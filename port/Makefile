@@ -2,7 +2,7 @@ CC = clang
 CFLAGS = -std=c11 -Wall -Wextra -O2 -g
 SDL = $(shell brew --prefix sdl3)
 B = ../build
-GAME = src/video.c
+GAME = $(filter-out src/main.c src/platform.c,$(wildcard src/*.c))
 SRC = $(wildcard src/*.c src/*.h)
 
 all: $(B)/dm $(B)/libdm.dylib
