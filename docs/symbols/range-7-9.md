@@ -541,7 +541,7 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the s
 
 1. Find the spell (`menus_get_spell_from_symbols`). No match: message "meaningless spell".
 2. Power = first symbol − 0x5f (1–6). Required level = power + base level. Experience = `(random & 7) + 16 × level + 8 × (power − 1) × base + D3²`. The intended last term is `level²` (ReDMCSB). The compiled code squares register D3 before it stores the level in D3, so it uses a stale value from the caller. A port should use `level²`.
-3. When the skill level is too low, each missing level gives a failure chance against luck (`min(luck + 15, 115)`). A failure adds reduced experience and prints "needs more practice".
+3. When the skill level is too low, each missing level gives a failure chance against the current wisdom (champion offset `0x50`, `min(wisdom + 15, 115)`). A failure adds reduced experience and prints "needs more practice".
 4. Potion: needs an empty flask (icon 0xc3) in a hand, else message "need flask" and return 3. The flask becomes potion `type` with power `power × 40 + random(16)`.
 5. Projectile: turn the champion to the party direction and shoot explosion `type − 128` with kinetic energy `bounded(21, (power + 2) × (4 + 2 × skill), 255)`. Type 4 doubles the skill.
 6. Other: 0 light, 1 darkness, 2 thieves eye (event 73), 3 invisibility (event 71), 4 party shield (event 74), 5 magic torch, 6 footprints (event 79), 7 zokathra (creates junk 10), 8 fire shield.
