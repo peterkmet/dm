@@ -84,6 +84,7 @@ void timeline_init(void)
     free(g_timeline);
     g_timeline_events = calloc(g_event_max_count, sizeof *g_timeline_events);
     g_timeline = calloc(g_event_max_count, sizeof *g_timeline);
+    if (g_event_max_count <= 0 || !g_timeline_events || !g_timeline) fatal_error(0x46);
     for (uint16_t i = 0; i < g_event_max_count; i++)
         g_timeline_events[i].map_time = i + 1;
     g_timeline_events[g_event_max_count - 1].map_time = 0xffff;
@@ -245,6 +246,7 @@ void group_init_active_groups(void)
     g_max_active_group_count = 110;
     free(g_active_groups);
     g_active_groups = malloc(g_max_active_group_count * sizeof *g_active_groups);
+    if (!g_active_groups) fatal_error(0x46);
     for (uint16_t i = 0; i < g_max_active_group_count; i++)
         g_active_groups[i].group_index = -1;
 }

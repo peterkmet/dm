@@ -99,7 +99,7 @@ The checksum is weak. A change that sets a bit in the plain word and clears the 
 | 26 | 2 | `g_first_unused_event_index` |
 | 28 | 2 | `g_event_max_count` |
 | 30 | 2 | `g_active_group_count` |
-| 32 | 4 | `0x10314e` (use not traced) |
+| 32 | 4 | `g_last_creature_attack_time` (`0x10314e`) |
 | 36 | 4 | `g_last_party_movement_time` |
 | 40 | 2 | `g_disabled_movement_ticks` |
 | 42 | 2 | `g_projectile_disabled_movement_ticks` |

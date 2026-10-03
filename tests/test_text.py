@@ -122,3 +122,12 @@ def test_message_word_wrap(lib):
     assert row(m, 2) == b"WORD00 WORD01 WORD02 WORD03 WORD04 WORD05 WORD06"
     assert row(m, 3) == b"\0\0WORD07 WORD08"  # continuation row starts at x 12
     assert m.cursor_x == 12 + 13 * 6
+
+
+def test_message_cursor_clamps_large_column(lib):
+    lib.message_clear()
+    m = message(lib)
+    lib.message_move_cursor(5462, 0)  # column * 6 overflows int16 without the clamp
+    assert m.cursor_x == 312
+    lib.message_print(1, b"HELLO WORLD", 0)
+    assert all(row(m, r) == b"" for r in (1, 2, 3))

@@ -16,6 +16,7 @@ static void clear_row(int r)
 void message_move_cursor(int16_t column, int16_t row)
 {
     if (column < 0) column = 0;
+    if (column > MESSAGE_COLS - 1) column = MESSAGE_COLS - 1;
     int16_t x = column * TEXT_CHAR_WIDTH, max = MESSAGE_ROW_WIDTH - TEXT_CHAR_WIDTH;
     g_message.cursor_x = x < max ? x : max;
     g_message.cursor_row = row < 0 ? 0 : row > 3 ? 3 : row;

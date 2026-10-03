@@ -102,7 +102,7 @@ Port the entrance screen, new game and resume, the save file format, and the end
 
 ### Step 14: Upscaling
 
-- Add an optional pixel-art upscaling filter (Scale2x/EPX) in the platform layer, selected by a command-line flag.
+- Add an optional pixel-art upscaling filter (Scale2x/EPX and Scale3x) in the platform layer. The `DM_FILTER` environment variable selects it (`none`, `scale2x`, `scale3x`). A command-line flag in `main.c` calls `plat_set_filter` when the game loop is integrated.
 - Test: Scale2x on a small known image gives the known output.
 
 ### Step 15: Full test and release

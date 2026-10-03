@@ -26,9 +26,10 @@ const int8_t *sound_sample(int16_t sound, uint16_t *length, uint16_t *period)
     uint16_t size;
     if (sound < 0 || sound >= SOUND_COUNT || kaos_s16(G_SOUNDS + 12 * sound) < 0) return NULL;
     const uint8_t *p = gfx_item(kaos_s16(G_SOUNDS + 12 * sound), &size);
-    if (!p || size < 2) return NULL;
+    uint8_t rate = kaos_u8(G_SOUNDS + 12 * sound + 3);
+    if (!p || size < 2 || !rate) return NULL;
     *length = size - 2;
-    *period = 0x11c60 / kaos_u8(G_SOUNDS + 12 * sound + 3);
+    *period = 0x11c60 / rate;
     return (const int8_t *)p + 2;
 }
 
