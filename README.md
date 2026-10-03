@@ -11,7 +11,7 @@ This repository contains no game files. You supply your own ADF disk image.
 | 1. Tooling | Extract the ADF, load FTL modules, decompile with Ghidra headless | Done |
 | 2. Data layer | Read `Graphics.DAT` and `Dungeon.DAT` in C | Not started |
 | 3. Game logic | Clean C from the decompiled modules | Not started |
-| 4. Platform layer | SDL video, sound, and input | Not started |
+| 4. Platform layer | SDL video, sound, and input | Scaffold done, no sound |
 
 ## Prerequisites
 
@@ -61,6 +61,30 @@ The `.gitignore` file excludes `*.adf`, `game/`, and `decomp/`. Do not commit ga
 | `tools/decompile-all.sh` | Run `dm-ftl` and `decompile.sh` for every module in `game/`. It uses `docs/<module>-symbols.csv` as `SYMBOLS` (for example `docs/kaos-symbols.csv`). |
 | `dmtools.emu` (Python) | Run a function of a module image in a 68000 emulator. `Emu(image).call(addr, [(size, value), ...])` pushes the arguments right to left and returns `D0`. Access to custom chips, CIA, or ExecBase stops the call with `EmuError`. Use `allow_hw=True` to permit this access. |
 
+## C port
+
+The C port is in `port/`. It uses C11, `clang`, and SDL3. Install SDL3 first.
+
+```sh
+brew install sdl3
+```
+
+Build the game and the test library. The output goes to `build/`.
+
+```sh
+make -C port
+```
+
+Run the game.
+
+```sh
+build/dm
+```
+
+At this time, the game shows a test pattern. Press Escape or close the window to quit. `build/dm --frames N` quits after N frames.
+
+`build/libdm.dylib` contains the game code without SDL. `tests/test_port.py` loads it with `ctypes`.
+
 ## Known limitations
 
 - Some decompiled code still contains `>> 0x10` casts, for example `(short)((uint)x >> 0x10)`. `grep -c '>> 0x10' decomp/KAOS.c` gives 193 lines (281 lines without `InferParams.java`). 93 of these lines are calls through function pointers, mostly through the module jump tables (`(*DAT_0010465a)(...)`). `InferParams.java` cannot set the parameters of an unknown call target. Most other lines are the high word of a 32-bit value in D0 or D1, for example in `CONCAT22` or `in_D0 >> 0x10`.
@@ -81,6 +105,8 @@ After the auto-analysis, `decompile.sh` runs these Ghidra scripts in this order:
 ```sh
 uv run pytest
 ```
+
+`tests/test_port.py` builds the C port and tests it through `ctypes`. Pytest skips it when `clang` or SDL3 is not installed.
 
 `tests/test_ghidra.py` runs `decompile.sh` on a small synthetic image. It takes about 4 seconds. Pytest skips it when Ghidra is not installed.
 
