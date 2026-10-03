@@ -87,7 +87,7 @@ At this time, the game shows a test pattern. Press Escape or close the window to
 
 ## Known limitations
 
-- Some decompiled code still contains `>> 0x10` casts, for example `(short)((uint)x >> 0x10)`. `grep -c '>> 0x10' decomp/KAOS.c` gives 193 lines (281 lines without `InferParams.java`). 93 of these lines are calls through function pointers, mostly through the module jump tables (`(*DAT_0010465a)(...)`). `InferParams.java` cannot set the parameters of an unknown call target. Most other lines are the high word of a 32-bit value in D0 or D1, for example in `CONCAT22` or `in_D0 >> 0x10`.
+- Some decompiled code still contains `>> 0x10` casts, for example `(short)((uint)x >> 0x10)`. `grep -c '>> 0x10' decomp/KAOS.c` gives 92 lines (281 lines without `InferParams.java` and `ResolveJumpTable.java`). Most of these lines are the high word of a 32-bit value in D0 or D1, for example in `CONCAT22` or `in_D0 >> 0x10`.
 - The decompiled C does not compile. Names, types, and register calling conventions still need work in stages 2–3.
 
 ## How decompile.sh finds functions
@@ -98,7 +98,8 @@ After the auto-analysis, `decompile.sh` runs these Ghidra scripts in this order:
 
 1. `ApplySymbols.java` reads the CSV file in `SYMBOLS`. The columns are `address,name,signature,subsystem`. The first line is a header. A row names a function when the row has a signature or when the address already holds an instruction. The script creates the function if it does not exist. Other rows label a global. The script does not apply the signature text. If `SYMBOLS` is empty or the file does not exist, the script does nothing.
 2. `InferParams.java` sets the stack parameters of each function that starts with `LINK A5` or `LINK A6`. The compiler uses a 16-bit `int`: each argument uses a 2-byte (word) or 4-byte (long) stack slot. The script reads each `d16(A5)` or `d16(A6)` operand with `d16 >= 8`. The largest access size at an offset gives the type: byte gives `char`, word gives `short`, long gives `undefined4`. A byte access at an odd offset reads the low byte of a word slot. The script fills gaps with `undefined2` slots. The parameter names are `arg_<offset>`, for example `arg_8` and `arg_a`.
-3. `ExportC.java` decompiles all functions to the output file.
+3. `ResolveJumpTable.java` finds each `JSR d16(A5)` or `JMP d16(A5)` that goes through a module jump table slot. It reads the `JMP abs.l` target of the slot and adds a call override reference. The decompiler then shows a direct call to the target function, with its parameters.
+4. `ExportC.java` decompiles all functions to the output file.
 
 ## Tests
 

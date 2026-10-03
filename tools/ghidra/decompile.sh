@@ -9,5 +9,5 @@ proj=$(mktemp -d)
 trap 'rm -rf "$proj"' EXIT
 "$GHIDRA/support/analyzeHeadless" "$proj" p -import "$1" \
   -loader BinaryLoader -loader-baseAddr "$2" -processor 68000:BE:32:default \
-  -scriptPath "$(realpath "$(dirname "$0")")" -preScript Entries.java "${@:4}" -postScript ApplySymbols.java "${SYMBOLS:-}" -postScript InferParams.java -postScript ExportC.java "$out" >"$out.log" 2>&1 \
+  -scriptPath "$(realpath "$(dirname "$0")")" -preScript Entries.java "${@:4}" -postScript ApplySymbols.java "${SYMBOLS:-}" -postScript InferParams.java -postScript ResolveJumpTable.java -postScript ExportC.java "$out" >"$out.log" 2>&1 \
   || { tail -20 "$out.log"; exit 1; }
