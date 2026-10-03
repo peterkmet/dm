@@ -1,10 +1,16 @@
 #include <SDL3/SDL.h>
+#include <string.h>
 #include "platform.h"
+#include "scale.h"
+#include "sound.h"
 
 static SDL_Window *win;
 static SDL_Renderer *ren;
 static SDL_Texture *tex;
 static Uint64 next_tick;
+static SDL_AudioStream *stream;
+static int filter = 1; /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */
+static uint8_t big[SCREEN_H * 3][SCREEN_W * 3];
 
 #define TICK_NS (SDL_NS_PER_SECOND / 50) /* PAL VBL */
 
@@ -12,14 +18,28 @@ int plat_init(int scale)
 {
     if (!SDL_Init(SDL_INIT_VIDEO) ||
         !SDL_CreateWindowAndRenderer("Dungeon Master", SCREEN_W * scale, SCREEN_H * scale,
-                                     SDL_WINDOW_RESIZABLE, &win, &ren) ||
-        !(tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-                                  SCREEN_W, SCREEN_H))) {
+                                     SDL_WINDOW_RESIZABLE, &win, &ren)) {
+        SDL_Log("SDL: %s", SDL_GetError());
+        return 0;
+    }
+    const char *f = SDL_getenv("DM_FILTER");
+    if (!plat_set_filter(f && !strcmp(f, "scale2x") ? 2 : f && !strcmp(f, "scale3x") ? 3 : 1)) return 0;
+    next_tick = SDL_GetTicksNS() + TICK_NS;
+    return 1;
+}
+
+/* Selects the upscale filter (1 none, 2 Scale2x, 3 Scale3x) and recreates the texture. */
+int plat_set_filter(int factor)
+{
+    filter = factor == 2 || factor == 3 ? factor : 1;
+    if (tex) SDL_DestroyTexture(tex);
+    tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+                            SCREEN_W * filter, SCREEN_H * filter);
+    if (!tex) {
         SDL_Log("SDL: %s", SDL_GetError());
         return 0;
     }
     SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_NEAREST);
-    next_tick = SDL_GetTicksNS() + TICK_NS;
     return 1;
 }
 
@@ -31,12 +51,15 @@ void plat_quit(void)
 void plat_present(void)
 {
     uint32_t pal[16], *px;
-    int pitch, w, h, s, ox, oy;
+    int pitch, w, h, s, ox, oy, tw = SCREEN_W * filter;
+    const uint8_t *src = filter == 1 ? &fb[0][0] : &big[0][0];
+    if (filter == 2) scale2x(&fb[0][0], SCREEN_W, SCREEN_H, &big[0][0]);
+    if (filter == 3) scale3x(&fb[0][0], SCREEN_W, SCREEN_H, &big[0][0]);
     for (int i = 0; i < 16; i++) pal[i] = video_argb(palette[i]);
     if (!SDL_LockTexture(tex, NULL, (void **)&px, &pitch)) return;
-    for (int y = 0; y < SCREEN_H; y++)
-        for (int x = 0; x < SCREEN_W; x++)
-            px[y * pitch / 4 + x] = pal[fb[y][x] & 15];
+    for (int y = 0; y < SCREEN_H * filter; y++)
+        for (int x = 0; x < tw; x++)
+            px[y * pitch / 4 + x] = pal[src[y * tw + x] & 15];
     SDL_UnlockTexture(tex);
 
     SDL_GetCurrentRenderOutputSize(ren, &w, &h);
@@ -77,15 +100,36 @@ int plat_poll(PlatEvent *e)
 /* Sleeps until the next 50 Hz tick. */
 void plat_wait_tick(void)
 {
+    plat_audio_pump();
     Uint64 now = SDL_GetTicksNS();
     if (now < next_tick) SDL_DelayPrecise(next_tick - now);
     else next_tick = now; /* fell behind: resync instead of bursting */
     next_tick += TICK_NS;
 }
 
-/* ponytail: audio stub, opens an SDL audio stream when the sound step needs it */
-void plat_audio_play(const int8_t *samples, int len)
+/* Opens the audio stream on first use. Returns 0 when audio is not available. */
+static int audio_open(void)
 {
-    (void)samples;
-    (void)len;
+    static int tried;
+    if (stream || tried) return stream != NULL;
+    tried = 1;
+    SDL_AudioSpec spec = { SDL_AUDIO_S16, 2, SOUND_OUTPUT_RATE };
+    if (!SDL_InitSubSystem(SDL_INIT_AUDIO) ||
+        !(stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL))) {
+        SDL_Log("SDL audio: %s", SDL_GetError());
+        return 0;
+    }
+    return SDL_ResumeAudioStreamDevice(stream);
+}
+
+/* Keeps about three ticks of mixer output queued; runs on the game thread, so the mixer needs no lock. */
+void plat_audio_pump(void)
+{
+    enum { FRAMES = SOUND_OUTPUT_RATE / 50 };
+    int16_t buf[FRAMES * 2];
+    if (!audio_open()) return;
+    while (SDL_GetAudioStreamQueued(stream) < (int)sizeof buf * 3) {
+        sound_mix(buf, FRAMES);
+        if (!SDL_PutAudioStreamData(stream, buf, sizeof buf)) return;
+    }
 }

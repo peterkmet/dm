@@ -9,9 +9,11 @@ This repository contains no game files. You supply your own ADF disk image.
 | Stage | Result | State |
 |---|---|---|
 | 1. Tooling | Extract the ADF, load FTL modules, decompile with Ghidra headless | Done |
-| 2. Data layer | Read `Graphics.DAT` and `Dungeon.DAT` in C | Not started |
-| 3. Game logic | Clean C from the decompiled modules | Not started |
-| 4. Platform layer | SDL video, sound, and input | Scaffold done, no sound |
+| 2. Data layer | Read `KAOS.FTL`, `Graphics.DAT` and `Dungeon.DAT` in C | Done |
+| 3. Game logic | Reimplement the game rules in C from the decompiled code | In progress: game state, random numbers, timeline, text, sound done |
+| 4. Platform layer | SDL video, sound, input, and upscaling | Done |
+
+The detailed plan is in [docs/superpowers/2026-10-04-dm-c-port-plan.md](docs/superpowers/2026-10-04-dm-c-port-plan.md).
 
 ## Prerequisites
 
@@ -82,6 +84,8 @@ build/dm
 ```
 
 At this time, the game shows a test pattern. Press Escape or close the window to quit. `build/dm --frames N` quits after N frames.
+
+Set `DM_FILTER` to select a pixel-art upscale filter. The values are `none` (default), `scale2x`, and `scale3x`. The filter makes the image 2 or 3 times larger before the window scaling. The filter gives the sharpest image when the window scale is a multiple of the filter factor. Example: `DM_FILTER=scale2x build/dm`.
 
 `build/libdm.dylib` contains the game code without SDL. `tests/test_port.py` loads it with `ctypes`.
 

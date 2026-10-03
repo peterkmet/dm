@@ -12,10 +12,11 @@ typedef struct {
 } PlatEvent;
 
 int plat_init(int scale);
+int plat_set_filter(int factor);
 void plat_quit(void);
 void plat_present(void);
 int plat_poll(PlatEvent *e);
 void plat_wait_tick(void);
-void plat_audio_play(const int8_t *samples, int len);
+void plat_audio_pump(void);
 
 #endif
