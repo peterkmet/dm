@@ -23,22 +23,22 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "amitools" },
+    { name = "machine68k" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "machine68k" },
     { name = "pytest" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "amitools", specifier = ">=0.8" }]
+requires-dist = [
+    { name = "amitools", specifier = ">=0.8" },
+    { name = "machine68k", specifier = ">=0.4.1" },
+]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "machine68k", specifier = ">=0.4.1" },
-    { name = "pytest", specifier = ">=8" },
-]
+dev = [{ name = "pytest", specifier = ">=8" }]
 
 [[package]]
 name = "iniconfig"

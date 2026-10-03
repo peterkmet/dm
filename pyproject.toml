@@ -2,7 +2,10 @@
 name = "dmtools"
 version = "0.1.0"
 requires-python = ">=3.14"
-dependencies = ["amitools>=0.8"]
+dependencies = [
+    "amitools>=0.8",
+    "machine68k>=0.4.1",
+]
 
 [project.scripts]
 dm-extract = "dmtools.extract:main"
@@ -17,7 +20,6 @@ packages = ["src/dmtools"]
 
 [dependency-groups]
 dev = [
-    "machine68k>=0.4.1",
     "pytest>=8",
 ]
 
