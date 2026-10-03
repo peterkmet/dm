@@ -1,0 +1,8 @@
+*.adf
+game/
+ghidra/
+tools/ghidra-amiga/build/
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
