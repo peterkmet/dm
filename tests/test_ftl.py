@@ -64,3 +64,14 @@ def test_parse_rejects_bad_checksum():
     ftl[-1] ^= 0xFF
     with pytest.raises(ValueError, match="code checksum"):
         parse(bytes(ftl))
+
+
+def test_unpack_r23():
+    from dmtools.ftl import unpack
+
+    words = [0] * 0x780
+    words[5], words[0x80] = 0xAAAA, 0xBBBB
+    # nibbles: 0 5 -> dict[5]; 8 0 0 -> dict[0x800 - 0x780]; f 1 2 3 4 -> literal 0x1234
+    stream = bytes.fromhex("0580 0f12 3400")
+    packed = struct.pack(">HHI", 0x5223, 0x5223, 3) + struct.pack(">1920H", *words) + stream
+    assert unpack(packed) == bytes.fromhex("aaaa bbbb 1234")

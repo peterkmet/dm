@@ -19,7 +19,7 @@ class Module:
     data_rle: bytes
     relocs: list[int]  # signed offsets from the data base of longs to relocate
     exports: list[int]  # code offsets of exported functions
-    code: bytes  # raw code section (still packed when compressed)
+    code: bytes  # code section, unpacked
 
 
 @dataclass
@@ -59,7 +59,9 @@ def parse(raw):
         raise ValueError("info checksum mismatch")
     if sum(data) & 0xFFFF != data_chk:
         raise ValueError("data checksum mismatch")
-    if not packed and sum(code[:csize]) & 0xFFFF != code_chk:
+    if packed:
+        code = unpack(code)
+    if sum(code[:csize]) & 0xFFFF != code_chk:
         raise ValueError("code checksum mismatch")
 
     rle_len, reloc_len = struct.unpack_from(">II", data, 2)
@@ -82,9 +84,37 @@ def _unrle(rle):
     return out
 
 
+def unpack(packed):
+    """Expand the 'R#' nibble coding that APPA.FTL applies to packed code sections."""
+    if packed[:2] != b"\x52\x23":
+        raise ValueError("not R# packed")
+    count = struct.unpack_from(">I", packed, 4)[0]
+    table = struct.unpack_from(">1920H", packed, 8)
+    stream = packed[0xF08:]
+    pos = 0
+
+    def nibbles(n):
+        nonlocal pos
+        v = 0
+        for _ in range(n):
+            v = (v << 4) | (stream[pos // 2] >> (4 if pos % 2 == 0 else 0)) & 0xF
+            pos += 1
+        return v
+
+    out = bytearray()
+    for _ in range(count):
+        v = nibbles(1)
+        if v < 8:
+            w = table[(v << 4) | nibbles(1)]
+        elif v == 15:
+            w = nibbles(4)
+        else:
+            w = table[((v << 8) | nibbles(2)) - 0x780]
+        out += struct.pack(">H", w)
+    return bytes(out)
+
+
 def load_image(mod, base):
-    if mod.compressed:
-        raise ValueError("compressed code is not supported")
     align = lambda x: (x + 1) & ~1
     data_base = base + align(mod.data_size)
     code_base = align(data_base + mod.region_size)
