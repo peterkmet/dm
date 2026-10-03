@@ -196,6 +196,7 @@ address,name,signature,subsystem
 0x101038,g_direction_to_step_east,,dungeon
 0x101040,g_direction_to_step_north,,dungeon
 0x101048,g_thing_data_byte_count,,dungeon
+0x101058,g_new_game_extra_thing_count,const uint8_t g_new_game_extra_thing_count[16],dungeon
 0x101068,g_object_info,,dungeon
 0x1014a0,g_weapon_info,const WeaponInfo g_weapon_info[]; /* 6 bytes each */,dungeon
 0x1015b4,g_armour_info,const ArmourInfo g_armour_info[]; /* 4 bytes each */,dungeon

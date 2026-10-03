@@ -114,3 +114,5 @@ uv run pytest
 ## Documentation
 
 - [FTL module format](docs/ftl-format.md)
+- [Dungeon.DAT format](docs/dungeon-format.md)
+- [KAOS map](docs/kaos-map.md) and subsystem notes in [docs/symbols/](docs/symbols/)

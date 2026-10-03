@@ -18,6 +18,15 @@ wheels = [
 ]
 
 [[package]]
+name = "dmcsb"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/77/4e/8ecee172818c5068e2fff749e685a12bf733bc3856eaf9ab1e95bfa887f2/dmcsb-0.2.1.tar.gz", hash = "sha256:66e24f6d288b8921cb59dda907b43d64df5da7770116b979a41e33f9491785d8", size = 84076, upload-time = "2026-07-02T11:56:13.744Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/69/7e/7cc69aed655f6fb686bb17f0f9d866e1640c9186c3db87e49223f42475dc/dmcsb-0.2.1-py3-none-any.whl", hash = "sha256:3e14e7a3463b662029dd1a5ad147dff94e8adb13fb3343927f5761c5aa1e7016", size = 82108, upload-time = "2026-07-02T11:56:12.525Z" },
+]
+
+[[package]]
 name = "dmtools"
 version = "0.1.0"
 source = { editable = "." }
@@ -28,6 +37,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "dmcsb" },
     { name = "pytest" },
 ]
 
@@ -38,7 +48,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8" }]
+dev = [
+    { name = "dmcsb", specifier = ">=0.2.1" },
+    { name = "pytest", specifier = ">=8" },
+]
 
 [[package]]
 name = "iniconfig"

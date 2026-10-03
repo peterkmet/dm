@@ -7,7 +7,7 @@ Produce a portable C version of Dungeon Master v3.60 (Amiga) that builds and run
 ## Decisions
 
 - Basis: our own decompilation of the user's disk (`docs/ftl-format.md`, stage 1). ReDMCSB and CSBwin knowledge may be used for names and data formats only. Do not copy code from ReDMCSB, CSBwin, or PyDM.
-- Fidelity: functional equivalence. Same rules, data, and arithmetic. The code does not need to match the original binary.
+- Fidelity: a reimplementation, not an emulation. Game rules (movement, combat, magic, creatures, timeline, random numbers) follow the decompiled code exactly. The Amiga technical layer is not reproduced: no heap or bitmap cache, no blitter, bitplanes, copper, interrupts, or busy waits. Drawing goes straight to the chunky framebuffer, and a plain game loop drives timing.
 - Scope: `KAOS.FTL` is the whole game. It does not call other modules except a return to `APPB`. Intro modules (`APPB`, `ANIM`, `SWSH`, `TITL.DAT`) are out of scope until the game runs.
 - Language: C11, `clang`, plain `Makefile`. SDL3 from Homebrew (`brew install sdl3`). No CMake.
 - Integer semantics: the original compiler uses 16-bit `int`. Use `int16_t`/`uint16_t` where the original uses 16-bit values. Keep overflow behavior.
@@ -34,7 +34,7 @@ tests/              pytest tests (Python tools and C port)
 
 ## Steps
 
-Each step ends with green tests and a commit. A fresh subagent executes each step. The `reviewer` agent reviews each step. Steps 7–12 get their detailed task lists after step 3, from `docs/kaos-map.md`.
+Each step ends with green tests and a commit. A fresh subagent executes each step. The `reviewer` agent reviews each step. Each step lists the original functions it ports from `docs/kaos-symbols.csv`.
 
 ### Step 1: Emulator harness
 
@@ -65,22 +65,46 @@ Each step ends with green tests and a commit. A fresh subagent executes each ste
 ### Step 5: Graphics data
 
 - Load `Graphics.DAT` (header, item table, compressed images). Port the image decompression from `KAOS`.
-- Test: decode several images and compare with the original decompression function run in `dmtools.emu`, and with `dmcsb`.
+- Test: decode every bitmap item and compare with the original decompression function run in `dmtools.emu`.
 
 ### Step 6: Dungeon data
 
 - Load `Dungeon.DAT` (header, maps, object lists, text). Port the loader logic from `KAOS`.
 - Test: compare map sizes, square data, and object counts with `dmcsb` for `Dungeon.DAT`.
 
-### Steps 7–12: Game subsystems
+### Step 7: Dungeon view rendering
 
-Order: dungeon view rendering, interface panels and text, input and party movement, champions and inventory, creatures and timeline, projectiles and magic and combat, sound, save and load, endgame. Each step lists the original functions it ports (from `docs/kaos-symbols.csv`) and their tests. Pure functions get differential tests against `dmtools.emu`. Rendering gets framebuffer tests against original rendering functions run in the emulator, with blitter operations handled by an emulator hook.
+Reimplement the dungeon view (floor, ceiling, walls, doors, ornaments, objects, creatures, projectiles, explosions, field effects) on the chunky framebuffer, using the drawing order and coordinate tables of the original. Test: unit tests for blit with transparency and flip, and for view square visibility; a manual visual check in `build/dm`.
 
-### Step 13: Upscaling
+### Step 8: Interface panels and text
+
+Reimplement the screen layout, champion status boxes, action area, spell area, message area, inventory panel, and text drawing. Test: unit tests for text drawing and layout zones; a manual visual check.
+
+### Step 9: Main loop, input, movement, timeline
+
+Port `game_loop`, the command queue, mouse and keyboard handling, party movement and turning, sensors, doors, pits, teleporters, and the timeline. Pure rule functions get unit tests (differential tests against `dmtools.emu` where cheap). Stateful logic gets scenario tests: a command sequence on a loaded dungeon gives the expected party position and state.
+
+### Step 10: Champions, inventory, items, actions
+
+Port champion recruiting, stats, inventory, item use, eating and drinking, and actions. Tests as in Step 9.
+
+### Step 11: Creatures, projectiles, magic, combat
+
+Port creature groups and AI, projectiles, explosions, spells, damage, and death. Tests as in Step 9. The random number generator must match the original exactly.
+
+### Step 12: Sound
+
+Port sound playback through SDL3 audio (four channels, two stereo pairs, sample data from `Graphics.DAT`).
+
+### Step 13: Entrance, save and load, endgame
+
+Port the entrance screen, new game and resume, the save file format, and the endgame sequence.
+
+### Step 14: Upscaling
 
 - Add an optional pixel-art upscaling filter (Scale2x/EPX) in the platform layer, selected by a command-line flag.
 - Test: Scale2x on a small known image gives the known output.
 
-### Step 14: Full test and release
+### Step 15: Full test and release
 
 - Run the full test suite. Write a manual test checklist (start, movement, combat, magic, save, load, endgame). Update `CHANGELOG.md`. Merge to `main`.
