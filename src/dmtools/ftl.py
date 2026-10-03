@@ -38,7 +38,7 @@ def _sum16(b):
 def parse(raw):
     magic, chk, version, b6, b7 = struct.unpack_from(">HHHBB", raw)
     count = struct.unpack_from(">H", raw, 0x12)[0]
-    if magic != MAGIC or version != 2 or b6 != 1 or b7 != 0:
+    if magic != MAGIC or version != 2 or b6 != 1 or b7 != 0 or count >= 0x65:
         raise ValueError("not an FTL module")
     table = raw[0x14 : 0x14 + count * 12]
     s = sum(raw[i] * i for i in range(4, 0x14)) + sum(table[i] * ((i & 0xFF) + 1) for i in range(len(table)))
@@ -51,6 +51,8 @@ def parse(raw):
             if kind != 1 or tag in secs:
                 raise ValueError(f"bad section {tag:#x}")
             secs[tag] = raw[off : off + size]
+    if len(secs) != 3:
+        raise ValueError("missing section")
     info, data, code = secs[TAG_INFO], secs[TAG_DATA], secs[TAG_CODE]
 
     region, dsize, _jt_size, jt_off, stack, csize, _dsec, _one, packed = struct.unpack_from(">7I2H", info)
@@ -120,6 +122,8 @@ def load_image(mod, base):
     code_base = align(data_base + mod.region_size)
     mem = bytearray(code_base - base + mod.code_size)
     init = _unrle(mod.data_rle)
+    if len(init) != mod.data_size:
+        raise ValueError("data length mismatch")
     mem[: len(init)] = init
     for off in mod.relocs:
         p = data_base - base + off

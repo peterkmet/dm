@@ -5,14 +5,21 @@ import pytest
 from dmtools.ftl import load_image, parse
 
 
-def make_ftl(code, data_words, relocs, exports, region=0x30, data_size=8):
-    """Build an uncompressed FTL module the same way BJELoad_R reads it."""
+def pack_literals(code):
+    """R# pack code using only literal codes (nibble f + 4 nibbles per word)."""
+    nibbles = "".join("f" + code[i : i + 2].hex() for i in range(0, len(code), 2))
+    nibbles += "0" * (-len(nibbles) % 4)
+    return struct.pack(">HHI", 0x5223, 0x5223, len(code) // 2) + bytes(0xF00) + bytes.fromhex(nibbles)
+
+
+def make_ftl(code, data_words, relocs, exports, region=0x30, data_size=8, packed=False, tags=(0x10, 0x11, 0x12)):
+    """Build an FTL module the same way BJELoad_R reads it."""
     jt_offset = 0x10
     rle = b"".join(struct.pack(">H", w) for w in data_words)
     reloc_bytes = b"".join(struct.pack(">h", r) for r in relocs)
     sec11 = struct.pack(">HII", 1, len(rle), len(reloc_bytes)) + rle + reloc_bytes
     exp = b"".join(struct.pack(">I", e) for e in exports)
-    info_wo_sum = [region, data_size, len(exports) * 8, jt_offset, 0x7D00, len(code), len(sec11), 1, 0, 0]
+    info_wo_sum = [region, data_size, len(exports) * 8, jt_offset, 0x7D00, len(code), len(sec11), 1, int(packed), 0]
     sum16 = lambda b: sum(struct.unpack(f">{len(b) // 2}h", b)) & 0xFFFF
     head = struct.pack(">IIIIIIIHHH", *info_wo_sum)
     code_sum = sum(code) & 0xFFFF
@@ -20,7 +27,8 @@ def make_ftl(code, data_words, relocs, exports, region=0x30, data_size=8):
     sums = struct.pack(">HH", code_sum, data_sum)
     chk = (sum16(head) + sum16(sums) + sum16(exp)) & 0xFFFF
     sec10 = head + struct.pack(">H", chk) + sums + exp
-    secs = [(0x10, sec10), (0x11, sec11), (0x12, code)]
+    secs = [(0x10, sec10), (0x11, sec11), (0x12, pack_literals(code) if packed else code)]
+    secs = [(tag, body) for (_, body), tag in zip(secs, tags)]
     off = 0x14 + 12 * len(secs)
     table = b""
     for tag, body in secs:
@@ -75,3 +83,21 @@ def test_unpack_r23():
     stream = bytes.fromhex("0580 0f12 3400")
     packed = struct.pack(">HHI", 0x5223, 0x5223, 3) + struct.pack(">1920H", *words) + stream
     assert unpack(packed) == bytes.fromhex("aaaa bbbb 1234")
+
+
+def test_parse_unpacks_packed_code():
+    code = bytes.fromhex("4e71 4e71 4e75")
+    mod = parse(make_ftl(code, [0x0002, 0x0000, 0x0002, 0x0010], [-4], [0], packed=True))
+    assert mod.compressed
+    assert mod.code == code
+
+
+def test_parse_rejects_missing_section():
+    with pytest.raises(ValueError, match="missing section"):
+        parse(make_ftl(b"\x4e\x75", [0], [], [0], tags=(0x10, 0x11, 0x13)))
+
+
+def test_load_image_rejects_wrong_data_length():
+    mod = parse(make_ftl(b"\x4e\x75", [0x0000, 0x0010], [], [0], data_size=2))
+    with pytest.raises(ValueError, match="data length"):
+        load_image(mod, 0x100000)

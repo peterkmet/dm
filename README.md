@@ -60,6 +60,13 @@ The `.gitignore` file excludes `*.adf`, `game/`, and `decomp/`. Do not commit ga
 | `tools/ghidra/decompile.sh <image.bin> <base> <out.c> [REG=VALUE] [ENTRY ...]` | Decompile a flat 68000 image with Ghidra headless. |
 | `tools/decompile-all.sh` | Run `dm-ftl` and `decompile.sh` for every module in `game/`. |
 
+## Known limitations
+
+- Ghidra cannot decompile 24 functions: 15 in `KAOS`, 8 in `VDEO`, and 1 in `ANIM`. The output contains `/* failed: Low-level Error: Cannot properly adjust input varnodes */` for each one. The cause is not yet known.
+- The decompiled C does not compile. Names, types, and register calling conventions still need work in stages 2–3.
+
+## How decompile.sh finds functions
+
 `decompile.sh` marks each `ENTRY` address as a function. It also marks each `LINK A5` or `LINK A6` instruction that follows an `RTS`. `REG=VALUE` sets a register for the whole program, for example `A5=0x104160` for the module data base.
 
 ## Tests
