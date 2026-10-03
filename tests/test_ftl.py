@@ -101,3 +101,19 @@ def test_load_image_rejects_wrong_data_length():
     mod = parse(make_ftl(b"\x4e\x75", [0x0000, 0x0010], [], [0], data_size=2))
     with pytest.raises(ValueError, match="data length"):
         load_image(mod, 0x100000)
+
+
+@pytest.mark.parametrize("tag, what", [(None, "header"), (0x10, "info"), (0x11, "data")])
+def test_parse_rejects_bad_section_checksum(tag, what):
+    ftl = bytearray(make_ftl(b"\x4e\x75", [0x0002], [], [0], data_size=2))
+    offsets = {t: struct.unpack_from(">HHI", ftl, 0x14 + i * 12)[2] for i, t in enumerate((0x10, 0x11, 0x12))}
+    ftl[0x08 if tag is None else offsets[tag] + 0x10 if tag == 0x10 else offsets[tag] + 1] ^= 0x01
+    with pytest.raises(ValueError, match=f"{what} checksum"):
+        parse(bytes(ftl))
+
+
+def test_parse_rejects_too_many_sections():
+    ftl = bytearray(make_ftl(b"\x4e\x75", [0x0002], [], [0], data_size=2))
+    ftl[0x12:0x14] = struct.pack(">H", 0x65)
+    with pytest.raises(ValueError, match="not an FTL module"):
+        parse(bytes(ftl))
