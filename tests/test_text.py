@@ -130,4 +130,5 @@ def test_message_cursor_clamps_large_column(lib):
     lib.message_move_cursor(5462, 0)  # column * 6 overflows int16 without the clamp
     assert m.cursor_x == 312
     lib.message_print(1, b"HELLO WORLD", 0)
-    assert all(row(m, r) == b"" for r in (1, 2, 3))
+    assert row(m, 0) == b"\0" * 52 + b"H"  # last cell, then the line wraps
+    assert row(m, 1) == b"\0\0ELLO WORLD"
