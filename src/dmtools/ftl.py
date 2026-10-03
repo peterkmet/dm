@@ -143,4 +143,4 @@ def main():
     with open(args.out, "wb") as f:
         f.write(img.data)
     print(f"base={img.base:#x} data_base={img.data_base:#x} code_base={img.code_base:#x}")
-    print(" ".join(f"{e:#x}" for e in img.entries))
+    print(" ".join([f"A5={img.data_base:#x}"] + [f"{e:#x}" for e in img.entries]))
