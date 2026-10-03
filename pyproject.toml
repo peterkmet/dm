@@ -6,7 +6,7 @@ dependencies = ["amitools>=0.8"]
 
 [project.scripts]
 dm-extract = "dmtools.extract:main"
-dm-hunks = "dmtools.hunks:main"
+dm-ftl = "dmtools.ftl:main"
 
 [build-system]
 requires = ["hatchling"]
