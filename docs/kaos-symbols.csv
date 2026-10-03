@@ -208,6 +208,7 @@ address,name,signature,subsystem
 0x10182a,g_inscription_escape_strings,const char g_inscription_escape_strings[32][8],dungeon
 0x10192a,g_group_directions_packed,"const uint8_t g_group_directions_packed[4]; /* 0x00,0x55,0xaa,0xff */",dungeon
 0x10192e,g_creature_info,const CreatureInfo g_creature_info[]; /* 0x1a bytes each; replaces 0x101930 */,dungeon
+0x101bec,g_creature_sounds,"const int8_t g_creature_sounds[18][2]; /* attack, movement sound per sound ordinal - 1; -1 none */",group
 0x101c10,g_fixed_possessions,const uint16_t g_fixed_possessions[]; /* 0-terminated lists 0x101c10..0x101c5f */,group
 0x101c60,g_current_map_index,,dungeon
 0x101c62,g_last_discarded_thing_map_index,uint8_t g_last_discarded_thing_map_index[16],dungeon
