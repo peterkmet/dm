@@ -85,6 +85,8 @@ build/dm
 
 At this time, the game shows a test pattern. Press Escape or close the window to quit. `build/dm --frames N` quits after N frames.
 
+`build/dm --view` shows the dungeon view at the party start of a new game. It needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/` (`--data DIR` selects another folder). Up and Down move forward and back, Left and Right turn, and A and D move sideways. Walls stop the movement. Objects, creatures, and light levels are not drawn yet.
+
 Set `DM_FILTER` to select a pixel-art upscale filter. The values are `none` (default), `scale2x`, and `scale3x`. The filter makes the image 2 or 3 times larger before the window scaling. The filter gives the sharpest image when the window scale is a multiple of the filter factor. Example: `DM_FILTER=scale2x build/dm`.
 
 `build/libdm.dylib` contains the game code without SDL. `tests/test_port.py` loads it with `ctypes`.

@@ -9,13 +9,18 @@ static uint8_t *dat;
 static size_t dat_len;
 static uint16_t count;
 static uint32_t *offsets; /* count + 1 file offsets */
+static Bitmap *decoded;   /* count bitmaps, decoded on first use */
 
 /* Reads a format 1 Graphics.DAT like graphics_dat_read_header. Returns the item count or -1. */
 int gfx_open(const char *path)
 {
+    for (int i = 0; decoded && i < count; i++)
+        free(decoded[i].px);
+    free(decoded);
     free(dat);
     free(offsets);
     offsets = NULL;
+    decoded = NULL;
     count = 0;
     if (!(dat = read_file(path, &dat_len)) || dat_len < 4) return -1;
     if (BE16(dat) != 0x8001) return -1;
@@ -28,7 +33,7 @@ int gfx_open(const char *path)
         off += BE16(sizes + 2 * i);
     }
     offsets[n] = off;
-    if (off > dat_len) return -1;
+    if (off > dat_len || !(decoded = calloc(n, sizeof *decoded))) return -1;
     return count = n;
 }
 
@@ -107,4 +112,12 @@ void gfx_free_bitmap(Bitmap *bm)
 {
     free(bm->px);
     bm->px = NULL;
+}
+
+/* Decoded graphic i, kept until the next gfx_open. NULL when it does not decode. */
+const Bitmap *gfx_bitmap(int i)
+{
+    if (i < 0 || i >= count) return NULL;
+    if (!decoded[i].px && gfx_load_bitmap(i, &decoded[i])) return NULL;
+    return &decoded[i];
 }
