@@ -1,0 +1,1113 @@
+address,name,signature,subsystem
+0x100002,g_copper_interrupt,,system
+0x100018,g_interrupt_data,,system
+0x10001c,g_console_port,,system
+0x100020,g_console_request,,system
+0x100024,g_input_request,,input
+0x100028,g_input_port,,input
+0x10002c,g_input_device_open,,input
+0x100030,g_old_auto_request,,system
+0x100034,g_old_build_sys_request,,system
+0x100038,g_chip_pool,,memory
+0x10003c,g_fast_pool,,memory
+0x100040,g_chip_pool_size,,memory
+0x100044,g_fast_pool_size,,memory
+0x100048,g_own_task,,system
+0x10004c,g_nil_file,,system
+0x100050,g_debug_output,,debug
+0x100054,g_chip_block,,system
+0x100058,g_chip_pool_2,,memory
+0x10005c,g_chip_pool_2_size,,memory
+0x1000d2,g_input_interrupt,,input
+0x1000e8,g_mouse_x_hires,,input
+0x1000ea,g_mouse_y_hires,,input
+0x1000f4,g_game_drive,,disk
+0x1000f6,g_save_drive,,disk
+0x100116,g_key_queue_head,,input
+0x100118,g_key_queue_tail,,input
+0x100152,g_vblank_interrupt,,video
+0x10016a,g_top_palette_pending,,palette
+0x10016c,g_bottom_palette_pending,,palette
+0x10016e,g_display_active,,video
+0x1001ba,g_top_palette,,palette
+0x1001be,g_bottom_palette,,palette
+0x1001c2,g_current_palette,,palette
+0x1001c6,g_module_args,,main
+0x1001cc,g_stop_waiting_for_input,,main
+0x1001ce,g_new_party_map_index,,main
+0x1001d0,g_viewport_bitmap,,video
+0x1001da,g_new_game,,main
+0x1001dc,g_candidate_champion_ordinal,,champion
+0x1001de,g_party_is_sleeping,,main
+0x1001e0,g_game_time_ticking,,main
+0x1001e4,g_party_dead,,main
+0x1001e8,g_party_champion_count,,champion
+0x1001ea,g_party_direction,,main
+0x1001ec,g_party_map_x,,main
+0x1001ee,g_party_map_y,,main
+0x1001f0,g_party_map_index,,main
+0x1001f2,g_disabled_movement_ticks,,main
+0x1001f4,g_projectile_disabled_movement_ticks,,main
+0x1001f6,g_last_projectile_disabled_movement_direction,,main
+0x1001f8,g_game_time,,main
+0x1001fc,g_vblank_counter,,main
+0x1001fe,g_wait_for_input_max_vblank_count,,main
+0x10020a,g_set_mouse_pointer_to_object_in_main_loop,,mouse
+0x10020c,g_refresh_mouse_pointer_in_main_loop,,mouse
+0x1002a6,g_hide_mouse_pointer_request_count,,mouse
+0x1002a8,g_mouse_pointer_bitmap_updated,,mouse
+0x100620,g_mouse_buttons,,input
+0x100622,g_mouse_x,,input
+0x100624,g_mouse_y,,input
+0x100ef8,g_random_seed,,random
+0x100efc,g_screen_bitmap,,video
+0x101038,g_direction_to_step_east,,dungeon
+0x101040,g_direction_to_step_north,,dungeon
+0x101048,g_thing_data_byte_count,,dungeon
+0x101068,g_object_info,,dungeon
+0x101930,g_creature_info,,dungeon
+0x101c60,g_current_map_index,,dungeon
+0x101c72,g_dungeon_text_data,,dungeon
+0x101cb8,g_dungeon_raw_map_data,,dungeon
+0x101cbc,g_current_map,,dungeon
+0x101cc0,g_current_map_column_first_thing_index,,dungeon
+0x101cc4,g_current_map_data,,dungeon
+0x101cc8,g_current_map_width,,dungeon
+0x101cca,g_current_map_height,,dungeon
+0x101cd0,g_dungeon_maps,,dungeon
+0x101cd4,g_dungeon_header,,dungeon
+0x101cd8,g_dungeon_map_data,,dungeon
+0x101cdc,g_dungeon_column_first_thing_index,,dungeon
+0x101ce0,g_dungeon_map_first_column,,dungeon
+0x101ce6,g_square_first_things,,dungeon
+0x101cea,g_thing_data,,dungeon
+0x101e18,g_active_group_count,,group
+0x101e22,g_active_groups,,group
+0x101e26,g_max_active_group_count,,group
+0x101e4c,g_language,,main
+0x101ea8,g_inventory_champion_ordinal,,inventory
+0x101ed2,g_leader_index,,champion
+0x101f54,g_champions,,champion
+0x102454,g_leader_hand_object,,champion
+0x102456,g_leader_hand_object_icon_index,,champion
+0x102458,g_object_icon_for_mouse_pointer,,mouse
+0x10245c,g_leader_empty_handed,,champion
+0x1024d6,g_video,,video
+0x102538,g_graphics_dat_open_count,,graphics_dat
+0x102544,g_graphic_dimensions,,graphics_dat
+0x102554,g_graphics_dat_file,,graphics_dat
+0x102558,g_graphic_count,,graphics_dat
+0x10255e,g_graphic_compressed_sizes,,graphics_dat
+0x102562,g_graphic_decompressed_sizes,,graphics_dat
+0x102566,g_graphic_cache,,graphics_dat
+0x102942,g_screen_width,,video
+0x102944,g_screen_height,,video
+0x102948,g_viewport_width,,video
+0x10294a,g_viewport_height,,video
+0x10294e,g_icon_width,,object
+0x102950,g_icon_height,,object
+0x103174,g_event_max_count,,timeline
+0x103176,g_event_count,,timeline
+0x103178,g_timeline_events,,timeline
+0x10317c,g_timeline,,timeline
+0x103fe0,g_magic_caster_champion_index,,menus
+0x103fe2,g_acting_champion_ordinal,,menus
+0x10400c,g_dos_base,,system
+0x104010,g_gfx_base,,system
+0x104014,g_intuition_base,,system
+0x104018,g_layers_base,,system
+0x10401c,g_console_device,,system
+0x104020,g_sys_base,,system
+0x104066,g_load_file,,loadsave
+0x104182,jt_module_entry_stub,,jump_table
+0x10418a,jt_rt_switch_word,,jump_table
+0x104192,jt_rt_switch_long,,jump_table
+0x10419a,jt_rt_switch_range,,jump_table
+0x1041a2,jt_rt_lmul,,jump_table
+0x1041aa,jt_rt_uldiv,,jump_table
+0x1041b2,jt_rt_ulmod,,jump_table
+0x1041ba,jt_rt_ldiv,,jump_table
+0x1041c2,jt_rt_lmod,,jump_table
+0x1041ca,jt_rt_nop,,jump_table
+0x1041d2,jt_input_handler_stub,,jump_table
+0x1041da,jt_install_input_handler,,jump_table
+0x1041e2,jt_detect_floppy_drives,,jump_table
+0x1041ea,jt_get_drive_disk_kind,,jump_table
+0x1041f2,jt_format_save_disk,,jump_table
+0x1041fa,jt_is_save_disk_inserted,,jump_table
+0x104202,jt_fun_106140,,jump_table
+0x10420a,jt_has_disk_changed,,jump_table
+0x104212,jt_input_any_pending,,jump_table
+0x10421a,jt_fun_106372,,jump_table
+0x104222,jt_input_key_pending,,jump_table
+0x10422a,jt_input_wait_key,,jump_table
+0x104232,jt_char_to_ascii7,,jump_table
+0x10423a,jt_file_open_read,,jump_table
+0x104242,jt_file_open_write,,jump_table
+0x10424a,jt_file_close,,jump_table
+0x104252,jt_file_seek,,jump_table
+0x10425a,jt_file_read,,jump_table
+0x104262,jt_file_write,,jump_table
+0x10426a,jt_file_size,,jump_table
+0x104272,jt_file_delete,,jump_table
+0x10427a,jt_file_rename,,jump_table
+0x104282,jt_vblank_interrupt_handler,,jump_table
+0x10428a,jt_fill_screen_box,,jump_table
+0x104292,jt_fill_bitmap_box,,jump_table
+0x10429a,jt_fill_bitmap_box_pattern,,jump_table
+0x1042a2,jt_palette_fade_to,,jump_table
+0x1042aa,jt_clear_screen,,jump_table
+0x1042b2,jt_box_to_bounds,,jump_table
+0x1042ba,jt_rt_longjmp,,jump_table
+0x1042c2,jt_str_length,,jump_table
+0x1042ca,jt_str_concat,,jump_table
+0x1042d2,jt_str_compare,,jump_table
+0x1042da,jt_str_copy,,jump_table
+0x1042e2,jt_str_replace_char,,jump_table
+0x1042ea,jt_int_to_decimal_string,,jump_table
+0x1042f2,jt_fatal_error,,jump_table
+0x1042fa,jt_wait_vertical_blank,,jump_table
+0x104302,jt_wait_vertical_blanks,,jump_table
+0x10430a,jt_abs16,,jump_table
+0x104312,jt_min16,,jump_table
+0x10431a,jt_max16,,jump_table
+0x104322,jt_bounded_value,,jump_table
+0x10432a,jt_random16,,jump_table
+0x104332,jt_random_bit,,jump_table
+0x10433a,jt_random_2bits,,jump_table
+0x104342,jt_scale_value,,jump_table
+0x10434a,jt_xor_screen_box,,jump_table
+0x104352,jt_xor_screen_zone,,jump_table
+0x10435a,jt_fill_bytes_stride,,jump_table
+0x104362,jt_fill_words_stride,,jump_table
+0x10436a,jt_bitmap_byte_count,,jump_table
+0x104372,jt_blit_bitmap_to_bitmap,,jump_table
+0x10437a,jt_blit_to_viewport,,jump_table
+0x104382,jt_blit_to_viewport_zone,,jump_table
+0x10438a,jt_blit_graphic_to_viewport,,jump_table
+0x104392,jt_blit_graphic_to_viewport_zone,,jump_table
+0x10439a,jt_blit_to_screen,,jump_table
+0x1043a2,jt_blit_to_screen_zone,,jump_table
+0x1043aa,jt_blit_graphic_to_screen,,jump_table
+0x1043b2,jt_blit_graphic_to_screen_zone,,jump_table
+0x1043ba,jt_get_cached_scaled_bitmap,,jump_table
+0x1043c2,jt_apply_palette_changes,,jump_table
+0x1043ca,jt_copy_bitmap_with_palette_changes,,jump_table
+0x1043d2,jt_flip_bitmap_horizontal,,jump_table
+0x1043da,jt_flip_bitmap_vertical,,jump_table
+0x1043e2,jt_process_new_party_map,,jump_table
+0x1043ea,jt_kaos_main,,jump_table
+0x1043f2,jt_load_object_names,,jump_table
+0x1043fa,jt_object_get_type,,jump_table
+0x104402,jt_object_get_icon_index,,jump_table
+0x10440a,jt_draw_leader_hand_object_name,,jump_table
+0x104412,jt_clear_leader_hand_object_name,,jump_table
+0x10441a,jt_extract_object_icon,,jump_table
+0x104422,jt_get_slot_box_zone,,jump_table
+0x10442a,jt_fun_107c64,,jump_table
+0x104432,jt_draw_icon_in_slot_box,,jump_table
+0x10443a,jt_get_icon_in_slot_box,,jump_table
+0x104442,jt_clear_memory,,jump_table
+0x10444a,jt_init_mouse_pointer,,jump_table
+0x104452,jt_request_mouse_pointer_redraw,,jump_table
+0x10445a,jt_set_mouse_pointer,,jump_table
+0x104462,jt_set_mouse_pointer_to_object,,jump_table
+0x10446a,jt_refresh_mouse_pointer,,jump_table
+0x104472,jt_set_mouse_pointer_to_champion,,jump_table
+0x10447a,jt_restore_champion_mouse_pointer,,jump_table
+0x104482,jt_mouse_end_change,,jump_table
+0x10448a,jt_mouse_begin_change,,jump_table
+0x104492,jt_mouse_show_pointer,,jump_table
+0x10449a,jt_mouse_hide_pointer,,jump_table
+0x1044a2,jt_sound_request_play,,jump_table
+0x1044aa,jt_sound_play_pending,,jump_table
+0x1044b2,jt_sound_play_sample,,jump_table
+0x1044ba,jt_sound_free_sample,,jump_table
+0x1044c2,jt_sound_stop_all,,jump_table
+0x1044ca,jt_sound_disable_unloaded,,jump_table
+0x1044d2,jt_sound_init,,jump_table
+0x1044da,jt_text_init,,jump_table
+0x1044e2,jt_text_get_zone_size,,jump_table
+0x1044ea,jt_text_get_next_word_line,,jump_table
+0x1044f2,jt_message_area_clear,,jump_table
+0x1044fa,jt_message_area_print_message,,jump_table
+0x104502,jt_message_area_print_number,,jump_table
+0x10450a,jt_message_area_new_line,,jump_table
+0x104512,jt_text_print_to_viewport,,jump_table
+0x10451a,jt_text_print_to_screen,,jump_table
+0x104522,jt_text_print_to_viewport_zone,,jump_table
+0x10452a,jt_text_print_to_viewport_zone_color,,jump_table
+0x104532,jt_text_print_to_screen_zone,,jump_table
+0x10453a,jt_text_print_to_bitmap,,jump_table
+0x104542,jt_text_print_centered_in_zone,,jump_table
+0x10454a,jt_text_print_padded_to_screen,,jump_table
+0x104552,jt_fun_1053b8,,jump_table
+0x10455a,jt_system_init,,jump_table
+0x104562,jt_system_shutdown,,jump_table
+0x10456a,jt_copper_interrupt_handler,,jump_table
+0x104572,jt_set_language_file_names,,jump_table
+0x10457a,jt_group_is_view_party_blocked,,jump_table
+0x104582,jt_group_is_smell_party_blocked,,jump_table
+0x10458a,jt_group_set_cell_value,,jump_table
+0x104592,jt_group_get_thing,,jump_table
+0x10459a,jt_group_get_creature_ordinal_in_cell,,jump_table
+0x1045a2,jt_group_get_melee_target_creature_ordinal,,jump_table
+0x1045aa,jt_fun_10bce6,,jump_table
+0x1045b2,jt_group_start_wandering,,jump_table
+0x1045ba,jt_group_delete_events,,jump_table
+0x1045c2,jt_group_stop_attacking,,jump_table
+0x1045ca,jt_group_add_active_group,,jump_table
+0x1045d2,jt_group_remove_active_group,,jump_table
+0x1045da,jt_group_get_generated,,jump_table
+0x1045e2,jt_group_drop_moving_creature_fixed_possessions,,jump_table
+0x1045ea,jt_group_drop_group_possessions,,jump_table
+0x1045f2,jt_group_delete,,jump_table
+0x1045fa,jt_group_get_damage_creature_outcome,,jump_table
+0x104602,jt_group_get_damage_all_creatures_outcome,,jump_table
+0x10460a,jt_group_get_resistance_adjusted_poison_attack,,jump_table
+0x104612,jt_group_remove_all_active_groups,,jump_table
+0x10461a,jt_group_add_all_active_groups,,jump_table
+0x104622,jt_group_init_active_groups,,jump_table
+0x10462a,jt_group_process_events_29_to_41,,jump_table
+0x104632,jt_load_string_table,,jump_table
+0x10463a,jt_get_string,,jump_table
+0x104642,jt_get_square,,jump_table
+0x10464a,jt_get_relative_square,,jump_table
+0x104652,jt_get_location_after_level_change,,jump_table
+0x10465a,jt_update_map_coordinates_after_relative_movement,,jump_table
+0x104662,jt_get_stairs_exit_direction,,jump_table
+0x10466a,jt_set_square_aspect,,jump_table
+0x104672,jt_get_thing_data,,jump_table
+0x10467a,jt_get_square_first_thing_data,,jump_table
+0x104682,jt_get_weapon_info,,jump_table
+0x10468a,jt_get_next_thing,,jump_table
+0x104692,jt_get_square_first_thing,,jump_table
+0x10469a,jt_get_square_first_object,,jump_table
+0x1046a2,jt_link_thing_to_list,,jump_table
+0x1046aa,jt_unlink_thing_from_list,,jump_table
+0x1046b2,jt_get_discarded_thing,,jump_table
+0x1046ba,jt_get_object_for_launcher_or_generator,,jump_table
+0x1046c2,jt_decode_text,,jump_table
+0x1046ca,jt_is_creature_allowed_on_map,,jump_table
+0x1046d2,jt_get_object_weight,,jump_table
+0x1046da,jt_get_object_info_index,,jump_table
+0x1046e2,jt_get_projectile_aspect,,jump_table
+0x1046ea,jt_get_armour_defense,,jump_table
+0x1046f2,jt_get_creature_attributes,,jump_table
+0x1046fa,jt_get_group_cells,,jump_table
+0x104702,jt_set_group_cells,,jump_table
+0x10470a,jt_get_group_directions,,jump_table
+0x104712,jt_set_group_directions,,jump_table
+0x10471a,jt_is_wall_ornament_an_alcove,,jump_table
+0x104722,jt_is_wall_ornament_a_fountain,,jump_table
+0x10472a,jt_set_current_map,,jump_table
+0x104732,jt_set_current_map_and_party_map,,jump_table
+0x10473a,jt_blit_shrink_with_palette_changes,,jump_table
+0x104742,jt_flip_bitmap_horizontal_raw,,jump_table
+0x10474a,jt_set_dungeon_view_palette,,jump_table
+0x104752,jt_decrease_torches_light_power,,jump_table
+0x10475a,jt_close_chest,,jump_table
+0x104762,jt_process_click_on_mouth,,jump_table
+0x10476a,jt_draw_stop_pressing_mouth,,jump_table
+0x104772,jt_draw_status_box_portrait,,jump_table
+0x10477a,jt_process_click_on_eye,,jump_table
+0x104782,jt_draw_stop_pressing_eye,,jump_table
+0x10478a,jt_inventory_toggle,,jump_table
+0x104792,jt_champion_get_scent_ordinal,,jump_table
+0x10479a,jt_champion_delete_scent,,jump_table
+0x1047a2,jt_champion_add_scent_strength,,jump_table
+0x1047aa,jt_champion_set_party_direction,,jump_table
+0x1047b2,jt_champion_get_index_in_cell,,jump_table
+0x1047ba,jt_champion_get_target_champion_index,,jump_table
+0x1047c2,jt_champion_put_object_in_leader_hand,,jump_table
+0x1047ca,jt_champion_get_object_removed_from_leader_hand,,jump_table
+0x1047d2,jt_champion_get_object_removed_from_slot,,jump_table
+0x1047da,jt_champion_add_object_in_slot,,jump_table
+0x1047e2,jt_champion_click_on_slot_box,,jump_table
+0x1047ea,jt_champion_decrement_stamina,,jump_table
+0x1047f2,jt_champion_disable_action,,jump_table
+0x1047fa,jt_champion_add_pending_damage_and_wounds,,jump_table
+0x104802,jt_champion_poison,,jump_table
+0x10480a,jt_champion_damage_all,,jump_table
+0x104812,jt_champion_apply_and_draw_pending_damage_and_wounds,,jump_table
+0x10481a,jt_champion_add_skill_experience,,jump_table
+0x104822,jt_champion_get_skill_level,,jump_table
+0x10482a,jt_champion_get_statistic_adjusted_attack,,jump_table
+0x104832,jt_champion_is_lucky,,jump_table
+0x10483a,jt_champion_get_maximum_load,,jump_table
+0x104842,jt_champion_get_movement_ticks,,jump_table
+0x10484a,jt_champion_get_dexterity,,jump_table
+0x104852,jt_champion_get_strength,,jump_table
+0x10485a,jt_fun_11035c,,jump_table
+0x104862,jt_champion_is_leader_hand_object_thrown,,jump_table
+0x10486a,jt_champion_is_object_thrown,,jump_table
+0x104872,jt_fun_111d04,,jump_table
+0x10487a,jt_fun_111d5c,,jump_table
+0x104882,jt_champion_wake_up,,jump_table
+0x10488a,jt_champion_apply_time_effects,,jump_table
+0x104892,jt_fun_1123cc,,jump_table
+0x10489a,jt_champion_draw_state,,jump_table
+0x1048a2,jt_champion_draw_all_states,,jump_table
+0x1048aa,jt_champion_draw_changed_object_icons,,jump_table
+0x1048b2,jt_fun_112f5c,,jump_table
+0x1048ba,jt_fun_112ffe,,jump_table
+0x1048c2,jt_fun_113abe,,jump_table
+0x1048ca,jt_champion_add_candidate_to_party,,jump_table
+0x1048d2,jt_champion_click_in_resurrect_reincarnate_panel,,jump_table
+0x1048da,jt_fun_113a12,,jump_table
+0x1048e2,jt_fun_113b6e,,jump_table
+0x1048ea,jt_fill_bitmap,,jump_table
+0x1048f2,jt_fill_viewport_box,,jump_table
+0x1048fa,jt_fill_screen_zone,,jump_table
+0x104902,jt_fill_screen_zone_pattern,,jump_table
+0x10490a,jt_copy_bytes,,jump_table
+0x104912,jt_heap_add_region,,jump_table
+0x10491a,jt_heap_set_reserve,,jump_table
+0x104922,jt_graphics_dat_open,,jump_table
+0x10492a,jt_graphics_dat_close,,jump_table
+0x104932,jt_graphics_dat_read_header,,jump_table
+0x10493a,jt_graphics_dat_load_graphics,,jump_table
+0x104942,jt_get_native_bitmap_or_graphic,,jump_table
+0x10494a,jt_decode_cached_graphic,,jump_table
+0x104952,jt_cache_free_graphic,,jump_table
+0x10495a,jt_load_graphic_into_bitmap,,jump_table
+0x104962,jt_load_graphic_alloc,,jump_table
+0x10496a,jt_load_bitmap_alloc,,jump_table
+0x104972,jt_mem_alloc,,jump_table
+0x10497a,jt_mem_free_top,,jump_table
+0x104982,jt_mem_free_temp,,jump_table
+0x10498a,jt_alloc_bitmap,,jump_table
+0x104992,jt_free_bitmap,,jump_table
+0x10499a,jt_is_derived_bitmap_in_cache,,jump_table
+0x1049a2,jt_get_derived_bitmap,,jump_table
+0x1049aa,jt_add_derived_bitmap_to_cache,,jump_table
+0x1049b2,jt_copy_bitmap_header,,jump_table
+0x1049ba,jt_copy_bitmap,,jump_table
+0x1049c2,jt_graphics_dat_get_graphic_size,,jump_table
+0x1049ca,jt_memory_debug_key,,jump_table
+0x1049d2,jt_set_service_table,,jump_table
+0x1049da,jt_service_cleanup,,jump_table
+0x1049e2,jt_expand_graphic,,jump_table
+0x1049ea,jt_find_video_driver,,jump_table
+0x1049f2,jt_blit_bitmap,,jump_table
+0x1049fa,jt_draw_viewport,,jump_table
+0x104a02,jt_fun_11751c,,jump_table
+0x104a0a,jt_fun_1176aa,,jump_table
+0x104a12,jt_fun_1175c6,,jump_table
+0x104a1a,jt_load_current_map_graphics,,jump_table
+0x104a22,jt_clear_viewport,,jump_table
+0x104a2a,jt_draw_dungeon_view,,jump_table
+0x104a32,jt_layout_alloc,,jump_table
+0x104a3a,jt_temp_box,,jump_table
+0x104a42,jt_temp_box_size,,jump_table
+0x104a4a,jt_set_box_size,,jump_table
+0x104a52,jt_inflate_box,,jump_table
+0x104a5a,jt_is_point_in_box,,jump_table
+0x104a62,jt_is_point_in_zone,,jump_table
+0x104a6a,jt_get_layout_bitmap,,jump_table
+0x104a72,jt_get_layout_bitmap_only,,jump_table
+0x104a7a,jt_set_layout_bitmap,,jump_table
+0x104a82,jt_get_zone,,jump_table
+0x104a8a,jt_get_zone_at_origin,,jump_table
+0x104a92,jt_get_zone_size,,jump_table
+0x104a9a,jt_get_zone_box_clipped,,jump_table
+0x104aa2,jt_get_zone_box,,jump_table
+0x104aaa,jt_init_layout,,jump_table
+0x104ab2,jt_move_is_levitating,,jump_table
+0x104aba,jt_move_get_move_result,,jump_table
+0x104ac2,jt_fun_11e526,,jump_table
+0x104aca,jt_sensor_is_triggered_by_click_on_wall,,jump_table
+0x104ad2,jt_sensor_process_thing_addition_or_removal,,jump_table
+0x104ada,jt_fun_11e4ec,,jump_table
+0x104ae2,jt_timeline_init,,jump_table
+0x104aea,jt_timeline_reset,,jump_table
+0x104af2,jt_timeline_add_event,,jump_table
+0x104afa,jt_timeline_get_index,,jump_table
+0x104b02,jt_timeline_fix_chronology,,jump_table
+0x104b0a,jt_timeline_delete_event,,jump_table
+0x104b12,jt_timeline_process,,jump_table
+0x104b1a,jt_projectile_create,,jump_table
+0x104b22,jt_projectile_delete_event,,jump_table
+0x104b2a,jt_projectile_delete,,jump_table
+0x104b32,jt_fun_11c4e8,,jump_table
+0x104b3a,jt_explosion_create,,jump_table
+0x104b42,jt_fun_11cc04,,jump_table
+0x104b4a,jt_group_fluxcage_action,,jump_table
+0x104b52,jt_fun_11cefe,,jump_table
+0x104b5a,jt_fun_11cf42,,jump_table
+0x104b62,jt_fun_11cfba,,jump_table
+0x104b6a,jt_group_set_ordered_cells_to_attack,,jump_table
+0x104b72,jt_fun_11d10a,,jump_table
+0x104b7a,jt_fun_11d348,,jump_table
+0x104b82,jt_fun_11d5e0,,jump_table
+0x104b8a,jt_highlight_box_disable,,jump_table
+0x104b92,jt_menus_init,,jump_table
+0x104b9a,jt_menus_refresh_action_area,,jump_table
+0x104ba2,jt_menus_clear_acting_champion,,jump_table
+0x104baa,jt_fun_1235fe,,jump_table
+0x104bb2,jt_menus_set_magic_caster,,jump_table
+0x104bba,jt_fun_123618,,jump_table
+0x104bc2,jt_fun_1238f8,,jump_table
+0x104bca,jt_fun_123a02,,jump_table
+0x104bd2,jt_command_init_mouse_zones,,jump_table
+0x104bda,jt_command_discard_all_input,,jump_table
+0x104be2,jt_fun_1210e8,,jump_table
+0x104bea,jt_command_set_leader,,jump_table
+0x104bf2,jt_command_process_click,,jump_table
+0x104bfa,jt_command_process_key,,jump_table
+0x104c02,jt_command_process_queue,,jump_table
+0x104c0a,jt_endgame,,jump_table
+0x104c12,jt_quit_game_thunk,,jump_table
+0x104c1a,jt_fun_125132,,jump_table
+0x104c22,jt_check_save_disk,,jump_table
+0x104c2a,jt_save_game,,jump_table
+0x104c32,jt_fun_1270c8,,jump_table
+0x104c3a,jt_game_freeze,,jump_table
+0x104c42,jt_game_unfreeze,,jump_table
+0x104c4a,jt_initialize_game,,jump_table
+0x104c52,jt_fun_127ad4,,jump_table
+0x104c5a,jt_fun_127ba6,,jump_table
+0x104c62,jt_fun_127c22,,jump_table
+0x104c6a,jt_os_add_int_server,,jump_table
+0x104c72,jt_os_alert,,jump_table
+0x104c7a,jt_os_alloc_mem,,jump_table
+0x104c82,jt_os_avail_mem,,jump_table
+0x104c8a,jt_os_change_sprite,,jump_table
+0x104c92,jt_os_check_io,,jump_table
+0x104c9a,jt_os_close,,jump_table
+0x104ca2,jt_os_close_device,,jump_table
+0x104caa,jt_os_close_library,,jump_table
+0x104cb2,jt_os_date_stamp,,jump_table
+0x104cba,jt_os_delay,,jump_table
+0x104cc2,jt_os_delete_file,,jump_table
+0x104cca,jt_os_device_proc,,jump_table
+0x104cd2,jt_os_disable,,jump_table
+0x104cda,jt_os_disown_blitter,,jump_table
+0x104ce2,jt_os_display_alert,,jump_table
+0x104cea,jt_os_do_io,,jump_table
+0x104cf2,jt_os_enable,,jump_table
+0x104cfa,jt_os_examine,,jump_table
+0x104d02,jt_os_create_ext_io,,jump_table
+0x104d0a,jt_os_delete_ext_io,,jump_table
+0x104d12,jt_os_create_std_io,,jump_table
+0x104d1a,jt_os_delete_std_io,,jump_table
+0x104d22,jt_os_find_port,,jump_table
+0x104d2a,jt_os_find_task,,jump_table
+0x104d32,jt_os_forbid,,jump_table
+0x104d3a,jt_os_free_mem,,jump_table
+0x104d42,jt_os_free_sprite,,jump_table
+0x104d4a,jt_os_get_msg,,jump_table
+0x104d52,jt_os_get_sprite,,jump_table
+0x104d5a,jt_os_init_bitmap,,jump_table
+0x104d62,jt_os_init_rastport,,jump_table
+0x104d6a,jt_os_load_view,,jump_table
+0x104d72,jt_os_lock,,jump_table
+0x104d7a,jt_os_make_screen,,jump_table
+0x104d82,jt_os_move_sprite,,jump_table
+0x104d8a,jt_os_open,,jump_table
+0x104d92,jt_os_open_device,,jump_table
+0x104d9a,jt_os_init_sys_base,,jump_table
+0x104da2,jt_os_exit_supervisor_reset,,jump_table
+0x104daa,jt_os_open_library,,jump_table
+0x104db2,jt_os_own_blitter,,jump_table
+0x104dba,jt_os_permit,,jump_table
+0x104dc2,jt_os_create_port,,jump_table
+0x104dca,jt_os_delete_port,,jump_table
+0x104dd2,jt_os_begin_io,,jump_table
+0x104dda,jt_os_put_msg,,jump_table
+0x104de2,jt_os_read,,jump_table
+0x104dea,jt_os_rect_fill,,jump_table
+0x104df2,jt_os_rem_int_server,,jump_table
+0x104dfa,jt_os_rename,,jump_table
+0x104e02,jt_os_rethink_display,,jump_table
+0x104e0a,jt_os_seek,,jump_table
+0x104e12,jt_os_set_a_pen,,jump_table
+0x104e1a,jt_os_set_dr_md,,jump_table
+0x104e22,jt_os_set_function,,jump_table
+0x104e2a,jt_os_set_rgb4,,jump_table
+0x104e32,jt_os_unlock,,jump_table
+0x104e3a,jt_os_wait_blit,,jump_table
+0x104e42,jt_os_wait_io,,jump_table
+0x104e4a,jt_os_wait_port,,jump_table
+0x104e52,jt_os_wait_tof,,jump_table
+0x104e5a,jt_os_write,,jump_table
+0x104e62,jt_os_raw_key_convert,,jump_table
+0x104e6c,module_entry_stub,,runtime
+0x104efa,rt_switch_word,,runtime
+0x104f0e,rt_switch_long,,runtime
+0x104f22,rt_switch_range,,runtime
+0x104f3e,rt_lmul,"long rt_lmul(long a, long b)",runtime
+0x104f74,rt_uldiv,,runtime
+0x104f94,rt_ulmod,,runtime
+0x104fb6,rt_ldiv,"long rt_ldiv(long a, long b)",runtime
+0x104fd6,rt_lmod,"long rt_lmod(long a, long b)",runtime
+0x104ff8,rt_ldivmod_core,,runtime
+0x105026,rt_uldivmod_core,,runtime
+0x105090,rt_nop,,runtime
+0x105092,copper_interrupt_handler,,system
+0x1050c2,install_copper_interrupt,,system
+0x1050f2,remove_copper_interrupt,,system
+0x105102,store_interrupt_data_a5,,system
+0x105108,open_dos_library,,system
+0x10512a,close_dos_library,,system
+0x105140,open_graphics_library,,system
+0x105162,close_graphics_library,,system
+0x105178,open_intuition_library,,system
+0x10519a,close_intuition_library,,system
+0x1051b0,open_layers_library,,system
+0x1051d2,close_layers_library,,system
+0x1051e8,open_console_device,,system
+0x105256,close_console_device,,system
+0x105294,open_input_device,,system
+0x1052fc,close_input_device,,system
+0x10533a,open_nil_output,,system
+0x105360,close_nil_output,,system
+0x10537a,alloc_chip_block,,system
+0x10539e,free_chip_block,,system
+0x1053bc,patch_system_requesters,,system
+0x1053f0,restore_system_requesters,,system
+0x105440,open_system_resources,,system
+0x10547a,close_system_resources,,system
+0x1054a0,alert_text_decimal,,system
+0x1054f8,alert_text_hex,,system
+0x10555a,alert_digit_table,,system
+0x105574,show_alert_decimal,void show_alert_decimal(short code),system
+0x1055dc,show_alert_hex,void show_alert_hex(unsigned long code),system
+0x10563c,fatal_system_error,void fatal_system_error(unsigned long code),system
+0x10567e,get_usable_chip_memory,,system
+0x105728,system_init,void system_init(void),system
+0x105880,system_release,,system
+0x1058e6,system_shutdown,void system_shutdown(void),system
+0x105908,input_event_handler,,input
+0x105db0,input_handler_stub,,input
+0x105dc4,install_input_handler,,input
+0x105e62,remove_input_handler,,input
+0x105e98,key_queue_put,void key_queue_put(short key),input
+0x105ed0,key_queue_get,short key_queue_get(void),input
+0x105efa,key_queue_not_empty,short key_queue_not_empty(void),input
+0x105f20,poll_disk_change,,disk
+0x105f68,detect_floppy_drives,,disk
+0x105fc8,get_drive_disk_kind,short get_drive_disk_kind(short which),disk
+0x1060da,format_save_disk,,disk
+0x106112,is_save_disk_inserted,,disk
+0x106148,has_disk_changed,short has_disk_changed(short which),disk
+0x1061b8,file_open_read,long file_open_read(const char *name),fileio
+0x1061cc,file_open_write,long file_open_write(const char *name),fileio
+0x1061e0,file_close,void file_close(long fh),fileio
+0x1061f8,file_seek,"long file_seek(long fh, long position)",fileio
+0x106212,file_read,"short file_read(long fh, long size, void *buffer)",fileio
+0x106236,file_write,"short file_write(long fh, long size, const void *buffer)",fileio
+0x10625a,file_rewind,,fileio
+0x10626e,file_size,long file_size(long fh),fileio
+0x1062b8,file_delete,long file_delete(const char *name),fileio
+0x1062ca,file_rename,"long file_rename(const char *old_name, const char *new_name)",fileio
+0x1062e0,input_wait_key,short input_wait_key(void),input
+0x1062f6,input_key_pending,short input_key_pending(void),input
+0x1062fc,char_to_ascii7,,input
+0x10630a,debug_print,,debug
+0x10633c,debug_print_char,,debug
+0x10635c,input_any_pending,,input
+0x106374,vblank_interrupt_handler,,video
+0x106586,install_vblank_interrupt,,video
+0x1065b6,remove_vblank_interrupt,,video
+0x1065c6,load_colormap,,palette
+0x10661a,connect_video_driver,,video
+0x1066be,restore_display,,video
+0x106746,fade_display_out,,palette
+0x10675c,wait_blitter_on_exit,,video
+0x106768,palette_fade,"void palette_fade(const unsigned short *from, const unsigned short *to)",palette
+0x106990,palette_fade_to,void palette_fade_to(const unsigned short *palette),palette
+0x1069dc,wait_for_raster_line,void wait_for_raster_line(short line),video
+0x106a04,setup_temp_rastport,,video
+0x106abe,fill_bitmap_box,"void fill_bitmap_box(void *bitmap, short *box, short color, short width, short height)",video
+0x106b46,fill_bitmap_box_pattern,,video
+0x106c04,fill_screen_box,,video
+0x106c8a,complement_screen_box,,video
+0x106d0e,clear_screen,void clear_screen(short color),video
+0x106d7c,box_to_bounds,,video
+0x106da4,init_module_args,,main
+0x106de8,module_cleanup,,main
+0x106dee,rt_setjmp,,runtime
+0x106dfc,rt_longjmp,,runtime
+0x106e0e,str_length,short str_length(const char *s),string
+0x106e32,str_concat,"char *str_concat(char *dst, const char *src)",string
+0x106e5c,str_compare,"short str_compare(const char *a, const char *b)",string
+0x106e92,str_copy,"char *str_copy(char *dst, const char *src)",string
+0x106eb8,str_copy_n,"char *str_copy_n(char *dst, const char *src, short n)",string
+0x106eea,str_find_char,"char *str_find_char(const char *s, char c)",string
+0x106f16,str_replace_char,,string
+0x106f82,int_to_decimal_string,"void int_to_decimal_string(long value, char *out)",string
+0x106ff6,wait_vertical_blank,void wait_vertical_blank(void),video
+0x106ffc,xor_screen_box,,video
+0x1070ec,xor_screen_zone,,video
+0x107110,fill_bytes_stride,,memory
+0x107146,fill_words_stride,,memory
+0x10717c,fatal_error,void fatal_error(short code),main
+0x107194,bitmap_byte_count,unsigned short bitmap_byte_count(const void *bitmap),video
+0x1071ae,blit_bitmap_to_bitmap,,video
+0x1071ea,blit_to_viewport,,video
+0x10721c,blit_to_viewport_zone,,video
+0x107280,blit_graphic_to_viewport,,video
+0x1072c6,blit_graphic_to_viewport_zone,,video
+0x107356,blit_to_screen,,video
+0x107388,blit_to_screen_zone,,video
+0x1073ec,blit_graphic_to_screen,,video
+0x107432,blit_graphic_to_screen_zone,,video
+0x1074c2,get_scaled_bitmap,,video
+0x107512,get_cached_scaled_bitmap,,video
+0x107584,apply_palette_changes,,video
+0x1075b2,copy_bitmap_with_palette_changes,,video
+0x1075f0,flip_bitmap_horizontal,,video
+0x10760c,flip_bitmap_vertical,,video
+0x107628,wait_vertical_blanks,void wait_vertical_blanks(short count),video
+0x107642,abs16,short abs16(short v),runtime
+0x107652,min16,"short min16(short a, short b)",runtime
+0x107668,max16,"short max16(short a, short b)",runtime
+0x10767e,bounded_value,"short bounded_value(short min, short value, short max)",runtime
+0x1076a0,random16,unsigned short random16(void),random
+0x1076bc,random_bit,unsigned short random_bit(void),random
+0x1076da,random_2bits,unsigned short random_2bits(void),random
+0x1076f8,scale_value,,runtime
+0x10770e,process_new_party_map,void process_new_party_map(short map_index),main
+0x10773c,game_loop,void game_loop(void),main
+0x1078de,kaos_main,"long kaos_main(void *services, void *args)",main
+0x10791c,load_object_names,,object
+0x1079a4,object_get_type,short object_get_type(unsigned short thing),object
+0x1079dc,object_get_icon_index,short object_get_icon_index(unsigned short thing),object
+0x107abe,draw_leader_hand_object_name,,object
+0x107baa,clear_leader_hand_object_name,,object
+0x107bb8,extract_object_icon,,object
+0x107c3a,get_slot_box_zone,,object
+0x107c88,draw_icon_in_slot_box,,object
+0x107d56,get_icon_in_slot_box,,object
+0x107d6e,clear_memory,"void clear_memory(void *dst, long size)",memory
+0x107dbc,update_mouse_pointer_sprites,,mouse
+0x107f20,init_mouse_pointer,,mouse
+0x108002,free_mouse_pointer,,mouse
+0x10809e,set_mouse_pointer_shape,,mouse
+0x1080d8,request_mouse_pointer_redraw,,mouse
+0x1080e0,set_mouse_pointer,,mouse
+0x108100,build_mouse_pointer_sprite,,mouse
+0x108216,build_mouse_pointer_bitmap,,mouse
+0x1082e2,set_mouse_pointer_to_object,,mouse
+0x108340,refresh_mouse_pointer,,mouse
+0x10836a,set_mouse_pointer_to_champion,,mouse
+0x1084f2,restore_champion_mouse_pointer,,mouse
+0x108504,get_mouse_pointer_shape_for_position,,mouse
+0x108702,mouse_begin_change,,mouse
+0x108704,mouse_end_change,,mouse
+0x108706,mouse_hide_pointer,void mouse_hide_pointer(void),mouse
+0x108710,mouse_show_pointer,void mouse_show_pointer(void),mouse
+0x10871a,sound_select_channel,,sound
+0x108788,sound_init,,sound
+0x10878a,sound_stop_all,,sound
+0x10881e,sound_free_sample,,sound
+0x108850,sound_play_sample,,sound
+0x1089be,audio_device_open,,sound
+0x108c68,audio_device_close,,sound
+0x108d86,sound_disable_unloaded,,sound
+0x108df4,sound_request_play,"void sound_request_play(short sound, short map_x, short map_y, short mode)",sound
+0x108fca,sound_play_pending,void sound_play_pending(void),sound
+0x109054,sound_get_volume,,sound
+0x109116,text_print_to_bitmap,,text
+0x1093e0,message_area_init_metrics,,text
+0x109466,text_get_zone_size,,text
+0x1094b6,text_get_next_word_line,,text
+0x10953c,text_print_centered_in_zone,,text
+0x1095aa,text_print_padded_to_viewport,,text
+0x109604,text_print_padded_to_screen,,text
+0x10965a,message_area_move_cursor,"void message_area_move_cursor(short column, short row)",text
+0x1096a6,message_area_clear,,text
+0x1096f0,message_area_clear_expired_rows,void message_area_clear_expired_rows(void),text
+0x10977a,message_area_create_new_row,,text
+0x1097e6,message_area_print_string,,text
+0x1098a6,message_area_print_message,"void message_area_print_message(short color, const char *text)",text
+0x109944,message_area_print_char,,text
+0x109962,message_area_print_number,,text
+0x10999e,message_area_new_line,,text
+0x1099ac,text_print_to_viewport,,text
+0x1099d8,text_print_to_screen,,text
+0x109a04,text_print_to_viewport_zone,,text
+0x109a72,text_print_to_viewport_zone_color,,text
+0x109ae0,text_print_to_screen_zone,,text
+0x109b4e,text_init,,text
+0x109bb2,trackdisk_init,,disk
+0x109c92,trackdisk_release,,disk
+0x109d28,trackdisk_open_unit,short trackdisk_open_unit(short unit),disk
+0x109d50,trackdisk_close_unit,,disk
+0x109d66,trackdisk_do_command,,disk
+0x109d94,dos_send_packet,,disk
+0x109e26,dos_inhibit_drive,,disk
+0x109e6a,dos_relabel_disk,,disk
+0x109ee0,sum_longs_128,,disk
+0x109f0a,trackdisk_format_disk,"short trackdisk_format_disk(short unit, const char *volume_name)",disk
+0x10a292,trackdisk_unit_exists,,disk
+0x10a2b2,trackdisk_get_change_count,,disk
+0x10a2ec,trackdisk_get_change_count_2,,disk
+0x10a34c,trackdisk_get_disk_state,,disk
+0x10a3a6,draw_format_progress,,disk
+0x10a432,is_creature_allowed_on_map,,dungeon
+0x10a4ac,get_object_weight,unsigned short get_object_weight(unsigned short thing),dungeon
+0x10a594,get_object_info_index,short get_object_info_index(unsigned short thing),dungeon
+0x10a618,get_projectile_aspect,,dungeon
+0x10a6a6,get_armour_defense,,dungeon
+0x10a6e4,get_creature_attributes,,dungeon
+0x10a70e,get_group_cells,,dungeon
+0x10a73e,set_group_cells,,dungeon
+0x10a772,get_group_directions,,dungeon
+0x10a7b2,set_group_directions,,dungeon
+0x10a7f4,is_wall_ornament_an_alcove,,dungeon
+0x10a828,is_wall_ornament_a_fountain,,dungeon
+0x10a85c,update_map_coordinates_after_relative_movement,,dungeon
+0x10a8ac,get_square,"unsigned char get_square(short map_x, short map_y)",dungeon
+0x10a9b8,get_relative_square,"unsigned char get_relative_square(short dir, short forward, short right, short map_x, short map_y)",dungeon
+0x10a9e4,get_relative_square_type,,dungeon
+0x10aa0c,get_location_after_level_change,,dungeon
+0x10aad2,get_stairs_exit_direction,,dungeon
+0x10ab3c,get_thing_data,void *get_thing_data(unsigned short thing),dungeon
+0x10ab6c,get_square_first_thing_data,,dungeon
+0x10ab86,get_weapon_info,,dungeon
+0x10abb4,get_next_thing,unsigned short get_next_thing(unsigned short thing),dungeon
+0x10abe8,get_square_first_thing_index,,dungeon
+0x10ac4e,get_square_first_thing,"unsigned short get_square_first_thing(short map_x, short map_y)",dungeon
+0x10ac7c,get_square_first_object,,dungeon
+0x10acba,link_thing_to_list,,dungeon
+0x10adf4,unlink_thing_from_list,,dungeon
+0x10af2e,get_unused_thing,,dungeon
+0x10b1a6,get_discarded_thing,,dungeon
+0x10b24e,get_object_for_launcher_or_generator,,dungeon
+0x10b312,decode_text,,dungeon
+0x10b47c,get_random_ornament_index,,dungeon
+0x10b4aa,get_random_ornament_ordinal,,dungeon
+0x10b4fa,set_square_aspect_random_wall_ornaments,,dungeon
+0x10b5ec,set_square_aspect,,dungeon
+0x10b988,set_current_map,void set_current_map(short map_index),dungeon
+0x10ba2a,set_current_map_and_party_map,void set_current_map_and_party_map(short map_index),dungeon
+0x10baca,insert_language_in_file_name,,dungeon
+0x10bb06,set_language_file_names,,dungeon
+0x10bb5c,group_get_thing,,group
+0x10bb9a,group_get_creature_ordinal_in_cell,,group
+0x10bc6c,group_get_melee_target_creature_ordinal,,group
+0x10bd24,group_set_cell_value,,group
+0x10bd54,group_get_creature_aspect_update_time,,group
+0x10bf0c,group_start_wandering,,group
+0x10bf8c,group_delete_events,,group
+0x10bfee,group_stop_attacking,,group
+0x10c020,group_add_active_group,,group
+0x10c0d8,group_remove_active_group,,group
+0x10c150,group_get_generated,,group
+0x10c290,group_drop_creature_fixed_possessions,,group
+0x10c40a,group_drop_moving_creature_fixed_possessions,,group
+0x10c466,group_drop_group_possessions,,group
+0x10c56a,group_delete,,group
+0x10c5e8,group_get_damage_creature_outcome,,group
+0x10c8fc,group_get_damage_all_creatures_outcome,,group
+0x10c99a,group_get_resistance_adjusted_poison_attack,,group
+0x10c9de,group_steal_from_champion,,group
+0x10cad0,group_remove_all_active_groups,void group_remove_all_active_groups(void),group
+0x10cafa,group_add_all_active_groups,void group_add_all_active_groups(void),group
+0x10cb76,group_init_active_groups,,group
+0x10cbcc,group_is_view_party_blocked,,group
+0x10cc54,group_is_smell_party_blocked,,group
+0x10cc98,group_get_distance_between_unblocked_squares,,group
+0x10ceee,group_get_distance_to_visible_party,,group
+0x10d07e,group_get_smelled_party_direction_ordinal,,group
+0x10d13e,group_is_movement_possible,,group
+0x10d366,group_get_first_possible_movement_direction_ordinal,,group
+0x10d3ae,group_is_archenemy_double_movement_possible,,group
+0x10d40a,group_set_direction,,group
+0x10d4ac,group_set_direction_group,,group
+0x10d500,group_is_creature_attacking,,group
+0x10d78c,group_add_event,,group
+0x10d7e4,group_process_events_29_to_41,,group
+0x10e706,load_string_table,,text
+0x10e784,get_string,const char *get_string(short index),text
+0x10e7b2,fill_bitmap,,video
+0x10e7f4,fill_viewport_box,,video
+0x10e814,fill_screen_zone,"void fill_screen_zone(short zone, short color)",video
+0x10e840,fill_viewport_zone,,video
+0x10e86c,fill_screen_zone_pattern,,video
+0x10e898,blit_shrink_with_palette_changes,,video
+0x10eae2,flip_bitmap_horizontal_raw,,video
+0x10ec40,draw_icon_to_viewport,,inventory
+0x10ec88,panel_print_line,,inventory
+0x10ed20,build_object_attributes_string,,inventory
+0x10edd6,set_dungeon_view_palette,void set_dungeon_view_palette(void),inventory
+0x10ef0e,decrease_torches_light_power,void decrease_torches_light_power(void),inventory
+0x10efac,draw_panel_arrow_or_eye,,inventory
+0x10efcc,draw_panel_scroll_text_line,,inventory
+0x10f048,draw_panel_scroll,,inventory
+0x10f14c,open_and_draw_chest,,inventory
+0x10f208,close_chest,,inventory
+0x10f28a,draw_panel_object,,inventory
+0x10f6ac,draw_panel_horizontal_bar,,inventory
+0x10f74e,draw_panel_food_water_poisoned,,inventory
+0x10f7d2,draw_panel_resurrect_reincarnate,,inventory
+0x10f7ee,draw_panel,,inventory
+0x10f860,adjust_statistic_current_value,,inventory
+0x10f8da,process_click_on_mouth,,inventory
+0x10fcf0,draw_stop_pressing_mouth,,inventory
+0x10fd08,draw_champion_skills_and_statistics,,inventory
+0x10ff32,process_click_on_eye,,inventory
+0x10ff94,draw_stop_pressing_eye,,inventory
+0x10fff0,draw_status_box_portrait,,inventory
+0x11005a,inventory_toggle,void inventory_toggle(short champion_index),inventory
+0x110254,champion_set_party_direction,void champion_set_party_direction(short direction),champion
+0x110296,champion_get_index_in_cell,,champion
+0x1102d2,champion_get_target_champion_index,,champion
+0x11040c,champion_put_object_in_leader_hand,,champion
+0x1104a2,champion_get_object_removed_from_leader_hand,,champion
+0x110510,champion_apply_object_modifiers,,champion
+0x110714,champion_get_object_removed_from_slot,,champion
+0x1108aa,champion_add_object_in_slot,,champion
+0x110a12,champion_click_on_slot_box,,champion
+0x110b20,champion_get_skill_level,"short champion_get_skill_level(short champion_index, short skill)",champion
+0x110c2e,champion_add_skill_experience,,champion
+0x110f0c,champion_get_throwing_stamina_cost,,champion
+0x110f4c,champion_get_stamina_adjusted_value,,champion
+0x110f88,champion_get_statistic_adjusted_attack,,champion
+0x110fc8,champion_is_lucky,,champion
+0x111056,champion_get_maximum_load,,champion
+0x1110c2,champion_get_movement_ticks,,champion
+0x11112e,champion_get_dexterity,,champion
+0x1111b6,champion_get_strength,,champion
+0x1112ea,champion_get_wound_defense,,champion
+0x111440,champion_wake_up,,champion
+0x11147a,champion_get_scent_ordinal,,champion
+0x1114f0,champion_delete_scent,,champion
+0x111584,champion_add_scent_strength,,champion
+0x111642,champion_drop_all_objects,,champion
+0x1116b4,champion_kill,,champion
+0x11187e,champion_apply_and_draw_pending_damage_and_wounds,void champion_apply_and_draw_pending_damage_and_wounds(void),champion
+0x111984,champion_add_pending_damage_and_wounds,,champion
+0x111b32,champion_poison,,champion
+0x111be4,champion_unpoison,,champion
+0x111c3a,champion_damage_all,,champion
+0x111ca2,champion_decrement_stamina,,champion
+0x111dd4,champion_is_object_thrown,,champion
+0x111f5e,champion_is_leader_hand_object_thrown,,champion
+0x111f82,champion_disable_action,,champion
+0x11202c,champion_apply_time_effects,void champion_apply_time_effects(void),champion
+0x11246c,champion_draw_bar_graphs,,champion
+0x112594,champion_get_string_from_integer,,champion
+0x1125d0,champion_draw_value_pair,,champion
+0x112624,champion_draw_health_stamina_mana_values,,champion
+0x112676,champion_draw_slot,,champion
+0x112880,champion_draw_state,short champion_draw_state(short champion_index),champion
+0x112d2c,champion_draw_all_states,void champion_draw_all_states(unsigned short attributes),champion
+0x112d62,champion_has_object_icon_in_slot_box_changed,,champion
+0x112dd2,champion_draw_changed_object_icons,,champion
+0x1130ac,champion_get_decoded_value,,champion
+0x1130c8,champion_add_candidate_to_party,,champion
+0x1134f0,champion_rename,,champion
+0x11382c,champion_click_in_resurrect_reincarnate_panel,,champion
+0x113c16,find_video_driver,,video
+0x113c48,select_display_buffer,,video
+0x113cc8,expand_graphic,"void expand_graphic(const void *packed, void *bitmap)",graphics_dat
+0x11427a,copy_bytes,"void copy_bytes(const void *src, void *dst, long size)",memory
+0x114362,graphics_dat_get_graphic_offset,,graphics_dat
+0x1143b0,heap_init_block,,memory
+0x1143f8,heap_find_pool,,memory
+0x11444a,heap_find_best_fit,,memory
+0x11449a,heap_take_from_block,,memory
+0x1144ba,heap_save_marks,,memory
+0x1144e0,heap_restore_marks,,memory
+0x114506,mem_alloc,"void *mem_alloc(long size, short kind, short pool)",memory
+0x1145a6,mem_free_top,,memory
+0x1145c6,mem_free_temp,,memory
+0x1145e2,alloc_bitmap,"void *alloc_bitmap(short width, short height, short pool)",memory
+0x114626,free_bitmap,void free_bitmap(void *bitmap),memory
+0x1148e4,graphics_dat_read_graphic,,graphics_dat
+0x1149dc,heap_add_region,"short heap_add_region(void *start, long size, short kind)",memory
+0x114b0c,heap_set_reserve,,memory
+0x114bf0,graphics_dat_open,void graphics_dat_open(void),graphics_dat
+0x114c1a,graphics_dat_close,void graphics_dat_close(void),graphics_dat
+0x114c2c,graphics_dat_read_header,void graphics_dat_read_header(void),graphics_dat
+0x114e02,cache_free_graphic,,graphics_dat
+0x114f5c,cache_make_room,,graphics_dat
+0x114f8e,cache_compact,,graphics_dat
+0x11502a,cache_alloc_block,,graphics_dat
+0x11529e,graphics_dat_load_graphics,,graphics_dat
+0x115728,derived_cache_reset_usage,,graphics_dat
+0x115768,derived_cache_add,,graphics_dat
+0x115858,derived_cache_lookup,,graphics_dat
+0x115998,decode_cached_graphic,,graphics_dat
+0x1159de,get_native_bitmap_or_graphic,void *get_native_bitmap_or_graphic(short graphic_index),graphics_dat
+0x115ad8,load_graphic_into_bitmap,"void load_graphic_into_bitmap(short graphic_index, void *bitmap)",graphics_dat
+0x115b40,is_derived_bitmap_in_cache,short is_derived_bitmap_in_cache(short derived_index),graphics_dat
+0x115bde,get_derived_bitmap,void *get_derived_bitmap(short derived_index),graphics_dat
+0x115c00,add_derived_bitmap_to_cache,void add_derived_bitmap_to_cache(short derived_index),graphics_dat
+0x115c18,copy_bitmap_header,,video
+0x115c38,copy_bitmap,"void copy_bitmap(const void *src, void *dst)",video
+0x115c6e,graphics_dat_get_graphic_size,unsigned short graphics_dat_get_graphic_size(short graphic_index),graphics_dat
+0x115c88,load_graphic_alloc,,graphics_dat
+0x115cc8,load_bitmap_alloc,,graphics_dat
+0x115d06,memory_debug_key,,debug
+0x115fbc,set_service_table,,main
+0x115fe8,service_cleanup,,main
+0x115fea,set_box,,zone
+0x116012,set_box_size,,zone
+0x116036,temp_box,,zone
+0x11607a,temp_box_size,,zone
+0x116090,inflate_box,,zone
+0x1160bc,is_point_in_box,,zone
+0x116102,is_point_in_zone,,zone
+0x116130,get_layout_bitmap,,zone
+0x1161d0,get_layout_bitmap_only,,zone
+0x1161e4,set_layout_bitmap,,zone
+0x116296,get_zone,,zone
+0x116808,get_zone_at_origin,,zone
+0x116830,get_zone_size,,zone
+0x11686a,get_zone_box_clipped,,zone
+0x11693a,get_zone_box,"short *get_zone_box(short zone, short *box)",zone
+0x116954,parse_layout,,zone
+0x1169d4,layout_alloc,,zone
+0x1169ea,load_layout,,zone
+0x116a42,init_layout,,zone
+0x116a4e,blit_setup,,blitter
+0x116c06,blit_raw,,blitter
+0x11739c,blit_bitmap,"void blit_bitmap(void *src, void *dst, short *box, short src_x, short src_y, short src_width, short dst_width, short transparent)",blitter
+0x1177a0,load_current_map_graphics,void load_current_map_graphics(void),dungeon_view
+0x11829e,draw_viewport,void draw_viewport(short mode),dungeon_view
+0x11838c,clear_viewport,,dungeon_view
+0x11b6ae,draw_dungeon_view,"void draw_dungeon_view(short direction, short map_x, short map_y)",dungeon_view
+0x11bb12,projectile_create,,projectile
+0x11bc44,explosion_create,,projectile
+0x11be5a,projectile_delete_event,,projectile
+0x11be7a,projectile_delete,,projectile
+0x11bf0a,projectile_get_impact_attack,,projectile
+0x11c036,projectile_has_impact_occurred,,projectile
+0x11c578,projectile_process_events_48_to_49,,projectile
+0x11c84a,explosion_process_event_25,,projectile
+0x11cda2,group_fluxcage_action,,group
+0x11d0b2,group_set_ordered_cells_to_attack,,group
+0x11d842,move_is_levitating,,move
+0x11d882,move_create_event_move_group,,move
+0x11d8ce,move_is_killed_by_fall,,move
+0x11db22,move_get_move_result,"short move_get_move_result(unsigned short thing, short src_x, short src_y, short dst_x, short dst_y)",move
+0x11e58e,sensor_add_skill_experience,,sensor
+0x11e5f4,sensor_trigger_local_effect,,sensor
+0x11e636,sensor_process_rotation_effect,,sensor
+0x11e74a,sensor_trigger_effect,,sensor
+0x11e7f8,sensor_get_object_of_type_in_cell,,sensor
+0x11e84e,sensor_is_object_in_party_possession,,sensor
+0x11e8ea,sensor_is_triggered_by_click_on_wall,,sensor
+0x11ed20,sensor_process_thing_addition_or_removal,,sensor
+0x11f16a,timeline_init,,timeline
+0x11f1da,timeline_reset,,timeline
+0x11f23c,timeline_is_event_a_before_b,,timeline
+0x11f26c,timeline_get_index,,timeline
+0x11f296,timeline_fix_chronology,,timeline
+0x11f3d0,timeline_delete_event,void timeline_delete_event(short event_index),timeline
+0x11f59c,timeline_add_event,short timeline_add_event(void *event),timeline
+0x11f634,timeline_extract_first_event,,timeline
+0x11f662,timeline_is_first_event_expired,,timeline
+0x120662,timeline_add_watchdog_event,,timeline
+0x1207bc,timeline_process,void timeline_process(void),timeline
+0x120afe,command_init_mouse_zones,,command
+0x120be8,command_discard_all_input,void command_discard_all_input(void),command
+0x120cc6,command_get_command_from_mouse_input,,command
+0x120db8,command_process_click,,command
+0x120ea0,command_process_key,,command
+0x120f9e,command_set_leader,,command
+0x121118,command_process_queue,void command_process_queue(void),command
+0x121af6,highlight_box_enable,,command
+0x121b28,highlight_zone_enable,,command
+0x121b4c,highlight_box_disable,void highlight_box_disable(void),command
+0x1220b2,menus_init,,menus
+0x122278,menus_clear_acting_champion,,menus
+0x12233a,menus_refresh_action_area,void menus_refresh_action_area(void),menus
+0x12374a,menus_set_magic_caster,,menus
+0x123ba6,os_add_int_server,,os_stub
+0x123bc8,os_add_port,,os_stub
+0x123be6,os_alert,,os_stub
+0x123c08,os_alloc_mem,"void *os_alloc_mem(unsigned long size, unsigned long flags)",os_stub
+0x123c2a,os_alloc_signal,,os_stub
+0x123c48,os_avail_mem,,os_stub
+0x123c66,os_change_sprite,,os_stub
+0x123c8c,os_check_io,,os_stub
+0x123caa,os_close,,os_stub
+0x123cc8,os_close_device,,os_stub
+0x123ce6,os_close_library,,os_stub
+0x123d04,os_cd_input_handler,,os_stub
+0x123d26,os_raw_key_convert,,os_stub
+0x123d50,os_date_stamp,,os_stub
+0x123d6e,os_delay,,os_stub
+0x123d8c,os_delete_file,,os_stub
+0x123daa,os_device_proc,,os_stub
+0x123dc8,os_disable,,os_stub
+0x123ddc,os_disown_blitter,,os_stub
+0x123df0,os_display_alert,,os_stub
+0x123e16,os_do_io,,os_stub
+0x123e34,os_enable,,os_stub
+0x123e48,os_examine,,os_stub
+0x123e6a,os_new_list,,os_stub
+0x123e88,os_create_ext_io,,os_stub
+0x123ecc,os_delete_ext_io,,os_stub
+0x123efe,os_create_std_io,,os_stub
+0x123f12,os_delete_std_io,,os_stub
+0x123f22,os_find_port,,os_stub
+0x123f40,os_find_task,,os_stub
+0x123f5e,os_forbid,,os_stub
+0x123f72,os_free_mem,"void os_free_mem(void *block, unsigned long size)",os_stub
+0x123f94,os_free_signal,,os_stub
+0x123fb2,os_free_sprite,,os_stub
+0x123fd0,os_get_msg,,os_stub
+0x123fee,os_get_sprite,,os_stub
+0x124010,os_init_bitmap,,os_stub
+0x12403a,os_init_rastport,,os_stub
+0x124058,os_load_view,,os_stub
+0x124076,os_lock,,os_stub
+0x124098,os_make_screen,,os_stub
+0x1240b6,os_move_sprite,,os_stub
+0x1240e0,os_open,"long os_open(const char *name, long mode)",os_stub
+0x124102,os_open_device,,os_stub
+0x12412c,os_init_sys_base,,os_stub
+0x124134,os_exit_supervisor_reset,,os_stub
+0x12414e,os_open_library,,os_stub
+0x124170,os_own_blitter,,os_stub
+0x124184,os_permit,,os_stub
+0x124198,os_create_port,,os_stub
+0x124222,os_delete_port,,os_stub
+0x124264,os_begin_io,,os_stub
+0x124280,os_put_msg,,os_stub
+0x1242a2,os_read,"long os_read(long fh, void *buffer, long length)",os_stub
+0x1242c8,os_rect_fill,,os_stub
+0x1242f6,os_rem_int_server,,os_stub
+0x124318,os_rem_port,,os_stub
+0x124336,os_rename,,os_stub
+0x124358,os_rethink_display,,os_stub
+0x12436c,os_seek,"long os_seek(long fh, long position, long mode)",os_stub
+0x124392,os_set_a_pen,,os_stub
+0x1243b4,os_set_dr_md,,os_stub
+0x1243d6,os_set_function,,os_stub
+0x1243fc,os_set_rgb4,,os_stub
+0x12442a,os_unlock,,os_stub
+0x124448,os_wait_blit,,os_stub
+0x12445c,os_wait_io,,os_stub
+0x12447a,os_wait_port,,os_stub
+0x124498,os_wait_tof,,os_stub
+0x1244ac,os_write,"long os_write(long fh, const void *buffer, long length)",os_stub
+0x1244d2,dialog_draw_viewport,,dialog
+0x1244f4,dialog_get_choice,"short dialog_get_choice(short choice_count, short dialog_set, short default_choice)",dialog
+0x12482e,dialog_draw,,dialog
+0x124d44,endgame,void endgame(short party_dead),startend
+0x12546a,quit_game_thunk,,startend
+0x125470,quit_game,,startend
+0x125492,save_file_read,,loadsave
+0x1254e6,save_file_write,,loadsave
+0x125510,save_block_xor,,loadsave
+0x125542,save_block_checksum,,loadsave
+0x125576,save_read_checked_block,,loadsave
+0x1255b2,save_write_checked_block,,loadsave
+0x125686,build_save_prompt,,loadsave
+0x1256c0,check_save_disk,,loadsave
+0x125a44,save_game,void save_game(void),loadsave
+0x1260ee,load_dungeon,short load_dungeon(void),loadsave
+0x1265d4,load_game,short load_game(void),loadsave
+0x126e96,process_entrance,,startend
+0x12712c,decompress_dungeon,,loadsave
+0x1271a2,game_freeze,,startend
+0x1271fa,game_unfreeze,,startend
+0x127cfa,start_game,void start_game(void),startend
+0x127e34,initialize_game,void initialize_game(void),startend
