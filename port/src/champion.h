@@ -6,7 +6,6 @@
 /* Champion rules of KAOS (CHAMPION.C): docs/rules-champions.md. */
 
 #define CHAMPION_RECORD_SIZE 0x140
-#define CHAMPION_MAX_COUNT 4
 #define ACTION_NONE 255
 
 enum {

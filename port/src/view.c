@@ -27,7 +27,6 @@
 #define PORTRAIT_SIZE 0x102958      /* g_portrait_width, g_portrait_height */
 #define GLYPH_SIZE 0x10296e         /* wall text glyph width, height */
 #define WALL_SET_IDS 0x102a22       /* g_wall_set_layout_ids[46] */
-#define WALL_SET_FLIPPED 0x102a60   /* g_wall_set_flipped_layout_ids[15] */
 #define WALL_ORN_DEPTH 0x102ba6     /* depth of each wall ornament view (0-4) */
 #define FLOOR_ORN_VIEW 0x102bb4     /* graphic offset of each floor ornament view */
 #define ALCOVES 0x102bc0            /* g_alcove_ornament_indices[3] */
@@ -72,38 +71,152 @@ enum { PILE_FLOOR_SHIFTS = 16, PILE_ODD_CELL = 8, PILE_ALCOVE_FIRST = 2, PILE_AL
 #define REBIRTH_SCALES 0x102fe8     /* rebirth step 2, then step 1 scale by object coordinate set */
 #define REBIRTH_STEP_1_SCALES 8
 
-#define VIEWPORT_ZONE 7
-#define BE16(p) ((uint16_t)((p)[0] << 8 | (p)[1]))
-#define LID(a) ids[((a) - WALL_SET_IDS) / 2] /* layout id stored at an original address */
+#define S8(a) ((int16_t)(int8_t)kaos_u8(a)) /* signed table byte */
+#define THING_INDEX(thing) ((thing) & 0x3ff) /* record index without type and cell */
 
-enum { MAP_DIFFICULTY = 12, MAP_COUNTS = 13 }; /* map descriptor bytes, high nibble: difficulty, creature type count */
-enum { NORMAL, OPAQUE, FLIPPED };
-enum { EL, SQ, THING, ST, RT, FR, LT }; /* set_square_aspect words */
-enum { WALL, CORRIDOR, PIT, STAIRS, DOOR, TELEPORTER, FAKEWALL };
-enum { DOOR_SIDE = 0x10, DOOR_FRONT, STAIRS_SIDE, STAIRS_FRONT };
+/* Layout bitmap record (14 bytes): the source rectangle of the slot in its graphic. */
+enum { LAYOUT_BITMAP_SIZE = 14, LAYOUT_BITMAP_X = 2, LAYOUT_BITMAP_Y = 4, LAYOUT_BITMAP_W = 6, LAYOUT_BITMAP_H = 8 };
+enum { LAYOUT_SLOTS = 64 };
+
+enum { WALL_COUNT = 15 };
+
+/* Entries of g_wall_set_layout_ids: layout bitmap ids of the floor set, the walls, the door frames, and the
+   mirrored walls. The right square of a pair draws the mirrored frame of the left square. */
+enum {
+    WS_FLOOR, WS_CEILING,
+    WS_WALL_D0R, WS_WALL_D0L, WS_WALL_D1R, WS_WALL_D1L, WS_WALL_D1C, WS_WALL_D2R2, WS_WALL_D2L2, WS_WALL_D2R,
+    WS_WALL_D2L, WS_WALL_D2C, WS_WALL_D3R2, WS_WALL_D3L2, WS_WALL_D3R, WS_WALL_D3L, WS_WALL_D3C,
+    WS_DOOR_FRAME_TOP_D1R, WS_DOOR_FRAME_TOP_D1L, WS_DOOR_FRAME_TOP_D1C, WS_DOOR_FRAME_TOP_D2R,
+    WS_DOOR_FRAME_TOP_D2L, WS_DOOR_FRAME_TOP_D2C, WS_DOOR_FRAME_D0C, WS_DOOR_FRAME_RIGHT_D1C,
+    WS_DOOR_FRAME_LEFT_D1C, WS_DOOR_FRAME_D2C, WS_DOOR_FRAME_D3C, WS_DOOR_FRAME_LEFT_D3L,
+    WS_DOOR_FRAME_RIGHT_D3L, WS_DOOR_FRAME_LEFT_D3R,
+    WS_MIRRORED_WALL_FIRST,
+    WS_COUNT = WS_MIRRORED_WALL_FIRST + WALL_COUNT,
+};
+enum { WS_WALL_FIRST = WS_WALL_D0R };
+
+/* Graphics of a wall set, from GFX_WALLSET_FIRST + GFX_WALLSET_SIZE * wall set. */
+enum {
+    WALLSET_DOOR_FRAME_D0C, WALLSET_DOOR_FRAME_D1C, WALLSET_DOOR_FRAME_D2C, WALLSET_DOOR_FRAME_D3C,
+    WALLSET_DOOR_FRAME_D3_SIDE, WALLSET_DOOR_FRAME_TOP_D1, WALLSET_DOOR_FRAME_TOP_D2, WALLSET_WALL_FIRST,
+    WALLSET_STAIRS_FIRST = WALLSET_WALL_FIRST + WALL_COUNT,
+};
+
+/* Stairs graphics, from WALLSET_STAIRS_FIRST. Right squares mirror the left graphic. */
+enum {
+    STAIRS_FRONT_D3L, STAIRS_FRONT_D3C, STAIRS_FRONT_D2L, STAIRS_FRONT_D2C, STAIRS_FRONT_D1L, STAIRS_FRONT_D1C,
+    STAIRS_FRONT_D0C, STAIRS_DOWN, /* down stairs front graphic = up stairs front graphic + STAIRS_DOWN */
+    STAIRS_SIDE_D2L = 14, STAIRS_UP_SIDE_D1L, STAIRS_DOWN_SIDE_D1L, STAIRS_SIDE_D0L,
+};
+
+/* Layout bitmap ids outside g_wall_set_layout_ids: parts of the D3L stairs and of the D1C wall. */
+enum {
+    LAYOUT_STAIRS_UP_FRONT_D3L2 = -33, LAYOUT_STAIRS_UP_FRONT_D3R2 = -34, LAYOUT_STAIRS_DOWN_FRONT_D3L2 = -35,
+    LAYOUT_STAIRS_DOWN_FRONT_D3R2 = -36, LAYOUT_INSCRIPTION_WALL = -51,
+};
+
+enum { BLIT_TRANSPARENT, BLIT_OPAQUE, BLIT_FLIPPED }; /* draw_wall_set_bitmap variants */
+enum { TRANSPARENT_COLOR = 10, DOOR_ORNAMENT_TRANSPARENT = 9, PORTRAIT_TRANSPARENT = 1 };
+
+/* View elements: the square types, and doors and stairs seen from the side or from the front. */
+enum { ELEMENT_DOOR_SIDE = 0x10, ELEMENT_DOOR_FRONT = VIEW_ELEMENT_DOOR_FRONT, ELEMENT_STAIRS_SIDE, ELEMENT_STAIRS_FRONT };
+
+/* Square bits that map.h does not name. */
+enum { SQUARE_RANDOM_ORNAMENT = 8, PIT_INVISIBLE = 4, TELEPORTER_VISIBLE = 4, DOOR_NORTH_SOUTH = 8 };
+enum { WALL_ORNAMENT_NORTH_FACE = 8 };
+#define WALL_ORNAMENT_FACE(direction) (WALL_ORNAMENT_NORTH_FACE >> (direction)) /* random ornament allowed on that side */
+enum { ORNAMENT_RANDOM_MODULO = 30 };
+
+/* View squares: index of the g_view_square_* tables. */
+enum {
+    VIEW_SQUARE_D0C, VIEW_SQUARE_D0L, VIEW_SQUARE_D0R, VIEW_SQUARE_D1C, VIEW_SQUARE_D1L, VIEW_SQUARE_D1R,
+    VIEW_SQUARE_D2C, VIEW_SQUARE_D2L, VIEW_SQUARE_D2R, VIEW_SQUARE_D2L2, VIEW_SQUARE_D2R2, VIEW_SQUARE_D3C,
+    VIEW_SQUARE_D3L, VIEW_SQUARE_D3R, VIEW_SQUARE_D3L2, VIEW_SQUARE_D3R2, VIEW_SQUARE_D4C, VIEW_SQUARE_D4L,
+    VIEW_SQUARE_D4R,
+};
+
+/* Floor views of the floor ornaments, and door views of the door zones. */
+enum { VIEW_D3L2, VIEW_D3R2, VIEW_D3L, VIEW_D3C, VIEW_D3R, VIEW_D2L, VIEW_D2C, VIEW_D2R, VIEW_D1L, VIEW_D1C, VIEW_D1R };
+
+/* View walls of draw_wall_ornament: the visible side of each wall square. */
+enum {
+    VIEW_WALL_D3L2_RIGHT, VIEW_WALL_D3R2_LEFT, VIEW_WALL_D3L_RIGHT, VIEW_WALL_D3R_LEFT, VIEW_WALL_D3L_FRONT,
+    VIEW_WALL_D3C_FRONT, VIEW_WALL_D3R_FRONT, VIEW_WALL_D2L_RIGHT, VIEW_WALL_D2R_LEFT, VIEW_WALL_D2L_FRONT,
+    VIEW_WALL_D2C_FRONT, VIEW_WALL_D2R_FRONT, VIEW_WALL_D1L_RIGHT, VIEW_WALL_D1R_LEFT, VIEW_WALL_D1C_FRONT,
+};
+
+enum { BUTTON_D3R, BUTTON_D3C, BUTTON_D2C, BUTTON_D1C }; /* door button views */
+enum { DOOR_DEPTH_D3, DOOR_DEPTH_D2, DOOR_DEPTH_D1, DOOR_DEPTHS };
+enum { DOOR_TYPES = 2 };
+enum { DOOR_ANIMATED = 0x400 }; /* door info attribute: the door mirrors at random on each draw */
+
+/* Ornaments: ordinal = index + 1, 0 = none. */
+enum { MAP_ORNAMENTS = 16, FLOOR_ORNAMENT_FOOTPRINTS = 15, DOOR_ORNAMENT_DESTROYED = 16, DOOR_ORNAMENT_THIEVES_EYE = 17 };
+enum { FLOOR_ORNAMENT_WITH_FOOTPRINTS = 0x8000 }; /* floor ornament ordinal flag */
+enum { WALL_ORNAMENT_GRAPHICS = 2, WALL_ORNAMENT_FRONT = 1, FLOOR_ORNAMENT_GRAPHICS = 6, DOOR_MASK_COORD_SET = 1 };
+enum { TEXT_PLAQUE_LINES = 3, WALL_TEXT_NEW_LINE = 0x80, WALL_TEXT_END = 0x81 }; /* decode_text mode 0 codes */
+enum { PORTRAITS_PER_ROW = 8 };
+enum { SCALE_D3_FAR_SIDE_W = 30 }; /* the D3L2 and D3R2 wall sides are wider than high */
+
+/* Cell orders of draw_objects_creatures_projectiles_explosions: a nibble per view cell + 1, low nibble first;
+   0 is the alcove. Bit 3 marks a door pass, bit 0 then selects the pass behind (0) or in front of the door (1),
+   and the next nibbles hold the cells. B back, F front, L left, R right. */
+enum {
+    CELLS_ALCOVE = 0, CELLS_BL = 0x1, CELLS_BR = 0x2, CELLS_BL_BR = 0x21, CELLS_BL_FL = 0x41, CELLS_BR_FR = 0x32,
+    CELLS_BL_BR_FR = 0x321, CELLS_BR_BL_FL = 0x412, CELLS_BR_FL_FR = 0x342, CELLS_BL_FR_FL = 0x431,
+    CELLS_BL_BR_FL_FR = 0x3421, CELLS_BR_BL_FR_FL = 0x4312,
+    DOOR_BACK_BL = 0x18, DOOR_BACK_BR = 0x28, DOOR_BACK_BL_BR = 0x218, DOOR_BACK_BR_BL = 0x128,
+    DOOR_FRONT_FL = 0x49, DOOR_FRONT_FR = 0x39, DOOR_FRONT_FL_FR = 0x349, DOOR_FRONT_FR_FL = 0x439,
+};
 
 enum { LIGHT_LEVELS = 6, LIGHT_DARKEST = LIGHT_LEVELS - 1, LIGHT_FULL = 99 }; /* party light amount 99: brightest */
+enum { VIEWPORT_MAX_W = 224, VIEWPORT_MAX_H = 136 };
 
+/* set_square_aspect: what the view draws of a square. */
 typedef struct {
-    uint16_t v[7];
-    uint16_t text;    /* g_inscription_thing */
+    uint16_t element;     /* square type, or a door or stairs element */
+    uint16_t square;      /* square byte */
+    uint16_t first_thing; /* first thing after the doors, teleporters, texts, and sensors */
+    union {
+        uint16_t side[4];                           /* wall: ornament ordinal of each side, clockwise from the far side */
+        struct { uint16_t far_side, right, front, left; };
+        struct { uint16_t state, door, floor_ornament; }; /* door state, pit invisible, stairs up; door thing */
+    };
+    uint16_t text;     /* g_inscription_thing */
     uint16_t portrait; /* g_champion_portrait_ordinal */
 } Aspect;
 
+typedef struct {
+    int16_t graphic, coord; /* first graphic, coordinate set */
+} Ornament;
+
 static Bitmap vp;                             /* g_viewport_bitmap */
 static int16_t map = -1, mw, mh;              /* current map and its size */
-static const uint8_t *desc;                   /* map descriptor, 16 bytes */
-static int16_t ids[46];                       /* g_wall_set_layout_ids, swapped for mirrored views */
-static int16_t slot_gfx[64];                  /* graphic of each layout bitmap slot */
-static uint8_t slot_flip[64];                 /* slot holds the mirrored graphic */
-static int16_t wall_orn[16][2], floor_orn[16][2], door_orn[17][2]; /* graphic, coordinate set */
-static int16_t alcoves[3], inscription, stairs, door_gfx[3][2];
-static uint16_t door_attr[2];
+static int16_t wall_set_ids[WS_COUNT];        /* g_wall_set_layout_ids, swapped for mirrored views */
+static int16_t slot_gfx[LAYOUT_SLOTS];        /* graphic of each layout bitmap slot */
+static uint8_t slot_flip[LAYOUT_SLOTS];       /* slot holds the mirrored graphic */
+static Ornament wall_orn[MAP_ORNAMENTS], floor_orn[MAP_ORNAMENTS], door_orn[DOOR_ORNAMENT_THIEVES_EYE];
+static int16_t alcoves[3], inscription, stairs, door_gfx[DOOR_DEPTHS][DOOR_TYPES];
+static uint16_t door_attr[DOOR_TYPES];
 static int16_t parity, rel_x, rel_y; /* g_use_flipped_wall_bitmaps, g_zone_relative_x/y */
 static uint16_t pals[LIGHT_LEVELS][16];                  /* g_dungeon_palettes with the creature replacement colors */
 static uint8_t creature_d3[16], creature_d2[16]; /* g_palette_changes_creature_d3/d2 of the map */
 static int16_t light = LIGHT_FULL;                  /* party light amount */
 static Box drawn_box;                        /* g_drawn_box: the box of the last in_zone */
+
+/* Smooth projectile flight (advanced feature, no rule change): the box of each projectile at the
+   last tick and at the tick before. Between ticks the view is drawn with each projectile part of the
+   way from the old box to the new box. */
+#define PROJECTILE_TRACK_COUNT 32
+typedef struct {
+    uint16_t thing;
+    Box from, to;
+} ProjectileTrack;
+static ProjectileTrack tracks[PROJECTILE_TRACK_COUNT], last_tracks[PROJECTILE_TRACK_COUNT];
+static int track_count, last_track_count;
+static int32_t track_view = -1;                /* map, position, and direction of the tracks */
+static int16_t motion_step, motion_steps;      /* the frame between two ticks; 0 steps: a tick view */
+static int16_t shift_x, shift_y;               /* in_zone moves the drawing by this offset */
 static int16_t vi_altar, fountain;           /* wall ornament index of the vi altar and the fountain, or -1 */
 int16_t g_do_not_draw_fluxcages;
 Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
@@ -111,145 +224,154 @@ uint16_t g_pile_top_objects[VIEW_CLICK_BOX_WALL];
 int16_t g_square_ahead_element;
 int16_t g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 
-/* Square byte of the current map; outside, a wall with the "ornament allowed" bit of get_square. */
+static int is_open_floor(uint8_t square) { return SQUARE_TYPE(square) == SQUARE_CORRIDOR || SQUARE_TYPE(square) == SQUARE_PIT; }
+
+/* Square byte of the current map. Outside the map: a wall, with a random ornament allowed on the side that
+   faces an open floor square at the map edge. */
 static uint8_t square(int16_t x, int16_t y)
 {
-    int inx = x >= 0 && x < mw, iny = y >= 0 && y < mh;
-    if (inx && iny) return dungeon_square(map, x, y);
-    if (inx) {
-        if (y == -1 && (dungeon_square(map, x, 0) >> 5 == 1 || dungeon_square(map, x, 0) >> 5 == 2)) return 2;
-        if (y == mh && (dungeon_square(map, x, mh - 1) >> 5 == 1 || dungeon_square(map, x, mh - 1) >> 5 == 2)) return 8;
-    } else if (iny) {
-        if (x == -1 && (dungeon_square(map, 0, y) >> 5 == 1 || dungeon_square(map, 0, y) >> 5 == 2)) return 4;
-        if (x == mw && (dungeon_square(map, mw - 1, y) >> 5 == 1 || dungeon_square(map, mw - 1, y) >> 5 == 2)) return 1;
+    int in_x = x >= 0 && x < mw, in_y = y >= 0 && y < mh;
+    if (in_x && in_y) return dungeon_square(map, x, y);
+    if (in_x) {
+        if (y == -1 && is_open_floor(dungeon_square(map, x, 0))) return WALL_ORNAMENT_FACE(DIRECTION_SOUTH);
+        if (y == mh && is_open_floor(dungeon_square(map, x, mh - 1))) return WALL_ORNAMENT_FACE(DIRECTION_NORTH);
+    } else if (in_y) {
+        if (x == -1 && is_open_floor(dungeon_square(map, 0, y))) return WALL_ORNAMENT_FACE(DIRECTION_EAST);
+        if (x == mw && is_open_floor(dungeon_square(map, mw - 1, y))) return WALL_ORNAMENT_FACE(DIRECTION_WEST);
     }
-    return 0;
+    return SQUARE_WALL;
 }
 
 static int16_t is_alcove(int16_t i) { return i >= 0 && (i == alcoves[0] || i == alcoves[1] || i == alcoves[2]); }
 
-/* get_random_ornament_ordinal: a pseudo-random ornament from the square position. */
-static uint16_t random_ordinal(int allowed, int16_t count, int16_t x, int16_t y, uint16_t modulo)
+/* get_random_ornament_ordinal: a pseudo-random ornament ordinal (0: none) from the square position. */
+static uint16_t random_ordinal(int allowed, int16_t count, int16_t x, int16_t y)
 {
     if (!allowed) return 0;
-    uint16_t a = (uint16_t)(y + x * 32 + 2000), b = (uint16_t)(mh + mw + map * 64 + 3000);
-    uint16_t i = (uint16_t)((uint16_t)(BE16(g_dungeon_header) + ((uint16_t)(a * 31417u) >> 1) + (uint16_t)(b * 11u)) >> 2) % modulo;
+    uint16_t square_seed = (uint16_t)(y + x * 32 + 2000), map_seed = (uint16_t)(mh + mw + map * 64 + 3000);
+    uint16_t hash = (uint16_t)(dungeon_ornament_seed() + ((uint16_t)(square_seed * 31417u) >> 1) + (uint16_t)(map_seed * 11u)) >> 2;
+    uint16_t i = hash % ORNAMENT_RANDOM_MODULO;
     return (int16_t)i < count ? i + 1 : 0;
 }
 
-/* set_square_aspect without the footprints bit. */
+enum { SCAN_NONE, SCAN_FLOOR, SCAN_WALL, SCAN_FAKE_WALL }; /* things that set_square_aspect reads */
+
+/* set_square_aspect without the footprints bit: the element, the ornaments, and the first drawn thing of
+   square (x, y) seen in direction dir. */
 static void aspect(Aspect *a, int16_t dir, int16_t x, int16_t y)
 {
     memset(a, 0, sizeof *a);
-    uint16_t t = dungeon_square_first_thing(map, x, y);
+    uint16_t thing = dungeon_square_first_thing(map, x, y);
     uint8_t s = square(x, y);
-    int floor_scan = 0, wall_scan = 0;
-    a->v[EL] = s >> 5;
-    a->v[SQ] = s;
-    switch (s >> 5) {
-    case WALL:
-        for (int k = 0; k < 4; k++) /* back, right, front, left */
-            a->v[ST + k] = random_ordinal(s & 8 >> ((dir + k) & 3), desc[0xb] >> 4, x, (int16_t)((((dir + k) & 3) + 1) * (y + 1)), 30);
-        if (x < 0 || x >= mw || y < 0 || y >= mh)
-            for (int k = ST; k <= LT; k++)
-                if (is_alcove(a->v[k] - 1)) a->v[k] = 0;
-        wall_scan = 1;
+    int scan = SCAN_NONE;
+    a->element = SQUARE_TYPE(s);
+    a->square = s;
+    switch (SQUARE_TYPE(s)) {
+    case SQUARE_WALL:
+        for (int k = 0; k < 4; k++) {
+            int16_t face = (dir + k) & 3;
+            a->side[k] = random_ordinal(s & WALL_ORNAMENT_FACE(face), map_random_wall_ornament_count(map), x, (int16_t)((face + 1) * (y + 1)));
+        }
+        if (x < 0 || x >= mw || y < 0 || y >= mh) /* no random alcove on the walls around the map */
+            for (int k = 0; k < 4; k++)
+                if (is_alcove(a->side[k] - 1)) a->side[k] = 0;
+        scan = SCAN_WALL;
         break;
-    case FAKEWALL:
-        if (!(s & 4)) {
-            a->v[EL] = WALL;
-            wall_scan = 2;
+    case SQUARE_FAKE_WALL:
+        if (!(s & FAKE_WALL_OPEN)) {
+            a->element = SQUARE_WALL;
+            scan = SCAN_FAKE_WALL;
             break;
         }
-        a->v[EL] = CORRIDOR;
-        s &= 8;
+        a->element = SQUARE_CORRIDOR;
+        s &= SQUARE_RANDOM_ORNAMENT;
         /* fall through */
-    case CORRIDOR:
-        a->v[FR] = random_ordinal(s & 8, desc[10] >> 4, x, y, 30);
-        floor_scan = 1;
+    case SQUARE_CORRIDOR:
+        a->floor_ornament = random_ordinal(s & SQUARE_RANDOM_ORNAMENT, map_random_floor_ornament_count(map), x, y);
+        scan = SCAN_FLOOR;
         break;
-    case PIT:
-        if (!(s & 8)) a->v[EL] = CORRIDOR;
-        else a->v[ST] = s & 4;
-        floor_scan = 1;
+    case SQUARE_PIT:
+        if (!(s & PIT_OPEN)) a->element = SQUARE_CORRIDOR;
+        else a->state = s & PIT_INVISIBLE;
+        scan = SCAN_FLOOR;
         break;
-    case STAIRS:
-        a->v[EL] = (dir & 1) == (s & 8) >> 3 ? STAIRS_SIDE : STAIRS_FRONT;
-        a->v[ST] = s & 4;
+    case SQUARE_STAIRS:
+        a->element = (dir & 1) == !!(s & STAIRS_NORTH_SOUTH) ? ELEMENT_STAIRS_SIDE : ELEMENT_STAIRS_FRONT;
+        a->state = s & STAIRS_UP;
         break;
-    case DOOR:
-        a->v[EL] = (dir & 1) == (s & 8) >> 3 ? DOOR_SIDE : DOOR_FRONT;
-        a->v[ST] = s & 7;
-        a->v[RT] = t & 0x3ff;
+    case SQUARE_DOOR:
+        a->element = (dir & 1) == !!(s & DOOR_NORTH_SOUTH) ? ELEMENT_DOOR_SIDE : ELEMENT_DOOR_FRONT;
+        a->state = door_state(s);
+        a->door = THING_INDEX(thing);
         break;
-    case TELEPORTER:
-        if (!(s & 8) || !(s & 4)) a->v[EL] = CORRIDOR;
-        floor_scan = 1;
+    case SQUARE_TELEPORTER:
+        if (!(s & TELEPORTER_OPEN) || !(s & TELEPORTER_VISIBLE)) a->element = SQUARE_CORRIDOR;
+        scan = SCAN_FLOOR;
         break;
     }
-    for (; t != THING_END && THING_TYPE(t) <= THING_SENSOR; t = get_next_thing(t)) {
-        if (floor_scan && THING_TYPE(t) == THING_SENSOR) a->v[FR] = sensor_ornament_ordinal(t);
-        if (!wall_scan) continue;
-        int side = ST + (THING_CELL(t) - dir & 3);
-        if (THING_TYPE(t) == THING_TEXT) {
-            if (text_is_visible(t)) {
-                a->v[side] = inscription + 1;
-                a->text = t;
+    for (; thing != THING_ENDOFLIST && THING_TYPE(thing) <= THING_SENSOR; thing = get_next_thing(thing)) {
+        if (scan == SCAN_FLOOR && THING_TYPE(thing) == THING_SENSOR) a->floor_ornament = sensor_ornament_ordinal(thing);
+        if (scan != SCAN_WALL && scan != SCAN_FAKE_WALL) continue;
+        uint16_t *side = &a->side[(THING_CELL(thing) - dir) & 3];
+        if (THING_TYPE(thing) == THING_TEXT) {
+            if (text_is_visible(thing)) {
+                *side = inscription + 1;
+                a->text = thing;
             }
         } else {
-            a->v[side] = sensor_ornament_ordinal(t);
-            if (sensor_type(t) == SENSOR_WALL_CHAMPION_PORTRAIT) a->portrait = sensor_data(t) + 1;
+            *side = sensor_ornament_ordinal(thing);
+            if (sensor_type(thing) == SENSOR_WALL_CHAMPION_PORTRAIT) a->portrait = sensor_data(thing) + 1;
         }
     }
-    a->v[THING] = wall_scan == 2 && g_party_map_x != x && g_party_map_y != y ? 0xfffe : t;
+    /* a closed fake wall shows its things only when the party stands in its row or column */
+    a->first_thing = scan == SCAN_FAKE_WALL && g_party_map_x != x && g_party_map_y != y ? THING_ENDOFLIST : thing;
 }
 
-/* draw_wall_set_bitmap and its _opaque and _flipped variants. id >= 0 is a graphic index. */
+/* draw_wall_set_bitmap and its _opaque and _flipped variants: a graphic (id >= 0) or a layout bitmap slot
+   (id < 0) at zone. */
 static void wall(int16_t id, int16_t zone, int mode)
 {
-    int16_t g = id, flip = mode == FLIPPED, sx = 0, sy = 0, w = 0, h = 0;
-    if (id < 0) {
-        uint32_t a = LAYOUT_BITMAPS + 14 * (-1 - id);
-        g = slot_gfx[-1 - id];
-        flip ^= slot_flip[-1 - id];
-        sx = kaos_s16(a + 2);
-        sy = kaos_s16(a + 4);
-        w = kaos_s16(a + 6);
-        h = kaos_s16(a + 8);
+    int16_t graphic = id, flip = mode == BLIT_FLIPPED, sx = 0, sy = 0, w = 0, h = 0;
+    if (id < 0) { /* the slot gives the graphic and the source rectangle */
+        int16_t slot = -1 - id;
+        uint32_t record = LAYOUT_BITMAPS + LAYOUT_BITMAP_SIZE * slot;
+        graphic = slot_gfx[slot];
+        flip ^= slot_flip[slot];
+        sx = kaos_s16(record + LAYOUT_BITMAP_X);
+        sy = kaos_s16(record + LAYOUT_BITMAP_Y);
+        w = kaos_s16(record + LAYOUT_BITMAP_W);
+        h = kaos_s16(record + LAYOUT_BITMAP_H);
     }
-    const Bitmap *bm = gfx_bitmap(g);
+    const Bitmap *bm = gfx_bitmap(graphic);
     Box b;
     if (bm && layout_get_zone(zone, bm->w, bm->h, &b, &w, &h))
-        draw_blit(bm, w + sx, h + sy, &vp, &b, mode == OPAQUE ? -1 : 10, flip);
+        draw_blit(bm, w + sx, h + sy, &vp, &b, mode == BLIT_OPAQUE ? -1 : TRANSPARENT_COLOR, flip);
 }
 
-/* draw_bitmap_in_zone. Bit 14 of zone starts from g_zone_relative_x/y. Returns 1 and sets
-   drawn_box (g_drawn_box) when it drew. */
+/* draw_bitmap_in_zone. ZONE_SHIFTED or ZONE_SIZED pass g_zone_relative_x/y to layout_get_zone: a shift, or
+   the item size. Returns 1 and sets drawn_box (g_drawn_box) when it drew. */
 static int in_zone(const Bitmap *bm, Bitmap *dst, int16_t zone, int flip, int16_t transparent)
 {
     int16_t w = 0, h = 0;
     Box b;
     if (!bm || zone == -1) return 0;
-    if (zone & 0xc000) {
+    if (zone & (ZONE_SHIFTED | ZONE_SIZED)) {
         w = rel_x;
         h = rel_y;
-        zone &= (int16_t)0xbfff;
+        zone &= ~ZONE_SIZED;
     }
     if (!layout_get_zone(zone, bm->w, bm->h, &b, &w, &h)) return 0;
-    draw_blit(bm, w, h, dst, &b, transparent, flip);
     drawn_box = b;
+    b.x += shift_x;
+    b.y += shift_y;
+    draw_blit(bm, w, h, dst, &b, transparent, flip);
     return 1;
 }
 
-#define S8(a) ((int16_t)(int8_t)kaos_u8(a)) /* signed table byte */
-#define THING_INDEX(thing) ((thing) & 0x3ff) /* record index without type and cell */
-
 enum { VIEW_CELL_BACK_LEFT, VIEW_CELL_BACK_RIGHT, VIEW_CELL_FRONT_RIGHT, VIEW_CELL_FRONT_LEFT, VIEW_CELL_CENTER };
-enum { VIEW_SQUARE_D0C, VIEW_SQUARE_D0L, VIEW_SQUARE_D0R, VIEW_SQUARE_D4C = 16, VIEW_SQUARE_D4L, VIEW_SQUARE_D4R };
 enum { FACING_AWAY, FACING_LEFT, FACING_TOWARD, FACING_RIGHT }; /* creature direction relative to the party */
 enum { DEPTH_D0, DEPTH_D1, DEPTH_D2, DEPTH_D3, DEPTH_D4 };
 enum { SCALE_D3 = 14, SCALE_D2 = 21, SCALE_NATIVE = 32, SCALE_EXPLOSION_MIN = 4 };
-enum { TRANSPARENT_COLOR = 10 };
 enum { DOOR_PASS_BACK = 1, DOOR_PASS_FRONT = 2 }; /* door squares draw things behind, then in front of the door */
 enum { CELL_ORDER_DOOR_PASS = 8 };
 enum { CLICK_BOX_MIN_W = 14, CLICK_BOX_MIN_H = 11, CLICK_BOX_CENTER_H = 15, CLICK_BOX_CENTER_OFFSET = 7 }; /* smallest clickable object box */
@@ -505,13 +627,68 @@ static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int
     return done;
 }
 
+/* A tick view starts new tracks; the old tracks stay when the party still looks from the same place. */
+static void start_tracks(int16_t dir, int16_t x, int16_t y)
+{
+    enum { POSITION_BITS = 5, DIRECTION_BITS = 2 }; /* maps are at most 32 squares wide and high */
+    int32_t view = ((((int32_t)map << POSITION_BITS | x) << POSITION_BITS | y) << DIRECTION_BITS) | dir;
+    last_track_count = view == track_view ? track_count : 0;
+    memcpy(last_tracks, tracks, sizeof tracks[0] * (size_t)last_track_count);
+    track_count = 0;
+    track_view = view;
+}
+
+/* The track of a projectile; the cell bits of the thing change while it flies. */
+static const ProjectileTrack *find_track(const ProjectileTrack *list, int count, uint16_t thing)
+{
+    enum { THING_CELL_BITS = 0xc000 };
+    for (int i = 0; i < count; i++)
+        if ((list[i].thing & ~THING_CELL_BITS) == (thing & ~THING_CELL_BITS)) return &list[i];
+    return NULL;
+}
+
+/* Between ticks: the offset from the new box of the projectile toward its old box. */
+static void begin_projectile(uint16_t thing)
+{
+    const ProjectileTrack *t = motion_steps ? find_track(tracks, track_count, thing) : NULL;
+    if (!t) return;
+    int16_t rest = motion_steps - motion_step;
+    shift_x = (int16_t)((t->from.x - t->to.x) * rest / motion_steps);
+    shift_y = (int16_t)((t->from.y - t->to.y) * rest / motion_steps);
+}
+
+/* At a tick: remembers where the projectile was drawn, and where it was at the tick before. */
+static void end_projectile(uint16_t thing, int drawn)
+{
+    shift_x = shift_y = 0;
+    if (motion_steps || !drawn || track_count == PROJECTILE_TRACK_COUNT) return;
+    const ProjectileTrack *last = find_track(last_tracks, last_track_count, thing);
+    tracks[track_count++] = (ProjectileTrack){ thing, last ? last->to : drawn_box, drawn_box };
+}
+
+int view_projectiles_moving(void)
+{
+    for (int i = 0; i < track_count; i++)
+        if (tracks[i].from.x != tracks[i].to.x || tracks[i].from.y != tracks[i].to.y) return 1;
+    return 0;
+}
+
+void view_set_motion(int16_t step, int16_t steps)
+{
+    motion_step = step;
+    motion_steps = steps;
+}
+
 /* A projectile in view cell cell: an object in flight, or a projectile graphic posed and mirrored by
    its direction of flight and scaled by depth (and kinetic energy). */
 static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_t cell, int16_t lane, int16_t depth, int16_t coord)
 {
     int16_t zone = ZONE_PROJECTILE_FIRST + coord * ZONE_OBJECT_CELLS + cell, aspect_index = projectile_aspect(projectile_slot(thing));
     if (aspect_index >= 0) {
+        drawn_box.w = 0;
+        begin_projectile(thing);
         object(thing, aspect_index, cell, lane, depth, 0, zone, NULL, 0, 0);
+        end_projectile(thing, drawn_box.w > 0);
         return;
     }
     const uint8_t *aspect = kaos_ptr(PROJECTILE_ASPECTS + PROJECTILE_ASPECT_SIZE * -aspect_index);
@@ -543,7 +720,8 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
     int16_t distance = row >> 1 == 2 ? 1 : row >> 1 == 3 ? 2 : 0; /* D2 or D3 palette changes */
     Bitmap own;
     const Bitmap *bm = shrunk(GFX_PROJECTILE_FIRST + aspect[PROJECTILE_ASPECT_GRAPHIC] + pose, scale, scale == SCALE_NATIVE ? NULL : object_pal(distance), &own);
-    in_zone(bm, &vp, zone, flip, TRANSPARENT_COLOR);
+    begin_projectile(thing);
+    end_projectile(thing, in_zone(bm, &vp, zone, flip, TRANSPARENT_COLOR));
     free(own.px);
 }
 
@@ -708,526 +886,571 @@ static void scaled(int16_t g, int16_t scale_x, int16_t scale_y, uint32_t palette
     if (bm) draw_shrink(bm, (int16_t)((scale_x >> 1) + bm->w * scale_x) >> 5, (int16_t)((scale_y >> 1) + bm->h * scale_y) >> 5, kaos_ptr(palette_changes), out);
 }
 
-/* The wall text of draw_wall_ornament at D1C: glyphs of graphic 0x102 in zones 1000 + line. */
-static void wall_text(const uint8_t *s)
+/* The inscription of the D1C wall: the blank wall, then the glyphs of each text line. */
+static void wall_text(const uint8_t *text)
 {
-    const Bitmap *font = gfx_bitmap(0x102);
-    int16_t gw = kaos_s16(GLYPH_SIZE), gh = kaos_s16(GLYPH_SIZE + 2);
-    wall(-0x33, 0x2df, NORMAL);
+    const Bitmap *font = gfx_bitmap(GFX_WALL_TEXT_FONT);
+    int16_t glyph_w = kaos_s16(GLYPH_SIZE), glyph_h = kaos_s16(GLYPH_SIZE + 2);
+    wall(LAYOUT_INSCRIPTION_WALL, ZONE_INSCRIPTION_WALL_D1C, BLIT_TRANSPARENT);
     for (int16_t line = 0; font; line++) {
         int16_t n = 0;
-        while (s[n] < 0x80) n++;
+        while (text[n] < WALL_TEXT_NEW_LINE) n++;
         Box b;
-        int16_t w = gw * n, h = gh;
-        if (n && layout_get_zone(1000 + line, 0, 0, &b, &w, &h))
-            for (b.w = gw; n; n--, s++, b.x += gw) draw_blit(font, *s * gw, 0, &vp, &b, 10, 0);
-        s += n;
-        if (*s++ == 0x81) break;
+        int16_t w = glyph_w * n, h = glyph_h;
+        if (n && layout_get_zone(ZONE_WALL_TEXT_LINE_FIRST + line, 0, 0, &b, &w, &h))
+            for (b.w = glyph_w; n; n--, text++, b.x += glyph_w) draw_blit(font, *text * glyph_w, 0, &vp, &b, TRANSPARENT_COLOR, 0);
+        text += n;
+        if (*text++ == WALL_TEXT_END) break;
     }
 }
 
-/* draw_wall_ornament: view walls 0-14, see docs/symbols/range-7-9.md. Returns 1 for an alcove. */
+/* The champion portrait of a portrait sensor on the D1C wall. */
+static void wall_portrait(int16_t champion)
+{
+    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
+    int16_t pw = kaos_s16(PORTRAIT_SIZE), ph = kaos_s16(PORTRAIT_SIZE + 2), w = pw, h = ph;
+    Box b;
+    if (portraits && layout_get_zone(ZONE_WALL_PORTRAIT, 0, 0, &b, &w, &h))
+        draw_blit(portraits, champion % PORTRAITS_PER_ROW * pw, champion / PORTRAITS_PER_ROW * ph, &vp, &b, PORTRAIT_TRANSPARENT, 0);
+}
+
+/* draw_wall_ornament: the ornament or inscription on a view wall, and on the D1C wall the champion
+   portrait and the facing flags. Returns 1 for an alcove. */
 static int wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
 {
     if (!ordinal) return 0;
-    int16_t i = ordinal - 1, g = wall_orn[i][0], flip = 0, zone = view + wall_orn[i][1] * 15 + 1004;
+    int16_t i = ordinal - 1, zone = ZONE_WALL_ORNAMENT_FIRST + ZONE_WALL_ORNAMENT_VIEWS * wall_orn[i].coord + view;
     int alcove = is_alcove(i), text = i == inscription;
-    uint8_t s[80] = { 0x81 };
+    int mirrored = view == VIEW_WALL_D3R2_LEFT || view == VIEW_WALL_D3R_LEFT || view == VIEW_WALL_D2R_LEFT || view == VIEW_WALL_D1R_LEFT;
+    int side = mirrored || view == VIEW_WALL_D3L2_RIGHT || view == VIEW_WALL_D3L_RIGHT || view == VIEW_WALL_D2L_RIGHT || view == VIEW_WALL_D1L_RIGHT;
+    int16_t graphic = wall_orn[i].graphic + (side ? 0 : WALL_ORNAMENT_FRONT);
+    uint8_t s[80] = { WALL_TEXT_END };
+    if (text) decode_text((char *)s, sizeof s, a->text, 0);
+    if (view == VIEW_WALL_D1C_FRONT) {
+        if (text) {
+            wall_text(s);
+            return alcove;
+        }
+        g_facing_alcove = alcove;
+        g_facing_vi_altar = i == vi_altar;
+        g_facing_fountain = i == fountain;
+    }
     Bitmap own = { 0 };
     const Bitmap *bm;
-    if (text) decode_text((char *)s, sizeof s, a->text, 0);
-    if (view < 12) {
-        if (view == 8 || view == 3 || view == 1) flip = 1;
-        else if (view > 3 && view != 7) g++;
-        if (view < 2) scaled(g, 30, 14, PAL_D3, &own);
-        else if (view < 7) scaled(g, 14, 14, PAL_D3, &own);
-        else scaled(g, 21, 21, PAL_D2, &own);
-        bm = &own;
+    if (view < VIEW_WALL_D1L_RIGHT) { /* D3 and D2: scaled and recolored */
+        if (view <= VIEW_WALL_D3R2_LEFT) scaled(graphic, SCALE_D3_FAR_SIDE_W, SCALE_D3, PAL_D3, &own);
+        else if (view <= VIEW_WALL_D3R_FRONT) scaled(graphic, SCALE_D3, SCALE_D3, PAL_D3, &own);
+        else scaled(graphic, SCALE_D2, SCALE_D2, PAL_D2, &own);
         if (!own.px) return alcove;
-    } else {
-        if (view == 14) {
-            if (text) {
-                wall_text(s);
-                return alcove;
-            }
-            g++;
-            g_facing_alcove = alcove;
-            g_facing_vi_altar = i == vi_altar;
-            g_facing_fountain = i == fountain;
-        }
-        flip = view == 13;
-        bm = gfx_bitmap(g);
-    }
-    if (text) {
-        int16_t lines = 0;
-        for (const uint8_t *p = s; *p != 0x81; p++) lines += *p == 0x80;
-        if (++lines < 4 && bm) {
-            zone |= 0x4000;
+        bm = &own;
+    } else bm = gfx_bitmap(graphic);
+    if (text) { /* the plaque shows only as many lines as the text has */
+        int16_t lines = 1;
+        for (const uint8_t *p = s; *p != WALL_TEXT_END; p++) lines += *p == WALL_TEXT_NEW_LINE;
+        if (lines <= TEXT_PLAQUE_LINES && bm) {
+            zone |= ZONE_SIZED;
             rel_x = bm->w;
-            rel_y = kaos_u8(TEXT_HEIGHTS + lines + kaos_u8(WALL_ORN_DEPTH + view) * 3);
+            rel_y = kaos_u8(TEXT_HEIGHTS + lines + TEXT_PLAQUE_LINES * kaos_u8(WALL_ORN_DEPTH + view));
         }
     }
-    if (in_zone(bm, &vp, zone, flip, 10) && view == 14) g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn_box;
-    if (view == 14 && a->portrait) {
-        const Bitmap *p = gfx_bitmap(0x1a);
-        int16_t pw = kaos_s16(PORTRAIT_SIZE), ph = kaos_s16(PORTRAIT_SIZE + 2), n = a->portrait - 1, w = pw, h = ph;
-        Box b;
-        if (p && layout_get_zone(0x2e1, 0, 0, &b, &w, &h)) draw_blit(p, (n & 7) * pw, (n >> 3) * ph, &vp, &b, 1, 0);
-    }
+    if (in_zone(bm, &vp, zone, mirrored, TRANSPARENT_COLOR) && view == VIEW_WALL_D1C_FRONT) g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn_box;
+    if (view == VIEW_WALL_D1C_FRONT && a->portrait) wall_portrait(a->portrait - 1);
     free(own.px);
     return alcove;
 }
 
-/* draw_floor_ornament: view floors 0-10. Bit 15 of the ordinal adds the footprints. */
+/* draw_floor_ornament: the floor ornament on a floor view; FLOOR_ORNAMENT_WITH_FOOTPRINTS adds the footprints. */
 static void floor_ornament(uint16_t ordinal, int16_t view)
 {
     if (!ordinal) return;
-    int16_t i = (ordinal & 0x7fff) - 1;
+    int16_t i = (ordinal & ~FLOOR_ORNAMENT_WITH_FOOTPRINTS) - 1;
     if (i >= 0) {
-        int flip = view == 10 || view == 7 || view == 4 || view == 1 || (i == 15 && parity && (view == 9 || view == 6 || view == 3));
-        in_zone(gfx_bitmap(floor_orn[i][0] + kaos_u8(FLOOR_ORN_VIEW + view)), &vp, view + floor_orn[i][1] * 11 + 1500, flip, 10);
+        int right = view == VIEW_D3R2 || view == VIEW_D3R || view == VIEW_D2R || view == VIEW_D1R;
+        int center = view == VIEW_D3C || view == VIEW_D2C || view == VIEW_D1C;
+        int flip = right || (i == FLOOR_ORNAMENT_FOOTPRINTS && parity && center);
+        in_zone(gfx_bitmap(floor_orn[i].graphic + kaos_u8(FLOOR_ORN_VIEW + view)), &vp,
+                ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * floor_orn[i].coord + view, flip, TRANSPARENT_COLOR);
     }
-    if (ordinal & 0x8000) floor_ornament(16, view);
+    if (ordinal & FLOOR_ORNAMENT_WITH_FOOTPRINTS) floor_ornament(FLOOR_ORNAMENT_FOOTPRINTS + 1, view);
 }
 
-/* draw_door_ornament into the door bitmap. depth 0 D3, 1 D2, 2 D1. */
+/* draw_door_ornament: an ornament or mask on the door bitmap, scaled for D3 and D2. */
 static void door_ornament(uint16_t ordinal, int16_t depth, Bitmap *door)
 {
     if (!ordinal) return;
-    int16_t i = ordinal - 1;
+    const Ornament *o = &door_orn[ordinal - 1];
+    int16_t zone = ZONE_DOOR_ORNAMENT_FIRST + ZONE_DOOR_ORNAMENT_DEPTHS * o->coord + depth;
     Bitmap own = { 0 };
-    if (depth == 2) in_zone(gfx_bitmap(door_orn[i][0]), door, depth + door_orn[i][1] * 3 + 2000, 0, 9);
+    if (depth == DOOR_DEPTH_D1) in_zone(gfx_bitmap(o->graphic), door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
     else {
-        scaled(door_orn[i][0], depth ? 21 : 14, depth ? 21 : 14, depth ? PAL_DOOR_D2 : PAL_DOOR_D3, &own);
-        if (own.px) in_zone(&own, door, depth + door_orn[i][1] * 3 + 2000, 0, 9);
+        int16_t scale = depth == DOOR_DEPTH_D2 ? SCALE_D2 : SCALE_D3;
+        scaled(o->graphic, scale, scale, depth == DOOR_DEPTH_D2 ? PAL_DOOR_D2 : PAL_DOOR_D3, &own);
+        if (own.px) in_zone(&own, door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
     }
     free(own.px);
 }
 
-/* draw_door_button: view 0 D3R, 1 D3C, 2 D2C, 3 D1C. */
+/* draw_door_button: the button beside a door. The D1C button is clickable. */
 static void door_button(int16_t view)
 {
     Bitmap own = { 0 };
-    const Bitmap *bm = gfx_bitmap(0x1c5);
-    if (view < 3) {
-        scaled(0x1c5, view == 2 ? 21 : 14, view == 2 ? 21 : 14, view == 2 ? PAL_D2 : PAL_D3, &own);
+    const Bitmap *bm = gfx_bitmap(GFX_DOOR_BUTTON);
+    if (view != BUTTON_D1C) {
+        int16_t scale = view == BUTTON_D2C ? SCALE_D2 : SCALE_D3;
+        scaled(GFX_DOOR_BUTTON, scale, scale, view == BUTTON_D2C ? PAL_D2 : PAL_D3, &own);
         bm = &own;
     }
-    if (bm && bm->px && in_zone(bm, &vp, view + kaos_u8(DOOR_BUTTON_COORDS) + 1950, 0, 10) && view == 3)
+    if (bm && bm->px && in_zone(bm, &vp, ZONE_DOOR_BUTTON_FIRST + kaos_u8(DOOR_BUTTON_COORDS) + view, 0, TRANSPARENT_COLOR) && view == BUTTON_D1C)
         g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn_box;
     free(own.px);
 }
 
-/* draw_door: a copy of the door graphic with its ornament, placed by the door state. */
-static void door(uint16_t index, int16_t state, int16_t depth, int16_t zone)
+/* draw_door: a copy of the door graphic with its ornaments, placed by the door state. A door that does not
+   move vertically opens as two halves that slide apart. */
+static void door(uint16_t door_thing, int16_t state, int16_t view)
 {
-    if (!state) return;
-    int set = door_type(index);
-    const Bitmap *g = gfx_bitmap(door_gfx[depth][set]);
+    if (state == DOOR_OPEN) return;
+    int16_t depth = view < VIEW_D2L ? DOOR_DEPTH_D3 : view < VIEW_D1L ? DOOR_DEPTH_D2 : DOOR_DEPTH_D1;
+    int16_t zone = ZONE_DOOR_FIRST + ZONE_DOOR_VIEW_ZONES * view;
+    int type = door_type(door_thing);
+    const Bitmap *g = gfx_bitmap(door_gfx[depth][type]);
     if (!g) return;
     Bitmap t = { g->w, g->h, malloc((size_t)g->w * g->h) };
     if (!t.px) return;
     memcpy(t.px, g->px, (size_t)g->w * g->h);
-    door_ornament(door_ornament_ordinal(index), depth, &t);
-    if (door_attr[set] & 0x400) draw_flip(&t, random_2bits() & 3); /* animated door */
-    if (state == 5) door_ornament(16, depth, &t);
-    else if (state != 4) {
+    door_ornament(door_ornament_ordinal(door_thing), depth, &t);
+    if (door_attr[type] & DOOR_ANIMATED) draw_flip(&t, random_2bits());
+    if (state == DOOR_DESTROYED) door_ornament(DOOR_ORNAMENT_DESTROYED, depth, &t);
+    else if (state != DOOR_CLOSED) { /* partly open: the zone moves with the state */
         zone += state;
-        if (!door_is_vertical(index)) { /* two halves that slide apart */
+        if (!door_is_vertical(door_thing)) {
             int16_t w = rel_x = t.w >> 1, h = rel_y = 0;
             Box b;
-            if (layout_get_zone(zone + 6, t.w, t.h, &b, &w, &h)) draw_blit(&t, rel_x + w, h, &vp, &b, 10, 0);
-            zone += 0x4003;
+            if (layout_get_zone(zone + ZONE_DOOR_RIGHT_HALF, t.w, t.h, &b, &w, &h)) draw_blit(&t, rel_x + w, h, &vp, &b, TRANSPARENT_COLOR, 0);
+            zone = (zone + ZONE_DOOR_LEFT_HALF) | ZONE_SIZED;
         }
     }
-    in_zone(&t, &vp, zone, 0, 10);
+    in_zone(&t, &vp, zone, 0, TRANSPARENT_COLOR);
     free(t.px);
 }
 
-/* get_location_after_level_change: the map and square one level up or down. */
-static int16_t level_change(int16_t m, int16_t delta, int16_t *x, int16_t *y)
+/* get_location_after_level_change for any map (map.c checks the party map first): the map and square one
+   level up or down, or -1. */
+static int16_t level_change(int16_t from, int16_t delta, int16_t *x, int16_t *y)
 {
-    const uint8_t *from = g_dungeon_maps + 16 * m;
-    int16_t ax = *x + from[6], ay = *y + from[7];
-    for (int16_t i = 0; i < dungeon_map_count(); i++) {
-        const uint8_t *to = g_dungeon_maps + 16 * i;
-        if ((uint16_t)(delta + (from[9] & 0x3f)) == (to[9] & 0x3f) && to[6] <= ax && ax <= to[6] + (BE16(to + 8) >> 6 & 0x1f)
-            && to[7] <= ay && ay <= to[7] + (to[8] >> 3)) {
-            *x = ax - to[6];
-            *y = ay - to[7];
-            return i;
+    int16_t dungeon_x = *x + map_offset_x(from), dungeon_y = *y + map_offset_y(from);
+    for (int16_t m = 0; m < dungeon_map_count(); m++) {
+        if ((uint16_t)(delta + map_level(from)) == map_level(m) && map_offset_x(m) <= dungeon_x && dungeon_x <= map_offset_x(m) + map_last_x(m)
+            && map_offset_y(m) <= dungeon_y && dungeon_y <= map_offset_y(m) + map_last_y(m)) {
+            *x = dungeon_x - map_offset_x(m);
+            *y = dungeon_y - map_offset_y(m);
+            return m;
         }
     }
     return -1;
 }
 
 /* draw_ceiling_pit: the hole of an open pit on the map above. */
-static void ceiling_pit(int16_t g, int16_t zone, int16_t x, int16_t y, int flip)
+static void ceiling_pit(int16_t graphic, int16_t zone, int16_t x, int16_t y, int mode)
 {
-    int16_t m = level_change(map, -1, &x, &y);
-    if (m >= 0 && dungeon_square(m, x, y) >> 5 == PIT && dungeon_square(m, x, y) & 8) wall(g, zone, flip ? FLIPPED : NORMAL);
+    int16_t m = level_change(map, LEVEL_UP, &x, &y);
+    if (m >= 0 && SQUARE_TYPE(dungeon_square(m, x, y)) == SQUARE_PIT && dungeon_square(m, x, y) & PIT_OPEN) wall(graphic, zone, mode);
 }
 
-#define ASPECT Aspect a; aspect(&a, dir, x, y)
-#define STAIR(i) (stairs + (i))
+/* The front of a staircase: the up or down graphic at the up or down zone. */
+static void stairs_front(int up, int16_t graphic, int16_t up_zone, int mode)
+{
+    wall(stairs + graphic + (up ? 0 : STAIRS_DOWN), up ? up_zone : up_zone + ZONE_STAIRS_DOWN_DELTA, mode);
+}
+
+/* The 16 square functions of draw_dungeon_view, back to front. Each draws the wall, pit, stairs, or door of
+   its square, then the floor ornament, the things, and a teleporter field. */
 
 static void d3l2(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    uint16_t cells = 0x3421;
-    switch (a.v[EL]) {
-    case WALL: wall(LID(0x102a3c), 0x2be, NORMAL); wall_ornament(a.v[RT], 0, &a); return;
-    case PIT: if (!a.v[ST]) wall(0x31, 0x352, NORMAL); break;
-    case DOOR_SIDE: case STAIRS_SIDE: cells = 0x321; break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 0);
-        things(a.v[THING], dir, x, y, 14, 0x218);
-        door(a.v[RT], a.v[ST], 0, 0xe74);
-        things(a.v[THING], dir, x, y, 14, 0x349);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    uint16_t cells = CELLS_BL_BR_FL_FR;
+    switch (a.element) {
+    case SQUARE_WALL: wall(wall_set_ids[WS_WALL_D3L2], ZONE_WALL_D3L2, BLIT_TRANSPARENT); wall_ornament(a.right, VIEW_WALL_D3L2_RIGHT, &a); return;
+    case SQUARE_PIT: if (!a.state) wall(GFX_PIT_D3L2, ZONE_PIT_D3L2, BLIT_TRANSPARENT); break;
+    case ELEMENT_DOOR_SIDE: case ELEMENT_STAIRS_SIDE: cells = CELLS_BL_BR_FR; break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D3L2);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L2, DOOR_BACK_BL_BR);
+        door(a.door, a.state, VIEW_D3L2);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L2, DOOR_FRONT_FL_FR);
         return;
-    case STAIRS_FRONT: wall(a.v[ST] ? -0x21 : -0x23, a.v[ST] ? 800 : 0x32d, NORMAL); break;
-    case CORRIDOR: case TELEPORTER: break;
+    case ELEMENT_STAIRS_FRONT:
+        if (a.state) wall(LAYOUT_STAIRS_UP_FRONT_D3L2, ZONE_STAIRS_UP_FRONT_D3L2, BLIT_TRANSPARENT);
+        else wall(LAYOUT_STAIRS_DOWN_FRONT_D3L2, ZONE_STAIRS_UP_FRONT_D3L2 + ZONE_STAIRS_DOWN_DELTA, BLIT_TRANSPARENT);
+        break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 0);
-    things(a.v[THING], dir, x, y, 14, cells);
-    if (a.v[EL] == TELEPORTER) field(14, 0x2be);
+    floor_ornament(a.floor_ornament, VIEW_D3L2);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L2, cells);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D3L2, ZONE_WALL_D3L2);
 }
 
 static void d3r2(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    uint16_t cells = 0x4312;
-    switch (a.v[EL]) {
-    case WALL: wall(LID(0x102a3a), 0x2bf, NORMAL); wall_ornament(a.v[LT], 1, &a); return;
-    case PIT: if (!a.v[ST]) wall(0x31, 0x353, FLIPPED); break;
-    case DOOR_SIDE: case STAIRS_SIDE: cells = 0x412; break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 1);
-        things(a.v[THING], dir, x, y, 15, 0x128);
-        door(a.v[RT], a.v[ST], 0, 0xe7e);
-        things(a.v[THING], dir, x, y, 15, 0x439);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    uint16_t cells = CELLS_BR_BL_FR_FL;
+    switch (a.element) {
+    case SQUARE_WALL: wall(wall_set_ids[WS_WALL_D3R2], ZONE_WALL_D3R2, BLIT_TRANSPARENT); wall_ornament(a.left, VIEW_WALL_D3R2_LEFT, &a); return;
+    case SQUARE_PIT: if (!a.state) wall(GFX_PIT_D3L2, ZONE_PIT_D3R2, BLIT_FLIPPED); break;
+    case ELEMENT_DOOR_SIDE: case ELEMENT_STAIRS_SIDE: cells = CELLS_BR_BL_FL; break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D3R2);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R2, DOOR_BACK_BR_BL);
+        door(a.door, a.state, VIEW_D3R2);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R2, DOOR_FRONT_FR_FL);
         return;
-    case STAIRS_FRONT: wall(a.v[ST] ? -0x22 : -0x24, a.v[ST] ? 0x321 : 0x32e, FLIPPED); break;
-    case CORRIDOR: case TELEPORTER: break;
+    case ELEMENT_STAIRS_FRONT:
+        if (a.state) wall(LAYOUT_STAIRS_UP_FRONT_D3R2, ZONE_STAIRS_UP_FRONT_D3R2, BLIT_FLIPPED);
+        else wall(LAYOUT_STAIRS_DOWN_FRONT_D3R2, ZONE_STAIRS_UP_FRONT_D3R2 + ZONE_STAIRS_DOWN_DELTA, BLIT_FLIPPED);
+        break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 1);
-    things(a.v[THING], dir, x, y, 15, cells);
-    if (a.v[EL] == TELEPORTER) field(15, 0x2bf);
+    floor_ornament(a.floor_ornament, VIEW_D3R2);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R2, cells);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D3R2, ZONE_WALL_D3R2);
 }
 
 static void d3l(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    uint16_t cells = 0x3421;
-    switch (a.v[EL]) {
-    case WALL:
-        wall(LID(0x102a40), 0x2c1, NORMAL);
-        wall_ornament(a.v[RT], 2, &a);
-        if (wall_ornament(a.v[FR], 4, &a)) things(a.v[THING], dir, x, y, 12, 0);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    uint16_t cells = CELLS_BL_BR_FL_FR;
+    switch (a.element) {
+    case SQUARE_WALL:
+        wall(wall_set_ids[WS_WALL_D3L], ZONE_WALL_D3L, BLIT_TRANSPARENT);
+        wall_ornament(a.right, VIEW_WALL_D3L_RIGHT, &a);
+        if (wall_ornament(a.front, VIEW_WALL_D3L_FRONT, &a)) things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L, CELLS_ALCOVE);
         return;
-    case PIT: if (!a.v[ST]) wall(0x32, 0x354, NORMAL); break;
-    case DOOR_SIDE: case STAIRS_SIDE: cells = 0x321; break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 2);
-        things(a.v[THING], dir, x, y, 12, 0x218);
-        wall(LID(0x102a5a), 0x2ce, NORMAL);
-        wall(LID(0x102a5c), 0x2cf, FLIPPED);
-        door(a.v[RT], a.v[ST], 0, 0xe88);
-        things(a.v[THING], dir, x, y, 12, 0x349);
+    case SQUARE_PIT: if (!a.state) wall(GFX_PIT_D3L, ZONE_PIT_D3L, BLIT_TRANSPARENT); break;
+    case ELEMENT_DOOR_SIDE: case ELEMENT_STAIRS_SIDE: cells = CELLS_BL_BR_FR; break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D3L);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L, DOOR_BACK_BL_BR);
+        wall(wall_set_ids[WS_DOOR_FRAME_LEFT_D3L], ZONE_DOOR_FRAME_LEFT_D3L, BLIT_TRANSPARENT);
+        wall(wall_set_ids[WS_DOOR_FRAME_RIGHT_D3L], ZONE_DOOR_FRAME_RIGHT_D3L, BLIT_FLIPPED);
+        door(a.door, a.state, VIEW_D3L);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L, DOOR_FRONT_FL_FR);
         return;
-    case STAIRS_FRONT: wall(STAIR(a.v[ST] ? 0 : 7), a.v[ST] ? 0x322 : 0x32f, NORMAL); break;
-    case CORRIDOR: case TELEPORTER: break;
+    case ELEMENT_STAIRS_FRONT: stairs_front(a.state, STAIRS_FRONT_D3L, ZONE_STAIRS_UP_FRONT_D3L, BLIT_TRANSPARENT); break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 2);
-    things(a.v[THING], dir, x, y, 12, cells);
-    if (a.v[EL] == TELEPORTER) field(12, 0x2c1);
+    floor_ornament(a.floor_ornament, VIEW_D3L);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L, cells);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D3L, ZONE_WALL_D3L);
 }
 
 static void d3r(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    uint16_t cells = 0x4312;
-    switch (a.v[EL]) {
-    case WALL:
-        wall(LID(0x102a3e), 0x2c2, NORMAL);
-        wall_ornament(a.v[LT], 3, &a);
-        if (wall_ornament(a.v[FR], 6, &a)) things(a.v[THING], dir, x, y, 13, 0);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    uint16_t cells = CELLS_BR_BL_FR_FL;
+    switch (a.element) {
+    case SQUARE_WALL:
+        wall(wall_set_ids[WS_WALL_D3R], ZONE_WALL_D3R, BLIT_TRANSPARENT);
+        wall_ornament(a.left, VIEW_WALL_D3R_LEFT, &a);
+        if (wall_ornament(a.front, VIEW_WALL_D3R_FRONT, &a)) things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R, CELLS_ALCOVE);
         return;
-    case PIT: if (!a.v[ST]) wall(0x32, 0x356, FLIPPED); break;
-    case DOOR_SIDE: case STAIRS_SIDE: cells = 0x412; break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 4);
-        things(a.v[THING], dir, x, y, 13, 0x128);
-        wall(LID(0x102a5e), 0x2d0, NORMAL);
-        wall(LID(0x102a5a), 0x2d1, FLIPPED);
-        if (door_button_present(a.v[RT])) door_button(0);
-        door(a.v[RT], a.v[ST], 0, 0xe9c);
-        things(a.v[THING], dir, x, y, 13, 0x439);
+    case SQUARE_PIT: if (!a.state) wall(GFX_PIT_D3L, ZONE_PIT_D3R, BLIT_FLIPPED); break;
+    case ELEMENT_DOOR_SIDE: case ELEMENT_STAIRS_SIDE: cells = CELLS_BR_BL_FL; break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D3R);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R, DOOR_BACK_BR_BL);
+        wall(wall_set_ids[WS_DOOR_FRAME_LEFT_D3R], ZONE_DOOR_FRAME_LEFT_D3R, BLIT_TRANSPARENT);
+        wall(wall_set_ids[WS_DOOR_FRAME_LEFT_D3L], ZONE_DOOR_FRAME_RIGHT_D3R, BLIT_FLIPPED);
+        if (door_button_present(a.door)) door_button(BUTTON_D3R);
+        door(a.door, a.state, VIEW_D3R);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R, DOOR_FRONT_FR_FL);
         return;
-    case STAIRS_FRONT: wall(STAIR(a.v[ST] ? 0 : 7), a.v[ST] ? 0x324 : 0x331, FLIPPED); break;
-    case CORRIDOR: case TELEPORTER: break;
+    case ELEMENT_STAIRS_FRONT: stairs_front(a.state, STAIRS_FRONT_D3L, ZONE_STAIRS_UP_FRONT_D3R, BLIT_FLIPPED); break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 4);
-    things(a.v[THING], dir, x, y, 13, cells);
-    if (a.v[EL] == TELEPORTER) field(13, 0x2c2);
+    floor_ornament(a.floor_ornament, VIEW_D3R);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R, cells);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D3R, ZONE_WALL_D3R);
 }
 
 static void d3c(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    switch (a.v[EL]) {
-    case WALL:
-        wall(LID(0x102a42), 0x2c0, OPAQUE);
-        if (wall_ornament(a.v[FR], 5, &a)) things(a.v[THING], dir, x, y, 11, 0);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    switch (a.element) {
+    case SQUARE_WALL:
+        wall(wall_set_ids[WS_WALL_D3C], ZONE_WALL_D3C, BLIT_OPAQUE);
+        if (wall_ornament(a.front, VIEW_WALL_D3C_FRONT, &a)) things(a.first_thing, dir, x, y, VIEW_SQUARE_D3C, CELLS_ALCOVE);
         return;
-    case PIT: if (!a.v[ST]) wall(0x33, 0x355, NORMAL); break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 3);
-        things(a.v[THING], dir, x, y, 11, 0x218);
-        wall(LID(0x102a58), 0x2d2, NORMAL);
-        wall(LID(0x102a58), 0x2d3, FLIPPED);
-        if (door_button_present(a.v[RT])) door_button(1);
-        door(a.v[RT], a.v[ST], 0, 0xe92);
-        things(a.v[THING], dir, x, y, 11, 0x349);
+    case SQUARE_PIT: if (!a.state) wall(GFX_PIT_D3C, ZONE_PIT_D3C, BLIT_TRANSPARENT); break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D3C);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3C, DOOR_BACK_BL_BR);
+        wall(wall_set_ids[WS_DOOR_FRAME_D3C], ZONE_DOOR_FRAME_LEFT_D3C, BLIT_TRANSPARENT);
+        wall(wall_set_ids[WS_DOOR_FRAME_D3C], ZONE_DOOR_FRAME_RIGHT_D3C, BLIT_FLIPPED);
+        if (door_button_present(a.door)) door_button(BUTTON_D3C);
+        door(a.door, a.state, VIEW_D3C);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D3C, DOOR_FRONT_FL_FR);
         return;
-    case STAIRS_FRONT: wall(STAIR(a.v[ST] ? 1 : 8), a.v[ST] ? 0x323 : 0x330, NORMAL); break;
-    case CORRIDOR: case TELEPORTER: break;
+    case ELEMENT_STAIRS_FRONT: stairs_front(a.state, STAIRS_FRONT_D3C, ZONE_STAIRS_UP_FRONT_D3C, BLIT_TRANSPARENT); break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 3);
-    things(a.v[THING], dir, x, y, 11, 0x3421);
-    if (a.v[EL] == TELEPORTER) field(11, 0x2c0);
+    floor_ornament(a.floor_ornament, VIEW_D3C);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D3C, CELLS_BL_BR_FL_FR);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D3C, ZONE_WALL_D3C);
 }
 
 static void d2l2(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    if (a.v[EL] == WALL) wall(LID(0x102a32), 0x2c3, NORMAL);
-    else if (a.v[EL] == TELEPORTER) field(9, 0x2c3);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    if (a.element == SQUARE_WALL) wall(wall_set_ids[WS_WALL_D2L2], ZONE_WALL_D2L2, BLIT_TRANSPARENT);
+    else if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D2L2, ZONE_WALL_D2L2);
 }
 
 static void d2r2(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    if (a.v[EL] == WALL) wall(LID(0x102a30), 0x2c4, NORMAL);
-    else if (a.v[EL] == TELEPORTER) field(10, 0x2c4);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    if (a.element == SQUARE_WALL) wall(wall_set_ids[WS_WALL_D2R2], ZONE_WALL_D2R2, BLIT_TRANSPARENT);
+    else if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D2R2, ZONE_WALL_D2R2);
 }
 
 static void d2l(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    uint16_t cells = 0x3421;
-    switch (a.v[EL]) {
-    case WALL:
-        wall(LID(0x102a36), 0x2c6, NORMAL);
-        wall_ornament(a.v[RT], 7, &a);
-        if (!wall_ornament(a.v[FR], 9, &a)) return;
-        ceiling_pit(0x40, 0x360, x, y, 0);
-        things(a.v[THING], dir, x, y, 7, 0);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    uint16_t cells = CELLS_BL_BR_FL_FR;
+    switch (a.element) {
+    case SQUARE_WALL:
+        wall(wall_set_ids[WS_WALL_D2L], ZONE_WALL_D2L, BLIT_TRANSPARENT);
+        wall_ornament(a.right, VIEW_WALL_D2L_RIGHT, &a);
+        if (!wall_ornament(a.front, VIEW_WALL_D2L_FRONT, &a)) return;
+        ceiling_pit(GFX_CEILING_PIT_D2L, ZONE_CEILING_PIT_D2L, x, y, BLIT_TRANSPARENT);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D2L, CELLS_ALCOVE);
         return;
-    case PIT: wall(a.v[ST] ? 0x3a : 0x34, 0x357, NORMAL); break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 5);
-        things(a.v[THING], dir, x, y, 7, 0x218);
-        wall(LID(0x102a4c), 0x2d9, NORMAL);
-        door(a.v[RT], a.v[ST], 1, 0xea6);
-        ceiling_pit(0x40, 0x360, x, y, 0);
-        things(a.v[THING], dir, x, y, 7, 0x349);
+    case SQUARE_PIT: wall(a.state ? GFX_INVISIBLE_PIT_D2L : GFX_PIT_D2L, ZONE_PIT_D2L, BLIT_TRANSPARENT); break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D2L);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D2L, DOOR_BACK_BL_BR);
+        wall(wall_set_ids[WS_DOOR_FRAME_TOP_D2L], ZONE_DOOR_FRAME_TOP_D2L, BLIT_TRANSPARENT);
+        door(a.door, a.state, VIEW_D2L);
+        ceiling_pit(GFX_CEILING_PIT_D2L, ZONE_CEILING_PIT_D2L, x, y, BLIT_TRANSPARENT);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D2L, DOOR_FRONT_FL_FR);
         return;
-    case STAIRS_SIDE: wall(STAIR(14), 0x33a, NORMAL); /* fall through */
-    case DOOR_SIDE: cells = 0x342; break;
-    case STAIRS_FRONT: wall(STAIR(a.v[ST] ? 2 : 9), a.v[ST] ? 0x325 : 0x332, NORMAL); break;
-    case CORRIDOR: case TELEPORTER: break;
+    case ELEMENT_STAIRS_SIDE: wall(stairs + STAIRS_SIDE_D2L, ZONE_STAIRS_SIDE_D2L, BLIT_TRANSPARENT); /* fall through */
+    case ELEMENT_DOOR_SIDE: cells = CELLS_BR_FL_FR; break;
+    case ELEMENT_STAIRS_FRONT: stairs_front(a.state, STAIRS_FRONT_D2L, ZONE_STAIRS_UP_FRONT_D2L, BLIT_TRANSPARENT); break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 5);
-    ceiling_pit(0x40, 0x360, x, y, 0);
-    things(a.v[THING], dir, x, y, 7, cells);
-    if (a.v[EL] == TELEPORTER) field(7, 0x2c6);
+    floor_ornament(a.floor_ornament, VIEW_D2L);
+    ceiling_pit(GFX_CEILING_PIT_D2L, ZONE_CEILING_PIT_D2L, x, y, BLIT_TRANSPARENT);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D2L, cells);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D2L, ZONE_WALL_D2L);
 }
 
 static void d2r(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    uint16_t cells = 0x4312;
-    switch (a.v[EL]) {
-    case WALL:
-        wall(LID(0x102a34), 0x2c7, NORMAL);
-        wall_ornament(a.v[LT], 8, &a);
-        if (wall_ornament(a.v[FR], 11, &a)) things(a.v[THING], dir, x, y, 8, 0);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    uint16_t cells = CELLS_BR_BL_FR_FL;
+    switch (a.element) {
+    case SQUARE_WALL:
+        wall(wall_set_ids[WS_WALL_D2R], ZONE_WALL_D2R, BLIT_TRANSPARENT);
+        wall_ornament(a.left, VIEW_WALL_D2R_LEFT, &a);
+        if (wall_ornament(a.front, VIEW_WALL_D2R_FRONT, &a)) things(a.first_thing, dir, x, y, VIEW_SQUARE_D2R, CELLS_ALCOVE);
         return;
-    case PIT: wall(a.v[ST] ? 0x3a : 0x34, 0x359, FLIPPED); break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 7);
-        things(a.v[THING], dir, x, y, 8, 0x128);
-        wall(LID(0x102a4a), 0x2db, NORMAL);
-        door(a.v[RT], a.v[ST], 1, 0xeba);
-        things(a.v[THING], dir, x, y, 8, 0x439);
+    case SQUARE_PIT: wall(a.state ? GFX_INVISIBLE_PIT_D2L : GFX_PIT_D2L, ZONE_PIT_D2R, BLIT_FLIPPED); break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D2R);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D2R, DOOR_BACK_BR_BL);
+        wall(wall_set_ids[WS_DOOR_FRAME_TOP_D2R], ZONE_DOOR_FRAME_TOP_D2R, BLIT_TRANSPARENT);
+        door(a.door, a.state, VIEW_D2R);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D2R, DOOR_FRONT_FR_FL);
         return;
-    case STAIRS_SIDE: wall(STAIR(14), 0x33b, FLIPPED); /* fall through */
-    case DOOR_SIDE: cells = 0x431; break;
-    case STAIRS_FRONT: wall(STAIR(a.v[ST] ? 2 : 9), a.v[ST] ? 0x327 : 0x334, FLIPPED); break;
-    case CORRIDOR: case TELEPORTER: break;
+    case ELEMENT_STAIRS_SIDE: wall(stairs + STAIRS_SIDE_D2L, ZONE_STAIRS_SIDE_D2R, BLIT_FLIPPED); /* fall through */
+    case ELEMENT_DOOR_SIDE: cells = CELLS_BL_FR_FL; break;
+    case ELEMENT_STAIRS_FRONT: stairs_front(a.state, STAIRS_FRONT_D2L, ZONE_STAIRS_UP_FRONT_D2R, BLIT_FLIPPED); break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 7);
-    ceiling_pit(0x40, 0x362, x, y, 1);
-    things(a.v[THING], dir, x, y, 8, cells);
-    if (a.v[EL] == TELEPORTER) field(8, 0x2c7);
+    floor_ornament(a.floor_ornament, VIEW_D2R);
+    ceiling_pit(GFX_CEILING_PIT_D2L, ZONE_CEILING_PIT_D2R, x, y, BLIT_FLIPPED);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D2R, cells);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D2R, ZONE_WALL_D2R);
 }
 
 static void d2c(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    switch (a.v[EL]) {
-    case WALL:
-        wall(LID(0x102a38), 0x2c5, OPAQUE);
-        if (wall_ornament(a.v[FR], 10, &a)) things(a.v[THING], dir, x, y, 6, 0);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    switch (a.element) {
+    case SQUARE_WALL:
+        wall(wall_set_ids[WS_WALL_D2C], ZONE_WALL_D2C, BLIT_OPAQUE);
+        if (wall_ornament(a.front, VIEW_WALL_D2C_FRONT, &a)) things(a.first_thing, dir, x, y, VIEW_SQUARE_D2C, CELLS_ALCOVE);
         return;
-    case PIT: wall(a.v[ST] ? 0x3b : 0x35, 0x358, NORMAL); break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 6);
-        things(a.v[THING], dir, x, y, 6, 0x218);
-        wall(LID(0x102a4e), 0x2da, NORMAL);
-        wall(LID(0x102a56), 0x2d4, NORMAL);
-        wall(LID(0x102a56), 0x2d5, FLIPPED);
-        if (door_button_present(a.v[RT])) door_button(2);
-        door(a.v[RT], a.v[ST], 1, 0xeb0);
-        things(a.v[THING], dir, x, y, 6, 0x349);
+    case SQUARE_PIT: wall(a.state ? GFX_INVISIBLE_PIT_D2C : GFX_PIT_D2C, ZONE_PIT_D2C, BLIT_TRANSPARENT); break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D2C);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D2C, DOOR_BACK_BL_BR);
+        wall(wall_set_ids[WS_DOOR_FRAME_TOP_D2C], ZONE_DOOR_FRAME_TOP_D2C, BLIT_TRANSPARENT);
+        wall(wall_set_ids[WS_DOOR_FRAME_D2C], ZONE_DOOR_FRAME_LEFT_D2C, BLIT_TRANSPARENT);
+        wall(wall_set_ids[WS_DOOR_FRAME_D2C], ZONE_DOOR_FRAME_RIGHT_D2C, BLIT_FLIPPED);
+        if (door_button_present(a.door)) door_button(BUTTON_D2C);
+        door(a.door, a.state, VIEW_D2C);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D2C, DOOR_FRONT_FL_FR);
         return;
-    case STAIRS_FRONT: wall(STAIR(a.v[ST] ? 3 : 10), a.v[ST] ? 0x326 : 0x333, NORMAL); break;
-    case CORRIDOR: case TELEPORTER: break;
+    case ELEMENT_STAIRS_FRONT: stairs_front(a.state, STAIRS_FRONT_D2C, ZONE_STAIRS_UP_FRONT_D2C, BLIT_TRANSPARENT); break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 6);
-    ceiling_pit(0x41, 0x361, x, y, 0);
-    things(a.v[THING], dir, x, y, 6, 0x3421);
-    if (a.v[EL] == TELEPORTER) field(6, 0x2c5);
+    floor_ornament(a.floor_ornament, VIEW_D2C);
+    ceiling_pit(GFX_CEILING_PIT_D2C, ZONE_CEILING_PIT_D2C, x, y, BLIT_TRANSPARENT);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D2C, CELLS_BL_BR_FL_FR);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D2C, ZONE_WALL_D2C);
 }
 
 static void d1l(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    switch (a.v[EL]) {
-    case WALL: wall(LID(0x102a2c), 0x2c9, NORMAL); wall_ornament(a.v[RT], 12, &a); return;
-    case PIT: wall(a.v[ST] ? 0x3c : 0x36, 0x35a, NORMAL); break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 8);
-        things(a.v[THING], dir, x, y, 4, 0x28);
-        wall(LID(0x102a46), 0x2dc, NORMAL);
-        door(a.v[RT], a.v[ST], 2, 0xec4);
-        things(a.v[THING], dir, x, y, 4, 0x39);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    switch (a.element) {
+    case SQUARE_WALL: wall(wall_set_ids[WS_WALL_D1L], ZONE_WALL_D1L, BLIT_TRANSPARENT); wall_ornament(a.right, VIEW_WALL_D1L_RIGHT, &a); return;
+    case SQUARE_PIT: wall(a.state ? GFX_INVISIBLE_PIT_D1L : GFX_PIT_D1L, ZONE_PIT_D1L, BLIT_TRANSPARENT); break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D1L);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D1L, DOOR_BACK_BR);
+        wall(wall_set_ids[WS_DOOR_FRAME_TOP_D1L], ZONE_DOOR_FRAME_TOP_D1L, BLIT_TRANSPARENT);
+        door(a.door, a.state, VIEW_D1L);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D1L, DOOR_FRONT_FR);
         return;
-    case STAIRS_SIDE: wall(STAIR(a.v[ST] ? 15 : 16), a.v[ST] ? 0x33c : 0x33e, NORMAL); break;
-    case STAIRS_FRONT: wall(STAIR(a.v[ST] ? 4 : 11), a.v[ST] ? 0x328 : 0x335, NORMAL); break;
-    case CORRIDOR: case TELEPORTER: case DOOR_SIDE: break;
+    case ELEMENT_STAIRS_SIDE:
+        if (a.state) wall(stairs + STAIRS_UP_SIDE_D1L, ZONE_STAIRS_UP_SIDE_D1L, BLIT_TRANSPARENT);
+        else wall(stairs + STAIRS_DOWN_SIDE_D1L, ZONE_STAIRS_DOWN_SIDE_D1L, BLIT_TRANSPARENT);
+        break;
+    case ELEMENT_STAIRS_FRONT: stairs_front(a.state, STAIRS_FRONT_D1L, ZONE_STAIRS_UP_FRONT_D1L, BLIT_TRANSPARENT); break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: case ELEMENT_DOOR_SIDE: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 8);
-    ceiling_pit(0x42, 0x363, x, y, 0);
-    things(a.v[THING], dir, x, y, 4, 0x32);
-    if (a.v[EL] == TELEPORTER) field(4, 0x2c9);
+    floor_ornament(a.floor_ornament, VIEW_D1L);
+    ceiling_pit(GFX_CEILING_PIT_D1L, ZONE_CEILING_PIT_D1L, x, y, BLIT_TRANSPARENT);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D1L, CELLS_BR_FR);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D1L, ZONE_WALL_D1L);
 }
 
 static void d1r(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    switch (a.v[EL]) {
-    case WALL: wall(LID(0x102a2a), 0x2ca, NORMAL); wall_ornament(a.v[LT], 13, &a); return;
-    case PIT: wall(a.v[ST] ? 0x3c : 0x36, 0x35c, FLIPPED); break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 10);
-        things(a.v[THING], dir, x, y, 5, 0x18);
-        wall(LID(0x102a44), 0x2de, NORMAL);
-        door(a.v[RT], a.v[ST], 2, 0xed8);
-        things(a.v[THING], dir, x, y, 5, 0x49);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    switch (a.element) {
+    case SQUARE_WALL: wall(wall_set_ids[WS_WALL_D1R], ZONE_WALL_D1R, BLIT_TRANSPARENT); wall_ornament(a.left, VIEW_WALL_D1R_LEFT, &a); return;
+    case SQUARE_PIT: wall(a.state ? GFX_INVISIBLE_PIT_D1L : GFX_PIT_D1L, ZONE_PIT_D1R, BLIT_FLIPPED); break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D1R);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D1R, DOOR_BACK_BL);
+        wall(wall_set_ids[WS_DOOR_FRAME_TOP_D1R], ZONE_DOOR_FRAME_TOP_D1R, BLIT_TRANSPARENT);
+        door(a.door, a.state, VIEW_D1R);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D1R, DOOR_FRONT_FL);
         return;
-    case STAIRS_SIDE: wall(STAIR(a.v[ST] ? 15 : 16), a.v[ST] ? 0x33d : 0x33f, FLIPPED); break;
-    case STAIRS_FRONT: wall(STAIR(a.v[ST] ? 4 : 11), a.v[ST] ? 0x32a : 0x337, FLIPPED); break;
-    case CORRIDOR: case TELEPORTER: case DOOR_SIDE: break;
+    case ELEMENT_STAIRS_SIDE:
+        if (a.state) wall(stairs + STAIRS_UP_SIDE_D1L, ZONE_STAIRS_UP_SIDE_D1R, BLIT_FLIPPED);
+        else wall(stairs + STAIRS_DOWN_SIDE_D1L, ZONE_STAIRS_DOWN_SIDE_D1R, BLIT_FLIPPED);
+        break;
+    case ELEMENT_STAIRS_FRONT: stairs_front(a.state, STAIRS_FRONT_D1L, ZONE_STAIRS_UP_FRONT_D1R, BLIT_FLIPPED); break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: case ELEMENT_DOOR_SIDE: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 10);
-    ceiling_pit(0x42, 0x365, x, y, 1);
-    things(a.v[THING], dir, x, y, 5, 0x41);
-    if (a.v[EL] == TELEPORTER) field(5, 0x2ca);
+    floor_ornament(a.floor_ornament, VIEW_D1R);
+    ceiling_pit(GFX_CEILING_PIT_D1L, ZONE_CEILING_PIT_D1R, x, y, BLIT_FLIPPED);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D1R, CELLS_BL_FL);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D1R, ZONE_WALL_D1R);
 }
 
 static void d1c(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    g_square_ahead_element = (int16_t)a.v[EL];
-    switch (a.v[EL]) {
-    case WALL: /* ponytail: no thieves eye hole yet, needs the party spell state (step 9) */
+    Aspect a;
+    aspect(&a, dir, x, y);
+    g_square_ahead_element = (int16_t)a.element;
+    switch (a.element) {
+    case SQUARE_WALL: /* ponytail: no thieves eye hole yet, needs the party spell state (step 9) */
         g_facing_alcove = g_facing_vi_altar = g_facing_fountain = 0;
-        wall(LID(0x102a2e), 0x2c8, OPAQUE);
-        if (wall_ornament(a.v[FR], 14, &a)) things(a.v[THING], dir, x, y, 3, 0);
+        wall(wall_set_ids[WS_WALL_D1C], ZONE_WALL_D1C, BLIT_OPAQUE);
+        if (wall_ornament(a.front, VIEW_WALL_D1C_FRONT, &a)) things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, CELLS_ALCOVE);
         return;
-    case PIT: wall(a.v[ST] ? 0x3d : 0x37, 0x35b, NORMAL); break;
-    case DOOR_FRONT:
-        floor_ornament(a.v[FR], 9);
-        things(a.v[THING], dir, x, y, 3, 0x218);
-        wall(LID(0x102a48), 0x2dd, NORMAL);
-        wall(LID(0x102a54), 0x2d6, NORMAL);
-        wall(LID(0x102a52), 0x2d7, NORMAL);
-        if (door_button_present(a.v[RT])) door_button(3);
-        door(a.v[RT], a.v[ST], 2, 0xece);
-        things(a.v[THING], dir, x, y, 3, 0x349);
+    case SQUARE_PIT: wall(a.state ? GFX_INVISIBLE_PIT_D1C : GFX_PIT_D1C, ZONE_PIT_D1C, BLIT_TRANSPARENT); break;
+    case ELEMENT_DOOR_FRONT:
+        floor_ornament(a.floor_ornament, VIEW_D1C);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, DOOR_BACK_BL_BR);
+        wall(wall_set_ids[WS_DOOR_FRAME_TOP_D1C], ZONE_DOOR_FRAME_TOP_D1C, BLIT_TRANSPARENT);
+        wall(wall_set_ids[WS_DOOR_FRAME_LEFT_D1C], ZONE_DOOR_FRAME_LEFT_D1C, BLIT_TRANSPARENT);
+        wall(wall_set_ids[WS_DOOR_FRAME_RIGHT_D1C], ZONE_DOOR_FRAME_RIGHT_D1C, BLIT_TRANSPARENT);
+        if (door_button_present(a.door)) door_button(BUTTON_D1C);
+        door(a.door, a.state, VIEW_D1C);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, DOOR_FRONT_FL_FR);
         return;
-    case STAIRS_FRONT: wall(STAIR(a.v[ST] ? 5 : 12), a.v[ST] ? 0x329 : 0x336, NORMAL); break;
-    case CORRIDOR: case TELEPORTER: break;
+    case ELEMENT_STAIRS_FRONT: stairs_front(a.state, STAIRS_FRONT_D1C, ZONE_STAIRS_UP_FRONT_D1C, BLIT_TRANSPARENT); break;
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: break;
     default: return;
     }
-    floor_ornament(a.v[FR], 9);
-    ceiling_pit(0x43, 0x364, x, y, 0);
-    things(a.v[THING], dir, x, y, 3, 0x3421);
-    if (a.v[EL] == TELEPORTER) field(3, 0x2c8);
+    floor_ornament(a.floor_ornament, VIEW_D1C);
+    ceiling_pit(GFX_CEILING_PIT_D1C, ZONE_CEILING_PIT_D1C, x, y, BLIT_TRANSPARENT);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, CELLS_BL_BR_FL_FR);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D1C, ZONE_WALL_D1C);
 }
 
 static void d0l(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    switch (a.v[EL]) {
-    case WALL: wall(LID(0x102a28), 0x2cc, NORMAL); return;
-    case STAIRS_SIDE: wall(STAIR(17), 0x340, NORMAL); return;
-    case PIT: wall(a.v[ST] ? 0x3e : 0x38, 0x35d, NORMAL); /* fall through */
-    case CORRIDOR: case TELEPORTER: case DOOR_SIDE:
-        ceiling_pit(0x44, 0x366, x, y, 0);
-        things(a.v[THING], dir, x, y, 1, 2);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    switch (a.element) {
+    case SQUARE_WALL: wall(wall_set_ids[WS_WALL_D0L], ZONE_WALL_D0L, BLIT_TRANSPARENT); return;
+    case ELEMENT_STAIRS_SIDE: wall(stairs + STAIRS_SIDE_D0L, ZONE_STAIRS_SIDE_D0L, BLIT_TRANSPARENT); return;
+    case SQUARE_PIT: wall(a.state ? GFX_INVISIBLE_PIT_D0L : GFX_PIT_D0L, ZONE_PIT_D0L, BLIT_TRANSPARENT); /* fall through */
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: case ELEMENT_DOOR_SIDE:
+        ceiling_pit(GFX_CEILING_PIT_D0L, ZONE_CEILING_PIT_D0L, x, y, BLIT_TRANSPARENT);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D0L, CELLS_BR);
     }
-    if (a.v[EL] == TELEPORTER) field(1, 0x2cc);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D0L, ZONE_WALL_D0L);
 }
 
 static void d0r(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    switch (a.v[EL]) {
-    case WALL: wall(LID(0x102a26), 0x2cd, NORMAL); return;
-    case STAIRS_SIDE: wall(STAIR(17), 0x341, FLIPPED); return;
-    case PIT: wall(a.v[ST] ? 0x3e : 0x38, 0x35f, FLIPPED); /* fall through */
-    case CORRIDOR: case TELEPORTER: case DOOR_SIDE:
-        ceiling_pit(0x44, 0x368, x, y, 1);
-        things(a.v[THING], dir, x, y, 2, 1);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    switch (a.element) {
+    case SQUARE_WALL: wall(wall_set_ids[WS_WALL_D0R], ZONE_WALL_D0R, BLIT_TRANSPARENT); return;
+    case ELEMENT_STAIRS_SIDE: wall(stairs + STAIRS_SIDE_D0L, ZONE_STAIRS_SIDE_D0R, BLIT_FLIPPED); return;
+    case SQUARE_PIT: wall(a.state ? GFX_INVISIBLE_PIT_D0L : GFX_PIT_D0L, ZONE_PIT_D0R, BLIT_FLIPPED); /* fall through */
+    case SQUARE_CORRIDOR: case SQUARE_TELEPORTER: case ELEMENT_DOOR_SIDE:
+        ceiling_pit(GFX_CEILING_PIT_D0L, ZONE_CEILING_PIT_D0R, x, y, BLIT_FLIPPED);
+        things(a.first_thing, dir, x, y, VIEW_SQUARE_D0R, CELLS_BL);
     }
-    if (a.v[EL] == TELEPORTER) field(2, 0x2cd);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D0R, ZONE_WALL_D0R);
 }
 
 static void d0c(int16_t dir, int16_t x, int16_t y)
 {
-    ASPECT;
-    if (a.v[EL] == DOOR_SIDE) wall(LID(0x102a50), 0x2d8, NORMAL);
-    else if (a.v[EL] == PIT) wall(a.v[ST] ? 0x3f : 0x39, 0x35e, NORMAL);
-    else if (a.v[EL] == STAIRS_FRONT) {
-        wall(STAIR(a.v[ST] ? 6 : 13), a.v[ST] ? 0x32b : 0x338, NORMAL);
-        wall(STAIR(a.v[ST] ? 6 : 13), a.v[ST] ? 0x32c : 0x339, FLIPPED);
+    Aspect a;
+    aspect(&a, dir, x, y);
+    if (a.element == ELEMENT_DOOR_SIDE) wall(wall_set_ids[WS_DOOR_FRAME_D0C], ZONE_DOOR_FRAME_D0C, BLIT_TRANSPARENT);
+    else if (a.element == SQUARE_PIT) wall(a.state ? GFX_INVISIBLE_PIT_D0C : GFX_PIT_D0C, ZONE_PIT_D0C, BLIT_TRANSPARENT);
+    else if (a.element == ELEMENT_STAIRS_FRONT) {
+        stairs_front(a.state, STAIRS_FRONT_D0C, ZONE_STAIRS_UP_FRONT_D0C_LEFT, BLIT_TRANSPARENT);
+        stairs_front(a.state, STAIRS_FRONT_D0C, ZONE_STAIRS_UP_FRONT_D0C_RIGHT, BLIT_FLIPPED);
     }
-    ceiling_pit(0x45, 0x367, x, y, 0);
-    things(a.v[THING], dir, x, y, 0, 0x21);
-    if (a.v[EL] == TELEPORTER) field(0, 0x2cb);
+    ceiling_pit(GFX_CEILING_PIT_D0C, ZONE_CEILING_PIT_D0C, x, y, BLIT_TRANSPARENT);
+    things(a.first_thing, dir, x, y, VIEW_SQUARE_D0C, CELLS_BL_BR);
+    if (a.element == SQUARE_TELEPORTER) field(VIEW_SQUARE_D0C, ZONE_WALL_D0C);
 }
 
 /* apply_creature_replacement_colors: color 9 or 10 of the 6 light palettes and of the creature
@@ -1242,81 +1465,100 @@ static void replacement_colors(int16_t color, int16_t n)
     creature_d3[color] = kaos_u8(set + 2 * LIGHT_LEVELS + 1);
 }
 
-/* set_current_map_and_party_map and load_current_map_graphics: the ornaments, wall set, floor set,
-   stairs, and doors of the map. Graphics decode on first use. */
-void view_load_map(int16_t m)
+static void reset_wall_set_ids(void)
 {
-    map = m;
-    mw = dungeon_map_width(m);
-    mh = dungeon_map_height(m);
-    desc = g_dungeon_maps + 16 * m;
-    int16_t walls = desc[0xb] & 15, floors = desc[10] & 15, doors = desc[0xd] & 15;
-    const uint8_t *creature_types = g_dungeon_map_data[m][mw - 1] + mh; /* map metadata: creature types, then ornaments */
-    int16_t creature_type_count = desc[MAP_COUNTS] >> 4;
-    const uint8_t *meta = creature_types + creature_type_count;
-    int16_t floor_set = desc[0xf] & 15, wall_set = desc[0xf] >> 4, base = 0x28 * wall_set;
-    for (int i = 0; i < 46; i++) ids[i] = kaos_s16(WALL_SET_IDS + 2 * i);
-#define SLOT(a, g, f) (slot_gfx[-1 - LID(a)] = (g), slot_flip[-1 - LID(a)] = (f))
-    SLOT(0x102a22, 0x4e + 2 * floor_set, 0);
-    SLOT(0x102a24, 0x4f + 2 * floor_set, 0);
-    for (int i = 0; i < 15; i++) SLOT(WALL_SET_IDS + 4 + 2 * i, 0x5d + base + i, 0);
-    static const uint32_t frames[7] = { 0x102a50, 0x102a54, 0x102a56, 0x102a58, 0x102a5a, 0x102a48, 0x102a4e };
-    for (int i = 0; i < 7; i++) SLOT(frames[i], 0x56 + base + i, 0);
-    SLOT(0x102a52, 0x57 + base, 1);
-    SLOT(0x102a4a, 0x5c + base, 0); /* layout_share_bitmap */
-    SLOT(0x102a4c, 0x5c + base, 0);
-    SLOT(0x102a44, 0x5b + base, 0);
-    SLOT(0x102a46, 0x5b + base, 0);
-    SLOT(0x102a5c, 0x5a + base, 0);
-    SLOT(0x102a5e, 0x5a + base, 0);
-    slot_gfx[0x32] = 0x5d + base + 4; /* -0x33 shares the D1C wall */
-    /* copy_wall_bitmap_and_flip_horizontal pairs: the mirrored views swap left and right */
-    static const uint32_t pairs[15][2] = {
-        { 0x102a42, 0x102a7c }, { 0x102a38, 0x102a72 }, { 0x102a2e, 0x102a68 }, { 0x102a28, 0x102a60 }, { 0x102a26, 0x102a62 },
-        { 0x102a3e, 0x102a7a }, { 0x102a40, 0x102a78 }, { 0x102a34, 0x102a70 }, { 0x102a36, 0x102a6e }, { 0x102a2a, 0x102a66 },
-        { 0x102a2c, 0x102a64 }, { 0x102a3a, 0x102a76 }, { 0x102a3c, 0x102a74 }, { 0x102a30, 0x102a6c }, { 0x102a32, 0x102a6a },
+    for (int i = 0; i < WS_COUNT; i++) wall_set_ids[i] = kaos_s16(WALL_SET_IDS + 2 * i);
+}
+
+static int16_t entry_slot(int entry) { return -1 - wall_set_ids[entry]; }
+
+static void set_slot(int entry, int16_t graphic, int flip)
+{
+    slot_gfx[entry_slot(entry)] = graphic;
+    slot_flip[entry_slot(entry)] = (uint8_t)flip;
+}
+
+/* load_floor_set and load_wall_set: the graphic of each layout bitmap slot, and the slots that hold a
+   mirrored graphic. */
+static void load_wall_set(int16_t floor_set, int16_t wall_set)
+{
+    /* copy_wall_bitmap_and_flip_horizontal: the mirrored entries hold the mirror of these walls */
+    static const uint8_t mirrored_walls[WALL_COUNT] = {
+        WS_WALL_D0L, WS_WALL_D0R, WS_WALL_D1L, WS_WALL_D1R, WS_WALL_D1C, WS_WALL_D2L2, WS_WALL_D2R2, WS_WALL_D2L,
+        WS_WALL_D2R, WS_WALL_D2C, WS_WALL_D3L2, WS_WALL_D3R2, WS_WALL_D3L, WS_WALL_D3R, WS_WALL_D3C,
     };
-    for (int i = 0; i < 15; i++) SLOT(pairs[i][1], slot_gfx[-1 - LID(pairs[i][0])], 1);
-#undef SLOT
-    stairs = 0x6c + base;
-    slot_gfx[32] = slot_gfx[33] = stairs; /* set_layout_graphic(-0x21/-0x22) */
-    slot_gfx[34] = slot_gfx[35] = stairs + 7;
-    for (int s = 0; s < 2; s++) {
-        int16_t type = desc[0xe] >> 4 * s & 15;
-        door_attr[s] = kaos_u16(DOOR_INFO + 2 * type);
-        for (int d = 0; d < 3; d++) door_gfx[d][s] = 0xf6 + 3 * type + d;
+    int16_t first = GFX_WALLSET_FIRST + GFX_WALLSET_SIZE * wall_set;
+    reset_wall_set_ids();
+    set_slot(WS_FLOOR, GFX_FLOOR_SET_FIRST + 2 * floor_set, 0);
+    set_slot(WS_CEILING, GFX_FLOOR_SET_FIRST + 2 * floor_set + 1, 0);
+    for (int i = 0; i < WALL_COUNT; i++) set_slot(WS_WALL_FIRST + i, first + WALLSET_WALL_FIRST + i, 0);
+    set_slot(WS_DOOR_FRAME_D0C, first + WALLSET_DOOR_FRAME_D0C, 0);
+    set_slot(WS_DOOR_FRAME_LEFT_D1C, first + WALLSET_DOOR_FRAME_D1C, 0);
+    set_slot(WS_DOOR_FRAME_D2C, first + WALLSET_DOOR_FRAME_D2C, 0);
+    set_slot(WS_DOOR_FRAME_D3C, first + WALLSET_DOOR_FRAME_D3C, 0);
+    set_slot(WS_DOOR_FRAME_LEFT_D3L, first + WALLSET_DOOR_FRAME_D3_SIDE, 0);
+    set_slot(WS_DOOR_FRAME_TOP_D1C, first + WALLSET_DOOR_FRAME_TOP_D1, 0);
+    set_slot(WS_DOOR_FRAME_TOP_D2C, first + WALLSET_DOOR_FRAME_TOP_D2, 0);
+    set_slot(WS_DOOR_FRAME_RIGHT_D1C, first + WALLSET_DOOR_FRAME_D1C, 1);
+    set_slot(WS_DOOR_FRAME_TOP_D2R, first + WALLSET_DOOR_FRAME_TOP_D2, 0); /* layout_share_bitmap */
+    set_slot(WS_DOOR_FRAME_TOP_D2L, first + WALLSET_DOOR_FRAME_TOP_D2, 0);
+    set_slot(WS_DOOR_FRAME_TOP_D1R, first + WALLSET_DOOR_FRAME_TOP_D1, 0);
+    set_slot(WS_DOOR_FRAME_TOP_D1L, first + WALLSET_DOOR_FRAME_TOP_D1, 0);
+    set_slot(WS_DOOR_FRAME_RIGHT_D3L, first + WALLSET_DOOR_FRAME_D3_SIDE, 0);
+    set_slot(WS_DOOR_FRAME_LEFT_D3R, first + WALLSET_DOOR_FRAME_D3_SIDE, 0);
+    slot_gfx[-1 - LAYOUT_INSCRIPTION_WALL] = slot_gfx[entry_slot(WS_WALL_D1C)];
+    for (int i = 0; i < WALL_COUNT; i++) set_slot(WS_MIRRORED_WALL_FIRST + i, slot_gfx[entry_slot(mirrored_walls[i])], 1);
+    stairs = first + WALLSET_STAIRS_FIRST;
+    slot_gfx[-1 - LAYOUT_STAIRS_UP_FRONT_D3L2] = slot_gfx[-1 - LAYOUT_STAIRS_UP_FRONT_D3R2] = stairs + STAIRS_FRONT_D3L;
+    slot_gfx[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3L2] = slot_gfx[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3R2] = stairs + STAIRS_FRONT_D3L + STAIRS_DOWN;
+}
+
+/* The door graphics and door info of the two door types of map m. */
+static void load_doors(int16_t m)
+{
+    for (int type = 0; type < DOOR_TYPES; type++) {
+        int16_t set = map_door_set(m, type);
+        door_attr[type] = kaos_u16(DOOR_INFO + 2 * set);
+        for (int depth = 0; depth < DOOR_DEPTHS; depth++) door_gfx[depth][type] = GFX_DOOR_FIRST + DOOR_DEPTHS * set + depth;
     }
-    int16_t n_alcove = 0;
+}
+
+/* The wall, floor, and door ornaments of map m from its ornament list, and the special ornaments: the
+   inscription plaque, the footprints, and the door masks. */
+static void load_ornaments(int16_t m, const uint8_t *ornaments)
+{
+    int16_t walls = map_wall_ornament_count(m), floors = map_floor_ornament_count(m), doors = map_door_ornament_count(m);
+    int16_t alcove_count = 0;
     alcoves[0] = alcoves[1] = alcoves[2] = -1;
     vi_altar = fountain = -1;
-    inscription = walls;
+    inscription = walls; /* after the map ornaments: the inscription plaque, ornament 0 */
     for (int16_t i = 0; i <= walls; i++) {
-        uint8_t o = i < walls ? meta[i] : 0;
-        wall_orn[i][0] = 0x103 + 2 * o;
-        wall_orn[i][1] = kaos_u8(WALL_ORN_COORDS + o);
+        uint8_t o = i < walls ? ornaments[i] : 0;
+        wall_orn[i] = (Ornament){ GFX_WALL_ORNAMENT_FIRST + WALL_ORNAMENT_GRAPHICS * o, kaos_u8(WALL_ORN_COORDS + o) };
         for (int k = 0; k < 3; k++)
             if (kaos_u8(ALCOVES + k) == o) {
-                alcoves[n_alcove++] = i;
+                alcoves[alcove_count++] = i;
                 if (o == ORNAMENT_VI_ALTAR) vi_altar = i;
             }
         if (kaos_u8(FOUNTAINS) == o) fountain = i;
     }
     for (int16_t i = 0; i < floors; i++) {
-        uint8_t o = meta[walls + i];
-        floor_orn[i][0] = 0x181 + 6 * o;
-        floor_orn[i][1] = kaos_u8(FLOOR_ORN_COORDS + o);
+        uint8_t o = ornaments[walls + i];
+        floor_orn[i] = (Ornament){ GFX_FLOOR_ORNAMENT_FIRST + FLOOR_ORNAMENT_GRAPHICS * o, kaos_u8(FLOOR_ORN_COORDS + o) };
     }
-    floor_orn[15][0] = 0x17b; /* footprints */
-    floor_orn[15][1] = 0;
+    floor_orn[FLOOR_ORNAMENT_FOOTPRINTS] = (Ornament){ GFX_FOOTPRINTS, 0 };
     for (int16_t i = 0; i < doors; i++) {
-        uint8_t o = meta[walls + floors + i];
-        door_orn[i][0] = 0x1b9 + o;
-        door_orn[i][1] = kaos_u8(DOOR_ORN_COORDS + o);
+        uint8_t o = ornaments[walls + floors + i];
+        door_orn[i] = (Ornament){ GFX_DOOR_ORNAMENT_FIRST + o, kaos_u8(DOOR_ORN_COORDS + o) };
     }
-    for (int i = 15; i < 17; i++) { /* destroyed door mask, thieves eye */
-        door_orn[i][0] = 0x1a8 + i;
-        door_orn[i][1] = 1;
-    }
+    door_orn[DOOR_ORNAMENT_DESTROYED - 1] = (Ornament){ GFX_DOOR_MASK_DESTROYED, DOOR_MASK_COORD_SET };
+    door_orn[DOOR_ORNAMENT_THIEVES_EYE - 1] = (Ornament){ GFX_DOOR_MASK_THIEVES_EYE, DOOR_MASK_COORD_SET };
+}
+
+/* The light palettes and the creature palette changes with the replacement colors of the creature types of
+   the map. */
+static void load_creature_colors(const uint8_t *creature_types, int16_t count)
+{
     if (!tables_creature_info(0)) tables_init();
     for (int l = 0; l < LIGHT_LEVELS; l++)
         for (int i = 0; i < 16; i++) pals[l][i] = kaos_u16(DUNGEON_PALETTE + sizeof pals[l] * l + 2 * i);
@@ -1324,50 +1566,74 @@ void view_load_map(int16_t m)
     memcpy(creature_d2, kaos_ptr(PAL_CREATURE_D2), 16);
     replacement_colors(COLOR_CREATURE_1, REPLACEMENT_DEFAULT_1);
     replacement_colors(COLOR_CREATURE_2, REPLACEMENT_DEFAULT_2);
-    for (int i = 0; i < creature_type_count; i++) { /* the original indexes the aspects by creature type */
+    for (int i = 0; i < count; i++) { /* the original indexes the aspects by creature type */
         uint8_t sets = kaos_u8(CREATURE_ASPECTS + CREATURE_ASPECT_SIZE * creature_types[i] + CREATURE_ASPECT_REPLACEMENT);
         if (sets & 15) replacement_colors(COLOR_CREATURE_1, (sets & 15) - 1);
         if (sets >> 4) replacement_colors(COLOR_CREATURE_2, (sets >> 4) - 1);
     }
 }
 
+/* set_current_map_and_party_map and load_current_map_graphics: the wall set, floor set, stairs, doors,
+   ornaments, and creature colors of the map. Graphics decode on first use. */
+void view_load_map(int16_t m)
+{
+    map = m;
+    mw = dungeon_map_width(m);
+    mh = dungeon_map_height(m);
+    const uint8_t *creature_types = g_dungeon_map_data[m][mw - 1] + mh; /* after the squares: creature types, then ornaments */
+    int16_t creature_type_count = map_creature_type_count(m);
+    load_wall_set(map_floor_set(m), map_wall_set(m));
+    load_doors(m);
+    load_ornaments(m, creature_types + creature_type_count);
+    load_creature_colors(creature_types, creature_type_count);
+}
+
 void view_set_light(int16_t amount) { light = amount; }
 
-/* draw_dungeon_view: ceiling, floor, then the 16 squares back to front, then draw_viewport. */
+/* update_map_coordinates_after_relative_movement: the square forward and right of (x, y) in direction dir. */
+static void step(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_t *y)
+{
+    *x += forward * kaos_s16(STEP_EAST + 2 * dir) + right * kaos_s16(STEP_EAST + 2 * ((dir + 1) & 3));
+    *y += forward * kaos_s16(STEP_NORTH + 2 * dir) + right * kaos_s16(STEP_NORTH + 2 * ((dir + 1) & 3));
+}
+
+/* draw_dungeon_view: ceiling, floor, the objects of D4, then the 16 squares back to front, then draw_viewport. */
 void view_draw(int16_t dir, int16_t x, int16_t y)
 {
     static void (*const squares[16])(int16_t, int16_t, int16_t) = { d3l2, d3r2, d3l, d3r, d3c, d2l2, d2r2, d2l, d2r, d2c, d1l, d1r, d1c, d0l, d0r, d0c };
     static const int8_t forward[16] = { 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0 }, right[16] = { -2, 2, -1, 1, 0, -2, 2, -1, 1, 0, -1, 1, 0, -1, 1, 0 };
-    static uint8_t px[136 * 224];
+    static const int8_t d4_right[3] = { -1, 1, 0 };
+    static const int16_t d4_squares[3] = { VIEW_SQUARE_D4L, VIEW_SQUARE_D4R, VIEW_SQUARE_D4C };
+    static uint8_t px[VIEWPORT_MAX_H * VIEWPORT_MAX_W];
     vp = (Bitmap){ (uint16_t)kaos_s16(VIEWPORT_SIZE), (uint16_t)kaos_s16(VIEWPORT_SIZE + 2), px };
     if (map < 0 || (size_t)vp.w * vp.h > sizeof px) return;
     memset(px, 0, sizeof px);
+    if (!motion_steps) start_tracks(dir, x, y);
     for (int i = 0; i < VIEW_CLICK_BOX_COUNT; i++) g_dungeon_view_clickable_boxes[i].x = -1;
-    for (int i = 0; i < 46; i++) ids[i] = kaos_s16(WALL_SET_IDS + 2 * i);
+    reset_wall_set_ids();
     parity = (dir + x + y) & 1;
     if (parity) { /* the mirrored-walls memory option is on, as on a 1 MB Amiga */
-        memcpy(&LID(WALL_SET_IDS + 4), &LID(WALL_SET_FLIPPED), 30);
-        wall(LID(0x102a24), 700, OPAQUE);
-        wall(LID(0x102a22), 701, FLIPPED);
+        memcpy(&wall_set_ids[WS_WALL_FIRST], &wall_set_ids[WS_MIRRORED_WALL_FIRST], WALL_COUNT * sizeof wall_set_ids[0]);
+        wall(wall_set_ids[WS_CEILING], ZONE_CEILING, BLIT_OPAQUE);
+        wall(wall_set_ids[WS_FLOOR], ZONE_FLOOR, BLIT_FLIPPED);
     } else {
-        wall(LID(0x102a24), 700, FLIPPED);
-        wall(LID(0x102a22), 701, OPAQUE);
+        wall(wall_set_ids[WS_CEILING], ZONE_CEILING, BLIT_FLIPPED);
+        wall(wall_set_ids[WS_FLOOR], ZONE_FLOOR, BLIT_OPAQUE);
     }
     for (int i = 0; i < 3; i++) { /* objects only on D4L, D4R, D4C */
-        int16_t sx = x, sy = y, r = i == 0 ? -1 : i == 1;
-        sx += 4 * kaos_s16(STEP_EAST + 2 * dir) + r * kaos_s16(STEP_EAST + 2 * ((dir + 1) & 3));
-        sy += 4 * kaos_s16(STEP_NORTH + 2 * dir) + r * kaos_s16(STEP_NORTH + 2 * ((dir + 1) & 3));
-        things(dungeon_square_first_thing(map, sx, sy), dir, sx, sy, (int16_t[]){ VIEW_SQUARE_D4L, VIEW_SQUARE_D4R, VIEW_SQUARE_D4C }[i], 1);
+        int16_t sx = x, sy = y;
+        step(dir, 4, d4_right[i], &sx, &sy);
+        things(dungeon_square_first_thing(map, sx, sy), dir, sx, sy, d4_squares[i], CELLS_BL);
     }
-    for (int i = 0; i < 16; i++) { /* update_map_coordinates_after_relative_movement */
-        int16_t sx = x + forward[i] * kaos_s16(STEP_EAST + 2 * dir) + right[i] * kaos_s16(STEP_EAST + 2 * ((dir + 1) & 3));
-        int16_t sy = y + forward[i] * kaos_s16(STEP_NORTH + 2 * dir) + right[i] * kaos_s16(STEP_NORTH + 2 * ((dir + 1) & 3));
+    for (int i = 0; i < 16; i++) {
+        int16_t sx = x, sy = y;
+        step(dir, forward[i], right[i], &sx, &sy);
         squares[i](dir, sx, sy);
     }
     Bitmap screen = { SCREEN_W, SCREEN_H, &fb[0][0] };
     int16_t w = vp.w, h = vp.h;
     Box b;
-    if (layout_get_zone(VIEWPORT_ZONE, vp.w, vp.h, &b, &w, &h)) draw_blit(&vp, w, h, &screen, &b, -1, 0);
+    if (layout_get_zone(ZONE_VIEWPORT, vp.w, vp.h, &b, &w, &h)) draw_blit(&vp, w, h, &screen, &b, -1, 0);
 }
 
 /* Draws the view of (map, x, y, dir) into fb with the palette of the light amount (set_dungeon_view_palette:
@@ -1377,7 +1643,7 @@ int view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
     if (!g_dungeon_maps || m < 0 || m >= dungeon_map_count()) return 0;
     if (m != map) view_load_map(m);
     int16_t l = 0;
-    if (desc[MAP_DIFFICULTY] >> 4) { /* a map of difficulty 0 is always bright */
+    if (map_difficulty(map)) { /* a map of difficulty 0 is always bright */
         if (light < 1) l = LIGHT_DARKEST;
         else
             while (light < kaos_s16(LIGHT_THRESHOLDS + 2 * l)) l++;

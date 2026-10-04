@@ -3,8 +3,9 @@
 #include "message.h"
 #include "text.h"
 
-MessageArea g_message = { .cursor_row = 3, .expiry = { MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY } };
+MessageArea g_message = { .cursor_row = MESSAGE_LAST_ROW, .expiry = { MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY } };
 
+/* Empties row r and stops its expiry. */
 static void clear_row(int r)
 {
     memset(g_message.text[r], 0, sizeof g_message.text[r]);
@@ -12,44 +13,44 @@ static void clear_row(int r)
     g_message.expiry[r] = MESSAGE_NO_EXPIRY;
 }
 
-/* Port of message_area_move_cursor. */
+/* Moves the cursor to a character column and a row, clamped to the area. */
 void message_move_cursor(int16_t column, int16_t row)
 {
     if (column < 0) column = 0;
     if (column > MESSAGE_COLS - 1) column = MESSAGE_COLS - 1;
     int16_t x = column * TEXT_CHAR_WIDTH, max = MESSAGE_ROW_WIDTH - TEXT_CHAR_WIDTH;
     g_message.cursor_x = x < max ? x : max;
-    g_message.cursor_row = row < 0 ? 0 : row > 3 ? 3 : row;
+    g_message.cursor_row = row < 0 ? 0 : row > MESSAGE_LAST_ROW ? MESSAGE_LAST_ROW : row;
 }
 
-/* Port of message_area_clear. */
+/* Empties all rows and puts the cursor at the start of the last row. */
 void message_clear(void)
 {
-    message_move_cursor(0, 3);
+    message_move_cursor(0, MESSAGE_LAST_ROW);
     for (int r = 0; r < MESSAGE_ROWS; r++) clear_row(r);
 }
 
-/* Port of message_area_clear_expired_rows. */
+/* Empties the rows whose display time has run out. */
 void message_clear_expired_rows(uint32_t game_time)
 {
     for (int r = 0; r < MESSAGE_ROWS; r++)
         if (g_message.expiry[r] != MESSAGE_NO_EXPIRY && g_message.expiry[r] <= game_time) clear_row(r);
 }
 
-/* Port of message_area_create_new_row: on the last row the area scrolls up one row. */
+/* Moves the cursor down one row; on the last row the area scrolls up one row. */
 static void new_row(void)
 {
-    if (g_message.cursor_row != 3) {
+    if (g_message.cursor_row != MESSAGE_LAST_ROW) {
         g_message.cursor_row++;
         return;
     }
-    memmove(g_message.text[0], g_message.text[1], sizeof g_message.text[0] * 3);
-    memmove(g_message.color[0], g_message.color[1], sizeof g_message.color[0] * 3);
-    memmove(g_message.expiry, g_message.expiry + 1, sizeof g_message.expiry[0] * 3);
-    clear_row(3);
+    memmove(g_message.text[0], g_message.text[1], sizeof g_message.text[0] * MESSAGE_LAST_ROW);
+    memmove(g_message.color[0], g_message.color[1], sizeof g_message.color[0] * MESSAGE_LAST_ROW);
+    memmove(g_message.expiry, g_message.expiry + 1, sizeof g_message.expiry[0] * MESSAGE_LAST_ROW);
+    clear_row(MESSAGE_LAST_ROW);
 }
 
-/* Port of message_area_print_string: writes s at the cursor without moving it. */
+/* Writes s at the cursor without moving it and restarts the row's display time. */
 static void print_string(int16_t color, const char *s, uint32_t game_time)
 {
     int r = g_message.cursor_row;
@@ -61,8 +62,7 @@ static void print_string(int16_t color, const char *s, uint32_t game_time)
     g_message.expiry[r] = game_time + MESSAGE_LIFETIME;
 }
 
-/* Port of message_area_print_message: word wraps s; '\n' starts a new row, a wrapped row
-   continues at x 12. */
+/* Prints s with word wrap; '\n' starts a new row, a wrapped row continues indented. */
 void message_print(int16_t color, const char *s, uint32_t game_time)
 {
     char line[100];
@@ -80,12 +80,12 @@ void message_print(int16_t color, const char *s, uint32_t game_time)
         } else {
             print_string(color, line, game_time);
             new_row();
-            g_message.cursor_x = 12;
+            g_message.cursor_x = MESSAGE_WRAP_INDENT;
         }
     }
 }
 
-/* Port of message_area_print_number: the number and a space. */
+/* Prints a number and a space. */
 void message_print_number(int16_t color, int32_t value, uint32_t game_time)
 {
     char buf[14];
@@ -94,7 +94,7 @@ void message_print_number(int16_t color, int32_t value, uint32_t game_time)
     message_print(color, " ", game_time);
 }
 
-/* Port of message_area_new_line. */
+/* Starts a new row. */
 void message_new_line(uint32_t game_time) { message_print(0, "\n", game_time); }
 
 /* Draws the 4 rows into the zone at (x, y) in their scrolled state: the zone is cleared

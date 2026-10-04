@@ -20,6 +20,7 @@ void draw_blit(const Bitmap *src, int16_t sx, int16_t sy, Bitmap *dst, const Box
     }
 }
 
+/* Fills box of dst with one color, clipped to dst. */
 void draw_fill(Bitmap *dst, const Box *box, uint8_t color)
 {
     for (int y = box->y; y < box->y + box->h; y++)
@@ -38,6 +39,10 @@ void draw_flip(Bitmap *bm, int flip)
     free(copy);
 }
 
+/* Step of draw_shrink: source pixels per destination pixel with 10 fraction bits, truncated to 16 bits.
+   A sample position adds 15 more fraction bits and rounds to the pixel. */
+enum { STEP_FRACTION_BITS = 10, SAMPLE_FRACTION_BITS = 16, SAMPLE_ROUNDING = 0x7fff };
+
 /* blit_shrink_with_palette_changes: samples the source at the pixel centers with the 16.16 step of
    the original. Rows after the first sample one row higher, as the original does. */
 int draw_shrink(const Bitmap *src, int16_t dw, int16_t dh, const uint8_t *palette_changes, Bitmap *out)
@@ -45,12 +50,13 @@ int draw_shrink(const Bitmap *src, int16_t dw, int16_t dh, const uint8_t *palett
     if (dw < 1 || dh < 1 || !src->w || !src->h) return -1;
     uint8_t *px = malloc((size_t)dw * dh);
     if (!px) return -1;
-    uint32_t stx = ((uint32_t)src->w << 10) / (uint16_t)dw & 0xffff, sty = ((uint32_t)src->h << 10) / (uint16_t)dh & 0xffff;
+    uint32_t step_x = (uint16_t)(((uint32_t)src->w << STEP_FRACTION_BITS) / (uint16_t)dw);
+    uint32_t step_y = (uint16_t)(((uint32_t)src->h << STEP_FRACTION_BITS) / (uint16_t)dh);
     for (int y = 0; y < dh; y++) {
-        int ry = (int)((0x7fff + sty * 32 * (2 * y + 1)) >> 16) - (y > 0);
+        int ry = (int)((SAMPLE_ROUNDING + step_y * 32 * (2 * y + 1)) >> SAMPLE_FRACTION_BITS) - (y > 0);
         if (ry >= src->h) ry = src->h - 1;
         for (int x = 0; x < dw; x++) {
-            int rx = (int)((0x7fff + stx * 32 * (2 * x + 1)) >> 16);
+            int rx = (int)((SAMPLE_ROUNDING + step_x * 32 * (2 * x + 1)) >> SAMPLE_FRACTION_BITS);
             if (rx >= src->w) rx = src->w - 1;
             uint8_t c = src->px[ry * src->w + rx];
             px[y * dw + x] = palette_changes ? palette_changes[c] & 15 : c;
@@ -71,17 +77,18 @@ void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bi
     if (box->w < 1 || box->h < 1) return;
     if ((transparent & FILL_OPAQUE) == FILL_OPAQUE) mask = NULL, transparent = -1;
     else if (transparent & FILL_NO_MASK) mask = NULL, transparent &= ~FILL_NO_MASK;
-    int words = ((box->w - 1) >> 4) + 1, tw = words * 16, uw = (units->w + 15) >> 4, mw = mask ? (mask->w + 15) >> 4 : 0;
-    uint8_t *temp = malloc((size_t)tw * box->h);
+    int words = ((box->w - 1) >> 4) + 1, temp_w = words * 16;
+    int unit_words = (units->w + 15) >> 4, mask_words = mask ? (mask->w + 15) >> 4 : 0; /* words per row */
+    uint8_t *temp = malloc((size_t)temp_w * box->h);
     if (!temp) return;
     int16_t u = first_unit;
     for (int k = 0; k < words * box->h; k++) {
         for (int p = 0; p < 16; p++) {
-            int ux = u % uw * 16 + p, uy = u / uw;
+            int ux = u % unit_words * 16 + p, uy = u / unit_words;
             uint8_t c = ux < units->w && uy < units->h ? units->px[uy * units->w + ux] : 0;
             if (mask) {
-                int mx = k % mw * 16 + p, my = k / mw;
-                if (mask_flip) mx = mw * 16 - 1 - mx;
+                int mx = k % mask_words * 16 + p, my = k / mask_words;
+                if (mask_flip) mx = mask_words * 16 - 1 - mx;
                 if (!(mx < mask->w && my < mask->h && mask->px[my * mask->w + mx] & 1)) c = transparent & 15;
             }
             temp[k * 16 + p] = c;
@@ -91,8 +98,8 @@ void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bi
     for (int y = 0; y < box->h; y++)
         for (int x = 0; x < box->w; x++) {
             int dx = box->x + x, dy = box->y + y;
-            long i = (long)(sy + y) * tw + sx + x;
-            if (dx < 0 || dx >= dst->w || dy < 0 || dy >= dst->h || i < 0 || i >= (long)tw * box->h) continue;
+            long i = (long)(sy + y) * temp_w + sx + x;
+            if (dx < 0 || dx >= dst->w || dy < 0 || dy >= dst->h || i < 0 || i >= (long)temp_w * box->h) continue;
             if (transparent == -1 || temp[i] != (transparent & 15)) dst->px[dy * dst->w + dx] = temp[i];
         }
     free(temp);

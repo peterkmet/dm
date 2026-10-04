@@ -8,6 +8,45 @@
 #define BE16(p) ((uint16_t)((p)[0] << 8 | (p)[1]))
 #define BE32(p) ((uint32_t)(p)[0] << 24 | (uint32_t)(p)[1] << 16 | (uint32_t)(p)[2] << 8 | (p)[3])
 
+/* FTL module file: header, then a table of section entries (tag, version, offset, size). */
+#define FTL_MAGIC 0x6160
+#define FTL_HEADER_CHECKSUM 2
+#define FTL_HEADER_VERSION 4
+#define FTL_HEADER_ENTRY_COUNT 18
+#define FTL_HEADER_BYTES 20
+#define FTL_ENTRY_BYTES 12
+#define FTL_MAX_ENTRIES 100
+enum { SECTION_INFO = 16, SECTION_DATA, SECTION_CODE, SECTION_COUNT = 3 };
+
+/* Info section fields. The entry point offsets follow the fixed fields. */
+#define INFO_REGION_SIZE 0
+#define INFO_DATA_SIZE 4
+#define INFO_JUMP_TABLE 12
+#define INFO_CODE_SIZE 20
+#define INFO_CODE_PACKED 30
+#define INFO_CHECKSUM 34
+#define INFO_CODE_SUM 36
+#define INFO_DATA_SUM 38
+#define INFO_ENTRY_POINTS 40
+
+/* Data section: 2 bytes, run-length data size, relocation table size, then both tables. */
+#define DATA_RLE_SIZE 2
+#define DATA_RELOC_SIZE 6
+#define DATA_HEADER_BYTES 10
+
+/* Jump table entry: 2 bytes, then a 68000 "jmp absolute long" to the entry point. */
+#define JUMP_ENTRY_BYTES 8
+#define JUMP_ENTRY_JMP 2
+#define JMP_ABS_LONG_OPCODE 0x4ef9
+
+/* Packed code section: magic, word count, a dictionary of 1920 words, then the nibble stream. */
+#define RSHARP_MAGIC 0x5223
+#define RSHARP_WORD_COUNT 4
+#define RSHARP_DICTIONARY 8
+#define RSHARP_SHORT_CODES 128
+#define RSHARP_STREAM (RSHARP_DICTIONARY + 2 * (RSHARP_SHORT_CODES + 7 * 256))
+#define RSHARP_LITERAL 15
+
 FtlImage kaos;
 
 uint8_t *read_file(const char *path, size_t *len)
@@ -28,6 +67,7 @@ uint8_t *read_file(const char *path, size_t *len)
 
 typedef struct { const uint8_t *s; size_t n, pos; } Nibbles;
 
+/* Reads count nibbles, high nibble first; past the end it reads zeros. */
 static unsigned nib(Nibbles *b, int count)
 {
     unsigned v = 0;
@@ -36,20 +76,21 @@ static unsigned nib(Nibbles *b, int count)
     return v;
 }
 
-/* Expands the R# nibble coding of a packed code section. */
+/* Expands the R# nibble coding of a packed code section. Codes 0-7 take one more nibble and
+   15 is a literal word; the other codes take two more nibbles. */
 static uint8_t *unpack(const uint8_t *p, size_t len, uint32_t *out_len)
 {
-    if (len < 0xF08 || BE16(p) != 0x5223) return NULL;
-    uint32_t words = BE32(p + 4);
-    Nibbles b = { p + 0xF08, (len - 0xF08) * 2, 0 };
+    if (len < RSHARP_STREAM || BE16(p) != RSHARP_MAGIC) return NULL;
+    uint32_t words = BE32(p + RSHARP_WORD_COUNT);
+    Nibbles b = { p + RSHARP_STREAM, (len - RSHARP_STREAM) * 2, 0 };
     uint8_t *out = malloc((size_t)words * 2 + 1);
     if (!out) return NULL;
     for (uint32_t i = 0; i < words; i++) {
         unsigned v = nib(&b, 1), w;
-        if (v == 15) w = nib(&b, 4);
+        if (v == RSHARP_LITERAL) w = nib(&b, 4);
         else {
-            unsigned t = v < 8 ? v << 4 | nib(&b, 1) : (v << 8 | nib(&b, 2)) - 0x780;
-            w = BE16(p + 8 + 2 * t);
+            unsigned t = v < 8 ? v << 4 | nib(&b, 1) : RSHARP_SHORT_CODES + ((v - 8) << 8 | nib(&b, 2));
+            w = BE16(p + RSHARP_DICTIONARY + 2 * t);
         }
         out[2 * i] = w >> 8;
         out[2 * i + 1] = w;
@@ -66,67 +107,100 @@ static uint16_t sum8(const uint8_t *p, size_t n)
     return s;
 }
 
-/* Lays out an FTL module in memory at base like BJELoad_R. Returns 0 or -1. */
-int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
+/* Checks the file header and finds the info, data, and code sections. Returns 0 or -1. */
+static int find_sections(const uint8_t *raw, size_t len, const uint8_t *sec[SECTION_COUNT], uint32_t secsz[SECTION_COUNT])
 {
-    const uint8_t *sec[3] = { 0 };
-    uint32_t secsz[3] = { 0 }, count, s = 0, csize;
-    uint8_t *code = NULL, *mem = NULL;
-    if (len < 0x14 || BE16(raw) != 0x6160 || BE16(raw + 4) != 2 || raw[6] != 1 || raw[7] != 0) return -1;
-    count = BE16(raw + 0x12);
-    if (count >= 0x65 || len < 0x14 + count * 12) return -1;
-    for (int i = 4; i < 0x14; i++) s += raw[i] * i;
-    for (uint32_t i = 0; i < count * 12; i++) s += raw[0x14 + i] * ((i & 0xFF) + 1);
-    if ((uint16_t)s != BE16(raw + 2)) return -1;
+    uint32_t count, s = 0;
+    if (len < FTL_HEADER_BYTES || BE16(raw) != FTL_MAGIC || BE16(raw + FTL_HEADER_VERSION) != 2 ||
+        raw[FTL_HEADER_VERSION + 2] != 1 || raw[FTL_HEADER_VERSION + 3] != 0) return -1;
+    count = BE16(raw + FTL_HEADER_ENTRY_COUNT);
+    if (count > FTL_MAX_ENTRIES || len < FTL_HEADER_BYTES + count * FTL_ENTRY_BYTES) return -1;
+    for (int i = FTL_HEADER_VERSION; i < FTL_HEADER_BYTES; i++) s += raw[i] * i;
+    for (uint32_t i = 0; i < count * FTL_ENTRY_BYTES; i++) s += raw[FTL_HEADER_BYTES + i] * (i % 256 + 1);
+    if ((uint16_t)s != BE16(raw + FTL_HEADER_CHECKSUM)) return -1;
     for (uint32_t i = 0; i < count; i++) {
-        const uint8_t *e = raw + 0x14 + i * 12;
+        const uint8_t *e = raw + FTL_HEADER_BYTES + i * FTL_ENTRY_BYTES;
         uint16_t tag = BE16(e);
         uint32_t off = BE32(e + 4), size = BE32(e + 8);
-        if (tag < 0x10 || tag > 0x12) continue;
-        if (BE16(e + 2) != 1 || sec[tag - 0x10] || off > len || size > len - off) return -1;
-        sec[tag - 0x10] = raw + off;
-        secsz[tag - 0x10] = size;
+        if (tag < SECTION_INFO || tag > SECTION_CODE) continue;
+        if (BE16(e + 2) != 1 || sec[tag - SECTION_INFO] || off > len || size > len - off) return -1;
+        sec[tag - SECTION_INFO] = raw + off;
+        secsz[tag - SECTION_INFO] = size;
     }
-    const uint8_t *info = sec[0], *data = sec[1];
-    if (!info || !data || !sec[2] || secsz[0] < 0x28 || secsz[1] < 10) return -1;
+    return 0;
+}
 
-    uint32_t region = BE32(info), dsize = BE32(info + 4), jt_off = BE32(info + 0xC);
-    csize = BE32(info + 0x14);
-    uint16_t info_chk = BE16(info + 0x22), ws = 0;
-    for (uint32_t i = 0; i + 1 < secsz[0]; i += 2) ws += BE16(info + i);
-    if ((uint16_t)(ws - info_chk) != info_chk || sum8(data, secsz[1]) != BE16(info + 0x26)) return -1;
-    uint32_t code_len = secsz[2];
-    const uint8_t *codep = sec[2];
-    if (BE16(info + 0x1E) && !(codep = code = unpack(sec[2], secsz[2], &code_len))) return -1;
-    if (code_len < csize || sum8(codep, csize) != BE16(info + 0x24)) goto fail;
-
-    uint64_t data_base = base + ((dsize + 1ull) & ~1ull), code_base = (data_base + region + 1) & ~1ull;
-    uint64_t size = code_base - base + csize;
-    uint32_t rle_len = BE32(data + 2), reloc_len = BE32(data + 6);
-    if (size > FTL_MAX_SIZE || base + size > UINT32_MAX || rle_len > secsz[1] - 10 || reloc_len > secsz[1] - 10 - rle_len || !(mem = calloc(size + 1, 1))) goto fail;
-    const uint8_t *r = data + 10, *rend = r + rle_len;
+/* Expands the run-length data into mem: words are copied, and a zero word is followed by a count of
+   extra zero bytes. Returns the number of bytes written, or -1 when it overflows size. */
+static int64_t expand_data(const uint8_t *r, uint32_t rle_len, uint8_t *mem, uint64_t size)
+{
+    const uint8_t *rend = r + rle_len;
     uint32_t n = 0;
-    while (r + 1 < rend) { /* word copy; 0x0000 is followed by a count of extra zero bytes */
+    while (r + 1 < rend) {
         int zero = !r[0] && !r[1];
-        if (n + 2 > size) goto fail;
+        if (n + 2 > size) return -1;
         mem[n++] = *r++;
         mem[n++] = *r++;
         if (zero && r + 1 < rend) { n += BE16(r); r += 2; }
     }
-    if (n != dsize) goto fail;
-    for (const uint8_t *p = rend; p + 1 < rend + reloc_len; p += 2) {
-        int64_t at = (int64_t)(data_base - base) + (int16_t)BE16(p);
-        if (at < 0 || (uint64_t)at + 4 > size) goto fail;
+    return n;
+}
+
+/* Adds data_base to each long word that the relocation table names. Returns 0 or -1. */
+static int relocate(const uint8_t *table, uint32_t reloc_len, uint8_t *mem, uint64_t size, uint64_t data_offset, uint32_t data_base)
+{
+    for (const uint8_t *p = table; p + 1 < table + reloc_len; p += 2) {
+        int64_t at = (int64_t)data_offset + (int16_t)BE16(p);
+        if (at < 0 || (uint64_t)at + 4 > size) return -1;
         uint32_t v = BE32(mem + at) + data_base;
         for (int k = 0; k < 4; k++) mem[at + k] = v >> (24 - 8 * k);
     }
-    for (uint32_t i = 0; 0x28 + i * 4 + 4 <= secsz[0]; i++) {
-        uint64_t at = data_base - base + jt_off + i * 8 + 2;
-        uint32_t v = code_base + BE32(info + 0x28 + i * 4);
-        if (at + 6 > size) goto fail;
-        uint8_t jmp[6] = { 0x4E, 0xF9, v >> 24, v >> 16, v >> 8, v };
+    return 0;
+}
+
+/* Writes a jmp to each entry point into the jump table. Returns 0 or -1. */
+static int write_jump_table(const uint8_t *info, uint32_t info_size, uint8_t *mem, uint64_t size, uint64_t table_offset, uint32_t code_base)
+{
+    for (uint32_t i = 0; INFO_ENTRY_POINTS + i * 4 + 4 <= info_size; i++) {
+        uint64_t at = table_offset + i * JUMP_ENTRY_BYTES + JUMP_ENTRY_JMP;
+        uint32_t v = code_base + BE32(info + INFO_ENTRY_POINTS + i * 4);
+        if (at + 6 > size) return -1;
+        uint8_t jmp[6] = { JMP_ABS_LONG_OPCODE >> 8, JMP_ABS_LONG_OPCODE & 255, v >> 24, v >> 16, v >> 8, v };
         memcpy(mem + at, jmp, 6);
     }
+    return 0;
+}
+
+/* Lays out an FTL module in memory at base like BJELoad_R: data, region, code. Returns 0 or -1. */
+int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
+{
+    const uint8_t *sec[SECTION_COUNT] = { 0 };
+    uint32_t secsz[SECTION_COUNT] = { 0 };
+    uint8_t *code = NULL, *mem = NULL;
+    if (find_sections(raw, len, sec, secsz)) return -1;
+    const uint8_t *info = sec[0], *data = sec[1];
+    if (!info || !data || !sec[2] || secsz[0] < INFO_ENTRY_POINTS || secsz[1] < DATA_HEADER_BYTES) return -1;
+
+    uint32_t region = BE32(info + INFO_REGION_SIZE), dsize = BE32(info + INFO_DATA_SIZE);
+    uint32_t jt_off = BE32(info + INFO_JUMP_TABLE), csize = BE32(info + INFO_CODE_SIZE);
+    uint16_t info_chk = BE16(info + INFO_CHECKSUM), ws = 0;
+    for (uint32_t i = 0; i + 1 < secsz[0]; i += 2) ws += BE16(info + i);
+    if ((uint16_t)(ws - info_chk) != info_chk || sum8(data, secsz[1]) != BE16(info + INFO_DATA_SUM)) return -1;
+    uint32_t code_len = secsz[2];
+    const uint8_t *codep = sec[2];
+    if (BE16(info + INFO_CODE_PACKED) && !(codep = code = unpack(sec[2], secsz[2], &code_len))) return -1;
+    if (code_len < csize || sum8(codep, csize) != BE16(info + INFO_CODE_SUM)) goto fail;
+
+    uint64_t data_base = base + ((dsize + 1ull) & ~1ull), code_base = (data_base + region + 1) & ~1ull;
+    uint64_t size = code_base - base + csize;
+    uint32_t rle_len = BE32(data + DATA_RLE_SIZE), reloc_len = BE32(data + DATA_RELOC_SIZE);
+    uint32_t tables_len = secsz[1] - DATA_HEADER_BYTES;
+    if (size > FTL_MAX_SIZE || base + size > UINT32_MAX || rle_len > tables_len || reloc_len > tables_len - rle_len ||
+        !(mem = calloc(size + 1, 1))) goto fail;
+    const uint8_t *rle = data + DATA_HEADER_BYTES;
+    if (expand_data(rle, rle_len, mem, size) != dsize ||
+        relocate(rle + rle_len, reloc_len, mem, size, data_base - base, (uint32_t)data_base) ||
+        write_jump_table(info, secsz[0], mem, size, data_base - base + jt_off, (uint32_t)code_base)) goto fail;
     memcpy(mem + code_base - base, codep, csize);
     free(code);
     *img = (FtlImage){ mem, (uint32_t)size, base, (uint32_t)data_base, (uint32_t)code_base };
@@ -153,7 +227,7 @@ int kaos_load(const char *path)
     return r;
 }
 
-/* Maps an original KAOS address (0x10xxxx) into the loaded image. */
+/* Maps an original KAOS address into the loaded image; aborts outside the image. */
 static uint8_t *at(uint32_t addr, uint32_t n)
 {
     if (!kaos.data || addr < kaos.base || (uint64_t)addr - kaos.base + n > kaos.size) {

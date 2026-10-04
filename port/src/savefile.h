@@ -20,7 +20,7 @@ enum { SAVE_BLOCK_GLOBALS, SAVE_BLOCK_GROUPS, SAVE_BLOCK_CHAMPIONS, SAVE_BLOCK_E
 /* All buffers keep the big-endian byte layout of the original memory. */
 typedef struct {
     uint8_t *data;                       /* save_decode: owned plain copy of the file */
-    uint8_t *header;                     /* 512 bytes; the payload at 0x100 is plain */
+    uint8_t *header;                     /* 512 bytes; the payload at byte 256 is plain */
     uint8_t *block[SAVE_BLOCKS];         /* plain blocks: globals, groups, champions, events, timeline */
     uint16_t block_size[SAVE_BLOCKS];
     uint8_t *portraits;                  /* 4 portraits, not encrypted */

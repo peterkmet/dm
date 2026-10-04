@@ -1,6 +1,7 @@
 #include <string.h>
 #include "command.h"
 #include "action.h"
+#include "advanced.h"
 #include "dialog.h"
 #include "startend.h"
 #include "champion.h"
@@ -27,6 +28,8 @@
 #define KEYS_SLEEPING 0x103980
 #define KEYS_FROZEN 0x10398c
 #define VIEWPORT_ORIGIN 0x10293a      /* viewport origin x, y on the screen */
+#define KEY_ENTRY_BYTES 4
+#define KEY_ENTRY_KEY 2               /* the key word after the command word */
 
 #define QUEUE_SIZE 9
 #define QUEUE_CLICK_LIMIT 5           /* a click or a key waits only when fewer commands wait */
@@ -43,6 +46,8 @@
 #define SOUND_SWALLOW 8
 #define SYMBOL_FIRST 0x60             /* font character of the first rune */
 #define SPELL_TAB_STEP 5              /* caster tab zones per caster */
+#define MANA_MULTIPLIER_SHIFT 3       /* the cost multiplier of the first rune is in eighths */
+#define HAND_SLOT_BOX_COUNT (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
 #define ZONE_THROW_LEFT 745           /* + 1 right: the upper view where a thrown object flies */
 #define ZONE_THROW_DOOR_LEFT 748      /* + 1 right: the same with a door in front */
 
@@ -126,6 +131,7 @@ void command_process_click(int16_t x, int16_t y, int16_t kind)
     if (kind == CLICK_LEFT_PRESS || kind == CLICK_RIGHT_PRESS) g_input_received = 1;
     if (kind == CLICK_LEFT_PRESS) left_button_down = 1;
     if (kind == CLICK_LEFT_RELEASE) left_button_down = 0;
+    if (g_automap_open) return;
     if (queue_count >= (kind == CLICK_LEFT_RELEASE ? QUEUE_RELEASE_LIMIT : QUEUE_CLICK_LIMIT)) return;
     int16_t command = COMMAND_LEFT_RELEASE;
     if (kind != CLICK_LEFT_RELEASE) {
@@ -139,18 +145,24 @@ void command_process_click(int16_t x, int16_t y, int16_t kind)
 static int16_t key_command(uint32_t table, uint16_t key)
 {
     if (!table) return COMMAND_NONE;
-    for (uint32_t a = table; kaos_s16(a); a += 4)
-        if (kaos_u16(a + 2) == key) return kaos_s16(a);
+    for (uint32_t entry = table; kaos_s16(entry); entry += KEY_ENTRY_BYTES)
+        if (kaos_u16(entry + KEY_ENTRY_KEY) == key) return kaos_s16(entry);
     return COMMAND_NONE;
 }
 
+/* A key press becomes the command of the key in the active tables. With the advanced features,
+   Escape closes an open inventory instead of freezing the game. */
 void command_process_key(uint16_t key)
 {
+    if (advanced_process_key(key)) return;
     g_input_received = 1;
     g_last_key = key;
     if (queue_count >= QUEUE_CLICK_LIMIT) return;
     int16_t command = key_command(primary_keys, key);
     if (!command) command = key_command(secondary_keys, key);
+    if (g_advanced_features && key == KEY_ESCAPE && command == COMMAND_FREEZE_GAME && g_inventory_champion_ordinal &&
+        !g_candidate_champion_ordinal)
+        command = COMMAND_CLOSE_INVENTORY;
     if (command) queue_put(command, 0, 0);
 }
 
@@ -179,6 +191,7 @@ static void highlight_zone(int16_t zone)
     highlight_enabled = 1;
 }
 
+/* Inverts the highlighted zone back. */
 void command_highlight_disable(void)
 {
     if (!highlight_enabled) return;
@@ -188,6 +201,7 @@ void command_highlight_disable(void)
     highlight_enabled = 0;
 }
 
+/* The square in front of the party. */
 static void front_square(int16_t *x, int16_t *y)
 {
     *x = g_party_map_x;
@@ -328,7 +342,7 @@ static void click_in_status_box(int16_t champion_index, int16_t x, int16_t y)
     int16_t command = ui_command_from_mouse(UI_INPUT_STATUS_BOX, x, y, CLICK_LEFT_PRESS);
     if (command >= COMMAND_SET_LEADER_FIRST && command < COMMAND_SET_LEADER_FIRST + CHAMPION_MAX_COUNT)
         command_set_leader(command - COMMAND_SET_LEADER_FIRST);
-    else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST && command < COMMAND_CLICK_SLOT_BOX_FIRST + 2 * CHAMPION_MAX_COUNT)
+    else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST && command < COMMAND_CLICK_SLOT_BOX_FIRST + HAND_SLOT_BOX_COUNT)
         champion_click_on_slot_box((uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST));
 }
 
@@ -410,6 +424,7 @@ static void touch_front_wall(void)
     front_square(&x, &y);
     if (x < 0 || x >= g_current_map_width || y < 0 || y >= g_current_map_height) return;
     int16_t candidate = g_candidate_champion_ordinal;
+    /* the wall side that faces the party */
     g_stop_waiting_for_input = sensor_is_triggered_by_click_on_wall(x, y, (uint16_t)NORMALIZE(g_party_direction + 2));
     if (!candidate && g_candidate_champion_ordinal) show_candidate();
 }
@@ -437,6 +452,7 @@ static void fill_at_fountain(void)
     g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
 }
 
+/* A point in a clickable box of the view; x -1 marks an unused box. */
 static int16_t in_box(const Box *b, int16_t x, int16_t y)
 {
     return b->x != -1 && x >= b->x && x < b->x + b->w && y >= b->y && y < b->y + b->h;
@@ -514,7 +530,7 @@ static void add_champion_symbol(int16_t symbol)
 {
     Champion *c = &g_champions[g_magic_caster_champion_index];
     uint16_t step = c->symbol_step, cost = *tables_symbol_base_mana_cost(step, symbol);
-    if (step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SYMBOL_FIRST)) >> 3;
+    if (step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SYMBOL_FIRST)) >> MANA_MULTIPLIER_SHIFT;
     if (cost > (uint16_t)c->current_mana) return;
     c->current_mana -= cost;
     c->attributes |= CHAMPION_ATTR_STATISTICS;
@@ -526,11 +542,12 @@ static void add_champion_symbol(int16_t symbol)
     champion_draw_state((uint16_t)g_magic_caster_champion_index);
 }
 
+/* The magic caster removes the last rune; the mana stays spent. */
 static void delete_champion_symbol(void)
 {
     Champion *c = &g_champions[g_magic_caster_champion_index];
     if (!c->symbols[0]) return;
-    c->symbol_step = (uint8_t)NORMALIZE(c->symbol_step + 3);
+    c->symbol_step = (uint8_t)NORMALIZE(c->symbol_step - 1);
     c->symbols[c->symbol_step] = 0;
     menus_draw_available_symbols(c->symbol_step);
     menus_draw_champion_symbols((uint16_t)g_magic_caster_champion_index);
@@ -621,6 +638,7 @@ static void left_release(void)
     pressing_mouth = pressing_fake_wall = g_mouse_pointer_hidden = 0;
 }
 
+/* The party sleeps: the game runs at full speed and only the wake up input is active. */
 static void go_to_sleep(void)
 {
     if (g_candidate_champion_ordinal) return;
@@ -629,10 +647,7 @@ static void go_to_sleep(void)
     g_party_is_sleeping = 1;
     draw_viewport_message(TEXT_WAKE_UP);
     g_wait_for_input_max_frames = 0;
-    primary_mouse = UI_INPUT_SLEEPING;
-    secondary_mouse = NO_TABLE;
-    primary_keys = KEYS_SLEEPING;
-    secondary_keys = 0;
+    set_input((InputTables){ UI_INPUT_SLEEPING, NO_TABLE, KEYS_SLEEPING, 0 });
     command_discard_all_input();
 }
 
@@ -647,19 +662,18 @@ void command_wake_up(void)
     command_discard_all_input();
 }
 
+/* The game time stops; only the unfreeze input is active. */
 static void freeze_game(void)
 {
     g_game_time_ticking = 0;
     game_freeze();
     draw_viewport_message(TEXT_GAME_FROZEN);
     frozen_input = current_input();
-    primary_mouse = UI_INPUT_FROZEN;
-    secondary_mouse = NO_TABLE;
-    primary_keys = KEYS_FROZEN;
-    secondary_keys = 0;
+    set_input((InputTables){ UI_INPUT_FROZEN, NO_TABLE, KEYS_FROZEN, 0 });
     command_discard_all_input();
 }
 
+/* The game time runs again with the input of before the freeze. */
 static void unfreeze_game(void)
 {
     g_game_time_ticking = 1;
@@ -706,6 +720,15 @@ static void process_other_command(int16_t command)
     }
 }
 
+/* A step waits while the party cannot move, or while a projectile blocks this direction. */
+static int movement_blocked(int16_t command)
+{
+    if (command < COMMAND_MOVE_FORWARD || command > COMMAND_MOVE_LEFT) return 0;
+    if (g_disabled_movement_ticks) return 1;
+    return g_projectile_disabled_movement_ticks &&
+           NORMALIZE(command + g_party_direction - COMMAND_MOVE_FORWARD) == g_last_projectile_disabled_movement_direction;
+}
+
 /* Takes the first waiting command and runs it. A movement command waits while the party cannot
    move. Returns 1 when it ran a command. */
 int command_process_queue(void)
@@ -713,10 +736,7 @@ int command_process_queue(void)
     if (!queue_count) return 0;
     QueuedCommand q = queue[queue_first];
     int16_t command = q.command, x = q.x, y = q.y;
-    if (command >= COMMAND_MOVE_FORWARD && command <= COMMAND_MOVE_LEFT &&
-        (g_disabled_movement_ticks || (g_projectile_disabled_movement_ticks &&
-                                       NORMALIZE(command + g_party_direction - COMMAND_MOVE_FORWARD) == g_last_projectile_disabled_movement_direction)))
-        return 0;
+    if (movement_blocked(command)) return 0;
     queue_first = (queue_first + 1) % QUEUE_SIZE;
     queue_count--;
     if (command == COMMAND_LEFT_RELEASE) left_release();

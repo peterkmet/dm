@@ -34,6 +34,7 @@
 #define GFX_OBJECT_ICONS_BEFORE_FIRST 41 /* + sheet number 1-7 */
 #define GFX_OBJECT_NAMES 694
 #define GFX_ACTION_NAMES 699
+#define GFX_FONT 695                     /* 6 rows of 128 bytes, one byte per character */
 #define GFX_STRINGS 700
 
 /* Interface zones on the screen. */
@@ -233,5 +234,137 @@
 #define TEXT_QUIT 103
 #define TEXT_OK 105
 #define TEXT_CANCEL 106
+
+/* Dungeon view squares: graphics. Square names: D0-D3 rows from the party, L/C/R lanes, L2/R2 two lanes aside. */
+#define GFX_PIT_D3L2 49                  /* D3R2 and D3R: mirrored */
+#define GFX_PIT_D3L 50
+#define GFX_PIT_D3C 51
+#define GFX_PIT_D2L 52                   /* D2R: mirrored, same for the D1 and D0 pits */
+#define GFX_PIT_D2C 53
+#define GFX_PIT_D1L 54
+#define GFX_PIT_D1C 55
+#define GFX_PIT_D0L 56
+#define GFX_PIT_D0C 57
+#define GFX_INVISIBLE_PIT_D2L 58
+#define GFX_INVISIBLE_PIT_D2C 59
+#define GFX_INVISIBLE_PIT_D1L 60
+#define GFX_INVISIBLE_PIT_D1C 61
+#define GFX_INVISIBLE_PIT_D0L 62
+#define GFX_INVISIBLE_PIT_D0C 63
+#define GFX_CEILING_PIT_D2L 64
+#define GFX_CEILING_PIT_D2C 65
+#define GFX_CEILING_PIT_D1L 66
+#define GFX_CEILING_PIT_D1C 67
+#define GFX_CEILING_PIT_D0L 68
+#define GFX_CEILING_PIT_D0C 69
+#define GFX_FLOOR_SET_FIRST 78           /* + 2 * floor set: floor, then ceiling */
+#define GFX_WALLSET_FIRST 86             /* + GFX_WALLSET_SIZE * wall set: 7 door frames, 15 walls, 18 stairs */
+#define GFX_WALLSET_SIZE 40
+#define GFX_DOOR_FIRST 246               /* + 3 * door set + depth (D3, D2, D1) */
+#define GFX_WALL_TEXT_FONT 258
+#define GFX_WALL_ORNAMENT_FIRST 259      /* + 2 * ornament: side view, front view */
+#define GFX_FOOTPRINTS 379
+#define GFX_FLOOR_ORNAMENT_FIRST 385     /* + 6 * ornament + floor view graphic */
+#define GFX_DOOR_MASK_DESTROYED 439
+#define GFX_DOOR_MASK_THIEVES_EYE 440
+#define GFX_DOOR_ORNAMENT_FIRST 441      /* + ornament */
+#define GFX_DOOR_BUTTON 453
+
+/* Dungeon view squares: zones in the viewport. */
+#define ZONE_SIZED 0x4000                /* zone flag: the item size comes from the zone relative x, y */
+#define ZONE_CEILING 700
+#define ZONE_FLOOR 701
+#define ZONE_WALL_D3L2 702               /* also the field of a teleporter on the square */
+#define ZONE_WALL_D3R2 703
+#define ZONE_WALL_D3C 704
+#define ZONE_WALL_D3L 705
+#define ZONE_WALL_D3R 706
+#define ZONE_WALL_D2L2 707
+#define ZONE_WALL_D2R2 708
+#define ZONE_WALL_D2C 709
+#define ZONE_WALL_D2L 710
+#define ZONE_WALL_D2R 711
+#define ZONE_WALL_D1C 712
+#define ZONE_WALL_D1L 713
+#define ZONE_WALL_D1R 714
+#define ZONE_WALL_D0C 715
+#define ZONE_WALL_D0L 716
+#define ZONE_WALL_D0R 717
+#define ZONE_DOOR_FRAME_LEFT_D3L 718
+#define ZONE_DOOR_FRAME_RIGHT_D3L 719
+#define ZONE_DOOR_FRAME_LEFT_D3R 720
+#define ZONE_DOOR_FRAME_RIGHT_D3R 721
+#define ZONE_DOOR_FRAME_LEFT_D3C 722
+#define ZONE_DOOR_FRAME_RIGHT_D3C 723
+#define ZONE_DOOR_FRAME_LEFT_D2C 724
+#define ZONE_DOOR_FRAME_RIGHT_D2C 725
+#define ZONE_DOOR_FRAME_LEFT_D1C 726
+#define ZONE_DOOR_FRAME_RIGHT_D1C 727
+#define ZONE_DOOR_FRAME_D0C 728          /* the party stands in the door frame */
+#define ZONE_DOOR_FRAME_TOP_D2L 729
+#define ZONE_DOOR_FRAME_TOP_D2C 730
+#define ZONE_DOOR_FRAME_TOP_D2R 731
+#define ZONE_DOOR_FRAME_TOP_D1L 732
+#define ZONE_DOOR_FRAME_TOP_D1C 733
+#define ZONE_DOOR_FRAME_TOP_D1R 734
+#define ZONE_INSCRIPTION_WALL_D1C 735    /* the blank wall behind a wall text */
+#define ZONE_WALL_PORTRAIT 737           /* champion portrait on the D1C wall */
+#define ZONE_STAIRS_UP_FRONT_D3L2 800
+#define ZONE_STAIRS_UP_FRONT_D3R2 801
+#define ZONE_STAIRS_UP_FRONT_D3L 802
+#define ZONE_STAIRS_UP_FRONT_D3C 803
+#define ZONE_STAIRS_UP_FRONT_D3R 804
+#define ZONE_STAIRS_UP_FRONT_D2L 805
+#define ZONE_STAIRS_UP_FRONT_D2C 806
+#define ZONE_STAIRS_UP_FRONT_D2R 807
+#define ZONE_STAIRS_UP_FRONT_D1L 808
+#define ZONE_STAIRS_UP_FRONT_D1C 809
+#define ZONE_STAIRS_UP_FRONT_D1R 810
+#define ZONE_STAIRS_UP_FRONT_D0C_LEFT 811
+#define ZONE_STAIRS_UP_FRONT_D0C_RIGHT 812
+#define ZONE_STAIRS_DOWN_DELTA 13        /* down stairs front zone = up stairs front zone + 13 */
+#define ZONE_STAIRS_SIDE_D2L 826
+#define ZONE_STAIRS_SIDE_D2R 827
+#define ZONE_STAIRS_UP_SIDE_D1L 828
+#define ZONE_STAIRS_UP_SIDE_D1R 829
+#define ZONE_STAIRS_DOWN_SIDE_D1L 830
+#define ZONE_STAIRS_DOWN_SIDE_D1R 831
+#define ZONE_STAIRS_SIDE_D0L 832
+#define ZONE_STAIRS_SIDE_D0R 833
+#define ZONE_PIT_D3L2 850
+#define ZONE_PIT_D3R2 851
+#define ZONE_PIT_D3L 852
+#define ZONE_PIT_D3C 853
+#define ZONE_PIT_D3R 854
+#define ZONE_PIT_D2L 855
+#define ZONE_PIT_D2C 856
+#define ZONE_PIT_D2R 857
+#define ZONE_PIT_D1L 858
+#define ZONE_PIT_D1C 859
+#define ZONE_PIT_D1R 860
+#define ZONE_PIT_D0L 861
+#define ZONE_PIT_D0C 862
+#define ZONE_PIT_D0R 863
+#define ZONE_CEILING_PIT_D2L 864
+#define ZONE_CEILING_PIT_D2C 865
+#define ZONE_CEILING_PIT_D2R 866
+#define ZONE_CEILING_PIT_D1L 867
+#define ZONE_CEILING_PIT_D1C 868
+#define ZONE_CEILING_PIT_D1R 869
+#define ZONE_CEILING_PIT_D0L 870
+#define ZONE_CEILING_PIT_D0C 871
+#define ZONE_CEILING_PIT_D0R 872
+#define ZONE_WALL_TEXT_LINE_FIRST 1000   /* + text line */
+#define ZONE_WALL_ORNAMENT_FIRST 1004    /* + ZONE_WALL_ORNAMENT_VIEWS * coordinate set + view wall */
+#define ZONE_WALL_ORNAMENT_VIEWS 15
+#define ZONE_FLOOR_ORNAMENT_FIRST 1500   /* + ZONE_FLOOR_ORNAMENT_VIEWS * coordinate set + floor view */
+#define ZONE_FLOOR_ORNAMENT_VIEWS 11
+#define ZONE_DOOR_BUTTON_FIRST 1950      /* + coordinate set + button view */
+#define ZONE_DOOR_ORNAMENT_FIRST 2000    /* + ZONE_DOOR_ORNAMENT_DEPTHS * coordinate set + depth (D3, D2, D1) */
+#define ZONE_DOOR_ORNAMENT_DEPTHS 3
+#define ZONE_DOOR_FIRST 3700             /* + ZONE_DOOR_VIEW_ZONES * door view + door state */
+#define ZONE_DOOR_VIEW_ZONES 10
+#define ZONE_DOOR_LEFT_HALF 3            /* + door zone of the state: the halves of a sliding door */
+#define ZONE_DOOR_RIGHT_HALF 6
 
 #endif

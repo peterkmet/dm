@@ -21,5 +21,10 @@ void view_draw(int16_t dir, int16_t x, int16_t y);
 /* Party light amount (magical light plus torches) for set_dungeon_view_palette. Default 99: bright. */
 void view_set_light(int16_t amount);
 int view_render(int16_t map, int16_t x, int16_t y, int16_t dir);
+/* Smooth projectile flight: view_set_motion(step, steps) makes the next views show each projectile
+   step/steps of the way from its place at the tick before to its place at the last tick; (0, 0) is a
+   normal view. Returns 1 when a projectile of the last view changed its place. */
+void view_set_motion(int16_t step, int16_t steps);
+int view_projectiles_moving(void);
 
 #endif

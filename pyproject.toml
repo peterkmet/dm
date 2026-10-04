@@ -5,11 +5,13 @@ requires-python = ">=3.14"
 dependencies = [
     "amitools>=0.8",
     "machine68k>=0.4.1",
+    "mcp>=2.3.0",
 ]
 
 [project.scripts]
 dm-extract = "dmtools.extract:main"
 dm-ftl = "dmtools.ftl:main"
+dm-mcp = "dmtools.mcp_server:main"
 
 [build-system]
 requires = ["hatchling"]

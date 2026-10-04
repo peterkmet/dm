@@ -1,9 +1,12 @@
 #include "random.h"
 #include <time.h>
 
+#define RANDOM_MULTIPLIER 0xBB40E62Du
+#define RANDOM_INCREMENT 11
+
 uint32_t g_random_seed;
 
-/* system_init seeds with IntuitionBase->Micros (offset 0x4c): microseconds of the current time. */
+/* Seeds with the microseconds of the current time, like system_init with IntuitionBase->Micros. */
 void random_init(void)
 {
     struct timespec ts;
@@ -11,9 +14,10 @@ void random_init(void)
     g_random_seed = (uint32_t)(ts.tv_nsec / 1000);
 }
 
+/* Next value of the linear congruential generator: bits 8-23 of the new seed. */
 static uint16_t next(void)
 {
-    g_random_seed = g_random_seed * 0xBB40E62Du + 11;
+    g_random_seed = g_random_seed * RANDOM_MULTIPLIER + RANDOM_INCREMENT;
     return (uint16_t)(g_random_seed >> 8);
 }
 

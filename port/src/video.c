@@ -1,23 +1,29 @@
 #include "video.h"
 
+#define ARGB_OPAQUE 0xff000000u
+#define COLOR_INDEX_MASK (PALETTE_COLORS - 1)
+#define AMIGA_CHANNEL_BITS 4
+#define AMIGA_CHANNEL_MASK 15
+#define CHANNEL_4_TO_8_BITS 17   /* 15 * 17 = 255 */
+
 uint8_t fb[SCREEN_H][SCREEN_W] = { 0 };
-uint16_t palette[32];
+uint16_t palette[2 * PALETTE_COLORS];
 int16_t palette_split_top = 0, palette_split_bottom = SCREEN_H;
 
-/* Amiga color of index c on screen row y. */
 uint16_t video_color(int y, uint8_t c)
 {
-    return palette[(c & 15) | (y >= palette_split_top && y < palette_split_bottom ? 0 : 16)];
+    int bottom = y < palette_split_top || y >= palette_split_bottom;
+    return palette[(c & COLOR_INDEX_MASK) | (bottom ? PALETTE_COLORS : 0)];
 }
 
-/* Converts Amiga 0x0RGB to ARGB8888. */
 uint32_t video_argb(uint16_t amiga)
 {
-    uint32_t r = (amiga >> 8) & 15, g = (amiga >> 4) & 15, b = amiga & 15;
-    return 0xFF000000u | (r * 17) << 16 | (g * 17) << 8 | b * 17;
+    uint32_t r = amiga >> 2 * AMIGA_CHANNEL_BITS & AMIGA_CHANNEL_MASK;
+    uint32_t g = amiga >> AMIGA_CHANNEL_BITS & AMIGA_CHANNEL_MASK;
+    uint32_t b = amiga & AMIGA_CHANNEL_MASK;
+    return ARGB_OPAQUE | (r * CHANNEL_4_TO_8_BITS) << 16 | (g * CHANNEL_4_TO_8_BITS) << 8 | b * CHANNEL_4_TO_8_BITS;
 }
 
-/* Largest integer scale that fits the output, centered (letterbox). */
 void video_layout(int out_w, int out_h, int *scale, int *ox, int *oy)
 {
     int sx = out_w / SCREEN_W, sy = out_h / SCREEN_H;
@@ -30,7 +36,6 @@ void video_layout(int out_w, int out_h, int *scale, int *ox, int *oy)
 
 static int clamp(int v, int max) { return v < 0 ? 0 : v > max ? max : v; }
 
-/* Maps output pixel coordinates to game coordinates, clamped to the screen. */
 void video_map_mouse(int out_w, int out_h, int x, int y, int *gx, int *gy)
 {
     int s, ox, oy;

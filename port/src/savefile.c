@@ -33,7 +33,7 @@
 static uint16_t rd16(const uint8_t *p) { return (uint16_t)(p[0] << 8 | p[1]); }
 static void wr16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)(v >> 8); p[1] = (uint8_t)v; }
 
-/* XOR big-endian words in place; returns the sum of key, plain and cipher words (0x125510) */
+/* XOR big-endian words in place; returns the sum of key, plain and cipher words */
 uint16_t save_block_xor(uint8_t *bytes, uint16_t key, uint16_t word_count) {
     uint16_t sum = key;
     for (uint16_t i = word_count; i != 0; i--, bytes += 2) {
@@ -56,6 +56,7 @@ static uint16_t block_size(int i, const uint8_t *globals) {
     }
 }
 
+/* Sum of the plain payload words; the chain must give this value. */
 static uint16_t payload_sum(const uint8_t *h) {
     uint16_t sum = 0;
     for (int i = H_PAYLOAD; i < SAVE_HEADER_BYTES; i += 2) sum = (uint16_t)(sum + rd16(h + i));
@@ -65,14 +66,15 @@ static uint16_t payload_sum(const uint8_t *h) {
 /* Chain over the 32 random word groups; with set_last, picks the last w3 so the chain gives sum */
 static uint16_t header_chain(uint8_t *h, int set_last, uint16_t sum) {
     uint16_t acc = 0;
-    for (int g = 0; g < 32; g++, h += 8) {
+    for (int g = 0; g < H_GROUP_COUNT; g++, h += H_GROUP_BYTES) {
         uint16_t x = (uint16_t)((rd16(h + 2) ^ (uint16_t)(rd16(h) + acc)) - rd16(h + 4));
-        if (set_last && g == 31) wr16(h + 6, sum ^ x);
+        if (set_last && g == H_GROUP_COUNT - 1) wr16(h + 6, sum ^ x);
         acc = rd16(h + 6) ^ x;
     }
     return acc;
 }
 
+/* Decrypts a save file into s and checks the header chain and block checksums. Returns 1 or 0. */
 int16_t save_decode(const uint8_t *file, uint32_t size, SaveFile *s) {
     memset(s, 0, sizeof *s);
     if (!file || size < SAVE_HEADER_BYTES || !(s->data = malloc(size))) return 0;
@@ -100,6 +102,7 @@ fail:
     return 0;
 }
 
+/* Encrypts s into a new save file buffer. Returns NULL when s is incomplete. */
 uint8_t *save_encode(const SaveFile *s, uint32_t *size) {
     if (!s->header || !s->portraits || (!s->dungeon && s->dungeon_size)) return NULL;
     uint32_t total = SAVE_HEADER_BYTES + SAVE_PORTRAITS_BYTES + s->dungeon_size;

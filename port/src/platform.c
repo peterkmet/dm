@@ -9,14 +9,20 @@ static SDL_Renderer *ren;
 static SDL_Texture *tex;
 static Uint64 next_tick;
 static SDL_AudioStream *stream;
+#define FRAMES_PER_SECOND 50              /* PAL vertical blank */
+#define TICK_NS (SDL_NS_PER_SECOND / FRAMES_PER_SECOND)
+#define FILTER_MAX 3
+#define AUDIO_CHANNELS 2
+#define AUDIO_QUEUED_TICKS 3
+#define COLOR_INDEX_MASK (PALETTE_COLORS - 1)
+#define ARGB_BYTES 4
+
 static int filter = 1; /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */
-static uint8_t big[SCREEN_H * 3][SCREEN_W * 3];
+static uint8_t big[SCREEN_H * FILTER_MAX][SCREEN_W * FILTER_MAX];
 enum { POINTER_MAX = 32 };
 static uint8_t pointer_px[POINTER_MAX * POINTER_MAX];
-static uint32_t pointer_argb[16];
+static uint32_t pointer_argb[PALETTE_COLORS];
 static int pointer_w, pointer_h, pointer_hot_x, pointer_hot_y, mouse_x, mouse_y;
-
-#define TICK_NS (SDL_NS_PER_SECOND / 50) /* PAL VBL */
 
 int plat_init(int scale)
 {
@@ -26,9 +32,16 @@ int plat_init(int scale)
         SDL_Log("SDL: %s", SDL_GetError());
         return 0;
     }
-    const char *f = SDL_getenv("DM_FILTER");
-    if (!plat_set_filter(f && !strcmp(f, "scale2x") ? 2 : f && !strcmp(f, "scale3x") ? 3 : 1)) return 0;
+    const char *name = SDL_getenv("DM_FILTER");
+    if (!plat_set_filter(name ? plat_filter_factor(name) : 1)) return 0;
     next_tick = SDL_GetTicksNS() + TICK_NS;
+    return 1;
+}
+
+int plat_filter_factor(const char *name)
+{
+    if (!strcmp(name, "scale2x")) return 2;
+    if (!strcmp(name, "scale3x")) return 3;
     return 1;
 }
 
@@ -61,7 +74,7 @@ void plat_set_pointer(const uint8_t *px, int w, int h, int hot_x, int hot_y, con
     if (!pointer_w) return;
     if (SDL_CursorVisible()) SDL_HideCursor();
     memcpy(pointer_px, px, (size_t)w * h);
-    for (int i = 0; i < 16; i++) pointer_argb[i] = video_argb(colors[i]);
+    for (int i = 0; i < PALETTE_COLORS; i++) pointer_argb[i] = video_argb(colors[i]);
 }
 
 void plat_mouse_position(int *x, int *y)
@@ -79,25 +92,26 @@ static void draw_pointer(uint32_t *px, int stride)
             int sx = mouse_x - pointer_hot_x + x, sy = mouse_y - pointer_hot_y + y;
             if (!c || sx < 0 || sy < 0 || sx >= SCREEN_W || sy >= SCREEN_H) continue;
             for (int dy = 0; dy < filter; dy++)
-                for (int dx = 0; dx < filter; dx++) px[(sy * filter + dy) * stride + sx * filter + dx] = pointer_argb[c & 15];
+                for (int dx = 0; dx < filter; dx++) px[(sy * filter + dy) * stride + sx * filter + dx] = pointer_argb[c & COLOR_INDEX_MASK];
         }
 }
 
 void plat_present(void)
 {
-    uint32_t pal[32], *px;
+    uint32_t pal[2 * PALETTE_COLORS], *px;
     int pitch, w, h, s, ox, oy, tw = SCREEN_W * filter;
     const uint8_t *src = filter == 1 ? &fb[0][0] : &big[0][0];
     if (filter == 2) scale2x(&fb[0][0], SCREEN_W, SCREEN_H, &big[0][0]);
     if (filter == 3) scale3x(&fb[0][0], SCREEN_W, SCREEN_H, &big[0][0]);
-    for (int i = 0; i < 32; i++) pal[i] = video_argb(palette[i]);
+    for (int i = 0; i < 2 * PALETTE_COLORS; i++) pal[i] = video_argb(palette[i]);
     if (!SDL_LockTexture(tex, NULL, (void **)&px, &pitch)) return;
+    int stride = pitch / ARGB_BYTES;
     for (int y = 0; y < SCREEN_H * filter; y++) {
-        int row = y / filter, top = row >= palette_split_top && row < palette_split_bottom ? 0 : 16;
+        int row = y / filter, half = row >= palette_split_top && row < palette_split_bottom ? 0 : PALETTE_COLORS;
         for (int x = 0; x < tw; x++)
-            px[y * pitch / 4 + x] = pal[(src[y * tw + x] & 15) | top];
+            px[y * stride + x] = pal[(src[y * tw + x] & COLOR_INDEX_MASK) | half];
     }
-    draw_pointer(px, pitch / 4);
+    draw_pointer(px, stride);
     SDL_UnlockTexture(tex);
 
     SDL_GetCurrentRenderOutputSize(ren, &w, &h);
@@ -161,7 +175,7 @@ static int audio_open(void)
     static int tried;
     if (stream || tried) return stream != NULL;
     tried = 1;
-    SDL_AudioSpec spec = { SDL_AUDIO_S16, 2, SOUND_OUTPUT_RATE };
+    SDL_AudioSpec spec = { SDL_AUDIO_S16, AUDIO_CHANNELS, SOUND_OUTPUT_RATE };
     if (!SDL_InitSubSystem(SDL_INIT_AUDIO) ||
         !(stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL))) {
         SDL_Log("SDL audio: %s", SDL_GetError());
@@ -173,10 +187,10 @@ static int audio_open(void)
 /* Keeps about three ticks of mixer output queued; runs on the game thread, so the mixer needs no lock. */
 void plat_audio_pump(void)
 {
-    enum { FRAMES = SOUND_OUTPUT_RATE / 50 };
-    int16_t buf[FRAMES * 2];
+    enum { FRAMES = SOUND_OUTPUT_RATE / FRAMES_PER_SECOND };
+    int16_t buf[FRAMES * AUDIO_CHANNELS];
     if (!audio_open()) return;
-    while (SDL_GetAudioStreamQueued(stream) < (int)sizeof buf * 3) {
+    while (SDL_GetAudioStreamQueued(stream) < (int)sizeof buf * AUDIO_QUEUED_TICKS) {
         sound_mix(buf, FRAMES);
         if (!SDL_PutAudioStreamData(stream, buf, sizeof buf)) return;
     }

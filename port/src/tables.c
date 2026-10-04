@@ -26,6 +26,19 @@
 #define WOUND_DEFENSE_FACTOR 0x100ce4
 #define FIXED_POSSESSIONS 0x101c10
 
+/* Record sizes in KAOS. */
+#define CREATURE_INFO_BYTES 26
+#define OBJECT_INFO_BYTES 6
+#define WEAPON_INFO_BYTES 6
+#define ARMOUR_INFO_BYTES 4
+#define SPELL_BYTES 8
+#define ACTION_SET_BYTES 8
+
+/* Spell word 3: kind in bits 0-3, type in bits 4-9, disabled ticks in bits 10-15. */
+#define SPELL_KIND(w) ((w) & 15)
+#define SPELL_TYPE(w) ((w) >> 4 & 63)
+#define SPELL_DISABLED_TICKS(w) ((w) >> 10)
+
 static int ready;
 static CreatureInfo creature_info[CREATURE_TYPE_COUNT];
 static CreatureSound creature_sounds[CREATURE_SOUND_COUNT];
@@ -46,12 +59,11 @@ static uint16_t slot_masks[SLOT_MASK_COUNT];
 static uint8_t wound_defense_factor[WOUND_DEFENSE_FACTOR_COUNT];
 static uint16_t fixed_possessions[FIXED_POSSESSION_COUNT];
 
-int tables_init(void)
+/* Creature attributes and the creature attack and movement sounds. */
+static void read_creatures(void)
 {
-    if (!kaos.data)
-        return -1;
     for (uint32_t i = 0; i < CREATURE_TYPE_COUNT; i++) {
-        uint32_t a = CREATURE_INFO + i * 0x1a;
+        uint32_t a = CREATURE_INFO + i * CREATURE_INFO_BYTES;
         creature_info[i] = (CreatureInfo){
             kaos_u8(a), kaos_u8(a + 1), kaos_u16(a + 2), kaos_u16(a + 4),
             kaos_u8(a + 6), kaos_u8(a + 7), kaos_u8(a + 8), kaos_u8(a + 9),
@@ -62,16 +74,21 @@ int tables_init(void)
     }
     for (uint32_t i = 0; i < CREATURE_SOUND_COUNT; i++)
         creature_sounds[i] = (CreatureSound){(int8_t)kaos_u8(CREATURE_SOUNDS + i * 2), (int8_t)kaos_u8(CREATURE_SOUNDS + i * 2 + 1)};
+}
+
+/* Object, weapon, armour, junk, food, and door properties. */
+static void read_objects(void)
+{
     for (uint32_t i = 0; i < OBJECT_INFO_COUNT; i++) {
-        uint32_t a = OBJECT_INFO + i * 6;
+        uint32_t a = OBJECT_INFO + i * OBJECT_INFO_BYTES;
         object_info[i] = (ObjectInfo){kaos_u16(a), kaos_u8(a + 2), kaos_u8(a + 3), kaos_u16(a + 4)};
     }
     for (uint32_t i = 0; i < WEAPON_TYPE_COUNT; i++) {
-        uint32_t a = WEAPON_INFO + i * 6;
+        uint32_t a = WEAPON_INFO + i * WEAPON_INFO_BYTES;
         weapon_info[i] = (WeaponInfo){kaos_u8(a), kaos_u8(a + 1), kaos_u8(a + 2), kaos_u8(a + 3), kaos_u16(a + 4)};
     }
     for (uint32_t i = 0; i < ARMOUR_TYPE_COUNT; i++) {
-        uint32_t a = ARMOUR_INFO + i * 4;
+        uint32_t a = ARMOUR_INFO + i * ARMOUR_INFO_BYTES;
         armour_info[i] = (ArmourInfo){kaos_u8(a), kaos_u8(a + 1), kaos_u8(a + 2)};
     }
     for (uint32_t i = 0; i < JUNK_TYPE_COUNT; i++)
@@ -80,18 +97,28 @@ int tables_init(void)
         food_values[i] = kaos_s16(FOOD_VALUES + i * 2);
     for (uint32_t i = 0; i < DOOR_TYPE_COUNT; i++)
         door_info[i] = (DoorInfo){kaos_u8(DOOR_INFO + i * 2), kaos_u8(DOOR_INFO + i * 2 + 1)};
+}
+
+/* Spells and the mana costs of the spell symbols. */
+static void read_magic(void)
+{
     for (uint32_t i = 0; i < SPELL_COUNT; i++) {
-        uint32_t a = SPELLS + i * 8;
+        uint32_t a = SPELLS + i * SPELL_BYTES;
         uint16_t w = kaos_u16(a + 6);
-        spells[i] = (Spell){kaos_u32(a), kaos_u8(a + 4), kaos_u8(a + 5), w & 0xf, (w >> 4) & 0x3f, w >> 10};
+        spells[i] = (Spell){kaos_u32(a), kaos_u8(a + 4), kaos_u8(a + 5), SPELL_KIND(w), SPELL_TYPE(w), SPELL_DISABLED_TICKS(w)};
     }
     for (uint32_t s = 0; s < SYMBOL_STEP_COUNT; s++)
         for (uint32_t n = 0; n < SYMBOL_COUNT; n++)
             symbol_base_mana_cost[s][n] = kaos_u8(SYMBOL_BASE_MANA_COST + s * SYMBOL_COUNT + n);
     for (uint32_t i = 0; i < SYMBOL_COUNT; i++)
         symbol_mana_cost_multiplier[i] = kaos_u8(SYMBOL_MANA_COST_MULTIPLIER + i);
+}
+
+/* Action sets of the objects and the properties of each action. */
+static void read_actions(void)
+{
     for (uint32_t i = 0; i < ACTION_SET_COUNT; i++) {
-        uint32_t a = ACTION_SETS + i * 8;
+        uint32_t a = ACTION_SETS + i * ACTION_SET_BYTES;
         action_sets[i] = (ActionSet){{kaos_u8(a), kaos_u8(a + 1), kaos_u8(a + 2)}, {kaos_u8(a + 4), kaos_u8(a + 5)}, kaos_u8(a + 6)};
     }
     for (uint32_t i = 0; i < ACTION_COUNT; i++)
@@ -101,6 +128,11 @@ int tables_init(void)
             (int8_t)kaos_u8(ACTION_DEFENSE + i), kaos_u8(ACTION_SKILL_INDEX + i),
             kaos_u8(ACTION_EXPERIENCE_GAIN + i),
         };
+}
+
+/* Light amounts, palette thresholds, slot masks, wound defense, and fixed possessions. */
+static void read_champion_tables(void)
+{
     for (uint32_t i = 0; i < LIGHT_POWER_COUNT; i++)
         light_power_to_light_amount[i] = kaos_s16(LIGHT_POWER_TO_LIGHT_AMOUNT + i * 2);
     for (uint32_t i = 0; i < PALETTE_LIGHT_THRESHOLD_COUNT; i++)
@@ -111,6 +143,17 @@ int tables_init(void)
         wound_defense_factor[i] = kaos_u8(WOUND_DEFENSE_FACTOR + i);
     for (uint32_t i = 0; i < FIXED_POSSESSION_COUNT; i++)
         fixed_possessions[i] = kaos_u16(FIXED_POSSESSIONS + i * 2);
+}
+
+int tables_init(void)
+{
+    if (!kaos.data)
+        return -1;
+    read_creatures();
+    read_objects();
+    read_magic();
+    read_actions();
+    read_champion_tables();
     ready = 1;
     return 0;
 }

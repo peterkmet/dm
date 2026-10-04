@@ -3,9 +3,14 @@
 #include <stdint.h>
 
 #define NORMALIZE(direction) ((direction) & 3)
+#define CHAMPION_MAX_COUNT 4
+#define STAT_LIMIT 170                 /* no statistic grows above this value */
+#define PARTY_SCENT_COUNT 24
+#define ACTIVE_GROUP_MAX_COUNT 110     /* creature groups that can act at the same time */
+#define WATCHDOG_INTERVAL 300          /* game ticks between two watchdog events */
 
 enum { STAT_LUCK, STAT_STRENGTH, STAT_DEXTERITY, STAT_WISDOM, STAT_VITALITY, STAT_ANTIMAGIC, STAT_ANTIFIRE, STAT_COUNT };
-enum { STAT_MAXIMUM, STAT_CURRENT, STAT_MINIMUM };
+enum { STAT_MAXIMUM, STAT_CURRENT, STAT_MINIMUM, STAT_VALUE_COUNT };
 
 typedef struct {
     int16_t temporary_experience;
@@ -30,9 +35,9 @@ typedef struct {
     int16_t current_mana, maximum_mana;
     int16_t action_defense;
     int16_t food, water;
-    uint8_t statistics[7][3];                  /* [STAT_*][STAT_MAXIMUM..STAT_MINIMUM] */
-    Skill skills[20];
-    uint16_t slots[30];
+    uint8_t statistics[STAT_COUNT][STAT_VALUE_COUNT];
+    Skill skills[20];                          /* SKILL_COUNT */
+    uint16_t slots[30];                        /* SLOT_COUNT */
     uint16_t load;
     int16_t shield_defense;
 } Champion;
@@ -42,8 +47,8 @@ typedef struct {
     uint8_t event73_count_thieves_eye, event79_count_footprints;
     int16_t shield_defense, fire_shield_defense, spell_shield_defense;
     uint8_t scent_count, freeze_life_ticks, first_scent_index, last_scent_index;
-    uint16_t scents[24];                       /* x bits 11-15, y bits 6-10, map bits 0-5 */
-    uint8_t scent_strengths[24];
+    uint16_t scents[PARTY_SCENT_COUNT];                       /* x bits 11-15, y bits 6-10, map bits 0-5 */
+    uint8_t scent_strengths[PARTY_SCENT_COUNT];
     uint8_t event71_count_invisibility;
 } Party;
 
@@ -64,7 +69,7 @@ typedef struct {
 } ActiveGroup;
 
 extern Party g_party;
-extern Champion g_champions[4];
+extern Champion g_champions[CHAMPION_MAX_COUNT];
 extern uint16_t g_party_champion_count;
 extern int16_t g_leader_index, g_magic_caster_champion_index;
 extern uint16_t g_leader_hand_object;

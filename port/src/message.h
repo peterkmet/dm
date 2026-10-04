@@ -2,13 +2,16 @@
 #define MESSAGE_H
 #include <stdint.h>
 #include "graphics.h"
+#include "text.h"
 
 #define MESSAGE_ROWS 4
+#define MESSAGE_LAST_ROW (MESSAGE_ROWS - 1)
 #define MESSAGE_ROW_HEIGHT 7   /* g_message_area_row_height */
 #define MESSAGE_ROW_WIDTH 320  /* g_message_area_row_bitmap_width */
-#define MESSAGE_COLS (MESSAGE_ROW_WIDTH / 6)
+#define MESSAGE_COLS (MESSAGE_ROW_WIDTH / TEXT_CHAR_WIDTH)
 #define MESSAGE_LIFETIME 70    /* game ticks until a row expires */
 #define MESSAGE_NO_EXPIRY UINT32_MAX
+#define MESSAGE_WRAP_INDENT 12  /* x where a wrapped row continues */
 
 /* Rule-level model of the message area (zone 15). A row is one character cell per
    TEXT_CHAR_WIDTH pixels; text 0 means an empty cell. */

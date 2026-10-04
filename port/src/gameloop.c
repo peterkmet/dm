@@ -2,11 +2,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "gameloop.h"
+#include "advanced.h"
+#include "automap.h"
 #include "champion.h"
 #include "command.h"
 #include "dialog.h"
 #include "group.h"
 #include "projectile.h"
+#include "random.h"
 #include "savegame.h"
 #include "sensor.h"
 #include "startend.h"
@@ -141,9 +144,17 @@ static void decrease_torches_light_power(void)
 /* The dungeon view of the party in the light of the party. */
 void gameloop_draw_view(void)
 {
-    view_set_light(party_light_amount());
+    int16_t light = party_light_amount();
+    view_set_light(light);
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
     ui_set_palette(NULL);
+    advanced_draw_debug(light);
+}
+
+/* The automap remembers the squares of the current view. */
+static void mark_seen_squares(void)
+{
+    automap_mark_seen(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
 }
 
 /* Redraws what commands and rules changed: flagged champion states, hand and inventory slots,
@@ -172,6 +183,7 @@ static void start_game(void)
     g_candidate_champion_ordinal = 0;
     g_party_is_sleeping = 0;
     g_game_won = g_do_not_draw_fluxcages = 0;
+    g_automap_open = 0;
     memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
     shown_hand_object = THING_NONE;
     command_reset();
@@ -207,8 +219,10 @@ int gameloop_new_game(const char *dir)
     g_saved_game_exists = 0;
     g_leader_empty_handed = 1;
     start_game();
+    automap_reset();
     move_party_enter_dungeon();
     show_game();
+    mark_seen_squares();
     return 1;
 }
 
@@ -244,6 +258,7 @@ void gameloop_start_loaded_game(void)
     show_game();
     reset_champions_of_loaded_game();
     refresh_interface();
+    mark_seen_squares();
 }
 
 /* The fuse action and sensor 18 ask for a sequence that runs outside the commands and events. */
@@ -254,14 +269,31 @@ static void run_requested_sequence(void)
     fuse_sequence();
 }
 
+/* Advanced feature: between two ticks the view shows the projectiles part of the way to their new
+   place. The view draws fields and explosions with the game random numbers: the seed stays. */
+static void draw_projectile_motion(void)
+{
+    if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_party_is_sleeping || g_inventory_champion_ordinal ||
+        !view_projectiles_moving())
+        return;
+    uint32_t seed = g_random_seed;
+    view_set_motion(frames_waiting, g_wait_for_input_max_frames + 1);
+    gameloop_draw_view();
+    view_set_motion(0, 0);
+    g_random_seed = seed;
+}
+
 int gameloop_frame(void)
 {
     int ran = 0;
+    if (g_automap_open) return 0; /* the game time stops while the automap is open */
     while ((!g_stop_waiting_for_input || !g_game_time_ticking) && command_process_queue()) ran = 1;
     if (ran) refresh_interface();
     run_requested_sequence();
     if (++frames_waiting > g_wait_for_input_max_frames) g_stop_waiting_for_input = 1;
-    return g_stop_waiting_for_input && g_game_time_ticking;
+    int tick = g_stop_waiting_for_input && g_game_time_ticking;
+    if (!tick) draw_projectile_motion();
+    return tick;
 }
 
 /* The game time advances one tick: torches burn, freeze life and movement delays count down, and
@@ -294,6 +326,7 @@ void gameloop_tick(void)
         if (!g_candidate_champion_ordinal) game_unfreeze();
         if (!g_inventory_champion_ordinal) gameloop_draw_view();
     }
+    mark_seen_squares();
     command_highlight_disable();
     sound_play_pending();
     champion_apply_and_draw_pending_damage_and_wounds();

@@ -24,4 +24,18 @@ static inline uint8_t explosion_attack(uint16_t explosion) { return REC(explosio
 static inline uint8_t explosion_type(uint16_t explosion) { return REC(explosion)[3] & 0x7f; }
 static inline int explosion_is_centered(uint16_t explosion) { return REC(explosion)[3] >> 7; }
 
+/* Map descriptor bytes of the view: ornament counts, difficulty, creature types, graphic sets. */
+static inline int16_t map_random_floor_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[10] >> 4; }
+static inline int16_t map_floor_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[10] & 15; }
+static inline int16_t map_random_wall_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[11] >> 4; }
+static inline int16_t map_wall_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[11] & 15; }
+static inline int16_t map_difficulty(int16_t map) { return MAP_DESCRIPTOR(map)[12] >> 4; }
+static inline int16_t map_door_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[13] & 15; }
+static inline int16_t map_creature_type_count(int16_t map) { return MAP_DESCRIPTOR(map)[13] >> 4; }
+static inline int16_t map_floor_set(int16_t map) { return MAP_DESCRIPTOR(map)[15] & 15; }
+static inline int16_t map_wall_set(int16_t map) { return MAP_DESCRIPTOR(map)[15] >> 4; }
+
+/* Dungeon header word 0: the seed of the random wall and floor ornaments. */
+static inline uint16_t dungeon_ornament_seed(void) { return BE16(g_dungeon_header); }
+
 #endif

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "advanced.h"
 #include "champion.h"
 #include "command.h"
 #include "dungeon.h"
@@ -10,7 +11,9 @@
 #include "inventory.h"
 #include "layout.h"
 #include "message.h"
+#include "map.h"
 #include "recruit.h"
+#include "tables.h"
 #include "text.h"
 #include "ui.h"
 
@@ -47,11 +50,23 @@
 #define POTION_POWER_SYMBOL_STEP 40
 #define TEXT_MODE_SCROLL 2
 #define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
+#define SCROLL_LINE_CHARS 18             /* characters that fit on the parchment */
+#define RUNE_FIRST 0x60                  /* font character of the first rune */
+#define METER_LABEL_CHARS 8              /* the bar starts after the longest label */
+#define METER_BAR_WIDTH 36
+#define METER_BAR_HEIGHT 5
+#define METER_VALUE_GAP 4                /* pixels between the bar and the value */
+#define METER_BAR_ABOVE_BASELINE 4       /* the bar top is level with the top of the letters */
 #define SLOT_BOX_ACTION_HAND (UI_SLOT_BOX_INVENTORY_FIRST + SLOT_HAND_ACTION)
 #define SLOT_BOX_CHEST_FIRST (UI_SLOT_BOX_INVENTORY_FIRST + SLOT_CHEST_FIRST)
 
 /* Object attribute bits of the description; the names are strings TEXT_CONSUMABLE + bit. */
 enum { ATTRIBUTE_CONSUMABLE = 1, ATTRIBUTE_POISONED = 2, ATTRIBUTE_BROKEN = 4, ATTRIBUTE_CURSED = 8, ATTRIBUTE_COUNT = 4 };
+
+const char *const g_rune_names[UI_RUNE_COUNT] = {
+    "LO", "UM", "ON", "EE", "PAL", "MON", "YA", "VI", "OH", "FUL", "DES", "ZO",
+    "VEN", "EW", "KATH", "IR", "BRO", "GOR", "KU", "ROS", "DAIN", "NETA", "RA", "SAR",
+};
 
 int16_t g_champion_portrait_indices[4];
 int16_t g_panel_content;
@@ -542,15 +557,55 @@ static void draw_icon_to_viewport(int16_t icon, int16_t zone)
     draw_blit(&bm, 0, 0, ui_viewport(), &b, COLOR_NONE, 0);
 }
 
-/* Prints one scroll line centered on x in the scroll font: letters and '{' to '~' have their own codes. */
+/* The rune of a word on a scroll ("FUL", "IR." ...), or -1. *core_length gets the length without the punctuation. */
+static int rune_of_word(const char *word, size_t length, size_t *core_length)
+{
+    while (length && (word[length - 1] == '.' || word[length - 1] == ',')) length--;
+    *core_length = length;
+    for (int k = 0; k < UI_RUNE_COUNT; k++)
+        if (strlen(g_rune_names[k]) == length && !strncmp(word, g_rune_names[k], length)) return k;
+    return -1;
+}
+
+/* Copies text to out with the rune symbol after each rune name, after gap. */
+static void add_rune_symbols(const char *text, const char *gap, char *out, size_t size)
+{
+    size_t n = 0;
+    out[0] = 0;
+    for (const char *word = text; *word;) {
+        size_t length = strcspn(word, " "), core;
+        int rune = rune_of_word(word, length, &core);
+        if (rune < 0) n += (size_t)snprintf(out + n, size - n, "%.*s", (int)length, word);
+        else n += (size_t)snprintf(out + n, size - n, "%.*s%s%c%s", (int)core, word, gap, RUNE_FIRST + rune, word + core);
+        if (n >= size) return;
+        word += length;
+        while (*word == ' ' && n + 1 < size) out[n++] = *word++, out[n] = 0;
+    }
+}
+
+/* Prints one scroll line centered on x in the scroll font: letters and '{' to '~' have their own codes.
+   With the advanced features each rune name gets its symbol in red. */
 static void draw_scroll_line(int16_t x, int16_t y, char *text)
 {
+    char runes[SCROLL_TEXT_SIZE];
     int w, h;
+    if (g_advanced_features) {
+        add_rune_symbols(text, " ", runes, sizeof runes);
+        if (strlen(runes) > SCROLL_LINE_CHARS) add_rune_symbols(text, "", runes, sizeof runes);
+        text = runes;
+    }
     for (char *c = text; *c; c++) {
         if (*c >= 'A' && *c <= 'Z') *c = (char)(*c - 'A' + 1);
         else if (*c >= '{') *c = (char)(*c - SCROLL_FONT_SHIFT);
     }
-    if (text_size(text, &w, &h)) text_draw(ui_viewport(), x - (w >> 1), y, COLOR_BLACK, COLOR_WHITE, text);
+    if (!text_size(text, &w, &h)) return;
+    int16_t left = (int16_t)(x - (w >> 1));
+    text_draw(ui_viewport(), left, y, COLOR_BLACK, COLOR_WHITE, text);
+    for (int i = 0; g_advanced_features && text[i]; i++) {
+        char glyph[2] = { text[i], 0 };
+        if ((uint8_t)text[i] >= RUNE_FIRST && (uint8_t)text[i] < RUNE_FIRST + UI_RUNE_COUNT)
+            text_draw(ui_viewport(), left + i * TEXT_CHAR_WIDTH, y, COLOR_RED, COLOR_WHITE, glyph);
+    }
 }
 
 /* Draws the open scroll with its text, vertically centered. */
@@ -581,6 +636,63 @@ static void draw_panel_scroll(uint16_t scroll)
         draw_scroll_line(x, y, rest);
         rest = nl ? nl + 1 : rest + strlen(rest);
     }
+}
+
+/* The largest value of a field over the entries of a rule table, at least 1. */
+static uint16_t largest_attack(void)
+{
+    uint16_t most = 1;
+    for (int i = 0; i < WEAPON_TYPE_COUNT; i++) most = tables_weapon_info(i)->strength > most ? tables_weapon_info(i)->strength : most;
+    return most;
+}
+
+static uint16_t largest_defense(void)
+{
+    uint16_t most = 1;
+    for (int i = 0; i < ARMOUR_TYPE_COUNT; i++) most = tables_armour_info(i)->defense > most ? tables_armour_info(i)->defense : most;
+    return most;
+}
+
+static uint16_t largest_weight(void)
+{
+    uint16_t most = 1;
+    for (int i = 0; i < WEAPON_TYPE_COUNT; i++) most = tables_weapon_info(i)->weight > most ? tables_weapon_info(i)->weight : most;
+    for (int i = 0; i < ARMOUR_TYPE_COUNT; i++) most = tables_armour_info(i)->weight > most ? tables_armour_info(i)->weight : most;
+    for (int i = 0; i < JUNK_TYPE_COUNT; i++) most = *tables_junk_weight(i) > most ? *tables_junk_weight(i) : most;
+    return most;
+}
+
+/* One stat meter at baseline y: the label, a bar with a black shadow, and the value when show_value is 1. */
+static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t value, uint16_t maximum, uint8_t color, int show_value)
+{
+    Bitmap *vp = ui_viewport();
+    char text[8];
+    int16_t bar_x = (int16_t)(x + METER_LABEL_CHARS * TEXT_CHAR_WIDTH), top = (int16_t)(y - METER_BAR_ABOVE_BASELINE);
+    int16_t filled = (int16_t)(value >= maximum ? METER_BAR_WIDTH : value * METER_BAR_WIDTH / maximum);
+    if (value && !filled) filled = 1; /* a small value still shows */
+    text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, label);
+    Box shadow = { (int16_t)(bar_x + 1), (int16_t)(top + 1), filled, METER_BAR_HEIGHT };
+    Box bar = { bar_x, top, filled, METER_BAR_HEIGHT };
+    if (filled) {
+        draw_fill(vp, &shadow, COLOR_BLACK);
+        draw_fill(vp, &bar, color);
+    }
+    if (!show_value) return;
+    snprintf(text, sizeof text, "%3u", value);
+    text_draw(vp, bar_x + METER_BAR_WIDTH + METER_VALUE_GAP, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, text);
+}
+
+/* Advanced feature: attack (weapons), defense (armour), and weight meters below the description. */
+static void draw_stat_meters(uint16_t thing, int16_t x, int16_t y)
+{
+    if (THING_TYPE(thing) == THING_WEAPON) {
+        draw_stat_meter(x, y, "ATTACK", tables_weapon_info(weapon_type(thing))->strength, largest_attack(), COLOR_GOLD, 1);
+        y += MESSAGE_ROW_HEIGHT;
+    } else if (THING_TYPE(thing) == THING_ARMOUR) {
+        draw_stat_meter(x, y, "DEFENSE", tables_armour_info(armour_type(thing))->defense, largest_defense(), COLOR_BLUE, 1);
+        y += MESSAGE_ROW_HEIGHT;
+    }
+    draw_stat_meter(x, y, "WEIGHT", get_object_weight(thing), largest_weight(), COLOR_LIGHT_BROWN, 0);
 }
 
 /* Opens a chest in the panel and draws its slots. While the eye is pressed, the action hand keeps
@@ -618,6 +730,7 @@ void draw_panel_object(uint16_t thing, int16_t pressing_eye)
         zone_point(ZONE_PANEL_OBJECT_TEXT, &x, &y);
         y = PANEL_OBJECT_TEXT_Y;
         for (int16_t i = 0; i < count; i++) print_panel_line(x, &y, lines[i]);
+        if (g_advanced_features) draw_stat_meters(thing, x, y);
     }
     ui_blit_graphic(vp, pressing_eye ? GFX_PANEL_EYE : GFX_PANEL_ARROW, ZONE_PANEL_ARROW_OR_EYE, COLOR_RED);
 }

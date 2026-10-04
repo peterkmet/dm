@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "advanced.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -113,8 +114,9 @@ void menus_set_acting_champion(uint16_t champion_index)
     menus_draw_action_area();
 }
 
-/* Draws the action hand object of a champion as a black icon on a cyan box; dimmed while the
-   action is disabled, a candidate is shown, or the party sleeps. */
+/* Draws the action hand object of a champion as a black icon on a cyan box (with the advanced
+   features, in its own colors on the cyan box); dimmed while the action is disabled, a candidate is
+   shown, or the party sleeps. */
 void menus_draw_action_icon(uint16_t champion_index)
 {
     const Champion *c = &g_champions[champion_index];
@@ -133,7 +135,10 @@ void menus_draw_action_icon(uint16_t champion_index)
         memset(px, COLOR_CYAN, sizeof px);
     } else {
         ui_extract_icon(thing == THING_NONE ? ICON_EMPTY_ACTION_HAND : object_get_icon_index(thing), &icon);
-        for (size_t i = 0; i < sizeof px; i++) px[i] = kaos_u8(ACTION_ICON_PALETTE + (px[i] & 15));
+        for (size_t i = 0; i < sizeof px; i++) {
+            uint8_t stamp = kaos_u8(ACTION_ICON_PALETTE + (px[i] & 15));
+            if (!g_advanced_features || stamp == COLOR_CYAN) px[i] = stamp;
+        }
     }
     ui_fill_zone(&screen, zone, COLOR_CYAN);
     ui_blit_zone(&screen, &icon, (int16_t)(ZONE_ACTION_ICON_FIRST + champion_index), COLOR_NONE);

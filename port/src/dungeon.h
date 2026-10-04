@@ -2,6 +2,8 @@
 #define DUNGEON_H
 #include <stdint.h>
 
+#define THING_TYPE_COUNT 16
+
 /* All buffers keep the big-endian byte layout of the original memory. */
 extern uint8_t *g_dungeon_header;                   /* 44 bytes */
 extern uint8_t *g_dungeon_maps;                     /* 16 bytes per map */
@@ -10,10 +12,10 @@ extern int16_t g_dungeon_column_count;
 extern uint8_t *g_dungeon_column_first_thing_index; /* word per column */
 extern uint8_t *g_square_first_things;              /* word per square with things */
 extern uint8_t *g_dungeon_text_data;
-extern uint8_t *g_thing_data[16];
+extern uint8_t *g_thing_data[THING_TYPE_COUNT];
 extern uint8_t *g_dungeon_raw_map_data;
 extern uint8_t ***g_dungeon_map_data;               /* [map][x] -> column of squares */
-extern const uint8_t g_thing_data_byte_count[16];
+extern const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT];
 extern uint16_t g_dungeon_id;
 extern int16_t g_event_max_count;
 extern int16_t g_party_map_x, g_party_map_y, g_party_direction, g_party_map_index;

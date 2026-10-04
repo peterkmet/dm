@@ -5,6 +5,16 @@
 
 #define BE16(p) ((uint16_t)((p)[0] << 8 | (p)[1]))
 
+#define GRAPHICS_DAT_FORMAT_1 0x8001
+#define GRAPHIC_PAD_WORD 0xff81 /* skipped before the width and height */
+
+/* Graphic command byte: bit 7 clear = short fill of (bits 4-6) + 1 pixels of color (bits 0-3).
+   Bit 7 set = a long command: kind in bits 4-5, bit 6 a 16-bit count. */
+enum { CMD_LONG = 0x80, CMD_WIDE_COUNT = 0x40, CMD_KIND_MASK = 0x30, CMD_COLOR_MASK = 15 };
+enum { KIND_FILL = 0x00, KIND_RAW = 0x10, KIND_SKIP = 0x20, KIND_COPY_ABOVE = 0x30 };
+/* Skip lengths 29-31 read the length from the next bytes. */
+enum { SKIP_BYTE = 29, SKIP_BYTE_PLUS_256 = 30, SKIP_WORD = 31 };
+
 static uint8_t *dat;
 static size_t dat_len;
 static uint16_t count;
@@ -23,7 +33,7 @@ int gfx_open(const char *path)
     decoded = NULL;
     count = 0;
     if (!(dat = read_file(path, &dat_len)) || dat_len < 4) return -1;
-    if (BE16(dat) != 0x8001) return -1;
+    if (BE16(dat) != GRAPHICS_DAT_FORMAT_1) return -1;
     uint16_t n = BE16(dat + 2);
     uint32_t off = 4 + n * 8u;
     const uint8_t *sizes = dat + 4;
@@ -39,7 +49,7 @@ int gfx_open(const char *path)
 
 int gfx_count(void) { return count; }
 
-/* Raw (packed) bytes of item i. */
+/* Packed bytes of item i. */
 const uint8_t *gfx_item(int i, uint16_t *size)
 {
     if (i < 0 || i >= count) return NULL;
@@ -51,7 +61,7 @@ const uint8_t *gfx_item(int i, uint16_t *size)
 int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
 {
     const uint8_t *end = p + len;
-    while (end - p >= 2 && BE16(p) == 0xff81) p += 2;
+    while (end - p >= 2 && BE16(p) == GRAPHIC_PAD_WORD) p += 2;
     if (end - p < 4) return -1;
     uint16_t w = BE16(p), h = BE16(p + 2);
     size_t n = (size_t)w * h, pos = 0;
@@ -61,28 +71,28 @@ int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
 #define NEXT() (p < end ? *p++ : 0)
 #define PUT(c) do { if (pos < n) px[pos] = (c); pos++; } while (0)
     while (pos < n) {
-        uint8_t cmd = NEXT(), c = cmd & 15;
+        uint8_t cmd = NEXT(), c = cmd & CMD_COLOR_MASK;
         unsigned cnt;
-        if (!(cmd & 0x80)) {
+        if (!(cmd & CMD_LONG)) {
             for (cnt = (cmd >> 4) + 1; cnt; cnt--) PUT(c);
             continue;
         }
-        if ((cmd & 0x30) == 0x20) { /* skip */
-            unsigned k = c | (cmd & 0x40 ? 16 : 0);
-            if (k == 29) k = NEXT();
-            else if (k == 30) k = 256 + NEXT();
-            else if (k == 31) { k = NEXT() << 8; k |= NEXT(); }
+        if ((cmd & CMD_KIND_MASK) == KIND_SKIP) { /* leave pixels transparent */
+            unsigned k = c | (cmd & CMD_WIDE_COUNT ? 16 : 0);
+            if (k == SKIP_BYTE) k = NEXT();
+            else if (k == SKIP_BYTE_PLUS_256) k = 256 + NEXT();
+            else if (k == SKIP_WORD) { k = NEXT() << 8; k |= NEXT(); }
             pos += k + 1;
             continue;
         }
         cnt = NEXT();
-        if (cmd & 0x40) cnt = cnt << 8 | NEXT();
+        if (cmd & CMD_WIDE_COUNT) cnt = cnt << 8 | NEXT();
         cnt++;
-        switch (cmd & 0x30) {
-        case 0x00: /* fill */
+        switch (cmd & CMD_KIND_MASK) {
+        case KIND_FILL:
             while (cnt--) PUT(c);
             break;
-        case 0x10: /* raw pixels, two per byte */
+        case KIND_RAW: /* two pixels per byte */
             if (cnt & 1) PUT(c);
             for (cnt /= 2; cnt; cnt--) {
                 uint8_t b = NEXT();
@@ -90,7 +100,7 @@ int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
                 PUT(b & 15);
             }
             break;
-        default: /* copy from the row above, then one pixel of color c */
+        default: /* KIND_COPY_ABOVE, then one pixel of color c */
             for (; cnt; cnt--) PUT(pos >= w && pos < n ? px[pos - w] : 0);
             PUT(c);
         }
@@ -101,6 +111,7 @@ int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
     return 0;
 }
 
+/* Decodes graphic i into a new bitmap. Returns 0 or -1. */
 int gfx_load_bitmap(int i, Bitmap *bm)
 {
     uint16_t size;

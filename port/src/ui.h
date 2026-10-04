@@ -113,6 +113,11 @@ int16_t ui_point_in_zone(int16_t zone, int16_t x, int16_t y);
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask);
 uint32_t ui_mouse_table_address(int16_t table); /* KAOS address of a mouse input table */
 
+/* Rune names by font character - 0x60: power, element, form, alignment. The original shows only
+   the glyphs; scrolls name the runes. */
+#define UI_RUNE_COUNT 24
+extern const char *const g_rune_names[UI_RUNE_COUNT];
+
 /* Champions and the inventory panel (ui_champion.c). */
 void champion_draw_bar_graphs(int16_t champion_index);
 void champion_draw_slot(uint16_t champion_index, uint16_t slot);

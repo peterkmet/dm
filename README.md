@@ -125,15 +125,52 @@ The controls are the controls of the original Amiga game.
 | Action area | Click a champion hand, then an action |
 | Spell area | Click runes, then the cast button. Click a tab to select another caster. |
 
+### Modes
+
+`--mode` selects the game mode. The game rules are the same in all modes.
+
+| Mode | Behavior |
+|---|---|
+| `vanilla` | Default. The original game. The advanced keys do nothing. |
+| `advanced` | The original game with the advanced features on. F6 turns them off and on. |
+| `turnbased` | The advanced features, and a program plays through a Unix socket. The game time stands still between turns. See [llm-mode.md](docs/llm-mode.md). |
+
+The advanced features are not in the original game:
+
+- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open.
+- Debug read-out: level, X and Y, facing, and light amount in the top-left corner of the view. Display only.
+- Rune symbols in red after each rune name on an open scroll.
+- Action icons in their own colors.
+- Stat meters in the object description (hold the eye with an object in the hand): attack for a weapon, defense for armour, and weight.
+- Escape closes an open inventory. With no inventory open, Escape freezes the game as in vanilla.
+- Smooth projectile flight: between two game ticks, the view shows each flying projectile part of the way to its new place. The size changes only at a tick.
+
+Keys of the `advanced` mode:
+
+| Key | Action |
+|---|---|
+| F6 | Turn the advanced features off or on |
+| M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, and Escape work. |
+| Escape | Close the automap or the open inventory, else freeze the game |
+| F5 | Show or hide the debug read-out |
+
+F1 to F4 open the inventories in every mode.
+
+In the `advanced` and `turnbased` modes, the save file has an extension block after the original save data. The block keeps the explored squares of the automap. The original part of the file is the same as in a vanilla save, and vanilla loads the file. A file without the block, or with a damaged block, loads with an empty automap.
+
+In the `turnbased` mode, the game enters the dungeon at the start. The keyboard and the mouse do not control the game. Closing the window quits.
+
 Options:
 
+- `--mode vanilla|advanced|turnbased` selects the game mode.
+- `--control PATH` selects the socket of the `turnbased` mode. The default is `~/.dm/control.sock`.
 - `--filter none|scale2x|scale3x` selects the pixel-art upscale filter.
 - `--frames N` quits after N frames (50 frames per second).
 - `--view` shows only the dungeon view at the party start. Up and Down move, Left and Right turn, A and D move sideways.
 - `--show N` shows graphic N of `Graphics.DAT`.
 - The environment variable `DM_AUTO_ENTER=1` presses ENTER at the start. The tests use it.
 
-Not available yet: actions and throwing (the action menu opens, but the action has no effect), the description of an object under the eye, chests and scrolls in the panel, the credits, and the door animation of the entrance. The dialogs and the endgame screens do not fade the palette.
+Not available yet: the credits fade, the door animation of the entrance, and the rename of a reincarnated champion. The dialogs and the endgame screens do not fade the palette.
 
 Set `DM_FILTER` to select a pixel-art upscale filter. The values are `none` (default), `scale2x`, and `scale3x`. The filter makes the image 2 or 3 times larger before the window scaling. The filter gives the sharpest image when the window scale is a multiple of the filter factor. Example: `DM_FILTER=scale2x build/dm`.
 

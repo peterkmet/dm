@@ -70,6 +70,10 @@
 #define BUTTON_FRAME_COLOR 0x86f
 #define MOUSE_ENTRY_BYTES 12
 #define MOUSE_ENTRY_BOX 2              /* x1, x2, y1, y2 after the command word */
+#define MOUSE_BOX_WORDS 4
+#define ENDGAME_TEXT_SIZE 64
+#define FUSE_FLASH_ROUNDS 3            /* the lord flashes 4 times per round; round n lasts n ticks per flash */
+#define FUSE_FLASHES_PER_ROUND 4
 #define SAVE_DIR_SIZE 1024
 
 /* Choices of the save dialog without the format choice. */
@@ -167,12 +171,23 @@ int16_t load_saved_game(void)
 /* endgame_print_text: capitals in the endgame font on the dark background. */
 static void endgame_print_text(int x, int y, uint8_t color, const char *text)
 {
-    char s[64];
+    char s[ENDGAME_TEXT_SIZE];
     int n = 0;
     for (; text[n] && n < (int)sizeof s - 1; n++)
         s[n] = text[n] >= 'A' && text[n] <= 'Z' ? (char)(text[n] - 'A' + ENDGAME_FONT_A) : text[n];
     s[n] = 0;
     text_draw_screen(x, y, color, ENDGAME_TEXT_BACKGROUND, s);
+}
+
+/* Writes a box into an entry of the endgame mouse table: x1, x2, y1, y2 as big-endian words. */
+static void set_endgame_click_box(int16_t entry_index, const Box *b)
+{
+    uint8_t *box = kaos_ptr(ui_mouse_table_address(UI_INPUT_ENDGAME) + (uint32_t)entry_index * MOUSE_ENTRY_BYTES + MOUSE_ENTRY_BOX);
+    int16_t words[MOUSE_BOX_WORDS] = { b->x, (int16_t)(b->x + b->w - 1), b->y, (int16_t)(b->y + b->h - 1) };
+    for (int i = 0; i < MOUSE_BOX_WORDS; i++) {
+        box[2 * i] = (uint8_t)((uint16_t)words[i] >> 8);
+        box[2 * i + 1] = (uint8_t)words[i];
+    }
 }
 
 /* A framed button with a text; its box becomes the click box of the endgame mouse table entry. */
@@ -190,11 +205,21 @@ static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_in
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
     draw_fill(&screen, &inner, COLOR_BLACK);
     ui_print_zone(&screen, zone, COLOR_CYAN, COLOR_BLACK, text);
-    uint8_t *box = kaos_ptr(ui_mouse_table_address(UI_INPUT_ENDGAME) + (uint32_t)entry_index * MOUSE_ENTRY_BYTES + MOUSE_ENTRY_BOX);
-    int16_t words[4] = { inner.x, (int16_t)(inner.x + inner.w - 1), inner.y, (int16_t)(inner.y + inner.h - 1) };
-    for (int i = 0; i < 4; i++) {
-        box[2 * i] = (uint8_t)((uint16_t)words[i] >> 8);
-        box[2 * i + 1] = (uint8_t)words[i];
+    set_endgame_click_box(entry_index, &inner);
+}
+
+/* The base skill levels above 1 of a champion, one line each below the name. */
+static void print_champion_skills(uint16_t champion_index, int y)
+{
+    for (int16_t skill = 0; skill < SKILL_BASE_COUNT; skill++) {
+        int16_t level = champion_get_skill_level((int16_t)champion_index, (uint16_t)(skill | SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE));
+        if (level > MAX_SKILL_LEVEL) level = MAX_SKILL_LEVEL;
+        if (level == 1) continue;
+        char line[ENDGAME_TEXT_SIZE];
+        snprintf(line, sizeof line, "%s %s", ui_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * level)),
+                 ui_string(kaos_s16(BASE_SKILL_STRINGS + 2 * skill)));
+        y += ENDGAME_SKILL_LINE;
+        endgame_print_text(ENDGAME_SKILL_X, y, COLOR_LIGHT_GRAY, line);
     }
 }
 
@@ -216,21 +241,12 @@ static void draw_champion_parade(void)
         char name[sizeof c->name + 1] = { 0 }, title[sizeof c->title + 1] = { 0 };
         memcpy(name, c->name, sizeof c->name);
         memcpy(title, c->title, sizeof c->title);
-        int name_y = i * ENDGAME_ROW_HEIGHT + ENDGAME_NAME_Y, skill_y = name_y + 1;
+        int name_y = i * ENDGAME_ROW_HEIGHT + ENDGAME_NAME_Y;
         int title_x = ENDGAME_NAME_X + (int)strlen(name) * TEXT_CHAR_WIDTH;
-        if (title[0] != ',' && title[0] != ';' && title[0] != '-') title_x += TEXT_CHAR_WIDTH;
+        if (title[0] != ',' && title[0] != ';' && title[0] != '-') title_x += TEXT_CHAR_WIDTH; /* a space unless punctuation follows */
         endgame_print_text(ENDGAME_NAME_X, name_y, COLOR_GOLD, name);
         endgame_print_text(title_x, name_y, COLOR_GOLD, title);
-        for (int16_t skill = 0; skill < SKILL_BASE_COUNT; skill++) {
-            int16_t level = champion_get_skill_level((int16_t)i, (uint16_t)(skill | SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE));
-            if (level > MAX_SKILL_LEVEL) level = MAX_SKILL_LEVEL;
-            if (level == 1) continue;
-            char line[64];
-            snprintf(line, sizeof line, "%s %s", ui_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * level)),
-                     ui_string(kaos_s16(BASE_SKILL_STRINGS + 2 * skill)));
-            skill_y += ENDGAME_SKILL_LINE;
-            endgame_print_text(ENDGAME_SKILL_X, skill_y, COLOR_LIGHT_GRAY, line);
-        }
+        print_champion_skills(i, name_y + 1);
     }
     ui_set_screen_palette(NULL);
 }
@@ -239,8 +255,8 @@ static void draw_champion_parade(void)
 static void draw_the_end(int with_buttons)
 {
     Bitmap screen = ui_screen();
-    uint16_t colors[16];
-    for (int i = 0; i < 16; i++) colors[i] = THE_END_BACKGROUND;
+    uint16_t colors[PALETTE_COLORS];
+    for (int i = 0; i < PALETTE_COLORS; i++) colors[i] = THE_END_BACKGROUND;
     colors[COLOR_WHITE] = THE_END_WHITE;
     memset(fb, COLOR_BLACK, sizeof fb);
     ui_blit_graphic(&screen, GFX_THE_END, ZONE_THE_END, COLOR_NONE);
@@ -277,6 +293,17 @@ static int wait_for_restart(void)
     return 1;
 }
 
+/* The credits screen until a key or a button is pressed. */
+static void show_credits(void)
+{
+    Bitmap screen = ui_screen();
+    ui_blit_graphic(&screen, GFX_CREDITS, ZONE_SCREEN, COLOR_NONE);
+    uint16_t credits_colors[PALETTE_COLORS];
+    for (int i = 0; i < PALETTE_COLORS; i++) credits_colors[i] = kaos_u16(CREDITS_PALETTE + 2 * i);
+    ui_set_screen_palette(credits_colors);
+    wait_for_input();
+}
+
 /* The port shows the entrance after the credits instead of quitting (deliberate deviation). */
 void endgame(int16_t party_dead)
 {
@@ -298,12 +325,7 @@ void endgame(int16_t party_dead)
             if (wait_for_restart()) return;
         }
     }
-    Bitmap screen = ui_screen();
-    ui_blit_graphic(&screen, GFX_CREDITS, ZONE_SCREEN, COLOR_NONE);
-    uint16_t credits_colors[16];
-    for (int i = 0; i < 16; i++) credits_colors[i] = kaos_u16(CREDITS_PALETTE + 2 * i);
-    ui_set_screen_palette(credits_colors);
-    wait_for_input();
+    show_credits();
     g_return_to_entrance = 1;
 }
 
@@ -366,6 +388,25 @@ static void show_final_texts(void)
     }
 }
 
+/* Lord Chaos and Lord Order flash in turn, slower each round, with the fuse sound. */
+static void flash_lords(uint16_t lord, int16_t x, int16_t y)
+{
+    for (int16_t ticks = FUSE_FLASH_ROUNDS; ticks > 0; ticks--)
+        for (int16_t flash = FUSE_FLASHES_PER_ROUND; flash > 0; flash--) {
+            sound_request_play(SOUND_FUSE, x, y, SOUND_MODE_AFTER_TICK);
+            group_set_creature_type(lord, flash & 1 ? CREATURE_LORD_ORDER : CREATURE_LORD_CHAOS);
+            for (int16_t i = 0; i < ticks; i++) fuse_update();
+        }
+}
+
+/* All creature groups of the map except the one on (x, y) disappear. */
+static void delete_other_groups(int16_t x, int16_t y)
+{
+    for (int16_t gx = 0; gx < g_current_map_width; gx++)
+        for (int16_t gy = 0; gy < g_current_map_height; gy++)
+            if (group_get_thing(gx, gy) != THING_ENDOFLIST && (gx != x || gy != y)) group_delete(gx, gy);
+}
+
 void fuse_sequence(void)
 {
     int16_t x = g_party_map_x, y = g_party_map_y;
@@ -381,7 +422,7 @@ void fuse_sequence(void)
     if (lord == THING_ENDOFLIST) return;
     group_set_health(lord, 0, FUSE_LORD_HEALTH);
     set_group_cells(lord, CELLS_CENTERED, g_party_map_index);
-    set_group_directions(lord, (uint8_t)NORMALIZE(g_party_direction + 2), g_party_map_index);
+    set_group_directions(lord, (uint8_t)NORMALIZE(g_party_direction + 2), g_party_map_index); /* faces the party */
     remove_fluxcages(g_party_map_x, g_party_map_y);
     remove_fluxcages(x, y);
     fuse_update();
@@ -390,12 +431,7 @@ void fuse_sequence(void)
     group_set_creature_type(lord, CREATURE_LORD_ORDER);
     fuse_update();
     fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
-    for (int16_t ticks = 3; ticks > 0; ticks--)
-        for (int16_t flash = 4; flash > 0; flash--) {
-            sound_request_play(SOUND_FUSE, x, y, SOUND_MODE_AFTER_TICK);
-            group_set_creature_type(lord, flash & 1 ? CREATURE_LORD_ORDER : CREATURE_LORD_CHAOS);
-            for (int16_t i = 0; i < ticks; i++) fuse_update();
-        }
+    flash_lords(lord, x, y);
     explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_LAST_ATTACK, (uint16_t)x, (uint16_t)y, CELL_CENTERED);
     explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_LAST_ATTACK, (uint16_t)x, (uint16_t)y, CELL_CENTERED);
     fuse_update();
@@ -403,9 +439,7 @@ void fuse_sequence(void)
     fuse_update();
     g_do_not_draw_fluxcages = 1;
     fuse_update();
-    for (int16_t gx = 0; gx < g_current_map_width; gx++)
-        for (int16_t gy = 0; gy < g_current_map_height; gy++)
-            if (group_get_thing(gx, gy) != THING_ENDOFLIST && (gx != x || gy != y)) group_delete(gx, gy);
+    delete_other_groups(x, y);
     fuse_update();
     show_final_texts();
     fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);

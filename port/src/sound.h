@@ -5,9 +5,10 @@
 #define SOUND_COUNT 35
 #define SOUND_OUTPUT_RATE 44100
 #define SOUND_PAL_CLOCK 3546895 /* Paula clock, Hz */
+#define SOUND_PENDING_SLOTS 2
 
-extern int16_t g_pending_sounds[2];             /* -1: empty slot */
-extern uint8_t g_pending_sound_volumes[2][2];  /* left, right */
+extern int16_t g_pending_sounds[SOUND_PENDING_SLOTS];             /* -1: empty slot */
+extern uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][2];  /* left, right */
 
 const int8_t *sound_sample(int16_t sound, uint16_t *length, uint16_t *period);
 int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b);

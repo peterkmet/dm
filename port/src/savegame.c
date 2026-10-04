@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "savegame.h"
+#include "advanced.h"
+#include "automap.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -19,6 +21,9 @@
 #define BITPLANE_COUNT 4
 #define PIXELS_PER_WORD 16
 #define PATH_SIZE 1024
+#define TIMELINE_ENTRY_BYTES 2        /* one event index per timeline entry */
+#define EXTENSION_LENGTH_BYTES 4      /* the length of the automap block, after the block */
+#define SCENT_COUNT (int)(sizeof g_party.scents / sizeof g_party.scents[0])
 
 /* Block 0: byte offsets of the globals. */
 enum {
@@ -28,7 +33,7 @@ enum {
     G_LAST_CREATURE_ATTACK_TIME = 32, G_LAST_PARTY_MOVEMENT_TIME = 36, G_DISABLED_MOVEMENT_TICKS = 40,
     G_PROJECTILE_DISABLED_MOVEMENT_TICKS = 42, G_LAST_PROJECTILE_DIRECTION = 44, G_MAX_ACTIVE_GROUP_COUNT = 46,
 };
-/* Party record (0x101ed4) offsets. */
+/* Party record (g_party) offsets. */
 enum {
     P_MAGICAL_LIGHT = 0, P_THIEVES_EYE = 2, P_FOOTPRINTS = 3, P_SHIELD = 4, P_FIRE_SHIELD = 6, P_SPELL_SHIELD = 8,
     P_SCENT_COUNT = 10, P_FREEZE_LIFE = 11, P_FIRST_SCENT = 12, P_LAST_SCENT = 13, P_SCENTS = 14, P_SCENT_STRENGTHS = 62,
@@ -43,11 +48,13 @@ int16_t g_saved_game_exists;
 uint32_t g_last_save_game_time, g_last_load_game_time;
 static uint8_t header_extra[SAVE_HEADER_EXTRA_BYTES];   /* g_save_header_extra */
 
+/* Big-endian words and longs, as the 68000 stores them. */
 static uint16_t rd16(const uint8_t *p) { return (uint16_t)(p[0] << 8 | p[1]); }
 static uint32_t rd32(const uint8_t *p) { return (uint32_t)rd16(p) << 16 | rd16(p + 2); }
 static void wr16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)(v >> 8); p[1] = (uint8_t)v; }
 static void wr32(uint8_t *p, uint32_t v) { wr16(p, (uint16_t)(v >> 16)); wr16(p + 2, (uint16_t)v); }
 
+/* Block 0: game time, random seed, party position, leader, and the timeline and group counts. */
 static void pack_globals(uint8_t *g)
 {
     memset(g, 0, SAVE_GLOBALS_BYTES);
@@ -73,6 +80,7 @@ static void pack_globals(uint8_t *g)
     wr16(g + G_MAX_ACTIVE_GROUP_COUNT, g_max_active_group_count);
 }
 
+/* Block 0 back into the globals; the game time also becomes the time of the last load. */
 static void unpack_globals(const uint8_t *g)
 {
     g_game_time = g_last_load_game_time = rd32(g + G_GAME_TIME);
@@ -111,7 +119,7 @@ static void pack_party(uint8_t *p)
     p[P_FREEZE_LIFE] = g_party.freeze_life_ticks;
     p[P_FIRST_SCENT] = g_party.first_scent_index;
     p[P_LAST_SCENT] = g_party.last_scent_index;
-    for (int i = 0; i < 24; i++) wr16(p + P_SCENTS + 2 * i, g_party.scents[i]);
+    for (int i = 0; i < SCENT_COUNT; i++) wr16(p + P_SCENTS + 2 * i, g_party.scents[i]);
     memcpy(p + P_SCENT_STRENGTHS, g_party.scent_strengths, sizeof g_party.scent_strengths);
     p[P_INVISIBILITY] = g_party.event71_count_invisibility;
 }
@@ -129,7 +137,7 @@ static void unpack_party(const uint8_t *p)
     g_party.freeze_life_ticks = p[P_FREEZE_LIFE];
     g_party.first_scent_index = p[P_FIRST_SCENT];
     g_party.last_scent_index = p[P_LAST_SCENT];
-    for (int i = 0; i < 24; i++) g_party.scents[i] = rd16(p + P_SCENTS + 2 * i);
+    for (int i = 0; i < SCENT_COUNT; i++) g_party.scents[i] = rd16(p + P_SCENTS + 2 * i);
     memcpy(g_party.scent_strengths, p + P_SCENT_STRENGTHS, sizeof g_party.scent_strengths);
     g_party.event71_count_invisibility = p[P_INVISIBILITY];
 }
@@ -153,6 +161,7 @@ static void unpack_event(const uint8_t *p, TimelineEvent *e)
     e->c = rd16(p + E_C);
 }
 
+/* An active group: the group index, then the creature state bytes as they are. */
 static void pack_active_group(const ActiveGroup *a, uint8_t *p)
 {
     wr16(p + A_GROUP_INDEX, (uint16_t)a->group_index);
@@ -203,14 +212,26 @@ static int16_t portrait_index_of(const uint8_t *bytes)
     return 0;
 }
 
-/* Builds the five blocks, the portraits, and the dungeon of the current game. The leader load
-   does not count the object in the leader hand, as in save_game. */
+/* The champion block: the four champion records, then the party record. The leader load does
+   not count the object in the leader hand, as in save_game. */
+static void pack_champions(uint8_t *champions)
+{
+    for (int i = 0; i < CHAMPION_MAX_COUNT; i++) champion_pack(&g_champions[i], champions + i * CHAMPION_RECORD_SIZE);
+    if (!g_leader_empty_handed && g_leader_index != -1) {
+        Champion leader = g_champions[g_leader_index];
+        leader.load -= get_object_weight(g_leader_hand_object);
+        champion_pack(&leader, champions + g_leader_index * CHAMPION_RECORD_SIZE);
+    }
+    pack_party(champions + CHAMPION_MAX_COUNT * CHAMPION_RECORD_SIZE);
+}
+
+/* Builds the five blocks, the portraits, and the dungeon of the current game. */
 static uint8_t *encode_game(uint32_t *size)
 {
     uint8_t header[SAVE_HEADER_BYTES], globals[SAVE_GLOBALS_BYTES], champions[SAVE_CHAMPIONS_BYTES];
     uint8_t portraits[SAVE_PORTRAITS_BYTES];
     uint16_t group_bytes = (uint16_t)(g_max_active_group_count * SAVE_ACTIVE_GROUP_BYTES);
-    uint16_t event_bytes = (uint16_t)(g_event_max_count * SAVE_EVENT_BYTES), timeline_bytes = (uint16_t)(g_event_max_count * 2);
+    uint16_t event_bytes = (uint16_t)(g_event_max_count * SAVE_EVENT_BYTES), timeline_bytes = (uint16_t)(g_event_max_count * TIMELINE_ENTRY_BYTES);
     uint8_t *groups = malloc(group_bytes), *events = malloc(event_bytes), *timeline = malloc(timeline_bytes);
     uint32_t dungeon_size = 0;
     uint8_t *dungeon = dungeon_save(&dungeon_size), *file = NULL;
@@ -219,16 +240,10 @@ static uint8_t *encode_game(uint32_t *size)
     timeline_reset();
     pack_globals(globals);
     for (uint16_t i = 0; i < g_max_active_group_count; i++) pack_active_group(&g_active_groups[i], groups + i * SAVE_ACTIVE_GROUP_BYTES);
-    for (int i = 0; i < CHAMPION_MAX_COUNT; i++) champion_pack(&g_champions[i], champions + i * CHAMPION_RECORD_SIZE);
-    if (!g_leader_empty_handed && g_leader_index != -1) {
-        Champion leader = g_champions[g_leader_index];
-        leader.load -= get_object_weight(g_leader_hand_object);
-        champion_pack(&leader, champions + g_leader_index * CHAMPION_RECORD_SIZE);
-    }
-    pack_party(champions + CHAMPION_MAX_COUNT * CHAMPION_RECORD_SIZE);
+    pack_champions(champions);
     for (int16_t i = 0; i < g_event_max_count; i++) {
         pack_event(&g_timeline_events[i], events + i * SAVE_EVENT_BYTES);
-        wr16(timeline + 2 * i, g_timeline[i]);
+        wr16(timeline + TIMELINE_ENTRY_BYTES * i, g_timeline[i]);
     }
     memset(portraits, 0, sizeof portraits);
     for (uint16_t i = 0; i < g_party_champion_count; i++)
@@ -250,9 +265,42 @@ done:
     return file;
 }
 
+/* dir/name in a buffer of PATH_SIZE bytes. */
 static void file_path(char *path, const char *dir, const char *name)
 {
     snprintf(path, PATH_SIZE, "%s/%s", dir, name);
+}
+
+/* Outside vanilla, the automap block and its length follow the original save data. The original
+   part stays the same. Returns the new size, or 0 when there is no memory. */
+static uint32_t append_automap(uint8_t **data, uint32_t size)
+{
+    uint8_t *block = NULL, *grown;
+    size_t length = 0;
+    if (g_game_mode == GAME_MODE_VANILLA) return size;
+    if (automap_save(&block, &length)) return 0;
+    grown = realloc(*data, size + length + EXTENSION_LENGTH_BYTES);
+    if (!grown) {
+        free(block);
+        return 0;
+    }
+    memcpy(grown + size, block, length);
+    wr32(grown + size + length, (uint32_t)length);
+    free(block);
+    *data = grown;
+    return size + (uint32_t)(length + EXTENSION_LENGTH_BYTES);
+}
+
+/* The automap block at the end of a save file, or NULL. *size becomes the size of the original part. */
+static const uint8_t *find_automap(const uint8_t *data, size_t *size, size_t *length)
+{
+    if (*size < SAVE_HEADER_BYTES + EXTENSION_LENGTH_BYTES) return NULL;
+    *length = rd32(data + *size - EXTENSION_LENGTH_BYTES);
+    if (*length > *size - SAVE_HEADER_BYTES - EXTENSION_LENGTH_BYTES) return NULL;
+    const uint8_t *block = data + *size - EXTENSION_LENGTH_BYTES - *length;
+    if (*length < strlen(AUTOMAP_SAVE_MAGIC) || memcmp(block, AUTOMAP_SAVE_MAGIC, strlen(AUTOMAP_SAVE_MAGIC))) return NULL;
+    *size -= *length + EXTENSION_LENGTH_BYTES;
+    return block;
 }
 
 int16_t savegame_save(const char *dir)
@@ -261,6 +309,11 @@ int16_t savegame_save(const char *dir)
     uint32_t size = 0;
     uint8_t *data = encode_game(&size);
     if (!data) return 0;
+    size = append_automap(&data, size);
+    if (!size) {
+        free(data);
+        return 0;
+    }
     file_path(path, dir, SAVE_FILE_NAME);
     file_path(backup, dir, SAVE_BACKUP_FILE_NAME);
     remove(backup);
@@ -305,7 +358,7 @@ static int restore_game(const SaveFile *s)
     unpack_party(s->block[SAVE_BLOCK_CHAMPIONS] + CHAMPION_MAX_COUNT * CHAMPION_RECORD_SIZE);
     for (int16_t i = 0; i < g_event_max_count; i++) {
         unpack_event(s->block[SAVE_BLOCK_EVENTS] + i * SAVE_EVENT_BYTES, &g_timeline_events[i]);
-        g_timeline[i] = rd16(s->block[SAVE_BLOCK_TIMELINE] + 2 * i);
+        g_timeline[i] = rd16(s->block[SAVE_BLOCK_TIMELINE] + TIMELINE_ENTRY_BYTES * i);
     }
     timeline_reset();
     for (uint16_t i = 0; i < g_party_champion_count && i < CHAMPION_MAX_COUNT; i++)
@@ -328,9 +381,12 @@ int16_t savegame_load(const char *dir)
     int from_backup = !data;
     if (from_backup) data = read_file(backup, &size);
     if (!data) return SAVEGAME_MISSING;
+    size_t automap_length = 0;
+    const uint8_t *automap = find_automap(data, &size, &automap_length);
     SaveFile s;
     int ok = save_decode(data, (uint32_t)size, &s) && restore_game(&s);
     save_free(&s);
+    if (ok && (!automap || automap_load(automap, automap_length))) automap_reset();
     free(data);
     if (!ok) return SAVEGAME_DAMAGED;
     if (from_backup) rename(backup, path);
