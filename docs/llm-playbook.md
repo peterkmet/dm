@@ -93,7 +93,21 @@ Use screenshots only when the text is not enough, for example to read a wall tex
 
 - Click wall features: switches, buttons, keyholes (with the key in the leader's hand), alcoves, wall texts.
 - Read every wall text with a screenshot. It often gives the hint.
-- When stuck, list the open features and unexplored edges from your level map, then visit them one by one.
+## When you are stuck
+
+Do not walk around the level at random. Stop and think first.
+
+1. Stop moving. Save.
+2. Read your level map and notes. Write a list into `progress.md` under "Not tried yet":
+   - wall features you have not clicked (switches, buttons, keyholes, alcoves, texts),
+   - keys and items you have not tried on each lock or alcove,
+   - piles you did not empty (an item can lie under the top one),
+   - wall texts you did not read,
+   - unexplored edges of the map, walls you did not test for an illusion,
+   - doors you could not open and what could open them.
+3. Order the list: the cheapest and most likely first.
+4. Do the items one by one. Mark each one as done in `progress.md`, with the result.
+5. Only when the list is empty, think again and make a new list.
 
 ## Bugs
 
