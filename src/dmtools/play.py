@@ -2,6 +2,8 @@
 
     uv run dm-play <cmd> [json-args]
     uv run dm-play act <action> [json-args]
+    uv run dm-play act_many '<json-list>'
+    uv run dm-play goto <x> <y>
 
 The response is printed as compact JSON on one line. --brief prints a short summary instead.
 The exit code is 1 when the response has "ok": false. The socket path comes from DM_CONTROL
@@ -13,7 +15,7 @@ import json
 import os
 import sys
 
-from dmtools.mcp_server import request, socket_path
+from dmtools.control_client import request, socket_path
 
 LANE = ["here", "ahead", "ahead 2", "ahead 3"]
 
@@ -23,9 +25,11 @@ def square_text(square: dict) -> str:
     words = [square["element"]]
     if "door" in square:
         words.append(square["door"] + (" with button" if square.get("button") else ""))
-    words += [key for key in ("mirror", "ornament") if square.get(key)]
-    if "text" in square:
-        words.append(f'text "{square["text"]}"')
+    for face in ("front_face", "side_face"):
+        if wall := square.get(face):
+            features = [key for key in ("mirror", "switch", "lock", "alcove", "fountain", "vi_altar", "ornament") if wall.get(key)]
+            features += [f'text "{wall["text"]}"'] if "text" in wall else []
+            words.append(f"{face.replace('_', ' ')} {wall['facing']}: " + " ".join(features))
     if creatures := square.get("creatures"):
         words.append(f"CREATURES {creatures['count']} {creatures['type']}")
     if square.get("objects"):
@@ -33,6 +37,11 @@ def square_text(square: dict) -> str:
     if square.get("flying"):
         words.append("flying " + ", ".join(f.get("name", f["kind"]) for f in square["flying"]))
     return ", ".join(words)
+
+
+def champion_text(c: dict) -> str:
+    bars = " ".join(f"{label} {c[key][0]}/{c[key][1]}" for label, key in (("HP", "health"), ("ST", "stamina"), ("MA", "mana")))
+    return f"{bars} food {c['food']} water {c['water']}"
 
 
 def state_lines(state: dict) -> list[str]:
@@ -43,12 +52,12 @@ def state_lines(state: dict) -> list[str]:
         f"time {state['time']} | level {party['level']} x {party['x']} y {party['y']} facing {party['facing']} | "
         f"darkness {party['darkness']}" + "".join(f" | {flag}" for flag in flags),
         f"leader {'-' if state['leader'] is None else state['leader']} | hand {hand['name'] if hand else '-'}"
-        + (f" | CANDIDATE {state['candidate']} (act recruit)" if state["candidate"] else ""),
     ]
+    if candidate := state["candidate"]:
+        lines.append(f"CANDIDATE (not recruited) {candidate['name']} {candidate['title']}: " + champion_text(candidate) + " | act recruit")
     for c in state["champions"]:
-        bars = " ".join(f"{label} {c[key][0]}/{c[key][1]}" for label, key in (("HP", "health"), ("ST", "stamina"), ("MA", "mana")))
         notes = [note for note in ("poisoned", "action_disabled") if c[note]] + ([] if c["alive"] else ["DEAD"])
-        lines.append(f"{c['index']} {c['name']}: {bars} food {c['food']} water {c['water']}" + "".join(f" {n}" for n in notes))
+        lines.append(f"{c['index']} {c['name']}: {champion_text(c)}" + "".join(f" {n}" for n in notes))
     if state["action_menu"]:
         lines.append(f"action menu of {state['action_menu']['champion']}: " + ", ".join(state["action_menu"]["actions"]))
     if state["messages"]:
@@ -60,10 +69,12 @@ def view_lines(view: dict) -> list[str]:
     squares = {(s["depth"], s["side"]): s for s in view["squares"]}
     lines = [f"sides: left {squares[0, 'left']['element']}, right {squares[0, 'right']['element']}"]
     for depth, name in enumerate(LANE):
-        square = squares[depth, "center"]
-        lines.append(f"{name}: {square_text(square)}")
-        if square["element"] == "wall":
+        if (depth, "center") not in squares:
             break
+        lines.append(f"{name}: {square_text(squares[depth, 'center'])}")
+        for side in ("left", "right"):
+            if squares[depth, side].get("side_face"):
+                lines.append(f"{name} {side}: {square_text(squares[depth, side])}")
     if view["piles"]:
         lines.append("piles: " + ", ".join(f"cell {p['cell']} {p['top']}" for p in view["piles"]))
     return lines
@@ -73,7 +84,7 @@ def brief(response: dict) -> str:
     """A few lines for the player: the turn, the party, the champions, what is ahead, the messages."""
     if not response.get("ok"):
         return f"error: {response.get('error')}"
-    head = " | ".join(f"{key} {response[key]}" for key in ("ticks", "game_over", "action_damage", "path") if key in response)
+    head = " | ".join(f"{key} {response[key]}" for key in ("ticks", "ran", "stopped", "error", "game_over", "action_damage", "path") if key in response)
     lines = [head] if head else []
     if "state" in response:
         lines += state_lines(response["state"])
@@ -87,8 +98,9 @@ def brief(response: dict) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="dm-play", description="Sends one request to the Dungeon Master control socket.")
     parser.add_argument("--brief", action="store_true", help="print a short summary instead of the JSON")
-    parser.add_argument("cmd", help="get_state, get_view, get_map, act, wait, screenshot, save, load, new_game")
-    parser.add_argument("rest", nargs="*", help="act: the action, then the args as JSON; other commands: the fields as JSON")
+    parser.add_argument("cmd", help="get_state, get_view, get_map, act, act_many, goto, wait, screenshot, save, load, new_game")
+    parser.add_argument("rest", nargs="*", help="act: the action, then the args as JSON; act_many: the actions as a JSON list; "
+                        "goto: x y; other commands: the fields as JSON")
     options = parser.parse_args(argv)
     payload = {"cmd": options.cmd}
     rest = options.rest
@@ -97,6 +109,14 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("act needs an action")
         payload["action"], rest = rest[0], rest[1:]
         payload["args"] = json.loads(rest[0]) if rest else {}
+    elif options.cmd == "act_many":
+        if len(rest) != 1:
+            parser.error("act_many needs the actions as one JSON list")
+        payload["actions"] = json.loads(rest[0])
+    elif options.cmd == "goto":
+        if len(rest) != 2:
+            parser.error("goto needs x and y")
+        payload["x"], payload["y"] = int(rest[0]), int(rest[1])
     elif rest:
         payload.update(json.loads(rest[0]))
     if "path" in payload:

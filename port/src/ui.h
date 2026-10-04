@@ -85,6 +85,8 @@ Bitmap *ui_viewport(void);                     /* g_viewport_bitmap, 224 x 136 *
 const char *ui_string(int16_t index);          /* get_string: graphic 700 */
 const char *ui_object_name(int16_t icon);      /* g_object_names: graphic 0x2b6 */
 const char *ui_action_name(int16_t action);    /* menus_get_action_name: graphic 699 */
+/* The rank name that the eye panel shows for a skill level (NEOPHYTE ...), or NULL for level 1. */
+const char *ui_skill_rank_name(int16_t level);
 int ui_zone_box(int16_t zone, Box *box);       /* get_zone_box */
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color);
 void ui_fill_zone_pattern(Bitmap *dst, int16_t zone, uint8_t color);

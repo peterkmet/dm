@@ -14,15 +14,7 @@
 #include "things.h"
 #include "ui.h"
 #include "view.h"
-#if defined(__has_include)
-#if __has_include("automap.h")
 #include "automap.h"
-#define HAVE_AUTOMAP 1
-#endif
-#endif
-#ifndef HAVE_AUTOMAP
-#define HAVE_AUTOMAP 0                /* without automap.h, get_map shows only the current view */
-#endif
 
 #define TEXT_MODE_MESSAGE 1
 #define TEXT_MODE_SCROLL 2
@@ -35,6 +27,8 @@
 #define ACTION_LIST_COUNT 3
 #define VIEW_DEPTH_COUNT 4            /* the party square and three squares ahead */
 #define CHAMPION_SYMBOL_COUNT 4
+#define STAMINA_DISPLAY_UNIT 10       /* the inventory shows stamina in tenths of the stored value */
+#define MAP_SIZE_MAX 32               /* map width and height have 5 bits */
 
 static const char *const direction_names[4] = { "north", "east", "south", "west" };
 static const char *const statistic_names[STAT_COUNT] = { "luck", "strength", "dexterity", "wisdom", "vitality", "antimagic", "antifire" };
@@ -124,6 +118,15 @@ void json_key(Json *j, const char *key)
 static void key_int(Json *j, const char *key, long value) { json_key(j, key); json_int(j, value); }
 static void key_str(Json *j, const char *key, const char *text) { json_key(j, key); json_str(j, text); }
 static void key_bool(Json *j, const char *key, int value) { json_key(j, key); json_bool(j, value); }
+
+/* A value in tenths as a decimal number, as the load line shows it. */
+static void tenths(Json *j, long value)
+{
+    char buf[24];
+    separate(j);
+    snprintf(buf, sizeof buf, "%ld.%ld", value / 10, value % 10);
+    json_raw(j, buf);
+}
 
 static void pair(Json *j, const char *key, long a, long b)
 {
@@ -225,11 +228,15 @@ static void champion_json(Json *j, int16_t index)
     key_str(j, "title", c->title);
     key_bool(j, "alive", c->current_health > 0);
     pair(j, "health", c->current_health, c->maximum_health);
-    pair(j, "stamina", c->current_stamina, c->maximum_stamina);
+    pair(j, "stamina", c->current_stamina / STAMINA_DISPLAY_UNIT, c->maximum_stamina / STAMINA_DISPLAY_UNIT);
     pair(j, "mana", c->current_mana, c->maximum_mana);
     key_int(j, "food", c->food);
     key_int(j, "water", c->water);
-    pair(j, "load", c->load, champion_get_maximum_load(c));
+    json_key(j, "load_kg");
+    json_open(j, '[');
+    tenths(j, c->load);
+    tenths(j, champion_get_maximum_load(c));
+    json_close(j, ']');
     key_str(j, "position", party_cell_names[NORMALIZE(c->cell - g_party_direction)]);
     key_bool(j, "poisoned", c->poison_event_count > 0);
     key_bool(j, "action_disabled", (c->attributes & CHAMPION_ATTR_ACTION_DISABLED) != 0);
@@ -239,7 +246,17 @@ static void champion_json(Json *j, int16_t index)
     json_close(j, '}');
     json_key(j, "skills");
     json_open(j, '{');
-    for (int s = 0; s < SKILL_BASE_COUNT; s++) key_int(j, skill_names[s], champion_get_skill_level(index, (uint16_t)s));
+    for (int s = 0; s < SKILL_BASE_COUNT; s++) {
+        int16_t level = champion_get_skill_level(index, (uint16_t)s);
+        const char *rank = ui_skill_rank_name(level);
+        json_key(j, skill_names[s]);
+        json_open(j, '{');
+        key_int(j, "level", level);
+        json_key(j, "rank");
+        if (rank) json_str(j, rank);
+        else json_null(j);
+        json_close(j, '}');
+    }
     json_close(j, '}');
     json_key(j, "wounds");
     json_open(j, '[');
@@ -363,17 +380,20 @@ void state_json_state(Json *j)
     key_bool(j, "sleeping", g_party_is_sleeping);
     key_bool(j, "dead", g_party_dead);
     json_close(j, '}');
+    /* A shown candidate is the last champion record, but not yet in the party. */
+    int16_t members = (int16_t)g_party_champion_count, candidate = -1;
+    if (g_candidate_champion_ordinal && members) candidate = --members;
     json_key(j, "leader");
-    if (g_leader_index < 0) json_null(j);
+    if (g_leader_index < 0 || g_leader_index == candidate) json_null(j);
     else json_int(j, g_leader_index);
     json_key(j, "leader_hand");
     object_json(j, g_leader_hand_object, 1);
     json_key(j, "candidate");
-    if (g_candidate_champion_ordinal && g_party_champion_count) json_str(j, g_champions[g_party_champion_count - 1].name);
+    if (candidate >= 0) champion_json(j, candidate);
     else json_null(j);
     json_key(j, "champions");
     json_open(j, '[');
-    for (uint16_t i = 0; i < g_party_champion_count; i++) champion_json(j, (int16_t)i);
+    for (int16_t i = 0; i < members; i++) champion_json(j, i);
     json_close(j, ']');
     json_key(j, "action_menu");
     if (g_acting_champion_ordinal) {
@@ -428,20 +448,80 @@ static int in_party_map(int16_t x, int16_t y)
 
 static uint8_t party_map_square(int16_t x, int16_t y) { return in_party_map(x, y) ? dungeon_square(g_party_map_index, x, y) : 0; }
 
-/* Wall face toward the party: inscription text, a champion mirror, an ornament (button, lock, lever). */
-static void wall_face_json(Json *j, int16_t x, int16_t y)
+/* The rows of the view the party sees now: up to the first center square that blocks sight. */
+static int16_t visible_depths(void) { return automap_visible_depths(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction); }
+
+static void view_square(int16_t depth, int16_t side, int16_t *x, int16_t *y)
 {
-    uint16_t face = NORMALIZE(g_party_direction + 2);
+    *x = g_party_map_x, *y = g_party_map_y;
+    update_map_coordinates_after_relative_movement(g_party_direction, depth, side, x, y);
+}
+
+/* What a wall face shows: inscription text, a champion mirror, a switch (button or lever), a lock (a keyhole
+   or a slot that takes an object), an alcove, a fountain, a vi altar, or another ornament. */
+typedef struct {
+    uint16_t text;                    /* THING_NONE: no visible text */
+    int mirror, switch_, lock, alcove, fountain, vi_altar, ornament;
+} WallFace;
+
+static int sensor_takes_object(uint16_t type)
+{
+    switch (type) {
+    case SENSOR_WALL_ANY_OBJECT: case SENSOR_WALL_OBJECT: case SENSOR_WALL_OBJECT_REMOVED: case SENSOR_WALL_SINGLE_OBJECT_STORAGE:
+    case SENSOR_WALL_SINGLE_OBJECT_EXCHANGER: case SENSOR_WALL_OBJECT_EXCHANGER: case SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED:
+        return 1;
+    }
+    return 0;
+}
+
+/* The side of wall square (x, y) that faces direction face. Returns 1 when it shows something. */
+static int wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
+{
+    memset(f, 0, sizeof *f);
+    f->text = THING_NONE;
     for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_CELL(t) != face) continue;
-        if (THING_TYPE(t) == THING_TEXT && text_is_visible(t)) {
-            char text[TEXT_SIZE];
-            if (decode_text(text, sizeof text, t, TEXT_MODE_MESSAGE)) key_str(j, "text", text);
-        } else if (THING_TYPE(t) == THING_SENSOR) {
-            if (sensor_type(t) == SENSOR_WALL_CHAMPION_PORTRAIT) key_bool(j, "mirror", 1);
-            else if (sensor_ornament_ordinal(t)) key_bool(j, "ornament", 1);
-        }
+        if (THING_TYPE(t) == THING_TEXT && text_is_visible(t)) f->text = t;
+        if (THING_TYPE(t) != THING_SENSOR) continue;
+        if (sensor_type(t) == SENSOR_WALL_CHAMPION_PORTRAIT) f->mirror = 1;
+        else if (sensor_ornament_ordinal(t) && sensor_type(t) == SENSOR_WALL_ORNAMENT_CLICK) f->switch_ = 1;
+        else if (sensor_ornament_ordinal(t) && sensor_takes_object(sensor_type(t))) f->lock = 1;
     }
+    switch (view_wall_ornament(x, y, face)) {
+    case VIEW_ORNAMENT_ALCOVE: f->alcove = 1; break;
+    case VIEW_ORNAMENT_FOUNTAIN: f->fountain = 1; break;
+    case VIEW_ORNAMENT_VI_ALTAR: f->vi_altar = 1; break;
+    case VIEW_ORNAMENT_OTHER: f->ornament = !f->mirror && !f->switch_ && !f->lock; break;
+    }
+    return f->text != THING_NONE || f->mirror || f->switch_ || f->lock || f->alcove || f->fountain || f->vi_altar || f->ornament;
+}
+
+/* The wall face of (x, y) that faces direction face as {facing, features}, under key, when it shows something. */
+static void wall_face_json(Json *j, const char *key, int16_t x, int16_t y, int16_t face)
+{
+    WallFace f;
+    char text[TEXT_SIZE];
+    if (!wall_face(x, y, face, &f)) return;
+    json_key(j, key);
+    json_open(j, '{');
+    key_str(j, "facing", direction_names[face]);
+    if (f.text != THING_NONE && decode_text(text, sizeof text, f.text, TEXT_MODE_MESSAGE)) key_str(j, "text", text);
+    if (f.mirror) key_bool(j, "mirror", 1);
+    if (f.switch_) key_bool(j, "switch", 1);
+    if (f.lock) key_bool(j, "lock", 1);
+    if (f.alcove) key_bool(j, "alcove", 1);
+    if (f.fountain) key_bool(j, "fountain", 1);
+    if (f.vi_altar) key_bool(j, "vi_altar", 1);
+    if (f.ornament) key_bool(j, "ornament", 1);
+    json_close(j, '}');
+}
+
+/* The wall faces the view draws: the front of a wall ahead, the lane side of a side wall from depth 1, and
+   also the front of a side wall from depth 2. The view draws no ornaments on the side walls of depth 0. */
+static void wall_faces_json(Json *j, int16_t depth, int16_t side, int16_t x, int16_t y)
+{
+    if (side && depth >= 1) wall_face_json(j, "side_face", x, y, NORMALIZE(g_party_direction - side));
+    if ((!side && depth >= 1) || depth >= 2) wall_face_json(j, "front_face", x, y, NORMALIZE(g_party_direction + 2));
 }
 
 /* Creature groups, objects per cell, projectiles, and explosions on a square. */
@@ -495,10 +575,10 @@ void state_json_view(Json *j)
     key_int(j, "darkness", g_dungeon_view_palette_index);
     json_key(j, "squares");
     json_open(j, '[');
-    for (int16_t depth = 0; depth < VIEW_DEPTH_COUNT; depth++)
+    for (int16_t depth = 0; depth < visible_depths(); depth++)
         for (int16_t side = -1; side <= 1; side++) {
-            int16_t x = g_party_map_x, y = g_party_map_y;
-            update_map_coordinates_after_relative_movement(g_party_direction, depth, side, &x, &y);
+            int16_t x, y;
+            view_square(depth, side, &x, &y);
             uint8_t square = party_map_square(x, y);
             const char *name = square_name(square);
             json_open(j, '{');
@@ -514,7 +594,7 @@ void state_json_view(Json *j)
                     if (THING_TYPE(door) == THING_DOOR && door != THING_ENDOFLIST) key_bool(j, "button", door_button_present(door));
                 }
                 if (!strcmp(name, "wall")) {
-                    if (side == 0) wall_face_json(j, x, y);
+                    wall_faces_json(j, depth, side, x, y);
                 } else {
                     square_things_json(j, x, y);
                 }
@@ -540,25 +620,101 @@ void state_json_view(Json *j)
     json_close(j, '}');
 }
 
+int state_json_visible_groups(void)
+{
+    int count = 0;
+    for (int16_t depth = 0; depth < visible_depths(); depth++)
+        for (int16_t side = -1; side <= 1; side++) {
+            int16_t x, y;
+            view_square(depth, side, &x, &y);
+            if (!in_party_map(x, y) || !strcmp(square_name(party_map_square(x, y)), "wall")) continue;
+            for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST; t = get_next_thing(t))
+                count += THING_TYPE(t) == THING_GROUP;
+        }
+    return count;
+}
+
 /* Explored squares: the automap and the squares of the current view. */
 static int is_seen(int16_t x, int16_t y)
 {
-#if HAVE_AUTOMAP
     if (automap_is_seen(g_party_map_index, x, y)) return 1;
-#endif
-    for (int16_t depth = 0; depth < VIEW_DEPTH_COUNT; depth++)
+    for (int16_t depth = 0; depth < visible_depths(); depth++)
         for (int16_t side = -1; side <= 1; side++) {
-            int16_t vx = g_party_map_x, vy = g_party_map_y;
-            update_map_coordinates_after_relative_movement(g_party_direction, depth, side, &vx, &vy);
+            int16_t vx, vy;
+            view_square(depth, side, &vx, &vy);
             if (vx == x && vy == y) return 1;
         }
     return 0;
 }
 
-static char map_char(uint8_t square)
+/* An explored square the party can walk through: floor, an open or broken door; stairs only as the goal. */
+static int is_walkable(int16_t x, int16_t y, int goal)
 {
+    if (!in_party_map(x, y) || !is_seen(x, y)) return 0;
+    uint8_t square = dungeon_square(g_party_map_index, x, y);
     const char *name = square_name(square);
-    if (!strcmp(name, "wall")) return '#';
+    if (!strcmp(name, "floor")) return 1;
+    if (!strcmp(name, "door")) return door_state(square) == DOOR_OPEN || door_state(square) == DOOR_DESTROYED;
+    return goal && (!strcmp(name, "stairs_up") || !strcmp(name, "stairs_down"));
+}
+
+int state_json_path(int16_t goal_x, int16_t goal_y, int16_t *directions, int max)
+{
+    enum { NOT_REACHED = -1, START = 4 };
+    int16_t entered_by[MAP_SIZE_MAX][MAP_SIZE_MAX], queue[MAP_SIZE_MAX * MAP_SIZE_MAX][2];
+    int head = 0, tail = 0;
+    memset(entered_by, NOT_REACHED, sizeof entered_by);  /* every byte 0xff: each entry is -1 */
+    if (!in_party_map(goal_x, goal_y)) return -1;
+    entered_by[g_party_map_x][g_party_map_y] = START;
+    queue[tail][0] = g_party_map_x, queue[tail++][1] = g_party_map_y;
+    while (head < tail && entered_by[goal_x][goal_y] == NOT_REACHED) {
+        int16_t x = queue[head][0], y = queue[head++][1];
+        for (int16_t dir = DIRECTION_NORTH; dir <= DIRECTION_WEST; dir++) {
+            int16_t nx = x, ny = y;
+            update_map_coordinates_after_relative_movement(dir, 1, 0, &nx, &ny);
+            if (!in_party_map(nx, ny) || entered_by[nx][ny] != NOT_REACHED) continue;
+            if (!is_walkable(nx, ny, nx == goal_x && ny == goal_y)) continue;
+            entered_by[nx][ny] = dir;
+            queue[tail][0] = nx, queue[tail++][1] = ny;
+        }
+    }
+    if (entered_by[goal_x][goal_y] == NOT_REACHED) return -1;
+    int length = 0;
+    for (int16_t x = goal_x, y = goal_y; entered_by[x][y] != START;) {
+        update_map_coordinates_after_relative_movement(entered_by[x][y], -1, 0, &x, &y);
+        length++;
+    }
+    if (length > max) return -1;
+    int16_t x = goal_x, y = goal_y;
+    for (int k = length - 1; k >= 0; k--) {
+        directions[k] = entered_by[x][y];
+        update_map_coordinates_after_relative_movement(directions[k], -1, 0, &x, &y);
+    }
+    return length;
+}
+
+/* The symbol of a wall: the most useful feature on a side that faces an explored square, else '#'. */
+static char wall_char(int16_t x, int16_t y)
+{
+    static const char symbols[] = "MLKVAF?";
+    int best = (int)sizeof symbols - 1;
+    for (int16_t face = DIRECTION_NORTH; face <= DIRECTION_WEST; face++) {
+        int16_t nx = x, ny = y;
+        WallFace f;
+        update_map_coordinates_after_relative_movement(face, 1, 0, &nx, &ny);
+        if (!in_party_map(nx, ny) || !is_seen(nx, ny) || !wall_face(x, y, face, &f)) continue;
+        const int found[] = { f.mirror, f.switch_, f.lock, f.vi_altar, f.alcove, f.fountain, f.text != THING_NONE };
+        for (int k = 0; k < best; k++)
+            if (found[k]) best = k;
+    }
+    return best < (int)sizeof symbols - 1 ? symbols[best] : '#';
+}
+
+static char map_char(int16_t x, int16_t y)
+{
+    uint8_t square = dungeon_square(g_party_map_index, x, y);
+    const char *name = square_name(square);
+    if (!strcmp(name, "wall")) return wall_char(x, y);
     if (!strcmp(name, "pit")) return 'O';
     if (!strcmp(name, "stairs_up")) return '<';
     if (!strcmp(name, "stairs_down")) return '>';
@@ -579,14 +735,16 @@ void state_json_map(Json *j)
     pair(j, "party", g_party_map_x, g_party_map_y);
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
     key_str(j, "legend", "row index = y (north at the top), column = x; @ party, # wall, . floor, D closed door, "
-                         "d open door, < stairs up, > stairs down, O pit, T teleporter, space not explored");
+                         "d open door, < stairs up, > stairs down, O pit, T teleporter, space not explored; walls with a seen "
+                         "feature: M mirror, L switch (button or lever), K lock (keyhole or object slot), V vi altar, "
+                         "A alcove, F fountain, ? text");
     json_key(j, "rows");
     json_open(j, '[');
     for (int16_t y = 0; y < h; y++) {
         int16_t x = 0;
         for (; x < w && x < (int16_t)sizeof row - 1; x++) {
             if (x == g_party_map_x && y == g_party_map_y) row[x] = '@';
-            else row[x] = is_seen(x, y) ? map_char(dungeon_square(g_party_map_index, x, y)) : ' ';
+            else row[x] = is_seen(x, y) ? map_char(x, y) : ' ';
         }
         row[x] = 0;
         json_str(j, row);

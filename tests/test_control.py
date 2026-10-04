@@ -4,6 +4,7 @@ import os
 import shutil
 import socket
 import subprocess
+import sys
 import tempfile
 import threading
 from contextlib import contextmanager
@@ -131,15 +132,23 @@ def test_state_json_after_recruiting(game):
     assert state["spell"]["caster"] == 0 and len(state["spell"]["available"]) == 6
     assert isinstance(state["messages"], list)
 
+    assert champion["stamina"] == [game.champions[0].current_stamina // 10, game.champions[0].maximum_stamina // 10]
+    for skill in champion["skills"].values():
+        assert (skill["rank"] is None) == (skill["level"] == 1)
+    assert any(isinstance(skill["rank"], str) and skill["rank"].isupper() for skill in champion["skills"].values())
+    assert champion["load_kg"][1] > champion["load_kg"][0] >= 0
+
     view = state_json(game, 1)
-    assert len(view["squares"]) == 12
+    assert len(view["squares"]) == 6  # the wall ahead hides depths 2 and 3
     ahead = next(s for s in view["squares"] if s["depth"] == 1 and s["side"] == "center")
-    assert ahead["element"] == "wall" and ahead.get("ornament")  # the used mirror
+    assert ahead["element"] == "wall" and ahead["front_face"].get("ornament")  # the used mirror
+    assert ahead["front_face"]["facing"] == DIRECTIONS[(game.position()[2] + 2) % 4]
 
     game_map = state_json(game, 2)
     assert len(game_map["rows"]) == game_map["height"]
     x, y = game_map["party"]
     assert game_map["rows"][y][x] == "@"
+    assert "?" in "".join(game_map["rows"])  # the inscription of the entrance
 
 
 def test_control_session_moves_and_recruits(game):
@@ -165,8 +174,15 @@ def test_control_session_moves_and_recruits(game):
         assert game.position()[:2] == [x1, y1]
     while game.position()[2] != direction:
         client.act("turn_left")
-    assert next(s for s in client.call(cmd="get_view")["view"]["squares"] if s["depth"] == 1 and s["side"] == "center").get("mirror")
-    assert client.act("click_wall_ahead")["state"]["candidate"]
+    ahead = next(s for s in client.call(cmd="get_view")["view"]["squares"] if s["depth"] == 1 and s["side"] == "center")
+    assert ahead["front_face"].get("mirror")
+    assert client.call(cmd="get_map")["map"]["rows"][ahead["y"]][ahead["x"]] == "M"
+    shown = client.act("click_wall_ahead")["state"]
+    assert shown["candidate"]["name"] and shown["candidate"]["skills"]
+    assert len(shown["champions"]) == 1 and shown["leader"] in (0, None)
+    from dmtools import play
+
+    assert "\nCANDIDATE (not recruited) " + shown["candidate"]["name"] in "\n" + play.brief({"ok": True, "state": shown})
     assert client.call(cmd="act", action="move_forward")["ok"] is False  # the recruit panel is open
     response = client.act("recruit", choice="resurrect")
     assert len(response["state"]["champions"]) == 2 and response["state"]["candidate"] is None
@@ -183,7 +199,7 @@ def test_mcp_tools(game, monkeypatch, tmp_path):
     game.lib.startend_set_save_dir(str(tmp_path).encode())
     with pumped(game):
         assert mcp_server.get_state()["state"]["champions"]
-        assert len(mcp_server.get_view()["view"]["squares"]) == 12
+        assert mcp_server.get_view()["view"]["squares"]
         assert "@" in "".join(mcp_server.get_map()["map"]["rows"])
         before = mcp_server.get_state()["state"]["party"]["facing"]
         after = mcp_server.act("turn_left")["state"]["party"]["facing"]
@@ -236,6 +252,142 @@ def test_dm_play_prints_json_and_the_brief_summary(game, monkeypatch, capsys):
         assert "facing" in capsys.readouterr().out
 
 
+@contextmanager
+def placed(game, x, y, direction):
+    """The party on another square of its map for the state JSON only; no frame runs meanwhile."""
+    names = ("g_party_map_x", "g_party_map_y", "g_party_direction")
+    saved = game.position()
+    for name, value in zip(names, (x, y, direction)):
+        ctypes.c_int16.in_dll(game.lib, name).value = value
+    try:
+        yield
+    finally:
+        for name, value in zip(names, saved):
+            ctypes.c_int16.in_dll(game.lib, name).value = value
+
+
+def square_byte(game, x, y):
+    return game.lib.dungeon_square(game.value("g_party_map_index"), x, y)
+
+
+def map_size(game):
+    lib, m = game.lib, game.value("g_party_map_index")
+    lib.dungeon_square.restype = ctypes.c_uint8
+    lib.dungeon_map_width.restype = lib.dungeon_map_height.restype = ctypes.c_int16
+    return lib.dungeon_map_width(m), lib.dungeon_map_height(m)
+
+
+def test_view_stops_at_a_closed_door(game):
+    lib, m = game.lib, game.value("g_party_map_index")
+    lib.automap_is_seen.argtypes = [ctypes.c_int16] * 3
+    width, height = map_size(game)
+    for x in range(width):
+        for y in range(height):
+            door = square_byte(game, x, y)
+            if door >> 5 != 4 or door & 7 != 4:  # a closed door
+                continue
+            for d in range(4):
+                fx, fy = x - STEP_EAST[d], y - STEP_NORTH[d]
+                bx, by = x + STEP_EAST[d], y + STEP_NORTH[d]
+                if 0 <= fx < width and 0 <= fy < height and 0 <= bx < width and 0 <= by < height and square_byte(game, fx, fy) >> 5 == 1:
+                    with placed(game, fx, fy, d):
+                        view, game_map = state_json(game, 1), state_json(game, 2)
+                    assert max(s["depth"] for s in view["squares"]) == 1
+                    assert next(s for s in view["squares"] if s["depth"] == 1 and s["side"] == "center")["door"] == "closed"
+                    if not lib.automap_is_seen(m, bx, by):
+                        assert game_map["rows"][by][bx] == " "
+                    return
+    pytest.skip("no closed door with floor in front on this map")
+
+
+def test_view_shows_a_mirror_on_a_side_wall(game):
+    width, height = map_size(game)
+    for mx, my in ((x, y) for x in range(width) for y in range(height) if game.mirror_cell(x, y) is not None):
+        face = game.mirror_cell(mx, my)
+        d = (face - 1) % 4  # the left wall at depth 1 faces the party lane: direction d + 1
+        x, y = mx - STEP_EAST[d] - STEP_EAST[(d + 3) % 4], my - STEP_NORTH[d] - STEP_NORTH[(d + 3) % 4]
+        if square_byte(game, x, y) >> 5 != 1:
+            continue
+        with placed(game, x, y, d):
+            view = state_json(game, 1)
+        left = next(s for s in view["squares"] if s["depth"] == 1 and s["side"] == "left")
+        assert left["element"] == "wall" and left["side_face"]["facing"] == DIRECTIONS[face]
+        assert left["side_face"].get("mirror") or left["side_face"].get("ornament")  # the recruited mirror is used
+        return
+    pytest.skip("no mirror seen from the side")
+
+
+def free_direction(game):
+    x, y, _ = game.position()
+    return next(k for k in range(4) if game.lib.get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
+
+
+def test_act_many_runs_in_order_and_stops_on_failure_and_damage(game):
+    client = Client(game)
+    try:
+        facing = game.position()[2]
+        response = client.call(cmd="act_many", actions=["turn_left", {"action": "turn_left", "args": {}}, "turn_right", "turn_right"])
+        assert response["ok"] and response["ran"] == 4 and response["stopped"] == "done"
+        assert response["state"]["party"]["facing"] == DIRECTIONS[facing] and response["ticks"] >= 8
+
+        response = client.call(cmd="act_many", actions=["turn_left", {"action": "take_object", "args": {"cell": 9}}, "turn_right"])
+        assert response["ran"] == 1 and response["stopped"] == "failed" and "cell" in response["error"]
+        assert client.call(cmd="act_many", actions=["fly"])["error"] == "unknown action"
+        assert client.call(cmd="act_many", actions="turn_left")["ok"] is False
+        assert client.call(cmd="act_many", actions=[5])["stopped"] == "failed"
+
+        ctypes.c_int16.in_dll(game.lib, "g_champion_pending_damage").value = min(10, game.champions[0].current_health - 1)
+        response = client.call(cmd="act_many", actions=["turn_left", "turn_left", "turn_left"])
+        assert response["ran"] == 1 and response["stopped"] == "damage"
+    finally:
+        client.sock.close()
+
+
+def test_goto_walks_back_over_explored_squares(game):
+    client = Client(game)
+    try:
+        start = game.position()[:2]
+        direction = free_direction(game)
+        while game.position()[2] != direction:
+            client.act("turn_right")
+        client.act("move_forward")
+        direction = free_direction(game)
+        while game.position()[2] != direction:
+            client.act("turn_left")
+        client.act("move_forward")
+        assert game.position()[:2] != start
+
+        response = client.call(cmd="goto", x=start[0], y=start[1])
+        assert response["ok"] and response["stopped"] == "done", response.get("stopped")
+        assert [response["state"]["party"]["x"], response["state"]["party"]["y"]] == start and response["ran"] >= 2
+        assert client.call(cmd="goto", x=start[0], y=start[1])["ran"] == 0
+        x, y = start
+        wall = next((x + STEP_EAST[k], y + STEP_NORTH[k]) for k in range(4) if game.lib.get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 0)
+        assert client.call(cmd="goto", x=wall[0], y=wall[1])["ok"] is False
+        assert client.call(cmd="goto", x=99, y=0)["ok"] is False
+    finally:
+        client.sock.close()
+
+
+def test_mcp_and_dm_play_batches(game, monkeypatch, capsys):
+    from dmtools import mcp_server, play
+
+    monkeypatch.setenv("DM_CONTROL", game.socket)
+    with pumped(game):
+        assert mcp_server.act_many(["turn_left", {"action": "turn_right"}])["ran"] == 2
+        x, y, _ = game.position()
+        assert mcp_server.goto(x, y)["stopped"] == "done"
+        assert play.main(["--brief", "act_many", '["turn_left", "turn_right"]']) == 0
+        assert capsys.readouterr().out.startswith("ticks ")
+        assert play.main(["goto", str(x), str(y)]) == 0
+        assert json.loads(capsys.readouterr().out)["ran"] == 0
+
+
+def test_dm_play_does_not_import_mcp():
+    code = "import sys, dmtools.play; assert 'mcp' not in sys.modules"
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 def kill_party(game, client):
     pending = (ctypes.c_int16 * 4).in_dll(game.lib, "g_champion_pending_damage")
     for index in range(game.value("g_party_champion_count", ctypes.c_uint16)):
@@ -267,3 +419,4 @@ def test_load_and_new_game_after_a_party_death(game, tmp_path):
     finally:
         client.sock.close()
         ctypes.c_int16.in_dll(lib, "g_return_to_entrance").value = 0
+

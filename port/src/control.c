@@ -16,6 +16,8 @@
 #include "gameloop.h"
 #include "ids.h"
 #include "inventory.h"
+#include "map.h"
+#include "message.h"
 #include "savegame.h"
 #include "startend.h"
 #include "state_json.h"
@@ -34,6 +36,8 @@
 #define FRAMES_PER_TICK_LIMIT 16      /* a frozen game ends a turn after this many frames per tick */
 #define TEXT_SIZE 256
 #define SPELL_TAB_STEP 5              /* caster tab zones per caster */
+#define ACTION_NAME_SIZE 32
+#define PATH_MAX_STEPS 1024           /* a 32 x 32 map */
 
 #ifdef MSG_NOSIGNAL
 #define SEND_FLAGS MSG_NOSIGNAL       /* a closed client does not raise SIGPIPE (Linux) */
@@ -57,6 +61,20 @@ static struct {
     int has_damage;
     int16_t damage;
 } turn;
+
+/* A batch: act_many runs a list of actions, goto walks a path; each step is one turn. */
+static struct {
+    int active, ran;
+    char *actions;                    /* act_many: a copy of the request; next is the rest of its actions array */
+    const char *next;
+    int16_t path[PATH_MAX_STEPS];     /* goto: the directions to walk */
+    int path_length, path_done, moving;
+    int16_t map, from_x, from_y;      /* the party square before a move */
+    uint32_t start_time, message_expiry;
+    int16_t health[CHAMPION_MAX_COUNT];
+    int groups;
+    const char *stop, *error;
+} batch;
 
 static int load_failed;               /* a damaged save file left no game to play */
 
@@ -514,7 +532,17 @@ static void send_turn_result(void)
     json_key(&j, "ok");
     json_bool(&j, 1);
     json_key(&j, "ticks");
-    json_int(&j, (long)(g_game_time - turn.start_time));
+    json_int(&j, (long)(g_game_time - (batch.active ? batch.start_time : turn.start_time)));
+    if (batch.active) {
+        json_key(&j, "ran");
+        json_int(&j, batch.ran);
+        json_key(&j, "stopped");
+        json_str(&j, batch.stop);
+        if (batch.error) {
+            json_key(&j, "error");
+            json_str(&j, batch.error);
+        }
+    }
     json_key(&j, "game_over");
     json_bool(&j, game_over());
     if (turn.has_damage) {
@@ -551,31 +579,184 @@ static void start_turn(long min_ticks, long max_ticks, int wait_only)
     turn.max_ticks = max_ticks;
 }
 
+/* Gives the input of action name with the args in request; NULL, or the reason why it cannot. */
+static const char *run_action(const char *name, const char *request)
+{
+    for (size_t k = 0; k < sizeof actions / sizeof actions[0]; k++) {
+        if (strcmp(name, actions[k].name)) continue;
+        if (g_candidate_champion_ordinal && strcmp(name, "recruit")) return "a candidate is shown: answer with recruit first";
+        if (g_party_is_sleeping && strcmp(name, "wake")) return "the party sleeps: use wake or wait";
+        turn.has_damage = 0;
+        return actions[k].run(request);
+    }
+    return "unknown action";
+}
+
 static void handle_act(const char *request)
 {
-    char name[32];
+    char name[ACTION_NAME_SIZE];
     if (!get_string(request, "action", name, sizeof name)) {
         send_error("missing action");
         return;
     }
-    for (size_t k = 0; k < sizeof actions / sizeof actions[0]; k++) {
-        if (strcmp(name, actions[k].name)) continue;
-        int recruiting = !strcmp(name, "recruit"), waking = !strcmp(name, "wake");
-        if (g_candidate_champion_ordinal && !recruiting) {
-            send_error("a candidate is shown: answer with recruit first");
+    const char *error = run_action(name, request);
+    if (error) send_error(error);
+    else start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
+}
+
+/* Batches. */
+
+/* The latest expiry time of a message row: it grows when the game prints a message. */
+static uint32_t latest_message_expiry(void)
+{
+    uint32_t latest = 0;
+    for (int r = 0; r < MESSAGE_ROWS; r++)
+        if (g_message.expiry[r] != MESSAGE_NO_EXPIRY && g_message.expiry[r] > latest) latest = g_message.expiry[r];
+    return latest;
+}
+
+/* Remembers what the stop checks compare after the next turn. */
+static void batch_snapshot(void)
+{
+    for (uint16_t i = 0; i < g_party_champion_count; i++) batch.health[i] = g_champions[i].current_health;
+    batch.groups = state_json_visible_groups();
+    batch.message_expiry = latest_message_expiry();
+    batch.map = g_party_map_index, batch.from_x = g_party_map_x, batch.from_y = g_party_map_y;
+}
+
+/* Why a batch stops after a turn, or NULL to go on. */
+static const char *batch_stop_reason(void)
+{
+    if (game_over()) return "game_over";
+    for (uint16_t i = 0; i < g_party_champion_count; i++)
+        if (g_champions[i].current_health < batch.health[i]) return "damage";
+    if (state_json_visible_groups() > batch.groups) return "creature";  /* ponytail: a count, misses a swap of groups */
+    if (latest_message_expiry() > batch.message_expiry) return "message";
+    if (batch.moving) {
+        int16_t x = batch.from_x, y = batch.from_y;
+        update_map_coordinates_after_relative_movement(batch.path[batch.path_done], 1, 0, &x, &y);
+        int last = batch.path_done + 1 == batch.path_length;
+        if (g_party_map_index != batch.map) return last ? NULL : "moved_elsewhere";
+        if (g_party_map_x == batch.from_x && g_party_map_y == batch.from_y) return "blocked";
+        if (g_party_map_x != x || g_party_map_y != y) return "moved_elsewhere";
+    }
+    return NULL;
+}
+
+static void batch_finish(const char *stop, const char *error)
+{
+    batch.stop = stop;
+    batch.error = error;
+    send_turn_result();
+    free(batch.actions);
+    memset(&batch, 0, sizeof batch);
+}
+
+/* The next goto step: turn toward the next square of the path, or move onto it. */
+static const char *goto_step(void)
+{
+    int16_t turns = NORMALIZE(batch.path[batch.path_done] - g_party_direction);
+    batch.moving = !turns;
+    if (!turns) return run_action("move_forward", "");
+    return run_action(turns == 1 ? "turn_right" : "turn_left", "");
+}
+
+/* The next act_many element, a "name" or an {"action": "name", "args": {...}} object, copied to out.
+   Returns 1, 0 at the end of the list, or -1 for an item that is not an action. */
+static int next_element(char *out, size_t size)
+{
+    const char *p = batch.next;
+    while (*p == ' ' || *p == ',') p++;
+    const char *start = p;
+    if (!*p || *p == ']') return 0;
+    if (*p == '"') {
+        p = strchr(p + 1, '"');
+        if (!p) return -1;
+        p++;
+    } else if (*p == '{') {
+        for (int depth = 0; *p; p++) {
+            if (*p == '"') p = strchr(p + 1, '"');  /* strings hold no '"' (docs/llm-mode.md) */
+            if (!p) return -1;
+            depth += (*p == '{') - (*p == '}');
+            if (!depth) break;
+        }
+        if (!*p++) return -1;
+    } else {
+        return -1;
+    }
+    if ((size_t)(p - start) >= size) return -1;
+    memcpy(out, start, (size_t)(p - start));
+    out[p - start] = 0;
+    batch.next = p;
+    return 1;
+}
+
+/* Starts the next step of the batch, or ends the batch when it is done or the step cannot run. */
+static void batch_next(void)
+{
+    const char *error;
+    char element[INPUT_SIZE / 4], name[ACTION_NAME_SIZE];
+    batch_snapshot();
+    if (batch.actions) {
+        int found = next_element(element, sizeof element);
+        if (found <= 0) {
+            batch_finish(found ? "failed" : "done", found ? "an item of actions is not an action name or object" : NULL);
             return;
         }
-        if (g_party_is_sleeping && !waking) {
-            send_error("the party sleeps: use wake or wait");
+        if (element[0] == '"') snprintf(name, sizeof name, "%.*s", (int)strlen(element) - 2, element + 1);
+        else if (!get_string(element, "action", name, sizeof name)) name[0] = 0;
+        error = run_action(name, element);
+    } else {
+        if (batch.path_done == batch.path_length) {
+            batch_finish("done", NULL);
             return;
         }
-        turn.has_damage = 0;
-        const char *error = actions[k].run(request);
-        if (error) send_error(error);
-        else start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
+        error = goto_step();
+    }
+    if (error) batch_finish("failed", error);
+    else start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
+}
+
+/* After a turn of the batch: count it, stop on news, else start the next step. */
+static void batch_after_turn(void)
+{
+    batch.ran++;
+    const char *stop = batch_stop_reason();
+    if (batch.moving && !stop) batch.path_done++;
+    batch.moving = 0;
+    if (stop) batch_finish(stop, NULL);
+    else batch_next();
+}
+
+static void handle_act_many(const char *request)
+{
+    const char *list = find_value(request, "actions");
+    if (!list || *list != '[') {
+        send_error("actions must be a list");
         return;
     }
-    send_error("unknown action");
+    batch.actions = strdup(list + 1);
+    if (!batch.actions) abort();
+    batch.next = batch.actions;
+    batch.active = 1;
+    batch.start_time = g_game_time;
+    turn.has_damage = 0;
+    batch_next();
+}
+
+static void handle_goto(const char *request)
+{
+    long x = get_int(request, "x", -1), y = get_int(request, "y", -1);
+    int length = x < 0 || y < 0 ? -1 : state_json_path((int16_t)x, (int16_t)y, batch.path, PATH_MAX_STEPS);
+    if (length < 0) {
+        send_error("no path over explored, passable squares to this square");
+        return;
+    }
+    batch.path_length = length;
+    batch.active = 1;
+    batch.start_time = g_game_time;
+    turn.has_damage = 0;
+    batch_next();
 }
 
 /* Loads DMGAME.DAT from the save directory, as RESUME does, and answers with the state. */
@@ -631,7 +812,8 @@ static void handle_request(const char *request)
         send_part("view", state_json_view);
     } else if (!strcmp(cmd, "get_map")) {
         send_part("map", state_json_map);
-    } else if (game_over() && (!strcmp(cmd, "act") || !strcmp(cmd, "wait") || !strcmp(cmd, "save"))) {
+    } else if (game_over() && (!strcmp(cmd, "act") || !strcmp(cmd, "act_many") || !strcmp(cmd, "goto") || !strcmp(cmd, "wait") ||
+                               !strcmp(cmd, "save"))) {
         send_error("game over");
     } else if (!strcmp(cmd, "save")) {
         if (!savegame_save(startend_save_dir())) send_error("cannot write the save file");
@@ -642,6 +824,10 @@ static void handle_request(const char *request)
         }
     } else if (!strcmp(cmd, "act")) {
         handle_act(request);
+    } else if (!strcmp(cmd, "act_many")) {
+        handle_act_many(request);
+    } else if (!strcmp(cmd, "goto")) {
+        handle_goto(request);
     } else if (!strcmp(cmd, "wait")) {
         long ticks = get_int(request, "ticks", 1);
         if (ticks < 1 || ticks > WAIT_MAX_TICKS) send_error("ticks must be 1-1000");
@@ -711,7 +897,11 @@ void control_poll(void)
             return;
         }
         turn.pending = 0;
-        if (client_fd >= 0) send_turn_result();
+        if (client_fd < 0) {
+            free(batch.actions);
+            memset(&batch, 0, sizeof batch);
+        } else if (batch.active) batch_after_turn();
+        else send_turn_result();
     }
     if (client_fd < 0) {
         client_fd = accept(listen_fd, NULL, NULL);

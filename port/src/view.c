@@ -1598,6 +1598,20 @@ static void step(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_
 }
 
 /* draw_dungeon_view: ceiling, floor, the objects of D4, then the 16 squares back to front, then draw_viewport. */
+int16_t view_wall_ornament(int16_t x, int16_t y, int16_t face)
+{
+    Aspect a;
+    if (map != g_party_map_index) return VIEW_ORNAMENT_NONE;
+    aspect(&a, face, x, y);
+    if (a.element != SQUARE_WALL || !a.far_side) return VIEW_ORNAMENT_NONE;
+    int16_t i = a.far_side - 1;
+    if (i == inscription) return VIEW_ORNAMENT_TEXT;
+    if (i == vi_altar) return VIEW_ORNAMENT_VI_ALTAR;
+    if (is_alcove(i)) return VIEW_ORNAMENT_ALCOVE;
+    if (i == fountain) return VIEW_ORNAMENT_FOUNTAIN;
+    return VIEW_ORNAMENT_OTHER;
+}
+
 void view_draw(int16_t dir, int16_t x, int16_t y)
 {
     static void (*const squares[16])(int16_t, int16_t, int16_t) = { d3l2, d3r2, d3l, d3r, d3c, d2l2, d2r2, d2l, d2r, d2c, d1l, d1r, d1c, d0l, d0r, d0c };

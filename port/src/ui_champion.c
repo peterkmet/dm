@@ -387,6 +387,13 @@ static void zone_point(int16_t zone, int16_t *x, int16_t *y)
     *y = b.y;
 }
 
+const char *ui_skill_rank_name(int16_t level)
+{
+    if (level <= 1) return NULL;
+    if (level > SKILL_LEVEL_MAXIMUM) level = SKILL_LEVEL_MAXIMUM;
+    return ui_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * (level - 2)));
+}
+
 /* Draws the eye panel: base skill levels above 1 (green after a level up), then the six
    statistics with current value (red below maximum, green above) and maximum value. */
 void draw_champion_skills_and_statistics(void)
@@ -400,9 +407,8 @@ void draw_champion_skills_and_statistics(void)
     zone_point(ZONE_PANEL_SKILLS, &x, &y);
     for (uint16_t k = 0; k < BASE_SKILL_COUNT; k++) {
         int16_t level = champion_get_skill_level(ci, k | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
-        if (level > SKILL_LEVEL_MAXIMUM) level = SKILL_LEVEL_MAXIMUM;
         if (level == 1) continue;
-        snprintf(s, sizeof s, "%s %s", ui_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * (level - 2))), ui_string(kaos_s16(BASE_SKILL_STRINGS + 2 * k)));
+        snprintf(s, sizeof s, "%s %s", ui_skill_rank_name(level), ui_string(kaos_s16(BASE_SKILL_STRINGS + 2 * k)));
         text_draw(vp, x, y, g_champion_skill_level_up[ci][k] ? COLOR_GREEN : COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
         y += MESSAGE_ROW_HEIGHT;
     }

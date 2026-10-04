@@ -62,6 +62,8 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 | `get_view` | none | `{ok, view}` |
 | `get_map` | none | `{ok, map}` |
 | `act` | `action`, `args` (object) | `{ok, ticks, game_over, action_damage?, state, view}` |
+| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, action_damage?, state, view}` |
+| `goto` | `x`, `y` | The same as `act_many` |
 | `wait` | `ticks` (1-1000, default 10) | `{ok, ticks, game_over, state, view}` |
 | `screenshot` | none | The screen as a 320 x 200 PNG image |
 | `save_game` | none | `{ok}` |
@@ -85,6 +87,8 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `get_view` | none | `view` |
 | `get_map` | none | `map` |
 | `act` | `action`, `args` | After the turn: `ticks`, `game_over`, `action_damage` (only `choose_action`), `state`, `view` |
+| `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `state`, `view`. See [Batches](#batches). |
+| `goto` | `x`, `y` | The same as `act_many`. See [Batches](#batches). |
 | `wait` | `ticks` (1-1000) | After the turn: `ticks`, `game_over`, `state`, `view` |
 | `screenshot` | `path` | `path`. The game writes a PNG file to `path`. |
 | `save` | none | Nothing. The game writes `DMGAME.DAT` in the save directory. The old file becomes `DMGAME.BAK`. |
@@ -111,9 +115,34 @@ A `wait` turn runs exactly `ticks` ticks. A game that does not tick ends a turn 
 
 During a turn, each frame is a tick: the game does not wait 12 frames for input. The game rules do not change.
 
+### Batches
+
+A batch runs many turns with one request. Each step is one `act` turn. After each turn the batch stops early when something happens, so that the caller can look again.
+
+`act_many` runs the `actions` in order. An item is an action name (`"move_forward"`) or an object `{"action": "take_object", "args": {"cell": 0}}`.
+
+```json
+{"cmd": "act_many", "actions": ["turn_left", "move_forward", {"action": "take_object", "args": {"cell": 2}}]}
+```
+
+`goto` walks to the square (`x`, `y`) of the party map. It finds the shortest path (breadth-first search) over explored squares that the party can pass: floor, open doors, and destroyed doors. Stairs are allowed only as the target. Pits, walls, closed doors, visible teleporters, and squares that are not explored are not on the path. The party turns toward the next square (`turn_left`, `turn_right`), then moves forward. When no path exists, the response is `{"ok": false, "error": ...}` and nothing changes.
+
+The response has `ran` (the number of turns that ran) and `stopped`:
+
+| `stopped` | Reason |
+|---|---|
+| `done` | All actions ran, or the party is at the target. |
+| `damage` | A champion lost health. |
+| `creature` | More creature groups are in view than before the turn. |
+| `message` | The game printed a new message. |
+| `game_over` | The party died, or the game is won. |
+| `failed` | An action cannot run. `error` gives the reason. The failed action is not in `ran`. |
+| `blocked` | `goto` only: a move did not change the party square (a creature, a closed door). |
+| `moved_elsewhere` | `goto` only: a move took the party to another square than the next one of the path (a teleporter, stairs on the way). |
+
 ### Game over
 
-When the party dies or the game is won during a turn, the turn ends. The response has `"game_over": true`, and `state.party.dead` is `true` after a death. The endgame runs without waiting for input, and the window shows the entrance. After that, `act`, `wait`, and `save` return `{"ok": false, "error": "game over"}`. `get_state`, `get_view`, `get_map`, and `screenshot` still work. To play again, send `load` or `new_game`.
+When the party dies or the game is won during a turn, the turn ends. The response has `"game_over": true`, and `state.party.dead` is `true` after a death. The endgame runs without waiting for input, and the window shows the entrance. After that, `act`, `act_many`, `goto`, `wait`, and `save` return `{"ok": false, "error": "game over"}`. `get_state`, `get_view`, `get_map`, and `screenshot` still work. To play again, send `load` or `new_game`.
 
 ### Save and load
 
@@ -166,8 +195,11 @@ The champion `position` uses `front_left`, `front_right`, `back_right`, `back_le
 
 - `time`: game ticks.
 - `party`: `map`, `level`, `x`, `y`, `facing`, `darkness` (0 bright to 5 dark), `can_move`, `sleeping`, `dead`.
-- `leader`, `leader_hand` (object or `null`), `candidate` (name or `null`).
-- `champions[]`: `index`, `name`, `title`, `alive`, `health`, `stamina`, `mana` (each `[current, maximum]`), `food`, `water`, `load` (`[current, maximum]` in 1/10 kg), `position`, `poisoned`, `action_disabled`, `statistics`, `skills` (levels of fighter, ninja, priest, wizard), `wounds`, `slots[]` (`slot`, `where`, `object`), `actions` (action menu of the action hand), `runes` (chosen runes).
+- `leader` (index, or `null`), `leader_hand` (object or `null`).
+- `candidate`: the champion that a mirror shows, with the fields of a champion, or `null`. The candidate is not in the party: it is not in `champions[]` and is never the `leader`. Answer with `act recruit`.
+- `champions[]`: `index`, `name`, `title`, `alive`, `health`, `stamina`, `mana` (each `[current, maximum]`), `food`, `water`, `load_kg` (`[current, maximum]` in kg, one decimal), `position`, `poisoned`, `action_disabled`, `statistics`, `skills` (`{level, rank}` for fighter, ninja, priest, wizard), `wounds`, `slots[]` (`slot`, `where`, `object`), `actions` (action menu of the action hand), `runes` (chosen runes).
+- The values use the units of the game screen. The game stores stamina in tenths of the value that the inventory shows, so `stamina` is the stored value divided by 10. The game stores the load in tenths of a kilogram and shows it as `nn.n/ mm KG`, so `load_kg` is in kilograms. Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars).
+- `rank` is the rank name that the eye panel shows for the level (from the string table of the game, for example `APPRENTICE`). It is `null` for level 1, because the game shows no rank then.
 - `action_menu`: `{champion, actions}` while a menu is open, else `null`.
 - `spell`: `{caster, chosen, available[{symbol, name, mana}]}`, or `null`.
 - `inventory`: `{champion, panel, chest?}`, or `null`.
@@ -177,9 +209,12 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 
 ### View fields
 
-- `squares[]`: 12 squares, `depth` 0-3 and `side` `left`, `center`, `right`. Each has `x`, `y`, `element` (`wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`). A door has `door` and `button`. A square that is not a wall has `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there. A wall in the center lane has `text`, `mirror`, or `ornament` when its face toward the party shows one.
+- `squares[]`: the visible squares, `depth` 0-3 and `side` `left`, `center`, `right`. Each has `x`, `y`, `element` (`wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`). A door has `door` and `button`. A square that is not a wall has `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there.
+- A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, alcove?, fountain?, vi_altar?, ornament?}`. `facing` is the direction that the face points to. `switch` is a button or a lever. `lock` takes or holds an object: a keyhole, a torch holder, a slot. `ornament` is another ornament. The faces are the faces that the dungeon view draws: the front face of a center wall from depth 1, the side face of a side wall from depth 1, and also the front face of a side wall from depth 2. The view draws no ornaments on the side walls of depth 0, so these have no faces.
 - `piles[]`: `{cell, top}` for each object that `take_object` can reach now.
 - `wall_ahead_clickable`, `alcove`, `fountain`, `vi_altar`.
+
+Visibility rule: the view has the party row (depth 0) and the rows ahead up to the first center square that blocks sight: a wall, a fake wall that looks closed, or a closed door. The row of that square is in the view, with its side squares. Nothing behind it is in the view. This is the same rule as the dungeon view and `automap_mark_seen` (`automap_visible_depths` in `port/src/automap.c`). Facing a wall at depth 1, the view has 6 squares.
 
 The view shows what a player sees. Creature health is not in the view, because the original does not show it. Creature names and rune names do not come from the game data, because the original shows only pictures.
 
@@ -187,7 +222,9 @@ The view shows what a player sees. Creature health is not in the view, because t
 
 `map`, `level`, `width`, `height`, `party` (`[x, y]`), `facing`, `legend`, and `rows`. Row index is `y` (north at the top). Column is `x`. The characters are in `legend`.
 
-A square is in the map when `automap_is_seen` (`port/src/automap.c`) says it was seen, or when it is in the current view. The game marks the seen squares after each tick, in all modes.
+A square is in the map when `automap_is_seen` (`port/src/automap.c`) says it was seen, or when it is in the current view (with the visibility rule). The game marks the seen squares after each tick, in all modes.
+
+A wall shows a feature symbol when one of its faces shows the feature and the square in front of that face is in the map: `M` mirror, `L` switch, `K` lock, `V` vi altar, `A` alcove, `F` fountain, `?` text. With more than one feature, the first in this list wins. Other walls are `#`.
 
 ## Play from the shell: dm-play
 
@@ -196,6 +233,8 @@ A square is in the map when `automap_is_seen` (`port/src/automap.c`) says it was
 ```sh
 uv run dm-play <cmd> [json-fields]
 uv run dm-play act <action> [json-args]
+uv run dm-play act_many '<json-list>'
+uv run dm-play goto <x> <y>
 ```
 
 Examples:
@@ -205,13 +244,16 @@ uv run dm-play get_state
 uv run dm-play act move_forward
 uv run dm-play act take_object '{"cell":0}'
 uv run dm-play wait '{"ticks":20}'
+uv run dm-play act_many '["turn_left","move_forward",{"action":"take_object","args":{"cell":2}}]'
+uv run dm-play goto 3 7
 uv run dm-play screenshot '{"path":"/tmp/x.png"}'
 uv run dm-play save
 uv run dm-play load
 uv run dm-play new_game
 ```
 
-- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `game_over`, `action_damage`), the party position, the leader hand, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the squares ahead up to the first wall, and the piles. This uses fewer tokens than the JSON.
+- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`), the party position, the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side walls with a face, and the piles.
+- `dm-play` does not import the `mcp` package. The socket helpers are in `src/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
 - A relative `path` becomes an absolute path, because the game runs in another directory.
 - The exit code is 1 when the response has `"ok": false`, also when the game is not running.
 
@@ -274,6 +316,10 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - The MCP tool functions, called directly against the socket, including `save_game` and `load_game`.
 - `save`, then a move and `wait`, then `load` restores the party position and the game time.
 - `dm-play` prints one line of valid JSON, the exit code 1 for `"ok": false`, and the `--brief` summary.
+- The view stops at a wall at depth 1 (6 squares) and at a closed door (nothing beyond the door, also not in the map). A mirror on a side wall is in `side_face`. A mirror ahead is `M` in the map.
+- The state: stamina in the units of the screen, skill ranks, `load_kg`, and the candidate outside `champions[]`, with the `--brief` line.
+- `act_many`: the actions run in order, a failed action stops the batch, and damage stops it after the first turn. `goto` walks back to an explored square and refuses a wall and a square outside the map. The MCP tools and `dm-play` send `act_many` and `goto`.
+- `dm-play` does not import `mcp`.
 - After a forced party death: `save` and `wait` return `game over`, `load` restores the game, and after a second death `new_game` starts a new game.
 
 `tests/test_modes.py` starts `build/dm --mode turnbased --control <socket>` with the SDL dummy drivers and checks `get_state` and `act move_forward`. It also checks that a party death during a turn gives `"game_over": true`.

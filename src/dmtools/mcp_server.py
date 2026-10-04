@@ -4,16 +4,12 @@ Start the game with `build/dm --mode turnbased --control <socket>`, then run `uv
 The socket path comes from the environment variable DM_CONTROL (default ~/.dm/control.sock).
 """
 
-import json
-import os
-import socket
 import tempfile
 from pathlib import Path
 
 from mcp.server.mcpserver import Image, MCPServer
 
-DEFAULT_SOCKET = "~/.dm/control.sock"
-TIMEOUT = 120.0
+from dmtools.control_client import request
 
 INSTRUCTIONS = """You play Dungeon Master (1987), a real-time dungeon crawler, in turn-based mode.
 The game time stands still between your calls. Each `act` runs one player input, then the game
@@ -25,11 +21,15 @@ Goal: explore the dungeon, find the Firestaff, defeat Lord Chaos. First recruit 
 champions from the mirrors in the Hall of Champions on the first level.
 
 How to play:
-1. Look: `get_view` shows the squares in front (depth 0 is your own square, depth 1 the square
-   ahead), `get_map` shows the explored map, `get_state` shows the champions.
+1. Look: `get_view` shows the squares you can see in front (depth 0 is your own square, depth 1
+   the square ahead; nothing behind a wall or a closed door), `get_map` shows the explored map,
+   `get_state` shows the champions.
 2. Walk with move_forward, move_back, move_left, move_right (strafe), turn_left, turn_right.
    Walls, closed doors, and creatures block you; the state does not change then.
-3. Recruit: face a wall with "mirror": true at depth 1, act click_wall_ahead, then act recruit
+   Fewer calls: `act_many` runs a list of actions, `goto` walks to an explored square. Both stop
+   early when something happens (damage, a creature comes into view, a message, a failed step).
+3. Recruit: face a wall whose "front_face" has "mirror": true at depth 1, act click_wall_ahead, then
+   look at the "candidate" in the state and act recruit
    with choice "resurrect" (keeps the skills; the best choice) or "reincarnate" (trades skill
    levels for statistics), or "cancel".
 4. Objects: the leader has one hand for moving objects ("leader_hand"). take_object picks up the
@@ -45,7 +45,7 @@ How to play:
    = a power rune, then symbol 3 (FUL), then symbol 3 (IR); a power rune and FUL alone make a
    magic torch (light).
 7. Doors: click_wall_ahead on a door with "button": true opens or closes it. Some doors open
-   with keys or levers on walls ("ornament": true).
+   with keys or levers on walls ("switch" or "lock" on a wall face).
 8. Health: keep food and water above 0, rest with sleep (wake to stop) when stamina or mana
    is low. Watch "poisoned" and "wounds".
 9. Save often with save_game. After game over ("game_over": true), only get_*, load_game, and
@@ -55,25 +55,6 @@ How to play:
 mcp = MCPServer("dm", instructions=INSTRUCTIONS)
 
 
-def socket_path() -> str:
-    return os.path.expanduser(os.environ.get("DM_CONTROL", DEFAULT_SOCKET))
-
-
-def request(payload: dict) -> dict:
-    """Sends one request line to the game and returns the response object."""
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-        s.settimeout(TIMEOUT)
-        s.connect(socket_path())
-        s.sendall(json.dumps(payload).encode() + b"\n")
-        data = b""
-        while not data.endswith(b"\n"):
-            chunk = s.recv(65536)
-            if not chunk:
-                break
-            data += chunk
-    return json.loads(data)
-
-
 @mcp.tool()
 def get_state() -> dict:
     """The party and the champions.
@@ -81,12 +62,15 @@ def get_state() -> dict:
     Fields: time (game ticks); party {map, level, x, y, facing, darkness 0 bright to 5 dark,
     can_move, sleeping, dead}; leader (champion index); leader_hand (the object that the leader
     moves, or null); candidate (name of a champion shown by a mirror, answer with act recruit);
-    champions [{index, name, title, alive, health/stamina/mana [current, maximum], food, water
-    (below 0 is starving), load [current, maximum] in 1/10 kg, position in the party, poisoned,
-    action_disabled, statistics {name: [current, maximum]}, skills {fighter, ninja, priest,
-    wizard: level}, wounds, slots [{slot, where, object}], actions (action menu of the action
-    hand), runes (chosen runes)}]; action_menu (open menu); spell {caster, chosen, available
-    [{symbol, name, mana}]}; inventory {champion, panel, chest}; messages (message area rows).
+    candidate: the champion a mirror shows, with the same fields as a champion, not yet in the
+    party (answer with act recruit), or null;
+    champions [{index, name, title, alive, health/stamina/mana [current, maximum] as the game
+    shows them, food, water (below 0 is starving), load_kg [current, maximum], position in the
+    party, poisoned, action_disabled, statistics {name: [current, maximum]}, skills {fighter,
+    ninja, priest, wizard: {level, rank}}, wounds, slots [{slot, where, object}], actions
+    (action menu of the action hand), runes (chosen runes)}]; action_menu (open menu); spell
+    {caster, chosen, available [{symbol, name, mana}]}; inventory {champion, panel, chest};
+    messages (message area rows).
 
     Slot numbers: 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet, 6 pouch 2,
     7-9 quiver, 10 neck, 11 pouch 1, 12 quiver 1, 13-29 backpack, 30-37 open chest.
@@ -101,7 +85,9 @@ def get_view() -> dict:
     squares: depth 0 (own square) to 3, side left/center/right, x, y, element (wall, floor,
     door, pit, stairs_up, stairs_down, teleporter), door (open, closed, partly_open, destroyed)
     and button, objects [{cell, name}], creatures {type, count}, flying (projectiles,
-    explosions). Walls in the center lane show what faces you: text, mirror, ornament.
+    explosions). The depths end at the first wall or closed door ahead. A wall has "front_face" (the
+    side that faces you) and "side_face" (the side that faces your lane) when they show something:
+    {facing, text, mirror, switch, lock, alcove, fountain, vi_altar, ornament}.
     piles: the objects that take_object can reach; cell 0-1 your own square (far left, far
     right), 2-3 the square ahead (near right, near left), 4 the alcove ahead.
     wall_ahead_clickable, alcove, fountain, vi_altar: what click_wall_ahead touches.
@@ -114,8 +100,9 @@ def get_map() -> dict:
     """The explored squares of the current level as text rows.
 
     Row index is y (north at the top), column is x. @ party, # wall, . floor, D closed door,
-    d open door, < stairs up, > stairs down, O pit, T teleporter, space not explored. North is
-    y - 1, east is x + 1. Fake walls look like walls, closed pits look like floor.
+    d open door, < stairs up, > stairs down, O pit, T teleporter, space not explored. Walls with
+    a seen feature: M mirror, L switch, K lock, V vi altar, A alcove, F fountain, ? text. North
+    is y - 1, east is x + 1. Fake walls look like walls, closed pits look like floor.
     """
     return request({"cmd": "get_map"})
 
@@ -139,6 +126,25 @@ def act(action: str, args: dict | None = None) -> dict:
     sleep; wake.
     """
     return request({"cmd": "act", "action": action, "args": args or {}})
+
+
+@mcp.tool()
+def act_many(actions: list) -> dict:
+    """Runs a list of actions in order, each as one act turn, and returns {ok, ticks, ran,
+    stopped, error?, game_over, state, view} after the last turn. Each item is an action name
+    ("move_forward") or {"action": ..., "args": {...}}. stopped: done, damage (a champion lost
+    health), creature (a creature came into view), message (a new message), game_over, or
+    failed (error says why; ran counts only the turns that ran)."""
+    return request({"cmd": "act_many", "actions": actions})
+
+
+@mcp.tool()
+def goto(x: int, y: int) -> dict:
+    """Walks to square (x, y) of the current level on the shortest path over explored squares
+    (floor, open doors; stairs only as the target; no pits) with turns and moves. Returns like
+    act_many; stopped can also be blocked (a move failed) or moved_elsewhere (a teleporter).
+    ok false: no such path."""
+    return request({"cmd": "goto", "x": x, "y": y})
 
 
 @mcp.tool()

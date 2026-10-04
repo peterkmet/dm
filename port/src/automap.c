@@ -69,19 +69,26 @@ static int blocks_sight(int16_t map, int16_t x, int16_t y)
     }
 }
 
+int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir)
+{
+    for (int16_t depth = 1; depth < VIEW_DEPTH_COUNT; depth++) {
+        int16_t ahead_x = x, ahead_y = y;
+        update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
+        if (blocks_sight(map, ahead_x, ahead_y)) return depth + 1;
+    }
+    return VIEW_DEPTH_COUNT;
+}
+
 void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir)
 {
-    for (int16_t depth = 0; depth < VIEW_DEPTH_COUNT; depth++) {
+    int16_t depths = automap_visible_depths(map, x, y, dir);
+    for (int16_t depth = 0; depth < depths; depth++)
         for (int16_t side = -1; side <= 1; side++) {
             int16_t square_x = x, square_y = y;
             update_map_coordinates_after_relative_movement(dir, depth, side, &square_x, &square_y);
             uint8_t *square = seen_square(map, square_x, square_y);
             if (square) *square = 1;
         }
-        int16_t ahead_x = x, ahead_y = y;
-        update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
-        if (depth > 0 && blocks_sight(map, ahead_x, ahead_y)) break;
-    }
 }
 
 /* Block: "AMAP", version, map count, then per map its width, height and one byte per square. */

@@ -17,6 +17,10 @@ extern int16_t g_square_ahead_element;
 extern int16_t g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 
 void view_load_map(int16_t map);
+/* The ornament that the view draws on the side of wall square (x, y) of the party map that faces
+   direction face (NONE when the view has not loaded the party map). */
+enum { VIEW_ORNAMENT_NONE, VIEW_ORNAMENT_OTHER, VIEW_ORNAMENT_TEXT, VIEW_ORNAMENT_ALCOVE, VIEW_ORNAMENT_FOUNTAIN, VIEW_ORNAMENT_VI_ALTAR };
+int16_t view_wall_ornament(int16_t x, int16_t y, int16_t face);
 void view_draw(int16_t dir, int16_t x, int16_t y);
 /* Party light amount (magical light plus torches) for set_dungeon_view_palette. Default 99: bright. */
 void view_set_light(int16_t amount);
