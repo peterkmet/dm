@@ -61,7 +61,7 @@ Save calls: ask for `get_map` only when you plan a route, not after every move. 
 
 Do not write helper loops that call `get_state`, `get_view`, or short `wait`s again and again. One `wait` with many ticks stops by itself on damage, a new creature, or a message, the same as `act_many`. Rest with one long `wait` (or `sleep`, then a long `wait`), then check why it stopped.
 
-When a spell batch stops halfway, the chosen runes stay. Delete them (`delete_rune`) before you cast again.
+When a spell batch stops halfway, or a cast fails with "NEEDS AN EMPTY FLASK", the chosen runes stay. Before you add runes, check `state.spell.chosen` and send `delete_rune` until it is empty; otherwise the new runes join the old ones and the cast fails.
 
 ## Survival
 

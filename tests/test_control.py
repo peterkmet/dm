@@ -500,6 +500,27 @@ def test_a_group_in_view_for_many_ticks_is_recorded_once(game):
             ctypes.c_int16.in_dll(lib, name).value = value
 
 
+def test_wait_does_not_stop_for_a_group_that_stays_in_view(game):
+    lib = game.lib
+    lib.group_delete.argtypes = [ctypes.c_int16, ctypes.c_int16]
+    x, y, f = square_with_floor_two_ahead(game)
+    target = (x + 2 * STEP_EAST[f], y + 2 * STEP_NORTH[f])
+    names = ("g_party_map_x", "g_party_map_y", "g_party_direction")
+    saved = game.position()
+    for name, value in zip(names, (x, y, f)):
+        ctypes.c_int16.in_dll(lib, name).value = value
+    client = Client(game)
+    try:
+        add_screamer(lib, *target)
+        response = client.call(cmd="wait", ticks=40)  # more ticks than the record holds groups
+        assert (response["stopped"], response["ticks"]) == ("done", 40)
+    finally:
+        client.sock.close()
+        lib.group_delete(*target)
+        for name, value in zip(names, saved):
+            ctypes.c_int16.in_dll(lib, name).value = value
+
+
 def test_view_names_explosion_types():
     from dmtools import play
 
