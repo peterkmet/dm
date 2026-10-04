@@ -117,9 +117,10 @@ Do not walk around the level at random. Stop and think first.
    - wall texts you did not read,
    - unexplored edges of the map, walls you did not test for an illusion,
    - doors you could not open and what could open them.
-3. Give each item a probability that it solves the problem. Think about what the level design wants from the player: what is near the blocked door, what the last wall text said, which key or item has no use yet.
-4. Do the most probable item first. After each result, update the probabilities, because a result changes what is likely. Do not work through the list in its written order.
-5. Mark each item as done in `progress.md`, with the result. When all probable items fail, think again and make a new list.
+3. Rank by what the level design needs from every player. Keys and visible things come first: piles you did not empty (a key can lie under the top item), items in alcoves, visible switches, buttons, keyholes, and doors. Hidden buttons and illusory walls are extras that many players miss: they come last, not first.
+4. Give each item a probability that it solves the problem. Think about what the level design wants from the player: what is near the blocked door, what the last wall text said, which key or item has no use yet.
+5. Do the most probable item first. After each result, update the probabilities, because a result changes what is likely. Do not work through the list in its written order.
+6. Mark each item as done in `progress.md`, with the result. When all probable items fail, think again and make a new list.
 
 ## Bugs
 
