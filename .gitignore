@@ -10,3 +10,4 @@ decomp/
 build/
 .playthrough/
 .playthrough_run1/
+.playthrough_checkpoints/
