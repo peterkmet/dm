@@ -59,7 +59,7 @@ def state_lines(state: dict) -> list[str]:
         lines.append(f"CANDIDATE (not recruited) {candidate['name']} {candidate['title']}: " + champion_text(candidate) + " | act recruit")
     for c in state["champions"]:
         notes = [note for note in ("poisoned", "action_disabled") if c[note]] + ([] if c["alive"] else ["DEAD"])
-        lines.append(f"{c['index']} {c['name']}: {champion_text(c)}" + "".join(f" {n}" for n in notes))
+        lines.append(f"{c['index']} {c['name']} ({c['position']}): {champion_text(c)}" + "".join(f" {n}" for n in notes))
     if state["action_menu"]:
         lines.append(f"action menu of {state['action_menu']['champion']}: " + ", ".join(state["action_menu"]["actions"]))
     if state["messages"]:
@@ -88,6 +88,8 @@ def brief(response: dict) -> str:
         return f"error: {response.get('error')}"
     head = " | ".join(f"{key} {response[key]}" for key in ("ticks", "ran", "stopped", "error", "game_over", "action_damage", "path") if key in response)
     lines = [head] if head else []
+    if look := response.get("look"):
+        lines.append(f"look: {look['name']}" + "".join(f" | {line}" for line in look["lines"]))
     if "state" in response:
         lines += state_lines(response["state"])
     if "view" in response:

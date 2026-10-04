@@ -8,6 +8,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include "control.h"
+#include "advanced.h"
 #include "champion.h"
 #include "command.h"
 #include "dungeon.h"
@@ -75,6 +76,13 @@ static struct {
     int groups;
     const char *stop, *error;
 } batch;
+
+/* The eye panel text of a look action, for the turn result. */
+static struct {
+    int shown;
+    int16_t count;
+    char name[PANEL_LINE_SIZE], lines[PANEL_LINE_COUNT + 1][PANEL_LINE_SIZE];
+} look_text;
 
 static int load_failed;               /* a damaged save file left no game to play */
 
@@ -298,6 +306,57 @@ static const char *click_slot(const char *r)
     return NULL;
 }
 
+/* Holds the eye down, reads the panel text of the leader hand object, and releases the eye. */
+static void press_eye(int16_t x, int16_t y)
+{
+    const char *label;
+    uint16_t value;
+    command_process_click(x, y, CLICK_LEFT_PRESS);
+    run_queue();
+    look_text.shown = 1;
+    look_text.count = panel_object_text(g_leader_hand_object, look_text.name, look_text.lines);
+    if (g_advanced_features && panel_object_meter(g_leader_hand_object, &label, &value))
+        snprintf(look_text.lines[look_text.count++], PANEL_LINE_SIZE, "%s %u", label, value);
+    command_process_click(x, y, CLICK_LEFT_RELEASE);
+    run_queue();
+}
+
+/* The eye on the leader hand object; with a slot, the hand takes the slot object first and puts it back after. */
+static const char *look(const char *r)
+{
+    int16_t x, y;
+    long slot = get_int(r, "slot", -1);
+    char request[64];
+    if (!g_inventory_champion_ordinal) return "open an inventory first (open_inventory): the eye is in the inventory";
+    if (!find_click(UI_INPUT_INVENTORY, COMMAND_CLICK_EYE, &x, &y)) return "eye not found";
+    if (slot < 0) {
+        if (g_leader_empty_handed) return "the leader hand is empty: take an object, or give champion and slot";
+        press_eye(x, y);
+        return NULL;
+    }
+    if (!g_leader_empty_handed) return "the leader hand must be empty to look at a slot";
+    snprintf(request, sizeof request, "\"champion\":%ld,\"slot\":%ld", get_int(r, "champion", g_inventory_champion_ordinal - 1), slot);
+    const char *error = click_slot(request);
+    if (error) return error;
+    if (g_leader_empty_handed) return "no object in this slot";
+    press_eye(x, y);
+    click_slot(request);
+    return NULL;
+}
+
+/* Clicks the icon of champion a, then the icon of champion b: the two champions swap cells. */
+static const char *swap_champions(const char *r)
+{
+    long pair[2] = { get_int(r, "a", -1), get_int(r, "b", -1) };
+    for (int k = 0; k < 2; k++)
+        if (pair[k] < 0 || pair[k] >= (long)g_party_champion_count || !g_champions[pair[k]].current_health) return "a and b must be living champions";
+    if (pair[0] == pair[1]) return "a and b must be different champions";
+    for (int k = 0; k < 2; k++)
+        if (!click_command(UI_INPUT_INTERFACE, (int16_t)(COMMAND_CLICK_CHAMPION_ICON_FIRST + NORMALIZE(g_champions[pair[k]].cell - g_party_direction))))
+            return "champion icon not found";
+    return NULL;
+}
+
 static const char *use_mouth(const char *r)
 {
     (void)r;
@@ -410,6 +469,7 @@ static const struct {
     { "eat", use_mouth }, { "drink", use_mouth }, { "choose_action", choose_action }, { "pass", pass },
     { "set_caster", set_caster }, { "add_rune", add_rune }, { "delete_rune", delete_rune }, { "cast", cast },
     { "recruit", recruit }, { "set_leader", set_leader }, { "sleep", sleep_party }, { "wake", wake },
+    { "swap_champions", swap_champions }, { "look", look },
 };
 
 /* Screenshot: fb as an RGB PNG with stored (uncompressed) deflate blocks. */
@@ -549,6 +609,17 @@ static void send_turn_result(void)
         json_key(&j, "action_damage");
         json_int(&j, turn.damage);
     }
+    if (look_text.shown) {
+        json_key(&j, "look");
+        json_open(&j, '{');
+        json_key(&j, "name");
+        json_str(&j, look_text.name);
+        json_key(&j, "lines");
+        json_open(&j, '[');
+        for (int16_t i = 0; i < look_text.count; i++) json_str(&j, look_text.lines[i]);
+        json_close(&j, ']');
+        json_close(&j, '}');
+    }
     json_key(&j, "state");
     state_json_state(&j);
     json_key(&j, "view");
@@ -586,7 +657,7 @@ static const char *run_action(const char *name, const char *request)
         if (strcmp(name, actions[k].name)) continue;
         if (g_candidate_champion_ordinal && strcmp(name, "recruit")) return "a candidate is shown: answer with recruit first";
         if (g_party_is_sleeping && strcmp(name, "wake")) return "the party sleeps: use wake or wait";
-        turn.has_damage = 0;
+        turn.has_damage = look_text.shown = 0;
         return actions[k].run(request);
     }
     return "unknown action";
@@ -832,7 +903,7 @@ static void handle_request(const char *request)
         long ticks = get_int(request, "ticks", 1);
         if (ticks < 1 || ticks > WAIT_MAX_TICKS) send_error("ticks must be 1-1000");
         else {
-            turn.has_damage = 0;
+            turn.has_damage = look_text.shown = 0;
             start_turn(ticks, ticks, 1);
         }
     } else if (!strcmp(cmd, "screenshot")) {

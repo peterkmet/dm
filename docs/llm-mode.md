@@ -61,7 +61,7 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 | `get_state` | none | `{ok, state}` |
 | `get_view` | none | `{ok, view}` |
 | `get_map` | none | `{ok, map}` |
-| `act` | `action`, `args` (object) | `{ok, ticks, game_over, action_damage?, state, view}` |
+| `act` | `action`, `args` (object) | `{ok, ticks, game_over, action_damage?, look?, state, view}` |
 | `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, action_damage?, state, view}` |
 | `goto` | `x`, `y` | The same as `act_many` |
 | `wait` | `ticks` (1-1000, default 10) | `{ok, ticks, game_over, state, view}` |
@@ -86,7 +86,7 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `get_state` | none | `state` |
 | `get_view` | none | `view` |
 | `get_map` | none | `map` |
-| `act` | `action`, `args` | After the turn: `ticks`, `game_over`, `action_damage` (only `choose_action`), `state`, `view` |
+| `act` | `action`, `args` | After the turn: `ticks`, `game_over`, `action_damage` (only `choose_action`), `look` (only `look`), `state`, `view` |
 | `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `state`, `view`. See [Batches](#batches). |
 | `goto` | `x`, `y` | The same as `act_many`. See [Batches](#batches). |
 | `wait` | `ticks` (1-1000) | After the turn: `ticks`, `game_over`, `state`, `view` |
@@ -173,8 +173,14 @@ There is one save slot. The save directory is the data directory (`game/`), the 
 | `recruit` | `choice`: `resurrect`, `reincarnate`, `cancel` | Only while a candidate is shown. |
 | `set_leader` | `champion` | |
 | `sleep`, `wake` | none | `sleep` opens the inventory of the leader when no inventory is open. |
+| `swap_champions` | `a`, `b` | Clicks the icon of champion `a`, then the icon of champion `b`. The two champions swap their cells. See `position` in the state. |
+| `look` | `champion`, `slot` (both optional) | Presses the eye of the open inventory and releases it. Without `slot`: the object in the leader hand. With `slot`: the empty leader hand takes the object of the slot (`champion`, default the open inventory), the eye looks, and the hand puts the object back. See [Look](#look). |
 
 While a candidate is shown, only `recruit` is accepted. While the party sleeps, only `wake` is accepted. `wait` is always accepted.
+
+### Look
+
+The response of `look` has `look: {name, lines}`. These are the texts of the eye panel, from `panel_object_text` (`port/src/ui_champion.c`): the name, then the description lines (burnt out, compass direction, waterskin level, attributes, and the weight, in the form `WEIGHS <kg>.<tenth> KG.`). With the advanced features, a weapon also has `ATTACK <value>` and an armour `DEFENSE <value>`, the values of the stat meters. A scroll and a chest also give the name and the weight; the scroll text is in the state.
 
 `action_damage`: a value above 0 is the damage, 0 is no damage, -1 is "can't reach", -2 is "need ammo".
 
@@ -243,6 +249,8 @@ Examples:
 uv run dm-play get_state
 uv run dm-play act move_forward
 uv run dm-play act take_object '{"cell":0}'
+uv run dm-play act swap_champions '{"a":1,"b":2}'
+uv run dm-play act look '{"champion":0,"slot":1}'
 uv run dm-play wait '{"ticks":20}'
 uv run dm-play act_many '["turn_left","move_forward",{"action":"take_object","args":{"cell":2}}]'
 uv run dm-play goto 3 7
@@ -252,7 +260,7 @@ uv run dm-play load
 uv run dm-play new_game
 ```
 
-- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`), the party position, the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side walls with a face, and the piles.
+- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`), the party position, the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side walls with a face, and the piles. After `look`, a `look: <name> | <line> | ...` line follows the turn line.
 - `dm-play` does not import the `mcp` package. The socket helpers are in `src/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
 - A relative `path` becomes an absolute path, because the game runs in another directory.
 - The exit code is 1 when the response has `"ok": false`, also when the game is not running.
@@ -271,7 +279,7 @@ ahead 2: floor
 ahead 3: floor
 ```
 
-With champions, each champion has one line, for example `0 <name>: HP 75/75 ST 63/63 MA 11/11 food 1500 water 1500`. A square shows creatures, objects with their cell, a door with its state, and a wall face (`mirror`, `ornament`, `text`).
+With champions, each champion has one line, for example `0 <name> (front_left): HP 75/75 ST 63/63 MA 11/11 food 1500 water 1500`. A square shows creatures, objects with their cell, a door with its state, and a wall face (`mirror`, `ornament`, `text`).
 
 ## C API
 
@@ -304,7 +312,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 ## Known limits
 
 - In the `turnbased` mode the automap and the debug read-out keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
-- Throwing objects and the eye (object description panel) have no action.
+- Throwing objects has no action.
 - Name entry for a reincarnated champion is not ported.
 
 ## Tests
@@ -320,6 +328,8 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - The state: stamina in the units of the screen, skill ranks, `load_kg`, and the candidate outside `champions[]`, with the `--brief` line.
 - `act_many`: the actions run in order, a failed action stops the batch, and damage stops it after the first turn. `goto` walks back to an explored square and refuses a wall and a square outside the map. The MCP tools and `dm-play` send `act_many` and `goto`.
 - `dm-play` does not import `mcp`.
+- `swap_champions` swaps the `position` of two champions. `look` on a slot returns the name of the sword and the weight line, and the sword is in its slot again. `look` on the leader hand gives the same text, with `ATTACK` in the advanced features. `--brief` prints the `look:` line.
+- `dm-play` returns exit code 1 and logs the call when the game is not running.
 - After a forced party death: `save` and `wait` return `game over`, `load` restores the game, and after a second death `new_game` starts a new game.
 
 `tests/test_modes.py` starts `build/dm --mode turnbased --control <socket>` with the SDL dummy drivers and checks `get_state` and `act move_forward`. It also checks that a party death during a turn gives `"game_over": true`.

@@ -383,6 +383,46 @@ def test_mcp_and_dm_play_batches(game, monkeypatch, capsys):
         assert json.loads(capsys.readouterr().out)["ran"] == 0
 
 
+def test_swap_champions_and_look(game, monkeypatch, capsys):
+    client = Client(game)
+    try:
+        before = [c["position"] for c in client.call(cmd="get_state")["state"]["champions"][:2]]
+        after = [c["position"] for c in client.act("swap_champions", a=0, b=1)["state"]["champions"][:2]]
+        assert after == before[::-1]
+        assert client.call(cmd="act", action="swap_champions", args={"a": 0, "b": 0})["ok"] is False
+
+        assert client.call(cmd="act", action="look", args={})["ok"] is False  # the eye is in the inventory
+        client.act("open_inventory", champion=0)
+        response = client.act("look", champion=0, slot=1)
+        assert response["look"]["name"] == "SAMURAI SWORD"
+        assert any(line.startswith("WEIGHS ") and line.endswith("KG.") for line in response["look"]["lines"])
+        assert response["state"]["leader_hand"] is None
+        slots = {s["slot"]: s["object"]["name"] for s in response["state"]["champions"][0]["slots"] if s["object"]}
+        assert slots[1] == "SAMURAI SWORD"
+
+        client.act("take_from_slot", champion=0, slot=1)
+        assert client.act("look")["look"] == response["look"]
+        advanced = ctypes.c_int16.in_dll(game.lib, "g_advanced_features")
+        saved, advanced.value = advanced.value, 1
+        try:
+            assert client.act("look")["look"]["lines"][-1].startswith("ATTACK ")
+        finally:
+            advanced.value = saved
+        monkeypatch.setenv("DM_CONTROL", game.socket)
+        client.sock.close()
+        with pumped(game):
+            from dmtools import play
+
+            assert play.main(["--brief", "act", "look"]) == 0
+            assert "\nlook: SAMURAI SWORD | WEIGHS " in "\n" + capsys.readouterr().out
+        client = Client(game)
+        client.act("put_in_slot", champion=0, slot=1)
+        client.act("close_inventory")
+        client.act("swap_champions", a=0, b=1)
+    finally:
+        client.sock.close()
+
+
 def test_dm_play_does_not_import_mcp():
     code = "import sys, dmtools.play; assert 'mcp' not in sys.modules"
     subprocess.run([sys.executable, "-c", code], check=True)
@@ -430,3 +470,13 @@ def test_dm_play_logs_each_call(tmp_path):
     lines = [line.split("\t") for line in path.read_text().splitlines()]
     assert lines[0][1:] == ["move_forward", "ok", "1", "3", "4", "42"]
     assert lines[1][1:3] == ["get_state", "fail"]
+
+
+def test_dm_play_reports_an_unreachable_game(tmp_path, monkeypatch, capsys):
+    from dmtools import play
+
+    monkeypatch.setenv("DM_CONTROL", str(tmp_path / "missing.sock"))
+    monkeypatch.setattr(play, "LOG_DIR", str(tmp_path))
+    assert play.main(["get_state"]) == 1
+    assert "cannot reach the game" in json.loads(capsys.readouterr().out)["error"]
+    assert "get_state\tfail" in (tmp_path / "calls.log").read_text()

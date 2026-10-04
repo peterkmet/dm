@@ -688,14 +688,29 @@ static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t va
     text_draw(vp, bar_x + METER_BAR_WIDTH + METER_VALUE_GAP, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, text);
 }
 
+int panel_object_meter(uint16_t thing, const char **label, uint16_t *value)
+{
+    if (THING_TYPE(thing) == THING_WEAPON) {
+        *label = "ATTACK";
+        *value = tables_weapon_info(weapon_type(thing))->strength;
+        return 1;
+    }
+    if (THING_TYPE(thing) == THING_ARMOUR) {
+        *label = "DEFENSE";
+        *value = tables_armour_info(armour_type(thing))->defense;
+        return 1;
+    }
+    return 0;
+}
+
 /* Advanced feature: attack (weapons), defense (armour), and weight meters below the description. */
 static void draw_stat_meters(uint16_t thing, int16_t x, int16_t y)
 {
-    if (THING_TYPE(thing) == THING_WEAPON) {
-        draw_stat_meter(x, y, "ATTACK", tables_weapon_info(weapon_type(thing))->strength, largest_attack(), COLOR_GOLD, 1);
-        y += MESSAGE_ROW_HEIGHT;
-    } else if (THING_TYPE(thing) == THING_ARMOUR) {
-        draw_stat_meter(x, y, "DEFENSE", tables_armour_info(armour_type(thing))->defense, largest_defense(), COLOR_BLUE, 1);
+    const char *label;
+    uint16_t value;
+    if (panel_object_meter(thing, &label, &value)) {
+        int attack = THING_TYPE(thing) == THING_WEAPON;
+        draw_stat_meter(x, y, label, value, attack ? largest_attack() : largest_defense(), attack ? COLOR_GOLD : COLOR_BLUE, 1);
         y += MESSAGE_ROW_HEIGHT;
     }
     draw_stat_meter(x, y, "WEIGHT", get_object_weight(thing), largest_weight(), COLOR_LIGHT_BROWN, 0);

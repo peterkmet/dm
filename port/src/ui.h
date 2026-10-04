@@ -138,6 +138,8 @@ enum { PANEL_CONTENT_FOOD_WATER = 1, PANEL_CONTENT_SCROLL = 5, PANEL_CONTENT_CHE
 enum { PANEL_LINE_COUNT = 3, PANEL_LINE_SIZE = 40 };
 extern int16_t g_panel_content;
 int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
+/* The ATTACK (weapon) or DEFENSE (armour) meter of the advanced object panel: 1 with its label and value, else 0. */
+int panel_object_meter(uint16_t thing, const char **label, uint16_t *value);
 void draw_panel_object(uint16_t thing, int16_t pressing_eye);
 void draw_panel_eye(void);
 void panel_click_in_chest(int16_t x, int16_t y);

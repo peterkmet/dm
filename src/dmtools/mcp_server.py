@@ -123,7 +123,10 @@ def act(action: str, args: dict | None = None) -> dict:
     choose_action {champion, index}; pass (closes an open action menu);
     set_caster {champion}; add_rune {symbol 0-5}; delete_rune; cast;
     recruit {choice: resurrect, reincarnate, cancel}; set_leader {champion};
-    sleep; wake.
+    sleep; wake;
+    swap_champions {a, b} (the two champions swap their positions, as clicks on their icons);
+    look {champion?, slot?} (the eye of the open inventory on the leader hand object; with a
+    slot the empty hand takes the slot object and puts it back; the response has look {name, lines}).
     """
     return request({"cmd": "act", "action": action, "args": args or {}})
 
