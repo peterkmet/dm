@@ -15,7 +15,8 @@ INSTRUCTIONS = """You play Dungeon Master (1987), a real-time dungeon crawler, i
 The game time stands still between your calls. Each `act` runs one player input, then the game
 runs until the party can move again (2 to 64 game ticks) and returns
 the new state and view. `wait` lets time pass: to rest, to let an action recover, or to let a
-door finish opening.
+door finish opening. A long `wait` (up to 5000 ticks) stops early on damage, a new creature, or a
+message, so one call can rest until something happens.
 
 Goal: explore the dungeon, find the Firestaff, defeat Lord Chaos. First recruit up to four
 champions from the mirrors in the Hall of Champions on the first level.
@@ -28,7 +29,8 @@ How to play:
    Walls, closed doors, and creatures block you: the response has "bumped": true, and a bump
    into a wall hurts two champions a little.
    Fewer calls: `act_many` runs a list of actions, `goto` walks to an explored square. Both stop
-   early when something happens (damage, a creature comes into view, a message, a bump, a failed step).
+   early when something happens (damage, a new creature group comes into view, a message, a bump,
+   a failed step).
 3. Recruit: face a wall whose "front_face" has "mirror": true at depth 1, act click_wall_ahead, then
    look at the "candidate" in the state and act recruit
    with choice "resurrect" (keeps the skills; the best choice) or "reincarnate" (trades skill
@@ -142,7 +144,8 @@ def act_many(actions: list) -> dict:
     """Runs a list of actions in order, each as one act turn, and returns {ok, ticks, ran,
     stopped, error?, game_over, bumped?, state, view} after the last turn. Each item is an action
     name ("move_forward") or {"action": ..., "args": {...}}. stopped: done, damage (a champion lost
-    health), creature (a creature came into view), message (a new message), bumped (a move did not
+    health), creature (a creature group came into view that was not in view
+    before the step), message (a new message), bumped (a move did not
     move the party), game_over, or failed (error says why; ran counts only the turns that ran)."""
     return request({"cmd": "act_many", "actions": actions})
 
@@ -161,7 +164,10 @@ def goto(x: int, y: int, facing: str | int | None = None) -> dict:
 
 @mcp.tool()
 def wait(ticks: int = 10) -> dict:
-    """Lets ticks (1-1000) of game time pass without input; returns {ok, ticks, state, view}.
+    """Lets ticks (1-5000) of game time pass without input; returns {ok, ticks, stopped,
+    game_over, state, view}. It stops early on news: stopped is done (all ticks ran), damage
+    (a champion lost health), creature (a new creature group came into view), message (a new
+    message), or game_over; ticks gives the ticks that ran. Also while the party sleeps.
     Use it to rest, to wait for action_disabled to clear, or for doors to open."""
     return request({"cmd": "wait", "ticks": ticks})
 

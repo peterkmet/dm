@@ -64,7 +64,7 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 | `act` | `action`, `args` (object) | `{ok, ticks, game_over, bumped?, action_damage?, look?, state, view}` |
 | `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage?, state, view}` |
 | `goto` | `x`, `y`, `facing` (optional) | The same as `act_many` |
-| `wait` | `ticks` (1-1000, default 10) | `{ok, ticks, game_over, state, view}` |
+| `wait` | `ticks` (1-5000, default 10) | `{ok, ticks, stopped, game_over, state, view}` |
 | `screenshot` | none | The screen as a 320 x 200 PNG image |
 | `save_game` | none | `{ok}` |
 | `load_game` | none | `{ok, state}` |
@@ -89,7 +89,7 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `act` | `action`, `args` | After the turn: `ticks`, `game_over`, `bumped` (only after a bump), `action_damage` (only `choose_action`), `look` (only `look`), `state`, `view` |
 | `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `bumped`, `state`, `view`. See [Batches](#batches). |
 | `goto` | `x`, `y`, `facing` (optional) | The same as `act_many`. See [Batches](#batches). |
-| `wait` | `ticks` (1-1000) | After the turn: `ticks`, `game_over`, `state`, `view` |
+| `wait` | `ticks` (1-5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `state`, `view`. See [Wait](#wait). |
 | `screenshot` | `path` | `path`. The game writes a PNG file to `path`. |
 | `save` | none | Nothing. The game writes `DMGAME.DAT` in the save directory. The old file becomes `DMGAME.BAK`. |
 | `load` | none | `state`. The game loads `DMGAME.DAT` (else `DMGAME.BAK`) from the save directory. |
@@ -111,7 +111,7 @@ An `act` turn does these steps:
 2. It runs the game one tick per frame.
 3. It ends when at least 2 ticks are done and the party can move again (`g_disabled_movement_ticks` is 0). It also ends after 64 ticks, and at once when the game is over.
 
-A `wait` turn runs exactly `ticks` ticks. A game that does not tick ends a turn after 16 frames for each tick of the limit.
+A `wait` turn runs `ticks` ticks. A game that does not tick ends a turn after 16 frames for each tick of the limit.
 
 During a turn, each frame is a tick: the game does not wait 12 frames for input. The game rules do not change.
 
@@ -119,9 +119,19 @@ During a turn, each frame is a tick: the game does not wait 12 frames for input.
 
 When a move action (`move_forward`, `move_back`, `move_left`, `move_right`) does not change the party square, the turn response has `"bumped": true`. A wall, a closed door, or a creature is in the way. Without a bump, the response has no `bumped` field. A bump into a wall or a closed door gives 1 damage to the two champions on the side of the bump, as in the original game.
 
+#### Wait
+
+A `wait` turn checks for news after each tick and ends at once when it finds news. The news are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, else the news. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
+
+Example: rest until something happens, at most 5000 ticks.
+
+```json
+{"cmd": "wait", "ticks": 5000}
+```
+
 ### Batches
 
-A batch runs many turns with one request. Each step is one `act` turn. After each turn the batch stops early when something happens, so that the caller can look again.
+A batch runs many turns with one request. Each step is one `act` turn. After each turn the batch stops early when something happens, so that the caller can look again. Each check compares with the time before the turn.
 
 `act_many` runs the `actions` in order. An item is an action name (`"move_forward"`) or an object `{"action": "take_object", "args": {"cell": 0}}`.
 
@@ -137,7 +147,7 @@ The response has `ran` (the number of turns that ran) and `stopped`:
 |---|---|
 | `done` | All actions ran, or the party is at the target. |
 | `damage` | A champion lost health. |
-| `creature` | More creature groups are in view than before the turn. |
+| `creature` | A creature group is in view that was not in view before the turn. The check compares the groups, not their count: a group that stays in view does not stop the batch again. |
 | `message` | The game printed a new message. |
 | `game_over` | The party died, or the game is won. |
 | `bumped` | A move did not change the party square (a wall, a closed door, a creature). See [Bump](#bump). The batch checks this before `damage`, because a bump into a wall hurts. |
@@ -272,6 +282,7 @@ uv run dm-play act take_object '{"cell":0}'
 uv run dm-play act swap_champions '{"a":1,"b":2}'
 uv run dm-play act look '{"champion":0,"slot":1}'
 uv run dm-play wait '{"ticks":20}'
+uv run dm-play wait '{"ticks":5000}'
 uv run dm-play act_many '["turn_left","move_forward",{"action":"take_object","args":{"cell":2}}]'
 uv run dm-play goto 3 7
 uv run dm-play goto 3 7 north
@@ -347,6 +358,8 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - `dm-play` prints one line of valid JSON, the exit code 1 for `"ok": false`, and the `--brief` summary.
 - The view stops at a wall at depth 1 (6 squares) and at a closed door (nothing beyond the door, also not in the map). A mirror on a side wall is in `side_face`. A mirror ahead is `M` in the map.
 - The state: stamina in the units of the screen, skill ranks, `load_kg`, and the candidate outside `champions[]`, with the `--brief` line.
+- `wait` without news runs all ticks with `stopped` `done`. Damage stops it early with `stopped` `damage` and the ticks that ran. `ticks` 5001 is refused.
+- `act_many` with a creature group in view on a side square runs all turns while the group stays in view. It stops with `creature` after the first turn when a new group comes into view, also when the old group leaves the view in the same turn.
 - `act_many`: the actions run in order, a failed action stops the batch, and damage stops it after the first turn. `goto` walks back to an explored square and refuses a wall and a square outside the map. The MCP tools and `dm-play` send `act_many` and `goto`.
 - A move into a wall gives `"bumped": true` and the same square. `act_many` stops with `bumped`. `--brief` ends the turn line with `BUMPED`.
 - `goto` with `facing` (a name or 0-3) turns the party at the target. A wrong `facing` returns `"ok": false`. The MCP tool and `dm-play` send `facing`.

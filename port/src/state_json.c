@@ -647,7 +647,7 @@ void state_json_view(Json *j)
     json_close(j, '}');
 }
 
-int state_json_visible_groups(void)
+int state_json_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX])
 {
     int count = 0;
     for (int16_t depth = 0; depth < visible_depths(); depth++)
@@ -656,7 +656,7 @@ int state_json_visible_groups(void)
             view_square(depth, side, &x, &y);
             if (!in_party_map(x, y) || !strcmp(square_name(party_map_square(x, y)), "wall")) continue;
             for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST; t = get_next_thing(t))
-                count += THING_TYPE(t) == THING_GROUP;
+                if (THING_TYPE(t) == THING_GROUP && count < STATE_JSON_VISIBLE_GROUPS_MAX) groups[count++] = THING_STRIP_CELL(t);
         }
     return count;
 }

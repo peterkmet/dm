@@ -246,7 +246,7 @@ def test_dm_play_prints_json_and_the_brief_summary(game, monkeypatch, capsys):
         assert json.loads(capsys.readouterr().out)["ok"] is False
         assert play.main(["--brief", "wait", '{"ticks": 2}']) == 0
         out = capsys.readouterr().out
-        assert out.startswith("ticks 2 | game_over False")
+        assert out.startswith("ticks 2 | stopped done | game_over False")
         assert "\n0 " in out and "HP " in out and "\nahead: " in out
         assert play.main(["--brief", "act", "turn_left"]) == 0
         assert "facing" in capsys.readouterr().out
@@ -341,6 +341,79 @@ def test_act_many_runs_in_order_and_stops_on_failure_and_damage(game):
         assert response["ran"] == 1 and response["stopped"] == "damage"
     finally:
         client.sock.close()
+
+
+def test_wait_runs_all_ticks_or_stops_on_damage(game):
+    client = Client(game)
+    try:
+        response = client.call(cmd="wait", ticks=300)
+        assert response["stopped"] == "done" and response["ticks"] == 300
+        ctypes.c_int16.in_dll(game.lib, "g_champion_pending_damage").value = min(10, game.champions[0].current_health - 1)
+        response = client.call(cmd="wait", ticks=5000)
+        assert response["stopped"] == "damage" and 1 <= response["ticks"] < 100
+        assert client.call(cmd="wait", ticks=5001)["ok"] is False
+    finally:
+        client.sock.close()
+
+
+THING_GROUP, SCREAMER = 4, 6
+
+
+def add_screamer(lib, x, y):
+    """A screamer on square (x, y) of the party map, active but without behavior events (map 0 allows no creatures)."""
+    group = lib.get_unused_thing(THING_GROUP)
+    data = lib.get_thing_data(group)
+    data[2], data[3] = 0xFF, 0xFE  # no possessions
+    data[4], data[5] = SCREAMER, 0xFF  # centered on the square
+    data[7] = 50  # health
+    lib.group_add_active_group(group, x, y)
+    lib.link_thing_to_list(group, 0, x, y)
+
+
+def square_with_floor_left_and_behind(game):
+    """A floor square of the party map and a facing with floor to the left and behind."""
+    width, height = map_size(game)
+
+    def floor(x, y):
+        return 0 <= x < width and 0 <= y < height and game.lib.get_square(x, y) >> 5 == 1
+
+    for x in range(width):
+        for y in range(height):
+            for f in range(4):
+                left, back = (f + 3) % 4, (f + 2) % 4
+                if floor(x, y) and floor(x + STEP_EAST[left], y + STEP_NORTH[left]) and floor(x + STEP_EAST[back], y + STEP_NORTH[back]):
+                    return x, y, f
+    pytest.skip("no floor square with floor to the left and behind")
+
+
+def test_act_many_stops_only_on_a_new_creature_group(game):
+    lib = game.lib
+    lib.get_unused_thing.restype = ctypes.c_uint16
+    lib.get_unused_thing.argtypes = [ctypes.c_uint16]
+    lib.group_add_active_group.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
+    lib.link_thing_to_list.argtypes = [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
+    lib.group_delete.argtypes = [ctypes.c_int16, ctypes.c_int16]
+    x, y, f = square_with_floor_left_and_behind(game)
+    left = (x + STEP_EAST[(f + 3) % 4], y + STEP_NORTH[(f + 3) % 4])
+    behind = (x + STEP_EAST[(f + 2) % 4], y + STEP_NORTH[(f + 2) % 4])
+    names = ("g_party_map_x", "g_party_map_y", "g_party_direction")
+    saved = game.position()
+    for name, value in zip(names, (x, y, f)):
+        ctypes.c_int16.in_dll(lib, name).value = value
+    client = Client(game)
+    try:
+        add_screamer(lib, *left)
+        response = client.call(cmd="act_many", actions=["turn_left", "turn_right", "turn_left", "turn_right"])
+        assert response["stopped"] == "done" and response["ran"] == 4  # the group stays in view
+        add_screamer(lib, *behind)
+        response = client.call(cmd="act_many", actions=["turn_right", "turn_left"])
+        assert response["stopped"] == "creature" and response["ran"] == 1  # one group leaves the view, a new one comes in
+    finally:
+        client.sock.close()
+        for square in (left, behind):
+            lib.group_delete(*square)
+        for name, value in zip(names, saved):
+            ctypes.c_int16.in_dll(lib, name).value = value
 
 
 def test_goto_walks_back_over_explored_squares(game):

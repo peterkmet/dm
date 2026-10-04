@@ -33,7 +33,7 @@
 #define INPUT_SIZE 65536              /* longest request line */
 #define TURN_MIN_TICKS 2              /* an action shows its result, then the action area returns */
 #define TURN_MAX_TICKS 64
-#define WAIT_MAX_TICKS 1000
+#define WAIT_MAX_TICKS 5000
 #define FRAMES_PER_TICK_LIMIT 16      /* a frozen game ends a turn after this many frames per tick */
 #define TEXT_SIZE 256
 #define SPELL_TAB_STEP 5              /* caster tab zones per caster */
@@ -63,6 +63,7 @@ static struct {
     int16_t damage;
     int moving;                       /* the action was a step; map, x, y is the party square before it */
     int16_t map, x, y;
+    const char *stop;                 /* wait: the news that ended it early, or NULL */
 } turn;
 
 /* A batch: act_many runs a list of actions, goto walks a path; each step is one turn. */
@@ -73,11 +74,17 @@ static struct {
     int16_t path[PATH_MAX_STEPS];     /* goto: the directions to walk */
     int path_length, path_done, moving;
     int16_t facing;                   /* goto: the direction to face at the target, or -1 */
-    uint32_t start_time, message_expiry;
-    int16_t health[CHAMPION_MAX_COUNT];
-    int groups;
+    uint32_t start_time;
     const char *stop, *error;
 } batch;
+
+/* What the party knew before a turn: act_many, goto, and wait stop on news against it. */
+static struct {
+    int16_t health[CHAMPION_MAX_COUNT];
+    uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX];
+    int group_count;
+    uint32_t message_expiry;
+} seen;
 
 /* The eye panel text of a look action, for the turn result. */
 static struct {
@@ -613,6 +620,10 @@ static void send_turn_result(void)
     json_bool(&j, 1);
     json_key(&j, "ticks");
     json_int(&j, (long)(g_game_time - (batch.active ? batch.start_time : turn.start_time)));
+    if (turn.wait_only) {
+        json_key(&j, "stopped");
+        json_str(&j, turn.stop ? turn.stop : "done");
+    }
     if (batch.active) {
         json_key(&j, "ran");
         json_int(&j, batch.ran);
@@ -668,6 +679,7 @@ static void start_turn(long min_ticks, long max_ticks, int wait_only)
 {
     turn.pending = 1;
     turn.wait_only = wait_only;
+    turn.stop = NULL;
     turn.start_time = g_game_time;
     turn.frames = 0;
     turn.min_ticks = min_ticks;
@@ -710,23 +722,44 @@ static uint32_t latest_message_expiry(void)
     return latest;
 }
 
-/* Remembers what the stop checks compare after the next turn. */
-static void batch_snapshot(void)
+/* Remembers what the news checks compare during and after the next turn. */
+static void snapshot(void)
 {
-    for (uint16_t i = 0; i < g_party_champion_count; i++) batch.health[i] = g_champions[i].current_health;
-    batch.groups = state_json_visible_groups();
-    batch.message_expiry = latest_message_expiry();
+    for (uint16_t i = 0; i < g_party_champion_count; i++) seen.health[i] = g_champions[i].current_health;
+    seen.group_count = state_json_visible_groups(seen.groups);
+    seen.message_expiry = latest_message_expiry();
+}
+
+/* A creature group is in view that was not in view at the snapshot. */
+static int new_group_in_view(void)
+{
+    uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX];
+    int count = state_json_visible_groups(groups);
+    for (int i = 0; i < count; i++) {
+        int known = 0;
+        for (int k = 0; k < seen.group_count; k++) known |= groups[i] == seen.groups[k];
+        if (!known) return 1;
+    }
+    return 0;
+}
+
+/* What happened since the snapshot that the player must see, or NULL. */
+static const char *news(void)
+{
+    if (game_over()) return "game_over";
+    for (uint16_t i = 0; i < g_party_champion_count; i++)
+        if (g_champions[i].current_health < seen.health[i]) return "damage";
+    if (new_group_in_view()) return "creature";
+    if (latest_message_expiry() > seen.message_expiry) return "message";
+    return NULL;
 }
 
 /* Why a batch stops after a turn, or NULL to go on. */
 static const char *batch_stop_reason(void)
 {
-    if (game_over()) return "game_over";
-    if (turn_bumped()) return "bumped";  /* before damage: a bump into a wall hurts */
-    for (uint16_t i = 0; i < g_party_champion_count; i++)
-        if (g_champions[i].current_health < batch.health[i]) return "damage";
-    if (state_json_visible_groups() > batch.groups) return "creature";  /* ponytail: a count, misses a swap of groups */
-    if (latest_message_expiry() > batch.message_expiry) return "message";
+    if (!game_over() && turn_bumped()) return "bumped";  /* before damage: a bump into a wall hurts */
+    const char *reason = news();
+    if (reason) return reason;
     if (batch.moving) {
         int16_t x = turn.x, y = turn.y;
         update_map_coordinates_after_relative_movement(batch.path[batch.path_done], 1, 0, &x, &y);
@@ -795,7 +828,7 @@ static void batch_next(void)
 {
     const char *error;
     char element[INPUT_SIZE / 4], name[ACTION_NAME_SIZE];
-    batch_snapshot();
+    snapshot();
     if (batch.actions) {
         int found = next_element(element, sizeof element);
         if (found <= 0) {
@@ -949,9 +982,10 @@ static void handle_request(const char *request)
         handle_goto(request);
     } else if (!strcmp(cmd, "wait")) {
         long ticks = get_int(request, "ticks", 1);
-        if (ticks < 1 || ticks > WAIT_MAX_TICKS) send_error("ticks must be 1-1000");
+        if (ticks < 1 || ticks > WAIT_MAX_TICKS) send_error("ticks must be 1-5000");
         else {
             turn.has_damage = look_text.shown = turn.moving = 0;
+            snapshot();
             start_turn(ticks, ticks, 1);
         }
     } else if (!strcmp(cmd, "screenshot")) {
@@ -969,11 +1003,12 @@ static void handle_request(const char *request)
     }
 }
 
-/* A turn ends when the party can move again after the minimum ticks, or at the maximum. A game
-   that does not tick ends the turn after a frame limit. */
+/* A turn ends when the party can move again after the minimum ticks, or at the maximum. A wait
+   ends early on news. A game that does not tick ends the turn after a frame limit. */
 static int turn_finished(void)
 {
     long ticks = (long)(g_game_time - turn.start_time);
+    if (turn.wait_only && (turn.stop = news())) return 1;
     if (game_over()) return 1;
     if (ticks >= turn.max_ticks || turn.frames > turn.max_ticks * FRAMES_PER_TICK_LIMIT) return 1;
     return !turn.wait_only && ticks >= turn.min_ticks && !g_disabled_movement_ticks;

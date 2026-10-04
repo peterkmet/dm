@@ -4,6 +4,7 @@
     uv run dm-play act <action> [json-args]
     uv run dm-play act_many '<json-list>'
     uv run dm-play goto <x> <y> [facing]
+    uv run dm-play wait '{"ticks": N}'    (1-5000; stops early on damage, a new creature, a message)
 
 The response is printed as compact JSON on one line. --brief prints a short summary instead.
 The exit code is 1 when the response has "ok": false. The socket path comes from DM_CONTROL
