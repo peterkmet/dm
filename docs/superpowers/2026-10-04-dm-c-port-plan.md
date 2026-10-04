@@ -16,6 +16,7 @@ Produce a portable C version of Dungeon Master v3.60 (Amiga) that builds and run
 - Oracles for tests:
   1. The original code, run function by function in the `machine68k` CPU emulator (`dmtools.emu`). Use it for pure functions: same input, same output.
   2. PyDM in `/Users/lego/github/pyDM` and its data library `dmcsb`. Use them for data decoding and expected values. Read only.
+- Code style: `docs/coding-standard.md`. New code follows it from the start. Older modules get the readability pass in Step 15.
 - Tests: `pytest` is the single test runner. C code is built as a shared library `build/libdm.dylib` and tested through `ctypes`. Each step adds at least one automated test.
 - Game files stay in `game/` (git-ignored). Tests that need game files skip when `game/` is missing.
 
@@ -105,6 +106,10 @@ Port the entrance screen, new game and resume, the save file format, and the end
 - Add an optional pixel-art upscaling filter (Scale2x/EPX and Scale3x) in the platform layer. The `DM_FILTER` environment variable selects it (`none`, `scale2x`, `scale3x`). A command-line flag in `main.c` calls `plat_set_filter` when the game loop is integrated.
 - Test: Scale2x on a small known image gives the known output.
 
-### Step 15: Full test and release
+### Step 15: Readability pass
+
+- When the game is playable, a fresh agent rewrites each module that was written before `docs/coding-standard.md` existed (text, message, sound, game state, random, save file, tables, view walls, draw, layout). The behavior must not change. The existing tests, including the differential tests against the original, prove this.
+
+### Step 16: Full test and release
 
 - Run the full test suite. Write a manual test checklist (start, movement, combat, magic, save, load, endgame). Update `CHANGELOG.md`. Merge to `main`.
