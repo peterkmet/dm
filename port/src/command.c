@@ -151,7 +151,7 @@ static int16_t key_command(uint32_t table, uint16_t key)
 }
 
 /* A key press becomes the command of the key in the active tables. With the advanced features,
-   Escape closes an open inventory instead of freezing the game. */
+   Escape closes an open inventory instead of freezing the game, and Tab closes it too. */
 void command_process_key(uint16_t key)
 {
     if (advanced_process_key(key)) return;
@@ -160,8 +160,8 @@ void command_process_key(uint16_t key)
     if (queue_count >= QUEUE_CLICK_LIMIT) return;
     int16_t command = key_command(primary_keys, key);
     if (!command) command = key_command(secondary_keys, key);
-    if (g_advanced_features && key == KEY_ESCAPE && command == COMMAND_FREEZE_GAME && g_inventory_champion_ordinal &&
-        !g_candidate_champion_ordinal)
+    if (g_advanced_features && ((key == KEY_ESCAPE && command == COMMAND_FREEZE_GAME) || key == KEY_TAB) &&
+        g_inventory_champion_ordinal && !g_candidate_champion_ordinal)
         command = COMMAND_CLOSE_INVENTORY;
     if (command) queue_put(command, 0, 0);
 }

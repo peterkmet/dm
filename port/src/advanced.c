@@ -106,7 +106,7 @@ int advanced_process_key(uint16_t key)
         return 1;
     case KEY_M:
     case KEY_TAB:
-        if (!in_dungeon_view()) return 1;
+        if (!in_dungeon_view()) return !(key == KEY_TAB && g_inventory_champion_ordinal);
         g_automap_open = 1;
         advanced_draw_automap();
         return 1;

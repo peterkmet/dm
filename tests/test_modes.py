@@ -278,6 +278,17 @@ def test_escape_rule(game, mode):
     set_mode(game, VANILLA)
 
 
+@pytest.mark.parametrize("mode", [VANILLA, ADVANCED])
+def test_tab_closes_the_inventory(game, mode):
+    set_mode(game, mode)
+    press(game, KEY_F1)
+    press(game, KEY_TAB)
+    assert game.value("g_inventory_champion_ordinal") == (0 if mode == ADVANCED else 1)
+    assert game.value("g_automap_open") == 0
+    if game.value("g_inventory_champion_ordinal"):
+        press(game, KEY_F1)
+    set_mode(game, VANILLA)
+
 def test_save_and_load_keep_the_automap(game, tmp_path):
     lib = game.lib
     set_mode(game, ADVANCED)
