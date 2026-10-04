@@ -22,7 +22,9 @@ packages = ["src/dmtools"]
 dev = [
     "dmcsb>=0.2.1",
     "pytest>=8",
+    "pytest-timeout>=2.4.0",
 ]
 
 [tool.pytest.ini_options]
+timeout = 120
 testpaths = ["tests"]
