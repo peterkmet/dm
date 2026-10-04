@@ -356,6 +356,25 @@ def test_wait_runs_all_ticks_or_stops_on_damage(game):
         client.sock.close()
 
 
+def test_wait_stops_when_the_sleeping_party_is_rested(game):
+    champion = game.champions[0]
+    champion.current_health, champion.current_mana = champion.maximum_health, champion.maximum_mana
+    champion.current_stamina = champion.maximum_stamina
+    client = Client(game)
+    try:
+        response = client.call(cmd="wait", ticks=50)
+        assert response["stopped"] == "done" and response["ticks"] == 50  # awake: full does not stop
+        client.act("sleep")
+        champion.current_stamina = champion.maximum_stamina - 20
+        response = client.call(cmd="wait", ticks=5000)
+        assert response["stopped"] == "rested" and 1 <= response["ticks"] < 5000
+        assert champion.current_stamina == champion.maximum_stamina
+    finally:
+        if game.value("g_party_is_sleeping"):
+            client.act("wake")
+        client.sock.close()
+
+
 THING_GROUP, SCREAMER = 4, 6
 
 

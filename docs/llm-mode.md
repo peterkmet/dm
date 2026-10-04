@@ -121,7 +121,9 @@ When a move action (`move_forward`, `move_back`, `move_left`, `move_right`) does
 
 #### Wait
 
-A `wait` turn checks for news after each tick and ends at once when it finds news. The news are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, else the news. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
+A `wait` turn checks for news after each tick and ends at once when it finds news. The news are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, else the news or `rested`. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
+
+While the party sleeps, a `wait` also ends with `stopped` `rested` when each living champion has full health, stamina, and mana. A player wakes the party then. The party still sleeps: send `wake`. An awake party does not stop on this rule.
 
 Example: rest until something happens, at most 5000 ticks.
 
@@ -359,6 +361,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - The view stops at a wall at depth 1 (6 squares) and at a closed door (nothing beyond the door, also not in the map). A mirror on a side wall is in `side_face`. A mirror ahead is `M` in the map.
 - The state: stamina in the units of the screen, skill ranks, `load_kg`, and the candidate outside `champions[]`, with the `--brief` line.
 - `wait` without news runs all ticks with `stopped` `done`. Damage stops it early with `stopped` `damage` and the ticks that ran. `ticks` 5001 is refused.
+- `wait` 5000 with a sleeping party and a champion below maximum stamina stops with `rested` before 5000 ticks, when all values are full. An awake party with full values runs all ticks.
 - `act_many` with a creature group in view on a side square runs all turns while the group stays in view. It stops with `creature` after the first turn when a new group comes into view, also when the old group leaves the view in the same turn.
 - `act_many`: the actions run in order, a failed action stops the batch, and damage stops it after the first turn. `goto` walks back to an explored square and refuses a wall and a square outside the map. The MCP tools and `dm-play` send `act_many` and `goto`.
 - A move into a wall gives `"bumped": true` and the same square. `act_many` stops with `bumped`. `--brief` ends the turn line with `BUMPED`.

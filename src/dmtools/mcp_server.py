@@ -167,7 +167,9 @@ def wait(ticks: int = 10) -> dict:
     """Lets ticks (1-5000) of game time pass without input; returns {ok, ticks, stopped,
     game_over, state, view}. It stops early on news: stopped is done (all ticks ran), damage
     (a champion lost health), creature (a new creature group came into view), message (a new
-    message), or game_over; ticks gives the ticks that ran. Also while the party sleeps.
+    message), game_over, or rested (the party sleeps and each living champion has full
+    health, stamina, and mana; send wake then); ticks gives the ticks that ran. Also while
+    the party sleeps.
     Use it to rest, to wait for action_disabled to clear, or for doors to open."""
     return request({"cmd": "wait", "ticks": ticks})
 
