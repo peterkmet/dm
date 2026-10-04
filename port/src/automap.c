@@ -92,11 +92,22 @@ int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir)
     return limit;
 }
 
+/* A side square is seen when the square ahead at its depth or the side square one row nearer is open. */
+static int side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side)
+{
+    if (depth == 0 || side == 0) return 1;
+    int16_t ahead_x = x, ahead_y = y, near_x = x, near_y = y;
+    update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
+    update_map_coordinates_after_relative_movement(dir, depth - 1, side, &near_x, &near_y);
+    return !blocks_sight(map, ahead_x, ahead_y) || !blocks_sight(map, near_x, near_y);
+}
+
 void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir)
 {
     int16_t depths = automap_visible_depths(map, x, y, dir);
     for (int16_t depth = 0; depth < depths; depth++)
         for (int16_t side = -1; side <= 1; side++) {
+            if (!side_is_visible(map, x, y, dir, depth, side)) continue;
             int16_t square_x = x, square_y = y;
             update_map_coordinates_after_relative_movement(dir, depth, side, &square_x, &square_y);
             uint8_t *square = seen_square(map, square_x, square_y);

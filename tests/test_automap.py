@@ -98,12 +98,20 @@ def test_walls_stop_visibility(game):
         game.automap_mark_seen(m, x, y, d)
         expected = set()
         for depth in range(4):
-            expected |= {ahead(x, y, d, depth, side) for side in (-1, 0, 1) if on_map(game, m, *ahead(x, y, d, depth, side))}
+            expected |= {ahead(x, y, d, depth, side) for side in (-1, 0, 1) if on_map(game, m, *ahead(x, y, d, depth, side))
+                         and (side == 0 or depth == 0 or not blocks(game, m, *ahead(x, y, d, depth))
+                              or not blocks(game, m, *ahead(x, y, d, depth - 1, side)))}
             if depth and blocks(game, m, *ahead(x, y, d, depth)):
                 stopped += depth < 3
                 break
         assert seen_squares(game, m) == expected
     assert stopped
+
+
+
+def test_side_squares_behind_walls_stay_unseen(game):
+    game.automap_mark_seen(1, 11, 10, WEST)
+    assert not game.automap_is_seen(1, 10, 9)
 
 
 def save(lib):
