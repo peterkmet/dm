@@ -22,8 +22,8 @@ void view_load_map(int16_t map);
 enum { VIEW_ORNAMENT_NONE, VIEW_ORNAMENT_OTHER, VIEW_ORNAMENT_TEXT, VIEW_ORNAMENT_ALCOVE, VIEW_ORNAMENT_FOUNTAIN, VIEW_ORNAMENT_VI_ALTAR };
 int16_t view_wall_ornament(int16_t x, int16_t y, int16_t face);
 void view_draw(int16_t dir, int16_t x, int16_t y);
-/* Party light amount (magical light plus torches) for set_dungeon_view_palette. Default 99: bright. */
-void view_set_light(int16_t amount);
+/* Sets g_dungeon_view_palette_index from the party light amount (magical light plus torches) on map m. */
+void view_set_light(int16_t m, int16_t amount);
 int view_render(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* Smooth projectile flight: view_set_motion(step, steps) makes the next views show each projectile
    step/steps of the way from its place at the tick before to its place at the last tick; (0, 0) is a

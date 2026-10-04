@@ -169,7 +169,7 @@ enum {
     DOOR_FRONT_FL = 0x49, DOOR_FRONT_FR = 0x39, DOOR_FRONT_FL_FR = 0x349, DOOR_FRONT_FR_FL = 0x439,
 };
 
-enum { LIGHT_LEVELS = 6, LIGHT_DARKEST = LIGHT_LEVELS - 1, LIGHT_FULL = 99 }; /* party light amount 99: brightest */
+enum { LIGHT_LEVELS = 6, LIGHT_DARKEST = LIGHT_LEVELS - 1 };
 enum { VIEWPORT_MAX_W = 224, VIEWPORT_MAX_H = 136 };
 
 /* set_square_aspect: what the view draws of a square. */
@@ -201,7 +201,6 @@ static uint16_t door_attr[DOOR_TYPES];
 static int16_t parity, rel_x, rel_y; /* g_use_flipped_wall_bitmaps, g_zone_relative_x/y */
 static uint16_t pals[LIGHT_LEVELS][16];                  /* g_dungeon_palettes with the creature replacement colors */
 static uint8_t creature_d3[16], creature_d2[16]; /* g_palette_changes_creature_d3/d2 of the map */
-static int16_t light = LIGHT_FULL;                  /* party light amount */
 static Box drawn_box;                        /* g_drawn_box: the box of the last in_zone */
 
 /* Smooth projectile flight (advanced feature, no rule change): the box of each projectile at the
@@ -1588,7 +1587,18 @@ void view_load_map(int16_t m)
     load_creature_colors(creature_types, creature_type_count);
 }
 
-void view_set_light(int16_t amount) { light = amount; }
+/* set_dungeon_view_palette: the darkness of the party light amount on map m (a map of difficulty 0 is
+   always bright) for the view and the creature rules. */
+void view_set_light(int16_t m, int16_t amount)
+{
+    g_dungeon_view_palette_index = 0;
+    if (!map_difficulty(m)) return;
+    if (amount < 1) {
+        g_dungeon_view_palette_index = LIGHT_DARKEST;
+        return;
+    }
+    while (amount < kaos_s16(LIGHT_THRESHOLDS + 2 * g_dungeon_view_palette_index)) g_dungeon_view_palette_index++;
+}
 
 /* update_map_coordinates_after_relative_movement: the square forward and right of (x, y) in direction dir. */
 static void step(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_t *y)
@@ -1650,19 +1660,13 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
     if (layout_get_zone(ZONE_VIEWPORT, vp.w, vp.h, &b, &w, &h)) draw_blit(&vp, w, h, &screen, &b, -1, 0);
 }
 
-/* Draws the view of (map, x, y, dir) into fb with the palette of the light amount (set_dungeon_view_palette:
-   a map without darkness is always bright). Returns 1 on success. */
+/* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that view_set_light set.
+   Returns 1 on success. */
 int view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
 {
     if (!g_dungeon_maps || m < 0 || m >= dungeon_map_count()) return 0;
     if (m != map) view_load_map(m);
-    int16_t l = 0;
-    if (map_difficulty(map)) { /* a map of difficulty 0 is always bright */
-        if (light < 1) l = LIGHT_DARKEST;
-        else
-            while (light < kaos_s16(LIGHT_THRESHOLDS + 2 * l)) l++;
-    }
-    memcpy(palette, pals[l], sizeof pals[l]);
+    memcpy(palette, pals[g_dungeon_view_palette_index], sizeof pals[g_dungeon_view_palette_index]);
     view_draw(dir & 3, x, y);
     return 1;
 }

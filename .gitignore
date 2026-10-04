@@ -9,3 +9,4 @@ __pycache__/
 decomp/
 build/
 .playthrough/
+.playthrough_run1/

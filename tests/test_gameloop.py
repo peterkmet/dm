@@ -253,3 +253,43 @@ def test_freeze_covers_open_inventory(game):
             break
     assert game.value("g_game_frozen") == 0
     assert viewport_pixels(game) == inventory
+
+
+def test_party_light_sets_the_darkness_of_view_and_rules(game):
+    from test_champion import Party
+
+    lib = game.lib
+    assert lib.gameloop_new_game(str(GAME).encode())
+    lib.automap_visible_depths.restype = c16
+    party = Party.in_dll(lib, "g_party")
+    darkness = c16.in_dll(lib, "g_dungeon_view_palette_index")
+    pal = (u16 * 16).in_dll(lib, "palette")
+    place = {n: c16.in_dll(lib, n) for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")}
+    start = {n: v.value for n, v in place.items()}
+
+    def view(light):
+        party.magical_light_amount = light
+        lib.gameloop_draw_view()
+        return darkness.value, list(pal), lib.automap_visible_depths(1, 14, 4, 3)
+
+    try:
+        for n, v in zip(place, (1, 14, 4, 3)):  # map 1 has darkness, a long corridor ahead
+            place[n].value = v
+        bright, dark = view(1000), view(-1000)
+        assert bright[0] == 0 and dark[0] == 5
+        assert bright[1] != dark[1]
+        assert dark[2] < bright[2]
+        sleeping = c16.in_dll(lib, "g_party_is_sleeping")
+        sleeping.value = 1  # no view is drawn, the creature rules still see the light of this tick
+        party.magical_light_amount = 1000
+        lib.gameloop_tick()
+        assert darkness.value == 0
+        sleeping.value = 0
+        for n, v in start.items():
+            place[n].value = v
+        assert view(-1000)[0] == 0  # map 0 has no darkness
+    finally:
+        party.magical_light_amount = 0
+        for n, v in start.items():
+            place[n].value = v
+        lib.gameloop_draw_view()

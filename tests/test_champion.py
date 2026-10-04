@@ -456,3 +456,51 @@ def test_damage_until_death(lib, party):
     assert {t & 0x3FFF for t in slots} <= {t & 0x3FFF for t in dropped}
     bones = [t for t in dropped if t >> 10 & 15 == 10 and lib.get_thing_data(t)[3] & 0x7F == 5]
     assert len(bones) == 1 and lib.get_thing_data(bones[0])[2] >> 6 == 0 and bones[0] >> 14 == ch.cell
+
+
+SET_DUNGEON_VIEW_PALETTE, PALETTE_INDEX, PARTY = 0x10EDD6, 0x1001E6, 0x101ED4
+BRIGHT_THRESHOLD = 99  # g_palette_light_thresholds[0]
+
+
+@pytest.mark.parametrize("seed", range(3))
+def test_party_light_matches_original(lib, seed):
+    need(lib, "Dungeon.DAT")
+    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
+    w = World(lib, 300 + seed)
+    lib.gameloop_set_light.restype = c16
+    w.put_champions(4)
+    w.globals(0, 1000, 0, 0, 1)  # a map with darkness
+    var(lib, c16, "g_party_map_index").value = 1
+    weapons = [t for t in w.things if t >> 10 == 5]
+    data = ctypes.cast((ctypes.c_void_p * 16).in_dll(lib, "g_thing_data")[5], ctypes.POINTER(u8))
+    torch_type = next(i for i in range(len(weapons)) if lib.object_get_type(weapons[i]) in range(4, 8))
+    torch_subtype = data[4 * torch_type + 3] & 0x7F
+    torches = weapons[:8]
+    cs = champions(lib)
+
+    def emu_index(magic):
+        w.emu.write(PARTY, struct.pack(">h", magic))
+        w.emu.call(SET_DUNGEON_VIEW_PALETTE)
+        return struct.unpack(">h", w.emu.read(PALETTE_INDEX, 2))[0]
+
+    for round_ in range(40):
+        for i in range(8):  # weapon records 0-7: torches with random charges
+            rec = bytes([w.rng.getrandbits(8), w.rng.getrandbits(1) << 7 | torch_subtype])
+            ctypes.memmove(ctypes.addressof(data.contents) + 4 * i + 2, rec, 2)
+            w.emu.write(THING_BUF + 4 * i + 2, rec)
+        for c in range(4):
+            for hand in range(2):
+                cs[c].slots[hand] = w.rng.choice(torches + [0xFFFF, w.rng.choice(w.things)])
+                w.emu.write(CHAMPIONS + 0x140 * c + 0xD4 + 2 * hand, struct.pack(">H", cs[c].slots[hand]))
+        lo, hi = -2000, 2000  # the least magical light that is fully bright gives the torch light
+        while lo < hi:
+            mid = (lo + hi) // 2
+            lo, hi = (lo, mid) if emu_index(mid) == 0 else (mid + 1, hi)
+        want = BRIGHT_THRESHOLD - lo
+        var(lib, Party, "g_party").magical_light_amount = 0
+        got = lib.gameloop_set_light()
+        assert got == want, (round_, [list(cs[c].slots[:2]) for c in range(4)])
+        for magic in (lo - 1, lo, -want, -want + 1, 40 - want):
+            var(lib, Party, "g_party").magical_light_amount = magic
+            lib.gameloop_set_light()
+            assert var(lib, c16, "g_dungeon_view_palette_index").value == emu_index(magic), (round_, magic)

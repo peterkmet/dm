@@ -16,6 +16,8 @@ void entrance_draw(void);
 int gameloop_new_game(const char *dir);
 /* start_game for a game that savegame_load restored: the party map, "GAME LOADED", the interface. */
 void gameloop_start_loaded_game(void);
+/* set_dungeon_view_palette: sets the darkness from the party light. Returns the party light amount. */
+int16_t gameloop_set_light(void);
 /* The dungeon view of the party in the light of the party (draw_dungeon_view). */
 void gameloop_draw_view(void);
 /* Runs the waiting commands of one 50 Hz frame. Returns 1 when the wait for input is over and a

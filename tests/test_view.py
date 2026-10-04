@@ -283,8 +283,8 @@ THINGS = {  # name: (map, x, y, direction, explosion (map x y cell attack type) 
 def test_render_things(game, name):
     lib, _ = game
     (m, x, y, d), explosion, light = THINGS[name]
-    lib.view_set_light.argtypes = [ctypes.c_int16]
-    lib.view_set_light(light)
+    lib.view_set_light.argtypes = [ctypes.c_int16] * 2
+    lib.view_set_light(m, light)
     assert lib.view_render(m, x, y, d)
     plain = screen(lib)[0]
     undo = add_explosion(lib, *explosion) if explosion else None
@@ -294,7 +294,7 @@ def test_render_things(game, name):
     finally:
         if undo:
             undo()
-        lib.view_set_light(99)
+        lib.view_set_light(m, 99)
     assert len(set(first)) > 4
     if explosion:
         assert first != plain

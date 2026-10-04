@@ -115,7 +115,8 @@ static int16_t party_light_amount(void)
             int16_t type = object_get_type(thing);
             if (type >= ICON_TORCH_UNLIT && type <= ICON_TORCH_LAST) power[n] = (int16_t)weapon_charges(thing);
         }
-    for (int i = 0; i < LIGHT_SOURCE_COUNT; i++)
+    /* the original sorts only the 4 brightest: the fifth light is any of the rest */
+    for (int i = 0; i < LIGHT_SOURCES_USED - 1; i++)
         for (int k = i + 1; k < LIGHT_SOURCE_COUNT; k++)
             if (power[i] < power[k]) {
                 int16_t t = power[i];
@@ -145,11 +146,17 @@ static void decrease_torches_light_power(void)
         }
 }
 
+int16_t gameloop_set_light(void)
+{
+    int16_t light = party_light_amount();
+    view_set_light(g_party_map_index, light);
+    return light;
+}
+
 /* The dungeon view of the party in the light of the party. */
 void gameloop_draw_view(void)
 {
-    int16_t light = party_light_amount();
-    view_set_light(light);
+    int16_t light = gameloop_set_light();
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
     ui_set_palette(NULL);
     advanced_draw_debug(light);
@@ -323,6 +330,7 @@ void gameloop_tick(void)
             move_process_new_party_map();
             command_discard_all_input();
         }
+        gameloop_set_light();  /* the creature rules see the light also while the view is not drawn */
         timeline_process();
     } while (g_new_party_map_index != -1);
     if (!g_party_is_sleeping) {
