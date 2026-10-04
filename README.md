@@ -115,7 +115,7 @@ The game font comes from `Graphics.DAT` in the `--data` folder, else in `game/`,
 
 ### Entrance
 
-The entrance of Dungeon Master: click ENTER or press Return to start a new game. Click RESUME to continue the saved game. QUIT or Ctrl+Q closes the program. Closing the window also closes the game.
+The entrance of Dungeon Master: click ENTER or press Return to start a new game. The doors open with a sound, then the game starts. Click RESUME to continue the saved game. QUIT or Ctrl+Q closes the program. Closing the window also closes the game.
 
 ### Chaos Strikes Back
 

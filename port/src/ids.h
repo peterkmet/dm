@@ -230,6 +230,7 @@
 #define ZONE_ENTRANCE_DOORS 429          /* size of the doors part */
 #define ZONE_ENTRANCE_LEFT_DOOR 430
 #define ZONE_ENTRANCE_RIGHT_DOOR 431
+#define ZONE_ENTRANCE_VIEWPORT 432       /* the dungeon view behind the doors, in the doors part */
 
 /* Commands and the game loop: graphics, icons, strings. */
 #define GFX_ENTRANCE_LEFT_DOOR 2

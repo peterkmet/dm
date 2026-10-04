@@ -12,6 +12,8 @@ int gameloop_load_data(const char *dir);
 const char *gameloop_data_dir(void);
 /* Shows the entrance: graphic 4 with the closed doors and the ENTER, RESUME, and QUIT buttons. */
 void entrance_draw(void);
+/* After ENTER: the doors open over the view of the start square. Needs the frames of g_frame_hook. */
+void entrance_open_doors(void);
 /* Loads Dungeon.DAT from dir and starts a new game on the start square. Returns 1 on success. */
 int gameloop_new_game(const char *dir);
 /* start_game for a game that savegame_load restored: the party map, "GAME LOADED", the interface. */

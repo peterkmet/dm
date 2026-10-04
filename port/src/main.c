@@ -227,6 +227,7 @@ static int entrance_frame(const char *data)
         }
     }
     if (g_new_game == ENTRANCE_NEW_GAME) {
+        entrance_open_doors();
         if (!gameloop_new_game(data)) return SDL_Log("cannot load %s/Dungeon.DAT", data), 0;
         mode = MODE_GAME;
     }
