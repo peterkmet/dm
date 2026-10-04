@@ -56,7 +56,11 @@ Keep each file short. Update it at the moments given. Another session continues 
 
 Use screenshots only when the text is not enough, for example to read a wall text or to find a feature.
 
-Save calls: ask for `get_map` only when you plan a route, not after every move. The `act`, `act_many`, and `goto` responses already contain the state and the view.
+Save calls: ask for `get_map` only when you plan a route, not after every move. The `act`, `act_many`, `goto`, and `wait` responses already contain the state and the view.
+
+Do not write helper loops that call `get_state`, `get_view`, or short `wait`s again and again. One `wait` with many ticks stops by itself on damage, a new creature, or a message, the same as `act_many`. Rest with one long `wait` (or `sleep`, then a long `wait`), then check why it stopped.
+
+When a spell batch stops halfway, the chosen runes stay. Delete them (`delete_rune`) before you cast again.
 
 ## Survival
 
