@@ -191,6 +191,7 @@ The advanced features are not in the original game:
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack for a weapon, defense for armour, and weight.
 - A click on a fountain with an empty hand lets every living champion drink, not only the leader.
+- Cheats on the automap: L switches full light (the view is always bright; the creatures still see the real light), I switches immortality (the health of a champion stops at 1; damage, wounds, poison, hunger, and thirst stay). The map shows their state under the read-out. They are not saved: a new or loaded game turns them off. Only in the `advanced` mode, not in `turnbased`.
 - Escape and Tab close an open inventory. With no inventory open, Escape freezes the game as in vanilla.
 - Smooth projectile flight: between two game ticks, the view shows each flying projectile part of the way to its new place. The size changes only at a tick.
 
@@ -198,7 +199,7 @@ Keys of the `advanced` mode:
 
 | Key | Action |
 |---|---|
-| M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, Escape, and a left click on the map work. Tab also closes an open inventory. |
+| M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, Escape, L and I (cheats), and a left click on the map work. Tab also closes an open inventory. |
 | Escape | Close the automap or the open inventory, else freeze the game |
 | F5 | Quick save. Only in the dungeon view. |
 | F9 | Quick load. Only in the dungeon view. |

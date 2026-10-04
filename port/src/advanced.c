@@ -22,7 +22,7 @@
 #define QUICK_MESSAGE_COLOR COLOR_WHITE
 
 int16_t g_game_mode = GAME_MODE_VANILLA;
-int16_t g_advanced_features, g_automap_open;
+int16_t g_advanced_features, g_automap_open, g_cheat_light, g_cheat_immortal;
 
 static const char *const direction_names[4] = { "NORTH", "EAST", "SOUTH", "WEST" };
 
@@ -43,6 +43,9 @@ static void draw_readout(Bitmap *vp)
     text_draw(vp, x, y, COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)], gameloop_party_light());
     text_draw(vp, x, y + TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP, COLOR_WHITE, COLOR_BLACK, line);
+    if (g_game_mode != GAME_MODE_ADVANCED) return;
+    snprintf(line, sizeof line, "L LIGHT %s I IMMORTAL %s", g_cheat_light ? "ON" : "OFF", g_cheat_immortal ? "ON" : "OFF");
+    text_draw(vp, x, y + 2 * (TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
 }
 
 void advanced_draw_automap(void)
@@ -113,6 +116,11 @@ int advanced_process_key(uint16_t key)
     if (g_game_mode == GAME_MODE_VANILLA) return 0;
     if (g_automap_open) {
         if (key == KEY_M || key == KEY_TAB || key == KEY_ESCAPE) close_automap();
+        if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I)) {
+            int16_t *cheat = key == KEY_L ? &g_cheat_light : &g_cheat_immortal;
+            *cheat = !*cheat;
+            advanced_draw_automap();
+        }
         return 1;
     }
     switch (key) {
