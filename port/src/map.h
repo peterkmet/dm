@@ -61,12 +61,20 @@ uint16_t weapon_charges(uint16_t thing);
 uint16_t junk_charges(uint16_t thing);
 uint16_t armour_charges(uint16_t thing);
 int16_t scroll_is_closed(uint16_t thing);
+int16_t weapon_is_poisoned(uint16_t thing);
+int16_t weapon_is_broken(uint16_t thing);
+int16_t armour_is_broken(uint16_t thing);
+uint16_t scroll_text_index(uint16_t thing);     /* text record index of the scroll text */
+void container_set_first_thing(uint16_t thing, uint16_t first);
 void weapon_set_lit(uint16_t thing, int16_t lit);
 void weapon_set_charges(uint16_t thing, uint16_t charges);
 void junk_set_charges(uint16_t thing, uint16_t charges);
 void armour_set_charges(uint16_t thing, uint16_t charges);
 void junk_set_type(uint16_t thing, uint16_t type);
 void potion_set_type(uint16_t thing, uint16_t type);
+void potion_set_power(uint16_t thing, uint16_t power);
+void object_set_type(uint16_t thing, uint16_t type);
+void object_set_cursed(uint16_t thing, int16_t cursed);
 void scroll_set_closed(uint16_t thing, int16_t closed);
 
 /* Sensor record (thing type 3). */
@@ -77,7 +85,7 @@ enum { SENSOR_DISABLED = 0,
 enum { SENSOR_WALL_ORNAMENT_CLICK = 1, SENSOR_WALL_ANY_OBJECT = 2, SENSOR_WALL_OBJECT = 3, SENSOR_WALL_OBJECT_REMOVED = 4,
        SENSOR_WALL_AND_OR_GATE = 5, SENSOR_WALL_COUNTER = 6, SENSOR_WALL_SINGLE_OBJECT_STORAGE = 11,
        SENSOR_WALL_OBJECT_GENERATOR = 12, SENSOR_WALL_SINGLE_OBJECT_EXCHANGER = 13, SENSOR_WALL_OBJECT_EXCHANGER = 16,
-       SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED = 17, SENSOR_WALL_CHAMPION_PORTRAIT = 127 };
+       SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED = 17, SENSOR_WALL_ENDGAME = 18, SENSOR_WALL_CHAMPION_PORTRAIT = 127 };
 enum { SENSOR_TYPE_MASK = 0x7f, SENSOR_DATA_SHIFT = 7 };
 
 static inline uint16_t sensor_type(uint16_t thing) { return BE16(REC(thing) + 2) & SENSOR_TYPE_MASK; }
@@ -96,6 +104,15 @@ static inline int16_t sensor_target_y(uint16_t thing) { return REC(thing)[6] >> 
 static inline int16_t sensor_target_cell(uint16_t thing) { return (REC(thing)[7] & 0x30) >> 4; }
 static inline int16_t sensor_local_effect(uint16_t thing) { return BE16(REC(thing) + 6) >> 4; }
 static inline uint16_t sensor_generator_delay(uint16_t thing) { return REC(thing)[6]; }
+static inline uint16_t sensor_ornament_ordinal(uint16_t thing) { return REC(thing)[4] >> 4; }
+/* Group generator: creature type in the data low byte, count field in word 4 bits 7-10, health multiplier in
+   word 6 bits 4-7. */
+static inline uint16_t sensor_generator_creature_type(uint16_t thing) { return sensor_data(thing) & 0xff; }
+static inline uint16_t sensor_generator_count_field(uint16_t thing) { return BE16(REC(thing) + 4) >> 7 & 15; }
+static inline uint16_t sensor_generator_health_multiplier(uint16_t thing) { return BE16(REC(thing) + 6) >> 4 & 15; }
+/* Launcher: kinetic energy in word 6 bits 4-11, step energy in bits 12-15. */
+static inline uint8_t sensor_launcher_kinetic_energy(uint16_t thing) { return (uint8_t)(BE16(REC(thing) + 6) >> 4); }
+static inline uint8_t sensor_launcher_step_energy(uint16_t thing) { return (uint8_t)(BE16(REC(thing) + 6) >> 12); }
 
 /* Teleporter record (thing type 1). Scope: 1 creatures, 2 party, 3 everything. */
 enum { TELEPORTER_SCOPE_CREATURES = 1, TELEPORTER_SCOPE_PARTY = 2, TELEPORTER_SCOPE_ALL = 3 };
@@ -113,6 +130,8 @@ static inline int16_t door_checks_creature_height(uint16_t thing) { return (REC(
 static inline int16_t door_breaks_by_magic(uint16_t thing) { return (REC(thing)[3] & 0x80) != 0; }
 static inline int16_t door_breaks_by_force(uint16_t thing) { return REC(thing)[2] & 1; }
 static inline int16_t door_button_present(uint16_t thing) { return (REC(thing)[3] & 0x40) != 0; }
+static inline int16_t door_is_vertical(uint16_t thing) { return (REC(thing)[3] & 0x20) != 0; }
+static inline uint16_t door_ornament_ordinal(uint16_t thing) { return (REC(thing)[3] & 0x1e) >> 1; }
 static inline int16_t door_info_defense(uint16_t door_info) { return door_info & 0xff; }
 
 /* Text record (thing type 2). */

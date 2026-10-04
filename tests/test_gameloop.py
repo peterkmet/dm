@@ -18,6 +18,7 @@ VIEWPORT_ORIGIN = 0x10293A
 ZONE_RESURRECT, ZONE_DROP_PARTY_CELL, ZONE_BACKPACK_FIRST_SLOT = 570, 740, 520
 SLOT_HAND_ACTION, SLOT_BACKPACK_FIRST = 1, 13
 SENSOR, CORRIDOR, CHAMPION_PORTRAIT = 3, 1, 127
+ATTACK_RAW = 0
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
 
 pytestmark = [
@@ -110,7 +111,7 @@ class Game:
             thing = self.lib.get_next_thing(thing)
         return None
 
-    def path_to_mirror(self):
+    def path_to_mirror(self, skip=()):
         """Shortest corridor path to a square whose wall ahead holds a mirror facing it, and that direction."""
         start = tuple(self.position()[:2])
         previous, queue = {start: None}, deque([start])
@@ -118,7 +119,7 @@ class Game:
             x, y = queue.popleft()
             for d in range(4):
                 nx, ny = x + STEP_EAST[d], y + STEP_NORTH[d]
-                if self.mirror_cell(nx, ny) == (d + 2) & 3:
+                if (nx, ny) not in skip and self.mirror_cell(nx, ny) == (d + 2) & 3:
                     path, square = [], (x, y)
                     while square:
                         path.append(square)
@@ -174,6 +175,42 @@ def test_new_game_recruit_take_and_store(game):
     game.click_zone(ZONE_BACKPACK_FIRST_SLOT)
     assert game.value("g_leader_hand_object", u16) == 0xFFFF
     assert game.champions[0].slots[SLOT_BACKPACK_FIRST] & 0x3FFF == weapon & 0x3FFF
+
+
+def test_champion_dies_with_inventory_open(game):
+    assert game.lib.gameloop_new_game(str(GAME).encode())
+    game.run(26)
+    mirrors = set()
+    for _ in range(2):
+        path, direction = game.path_to_mirror(mirrors)
+        game.walk(path)
+        game.face(direction)
+        game.run()
+        game.click_box(game.boxes[5])
+        game.click_zone(ZONE_RESURRECT)
+        x, y = path[-1]
+        mirrors.add((x + STEP_EAST[direction], y + STEP_NORTH[direction]))
+    assert game.value("g_party_champion_count", u16) == 2
+    game.key(KEY_F1 + 0x100)
+    game.run()
+    assert game.value("g_inventory_champion_ordinal") == 2
+
+    game.lib.champion_add_pending_damage_and_wounds(1, 10000, 0, ATTACK_RAW)
+    game.run()
+    assert game.champions[1].current_health == 0
+    assert game.value("g_inventory_champion_ordinal") == 0
+    game.click_zone(ZONE_BACKPACK_FIRST_SLOT)  # the dungeon view takes the click; no slot of champion -1
+
+    box = Box()
+    assert game.lib.ui_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
+    game.click_box(box, viewport=False)
+    assert game.value("g_leader_hand_object", u16) != 0xFFFF
+    game.click_zone(ZONE_DROP_PARTY_CELL)
+    assert game.value("g_leader_hand_object", u16) == 0xFFFF
+
+    direction = game.position()[2]
+    game.key(KEY_DEL)
+    assert game.until(lambda: game.position()[2] == (direction + 3) & 3)
 
 
 def test_game_runs_headless_with_auto_enter():

@@ -19,10 +19,11 @@
 #define VIEWPORT_SIZE 0x102948    /* g_viewport_width, g_viewport_height */
 #define SLOT_BOX_BORDER 0x102956  /* g_slot_box_border */
 #define VIEWPORT_ORIGIN 0x10293a  /* viewport origin x, y for zones relative to the viewport */
-static const uint32_t mouse_tables[UI_INPUT_COUNT] = {
+static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
     0x1031f8, 0x1032e8, 0x103354, 0x10351c, 0x103540, 0x103564,
-    0x1035a0, 0x1035dc, 0x103654, 0x1036f0, 0x10375c, 0x10378c, 0x10318c,
+    0x1035a0, 0x1035dc, 0x103654, 0x1036f0, 0x10375c, 0x10378c, 0x10318c, 0x1031d4,
 };
+#define DIALOG_MOUSE_INPUTS 0x103bd4 /* g_dialog_mouse_inputs[8]: pointers to the dialog tables */
 
 #define SLOT_BOX_COUNT 46         /* 8 hands on the screen, 30 inventory and 8 chest slots */
 #define SLOT_BOX_SCREEN_COUNT 8
@@ -166,6 +167,14 @@ void ui_draw_viewport(void)
 
 /* Sets the palette split: the viewport rows use top (when not NULL, it replaces palette[0..15]),
    the other rows the interface palette. */
+/* One palette for all rows: the 16 colors, or the interface palette for NULL (dialogs, endgame). */
+void ui_set_screen_palette(const uint16_t *colors)
+{
+    for (int i = 0; i < 16; i++) palette[i] = colors ? colors[i] : kaos_u16(BOTTOM_PALETTE + 2 * i);
+    palette_split_top = 0;
+    palette_split_bottom = SCREEN_H;
+}
+
 void ui_set_palette(const uint16_t *top)
 {
     Box b;
@@ -259,9 +268,8 @@ int16_t ui_get_icon_in_slot_box(int16_t slot_box)
     return slot_box >= 0 && slot_box < SLOT_BOX_COUNT ? slot_box_icon[slot_box] : -1;
 }
 
-/* The champion of a bones object: the charge bits of the junk record.
-   ponytail: raw junk record byte; move to the thing accessor module when it exists. */
-static int bones_champion(uint16_t thing) { return get_thing_data(thing)[2] >> 6; }
+/* The champion of a bones object: the charge bits of the junk record. */
+static int bones_champion(uint16_t thing) { return junk_charges(thing); }
 
 /* Shows the name of the object in the leader hand above the action area. Bones show the name of
    their champion first (English order). */
@@ -288,12 +296,18 @@ int16_t ui_point_in_zone(int16_t zone, int16_t x, int16_t y)
     return ui_zone_box(zone, &b) && x >= b.x && x <= b.x + b.w - 1 && y >= b.y && y <= b.y + b.h - 1;
 }
 
+uint32_t ui_mouse_table_address(int16_t table)
+{
+    if (table >= UI_INPUT_DIALOG_FIRST) return kaos_u32(DIALOG_MOUSE_INPUTS + 4 * (uint32_t)(table - UI_INPUT_DIALOG_FIRST));
+    return mouse_tables[table];
+}
+
 /* The command of a click at (x, y) with button_mask in an original mouse input table, or 0.
    An entry is a fixed box, or a zone on the screen or relative to the viewport. */
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask)
 {
     if (table < 0 || table >= UI_INPUT_COUNT) return 0;
-    for (uint32_t a = mouse_tables[table];; a += 2 * INPUT_WORDS) {
+    for (uint32_t a = ui_mouse_table_address(table);; a += 2 * INPUT_WORDS) {
         int16_t command = kaos_s16(a + 2 * INPUT_COMMAND), x1 = kaos_s16(a + 2 * INPUT_X1), x2 = kaos_s16(a + 2 * INPUT_X2);
         int buttons = (kaos_u16(a + 2 * INPUT_BUTTONS) & button_mask) != 0;
         if (!command) return 0;

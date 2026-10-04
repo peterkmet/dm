@@ -20,6 +20,9 @@ extern int16_t g_party_map_x, g_party_map_y, g_party_direction, g_party_map_inde
 
 int16_t decompress_dungeon(const uint8_t *src, int32_t src_size, uint8_t *dst, int32_t byte_count);
 int16_t load_dungeon(const char *path);
+int16_t dungeon_load_saved(const uint8_t *data, uint32_t size);
+int16_t dungeon_validate(void);
+uint8_t *dungeon_save(uint32_t *size);
 
 int16_t dungeon_map_count(void);
 int16_t dungeon_map_width(int16_t map);

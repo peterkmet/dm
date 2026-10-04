@@ -120,6 +120,7 @@ void group_add_active_group(uint16_t group, int16_t x, int16_t y);
 void group_remove_active_group(uint16_t active_index);
 void group_remove_all_active_groups(void);
 void group_add_all_active_groups(void);
+void group_reset(void);
 
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index, int16_t direction, int16_t x, int16_t y);
 void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y);

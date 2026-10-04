@@ -40,6 +40,8 @@ enum {
     COMMAND_ENTRANCE_ENTER_DUNGEON_B = 201,
     COMMAND_ENTRANCE_RESUME = 202,
     COMMAND_ENTRANCE_CREDITS = 203,
+    COMMAND_DIALOG_CHOICE_FIRST = 210,     /* + choice 0-3 */
+    COMMAND_RESTART_GAME = 215,
     COMMAND_QUIT = 216,
     COMMAND_LEFT_RELEASE = 254,
 };
@@ -54,16 +56,23 @@ enum {
 };
 
 /* Result of the entrance (g_new_game): ENTRANCE_WAITING until a button is pressed. */
-enum { ENTRANCE_RESUME = 0, ENTRANCE_NEW_GAME = 1, ENTRANCE_WAITING = 99, ENTRANCE_QUIT = 216 };
+enum { ENTRANCE_RESUME = 0, ENTRANCE_NEW_GAME = 1, ENTRANCE_WAITING = 99 };
 
 extern int16_t g_stop_waiting_for_input;      /* set by commands that end the wait for the next tick */
 extern int16_t g_game_time_ticking;           /* 0 while the game is frozen */
 extern int16_t g_wait_for_input_max_frames;   /* frames of one tick without input: 12, 0 while sleeping */
 extern int16_t g_game_frozen;
 extern int16_t g_new_game;
+extern int16_t g_input_received;              /* a key or button press since the last discard */
+extern uint16_t g_last_key;                   /* the last key word since the last discard, 0: none */
 
 void command_set_entrance_input(void);
 void command_set_game_input(void);
+void command_reset(void);
+/* Dialogs and the endgame: only one mouse table; the saved tables come back with restore. */
+void command_set_only_mouse_input(int16_t table);
+void command_save_input(void);
+void command_restore_input(void);
 void command_process_click(int16_t x, int16_t y, int16_t kind);
 void command_process_key(uint16_t key);
 int command_process_queue(void);
@@ -76,5 +85,6 @@ extern int16_t g_mouse_pointer_hidden;           /* the eye, or an imaginary wal
 void game_freeze(void);
 void game_unfreeze(void);
 void inventory_toggle(int16_t champion_index);
+void command_release_dead_champion(uint16_t champion_index);
 
 #endif

@@ -10,15 +10,13 @@
 #include "view.h"
 #include "command.h"
 #include "gameloop.h"
+#include "startend.h"
 #include "random.h"
 #include "text.h"
 
 #define DUNGEON_PALETTE 0x100aa6 /* g_dungeon_palettes[0], full light */
 #define STEP_EAST 0x101038       /* g_direction_to_step_east[4] */
 #define STEP_NORTH 0x101040      /* g_direction_to_step_north[4] */
-#define RESUME_TEXT_X 8          /* "no saved game" message on the entrance */
-#define RESUME_TEXT_Y 192
-#define RESUME_TEXT_COLOR 15     /* white in the entrance palette */
 
 /* Draws graphic n at the top-left with the dungeon palette. */
 static int show(const char *dir, int n)
@@ -127,6 +125,43 @@ static int filter_factor(const char *name)
 
 enum { MODE_SHOW, MODE_VIEW, MODE_ENTRANCE, MODE_GAME };
 
+static int mode;
+
+/* Keys and mouse buttons become commands; closing the window quits. */
+static void read_input(void)
+{
+    PlatEvent e;
+    while (plat_poll(&e)) {
+        if (e.type == PLAT_QUIT) g_quit_requested = 1;
+        if (mode < MODE_ENTRANCE) {
+            if (e.type == PLAT_KEY && e.key == SDLK_ESCAPE) g_quit_requested = 1;
+            if (mode == MODE_VIEW && e.type == PLAT_KEY) view_key(e.key);
+            continue;
+        }
+        uint16_t key = e.type == PLAT_KEY ? amiga_key(e.key, e.modifiers) : 0;
+        if (key) command_process_key(key);
+        if (e.type == PLAT_MOUSE || e.type == PLAT_MOUSE_UP) command_process_click((int16_t)e.x, (int16_t)e.y, click_kind(&e));
+    }
+}
+
+/* One frame of a dialog, the endgame, or the fuse sequence. */
+static void frame_hook(void)
+{
+    read_input();
+    set_pointer(0);
+    plat_present();
+    plat_wait_tick();
+}
+
+/* The entrance again, after a cancelled or failed resume. */
+static void show_entrance(void)
+{
+    entrance_draw();
+    command_set_entrance_input();
+    command_discard_all_input();
+    g_new_game = ENTRANCE_WAITING;
+}
+
 int main(int argc, char **argv)
 {
     long frames = -1, graphic = -1;
@@ -144,7 +179,7 @@ int main(int argc, char **argv)
     random_init();
     for (int i = 0; i < 16; i++) /* gray ramp, 0x0iii */
         palette[i] = i << 8 | i << 4 | i;
-    int mode = graphic >= 0 ? MODE_SHOW : view ? MODE_VIEW : MODE_ENTRANCE;
+    mode = graphic >= 0 ? MODE_SHOW : view ? MODE_VIEW : MODE_ENTRANCE;
     if (mode == MODE_SHOW && !show(data, graphic)) return 1;
     if (mode == MODE_VIEW && !view_start(data)) return 1;
     if (mode == MODE_ENTRANCE) {
@@ -156,27 +191,22 @@ int main(int argc, char **argv)
     if (filter && !plat_set_filter(filter_factor(filter))) return 1;
     if (auto_enter) command_process_key(KEY_RETURN);
 
+    g_frame_hook = frame_hook;
     for (long frame = 0; frames < 0 || frame < frames; frame++) {
-        PlatEvent e;
-        while (plat_poll(&e)) {
-            if (e.type == PLAT_QUIT) goto done;
-            if (mode < MODE_ENTRANCE) {
-                if (e.type == PLAT_KEY && e.key == SDLK_ESCAPE) goto done;
-                if (mode == MODE_VIEW && e.type == PLAT_KEY) view_key(e.key);
-                continue;
-            }
-            uint16_t key = e.type == PLAT_KEY ? amiga_key(e.key, e.modifiers) : 0;
-            if (key) command_process_key(key);
-            if (e.type == PLAT_MOUSE || e.type == PLAT_MOUSE_UP) command_process_click((int16_t)e.x, (int16_t)e.y, click_kind(&e));
-        }
+        read_input();
+        if (g_quit_requested) break;
         int tick = 0;
         if (mode == MODE_ENTRANCE) {
             while (command_process_queue())
                 ;
-            if (g_new_game == ENTRANCE_QUIT) goto done;
+            if (g_quit_requested) break;
             if (g_new_game == ENTRANCE_RESUME) {
-                text_draw_screen(RESUME_TEXT_X, RESUME_TEXT_Y, RESUME_TEXT_COLOR, 0, "NO SAVED GAME YET");
-                g_new_game = ENTRANCE_WAITING;
+                if (load_saved_game()) {
+                    gameloop_start_loaded_game();
+                    mode = MODE_GAME;
+                } else {
+                    show_entrance();
+                }
             }
             if (g_new_game == ENTRANCE_NEW_GAME) {
                 if (!gameloop_new_game(data)) return SDL_Log("cannot load %s/Dungeon.DAT", data), 1;
@@ -184,13 +214,21 @@ int main(int argc, char **argv)
             }
         } else if (mode == MODE_GAME) {
             tick = gameloop_frame();
+            if (g_return_to_entrance) tick = 0;
         }
+        if (g_quit_requested) break;
         if (mode >= MODE_ENTRANCE) set_pointer(mode == MODE_GAME);
         plat_present();
         if (tick) gameloop_tick();
+        if (g_quit_requested) break;
+        if (g_return_to_entrance) {
+            g_return_to_entrance = 0;
+            mode = MODE_ENTRANCE;
+            show_entrance();
+        }
         plat_wait_tick();
     }
-done:
+
     plat_quit();
     return 0;
 }

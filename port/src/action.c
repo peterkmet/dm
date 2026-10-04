@@ -65,6 +65,9 @@ enum {
 #define THROW_STEP_ENERGY_BASE 11
 #define THROW_STEP_ENERGY_MINIMUM 5
 #define WEAPON_CLASS_SKILL_LEVEL_STEP 8
+#define WEAPON_SHOOT_ATTACK_MASK 0xff     /* weapon info attributes bits 0-7: the attack of a launcher */
+#define QUIVER_SLOT_SHIFT 8               /* event 11 b: slot + 1 for the next quiver weapon in the high byte */
+#define EVENT_B_LOW_BYTE 0xff
 
 uint16_t g_action_target_group_thing;
 
@@ -234,9 +237,9 @@ static int16_t is_shot(uint16_t champion_index)
     uint16_t thing = champion_get_object_removed_from_slot(champion_index, SLOT_HAND_READY);
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
     int16_t level = champion_get_skill_level((int16_t)champion_index, SKILL_SHOOT);
-    /* The attack is a byte: the low byte of the launcher attributes plus the level, doubled. */
+    /* The attack is a byte: the launcher shoot attack plus the level, doubled. */
     champion_shoot_projectile((int16_t)champion_index, thing, (uint8_t)(missile->kinetic_energy + launcher->kinetic_energy),
-                              (uint8_t)((level + (launcher->attributes & 0xff)) << 1), (uint8_t)step_energy);
+                              (uint8_t)((level + (launcher->attributes & WEAPON_SHOOT_ATTACK_MASK)) << 1), (uint8_t)step_energy);
     return 1;
 }
 
@@ -430,8 +433,8 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
         int16_t side = NORMALIZE(g_party_direction + 1) == c->cell || NORMALIZE(g_party_direction + 2) == c->cell;
         performed = champion_is_object_thrown(champion_index, SLOT_HAND_ACTION, side);
         if (performed) /* event 11 moves the next weapon from the quiver to the action hand */
-            g_timeline_events[c->enable_action_event_index].b = (uint16_t)((SLOT_HAND_ACTION + 1) << 8 |
-                                                                           (g_timeline_events[c->enable_action_event_index].b & 0xff));
+            g_timeline_events[c->enable_action_event_index].b = (uint16_t)((SLOT_HAND_ACTION + 1) << QUIVER_SLOT_SHIFT |
+                                                                           (g_timeline_events[c->enable_action_event_index].b & EVENT_B_LOW_BYTE));
         break;
     }
     case ACTION_FUSE: {

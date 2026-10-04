@@ -95,24 +95,38 @@ static void dungeon_free(void)
     g_dungeon_column_count = 0;
 }
 
-/* New game only: the save game path adds no free records. */
-static int16_t parse_dungeon(void)
+#define HEADER_BYTES 44
+#define MAP_BYTES 16
+#define FREE_SQUARE_THINGS 300 /* free square-first-thing entries of a new game */
+#define DUNGEON_PART_COUNT (5 + 16 + 1)
+
+/* Header words: raw map bytes, text words, square-first-thing count, thing counts. */
+static uint16_t raw_map_bytes(void) { return BE16(g_dungeon_header + 2); }
+static uint16_t text_words(void) { return BE16(g_dungeon_header + 6); }
+static uint16_t square_thing_count(void) { return BE16(g_dungeon_header + 10); }
+static uint16_t thing_count(int16_t type) { return BE16(g_dungeon_header + 12 + type * 2); }
+
+/* load_dungeon: reads the parts from load_ptr. A new game takes the party start from the header
+   and adds free records; a saved game has them already. */
+static int16_t parse_dungeon(int new_game)
 {
     uint16_t sum = 0, checksum;
-    uint8_t *h = g_dungeon_header = alloc(44);
-    if (!read_summed_block(h, &sum, 44))
+    uint8_t *h = g_dungeon_header = alloc(HEADER_BYTES);
+    if (!read_summed_block(h, &sum, HEADER_BYTES))
         return 0;
-    uint16_t loc = BE16(h + 8);
-    g_party_map_x = loc & 0x1f;
-    g_party_map_y = loc >> 5 & 0x1f;
-    g_party_direction = loc >> 10 & 3;
-    g_party_map_index = 0;
+    if (new_game) {
+        uint16_t loc = BE16(h + 8);
+        g_party_map_x = loc & 0x1f;
+        g_party_map_y = loc >> 5 & 0x1f;
+        g_party_direction = loc >> 10 & 3;
+        g_party_map_index = 0;
+    }
 
     int16_t maps = h[4];
     if (!maps)
         return 0;
-    g_dungeon_maps = alloc(maps * 16);
-    if (!read_summed_block(g_dungeon_maps, &sum, maps * 16))
+    g_dungeon_maps = alloc(maps * MAP_BYTES);
+    if (!read_summed_block(g_dungeon_maps, &sum, maps * MAP_BYTES))
         return 0;
     if (!(g_dungeon_map_first_column = alloc(maps * 2)))
         return 0;
@@ -123,40 +137,41 @@ static int16_t parse_dungeon(void)
     }
     g_dungeon_column_count = columns;
 
-    uint16_t square_things = BE16(h + 10);
-    if (square_things > 0xffff - 300)
+    uint16_t square_things = square_thing_count(), extra = new_game ? FREE_SQUARE_THINGS : 0;
+    if (square_things > 0xffff - extra)
         return 0;
-    WR16(h + 10, square_things + 300);
+    WR16(h + 10, square_things + extra);
     g_dungeon_column_first_thing_index = alloc(columns * 2);
-    g_square_first_things = alloc((square_things + 300) * 2);
-    g_dungeon_text_data = alloc(BE16(h + 6) * 2);
+    g_square_first_things = alloc((square_things + extra) * 2);
+    g_dungeon_text_data = alloc(text_words() * 2);
     if (!read_summed_block(g_dungeon_column_first_thing_index, &sum, columns * 2) ||
         !read_summed_block(g_square_first_things, &sum, square_things * 2))
         return 0;
-    memset(g_square_first_things + square_things * 2, 0xff, 300 * 2);
-    if (!read_summed_block(g_dungeon_text_data, &sum, BE16(h + 6) * 2))
+    memset(g_square_first_things + square_things * 2, 0xff, extra * 2);
+    if (!read_summed_block(g_dungeon_text_data, &sum, text_words() * 2))
         return 0;
 
-    g_event_max_count = 100;
+    if (new_game)
+        g_event_max_count = 100;
     for (int16_t t = 0; t < 16; t++) {
-        int16_t count = (int16_t)BE16(h + 12 + t * 2), size = g_thing_data_byte_count[t];
-        int16_t total = count + kaos_u8(NEW_GAME_EXTRA_THINGS + t), cap = t == 15 ? 0x300 : 0x400;
+        int16_t count = (int16_t)thing_count(t), size = g_thing_data_byte_count[t];
+        int16_t total = count, cap = t == 15 ? 0x300 : 0x400;
         if (count < 0 || count > cap)
             return 0;
-        if (total > cap)
-            total = cap;
+        if (new_game)
+            total = count + kaos_u8(NEW_GAME_EXTRA_THINGS + t) > cap ? cap : count + kaos_u8(NEW_GAME_EXTRA_THINGS + t);
         WR16(h + 12 + t * 2, total);
         g_thing_data[t] = alloc(total * size);
         if (!read_summed_block(g_thing_data[t], &sum, count * size))
             return 0;
-        if (t == 4 || t > 13)
+        if (new_game && (t == 4 || t > 13))
             g_event_max_count += total;
         for (int16_t i = count; i < total; i++)
             WR16(g_thing_data[t] + i * size, 0xffff);
     }
 
-    g_dungeon_raw_map_data = alloc(BE16(h + 2));
-    if (!read_summed_block(g_dungeon_raw_map_data, &sum, BE16(h + 2)))
+    g_dungeon_raw_map_data = alloc(raw_map_bytes());
+    if (!read_summed_block(g_dungeon_raw_map_data, &sum, raw_map_bytes()))
         return 0;
     if (load_remaining >= 2) {
         checksum = BE16(load_ptr);
@@ -165,7 +180,7 @@ static int16_t parse_dungeon(void)
     }
 
     for (int16_t m = 0; m < maps; m++)
-        if (BE16(g_dungeon_maps + m * 16) + dungeon_map_width(m) * dungeon_map_height(m) > BE16(h + 2))
+        if (BE16(g_dungeon_maps + m * MAP_BYTES) + dungeon_map_width(m) * dungeon_map_height(m) > raw_map_bytes())
             return 0;
     g_dungeon_map_data = alloc(maps * sizeof *g_dungeon_map_data);
     uint8_t **cols = alloc(columns * sizeof *cols);
@@ -174,7 +189,87 @@ static int16_t parse_dungeon(void)
     for (int16_t m = 0; m < maps; m++) {
         uint8_t **c = g_dungeon_map_data[m] = cols + g_dungeon_map_first_column[m];
         for (int16_t x = 0; x < dungeon_map_width(m); x++)
-            c[x] = g_dungeon_raw_map_data + BE16(g_dungeon_maps + m * 16) + x * dungeon_map_height(m);
+            c[x] = g_dungeon_raw_map_data + BE16(g_dungeon_maps + m * MAP_BYTES) + x * dungeon_map_height(m);
+    }
+    return dungeon_validate();
+}
+
+/* Record layout for the validation; map.h has the accessors for the game rules. */
+enum { THING_TYPE_TELEPORTER = 1, THING_TYPE_GROUP = 4, THING_TYPE_CONTAINER = 9, THING_TYPE_COUNT = 16 };
+enum { SQUARE_TYPE_SHIFT = 5, SQUARE_PIT = 2, SQUARE_STAIRS = 3, SQUARE_HAS_THINGS = 0x10 };
+enum { STAIRS_UP = 4, PIT_OPEN = 8, PIT_IMAGINARY = 1 };
+#define THING_LIST_END 0xfffe
+#define THING_FREE 0xffff
+#define THING_INDEX(thing) ((thing) & 0x3ff)
+#define THING_TYPE_OF(thing) ((thing) >> 10 & 15)
+#define MAP_LEVEL_MASK 0x3f
+
+/* A thing word that names an existing record. */
+static int valid_thing(uint16_t thing)
+{
+    uint16_t type = THING_TYPE_OF(thing);
+    return g_thing_data_byte_count[type] && THING_INDEX(thing) < thing_count(type);
+}
+
+static int valid_link(uint16_t thing) { return thing == THING_LIST_END || valid_thing(thing); }
+
+/* The map one level up or down that covers the dungeon position of (x, y) on map, or -1. */
+static int16_t map_at_level(int16_t map, int16_t level_delta, int16_t x, int16_t y)
+{
+    const uint8_t *from = g_dungeon_maps + map * MAP_BYTES;
+    int16_t dungeon_x = x + from[6], dungeon_y = y + from[7], level = (from[9] & MAP_LEVEL_MASK) + level_delta;
+    for (int16_t m = 0; m < dungeon_map_count(); m++) {
+        const uint8_t *to = g_dungeon_maps + m * MAP_BYTES;
+        if ((to[9] & MAP_LEVEL_MASK) == level && to[6] <= dungeon_x && dungeon_x < to[6] + dungeon_map_width(m) &&
+            to[7] <= dungeon_y && dungeon_y < to[7] + dungeon_map_height(m))
+            return m;
+    }
+    return -1;
+}
+
+/* A teleporter record points to a square inside a map. */
+static int valid_teleporter(const uint8_t *record)
+{
+    int16_t map = record[4], x = record[3] & 31, y = BE16(record + 2) >> 5 & 31;
+    return map < dungeon_map_count() && x < dungeon_map_width(map) && y < dungeon_map_height(map);
+}
+
+/* Checks the links of the loaded dungeon: thing lists, square thing lists, teleporter targets, and the map below
+   stairs and open pits. A corrupt file or save game fails here instead of crashing the game later. */
+int16_t dungeon_validate(void)
+{
+    for (int16_t type = 0; type < THING_TYPE_COUNT; type++) {
+        uint16_t size = g_thing_data_byte_count[type];
+        for (uint16_t i = 0; size && i < thing_count(type); i++) {
+            const uint8_t *record = g_thing_data[type] + i * size;
+            if (BE16(record) == THING_FREE)
+                continue;
+            if (!valid_link(BE16(record)))
+                return 0;
+            if ((type == THING_TYPE_GROUP || type == THING_TYPE_CONTAINER) && !valid_link(BE16(record + 2)))
+                return 0;
+            if (type == THING_TYPE_TELEPORTER && !valid_teleporter(record))
+                return 0;
+        }
+    }
+    for (int16_t m = 0; m < dungeon_map_count(); m++) {
+        for (int16_t x = 0; x < dungeon_map_width(m); x++) {
+            uint16_t index = BE16(g_dungeon_column_first_thing_index + (g_dungeon_map_first_column[m] + x) * 2);
+            for (int16_t y = 0; y < dungeon_map_height(m); y++) {
+                uint8_t square = g_dungeon_map_data[m][x][y];
+                int16_t type = square >> SQUARE_TYPE_SHIFT;
+                if (square & SQUARE_HAS_THINGS) {
+                    if (index >= square_thing_count() || !valid_link(BE16(g_square_first_things + index * 2)))
+                        return 0;
+                    index++;
+                }
+                int16_t down = type == SQUARE_PIT && (square & PIT_OPEN) && !(square & PIT_IMAGINARY);
+                if (type == SQUARE_STAIRS && map_at_level(m, square & STAIRS_UP ? -1 : 1, x, y) < 0)
+                    return 0;
+                if (down && map_at_level(m, 1, x, y) < 0)
+                    return 0;
+            }
+        }
     }
     return 1;
 }
@@ -193,12 +288,62 @@ int16_t load_dungeon(const char *path)
         load_ptr = unpacked = load_remaining > 0 && load_remaining <= MAX_DUNGEON_SIZE ? malloc(load_remaining) : NULL;
         ok = unpacked && decompress_dungeon(file + 8, (int32_t)size - 8, unpacked, load_remaining);
     }
-    ok = ok && size <= MAX_DUNGEON_SIZE && parse_dungeon();
+    ok = ok && size <= MAX_DUNGEON_SIZE && parse_dungeon(1);
     if (!ok)
         dungeon_free();
     free(file);
     free(unpacked);
     return ok;
+}
+
+/* The dungeon part of a save file: the parts without compression and free records. */
+int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)
+{
+    dungeon_free();
+    load_ptr = data;
+    load_remaining = (int32_t)size;
+    int16_t ok = data && size <= MAX_DUNGEON_SIZE && parse_dungeon(0);
+    if (!ok)
+        dungeon_free();
+    return ok;
+}
+
+/* The dungeon parts in the order of save_game, then the 16-bit sum of their bytes. Returns a
+   malloc buffer, or NULL when no dungeon is loaded. */
+uint8_t *dungeon_save(uint32_t *size)
+{
+    if (!g_dungeon_header)
+        return NULL;
+    const uint8_t *part[DUNGEON_PART_COUNT] = {
+        g_dungeon_header, g_dungeon_maps, g_dungeon_column_first_thing_index, g_square_first_things, g_dungeon_text_data,
+    };
+    uint32_t bytes[DUNGEON_PART_COUNT] = {
+        HEADER_BYTES, (uint32_t)dungeon_map_count() * MAP_BYTES, (uint32_t)g_dungeon_column_count * 2,
+        (uint32_t)square_thing_count() * 2, (uint32_t)text_words() * 2,
+    };
+    for (int16_t t = 0; t < 16; t++) {
+        part[5 + t] = g_thing_data[t];
+        bytes[5 + t] = (uint32_t)thing_count(t) * g_thing_data_byte_count[t];
+    }
+    part[DUNGEON_PART_COUNT - 1] = g_dungeon_raw_map_data;
+    bytes[DUNGEON_PART_COUNT - 1] = raw_map_bytes();
+    uint32_t total = 2;
+    for (int i = 0; i < DUNGEON_PART_COUNT; i++)
+        total += bytes[i];
+    uint8_t *out = malloc(total), *p = out;
+    if (!out)
+        return NULL;
+    uint16_t sum = 0;
+    for (int i = 0; i < DUNGEON_PART_COUNT; i++) {
+        if (bytes[i])
+            memcpy(p, part[i], bytes[i]);
+        for (uint32_t k = 0; k < bytes[i]; k++)
+            sum += p[k];
+        p += bytes[i];
+    }
+    WR16(p, sum);
+    *size = total;
+    return out;
 }
 
 int16_t dungeon_map_count(void)

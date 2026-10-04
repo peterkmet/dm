@@ -63,9 +63,10 @@ void champion_set_party_direction(int16_t direction)
     }
 }
 
+/* A scent word: x in bits 11-15, y in bits 6-10, map in bits 0-5. x can be negative (unsigned shift). */
 static uint16_t scent_of(int16_t x, int16_t y, int16_t map)
 {
-    return (uint16_t)(x << 11 | (y & 31) << 6 | (map & 63));
+    return (uint16_t)((uint16_t)x << 11 | (y & 31) << 6 | (map & 63));
 }
 
 /* Adds strength to the party scent on a square, or keeps the larger strength. The original compares scent i
@@ -355,4 +356,11 @@ void command_move_party(int16_t command)
             ticks = max16(ticks, champion_get_movement_ticks(&g_champions[i]));
     g_projectile_disabled_movement_ticks = 0;
     g_disabled_movement_ticks = ticks;
+}
+
+/* No map change and no rope climb wait at the start of a game. */
+void move_reset(void)
+{
+    g_new_party_map_index = -1;
+    g_use_rope_to_climb_down_pit = 0;
 }

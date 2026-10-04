@@ -378,3 +378,10 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
     }
     sensor_process_rotation_effect();
 }
+
+/* No rotation effect waits at the start of a game. */
+void sensor_reset(void)
+{
+    g_sensor_rotation_effect = -1;
+    g_sensor_rotation_effect_map_x = g_sensor_rotation_effect_map_y = g_sensor_rotation_effect_cell = 0;
+}

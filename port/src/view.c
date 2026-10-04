@@ -188,18 +188,17 @@ static void aspect(Aspect *a, int16_t dir, int16_t x, int16_t y)
         break;
     }
     for (; t != THING_END && THING_TYPE(t) <= THING_SENSOR; t = get_next_thing(t)) {
-        const uint8_t *d = get_thing_data(t);
-        if (floor_scan && (t >> 10 & 15) == 3) a->v[FR] = d[4] >> 4;
+        if (floor_scan && THING_TYPE(t) == THING_SENSOR) a->v[FR] = sensor_ornament_ordinal(t);
         if (!wall_scan) continue;
-        int side = ST + ((t >> 14) - dir & 3);
-        if ((t >> 10 & 15) == 2) {
-            if (d[3] & 1) {
+        int side = ST + (THING_CELL(t) - dir & 3);
+        if (THING_TYPE(t) == THING_TEXT) {
+            if (text_is_visible(t)) {
                 a->v[side] = inscription + 1;
                 a->text = t;
             }
         } else {
-            a->v[side] = d[4] >> 4;
-            if ((BE16(d + 2) & 0x7f) == 0x7f) a->portrait = (BE16(d + 2) >> 7) + 1;
+            a->v[side] = sensor_ornament_ordinal(t);
+            if (sensor_type(t) == SENSOR_WALL_CHAMPION_PORTRAIT) a->portrait = sensor_data(t) + 1;
         }
     }
     a->v[THING] = wall_scan == 2 && g_party_map_x != x && g_party_map_y != y ? 0xfffe : t;
@@ -819,25 +818,22 @@ static void door_button(int16_t view)
     free(own.px);
 }
 
-static int has_button(uint16_t door) { return get_thing_data(door)[3] & 0x40; }
-
 /* draw_door: a copy of the door graphic with its ornament, placed by the door state. */
 static void door(uint16_t index, int16_t state, int16_t depth, int16_t zone)
 {
     if (!state) return;
-    const uint8_t *d = get_thing_data(index);
-    int set = d[3] & 1;
+    int set = door_type(index);
     const Bitmap *g = gfx_bitmap(door_gfx[depth][set]);
     if (!g) return;
     Bitmap t = { g->w, g->h, malloc((size_t)g->w * g->h) };
     if (!t.px) return;
     memcpy(t.px, g->px, (size_t)g->w * g->h);
-    door_ornament((d[3] & 0x1e) >> 1, depth, &t);
+    door_ornament(door_ornament_ordinal(index), depth, &t);
     if (door_attr[set] & 0x400) draw_flip(&t, random_2bits() & 3); /* animated door */
     if (state == 5) door_ornament(16, depth, &t);
     else if (state != 4) {
         zone += state;
-        if (!(d[3] & 0x20)) { /* two halves that slide apart */
+        if (!door_is_vertical(index)) { /* two halves that slide apart */
             int16_t w = rel_x = t.w >> 1, h = rel_y = 0;
             Box b;
             if (layout_get_zone(zone + 6, t.w, t.h, &b, &w, &h)) draw_blit(&t, rel_x + w, h, &vp, &b, 10, 0);
@@ -967,7 +963,7 @@ static void d3r(int16_t dir, int16_t x, int16_t y)
         things(a.v[THING], dir, x, y, 13, 0x128);
         wall(LID(0x102a5e), 0x2d0, NORMAL);
         wall(LID(0x102a5a), 0x2d1, FLIPPED);
-        if (has_button(a.v[RT])) door_button(0);
+        if (door_button_present(a.v[RT])) door_button(0);
         door(a.v[RT], a.v[ST], 0, 0xe9c);
         things(a.v[THING], dir, x, y, 13, 0x439);
         return;
@@ -994,7 +990,7 @@ static void d3c(int16_t dir, int16_t x, int16_t y)
         things(a.v[THING], dir, x, y, 11, 0x218);
         wall(LID(0x102a58), 0x2d2, NORMAL);
         wall(LID(0x102a58), 0x2d3, FLIPPED);
-        if (has_button(a.v[RT])) door_button(1);
+        if (door_button_present(a.v[RT])) door_button(1);
         door(a.v[RT], a.v[ST], 0, 0xe92);
         things(a.v[THING], dir, x, y, 11, 0x349);
         return;
@@ -1099,7 +1095,7 @@ static void d2c(int16_t dir, int16_t x, int16_t y)
         wall(LID(0x102a4e), 0x2da, NORMAL);
         wall(LID(0x102a56), 0x2d4, NORMAL);
         wall(LID(0x102a56), 0x2d5, FLIPPED);
-        if (has_button(a.v[RT])) door_button(2);
+        if (door_button_present(a.v[RT])) door_button(2);
         door(a.v[RT], a.v[ST], 1, 0xeb0);
         things(a.v[THING], dir, x, y, 6, 0x349);
         return;
@@ -1178,7 +1174,7 @@ static void d1c(int16_t dir, int16_t x, int16_t y)
         wall(LID(0x102a48), 0x2dd, NORMAL);
         wall(LID(0x102a54), 0x2d6, NORMAL);
         wall(LID(0x102a52), 0x2d7, NORMAL);
-        if (has_button(a.v[RT])) door_button(3);
+        if (door_button_present(a.v[RT])) door_button(3);
         door(a.v[RT], a.v[ST], 2, 0xece);
         things(a.v[THING], dir, x, y, 3, 0x349);
         return;

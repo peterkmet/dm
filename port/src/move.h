@@ -16,6 +16,7 @@ uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint1
 int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 void move_process_new_party_map(void);
 void move_party_enter_dungeon(void);
+void move_reset(void);
 
 void champion_set_party_direction(int16_t direction);
 void champion_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags);

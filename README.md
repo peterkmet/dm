@@ -83,7 +83,16 @@ Run the game. It needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/`.
 build/dm
 ```
 
-The game starts at the entrance. Click ENTER or press Return to start a new game. RESUME shows "NO SAVED GAME YET", because saved games are not available yet. QUIT or Ctrl+Q closes the game. Closing the window also closes the game.
+The game starts at the entrance. Click ENTER or press Return to start a new game. Click RESUME to continue the saved game. QUIT or Ctrl+Q closes the program. Closing the window also closes the game.
+
+### Saved games
+
+The game saves to `DMGAME.DAT` in the data folder (`game/`, or the folder of `--data`). Before a save, the old `DMGAME.DAT` becomes `DMGAME.BAK`. The file has the format of the original Amiga save file, see [save-format.md](docs/save-format.md).
+
+- Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. After SAVE the dialog stays open. CANCEL continues the game. QUIT ends the game. When the game was not saved or loaded in the last 100 ticks, QUIT asks first.
+- Resume: click RESUME at the entrance. The game loads `DMGAME.DAT`, or `DMGAME.BAK` when `DMGAME.DAT` is missing. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
+- When all champions die, the game shows THE END. When a saved game exists, RESTART THIS GAME loads it. QUIT on this screen, the QUIT of the save dialog, and the end of a won game show the credits. A key or a click then shows the entrance.
+- Deliberate deviations from the original: the original quits the program after the credits and after a damaged save. The port shows the entrance. Only QUIT on the entrance (or Ctrl+Q, or closing the window) ends the program.
 
 ### Controls
 
@@ -112,6 +121,7 @@ The controls are the controls of the original Amiga game.
 | Inventory: click on the mouth | Eat or drink the object in the hand |
 | Inventory: hold the eye | Show skills and statistics |
 | Inventory: ZZZ or the X | Sleep or close the inventory |
+| Inventory: the save icon, Ctrl+S | Save the game |
 | Action area | Click a champion hand, then an action |
 | Spell area | Click runes, then the cast button. Click a tab to select another caster. |
 
@@ -123,7 +133,7 @@ Options:
 - `--show N` shows graphic N of `Graphics.DAT`.
 - The environment variable `DM_AUTO_ENTER=1` presses ENTER at the start. The tests use it.
 
-Not available yet: saved games, actions and throwing (the action menu opens, but the action has no effect), the description of an object under the eye, chests and scrolls in the panel, the credits, the door animation of the entrance, and the end of the game.
+Not available yet: actions and throwing (the action menu opens, but the action has no effect), the description of an object under the eye, chests and scrolls in the panel, the credits, and the door animation of the entrance. The dialogs and the endgame screens do not fade the palette.
 
 Set `DM_FILTER` to select a pixel-art upscale filter. The values are `none` (default), `scale2x`, and `scale3x`. The filter makes the image 2 or 3 times larger before the window scaling. The filter gives the sharpest image when the window scale is a multiple of the filter factor. Example: `DM_FILTER=scale2x build/dm`.
 

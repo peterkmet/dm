@@ -57,7 +57,9 @@ enum {
     UI_INPUT_RESURRECT,       /* g_mouse_input_panel_resurrect_reincarnate */
     UI_INPUT_NAME_ENTRY,      /* g_mouse_input_champion_name_entry */
     UI_INPUT_ENTRANCE,        /* the entrance buttons */
-    UI_INPUT_COUNT
+    UI_INPUT_ENDGAME,         /* RESTART THIS GAME and QUIT of the endgame screen */
+    UI_INPUT_DIALOG_FIRST,    /* g_dialog_mouse_inputs: + full screen * 4 + choice count - 1 */
+    UI_INPUT_COUNT = UI_INPUT_DIALOG_FIRST + 8
 };
 
 /* Mouse button masks of the input tables (the click kinds of input_event_handler). */
@@ -94,6 +96,7 @@ void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char
 void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t length);
 void ui_draw_viewport(void);                   /* draw_viewport(0): the viewport bitmap to zone 7 */
 void ui_set_palette(const uint16_t *top);
+void ui_set_screen_palette(const uint16_t *colors);
 void ui_draw_interface(void);
 void ui_draw_message_area(void);
 
@@ -108,6 +111,7 @@ void draw_leader_hand_object_name(uint16_t thing);
 /* Hit tests. */
 int16_t ui_point_in_zone(int16_t zone, int16_t x, int16_t y);
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask);
+uint32_t ui_mouse_table_address(int16_t table); /* KAOS address of a mouse input table */
 
 /* Champions and the inventory panel (ui_champion.c). */
 void champion_draw_bar_graphs(int16_t champion_index);
@@ -122,6 +126,15 @@ void draw_panel(void);
 void draw_panel_food_water_poisoned(void);
 void draw_champion_skills_and_statistics(void);
 
+/* Inventory panel content (g_panel_content). */
+enum { PANEL_CONTENT_FOOD_WATER = 1, PANEL_CONTENT_SCROLL = 5, PANEL_CONTENT_CHEST = 6, PANEL_CONTENT_RESURRECT = 7 };
+enum { PANEL_LINE_COUNT = 3, PANEL_LINE_SIZE = 40 };
+extern int16_t g_panel_content;
+int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
+void draw_panel_object(uint16_t thing, int16_t pressing_eye);
+void draw_panel_eye(void);
+void panel_click_in_chest(int16_t x, int16_t y);
+
 /* Action area, spell area, movement arrows (ui_menus.c). */
 void menus_draw_movement_arrows(void);
 void menus_set_action_list(int16_t action_set_index);
@@ -135,5 +148,6 @@ void menus_draw_spell_area_controls(uint16_t champion_index);
 void menus_draw_available_symbols(uint16_t symbol_step);
 void menus_draw_champion_symbols(uint16_t champion_index);
 void menus_set_magic_caster(int16_t champion_index);
+void menus_reset(void);
 
 #endif

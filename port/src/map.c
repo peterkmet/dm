@@ -278,6 +278,11 @@ uint16_t weapon_charges(uint16_t thing) { return (get_thing_data(thing)[2] & 0x3
 uint16_t junk_charges(uint16_t thing) { return get_thing_data(thing)[2] >> 6; }
 uint16_t armour_charges(uint16_t thing) { return (get_thing_data(thing)[2] & 0x1e) >> 1; }
 int16_t scroll_is_closed(uint16_t thing) { return (get_thing_data(thing)[2] & 0xfc) != 0; }
+int16_t weapon_is_poisoned(uint16_t thing) { return (get_thing_data(thing)[2] & 0x02) != 0; }
+int16_t weapon_is_broken(uint16_t thing) { return (get_thing_data(thing)[2] & 0x40) != 0; }
+int16_t armour_is_broken(uint16_t thing) { return (get_thing_data(thing)[2] & 0x20) != 0; }
+uint16_t scroll_text_index(uint16_t thing) { return BE16(get_thing_data(thing) + 2) & 0x3ff; }
+void container_set_first_thing(uint16_t thing, uint16_t first) { WR16(get_thing_data(thing) + 2, first); }
 
 void weapon_set_lit(uint16_t thing, int16_t lit)
 {
@@ -313,6 +318,21 @@ void potion_set_type(uint16_t thing, uint16_t type)
 {
     uint8_t *d = get_thing_data(thing);
     d[2] = (uint8_t)((d[2] & IMPORTANT) | type);
+}
+
+void potion_set_power(uint16_t thing, uint16_t power) { get_thing_data(thing)[3] = (uint8_t)power; }
+
+/* Weapon, armour, and junk: the type in word 2 bits 0-6; the important bit stays. */
+void object_set_type(uint16_t thing, uint16_t type)
+{
+    uint8_t *d = get_thing_data(thing);
+    d[3] = (uint8_t)((d[3] & IMPORTANT) | (type & TYPE_MASK));
+}
+
+void object_set_cursed(uint16_t thing, int16_t cursed)
+{
+    uint8_t *d = get_thing_data(thing);
+    d[2] = (uint8_t)((d[2] & ~1) | (cursed != 0));
 }
 
 /* The closed bits are 10-15; bits 8-9 stay. */

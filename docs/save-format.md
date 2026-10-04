@@ -1,8 +1,13 @@
 # Save file format
 
-This page describes the Dungeon Master v3.60 save file `DMGAME~.DAT` and the C code that reads and writes it. The C code is in `port/src/savefile.c` and `port/src/savefile.h`. The original routines are `save_game` (`0x125a44`) and `load_game` (`0x1265d4`) in `KAOS.FTL`.
+This page describes the Dungeon Master v3.60 save file `DMGAME~.DAT` and the C code that reads and writes it. The original routines are `save_game` (`0x125a44`) and `load_game` (`0x1265d4`) in `KAOS.FTL`.
 
-The C code handles only the container: the header, the cipher, and the checksums. It does not copy blocks into the game state. Another part of the port does that.
+The C code has two layers:
+
+- `port/src/savefile.c` handles the container: the header, the cipher, and the checksums.
+- `port/src/savegame.c` copies the game state into the blocks and back. `port/src/dungeon.c` writes and reads the dungeon part.
+
+The English version replaces `~` in the file name with nothing. The port writes `DMGAME.DAT` and `DMGAME.BAK`.
 
 ## Byte order
 
@@ -177,9 +182,73 @@ The block cipher. Encrypts or decrypts `word_count` big-endian words in place. R
 
 Frees the decoded copy and clears `s`.
 
+### Header fields
+
+| Function | Work |
+|---|---|
+| `save_header_init(h, game_id, dungeon_id, extra)` | Clears the header. Writes 16 keys with `random16`, then 127 chain words with `random16`, in the order of `save_game` and `save_write_header`. Writes the header byte 1, platform 5, dialog choice 1, the game ID, format 3, the dungeon ID, and the 134 extra bytes. |
+| `save_header_game_id(h)`, `save_header_dungeon_id(h)`, `save_header_extra(h)` | Read the fields of a plain header. |
+
+## Game state (`savegame.c`)
+
+### Files
+
+The save directory is the game data directory (`--data`, default `game/`). `startend_set_save_dir` changes it.
+
+`int16_t savegame_save(const char *dir)`:
+
+1. `timeline_reset`. Then pack the globals, the active groups, the champions, the party, the timeline events, and the timeline index into the blocks.
+2. The leader load in the file does not count the object in the leader hand, as in `save_game`. The live state does not change.
+3. Write the portraits and the dungeon (`dungeon_save`).
+4. `save_header_init` with `g_game_id`, `g_dungeon_id`, and the extra bytes of the last load. `save_encode`.
+5. Delete `DMGAME.BAK`. Rename `DMGAME.DAT` to `DMGAME.BAK`. Write `DMGAME.DAT`.
+6. Set `g_saved_game_exists` and `g_last_save_game_time`. Return 1, or 0 on a write error.
+
+The random header words come after the copy of the globals. Thus the saved random seed is the seed before the save, as in the original.
+
+`int16_t savegame_load(const char *dir)` returns `SAVEGAME_LOADED` (1), `SAVEGAME_MISSING` (0), or `SAVEGAME_DAMAGED` (−1):
+
+1. Read `DMGAME.DAT`. When it is missing, read `DMGAME.BAK`.
+2. `save_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
+3. Copy block 0 into the globals. `g_last_load_game_time` gets the game time.
+4. Allocate the timeline for `g_event_max_count` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`.
+5. Find the portrait index of each party champion (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
+6. Clear `g_party_dead` and the sleep flag. Set `g_saved_game_exists`.
+7. When the file was the backup, rename it to `DMGAME.DAT`.
+
+After a damaged file, the dungeon is not loaded and the globals can be partly changed. The entrance starts a new game from `Dungeon.DAT`, which sets all state again.
+
+`gameloop_start_loaded_game` then does the rest of `start_game`: it makes the party map current (`group_remove_all_active_groups`, `set_current_map_and_party_map`, `group_add_all_active_groups`), shows "GAME LOADED, READY TO PLAY.", draws the interface, and runs `champion_reset_data_to_start_game`: the hand object goes back into the hand, `command_set_leader` adds its weight to the leader load again, and the magic caster comes back.
+
+### Block contents
+
+- Block 0: the globals of the table above. The unused bytes are 0.
+- Block 1: `ActiveGroup` in its original 16-byte order. `group_index` is a big-endian word.
+- Block 2: `champion_pack` for the 4 champions, then the party record (`docs/game-state.md`). The bytes from `0x58` to `0x7f` of the party part are not traced. The port writes 0 and ignores them on load.
+- Block 3: 10 bytes per event: `map_time` (long), `type`, `priority`, `b`, `c`. A free slot has the next free index in the high word, as `timeline_reset` writes it.
+- Block 4: the heap of slot indices.
+
+### Portraits
+
+The port does not keep portrait bitmaps. It keeps the index of each portrait in graphic 26 (`g_champion_portrait_indices`). The save writes the portrait of each party champion in the interleaved form: per row and per 16-pixel column, one word for each of the 4 bit planes (`champion_portraits_to_interleaved`). The other portraits are 0. The load encodes each portrait of graphic 26 in the same form and takes the index of the equal one. A portrait that has no equal gets index 0.
+
+### Dungeon part (`dungeon.c`)
+
+- `uint8_t *dungeon_save(uint32_t *size)` writes the parts in the order of `save_game`: header, maps, column first-thing indices, square first things, text data, 16 thing arrays, raw map data. Then the 16-bit sum of all bytes. The header has the counts with the free records of the new game, so the load needs no extras.
+- `int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `load_dungeon` for a saved game: no compression, no party start from the header, no free records, and no new `g_event_max_count`. It checks the byte sum when the word is there.
+
 ## Tests
 
-`tests/test_savefile.py` tests the C code through `build/libdm.dylib`:
+`tests/test_save.py` tests the game state layer:
+
+- Round trip: a new game, a recruited champion with an object in the hand, then a save. A new game, then a load. The globals, the packed champions (the leader load less the hand object), the party, the timeline, the active groups, the portrait indices, and `dungeon_save` are equal.
+- The second save keeps the first file as `DMGAME.BAK`. A load without `DMGAME.DAT` uses the backup and renames it.
+- A missing file gives `SAVEGAME_MISSING`. A truncated file, a changed dungeon end, a changed header byte, and zeros give `SAVEGAME_DAMAGED`.
+- The original `save_read_header` and `save_read_checked_block` in `dmtools.emu` accept the file of `savegame_save`. The dungeon sum word is correct.
+- Ctrl+S runs the save dialog. A frame hook clicks SAVE, then CANCEL. The file exists and the game is not frozen.
+- Party death without a frame hook ends with `g_return_to_entrance`. With a frame hook, RESTART THIS GAME loads the saved game and the game continues. QUIT on THE END shows the credits and then sets `g_return_to_entrance`.
+
+`tests/test_savefile.py` tests the container through `build/libdm.dylib`:
 
 - A round trip from encode to decode gives the same blocks, portraits, and dungeon.
 - The original `save_block_xor` in `dmtools.emu` gives the same encrypted bytes and checksums as the C encoder.
@@ -188,6 +257,9 @@ Frees the decoded copy and clears `s`.
 
 ## Limits
 
-- No real save file was available. The tests use synthetic data and the original routines as the oracle.
+- No real save file was available. The tests use synthetic data, the port's own saves, and the original routines as the oracle. The original `load_dungeon` reads a file handle, so the tests do not run it on the dungeon part.
+- Deliberate deviation: the original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!". The port sets `g_return_to_entrance`, and `main.c` shows the entrance.
+- A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
+- The header byte at `0x12a` is always written as 1. The original writes back the value of the last load.
 - `save_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.
 - The meaning of the header byte at `0x12a`, of `g_save_header_extra`, and of the long at block 0 offset 32 is not traced.

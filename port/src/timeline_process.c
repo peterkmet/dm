@@ -1,4 +1,5 @@
 #include "timeline_process.h"
+#include "startend.h"
 #include "action.h"
 #include "champion.h"
 #include "dungeon.h"
@@ -254,7 +255,7 @@ static void gate(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t 
 }
 
 /* Texts of the event cell change visibility. Counters, AND/OR gates, and projectile launchers of the cell run.
-   The endgame step adds the endgame sensor. */
+   An endgame sensor ends the game. */
 void timeline_process_event6_wall(TimelineEvent *event)
 {
     int16_t x = EVENT_X(event), y = EVENT_Y(event), cell = EVENT_CELL(event), effect = EVENT_EFFECT(event);
@@ -269,6 +270,8 @@ void timeline_process_event6_wall(TimelineEvent *event)
             timeline_trigger_projectile_launcher(t, event);
             if (sensor_is_once_only(t))
                 sensor_set_type(t, SENSOR_DISABLED);
+        } else if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_WALL_ENDGAME) {
+            endgame_sensor(sensor_delay(t));
         }
     }
     sensor_process_rotation_effect();

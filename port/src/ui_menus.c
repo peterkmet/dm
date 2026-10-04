@@ -49,16 +49,14 @@ void menus_draw_movement_arrows(void)
     ui_blit_graphic(&screen, GFX_MOVEMENT_ARROWS, ZONE_MOVEMENT_ARROWS, COLOR_NONE);
 }
 
-/* The charges of the object in the action hand of the acting champion (1 when it has none).
-   ponytail: raw record bytes; move to the thing accessor module when it exists. */
+/* The charges of the object in the action hand of the acting champion (1 when it has none). */
 static uint16_t action_hand_charge_count(void)
 {
     uint16_t thing = g_champions[g_acting_champion_ordinal - 1].slots[SLOT_HAND_ACTION];
-    const uint8_t *d = get_thing_data(thing);
     switch (THING_TYPE(thing)) {
-    case THING_TYPE_WEAPON: return (d[2] & 0x3c) >> 2;  /* weapon: bits 10-13 */
-    case THING_TYPE_ARMOUR: return (d[2] & 0x1e) >> 1;  /* armour: bits 9-12 */
-    case THING_TYPE_JUNK: return d[2] >> 6;          /* junk: bits 14-15 */
+    case THING_TYPE_WEAPON: return weapon_charges(thing);
+    case THING_TYPE_ARMOUR: return armour_charges(thing);
+    case THING_TYPE_JUNK: return junk_charges(thing);
     }
     return 1;
 }
@@ -277,4 +275,16 @@ void menus_set_magic_caster(int16_t champion_index)
     menus_draw_spell_area_controls((uint16_t)champion_index);
     menus_draw_available_symbols(g_champions[champion_index].symbol_step);
     menus_draw_champion_symbols((uint16_t)champion_index);
+}
+
+/* No acting champion, no action list, and no action damage at the start of a game. */
+void menus_reset(void)
+{
+    g_acting_champion_ordinal = 0;
+    g_action_area_contains_icons = 1;
+    memset(g_action_list_indices, ACTION_NONE, sizeof g_action_list_indices);
+    memset(g_action_list_minimum_skill_levels, 0, sizeof g_action_list_minimum_skill_levels);
+    g_action_count = 0;
+    g_action_damage = 0;
+    g_refresh_action_area = 0;
 }

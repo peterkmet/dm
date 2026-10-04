@@ -3,6 +3,12 @@
 #include "gameloop.h"
 #include "champion.h"
 #include "command.h"
+#include "dialog.h"
+#include "group.h"
+#include "projectile.h"
+#include "savegame.h"
+#include "sensor.h"
+#include "startend.h"
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
@@ -53,6 +59,7 @@ int gameloop_load_data(const char *dir)
     snprintf(path, sizeof path, "%s/KAOS.FTL", dir);
     if (kaos_load(path)) return 0;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
+    startend_set_save_dir(dir);
     return gfx_open(path) >= 0 && !layout_init() && !text_init() && !tables_init() && !ui_init();
 }
 
@@ -121,7 +128,7 @@ static void decrease_torches_light_power(void)
 }
 
 /* The dungeon view of the party in the light of the party. */
-static void draw_dungeon_view(void)
+void gameloop_draw_view(void)
 {
     view_set_light(party_light_amount());
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
@@ -148,32 +155,92 @@ static void refresh_interface(void)
     ui_draw_message_area();
 }
 
-/* start_game for a new game: the party enters the dungeon and the interface appears. */
+/* start_game, the part for both a new and a loaded game: interface state and input. */
+static void start_game(void)
+{
+    g_candidate_champion_ordinal = 0;
+    g_party_is_sleeping = 0;
+    g_game_won = g_do_not_draw_fluxcages = 0;
+    memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
+    shown_hand_object = THING_NONE;
+    command_reset();
+    inventory_reset();
+    group_reset();
+    menus_reset();
+    sensor_reset();
+    move_reset();
+    projectile_reset();
+    message_clear();
+    view_load_map(g_party_map_index);
+}
+
+/* The interface appears and the game time runs. */
+static void show_game(void)
+{
+    g_game_screen_inactive = 0;
+    memset(fb, 0, sizeof fb);
+    ui_set_palette(NULL);
+    ui_draw_interface();
+    gameloop_draw_view();
+    g_game_time_ticking = 1;
+    frames_waiting = 0;
+    command_discard_all_input();
+}
+
 int gameloop_new_game(const char *dir)
 {
     char path[1024];
     snprintf(path, sizeof path, "%s/Dungeon.DAT", dir);
     if (!load_dungeon(path)) return 0;
     game_new();
+    g_saved_game_exists = 0;
     g_leader_empty_handed = 1;
-    g_candidate_champion_ordinal = g_inventory_champion_ordinal = 0;
-    g_acting_champion_ordinal = 0;
-    g_action_area_contains_icons = 1;
-    g_game_frozen = 0;
-    memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
-    shown_hand_object = THING_NONE;
-    message_clear();
-    command_set_game_input();
-    view_load_map(g_party_map_index);
+    start_game();
     move_party_enter_dungeon();
-    memset(fb, 0, sizeof fb);
-    ui_set_palette(NULL);
-    ui_draw_interface();
-    draw_dungeon_view();
-    g_game_time_ticking = 1;
-    frames_waiting = 0;
-    command_discard_all_input();
+    show_game();
     return 1;
+}
+
+/* champion_reset_data_to_start_game for a loaded game: the hand object, the leader with its load,
+   and the magic caster come back; all champion states are drawn. */
+static void reset_champions_of_loaded_game(void)
+{
+    int16_t leader = g_leader_index, caster = g_magic_caster_champion_index;
+    uint16_t hand = g_leader_hand_object;
+    g_leader_empty_handed = 1;
+    g_leader_hand_object = THING_NONE;
+    g_leader_index = -1;
+    champion_put_object_in_leader_hand(hand);
+    for (uint16_t i = 0; i < g_party_champion_count; i++) g_champions[i].attributes &= CHAMPION_ATTR_KEEP_MASK;
+    champion_draw_all_states(CHAMPION_ATTR_ICON | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ACTION_HAND);
+    if (leader != -1) command_set_leader(leader);
+    g_magic_caster_champion_index = -1;
+    if (caster != -1) menus_set_magic_caster(caster);
+}
+
+void gameloop_start_loaded_game(void)
+{
+    start_game();
+    map_reset();
+    g_new_party_map_index = -1;
+    group_remove_all_active_groups();
+    set_current_map_and_party_map(g_party_map_index);
+    group_add_all_active_groups();
+    g_game_screen_inactive = 1;
+    memset(fb, 0, sizeof fb);
+    dialog_draw(NULL, ui_string(TEXT_GAME_LOADED), ui_string(TEXT_OK), NULL, NULL, NULL);
+    dialog_get_choice(1);
+    show_game();
+    reset_champions_of_loaded_game();
+    refresh_interface();
+}
+
+/* The fuse action and sensor 18 ask for a sequence that runs outside the commands and events. */
+static void run_requested_sequence(void)
+{
+    if (!g_fuse_sequence_requested) return;
+    g_fuse_sequence_requested = 0;
+    fuse_sequence();
 }
 
 int gameloop_frame(void)
@@ -181,11 +248,12 @@ int gameloop_frame(void)
     int ran = 0;
     while ((!g_stop_waiting_for_input || !g_game_time_ticking) && command_process_queue()) ran = 1;
     if (ran) refresh_interface();
+    run_requested_sequence();
     if (++frames_waiting > g_wait_for_input_max_frames) g_stop_waiting_for_input = 1;
     return g_stop_waiting_for_input && g_game_time_ticking;
 }
 
-/* game_loop: one tick of the game. ponytail: the party death (endgame) is not handled yet. */
+/* game_loop: one tick of the game. A dead party ends in the endgame. */
 void gameloop_tick(void)
 {
     frames_waiting = 0;
@@ -200,12 +268,15 @@ void gameloop_tick(void)
     if (!g_party_is_sleeping) {
         command_wake_up();
         if (!g_candidate_champion_ordinal) game_unfreeze();
-        if (!g_inventory_champion_ordinal) draw_dungeon_view();
+        if (!g_inventory_champion_ordinal) gameloop_draw_view();
     }
     command_highlight_disable();
     sound_play_pending();
     champion_apply_and_draw_pending_damage_and_wounds();
-    if (g_party_dead) return;
+    if (g_party_dead) {
+        endgame(1);
+        return;
+    }
     g_game_time++;
     if (!(g_game_time & TORCH_BURN_INTERVAL_MASK)) decrease_torches_light_power();
     if (g_party.freeze_life_ticks) g_party.freeze_life_ticks--;
@@ -215,6 +286,7 @@ void gameloop_tick(void)
     if (g_projectile_disabled_movement_ticks) g_projectile_disabled_movement_ticks--;
     message_clear_expired_rows(g_game_time);
     refresh_interface();
+    run_requested_sequence();
 }
 
 /* Reads a 4 bit plane bitmap of the KAOS data into one color per pixel. */

@@ -1,6 +1,8 @@
 #include <string.h>
 #include "command.h"
 #include "action.h"
+#include "dialog.h"
+#include "startend.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -56,13 +58,19 @@ int16_t g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
 int16_t g_game_frozen;
 int16_t g_new_game = ENTRANCE_WAITING;
 int16_t g_mouse_pointer_hidden;
+int16_t g_input_received;
+uint16_t g_last_key;
 
 static QueuedCommand queue[QUEUE_SIZE];
 static int16_t queue_first, queue_count;
 static int16_t primary_mouse = NO_TABLE, secondary_mouse = NO_TABLE;
 static uint32_t primary_keys, secondary_keys;
-static int16_t saved_primary_mouse, saved_secondary_mouse;
-static uint32_t saved_primary_keys, saved_secondary_keys;
+typedef struct {
+    int16_t primary_mouse, secondary_mouse;
+    uint32_t primary_keys, secondary_keys;
+} InputTables;
+
+static InputTables frozen_input, dialog_input;
 static int16_t left_button_down, pressing_eye, pressing_mouth, pressing_fake_wall;
 static int16_t dragged_icon_cell_plus_1;
 static Box highlight;
@@ -75,6 +83,27 @@ void command_set_entrance_input(void)
     primary_keys = KEYS_ENTRANCE;
     secondary_keys = 0;
 }
+
+static InputTables current_input(void)
+{
+    return (InputTables){ primary_mouse, secondary_mouse, primary_keys, secondary_keys };
+}
+
+static void set_input(InputTables t)
+{
+    primary_mouse = t.primary_mouse;
+    secondary_mouse = t.secondary_mouse;
+    primary_keys = t.primary_keys;
+    secondary_keys = t.secondary_keys;
+}
+
+void command_set_only_mouse_input(int16_t table)
+{
+    set_input((InputTables){ table, NO_TABLE, 0, 0 });
+}
+
+void command_save_input(void) { dialog_input = current_input(); }
+void command_restore_input(void) { set_input(dialog_input); }
 
 void command_set_game_input(void)
 {
@@ -94,6 +123,7 @@ static void queue_put(int16_t command, int16_t x, int16_t y)
    tables, a left release becomes COMMAND_LEFT_RELEASE. */
 void command_process_click(int16_t x, int16_t y, int16_t kind)
 {
+    if (kind == CLICK_LEFT_PRESS || kind == CLICK_RIGHT_PRESS) g_input_received = 1;
     if (kind == CLICK_LEFT_PRESS) left_button_down = 1;
     if (kind == CLICK_LEFT_RELEASE) left_button_down = 0;
     if (queue_count >= (kind == CLICK_LEFT_RELEASE ? QUEUE_RELEASE_LIMIT : QUEUE_CLICK_LIMIT)) return;
@@ -116,6 +146,8 @@ static int16_t key_command(uint32_t table, uint16_t key)
 
 void command_process_key(uint16_t key)
 {
+    g_input_received = 1;
+    g_last_key = key;
     if (queue_count >= QUEUE_CLICK_LIMIT) return;
     int16_t command = key_command(primary_keys, key);
     if (!command) command = key_command(secondary_keys, key);
@@ -127,6 +159,8 @@ void command_discard_all_input(void)
 {
     QueuedCommand kept[QUEUE_SIZE];
     int16_t n = 0;
+    g_input_received = 0;
+    g_last_key = 0;
     for (int16_t i = 0; i < queue_count; i++) {
         QueuedCommand c = queue[(queue_first + i) % QUEUE_SIZE];
         if (c.command == COMMAND_LEFT_RELEASE || c.command == COMMAND_RIGHT_RELEASE) kept[n++] = c;
@@ -178,6 +212,7 @@ void game_freeze(void)
     g_game_frozen = 1;
     command_highlight_disable();
     if (!g_inventory_champion_ordinal) ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
+    else close_chest();
     ui_fill_zone_pattern(&screen, ZONE_SPELL_AREA, COLOR_BLACK);
     ui_fill_zone_pattern(&screen, ZONE_ACTION_AREA, COLOR_BLACK);
 }
@@ -232,6 +267,21 @@ void inventory_toggle(int16_t champion_index)
     secondary_mouse = UI_INPUT_INVENTORY;
     secondary_keys = 0;
     command_discard_all_input();
+}
+
+/* A champion dies: its open inventory closes, also during a press on the eye or the mouth; a dead
+   leader ends a press on an imaginary wall; its icon is cleared and is no longer dragged. */
+void command_release_dead_champion(uint16_t champion_index)
+{
+    Bitmap screen = ui_screen();
+    int16_t icon_cell = NORMALIZE(g_champions[champion_index].cell - g_party_direction);
+    if (champion_index + 1 == g_inventory_champion_ordinal) {
+        pressing_eye = pressing_mouth = g_mouse_pointer_hidden = 0;
+        inventory_toggle(INVENTORY_CLOSE);
+    }
+    if (champion_index == g_leader_index && pressing_fake_wall) pressing_fake_wall = g_mouse_pointer_hidden = 0;
+    if (icon_cell + 1 == dragged_icon_cell_plus_1) dragged_icon_cell_plus_1 = 0;
+    ui_fill_zone(&screen, (int16_t)(ZONE_CHAMPION_ICON_FIRST + icon_cell), COLOR_BLACK);
 }
 
 /* The candidate inventory shows the resurrect and reincarnate panel; the game is frozen meanwhile. */
@@ -547,15 +597,15 @@ static void draw_viewport_icon(int16_t icon, int16_t zone)
     ui_blit_zone(ui_viewport(), &bm, zone, COLOR_NONE);
 }
 
-/* While the left button stays down on the eye, the panel shows the skills and statistics.
-   ponytail: an object in the hand should show its description (draw_panel_object is missing). */
+/* While the left button stays down on the eye, the panel shows the skills and statistics, or the
+   description of the object in the hand. */
 static void click_on_eye(void)
 {
     if (!left_button_down) return;
     pressing_eye = g_mouse_pointer_hidden = 1;
     command_discard_all_input();
     draw_viewport_icon(ICON_EYE_LOOKING, ZONE_EYE);
-    draw_champion_skills_and_statistics();
+    draw_panel_eye();
     ui_draw_viewport();
 }
 
@@ -602,10 +652,7 @@ static void freeze_game(void)
     g_game_time_ticking = 0;
     game_freeze();
     draw_viewport_message(TEXT_GAME_FROZEN);
-    saved_primary_mouse = primary_mouse;
-    saved_secondary_mouse = secondary_mouse;
-    saved_primary_keys = primary_keys;
-    saved_secondary_keys = secondary_keys;
+    frozen_input = current_input();
     primary_mouse = UI_INPUT_FROZEN;
     secondary_mouse = NO_TABLE;
     primary_keys = KEYS_FROZEN;
@@ -617,10 +664,7 @@ static void unfreeze_game(void)
 {
     g_game_time_ticking = 1;
     game_unfreeze();
-    primary_mouse = saved_primary_mouse;
-    secondary_mouse = saved_secondary_mouse;
-    primary_keys = saved_primary_keys;
-    secondary_keys = saved_secondary_keys;
+    set_input(frozen_input);
     command_discard_all_input();
 }
 
@@ -653,8 +697,12 @@ static void process_other_command(int16_t command)
     case COMMAND_UNFREEZE_GAME: unfreeze_game(); break;
     case COMMAND_ENTRANCE_ENTER: case COMMAND_ENTRANCE_ENTER_DUNGEON_B: g_new_game = ENTRANCE_NEW_GAME; break;
     case COMMAND_ENTRANCE_RESUME: g_new_game = ENTRANCE_RESUME; break;
-    case COMMAND_QUIT: g_new_game = ENTRANCE_QUIT; break;
-    default: break; /* ponytail: save (140), credits (203), dialogs and name entry are not ported yet */
+    case COMMAND_SAVE_GAME: save_game(); break;
+    case COMMAND_DIALOG_CHOICE_FIRST: case COMMAND_DIALOG_CHOICE_FIRST + 1: case COMMAND_DIALOG_CHOICE_FIRST + 2:
+    case COMMAND_DIALOG_CHOICE_FIRST + 3: g_dialog_choice = (int16_t)(command - COMMAND_DIALOG_CHOICE_FIRST + 1); break;
+    case COMMAND_RESTART_GAME: g_restart_requested = 1; break;
+    case COMMAND_QUIT: g_quit_requested = 1; break;
+    default: break; /* ponytail: credits (203) and name entry are not ported yet */
     }
 }
 
@@ -699,8 +747,23 @@ int command_process_queue(void)
         click_in_dungeon_view((int16_t)(x - kaos_s16(VIEWPORT_ORIGIN)), (int16_t)(y - kaos_s16(VIEWPORT_ORIGIN + 2)));
     } else if (command == COMMAND_CLICK_PANEL) {
         if (g_candidate_champion_ordinal) click_in_candidate_panel(x, y);
+        else panel_click_in_chest(x, y);
     } else {
         process_other_command(command);
     }
     return 1;
+}
+
+/* A new or loaded game starts without a pressed eye, mouth or wall, a highlight, a sleeping input
+   speed, or waiting commands; the game input tables are active. */
+void command_reset(void)
+{
+    left_button_down = pressing_eye = pressing_mouth = pressing_fake_wall = 0;
+    dragged_icon_cell_plus_1 = highlight_enabled = 0;
+    g_mouse_pointer_hidden = g_stop_waiting_for_input = g_game_frozen = 0;
+    g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
+    queue_first = queue_count = 0;
+    g_input_received = 0;
+    g_last_key = 0;
+    command_set_game_input();
 }

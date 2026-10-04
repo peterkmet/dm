@@ -156,7 +156,7 @@ static int16_t cast_potion(uint16_t champion_index, uint16_t potion_type, int16_
     }
     uint16_t empty_weight = get_object_weight(flask);
     potion_set_type(flask, potion_type);
-    REC(flask)[3] = (uint8_t)(power * POTION_POWER_PER_LEVEL + (random16() & 15));   /* potion power */
+    potion_set_power(flask, power * POTION_POWER_PER_LEVEL + (random16() & 15));
     c->load += get_object_weight(flask) - empty_weight;
     if (champion_index + 1 == g_inventory_champion_ordinal) {
         c->attributes |= CHAMPION_ATTR_LOAD;

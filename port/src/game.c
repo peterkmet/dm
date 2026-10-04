@@ -96,6 +96,24 @@ void timeline_init(void)
     timeline_add_watchdog_event();
 }
 
+/* Rebuilds the free list and the high water mark from the slot types (before a save, after a load). */
+void timeline_reset(void)
+{
+    int16_t last_free = -1;
+    g_event_high_water = 0;
+    g_first_unused_event_index = -1;
+    for (int16_t i = 0; i < g_event_max_count; i++) {
+        if (g_timeline_events[i].type) {
+            g_event_high_water = (uint16_t)(i + 1);
+            continue;
+        }
+        if (last_free == -1) g_first_unused_event_index = i;
+        else g_timeline_events[last_free].map_time = (uint32_t)i;
+        g_timeline_events[i].map_time = 0xffff;
+        last_free = i;
+    }
+}
+
 /* Earlier time first, then higher type and priority, then the lower slot. */
 int16_t timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b)
 {

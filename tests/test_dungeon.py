@@ -197,6 +197,61 @@ def test_bad_header_fails(lib, tmp_path, change):
     assert not u8p.in_dll(lib, "g_dungeon_header")
 
 
+THING_SIZES = [4, 6, 4, 8, 16, 4, 4, 4, 4, 8, 4, 0, 0, 0, 8, 4]
+
+
+def offsets(d):
+    """Byte offsets of the parts of a plain dungeon: columns, square first things, records of each thing type."""
+    maps = d[4]
+    columns = 44 + 16 * maps
+    width = sum((struct.unpack_from(">H", d, 44 + 16 * m + 8)[0] >> 6 & 31) + 1 for m in range(maps))
+    first_things = columns + 2 * width
+    p = first_things + 2 * struct.unpack_from(">H", d, 10)[0] + 2 * struct.unpack_from(">H", d, 6)[0]
+    records = []
+    for t in range(16):
+        records.append(p)
+        p += struct.unpack_from(">H", d, 12 + 2 * t)[0] * THING_SIZES[t]
+    return columns, first_things, records
+
+
+def bad_next_link(d):
+    d[offsets(d)[2][0] : offsets(d)[2][0] + 2] = b"\x03\xff"  # door 1023
+
+
+def bad_next_link_type(d):
+    d[offsets(d)[2][0] : offsets(d)[2][0] + 2] = b"\x2c\x00"  # type 11 has no records
+
+
+def bad_first_thing(d):
+    d[offsets(d)[1] : offsets(d)[1] + 2] = b"\x0b\xff"  # teleporter 1023
+
+
+def bad_column_index(d):
+    d[offsets(d)[0] : offsets(d)[0] + 2] = b"\xff\x00"
+
+
+def bad_teleporter_target(d):
+    teleporters = offsets(d)[2][1]
+    used = next(i for i in range(0, 6 * 1024, 6) if d[teleporters + i : teleporters + i + 2] != b"\xff\xff")
+    d[teleporters + used + 4] = 0xFF  # target map 255
+
+
+@pytest.mark.parametrize(
+    "change", [bad_next_link, bad_next_link_type, bad_first_thing, bad_column_index, bad_teleporter_target]
+)
+def test_corrupt_links_fail(lib, tmp_path, change):
+    need(lib, "Dungeon.DAT")
+    d = plain_dungeon(lib)
+    path = tmp_path / "bad.DAT"
+    path.write_bytes(d)
+    assert lib.load_dungeon(str(path).encode()) == 1
+    assert lib.dungeon_validate() == 1
+    change(d)
+    path.write_bytes(d)
+    assert lib.load_dungeon(str(path).encode()) == 0
+    assert lib.dungeon_map_count() == 0
+
+
 @pytest.mark.parametrize("cut", [9, 28, 1000, 20000])
 def test_truncated_file_fails(lib, tmp_path, cut):
     need(lib, "Dungeon.DAT")

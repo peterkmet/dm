@@ -1,4 +1,5 @@
 #include "champion.h"
+#include "command.h"
 #include "dungeon.h"
 #include "ftl.h"
 #include "graphics.h"
@@ -678,14 +679,17 @@ void champion_drop_all_objects(uint16_t champion_index)
     }
 }
 
-/* Drops all objects and the champion's bones on the party square. The party dies with its last champion. */
+/* Closes the champion's inventory and action menu, drops all objects and the bones on the party
+   square, and passes the leader and the spell casting to the first living champion. The party dies
+   with its last champion. */
 void champion_kill(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
+    if (champion_index + 1 == g_acting_champion_ordinal)
+        menus_clear_acting_champion();
     c->current_health = 0;
     c->attributes |= CHAMPION_ATTR_STATUS_BOX;
-    if (champion_index + 1 == g_inventory_champion_ordinal)
-        g_inventory_champion_ordinal = 0;
+    command_release_dead_champion(champion_index);
     champion_drop_all_objects(champion_index);
     uint16_t bones = get_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
     if (bones != THING_NONE) {
@@ -700,6 +704,7 @@ void champion_kill(uint16_t champion_index)
     c->maximum_damage_received = 0;
     if (c->poison_event_count)
         champion_unpoison(champion_index);
+    champion_draw_state(champion_index);
     uint16_t alive = 0;
     while (alive < g_party_champion_count && !g_champions[alive].current_health)
         alive++;
@@ -710,7 +715,9 @@ void champion_kill(uint16_t champion_index)
     if (champion_index == g_leader_index)
         command_set_leader(alive);
     if (champion_index == g_magic_caster_champion_index)
-        g_magic_caster_champion_index = alive;
+        menus_set_magic_caster(alive);
+    else
+        menus_draw_spell_area_controls(g_magic_caster_champion_index);
 }
 
 /* Each poison step deals attack / 64 (at least 1) and schedules the next step with attack - 1. */

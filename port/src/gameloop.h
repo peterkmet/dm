@@ -12,6 +12,10 @@ int gameloop_load_data(const char *dir);
 void entrance_draw(void);
 /* Loads Dungeon.DAT from dir and starts a new game on the start square. Returns 1 on success. */
 int gameloop_new_game(const char *dir);
+/* start_game for a game that savegame_load restored: the party map, "GAME LOADED", the interface. */
+void gameloop_start_loaded_game(void);
+/* The dungeon view of the party in the light of the party (draw_dungeon_view). */
+void gameloop_draw_view(void);
 /* Runs the waiting commands of one 50 Hz frame. Returns 1 when the wait for input is over and a
    game tick is due (gameloop_tick). */
 int gameloop_frame(void);

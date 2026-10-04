@@ -91,6 +91,7 @@ int32_t scale_value(uint16_t a, int16_t shift, uint16_t b);
 void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t *map_x, int16_t *map_y);
 
 void timeline_init(void);
+void timeline_reset(void);
 int16_t timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b);
 uint16_t timeline_get_index(uint16_t event_index);
 void timeline_fix_chronology(uint16_t timeline_index);

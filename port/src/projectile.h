@@ -78,6 +78,7 @@ int16_t group_is_fluxcage_on_square(int16_t x, int16_t y);
 uint16_t group_get_lord_chaos_on_square(int16_t x, int16_t y);
 void group_fluxcage_action(int16_t x, int16_t y);
 void group_fuse_action(int16_t x, int16_t y);
+void projectile_reset(void);
 
 int16_t move_is_killed_by_projectile_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing);
 void timeline_trigger_projectile_launcher(uint16_t sensor, const TimelineEvent *event);

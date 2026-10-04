@@ -35,6 +35,7 @@ enum { SOUND_SWALLOW = 8 };
 int16_t g_inventory_champion_ordinal;
 int16_t g_leader_empty_handed = 1;
 uint16_t g_open_chest_slots[SLOT_CHEST_COUNT] = {THING_NONE, THING_NONE, THING_NONE, THING_NONE, THING_NONE, THING_NONE, THING_NONE, THING_NONE};
+uint16_t g_open_chest = THING_NONE;
 
 /* The object info record of an object thing, or -1. */
 int16_t get_object_info_index(uint16_t thing)
@@ -236,6 +237,8 @@ uint16_t champion_get_object_removed_from_slot(uint16_t champion_index, uint16_t
         }
         if (is_torch(icon))
             weapon_set_lit(thing, 0);
+        if (inventory_open && slot == SLOT_HAND_ACTION && icon == ICON_CHEST_CLOSED && thing == g_open_chest)
+            close_chest();
         if (inventory_open && slot == SLOT_HAND_ACTION && (icon == ICON_CHEST_CLOSED || is_scroll(icon)))
             c->attributes |= CHAMPION_ATTR_PANEL;
     }
@@ -288,6 +291,8 @@ void champion_click_on_slot_box(uint16_t slot_box)
             return;
         slot = slot_box & 1;
     } else {
+        if (!g_inventory_champion_ordinal)
+            return;
         champion_index = g_inventory_champion_ordinal - 1;
         slot = slot_box - HAND_BOX_COUNT;
     }
@@ -304,6 +309,41 @@ void champion_click_on_slot_box(uint16_t slot_box)
     }
     if (hand != THING_NONE)
         champion_add_object_in_slot(champion_index, hand, slot);
+}
+
+/* Opens a chest in the panel: its first 8 objects go to the chest slots, the other slots are empty. */
+void chest_open(uint16_t chest)
+{
+    uint16_t thing = container_first_thing(chest);
+    g_open_chest = chest;
+    for (int i = 0; i < SLOT_CHEST_COUNT; i++) {
+        g_open_chest_slots[i] = thing == THING_END ? THING_NONE : thing;
+        if (thing != THING_END)
+            thing = get_next_thing(thing);
+    }
+}
+
+/* Closes the open chest: the objects in the chest slots become its content, in slot order. */
+void close_chest(void)
+{
+    if (g_open_chest == THING_NONE)
+        return;
+    uint16_t chest = g_open_chest, last = THING_NONE;
+    g_open_chest = THING_NONE;
+    container_set_first_thing(chest, THING_END);
+    for (int i = 0; i < SLOT_CHEST_COUNT; i++) {
+        uint16_t thing = g_open_chest_slots[i];
+        if (thing == THING_NONE)
+            continue;
+        g_open_chest_slots[i] = THING_NONE;
+        if (last == THING_NONE) {
+            thing_set_next(thing, THING_END);
+            container_set_first_thing(chest, thing);
+        } else {
+            link_thing_to_list(thing, last, -1, 0);
+        }
+        last = thing;
+    }
 }
 
 /* Heals wounds at random; tries again (up to 10 times) until at least one wound heals. */
@@ -405,4 +445,12 @@ void process_click_on_mouth(void)
     }
     sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, 0);
     c->attributes |= CHAMPION_ATTR_STATISTICS;
+}
+
+/* No inventory and no chest are open at the start of a game. */
+void inventory_reset(void)
+{
+    g_inventory_champion_ordinal = 0;
+    g_open_chest = THING_NONE;
+    for (int i = 0; i < SLOT_CHEST_COUNT; i++) g_open_chest_slots[i] = THING_NONE;
 }

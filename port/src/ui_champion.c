@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "champion.h"
+#include "command.h"
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
@@ -22,6 +23,11 @@
 #define PORTRAIT_SIZE 0x102958           /* g_portrait_width, g_portrait_height */
 #define CHAMPION_ICON_SIZE 0x10295c      /* g_champion_icon_width, g_champion_icon_height */
 #define BAR_SHADOW 0x102980              /* offset of the panel bar shadow */
+#define DIRECTION_STRINGS 0x101e92       /* g_direction_string_indices[4] */
+#define LIST_SEPARATOR 0x101ebe          /* ", " */
+#define BONES_SEPARATOR 0x101ec6         /* " " between champion name and "BONES" */
+#define ATTRIBUTES_SUFFIX 0x101ec8       /* ")" */
+#define ATTRIBUTES_PREFIX 0x101eca       /* "(" */
 
 #define BAR_COUNT 3                      /* health, stamina, mana */
 #define BAR_ZONE_STEP 4
@@ -33,8 +39,22 @@
 #define LOAD_WARNING_NUMERATOR 5         /* yellow above 5/8 of the maximum load */
 #define LOAD_WARNING_DENOMINATOR 8
 #define VALUE_WIDTH 3
+#define PANEL_OBJECT_TEXT_Y 87           /* baseline of the first description line */
+#define PANEL_LINE_WRAP 18               /* longer lines break at a space */
+#define SCROLL_TEXT_SIZE 200
+#define SCROLL_FONT_SHIFT 0x60           /* '{' to '~' print as scroll font codes 27-30 */
+#define POTION_POWER_SYMBOL_FIRST '_'    /* + power / 40: the power rune before the name */
+#define POTION_POWER_SYMBOL_STEP 40
+#define TEXT_MODE_SCROLL 2
+#define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
+#define SLOT_BOX_ACTION_HAND (UI_SLOT_BOX_INVENTORY_FIRST + SLOT_HAND_ACTION)
+#define SLOT_BOX_CHEST_FIRST (UI_SLOT_BOX_INVENTORY_FIRST + SLOT_CHEST_FIRST)
+
+/* Object attribute bits of the description; the names are strings TEXT_CONSUMABLE + bit. */
+enum { ATTRIBUTE_CONSUMABLE = 1, ATTRIBUTE_POISONED = 2, ATTRIBUTE_BROKEN = 4, ATTRIBUTE_CURSED = 8, ATTRIBUTE_COUNT = 4 };
 
 int16_t g_champion_portrait_indices[4];
+int16_t g_panel_content;
 
 /* A number as text: right aligned in width characters, or not padded. */
 static const char *number(char *buf, uint16_t value, int pad, int width)
@@ -315,6 +335,7 @@ void draw_panel_food_water_poisoned(void)
 {
     const Champion *c = &g_champions[g_inventory_champion_ordinal - 1];
     Bitmap *vp = ui_viewport();
+    close_chest();
     ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
     ui_blit_graphic(vp, GFX_PANEL_FOOD_LABEL, ZONE_PANEL_FOOD_LABEL, COLOR_DARKEST_GRAY);
     ui_blit_graphic(vp, GFX_PANEL_WATER_LABEL, ZONE_PANEL_WATER_LABEL, COLOR_DARKEST_GRAY);
@@ -323,16 +344,22 @@ void draw_panel_food_water_poisoned(void)
     food_water_bar(c->water, ZONE_PANEL_WATER_BAR, COLOR_BLUE);
 }
 
-/* Draws the inventory panel: resurrect/reincarnate for a candidate, else food and water.
-   ponytail: scroll and chest panels (object in the action hand) show food and water; add them
-   with the panel object drawing. */
+/* Draws the inventory panel: resurrect/reincarnate for a candidate, the open scroll or chest in
+   the action hand, else food and water. */
 void draw_panel(void)
 {
+    close_chest();
     if (g_candidate_champion_ordinal) {
+        g_panel_content = PANEL_CONTENT_RESURRECT;
         ui_blit_graphic(ui_viewport(), GFX_PANEL_RESURRECT_REINCARNATE, ZONE_PANEL, COLOR_DARK_GREEN);
         return;
     }
-    draw_panel_food_water_poisoned();
+    uint16_t thing = g_champions[g_inventory_champion_ordinal - 1].slots[SLOT_HAND_ACTION];
+    g_panel_content = thing == THING_NONE ? PANEL_CONTENT_FOOD_WATER
+                    : THING_TYPE(thing) == THING_SCROLL ? PANEL_CONTENT_SCROLL
+                    : THING_TYPE(thing) == THING_CONTAINER ? PANEL_CONTENT_CHEST : PANEL_CONTENT_FOOD_WATER;
+    if (g_panel_content == PANEL_CONTENT_FOOD_WATER) draw_panel_food_water_poisoned();
+    else draw_panel_object(thing, 0);
 }
 
 /* The position of zone (a 1 x 1 box). */
@@ -353,6 +380,7 @@ void draw_champion_skills_and_statistics(void)
     const Champion *c = &g_champions[ci];
     Bitmap *vp = ui_viewport();
     char s[40], a[8], b[8];
+    close_chest();
     ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
     zone_point(ZONE_PANEL_SKILLS, &x, &y);
     for (uint16_t k = 0; k < BASE_SKILL_COUNT; k++) {
@@ -401,9 +429,215 @@ void inventory_draw_open(int16_t champion_index)
 void inventory_draw_close(int16_t champion_index)
 {
     g_inventory_champion_ordinal = 0;
+    close_chest();
     if (g_champions[champion_index].current_health && !g_candidate_champion_ordinal) {
         g_champions[champion_index].attributes |= CHAMPION_ATTR_STATUS_BOX;
         champion_draw_state((uint16_t)champion_index);
     }
     if (!g_party_is_sleeping) menus_draw_movement_arrows();
+}
+
+static void append(char *dst, size_t size, const char *s)
+{
+    size_t n = strlen(dst);
+    snprintf(dst + n, size - n, "%s", s);
+}
+
+/* The attribute list "(POISONED, BROKEN AND CURSED)" of the bits in both masks, or "" for none. */
+static void attributes_text(uint16_t potential, uint16_t actual, char *dst, size_t size)
+{
+    uint16_t bits = potential & actual;
+    int16_t left = 0;
+    for (int16_t i = 0; i < ATTRIBUTE_COUNT; i++) left += bits >> i & 1;
+    dst[0] = 0;
+    if (!left) return;
+    append(dst, size, (const char *)kaos_ptr(ATTRIBUTES_PREFIX));
+    for (int16_t i = 0; i < ATTRIBUTE_COUNT; i++) {
+        if (!(bits >> i & 1)) continue;
+        append(dst, size, ui_string((int16_t)(TEXT_CONSUMABLE + i)));
+        left--;
+        if (left > 1) append(dst, size, (const char *)kaos_ptr(LIST_SEPARATOR));
+        else if (left == 1) append(dst, size, ui_string(TEXT_AND));
+    }
+    append(dst, size, (const char *)kaos_ptr(ATTRIBUTES_SUFFIX));
+}
+
+/* The object panel text: the name (bones with the champion name, a potion with its power rune
+   for a priest above level 1) and the description lines (burnt out, compass direction, waterskin
+   level, attributes, weight). Returns the line count. */
+int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE])
+{
+    int16_t icon = object_get_icon_index(thing), n = 0;
+    uint16_t type = THING_TYPE(thing), potential = 0, actual = 0, weight = get_object_weight(thing);
+    if (icon == ICON_BONES)
+        snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[junk_charges(thing)].name, (const char *)kaos_ptr(BONES_SEPARATOR), ui_object_name(icon));
+    else if (type == THING_POTION && icon != ICON_WATER_FLASK && g_inventory_champion_ordinal &&
+             champion_get_skill_level((int16_t)(g_inventory_champion_ordinal - 1), SKILL_PRIEST) > 1)
+        snprintf(name, PANEL_LINE_SIZE, "%c %s", POTION_POWER_SYMBOL_FIRST + potion_power(thing) / POTION_POWER_SYMBOL_STEP, ui_object_name(icon));
+    else
+        snprintf(name, PANEL_LINE_SIZE, "%s", ui_object_name(icon));
+    switch (type) {
+    case THING_WEAPON:
+        potential = ATTRIBUTE_POISONED | ATTRIBUTE_BROKEN | ATTRIBUTE_CURSED;
+        actual = (weapon_is_poisoned(thing) ? ATTRIBUTE_POISONED : 0) | (weapon_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) |
+                 (object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
+        if (icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST && !weapon_charges(thing))
+            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", ui_string(TEXT_BURNT_OUT));
+        break;
+    case THING_ARMOUR:
+        potential = ATTRIBUTE_BROKEN | ATTRIBUTE_CURSED;
+        actual = (armour_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) | (object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
+        break;
+    case THING_POTION:
+        potential = ATTRIBUTE_CONSUMABLE;
+        actual = tables_object_info(get_object_info_index(thing))->allowed_slots;
+        break;
+    case THING_JUNK:
+        if (icon <= ICON_COMPASS_NORTH + DIRECTION_WEST)
+            snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s", ui_string(TEXT_PARTY_FACING), ui_string(kaos_s16(DIRECTION_STRINGS + 2 * icon)));
+        else if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
+            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", ui_string((int16_t)(TEXT_WATERSKIN_EMPTY + junk_charges(thing))));
+        else {
+            potential = ATTRIBUTE_CONSUMABLE;
+            actual = tables_object_info(get_object_info_index(thing))->allowed_slots;
+        }
+        break;
+    }
+    attributes_text(potential, actual, lines[n], PANEL_LINE_SIZE);
+    if (lines[n][0]) n++;
+    char a[8], b[8];
+    snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s%s%s%s", ui_string(TEXT_WEIGHS), number(a, weight / 10, 0, 0), ui_string(TEXT_DECIMAL_POINT),
+             number(b, weight % 10, 0, 0), ui_string(TEXT_KG_PERIOD)); /* the weight is in tenths of a kilogram */
+    return n;
+}
+
+/* Prints a description line at (x, *y) and moves *y down; a line longer than 18 characters
+   breaks at the last space within the first 18. */
+static void print_panel_line(int16_t x, int16_t *y, const char *text)
+{
+    char buf[PANEL_LINE_SIZE];
+    snprintf(buf, sizeof buf, "%s", text);
+    for (char *s = buf; *s;) {
+        char *rest = s + strlen(s);
+        if (strlen(s) > PANEL_LINE_WRAP) {
+            char *space = s + PANEL_LINE_WRAP - 1;
+            while (space > s && *space != ' ') space--;
+            *space = 0;
+            rest = space + 1;
+        }
+        text_draw(ui_viewport(), x, *y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
+        *y += MESSAGE_ROW_HEIGHT;
+        s = rest;
+    }
+}
+
+/* Draws an object icon in an icon zone of the viewport. */
+static void draw_icon_to_viewport(int16_t icon, int16_t zone)
+{
+    uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
+    Bitmap bm = { UI_ICON_SIZE, UI_ICON_SIZE, px };
+    Box b;
+    if (!ui_icon_zone_box(zone, 0, &b)) return;
+    ui_extract_icon(icon, &bm);
+    draw_blit(&bm, 0, 0, ui_viewport(), &b, COLOR_NONE, 0);
+}
+
+/* Prints one scroll line centered on x in the scroll font: letters and '{' to '~' have their own codes. */
+static void draw_scroll_line(int16_t x, int16_t y, char *text)
+{
+    int w, h;
+    for (char *c = text; *c; c++) {
+        if (*c >= 'A' && *c <= 'Z') *c = (char)(*c - 'A' + 1);
+        else if (*c >= '{') *c = (char)(*c - SCROLL_FONT_SHIFT);
+    }
+    if (text_size(text, &w, &h)) text_draw(ui_viewport(), x - (w >> 1), y, COLOR_BLACK, COLOR_WHITE, text);
+}
+
+/* Draws the open scroll with its text, vertically centered. */
+static void draw_panel_scroll(uint16_t scroll)
+{
+    char text[SCROLL_TEXT_SIZE];
+    int16_t x, y, count = 1;
+    decode_text(text, sizeof text, (uint16_t)(THING_TEXT << 10 | scroll_text_index(scroll)), TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
+    char *rest = strchr(text, '\n');
+    if (rest) {
+        *rest++ = 0;
+        char *end = rest + strlen(rest);
+        for (const char *c = rest; *c; c++) count += *c == '\n';
+        /* the count reads the NUL of the first line when the rest is empty, as the original does */
+        if (end[-1] != '\n') count++;
+        else if (end[-2] == '\n') count--;
+    } else {
+        rest = text + strlen(text);
+    }
+    ui_blit_graphic(ui_viewport(), GFX_PANEL_SCROLL, ZONE_PANEL, COLOR_RED);
+    zone_point(ZONE_PANEL_SCROLL_CENTER, &x, &y);
+    y = (int16_t)(y - (((MESSAGE_ROW_HEIGHT * count - TEXT_BASELINE_GAP - 1) >> 1) - TEXT_LINE_HEIGHT));
+    draw_scroll_line(x, y, text);
+    while (*rest) {
+        char *nl = strchr(rest, '\n');
+        y += MESSAGE_ROW_HEIGHT;
+        if (nl) *nl = 0;
+        draw_scroll_line(x, y, rest);
+        rest = nl ? nl + 1 : rest + strlen(rest);
+    }
+}
+
+/* Opens a chest in the panel and draws its slots. While the eye is pressed, the action hand keeps
+   its icon. */
+static void open_and_draw_chest(uint16_t chest, int16_t pressing_eye)
+{
+    if (g_open_chest == chest) return;
+    close_chest();
+    chest_open(chest);
+    if (!pressing_eye) ui_draw_icon_in_slot_box(SLOT_BOX_ACTION_HAND, ICON_CHEST_OPEN);
+    ui_blit_graphic(ui_viewport(), GFX_PANEL_CHEST, ZONE_PANEL, COLOR_RED);
+    for (int16_t i = 0; i < SLOT_CHEST_COUNT; i++) {
+        uint16_t thing = g_open_chest_slots[i];
+        ui_draw_icon_in_slot_box((int16_t)(SLOT_BOX_CHEST_FIRST + i), thing == THING_NONE ? -1 : object_get_icon_index(thing));
+    }
+}
+
+/* Draws an object in the panel: the open scroll, the open chest, or the name, icon, and
+   description of any other object; then the arrow, or the eye while it is pressed. */
+void draw_panel_object(uint16_t thing, int16_t pressing_eye)
+{
+    Bitmap *vp = ui_viewport();
+    close_chest();
+    if (THING_TYPE(thing) == THING_SCROLL) {
+        draw_panel_scroll(thing);
+    } else if (THING_TYPE(thing) == THING_CONTAINER) {
+        open_and_draw_chest(thing, pressing_eye);
+    } else {
+        char name[PANEL_LINE_SIZE], lines[PANEL_LINE_COUNT][PANEL_LINE_SIZE];
+        int16_t count = panel_object_text(thing, name, lines), x, y;
+        ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
+        ui_blit_graphic(vp, GFX_PANEL_OBJECT_CIRCLE, ZONE_PANEL_OBJECT_CIRCLE, COLOR_DARKEST_GRAY);
+        ui_print_zone(vp, ZONE_PANEL_OBJECT_NAME, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, name);
+        draw_icon_to_viewport(object_get_icon_index(thing), ZONE_PANEL_OBJECT_ICON);
+        zone_point(ZONE_PANEL_OBJECT_TEXT, &x, &y);
+        y = PANEL_OBJECT_TEXT_Y;
+        for (int16_t i = 0; i < count; i++) print_panel_line(x, &y, lines[i]);
+    }
+    ui_blit_graphic(vp, pressing_eye ? GFX_PANEL_EYE : GFX_PANEL_ARROW, ZONE_PANEL_ARROW_OR_EYE, COLOR_RED);
+}
+
+/* The panel while the eye is pressed: the leader hand object, or the skills and statistics.
+   ponytail: the leader hand object name stays; the original clears it until the eye is released. */
+void draw_panel_eye(void)
+{
+    if (!g_leader_empty_handed) draw_panel_object(g_leader_hand_object, 1);
+    else draw_champion_skills_and_statistics();
+}
+
+/* A click in the open chest panel swaps the leader hand object with the clicked chest slot. */
+void panel_click_in_chest(int16_t x, int16_t y)
+{
+    if (g_panel_content != PANEL_CONTENT_CHEST || g_leader_index == -1) return;
+    int16_t command = ui_command_from_mouse(UI_INPUT_CHEST, x, y, UI_BUTTON_LEFT);
+    if (!command) return;
+    uint16_t slot_box = (uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST);
+    champion_click_on_slot_box(slot_box);
+    champion_draw_slot((uint16_t)(g_inventory_champion_ordinal - 1), (uint16_t)(slot_box - UI_SLOT_BOX_INVENTORY_FIRST));
+    ui_draw_viewport();
 }

@@ -1,14 +1,34 @@
 #include "savefile.h"
+#include "random.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 /* Header offsets */
 #define H_PAYLOAD 0x100
+#define H_PAYLOAD_KEY 0x14
+#define H_GROUP_BYTES 8
+#define H_GROUP_COUNT 32
+#define H_BYTE_12A 0x12a
 #define H_PLATFORM 0x12b
+#define H_DIALOG_CHOICE 0x130
+#define H_GAME_ID 0x132
+#define H_KEY_COUNT 16
+#define H_DUNGEON_ID 0x178
+#define H_EXTRA 0x17a
 #define H_KEYS 0x136
 #define H_CHECKSUMS 0x156
 #define H_FORMAT 0x176
+
+/* Globals block offsets that give the block sizes. */
+#define G_EVENT_MAX_COUNT 28
+#define G_MAX_ACTIVE_GROUP_COUNT 46
+
+#define SAVE_FORMAT 3
+#define PLATFORM_AMIGA 5      /* save_game writes 5; a load refuses 1 */
+#define PLATFORM_REFUSED 1
+#define HEADER_BYTE_12A 1     /* g_save_header_byte_12a default */
+#define DIALOG_CHOICE_SAVE 1
 
 static uint16_t rd16(const uint8_t *p) { return (uint16_t)(p[0] << 8 | p[1]); }
 static void wr16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)(v >> 8); p[1] = (uint8_t)v; }
@@ -28,11 +48,11 @@ uint16_t save_block_xor(uint8_t *bytes, uint16_t key, uint16_t word_count) {
 /* Block sizes as 16-bit values, as the original computes them from the globals block */
 static uint16_t block_size(int i, const uint8_t *globals) {
     switch (i) {
-    case 0: return 0x80;
-    case 1: return (uint16_t)(rd16(globals + 46) << 4);
-    case 2: return 0x580;
-    case 3: return (uint16_t)(rd16(globals + 28) * 10);
-    default: return (uint16_t)(rd16(globals + 28) * 2);
+    case SAVE_BLOCK_GLOBALS: return SAVE_GLOBALS_BYTES;
+    case SAVE_BLOCK_GROUPS: return (uint16_t)(rd16(globals + G_MAX_ACTIVE_GROUP_COUNT) * SAVE_ACTIVE_GROUP_BYTES);
+    case SAVE_BLOCK_CHAMPIONS: return SAVE_CHAMPIONS_BYTES;
+    case SAVE_BLOCK_EVENTS: return (uint16_t)(rd16(globals + G_EVENT_MAX_COUNT) * SAVE_EVENT_BYTES);
+    default: return (uint16_t)(rd16(globals + G_EVENT_MAX_COUNT) * 2);
     }
 }
 
@@ -58,8 +78,8 @@ int16_t save_decode(const uint8_t *file, uint32_t size, SaveFile *s) {
     if (!file || size < SAVE_HEADER_BYTES || !(s->data = malloc(size))) return 0;
     uint8_t *d = s->header = s->data;
     memcpy(d, file, size);
-    save_block_xor(d + H_PAYLOAD, rd16(d + 0x14), 0x80);
-    if (header_chain(d, 0, 0) != payload_sum(d) || d[H_PLATFORM] == 1 || rd16(d + H_FORMAT) != 3) goto fail;
+    save_block_xor(d + H_PAYLOAD, rd16(d + H_PAYLOAD_KEY), SAVE_PAYLOAD_WORDS);
+    if (header_chain(d, 0, 0) != payload_sum(d) || d[H_PLATFORM] == PLATFORM_REFUSED || rd16(d + H_FORMAT) != SAVE_FORMAT) goto fail;
     uint32_t pos = SAVE_HEADER_BYTES;
     for (int i = 0; i < SAVE_BLOCKS; i++) {
         uint16_t n = block_size(i, s->block[0]);
@@ -67,7 +87,7 @@ int16_t save_decode(const uint8_t *file, uint32_t size, SaveFile *s) {
         s->block[i] = d + pos;
         s->block_size[i] = n;
         uint16_t sum = save_block_xor(d + pos, rd16(d + H_KEYS + 2 * i), n >> 1);
-        if (i != 2 && sum != rd16(d + H_CHECKSUMS + 2 * i)) goto fail; /* load_game ignores the champions result */
+        if (i != SAVE_BLOCK_CHAMPIONS && sum != rd16(d + H_CHECKSUMS + 2 * i)) goto fail; /* load_game ignores the champions result */
         pos += n;
     }
     if (size - pos < SAVE_PORTRAITS_BYTES) goto fail;
@@ -98,7 +118,7 @@ uint8_t *save_encode(const SaveFile *s, uint32_t *size) {
         pos += n;
     }
     header_chain(out, 1, payload_sum(out));
-    save_block_xor(out + H_PAYLOAD, rd16(out + 0x14), 0x80);
+    save_block_xor(out + H_PAYLOAD, rd16(out + H_PAYLOAD_KEY), SAVE_PAYLOAD_WORDS);
     memcpy(out + pos, s->portraits, SAVE_PORTRAITS_BYTES);
     if (s->dungeon_size) memcpy(out + pos + SAVE_PORTRAITS_BYTES, s->dungeon, s->dungeon_size);
     *size = total;
@@ -109,3 +129,24 @@ void save_free(SaveFile *s) {
     free(s->data);
     memset(s, 0, sizeof *s);
 }
+
+/* save_game and save_write_header: the 16 block keys, then the random chain words (the last w3
+   comes from save_encode), then the fields of the payload. */
+void save_header_init(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const uint8_t *extra)
+{
+    memset(h, 0, SAVE_HEADER_BYTES);
+    for (int i = 0; i < H_KEY_COUNT; i++) wr16(h + H_KEYS + 2 * i, random16());
+    for (int i = 0; i < H_GROUP_COUNT * H_GROUP_BYTES / 2 - 1; i++) wr16(h + 2 * i, random16());
+    h[H_BYTE_12A] = HEADER_BYTE_12A;
+    h[H_PLATFORM] = PLATFORM_AMIGA;
+    wr16(h + H_DIALOG_CHOICE, DIALOG_CHOICE_SAVE);
+    wr16(h + H_GAME_ID, (uint16_t)(game_id >> 16));
+    wr16(h + H_GAME_ID + 2, (uint16_t)game_id);
+    wr16(h + H_FORMAT, SAVE_FORMAT);
+    wr16(h + H_DUNGEON_ID, dungeon_id);
+    if (extra) memcpy(h + H_EXTRA, extra, SAVE_HEADER_EXTRA_BYTES);
+}
+
+uint32_t save_header_game_id(const uint8_t *h) { return (uint32_t)rd16(h + H_GAME_ID) << 16 | rd16(h + H_GAME_ID + 2); }
+uint16_t save_header_dungeon_id(const uint8_t *h) { return rd16(h + H_DUNGEON_ID); }
+const uint8_t *save_header_extra(const uint8_t *h) { return h + H_EXTRA; }

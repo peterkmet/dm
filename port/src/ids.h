@@ -13,7 +13,12 @@
 #define GFX_DAMAGE_STATUS_BOX 15
 #define GFX_DAMAGE_PORTRAIT 16
 #define GFX_INVENTORY 17
+#define GFX_PANEL_ARROW 18
+#define GFX_PANEL_EYE 19
 #define GFX_PANEL_EMPTY 20
+#define GFX_PANEL_SCROLL 23
+#define GFX_PANEL_CHEST 25
+#define GFX_PANEL_OBJECT_CIRCLE 29
 #define GFX_CHAMPION_PORTRAITS 26
 #define GFX_CHAMPION_ICONS 28
 #define GFX_PANEL_FOOD_LABEL 30
@@ -69,6 +74,12 @@
 #define ZONE_PANEL_FOOD_LABEL 500
 #define ZONE_PANEL_WATER_LABEL 501
 #define ZONE_PANEL_POISONED_LABEL 502
+#define ZONE_PANEL_ARROW_OR_EYE 503
+#define ZONE_PANEL_OBJECT_CIRCLE 504
+#define ZONE_PANEL_OBJECT_ICON 505
+#define ZONE_PANEL_OBJECT_NAME 506
+#define ZONE_PANEL_OBJECT_TEXT 556       /* x of the object description lines */
+#define ZONE_PANEL_SCROLL_CENTER 560
 #define ZONE_MOUTH 545
 #define ZONE_EYE 546
 #define ZONE_HEALTH_LABEL 547            /* stamina + 1, mana + 2 */
@@ -86,12 +97,20 @@
 #define ICON_CHEST_CLOSED 144
 #define ICON_CHEST_OPEN 145
 #define ICON_BONES 147
+#define ICON_WATER_FLASK 163
 #define ICON_EMPTY_BODY_SLOT_FIRST 212   /* + 2 * slot, + 1 wounded; slots 0-5 */
 #define ICON_EMPTY_SLOT 204
 #define ICON_EMPTY_NECK_POUCH_BASE 198   /* + slot for slots 10-13 */
 #define ICON_EMPTY_ACTION_HAND 201       /* action area */
 
 /* Strings of graphic 700. */
+#define TEXT_PARTY_FACING 21
+#define TEXT_CONSUMABLE 26               /* + object attribute bit: consumable, poisoned, broken, cursed */
+#define TEXT_AND 30
+#define TEXT_BURNT_OUT 31
+#define TEXT_WATERSKIN_EMPTY 32          /* + charges: almost empty, almost full, full */
+#define TEXT_WEIGHS 37
+#define TEXT_KG_PERIOD 39
 #define TEXT_LOAD 36
 #define TEXT_DECIMAL_POINT 38
 #define TEXT_KG 40
@@ -200,5 +219,19 @@
 #define ICON_EYE_LOOKING 203
 #define TEXT_WAKE_UP 19
 #define TEXT_GAME_FROZEN 20
+/* Save, load, and endgame texts. */
+#define TEXT_RESTART_THIS_GAME 77
+#define TEXT_GAME_LOADED 78
+#define TEXT_CANT_FIND_SAVED_GAME 80
+#define TEXT_UNABLE_TO_SAVE 81
+#define TEXT_GAME_DAMAGED 86
+#define TEXT_SAVING_GAME 87
+#define TEXT_LOADING_GAME 88
+#define TEXT_NOT_SAVED_OK_TO_QUIT 93
+#define TEXT_LOAD_SAVED_GAME 101
+#define TEXT_SAVE 102
+#define TEXT_QUIT 103
+#define TEXT_OK 105
+#define TEXT_CANCEL 106
 
 #endif
