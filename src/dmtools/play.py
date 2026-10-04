@@ -3,7 +3,7 @@
     uv run dm-play <cmd> [json-args]
     uv run dm-play act <action> [json-args]
     uv run dm-play act_many '<json-list>'
-    uv run dm-play goto <x> <y>
+    uv run dm-play goto <x> <y> [facing]
 
 The response is printed as compact JSON on one line. --brief prints a short summary instead.
 The exit code is 1 when the response has "ok": false. The socket path comes from DM_CONTROL
@@ -87,6 +87,7 @@ def brief(response: dict) -> str:
     if not response.get("ok"):
         return f"error: {response.get('error')}"
     head = " | ".join(f"{key} {response[key]}" for key in ("ticks", "ran", "stopped", "error", "game_over", "action_damage", "path") if key in response)
+    head += " | BUMPED" if response.get("bumped") else ""
     lines = [head] if head else []
     if look := response.get("look"):
         lines.append(f"look: {look['name']}" + "".join(f" | {line}" for line in look["lines"]))
@@ -114,7 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--brief", action="store_true", help="print a short summary instead of the JSON")
     parser.add_argument("cmd", help="get_state, get_view, get_map, act, act_many, goto, wait, screenshot, save, load, new_game")
     parser.add_argument("rest", nargs="*", help="act: the action, then the args as JSON; act_many: the actions as a JSON list; "
-                        "goto: x y; other commands: the fields as JSON")
+                        "goto: x y [facing]; other commands: the fields as JSON")
     options = parser.parse_args(argv)
     payload = {"cmd": options.cmd}
     rest = options.rest
@@ -128,9 +129,11 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("act_many needs the actions as one JSON list")
         payload["actions"] = json.loads(rest[0])
     elif options.cmd == "goto":
-        if len(rest) != 2:
-            parser.error("goto needs x and y")
+        if len(rest) not in (2, 3):
+            parser.error("goto needs x and y, and an optional facing")
         payload["x"], payload["y"] = int(rest[0]), int(rest[1])
+        if len(rest) == 3:
+            payload["facing"] = int(rest[2]) if rest[2].isdigit() else rest[2]
     elif rest:
         payload.update(json.loads(rest[0]))
     if "path" in payload:

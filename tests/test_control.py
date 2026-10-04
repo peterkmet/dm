@@ -369,6 +369,56 @@ def test_goto_walks_back_over_explored_squares(game):
         client.sock.close()
 
 
+def wall_direction(game):
+    x, y, _ = game.position()
+    return next(k for k in range(4) if game.lib.get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 0)
+
+
+def test_a_move_into_a_wall_bumps(game, monkeypatch, capsys):
+    from dmtools import play
+
+    client = Client(game)
+    try:
+        wall = wall_direction(game)
+        while game.position()[2] != wall:
+            client.act("turn_left")
+        position = game.position()
+        response = client.act("move_forward")
+        assert response["bumped"] is True and game.position() == position
+        assert "bumped" not in client.act("turn_left") and "bumped" not in client.call(cmd="wait", ticks=1)
+        client.act("turn_right")
+        response = client.call(cmd="act_many", actions=["move_forward", "turn_left"])
+        assert response["ran"] == 1 and response["stopped"] == "bumped" and response["bumped"] is True
+    finally:
+        client.sock.close()
+    monkeypatch.setenv("DM_CONTROL", game.socket)
+    with pumped(game):
+        assert play.main(["--brief", "act", "move_forward"]) == 0
+        assert capsys.readouterr().out.splitlines()[0].endswith(" | BUMPED")
+
+
+def test_goto_turns_to_the_facing_at_the_target(game, monkeypatch, capsys):
+    from dmtools import mcp_server, play
+
+    client = Client(game)
+    try:
+        x, y, facing = game.position()
+        back = (facing + 2) % 4
+        response = client.call(cmd="goto", x=x, y=y, facing=DIRECTIONS[back])
+        assert response["stopped"] == "done" and response["ran"] == 2 and response["state"]["party"]["facing"] == DIRECTIONS[back]
+        response = client.call(cmd="goto", x=x, y=y, facing=(back + 1) % 4)
+        assert response["ran"] == 1 and response["state"]["party"]["facing"] == DIRECTIONS[(back + 1) % 4]
+        assert client.call(cmd="goto", x=x, y=y, facing="up")["ok"] is False
+        assert client.call(cmd="goto", x=x, y=y, facing=4)["ok"] is False
+    finally:
+        client.sock.close()
+    monkeypatch.setenv("DM_CONTROL", game.socket)
+    with pumped(game):
+        assert mcp_server.goto(x, y, "north")["state"]["party"]["facing"] == "north"
+        assert play.main(["goto", str(x), str(y), "3"]) == 0
+        assert json.loads(capsys.readouterr().out)["state"]["party"]["facing"] == "west"
+
+
 def test_mcp_and_dm_play_batches(game, monkeypatch, capsys):
     from dmtools import mcp_server, play
 

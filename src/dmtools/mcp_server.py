@@ -25,9 +25,10 @@ How to play:
    the square ahead; nothing behind a wall or a closed door), `get_map` shows the explored map,
    `get_state` shows the champions.
 2. Walk with move_forward, move_back, move_left, move_right (strafe), turn_left, turn_right.
-   Walls, closed doors, and creatures block you; the state does not change then.
+   Walls, closed doors, and creatures block you: the response has "bumped": true, and a bump
+   into a wall hurts two champions a little.
    Fewer calls: `act_many` runs a list of actions, `goto` walks to an explored square. Both stop
-   early when something happens (damage, a creature comes into view, a message, a failed step).
+   early when something happens (damage, a creature comes into view, a message, a bump, a failed step).
 3. Recruit: face a wall whose "front_face" has "mirror": true at depth 1, act click_wall_ahead, then
    look at the "candidate" in the state and act recruit
    with choice "resurrect" (keeps the skills; the best choice) or "reincarnate" (trades skill
@@ -111,7 +112,8 @@ def get_map() -> dict:
 def act(action: str, args: dict | None = None) -> dict:
     """Runs one player input, advances the game until the party can move again, and returns
     {ok, ticks, action_damage (choose_action only: damage, 0 miss, -1 can't reach, -2 need
-    ammo), state, view}. ok false with error: nothing happened.
+    ammo), bumped (true when a move did not move the party: wall, closed door, creature), state,
+    view}. ok false with error: nothing happened.
 
     Actions and args:
     move_forward, move_back, move_left, move_right, turn_left, turn_right;
@@ -134,20 +136,23 @@ def act(action: str, args: dict | None = None) -> dict:
 @mcp.tool()
 def act_many(actions: list) -> dict:
     """Runs a list of actions in order, each as one act turn, and returns {ok, ticks, ran,
-    stopped, error?, game_over, state, view} after the last turn. Each item is an action name
-    ("move_forward") or {"action": ..., "args": {...}}. stopped: done, damage (a champion lost
-    health), creature (a creature came into view), message (a new message), game_over, or
-    failed (error says why; ran counts only the turns that ran)."""
+    stopped, error?, game_over, bumped?, state, view} after the last turn. Each item is an action
+    name ("move_forward") or {"action": ..., "args": {...}}. stopped: done, damage (a champion lost
+    health), creature (a creature came into view), message (a new message), bumped (a move did not
+    move the party), game_over, or failed (error says why; ran counts only the turns that ran)."""
     return request({"cmd": "act_many", "actions": actions})
 
 
 @mcp.tool()
-def goto(x: int, y: int) -> dict:
+def goto(x: int, y: int, facing: str | int | None = None) -> dict:
     """Walks to square (x, y) of the current level on the shortest path over explored squares
-    (floor, open doors; stairs only as the target; no pits) with turns and moves. Returns like
-    act_many; stopped can also be blocked (a move failed) or moved_elsewhere (a teleporter).
-    ok false: no such path."""
-    return request({"cmd": "goto", "x": x, "y": y})
+    (floor, open doors; stairs only as the target; no pits) with turns and moves. With facing
+    (north, east, south, west, or 0-3) the party turns to it at the target. Returns like
+    act_many; stopped can also be moved_elsewhere (a teleporter). ok false: no such path."""
+    payload = {"cmd": "goto", "x": x, "y": y}
+    if facing is not None:
+        payload["facing"] = facing
+    return request(payload)
 
 
 @mcp.tool()

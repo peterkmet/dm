@@ -61,9 +61,9 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 | `get_state` | none | `{ok, state}` |
 | `get_view` | none | `{ok, view}` |
 | `get_map` | none | `{ok, map}` |
-| `act` | `action`, `args` (object) | `{ok, ticks, game_over, action_damage?, look?, state, view}` |
-| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, action_damage?, state, view}` |
-| `goto` | `x`, `y` | The same as `act_many` |
+| `act` | `action`, `args` (object) | `{ok, ticks, game_over, bumped?, action_damage?, look?, state, view}` |
+| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage?, state, view}` |
+| `goto` | `x`, `y`, `facing` (optional) | The same as `act_many` |
 | `wait` | `ticks` (1-1000, default 10) | `{ok, ticks, game_over, state, view}` |
 | `screenshot` | none | The screen as a 320 x 200 PNG image |
 | `save_game` | none | `{ok}` |
@@ -86,9 +86,9 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `get_state` | none | `state` |
 | `get_view` | none | `view` |
 | `get_map` | none | `map` |
-| `act` | `action`, `args` | After the turn: `ticks`, `game_over`, `action_damage` (only `choose_action`), `look` (only `look`), `state`, `view` |
-| `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `state`, `view`. See [Batches](#batches). |
-| `goto` | `x`, `y` | The same as `act_many`. See [Batches](#batches). |
+| `act` | `action`, `args` | After the turn: `ticks`, `game_over`, `bumped` (only after a bump), `action_damage` (only `choose_action`), `look` (only `look`), `state`, `view` |
+| `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `bumped`, `state`, `view`. See [Batches](#batches). |
+| `goto` | `x`, `y`, `facing` (optional) | The same as `act_many`. See [Batches](#batches). |
 | `wait` | `ticks` (1-1000) | After the turn: `ticks`, `game_over`, `state`, `view` |
 | `screenshot` | `path` | `path`. The game writes a PNG file to `path`. |
 | `save` | none | Nothing. The game writes `DMGAME.DAT` in the save directory. The old file becomes `DMGAME.BAK`. |
@@ -115,6 +115,10 @@ A `wait` turn runs exactly `ticks` ticks. A game that does not tick ends a turn 
 
 During a turn, each frame is a tick: the game does not wait 12 frames for input. The game rules do not change.
 
+#### Bump
+
+When a move action (`move_forward`, `move_back`, `move_left`, `move_right`) does not change the party square, the turn response has `"bumped": true`. A wall, a closed door, or a creature is in the way. Without a bump, the response has no `bumped` field. A bump into a wall or a closed door gives 1 damage to the two champions on the side of the bump, as in the original game.
+
 ### Batches
 
 A batch runs many turns with one request. Each step is one `act` turn. After each turn the batch stops early when something happens, so that the caller can look again.
@@ -125,7 +129,7 @@ A batch runs many turns with one request. Each step is one `act` turn. After eac
 {"cmd": "act_many", "actions": ["turn_left", "move_forward", {"action": "take_object", "args": {"cell": 2}}]}
 ```
 
-`goto` walks to the square (`x`, `y`) of the party map. It finds the shortest path (breadth-first search) over explored squares that the party can pass: floor, open doors, and destroyed doors. Stairs are allowed only as the target. Pits, walls, closed doors, visible teleporters, and squares that are not explored are not on the path. The party turns toward the next square (`turn_left`, `turn_right`), then moves forward. When no path exists, the response is `{"ok": false, "error": ...}` and nothing changes.
+`goto` walks to the square (`x`, `y`) of the party map. It finds the shortest path (breadth-first search) over explored squares that the party can pass: floor, open doors, and destroyed doors. Stairs are allowed only as the target. Pits, walls, closed doors, visible teleporters, and squares that are not explored are not on the path. The party turns toward the next square (`turn_left`, `turn_right`), then moves forward. With `facing` (`north`, `east`, `south`, `west`, or 0-3), the party turns to this direction at the target, with `turn_left` and `turn_right` turns. A `facing` that is not a direction gives `{"ok": false, "error": ...}`. When no path exists, the response is `{"ok": false, "error": ...}` and nothing changes.
 
 The response has `ran` (the number of turns that ran) and `stopped`:
 
@@ -136,8 +140,8 @@ The response has `ran` (the number of turns that ran) and `stopped`:
 | `creature` | More creature groups are in view than before the turn. |
 | `message` | The game printed a new message. |
 | `game_over` | The party died, or the game is won. |
+| `bumped` | A move did not change the party square (a wall, a closed door, a creature). See [Bump](#bump). The batch checks this before `damage`, because a bump into a wall hurts. |
 | `failed` | An action cannot run. `error` gives the reason. The failed action is not in `ran`. |
-| `blocked` | `goto` only: a move did not change the party square (a creature, a closed door). |
 | `moved_elsewhere` | `goto` only: a move took the party to another square than the next one of the path (a teleporter, stairs on the way). |
 
 ### Game over
@@ -240,7 +244,7 @@ A wall shows a feature symbol when one of its faces shows the feature and the sq
 uv run dm-play <cmd> [json-fields]
 uv run dm-play act <action> [json-args]
 uv run dm-play act_many '<json-list>'
-uv run dm-play goto <x> <y>
+uv run dm-play goto <x> <y> [facing]
 ```
 
 Examples:
@@ -254,13 +258,14 @@ uv run dm-play act look '{"champion":0,"slot":1}'
 uv run dm-play wait '{"ticks":20}'
 uv run dm-play act_many '["turn_left","move_forward",{"action":"take_object","args":{"cell":2}}]'
 uv run dm-play goto 3 7
+uv run dm-play goto 3 7 north
 uv run dm-play screenshot '{"path":"/tmp/x.png"}'
 uv run dm-play save
 uv run dm-play load
 uv run dm-play new_game
 ```
 
-- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`), the party position, the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side walls with a face, and the piles. After `look`, a `look: <name> | <line> | ...` line follows the turn line.
+- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, and `BUMPED` after a bump), the party position, the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side walls with a face, and the piles. After `look`, a `look: <name> | <line> | ...` line follows the turn line.
 - `dm-play` does not import the `mcp` package. The socket helpers are in `src/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
 - A relative `path` becomes an absolute path, because the game runs in another directory.
 - The exit code is 1 when the response has `"ok": false`, also when the game is not running.
@@ -327,6 +332,8 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - The view stops at a wall at depth 1 (6 squares) and at a closed door (nothing beyond the door, also not in the map). A mirror on a side wall is in `side_face`. A mirror ahead is `M` in the map.
 - The state: stamina in the units of the screen, skill ranks, `load_kg`, and the candidate outside `champions[]`, with the `--brief` line.
 - `act_many`: the actions run in order, a failed action stops the batch, and damage stops it after the first turn. `goto` walks back to an explored square and refuses a wall and a square outside the map. The MCP tools and `dm-play` send `act_many` and `goto`.
+- A move into a wall gives `"bumped": true` and the same square. `act_many` stops with `bumped`. `--brief` ends the turn line with `BUMPED`.
+- `goto` with `facing` (a name or 0-3) turns the party at the target. A wrong `facing` returns `"ok": false`. The MCP tool and `dm-play` send `facing`.
 - `dm-play` does not import `mcp`.
 - `swap_champions` swaps the `position` of two champions. `look` on a slot returns the name of the sword and the weight line, and the sword is in its slot again. `look` on the leader hand gives the same text, with `ATTACK` in the advanced features. `--brief` prints the `look:` line.
 - `dm-play` returns exit code 1 and logs the call when the game is not running.

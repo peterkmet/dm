@@ -61,6 +61,8 @@ static struct {
     long frames, min_ticks, max_ticks;
     int has_damage;
     int16_t damage;
+    int moving;                       /* the action was a step; map, x, y is the party square before it */
+    int16_t map, x, y;
 } turn;
 
 /* A batch: act_many runs a list of actions, goto walks a path; each step is one turn. */
@@ -70,7 +72,7 @@ static struct {
     const char *next;
     int16_t path[PATH_MAX_STEPS];     /* goto: the directions to walk */
     int path_length, path_done, moving;
-    int16_t map, from_x, from_y;      /* the party square before a move */
+    int16_t facing;                   /* goto: the direction to face at the target, or -1 */
     uint32_t start_time, message_expiry;
     int16_t health[CHAMPION_MAX_COUNT];
     int groups;
@@ -83,6 +85,8 @@ static struct {
     int16_t count;
     char name[PANEL_LINE_SIZE], lines[PANEL_LINE_COUNT + 1][PANEL_LINE_SIZE];
 } look_text;
+
+static const char *const direction_names[] = { "north", "east", "south", "west" };
 
 static int load_failed;               /* a damaged save file left no game to play */
 
@@ -230,10 +234,24 @@ static const char *movement(uint16_t key)
     return error;
 }
 
-static const char *move_forward(const char *r) { (void)r; return movement(KEY_UP); }
-static const char *move_back(const char *r) { (void)r; return movement(KEY_DOWN); }
-static const char *move_left(const char *r) { (void)r; return movement(KEY_LEFT); }
-static const char *move_right(const char *r) { (void)r; return movement(KEY_RIGHT); }
+/* A step remembers the party square, so that the turn result can tell a bump. */
+static const char *step(uint16_t key)
+{
+    turn.moving = 1;
+    turn.map = g_party_map_index, turn.x = g_party_map_x, turn.y = g_party_map_y;
+    return movement(key);
+}
+
+/* The step of the turn left the party on its square: a wall, a closed door, or a creature is in the way. */
+static int turn_bumped(void)
+{
+    return turn.moving && g_party_map_index == turn.map && g_party_map_x == turn.x && g_party_map_y == turn.y;
+}
+
+static const char *move_forward(const char *r) { (void)r; return step(KEY_UP); }
+static const char *move_back(const char *r) { (void)r; return step(KEY_DOWN); }
+static const char *move_left(const char *r) { (void)r; return step(KEY_LEFT); }
+static const char *move_right(const char *r) { (void)r; return step(KEY_RIGHT); }
 static const char *turn_left(const char *r) { (void)r; return movement(KEY_DEL); }
 static const char *turn_right(const char *r) { (void)r; return movement(KEY_HELP); }
 
@@ -605,6 +623,10 @@ static void send_turn_result(void)
     }
     json_key(&j, "game_over");
     json_bool(&j, game_over());
+    if (turn_bumped()) {
+        json_key(&j, "bumped");
+        json_bool(&j, 1);
+    }
     if (turn.has_damage) {
         json_key(&j, "action_damage");
         json_int(&j, turn.damage);
@@ -657,7 +679,7 @@ static const char *run_action(const char *name, const char *request)
         if (strcmp(name, actions[k].name)) continue;
         if (g_candidate_champion_ordinal && strcmp(name, "recruit")) return "a candidate is shown: answer with recruit first";
         if (g_party_is_sleeping && strcmp(name, "wake")) return "the party sleeps: use wake or wait";
-        turn.has_damage = look_text.shown = 0;
+        turn.has_damage = look_text.shown = turn.moving = 0;
         return actions[k].run(request);
     }
     return "unknown action";
@@ -692,23 +714,22 @@ static void batch_snapshot(void)
     for (uint16_t i = 0; i < g_party_champion_count; i++) batch.health[i] = g_champions[i].current_health;
     batch.groups = state_json_visible_groups();
     batch.message_expiry = latest_message_expiry();
-    batch.map = g_party_map_index, batch.from_x = g_party_map_x, batch.from_y = g_party_map_y;
 }
 
 /* Why a batch stops after a turn, or NULL to go on. */
 static const char *batch_stop_reason(void)
 {
     if (game_over()) return "game_over";
+    if (turn_bumped()) return "bumped";  /* before damage: a bump into a wall hurts */
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         if (g_champions[i].current_health < batch.health[i]) return "damage";
     if (state_json_visible_groups() > batch.groups) return "creature";  /* ponytail: a count, misses a swap of groups */
     if (latest_message_expiry() > batch.message_expiry) return "message";
     if (batch.moving) {
-        int16_t x = batch.from_x, y = batch.from_y;
+        int16_t x = turn.x, y = turn.y;
         update_map_coordinates_after_relative_movement(batch.path[batch.path_done], 1, 0, &x, &y);
         int last = batch.path_done + 1 == batch.path_length;
-        if (g_party_map_index != batch.map) return last ? NULL : "moved_elsewhere";
-        if (g_party_map_x == batch.from_x && g_party_map_y == batch.from_y) return "blocked";
+        if (g_party_map_index != turn.map) return last ? NULL : "moved_elsewhere";
         if (g_party_map_x != x || g_party_map_y != y) return "moved_elsewhere";
     }
     return NULL;
@@ -723,13 +744,18 @@ static void batch_finish(const char *stop, const char *error)
     memset(&batch, 0, sizeof batch);
 }
 
+/* One turn of the party toward direction. */
+static const char *turn_toward(int16_t direction)
+{
+    return run_action(NORMALIZE(direction - g_party_direction) == 1 ? "turn_right" : "turn_left", "");
+}
+
 /* The next goto step: turn toward the next square of the path, or move onto it. */
 static const char *goto_step(void)
 {
-    int16_t turns = NORMALIZE(batch.path[batch.path_done] - g_party_direction);
-    batch.moving = !turns;
-    if (!turns) return run_action("move_forward", "");
-    return run_action(turns == 1 ? "turn_right" : "turn_left", "");
+    batch.moving = batch.path[batch.path_done] == g_party_direction;
+    if (batch.moving) return run_action("move_forward", "");
+    return turn_toward(batch.path[batch.path_done]);
 }
 
 /* The next act_many element, a "name" or an {"action": "name", "args": {...}} object, copied to out.
@@ -778,11 +804,12 @@ static void batch_next(void)
         else if (!get_string(element, "action", name, sizeof name)) name[0] = 0;
         error = run_action(name, element);
     } else {
-        if (batch.path_done == batch.path_length) {
+        int arrived = batch.path_done == batch.path_length;
+        if (arrived && (batch.facing < 0 || batch.facing == g_party_direction)) {
             batch_finish("done", NULL);
             return;
         }
-        error = goto_step();
+        error = arrived ? turn_toward(batch.facing) : goto_step();
     }
     if (error) batch_finish("failed", error);
     else start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
@@ -811,22 +838,41 @@ static void handle_act_many(const char *request)
     batch.next = batch.actions;
     batch.active = 1;
     batch.start_time = g_game_time;
-    turn.has_damage = 0;
+    turn.has_damage = turn.moving = 0;
     batch_next();
+}
+
+/* The optional facing of goto: a direction name or 0-3; -1 without facing, -2 when it is not a direction. */
+static long goto_facing(const char *request)
+{
+    char name[8];
+    if (!find_value(request, "facing")) return -1;
+    if (get_string(request, "facing", name, sizeof name)) {
+        for (long d = DIRECTION_NORTH; d <= DIRECTION_WEST; d++)
+            if (!strcmp(name, direction_names[d])) return d;
+        return -2;
+    }
+    long d = get_int(request, "facing", -2);
+    return d >= DIRECTION_NORTH && d <= DIRECTION_WEST ? d : -2;
 }
 
 static void handle_goto(const char *request)
 {
-    long x = get_int(request, "x", -1), y = get_int(request, "y", -1);
+    long x = get_int(request, "x", -1), y = get_int(request, "y", -1), facing = goto_facing(request);
+    if (facing == -2) {
+        send_error("facing must be north, east, south, west, or 0-3");
+        return;
+    }
     int length = x < 0 || y < 0 ? -1 : state_json_path((int16_t)x, (int16_t)y, batch.path, PATH_MAX_STEPS);
     if (length < 0) {
         send_error("no path over explored, passable squares to this square");
         return;
     }
     batch.path_length = length;
+    batch.facing = (int16_t)facing;
     batch.active = 1;
     batch.start_time = g_game_time;
-    turn.has_damage = 0;
+    turn.has_damage = turn.moving = 0;
     batch_next();
 }
 
@@ -903,7 +949,7 @@ static void handle_request(const char *request)
         long ticks = get_int(request, "ticks", 1);
         if (ticks < 1 || ticks > WAIT_MAX_TICKS) send_error("ticks must be 1-1000");
         else {
-            turn.has_damage = look_text.shown = 0;
+            turn.has_damage = look_text.shown = turn.moving = 0;
             start_turn(ticks, ticks, 1);
         }
     } else if (!strcmp(cmd, "screenshot")) {
