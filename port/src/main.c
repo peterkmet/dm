@@ -145,7 +145,8 @@ static void set_pointer(int in_game)
 
 enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
 
-static int mode, turnbased, auto_enter, title_pending; /* title_pending: the DM title plays before the entrance */
+static int mode, turnbased, auto_enter, title_pending;
+static int loaded_adventure = -1; /* the adventure whose game files are loaded */ /* title_pending: the DM title plays before the entrance */
 static const char *data, *data_override, *control, *csb_dir;
 
 /* Keys and clicks of the start screens. Ctrl+Q quits. */
@@ -226,13 +227,29 @@ static void play_csb_intro(void)
     command_discard_all_input();
 }
 
+/* QUIT on the DM entrance or the CSB screen: back to the first start screen. In turn-based mode, or
+   when --adventure and --mode skip every start screen, the program ends. */
+static void quit_to_start(void)
+{
+    if (turnbased || !select_restart()) {
+        g_quit_requested = 1;
+        return;
+    }
+    mode = MODE_SELECT;
+}
+
 /* Runs the entrance commands; RESUME loads the saved game, ENTER starts a new game. Returns 0
    when the dungeon cannot be loaded. */
 static int entrance_frame(const char *data)
 {
+    if (g_quit_requested) return 1;
     while (command_process_queue())
         ;
-    if (g_quit_requested) return 1;
+    if (g_quit_requested) { /* the QUIT button: closing the window and Ctrl+Q end the program before */
+        g_quit_requested = 0;
+        quit_to_start();
+        return 1;
+    }
     if (g_new_game == ENTRANCE_RESUME || g_new_game == ENTRANCE_NEW_GAME) entrance_press_button(g_new_game == ENTRANCE_RESUME);
     if (g_new_game == ENTRANCE_RESUME) {
         if (load_saved_game()) {
@@ -313,16 +330,18 @@ static const char *adventure_dir(void)
    game files or the control socket cannot be opened. */
 static int start_csb(void)
 {
-    static int loaded;
     int choice = select_csb_choice();
-    if (choice == CSB_QUIT) return 1;
-    if (!loaded) {
+    if (choice == CSB_QUIT) {
+        quit_to_start();
+        return 1;
+    }
+    if (loaded_adventure != ADVENTURE_CSB) {
         SDL_Log("adventure csb, mode %s", game_mode_names[g_game_mode]);
         data = adventure_dir();
         if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
-        if (!apply_mode()) return 0;
-        loaded = 1;
+        loaded_adventure = ADVENTURE_CSB;
     }
+    if (!apply_mode()) return 0;
     mode = MODE_GAME; /* the dialogs of RESUME read the game input */
     if (choice == CSB_NEW_ADVENTURE && !auto_enter) play_csb_intro();
     if (choice == CSB_NEW_ADVENTURE) {
@@ -346,6 +365,7 @@ static int start_adventure(void)
     SDL_Log("adventure dm, mode %s", game_mode_names[g_game_mode]);
     data = adventure_dir();
     if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
+    loaded_adventure = ADVENTURE_DM;
     if (!apply_mode()) return 0;
     entrance_draw();
     command_set_entrance_input();
@@ -416,7 +436,7 @@ int main(int argc, char **argv)
             if (g_return_to_entrance) tick = 0;
         }
         if (g_quit_requested) break;
-        if (mode >= MODE_ENTRANCE) set_pointer(mode == MODE_GAME);
+        if (mode >= MODE_ENTRANCE || loaded_adventure >= 0) set_pointer(mode == MODE_GAME); /* the arrow on the start screens after QUIT */
         plat_present();
         if (tick) gameloop_tick();
         if (g_quit_requested) break;

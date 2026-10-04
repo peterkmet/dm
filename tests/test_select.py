@@ -232,8 +232,7 @@ def test_csb_screen_choices(lib, item):
     keys(lib, *[DOWN] * item, ENTER)
     assert lib.select_screen() == SCREEN_DONE
     assert lib.select_csb_choice() == item
-    assert value(lib, "g_quit_requested") == (item == CSB_QUIT)
-    set_value(lib, "g_quit_requested", 0)
+    assert value(lib, "g_quit_requested") == 0  # QUIT goes back to the first screen (main.c)
 
 
 @needs_dm
@@ -355,3 +354,18 @@ def test_csb_screen_runs():
     result = run_dm("--adventure", "csb", "--mode", "vanilla")
     assert result.returncode == 0, result.stderr
     assert "adventure dm, mode" not in result.stderr
+
+
+@pytest.mark.parametrize("adventure, mode, first", [(-1, -1, SCREEN_ADVENTURE), (DM, -1, SCREEN_MODE), (CSB, 0, SCREEN_CSB)])
+def test_restart_goes_back_to_the_first_screen(lib, adventure, mode, first):
+    """QUIT on the DM entrance or the CSB screen: the first screen that the flags do not skip."""
+    start(lib, adventure, mode)
+    keys(lib, *[ENTER] * 3)
+    assert lib.select_restart() == 1
+    assert lib.select_screen() == first
+
+
+@pytest.mark.parametrize("adventure", [DM, -1])
+def test_restart_with_every_screen_skipped(lib, adventure):
+    start(lib, adventure, 0)  # --mode alone means DM
+    assert lib.select_restart() == 0

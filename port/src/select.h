@@ -16,6 +16,9 @@ void select_start(int16_t adventure, int16_t mode, int csb_present);
 /* Shows the CSB screen again, with a message line below the items when message is not NULL. After
    it, Escape does not go back to the mode screen. */
 void select_start_csb(const char *message);
+/* QUIT on the DM entrance or the CSB screen: the first screen that --adventure and --mode do not skip.
+   Returns 0 when the flags skip every screen: then there is no screen to go back to. */
+int select_restart(void);
 /* The current screen, or SCREEN_DONE. */
 int select_screen(void);
 /* CSB_NEW_ADVENTURE, CSB_RESUME, or CSB_QUIT: the CSB screen item that ended the selection. */

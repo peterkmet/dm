@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.1 - 2026-10-05
+
+### Changed
+
+- QUIT on the DM entrance and on the CSB screen goes back to the first start screen. Ctrl+Q or closing the window ends the program. In turn-based mode, and when `--adventure` and `--mode` skip every start screen, QUIT ends the program.
+
+### Fixed
+
+- Over the hands in the champion status boxes, the pointer shows the object in the hand, as in the original. Before, it showed the arrow.
+
 ## 0.4.0 - 2026-10-05
 
 Intros of the original disks. The save format does not change.
