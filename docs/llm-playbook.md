@@ -56,6 +56,8 @@ Keep each file short. Update it at the moments given. Another session continues 
 
 Use screenshots only when the text is not enough, for example to read a wall text or to find a feature.
 
+Save calls: ask for `get_map` only when you plan a route, not after every move. The `act`, `act_many`, and `goto` responses already contain the state and the view.
+
 ## Survival
 
 - **Save** after each recruit, before each fight or risky step, after each solved puzzle, and when you leave a level. Write the save time into `progress.md`. If the party dies, `load`.
