@@ -66,6 +66,7 @@ enum { POINTER_ARROW, POINTER_HAND, POINTER_OBJECT };
 
 static int16_t frames_waiting;
 static uint16_t shown_hand_object = THING_NONE;
+static int16_t shown_hand_icon;  /* a waterskin or a torch changes its icon and its name */
 static char data_dir[PATH_SIZE];
 
 int gameloop_load_data(const char *dir)
@@ -180,8 +181,10 @@ static void refresh_interface(void)
         for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++) champion_draw_slot(i, slot);
         if (inventory) ui_draw_viewport();
     }
-    if (g_leader_hand_object != shown_hand_object) {
+    int16_t icon = g_leader_hand_object == THING_NONE ? -1 : object_get_icon_index(g_leader_hand_object);
+    if (g_leader_hand_object != shown_hand_object || icon != shown_hand_icon) {
         shown_hand_object = g_leader_hand_object;
+        shown_hand_icon = icon;
         if (shown_hand_object == THING_NONE) ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
         else draw_leader_hand_object_name(shown_hand_object);
     }
