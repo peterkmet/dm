@@ -1,26 +1,16 @@
 # Status of the C port
 
-Updated: 2026-10-04 03:10. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
+Updated: 2026-10-04 03:35. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
 
 ## Done and committed
 
-- Tools: ADF extraction, FTL loader, R# unpacker, Ghidra headless decompile with names (`docs/kaos-symbols.csv`, all 756 KAOS functions named), 68000 emulator harness (`dmtools.emu`).
-- C port: FTL/KAOS loader, Graphics.DAT and expand_graphic, Dungeon.DAT, text and message area, sound mixer with SDL3 audio, Scale2x/Scale3x filter, game state and RNG and timeline, save file codec, game tables, recruiting text and spell runes, dungeon view walls/doors/ornaments (`build/dm --view`).
+- Tools: ADF extraction, FTL loader, R# unpacker, Ghidra headless decompile with names (`docs/kaos-symbols.csv`), 68000 emulator harness (`dmtools.emu`).
+- C port: FTL/KAOS loader, Graphics.DAT, Dungeon.DAT, text and message area, sound with SDL3 audio, Scale2x/Scale3x, game state, RNG, timeline, save file codec, game tables, recruiting text, spell runes, full dungeon view (walls, doors, ornaments, objects, creatures, projectiles, explosions, fields, light), interface panels, movement and sensors, champions and inventory, creatures, projectiles, magic. 261 tests pass (commit `ab63882`).
 
-## Done, not committed yet (in the working tree)
+## In progress
 
-- Step 8 interface: `port/src/ui*.c`, `ids.h`, `tests/test_ui.py`, small changes in `video.*`, `platform.c`, `layout.*`.
-- Step 9 rules: `port/src/map.*`, `move.*`, `sensor.*`, `timeline_process.*`, `tests/test_move.py`, `docs/rules-movement.md` (cleaned to the coding standard).
-
-## In progress when this file was written
-
-A usage limit stopped all agents at 02:50. At 03:05 three agents restarted from the files on disk: Step 11 (continue), Step 7b (continue), and Integration (new: `port/src/command.*`, `gameloop.*`, `main.c`, `tests/test_gameloop.py`). Steps 8, 9 and 10 are finished but not committed yet.
-
-- Step 10 champions: `port/src/champion.*`, `inventory.*`, `tests/test_champion.py`, `docs/rules-champions.md`.
-- Step 11 creatures, projectiles, magic: `port/src/group.*`, `projectile.*`, `magic.*`, `tests/test_creatures.py`, `docs/rules-creatures.md`.
-- Step 7b things in the view: objects, creatures, projectiles, explosions, fields, light levels in `port/src/view.c`.
-
-The working tree can fail to build while these files are incomplete (link errors between them).
+- Integration (agent started 03:05): `port/src/command.*`, `gameloop.*`, `main.c`, clickable boxes in `view.c`, `tests/test_gameloop.py`. Goal: first playable version.
+- Champion actions (agent started 03:35): `port/src/action.*`, timeline events 11, 12, 13, 75 in `timeline_process.c`, `tests/test_actions.py`.
 
 ## Snapshots
 
