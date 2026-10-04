@@ -1,6 +1,6 @@
 # Status of the C port
 
-Updated: 2026-10-04 05:05. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
+Updated: 2026-10-04 10:50. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
 
 ## Done and committed
 
@@ -9,11 +9,11 @@ Updated: 2026-10-04 05:05. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`
 
 ## In progress
 
-Vanilla is playable with save/resume/endgame (commit `2f9cc2c`, 297 tests).
+Vanilla, advanced and turn-based modes are committed (commit `5a24461`, 319 tests). Step 15 readability pass is done.
 
-- Step 15 readability pass, 4 agents (started 05:00): (a) ftl/graphics/dungeon/savefile/tables, (b) text/message/sound/game/random/recruit/spells, (c) view/draw/layout, (d) savegame/startend/dialog/gameloop/main/platform/video/scale/command.
-- New modes (`docs/superpowers/2026-10-04-modes-plan.md`, approved without PRD): automap module agent (`automap.*`) and turn-based control agent (`control.*`, `state_json.*`, `src/dmtools/mcp_server.py`) started 05:05, new files only.
-- After step 15: wire advanced features and modes into existing files; then Step 16 (final test, checklist, CHANGELOG, merge).
+- Turn-based extras (agent started 10:50): control commands save/load/new_game, MCP tools, CLI client `dm-play`.
+- Step 16 final review (agent started 10:50): ASan soak in all modes, protocol robustness, vanilla regression check.
+- Next: fix review findings, CHANGELOG, manual checklist, merge to main, create the private GitHub repo and push (user chose private GitHub). Then the LLM playthrough: run `build/dm --mode turnbased` with a visible window; a subagent plays through `uv run dm-play` over the socket (user chose the socket, no MCP registration). Keep notes and save often.
 
 ## Snapshots
 
