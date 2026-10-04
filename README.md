@@ -101,7 +101,7 @@ Without `--adventure` and `--mode`, the game shows two screens in the game font:
 
 Up and Down move the cursor. Return or keypad Enter selects the item. A click on an item selects it. Ctrl+Q or closing the window quits.
 
-After DUNGEON MASTER, the game plays the title animation (`TITL.DAT`, about 1 second; a key or a click stops it) and shows the entrance. `DM_AUTO_ENTER` and the turn-based mode skip the title. After CHAOS STRIKES BACK, the game shows a third screen: NEW ADVENTURE, RESUME, and QUIT. Escape goes back to the mode screen until the first game starts. After that, Escape does nothing on the CSB screen. See [Chaos Strikes Back](#chaos-strikes-back).
+After DUNGEON MASTER, the game shows the FTL logo (`SWSH.FTL`, about 1 second), plays the title animation (`TITL.DAT`, about 1 second; a key or a click stops it), and shows the entrance. `DM_AUTO_ENTER` and the turn-based mode skip the logo and the title. After CHAOS STRIKES BACK, the game shows a third screen: NEW ADVENTURE, RESUME, and QUIT. Escape goes back to the mode screen until the first game starts. After that, Escape does nothing on the CSB screen. See [Chaos Strikes Back](#chaos-strikes-back).
 
 | Flags | Screens |
 |---|---|
@@ -119,7 +119,7 @@ The entrance of Dungeon Master: click ENTER or press Return to start a new game.
 
 ### Chaos Strikes Back
 
-1. Select NEW ADVENTURE on the CSB screen. The game starts in the prison (`game-csb/Dungeon.DAT`).
+1. Select NEW ADVENTURE on the CSB screen. The game shows the FTL logo and the intro of disk B (`disk-b/ANIM.DAT` with the music `disk-b/MIDI/NAKED.AMG`, about 3.6 minutes; a key or a click stops it). Then the game starts in the prison (`game-csb/Dungeon.DAT`). `DM_AUTO_ENTER` and the turn-based mode skip the logo and the intro.
 2. Recruit one to four champions at the 24 mirrors.
 3. Save the game. In the prison, the save makes the new adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, loads it, and continues in the CSB dungeon. The original needs a restart with the utility disk for this step.
 

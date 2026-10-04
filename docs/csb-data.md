@@ -236,7 +236,30 @@ Port: `endgame_sensor` in `port/src/startend.c` sets `g_game_won`, plays `ENDA.D
 - `TITL.DAT` (disk B): the title animation of the utility disk. 1 `AN`, 1 `PL`, 1 `EN`, 31 `DL`, 1 `DO`.
 - `ANIM.DAT` (disk B): the long intro animation. It loads 5 samples from `Sound/` by name and music from `MIDI/NAKED.AMG`. The 5 files in `Sound/` equal CSB graphic items 688, 675, 683, 684, and 685.
 
-The port does not read these two files.
+The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `port/src/main.c`). It does not read `TITL.DAT` of disk B.
+
+`ANIM.FTL` of disk B is another build than disk A (all addresses below are disk B addresses). Dispatcher `0x100c76`, table at `0x100c8e`. Handlers:
+
+| Tag | Handler | Meaning |
+|---|---|---|
+| `SF` | `0x100920` | Payload: a file name (`SOUND/TELE2.amg`). The file is a sample: length word, signed 8-bit data. It goes into the `SD` sample table; a file that cannot be read keeps its number. AmigaDOS ignores the case of the name; the files on disk are `Sound/tele2.amg`. |
+| `MF` | `0x100a1a` | Payload: a music file name (`MIDI/NAKED.amg`), into the music table. `MD` (`0x100866`) puts its payload into the same table. |
+| `MI` | `0x1008f6` | Plays music number parameter (1-based) at once (`0x101424`). |
+| `SO` | `0x1008a2` | As disk A (period 650, volumes `(byte + 1) >> 2`). The word after the two volume bytes (`0x1388`) is not read. While the music plays, a sample goes to pair A (channels 3 and 2), and a new sample stops the sample before. |
+| `DO` | `0x100c4c` | Ends the samples after their cycle. It does not stop the music. |
+
+`ANIM.DAT` has 851 frames, 10808 vertical blanks (216 s). After the last frame or a stop (`BR` 1), the cleanup fades the music: volume 29 down to 1, one step every 3 ticks (`0x102e4c`), then the music stops.
+
+`NAKED.AMG` is not a tracker or MIDI file. All words are big-endian:
+
+| Offset | Content |
+|---|---|
+| 0 | `n` = 6, the item count. `MI` rejects the file when bit 7 of byte 0 is set. |
+| 2 | Table 1: `n` item sizes. `MI` checks only that the first entry equals the first entry of table 2. |
+| `2 + 2n` | Table 2: the `n` item sizes in bytes. |
+| `2 + 4n` | The items, one after another. |
+
+Item 0 is the sequence: item numbers, ended by `0xff` (`1,1,2,2,1,1,2,2,3,4,3,4,3,5,3,4`). Items 1 to 5 are samples (length word, signed 8-bit data). `MI` queues the sequence 6 times (96 writes) on pair B (channels 0 and 1, the same data on both), period 328, volume 30, one after another without a gap. One pass is 48.9 s; the music ends after the sixth pass (293.5 s), so the animation ends first.
 
 ## Sounds
 

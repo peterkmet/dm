@@ -33,6 +33,14 @@ typedef struct {
 static Voice voices[AMIGA_CHANNELS];     /* Amiga channels: 0, 3 left; 1, 2 right */
 static const int pair_channels[PAIR_COUNT][SIDE_COUNT] = { { 3, 2 }, { 0, 1 } }; /* pair A, pair B: left, right */
 static uint8_t pair_volumes[PAIR_COUNT][SIDE_COUNT];
+/* Music of the CSB intro (ANIM.FTL of CSB disk B): sample segments one after another on pair B. */
+static struct {
+    const int8_t *data[SOUND_MUSIC_SEGMENTS];
+    uint16_t length[SOUND_MUSIC_SEGMENTS];
+    int count, next;
+    uint16_t period;
+    uint8_t volume;
+} music;
 int16_t g_pending_sounds[SOUND_PENDING_SLOTS] = { NO_SOUND, NO_SOUND };
 uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][SIDE_COUNT];
 
@@ -116,7 +124,9 @@ void sound_play_sample(int16_t sound, const uint8_t *volumes)
 void sound_play_data(const int8_t *data, uint16_t length, uint16_t period, const uint8_t *volumes)
 {
     if (!data || !length) return;
-    int pair = !voice_busy(&voices[pair_channels[PAIR_A][SIDE_LEFT]]) ? PAIR_A
+    /* while the music plays, a sample replaces the sample on pair A */
+    int pair = music.count ? PAIR_A
+             : !voice_busy(&voices[pair_channels[PAIR_A][SIDE_LEFT]]) ? PAIR_A
              : !voice_busy(&voices[pair_channels[PAIR_B][SIDE_LEFT]]) ? PAIR_B
              : sound_compare_loudness(pair_volumes[PAIR_A], pair_volumes[PAIR_B]) == 1 ? PAIR_B : PAIR_A;
     memcpy(pair_volumes[pair], volumes, SIDE_COUNT);
@@ -182,6 +192,47 @@ void sound_play_pending(void)
 void sound_stop_all(void)
 {
     memset(voices, 0, sizeof voices);
+    music.count = 0;
+}
+
+void sound_music_play(const int8_t *const *data, const uint16_t *lengths, int count, uint16_t period, uint8_t volume)
+{
+    music.count = 0;
+    for (int i = 0; i < count && i < SOUND_MUSIC_SEGMENTS; i++) {
+        music.data[i] = data[i];
+        music.length[i] = lengths[i];
+    }
+    music.count = count < SOUND_MUSIC_SEGMENTS ? count : SOUND_MUSIC_SEGMENTS;
+    music.next = 0;
+    music.period = period;
+    music.volume = volume;
+    for (int side = 0; side < SIDE_COUNT; side++) voices[pair_channels[PAIR_B][side]].data = NULL;
+}
+
+void sound_music_set_volume(uint8_t volume)
+{
+    music.volume = volume;
+    for (int side = 0; side < SIDE_COUNT && music.count; side++) voices[pair_channels[PAIR_B][side]].volume = volume;
+}
+
+void sound_music_stop(void)
+{
+    if (!music.count) return;
+    music.count = 0;
+    for (int side = 0; side < SIDE_COUNT; side++) voices[pair_channels[PAIR_B][side]].data = NULL;
+}
+
+/* The next music segment starts on pair B when the one before ends; after the last one the music ends. */
+static void continue_music(void)
+{
+    if (!music.count || voice_busy(&voices[pair_channels[PAIR_B][SIDE_LEFT]])) return;
+    if (music.next >= music.count) {
+        music.count = 0;
+        return;
+    }
+    for (int side = 0; side < SIDE_COUNT; side++)
+        voices[pair_channels[PAIR_B][side]] = (Voice){ music.data[music.next], music.length[music.next], music.period, 0, music.volume };
+    music.next++;
 }
 
 /* Renders interleaved stereo int16 at SOUND_OUTPUT_RATE. Paula has no interpolation: each sample holds for one period. */
@@ -189,6 +240,7 @@ void sound_mix(int16_t *out, int frames)
 {
     for (int f = 0; f < frames; f++) {
         int mix[AMIGA_CHANNELS] = { 0 };
+        continue_music();
         for (int c = 0; c < AMIGA_CHANNELS; c++) {
             Voice *v = &voices[c];
             if (!v->data) continue;

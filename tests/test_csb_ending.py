@@ -462,3 +462,52 @@ def test_death_shows_restart_only_and_restart_loads_the_save(lib, tmp_path, rese
     assert COLOR_CYAN in {after[py * SCREEN_W + px] for px in range(ix, ix + iw) for py in range(iy, iy + ih)}
     assert value(lib, "g_quit_requested").value == 0 and value(lib, "g_return_to_entrance").value == 0
     assert value(lib, "g_game_time", u32).value == saved_time
+
+
+INTRO = GAME_CSB / "disk-b" / "ANIM.DAT"
+needs_intro = pytest.mark.skipif(not (INTRO.exists() and (GAME_CSB / "disk-b" / "MIDI" / "NAKED.AMG").exists()), reason="CSB disk B intro missing")
+
+
+def mix(lib, frames):
+    out = (c16 * (2 * frames))()
+    lib.sound_mix(out, frames)
+    return list(out[0::2]), list(out[1::2])
+
+
+@needs_intro
+def test_csb_intro_frames_and_music(lib):
+    """Disk B ANIM.DAT: 851 frames; MI starts NAKED.AMG, the same music on both sides."""
+    assert lib.anim_open(str(INTRO).encode()) == 0
+    assert lib.anim_next_frame() != ANIM_END
+    left, right = mix(lib, 4410)
+    assert any(left) and left == right
+    frames = 1
+    while lib.anim_next_frame() != ANIM_END:
+        frames += 1
+    assert frames == 851
+    lib.anim_close()
+    assert not any(mix(lib, 100)[0])
+
+
+@needs_intro
+def test_csb_intro_sample_files_play_beside_the_music(lib):
+    assert lib.anim_open(str(INTRO).encode()) == 0
+    while lib.anim_next_frame() != ANIM_END:
+        left, right = mix(lib, 64)
+        if left != right:  # an SO sample with other volumes per side on pair A
+            break
+    else:
+        pytest.fail("no SO sample played")
+    lib.anim_close()
+
+
+@needs_intro
+def test_csb_intro_stops_on_input_and_fades_the_music(lib, reset):
+    press = lambda n: n == 3 and setattr(value(lib, "g_input_received"), "value", 1)
+    frames = Frames(lib, press)
+    assert lib.anim_play(str(INTRO).encode()) == 0
+    frames.remove()
+    items, _ = chunks(INTRO.read_bytes())
+    first_delay = next(param for _, tag, _, param in items if tag in ("EN", "DL"))
+    assert first_delay > 3  # the input comes during the first frame: it stays its delay
+    assert len(frames.shots) == first_delay + 29 * 3  # the music fades in 29 steps of 3 frames

@@ -68,3 +68,26 @@ def test_pressed_button_shows_for_20_frames(lib, resume):
     assert len(shots) == 20 and len(set(shots)) == 1
     changed = [i for i in range(SCREEN_W * SCREEN_H) if shots[0][i] != closed[i]]
     assert changed and all(240 <= i % SCREEN_W < 260 for i in changed)  # only the button column changes
+
+
+SWSH = GAME / "SWSH.FTL"
+WHITE, GRAY, DARK, YELLOW = 0xFFF, 0xAAA, 0x444, 0xFF0
+
+
+@pytest.mark.skipif(not SWSH.exists(), reason="game/SWSH.FTL missing")
+def test_ftl_logo_lasts_as_its_sound(lib):
+    """SWSH.FTL: the logo in a palette script, shown until the sound (9078 bytes at period 334) ends."""
+    pal = (ctypes.c_uint16 * 32).in_dll(lib, "palette")
+    shots = []
+    hook = HOOK(lambda: shots.append((screen(lib), list(pal[:16]))))
+    ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = ctypes.cast(hook, ctypes.c_void_p).value
+    lib.logo_play.argtypes = [ctypes.c_char_p]
+    try:
+        assert lib.logo_play(str(SWSH).encode()) == 0
+    finally:
+        ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
+    assert len(shots) == 43  # 9078 * 334 / 3546895 seconds at 50 Hz
+    assert shots[0][1][1] == WHITE and shots[0][1][2] == 0  # the first script step: color 1 is white
+    assert shots[-1][1] == [0, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, 0, WHITE, GRAY, WHITE, GRAY, DARK, YELLOW, YELLOW]
+    assert len(set(shots[-1][0])) > 4
+    lib.sound_stop_all()

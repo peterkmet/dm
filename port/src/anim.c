@@ -1,5 +1,8 @@
+#include <dirent.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include "anim.h"
 #include "command.h"
 #include "ftl.h"
@@ -26,6 +29,13 @@
 #define RED_SHIFT 8           /* Amiga color: red, green, blue nibbles */
 #define GREEN_SHIFT 4
 #define SAMPLE_VOLUME_BYTES 2 /* SO: left and right volume bytes after the chunk header */
+#define MAX_MUSIC 32
+#define PATH_SIZE 1024
+#define MUSIC_PERIOD 328      /* CSB disk B ANIM.FTL 0x101424: every music segment */
+#define MUSIC_VOLUME 30
+#define MUSIC_PASSES 6        /* the sequence plays 6 times, then the music ends */
+#define MUSIC_SEQUENCE_END 0xff
+#define MUSIC_FADE_FRAMES 3   /* 0x102e4c: the volume goes down by 1 every 3 ticks */
 
 /* Chunk tags that the player runs. The other tags (AN, DO, P8, music, sample files) do nothing for ENDA.DAT and TITL.DAT. */
 enum {
@@ -38,6 +48,9 @@ enum {
     TAG_LOOP = TAG('F', 'O'),
     TAG_LOOP_NEXT = TAG('N', 'E'),
     TAG_LOOP_BACK = TAG('B', 'N'),
+    TAG_SAMPLE_FILE = TAG('S', 'F'),
+    TAG_MUSIC_FILE = TAG('M', 'F'),
+    TAG_MUSIC = TAG('M', 'I'),
 };
 
 typedef struct {
@@ -52,6 +65,11 @@ static uint16_t sample_sizes[MAX_SAMPLES];
 static int sample_count, loop_depth, palette_changed, input_stops; /* input_stops: BR allows a stop by a key or a click */
 static Loop loops[MAX_LOOP_DEPTH];
 static uint16_t colors[PALETTE_COLORS];
+static char directory[PATH_SIZE];           /* the folder of the animation file: SF and MF names are relative to it */
+static uint8_t *loaded[MAX_SAMPLES + MAX_MUSIC]; /* the files of SF and MF */
+static size_t music_sizes[MAX_MUSIC];
+static const uint8_t *music[MAX_MUSIC];
+static int loaded_count, music_count, music_started;
 
 /* Offset of the chunk after the chunk at offset at. */
 static size_t next_chunk(size_t at)
@@ -61,15 +79,80 @@ static size_t next_chunk(size_t at)
 
 void anim_close(void)
 {
-    sound_stop_all(); /* the voices point into the file */
+    sound_stop_all(); /* the voices point into the file and the loaded files */
     free(file);
     file = NULL;
     file_len = pos = 0;
+    while (loaded_count) free(loaded[--loaded_count]);
+    music_count = music_started = 0;
+}
+
+/* Reads the file name relative to the animation folder. AmigaDOS ignores the case of the names. */
+static uint8_t *read_file_any_case(const char *name, size_t *len)
+{
+    char path[PATH_SIZE], part[PATH_SIZE];
+    snprintf(path, sizeof path, "%s", directory);
+    for (const char *p = name; *p;) {
+        size_t n = strcspn(p, "/");
+        snprintf(part, sizeof part, "%.*s", (int)n, p);
+        DIR *d = opendir(path);
+        struct dirent *e;
+        while (d && (e = readdir(d)) && strcasecmp(e->d_name, part))
+            ;
+        size_t used = strlen(path);
+        snprintf(path + used, sizeof path - used, "/%s", d && e ? e->d_name : part);
+        if (d) closedir(d);
+        p += n + (p[n] == '/');
+    }
+    return read_file(path, len);
+}
+
+/* SF and MF: the file named by the payload, kept until anim_close. NULL when it cannot be read. */
+static uint8_t *load_named_file(const uint8_t *payload, uint16_t length, size_t *size)
+{
+    char name[PATH_SIZE];
+    snprintf(name, sizeof name, "%.*s", (int)length, (const char *)payload);
+    *size = 0;
+    if (loaded_count >= (int)(sizeof loaded / sizeof loaded[0])) return NULL;
+    uint8_t *data = read_file_any_case(name, size);
+    if (data) loaded[loaded_count++] = data;
+    return data;
+}
+
+/* MI: the music file is a count n, two copies of a table of n item sizes, then the items. Item 0 is a
+   sequence of item numbers that ends with 0xff; the other items are samples (length word, data). */
+static void play_music(uint16_t number)
+{
+    if (number < 1 || number > music_count || !music[number - 1]) return;
+    const uint8_t *m = music[number - 1];
+    size_t size = music_sizes[number - 1];
+    if (size < 2 || m[0] & 0x80) return;
+    uint16_t n = BE16(m);
+    size_t items = 2 + 4 * (size_t)n, offsets[UINT8_MAX + 1];
+    if (!n || n > UINT8_MAX || items > size || BE16(m + 2) != BE16(m + 2 + 2 * n)) return;
+    for (uint16_t i = 0, at = 0; i < n; i++) {
+        offsets[i] = items + at;
+        at = (uint16_t)(at + BE16(m + 2 + 2 * (n + i)));
+    }
+    const int8_t *segments[SOUND_MUSIC_SEGMENTS];
+    uint16_t lengths[SOUND_MUSIC_SEGMENTS];
+    int sequence_length = 0, count = 0;
+    while (offsets[0] + sequence_length < size && m[offsets[0] + sequence_length] != MUSIC_SEQUENCE_END) sequence_length++;
+    for (int i = 0; sequence_length && i < MUSIC_PASSES * sequence_length && count < SOUND_MUSIC_SEGMENTS; i++) {
+        uint8_t item = m[offsets[0] + i % sequence_length];
+        if (item >= n || offsets[item] + SAMPLE_HEADER > size || BE16(m + offsets[item]) > size - offsets[item] - SAMPLE_HEADER) continue;
+        segments[count] = (const int8_t *)m + offsets[item] + SAMPLE_HEADER;
+        lengths[count++] = BE16(m + offsets[item]);
+    }
+    sound_music_play(segments, lengths, count, MUSIC_PERIOD, MUSIC_VOLUME);
+    music_started = 1;
 }
 
 int anim_open(const char *path)
 {
     anim_close();
+    const char *slash = strrchr(path, '/');
+    snprintf(directory, sizeof directory, "%.*s", slash ? (int)(slash - path) : 1, slash ? path : ".");
     if (!(file = read_file(path, &file_len))) return -1;
     size_t at = 0;
     while (at + CHUNK_HEADER <= file_len) at = next_chunk(at);
@@ -95,7 +178,7 @@ static void set_colors(const uint8_t *payload, uint16_t length)
    when the chunk has no payload (as the original). */
 static void play_sample(size_t at, uint16_t number)
 {
-    if (number < 1 || number > sample_count || at + CHUNK_HEADER + SAMPLE_VOLUME_BYTES > file_len) return;
+    if (number < 1 || number > sample_count || !samples[number - 1] || at + CHUNK_HEADER + SAMPLE_VOLUME_BYTES > file_len) return;
     const uint8_t *s = samples[number - 1];
     uint16_t length = BE16(s);
     if (length > sample_sizes[number - 1] - SAMPLE_HEADER) return;
@@ -126,6 +209,24 @@ int16_t anim_next_frame(void)
             break;
         case TAG_PLAY_SAMPLE:
             play_sample(at, parameter);
+            break;
+        case TAG_SAMPLE_FILE: { /* numbered with the SD samples; a missing file keeps its number */
+            size_t size;
+            const uint8_t *data = load_named_file(payload, length, &size);
+            if (sample_count < MAX_SAMPLES) {
+                samples[sample_count] = data;
+                sample_sizes[sample_count++] = (uint16_t)(size < UINT16_MAX ? size : UINT16_MAX);
+            }
+            break;
+        }
+        case TAG_MUSIC_FILE:
+            if (music_count < MAX_MUSIC) {
+                music[music_count] = load_named_file(payload, length, &music_sizes[music_count]);
+                music_count++;
+            }
+            break;
+        case TAG_MUSIC:
+            play_music(parameter);
             break;
         case TAG_LOOP: /* the chunk after FO runs once, the loop body starts after it */
             if (loop_depth < MAX_LOOP_DEPTH) loops[loop_depth++] = (Loop){ next_chunk(pos), (int16_t)(parameter - 1) };
@@ -165,6 +266,11 @@ int anim_play(const char *path)
         while (delay-- > 0 && (running = wait_frame()))
             ;
         if (input_stops && g_input_received) running = 0;
+    }
+    /* the music fades out at the end and after a stop (0x102e4c) */
+    for (int volume = MUSIC_VOLUME - 1; music_started && volume > 0 && !g_quit_requested; volume--) {
+        sound_music_set_volume((uint8_t)volume);
+        wait_frames(MUSIC_FADE_FRAMES);
     }
     anim_close();
     return 0;
