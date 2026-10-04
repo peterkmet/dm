@@ -218,6 +218,7 @@ static int entrance_frame(const char *data)
     while (command_process_queue())
         ;
     if (g_quit_requested) return 1;
+    if (g_new_game == ENTRANCE_RESUME || g_new_game == ENTRANCE_NEW_GAME) entrance_press_button(g_new_game == ENTRANCE_RESUME);
     if (g_new_game == ENTRANCE_RESUME) {
         if (load_saved_game()) {
             gameloop_start_loaded_game();

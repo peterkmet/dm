@@ -53,3 +53,18 @@ def test_no_frames_no_doors(lib):
     closed = screen(lib)
     lib.entrance_open_doors()
     assert screen(lib) == closed
+
+
+@pytest.mark.parametrize("resume", [0, 1])
+def test_pressed_button_shows_for_20_frames(lib, resume):
+    lib.entrance_draw()
+    closed, shots = screen(lib), []
+    hook = HOOK(lambda: shots.append(screen(lib)))
+    ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = ctypes.cast(hook, ctypes.c_void_p).value
+    try:
+        lib.entrance_press_button(resume)
+    finally:
+        ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
+    assert len(shots) == 20 and len(set(shots)) == 1
+    changed = [i for i in range(SCREEN_W * SCREEN_H) if shots[0][i] != closed[i]]
+    assert changed and all(240 <= i % SCREEN_W < 260 for i in changed)  # only the button column changes

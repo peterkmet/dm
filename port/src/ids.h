@@ -230,12 +230,15 @@
 #define ZONE_ENTRANCE_DOORS 429          /* size of the doors part */
 #define ZONE_ENTRANCE_LEFT_DOOR 430
 #define ZONE_ENTRANCE_RIGHT_DOOR 431
+#define ZONE_ENTRANCE_ENTER 435          /* the pressed ENTER button */
+#define ZONE_ENTRANCE_RESUME 436         /* the pressed RESUME button */
 #define ZONE_ENTRANCE_VIEWPORT 432       /* the dungeon view behind the doors, in the doors part */
 
 /* Commands and the game loop: graphics, icons, strings. */
 #define GFX_ENTRANCE_LEFT_DOOR 2
 #define GFX_ENTRANCE_RIGHT_DOOR 3
 #define GFX_ENTRANCE 4
+#define GFX_ENTRANCE_BUTTONS 11          /* the pressed buttons: ENTER, then RESUME, 13 rows each */
 #define ICON_EYE 202
 #define ICON_EYE_LOOKING 203
 #define TEXT_WAKE_UP 19

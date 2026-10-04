@@ -129,6 +129,22 @@ void entrance_draw(void)
     draw_entrance_doors(NULL, 0);
 }
 
+/* process_entrance: ENTER or RESUME shows its pressed button, plays the switch sound, and waits 20 frames. */
+void entrance_press_button(int resume)
+{
+    enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20, SOUND_SWITCH = 1, BUTTON_VOLUME = 64 };
+    static const uint8_t volumes[2] = { BUTTON_VOLUME, BUTTON_VOLUME };
+    const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_BUTTONS);
+    Bitmap screen = ui_screen();
+    Box box;
+    int16_t sx = 0, sy = 0;
+    if (!g_frame_hook) return;
+    if (bm && layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
+        draw_blit(bm, sx, (int16_t)(sy + (resume ? BUTTON_HEIGHT : 0)), &screen, &box, COLOR_NONE, 0);
+    sound_play_sample(SOUND_SWITCH, volumes);
+    wait_frames(BUTTON_FRAMES);
+}
+
 /* entrance_open_doors: after ENTER the doors slide apart, 2 pixels each 2 frames, over the dungeon view
    in the entrance palette. The door sound plays at the start and every 40 frames.
    ponytail: the original draws a made-up corridor; this draws the view of the start square. */
