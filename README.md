@@ -77,15 +77,53 @@ Build the game and the test library. The output goes to `build/`.
 make -C port
 ```
 
-Run the game.
+Run the game. It needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/`. `--data DIR` selects another folder.
 
 ```sh
 build/dm
 ```
 
-At this time, the game shows a test pattern. Press Escape or close the window to quit. `build/dm --frames N` quits after N frames.
+The game starts at the entrance. Click ENTER or press Return to start a new game. RESUME shows "NO SAVED GAME YET", because saved games are not available yet. QUIT or Ctrl+Q closes the game. Closing the window also closes the game.
 
-`build/dm --view` shows the dungeon view at the party start of a new game. It needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/` (`--data DIR` selects another folder). Up and Down move forward and back, Left and Right turn, and A and D move sideways. Walls stop the movement. Objects, creatures, and light levels are not drawn yet.
+### Controls
+
+The controls are the controls of the original Amiga game.
+
+| Input | Action |
+|---|---|
+| Up, keypad 8 | Move forward |
+| Down, keypad 2 or 5 | Move backward |
+| Left, keypad 4 | Move left (sideways) |
+| Right, keypad 6 | Move right (sideways) |
+| Delete, keypad 7 | Turn left |
+| Help, Insert, keypad 9 | Turn right |
+| F1 to F4 | Open or close the inventory of champion 1 to 4 |
+| Escape | Freeze the game. Escape again continues. |
+| Return | Wake up a sleeping party |
+| Click on the movement arrows | Move and turn |
+| Click on a mirror | Show the champion. Then click RESURRECT, REINCARNATE, or CANCEL. |
+| Click on an object in the view | Take the object into the leader hand |
+| Click on the floor with an object in the hand | Drop the object |
+| Click on the front wall or a door button | Use the wall switch or the door button |
+| Click on a hand in a status box | Take or put an object |
+| Click on a status box name | Select the leader |
+| Right-click on a status box | Open the inventory |
+| Inventory: click on a slot | Take or put an object |
+| Inventory: click on the mouth | Eat or drink the object in the hand |
+| Inventory: hold the eye | Show skills and statistics |
+| Inventory: ZZZ or the X | Sleep or close the inventory |
+| Action area | Click a champion hand, then an action |
+| Spell area | Click runes, then the cast button. Click a tab to select another caster. |
+
+Options:
+
+- `--filter none|scale2x|scale3x` selects the pixel-art upscale filter.
+- `--frames N` quits after N frames (50 frames per second).
+- `--view` shows only the dungeon view at the party start. Up and Down move, Left and Right turn, A and D move sideways.
+- `--show N` shows graphic N of `Graphics.DAT`.
+- The environment variable `DM_AUTO_ENTER=1` presses ENTER at the start. The tests use it.
+
+Not available yet: saved games, actions and throwing (the action menu opens, but the action has no effect), the description of an object under the eye, chests and scrolls in the panel, the credits, the door animation of the entrance, and the end of the game.
 
 Set `DM_FILTER` to select a pixel-art upscale filter. The values are `none` (default), `scale2x`, and `scale3x`. The filter makes the image 2 or 3 times larger before the window scaling. The filter gives the sharpest image when the window scale is a multiple of the filter factor. Example: `DM_FILTER=scale2x build/dm`.
 

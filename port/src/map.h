@@ -59,10 +59,12 @@ void object_clear_important(uint16_t thing);
 int16_t weapon_is_lit(uint16_t thing);
 uint16_t weapon_charges(uint16_t thing);
 uint16_t junk_charges(uint16_t thing);
+uint16_t armour_charges(uint16_t thing);
 int16_t scroll_is_closed(uint16_t thing);
 void weapon_set_lit(uint16_t thing, int16_t lit);
 void weapon_set_charges(uint16_t thing, uint16_t charges);
 void junk_set_charges(uint16_t thing, uint16_t charges);
+void armour_set_charges(uint16_t thing, uint16_t charges);
 void junk_set_type(uint16_t thing, uint16_t type);
 void potion_set_type(uint16_t thing, uint16_t type);
 void scroll_set_closed(uint16_t thing, int16_t closed);
@@ -110,6 +112,7 @@ static inline int16_t door_type(uint16_t thing) { return REC(thing)[3] & 1; }
 static inline int16_t door_checks_creature_height(uint16_t thing) { return (REC(thing)[3] & 0x20) != 0; }
 static inline int16_t door_breaks_by_magic(uint16_t thing) { return (REC(thing)[3] & 0x80) != 0; }
 static inline int16_t door_breaks_by_force(uint16_t thing) { return REC(thing)[2] & 1; }
+static inline int16_t door_button_present(uint16_t thing) { return (REC(thing)[3] & 0x40) != 0; }
 static inline int16_t door_info_defense(uint16_t door_info) { return door_info & 0xff; }
 
 /* Text record (thing type 2). */

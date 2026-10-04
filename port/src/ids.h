@@ -176,4 +176,29 @@
 #define TEXT_RESURRECTED 73
 #define TEXT_REINCARNATED 75
 
+/* Commands and the game loop: zones. */
+#define ZONE_SCREEN 2                    /* the whole screen */
+#define ZONE_VIEWPORT_MESSAGE 6          /* "WAKE UP", "GAME FROZEN" in the viewport */
+#define ZONE_MOVEMENT_ARROW_BEFORE_FIRST 67 /* + movement command 1-6: the arrow box */
+#define ZONE_ACTION_NAME_BOX_FIRST 82    /* + action list index 0-2 */
+#define ZONE_ACTION_PASS_BOX 98
+#define ZONE_SPELL_CASTER_TAB_FIRST 224  /* + 5 * caster + champion */
+#define ZONE_SPELL_SYMBOL_BOX_FIRST 245  /* + symbol 0-5 */
+#define ZONE_SPELL_CAST_BOX 252
+#define ZONE_SPELL_DELETE_BOX 254
+#define ZONE_DROP_CELL_FIRST 740         /* + view cell 0-3: the floor where a dropped object lands */
+#define ZONE_ENTRANCE_WORK 427           /* the doors part of the entrance on the screen */
+#define ZONE_ENTRANCE_DOORS 429          /* size of the doors part */
+#define ZONE_ENTRANCE_LEFT_DOOR 430
+#define ZONE_ENTRANCE_RIGHT_DOOR 431
+
+/* Commands and the game loop: graphics, icons, strings. */
+#define GFX_ENTRANCE_LEFT_DOOR 2
+#define GFX_ENTRANCE_RIGHT_DOOR 3
+#define GFX_ENTRANCE 4
+#define ICON_EYE 202
+#define ICON_EYE_LOOKING 203
+#define TEXT_WAKE_UP 19
+#define TEXT_GAME_FROZEN 20
+
 #endif

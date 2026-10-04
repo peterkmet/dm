@@ -276,6 +276,7 @@ void object_clear_important(uint16_t thing) { get_thing_data(thing)[3] &= (uint8
 int16_t weapon_is_lit(uint16_t thing) { return get_thing_data(thing)[2] >> 7; }
 uint16_t weapon_charges(uint16_t thing) { return (get_thing_data(thing)[2] & 0x3c) >> 2; }
 uint16_t junk_charges(uint16_t thing) { return get_thing_data(thing)[2] >> 6; }
+uint16_t armour_charges(uint16_t thing) { return (get_thing_data(thing)[2] & 0x1e) >> 1; }
 int16_t scroll_is_closed(uint16_t thing) { return (get_thing_data(thing)[2] & 0xfc) != 0; }
 
 void weapon_set_lit(uint16_t thing, int16_t lit)
@@ -288,6 +289,12 @@ void weapon_set_charges(uint16_t thing, uint16_t charges)
 {
     uint8_t *d = get_thing_data(thing);
     d[2] = (uint8_t)((d[2] & ~0x3c) | (charges & 15) << 2);
+}
+
+void armour_set_charges(uint16_t thing, uint16_t charges)
+{
+    uint8_t *d = get_thing_data(thing);
+    d[2] = (uint8_t)((d[2] & ~0x1e) | (charges & 15) << 1);
 }
 
 void junk_set_charges(uint16_t thing, uint16_t charges)
