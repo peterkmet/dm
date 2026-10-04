@@ -530,3 +530,24 @@ def test_dm_play_reports_an_unreachable_game(tmp_path, monkeypatch, capsys):
     assert play.main(["get_state"]) == 1
     assert "cannot reach the game" in json.loads(capsys.readouterr().out)["error"]
     assert "get_state\tfail" in (tmp_path / "calls.log").read_text()
+
+
+def test_torch_holder_is_not_a_lock(game):
+    lib = game.lib
+    assert lib.gameloop_new_game(str(GAME).encode())
+    holder = None
+    for y in range(lib.dungeon_map_height(0)):
+        for x in range(lib.dungeon_map_width(0)):
+            t = lib.get_square_first_thing(x, y)
+            while t not in (0xFFFE, 0xFFFF):
+                data = lib.get_thing_data(t)
+                if t >> 10 & 15 == 3 and 4 <= (data[2] << 8 | data[3]) >> 7 <= 7:  # a sensor that wants a torch
+                    holder = (x, y, t >> 14)
+                t = lib.get_next_thing(t)
+    assert holder
+    x, y, face = holder
+    for name, value in (("g_party_map_x", x + STEP_EAST[face]), ("g_party_map_y", y + STEP_NORTH[face]), ("g_party_direction", (face + 2) & 3)):
+        ctypes.c_int16.in_dll(lib, name).value = value
+    wall = state_json(game, 1)["squares"][4]  # depth 1, center: the wall ahead
+    assert wall["front_face"].get("torch_holder") is True
+    assert "lock" not in wall["front_face"]

@@ -220,7 +220,7 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 ### View fields
 
 - `squares[]`: the visible squares, `depth` 0-3 and `side` `left`, `center`, `right`. Each has `x`, `y`, `element` (`wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`). A door has `door` and `button`. A square that is not a wall has `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there.
-- A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, alcove?, fountain?, vi_altar?, ornament?}`. `facing` is the direction that the face points to. `switch` is a button or a lever. `lock` takes or holds an object: a keyhole, a torch holder, a slot. `ornament` is another ornament. The faces are the faces that the dungeon view draws: the front face of a center wall from depth 1, the side face of a side wall from depth 1, and also the front face of a side wall from depth 2. The view draws no ornaments on the side walls of depth 0, so these have no faces.
+- A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`. `facing` is the direction that the face points to. `switch` is a button or a lever. `lock` takes or holds an object: a keyhole or a slot. `torch_holder` is a wall holder for a torch. `ornament` is another ornament. The faces are the faces that the dungeon view draws: the front face of a center wall from depth 1, the side face of a side wall from depth 1, and also the front face of a side wall from depth 2. The view draws no ornaments on the side walls of depth 0, so these have no faces.
 - `piles[]`: `{cell, top}` for each object that `take_object` can reach now.
 - `wall_ahead_clickable`, `alcove`, `fountain`, `vi_altar`.
 
@@ -234,7 +234,7 @@ The view shows what a player sees. Creature health is not in the view, because t
 
 A square is in the map when `automap_is_seen` (`port/src/automap.c`) says it was seen, or when it is in the current view (with the visibility rule). The game marks the seen squares after each tick, in all modes.
 
-A wall shows a feature symbol when one of its faces shows the feature and the square in front of that face is in the map: `M` mirror, `L` switch, `K` lock, `V` vi altar, `A` alcove, `F` fountain, `?` text. With more than one feature, the first in this list wins. Other walls are `#`.
+A wall shows a feature symbol when one of its faces shows the feature and the square in front of that face is in the map: `M` mirror, `L` switch, `K` lock, `H` torch holder, `V` vi altar, `A` alcove, `F` fountain, `?` text. With more than one feature, the first in this list wins. Other walls are `#`.
 
 ## Play from the shell: dm-play
 

@@ -461,7 +461,7 @@ static void view_square(int16_t depth, int16_t side, int16_t *x, int16_t *y)
    or a slot that takes an object), an alcove, a fountain, a vi altar, or another ornament. */
 typedef struct {
     uint16_t text;                    /* THING_NONE: no visible text */
-    int mirror, switch_, lock, alcove, fountain, vi_altar, ornament;
+    int mirror, switch_, lock, torch_holder, alcove, fountain, vi_altar, ornament;
 } WallFace;
 
 static int sensor_takes_object(uint16_t type)
@@ -485,15 +485,18 @@ static int wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
         if (THING_TYPE(t) != THING_SENSOR) continue;
         if (sensor_type(t) == SENSOR_WALL_CHAMPION_PORTRAIT) f->mirror = 1;
         else if (sensor_ornament_ordinal(t) && sensor_type(t) == SENSOR_WALL_ORNAMENT_CLICK) f->switch_ = 1;
-        else if (sensor_ornament_ordinal(t) && sensor_takes_object(sensor_type(t))) f->lock = 1;
+        else if (sensor_ornament_ordinal(t) && sensor_takes_object(sensor_type(t))) {
+            if (sensor_data(t) >= ICON_TORCH_UNLIT && sensor_data(t) <= ICON_TORCH_LAST) f->torch_holder = 1;  /* it wants a torch */
+            else f->lock = 1;
+        }
     }
     switch (view_wall_ornament(x, y, face)) {
     case VIEW_ORNAMENT_ALCOVE: f->alcove = 1; break;
     case VIEW_ORNAMENT_FOUNTAIN: f->fountain = 1; break;
     case VIEW_ORNAMENT_VI_ALTAR: f->vi_altar = 1; break;
-    case VIEW_ORNAMENT_OTHER: f->ornament = !f->mirror && !f->switch_ && !f->lock; break;
+    case VIEW_ORNAMENT_OTHER: f->ornament = !f->mirror && !f->switch_ && !f->lock && !f->torch_holder; break;
     }
-    return f->text != THING_NONE || f->mirror || f->switch_ || f->lock || f->alcove || f->fountain || f->vi_altar || f->ornament;
+    return f->text != THING_NONE || f->mirror || f->switch_ || f->lock || f->torch_holder || f->alcove || f->fountain || f->vi_altar || f->ornament;
 }
 
 /* The wall face of (x, y) that faces direction face as {facing, features}, under key, when it shows something. */
@@ -509,6 +512,7 @@ static void wall_face_json(Json *j, const char *key, int16_t x, int16_t y, int16
     if (f.mirror) key_bool(j, "mirror", 1);
     if (f.switch_) key_bool(j, "switch", 1);
     if (f.lock) key_bool(j, "lock", 1);
+    if (f.torch_holder) key_bool(j, "torch_holder", 1);
     if (f.alcove) key_bool(j, "alcove", 1);
     if (f.fountain) key_bool(j, "fountain", 1);
     if (f.vi_altar) key_bool(j, "vi_altar", 1);
@@ -696,14 +700,14 @@ int state_json_path(int16_t goal_x, int16_t goal_y, int16_t *directions, int max
 /* The symbol of a wall: the most useful feature on a side that faces an explored square, else '#'. */
 static char wall_char(int16_t x, int16_t y)
 {
-    static const char symbols[] = "MLKVAF?";
+    static const char symbols[] = "MLKHVAF?";
     int best = (int)sizeof symbols - 1;
     for (int16_t face = DIRECTION_NORTH; face <= DIRECTION_WEST; face++) {
         int16_t nx = x, ny = y;
         WallFace f;
         update_map_coordinates_after_relative_movement(face, 1, 0, &nx, &ny);
         if (!in_party_map(nx, ny) || !is_seen(nx, ny) || !wall_face(x, y, face, &f)) continue;
-        const int found[] = { f.mirror, f.switch_, f.lock, f.vi_altar, f.alcove, f.fountain, f.text != THING_NONE };
+        const int found[] = { f.mirror, f.switch_, f.lock, f.torch_holder, f.vi_altar, f.alcove, f.fountain, f.text != THING_NONE };
         for (int k = 0; k < best; k++)
             if (found[k]) best = k;
     }
@@ -736,7 +740,7 @@ void state_json_map(Json *j)
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
     key_str(j, "legend", "row index = y (north at the top), column = x; @ party, # wall, . floor, D closed door, "
                          "d open door, < stairs up, > stairs down, O pit, T teleporter, space not explored; walls with a seen "
-                         "feature: M mirror, L switch (button or lever), K lock (keyhole or object slot), V vi altar, "
+                         "feature: M mirror, L switch (button or lever), K lock (keyhole or object slot), H torch holder, V vi altar, "
                          "A alcove, F fountain, ? text");
     json_key(j, "rows");
     json_open(j, '[');
