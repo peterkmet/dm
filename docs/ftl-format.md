@@ -9,7 +9,7 @@ All values are big-endian.
 | File | Content |
 |---|---|
 | `BJELoad_R` | AmigaDOS hunk executable. Loads FTL modules and gives them a service table. Starts `APPA`. |
-| `APPA.FTL` | Launcher. Loads `APPB`, then `ANIM`, then `KAOS` with language 0, 1, or 2 (English, French, German). Contains the R# unpacker. |
+| `APPA.FTL` | Launcher. Runs `SWSH` (the FTL logo with a sound), then `ANIM` with `TITL.DAT` (the title animation), then `APPB` (the language menu), then `KAOS` with language 0, 1, or 2 (English, French, German). Each module writes the tag of the next module into the shared block. Contains the R# unpacker. |
 | `KAOS.FTL` | Main game. Code is R# packed. |
 | `ANIM.FTL`, `APPB.FTL`, `CNFG.FTL`, `GRF1.FTL`, `MEM1.FTL`, `SWSH.FTL`, `USIO.FTL`, `VDEO.FTL` | Other modules. `CNFG.FTL` code is R# packed. |
 | `Graphics.DAT`, `Dungeon.DAT`, `DungeonF.DAT`, `DungeonG.DAT`, `TITL.DAT` | Game data. |

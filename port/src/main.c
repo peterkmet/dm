@@ -3,6 +3,7 @@
 #include <string.h>
 #include <SDL3/SDL.h>
 #include "advanced.h"
+#include "anim.h"
 #include "adventure.h"
 #include "control.h"
 #include "dungeon.h"
@@ -26,6 +27,7 @@
 #define GRAY_STEP 0x111          /* one step of the gray ramp: equal red, green, and blue */
 #define ICON_GRAPHIC 616          /* the front view of the mummy */
 #define ICON_TRANSPARENT_COLOR 4  /* the see-through color of the creature graphics */
+#define TITLE_FILE "TITL.DAT"      /* the DM title animation, before the entrance */
 #define DEFAULT_CONTROL_SOCKET ".dm/control.sock" /* in the home directory */
 
 /* Loads the engine module and Graphics.DAT from dir. Returns 0 with a log line when a file is missing. */
@@ -141,7 +143,7 @@ static void set_pointer(int in_game)
 
 enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
 
-static int mode, turnbased, auto_enter;
+static int mode, turnbased, auto_enter, title_pending; /* title_pending: the DM title plays before the entrance */
 static const char *data, *data_override, *control, *csb_dir;
 
 /* Keys and clicks of the start screens. Ctrl+Q quits. */
@@ -197,6 +199,16 @@ static void show_entrance(void)
     command_set_entrance_input();
     command_discard_all_input();
     g_new_game = ENTRANCE_WAITING;
+}
+
+/* The title animation, then the entrance. In MODE_ENTRANCE the input goes to the commands: a key or a click stops it. */
+static void play_title(void)
+{
+    char path[PATH_SIZE];
+    title_pending = 0;
+    snprintf(path, sizeof path, "%s/%s", data, TITLE_FILE);
+    anim_play(path);
+    show_entrance();
 }
 
 /* Runs the entrance commands; RESUME loads the saved game, ENTER starts a new game. Returns 0
@@ -320,6 +332,7 @@ static int start_adventure(void)
     entrance_draw();
     command_set_entrance_input();
     mode = MODE_ENTRANCE;
+    title_pending = !auto_enter;
     if (auto_enter) command_process_key(KEY_RETURN);
     return 1;
 }
@@ -378,6 +391,7 @@ int main(int argc, char **argv)
             if (mode == MODE_SELECT) select_draw();
         }
         if (mode == MODE_ENTRANCE) {
+            if (title_pending) play_title();
             if (!entrance_frame(data)) return 1;
         } else if (mode == MODE_GAME && (!turnbased || control_is_turn_pending())) {
             tick = gameloop_frame();

@@ -101,7 +101,7 @@ Without `--adventure` and `--mode`, the game shows two screens in the game font:
 
 Up and Down move the cursor. Return or keypad Enter selects the item. A click on an item selects it. Ctrl+Q or closing the window quits.
 
-After DUNGEON MASTER, the game shows the entrance. After CHAOS STRIKES BACK, the game shows a third screen: NEW ADVENTURE, RESUME, and QUIT. Escape goes back to the mode screen until the first game starts. After that, Escape does nothing on the CSB screen. See [Chaos Strikes Back](#chaos-strikes-back).
+After DUNGEON MASTER, the game plays the title animation (`TITL.DAT`, about 1 second; a key or a click stops it) and shows the entrance. `DM_AUTO_ENTER` and the turn-based mode skip the title. After CHAOS STRIKES BACK, the game shows a third screen: NEW ADVENTURE, RESUME, and QUIT. Escape goes back to the mode screen until the first game starts. After that, Escape does nothing on the CSB screen. See [Chaos Strikes Back](#chaos-strikes-back).
 
 | Flags | Screens |
 |---|---|
