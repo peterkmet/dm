@@ -24,6 +24,8 @@
 #define PATH_SIZE 1024
 #define WINDOW_SCALE 3
 #define GRAY_STEP 0x111          /* one step of the gray ramp: equal red, green, and blue */
+#define ICON_GRAPHIC 616          /* the front view of the mummy */
+#define ICON_TRANSPARENT_COLOR 4  /* the see-through color of the creature graphics */
 #define DEFAULT_CONTROL_SOCKET ".dm/control.sock" /* in the home directory */
 
 /* Loads the engine module and Graphics.DAT from dir. Returns 0 with a log line when a file is missing. */
@@ -242,6 +244,15 @@ static int load_font(void)
     return SDL_Log("cannot load the font from Graphics.DAT"), 0;
 }
 
+/* The window icon from the open Graphics.DAT in the colors of the interface. Without the graphic, SDL keeps its icon. */
+static void set_icon(void)
+{
+    static const uint16_t colors[PALETTE_COLORS] = { 0x000, 0x666, 0x888, 0x620, 0x0cc, 0x840, 0x080, 0x0c0,
+                                                     0xf00, 0xfa0, 0xc86, 0xff0, 0x444, 0xaaa, 0x00f, 0xfff };
+    const Bitmap *bm = gfx_bitmap(ICON_GRAPHIC);
+    if (bm) plat_set_icon(bm->px, bm->w, bm->h, ICON_TRANSPARENT_COLOR, colors);
+}
+
 /* Applies the chosen game mode: auto enter, frame hook, and in turn-based mode the control socket. */
 static int apply_mode(void)
 {
@@ -351,6 +362,7 @@ int main(int argc, char **argv)
     if (mode == MODE_SELECT && select_screen() == SCREEN_DONE && !start_adventure()) return 1;
     if (mode < MODE_SELECT && !apply_mode()) return 1;
     if (!plat_init(WINDOW_SCALE)) return 1;
+    set_icon();
     if (filter && !plat_set_filter(plat_filter_factor(filter))) return 1;
     /* turn-based and DM_AUTO_ENTER choose NEW ADVENTURE, as ENTER at the DM entrance */
     if (mode == MODE_SELECT && select_screen() == SCREEN_CSB && (auto_enter || g_game_mode == GAME_MODE_TURNBASED))

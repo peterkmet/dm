@@ -77,6 +77,20 @@ void plat_set_pointer(const uint8_t *px, int w, int h, int hot_x, int hot_y, con
     for (int i = 0; i < PALETTE_COLORS; i++) pointer_argb[i] = video_argb(colors[i]);
 }
 
+void plat_set_icon(const uint8_t *px, int w, int h, int transparent, const uint16_t *colors)
+{
+    SDL_Surface *icon = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_ARGB8888);
+    if (!icon) return;
+    uint32_t *out = icon->pixels;
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++) {
+            uint8_t c = px[y * w + x] & COLOR_INDEX_MASK;
+            out[y * (icon->pitch / ARGB_BYTES) + x] = c == transparent ? 0 : video_argb(colors[c]);
+        }
+    SDL_SetWindowIcon(win, icon);
+    SDL_DestroySurface(icon);
+}
+
 void plat_mouse_position(int *x, int *y)
 {
     *x = mouse_x;

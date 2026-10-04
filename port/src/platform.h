@@ -28,5 +28,7 @@ void plat_audio_pump(void);
    from the 16 Amiga colors. NULL px shows no pointer. */
 void plat_set_pointer(const uint8_t *px, int w, int h, int hot_x, int hot_y, const uint16_t *colors);
 void plat_mouse_position(int *x, int *y);
+/* The window and Dock icon: w x h pixels, color transparent see-through, the others from colors. */
+void plat_set_icon(const uint8_t *px, int w, int h, int transparent, const uint16_t *colors);
 
 #endif
