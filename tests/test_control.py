@@ -6,6 +6,7 @@ import socket
 import subprocess
 import tempfile
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -68,6 +69,24 @@ def pump(lib):
     lib.control_poll()
     if lib.control_is_turn_pending() and lib.gameloop_frame():
         lib.gameloop_tick()
+
+
+@contextmanager
+def pumped(game):
+    """The turn-based main loop in a thread, for clients that block while they wait."""
+    stop = threading.Event()
+
+    def loop():
+        while not stop.is_set():
+            pump(game.lib)
+
+    thread = threading.Thread(target=loop)
+    thread.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        thread.join()
 
 
 class Client:
@@ -161,15 +180,8 @@ def test_mcp_tools(game, monkeypatch, tmp_path):
     from dmtools import mcp_server
 
     monkeypatch.setenv("DM_CONTROL", game.socket)
-    stop = threading.Event()
-
-    def loop():
-        while not stop.is_set():
-            pump(game.lib)
-
-    thread = threading.Thread(target=loop)
-    thread.start()
-    try:
+    game.lib.startend_set_save_dir(str(tmp_path).encode())
+    with pumped(game):
         assert mcp_server.get_state()["state"]["champions"]
         assert len(mcp_server.get_view()["view"]["squares"]) == 12
         assert "@" in "".join(mcp_server.get_map()["map"]["rows"])
@@ -180,6 +192,78 @@ def test_mcp_tools(game, monkeypatch, tmp_path):
         assert mcp_server.wait(2)["ticks"] == 2
         image = mcp_server.screenshot()
         assert image.data.startswith(b"\x89PNG\r\n\x1a\n")
+        assert mcp_server.save_game() == {"ok": True}
+        assert mcp_server.load_game()["state"]["champions"]
+
+
+def test_save_and_load_restore_the_position_and_the_time(game, tmp_path):
+    game.lib.startend_set_save_dir(str(tmp_path).encode())
+    client = Client(game)
+    assert client.call(cmd="save") == {"ok": True}
+    assert (tmp_path / "DMGAME.DAT").exists()
+    saved = client.call(cmd="get_state")["state"]
+
+    x, y, _ = game.position()
+    free = next(k for k in range(4) if game.lib.get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
+    while game.position()[2] != free:
+        client.act("turn_right")
+    client.act("move_forward")
+    moved = client.call(cmd="wait", ticks=20)["state"]
+    assert moved["party"] != saved["party"] and moved["time"] > saved["time"]
+
+    loaded = client.call(cmd="load")
+    assert loaded["ok"]
+    assert loaded["state"]["party"] == saved["party"] and loaded["state"]["time"] == saved["time"]
+    assert client.call(cmd="wait", ticks=2)["ticks"] == 2
+    client.sock.close()
+
+
+def test_dm_play_prints_json_and_the_brief_summary(game, monkeypatch, capsys):
+    from dmtools import play
+
+    monkeypatch.setenv("DM_CONTROL", game.socket)
+    with pumped(game):
+        assert play.main(["get_state"]) == 0
+        out = capsys.readouterr().out
+        assert out.count("\n") == 1 and json.loads(out)["state"]["champions"]
+        assert play.main(["act", "take_object", '{"cell": 9}']) == 1
+        assert json.loads(capsys.readouterr().out)["ok"] is False
+        assert play.main(["--brief", "wait", '{"ticks": 2}']) == 0
+        out = capsys.readouterr().out
+        assert out.startswith("ticks 2 | game_over False")
+        assert "\n0 " in out and "HP " in out and "\nahead: " in out
+        assert play.main(["--brief", "act", "turn_left"]) == 0
+        assert "facing" in capsys.readouterr().out
+
+
+def kill_party(game, client):
+    pending = (ctypes.c_int16 * 4).in_dll(game.lib, "g_champion_pending_damage")
+    for index in range(game.value("g_party_champion_count", ctypes.c_uint16)):
+        pending[index] = game.champions[index].current_health + 100  # applied in the first tick of the turn
+    result = client.call(cmd="wait", ticks=50)
+    assert result["game_over"] is True and result["state"]["party"]["dead"] is True
+
+
+def test_load_and_new_game_after_a_party_death(game, tmp_path):
+    lib = game.lib
+    lib.startend_set_save_dir(str(tmp_path).encode())
+    client = Client(game)
+    try:
+        assert client.call(cmd="save") == {"ok": True}
+        kill_party(game, client)
+        assert client.call(cmd="save") == {"ok": False, "error": "game over"}
+        assert client.call(cmd="wait", ticks=1) == {"ok": False, "error": "game over"}
+
+        loaded = client.call(cmd="load")
+        assert loaded["ok"] and loaded["state"]["party"]["dead"] is False and loaded["state"]["champions"]
+        assert client.call(cmd="wait", ticks=2)["game_over"] is False
+
+        kill_party(game, client)
+        new = client.call(cmd="new_game")
+        assert new["ok"] and new["state"]["party"]["dead"] is False
+        assert new["state"]["champions"] == [] and new["state"]["time"] == 0
+        response = client.act("turn_left")
+        assert response["game_over"] is False and response["ticks"] >= 2
     finally:
-        stop.set()
-        thread.join()
+        client.sock.close()
+        ctypes.c_int16.in_dll(lib, "g_return_to_entrance").value = 0

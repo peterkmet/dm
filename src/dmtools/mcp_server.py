@@ -48,6 +48,8 @@ How to play:
    with keys or levers on walls ("ornament": true).
 8. Health: keep food and water above 0, rest with sleep (wake to stop) when stamina or mana
    is low. Watch "poisoned" and "wounds".
+9. Save often with save_game. After game over ("game_over": true), only get_*, load_game, and
+   new_game work.
 """
 
 mcp = MCPServer("dm", instructions=INSTRUCTIONS)
@@ -144,6 +146,26 @@ def wait(ticks: int = 10) -> dict:
     """Lets ticks (1-1000) of game time pass without input; returns {ok, ticks, state, view}.
     Use it to rest, to wait for action_disabled to clear, or for doors to open."""
     return request({"cmd": "wait", "ticks": ticks})
+
+
+@mcp.tool()
+def save_game() -> dict:
+    """Writes the game to the save file DMGAME.DAT (one save slot; the old file becomes
+    DMGAME.BAK). Returns {ok}. Not possible after game over. Save before risky fights."""
+    return request({"cmd": "save"})
+
+
+@mcp.tool()
+def load_game() -> dict:
+    """Loads the saved game, also after game over. Returns {ok, state}."""
+    return request({"cmd": "load"})
+
+
+@mcp.tool()
+def new_game() -> dict:
+    """Starts a new game at the dungeon entrance, also after game over. All progress since the
+    last save is lost. Returns {ok, state}."""
+    return request({"cmd": "new_game"})
 
 
 @mcp.tool()

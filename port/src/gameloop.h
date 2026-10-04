@@ -8,6 +8,8 @@
 
 /* Loads KAOS.FTL and Graphics.DAT from dir and sets up the interface. Returns 1 on success. */
 int gameloop_load_data(const char *dir);
+/* The directory that gameloop_load_data read the game files from. */
+const char *gameloop_data_dir(void);
 /* Shows the entrance: graphic 4 with the closed doors and the ENTER, RESUME, and QUIT buttons. */
 void entrance_draw(void);
 /* Loads Dungeon.DAT from dir and starts a new game on the start square. Returns 1 on success. */

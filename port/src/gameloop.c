@@ -65,16 +65,20 @@ enum { POINTER_ARROW, POINTER_HAND, POINTER_OBJECT };
 
 static int16_t frames_waiting;
 static uint16_t shown_hand_object = THING_NONE;
+static char data_dir[PATH_SIZE];
 
 int gameloop_load_data(const char *dir)
 {
     char path[PATH_SIZE];
+    snprintf(data_dir, sizeof data_dir, "%s", dir);
     snprintf(path, sizeof path, "%s/KAOS.FTL", dir);
     if (kaos_load(path)) return 0;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     startend_set_save_dir(dir);
     return gfx_open(path) >= 0 && !layout_init() && !text_init() && !tables_init() && !ui_init();
 }
+
+const char *gameloop_data_dir(void) { return data_dir; }
 
 /* The entrance graphic with both doors closed, in the entrance palette on the whole screen.
    ponytail: no dungeon behind the doors, no door animation, no credits. */

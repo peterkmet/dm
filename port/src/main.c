@@ -271,8 +271,12 @@ int main(int argc, char **argv)
         if (g_quit_requested) break;
         if (g_return_to_entrance) {
             g_return_to_entrance = 0;
-            mode = MODE_ENTRANCE;
-            show_entrance();
+            if (turnbased) {
+                entrance_draw(); /* the game mode stays: load and new_game over the socket start the next game */
+            } else {
+                mode = MODE_ENTRANCE;
+                show_entrance();
+            }
         }
         plat_wait_tick();
     }

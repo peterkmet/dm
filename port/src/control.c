@@ -13,8 +13,11 @@
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
+#include "gameloop.h"
 #include "ids.h"
 #include "inventory.h"
+#include "savegame.h"
+#include "startend.h"
 #include "state_json.h"
 #include "timeline_process.h"
 #include "ui.h"
@@ -55,7 +58,9 @@ static struct {
     int16_t damage;
 } turn;
 
-/* The party died, or the game is won: the endgame ran and no turn can follow. */
+static int load_failed;               /* a damaged save file left no game to play */
+
+/* The party died, or the game is won: the endgame ran and no turn can follow until load or new_game. */
 static int game_over(void) { return g_party_dead || g_game_won; }
 
 /* Input as the player gives it: clicks and keys go through the command queue. */
@@ -573,6 +578,34 @@ static void handle_act(const char *request)
     send_error("unknown action");
 }
 
+/* Loads DMGAME.DAT from the save directory, as RESUME does, and answers with the state. */
+static void handle_load(void)
+{
+    int16_t result = savegame_load(startend_save_dir());
+    if (result == SAVEGAME_MISSING) {
+        send_error("no saved game (use save first)");
+        return;
+    }
+    load_failed = result == SAVEGAME_DAMAGED;
+    if (load_failed) {
+        send_error("the saved game is damaged: use new_game");
+        return;
+    }
+    gameloop_start_loaded_game();
+    send_part("state", state_json_state);
+}
+
+/* Starts a new game on the start square, as ENTER at the entrance does, and answers with the state. */
+static void handle_new_game(void)
+{
+    if (!gameloop_new_game(gameloop_data_dir())) {
+        send_error("cannot load Dungeon.DAT");
+        return;
+    }
+    load_failed = 0;
+    send_part("state", state_json_state);
+}
+
 static void handle_request(const char *request)
 {
     char cmd[32], path[1024];
@@ -580,8 +613,16 @@ static void handle_request(const char *request)
         send_error("missing cmd");
         return;
     }
-    if (!g_dungeon_maps) {
-        send_error("no game is running");
+    if (!strcmp(cmd, "load")) {
+        handle_load();
+        return;
+    }
+    if (!strcmp(cmd, "new_game")) {
+        handle_new_game();
+        return;
+    }
+    if (!g_dungeon_maps || load_failed) {
+        send_error("no game is running: use load or new_game");
         return;
     }
     if (!strcmp(cmd, "get_state")) {
@@ -590,8 +631,15 @@ static void handle_request(const char *request)
         send_part("view", state_json_view);
     } else if (!strcmp(cmd, "get_map")) {
         send_part("map", state_json_map);
-    } else if (game_over() && (!strcmp(cmd, "act") || !strcmp(cmd, "wait"))) {
+    } else if (game_over() && (!strcmp(cmd, "act") || !strcmp(cmd, "wait") || !strcmp(cmd, "save"))) {
         send_error("game over");
+    } else if (!strcmp(cmd, "save")) {
+        if (!savegame_save(startend_save_dir())) send_error("cannot write the save file");
+        else {
+            Json j = { 0 };
+            json_raw(&j, "{\"ok\":true}");
+            send_line(&j);
+        }
     } else if (!strcmp(cmd, "act")) {
         handle_act(request);
     } else if (!strcmp(cmd, "wait")) {

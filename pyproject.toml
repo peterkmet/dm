@@ -12,6 +12,7 @@ dependencies = [
 dm-extract = "dmtools.extract:main"
 dm-ftl = "dmtools.ftl:main"
 dm-mcp = "dmtools.mcp_server:main"
+dm-play = "dmtools.play:main"
 
 [build-system]
 requires = ["hatchling"]
