@@ -112,6 +112,8 @@ With the first champion, the time of the last party move becomes the game time.
 4. Wounds: a threshold is the vitality-adjusted value of `(random16() & 127) + 10`. While the threshold is below the attack, a random allowed body slot gets a wound and the threshold doubles.
 5. Damage wakes up a sleeping party.
 
+Sleep keeps the selected runes of the magic caster, in the original (command 145 and `champion_wake_up`) and in the port (`go_to_sleep`). The input of a sleeping party only wakes it up, so the runes do not change during sleep. Mana regeneration does not depend on the selected runes.
+
 `champion_damage_all(attack, wounds, type)` gives each champion `max(1, attack − spread + random16() % (2 × spread))` with `spread = attack / 8 + 1`. It returns the number of champions hurt.
 
 `champion_apply_and_draw_pending_damage_and_wounds()` adds the pending wounds, subtracts the pending damage, and kills a champion at 0 health. A hurt champion gets event 12 (hide the damage) at time + 5, or the existing event moves to that time.
