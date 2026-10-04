@@ -5,7 +5,7 @@ Approved by the user on 2026-10-04 (design in chat, no PRD). Code style: `docs/c
 ## Modes
 
 - `build/dm --mode vanilla|advanced|turnbased`. Default `vanilla`. Game rules are the same in all modes.
-- `advanced`: display and comfort features. F4 turns them on and off during the game.
+- `advanced`: display and comfort features. Ctrl+E turns them on and off during the game.
 - `turnbased`: advanced plus control through a Unix socket. The game waits for a turn.
 
 ## Advanced features (from PyDM)
@@ -15,7 +15,7 @@ Approved by the user on 2026-10-04 (design in chat, no PRD). Code style: `docs/c
 3. Smooth projectile flight: interpolate the drawn position between ticks (`view.c`). No rule change.
 4. Coloured action icons (`ui_menus.c`).
 5. Item stat meters in the object description panel (`ui_champion.c`).
-6. Debug read-out on F3: level, X/Y, facing, light. Display only, no cheats.
+6. Debug read-out on Ctrl+D: level, X/Y, facing, light. Display only, no cheats. (F1–F4 stay the inventory keys.)
 7. Escape closes an open inventory first. With no inventory open, it freezes the game as in vanilla. Vanilla keeps the original: Escape always freezes.
 
 ## Turn-based mode
