@@ -168,6 +168,11 @@ def test_new_game_recruit_take_and_store(game):
     pile = next(i for i in range(4) if game.boxes[i].x != -1)
     game.click_box(game.boxes[pile])
     assert game.value("g_leader_hand_object", u16) & 0x3FFF == weapon & 0x3FFF
+    game.click_box(box, viewport=False)  # the status box hand takes the weapon without the inventory
+    assert game.champions[0].slots[SLOT_HAND_ACTION] & 0x3FFF == weapon & 0x3FFF
+    assert game.value("g_leader_hand_object", u16) == 0xFFFF
+    game.click_box(box, viewport=False)
+    assert game.value("g_leader_hand_object", u16) & 0x3FFF == weapon & 0x3FFF
 
     game.key(KEY_F1)
     game.run()
