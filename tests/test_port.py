@@ -52,6 +52,6 @@ def test_mouse_mapping(lib, out, pos, game):
 
 
 def test_smoke_run(lib):
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy")
+    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     r = subprocess.run([BUILD / "dm", "--frames", "5"], env=env, capture_output=True, timeout=10)
     assert r.returncode == 0, r.stderr

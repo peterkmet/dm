@@ -165,6 +165,6 @@ def test_expand_graphic_matches_original(lib):
 
 @needs_game
 def test_show_smoke_run(lib):
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy")
+    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     r = subprocess.run([BUILD / "dm", "--data", GAME, "--show", "1", "--frames", "5"], env=env, capture_output=True, timeout=10)
     assert r.returncode == 0, r.stderr

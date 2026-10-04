@@ -1,6 +1,6 @@
 # Status of the C port
 
-Updated: 2026-10-04 02:30. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
+Updated: 2026-10-04 03:10. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
 
 ## Done and committed
 
@@ -13,6 +13,8 @@ Updated: 2026-10-04 02:30. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`
 - Step 9 rules: `port/src/map.*`, `move.*`, `sensor.*`, `timeline_process.*`, `tests/test_move.py`, `docs/rules-movement.md` (cleaned to the coding standard).
 
 ## In progress when this file was written
+
+A usage limit stopped all agents at 02:50. At 03:05 three agents restarted from the files on disk: Step 11 (continue), Step 7b (continue), and Integration (new: `port/src/command.*`, `gameloop.*`, `main.c`, `tests/test_gameloop.py`). Steps 8, 9 and 10 are finished but not committed yet.
 
 - Step 10 champions: `port/src/champion.*`, `inventory.*`, `tests/test_champion.py`, `docs/rules-champions.md`.
 - Step 11 creatures, projectiles, magic: `port/src/group.*`, `projectile.*`, `magic.*`, `tests/test_creatures.py`, `docs/rules-creatures.md`.
