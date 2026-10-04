@@ -59,7 +59,9 @@
 #define POINTER_HEIGHT_BEFORE 2
 
 /* Byte offsets of the words of a pointer zone and of a pointer hotspot. */
-enum { POINTER_ZONE_X = 0, POINTER_ZONE_Y = 2, POINTER_ZONE_W = 4, POINTER_ZONE_H = 6, POINTER_ZONE_SHAPE = 8 };
+enum { POINTER_ZONE_X = 0, POINTER_ZONE_Y = 2, POINTER_ZONE_W = 4, POINTER_ZONE_H = 6, POINTER_ZONE_SHAPE = 8, POINTER_ZONE_CHAMPION = 10 };
+/* POINTER_ZONE_CHAMPION: champion index + 1 in bits 0-2; 8 and more is the name zone of the champion */
+enum { ZONE_CHAMPION_INDEX_MASK = 7, ZONE_CHAMPION_NAME = 8 };
 enum { HOTSPOT_X = 0, HOTSPOT_Y = 2 };
 
 enum { POINTER_ARROW, POINTER_HAND, POINTER_OBJECT };
@@ -475,7 +477,13 @@ static int pointer_shape(int16_t x, int16_t y, int in_game)
         int16_t zx = kaos_s16(z + POINTER_ZONE_X), zy = kaos_s16(z + POINTER_ZONE_Y);
         int16_t zw = kaos_s16(z + POINTER_ZONE_W), zh = kaos_s16(z + POINTER_ZONE_H);
         if (x < zx || x >= zx + zw || y < zy || y >= zy + zh) continue;
-        if (!kaos_s16(z + POINTER_ZONE_SHAPE)) return POINTER_ARROW;
+        int16_t champion = kaos_s16(z + POINTER_ZONE_CHAMPION);
+        if (!champion && !kaos_s16(z + POINTER_ZONE_SHAPE)) return POINTER_ARROW;
+        /* a status box: the arrow over a living champion with its inventory open, or over its name */
+        int16_t index = (int16_t)((champion & ZONE_CHAMPION_INDEX_MASK) - 1);
+        if (champion && index < g_party_champion_count && g_champions[index].current_health &&
+            (index + 1 == g_inventory_champion_ordinal || champion >= ZONE_CHAMPION_NAME))
+            return POINTER_ARROW;
         return g_leader_empty_handed ? POINTER_HAND : POINTER_OBJECT;
     }
     return POINTER_ARROW;

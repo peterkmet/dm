@@ -330,3 +330,36 @@ def test_hand_object_name_follows_the_icon(game):
     assert name() != before
     game.key(KEY_F1)
     game.run()
+
+
+def pointer(lib, x, y):
+    """The pointer at (x, y) in the game: width, height, and hot spot (they differ by shape)."""
+    px = (ctypes.c_uint8 * (32 * 32))()
+    out = [ctypes.c_int() for _ in range(4)]
+    assert lib.gameloop_pointer(x, y, 1, px, *[ctypes.byref(v) for v in out])
+    return tuple(v.value for v in out)
+
+
+def test_pointer_over_the_status_box_hands(game):
+    """KAOS 0x108530: over the hands of a champion, the pointer shows the hand object, unless that inventory is open."""
+    lib = game.lib
+    assert lib.gameloop_new_game(str(GAME).encode())
+    game.run(26)
+    path, direction = game.path_to_mirror()
+    game.walk(path)
+    game.face(direction)
+    game.run()
+    game.click_box(game.boxes[5])
+    game.click_zone(ZONE_RESURRECT)
+    box = Box()
+    assert lib.ui_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
+    game.click_box(box, viewport=False)  # the weapon goes into the leader hand
+    hand = (box.x + box.w // 2, box.y + box.h // 2)
+    viewport_object, arrow = pointer(lib, 100, 100), pointer(lib, 300, 100)
+    assert viewport_object != arrow
+    assert pointer(lib, *hand) == viewport_object
+    game.key(KEY_F1)
+    game.run()
+    assert pointer(lib, *hand) == arrow
+    game.key(KEY_F1)
+    game.run()
