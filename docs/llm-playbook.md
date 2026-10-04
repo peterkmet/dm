@@ -8,6 +8,7 @@ You play Dungeon Master (Amiga v3.60) through the turn-based mode of this C port
 2. Write down every spell you find (`spells.md`).
 3. Keep your own map of each level (`map_L<n>.md`). The game does not remember items or puzzles for you.
 4. Keep the party alive. Food, water, stamina, light, and healing come before progress.
+5. Cast LIGHT (LO FUL) when it gets dark. Do not walk in darkness.
 
 ## Rules
 
