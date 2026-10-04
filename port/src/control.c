@@ -38,7 +38,6 @@
 #define TEXT_SIZE 256
 #define SPELL_TAB_STEP 5              /* caster tab zones per caster */
 #define ACTION_NAME_SIZE 32
-#define PATH_MAX_STEPS 1024           /* a 32 x 32 map */
 
 #ifdef MSG_NOSIGNAL
 #define SEND_FLAGS MSG_NOSIGNAL       /* a closed client does not raise SIGPIPE (Linux) */
@@ -66,19 +65,16 @@ static struct {
     const char *stop;                 /* wait: the news that ended it early, or NULL */
 } turn;
 
-/* A batch: act_many runs a list of actions, goto walks a path; each step is one turn. */
+/* A batch: act_many runs a list of actions; each step is one turn. */
 static struct {
     int active, ran;
-    char *actions;                    /* act_many: a copy of the request; next is the rest of its actions array */
+    char *actions;                    /* a copy of the request; next is the rest of its actions array */
     const char *next;
-    int16_t path[PATH_MAX_STEPS];     /* goto: the directions to walk */
-    int path_length, path_done, moving;
-    int16_t facing;                   /* goto: the direction to face at the target, or -1 */
     uint32_t start_time;
     const char *stop, *error;
 } batch;
 
-/* What the party knew before a turn: act_many, goto, and wait stop on news against it. */
+/* What the party knew before a turn: act_many and wait stop on news against it. */
 static struct {
     int16_t health[CHAMPION_MAX_COUNT];
     uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX];
@@ -92,8 +88,6 @@ static struct {
     int16_t count;
     char name[PANEL_LINE_SIZE], lines[PANEL_LINE_COUNT + 1][PANEL_LINE_SIZE];
 } look_text;
-
-static const char *const direction_names[] = { "north", "east", "south", "west" };
 
 static int load_failed;               /* a damaged save file left no game to play */
 
@@ -758,16 +752,7 @@ static const char *news(void)
 static const char *batch_stop_reason(void)
 {
     if (!game_over() && turn_bumped()) return "bumped";  /* before damage: a bump into a wall hurts */
-    const char *reason = news();
-    if (reason) return reason;
-    if (batch.moving) {
-        int16_t x = turn.x, y = turn.y;
-        update_map_coordinates_after_relative_movement(batch.path[batch.path_done], 1, 0, &x, &y);
-        int last = batch.path_done + 1 == batch.path_length;
-        if (g_party_map_index != turn.map) return last ? NULL : "moved_elsewhere";
-        if (g_party_map_x != x || g_party_map_y != y) return "moved_elsewhere";
-    }
-    return NULL;
+    return news();
 }
 
 static void batch_finish(const char *stop, const char *error)
@@ -777,20 +762,6 @@ static void batch_finish(const char *stop, const char *error)
     send_turn_result();
     free(batch.actions);
     memset(&batch, 0, sizeof batch);
-}
-
-/* One turn of the party toward direction. */
-static const char *turn_toward(int16_t direction)
-{
-    return run_action(NORMALIZE(direction - g_party_direction) == 1 ? "turn_right" : "turn_left", "");
-}
-
-/* The next goto step: turn toward the next square of the path, or move onto it. */
-static const char *goto_step(void)
-{
-    batch.moving = batch.path[batch.path_done] == g_party_direction;
-    if (batch.moving) return run_action("move_forward", "");
-    return turn_toward(batch.path[batch.path_done]);
 }
 
 /* The next act_many element, a "name" or an {"action": "name", "args": {...}} object, copied to out.
@@ -829,23 +800,14 @@ static void batch_next(void)
     const char *error;
     char element[INPUT_SIZE / 4], name[ACTION_NAME_SIZE];
     snapshot();
-    if (batch.actions) {
-        int found = next_element(element, sizeof element);
-        if (found <= 0) {
-            batch_finish(found ? "failed" : "done", found ? "an item of actions is not an action name or object" : NULL);
-            return;
-        }
-        if (element[0] == '"') snprintf(name, sizeof name, "%.*s", (int)strlen(element) - 2, element + 1);
-        else if (!get_string(element, "action", name, sizeof name)) name[0] = 0;
-        error = run_action(name, element);
-    } else {
-        int arrived = batch.path_done == batch.path_length;
-        if (arrived && (batch.facing < 0 || batch.facing == g_party_direction)) {
-            batch_finish("done", NULL);
-            return;
-        }
-        error = arrived ? turn_toward(batch.facing) : goto_step();
+    int found = next_element(element, sizeof element);
+    if (found <= 0) {
+        batch_finish(found ? "failed" : "done", found ? "an item of actions is not an action name or object" : NULL);
+        return;
     }
+    if (element[0] == '"') snprintf(name, sizeof name, "%.*s", (int)strlen(element) - 2, element + 1);
+    else if (!get_string(element, "action", name, sizeof name)) name[0] = 0;
+    error = run_action(name, element);
     if (error) batch_finish("failed", error);
     else start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
 }
@@ -855,8 +817,6 @@ static void batch_after_turn(void)
 {
     batch.ran++;
     const char *stop = batch_stop_reason();
-    if (batch.moving && !stop) batch.path_done++;
-    batch.moving = 0;
     if (stop) batch_finish(stop, NULL);
     else batch_next();
 }
@@ -871,40 +831,6 @@ static void handle_act_many(const char *request)
     batch.actions = strdup(list + 1);
     if (!batch.actions) abort();
     batch.next = batch.actions;
-    batch.active = 1;
-    batch.start_time = g_game_time;
-    turn.has_damage = turn.moving = 0;
-    batch_next();
-}
-
-/* The optional facing of goto: a direction name or 0-3; -1 without facing, -2 when it is not a direction. */
-static long goto_facing(const char *request)
-{
-    char name[8];
-    if (!find_value(request, "facing")) return -1;
-    if (get_string(request, "facing", name, sizeof name)) {
-        for (long d = DIRECTION_NORTH; d <= DIRECTION_WEST; d++)
-            if (!strcmp(name, direction_names[d])) return d;
-        return -2;
-    }
-    long d = get_int(request, "facing", -2);
-    return d >= DIRECTION_NORTH && d <= DIRECTION_WEST ? d : -2;
-}
-
-static void handle_goto(const char *request)
-{
-    long x = get_int(request, "x", -1), y = get_int(request, "y", -1), facing = goto_facing(request);
-    if (facing == -2) {
-        send_error("facing must be north, east, south, west, or 0-3");
-        return;
-    }
-    int length = x < 0 || y < 0 ? -1 : state_json_path((int16_t)x, (int16_t)y, batch.path, PATH_MAX_STEPS);
-    if (length < 0) {
-        send_error("no path over explored, passable squares to this square");
-        return;
-    }
-    batch.path_length = length;
-    batch.facing = (int16_t)facing;
     batch.active = 1;
     batch.start_time = g_game_time;
     turn.has_damage = turn.moving = 0;
@@ -964,7 +890,7 @@ static void handle_request(const char *request)
         send_part("view", state_json_view);
     } else if (!strcmp(cmd, "get_map")) {
         send_part("map", state_json_map);
-    } else if (game_over() && (!strcmp(cmd, "act") || !strcmp(cmd, "act_many") || !strcmp(cmd, "goto") || !strcmp(cmd, "wait") ||
+    } else if (game_over() && (!strcmp(cmd, "act") || !strcmp(cmd, "act_many") || !strcmp(cmd, "wait") ||
                                !strcmp(cmd, "save"))) {
         send_error("game over");
     } else if (!strcmp(cmd, "save")) {
@@ -978,8 +904,6 @@ static void handle_request(const char *request)
         handle_act(request);
     } else if (!strcmp(cmd, "act_many")) {
         handle_act_many(request);
-    } else if (!strcmp(cmd, "goto")) {
-        handle_goto(request);
     } else if (!strcmp(cmd, "wait")) {
         long ticks = get_int(request, "ticks", 1);
         if (ticks < 1 || ticks > WAIT_MAX_TICKS) send_error("ticks must be 1-5000");

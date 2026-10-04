@@ -30,9 +30,6 @@ void state_json_map(Json *j);     /* the explored squares of the party map as te
 #define STATE_JSON_VISIBLE_GROUPS_MAX 12   /* four depths of three squares; a square holds one group */
 /* The creature groups (their things) on the squares the party sees now, written to groups. Returns the count. */
 int state_json_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX]);
-/* The shortest walk on the party map to (x, y) over explored squares the party can pass, as directions
-   (north, east, south, west), at most max. Returns the length (0 at the goal), or -1 without a path. */
-int state_json_path(int16_t x, int16_t y, int16_t *directions, int max);
 
 enum { STATE_JSON_STATE, STATE_JSON_VIEW, STATE_JSON_MAP };
 /* One part as a new string (tests); release it with free. */

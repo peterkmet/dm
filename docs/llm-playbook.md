@@ -47,16 +47,17 @@ Keep each file short. Update it at the moments given. Another session continues 
 | What is ahead | `uv run dm-play --brief get_view` |
 | Explored map | `uv run dm-play get_map` |
 | Several actions | `uv run dm-play act_many '["move_forward","turn_left","move_forward"]'` |
-| Walk to a square | `uv run dm-play goto X Y` |
 | Pass time | `uv run dm-play wait '{"ticks":50}'` |
 | Save, load | `uv run dm-play save`, `uv run dm-play load` |
 | See the screen | `uv run dm-play screenshot '{"path":"/Users/lego/github/dm/.playthrough/shot.png"}'`, then read the PNG |
 
-`act_many` and `goto` stop early on damage, a new creature, a new message, or a failed action. Check why they stopped before you continue.
+Walk to a square: plan the path from your own map and send it as `act_many`.
+
+`act_many` stops early on damage, a new creature, a new message, or a failed action. Check why it stopped before you continue.
 
 Use screenshots only when the text is not enough, for example to read a wall text or to find a feature.
 
-Save calls: ask for `get_map` only when you plan a route, not after every move. The `act`, `act_many`, `goto`, and `wait` responses already contain the state and the view.
+Save calls: ask for `get_map` only when you plan a route, not after every move. The `act`, `act_many`, and `wait` responses already contain the state and the view.
 
 Do not write helper loops that call `get_state`, `get_view`, or short `wait`s again and again. One `wait` with many ticks stops by itself on damage, a new creature, or a message, the same as `act_many`. Rest with one long `wait` (or `sleep`, then a long `wait`), then check why it stopped.
 
@@ -69,7 +70,7 @@ When a spell batch stops halfway, the chosen runes stay. Delete them (`delete_ru
 - **Stamina:** when stamina is below about a third, sleep in a safe place: `act sleep`, then `wait`, then `act wake`. Damage wakes the party. Sleep in steps of about 200 ticks; after each step read health, stamina, and mana in the response and wake up (`act wake`) as soon as they are full: sleeping longer only burns food and water. The game does not wake you.
 - **Light:** when `darkness` rises above 1, cast LIGHT (LO FUL). Darkness hides the far rows of the view. Keep a torch in a hand as a reserve.
 - **Pits:** do not walk into an open pit. A fall costs about 35–45 HP for each new champion. Climb down only with a rope.
-- **Walls:** walking into a wall hurts the front row. Use `goto` and look before you move.
+- **Walls:** walking into a wall hurts the front row. Plan the path from your own map, send it as `act_many`, and look before you move.
 - **Hidden plates:** note each square that closes a door or starts a trap in the level map. Walk around it.
 
 ## Spells and training

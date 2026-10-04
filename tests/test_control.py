@@ -416,30 +416,16 @@ def test_act_many_stops_only_on_a_new_creature_group(game):
             ctypes.c_int16.in_dll(lib, name).value = value
 
 
-def test_goto_walks_back_over_explored_squares(game):
+def test_goto_is_an_unknown_command(game):
+    from dmtools import mcp_server
+
     client = Client(game)
     try:
-        start = game.position()[:2]
-        direction = free_direction(game)
-        while game.position()[2] != direction:
-            client.act("turn_right")
-        client.act("move_forward")
-        direction = free_direction(game)
-        while game.position()[2] != direction:
-            client.act("turn_left")
-        client.act("move_forward")
-        assert game.position()[:2] != start
-
-        response = client.call(cmd="goto", x=start[0], y=start[1])
-        assert response["ok"] and response["stopped"] == "done", response.get("stopped")
-        assert [response["state"]["party"]["x"], response["state"]["party"]["y"]] == start and response["ran"] >= 2
-        assert client.call(cmd="goto", x=start[0], y=start[1])["ran"] == 0
-        x, y = start
-        wall = next((x + STEP_EAST[k], y + STEP_NORTH[k]) for k in range(4) if game.lib.get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 0)
-        assert client.call(cmd="goto", x=wall[0], y=wall[1])["ok"] is False
-        assert client.call(cmd="goto", x=99, y=0)["ok"] is False
+        x, y, _ = game.position()
+        assert client.call(cmd="goto", x=x, y=y) == {"ok": False, "error": "unknown cmd"}
     finally:
         client.sock.close()
+    assert not hasattr(mcp_server, "goto")
 
 
 def wall_direction(game):
@@ -470,40 +456,14 @@ def test_a_move_into_a_wall_bumps(game, monkeypatch, capsys):
         assert capsys.readouterr().out.splitlines()[0].endswith(" | BUMPED")
 
 
-def test_goto_turns_to_the_facing_at_the_target(game, monkeypatch, capsys):
-    from dmtools import mcp_server, play
-
-    client = Client(game)
-    try:
-        x, y, facing = game.position()
-        back = (facing + 2) % 4
-        response = client.call(cmd="goto", x=x, y=y, facing=DIRECTIONS[back])
-        assert response["stopped"] == "done" and response["ran"] == 2 and response["state"]["party"]["facing"] == DIRECTIONS[back]
-        response = client.call(cmd="goto", x=x, y=y, facing=(back + 1) % 4)
-        assert response["ran"] == 1 and response["state"]["party"]["facing"] == DIRECTIONS[(back + 1) % 4]
-        assert client.call(cmd="goto", x=x, y=y, facing="up")["ok"] is False
-        assert client.call(cmd="goto", x=x, y=y, facing=4)["ok"] is False
-    finally:
-        client.sock.close()
-    monkeypatch.setenv("DM_CONTROL", game.socket)
-    with pumped(game):
-        assert mcp_server.goto(x, y, "north")["state"]["party"]["facing"] == "north"
-        assert play.main(["goto", str(x), str(y), "3"]) == 0
-        assert json.loads(capsys.readouterr().out)["state"]["party"]["facing"] == "west"
-
-
 def test_mcp_and_dm_play_batches(game, monkeypatch, capsys):
     from dmtools import mcp_server, play
 
     monkeypatch.setenv("DM_CONTROL", game.socket)
     with pumped(game):
         assert mcp_server.act_many(["turn_left", {"action": "turn_right"}])["ran"] == 2
-        x, y, _ = game.position()
-        assert mcp_server.goto(x, y)["stopped"] == "done"
         assert play.main(["--brief", "act_many", '["turn_left", "turn_right"]']) == 0
         assert capsys.readouterr().out.startswith("ticks ")
-        assert play.main(["goto", str(x), str(y)]) == 0
-        assert json.loads(capsys.readouterr().out)["ran"] == 0
 
 
 def test_swap_champions_and_look(game, monkeypatch, capsys):
@@ -614,6 +574,19 @@ def test_brief_prints_creatures_on_side_squares():
     lines = view_lines(view)
     assert "here left: floor, CREATURES 2 mummy" in lines
     assert "ahead right: floor, CREATURES 1 screamer" in lines
+
+
+def test_brief_prints_doors_and_pits_on_side_squares():
+    from dmtools.play import view_lines
+
+    floor = {"element": "floor"}
+    view = {"squares": [floor | {"depth": d, "side": s} for d in (0, 1) for s in ("left", "center", "right")], "piles": []}
+    view["squares"][3] |= {"element": "door", "door": "closed"}
+    view["squares"][2] |= {"element": "pit"}
+    lines = view_lines(view)
+    assert "ahead left: door, closed" in lines
+    assert "here right: pit" in lines
+    assert not any(line.startswith(("here left:", "ahead right:")) for line in lines)
 
 
 def test_map_grid_has_indexes(game, monkeypatch, capsys):

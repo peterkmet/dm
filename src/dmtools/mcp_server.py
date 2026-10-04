@@ -28,9 +28,9 @@ How to play:
 2. Walk with move_forward, move_back, move_left, move_right (strafe), turn_left, turn_right.
    Walls, closed doors, and creatures block you: the response has "bumped": true, and a bump
    into a wall hurts two champions a little.
-   Fewer calls: `act_many` runs a list of actions, `goto` walks to an explored square. Both stop
-   early when something happens (damage, a new creature group comes into view, a message, a bump,
-   a failed step).
+   Fewer calls: `act_many` runs a list of actions; plan the path from your own map and send it as
+   `act_many`. It stops early when something happens (damage, a new creature group comes into
+   view, a message, a bump, a failed step).
 3. Recruit: face a wall whose "front_face" has "mirror": true at depth 1, act click_wall_ahead, then
    look at the "candidate" in the state and act recruit
    with choice "resurrect" (keeps the skills; the best choice) or "reincarnate" (trades skill
@@ -148,18 +148,6 @@ def act_many(actions: list) -> dict:
     before the step), message (a new message), bumped (a move did not
     move the party), game_over, or failed (error says why; ran counts only the turns that ran)."""
     return request({"cmd": "act_many", "actions": actions})
-
-
-@mcp.tool()
-def goto(x: int, y: int, facing: str | int | None = None) -> dict:
-    """Walks to square (x, y) of the current level on the shortest path over explored squares
-    (floor, open doors; stairs only as the target; no pits) with turns and moves. With facing
-    (north, east, south, west, or 0-3) the party turns to it at the target. Returns like
-    act_many; stopped can also be moved_elsewhere (a teleporter). ok false: no such path."""
-    payload = {"cmd": "goto", "x": x, "y": y}
-    if facing is not None:
-        payload["facing"] = facing
-    return request(payload)
 
 
 @mcp.tool()

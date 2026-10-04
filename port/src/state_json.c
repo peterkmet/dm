@@ -30,7 +30,6 @@
 #define VIEW_DEPTH_COUNT 4            /* the party square and three squares ahead */
 #define CHAMPION_SYMBOL_COUNT 4
 #define STAMINA_DISPLAY_UNIT 10       /* the inventory shows stamina in tenths of the stored value */
-#define MAP_SIZE_MAX 32               /* map width and height have 5 bits */
 
 static const char *const direction_names[4] = { "north", "east", "south", "west" };
 static const char *const statistic_names[STAT_COUNT] = { "luck", "strength", "dexterity", "wisdom", "vitality", "antimagic", "antifire" };
@@ -672,52 +671,6 @@ static int is_seen(int16_t x, int16_t y)
             if (vx == x && vy == y) return 1;
         }
     return 0;
-}
-
-/* An explored square the party can walk through: floor, an open or broken door; stairs only as the goal. */
-static int is_walkable(int16_t x, int16_t y, int goal)
-{
-    if (!in_party_map(x, y) || !is_seen(x, y)) return 0;
-    uint8_t square = dungeon_square(g_party_map_index, x, y);
-    const char *name = square_name(square);
-    if (!strcmp(name, "floor")) return 1;
-    if (!strcmp(name, "door")) return door_state(square) == DOOR_OPEN || door_state(square) == DOOR_DESTROYED;
-    return goal && (!strcmp(name, "stairs_up") || !strcmp(name, "stairs_down"));
-}
-
-int state_json_path(int16_t goal_x, int16_t goal_y, int16_t *directions, int max)
-{
-    enum { NOT_REACHED = -1, START = 4 };
-    int16_t entered_by[MAP_SIZE_MAX][MAP_SIZE_MAX], queue[MAP_SIZE_MAX * MAP_SIZE_MAX][2];
-    int head = 0, tail = 0;
-    memset(entered_by, NOT_REACHED, sizeof entered_by);  /* every byte 0xff: each entry is -1 */
-    if (!in_party_map(goal_x, goal_y)) return -1;
-    entered_by[g_party_map_x][g_party_map_y] = START;
-    queue[tail][0] = g_party_map_x, queue[tail++][1] = g_party_map_y;
-    while (head < tail && entered_by[goal_x][goal_y] == NOT_REACHED) {
-        int16_t x = queue[head][0], y = queue[head++][1];
-        for (int16_t dir = DIRECTION_NORTH; dir <= DIRECTION_WEST; dir++) {
-            int16_t nx = x, ny = y;
-            update_map_coordinates_after_relative_movement(dir, 1, 0, &nx, &ny);
-            if (!in_party_map(nx, ny) || entered_by[nx][ny] != NOT_REACHED) continue;
-            if (!is_walkable(nx, ny, nx == goal_x && ny == goal_y)) continue;
-            entered_by[nx][ny] = dir;
-            queue[tail][0] = nx, queue[tail++][1] = ny;
-        }
-    }
-    if (entered_by[goal_x][goal_y] == NOT_REACHED) return -1;
-    int length = 0;
-    for (int16_t x = goal_x, y = goal_y; entered_by[x][y] != START;) {
-        update_map_coordinates_after_relative_movement(entered_by[x][y], -1, 0, &x, &y);
-        length++;
-    }
-    if (length > max) return -1;
-    int16_t x = goal_x, y = goal_y;
-    for (int k = length - 1; k >= 0; k--) {
-        directions[k] = entered_by[x][y];
-        update_map_coordinates_after_relative_movement(directions[k], -1, 0, &x, &y);
-    }
-    return length;
 }
 
 /* The symbol of a wall: the most useful feature on a side that faces an explored square, else '#'. */

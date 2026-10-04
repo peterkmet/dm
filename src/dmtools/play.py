@@ -3,7 +3,6 @@
     uv run dm-play <cmd> [json-args]
     uv run dm-play act <action> [json-args]
     uv run dm-play act_many '<json-list>'
-    uv run dm-play goto <x> <y> [facing]
     uv run dm-play wait '{"ticks": N}'    (1-5000; stops early on damage, a new creature, a message)
 
 The response is printed as compact JSON on one line. --brief prints a short summary instead.
@@ -78,8 +77,9 @@ def view_lines(view: dict) -> list[str]:
             break
         lines.append(f"{name}: {square_text(squares[depth, 'center'])}")
         for side in ("left", "right"):
-            if any(key in squares[depth, side] for key in ("side_face", "floor_ornament", "creatures")):
-                lines.append(f"{name} {side}: {square_text(squares[depth, side])}")
+            square = squares[depth, side]
+            if square["element"] == "pit" or any(key in square for key in ("door", "side_face", "floor_ornament", "creatures")):
+                lines.append(f"{name} {side}: {square_text(square)}")
     if view["piles"]:
         lines.append("piles: " + ", ".join(f"cell {p['cell']} {p['top']}" for p in view["piles"]))
     return lines
@@ -116,9 +116,9 @@ def log_call(path: str, payload: dict, response: dict) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="dm-play", description="Sends one request to the Dungeon Master control socket.")
     parser.add_argument("--brief", action="store_true", help="print a short summary instead of the JSON")
-    parser.add_argument("cmd", help="get_state, get_view, get_map, act, act_many, goto, wait, screenshot, save, load, new_game")
+    parser.add_argument("cmd", help="get_state, get_view, get_map, act, act_many, wait, screenshot, save, load, new_game")
     parser.add_argument("rest", nargs="*", help="act: the action, then the args as JSON; act_many: the actions as a JSON list; "
-                        "goto: x y [facing]; other commands: the fields as JSON")
+                        "other commands: the fields as JSON")
     options = parser.parse_args(argv)
     payload = {"cmd": options.cmd}
     rest = options.rest
@@ -131,12 +131,6 @@ def main(argv: list[str] | None = None) -> int:
         if len(rest) != 1:
             parser.error("act_many needs the actions as one JSON list")
         payload["actions"] = json.loads(rest[0])
-    elif options.cmd == "goto":
-        if len(rest) not in (2, 3):
-            parser.error("goto needs x and y, and an optional facing")
-        payload["x"], payload["y"] = int(rest[0]), int(rest[1])
-        if len(rest) == 3:
-            payload["facing"] = int(rest[2]) if rest[2].isdigit() else rest[2]
     elif rest:
         payload.update(json.loads(rest[0]))
     if "path" in payload:
