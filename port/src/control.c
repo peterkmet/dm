@@ -1003,30 +1003,12 @@ static void handle_request(const char *request)
     }
 }
 
-/* The party sleeps and each living champion has full health, stamina, and mana: a player wakes up. */
-static int party_rested(void)
-{
-    if (!g_party_is_sleeping) return 0;
-    for (uint16_t i = 0; i < g_party_champion_count; i++) {
-        const Champion *c = &g_champions[i];
-        if (c->current_health && (c->current_health < c->maximum_health || c->current_stamina < c->maximum_stamina ||
-                                  c->current_mana < c->maximum_mana))
-            return 0;
-    }
-    return 1;
-}
-
 /* A turn ends when the party can move again after the minimum ticks, or at the maximum. A wait
-   ends early on news, or when the sleeping party is rested. A game that does not tick ends the
-   turn after a frame limit. */
+   ends early on news. A game that does not tick ends the turn after a frame limit. */
 static int turn_finished(void)
 {
     long ticks = (long)(g_game_time - turn.start_time);
     if (turn.wait_only && (turn.stop = news())) return 1;
-    if (turn.wait_only && party_rested()) {
-        turn.stop = "rested";
-        return 1;
-    }
     if (game_over()) return 1;
     if (ticks >= turn.max_ticks || turn.frames > turn.max_ticks * FRAMES_PER_TICK_LIMIT) return 1;
     return !turn.wait_only && ticks >= turn.min_ticks && !g_disabled_movement_ticks;
