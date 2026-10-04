@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 #include "advanced.h"
 #include "anim.h"
+#include "logo.h"
 #include "adventure.h"
 #include "control.h"
 #include "dungeon.h"
@@ -27,6 +28,7 @@
 #define GRAY_STEP 0x111          /* one step of the gray ramp: equal red, green, and blue */
 #define ICON_GRAPHIC 616          /* the front view of the mummy */
 #define ICON_TRANSPARENT_COLOR 4  /* the see-through color of the creature graphics */
+#define LOGO_FILE "SWSH.FTL"       /* the FTL logo, before the DM title */
 #define TITLE_FILE "TITL.DAT"      /* the DM title animation, before the entrance */
 #define DEFAULT_CONTROL_SOCKET ".dm/control.sock" /* in the home directory */
 
@@ -201,11 +203,13 @@ static void show_entrance(void)
     g_new_game = ENTRANCE_WAITING;
 }
 
-/* The title animation, then the entrance. In MODE_ENTRANCE the input goes to the commands: a key or a click stops it. */
+/* The FTL logo, the title animation, then the entrance. In MODE_ENTRANCE the input goes to the commands: a key or a click stops it. */
 static void play_title(void)
 {
     char path[PATH_SIZE];
     title_pending = 0;
+    snprintf(path, sizeof path, "%s/%s", data, LOGO_FILE);
+    logo_play(path);
     snprintf(path, sizeof path, "%s/%s", data, TITLE_FILE);
     anim_play(path);
     show_entrance();
