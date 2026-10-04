@@ -11,6 +11,10 @@ static Uint64 next_tick;
 static SDL_AudioStream *stream;
 static int filter = 1; /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */
 static uint8_t big[SCREEN_H * 3][SCREEN_W * 3];
+enum { POINTER_MAX = 32 };
+static uint8_t pointer_px[POINTER_MAX * POINTER_MAX];
+static uint32_t pointer_argb[16];
+static int pointer_w, pointer_h, pointer_hot_x, pointer_hot_y, mouse_x, mouse_y;
 
 #define TICK_NS (SDL_NS_PER_SECOND / 50) /* PAL VBL */
 
@@ -48,18 +52,52 @@ void plat_quit(void)
     SDL_Quit();
 }
 
+void plat_set_pointer(const uint8_t *px, int w, int h, int hot_x, int hot_y, const uint16_t *colors)
+{
+    pointer_w = px && w <= POINTER_MAX && h <= POINTER_MAX ? w : 0;
+    pointer_h = pointer_w ? h : 0;
+    pointer_hot_x = hot_x;
+    pointer_hot_y = hot_y;
+    if (!pointer_w) return;
+    if (SDL_CursorVisible()) SDL_HideCursor();
+    memcpy(pointer_px, px, (size_t)w * h);
+    for (int i = 0; i < 16; i++) pointer_argb[i] = video_argb(colors[i]);
+}
+
+void plat_mouse_position(int *x, int *y)
+{
+    *x = mouse_x;
+    *y = mouse_y;
+}
+
+/* Draws the pointer at the mouse position into the filtered frame (row length stride). */
+static void draw_pointer(uint32_t *px, int stride)
+{
+    for (int y = 0; y < pointer_h; y++)
+        for (int x = 0; x < pointer_w; x++) {
+            uint8_t c = pointer_px[y * pointer_w + x];
+            int sx = mouse_x - pointer_hot_x + x, sy = mouse_y - pointer_hot_y + y;
+            if (!c || sx < 0 || sy < 0 || sx >= SCREEN_W || sy >= SCREEN_H) continue;
+            for (int dy = 0; dy < filter; dy++)
+                for (int dx = 0; dx < filter; dx++) px[(sy * filter + dy) * stride + sx * filter + dx] = pointer_argb[c & 15];
+        }
+}
+
 void plat_present(void)
 {
-    uint32_t pal[16], *px;
+    uint32_t pal[32], *px;
     int pitch, w, h, s, ox, oy, tw = SCREEN_W * filter;
     const uint8_t *src = filter == 1 ? &fb[0][0] : &big[0][0];
     if (filter == 2) scale2x(&fb[0][0], SCREEN_W, SCREEN_H, &big[0][0]);
     if (filter == 3) scale3x(&fb[0][0], SCREEN_W, SCREEN_H, &big[0][0]);
-    for (int i = 0; i < 16; i++) pal[i] = video_argb(palette[i]);
+    for (int i = 0; i < 32; i++) pal[i] = video_argb(palette[i]);
     if (!SDL_LockTexture(tex, NULL, (void **)&px, &pitch)) return;
-    for (int y = 0; y < SCREEN_H * filter; y++)
+    for (int y = 0; y < SCREEN_H * filter; y++) {
+        int row = y / filter, top = row >= palette_split_top && row < palette_split_bottom ? 0 : 16;
         for (int x = 0; x < tw; x++)
-            px[y * pitch / 4 + x] = pal[src[y * tw + x] & 15];
+            px[y * pitch / 4 + x] = pal[(src[y * tw + x] & 15) | top];
+    }
+    draw_pointer(px, pitch / 4);
     SDL_UnlockTexture(tex);
 
     SDL_GetCurrentRenderOutputSize(ren, &w, &h);
@@ -82,15 +120,25 @@ int plat_poll(PlatEvent *e)
             e->type = PLAT_QUIT;
             return 1;
         case SDL_EVENT_KEY_DOWN:
+            if (ev.key.repeat) break;
             e->type = PLAT_KEY;
             e->key = ev.key.key;
+            e->modifiers = ev.key.mod;
             return 1;
-        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_MOTION:
             SDL_ConvertEventToRenderCoordinates(ren, &ev); /* window points -> output pixels */
             SDL_GetCurrentRenderOutputSize(ren, &w, &h);
-            e->type = PLAT_MOUSE;
+            video_map_mouse(w, h, (int)ev.motion.x, (int)ev.motion.y, &mouse_x, &mouse_y);
+            break;
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
+            SDL_ConvertEventToRenderCoordinates(ren, &ev);
+            SDL_GetCurrentRenderOutputSize(ren, &w, &h);
+            e->type = ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN ? PLAT_MOUSE : PLAT_MOUSE_UP;
             e->button = ev.button.button;
             video_map_mouse(w, h, (int)ev.button.x, (int)ev.button.y, &e->x, &e->y);
+            mouse_x = e->x;
+            mouse_y = e->y;
             return 1;
         }
     }

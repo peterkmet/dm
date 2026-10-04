@@ -1,7 +1,14 @@
 #include "video.h"
 
 uint8_t fb[SCREEN_H][SCREEN_W] = { 0 };
-uint16_t palette[16];
+uint16_t palette[32];
+int16_t palette_split_top = 0, palette_split_bottom = SCREEN_H;
+
+/* Amiga color of index c on screen row y. */
+uint16_t video_color(int y, uint8_t c)
+{
+    return palette[(c & 15) | (y >= palette_split_top && y < palette_split_bottom ? 0 : 16)];
+}
 
 /* Converts Amiga 0x0RGB to ARGB8888. */
 uint32_t video_argb(uint16_t amiga)

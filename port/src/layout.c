@@ -145,3 +145,15 @@ int layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, 
     }
     return box->w > 0 && box->h > 0;
 }
+
+/* get_zone_box_clipped: the box of zone with the size record of its parent, scaled by
+   wp / 10000 and hp / 10000 (10000 = full size). Returns 0 when nothing is visible. */
+int layout_get_zone_box(int16_t zone, int16_t wp, int16_t hp, Box *box)
+{
+    const uint8_t *r = find(zone), *p;
+    if (!r || !S16(r, 1) || !(p = find(S16(r, 1))) || S16(p, 0) != 9) return 0;
+    int16_t w = wp == 10000 ? S16(p, 2) : (int16_t)((int32_t)S16(p, 2) * wp / 10000);
+    int16_t h = hp == 10000 ? S16(p, 3) : (int16_t)((int32_t)S16(p, 3) * hp / 10000);
+    if (w <= 0 || h <= 0) return 0;
+    return layout_get_zone(zone, 0, 0, box, &w, &h);
+}

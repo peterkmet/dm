@@ -1,4 +1,5 @@
 #include "game.h"
+#include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
 #include "random.h"
@@ -39,6 +40,8 @@ void game_new(void)
 {
     memset(&g_party, 0, sizeof g_party);
     memset(g_champions, 0, sizeof g_champions);
+    memset(g_champion_pending_damage, 0, sizeof g_champion_pending_damage);
+    memset(g_champion_pending_wounds, 0, sizeof g_champion_pending_wounds);
     g_party_champion_count = 0;
     g_leader_index = g_magic_caster_champion_index = -1;
     g_leader_hand_object = 0xffff;

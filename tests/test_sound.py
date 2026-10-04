@@ -145,7 +145,9 @@ def test_request_queue_matches_original(lib, emu):
     for _ in range(40):
         set_party(lib, emu, 10, 10, rnd.randrange(4))
         pending[0] = pending[1] = -1
+        volumes[:] = [0] * 4  # earlier tests can leave volumes behind
         emu.write(G_PENDING_SOUNDS, b"\xff\xff\xff\xff")
+        emu.write(G_PENDING_VOLUMES, bytes(4))
         for _ in range(6):
             s, x, y = rnd.randrange(35), rnd.randrange(-3, 24), rnd.randrange(-3, 24)
             emu.call(SOUND_REQUEST_PLAY, [(2, s), (2, x), (2, y), (2, 1)])

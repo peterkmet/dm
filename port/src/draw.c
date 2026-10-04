@@ -59,3 +59,41 @@ int draw_shrink(const Bitmap *src, int16_t dw, int16_t dh, const uint8_t *palett
     *out = (Bitmap){ (uint16_t)dw, (uint16_t)dh, px };
     return 0;
 }
+
+/* blit_box_filled_with_masked_bitmap on chunky pixels. units holds one 16-pixel unit per word of its
+   plane 0, in row order. The temp bitmap is box->w rounded up to words; each word takes the next unit,
+   from first_unit, restarting at 0 when the index reaches last_unit. With a mask (bit 7 of transparent
+   clear), the mask words are read in row order; a 0 bit gives the transparent color. mask_flip mirrors
+   the mask by whole words, as flip_bitmap_horizontal does. The temp bitmap is then blitted from
+   (sx, sy) with the color key. */
+void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bitmap *dst, const Box *box, int16_t last_unit, int16_t first_unit, int16_t transparent, int16_t sx, int16_t sy)
+{
+    if (box->w < 1 || box->h < 1) return;
+    if ((transparent & FILL_OPAQUE) == FILL_OPAQUE) mask = NULL, transparent = -1;
+    else if (transparent & FILL_NO_MASK) mask = NULL, transparent &= ~FILL_NO_MASK;
+    int words = ((box->w - 1) >> 4) + 1, tw = words * 16, uw = (units->w + 15) >> 4, mw = mask ? (mask->w + 15) >> 4 : 0;
+    uint8_t *temp = malloc((size_t)tw * box->h);
+    if (!temp) return;
+    int16_t u = first_unit;
+    for (int k = 0; k < words * box->h; k++) {
+        for (int p = 0; p < 16; p++) {
+            int ux = u % uw * 16 + p, uy = u / uw;
+            uint8_t c = ux < units->w && uy < units->h ? units->px[uy * units->w + ux] : 0;
+            if (mask) {
+                int mx = k % mw * 16 + p, my = k / mw;
+                if (mask_flip) mx = mw * 16 - 1 - mx;
+                if (!(mx < mask->w && my < mask->h && mask->px[my * mask->w + mx] & 1)) c = transparent & 15;
+            }
+            temp[k * 16 + p] = c;
+        }
+        if (++u == last_unit) u = 0;
+    }
+    for (int y = 0; y < box->h; y++)
+        for (int x = 0; x < box->w; x++) {
+            int dx = box->x + x, dy = box->y + y;
+            long i = (long)(sy + y) * tw + sx + x;
+            if (dx < 0 || dx >= dst->w || dy < 0 || dy >= dst->h || i < 0 || i >= (long)tw * box->h) continue;
+            if (transparent == -1 || temp[i] != (transparent & 15)) dst->px[dy * dst->w + dx] = temp[i];
+        }
+    free(temp);
+}

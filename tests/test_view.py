@@ -182,3 +182,121 @@ def test_render_view(game, tmp_path, name):
     for out in (tmp_path, SCRATCH):
         if out.exists():
             png(out / f"view_{name}.png", rgb)
+
+
+MASKED_FILL, BLIT_BITMAP = 0x116A4E, 0x11739C
+
+
+def word_flipped(px, w, h):
+    """flip_bitmap_horizontal: mirrors each row over whole 16-pixel words."""
+    pw = (w + 15) // 16 * 16
+    return [[px[y][pw - 1 - x] if pw - 1 - x < w else 0 for x in range(pw)] for y in range(h)], pw
+
+
+@needs_game
+@pytest.mark.parametrize("box, last, first, transparent, sx, mask_kind", [
+    ((5, 3, 36, 20), 63, 7, 0x0A, 0, "plain"),
+    ((0, 0, 36, 49), 64, 31, 0x0A, 12, "flipped"),
+    ((10, 2, 40, 30), 50, 49, 0x8A, 0, None),
+    ((3, 4, 17, 9), 9, 0, 0x03, 2, "plain"),
+])
+def test_masked_fill_matches_original(lib, emu, box, last, first, transparent, sx, mask_kind):
+    lib.draw_masked_fill.argtypes = [ctypes.POINTER(Bitmap), ctypes.POINTER(Bitmap), ctypes.c_int, ctypes.POINTER(Bitmap), ctypes.POINTER(Box)] + [ctypes.c_int16] * 5
+    uw, uh, dw, dh = 32, 32, 64, 60
+    units = [[(x * 5 + y * 3 + x * y) % 16 for x in range(uw)] for y in range(uh)]
+    mw, mh = 36, 49
+    mask = [[(x + y) % 3 != 0 for x in range(mw)] for y in range(mh)]
+    dst = [[(x + 2 * y) % 16 for x in range(dw)] for y in range(dh)]
+    words = ((box[2] - 1) >> 4) + 1
+    emu.write(0x400000, planar(units, uw, uh))
+    mask_addr = 0
+    if mask_kind:
+        mpx, mpw = word_flipped(mask, mw, mh) if mask_kind == "flipped" else (mask, mw)
+        emu.write(0x500000, planar(mpx, mpw, mh))
+        mask_addr = 0x500000
+    emu.write(0x600000, struct.pack(">hhhh", *box))
+    emu.write(0x610000, bytes(words * 2 * box[3] * 4))
+    emu.write(0x700000, planar(dst, dw, dh))
+    saved = emu.read(BLIT_BITMAP, 2)
+    emu.write(BLIT_BITMAP, b"\x4e\x75")  # rts: the test applies the final blit, the blitter is not emulated
+    try:
+        emu.call(MASKED_FILL, [(4, 0x400000), (4, 0x700000), (4, mask_addr), (4, 0x610000), (4, 0x600000), (2, last), (2, first),
+                               (2, dw), (2, transparent), (2, sx), (2, 0), (2, dh), (2, uw // 16 * uh)])
+    finally:
+        emu.write(BLIT_BITMAP, saved)
+    temp = chunky(emu.read(0x610000, words * 2 * box[3] * 4), words * 16, box[3])
+    key = transparent & 0x0F
+    expected = [row[:] for row in dst]
+    bx, by, bw, bh = box
+    for y in range(bh):  # blit_bitmap of the temp bitmap with the color key
+        for x in range(bw):
+            c = temp[y][sx + x]
+            if c != key:
+                expected[by + y][bx + x] = c
+    out = bitmap(dst)
+    lib.draw_masked_fill(bitmap(units), bitmap([[int(m) for m in row] for row in mask]) if mask_kind else None,
+                         mask_kind == "flipped", out, Box(*box), last, first, transparent, sx, 0)
+    assert pixels(out) == expected
+
+
+def thing_records(lib, thing_type):
+    data = (ctypes.POINTER(ctypes.c_uint8) * 16).in_dll(lib, "g_thing_data")[thing_type]
+    header = ctypes.POINTER(ctypes.c_uint8).in_dll(lib, "g_dungeon_header")
+    return data, header[12 + 2 * thing_type] << 8 | header[13 + 2 * thing_type]
+
+
+def add_explosion(lib, m, x, y, cell, attack, explosion_type):
+    """Links a new explosion behind the first thing of a square with things. Returns an undo function."""
+    lib.dungeon_square_first_thing.restype = ctypes.c_uint16
+    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    data, count = thing_records(lib, 15)
+    index = next(i for i in range(count) if data[4 * i] == 0xFF and data[4 * i + 1] == 0xFF)
+    first = lib.dungeon_square_first_thing(m, x, y)
+    assert first != 0xFFFE
+    head = lib.get_thing_data(first)
+    thing = cell << 14 | 15 << 10 | index
+    data[4 * index], data[4 * index + 1], data[4 * index + 2], data[4 * index + 3] = head[0], head[1], attack, explosion_type
+    old = head[0], head[1]
+    head[0], head[1] = thing >> 8, thing & 0xFF
+
+    def undo():
+        head[0], head[1] = old
+        data[4 * index] = data[4 * index + 1] = 0xFF
+    return undo
+
+
+THINGS = {  # name: (map, x, y, direction, explosion (map x y cell attack type) or None, light)
+    "objects": ((1, 6, 2, 2), None, 99),
+    "objects_start_level": ((0, 4, 17, 0), None, 99),
+    "creatures": ((1, 14, 4, 3), None, 99),
+    "creatures_d3": ((1, 16, 4, 3), None, 99),
+    "teleporter": ((1, 24, 29, 1), None, 99),
+    "fluxcage": ((1, 15, 4, 3), (1, 13, 4, 0, 0, 50), 99),
+    "fireball": ((1, 15, 4, 3), (1, 13, 4, 0, 200, 0x80), 99),
+    "party_explosion": ((1, 13, 4, 3), (1, 13, 4, 0, 150, 0), 99),
+    "dark": ((1, 14, 4, 3), None, 10),
+}
+
+
+@needs_game
+@pytest.mark.parametrize("name", list(THINGS))
+def test_render_things(game, name):
+    lib, _ = game
+    (m, x, y, d), explosion, light = THINGS[name]
+    lib.view_set_light.argtypes = [ctypes.c_int16]
+    lib.view_set_light(light)
+    assert lib.view_render(m, x, y, d)
+    plain = screen(lib)[0]
+    undo = add_explosion(lib, *explosion) if explosion else None
+    try:
+        assert lib.view_render(m, x, y, d)
+        first, rgb = screen(lib)
+    finally:
+        if undo:
+            undo()
+        lib.view_set_light(99)
+    assert len(set(first)) > 4
+    if explosion:
+        assert first != plain
+    if SCRATCH.exists():
+        png(SCRATCH / f"view7b_{name}.png", rgb)
