@@ -21,6 +21,9 @@ void view_load_map(int16_t map);
    direction face (NONE when the view has not loaded the party map). */
 enum { VIEW_ORNAMENT_NONE, VIEW_ORNAMENT_OTHER, VIEW_ORNAMENT_TEXT, VIEW_ORNAMENT_ALCOVE, VIEW_ORNAMENT_FOUNTAIN, VIEW_ORNAMENT_VI_ALTAR };
 int16_t view_wall_ornament(int16_t x, int16_t y, int16_t face);
+/* The floor ornament that the view draws on square (x, y) of the party map from depth 1: its index in the
+   floor ornament graphics of the game, or -1 (none, or the view has not loaded the party map). */
+int16_t view_floor_ornament(int16_t x, int16_t y);
 void view_draw(int16_t dir, int16_t x, int16_t y);
 /* Sets g_dungeon_view_palette_index from the party light amount (magical light plus torches) on map m. */
 void view_set_light(int16_t m, int16_t amount);

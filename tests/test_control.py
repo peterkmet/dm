@@ -551,3 +551,71 @@ def test_torch_holder_is_not_a_lock(game):
     wall = state_json(game, 1)["squares"][4]  # depth 1, center: the wall ahead
     assert wall["front_face"].get("torch_holder") is True
     assert "lock" not in wall["front_face"]
+
+
+def test_brief_names_a_torch_holder():
+    from dmtools.play import square_text
+
+    square = {"element": "wall", "front_face": {"facing": "south", "torch_holder": True}}
+    assert square_text(square) == "wall, front face south: torch_holder"
+
+
+@contextmanager
+def on_map(game, m, x, y, direction):
+    """The party on map m for the state JSON only, in full light; no frame runs meanwhile."""
+    lib, saved_map = game.lib, game.value("g_party_map_index")
+    palette = ctypes.c_int16.in_dll(lib, "g_dungeon_view_palette_index")
+    saved_palette, palette.value = palette.value, 0
+    lib.set_current_map_and_party_map(m)
+    lib.view_load_map(m)
+    try:
+        with placed(game, x, y, direction):
+            yield
+    finally:
+        lib.set_current_map_and_party_map(saved_map)
+        lib.view_load_map(saved_map)
+        palette.value = saved_palette
+
+
+def squares_by_place(view):
+    return {(s["x"], s["y"]): s for s in view["squares"]}
+
+
+def test_view_and_map_show_the_pressure_pads_of_map_1(game, monkeypatch, capsys):
+    from dmtools import play
+
+    with on_map(game, 1, 14, 1, 1):  # facing east into the room of nine pads
+        view, game_map = state_json(game, 1), state_json(game, 2)
+    squares = squares_by_place(view)
+    for x in (15, 16, 17):
+        for y in (0, 1, 2):
+            assert squares[x, y]["floor_ornament"] == "pressure_pad", (x, y)
+            assert game_map["rows"][y][x] == "_"
+    assert "_ pressure pad" in game_map["legend"]
+    with on_map(game, 1, 23, 1, 1):  # the pad that holds the east portcullis open, at depth 2
+        squares = squares_by_place(state_json(game, 1))
+    assert squares[25, 1]["floor_ornament"] == "pressure_pad"
+    assert "floor_ornament" not in squares[24, 1] and "floor_ornament" not in squares[23, 1]
+    with on_map(game, 1, 25, 1, 3):  # the view draws no floor ornament on the party square
+        assert "floor_ornament" not in squares_by_place(state_json(game, 1))[25, 1]
+    assert "floor, pressure_pad" in play.square_text(squares[25, 1])
+    floor = {"element": "floor"}
+    pad = floor | {"floor_ornament": "pressure_pad"}
+    view = {"squares": [floor | {"depth": d, "side": s} for d in (0, 1) for s in ("left", "center", "right")], "piles": []}
+    view["squares"][3] = pad | {"depth": 1, "side": "left"}
+    assert "ahead left: floor, pressure_pad" in play.view_lines(view)
+
+
+def test_a_plate_without_an_ornament_stays_hidden(game):
+    lib = game.lib
+    lib.dungeon_square.restype = ctypes.c_uint8
+    hidden = (14, 14)  # a floor sensor of map 1 without an ornament
+    for d in range(4):
+        x, y = hidden[0] - STEP_EAST[d], hidden[1] - STEP_NORTH[d]
+        if lib.dungeon_square(1, x, y) >> 5 == 1:
+            with on_map(game, 1, x, y, d):
+                view, game_map = state_json(game, 1), state_json(game, 2)
+            assert "floor_ornament" not in squares_by_place(view)[hidden]
+            assert game_map["rows"][hidden[1]][hidden[0]] == "."
+            return
+    pytest.fail("no floor square next to the hidden plate")

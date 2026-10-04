@@ -528,6 +528,26 @@ static void wall_faces_json(Json *j, int16_t depth, int16_t side, int16_t x, int
     if ((!side && depth >= 1) || depth >= 2) wall_face_json(j, "front_face", x, y, NORMALIZE(g_party_direction + 2));
 }
 
+/* The floor ornaments of the game graphics, by index. */
+static const char *const floor_ornament_names[] = {
+    "grate", "pressure_pad", "moss", "round_grate", "round_pressure_pad", "flame_pit", "crack", "tiny_pressure_pad", "puddle"
+};
+enum { FLOOR_ORNAMENT_COUNT = sizeof floor_ornament_names / sizeof *floor_ornament_names };
+
+static int is_pressure_pad(int16_t ornament)
+{
+    return ornament >= 0 && ornament < FLOOR_ORNAMENT_COUNT && strstr(floor_ornament_names[ornament], "pressure_pad");
+}
+
+/* The floor ornament that the view draws on the square; an unknown ornament gets its index. */
+static void floor_ornament_json(Json *j, int16_t x, int16_t y)
+{
+    int16_t ornament = view_floor_ornament(x, y);
+    if (ornament < 0) return;
+    if (ornament < FLOOR_ORNAMENT_COUNT) key_str(j, "floor_ornament", floor_ornament_names[ornament]);
+    else key_int(j, "floor_ornament", ornament);
+}
+
 /* Creature groups, objects per cell, projectiles, and explosions on a square. */
 static void square_things_json(Json *j, int16_t x, int16_t y)
 {
@@ -600,6 +620,7 @@ void state_json_view(Json *j)
                 if (!strcmp(name, "wall")) {
                     wall_faces_json(j, depth, side, x, y);
                 } else {
+                    if (depth >= 1) floor_ornament_json(j, x, y);
                     square_things_json(j, x, y);
                 }
             }
@@ -724,7 +745,7 @@ static char map_char(int16_t x, int16_t y)
     if (!strcmp(name, "stairs_down")) return '>';
     if (!strcmp(name, "teleporter")) return 'T';
     if (!strcmp(name, "door")) return door_state(square) == DOOR_OPEN || door_state(square) == DOOR_DESTROYED ? 'd' : 'D';
-    return '.';
+    return is_pressure_pad(view_floor_ornament(x, y)) ? '_' : '.';
 }
 
 void state_json_map(Json *j)
@@ -739,7 +760,7 @@ void state_json_map(Json *j)
     pair(j, "party", g_party_map_x, g_party_map_y);
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
     key_str(j, "legend", "row index = y (north at the top), column = x; @ party, # wall, . floor, D closed door, "
-                         "d open door, < stairs up, > stairs down, O pit, T teleporter, space not explored; walls with a seen "
+                         "d open door, < stairs up, > stairs down, O pit, T teleporter, _ pressure pad, space not explored; walls with a seen "
                          "feature: M mirror, L switch (button or lever), K lock (keyhole or object slot), H torch holder, V vi altar, "
                          "A alcove, F fountain, ? text");
     json_key(j, "rows");

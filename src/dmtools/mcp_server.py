@@ -86,9 +86,10 @@ def get_view() -> dict:
     squares: depth 0 (own square) to 3, side left/center/right, x, y, element (wall, floor,
     door, pit, stairs_up, stairs_down, teleporter), door (open, closed, partly_open, destroyed)
     and button, objects [{cell, name}], creatures {type, count}, flying (projectiles,
-    explosions). The depths end at the first wall or closed door ahead. A wall has "front_face" (the
+    explosions), floor_ornament from depth 1 (pressure_pad, round_pressure_pad, tiny_pressure_pad,
+    grate, round_grate, moss, crack, puddle, flame_pit). The depths end at the first wall or closed door ahead. A wall has "front_face" (the
     side that faces you) and "side_face" (the side that faces your lane) when they show something:
-    {facing, text, mirror, switch, lock, alcove, fountain, vi_altar, ornament}.
+    {facing, text, mirror, switch, lock, torch_holder, alcove, fountain, vi_altar, ornament}.
     piles: the objects that take_object can reach; cell 0-1 your own square (far left, far
     right), 2-3 the square ahead (near right, near left), 4 the alcove ahead.
     wall_ahead_clickable, alcove, fountain, vi_altar: what click_wall_ahead touches.
@@ -101,8 +102,8 @@ def get_map() -> dict:
     """The explored squares of the current level as text rows.
 
     Row index is y (north at the top), column is x. @ party, # wall, . floor, D closed door,
-    d open door, < stairs up, > stairs down, O pit, T teleporter, space not explored. Walls with
-    a seen feature: M mirror, L switch, K lock, V vi altar, A alcove, F fountain, ? text. North
+    d open door, < stairs up, > stairs down, O pit, T teleporter, _ pressure pad, space not explored.
+    Walls with a seen feature: M mirror, L switch, K lock, H torch holder, V vi altar, A alcove, F fountain, ? text. North
     is y - 1, east is x + 1. Fake walls look like walls, closed pits look like floor.
     """
     return request({"cmd": "get_map"})

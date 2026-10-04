@@ -25,11 +25,13 @@ LANE = ["here", "ahead", "ahead 2", "ahead 3"]
 def square_text(square: dict) -> str:
     """One square of the view in a few words: element, door, wall face, creatures, objects, flying."""
     words = [square["element"]]
+    if (ornament := square.get("floor_ornament")) is not None:
+        words.append(ornament if isinstance(ornament, str) else f"floor ornament {ornament}")
     if "door" in square:
         words.append(square["door"] + (" with button" if square.get("button") else ""))
     for face in ("front_face", "side_face"):
         if wall := square.get(face):
-            features = [key for key in ("mirror", "switch", "lock", "alcove", "fountain", "vi_altar", "ornament") if wall.get(key)]
+            features = [key for key in ("mirror", "switch", "lock", "torch_holder", "alcove", "fountain", "vi_altar", "ornament") if wall.get(key)]
             features += [f'text "{wall["text"]}"'] if "text" in wall else []
             words.append(f"{face.replace('_', ' ')} {wall['facing']}: " + " ".join(features))
     if creatures := square.get("creatures"):
@@ -75,7 +77,7 @@ def view_lines(view: dict) -> list[str]:
             break
         lines.append(f"{name}: {square_text(squares[depth, 'center'])}")
         for side in ("left", "right"):
-            if squares[depth, side].get("side_face"):
+            if squares[depth, side].get("side_face") or "floor_ornament" in squares[depth, side]:
                 lines.append(f"{name} {side}: {square_text(squares[depth, side])}")
     if view["piles"]:
         lines.append("piles: " + ", ".join(f"cell {p['cell']} {p['top']}" for p in view["piles"]))

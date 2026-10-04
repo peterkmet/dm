@@ -1622,6 +1622,16 @@ int16_t view_wall_ornament(int16_t x, int16_t y, int16_t face)
     return VIEW_ORNAMENT_OTHER;
 }
 
+int16_t view_floor_ornament(int16_t x, int16_t y)
+{
+    Aspect a;
+    if (map != g_party_map_index) return -1;
+    aspect(&a, DIRECTION_NORTH, x, y);
+    if (a.element != SQUARE_CORRIDOR && a.element != SQUARE_PIT && a.element != SQUARE_TELEPORTER) return -1;
+    int16_t i = (a.floor_ornament & ~FLOOR_ORNAMENT_WITH_FOOTPRINTS) - 1;
+    return i < 0 ? -1 : (floor_orn[i].graphic - GFX_FLOOR_ORNAMENT_FIRST) / FLOOR_ORNAMENT_GRAPHICS;
+}
+
 void view_draw(int16_t dir, int16_t x, int16_t y)
 {
     static void (*const squares[16])(int16_t, int16_t, int16_t) = { d3l2, d3r2, d3l, d3r, d3c, d2l2, d2r2, d2l, d2r, d2c, d1l, d1r, d1c, d0l, d0r, d0c };
