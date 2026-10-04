@@ -215,6 +215,17 @@ static void play_title(void)
     show_entrance();
 }
 
+/* NEW ADVENTURE of CSB: the FTL logo and the intro of disk B. A key or a click stops the intro. */
+static void play_csb_intro(void)
+{
+    char path[PATH_SIZE];
+    snprintf(path, sizeof path, "%s/%s", data, LOGO_FILE);
+    logo_play(path);
+    snprintf(path, sizeof path, "%s/%s", data, CSB_INTRO_FILE);
+    anim_play(path);
+    command_discard_all_input();
+}
+
 /* Runs the entrance commands; RESUME loads the saved game, ENTER starts a new game. Returns 0
    when the dungeon cannot be loaded. */
 static int entrance_frame(const char *data)
@@ -313,6 +324,7 @@ static int start_csb(void)
         loaded = 1;
     }
     mode = MODE_GAME; /* the dialogs of RESUME read the game input */
+    if (choice == CSB_NEW_ADVENTURE && !auto_enter) play_csb_intro();
     if (choice == CSB_NEW_ADVENTURE) {
         if (!gameloop_new_game(data)) return SDL_Log("cannot load %s/Dungeon.DAT", data), 0;
     } else if (load_saved_game()) {
