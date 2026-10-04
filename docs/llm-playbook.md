@@ -66,7 +66,7 @@ When a spell batch stops halfway, the chosen runes stay. Delete them (`delete_ru
 
 - **Save** after each recruit, before each fight or risky step, after each solved puzzle, and when you leave a level. Write the save time into `progress.md`. If the party dies, `load`.
 - **Food and water:** keep both above about 1000. Eat and drink before they fall low. Carry food and a full waterskin or flask; refill at fountains. Pick up all food you find.
-- **Stamina:** when stamina is below about a third, sleep in a safe place: `act sleep`, then `wait`, then `act wake`. Damage wakes the party. Wake up as soon as health, stamina, and mana are full: sleeping longer only burns food and water.
+- **Stamina:** when stamina is below about a third, sleep in a safe place: `act sleep`, then `wait`, then `act wake`. Damage wakes the party. Sleep in steps of about 200 ticks; after each step read health, stamina, and mana in the response and wake up (`act wake`) as soon as they are full: sleeping longer only burns food and water. The game does not wake you.
 - **Light:** when `darkness` rises above 1, cast LIGHT (LO FUL). Darkness hides the far rows of the view. Keep a torch in a hand as a reserve.
 - **Pits:** do not walk into an open pit. A fall costs about 35–45 HP for each new champion. Climb down only with a rope.
 - **Walls:** walking into a wall hurts the front row. Use `goto` and look before you move.
