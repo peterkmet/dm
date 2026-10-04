@@ -327,3 +327,10 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 ```sh
 uv run pytest -q tests/test_control.py
 ```
+
+## Playing tips
+
+- A pile on the floor can hide items under the top one. Take objects from the same cell until the cell is empty, then drop what you do not need. Keys are often under clothes.
+- Darkness hides the far rows of the view, as on the real screen: at palette 4 you see 3 rows, at palette 5 only 2. Keep the light up: cast LIGHT with power rune 1 (LO) and element rune 4 (FUL), and cast it again when `darkness` rises.
+- Train the spell casters: cast cheap spells (for example LIGHT) again and again while resting, so the wizard and the priest gain levels and mana.
+- Sleep in a safe place when stamina is low. Eat and drink before food and water run out.

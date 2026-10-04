@@ -3,6 +3,7 @@
 #include <string.h>
 #include "dungeon.h"
 #include "game.h"
+#include "group.h"
 #include "map.h"
 #include "ui.h"
 
@@ -69,14 +70,26 @@ static int blocks_sight(int16_t map, int16_t x, int16_t y)
     }
 }
 
+#define DARKEST_PALETTE 5  /* g_dungeon_view_palette_index of the darkest light level */
+
+/* Rows the party can make out in the current light: the darkest palettes hide the far rows. */
+static int16_t light_depths(void)
+{
+    /* ponytail: fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it */
+    if (g_dungeon_view_palette_index >= DARKEST_PALETTE) return VIEW_DEPTH_COUNT - 2;
+    if (g_dungeon_view_palette_index >= DARKEST_PALETTE - 1) return VIEW_DEPTH_COUNT - 1;
+    return VIEW_DEPTH_COUNT;
+}
+
 int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir)
 {
-    for (int16_t depth = 1; depth < VIEW_DEPTH_COUNT; depth++) {
+    int16_t limit = light_depths();
+    for (int16_t depth = 1; depth < limit; depth++) {
         int16_t ahead_x = x, ahead_y = y;
         update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
         if (blocks_sight(map, ahead_x, ahead_y)) return depth + 1;
     }
-    return VIEW_DEPTH_COUNT;
+    return limit;
 }
 
 void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir)

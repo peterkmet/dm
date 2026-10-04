@@ -169,3 +169,21 @@ def test_png_after_walking(game):
     rows = [[(pal[px[y * w + x]] >> s & 15) * 17 for x in range(w) for _ in range(scale) for s in (8, 4, 0)] for y in range(h)]
     if SCRATCH.exists():
         png(SCRATCH / "automap.png", [row for row in rows for _ in range(scale)])
+
+
+def test_darkness_shortens_the_visible_depth(game):
+    lib = game
+    lib.automap_visible_depths.restype = c16
+    palette = c16.in_dll(lib, "g_dungeon_view_palette_index")
+    best = None
+    for y in range(lib.dungeon_map_height(0)):  # a position with a long free view ahead
+        for x in range(lib.dungeon_map_width(0)):
+            for d in range(4):
+                palette.value = 0
+                if lib.automap_visible_depths(0, x, y, d) == 4:
+                    best = (x, y, d)
+    assert best
+    for darkness, depths in ((0, 4), (3, 4), (4, 3), (5, 2)):
+        palette.value = darkness
+        assert lib.automap_visible_depths(0, *best) == depths
+    palette.value = 0
