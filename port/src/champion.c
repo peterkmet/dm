@@ -1,4 +1,5 @@
 #include "champion.h"
+#include "adventure.h"
 #include "command.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -36,6 +37,8 @@ enum { EVENT_HIDE_DAMAGE_RECEIVED = 12, EVENT_POISON = 75 };
 #define HIDE_DAMAGE_TICKS 5
 #define POISON_STEP_TICKS 36
 #define REINCARNATION_POINTS 12
+#define CSB_REINCARNATION_STAT_LOSS_SHIFT 3       /* CSB: each statistic but luck loses 1/8 */
+#define CSB_REINCARNATION_BAR_SHIFT 2             /* CSB: health, stamina, and mana drop to 1/4 */
 #define RESURRECTION_MINIMUM_HEALTH 25
 #define SCENT_STRENGTH_MINIMUM 0
 #define PIT_ATTACK 20
@@ -268,10 +271,21 @@ void champion_add_candidate_to_party(int16_t portrait_index)
     g_inventory_champion_ordinal = index + 1;
 }
 
-/* Reincarnation: all experience is lost and 12 random statistic points are gained. */
+/* Reincarnation: all experience is lost and 12 random statistic points are gained. In CSB, the statistics but luck
+   lose 1/8 first, down to their minimum, and health, stamina, and mana drop to 1/4. */
 static void reincarnate(Champion *c)
 {
     memset(c->skills, 0, sizeof c->skills);
+    if (g_adventure == ADVENTURE_CSB) {
+        for (int s = STAT_STRENGTH; s < STAT_COUNT; s++) {
+            int16_t value = c->statistics[s][STAT_CURRENT];
+            value = max16(c->statistics[s][STAT_MINIMUM], value - (value >> CSB_REINCARNATION_STAT_LOSS_SHIFT));
+            c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM] = (uint8_t)value;
+        }
+        c->current_health >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_health >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->current_stamina >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_stamina >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->current_mana >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_mana >>= CSB_REINCARNATION_BAR_SHIFT;
+    }
     for (int i = 0; i < REINCARNATION_POINTS; i++) {
         uint16_t s = random16() % STAT_COUNT;
         c->statistics[s][STAT_CURRENT]++;

@@ -1,4 +1,5 @@
 #include "action.h"
+#include "adventure.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "game.h"
@@ -309,6 +310,12 @@ static int16_t is_climbed_down(void)
     return 1;
 }
 
+/* CSB has no code for invoke, fluxcage, and fuse: they only disable the hand, take stamina, and give experience. */
+static int16_t is_removed_in_csb(int16_t action)
+{
+    return g_adventure == ADVENTURE_CSB && (action == ACTION_INVOKE || action == ACTION_FLUXCAGE || action == ACTION_FUSE);
+}
+
 /* Runs one action of a champion against the square in front of the champion. After the action the action hand is
    disabled for the action ticks, the champion loses stamina, and the action skill gains experience. A failed
    melee action halves the ticks and the experience. Returns 0 when the action fails. */
@@ -330,7 +337,7 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
     int16_t performed = 1, mana_cost = 0;
     if ((skill_index >= SKILL_COUNT - SKILL_BASE_COUNT && skill_index < SKILL_COUNT) || skill_index == SKILL_WIZARD)
         mana_cost = SPELL_ACTION_MAXIMUM_LEVEL + 1 - min16(SPELL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level((int16_t)champion_index, skill_index));
-    switch (action) {
+    switch (is_removed_in_csb(action) ? ACTION_NONE : action) {
     case ACTION_CHOP: case ACTION_KICK: case ACTION_SWING: case ACTION_HACK: case ACTION_BERZERK: case ACTION_BASH:
         if (SQUARE_TYPE(square) == SQUARE_DOOR && door_state(square) == DOOR_CLOSED) {
             sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);

@@ -1,4 +1,5 @@
 #include "sensor.h"
+#include "adventure.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -16,18 +17,20 @@
 #define SENSOR_EXPERIENCE_SKILL 8   /* steal */
 #define SENSOR_EXPERIENCE 300
 #define VERSION_CHECKER_LIMIT 37   /* the version checker passes for data below this value */
+#define CSB_VERSION_CHECKER_LIMIT 32
 #define TEXT_SIZE 256
 
 int16_t g_sensor_rotation_effect = -1, g_sensor_rotation_effect_map_x, g_sensor_rotation_effect_map_y, g_sensor_rotation_effect_cell;
 
-/* Adds a square event on the current map. Clear events come first at equal time, then toggle, then set. */
+/* Adds a square event on the current map. Clear events come first at equal time, then toggle, then set.
+   CSB gives each sensor event priority 0. */
 void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, int16_t effect, uint32_t time)
 {
     static const uint8_t priority[3] = {[EFFECT_SET] = 1, [EFFECT_CLEAR] = 3, [EFFECT_TOGGLE] = 2};
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(g_current_map_index, time),
         .type = (uint8_t)event_type,
-        .priority = effect >= EFFECT_SET && effect <= EFFECT_TOGGLE ? priority[effect] : 0,
+        .priority = g_adventure == ADVENTURE_CSB ? 0 : effect >= EFFECT_SET && effect <= EFFECT_TOGGLE ? priority[effect] : 0,
         .b = EVENT_SQUARE(x, y),
         .c = EVENT_CELL_EFFECT(cell, effect),
     };
@@ -372,7 +375,7 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
             break;
         case SENSOR_FLOOR_VERSION_CHECKER:
             if (party && add && !party_on_square)
-                trigger(t, data < VERSION_CHECKER_LIMIT, x, y);
+                trigger(t, data < (g_adventure == ADVENTURE_CSB ? CSB_VERSION_CHECKER_LIMIT : VERSION_CHECKER_LIMIT), x, y);
             break;
         }
     }
