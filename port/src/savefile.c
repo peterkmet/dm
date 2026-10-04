@@ -22,6 +22,7 @@
 #define H_FORMAT 0x176
 #define H_CSB_PAYLOAD_KEY 0x3a
 #define H_CSB_SHIFT 2          /* CSB moves the fields from 0x12a on by 2 bytes */
+#define H_SAVED_GAME_BYTES 0x28 /* payload bytes that the CEDT merge copies from the saved game */
 
 /* Globals block offsets that give the block sizes. */
 #define G_EVENT_MAX_COUNT 28
@@ -31,6 +32,7 @@
 #define PLATFORM_AMIGA 5      /* save_game writes 5; a load refuses 1 */
 #define PLATFORM_REFUSED 1
 #define HEADER_BYTE_12A 1     /* g_save_header_byte_12a default */
+#define HEADER_BYTE_NEW_ADVENTURE 2 /* CEDT writes 2 into a new adventure */
 #define DIALOG_CHOICE_SAVE 1
 
 static uint16_t rd16(const uint8_t *p) { return (uint16_t)(p[0] << 8 | p[1]); }
@@ -141,13 +143,18 @@ void save_free(SaveFile *s) {
     memset(s, 0, sizeof *s);
 }
 
+void save_header_randomize(uint8_t *h)
+{
+    for (int i = 0; i < H_KEY_COUNT; i++) wr16(h + field(H_KEYS) + 2 * i, random16());
+    for (int i = 0; i < H_GROUP_COUNT * H_GROUP_BYTES / 2 - 1; i++) wr16(h + 2 * i, random16());
+}
+
 /* save_game and save_write_header: the 16 block keys, then the random chain words (the last w3
    comes from save_encode), then the fields of the payload. */
 void save_header_init(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const uint8_t *extra)
 {
     memset(h, 0, SAVE_HEADER_BYTES);
-    for (int i = 0; i < H_KEY_COUNT; i++) wr16(h + field(H_KEYS) + 2 * i, random16());
-    for (int i = 0; i < H_GROUP_COUNT * H_GROUP_BYTES / 2 - 1; i++) wr16(h + 2 * i, random16());
+    save_header_randomize(h);
     h[field(H_BYTE_12A)] = HEADER_BYTE_12A;
     h[field(H_PLATFORM)] = PLATFORM_AMIGA;
     wr16(h + field(H_DIALOG_CHOICE), DIALOG_CHOICE_SAVE);
@@ -156,6 +163,18 @@ void save_header_init(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const u
     wr16(h + field(H_FORMAT), SAVE_FORMAT);
     wr16(h + field(H_DUNGEON_ID), dungeon_id);
     if (extra) memcpy(h + field(H_EXTRA), extra, save_header_extra_size());
+}
+
+/* CEDT merge: the first payload bytes come from the saved game (0 in a port save), the game ID is
+   the ID of the saved game + 1, the header byte is 2. New keys and chain words follow. */
+void save_header_new_adventure(uint8_t *h, uint32_t game_id)
+{
+    memset(h + H_PAYLOAD, 0, H_SAVED_GAME_BYTES);
+    wr16(h + field(H_GAME_ID), (uint16_t)((game_id + 1) >> 16));
+    wr16(h + field(H_GAME_ID) + 2, (uint16_t)(game_id + 1));
+    wr16(h + field(H_FORMAT), SAVE_FORMAT);
+    h[field(H_BYTE_12A)] = HEADER_BYTE_NEW_ADVENTURE;
+    save_header_randomize(h);
 }
 
 uint32_t save_header_game_id(const uint8_t *h) { return (uint32_t)rd16(h + field(H_GAME_ID)) << 16 | rd16(h + field(H_GAME_ID) + 2); }

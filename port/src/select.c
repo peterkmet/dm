@@ -70,6 +70,7 @@ void select_start(int16_t adventure, int16_t mode, int csb_present)
 
 void select_start_csb(const char *text)
 {
+    mode_given = 1; /* the game mode is applied: Escape stays on the CSB screen */
     show(SCREEN_CSB);
     message = text;
 }

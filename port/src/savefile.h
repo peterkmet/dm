@@ -36,6 +36,10 @@ void save_free(SaveFile *s);
 
 /* Plain header fields. save_header_init fills a new header with random16 words and keys. */
 void save_header_init(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const uint8_t *extra);
+/* New random block keys and chain words; the payload fields stay. */
+void save_header_randomize(uint8_t *h);
+/* The header of a new adventure made from a saved game with ID game_id (CEDT merge), new keys included. */
+void save_header_new_adventure(uint8_t *h, uint32_t game_id);
 uint32_t save_header_game_id(const uint8_t *h);
 uint16_t save_header_dungeon_id(const uint8_t *h);
 const uint8_t *save_header_extra(const uint8_t *h);

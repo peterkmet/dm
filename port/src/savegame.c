@@ -23,6 +23,10 @@
 #define TIMELINE_ENTRY_BYTES 2        /* one event index per timeline entry */
 #define EXTENSION_LENGTH_BYTES 4      /* the length of the automap block, after the block */
 #define SCENT_COUNT (int)(sizeof g_party.scents / sizeof g_party.scents[0])
+#define NEW_ADVENTURE_FOOD_WATER 1500  /* food and water of a merged champion: this + a random byte */
+#define NEW_ADVENTURE_RANDOM_MASK 0xff
+#define NEW_ADVENTURE_STAT_MINIMUM 30
+#define NEW_ADVENTURE_LUCK_MINIMUM 10
 
 /* Block 0: byte offsets of the globals. */
 enum {
@@ -300,17 +304,10 @@ static const uint8_t *find_automap(const uint8_t *data, size_t *size, size_t *le
 
 int16_t savegame_save(const char *dir) { return savegame_save_as(dir, adventure_save_name(), adventure_backup_name()); }
 
-int16_t savegame_save_as(const char *dir, const char *name, const char *backup_name)
+/* Writes size bytes to dir/name; with a backup name, the old file becomes dir/backup first. Returns 1 on success. */
+static int write_save_file(const char *dir, const char *name, const char *backup_name, const uint8_t *data, uint32_t size)
 {
     char path[PATH_SIZE], backup[PATH_SIZE];
-    uint32_t size = 0;
-    uint8_t *data = encode_game(&size);
-    if (!data) return 0;
-    size = append_automap(&data, size);
-    if (!size) {
-        free(data);
-        return 0;
-    }
     file_path(path, dir, name);
     if (backup_name) {
         file_path(backup, dir, backup_name);
@@ -318,13 +315,125 @@ int16_t savegame_save_as(const char *dir, const char *name, const char *backup_n
         rename(path, backup);
     }
     FILE *f = fopen(path, "wb");
-    int16_t ok = f && fwrite(data, 1, size, f) == size;
+    int ok = f && fwrite(data, 1, size, f) == size;
     if (f && fclose(f)) ok = 0;
+    return ok;
+}
+
+int16_t savegame_save_as(const char *dir, const char *name, const char *backup_name)
+{
+    uint32_t size = 0;
+    uint8_t *data = encode_game(&size);
+    if (!data) return 0;
+    size = append_automap(&data, size);
+    int ok = size && write_save_file(dir, name, backup_name, data, size);
     free(data);
     if (!ok) return 0;
     g_saved_game_exists = 1;
     g_last_save_game_time = g_game_time;
     return 1;
+}
+
+/* CEDT check before the merge: each first name is not empty and differs from the others. */
+static int first_names_unique(void)
+{
+    for (uint16_t i = 0; i < g_party_champion_count; i++) {
+        if (!g_champions[i].name[0]) return 0;
+        for (uint16_t k = i + 1; k < g_party_champion_count; k++)
+            if (!strncmp(g_champions[i].name, g_champions[k].name, sizeof g_champions[i].name)) return 0;
+    }
+    return 1;
+}
+
+/* The bytes of a text field after the first NUL become 0. */
+static void clear_after_text(char *text, size_t size)
+{
+    char *end = memchr(text, 0, size);
+    if (end) memset(end, 0, size - (size_t)(end - text));
+}
+
+/* CEDT merge: a champion of the saved game starts the new adventure rested, without objects,
+   effects, or temporary experience. turn is the change of the party direction. */
+static void reset_for_new_adventure(Champion *c, int16_t turn)
+{
+    clear_after_text(c->name, sizeof c->name);
+    clear_after_text(c->title, sizeof c->title);
+    if (turn) {
+        c->cell = (uint8_t)NORMALIZE(c->cell + turn);
+        c->direction = (uint8_t)NORMALIZE(c->direction + turn);
+    }
+    c->action_index = ACTION_NONE;
+    c->symbol_step = 0;
+    c->symbols[0] = 0;
+    c->direction_maximum_damage_received = c->maximum_damage_received = c->poison_event_count = 0;
+    c->enable_action_event_index = c->hide_damage_received_event_index = -1;
+    c->attributes &= CHAMPION_ATTR_MALE;
+    c->wounds = 0;
+    c->current_health = c->maximum_health;
+    c->current_stamina = c->maximum_stamina;
+    c->current_mana = c->maximum_mana;
+    c->action_defense = 0;
+    c->food = (int16_t)(NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK));
+    c->water = (int16_t)(NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK));
+    for (int s = 0; s < STAT_COUNT; s++) {
+        c->statistics[s][STAT_MINIMUM] = NEW_ADVENTURE_STAT_MINIMUM;
+        c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM];
+    }
+    c->statistics[STAT_LUCK][STAT_MINIMUM] = NEW_ADVENTURE_LUCK_MINIMUM;
+    for (int k = 0; k < SKILL_COUNT; k++) c->skills[k].temporary_experience = 0;
+    for (int s = 0; s < SLOT_COUNT; s++) c->slots[s] = THING_NONE;
+    c->load = 0;
+    c->shield_defense = 0;
+}
+
+/* The lowest cell that no champion of the party uses, else 0. */
+static uint8_t free_cell(const Champion *party)
+{
+    for (uint8_t cell = 0; cell < CHAMPION_MAX_COUNT; cell++) {
+        int used = 0;
+        for (uint16_t i = 0; i < g_party_champion_count; i++) used |= party[i].cell == cell;
+        if (!used) return cell;
+    }
+    return 0;
+}
+
+/* CEDT merge into the decoded MINI.DAT: the champions and portraits of the party, reset; the
+   champion count; the header of the new adventure. All other state stays from MINI.DAT. */
+static void merge_party(SaveFile *mini)
+{
+    Champion party[CHAMPION_MAX_COUNT];
+    uint8_t *globals = mini->block[SAVE_BLOCK_GLOBALS];
+    int16_t turn = (int16_t)(rd16(globals + G_PARTY_DIRECTION) - g_party_direction);
+    memcpy(party, g_champions, sizeof party);
+    for (uint16_t i = 0; i < g_party_champion_count; i++) reset_for_new_adventure(&party[i], turn);
+    for (uint16_t i = 0; i < g_party_champion_count; i++) /* each champion gets a cell of its own */
+        for (uint16_t k = 0; k < g_party_champion_count; k++)
+            if (k != i && party[k].cell == party[i].cell) party[k].cell = free_cell(party);
+    for (int i = 0; i < CHAMPION_MAX_COUNT; i++) champion_pack(&party[i], mini->block[SAVE_BLOCK_CHAMPIONS] + i * CHAMPION_RECORD_SIZE);
+    memset(mini->portraits, 0, SAVE_PORTRAITS_BYTES);
+    for (uint16_t i = 0; i < g_party_champion_count; i++)
+        portrait_to_interleaved(g_champion_portraits[i], mini->portraits + i * SAVE_PORTRAIT_BYTES);
+    wr16(globals + G_PARTY_CHAMPION_COUNT, g_party_champion_count);
+    save_header_new_adventure(mini->header, g_game_id);
+}
+
+int16_t savegame_make_adventure(const char *dir, const char *mini_path)
+{
+    if (!g_party_champion_count) return ADVENTURE_NO_CHAMPIONS;
+    if (!first_names_unique()) return ADVENTURE_NAMES_NOT_UNIQUE;
+    size_t size = 0;
+    uint32_t out_size = 0;
+    uint8_t *data = read_file(mini_path, &size), *out = NULL;
+    SaveFile mini;
+    if (data && save_decode(data, (uint32_t)size, &mini)) {
+        merge_party(&mini);
+        out = save_encode(&mini, &out_size);
+        save_free(&mini);
+    }
+    int ok = out && write_save_file(dir, adventure_save_name(), adventure_backup_name(), out, out_size);
+    free(out);
+    free(data);
+    return ok && savegame_load(dir) == SAVEGAME_LOADED ? ADVENTURE_MADE : ADVENTURE_FAILED;
 }
 
 /* Allocates the timeline and the active groups for the saved counts, as timeline_init and

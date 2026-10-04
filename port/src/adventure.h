@@ -6,6 +6,9 @@
 
 enum { ADVENTURE_DM, ADVENTURE_CSB };
 
+#define CSB_PRISON_DUNGEON_ID 12          /* the CSB Dungeon.DAT: champion selection; a save makes the adventure */
+#define CSB_MINI_FILE "disk-b/MINI.DAT"   /* the CSB adventure without champions, in the CSB folder */
+
 extern int16_t g_adventure;              /* ADVENTURE_DM by default; game_new does not reset it */
 
 /* The adventure of a --adventure value ("dm" or "csb"), or -1. */

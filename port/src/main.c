@@ -267,14 +267,41 @@ static const char *adventure_dir(void)
     return data_override ? data_override : adventure_default_dir(ADVENTURE_DM);
 }
 
-/* Starts the selected adventure. DM: the entrance. CSB: play is not available yet, the CSB screen
-   stays. Returns 0 when the game files or the control socket cannot be opened. */
+/* The choice of the CSB screen: NEW ADVENTURE starts the prison, RESUME loads CSBGAME.DAT. The game
+   files and the game mode are loaded at the first start only. A failed resume shows the CSB screen
+   again; in turn-based mode, load and new_game over the socket start the game. Returns 0 when the
+   game files or the control socket cannot be opened. */
+static int start_csb(void)
+{
+    static int loaded;
+    int choice = select_csb_choice();
+    if (choice == CSB_QUIT) return 1;
+    if (!loaded) {
+        SDL_Log("adventure csb, mode %s", game_mode_names[g_game_mode]);
+        data = adventure_dir();
+        if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
+        if (!apply_mode()) return 0;
+        loaded = 1;
+    }
+    mode = MODE_GAME; /* the dialogs of RESUME read the game input */
+    if (choice == CSB_NEW_ADVENTURE) {
+        if (!gameloop_new_game(data)) return SDL_Log("cannot load %s/Dungeon.DAT", data), 0;
+    } else if (load_saved_game()) {
+        gameloop_start_loaded_game();
+    } else if (turnbased) {
+        entrance_draw();
+    } else {
+        mode = MODE_SELECT;
+        select_start_csb(NULL);
+    }
+    return 1;
+}
+
+/* Starts the selected adventure. DM: the entrance. CSB: the choice of the CSB screen. Returns 0 when
+   the game files or the control socket cannot be opened. */
 static int start_adventure(void)
 {
-    if (g_adventure == ADVENTURE_CSB) {
-        if (select_csb_choice() != CSB_QUIT) select_start_csb("NOT AVAILABLE YET");
-        return 1;
-    }
+    if (g_adventure == ADVENTURE_CSB) return start_csb();
     SDL_Log("adventure dm, mode %s", game_mode_names[g_game_mode]);
     data = adventure_dir();
     if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
@@ -325,6 +352,9 @@ int main(int argc, char **argv)
     if (mode < MODE_SELECT && !apply_mode()) return 1;
     if (!plat_init(WINDOW_SCALE)) return 1;
     if (filter && !plat_set_filter(plat_filter_factor(filter))) return 1;
+    /* turn-based and DM_AUTO_ENTER choose NEW ADVENTURE, as ENTER at the DM entrance */
+    if (mode == MODE_SELECT && select_screen() == SCREEN_CSB && (auto_enter || g_game_mode == GAME_MODE_TURNBASED))
+        select_key(SELECT_KEY_ENTER);
 
     for (long frame = 0; frames < 0 || frame < frames; frame++) {
         read_input();
@@ -350,6 +380,9 @@ int main(int argc, char **argv)
             g_return_to_entrance = 0;
             if (turnbased) {
                 entrance_draw(); /* the game mode stays: load and new_game over the socket start the next game */
+            } else if (g_adventure == ADVENTURE_CSB) {
+                mode = MODE_SELECT;
+                select_start_csb(NULL);
             } else {
                 mode = MODE_ENTRANCE;
                 show_entrance();

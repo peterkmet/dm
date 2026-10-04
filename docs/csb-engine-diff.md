@@ -332,7 +332,14 @@ The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`):
 Other load and save differences:
 
 - No new game in the engine. `load_game` opens `CSBGame.dat`, then `CSBGame.bak`. Then it tries `DungeonMaster:Dungeon.FTL` (C`0x129d74`). That file is not on the disk. `Dungeon.DAT` on disk A is a 2622-byte stub (compressed, signature `0x8104`).
-- The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY. UNVERIFIED: the effect of each choice.
+- The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`, `decomp-csb/A/APPB.c` from line 36964). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
+  - CANCEL closes the dialog.
+  - SAVE AND PLAY and SAVE AND QUIT write the file. The header field dialog choice (`0x132`) is 1 for SAVE AND PLAY and 0 for SAVE AND QUIT.
+  - After a successful SAVE AND PLAY, `A5-0xe0` becomes 1 and the game continues. The dialog does not stay open (the DM port keeps the DM dialog open after SAVE).
+  - After a successful SAVE AND QUIT, `A5-0xe0` becomes 0 and `endgame(0)` (C`0x128374`) runs: the credits, then `quit_game`.
+  - When the save fails, a message dialog with one button shows (C`0x1294f8`), then the game continues.
+  - No code path quits without a save. Text 93 (quit without save) does not exist, and the save dialog has no plain QUIT.
+  - Port (`port/src/startend.c` `save_game_csb`): the 3-choice dialog. The port writes dialog choice 1 for both saves. SAVE AND QUIT shows the credits and then the CSB screen.
 - `load_dungeon` (C`0x1295a0`) reads the same format. Its extra calls are copy protection.
 
 Port changes: `port/src/savefile.c` (header offsets, file names), `port/src/savegame.c` (active group count, champion bytes `0x118`–`0x11d`), `port/src/startend.c` (save dialog). An open question decides the start of a game, see [Open questions](#open-questions).
@@ -403,6 +410,6 @@ Total without `ENDA.DAT` and without `CEDT.FTL`: about 1500–2200 lines.
 1. Game start: CSB needs `CSBGame.dat` from the utility disk (`CEDT.FTL`, disk B, with `MINI.DAT` and the portraits). Must the user supply a save made with the original utility disk, or must the port also port the "make new adventure" and champion import of `CEDT.FTL`?
 2. The `ENDA.DAT` ending: port the `ANIM.FTL` player, or show a replacement screen?
 3. The magic map: is a "MAGICMAP" scroll in the CSB dungeon? If not, the magic map can wait.
-4. SAVE AND QUIT freezes the original. The port shows the entrance in DM mode. Keep this deviation for CSB?
+4. SAVE AND QUIT. Answered: the original does not freeze. After a successful save, `save_game` calls `endgame(0)`: the credits, then `quit_game` (see [Save and load](#save-and-load)). The port shows the credits and then the CSB screen (turn-based: the entrance picture).
 5. The DM disk has an empty `CSBGAME.DAT`. Does DM 3.60 read it? Not traced.
 6. Graphics.DAT item 696 (layout) is 16 bytes shorter in CSB. Answered: only the endgame button zones 437 and 438 are missing (see [Graphics.DAT](#graphicsdat)).

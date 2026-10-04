@@ -13,7 +13,8 @@ enum { SELECT_KEY_UP, SELECT_KEY_DOWN, SELECT_KEY_ENTER, SELECT_KEY_ESCAPE };
 /* Starts at the first screen that --adventure and --mode do not skip; adventure and mode are -1
    when the flag is absent. --mode alone means DM. csb_present 0 disables CHAOS STRIKES BACK. */
 void select_start(int16_t adventure, int16_t mode, int csb_present);
-/* Shows the CSB screen again, with a message line below the items when message is not NULL. */
+/* Shows the CSB screen again, with a message line below the items when message is not NULL. After
+   it, Escape does not go back to the mode screen. */
 void select_start_csb(const char *message);
 /* The current screen, or SCREEN_DONE. */
 int select_screen(void);

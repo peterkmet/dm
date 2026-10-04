@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "startend.h"
+#include "adventure.h"
 #include "champion.h"
 #include "command.h"
 #include "dialog.h"
@@ -120,10 +121,52 @@ static int confirm_quit(void)
     return dialog_get_choice(2) != QUIT_CHOICE_CANCEL;
 }
 
+int save_current_game(const char **reason)
+{
+    char mini[SAVE_DIR_SIZE];
+    *reason = NULL;
+    if (g_adventure != ADVENTURE_CSB || g_dungeon_id != CSB_PRISON_DUNGEON_ID) return savegame_save(save_dir) ? SAVED_GAME : 0;
+    snprintf(mini, sizeof mini, "%s/%s", gameloop_data_dir(), CSB_MINI_FILE);
+    switch (savegame_make_adventure(save_dir, mini)) {
+    case ADVENTURE_MADE: return SAVED_NEW_ADVENTURE;
+    case ADVENTURE_NO_CHAMPIONS: *reason = "CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS."; return 0;
+    case ADVENTURE_NAMES_NOT_UNIQUE: *reason = "EACH CHAMPION MUST HAVE A UNIQUE FIRST NAME!"; return 0;
+    default: return 0;
+    }
+}
+
+/* CSB save_game: SAVE AND PLAY saves and goes on, SAVE AND QUIT saves and ends the game. The dialog
+   closes after a save; CSB has no quit without a save. */
+static void save_game_csb(void)
+{
+    game_freeze();
+    dialog_draw(NULL, NULL, ui_string(TEXT_CANCEL), ui_string(TEXT_SAVE), ui_string(TEXT_QUIT), NULL);
+    int16_t choice = dialog_get_choice(3);
+    if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
+        dialog_draw(NULL, ui_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
+        const char *reason;
+        int saved = save_current_game(&reason);
+        if (!saved) {
+            dialog_draw(reason ? reason : ui_string(TEXT_UNABLE_TO_SAVE), NULL, ui_string(TEXT_OK), NULL, NULL, NULL);
+            dialog_get_choice(1);
+        } else if (choice == SAVE_CHOICE_QUIT) {
+            endgame(0);
+            return;
+        } else if (saved == SAVED_NEW_ADVENTURE) {
+            gameloop_start_loaded_game();
+        }
+    }
+    game_unfreeze();
+}
+
 /* save_game without disks: the dialog stays after a save until CANCEL or QUIT. */
 void save_game(void)
 {
     const char *message = NULL;
+    if (g_adventure == ADVENTURE_CSB) {
+        save_game_csb();
+        return;
+    }
     game_freeze();
     for (;;) {
         dialog_draw(message, NULL, ui_string(TEXT_CANCEL), ui_string(TEXT_SAVE), ui_string(TEXT_QUIT), NULL);

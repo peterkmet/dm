@@ -6,6 +6,7 @@
    savefile.c owns the container; this module owns the block contents. Layout: docs/save-format.md. */
 
 enum { SAVEGAME_DAMAGED = -1, SAVEGAME_MISSING = 0, SAVEGAME_LOADED = 1 };
+enum { ADVENTURE_FAILED, ADVENTURE_MADE, ADVENTURE_NO_CHAMPIONS, ADVENTURE_NAMES_NOT_UNIQUE };
 
 extern int16_t g_saved_game_exists;          /* 1 after a save or a load: the endgame offers a restart */
 extern uint32_t g_last_save_game_time, g_last_load_game_time;
@@ -21,5 +22,10 @@ int16_t savegame_save(const char *dir);
    champions, party, timeline, and portraits. Returns SAVEGAME_LOADED, SAVEGAME_MISSING, or
    SAVEGAME_DAMAGED. After a damaged file the dungeon is not loaded. */
 int16_t savegame_load(const char *dir);
+
+/* CSB prison (CEDT MAKE NEW ADVENTURE): puts the party into the CSB adventure of mini_path (MINI.DAT),
+   writes it to dir/CSBGAME.DAT (the old file becomes CSBGAME.BAK), and loads it. Returns ADVENTURE_MADE,
+   ADVENTURE_NO_CHAMPIONS or ADVENTURE_NAMES_NOT_UNIQUE (nothing written), or ADVENTURE_FAILED. */
+int16_t savegame_make_adventure(const char *dir, const char *mini_path);
 
 #endif
