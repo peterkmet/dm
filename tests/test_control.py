@@ -470,6 +470,36 @@ def test_turn_reports_a_fireball_and_a_killed_creature_seen_during_the_turn(game
             ctypes.c_int16.in_dll(lib, name).value = value
 
 
+def test_a_group_in_view_for_many_ticks_is_recorded_once(game):
+    lib = game.lib
+    x, y, f = square_with_floor_two_ahead(game)
+    target = (x + 2 * STEP_EAST[f], y + 2 * STEP_NORTH[f])
+    names = ("g_party_map_x", "g_party_map_y", "g_party_direction")
+    saved = game.position()
+    for name, value in zip(names, (x, y, f)):
+        ctypes.c_int16.in_dll(lib, name).value = value
+    client = Client(game)
+    try:
+        add_screamer(lib, *target)
+        client.sock.sendall(b'{"cmd": "wait", "ticks": 80}\n')
+        for _ in range(40):  # the group stays in view for more ticks than the record holds groups
+            pump(lib)
+        lib.projectile_create(FIREBALL, x, y, f, f, 255, 255, 1)
+        data = b""
+        while not data.endswith(b"\n"):
+            pump(lib)
+            try:
+                data += client.sock.recv(1 << 20)
+            except BlockingIOError:
+                pass
+        changes = json.loads(data)["seen"]["creature_changes"]
+        assert changes == [{"type": "Screamer", "x": target[0], "y": target[1], "depth": 2, "side": "center", "before": 1, "after": 0}]
+    finally:
+        client.sock.close()
+        for name, value in zip(names, saved):
+            ctypes.c_int16.in_dll(lib, name).value = value
+
+
 def test_view_names_explosion_types():
     from dmtools import play
 

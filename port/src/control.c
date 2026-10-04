@@ -635,8 +635,10 @@ static void witness(void)
         while (k < witnessed.group_count && witnessed.groups[k].at.thing != things[i].thing) k++;
         if (k == WITNESSED_GROUPS_MAX) continue;
         int16_t creatures = (int16_t)(group_last_creature_index(things[i].thing) + 1);
-        if (k == witnessed.group_count++)
+        if (k == witnessed.group_count) {  /* a group seen first: count it once, not on each tick */
             witnessed.groups[k] = (WitnessedGroup){ .creature = group_creature_type(things[i].thing), .before = creatures };
+            witnessed.group_count++;
+        }
         witnessed.groups[k].at = things[i];
         witnessed.groups[k].after = creatures;
         witnessed.groups[k].in_view = 1;
