@@ -16,7 +16,9 @@
 #define GFX_PANEL_ARROW 18
 #define GFX_PANEL_EYE 19
 #define GFX_PANEL_EMPTY 20
+#define GFX_MAGIC_MAP_TILES 12          /* CSB: the 7 x 7 pixel tiles of the magic map */
 #define GFX_PANEL_SCROLL 23
+#define GFX_PANEL_MAGIC_MAP 24          /* CSB */
 #define GFX_PANEL_CHEST 25
 #define GFX_PANEL_OBJECT_CIRCLE 29
 #define GFX_CHAMPION_PORTRAITS 26
@@ -81,6 +83,8 @@
 #define ZONE_PANEL_OBJECT_NAME 506
 #define ZONE_PANEL_OBJECT_TEXT 556       /* x of the object description lines */
 #define ZONE_PANEL_SCROLL_CENTER 560
+#define ZONE_MAGIC_MAP 614               /* CSB: the top left square of the 7 x 7 grid */
+#define ZONE_MAGIC_MAP_RUNE_FIRST 615    /* CSB: + KU, ROS, DAIN, NETA */
 #define ZONE_MOUTH 545
 #define ZONE_EYE 546
 #define ZONE_HEALTH_LABEL 547            /* stamina + 1, mana + 2 */

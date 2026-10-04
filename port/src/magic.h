@@ -8,7 +8,8 @@
 enum { SPELL_CAST_FAILURE = 0, SPELL_CAST_SUCCESS = 1, SPELL_CAST_FAILURE_NEEDS_FLASK = 3 };
 
 /* Failure messages of menus_print_spell_failure_message. */
-enum { SPELL_FAILURE_NEEDS_MORE_PRACTICE = 0, SPELL_FAILURE_MEANINGLESS_SPELL = 1, SPELL_FAILURE_NEEDS_FLASK_IN_HAND = 10 };
+enum { SPELL_FAILURE_NEEDS_MORE_PRACTICE = 0, SPELL_FAILURE_MEANINGLESS_SPELL = 1, SPELL_FAILURE_NEEDS_FLASK_IN_HAND = 10,
+       SPELL_FAILURE_NEEDS_MAGIC_MAP = 11 };
 
 /* Other spell types (spell kind 3). */
 enum {
@@ -24,5 +25,7 @@ int16_t champion_is_projectile_spell_cast(uint16_t champion_index, uint16_t thin
 int16_t menus_is_party_spell_or_fire_shield_successful(uint16_t champion_index, int16_t spell_shield, uint16_t ticks, int16_t use_mana);
 void menus_create_event70_light(int16_t light_power, int16_t ticks);
 void champion_disable_action(uint16_t champion_index, uint16_t ticks);
+/* CSB: 1 when a scroll text (or its first line) is the magic map text MAGICMAP. */
+int magic_map_is_text(const char *text);
 
 #endif

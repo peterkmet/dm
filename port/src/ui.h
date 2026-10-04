@@ -148,6 +148,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
 int panel_object_meter(uint16_t thing, const char **label, uint16_t *value);
 void draw_panel_object(uint16_t thing, int16_t pressing_eye);
 void draw_panel_eye(void);
+void panel_redraw_scroll(void);
 void panel_click_in_chest(int16_t x, int16_t y);
 
 /* Action area, spell area, movement arrows (ui_menus.c). */

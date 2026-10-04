@@ -343,6 +343,7 @@ void gameloop_tick(void)
         command_wake_up();
         if (!g_candidate_champion_ordinal) game_unfreeze();
         if (!g_inventory_champion_ordinal) gameloop_draw_view();
+        else if (g_adventure == ADVENTURE_CSB) panel_redraw_scroll();
     }
     mark_seen_squares();
     command_highlight_disable();

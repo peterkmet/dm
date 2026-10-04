@@ -1,3 +1,4 @@
+#include <string.h>
 #include "magic.h"
 #include "champion.h"
 #include "dungeon.h"
@@ -16,7 +17,7 @@ int16_t spell_find(const uint8_t *symbols);
 int16_t spell_draw_fails(uint8_t current_wisdom, uint16_t random);
 uint16_t spell_failure_experience(uint16_t experience, uint16_t required_level, uint16_t skill_level);
 
-enum { SPELL_KIND_POTION = 1, SPELL_KIND_PROJECTILE = 2, SPELL_KIND_OTHER = 3 };
+enum { SPELL_KIND_POTION = 1, SPELL_KIND_PROJECTILE = 2, SPELL_KIND_OTHER = 3, SPELL_KIND_MAGIC_MAP = 4 };
 
 #define ICON_EMPTY_FLASK 195
 #define JUNK_ZOKATHRA 51
@@ -31,6 +32,10 @@ enum { SPELL_KIND_POTION = 1, SPELL_KIND_PROJECTILE = 2, SPELL_KIND_OTHER = 3 };
 #define FIRE_SHIELD_BASE_TICKS 100
 #define POTION_POWER_PER_LEVEL 40
 #define LIGHT_POWER_MAXIMUM 15
+#define MAGIC_MAP_TEXT "MAGICMAP"        /* the text of a magic map scroll */
+#define SCROLL_TEXT_SIZE 200
+#define TEXT_MODE_SCROLL 2
+#define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
 
 static void add_party_event(uint8_t type, uint16_t ticks, uint16_t b)
 {
@@ -79,6 +84,8 @@ void menus_print_spell_failure_message(uint16_t champion_index, int16_t failure_
         first = TEXT_SPELL_FAILURE_FLASK;
     } else if (failure_type == SPELL_FAILURE_MEANINGLESS_SPELL) {
         first = TEXT_SPELL_FAILURE_MEANINGLESS;
+    } else if (failure_type == SPELL_FAILURE_NEEDS_MAGIC_MAP) {
+        first = TEXT_SPELL_FAILURE_MAGIC_MAP;
     } else {
         return;
     }
@@ -252,6 +259,49 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
     }
 }
 
+int magic_map_is_text(const char *text) { return !strcmp(text, MAGIC_MAP_TEXT); }
+
+/* A magic map is a scroll with the text MAGICMAP. */
+static int is_magic_map(uint16_t thing)
+{
+    char text[SCROLL_TEXT_SIZE];
+    if (THING_TYPE(thing) != THING_SCROLL) return 0;
+    decode_text(text, sizeof text, (uint16_t)(THING_TEXT << 10 | scroll_text_index(thing)), TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
+    return magic_map_is_text(text);
+}
+
+/* CSB map spells need a magic map in the action hand. DAIN, ROS, and KU add a map layer for a time;
+   NETA keeps the map of the party square and direction. Returns 0 without the map. */
+static int16_t cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power, uint16_t *disabled_ticks)
+{
+    Champion *c = &g_champions[champion_index];
+    if (!is_magic_map(c->slots[SLOT_HAND_ACTION])) {
+        menus_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MAGIC_MAP, 0);
+        return 0;
+    }
+    uint16_t d = (uint16_t)((power + 1) * 4), ticks;
+    if (type == MAGIC_MAP_NETA) {
+        for (uint16_t i = 0; c->magic_map[MAGIC_MAP_NETA] && i < g_event_high_water; i++)
+            if (g_timeline_events[i].type == EVENT_MAGIC_MAP_NETA_END && g_timeline_events[i].priority == champion_index) {
+                timeline_delete_event(i);
+                break;
+            }
+        c->magic_map[MAGIC_MAP_NETA] = (uint8_t)(g_party_direction + 1);
+        magic_map_set_position(c->magic_map, g_party_map_index, g_party_map_x, g_party_map_y);
+        *disabled_ticks = (uint16_t)(d * d) >> 1;
+        ticks = (uint16_t)(*disabled_ticks * 4);
+    } else {
+        if (type == MAGIC_MAP_ROS) d -= 2;
+        else if (type == MAGIC_MAP_KU) d -= (d >> 2) - 1;
+        c->magic_map[type]++;
+        ticks = (uint16_t)(d * d * 2);
+    }
+    TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks), .type = (uint8_t)(EVENT_MAGIC_MAP_DAIN_END + type),
+                           .priority = (uint8_t)champion_index};
+    timeline_add_event(&event);
+    return 1;
+}
+
 /* Casts the spell of the champion symbols. Each missing skill level is a chance to fail against wisdom. */
 int16_t menus_get_champion_spell_cast_result(uint16_t champion_index)
 {
@@ -280,6 +330,7 @@ int16_t menus_get_champion_spell_cast_result(uint16_t champion_index)
             return SPELL_CAST_FAILURE;
         }
     }
+    uint16_t disabled_ticks = spell->disabled_ticks;
     switch (spell->kind) {
     case SPELL_KIND_POTION:
         if (!cast_potion(champion_index, spell->type, power))
@@ -291,9 +342,13 @@ int16_t menus_get_champion_spell_cast_result(uint16_t champion_index)
     case SPELL_KIND_OTHER:
         cast_other(champion_index, spell->type, power);
         break;
+    case SPELL_KIND_MAGIC_MAP:
+        if (!cast_magic_map(champion_index, spell->type, power, &disabled_ticks))
+            return SPELL_CAST_FAILURE_NEEDS_FLASK; /* the symbols stay, as without a flask */
+        break;
     }
     champion_add_skill_experience(champion_index, spell->skill_index, experience);
-    champion_disable_action(champion_index, spell->disabled_ticks);
+    champion_disable_action(champion_index, disabled_ticks);
     return SPELL_CAST_SUCCESS;
 }
 
