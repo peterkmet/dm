@@ -1,6 +1,6 @@
 # Status of the C port
 
-Updated: 2026-10-04 10:50. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
+Updated: 2026-10-04 14:30. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
 
 ## Done and committed
 
@@ -9,11 +9,10 @@ Updated: 2026-10-04 10:50. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`
 
 ## In progress
 
-Vanilla, advanced and turn-based modes are committed (commit `5a24461`, 319 tests). Step 15 readability pass is done.
+LLM playthrough in turn-based mode (`docs/llm-playbook.md`). The player keeps its files in `.playthrough/` (git-ignored); the coordinator keeps `.playthrough/session_costs.md`.
 
-- Turn-based extras (agent started 10:50): control commands save/load/new_game, MCP tools, CLI client `dm-play`.
-- Step 16 final review (agent started 10:50): ASan soak in all modes, protocol robustness, vanilla regression check.
-- Next: fix review findings, CHANGELOG, manual checklist, merge to main, create the private GitHub repo and push (user chose private GitHub). Then the LLM playthrough: run `build/dm --mode turnbased` with a visible window; a subagent plays through `uv run dm-play` over the socket (user chose the socket, no MCP registration). Keep notes and save often.
+- Restart point: checkpoint `level3b` in `.playthrough_checkpoints/level3b/` (save `DMGAME.DAT` + player files), party just arrived on level 3 by the stairs, game time 37010. Older checkpoints: `party`, `level2`, `level3`.
+- To restart: copy the checkpoint save to `game/DMGAME.DAT` and its `files/` to `.playthrough/`, run `build/dm --mode turnbased`, then `uv run dm-play load`.
 
 ## Known differences from the original
 
