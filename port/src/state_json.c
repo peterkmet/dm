@@ -10,6 +10,7 @@
 #include "inventory.h"
 #include "map.h"
 #include "message.h"
+#include "projectile.h"
 #include "tables.h"
 #include "things.h"
 #include "ui.h"
@@ -37,6 +38,7 @@ static const char *const skill_names[SKILL_BASE_COUNT] = { "fighter", "ninja", "
 static const char *const wound_names[UI_BODY_SLOT_COUNT] = { "ready_hand", "action_hand", "head", "torso", "legs", "feet" };
 /* Relative view cells: on the party square the far cells, on the square ahead the near cells are piles 0-3. */
 static const char *const cell_names[4] = { "far_left", "far_right", "near_right", "near_left" };
+static const char *const side_names[3] = { "left", "center", "right" };
 static const char *const party_cell_names[4] = { "front_left", "front_right", "back_right", "back_left" };
 static const char *const slot_names[SLOT_COUNT] = {
     "ready_hand", "action_hand", "head", "torso", "legs", "feet", "pouch_2", "quiver_2", "quiver_3", "quiver_4",
@@ -549,6 +551,26 @@ static void floor_ornament_json(Json *j, int16_t x, int16_t y)
     else key_int(j, "floor_ornament", ornament);
 }
 
+const char *state_json_creature_name(uint16_t type) { return type < CREATURE_TYPE_COUNT ? creature_names[type] : "unknown"; }
+
+void state_json_explosion_name(Json *j, uint16_t type)
+{
+    switch (type) {
+    case EXPLOSION_FIREBALL: json_str(j, "fireball"); return;
+    case EXPLOSION_SLIME: json_str(j, "slime"); return;
+    case EXPLOSION_LIGHTNING_BOLT: json_str(j, "lightning"); return;
+    case EXPLOSION_HARM_NON_MATERIAL: json_str(j, "harm_non_material"); return;
+    case EXPLOSION_OPEN_DOOR: json_str(j, "open_door"); return;
+    case EXPLOSION_POISON_BOLT: json_str(j, "poison_bolt"); return;
+    case EXPLOSION_POISON_CLOUD: json_str(j, "poison_cloud"); return;
+    case EXPLOSION_SMOKE: json_str(j, "smoke"); return;
+    case EXPLOSION_FLUXCAGE: json_str(j, "fluxcage"); return;
+    case EXPLOSION_REBIRTH_STEP_1:
+    case EXPLOSION_REBIRTH_STEP_2: json_str(j, "rebirth"); return;
+    }
+    json_int(j, type);
+}
+
 /* Creature groups, objects per cell, projectiles, and explosions on a square. */
 static void square_things_json(Json *j, int16_t x, int16_t y)
 {
@@ -561,7 +583,7 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
             uint16_t creature = group_creature_type(t);
             json_key(j, "creatures");
             json_open(j, '{');
-            key_str(j, "type", creature < CREATURE_TYPE_COUNT ? creature_names[creature] : "unknown");
+            key_str(j, "type", state_json_creature_name(creature));
             key_int(j, "count", group_last_creature_index(t) + 1);
             json_close(j, '}');
         } else if (is_object(t)) {
@@ -579,6 +601,8 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
             json_open(&flying, '{');
             key_str(&flying, "kind", "explosion");
             key_int(&flying, "type", explosion_type(t));
+            json_key(&flying, "name");
+            state_json_explosion_name(&flying, explosion_type(t));
             json_close(&flying, '}');
         }
     }
@@ -594,7 +618,6 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
 
 void state_json_view(Json *j)
 {
-    static const char *const side_names[3] = { "left", "center", "right" };
     json_open(j, '{');
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
     key_int(j, "darkness", g_dungeon_view_palette_index);
@@ -646,7 +669,7 @@ void state_json_view(Json *j)
     json_close(j, '}');
 }
 
-int state_json_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX])
+int state_json_visible_things(uint16_t type, StateJsonSeenThing *out, int max)
 {
     int count = 0;
     for (int16_t depth = 0; depth < visible_depths(); depth++)
@@ -655,8 +678,17 @@ int state_json_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX])
             view_square(depth, side, &x, &y);
             if (!in_party_map(x, y) || !strcmp(square_name(party_map_square(x, y)), "wall")) continue;
             for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST; t = get_next_thing(t))
-                if (THING_TYPE(t) == THING_GROUP && count < STATE_JSON_VISIBLE_GROUPS_MAX) groups[count++] = THING_STRIP_CELL(t);
+                if (THING_TYPE(t) == type && count < max)
+                    out[count++] = (StateJsonSeenThing){ depth, x, y, side_names[side + 1], THING_STRIP_CELL(t) };
         }
+    return count;
+}
+
+int state_json_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX])
+{
+    StateJsonSeenThing seen[STATE_JSON_VISIBLE_GROUPS_MAX];
+    int count = state_json_visible_things(THING_GROUP, seen, STATE_JSON_VISIBLE_GROUPS_MAX);
+    for (int i = 0; i < count; i++) groups[i] = seen[i].thing;
     return count;
 }
 

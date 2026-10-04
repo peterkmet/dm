@@ -25,6 +25,8 @@ How to play:
 1. Look: `get_view` shows the squares you can see in front (depth 0 is your own square, depth 1
    the square ahead; nothing behind a wall or a closed door), `get_map` shows the explored map,
    `get_state` shows the champions.
+   An explosion or a creature death can be gone before a turn ends: the response of act,
+   act_many, and wait has "seen" {explosions, creature_changes} with what the party saw during it.
 2. Walk with move_forward, move_back, move_left, move_right (strafe), turn_left, turn_right.
    Walls, closed doors, and creatures block you: the response has "bumped": true, and a bump
    into a wall hurts two champions a little.

@@ -39,7 +39,7 @@ def square_text(square: dict) -> str:
     if square.get("objects"):
         words.append("objects " + ", ".join(f"{o['name']} ({o['cell']})" for o in square["objects"]))
     if square.get("flying"):
-        words.append("flying " + ", ".join(f.get("name", f["kind"]) for f in square["flying"]))
+        words.append("flying " + ", ".join(str(f.get("name", f["kind"])) for f in square["flying"]))
     return ", ".join(words)
 
 
@@ -85,6 +85,19 @@ def view_lines(view: dict) -> list[str]:
     return lines
 
 
+def place_text(at: dict) -> str:
+    return LANE[at["depth"]] + ("" if at["side"] == "center" else f" {at['side']}")
+
+
+def seen_text(seen: dict) -> str:
+    """What the party saw during the turn, also when it was gone at the end."""
+    parts = [f"{e['name']} at {place_text(e)}" for e in seen["explosions"]]
+    for c in seen["creature_changes"]:
+        lost = "was killed" if c["after"] == 0 else f"lost {c['before'] - c['after']}"
+        parts.append(f"a group of {c['before']} {c['type']} at {place_text(c)} {lost}")
+    return "seen: " + "; ".join(parts)
+
+
 def brief(response: dict) -> str:
     """A few lines for the player: the turn, the party, the champions, what is ahead, the messages."""
     if not response.get("ok"):
@@ -94,6 +107,8 @@ def brief(response: dict) -> str:
     lines = [head] if head else []
     if look := response.get("look"):
         lines.append(f"look: {look['name']}" + "".join(f" | {line}" for line in look["lines"]))
+    if seen := response.get("seen"):
+        lines.append(seen_text(seen))
     if "state" in response:
         lines += state_lines(response["state"])
     if "view" in response:

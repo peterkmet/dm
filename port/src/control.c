@@ -19,6 +19,7 @@
 #include "inventory.h"
 #include "map.h"
 #include "message.h"
+#include "things.h"
 #include "savegame.h"
 #include "startend.h"
 #include "state_json.h"
@@ -38,6 +39,8 @@
 #define TEXT_SIZE 256
 #define SPELL_TAB_STEP 5              /* caster tab zones per caster */
 #define ACTION_NAME_SIZE 32
+#define WITNESSED_EXPLOSIONS_MAX 32
+#define WITNESSED_GROUPS_MAX 16
 
 #ifdef MSG_NOSIGNAL
 #define SEND_FLAGS MSG_NOSIGNAL       /* a closed client does not raise SIGPIPE (Linux) */
@@ -81,6 +84,24 @@ static struct {
     int group_count;
     uint32_t message_expiry;
 } seen;
+
+/* What the party saw during a request, also when it was gone at the end: the explosions, and the creature
+   groups with their count when first seen and when last seen. */
+typedef struct {
+    StateJsonSeenThing at;
+    uint8_t type;
+} WitnessedExplosion;
+typedef struct {
+    StateJsonSeenThing at;
+    uint16_t creature;
+    int16_t before, after;
+    int in_view, killed;
+} WitnessedGroup;
+static struct {
+    int explosion_count, group_count;
+    WitnessedExplosion explosions[WITNESSED_EXPLOSIONS_MAX];
+    WitnessedGroup groups[WITNESSED_GROUPS_MAX];
+} witnessed;
 
 /* The eye panel text of a look action, for the turn result. */
 static struct {
@@ -573,6 +594,94 @@ static int write_png(const char *path)
     return fclose(f) == 0;
 }
 
+/* What the party saw during a request. */
+
+/* Adds the explosions and the creature counts that the party sees now to the record of the request. */
+static void witness(void)
+{
+    StateJsonSeenThing things[WITNESSED_EXPLOSIONS_MAX];
+    int count = state_json_visible_things(THING_EXPLOSION, things, WITNESSED_EXPLOSIONS_MAX);
+    for (int i = 0; i < count; i++) {
+        uint8_t type = explosion_type(things[i].thing);
+        int known = 0;
+        for (int k = 0; k < witnessed.explosion_count; k++)
+            known |= witnessed.explosions[k].type == type && witnessed.explosions[k].at.x == things[i].x && witnessed.explosions[k].at.y == things[i].y;
+        if (!known && witnessed.explosion_count < WITNESSED_EXPLOSIONS_MAX)
+            witnessed.explosions[witnessed.explosion_count++] = (WitnessedExplosion){ things[i], type };
+    }
+    for (int k = 0; k < witnessed.group_count; k++) witnessed.groups[k].in_view = 0;
+    count = state_json_visible_things(THING_GROUP, things, STATE_JSON_VISIBLE_GROUPS_MAX);
+    for (int i = 0; i < count; i++) {
+        int k = 0;
+        while (k < witnessed.group_count && witnessed.groups[k].at.thing != things[i].thing) k++;
+        if (k == WITNESSED_GROUPS_MAX) continue;
+        int16_t creatures = (int16_t)(group_last_creature_index(things[i].thing) + 1);
+        if (k == witnessed.group_count++)
+            witnessed.groups[k] = (WitnessedGroup){ .creature = group_creature_type(things[i].thing), .before = creatures };
+        witnessed.groups[k].at = things[i];
+        witnessed.groups[k].after = creatures;
+        witnessed.groups[k].in_view = 1;
+    }
+    for (int k = 0; k < witnessed.group_count; k++)  /* a killed group frees its record */
+        witnessed.groups[k].killed |= !witnessed.groups[k].in_view && get_next_thing(witnessed.groups[k].at.thing) == THING_NONE;
+}
+
+/* Starts the record of what the party sees during a request. */
+static void start_witnessing(void)
+{
+    memset(&witnessed, 0, sizeof witnessed);
+    witness();
+}
+
+static void seen_place_json(Json *j, const StateJsonSeenThing *at)
+{
+    json_key(j, "x");
+    json_int(j, at->x);
+    json_key(j, "y");
+    json_int(j, at->y);
+    json_key(j, "depth");
+    json_int(j, at->depth);
+    json_key(j, "side");
+    json_str(j, at->side);
+}
+
+/* The explosions the party saw and the groups that lost creatures in view or were killed; nothing when none. */
+static void seen_json(Json *j)
+{
+    int changes = 0;
+    for (int k = 0; k < witnessed.group_count; k++)
+        changes += witnessed.groups[k].killed || witnessed.groups[k].after < witnessed.groups[k].before;
+    if (!changes && !witnessed.explosion_count) return;
+    json_key(j, "seen");
+    json_open(j, '{');
+    json_key(j, "explosions");
+    json_open(j, '[');
+    for (int k = 0; k < witnessed.explosion_count; k++) {
+        json_open(j, '{');
+        json_key(j, "name");
+        state_json_explosion_name(j, witnessed.explosions[k].type);
+        seen_place_json(j, &witnessed.explosions[k].at);
+        json_close(j, '}');
+    }
+    json_close(j, ']');
+    json_key(j, "creature_changes");
+    json_open(j, '[');
+    for (int k = 0; k < witnessed.group_count; k++) {
+        if (!witnessed.groups[k].killed && witnessed.groups[k].after >= witnessed.groups[k].before) continue;
+        json_open(j, '{');
+        json_key(j, "type");
+        json_str(j, state_json_creature_name(witnessed.groups[k].creature));
+        seen_place_json(j, &witnessed.groups[k].at);
+        json_key(j, "before");
+        json_int(j, witnessed.groups[k].before);
+        json_key(j, "after");
+        json_int(j, witnessed.groups[k].killed ? 0 : witnessed.groups[k].after);
+        json_close(j, '}');
+    }
+    json_close(j, ']');
+    json_close(j, '}');
+}
+
 /* Responses. */
 
 static void close_client(void)
@@ -649,6 +758,7 @@ static void send_turn_result(void)
         json_close(&j, ']');
         json_close(&j, '}');
     }
+    seen_json(&j);
     json_key(&j, "state");
     state_json_state(&j);
     json_key(&j, "view");
@@ -700,6 +810,7 @@ static void handle_act(const char *request)
         send_error("missing action");
         return;
     }
+    start_witnessing();
     const char *error = run_action(name, request);
     if (error) send_error(error);
     else start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
@@ -834,6 +945,7 @@ static void handle_act_many(const char *request)
     batch.active = 1;
     batch.start_time = g_game_time;
     turn.has_damage = turn.moving = 0;
+    start_witnessing();
     batch_next();
 }
 
@@ -910,6 +1022,7 @@ static void handle_request(const char *request)
         else {
             turn.has_damage = look_text.shown = turn.moving = 0;
             snapshot();
+            start_witnessing();
             start_turn(ticks, ticks, 1);
         }
     } else if (!strcmp(cmd, "screenshot")) {
@@ -968,6 +1081,7 @@ void control_poll(void)
 {
     if (listen_fd < 0) return;
     if (turn.pending) {
+        witness();
         if (!turn_finished()) {
             turn.frames++;
             run_queue();

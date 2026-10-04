@@ -416,6 +416,67 @@ def test_act_many_stops_only_on_a_new_creature_group(game):
             ctypes.c_int16.in_dll(lib, name).value = value
 
 
+FIREBALL = 0xFF80  # the explosion thing of a fireball
+
+
+def square_with_floor_two_ahead(game):
+    """A floor square of the party map and a facing with floor on the next two squares ahead."""
+    width, height = map_size(game)
+
+    def floor(x, y):
+        return 0 <= x < width and 0 <= y < height and game.lib.get_square(x, y) >> 5 == 1
+
+    for x in range(width):
+        for y in range(height):
+            for f in range(4):
+                if all(floor(x + k * STEP_EAST[f], y + k * STEP_NORTH[f]) for k in range(3)):
+                    return x, y, f
+    pytest.skip("no floor square with floor two squares ahead")
+
+
+def test_turn_reports_a_fireball_and_a_killed_creature_seen_during_the_turn(game, capsys):
+    from dmtools import play
+
+    lib = game.lib
+    lib.get_unused_thing.restype = ctypes.c_uint16
+    lib.get_unused_thing.argtypes = [ctypes.c_uint16]
+    lib.group_add_active_group.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
+    lib.link_thing_to_list.argtypes = [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
+    lib.projectile_create.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.c_int16,
+                                      ctypes.c_uint8, ctypes.c_uint8, ctypes.c_uint8]
+    x, y, f = square_with_floor_two_ahead(game)
+    target = (x + 2 * STEP_EAST[f], y + 2 * STEP_NORTH[f])
+    names = ("g_party_map_x", "g_party_map_y", "g_party_direction")
+    saved = game.position()
+    for name, value in zip(names, (x, y, f)):
+        ctypes.c_int16.in_dll(lib, name).value = value
+    client = Client(game)
+    try:
+        add_screamer(lib, *target)
+        lib.projectile_create(FIREBALL, x, y, f, f, 255, 255, 1)  # a fireball from the front cell, toward the screamer
+        response = client.call(cmd="wait", ticks=40)
+        assert response["ok"], response
+        flying = [e for s in response["view"]["squares"] for e in s.get("flying", [])]
+        assert not any(e.get("name") == "fireball" for e in flying)  # the explosion is gone at the end of the turn
+        seen = response["seen"]
+        assert any(e["name"] == "fireball" and (e["x"], e["y"]) == target and e["depth"] == 2 for e in seen["explosions"])
+        assert {"type": "Screamer", "x": target[0], "y": target[1], "depth": 2, "side": "center", "before": 1, "after": 0} in seen["creature_changes"]
+        line = next(line for line in play.brief(response).splitlines() if line.startswith("seen: "))
+        assert "fireball at ahead 2" in line and "a group of 1 Screamer at ahead 2 was killed" in line
+        assert "seen" not in client.call(cmd="wait", ticks=2)  # nothing happened in this turn
+    finally:
+        client.sock.close()
+        for name, value in zip(names, saved):
+            ctypes.c_int16.in_dll(lib, name).value = value
+
+
+def test_view_names_explosion_types():
+    from dmtools import play
+
+    square = {"element": "floor", "flying": [{"kind": "explosion", "type": 0, "name": "fireball"}, {"kind": "explosion", "type": 90, "name": 90}]}
+    assert play.square_text(square) == "floor, flying fireball, 90"
+
+
 def test_goto_is_an_unknown_command(game):
     from dmtools import mcp_server
 
