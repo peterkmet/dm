@@ -1,6 +1,6 @@
 # Status of the C port
 
-Updated: 2026-10-04 04:10. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
+Updated: 2026-10-04 05:05. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`. Plan: `docs/superpowers/2026-10-04-dm-c-port-plan.md`. Code style: `docs/coding-standard.md`.
 
 ## Done and committed
 
@@ -9,11 +9,11 @@ Updated: 2026-10-04 04:10. Branch: `feature/2026-10-03-dm-tooling-disk-analysis`
 
 ## In progress
 
-The game is playable (commit `bd6ddbc`, 278 tests): entrance, new game, movement, recruiting, inventory, creatures, combat, actions, spells.
+Vanilla is playable with save/resume/endgame (commit `2f9cc2c`, 297 tests).
 
-- Step 13 (agent started 04:10): save game, resume, party death, endgame. Files: `gameloop.c`, `command.c`, `main.c`, `tests/test_save.py`.
-- Object panels (agent started 04:10): eye description, scroll and chest panels in `ui_champion.c`, `tests/test_panels.py`.
-- Review of the playable version (agent started 04:10): read-only, ASan soak run in a separate worktree.
+- Step 15 readability pass, 4 agents (started 05:00): (a) ftl/graphics/dungeon/savefile/tables, (b) text/message/sound/game/random/recruit/spells, (c) view/draw/layout, (d) savegame/startend/dialog/gameloop/main/platform/video/scale/command.
+- New modes (`docs/superpowers/2026-10-04-modes-plan.md`, approved without PRD): automap module agent (`automap.*`) and turn-based control agent (`control.*`, `state_json.*`, `src/dmtools/mcp_server.py`) started 05:05, new files only.
+- After step 15: wire advanced features and modes into existing files; then Step 16 (final test, checklist, CHANGELOG, merge).
 
 ## Snapshots
 
