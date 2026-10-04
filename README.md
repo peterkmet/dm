@@ -115,7 +115,7 @@ The game font comes from `Graphics.DAT` in the `--data` folder, else in `game/`,
 
 ### Entrance
 
-The entrance of Dungeon Master: click ENTER or press Return to start a new game. The doors open with a sound, then the game starts. Click RESUME to continue the saved game. QUIT or Ctrl+Q closes the program. Closing the window also closes the game.
+The entrance of Dungeon Master: click ENTER or press Return to start a new game. The doors open with a sound, then the game starts. Click RESUME to continue the saved game. QUIT goes back to the first start screen (adventure, then mode). Ctrl+Q or closing the window closes the program. When `--adventure` and `--mode` skip every start screen, and in turn-based mode, QUIT closes the program.
 
 ### Chaos Strikes Back
 
@@ -127,7 +127,7 @@ The new adventure starts on level 4 at (22, 18), facing south. Each champion has
 
 - RESUME loads `CSBGAME.DAT`, or `CSBGAME.BAK` when `CSBGAME.DAT` is missing. When the file is missing or damaged, the dialogs are the same as in Dungeon Master, and the game shows the CSB screen again.
 - The save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. SAVE AND PLAY saves and continues the game. SAVE AND QUIT saves, shows the credits, and then shows the CSB screen. In the prison, SAVE AND QUIT makes the new adventure and then quits: RESUME starts it. The dialog closes after a save. CSB has no quit without a save, as in the original.
-- After the credits (SAVE AND QUIT, the end of the game), the game shows the CSB screen. In turn-based mode, the game shows the entrance picture, and `load` or `new_game` over the socket starts the next game. QUIT on the CSB screen, Ctrl+Q, or closing the window ends the program.
+- After the credits (SAVE AND QUIT, the end of the game), the game shows the CSB screen. In turn-based mode, the game shows the entrance picture, and `load` or `new_game` over the socket starts the next game. QUIT on the CSB screen goes back to the first start screen, as QUIT on the DM entrance. Ctrl+Q or closing the window ends the program.
 - The end of the game: when the party dies, THE END shows with RESTART THIS GAME only (no QUIT), then the credits. When the party wins, the game plays the ending animation `ENDA.DAT`. After the last frame, a key or a click shows the CSB screen (the original stays on the last frame).
 - Quick save (F5) and quick load (F9) use `QUICK.DAT` in the CSB folder. A quick save in the prison is a plain save: it does not make the new adventure.
 - Turn-based mode: `new_game` starts NEW ADVENTURE (the prison). `save` in the prison makes the new adventure. `load` loads `CSBGAME.DAT`.
@@ -139,7 +139,7 @@ The game saves to `DMGAME.DAT` in the data folder (`game/`, or the folder of `--
 - Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. After SAVE the dialog stays open. CANCEL continues the game. QUIT ends the game. When the game was not saved or loaded in the last 100 ticks, QUIT asks first.
 - Resume: click RESUME at the entrance. The game loads `DMGAME.DAT`, or `DMGAME.BAK` when `DMGAME.DAT` is missing. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
 - When all champions die, the game shows THE END. When a saved game exists, RESTART THIS GAME loads it. QUIT on this screen, the QUIT of the save dialog, and the end of a won game show the credits. A key or a click then shows the entrance.
-- Deliberate deviations from the original: the original quits the program after the credits and after a damaged save. The port shows the entrance. Only QUIT on the entrance (or Ctrl+Q, or closing the window) ends the program.
+- Deliberate deviations from the original: the original quits the program after the credits and after a damaged save. The port shows the entrance. QUIT on the entrance goes back to the start screens. Only Ctrl+Q or closing the window ends the program.
 
 ### Controls
 

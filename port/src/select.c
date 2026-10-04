@@ -2,7 +2,6 @@
 #include "select.h"
 #include "advanced.h"
 #include "adventure.h"
-#include "startend.h"
 #include "text.h"
 #include "ui.h"
 #include "video.h"
@@ -35,6 +34,7 @@ static const uint16_t select_palette[PALETTE_COLORS] = {
 
 static int screen = SCREEN_DONE, cursor, csb_enabled, adventure_given, mode_given, csb_choice;
 static const char *message;
+static int16_t adventure_flag = -1, mode_flag = -1; /* --adventure and --mode, -1 when absent */
 
 /* Only CHAOS STRIKES BACK can be disabled: its files are missing. */
 static int enabled(int item) { return screen != SCREEN_ADVENTURE || item != ADVENTURE_CSB || csb_enabled; }
@@ -58,6 +58,8 @@ static void set_mode(int16_t mode)
 
 void select_start(int16_t adventure, int16_t mode, int csb_present)
 {
+    adventure_flag = adventure;
+    mode_flag = mode;
     csb_enabled = csb_present;
     adventure_given = adventure >= 0;
     mode_given = mode >= 0;
@@ -73,6 +75,12 @@ void select_start_csb(const char *text)
     mode_given = 1; /* the game mode is applied: Escape stays on the CSB screen */
     show(SCREEN_CSB);
     message = text;
+}
+
+int select_restart(void)
+{
+    select_start(adventure_flag, mode_flag, csb_enabled);
+    return screen != SCREEN_DONE;
 }
 
 int select_screen(void) { return screen; }
@@ -91,8 +99,7 @@ static void activate(void)
         show_after_mode();
         break;
     case SCREEN_CSB:
-        csb_choice = cursor;
-        if (csb_choice == CSB_QUIT) g_quit_requested = 1;
+        csb_choice = cursor; /* the program decides what QUIT does */
         show(SCREEN_DONE);
         break;
     }
