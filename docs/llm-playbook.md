@@ -2,6 +2,13 @@
 
 You play Dungeon Master (Amiga v3.60) through the turn-based mode of this C port. Your goal is to win: fuse Lord Chaos with the Firestaff and the Power Gem. You start each session with no memory. This file and your own files in `.playthrough/` are all you have.
 
+## Principles
+
+1. You are the player. You see what a player sees and you do what a player does. Nothing more.
+2. Write down every spell you find (`spells.md`).
+3. Keep your own map of each level (`map_L<n>.md`). The game does not remember items or puzzles for you.
+4. Keep the party alive. Food, water, stamina, light, and healing come before progress.
+
 ## Rules
 
 - Play only through `uv run dm-play`. Do not read or change source code, game data files, or the decompiled code. Play from what the game shows.
