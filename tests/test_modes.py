@@ -211,6 +211,26 @@ def test_automap_stops_the_game_time_and_draws_the_map(game):
     set_mode(game, VANILLA)
 
 
+def arrow_x(game):
+    """The mean x of the party arrow pixels in the viewport."""
+    b = zone_box(game, ZONE_VIEWPORT)
+    xs = [i % b.w for i, c in enumerate(pixels(game, ZONE_VIEWPORT)) if c == COLOR_YELLOW]
+    return sum(xs) / len(xs) if xs else None
+
+
+def test_a_click_scrolls_the_automap(game):
+    set_mode(game, ADVANCED)
+    press(game, KEY_M)
+    centered = arrow_x(game)
+    b = zone_box(game, ZONE_VIEWPORT)
+    game.click(b.x + b.w // 2 + 3 * 7, b.y + b.h // 2)  # 3 squares east of the center
+    assert arrow_x(game) == centered - 3 * 7
+    press(game, KEY_M)
+    press(game, KEY_M)
+    assert arrow_x(game) == centered
+    press(game, KEY_M)
+    set_mode(game, VANILLA)
+
 def test_automap_opens_only_in_the_dungeon_view(game):
     set_mode(game, ADVANCED)
     press(game, KEY_F1)

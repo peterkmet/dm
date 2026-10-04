@@ -18,6 +18,7 @@ enum { SAVE_MAGIC_SIZE = sizeof SAVE_MAGIC - 1 };  /* without the NUL */
 /* One byte per square of every map, the maps one after another. */
 static uint8_t *seen;
 static size_t seen_size;
+static int16_t scroll_x, scroll_y; /* squares between the party and the center of the drawn map */
 
 static size_t map_square_count(int16_t map)
 {
@@ -201,13 +202,35 @@ static void draw_party_arrow(Bitmap *target, Box area, int16_t left, int16_t top
     }
 }
 
+/* The square at the center of the drawn map. */
+static void draw_center(int16_t map, int16_t *center_x, int16_t *center_y)
+{
+    int party_here = map == g_party_map_index;
+    *center_x = (party_here ? g_party_map_x : dungeon_map_width(map) / 2) + scroll_x;
+    *center_y = (party_here ? g_party_map_y : dungeon_map_height(map) / 2) + scroll_y;
+}
+
+void automap_scroll(int16_t map, int16_t dx, int16_t dy)
+{
+    if (map < 0 || map >= dungeon_map_count()) return;
+    int16_t center_x, center_y;
+    draw_center(map, &center_x, &center_y);
+    scroll_x += max16(0, min16(dungeon_map_width(map) - 1, center_x + dx)) - center_x;
+    scroll_y += max16(0, min16(dungeon_map_height(map) - 1, center_y + dy)) - center_y;
+}
+
+void automap_scroll_reset(void)
+{
+    scroll_x = scroll_y = 0;
+}
+
 void automap_draw(Bitmap *target, Box area, int16_t map)
 {
     fill_clipped(target, area, area.x, area.y, area.w, area.h, COLOR_BLACK);
     if (map < 0 || map >= dungeon_map_count()) return;
     int party_here = map == g_party_map_index;
-    int16_t center_x = party_here ? g_party_map_x : dungeon_map_width(map) / 2;
-    int16_t center_y = party_here ? g_party_map_y : dungeon_map_height(map) / 2;
+    int16_t center_x, center_y;
+    draw_center(map, &center_x, &center_y);
     int16_t origin_x = area.x + (area.w - AUTOMAP_CELL_SIZE) / 2 - center_x * AUTOMAP_CELL_SIZE;
     int16_t origin_y = area.y + (area.h - AUTOMAP_CELL_SIZE) / 2 - center_y * AUTOMAP_CELL_SIZE;
     for (int16_t x = 0; x < dungeon_map_width(map); x++)
@@ -215,5 +238,5 @@ void automap_draw(Bitmap *target, Box area, int16_t map)
             if (automap_is_seen(map, x, y))
                 draw_square(target, area, dungeon_square(map, x, y), origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
     if (party_here)
-        draw_party_arrow(target, area, origin_x + center_x * AUTOMAP_CELL_SIZE, origin_y + center_y * AUTOMAP_CELL_SIZE, g_party_direction);
+        draw_party_arrow(target, area, origin_x + g_party_map_x * AUTOMAP_CELL_SIZE, origin_y + g_party_map_y * AUTOMAP_CELL_SIZE, g_party_direction);
 }
