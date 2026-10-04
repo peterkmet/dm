@@ -165,7 +165,6 @@ def rgb_rows(lib):
 def recruit(lib, n):
     """Fills champions 0..n-1 from real mirror texts, with objects in hands and body slots."""
     champions = (Champion * 4).in_dll(lib, "g_champions")
-    portraits = (c16 * 4).in_dll(lib, "g_champion_portrait_indices")
     found = sorted(mirrors(lib))[:n]
     weapons = list(range(8))
     for i, (portrait, text) in enumerate(found):
@@ -192,7 +191,7 @@ def recruit(lib, n):
         c.action_index = 0xFF
         c.enable_action_event_index = c.hide_damage_received_event_index = -1
         champions[i] = c
-        portraits[i] = portrait
+        lib.champion_set_portrait(i, portrait)
     c16.in_dll(lib, "g_leader_index").value = 0 if n else -1
     u16.in_dll(lib, "g_party_champion_count").value = n
     c16.in_dll(lib, "g_magic_caster_champion_index").value = -1

@@ -80,7 +80,7 @@ def state(game):
     return {
         **values,
         "champions": champions,
-        "portraits": list((c16 * 4).in_dll(lib, "g_champion_portrait_indices"))[: values["g_party_champion_count"]],
+        "portraits": bytes((ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits"))[: values["g_party_champion_count"] * 32 * 29],
         "party": raw(lib, "g_party", PARTY_BYTES),
         "events": raw_array(lib, "g_timeline_events", events * EVENT_BYTES),
         "timeline": raw_array(lib, "g_timeline", events * 2),
@@ -142,6 +142,26 @@ def test_save_keeps_a_backup(game, tmp_path):
     (tmp_path / SAVE).unlink()
     assert lib.savegame_load(str(tmp_path).encode()) == LOADED
     assert (tmp_path / SAVE).read_bytes() == first and not (tmp_path / BACKUP).exists()
+
+
+def test_portraits_survive_save_and_load(game, tmp_path):
+    """The file keeps all four portrait bitmaps, also ones that are not in graphic 26."""
+    lib = game.lib
+    keep, saved = tmp_path / "keep", tmp_path / "saved"
+    keep.mkdir()
+    saved.mkdir()
+    assert lib.savegame_save(str(keep).encode()) == 1
+    count = u16.in_dll(lib, "g_party_champion_count")
+    count.value = 4
+    portraits = (ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits")
+    for i in range(len(portraits)):
+        portraits[i] = (i * 7 + i // 32) & 15
+    before = bytes(portraits)
+    assert lib.savegame_save(str(saved).encode()) == 1
+    ctypes.memset(portraits, 0, len(before))
+    assert lib.savegame_load(str(saved).encode()) == LOADED
+    assert count.value == 4 and bytes(portraits) == before
+    assert lib.savegame_load(str(keep).encode()) == LOADED
 
 
 def test_load_fails_gracefully(game, tmp_path):

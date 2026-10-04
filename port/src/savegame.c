@@ -9,16 +9,13 @@
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
-#include "graphics.h"
 #include "ids.h"
 #include "inventory.h"
 #include "map.h"
 #include "random.h"
-#include "recruit.h"
 #include "savefile.h"
 #include "ui.h"
 
-#define PORTRAIT_SIZE 0x102958        /* g_portrait_width, g_portrait_height */
 #define MIN_ACTIVE_GROUP_COUNT 110    /* load_game raises the saved maximum to at least this */
 #define BITPLANE_COUNT 4
 #define PIXELS_PER_WORD 16
@@ -176,42 +173,38 @@ static void unpack_active_group(const uint8_t *p, ActiveGroup *a)
     memcpy(&a->directions, p + A_BYTES, SAVE_ACTIVE_GROUP_BYTES - A_BYTES);
 }
 
-/* A portrait of graphic 26 in the interleaved form of champion_portraits_to_interleaved: per row
-   and per 16-pixel column, one word for each bit plane. */
-static void portrait_interleaved(int16_t portrait_index, uint8_t *out)
+#define PORTRAIT_COLUMNS ((CHAMPION_PORTRAIT_WIDTH + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD)
+
+/* champion_portraits_to_interleaved: per row and per 16-pixel column, one word for each bit plane. */
+static void portrait_to_interleaved(const uint8_t *px, uint8_t *out)
 {
-    const Bitmap *sheet = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
-    int16_t w = kaos_s16(PORTRAIT_SIZE), h = kaos_s16(PORTRAIT_SIZE + 2), x0, y0;
-    memset(out, 0, SAVE_PORTRAIT_BYTES);
-    if (!sheet) return;
-    recruit_portrait_origin(portrait_index, &x0, &y0);
-    int16_t columns = (int16_t)((w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD);
-    for (int16_t y = 0; y < h; y++)
-        for (int16_t c = 0; c < columns; c++)
+    for (int y = 0; y < CHAMPION_PORTRAIT_HEIGHT; y++)
+        for (int c = 0; c < PORTRAIT_COLUMNS; c++)
             for (int plane = 0; plane < BITPLANE_COUNT; plane++, out += 2) {
                 uint16_t word = 0;
-                for (int16_t k = 0; k < PIXELS_PER_WORD; k++) {
-                    int16_t x = (int16_t)(c * PIXELS_PER_WORD + k), sx = (int16_t)(x0 + x), sy = (int16_t)(y0 + y);
-                    if (x < w && sx < sheet->w && sy < sheet->h && sheet->px[sy * sheet->w + sx] >> plane & 1)
+                for (int k = 0; k < PIXELS_PER_WORD; k++) {
+                    int x = c * PIXELS_PER_WORD + k;
+                    if (x < CHAMPION_PORTRAIT_WIDTH && px[y * CHAMPION_PORTRAIT_WIDTH + x] >> plane & 1)
                         word |= (uint16_t)(1u << (PIXELS_PER_WORD - 1 - k));
                 }
                 wr16(out, word);
             }
 }
 
-/* The index of the portrait of graphic 26 that has these bitmap bytes, or 0. */
-static int16_t portrait_index_of(const uint8_t *bytes)
+/* champion_portraits_from_interleaved: the reverse of portrait_to_interleaved. */
+static void portrait_from_interleaved(const uint8_t *in, uint8_t *px)
 {
-    const Bitmap *sheet = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
-    int16_t w = kaos_s16(PORTRAIT_SIZE), h = kaos_s16(PORTRAIT_SIZE + 2);
-    if (!sheet || w <= 0 || h <= 0) return 0;
-    uint8_t candidate[SAVE_PORTRAIT_BYTES];
-    int16_t count = (int16_t)((sheet->w / w) * (sheet->h / h));
-    for (int16_t i = 0; i < count; i++) {
-        portrait_interleaved(i, candidate);
-        if (!memcmp(candidate, bytes, SAVE_PORTRAIT_BYTES)) return i;
-    }
-    return 0;
+    memset(px, 0, CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT);
+    for (int y = 0; y < CHAMPION_PORTRAIT_HEIGHT; y++)
+        for (int c = 0; c < PORTRAIT_COLUMNS; c++)
+            for (int plane = 0; plane < BITPLANE_COUNT; plane++, in += 2) {
+                uint16_t word = rd16(in);
+                for (int k = 0; k < PIXELS_PER_WORD; k++) {
+                    int x = c * PIXELS_PER_WORD + k;
+                    if (x < CHAMPION_PORTRAIT_WIDTH && word >> (PIXELS_PER_WORD - 1 - k) & 1)
+                        px[y * CHAMPION_PORTRAIT_WIDTH + x] |= (uint8_t)(1u << plane);
+                }
+            }
 }
 
 /* The champion block: the four champion records, then the party record. The leader load does
@@ -249,7 +242,7 @@ static uint8_t *encode_game(uint32_t *size)
     }
     memset(portraits, 0, sizeof portraits);
     for (uint16_t i = 0; i < g_party_champion_count; i++)
-        portrait_interleaved(g_champion_portrait_indices[i], portraits + i * SAVE_PORTRAIT_BYTES);
+        portrait_to_interleaved(g_champion_portraits[i], portraits + i * SAVE_PORTRAIT_BYTES);
 
     save_header_init(header, g_game_id, g_dungeon_id, header_extra);
     SaveFile s = {
@@ -368,7 +361,7 @@ static int restore_game(const SaveFile *s)
     }
     timeline_reset();
     for (uint16_t i = 0; i < g_party_champion_count && i < CHAMPION_MAX_COUNT; i++)
-        g_champion_portrait_indices[i] = portrait_index_of(s->portraits + i * SAVE_PORTRAIT_BYTES);
+        portrait_from_interleaved(s->portraits + i * SAVE_PORTRAIT_BYTES, g_champion_portraits[i]);
     g_game_id = save_header_game_id(s->header);
     g_dungeon_id = save_header_dungeon_id(s->header);
     memcpy(header_extra, save_header_extra(s->header), SAVE_HEADER_EXTRA_BYTES);

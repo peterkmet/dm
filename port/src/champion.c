@@ -235,10 +235,10 @@ static void add_candidate_possessions(uint16_t champion_index)
 /* The party stands in front of a mirror. The text on the party square holds the champion data. */
 void champion_add_candidate_to_party(int16_t portrait_index)
 {
-    (void)portrait_index; /* selects the portrait bitmap only */
     if (!g_leader_empty_handed || g_party_champion_count >= CHAMPION_MAX_COUNT)
         return;
     uint16_t index = g_party_champion_count;
+    champion_set_portrait((int16_t)index, portrait_index);
     Champion *c = &g_champions[index];
     memset(c, 0, sizeof *c);
     c->action_index = ACTION_NONE;

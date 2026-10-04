@@ -15,7 +15,6 @@
 #include "map.h"
 #include "message.h"
 #include "projectile.h"
-#include "recruit.h"
 #include "savegame.h"
 #include "sound.h"
 #include "text.h"
@@ -229,17 +228,16 @@ static void print_champion_skills(uint16_t champion_index, int y)
 static void draw_champion_parade(void)
 {
     Bitmap screen = ui_screen();
-    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
     int16_t pw = kaos_s16(PORTRAIT_SIZE), ph = kaos_s16(PORTRAIT_SIZE + 2);
     memset(fb, COLOR_DARKEST_GRAY, sizeof fb);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         const Champion *c = &g_champions[i];
         ui_blit_graphic(&screen, GFX_CHAMPION_FRAME, (int16_t)(ZONE_CHAMPION_FRAME_FIRST + i), COLOR_FLESH);
-        int16_t x, y, w = pw, h = ph;
+        int16_t w = pw, h = ph;
         Box b;
-        recruit_portrait_origin(g_champion_portrait_indices[i], &x, &y);
-        if (portraits && layout_get_zone((int16_t)(ZONE_CHAMPION_PORTRAIT_FIRST + i), pw, ph, &b, &w, &h))
-            draw_blit(portraits, (int16_t)(x + w), (int16_t)(y + h), &screen, &b, COLOR_DARK_GRAY, 0);
+        Bitmap portrait = champion_portrait((int16_t)i);
+        if (layout_get_zone((int16_t)(ZONE_CHAMPION_PORTRAIT_FIRST + i), pw, ph, &b, &w, &h))
+            draw_blit(&portrait, w, h, &screen, &b, COLOR_DARK_GRAY, 0);
         char name[sizeof c->name + 1] = { 0 }, title[sizeof c->title + 1] = { 0 };
         memcpy(name, c->name, sizeof c->name);
         memcpy(title, c->title, sizeof c->title);

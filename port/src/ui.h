@@ -73,8 +73,14 @@ extern uint8_t g_action_list_minimum_skill_levels[3];
 extern uint16_t g_action_count;
 extern int16_t g_action_damage;                /* 0: none, -1 can't reach, -2 need ammo */
 extern int16_t g_refresh_action_area;
-/* Portrait of each champion in graphic 26 (the portrait bitmap pointer at champion +0x114). */
-extern int16_t g_champion_portrait_indices[4];
+#define CHAMPION_PORTRAIT_WIDTH 32   /* g_portrait_width */
+#define CHAMPION_PORTRAIT_HEIGHT 29  /* g_portrait_height */
+/* The portrait bitmap of each champion (the portrait bitmap pointer at champion +0x114). */
+extern uint8_t g_champion_portraits[4][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
+/* The portrait of a champion as a bitmap. */
+Bitmap champion_portrait(int16_t champion_index);
+/* Copies portrait portrait_index of graphic 26 into the portrait of the champion. */
+void champion_set_portrait(int16_t champion_index, int16_t portrait_index);
 
 /* Setup: call after kaos_load, gfx_open, layout_init, text_init, and tables_init. */
 int ui_init(void);

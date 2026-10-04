@@ -68,7 +68,7 @@ const char *const g_rune_names[UI_RUNE_COUNT] = {
     "VEN", "EW", "KATH", "IR", "BRO", "GOR", "KU", "ROS", "DAIN", "NETA", "RA", "SAR",
 };
 
-int16_t g_champion_portrait_indices[4];
+uint8_t g_champion_portraits[4][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 int16_t g_panel_content;
 
 /* A number as text: right aligned in width characters, or not padded. */
@@ -185,18 +185,32 @@ static void draw_icon(uint16_t champion_index)
     ui_blit_zone(&screen, &bm, (int16_t)(ZONE_CHAMPION_ICON_FIRST + cell), COLOR_NONE);
 }
 
+Bitmap champion_portrait(int16_t champion_index)
+{
+    return (Bitmap){ CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champion_portraits[champion_index] };
+}
+
+void champion_set_portrait(int16_t champion_index, int16_t portrait_index)
+{
+    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
+    Bitmap portrait = champion_portrait(champion_index);
+    Box b = { 0, 0, CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT };
+    int16_t x, y;
+    memset(portrait.px, 0, CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT);
+    recruit_portrait_origin(portrait_index, &x, &y);
+    if (portraits) draw_blit(portraits, x, y, &portrait, &b, COLOR_NONE, 0);
+}
+
 /* Draws the portrait in the status box while the inventory is open. */
 void draw_status_box_portrait(int16_t champion_index)
 {
-    Bitmap screen = ui_screen();
-    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
-    int16_t x, y, zone = (int16_t)(ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index);
+    Bitmap screen = ui_screen(), portrait = champion_portrait(champion_index);
+    int16_t zone = (int16_t)(ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index);
     Box b;
     if (!ui_zone_box(zone, &b)) return;
-    recruit_portrait_origin(g_champion_portrait_indices[champion_index], &x, &y);
     b.w = kaos_s16(PORTRAIT_SIZE);
     b.h = kaos_s16(PORTRAIT_SIZE + 2);
-    if (portraits) draw_blit(portraits, x, y, &screen, &b, COLOR_NONE, 0);
+    draw_blit(&portrait, 0, 0, &screen, &b, COLOR_NONE, 0);
     if (g_party.event71_count_invisibility) ui_fill_zone_pattern(&screen, zone, COLOR_DARKEST_GRAY);
 }
 

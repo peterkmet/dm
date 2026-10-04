@@ -392,8 +392,10 @@ def party(lib):
     var(lib, c16, "g_party_map_y").value = py = y + STEP_NORTH[c]
     var(lib, c16, "g_party_direction").value = d = (c + 2) & 3
     possessions = [t for t in square_things(lib, m, x, y) if t >> 10 & 15 >= 4 and t >> 14 == c]
+    need(lib, "Graphics.DAT")
+    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())  # the portraits of graphic 26
     lib.champion_add_candidate_to_party(portrait)
-    return dict(m=m, wall=(x, y), square=(px, py), direction=d, possessions=possessions, text=lib.recruit_text_thing(m, px, py))
+    return dict(m=m, wall=(x, y), square=(px, py), direction=d, possessions=possessions, text=lib.recruit_text_thing(m, px, py), portrait=portrait)
 
 
 def test_recruit_first_mirror_champion(lib, party):
@@ -418,6 +420,20 @@ def test_recruit_first_mirror_champion(lib, party):
     wall = list(square_things(lib, party["m"], *party["wall"]))
     assert not set(t & 0x3FFF for t in party["possessions"]) & set(t & 0x3FFF for t in wall)
     assert all(lib.recruit_portrait_index(t) == -1 for t in wall if t >> 10 & 15 == 3)  # mirror disabled
+
+
+class Bitmap(ctypes.Structure):
+    _fields_ = [("w", u16), ("h", u16), ("px", ctypes.POINTER(ctypes.c_uint8))]
+
+
+def test_recruit_copies_the_mirror_portrait(lib, party):
+    lib.gfx_bitmap.restype = ctypes.POINTER(Bitmap)
+    sheet = lib.gfx_bitmap(26).contents
+    x, y = c16(), c16()
+    lib.recruit_portrait_origin(party["portrait"], ctypes.byref(x), ctypes.byref(y))
+    expected = [sheet.px[(y.value + r) * sheet.w + x.value + c] for r in range(29) for c in range(32)]
+    portraits = (ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits")
+    assert party["portrait"] > 0 and list(portraits[: 32 * 29]) == expected
 
 
 def test_eat_food(lib, party):
