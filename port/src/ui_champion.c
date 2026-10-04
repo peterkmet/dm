@@ -578,7 +578,7 @@ static void print_panel_line(int16_t x, int16_t *y, const char *text)
 }
 
 /* Draws an object icon in an icon zone of the viewport. */
-static void draw_icon_to_viewport(int16_t icon, int16_t zone)
+void draw_icon_to_viewport(int16_t icon, int16_t zone)
 {
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap bm = { UI_ICON_SIZE, UI_ICON_SIZE, px };

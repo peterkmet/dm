@@ -105,6 +105,7 @@
 #define ICON_WATER_FLASK 163
 #define ICON_EMPTY_BODY_SLOT_FIRST 212   /* + 2 * slot, + 1 wounded; slots 0-5 */
 #define ICON_EMPTY_SLOT 204
+#define ICON_MOUTH 205                   /* + 1: the second image of the blinking mouth */
 #define ICON_EMPTY_NECK_POUCH_BASE 198   /* + slot for slots 10-13 */
 #define ICON_EMPTY_ACTION_HAND 201       /* action area */
 

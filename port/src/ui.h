@@ -136,6 +136,8 @@ void draw_status_box_portrait(int16_t champion_index);
 void inventory_draw_open(int16_t champion_index);
 void inventory_draw_close(int16_t champion_index);
 void draw_panel(void);
+/* Draws an object icon in an icon zone of the viewport. */
+void draw_icon_to_viewport(int16_t icon, int16_t zone);
 void draw_panel_food_water_poisoned(void);
 void draw_champion_skills_and_statistics(void);
 
