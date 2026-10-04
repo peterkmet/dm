@@ -373,7 +373,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 ## Known limits
 
-- In the `turnbased` mode the automap and the debug read-out keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
+- In the `turnbased` mode the automap and the quick save keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
 - Throwing objects has no action.
 - Name entry for a reincarnated champion is not ported.
 

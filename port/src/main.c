@@ -84,8 +84,8 @@ static void view_key(int key)
 }
 
 /* The Amiga key word of an SDL key: raw key code in the high byte, ASCII in the low byte. Keypad
-   keys move as the cursor keys; 7 and 9 turn (Del and Help). Outside vanilla, M, Tab, F5, and F6
-   are the advanced keys. Returns 0 for other keys. */
+   keys move as the cursor keys; 7 and 9 turn (Del and Help). Outside vanilla, M, Tab, F5, F9, and
+   W, A, S, D, Q, E are the advanced keys. Returns 0 for other keys. */
 static uint16_t amiga_key(int key, int modifiers)
 {
     enum { RAW_Q = 0x10, RAW_S = 0x21, CTRL_ASCII = 0x80, CTRL_MASK = 0x3f };
@@ -110,9 +110,9 @@ static uint16_t amiga_key(int key, int modifiers)
     case SDLK_M: return KEY_M;
     case SDLK_TAB: return KEY_TAB;
     case SDLK_F5: return KEY_F5;
-    case SDLK_F6: return KEY_F6;
+    case SDLK_F9: return KEY_F9;
     }
-    return 0;
+    return advanced_letter_key(key);
 }
 
 /* Mouse buttons as click kinds: left and right, pressed or released. */

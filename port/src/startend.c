@@ -83,7 +83,7 @@ enum { LOAD_CHOICE_CANCEL = 2 };
 enum { SOUND_SCREAM_DEATH = 7, SOUND_FUSE = 14 };
 
 void (*g_frame_hook)(void);
-int16_t g_quit_requested, g_restart_requested, g_return_to_entrance;
+int16_t g_quit_requested, g_restart_requested, g_return_to_entrance, g_waiting_frame;
 static char save_dir[SAVE_DIR_SIZE] = ".";
 
 void startend_set_save_dir(const char *dir) { snprintf(save_dir, sizeof save_dir, "%s", dir); }
@@ -92,7 +92,9 @@ const char *startend_save_dir(void) { return save_dir; }
 int wait_frame(void)
 {
     if (!g_frame_hook || g_quit_requested) return 0;
+    g_waiting_frame++;
     g_frame_hook();
+    g_waiting_frame--;
     return !g_quit_requested;
 }
 

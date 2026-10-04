@@ -19,6 +19,8 @@ const char *startend_save_dir(void);
 
 /* Returns 1 after one frame, 0 when there are no frames or the player quits. */
 int wait_frame(void);
+/* Not 0 while wait_frame runs a frame: a dialog, a sequence, or an endgame wait. */
+extern int16_t g_waiting_frame;
 void wait_frames(int16_t count);
 
 /* Command 140: CANCEL, SAVE, QUIT. QUIT ends the game through the endgame. */

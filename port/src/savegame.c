@@ -11,6 +11,7 @@
 #include "graphics.h"
 #include "ids.h"
 #include "inventory.h"
+#include "map.h"
 #include "random.h"
 #include "recruit.h"
 #include "savefile.h"
@@ -303,7 +304,9 @@ static const uint8_t *find_automap(const uint8_t *data, size_t *size, size_t *le
     return block;
 }
 
-int16_t savegame_save(const char *dir)
+int16_t savegame_save(const char *dir) { return savegame_save_as(dir, SAVE_FILE_NAME, SAVE_BACKUP_FILE_NAME); }
+
+int16_t savegame_save_as(const char *dir, const char *name, const char *backup_name)
 {
     char path[PATH_SIZE], backup[PATH_SIZE];
     uint32_t size = 0;
@@ -314,10 +317,12 @@ int16_t savegame_save(const char *dir)
         free(data);
         return 0;
     }
-    file_path(path, dir, SAVE_FILE_NAME);
-    file_path(backup, dir, SAVE_BACKUP_FILE_NAME);
-    remove(backup);
-    rename(path, backup);
+    file_path(path, dir, name);
+    if (backup_name) {
+        file_path(backup, dir, backup_name);
+        remove(backup);
+        rename(path, backup);
+    }
     FILE *f = fopen(path, "wb");
     int16_t ok = f && fwrite(data, 1, size, f) == size;
     if (f && fclose(f)) ok = 0;
@@ -371,22 +376,49 @@ static int restore_game(const SaveFile *s)
     return 1;
 }
 
-int16_t savegame_load(const char *dir)
+int16_t savegame_load(const char *dir) { return savegame_load_from(dir, SAVE_FILE_NAME, SAVE_BACKUP_FILE_NAME); }
+
+/* Puts back the game of a snapshot after a failed load. The saved-game flags stay. The current
+   map is selected again, because the dungeon has new buffers. */
+static void restore_snapshot(const uint8_t *data, uint32_t size)
+{
+    int16_t exists = g_saved_game_exists, dead = g_party_dead, current = g_current_map_index;
+    uint32_t loaded = g_last_load_game_time;
+    SaveFile s;
+    if (save_decode(data, size, &s)) restore_game(&s);
+    save_free(&s);
+    map_reset();
+    if (current >= 0) set_current_map(current);
+    g_saved_game_exists = exists;
+    g_party_dead = dead;
+    g_last_load_game_time = loaded;
+}
+
+int16_t savegame_load_from(const char *dir, const char *name, const char *backup_name)
 {
     char path[PATH_SIZE], backup[PATH_SIZE];
     size_t size = 0;
-    file_path(path, dir, SAVE_FILE_NAME);
-    file_path(backup, dir, SAVE_BACKUP_FILE_NAME);
+    uint32_t snapshot_size = 0;
+    file_path(path, dir, name);
+    if (backup_name) file_path(backup, dir, backup_name);
     uint8_t *data = read_file(path, &size);
-    int from_backup = !data;
+    int from_backup = !data && backup_name;
     if (from_backup) data = read_file(backup, &size);
     if (!data) return SAVEGAME_MISSING;
     size_t automap_length = 0;
     const uint8_t *automap = find_automap(data, &size, &automap_length);
     SaveFile s;
-    int ok = save_decode(data, (uint32_t)size, &s) && restore_game(&s);
+    uint8_t *snapshot = NULL;
+    int ok = save_decode(data, (uint32_t)size, &s);
+    if (ok) {
+        /* restore_game frees the running dungeon before it checks the dungeon part */
+        snapshot = g_dungeon_header ? encode_game(&snapshot_size) : NULL;
+        ok = restore_game(&s);
+        if (!ok && snapshot) restore_snapshot(snapshot, snapshot_size);
+    }
     save_free(&s);
     if (ok && (!automap || automap_load(automap, automap_length))) automap_reset();
+    free(snapshot);
     free(data);
     if (!ok) return SAVEGAME_DAMAGED;
     if (from_backup) rename(backup, path);

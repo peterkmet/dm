@@ -132,13 +132,14 @@ The controls are the controls of the original Amiga game.
 | Mode | Behavior |
 |---|---|
 | `vanilla` | Default. The original game. The advanced keys do nothing. |
-| `advanced` | The original game with the advanced features on. F6 turns them off and on. |
+| `advanced` | The original game with the advanced features. |
 | `turnbased` | The advanced features, and a program plays through a Unix socket. The game time stands still between turns. See [llm-mode.md](docs/llm-mode.md). |
 
 The advanced features are not in the original game:
 
-- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open.
-- Debug read-out: level, X and Y, facing, and light amount in the top-left corner of the view. Display only.
+- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. The top-left corner of the map shows the level, X and Y, facing, and light amount.
+- Quick save and quick load: one save slot in `QUICK.DAT` in the data folder. `DMGAME.DAT` does not change. The message area shows GAME SAVED, GAME LOADED, NO QUICK SAVE, or QUICK SAVE DAMAGED.
+- W, A, S, D, Q, and E move and turn the party. The cursor keys and the keypad also work.
 - Rune symbols in red after each rune name on an open scroll.
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack for a weapon, defense for armour, and weight.
@@ -149,10 +150,13 @@ Keys of the `advanced` mode:
 
 | Key | Action |
 |---|---|
-| F6 | Turn the advanced features off or on |
 | M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, and Escape work. |
 | Escape | Close the automap or the open inventory, else freeze the game |
-| F5 | Show or hide the debug read-out |
+| F5 | Quick save. Only in the dungeon view. |
+| F9 | Quick load. Only in the dungeon view. |
+| W, S | Move forward, move backward |
+| A, D | Move left, move right (sideways) |
+| Q, E | Turn left, turn right |
 
 F1 to F4 open the inventories in every mode.
 

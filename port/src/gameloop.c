@@ -106,7 +106,7 @@ void entrance_draw(void)
 
 /* The party light: magical light plus the burning torches in the hands, the brightest first
    with a falling weight (set_dungeon_view_palette). */
-static int16_t party_light_amount(void)
+int16_t gameloop_party_light(void)
 {
     int16_t power[LIGHT_SOURCE_COUNT] = { 0 }, n = 0, total = 0, shift = LIGHT_FIRST_SHIFT;
     for (uint16_t i = 0; i < g_party_champion_count; i++)
@@ -148,7 +148,7 @@ static void decrease_torches_light_power(void)
 
 int16_t gameloop_set_light(void)
 {
-    int16_t light = party_light_amount();
+    int16_t light = gameloop_party_light();
     view_set_light(g_party_map_index, light);
     return light;
 }
@@ -156,10 +156,9 @@ int16_t gameloop_set_light(void)
 /* The dungeon view of the party in the light of the party. */
 void gameloop_draw_view(void)
 {
-    int16_t light = gameloop_set_light();
+    gameloop_set_light();
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
     ui_set_palette(NULL);
-    advanced_draw_debug(light);
 }
 
 /* The automap remembers the squares of the current view. */
@@ -254,7 +253,8 @@ static void reset_champions_of_loaded_game(void)
     if (caster != -1) menus_set_magic_caster(caster);
 }
 
-void gameloop_start_loaded_game(void)
+/* start_game for a loaded game; the "GAME LOADED" dialog shows when confirm is 1. */
+static void start_loaded_game(int confirm)
 {
     start_game();
     map_reset();
@@ -262,15 +262,20 @@ void gameloop_start_loaded_game(void)
     group_remove_all_active_groups();
     set_current_map_and_party_map(g_party_map_index);
     group_add_all_active_groups();
-    g_game_screen_inactive = 1;
-    memset(fb, 0, sizeof fb);
-    dialog_draw(NULL, ui_string(TEXT_GAME_LOADED), ui_string(TEXT_OK), NULL, NULL, NULL);
-    dialog_get_choice(1);
+    if (confirm) {
+        g_game_screen_inactive = 1;
+        memset(fb, 0, sizeof fb);
+        dialog_draw(NULL, ui_string(TEXT_GAME_LOADED), ui_string(TEXT_OK), NULL, NULL, NULL);
+        dialog_get_choice(1);
+    }
     show_game();
     reset_champions_of_loaded_game();
     refresh_interface();
     mark_seen_squares();
 }
+
+void gameloop_start_loaded_game(void) { start_loaded_game(1); }
+void gameloop_continue_loaded_game(void) { start_loaded_game(0); }
 
 /* The fuse action and sensor 18 ask for a sequence that runs outside the commands and events. */
 static void run_requested_sequence(void)
