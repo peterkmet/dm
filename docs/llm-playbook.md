@@ -80,6 +80,16 @@ Use screenshots only when the text is not enough, for example to read a wall tex
 - A pile can hide items under the top one. Take from a cell until it is empty when you look for a key, then put back what you do not need.
 - Watch the load. A heavy party moves slowly.
 
+## Strength and progress
+
+The goal is to reach the bottom and kill Lord Chaos, not to build the strongest party on the first level.
+
+- Equip each champion with the best weapon, armour, and shield you have for their row and role.
+- Train only as much as the current level needs: enough to win its fights without losing a champion and to cast the spells its puzzles need.
+- Train while you do other things that cost time anyway: cast spells while resting, fight the creatures on your way.
+- Do not grind for long. Training costs food and water. When fights on the current level are easy, move on.
+- Train more when a level is hard: champions often near death, a creature that you cannot beat, a spell you cannot cast yet.
+
 ## Party
 
 - Recruit 4 champions in the Hall of Champions quickly: 2 strong fighters for the front row, a wizard and a priest for the back row. Choose RESURRECT to keep the champion's skills.
