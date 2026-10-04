@@ -27,14 +27,16 @@ You play Dungeon Master (Amiga v3.60) through the turn-based mode of this C port
 
 ## Files you keep
 
-Keep each file short. Update it at the moments given. Another session continues from these files only.
+Keep each file short. Update it at the moments given. Another session continues from these files only. `dm-play` writes `.playthrough/calls.log` itself (one line per call: time, command, result, level, position, game time); use it for the cost table.
 
 | File | Content | Update |
 |---|---|---|
-| `progress.md` | Current level and position, game time of the last save, the current goal, the next 3 steps, open problems. | After each save. |
-| `party.md` | Each champion: name, role, front or back row, important stats, what each one carries (hands, body, backpack). Food and water reserve. | After you take, drop, eat, or drink. |
-| `map_L<n>.md` | Your own map of level `n`: an ASCII map in `get_map` style, then lists: items left on the floor (square, what), keys and the locks they open, switches and what they do, hidden plates, pits, teleporters, stairs, dangerous creatures, solved and open puzzles. | When you see something new or change something. |
-| `spells.md` | Spells you know: name, runes as `add_rune` numbers per row, mana, what it does, which champion can cast it. | When you learn a spell. |
+| `progress.md` | Current level and position, game time of the last save, the current goal, the next 3 steps, open problems, "Not tried yet" when stuck. A milestone log: game time, what happened (recruit, key found, puzzle solved, new level). A cost table: for each level, the number of `dm-play` calls and game ticks spent, from `.playthrough/calls.log`. | After each save, each milestone, and when you leave a level. |
+| `party.md` | Each champion: name, role, front or back row, important stats, skill levels. Food and water reserve. | After level-ups, eating, drinking. |
+| `items.md` | Every item you have seen: name, type, stats from the eye panel (attack, defense, weight, charges, effect), and where it is now: which champion and slot, or the level and square where it lies. | When you see, take, drop, or use an item. |
+| `map_L<n>.md` | Your own map of level `n`: an ASCII map in `get_map` style, then lists: keys and the locks they open, switches and what they do, hidden plates, pits, teleporters, stairs, creatures met, solved and open puzzles. | When you see something new or change something. |
+| `spells.md` | Spells you know: name, runes as `add_rune` numbers per row, mana cost, what it does, your estimate of its power and the best power rune to use, which champion can cast it. | When you learn a spell or see its effect. |
+| `bestiary.md` | Each creature type: where you met it, your estimate of its health (hits and damage needed to kill it), its attack damage, its behaviour, what works against it, what it drops. Mark estimates as estimates. | After each fight with a new or known creature. |
 | `bugs.md` | Suspected port bugs: steps, state, screenshot path. | When it happens. |
 
 ## Commands you use most

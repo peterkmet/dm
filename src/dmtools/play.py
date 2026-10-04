@@ -11,12 +11,14 @@ The exit code is 1 when the response has "ok": false. The socket path comes from
 """
 
 import argparse
+import time
 import json
 import os
 import sys
 
 from dmtools.control_client import request, socket_path
 
+LOG_DIR = os.environ.get("DM_PLAY_LOG_DIR", ".playthrough")  # one line per call goes to calls.log here
 LANE = ["here", "ahead", "ahead 2", "ahead 3"]
 
 
@@ -95,6 +97,16 @@ def brief(response: dict) -> str:
     return "\n".join(lines) or "ok"
 
 
+def log_call(path: str, payload: dict, response: dict) -> None:
+    """Appends one line per call: time, command, result, level, position, game time."""
+    party = (response.get("state") or {}).get("party") or {}
+    what = payload.get("action") or payload["cmd"]
+    line = [time.strftime("%Y-%m-%dT%H:%M:%S"), what, "ok" if response.get("ok") else "fail",
+            party.get("map", ""), party.get("x", ""), party.get("y", ""), (response.get("state") or {}).get("time", "")]
+    with open(path, "a") as log:
+        log.write("\t".join(str(v) for v in line) + "\n")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="dm-play", description="Sends one request to the Dungeon Master control socket.")
     parser.add_argument("--brief", action="store_true", help="print a short summary instead of the JSON")
@@ -125,6 +137,8 @@ def main(argv: list[str] | None = None) -> int:
         response = request(payload)
     except OSError as error:
         response = {"ok": False, "error": f"cannot reach the game at {socket_path()}: {error}"}
+    if os.path.isdir(LOG_DIR):
+        log_call(os.path.join(LOG_DIR, "calls.log"), payload, response)
     print(brief(response) if options.brief else json.dumps(response, separators=(",", ":")))
     return 0 if response.get("ok") else 1
 

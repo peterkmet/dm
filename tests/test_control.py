@@ -420,3 +420,13 @@ def test_load_and_new_game_after_a_party_death(game, tmp_path):
         client.sock.close()
         ctypes.c_int16.in_dll(lib, "g_return_to_entrance").value = 0
 
+
+
+def test_dm_play_logs_each_call(tmp_path):
+    from dmtools.play import log_call
+    path = tmp_path / "calls.log"
+    log_call(str(path), {"cmd": "act", "action": "move_forward"}, {"ok": True, "state": {"time": 42, "party": {"map": 1, "x": 3, "y": 4}}})
+    log_call(str(path), {"cmd": "get_state"}, {"ok": False})
+    lines = [line.split("\t") for line in path.read_text().splitlines()]
+    assert lines[0][1:] == ["move_forward", "ok", "1", "3", "4", "42"]
+    assert lines[1][1:3] == ["get_state", "fail"]
