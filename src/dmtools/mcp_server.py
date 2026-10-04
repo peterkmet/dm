@@ -119,8 +119,9 @@ def get_map() -> dict:
 def act(action: str, args: dict | None = None) -> dict:
     """Runs one player input, advances the game until the party can move again, and returns
     {ok, ticks, action_damage (choose_action only: damage, 0 miss, -1 can't reach, -2 need
-    ammo), bumped (true when a move did not move the party: wall, closed door, creature), state,
-    view}. ok false with error: nothing happened.
+    ammo), bumped (true when a move did not move the party: wall, closed door, creature),
+    stopped (only when the dungeon moved the party: moved by a teleporter, pit, or stairs; turned
+    by a spinner), state, view}. ok false with error: nothing happened.
 
     Actions and args:
     move_forward, move_back, move_left, move_right, turn_left, turn_right;
@@ -148,7 +149,8 @@ def act_many(actions: list) -> dict:
     name ("move_forward") or {"action": ..., "args": {...}}. stopped: done, damage (a champion lost
     health), creature (a creature group came into view that was not in view
     before the step), message (a new message), bumped (a move did not
-    move the party), game_over, or failed (error says why; ran counts only the turns that ran)."""
+    move the party), moved (a teleporter, pit, or stairs moved the party), turned (a spinner
+    turned the party), game_over, or failed (error says why; ran counts only the turns that ran)."""
     return request({"cmd": "act_many", "actions": actions})
 
 

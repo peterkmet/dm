@@ -517,6 +517,22 @@ def test_a_move_into_a_wall_bumps(game, monkeypatch, capsys):
         assert capsys.readouterr().out.splitlines()[0].endswith(" | BUMPED")
 
 
+
+def test_act_many_stops_when_a_spinner_turns_the_party(game):
+    spinner = (3, 4)  # a spinner of map 2 that turns the party 90 degrees right
+    south = 2
+    client = Client(game)
+    try:
+        with on_map(game, 2, spinner[0], spinner[1] - 2, south):
+            response = client.call(cmd="act_many", actions=["move_forward", "turn_left", "turn_right", "move_forward", "turn_left"])
+            assert response["ran"] == 4 and response["stopped"] == "turned", response["stopped"]
+            assert tuple(game.position()) == (*spinner, (south + 1) % 4)
+            assert "stopped" not in client.act("move_left")  # facing west: one step south
+            assert "stopped" not in client.act("turn_left")
+            assert client.act("move_back")["stopped"] == "turned"
+    finally:
+        client.sock.close()
+
 def test_mcp_and_dm_play_batches(game, monkeypatch, capsys):
     from dmtools import mcp_server, play
 

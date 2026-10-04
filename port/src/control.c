@@ -63,8 +63,10 @@ static struct {
     long frames, min_ticks, max_ticks;
     int has_damage;
     int16_t damage;
-    int moving;                       /* the action was a step; map, x, y is the party square before it */
-    int16_t map, x, y;
+    int moving;                       /* the action was a step forward and to the right */
+    int16_t step_forward, step_right;
+    int16_t rotation;                 /* the action was a turn: 1 right, -1 left */
+    int16_t map, x, y, direction;     /* the party before the action */
     const char *stop;                 /* wait: the news that ended it early, or NULL */
 } turn;
 
@@ -256,11 +258,17 @@ static const char *movement(uint16_t key)
     return error;
 }
 
-/* A step remembers the party square, so that the turn result can tell a bump. */
-static const char *step(uint16_t key)
+/* A step remembers where it goes, so that the turn result can tell a bump or a move by the dungeon. */
+static const char *step(uint16_t key, int16_t forward, int16_t right)
 {
     turn.moving = 1;
-    turn.map = g_party_map_index, turn.x = g_party_map_x, turn.y = g_party_map_y;
+    turn.step_forward = forward, turn.step_right = right;
+    return movement(key);
+}
+
+static const char *rotate(uint16_t key, int16_t rotation)
+{
+    turn.rotation = rotation;
     return movement(key);
 }
 
@@ -270,12 +278,23 @@ static int turn_bumped(void)
     return turn.moving && g_party_map_index == turn.map && g_party_map_x == turn.x && g_party_map_y == turn.y;
 }
 
-static const char *move_forward(const char *r) { (void)r; return step(KEY_UP); }
-static const char *move_back(const char *r) { (void)r; return step(KEY_DOWN); }
-static const char *move_left(const char *r) { (void)r; return step(KEY_LEFT); }
-static const char *move_right(const char *r) { (void)r; return step(KEY_RIGHT); }
-static const char *turn_left(const char *r) { (void)r; return movement(KEY_DEL); }
-static const char *turn_right(const char *r) { (void)r; return movement(KEY_HELP); }
+/* The party was turned or moved by something else than its action: a spinner, a teleporter, a pit, stairs. */
+static const char *turn_displaced(void)
+{
+    int16_t x = turn.x, y = turn.y;
+    if (turn.moving) update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
+    int stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
+    if (g_party_map_index != turn.map || (!stayed && (g_party_map_x != x || g_party_map_y != y))) return "moved";
+    if (g_party_direction != turn.direction && g_party_direction != NORMALIZE(turn.direction + turn.rotation)) return "turned";
+    return NULL;
+}
+
+static const char *move_forward(const char *r) { (void)r; return step(KEY_UP, 1, 0); }
+static const char *move_back(const char *r) { (void)r; return step(KEY_DOWN, -1, 0); }
+static const char *move_left(const char *r) { (void)r; return step(KEY_LEFT, 0, -1); }
+static const char *move_right(const char *r) { (void)r; return step(KEY_RIGHT, 0, 1); }
+static const char *turn_left(const char *r) { (void)r; return rotate(KEY_DEL, -1); }
+static const char *turn_right(const char *r) { (void)r; return rotate(KEY_HELP, 1); }
 
 static const char *click_wall_ahead(const char *r)
 {
@@ -727,6 +746,10 @@ static void send_turn_result(void)
         json_key(&j, "stopped");
         json_str(&j, turn.stop ? turn.stop : "done");
     }
+    if (!turn.wait_only && !batch.active && !game_over() && turn_displaced()) {
+        json_key(&j, "stopped");
+        json_str(&j, turn_displaced());
+    }
     if (batch.active) {
         json_key(&j, "ran");
         json_int(&j, batch.ran);
@@ -797,7 +820,8 @@ static const char *run_action(const char *name, const char *request)
         if (strcmp(name, actions[k].name)) continue;
         if (g_candidate_champion_ordinal && strcmp(name, "recruit")) return "a candidate is shown: answer with recruit first";
         if (g_party_is_sleeping && strcmp(name, "wake")) return "the party sleeps: use wake or wait";
-        turn.has_damage = look_text.shown = turn.moving = 0;
+        turn.has_damage = look_text.shown = turn.moving = turn.rotation = 0;
+        turn.map = g_party_map_index, turn.x = g_party_map_x, turn.y = g_party_map_y, turn.direction = g_party_direction;
         return actions[k].run(request);
     }
     return "unknown action";
@@ -862,8 +886,10 @@ static const char *news(void)
 /* Why a batch stops after a turn, or NULL to go on. */
 static const char *batch_stop_reason(void)
 {
-    if (!game_over() && turn_bumped()) return "bumped";  /* before damage: a bump into a wall hurts */
-    return news();
+    if (game_over()) return news();
+    if (turn_bumped()) return "bumped";  /* before damage: a bump into a wall hurts */
+    const char *displaced = turn_displaced();  /* before damage: a pit fall hurts */
+    return displaced ? displaced : news();
 }
 
 static void batch_finish(const char *stop, const char *error)

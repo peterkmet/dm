@@ -61,7 +61,7 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 | `get_state` | none | `{ok, state}` |
 | `get_view` | none | `{ok, view}` |
 | `get_map` | none | `{ok, map}` |
-| `act` | `action`, `args` (object) | `{ok, ticks, game_over, bumped?, action_damage?, look?, seen?, state, view}` |
+| `act` | `action`, `args` (object) | `{ok, ticks, stopped?, game_over, bumped?, action_damage?, look?, seen?, state, view}` |
 | `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage?, seen?, state, view}` |
 | `wait` | `ticks` (1-5000, default 10) | `{ok, ticks, stopped, game_over, seen?, state, view}` |
 | `screenshot` | none | The screen as a 320 x 200 PNG image |
@@ -85,7 +85,7 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `get_state` | none | `state` |
 | `get_view` | none | `view` |
 | `get_map` | none | `map` |
-| `act` | `action`, `args` | After the turn: `ticks`, `game_over`, `bumped` (only after a bump), `action_damage` (only `choose_action`), `look` (only `look`), `seen` (see [Seen](#seen)), `state`, `view` |
+| `act` | `action`, `args` | After the turn: `ticks`, `stopped` (only after a [displacement](#displacement)), `game_over`, `bumped` (only after a bump), `action_damage` (only `choose_action`), `look` (only `look`), `seen` (see [Seen](#seen)), `state`, `view` |
 | `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `bumped`, `seen`, `state`, `view`. See [Batches](#batches). |
 | `wait` | `ticks` (1-5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `seen`, `state`, `view`. See [Wait](#wait). |
 | `screenshot` | `path` | `path`. The game writes a PNG file to `path`. |
@@ -116,6 +116,23 @@ During a turn, each frame is a tick: the game does not wait 12 frames for input.
 #### Bump
 
 When a move action (`move_forward`, `move_back`, `move_left`, `move_right`) does not change the party square, the turn response has `"bumped": true`. A wall, a closed door, or a creature is in the way. Without a bump, the response has no `bumped` field. A bump into a wall or a closed door gives 1 damage to the two champions on the side of the bump, as in the original game.
+
+#### Displacement
+
+The game informs; it does not play. After each `act` turn and each `act_many` step, the game compares the party facing, square, and map with what the action does:
+
+- A move action changes the square by one step in its direction, or nothing (a bump).
+- `turn_left` and `turn_right` change the facing by 90 degrees.
+- All other actions change neither.
+
+When the dungeon changes the party in another way, the turn has a displacement:
+
+| `stopped` | Reason |
+|---|---|
+| `moved` | The square or the map changed in another way: a teleporter, a pit, stairs. |
+| `turned` | The facing changed in another way: a spinner. |
+
+`moved` comes before `turned` when both happen. An `act` response has `stopped` only after a displacement. An `act_many` batch stops after the step (see [Batches](#batches)).
 
 #### Wait
 
@@ -165,6 +182,8 @@ The response has `ran` (the number of turns that ran) and `stopped`:
 | `message` | The game printed a new message. |
 | `game_over` | The party died, or the game is won. |
 | `bumped` | A move did not change the party square (a wall, a closed door, a creature). See [Bump](#bump). The batch checks this before `damage`, because a bump into a wall hurts. |
+| `moved` | The dungeon moved the party: a teleporter, a pit, stairs. See [Displacement](#displacement). The batch checks this after `bumped` and before `damage`, because a pit fall hurts. |
+| `turned` | The dungeon turned the party: a spinner. See [Displacement](#displacement). The batch checks this after `moved`. |
 | `failed` | An action cannot run. `error` gives the reason. The failed action is not in `ran`. |
 
 ### Game over
@@ -373,6 +392,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - `act_many` with a creature group in view on a side square runs all turns while the group stays in view. It stops with `creature` after the first turn when a new group comes into view, also when the old group leaves the view in the same turn.
 - `act_many`: the actions run in order, a failed action stops the batch, and damage stops it after the first turn. The MCP tools and `dm-play` send `act_many`.
 - A move into a wall gives `"bumped": true` and the same square. `act_many` stops with `bumped`. `--brief` ends the turn line with `BUMPED`.
+- A move onto a spinner of map 2 stops `act_many` with `turned` after that step. A move and turns before the spinner do not stop it. A single `act` onto the spinner has `stopped` `turned`.
 - `dm-play` does not import `mcp`.
 - A fireball flies to a screamer two squares ahead during a `wait`. The explosion is gone at the end of the turn, but `seen.explosions` has `fireball` on the square of the screamer, and `seen.creature_changes` has the killed screamer with `after` 0. `--brief` prints the `seen:` line. A `wait` without explosions and creature changes has no `seen`.
 - `--brief` prints the name of an explosion in `flying`, also a number.
