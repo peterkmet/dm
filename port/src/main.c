@@ -119,6 +119,8 @@ static uint16_t amiga_key(int key, int modifiers)
     case SDLK_TAB: return KEY_TAB;
     case SDLK_F5: return KEY_F5;
     case SDLK_F9: return KEY_F9;
+    case SDLK_L: return KEY_L;
+    case SDLK_I: return KEY_I;
     }
     return advanced_letter_key(key);
 }

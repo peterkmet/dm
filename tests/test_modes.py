@@ -508,6 +508,68 @@ def test_empty_hand_at_a_fountain(game, mode):
     set_mode(game, VANILLA)
 
 
+KEY_L, KEY_I = 0x2800, 0x1700
+
+
+@pytest.mark.parametrize("mode", [VANILLA, ADVANCED, TURNBASED])
+def test_cheat_keys_work_only_on_the_advanced_automap(game, mode):
+    set_mode(game, mode)
+    press(game, KEY_L)  # not on the automap: nothing
+    assert game.value("g_cheat_light") == 0
+    press(game, KEY_M)
+    press(game, KEY_L)
+    press(game, KEY_I)
+    on = mode == ADVANCED
+    assert (game.value("g_cheat_light"), game.value("g_cheat_immortal")) == (on, on)
+    if on:
+        assert COLOR_WHITE in pixels(game, ZONE_VIEWPORT)[:224 * 24]  # the cheat line under the read-out
+        press(game, KEY_L)
+        press(game, KEY_I)
+        assert (game.value("g_cheat_light"), game.value("g_cheat_immortal")) == (0, 0)
+    press(game, KEY_M)
+    set_mode(game, VANILLA)
+
+
+def test_cheat_light_draws_the_bright_palette(game):
+    from test_champion import Party
+    lib, party = game.lib, Party.in_dll(game.lib, "g_party")
+    place = {n: c16.in_dll(lib, n) for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")}
+    start = {n: v.value for n, v in place.items()}
+    palette = (u16 * 16).in_dll(lib, "palette")
+    try:
+        for name, v in zip(place, (1, 14, 4, 3)):  # map 1 has darkness
+            place[name].value = v
+        party.magical_light_amount = 1000
+        lib.gameloop_draw_view()
+        bright = list(palette)
+        party.magical_light_amount = -1000
+        lib.gameloop_draw_view()
+        assert list(palette) != bright
+        c16.in_dll(lib, "g_cheat_light").value = 1
+        lib.gameloop_draw_view()
+        assert list(palette) == bright
+        assert game.value("g_dungeon_view_palette_index") == 5  # the creatures still see the darkness
+    finally:
+        c16.in_dll(lib, "g_cheat_light").value = 0
+        party.magical_light_amount = 0
+        for name, v in start.items():
+            place[name].value = v
+        lib.gameloop_draw_view()
+
+
+def test_cheat_immortal_keeps_1_health(game):
+    lib, champion = game.lib, game.champions[0]
+    health = champion.current_health
+    lib.champion_damage_all.argtypes = [u16, u16, c16]
+    c16.in_dll(lib, "g_cheat_immortal").value = 1
+    try:
+        lib.champion_damage_all(5000, 0, 0)
+        lib.champion_apply_and_draw_pending_damage_and_wounds()
+        assert champion.current_health == 1
+    finally:
+        c16.in_dll(lib, "g_cheat_immortal").value = 0
+        champion.current_health = health
+
 def test_party_death_during_a_turn_reports_game_over(game):
     lib = game.lib
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")

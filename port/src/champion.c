@@ -1,4 +1,5 @@
 #include "champion.h"
+#include "advanced.h"
 #include "adventure.h"
 #include "command.h"
 #include "dungeon.h"
@@ -650,6 +651,7 @@ void champion_apply_and_draw_pending_damage_and_wounds(void)
         if (!c->current_health)
             continue;
         int16_t health = c->current_health - damage;
+        if (health <= 0 && g_cheat_immortal) health = 1;
         if (health <= 0) {
             champion_kill(i);
             continue;

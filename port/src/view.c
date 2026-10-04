@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include "advanced.h"
 #include "draw.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -1853,7 +1854,8 @@ int view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
 {
     if (!g_dungeon_maps || m < 0 || m >= dungeon_map_count()) return 0;
     if (m != map) view_load_map(m);
-    memcpy(palette, pals[g_dungeon_view_palette_index], sizeof pals[g_dungeon_view_palette_index]);
+    int16_t light = g_cheat_light ? 0 : g_dungeon_view_palette_index;
+    memcpy(palette, pals[light], sizeof pals[light]);
     view_draw(dir & 3, x, y);
     return 1;
 }

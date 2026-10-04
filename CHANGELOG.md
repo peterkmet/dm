@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 - 2026-10-05
+
+### Added
+
+- Advanced mode: cheats on the automap. L switches full light (the view is always bright; the creature rules keep the real light). I switches immortality (the health of a champion stops at 1; damage, wounds, poison, hunger, and thirst stay). The automap shows their state. They are not saved: a new or loaded game turns them off. Not in the turn-based mode.
+
 ## 0.4.1 - 2026-10-05
 
 ### Changed
