@@ -101,7 +101,7 @@ Without `--adventure` and `--mode`, the game shows two screens in the game font:
 
 Up and Down move the cursor. Return or keypad Enter selects the item. A click on an item selects it. Ctrl+Q or closing the window quits.
 
-After DUNGEON MASTER, the game shows the entrance. After CHAOS STRIKES BACK, the game shows a third screen: NEW ADVENTURE, RESUME, and QUIT. Escape goes back to the mode screen until the first game starts. After that, Escape does nothing on the CSB screen. See [Chaos Strikes Back](#chaos-strikes-back).
+After DUNGEON MASTER, the game plays the title animation (`TITL.DAT`, about 1 second; a key or a click stops it) and shows the entrance. `DM_AUTO_ENTER` and the turn-based mode skip the title. After CHAOS STRIKES BACK, the game shows a third screen: NEW ADVENTURE, RESUME, and QUIT. Escape goes back to the mode screen until the first game starts. After that, Escape does nothing on the CSB screen. See [Chaos Strikes Back](#chaos-strikes-back).
 
 | Flags | Screens |
 |---|---|
@@ -115,7 +115,7 @@ The game font comes from `Graphics.DAT` in the `--data` folder, else in `game/`,
 
 ### Entrance
 
-The entrance of Dungeon Master: click ENTER or press Return to start a new game. Click RESUME to continue the saved game. QUIT or Ctrl+Q closes the program. Closing the window also closes the game.
+The entrance of Dungeon Master: click ENTER or press Return to start a new game. The doors open with a sound, then the game starts. Click RESUME to continue the saved game. QUIT or Ctrl+Q closes the program. Closing the window also closes the game.
 
 ### Chaos Strikes Back
 
@@ -184,20 +184,21 @@ The controls are the controls of the original Amiga game.
 
 The advanced features are not in the original game:
 
-- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. The top-left corner of the map shows the level, X and Y, facing, and light amount.
+- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. The top-left corner of the map shows the level, X and Y, facing, and light amount. Corridors are light gray, walls are dark gray. A left click on the map moves the clicked square to the center, so the whole level can be seen. The map opens centered on the party.
 - Quick save and quick load: one save slot in `QUICK.DAT` in the data folder. `DMGAME.DAT` does not change. The message area shows GAME SAVED, GAME LOADED, NO QUICK SAVE, or QUICK SAVE DAMAGED.
 - W, A, S, D, Q, and E move and turn the party. The cursor keys and the keypad also work.
 - Rune symbols in red after each rune name on an open scroll.
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack for a weapon, defense for armour, and weight.
-- Escape closes an open inventory. With no inventory open, Escape freezes the game as in vanilla.
+- A click on a fountain with an empty hand lets every living champion drink, not only the leader.
+- Escape and Tab close an open inventory. With no inventory open, Escape freezes the game as in vanilla.
 - Smooth projectile flight: between two game ticks, the view shows each flying projectile part of the way to its new place. The size changes only at a tick.
 
 Keys of the `advanced` mode:
 
 | Key | Action |
 |---|---|
-| M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, and Escape work. |
+| M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, Escape, and a left click on the map work. Tab also closes an open inventory. |
 | Escape | Close the automap or the open inventory, else freeze the game |
 | F5 | Quick save. Only in the dungeon view. |
 | F9 | Quick load. Only in the dungeon view. |

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "anim.h"
+#include "command.h"
 #include "ftl.h"
 #include "graphics.h"
 #include "sound.h"
@@ -26,8 +27,9 @@
 #define GREEN_SHIFT 4
 #define SAMPLE_VOLUME_BYTES 2 /* SO: left and right volume bytes after the chunk header */
 
-/* Chunk tags that the player runs. The other tags (BR, AN, DO, music, sample files) do nothing for ENDA.DAT. */
+/* Chunk tags that the player runs. The other tags (AN, DO, P8, music, sample files) do nothing for ENDA.DAT and TITL.DAT. */
 enum {
+    TAG_BREAK = TAG('B', 'R'),
     TAG_PALETTE = TAG('P', 'L'),
     TAG_FULL_FRAME = TAG('E', 'N'),
     TAG_DELTA_FRAME = TAG('D', 'L'),
@@ -47,7 +49,7 @@ static uint8_t *file;
 static size_t file_len, pos; /* pos: offset of the next chunk */
 static const uint8_t *samples[MAX_SAMPLES];
 static uint16_t sample_sizes[MAX_SAMPLES];
-static int sample_count, loop_depth, palette_changed;
+static int sample_count, loop_depth, palette_changed, input_stops; /* input_stops: BR allows a stop by a key or a click */
 static Loop loops[MAX_LOOP_DEPTH];
 static uint16_t colors[PALETTE_COLORS];
 
@@ -72,7 +74,7 @@ int anim_open(const char *path)
     size_t at = 0;
     while (at + CHUNK_HEADER <= file_len) at = next_chunk(at);
     if (at != file_len) return anim_close(), -1;
-    sample_count = loop_depth = palette_changed = 0;
+    sample_count = loop_depth = palette_changed = input_stops = 0;
     memset(colors, 0, sizeof colors);
     return 0;
 }
@@ -112,6 +114,9 @@ int16_t anim_next_frame(void)
         switch (BE16(chunk)) {
         case TAG_PALETTE:
             set_colors(payload, length);
+            break;
+        case TAG_BREAK:
+            input_stops = parameter != 0;
             break;
         case TAG_SAMPLE:
             if (sample_count < MAX_SAMPLES && length >= SAMPLE_HEADER) {
@@ -153,9 +158,14 @@ int anim_play(const char *path)
     memset(fb, 0, sizeof fb);
     ui_set_screen_palette(colors);
     int running = 1;
-    for (int16_t delay; running && (delay = anim_next_frame()) != ANIM_END;)
+    command_discard_all_input();
+    g_input_received = 0;
+    /* a stop keeps the shown frame for its delay, as the original */
+    for (int16_t delay; running && (delay = anim_next_frame()) != ANIM_END;) {
         while (delay-- > 0 && (running = wait_frame()))
             ;
+        if (input_stops && g_input_received) running = 0;
+    }
     anim_close();
     return 0;
 }

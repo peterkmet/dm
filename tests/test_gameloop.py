@@ -168,6 +168,11 @@ def test_new_game_recruit_take_and_store(game):
     pile = next(i for i in range(4) if game.boxes[i].x != -1)
     game.click_box(game.boxes[pile])
     assert game.value("g_leader_hand_object", u16) & 0x3FFF == weapon & 0x3FFF
+    game.click_box(box, viewport=False)  # the status box hand takes the weapon without the inventory
+    assert game.champions[0].slots[SLOT_HAND_ACTION] & 0x3FFF == weapon & 0x3FFF
+    assert game.value("g_leader_hand_object", u16) == 0xFFFF
+    game.click_box(box, viewport=False)
+    assert game.value("g_leader_hand_object", u16) & 0x3FFF == weapon & 0x3FFF
 
     game.key(KEY_F1)
     game.run()
@@ -293,3 +298,35 @@ def test_party_light_sets_the_darkness_of_view_and_rules(game):
         for n, v in start.items():
             place[n].value = v
         lib.gameloop_draw_view()
+
+
+def test_hand_object_name_follows_the_icon(game):
+    """The last drink from a waterskin changes its icon and its name from WATER to WATERSKIN."""
+    lib = game.lib
+    assert lib.gameloop_new_game(str(GAME).encode())
+    game.run(26)
+    path, direction = game.path_to_mirror()
+    game.walk(path)
+    game.face(direction)
+    game.run()
+    game.click_box(game.boxes[5])
+    game.click_zone(ZONE_RESURRECT)
+    lib.tables_object_info.restype = ctypes.POINTER(u16 * 3)
+    junk = next(j for j in range(53) if lib.tables_object_info(0x7F + j).contents[0] == 8)  # waterskin
+    lib.get_unused_thing.restype = u16
+    skin = lib.get_unused_thing(10)
+    data = lib.get_thing_data(skin)
+    data[3], data[2] = junk, 1 << 6  # one charge
+    lib.champion_put_object_in_leader_hand(skin)
+    game.key(KEY_F1)
+    game.run()
+    box = Box()
+    assert lib.ui_zone_box(17, ctypes.byref(box))  # the leader hand object name
+    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    name = lambda: [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
+    before = name()
+    game.click_zone(545)  # the mouth
+    assert lib.get_thing_data(skin)[2] >> 6 == 0
+    assert name() != before
+    game.key(KEY_F1)
+    game.run()

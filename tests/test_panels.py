@@ -8,7 +8,7 @@ import pytest
 import dmtools.emu as emu_module
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_ui import GAME, Box, Champion, c16, game, lib, needs_game, recruit, render, reset, rgb_rows, u16  # noqa: F401
+from test_ui import GAME, Bitmap, Box, Champion, c16, game, lib, needs_game, recruit, render, reset, rgb_rows, u16  # noqa: F401
 from test_view import SCRATCH, png
 
 # Original addresses (docs/kaos-symbols.csv).
@@ -255,4 +255,24 @@ def test_render_scroll_and_eye(game, party):
     assert name == b"SWORD" and lines[-1].startswith(b"WEIGHS ")
     game.champion_get_object_removed_from_leader_hand()
     party[0].slots[1] = NONE
+    game.inventory_draw_close(0)
+
+
+@needs_game
+def test_eat_food_redraws_the_food_bar(game, party):
+    game.tables_object_info.restype = ctypes.POINTER(u16 * 3)
+    junk = next(j for j in range(53) if 0xA8 <= game.tables_object_info(0x7F + j).contents[0] < 0xB0)
+    thing = game.get_unused_thing(10)
+    game.get_thing_data(thing)[3] = junk
+    party[0].food = 100
+    game.inventory_draw_open(0)
+    c16.in_dll(game, "g_panel_content").value = 1  # food and water
+    game.draw_panel()
+    game.champion_put_object_in_leader_hand(thing)
+    game.ui_viewport.restype = ctypes.POINTER(Bitmap)
+    viewport = game.ui_viewport().contents
+    before = viewport.px[: viewport.w * viewport.h]
+    game.process_click_on_mouth()
+    assert viewport.px[: viewport.w * viewport.h] != before
+    assert not party[0].attributes & 0x0900  # statistics and panel drawn
     game.inventory_draw_close(0)

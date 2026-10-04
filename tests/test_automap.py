@@ -13,7 +13,7 @@ c16 = ctypes.c_int16
 NORTH, EAST, SOUTH, WEST = range(4)
 STEP = {NORTH: (0, -1), EAST: (1, 0), SOUTH: (0, 1), WEST: (-1, 0)}
 FORWARD, TURN_LEFT = 3, 1
-CELL, BLACK, YELLOW, FILLER = 7, 0, 11, 0xEE
+CELL, BLACK, YELLOW, FILLER, DARKEST_GRAY, LIGHT_GRAY = 7, 0, 11, 0xEE, 12, 13
 WALL, DOOR, FAKE_WALL, FAKE_WALL_OPEN, DOOR_CLOSED = 0, 4, 6, 4, 4
 
 
@@ -98,12 +98,20 @@ def test_walls_stop_visibility(game):
         game.automap_mark_seen(m, x, y, d)
         expected = set()
         for depth in range(4):
-            expected |= {ahead(x, y, d, depth, side) for side in (-1, 0, 1) if on_map(game, m, *ahead(x, y, d, depth, side))}
+            expected |= {ahead(x, y, d, depth, side) for side in (-1, 0, 1) if on_map(game, m, *ahead(x, y, d, depth, side))
+                         and (side == 0 or depth == 0 or not blocks(game, m, *ahead(x, y, d, depth))
+                              or not blocks(game, m, *ahead(x, y, d, depth - 1, side)))}
             if depth and blocks(game, m, *ahead(x, y, d, depth)):
                 stopped += depth < 3
                 break
         assert seen_squares(game, m) == expected
     assert stopped
+
+
+
+def test_side_squares_behind_walls_stay_unseen(game):
+    game.automap_mark_seen(1, 11, 10, WEST)
+    assert not game.automap_is_seen(1, 10, 9)
 
 
 def save(lib):
@@ -144,6 +152,19 @@ def test_draw_stays_in_area_with_party_arrow_at_center(game):
                 assert (px[y * 320 + x] != FILLER) == inside
         left, top = VIEWPORT.x + (VIEWPORT.w - CELL) // 2, VIEWPORT.y + (VIEWPORT.h - CELL) // 2
         assert px[(top + CELL // 2) * 320 + left + CELL // 2] == YELLOW
+
+
+def test_floors_are_light_and_walls_dark(game):
+    m, x, y, d = party(game)
+    mark_here(game)
+    px = draw(game, VIEWPORT.w, VIEWPORT.h, Box(0, 0, VIEWPORT.w, VIEWPORT.h))
+    left, top = (VIEWPORT.w - CELL) // 2 - x * CELL, (VIEWPORT.h - CELL) // 2 - y * CELL
+    colors = {}
+    for sx, sy in seen_squares(game, m) - {(x, y)}:
+        kind = game.dungeon_square(m, sx, sy) >> 5
+        if kind in (WALL, 1):  # wall, floor
+            colors.setdefault(kind, set()).add(px[(top + sy * CELL) * VIEWPORT.w + left + sx * CELL])
+    assert colors == {WALL: {DARKEST_GRAY}, 1: {LIGHT_GRAY}}
 
 
 def png(path, rgb_rows):

@@ -66,6 +66,7 @@ enum { POINTER_ARROW, POINTER_HAND, POINTER_OBJECT };
 
 static int16_t frames_waiting;
 static uint16_t shown_hand_object = THING_NONE;
+static int16_t shown_hand_icon;  /* a waterskin or a torch changes its icon and its name */
 static char data_dir[PATH_SIZE];
 
 int gameloop_load_data(const char *dir)
@@ -81,27 +82,90 @@ int gameloop_load_data(const char *dir)
 
 const char *gameloop_data_dir(void) { return data_dir; }
 
-/* The entrance graphic with both doors closed, in the entrance palette on the whole screen.
-   ponytail: no dungeon behind the doors, no door animation, no credits. */
-void entrance_draw(void)
+/* The entrance graphic, the view behind the doors (or nothing for NULL), and each door moved apart by
+   opened pixels. Returns 1 while a part of a door shows. */
+static int draw_entrance_doors(const Bitmap *view, int16_t opened)
 {
     Bitmap screen = ui_screen();
     Box doors, work, door;
-    memset(fb, 0, sizeof fb);
-    for (int i = 0; i < PALETTE_COLORS; i++) palette[i] = kaos_u16(ENTRANCE_PALETTE + 2 * i);
-    palette_split_top = 0;
-    palette_split_bottom = SCREEN_H;
+    int16_t w = 0, h = 0, shown = 0;
     ui_blit_graphic(&screen, GFX_ENTRANCE, ZONE_SCREEN, COLOR_NONE);
-    if (!ui_zone_box(ZONE_ENTRANCE_DOORS, &doors)) return;
-    int16_t w = 0, h = 0;
-    if (!layout_get_zone(ZONE_ENTRANCE_WORK, doors.w, doors.h, &work, &w, &h)) return;
+    if (!ui_zone_box(ZONE_ENTRANCE_DOORS, &doors)) return 0;
+    if (!layout_get_zone(ZONE_ENTRANCE_WORK, doors.w, doors.h, &work, &w, &h)) return 0;
+    w = h = 0;
+    if (view && layout_get_zone(ZONE_ENTRANCE_VIEWPORT, view->w, view->h, &door, &w, &h)) {
+        door.x += work.x;
+        door.y += work.y;
+        draw_blit(view, w, h, &screen, &door, COLOR_NONE, 0);
+    }
     for (int16_t side = 0; side < 2; side++) {
         const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
         w = h = 0;
         if (!bm || !layout_get_zone((int16_t)(ZONE_ENTRANCE_LEFT_DOOR + side), bm->w, bm->h, &door, &w, &h)) continue;
         door.x += work.x;
         door.y += work.y;
+        door.w = (int16_t)max16(0, door.w - opened);
+        if (side == 0) w += opened;  /* the left door slides left, the right door slides right */
+        else door.x += opened;
+        if (door.w) shown = 1;
         draw_blit(bm, w, h, &screen, &door, COLOR_NONE, 0);
+    }
+    return shown;
+}
+
+static void set_entrance_palette(void)
+{
+    for (int i = 0; i < PALETTE_COLORS; i++) palette[i] = kaos_u16(ENTRANCE_PALETTE + 2 * i);
+    palette_split_top = 0;
+    palette_split_bottom = SCREEN_H;
+}
+
+/* The entrance graphic with both doors closed, in the entrance palette on the whole screen.
+   ponytail: no credits. */
+void entrance_draw(void)
+{
+    memset(fb, 0, sizeof fb);
+    set_entrance_palette();
+    draw_entrance_doors(NULL, 0);
+}
+
+/* process_entrance: ENTER or RESUME shows its pressed button, plays the switch sound, and waits 20 frames. */
+void entrance_press_button(int resume)
+{
+    enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20, SOUND_SWITCH = 1, BUTTON_VOLUME = 64 };
+    static const uint8_t volumes[2] = { BUTTON_VOLUME, BUTTON_VOLUME };
+    const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_BUTTONS);
+    Bitmap screen = ui_screen();
+    Box box;
+    int16_t sx = 0, sy = 0;
+    if (!g_frame_hook) return;
+    if (bm && layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
+        draw_blit(bm, sx, (int16_t)(sy + (resume ? BUTTON_HEIGHT : 0)), &screen, &box, COLOR_NONE, 0);
+    sound_play_sample(SOUND_SWITCH, volumes);
+    wait_frames(BUTTON_FRAMES);
+}
+
+/* entrance_open_doors: after ENTER the doors slide apart, 2 pixels each 2 frames, over the dungeon view
+   in the entrance palette. The door sound plays at the start and every 40 frames.
+   ponytail: the original draws a made-up corridor; this draws the view of the start square. */
+void entrance_open_doors(void)
+{
+    enum { DOOR_STEP = 2, STEP_FRAMES = 2, SOUND_FRAMES = 40, SOUND_ENTRANCE_DOOR = 3, DOOR_VOLUME = 64 };
+    static const uint8_t volumes[2] = { DOOR_VOLUME, DOOR_VOLUME };
+    static uint8_t view_px[SCREEN_W * SCREEN_H];
+    char path[PATH_SIZE];
+    Box box;
+    snprintf(path, sizeof path, "%s/Dungeon.DAT", data_dir);
+    if (!g_frame_hook || !load_dungeon(path) || !ui_zone_box(ZONE_VIEWPORT, &box)) return;
+    view_set_light(g_party_map_index, 0);
+    view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
+    Bitmap view = { (uint16_t)box.w, (uint16_t)box.h, view_px };
+    for (int16_t y = 0; y < box.h; y++) memcpy(view_px + y * box.w, &fb[box.y + y][box.x], (size_t)box.w);
+    set_entrance_palette();
+    for (int16_t opened = 0, frames = 0; draw_entrance_doors(&view, opened) && !g_quit_requested; opened += DOOR_STEP) {
+        if (frames % SOUND_FRAMES == 0) sound_play_sample(SOUND_ENTRANCE_DOOR, volumes);
+        for (int16_t f = 0; f < STEP_FRAMES && wait_frame(); f++, frames++)
+            ;
     }
 }
 
@@ -180,8 +244,10 @@ static void refresh_interface(void)
         for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++) champion_draw_slot(i, slot);
         if (inventory) ui_draw_viewport();
     }
-    if (g_leader_hand_object != shown_hand_object) {
+    int16_t icon = g_leader_hand_object == THING_NONE ? -1 : object_get_icon_index(g_leader_hand_object);
+    if (g_leader_hand_object != shown_hand_object || icon != shown_hand_icon) {
         shown_hand_object = g_leader_hand_object;
+        shown_hand_icon = icon;
         if (shown_hand_object == THING_NONE) ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
         else draw_leader_hand_object_name(shown_hand_object);
     }
@@ -195,6 +261,7 @@ static void start_game(void)
     g_party_is_sleeping = 0;
     g_game_won = g_do_not_draw_fluxcages = 0;
     g_automap_open = 0;
+    automap_scroll_reset();
     memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
     shown_hand_object = THING_NONE;
     command_reset();

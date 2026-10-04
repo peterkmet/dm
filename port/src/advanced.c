@@ -57,7 +57,25 @@ void advanced_draw_automap(void)
 static void close_automap(void)
 {
     g_automap_open = 0;
+    automap_scroll_reset();
     gameloop_draw_view();
+}
+
+/* The square of pixel p on an axis of length, counted from the center square of automap_draw. */
+static int16_t squares_from_center(int16_t p, int16_t length)
+{
+    int16_t d = (int16_t)(p - (length - AUTOMAP_CELL_SIZE) / 2);
+    return (int16_t)((d - (d < 0 ? AUTOMAP_CELL_SIZE - 1 : 0)) / AUTOMAP_CELL_SIZE);
+}
+
+int advanced_process_click(int16_t x, int16_t y)
+{
+    if (!g_automap_open) return 0;
+    Box b;
+    if (!ui_zone_box(ZONE_VIEWPORT, &b) || x < b.x || x >= b.x + b.w || y < b.y || y >= b.y + b.h) return 1;
+    automap_scroll(g_party_map_index, squares_from_center((int16_t)(x - b.x), b.w), squares_from_center((int16_t)(y - b.y), b.h));
+    advanced_draw_automap();
+    return 1;
 }
 
 /* A white line in the message area. */
@@ -106,7 +124,7 @@ int advanced_process_key(uint16_t key)
         return 1;
     case KEY_M:
     case KEY_TAB:
-        if (!in_dungeon_view()) return 1;
+        if (!in_dungeon_view()) return !(key == KEY_TAB && g_inventory_champion_ordinal);
         g_automap_open = 1;
         advanced_draw_automap();
         return 1;

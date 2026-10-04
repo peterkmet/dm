@@ -24,7 +24,12 @@ int automap_is_seen(int16_t map, int16_t x, int16_t y);
 int automap_save(uint8_t **buf, size_t *len);
 int automap_load(const uint8_t *buf, size_t len);
 
-/* Draws the seen squares of map into area of target, centered on the party when it is on map. */
+/* Draws the seen squares of map into area of target, centered on the party when it is on map, moved by
+   the scroll. */
 void automap_draw(Bitmap *target, Box area, int16_t map);
+/* Moves the center of the drawn map by (dx, dy) squares; the center stays on the map. */
+void automap_scroll(int16_t map, int16_t dx, int16_t dy);
+/* Centers the drawn map on the party again. */
+void automap_scroll_reset(void);
 
 #endif

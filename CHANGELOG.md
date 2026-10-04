@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.3.0 - 2026-10-05
+
+Items of the todo list. The save format does not change: saves of 0.2.0 load, and 0.2.0 loads the new saves.
+
+### Added
+
+- DM title animation (`TITL.DAT`) before the entrance. A key or a click stops it. `DM_AUTO_ENTER` and the turn-based mode skip it.
+- Entrance: ENTER and RESUME show the pressed button with the switch sound. After ENTER, the doors open with the door sound.
+- Window and Dock icon: the mummy from `Graphics.DAT`.
+- Advanced mode: a left click on the automap moves the clicked square to the center. Tab closes an open inventory. A click on a fountain with an empty hand lets every living champion drink.
+
+### Changed
+
+- Automap: corridors are light gray, walls are dark gray.
+
+### Fixed
+
+- The automap marked side squares that the party cannot see.
+- Eating redraws the food and water bars at once, and the mouth blinks when the object is used up, as in the original.
+- The name of the object in the leader hand follows a changed icon: a waterskin shows WATERSKIN after the last drink.
+
+### Deviations from the original
+
+- Behind the opening doors, the port shows the view of the start square; the original shows a made-up corridor.
+
 ## 0.2.0 - 2026-10-04
 
 Chaos Strikes Back (Amiga) support, and changes to the advanced mode.

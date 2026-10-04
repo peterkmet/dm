@@ -288,7 +288,7 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 - `piles[]`: `{cell, top}` for each object that `take_object` can reach now.
 - `wall_ahead_clickable`, `alcove`, `fountain`, `vi_altar`.
 
-Visibility rule: the view has the party row (depth 0) and the rows ahead up to the first center square that blocks sight: a wall, a fake wall that looks closed, or a closed door. The row of that square is in the view, with its side squares. Nothing behind it is in the view. This is the same rule as the dungeon view and `automap_mark_seen` (`automap_visible_depths` in `port/src/automap.c`). Facing a wall at depth 1, the view has 6 squares.
+Visibility rule: the view has the party row (depth 0) and the rows ahead up to the first center square that blocks sight: a wall, a fake wall that looks closed, or a closed door. The row of that square is in the view, with its side squares. Nothing behind it is in the view. This is the same rule as the dungeon view (`automap_visible_depths` in `port/src/automap.c`). The automap (`automap_mark_seen`) marks a side square only when the center square of its row or the side square one row nearer is open. Facing a wall at depth 1, the view has 6 squares.
 
 The view shows what a player sees. Creature health is not in the view, because the original does not show it. Creature names and rune names do not come from the game data, because the original shows only pictures.
 

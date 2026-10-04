@@ -281,6 +281,30 @@ def test_anim_play_holds_each_frame_for_its_delay(lib, model, reset):
     assert frames.shots == expected
 
 
+TITL = ROOT / "game" / "TITL.DAT"
+
+
+@pytest.mark.skipif(not TITL.exists(), reason="game/TITL.DAT missing")
+def test_dm_title_plays_and_stops_on_input(lib, reset):
+    """TITL.DAT: 53 frames of one vertical blank; its BR chunk lets a key or a click stop it."""
+    frames = Frames(lib)
+    assert lib.anim_play(str(TITL).encode()) == 0
+    assert len(frames.shots) == 53
+    assert len(set(frames.shots[-1][0])) > 4  # the last frame stays on the screen
+    press = lambda n: n == 5 and setattr(value(lib, "g_input_received"), "value", 1)
+    frames = Frames(lib, press)
+    assert lib.anim_play(str(TITL).encode()) == 0
+    frames.remove()
+    assert len(frames.shots) == 5
+
+
+def test_enda_ignores_input(lib, model, reset):
+    press = lambda n: n == 5 and setattr(value(lib, "g_input_received"), "value", 1)
+    frames = Frames(lib, press)
+    assert lib.anim_play(str(ENDA).encode()) == 0
+    frames.remove()
+    assert len(frames.shots) == sum(delay for delay, _, _ in model)
+
 def test_play_sample_volumes_and_period(lib):
     data = ENDA.read_bytes()
     items, _ = chunks(data)

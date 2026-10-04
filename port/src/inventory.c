@@ -6,6 +6,7 @@
 #include "ids.h"
 #include "random.h"
 #include "sound.h"
+#include "startend.h"
 #include "ui.h"
 
 /* KAOS data addresses. */
@@ -16,6 +17,7 @@ enum { INFO_SCROLL = 0, INFO_CONTAINER = 1, INFO_POTION = 2, INFO_WEAPON = 23, I
 
 enum { EVENT_CHAMPION_SHIELD = 72 };
 enum { SOUND_SWALLOW = 8 };
+enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 };  /* the mouth blinks when it eats an object up */
 #define WATERSKIN_WATER 800
 #define POTION_WATER_WATER 1600
 #define FOOD_WATER_MAXIMUM 2048
@@ -442,9 +444,17 @@ void process_click_on_mouth(void)
         /* The leader carries the hand object, also when another champion drinks. */
         g_champions[g_leader_index].load += get_object_weight(thing) - weight;
         g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
+    } else {
+        for (int16_t blink = MOUTH_BLINK_COUNT; blink > 0; blink--) {
+            draw_icon_to_viewport(ICON_MOUTH + !(blink & 1), ZONE_MOUTH);
+            ui_draw_viewport();
+            wait_frames(MOUTH_BLINK_FRAMES);
+        }
     }
     sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, 0);
     c->attributes |= CHAMPION_ATTR_STATISTICS;
+    if (g_panel_content == PANEL_CONTENT_FOOD_WATER) c->attributes |= CHAMPION_ATTR_PANEL;
+    champion_draw_state(champion_index);
 }
 
 /* No inventory and no chest are open at the start of a game. */

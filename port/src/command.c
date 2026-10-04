@@ -131,7 +131,7 @@ void command_process_click(int16_t x, int16_t y, int16_t kind)
     if (kind == CLICK_LEFT_PRESS || kind == CLICK_RIGHT_PRESS) g_input_received = 1;
     if (kind == CLICK_LEFT_PRESS) left_button_down = 1;
     if (kind == CLICK_LEFT_RELEASE) left_button_down = 0;
-    if (g_automap_open) return;
+    if (kind == CLICK_LEFT_PRESS ? advanced_process_click(x, y) : g_automap_open) return;
     if (queue_count >= (kind == CLICK_LEFT_RELEASE ? QUEUE_RELEASE_LIMIT : QUEUE_CLICK_LIMIT)) return;
     int16_t command = COMMAND_LEFT_RELEASE;
     if (kind != CLICK_LEFT_RELEASE) {
@@ -151,7 +151,7 @@ static int16_t key_command(uint32_t table, uint16_t key)
 }
 
 /* A key press becomes the command of the key in the active tables. With the advanced features,
-   Escape closes an open inventory instead of freezing the game. */
+   Escape closes an open inventory instead of freezing the game, and Tab closes it too. */
 void command_process_key(uint16_t key)
 {
     if (advanced_process_key(key)) return;
@@ -160,8 +160,8 @@ void command_process_key(uint16_t key)
     if (queue_count >= QUEUE_CLICK_LIMIT) return;
     int16_t command = key_command(primary_keys, key);
     if (!command) command = key_command(secondary_keys, key);
-    if (g_advanced_features && key == KEY_ESCAPE && command == COMMAND_FREEZE_GAME && g_inventory_champion_ordinal &&
-        !g_candidate_champion_ordinal)
+    if (g_advanced_features && ((key == KEY_ESCAPE && command == COMMAND_FREEZE_GAME) || key == KEY_TAB) &&
+        g_inventory_champion_ordinal && !g_candidate_champion_ordinal)
         command = COMMAND_CLOSE_INVENTORY;
     if (command) queue_put(command, 0, 0);
 }
@@ -499,6 +499,9 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
             }
             if (g_facing_fountain && g_leader_index != -1) {
                 g_champions[g_leader_index].water = FOUNTAIN_WATER;
+                /* With the advanced features, every living champion drinks. */
+                for (uint16_t i = 0; g_advanced_features && i < g_party_champion_count; i++)
+                    if (g_champions[i].current_health) g_champions[i].water = FOUNTAIN_WATER;
                 sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
             }
             if (!g_facing_alcove) touch_front_wall();
