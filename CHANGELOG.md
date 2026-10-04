@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 - 2026-10-05
+
+Intros of the original disks. The save format does not change.
+
+### Added
+
+- DM: the FTL logo of `SWSH.FTL` with its sound before the title animation.
+- CSB: NEW ADVENTURE shows the FTL logo and the intro of disk B (`disk-b/ANIM.DAT`, about 3.6 minutes) with the music `disk-b/MIDI/NAKED.AMG` and the sounds of `disk-b/Sound/`. A key or a click stops the intro; the music fades out. `DM_AUTO_ENTER` and the turn-based mode skip it.
+
+### Deviations from the original
+
+- CSB: the original shows the intro from the menu of the utility disk (disk B); the port shows it after NEW ADVENTURE.
+
 ## 0.3.0 - 2026-10-05
 
 Items of the todo list. The save format does not change: saves of 0.2.0 load, and 0.2.0 loads the new saves.
