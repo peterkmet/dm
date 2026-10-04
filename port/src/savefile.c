@@ -1,4 +1,5 @@
 #include "savefile.h"
+#include "adventure.h"
 #include "random.h"
 
 #include <stdlib.h>
@@ -19,6 +20,8 @@
 #define H_KEYS 0x136
 #define H_CHECKSUMS 0x156
 #define H_FORMAT 0x176
+#define H_CSB_PAYLOAD_KEY 0x3a
+#define H_CSB_SHIFT 2          /* CSB moves the fields from 0x12a on by 2 bytes */
 
 /* Globals block offsets that give the block sizes. */
 #define G_EVENT_MAX_COUNT 28
@@ -32,6 +35,10 @@
 
 static uint16_t rd16(const uint8_t *p) { return (uint16_t)(p[0] << 8 | p[1]); }
 static void wr16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)(v >> 8); p[1] = (uint8_t)v; }
+
+/* The offset of a payload field in the header of g_adventure; the DM offset is the argument. */
+static int field(int dm_offset) { return g_adventure == ADVENTURE_CSB ? dm_offset + H_CSB_SHIFT : dm_offset; }
+static int payload_key(void) { return g_adventure == ADVENTURE_CSB ? H_CSB_PAYLOAD_KEY : H_PAYLOAD_KEY; }
 
 /* XOR big-endian words in place; returns the sum of key, plain and cipher words */
 uint16_t save_block_xor(uint8_t *bytes, uint16_t key, uint16_t word_count) {
@@ -80,16 +87,17 @@ int16_t save_decode(const uint8_t *file, uint32_t size, SaveFile *s) {
     if (!file || size < SAVE_HEADER_BYTES || !(s->data = malloc(size))) return 0;
     uint8_t *d = s->header = s->data;
     memcpy(d, file, size);
-    save_block_xor(d + H_PAYLOAD, rd16(d + H_PAYLOAD_KEY), SAVE_PAYLOAD_WORDS);
-    if (header_chain(d, 0, 0) != payload_sum(d) || d[H_PLATFORM] == PLATFORM_REFUSED || rd16(d + H_FORMAT) != SAVE_FORMAT) goto fail;
+    save_block_xor(d + H_PAYLOAD, rd16(d + payload_key()), SAVE_PAYLOAD_WORDS);
+    if (header_chain(d, 0, 0) != payload_sum(d) || d[field(H_PLATFORM)] == PLATFORM_REFUSED || rd16(d + field(H_FORMAT)) != SAVE_FORMAT) goto fail;
     uint32_t pos = SAVE_HEADER_BYTES;
     for (int i = 0; i < SAVE_BLOCKS; i++) {
         uint16_t n = block_size(i, s->block[0]);
         if (size - pos < n) goto fail;
         s->block[i] = d + pos;
         s->block_size[i] = n;
-        uint16_t sum = save_block_xor(d + pos, rd16(d + H_KEYS + 2 * i), n >> 1);
-        if (i != SAVE_BLOCK_CHAMPIONS && sum != rd16(d + H_CHECKSUMS + 2 * i)) goto fail; /* load_game ignores the champions result */
+        uint16_t sum = save_block_xor(d + pos, rd16(d + field(H_KEYS) + 2 * i), n >> 1);
+        /* DM load_game ignores the champions result; CSB checks it */
+        if ((i != SAVE_BLOCK_CHAMPIONS || g_adventure == ADVENTURE_CSB) && sum != rd16(d + field(H_CHECKSUMS) + 2 * i)) goto fail;
         pos += n;
     }
     if (size - pos < SAVE_PORTRAITS_BYTES) goto fail;
@@ -117,11 +125,11 @@ uint8_t *save_encode(const SaveFile *s, uint32_t *size) {
     for (int i = 0; i < SAVE_BLOCKS; i++) {
         uint16_t n = s->block_size[i];
         memcpy(out + pos, s->block[i], n);
-        wr16(out + H_CHECKSUMS + 2 * i, save_block_xor(out + pos, rd16(out + H_KEYS + 2 * i), n >> 1));
+        wr16(out + field(H_CHECKSUMS) + 2 * i, save_block_xor(out + pos, rd16(out + field(H_KEYS) + 2 * i), n >> 1));
         pos += n;
     }
     header_chain(out, 1, payload_sum(out));
-    save_block_xor(out + H_PAYLOAD, rd16(out + H_PAYLOAD_KEY), SAVE_PAYLOAD_WORDS);
+    save_block_xor(out + H_PAYLOAD, rd16(out + payload_key()), SAVE_PAYLOAD_WORDS);
     memcpy(out + pos, s->portraits, SAVE_PORTRAITS_BYTES);
     if (s->dungeon_size) memcpy(out + pos + SAVE_PORTRAITS_BYTES, s->dungeon, s->dungeon_size);
     *size = total;
@@ -138,18 +146,19 @@ void save_free(SaveFile *s) {
 void save_header_init(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const uint8_t *extra)
 {
     memset(h, 0, SAVE_HEADER_BYTES);
-    for (int i = 0; i < H_KEY_COUNT; i++) wr16(h + H_KEYS + 2 * i, random16());
+    for (int i = 0; i < H_KEY_COUNT; i++) wr16(h + field(H_KEYS) + 2 * i, random16());
     for (int i = 0; i < H_GROUP_COUNT * H_GROUP_BYTES / 2 - 1; i++) wr16(h + 2 * i, random16());
-    h[H_BYTE_12A] = HEADER_BYTE_12A;
-    h[H_PLATFORM] = PLATFORM_AMIGA;
-    wr16(h + H_DIALOG_CHOICE, DIALOG_CHOICE_SAVE);
-    wr16(h + H_GAME_ID, (uint16_t)(game_id >> 16));
-    wr16(h + H_GAME_ID + 2, (uint16_t)game_id);
-    wr16(h + H_FORMAT, SAVE_FORMAT);
-    wr16(h + H_DUNGEON_ID, dungeon_id);
-    if (extra) memcpy(h + H_EXTRA, extra, SAVE_HEADER_EXTRA_BYTES);
+    h[field(H_BYTE_12A)] = HEADER_BYTE_12A;
+    h[field(H_PLATFORM)] = PLATFORM_AMIGA;
+    wr16(h + field(H_DIALOG_CHOICE), DIALOG_CHOICE_SAVE);
+    wr16(h + field(H_GAME_ID), (uint16_t)(game_id >> 16));
+    wr16(h + field(H_GAME_ID) + 2, (uint16_t)game_id);
+    wr16(h + field(H_FORMAT), SAVE_FORMAT);
+    wr16(h + field(H_DUNGEON_ID), dungeon_id);
+    if (extra) memcpy(h + field(H_EXTRA), extra, save_header_extra_size());
 }
 
-uint32_t save_header_game_id(const uint8_t *h) { return (uint32_t)rd16(h + H_GAME_ID) << 16 | rd16(h + H_GAME_ID + 2); }
-uint16_t save_header_dungeon_id(const uint8_t *h) { return rd16(h + H_DUNGEON_ID); }
-const uint8_t *save_header_extra(const uint8_t *h) { return h + H_EXTRA; }
+uint32_t save_header_game_id(const uint8_t *h) { return (uint32_t)rd16(h + field(H_GAME_ID)) << 16 | rd16(h + field(H_GAME_ID) + 2); }
+uint16_t save_header_dungeon_id(const uint8_t *h) { return rd16(h + field(H_DUNGEON_ID)); }
+const uint8_t *save_header_extra(const uint8_t *h) { return h + field(H_EXTRA); }
+uint16_t save_header_extra_size(void) { return (uint16_t)(SAVE_HEADER_BYTES - field(H_EXTRA)); }

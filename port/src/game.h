@@ -7,6 +7,7 @@
 #define STAT_LIMIT 170                 /* no statistic grows above this value */
 #define PARTY_SCENT_COUNT 24
 #define ACTIVE_GROUP_MAX_COUNT 110     /* creature groups that can act at the same time */
+#define CSB_ACTIVE_GROUP_MAX_COUNT 60  /* active group slots of a new CSB game */
 #define WATCHDOG_INTERVAL 300          /* game ticks between two watchdog events */
 
 enum { STAT_LUCK, STAT_STRENGTH, STAT_DEXTERITY, STAT_WISDOM, STAT_VITALITY, STAT_ANTIMAGIC, STAT_ANTIFIRE, STAT_COUNT };
@@ -40,6 +41,7 @@ typedef struct {
     uint16_t slots[30];                        /* SLOT_COUNT */
     uint16_t load;
     int16_t shield_defense;
+    uint8_t magic_map[6];                      /* CSB record bytes 0x118-0x11d, kept as they are */
 } Champion;
 
 typedef struct {

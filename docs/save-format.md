@@ -158,7 +158,7 @@ Copies the file, decrypts the header and the blocks, and sets the pointers in `s
 - The file is shorter than the header, the blocks, or the portraits.
 - The header chain does not equal the payload sum.
 - The platform byte is 1 or the save format is not 3.
-- The checksum of block 0, 1, 3, or 4 is not correct.
+- The checksum of block 0, 1, 3, or 4 is not correct. CSB also checks block 2.
 
 Call `save_free` after a successful decode.
 
@@ -186,8 +186,13 @@ Frees the decoded copy and clears `s`.
 
 | Function | Work |
 |---|---|
-| `save_header_init(h, game_id, dungeon_id, extra)` | Clears the header. Writes 16 keys with `random16`, then 127 chain words with `random16`, in the order of `save_game` and `save_write_header`. Writes the header byte 1, platform 5, dialog choice 1, the game ID, format 3, the dungeon ID, and the 134 extra bytes. |
+| `save_header_init(h, game_id, dungeon_id, extra)` | Clears the header. Writes 16 keys with `random16`, then 127 chain words with `random16`, in the order of `save_game` and `save_write_header`. Writes the header byte 1, platform 5, dialog choice 1, the game ID, format 3, the dungeon ID, and the 134 extra bytes (CSB: 132). |
 | `save_header_game_id(h)`, `save_header_dungeon_id(h)`, `save_header_extra(h)` | Read the fields of a plain header. |
+| `save_header_extra_size()` | The number of extra bytes: 134, or 132 for CSB. |
+
+### CSB header
+
+With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header: the payload key is at `0x3a` (word 29), and the fields from `0x12a` on are 2 bytes later. The extra bytes start at `0x17c`. `save_decode` also checks the block 2 checksum. See [csb-data.md](csb-data.md) "Save file".
 
 ## Game state (`savegame.c`)
 
@@ -211,7 +216,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 1. Read `DMGAME.DAT`. When it is missing, read `DMGAME.BAK`.
 2. `save_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
 3. Copy block 0 into the globals. `g_last_load_game_time` gets the game time.
-4. Allocate the timeline for `g_event_max_count` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`.
+4. Allocate the timeline for `g_event_max_count` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB allocates exactly the saved count and keeps it. A new CSB game has 60 entries.
 5. Find the portrait index of each party champion (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
 6. Clear `g_party_dead` and the sleep flag. Set `g_saved_game_exists`.
 7. When the file was the backup, rename it to `DMGAME.DAT`.

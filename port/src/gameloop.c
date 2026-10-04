@@ -3,6 +3,7 @@
 #include <string.h>
 #include "gameloop.h"
 #include "advanced.h"
+#include "adventure.h"
 #include "automap.h"
 #include "champion.h"
 #include "command.h"
@@ -71,7 +72,7 @@ int gameloop_load_data(const char *dir)
 {
     char path[PATH_SIZE];
     snprintf(data_dir, sizeof data_dir, "%s", dir);
-    snprintf(path, sizeof path, "%s/KAOS.FTL", dir);
+    snprintf(path, sizeof path, "%s/%s", dir, adventure_engine_name());
     if (kaos_load(path)) return 0;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     startend_set_save_dir(dir);

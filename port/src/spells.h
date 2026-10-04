@@ -2,7 +2,7 @@
 #define SPELLS_H
 #include <stdint.h>
 
-#define SPELL_COUNT 25
+#define DM_SPELL_COUNT 25 /* CSB has CSB_SPELL_COUNT */
 #define SPELL_SYMBOL_FIRST 0x60       /* font character of the first symbol: power 1 at step 0 */
 #define SPELL_SYMBOLS_PER_STEP 6
 #define SPELL_POWER_SYMBOL_MASK 0xff000000u
@@ -20,6 +20,7 @@ typedef struct {
     uint16_t attributes;  /* bits 0-3 kind, 4-9 type, 10-15 action disabled ticks */
 } Spell;
 
+int16_t spell_count(void);
 Spell spell_get(int16_t index);
 uint16_t spell_kind(const Spell *spell);
 uint16_t spell_type(const Spell *spell);

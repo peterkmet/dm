@@ -1,4 +1,6 @@
 #include "spells.h"
+#include "adventure.h"
+#include "csbimage.h"
 #include "ftl.h"
 
 #define G_SYMBOL_BASE_MANA_COST 0x103c66       /* uint8_t[4][6] */
@@ -10,9 +12,13 @@
 #define SPELL_WISDOM_LIMIT 115     /* the failure draw limit never goes above this */
 #define SPELL_DRAW_RANGE 128
 
+/* The spell table of the engine: the CSB table with its 4 magic map spells lies after the KAOS data. */
+static uint32_t spells_address(void) { return g_adventure == ADVENTURE_CSB ? CSB_SPELLS : G_SPELLS; }
+int16_t spell_count(void) { return g_adventure == ADVENTURE_CSB ? CSB_SPELL_COUNT : DM_SPELL_COUNT; }
+
 /* Spell table entry with its symbols, required level, skill and attributes. */
 Spell spell_get(int16_t index) {
-    uint32_t a = G_SPELLS + (uint32_t)index * SPELL_ENTRY_SIZE;
+    uint32_t a = spells_address() + (uint32_t)index * SPELL_ENTRY_SIZE;
     return (Spell){kaos_u32(a), kaos_u8(a + 4), kaos_u8(a + 5), kaos_u16(a + 6)};
 }
 
@@ -33,8 +39,8 @@ int16_t spell_find(const uint8_t *symbols) {
         if (symbols[1] == 0)
             break;
     }
-    for (int16_t i = 0; i < SPELL_COUNT; i++) {
-        uint32_t s = kaos_u32(G_SPELLS + (uint32_t)i * SPELL_ENTRY_SIZE);
+    for (int16_t i = 0; i < spell_count(); i++) {
+        uint32_t s = kaos_u32(spells_address() + (uint32_t)i * SPELL_ENTRY_SIZE);
         /* a spell without a power symbol matches any power */
         if ((s & SPELL_POWER_SYMBOL_MASK) ? packed == s : (packed & ~SPELL_POWER_SYMBOL_MASK) == s)
             return i;

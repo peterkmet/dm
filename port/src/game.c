@@ -1,4 +1,5 @@
 #include "game.h"
+#include "adventure.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -285,7 +286,7 @@ void timeline_add_watchdog_event(void)
 /* New game only: all active group entries are free. */
 void group_init_active_groups(void)
 {
-    g_max_active_group_count = ACTIVE_GROUP_MAX_COUNT;
+    g_max_active_group_count = g_adventure == ADVENTURE_CSB ? CSB_ACTIVE_GROUP_MAX_COUNT : ACTIVE_GROUP_MAX_COUNT;
     free(g_active_groups);
     g_active_groups = malloc(g_max_active_group_count * sizeof *g_active_groups);
     if (!g_active_groups) fatal_error(SYSTEM_ERROR_MEMORY);

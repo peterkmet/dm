@@ -16,7 +16,7 @@
 #include "savefile.h"
 #include "ui.h"
 
-#define MIN_ACTIVE_GROUP_COUNT 110    /* load_game raises the saved maximum to at least this */
+#define MIN_ACTIVE_GROUP_COUNT 110    /* DM load_game raises the saved maximum to at least this; CSB keeps it */
 #define BITPLANE_COUNT 4
 #define PIXELS_PER_WORD 16
 #define PATH_SIZE 1024
@@ -328,10 +328,11 @@ int16_t savegame_save_as(const char *dir, const char *name, const char *backup_n
 }
 
 /* Allocates the timeline and the active groups for the saved counts, as timeline_init and
-   group_init_active_groups do for a loaded game. */
+   group_init_active_groups do for a loaded game. CSB allocates exactly the saved count. */
 static int allocate_tables(void)
 {
-    uint16_t groups = g_max_active_group_count < MIN_ACTIVE_GROUP_COUNT ? MIN_ACTIVE_GROUP_COUNT : g_max_active_group_count;
+    uint16_t groups = g_max_active_group_count;
+    if (g_adventure == ADVENTURE_DM && groups < MIN_ACTIVE_GROUP_COUNT) groups = MIN_ACTIVE_GROUP_COUNT;
     if (g_event_max_count <= 0) return 0;
     free(g_timeline_events);
     free(g_timeline);
@@ -352,7 +353,7 @@ static int restore_game(const SaveFile *s)
     if (!allocate_tables()) return 0;
     for (uint16_t i = 0; i < g_max_active_group_count; i++)
         unpack_active_group(s->block[SAVE_BLOCK_GROUPS] + i * SAVE_ACTIVE_GROUP_BYTES, &g_active_groups[i]);
-    if (g_max_active_group_count < MIN_ACTIVE_GROUP_COUNT) g_max_active_group_count = MIN_ACTIVE_GROUP_COUNT;
+    if (g_adventure == ADVENTURE_DM && g_max_active_group_count < MIN_ACTIVE_GROUP_COUNT) g_max_active_group_count = MIN_ACTIVE_GROUP_COUNT;
     for (int i = 0; i < CHAMPION_MAX_COUNT; i++) champion_unpack(s->block[SAVE_BLOCK_CHAMPIONS] + i * CHAMPION_RECORD_SIZE, &g_champions[i]);
     unpack_party(s->block[SAVE_BLOCK_CHAMPIONS] + CHAMPION_MAX_COUNT * CHAMPION_RECORD_SIZE);
     for (int16_t i = 0; i < g_event_max_count; i++) {
@@ -364,7 +365,7 @@ static int restore_game(const SaveFile *s)
         portrait_from_interleaved(s->portraits + i * SAVE_PORTRAIT_BYTES, g_champion_portraits[i]);
     g_game_id = save_header_game_id(s->header);
     g_dungeon_id = save_header_dungeon_id(s->header);
-    memcpy(header_extra, save_header_extra(s->header), SAVE_HEADER_EXTRA_BYTES);
+    memcpy(header_extra, save_header_extra(s->header), save_header_extra_size());
     g_party_dead = g_party_is_sleeping = 0;
     g_saved_game_exists = 1;
     return 1;

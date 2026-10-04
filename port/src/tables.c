@@ -1,4 +1,6 @@
 #include "tables.h"
+#include "adventure.h"
+#include "csbimage.h"
 #include "ftl.h"
 
 #define CREATURE_INFO 0x10192e
@@ -48,7 +50,8 @@ static ArmourInfo armour_info[ARMOUR_TYPE_COUNT];
 static uint8_t junk_weights[JUNK_TYPE_COUNT];
 static int16_t food_values[FOOD_TYPE_COUNT];
 static DoorInfo door_info[DOOR_TYPE_COUNT];
-static Spell spells[SPELL_COUNT];
+static Spell spells[CSB_SPELL_COUNT];
+static int16_t loaded_spell_count;
 static uint8_t symbol_base_mana_cost[SYMBOL_STEP_COUNT][SYMBOL_COUNT];
 static uint8_t symbol_mana_cost_multiplier[SYMBOL_COUNT];
 static ActionSet action_sets[ACTION_SET_COUNT];
@@ -102,8 +105,10 @@ static void read_objects(void)
 /* Spells and the mana costs of the spell symbols. */
 static void read_magic(void)
 {
-    for (uint32_t i = 0; i < SPELL_COUNT; i++) {
-        uint32_t a = SPELLS + i * SPELL_BYTES;
+    int csb = g_adventure == ADVENTURE_CSB;
+    loaded_spell_count = csb ? CSB_SPELL_COUNT : DM_SPELL_COUNT;
+    for (uint32_t i = 0; i < (uint32_t)loaded_spell_count; i++) {
+        uint32_t a = (csb ? CSB_SPELLS : SPELLS) + i * SPELL_BYTES;
         uint16_t w = kaos_u16(a + 6);
         spells[i] = (Spell){kaos_u32(a), kaos_u8(a + 4), kaos_u8(a + 5), SPELL_KIND(w), SPELL_TYPE(w), SPELL_DISABLED_TICKS(w)};
     }
@@ -168,7 +173,7 @@ const ArmourInfo *tables_armour_info(int i) { return GET(armour_info, i); }
 const uint8_t *tables_junk_weight(int i) { return GET(junk_weights, i); }
 const int16_t *tables_food_value(int i) { return GET(food_values, i); }
 const DoorInfo *tables_door_info(int i) { return GET(door_info, i); }
-const Spell *tables_spell(int i) { return GET(spells, i); }
+const Spell *tables_spell(int i) { return i < loaded_spell_count ? GET(spells, i) : NULL; }
 const uint8_t *tables_symbol_mana_cost_multiplier(int i) { return GET(symbol_mana_cost_multiplier, i); }
 const ActionSet *tables_action_set(int i) { return GET(action_sets, i); }
 const ActionInfo *tables_action_info(int i) { return GET(action_info, i); }

@@ -26,11 +26,11 @@
 #define GRAY_STEP 0x111          /* one step of the gray ramp: equal red, green, and blue */
 #define DEFAULT_CONTROL_SOCKET ".dm/control.sock" /* in the home directory */
 
-/* Loads KAOS.FTL and Graphics.DAT from dir. Returns 0 with a log line when a file is missing. */
+/* Loads the engine module and Graphics.DAT from dir. Returns 0 with a log line when a file is missing. */
 static int load_kaos_and_graphics(const char *dir)
 {
     char path[PATH_SIZE];
-    snprintf(path, sizeof path, "%s/KAOS.FTL", dir);
+    snprintf(path, sizeof path, "%s/%s", dir, adventure_engine_name());
     if (kaos_load(path)) return SDL_Log("cannot load %s", path), 0;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     if (gfx_open(path) < 0) return SDL_Log("cannot load %s", path), 0;
@@ -140,7 +140,7 @@ static void set_pointer(int in_game)
 enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
 
 static int mode, turnbased, auto_enter;
-static const char *data, *data_override, *control;
+static const char *data, *data_override, *control, *csb_dir;
 
 /* Keys and clicks of the start screens. Ctrl+Q quits. */
 static void select_input(const PlatEvent *e)
@@ -260,6 +260,13 @@ static int apply_mode(void)
     return 1;
 }
 
+/* The disk A folder of g_adventure: CSB uses csb_dir, DM the --data folder or game/. */
+static const char *adventure_dir(void)
+{
+    if (g_adventure == ADVENTURE_CSB) return csb_dir;
+    return data_override ? data_override : adventure_default_dir(ADVENTURE_DM);
+}
+
 /* Starts the selected adventure. DM: the entrance. CSB: play is not available yet, the CSB screen
    stays. Returns 0 when the game files or the control socket cannot be opened. */
 static int start_adventure(void)
@@ -269,7 +276,7 @@ static int start_adventure(void)
         return 1;
     }
     SDL_Log("adventure dm, mode %s", game_mode_names[g_game_mode]);
-    data = data_override ? data_override : adventure_default_dir(g_adventure);
+    data = adventure_dir();
     if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
     if (!apply_mode()) return 0;
     entrance_draw();
@@ -301,11 +308,11 @@ int main(int argc, char **argv)
     /* DM_AUTO_ENTER, --show, and --view show no start screen: the mode is vanilla unless --mode says otherwise */
     if ((auto_enter || view || graphic >= 0) && mode_arg < 0) mode_arg = GAME_MODE_VANILLA;
     /* --data is the CSB folder only with --adventure csb */
-    const char *csb_dir = data_override && adventure == ADVENTURE_CSB ? data_override : adventure_default_dir(ADVENTURE_CSB);
+    csb_dir = data_override && adventure == ADVENTURE_CSB ? data_override : adventure_default_dir(ADVENTURE_CSB);
     int csb_present = adventure_csb_present(csb_dir);
     if (adventure == ADVENTURE_CSB && !csb_present) return SDL_Log("CSB data is missing in %s", csb_dir), 1;
     select_start((int16_t)adventure, (int16_t)mode_arg, csb_present);
-    data = data_override ? data_override : adventure_default_dir(g_adventure);
+    data = adventure_dir();
 
     random_init();
     for (int i = 0; i < PALETTE_COLORS; i++) /* gray ramp */

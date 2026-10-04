@@ -176,6 +176,29 @@ def test_load_fails_gracefully(game, tmp_path):
     assert lib.savegame_load(str(tmp_path).encode()) == LOADED
 
 
+def test_dm_load_raises_the_active_group_count_to_110(game, tmp_path):
+    from test_savefile import SaveFile, encode
+
+    lib = game.lib
+    lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.save_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(u32)]
+    lib.save_encode.restype = ctypes.c_void_p
+    lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]
+    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    good = (tmp_path / SAVE).read_bytes()
+    plain = decode(lib, good)
+    groups = 20
+    blocks = [bytearray(b) for b in plain["blocks"]]
+    struct.pack_into(">H", blocks[0], 46, groups)
+    blocks[1] = blocks[1][: groups * ACTIVE_GROUP_BYTES]
+    sizes = [len(b) for b in blocks]
+    (tmp_path / SAVE).write_bytes(encode(lib, plain["header"], blocks, plain["portraits"], plain["dungeon"], sizes))
+    assert lib.savegame_load(str(tmp_path).encode()) == LOADED
+    assert u16.in_dll(lib, "g_max_active_group_count").value == 110
+    (tmp_path / SAVE).write_bytes(good)
+    assert lib.savegame_load(str(tmp_path).encode()) == LOADED
+
+
 def test_original_load_routines_accept_the_file(game, tmp_path):
     lib = game.lib
     assert lib.savegame_save(str(tmp_path).encode()) == 1

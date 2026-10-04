@@ -15,8 +15,6 @@
 #include "timeline_process.h"
 #include "ui.h"
 
-#define TEXT_FLIP_HEADS 0x45
-#define TEXT_FLIP_TAILS 0x46
 #define MESSAGE_COLOR_ACTION 4
 #define MESSAGE_SIZE 100
 

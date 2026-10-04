@@ -53,7 +53,7 @@ int16_t g_champion_skill_level_up[CHAMPION_MAX_COUNT][SKILL_BASE_COUNT];
 enum {
     REC_NAME = 0x00, REC_TITLE = 0x08, REC_DIRECTION = 0x1c, REC_CELL = 0x1d, REC_ACTION = 0x20, REC_SYMBOL_STEP = 0x21,
     REC_SYMBOLS = 0x22, REC_DAMAGE_DIRECTION = 0x28, REC_MAXIMUM_DAMAGE = 0x29, REC_POISON_EVENTS = 0x2a, REC_WORDS = 0x2c,
-    REC_STATISTICS = 0x46, REC_SKILLS = 0x5c, REC_SLOTS = 0xd4, REC_LOAD = 0x110, REC_SHIELD = 0x112,
+    REC_STATISTICS = 0x46, REC_SKILLS = 0x5c, REC_SLOTS = 0xd4, REC_LOAD = 0x110, REC_SHIELD = 0x112, REC_MAGIC_MAP = 0x118,
 };
 #define REC_WORD_COUNT 13
 #define REC_SKILL_SIZE 6
@@ -87,6 +87,7 @@ void champion_pack(const Champion *c, uint8_t *out)
         WR16(out + REC_SLOTS + 2 * i, c->slots[i]);
     WR16(out + REC_LOAD, c->load);
     WR16(out + REC_SHIELD, c->shield_defense);
+    memcpy(out + REC_MAGIC_MAP, c->magic_map, sizeof c->magic_map);
 }
 
 void champion_unpack(const uint8_t *in, Champion *c)
@@ -112,17 +113,7 @@ void champion_unpack(const uint8_t *in, Champion *c)
         c->slots[i] = BE16(in + REC_SLOTS + 2 * i);
     c->load = BE16(in + REC_LOAD);
     c->shield_defense = (int16_t)BE16(in + REC_SHIELD);
-}
-
-/* A string of the game text table. Empty when Graphics.DAT is not open. */
-static const char *get_string(int16_t index)
-{
-    uint16_t size;
-    const char *p = (const char *)gfx_item(GFX_STRINGS, &size);
-    for (const char *end = p + (p ? size : 0); p && p < end; p += strlen(p) + 1)
-        if (!index--)
-            return p;
-    return "";
+    memcpy(c->magic_map, in + REC_MAGIC_MAP, sizeof c->magic_map);
 }
 
 /* "<prefix><name><suffix>" in the champion color on a new message line. */
@@ -130,9 +121,9 @@ static void print_champion_message(uint16_t champion_index, int16_t text)
 {
     int16_t color = kaos_u8(CHAMPION_COLORS + champion_index);
     message_new_line(g_game_time);
-    message_print(color, get_string(text), g_game_time);
+    message_print(color, ui_string(text), g_game_time);
     message_print(color, g_champions[champion_index].name, g_game_time);
-    message_print(color, get_string(text + 1), g_game_time);
+    message_print(color, ui_string(text + 1), g_game_time);
 }
 
 static void square_in_front(int16_t *x, int16_t *y)

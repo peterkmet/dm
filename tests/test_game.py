@@ -42,7 +42,7 @@ class Champion(ctypes.Structure):
         ("current_health", c16), ("maximum_health", c16), ("current_stamina", c16), ("maximum_stamina", c16),
         ("current_mana", c16), ("maximum_mana", c16), ("action_defense", c16), ("food", c16), ("water", c16),
         ("statistics", (ctypes.c_uint8 * 3) * 7), ("skills", Skill * 20), ("slots", ctypes.c_uint16 * 30),
-        ("load", ctypes.c_uint16), ("shield_defense", c16),
+        ("load", ctypes.c_uint16), ("shield_defense", c16), ("magic_map", ctypes.c_uint8 * 6),
     ]
 
 

@@ -15,6 +15,7 @@ void ftl_free(FtlImage *img);
 uint8_t *read_file(const char *path, size_t *len);
 
 extern FtlImage kaos;
+/* Loads the engine module at path: KAOS.FTL, or for CSB APPB.FTL as a KAOS-layout image. Returns 0 or -1. */
 int kaos_load(const char *path);
 uint8_t *kaos_ptr(uint32_t addr);
 uint8_t kaos_u8(uint32_t addr);

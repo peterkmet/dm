@@ -12,6 +12,8 @@ extern int16_t g_adventure;              /* ADVENTURE_DM by default; game_new do
 int adventure_of(const char *name);
 /* The default disk A folder: "game" (DM) or "game-csb" (CSB). */
 const char *adventure_default_dir(int16_t adventure);
+/* The engine module of g_adventure: KAOS.FTL or APPB.FTL. */
+const char *adventure_engine_name(void);
 /* The save file name of g_adventure: DMGAME.DAT or CSBGAME.DAT. */
 const char *adventure_save_name(void);
 /* The backup file name of g_adventure: DMGAME.BAK or CSBGAME.BAK. */

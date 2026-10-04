@@ -8,6 +8,7 @@ int16_t g_adventure = ADVENTURE_DM;
 
 static const char *const names[] = { "dm", "csb" };
 static const char *const dirs[] = { "game", "game-csb" };
+static const char *const engine_names[] = { "KAOS.FTL", "APPB.FTL" };
 static const char *const save_names[] = { "DMGAME.DAT", "CSBGAME.DAT" };
 static const char *const backup_names[] = { "DMGAME.BAK", "CSBGAME.BAK" };
 
@@ -19,6 +20,7 @@ int adventure_of(const char *name)
 }
 
 const char *adventure_default_dir(int16_t adventure) { return dirs[adventure]; }
+const char *adventure_engine_name(void) { return engine_names[g_adventure]; }
 const char *adventure_save_name(void) { return save_names[g_adventure]; }
 const char *adventure_backup_name(void) { return backup_names[g_adventure]; }
 

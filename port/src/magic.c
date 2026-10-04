@@ -22,10 +22,6 @@ enum { SPELL_KIND_POTION = 1, SPELL_KIND_PROJECTILE = 2, SPELL_KIND_OTHER = 3 };
 #define JUNK_ZOKATHRA 51
 #define POWER_SYMBOL_FIRST 0x60          /* symbol of power 1 is 0x60, power n is 0x5f + n */
 #define SPELL_PROJECTILE_ATTACK 90
-#define SPELL_FAILURE_TEXT_FIRST_WIZARD 0x33
-#define SPELL_FAILURE_TEXT_FIRST_OTHER 0x35
-#define SPELL_FAILURE_TEXT_FIRST_MEANINGLESS 0x37
-#define SPELL_FAILURE_TEXT_FIRST_FLASK 0x39
 #define MESSAGE_COLOR_SPELL 4
 #define SHIELD_STRONG 50                 /* above this a new shield adds a quarter */
 #define SHIELD_MANA_COST 4
@@ -78,11 +74,11 @@ void menus_print_spell_failure_message(uint16_t champion_index, int16_t failure_
     if (failure_type == SPELL_FAILURE_NEEDS_MORE_PRACTICE) {
         if (skill_index >= SKILL_BASE_COUNT)
             skill_index = (skill_index - SKILL_BASE_COUNT) >> 2;
-        first = skill_index == SKILL_WIZARD ? SPELL_FAILURE_TEXT_FIRST_WIZARD : SPELL_FAILURE_TEXT_FIRST_OTHER;
+        first = skill_index == SKILL_WIZARD ? TEXT_SPELL_FAILURE_WIZARD : TEXT_SPELL_FAILURE_PRIEST;
     } else if (failure_type == SPELL_FAILURE_NEEDS_FLASK_IN_HAND) {
-        first = SPELL_FAILURE_TEXT_FIRST_FLASK;
+        first = TEXT_SPELL_FAILURE_FLASK;
     } else if (failure_type == SPELL_FAILURE_MEANINGLESS_SPELL) {
-        first = SPELL_FAILURE_TEXT_FIRST_MEANINGLESS;
+        first = TEXT_SPELL_FAILURE_MEANINGLESS;
     } else {
         return;
     }

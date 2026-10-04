@@ -101,7 +101,7 @@ These tables have the same bytes in CSB. Only the address changes.
 | `ARROW_POINTER`, `HAND_POINTER`, `POINTER_ZONES`, `POINTER_HOTSPOTS`, `POINTER_SHADOW_OBJECT` | `0x1002b0` … `0x1005fe` | `0x1005f0`, `0x100714`, `0x10084a`, `0x10091a`, `0x100984` |
 | `DUNGEON_PALETTE` | `0x100aa6` | `0x100f78` |
 | `LAYOUT_BITMAPS` | `0x1025f2` | `0x102f50` |
-| `INVISIBILITY_PALETTE`, `ACTION_ICON_PALETTE` | `0x10247a`, `0x103ffa` | `0x102d8a` (UNVERIFIED: content search only), `0x104b52` |
+| `INVISIBILITY_PALETTE`, `ACTION_ICON_PALETTE` | `0x10247a`, `0x103ffa` | `0x102d8a` (`champion_build_icon_bitmap` pushes it at C`0x1150b6`, as DM does), `0x104b52` |
 | View tables: `WALL_ORN_DEPTH` … `TEXT_HEIGHTS`, `OBJECT_ASPECTS`, `PROJECTILE_ASPECTS`, `PAL_*`, `CREATURE_ASPECTS`, `REPLACEMENT_COLORS`, `SHIFT_SETS` | `0x102ba6` … `0x102fd0` | `0x10373a` … `0x103b60` |
 
 Small scalar values (`VIEWPORT_ORIGIN`, `PORTRAIT_SIZE`, `GLYPH_SIZE`, `DAMAGE_SIZE_*`, `BAR_SHADOW`, `BUTTON_*`) are equal. Take their CSB address from the code reference, because a content search gives many hits. Example: `PORTRAIT_SIZE` is C`0x1032bc`, `VIEWPORT_SIZE` is C`0x1032a6`, `GLYPH_SIZE` is C`0x1032d2`.
@@ -129,7 +129,7 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 | `CREDITS_PALETTE` | `0x100a46` | `0x100f18` | All colors differ (CSB credits picture) |
 | `KEYS_ENTRANCE` | `0x10393c`, 2 entries | `0x1043bc`, 1 entry | CSB has only command `0xc8` |
 | `VERSION_TEXT` | `0x10402c` "V3.6" | `0x104c24` "V3.1" | Text |
-| `DIALOG_MOUSE_INPUTS` | `0x103bd4` | different pointers | CSB dialogs differ, see [Save and load](#save-and-load) |
+| `DIALOG_MOUSE_INPUTS` | `0x103bd4` | `0x104650` (read in `dialog_get_choice` at C`0x127b06`) | Other pointer values. The 8 tables they point to (C`0x104500`, 336 bytes) have the same bytes as the DM tables (K`0x103a84`). |
 | String index tables `SKILL_LEVEL_STRINGS`, `BASE_SKILL_STRINGS`, `STATISTIC_STRINGS`, `DIRECTION_STRINGS` | indices into graphic 700 | pointer tables | See [Text](#text) |
 
 ### Graphics.DAT
@@ -139,18 +139,48 @@ CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have th
 - Item 700 (strings) and item 699 (action names) are empty in CSB. Items 737 and 747 (French and German strings) do not exist.
 - Item 694 (object names) ends each name with a byte that has bit 7 set. DM separates the names with NUL. 33 names differ, for example 23 BOLT BLADE → STORM, 158 BRO POTION → ANTIVENIN, 174 DRUMSTICK → SHANK.
 - Pictures and creature graphics differ in items 2–5, 10, 11, 26, 42–47, 329, 330, 371, 378, 504, 550, 588–669. Items 602 and 669 are 3 × 3 dummies in CSB. These need no code change.
-- Item 696 is 16 bytes shorter (9160 against 9176). UNVERIFIED: the effect on the layout zones.
+- Item 696 is 16 bytes shorter (9160 against 9176). Zones 437 and 438 (the endgame buttons) are missing. All other 554 zones that `layout_get_zone` resolves give the same boxes (`tests/test_csb_engine.py`).
 - The header width of raw (non-bitmap) items 671–711 is 1–3 smaller in CSB. The port must use the decompressed size for raw items, not the header width. UNVERIFIED: whether the port reads that width.
 
 ## Differences that need port changes
 
 ### Engine selection and table addresses
 
-The port reads `KAOS.FTL` with `kaos_load` and the `kaos_u8`/`kaos_u16` accessors at fixed DM addresses (`port/src/ftl.c`, `port/src/tables.c`, and 20 other files). CSB support needs:
+Implemented in Step 2 of the CSB plan:
 
-- `port/src/ftl.c`: load `APPB.FTL` (data base `0x10511e`) when the data folder holds the CSB files.
-- One address table per engine for all 140 addresses, with the strides and splits of [Tables with a different layout](#tables-with-a-different-layout).
-- `port/src/tables.c` `read_actions`: action set record size 6 for CSB. `SPELL_COUNT` 29 for CSB.
+- `kaos_load` (`port/src/ftl.c`) loads `APPB.FTL` when `g_adventure` is CSB. `csb_image_build` (`port/src/csbimage.c`) then makes a KAOS-layout image: each table that the port reads is at its DM address. The files with `#define ... 0x10xxxx` do not change.
+- `csb_copies` in `port/src/csbimage.c` is the single address table: KAOS address, APPB address, size. Strided and split tables have one row per part.
+- Conversions in code: the action sets (6-byte CSB records to the 8-byte DM layout), and the dialog pointers (moved to the DM tables).
+- The 29 CSB spells are at `0x104160`, after the KAOS data. `spells.c` and `tables.c` read 29 spells from there for CSB.
+- `adventure_engine_name` gives the module file name: `KAOS.FTL` or `APPB.FTL`.
+
+Addresses that the tables above do not list. Each is verified by a code reference (the CSB function that reads it) or by the CSV:
+
+| Port name | DM | CSB | Reference |
+|---|---|---|---|
+| `BOTTOM_PALETTE`, `SPRITE_PALETTE` | `0x100170`, `0x100190` | `0x102f0a`, `0x102f2a` | `g_initial_colormap` and + 32 (`display_load_view`, `input_event_handler`) |
+| `ARROW_POINTER`, `HAND_POINTER` (with the 4 size bytes before) | `0x1002ac`, `0x1003d0` | `0x1005ec`, `0x100710` | `init_mouse_pointer` C`0x10898c`, `0x10899a` |
+| `CREDITS_PALETTE`, `ENTRANCE_PALETTE` (CSB values) | `0x100a46`, `0x100a66` | `0x100f18`, `0x100f38` | `entrance_show_credits`, `entrance_draw` |
+| `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b8a` | `0x10105e` | `group_steal_from_champion` C`0x10e7f6` |
+| `LIST_SEPARATOR` ", " | `0x101ebe` | `0x10264a` | `build_object_attributes_string` C`0x110dcc` |
+| `BONES_SEPARATOR` " ", `ATTRIBUTES_SUFFIX` ")", `ATTRIBUTES_PREFIX` "(" | `0x101ec6`, `0x101ec8`, `0x101eca` | `0x10267a`, `0x1026ec`, `0x1026ea` | `draw_panel_object` C`0x111cba`, `0x111f12`, `0x111f16` |
+| `VIEWPORT_ORIGIN` | `0x10293a` | `0x103298` | `command_init_mouse_input_table` |
+| `MESSAGE_LINE_PAD` | `0x102966` | `0x1032ca` | `dialog_draw` C`0x128176` |
+| `DAMAGE_SIZE_LARGE`, `DAMAGE_SIZE_SMALL` | `0x102978`, `0x10297c` | `0x1032dc`, `0x1032e0` | `menus_draw_action_damage` |
+| `BAR_SHADOW` | `0x102980` | `0x1032e4` | `draw_panel_horizontal_bar` C`0x11203e` |
+| `WALL_ORN_DEPTH` (14), `FLOOR_ORN_VIEW` (11), `ALCOVES` (3), `FOUNTAINS` (1) | `0x102ba6`, `0x102bb4`, `0x102bc0`, `0x102bc3` | `0x10373a`, `0x103748`, `0x103753`, `0x103757` | `draw_wall_ornament`, `draw_floor_ornament`, `load_current_map_graphics`, CSV |
+| `FLOOR_ORN_COORDS` (9), `DOOR_ORN_COORDS` (12), `DOOR_BUTTON_COORDS` (1) | `0x102c00`, `0x102c0a`, `0x102c16` | `0x103794`, `0x10379d`, `0x1037a9` | `load_current_map_graphics`, `draw_door_button` |
+| `TEXT_HEIGHTS` + 1 | `0x102c58` | `0x1037ea` | `draw_wall_ornament` C`0x11b1ee` |
+| Entrance mouse input (4 entries, no 0xd8) | `0x10318c` | `0x103c24` | `process_entrance` C`0x12a550` |
+| Endgame mouse input (RESTART only) | `0x1031d4` | `0x103c60` | `endgame` C`0x1284c2` |
+| Other mouse input tables | `0x1031f8` … `0x10378c` | `0x103c78` … `0x10420c` | CSV names |
+| `KEYS_ENTRANCE` (1 entry), `KEYS_INTERFACE`, `KEYS_MOVEMENT` | `0x10393c`, `0x103948`, `0x103964` | `0x1043bc`, `0x1043c4`, `0x1043e0` | `process_entrance`, `start_game` |
+| `ACTION_EXPERIENCE_GAIN`, `VERSION_TEXT`, `MESSAGE_COLORS` | `0x103fb4`, `0x10402c`, `0x104026` | `0x104ae8`, `0x104c24`, `0x104c20` | `menus_is_action_performed`, `dialog_draw` |
+
+Not in the CSB image:
+
+- `BUTTON_BORDER`, `BUTTON_INNER_BORDER` (K`0x102988`, `0x10298c`): only DM `endgame_draw_button` reads them. CSB has no such function. Step 8 (end of the game) decides the CSB endgame buttons.
+- The string index tables `SKILL_LEVEL_STRINGS`, `BASE_SKILL_STRINGS`, `STATISTIC_STRINGS`, `DIRECTION_STRINGS`: CSB has pointer tables. `csb_text_build` fills them with the text indices of the built strings (see [Text](#text)).
 
 ### Text
 
@@ -181,12 +211,37 @@ Text that differs:
 - Disk messages 94, 95, 96 say "CHAOS STRIKES BACK" in place of "DUNGEON MASTER" (C`0x104d8c`, `0x104e14`, `0x104ed4`).
 - The save dialog has "SAVE AND PLAY" (C`0x104f88`) and "SAVE AND QUIT" (C`0x104f96`), not SAVE and QUIT. Text 93 (quit without save) does not exist.
 - Texts 99, 100 ("A:", "B:") and 135–139 (memory errors) do not exist.
-- New: " NEEDS A MAGIC MAP IN ACTION HAND FOR THIS SPELL." (C`0x104bea`), "NO CREATURE" (C`0x102654`), creature names (pointer table C`0x102164`[27]).
+- Creature names (pointer table C`0x102164`[27], DM texts 108–134): 12 names differ, for example 109 SLIME DEVIL (DM SWAMP SLIME), 111 GAZER (WIZARD EYE), 127 ZYTAZ (MATERIALIZER).
+- Correction: " NEEDS A MAGIC MAP IN ACTION HAND FOR THIS SPELL." (C`0x104bea`) and "NO CREATURE" (C`0x102654`) are not new. DM item 700 has them as texts 60 and 107, and the creature names as texts 108–134. The port does not use these texts yet (Step 7).
+- Correction: the CSB direction table C`0x102578` is in direction order (NORTH, EAST, SOUTH, WEST). DM texts 22–25 are NORTH, SOUTH, EAST, WEST.
 
-Port changes:
+Code references (Step 3 verified each address: a `pea` or `lea` with A5 = C`0x10511e` in the function, found in the APPB code bytes):
 
-- `port/src/ui.c` `ui_init`, `load_strings`, `ui_string`: take `strings` and `action_names` from the APPB data. Add a bit-7 terminator mode for `object_names` (CSB `load_object_names`, C`0x108280`, reads 199 names).
-- `port/src/ids.h` `TEXT_*`, `port/src/ui_champion.c` string index tables, `port/src/champion.c` (level gained, resurrected), `port/src/magic.c` (spell failure), `port/src/action.c` (coin flip), `port/src/ui_menus.c`, `port/src/command.c`, `port/src/gameloop.c`, `port/src/startend.c`: use the CSB text source.
+| CSB address | Function |
+|---|---|
+| `0x104680`, `0x104688` | `command_draw_sleep_screen`, `command_process_queue` |
+| `0x10264e` | `build_object_attributes_string` |
+| `0x10267c`–`0x10269a`, `0x1026a2`, `0x1026ae`, `0x1026bc`–`0x1026e2`, `0x1026ee`–`0x1026f8`, `0x102578` | `draw_panel_object` |
+| `0x102dc2`, `0x102dcc` | `champion_draw_state` |
+| `0x102740`, `0x102748`, `0x102750` | `inventory_toggle` |
+| `0x102524`, `0x102588`, `0x102d56` | `draw_champion_skills_and_statistics` (`0x102d56` also in `champion_add_skill_experience` and `menus_print_spell_failure_message`) |
+| `0x104b7a`, `0x104b9a`, `0x104ba2`, `0x104bc0`, `0x104bea` | `menus_print_spell_failure_message` |
+| `0x102d3e`, `0x102d4e` | `champion_add_skill_experience` |
+| `0x104b2a`, `0x104b3e` | `menus_is_action_performed` |
+| `0x104b64`, `0x104b70` | `menus_draw_action_damage` |
+| `0x102dec`, `0x102dfa` | `champion_click_in_resurrect_reincarnate_panel` |
+| `0x104c56` | `endgame` |
+| `0x102654`, `0x102164` | `scroll_text_insert_creature_name` |
+| `0x1048b4` | `menus_get_action_name` |
+| `0x104d08` + 4·n | Read with `move.l` (no `lea`), for example `decomp-csb/A/APPB.c` line 38716 (entry 0) and line 37116 (save dialog: entries 24, 21, 22) |
+
+The pointer table C`0x104d08` has 26 entries. Entry n gives DM text: 78, 94, 79, 80, 81, 82, 95, 92, 84, 90, 85, 86, 97, 96, 98, 87, 88, 89, 83, 91, 101, 102 (SAVE AND PLAY), 103 (SAVE AND QUIT), 105, 106, 104.
+
+Port implementation (Step 3):
+
+- `port/src/csbtext.c` `csb_text_build` (called by `csb_image_build`): builds DM texts 0–134 as one block of NUL-terminated strings (item 700 order) and the 44 action names (item 699). The spell failure and level gained texts join prefix, class name, and suffix. Each string index table entry k of the KAOS image gets text index first + k, so the class names (0–3) and directions (22–25) are in the CSB table order: text 2 is PRIEST, 3 is WIZARD, 23 is EAST, 24 is SOUTH. Only the index tables read these texts.
+- `port/src/ui.c` `load_strings`: for CSB, takes items 699 and 700 from `csb_text_item`, and ends each object name (item 694) at the byte with bit 7 set.
+- `port/src/champion.c` reads its messages with `ui_string`. The other files that show text do not change.
 
 ### Actions
 
@@ -272,7 +327,7 @@ The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`):
 | Dungeon ID | `0x178` | `0x17a` |
 | Copied extra header | `0x17a`, 134 bytes | `0x17c`, 132 bytes |
 
-UNVERIFIED: the dungeon ID value of a CSB save, and the CSB writer `save_write_header` (C`0x128a42`) beyond the key offset.
+`save_game` (C`0x128cc0`) writes the fields at the CSB offsets: dialog choice `0x132`, extra header `0x17c` (`0x84` bytes), game ID `0x134`, platform `0x12d` = 5, header byte `0x12c`, save format `0x178`, dungeon ID `0x17a`, block keys `0x138`, block checksums `0x158`. Then it calls `save_write_header` (C`0x128a42`). UNVERIFIED: the dungeon ID value of a CSB save.
 
 Other load and save differences:
 
@@ -350,4 +405,4 @@ Total without `ENDA.DAT` and without `CEDT.FTL`: about 1500–2200 lines.
 3. The magic map: is a "MAGICMAP" scroll in the CSB dungeon? If not, the magic map can wait.
 4. SAVE AND QUIT freezes the original. The port shows the entrance in DM mode. Keep this deviation for CSB?
 5. The DM disk has an empty `CSBGAME.DAT`. Does DM 3.60 read it? Not traced.
-6. Graphics.DAT item 696 (layout) is 16 bytes shorter in CSB. Check the zone data before rendering CSB.
+6. Graphics.DAT item 696 (layout) is 16 bytes shorter in CSB. Answered: only the endgame button zones 437 and 438 are missing (see [Graphics.DAT](#graphicsdat)).

@@ -85,7 +85,7 @@ Object names (item 694). The CSB engine reads 199 names at `0x108280` (graphic i
 
 33 of the 199 CSB names differ from DM. Examples: 23–24 STORM (DM BOLT BLADE), 25–26 RA BLADE (FURY), 38 SIDE SPLITTER (DELTA), 41 DRAGON FANG (THE INQUISITOR), 62–64 STAFF OF IRRA, CROSS OF NETA, SERPENT STAFF, 174 SHANK (DRUMSTICK).
 
-Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start near `0x1048c0` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. The order of the CSB texts against the DM indices of item 700 is not mapped. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
+Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start near `0x1048c0` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. `docs/csb-engine-diff.md` "Text" maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
 
 Layout (item 696). The scratch script `txt.py` compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal. `startend.c` uses zone 437 (`ZONE_RESTART_BUTTON`) and zone 438 (`ZONE_QUIT_BUTTON`) for THE END screen.
 
@@ -179,7 +179,7 @@ Evidence: the writer at `0x128cc0` and the reader at `0x129b3e` use the same off
 - `save_game` starts with a disk check that reads raw MFM data from the drive (`0x128cc0`, custom chip and CIA access). This is probably copy protection (unverified).
 - After a save, the dialog closes. When the player chose save and quit, the save calls the endgame `0x128374(0)`.
 
-Result: `savefile.c` reads the key at `0x14` and the fields at DM offsets. A CSB save fails the header chain check. No real CSB save file was available, so no test proves this.
+Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`, and then also checks the block 2 checksum. `tests/test_csb_save.py` decodes `MINI.DAT` with the port. The original CEDT reader (`tools/csb/diff_test.py`) accepts a file that the port writes.
 
 ## ENDA.DAT and the endgame
 
