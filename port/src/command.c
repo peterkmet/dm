@@ -499,6 +499,9 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
             }
             if (g_facing_fountain && g_leader_index != -1) {
                 g_champions[g_leader_index].water = FOUNTAIN_WATER;
+                /* With the advanced features, every living champion drinks. */
+                for (uint16_t i = 0; g_advanced_features && i < g_party_champion_count; i++)
+                    if (g_champions[i].current_health) g_champions[i].water = FOUNTAIN_WATER;
                 sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
             }
             if (!g_facing_alcove) touch_front_wall();

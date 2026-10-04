@@ -482,6 +482,32 @@ def test_smooth_projectile_flight(game):
     set_mode(game, VANILLA)
 
 
+@pytest.mark.parametrize("mode", [VANILLA, ADVANCED])
+def test_empty_hand_at_a_fountain(game, mode):
+    lib, champions = game.lib, game.champions
+    set_mode(game, mode)
+    count = u16.in_dll(lib, "g_party_champion_count")
+    start = game.value("g_party_map_index"), game.position()
+    ctypes.memmove(ctypes.byref(champions[1]), ctypes.byref(champions[0]), ctypes.sizeof(champions[0]))
+    champions[1].cell = (champions[0].cell + 1) % 4
+    count.value = 2
+    lib.set_current_map_and_party_map(1)
+    for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (0, 21, 2)):  # facing a fountain on level 2
+        c16.in_dll(lib, name).value = v
+    lib.gameloop_draw_view()
+    assert game.value("g_facing_fountain") == 1
+    champions[0].water = champions[1].water = 100
+    game.click_box(game.boxes[5])
+    assert (champions[0].water, champions[1].water) == (2048, 2048 if mode == ADVANCED else 100)
+    count.value = 1
+    ctypes.memset(ctypes.byref(champions[1]), 0, ctypes.sizeof(champions[1]))
+    lib.set_current_map_and_party_map(start[0])
+    for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), start[1]):
+        c16.in_dll(lib, name).value = v
+    lib.gameloop_draw_view()
+    set_mode(game, VANILLA)
+
+
 def test_party_death_during_a_turn_reports_game_over(game):
     lib = game.lib
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")

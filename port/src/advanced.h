@@ -4,7 +4,7 @@
 
 /* Game modes and the advanced features (not in the original game): automap with a position read-out,
    quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat
-   meters, Escape closes the inventory.
+   meters, Escape and Tab close the inventory, the whole party drinks at a fountain.
    The game rules are the same in every mode. Plan: docs/superpowers/2026-10-04-modes-plan.md. */
 
 enum { GAME_MODE_VANILLA, GAME_MODE_ADVANCED, GAME_MODE_TURNBASED };

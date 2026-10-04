@@ -190,6 +190,7 @@ The advanced features are not in the original game:
 - Rune symbols in red after each rune name on an open scroll.
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack for a weapon, defense for armour, and weight.
+- A click on a fountain with an empty hand lets every living champion drink, not only the leader.
 - Escape and Tab close an open inventory. With no inventory open, Escape freezes the game as in vanilla.
 - Smooth projectile flight: between two game ticks, the view shows each flying projectile part of the way to its new place. The size changes only at a tick.
 
