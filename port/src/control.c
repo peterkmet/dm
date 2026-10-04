@@ -307,7 +307,8 @@ static const char *close_inventory(const char *r)
     return NULL;
 }
 
-/* A slot box click swaps the leader hand object with the slot: put and take are the same click. */
+/* A slot box click swaps the leader hand object with the slot: put and take are the same click.
+   The slots of the open chest are boxes of the chest panel. */
 static const char *click_slot(const char *r)
 {
     int16_t c;
@@ -316,7 +317,8 @@ static const char *click_slot(const char *r)
     if (g_leader_index == -1) return "no leader";
     if (g_inventory_champion_ordinal == c + 1) {
         if (slot < 0 || slot >= SLOT_CHEST_FIRST + (g_open_chest != THING_NONE ? SLOT_CHEST_COUNT : 0)) return "slot out of range";
-        if (!click_command(UI_INPUT_INVENTORY, (int16_t)(COMMAND_CLICK_SLOT_BOX_FIRST + UI_SLOT_BOX_INVENTORY_FIRST + slot))) return "slot not found";
+        int16_t table = slot >= SLOT_CHEST_FIRST ? UI_INPUT_CHEST : UI_INPUT_INVENTORY;
+        if (!click_command(table, (int16_t)(COMMAND_CLICK_SLOT_BOX_FIRST + UI_SLOT_BOX_INVENTORY_FIRST + slot))) return "slot not found";
         return NULL;
     }
     if (slot != SLOT_HAND_READY && slot != SLOT_HAND_ACTION) return "open the inventory of this champion first (open_inventory)";

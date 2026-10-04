@@ -473,6 +473,97 @@ def test_swap_champions_and_look(game, monkeypatch, capsys):
         client.sock.close()
 
 
+def chest_with_content(game):
+    """A chest of the dungeon with 1-6 objects, and its content."""
+    lib = game.lib
+    header = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_header"), ctypes.POINTER(ctypes.c_uint8))
+    for chest in (9 << 10 | i for i in range(header[12 + 2 * 9] << 8 | header[13 + 2 * 9])):
+        data, content = lib.get_thing_data(chest), []
+        if bytes(data[:2]) == b"\xff\xff":
+            continue
+        thing = data[2] << 8 | data[3]
+        while thing != 0xFFFE:
+            content.append(thing)
+            thing = lib.get_next_thing(thing)
+        if 1 <= len(content) <= 6:
+            return chest, content
+    pytest.skip("no chest with 1-6 objects")
+
+
+def test_take_put_and_look_in_an_open_chest(game):
+    lib = game.lib
+    lib.champion_put_object_in_leader_hand.argtypes = [ctypes.c_uint16]
+    lib.champion_get_object_removed_from_leader_hand.restype = ctypes.c_uint16
+    chest, content = chest_with_content(game)
+    free = 30 + len(content)
+    lib.champion_put_object_in_leader_hand(chest)  # the chest stays in its square list; the test gives it back unchanged
+    client = Client(game)
+    try:
+        client.act("open_inventory", champion=0)
+        state = client.act("take_from_slot", champion=0, slot=1)["state"]  # the chest goes to the action hand and opens
+        assert state["inventory"]["panel"] == "chest" and state["leader_hand"]["name"] == "SAMURAI SWORD"
+        assert [s["slot"] for s in state["inventory"]["chest"]] == list(range(30, free))
+        first = state["inventory"]["chest"][0]["object"]
+        client.act("put_in_slot", champion=0, slot=0)
+
+        state = client.act("take_from_slot", champion=0, slot=30)["state"]
+        assert state["leader_hand"] == first and 30 not in [s["slot"] for s in state["inventory"]["chest"]]
+        state = client.act("put_in_slot", champion=0, slot=free)["state"]
+        assert state["leader_hand"] is None
+        assert {s["slot"]: s["object"] for s in state["inventory"]["chest"]}[free] == first
+
+        response = client.act("look", champion=0, slot=free)
+        assert response["look"]["name"] == first["name"] and response["state"]["leader_hand"] is None
+        assert len(response["state"]["inventory"]["chest"]) == len(content)
+        assert client.call(cmd="act", action="take_from_slot", args={"champion": 0, "slot": 38})["error"] == "slot out of range"
+
+        client.act("take_from_slot", champion=0, slot=free)
+        client.act("put_in_slot", champion=0, slot=30)
+        client.act("take_from_slot", champion=0, slot=0)
+        state = client.act("put_in_slot", champion=0, slot=1)["state"]  # the sword back, the chest closes in the hand
+        assert state["leader_hand"]["kind"] == "container" and "chest" not in state["inventory"]
+        client.act("close_inventory")
+    finally:
+        client.sock.close()
+        removed = lib.champion_get_object_removed_from_leader_hand()
+    assert removed == chest
+    data = lib.get_thing_data(chest)
+    assert data[2] << 8 | data[3] == content[0]
+
+
+def test_brief_prints_creatures_on_side_squares():
+    from dmtools.play import view_lines
+
+    floor = {"element": "floor"}
+    view = {"squares": [floor | {"depth": d, "side": s} for d in (0, 1) for s in ("left", "center", "right")], "piles": []}
+    view["squares"][0] |= {"creatures": {"type": "mummy", "count": 2}}
+    view["squares"][5] |= {"creatures": {"type": "screamer", "count": 1}}
+    lines = view_lines(view)
+    assert "here left: floor, CREATURES 2 mummy" in lines
+    assert "ahead right: floor, CREATURES 1 screamer" in lines
+
+
+def test_map_grid_has_indexes(game, monkeypatch, capsys):
+    from dmtools import play
+
+    client = Client(game)
+    try:
+        game_map = client.call(cmd="get_map")["map"]
+    finally:
+        client.sock.close()
+    width, height = game_map["width"], game_map["height"]
+    assert len(game_map["rows"]) == height and all(len(row) == width for row in game_map["rows"])
+    header, *rows = game_map["grid"]
+    assert header == "   " + "".join(str(x % 10) for x in range(width))
+    assert rows == [f"{y:2d} {row}" for y, row in enumerate(game_map["rows"])]
+    x, y = game_map["party"]
+    assert rows[y][3 + x] == "@"
+    monkeypatch.setenv("DM_CONTROL", game.socket)
+    with pumped(game):
+        assert play.main(["--brief", "get_map"]) == 0
+    assert capsys.readouterr().out.splitlines() == game_map["grid"]
+
+
 def test_dm_play_does_not_import_mcp():
     code = "import sys, dmtools.play; assert 'mcp' not in sys.modules"
     subprocess.run([sys.executable, "-c", code], check=True)

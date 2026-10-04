@@ -36,7 +36,8 @@ How to play:
 4. Objects: the leader has one hand for moving objects ("leader_hand"). take_object picks up the
    top object of a pile (cells in get_view "piles"), drop_object puts it down, put_in_slot or
    take_from_slot swaps the hand with a champion slot (open_inventory first for slots other than
-   the hands). Eat and drink: hold the food in the leader hand, open the inventory of the
+   the hands). A chest in the action hand of the open inventory opens: its slots are 30-37
+   (state inventory "chest"), used the same way. Eat and drink: hold the food in the leader hand, open the inventory of the
    champion who eats, then act eat.
 5. Fight: choose_action with the champion and the index of an action in its "actions" list
    (the actions of the object in its action hand, slot 1). A champion with "action_disabled"
@@ -105,6 +106,7 @@ def get_map() -> dict:
     d open door, < stairs up, > stairs down, O pit, T teleporter, _ pressure pad, space not explored.
     Walls with a seen feature: M mirror, L switch, K lock, H torch holder, V vi altar, A alcove, F fountain, ? text. North
     is y - 1, east is x + 1. Fake walls look like walls, closed pits look like floor.
+    "grid" has the same rows with x mod 10 in the first line and y in front of each row.
     """
     return request({"cmd": "get_map"})
 
@@ -121,7 +123,8 @@ def act(action: str, args: dict | None = None) -> dict:
     click_wall_ahead (mirror, button, lever, door button, fountain);
     take_object {cell 0-4}; drop_object {cell 0-3, 4 alcove; default 0};
     open_inventory {champion}; close_inventory;
-    put_in_slot {champion, slot}; take_from_slot {champion, slot} (swaps with the leader hand);
+    put_in_slot {champion, slot}; take_from_slot {champion, slot} (swaps with the leader hand;
+    slots 30-37 are the open chest);
     eat, drink (leader hand object to the champion whose inventory is open);
     choose_action {champion, index}; pass (closes an open action menu);
     set_caster {champion}; add_rune {symbol 0-5}; delete_rune; cast;

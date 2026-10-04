@@ -25,6 +25,8 @@
 #define ACTION_SET_EMPTY_HAND 2
 #define ACTION_LEVEL_NEEDS_CHARGES 0x80
 #define ACTION_LIST_COUNT 3
+#define MAP_MAX_SIZE 63               /* the widest map row (a map is at most 32 squares wide) */
+#define MAP_GRID_PREFIX 3             /* "yy " in front of a grid row */
 #define VIEW_DEPTH_COUNT 4            /* the party square and three squares ahead */
 #define CHAMPION_SYMBOL_COUNT 4
 #define STAMINA_DISPLAY_UNIT 10       /* the inventory shows stamina in tenths of the stored value */
@@ -748,10 +750,19 @@ static char map_char(int16_t x, int16_t y)
     return is_pressure_pad(view_floor_ornament(x, y)) ? '_' : '.';
 }
 
+/* Map row y in out: one character per square, a space for a square not explored. */
+static void map_row(int16_t y, int16_t w, char *out)
+{
+    for (int16_t x = 0; x < w; x++)
+        out[x] = x == g_party_map_x && y == g_party_map_y ? '@' : is_seen(x, y) ? map_char(x, y) : ' ';
+    out[w] = 0;
+}
+
 void state_json_map(Json *j)
 {
     int16_t w = dungeon_map_width(g_party_map_index), h = dungeon_map_height(g_party_map_index);
-    char row[64];
+    char line[MAP_GRID_PREFIX + MAP_MAX_SIZE + 1];
+    if (w > MAP_MAX_SIZE) w = MAP_MAX_SIZE;
     json_open(j, '{');
     key_int(j, "map", g_party_map_index);
     key_int(j, "level", map_level(g_party_map_index));
@@ -762,17 +773,24 @@ void state_json_map(Json *j)
     key_str(j, "legend", "row index = y (north at the top), column = x; @ party, # wall, . floor, D closed door, "
                          "d open door, < stairs up, > stairs down, O pit, T teleporter, _ pressure pad, space not explored; walls with a seen "
                          "feature: M mirror, L switch (button or lever), K lock (keyhole or object slot), H torch holder, V vi altar, "
-                         "A alcove, F fountain, ? text");
+                         "A alcove, F fountain, ? text; grid: the rows with x mod 10 above and y in front");
     json_key(j, "rows");
     json_open(j, '[');
     for (int16_t y = 0; y < h; y++) {
-        int16_t x = 0;
-        for (; x < w && x < (int16_t)sizeof row - 1; x++) {
-            if (x == g_party_map_x && y == g_party_map_y) row[x] = '@';
-            else row[x] = is_seen(x, y) ? map_char(x, y) : ' ';
-        }
-        row[x] = 0;
-        json_str(j, row);
+        map_row(y, w, line);
+        json_str(j, line);
+    }
+    json_close(j, ']');
+    json_key(j, "grid");
+    json_open(j, '[');
+    memset(line, ' ', MAP_GRID_PREFIX);
+    for (int16_t x = 0; x < w; x++) line[MAP_GRID_PREFIX + x] = (char)('0' + x % 10);
+    line[MAP_GRID_PREFIX + w] = 0;
+    json_str(j, line);
+    for (int16_t y = 0; y < h; y++) {
+        snprintf(line, sizeof line, "%2d ", y);
+        map_row(y, w, line + MAP_GRID_PREFIX);
+        json_str(j, line);
     }
     json_close(j, ']');
     json_close(j, '}');

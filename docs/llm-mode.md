@@ -167,7 +167,7 @@ There is one save slot. The save directory is the data directory (`game/`), the 
 | `drop_object` | `cell` 0-4, default 0 | 0-1: own square, 2-3: square ahead, 4: alcove ahead. |
 | `open_inventory` | `champion` | |
 | `close_inventory` | none | |
-| `put_in_slot`, `take_from_slot` | `champion`, `slot` | Swaps the leader hand with the slot. Slots other than 0 and 1 need the open inventory of the champion. |
+| `put_in_slot`, `take_from_slot` | `champion`, `slot` | Swaps the leader hand with the slot. Slots other than 0 and 1 need the open inventory of the champion. Slots 30-37 are the slots of the open chest. See [Chest](#chest). |
 | `eat`, `drink` | none | Gives the leader hand object to the champion with the open inventory. |
 | `choose_action` | `champion`, `index` | Index in the `actions` list of the champion. |
 | `pass` | none | Closes an open action menu. |
@@ -181,6 +181,10 @@ There is one save slot. The save directory is the data directory (`game/`), the 
 | `look` | `champion`, `slot` (both optional) | Presses the eye of the open inventory and releases it. Without `slot`: the object in the leader hand. With `slot`: the empty leader hand takes the object of the slot (`champion`, default the open inventory), the eye looks, and the hand puts the object back. See [Look](#look). |
 
 While a candidate is shown, only `recruit` is accepted. While the party sleeps, only `wake` is accepted. `wait` is always accepted.
+
+### Chest
+
+A chest in the action hand (slot 1) of the open inventory opens in the panel. `state.inventory.panel` is `chest`, and `state.inventory.chest` lists the chest slots that hold an object. The chest slots are 30-37: slot 30 is the first chest slot box, slot 37 the last. `take_from_slot`, `put_in_slot`, and `look` with `slot` use the same numbers. The action clicks the chest slot box in the panel (`panel_click_in_chest`), as a player does. The game rules apply: an object that does not fit in a chest (for example a sword) stays in the leader hand. Slot 38 and higher, or a chest slot without an open chest, gives `slot out of range`. When the chest leaves the action hand, or the inventory closes, the chest closes.
 
 ### Look
 
@@ -230,7 +234,17 @@ The view shows what a player sees. Creature health is not in the view, because t
 
 ### Map fields
 
-`map`, `level`, `width`, `height`, `party` (`[x, y]`), `facing`, `legend`, and `rows`. Row index is `y` (north at the top). Column is `x`. The characters are in `legend`.
+`map`, `level`, `width`, `height`, `party` (`[x, y]`), `facing`, `legend`, `rows`, and `grid`. Row index is `y` (north at the top). Column is `x`. The characters are in `legend`.
+
+- `rows`: one string per `y`. Each string has exactly `width` characters, one per `x`. A square that is not explored is a space.
+- `grid`: the same rows with indexes, for reading by eye. The first line is three spaces and then `x mod 10` for each column. Each next line is `y` in two characters, a space, and the row of `rows`. The character of square (`x`, `y`) is at position `3 + x` of line `y + 1`. `dm-play --brief get_map` prints `grid`.
+
+```text
+   0123456789
+ 0 ##########
+ 1 #...@....#
+ 2 ####D#####
+```
 
 A square is in the map when `automap_is_seen` (`port/src/automap.c`) says it was seen, or when it is in the current view (with the visibility rule). The game marks the seen squares after each tick, in all modes.
 
@@ -267,7 +281,7 @@ uv run dm-play load
 uv run dm-play new_game
 ```
 
-- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, and `BUMPED` after a bump), the party position, the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side squares with a wall face or a floor ornament, and the piles. After `look`, a `look: <name> | <line> | ...` line follows the turn line.
+- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, and `BUMPED` after a bump), the party position, the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side squares (also at depth 0, `here left` and `here right`) with a wall face, a floor ornament, or creatures, and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line.
 - `dm-play` does not import the `mcp` package. The socket helpers are in `src/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
 - A relative `path` becomes an absolute path, because the game runs in another directory.
 - The exit code is 1 when the response has `"ok": false`, also when the game is not running.
@@ -337,6 +351,9 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - A move into a wall gives `"bumped": true` and the same square. `act_many` stops with `bumped`. `--brief` ends the turn line with `BUMPED`.
 - `goto` with `facing` (a name or 0-3) turns the party at the target. A wrong `facing` returns `"ok": false`. The MCP tool and `dm-play` send `facing`.
 - `dm-play` does not import `mcp`.
+- A chest in the action hand opens. `take_from_slot`, `put_in_slot`, and `look` with a chest slot (30-37) click the chest slot box, and the state shows the change. Slot 38 gives `slot out of range`.
+- `--brief` prints the creatures on a side square, also at depth 0.
+- `get_map`: each row of `rows` has `width` characters. `grid` has the `x mod 10` header and the `y` in front of each row. `--brief get_map` prints `grid`.
 - On map 1, the nine pads of the room east of (14, 1) and the pad at (25, 1) give `floor_ornament` `pressure_pad` in the view and `_` in the map. The party row gives none. The floor sensor at (14, 14) has no ornament and gives none. `--brief` prints the pad, also on a side square.
 - `swap_champions` swaps the `position` of two champions. `look` on a slot returns the name of the sword and the weight line, and the sword is in its slot again. `look` on the leader hand gives the same text, with `ATTACK` in the advanced features. `--brief` prints the `look:` line.
 - `dm-play` returns exit code 1 and logs the call when the game is not running.

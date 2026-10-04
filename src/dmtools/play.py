@@ -77,7 +77,7 @@ def view_lines(view: dict) -> list[str]:
             break
         lines.append(f"{name}: {square_text(squares[depth, 'center'])}")
         for side in ("left", "right"):
-            if squares[depth, side].get("side_face") or "floor_ornament" in squares[depth, side]:
+            if any(key in squares[depth, side] for key in ("side_face", "floor_ornament", "creatures")):
                 lines.append(f"{name} {side}: {square_text(squares[depth, side])}")
     if view["piles"]:
         lines.append("piles: " + ", ".join(f"cell {p['cell']} {p['top']}" for p in view["piles"]))
@@ -98,7 +98,7 @@ def brief(response: dict) -> str:
     if "view" in response:
         lines += view_lines(response["view"])
     if "map" in response:
-        lines += response["map"]["rows"]
+        lines += response["map"]["grid"]
     return "\n".join(lines) or "ok"
 
 
