@@ -78,7 +78,8 @@ def view_lines(view: dict) -> list[str]:
         lines.append(f"{name}: {square_text(squares[depth, 'center'])}")
         for side in ("left", "right"):
             square = squares[depth, side]
-            if square["element"] == "pit" or any(key in square for key in ("door", "side_face", "floor_ornament", "creatures")):
+            opening = depth > 0 and square["element"] != "wall"  # a side passage the player sees
+            if opening or square["element"] == "pit" or any(key in square for key in ("door", "side_face", "floor_ornament", "creatures")):
                 lines.append(f"{name} {side}: {square_text(square)}")
     if view["piles"]:
         lines.append("piles: " + ", ".join(f"cell {p['cell']} {p['top']}" for p in view["piles"]))

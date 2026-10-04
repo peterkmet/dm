@@ -714,7 +714,8 @@ def test_brief_prints_doors_and_pits_on_side_squares():
     lines = view_lines(view)
     assert "ahead left: door, closed" in lines
     assert "here right: pit" in lines
-    assert not any(line.startswith(("here left:", "ahead right:")) for line in lines)
+    assert not any(line.startswith("here left:") for line in lines)  # depth 0 sides are in the "sides" line
+    assert "ahead right: floor" in lines  # a side passage ahead is shown
 
 
 def test_map_grid_has_indexes(game, monkeypatch, capsys):
