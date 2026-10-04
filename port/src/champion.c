@@ -1,4 +1,5 @@
 #include "champion.h"
+#include "adventure.h"
 #include "command.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -36,6 +37,8 @@ enum { EVENT_HIDE_DAMAGE_RECEIVED = 12, EVENT_POISON = 75 };
 #define HIDE_DAMAGE_TICKS 5
 #define POISON_STEP_TICKS 36
 #define REINCARNATION_POINTS 12
+#define CSB_REINCARNATION_STAT_LOSS_SHIFT 3       /* CSB: each statistic but luck loses 1/8 */
+#define CSB_REINCARNATION_BAR_SHIFT 2             /* CSB: health, stamina, and mana drop to 1/4 */
 #define RESURRECTION_MINIMUM_HEALTH 25
 #define SCENT_STRENGTH_MINIMUM 0
 #define PIT_ATTACK 20
@@ -53,7 +56,7 @@ int16_t g_champion_skill_level_up[CHAMPION_MAX_COUNT][SKILL_BASE_COUNT];
 enum {
     REC_NAME = 0x00, REC_TITLE = 0x08, REC_DIRECTION = 0x1c, REC_CELL = 0x1d, REC_ACTION = 0x20, REC_SYMBOL_STEP = 0x21,
     REC_SYMBOLS = 0x22, REC_DAMAGE_DIRECTION = 0x28, REC_MAXIMUM_DAMAGE = 0x29, REC_POISON_EVENTS = 0x2a, REC_WORDS = 0x2c,
-    REC_STATISTICS = 0x46, REC_SKILLS = 0x5c, REC_SLOTS = 0xd4, REC_LOAD = 0x110, REC_SHIELD = 0x112,
+    REC_STATISTICS = 0x46, REC_SKILLS = 0x5c, REC_SLOTS = 0xd4, REC_LOAD = 0x110, REC_SHIELD = 0x112, REC_MAGIC_MAP = 0x118,
 };
 #define REC_WORD_COUNT 13
 #define REC_SKILL_SIZE 6
@@ -87,6 +90,7 @@ void champion_pack(const Champion *c, uint8_t *out)
         WR16(out + REC_SLOTS + 2 * i, c->slots[i]);
     WR16(out + REC_LOAD, c->load);
     WR16(out + REC_SHIELD, c->shield_defense);
+    memcpy(out + REC_MAGIC_MAP, c->magic_map, sizeof c->magic_map);
 }
 
 void champion_unpack(const uint8_t *in, Champion *c)
@@ -112,17 +116,7 @@ void champion_unpack(const uint8_t *in, Champion *c)
         c->slots[i] = BE16(in + REC_SLOTS + 2 * i);
     c->load = BE16(in + REC_LOAD);
     c->shield_defense = (int16_t)BE16(in + REC_SHIELD);
-}
-
-/* A string of the game text table. Empty when Graphics.DAT is not open. */
-static const char *get_string(int16_t index)
-{
-    uint16_t size;
-    const char *p = (const char *)gfx_item(GFX_STRINGS, &size);
-    for (const char *end = p + (p ? size : 0); p && p < end; p += strlen(p) + 1)
-        if (!index--)
-            return p;
-    return "";
+    memcpy(c->magic_map, in + REC_MAGIC_MAP, sizeof c->magic_map);
 }
 
 /* "<prefix><name><suffix>" in the champion color on a new message line. */
@@ -130,9 +124,9 @@ static void print_champion_message(uint16_t champion_index, int16_t text)
 {
     int16_t color = kaos_u8(CHAMPION_COLORS + champion_index);
     message_new_line(g_game_time);
-    message_print(color, get_string(text), g_game_time);
+    message_print(color, ui_string(text), g_game_time);
     message_print(color, g_champions[champion_index].name, g_game_time);
-    message_print(color, get_string(text + 1), g_game_time);
+    message_print(color, ui_string(text + 1), g_game_time);
 }
 
 static void square_in_front(int16_t *x, int16_t *y)
@@ -235,10 +229,10 @@ static void add_candidate_possessions(uint16_t champion_index)
 /* The party stands in front of a mirror. The text on the party square holds the champion data. */
 void champion_add_candidate_to_party(int16_t portrait_index)
 {
-    (void)portrait_index; /* selects the portrait bitmap only */
     if (!g_leader_empty_handed || g_party_champion_count >= CHAMPION_MAX_COUNT)
         return;
     uint16_t index = g_party_champion_count;
+    champion_set_portrait((int16_t)index, portrait_index);
     Champion *c = &g_champions[index];
     memset(c, 0, sizeof *c);
     c->action_index = ACTION_NONE;
@@ -277,10 +271,21 @@ void champion_add_candidate_to_party(int16_t portrait_index)
     g_inventory_champion_ordinal = index + 1;
 }
 
-/* Reincarnation: all experience is lost and 12 random statistic points are gained. */
+/* Reincarnation: all experience is lost and 12 random statistic points are gained. In CSB, the statistics but luck
+   lose 1/8 first, down to their minimum, and health, stamina, and mana drop to 1/4. */
 static void reincarnate(Champion *c)
 {
     memset(c->skills, 0, sizeof c->skills);
+    if (g_adventure == ADVENTURE_CSB) {
+        for (int s = STAT_STRENGTH; s < STAT_COUNT; s++) {
+            int16_t value = c->statistics[s][STAT_CURRENT];
+            value = max16(c->statistics[s][STAT_MINIMUM], value - (value >> CSB_REINCARNATION_STAT_LOSS_SHIFT));
+            c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM] = (uint8_t)value;
+        }
+        c->current_health >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_health >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->current_stamina >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_stamina >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->current_mana >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_mana >>= CSB_REINCARNATION_BAR_SHIFT;
+    }
     for (int i = 0; i < REINCARNATION_POINTS; i++) {
         uint16_t s = random16() % STAT_COUNT;
         c->statistics[s][STAT_CURRENT]++;

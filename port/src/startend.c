@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include "startend.h"
+#include "adventure.h"
+#include "anim.h"
 #include "champion.h"
 #include "command.h"
+#include "csbimage.h"
 #include "dialog.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -15,7 +18,6 @@
 #include "map.h"
 #include "message.h"
 #include "projectile.h"
-#include "recruit.h"
 #include "savegame.h"
 #include "sound.h"
 #include "text.h"
@@ -75,6 +77,9 @@
 #define FUSE_FLASH_ROUNDS 3            /* the lord flashes 4 times per round; round n lasts n ticks per flash */
 #define FUSE_FLASHES_PER_ROUND 4
 #define SAVE_DIR_SIZE 1024
+#define CSB_RESTART_TEXT_X 110         /* RESTART THIS GAME text position of the CSB endgame */
+#define CSB_RESTART_TEXT_Y 154
+#define CSB_ENDING_FILE "ENDA.DAT"     /* the CSB ending animation, in the disk A folder */
 
 /* Choices of the save dialog without the format choice. */
 enum { SAVE_CHOICE_CANCEL = 1, SAVE_CHOICE_SAVE = 2, SAVE_CHOICE_QUIT = 3 };
@@ -83,7 +88,7 @@ enum { LOAD_CHOICE_CANCEL = 2 };
 enum { SOUND_SCREAM_DEATH = 7, SOUND_FUSE = 14 };
 
 void (*g_frame_hook)(void);
-int16_t g_quit_requested, g_restart_requested, g_return_to_entrance;
+int16_t g_quit_requested, g_restart_requested, g_return_to_entrance, g_waiting_frame;
 static char save_dir[SAVE_DIR_SIZE] = ".";
 
 void startend_set_save_dir(const char *dir) { snprintf(save_dir, sizeof save_dir, "%s", dir); }
@@ -92,7 +97,9 @@ const char *startend_save_dir(void) { return save_dir; }
 int wait_frame(void)
 {
     if (!g_frame_hook || g_quit_requested) return 0;
+    g_waiting_frame++;
     g_frame_hook();
+    g_waiting_frame--;
     return !g_quit_requested;
 }
 
@@ -119,10 +126,52 @@ static int confirm_quit(void)
     return dialog_get_choice(2) != QUIT_CHOICE_CANCEL;
 }
 
+int save_current_game(const char **reason)
+{
+    char mini[SAVE_DIR_SIZE];
+    *reason = NULL;
+    if (g_adventure != ADVENTURE_CSB || g_dungeon_id != CSB_PRISON_DUNGEON_ID) return savegame_save(save_dir) ? SAVED_GAME : 0;
+    snprintf(mini, sizeof mini, "%s/%s", gameloop_data_dir(), CSB_MINI_FILE);
+    switch (savegame_make_adventure(save_dir, mini)) {
+    case ADVENTURE_MADE: return SAVED_NEW_ADVENTURE;
+    case ADVENTURE_NO_CHAMPIONS: *reason = "CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS."; return 0;
+    case ADVENTURE_NAMES_NOT_UNIQUE: *reason = "EACH CHAMPION MUST HAVE A UNIQUE FIRST NAME!"; return 0;
+    default: return 0;
+    }
+}
+
+/* CSB save_game: SAVE AND PLAY saves and goes on, SAVE AND QUIT saves and ends the game. The dialog
+   closes after a save; CSB has no quit without a save. */
+static void save_game_csb(void)
+{
+    game_freeze();
+    dialog_draw(NULL, NULL, ui_string(TEXT_CANCEL), ui_string(TEXT_SAVE), ui_string(TEXT_QUIT), NULL);
+    int16_t choice = dialog_get_choice(3);
+    if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
+        dialog_draw(NULL, ui_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
+        const char *reason;
+        int saved = save_current_game(&reason);
+        if (!saved) {
+            dialog_draw(reason ? reason : ui_string(TEXT_UNABLE_TO_SAVE), NULL, ui_string(TEXT_OK), NULL, NULL, NULL);
+            dialog_get_choice(1);
+        } else if (choice == SAVE_CHOICE_QUIT) {
+            endgame(0);
+            return;
+        } else if (saved == SAVED_NEW_ADVENTURE) {
+            gameloop_start_loaded_game();
+        }
+    }
+    game_unfreeze();
+}
+
 /* save_game without disks: the dialog stays after a save until CANCEL or QUIT. */
 void save_game(void)
 {
     const char *message = NULL;
+    if (g_adventure == ADVENTURE_CSB) {
+        save_game_csb();
+        return;
+    }
     game_freeze();
     for (;;) {
         dialog_draw(message, NULL, ui_string(TEXT_CANCEL), ui_string(TEXT_SAVE), ui_string(TEXT_QUIT), NULL);
@@ -227,17 +276,16 @@ static void print_champion_skills(uint16_t champion_index, int y)
 static void draw_champion_parade(void)
 {
     Bitmap screen = ui_screen();
-    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
     int16_t pw = kaos_s16(PORTRAIT_SIZE), ph = kaos_s16(PORTRAIT_SIZE + 2);
     memset(fb, COLOR_DARKEST_GRAY, sizeof fb);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         const Champion *c = &g_champions[i];
         ui_blit_graphic(&screen, GFX_CHAMPION_FRAME, (int16_t)(ZONE_CHAMPION_FRAME_FIRST + i), COLOR_FLESH);
-        int16_t x, y, w = pw, h = ph;
+        int16_t w = pw, h = ph;
         Box b;
-        recruit_portrait_origin(g_champion_portrait_indices[i], &x, &y);
-        if (portraits && layout_get_zone((int16_t)(ZONE_CHAMPION_PORTRAIT_FIRST + i), pw, ph, &b, &w, &h))
-            draw_blit(portraits, (int16_t)(x + w), (int16_t)(y + h), &screen, &b, COLOR_DARK_GRAY, 0);
+        Bitmap portrait = champion_portrait((int16_t)i);
+        if (layout_get_zone((int16_t)(ZONE_CHAMPION_PORTRAIT_FIRST + i), pw, ph, &b, &w, &h))
+            draw_blit(&portrait, w, h, &screen, &b, COLOR_DARK_GRAY, 0);
         char name[sizeof c->name + 1] = { 0 }, title[sizeof c->title + 1] = { 0 };
         memcpy(name, c->name, sizeof c->name);
         memcpy(title, c->title, sizeof c->title);
@@ -251,7 +299,23 @@ static void draw_champion_parade(void)
     ui_set_screen_palette(NULL);
 }
 
-/* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. */
+/* The box of a CSB endgame button: x, y, width, height words. */
+static Box csb_box(uint32_t address)
+{
+    return (Box){ kaos_s16(address), kaos_s16(address + 2), kaos_s16(address + 4), kaos_s16(address + 6) };
+}
+
+/* CSB: RESTART THIS GAME in its fixed boxes. The click box is in the endgame mouse table. */
+static void csb_draw_restart_button(void)
+{
+    Bitmap screen = ui_screen();
+    Box outer = csb_box(CSB_RESTART_BOXES), inner = csb_box(CSB_RESTART_BOXES + CSB_BOX_BYTES);
+    draw_fill(&screen, &outer, COLOR_DARK_GRAY);
+    draw_fill(&screen, &inner, COLOR_BLACK);
+    text_draw_screen(CSB_RESTART_TEXT_X, CSB_RESTART_TEXT_Y, COLOR_CYAN, COLOR_BLACK, ui_string(TEXT_RESTART_THIS_GAME));
+}
+
+/* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. CSB has no QUIT. */
 static void draw_the_end(int with_buttons)
 {
     Bitmap screen = ui_screen();
@@ -261,8 +325,12 @@ static void draw_the_end(int with_buttons)
     memset(fb, COLOR_BLACK, sizeof fb);
     ui_blit_graphic(&screen, GFX_THE_END, ZONE_THE_END, COLOR_NONE);
     if (with_buttons) {
-        endgame_draw_button(ZONE_RESTART_BUTTON, ui_string(TEXT_RESTART_THIS_GAME), 0);
-        endgame_draw_button(ZONE_QUIT_BUTTON, ui_string(TEXT_QUIT), 1);
+        if (g_adventure == ADVENTURE_CSB) {
+            csb_draw_restart_button();
+        } else {
+            endgame_draw_button(ZONE_RESTART_BUTTON, ui_string(TEXT_RESTART_THIS_GAME), 0);
+            endgame_draw_button(ZONE_QUIT_BUTTON, ui_string(TEXT_QUIT), 1);
+        }
         colors[COLOR_DARK_GRAY] = BUTTON_FRAME_COLOR;
         colors[COLOR_CYAN] = THE_END_WHITE;
     }
@@ -448,8 +516,23 @@ void fuse_sequence(void)
     endgame(1);
 }
 
+/* CSB won game: the ending animation, then the CSB screen after a key or a click (the original stays on the last frame). */
+static void csb_ending(void)
+{
+    char path[SAVE_DIR_SIZE];
+    g_game_screen_inactive = 1;
+    snprintf(path, sizeof path, "%s/%s", gameloop_data_dir(), CSB_ENDING_FILE);
+    if (!anim_play(path)) wait_for_input();
+    g_return_to_entrance = 1;
+}
+
 void endgame_sensor(uint16_t delay)
 {
+    if (g_adventure == ADVENTURE_CSB) { /* no delay, and the saved game stays */
+        g_game_won = 1;
+        csb_ending();
+        return;
+    }
     wait_frames((int16_t)(delay * SENSOR_DELAY_FRAMES));
     g_saved_game_exists = 0;
     g_game_won = 1;

@@ -51,7 +51,16 @@ The detailed plan is in [docs/superpowers/2026-10-04-dm-c-port-plan.md](docs/sup
 
    For each module, the script writes `decomp/<MODULE>.bin` (memory image), `decomp/<MODULE>.c` (decompiled C), and `decomp/<MODULE>.c.log` (Ghidra log). A full run takes about 20 seconds.
 
-The `.gitignore` file excludes `*.adf`, `game/`, and `decomp/`. Do not commit game content.
+5. Optional: extract the two Chaos Strikes Back (CSB) disks. Disk A goes to `game-csb/`, disk B goes to `game-csb/disk-b/`. The disks have files with the same name, so each disk needs its own folder.
+
+   ```sh
+   uv run dm-extract "<disk A>.adf" game-csb
+   uv run dm-extract "<disk B>.adf" game-csb/disk-b
+   ```
+
+   Replace `<disk A>` and `<disk B>` with the paths to your CSB ADF files.
+
+The `.gitignore` file excludes `*.adf`, `game/`, `game-csb/`, and `decomp/`. Do not commit game content.
 
 ## Tools
 
@@ -77,17 +86,55 @@ Build the game and the test library. The output goes to `build/`.
 make -C port
 ```
 
-Run the game. It needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/`. `--data DIR` selects another folder.
+Run the game. Dungeon Master needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/`. `--data DIR` selects another folder for the selected adventure.
 
 ```sh
 build/dm
 ```
 
-The game starts at the entrance. Click ENTER or press Return to start a new game. Click RESUME to continue the saved game. QUIT or Ctrl+Q closes the program. Closing the window also closes the game.
+### Start screens
+
+Without `--adventure` and `--mode`, the game shows two screens in the game font:
+
+1. Adventure: DUNGEON MASTER or CHAOS STRIKES BACK. CHAOS STRIKES BACK is gray and cannot be selected when `game-csb/` does not have `APPB.FTL`, `Graphics.DAT`, `Dungeon.DAT`, and `disk-b/MINI.DAT`.
+2. Mode: VANILLA, ADVANCED, or LLM (`turnbased`). Escape goes back to the adventure screen.
+
+Up and Down move the cursor. Return or keypad Enter selects the item. A click on an item selects it. Ctrl+Q or closing the window quits.
+
+After DUNGEON MASTER, the game shows the entrance. After CHAOS STRIKES BACK, the game shows a third screen: NEW ADVENTURE, RESUME, and QUIT. Escape goes back to the mode screen until the first game starts. After that, Escape does nothing on the CSB screen. See [Chaos Strikes Back](#chaos-strikes-back).
+
+| Flags | Screens |
+|---|---|
+| None | Adventure and mode |
+| `--adventure` only | Mode |
+| `--mode` only | None. The adventure is Dungeon Master. |
+| `--adventure` and `--mode` | None. CSB shows its third screen. In `turnbased` mode, the game selects NEW ADVENTURE. |
+| `--show`, `--view`, or `DM_AUTO_ENTER=1` | None. The adventure is Dungeon Master unless `--adventure` selects CSB. The mode is `vanilla` unless `--mode` selects another mode. With `DM_AUTO_ENTER=1` and `--adventure csb`, the game selects NEW ADVENTURE. |
+
+The game font comes from `Graphics.DAT` in the `--data` folder, else in `game/`, else in `game-csb/`.
+
+### Entrance
+
+The entrance of Dungeon Master: click ENTER or press Return to start a new game. Click RESUME to continue the saved game. QUIT or Ctrl+Q closes the program. Closing the window also closes the game.
+
+### Chaos Strikes Back
+
+1. Select NEW ADVENTURE on the CSB screen. The game starts in the prison (`game-csb/Dungeon.DAT`).
+2. Recruit one to four champions at the 24 mirrors.
+3. Save the game. In the prison, the save makes the new adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, loads it, and continues in the CSB dungeon. The original needs a restart with the utility disk for this step.
+
+The new adventure starts on level 4 at (22, 18), facing south. Each champion has full health, stamina, and mana, no objects, and food and water of 1500 to 1755. The save needs at least one champion, and each champion needs a unique first name. Else a dialog gives the reason and the game stays in the prison.
+
+- RESUME loads `CSBGAME.DAT`, or `CSBGAME.BAK` when `CSBGAME.DAT` is missing. When the file is missing or damaged, the dialogs are the same as in Dungeon Master, and the game shows the CSB screen again.
+- The save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. SAVE AND PLAY saves and continues the game. SAVE AND QUIT saves, shows the credits, and then shows the CSB screen. In the prison, SAVE AND QUIT makes the new adventure and then quits: RESUME starts it. The dialog closes after a save. CSB has no quit without a save, as in the original.
+- After the credits (SAVE AND QUIT, the end of the game), the game shows the CSB screen. In turn-based mode, the game shows the entrance picture, and `load` or `new_game` over the socket starts the next game. QUIT on the CSB screen, Ctrl+Q, or closing the window ends the program.
+- The end of the game: when the party dies, THE END shows with RESTART THIS GAME only (no QUIT), then the credits. When the party wins, the game plays the ending animation `ENDA.DAT`. After the last frame, a key or a click shows the CSB screen (the original stays on the last frame).
+- Quick save (F5) and quick load (F9) use `QUICK.DAT` in the CSB folder. A quick save in the prison is a plain save: it does not make the new adventure.
+- Turn-based mode: `new_game` starts NEW ADVENTURE (the prison). `save` in the prison makes the new adventure. `load` loads `CSBGAME.DAT`.
 
 ### Saved games
 
-The game saves to `DMGAME.DAT` in the data folder (`game/`, or the folder of `--data`). Before a save, the old `DMGAME.DAT` becomes `DMGAME.BAK`. The file has the format of the original Amiga save file, see [save-format.md](docs/save-format.md).
+The game saves to `DMGAME.DAT` in the data folder (`game/`, or the folder of `--data`). The save file of CSB is `CSBGAME.DAT` (backup `CSBGAME.BAK`) in the CSB data folder (`game-csb/`, or the folder of `--data`). Before a save, the old `DMGAME.DAT` becomes `DMGAME.BAK`. The file has the format of the original Amiga save file, see [save-format.md](docs/save-format.md).
 
 - Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. After SAVE the dialog stays open. CANCEL continues the game. QUIT ends the game. When the game was not saved or loaded in the last 100 ticks, QUIT asks first.
 - Resume: click RESUME at the entrance. The game loads `DMGAME.DAT`, or `DMGAME.BAK` when `DMGAME.DAT` is missing. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
@@ -132,13 +179,14 @@ The controls are the controls of the original Amiga game.
 | Mode | Behavior |
 |---|---|
 | `vanilla` | Default. The original game. The advanced keys do nothing. |
-| `advanced` | The original game with the advanced features on. F6 turns them off and on. |
+| `advanced` | The original game with the advanced features. |
 | `turnbased` | The advanced features, and a program plays through a Unix socket. The game time stands still between turns. See [llm-mode.md](docs/llm-mode.md). |
 
 The advanced features are not in the original game:
 
-- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open.
-- Debug read-out: level, X and Y, facing, and light amount in the top-left corner of the view. Display only.
+- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. The top-left corner of the map shows the level, X and Y, facing, and light amount.
+- Quick save and quick load: one save slot in `QUICK.DAT` in the data folder. `DMGAME.DAT` does not change. The message area shows GAME SAVED, GAME LOADED, NO QUICK SAVE, or QUICK SAVE DAMAGED.
+- W, A, S, D, Q, and E move and turn the party. The cursor keys and the keypad also work.
 - Rune symbols in red after each rune name on an open scroll.
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack for a weapon, defense for armour, and weight.
@@ -149,26 +197,31 @@ Keys of the `advanced` mode:
 
 | Key | Action |
 |---|---|
-| F6 | Turn the advanced features off or on |
 | M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, and Escape work. |
 | Escape | Close the automap or the open inventory, else freeze the game |
-| F5 | Show or hide the debug read-out |
+| F5 | Quick save. Only in the dungeon view. |
+| F9 | Quick load. Only in the dungeon view. |
+| W, S | Move forward, move backward |
+| A, D | Move left, move right (sideways) |
+| Q, E | Turn left, turn right |
 
 F1 to F4 open the inventories in every mode.
 
 In the `advanced` and `turnbased` modes, the save file has an extension block after the original save data. The block keeps the explored squares of the automap. The original part of the file is the same as in a vanilla save, and vanilla loads the file. A file without the block, or with a damaged block, loads with an empty automap.
 
-In the `turnbased` mode, the game enters the dungeon at the start. The keyboard and the mouse do not control the game. Closing the window quits.
+In the `turnbased` mode, the game enters the dungeon at the start. The control socket opens after the start screens. A script that waits for the socket must pass `--mode turnbased` to skip the screens. The keyboard and the mouse do not control the game. Closing the window quits.
 
 Options:
 
+- `--adventure dm|csb` selects the adventure: Dungeon Master (data in `game/`) or Chaos Strikes Back (data in `game-csb/`). With `--adventure csb`, the program stops with exit code 1 when the CSB files are missing.
 - `--mode vanilla|advanced|turnbased` selects the game mode.
+- `--data DIR` selects the data folder (disk A) of the selected adventure. The CSB file check uses `DIR` only with `--adventure csb`. Else it uses `game-csb/`.
 - `--control PATH` selects the socket of the `turnbased` mode. The default is `~/.dm/control.sock`.
 - `--filter none|scale2x|scale3x` selects the pixel-art upscale filter.
 - `--frames N` quits after N frames (50 frames per second).
 - `--view` shows only the dungeon view at the party start. Up and Down move, Left and Right turn, A and D move sideways.
 - `--show N` shows graphic N of `Graphics.DAT`.
-- The environment variable `DM_AUTO_ENTER=1` presses ENTER at the start. The tests use it.
+- The environment variable `DM_AUTO_ENTER=1` skips the start screens and presses ENTER at the entrance. The tests use it.
 
 Not available yet: the credits fade, the door animation of the entrance, and the rename of a reincarnated champion. The dialogs and the endgame screens do not fade the palette.
 

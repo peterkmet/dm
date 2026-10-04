@@ -731,7 +731,7 @@ static uint16_t group_get_distance_to_visible_party(uint16_t group, int16_t crea
 }
 
 /* Ordinal of the latest party scent on a square (champion_get_scent_ordinal), or 0. */
-static uint16_t party_scent_ordinal(int16_t x, int16_t y)
+uint16_t party_scent_ordinal(int16_t x, int16_t y)
 {
     uint16_t scent = x << 11 | (y & 31) << 6 | (g_current_map_index & 63);
     for (uint16_t ordinal = g_party.scent_count; ordinal; ordinal--)

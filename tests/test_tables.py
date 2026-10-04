@@ -62,7 +62,7 @@ TABLES = {
 @pytest.fixture(scope="module")
 def lib(tmp_path_factory):
     out = tmp_path_factory.mktemp("tables") / "libtables.dylib"
-    src = [str(ROOT / "port/src" / f) for f in ("tables.c", "ftl.c")]
+    src = [str(ROOT / "port/src" / f) for f in ("tables.c", "ftl.c", "adventure.c", "csbimage.c", "csbtext.c")]
     r = subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-dynamiclib", "-o", str(out), *src],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr

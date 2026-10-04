@@ -25,6 +25,14 @@ You play Dungeon Master (Amiga v3.60) through the turn-based mode of this C port
 3. Run `uv run dm-play --brief get_state`. If the position or the time does not match `progress.md`, run `uv run dm-play load` and check again.
 4. If `.playthrough/` is empty, start a new playthrough: `uv run dm-play new_game`.
 
+## Chaos Strikes Back start
+
+When `state.adventure` is `"csb"`, the game starts in the prison.
+
+1. Recruit up to four champions at the mirrors, as in Dungeon Master.
+2. Run `uv run dm-play save`. The save makes the adventure and the game continues at the start of the CSB dungeon.
+3. Run `uv run dm-play --brief get_state`. The answer of `save` has no state.
+
 ## Files you keep
 
 Keep each file short. Update it at the moments given. Another session continues from these files only. `dm-play` writes `.playthrough/calls.log` itself (one line per call: time, command, result, level, position, game time); use it for the cost table.

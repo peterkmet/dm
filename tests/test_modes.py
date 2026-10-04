@@ -20,10 +20,12 @@ ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 SCRATCH = Path("/private/tmp/claude-501/-Users-lego-github-dm/a035dd1c-2cf2-40ec-9360-f301ae6b451f/scratchpad")
 VANILLA, ADVANCED, TURNBASED = 0, 1, 2
-KEY_TAB, KEY_M, KEY_F5, KEY_F6 = 0x4200, 0x3700, 0x5400, 0x5500
+KEY_TAB, KEY_M, KEY_F5, KEY_F9 = 0x4200, 0x3700, 0x5400, 0x5800
+KEY_DOWN, KEY_RIGHT, KEY_LEFT, KEY_DEL, KEY_HELP = 0x4D00, 0x4E00, 0x4F00, 0x4600, 0x5F00
+QUICK = "QUICK.DAT"
 THING_WEAPON, THING_ARMOUR, THING_SCROLL = 5, 6, 7
 ZONE_VIEWPORT, ZONE_ACTION_AREA, ZONE_PANEL = 7, 11, 101
-COLOR_BLACK, COLOR_CYAN, COLOR_RED, COLOR_YELLOW = 0, 4, 8, 11
+COLOR_BLACK, COLOR_CYAN, COLOR_RED, COLOR_YELLOW, COLOR_WHITE = 0, 4, 8, 11, 15
 SLOT_HAND_ACTION = 1
 SAVE = "DMGAME.DAT"
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
@@ -123,23 +125,61 @@ def unfreeze(game):
     assert game.value("g_game_frozen") == 0
 
 
-def test_vanilla_is_the_default_and_f6_does_nothing(game):
+def test_vanilla_is_the_default_and_the_advanced_keys_do_nothing(game, tmp_path):
     assert game.value("g_game_mode") == VANILLA and game.value("g_advanced_features") == 0
-    for key in (KEY_F6, KEY_F5, KEY_M, KEY_TAB):
+    game.lib.startend_set_save_dir(str(tmp_path).encode())
+    position = game.position()
+    for key in (KEY_F5, KEY_F9, KEY_M, KEY_TAB):
         press(game, key)
-    assert game.value("g_advanced_features") == 0
-    assert game.value("g_automap_open") == 0 and game.value("g_debug_readout") == 0
-    assert game.value("g_inventory_champion_ordinal") == 0
+    assert game.value("g_automap_open") == 0 and not (tmp_path / QUICK).exists()
+    assert game.value("g_inventory_champion_ordinal") == 0 and game.position() == position
+    assert [game.lib.advanced_letter_key(ord(c)) for c in "wsadqe"] == [0] * 6
 
 
-def test_f6_toggles_the_advanced_features(game):
+def test_letter_keys_move_and_turn_outside_vanilla(game):
     set_mode(game, ADVANCED)
-    press(game, KEY_F6)
-    assert game.value("g_advanced_features") == 0
-    press(game, KEY_M)
-    assert game.value("g_automap_open") == 0
-    press(game, KEY_F6)
-    assert game.value("g_advanced_features") == 1
+    keys = [game.lib.advanced_letter_key(ord(c)) for c in "wsadqex"]
+    assert keys == [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_DEL, KEY_HELP, 0]
+    set_mode(game, VANILLA)
+
+
+def message_text(game):
+    rows = (ctypes.c_char * (4 * 53)).in_dll(game.lib, "g_message")
+    return bytes(rows).replace(b"\0", b" ").decode("latin-1")
+
+
+def test_quick_save_and_quick_load(game, tmp_path):
+    lib = game.lib
+    set_mode(game, ADVANCED)
+    lib.startend_set_save_dir(str(tmp_path).encode())
+    press(game, KEY_F9)
+    assert "NO QUICK SAVE" in message_text(game)
+    position, time_saved = game.position(), game.value("g_game_time", u32)
+    press(game, KEY_F5)
+    assert (tmp_path / QUICK).exists() and not (tmp_path / SAVE).exists()
+    assert "GAME SAVED" in message_text(game)
+    game.face((position[2] + 2) & 3)
+    game.run(30)
+    assert game.position() != position
+    press(game, KEY_F9)
+    assert game.position() == position
+    assert game.value("g_game_time", u32) < time_saved + 30
+    assert "GAME LOADED" in message_text(game)
+    assert game.value("g_game_screen_inactive") == 0 and game.value("g_game_time_ticking") == 1
+    assert game.value("g_saved_game_exists") == 0  # a quick save is not a saved game for RESTART
+    good = (tmp_path / QUICK).read_bytes()
+    for offset in (600, len(good) // 2):  # a checked block, then the dungeon part
+        damaged = bytearray(good)
+        damaged[offset] ^= 0xFF
+        (tmp_path / QUICK).write_bytes(bytes(damaged))
+        position = game.position()
+        press(game, KEY_F9)
+        assert "QUICK SAVE DAMAGED" in message_text(game)
+        assert game.value("g_party_champion_count", u16) == 1
+        game.face((position[2] + 1) & 3)  # turns and moves read the squares of the running dungeon
+        press(game, KEY_UP, 30)
+        game.run(100)
+    lib.startend_set_save_dir(b".")
     set_mode(game, VANILLA)
 
 
@@ -185,16 +225,40 @@ def test_automap_opens_only_in_the_dungeon_view(game):
     set_mode(game, VANILLA)
 
 
-def test_debug_readout(game):
+def test_quick_keys_work_only_in_the_dungeon_view(game, tmp_path):
+    lib = game.lib
     set_mode(game, ADVANCED)
-    before = pixels(game, ZONE_VIEWPORT)
+    lib.startend_set_save_dir(str(tmp_path).encode())
+    press(game, KEY_F1)
     press(game, KEY_F5)
-    assert game.value("g_debug_readout") == 1
-    after = pixels(game, ZONE_VIEWPORT)
-    assert before[:224 * 14] != after[:224 * 14]
-    screenshot(game, "adv_debug.png")
+    assert not (tmp_path / QUICK).exists()
+    press(game, KEY_F1)
+    waiting = c16.in_dll(lib, "g_waiting_frame")
+    waiting.value = 1  # a sequence or an endgame wait runs the frame
     press(game, KEY_F5)
-    assert game.value("g_debug_readout") == 0
+    waiting.value = 0
+    assert not (tmp_path / QUICK).exists()
+    press(game, KEY_F5)
+    assert (tmp_path / QUICK).exists()
+    lib.startend_set_save_dir(b".")
+    set_mode(game, VANILLA)
+
+
+def test_automap_shows_the_position_readout(game):
+    lib = game.lib
+    set_mode(game, ADVANCED)
+    game.run(13)
+    lib.gameloop_draw_view()
+    view = pixels(game, ZONE_VIEWPORT)
+    set_mode(game, VANILLA)
+    lib.gameloop_draw_view()
+    assert pixels(game, ZONE_VIEWPORT) == view  # the dungeon view has no read-out
+    set_mode(game, ADVANCED)
+    press(game, KEY_M)
+    with_readout = pixels(game, ZONE_VIEWPORT)
+    assert COLOR_WHITE in with_readout[:224 * 14]  # the read-out text in the top rows
+    screenshot(game, "adv_automap_readout.png")
+    press(game, KEY_M)
     set_mode(game, VANILLA)
 
 

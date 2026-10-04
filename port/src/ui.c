@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
+#include "adventure.h"
+#include "csbtext.h"
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
@@ -30,6 +32,7 @@ static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
 #define ICON_SHEET_COUNT 7
 #define ICONS_PER_ROW 16
 #define LEADER_HAND_NAME_LENGTH 14
+#define NAME_END_BIT 0x80         /* CSB object names: set in the last character */
 
 /* Mouse input entry: 6 words. */
 enum { INPUT_COMMAND, INPUT_X1, INPUT_X2, INPUT_Y1, INPUT_Y2, INPUT_BUTTONS, INPUT_WORDS };
@@ -48,21 +51,28 @@ static uint8_t viewport_px[224 * 136];
 static Bitmap viewport;
 static int16_t slot_box_icon[SLOT_BOX_COUNT];
 
-/* Splits a graphic of NUL-terminated strings into a list. */
+/* Splits a graphic of NUL-terminated strings into a list. CSB takes the strings and action names from
+   the engine, and ends each object name at a byte with bit 7 set. */
 static int load_strings(int graphic, StringList *list)
 {
     uint16_t size;
-    const uint8_t *p = gfx_item(graphic, &size);
+    int csb = g_adventure == ADVENTURE_CSB, bit7_ends = csb && graphic == GFX_OBJECT_NAMES;
+    const uint8_t *p = csb ? csb_text_item(graphic, &size) : NULL;
+    if (!p) p = gfx_item(graphic, &size);
     if (!p) return -1;
     free(list->data);
     free(list->s);
-    list->data = malloc((size_t)size + 1);
+    list->data = malloc(2 * (size_t)size + 1);
     list->s = malloc(((size_t)size + 1) * sizeof *list->s);
     if (!list->data || !list->s) return -1;
-    memcpy(list->data, p, size);
-    list->data[size] = 0;
+    size_t n = 0;
+    for (uint16_t i = 0; i < size; i++) {
+        list->data[n++] = (char)(bit7_ends ? p[i] & ~NAME_END_BIT : p[i]);
+        if (bit7_ends && p[i] & NAME_END_BIT) list->data[n++] = 0;
+    }
+    list->data[n] = 0;
     list->count = 0;
-    for (char *c = list->data; c < list->data + size; c += strlen(c) + 1) list->s[list->count++] = c;
+    for (char *c = list->data; c < list->data + n; c += strlen(c) + 1) list->s[list->count++] = c;
     return 0;
 }
 

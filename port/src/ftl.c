@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "adventure.h"
+#include "csbimage.h"
 #include "ftl.h"
 
 #define FTL_MAX_SIZE (4u << 20)
@@ -221,9 +223,13 @@ int kaos_load(const char *path)
 {
     size_t len;
     uint8_t *raw = read_file(path, &len);
+    FtlImage appb = { 0 };
+    int csb = g_adventure == ADVENTURE_CSB;
     ftl_free(&kaos);
-    int r = raw ? ftl_load(raw, len, KAOS_BASE, &kaos) : -1;
+    int r = raw ? ftl_load(raw, len, KAOS_BASE, csb ? &appb : &kaos) : -1;
     free(raw);
+    if (!r && csb) r = csb_image_build(&appb, &kaos);
+    ftl_free(&appb);
     return r;
 }
 

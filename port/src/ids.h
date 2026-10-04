@@ -16,7 +16,9 @@
 #define GFX_PANEL_ARROW 18
 #define GFX_PANEL_EYE 19
 #define GFX_PANEL_EMPTY 20
+#define GFX_MAGIC_MAP_TILES 12          /* CSB: the 7 x 7 pixel tiles of the magic map */
 #define GFX_PANEL_SCROLL 23
+#define GFX_PANEL_MAGIC_MAP 24          /* CSB */
 #define GFX_PANEL_CHEST 25
 #define GFX_PANEL_OBJECT_CIRCLE 29
 #define GFX_CHAMPION_PORTRAITS 26
@@ -81,6 +83,8 @@
 #define ZONE_PANEL_OBJECT_NAME 506
 #define ZONE_PANEL_OBJECT_TEXT 556       /* x of the object description lines */
 #define ZONE_PANEL_SCROLL_CENTER 560
+#define ZONE_MAGIC_MAP 614               /* CSB: the top left square of the 7 x 7 grid */
+#define ZONE_MAGIC_MAP_RUNE_FIRST 615    /* CSB: + KU, ROS, DAIN, NETA */
 #define ZONE_MOUTH 545
 #define ZONE_EYE 546
 #define ZONE_HEALTH_LABEL 547            /* stamina + 1, mana + 2 */
@@ -105,6 +109,10 @@
 #define ICON_EMPTY_ACTION_HAND 201       /* action area */
 
 /* Strings of graphic 700. */
+#define TEXT_CLASS_FIRST 0               /* + index of g_base_skill_string_indices */
+#define TEXT_SKILL_LEVEL_FIRST 4         /* + index of g_skill_level_string_indices: level 2-16 */
+#define TEXT_DIRECTION_FIRST 22          /* + index of g_direction_string_indices */
+#define TEXT_STATISTIC_FIRST 41          /* + index of g_statistic_string_indices */
 #define TEXT_PARTY_FACING 21
 #define TEXT_CONSUMABLE 26               /* + object attribute bit: consumable, poisoned, broken, cursed */
 #define TEXT_AND 30
@@ -120,6 +128,16 @@
 #define TEXT_MANA 50
 #define TEXT_CANT_REACH 71
 #define TEXT_NEED_AMMO 72
+#define TEXT_FLIP_HEADS 69
+#define TEXT_FLIP_TAILS 70
+/* Spell failure messages: a prefix, the name, and a suffix (+ 1). */
+#define TEXT_SPELL_FAILURE_WIZARD 51
+#define TEXT_SPELL_FAILURE_PRIEST 53
+#define TEXT_SPELL_FAILURE_MEANINGLESS 55
+#define TEXT_SPELL_FAILURE_FLASK 57
+#define TEXT_SPELL_FAILURE_MAGIC_MAP 59  /* CSB */
+#define TEXT_NO_CREATURE 107             /* CSB scroll text CREANAME */
+#define TEXT_CREATURE_NAME_FIRST 108     /* + creature type */
 
 /* Dungeon view things: graphics. */
 #define GFX_FIELD_MASK_FIRST 70          /* + field aspect mask */
@@ -223,15 +241,30 @@
 /* Save, load, and endgame texts. */
 #define TEXT_RESTART_THIS_GAME 77
 #define TEXT_GAME_LOADED 78
+#define TEXT_NOT_MASTER_DISK 79
 #define TEXT_CANT_FIND_SAVED_GAME 80
 #define TEXT_UNABLE_TO_SAVE 81
+#define TEXT_UNABLE_TO_FORMAT 82
+#define TEXT_FORMAT_ANYWAY 83
+#define TEXT_WRITE_PROTECTED 84
+#define TEXT_NOT_SAME_GAME 85
 #define TEXT_GAME_DAMAGED 86
 #define TEXT_SAVING_GAME 87
 #define TEXT_LOADING_GAME 88
-#define TEXT_NOT_SAVED_OK_TO_QUIT 93
+#define TEXT_FORMATTING_DISK 89
+#define TEXT_DISK_UNREADABLE 90
+#define TEXT_NO_DISK_IN_DRIVE 91
+#define TEXT_GAME_SAVE_DISK 92
+#define TEXT_NOT_SAVED_OK_TO_QUIT 93     /* empty in CSB */
+#define TEXT_CANT_MODIFY_GAME_DISK 94
+#define TEXT_IS_GAME_DISK 95
+#define TEXT_PUT_GAME_DISK 96
+#define TEXT_PUT_SAVE_DISK 97
+#define TEXT_PUT_BLANK_DISK 98
 #define TEXT_LOAD_SAVED_GAME 101
-#define TEXT_SAVE 102
-#define TEXT_QUIT 103
+#define TEXT_SAVE 102                    /* CSB: SAVE AND PLAY */
+#define TEXT_QUIT 103                    /* CSB: SAVE AND QUIT */
+#define TEXT_FORMAT_FLOPPY 104
 #define TEXT_OK 105
 #define TEXT_CANCEL 106
 

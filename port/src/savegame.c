@@ -2,28 +2,31 @@
 #include <stdlib.h>
 #include <string.h>
 #include "savegame.h"
+#include "adventure.h"
 #include "advanced.h"
 #include "automap.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
-#include "graphics.h"
 #include "ids.h"
 #include "inventory.h"
+#include "map.h"
 #include "random.h"
-#include "recruit.h"
 #include "savefile.h"
 #include "ui.h"
 
-#define PORTRAIT_SIZE 0x102958        /* g_portrait_width, g_portrait_height */
-#define MIN_ACTIVE_GROUP_COUNT 110    /* load_game raises the saved maximum to at least this */
+#define MIN_ACTIVE_GROUP_COUNT 110    /* DM load_game raises the saved maximum to at least this; CSB keeps it */
 #define BITPLANE_COUNT 4
 #define PIXELS_PER_WORD 16
 #define PATH_SIZE 1024
 #define TIMELINE_ENTRY_BYTES 2        /* one event index per timeline entry */
 #define EXTENSION_LENGTH_BYTES 4      /* the length of the automap block, after the block */
 #define SCENT_COUNT (int)(sizeof g_party.scents / sizeof g_party.scents[0])
+#define NEW_ADVENTURE_FOOD_WATER 1500  /* food and water of a merged champion: this + a random byte */
+#define NEW_ADVENTURE_RANDOM_MASK 0xff
+#define NEW_ADVENTURE_STAT_MINIMUM 30
+#define NEW_ADVENTURE_LUCK_MINIMUM 10
 
 /* Block 0: byte offsets of the globals. */
 enum {
@@ -174,42 +177,38 @@ static void unpack_active_group(const uint8_t *p, ActiveGroup *a)
     memcpy(&a->directions, p + A_BYTES, SAVE_ACTIVE_GROUP_BYTES - A_BYTES);
 }
 
-/* A portrait of graphic 26 in the interleaved form of champion_portraits_to_interleaved: per row
-   and per 16-pixel column, one word for each bit plane. */
-static void portrait_interleaved(int16_t portrait_index, uint8_t *out)
+#define PORTRAIT_COLUMNS ((CHAMPION_PORTRAIT_WIDTH + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD)
+
+/* champion_portraits_to_interleaved: per row and per 16-pixel column, one word for each bit plane. */
+static void portrait_to_interleaved(const uint8_t *px, uint8_t *out)
 {
-    const Bitmap *sheet = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
-    int16_t w = kaos_s16(PORTRAIT_SIZE), h = kaos_s16(PORTRAIT_SIZE + 2), x0, y0;
-    memset(out, 0, SAVE_PORTRAIT_BYTES);
-    if (!sheet) return;
-    recruit_portrait_origin(portrait_index, &x0, &y0);
-    int16_t columns = (int16_t)((w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD);
-    for (int16_t y = 0; y < h; y++)
-        for (int16_t c = 0; c < columns; c++)
+    for (int y = 0; y < CHAMPION_PORTRAIT_HEIGHT; y++)
+        for (int c = 0; c < PORTRAIT_COLUMNS; c++)
             for (int plane = 0; plane < BITPLANE_COUNT; plane++, out += 2) {
                 uint16_t word = 0;
-                for (int16_t k = 0; k < PIXELS_PER_WORD; k++) {
-                    int16_t x = (int16_t)(c * PIXELS_PER_WORD + k), sx = (int16_t)(x0 + x), sy = (int16_t)(y0 + y);
-                    if (x < w && sx < sheet->w && sy < sheet->h && sheet->px[sy * sheet->w + sx] >> plane & 1)
+                for (int k = 0; k < PIXELS_PER_WORD; k++) {
+                    int x = c * PIXELS_PER_WORD + k;
+                    if (x < CHAMPION_PORTRAIT_WIDTH && px[y * CHAMPION_PORTRAIT_WIDTH + x] >> plane & 1)
                         word |= (uint16_t)(1u << (PIXELS_PER_WORD - 1 - k));
                 }
                 wr16(out, word);
             }
 }
 
-/* The index of the portrait of graphic 26 that has these bitmap bytes, or 0. */
-static int16_t portrait_index_of(const uint8_t *bytes)
+/* champion_portraits_from_interleaved: the reverse of portrait_to_interleaved. */
+static void portrait_from_interleaved(const uint8_t *in, uint8_t *px)
 {
-    const Bitmap *sheet = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
-    int16_t w = kaos_s16(PORTRAIT_SIZE), h = kaos_s16(PORTRAIT_SIZE + 2);
-    if (!sheet || w <= 0 || h <= 0) return 0;
-    uint8_t candidate[SAVE_PORTRAIT_BYTES];
-    int16_t count = (int16_t)((sheet->w / w) * (sheet->h / h));
-    for (int16_t i = 0; i < count; i++) {
-        portrait_interleaved(i, candidate);
-        if (!memcmp(candidate, bytes, SAVE_PORTRAIT_BYTES)) return i;
-    }
-    return 0;
+    memset(px, 0, CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT);
+    for (int y = 0; y < CHAMPION_PORTRAIT_HEIGHT; y++)
+        for (int c = 0; c < PORTRAIT_COLUMNS; c++)
+            for (int plane = 0; plane < BITPLANE_COUNT; plane++, in += 2) {
+                uint16_t word = rd16(in);
+                for (int k = 0; k < PIXELS_PER_WORD; k++) {
+                    int x = c * PIXELS_PER_WORD + k;
+                    if (x < CHAMPION_PORTRAIT_WIDTH && word >> (PIXELS_PER_WORD - 1 - k) & 1)
+                        px[y * CHAMPION_PORTRAIT_WIDTH + x] |= (uint8_t)(1u << plane);
+                }
+            }
 }
 
 /* The champion block: the four champion records, then the party record. The leader load does
@@ -247,7 +246,7 @@ static uint8_t *encode_game(uint32_t *size)
     }
     memset(portraits, 0, sizeof portraits);
     for (uint16_t i = 0; i < g_party_champion_count; i++)
-        portrait_interleaved(g_champion_portrait_indices[i], portraits + i * SAVE_PORTRAIT_BYTES);
+        portrait_to_interleaved(g_champion_portraits[i], portraits + i * SAVE_PORTRAIT_BYTES);
 
     save_header_init(header, g_game_id, g_dungeon_id, header_extra);
     SaveFile s = {
@@ -303,24 +302,31 @@ static const uint8_t *find_automap(const uint8_t *data, size_t *size, size_t *le
     return block;
 }
 
-int16_t savegame_save(const char *dir)
+int16_t savegame_save(const char *dir) { return savegame_save_as(dir, adventure_save_name(), adventure_backup_name()); }
+
+/* Writes size bytes to dir/name; with a backup name, the old file becomes dir/backup first. Returns 1 on success. */
+static int write_save_file(const char *dir, const char *name, const char *backup_name, const uint8_t *data, uint32_t size)
 {
     char path[PATH_SIZE], backup[PATH_SIZE];
+    file_path(path, dir, name);
+    if (backup_name) {
+        file_path(backup, dir, backup_name);
+        remove(backup);
+        rename(path, backup);
+    }
+    FILE *f = fopen(path, "wb");
+    int ok = f && fwrite(data, 1, size, f) == size;
+    if (f && fclose(f)) ok = 0;
+    return ok;
+}
+
+int16_t savegame_save_as(const char *dir, const char *name, const char *backup_name)
+{
     uint32_t size = 0;
     uint8_t *data = encode_game(&size);
     if (!data) return 0;
     size = append_automap(&data, size);
-    if (!size) {
-        free(data);
-        return 0;
-    }
-    file_path(path, dir, SAVE_FILE_NAME);
-    file_path(backup, dir, SAVE_BACKUP_FILE_NAME);
-    remove(backup);
-    rename(path, backup);
-    FILE *f = fopen(path, "wb");
-    int16_t ok = f && fwrite(data, 1, size, f) == size;
-    if (f && fclose(f)) ok = 0;
+    int ok = size && write_save_file(dir, name, backup_name, data, size);
     free(data);
     if (!ok) return 0;
     g_saved_game_exists = 1;
@@ -328,11 +334,114 @@ int16_t savegame_save(const char *dir)
     return 1;
 }
 
+/* CEDT check before the merge: each first name is not empty and differs from the others. */
+static int first_names_unique(void)
+{
+    for (uint16_t i = 0; i < g_party_champion_count; i++) {
+        if (!g_champions[i].name[0]) return 0;
+        for (uint16_t k = i + 1; k < g_party_champion_count; k++)
+            if (!strncmp(g_champions[i].name, g_champions[k].name, sizeof g_champions[i].name)) return 0;
+    }
+    return 1;
+}
+
+/* The bytes of a text field after the first NUL become 0. */
+static void clear_after_text(char *text, size_t size)
+{
+    char *end = memchr(text, 0, size);
+    if (end) memset(end, 0, size - (size_t)(end - text));
+}
+
+/* CEDT merge: a champion of the saved game starts the new adventure rested, without objects,
+   effects, or temporary experience. turn is the change of the party direction. */
+static void reset_for_new_adventure(Champion *c, int16_t turn)
+{
+    clear_after_text(c->name, sizeof c->name);
+    clear_after_text(c->title, sizeof c->title);
+    if (turn) {
+        c->cell = (uint8_t)NORMALIZE(c->cell + turn);
+        c->direction = (uint8_t)NORMALIZE(c->direction + turn);
+    }
+    c->action_index = ACTION_NONE;
+    c->symbol_step = 0;
+    c->symbols[0] = 0;
+    c->direction_maximum_damage_received = c->maximum_damage_received = c->poison_event_count = 0;
+    c->enable_action_event_index = c->hide_damage_received_event_index = -1;
+    c->attributes &= CHAMPION_ATTR_MALE;
+    c->wounds = 0;
+    c->current_health = c->maximum_health;
+    c->current_stamina = c->maximum_stamina;
+    c->current_mana = c->maximum_mana;
+    c->action_defense = 0;
+    c->food = (int16_t)(NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK));
+    c->water = (int16_t)(NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK));
+    for (int s = 0; s < STAT_COUNT; s++) {
+        c->statistics[s][STAT_MINIMUM] = NEW_ADVENTURE_STAT_MINIMUM;
+        c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM];
+    }
+    c->statistics[STAT_LUCK][STAT_MINIMUM] = NEW_ADVENTURE_LUCK_MINIMUM;
+    for (int k = 0; k < SKILL_COUNT; k++) c->skills[k].temporary_experience = 0;
+    for (int s = 0; s < SLOT_COUNT; s++) c->slots[s] = THING_NONE;
+    c->load = 0;
+    c->shield_defense = 0;
+}
+
+/* The lowest cell that no champion of the party uses, else 0. */
+static uint8_t free_cell(const Champion *party)
+{
+    for (uint8_t cell = 0; cell < CHAMPION_MAX_COUNT; cell++) {
+        int used = 0;
+        for (uint16_t i = 0; i < g_party_champion_count; i++) used |= party[i].cell == cell;
+        if (!used) return cell;
+    }
+    return 0;
+}
+
+/* CEDT merge into the decoded MINI.DAT: the champions and portraits of the party, reset; the
+   champion count; the header of the new adventure. All other state stays from MINI.DAT. */
+static void merge_party(SaveFile *mini)
+{
+    Champion party[CHAMPION_MAX_COUNT];
+    uint8_t *globals = mini->block[SAVE_BLOCK_GLOBALS];
+    int16_t turn = (int16_t)(rd16(globals + G_PARTY_DIRECTION) - g_party_direction);
+    memcpy(party, g_champions, sizeof party);
+    for (uint16_t i = 0; i < g_party_champion_count; i++) reset_for_new_adventure(&party[i], turn);
+    for (uint16_t i = 0; i < g_party_champion_count; i++) /* each champion gets a cell of its own */
+        for (uint16_t k = 0; k < g_party_champion_count; k++)
+            if (k != i && party[k].cell == party[i].cell) party[k].cell = free_cell(party);
+    for (int i = 0; i < CHAMPION_MAX_COUNT; i++) champion_pack(&party[i], mini->block[SAVE_BLOCK_CHAMPIONS] + i * CHAMPION_RECORD_SIZE);
+    memset(mini->portraits, 0, SAVE_PORTRAITS_BYTES);
+    for (uint16_t i = 0; i < g_party_champion_count; i++)
+        portrait_to_interleaved(g_champion_portraits[i], mini->portraits + i * SAVE_PORTRAIT_BYTES);
+    wr16(globals + G_PARTY_CHAMPION_COUNT, g_party_champion_count);
+    save_header_new_adventure(mini->header, g_game_id);
+}
+
+int16_t savegame_make_adventure(const char *dir, const char *mini_path)
+{
+    if (!g_party_champion_count) return ADVENTURE_NO_CHAMPIONS;
+    if (!first_names_unique()) return ADVENTURE_NAMES_NOT_UNIQUE;
+    size_t size = 0;
+    uint32_t out_size = 0;
+    uint8_t *data = read_file(mini_path, &size), *out = NULL;
+    SaveFile mini;
+    if (data && save_decode(data, (uint32_t)size, &mini)) {
+        merge_party(&mini);
+        out = save_encode(&mini, &out_size);
+        save_free(&mini);
+    }
+    int ok = out && write_save_file(dir, adventure_save_name(), adventure_backup_name(), out, out_size);
+    free(out);
+    free(data);
+    return ok && savegame_load(dir) == SAVEGAME_LOADED ? ADVENTURE_MADE : ADVENTURE_FAILED;
+}
+
 /* Allocates the timeline and the active groups for the saved counts, as timeline_init and
-   group_init_active_groups do for a loaded game. */
+   group_init_active_groups do for a loaded game. CSB allocates exactly the saved count. */
 static int allocate_tables(void)
 {
-    uint16_t groups = g_max_active_group_count < MIN_ACTIVE_GROUP_COUNT ? MIN_ACTIVE_GROUP_COUNT : g_max_active_group_count;
+    uint16_t groups = g_max_active_group_count;
+    if (g_adventure == ADVENTURE_DM && groups < MIN_ACTIVE_GROUP_COUNT) groups = MIN_ACTIVE_GROUP_COUNT;
     if (g_event_max_count <= 0) return 0;
     free(g_timeline_events);
     free(g_timeline);
@@ -353,7 +462,7 @@ static int restore_game(const SaveFile *s)
     if (!allocate_tables()) return 0;
     for (uint16_t i = 0; i < g_max_active_group_count; i++)
         unpack_active_group(s->block[SAVE_BLOCK_GROUPS] + i * SAVE_ACTIVE_GROUP_BYTES, &g_active_groups[i]);
-    if (g_max_active_group_count < MIN_ACTIVE_GROUP_COUNT) g_max_active_group_count = MIN_ACTIVE_GROUP_COUNT;
+    if (g_adventure == ADVENTURE_DM && g_max_active_group_count < MIN_ACTIVE_GROUP_COUNT) g_max_active_group_count = MIN_ACTIVE_GROUP_COUNT;
     for (int i = 0; i < CHAMPION_MAX_COUNT; i++) champion_unpack(s->block[SAVE_BLOCK_CHAMPIONS] + i * CHAMPION_RECORD_SIZE, &g_champions[i]);
     unpack_party(s->block[SAVE_BLOCK_CHAMPIONS] + CHAMPION_MAX_COUNT * CHAMPION_RECORD_SIZE);
     for (int16_t i = 0; i < g_event_max_count; i++) {
@@ -362,31 +471,58 @@ static int restore_game(const SaveFile *s)
     }
     timeline_reset();
     for (uint16_t i = 0; i < g_party_champion_count && i < CHAMPION_MAX_COUNT; i++)
-        g_champion_portrait_indices[i] = portrait_index_of(s->portraits + i * SAVE_PORTRAIT_BYTES);
+        portrait_from_interleaved(s->portraits + i * SAVE_PORTRAIT_BYTES, g_champion_portraits[i]);
     g_game_id = save_header_game_id(s->header);
     g_dungeon_id = save_header_dungeon_id(s->header);
-    memcpy(header_extra, save_header_extra(s->header), SAVE_HEADER_EXTRA_BYTES);
+    memcpy(header_extra, save_header_extra(s->header), save_header_extra_size());
     g_party_dead = g_party_is_sleeping = 0;
     g_saved_game_exists = 1;
     return 1;
 }
 
-int16_t savegame_load(const char *dir)
+int16_t savegame_load(const char *dir) { return savegame_load_from(dir, adventure_save_name(), adventure_backup_name()); }
+
+/* Puts back the game of a snapshot after a failed load. The saved-game flags stay. The current
+   map is selected again, because the dungeon has new buffers. */
+static void restore_snapshot(const uint8_t *data, uint32_t size)
+{
+    int16_t exists = g_saved_game_exists, dead = g_party_dead, current = g_current_map_index;
+    uint32_t loaded = g_last_load_game_time;
+    SaveFile s;
+    if (save_decode(data, size, &s)) restore_game(&s);
+    save_free(&s);
+    map_reset();
+    if (current >= 0) set_current_map(current);
+    g_saved_game_exists = exists;
+    g_party_dead = dead;
+    g_last_load_game_time = loaded;
+}
+
+int16_t savegame_load_from(const char *dir, const char *name, const char *backup_name)
 {
     char path[PATH_SIZE], backup[PATH_SIZE];
     size_t size = 0;
-    file_path(path, dir, SAVE_FILE_NAME);
-    file_path(backup, dir, SAVE_BACKUP_FILE_NAME);
+    uint32_t snapshot_size = 0;
+    file_path(path, dir, name);
+    if (backup_name) file_path(backup, dir, backup_name);
     uint8_t *data = read_file(path, &size);
-    int from_backup = !data;
+    int from_backup = !data && backup_name;
     if (from_backup) data = read_file(backup, &size);
     if (!data) return SAVEGAME_MISSING;
     size_t automap_length = 0;
     const uint8_t *automap = find_automap(data, &size, &automap_length);
     SaveFile s;
-    int ok = save_decode(data, (uint32_t)size, &s) && restore_game(&s);
+    uint8_t *snapshot = NULL;
+    int ok = save_decode(data, (uint32_t)size, &s);
+    if (ok) {
+        /* restore_game frees the running dungeon before it checks the dungeon part */
+        snapshot = g_dungeon_header ? encode_game(&snapshot_size) : NULL;
+        ok = restore_game(&s);
+        if (!ok && snapshot) restore_snapshot(snapshot, snapshot_size);
+    }
     save_free(&s);
     if (ok && (!automap || automap_load(automap, automap_length))) automap_reset();
+    free(snapshot);
     free(data);
     if (!ok) return SAVEGAME_DAMAGED;
     if (from_backup) rename(backup, path);

@@ -109,6 +109,12 @@ void sound_play_sample(int16_t sound, const uint8_t *volumes)
 {
     uint16_t length, period;
     const int8_t *data = sound_sample(sound, &length, &period);
+    sound_play_data(data, length, period, volumes);
+}
+
+/* Starts sample data on a free stereo pair, or on the quieter pair when both play. */
+void sound_play_data(const int8_t *data, uint16_t length, uint16_t period, const uint8_t *volumes)
+{
     if (!data || !length) return;
     int pair = !voice_busy(&voices[pair_channels[PAIR_A][SIDE_LEFT]]) ? PAIR_A
              : !voice_busy(&voices[pair_channels[PAIR_B][SIDE_LEFT]]) ? PAIR_B

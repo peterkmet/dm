@@ -54,6 +54,22 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
    The server instructions and the tool descriptions tell the LLM how to play.
 
+## Play Chaos Strikes Back
+
+The CSB files must be in `game-csb/` (see the [README](../README.md)). Start the game with `--adventure csb`:
+
+```sh
+build/dm --adventure csb --mode turnbased --control ~/.dm/control.sock
+```
+
+The game selects NEW ADVENTURE at the start. `new_game` starts it again. `state.adventure` is `"csb"`.
+
+1. The game starts in the prison (map 0, square 9,0). Recruit up to four champions at the mirrors, as in Dungeon Master.
+2. Send `save`. In the prison, the save makes the adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, and continues at the start of the CSB dungeon (map 4).
+3. The answer of `save` is `{"ok":true}` only. Send `get_state` to see the new position.
+
+After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the CSB data folder.
+
 ## MCP tools
 
 | Tool | Arguments | Result |
@@ -89,9 +105,9 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `bumped`, `seen`, `state`, `view`. See [Batches](#batches). |
 | `wait` | `ticks` (1-5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `seen`, `state`, `view`. See [Wait](#wait). |
 | `screenshot` | `path` | `path`. The game writes a PNG file to `path`. |
-| `save` | none | Nothing. The game writes `DMGAME.DAT` in the save directory. The old file becomes `DMGAME.BAK`. |
-| `load` | none | `state`. The game loads `DMGAME.DAT` (else `DMGAME.BAK`) from the save directory. |
-| `new_game` | none | `state`. The game loads `Dungeon.DAT` from the data directory and starts on the start square. |
+| `save` | none | Nothing. The game writes `DMGAME.DAT` (CSB: `CSBGAME.DAT`) in the save directory. The old file becomes `DMGAME.BAK` (CSB: `CSBGAME.BAK`). |
+| `load` | none | `state`. The game loads `DMGAME.DAT` (else `DMGAME.BAK`; CSB: `CSBGAME.DAT`, else `CSBGAME.BAK`) from the save directory. |
+| `new_game` | none | `state`. The game loads `Dungeon.DAT` from the data directory and starts on the start square (CSB: in the prison). |
 
 Example: move one square forward.
 
@@ -250,6 +266,7 @@ The champion `position` uses `front_left`, `front_right`, `back_right`, `back_le
 ### State fields
 
 - `time`: game ticks.
+- `adventure`: `"dm"` or `"csb"`.
 - `party`: `map`, `level`, `x`, `y`, `facing`, `darkness` (0 bright to 5 dark), `can_move`, `sleeping`, `dead`.
 - `leader` (index, or `null`), `leader_hand` (object or `null`).
 - `candidate`: the champion that a mirror shows, with the fields of a champion, or `null`. The candidate is not in the party: it is not in `champions[]` and is never the `leader`. Answer with `act recruit`.
@@ -322,7 +339,7 @@ uv run dm-play load
 uv run dm-play new_game
 ```
 
-- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, and `BUMPED` after a bump), the party position, the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side squares (also at depth 0, `here left` and `here right`) with a door and its state, an open pit, a wall face, a floor ornament, or creatures, every side square ahead that is not a wall (a side passage), and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A response with `seen` has a line such as `seen: fireball at ahead 2; a group of 1 Screamer at ahead 2 was killed` (or `lost <n>`) after the turn line.
+- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, and `BUMPED` after a bump), the party position (the first line has `| CSB` in a CSB game), the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side squares (also at depth 0, `here left` and `here right`) with a door and its state, an open pit, a wall face, a floor ornament, or creatures, every side square ahead that is not a wall (a side passage), and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A response with `seen` has a line such as `seen: fireball at ahead 2; a group of 1 Screamer at ahead 2 was killed` (or `lost <n>`) after the turn line.
 - `dm-play` does not import the `mcp` package. The socket helpers are in `src/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
 - A relative `path` becomes an absolute path, because the game runs in another directory.
 - The exit code is 1 when the response has `"ok": false`, also when the game is not running.
@@ -373,7 +390,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 ## Known limits
 
-- In the `turnbased` mode the automap and the debug read-out keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
+- In the `turnbased` mode the automap and the quick save keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
 - Throwing objects has no action.
 - Name entry for a reincarnated champion is not ported.
 

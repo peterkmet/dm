@@ -1632,6 +1632,183 @@ int16_t view_floor_ornament(int16_t x, int16_t y)
     return i < 0 ? -1 : (floor_orn[i].graphic - GFX_FLOOR_ORNAMENT_FIRST) / FLOOR_ORNAMENT_GRAPHICS;
 }
 
+/* CSB magic map: a grid of 7 x 7 squares, each a 7 x 7 pixel tile with a 1 pixel border. */
+enum { MAP_SQUARES = 7, MAP_HALF = 3, MAP_TILE_W = 7, MAP_TILE_H = 7, MAP_GAP_X = 1, MAP_GAP_Y = 1, MAP_TILES_PER_ROW = 16 };
+enum { MAP_COLOR_PARTY = 8, MAP_COLOR_FOOTPRINTS = 4 };
+/* Tiles of GFX_MAGIC_MAP_TILES. A tile with "+ cell" or "+ side" has 4 tiles, one per side relative to the map. */
+enum {
+    MAP_TILE_WALL, MAP_TILE_FAKE_WALL_BLINK, MAP_TILE_FLOOR, MAP_TILE_PIT, MAP_TILE_PIT_INVISIBLE, MAP_TILE_PIT_BLINK,
+    MAP_TILE_TELEPORTER_FIRST = 6, MAP_TILE_DOOR_FRONT = 10, MAP_TILE_DOOR_SIDE = 11, MAP_TILE_DOOR_NO_BUTTON = 2, MAP_TILE_DOOR_OPEN = 4,
+    MAP_TILE_STAIRS_FIRST = 18, MAP_TILE_ALCOVE_FIRST = 22, MAP_TILE_VI_ALTAR_FIRST = 26, MAP_TILE_FOUNTAIN_FIRST = 30,
+    MAP_TILE_ZOKATHRA_FIRST = 34, MAP_TILE_IN_WALL = 4, MAP_TILE_LIGHTNING_FIRST = 42, MAP_TILE_LIGHTNING_ACROSS = 4,
+    MAP_TILE_FIREBALL_FIRST = 50, MAP_TILE_SPELL_FIRST = 54, MAP_TILE_SLIME_FIRST = 58, MAP_TILE_POISON_FIRST = 62,
+    MAP_TILE_EXPLOSION_FIRE = 66, MAP_TILE_EXPLOSION_OTHER = 67, MAP_TILE_POISON_CLOUD_FIRST = 68, MAP_TILE_FLUXCAGE_FIRST = 72,
+    MAP_TILE_CREATURE_FIRST = 76, MAP_TILE_FLOOR_ORNAMENT_FIRST = 78,
+};
+enum { OBJECT_TYPE_ZOKATHRA = 197 };         /* the ZOKATHRA SPELL object, that DAIN shows */
+enum { CREATURE_NOT_ON_MAP = 0x4000 };       /* creature attribute: KU does not show the creature */
+enum { MAP_TIME_BLINK_PIT = 1, MAP_TIME_BLINK_WALL = 2 }; /* game time bits of the blinking tiles */
+
+/* Draws one map tile at (px, py). */
+static void map_tile(Bitmap *dst, int16_t tile, int16_t px, int16_t py)
+{
+    const Bitmap *tiles = gfx_bitmap(GFX_MAGIC_MAP_TILES);
+    Box b = { px, py, MAP_TILE_W, MAP_TILE_H };
+    if (tiles) draw_blit(tiles, (int16_t)(tile % MAP_TILES_PER_ROW * MAP_TILE_W), (int16_t)(tile / MAP_TILES_PER_ROW * MAP_TILE_H), dst, &b, TRANSPARENT_COLOR, 0);
+}
+
+/* Footprints of the footprints spell on a floor square (the footprints bit of set_square_aspect). */
+static int map_footprints(const Aspect *a, int16_t x, int16_t y)
+{
+    int allowed = a->element == SQUARE_PIT ? a->square & PIT_IMAGINARY
+                : a->element != SQUARE_WALL && a->element != ELEMENT_STAIRS_SIDE && a->element != ELEMENT_STAIRS_FRONT;
+    uint16_t ordinal = allowed ? party_scent_ordinal(x, y) : 0;
+    return ordinal && ordinal - 1 >= g_party.first_scent_index && ordinal - 1 < g_party.last_scent_index;
+}
+
+/* The tile of a flying thing, or -1: spell projectiles and a flying zokathra. */
+static int16_t map_projectile_tile(uint16_t projectile, int16_t dir)
+{
+    uint16_t slot = projectile_slot(projectile);
+    switch (projectile_aspect(slot)) {
+    case -PROJECTILE_ASPECT_FIREBALL: return MAP_TILE_FIREBALL_FIRST;
+    case -PROJECTILE_ASPECT_SPELL: return MAP_TILE_SPELL_FIRST;
+    case -PROJECTILE_ASPECT_POISON: return MAP_TILE_POISON_FIRST;
+    case -PROJECTILE_ASPECT_SLIME: return MAP_TILE_SLIME_FIRST;
+    case -PROJECTILE_ASPECT_LIGHTNING: {
+        const TimelineEvent *event = &g_timeline_events[projectile_event_index(projectile)];
+        return (int16_t)(MAP_TILE_LIGHTNING_FIRST + ((projectile_event_direction(event) & 1) != (dir & 1) ? MAP_TILE_LIGHTNING_ACROSS : 0));
+    }
+    }
+    return projectile_aspect(slot) >= 0 && object_get_type(slot) == OBJECT_TYPE_ZOKATHRA ? MAP_TILE_ZOKATHRA_FIRST : -1;
+}
+
+/* The tile of an explosion, or -1: smoke and rebirth do not show. */
+static int16_t map_explosion_tile(uint16_t explosion)
+{
+    switch (explosion_type(explosion)) {
+    case EXPLOSION_FIREBALL: case EXPLOSION_LIGHTNING_BOLT: return MAP_TILE_EXPLOSION_FIRE;
+    case EXPLOSION_POISON_BOLT: case EXPLOSION_POISON_CLOUD: return (int16_t)(MAP_TILE_POISON_CLOUD_FIRST + random_2bits());
+    case EXPLOSION_FLUXCAGE: return (int16_t)(MAP_TILE_FLUXCAGE_FIRST + random_2bits());
+    }
+    return explosion_type(explosion) < EXPLOSION_SMOKE ? MAP_TILE_EXPLOSION_OTHER : -1;
+}
+
+/* The tiles of square (x, y) seen in direction dir at (px, py): the square, then with DAIN the footprints, the
+   zokathra objects, the projectiles, and the explosions, with ROS the fake walls and invisible pits, with KU the
+   creatures. */
+static void map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16_t y, int16_t dir, int16_t px, int16_t py)
+{
+    Aspect a;
+    aspect(&a, dir, x, y);
+    int blink = SQUARE_TYPE(a.square) == SQUARE_FAKE_WALL && (a.square & FAKE_WALL_IMAGINARY);
+    int16_t color = x == g_party_map_x && y == g_party_map_y ? MAP_COLOR_PARTY
+                  : spells[MAGIC_MAP_DAIN] && a.element != SQUARE_WALL && map_footprints(&a, x, y) ? MAP_COLOR_FOOTPRINTS : -1;
+    if (color >= 0) {
+        Box b = { (int16_t)(px - MAP_GAP_X), (int16_t)(py - MAP_GAP_Y), MAP_TILE_W + 2 * MAP_GAP_X, MAP_TILE_H + 2 * MAP_GAP_Y };
+        draw_fill(dst, &b, (uint8_t)color);
+    }
+    switch (a.element) {
+    case SQUARE_WALL:
+        if (spells[MAGIC_MAP_ROS] && blink && (g_game_time & MAP_TIME_BLINK_WALL)) {
+            map_tile(dst, MAP_TILE_FAKE_WALL_BLINK, px, py);
+            break;
+        }
+        map_tile(dst, MAP_TILE_WALL, px, py);
+        for (int16_t k = 0; k < 4; k++) {
+            int16_t i = (int16_t)(a.side[k] - 1);
+            int16_t first = !a.side[k] ? -1 : i == vi_altar ? MAP_TILE_VI_ALTAR_FIRST : is_alcove(i) ? MAP_TILE_ALCOVE_FIRST
+                          : i == fountain ? MAP_TILE_FOUNTAIN_FIRST : -1;
+            if (first >= 0) map_tile(dst, (int16_t)(first + k), px, py);
+        }
+        break;
+    case SQUARE_CORRIDOR: {
+        map_tile(dst, MAP_TILE_FLOOR, px, py);
+        int16_t i = (int16_t)((a.floor_ornament & ~FLOOR_ORNAMENT_WITH_FOOTPRINTS) - 1);
+        if (i >= 0) map_tile(dst, (int16_t)(MAP_TILE_FLOOR_ORNAMENT_FIRST + (floor_orn[i].graphic - GFX_FLOOR_ORNAMENT_FIRST) / FLOOR_ORNAMENT_GRAPHICS), px, py);
+        break;
+    }
+    case SQUARE_TELEPORTER:
+        map_tile(dst, (int16_t)(MAP_TILE_TELEPORTER_FIRST + random_2bits()), px, py);
+        break;
+    case ELEMENT_DOOR_FRONT:
+    case ELEMENT_DOOR_SIDE: {
+        int16_t tile = a.element == ELEMENT_DOOR_SIDE ? MAP_TILE_DOOR_SIDE : MAP_TILE_DOOR_FRONT;
+        if (!door_button_present((uint16_t)(THING_DOOR << 10 | a.door))) tile += MAP_TILE_DOOR_NO_BUTTON;
+        if (a.state == DOOR_OPEN || a.state == DOOR_DESTROYED) tile += MAP_TILE_DOOR_OPEN;
+        map_tile(dst, tile, px, py);
+        break;
+    }
+    case ELEMENT_STAIRS_SIDE:
+    case ELEMENT_STAIRS_FRONT: {
+        int16_t side = NORMALIZE(get_stairs_exit_direction(x, y) - dir);
+        if (a.state) side = NORMALIZE(side + 2);
+        map_tile(dst, (int16_t)(MAP_TILE_STAIRS_FIRST + side), px, py);
+        break;
+    }
+    case SQUARE_PIT:
+        map_tile(dst, !a.state ? MAP_TILE_PIT : spells[MAGIC_MAP_ROS] && (g_game_time & MAP_TIME_BLINK_PIT) ? MAP_TILE_PIT_BLINK : MAP_TILE_PIT_INVISIBLE, px, py);
+        break;
+    }
+    if (!spells[MAGIC_MAP_KU] && !spells[MAGIC_MAP_DAIN]) return;
+    uint16_t explosion = THING_ENDOFLIST, projectile = THING_ENDOFLIST, group = THING_ENDOFLIST;
+    for (uint16_t t = a.first_thing; t != THING_ENDOFLIST; t = get_next_thing(t)) {
+        int16_t type = THING_TYPE(t);
+        if (type == THING_GROUP && spells[MAGIC_MAP_KU]) group = t;
+        else if (!spells[MAGIC_MAP_DAIN]) continue;
+        else if (type == THING_PROJECTILE && projectile == THING_ENDOFLIST) projectile = t;
+        else if (type == THING_EXPLOSION && explosion == THING_ENDOFLIST) explosion = t;
+        else if (type == THING_JUNK && object_get_type(t) == OBJECT_TYPE_ZOKATHRA)
+            map_tile(dst, (int16_t)(MAP_TILE_ZOKATHRA_FIRST + NORMALIZE(THING_CELL(t) - dir) + (a.element == SQUARE_WALL && !blink ? MAP_TILE_IN_WALL : 0)), px, py);
+    }
+    if (group != THING_ENDOFLIST && !(get_creature_attributes(group) & CREATURE_NOT_ON_MAP))
+        map_tile(dst, (int16_t)(MAP_TILE_CREATURE_FIRST + (g_game_time & 1)), px, py);
+    for (uint16_t t = projectile; t != THING_ENDOFLIST; t = get_next_thing(t)) {
+        int16_t tile = THING_TYPE(t) == THING_PROJECTILE ? map_projectile_tile(t, dir) : -1;
+        if (tile >= 0) map_tile(dst, (int16_t)(tile + NORMALIZE(THING_CELL(t) - dir)), px, py);
+    }
+    for (uint16_t t = explosion; t != THING_ENDOFLIST; t = get_next_thing(t)) {
+        int16_t tile = THING_TYPE(t) == THING_EXPLOSION ? map_explosion_tile(t) : -1;
+        if (tile >= 0) map_tile(dst, tile, px, py);
+    }
+}
+
+/* The magic map of a champion at (px, py) of dst: 7 x 7 squares around the party, or around the square that
+   NETA keeps. The party square is drawn last. The ornaments are those of the party map, as in the original. */
+void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py)
+{
+    int16_t m = g_party_map_index, x = g_party_map_x, y = g_party_map_y, dir = g_party_direction, saved_map = g_current_map_index;
+    int16_t party_px = -1, party_py = 0;
+    if (map != g_party_map_index) view_load_map(g_party_map_index);
+    if (spells[MAGIC_MAP_NETA]) {
+        magic_map_position(spells, &m, &x, &y);
+        dir = (int16_t)(spells[MAGIC_MAP_NETA] - 1);
+    }
+    set_current_map(m);
+    map = m;
+    mw = dungeon_map_width(m);
+    mh = dungeon_map_height(m);
+    step(dir, MAP_HALF, -MAP_HALF, &x, &y);
+    for (int16_t row = 0; row < MAP_SQUARES; row++, py += MAP_TILE_H + MAP_GAP_Y) {
+        int16_t sx = x, sy = y, cx = px;
+        for (int16_t col = 0; col < MAP_SQUARES; col++, cx += MAP_TILE_W + MAP_GAP_X) {
+            if (m == g_party_map_index && sx == g_party_map_x && sy == g_party_map_y) {
+                party_px = cx;
+                party_py = py;
+            } else {
+                map_square(dst, spells, sx, sy, dir, cx, py);
+            }
+            step(dir, 0, 1, &sx, &sy);
+        }
+        step(dir, -1, 0, &x, &y);
+    }
+    if (party_px >= 0) map_square(dst, spells, g_party_map_x, g_party_map_y, dir, party_px, party_py);
+    map = g_party_map_index;
+    mw = dungeon_map_width(map);
+    mh = dungeon_map_height(map);
+    if (saved_map >= 0) set_current_map(saved_map);
+}
+
 void view_draw(int16_t dir, int16_t x, int16_t y)
 {
     static void (*const squares[16])(int16_t, int16_t, int16_t) = { d3l2, d3r2, d3l, d3r, d3c, d2l2, d2r2, d2l, d2r, d2c, d1l, d1r, d1c, d0l, d0r, d0c };

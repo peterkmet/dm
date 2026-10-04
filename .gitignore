@@ -12,3 +12,5 @@ build/
 .playthrough_run1/
 .playthrough_checkpoints/
 .playthrough_run2/
+game-csb/
+decomp-csb/

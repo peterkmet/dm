@@ -80,7 +80,7 @@ def state(game):
     return {
         **values,
         "champions": champions,
-        "portraits": list((c16 * 4).in_dll(lib, "g_champion_portrait_indices"))[: values["g_party_champion_count"]],
+        "portraits": bytes((ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits"))[: values["g_party_champion_count"] * 32 * 29],
         "party": raw(lib, "g_party", PARTY_BYTES),
         "events": raw_array(lib, "g_timeline_events", events * EVENT_BYTES),
         "timeline": raw_array(lib, "g_timeline", events * 2),
@@ -144,6 +144,26 @@ def test_save_keeps_a_backup(game, tmp_path):
     assert (tmp_path / SAVE).read_bytes() == first and not (tmp_path / BACKUP).exists()
 
 
+def test_portraits_survive_save_and_load(game, tmp_path):
+    """The file keeps all four portrait bitmaps, also ones that are not in graphic 26."""
+    lib = game.lib
+    keep, saved = tmp_path / "keep", tmp_path / "saved"
+    keep.mkdir()
+    saved.mkdir()
+    assert lib.savegame_save(str(keep).encode()) == 1
+    count = u16.in_dll(lib, "g_party_champion_count")
+    count.value = 4
+    portraits = (ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits")
+    for i in range(len(portraits)):
+        portraits[i] = (i * 7 + i // 32) & 15
+    before = bytes(portraits)
+    assert lib.savegame_save(str(saved).encode()) == 1
+    ctypes.memset(portraits, 0, len(before))
+    assert lib.savegame_load(str(saved).encode()) == LOADED
+    assert count.value == 4 and bytes(portraits) == before
+    assert lib.savegame_load(str(keep).encode()) == LOADED
+
+
 def test_load_fails_gracefully(game, tmp_path):
     lib = game.lib
     assert lib.savegame_load(str(tmp_path).encode()) == MISSING
@@ -152,6 +172,29 @@ def test_load_fails_gracefully(game, tmp_path):
     for bad in (good[:600], good[:-100] + bytes(100), good[:0x180] + bytes([good[0x180] ^ 1]) + good[0x181:], b"\0" * 4000):
         (tmp_path / SAVE).write_bytes(bad)
         assert lib.savegame_load(str(tmp_path).encode()) == DAMAGED
+    (tmp_path / SAVE).write_bytes(good)
+    assert lib.savegame_load(str(tmp_path).encode()) == LOADED
+
+
+def test_dm_load_raises_the_active_group_count_to_110(game, tmp_path):
+    from test_savefile import SaveFile, encode
+
+    lib = game.lib
+    lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.save_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(u32)]
+    lib.save_encode.restype = ctypes.c_void_p
+    lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]
+    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    good = (tmp_path / SAVE).read_bytes()
+    plain = decode(lib, good)
+    groups = 20
+    blocks = [bytearray(b) for b in plain["blocks"]]
+    struct.pack_into(">H", blocks[0], 46, groups)
+    blocks[1] = blocks[1][: groups * ACTIVE_GROUP_BYTES]
+    sizes = [len(b) for b in blocks]
+    (tmp_path / SAVE).write_bytes(encode(lib, plain["header"], blocks, plain["portraits"], plain["dungeon"], sizes))
+    assert lib.savegame_load(str(tmp_path).encode()) == LOADED
+    assert u16.in_dll(lib, "g_max_active_group_count").value == 110
     (tmp_path / SAVE).write_bytes(good)
     assert lib.savegame_load(str(tmp_path).encode()) == LOADED
 

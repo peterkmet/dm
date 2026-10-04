@@ -25,6 +25,8 @@ int16_t view_wall_ornament(int16_t x, int16_t y, int16_t face);
    floor ornament graphics of the game, or -1 (none, or the view has not loaded the party map). */
 int16_t view_floor_ornament(int16_t x, int16_t y);
 void view_draw(int16_t dir, int16_t x, int16_t y);
+/* CSB: draws the magic map grid of a champion (Champion.magic_map) with its top left square at (px, py). */
+void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py);
 /* Sets g_dungeon_view_palette_index from the party light amount (magical light plus torches) on map m. */
 void view_set_light(int16_t m, int16_t amount);
 int view_render(int16_t map, int16_t x, int16_t y, int16_t dir);

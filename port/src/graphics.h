@@ -12,6 +12,7 @@ int gfx_open(const char *path);
 int gfx_count(void);
 const uint8_t *gfx_item(int i, uint16_t *size);
 int gfx_expand(const uint8_t *packed, size_t len, Bitmap *bm);
+int gfx_expand_over(const uint8_t *packed, size_t len, Bitmap *bm);
 int gfx_load_bitmap(int i, Bitmap *bm);
 void gfx_free_bitmap(Bitmap *bm);
 const Bitmap *gfx_bitmap(int i);

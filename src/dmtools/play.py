@@ -52,8 +52,9 @@ def state_lines(state: dict) -> list[str]:
     party = state["party"]
     flags = [flag for flag in ("sleeping", "dead") if party[flag]] + ([] if party["can_move"] else ["cannot move yet"])
     hand = state["leader_hand"]
+    tag = " | CSB" if state.get("adventure") == "csb" else ""
     lines = [
-        f"time {state['time']} | level {party['level']} x {party['x']} y {party['y']} facing {party['facing']} | "
+        f"time {state['time']}{tag} | level {party['level']} x {party['x']} y {party['y']} facing {party['facing']} | "
         f"darkness {party['darkness']}" + "".join(f" | {flag}" for flag in flags),
         f"leader {'-' if state['leader'] is None else state['leader']} | hand {hand['name'] if hand else '-'}"
     ]

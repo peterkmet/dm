@@ -57,17 +57,20 @@ const uint8_t *gfx_item(int i, uint16_t *size)
     return dat + offsets[i];
 }
 
-/* Port of expand_graphic: decodes a packed graphic into a chunky bitmap. */
-int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
+/* Skips the pad words and reads the size of a packed graphic. Returns the start of the commands or NULL. */
+static const uint8_t *graphic_size(const uint8_t *p, const uint8_t *end, uint16_t *w, uint16_t *h)
 {
-    const uint8_t *end = p + len;
     while (end - p >= 2 && BE16(p) == GRAPHIC_PAD_WORD) p += 2;
-    if (end - p < 4) return -1;
-    uint16_t w = BE16(p), h = BE16(p + 2);
-    size_t n = (size_t)w * h, pos = 0;
-    uint8_t *px = calloc(n ? n : 1, 1);
-    if (!px) return -1;
-    p += 4;
+    if (end - p < 4) return NULL;
+    *w = BE16(p);
+    *h = BE16(p + 2);
+    return p + 4;
+}
+
+/* Decodes the graphic commands into px (w * h pixels); skip commands leave pixels unchanged. */
+static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, uint16_t w, size_t n)
+{
+    size_t pos = 0;
 #define NEXT() (p < end ? *p++ : 0)
 #define PUT(c) do { if (pos < n) px[pos] = (c); pos++; } while (0)
     while (pos < n) {
@@ -107,7 +110,29 @@ int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
     }
 #undef NEXT
 #undef PUT
+}
+
+/* Port of expand_graphic: decodes a packed graphic into a chunky bitmap. */
+int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
+{
+    const uint8_t *end = p + len;
+    uint16_t w, h;
+    if (!(p = graphic_size(p, end, &w, &h))) return -1;
+    size_t n = (size_t)w * h;
+    uint8_t *px = calloc(n ? n : 1, 1);
+    if (!px) return -1;
+    expand_commands(p, end, px, w, n);
     *bm = (Bitmap){ w, h, px };
+    return 0;
+}
+
+/* Decodes a packed graphic over a bitmap of the same size: skipped pixels keep their color. */
+int gfx_expand_over(const uint8_t *p, size_t len, Bitmap *bm)
+{
+    const uint8_t *end = p + len;
+    uint16_t w, h;
+    if (!(p = graphic_size(p, end, &w, &h)) || w != bm->w || h != bm->h) return -1;
+    expand_commands(p, end, bm->px, w, (size_t)w * h);
     return 0;
 }
 

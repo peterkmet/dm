@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "advanced.h"
+#include "adventure.h"
 #include "champion.h"
 #include "command.h"
 #include "dungeon.h"
@@ -11,11 +12,13 @@
 #include "inventory.h"
 #include "layout.h"
 #include "message.h"
+#include "magic.h"
 #include "map.h"
 #include "recruit.h"
 #include "tables.h"
 #include "text.h"
 #include "ui.h"
+#include "view.h"
 
 /* KAOS data addresses. */
 #define CHAMPION_COLORS 0x100ce0         /* g_champion_colors[4] */
@@ -52,6 +55,9 @@
 #define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
 #define SCROLL_LINE_CHARS 18             /* characters that fit on the parchment */
 #define RUNE_FIRST 0x60                  /* font character of the first rune */
+#define CREATURE_NAME_TEXT "CREANAME"    /* CSB: scroll text replaced by the creature name ahead */
+#define MAGIC_MAP_RUNE_FIRST 0x72        /* font character of the KU rune; ROS, DAIN, NETA follow */
+#define MAGIC_MAP_RUNE_COUNT 4
 #define METER_LABEL_CHARS 8              /* the bar starts after the longest label */
 #define METER_BAR_WIDTH 36
 #define METER_BAR_HEIGHT 5
@@ -68,8 +74,10 @@ const char *const g_rune_names[UI_RUNE_COUNT] = {
     "VEN", "EW", "KATH", "IR", "BRO", "GOR", "KU", "ROS", "DAIN", "NETA", "RA", "SAR",
 };
 
-int16_t g_champion_portrait_indices[4];
+uint8_t g_champion_portraits[4][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 int16_t g_panel_content;
+static int16_t scroll_redraw;     /* CSB: the panel scroll shows a creature name or the magic map, so it draws again each tick */
+static int16_t scroll_redraw_eye; /* the scroll is the leader hand object while the eye is pressed */
 
 /* A number as text: right aligned in width characters, or not padded. */
 static const char *number(char *buf, uint16_t value, int pad, int width)
@@ -185,18 +193,32 @@ static void draw_icon(uint16_t champion_index)
     ui_blit_zone(&screen, &bm, (int16_t)(ZONE_CHAMPION_ICON_FIRST + cell), COLOR_NONE);
 }
 
+Bitmap champion_portrait(int16_t champion_index)
+{
+    return (Bitmap){ CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champion_portraits[champion_index] };
+}
+
+void champion_set_portrait(int16_t champion_index, int16_t portrait_index)
+{
+    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
+    Bitmap portrait = champion_portrait(champion_index);
+    Box b = { 0, 0, CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT };
+    int16_t x, y;
+    memset(portrait.px, 0, CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT);
+    recruit_portrait_origin(portrait_index, &x, &y);
+    if (portraits) draw_blit(portraits, x, y, &portrait, &b, COLOR_NONE, 0);
+}
+
 /* Draws the portrait in the status box while the inventory is open. */
 void draw_status_box_portrait(int16_t champion_index)
 {
-    Bitmap screen = ui_screen();
-    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
-    int16_t x, y, zone = (int16_t)(ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index);
+    Bitmap screen = ui_screen(), portrait = champion_portrait(champion_index);
+    int16_t zone = (int16_t)(ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index);
     Box b;
     if (!ui_zone_box(zone, &b)) return;
-    recruit_portrait_origin(g_champion_portrait_indices[champion_index], &x, &y);
     b.w = kaos_s16(PORTRAIT_SIZE);
     b.h = kaos_s16(PORTRAIT_SIZE + 2);
-    if (portraits) draw_blit(portraits, x, y, &screen, &b, COLOR_NONE, 0);
+    draw_blit(&portrait, 0, 0, &screen, &b, COLOR_NONE, 0);
     if (g_party.event71_count_invisibility) ui_fill_zone_pattern(&screen, zone, COLOR_DARKEST_GRAY);
 }
 
@@ -348,6 +370,7 @@ static void food_water_bar(int16_t value, int16_t zone, uint8_t color)
 /* Draws the food and water panel of the inventory, with "POISONED" when poisoned. */
 void draw_panel_food_water_poisoned(void)
 {
+    scroll_redraw = 0;
     const Champion *c = &g_champions[g_inventory_champion_ordinal - 1];
     Bitmap *vp = ui_viewport();
     close_chest();
@@ -363,6 +386,7 @@ void draw_panel_food_water_poisoned(void)
    the action hand, else food and water. */
 void draw_panel(void)
 {
+    scroll_redraw = 0;
     close_chest();
     if (g_candidate_champion_ordinal) {
         g_panel_content = PANEL_CONTENT_RESURRECT;
@@ -398,6 +422,7 @@ const char *ui_skill_rank_name(int16_t level)
    statistics with current value (red below maximum, green above) and maximum value. */
 void draw_champion_skills_and_statistics(void)
 {
+    scroll_redraw = 0;
     int16_t ci = g_inventory_champion_ordinal - 1, x, y, vx;
     const Champion *c = &g_champions[ci];
     Bitmap *vp = ui_viewport();
@@ -614,12 +639,59 @@ static void draw_scroll_line(int16_t x, int16_t y, char *text)
     }
 }
 
+/* CSB: each CREANAME in the text becomes the name of the creatures ahead of the party, or NO CREATURE. */
+static void insert_creature_name(char *text, size_t size)
+{
+    const char *name = NULL;
+    size_t length = strlen(CREATURE_NAME_TEXT);
+    for (char *at = strstr(text, CREATURE_NAME_TEXT); at; at = strstr(at, CREATURE_NAME_TEXT)) {
+        if (!name) {
+            int16_t x = g_party_map_x, y = g_party_map_y;
+            update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
+            uint16_t group = group_get_thing(x, y);
+            name = ui_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE : (int16_t)(TEXT_CREATURE_NAME_FIRST + group_creature_type(group)));
+            scroll_redraw = 1;
+        }
+        size_t rest = strlen(at + length), n = strlen(name);
+        if ((size_t)(at - text) + n + rest >= size) n = size - 1 - (size_t)(at - text) - rest;
+        memmove(at + n, at + length, rest + 1);
+        memcpy(at, name, n);
+        at += n;
+    }
+}
+
+/* CSB: the magic map panel when the first scroll line is MAGICMAP: the runes of the active map spells lit,
+   and the map grid. Returns 0 for another scroll. */
+static int draw_panel_magic_map(const char *text)
+{
+    char line[SCROLL_TEXT_SIZE];
+    snprintf(line, sizeof line, "%.*s", (int)strcspn(text, "\n"), text);
+    if (!magic_map_is_text(line)) return 0;
+    const uint8_t *spells = g_champions[g_inventory_champion_ordinal - 1].magic_map;
+    static const int8_t rune_spell[MAGIC_MAP_RUNE_COUNT] = { MAGIC_MAP_KU, MAGIC_MAP_ROS, MAGIC_MAP_DAIN, MAGIC_MAP_NETA };
+    Bitmap *vp = ui_viewport();
+    int16_t x, y;
+    scroll_redraw = 1;
+    ui_blit_graphic(vp, GFX_PANEL_MAGIC_MAP, ZONE_PANEL, COLOR_RED);
+    for (int16_t i = 0; i < MAGIC_MAP_RUNE_COUNT; i++) {
+        char rune[2] = { (char)(MAGIC_MAP_RUNE_FIRST + i), 0 };
+        ui_print_zone(vp, (int16_t)(ZONE_MAGIC_MAP_RUNE_FIRST + i), spells[rune_spell[i]] ? COLOR_RED : COLOR_BLACK, COLOR_WHITE, rune);
+    }
+    zone_point(ZONE_MAGIC_MAP, &x, &y);
+    view_draw_magic_map(vp, spells, x, y);
+    return 1;
+}
+
 /* Draws the open scroll with its text, vertically centered. */
 static void draw_panel_scroll(uint16_t scroll)
 {
     char text[SCROLL_TEXT_SIZE];
     int16_t x, y, count = 1;
     decode_text(text, sizeof text, (uint16_t)(THING_TEXT << 10 | scroll_text_index(scroll)), TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
+    if (g_adventure == ADVENTURE_CSB) {
+        insert_creature_name(text, sizeof text);
+        if (draw_panel_magic_map(text)) return;
+    }
     char *rest = strchr(text, '\n');
     if (rest) {
         *rest++ = 0;
@@ -736,6 +808,8 @@ static void open_and_draw_chest(uint16_t chest, int16_t pressing_eye)
 void draw_panel_object(uint16_t thing, int16_t pressing_eye)
 {
     Bitmap *vp = ui_viewport();
+    scroll_redraw = 0;
+    scroll_redraw_eye = pressing_eye;
     close_chest();
     if (THING_TYPE(thing) == THING_SCROLL) {
         draw_panel_scroll(thing);
@@ -762,6 +836,19 @@ void draw_panel_eye(void)
 {
     if (!g_leader_empty_handed) draw_panel_object(g_leader_hand_object, 1);
     else draw_champion_skills_and_statistics();
+}
+
+/* CSB, each tick with the inventory open: a scroll with a creature name or the magic map draws again. */
+void panel_redraw_scroll(void)
+{
+    if (!scroll_redraw) return;
+    if (scroll_redraw_eye) {
+        draw_panel_eye();
+        ui_draw_viewport();
+        return;
+    }
+    g_champions[g_inventory_champion_ordinal - 1].attributes |= CHAMPION_ATTR_PANEL;
+    champion_draw_state((uint16_t)(g_inventory_champion_ordinal - 1));
 }
 
 /* A click in the open chest panel swaps the leader hand object with the clicked chest slot. */
