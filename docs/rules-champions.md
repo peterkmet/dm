@@ -196,6 +196,70 @@ The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the
    - Every 256 ticks (64 while sleeping), each current statistic moves toward its maximum.
    - When the party is awake and no creature attacked for 60 ticks, the champion turns to the party direction.
 
+## Actions
+
+The code is in `port/src/action.c`. The rules follow `menus_is_action_performed` and its helpers in KAOS range 8 (MENU.C). The per-action values come from the action tables ([tables.md](tables.md#actions)).
+
+`menus_did_click_trigger_action(list_index)` runs commands 113–115. It adds the action defense to the champion, runs the action, stores the action in `action_index`, and closes the action menu.
+
+`menus_is_action_performed(champion, action)` runs one action against the square in front of the champion:
+
+1. The target group is the group on that square (`g_action_target_group_thing`).
+2. Stamina cost is `random_bit() + stamina`. For skills 16–19 and the wizard skill, the mana cost of a spell action is `7 − min(6, skill level)`.
+3. The action runs (table below).
+4. The action hand is disabled for the action ticks (event 11, `champion_disable_action`). Stamina decreases. The action skill gets the experience. A value of 0 skips each step.
+
+| Action | Effect |
+|---|---|
+| Chop, Kick, Swing, Hack, Berzerk, Bash on a closed door | Bashes the door with the action-hand strength (`group_is_door_destroyed_by_attack`, destruction after 2 ticks). Disabled ticks become 6. |
+| Melee actions (the above without a door, Punch, Stab, Thrust, Jab, Parry, Disrupt, Melee, Slash, Cleave, Stun) | `menus_is_melee_action_performed`. A miss of the target (no group, no creature in reach) halves the experience and the disabled ticks. |
+| War Cry, Blow Horn, Calm, Brandish, Confuse | `menus_is_group_frightened_by_action`. Confuse uses a charge. War Cry plays sound 17, Blow Horn sound 18. |
+| Flip | Prints heads or tails (text 0x45 or 0x46) by a random bit. |
+| Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Else no disabled ticks. |
+| Freeze Life | A blue magical box adds 30 freeze ticks, a green box 125; the box is used up. Other objects add 70 and use a charge. The maximum is 200. |
+| Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, else fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
+| Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_action_damage = −2`, no experience. |
+| Spellshield, Fireshield | `menus_is_party_spell_or_fire_shield_successful` for 280 ticks with mana. Success uses a charge. Failure quarters the experience and halves the disabled ticks. |
+| Fluxcage | `group_fluxcage_action` on the square in front. |
+| Heal | While mana remains: health + `min(10, heal level)`, mana − 2, experience + 2 (start 2). |
+| Light | Light power 2 now, event 70 takes it back after 2500 ticks. Uses a charge. |
+| Window | Thieves eye (event 73) for `random % (level + 8) + 5` ticks. Uses a charge. |
+| Throw | `champion_is_object_thrown` from the action hand. The event 11 gets byte 6 = 2: when it runs, the next weapon of the quiver goes to the action hand. |
+| Fuse | `group_fuse_action` on the square in front of the party. |
+
+Block, Hit, and the other actions only add the action defense, the disabled ticks, the stamina cost, and the experience. The champion turns to the party direction for the spell, shoot, throw, fluxcage, and fuse actions.
+
+### Melee
+
+`menus_is_melee_action_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target_creature_ordinal`). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](rules-creatures.md)) gives the damage, which goes into `g_action_damage` for the action area.
+
+### Fear
+
+The influence roll is `random16() % (influence level + bonus)`. The bonus and the experience are: Confuse 12 and 45, War Cry 3 and 12, Blow Horn 6 and 20, Brandish 6 and 30, Calm 7 and 35. When the roll is below the fear resistance, or the creature is fearless (15), the group stays and the experience is halved. Else an attacking group stops its attack, the group flees, and the flee delay is `(16 − fear) × 4 / movement ticks`.
+
+### Throwing
+
+`champion_is_object_thrown(champion, slot, side)` throws the object of the slot. With slot < 0 it throws the leader hand object (`champion_is_leader_hand_object_thrown`, a click in the throw zones of the dungeon view); the strength then counts the object as if it were in the action hand.
+
+1. Stamina cost: half the weight, bounded 1–10, plus half of each 10 above (`champion_get_throwing_stamina_cost`). The action hand is disabled for 4 ticks.
+2. Experience to the throw skill: 8 for objects, 12 for weapons, plus kinetic energy / 4 for weapons of class 0–12.
+3. Kinetic energy (a byte): `level + e / 2 + random(16) + e` with `e` = strength + the weapon kinetic energy (class 0–12) or 1.
+4. Attack: `bounded(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 − level)`.
+5. The projectile starts in the front cell of the side and flies in the party direction. The party cannot move in that direction for 4 ticks.
+
+### Charges
+
+`menus_decrement_charges` removes one charge from the action-hand object: weapon bits 10–13, armour bits 9–12, junk bits 14–15 of word 1.
+
+## Champion events
+
+| Event | Handler | Effect |
+|---|---|---|
+| 11 | `timeline_process_event11_enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 − 1` (`timeline_move_weapon_from_quiver_to_slot`). |
+| 12 | `timeline_process_event12_hide_damage_received` | Hides the damage number of the champion. |
+| 13 | `timeline_process_event13_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
+| 75 | `champion_poison` | One poison step: the poison event count decreases, then `champion_poison(champion, word 6)`. |
+
 ## Save files
 
 `champion_pack` and `champion_unpack` convert between the `Champion` struct and the original 0x140-byte big-endian record. The portrait pointer (offset 0x114) is not in the struct.
@@ -203,7 +267,7 @@ The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the
 ## Not in this module
 
 - Drawing: status boxes, damage numbers, the inventory panel, and portraits (`ui_champion.c`).
-- Champion actions, spells, and creature attacks on champions.
+- Spells and creature attacks on champions (`magic.c`, `group.c`).
 - Scent creation on party moves (`move.c`).
 - `get_unused_thing` does not free discarded things yet (`map.c`).
 - Chest closing when the open chest leaves the action hand, and the light palette update after a torch or Illumulet change.
@@ -215,5 +279,7 @@ The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the
 - `champion_pack` writes the original offsets and `champion_unpack` reverses it.
 - Object weight and icon, skill level, maximum load, movement ticks, dexterity, strength, wound defense, pending damage, damage to all, stamina decrease, experience gain with level-ups, and time effects give the same champion records, random seed, and globals as the original functions in `dmtools.emu`.
 - Scenario tests in `Dungeon.DAT`: recruit the first mirror champion and accept it, eat food, and take damage until the party dies (objects and bones on the party square).
+
+`tests/test_actions.py` compares `menus_is_action_performed` (stamina, experience, disabled ticks, heal, action damage, random seed) for all actions without a target, and `group_get_melee_action_damage` (hit and damage), with the original functions in `dmtools.emu`. Scenario tests: a sword attack hurts a skeleton and trains the skill, a back-row champion cannot reach, a throw creates a projectile and event 11 refills the hand from the quiver, event 11 ends the action defense, poison steps, event 12, and the vi altar rebirth.
 
 The tests skip when `game/KAOS.FTL` or `game/Dungeon.DAT` is missing.

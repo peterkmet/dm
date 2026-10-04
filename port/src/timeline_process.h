@@ -7,10 +7,11 @@
 
 enum {
     EVENT_DOOR_ANIMATION = 1, EVENT_DOOR_DESTRUCTION = 2, EVENT_CORRIDOR = 5, EVENT_WALL = 6, EVENT_FAKE_WALL = 7,
-    EVENT_TELEPORTER = 8, EVENT_PIT = 9, EVENT_DOOR = 10, EVENT_PLAY_SOUND = 20, EVENT_REMOVE_FLUXCAGE = 24,
+    EVENT_TELEPORTER = 8, EVENT_PIT = 9, EVENT_DOOR = 10, EVENT_ENABLE_CHAMPION_ACTION = 11,
+    EVENT_HIDE_DAMAGE_RECEIVED = 12, EVENT_VI_ALTAR_REBIRTH = 13, EVENT_PLAY_SOUND = 20, EVENT_REMOVE_FLUXCAGE = 24,
     EVENT_EXPLOSION = 25, EVENT_WATCHDOG = 53, EVENT_ENABLE_GROUP_GENERATOR = 65, EVENT_LIGHT = 70,
     EVENT_INVISIBILITY_END = 71, EVENT_CHAMPION_SHIELD_END = 72, EVENT_THIEVES_EYE_END = 73, EVENT_PARTY_SHIELD_END = 74,
-    EVENT_SPELL_SHIELD_END = 77, EVENT_FIRE_SHIELD_END = 78, EVENT_FOOTPRINTS_END = 79
+    EVENT_POISON = 75, EVENT_SPELL_SHIELD_END = 77, EVENT_FIRE_SHIELD_END = 78, EVENT_FOOTPRINTS_END = 79
 };
 
 /* Event time: map index in bits 24-31, game time in bits 0-23. */
@@ -41,6 +42,9 @@ void timeline_process_event7_fake_wall(TimelineEvent *event);
 void timeline_process_event8_teleporter(TimelineEvent *event);
 void timeline_process_event9_pit(TimelineEvent *event);
 void timeline_process_event10_door(TimelineEvent *event);
+void timeline_process_event11_enable_champion_action(uint16_t champion_index);
+void timeline_process_event12_hide_damage_received(uint16_t champion_index);
+void timeline_process_event13_vi_altar_rebirth(TimelineEvent *event);
 void timeline_process_event65_enable_group_generator(TimelineEvent *event);
 void timeline_process_event70_light(TimelineEvent *event);
 void timeline_move_teleporter_or_pit_square_things(int16_t x, int16_t y);

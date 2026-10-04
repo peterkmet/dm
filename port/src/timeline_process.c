@@ -1,8 +1,10 @@
 #include "timeline_process.h"
+#include "action.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
 #include "group.h"
+#include "ids.h"
 #include "inventory.h"
 #include "map.h"
 #include "message.h"
@@ -10,6 +12,8 @@
 #include "projectile.h"
 #include "sensor.h"
 #include "sound.h"
+#include "tables.h"
+#include "ui.h"
 
 /* KAOS table: the light amount of each light power. */
 #define KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT 0x100cb4
@@ -21,6 +25,7 @@
 #define LIGHT_STEP_TICKS 4
 #define TEXT_SIZE 256
 #define PROJECTILE_EVENT_STEP_ENERGY 0x000f
+#define REBIRTH_EXPLOSION_TICKS 5
 
 int16_t g_game_won;
 
@@ -358,6 +363,74 @@ int16_t group_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, 
     return 1;
 }
 
+/* The action hand works again: the action defense ends. After a shot the next ammunition of the quiver goes to the
+   ready hand (quiver line 1 first, then slots 7-9). */
+void timeline_process_event11_enable_champion_action(uint16_t champion_index)
+{
+    Champion *c = &g_champions[champion_index];
+    c->enable_action_event_index = -1;
+    c->attributes &= ~CHAMPION_ATTR_ACTION_DISABLED;
+    if (c->action_index != ACTION_NONE)
+        c->action_defense -= tables_action_info(c->action_index)->defense;
+    if (c->current_health) {
+        if (c->action_index == ACTION_SHOOT && c->slots[SLOT_HAND_READY] == THING_NONE) {
+            static const uint16_t quiver_order[] = {SLOT_QUIVER_LINE1_1, SLOT_QUIVER_LINE2_1, SLOT_QUIVER_LINE1_2, SLOT_QUIVER_LINE2_2};
+            for (size_t i = 0; i < sizeof quiver_order / sizeof quiver_order[0]; i++) {
+                if (champion_is_ammunition_compatible_with_weapon(champion_index, SLOT_HAND_ACTION, quiver_order[i])) {
+                    champion_add_object_in_slot(champion_index, champion_get_object_removed_from_slot(champion_index, quiver_order[i]), SLOT_HAND_READY);
+                    break;
+                }
+            }
+        }
+        c->attributes |= CHAMPION_ATTR_ACTION_HAND;
+        champion_draw_state(champion_index);
+    }
+    c->action_index = ACTION_NONE;
+}
+
+/* The damage number on the champion portrait disappears. */
+void timeline_process_event12_hide_damage_received(uint16_t champion_index)
+{
+    Champion *c = &g_champions[champion_index];
+    c->hide_damage_received_event_index = -1;
+    if (!c->current_health)
+        return;
+    if (champion_index + 1 == g_inventory_champion_ordinal) {
+        draw_status_box_portrait((int16_t)champion_index);
+    } else {
+        c->attributes |= CHAMPION_ATTR_NAME_TITLE;
+        champion_draw_state(champion_index);
+    }
+}
+
+/* Vi altar rebirth in three steps (event cell byte: the step): 2 the rebirth explosion, 1 the bones of the champion
+   disappear, 0 the champion lives again. The bones hold the champion index in their charges. */
+void timeline_process_event13_vi_altar_rebirth(TimelineEvent *event)
+{
+    int16_t x = EVENT_X(event), y = EVENT_Y(event), cell = EVENT_CELL(event), step = EVENT_EFFECT(event);
+    uint16_t champion_index = event->priority;
+    if (step == 0) {
+        champion_resurrect(champion_index);
+        return;
+    }
+    if (step == 2) {
+        explosion_create(EXPLOSION_THING(EXPLOSION_REBIRTH_STEP_1), 0, (uint16_t)x, (uint16_t)y, cell);
+        event->map_time += REBIRTH_EXPLOSION_TICKS;
+    } else {
+        uint16_t thing = get_square_first_thing(x, y);
+        while (thing != THING_ENDOFLIST && !(THING_CELL(thing) == cell && THING_TYPE(thing) == THING_JUNK &&
+                                             object_get_icon_index(thing) == ICON_BONES && junk_charges(thing) == champion_index))
+            thing = get_next_thing(thing);
+        if (thing == THING_ENDOFLIST)
+            return;
+        unlink_thing_from_list(thing, 0, x, y);
+        thing_set_free(thing);
+        event->map_time++;
+    }
+    EVENT_SET_EFFECT(event, step - 1);
+    timeline_add_event(event);
+}
+
 /* Runs every expired event on its map. Event types without a handler here belong to later steps. */
 void timeline_process(void)
 {
@@ -374,6 +447,13 @@ void timeline_process(void)
         case EVENT_TELEPORTER: timeline_process_event8_teleporter(&event); break;
         case EVENT_PIT: timeline_process_event9_pit(&event); break;
         case EVENT_DOOR: timeline_process_event10_door(&event); break;
+        case EVENT_ENABLE_CHAMPION_ACTION:
+            timeline_process_event11_enable_champion_action(event.priority);
+            if (event.b >> 8)   /* after a throw: the slot + 1 that gets the next weapon of the quiver */
+                timeline_move_weapon_from_quiver_to_slot(event.priority, (uint16_t)((int8_t)(event.b >> 8) - 1));
+            break;
+        case EVENT_HIDE_DAMAGE_RECEIVED: timeline_process_event12_hide_damage_received(event.priority); break;
+        case EVENT_VI_ALTAR_REBIRTH: timeline_process_event13_vi_altar_rebirth(&event); break;
         case EVENT_PLAY_SOUND: sound_request_play((int16_t)event.c, EVENT_X(&event), EVENT_Y(&event), SOUND_MODE_AFTER_TICK); break;
         case EVENT_REMOVE_FLUXCAGE:
             if (!g_game_won) {
@@ -396,6 +476,10 @@ void timeline_process(void)
         case EVENT_CHAMPION_SHIELD_END: g_champions[event.priority].shield_defense -= (int16_t)event.b; break;
         case EVENT_THIEVES_EYE_END: g_party.event73_count_thieves_eye--; break;
         case EVENT_PARTY_SHIELD_END: g_party.shield_defense -= (int16_t)event.b; break;
+        case EVENT_POISON:
+            g_champions[event.priority].poison_event_count--;
+            champion_poison(event.priority, event.b);
+            break;
         case EVENT_SPELL_SHIELD_END: g_party.spell_shield_defense -= (int16_t)event.b; break;
         case EVENT_FIRE_SHIELD_END: g_party.fire_shield_defense -= (int16_t)event.b; break;
         case EVENT_FOOTPRINTS_END: g_party.event79_count_footprints--; break;

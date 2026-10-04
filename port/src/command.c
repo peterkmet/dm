@@ -1,5 +1,6 @@
 #include <string.h>
 #include "command.h"
+#include "action.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -41,6 +42,7 @@
 #define SYMBOL_FIRST 0x60             /* font character of the first rune */
 #define SPELL_TAB_STEP 5              /* caster tab zones per caster */
 #define ZONE_THROW_LEFT 745           /* + 1 right: the upper view where a thrown object flies */
+#define ZONE_THROW_DOOR_LEFT 748      /* + 1 right: the same with a door in front */
 
 enum { VIEW_CELL_FRONT_FIRST = 2, VIEW_CELL_COUNT = 4 }; /* view cells 0-1 on the party square, 2-3 ahead */
 
@@ -390,6 +392,20 @@ static int16_t in_box(const Box *b, int16_t x, int16_t y)
     return b->x != -1 && x >= b->x && x < b->x + b->w && y >= b->y && y < b->y + b->h;
 }
 
+/* The leader throws the hand object when the click is in the left or right throw zone. */
+static int16_t is_leader_hand_object_thrown(int16_t x, int16_t y)
+{
+    int16_t zone = g_square_ahead_element == VIEW_ELEMENT_DOOR_FRONT ? ZONE_THROW_DOOR_LEFT : ZONE_THROW_LEFT;
+    int16_t thrown = 0;
+    if (ui_point_in_zone(zone, x, y))
+        thrown = champion_is_leader_hand_object_thrown(0);
+    else if (ui_point_in_zone((int16_t)(zone + 1), x, y))
+        thrown = champion_is_leader_hand_object_thrown(1);
+    if (thrown)
+        g_stop_waiting_for_input = 1;
+    return thrown;
+}
+
 /* Click in the dungeon view (x, y in viewport coordinates): door buttons, objects, the front wall. */
 static void click_in_dungeon_view(int16_t x, int16_t y)
 {
@@ -398,6 +414,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
     front_square(&fx, &fy);
     if (g_square_ahead_element == VIEW_ELEMENT_DOOR_FRONT) {
         if (g_leader_index == -1) return;
+        if (!g_leader_empty_handed && is_leader_hand_object_thrown(x, y)) return;
         if (g_leader_empty_handed && door_button_present(get_square_first_thing(fx, fy)) && in_box(wall_box, x, y)) {
             sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
             sensor_add_event(EVENT_DOOR, fx, fy, 0, EFFECT_TOGGLE, (uint32_t)(g_game_time + 1));
@@ -426,7 +443,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
             touch_front_square_empty_handed(imaginary_wall, fx, fy);
         return;
     }
-    /* ponytail: throwing (champion_is_leader_hand_object_thrown) is missing; clicks in the throw zones do nothing */
+    if ((g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall) && is_leader_hand_object_thrown(x, y)) return;
     int16_t cells = g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall ? VIEW_CELL_COUNT : VIEW_CELL_FRONT_FIRST;
     for (int16_t i = 0; i < cells; i++)
         if (ui_point_in_zone((int16_t)(ZONE_DROP_CELL_FIRST + i), x, y)) {
@@ -493,12 +510,10 @@ static void click_in_spell_area(int16_t x, int16_t y)
 }
 
 /* An action of the menu (or pass, -1) ends the menu of the acting champion. Returns 1 when the
-   action took place. ponytail: menus_is_action_performed is missing, so an action only becomes the
-   last action of the champion; add the effect, action defense, and disable time with it. */
+   action took place. */
 static int16_t trigger_action(int16_t list_index)
 {
-    if (!g_acting_champion_ordinal || (list_index >= 0 && g_action_list_indices[list_index] == ACTION_NONE)) return 0;
-    if (list_index >= 0) g_champions[g_acting_champion_ordinal - 1].action_index = g_action_list_indices[list_index];
+    if (list_index >= 0) return menus_did_click_trigger_action(list_index);
     menus_clear_acting_champion();
     return 0;
 }

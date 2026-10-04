@@ -216,7 +216,6 @@ Each fix has a short comment in the code.
 
 ## Not ported in this step
 
-- Champion actions (`menus_is_action_performed`): melee, throw, shoot, and the action spells. `group_get_melee_action_damage`, `group_fluxcage_action`, `group_fuse_action`, `champion_is_projectile_spell_cast`, and `menus_is_party_spell_or_fire_shield_successful` are ready for them.
-- Timeline events 11 (enable champion action), 12 (hide damage), 13 (vi altar rebirth), and 75 (poison). They belong to the champion step.
+- Champion actions and the events 11, 12, 13, and 75 are in [rules-champions.md](rules-champions.md#actions).
 - The fuse sequence (endgame). `g_fuse_sequence_requested` marks the request.
 - The palette change after a light spell. The view step computes the palette from the light amount.
