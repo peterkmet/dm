@@ -13,6 +13,7 @@
 #define DIALOG_TABLES_SIZE 336
 #define DIALOG_TABLE_COUNT 8
 #define APPB_SPELLS 0x1046c2
+#define APPB_RESTART_BOXES 0x100dcc      /* the endgame fills these two boxes */
 #define APPB_DATA_BASE 0x10511e          /* the APPB data base: all APPB tables are below it */
 
 enum { ACTION_SET_COUNT = 44, KAOS_ACTION_SET_BYTES = 8, APPB_ACTION_SET_BYTES = 6, ACTION_SET_ACTIONS = 3, ACTION_SET_LEVELS = 2 };
@@ -142,6 +143,7 @@ const CsbCopy csb_copies[] = {
     { 0x104026, 0x104c20, 4 },    /* g_dialog_message_colors */
     { 0x10402c, 0x104c24, 6 },    /* version text: V3.1 */
     { CSB_SPELLS, APPB_SPELLS, CSB_SPELL_COUNT * SPELL_BYTES },
+    { CSB_RESTART_BOXES, APPB_RESTART_BOXES, 2 * CSB_BOX_BYTES },
 };
 const int csb_copy_count = sizeof csb_copies / sizeof csb_copies[0];
 
@@ -153,7 +155,7 @@ static void put32(uint8_t *p, uint32_t v)
 /* Copies the tables, converts the action sets, moves the dialog pointers to the KAOS tables, and builds the texts. */
 int csb_image_build(const FtlImage *appb, FtlImage *out)
 {
-    uint32_t size = CSB_SPELLS + CSB_SPELL_COUNT * SPELL_BYTES - KAOS_BASE;
+    uint32_t size = CSB_IMAGE_END - KAOS_BASE;
     uint8_t *mem = calloc(size, 1);
     if (!mem || appb->base != KAOS_BASE || appb->data_base != APPB_DATA_BASE) return free(mem), -1;
     const uint8_t *src = appb->data - KAOS_BASE;

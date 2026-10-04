@@ -196,36 +196,47 @@ Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVE
 
 The next chunk follows the payload directly. `ANIM.FTL` `0x101356` walks the chunks with this step. The scratch script `anim.py` walks all four files to the exact file end. All payload lengths are even.
 
-Known tags:
+The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (18 entries: offset word, then tag word; each offset is relative to its own position; default offset at `0x100d7a`). The loop `0x100fca` runs the chunks from the first chunk to the file end. Step 8 checked each handler in the disassembly (`machine68k`, scratch script):
 
-| Tag | Payload | Status |
-|---|---|---|
-| `AN` | 8 bytes: width 320, height 200, 4 planes, a count | Verified layout, count meaning unverified |
-| `PL` | 66 bytes, palette | Unverified detail |
-| `EN` | Full-screen image, starts with width and height | Unverified detail |
-| `DL` | Frame, starts with `0xff81`, width, height. `dmcsb` says DL frames use transparent runs. | Unverified detail |
-| `SD` | Sound sample with a 2-byte header word | Verified: the two `SD` chunks of `ENDA.DAT` equal CSB graphic items 675 (explosion) and 683 (spell, `magexplo.amg`) |
-| `SF` | NUL-terminated sample file name | Verified: `SOUND/TELE2.amg` and 4 others in `ANIM.DAT` |
-| `MF` | NUL-terminated music file name, `MIDI/NAKED.amg` | Verified name |
-| `BR`, `SO`, `FO`, `NE`, `BN`, `MI`, `P8`, `DO` | Control chunks, length 0 except `P8` | Meaning unverified |
+| Tag | Handler | Meaning | Port (`port/src/anim.c`) |
+|---|---|---|---|
+| `PL` | `0x100760` | Payload: count word, then count entries of 4 bytes: color index, red, green, blue (4 bits each). The colors go into a pending palette. The next frame applies it (`0x1016d8`). | Done |
+| `EN` | `0x100812` | Full frame: the `Graphics.DAT` packed graphic format (width, height, commands), decoded by the GRF1 function behind slot `0xea` into the back buffer. The parameter is the time in vertical blanks (50 Hz) that the frame stays. | Done |
+| `DL` | `0x100846` | Delta frame: the blitter first copies the shown screen into the back buffer (`0x1017bc`), then the same decoder draws the frame. Skip commands keep the old pixels. Pad word `0xff81` before the size. Parameter as `EN`. | Done |
+| `SD` | `0x10087a` | Sample: adds the payload to the sample table (max. 32). Payload: length word, then the 8-bit sample data. | Done |
+| `SO` | `0x1008f2` | Plays sample number parameter (1-based) at Paula period 650 (`0x101406`). The two bytes after the chunk header give the volumes: (byte + 1) >> 2. In `ENDA.DAT` the `SO` chunks have no payload, so these are the bytes `DL` of the next tag (volumes 17 and 19). | Done. UNVERIFIED: which volume is the left channel. |
+| `FO` | `0x100b64` | Loop start: pushes the loop (count parameter − 1, start = the second chunk after `FO`) onto a stack of 16 loops. The chunk after `FO` runs once. | Done |
+| `NE` | `0x100be2` | End of a pass: decrements the count. When the count was 0, it pops the loop and skips the two chunks after `NE`. | Done |
+| `BN` | `0x100c7e` | Goes back to the loop start. | Done |
+| `BR` | `0x10073a` | The parameter allows a stop by key or click (`0x10104e`, input types 1 and `0x11`). `ENDA.DAT` has 0: no stop. | Not used (always 0 in `ENDA.DAT`) |
+| `AN` | `0x100722` | Skipped by the player. Payload: width 320, height 200, 4 planes, a count. | Skipped |
+| `DO` | `0x100c9c` | Calls slot `0x182` (`0x102d52`): `ADCMD_FINISH` (command 11) on both audio channel pairs, so the playing samples end with their cycle. | No action: the port voices play once and stop |
+| `MI` | `0x100946` | Music: plays music number parameter at the next frame (`0x101566`). | Not used (no `MI` in `ENDA.DAT`) |
+| `MD`, `SF`, `MF` | `0x1008b6`, `0x100970`, `0x100a6a` | Music data, sample file, music file (loads the named file into the sample or music table). | Not used (`ANIM.DAT` only) |
+| `TR`, `WA` | `0x100cf0`, `0x100cc6` | Empty functions. | Not used |
+| `TD`, other tags | default `0x100e80` | Skipped. | Skipped |
 
-`ENDA.DAT` starts with `BR`, then `AN`. It has 2 `SD`, 3 `PL`, 2 `EN`, 285 `DL`, 3 `SO`, 1 `FO`, 1 `NE`, 1 `BN`, and 1 `DO`.
+`ENDA.DAT` starts with `BR`, then `AN`. It has 2 `SD`, 3 `PL`, 2 `EN`, 285 `DL`, 3 `SO`, 1 `FO`, 1 `NE`, 1 `BN`, and 1 `DO`. Every `EN` and `DL` payload decodes to exactly 320 × 200 pixels with 0 or 1 pad byte left (`EN` has no skip commands). The frames show the volcano, the mountain, and THE END. The loop (`FO` 8) repeats 19 frames 8 times at the end. With the loop, the animation has 426 frames.
+
+The `SO` chunks play `SD` sample 2 (graphic item 683) three times.
 
 ### Engine use
 
-1. A wall sensor of type 18 (endgame) sets the game-won flag (`-0x4f9c(A5)`) and calls `0x1285e8` through slot `0xb42(A5)` (`APPB.c` line 33497). DM calls `endgame(1)` here and shows THE END and the credits.
-2. `0x1285ee` waits, then writes `'ENDA'` into the next-module field of the shared FTL block (`*(-4(A5)) + 4`) and leaves `APPB`.
-3. The launcher `APPA.FTL` (`0x10089e`) reads the field. For `ANIM`, `TITL`, or `ENDA`, it starts `ANIM.FTL` with that tag.
-4. `ANIM.FTL` builds the file name from the tag and `.DAT` (`0x2e444154`) and plays `ENDA.DAT`. After `ENDA`, it loops forever with a delay (`ANIM.c` line 579). The player must reset the computer.
+1. A wall sensor of type 18 (endgame, C`0x123970`) sets the game-won flag (`-0x4f9c(A5)`) and calls `0x1285e8` through slot `0xb42(A5)`. There is no delay. DM waits the sensor delay, clears the saved-game flag, and calls `endgame(1)`.
+2. `0x1285e8` branches to `0x1285ee` (`quit_game_to_ending`). It waits until the pointer is hidden, closes `Graphics.DAT`, stops in an endless loop while the won flag is 0 (C`0x128600`), fills zones 401, 13, 11, and 9 with color 0, writes `'ENDA'` into the next-module field of the shared FTL block (`*(-4(A5)) + 4`, C`0x12863a`), and leaves `APPB` (`system_shutdown`, `rt_longjmp`).
+3. The launcher `APPA.FTL` (`APPA.c` line 355) reads the field. For `ANIM`, `TITL`, or `ENDA`, it starts `ANIM.FTL` with that tag.
+4. `ANIM.FTL` `0x100e96` builds the file name from the tag and `.DAT` (`0x2e444154`) and plays `ENDA.DAT`. After `ENDA`, it loops forever with a delay (`ANIM.c` line 579). The last frame stays on the screen. The player must reset the computer.
 
-The same path runs when the endgame `0x128374` ends without a restart and when a load fails on the start screen.
+The endgame `0x128374` (party dead) goes to `0x1285e8` when there is no saved game. The won flag is 0 then, so the engine stops at C`0x128600` on the credits screen.
+
+Port: `endgame_sensor` in `port/src/startend.c` sets `g_game_won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
 
 ### TITL.DAT and ANIM.DAT on disk B
 
 - `TITL.DAT` (disk B): the title animation of the utility disk. 1 `AN`, 1 `PL`, 1 `EN`, 31 `DL`, 1 `DO`.
 - `ANIM.DAT` (disk B): the long intro animation. It loads 5 samples from `Sound/` by name and music from `MIDI/NAKED.AMG`. The 5 files in `Sound/` equal CSB graphic items 688, 675, 683, 684, and 685.
 
-The port does not read any of these files.
+The port does not read these two files.
 
 ## Sounds
 
@@ -264,13 +275,13 @@ The other tables of `tables.md`, the view tables, the input tables, and the esca
 |---|---|---|---|
 | `port/src/ui.c` | `load_strings`, `ui_init` | Read item 694 in TXT1 encoding for CSB. | CSB object names end with bit 7, not NUL. |
 | `port/src/ui.c`, `port/src/champion.c` | `ui_init`, the `GFX_STRINGS` reader | Read the texts and action names from `APPB.FTL` for CSB, with an index map to the DM text indices. | Items 699 and 700 are empty in CSB. |
-| `port/src/startend.c` | THE END screen | Do not use zones 437 and 438 for CSB, or use the CSB endgame. | The CSB layout has no zones 437 and 438. |
+| `port/src/startend.c` | THE END screen | Done (Step 8): CSB draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
 | `port/src/savefile.c` | `save_decode`, `save_encode`, `save_header_init`, header accessors | Add a CSB header variant: key at `0x3a`, fields 2 bytes up, 132 extra bytes. Check the block 2 checksum. | A CSB save fails the DM header check. |
 | `port/src/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Use `CSBGAME.DAT` and `CSBGAME.BAK`. Keep the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
 | `port/src/ftl.c` and every `kaos_*` user (`tables.c`, `sound.c`, `view.c`, `dungeon.c`, and others) | `kaos_load`, address constants | Load `APPB.FTL` and translate the addresses. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
-| New | Animation player | Read the chunk format of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
+| New `port/src/anim.c` | Animation player | Done (Step 8): plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
 
-No change is needed in `graphics.c` (`gfx_open`, `gfx_expand`), `layout.c`, `sound.c` (sample access), or `dungeon.c` (`load_dungeon`).
+No change is needed in `layout.c` or `dungeon.c` (`load_dungeon`). Step 8 added `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `sound_play_data` (`sound.c`, plays sample data that is not in `Graphics.DAT`).
 
 ## Scratch scripts
 
@@ -288,7 +299,7 @@ The scripts are in the session scratchpad, folder `data/`. They are not part of 
 ## Open points
 
 - The order of the CSB texts in `APPB.FTL` against the DM text indices.
-- The meaning of the animation control chunks and of the `AN` count.
+- The meaning of the `AN` count (the player skips `AN`). The music chunks (`MI`, `MD`, `MF`) and `SF` of `ANIM.DAT`.
 - The format of `MINI.DAT` and the way the utility disk builds the CSB adventure.
 - The CSB entrance buttons (graphic 11 and the entrance mouse zones).
 - The CSB rule differences for renamed objects (for example STORM, RA BLADE).

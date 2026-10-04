@@ -40,7 +40,7 @@ int16_t load_saved_game(void);
 void endgame(int16_t party_dead);
 /* The party fused Lord Chaos: the final explosions, the texts of square (0, 0), then the endgame. */
 void fuse_sequence(void);
-/* Sensor 18: waits delay seconds, then the won endgame. */
+/* Sensor 18: waits delay seconds, then the won endgame. CSB: the ending animation (ENDA.DAT) at once. */
 void endgame_sensor(uint16_t delay);
 
 #endif

@@ -128,6 +128,7 @@ The new adventure starts on level 4 at (22, 18), facing south. Each champion has
 - RESUME loads `CSBGAME.DAT`, or `CSBGAME.BAK` when `CSBGAME.DAT` is missing. When the file is missing or damaged, the dialogs are the same as in Dungeon Master, and the game shows the CSB screen again.
 - The save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. SAVE AND PLAY saves and continues the game. SAVE AND QUIT saves, shows the credits, and then shows the CSB screen. In the prison, SAVE AND QUIT makes the new adventure and then quits: RESUME starts it. The dialog closes after a save. CSB has no quit without a save, as in the original.
 - After the credits (SAVE AND QUIT, the end of the game), the game shows the CSB screen. In turn-based mode, the game shows the entrance picture, and `load` or `new_game` over the socket starts the next game. QUIT on the CSB screen, Ctrl+Q, or closing the window ends the program.
+- The end of the game: when the party dies, THE END shows with RESTART THIS GAME only (no QUIT), then the credits. When the party wins, the game plays the ending animation `ENDA.DAT`. After the last frame, a key or a click shows the CSB screen (the original stays on the last frame).
 - Quick save (F5) and quick load (F9) use `QUICK.DAT` in the CSB folder. A quick save in the prison is a plain save: it does not make the new adventure.
 - Turn-based mode: `new_game` starts NEW ADVENTURE (the prison). `save` in the prison makes the new adventure. `load` loads `CSBGAME.DAT`.
 

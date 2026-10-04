@@ -275,20 +275,60 @@ Cast (`menus_get_champion_spell_cast_result`, C`0x126e0e`, case kind 4 at C`0x12
 4. Type 3 (C`0x1270de`): delete the first event 83 of this champion. Byte `0x11b` = party direction + 1. Word `0x11c` = x << 11 | y << 6 | map. Action disabled ticks = D6² >> 1, event duration = 4 × that value.
 5. C`0x1272d4`: the event time is game time + duration, on the party map. `timeline_add_event`. The event priority byte holds the champion index.
 
+Step 7 checks of the cast (APPB disassembly):
+
+- The switch on the spell type is `rt_switch_range` 0–3 after C`0x127094`: type 0 C`0x1270a6`, 1 C`0x1270bc`, 2 C`0x1270ca`, 3 C`0x1270de`.
+- D6 is a 16-bit word. Types 0–2: duration = 2·D6² (`muls`, `add`). The action disabled ticks of types 0–2 come from the spell record, as for the other spells.
+- Type 3 looks for the first event 83 only when byte `0x11b` is not 0. The search runs over the slots 0 to `g_event_high_water` − 1 (C`0x103bd2`) and compares the type byte and the priority byte (champion index). Disabled ticks = (D6² as an unsigned word) >> 1.
+- The failure (C`0x12706a`) prints message 11 and returns 3 before the experience and the action disable. C`0x127a1a` prints the champion name, then the text of the message. The CSB prefix text 59 is empty, so the port order (prefix, name, suffix) gives the same line.
+
 Timeline (`timeline_process`, C`0x12411e`): events 80, 81, 82 decrement champion bytes `0x118`, `0x119`, `0x11a` (C`0x124486`, `0x12449c`, `0x1244b2`). Event 83 clears byte `0x11b` (C`0x1244c8`).
 
-Magic map object: a scroll whose decoded text equals "MAGICMAP" (pointer C`0x102564` → C`0x102640`).
+Magic map object: a scroll whose decoded text equals "MAGICMAP" (pointer C`0x102564` → C`0x102640`). `is_magic_map_in_hand` (C`0x111080`) decodes the whole text (mode `0x8002`: scroll, any visibility) and compares it with `str_compare`.
+
+The CSB dungeon (Step 7 search of every scroll, also in chests and group possessions, with the port loading `disk-b/MINI.DAT`):
+
+| Text | Map | x | y | Thing |
+|---|---|---|---|---|
+| MAGICMAP | 4 | 20 | 11 | `0x1c05` |
+| CREANAME | 4 | 12 | 13 | `0x1c06` |
+| MAP SPELL / OH GOR DAIN | 5 | 14 | 1 | `0x5c08` |
+| MAP SPELL / OH GOR ROS | 5 | 7 | 10 | `0x5c09` |
+| MAP SPELL / ZO IR NETA | 6 | 21 | 19 | `0x5c07` |
+| MAP SPELL / OH GOR KU | 8 | 1 | 24 | `0x1c03` |
+
+The party starts on map 4. The prison (`Dungeon.DAT`, dungeon ID 12) has no scrolls.
 
 Scroll panel (`draw_panel_scroll`, C`0x111764`):
 
-- `scroll_text_insert_creature_name` (C`0x1116a0`) replaces each "CREANAME" (C`0x102636`) in the scroll text with the name of the creature group in front of the party, or with "NO CREATURE".
-- When the first line is "MAGICMAP": panel content 10, graphic `0x18` in zone `0x65`. Rune characters `0x72`–`0x75` in zones `0x267`+i are lit (color 8) when the matching champion byte is not 0.
-- A 7 × 7 grid in zone `0x266`, centered on the party. With byte `0x11b` set, the grid uses the stored map, position, and direction. `magic_map_draw_square` (C`0x111140`) draws each cell from tiles of graphic 12 (`magic_map_draw_cell`, C`0x1110e0`).
-- DAIN shows footprints, projectiles, and explosions. ROS shows fake walls and invisible pits (blinking). KU shows creatures whose creature attribute bit `0x4000` is clear. The tile numbers are in C`0x111140`. UNVERIFIED: tile size and gap values at C`0x1032e6`–`0x1032ec`.
+- `scroll_text_insert_creature_name` (C`0x1116a0`) replaces each "CREANAME" (C`0x102636`) in the scroll text with the name of the creature group in front of the party, or with "NO CREATURE". The name is the text of `group_get_thing` (C`0x10d7f0`) on the square one step ahead in the party direction: "NO CREATURE" (C`0x102654`) for no group, else the creature name pointer of the group creature type (table C`0x102164`, port texts 108 + type). The first match sets the drawn panel content to 9.
+- When the first line (after the replacement) is "MAGICMAP": drawn panel content 10, graphic `0x18` in zone `0x65` with transparent color 8. Rune characters `0x72`–`0x75` (KU, ROS, DAIN, NETA) print in zones `0x267`–`0x26a` with `text_print_to_viewport_zone_color`: color 8 when the byte (`0x11a`, `0x119`, `0x118`, `0x11b`) is not 0, else color 0, background 15.
+- A 7 × 7 grid. `get_zone_size(0x266)` (C`0x119616`) gives the top left point of the first square. The first row is 3 squares ahead of the party, the first column 3 squares to the left (`update_map_coordinates_after_relative_movement(dir, 3, −3)`). Columns step to the right (direction + 1), rows step back (direction + 2). With byte `0x11b` set, the grid uses the stored map (`set_current_map`), position, and direction (byte − 1), and `set_current_map(party map)` follows.
+- The party square is drawn last, when the grid map is the party map. `magic_map_draw_square` (C`0x111140`, args x, y, direction, pixel x, pixel y) draws each square from tiles of graphic 12 (`magic_map_draw_cell`, C`0x1110e0`: tile & 15 and tile >> 4 select the 7 × 7 source, transparent color 10).
+- Tile size and gap (C`0x1032e6`–`0x1032ec`): width 7, height 7, gap x 1, gap y 1 in the APPB data. The code only reads them. Graphic 12 is 112 × 42 (16 × 6 tiles).
+
+`magic_map_draw_square` (C`0x111140`), verified in the disassembly (the decompiler stops at the `rt_switch_word` table C`0x111218`):
+
+1. `set_square_aspect` of the square in the map direction. The aspect words are element, square byte, first thing, then 4 words (wall sides, or door state, door thing index, floor ornament ordinal with the footprints bit `0x8000`).
+2. Border fill (`fill_viewport_box`, 1 pixel around the tile): color 8 when x and y are the party x and y (also on a stored map), else color 4 when DAIN (`0x118`) is set, the element is not a wall, and the footprints bit is set.
+3. Blink flag: square type 6 (fake wall) with bit 0 (imaginary).
+4. The element: wall: tile 1 when ROS and blink and game time bit 1, else tile 0 and for each side k with a wall ornament: tile `0x1a`+k for the vi altar ornament (C`0x10220c`), `0x16`+k for an alcove, `0x1e`+k for a fountain. Corridor: tile 2, then tile `0x4e` + the global floor ornament index (C`0x1021e4`) of the floor ornament ordinal. Teleporter: tile 6 + `random_2bits`. Door (16 side, 17 front): tile `0xb` or `0xa`, + 2 without a door button (door byte 3 bit 6), + 4 when the door state is open or destroyed. Stairs (18, 19): tile `0x12` + ((stairs exit direction − direction) & 3), turned by 2 for stairs up. Pit: tile 3, tile 4 when invisible, tile 5 when invisible and ROS and game time bit 0.
+5. Only with DAIN or KU: the thing list from the first thing. A group with KU becomes the group of the square. With DAIN: the first projectile, the first explosion, and each junk of object type 197 (ZOKATHRA SPELL): tile `0x22` + ((cell − direction) & 3), + 4 when the element is a wall and the square does not blink.
+6. A group whose creature attributes have bit `0x4000` clear: tile `0x4c` + game time bit 0.
+7. From the first projectile on: each projectile with `get_projectile_aspect` of its slot: −11 tile `0x32`, −12 `0x36`, −14 `0x3e`, −13 `0x3a`, −4 `0x2a` (+ 4 when bit 0 of the projectile event direction, event byte 9 bits 4–5, differs from bit 0 of the map direction), other negative values none; an aspect ≥ 0 with object type 197: `0x22`. The tile adds (cell − direction) & 3.
+8. From the first explosion on: each explosion type 0 or 2: tile `0x42`; 6 or 7: `0x44` + `random_2bits`; 50: `0x48` + `random_2bits`; other types below 40: `0x43`; 40, 100, 101: none.
+
+The footprints bit (`set_square_aspect` C`0x10d630`–`0x10d654`): for a corridor, an open fake wall, a closed pit, an open imaginary pit, a door, and a teleporter, `champion_get_scent_ordinal` − 1 is in [`first_scent_index`, `last_scent_index`). Walls, closed fake walls, stairs, and other open pits have no footprints.
+
+`set_current_map` (C`0x10d666`) changes the map, its size, and its door types. The ornament lists, the alcove, vi altar, and fountain indices, and the inscription index come from `load_current_map_graphics` of the party map. Thus a stored map of another level shows its squares with the ornament data of the party map. The port does the same.
+
+Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn panel content 9 or 10, CSB sets the panel attribute of the inventory champion and calls `draw_champion_state` each tick. `draw_champion_state` (C`0x115a04`) draws `draw_panel_object(leader hand object, 1)` while the eye is pressed and the drawn panel content is 9 or 10. Thus the map and the creature name follow the game.
+
+Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_drawn` (C`0x1024cc`: 5, 9, or 10), not `g_panel_content` (C`0x1024ca`).
 
 Port changes: `port/src/magic.c` (spell kind 4, failure message 11), `port/src/spells.c` (29 spells), `port/src/timeline_process.c` (events 80–83), `port/src/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `port/src/ui_champion.c` (scroll panel, CREANAME, MAGICMAP), `port/src/view.c` (square aspect for the map).
 
-UNVERIFIED: whether the CSB dungeon contains a "MAGICMAP" scroll. The dungeon is in the save file that `CEDT.FTL` makes.
+Port (Step 7): `magic.c` `cast_magic_map`, `timeline_process.c` events 80–83, `ui_champion.c` (`insert_creature_name`, `draw_panel_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
 
 ### Sensors and timeline
 
@@ -301,7 +341,7 @@ UNVERIFIED: whether the CSB dungeon contains a "MAGICMAP" scroll. The dungeon is
 ### Creatures
 
 - `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `port/src/game.h`, `MIN_ACTIVE_GROUP_COUNT` in `port/src/savegame.c`.
-- `group_steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. UNVERIFIED: an indirect write of 10.
+- `group_steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. Step 7 check: the APPB code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
 
 ### Champions
 
@@ -359,16 +399,22 @@ Port: `port/src/startend.c`, `port/src/gameloop.c`. UNVERIFIED: the labels of th
 
 DM: wall sensor type 18 waits, clears the saved-game flag, and calls `endgame(1)`: the victory screen with champion portraits and skills, then the credits.
 
-CSB:
+CSB (Step 8 checked each address in the APPB, APPA, and ANIM disassembly):
 
-1. Wall sensor type 18 (C`0x123970`) sets `g_fade_display_on_exit` (C`0x100182`) to 1 and calls `quit_game`.
-2. `quit_game_to_ending` (C`0x1285ee`) clears the interface zones and writes the module tag `ENDA` (`0x454e4441`) into the module arguments (C`0x12863a`). Then `system_shutdown` and `rt_longjmp` leave the engine.
-3. The loader runs `ANIM.FTL`, which builds the file name `<tag>.DAT` and plays `ENDA.DAT`. UNVERIFIED: the APPA and ANIM chain was read only from strings.
-4. When the flag is 0, `quit_game_to_ending` stops in an endless loop (C`0x128600`). UNVERIFIED: this is the frozen screen after SAVE AND QUIT.
+1. Wall sensor type 18 (C`0x123970`) sets the game-won flag `-0x4f9c(A5)` (C`0x100182`) to 1 and calls `quit_game` (C`0x1285e8`) through slot `0xb42`. There is no delay, and the saved-game flag stays.
+2. `quit_game_to_ending` (C`0x1285ee`) waits until the pointer is hidden, closes `Graphics.DAT`, fills zones 401, 13, 11, 9 with color 0, and writes the module tag `ENDA` (`0x454e4441`) into the module arguments (C`0x12863a`). Then `system_shutdown` and `rt_longjmp` leave the engine.
+3. The launcher (`APPA.c` line 355) runs `ANIM.FTL` for the tags `ANIM`, `TITL`, and `ENDA`. `ANIM.FTL` (C`0x100e96` of ANIM) builds the file name `<tag>.DAT`, plays `ENDA.DAT`, and then loops forever on the last frame. The chunk format: `docs/csb-data.md` "ENDA.DAT and the endgame".
+4. When the won flag is 0, `quit_game_to_ending` stops in an endless loop (C`0x128600`: `beq` to itself). This is the frozen screen after the credits of SAVE AND QUIT and after the credits of a death without a saved game.
 
-CSB `endgame` (C`0x128374`) is only the death screen: graphic 6 ("THE END"), a RESTART THIS GAME button for 900 frames, then `load_game` and `start_game`, or the credits (graphic 5, palette C`0x100f18`) and `quit_game`. It has no QUIT button and no champion list.
+CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:
 
-Port changes: `port/src/timeline_process.c` `timeline_process_event6_wall`, `port/src/startend.c` (endgame, credits). The port needs an `ENDA.DAT` player or a replacement screen, see [Open questions](#open-questions).
+- Party dead and not won: sound 7 (scream) at the party, 240 frames.
+- THE END: graphic 6 in zone 5, palette with 16 × `0x004` and color 15 `0xfff` (C`0x12842e`–`0x128464`), 300 frames (only the first time).
+- With a saved game (`-0xe0(A5)`): RESTART THIS GAME. `fill_screen_box` of the box at C`0x100dcc` (x 103, y 145, width 115, height 15) with color 1 and of the box at C`0x100dd4` (105, 147, 111, 11) with color 0, `text_print_to_screen`(110, 154, color 4, color 0, text 77). Colors 1 = `0x86f` and 4 = `0xfff`. The endgame mouse table (C`0x103c60`) has RESTART only, with the outer box. No QUIT button, no champion list.
+- 900 frames, or RESTART: `load_game`, then `start_game`. When the load fails, the credits.
+- The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, THE END again (without the 300 frames); else `quit_game`.
+
+Port (`port/src/startend.c`): `endgame_sensor` plays `ENDA.DAT` with `port/src/anim.c` for CSB, waits for a key or a click, and shows the CSB screen. `draw_the_end` draws the CSB button from the boxes, which the image copies to `0x104248` (`CSB_RESTART_BOXES`). After the credits, the port shows the CSB screen (deliberate deviation, as for DM); it does not go back to THE END.
 
 ### Copy protection
 
@@ -408,8 +454,8 @@ Total without `ENDA.DAT` and without `CEDT.FTL`: about 1500–2200 lines.
 ## Open questions
 
 1. Game start: CSB needs `CSBGame.dat` from the utility disk (`CEDT.FTL`, disk B, with `MINI.DAT` and the portraits). Must the user supply a save made with the original utility disk, or must the port also port the "make new adventure" and champion import of `CEDT.FTL`?
-2. The `ENDA.DAT` ending: port the `ANIM.FTL` player, or show a replacement screen?
-3. The magic map: is a "MAGICMAP" scroll in the CSB dungeon? If not, the magic map can wait.
-4. SAVE AND QUIT. Answered: the original does not freeze. After a successful save, `save_game` calls `endgame(0)`: the credits, then `quit_game` (see [Save and load](#save-and-load)). The port shows the credits and then the CSB screen (turn-based: the entrance picture).
+2. The `ENDA.DAT` ending: port the `ANIM.FTL` player, or show a replacement screen? Answered: Step 8 ports the player (`port/src/anim.c`, see [End of the game](#end-of-the-game)).
+3. The magic map: is a "MAGICMAP" scroll in the CSB dungeon? Answered: yes, on map 4 at x 20, y 11 (see [Magic map](#magic-map)).
+4. SAVE AND QUIT. Answered: after a successful save, `save_game` calls `endgame(0)`: the credits, then `quit_game` (see [Save and load](#save-and-load)). `quit_game` then stops at C`0x128600`, because the won flag is 0 (Step 8, see [End of the game](#end-of-the-game)). The port shows the credits and then the CSB screen (turn-based: the entrance picture).
 5. The DM disk has an empty `CSBGAME.DAT`. Does DM 3.60 read it? Not traced.
 6. Graphics.DAT item 696 (layout) is 16 bytes shorter in CSB. Answered: only the endgame button zones 437 and 438 are missing (see [Graphics.DAT](#graphicsdat)).

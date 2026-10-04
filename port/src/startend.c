@@ -2,8 +2,10 @@
 #include <string.h>
 #include "startend.h"
 #include "adventure.h"
+#include "anim.h"
 #include "champion.h"
 #include "command.h"
+#include "csbimage.h"
 #include "dialog.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -75,6 +77,9 @@
 #define FUSE_FLASH_ROUNDS 3            /* the lord flashes 4 times per round; round n lasts n ticks per flash */
 #define FUSE_FLASHES_PER_ROUND 4
 #define SAVE_DIR_SIZE 1024
+#define CSB_RESTART_TEXT_X 110         /* RESTART THIS GAME text position of the CSB endgame */
+#define CSB_RESTART_TEXT_Y 154
+#define CSB_ENDING_FILE "ENDA.DAT"     /* the CSB ending animation, in the disk A folder */
 
 /* Choices of the save dialog without the format choice. */
 enum { SAVE_CHOICE_CANCEL = 1, SAVE_CHOICE_SAVE = 2, SAVE_CHOICE_QUIT = 3 };
@@ -294,7 +299,23 @@ static void draw_champion_parade(void)
     ui_set_screen_palette(NULL);
 }
 
-/* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. */
+/* The box of a CSB endgame button: x, y, width, height words. */
+static Box csb_box(uint32_t address)
+{
+    return (Box){ kaos_s16(address), kaos_s16(address + 2), kaos_s16(address + 4), kaos_s16(address + 6) };
+}
+
+/* CSB: RESTART THIS GAME in its fixed boxes. The click box is in the endgame mouse table. */
+static void csb_draw_restart_button(void)
+{
+    Bitmap screen = ui_screen();
+    Box outer = csb_box(CSB_RESTART_BOXES), inner = csb_box(CSB_RESTART_BOXES + CSB_BOX_BYTES);
+    draw_fill(&screen, &outer, COLOR_DARK_GRAY);
+    draw_fill(&screen, &inner, COLOR_BLACK);
+    text_draw_screen(CSB_RESTART_TEXT_X, CSB_RESTART_TEXT_Y, COLOR_CYAN, COLOR_BLACK, ui_string(TEXT_RESTART_THIS_GAME));
+}
+
+/* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. CSB has no QUIT. */
 static void draw_the_end(int with_buttons)
 {
     Bitmap screen = ui_screen();
@@ -304,8 +325,12 @@ static void draw_the_end(int with_buttons)
     memset(fb, COLOR_BLACK, sizeof fb);
     ui_blit_graphic(&screen, GFX_THE_END, ZONE_THE_END, COLOR_NONE);
     if (with_buttons) {
-        endgame_draw_button(ZONE_RESTART_BUTTON, ui_string(TEXT_RESTART_THIS_GAME), 0);
-        endgame_draw_button(ZONE_QUIT_BUTTON, ui_string(TEXT_QUIT), 1);
+        if (g_adventure == ADVENTURE_CSB) {
+            csb_draw_restart_button();
+        } else {
+            endgame_draw_button(ZONE_RESTART_BUTTON, ui_string(TEXT_RESTART_THIS_GAME), 0);
+            endgame_draw_button(ZONE_QUIT_BUTTON, ui_string(TEXT_QUIT), 1);
+        }
         colors[COLOR_DARK_GRAY] = BUTTON_FRAME_COLOR;
         colors[COLOR_CYAN] = THE_END_WHITE;
     }
@@ -491,8 +516,23 @@ void fuse_sequence(void)
     endgame(1);
 }
 
+/* CSB won game: the ending animation, then the CSB screen after a key or a click (the original stays on the last frame). */
+static void csb_ending(void)
+{
+    char path[SAVE_DIR_SIZE];
+    g_game_screen_inactive = 1;
+    snprintf(path, sizeof path, "%s/%s", gameloop_data_dir(), CSB_ENDING_FILE);
+    if (!anim_play(path)) wait_for_input();
+    g_return_to_entrance = 1;
+}
+
 void endgame_sensor(uint16_t delay)
 {
+    if (g_adventure == ADVENTURE_CSB) { /* no delay, and the saved game stays */
+        g_game_won = 1;
+        csb_ending();
+        return;
+    }
     wait_frames((int16_t)(delay * SENSOR_DELAY_FRAMES));
     g_saved_game_exists = 0;
     g_game_won = 1;
