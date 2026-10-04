@@ -1,6 +1,7 @@
 """MCP stdio server that plays Dungeon Master through the turn-based control socket.
 
-Start the game with `build/dm --mode turnbased --control <socket>`, then run `uv run dm-mcp`.
+Start the game with `build/dm --mode turnbased --control <socket>` (add `--adventure csb` for
+Chaos Strikes Back), then run `uv run dm-mcp`.
 The socket path comes from the environment variable DM_CONTROL (default ~/.dm/control.sock).
 """
 
@@ -20,6 +21,11 @@ message, so one call can rest until something happens.
 
 Goal: explore the dungeon, find the Firestaff, defeat Lord Chaos. First recruit up to four
 champions from the mirrors in the Hall of Champions on the first level.
+
+Chaos Strikes Back: get_state has "adventure": "csb". new_game starts in the prison (map 0), where
+you recruit up to four champions at the mirrors, as in Dungeon Master. save_game there makes the
+CSB adventure and the game continues at the start of the CSB dungeon (map 4). Its answer is only
+{ok}: call get_state afterwards. The save file is CSBGAME.DAT.
 
 How to play:
 1. Look: `get_view` shows the squares you can see in front (depth 0 is your own square, depth 1
@@ -65,8 +71,8 @@ mcp = MCPServer("dm", instructions=INSTRUCTIONS)
 def get_state() -> dict:
     """The party and the champions.
 
-    Fields: time (game ticks); party {map, level, x, y, facing, darkness 0 bright to 5 dark,
-    can_move, sleeping, dead}; leader (champion index); leader_hand (the object that the leader
+    Fields: time (game ticks); adventure ("dm" or "csb"); party {map, level, x, y, facing,
+    darkness 0 bright to 5 dark, can_move, sleeping, dead}; leader (champion index); leader_hand (the object that the leader
     moves, or null); candidate (name of a champion shown by a mirror, answer with act recruit);
     candidate: the champion a mirror shows, with the same fields as a champion, not yet in the
     party (answer with act recruit), or null;
@@ -166,21 +172,24 @@ def wait(ticks: int = 10) -> dict:
 
 @mcp.tool()
 def save_game() -> dict:
-    """Writes the game to the save file DMGAME.DAT (one save slot; the old file becomes
-    DMGAME.BAK). Returns {ok}. Not possible after game over. Save before risky fights."""
+    """Writes the game to the save file DMGAME.DAT, or CSBGAME.DAT in Chaos Strikes Back (one save
+    slot; the old file becomes DMGAME.BAK or CSBGAME.BAK). Returns {ok}. In the CSB prison, the
+    save makes the adventure and the game continues at map 4: call get_state afterwards. Not
+    possible after game over. Save before risky fights."""
     return request({"cmd": "save"})
 
 
 @mcp.tool()
 def load_game() -> dict:
-    """Loads the saved game, also after game over. Returns {ok, state}."""
+    """Loads the saved game (DMGAME.DAT or CSBGAME.DAT), also after game over.
+    Returns {ok, state}."""
     return request({"cmd": "load"})
 
 
 @mcp.tool()
 def new_game() -> dict:
-    """Starts a new game at the dungeon entrance, also after game over. All progress since the
-    last save is lost. Returns {ok, state}."""
+    """Starts a new game at the dungeon entrance (CSB: in the prison), also after game over.
+    All progress since the last save is lost. Returns {ok, state}."""
     return request({"cmd": "new_game"})
 
 

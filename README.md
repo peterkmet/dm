@@ -121,7 +121,7 @@ The entrance of Dungeon Master: click ENTER or press Return to start a new game.
 
 1. Select NEW ADVENTURE on the CSB screen. The game starts in the prison (`game-csb/Dungeon.DAT`).
 2. Recruit one to four champions at the 24 mirrors.
-3. Save the game. In the prison, the save makes the new adventure: the game puts the party into `game-csb/disk-b/MINI.DAT`, writes `CSBGAME.DAT`, loads it, and continues in the CSB dungeon. The original needs a restart with the utility disk for this step.
+3. Save the game. In the prison, the save makes the new adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, loads it, and continues in the CSB dungeon. The original needs a restart with the utility disk for this step.
 
 The new adventure starts on level 4 at (22, 18), facing south. Each champion has full health, stamina, and mana, no objects, and food and water of 1500 to 1755. The save needs at least one champion, and each champion needs a unique first name. Else a dialog gives the reason and the game stays in the prison.
 

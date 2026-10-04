@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "state_json.h"
+#include "adventure.h"
 #include "champion.h"
 #include "command.h"
 #include "dungeon.h"
@@ -371,6 +372,7 @@ void state_json_state(Json *j)
 {
     json_open(j, '{');
     key_int(j, "time", (long)g_game_time);
+    key_str(j, "adventure", g_adventure == ADVENTURE_CSB ? "csb" : "dm");
     json_key(j, "party");
     json_open(j, '{');
     key_int(j, "map", g_party_map_index);
