@@ -12,7 +12,7 @@ from test_champion import Champion
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 STEP_EAST, STEP_NORTH = (0, 1, 0, -1), (-1, 0, 1, 0)
-KEY_UP, KEY_DEL, KEY_HELP, KEY_F1 = 0x4C00, 0x4600, 0x5F00, 0x5000
+KEY_UP, KEY_DEL, KEY_HELP, KEY_F1, KEY_RETURN, KEY_ESCAPE = 0x4C00, 0x4600, 0x5F00, 0x5000, 0x4400, 0x4500
 LEFT_PRESS, LEFT_RELEASE = 2, 4
 VIEWPORT_ORIGIN = 0x10293A
 ZONE_RESURRECT, ZONE_DROP_PARTY_CELL, ZONE_BACKPACK_FIRST_SLOT = 570, 740, 520
@@ -218,3 +218,38 @@ def test_game_runs_headless_with_auto_enter():
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy", DM_AUTO_ENTER="1")
     result = subprocess.run([str(ROOT / "build/dm"), "--frames", "100"], cwd=ROOT, env=env, capture_output=True, timeout=60)
     assert result.returncode == 0, result.stderr
+
+
+def viewport_pixels(game):
+    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(game.lib, "fb")
+    x0, y0 = game.origin
+    return [fb[(y0 + y) * 320 + x0 + x] for y in range(136) for x in range(224)]
+
+
+def test_freeze_covers_open_inventory(game):
+    assert game.lib.gameloop_new_game(str(GAME).encode())
+    game.run(26)
+    path, direction = game.path_to_mirror()
+    game.walk(path)
+    game.face(direction)
+    game.run()
+    game.click_box(game.boxes[5])
+    game.click_zone(ZONE_RESURRECT)
+    game.key(KEY_F1)
+    game.run()
+    assert game.value("g_inventory_champion_ordinal") == 1
+    inventory = viewport_pixels(game)
+
+    game.key(KEY_ESCAPE)
+    game.run(39)
+    assert game.value("g_game_frozen") == 1
+    frozen = viewport_pixels(game)
+    assert len(set(frozen)) == 2  # black and the GAME FROZEN text, no slot icons on top
+
+    for key in (KEY_ESCAPE, KEY_RETURN):
+        game.key(key)
+        game.run()
+        if not game.value("g_game_frozen"):
+            break
+    assert game.value("g_game_frozen") == 0
+    assert viewport_pixels(game) == inventory

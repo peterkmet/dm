@@ -16,6 +16,7 @@ Approved by the user on 2026-10-04 (design in chat, no PRD). Code style: `docs/c
 4. Coloured action icons (`ui_menus.c`).
 5. Item stat meters in the object description panel (`ui_champion.c`).
 6. Debug read-out on F3: level, X/Y, facing, light. Display only, no cheats.
+7. Escape closes an open inventory first. With no inventory open, it freezes the game as in vanilla. Vanilla keeps the original: Escape always freezes.
 
 ## Turn-based mode
 

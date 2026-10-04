@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include "gameloop.h"
@@ -44,9 +45,18 @@
 #define LIGHT_SOURCES_USED 5          /* the brightest torches that add light */
 #define LIGHT_FIRST_SHIFT 6
 #define POINTER_ZONE_COUNT 16
-#define POINTER_ZONE_WORDS 6
+#define POINTER_ZONE_BYTES 12
+#define POINTER_HOTSPOT_BYTES 8
 #define POINTER_SHADOW_COLOR 12       /* black: the shadow, swapped with the transparent color 0 */
 #define BITPLANE_COUNT 4
+#define PIXELS_PER_WORD 16
+#define PATH_SIZE 1024
+#define POINTER_WIDTH_BEFORE 4        /* the bitmap width word comes 4 bytes before the planes */
+#define POINTER_HEIGHT_BEFORE 2
+
+/* Byte offsets of the words of a pointer zone and of a pointer hotspot. */
+enum { POINTER_ZONE_X = 0, POINTER_ZONE_Y = 2, POINTER_ZONE_W = 4, POINTER_ZONE_H = 6, POINTER_ZONE_SHAPE = 8 };
+enum { HOTSPOT_X = 0, HOTSPOT_Y = 2 };
 
 enum { POINTER_ARROW, POINTER_HAND, POINTER_OBJECT };
 
@@ -55,7 +65,7 @@ static uint16_t shown_hand_object = THING_NONE;
 
 int gameloop_load_data(const char *dir)
 {
-    char path[1024];
+    char path[PATH_SIZE];
     snprintf(path, sizeof path, "%s/KAOS.FTL", dir);
     if (kaos_load(path)) return 0;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
@@ -70,7 +80,7 @@ void entrance_draw(void)
     Bitmap screen = ui_screen();
     Box doors, work, door;
     memset(fb, 0, sizeof fb);
-    for (int i = 0; i < 16; i++) palette[i] = kaos_u16(ENTRANCE_PALETTE + 2 * i);
+    for (int i = 0; i < PALETTE_COLORS; i++) palette[i] = kaos_u16(ENTRANCE_PALETTE + 2 * i);
     palette_split_top = 0;
     palette_split_bottom = SCREEN_H;
     ui_blit_graphic(&screen, GFX_ENTRANCE, ZONE_SCREEN, COLOR_NONE);
@@ -107,6 +117,7 @@ static int16_t party_light_amount(void)
             }
     for (int i = 0; i < LIGHT_SOURCES_USED; i++)
         if (power[i]) {
+            /* the 16-bit cast keeps the overflow of the original word arithmetic */
             total += (int16_t)(*tables_light_power_to_light_amount(power[i]) << shift) >> LIGHT_FIRST_SHIFT;
             shift = max16(0, shift - 1);
         }
@@ -143,7 +154,7 @@ static void refresh_interface(void)
     champion_draw_all_states(0);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].current_health) continue;
-        int inventory = i + 1 == g_inventory_champion_ordinal;
+        int inventory = i + 1 == g_inventory_champion_ordinal && !g_game_frozen;  /* the frozen screen covers it */
         for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++) champion_draw_slot(i, slot);
         if (inventory) ui_draw_viewport();
     }
@@ -189,7 +200,7 @@ static void show_game(void)
 
 int gameloop_new_game(const char *dir)
 {
-    char path[1024];
+    char path[PATH_SIZE];
     snprintf(path, sizeof path, "%s/Dungeon.DAT", dir);
     if (!load_dungeon(path)) return 0;
     game_new();
@@ -253,6 +264,19 @@ int gameloop_frame(void)
     return g_stop_waiting_for_input && g_game_time_ticking;
 }
 
+/* The game time advances one tick: torches burn, freeze life and movement delays count down, and
+   the champions get their time effects. */
+static void advance_game_time(void)
+{
+    g_game_time++;
+    if (!(g_game_time & TORCH_BURN_INTERVAL_MASK)) decrease_torches_light_power();
+    if (g_party.freeze_life_ticks) g_party.freeze_life_ticks--;
+    menus_refresh_action_area();
+    if (!(g_game_time & (g_party_is_sleeping ? TIME_EFFECTS_SLEEPING_MASK : TIME_EFFECTS_MASK))) champion_apply_time_effects();
+    if (g_disabled_movement_ticks) g_disabled_movement_ticks--;
+    if (g_projectile_disabled_movement_ticks) g_projectile_disabled_movement_ticks--;
+}
+
 /* game_loop: one tick of the game. A dead party ends in the endgame. */
 void gameloop_tick(void)
 {
@@ -277,13 +301,7 @@ void gameloop_tick(void)
         endgame(1);
         return;
     }
-    g_game_time++;
-    if (!(g_game_time & TORCH_BURN_INTERVAL_MASK)) decrease_torches_light_power();
-    if (g_party.freeze_life_ticks) g_party.freeze_life_ticks--;
-    menus_refresh_action_area();
-    if (!(g_game_time & (g_party_is_sleeping ? TIME_EFFECTS_SLEEPING_MASK : TIME_EFFECTS_MASK))) champion_apply_time_effects();
-    if (g_disabled_movement_ticks) g_disabled_movement_ticks--;
-    if (g_projectile_disabled_movement_ticks) g_projectile_disabled_movement_ticks--;
+    advance_game_time();
     message_clear_expired_rows(g_game_time);
     refresh_interface();
     run_requested_sequence();
@@ -292,14 +310,16 @@ void gameloop_tick(void)
 /* Reads a 4 bit plane bitmap of the KAOS data into one color per pixel. */
 static void planar_pointer(uint32_t address, uint8_t *px, int *w, int *h)
 {
-    *w = kaos_u16(address - 4);
-    *h = kaos_u16(address - 2);
-    int row_bytes = (*w + 15) / 16 * 2, plane = row_bytes * *h;
+    *w = kaos_u16(address - POINTER_WIDTH_BEFORE);
+    *h = kaos_u16(address - POINTER_HEIGHT_BEFORE);
+    int row_bytes = (*w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD * 2, plane = row_bytes * *h;
     for (int y = 0; y < *h; y++)
         for (int x = 0; x < *w; x++) {
             uint8_t c = 0;
-            for (int p = 0; p < BITPLANE_COUNT; p++)
-                c |= (uint8_t)((kaos_u8(address + p * plane + y * row_bytes + x / 8) >> (7 - x % 8) & 1) << p);
+            for (int p = 0; p < BITPLANE_COUNT; p++) {
+                uint8_t byte = kaos_u8(address + p * plane + y * row_bytes + x / CHAR_BIT);
+                c |= (uint8_t)((byte >> (CHAR_BIT - 1 - x % CHAR_BIT) & 1) << p);
+            }
             px[y * *w + x] = c;
         }
 }
@@ -332,10 +352,11 @@ static int pointer_shape(int16_t x, int16_t y, int in_game)
 {
     if (!in_game || g_leader_index == -1) return POINTER_ARROW;
     for (int i = 0; i < POINTER_ZONE_COUNT; i++) {
-        uint32_t z = POINTER_ZONES + 2 * POINTER_ZONE_WORDS * i;
-        int16_t zx = kaos_s16(z), zy = kaos_s16(z + 2), zw = kaos_s16(z + 4), zh = kaos_s16(z + 6);
+        uint32_t z = POINTER_ZONES + POINTER_ZONE_BYTES * i;
+        int16_t zx = kaos_s16(z + POINTER_ZONE_X), zy = kaos_s16(z + POINTER_ZONE_Y);
+        int16_t zw = kaos_s16(z + POINTER_ZONE_W), zh = kaos_s16(z + POINTER_ZONE_H);
         if (x < zx || x >= zx + zw || y < zy || y >= zy + zh) continue;
-        if (!kaos_s16(z + 8)) return POINTER_ARROW;
+        if (!kaos_s16(z + POINTER_ZONE_SHAPE)) return POINTER_ARROW;
         return g_leader_empty_handed ? POINTER_HAND : POINTER_OBJECT;
     }
     return POINTER_ARROW;
@@ -347,14 +368,14 @@ int gameloop_pointer(int16_t x, int16_t y, int in_game, uint8_t *px, int *w, int
     int shape = pointer_shape(x, y, in_game);
     if (shape == POINTER_OBJECT) object_pointer(px, w, h);
     else planar_pointer(shape == POINTER_HAND ? HAND_POINTER : ARROW_POINTER, px, w, h);
-    *hot_x = kaos_s16(POINTER_HOTSPOTS + 8 * shape);
-    *hot_y = kaos_s16(POINTER_HOTSPOTS + 8 * shape + 2);
+    *hot_x = kaos_s16(POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + HOTSPOT_X);
+    *hot_y = kaos_s16(POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + HOTSPOT_Y);
     return 1;
 }
 
 const uint16_t *gameloop_pointer_palette(void)
 {
-    static uint16_t colors[16];
-    for (int i = 0; i < 16; i++) colors[i] = kaos_u16(SPRITE_PALETTE + 2 * i);
+    static uint16_t colors[PALETTE_COLORS];
+    for (int i = 0; i < PALETTE_COLORS; i++) colors[i] = kaos_u16(SPRITE_PALETTE + 2 * i);
     return colors;
 }
