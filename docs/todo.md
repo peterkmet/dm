@@ -4,7 +4,6 @@ User wishes for future versions. Not planned yet.
 
 - Weapons go straight into a hand of a champion, not through the inventory.
 - The automap (Tab, M) scrolls with the mouse, so the whole level can be seen.
-- Fix the automap: walls and corridors look swapped.
 - A click on a fountain with an empty hand lets the whole party drink, not only the leader.
 - An application icon (macOS app bundle), so the Dock does not show the generic (exec) icon.
 - Check: in the DOS version, a selected rune stayed selected during sleep, so a fighter could train a little mana. Check what the Amiga original (KAOS) does with the selected runes during sleep, and that the port does the same.

@@ -164,17 +164,17 @@ static void fill_clipped(Bitmap *target, Box area, int16_t x, int16_t y, int16_t
     draw_fill(target, &box, color);
 }
 
-/* One seen square at screen position (left, top): floor with a 1 pixel grid gap, or a full wall. */
+/* One seen square at screen position (left, top): a light floor with a 1 pixel grid gap, or a full dark wall. */
 static void draw_square(Bitmap *target, Box area, uint8_t square, int16_t left, int16_t top)
 {
     const int16_t size = AUTOMAP_CELL_SIZE, floor = AUTOMAP_CELL_SIZE - 1;
     const int16_t bar = AUTOMAP_CELL_SIZE / 3, middle = (AUTOMAP_CELL_SIZE - AUTOMAP_CELL_SIZE / 3) / 2;
     int type = SQUARE_TYPE(square);
     if (type == SQUARE_WALL || (type == SQUARE_FAKE_WALL && !(square & FAKE_WALL_OPEN))) {
-        fill_clipped(target, area, left, top, size, size, COLOR_LIGHT_GRAY);
+        fill_clipped(target, area, left, top, size, size, COLOR_DARKEST_GRAY);
         return;
     }
-    uint8_t color = COLOR_DARKEST_GRAY;
+    uint8_t color = COLOR_LIGHT_GRAY;
     if (type == SQUARE_STAIRS) color = square & STAIRS_UP ? COLOR_WHITE : COLOR_GOLD;
     else if (type == SQUARE_PIT && (square & PIT_OPEN)) color = COLOR_RED;
     else if (type == SQUARE_TELEPORTER && (square & TELEPORTER_OPEN) && (square & TELEPORTER_VISIBLE)) color = COLOR_CYAN;
