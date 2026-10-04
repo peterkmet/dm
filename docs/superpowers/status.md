@@ -15,6 +15,10 @@ Vanilla, advanced and turn-based modes are committed (commit `5a24461`, 319 test
 - Step 16 final review (agent started 10:50): ASan soak in all modes, protocol robustness, vanilla regression check.
 - Next: fix review findings, CHANGELOG, manual checklist, merge to main, create the private GitHub repo and push (user chose private GitHub). Then the LLM playthrough: run `build/dm --mode turnbased` with a visible window; a subagent plays through `uv run dm-play` over the socket (user chose the socket, no MCP registration). Keep notes and save often.
 
+## Known differences from the original
+
+- The port never draws the party footprints on the floor (the footprint flag is never set).
+
 ## Snapshots
 
 The branch `wip-snapshot` holds snapshots of the whole working tree, including unfinished files. Each snapshot is a commit on top of the previous one. To restore a file: `git checkout wip-snapshot -- <path>`.
