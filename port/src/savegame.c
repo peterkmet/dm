@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "savegame.h"
+#include "adventure.h"
 #include "advanced.h"
 #include "automap.h"
 #include "champion.h"
@@ -304,7 +305,7 @@ static const uint8_t *find_automap(const uint8_t *data, size_t *size, size_t *le
     return block;
 }
 
-int16_t savegame_save(const char *dir) { return savegame_save_as(dir, SAVE_FILE_NAME, SAVE_BACKUP_FILE_NAME); }
+int16_t savegame_save(const char *dir) { return savegame_save_as(dir, adventure_save_name(), adventure_backup_name()); }
 
 int16_t savegame_save_as(const char *dir, const char *name, const char *backup_name)
 {
@@ -376,7 +377,7 @@ static int restore_game(const SaveFile *s)
     return 1;
 }
 
-int16_t savegame_load(const char *dir) { return savegame_load_from(dir, SAVE_FILE_NAME, SAVE_BACKUP_FILE_NAME); }
+int16_t savegame_load(const char *dir) { return savegame_load_from(dir, adventure_save_name(), adventure_backup_name()); }
 
 /* Puts back the game of a snapshot after a failed load. The saved-game flags stay. The current
    map is selected again, because the dungeon has new buffers. */

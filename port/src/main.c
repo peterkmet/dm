@@ -3,6 +3,7 @@
 #include <string.h>
 #include <SDL3/SDL.h>
 #include "advanced.h"
+#include "adventure.h"
 #include "control.h"
 #include "dungeon.h"
 #include "ftl.h"
@@ -16,6 +17,7 @@
 #include "gameloop.h"
 #include "startend.h"
 #include "random.h"
+#include "select.h"
 #include "text.h"
 
 #define DUNGEON_PALETTE 0x100aa6 /* g_dungeon_palettes[0], full light */
@@ -135,9 +137,24 @@ static void set_pointer(int in_game)
         plat_set_pointer(NULL, 0, 0, 0, 0, NULL);
 }
 
-enum { MODE_SHOW, MODE_VIEW, MODE_ENTRANCE, MODE_GAME };
+enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
 
-static int mode;
+static int mode, turnbased, auto_enter;
+static const char *data, *data_override, *control;
+
+/* Keys and clicks of the start screens. Ctrl+Q quits. */
+static void select_input(const PlatEvent *e)
+{
+    if (e->type == PLAT_MOUSE && e->button == SDL_BUTTON_LEFT) select_click(e->x, e->y);
+    if (e->type != PLAT_KEY) return;
+    if (e->key == SDLK_Q && e->modifiers & SDL_KMOD_CTRL) g_quit_requested = 1;
+    switch (e->key) {
+    case SDLK_UP: case SDLK_KP_8: select_key(SELECT_KEY_UP); break;
+    case SDLK_DOWN: case SDLK_KP_2: select_key(SELECT_KEY_DOWN); break;
+    case SDLK_RETURN: case SDLK_KP_ENTER: select_key(SELECT_KEY_ENTER); break;
+    case SDLK_ESCAPE: select_key(SELECT_KEY_ESCAPE); break;
+    }
+}
 
 /* Keys and mouse buttons become commands; closing the window quits. In turn-based mode the turns
    are the only game input. */
@@ -146,6 +163,10 @@ static void read_input(void)
     PlatEvent e;
     while (plat_poll(&e)) {
         if (e.type == PLAT_QUIT) g_quit_requested = 1;
+        if (mode == MODE_SELECT) {
+            select_input(&e);
+            continue;
+        }
         if (g_game_mode == GAME_MODE_TURNBASED && mode >= MODE_ENTRANCE) continue;
         if (mode < MODE_ENTRANCE) {
             if (e.type == PLAT_KEY && e.key == SDLK_ESCAPE) g_quit_requested = 1;
@@ -198,66 +219,115 @@ static int entrance_frame(const char *data)
     return 1;
 }
 
+static const char *const game_mode_names[] = { "vanilla", "advanced", "turnbased" };
+
 /* The game mode of a --mode value, or -1. */
 static int game_mode_of(const char *name)
 {
-    static const char *const names[] = { "vanilla", "advanced", "turnbased" };
-    for (int i = 0; i < (int)(sizeof names / sizeof names[0]); i++)
-        if (!strcmp(name, names[i])) return i;
+    for (int i = 0; i < (int)(sizeof game_mode_names / sizeof game_mode_names[0]); i++)
+        if (!strcmp(name, game_mode_names[i])) return i;
     return -1;
+}
+
+/* Loads the font of the start screens from Graphics.DAT: the --data folder, else DM, else CSB. */
+static int load_font(void)
+{
+    const char *dirs[] = { data_override, adventure_default_dir(ADVENTURE_DM), adventure_default_dir(ADVENTURE_CSB) };
+    char path[PATH_SIZE];
+    for (int i = 0; i < (int)(sizeof dirs / sizeof dirs[0]); i++) {
+        if (!dirs[i]) continue;
+        snprintf(path, sizeof path, "%s/Graphics.DAT", dirs[i]);
+        if (gfx_open(path) >= 0 && !text_init()) return 1;
+    }
+    return SDL_Log("cannot load the font from Graphics.DAT"), 0;
+}
+
+/* Applies the chosen game mode: auto enter, frame hook, and in turn-based mode the control socket. */
+static int apply_mode(void)
+{
+    static char default_control[PATH_SIZE];
+    turnbased = g_game_mode == GAME_MODE_TURNBASED;
+    if (turnbased) auto_enter = 1;
+    /* turn-based: no frames inside the endgame and dialogs, so a dead party ends the turn at once */
+    g_frame_hook = turnbased ? NULL : frame_hook;
+    if (!turnbased) return 1;
+    if (!control) {
+        const char *home = SDL_getenv("HOME");
+        snprintf(default_control, sizeof default_control, "%s/%s", home ? home : ".", DEFAULT_CONTROL_SOCKET);
+        control = default_control;
+    }
+    if (!control_open(control)) return SDL_Log("cannot open the control socket %s", control), 0;
+    return 1;
+}
+
+/* Starts the selected adventure. DM: the entrance. CSB: play is not available yet, the CSB screen
+   stays. Returns 0 when the game files or the control socket cannot be opened. */
+static int start_adventure(void)
+{
+    if (g_adventure == ADVENTURE_CSB) {
+        if (select_csb_choice() != CSB_QUIT) select_start_csb("NOT AVAILABLE YET");
+        return 1;
+    }
+    SDL_Log("adventure dm, mode %s", game_mode_names[g_game_mode]);
+    data = data_override ? data_override : adventure_default_dir(g_adventure);
+    if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
+    if (!apply_mode()) return 0;
+    entrance_draw();
+    command_set_entrance_input();
+    mode = MODE_ENTRANCE;
+    if (auto_enter) command_process_key(KEY_RETURN);
+    return 1;
 }
 
 int main(int argc, char **argv)
 {
     long frames = -1, graphic = -1;
-    const char *data = "game", *filter = NULL, *control = NULL;
-    char default_control[PATH_SIZE];
-    int view = 0, auto_enter = SDL_getenv("DM_AUTO_ENTER") != NULL;
+    const char *filter = NULL;
+    int view = 0, adventure = -1, mode_arg = -1;
+    auto_enter = SDL_getenv("DM_AUTO_ENTER") != NULL;
     for (int i = 1; i < argc; i++)
         if (!strcmp(argv[i], "--view")) view = 1;
     for (int i = 1; i < argc - 1; i++) {
         if (!strcmp(argv[i], "--frames")) frames = strtol(argv[i + 1], NULL, 10);
-        if (!strcmp(argv[i], "--data")) data = argv[i + 1];
+        if (!strcmp(argv[i], "--data")) data_override = argv[i + 1];
         if (!strcmp(argv[i], "--show")) graphic = strtol(argv[i + 1], NULL, 10);
         if (!strcmp(argv[i], "--filter")) filter = argv[i + 1];
         if (!strcmp(argv[i], "--control")) control = argv[i + 1];
-        if (!strcmp(argv[i], "--mode") && (g_game_mode = (int16_t)game_mode_of(argv[i + 1])) < 0)
+        if (!strcmp(argv[i], "--mode") && (mode_arg = game_mode_of(argv[i + 1])) < 0)
             return SDL_Log("--mode must be vanilla, advanced, or turnbased"), 1;
+        if (!strcmp(argv[i], "--adventure") && (adventure = adventure_of(argv[i + 1])) < 0)
+            return SDL_Log("--adventure must be dm or csb"), 1;
     }
-    g_advanced_features = g_game_mode != GAME_MODE_VANILLA;
-    int turnbased = g_game_mode == GAME_MODE_TURNBASED;
-    if (turnbased) auto_enter = 1;
+    /* DM_AUTO_ENTER, --show, and --view show no start screen: the mode is vanilla unless --mode says otherwise */
+    if ((auto_enter || view || graphic >= 0) && mode_arg < 0) mode_arg = GAME_MODE_VANILLA;
+    /* --data is the CSB folder only with --adventure csb */
+    const char *csb_dir = data_override && adventure == ADVENTURE_CSB ? data_override : adventure_default_dir(ADVENTURE_CSB);
+    int csb_present = adventure_csb_present(csb_dir);
+    if (adventure == ADVENTURE_CSB && !csb_present) return SDL_Log("CSB data is missing in %s", csb_dir), 1;
+    select_start((int16_t)adventure, (int16_t)mode_arg, csb_present);
+    data = data_override ? data_override : adventure_default_dir(g_adventure);
 
     random_init();
     for (int i = 0; i < PALETTE_COLORS; i++) /* gray ramp */
         palette[i] = (uint16_t)(i * GRAY_STEP);
-    mode = graphic >= 0 ? MODE_SHOW : view ? MODE_VIEW : MODE_ENTRANCE;
+    mode = graphic >= 0 ? MODE_SHOW : view ? MODE_VIEW : MODE_SELECT;
     if (mode == MODE_SHOW && !show(data, graphic)) return 1;
     if (mode == MODE_VIEW && !view_start(data)) return 1;
-    if (mode == MODE_ENTRANCE) {
-        if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 1;
-        entrance_draw();
-        command_set_entrance_input();
-    }
+    if (mode == MODE_SELECT && select_screen() != SCREEN_DONE && !load_font()) return 1;
+    if (mode == MODE_SELECT && select_screen() == SCREEN_DONE && !start_adventure()) return 1;
+    if (mode < MODE_SELECT && !apply_mode()) return 1;
     if (!plat_init(WINDOW_SCALE)) return 1;
     if (filter && !plat_set_filter(plat_filter_factor(filter))) return 1;
-    if (auto_enter) command_process_key(KEY_RETURN);
 
-    if (turnbased) {
-        if (!control) {
-            const char *home = SDL_getenv("HOME");
-            snprintf(default_control, sizeof default_control, "%s/%s", home ? home : ".", DEFAULT_CONTROL_SOCKET);
-            control = default_control;
-        }
-        if (!control_open(control)) return SDL_Log("cannot open the control socket %s", control), 1;
-    }
-    /* turn-based: no frames inside the endgame and dialogs, so a dead party ends the turn at once */
-    g_frame_hook = turnbased ? NULL : frame_hook;
     for (long frame = 0; frames < 0 || frame < frames; frame++) {
         read_input();
         if (g_quit_requested) break;
         control_poll();
         int tick = 0;
+        if (mode == MODE_SELECT) {
+            if (select_screen() == SCREEN_DONE && !start_adventure()) return 1;
+            if (mode == MODE_SELECT) select_draw();
+        }
         if (mode == MODE_ENTRANCE) {
             if (!entrance_frame(data)) return 1;
         } else if (mode == MODE_GAME && (!turnbased || control_is_turn_pending())) {

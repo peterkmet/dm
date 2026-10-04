@@ -977,7 +977,7 @@ static void handle_act_many(const char *request)
     batch_next();
 }
 
-/* Loads DMGAME.DAT from the save directory, as RESUME does, and answers with the state. */
+/* Loads the save file of the adventure (DMGAME.DAT or CSBGAME.DAT) from the save directory, as RESUME does, and answers with the state. */
 static void handle_load(void)
 {
     int16_t result = savegame_load(startend_save_dir());
@@ -998,7 +998,7 @@ static void handle_load(void)
 static void handle_new_game(void)
 {
     if (!gameloop_new_game(gameloop_data_dir())) {
-        send_error("cannot load Dungeon.DAT");
+        send_error("cannot start the new game");
         return;
     }
     load_failed = 0;

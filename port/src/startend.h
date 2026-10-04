@@ -13,7 +13,7 @@ extern int16_t g_quit_requested;       /* the player quits: the program ends */
 extern int16_t g_restart_requested;    /* RESTART THIS GAME on the endgame screen */
 extern int16_t g_return_to_entrance;   /* the endgame ended: the program shows the entrance */
 
-/* The directory of DMGAME.DAT. The default is the game data directory. */
+/* The directory of the save file of the adventure (DMGAME.DAT or CSBGAME.DAT). The default is the game data directory. */
 void startend_set_save_dir(const char *dir);
 const char *startend_save_dir(void);
 
