@@ -855,6 +855,12 @@ def test_a_lock_names_its_picture(game):
     assert wall["front_face"]["lock"] == "iron_lock"
 
 
+def test_a_wall_text_has_no_leading_newline(game):
+    with on_map(game, 0, 8, 4, 2):  # facing south to the plaque of the Hall of Champions
+        wall = state_json(game, 1)["squares"][4]
+    assert wall["front_face"]["text"] == "HALL OF CHAMPIONS"
+
+
 def test_brief_names_a_lock():
     from dmtools.play import square_text
 

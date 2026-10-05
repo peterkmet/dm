@@ -529,7 +529,8 @@ static void wall_face_json(Json *j, const char *key, int16_t x, int16_t y, int16
     json_key(j, key);
     json_open(j, '{');
     key_str(j, "facing", direction_names[face]);
-    if (f.text != THING_NONE && decode_text(text, sizeof text, f.text, TEXT_MODE_MESSAGE)) key_str(j, "text", text);
+    /* the message mode starts the text with a new line */
+    if (f.text != THING_NONE && decode_text(text, sizeof text, f.text, TEXT_MODE_MESSAGE)) key_str(j, "text", text + (text[0] == '\n'));
     if (f.mirror) key_bool(j, "mirror", 1);
     if (f.switch_) key_bool(j, "switch", 1);
     if (f.lock && f.lock_ornament >= 0 && f.lock_ornament < WALL_ORNAMENT_NAME_COUNT && wall_ornament_names[f.lock_ornament])
