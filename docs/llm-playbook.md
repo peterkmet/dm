@@ -99,7 +99,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 
 ### Rules
 
-- Play only through `uv run dm-play`. Do not read or change source code, game data files, or the decompiled code.
+- Play only through `uv run dm-play`. Do not read or change source code, game data files, or the decompiled code. Do not search the internet for tips, maps, or walkthroughs.
 - Do not start or stop the game program. The coordinator runs it.
 - The user watches the window. Before each `dm-play` call, write one short line of text: what you do next and why.
 - Plan a corridor or a fight in one `act_many` call. It stops early on damage, a new creature, a new message, or a failed action. Check why it stopped before you continue.
