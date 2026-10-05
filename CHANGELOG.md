@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1 - 2026-10-05
+
+### Fixed
+
+- `dm-play --brief` stopped with `KeyError` when the view left out a side square that the screen does not draw (since 0.8.0).
+
 ## 0.8.0 - 2026-10-05
 
 ### Changed

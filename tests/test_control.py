@@ -940,6 +940,15 @@ def test_the_view_lists_no_side_square_that_the_screen_hides(game):
     assert game_map["rows"][9][1] == " "
 
 
+def test_brief_skips_a_side_square_that_the_view_leaves_out():
+    from dmtools.play import view_lines
+
+    square = lambda depth, side, element: {"depth": depth, "side": side, "x": 0, "y": 0, "element": element}
+    view = {"squares": [square(0, "left", "wall"), square(0, "center", "floor"), square(0, "right", "wall"),
+                        square(1, "left", "floor"), square(1, "center", "wall")], "piles": []}
+    assert view_lines(view) == ["sides: left wall, right wall", "here: floor", "ahead: wall", "ahead left: floor"]
+
+
 def test_brief_names_a_lock():
     from dmtools.play import square_text
 
