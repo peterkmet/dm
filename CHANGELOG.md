@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 - 2026-10-05
+
+### Added
+
+- Advanced mode: a third cheat on the automap. F switches food and water: they do not go down; eating and drinking still raise them. The automap shows its state. It is not saved: a new or loaded game turns it off. Not in the turn-based mode.
+
 ## 0.8.2 - 2026-10-05
 
 ### Fixed

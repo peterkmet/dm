@@ -22,7 +22,7 @@
 #define QUICK_MESSAGE_COLOR COLOR_WHITE
 
 int16_t g_game_mode = GAME_MODE_VANILLA;
-int16_t g_advanced_features, g_automap_open, g_cheat_light, g_cheat_immortal;
+int16_t g_advanced_features, g_automap_open, g_cheat_light, g_cheat_immortal, g_cheat_food;
 
 static const char *const direction_names[4] = { "NORTH", "EAST", "SOUTH", "WEST" };
 
@@ -46,6 +46,8 @@ static void draw_readout(Bitmap *vp)
     if (g_game_mode != GAME_MODE_ADVANCED) return;
     snprintf(line, sizeof line, "L LIGHT %s I IMMORTAL %s", g_cheat_light ? "ON" : "OFF", g_cheat_immortal ? "ON" : "OFF");
     text_draw(vp, x, y + 2 * (TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
+    snprintf(line, sizeof line, "F FOOD AND WATER %s", g_cheat_food ? "ON" : "OFF");
+    text_draw(vp, x, y + 3 * (TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
 }
 
 void advanced_draw_automap(void)
@@ -116,8 +118,8 @@ int advanced_process_key(uint16_t key)
     if (g_game_mode == GAME_MODE_VANILLA) return 0;
     if (g_automap_open) {
         if (key == KEY_M || key == KEY_TAB || key == KEY_ESCAPE) close_automap();
-        if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I)) {
-            int16_t *cheat = key == KEY_L ? &g_cheat_light : &g_cheat_immortal;
+        if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I || key == KEY_F)) {
+            int16_t *cheat = key == KEY_L ? &g_cheat_light : key == KEY_I ? &g_cheat_immortal : &g_cheat_food;
             *cheat = !*cheat;
             advanced_draw_automap();
         }

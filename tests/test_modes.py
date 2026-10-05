@@ -551,7 +551,7 @@ def test_empty_hand_at_a_fountain(game, mode):
     set_mode(game, VANILLA)
 
 
-KEY_L, KEY_I = 0x2800, 0x1700
+KEY_L, KEY_I, KEY_F = 0x2800, 0x1700, 0x2300
 
 
 @pytest.mark.parametrize("mode", [VANILLA, ADVANCED, TURNBASED])
@@ -562,13 +562,15 @@ def test_cheat_keys_work_only_on_the_advanced_automap(game, mode):
     press(game, KEY_M)
     press(game, KEY_L)
     press(game, KEY_I)
+    press(game, KEY_F)
     on = mode == ADVANCED
-    assert (game.value("g_cheat_light"), game.value("g_cheat_immortal")) == (on, on)
+    assert (game.value("g_cheat_light"), game.value("g_cheat_immortal"), game.value("g_cheat_food")) == (on, on, on)
     if on:
         assert COLOR_WHITE in pixels(game, ZONE_VIEWPORT)[:224 * 24]  # the cheat line under the read-out
         press(game, KEY_L)
         press(game, KEY_I)
-        assert (game.value("g_cheat_light"), game.value("g_cheat_immortal")) == (0, 0)
+        press(game, KEY_F)
+        assert (game.value("g_cheat_light"), game.value("g_cheat_immortal"), game.value("g_cheat_food")) == (0, 0, 0)
     press(game, KEY_M)
     set_mode(game, VANILLA)
 
@@ -612,6 +614,23 @@ def test_cheat_immortal_keeps_1_health(game):
     finally:
         c16.in_dll(lib, "g_cheat_immortal").value = 0
         champion.current_health = health
+
+def test_cheat_food_keeps_food_and_water(game):
+    lib, champion = game.lib, game.champions[0]
+    food, water = champion.food, champion.water
+    c16.in_dll(lib, "g_cheat_food").value = 1
+    try:
+        for _ in range(1000):
+            lib.champion_apply_time_effects()
+        assert (champion.food, champion.water) == (food, water)
+        c16.in_dll(lib, "g_cheat_food").value = 0
+        for _ in range(1000):
+            lib.champion_apply_time_effects()
+        assert champion.food < food and champion.water < water
+    finally:
+        c16.in_dll(lib, "g_cheat_food").value = 0
+        champion.food, champion.water = food, water
+
 
 def test_party_death_during_a_turn_reports_game_over(game):
     lib = game.lib

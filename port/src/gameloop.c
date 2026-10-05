@@ -262,7 +262,7 @@ static void start_game(void)
     g_candidate_champion_ordinal = 0;
     g_party_is_sleeping = 0;
     g_game_won = g_do_not_draw_fluxcages = 0;
-    g_automap_open = g_cheat_light = g_cheat_immortal = 0;
+    g_automap_open = g_cheat_light = g_cheat_immortal = g_cheat_food = 0;
     automap_scroll_reset();
     memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
     shown_hand_object = THING_NONE;
