@@ -2,16 +2,19 @@
 #include "advanced.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "dungeon.h"
 #include "game.h"
 #include "group.h"
 #include "map.h"
+#include "text.h"
 #include "ui.h"
 #include "view.h"
 
 /* Square flags that map.h does not name yet. */
 enum { TELEPORTER_VISIBLE = 4, DOOR_PASSAGE_NORTH_SOUTH = 8 };
 
+enum { LABEL_WIDTH = 11, LABEL_BASELINE = 4 }; /* two digits; the font cell starts 4 rows above the baseline */
 enum { VIEW_DEPTH_COUNT = 4 };                    /* the view draws the party row and 3 rows ahead */
 enum { SAVE_VERSION = 1, SAVE_HEADER_SIZE = 6 };  /* magic, version, map count */
 static const char SAVE_MAGIC[] = AUTOMAP_SAVE_MAGIC;
@@ -229,20 +232,40 @@ void automap_scroll_reset(void)
     scroll_x = scroll_y = 0;
 }
 
+/* The number n at (x, y), only when the whole number is inside area. */
+static void draw_label(Bitmap *target, Box area, int16_t x, int16_t y, int16_t n)
+{
+    char text[4];
+    if (x < area.x || x + LABEL_WIDTH > area.x + area.w || y < area.y || y + TEXT_LINE_HEIGHT > area.y + area.h) return;
+    snprintf(text, sizeof text, "%02d", n);
+    text_draw(target, x, y + LABEL_BASELINE, COLOR_LIGHT_GRAY, COLOR_BLACK, text);
+}
+
 void automap_draw(Bitmap *target, Box area, int16_t map)
 {
     fill_clipped(target, area, area.x, area.y, area.w, area.h, COLOR_BLACK);
     if (map < 0 || map >= dungeon_map_count()) return;
+    Box top = { area.x + AUTOMAP_RULER_WIDTH, area.y, area.w - AUTOMAP_RULER_WIDTH, AUTOMAP_RULER_HEIGHT };
+    Box left = { area.x, area.y + AUTOMAP_RULER_HEIGHT, AUTOMAP_RULER_WIDTH, area.h - AUTOMAP_RULER_HEIGHT };
+    Box maps = { top.x, left.y, top.w, left.h };
     int party_here = map == g_party_map_index;
-    int16_t center_x, center_y;
+    int16_t center_x, center_y, w = dungeon_map_width(map), h = dungeon_map_height(map);
     draw_center(map, &center_x, &center_y);
-    int16_t origin_x = area.x + (area.w - AUTOMAP_CELL_SIZE) / 2 - center_x * AUTOMAP_CELL_SIZE;
-    int16_t origin_y = area.y + (area.h - AUTOMAP_CELL_SIZE) / 2 - center_y * AUTOMAP_CELL_SIZE;
-    for (int16_t x = 0; x < dungeon_map_width(map); x++)
-        for (int16_t y = 0; y < dungeon_map_height(map); y++)
+    int16_t origin_x = maps.x + (maps.w - AUTOMAP_CELL_SIZE) / 2 - center_x * AUTOMAP_CELL_SIZE;
+    int16_t origin_y = maps.y + (maps.h - AUTOMAP_CELL_SIZE) / 2 - center_y * AUTOMAP_CELL_SIZE;
+    for (int16_t x = 0; x < w; x++)
+        for (int16_t y = 0; y < h; y++)
             if (automap_is_seen(map, x, y))
-                draw_square(target, area, dungeon_square(map, x, y), party_here && view_floor_pressure_pad(x, y),
+                draw_square(target, maps, dungeon_square(map, x, y), party_here && view_floor_pressure_pad(x, y),
                             origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
+    /* The frame lies in the grid gap around the outer squares. */
+    int16_t right = origin_x + w * AUTOMAP_CELL_SIZE - 1, bottom = origin_y + h * AUTOMAP_CELL_SIZE - 1;
+    fill_clipped(target, maps, origin_x - 1, origin_y - 1, right - origin_x + 2, 1, COLOR_WHITE);
+    fill_clipped(target, maps, origin_x - 1, bottom, right - origin_x + 2, 1, COLOR_WHITE);
+    fill_clipped(target, maps, origin_x - 1, origin_y - 1, 1, bottom - origin_y + 2, COLOR_WHITE);
+    fill_clipped(target, maps, right, origin_y - 1, 1, bottom - origin_y + 2, COLOR_WHITE);
+    for (int16_t x = 0; x < w; x += 2) draw_label(target, top, origin_x + x * AUTOMAP_CELL_SIZE + (AUTOMAP_CELL_SIZE - LABEL_WIDTH) / 2, top.y, x);
+    for (int16_t y = 0; y < h; y++) draw_label(target, left, left.x, origin_y + y * AUTOMAP_CELL_SIZE, y);
     if (party_here)
-        draw_party_arrow(target, area, origin_x + g_party_map_x * AUTOMAP_CELL_SIZE, origin_y + g_party_map_y * AUTOMAP_CELL_SIZE, g_party_direction);
+        draw_party_arrow(target, maps, origin_x + g_party_map_x * AUTOMAP_CELL_SIZE, origin_y + g_party_map_y * AUTOMAP_CELL_SIZE, g_party_direction);
 }

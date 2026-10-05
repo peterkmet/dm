@@ -19,7 +19,7 @@
 #include "ui.h"
 
 #define READOUT_TEXT_SIZE 40
-#define READOUT_MARGIN 2               /* pixels between the viewport edge and the read-out */
+#define READOUT_MARGIN 2               /* pixels between the rulers and the read-out */
 #define QUICK_MESSAGE_COLOR COLOR_WHITE
 
 int16_t g_game_mode = GAME_MODE_VANILLA;
@@ -36,11 +36,11 @@ static int in_dungeon_view(void)
            !g_game_won;
 }
 
-/* Level, position, facing, and light in the top-left corner of the viewport. */
+/* Level, position, facing, and light in the top-left corner of the map, inside the rulers. */
 static void draw_readout(Bitmap *vp)
 {
     char line[READOUT_TEXT_SIZE];
-    int16_t x = READOUT_MARGIN, y = (int16_t)(READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP);
+    int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN, y = (int16_t)(AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP);
     snprintf(line, sizeof line, "LEVEL %u X %d Y %d", map_level(g_party_map_index), g_party_map_x, g_party_map_y);
     text_draw(vp, x, y, COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)], gameloop_party_light());
@@ -82,7 +82,8 @@ int advanced_process_click(int16_t x, int16_t y)
     if (!g_automap_open) return 0;
     Box b;
     if (!ui_zone_box(ZONE_VIEWPORT, &b) || x < b.x || x >= b.x + b.w || y < b.y || y >= b.y + b.h) return 1;
-    automap_scroll(g_party_map_index, squares_from_center((int16_t)(x - b.x), b.w), squares_from_center((int16_t)(y - b.y), b.h));
+    automap_scroll(g_party_map_index, squares_from_center((int16_t)(x - b.x - AUTOMAP_RULER_WIDTH), b.w - AUTOMAP_RULER_WIDTH),
+                   squares_from_center((int16_t)(y - b.y - AUTOMAP_RULER_HEIGHT), b.h - AUTOMAP_RULER_HEIGHT));
     advanced_draw_automap();
     return 1;
 }

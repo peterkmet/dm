@@ -223,7 +223,7 @@ def test_a_click_scrolls_the_automap(game):
     press(game, KEY_M)
     centered = arrow_x(game)
     b = zone_box(game, ZONE_VIEWPORT)
-    game.click(b.x + b.w // 2 + 3 * 7, b.y + b.h // 2)  # 3 squares east of the center
+    game.click(b.x + 12 + (b.w - 12) // 2 + 3 * 7, b.y + 7 + (b.h - 7) // 2)  # 3 squares east of the center, inside the rulers
     assert arrow_x(game) == centered - 3 * 7
     press(game, KEY_M)
     press(game, KEY_M)
