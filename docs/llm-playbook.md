@@ -50,6 +50,7 @@ Keep each file short. Update it at the moments given. Another session continues 
 | Several actions | `uv run dm-play act_many '["move_forward","turn_left","move_forward"]'` |
 | Pass time | `uv run dm-play wait '{"ticks":50}'` |
 | Save, load | `uv run dm-play save`, `uv run dm-play load` |
+| Sleep | `uv run dm-play act sleep`, then `wait`, then `uv run dm-play act wake` |
 | See the screen | `uv run dm-play screenshot '{"path":"/Users/lego/github/dm/.playthrough/shot.png"}'`, then read the PNG |
 
 - Walk to a square: plan the path from your own map and send it as `act_many`.
@@ -59,15 +60,20 @@ Keep each file short. Update it at the moments given. Another session continues 
 - Do not write helper loops that call `get_state`, `get_view`, or short `wait`s again and again. One `wait` with many ticks stops by itself on damage, a new creature, or a message, the same as `act_many`.
 - Before you add runes, check `state.spell.chosen`. Send `delete_rune` until it is empty.
 
-## Survival
+## What the party needs
 
-- **Save** before each fight or risky step, after each solved puzzle, and when you leave a level. Write the save time into `progress.md`. If the party dies, `load`.
-- **Food and water:** keep both above about 1000. Eat and drink before they fall low. Carry food and a full waterskin or flask; refill at fountains. Pick up all food you find.
-- **Stamina:** when stamina is below about a third, sleep in a safe place: `act sleep`, then `wait`, then `act wake`. Wake up as soon as health, stamina, and mana are full: sleeping longer only burns food and water.
-- **Light:** when `darkness` rises above 1, cast LIGHT. Keep a torch in a hand as a reserve.
-- **Pits:** a pit can be the way down or a trap. Before you jump, save and heal the party.
-- **Walls:** plan the path from your own map and look before you move.
-- **Hidden plates:** note each square that closes a door or starts a trap in the level map. Walk around it.
+- **Health:** a champion with 0 health dies. Potions, healing spells, and sleep give health back.
+- **Stamina:** fighting, walking, and carrying a load use stamina. A champion with low stamina can carry less, and at 0 stamina loses health. Sleep gives stamina back.
+- **Mana:** spells cost mana. Mana comes back over time, faster during sleep.
+- **Food and water:** the champions use them all the time. Without them, the champions lose stamina and then health. Eat and drink from your items; fountains give water.
+- **Light:** without light the view gets dark and you see less. LIGHT spells and torches give light. The game state has `darkness`.
+- **Load:** each champion can carry a limited weight. A heavy load uses more stamina and makes the party slower.
+- **Saves:** `save` keeps the game. After a death or a mistake, `load` goes back to the last save.
+
+## The dungeon
+
+- **Pits:** a pit can be the way down or a trap.
+- **Hidden plates:** some floor squares close doors, open pits, or start traps.
 
 ## Spells and training
 
@@ -95,7 +101,7 @@ The goal is to reach the bottom and kill Lord Chaos, not to build the strongest 
 ## Fights
 
 - Fight from the front row with the best attack action. Let the back row use spells, throwing, or bows.
-- Step back when health falls below about a half. Rest and heal before you continue.
+- Step back before a champion dies. Rest and heal before you continue.
 - Use doors in fights.
 
 ## Puzzles
