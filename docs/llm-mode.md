@@ -154,7 +154,7 @@ When the dungeon changes the party in another way, the turn has a displacement:
 
 | `stopped` | Reason |
 |---|---|
-| `moved` | The square or the map changed in another way: a teleporter, a pit, stairs. |
+| `moved` | The square or the map changed in another way: a teleporter, a pit, stairs. Also a teleporter that sends the party back to the square where the turn started: this is not `bumped`. |
 | `turned` | The facing changed in another way: a spinner. |
 
 `moved` comes before `turned` when both happen. An `act` response has `stopped` only after a displacement. An `act_many` batch stops after the step (see [Batches](#batches)).

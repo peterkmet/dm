@@ -581,6 +581,18 @@ def test_a_move_into_a_wall_bumps(game, monkeypatch, capsys):
 
 
 
+def test_a_teleporter_back_to_the_start_square_moves_the_party(game):
+    west = 3  # (17,10) of map 5 opens when the party steps on it and sends it back to (18,10)
+    client = Client(game)
+    try:
+        with on_map(game, 5, 18, 10, west):
+            response = client.act("move_forward")
+            assert response.get("stopped") == "moved" and "bumped" not in response, response
+            assert tuple(game.position()) == (18, 10, west)
+    finally:
+        client.sock.close()
+
+
 def test_act_many_stops_when_a_spinner_turns_the_party(game):
     spinner = (3, 4)  # a spinner of map 2 that turns the party 90 degrees right
     south = 2

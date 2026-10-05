@@ -70,7 +70,7 @@ Your files in `.playthrough/` are your memory. Keep each file short and up to da
 - **Switches and plates:** wall switches and floor plates open doors, close doors, open pits, move walls, or start traps. Some are hidden.
 - **Walls:** some walls are illusions that the party can walk through.
 - **Pits:** a pit can be the way down or a trap.
-- **Teleporters:** a teleporter moves the party or objects to another square.
+- **Teleporters:** a teleporter moves the party or objects to another square. A teleporter shows only while it is open; a closed one looks like floor. It can open when something steps on it or on a timer.
 - **Stairs:** stairs lead to the level above or below.
 - **Alcoves and altars:** alcoves hold objects. Some alcoves and altars react to the object that you put in.
 

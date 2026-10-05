@@ -67,6 +67,7 @@ static struct {
     int16_t step_forward, step_right;
     int16_t rotation;                 /* the action was a turn: 1 right, -1 left */
     int16_t map, x, y, direction;     /* the party before the action */
+    int teleports;                    /* g_party_teleport_count before the action */
     const char *stop;                 /* wait: the news that ended it early, or NULL */
 } turn;
 
@@ -278,7 +279,8 @@ static const char *rotate(uint16_t key, int16_t rotation)
 /* The step of the turn left the party on its square: a wall, a closed door, or a creature is in the way. */
 static int turn_bumped(void)
 {
-    return turn.moving && g_party_map_index == turn.map && g_party_map_x == turn.x && g_party_map_y == turn.y;
+    return turn.moving && g_party_map_index == turn.map && g_party_map_x == turn.x && g_party_map_y == turn.y &&
+           g_party_teleport_count == turn.teleports;
 }
 
 /* The party was turned or moved by something else than its action: a spinner, a teleporter, a pit, stairs. */
@@ -288,6 +290,7 @@ static const char *turn_displaced(void)
     if (turn.moving) update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
     int stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
     if (g_party_map_index != turn.map || (!stayed && (g_party_map_x != x || g_party_map_y != y))) return "moved";
+    if (stayed && g_party_teleport_count != turn.teleports) return "moved"; /* a teleporter sent the party back */
     if (g_party_direction != turn.direction && g_party_direction != NORMALIZE(turn.direction + turn.rotation)) return "turned";
     return NULL;
 }
@@ -833,6 +836,7 @@ static const char *run_action(const char *name, const char *request)
         if (g_party_is_sleeping && strcmp(name, "wake")) return "the party sleeps: use wake or wait";
         turn.has_damage = look_text.shown = turn.moving = turn.rotation = 0;
         turn.map = g_party_map_index, turn.x = g_party_map_x, turn.y = g_party_map_y, turn.direction = g_party_direction;
+        turn.teleports = g_party_teleport_count;
         return actions[k].run(request);
     }
     return "unknown action";
