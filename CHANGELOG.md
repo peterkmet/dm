@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.0 - 2026-10-05
+
+### Changed
+
+- Turn-based `get_map` shows what the automap shows: walls, floors, doors and their state, stairs, open pits, open teleporters, and pressure pads. It shows no wall features (`M L K H V A F ?`): a wall is `#`. The view keeps the wall features, with their side.
+- The turn-based view lists a side square only when the screen draws it: not when the center square of its row and the side square one row nearer block the sight. Before, the view showed squares, creatures, and objects behind walls.
+- `make -C port lego` copies the latest game into `.playthrough-lego/`, the personal play folder; the saves there stay.
+
+### Added
+
+- Automap (advanced mode): a pressure pad that the view draws is a gray square in the floor.
+
 ## 0.7.0 - 2026-10-05
 
 ### Added
