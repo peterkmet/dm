@@ -42,6 +42,7 @@ Your files in `.playthrough/` are your memory. Keep each file short and up to da
 ## Light and load
 
 - Without light the view gets dark and you see less. Torches and light spells give light. Both fade with time.
+- Keep the light up all the time: cast a light spell, or hold a burning torch in a hand. Darkness is dangerous: creatures, pits, and wall features in the far rows stay hidden.
 - Each champion can carry a limited weight; strength sets the limit. A heavy load uses more stamina and makes the party slower.
 
 ## Skills and training
