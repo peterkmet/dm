@@ -8,11 +8,6 @@ __pycache__/
 .DS_Store
 decomp/
 build/
-.playthrough/
-.playthrough_run1/
-.playthrough_checkpoints/
-.playthrough_run2/
 game-csb/
 decomp-csb/
-.playthrough_run3/
-.playthrough_old/
+.playthrough*/

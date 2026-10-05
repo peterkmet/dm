@@ -54,15 +54,24 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
    The server instructions and the tool descriptions tell the LLM how to play.
 
-## Checkpoints
+## Runs and checkpoints
 
-The coordinator of a long playthrough keeps checkpoints in `.playthrough_checkpoints/<name>/` (git-ignored). A checkpoint holds the save `DMGAME.DAT` and the player files in `files/`.
+A run is one playthrough from a start save. All run folders are git-ignored (`.playthrough*/`).
 
-- Start a new run: copy `playthrough_template/` to an empty `.playthrough/` (the player files with their headers), and copy the start save to `game/DMGAME.DAT`.
-- Make a checkpoint after a session: copy `game/DMGAME.DAT` and `.playthrough/` (as `files/`) to a new folder.
+```text
+.playthrough/                 the player memory of the current run (the player sees only this)
+.playthrough_run<N>/          the coordinator files of run N
+  checkpoints/<name>/         a save DMGAME.DAT and a copy of .playthrough/ in files/
+  session_costs.md            the cost of each session
+  level_stats.md              at the end of the run: game time, calls, and tokens at the arrival on each level
+playthrough_template/         the player files with their headers (in git)
+```
+
+- Start a new run N: copy `playthrough_template/` to an empty `.playthrough/`. Create `.playthrough_run<N>/checkpoints/start/` with the start save and a copy of `.playthrough/`. Copy the start save to `game/DMGAME.DAT`. The start save with a recruited party is `.playthrough_run3/checkpoints/party/DMGAME.DAT`.
+- Make a checkpoint after a session: copy `game/DMGAME.DAT` and `.playthrough/` (as `files/`) to `.playthrough_run<N>/checkpoints/<name>/`. Add a row to `session_costs.md`.
 - Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `.playthrough/`. Run `build/dm --mode turnbased`, then `uv run dm-play load`.
 - Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `.playthrough/`. Give the player the current goal and the limit of `dm-play` calls.
-- The current state of the playthrough is in `.playthrough/progress.md`. The cost of each session is in `.playthrough/session_costs.md`.
+- End a run: copy `.playthrough/` and the last save into `.playthrough_run<N>/`, and write `level_stats.md`.
 
 ## Play Chaos Strikes Back
 
