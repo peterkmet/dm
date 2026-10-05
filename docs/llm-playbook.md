@@ -7,6 +7,7 @@ You play the original Dungeon Master (Amiga v3.60) through the turn-based mode o
 1. You are the player. You see what a player sees and you do what a player does. Nothing more.
 2. Keep the party alive. Food, water, stamina, light, and healing come before progress.
 3. The game does not remember items or puzzles for you. Your files do.
+4. Learn from play. Write what you learn into `lessons.md` and use it.
 
 ## Rules
 
@@ -21,7 +22,7 @@ You play the original Dungeon Master (Amiga v3.60) through the turn-based mode o
 
 1. Read this file.
 2. Read these sections of `docs/llm-mode.md`: "Play from the shell: dm-play", "Actions", "Cells", "Look", "Chest", "State fields", "View fields", and "Map fields".
-3. Read your files in `.playthrough/`, newest information first: `progress.md`, then the map of the current level, `party.md`, `spells.md`.
+3. Read your files in `.playthrough/`, newest information first: `progress.md`, `lessons.md`, then the map of the current level, `party.md`, `spells.md`.
 4. Run `uv run dm-play --brief get_state`. If the position or the time does not match `progress.md`, run `uv run dm-play load` and check again.
 
 ## Files you keep
@@ -31,6 +32,7 @@ Keep each file short. Update it at the moments given. Another session continues 
 | File | Content | Update |
 |---|---|---|
 | `progress.md` | Current level and position, game time of the last save, the current goal, the next 3 steps, open problems, "Not tried yet" when stuck. A milestone log: game time, what happened (key found, puzzle solved, new level). | After each save, each milestone, and when you leave a level. |
+| `lessons.md` | What you learned from play: what happens after an action, what works and what does not, about the game and about the commands. One line each, with the game time when you learned it. | After each surprise or mistake. |
 | `party.md` | Each champion: name, role, front or back row, important stats, skill levels. Food and water reserve. | After level-ups, eating, drinking. |
 | `items.md` | Every item you have seen: name, type, stats from the eye panel (attack, defense, weight, charges, effect), and where it is now: which champion and slot, or the level and square where it lies. | When you see, take, drop, or use an item. |
 | `map_L<n>.md` | Your own map of level `n`: an ASCII map in `get_map` style, then lists: keys and the locks they open (by lock name), switches and what they do, hidden plates, pits, teleporters, stairs, creatures met, solved and open puzzles. | When you see something new or change something. |
@@ -55,31 +57,30 @@ Keep each file short. Update it at the moments given. Another session continues 
 - The view gives wall texts (`text`) and the picture of each lock (`lock`, for example `gold_lock`). Use screenshots only to check a suspected bug or when the view does not explain what you see.
 - Fewer calls: ask for `get_map` only when you plan a route, not after every move. The `act`, `act_many`, and `wait` responses already contain the state and the view.
 - Do not write helper loops that call `get_state`, `get_view`, or short `wait`s again and again. One `wait` with many ticks stops by itself on damage, a new creature, or a message, the same as `act_many`.
-- When a spell batch stops halfway, or a cast fails with "NEEDS AN EMPTY FLASK", the chosen runes stay. Before you add runes, check `state.spell.chosen` and send `delete_rune` until it is empty; otherwise the new runes join the old ones and the cast fails.
+- Before you add runes, check `state.spell.chosen`. Send `delete_rune` until it is empty.
 
 ## Survival
 
 - **Save** before each fight or risky step, after each solved puzzle, and when you leave a level. Write the save time into `progress.md`. If the party dies, `load`.
 - **Food and water:** keep both above about 1000. Eat and drink before they fall low. Carry food and a full waterskin or flask; refill at fountains. Pick up all food you find.
-- **Stamina:** when stamina is below about a third, sleep in a safe place: `act sleep`, then `wait`, then `act wake`. Damage wakes the party. Sleep in steps of about 200 ticks; after each step read health, stamina, and mana in the response and wake up (`act wake`) as soon as they are full: sleeping longer only burns food and water. The game does not wake you.
-- **Light:** when `darkness` rises above 1, cast LIGHT (LO FUL). Darkness hides the far rows of the view. Keep a torch in a hand as a reserve.
-- **Pits:** do not walk into an open pit. A fall costs each champion about 35–50 HP.
-- **Walls:** walking into a wall hurts the front row. Plan the path from your own map and look before you move.
+- **Stamina:** when stamina is below about a third, sleep in a safe place: `act sleep`, then `wait`, then `act wake`. Wake up as soon as health, stamina, and mana are full: sleeping longer only burns food and water.
+- **Light:** when `darkness` rises above 1, cast LIGHT. Keep a torch in a hand as a reserve.
+- **Pits:** a pit can be the way down or a trap. Before you jump, save and heal the party.
+- **Walls:** plan the path from your own map and look before you move.
 - **Hidden plates:** note each square that closes a door or starts a trap in the level map. Walk around it.
 
 ## Spells and training
 
 - Runes go in row by row: a power rune (row 1), then an element rune (row 2), then more rows for some spells. `add_rune` takes the position 0–5 in the current row.
-- LIGHT (LO FUL): `add_rune 0`, `add_rune 3`, `cast`. Use a stronger power rune when you have mana.
-- Learn new spells from scrolls.
+- Learn new spells from scrolls. Use a stronger power rune when you have mana.
 - Train the spell casters while you rest: let the wizard and the priest cast cheap spells again and again, rest to get mana back, and repeat.
 
 ## Items
 
 - Take: food, water containers, keys, light sources, scrolls, potions, better weapons and armour, and quest items (gems, the Firestaff parts).
 - Leave other items on the floor. Write in the level map where they lie.
-- A pile can hide items under the top one. Take from a cell until it is empty when you look for a key, then put back what you do not need.
-- Watch the load. A heavy party moves slowly.
+- When you look for a key, take from a cell until it is empty, then put back what you do not need.
+- Watch the load.
 
 ## Strength and progress
 
@@ -95,7 +96,7 @@ The goal is to reach the bottom and kill Lord Chaos, not to build the strongest 
 
 - Fight from the front row with the best attack action. Let the back row use spells, throwing, or bows.
 - Step back when health falls below about a half. Rest and heal before you continue.
-- Doors can block creatures. Some creatures can be killed by closing a door on them.
+- Use doors in fights.
 
 ## Puzzles
 
