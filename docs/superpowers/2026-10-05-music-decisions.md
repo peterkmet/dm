@@ -1,6 +1,6 @@
 # Music for the advanced mode: decisions
 
-Decisions of the user for the music feature, before the PRD (workflow step 2). The next session writes the PRD from this file.
+Decisions of the user for the music feature. The feature is implemented from this file, without a PRD.
 
 ## Sources
 
@@ -17,9 +17,12 @@ Decisions of the user for the music feature, before the PRD (workflow step 2). T
 6. Chaos Strikes Back: FM-Towns CSB by square, from the table of the FM-Towns program (`MUSIC_MAP.md`). Key 2 does nothing in CSB (there is no Super NES CSB).
 7. Playback as the original: a track plays one time and does not loop. FM-Towns DM: a new level starts its track and stops the current one. FM-Towns CSB: a new zone requests its track, which starts when the current track ends; a level change stops the music. Value 0 in the CSB table means no change.
 
-## Open for the PRD
+8. Super NES: a new trigger square stops the current track and starts its track. A trigger of the track that plays does nothing.
+9. Files: one flat folder `music/` in the disk A folder (`game/music/`, `game-csb/music/`), with the file names of `music/`: `FM-Towns,Track_NN,Music.mp3`, `Super_NES,Track_NN,Music.mp3`. A missing file gives silence.
+10. Special tracks: only the tracks in the game. CSB prison (FM-Towns 06), game over (DM FM-Towns 13, CSB FM-Towns 17), game won (DM FM-Towns 18, Super NES 16). No entrance, title, story, or CSB ending track: they come before the choice, or the port has no FM-Towns animation.
+11. Data: `port/src/musicmap.c` holds the CSB square table, generated one time from `music_map.json`. The DM level tracks and the 22 Super NES triggers are in `port/src/music.c`.
 
-- The Super NES rule when a new trigger square comes while a track plays (stop it, or wait).
-- Where the port looks for the MP3 files (for example `game/music/`), and the file names.
-- The special tracks: entrance, Hall of Champions, game over, game won, CSB prison, story and ending animations (tracks in `MUSIC_MAP.md`).
-- How the CSB square table and the trigger lists go into the port (a data table in the source: the table is facts, not a game asset).
+## Not done
+
+- The countdown of 100 calls before a track starts (FM-Towns DM and CSB): a track starts at once.
+- The freeze does not pause the music.

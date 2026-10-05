@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0 - 2026-10-05
+
+### Added
+
+- Advanced mode: music of the FM-Towns and Super NES versions from MP3 files in `music/` of the game folder. On the automap, 1 selects Original (no music, the default), 2 Super NES, 3 FM-Towns. FM-Towns DM plays a track per level, FM-Towns CSB a track per zone, Super NES a track per trigger square. A track plays one time. The choice is not saved. The MP3 decoder is `dr_mp3` (`port/src/dr_mp3.h`, public domain).
+
 ## 0.9.0 - 2026-10-05
 
 ### Added

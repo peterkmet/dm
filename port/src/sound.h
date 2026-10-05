@@ -17,7 +17,7 @@ void sound_play_sample(int16_t sound, const uint8_t *volumes);
 void sound_play_data(const int8_t *data, uint16_t length, uint16_t period, const uint8_t *volumes);
 void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mode);
 void sound_play_pending(void);
-/* Stops every voice and the music. */
+/* Stops every voice, the music, and the MP3 music. */
 void sound_stop_all(void);
 #define SOUND_MUSIC_SEGMENTS 128
 /* Music: the segments play one after another, the same data on both sides of pair B. Samples go to pair A
