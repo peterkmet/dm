@@ -52,16 +52,28 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
 4. Start Claude Code and ask it to play. Example prompt: `Use the dm tools. Recruit four champions and explore the first level.`
 
-   The server instructions and the tool descriptions tell the LLM how to play.
+   The server instructions and the tool descriptions tell the LLM how to play. A long playthrough uses `dm-play` and the player instructions instead: see [Runs and checkpoints](#runs-and-checkpoints).
 
-## Checkpoints
+## Runs and checkpoints
 
-The coordinator of a long playthrough keeps checkpoints in `.playthrough_checkpoints/<name>/` (git-ignored). A checkpoint holds the save `DMGAME.DAT` and the player files in `files/`.
+A run is one playthrough from a start save. All run folders are git-ignored (`.playthrough*/`).
 
-- Make a checkpoint after a session: copy `game/DMGAME.DAT` and `.playthrough/` (as `files/`) to a new folder.
-- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `.playthrough/`. Run `build/dm --mode turnbased`, then `uv run dm-play load`.
-- Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `.playthrough/`. Give the player the current goal and the limit of `dm-play` calls.
-- The current state of the playthrough is in `.playthrough/progress.md`. The cost of each session is in `.playthrough/session_costs.md`.
+```text
+.playthrough/                 the player memory of the current run (the player sees only this)
+.playthrough_run<N>/          the coordinator files of run N
+  checkpoints/<name>/         a save DMGAME.DAT and a copy of .playthrough/ in files/
+  session_costs.md            the cost of each session
+  calls.log                   one line per dm-play call of the player (through the link .playthrough_log)
+  level_stats.md              at the end of the run: game time, calls, and tokens at the arrival on each level
+playthrough_template/         the player files with their headers (in git), and the start save DMGAME.DAT (local only, git-ignored: a game file)
+```
+
+- Start a new run N: copy the `*.md` files of `playthrough_template/` to an empty `.playthrough/`. Copy `playthrough_template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/DMGAME.DAT`. Create `.playthrough_run<N>/checkpoints/start/` with the start save and a copy of `.playthrough/`. Point the call log to the run: `ln -sfn .playthrough_run<N> .playthrough_log`. Run `build/dm --mode turnbased --control ~/.dm/control.sock`, then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Make a checkpoint after a session: copy `game/DMGAME.DAT` and `.playthrough/` (as `files/`) to `.playthrough_run<N>/checkpoints/<name>/`. Add a row to `session_costs.md`; count the calls of the session in `calls.log`.
+- The coordinator's own `dm-play` calls stay out of the log: `DM_PLAY_LOG_DIR=none uv run dm-play ...`.
+- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `.playthrough/`. Run `build/dm --mode turnbased --control ~/.dm/control.sock`, then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `.playthrough/`. Give the player the current goal and the limit of `dm-play` calls. The player shell must run in the repository root: `dm-play` finds `.playthrough_log` relative to it, else `calls.log` stays empty.
+- End a run: copy `.playthrough/` and the last save into `.playthrough_run<N>/`, and write `level_stats.md`.
 
 ## Play Chaos Strikes Back
 
@@ -87,7 +99,7 @@ After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), an
 | `get_view` | none | `{ok, view}` |
 | `get_map` | none | `{ok, map}` |
 | `act` | `action`, `args` (object) | `{ok, ticks, stopped?, game_over, bumped?, action_damage?, look?, seen?, state, view}` |
-| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage?, seen?, state, view}` |
+| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage? (list), seen?, state, view}` |
 | `wait` | `ticks` (1-5000, default 10) | `{ok, ticks, stopped, game_over, seen?, state, view}` |
 | `screenshot` | none | The screen as a 320 x 200 PNG image |
 | `save_game` | none | `{ok}` |
@@ -110,9 +122,9 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `get_state` | none | `state` |
 | `get_view` | none | `view` |
 | `get_map` | none | `map` |
-| `act` | `action`, `args` | After the turn: `ticks`, `stopped` (only after a [displacement](#displacement)), `game_over`, `bumped` (only after a bump), `action_damage` (only `choose_action`), `look` (only `look`), `seen` (see [Seen](#seen)), `state`, `view` |
-| `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `bumped`, `seen`, `state`, `view`. See [Batches](#batches). |
-| `wait` | `ticks` (1-5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `seen`, `state`, `view`. See [Wait](#wait). |
+| `act` | `action`, `args` | After the turn: `ticks`, `stopped` (only after a [displacement](llm-playbook.md#displacement)), `game_over`, `bumped` (only after a bump), `action_damage` (only `choose_action`), `look` (only `look`), `seen` (see [Seen](llm-playbook.md#seen)), `state`, `view` |
+| `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `bumped`, `action_damage` (a list, one value for each `choose_action`), `seen`, `state`, `view`. See [Batches](llm-playbook.md#batches). |
+| `wait` | `ticks` (1-5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `seen`, `state`, `view`. See [Wait](llm-playbook.md#wait). |
 | `screenshot` | `path` | `path`. The game writes a PNG file to `path`. |
 | `save` | none | Nothing. The game writes `DMGAME.DAT` (CSB: `CSBGAME.DAT`) in the save directory. The old file becomes `DMGAME.BAK` (CSB: `CSBGAME.BAK`). |
 | `load` | none | `state`. The game loads `DMGAME.DAT` (else `DMGAME.BAK`; CSB: `CSBGAME.DAT`, else `CSBGAME.BAK`) from the save directory. |
@@ -138,83 +150,6 @@ A `wait` turn runs `ticks` ticks. A game that does not tick ends a turn after 16
 
 During a turn, each frame is a tick: the game does not wait 12 frames for input. The game rules do not change.
 
-#### Bump
-
-When a move action (`move_forward`, `move_back`, `move_left`, `move_right`) does not change the party square, the turn response has `"bumped": true`. A wall, a closed door, or a creature is in the way. Without a bump, the response has no `bumped` field. A bump into a wall or a closed door gives 1 damage to the two champions on the side of the bump, as in the original game.
-
-#### Displacement
-
-The game informs; it does not play. After each `act` turn and each `act_many` step, the game compares the party facing, square, and map with what the action does:
-
-- A move action changes the square by one step in its direction, or nothing (a bump).
-- `turn_left` and `turn_right` change the facing by 90 degrees.
-- All other actions change neither.
-
-When the dungeon changes the party in another way, the turn has a displacement:
-
-| `stopped` | Reason |
-|---|---|
-| `moved` | The square or the map changed in another way: a teleporter, a pit, stairs. |
-| `turned` | The facing changed in another way: a spinner. |
-
-`moved` comes before `turned` when both happen. An `act` response has `stopped` only after a displacement. An `act_many` batch stops after the step (see [Batches](#batches)).
-
-#### Wait
-
-A `wait` turn checks for news after each tick and ends at once when it finds news. The news are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, else the news. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
-
-Example: rest until something happens, at most 5000 ticks.
-
-```json
-{"cmd": "wait", "ticks": 5000}
-```
-
-#### Seen
-
-An explosion lasts only a few ticks. It can be gone before the turn ends, so the `view` of the response does not show it. A creature can die in the same way. For this reason, an `act`, `act_many`, or `wait` request records what the party sees after each tick, from the start of the request to the end of the last turn. The record uses the visibility rule of the view (see [View fields](llm-playbook.md#view-fields)).
-
-The response has `seen: {explosions, creature_changes}` when the record is not empty. Without a record, the response has no `seen` field.
-
-- `explosions[]`: `{name, x, y, depth, side}`, one entry for each explosion type on each square. `name` is the explosion type (see [View fields](llm-playbook.md#view-fields)). `depth` and `side` give the place in the view when the party first saw the explosion.
-- `creature_changes[]`: `{type, x, y, depth, side, before, after}` for each creature group in view that lost creatures, or that was killed. `before` is the creature count when the party first saw the group in the request, `after` is the count when the party last saw it. `after` is 0 for a killed group. A group that only leaves the view is not in the list.
-
-Example: a fireball kills a screamer two squares ahead.
-
-```json
-"seen": {"explosions": [{"name": "fireball", "x": 1, "y": 6, "depth": 2, "side": "center"}],
-         "creature_changes": [{"type": "Screamer", "x": 1, "y": 6, "depth": 2, "side": "center", "before": 1, "after": 0}]}
-```
-
-### Batches
-
-A batch runs many turns with one request. Each step is one `act` turn. After each turn the batch stops early when something happens, so that the caller can look again. Each check compares with the time before the turn.
-
-`act_many` runs the `actions` in order. An item is an action name (`"move_forward"`) or an object `{"action": "take_object", "args": {"cell": 0}}`.
-
-```json
-{"cmd": "act_many", "actions": ["turn_left", "move_forward", {"action": "take_object", "args": {"cell": 2}}]}
-```
-
-The game does not find paths. Plan the path from your own map and send it as `act_many`.
-
-The response has `ran` (the number of turns that ran) and `stopped`:
-
-| `stopped` | Reason |
-|---|---|
-| `done` | All actions ran. |
-| `damage` | A champion lost health. |
-| `creature` | A creature group is in view that was not in view before the turn. The check compares the groups, not their count: a group that stays in view does not stop the batch again. |
-| `message` | The game printed a new message. |
-| `game_over` | The party died, or the game is won. |
-| `bumped` | A move did not change the party square (a wall, a closed door, a creature). See [Bump](#bump). The batch checks this before `damage`, because a bump into a wall hurts. |
-| `moved` | The dungeon moved the party: a teleporter, a pit, stairs. See [Displacement](#displacement). The batch checks this after `bumped` and before `damage`, because a pit fall hurts. |
-| `turned` | The dungeon turned the party: a spinner. See [Displacement](#displacement). The batch checks this after `moved`. |
-| `failed` | An action cannot run. `error` gives the reason. The failed action is not in `ran`. |
-
-### Game over
-
-When the party dies or the game is won during a turn, the turn ends. The response has `"game_over": true`, and `state.party.dead` is `true` after a death. The endgame runs without waiting for input, and the window shows the entrance. After that, `act`, `act_many`, `wait`, and `save` return `{"ok": false, "error": "game over"}`. `get_state`, `get_view`, `get_map`, and `screenshot` still work. To play again, send `load` or `new_game`.
-
 ### Save and load
 
 There is one save slot. The save directory is the data directory (`game/`), the same as for the SAVE button of the game. `save` and `load` use the same functions as the SAVE dialog and the RESUME button (`savegame_save`, `savegame_load`, `gameloop_start_loaded_game`).
@@ -223,9 +158,9 @@ There is one save slot. The save directory is the data directory (`game/`), the 
 - `load` of a damaged file returns an error. After that, only `load` and `new_game` work, because the game state can be incomplete.
 - `load` and `new_game` work at all times, also after a game over. Each ends the old game without a question.
 
-### Actions and fields
+### Actions, stops, and fields
 
-The actions, the cells, the chest and look answers, and the fields of `state`, `view`, and `map` are in the [player instructions](llm-playbook.md#how-to-play).
+The actions, why a turn or a batch stops (bump, displacement, wait, seen, game over), the cells, the chest and look answers, and the fields of `state`, `view`, and `map` are in the [player instructions](llm-playbook.md#how-to-play).
 
 ## Play from the shell: dm-play
 
@@ -336,6 +271,11 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - `swap_champions` swaps the `position` of two champions. `look` on a slot returns the name of the sword and the weight line, and the sword is in its slot again. `look` on the leader hand gives the same text, with `ATTACK` in the advanced features. `--brief` prints the `look:` line.
 - `dm-play` returns exit code 1 and logs the call when the game is not running.
 - After a forced party death: `save` and `wait` return `game over`, `load` restores the game, and after a second death `new_game` starts a new game.
+- A lock and another wall ornament give the name of their picture (`iron_lock`, `creeper`); `--brief` prints the name. A wall text has no leading new line.
+- `alcove`, `fountain`, and `vi_altar` are false when no wall is ahead. A border wall outside the map shows its fountain.
+- A teleporter that sends the party back to its start square gives `stopped` `moved`, not `bumped`.
+- `act_many` gives `action_damage` as a list. `add_rune` without enough mana fails and adds no rune.
+- The tests log the `dm-play` calls to a temporary folder (`tests/conftest.py`), never into a run.
 
 `tests/test_modes.py` starts `build/dm --mode turnbased --control <socket>` with the SDL dummy drivers and checks `get_state` and `act move_forward`. It also checks that a party death during a turn gives `"game_over": true`.
 

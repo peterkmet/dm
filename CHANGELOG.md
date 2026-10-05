@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.7.0 - 2026-10-05
+
+### Added
+
+- Turn-based view: `ornament` on a wall face names its picture (for example `creeper`, `manacles`), as `lock` does. All wall ornaments of the DM dungeon have a name.
+- Player file templates in `playthrough_template/`, each with a header that says what to write and in which format. The start save with the party of 4 is kept there locally (git-ignored).
+
+### Changed
+
+- `act_many` gives `action_damage` as a list, one value for each `choose_action`. Before, it gave only the value of the last step.
+- A teleporter that sends the party back to the square where the turn started gives `stopped: moved`. Before, it gave `bumped`.
+- The LLM docs: `docs/llm-playbook.md` holds everything the player needs (the game manual and how to play); `docs/llm-mode.md` is for the coordinator. Each run keeps its checkpoints, costs, and call log in `.playthrough_run<N>/`.
+- `dm-play` logs its calls to `.playthrough_log/` (a link to the folder of the run), not into the player memory.
+
+### Fixed
+
+- Wall texts in the view started with a new line.
+- `alcove`, `fountain`, and `vi_altar` kept their value from an older view when no wall was ahead. `drop_object` to the alcove checks the same.
+- `add_rune` reported success when the caster had not enough mana; the game ignored the rune and the next cast failed.
+- A border wall outside the map showed no wall face, also when the view draws a fountain on it.
+- The tests wrote `dm-play` calls into the log of a run.
+
 ## 0.6.0 - 2026-10-05
 
 ### Changed

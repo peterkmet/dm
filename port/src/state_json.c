@@ -468,16 +468,21 @@ typedef struct {
     uint16_t text;                    /* THING_NONE: no visible text */
     int mirror, switch_, lock, torch_holder, alcove, fountain, vi_altar, ornament;
     int16_t lock_ornament;            /* index in the wall ornament graphics, -1: unknown */
+    int16_t other_ornament;           /* the same for ornament */
 } WallFace;
 
-/* The wall ornaments that hold an object in DM and CSB, by index, named from their picture. */
+/* The wall ornaments of DM and CSB, by index, named from their picture. */
 static const char *const wall_ornament_names[] = {
-    [1] = "square_alcove", [3] = "arched_alcove", [4] = "hook", [5] = "iron_lock", [6] = "plate_ring", [7] = "dent",
-    [10] = "iron_ring", [11] = "crack", [12] = "slime_outlet", [17] = "coin_slot", [19] = "wooden_lock", [20] = "rune_lock",
-    [21] = "framed_lock", [22] = "studded_lock", [23] = "cross_lock", [24] = "gold_lock", [25] = "skull_lock",
-    [26] = "ornate_gold_lock", [27] = "blue_lock", [28] = "green_lock", [29] = "diamond_lock", [30] = "sun_lock",
-    [31] = "black_lock", [32] = "gem_hole", [33] = "creeper", [35] = "fountain", [37] = "demon_face", [48] = "eye_socket",
-    [51] = "green_gem", [54] = "wall_slot", [56] = "red_gem_roots", [57] = "blue_gem_roots",
+    [1] = "square_alcove", [2] = "vi_altar", [3] = "arched_alcove", [4] = "hook", [5] = "iron_lock", [6] = "plate_ring",
+    [7] = "dent", [8] = "tiny_button", [10] = "iron_ring", [11] = "crack", [12] = "slime_outlet", [14] = "green_button",
+    [15] = "blue_button", [16] = "grate", [17] = "coin_slot", [19] = "wooden_lock", [20] = "rune_lock", [21] = "framed_lock",
+    [22] = "studded_lock", [23] = "cross_lock", [24] = "gold_lock", [25] = "skull_lock", [26] = "ornate_gold_lock",
+    [27] = "blue_lock", [28] = "green_lock", [29] = "diamond_lock", [30] = "sun_lock", [31] = "black_lock", [32] = "gem_hole",
+    [33] = "creeper", [34] = "manacles", [35] = "fountain", [36] = "iron_ornament", [37] = "demon_face", [38] = "scratches",
+    [39] = "tiny_hole", [40] = "round_hole", [41] = "narrow_slot", [43] = "mirror", [44] = "torch_holder",
+    [45] = "empty_torch_holder", [46] = "long_holder", [47] = "red_button", [48] = "eye_socket", [49] = "grey_button",
+    [50] = "small_crack", [51] = "green_gem", [52] = "blue_gem", [53] = "brown_button", [54] = "wall_slot", [55] = "wide_crack",
+    [56] = "red_gem_roots", [57] = "blue_gem_roots", [58] = "rock_face", [59] = "lord_order",
 };
 enum { WALL_ORNAMENT_NAME_COUNT = sizeof wall_ornament_names / sizeof *wall_ornament_names };
 
@@ -496,7 +501,7 @@ static int wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
 {
     memset(f, 0, sizeof *f);
     f->text = THING_NONE;
-    f->lock_ornament = -1;
+    f->lock_ornament = f->other_ornament = -1;
     for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_CELL(t) != face) continue;
         if (THING_TYPE(t) == THING_TEXT && text_is_visible(t)) f->text = t;
@@ -515,9 +520,20 @@ static int wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
     case VIEW_ORNAMENT_ALCOVE: f->alcove = 1; break;
     case VIEW_ORNAMENT_FOUNTAIN: f->fountain = 1; break;
     case VIEW_ORNAMENT_VI_ALTAR: f->vi_altar = 1; break;
-    case VIEW_ORNAMENT_OTHER: f->ornament = !f->mirror && !f->switch_ && !f->lock && !f->torch_holder; break;
+    case VIEW_ORNAMENT_OTHER:
+        f->ornament = !f->mirror && !f->switch_ && !f->lock && !f->torch_holder;
+        f->other_ornament = view_wall_face_ornament_index(x, y, face);
+        break;
     }
     return f->text != THING_NONE || f->mirror || f->switch_ || f->lock || f->torch_holder || f->alcove || f->fountain || f->vi_altar || f->ornament;
+}
+
+/* A wall ornament under key: its picture name, else its index, else true. */
+static void ornament_json(Json *j, const char *key, int16_t index)
+{
+    if (index >= 0 && index < WALL_ORNAMENT_NAME_COUNT && wall_ornament_names[index]) key_str(j, key, wall_ornament_names[index]);
+    else if (index >= 0) key_int(j, key, index);
+    else key_bool(j, key, 1);
 }
 
 /* The wall face of (x, y) that faces direction face as {facing, features}, under key, when it shows something. */
@@ -529,18 +545,16 @@ static void wall_face_json(Json *j, const char *key, int16_t x, int16_t y, int16
     json_key(j, key);
     json_open(j, '{');
     key_str(j, "facing", direction_names[face]);
-    if (f.text != THING_NONE && decode_text(text, sizeof text, f.text, TEXT_MODE_MESSAGE)) key_str(j, "text", text);
+    /* the message mode starts the text with a new line */
+    if (f.text != THING_NONE && decode_text(text, sizeof text, f.text, TEXT_MODE_MESSAGE)) key_str(j, "text", text + (text[0] == '\n'));
     if (f.mirror) key_bool(j, "mirror", 1);
     if (f.switch_) key_bool(j, "switch", 1);
-    if (f.lock && f.lock_ornament >= 0 && f.lock_ornament < WALL_ORNAMENT_NAME_COUNT && wall_ornament_names[f.lock_ornament])
-        key_str(j, "lock", wall_ornament_names[f.lock_ornament]);
-    else if (f.lock && f.lock_ornament >= 0) key_int(j, "lock", f.lock_ornament);
-    else if (f.lock) key_bool(j, "lock", 1);
+    if (f.lock) ornament_json(j, "lock", f.lock_ornament);
     if (f.torch_holder) key_bool(j, "torch_holder", 1);
     if (f.alcove) key_bool(j, "alcove", 1);
     if (f.fountain) key_bool(j, "fountain", 1);
     if (f.vi_altar) key_bool(j, "vi_altar", 1);
-    if (f.ornament) key_bool(j, "ornament", 1);
+    if (f.ornament) ornament_json(j, "ornament", f.other_ornament);
     json_close(j, '}');
 }
 
@@ -668,6 +682,8 @@ void state_json_view(Json *j)
                     if (depth >= 1) floor_ornament_json(j, x, y);
                     square_things_json(j, x, y);
                 }
+            } else if (!strcmp(name, "wall")) {
+                wall_faces_json(j, depth, side, x, y); /* a border wall outside the map can show a random ornament */
             }
             json_close(j, '}');
         }
@@ -684,9 +700,10 @@ void state_json_view(Json *j)
     }
     json_close(j, ']');
     key_bool(j, "wall_ahead_clickable", g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL].x != -1);
-    key_bool(j, "alcove", g_facing_alcove);
-    key_bool(j, "fountain", g_facing_fountain);
-    key_bool(j, "vi_altar", g_facing_vi_altar);
+    int wall_ahead = g_square_ahead_element == VIEW_ELEMENT_WALL; /* the view sets the facing flags only for a wall ahead */
+    key_bool(j, "alcove", wall_ahead && g_facing_alcove);
+    key_bool(j, "fountain", wall_ahead && g_facing_fountain);
+    key_bool(j, "vi_altar", wall_ahead && g_facing_vi_altar);
     json_close(j, '}');
 }
 

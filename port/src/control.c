@@ -67,12 +67,16 @@ static struct {
     int16_t step_forward, step_right;
     int16_t rotation;                 /* the action was a turn: 1 right, -1 left */
     int16_t map, x, y, direction;     /* the party before the action */
+    int teleports;                    /* g_party_teleport_count before the action */
     const char *stop;                 /* wait: the news that ended it early, or NULL */
 } turn;
 
 /* A batch: act_many runs a list of actions; each step is one turn. */
+enum { BATCH_DAMAGE_MAX = 64 };
 static struct {
     int active, ran;
+    int16_t damages[BATCH_DAMAGE_MAX]; /* the action damage of each choose_action, in order */
+    int damage_count;
     char *actions;                    /* a copy of the request; next is the rest of its actions array */
     const char *next;
     uint32_t start_time;
@@ -275,7 +279,8 @@ static const char *rotate(uint16_t key, int16_t rotation)
 /* The step of the turn left the party on its square: a wall, a closed door, or a creature is in the way. */
 static int turn_bumped(void)
 {
-    return turn.moving && g_party_map_index == turn.map && g_party_map_x == turn.x && g_party_map_y == turn.y;
+    return turn.moving && g_party_map_index == turn.map && g_party_map_x == turn.x && g_party_map_y == turn.y &&
+           g_party_teleport_count == turn.teleports;
 }
 
 /* The party was turned or moved by something else than its action: a spinner, a teleporter, a pit, stairs. */
@@ -285,6 +290,7 @@ static const char *turn_displaced(void)
     if (turn.moving) update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
     int stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
     if (g_party_map_index != turn.map || (!stayed && (g_party_map_x != x || g_party_map_y != y))) return "moved";
+    if (stayed && g_party_teleport_count != turn.teleports) return "moved"; /* a teleporter sent the party back */
     if (g_party_direction != turn.direction && g_party_direction != NORMALIZE(turn.direction + turn.rotation)) return "turned";
     return NULL;
 }
@@ -324,7 +330,7 @@ static const char *drop_object(const char *r)
     if (g_inventory_champion_ordinal) return "close the inventory first (close_inventory)";
     if (g_leader_empty_handed) return "the leader hand is empty";
     if (cell == VIEW_CLICK_BOX_ALCOVE) {
-        if (!g_facing_alcove) return "no alcove ahead";
+        if (g_square_ahead_element != VIEW_ELEMENT_WALL || !g_facing_alcove) return "no alcove ahead";
         click_view_box(&g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL]);
         return NULL;
     }
@@ -442,6 +448,7 @@ static const char *choose_action(const char *r)
     g_action_damage = 0;
     click_command(UI_INPUT_ACTION_NAMES, (int16_t)(COMMAND_ACTION_FIRST + index));
     turn.damage = g_action_damage;
+    if (batch.active && batch.damage_count < BATCH_DAMAGE_MAX) batch.damages[batch.damage_count++] = g_action_damage;
     return NULL;
 }
 
@@ -474,7 +481,11 @@ static const char *add_rune(const char *r)
 {
     long symbol = get_int(r, "symbol", -1);
     if (symbol < 0 || symbol >= SYMBOL_COUNT) return "symbol must be 0-5";
-    return spell_click((int16_t)(COMMAND_SPELL_SYMBOL_FIRST + symbol));
+    if (g_magic_caster_champion_index == -1) return "no spell area";
+    size_t before = strlen(g_champions[g_magic_caster_champion_index].symbols);
+    spell_click((int16_t)(COMMAND_SPELL_SYMBOL_FIRST + symbol));
+    /* the game ignores a rune that costs more mana than the caster has */
+    return strlen(g_champions[g_magic_caster_champion_index].symbols) == before ? "the rune was not added: not enough mana" : NULL;
 }
 
 static const char *delete_rune(const char *r) { (void)r; return spell_click(COMMAND_DELETE_SYMBOL); }
@@ -768,7 +779,12 @@ static void send_turn_result(void)
         json_key(&j, "bumped");
         json_bool(&j, 1);
     }
-    if (turn.has_damage) {
+    if (batch.active && batch.damage_count) {
+        json_key(&j, "action_damage");
+        json_open(&j, '[');
+        for (int i = 0; i < batch.damage_count; i++) json_int(&j, batch.damages[i]);
+        json_close(&j, ']');
+    } else if (!batch.active && turn.has_damage) {
         json_key(&j, "action_damage");
         json_int(&j, turn.damage);
     }
@@ -824,6 +840,7 @@ static const char *run_action(const char *name, const char *request)
         if (g_party_is_sleeping && strcmp(name, "wake")) return "the party sleeps: use wake or wait";
         turn.has_damage = look_text.shown = turn.moving = turn.rotation = 0;
         turn.map = g_party_map_index, turn.x = g_party_map_x, turn.y = g_party_map_y, turn.direction = g_party_direction;
+        turn.teleports = g_party_teleport_count;
         return actions[k].run(request);
     }
     return "unknown action";
@@ -971,6 +988,7 @@ static void handle_act_many(const char *request)
     if (!batch.actions) abort();
     batch.next = batch.actions;
     batch.active = 1;
+    batch.damage_count = 0;
     batch.start_time = g_game_time;
     turn.has_damage = turn.moving = 0;
     start_witnessing();

@@ -4,7 +4,7 @@ You play the original Dungeon Master (Amiga v3.60). Your goal is to win: find th
 
 ## Your notes
 
-Your files in `.playthrough/` are your memory. Keep each file short and up to date.
+Your files in `.playthrough/` are your memory. Keep each file short and up to date. Each file starts with a header that says what to write and in which format: keep the header and follow it. For a new level, copy the header of `map_L1.md`.
 
 | File | Content |
 |---|---|
@@ -70,7 +70,7 @@ Your files in `.playthrough/` are your memory. Keep each file short and up to da
 - **Switches and plates:** wall switches and floor plates open doors, close doors, open pits, move walls, or start traps. Some are hidden.
 - **Walls:** some walls are illusions that the party can walk through.
 - **Pits:** a pit can be the way down or a trap.
-- **Teleporters:** a teleporter moves the party or objects to another square.
+- **Teleporters:** a teleporter moves the party or objects to another square. A teleporter shows only while it is open; a closed one looks like floor. Some teleporters are never visible. It can open when something steps on it or on a timer.
 - **Stairs:** stairs lead to the level above or below.
 - **Alcoves and altars:** alcoves hold objects. Some alcoves and altars react to the object that you put in.
 
@@ -103,7 +103,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 - Your general knowledge of Dungeon Master is allowed.
 - Do not start or stop the game program. The coordinator runs it.
 - The user watches the window. Before each `dm-play` call, write one short line of text: what you do next and why.
-- Plan a corridor or a fight in one `act_many` call. It stops early on damage, a new creature, a new message, or a failed action. Check why it stopped before you continue.
+- Plan a corridor or a fight in one `act_many` call. It stops early when something happens (see [Batches](#batches)). Check why it stopped before you continue.
 - One `wait` with many ticks stops by itself on damage, a new creature, or a message. Do not write helper loops that call `get_state`, `get_view`, or short `wait`s again and again.
 - Ask for `get_map` only when you plan a route. The `act`, `act_many`, and `wait` responses already contain the state and the view.
 - The view gives wall texts (`text`) and the picture of each lock (`lock`). Use screenshots only to check a suspected bug.
@@ -132,7 +132,84 @@ uv run dm-play act <action> [json-args]
 uv run dm-play act_many '<json-list>'
 ```
 
-`--brief` (before the command) prints a short summary instead of the JSON: the turn, the party, each champion, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side passages, and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A `seen:` line lists explosions and creature losses seen during the turn.
+`--brief` (before the command) prints a short summary instead of the JSON: the turn, the party, each champion, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side passages, and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A `seen:` line lists explosions and creature losses seen during the turn. The turn line ends with `BUMPED` after a bump. While a mirror shows a champion, a `CANDIDATE (not recruited)` line follows the champions.
+
+### Batches
+
+A batch runs many turns with one request. Each step is one `act` turn. After each turn the batch stops early when something happens, so that the caller can look again. Each check compares with the time before the turn.
+
+`act_many` runs the `actions` in order. An item is an action name (`"move_forward"`) or an object `{"action": "take_object", "args": {"cell": 0}}`.
+
+```sh
+uv run dm-play act_many '["turn_left","move_forward",{"action":"take_object","args":{"cell":2}}]'
+```
+
+The game does not find paths. Plan the path from your own map and send it as `act_many`.
+
+The response has `ran` (the number of turns that ran) and `stopped`:
+
+| `stopped` | Reason |
+|---|---|
+| `done` | All actions ran. |
+| `damage` | A champion lost health. |
+| `creature` | A creature group is in view that was not in view before the turn. The check compares the groups, not their count: a group that stays in view does not stop the batch again. |
+| `message` | The game printed a new message. |
+| `game_over` | The party died, or the game is won. |
+| `bumped` | A move did not change the party square (a wall, a closed door, a creature). See [Bump](#bump). The batch checks this before `damage`, because a bump into a wall hurts. |
+| `moved` | The dungeon moved the party: a teleporter, a pit, stairs. See [Displacement](#displacement). The batch checks this after `bumped` and before `damage`, because a pit fall hurts. |
+| `turned` | The dungeon turned the party: a spinner. See [Displacement](#displacement). The batch checks this after `moved`. |
+| `failed` | An action cannot run. `error` gives the reason. The failed action is not in `ran`. |
+
+### Bump
+
+When a move action (`move_forward`, `move_back`, `move_left`, `move_right`) does not change the party square, the turn response has `"bumped": true`. A wall, a closed door, or a creature is in the way. Without a bump, the response has no `bumped` field. A bump into a wall or a closed door gives 1 damage to the two champions on the side of the bump, as in the original game.
+
+### Displacement
+
+The game informs; it does not play. After each `act` turn and each `act_many` step, the game compares the party facing, square, and map with what the action does:
+
+- A move action changes the square by one step in its direction, or nothing (a bump).
+- `turn_left` and `turn_right` change the facing by 90 degrees.
+- All other actions change neither.
+
+When the dungeon changes the party in another way, the turn has a displacement:
+
+| `stopped` | Reason |
+|---|---|
+| `moved` | The square or the map changed in another way: a teleporter, a pit, stairs. Also a teleporter that sends the party back to the square where the turn started: this is not `bumped`. |
+| `turned` | The facing changed in another way: a spinner. |
+
+`moved` comes before `turned` when both happen. An `act` response has `stopped` only after a displacement. An `act_many` batch stops after the step (see [Batches](#batches)).
+
+### Wait
+
+A `wait` turn checks for news after each tick and ends at once when it finds news. The news are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, else the news. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
+
+Example: rest until something happens, at most 5000 ticks.
+
+```sh
+uv run dm-play wait '{"ticks":5000}'
+```
+
+### Seen
+
+An explosion lasts only a few ticks. It can be gone before the turn ends, so the `view` of the response does not show it. A creature can die in the same way. For this reason, an `act`, `act_many`, or `wait` request records what the party sees after each tick, from the start of the request to the end of the last turn. The record uses the visibility rule of the view (see [View fields](#view-fields)).
+
+The response has `seen: {explosions, creature_changes}` when the record is not empty. Without a record, the response has no `seen` field.
+
+- `explosions[]`: `{name, x, y, depth, side}`, one entry for each explosion type on each square. `name` is the explosion type (see [View fields](#view-fields)). `depth` and `side` give the place in the view when the party first saw the explosion.
+- `creature_changes[]`: `{type, x, y, depth, side, before, after}` for each creature group in view that lost creatures, or that was killed. `before` is the creature count when the party first saw the group in the request, `after` is the count when the party last saw it. `after` is 0 for a killed group. A group that only leaves the view is not in the list.
+
+Example: a fireball kills a screamer two squares ahead.
+
+```json
+"seen": {"explosions": [{"name": "fireball", "x": 1, "y": 6, "depth": 2, "side": "center"}],
+         "creature_changes": [{"type": "Screamer", "x": 1, "y": 6, "depth": 2, "side": "center", "before": 1, "after": 0}]}
+```
+
+### Game over
+
+When the party dies or the game is won during a turn, the turn ends. The response has `"game_over": true`, and `state.party.dead` is `true` after a death. The endgame runs without waiting for input, and the window shows the entrance. After that, `act`, `act_many`, `wait`, and `save` return `{"ok": false, "error": "game over"}`. `get_state`, `get_view`, `get_map`, and `screenshot` still work. To play again, send `load` or `new_game`.
 
 ### Actions
 
@@ -140,12 +217,12 @@ uv run dm-play act_many '<json-list>'
 |---|---|---|
 | `move_forward`, `move_back`, `move_left`, `move_right` | none | Left and right move to the side. The inventory must be closed. |
 | `turn_left`, `turn_right` | none | |
-| `click_wall_ahead` | none | Touches the wall ahead: mirror, button, lever, door button, fountain. |
-| `take_object` | `cell` 0-4 | The leader hand must be empty. See `view.piles`. |
-| `drop_object` | `cell` 0-4, default 0 | 0-1: own square, 2-3: square ahead, 4: alcove ahead. |
+| `click_wall_ahead` | none | Touches the wall ahead: mirror, button, lever, door button, fountain. The inventory must be closed. |
+| `take_object` | `cell` 0-4 | The leader hand must be empty. The inventory must be closed. See `view.piles`. |
+| `drop_object` | `cell` 0-4, default 0 | 0-1: own square, 2-3: square ahead, 4: alcove ahead. The inventory must be closed. |
 | `open_inventory` | `champion` | |
 | `close_inventory` | none | |
-| `put_in_slot`, `take_from_slot` | `champion`, `slot` | Swaps the leader hand with the slot. Slots other than 0 and 1 need the open inventory of the champion. Slots 30-37 are the slots of the open chest. See [Chest](#chest). |
+| `put_in_slot`, `take_from_slot` | `champion`, `slot` | Swaps the leader hand with the slot. Slots other than 0 and 1 need the open inventory of the champion. See the slot numbers below and [Chest](#chest). |
 | `eat`, `drink` | none | Gives the leader hand object to the champion with the open inventory. |
 | `choose_action` | `champion`, `index` | Index in the `actions` list of the champion. |
 | `pass` | none | Closes an open action menu. |
@@ -158,6 +235,8 @@ uv run dm-play act_many '<json-list>'
 | `swap_champions` | `a`, `b` | Clicks the icon of champion `a`, then the icon of champion `b`. The two champions swap their cells. See `position` in the state. |
 | `look` | `champion`, `slot` (both optional) | Presses the eye of the open inventory and releases it. Without `slot`: the object in the leader hand. With `slot`: the empty leader hand takes the object of the slot (`champion`, default the open inventory), the eye looks, and the hand puts the object back. See [Look](#look). |
 
+Slot numbers: 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet, 6 pouch 2, 7-9 quiver 2-4, 10 neck, 11 pouch 1, 12 quiver 1, 13-29 backpack, 30-37 the open chest. `state.champions[].slots[]` lists only the slots that hold an object.
+
 While a candidate is shown, only `recruit` is accepted. While the party sleeps, only `wake` is accepted. `wait` is always accepted.
 
 ### Chest
@@ -168,7 +247,7 @@ A chest in the action hand (slot 1) of the open inventory opens in the panel. `s
 
 The response of `look` has `look: {name, lines}`. These are the texts of the eye panel: the name, then the description lines (burnt out, compass direction, waterskin level, attributes, and the weight, in the form `WEIGHS <kg>.<tenth> KG.`). With the advanced features, a weapon also has `ATTACK <value>` and an armour `DEFENSE <value>`, the values of the stat meters. A scroll and a chest also give the name and the weight; the scroll text is in the state.
 
-`action_damage`: a value above 0 is the damage, 0 is no damage, -1 is "can't reach", -2 is "need ammo".
+`action_damage`: a value above 0 is the damage, 0 is no damage, -1 is "can't reach", -2 is "need ammo". After `act_many` it is a list with one value for each `choose_action`, in order.
 
 ### Cells
 
@@ -191,7 +270,7 @@ The champion `position` uses `front_left`, `front_right`, `back_right`, `back_le
 - `leader` (index, or `null`), `leader_hand` (object or `null`).
 - `candidate`: the champion that a mirror shows, with the fields of a champion, or `null`. The candidate is not in the party: it is not in `champions[]` and is never the `leader`. Answer with `act recruit`.
 - `champions[]`: `index`, `name`, `title`, `alive`, `health`, `stamina`, `mana` (each `[current, maximum]`), `food`, `water`, `load_kg` (`[current, maximum]` in kg, one decimal), `position`, `poisoned`, `action_disabled`, `statistics`, `skills` (`{level, rank}` for fighter, ninja, priest, wizard), `wounds`, `slots[]` (`slot`, `where`, `object`), `actions` (action menu of the action hand), `runes` (chosen runes).
-- The values use the units of the game screen. The game stores stamina in tenths of the value that the inventory shows, so `stamina` is the stored value divided by 10. The game stores the load in tenths of a kilogram and shows it as `nn.n/ mm KG`, so `load_kg` is in kilograms. Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars).
+- The values use the units of the game screen. The game stores stamina in tenths of the value that the inventory shows, so `stamina` is the stored value divided by 10. The game stores the load in tenths of a kilogram and shows it as `nn.n/ mm KG`, so `load_kg` is in kilograms. Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars). The maximum is 2048; below 0 the champion starves or dies of thirst.
 - `rank` is the rank name that the eye panel shows for the level (from the string table of the game, for example `APPRENTICE`). It is `null` for level 1, because the game shows no rank then.
 - `action_menu`: `{champion, actions}` while a menu is open, else `null`.
 - `spell`: `{caster, chosen, available[{symbol, name, mana}]}`, or `null`.
@@ -204,7 +283,7 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 
 - `squares[]`: the visible squares, `depth` 0-3 and `side` `left`, `center`, `right`. Each has `x`, `y`, `element` (`wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`). A door has `door` and `button`. A square that is not a wall has `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there. From depth 1, a floor square has `floor_ornament` when the view draws one: `grate`, `pressure_pad`, `moss`, `round_grate`, `round_pressure_pad`, `flame_pit`, `crack`, `tiny_pressure_pad`, or `puddle` (the index of the floor ornament graphics of the game). Another ornament gives its index as a number. The view draws no floor ornament on the party row, and a floor sensor without an ornament shows nothing, as on the screen.
 - A `flying` entry is `{kind, name}`. A projectile has `kind` `projectile` and the object name, or `spell`. An explosion has `kind` `explosion`, `type` (the number of the game), and `name`: `fireball`, `slime`, `lightning`, `harm_non_material`, `open_door`, `poison_bolt`, `poison_cloud`, `smoke`, `fluxcage`, or `rebirth`. Another type gives its number as `name`.
-- A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`. `facing` is the direction that the face points to. `switch` is a button or a lever. `lock` takes or holds an object: a keyhole or a slot. Its value names the picture, for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, or `coin_slot`; a picture without a name gives its index in the wall ornament graphics. `torch_holder` is a wall holder for a torch. `ornament` is another ornament. The faces are the faces that the dungeon view draws: the front face of a center wall from depth 1, the side face of a side wall from depth 1, and also the front face of a side wall from depth 2. The view draws no ornaments on the side walls of depth 0, so these have no faces.
+- A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`. `facing` is the direction that the face points to. `switch` is a button or a lever. `lock` takes or holds an object: a keyhole or a slot. Its value names the picture, for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, or `coin_slot`; a picture without a name gives its index in the wall ornament graphics. `torch_holder` is a wall holder for a torch. `ornament` is another ornament, also named by its picture, for example `creeper` or `manacles`. The faces are the faces that the dungeon view draws: the front face of a center wall from depth 1, the side face of a side wall from depth 1, and also the front face of a side wall from depth 2. The view draws no ornaments on the side walls of depth 0, so these have no faces.
 - `piles[]`: `{cell, top}` for each object that `take_object` can reach now.
 - `wall_ahead_clickable`, `alcove`, `fountain`, `vi_altar`.
 
@@ -234,4 +313,4 @@ A floor square with a pressure pad (`pressure_pad`, `round_pressure_pad`, `tiny_
 
 ### End of a session
 
-Stop when the coordinator's limit is reached, when the game stops answering, or when a bug blocks progress. Before you stop, save the game and update your files. The report: where the party is, party status, what you achieved, the current goal, bugs found, and the number of `dm-play` calls.
+Stop when the coordinator's limit is reached, when the game stops answering, or when a bug blocks progress. Before you stop, save the game and update your files. The report: where the party is, party status, what you achieved, the current goal, and bugs found.

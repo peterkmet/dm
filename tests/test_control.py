@@ -343,6 +343,33 @@ def test_act_many_runs_in_order_and_stops_on_failure_and_damage(game):
         client.sock.close()
 
 
+def test_act_many_lists_the_damage_of_each_attack(game):
+    client = Client(game)
+    try:
+        attack = {"action": "choose_action", "args": {"champion": 0, "index": 0}}
+        response = client.call(cmd="act_many", actions=[attack, "turn_left", "turn_right"])
+        assert response["ran"] == 3, response
+        assert isinstance(response["action_damage"], list) and len(response["action_damage"]) == 1
+        assert isinstance(client.call(cmd="act", action="choose_action", args={"champion": 0, "index": 0}).get("action_damage", 0), int)
+    finally:
+        client.sock.close()
+
+
+def test_a_rune_without_enough_mana_fails(game):
+    client = Client(game)
+    champion = game.champions[0]
+    mana = champion.current_mana
+    try:
+        assert client.act("set_caster", champion=0)
+        champion.current_mana = 0
+        response = client.call(cmd="act", action="add_rune", args={"symbol": 0})
+        assert response["ok"] is False and "mana" in response["error"]
+        assert state_json(game, 0)["spell"]["chosen"] == []
+    finally:
+        champion.current_mana = mana
+        client.sock.close()
+
+
 def test_wait_runs_all_ticks_or_stops_on_damage(game):
     client = Client(game)
     try:
@@ -569,6 +596,18 @@ def test_a_move_into_a_wall_bumps(game, monkeypatch, capsys):
 
 
 
+def test_a_teleporter_back_to_the_start_square_moves_the_party(game):
+    west = 3  # (17,10) of map 5 opens when the party steps on it and sends it back to (18,10)
+    client = Client(game)
+    try:
+        with on_map(game, 5, 18, 10, west):
+            response = client.act("move_forward")
+            assert response.get("stopped") == "moved" and "bumped" not in response, response
+            assert tuple(game.position()) == (18, 10, west)
+    finally:
+        client.sock.close()
+
+
 def test_act_many_stops_when_a_spinner_turns_the_party(game):
     spinner = (3, 4)  # a spinner of map 2 that turns the party 90 degrees right
     south = 2
@@ -739,6 +778,12 @@ def test_map_grid_has_indexes(game, monkeypatch, capsys):
     assert capsys.readouterr().out.splitlines() == game_map["grid"]
 
 
+def test_the_tests_do_not_log_into_a_run():
+    from dmtools import play
+
+    assert not play.LOG_DIR.startswith(".playthrough")
+
+
 def test_dm_play_does_not_import_mcp():
     code = "import sys, dmtools.play; assert 'mcp' not in sys.modules"
     subprocess.run([sys.executable, "-c", code], check=True)
@@ -855,11 +900,40 @@ def test_a_lock_names_its_picture(game):
     assert wall["front_face"]["lock"] == "iron_lock"
 
 
+def test_a_wall_text_has_no_leading_newline(game):
+    with on_map(game, 0, 8, 4, 2):  # facing south to the plaque of the Hall of Champions
+        wall = state_json(game, 1)["squares"][4]
+    assert wall["front_face"]["text"] == "HALL OF CHAMPIONS"
+
+
+def test_the_view_has_no_alcove_without_a_wall_ahead(game):
+    lib = game.lib
+    with on_map(game, 2, 4, 17, 1):
+        lib.view_draw(1, 4, 17)  # facing east: an alcove ahead
+        assert state_json(game, 1)["alcove"] is True
+    with on_map(game, 2, 4, 17, 0):
+        lib.view_draw(0, 4, 17)  # facing north: no wall ahead
+        assert state_json(game, 1)["alcove"] is False
+
+
+def test_a_wall_decoration_names_its_picture(game):
+    with on_map(game, 7, 6, 13, 3):  # facing west to the random creeper of (5,13)
+        wall = state_json(game, 1)["squares"][4]
+    assert wall["front_face"]["ornament"] == "creeper"
+
+
+def test_a_border_wall_outside_the_map_shows_its_fountain(game):
+    with on_map(game, 1, 10, 0, 0):  # facing north to the random fountain of the border wall
+        wall = state_json(game, 1)["squares"][4]
+    assert wall["y"] == -1 and wall["front_face"]["fountain"] is True
+
+
 def test_brief_names_a_lock():
     from dmtools.play import square_text
 
     assert square_text({"element": "wall", "front_face": {"facing": "south", "lock": "sun_lock"}}) == "wall, front face south: lock sun_lock"
     assert square_text({"element": "wall", "front_face": {"facing": "south", "lock": 40}}) == "wall, front face south: lock 40"
+    assert square_text({"element": "wall", "front_face": {"facing": "south", "ornament": "creeper"}}) == "wall, front face south: ornament creeper"
 
 
 def squares_by_place(view):

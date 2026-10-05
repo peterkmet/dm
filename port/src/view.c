@@ -1623,6 +1623,15 @@ int16_t view_wall_ornament(int16_t x, int16_t y, int16_t face)
     return VIEW_ORNAMENT_OTHER;
 }
 
+int16_t view_wall_face_ornament_index(int16_t x, int16_t y, int16_t face)
+{
+    Aspect a;
+    if (map != g_party_map_index) return -1;
+    aspect(&a, face, x, y);
+    if (a.element != SQUARE_WALL || !a.far_side) return -1;
+    return view_wall_ornament_index((uint16_t)a.far_side);
+}
+
 int16_t view_wall_ornament_index(uint16_t ordinal)
 {
     if (map != g_party_map_index || ordinal < 1 || ordinal > map_wall_ornament_count(map)) return -1;

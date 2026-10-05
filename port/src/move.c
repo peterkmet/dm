@@ -27,6 +27,7 @@ int16_t g_new_party_map_index = -1;
 int16_t g_move_result_map_x, g_move_result_map_y;
 uint16_t g_move_result_map_index, g_move_result_cell, g_move_result_direction;
 int16_t g_use_rope_to_climb_down_pit;
+int g_party_teleport_count;
 
 /* Levitating groups, projectiles, and explosions do not fall into pits and do not trigger sensors when they leave a square. */
 int16_t move_is_levitating(uint16_t thing)
@@ -152,6 +153,7 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
                 if (party) {
                     g_party_map_x = dst_x;
                     g_party_map_y = dst_y;
+                    g_party_teleport_count += !points_to_itself;
                     if (teleporter_is_audible(teleporter))
                         sound_request_play(SOUND_TELEPORT, dst_x, dst_y, SOUND_MODE_NOW);
                     champion_set_party_direction(teleporter_is_rotation_absolute(teleporter) ? rotation : NORMALIZE(g_party_direction + rotation));

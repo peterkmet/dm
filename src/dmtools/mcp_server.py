@@ -20,7 +20,7 @@ door finish opening. A long `wait` (up to 5000 ticks) stops early on damage, a n
 message, so one call can rest until something happens.
 
 Goal: explore the dungeon, find the Firestaff, defeat Lord Chaos. First recruit up to four
-champions from the mirrors in the Hall of Champions on the first level.
+champions from the mirrors in the Hall of Champions on level 0.
 
 Chaos Strikes Back: get_state has "adventure": "csb". new_game starts in the prison (map 0), where
 you recruit up to four champions at the mirrors, as in Dungeon Master. save_game there makes the
@@ -54,7 +54,7 @@ How to play:
    must wait. A creature must be in the square ahead for melee.
 6. Magic: the "spell" state shows the caster. add_rune with symbol 0-5 (power, element, form,
    alignment in four steps; each rune costs mana), then cast. Examples: FUL IR (fireball)
-   = a power rune, then symbol 3 (FUL), then symbol 3 (IR); a power rune and FUL alone make a
+   = a power rune, then symbol 3 (FUL), then symbol 1 (IR); a power rune and FUL alone make a
    magic torch (light).
 7. Doors: click_wall_ahead on a door with "button": true opens or closes it. Some doors open
    with keys or levers on walls ("switch" or "lock" on a wall face).
@@ -73,7 +73,7 @@ def get_state() -> dict:
 
     Fields: time (game ticks); adventure ("dm" or "csb"); party {map, level, x, y, facing,
     darkness 0 bright to 5 dark, can_move, sleeping, dead}; leader (champion index); leader_hand (the object that the leader
-    moves, or null); candidate (name of a champion shown by a mirror, answer with act recruit);
+    moves, or null);
     candidate: the champion a mirror shows, with the same fields as a champion, not yet in the
     party (answer with act recruit), or null;
     champions [{index, name, title, alive, health/stamina/mana [current, maximum] as the game
@@ -128,7 +128,8 @@ def act(action: str, args: dict | None = None) -> dict:
     {ok, ticks, action_damage (choose_action only: damage, 0 miss, -1 can't reach, -2 need
     ammo), bumped (true when a move did not move the party: wall, closed door, creature),
     stopped (only when the dungeon moved the party: moved by a teleporter, pit, or stairs; turned
-    by a spinner), state, view}. ok false with error: nothing happened.
+    by a spinner), game_over, look (look only: {name, lines}), seen (explosions and creature
+    changes seen during the turn), state, view}. ok false with error: nothing happened.
 
     Actions and args:
     move_forward, move_back, move_left, move_right, turn_left, turn_right;
