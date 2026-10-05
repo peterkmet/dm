@@ -68,10 +68,10 @@ A run is one playthrough from a start save. All run folders are git-ignored (`.p
 playthrough_template/         the player files with their headers (in git), and the start save DMGAME.DAT (local only, git-ignored: a game file)
 ```
 
-- Start a new run N: copy the `*.md` files of `playthrough_template/` to an empty `.playthrough/`. Copy `playthrough_template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/DMGAME.DAT`. Create `.playthrough_run<N>/checkpoints/start/` with the start save and a copy of `.playthrough/`. Point the call log to the run: `ln -sfn .playthrough_run<N> .playthrough_log`. Run `build/dm --mode turnbased --control ~/.dm/control.sock`, then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Start a new run N: copy the `*.md` files of `playthrough_template/` to an empty `.playthrough/`. Copy `playthrough_template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/DMGAME.DAT`. Create `.playthrough_run<N>/checkpoints/start/` with the start save and a copy of `.playthrough/`. Point the call log to the run: `ln -sfn .playthrough_run<N> .playthrough_log`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
 - Make a checkpoint after a session: copy `game/DMGAME.DAT` and `.playthrough/` (as `files/`) to `.playthrough_run<N>/checkpoints/<name>/`. Add a row to `session_costs.md`; count the calls of the session in `calls.log`.
 - The coordinator's own `dm-play` calls stay out of the log: `DM_PLAY_LOG_DIR=none uv run dm-play ...`.
-- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `.playthrough/`. Run `build/dm --mode turnbased --control ~/.dm/control.sock`, then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `.playthrough/`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
 - Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `.playthrough/`. Give the player the current goal and the limit of `dm-play` calls. The player shell must run in the repository root: `dm-play` finds `.playthrough_log` relative to it, else `calls.log` stays empty.
 - End a run: copy `.playthrough/` and the last save into `.playthrough_run<N>/`, and write `level_stats.md`.
 
