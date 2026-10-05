@@ -855,6 +855,7 @@ static void regenerate_mana(uint16_t i, uint16_t chance)
 static void consume_food_and_water(uint16_t i, uint16_t time)
 {
     Champion *c = &g_champions[i];
+    int16_t food = c->food, water = c->water;
     uint16_t steps = 4;
     for (int16_t half = c->maximum_stamina >> 1; half > c->current_stamina; half >>= 1)
         steps += 2;
@@ -889,6 +890,8 @@ static void consume_food_and_water(uint16_t i, uint16_t time)
         c->food = FOOD_WATER_MINIMUM;
     if (c->water < FOOD_WATER_MINIMUM)
         c->water = FOOD_WATER_MINIMUM;
+    if (g_cheat_food)
+        c->food = food, c->water = water;
 }
 
 /* Health comes back while stamina is above a quarter; vitality makes it more likely. */
