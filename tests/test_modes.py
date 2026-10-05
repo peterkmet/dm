@@ -449,6 +449,49 @@ def test_turnbased_program_answers_get_state_and_act(tmp_path):
     assert not os.path.exists(path)
 
 
+def test_turnbased_load_sent_at_once_runs_the_game(tmp_path):
+    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    data = tmp_path / "game"
+    shutil.copytree(ROOT / "game", data, ignore=shutil.ignore_patterns("DMGAME.*", "QUICK.DAT"))
+    sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
+    path = os.path.join(sock_dir, "control.sock")
+    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
+
+    def session(requests, wait_for_game):
+        program = subprocess.Popen([str(ROOT / "build/dm"), "--mode", "turnbased", "--data", str(data), "--control", path,
+                                    "--frames", "100000"], cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            while not os.path.exists(path):
+                time.sleep(0.001)
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+                s.settimeout(60)
+                s.connect(path)
+                lines = s.makefile("rw")
+
+                def call(**payload):
+                    lines.write(json.dumps(payload) + "\n")
+                    lines.flush()
+                    return json.loads(lines.readline())
+
+                while wait_for_game and not call(cmd="get_state")["ok"]:
+                    time.sleep(0.05)
+                return [call(**r) for r in requests]
+        finally:
+            program.send_signal(signal.SIGINT)
+            try:
+                program.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                program.kill()
+
+    try:
+        assert session([{"cmd": "save"}], wait_for_game=True)[0]["ok"]
+        loaded, waited = session([{"cmd": "load"}, {"cmd": "wait", "ticks": 5}], wait_for_game=False)
+        assert loaded["ok"]
+        assert waited["ticks"] == 5  # the load before the first entrance frame still leaves the entrance
+    finally:
+        shutil.rmtree(sock_dir, ignore_errors=True)
+
+
 def test_smooth_projectile_flight(game):
     lib = game.lib
     for direction in range(4):  # a direction with open floor ahead

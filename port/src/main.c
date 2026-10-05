@@ -374,6 +374,8 @@ static int start_adventure(void)
     mode = MODE_ENTRANCE;
     title_pending = !auto_enter;
     if (auto_enter) command_process_key(KEY_RETURN);
+    /* turn-based: the game starts before the first socket request, so an early load cannot keep the entrance */
+    if (turnbased && !entrance_frame(data)) return 0;
     return 1;
 }
 
