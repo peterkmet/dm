@@ -62,6 +62,45 @@ The coordinator of a long playthrough keeps checkpoints in `.playthrough_checkpo
 - Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `.playthrough/`. Run `build/dm --mode turnbased`, then `uv run dm-play load`.
 - The current state of the playthrough is in `.playthrough/progress.md`. The cost of each session is in `.playthrough/session_costs.md`.
 
+## Player interface
+
+The rules of the LLM player in a long playthrough. The game rules are in the [player manual](llm-playbook.md).
+
+### Start of a session
+
+1. Read the [player manual](llm-playbook.md) and this section.
+2. Read these sections: "Play from the shell: dm-play", "Actions", "Cells", "Look", "Chest", "State fields", "View fields", and "Map fields".
+3. Read your files in `.playthrough/`: `progress.md`, `lessons.md`, the map of the current level, `party.md`, `spells.md`.
+4. Run `uv run dm-play --brief get_state`. If the position or the time does not match `progress.md`, run `uv run dm-play load` and check again.
+
+### Rules
+
+- Play only through `uv run dm-play`. Do not read or change source code, game data files, or the decompiled code.
+- Do not start or stop the game program. The coordinator runs it.
+- The user watches the window. Before each `dm-play` call, write one short line of text: what you do next and why.
+- Plan a corridor or a fight in one `act_many` call. It stops early on damage, a new creature, a new message, or a failed action. Check why it stopped before you continue.
+- One `wait` with many ticks stops by itself on damage, a new creature, or a message. Do not write helper loops that call `get_state`, `get_view`, or short `wait`s again and again.
+- Ask for `get_map` only when you plan a route. The `act`, `act_many`, and `wait` responses already contain the state and the view.
+- The view gives wall texts (`text`) and the picture of each lock (`lock`). Use screenshots only to check a suspected bug.
+- Chosen runes stay after a stopped or failed cast. Before you add runes, check `state.spell.chosen` and send `delete_rune` until it is empty.
+
+### Commands you use most
+
+| Goal | Command |
+|---|---|
+| State in short form | `uv run dm-play --brief get_state` |
+| What is ahead | `uv run dm-play --brief get_view` |
+| Explored map | `uv run dm-play get_map` |
+| Several actions | `uv run dm-play act_many '["move_forward","turn_left","move_forward"]'` |
+| Pass time | `uv run dm-play wait '{"ticks":50}'` |
+| Save, load | `uv run dm-play save`, `uv run dm-play load` |
+| Sleep | `uv run dm-play act sleep`, then `wait`, then `uv run dm-play act wake` |
+| See the screen | `uv run dm-play screenshot '{"path":"/Users/lego/github/dm/.playthrough/shot.png"}'`, then read the PNG |
+
+### End of a session
+
+Stop when the coordinator's limit is reached, when the game stops answering, or when a bug blocks progress. Before you stop, save the game and update your files. The report: where the party is, party status, what you achieved, the current goal, bugs found, and the number of `dm-play` calls.
+
 ## Play Chaos Strikes Back
 
 The CSB files must be in `game-csb/` (see the [README](../README.md)). Start the game with `--adventure csb`:
