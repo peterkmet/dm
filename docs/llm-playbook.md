@@ -287,7 +287,7 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 - `piles[]`: `{cell, top}` for each object that `take_object` can reach now.
 - `wall_ahead_clickable`, `alcove`, `fountain`, `vi_altar`.
 
-Visibility rule: the view has the party row (depth 0) and the rows ahead up to the first center square that blocks sight: a wall, a fake wall that looks closed, or a closed door. The row of that square is in the view, with its side squares. Nothing behind it is in the view. A side square is in the view only when the center square of its row or the side square one row nearer is open: the screen does not draw a side square behind walls. Facing a wall at depth 1, the view has at most 6 squares.
+Visibility rule: the view has the party row (depth 0) and the rows ahead up to the first center square that blocks sight: a wall, a fake wall that looks closed, or a closed door. The row of that square is in the view, with its side squares. Nothing behind it is in the view. A side square is in the view only when the center square of its row or the side square one row nearer is open: the screen does not draw a side square behind walls. Facing a wall at depth 1, the view has at most 6 squares. A square outside the map (for example `y` -1) is the border wall of the level; the screen draws its ornaments too.
 
 The view shows what a player sees. Creature health is not in the view, because the original does not show it. Creature names and rune names do not come from the game data, because the original shows only pictures.
 

@@ -79,7 +79,9 @@ def view_lines(view: dict) -> list[str]:
             break
         lines.append(f"{name}: {square_text(squares[depth, 'center'])}")
         for side in ("left", "right"):
-            square = squares[depth, side]
+            square = squares.get((depth, side))
+            if square is None:  # the screen does not draw this side square
+                continue
             opening = depth > 0 and square["element"] != "wall"  # a side passage the player sees
             if opening or square["element"] == "pit" or any(key in square for key in ("door", "side_face", "floor_ornament", "creatures")):
                 lines.append(f"{name} {side}: {square_text(square)}")
