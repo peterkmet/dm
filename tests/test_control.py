@@ -883,11 +883,18 @@ def test_the_view_has_no_alcove_without_a_wall_ahead(game):
         assert state_json(game, 1)["alcove"] is False
 
 
+def test_a_wall_decoration_names_its_picture(game):
+    with on_map(game, 7, 6, 13, 3):  # facing west to the random creeper of (5,13)
+        wall = state_json(game, 1)["squares"][4]
+    assert wall["front_face"]["ornament"] == "creeper"
+
+
 def test_brief_names_a_lock():
     from dmtools.play import square_text
 
     assert square_text({"element": "wall", "front_face": {"facing": "south", "lock": "sun_lock"}}) == "wall, front face south: lock sun_lock"
     assert square_text({"element": "wall", "front_face": {"facing": "south", "lock": 40}}) == "wall, front face south: lock 40"
+    assert square_text({"element": "wall", "front_face": {"facing": "south", "ornament": "creeper"}}) == "wall, front face south: ornament creeper"
 
 
 def squares_by_place(view):

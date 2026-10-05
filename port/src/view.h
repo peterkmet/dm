@@ -24,6 +24,9 @@ int16_t view_wall_ornament(int16_t x, int16_t y, int16_t face);
 /* The wall ornament of ordinal (1-based, from a sensor) of the party map: its index in the wall ornament
    graphics of the game, or -1 (no ornament, or the view has not loaded the party map). */
 int16_t view_wall_ornament_index(uint16_t ordinal);
+/* The wall ornament that the view draws on the side of wall square (x, y) that faces direction face: its index
+   in the wall ornament graphics of the game, or -1 (none, or the view has not loaded the party map). */
+int16_t view_wall_face_ornament_index(int16_t x, int16_t y, int16_t face);
 /* The floor ornament that the view draws on square (x, y) of the party map from depth 1: its index in the
    floor ornament graphics of the game, or -1 (none, or the view has not loaded the party map). */
 int16_t view_floor_ornament(int16_t x, int16_t y);
