@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.1 - 2026-10-05
+
+### Fixed
+
+- Turn-based mode: a `load` that arrived on the control socket before the first frame stopped the game clock. The program stayed at the entrance, and each `wait` and move returned `ticks 0`. Now the game starts before the program reads the first request.
+
+### Removed
+
+- `tools/snapshot.sh` and the `wip-snapshot` branch. The LLM playthrough keeps its saves in `.playthrough_checkpoints/`.
+
 ## 0.5.0 - 2026-10-05
 
 ### Added
