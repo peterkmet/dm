@@ -861,6 +861,16 @@ def test_a_wall_text_has_no_leading_newline(game):
     assert wall["front_face"]["text"] == "HALL OF CHAMPIONS"
 
 
+def test_the_view_has_no_alcove_without_a_wall_ahead(game):
+    lib = game.lib
+    with on_map(game, 2, 4, 17, 1):
+        lib.view_draw(1, 4, 17)  # facing east: an alcove ahead
+        assert state_json(game, 1)["alcove"] is True
+    with on_map(game, 2, 4, 17, 0):
+        lib.view_draw(0, 4, 17)  # facing north: no wall ahead
+        assert state_json(game, 1)["alcove"] is False
+
+
 def test_brief_names_a_lock():
     from dmtools.play import square_text
 

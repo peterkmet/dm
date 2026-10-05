@@ -324,7 +324,7 @@ static const char *drop_object(const char *r)
     if (g_inventory_champion_ordinal) return "close the inventory first (close_inventory)";
     if (g_leader_empty_handed) return "the leader hand is empty";
     if (cell == VIEW_CLICK_BOX_ALCOVE) {
-        if (!g_facing_alcove) return "no alcove ahead";
+        if (g_square_ahead_element != VIEW_ELEMENT_WALL || !g_facing_alcove) return "no alcove ahead";
         click_view_box(&g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL]);
         return NULL;
     }

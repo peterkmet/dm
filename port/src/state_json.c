@@ -685,9 +685,10 @@ void state_json_view(Json *j)
     }
     json_close(j, ']');
     key_bool(j, "wall_ahead_clickable", g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL].x != -1);
-    key_bool(j, "alcove", g_facing_alcove);
-    key_bool(j, "fountain", g_facing_fountain);
-    key_bool(j, "vi_altar", g_facing_vi_altar);
+    int wall_ahead = g_square_ahead_element == VIEW_ELEMENT_WALL; /* the view sets the facing flags only for a wall ahead */
+    key_bool(j, "alcove", wall_ahead && g_facing_alcove);
+    key_bool(j, "fountain", wall_ahead && g_facing_fountain);
+    key_bool(j, "vi_altar", wall_ahead && g_facing_vi_altar);
     json_close(j, '}');
 }
 
