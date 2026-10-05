@@ -99,9 +99,9 @@ After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), an
 | `get_state` | none | `{ok, state}` |
 | `get_view` | none | `{ok, view}` |
 | `get_map` | none | `{ok, map}` |
-| `act` | `action`, `args` (object) | `{ok, ticks, stopped?, game_over, bumped?, action_damage?, look?, seen?, state, view}` |
-| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage? (list), seen?, state, view}` |
-| `wait` | `ticks` (1-5000, default 10) | `{ok, ticks, stopped, game_over, seen?, state, view}` |
+| `act` | `action`, `args` (object) | `{ok, ticks, stopped?, game_over, bumped?, action_damage?, health_lost?, look?, seen?, state, view}` |
+| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage? (list), health_lost?, seen?, state, view}` |
+| `wait` | `ticks` (1-5000, default 10) | `{ok, ticks, stopped, game_over, health_lost?, seen?, state, view}` |
 | `screenshot` | none | The screen as a 320 x 200 PNG image |
 | `save_game` | none | `{ok}` |
 | `load_game` | none | `{ok, state}` |
@@ -123,9 +123,9 @@ The server accepts one client at a time. While a turn runs, the server does not 
 | `get_state` | none | `state` |
 | `get_view` | none | `view` |
 | `get_map` | none | `map` |
-| `act` | `action`, `args` | After the turn: `ticks`, `stopped` (only after a [displacement](llm-playbook.md#displacement)), `game_over`, `bumped` (only after a bump), `action_damage` (only `choose_action`), `look` (only `look`), `seen` (see [Seen](llm-playbook.md#seen)), `state`, `view` |
-| `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `bumped`, `action_damage` (a list, one value for each `choose_action`), `seen`, `state`, `view`. See [Batches](llm-playbook.md#batches). |
-| `wait` | `ticks` (1-5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `seen`, `state`, `view`. See [Wait](llm-playbook.md#wait). |
+| `act` | `action`, `args` | After the turn: `ticks`, `stopped` (only after a [displacement](llm-playbook.md#displacement)), `game_over`, `bumped` (only after a bump), `action_damage` (only `choose_action`), `health_lost`, `look` (only `look`), `seen` (see [Seen](llm-playbook.md#seen)), `state`, `view` |
+| `act_many` | `actions` | After the last turn: `ticks` (all turns), `ran`, `stopped`, `error`, `game_over`, `bumped`, `action_damage` (a list, one value for each `choose_action`), `health_lost`, `seen`, `state`, `view`. See [Batches](llm-playbook.md#batches). |
+| `wait` | `ticks` (1-5000) | After the turn: `ticks` (the ticks that ran), `stopped`, `game_over`, `health_lost`, `seen`, `state`, `view`. See [Wait](llm-playbook.md#wait). |
 | `screenshot` | `path` | `path`. The game writes a PNG file to `path`. |
 | `save` | none | Nothing. The game writes `DMGAME.DAT` (CSB: `CSBGAME.DAT`) in the save directory. The old file becomes `DMGAME.BAK` (CSB: `CSBGAME.BAK`). |
 | `load` | none | `state`. The game loads `DMGAME.DAT` (else `DMGAME.BAK`; CSB: `CSBGAME.DAT`, else `CSBGAME.BAK`) from the save directory. |
@@ -190,7 +190,7 @@ uv run dm-play load
 uv run dm-play new_game
 ```
 
-- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, and `BUMPED` after a bump), the party position (the first line has `| CSB` in a CSB game), the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side squares (also at depth 0, `here left` and `here right`) with a door and its state, an open pit, a wall face, a floor ornament, or creatures, every side square ahead that is not a wall (a side passage), and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A response with `seen` has a line such as `seen: fireball at ahead 2; a group of 1 Screamer at ahead 2 was killed` (or `lost <n>`) after the turn line.
+- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, `health_lost`, and `BUMPED` after a bump), the party position (the first line has `| CSB` in a CSB game), the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side squares (also at depth 0, `here left` and `here right`) with a door and its state, an open pit, a wall face, a floor ornament, or creatures, every side square ahead that is not a wall (a side passage), and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A response with `seen` has a line such as `seen: fireball at ahead 2; a group of 1 Screamer at ahead 2 was killed` (or `lost <n>`) after the turn line.
 - `dm-play` does not import the `mcp` package. The socket helpers are in `src/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
 - A relative `path` becomes an absolute path, because the game runs in another directory.
 - The exit code is 1 when the response has `"ok": false`, also when the game is not running.
