@@ -2,6 +2,7 @@
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
+#include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -160,11 +161,25 @@ static void fatal(int16_t code)
     exit(1);
 }
 
+/* A free record (THING_NONE) must never enter a square list: a save with it is damaged. Logs where it comes from. */
+static void report_free_record(const char *action, int16_t x, int16_t y)
+{
+    enum { FRAMES = 16 };
+    void *frames[FRAMES];
+    fprintf(stderr, "square list guard: %s, map %d (%d,%d), game time %lu\n", action, g_current_map_index, x, y,
+            (unsigned long)g_game_time);
+    backtrace_symbols_fd(frames, backtrace(frames, FRAMES), 2);
+}
+
 /* x >= 0: append the thing to the list of square (x, y). x < 0: append it to the list that starts at list. */
 void link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
 {
     if (thing == THING_ENDOFLIST)
         return;
+    if (thing == THING_NONE) {
+        report_free_record("link of a free record", x, y);
+        return;
+    }
     thing_set_next(thing, THING_ENDOFLIST);
     if (x >= 0) {
         uint8_t *square = &g_current_map_data[x][y];
@@ -196,7 +211,10 @@ void unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
     if (x >= 0) {
         uint16_t index = (uint16_t)get_square_first_thing_index(x, y);
         uint8_t *first = g_square_first_things + index * 2;
-        if (get_next_thing(thing) == THING_ENDOFLIST && thing == THING_STRIP_CELL(BE16(first))) {
+        uint16_t after = get_next_thing(thing);
+        if (after == THING_NONE && thing == THING_STRIP_CELL(BE16(first)))
+            report_free_record("unlink of a free record", x, y); /* its next is gone: remove the whole entry */
+        if ((after == THING_ENDOFLIST || after == THING_NONE) && thing == THING_STRIP_CELL(BE16(first))) {
             uint16_t last = dungeon_square_first_thing_count() - 1;
             g_current_map_data[x][y] &= ~SQUARE_HAS_THINGS;
             memmove(first, first + 2, (last - index) * 2);
