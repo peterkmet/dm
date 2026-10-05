@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from test_control import Client, pump
-from test_gameloop import CORRIDOR, KEY_ESCAPE, KEY_F1, KEY_RETURN, KEY_UP, STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
+from test_gameloop import CORRIDOR, KEY_ESCAPE, KEY_F1, KEY_RETURN, KEY_UP, LEFT_PRESS, LEFT_RELEASE, STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -218,13 +218,19 @@ def arrow_x(game):
     return sum(xs) / len(xs) if xs else None
 
 
-def test_a_click_scrolls_the_automap(game):
+def test_a_drag_scrolls_the_automap(game):
     set_mode(game, ADVANCED)
     press(game, KEY_M)
     centered = arrow_x(game)
     b = zone_box(game, ZONE_VIEWPORT)
-    game.click(b.x + 12 + (b.w - 12) // 2 + 3 * 7, b.y + 7 + (b.h - 7) // 2)  # 3 squares east of the center, inside the rulers
-    assert arrow_x(game) == centered - 3 * 7
+    x, y = b.x + b.w // 2, b.y + b.h // 2
+    game.click(x, y)
+    assert arrow_x(game) == centered  # a click without a move does not scroll
+    game.lib.command_process_click(x, y, LEFT_PRESS)
+    game.lib.advanced_drag(x - 3 * 7 - 3, y)  # 3 squares and a part of one to the west
+    game.lib.command_process_click(x - 3 * 7 - 3, y, LEFT_RELEASE)
+    game.run()
+    assert arrow_x(game) == centered - 3 * 7  # the map follows the mouse in whole squares
     press(game, KEY_M)
     press(game, KEY_M)
     assert arrow_x(game) == centered

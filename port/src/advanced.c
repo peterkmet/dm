@@ -25,6 +25,11 @@
 int16_t g_game_mode = GAME_MODE_VANILLA;
 int16_t g_advanced_features, g_automap_open, g_cheat_light, g_cheat_immortal, g_cheat_food;
 
+static struct {
+    int active;
+    int16_t x, y; /* the mouse position that matches the current scroll */
+} drag;
+
 static const char *const direction_names[4] = { "NORTH", "EAST", "SOUTH", "WEST" };
 static const char *const soundtrack_names[3] = { "ORIGINAL", "SUPER NES", "FM-TOWNS" };
 
@@ -65,26 +70,32 @@ void advanced_draw_automap(void)
 
 static void close_automap(void)
 {
-    g_automap_open = 0;
+    g_automap_open = drag.active = 0;
     automap_scroll_reset();
     gameloop_draw_view();
 }
 
-/* The square of pixel p on an axis of length, counted from the center square of automap_draw. */
-static int16_t squares_from_center(int16_t p, int16_t length)
+void advanced_drag(int16_t x, int16_t y)
 {
-    int16_t d = (int16_t)(p - (length - AUTOMAP_CELL_SIZE) / 2);
-    return (int16_t)((d - (d < 0 ? AUTOMAP_CELL_SIZE - 1 : 0)) / AUTOMAP_CELL_SIZE);
+    if (!drag.active || !g_automap_open) return;
+    int16_t dx = (int16_t)((x - drag.x) / AUTOMAP_CELL_SIZE), dy = (int16_t)((y - drag.y) / AUTOMAP_CELL_SIZE);
+    if (!dx && !dy) return;
+    drag.x += dx * AUTOMAP_CELL_SIZE;
+    drag.y += dy * AUTOMAP_CELL_SIZE;
+    automap_scroll(g_party_map_index, -dx, -dy);
+    advanced_draw_automap();
 }
 
-int advanced_process_click(int16_t x, int16_t y)
+int advanced_process_click(int16_t x, int16_t y, int16_t kind)
 {
     if (!g_automap_open) return 0;
     Box b;
-    if (!ui_zone_box(ZONE_VIEWPORT, &b) || x < b.x || x >= b.x + b.w || y < b.y || y >= b.y + b.h) return 1;
-    automap_scroll(g_party_map_index, squares_from_center((int16_t)(x - b.x - AUTOMAP_RULER_WIDTH), b.w - AUTOMAP_RULER_WIDTH),
-                   squares_from_center((int16_t)(y - b.y - AUTOMAP_RULER_HEIGHT), b.h - AUTOMAP_RULER_HEIGHT));
-    advanced_draw_automap();
+    if (kind == CLICK_LEFT_RELEASE) {
+        advanced_drag(x, y);
+        drag.active = 0;
+    } else if (kind == CLICK_LEFT_PRESS && ui_zone_box(ZONE_VIEWPORT, &b) && x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h) {
+        drag.active = 1, drag.x = x, drag.y = y;
+    }
     return 1;
 }
 

@@ -446,6 +446,11 @@ int main(int argc, char **argv)
         }
         if (g_quit_requested) break;
         if (mode >= MODE_ENTRANCE || loaded_adventure >= 0) set_pointer(mode == MODE_GAME); /* the arrow on the start screens after QUIT */
+        if (mode == MODE_GAME) {
+            int mouse_x, mouse_y;
+            plat_mouse_position(&mouse_x, &mouse_y);
+            advanced_drag((int16_t)mouse_x, (int16_t)mouse_y);
+        }
         plat_present();
         if (tick) gameloop_tick();
         if (g_quit_requested) break;

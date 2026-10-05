@@ -7,8 +7,3 @@ User wishes for future versions. Not planned yet.
 - Black means a square that the party has not seen. A wall that the party has not seen looks the same as an open corridor.
 - Draw an unseen square next to a seen floor square in another color (for example dark blue): the corridor can go on there. Black then means only "far and not explored".
 - Only the automap of the advanced mode changes. `get_map` of the turn-based mode stays.
-
-## Automap: move the map by dragging (advanced mode)
-
-- Today a click on the automap scrolls it (`automap_scroll`).
-- Change: press the mouse button on the map, move the mouse, and release: the map follows the mouse. A click without a move does not scroll.
