@@ -30,6 +30,8 @@ int16_t view_wall_face_ornament_index(int16_t x, int16_t y, int16_t face);
 /* The floor ornament that the view draws on square (x, y) of the party map from depth 1: its index in the
    floor ornament graphics of the game, or -1 (none, or the view has not loaded the party map). */
 int16_t view_floor_ornament(int16_t x, int16_t y);
+/* 1 when the view draws a pressure pad on square (x, y) of the party map. */
+int view_floor_pressure_pad(int16_t x, int16_t y);
 void view_draw(int16_t dir, int16_t x, int16_t y);
 /* CSB: draws the magic map grid of a champion (Champion.magic_map) with its top left square at (px, py). */
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py);

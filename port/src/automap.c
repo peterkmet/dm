@@ -7,6 +7,7 @@
 #include "group.h"
 #include "map.h"
 #include "ui.h"
+#include "view.h"
 
 /* Square flags that map.h does not name yet. */
 enum { TELEPORTER_VISIBLE = 4, DOOR_PASSAGE_NORTH_SOUTH = 8 };
@@ -96,7 +97,7 @@ int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir)
 }
 
 /* A side square is seen when the square ahead at its depth or the side square one row nearer is open. */
-static int side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side)
+int automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side)
 {
     if (depth == 0 || side == 0) return 1;
     int16_t ahead_x = x, ahead_y = y, near_x = x, near_y = y;
@@ -110,7 +111,7 @@ void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir)
     int16_t depths = automap_visible_depths(map, x, y, dir);
     for (int16_t depth = 0; depth < depths; depth++)
         for (int16_t side = -1; side <= 1; side++) {
-            if (!side_is_visible(map, x, y, dir, depth, side)) continue;
+            if (!automap_side_is_visible(map, x, y, dir, depth, side)) continue;
             int16_t square_x = x, square_y = y;
             update_map_coordinates_after_relative_movement(dir, depth, side, &square_x, &square_y);
             uint8_t *square = seen_square(map, square_x, square_y);
@@ -167,8 +168,9 @@ static void fill_clipped(Bitmap *target, Box area, int16_t x, int16_t y, int16_t
     draw_fill(target, &box, color);
 }
 
-/* One seen square at screen position (left, top): a light floor with a 1 pixel grid gap, or a full dark wall. */
-static void draw_square(Bitmap *target, Box area, uint8_t square, int16_t left, int16_t top)
+/* One seen square at screen position (left, top): a light floor with a 1 pixel grid gap, or a full dark wall.
+   pad: a pressure pad that the view draws, as a gray square in the middle of the floor. */
+static void draw_square(Bitmap *target, Box area, uint8_t square, int pad, int16_t left, int16_t top)
 {
     const int16_t size = AUTOMAP_CELL_SIZE, floor = AUTOMAP_CELL_SIZE - 1;
     const int16_t bar = AUTOMAP_CELL_SIZE / 3, middle = (AUTOMAP_CELL_SIZE - AUTOMAP_CELL_SIZE / 3) / 2;
@@ -182,6 +184,7 @@ static void draw_square(Bitmap *target, Box area, uint8_t square, int16_t left, 
     else if (type == SQUARE_PIT && (square & PIT_OPEN)) color = COLOR_RED;
     else if (type == SQUARE_TELEPORTER && (square & TELEPORTER_OPEN) && (square & TELEPORTER_VISIBLE)) color = COLOR_CYAN;
     fill_clipped(target, area, left, top, floor, floor, color);
+    if (pad) fill_clipped(target, area, left + bar, top + bar, floor - 2 * bar, floor - 2 * bar, COLOR_GRAY);
     if (type != SQUARE_DOOR) return;
     int state = door_state(square);
     uint8_t door_color = state == DOOR_OPEN || state == DOOR_DESTROYED ? COLOR_BROWN : COLOR_LIGHT_BROWN;
@@ -238,7 +241,8 @@ void automap_draw(Bitmap *target, Box area, int16_t map)
     for (int16_t x = 0; x < dungeon_map_width(map); x++)
         for (int16_t y = 0; y < dungeon_map_height(map); y++)
             if (automap_is_seen(map, x, y))
-                draw_square(target, area, dungeon_square(map, x, y), origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
+                draw_square(target, area, dungeon_square(map, x, y), party_here && view_floor_pressure_pad(x, y),
+                            origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
     if (party_here)
         draw_party_arrow(target, area, origin_x + g_party_map_x * AUTOMAP_CELL_SIZE, origin_y + g_party_map_y * AUTOMAP_CELL_SIZE, g_party_direction);
 }

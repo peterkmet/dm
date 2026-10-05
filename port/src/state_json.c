@@ -572,11 +572,6 @@ static const char *const floor_ornament_names[] = {
 };
 enum { FLOOR_ORNAMENT_COUNT = sizeof floor_ornament_names / sizeof *floor_ornament_names };
 
-static int is_pressure_pad(int16_t ornament)
-{
-    return ornament >= 0 && ornament < FLOOR_ORNAMENT_COUNT && strstr(floor_ornament_names[ornament], "pressure_pad");
-}
-
 /* The floor ornament that the view draws on the square; an unknown ornament gets its index. */
 static void floor_ornament_json(Json *j, int16_t x, int16_t y)
 {
@@ -651,6 +646,12 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
     free(flying.s);
 }
 
+/* A square of the view that the screen draws: a side square behind a wall at its depth and one row nearer is hidden. */
+static int side_seen(int16_t depth, int16_t side)
+{
+    return automap_side_is_visible(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction, depth, side);
+}
+
 void state_json_view(Json *j)
 {
     json_open(j, '{');
@@ -661,6 +662,7 @@ void state_json_view(Json *j)
     for (int16_t depth = 0; depth < visible_depths(); depth++)
         for (int16_t side = -1; side <= 1; side++) {
             int16_t x, y;
+            if (!side_seen(depth, side)) continue;
             view_square(depth, side, &x, &y);
             uint8_t square = party_map_square(x, y);
             const char *name = square_name(square);
@@ -713,6 +715,7 @@ int state_json_visible_things(uint16_t type, StateJsonSeenThing *out, int max)
     for (int16_t depth = 0; depth < visible_depths(); depth++)
         for (int16_t side = -1; side <= 1; side++) {
             int16_t x, y;
+            if (!side_seen(depth, side)) continue;
             view_square(depth, side, &x, &y);
             if (!in_party_map(x, y) || !strcmp(square_name(party_map_square(x, y)), "wall")) continue;
             for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST; t = get_next_thing(t))
@@ -730,47 +733,31 @@ int state_json_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX])
     return count;
 }
 
-/* Explored squares: the automap and the squares of the current view. */
+/* Explored squares: the automap and the squares of the current view, which the automap marks at the next tick. */
 static int is_seen(int16_t x, int16_t y)
 {
     if (automap_is_seen(g_party_map_index, x, y)) return 1;
     for (int16_t depth = 0; depth < visible_depths(); depth++)
         for (int16_t side = -1; side <= 1; side++) {
             int16_t vx, vy;
+            if (!side_seen(depth, side)) continue;
             view_square(depth, side, &vx, &vy);
             if (vx == x && vy == y) return 1;
         }
     return 0;
 }
 
-/* The symbol of a wall: the most useful feature on a side that faces an explored square, else '#'. */
-static char wall_char(int16_t x, int16_t y)
-{
-    static const char symbols[] = "MLKHVAF?";
-    int best = (int)sizeof symbols - 1;
-    for (int16_t face = DIRECTION_NORTH; face <= DIRECTION_WEST; face++) {
-        int16_t nx = x, ny = y;
-        WallFace f;
-        update_map_coordinates_after_relative_movement(face, 1, 0, &nx, &ny);
-        if (!in_party_map(nx, ny) || !is_seen(nx, ny) || !wall_face(x, y, face, &f)) continue;
-        const int found[] = { f.mirror, f.switch_, f.lock, f.torch_holder, f.vi_altar, f.alcove, f.fountain, f.text != THING_NONE };
-        for (int k = 0; k < best; k++)
-            if (found[k]) best = k;
-    }
-    return best < (int)sizeof symbols - 1 ? symbols[best] : '#';
-}
-
 static char map_char(int16_t x, int16_t y)
 {
     uint8_t square = dungeon_square(g_party_map_index, x, y);
     const char *name = square_name(square);
-    if (!strcmp(name, "wall")) return wall_char(x, y);
+    if (!strcmp(name, "wall")) return '#';
     if (!strcmp(name, "pit")) return 'O';
     if (!strcmp(name, "stairs_up")) return '<';
     if (!strcmp(name, "stairs_down")) return '>';
     if (!strcmp(name, "teleporter")) return 'T';
     if (!strcmp(name, "door")) return door_state(square) == DOOR_OPEN || door_state(square) == DOOR_DESTROYED ? 'd' : 'D';
-    return is_pressure_pad(view_floor_ornament(x, y)) ? '_' : '.';
+    return view_floor_pressure_pad(x, y) ? '_' : '.';
 }
 
 /* Map row y in out: one character per square, a space for a square not explored. */
@@ -794,9 +781,8 @@ void state_json_map(Json *j)
     pair(j, "party", g_party_map_x, g_party_map_y);
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
     key_str(j, "legend", "row index = y (north at the top), column = x; @ party, # wall, . floor, D closed door, "
-                         "d open door, < stairs up, > stairs down, O pit, T teleporter, _ pressure pad, space not explored; walls with a seen "
-                         "feature: M mirror, L switch (button or lever), K lock (keyhole or object slot), H torch holder, V vi altar, "
-                         "A alcove, F fountain, ? text; grid: the rows with x mod 10 above and y in front");
+                         "d open door, < stairs up, > stairs down, O pit, T teleporter, _ pressure pad, space not explored; "
+                         "grid: the rows with x mod 10 above and y in front");
     json_key(j, "rows");
     json_open(j, '[');
     for (int16_t y = 0; y < h; y++) {

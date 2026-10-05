@@ -20,7 +20,7 @@ LEGO = ../.playthrough-lego
 lego: $(B)/dm
 	@mkdir -p $(LEGO)
 	rsync -a --exclude 'DMGAME.*' --exclude 'QUICK.DAT' --exclude 'CSBGAME.*' ../game/ $(LEGO)/
-	cp $(B)/dm $(LEGO)/dm
+	cp $(B)/dm $(LEGO)/dm.new && mv $(LEGO)/dm.new $(LEGO)/dm # a new file: a running game keeps the old one
 
 clean:
 	rm -rf $(B)
