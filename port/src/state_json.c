@@ -682,6 +682,8 @@ void state_json_view(Json *j)
                     if (depth >= 1) floor_ornament_json(j, x, y);
                     square_things_json(j, x, y);
                 }
+            } else if (!strcmp(name, "wall")) {
+                wall_faces_json(j, depth, side, x, y); /* a border wall outside the map can show a random ornament */
             }
             json_close(j, '}');
         }

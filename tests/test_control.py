@@ -355,6 +355,21 @@ def test_act_many_lists_the_damage_of_each_attack(game):
         client.sock.close()
 
 
+def test_a_rune_without_enough_mana_fails(game):
+    client = Client(game)
+    champion = game.champions[0]
+    mana = champion.current_mana
+    try:
+        assert client.act("set_caster", champion=0)
+        champion.current_mana = 0
+        response = client.call(cmd="act", action="add_rune", args={"symbol": 0})
+        assert response["ok"] is False and "mana" in response["error"]
+        assert state_json(game, 0)["spell"]["chosen"] == []
+    finally:
+        champion.current_mana = mana
+        client.sock.close()
+
+
 def test_wait_runs_all_ticks_or_stops_on_damage(game):
     client = Client(game)
     try:
@@ -899,6 +914,12 @@ def test_a_wall_decoration_names_its_picture(game):
     with on_map(game, 7, 6, 13, 3):  # facing west to the random creeper of (5,13)
         wall = state_json(game, 1)["squares"][4]
     assert wall["front_face"]["ornament"] == "creeper"
+
+
+def test_a_border_wall_outside_the_map_shows_its_fountain(game):
+    with on_map(game, 1, 10, 0, 0):  # facing north to the random fountain of the border wall
+        wall = state_json(game, 1)["squares"][4]
+    assert wall["y"] == -1 and wall["front_face"]["fountain"] is True
 
 
 def test_brief_names_a_lock():

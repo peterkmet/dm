@@ -481,7 +481,11 @@ static const char *add_rune(const char *r)
 {
     long symbol = get_int(r, "symbol", -1);
     if (symbol < 0 || symbol >= SYMBOL_COUNT) return "symbol must be 0-5";
-    return spell_click((int16_t)(COMMAND_SPELL_SYMBOL_FIRST + symbol));
+    if (g_magic_caster_champion_index == -1) return "no spell area";
+    size_t before = strlen(g_champions[g_magic_caster_champion_index].symbols);
+    spell_click((int16_t)(COMMAND_SPELL_SYMBOL_FIRST + symbol));
+    /* the game ignores a rune that costs more mana than the caster has */
+    return strlen(g_champions[g_magic_caster_champion_index].symbols) == before ? "the rune was not added: not enough mana" : NULL;
 }
 
 static const char *delete_rune(const char *r) { (void)r; return spell_click(COMMAND_DELETE_SYMBOL); }
