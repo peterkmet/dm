@@ -18,7 +18,7 @@ import sys
 
 from dmtools.control_client import request, socket_path
 
-LOG_DIR = os.environ.get("DM_PLAY_LOG_DIR", ".playthrough")  # one line per call goes to calls.log here
+LOG_DIR = os.environ.get("DM_PLAY_LOG_DIR", ".playthrough_log")  # one line per call goes to calls.log here, when the folder exists
 LANE = ["here", "ahead", "ahead 2", "ahead 3"]
 
 

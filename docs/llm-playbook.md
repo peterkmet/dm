@@ -103,7 +103,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 - Your general knowledge of Dungeon Master is allowed.
 - Do not start or stop the game program. The coordinator runs it.
 - The user watches the window. Before each `dm-play` call, write one short line of text: what you do next and why.
-- Plan a corridor or a fight in one `act_many` call. It stops early on damage, a new creature, a new message, or a failed action. Check why it stopped before you continue.
+- Plan a corridor or a fight in one `act_many` call. It stops early when something happens (see [Batches](#batches)). Check why it stopped before you continue.
 - One `wait` with many ticks stops by itself on damage, a new creature, or a message. Do not write helper loops that call `get_state`, `get_view`, or short `wait`s again and again.
 - Ask for `get_map` only when you plan a route. The `act`, `act_many`, and `wait` responses already contain the state and the view.
 - The view gives wall texts (`text`) and the picture of each lock (`lock`). Use screenshots only to check a suspected bug.
@@ -133,6 +133,83 @@ uv run dm-play act_many '<json-list>'
 ```
 
 `--brief` (before the command) prints a short summary instead of the JSON: the turn, the party, each champion, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side passages, and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A `seen:` line lists explosions and creature losses seen during the turn.
+
+### Batches
+
+A batch runs many turns with one request. Each step is one `act` turn. After each turn the batch stops early when something happens, so that the caller can look again. Each check compares with the time before the turn.
+
+`act_many` runs the `actions` in order. An item is an action name (`"move_forward"`) or an object `{"action": "take_object", "args": {"cell": 0}}`.
+
+```sh
+uv run dm-play act_many '["turn_left","move_forward",{"action":"take_object","args":{"cell":2}}]'
+```
+
+The game does not find paths. Plan the path from your own map and send it as `act_many`.
+
+The response has `ran` (the number of turns that ran) and `stopped`:
+
+| `stopped` | Reason |
+|---|---|
+| `done` | All actions ran. |
+| `damage` | A champion lost health. |
+| `creature` | A creature group is in view that was not in view before the turn. The check compares the groups, not their count: a group that stays in view does not stop the batch again. |
+| `message` | The game printed a new message. |
+| `game_over` | The party died, or the game is won. |
+| `bumped` | A move did not change the party square (a wall, a closed door, a creature). See [Bump](#bump). The batch checks this before `damage`, because a bump into a wall hurts. |
+| `moved` | The dungeon moved the party: a teleporter, a pit, stairs. See [Displacement](#displacement). The batch checks this after `bumped` and before `damage`, because a pit fall hurts. |
+| `turned` | The dungeon turned the party: a spinner. See [Displacement](#displacement). The batch checks this after `moved`. |
+| `failed` | An action cannot run. `error` gives the reason. The failed action is not in `ran`. |
+
+### Bump
+
+When a move action (`move_forward`, `move_back`, `move_left`, `move_right`) does not change the party square, the turn response has `"bumped": true`. A wall, a closed door, or a creature is in the way. Without a bump, the response has no `bumped` field. A bump into a wall or a closed door gives 1 damage to the two champions on the side of the bump, as in the original game.
+
+### Displacement
+
+The game informs; it does not play. After each `act` turn and each `act_many` step, the game compares the party facing, square, and map with what the action does:
+
+- A move action changes the square by one step in its direction, or nothing (a bump).
+- `turn_left` and `turn_right` change the facing by 90 degrees.
+- All other actions change neither.
+
+When the dungeon changes the party in another way, the turn has a displacement:
+
+| `stopped` | Reason |
+|---|---|
+| `moved` | The square or the map changed in another way: a teleporter, a pit, stairs. Also a teleporter that sends the party back to the square where the turn started: this is not `bumped`. |
+| `turned` | The facing changed in another way: a spinner. |
+
+`moved` comes before `turned` when both happen. An `act` response has `stopped` only after a displacement. An `act_many` batch stops after the step (see [Batches](#batches)).
+
+### Wait
+
+A `wait` turn checks for news after each tick and ends at once when it finds news. The news are the same as for a batch: `damage`, `creature`, `message`, and `game_over` (see [Batches](#batches)). The response has `stopped`: `done` when all `ticks` ran, else the news. `ticks` gives the ticks that ran. This also works while the party sleeps: damage wakes the party.
+
+Example: rest until something happens, at most 5000 ticks.
+
+```sh
+uv run dm-play wait '{"ticks":5000}'
+```
+
+### Seen
+
+An explosion lasts only a few ticks. It can be gone before the turn ends, so the `view` of the response does not show it. A creature can die in the same way. For this reason, an `act`, `act_many`, or `wait` request records what the party sees after each tick, from the start of the request to the end of the last turn. The record uses the visibility rule of the view (see [View fields](#view-fields)).
+
+The response has `seen: {explosions, creature_changes}` when the record is not empty. Without a record, the response has no `seen` field.
+
+- `explosions[]`: `{name, x, y, depth, side}`, one entry for each explosion type on each square. `name` is the explosion type (see [View fields](#view-fields)). `depth` and `side` give the place in the view when the party first saw the explosion.
+- `creature_changes[]`: `{type, x, y, depth, side, before, after}` for each creature group in view that lost creatures, or that was killed. `before` is the creature count when the party first saw the group in the request, `after` is the count when the party last saw it. `after` is 0 for a killed group. A group that only leaves the view is not in the list.
+
+Example: a fireball kills a screamer two squares ahead.
+
+```json
+"seen": {"explosions": [{"name": "fireball", "x": 1, "y": 6, "depth": 2, "side": "center"}],
+         "creature_changes": [{"type": "Screamer", "x": 1, "y": 6, "depth": 2, "side": "center", "before": 1, "after": 0}]}
+```
+
+### Game over
+
+When the party dies or the game is won during a turn, the turn ends. The response has `"game_over": true`, and `state.party.dead` is `true` after a death. The endgame runs without waiting for input, and the window shows the entrance. After that, `act`, `act_many`, `wait`, and `save` return `{"ok": false, "error": "game over"}`. `get_state`, `get_view`, `get_map`, and `screenshot` still work. To play again, send `load` or `new_game`.
 
 ### Actions
 
@@ -234,4 +311,4 @@ A floor square with a pressure pad (`pressure_pad`, `round_pressure_pad`, `tiny_
 
 ### End of a session
 
-Stop when the coordinator's limit is reached, when the game stops answering, or when a bug blocks progress. Before you stop, save the game and update your files. The report: where the party is, party status, what you achieved, the current goal, bugs found, and the number of `dm-play` calls.
+Stop when the coordinator's limit is reached, when the game stops answering, or when a bug blocks progress. Before you stop, save the game and update your files. The report: where the party is, party status, what you achieved, the current goal, and bugs found.

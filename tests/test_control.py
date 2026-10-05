@@ -778,6 +778,12 @@ def test_map_grid_has_indexes(game, monkeypatch, capsys):
     assert capsys.readouterr().out.splitlines() == game_map["grid"]
 
 
+def test_the_tests_do_not_log_into_a_run():
+    from dmtools import play
+
+    assert not play.LOG_DIR.startswith(".playthrough")
+
+
 def test_dm_play_does_not_import_mcp():
     code = "import sys, dmtools.play; assert 'mcp' not in sys.modules"
     subprocess.run([sys.executable, "-c", code], check=True)
