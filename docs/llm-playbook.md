@@ -70,7 +70,7 @@ Your files in `.playthrough/` are your memory. Keep each file short and up to da
 - **Switches and plates:** wall switches and floor plates open doors, close doors, open pits, move walls, or start traps. Some are hidden.
 - **Walls:** some walls are illusions that the party can walk through.
 - **Pits:** a pit can be the way down or a trap.
-- **Teleporters:** a teleporter moves the party or objects to another square. A teleporter shows only while it is open; a closed one looks like floor. It can open when something steps on it or on a timer.
+- **Teleporters:** a teleporter moves the party or objects to another square. A teleporter shows only while it is open; a closed one looks like floor. Some teleporters are never visible. It can open when something steps on it or on a timer.
 - **Stairs:** stairs lead to the level above or below.
 - **Alcoves and altars:** alcoves hold objects. Some alcoves and altars react to the object that you put in.
 
@@ -132,7 +132,7 @@ uv run dm-play act <action> [json-args]
 uv run dm-play act_many '<json-list>'
 ```
 
-`--brief` (before the command) prints a short summary instead of the JSON: the turn, the party, each champion, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side passages, and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A `seen:` line lists explosions and creature losses seen during the turn.
+`--brief` (before the command) prints a short summary instead of the JSON: the turn, the party, each champion, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side passages, and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A `seen:` line lists explosions and creature losses seen during the turn. The turn line ends with `BUMPED` after a bump. While a mirror shows a champion, a `CANDIDATE (not recruited)` line follows the champions.
 
 ### Batches
 
@@ -217,12 +217,12 @@ When the party dies or the game is won during a turn, the turn ends. The respons
 |---|---|---|
 | `move_forward`, `move_back`, `move_left`, `move_right` | none | Left and right move to the side. The inventory must be closed. |
 | `turn_left`, `turn_right` | none | |
-| `click_wall_ahead` | none | Touches the wall ahead: mirror, button, lever, door button, fountain. |
-| `take_object` | `cell` 0-4 | The leader hand must be empty. See `view.piles`. |
-| `drop_object` | `cell` 0-4, default 0 | 0-1: own square, 2-3: square ahead, 4: alcove ahead. |
+| `click_wall_ahead` | none | Touches the wall ahead: mirror, button, lever, door button, fountain. The inventory must be closed. |
+| `take_object` | `cell` 0-4 | The leader hand must be empty. The inventory must be closed. See `view.piles`. |
+| `drop_object` | `cell` 0-4, default 0 | 0-1: own square, 2-3: square ahead, 4: alcove ahead. The inventory must be closed. |
 | `open_inventory` | `champion` | |
 | `close_inventory` | none | |
-| `put_in_slot`, `take_from_slot` | `champion`, `slot` | Swaps the leader hand with the slot. Slots other than 0 and 1 need the open inventory of the champion. Slots 30-37 are the slots of the open chest. See [Chest](#chest). |
+| `put_in_slot`, `take_from_slot` | `champion`, `slot` | Swaps the leader hand with the slot. Slots other than 0 and 1 need the open inventory of the champion. See the slot numbers below and [Chest](#chest). |
 | `eat`, `drink` | none | Gives the leader hand object to the champion with the open inventory. |
 | `choose_action` | `champion`, `index` | Index in the `actions` list of the champion. |
 | `pass` | none | Closes an open action menu. |
@@ -234,6 +234,8 @@ When the party dies or the game is won during a turn, the turn ends. The respons
 | `sleep`, `wake` | none | `sleep` opens the inventory of the leader when no inventory is open. |
 | `swap_champions` | `a`, `b` | Clicks the icon of champion `a`, then the icon of champion `b`. The two champions swap their cells. See `position` in the state. |
 | `look` | `champion`, `slot` (both optional) | Presses the eye of the open inventory and releases it. Without `slot`: the object in the leader hand. With `slot`: the empty leader hand takes the object of the slot (`champion`, default the open inventory), the eye looks, and the hand puts the object back. See [Look](#look). |
+
+Slot numbers: 0 ready hand, 1 action hand, 2 head, 3 torso, 4 legs, 5 feet, 6 pouch 2, 7-9 quiver 2-4, 10 neck, 11 pouch 1, 12 quiver 1, 13-29 backpack, 30-37 the open chest. `state.champions[].slots[]` lists only the slots that hold an object.
 
 While a candidate is shown, only `recruit` is accepted. While the party sleeps, only `wake` is accepted. `wait` is always accepted.
 
@@ -268,7 +270,7 @@ The champion `position` uses `front_left`, `front_right`, `back_right`, `back_le
 - `leader` (index, or `null`), `leader_hand` (object or `null`).
 - `candidate`: the champion that a mirror shows, with the fields of a champion, or `null`. The candidate is not in the party: it is not in `champions[]` and is never the `leader`. Answer with `act recruit`.
 - `champions[]`: `index`, `name`, `title`, `alive`, `health`, `stamina`, `mana` (each `[current, maximum]`), `food`, `water`, `load_kg` (`[current, maximum]` in kg, one decimal), `position`, `poisoned`, `action_disabled`, `statistics`, `skills` (`{level, rank}` for fighter, ninja, priest, wizard), `wounds`, `slots[]` (`slot`, `where`, `object`), `actions` (action menu of the action hand), `runes` (chosen runes).
-- The values use the units of the game screen. The game stores stamina in tenths of the value that the inventory shows, so `stamina` is the stored value divided by 10. The game stores the load in tenths of a kilogram and shows it as `nn.n/ mm KG`, so `load_kg` is in kilograms. Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars).
+- The values use the units of the game screen. The game stores stamina in tenths of the value that the inventory shows, so `stamina` is the stored value divided by 10. The game stores the load in tenths of a kilogram and shows it as `nn.n/ mm KG`, so `load_kg` is in kilograms. Health, mana, and statistics are not scaled. `food` and `water` are the stored values (the game shows them only as bars). The maximum is 2048; below 0 the champion starves or dies of thirst.
 - `rank` is the rank name that the eye panel shows for the level (from the string table of the game, for example `APPRENTICE`). It is `null` for level 1, because the game shows no rank then.
 - `action_menu`: `{champion, actions}` while a menu is open, else `null`.
 - `spell`: `{caster, chosen, available[{symbol, name, mana}]}`, or `null`.
