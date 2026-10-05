@@ -88,7 +88,7 @@ int advanced_process_click(int16_t x, int16_t y)
 }
 
 /* A white line in the message area. */
-static void print_quick_message(const char *text)
+void advanced_print_message(const char *text)
 {
     message_new_line(g_game_time);
     message_print(QUICK_MESSAGE_COLOR, text, g_game_time);
@@ -99,7 +99,7 @@ static void quick_save(void)
 {
     int16_t exists = g_saved_game_exists;
     uint32_t saved = g_last_save_game_time;
-    print_quick_message(savegame_save_as(startend_save_dir(), QUICK_SAVE_FILE_NAME, NULL) ? "GAME SAVED" : "UNABLE TO SAVE");
+    advanced_print_message(savegame_save_as(startend_save_dir(), QUICK_SAVE_FILE_NAME, NULL) ? "GAME SAVED" : "UNABLE TO SAVE");
     g_saved_game_exists = exists;
     g_last_save_game_time = saved;
 }
@@ -114,7 +114,7 @@ static void quick_load(void)
         g_saved_game_exists = exists;
         g_last_save_game_time = g_last_load_game_time = 0;
     }
-    print_quick_message(result == SAVEGAME_LOADED ? "GAME LOADED" : result == SAVEGAME_MISSING ? "NO QUICK SAVE" : "QUICK SAVE DAMAGED");
+    advanced_print_message(result == SAVEGAME_LOADED ? "GAME LOADED" : result == SAVEGAME_MISSING ? "NO QUICK SAVE" : "QUICK SAVE DAMAGED");
 }
 
 int advanced_process_key(uint16_t key)

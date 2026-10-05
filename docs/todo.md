@@ -19,14 +19,3 @@ User wishes for future versions. Not planned yet.
 
 - Today a click on the automap scrolls it (`automap_scroll`).
 - Change: press the mouse button on the map, move the mouse, and release: the map follows the mouse. A click without a move does not scroll.
-
-## Drop a weapon on the action icons (advanced mode)
-
-- The action area under the spell area shows one icon for each champion: the object in the action hand, or the empty hand.
-- Change: when the leader hand holds an object and the player clicks a champion's action icon, the object goes to the action hand of that champion (swap with the object there). Today the player must open the inventory of the champion.
-- Not in the original: only in the advanced mode.
-
-## Show that the game was saved
-
-- After SAVE, the game shows no sign that the save is done.
-- Show a short message, for example "GAME SAVED", as the quick save of the advanced mode does.

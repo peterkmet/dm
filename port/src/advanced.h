@@ -35,5 +35,7 @@ uint16_t advanced_letter_key(int letter);
 /* Draws the automap and the position read-out (level, position, facing, light) in place of the
    viewport with the interface palette. */
 void advanced_draw_automap(void);
+/* A white line in the message area. */
+void advanced_print_message(const char *text);
 
 #endif
