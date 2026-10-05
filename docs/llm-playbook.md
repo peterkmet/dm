@@ -15,6 +15,7 @@ You play Dungeon Master (Amiga v3.60) through the turn-based mode of this C port
 - Play only through `uv run dm-play`. Do not read or change source code, game data files, or the decompiled code. Play from what the game shows.
 - Your general knowledge of Dungeon Master is allowed.
 - The user watches the window. Move fluently: plan a corridor or a fight in one call.
+- Before each `dm-play` call, write one short line of text: what you do next and why (example: "Go west to (0,19) to avoid the skeletons."). The user follows the session through these lines.
 - Do not start or stop the game program. The coordinator runs it.
 - You are also the main test of the port. Report what looks wrong (see "Bugs").
 
