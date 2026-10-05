@@ -843,6 +843,25 @@ def on_map(game, m, x, y, direction):
         palette.value = saved_palette
 
 
+def test_a_lock_names_its_picture(game):
+    lib = game.lib
+    with on_map(game, 1, 0, 0, 0):
+        t = lib.get_square_first_thing(10, 1)  # the iron keyhole before the stairs of map 1
+        while t >> 10 & 15 != 3:
+            t = lib.get_next_thing(t)
+    face = t >> 14
+    with on_map(game, 1, 10 + STEP_EAST[face], 1 + STEP_NORTH[face], (face + 2) & 3):
+        wall = state_json(game, 1)["squares"][4]  # depth 1, center: the wall ahead
+    assert wall["front_face"]["lock"] == "iron_lock"
+
+
+def test_brief_names_a_lock():
+    from dmtools.play import square_text
+
+    assert square_text({"element": "wall", "front_face": {"facing": "south", "lock": "sun_lock"}}) == "wall, front face south: lock sun_lock"
+    assert square_text({"element": "wall", "front_face": {"facing": "south", "lock": 40}}) == "wall, front face south: lock 40"
+
+
 def squares_by_place(view):
     return {(s["x"], s["y"]): s for s in view["squares"]}
 

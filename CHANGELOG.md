@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0 - 2026-10-05
+
+### Changed
+
+- Turn-based view: `lock` on a wall face names the picture of the keyhole or slot (for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, `coin_slot`). A picture without a name gives its index in the wall ornament graphics. Before, `lock` was only `true`. `--brief` prints `lock <name>`.
+- LLM playbook: the player reads wall texts and lock names from the view JSON. Screenshots are only for a suspected bug.
+
 ## 0.5.1 - 2026-10-05
 
 ### Fixed
