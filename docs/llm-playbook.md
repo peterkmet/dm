@@ -21,6 +21,8 @@ Your files in `.playthrough/` are your memory. Keep each file short and up to da
 
 - The party has up to 4 champions in 2 rows. The front row fights hand to hand and takes most of the hits from the front. The back row casts spells, throws objects, or shoots.
 - Each champion has health, stamina, and mana, and the attributes strength, dexterity, wisdom, vitality, anti-magic, anti-fire, and luck.
+- Champions can swap their places in the party. A champion in the back row is safer from attacks from the front.
+- The party turns as one. A creature attacks the champions on the side that faces it: a creature behind the party hits the back row.
 - The leader carries the object in the hand and uses it on walls and doors.
 - A dead champion leaves bones. A VI altar brings the champion back to life.
 
