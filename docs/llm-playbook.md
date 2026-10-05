@@ -4,7 +4,7 @@ You play the original Dungeon Master (Amiga v3.60). Your goal is to win: find th
 
 ## Your notes
 
-Your files in `.playthrough/` are your memory. Keep each file short and up to date.
+Your files in `.playthrough/` are your memory. Keep each file short and up to date. Each file starts with a header that says what to write and in which format: keep the header and follow it. For a new level, copy the header of `map_L1.md`.
 
 | File | Content |
 |---|---|
