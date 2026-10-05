@@ -28,10 +28,6 @@ The LLM playthrough is paused on the user's request. Nothing is running.
 
 - The port never draws the party footprints on the floor (the footprint flag is never set).
 
-## Snapshots
-
-The branch `wip-snapshot` holds snapshots of the whole working tree, including unfinished files. Each snapshot is a commit on top of the previous one. To restore a file: `git checkout wip-snapshot -- <path>`.
-
 ## Next steps
 
 1. Finish steps 7b, 10, 11. Make `make -C port` and `uv run pytest -q` green. Review and commit.
