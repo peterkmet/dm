@@ -58,7 +58,7 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
 The coordinator of a long playthrough keeps checkpoints in `.playthrough_checkpoints/<name>/` (git-ignored). A checkpoint holds the save `DMGAME.DAT` and the player files in `files/`.
 
-- Start a new run: copy `.playthrough_template/` to an empty `.playthrough/` (the player files with their headers), and copy the start save to `game/DMGAME.DAT`.
+- Start a new run: copy `playthrough_template/` to an empty `.playthrough/` (the player files with their headers), and copy the start save to `game/DMGAME.DAT`.
 - Make a checkpoint after a session: copy `game/DMGAME.DAT` and `.playthrough/` (as `files/`) to a new folder.
 - Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `.playthrough/`. Run `build/dm --mode turnbased`, then `uv run dm-play load`.
 - Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `.playthrough/`. Give the player the current goal and the limit of `dm-play` calls.
