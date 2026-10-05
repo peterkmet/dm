@@ -15,7 +15,14 @@ $(B)/libdm.dylib: $(SRC)
 	@mkdir -p $(B)
 	$(CC) $(CFLAGS) -dynamiclib -o $@ $(GAME)
 
+# The personal play folder: the latest game and the game files; the saves there stay.
+LEGO = ../.playthrough-lego
+lego: $(B)/dm
+	@mkdir -p $(LEGO)
+	rsync -a --exclude 'DMGAME.*' --exclude 'QUICK.DAT' --exclude 'CSBGAME.*' ../game/ $(LEGO)/
+	cp $(B)/dm $(LEGO)/dm
+
 clean:
 	rm -rf $(B)
 
-.PHONY: all clean
+.PHONY: all clean lego
