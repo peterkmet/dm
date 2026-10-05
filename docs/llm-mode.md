@@ -87,7 +87,7 @@ After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), an
 | `get_view` | none | `{ok, view}` |
 | `get_map` | none | `{ok, map}` |
 | `act` | `action`, `args` (object) | `{ok, ticks, stopped?, game_over, bumped?, action_damage?, look?, seen?, state, view}` |
-| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage?, seen?, state, view}` |
+| `act_many` | `actions` (list) | `{ok, ticks, ran, stopped, error?, game_over, bumped?, action_damage? (list), seen?, state, view}` |
 | `wait` | `ticks` (1-5000, default 10) | `{ok, ticks, stopped, game_over, seen?, state, view}` |
 | `screenshot` | none | The screen as a 320 x 200 PNG image |
 | `save_game` | none | `{ok}` |

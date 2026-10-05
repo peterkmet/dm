@@ -71,8 +71,11 @@ static struct {
 } turn;
 
 /* A batch: act_many runs a list of actions; each step is one turn. */
+enum { BATCH_DAMAGE_MAX = 64 };
 static struct {
     int active, ran;
+    int16_t damages[BATCH_DAMAGE_MAX]; /* the action damage of each choose_action, in order */
+    int damage_count;
     char *actions;                    /* a copy of the request; next is the rest of its actions array */
     const char *next;
     uint32_t start_time;
@@ -442,6 +445,7 @@ static const char *choose_action(const char *r)
     g_action_damage = 0;
     click_command(UI_INPUT_ACTION_NAMES, (int16_t)(COMMAND_ACTION_FIRST + index));
     turn.damage = g_action_damage;
+    if (batch.active && batch.damage_count < BATCH_DAMAGE_MAX) batch.damages[batch.damage_count++] = g_action_damage;
     return NULL;
 }
 
@@ -768,7 +772,12 @@ static void send_turn_result(void)
         json_key(&j, "bumped");
         json_bool(&j, 1);
     }
-    if (turn.has_damage) {
+    if (batch.active && batch.damage_count) {
+        json_key(&j, "action_damage");
+        json_open(&j, '[');
+        for (int i = 0; i < batch.damage_count; i++) json_int(&j, batch.damages[i]);
+        json_close(&j, ']');
+    } else if (!batch.active && turn.has_damage) {
         json_key(&j, "action_damage");
         json_int(&j, turn.damage);
     }
@@ -971,6 +980,7 @@ static void handle_act_many(const char *request)
     if (!batch.actions) abort();
     batch.next = batch.actions;
     batch.active = 1;
+    batch.damage_count = 0;
     batch.start_time = g_game_time;
     turn.has_damage = turn.moving = 0;
     start_witnessing();

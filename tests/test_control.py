@@ -343,6 +343,18 @@ def test_act_many_runs_in_order_and_stops_on_failure_and_damage(game):
         client.sock.close()
 
 
+def test_act_many_lists_the_damage_of_each_attack(game):
+    client = Client(game)
+    try:
+        attack = {"action": "choose_action", "args": {"champion": 0, "index": 0}}
+        response = client.call(cmd="act_many", actions=[attack, "turn_left", "turn_right"])
+        assert response["ran"] == 3, response
+        assert isinstance(response["action_damage"], list) and len(response["action_damage"]) == 1
+        assert isinstance(client.call(cmd="act", action="choose_action", args={"champion": 0, "index": 0}).get("action_damage", 0), int)
+    finally:
+        client.sock.close()
+
+
 def test_wait_runs_all_ticks_or_stops_on_damage(game):
     client = Client(game)
     try:
