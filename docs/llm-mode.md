@@ -253,7 +253,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - The MCP tool functions, called directly against the socket, including `save_game` and `load_game`.
 - `save`, then a move and `wait`, then `load` restores the party position and the game time.
 - `dm-play` prints one line of valid JSON, the exit code 1 for `"ok": false`, and the `--brief` summary.
-- The view stops at a wall at depth 1 (6 squares) and at a closed door (nothing beyond the door, also not in the map). A mirror on a side wall is in `side_face`. A mirror ahead is `M` in the map.
+- The view stops at a wall at depth 1 (6 squares) and at a closed door (nothing beyond the door, also not in the map). A mirror on a side wall is in `side_face`. The map shows the wall of a mirror as `#`: the map has no wall features, as the automap. A side square behind walls is not in the view and not in the map.
 - The state: stamina in the units of the screen, skill ranks, `load_kg`, and the candidate outside `champions[]`, with the `--brief` line.
 - `wait` without news runs all ticks with `stopped` `done`. Damage stops it early with `stopped` `damage` and the ticks that ran. `ticks` 5001 is refused.
 - `act_many` with a creature group in view on a side square runs all turns while the group stays in view. It stops with `creature` after the first turn when a new group comes into view, also when the old group leaves the view in the same turn.
@@ -276,6 +276,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - A teleporter that sends the party back to its start square gives `stopped` `moved`, not `bumped`.
 - `act_many` gives `action_damage` as a list. `add_rune` without enough mana fails and adds no rune.
 - The tests log the `dm-play` calls to a temporary folder (`tests/conftest.py`), never into a run.
+- `tests/test_automap.py`: a pressure pad that the view draws is a gray square in the floor of the automap.
 
 `tests/test_modes.py` starts `build/dm --mode turnbased --control <socket>` with the SDL dummy drivers and checks `get_state` and `act move_forward`. It also checks that a party death during a turn gives `"game_over": true`.
 

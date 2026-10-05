@@ -115,7 +115,7 @@ def get_map() -> dict:
 
     Row index is y (north at the top), column is x. @ party, # wall, . floor, D closed door,
     d open door, < stairs up, > stairs down, O pit, T teleporter, _ pressure pad, space not explored.
-    Walls with a seen feature: M mirror, L switch, K lock, H torch holder, V vi altar, A alcove, F fountain, ? text. North
+    The map shows what the automap shows: no wall features (they are in the view, with their side). North
     is y - 1, east is x + 1. Fake walls look like walls, closed pits look like floor.
     "grid" has the same rows with x mod 10 in the first line and y in front of each row.
     """

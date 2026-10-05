@@ -17,6 +17,9 @@ int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* Marks the squares the dungeon view shows from (x, y) looking in direction dir on map. */
 void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir);
 int automap_is_seen(int16_t map, int16_t x, int16_t y);
+/* A side square of the view of a party at (x, y) facing dir is seen when the square ahead at its depth or the side
+   square one row nearer is open; squares of the center lane and of the party row are always seen. */
+int automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side);
 
 #define AUTOMAP_SAVE_MAGIC "AMAP" /* the first 4 bytes of the save block */
 

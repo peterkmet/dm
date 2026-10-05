@@ -287,7 +287,7 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 - `piles[]`: `{cell, top}` for each object that `take_object` can reach now.
 - `wall_ahead_clickable`, `alcove`, `fountain`, `vi_altar`.
 
-Visibility rule: the view has the party row (depth 0) and the rows ahead up to the first center square that blocks sight: a wall, a fake wall that looks closed, or a closed door. The row of that square is in the view, with its side squares. Nothing behind it is in the view. The map marks a side square only when the center square of its row or the side square one row nearer is open. Facing a wall at depth 1, the view has 6 squares.
+Visibility rule: the view has the party row (depth 0) and the rows ahead up to the first center square that blocks sight: a wall, a fake wall that looks closed, or a closed door. The row of that square is in the view, with its side squares. Nothing behind it is in the view. A side square is in the view only when the center square of its row or the side square one row nearer is open: the screen does not draw a side square behind walls. Facing a wall at depth 1, the view has at most 6 squares.
 
 The view shows what a player sees. Creature health is not in the view, because the original does not show it. Creature names and rune names do not come from the game data, because the original shows only pictures.
 
@@ -305,9 +305,7 @@ The view shows what a player sees. Creature health is not in the view, because t
  2 ####D#####
 ```
 
-A square is in the map when the party saw it, or when it is in the current view. The game marks the seen squares after each tick, in all modes.
-
-A wall shows a feature symbol when one of its faces shows the feature and the square in front of that face is in the map: `M` mirror, `L` switch, `K` lock, `H` torch holder, `V` vi altar, `A` alcove, `F` fountain, `?` text. With more than one feature, the first in this list wins. Other walls are `#`.
+The map shows the same as the automap of the game: the squares that the party saw, with walls, floors, doors and their state, stairs, open pits, open teleporters, and pressure pads. It shows no wall features: a wall is `#`. What is on a wall (switches, locks, alcoves, fountains, texts) is in the view, with its side; keep it in your own map. The map shows the squares as they are now, also when they changed after you saw them.
 
 A floor square with a pressure pad (`pressure_pad`, `round_pressure_pad`, `tiny_pressure_pad`) is `_`.
 

@@ -1638,6 +1638,13 @@ int16_t view_wall_ornament_index(uint16_t ordinal)
     return (wall_orn[ordinal - 1].graphic - GFX_WALL_ORNAMENT_FIRST) / WALL_ORNAMENT_GRAPHICS;
 }
 
+int view_floor_pressure_pad(int16_t x, int16_t y)
+{
+    enum { PRESSURE_PAD = 1, ROUND_PRESSURE_PAD = 4, TINY_PRESSURE_PAD = 7 }; /* floor ornament graphics */
+    int16_t ornament = view_floor_ornament(x, y);
+    return ornament == PRESSURE_PAD || ornament == ROUND_PRESSURE_PAD || ornament == TINY_PRESSURE_PAD;
+}
+
 int16_t view_floor_ornament(int16_t x, int16_t y)
 {
     Aspect a;

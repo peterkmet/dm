@@ -167,6 +167,20 @@ def test_floors_are_light_and_walls_dark(game):
     assert colors == {WALL: {DARKEST_GRAY}, 1: {LIGHT_GRAY}}
 
 
+def test_a_pressure_pad_is_a_gray_square_in_the_floor(game):
+    gray = 2
+    for name, value in (("g_party_map_index", 1), ("g_party_map_x", 14), ("g_party_map_y", 1), ("g_party_direction", 1)):
+        c16.in_dll(game, name).value = value
+    game.set_current_map_and_party_map(1)
+    game.view_load_map(1)
+    mark_here(game)  # facing east into the room of nine pads of map 1
+    px = draw(game, VIEWPORT.w, VIEWPORT.h, Box(0, 0, VIEWPORT.w, VIEWPORT.h))
+    left, top = (VIEWPORT.w - CELL) // 2 - 14 * CELL, (VIEWPORT.h - CELL) // 2 - 1 * CELL
+    pixel = lambda x, y, dx, dy: px[(top + y * CELL + dy) * VIEWPORT.w + left + x * CELL + dx]
+    assert pixel(15, 1, CELL // 2, CELL // 2) == gray and pixel(15, 1, 0, 0) == LIGHT_GRAY
+    assert pixel(14, 2, CELL // 2, CELL // 2) != gray  # a plain floor
+
+
 def png(path, rgb_rows):
     h, w = len(rgb_rows), len(rgb_rows[0]) // 3
     raw = b"".join(b"\0" + bytes(row) for row in rgb_rows)

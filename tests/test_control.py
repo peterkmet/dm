@@ -118,6 +118,11 @@ class Client:
         return response
 
 
+def ahead_square(view):
+    """The center square at depth 1 of the view."""
+    return next(s for s in view["squares"] if s["depth"] == 1 and s["side"] == "center")
+
+
 def test_state_json_after_recruiting(game):
     state = state_json(game, 0)
     assert state["leader"] == 0
@@ -148,7 +153,7 @@ def test_state_json_after_recruiting(game):
     assert len(game_map["rows"]) == game_map["height"]
     x, y = game_map["party"]
     assert game_map["rows"][y][x] == "@"
-    assert "?" in "".join(game_map["rows"])  # the inscription of the entrance
+    assert not set("MLKHVAF?") & set("".join(game_map["rows"]))  # as the automap: no wall features
 
 
 def test_control_session_moves_and_recruits(game):
@@ -176,7 +181,7 @@ def test_control_session_moves_and_recruits(game):
         client.act("turn_left")
     ahead = next(s for s in client.call(cmd="get_view")["view"]["squares"] if s["depth"] == 1 and s["side"] == "center")
     assert ahead["front_face"].get("mirror")
-    assert client.call(cmd="get_map")["map"]["rows"][ahead["y"]][ahead["x"]] == "M"
+    assert client.call(cmd="get_map")["map"]["rows"][ahead["y"]][ahead["x"]] == "#"  # the face shows the mirror, the map a wall
     shown = client.act("click_wall_ahead")["state"]
     assert shown["candidate"]["name"] and shown["candidate"]["skills"]
     assert len(shown["champions"]) == 1 and shown["leader"] in (0, None)
@@ -859,7 +864,7 @@ def test_torch_holder_is_not_a_lock(game):
     x, y, face = holder
     for name, value in (("g_party_map_x", x + STEP_EAST[face]), ("g_party_map_y", y + STEP_NORTH[face]), ("g_party_direction", (face + 2) & 3)):
         ctypes.c_int16.in_dll(lib, name).value = value
-    wall = state_json(game, 1)["squares"][4]  # depth 1, center: the wall ahead
+    wall = ahead_square(state_json(game, 1))  # depth 1, center: the wall ahead
     assert wall["front_face"].get("torch_holder") is True
     assert "lock" not in wall["front_face"]
 
@@ -896,13 +901,13 @@ def test_a_lock_names_its_picture(game):
             t = lib.get_next_thing(t)
     face = t >> 14
     with on_map(game, 1, 10 + STEP_EAST[face], 1 + STEP_NORTH[face], (face + 2) & 3):
-        wall = state_json(game, 1)["squares"][4]  # depth 1, center: the wall ahead
+        wall = ahead_square(state_json(game, 1))  # depth 1, center: the wall ahead
     assert wall["front_face"]["lock"] == "iron_lock"
 
 
 def test_a_wall_text_has_no_leading_newline(game):
     with on_map(game, 0, 8, 4, 2):  # facing south to the plaque of the Hall of Champions
-        wall = state_json(game, 1)["squares"][4]
+        wall = ahead_square(state_json(game, 1))
     assert wall["front_face"]["text"] == "HALL OF CHAMPIONS"
 
 
@@ -918,14 +923,21 @@ def test_the_view_has_no_alcove_without_a_wall_ahead(game):
 
 def test_a_wall_decoration_names_its_picture(game):
     with on_map(game, 7, 6, 13, 3):  # facing west to the random creeper of (5,13)
-        wall = state_json(game, 1)["squares"][4]
+        wall = ahead_square(state_json(game, 1))
     assert wall["front_face"]["ornament"] == "creeper"
 
 
 def test_a_border_wall_outside_the_map_shows_its_fountain(game):
     with on_map(game, 1, 10, 0, 0):  # facing north to the random fountain of the border wall
-        wall = state_json(game, 1)["squares"][4]
+        wall = ahead_square(state_json(game, 1))
     assert wall["y"] == -1 and wall["front_face"]["fountain"] is True
+
+
+def test_the_view_lists_no_side_square_that_the_screen_hides(game):
+    with on_map(game, 1, 0, 8, 2):  # facing south: (1,8) and (0,9) are walls, the screen does not draw (1,9)
+        view, game_map = state_json(game, 1), state_json(game, 2)
+    assert (1, 9) not in squares_by_place(view)
+    assert game_map["rows"][9][1] == " "
 
 
 def test_brief_names_a_lock():
