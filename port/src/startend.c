@@ -2,6 +2,7 @@
 #include <string.h>
 #include "startend.h"
 #include "adventure.h"
+#include "advanced.h"
 #include "anim.h"
 #include "champion.h"
 #include "command.h"
@@ -161,6 +162,7 @@ static void save_game_csb(void)
         } else if (saved == SAVED_NEW_ADVENTURE) {
             gameloop_start_loaded_game();
         }
+        if (saved && g_advanced_features) advanced_print_message("GAME SAVED");
     }
     game_unfreeze();
 }
@@ -183,6 +185,8 @@ void save_game(void)
             if (!savegame_save(save_dir)) {
                 dialog_draw(ui_string(TEXT_UNABLE_TO_SAVE), NULL, ui_string(TEXT_OK), NULL, NULL, NULL);
                 dialog_get_choice(1);
+            } else if (g_advanced_features) {
+                message = "GAME SAVED";
             }
             continue;
         }

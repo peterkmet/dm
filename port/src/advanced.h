@@ -27,13 +27,17 @@ extern int16_t g_cheat_food;           /* food and water do not go down */
    switch the cheats, 1, 2, and 3 select the music in the advanced mode).
    Returns 1 when the key is used up. */
 int advanced_process_key(uint16_t key);
-/* A left click while the automap is open: the map scrolls so the clicked square is at the center.
-   Returns 1 when the automap is open. */
-int advanced_process_click(int16_t x, int16_t y);
+/* A mouse button while the automap is open: a left press on the map starts a drag, the left release
+   ends it. Returns 1 when the automap is open. */
+int advanced_process_click(int16_t x, int16_t y, int16_t kind);
+/* The mouse is at (x, y): during a drag the map follows it in whole squares. */
+void advanced_drag(int16_t x, int16_t y);
 /* The movement key word of a letter key outside vanilla: W, S, A, D move, Q and E turn. Else 0. */
 uint16_t advanced_letter_key(int letter);
 /* Draws the automap and the position read-out (level, position, facing, light) in place of the
    viewport with the interface palette. */
 void advanced_draw_automap(void);
+/* A white line in the message area. */
+void advanced_print_message(const char *text);
 
 #endif

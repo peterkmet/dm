@@ -131,7 +131,7 @@ void command_process_click(int16_t x, int16_t y, int16_t kind)
     if (kind == CLICK_LEFT_PRESS || kind == CLICK_RIGHT_PRESS) g_input_received = 1;
     if (kind == CLICK_LEFT_PRESS) left_button_down = 1;
     if (kind == CLICK_LEFT_RELEASE) left_button_down = 0;
-    if (kind == CLICK_LEFT_PRESS ? advanced_process_click(x, y) : g_automap_open) return;
+    if (advanced_process_click(x, y, kind)) return;
     if (queue_count >= (kind == CLICK_LEFT_RELEASE ? QUEUE_RELEASE_LIMIT : QUEUE_CLICK_LIMIT)) return;
     int16_t command = COMMAND_LEFT_RELEASE;
     if (kind != CLICK_LEFT_RELEASE) {

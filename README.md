@@ -184,7 +184,7 @@ The controls are the controls of the original Amiga game.
 
 The advanced features are not in the original game:
 
-- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. The top-left corner of the map shows the level, X and Y, facing, and light amount. Corridors are light gray, walls are dark gray. A left click on the map moves the clicked square to the center, so the whole level can be seen. The map opens centered on the party.
+- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. The top ruler numbers each second column, the left ruler each row; a white frame shows the end of the map. The top-left corner of the map shows the level, X and Y, facing, and light amount. Corridors are light gray, walls are dark gray. Drag the map with the left mouse button to see the whole level; a click without a move does not scroll. The map opens centered on the party.
 - Quick save and quick load: one save slot in `QUICK.DAT` in the data folder. `DMGAME.DAT` does not change. The message area shows GAME SAVED, GAME LOADED, NO QUICK SAVE, or QUICK SAVE DAMAGED.
 - W, A, S, D, Q, and E move and turn the party. The cursor keys and the keypad also work.
 - Rune symbols in red after each rune name on an open scroll.
@@ -204,7 +204,7 @@ Keys of the `advanced` mode:
 
 | Key | Action |
 |---|---|
-| M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, Escape, L, I, and F (cheats), 1, 2, and 3 (music), and a left click on the map work. Tab also closes an open inventory. |
+| M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, Escape, L, I, and F (cheats), 1, 2, and 3 (music), and a drag on the map work. Tab also closes an open inventory. |
 | Escape | Close the automap or the open inventory, else freeze the game |
 | F5 | Quick save. Only in the dungeon view. |
 | F9 | Quick load. Only in the dungeon view. |

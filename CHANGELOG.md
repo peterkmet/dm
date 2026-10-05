@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.11.0 - 2026-10-05
+
+### Added
+
+- `act`, `act_many`, and `wait` report `health_lost`: the health that each champion lost since the start of the request, only when a champion lost health. `dm-play --brief` shows it on the turn line.
+- The save dialog shows GAME SAVED after a save outside vanilla. In CSB, SAVE AND PLAY prints GAME SAVED in the message area.
+- Automap (advanced mode): rulers with the column and row numbers, and a white frame at the end of the map.
+
+### Changed
+
+- Automap (advanced mode): drag the map with the left mouse button to scroll it. A click without a move does not scroll.
+
 ## 0.10.0 - 2026-10-05
 
 ### Added

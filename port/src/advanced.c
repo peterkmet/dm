@@ -19,11 +19,16 @@
 #include "ui.h"
 
 #define READOUT_TEXT_SIZE 40
-#define READOUT_MARGIN 2               /* pixels between the viewport edge and the read-out */
+#define READOUT_MARGIN 2               /* pixels between the rulers and the read-out */
 #define QUICK_MESSAGE_COLOR COLOR_WHITE
 
 int16_t g_game_mode = GAME_MODE_VANILLA;
 int16_t g_advanced_features, g_automap_open, g_cheat_light, g_cheat_immortal, g_cheat_food;
+
+static struct {
+    int active;
+    int16_t x, y; /* the mouse position that matches the current scroll */
+} drag;
 
 static const char *const direction_names[4] = { "NORTH", "EAST", "SOUTH", "WEST" };
 static const char *const soundtrack_names[3] = { "ORIGINAL", "SUPER NES", "FM-TOWNS" };
@@ -36,11 +41,11 @@ static int in_dungeon_view(void)
            !g_game_won;
 }
 
-/* Level, position, facing, and light in the top-left corner of the viewport. */
+/* Level, position, facing, and light in the top-left corner of the map, inside the rulers. */
 static void draw_readout(Bitmap *vp)
 {
     char line[READOUT_TEXT_SIZE];
-    int16_t x = READOUT_MARGIN, y = (int16_t)(READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP);
+    int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN, y = (int16_t)(AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP);
     snprintf(line, sizeof line, "LEVEL %u X %d Y %d", map_level(g_party_map_index), g_party_map_x, g_party_map_y);
     text_draw(vp, x, y, COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)], gameloop_party_light());
@@ -65,30 +70,37 @@ void advanced_draw_automap(void)
 
 static void close_automap(void)
 {
-    g_automap_open = 0;
+    g_automap_open = drag.active = 0;
     automap_scroll_reset();
     gameloop_draw_view();
 }
 
-/* The square of pixel p on an axis of length, counted from the center square of automap_draw. */
-static int16_t squares_from_center(int16_t p, int16_t length)
+void advanced_drag(int16_t x, int16_t y)
 {
-    int16_t d = (int16_t)(p - (length - AUTOMAP_CELL_SIZE) / 2);
-    return (int16_t)((d - (d < 0 ? AUTOMAP_CELL_SIZE - 1 : 0)) / AUTOMAP_CELL_SIZE);
+    if (!drag.active || !g_automap_open) return;
+    int16_t dx = (int16_t)((x - drag.x) / AUTOMAP_CELL_SIZE), dy = (int16_t)((y - drag.y) / AUTOMAP_CELL_SIZE);
+    if (!dx && !dy) return;
+    drag.x += dx * AUTOMAP_CELL_SIZE;
+    drag.y += dy * AUTOMAP_CELL_SIZE;
+    automap_scroll(g_party_map_index, -dx, -dy);
+    advanced_draw_automap();
 }
 
-int advanced_process_click(int16_t x, int16_t y)
+int advanced_process_click(int16_t x, int16_t y, int16_t kind)
 {
     if (!g_automap_open) return 0;
     Box b;
-    if (!ui_zone_box(ZONE_VIEWPORT, &b) || x < b.x || x >= b.x + b.w || y < b.y || y >= b.y + b.h) return 1;
-    automap_scroll(g_party_map_index, squares_from_center((int16_t)(x - b.x), b.w), squares_from_center((int16_t)(y - b.y), b.h));
-    advanced_draw_automap();
+    if (kind == CLICK_LEFT_RELEASE) {
+        advanced_drag(x, y);
+        drag.active = 0;
+    } else if (kind == CLICK_LEFT_PRESS && ui_zone_box(ZONE_VIEWPORT, &b) && x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h) {
+        drag.active = 1, drag.x = x, drag.y = y;
+    }
     return 1;
 }
 
 /* A white line in the message area. */
-static void print_quick_message(const char *text)
+void advanced_print_message(const char *text)
 {
     message_new_line(g_game_time);
     message_print(QUICK_MESSAGE_COLOR, text, g_game_time);
@@ -99,7 +111,7 @@ static void quick_save(void)
 {
     int16_t exists = g_saved_game_exists;
     uint32_t saved = g_last_save_game_time;
-    print_quick_message(savegame_save_as(startend_save_dir(), QUICK_SAVE_FILE_NAME, NULL) ? "GAME SAVED" : "UNABLE TO SAVE");
+    advanced_print_message(savegame_save_as(startend_save_dir(), QUICK_SAVE_FILE_NAME, NULL) ? "GAME SAVED" : "UNABLE TO SAVE");
     g_saved_game_exists = exists;
     g_last_save_game_time = saved;
 }
@@ -114,7 +126,7 @@ static void quick_load(void)
         g_saved_game_exists = exists;
         g_last_save_game_time = g_last_load_game_time = 0;
     }
-    print_quick_message(result == SAVEGAME_LOADED ? "GAME LOADED" : result == SAVEGAME_MISSING ? "NO QUICK SAVE" : "QUICK SAVE DAMAGED");
+    advanced_print_message(result == SAVEGAME_LOADED ? "GAME LOADED" : result == SAVEGAME_MISSING ? "NO QUICK SAVE" : "QUICK SAVE DAMAGED");
 }
 
 int advanced_process_key(uint16_t key)

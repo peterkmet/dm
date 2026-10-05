@@ -250,6 +250,8 @@ The response of `look` has `look: {name, lines}`. These are the texts of the eye
 
 `action_damage`: a value above 0 is the damage, 0 is no damage, -1 is "can't reach", -2 is "need ammo". After `act_many` it is a list with one value for each `choose_action`, in order.
 
+`health_lost`: a list with one value for each champion: the health that the champion lost since the start of the request (`act`, `act_many`, or `wait`). It is only in the response when a champion lost health.
+
 ### Cells
 
 The view and the actions use cells relative to the party direction:

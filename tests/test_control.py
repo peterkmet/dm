@@ -789,6 +789,22 @@ def test_the_tests_do_not_log_into_a_run():
     assert not play.LOG_DIR.startswith(".playthrough")
 
 
+def test_a_bump_reports_the_health_lost_of_the_step(game):
+    client = Client(game)
+    try:
+        wall = wall_direction(game)
+        while game.position()[2] != wall:
+            client.act("turn_left")
+        assert "health_lost" not in client.act("turn_left")
+        client.act("turn_right")
+        game.champions[0].current_health = max(game.champions[0].current_health, 20)
+        ctypes.c_int16.in_dll(game.lib, "g_champion_pending_damage").value = 5
+        response = client.call(cmd="act_many", actions=["move_forward", "turn_left"])
+        assert response["stopped"] == "bumped" and response["health_lost"][0] == 6, response
+    finally:
+        client.sock.close()
+
+
 def test_dm_play_does_not_import_mcp():
     code = "import sys, dmtools.play; assert 'mcp' not in sys.modules"
     subprocess.run([sys.executable, "-c", code], check=True)

@@ -14,6 +14,7 @@ NORTH, EAST, SOUTH, WEST = range(4)
 STEP = {NORTH: (0, -1), EAST: (1, 0), SOUTH: (0, 1), WEST: (-1, 0)}
 FORWARD, TURN_LEFT = 3, 1
 CELL, BLACK, YELLOW, FILLER, DARKEST_GRAY, LIGHT_GRAY = 7, 0, 11, 0xEE, 12, 13
+RULER_W, RULER_H = 12, 7
 WALL, DOOR, FAKE_WALL, FAKE_WALL_OPEN, DOOR_CLOSED = 0, 4, 6, 4, 4
 
 
@@ -150,15 +151,32 @@ def test_draw_stays_in_area_with_party_arrow_at_center(game):
             for x in range(320):
                 inside = VIEWPORT.x <= x < VIEWPORT.x + VIEWPORT.w and VIEWPORT.y <= y < VIEWPORT.y + VIEWPORT.h
                 assert (px[y * 320 + x] != FILLER) == inside
-        left, top = VIEWPORT.x + (VIEWPORT.w - CELL) // 2, VIEWPORT.y + (VIEWPORT.h - CELL) // 2
+        left, top = VIEWPORT.x + RULER_W + (VIEWPORT.w - RULER_W - CELL) // 2, VIEWPORT.y + RULER_H + (VIEWPORT.h - RULER_H - CELL) // 2
         assert px[(top + CELL // 2) * 320 + left + CELL // 2] == YELLOW
+
+
+def test_rulers_number_the_squares_and_a_frame_ends_the_map(game):
+    white = 15
+    assert game.gfx_open(str(GAME / "Graphics.DAT").encode()) >= 0 and game.text_init() == 0  # the font of the numbers
+    mark_here(game)
+    game.automap_scroll(party(game)[0], -64, -64)  # the top-left corner of the map at the center
+    try:
+        px = draw(game, VIEWPORT.w, VIEWPORT.h, Box(0, 0, VIEWPORT.w, VIEWPORT.h))
+    finally:
+        game.automap_scroll_reset()
+    rows = [px[y * VIEWPORT.w:(y + 1) * VIEWPORT.w] for y in range(VIEWPORT.h)]
+    assert LIGHT_GRAY in b"".join(bytes(r[RULER_W:]) for r in rows[:RULER_H])  # column numbers
+    assert LIGHT_GRAY in b"".join(bytes(r[:RULER_W]) for r in rows[RULER_H:])  # row numbers
+    left, top = RULER_W + (VIEWPORT.w - RULER_W - CELL) // 2, RULER_H + (VIEWPORT.h - RULER_H - CELL) // 2
+    assert rows[top - 1][left + CELL] == white and rows[top + CELL][left - 1] == white
+    assert rows[top - 2][left + CELL] == BLACK  # outside the map
 
 
 def test_floors_are_light_and_walls_dark(game):
     m, x, y, d = party(game)
     mark_here(game)
     px = draw(game, VIEWPORT.w, VIEWPORT.h, Box(0, 0, VIEWPORT.w, VIEWPORT.h))
-    left, top = (VIEWPORT.w - CELL) // 2 - x * CELL, (VIEWPORT.h - CELL) // 2 - y * CELL
+    left, top = RULER_W + (VIEWPORT.w - RULER_W - CELL) // 2 - x * CELL, RULER_H + (VIEWPORT.h - RULER_H - CELL) // 2 - y * CELL
     colors = {}
     for sx, sy in seen_squares(game, m) - {(x, y)}:
         kind = game.dungeon_square(m, sx, sy) >> 5
@@ -175,7 +193,7 @@ def test_a_pressure_pad_is_a_gray_square_in_the_floor(game):
     game.view_load_map(1)
     mark_here(game)  # facing east into the room of nine pads of map 1
     px = draw(game, VIEWPORT.w, VIEWPORT.h, Box(0, 0, VIEWPORT.w, VIEWPORT.h))
-    left, top = (VIEWPORT.w - CELL) // 2 - 14 * CELL, (VIEWPORT.h - CELL) // 2 - 1 * CELL
+    left, top = RULER_W + (VIEWPORT.w - RULER_W - CELL) // 2 - 14 * CELL, RULER_H + (VIEWPORT.h - RULER_H - CELL) // 2 - 1 * CELL
     pixel = lambda x, y, dx, dy: px[(top + y * CELL + dy) * VIEWPORT.w + left + x * CELL + dx]
     assert pixel(15, 1, CELL // 2, CELL // 2) == gray and pixel(15, 1, 0, 0) == LIGHT_GRAY
     assert pixel(14, 2, CELL // 2, CELL // 2) != gray  # a plain floor

@@ -107,6 +107,8 @@ static struct {
     int explosion_count, group_count;
     WitnessedExplosion explosions[WITNESSED_EXPLOSIONS_MAX];
     WitnessedGroup groups[WITNESSED_GROUPS_MAX];
+    int16_t health[CHAMPION_MAX_COUNT]; /* the health of each champion at the start of the request */
+    uint16_t champion_count;
 } witnessed;
 
 /* The eye panel text of a look action, for the turn result. */
@@ -662,6 +664,8 @@ static void witness(void)
 static void start_witnessing(void)
 {
     memset(&witnessed, 0, sizeof witnessed);
+    witnessed.champion_count = g_party_champion_count;
+    for (uint16_t i = 0; i < g_party_champion_count; i++) witnessed.health[i] = g_champions[i].current_health;
     witness();
 }
 
@@ -715,6 +719,21 @@ static void seen_json(Json *j)
 }
 
 /* Responses. */
+
+/* The health that each champion lost since the start of the request, only when one lost health. */
+static void health_lost_json(Json *j)
+{
+    int any = 0;
+    for (uint16_t i = 0; i < witnessed.champion_count; i++) any |= g_champions[i].current_health < witnessed.health[i];
+    if (!any) return;
+    json_key(j, "health_lost");
+    json_open(j, '[');
+    for (uint16_t i = 0; i < witnessed.champion_count; i++) {
+        int lost = witnessed.health[i] - g_champions[i].current_health;
+        json_int(j, lost > 0 ? lost : 0);
+    }
+    json_close(j, ']');
+}
 
 static void close_client(void)
 {
@@ -788,6 +807,7 @@ static void send_turn_result(void)
         json_key(&j, "action_damage");
         json_int(&j, turn.damage);
     }
+    health_lost_json(&j);
     if (look_text.shown) {
         json_key(&j, "look");
         json_open(&j, '{');

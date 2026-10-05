@@ -128,7 +128,8 @@ def act(action: str, args: dict | None = None) -> dict:
     {ok, ticks, action_damage (choose_action only: damage, 0 miss, -1 can't reach, -2 need
     ammo), bumped (true when a move did not move the party: wall, closed door, creature),
     stopped (only when the dungeon moved the party: moved by a teleporter, pit, or stairs; turned
-    by a spinner), game_over, look (look only: {name, lines}), seen (explosions and creature
+    by a spinner), game_over, health_lost (only when a champion lost health: the health each champion
+    lost during the request), look (look only: {name, lines}), seen (explosions and creature
     changes seen during the turn), state, view}. ok false with error: nothing happened.
 
     Actions and args:
@@ -153,7 +154,7 @@ def act(action: str, args: dict | None = None) -> dict:
 @mcp.tool()
 def act_many(actions: list) -> dict:
     """Runs a list of actions in order, each as one act turn, and returns {ok, ticks, ran,
-    stopped, error?, game_over, bumped?, state, view} after the last turn. Each item is an action
+    stopped, error?, game_over, bumped?, health_lost?, state, view} after the last turn. Each item is an action
     name ("move_forward") or {"action": ..., "args": {...}}. stopped: done, damage (a champion lost
     health), creature (a creature group came into view that was not in view
     before the step), message (a new message), bumped (a move did not
@@ -165,7 +166,7 @@ def act_many(actions: list) -> dict:
 @mcp.tool()
 def wait(ticks: int = 10) -> dict:
     """Lets ticks (1-5000) of game time pass without input; returns {ok, ticks, stopped,
-    game_over, state, view}. It stops early on news: stopped is done (all ticks ran), damage
+    game_over, health_lost?, state, view}. It stops early on news: stopped is done (all ticks ran), damage
     (a champion lost health), creature (a new creature group came into view), message (a new
     message), or game_over; ticks gives the ticks that ran. Also while the party sleeps.
     Use it to rest, to wait for action_disabled to clear, or for doors to open."""

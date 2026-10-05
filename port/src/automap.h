@@ -8,6 +8,8 @@
    as a top-down map. */
 
 #define AUTOMAP_CELL_SIZE 7 /* pixels per square: 32 squares fill the 224 pixel viewport */
+#define AUTOMAP_RULER_WIDTH 12 /* the left ruler with the row numbers: two digits and a gap */
+#define AUTOMAP_RULER_HEIGHT 7 /* the top ruler with the column numbers: one text row and a gap */
 
 /* Forgets every seen square and sizes the storage from the loaded dungeon. */
 void automap_reset(void);
@@ -28,7 +30,7 @@ int automap_save(uint8_t **buf, size_t *len);
 int automap_load(const uint8_t *buf, size_t len);
 
 /* Draws the seen squares of map into area of target, centered on the party when it is on map, moved by
-   the scroll. */
+   the scroll. The map has a white frame; the top ruler numbers each second column, the left ruler each row. */
 void automap_draw(Bitmap *target, Box area, int16_t map);
 /* Moves the center of the drawn map by (dx, dy) squares; the center stays on the map. */
 void automap_scroll(int16_t map, int16_t dx, int16_t dy);

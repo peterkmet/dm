@@ -107,7 +107,7 @@ def brief(response: dict) -> str:
     """A few lines for the player: the turn, the party, the champions, what is ahead, the messages."""
     if not response.get("ok"):
         return f"error: {response.get('error')}"
-    head = " | ".join(f"{key} {response[key]}" for key in ("ticks", "ran", "stopped", "error", "game_over", "action_damage", "path") if key in response)
+    head = " | ".join(f"{key} {response[key]}" for key in ("ticks", "ran", "stopped", "error", "game_over", "action_damage", "health_lost", "path") if key in response)
     head += " | BUMPED" if response.get("bumped") else ""
     lines = [head] if head else []
     if look := response.get("look"):
