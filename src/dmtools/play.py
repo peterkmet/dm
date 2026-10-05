@@ -32,6 +32,7 @@ def square_text(square: dict) -> str:
     for face in ("front_face", "side_face"):
         if wall := square.get(face):
             features = [key for key in ("mirror", "switch", "lock", "torch_holder", "alcove", "fountain", "vi_altar", "ornament") if wall.get(key)]
+            features = [f"lock {wall['lock']}" if key == "lock" and wall["lock"] is not True else key for key in features]
             features += [f'text "{wall["text"]}"'] if "text" in wall else []
             words.append(f"{face.replace('_', ' ')} {wall['facing']}: " + " ".join(features))
     if creatures := square.get("creatures"):

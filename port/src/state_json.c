@@ -467,7 +467,19 @@ static void view_square(int16_t depth, int16_t side, int16_t *x, int16_t *y)
 typedef struct {
     uint16_t text;                    /* THING_NONE: no visible text */
     int mirror, switch_, lock, torch_holder, alcove, fountain, vi_altar, ornament;
+    int16_t lock_ornament;            /* index in the wall ornament graphics, -1: unknown */
 } WallFace;
+
+/* The wall ornaments that hold an object in DM and CSB, by index, named from their picture. */
+static const char *const wall_ornament_names[] = {
+    [1] = "square_alcove", [3] = "arched_alcove", [4] = "hook", [5] = "iron_lock", [6] = "plate_ring", [7] = "dent",
+    [10] = "iron_ring", [11] = "crack", [12] = "slime_outlet", [17] = "coin_slot", [19] = "wooden_lock", [20] = "rune_lock",
+    [21] = "framed_lock", [22] = "studded_lock", [23] = "cross_lock", [24] = "gold_lock", [25] = "skull_lock",
+    [26] = "ornate_gold_lock", [27] = "blue_lock", [28] = "green_lock", [29] = "diamond_lock", [30] = "sun_lock",
+    [31] = "black_lock", [32] = "gem_hole", [33] = "creeper", [35] = "fountain", [37] = "demon_face", [48] = "eye_socket",
+    [51] = "green_gem", [54] = "wall_slot", [56] = "red_gem_roots", [57] = "blue_gem_roots",
+};
+enum { WALL_ORNAMENT_NAME_COUNT = sizeof wall_ornament_names / sizeof *wall_ornament_names };
 
 static int sensor_takes_object(uint16_t type)
 {
@@ -484,6 +496,7 @@ static int wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
 {
     memset(f, 0, sizeof *f);
     f->text = THING_NONE;
+    f->lock_ornament = -1;
     for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_CELL(t) != face) continue;
         if (THING_TYPE(t) == THING_TEXT && text_is_visible(t)) f->text = t;
@@ -492,7 +505,10 @@ static int wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
         else if (sensor_ornament_ordinal(t) && sensor_type(t) == SENSOR_WALL_ORNAMENT_CLICK) f->switch_ = 1;
         else if (sensor_ornament_ordinal(t) && sensor_takes_object(sensor_type(t))) {
             if (sensor_data(t) >= ICON_TORCH_UNLIT && sensor_data(t) <= ICON_TORCH_LAST) f->torch_holder = 1;  /* it wants a torch */
-            else f->lock = 1;
+            else {
+                f->lock = 1;
+                f->lock_ornament = view_wall_ornament_index(sensor_ornament_ordinal(t));
+            }
         }
     }
     switch (view_wall_ornament(x, y, face)) {
@@ -516,7 +532,10 @@ static void wall_face_json(Json *j, const char *key, int16_t x, int16_t y, int16
     if (f.text != THING_NONE && decode_text(text, sizeof text, f.text, TEXT_MODE_MESSAGE)) key_str(j, "text", text);
     if (f.mirror) key_bool(j, "mirror", 1);
     if (f.switch_) key_bool(j, "switch", 1);
-    if (f.lock) key_bool(j, "lock", 1);
+    if (f.lock && f.lock_ornament >= 0 && f.lock_ornament < WALL_ORNAMENT_NAME_COUNT && wall_ornament_names[f.lock_ornament])
+        key_str(j, "lock", wall_ornament_names[f.lock_ornament]);
+    else if (f.lock && f.lock_ornament >= 0) key_int(j, "lock", f.lock_ornament);
+    else if (f.lock) key_bool(j, "lock", 1);
     if (f.torch_holder) key_bool(j, "torch_holder", 1);
     if (f.alcove) key_bool(j, "alcove", 1);
     if (f.fountain) key_bool(j, "fountain", 1);

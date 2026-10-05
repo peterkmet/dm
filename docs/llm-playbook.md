@@ -64,7 +64,7 @@ Walk to a square: plan the path from your own map and send it as `act_many`.
 
 `act_many` stops early on damage, a new creature, a new message, or a failed action. Check why it stopped before you continue.
 
-Use screenshots only when the text is not enough, for example to read a wall text or to find a feature.
+The view JSON gives wall texts (`text`) and the picture of each lock (`lock`, for example `gold_lock`). Use screenshots only to check a suspected bug or when the JSON does not explain what you see.
 
 Save calls: ask for `get_map` only when you plan a route, not after every move. The `act`, `act_many`, and `wait` responses already contain the state and the view.
 
@@ -120,7 +120,7 @@ The goal is to reach the bottom and kill Lord Chaos, not to build the strongest 
 ## Puzzles
 
 - Click wall features: switches, buttons, keyholes (with the key in the leader's hand), alcoves, wall texts.
-- Read every wall text with a screenshot. It often gives the hint.
+- Read every wall text (`text` in the view). It often gives the hint. Match each key to a lock by the lock name.
 ## When you are stuck
 
 Do not walk around the level at random. Stop and think first.
