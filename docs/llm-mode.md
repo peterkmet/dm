@@ -54,6 +54,14 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
    The server instructions and the tool descriptions tell the LLM how to play.
 
+## Checkpoints
+
+The coordinator of a long playthrough keeps checkpoints in `.playthrough_checkpoints/<name>/` (git-ignored). A checkpoint holds the save `DMGAME.DAT` and the player files in `files/`.
+
+- Make a checkpoint after a session: copy `game/DMGAME.DAT` and `.playthrough/` (as `files/`) to a new folder.
+- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `.playthrough/`. Run `build/dm --mode turnbased`, then `uv run dm-play load`.
+- The current state of the playthrough is in `.playthrough/progress.md`. The cost of each session is in `.playthrough/session_costs.md`.
+
 ## Play Chaos Strikes Back
 
 The CSB files must be in `game-csb/` (see the [README](../README.md)). Start the game with `--adventure csb`:
