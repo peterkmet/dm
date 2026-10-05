@@ -13,6 +13,7 @@
 #include "graphics.h"
 #include "layout.h"
 #include "map.h"
+#include "music.h"
 #include "platform.h"
 #include "view.h"
 #include "command.h"
@@ -450,6 +451,7 @@ int main(int argc, char **argv)
         if (g_quit_requested) break;
         if (g_return_to_entrance) {
             g_return_to_entrance = 0;
+            music_stop(); /* the start screens have no music */
             if (turnbased) {
                 entrance_draw(); /* the game mode stays: load and new_game over the socket start the next game */
             } else if (g_adventure == ADVENTURE_CSB) {

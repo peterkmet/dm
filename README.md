@@ -196,7 +196,7 @@ The advanced features are not in the original game:
   - FM-Towns DM: each level has a track. A new level stops the current track and starts its track. Game over and game won have a track.
   - FM-Towns CSB: each square of a zone has a track. A new zone requests its track; it starts when the current track ends. A level change stops the music. The prison and game over have a track.
   - Super NES (DM only, 2 does nothing in CSB): a step on one of 22 trigger squares stops the current track and starts its track. Game won plays the end credits.
-  - The MP3 files go into `music/` of the game folder: `game/music/` gets `music/Game_Dungeon_Master_JP/*.mp3` and `music/Game_Dungeon_Master_US/Super_NES,*.mp3`, `game-csb/music/` gets `music/Game_Chaos_Strikes_Back_JP/*.mp3`. A missing file gives silence.
+  - The MP3 files go into `music/` of the game folder: `game/music/` gets `music/Game_Dungeon_Master_JP/*.mp3` and `music/Game_Dungeon_Master_US/Super_NES,*.mp3`, `game-csb/music/` gets `music/Game_Chaos_Strikes_Back_JP/*.mp3`. A missing file gives silence. The music stops at the entrance and at the CSB screen.
 - Escape and Tab close an open inventory. With no inventory open, Escape freezes the game as in vanilla.
 - Smooth projectile flight: between two game ticks, the view shows each flying projectile part of the way to its new place. The size changes only at a tick.
 

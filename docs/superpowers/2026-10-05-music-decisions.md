@@ -21,6 +21,7 @@ Decisions of the user for the music feature. The feature is implemented from thi
 9. Files: one flat folder `music/` in the disk A folder (`game/music/`, `game-csb/music/`), with the file names of `music/`: `FM-Towns,Track_NN,Music.mp3`, `Super_NES,Track_NN,Music.mp3`. A missing file gives silence.
 10. Special tracks: only the tracks in the game. CSB prison (FM-Towns 06), game over (DM FM-Towns 13, CSB FM-Towns 17), game won (DM FM-Towns 18, Super NES 16). No entrance, title, story, or CSB ending track: they come before the choice, or the port has no FM-Towns animation.
 11. Data: `port/src/musicmap.c` holds the CSB square table, generated one time from `music_map.json`. The DM level tracks and the 22 Super NES triggers are in `port/src/music.c`.
+12. The return to the entrance or the CSB screen stops the music. A game over or game won track plays over the credits.
 
 ## Not done
 
