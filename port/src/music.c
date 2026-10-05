@@ -12,7 +12,7 @@
 #pragma clang diagnostic pop
 
 #define MUSIC_PATH_SIZE 1024
-#define MUSIC_VOLUME_DIVISOR 4   /* the music under the game sounds; raise it for quieter music */
+#define MUSIC_VOLUME_DIVISOR 6   /* the music under the game sounds; raise it for quieter music */
 #define MUSIC_MIX_FRAMES 1024
 #define MUSIC_CHANNELS 2
 #define NO_POSITION (-1)
