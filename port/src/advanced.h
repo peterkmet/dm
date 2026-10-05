@@ -10,7 +10,8 @@
 enum { GAME_MODE_VANILLA, GAME_MODE_ADVANCED, GAME_MODE_TURNBASED };
 
 /* Key words of the advanced keys: Amiga raw key in the high byte. No original key table has them. */
-enum { KEY_TAB = 0x4200, KEY_M = 0x3700, KEY_F5 = 0x5400, KEY_F9 = 0x5800, KEY_L = 0x2800, KEY_I = 0x1700, KEY_F = 0x2300 };
+enum { KEY_TAB = 0x4200, KEY_M = 0x3700, KEY_F5 = 0x5400, KEY_F9 = 0x5800, KEY_L = 0x2800, KEY_I = 0x1700, KEY_F = 0x2300,
+       KEY_1 = 0x0100, KEY_2 = 0x0200, KEY_3 = 0x0300 };
 
 #define QUICK_SAVE_FILE_NAME "QUICK.DAT"
 
@@ -23,7 +24,7 @@ extern int16_t g_cheat_immortal;       /* the health of a champion stops at 1 */
 extern int16_t g_cheat_food;           /* food and water do not go down */
 
 /* Handles M, Tab, F5 (quick save), F9 (quick load), and the keys while the automap is open (L, I, and F
-   switch the cheats in the advanced mode).
+   switch the cheats, 1, 2, and 3 select the music in the advanced mode).
    Returns 1 when the key is used up. */
 int advanced_process_key(uint16_t key);
 /* A left click while the automap is open: the map scrolls so the clicked square is at the center.

@@ -11,6 +11,7 @@
 #include "inventory.h"
 #include "map.h"
 #include "message.h"
+#include "music.h"
 #include "savegame.h"
 #include "startend.h"
 #include "text.h"
@@ -25,6 +26,7 @@ int16_t g_game_mode = GAME_MODE_VANILLA;
 int16_t g_advanced_features, g_automap_open, g_cheat_light, g_cheat_immortal, g_cheat_food;
 
 static const char *const direction_names[4] = { "NORTH", "EAST", "SOUTH", "WEST" };
+static const char *const soundtrack_names[3] = { "ORIGINAL", "SUPER NES", "FM-TOWNS" };
 
 /* The party walks the dungeon: no inventory, dialog, freeze, sleep, candidate, death, sequence, or won game. */
 static int in_dungeon_view(void)
@@ -48,6 +50,8 @@ static void draw_readout(Bitmap *vp)
     text_draw(vp, x, y + 2 * (TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "F FOOD AND WATER %s", g_cheat_food ? "ON" : "OFF");
     text_draw(vp, x, y + 3 * (TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
+    snprintf(line, sizeof line, "1 2 3 MUSIC %s", soundtrack_names[g_music_soundtrack]);
+    text_draw(vp, x, y + 4 * (TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
 }
 
 void advanced_draw_automap(void)
@@ -121,6 +125,10 @@ int advanced_process_key(uint16_t key)
         if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I || key == KEY_F)) {
             int16_t *cheat = key == KEY_L ? &g_cheat_light : key == KEY_I ? &g_cheat_immortal : &g_cheat_food;
             *cheat = !*cheat;
+            advanced_draw_automap();
+        }
+        if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_1 || key == KEY_2 || key == KEY_3)) {
+            music_select(key == KEY_1 ? MUSIC_ORIGINAL : key == KEY_2 ? MUSIC_SUPER_NES : MUSIC_FM_TOWNS);
             advanced_draw_automap();
         }
         return 1;

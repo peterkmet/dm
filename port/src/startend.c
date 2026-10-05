@@ -17,6 +17,7 @@
 #include "layout.h"
 #include "map.h"
 #include "message.h"
+#include "music.h"
 #include "projectile.h"
 #include "savegame.h"
 #include "sound.h"
@@ -376,6 +377,7 @@ static void show_credits(void)
 void endgame(int16_t party_dead)
 {
     command_set_only_mouse_input(-1);
+    if (party_dead) music_play_end(g_game_won);
     if (party_dead && !g_game_won) {
         sound_request_play(SOUND_SCREAM_DEATH, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
         wait_frames(DEATH_WAIT_FRAMES);

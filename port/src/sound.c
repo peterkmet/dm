@@ -4,6 +4,7 @@
 #include "game.h"
 #include "graphics.h"
 #include "map.h"
+#include "music.h"
 #include "sound.h"
 #include "timeline_process.h"
 
@@ -193,6 +194,7 @@ void sound_stop_all(void)
 {
     memset(voices, 0, sizeof voices);
     music.count = 0;
+    music_stop();
 }
 
 void sound_music_play(const int8_t *const *data, const uint16_t *lengths, int count, uint16_t period, uint8_t volume)
@@ -255,6 +257,7 @@ void sound_mix(int16_t *out, int frames)
         out[2 * f] = (int16_t)(mix[0] + mix[3]);
         out[2 * f + 1] = (int16_t)(mix[1] + mix[2]);
     }
+    music_mix(out, frames);
 }
 
 /* Plays a sound at full volume on both sides. */

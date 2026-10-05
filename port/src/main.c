@@ -13,6 +13,7 @@
 #include "graphics.h"
 #include "layout.h"
 #include "map.h"
+#include "music.h"
 #include "platform.h"
 #include "view.h"
 #include "command.h"
@@ -122,6 +123,9 @@ static uint16_t amiga_key(int key, int modifiers)
     case SDLK_L: return KEY_L;
     case SDLK_F: return KEY_F;
     case SDLK_I: return KEY_I;
+    case SDLK_1: return KEY_1;
+    case SDLK_2: return KEY_2;
+    case SDLK_3: return KEY_3;
     }
     return advanced_letter_key(key);
 }
@@ -447,6 +451,7 @@ int main(int argc, char **argv)
         if (g_quit_requested) break;
         if (g_return_to_entrance) {
             g_return_to_entrance = 0;
+            music_stop(); /* the start screens have no music */
             if (turnbased) {
                 entrance_draw(); /* the game mode stays: load and new_game over the socket start the next game */
             } else if (g_adventure == ADVENTURE_CSB) {

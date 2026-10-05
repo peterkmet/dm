@@ -24,6 +24,7 @@
 #include "map.h"
 #include "message.h"
 #include "move.h"
+#include "music.h"
 #include "sound.h"
 #include "tables.h"
 #include "text.h"
@@ -263,6 +264,7 @@ static void start_game(void)
     g_party_is_sleeping = 0;
     g_game_won = g_do_not_draw_fluxcages = 0;
     g_automap_open = g_cheat_light = g_cheat_immortal = g_cheat_food = 0;
+    music_select(MUSIC_ORIGINAL);
     automap_scroll_reset();
     memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
     shown_hand_object = THING_NONE;
@@ -408,6 +410,7 @@ void gameloop_tick(void)
         gameloop_set_light();  /* the creature rules see the light also while the view is not drawn */
         timeline_process();
     } while (g_new_party_map_index != -1);
+    music_update();
     if (!g_party_is_sleeping) {
         command_wake_up();
         if (!g_candidate_champion_ordinal) game_unfreeze();
