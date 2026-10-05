@@ -848,6 +848,33 @@ def test_dm_play_reports_an_unreachable_game(tmp_path, monkeypatch, capsys):
     assert "get_state\tfail" in (tmp_path / "calls.log").read_text()
 
 
+HAS_THINGS, THING_NONE, THING_END = 0x10, 0xFFFF, 0xFFFE
+
+
+def test_a_free_record_never_enters_a_square_list(game, capfd):
+    lib = game.lib
+    x, y = next((x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
+                if lib.get_square(x, y) >> 5 == 1 and not lib.get_square(x, y) & HAS_THINGS)
+    lib.link_thing_to_list(THING_NONE, 0, x, y)
+    assert not lib.get_square(x, y) & HAS_THINGS
+    assert "square list guard: link of a free record" in capfd.readouterr().err
+
+
+def test_unlinking_a_freed_last_thing_empties_the_square(game, capfd):
+    lib = game.lib
+    x, y = next((x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
+                if lib.get_square(x, y) & HAS_THINGS and lib.get_next_thing(lib.get_square_first_thing(x, y)) == THING_END)
+    thing = lib.get_square_first_thing(x, y)
+    lib.thing_set_free(thing)  # its next becomes THING_NONE
+    lib.unlink_thing_from_list(thing, 0, x, y)
+    assert not lib.get_square(x, y) & HAS_THINGS
+    assert "square list guard: unlink of a free record" in capfd.readouterr().err
+    record = lib.get_thing_data(thing)
+    record[0], record[1] = THING_END >> 8, THING_END & 0xFF  # next: end of list
+    lib.link_thing_to_list(thing, 0, x, y)  # the fixture game again as before
+    assert lib.get_square_first_thing(x, y) == thing
+
+
 def test_torch_holder_is_not_a_lock(game):
     lib = game.lib
     assert lib.gameloop_new_game(str(GAME).encode())

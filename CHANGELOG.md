@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.2 - 2026-10-05
+
+### Fixed
+
+- A free thing record (`THING_NONE`) could enter the thing list of a square. The save was then damaged: `load` stopped the game or refused the file (run 4, level 3 (1,30)). The list functions now refuse it and log `square list guard:` with the map, the square, the game time, and the call stack, so the source can be found.
+
 ## 0.8.1 - 2026-10-05
 
 ### Fixed
