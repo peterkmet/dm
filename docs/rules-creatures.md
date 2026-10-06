@@ -1,6 +1,6 @@
 # Creature, projectile, and magic rules
 
-This page describes the creature rules of the C port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `port/src/group.c`, `port/src/projectile.c`, and `port/src/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md) for the record layouts and the original addresses. See [rules-movement.md](rules-movement.md) for the game loop and the timeline dispatch.
+This page describes the creature rules of the C port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `port/src/engine/group.c`, `port/src/engine/projectile.c`, and `port/src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md) for the record layouts and the original addresses. See [rules-movement.md](rules-movement.md) for the game loop and the timeline dispatch.
 
 ## Records
 

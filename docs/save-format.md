@@ -4,8 +4,8 @@ This page describes the Dungeon Master v3.60 save file `DMGAME~.DAT` and the C c
 
 The C code has two layers:
 
-- `port/src/savefile.c` handles the container: the header, the cipher, and the checksums.
-- `port/src/savegame.c` copies the game state into the blocks and back. `port/src/dungeon.c` writes and reads the dungeon part.
+- `port/src/engine/savefile.c` handles the container: the header, the cipher, and the checksums.
+- `port/src/engine/savegame.c` copies the game state into the blocks and back. `port/src/engine/dungeon.c` writes and reads the dungeon part.
 
 The English version replaces `~` in the file name with nothing. The port writes `DMGAME.DAT` and `DMGAME.BAK`.
 
@@ -139,7 +139,7 @@ The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps
 
 ## C API
 
-The header `port/src/savefile.h` declares the API. All buffers keep the big-endian byte layout.
+The header `port/src/engine/savefile.h` declares the API. All buffers keep the big-endian byte layout.
 
 ### `SaveFile`
 

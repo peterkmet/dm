@@ -2,18 +2,20 @@ CC = clang
 CFLAGS = -std=c11 -Wall -Wextra -O2 -g
 SDL = $(shell brew --prefix sdl3)
 B = ../build
-GAME = $(filter-out src/main.c src/platform.c,$(wildcard src/*.c))
-SRC = $(wildcard src/*.c src/*.h)
+LAYERS = data engine ui platform
+INCLUDES = $(addprefix -Isrc/,$(LAYERS))
+GAME = $(filter-out src/platform/main.c src/platform/platform.c,$(wildcard $(addsuffix /*.c,$(addprefix src/,$(LAYERS)))))
+SRC = $(wildcard $(addsuffix /*.[ch],$(addprefix src/,$(LAYERS))))
 
 all: $(B)/dm $(B)/libdm.dylib
 
 $(B)/dm: $(SRC)
 	@mkdir -p $(B)
-	$(CC) $(CFLAGS) -I$(SDL)/include -o $@ src/main.c src/platform.c $(GAME) -L$(SDL)/lib -lSDL3
+	$(CC) $(CFLAGS) $(INCLUDES) -I$(SDL)/include -o $@ src/platform/main.c src/platform/platform.c $(GAME) -L$(SDL)/lib -lSDL3
 
 $(B)/libdm.dylib: $(SRC)
 	@mkdir -p $(B)
-	$(CC) $(CFLAGS) -dynamiclib -o $@ $(GAME)
+	$(CC) $(CFLAGS) $(INCLUDES) -dynamiclib -o $@ $(GAME)
 
 # The personal play folder: the latest game and the game files; the saves there stay.
 LEGO = ../.playthrough-lego

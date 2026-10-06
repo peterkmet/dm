@@ -161,3 +161,25 @@ def test_functions_are_short():
                     found.append(f"long {key}  | {number - start + 1} lines")
                 name = None
     report("long", found)
+
+
+LAYERS = ["data", "engine", "ui", "platform"]
+INCLUDE = re.compile(r'^\s*#include\s+"([\w./]+)"', re.M)
+
+
+def test_layers():
+    ok = allowed()
+    home = {p.name: p.parent.name for p in SRC.rglob("*.h")}
+    found = []
+    for path in sources():
+        layer = path.parent.name
+        assert layer in LAYERS, f"{rel(path)} is not in a layer folder"
+        text = path.read_text(errors="replace")
+        for header in INCLUDE.findall(text):
+            target = home.get(header)
+            key = f"{rel(path)}:{header}"
+            if target and LAYERS.index(target) > LAYERS.index(layer) and ("layer", key) not in ok:
+                found.append(f"layer {key}  | {layer} includes {target}")
+        if layer != "platform" and re.search(r"#include\s+<SDL", text):
+            found.append(f"layer {rel(path)}:SDL  | SDL outside platform/")
+    report("layer", found)

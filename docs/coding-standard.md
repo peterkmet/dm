@@ -9,7 +9,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
    - No thing: `THING_NONE`, not `0xffff`. End of list: `THING_ENDOFLIST`.
    - Directions, cells, champion slots (`SLOT_HAND_READY`, `SLOT_COUNT`), statistics, skills, square types, sensor types, door states, timeline event types, commands.
    - Message and text numbers: a named constant for each string id, for example `TEXT_RESURRECTED`.
-   - Graphic and layout zone numbers: named constants in `port/src/ids.h`, for example `GFX_WALLSET_FIRST`, `ZONE_VIEWPORT`.
+   - Graphic and layout zone numbers: named constants in `port/src/data/ids.h`, for example `GFX_WALLSET_FIRST`, `ZONE_VIEWPORT`.
    - Plain numbers are allowed only for 0, 1, -1, and 2 when it halves or doubles a value. Every other number is a named constant, also decimal game values such as divisors, limits, and thresholds.
    - Each constant has one definition, in the header of the module that owns it. Other modules include that header. They do not define the value again under the same or another name.
 2. Do not index raw record bytes outside one accessor module. Put field access in small functions or macros with names, for example `sensor_type(t)`, `sensor_disable(t)`, `door_state(t)`, `group_count(t)`. One module (`map.c` and `map.h`) owns the record layout.

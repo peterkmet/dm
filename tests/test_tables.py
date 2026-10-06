@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, PORT_SRC
 from dmtools.ftl import load_image, parse
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,8 +63,8 @@ TABLES = {
 @pytest.fixture(scope="module")
 def lib(tmp_path_factory):
     out = tmp_path_factory.mktemp("tables") / "libtables.dylib"
-    src = [str(ROOT / "port/src" / f) for f in ("tables.c", "ftl.c", "adventure.c", "csbimage.c", "csbtext.c")]
-    r = subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-dynamiclib", "-o", str(out), *src],
+    src = [str(next(PORT_SRC.rglob(f))) for f in ("tables.c", "ftl.c", "adventure.c", "csbimage.c", "csbtext.c")]
+    r = subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *src],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     lib = ctypes.CDLL(str(out))

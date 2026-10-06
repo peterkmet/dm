@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, game_sources
 from test_creatures import TimelineEvent
 
 ROOT = Path(__file__).parent.parent
@@ -40,8 +41,8 @@ pytestmark = [
 def lib(tmp_path_factory):
     """A private build of libdm."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     for name, res, args in [
         ("anim_open", ctypes.c_int, [ctypes.c_char_p]), ("anim_next_frame", c16, []), ("anim_close", None, []),

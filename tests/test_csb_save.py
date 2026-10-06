@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, game_sources
 from test_gameloop import Game
 from test_save import state
 from test_savefile import SaveFile, u8p
@@ -35,8 +36,8 @@ pytestmark = [
 def game(tmp_path_factory):
     """A private build of libdm with the CSB data loaded."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     lib.kaos_s16.restype = c16
     lib.dungeon_save.restype = ctypes.c_void_p

@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, game_sources
+
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 SCREEN_W, SCREEN_H = 320, 200
@@ -22,8 +24,8 @@ pytestmark = [
 def lib(tmp_path_factory):
     """A private build of libdm with the DM data."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     assert lib.gameloop_load_data(str(GAME).encode())
     return lib

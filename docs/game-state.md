@@ -1,6 +1,6 @@
 # Game state
 
-This page describes the game state of the C port: the structs and globals in `port/src/game.h` and `port/src/random.h`. It gives the original KAOS address of each item. The names come from [kaos-symbols.csv](kaos-symbols.csv). The field meanings come from [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md).
+This page describes the game state of the C port: the structs and globals in `port/src/engine/game.h` and `port/src/engine/random.h`. It gives the original KAOS address of each item. The names come from [kaos-symbols.csv](kaos-symbols.csv). The field meanings come from [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md).
 
 The port uses native C types for this state. It does not keep the big-endian byte layout. The dungeon data from `dungeon.c` keeps the big-endian layout, see [Dungeon.DAT format](dungeon-format.md). A save file reader or writer must convert between the two layouts.
 

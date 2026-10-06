@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, game_sources
+
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 GAME_CSB = ROOT / "game-csb"
@@ -55,8 +57,8 @@ OBJECT_NAMES = {0: "COMPASS", 23: "STORM", 24: "STORM", 158: "ANTIVENIN", 174: "
 def lib(tmp_path_factory):
     """A private build of libdm."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     for f in ("ui_string", "ui_action_name", "ui_object_name", "ui_skill_rank_name"):
         getattr(lib, f).restype = ctypes.c_char_p

@@ -422,6 +422,12 @@ Decisions made during the task:
 - [ ] **Step 7: Run the full suite.** `uv run pytest -q`. Expected: all pass.
 - [ ] **Step 8: Commit.** `git add -A port tests README.md docs && git commit -m "refactor: split the C port into data, engine, ui, and platform folders"`
 
+Decisions made during the task:
+- `port/src/` had no file outside the file map.
+- `README.md` names no `port/src/` path. `CHANGELOG.md` records history and keeps the flat paths.
+- The test imports go in the local import group, in alphabetical order: `from conftest import ...` comes first.
+- The layer test found 17 keys: 2 for Task 5 and 15 for Task 6. `engine/dungeon.c` and `engine/savefile.c` have no `layer` key. A key goes to the task that removes the last use of the header. `action.c`, `champion.c`, and `magic.c` call `ui_string` (Task 6 Step 2), so their `ui.h` keys go to Task 6, although Task 5 removes the drawing calls of these files. The uses that Task 6 does not name are in the Task 6 notes.
+
 ---
 
 ### Task 5: Engine sets redraw flags instead of drawing
@@ -487,6 +493,14 @@ The changes, one at a time, each with a full suite run:
 - [ ] **Step 9: Dead champion release.** Write a test in `tests/test_champion.py`: kill a champion, then assert its bit in `g_dead_champions` is set. Run it: FAIL. Replace `command_release_dead_champion(i)` at `champion.c:699` with `g_dead_champions |= 1 << i`. In `ui/gameloop.c`, release the champions after the tick. Run the test, then the full suite. Check Review focus item 3.
 - [ ] **Step 10: Inventory drawing.** The mouth blink at `inventory.c:449-451` and the panel check at `inventory.c:456` are drawing. Move the blink loop into the click handler in `ui/command.c` that calls the eat or drink function, before the call, so the order on the screen stays. Replace the `g_panel_content` check with `c->attributes |= CHAMPION_ATTR_PANEL`: `champion_draw_state` draws the panel only when it is the food and water panel. If this changes a screen test, keep the original check in `ui/` instead. Run the full suite.
 - [ ] **Step 11: Data and engine includes.** Fix the remaining `layer` keys of `data/csbtext.c` (`champion.h`), `engine/dungeon.c`, and `engine/savefile.c`. Move each used constant to its owner in the lower layer. If a file uses functions of the higher layer, move the file to that layer and update the file map in this plan. Run the full suite.
+Uses from the Task 4 layer keys that the steps above do not name:
+- Step 2: after the rename, delete the `ui.h` include from `engine/action.c` and `engine/magic.c` when they use nothing else of it.
+- Step 3: `engine/message.h` uses `TEXT_CHAR_WIDTH` of `text.h` for `MESSAGE_COLS`.
+- Step 6: `engine/savegame.c` uses `AUTOMAP_SAVE_MAGIC` of `automap.h`.
+- Step 7: `engine/savegame.c` uses `CHAMPION_PORTRAIT_WIDTH` and `CHAMPION_PORTRAIT_HEIGHT` of `ui.h`. `engine/champion.c:229` calls `champion_set_portrait` of `ui/ui_champion.c`.
+- Step 10: `engine/inventory.c` includes `startend.h` for `wait_frames` in the mouth blink.
+- Step 11: `data/csbtext.c` uses `SKILL_BASE_COUNT` and `SKILL_FIGHTER` to `SKILL_WIZARD` of `engine/champion.h`.
+
 - [ ] **Step 12: Check the allowlist.** It has no `layer` line. Run `uv run pytest tests/test_standard.py -q`: PASS.
 - [ ] **Step 13: Commit.** One commit for each step that changes code: `refactor: <what the step did>`.
 

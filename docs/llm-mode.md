@@ -8,11 +8,11 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
 | Part | File | State |
 |---|---|---|
-| State, view, and map as JSON | `port/src/state_json.c` | Done, tested |
-| Socket server and turns | `port/src/control.c` | Done, tested in process |
+| State, view, and map as JSON | `port/src/platform/state_json.c` | Done, tested |
+| Socket server and turns | `port/src/platform/control.c` | Done, tested in process |
 | MCP server | `src/dmtools/mcp_server.py` | Done, tested against the socket |
 | Command-line client `dm-play` | `src/dmtools/play.py` | Done, tested against the socket |
-| `--mode turnbased --control PATH` | `port/src/main.c` | Done, tested headless |
+| `--mode turnbased --control PATH` | `port/src/platform/main.c` | Done, tested headless |
 
 ## Play with Claude Code
 
