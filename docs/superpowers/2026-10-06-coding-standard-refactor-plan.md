@@ -179,11 +179,11 @@ What refutes the hypothesis: the original door animation event (KAOS) tests anot
       assert not found, f"{check} violations (allowlist key, evidence):\n" + "\n".join(found)
 
 
-  def line_check(check, pattern):
+  def line_check(check, pattern, owners=()):
       ok = allowed()
       found = []
       for path in sources():
-          if (check, rel(path)) in ok:
+          if (check, rel(path)) in ok or path.name in owners:
               continue
           found += [f"{check} {rel(path)}  | {n}: {line.strip()}" for n, line in code_lines(path) if pattern.search(line)]
       report(check, found)
@@ -193,7 +193,7 @@ What refutes the hypothesis: the original door animation event (KAOS) tests anot
       """(return type, name) of each function that a header declares or defines inline."""
       text = strip(path.read_text(errors="replace"))
       return [(ret.replace("static", "").replace("inline", "").strip(), name) for ret, name in DECL.findall(text)
-              if not ret.lstrip().startswith(("typedef", "return"))]
+              if not ret.lstrip().startswith(("typedef", "return", "extern"))]
 
 
   def test_no_hex_literals():
@@ -209,7 +209,7 @@ What refutes the hypothesis: the original door animation event (KAOS) tests anot
 
 
   def test_raw_record_access_only_in_accessors():
-      line_check("record", RECORD)
+      line_check("record", RECORD, owners={"map.c", "map.h"})
 
 
   def test_each_constant_has_one_definition():
@@ -288,6 +288,10 @@ What refutes the hypothesis: the original door animation event (KAOS) tests anot
   ```
 
   Run `uv run pytest tests/test_standard.py -q`. Expected: most of the 9 tests FAIL. Each failure line starts with an allowlist key.
+
+  Fixes to the Step 2 code, made during the step (the code above includes them):
+  - `record`: rule 2 lets `map.c` and `map.h` index raw record bytes. The first version reported 19 accessor lines of `map.c`. `line_check` takes `owners`, the file names that a check skips.
+  - `declarations`: the first version read the function pointer variable `extern void (*g_frame_hook)(void)` in `startend.h` as a function named `void`. It skips `extern` lines now. No header declares a function with `extern`.
 
 - [ ] **Step 4: Fill the allowlist.** For each distinct key in the output, add one line `<key> <reason>`. Use these reasons:
   - `hex map.c`, `hex map.h`: `record layout accessors`.

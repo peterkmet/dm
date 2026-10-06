@@ -24,11 +24,11 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
 5. Keep original quirks only when they change what the player sees. Fix the original bugs that are clearly bugs (stale registers, overflows), and mark each fix with a short comment.
 6. Read game data at run time. Do not copy game tables into the source.
 7. Names follow one scheme.
-   - Functions: `<module>_<verb>_<object>` in `snake_case`. The prefix is the file name, for example `action_` in `action.c`.
+   - Functions: `<prefix><verb>_<object>` in `snake_case`. Each header states its prefixes in one comment line, for example `/* Prefixes: gfx_ */` in `graphics.h`. A prefix belongs to one header only, and no prefix starts with the prefix of another header.
    - Global variables: `g_` prefix. Module-private globals and functions are `static`.
    - Types: `PascalCase`. Constants and enum values: `UPPER_CASE`.
    - No event numbers or original addresses in names. Name the game task, for example `group_process_reaction_event`, not `group_process_events_29_to_41`.
-8. Game rules do not depend on the user interface or on SDL. Modules in `engine/` include only `engine/` and `data/` headers. Only `platform/` includes SDL.
+8. The source has four layers in subfolders of `port/src/`: `data/`, `engine/`, `ui/`, and `platform/`. A file includes only headers of its own layer and of the layers before it in this list. Game rules in `engine/` do not call the user interface: they set redraw flags. Only `platform/` includes SDL.
 9. Big-endian read and write helpers (`BE16`, `WR16`, `BE32`, `WR32`) live in one header. Modules do not define their own copies.
 10. Code that differs between Dungeon Master and Chaos Strikes Back tests `g_adventure == ADVENTURE_CSB`, or reads a table from the game data. No other way detects the adventure.
 
