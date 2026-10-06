@@ -2,7 +2,6 @@
 #define MESSAGE_H
 #include <stdint.h>
 #include "graphics.h"
-#include "text.h"
 
 #define MESSAGE_ROWS 4
 #define MESSAGE_LAST_ROW (MESSAGE_ROWS - 1)
@@ -30,6 +29,6 @@ void message_clear_expired_rows(uint32_t game_time);
 void message_print(int16_t color, const char *s, uint32_t game_time);
 void message_print_number(int16_t color, int32_t value, uint32_t game_time);
 void message_new_line(uint32_t game_time);
-void message_draw(Bitmap *bm, int x, int y);
+int message_next_word_line(const char *s, char *line, int *pos, int max_width);
 
 #endif

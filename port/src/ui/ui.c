@@ -154,12 +154,28 @@ void ui_set_palette(const uint16_t *top)
     }
 }
 
+/* Draws the 4 rows into the zone at (x, y) in their scrolled state: the zone is cleared
+   to color 0, then each cell is drawn with its color on color 0. */
+static void draw_messages(Bitmap *bm, int x, int y)
+{
+    for (int py = y; py < y + MESSAGE_ROWS * MESSAGE_ROW_HEIGHT; py++)
+        for (int px = x; px < x + MESSAGE_ROW_WIDTH; px++)
+            if (py >= 0 && py < bm->h && px >= 0 && px < bm->w) bm->px[py * bm->w + px] = 0;
+    for (int r = 0; r < MESSAGE_ROWS; r++)
+        for (int c = 0; c < MESSAGE_COLS; c++)
+            if (g_message.text[r][c]) {
+                char ch[2] = { g_message.text[r][c], 0 };
+                text_draw(bm, x + c * TEXT_CHAR_WIDTH, y + r * MESSAGE_ROW_HEIGHT + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP - 1,
+                          g_message.color[r][c], 0, ch);
+            }
+}
+
 /* Draws the message area at the bottom of the screen. */
 void ui_draw_message_area(void)
 {
     Bitmap screen = ui_screen();
     Box b;
-    if (ui_zone_box(ZONE_MESSAGE_AREA, &b)) message_draw(&screen, b.x, b.y);
+    if (ui_zone_box(ZONE_MESSAGE_AREA, &b)) draw_messages(&screen, b.x, b.y);
 }
 
 /* Draws the whole screen outside the viewport, as at the start of a game. */

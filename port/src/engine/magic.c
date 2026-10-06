@@ -5,6 +5,7 @@
 #include "dungeon.h"
 #include "game.h"
 #include "graphics.h"
+#include "ids.h"
 #include "inventory.h"
 #include "map.h"
 #include "message.h"

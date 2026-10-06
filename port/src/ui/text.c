@@ -75,32 +75,3 @@ void text_draw_box(Bitmap *bm, int x, int y, int w, int h, int centered, uint8_t
     text_draw(bm, x, y + th - 1, fg, bg, s);
 }
 
-/* Copies from s + *pos the words that fit in max_width pixels into line, moves *pos, and
-   returns the line width. A line ends at '\n' or '\0' (*pos stays on it) or after the last
-   space that fits (*pos skips the space). */
-int text_next_word_line(const char *s, char *line, int *pos, int max_width)
-{
-    int w = 0, space = -1, space_w = 0, space_n = 0, p = *pos, n = 0;
-    for (;; p++, n++) {
-        line[n] = 0;
-        if (s[p] == '\n' || s[p] == 0) {
-            *pos = p;
-            return w;
-        }
-        if (s[p] == ' ') {
-            space = p;
-            space_w = w;
-            space_n = n;
-        }
-        if (max_width <= w + TEXT_CHAR_WIDTH) break;
-        w += TEXT_CHAR_WIDTH;
-        line[n] = s[p];
-    }
-    if (space == -1) {
-        *pos = p;
-        return w;
-    }
-    *pos = space + 1;
-    line[space_n] = 0;
-    return space_w;
-}

@@ -152,8 +152,6 @@ layer engine/champion.c:command.h open: Task 6
 layer engine/champion.c:ui.h open: Task 6
 layer engine/inventory.c:startend.h open: Task 6
 layer engine/inventory.c:ui.h open: Task 6
-layer engine/message.c:text.h open: Task 6
-layer engine/message.h:text.h open: Task 6
 layer engine/savegame.c:advanced.h open: Task 6
 layer engine/savegame.c:automap.h open: Task 6
 layer engine/savegame.c:ui.h open: Task 6

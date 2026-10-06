@@ -105,7 +105,7 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
         if (lines[i] == 2) {
             char line[MESSAGE_LINE_SIZE];
             int max = width[i] - (width[i] >> WIDE_MESSAGE_SHIFT);
-            int line_width = text_next_word_line(message[i], line, &pos, max < box.w ? max : box.w);
+            int line_width = message_next_word_line(message[i], line, &pos, max < box.w ? max : box.w);
             text_draw(vp, (vp->w - line_width) >> 1, y, color, COLOR_LIGHT_BROWN, line);
             y += pad + MESSAGE_ROW_HEIGHT;
             if (!text_size(message[i] + pos, &width[i], &height)) continue;

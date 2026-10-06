@@ -522,6 +522,7 @@ Additions from the Task 4 review:
 Decisions made during the task:
 - Each step removes its own `layer` lines from the allowlist, so that the full suite is green after each step.
 - Step 2: `ui_object_name` and `ui_action_name` share the string loader with `ui_string`. All three lists move to `data/graphics.c` and become `gfx_string`, `gfx_object_name`, and `gfx_action_name`. `gfx_load_strings` loads them, and `ui_init` calls it.
+- Step 3: `message_print` uses the word wrap of `ui/text.c`. The word wrap moves to `engine/message.c` as `message_next_word_line`, and `ui/dialog.c` calls it. The four font metrics (`TEXT_CHAR_WIDTH`, `TEXT_CHAR_GAP`, `TEXT_LINE_HEIGHT`, `TEXT_BASELINE_GAP`) move from `ui/text.h` to `data/graphics.h`. `message_draw` becomes the static `draw_messages` in `ui/ui.c`. Files that got `ids.h` through `text.h` include it now.
 
 ---
 

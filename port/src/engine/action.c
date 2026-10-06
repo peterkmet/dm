@@ -4,6 +4,7 @@
 #include "dungeon.h"
 #include "game.h"
 #include "graphics.h"
+#include "ids.h"
 #include "group.h"
 #include "inventory.h"
 #include "magic.h"

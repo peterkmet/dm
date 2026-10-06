@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "message.h"
-#include "text.h"
 
 MessageArea g_message = { .cursor_row = MESSAGE_LAST_ROW, .expiry = { MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY } };
 
@@ -62,13 +61,43 @@ static void print_string(int16_t color, const char *s, uint32_t game_time)
     g_message.expiry[r] = game_time + MESSAGE_LIFETIME;
 }
 
+/* Copies from s + *pos the words that fit in max_width pixels into line, moves *pos, and
+   returns the line width. A line ends at '\n' or '\0' (*pos stays on it) or after the last
+   space that fits (*pos skips the space). */
+int message_next_word_line(const char *s, char *line, int *pos, int max_width)
+{
+    int w = 0, space = -1, space_w = 0, space_n = 0, p = *pos, n = 0;
+    for (;; p++, n++) {
+        line[n] = 0;
+        if (s[p] == '\n' || s[p] == 0) {
+            *pos = p;
+            return w;
+        }
+        if (s[p] == ' ') {
+            space = p;
+            space_w = w;
+            space_n = n;
+        }
+        if (max_width <= w + TEXT_CHAR_WIDTH) break;
+        w += TEXT_CHAR_WIDTH;
+        line[n] = s[p];
+    }
+    if (space == -1) {
+        *pos = p;
+        return w;
+    }
+    *pos = space + 1;
+    line[space_n] = 0;
+    return space_w;
+}
+
 /* Prints s with word wrap; '\n' starts a new row, a wrapped row continues indented. */
 void message_print(int16_t color, const char *s, uint32_t game_time)
 {
     char line[100];
     int pos = 0;
     while (s[pos]) {
-        int w = text_next_word_line(s, line, &pos, MESSAGE_ROW_WIDTH - g_message.cursor_x);
+        int w = message_next_word_line(s, line, &pos, MESSAGE_ROW_WIDTH - g_message.cursor_x);
         if (s[pos] == '\n') {
             new_row();
             print_string(color, line, game_time);
@@ -96,19 +125,3 @@ void message_print_number(int16_t color, int32_t value, uint32_t game_time)
 
 /* Starts a new row. */
 void message_new_line(uint32_t game_time) { message_print(0, "\n", game_time); }
-
-/* Draws the 4 rows into the zone at (x, y) in their scrolled state: the zone is cleared
-   to color 0, then each cell is drawn with its color on color 0. */
-void message_draw(Bitmap *bm, int x, int y)
-{
-    for (int py = y; py < y + MESSAGE_ROWS * MESSAGE_ROW_HEIGHT; py++)
-        for (int px = x; px < x + MESSAGE_ROW_WIDTH; px++)
-            if (py >= 0 && py < bm->h && px >= 0 && px < bm->w) bm->px[py * bm->w + px] = 0;
-    for (int r = 0; r < MESSAGE_ROWS; r++)
-        for (int c = 0; c < MESSAGE_COLS; c++)
-            if (g_message.text[r][c]) {
-                char ch[2] = { g_message.text[r][c], 0 };
-                text_draw(bm, x + c * TEXT_CHAR_WIDTH, y + r * MESSAGE_ROW_HEIGHT + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP - 1,
-                          g_message.color[r][c], 0, ch);
-            }
-}
