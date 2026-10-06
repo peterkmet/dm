@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "bytes.h"
-#include "champion.h"
 #include "csbtext.h"
 #include "ids.h"
 #include "tables.h"

@@ -15,7 +15,6 @@
 #include "sound.h"
 #include "tables.h"
 #include "timeline_process.h"
-#include "ui.h"
 #include <string.h>
 
 /* KAOS data addresses. */

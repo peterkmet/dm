@@ -28,6 +28,10 @@ enum {
     FIXED_POSSESSION_COUNT = 40,
 };
 
+/* Skill indices of the champion records: the 4 base skills, then the hidden skills. */
+enum { SKILL_FIGHTER, SKILL_NINJA, SKILL_PRIEST, SKILL_WIZARD, SKILL_BASE_COUNT, SKILL_SWING = 4, SKILL_THROW = 10,
+       SKILL_SHOOT, SKILL_HEAL = 13, SKILL_INFLUENCE, SKILL_DEFEND, SKILL_COUNT = 20 };
+
 typedef struct {
     uint8_t aspect_index;
     uint8_t attack_sound_ordinal; /* 0 = none, else index + 1 into creature sounds */
