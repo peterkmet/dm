@@ -84,7 +84,7 @@ void timeline_process_event1_door_animation(TimelineEvent *event)
             return;
         }
         if (is_material_group_on(x, y, &attributes)) {
-            int16_t height = door_checks_creature_height(get_square_first_thing(x, y)) ? creature_height(attributes) : 1;
+            int16_t height = door_is_vertical(get_square_first_thing(x, y)) ? creature_height(attributes) : 1;
             if (height <= state) {
                 group_door_damages_creatures(x, y);
                 *square = square_with_door_state(*square, state != DOOR_OPEN ? state - 1 : DOOR_OPEN);

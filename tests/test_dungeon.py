@@ -270,3 +270,11 @@ def test_bad_text_offset_and_small_buffer(lib):
     rec = lib.get_thing_data(2 << 10)
     rec[2], rec[3] = (words << 3 | 1) >> 8 & 0xFF, (words << 3 | 1) & 0xFF
     assert lib.decode_text(buf, 8, 2 << 10, 2) == 0
+
+
+def test_door_vertical_bit(lib):
+    need(lib, "Dungeon.DAT")
+    doors = load(lib, GAME / "Dungeon.DAT").things["Door"]
+    assert {d["Vertical"] for d in doors} == {0, 1}
+    for i, door in enumerate(doors):
+        assert (lib.get_thing_data(i)[3] & 0x20 != 0) == door["Vertical"]  # door_is_vertical

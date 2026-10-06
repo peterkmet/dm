@@ -126,10 +126,10 @@ static inline int16_t teleporter_is_audible(uint16_t thing) { return (REC(thing)
 
 /* Door record (thing type 0). */
 static inline int16_t door_type(uint16_t thing) { return REC(thing)[3] & 1; }
-static inline int16_t door_checks_creature_height(uint16_t thing) { return (REC(thing)[3] & 0x20) != 0; }
 static inline int16_t door_breaks_by_magic(uint16_t thing) { return (REC(thing)[3] & 0x80) != 0; }
 static inline int16_t door_breaks_by_force(uint16_t thing) { return REC(thing)[2] & 1; }
 static inline int16_t door_button_present(uint16_t thing) { return (REC(thing)[3] & 0x40) != 0; }
+/* A door that slides down; it hits a creature by its height. */
 static inline int16_t door_is_vertical(uint16_t thing) { return (REC(thing)[3] & 0x20) != 0; }
 static inline uint16_t door_ornament_ordinal(uint16_t thing) { return (REC(thing)[3] & 0x1e) >> 1; }
 static inline int16_t door_info_defense(uint16_t door_info) { return door_info & 0xff; }

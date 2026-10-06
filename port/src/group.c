@@ -803,7 +803,7 @@ static int16_t group_is_movement_possible(const CreatureInfo *info, int16_t x, i
     if (movement_blocked_by_party)
         return 0;
     if (type == SQUARE_DOOR) {
-        int16_t height = door_checks_creature_height(get_square_first_thing(x, y)) ? creature_height(info->attributes) : 1;
+        int16_t height = door_is_vertical(get_square_first_thing(x, y)) ? creature_height(info->attributes) : 1;
         int16_t state = door_state(square);
         if (height < state && state != DOOR_DESTROYED && !(info->attributes & CREATURE_NON_MATERIAL)) {
             movement_blocked_by_door = 1;
