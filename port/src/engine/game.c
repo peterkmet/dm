@@ -34,6 +34,7 @@ int32_t g_last_creature_attack_time, g_last_party_movement_time, g_watchdog_time
 int16_t g_disabled_movement_ticks, g_projectile_disabled_movement_ticks;
 int16_t g_last_projectile_disabled_movement_direction;
 uint16_t g_redraw;
+uint16_t g_endgame_delay = ENDGAME_NONE;
 int16_t g_game_mode = GAME_MODE_VANILLA;
 int16_t g_cheat_light, g_cheat_immortal, g_cheat_food;
 
@@ -68,6 +69,7 @@ void game_new(void)
     g_disabled_movement_ticks = g_projectile_disabled_movement_ticks = 0;
     g_last_projectile_disabled_movement_direction = 0;
     g_redraw = 0;
+    g_endgame_delay = ENDGAME_NONE;
     g_active_group_count = 0;
     uint32_t r = random16();
     g_game_id = r * random16();

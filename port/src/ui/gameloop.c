@@ -428,6 +428,7 @@ void gameloop_tick(void)
     advance_game_time();
     message_clear_expired_rows(g_game_time);
     refresh_interface();
+    endgame_check_sensor();
     run_requested_sequence();
 }
 

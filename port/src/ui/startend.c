@@ -407,6 +407,7 @@ static void fuse_update(void)
     sound_play_pending();
     g_game_time++;
     wait_frame();
+    endgame_check_sensor();
 }
 
 /* The fluxcage explosions on a square disappear. */
@@ -539,4 +540,12 @@ void endgame_sensor(uint16_t delay)
     g_saved_game_exists = 0;
     g_game_won = 1;
     endgame(1);
+}
+
+void endgame_check_sensor(void)
+{
+    uint16_t delay = g_endgame_delay;
+    if (delay == ENDGAME_NONE) return;
+    g_endgame_delay = ENDGAME_NONE;
+    endgame_sensor(delay);
 }

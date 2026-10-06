@@ -19,6 +19,7 @@ MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 DM, CSB = 0, 1
 SCREEN_W, SCREEN_H = 320, 200
 ANIM_END = -1
+ENDGAME_NONE = 0xFFFF
 THING_SENSOR, THING_ENDOFLIST, SENSOR_WALL_ENDGAME = 3, 0xFFFE, 18
 COLOR_BLACK, COLOR_DARK_GRAY, COLOR_CYAN = 0, 1, 4
 CSB_RESTART_BOXES = 0x104248  # outer and inner box: x, y, width, height
@@ -388,6 +389,19 @@ def endgame_sensor_square(lib):
     raise AssertionError("no endgame sensor")
 
 
+def test_sensor_18_sets_the_endgame_delay(lib, tmp_path, reset):
+    load_mini(lib, tmp_path)
+    m, x, y, sensor = endgame_sensor_square(lib)
+    rec = lib.get_thing_data(sensor)
+    delay = (rec[4] << 8 | rec[5]) >> 7 & 15
+    lib.set_current_map(m)
+    event = TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)
+    lib.timeline_process_event6_wall(ctypes.byref(event))
+    assert value(lib, "g_endgame_delay", u16).value == delay
+    assert value(lib, "g_game_won").value == 0
+    value(lib, "g_endgame_delay", u16).value = ENDGAME_NONE
+
+
 def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     load_mini(lib, tmp_path)
     m, x, y, sensor = endgame_sensor_square(lib)
@@ -400,6 +414,7 @@ def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     lib.set_current_map(m)
     event = TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)
     lib.timeline_process_event6_wall(ctypes.byref(event))
+    lib.endgame_check_sensor()
     assert value(lib, "g_game_won").value == 1 and value(lib, "g_return_to_entrance").value == 1
     assert screen(lib) == first_frame and palette(lib) == first_palette
 

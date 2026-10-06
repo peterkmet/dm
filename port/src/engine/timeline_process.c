@@ -1,5 +1,4 @@
 #include "timeline_process.h"
-#include "startend.h"
 #include "action.h"
 #include "champion.h"
 #include "dungeon.h"
@@ -269,7 +268,7 @@ void timeline_process_event6_wall(TimelineEvent *event)
             if (sensor_is_once_only(t))
                 sensor_set_type(t, SENSOR_DISABLED);
         } else if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_WALL_ENDGAME) {
-            endgame_sensor(sensor_delay(t));
+            g_endgame_delay = sensor_delay(t);
         }
     }
     sensor_process_rotation_effect();

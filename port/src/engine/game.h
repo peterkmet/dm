@@ -114,6 +114,9 @@ extern uint16_t g_active_group_count, g_max_active_group_count;
 /* Interface parts that the game rules changed: the user interface draws them again (g_redraw bits). */
 extern uint16_t g_redraw;
 enum { REDRAW_ACTION_AREA = 1, REDRAW_SPELL_AREA = 2, REDRAW_SPELL_TABS = 4, REDRAW_SPELL_SYMBOLS = 8 };
+/* The delay of an endgame sensor that the tick triggered: the user interface runs the endgame after the tick. */
+extern uint16_t g_endgame_delay;
+enum { ENDGAME_NONE = 0xffff };
 
 /* Game modes (not in the original game): the user interface differs, the game rules are the same. */
 enum { GAME_MODE_VANILLA, GAME_MODE_ADVANCED, GAME_MODE_TURNBASED };
