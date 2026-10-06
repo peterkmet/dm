@@ -6,9 +6,7 @@
 #include "ids.h"
 #include "random.h"
 #include "sound.h"
-#include "startend.h"
 #include "timeline_process.h"
-#include "ui.h"
 
 /* KAOS data addresses. */
 #define TORCH_CHARGE_TO_ICON_OFFSET 0x100ba0   /* g_torch_charge_to_icon_offset[16] */
@@ -16,7 +14,6 @@
 /* Object info index of the first record of each object type. */
 enum { INFO_SCROLL = 0, INFO_CONTAINER = 1, INFO_POTION = 2, INFO_WEAPON = 23, INFO_ARMOUR = 69, INFO_JUNK = 127 };
 
-enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 };  /* the mouth blinks when it eats an object up */
 #define WATERSKIN_WATER 800
 #define POTION_WATER_WATER 1600
 #define FOOD_WATER_MAXIMUM 2048
@@ -409,12 +406,12 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
 
 /* The inventory champion eats or drinks the leader hand object. Food is used up, a potion
    leaves an empty flask, and a waterskin loses one charge. */
-void process_click_on_mouth(void)
+int16_t process_click_on_mouth(void)
 {
     uint16_t thing = g_leader_hand_object;
     if (g_leader_empty_handed || g_candidate_champion_ordinal ||
         !(tables_object_info(get_object_info_index(thing))->allowed_slots & OBJECT_EDIBLE))
-        return;
+        return MOUTH_REFUSED;
     int16_t icon = object_get_icon_index(thing);
     uint16_t type = THING_TYPE(thing), weight = get_object_weight(thing);
     uint16_t champion_index = g_inventory_champion_ordinal - 1;
@@ -422,7 +419,7 @@ void process_click_on_mouth(void)
     int consumed = 0;
     if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL) {
         if (!junk_charges(thing))
-            return;
+            return MOUTH_REFUSED;
         c->water = min16(c->water + WATERSKIN_WATER, FOOD_WATER_MAXIMUM);
         junk_set_charges(thing, junk_charges(thing) - 1);
     } else if (type != THING_POTION) {
@@ -443,17 +440,9 @@ void process_click_on_mouth(void)
         /* The leader carries the hand object, also when another champion drinks. */
         g_champions[g_leader_index].load += get_object_weight(thing) - weight;
         g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
-    } else {
-        for (int16_t blink = MOUTH_BLINK_COUNT; blink > 0; blink--) {
-            draw_icon_to_viewport(ICON_MOUTH + !(blink & 1), ZONE_MOUTH);
-            ui_draw_viewport();
-            wait_frames(MOUTH_BLINK_FRAMES);
-        }
     }
-    sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, 0);
     c->attributes |= CHAMPION_ATTR_STATISTICS;
-    if (g_panel_content == PANEL_CONTENT_FOOD_WATER) c->attributes |= CHAMPION_ATTR_PANEL;
-    champion_draw_state(champion_index);
+    return consumed ? MOUTH_USED_UP : MOUTH_SWALLOWED;
 }
 
 /* No inventory and no chest are open at the start of a game. */

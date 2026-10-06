@@ -30,7 +30,9 @@ uint16_t champion_get_object_removed_from_leader_hand(void);
 uint16_t champion_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot);
 void champion_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot);
 void champion_click_on_slot_box(uint16_t slot_box);
-void process_click_on_mouth(void);
+/* Results of process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
+enum { MOUTH_REFUSED, MOUTH_SWALLOWED, MOUTH_USED_UP };
+int16_t process_click_on_mouth(void);
 void chest_open(uint16_t chest);
 void close_chest(void);
 void inventory_reset(void);

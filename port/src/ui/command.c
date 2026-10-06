@@ -40,6 +40,7 @@
 #define WAIT_FOR_INPUT_FRAMES 12
 #define FOUNTAIN_WATER 2048
 #define FILLED_WATERSKIN_CHARGES 3
+enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 };  /* the mouth blinks when it eats an object up */
 #define VI_ALTAR_REBIRTH_EFFECT 2     /* event 13 effect byte */
 #define MANA_MULTIPLIER_SHIFT 3       /* the cost multiplier of the first rune is in eighths */
 #define HAND_SLOT_BOX_COUNT (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
@@ -276,6 +277,24 @@ void inventory_toggle(int16_t champion_index)
     secondary_mouse = UI_INPUT_INVENTORY;
     secondary_keys = 0;
     command_discard_all_input();
+}
+
+/* The inventory champion eats or drinks the leader hand object. The mouth blinks when the object is
+   used up, then the champion swallows and its state is drawn. */
+void command_click_on_mouth(void)
+{
+    int16_t result = process_click_on_mouth();
+    if (result == MOUTH_REFUSED) return;
+    uint16_t champion_index = g_inventory_champion_ordinal - 1;
+    if (result == MOUTH_USED_UP)
+        for (int16_t blink = MOUTH_BLINK_COUNT; blink > 0; blink--) {
+            draw_icon_to_viewport(ICON_MOUTH + !(blink & 1), ZONE_MOUTH);
+            ui_draw_viewport();
+            wait_frames(MOUTH_BLINK_FRAMES);
+        }
+    sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
+    if (g_panel_content == PANEL_CONTENT_FOOD_WATER) g_champions[champion_index].attributes |= CHAMPION_ATTR_PANEL;
+    champion_draw_state(champion_index);
 }
 
 /* A champion dies: its open inventory closes, also during a press on the eye or the mouth; a dead
@@ -758,7 +777,7 @@ int command_process_queue(void)
     } else if (command == COMMAND_CLICK_ACTION_AREA) {
         if (!g_candidate_champion_ordinal) click_in_action_area(x, y);
     } else if (command == COMMAND_CLICK_MOUTH) {
-        process_click_on_mouth();
+        command_click_on_mouth();
     } else if (command == COMMAND_CLICK_EYE) {
         click_on_eye();
     } else if (command == COMMAND_CLICK_DUNGEON_VIEW) {

@@ -272,7 +272,7 @@ def test_eat_food_redraws_the_food_bar(game, party):
     game.ui_viewport.restype = ctypes.POINTER(Bitmap)
     viewport = game.ui_viewport().contents
     before = viewport.px[: viewport.w * viewport.h]
-    game.process_click_on_mouth()
+    game.command_click_on_mouth()
     assert viewport.px[: viewport.w * viewport.h] != before
     assert not party[0].attributes & 0x0900  # statistics and panel drawn
     game.inventory_draw_close(0)

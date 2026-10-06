@@ -148,5 +148,3 @@ prefix ui/video.h open: Task 7
 prefix ui/view.h open: Task 7
 layer data/csbtext.c:champion.h open: Task 6
 layer engine/champion.c:ui.h open: Task 6
-layer engine/inventory.c:startend.h open: Task 6
-layer engine/inventory.c:ui.h open: Task 6

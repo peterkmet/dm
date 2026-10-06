@@ -85,6 +85,7 @@ extern int16_t g_mouse_pointer_hidden;           /* the eye, or an imaginary wal
 void game_freeze(void);
 void game_unfreeze(void);
 void inventory_toggle(int16_t champion_index);
+void command_click_on_mouth(void);
 void command_release_dead_champion(uint16_t champion_index, int16_t leader_index);
 
 #endif
