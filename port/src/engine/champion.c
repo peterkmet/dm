@@ -1,4 +1,5 @@
 #include "champion.h"
+#include "action.h"
 #include "advanced.h"
 #include "adventure.h"
 #include "command.h"
@@ -686,7 +687,7 @@ void champion_kill(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     if (champion_index + 1 == g_acting_champion_ordinal)
-        menus_clear_acting_champion();
+        action_clear_acting_champion();
     c->current_health = 0;
     c->attributes |= CHAMPION_ATTR_STATUS_BOX;
     command_release_dead_champion(champion_index);
@@ -704,7 +705,6 @@ void champion_kill(uint16_t champion_index)
     c->maximum_damage_received = 0;
     if (c->poison_event_count)
         champion_unpoison(champion_index);
-    champion_draw_state(champion_index);
     uint16_t alive = 0;
     while (alive < g_party_champion_count && !g_champions[alive].current_health)
         alive++;
@@ -714,10 +714,12 @@ void champion_kill(uint16_t champion_index)
     }
     if (champion_index == g_leader_index)
         command_set_leader(alive);
-    if (champion_index == g_magic_caster_champion_index)
-        menus_set_magic_caster(alive);
-    else
-        menus_draw_spell_area_controls(g_magic_caster_champion_index);
+    if (champion_index == g_magic_caster_champion_index) {
+        g_magic_caster_champion_index = (int16_t)alive;
+        g_redraw |= REDRAW_SPELL_AREA;
+    } else {
+        g_redraw |= REDRAW_SPELL_TABS;
+    }
 }
 
 /* Each poison step deals attack / 64 (at least 1) and schedules the next step with attack - 1. */

@@ -9,7 +9,6 @@
 #include "sensor.h"
 #include "sound.h"
 #include "timeline_process.h"
-#include "ui.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -598,7 +597,6 @@ static void group_steal_from_champion(uint16_t group, uint16_t champion_index)
                 group_set_possessions(group, thing);
             else
                 link_thing_to_list(thing, group_possessions(group), -1, 0);
-            champion_draw_state(champion_index);
         }
         slot_index = (slot_index & 7) + 1;
         chance -= STEAL_CHANCE_STEP;
@@ -1181,7 +1179,6 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
         damage = 0;
         champion_decrement_stamina(champion_index, random_bit() + 2);
     }
-    champion_draw_state(champion_index);
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
         group_process_events_29_to_41(x, y, REACTION_PARTY_IS_ADJACENT, 0);
     return damage;

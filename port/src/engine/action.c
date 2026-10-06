@@ -69,6 +69,17 @@ enum {
 #define EVENT_B_LOW_BYTE 0xff
 
 uint16_t g_action_target_group_thing;
+int16_t g_acting_champion_ordinal;
+uint8_t g_action_list_indices[ACTION_LIST_COUNT] = { ACTION_NONE, ACTION_NONE, ACTION_NONE };
+int16_t g_action_damage;
+
+void action_clear_acting_champion(void)
+{
+    if (!g_acting_champion_ordinal) return;
+    g_champions[g_acting_champion_ordinal - 1].attributes |= CHAMPION_ATTR_ACTION_HAND;
+    g_acting_champion_ordinal = 0;
+    g_redraw |= REDRAW_ACTION_AREA;
+}
 
 /* The square in front of (x, y) in the direction. */
 static void step_forward(int16_t direction, int16_t *x, int16_t *y)
@@ -456,7 +467,6 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
         champion_decrement_stamina((int16_t)champion_index, stamina);
     if (experience)
         champion_add_skill_experience(champion_index, skill_index, experience);
-    champion_draw_state(champion_index);
     return performed;
 }
 
@@ -472,7 +482,7 @@ int16_t menus_did_click_trigger_action(int16_t action_list_index)
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     int16_t performed = menus_is_action_performed(champion_index, action);
     c->action_index = action;
-    menus_clear_acting_champion();
+    action_clear_acting_champion();
     return performed;
 }
 
@@ -535,7 +545,6 @@ int16_t champion_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t
                       kinetic_energy, attack, step_energy);
     g_projectile_disabled_movement_ticks = PROJECTILE_DISABLED_MOVEMENT_TICKS;
     g_last_projectile_disabled_movement_direction = g_party_direction;
-    champion_draw_state(champion_index);
     return 1;
 }
 

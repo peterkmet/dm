@@ -111,6 +111,10 @@ extern int16_t g_first_unused_event_index;
 extern ActiveGroup *g_active_groups;
 extern uint16_t g_active_group_count, g_max_active_group_count;
 
+/* Interface parts that the game rules changed: the user interface draws them again (g_redraw bits). */
+extern uint16_t g_redraw;
+enum { REDRAW_ACTION_AREA = 1, REDRAW_SPELL_AREA = 2, REDRAW_SPELL_TABS = 4, REDRAW_SPELL_SYMBOLS = 8 };
+
 void game_new(void);
 
 int16_t min16(int16_t a, int16_t b);

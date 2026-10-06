@@ -24,6 +24,22 @@ enum { WOUND_DEFENSE_USE_SHARP = 0x8000 };
 enum { ATTACK_RAW, ATTACK_FIRE, ATTACK_SELF, ATTACK_BLUNT, ATTACK_SHARP, ATTACK_MAGIC, ATTACK_PSYCHIC, ATTACK_LIGHTNING };
 enum { PANEL_RESURRECT = 0xa0, PANEL_REINCARNATE = 0xa1, PANEL_CANCEL = 0xa2 };
 enum { CHAMPION_ATTR_MALE = 0x0010 };
+/* Champion attribute redraw flags (Champion.attributes). */
+enum {
+    CHAMPION_ATTR_ACTION_DISABLED = 0x0008,
+    CHAMPION_ATTR_NAME_TITLE = 0x0080,
+    CHAMPION_ATTR_STATISTICS = 0x0100,
+    CHAMPION_ATTR_LOAD = 0x0200,
+    CHAMPION_ATTR_ICON = 0x0400,
+    CHAMPION_ATTR_PANEL = 0x0800,
+    CHAMPION_ATTR_STATUS_BOX = 0x1000,
+    CHAMPION_ATTR_WOUNDS = 0x2000,
+    CHAMPION_ATTR_VIEWPORT = 0x4000,
+    CHAMPION_ATTR_ACTION_HAND = 0x8000,
+    CHAMPION_ATTR_REDRAW_MASK = 0xff80,      /* all redraw flags */
+    CHAMPION_ATTR_KEEP_MASK = 0x007f,        /* flags that stay after a redraw */
+    CHAMPION_ATTR_INVENTORY_ALL = 0x5f80,    /* everything the inventory shows */
+};
 
 extern int16_t g_candidate_champion_ordinal;   /* 0: no candidate */
 extern int16_t g_champion_pending_damage[CHAMPION_MAX_COUNT];

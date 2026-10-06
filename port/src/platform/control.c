@@ -8,6 +8,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include "control.h"
+#include "action.h"
 #include "advanced.h"
 #include "champion.h"
 #include "command.h"

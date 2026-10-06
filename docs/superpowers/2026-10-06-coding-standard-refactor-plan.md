@@ -463,6 +463,16 @@ The calls to replace:
 - [ ] **Step 6: Run the full suite.** `uv run pytest -q`. Expected: all pass. A failure in a screen test (`test_ui.py`, `test_panels.py`, `test_view.py`) means a redraw moved in time: check Review focus item 2 before a fix.
 - [ ] **Step 7: Commit.** `git commit -am "refactor: the game rules set redraw flags instead of drawing"`
 
+Decisions made during the task:
+- `REDRAW_ACTION_AREA` replaces `g_refresh_action_area`. `menus_refresh_action_area` reads and clears the bit, so the action area is drawn at the same time in the tick as before (in `advance_game_time`, not after `champion_draw_all_states(0)`). `menus_reset` clears `g_redraw`.
+- The spell area needs three bits to keep the picture: `REDRAW_SPELL_AREA` (the caster died: the whole area for the new caster), `REDRAW_SPELL_TABS` (another champion died: only the caster tabs), and `REDRAW_SPELL_SYMBOLS` (a cast: only the runes). A full redraw after a cast would erase the highlight of the cast box, and a full redraw over the frozen or sleeping pattern would differ from the original. `menus_refresh_spell_area` in `ui/ui_menus.c` draws the bits. `refresh_interface` in `ui/gameloop.c` calls it after `champion_draw_all_states(0)`.
+- `menus_set_magic_caster` only sets `g_magic_caster_champion_index`. Its drawing part is now `draw_spell_area` in `ui/ui_menus.c`. No state part moves to `engine/magic.c`.
+- A dead party skips `refresh_interface`. `gameloop_tick` calls `champion_draw_all_states(0)` before `endgame(1)`, so that the dead status box shows during the death scream as before.
+- `magic.c` sets the flags on all champions with the static `set_attributes_of_all`.
+- `menus_clear_acting_champion` calls `action_clear_acting_champion` first and then draws the action hand. The action hand is drawn without the acting border. `refresh_interface` draws the hand slots without the border at the end of the same frame, as before.
+- `inventory.c` keeps its `champion_draw_state` call for Task 6 Step 10.
+- Known difference: a champion state that a timeline event changes in the same tick as the endgame sensor shows after the sensor delay. Task 6 Step 8 moves the sensor after the tick.
+
 ---
 
 ### Task 6: Remaining engine and data dependencies

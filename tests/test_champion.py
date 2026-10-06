@@ -22,6 +22,7 @@ CURRENT_MAP, THING_DATA, PENDING_DAMAGE, PENDING_WOUNDS, LEVEL_UP = 0x101CBC, 0x
 SKILL_LEVEL, ADD_EXPERIENCE, MAX_LOAD, MOVE_TICKS, DEXTERITY = 0x110B20, 0x110C2E, 0x111056, 0x1110C2, 0x11112E
 STRENGTH, WOUND_DEFENSE, PENDING, DAMAGE_ALL, TIME_EFFECTS = 0x1111B6, 0x1112EA, 0x111984, 0x111C3A, 0x11202C
 WEIGHT, ICON = 0x10A4AC, 0x1079DC
+ATTR_STATUS_BOX, REDRAW_SPELL_AREA = 0x1000, 2
 RTS = b"\x4e\x75"
 STUBS = {0x112880: RTS, 0x112D2C: RTS, 0x1098A6: RTS, 0x10999E: RTS,  # draw state, draw all, message print, new line
          0x111440: b"\x42\x6d\xc0\x7e" + RTS}  # champion_wake_up: clr.w g_party_is_sleeping
@@ -472,6 +473,21 @@ def test_damage_until_death(lib, party):
     assert {t & 0x3FFF for t in slots} <= {t & 0x3FFF for t in dropped}
     bones = [t for t in dropped if t >> 10 & 15 == 10 and lib.get_thing_data(t)[3] & 0x7F == 5]
     assert len(bones) == 1 and lib.get_thing_data(bones[0])[2] >> 6 == 0 and bones[0] >> 14 == ch.cell
+
+
+def test_death_sets_redraw_flags(lib, party):
+    lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
+    cs = champions(lib)
+    ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
+    cs[1].cell = (cs[0].cell + 1) & 3
+    var(lib, u16, "g_party_champion_count").value = 2
+    var(lib, c16, "g_leader_index").value = 1
+    var(lib, c16, "g_magic_caster_champion_index").value = 0
+    redraw = var(lib, u16, "g_redraw")
+    redraw.value = 0
+    lib.champion_kill(0)
+    assert cs[0].attributes & ATTR_STATUS_BOX  # the user interface draws the dead champion after the tick
+    assert var(lib, c16, "g_magic_caster_champion_index").value == 1 and redraw.value == REDRAW_SPELL_AREA
 
 
 SET_DUNGEON_VIEW_PALETTE, PALETTE_INDEX, PARTY = 0x10EDD6, 0x1001E6, 0x101ED4

@@ -33,6 +33,13 @@ static void add_party_event(uint8_t type, uint16_t ticks, uint16_t b)
     timeline_add_event(&event);
 }
 
+/* Sets redraw flags on all champions. */
+static void set_attributes_of_all(uint16_t attributes)
+{
+    for (uint16_t i = 0; i < g_party_champion_count; i++)
+        g_champions[i].attributes |= attributes;
+}
+
 /* Light comes now; event 70 takes it back step by step after the ticks. */
 void menus_create_event70_light(int16_t light_power, int16_t ticks)
 {
@@ -48,7 +55,6 @@ void champion_disable_action(uint16_t champion_index, uint16_t ticks)
     uint32_t time = g_game_time + ticks;
     if (c->enable_action_event_index < 0) {
         c->attributes |= CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_ACTION_DISABLED;
-        champion_draw_state(champion_index);
     } else {
         uint32_t old = g_timeline_events[c->enable_action_event_index].map_time & EVENT_TIME_MASK;
         if ((int32_t)time < (int32_t)old)
@@ -125,7 +131,7 @@ int16_t menus_is_party_spell_or_fire_shield_successful(uint16_t champion_index, 
         defense >>= 2;
     *shield += defense;
     add_party_event(spell_shield ? EVENT_SPELL_SHIELD_END : EVENT_FIRE_SHIELD_END, ticks, (uint16_t)defense);
-    champion_draw_all_states(CHAMPION_ATTR_STATUS_BOX);
+    set_attributes_of_all(CHAMPION_ATTR_STATUS_BOX);
     return success;
 }
 
@@ -151,10 +157,8 @@ static int16_t cast_potion(uint16_t champion_index, uint16_t potion_type, int16_
     potion_set_type(flask, potion_type);
     potion_set_power(flask, power * POTION_POWER_PER_LEVEL + (random16() & 15));
     c->load += get_object_weight(flask) - empty_weight;
-    if (champion_index + 1 == g_inventory_champion_ordinal) {
+    if (champion_index + 1 == g_inventory_champion_ordinal)
         c->attributes |= CHAMPION_ATTR_LOAD;
-        champion_draw_state(champion_index);
-    }
     return 1;
 }
 
@@ -165,7 +169,6 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
     if (c->direction != g_party_direction) {
         c->direction = (uint8_t)g_party_direction;
         c->attributes |= CHAMPION_ATTR_ICON;
-        champion_draw_state(champion_index);
     }
     if (explosion_type == EXPLOSION_OPEN_DOOR)
         skill_level *= 2;
@@ -191,7 +194,6 @@ static void cast_zokathra(uint16_t champion_index)
     int16_t slot = c->slots[SLOT_HAND_READY] == THING_NONE ? SLOT_HAND_READY : c->slots[SLOT_HAND_ACTION] == THING_NONE ? SLOT_HAND_ACTION : -1;
     if (slot >= 0) {
         champion_add_object_in_slot(champion_index, thing, (uint16_t)slot);
-        champion_draw_state(champion_index);
     } else {
         move_get_move_result(thing, -1, 0, g_party_map_x, g_party_map_y);
     }
@@ -218,7 +220,7 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
         if (!g_party.event71_count_invisibility++) {
             if (g_inventory_champion_ordinal)
                 g_champions[g_inventory_champion_ordinal - 1].attributes |= CHAMPION_ATTR_STATUS_BOX;
-            champion_draw_all_states(CHAMPION_ATTR_ICON);
+            set_attributes_of_all(CHAMPION_ATTR_ICON);
         }
         add_party_event(EVENT_INVISIBILITY_END, (uint16_t)(ticks * 8), 0);
         break;
@@ -227,7 +229,7 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
         if (g_party.shield_defense > SHIELD_STRONG)
             defense >>= 2;
         g_party.shield_defense += defense;
-        champion_draw_all_states(CHAMPION_ATTR_STATUS_BOX);
+        set_attributes_of_all(CHAMPION_ATTR_STATUS_BOX);
         add_party_event(EVENT_PARTY_SHIELD_END, (uint16_t)(ticks * ticks), (uint16_t)defense);
         break;
     }
@@ -351,7 +353,6 @@ int16_t menus_get_click_on_spell_cast_result(void)
     Champion *c = &g_champions[g_magic_caster_champion_index];
     c->symbols[0] = 0;
     c->symbol_step = 0;
-    menus_draw_available_symbols(0);
-    menus_draw_champion_symbols((uint16_t)g_magic_caster_champion_index);
+    g_redraw |= REDRAW_SPELL_SYMBOLS;
     return result;
 }

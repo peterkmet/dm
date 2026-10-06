@@ -238,6 +238,7 @@ static void refresh_interface(void)
 {
     Bitmap screen = ui_screen();
     champion_draw_all_states(0);
+    menus_refresh_spell_area();
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].current_health) continue;
         int inventory = i + 1 == g_inventory_champion_ordinal && !g_game_frozen;  /* the frozen screen covers it */
@@ -419,6 +420,7 @@ void gameloop_tick(void)
     sound_play_pending();
     champion_apply_and_draw_pending_damage_and_wounds();
     if (g_party_dead) {
+        champion_draw_all_states(0);  /* the dead champions show during the death scream */
         endgame(1);
         return;
     }

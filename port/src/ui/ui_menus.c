@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "action.h"
 #include "advanced.h"
 #include "champion.h"
 #include "dungeon.h"
@@ -27,13 +28,9 @@
 #define DAMAGE_LARGE_BELOW 41
 #define SYMBOLS_PER_STEP 6
 
-int16_t g_acting_champion_ordinal;
 int16_t g_action_area_contains_icons = 1;
-uint8_t g_action_list_indices[ACTION_LIST_COUNT] = { ACTION_NONE, ACTION_NONE, ACTION_NONE };
 uint8_t g_action_list_minimum_skill_levels[ACTION_LIST_COUNT];
 uint16_t g_action_count;
-int16_t g_action_damage;
-int16_t g_refresh_action_area;
 
 /* Draws the movement arrows. */
 void menus_draw_movement_arrows(void)
@@ -80,12 +77,9 @@ void menus_set_action_list(int16_t action_set_index)
 /* Closes the action menu and redraws the action hand of the champion. */
 void menus_clear_acting_champion(void)
 {
-    if (!g_acting_champion_ordinal) return;
-    int16_t i = g_acting_champion_ordinal - 1;
-    g_champions[i].attributes |= CHAMPION_ATTR_ACTION_HAND;
-    champion_draw_state((uint16_t)i);
-    g_acting_champion_ordinal = 0;
-    g_refresh_action_area = 1;
+    int16_t ordinal = g_acting_champion_ordinal;
+    action_clear_acting_champion();
+    if (ordinal) champion_draw_state((uint16_t)(ordinal - 1));
 }
 
 /* Opens the action menu of a champion: the actions of the object in the action hand. */
@@ -157,7 +151,7 @@ void menus_draw_action_area(void)
             ui_print_zone_padded(&screen, (int16_t)(ZONE_ACTION_NAME_FIRST + k), COLOR_CYAN, COLOR_BLACK, action == ACTION_NONE ? "" : ui_action_name(action), ACTION_NAME_LENGTH);
         }
     }
-    g_refresh_action_area = 0;
+    g_redraw &= ~REDRAW_ACTION_AREA;
 }
 
 /* Shows the result of an action: "CAN'T REACH", "NEED AMMO", or the damage in a splat (smaller
@@ -206,7 +200,7 @@ void menus_refresh_action_area(void)
         }
         if (!g_candidate_champion_ordinal) return;
     }
-    if (!g_refresh_action_area) return;
+    if (!(g_redraw & REDRAW_ACTION_AREA)) return;
     if (g_acting_champion_ordinal) {
         g_action_area_contains_icons = 0;
         g_champions[g_acting_champion_ordinal - 1].attributes |= CHAMPION_ATTR_ACTION_HAND;
@@ -258,20 +252,43 @@ void menus_draw_champion_symbols(uint16_t champion_index)
     }
 }
 
-/* Selects the spell caster and draws the spell area; -1 clears it. */
-void menus_set_magic_caster(int16_t champion_index)
+/* Draws the spell area of the magic caster; without a caster it is black. */
+static void draw_spell_area(void)
 {
     Bitmap screen = ui_screen();
-    if (champion_index == g_magic_caster_champion_index || (champion_index != -1 && !g_champions[champion_index].current_health)) return;
-    g_magic_caster_champion_index = champion_index;
-    if (champion_index == -1) {
+    int16_t caster = g_magic_caster_champion_index;
+    if (caster == -1) {
         ui_fill_zone(&screen, ZONE_SPELL_AREA, COLOR_BLACK);
         return;
     }
     ui_blit_graphic(&screen, GFX_SPELL_AREA, ZONE_SPELL_AREA, COLOR_NONE);
-    menus_draw_spell_area_controls((uint16_t)champion_index);
-    menus_draw_available_symbols(g_champions[champion_index].symbol_step);
-    menus_draw_champion_symbols((uint16_t)champion_index);
+    menus_draw_spell_area_controls((uint16_t)caster);
+    menus_draw_available_symbols(g_champions[caster].symbol_step);
+    menus_draw_champion_symbols((uint16_t)caster);
+}
+
+/* Selects the spell caster and draws the spell area; -1 clears it. */
+void menus_set_magic_caster(int16_t champion_index)
+{
+    if (champion_index == g_magic_caster_champion_index || (champion_index != -1 && !g_champions[champion_index].current_health)) return;
+    g_magic_caster_champion_index = champion_index;
+    draw_spell_area();
+}
+
+/* Draws the parts of the spell area that the game rules changed: all of it, the caster tabs, or the runes. */
+void menus_refresh_spell_area(void)
+{
+    int16_t caster = g_magic_caster_champion_index;
+    if (g_redraw & REDRAW_SPELL_AREA) {
+        draw_spell_area();
+    } else if (caster != -1) {
+        if (g_redraw & REDRAW_SPELL_TABS) menus_draw_spell_area_controls((uint16_t)caster);
+        if (g_redraw & REDRAW_SPELL_SYMBOLS) {
+            menus_draw_available_symbols(g_champions[caster].symbol_step);
+            menus_draw_champion_symbols((uint16_t)caster);
+        }
+    }
+    g_redraw &= ~(REDRAW_SPELL_AREA | REDRAW_SPELL_TABS | REDRAW_SPELL_SYMBOLS);
 }
 
 /* No acting champion, no action list, and no action damage at the start of a game. */
@@ -283,5 +300,5 @@ void menus_reset(void)
     memset(g_action_list_minimum_skill_levels, 0, sizeof g_action_list_minimum_skill_levels);
     g_action_count = 0;
     g_action_damage = 0;
-    g_refresh_action_area = 0;
+    g_redraw = 0;
 }

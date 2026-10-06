@@ -26,23 +26,6 @@ enum {
 
 #define UI_BODY_SLOT_COUNT 6 /* hands, head, torso, legs, feet */
 
-/* Champion attribute redraw flags (Champion.attributes). */
-enum {
-    CHAMPION_ATTR_ACTION_DISABLED = 0x0008,
-    CHAMPION_ATTR_NAME_TITLE = 0x0080,
-    CHAMPION_ATTR_STATISTICS = 0x0100,
-    CHAMPION_ATTR_LOAD = 0x0200,
-    CHAMPION_ATTR_ICON = 0x0400,
-    CHAMPION_ATTR_PANEL = 0x0800,
-    CHAMPION_ATTR_STATUS_BOX = 0x1000,
-    CHAMPION_ATTR_WOUNDS = 0x2000,
-    CHAMPION_ATTR_VIEWPORT = 0x4000,
-    CHAMPION_ATTR_ACTION_HAND = 0x8000,
-    CHAMPION_ATTR_REDRAW_MASK = 0xff80,      /* all redraw flags */
-    CHAMPION_ATTR_KEEP_MASK = 0x007f,        /* flags that stay after a redraw */
-    CHAMPION_ATTR_INVENTORY_ALL = 0x5f80,    /* everything the inventory shows */
-};
-
 #define UI_SLOT_BOX_INVENTORY_FIRST 8        /* slot box of champion slot 0 in the inventory */
 
 /* Mouse input entry: 6 words: command, x1, x2, y1, y2, buttons. A negative x1 marks a zone entry;
@@ -74,13 +57,9 @@ enum {
 enum { UI_BUTTON_RIGHT = 1, UI_BUTTON_LEFT = 2 };
 
 /* MENU.C state. */
-extern int16_t g_acting_champion_ordinal;      /* 0: none */
 extern int16_t g_action_area_contains_icons;
-extern uint8_t g_action_list_indices[3];       /* 0xff: none */
 extern uint8_t g_action_list_minimum_skill_levels[3];
 extern uint16_t g_action_count;
-extern int16_t g_action_damage;                /* 0: none, -1 can't reach, -2 need ammo */
-extern int16_t g_refresh_action_area;
 #define CHAMPION_PORTRAIT_WIDTH 32   /* g_portrait_width */
 #define CHAMPION_PORTRAIT_HEIGHT 29  /* g_portrait_height */
 /* The portrait bitmap of each champion (the portrait bitmap pointer at champion +0x114). */
@@ -174,6 +153,7 @@ void menus_draw_spell_area_controls(uint16_t champion_index);
 void menus_draw_available_symbols(uint16_t symbol_step);
 void menus_draw_champion_symbols(uint16_t champion_index);
 void menus_set_magic_caster(int16_t champion_index);
+void menus_refresh_spell_area(void);
 void menus_reset(void);
 
 #endif

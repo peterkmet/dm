@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "action.h"
 #include "advanced.h"
 #include "adventure.h"
 #include "champion.h"

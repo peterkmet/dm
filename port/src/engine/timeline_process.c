@@ -14,7 +14,6 @@
 #include "sensor.h"
 #include "sound.h"
 #include "tables.h"
-#include "ui.h"
 
 /* KAOS table: the light amount of each light power. */
 #define KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT 0x100cb4
@@ -385,7 +384,6 @@ void timeline_process_event11_enable_champion_action(uint16_t champion_index)
             }
         }
         c->attributes |= CHAMPION_ATTR_ACTION_HAND;
-        champion_draw_state(champion_index);
     }
     c->action_index = ACTION_NONE;
 }
@@ -397,12 +395,10 @@ void timeline_process_event12_hide_damage_received(uint16_t champion_index)
     c->hide_damage_received_event_index = -1;
     if (!c->current_health)
         return;
-    if (champion_index + 1 == g_inventory_champion_ordinal) {
-        draw_status_box_portrait((int16_t)champion_index);
-    } else {
+    if (champion_index + 1 == g_inventory_champion_ordinal)
+        c->attributes |= CHAMPION_ATTR_STATUS_BOX;
+    else
         c->attributes |= CHAMPION_ATTR_NAME_TITLE;
-        champion_draw_state(champion_index);
-    }
 }
 
 /* Vi altar rebirth in three steps (event cell byte: the step): 2 the rebirth explosion, 1 the bones of the champion

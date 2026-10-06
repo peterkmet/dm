@@ -20,6 +20,14 @@ enum {
 /* Values of g_action_damage other than a damage. */
 enum { ACTION_DAMAGE_CANT_REACH = -1, ACTION_DAMAGE_NO_AMMUNITION = -2 };
 
+/* MENU.C state of the action menu. */
+extern int16_t g_acting_champion_ordinal;      /* 0: none */
+extern uint8_t g_action_list_indices[3];       /* 0xff: none */
+extern int16_t g_action_damage;                /* 0: none, -1 can't reach, -2 need ammo */
+
+/* Closes the action menu: the action hand and the action area are drawn again. */
+void action_clear_acting_champion(void);
+
 /* The group on the square in front of the acting champion, or THING_ENDOFLIST. */
 extern uint16_t g_action_target_group_thing;
 

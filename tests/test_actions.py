@@ -26,7 +26,8 @@ WEAPON_DAGGER, WEAPON_SWORD, JUNK_BONES = 8, 10, 5
 SLOT_HAND_READY, SLOT_HAND_ACTION, SLOT_QUIVER_LINE1_1 = 0, 1, 12
 ACTION_BLOCK, ACTION_SWING, ACTION_SHOOT, ACTION_THROW = 1, 13, 32, 42
 SKILL_SWING = 4
-ATTR_ACTION_DISABLED = 0x0008
+ATTR_ACTION_DISABLED, ATTR_ACTION_HAND = 0x0008, 0x8000
+REDRAW_ACTION_AREA = 1
 EVENT_ENABLE_ACTION, EVENT_HIDE_DAMAGE, EVENT_REBIRTH, EVENT_POISON = 11, 12, 13, 75
 FAR = 60  # a square outside every map: a wall without things
 
@@ -252,6 +253,19 @@ def test_event_11_ends_action_defense(party):
     assert c.attributes & ATTR_ACTION_DISABLED  # still disabled until the last tick runs
     tick(lib)
     assert not c.attributes & ATTR_ACTION_DISABLED and c.action_defense == 0 and c.action_index == 255
+
+
+def test_triggered_action_closes_menu_and_asks_for_action_area(party):
+    lib, c, _ = party
+    lib.menus_did_click_trigger_action.restype, lib.menus_did_click_trigger_action.argtypes = c16, [c16]
+    redraw = ctypes.c_uint16.in_dll(lib, "g_redraw")
+    redraw.value = 0
+    var(lib, c16, "g_acting_champion_ordinal").value = 1
+    (u8 * 3).in_dll(lib, "g_action_list_indices")[0] = ACTION_BLOCK
+    lib.menus_did_click_trigger_action(0)
+    assert var(lib, c16, "g_acting_champion_ordinal").value == 0
+    assert redraw.value & REDRAW_ACTION_AREA
+    assert c.attributes & ATTR_ACTION_HAND
 
 
 def test_poison_event_deals_damage_each_step(party):

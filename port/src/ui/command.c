@@ -324,7 +324,7 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
         champion_draw_all_states(CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_NAME_TITLE | CHAMPION_ATTR_STATISTICS |
                                  CHAMPION_ATTR_ICON | CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_WOUNDS);
     }
-    g_refresh_action_area = 1;
+    g_redraw |= REDRAW_ACTION_AREA;
 }
 
 /* Left click in a champion status box: the name sets the leader, a hand is a slot box. */

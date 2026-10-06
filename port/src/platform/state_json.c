@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "state_json.h"
+#include "action.h"
 #include "adventure.h"
 #include "champion.h"
 #include "command.h"

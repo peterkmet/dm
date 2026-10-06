@@ -221,7 +221,7 @@ void ui_draw_interface(void)
     int16_t caster = g_magic_caster_champion_index;
     g_magic_caster_champion_index = -1;
     menus_set_magic_caster(caster);
-    g_refresh_action_area = 1;
+    g_redraw |= REDRAW_ACTION_AREA;
     menus_refresh_action_area();
     ui_draw_message_area();
 }
