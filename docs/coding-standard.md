@@ -15,7 +15,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
 2. Do not index raw record bytes outside one accessor module. Put field access in small functions or macros with names, for example `sensor_type(t)`, `sensor_disable(t)`, `door_state(t)`, `group_count(t)`. One module (`map.c` and `map.h`) owns the record layout.
 3. Write C, not decompiler output.
    - No names like `uVar1`, `iVar3`, `local_10`, `arg_8`.
-   - Use `int16_t` or `uint16_t` only where the 16-bit wrap or sign changes the game result, as in the original 16-bit `int`. Mark each such variable with a short comment. Everywhere else, use `int`.
+   - Game values keep the 16-bit types of the original (`int16_t`, `uint16_t`). One value has one type on its whole path: field, parameter, local variable, and return value. Then no cast is needed to pass it on. Use `int` only for values that are not game values, for example sizes, file offsets, and loop counters over C arrays.
    - A cast is allowed only where it changes the result (16-bit wrap, sign, truncation). Add a short comment when the reason is not obvious.
    - Predicates (`is_*`, `has_*`, `can_*`) return `bool` from `<stdbool.h>`. Flags in game records keep their stored type.
    - Use `for`, `while`, `switch`, and early `return`. Do not use `goto`, except for one cleanup label in a function that frees memory.

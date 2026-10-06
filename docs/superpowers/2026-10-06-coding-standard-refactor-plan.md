@@ -12,7 +12,7 @@ Approved by the user on 2026-10-06 (design in chat, no PRD). Branch: `feature/20
 
 **Spec:** `docs/coding-standard.md`. Decisions from the chat on 2026-10-06:
 
-- 16-bit types: `int16_t`/`uint16_t` only where the 16-bit wrap or sign changes the game result. Everywhere else `int`.
+- 16-bit types: game values keep `int16_t`/`uint16_t`. One value has one type on its whole path, so a cast is needed only where it changes the result. `int` only for values that are not game values.
 - Predicates return `bool`.
 - Layers: move the files to folders and remove all engine calls into the user interface in this plan.
 - Function prefixes: each header states its prefixes. A prefix belongs to one header only. Rename only collisions and names with event numbers.
@@ -33,7 +33,7 @@ Approved by the user on 2026-10-06 (design in chat, no PRD). Branch: `feature/20
 
 The tests do not cover these risks well. The reviewer checks them on each task:
 
-1. A narrowed type (`int16_t` → `int`) on a value that overflows 16 bits in the original: damage, experience, random arithmetic, game time parts. Expected: the same value as before.
+1. A changed signedness (`int16_t` ↔ `uint16_t`) on a value: a comparison, a division, or a right shift of a negative or large value gives another result. Expected: the same value as before.
 2. A redraw that moves from an immediate call to the end of the tick: something that the player sees in the same frame changes order, for example a status box after a death.
 3. Inventory close on a champion death that moves from immediate to deferred: rule code later in the same tick reads `g_inventory_champion_ordinal`.
 4. A test file that compiles its own library from `port/src/*.c` and misses the new subfolders or include paths.
@@ -524,11 +524,11 @@ Do the steps for one file at a time. Run the full suite after each file.
 - [ ] **Step 1: Remove the allowlist lines of the file.** Keys `hex`, `decimal`, `decompiler`, `bool`, and `long`. Keep `hex data/csbimage.c`, `hex data/csbtext.c`, `hex engine/map.c`, and `hex engine/map.h`. Run `uv run pytest tests/test_standard.py -q`. Expected: FAIL for this file, or PASS if the file had no lines.
 - [ ] **Step 2: Name the numbers.** For each `hex` and `decimal` failure, and each plain number 3 to 9 that is a game value, add a named constant. Find the meaning in `docs/` (`rules-*.md`, `tables.md`, `game-state.md`, `docs/symbols/`) and in `decomp/KAOS.c`. Put the constant in the header of the module that owns the value (rule 1). Examples from `engine/champion.c`: `/= 21` and `/= 25` (stamina gain divisors), `115 - wisdom`, `idle > 80` and `> 250`.
 - [ ] **Step 3: Predicates return `bool`.** Change each `is_`, `has_`, and `can_` function of the file to return `bool`. Include `<stdbool.h>` in the header. In each test that binds the function, set `restype = ctypes.c_bool`.
-- [ ] **Step 4: Narrow the 16-bit types.** For each parameter, local variable, and return value of type `int16_t` or `uint16_t`:
-  - Keep the type if the value is a field of a saved or `ctypes` struct, or if an addition, subtraction, multiplication, or shift can exceed the 16-bit range before the value is stored or compared. Add a one-line comment, for example `/* 16-bit wrap as in the original */`.
-  - Else change the type to `int`.
-  - Delete each cast that no longer changes the result.
-  - In the tests, change `argtypes`/`restype` of a changed function from `c16`/`u16` to `ctypes.c_int`.
+- [ ] **Step 4: One type for each value.** For each cast `(int16_t)` or `(uint16_t)` in the file:
+  - If the cast only passes a value between a variable, a parameter, or a return value of the other 16-bit type, change the declaration so both have the same type. Use the type of the struct field the value comes from. Then delete the cast.
+  - If the cast changes the result (16-bit wrap, sign, truncation), keep it. Add a one-line comment when the reason is not obvious, for example `/* 16-bit wrap as in the original */`.
+  - Values that are not game values (sizes, file offsets, loop counters over C arrays) become `int`.
+  - In the tests, change `argtypes`/`restype` of a changed function to the new type.
   Check Review focus item 1 for each change.
 - [ ] **Step 5: Split the long functions.** For each `long` failure, split the function where a part has its own game meaning, for example one `case` group of a `switch`. The new function is `static`, with a one-line comment. If no split has its own meaning, add the reason to the comment of the function and the line `long <path:function> <reason>` to the allowlist.
 - [ ] **Step 6: Run the standard test and the full suite.** `uv run pytest -q`. Expected: all pass.
