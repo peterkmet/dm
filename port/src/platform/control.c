@@ -117,23 +117,17 @@ static int game_over(void) { return g_party_dead || g_game_won; }
 
 /* Input as the player gives it: clicks and keys go through the command queue. */
 
-static void run_queue(void)
-{
-    while (command_process_queue())
-        ;
-}
-
 static void click(int16_t x, int16_t y)
 {
     command_process_click(x, y, CLICK_LEFT_PRESS);
     command_process_click(x, y, CLICK_LEFT_RELEASE);
-    run_queue();
+    gameloop_run_commands();
 }
 
 static void press_key(uint16_t key)
 {
     command_process_key(key);
-    run_queue();
+    gameloop_run_commands();
 }
 
 static void viewport_origin(int16_t *x, int16_t *y)
@@ -373,13 +367,13 @@ static void press_eye(int16_t x, int16_t y)
     const char *label;
     uint16_t value;
     command_process_click(x, y, CLICK_LEFT_PRESS);
-    run_queue();
+    gameloop_run_commands();
     look_text.shown = 1;
     look_text.count = panel_object_text(g_leader_hand_object, look_text.name, look_text.lines);
     if (g_advanced_features && panel_object_meter(g_leader_hand_object, &label, &value))
         snprintf(look_text.lines[look_text.count++], PANEL_LINE_SIZE, "%s %u", label, value);
     command_process_click(x, y, CLICK_LEFT_RELEASE);
-    run_queue();
+    gameloop_run_commands();
 }
 
 /* The eye on the leader hand object; with a slot, the hand takes the slot object first and puts it back after. */
@@ -1140,7 +1134,7 @@ void control_poll(void)
         witness();
         if (!turn_finished()) {
             turn.frames++;
-            run_queue();
+            gameloop_run_commands();
             g_stop_waiting_for_input = 1; /* every frame of a turn is a tick */
             return;
         }

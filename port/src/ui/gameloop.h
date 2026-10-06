@@ -31,6 +31,8 @@ void gameloop_draw_view(void);
 /* Runs the waiting commands of one 50 Hz frame. Returns 1 when the wait for input is over and a
    game tick is due (gameloop_tick). */
 int gameloop_frame(void);
+/* Runs all waiting commands and draws what they changed, without the wait for a tick. */
+void gameloop_run_commands(void);
 /* One game tick: map change, timeline, view, sounds, damage, time, champion effects, interface. */
 void gameloop_tick(void);
 /* The pointer image at screen position (x, y): px gets w x h colors (0 transparent) of the sprite

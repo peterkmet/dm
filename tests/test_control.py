@@ -13,11 +13,13 @@ from pathlib import Path
 import pytest
 
 from conftest import PORT_INCLUDES, game_sources
-from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Game
+from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 DIRECTIONS = ["north", "east", "south", "west"]
+ZONE_SPELL_CAST_BOX, COLOR_CYAN = 252, 4
+RUNE_CELL_PIXELS = 4 * 5 * 6  # the four rune cells of the cast box, 5 x 6 pixels each
 
 pytestmark = [
     pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
@@ -372,6 +374,27 @@ def test_a_rune_without_enough_mana_fails(game):
         response = client.call(cmd="act", action="add_rune", args={"symbol": 0})
         assert response["ok"] is False and "mana" in response["error"]
         assert state_json(game, 0)["spell"]["chosen"] == []
+    finally:
+        champion.current_mana = mana
+        client.sock.close()
+
+
+def test_a_cast_leaves_the_cleared_runes_inverted_as_with_the_mouse(game):
+    """The cast clears the runes inside the highlighted cast box; the tick inverts the box back over them."""
+    lib = game.lib
+    client = Client(game)
+    champion = game.champions[0]
+    mana = champion.current_mana
+    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    try:
+        champion.current_mana = 100
+        client.act("set_caster", champion=0)
+        client.act("add_rune", symbol=0)
+        assert client.call(cmd="act", action="cast", args={})["ok"]
+        box = Box()
+        assert lib.ui_zone_box(ZONE_SPELL_CAST_BOX, ctypes.byref(box))
+        cast_box = [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
+        assert cast_box.count(COLOR_CYAN) == RUNE_CELL_PIXELS
     finally:
         champion.current_mana = mana
         client.sock.close()

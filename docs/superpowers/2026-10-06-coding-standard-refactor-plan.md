@@ -472,6 +472,7 @@ Decisions made during the task:
 - `menus_clear_acting_champion` calls `action_clear_acting_champion` first and then draws the action hand. The action hand is drawn without the acting border. `refresh_interface` draws the hand slots without the border at the end of the same frame, as before.
 - `inventory.c` keeps its `champion_draw_state` call for Task 6 Step 10.
 - Known difference: a champion state that a timeline event changes in the same tick as the endgame sensor shows after the sensor delay. Task 6 Step 8 moves the sensor after the tick.
+- Fix after the review: the control socket ran the command queue without `refresh_interface`, so the runes of a cast showed only after `command_highlight_disable` of the tick, black instead of inverted. `gameloop_run_commands` in `ui/gameloop.c` runs the queue and then `refresh_interface`, as `gameloop_frame` does. `platform/control.c` calls it. `test_a_cast_leaves_the_cleared_runes_inverted_as_with_the_mouse` in `tests/test_control.py` checks the cast box. A frame hash comparison against 30ab027 (23 socket actions: moves, runes, cast, action, inventory, sleep) gives the same frames.
 
 ---
 

@@ -383,6 +383,14 @@ int gameloop_frame(void)
     return tick;
 }
 
+/* Runs all waiting commands and draws what they changed, as gameloop_frame does (control socket). */
+void gameloop_run_commands(void)
+{
+    int ran = 0;
+    while (command_process_queue()) ran = 1;
+    if (ran) refresh_interface();
+}
+
 /* The game time advances one tick: torches burn, freeze life and movement delays count down, and
    the champions get their time effects. */
 static void advance_game_time(void)
