@@ -45,6 +45,7 @@
 /* Weapon classes that use the swing, throw, and shoot skills. */
 enum { CLASS_SWING_WEAPON = 0, CLASS_DAGGER_AND_AXES = 2, CLASS_FIRST_AMMUNITION = 16, CLASS_AMMUNITION_END = 112 };
 
+uint8_t g_champion_portraits[CHAMPION_MAX_COUNT][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 int16_t g_candidate_champion_ordinal;
 int16_t g_champion_pending_damage[CHAMPION_MAX_COUNT];
 uint16_t g_champion_pending_wounds[CHAMPION_MAX_COUNT];
@@ -219,6 +220,23 @@ static void add_candidate_possessions(uint16_t champion_index)
             continue;
         champion_add_object_in_slot(champion_index, t, candidate_slot(&g_champions[champion_index], t, &backpack));
     }
+}
+
+/* Copies the portrait from the portrait sheet, clipped to the sheet; the pixels outside the sheet stay 0. */
+void champion_set_portrait(int16_t champion_index, int16_t portrait_index)
+{
+    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
+    uint8_t *px = g_champion_portraits[champion_index];
+    int16_t x, y;
+    memset(px, 0, CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT);
+    recruit_portrait_origin(portrait_index, &x, &y);
+    if (!portraits) return;
+    for (int row = 0; row < CHAMPION_PORTRAIT_HEIGHT; row++)
+        for (int column = 0; column < CHAMPION_PORTRAIT_WIDTH; column++) {
+            int sx = x + column, sy = y + row;
+            if (sx >= 0 && sx < portraits->w && sy >= 0 && sy < portraits->h)
+                px[row * CHAMPION_PORTRAIT_WIDTH + column] = portraits->px[sy * portraits->w + sx];
+        }
 }
 
 /* The party stands in front of a mirror. The text on the party square holds the champion data. */

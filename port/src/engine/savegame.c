@@ -15,7 +15,6 @@
 #include "map.h"
 #include "random.h"
 #include "savefile.h"
-#include "ui.h"
 
 #define MIN_ACTIVE_GROUP_COUNT 110    /* DM load_game raises the saved maximum to at least this; CSB keeps it */
 #define TIMELINE_ENTRY_BYTES 2        /* one event index per timeline entry */

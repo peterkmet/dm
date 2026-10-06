@@ -15,7 +15,6 @@
 #include "message.h"
 #include "magic.h"
 #include "map.h"
-#include "recruit.h"
 #include "tables.h"
 #include "text.h"
 #include "ui.h"
@@ -67,7 +66,6 @@ const char *const g_rune_names[UI_RUNE_COUNT] = {
     "VEN", "EW", "KATH", "IR", "BRO", "GOR", "KU", "ROS", "DAIN", "NETA", "RA", "SAR",
 };
 
-uint8_t g_champion_portraits[4][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 int16_t g_panel_content;
 static int16_t scroll_redraw;     /* CSB: the panel scroll shows a creature name or the magic map, so it draws again each tick */
 static int16_t scroll_redraw_eye; /* the scroll is the leader hand object while the eye is pressed */
@@ -189,17 +187,6 @@ static void draw_icon(uint16_t champion_index)
 Bitmap champion_portrait(int16_t champion_index)
 {
     return (Bitmap){ CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champion_portraits[champion_index] };
-}
-
-void champion_set_portrait(int16_t champion_index, int16_t portrait_index)
-{
-    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
-    Bitmap portrait = champion_portrait(champion_index);
-    Box b = { 0, 0, CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT };
-    int16_t x, y;
-    memset(portrait.px, 0, CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT);
-    recruit_portrait_origin(portrait_index, &x, &y);
-    if (portraits) draw_blit(portraits, x, y, &portrait, &b, COLOR_NONE, 0);
 }
 
 /* Draws the portrait in the status box while the inventory is open. */
