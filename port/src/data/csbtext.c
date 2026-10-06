@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include "bytes.h"
 #include "champion.h"
 #include "csbtext.h"
 #include "ids.h"
@@ -96,7 +97,7 @@ static const char *appb_pointed_string(const FtlImage *appb, uint32_t addr)
 {
     if (addr < appb->base || addr + 4 > appb->base + appb->size) return NULL;
     const uint8_t *p = appb->data + (addr - appb->base);
-    return appb_string(appb, (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3]);
+    return appb_string(appb, BE32(p));
 }
 
 /* Joins the parts of each text into one block of NUL-terminated strings. */

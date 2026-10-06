@@ -57,7 +57,7 @@ void champion_disable_action(uint16_t champion_index, uint16_t ticks)
             time += (old - g_game_time) >> 1;
         timeline_delete_event((uint16_t)c->enable_action_event_index);
     }
-    TimelineEvent event = {.map_time = time | (uint32_t)g_party_map_index << 24, .type = EVENT_ENABLE_CHAMPION_ACTION,
+    TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, time), .type = EVENT_ENABLE_CHAMPION_ACTION,
                            .priority = (uint8_t)champion_index};
     c->enable_action_event_index = timeline_add_event(&event);
 }

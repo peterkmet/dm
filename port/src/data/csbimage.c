@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include "bytes.h"
 #include "csbimage.h"
 #include "csbtext.h"
 #include "tables.h"
@@ -147,11 +148,6 @@ const CsbCopy csb_copies[] = {
 };
 const int csb_copy_count = sizeof csb_copies / sizeof csb_copies[0];
 
-static void put32(uint8_t *p, uint32_t v)
-{
-    for (int k = 0; k < 4; k++) p[k] = (uint8_t)(v >> (24 - 8 * k));
-}
-
 /* Copies the tables, converts the action sets, moves the dialog pointers to the KAOS tables, and builds the texts. */
 int csb_image_build(const FtlImage *appb, FtlImage *out)
 {
@@ -171,8 +167,8 @@ int csb_image_build(const FtlImage *appb, FtlImage *out)
     /* the dialog pointers move with their tables */
     for (int i = 0; i < DIALOG_TABLE_COUNT; i++) {
         const uint8_t *p = src + APPB_DIALOG_MOUSE_INPUTS + 4 * i;
-        uint32_t table = (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3];
-        put32(dst + KAOS_DIALOG_MOUSE_INPUTS + 4 * i, table - APPB_DIALOG_TABLES + KAOS_DIALOG_TABLES);
+        uint32_t table = BE32(p);
+        WR32(dst + KAOS_DIALOG_MOUSE_INPUTS + 4 * i, table - APPB_DIALOG_TABLES + KAOS_DIALOG_TABLES);
     }
     *out = (FtlImage){ mem, size, KAOS_BASE, CSB_SPELLS, 0 };
     return csb_text_build(appb, out);
