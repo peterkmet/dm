@@ -413,6 +413,18 @@ static void release_dead_champions(int16_t leader)
     g_dead_champions = 0;
 }
 
+/* A party that died in one tick: the spell area as the death before the last one drew it, while the
+   last champion, now the caster, still lived with its runes (before holds the champions before the damage). */
+static void draw_spell_area_before_last_death(const Champion *before)
+{
+    int16_t caster = g_magic_caster_champion_index;
+    if (caster == -1) return;
+    Champion dead = g_champions[caster];
+    g_champions[caster] = before[caster];
+    menus_refresh_spell_area();
+    g_champions[caster] = dead;
+}
+
 /* game_loop: one tick of the game. A dead party ends in the endgame. */
 void gameloop_tick(void)
 {
@@ -437,10 +449,13 @@ void gameloop_tick(void)
     command_highlight_disable();
     sound_play_pending();
     int16_t leader = g_leader_index;
+    Champion before[CHAMPION_MAX_COUNT];
+    memcpy(before, g_champions, sizeof before);
     champion_apply_and_draw_pending_damage_and_wounds();
     release_dead_champions(leader);
     if (g_party_dead) {
         champion_draw_all_states(0);  /* the dead champions show during the death scream */
+        draw_spell_area_before_last_death(before);
         endgame(1);
         return;
     }
