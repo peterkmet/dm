@@ -285,7 +285,8 @@ def map_size(game):
 
 def test_view_stops_at_a_closed_door(game):
     lib, m = game.lib, game.value("g_party_map_index")
-    lib.automap_is_seen.argtypes = [ctypes.c_int16] * 3
+    lib.explored_is_seen.argtypes = [ctypes.c_int16] * 3
+    lib.explored_is_seen.restype = ctypes.c_bool
     width, height = map_size(game)
     for x in range(width):
         for y in range(height):
@@ -300,7 +301,7 @@ def test_view_stops_at_a_closed_door(game):
                         view, game_map = state_json(game, 1), state_json(game, 2)
                     assert max(s["depth"] for s in view["squares"]) == 1
                     assert next(s for s in view["squares"] if s["depth"] == 1 and s["side"] == "center")["door"] == "closed"
-                    if not lib.automap_is_seen(m, bx, by):
+                    if not lib.explored_is_seen(m, bx, by):
                         assert game_map["rows"][by][bx] == " "
                     return
     pytest.skip("no closed door with floor in front on this map")

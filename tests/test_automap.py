@@ -38,15 +38,16 @@ def game():
     lib.dungeon_square.restype = ctypes.c_uint8
     for name in ("dungeon_map_width", "dungeon_map_height"):
         getattr(lib, name).restype = c16
-    lib.automap_save.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_size_t)]
-    lib.automap_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
+    lib.explored_save.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_size_t)]
+    lib.explored_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
+    lib.explored_is_seen.restype = ctypes.c_bool
     lib.automap_draw.argtypes = [ctypes.POINTER(Bitmap), Box, c16]
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
     assert lib.tables_init() == 0
     lib.game_new()
     lib.move_party_enter_dungeon()
-    lib.automap_reset()
+    lib.explored_reset()
     return lib
 
 
@@ -77,25 +78,25 @@ def mark_here(lib):
 
 
 def seen_squares(lib, m):
-    return {(x, y) for x in range(lib.dungeon_map_width(m)) for y in range(lib.dungeon_map_height(m)) if lib.automap_is_seen(m, x, y)}
+    return {(x, y) for x in range(lib.dungeon_map_width(m)) for y in range(lib.dungeon_map_height(m)) if lib.explored_is_seen(m, x, y)}
 
 
 def test_marks_start_and_squares_ahead(game):
     m, x, y, d = party(game)
-    assert not game.automap_is_seen(m, x, y)
+    assert not game.explored_is_seen(m, x, y)
     mark_here(game)
-    assert game.automap_is_seen(m, x, y)
-    assert game.automap_is_seen(m, *ahead(x, y, d, 1))
+    assert game.explored_is_seen(m, x, y)
+    assert game.explored_is_seen(m, *ahead(x, y, d, 1))
     for side in (-1, 1):
         if on_map(game, m, *ahead(x, y, d, 0, side)):
-            assert game.automap_is_seen(m, *ahead(x, y, d, 0, side))
+            assert game.explored_is_seen(m, *ahead(x, y, d, 0, side))
 
 
 def test_walls_stop_visibility(game):
     m, x, y, _ = party(game)
     stopped = 0
     for d in range(4):
-        game.automap_reset()
+        game.explored_reset()
         game.automap_mark_seen(m, x, y, d)
         expected = set()
         for depth in range(4):
@@ -112,12 +113,12 @@ def test_walls_stop_visibility(game):
 
 def test_side_squares_behind_walls_stay_unseen(game):
     game.automap_mark_seen(1, 11, 10, WEST)
-    assert not game.automap_is_seen(1, 10, 9)
+    assert not game.explored_is_seen(1, 10, 9)
 
 
 def save(lib):
     buf, size = ctypes.POINTER(ctypes.c_uint8)(), ctypes.c_size_t()
-    assert lib.automap_save(ctypes.byref(buf), ctypes.byref(size)) == 0
+    assert lib.explored_save(ctypes.byref(buf), ctypes.byref(size)) == 0
     data = ctypes.string_at(buf, size.value)
     ctypes.CDLL(None).free(buf)
     return data
@@ -128,11 +129,11 @@ def test_save_load_round_trip(game):
     mark_here(game)
     before, data = seen_squares(game, m), save(game)
     assert data[:5] == b"AMAP\x01"
-    game.automap_reset()
+    game.explored_reset()
     assert not seen_squares(game, m)
     for bad in (data[:-1], b"XMAP" + data[4:], data[:4] + b"\x02" + data[5:], data[:-1] + b"\x02"):
-        assert game.automap_load(bad, len(bad)) == -1
-    assert game.automap_load(data, len(data)) == 0
+        assert game.explored_load(bad, len(bad)) == -1
+    assert game.explored_load(data, len(data)) == 0
     assert seen_squares(game, m) == before
 
 

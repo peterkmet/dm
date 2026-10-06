@@ -7,6 +7,7 @@
 #include "champion.h"
 #include "command.h"
 #include "dungeon.h"
+#include "explored.h"
 #include "game.h"
 #include "group.h"
 #include "ids.h"
@@ -729,7 +730,7 @@ int state_json_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX])
 /* Explored squares: the automap and the squares of the current view, which the automap marks at the next tick. */
 static int is_seen(int16_t x, int16_t y)
 {
-    if (automap_is_seen(g_party_map_index, x, y)) return 1;
+    if (explored_is_seen(g_party_map_index, x, y)) return 1;
     for (int16_t depth = 0; depth < visible_depths(); depth++)
         for (int16_t side = -1; side <= 1; side++) {
             int16_t vx, vy;

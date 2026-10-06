@@ -15,6 +15,7 @@
 #include "sensor.h"
 #include "startend.h"
 #include "dungeon.h"
+#include "explored.h"
 #include "ftl.h"
 #include "game.h"
 #include "graphics.h"
@@ -299,7 +300,7 @@ int gameloop_new_game(const char *dir)
     g_saved_game_exists = 0;
     g_leader_empty_handed = 1;
     start_game();
-    automap_reset();
+    explored_reset();
     move_party_enter_dungeon();
     show_game();
     mark_seen_squares();

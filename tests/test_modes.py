@@ -106,7 +106,8 @@ def screenshot(game, name):
 
 def seen(game):
     lib, m = game.lib, game.value("g_party_map_index")
-    return {(x, y) for x in range(lib.dungeon_map_width(m)) for y in range(lib.dungeon_map_height(m)) if lib.automap_is_seen(m, x, y)}
+    lib.explored_is_seen.restype = ctypes.c_bool
+    return {(x, y) for x in range(lib.dungeon_map_width(m)) for y in range(lib.dungeon_map_height(m)) if lib.explored_is_seen(m, x, y)}
 
 
 def thing_count(game, thing_type):
@@ -335,7 +336,7 @@ def test_save_and_load_keep_the_automap(game, tmp_path):
     vanilla, advanced = (vanilla_dir / SAVE).read_bytes(), (advanced_dir / SAVE).read_bytes()
     assert len(advanced) > len(vanilla) and advanced[: len(vanilla)] == vanilla
 
-    lib.automap_reset()
+    lib.explored_reset()
     assert seen(game) == set()
     assert lib.savegame_load(str(advanced_dir).encode()) == 1
     assert seen(game) == explored

@@ -1,6 +1,5 @@
 #ifndef AUTOMAP_H
 #define AUTOMAP_H
-#include <stddef.h>
 #include <stdint.h>
 #include "draw.h"
 
@@ -11,23 +10,14 @@
 #define AUTOMAP_RULER_WIDTH 12 /* the left ruler with the row numbers: two digits and a gap */
 #define AUTOMAP_RULER_HEIGHT 7 /* the top ruler with the column numbers: one text row and a gap */
 
-/* Forgets every seen square and sizes the storage from the loaded dungeon. */
-void automap_reset(void);
 /* The rows of the view that the party sees from (x, y) looking in direction dir: the party row and the
    rows ahead up to the first center square that blocks sight (a wall, a closed fake wall, a closed door). */
 int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* Marks the squares the dungeon view shows from (x, y) looking in direction dir on map. */
 void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir);
-int automap_is_seen(int16_t map, int16_t x, int16_t y);
 /* A side square of the view of a party at (x, y) facing dir is seen when the square ahead at its depth or the side
    square one row nearer is open; squares of the center lane and of the party row are always seen. */
 int automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side);
-
-#define AUTOMAP_SAVE_MAGIC "AMAP" /* the first 4 bytes of the save block */
-
-/* Save block: a malloc'd buffer the caller frees. Both return 0 on success, -1 on failure. */
-int automap_save(uint8_t **buf, size_t *len);
-int automap_load(const uint8_t *buf, size_t len);
 
 /* Draws the seen squares of map into area of target, centered on the party when it is on map, moved by
    the scroll. The map has a white frame; the top ruler numbers each second column, the left ruler each row. */

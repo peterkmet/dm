@@ -4,9 +4,9 @@
 #include "savegame.h"
 #include "bytes.h"
 #include "adventure.h"
-#include "automap.h"
 #include "champion.h"
 #include "dungeon.h"
+#include "explored.h"
 #include "ftl.h"
 #include "game.h"
 #include "graphics.h"
@@ -260,7 +260,7 @@ static uint32_t append_automap(uint8_t **data, uint32_t size)
     uint8_t *block = NULL, *grown;
     size_t length = 0;
     if (g_game_mode == GAME_MODE_VANILLA) return size;
-    if (automap_save(&block, &length)) return 0;
+    if (explored_save(&block, &length)) return 0;
     grown = realloc(*data, size + length + EXTENSION_LENGTH_BYTES);
     if (!grown) {
         free(block);
@@ -280,7 +280,7 @@ static const uint8_t *find_automap(const uint8_t *data, size_t *size, size_t *le
     *length = BE32(data + *size - EXTENSION_LENGTH_BYTES);
     if (*length > *size - SAVE_HEADER_BYTES - EXTENSION_LENGTH_BYTES) return NULL;
     const uint8_t *block = data + *size - EXTENSION_LENGTH_BYTES - *length;
-    if (*length < strlen(AUTOMAP_SAVE_MAGIC) || memcmp(block, AUTOMAP_SAVE_MAGIC, strlen(AUTOMAP_SAVE_MAGIC))) return NULL;
+    if (*length < strlen(EXPLORED_SAVE_MAGIC) || memcmp(block, EXPLORED_SAVE_MAGIC, strlen(EXPLORED_SAVE_MAGIC))) return NULL;
     *size -= *length + EXTENSION_LENGTH_BYTES;
     return block;
 }
@@ -504,7 +504,7 @@ int16_t savegame_load_from(const char *dir, const char *name, const char *backup
         if (!ok && snapshot) restore_snapshot(snapshot, snapshot_size);
     }
     save_free(&s);
-    if (ok && (!automap || automap_load(automap, automap_length))) automap_reset();
+    if (ok && (!automap || explored_load(automap, automap_length))) explored_reset();
     free(snapshot);
     free(data);
     if (!ok) return SAVEGAME_DAMAGED;

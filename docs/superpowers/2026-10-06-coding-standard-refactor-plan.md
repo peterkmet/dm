@@ -524,6 +524,7 @@ Decisions made during the task:
 - Step 2: `ui_object_name` and `ui_action_name` share the string loader with `ui_string`. All three lists move to `data/graphics.c` and become `gfx_string`, `gfx_object_name`, and `gfx_action_name`. `gfx_load_strings` loads them, and `ui_init` calls it.
 - Step 3: `message_print` uses the word wrap of `ui/text.c`. The word wrap moves to `engine/message.c` as `message_next_word_line`, and `ui/dialog.c` calls it. The four font metrics (`TEXT_CHAR_WIDTH`, `TEXT_CHAR_GAP`, `TEXT_LINE_HEIGHT`, `TEXT_BASELINE_GAP`) move from `ui/text.h` to `data/graphics.h`. `message_draw` becomes the static `draw_messages` in `ui/ui.c`. Files that got `ids.h` through `text.h` include it now.
 - Step 4: no file of `engine/` calls `sound_stop_all`. `tests/test_music.py` calls `music_mix` after `sound_mix` in its `mix` helper, and `music_stop` after `sound_stop_all`, as `platform.c`, `anim.c`, and `logo.c` do now. The assertions do not change.
+- Step 6: `explored_mark(map, x, y)` marks one square. The view rules that decide which squares the party sees (`automap_mark_seen`, `automap_visible_depths`, `automap_side_is_visible`) stay in `ui/automap.c`, because they use `VIEW_DEPTH_COUNT` of `ui/view.h`. `automap_mark_seen` calls `explored_mark`. `AUTOMAP_SAVE_MAGIC` is `EXPLORED_SAVE_MAGIC` now. `explored_is_seen` returns `bool` (rule 3 of the standard, new header without an allowlist entry), and the tests bind it with `restype = ctypes.c_bool`. `ui/automap.c` and `engine/explored.c` each keep a static `is_on_map`.
 
 ---
 

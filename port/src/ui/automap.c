@@ -1,9 +1,8 @@
 #include "automap.h"
 #include "advanced.h"
-#include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
 #include "dungeon.h"
+#include "explored.h"
 #include "game.h"
 #include "group.h"
 #include "map.h"
@@ -15,51 +14,11 @@
 enum { DOOR_PASSAGE_NORTH_SOUTH = 8 };
 
 enum { LABEL_WIDTH = 11, LABEL_BASELINE = 4 }; /* two digits; the font cell starts 4 rows above the baseline */
-enum { SAVE_VERSION = 1, SAVE_HEADER_SIZE = 6 };  /* magic, version, map count */
-static const char SAVE_MAGIC[] = AUTOMAP_SAVE_MAGIC;
-enum { SAVE_MAGIC_SIZE = sizeof SAVE_MAGIC - 1 };  /* without the NUL */
-
-/* One byte per square of every map, the maps one after another. */
-static uint8_t *seen;
-static size_t seen_size;
 static int16_t scroll_x, scroll_y; /* squares between the party and the center of the drawn map */
-
-static size_t map_square_count(int16_t map)
-{
-    return (size_t)dungeon_map_width(map) * (size_t)dungeon_map_height(map);
-}
-
-static size_t map_first_square(int16_t map)
-{
-    size_t offset = 0;
-    for (int16_t m = 0; m < map; m++) offset += map_square_count(m);
-    return offset;
-}
-
-void automap_reset(void)
-{
-    free(seen);
-    seen_size = map_first_square(dungeon_map_count());
-    seen = calloc(seen_size ? seen_size : 1, 1);
-}
 
 static int is_on_map(int16_t map, int16_t x, int16_t y)
 {
     return map >= 0 && map < dungeon_map_count() && x >= 0 && x < dungeon_map_width(map) && y >= 0 && y < dungeon_map_height(map);
-}
-
-/* The byte of square (x, y), or NULL outside the map. */
-static uint8_t *seen_square(int16_t map, int16_t x, int16_t y)
-{
-    if (!seen) automap_reset();
-    if (!seen || !is_on_map(map, x, y)) return NULL;
-    return seen + map_first_square(map) + (size_t)x * dungeon_map_height(map) + y;
-}
-
-int automap_is_seen(int16_t map, int16_t x, int16_t y)
-{
-    uint8_t *square = seen_square(map, x, y);
-    return square && *square;
 }
 
 /* A square the view cannot look through: a wall, a fake wall that looks like a wall, a closed door. */
@@ -116,48 +75,8 @@ void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir)
             if (!automap_side_is_visible(map, x, y, dir, depth, side)) continue;
             int16_t square_x = x, square_y = y;
             update_map_coordinates_after_relative_movement(dir, depth, side, &square_x, &square_y);
-            uint8_t *square = seen_square(map, square_x, square_y);
-            if (square) *square = 1;
+            explored_mark(map, square_x, square_y);
         }
-}
-
-/* Block: "AMAP", version, map count, then per map its width, height and one byte per square. */
-int automap_save(uint8_t **buf, size_t *len)
-{
-    if (!seen) automap_reset();
-    int16_t map_count = dungeon_map_count();
-    size_t size = SAVE_HEADER_SIZE + 2 * (size_t)map_count + seen_size;
-    uint8_t *out = malloc(size), *p = out;
-    if (!out) return -1;
-    memcpy(p, SAVE_MAGIC, SAVE_MAGIC_SIZE);
-    p += SAVE_MAGIC_SIZE;
-    *p++ = SAVE_VERSION;
-    *p++ = (uint8_t)map_count;
-    for (int16_t map = 0; map < map_count; map++) {
-        *p++ = (uint8_t)dungeon_map_width(map);
-        *p++ = (uint8_t)dungeon_map_height(map);
-    }
-    memcpy(p, seen, seen_size);
-    *buf = out;
-    *len = size;
-    return 0;
-}
-
-int automap_load(const uint8_t *buf, size_t len)
-{
-    int16_t map_count = dungeon_map_count();
-    size_t expected = SAVE_HEADER_SIZE + 2 * (size_t)map_count + map_first_square(map_count);
-    if (!buf || len != expected || memcmp(buf, SAVE_MAGIC, SAVE_MAGIC_SIZE) || buf[4] != SAVE_VERSION || buf[5] != map_count)
-        return -1;
-    const uint8_t *p = buf + SAVE_HEADER_SIZE;
-    for (int16_t map = 0; map < map_count; map++, p += 2)
-        if (p[0] != dungeon_map_width(map) || p[1] != dungeon_map_height(map)) return -1;
-    for (size_t i = 0; i < len - (size_t)(p - buf); i++)
-        if (p[i] > 1) return -1;
-    automap_reset();
-    if (!seen) return -1;
-    memcpy(seen, p, seen_size);
-    return 0;
 }
 
 /* Fills the part of the box (x, y, w, h) that lies inside area. */
@@ -254,7 +173,7 @@ void automap_draw(Bitmap *target, Box area, int16_t map)
     int16_t origin_y = maps.y + (maps.h - AUTOMAP_CELL_SIZE) / 2 - center_y * AUTOMAP_CELL_SIZE;
     for (int16_t x = 0; x < w; x++)
         for (int16_t y = 0; y < h; y++)
-            if (automap_is_seen(map, x, y))
+            if (explored_is_seen(map, x, y))
                 draw_square(target, maps, dungeon_square(map, x, y), party_here && view_floor_pressure_pad(x, y),
                             origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
     /* The frame lies in the grid gap around the outer squares. */
