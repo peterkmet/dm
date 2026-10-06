@@ -70,7 +70,7 @@ What refutes the hypothesis: the original door animation event (KAOS) tests anot
 - [ ] **Step 2: Decide.**
   - If the mask is bit 5 of the door record (byte 3, `0x20`): the hypothesis holds. Go to Step 3.
   - Else: stop. Report the mask and the function addresses to the user. Do not change code.
-- [ ] **Step 3: Write the test.** Add to `tests/test_dungeon.py` a test that reads a door thing of `Dungeon.DAT` with the vertical bit set and asserts `door_is_vertical` returns nonzero. Use the fixtures and the binding style that `tests/test_dungeon.py` already uses for `get_thing_data`.
+- [x] **Step 3: Write the test.** Add to `tests/test_dungeon.py` a test that reads each door thing of `Dungeon.DAT` through `get_thing_data` and asserts that byte 3 & `0x20` equals the `Vertical` field of the `dmcsb` parser. `door_is_vertical` is `static inline`, so `ctypes` cannot call it; the test checks the bit that it reads.
 - [ ] **Step 4: Run it.** `uv run pytest tests/test_dungeon.py -q`. Expected: PASS (the accessor exists).
 - [ ] **Step 5: Remove the duplicate.** Delete `door_checks_creature_height` from `map.h`. In `group.c:806` and `timeline_process.c:87`, call `door_is_vertical`. Add a one-line comment on `door_is_vertical`: `/* A door that slides down; it hits a creature by its height. */`
 - [ ] **Step 6: Run the full suite.** `uv run pytest -q`. Expected: all pass.
