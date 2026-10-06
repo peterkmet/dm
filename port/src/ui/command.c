@@ -209,7 +209,7 @@ static void draw_viewport_message(int16_t text)
 {
     Bitmap *vp = ui_viewport();
     memset(vp->px, COLOR_BLACK, (size_t)vp->w * vp->h);
-    ui_print_zone(vp, ZONE_VIEWPORT_MESSAGE, COLOR_CYAN, COLOR_BLACK, ui_string(text));
+    ui_print_zone(vp, ZONE_VIEWPORT_MESSAGE, COLOR_CYAN, COLOR_BLACK, gfx_string(text));
     ui_draw_viewport();
 }
 

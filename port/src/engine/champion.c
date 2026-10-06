@@ -119,9 +119,9 @@ static void print_champion_message(uint16_t champion_index, int16_t text)
 {
     int16_t color = kaos_u8(CHAMPION_COLORS + champion_index);
     message_new_line(g_game_time);
-    message_print(color, ui_string(text), g_game_time);
+    message_print(color, gfx_string(text), g_game_time);
     message_print(color, g_champions[champion_index].name, g_game_time);
-    message_print(color, ui_string(text + 1), g_game_time);
+    message_print(color, gfx_string(text + 1), g_game_time);
 }
 
 static void square_in_front(int16_t *x, int16_t *y)

@@ -31,47 +31,14 @@ static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
 #define ICON_SHEET_COUNT 7
 #define ICONS_PER_ROW 16
 #define LEADER_HAND_NAME_LENGTH 14
-#define NAME_END_BIT 0x80         /* CSB object names: set in the last character */
 
 /* INPUT_X1 values that make INPUT_X2 a zone: on the screen, relative to the viewport origin,
    relative to the centered viewport. */
 enum { INPUT_ZONE_SCREEN = -1, INPUT_ZONE_VIEWPORT = -2, INPUT_ZONE_CENTERED_VIEWPORT = -3 };
 
-typedef struct {
-    char *data;
-    const char **s;
-    int16_t count;
-} StringList;
-
-static StringList strings, action_names, object_names;
 static uint8_t viewport_px[224 * 136];
 static Bitmap viewport;
 static int16_t slot_box_icon[SLOT_BOX_COUNT];
-
-/* Splits a graphic of NUL-terminated strings into a list. CSB takes the strings and action names from
-   the engine, and ends each object name at a byte with bit 7 set. */
-static int load_strings(int graphic, StringList *list)
-{
-    uint16_t size;
-    int csb = g_adventure == ADVENTURE_CSB, bit7_ends = csb && graphic == GFX_OBJECT_NAMES;
-    const uint8_t *p = csb ? csb_text_item(graphic, &size) : NULL;
-    if (!p) p = gfx_item(graphic, &size);
-    if (!p) return -1;
-    free(list->data);
-    free(list->s);
-    list->data = malloc(2 * (size_t)size + 1);
-    list->s = malloc(((size_t)size + 1) * sizeof *list->s);
-    if (!list->data || !list->s) return -1;
-    size_t n = 0;
-    for (uint16_t i = 0; i < size; i++) {
-        list->data[n++] = (char)(bit7_ends ? p[i] & ~NAME_END_BIT : p[i]);
-        if (bit7_ends && p[i] & NAME_END_BIT) list->data[n++] = 0;
-    }
-    list->data[n] = 0;
-    list->count = 0;
-    for (char *c = list->data; c < list->data + n; c += strlen(c) + 1) list->s[list->count++] = c;
-    return 0;
-}
 
 /* Loads the strings, action names, and object names, and sets up the viewport bitmap. */
 int ui_init(void)
@@ -79,19 +46,11 @@ int ui_init(void)
     viewport = (Bitmap){ kaos_u16(VIEWPORT_SIZE), kaos_u16(VIEWPORT_SIZE + 2), viewport_px };
     if ((size_t)viewport.w * viewport.h > sizeof viewport_px) return -1;
     for (int i = 0; i < SLOT_BOX_COUNT; i++) slot_box_icon[i] = -1;
-    if (load_strings(GFX_STRINGS, &strings) || load_strings(GFX_ACTION_NAMES, &action_names) ||
-        load_strings(GFX_OBJECT_NAMES, &object_names))
-        return -1;
-    return 0;
+    return gfx_load_strings();
 }
 
 Bitmap ui_screen(void) { return (Bitmap){ SCREEN_W, SCREEN_H, &fb[0][0] }; }
 Bitmap *ui_viewport(void) { return &viewport; }
-
-static const char *list_get(const StringList *l, int16_t i) { return i >= 0 && i < l->count ? l->s[i] : ""; }
-const char *ui_string(int16_t index) { return list_get(&strings, index); }
-const char *ui_object_name(int16_t icon) { return list_get(&object_names, icon); }
-const char *ui_action_name(int16_t action) { return list_get(&action_names, action); }
 
 int ui_zone_box(int16_t zone, Box *box) { return layout_get_zone_box(zone, 10000, 10000, box); }
 
@@ -286,11 +245,11 @@ void draw_leader_hand_object_name(uint16_t thing)
     char buf[32];
     ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
     int16_t icon = object_get_icon_index(thing);
-    const char *name = ui_object_name(icon);
+    const char *name = gfx_object_name(icon);
     if (icon == ICON_BONES) {
         strncpy(buf, g_champions[bones_champion(thing)].name, sizeof buf - 1);
         buf[sizeof buf - 1] = 0;
-        strncat(buf, ui_object_name(ICON_BONES), sizeof buf - strlen(buf) - 1);
+        strncat(buf, gfx_object_name(ICON_BONES), sizeof buf - strlen(buf) - 1);
         name = buf;
     }
     ui_print_zone_padded(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_CYAN, COLOR_BLACK, name, LEADER_HAND_NAME_LENGTH);

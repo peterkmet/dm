@@ -1,8 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
+#include "adventure.h"
 #include "bytes.h"
+#include "csbtext.h"
 #include "ftl.h"
 #include "graphics.h"
+#include "ids.h"
 
 #define GRAPHICS_DAT_FORMAT_1 0x8001
 #define GRAPHIC_PAD_WORD 0xff81 /* skipped before the width and height */
@@ -156,3 +159,52 @@ const Bitmap *gfx_bitmap(int i)
     if (!decoded[i].px && gfx_load_bitmap(i, &decoded[i])) return NULL;
     return &decoded[i];
 }
+
+#define NAME_END_BIT 0x80 /* CSB object names: set in the last character */
+
+typedef struct {
+    char *data;
+    const char **s;
+    int16_t count;
+} StringList;
+
+static StringList strings, action_names, object_names;
+
+/* Splits a graphic of NUL-terminated strings into a list. CSB takes the strings and action names from
+   the engine, and ends each object name at a byte with bit 7 set. */
+static int load_strings(int graphic, StringList *list)
+{
+    uint16_t size;
+    int csb = g_adventure == ADVENTURE_CSB, bit7_ends = csb && graphic == GFX_OBJECT_NAMES;
+    const uint8_t *p = csb ? csb_text_item(graphic, &size) : NULL;
+    if (!p) p = gfx_item(graphic, &size);
+    if (!p) return -1;
+    free(list->data);
+    free(list->s);
+    list->data = malloc(2 * (size_t)size + 1);
+    list->s = malloc(((size_t)size + 1) * sizeof *list->s);
+    if (!list->data || !list->s) return -1;
+    size_t n = 0;
+    for (uint16_t i = 0; i < size; i++) {
+        list->data[n++] = (char)(bit7_ends ? p[i] & ~NAME_END_BIT : p[i]);
+        if (bit7_ends && p[i] & NAME_END_BIT) list->data[n++] = 0;
+    }
+    list->data[n] = 0;
+    list->count = 0;
+    for (char *c = list->data; c < list->data + n; c += strlen(c) + 1) list->s[list->count++] = c;
+    return 0;
+}
+
+/* Loads the strings, action names, and object names. */
+int gfx_load_strings(void)
+{
+    if (load_strings(GFX_STRINGS, &strings) || load_strings(GFX_ACTION_NAMES, &action_names) ||
+        load_strings(GFX_OBJECT_NAMES, &object_names))
+        return -1;
+    return 0;
+}
+
+static const char *list_get(const StringList *l, int16_t i) { return i >= 0 && i < l->count ? l->s[i] : ""; }
+const char *gfx_string(int16_t index) { return list_get(&strings, index); }
+const char *gfx_object_name(int16_t icon) { return list_get(&object_names, icon); }
+const char *gfx_action_name(int16_t action) { return list_get(&action_names, action); }

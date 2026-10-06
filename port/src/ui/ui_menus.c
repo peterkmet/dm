@@ -148,7 +148,7 @@ void menus_draw_action_area(void)
         ui_print_zone_padded(&screen, ZONE_ACTING_CHAMPION_NAME, COLOR_BLACK, COLOR_CYAN, g_champions[g_acting_champion_ordinal - 1].name, ACTING_NAME_LENGTH);
         for (int k = 0; k < ACTION_LIST_COUNT; k++) {
             uint8_t action = g_action_list_indices[k];
-            ui_print_zone_padded(&screen, (int16_t)(ZONE_ACTION_NAME_FIRST + k), COLOR_CYAN, COLOR_BLACK, action == ACTION_NONE ? "" : ui_action_name(action), ACTION_NAME_LENGTH);
+            ui_print_zone_padded(&screen, (int16_t)(ZONE_ACTION_NAME_FIRST + k), COLOR_CYAN, COLOR_BLACK, action == ACTION_NONE ? "" : gfx_action_name(action), ACTION_NAME_LENGTH);
         }
     }
     g_redraw &= ~REDRAW_ACTION_AREA;
@@ -162,7 +162,7 @@ void menus_draw_action_damage(int16_t damage)
     char buf[8];
     ui_fill_zone(&screen, ZONE_ACTION_AREA, COLOR_BLACK);
     if (damage < 0) {
-        ui_print_zone(&screen, ZONE_ACTION_DAMAGE, COLOR_CYAN, COLOR_BLACK, ui_string(damage == -1 ? TEXT_CANT_REACH : TEXT_NEED_AMMO));
+        ui_print_zone(&screen, ZONE_ACTION_DAMAGE, COLOR_CYAN, COLOR_BLACK, gfx_string(damage == -1 ? TEXT_CANT_REACH : TEXT_NEED_AMMO));
         return;
     }
     const Bitmap *splat = gfx_bitmap(GFX_DAMAGE_ACTION);

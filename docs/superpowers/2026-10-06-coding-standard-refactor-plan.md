@@ -514,6 +514,15 @@ Uses from the Task 4 layer keys that the steps above do not name:
 - [ ] **Step 12: Check the allowlist.** It has no `layer` line. Run `uv run pytest tests/test_standard.py -q`: PASS.
 - [ ] **Step 13: Commit.** One commit for each step that changes code: `refactor: <what the step did>`.
 
+Additions from the Task 4 review:
+- Step 10: `engine/inventory.c` also calls `champion_draw_state(champion_index)` of `ui.h`. Replace it with attribute flags (the tick-end `champion_draw_all_states(0)` draws them) or move it to the click handler in `ui/command.c`, whichever keeps the screen identical. Check Review focus item 2.
+- Step 11: `engine/dungeon.c` and `engine/savefile.c` have no `layer` key. Only `data/csbtext.c:champion.h` (the `SKILL_*` constants) remains.
+- Step 9: Task 5 sets flags in `champion_kill` and adds `REDRAW_*` bits in `engine/game.h`. The release of the dead champions keeps its order with these flags and with `refresh_interface` in `ui/gameloop.c`.
+
+Decisions made during the task:
+- Each step removes its own `layer` lines from the allowlist, so that the full suite is green after each step.
+- Step 2: `ui_object_name` and `ui_action_name` share the string loader with `ui_string`. All three lists move to `data/graphics.c` and become `gfx_string`, `gfx_object_name`, and `gfx_action_name`. `gfx_load_strings` loads them, and `ui_init` calls it.
+
 ---
 
 ### Task 7: Prefixes and numbered names

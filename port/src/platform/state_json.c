@@ -150,7 +150,7 @@ static const char *object_kind(uint16_t thing)
 
 static int is_object(uint16_t thing) { return THING_TYPE(thing) >= THING_WEAPON && THING_TYPE(thing) <= THING_JUNK; }
 
-static const char *object_name(uint16_t thing) { return ui_object_name(object_get_icon_index(thing)); }
+static const char *object_name(uint16_t thing) { return gfx_object_name(object_get_icon_index(thing)); }
 
 /* An object as {name, kind}; a held scroll also gives its text. */
 static void object_json(Json *j, uint16_t thing, int held)
@@ -196,13 +196,13 @@ static void action_list_json(Json *j, int16_t index)
     }
     const ActionSet *set = set_index ? tables_action_set(set_index) : NULL;
     if (set) {
-        json_str(j, ui_action_name(set->action_indices[0]));
+        json_str(j, gfx_action_name(set->action_indices[0]));
         for (int k = 1; k < ACTION_LIST_COUNT; k++) {
             uint8_t action = set->action_indices[k], level = set->minimum_skill_levels[k - 1];
             const ActionInfo *info = tables_action_info(action);
             if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charges(c))) continue;
             if ((level & ~ACTION_LEVEL_NEEDS_CHARGES) <= champion_get_skill_level(index, info->skill_index))
-                json_str(j, ui_action_name(action));
+                json_str(j, gfx_action_name(action));
         }
     }
     json_close(j, ']');
@@ -398,7 +398,7 @@ void state_json_state(Json *j)
         key_int(j, "champion", g_acting_champion_ordinal - 1);
         json_key(j, "actions");
         json_open(j, '[');
-        for (int k = 0; k < ACTION_LIST_COUNT && g_action_list_indices[k] != ACTION_NONE; k++) json_str(j, ui_action_name(g_action_list_indices[k]));
+        for (int k = 0; k < ACTION_LIST_COUNT && g_action_list_indices[k] != ACTION_NONE; k++) json_str(j, gfx_action_name(g_action_list_indices[k]));
         json_close(j, ']');
         json_close(j, '}');
     } else {

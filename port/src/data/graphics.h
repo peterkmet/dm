@@ -21,4 +21,10 @@ int gfx_load_bitmap(int i, Bitmap *bm);
 void gfx_free_bitmap(Bitmap *bm);
 const Bitmap *gfx_bitmap(int i);
 
+/* Loads the string lists of the game data. Call after gfx_open and csb_text_build. */
+int gfx_load_strings(void);
+const char *gfx_string(int16_t index);          /* get_string: graphic 700 */
+const char *gfx_object_name(int16_t icon);      /* g_object_names: graphic 0x2b6 */
+const char *gfx_action_name(int16_t action);    /* menus_get_action_name: graphic 699 */
+
 #endif

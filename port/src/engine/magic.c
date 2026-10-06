@@ -4,6 +4,7 @@
 #include "champion.h"
 #include "dungeon.h"
 #include "game.h"
+#include "graphics.h"
 #include "inventory.h"
 #include "map.h"
 #include "message.h"
@@ -11,7 +12,6 @@
 #include "projectile.h"
 #include "random.h"
 #include "timeline_process.h"
-#include "ui.h"
 
 #define JUNK_ZOKATHRA 51
 #define POWER_SYMBOL_FIRST 0x60          /* symbol of power 1 is 0x60, power n is 0x5f + n */
@@ -86,9 +86,9 @@ void menus_print_spell_failure_message(uint16_t champion_index, int16_t failure_
         return;
     }
     message_new_line(g_game_time);
-    message_print(MESSAGE_COLOR_SPELL, ui_string(first), g_game_time);
+    message_print(MESSAGE_COLOR_SPELL, gfx_string(first), g_game_time);
     message_print(MESSAGE_COLOR_SPELL, g_champions[champion_index].name, g_game_time);
-    message_print(MESSAGE_COLOR_SPELL, ui_string(first + 1), g_game_time);
+    message_print(MESSAGE_COLOR_SPELL, gfx_string(first + 1), g_game_time);
 }
 
 /* Spends the mana and shoots the spell; a weak cast with little maximum mana gets a slower step energy. */

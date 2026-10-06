@@ -3,6 +3,7 @@
 #include "champion.h"
 #include "dungeon.h"
 #include "game.h"
+#include "graphics.h"
 #include "group.h"
 #include "inventory.h"
 #include "magic.h"
@@ -14,7 +15,6 @@
 #include "sound.h"
 #include "tables.h"
 #include "timeline_process.h"
-#include "ui.h"
 
 #define MESSAGE_COLOR_ACTION 4
 #define MESSAGE_SIZE 100
@@ -378,7 +378,7 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
         performed = menus_is_group_frightened_by_action(champion_index, action, x, y);
         break;
     case ACTION_FLIP:
-        menus_print_action_message(champion_index, ui_string(random_bit() ? TEXT_FLIP_HEADS : TEXT_FLIP_TAILS));
+        menus_print_action_message(champion_index, gfx_string(random_bit() ? TEXT_FLIP_HEADS : TEXT_FLIP_TAILS));
         break;
     case ACTION_CLIMB_DOWN:
         if (!is_climbed_down())

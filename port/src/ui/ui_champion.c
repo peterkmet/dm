@@ -242,9 +242,9 @@ static void draw_load(uint16_t champion_index)
     uint16_t max = champion_get_maximum_load(c);
     uint8_t color = max < c->load ? COLOR_RED : (int32_t)max * LOAD_WARNING_NUMERATOR < (int32_t)c->load * LOAD_WARNING_DENOMINATOR ? COLOR_YELLOW : COLOR_LIGHT_GRAY;
     char text[40], a[8], b[8], d[8]; /* the load is in tenths of a kilogram */
-    ui_print_zone(ui_viewport(), ZONE_LOAD_LABEL, color, COLOR_DARKEST_GRAY, ui_string(TEXT_LOAD));
-    snprintf(text, sizeof text, "%s%s%s/%s%s", number(a, c->load / 10, 1, VALUE_WIDTH), ui_string(TEXT_DECIMAL_POINT), number(d, c->load % 10, 0, 1),
-             number(b, (uint16_t)(max + 5) / 10, 1, VALUE_WIDTH), ui_string(TEXT_KG));
+    ui_print_zone(ui_viewport(), ZONE_LOAD_LABEL, color, COLOR_DARKEST_GRAY, gfx_string(TEXT_LOAD));
+    snprintf(text, sizeof text, "%s%s%s/%s%s", number(a, c->load / 10, 1, VALUE_WIDTH), gfx_string(TEXT_DECIMAL_POINT), number(d, c->load % 10, 0, 1),
+             number(b, (uint16_t)(max + 5) / 10, 1, VALUE_WIDTH), gfx_string(TEXT_KG));
     ui_print_zone(ui_viewport(), ZONE_LOAD_VALUE, color, COLOR_DARKEST_GRAY, text);
 }
 
@@ -408,7 +408,7 @@ const char *ui_skill_rank_name(int16_t level)
 {
     if (level <= 1) return NULL;
     if (level > SKILL_LEVEL_MAXIMUM) level = SKILL_LEVEL_MAXIMUM;
-    return ui_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * (level - 2)));
+    return gfx_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * (level - 2)));
 }
 
 /* Draws the eye panel: base skill levels above 1 (green after a level up), then the six
@@ -426,14 +426,14 @@ void draw_champion_skills_and_statistics(void)
     for (uint16_t k = 0; k < BASE_SKILL_COUNT; k++) {
         int16_t level = champion_get_skill_level(ci, k | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
         if (level == 1) continue;
-        snprintf(s, sizeof s, "%s %s", ui_skill_rank_name(level), ui_string(kaos_s16(BASE_SKILL_STRINGS + 2 * k)));
+        snprintf(s, sizeof s, "%s %s", ui_skill_rank_name(level), gfx_string(kaos_s16(BASE_SKILL_STRINGS + 2 * k)));
         text_draw(vp, x, y, g_champion_skill_level_up[ci][k] ? COLOR_GREEN : COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
         y += MESSAGE_ROW_HEIGHT;
     }
     zone_point(ZONE_PANEL_STATISTICS, &vx, &y);
     for (int k = STAT_STRENGTH; k <= STAT_ANTIFIRE; k++) {
         uint8_t cur = c->statistics[k][STAT_CURRENT], max = c->statistics[k][STAT_MAXIMUM];
-        text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, ui_string(kaos_s16(STATISTIC_STRINGS + 2 * k)));
+        text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(kaos_s16(STATISTIC_STRINGS + 2 * k)));
         text_draw(vp, vx, y, cur < max ? COLOR_RED : cur > max ? COLOR_GREEN : COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, number(a, cur, 1, VALUE_WIDTH));
         snprintf(s, sizeof s, "/%s", number(b, max, 1, VALUE_WIDTH));
         text_draw(vp, vx + TEXT_CHAR_WIDTH * VALUE_WIDTH, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
@@ -455,9 +455,9 @@ void inventory_draw_open(int16_t champion_index)
         ui_fill_zone(vp, ZONE_INVENTORY_SLEEP, COLOR_DARKEST_GRAY);
         ui_fill_zone(vp, ZONE_INVENTORY_CLOSE, COLOR_DARKEST_GRAY);
     }
-    ui_print_zone(vp, ZONE_HEALTH_LABEL, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, ui_string(TEXT_HEALTH));
-    ui_print_zone(vp, ZONE_HEALTH_LABEL + 1, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, ui_string(TEXT_STAMINA));
-    ui_print_zone(vp, ZONE_HEALTH_LABEL + 2, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, ui_string(TEXT_MANA));
+    ui_print_zone(vp, ZONE_HEALTH_LABEL, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(TEXT_HEALTH));
+    ui_print_zone(vp, ZONE_HEALTH_LABEL + 1, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(TEXT_STAMINA));
+    ui_print_zone(vp, ZONE_HEALTH_LABEL + 2, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(TEXT_MANA));
     for (uint16_t s = 0; s < SLOT_COUNT; s++) champion_draw_slot((uint16_t)champion_index, s);
     g_champions[champion_index].attributes |= CHAMPION_ATTR_INVENTORY_ALL;
     champion_draw_state((uint16_t)champion_index);
@@ -493,10 +493,10 @@ static void attributes_text(uint16_t potential, uint16_t actual, char *dst, size
     append(dst, size, (const char *)kaos_ptr(ATTRIBUTES_PREFIX));
     for (int16_t i = 0; i < ATTRIBUTE_COUNT; i++) {
         if (!(bits >> i & 1)) continue;
-        append(dst, size, ui_string((int16_t)(TEXT_CONSUMABLE + i)));
+        append(dst, size, gfx_string((int16_t)(TEXT_CONSUMABLE + i)));
         left--;
         if (left > 1) append(dst, size, (const char *)kaos_ptr(LIST_SEPARATOR));
-        else if (left == 1) append(dst, size, ui_string(TEXT_AND));
+        else if (left == 1) append(dst, size, gfx_string(TEXT_AND));
     }
     append(dst, size, (const char *)kaos_ptr(ATTRIBUTES_SUFFIX));
 }
@@ -509,19 +509,19 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
     int16_t icon = object_get_icon_index(thing), n = 0;
     uint16_t type = THING_TYPE(thing), potential = 0, actual = 0, weight = get_object_weight(thing);
     if (icon == ICON_BONES)
-        snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[junk_charges(thing)].name, (const char *)kaos_ptr(BONES_SEPARATOR), ui_object_name(icon));
+        snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[junk_charges(thing)].name, (const char *)kaos_ptr(BONES_SEPARATOR), gfx_object_name(icon));
     else if (type == THING_POTION && icon != ICON_WATER_FLASK && g_inventory_champion_ordinal &&
              champion_get_skill_level((int16_t)(g_inventory_champion_ordinal - 1), SKILL_PRIEST) > 1)
-        snprintf(name, PANEL_LINE_SIZE, "%c %s", POTION_POWER_SYMBOL_FIRST + potion_power(thing) / POTION_POWER_SYMBOL_STEP, ui_object_name(icon));
+        snprintf(name, PANEL_LINE_SIZE, "%c %s", POTION_POWER_SYMBOL_FIRST + potion_power(thing) / POTION_POWER_SYMBOL_STEP, gfx_object_name(icon));
     else
-        snprintf(name, PANEL_LINE_SIZE, "%s", ui_object_name(icon));
+        snprintf(name, PANEL_LINE_SIZE, "%s", gfx_object_name(icon));
     switch (type) {
     case THING_WEAPON:
         potential = ATTRIBUTE_POISONED | ATTRIBUTE_BROKEN | ATTRIBUTE_CURSED;
         actual = (weapon_is_poisoned(thing) ? ATTRIBUTE_POISONED : 0) | (weapon_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) |
                  (object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
         if (icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST && !weapon_charges(thing))
-            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", ui_string(TEXT_BURNT_OUT));
+            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_string(TEXT_BURNT_OUT));
         break;
     case THING_ARMOUR:
         potential = ATTRIBUTE_BROKEN | ATTRIBUTE_CURSED;
@@ -533,9 +533,9 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
         break;
     case THING_JUNK:
         if (icon <= ICON_COMPASS_NORTH + DIRECTION_WEST)
-            snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s", ui_string(TEXT_PARTY_FACING), ui_string(kaos_s16(DIRECTION_STRINGS + 2 * icon)));
+            snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s", gfx_string(TEXT_PARTY_FACING), gfx_string(kaos_s16(DIRECTION_STRINGS + 2 * icon)));
         else if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
-            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", ui_string((int16_t)(TEXT_WATERSKIN_EMPTY + junk_charges(thing))));
+            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_string((int16_t)(TEXT_WATERSKIN_EMPTY + junk_charges(thing))));
         else {
             potential = ATTRIBUTE_CONSUMABLE;
             actual = tables_object_info(get_object_info_index(thing))->allowed_slots;
@@ -545,8 +545,8 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
     attributes_text(potential, actual, lines[n], PANEL_LINE_SIZE);
     if (lines[n][0]) n++;
     char a[8], b[8];
-    snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s%s%s%s", ui_string(TEXT_WEIGHS), number(a, weight / 10, 0, 0), ui_string(TEXT_DECIMAL_POINT),
-             number(b, weight % 10, 0, 0), ui_string(TEXT_KG_PERIOD)); /* the weight is in tenths of a kilogram */
+    snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s%s%s%s", gfx_string(TEXT_WEIGHS), number(a, weight / 10, 0, 0), gfx_string(TEXT_DECIMAL_POINT),
+             number(b, weight % 10, 0, 0), gfx_string(TEXT_KG_PERIOD)); /* the weight is in tenths of a kilogram */
     return n;
 }
 
@@ -642,7 +642,7 @@ static void insert_creature_name(char *text, size_t size)
             int16_t x = g_party_map_x, y = g_party_map_y;
             update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
             uint16_t group = group_get_thing(x, y);
-            name = ui_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE : (int16_t)(TEXT_CREATURE_NAME_FIRST + group_creature_type(group)));
+            name = gfx_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE : (int16_t)(TEXT_CREATURE_NAME_FIRST + group_creature_type(group)));
             scroll_redraw = 1;
         }
         size_t rest = strlen(at + length), n = strlen(name);
