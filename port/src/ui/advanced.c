@@ -22,8 +22,7 @@
 #define READOUT_MARGIN 2               /* pixels between the rulers and the read-out */
 #define QUICK_MESSAGE_COLOR COLOR_WHITE
 
-int16_t g_game_mode = GAME_MODE_VANILLA;
-int16_t g_advanced_features, g_automap_open, g_cheat_light, g_cheat_immortal, g_cheat_food;
+int16_t g_advanced_features, g_automap_open;
 
 static struct {
     int active;

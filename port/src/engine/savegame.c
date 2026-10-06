@@ -4,7 +4,6 @@
 #include "savegame.h"
 #include "bytes.h"
 #include "adventure.h"
-#include "advanced.h"
 #include "automap.h"
 #include "champion.h"
 #include "dungeon.h"

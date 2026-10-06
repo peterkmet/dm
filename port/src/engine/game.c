@@ -34,6 +34,8 @@ int32_t g_last_creature_attack_time, g_last_party_movement_time, g_watchdog_time
 int16_t g_disabled_movement_ticks, g_projectile_disabled_movement_ticks;
 int16_t g_last_projectile_disabled_movement_direction;
 uint16_t g_redraw;
+int16_t g_game_mode = GAME_MODE_VANILLA;
+int16_t g_cheat_light, g_cheat_immortal, g_cheat_food;
 
 TimelineEvent *g_timeline_events;
 uint16_t *g_timeline;

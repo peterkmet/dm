@@ -115,6 +115,14 @@ extern uint16_t g_active_group_count, g_max_active_group_count;
 extern uint16_t g_redraw;
 enum { REDRAW_ACTION_AREA = 1, REDRAW_SPELL_AREA = 2, REDRAW_SPELL_TABS = 4, REDRAW_SPELL_SYMBOLS = 8 };
 
+/* Game modes (not in the original game): the user interface differs, the game rules are the same. */
+enum { GAME_MODE_VANILLA, GAME_MODE_ADVANCED, GAME_MODE_TURNBASED };
+extern int16_t g_game_mode;            /* GAME_MODE_VANILLA by default */
+/* Cheats of the advanced mode, L, I, and F on the automap. Not saved; a new or loaded game turns them off. */
+extern int16_t g_cheat_light;          /* the view draws in full light; the creature rules keep the real light */
+extern int16_t g_cheat_immortal;       /* the health of a champion stops at 1 */
+extern int16_t g_cheat_food;           /* food and water do not go down */
+
 void game_new(void);
 
 int16_t min16(int16_t a, int16_t b);
