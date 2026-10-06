@@ -3,6 +3,14 @@
 #include <stdint.h>
 #include "draw.h"
 
+/* KAOS data addresses. */
+#define DUNGEON_PALETTE 0x100aa6    /* g_dungeon_palettes[0], full light */
+#define VIEWPORT_ORIGIN 0x10293a    /* viewport origin x, y on the screen */
+#define VIEWPORT_SIZE 0x102948      /* g_viewport_width, g_viewport_height */
+#define PORTRAIT_SIZE 0x102958      /* g_portrait_width, g_portrait_height */
+
+enum { VIEW_DEPTH_COUNT = 4 };      /* the view draws the party row and 3 rows ahead */
+
 /* Clickable boxes of the dungeon view, in viewport coordinates (x = -1: empty): the object piles of
    view cells 0-3 (D0 back cells, D1C front cells), the alcove pile, and the front wall ornament or
    door button. */

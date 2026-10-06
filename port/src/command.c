@@ -12,6 +12,7 @@
 #include "ids.h"
 #include "inventory.h"
 #include "magic.h"
+#include "spells.h"
 #include "map.h"
 #include "move.h"
 #include "sensor.h"
@@ -27,7 +28,6 @@
 #define KEYS_ENTRANCE 0x10393c
 #define KEYS_SLEEPING 0x103980
 #define KEYS_FROZEN 0x10398c
-#define VIEWPORT_ORIGIN 0x10293a      /* viewport origin x, y on the screen */
 #define KEY_ENTRY_BYTES 4
 #define KEY_ENTRY_KEY 2               /* the key word after the command word */
 
@@ -40,12 +40,7 @@
 #define WAIT_FOR_INPUT_FRAMES 12
 #define FOUNTAIN_WATER 2048
 #define FILLED_WATERSKIN_CHARGES 3
-#define ICON_EMPTY_FLASK 195
 #define VI_ALTAR_REBIRTH_EFFECT 2     /* event 13 effect byte */
-#define EVENT_VI_ALTAR_REBIRTH 13
-#define SOUND_SWALLOW 8
-#define SYMBOL_FIRST 0x60             /* font character of the first rune */
-#define SPELL_TAB_STEP 5              /* caster tab zones per caster */
 #define MANA_MULTIPLIER_SHIFT 3       /* the cost multiplier of the first rune is in eighths */
 #define HAND_SLOT_BOX_COUNT (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
 #define ZONE_THROW_LEFT 745           /* + 1 right: the upper view where a thrown object flies */
@@ -533,11 +528,11 @@ static void add_champion_symbol(int16_t symbol)
 {
     Champion *c = &g_champions[g_magic_caster_champion_index];
     uint16_t step = c->symbol_step, cost = *tables_symbol_base_mana_cost(step, symbol);
-    if (step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SYMBOL_FIRST)) >> MANA_MULTIPLIER_SHIFT;
+    if (step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >> MANA_MULTIPLIER_SHIFT;
     if (cost > (uint16_t)c->current_mana) return;
     c->current_mana -= cost;
     c->attributes |= CHAMPION_ATTR_STATISTICS;
-    c->symbols[step] = (char)(SYMBOL_FIRST + step * SYMBOL_COUNT + symbol);
+    c->symbols[step] = (char)(SPELL_SYMBOL_FIRST + step * SYMBOL_COUNT + symbol);
     c->symbols[step + 1] = 0;
     c->symbol_step = (uint8_t)NORMALIZE(step + 1);
     menus_draw_available_symbols(c->symbol_step);

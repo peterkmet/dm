@@ -13,14 +13,13 @@
 #include "text.h"
 #include "ui.h"
 #include "video.h"
+#include "view.h"
 
 /* KAOS data addresses. */
 #define BOTTOM_PALETTE 0x100170   /* g_initial_colormap[0..15]: interface palette */
 #define ICON_FIRST 0x100b92       /* g_icon_graphic_first_index[7] */
 #define SLOT_BOXES 0x100bb0       /* g_slot_boxes[46]: zone, current icon */
-#define VIEWPORT_SIZE 0x102948    /* g_viewport_width, g_viewport_height */
 #define SLOT_BOX_BORDER 0x102956  /* g_slot_box_border */
-#define VIEWPORT_ORIGIN 0x10293a  /* viewport origin x, y for zones relative to the viewport */
 static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
     0x1031f8, 0x1032e8, 0x103354, 0x10351c, 0x103540, 0x103564,
     0x1035a0, 0x1035dc, 0x103654, 0x1036f0, 0x10375c, 0x10378c, 0x10318c, 0x1031d4,
@@ -34,8 +33,6 @@ static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
 #define LEADER_HAND_NAME_LENGTH 14
 #define NAME_END_BIT 0x80         /* CSB object names: set in the last character */
 
-/* Mouse input entry: 6 words. */
-enum { INPUT_COMMAND, INPUT_X1, INPUT_X2, INPUT_Y1, INPUT_Y2, INPUT_BUTTONS, INPUT_WORDS };
 /* INPUT_X1 values that make INPUT_X2 a zone: on the screen, relative to the viewport origin,
    relative to the centered viewport. */
 enum { INPUT_ZONE_SCREEN = -1, INPUT_ZONE_VIEWPORT = -2, INPUT_ZONE_CENTERED_VIEWPORT = -3 };

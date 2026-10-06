@@ -12,10 +12,9 @@
 #include "view.h"
 
 /* Square flags that map.h does not name yet. */
-enum { TELEPORTER_VISIBLE = 4, DOOR_PASSAGE_NORTH_SOUTH = 8 };
+enum { DOOR_PASSAGE_NORTH_SOUTH = 8 };
 
 enum { LABEL_WIDTH = 11, LABEL_BASELINE = 4 }; /* two digits; the font cell starts 4 rows above the baseline */
-enum { VIEW_DEPTH_COUNT = 4 };                    /* the view draws the party row and 3 rows ahead */
 enum { SAVE_VERSION = 1, SAVE_HEADER_SIZE = 6 };  /* magic, version, map count */
 static const char SAVE_MAGIC[] = AUTOMAP_SAVE_MAGIC;
 enum { SAVE_MAGIC_SIZE = sizeof SAVE_MAGIC - 1 };  /* without the NUL */

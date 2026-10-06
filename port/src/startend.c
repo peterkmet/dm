@@ -30,11 +30,8 @@
 
 /* KAOS data addresses. */
 #define CREDITS_PALETTE 0x100a46       /* g_credits_palette[16] */
-#define SKILL_LEVEL_STRINGS 0x101e70   /* string index of each skill level name, used from level 2 */
-#define BASE_SKILL_STRINGS 0x102472    /* g_base_skill_string_indices[4] */
 #define BUTTON_BORDER 0x102988         /* outer border x, y of an endgame button */
 #define BUTTON_INNER_BORDER 0x10298c   /* inner border x, y */
-#define PORTRAIT_SIZE 0x102958         /* g_portrait_width, g_portrait_height */
 
 #define GFX_CREDITS 5
 #define GFX_THE_END 6
@@ -72,7 +69,6 @@
 #define THE_END_BACKGROUND 0x004       /* dark blue of the THE END palette */
 #define THE_END_WHITE 0xfff
 #define BUTTON_FRAME_COLOR 0x86f
-#define MOUSE_ENTRY_BYTES 12
 #define MOUSE_ENTRY_BOX 2              /* x1, x2, y1, y2 after the command word */
 #define MOUSE_BOX_WORDS 4
 #define ENDGAME_TEXT_SIZE 64
@@ -270,7 +266,7 @@ static void print_champion_skills(uint16_t champion_index, int y)
         if (level > MAX_SKILL_LEVEL) level = MAX_SKILL_LEVEL;
         if (level == 1) continue;
         char line[ENDGAME_TEXT_SIZE];
-        snprintf(line, sizeof line, "%s %s", ui_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * level)),
+        snprintf(line, sizeof line, "%s %s", ui_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * (level - 2))),
                  ui_string(kaos_s16(BASE_SKILL_STRINGS + 2 * skill)));
         y += ENDGAME_SKILL_LINE;
         endgame_print_text(ENDGAME_SKILL_X, y, COLOR_LIGHT_GRAY, line);

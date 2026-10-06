@@ -164,11 +164,11 @@ static void fatal(int16_t code)
 /* A free record (THING_NONE) must never enter a square list: a save with it is damaged. Logs where it comes from. */
 static void report_free_record(const char *action, int16_t x, int16_t y)
 {
-    enum { FRAMES = 16 };
-    void *frames[FRAMES];
+    enum { BACKTRACE_FRAMES = 16 };
+    void *frames[BACKTRACE_FRAMES];
     fprintf(stderr, "square list guard: %s, map %d (%d,%d), game time %lu\n", action, g_current_map_index, x, y,
             (unsigned long)g_game_time);
-    backtrace_symbols_fd(frames, backtrace(frames, FRAMES), 2);
+    backtrace_symbols_fd(frames, backtrace(frames, BACKTRACE_FRAMES), 2);
 }
 
 /* x >= 0: append the thing to the list of square (x, y). x < 0: append it to the list that starts at list. */

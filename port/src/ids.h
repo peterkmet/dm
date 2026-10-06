@@ -101,6 +101,7 @@
 /* Object icons. */
 #define ICON_CHEST_CLOSED 144
 #define ICON_CHEST_OPEN 145
+#define ICON_EMPTY_FLASK 195
 #define ICON_BONES 147
 #define ICON_WATER_FLASK 163
 #define ICON_EMPTY_BODY_SLOT_FIRST 212   /* + 2 * slot, + 1 wounded; slots 0-5 */

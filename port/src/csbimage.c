@@ -2,6 +2,7 @@
 #include <string.h>
 #include "csbimage.h"
 #include "csbtext.h"
+#include "tables.h"
 
 /* KAOS and APPB addresses of the tables that need a conversion. Sources: docs/csb-engine-diff.md "Data tables". */
 #define KAOS_ACTION_SETS 0x103d4c        /* 44 records of 8 bytes: 3 actions, pad, 2 minimum levels, flags, pad */
@@ -16,9 +17,8 @@
 #define APPB_RESTART_BOXES 0x100dcc      /* the endgame fills these two boxes */
 #define APPB_DATA_BASE 0x10511e          /* the APPB data base: all APPB tables are below it */
 
-enum { ACTION_SET_COUNT = 44, KAOS_ACTION_SET_BYTES = 8, APPB_ACTION_SET_BYTES = 6, ACTION_SET_ACTIONS = 3, ACTION_SET_LEVELS = 2 };
+enum { KAOS_ACTION_SET_BYTES = 8, APPB_ACTION_SET_BYTES = 6, ACTION_SET_ACTIONS = 3, ACTION_SET_LEVELS = 2 };
 enum { KAOS_ACTION_SET_LEVELS = 4, KAOS_ACTION_SET_FLAGS = 6, APPB_ACTION_SET_LEVELS = 3, APPB_ACTION_SET_FLAGS = 5 };
-enum { SPELL_BYTES = 8 };
 
 /* Tables with the same layout: KAOS address, APPB address, size. The APPB addresses are verified in
    docs/csb-engine-diff.md. Strided or split DM tables have one row per part. */

@@ -16,7 +16,6 @@
 #define KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT 0x103c5e
 
 #define SQUARE_CHAIN_MAXIMUM 99        /* teleporters, pits, and stairs that one move follows */
-#define SCENT_COUNT 24
 #define SCENT_STRENGTH_MAXIMUM 80
 #define SCENT_KEEP_LARGER 0x8000       /* flag: keep the larger strength instead of adding */
 #define SCENT_NEW_STRENGTH 24
@@ -95,7 +94,7 @@ void champion_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flag
 static void add_party_scent(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, int16_t map)
 {
     uint16_t n = g_party.scent_count;
-    for (; n >= SCENT_COUNT; n--)
+    for (; n >= PARTY_SCENT_COUNT; n--)
         champion_delete_scent(0);
     if (n)
         champion_add_scent_strength(src_x, src_y, (int16_t)((uint16_t)g_game_time - (uint16_t)g_last_party_movement_time));   /* 16-bit difference */

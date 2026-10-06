@@ -13,7 +13,6 @@
 #define VERSION_TEXT 0x10402c          /* g_dialog_version_text: "V3.6" */
 #define MESSAGE_COLORS 0x104026        /* g_dialog_message_colors[2] */
 #define MESSAGE_LINE_PAD 0x102966      /* pixels above and below a message line */
-#define LAYOUT_BITMAPS 0x1025f2        /* g_layout_bitmaps: 14 bytes each, layout bitmap -1 - n */
 #define LAYOUT_BITMAP_BYTES 14
 #define LAYOUT_BITMAP_SOURCE 2         /* source x, y, width, height (0: the bitmap size) */
 #define VIEWPORT_PIXELS (224 * 136)    /* the viewport bitmap of ui_viewport */
@@ -37,7 +36,6 @@
 #define ZONE_CHOICE_BOTTOM_RIGHT 467
 #define ZONE_MESSAGE_ONE_CHOICE 469
 #define ZONE_MESSAGE 471
-#define MOUSE_ENTRY_BYTES 12
 #define MOUSE_ENTRY_ZONE 4             /* the zone word of an entry with a negative x1 */
 #define PRESS_FRAMES 5
 #define WIDE_MESSAGE_SHIFT 3           /* a message wider than 7/8 of the zone takes two lines */

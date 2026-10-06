@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "champion.h"
 
+#define PORTRAITS_PER_ROW 8
+
 /* Candidate champion data from the mirror text, as champion_add_candidate_to_party sets it. */
 typedef struct {
     char name[8];

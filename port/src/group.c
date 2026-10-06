@@ -32,7 +32,7 @@ enum { SYSTEM_ERROR_NO_FREE_ACTIVE_GROUP = 71, ACTIVE_GROUP_RESERVE = 5, THING_I
 enum { MOVEMENT_TICKS_OF_IMMOBILE_CREATURE = 100, FREEZE_LIFE_RETRY_TICKS = 4, MOVE_GROUP_RETRY_TICKS = 5 };
 enum { WARINESS_AVOIDS_FORBIDDEN_TELEPORTER = 10, FALL_DAMAGE = 20, DOOR_DAMAGE = 5 };
 enum { SKILL_PARRY_DEFENSE = 7, INVISIBLE_PARTY_DODGE_BONUS = 16, LUCK_PERCENT_AGAINST_CREATURE = 60, LUCK_PERCENT_AGAINST_MISS = 75 };
-enum { ICON_DIAMOND_EDGE = 39, ICON_HALF_DAMAGE_ON_MATERIAL = 40, ICON_VORPAL_BLADE = 43 };
+enum { ICON_DIAMOND_EDGE = 39, ICON_HALF_DAMAGE_ON_MATERIAL = 40, ICON_HARDCLEAVE = 43 };
 enum { SLOT_ACTION_HAND = 1 };
 enum { STEAL_CHANCE_STEP = 20 };
 enum { HIT_PROBABILITY_ALWAYS_HITS = 0x8000, HIT_PROBABILITY_MASK = 0x7fff };
@@ -361,7 +361,7 @@ void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y)
         last_creature_index = (field & 15) - 1;
     int16_t multiplier = sensor_generator_health_multiplier(sensor);
     if (!multiplier)
-        multiplier = current_map_difficulty();
+        multiplier = map_current_difficulty();
     int16_t direction = random_2bits();
     group_get_generated(sensor_generator_creature_type(sensor), multiplier, last_creature_index, direction, x, y);
 }
@@ -1057,7 +1057,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
         return 0;
     if (g_party_is_sleeping)
         champion_wake_up();
-    int16_t difficulty = current_map_difficulty() * 2;
+    int16_t difficulty = map_current_difficulty() * 2;
     const CreatureInfo *info = group_info(group);
     champion_add_skill_experience(champion_index, SKILL_PARRY_DEFENSE, creature_experience(info));
     int16_t dodge_bonus;
@@ -1128,7 +1128,7 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
     Champion *champion = &g_champions[champion_index];
     if (!champion->current_health)
         return 0;
-    int16_t difficulty = current_map_difficulty() * 2, damage = 0, outcome = OUTCOME_NO_CREATURE_KILLED;
+    int16_t difficulty = map_current_difficulty() * 2, damage = 0, outcome = OUTCOME_NO_CREATURE_KILLED;
     const CreatureInfo *info = group_info(group);
     int16_t hit = 0;
     if (info->dexterity != CREATURE_NEVER_HITS) {
@@ -1149,7 +1149,7 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
                 int16_t armour = (random16() & 31) + info->defense + difficulty;
                 if (icon == ICON_DIAMOND_EDGE)
                     armour -= armour >> 2;
-                else if (icon == ICON_VORPAL_BLADE)
+                else if (icon == ICON_HARDCLEAVE)
                     armour -= armour >> 3;
                 damage += random16() & 31;
                 damage -= armour;

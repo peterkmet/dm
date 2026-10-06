@@ -3,6 +3,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Amiga planar graphics: 4 bitplanes, 16 pixels per word. */
+#define BITPLANE_COUNT 4
+#define PIXELS_PER_WORD 16
+
 typedef struct {
     uint16_t w, h;
     uint8_t *px; /* w * h bytes, palette index 0-15 */

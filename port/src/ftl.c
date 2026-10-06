@@ -2,13 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "adventure.h"
+#include "bytes.h"
 #include "csbimage.h"
 #include "ftl.h"
 
 #define FTL_MAX_SIZE (4u << 20)
-
-#define BE16(p) ((uint16_t)((p)[0] << 8 | (p)[1]))
-#define BE32(p) ((uint32_t)(p)[0] << 24 | (uint32_t)(p)[1] << 16 | (uint32_t)(p)[2] << 8 | (p)[3])
 
 /* FTL module file: header, then a table of section entries (tag, version, offset, size). */
 #define FTL_MAGIC 0x6160

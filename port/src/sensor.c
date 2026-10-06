@@ -18,7 +18,6 @@
 #define SENSOR_EXPERIENCE 300
 #define VERSION_CHECKER_LIMIT 37   /* the version checker passes for data below this value */
 #define CSB_VERSION_CHECKER_LIMIT 32
-#define TEXT_SIZE 256
 
 int16_t g_sensor_rotation_effect = -1, g_sensor_rotation_effect_map_x, g_sensor_rotation_effect_map_y, g_sensor_rotation_effect_cell;
 

@@ -1,7 +1,6 @@
 #include "video.h"
 
 #define ARGB_OPAQUE 0xff000000u
-#define COLOR_INDEX_MASK (PALETTE_COLORS - 1)
 #define AMIGA_CHANNEL_BITS 4
 #define AMIGA_CHANNEL_MASK 15
 #define CHANNEL_4_TO_8_BITS 17   /* 15 * 17 = 255 */

@@ -1,5 +1,6 @@
 #include <string.h>
 #include "magic.h"
+#include "spells.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "game.h"
@@ -12,14 +13,6 @@
 #include "timeline_process.h"
 #include "ui.h"
 
-/* spells.c helpers without the Spell type: spells.h and tables.h (through inventory.h) both define Spell. */
-int16_t spell_find(const uint8_t *symbols);
-int16_t spell_draw_fails(uint8_t current_wisdom, uint16_t random);
-uint16_t spell_failure_experience(uint16_t experience, uint16_t required_level, uint16_t skill_level);
-
-enum { SPELL_KIND_POTION = 1, SPELL_KIND_PROJECTILE = 2, SPELL_KIND_OTHER = 3, SPELL_KIND_MAGIC_MAP = 4 };
-
-#define ICON_EMPTY_FLASK 195
 #define JUNK_ZOKATHRA 51
 #define POWER_SYMBOL_FIRST 0x60          /* symbol of power 1 is 0x60, power n is 0x5f + n */
 #define SPELL_PROJECTILE_ATTACK 90
@@ -33,9 +26,6 @@ enum { SPELL_KIND_POTION = 1, SPELL_KIND_PROJECTILE = 2, SPELL_KIND_OTHER = 3, S
 #define POTION_POWER_PER_LEVEL 40
 #define LIGHT_POWER_MAXIMUM 15
 #define MAGIC_MAP_TEXT "MAGICMAP"        /* the text of a magic map scroll */
-#define SCROLL_TEXT_SIZE 200
-#define TEXT_MODE_SCROLL 2
-#define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
 
 static void add_party_event(uint8_t type, uint16_t ticks, uint16_t b)
 {

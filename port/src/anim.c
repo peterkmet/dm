@@ -4,6 +4,8 @@
 #include <string.h>
 #include <strings.h>
 #include "anim.h"
+#include "adventure.h"
+#include "bytes.h"
 #include "command.h"
 #include "ftl.h"
 #include "graphics.h"
@@ -12,7 +14,6 @@
 #include "ui.h"
 #include "video.h"
 
-#define BE16(p) ((uint16_t)((p)[0] << 8 | (p)[1]))
 #define TAG(a, b) ((a) << 8 | (b))
 
 #define CHUNK_HEADER 6        /* tag, payload length, parameter */
@@ -20,7 +21,7 @@
 #define CHUNK_PARAMETER 4
 #define MAX_SAMPLES 32
 #define MAX_LOOP_DEPTH 16
-#define SAMPLE_PERIOD 650     /* Paula period of every animation sample */
+#define ANIMATION_SAMPLE_PERIOD 650     /* Paula period of every animation sample */
 #define SAMPLE_HEADER 2       /* sample length word before the sample data */
 #define SAMPLE_VOLUME_SHIFT 2 /* volume = (byte + 1) >> 2 */
 #define PALETTE_COUNT_BYTES 2 /* PL: entry count word before the entries */
@@ -30,7 +31,6 @@
 #define GREEN_SHIFT 4
 #define SAMPLE_VOLUME_BYTES 2 /* SO: left and right volume bytes after the chunk header */
 #define MAX_MUSIC 32
-#define PATH_SIZE 1024
 #define MUSIC_PERIOD 328      /* CSB disk B ANIM.FTL 0x101424: every music segment */
 #define MUSIC_VOLUME 30
 #define MUSIC_PASSES 6        /* the sequence plays 6 times, then the music ends */
@@ -184,7 +184,7 @@ static void play_sample(size_t at, uint16_t number)
     if (length > sample_sizes[number - 1] - SAMPLE_HEADER) return;
     uint8_t volumes[SAMPLE_VOLUME_BYTES] = { (uint8_t)((file[at + CHUNK_HEADER] + 1) >> SAMPLE_VOLUME_SHIFT),
                            (uint8_t)((file[at + CHUNK_HEADER + 1] + 1) >> SAMPLE_VOLUME_SHIFT) };
-    sound_play_data((const int8_t *)s + SAMPLE_HEADER, length, SAMPLE_PERIOD, volumes);
+    sound_play_data((const int8_t *)s + SAMPLE_HEADER, length, ANIMATION_SAMPLE_PERIOD, volumes);
 }
 
 int16_t anim_next_frame(void)

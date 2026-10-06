@@ -7,6 +7,7 @@
 #include "random.h"
 #include "sound.h"
 #include "startend.h"
+#include "timeline_process.h"
 #include "ui.h"
 
 /* KAOS data addresses. */
@@ -15,8 +16,6 @@
 /* Object info index of the first record of each object type. */
 enum { INFO_SCROLL = 0, INFO_CONTAINER = 1, INFO_POTION = 2, INFO_WEAPON = 23, INFO_ARMOUR = 69, INFO_JUNK = 127 };
 
-enum { EVENT_CHAMPION_SHIELD = 72 };
-enum { SOUND_SWALLOW = 8 };
 enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 };  /* the mouth blinks when it eats an object up */
 #define WATERSKIN_WATER 800
 #define POTION_WATER_WATER 1600
@@ -383,8 +382,8 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
         if (c->shield_defense > SHIELD_POTION_STRONG)
             amount >>= 2;
         c->shield_defense += amount;
-        TimelineEvent e = {(uint32_t)g_party_map_index << 24 | (g_game_time + (uint16_t)(amount * amount)),
-                           EVENT_CHAMPION_SHIELD, champion_index, amount, 0};
+        TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + (uint16_t)(amount * amount)),
+                           EVENT_CHAMPION_SHIELD_END, champion_index, amount, 0};
         timeline_add_event(&e);
         c->attributes |= CHAMPION_ATTR_STATUS_BOX;
         break;

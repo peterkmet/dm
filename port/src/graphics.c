@@ -1,9 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
+#include "bytes.h"
 #include "ftl.h"
 #include "graphics.h"
-
-#define BE16(p) ((uint16_t)((p)[0] << 8 | (p)[1]))
 
 #define GRAPHICS_DAT_FORMAT_1 0x8001
 #define GRAPHIC_PAD_WORD 0xff81 /* skipped before the width and height */

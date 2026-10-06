@@ -9,6 +9,7 @@
 #include "graphics.h"
 #include "ids.h"
 #include "inventory.h"
+#include "spells.h"
 #include "tables.h"
 #include "ui.h"
 
@@ -17,23 +18,14 @@
 #define DAMAGE_SIZE_LARGE 0x102978    /* width, height of the damage splat for 16-40 damage */
 #define DAMAGE_SIZE_SMALL 0x10297c    /* width, height of the damage splat below 16 damage */
 
-#ifndef ACTION_NONE
-#define ACTION_NONE 0xff
-#endif
 #define THING_TYPE_WEAPON 5
 #define THING_TYPE_ARMOUR 6
 #define THING_TYPE_JUNK 10
-#define ACTION_LIST_COUNT 3
-#define ACTION_SET_EMPTY_HAND 2
-#define ACTION_LEVEL_NEEDS_CHARGES 0x80 /* bit of a minimum skill level */
 #define ACTING_NAME_LENGTH 7
 #define ACTION_NAME_LENGTH 12
 #define DAMAGE_SMALL_BELOW 16
 #define DAMAGE_LARGE_BELOW 41
 #define SYMBOLS_PER_STEP 6
-#define SYMBOL_FIRST 0x60             /* font character of the first rune */
-#define CHAMPION_SYMBOL_COUNT 4
-#define SPELL_TAB_STEP 5              /* tab zones per caster */
 
 int16_t g_acting_champion_ordinal;
 int16_t g_action_area_contains_icons = 1;
@@ -247,7 +239,7 @@ void menus_draw_available_symbols(uint16_t symbol_step)
     Bitmap screen = ui_screen();
     char s[2] = { 0, 0 };
     for (int k = 0; k < SYMBOLS_PER_STEP; k++) {
-        s[0] = (char)(SYMBOL_FIRST + symbol_step * SYMBOLS_PER_STEP + k);
+        s[0] = (char)(SPELL_SYMBOL_FIRST + symbol_step * SYMBOLS_PER_STEP + k);
         ui_print_zone(&screen, (int16_t)(ZONE_SPELL_SYMBOL_FIRST + k), COLOR_CYAN, COLOR_BLACK, s);
     }
 }

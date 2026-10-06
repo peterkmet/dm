@@ -23,8 +23,6 @@
 #include "select.h"
 #include "text.h"
 
-#define DUNGEON_PALETTE 0x100aa6 /* g_dungeon_palettes[0], full light */
-#define PATH_SIZE 1024
 #define WINDOW_SCALE 3
 #define GRAY_STEP 0x111          /* one step of the gray ramp: equal red, green, and blue */
 #define ICON_GRAPHIC 616          /* the front view of the mummy */

@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BE32(p) ((uint32_t)BE16(p) << 16 | BE16((p) + 2))
-
 uint8_t *g_dungeon_header, *g_dungeon_maps, *g_dungeon_column_first_thing_index;
 uint8_t *g_square_first_things, *g_dungeon_text_data, *g_thing_data[THING_TYPE_COUNT], *g_dungeon_raw_map_data;
 int16_t *g_dungeon_map_first_column;
@@ -48,7 +46,6 @@ const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, 16, 4, 4,
 /* Save order: header, maps, column index, square things, text, the 16 thing types, raw map data. */
 enum { PART_THINGS_FIRST = 5, PART_RAW_MAPS = PART_THINGS_FIRST + THING_TYPE_COUNT, DUNGEON_PART_COUNT };
 
-#define THING_INDEX(thing) ((thing) & 0x3ff)
 #define THING_MAKE(type, index) ((uint16_t)((type) << 10 | (index)))
 
 static void *blocks[32];

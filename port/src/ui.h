@@ -10,6 +10,12 @@
 
 #define UI_ICON_SIZE 16
 
+/* KAOS data addresses. */
+#define SKILL_LEVEL_STRINGS 0x101e74 /* g_skill_level_string_indices[15], level 2-16 */
+#define BASE_SKILL_STRINGS 0x102472  /* g_base_skill_string_indices[4] */
+
+#define SPELL_TAB_STEP 5              /* caster tab zones per caster */
+
 /* Colors of the interface palette. */
 enum {
     COLOR_BLACK, COLOR_DARK_GRAY, COLOR_GRAY, COLOR_BROWN, COLOR_CYAN, COLOR_LIGHT_BROWN, COLOR_DARK_GREEN,
@@ -37,10 +43,12 @@ enum {
     CHAMPION_ATTR_INVENTORY_ALL = 0x5f80,    /* everything the inventory shows */
 };
 
-#ifndef THING_NONE
-#define THING_NONE 0xffff
-#endif
 #define UI_SLOT_BOX_INVENTORY_FIRST 8        /* slot box of champion slot 0 in the inventory */
+
+/* Mouse input entry: 6 words: command, x1, x2, y1, y2, buttons. A negative x1 marks a zone entry;
+   x2 is then the zone. */
+enum { INPUT_COMMAND, INPUT_X1, INPUT_X2, INPUT_Y1, INPUT_Y2, INPUT_BUTTONS, INPUT_WORDS };
+#define MOUSE_ENTRY_BYTES (2 * INPUT_WORDS)
 
 /* Mouse input tables of COMMAND.C, in the order of their KAOS addresses. */
 enum {

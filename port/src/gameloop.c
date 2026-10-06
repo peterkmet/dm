@@ -53,9 +53,6 @@
 #define POINTER_ZONE_BYTES 12
 #define POINTER_HOTSPOT_BYTES 8
 #define POINTER_SHADOW_COLOR 12       /* black: the shadow, swapped with the transparent color 0 */
-#define BITPLANE_COUNT 4
-#define PIXELS_PER_WORD 16
-#define PATH_SIZE 1024
 #define POINTER_WIDTH_BEFORE 4        /* the bitmap width word comes 4 bytes before the planes */
 #define POINTER_HEIGHT_BEFORE 2
 
@@ -135,7 +132,7 @@ void entrance_draw(void)
 /* process_entrance: ENTER or RESUME shows its pressed button, plays the switch sound, and waits 20 frames. */
 void entrance_press_button(int resume)
 {
-    enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20, SOUND_SWITCH = 1, BUTTON_VOLUME = 64 };
+    enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20, BUTTON_VOLUME = 64 };
     static const uint8_t volumes[2] = { BUTTON_VOLUME, BUTTON_VOLUME };
     const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_BUTTONS);
     Bitmap screen = ui_screen();

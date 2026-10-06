@@ -21,12 +21,8 @@
 #include "view.h"
 
 /* KAOS data addresses. */
-#define CHAMPION_COLORS 0x100ce0         /* g_champion_colors[4] */
 #define INVISIBILITY_PALETTE 0x10247a    /* g_invisibility_palette_changes[16] */
-#define SKILL_LEVEL_STRINGS 0x101e74     /* g_skill_level_string_indices[15], level 2-16 */
-#define BASE_SKILL_STRINGS 0x102472      /* g_base_skill_string_indices[4] */
 #define STATISTIC_STRINGS 0x101e9a       /* g_statistic_string_indices[7] */
-#define PORTRAIT_SIZE 0x102958           /* g_portrait_width, g_portrait_height */
 #define CHAMPION_ICON_SIZE 0x10295c      /* g_champion_icon_width, g_champion_icon_height */
 #define BAR_SHADOW 0x102980              /* offset of the panel bar shadow */
 #define DIRECTION_STRINGS 0x101e92       /* g_direction_string_indices[4] */
@@ -39,7 +35,6 @@
 #define BAR_ZONE_STEP 4
 #define SKILL_LEVEL_MAXIMUM 16
 #define BASE_SKILL_COUNT 4
-#define FOOD_WATER_MINIMUM (-1024)
 #define FOOD_WATER_RANGE 3072            /* -1024 to 2048 */
 #define FOOD_WATER_LOW (-512)
 #define LOAD_WARNING_NUMERATOR 5         /* yellow above 5/8 of the maximum load */
@@ -47,12 +42,9 @@
 #define VALUE_WIDTH 3
 #define PANEL_OBJECT_TEXT_Y 87           /* baseline of the first description line */
 #define PANEL_LINE_WRAP 18               /* longer lines break at a space */
-#define SCROLL_TEXT_SIZE 200
 #define SCROLL_FONT_SHIFT 0x60           /* '{' to '~' print as scroll font codes 27-30 */
 #define POTION_POWER_SYMBOL_FIRST '_'    /* + power / 40: the power rune before the name */
 #define POTION_POWER_SYMBOL_STEP 40
-#define TEXT_MODE_SCROLL 2
-#define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
 #define SCROLL_LINE_CHARS 18             /* characters that fit on the parchment */
 #define RUNE_FIRST 0x60                  /* font character of the first rune */
 #define CREATURE_NAME_TEXT "CREANAME"    /* CSB: scroll text replaced by the creature name ahead */

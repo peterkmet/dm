@@ -7,9 +7,6 @@
 #define G_PORTRAIT_WIDTH 0x102958
 #define G_PORTRAIT_HEIGHT 0x10295a
 
-#define TEXT_MODE_SCROLL 2
-#define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
-
 /* Offsets in the values line of a champion text, counted from its leading '\n'. */
 #define VALUES_GENDER 1
 #define VALUES_HEALTH 3
@@ -23,7 +20,6 @@
 #define RECRUIT_STAT_MINIMUM 30
 #define SKILL_BASE_EXPERIENCE 125     /* experience of skill level 1, doubled per level */
 #define HIDDEN_SKILLS_PER_BASE 4
-#define PORTRAITS_PER_ROW 8
 
 /* Decodes char_count letters, 4 bits each. Each character adds c - 'A' to the low byte only. */
 uint16_t recruit_decoded_value(const char *text, int16_t char_count) {

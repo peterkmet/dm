@@ -9,12 +9,10 @@ static SDL_Renderer *ren;
 static SDL_Texture *tex;
 static Uint64 next_tick;
 static SDL_AudioStream *stream;
-#define FRAMES_PER_SECOND 50              /* PAL vertical blank */
 #define TICK_NS (SDL_NS_PER_SECOND / FRAMES_PER_SECOND)
 #define FILTER_MAX 3
 #define AUDIO_CHANNELS 2
 #define AUDIO_QUEUED_TICKS 3
-#define COLOR_INDEX_MASK (PALETTE_COLORS - 1)
 #define ARGB_BYTES 4
 
 static int filter = 1; /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "logo.h"
+#include "bytes.h"
 #include "ftl.h"
 #include "graphics.h"
 #include "sound.h"
@@ -17,12 +18,9 @@
 #define SAMPLE_LENGTH 0x100a56
 #define SAMPLE_DATA 0x100a5a
 
-#define BE16(p) ((uint16_t)((p)[0] << 8 | (p)[1]))
-#define BE32(p) ((uint32_t)BE16(p) << 16 | BE16((p) + 2))
 #define SCRIPT_SHOW (-1)
 #define SCRIPT_ENTRY_BYTES 4
 #define LOGO_VOLUME 64
-#define FRAMES_PER_SECOND 50
 
 int logo_play(const char *path)
 {

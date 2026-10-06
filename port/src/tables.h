@@ -4,6 +4,10 @@
 
 /* Static rule tables of KAOS.FTL, decoded once from the loaded image. Field bits: docs/tables.md. */
 
+/* KAOS data addresses. */
+#define DOOR_INFO 0x1016e2 /* g_door_info[], high byte attributes */
+#define SPELL_BYTES 8
+
 enum {
     CREATURE_TYPE_COUNT = 27,
     CREATURE_SOUND_COUNT = 18,
@@ -13,7 +17,6 @@ enum {
     JUNK_TYPE_COUNT = 53,
     FOOD_TYPE_COUNT = 8,
     DOOR_TYPE_COUNT = 4,
-    DM_SPELL_COUNT = 25, /* CSB has CSB_SPELL_COUNT */
     SYMBOL_STEP_COUNT = 4,
     SYMBOL_COUNT = 6,
     ACTION_SET_COUNT = 44,
@@ -90,6 +93,9 @@ typedef struct {
     uint8_t minimum_skill_levels[2]; /* actions 1 and 2; bit 7 = needs charges */
     uint8_t byte_6;
 } ActionSet;
+#define ACTION_LIST_COUNT 3
+#define ACTION_SET_EMPTY_HAND 2
+#define ACTION_LEVEL_NEEDS_CHARGES 0x80 /* bit of a minimum skill level */
 
 typedef struct {
     uint8_t disabled_ticks;

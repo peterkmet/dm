@@ -15,17 +15,13 @@
 #include "graphics.h"
 #include "layout.h"
 #include "random.h"
+#include "recruit.h"
 #include "video.h"
 #include "view.h"
 
 /* KAOS globals (original addresses). */
-#define DUNGEON_PALETTE 0x100aa6    /* g_dungeon_palettes[0], full light */
 #define STEP_EAST 0x101038          /* g_direction_to_step_east[4] */
 #define STEP_NORTH 0x101040         /* g_direction_to_step_north[4] */
-#define DOOR_INFO 0x1016e2          /* g_door_info[], high byte attributes */
-#define LAYOUT_BITMAPS 0x1025f2     /* g_layout_bitmaps[], 14 bytes, index -1 - id */
-#define VIEWPORT_SIZE 0x102948      /* g_viewport_width, g_viewport_height */
-#define PORTRAIT_SIZE 0x102958      /* g_portrait_width, g_portrait_height */
 #define GLYPH_SIZE 0x10296e         /* wall text glyph width, height */
 #define WALL_SET_IDS 0x102a22       /* g_wall_set_layout_ids[46] */
 #define WALL_ORN_DEPTH 0x102ba6     /* depth of each wall ornament view (0-4) */
@@ -73,7 +69,6 @@ enum { PILE_FLOOR_SHIFTS = 16, PILE_ODD_CELL = 8, PILE_ALCOVE_FIRST = 2, PILE_AL
 #define REBIRTH_STEP_1_SCALES 8
 
 #define S8(a) ((int16_t)(int8_t)kaos_u8(a)) /* signed table byte */
-#define THING_INDEX(thing) ((thing) & 0x3ff) /* record index without type and cell */
 
 /* Layout bitmap record (14 bytes): the source rectangle of the slot in its graphic. */
 enum { LAYOUT_BITMAP_SIZE = 14, LAYOUT_BITMAP_X = 2, LAYOUT_BITMAP_Y = 4, LAYOUT_BITMAP_W = 6, LAYOUT_BITMAP_H = 8 };
@@ -123,7 +118,7 @@ enum { TRANSPARENT_COLOR = 10, DOOR_ORNAMENT_TRANSPARENT = 9, PORTRAIT_TRANSPARE
 enum { ELEMENT_DOOR_SIDE = 0x10, ELEMENT_DOOR_FRONT = VIEW_ELEMENT_DOOR_FRONT, ELEMENT_STAIRS_SIDE, ELEMENT_STAIRS_FRONT };
 
 /* Square bits that map.h does not name. */
-enum { SQUARE_RANDOM_ORNAMENT = 8, PIT_INVISIBLE = 4, TELEPORTER_VISIBLE = 4, DOOR_NORTH_SOUTH = 8 };
+enum { SQUARE_RANDOM_ORNAMENT = 8, PIT_INVISIBLE = 4, DOOR_NORTH_SOUTH = 8 };
 enum { WALL_ORNAMENT_NORTH_FACE = 8 };
 #define WALL_ORNAMENT_FACE(direction) (WALL_ORNAMENT_NORTH_FACE >> (direction)) /* random ornament allowed on that side */
 enum { ORNAMENT_RANDOM_MODULO = 30 };
@@ -156,7 +151,6 @@ enum { MAP_ORNAMENTS = 16, FLOOR_ORNAMENT_FOOTPRINTS = 15, DOOR_ORNAMENT_DESTROY
 enum { FLOOR_ORNAMENT_WITH_FOOTPRINTS = 0x8000 }; /* floor ornament ordinal flag */
 enum { WALL_ORNAMENT_GRAPHICS = 2, WALL_ORNAMENT_FRONT = 1, FLOOR_ORNAMENT_GRAPHICS = 6, DOOR_MASK_COORD_SET = 1 };
 enum { TEXT_PLAQUE_LINES = 3, WALL_TEXT_NEW_LINE = 0x80, WALL_TEXT_END = 0x81 }; /* decode_text mode 0 codes */
-enum { PORTRAITS_PER_ROW = 8 };
 enum { SCALE_D3_FAR_SIDE_W = 30 }; /* the D3L2 and D3R2 wall sides are wider than high */
 
 /* Cell orders of draw_objects_creatures_projectiles_explosions: a nibble per view cell + 1, low nibble first;

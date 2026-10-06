@@ -15,6 +15,17 @@ enum {
     EVENT_MAGIC_MAP_DAIN_END = 80, EVENT_MAGIC_MAP_ROS_END = 81, EVENT_MAGIC_MAP_KU_END = 82, EVENT_MAGIC_MAP_NETA_END = 83 /* CSB */
 };
 
+/* Group timeline events. A behavior event is an aspect event + 5. */
+enum {
+    EVENT_GROUP_REACTION_DANGER_ON_SQUARE = 29, EVENT_GROUP_REACTION_HIT_BY_PROJECTILE = 30,
+    EVENT_GROUP_REACTION_PARTY_IS_ADJACENT = 31, EVENT_UPDATE_ASPECT_GROUP = 32, EVENT_UPDATE_ASPECT_CREATURE_0 = 33,
+    EVENT_UPDATE_BEHAVIOR_GROUP = 37, EVENT_UPDATE_BEHAVIOR_CREATURE_0 = 38, EVENT_UPDATE_BEHAVIOR_CREATURE_3 = 41,
+    EVENT_MOVE_GROUP_SILENT = 60, EVENT_MOVE_GROUP_AUDIBLE = 61
+};
+
+/* A projectile moves one square per event 48 or 49. Event 48 ignores impacts on the square where it starts. */
+enum { EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS = 48, EVENT_MOVE_PROJECTILE = 49 };
+
 /* Event time: map index in bits 24-31, game time in bits 0-23. */
 #define EVENT_MAP_TIME(map, time) ((uint32_t)(map) << 24 | (uint32_t)(time))
 #define EVENT_TIME_MASK 0xffffff

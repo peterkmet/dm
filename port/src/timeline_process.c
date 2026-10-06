@@ -24,7 +24,6 @@
 #define GENERATOR_DELAY_LONG 127       /* a delay above this value counts in units of 64 ticks above 126 */
 #define GENERATOR_DELAY_UNIT 64
 #define LIGHT_STEP_TICKS 4
-#define TEXT_SIZE 256
 #define PROJECTILE_EVENT_STEP_ENERGY 0x000f
 #define REBIRTH_EXPLOSION_TICKS 5
 

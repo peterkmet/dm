@@ -12,25 +12,16 @@
 #include "map.h"
 #include "message.h"
 #include "projectile.h"
+#include "spells.h"
 #include "tables.h"
 #include "things.h"
 #include "ui.h"
 #include "view.h"
 #include "automap.h"
 
-#define TEXT_MODE_MESSAGE 1
-#define TEXT_MODE_SCROLL 2
-#define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
-#define TEXT_SIZE 512
-#define TELEPORTER_VISIBLE 4          /* square flag: the field is drawn */
-#define SYMBOL_FIRST 0x60             /* font character of the first rune */
-#define ACTION_SET_EMPTY_HAND 2
-#define ACTION_LEVEL_NEEDS_CHARGES 0x80
-#define ACTION_LIST_COUNT 3
+#define STATE_TEXT_SIZE 512
 #define MAP_MAX_SIZE 63               /* the widest map row (a map is at most 32 squares wide) */
 #define MAP_GRID_PREFIX 3             /* "yy " in front of a grid row */
-#define VIEW_DEPTH_COUNT 4            /* the party square and three squares ahead */
-#define CHAMPION_SYMBOL_COUNT 4
 #define STAMINA_DISPLAY_UNIT 10       /* the inventory shows stamina in tenths of the stored value */
 
 static const char *const direction_names[4] = { "north", "east", "south", "west" };
@@ -171,7 +162,7 @@ static void object_json(Json *j, uint16_t thing, int held)
     key_str(j, "name", object_name(thing));
     key_str(j, "kind", object_kind(thing));
     if (held && THING_TYPE(thing) == THING_SCROLL) {
-        char text[TEXT_SIZE];
+        char text[STATE_TEXT_SIZE];
         uint16_t text_thing = (uint16_t)(THING_TEXT << 10 | scroll_text_index(thing));
         if (decode_text(text, sizeof text, text_thing, TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY)) key_str(j, "text", text);
     }
@@ -219,7 +210,7 @@ static void action_list_json(Json *j, int16_t index)
 static void runes_json(Json *j, const char *symbols, int count)
 {
     json_open(j, '[');
-    for (int k = 0; k < count && symbols[k]; k++) json_str(j, g_rune_names[(uint8_t)symbols[k] - SYMBOL_FIRST]);
+    for (int k = 0; k < count && symbols[k]; k++) json_str(j, g_rune_names[(uint8_t)symbols[k] - SPELL_SYMBOL_FIRST]);
     json_close(j, ']');
 }
 
@@ -320,7 +311,7 @@ static void spell_json(Json *j)
     json_open(j, '[');
     for (int s = 0; s < SYMBOL_COUNT; s++) {
         uint16_t cost = *tables_symbol_base_mana_cost(c->symbol_step, s);
-        if (c->symbol_step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SYMBOL_FIRST)) >> 3;
+        if (c->symbol_step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >> 3;
         json_open(j, '{');
         key_int(j, "symbol", s);
         key_str(j, "name", g_rune_names[c->symbol_step * SYMBOL_COUNT + s]);
@@ -540,7 +531,7 @@ static void ornament_json(Json *j, const char *key, int16_t index)
 static void wall_face_json(Json *j, const char *key, int16_t x, int16_t y, int16_t face)
 {
     WallFace f;
-    char text[TEXT_SIZE];
+    char text[STATE_TEXT_SIZE];
     if (!wall_face(x, y, face, &f)) return;
     json_key(j, key);
     json_open(j, '{');

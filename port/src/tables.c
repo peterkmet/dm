@@ -1,4 +1,5 @@
 #include "tables.h"
+#include "spells.h"
 #include "adventure.h"
 #include "csbimage.h"
 #include "ftl.h"
@@ -10,7 +11,6 @@
 #define ARMOUR_INFO 0x1015b4
 #define JUNK_WEIGHTS 0x10169c
 #define FOOD_VALUES 0x1016d2
-#define DOOR_INFO 0x1016e2
 #define SPELLS 0x103c84
 #define SYMBOL_BASE_MANA_COST 0x103c66
 #define SYMBOL_MANA_COST_MULTIPLIER 0x103c7e
@@ -33,7 +33,6 @@
 #define OBJECT_INFO_BYTES 6
 #define WEAPON_INFO_BYTES 6
 #define ARMOUR_INFO_BYTES 4
-#define SPELL_BYTES 8
 #define ACTION_SET_BYTES 8
 
 /* Spell word 3: kind in bits 0-3, type in bits 4-9, disabled ticks in bits 10-15. */

@@ -4,6 +4,7 @@
 #include "game.h"
 #include "map.h"
 #include "things.h"
+#include "timeline_process.h"
 
 /* Projectiles, explosions, fluxcages, and launchers (KAOS range 7, PROJEXPL.C): docs/rules-creatures.md. */
 
@@ -15,9 +16,6 @@ enum {
 };
 #define EXPLOSION_THING_BASE 0xff80
 #define EXPLOSION_THING(type) ((uint16_t)(EXPLOSION_THING_BASE + (type)))
-
-/* A projectile moves one square per event 48 or 49. Event 48 ignores impacts on the square where it starts. */
-enum { EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS = 48, EVENT_MOVE_PROJECTILE = 49 };
 
 /* Impact type of projectile_has_impact_occurred: a square type (wall, stairs, door, fake wall) or these values. */
 enum { IMPACT_PARTY = -2, IMPACT_CREATURE = -1 };

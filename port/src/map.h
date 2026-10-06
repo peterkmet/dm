@@ -1,13 +1,11 @@
 #ifndef MAP_H
 #define MAP_H
 #include <stdint.h>
+#include "bytes.h"
 #include "dungeon.h"
 
 /* Current map, square bytes, thing lists, and the record fields that the movement rules use.
    Coordinates are on the current map. All records keep the big-endian layout of Dungeon.DAT. */
-
-#define BE16(p) ((uint16_t)((p)[0] << 8 | (p)[1]))
-#define WR16(p, v) ((p)[0] = (uint8_t)((uint16_t)(v) >> 8), (p)[1] = (uint8_t)(v))
 
 enum { DIRECTION_NORTH, DIRECTION_EAST, DIRECTION_SOUTH, DIRECTION_WEST };
 enum { LEVEL_UP = -1, LEVEL_DOWN = 1 };
@@ -19,7 +17,7 @@ enum { WALL_ORNAMENT_RIGHT = 1, WALL_ORNAMENT_ABOVE = 2, WALL_ORNAMENT_LEFT = 4,
 enum { PIT_IMAGINARY = 1, PIT_OPEN = 8 };
 enum { STAIRS_UP = 4, STAIRS_NORTH_SOUTH = 8 };
 enum { DOOR_STATE_MASK = 7, DOOR_OPEN = 0, DOOR_ALMOST_OPEN = 1, DOOR_CLOSED = 4, DOOR_DESTROYED = 5 };
-enum { TELEPORTER_OPEN = 8 };
+enum { TELEPORTER_VISIBLE = 4, TELEPORTER_OPEN = 8 };
 enum { FAKE_WALL_IMAGINARY = 1, FAKE_WALL_OPEN = 4 };
 #define SQUARE_TYPE(square) ((square) >> 5)
 
@@ -34,6 +32,7 @@ enum { THING_DOOR, THING_TELEPORTER, THING_TEXT, THING_SENSOR, THING_GROUP, THIN
 #define THING_NONE 0xffff
 #define THING_TYPE(thing) ((thing) >> 10 & 15)
 #define THING_CELL(thing) ((uint16_t)(thing) >> 14)
+#define THING_INDEX(thing) ((thing) & 0x3ff) /* record index without type and cell */
 #define THING_STRIP_CELL(thing) ((thing) & 0x3fff)
 #define THING_WITH_CELL(thing, cell) ((uint16_t)(((cell) & 3) << 14 | THING_STRIP_CELL(thing)))
 
@@ -158,14 +157,15 @@ static inline int16_t map_door_set(int16_t map, int16_t door_type) { return door
 /* Dungeon header: the size of the square first thing table. */
 static inline uint16_t dungeon_square_first_thing_count(void) { return BE16(g_dungeon_header + 10); }
 
-/* Sounds of the square rules. Mode: 0 plays now, 1 plays after the tick. */
-enum { SOUND_SWITCH = 1, SOUND_DOOR = 2, SOUND_DOOR_HITS_CREATURE = 4, SOUND_TELEPORT = 14, SOUND_PARTY_DAMAGED = 15 };
-enum { SOUND_MODE_NOW = 0, SOUND_MODE_AFTER_TICK = 1 };
-
 extern int16_t g_current_map_index, g_current_map_width, g_current_map_height;
 extern uint8_t **g_current_map_data;
 extern uint8_t *g_current_map;                   /* map descriptor, 16 bytes */
 extern uint16_t g_current_map_door_info[2];      /* high byte attributes, low byte defense */
+
+/* Map descriptor byte 12: difficulty in bits 4-7. */
+enum { MAP_DIFFICULTY_BYTE = 12, MAP_DIFFICULTY_SHIFT = 4 };
+/* Difficulty of the current map, 0 when no map is loaded. */
+static inline uint16_t map_current_difficulty(void) { return g_current_map ? g_current_map[MAP_DIFFICULTY_BYTE] >> MAP_DIFFICULTY_SHIFT : 0; }
 
 void map_reset(void);
 void set_current_map(int16_t map);

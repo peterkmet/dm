@@ -5,6 +5,7 @@
 #include "map.h"
 #include "tables.h"
 #include "things.h"
+#include "timeline_process.h"
 
 /* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules-creatures.md. */
 
@@ -35,13 +36,7 @@ enum {
     BEHAVIOR_APPROACH = 7
 };
 
-/* Group timeline events. A behavior event is an aspect event + 5. */
-enum {
-    EVENT_GROUP_REACTION_DANGER_ON_SQUARE = 29, EVENT_GROUP_REACTION_HIT_BY_PROJECTILE = 30,
-    EVENT_GROUP_REACTION_PARTY_IS_ADJACENT = 31, EVENT_UPDATE_ASPECT_GROUP = 32, EVENT_UPDATE_ASPECT_CREATURE_0 = 33,
-    EVENT_UPDATE_BEHAVIOR_GROUP = 37, EVENT_UPDATE_BEHAVIOR_CREATURE_0 = 38, EVENT_UPDATE_BEHAVIOR_CREATURE_3 = 41,
-    EVENT_MOVE_GROUP_SILENT = 60, EVENT_MOVE_GROUP_AUDIBLE = 61
-};
+/* A behavior event is an aspect event + 5. */
 enum { EVENT_BEHAVIOR_TO_ASPECT = 5 };
 
 /* Reactions that other rules send to group_process_events_29_to_41. Reaction r becomes event 32 + r. */
@@ -55,13 +50,6 @@ enum { CELLS_CENTERED = 0xff };
 
 /* Active group aspect byte: bit 7 attacking, bit 6 flipped, bits 3-5 vertical offset, bits 0-2 horizontal offset. */
 enum { ASPECT_ATTACKING = 0x80, ASPECT_FLIPPED = 0x40 };
-
-/* Sounds of the creature rules. */
-enum {
-    SOUND_METALLIC_THUD = 0, SOUND_WOODEN_THUD = 4, SOUND_STRONG_EXPLOSION = 5, SOUND_WEAK_EXPLOSION = 6,
-    SOUND_SCREAM = 7, SOUND_CHAMPION_0_DAMAGED = 9, SOUND_SWING = 13, SOUND_BUZZ = 14, SOUND_SPELL = 16
-};
-enum { SOUND_MODE_ONE_TICK_LATER = 2 };
 
 /* Group record, 16 bytes (thing type 4): next, possessions, type, cells, 4 health words, word 14 flags. */
 static inline uint16_t group_possessions(uint16_t group) { return BE16(REC(group) + 2); }
@@ -92,9 +80,6 @@ static inline uint16_t creature_ticks_after_attack(const CreatureInfo *info) { r
 static inline uint16_t creature_ticks_non_attack_aspect(const CreatureInfo *info) { return info->animation_ticks >> 4 & 15; }
 static inline uint16_t creature_ticks_attack_aspect(const CreatureInfo *info) { return info->animation_ticks >> 8 & 15; }
 static inline uint16_t creature_size(const CreatureInfo *info) { return info->attributes & CREATURE_SIZE_MASK; }
-
-/* Map descriptor byte 12 bits 4-7: the difficulty of the current map. */
-static inline uint16_t current_map_difficulty(void) { return g_current_map[12] >> 4; }
 
 extern int16_t g_creature_damage_outcome;
 extern int16_t g_group_secondary_direction;

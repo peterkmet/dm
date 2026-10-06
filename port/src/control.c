@@ -28,16 +28,11 @@
 #include "video.h"
 #include "view.h"
 
-/* KAOS data addresses. */
-#define VIEWPORT_ORIGIN 0x10293a      /* viewport origin x, y on the screen */
-
 #define INPUT_SIZE 65536              /* longest request line */
 #define TURN_MIN_TICKS 2              /* an action shows its result, then the action area returns */
 #define TURN_MAX_TICKS 64
 #define WAIT_MAX_TICKS 5000
 #define FRAMES_PER_TICK_LIMIT 16      /* a frozen game ends a turn after this many frames per tick */
-#define TEXT_SIZE 256
-#define SPELL_TAB_STEP 5              /* caster tab zones per caster */
 #define ACTION_NAME_SIZE 32
 #define WITNESSED_EXPLOSIONS_MAX 32
 #define WITNESSED_GROUPS_MAX 16
@@ -47,10 +42,6 @@
 #else
 #define SEND_FLAGS 0                  /* SO_NOSIGPIPE does the same (macOS) */
 #endif
-
-/* Entry of a mouse input table (ui.c reads the same layout): command, x1, x2, y1, y2, buttons. A
-   negative x1 marks a zone entry; x2 is then the zone. */
-enum { INPUT_COMMAND, INPUT_X1, INPUT_X2, INPUT_Y1, INPUT_Y2, INPUT_BUTTONS, INPUT_WORDS };
 
 static int listen_fd = -1, client_fd = -1;
 static char socket_path[sizeof(((struct sockaddr_un *)0)->sun_path)];
@@ -568,20 +559,15 @@ static uint32_t crc32_update(uint32_t crc, const uint8_t *p, size_t n)
     return ~crc;
 }
 
-static void be32(uint8_t *p, uint32_t v)
-{
-    p[0] = (uint8_t)(v >> 24), p[1] = (uint8_t)(v >> 16), p[2] = (uint8_t)(v >> 8), p[3] = (uint8_t)v;
-}
-
 static void png_chunk(FILE *f, const char *type, const uint8_t *data, uint32_t n)
 {
     uint8_t head[8];
-    be32(head, n);
+    WR32(head, n);
     memcpy(head + 4, type, 4);
     uint32_t crc = crc32_update(crc32_update(0, head + 4, 4), data, n);
     fwrite(head, 1, 8, f);
     fwrite(data, 1, n, f);
-    be32(head, crc);
+    WR32(head, crc);
     fwrite(head, 1, 4, f);
 }
 
@@ -610,11 +596,11 @@ static int write_png(const char *path)
         q += n;
         done += n;
     }
-    be32(q, b << 16 | a);
+    WR32(q, b << 16 | a);
     q += 4;
     uint8_t ihdr[13] = { 0 };
-    be32(ihdr, SCREEN_W);
-    be32(ihdr + 4, SCREEN_H);
+    WR32(ihdr, SCREEN_W);
+    WR32(ihdr + 4, SCREEN_H);
     ihdr[8] = 8; /* bits per channel */
     ihdr[9] = 2; /* RGB */
     FILE *f = fopen(path, "wb");

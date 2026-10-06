@@ -14,14 +14,12 @@
 #include "recruit.h"
 #include "sound.h"
 #include "tables.h"
+#include "timeline_process.h"
 #include "ui.h"
 #include <string.h>
 
 /* KAOS data addresses. */
-#define CHAMPION_COLORS 0x100ce0   /* g_champion_colors[4] */
 #define SLOT_DROP_ORDER 0x100d0e   /* g_slot_drop_order[30] */
-
-enum { EVENT_HIDE_DAMAGE_RECEIVED = 12, EVENT_POISON = 75 };
 
 #define CELL_COUNT 4
 #define INITIAL_FOOD_WATER 1500
@@ -29,7 +27,6 @@ enum { EVENT_HIDE_DAMAGE_RECEIVED = 12, EVENT_POISON = 75 };
 #define MAXIMUM_STAMINA 9999
 #define MAXIMUM_MANA 900
 #define FOOD_WATER_STARVING (-512)
-#define FOOD_WATER_MINIMUM (-1024)
 #define LEVEL_EXPERIENCE 500              /* experience for level 2; each level doubles it */
 #define TEMPORARY_EXPERIENCE_LIMIT 32000
 #define RECENT_ATTACK_TICKS 25            /* hidden skills gain double experience */
@@ -43,7 +40,6 @@ enum { EVENT_HIDE_DAMAGE_RECEIVED = 12, EVENT_POISON = 75 };
 #define RESURRECTION_MINIMUM_HEALTH 25
 #define SCENT_STRENGTH_MINIMUM 0
 #define PIT_ATTACK 20
-#define SOUND_PARTY_DAMAGED 7
 
 /* Weapon classes that use the swing, throw, and shoot skills. */
 enum { CLASS_SWING_WEAPON = 0, CLASS_DAGGER_AND_AXES = 2, CLASS_FIRST_AMMUNITION = 16, CLASS_AMMUNITION_END = 112 };
@@ -65,9 +61,6 @@ enum {
     (int16_t *)&c->wounds, &c->current_health, &c->maximum_health, &c->current_stamina, &c->maximum_stamina, \
     &c->current_mana, &c->maximum_mana, &c->action_defense, &c->food, &c->water
 
-static void write32(uint8_t *p, uint32_t v) { WR16(p, v >> 16), WR16(p + 2, v); }
-static uint32_t read32(const uint8_t *p) { return (uint32_t)BE16(p) << 16 | BE16(p + 2); }
-
 void champion_pack(const Champion *c, uint8_t *out)
 {
     memset(out, 0, CHAMPION_RECORD_SIZE);
@@ -85,7 +78,7 @@ void champion_pack(const Champion *c, uint8_t *out)
     memcpy(out + REC_STATISTICS, c->statistics, sizeof c->statistics);
     for (int i = 0; i < SKILL_COUNT; i++) {
         WR16(out + REC_SKILLS + REC_SKILL_SIZE * i, c->skills[i].temporary_experience);
-        write32(out + REC_SKILLS + REC_SKILL_SIZE * i + 2, (uint32_t)c->skills[i].experience);
+        WR32(out + REC_SKILLS + REC_SKILL_SIZE * i + 2, (uint32_t)c->skills[i].experience);
     }
     for (int i = 0; i < SLOT_COUNT; i++)
         WR16(out + REC_SLOTS + 2 * i, c->slots[i]);
@@ -111,7 +104,7 @@ void champion_unpack(const uint8_t *in, Champion *c)
     memcpy(c->statistics, in + REC_STATISTICS, sizeof c->statistics);
     for (int i = 0; i < SKILL_COUNT; i++) {
         c->skills[i].temporary_experience = (int16_t)BE16(in + REC_SKILLS + REC_SKILL_SIZE * i);
-        c->skills[i].experience = (int32_t)read32(in + REC_SKILLS + REC_SKILL_SIZE * i + 2);
+        c->skills[i].experience = (int32_t)BE32(in + REC_SKILLS + REC_SKILL_SIZE * i + 2);
     }
     for (int i = 0; i < SLOT_COUNT; i++)
         c->slots[i] = BE16(in + REC_SLOTS + 2 * i);
@@ -453,7 +446,7 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
         experience >>= 1;
     if (!experience)
         return;
-    uint16_t difficulty = g_current_map ? g_current_map[12] >> 4 : 0;
+    uint16_t difficulty = map_current_difficulty();
     if (difficulty)
         experience *= difficulty;
     Champion *c = &g_champions[champion_index];
@@ -658,7 +651,7 @@ void champion_apply_and_draw_pending_damage_and_wounds(void)
         }
         c->current_health = health;
         c->attributes |= wounds ? CHAMPION_ATTR_STATISTICS | CHAMPION_ATTR_WOUNDS : CHAMPION_ATTR_STATISTICS;
-        uint32_t map_time = (uint32_t)g_party_map_index << 24 | (g_game_time + HIDE_DAMAGE_TICKS);
+        uint32_t map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + HIDE_DAMAGE_TICKS);
         int16_t e = c->hide_damage_received_event_index;
         if (e == -1) {
             TimelineEvent event = {map_time, EVENT_HIDE_DAMAGE_RECEIVED, i, 0, 0};
@@ -737,7 +730,7 @@ void champion_poison(int16_t champion_index, uint16_t attack)
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     if (--attack) {
         c->poison_event_count++;
-        TimelineEvent e = {(uint32_t)g_party_map_index << 24 | (g_game_time + POISON_STEP_TICKS), EVENT_POISON, champion_index, attack, 0};
+        TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + POISON_STEP_TICKS), EVENT_POISON, champion_index, attack, 0};
         timeline_add_event(&e);
     }
 }
@@ -792,7 +785,7 @@ void champion_fall_damage(int16_t use_rope)
         return;
     if (!use_rope) {
         if (champion_damage_all(PIT_ATTACK, WOUND_LEGS | WOUND_FEET, ATTACK_SELF))
-            sound_request_play(SOUND_PARTY_DAMAGED, g_party_map_x, g_party_map_y, 0);
+            sound_request_play(SOUND_SCREAM, g_party_map_x, g_party_map_y, 0);
         return;
     }
     for (uint16_t i = 0; i < g_party_champion_count; i++) {

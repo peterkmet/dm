@@ -2,8 +2,6 @@
 #include <string.h>
 #include "adventure.h"
 
-#define PATH_SIZE 1024
-
 int16_t g_adventure = ADVENTURE_DM;
 
 static const char *const names[] = { "dm", "csb" };
