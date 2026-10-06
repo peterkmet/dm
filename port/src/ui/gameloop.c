@@ -396,6 +396,15 @@ static void advance_game_time(void)
     if (g_projectile_disabled_movement_ticks) g_projectile_disabled_movement_ticks--;
 }
 
+/* The champions that died in the tick let go of the inventory, the presses, and their icons.
+   leader is the leader before the deaths. */
+static void release_dead_champions(int16_t leader)
+{
+    for (uint16_t i = 0; i < CHAMPION_MAX_COUNT; i++)
+        if (g_dead_champions & 1 << i) command_release_dead_champion(i, leader);
+    g_dead_champions = 0;
+}
+
 /* game_loop: one tick of the game. A dead party ends in the endgame. */
 void gameloop_tick(void)
 {
@@ -419,7 +428,9 @@ void gameloop_tick(void)
     mark_seen_squares();
     command_highlight_disable();
     sound_play_pending();
+    int16_t leader = g_leader_index;
     champion_apply_and_draw_pending_damage_and_wounds();
+    release_dead_champions(leader);
     if (g_party_dead) {
         champion_draw_all_states(0);  /* the dead champions show during the death scream */
         endgame(1);

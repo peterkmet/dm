@@ -280,7 +280,7 @@ void inventory_toggle(int16_t champion_index)
 
 /* A champion dies: its open inventory closes, also during a press on the eye or the mouth; a dead
    leader ends a press on an imaginary wall; its icon is cleared and is no longer dragged. */
-void command_release_dead_champion(uint16_t champion_index)
+void command_release_dead_champion(uint16_t champion_index, int16_t leader_index)
 {
     Bitmap screen = ui_screen();
     int16_t icon_cell = NORMALIZE(g_champions[champion_index].cell - g_party_direction);
@@ -288,7 +288,7 @@ void command_release_dead_champion(uint16_t champion_index)
         pressing_eye = pressing_mouth = g_mouse_pointer_hidden = 0;
         inventory_toggle(INVENTORY_CLOSE);
     }
-    if (champion_index == g_leader_index && pressing_fake_wall) pressing_fake_wall = g_mouse_pointer_hidden = 0;
+    if (champion_index == leader_index && pressing_fake_wall) pressing_fake_wall = g_mouse_pointer_hidden = 0;
     if (icon_cell + 1 == dragged_icon_cell_plus_1) dragged_icon_cell_plus_1 = 0;
     ui_fill_zone(&screen, (int16_t)(ZONE_CHAMPION_ICON_FIRST + icon_cell), COLOR_BLACK);
 }

@@ -70,6 +70,7 @@ void game_new(void)
     g_last_projectile_disabled_movement_direction = 0;
     g_redraw = 0;
     g_endgame_delay = ENDGAME_NONE;
+    g_dead_champions = 0;
     g_active_group_count = 0;
     uint32_t r = random16();
     g_game_id = r * random16();

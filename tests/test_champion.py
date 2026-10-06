@@ -490,6 +490,19 @@ def test_death_sets_redraw_flags(lib, party):
     assert var(lib, c16, "g_magic_caster_champion_index").value == 1 and redraw.value == REDRAW_SPELL_AREA
 
 
+
+def test_death_marks_the_champion_for_release(lib, party):
+    lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
+    cs = champions(lib)
+    ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
+    cs[1].cell = (cs[0].cell + 1) & 3
+    var(lib, u16, "g_party_champion_count").value = 2
+    dead = var(lib, u16, "g_dead_champions")
+    dead.value = 0
+    lib.champion_kill(1)
+    assert dead.value == 1 << 1  # the user interface releases the champion after the tick
+    dead.value = 0
+
 SET_DUNGEON_VIEW_PALETTE, PALETTE_INDEX, PARTY = 0x10EDD6, 0x1001E6, 0x101ED4
 BRIGHT_THRESHOLD = 99  # g_palette_light_thresholds[0]
 

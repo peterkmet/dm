@@ -1,7 +1,6 @@
 #include "champion.h"
 #include "action.h"
 #include "adventure.h"
-#include "command.h"
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
@@ -50,6 +49,7 @@ int16_t g_candidate_champion_ordinal;
 int16_t g_champion_pending_damage[CHAMPION_MAX_COUNT];
 uint16_t g_champion_pending_wounds[CHAMPION_MAX_COUNT];
 int16_t g_champion_skill_level_up[CHAMPION_MAX_COUNT][SKILL_BASE_COUNT];
+uint16_t g_dead_champions;
 
 /* Offsets of the original record. */
 enum {
@@ -708,7 +708,7 @@ void champion_kill(uint16_t champion_index)
         action_clear_acting_champion();
     c->current_health = 0;
     c->attributes |= CHAMPION_ATTR_STATUS_BOX;
-    command_release_dead_champion(champion_index);
+    g_dead_champions |= 1 << champion_index;
     champion_drop_all_objects(champion_index);
     uint16_t bones = get_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
     if (bones != THING_NONE) {
