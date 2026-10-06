@@ -4,6 +4,7 @@
 #include "bytes.h"
 #include "ftl.h"
 #include "graphics.h"
+#include "music.h"
 #include "sound.h"
 #include "startend.h"
 #include "ui.h"
@@ -56,6 +57,7 @@ int logo_play(const char *path)
     while (frames-- > 0 && wait_frame())
         ;
     sound_stop_all(); /* the voice points into the image */
+    music_stop();
     ftl_free(&img);
     return 0;
 }

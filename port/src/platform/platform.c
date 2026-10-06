@@ -2,6 +2,7 @@
 #include <string.h>
 #include "platform.h"
 #include "scale.h"
+#include "music.h"
 #include "sound.h"
 
 static SDL_Window *win;
@@ -204,6 +205,7 @@ void plat_audio_pump(void)
     if (!audio_open()) return;
     while (SDL_GetAudioStreamQueued(stream) < (int)sizeof buf * AUDIO_QUEUED_TICKS) {
         sound_mix(buf, FRAMES);
+        music_mix(buf, FRAMES);
         if (!SDL_PutAudioStreamData(stream, buf, sizeof buf)) return;
     }
 }

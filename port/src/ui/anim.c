@@ -9,6 +9,7 @@
 #include "command.h"
 #include "ftl.h"
 #include "graphics.h"
+#include "music.h"
 #include "sound.h"
 #include "startend.h"
 #include "ui.h"
@@ -80,6 +81,7 @@ static size_t next_chunk(size_t at)
 void anim_close(void)
 {
     sound_stop_all(); /* the voices point into the file and the loaded files */
+    music_stop();
     free(file);
     file = NULL;
     file_len = pos = 0;

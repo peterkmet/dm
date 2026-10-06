@@ -57,6 +57,7 @@ def restore(game):
 def mix(game, frames):
     out = (c16 * (2 * frames))()
     game.lib.sound_mix(out, frames)
+    game.lib.music_mix(out, frames)
     return out
 
 
@@ -117,6 +118,7 @@ def test_sound_stop_all_stops_the_track(game):
     update_at(game, 0, 1, 1)
     game.lib.music_select(FM_TOWNS)
     game.lib.sound_stop_all()
+    game.lib.music_stop()
     assert (var(game, "g_music_track").value, var(game, "g_music_soundtrack").value) == (0, FM_TOWNS)
 
 
