@@ -41,6 +41,7 @@ def game(tmp_path_factory):
     lib.kaos_s16.restype = ctypes.c_int16
     lib.state_json_string.restype = ctypes.c_void_p
     lib.control_open.argtypes = [ctypes.c_char_p]
+    lib.control_is_turn_pending.restype = ctypes.c_bool
     assert lib.gameloop_load_data(str(GAME).encode())
     assert lib.gameloop_new_game(str(GAME).encode())
     game = Game(lib)

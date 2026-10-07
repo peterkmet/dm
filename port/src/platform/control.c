@@ -10,6 +10,7 @@
 #include "control.h"
 #include "action.h"
 #include "advanced.h"
+#include "adventure.h"
 #include "champion.h"
 #include "command.h"
 #include "dungeon.h"
@@ -36,6 +37,11 @@
 #define ACTION_NAME_SIZE 32
 #define WITNESSED_EXPLOSIONS_MAX 32
 #define WITNESSED_GROUPS_MAX 16
+#define KEY_PATTERN_SIZE 64           /* a quoted request key */
+#define NUMBER_BASE 10                /* request numbers are decimal */
+#define SLOT_REQUEST_SIZE 64
+#define CHOICE_SIZE 16
+#define CMD_SIZE 32
 
 #ifdef MSG_NOSIGNAL
 #define SEND_FLAGS MSG_NOSIGNAL       /* a closed client does not raise SIGPIPE (Linux) */
@@ -138,13 +144,13 @@ static void viewport_origin(int16_t *x, int16_t *y)
 /* A screen point inside box b (moved by dx, dy) where the table gives command, or 0. */
 static int find_in_box(int16_t table, int16_t command, Box b, int16_t dx, int16_t dy, int16_t *x, int16_t *y)
 {
-    int16_t cx = (int16_t)(b.x + dx + b.w / 2), cy = (int16_t)(b.y + dy + b.h / 2);
+    int16_t cx = b.x + dx + b.w / 2, cy = b.y + dy + b.h / 2;
     if (ui_command_from_mouse(table, cx, cy, UI_BUTTON_LEFT) == command) {
         *x = cx, *y = cy;
         return 1;
     }
-    for (int16_t py = (int16_t)(b.y + dy); py < b.y + dy + b.h; py++)
-        for (int16_t px = (int16_t)(b.x + dx); px < b.x + dx + b.w; px++)
+    for (int16_t py = b.y + dy; py < b.y + dy + b.h; py++)
+        for (int16_t px = b.x + dx; px < b.x + dx + b.w; px++)
             if (ui_command_from_mouse(table, px, py, UI_BUTTON_LEFT) == command) {
                 *x = px, *y = py;
                 return 1;
@@ -159,13 +165,13 @@ static int find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
     const Bitmap *vp = ui_viewport();
     int16_t ox, oy;
     viewport_origin(&ox, &oy);
-    const int16_t offsets[3][2] = { { 0, 0 }, { ox, oy }, { (int16_t)((SCREEN_W - vp->w) / 2), (int16_t)((SCREEN_H - vp->h) / 2) } };
+    const int16_t offsets[3][2] = { { 0, 0 }, { ox, oy }, { (SCREEN_W - vp->w) / 2, (SCREEN_H - vp->h) / 2 } };
     for (uint32_t a = ui_mouse_table_address(table); kaos_s16(a + 2 * INPUT_COMMAND); a += 2 * INPUT_WORDS) {
         if (kaos_s16(a + 2 * INPUT_COMMAND) != command) continue;
         int16_t x1 = kaos_s16(a + 2 * INPUT_X1), x2 = kaos_s16(a + 2 * INPUT_X2);
-        Box b = { x1, kaos_s16(a + 2 * INPUT_Y1), (int16_t)(x2 - x1 + 1), 0 };
+        Box b = { x1, kaos_s16(a + 2 * INPUT_Y1), x2 - x1 + 1, 0 };
         if (x1 >= 0) {
-            b.h = (int16_t)(kaos_s16(a + 2 * INPUT_Y2) - b.y + 1);
+            b.h = kaos_s16(a + 2 * INPUT_Y2) - b.y + 1;
             if (find_in_box(table, command, b, 0, 0, x, y)) return 1;
             continue;
         }
@@ -189,14 +195,14 @@ static void click_view_box(const Box *b)
 {
     int16_t ox, oy;
     viewport_origin(&ox, &oy);
-    click((int16_t)(ox + b->x + b->w / 2), (int16_t)(oy + b->y + b->h / 2));
+    click(ox + b->x + b->w / 2, oy + b->y + b->h / 2);
 }
 
 /* Requests: a flat search for "key": value; nested args are found the same way. */
 
 static const char *find_value(const char *line, const char *key)
 {
-    char pattern[64];
+    char pattern[KEY_PATTERN_SIZE];
     snprintf(pattern, sizeof pattern, "\"%s\"", key);
     const char *p = strstr(line, pattern);
     if (!p) return NULL;
@@ -220,7 +226,7 @@ static long get_int(const char *line, const char *key, long missing)
     const char *p = find_value(line, key);
     char *end;
     if (!p) return missing;
-    long value = strtol(p, &end, 10);
+    long value = strtol(p, &end, NUMBER_BASE);
     return end == p ? missing : value;
 }
 
@@ -232,7 +238,7 @@ static int champion_arg(const char *request, int16_t *champion)
 {
     long c = get_int(request, "champion", -1);
     if (c < 0 || c >= (long)g_party_champion_count || !g_champions[c].current_health) return 0;
-    *champion = (int16_t)c;
+    *champion = c;
     return 1;
 }
 
@@ -321,7 +327,7 @@ static const char *drop_object(const char *r)
         click_view_box(&g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL]);
         return NULL;
     }
-    if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE || !ui_zone_box((int16_t)(ZONE_DROP_CELL_FIRST + cell), &b)) return "cell must be 0-4";
+    if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE || !ui_zone_box(ZONE_DROP_CELL_FIRST + cell, &b)) return "cell must be 0-4";
     click_view_box(&b);
     return NULL;
 }
@@ -330,14 +336,14 @@ static const char *open_inventory(const char *r)
 {
     int16_t c;
     if (!champion_arg(r, &c)) return "no living champion with this index";
-    if (g_inventory_champion_ordinal != c + 1) press_key((uint16_t)(KEY_F1 + (c << 8)));
+    if (g_inventory_champion_ordinal != c + 1) press_key(KEY_F1 + (c << 8));
     return NULL;
 }
 
 static const char *close_inventory(const char *r)
 {
     (void)r;
-    if (g_inventory_champion_ordinal) press_key((uint16_t)(KEY_F1 + ((g_inventory_champion_ordinal - 1) << 8)));
+    if (g_inventory_champion_ordinal) press_key(KEY_F1 + ((g_inventory_champion_ordinal - 1) << 8));
     return NULL;
 }
 
@@ -352,11 +358,11 @@ static const char *click_slot(const char *r)
     if (g_inventory_champion_ordinal == c + 1) {
         if (slot < 0 || slot >= SLOT_CHEST_FIRST + (g_open_chest != THING_NONE ? SLOT_CHEST_COUNT : 0)) return "slot out of range";
         int16_t table = slot >= SLOT_CHEST_FIRST ? UI_INPUT_CHEST : UI_INPUT_INVENTORY;
-        if (!click_command(table, (int16_t)(COMMAND_CLICK_SLOT_BOX_FIRST + UI_SLOT_BOX_INVENTORY_FIRST + slot))) return "slot not found";
+        if (!click_command(table, COMMAND_CLICK_SLOT_BOX_FIRST + UI_SLOT_BOX_INVENTORY_FIRST + slot)) return "slot not found";
         return NULL;
     }
     if (slot != SLOT_HAND_READY && slot != SLOT_HAND_ACTION) return "open the inventory of this champion first (open_inventory)";
-    if (!click_command(UI_INPUT_STATUS_BOX, (int16_t)(COMMAND_CLICK_SLOT_BOX_FIRST + 2 * c + slot))) return "slot not found";
+    if (!click_command(UI_INPUT_STATUS_BOX, COMMAND_CLICK_SLOT_BOX_FIRST + 2 * c + slot)) return "slot not found";
     return NULL;
 }
 
@@ -380,7 +386,7 @@ static const char *look(const char *r)
 {
     int16_t x, y;
     long slot = get_int(r, "slot", -1);
-    char request[64];
+    char request[SLOT_REQUEST_SIZE];
     if (!g_inventory_champion_ordinal) return "open an inventory first (open_inventory): the eye is in the inventory";
     if (!find_click(UI_INPUT_INVENTORY, COMMAND_CLICK_EYE, &x, &y)) return "eye not found";
     if (slot < 0) {
@@ -406,7 +412,7 @@ static const char *swap_champions(const char *r)
         if (pair[k] < 0 || pair[k] >= (long)g_party_champion_count || !g_champions[pair[k]].current_health) return "a and b must be living champions";
     if (pair[0] == pair[1]) return "a and b must be different champions";
     for (int k = 0; k < 2; k++)
-        if (!click_command(UI_INPUT_INTERFACE, (int16_t)(COMMAND_CLICK_CHAMPION_ICON_FIRST + NORMALIZE(g_champions[pair[k]].cell - g_party_direction))))
+        if (!click_command(UI_INPUT_INTERFACE, COMMAND_CLICK_CHAMPION_ICON_FIRST + NORMALIZE(g_champions[pair[k]].cell - g_party_direction)))
             return "champion icon not found";
     return NULL;
 }
@@ -427,13 +433,13 @@ static const char *choose_action(const char *r)
     if (!champion_arg(r, &c)) return "no living champion with this index";
     if (g_acting_champion_ordinal && g_acting_champion_ordinal != c + 1) return "another champion's action menu is open: use pass first";
     if (!g_acting_champion_ordinal) {
-        click_command(UI_INPUT_ACTION_ICONS, (int16_t)(COMMAND_SELECT_ACTING_CHAMPION_FIRST + c));
+        click_command(UI_INPUT_ACTION_ICONS, COMMAND_SELECT_ACTING_CHAMPION_FIRST + c);
         if (g_acting_champion_ordinal != c + 1) return "this champion cannot act now (action disabled, or no actions)";
     }
     if (index < 0 || index >= (long)g_action_count) return "index out of range of the action menu (see state action_menu)";
     turn.has_damage = 1;
     g_action_damage = 0;
-    click_command(UI_INPUT_ACTION_NAMES, (int16_t)(COMMAND_ACTION_FIRST + index));
+    click_command(UI_INPUT_ACTION_NAMES, COMMAND_ACTION_FIRST + index);
     turn.damage = g_action_damage;
     if (batch.active && batch.damage_count < BATCH_DAMAGE_MAX) batch.damages[batch.damage_count++] = g_action_damage;
     return NULL;
@@ -452,8 +458,8 @@ static const char *set_caster(const char *r)
     Box b;
     if (!champion_arg(r, &c)) return "no living champion with this index";
     if (g_magic_caster_champion_index == -1) return "no spell area";
-    if (!ui_zone_box((int16_t)(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + c), &b)) return "caster tab not found";
-    click((int16_t)(b.x + b.w / 2), (int16_t)(b.y + b.h / 2));
+    if (!ui_zone_box(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + c, &b)) return "caster tab not found";
+    click(b.x + b.w / 2, b.y + b.h / 2);
     return NULL;
 }
 
@@ -470,7 +476,7 @@ static const char *add_rune(const char *r)
     if (symbol < 0 || symbol >= SYMBOL_COUNT) return "symbol must be 0-5";
     if (g_magic_caster_champion_index == -1) return "no spell area";
     size_t before = strlen(g_champions[g_magic_caster_champion_index].symbols);
-    spell_click((int16_t)(COMMAND_SPELL_SYMBOL_FIRST + symbol));
+    spell_click(COMMAND_SPELL_SYMBOL_FIRST + symbol);
     /* the game ignores a rune that costs more mana than the caster has */
     return strlen(g_champions[g_magic_caster_champion_index].symbols) == before ? "the rune was not added: not enough mana" : NULL;
 }
@@ -481,13 +487,13 @@ static const char *cast(const char *r) { (void)r; return spell_click(COMMAND_CAS
 static const char *recruit(const char *r)
 {
     static const char *const choices[3] = { "resurrect", "reincarnate", "cancel" };
-    char choice[16];
+    char choice[CHOICE_SIZE];
     if (!g_candidate_champion_ordinal) return "no candidate: click a champion mirror first (click_wall_ahead)";
     if (!g_leader_empty_handed) return "the leader hand must be empty";
     if (!get_string(r, "choice", choice, sizeof choice)) return "choice must be resurrect, reincarnate, or cancel";
     for (int k = 0; k < 3; k++)
         if (!strcmp(choice, choices[k])) {
-            click_command(UI_INPUT_RESURRECT, (int16_t)(PANEL_RESURRECT + k));
+            click_command(UI_INPUT_RESURRECT, PANEL_RESURRECT + k);
             return NULL;
         }
     return "choice must be resurrect, reincarnate, or cancel";
@@ -497,7 +503,7 @@ static const char *set_leader(const char *r)
 {
     int16_t c;
     if (!champion_arg(r, &c)) return "no living champion with this index";
-    click_command(UI_INPUT_STATUS_BOX, (int16_t)(COMMAND_SET_LEADER_FIRST + c));
+    click_command(UI_INPUT_STATUS_BOX, COMMAND_SET_LEADER_FIRST + c);
     return NULL;
 }
 
@@ -505,7 +511,7 @@ static const char *sleep_party(const char *r)
 {
     (void)r;
     if (g_leader_index == -1) return "no leader";
-    if (!g_inventory_champion_ordinal) press_key((uint16_t)(KEY_F1 + (g_leader_index << 8)));
+    if (!g_inventory_champion_ordinal) press_key(KEY_F1 + (g_leader_index << 8));
     click_command(UI_INPUT_INVENTORY, COMMAND_SLEEP);
     return NULL;
 }
@@ -537,13 +543,17 @@ static const struct {
 #define ZLIB_METHOD 0x78               /* deflate, 32 KB window */
 #define ZLIB_FLAGS 0x01                /* no dictionary; header check bits */
 #define BYTE_MASK 0xff
+#define CRC_TABLE_SIZE 256            /* one entry for each byte value */
+#define ADLER32_MODULUS 65521         /* the largest prime below 65536 */
+#define ADLER32_HIGH_SHIFT 16
+#define PNG_IHDR_SIZE 13
 
-static uint32_t crc_table[256];
+static uint32_t crc_table[CRC_TABLE_SIZE];
 
 static uint32_t crc32_update(uint32_t crc, const uint8_t *p, size_t n)
 {
     if (!crc_table[1])
-        for (uint32_t i = 0; i < 256; i++) {
+        for (uint32_t i = 0; i < CRC_TABLE_SIZE; i++) {
             uint32_t c = i;
             for (int k = 0; k < 8; k++) c = c & 1 ? CRC32_POLYNOMIAL ^ c >> 1 : c >> 1;
             crc_table[i] = c;
@@ -575,7 +585,7 @@ static int write_png(const char *path)
         *p++ = 0; /* filter: none */
         for (int x = 0; x < SCREEN_W; x++) {
             uint32_t argb = video_argb(video_color(y, fb[y][x]));
-            *p++ = (uint8_t)(argb >> 16), *p++ = (uint8_t)(argb >> 8), *p++ = (uint8_t)argb;
+            *p++ = (uint8_t)(argb >> ARGB_RED_SHIFT), *p++ = (uint8_t)(argb >> ARGB_GREEN_SHIFT), *p++ = (uint8_t)argb;
         }
     }
     uint8_t *q = z;
@@ -586,13 +596,13 @@ static int write_png(const char *path)
         *q++ = done + n == RAW;
         *q++ = (uint8_t)n, *q++ = (uint8_t)(n >> 8), *q++ = (uint8_t)~n, *q++ = (uint8_t)(~n >> 8);
         memcpy(q, raw + done, n);
-        for (size_t i = 0; i < n; i++) a = (a + raw[done + i]) % 65521, b = (b + a) % 65521;
+        for (size_t i = 0; i < n; i++) a = (a + raw[done + i]) % ADLER32_MODULUS, b = (b + a) % ADLER32_MODULUS;
         q += n;
         done += n;
     }
-    WR32(q, b << 16 | a);
+    WR32(q, b << ADLER32_HIGH_SHIFT | a);
     q += 4;
-    uint8_t ihdr[13] = { 0 };
+    uint8_t ihdr[PNG_IHDR_SIZE] = { 0 };
     WR32(ihdr, SCREEN_W);
     WR32(ihdr + 4, SCREEN_H);
     ihdr[8] = 8; /* bits per channel */
@@ -627,7 +637,7 @@ static void witness(void)
         int k = 0;
         while (k < witnessed.group_count && witnessed.groups[k].at.thing != things[i].thing) k++;
         if (k == WITNESSED_GROUPS_MAX) continue;
-        int16_t creatures = (int16_t)(rec_group_last_creature_index(things[i].thing) + 1);
+        int16_t creatures = rec_group_last_creature_index(things[i].thing) + 1;
         if (k == witnessed.group_count) {  /* a group seen first: count it once, not on each tick */
             witnessed.groups[k] = (WitnessedGroup){ .creature = rec_group_creature_type(things[i].thing), .before = creatures };
             witnessed.group_count++;
@@ -745,6 +755,21 @@ static void send_error(const char *error)
     send_line(&j);
 }
 
+/* The eye panel text of a look action, only when the turn looked. */
+static void look_json(Json *j)
+{
+    if (!look_text.shown) return;
+    json_key(j, "look");
+    json_open(j, '{');
+    json_key(j, "name");
+    json_str(j, look_text.name);
+    json_key(j, "lines");
+    json_open(j, '[');
+    for (int16_t i = 0; i < look_text.count; i++) json_str(j, look_text.lines[i]);
+    json_close(j, ']');
+    json_close(j, '}');
+}
+
 /* The end of a turn: the ticks it took, the action damage, the state, and the view. */
 static void send_turn_result(void)
 {
@@ -788,17 +813,7 @@ static void send_turn_result(void)
         json_int(&j, turn.damage);
     }
     health_lost_json(&j);
-    if (look_text.shown) {
-        json_key(&j, "look");
-        json_open(&j, '{');
-        json_key(&j, "name");
-        json_str(&j, look_text.name);
-        json_key(&j, "lines");
-        json_open(&j, '[');
-        for (int16_t i = 0; i < look_text.count; i++) json_str(&j, look_text.lines[i]);
-        json_close(&j, ']');
-        json_close(&j, '}');
-    }
+    look_json(&j);
     seen_json(&j);
     json_key(&j, "state");
     state_json_state(&j);
@@ -1023,9 +1038,51 @@ static void handle_new_game(void)
     send_part("state", state_json_state);
 }
 
+/* Writes the save file of the adventure, as the SAVE button does. */
+static void handle_save(void)
+{
+    const char *reason;
+    int saved = startend_save_current_game(&reason);
+    if (!saved) send_error(reason ? reason : "cannot write the save file");
+    else {
+        if (saved == SAVED_NEW_ADVENTURE) gameloop_start_loaded_game();
+        Json j = { 0 };
+        json_raw(&j, "{\"ok\":true}");
+        send_line(&j);
+    }
+}
+
+/* Starts a turn of the given ticks without an action; it ends early on news. */
+static void handle_wait(const char *request)
+{
+    long ticks = get_int(request, "ticks", 1);
+    if (ticks < 1 || ticks > WAIT_MAX_TICKS) send_error("ticks must be 1-5000");
+    else {
+        turn.has_damage = look_text.shown = turn.moving = 0;
+        snapshot();
+        start_witnessing();
+        start_turn(ticks, ticks, 1);
+    }
+}
+
+/* Writes the screen to the PNG file of the request path. */
+static void handle_screenshot(const char *request)
+{
+    char path[PATH_SIZE];
+    if (!get_string(request, "path", path, sizeof path)) send_error("missing path");
+    else if (!write_png(path)) send_error("cannot write the PNG file");
+    else {
+        Json j = { 0 };
+        json_raw(&j, "{\"ok\":true,\"path\":");
+        json_str(&j, path);
+        json_close(&j, '}');
+        send_line(&j);
+    }
+}
+
 static void handle_request(const char *request)
 {
-    char cmd[32], path[1024];
+    char cmd[CMD_SIZE];
     if (!get_string(request, "cmd", cmd, sizeof cmd)) {
         send_error("missing cmd");
         return;
@@ -1052,38 +1109,15 @@ static void handle_request(const char *request)
                                !strcmp(cmd, "save"))) {
         send_error("game over");
     } else if (!strcmp(cmd, "save")) {
-        const char *reason;
-        int saved = startend_save_current_game(&reason);
-        if (!saved) send_error(reason ? reason : "cannot write the save file");
-        else {
-            if (saved == SAVED_NEW_ADVENTURE) gameloop_start_loaded_game();
-            Json j = { 0 };
-            json_raw(&j, "{\"ok\":true}");
-            send_line(&j);
-        }
+        handle_save();
     } else if (!strcmp(cmd, "act")) {
         handle_act(request);
     } else if (!strcmp(cmd, "act_many")) {
         handle_act_many(request);
     } else if (!strcmp(cmd, "wait")) {
-        long ticks = get_int(request, "ticks", 1);
-        if (ticks < 1 || ticks > WAIT_MAX_TICKS) send_error("ticks must be 1-5000");
-        else {
-            turn.has_damage = look_text.shown = turn.moving = 0;
-            snapshot();
-            start_witnessing();
-            start_turn(ticks, ticks, 1);
-        }
+        handle_wait(request);
     } else if (!strcmp(cmd, "screenshot")) {
-        if (!get_string(request, "path", path, sizeof path)) send_error("missing path");
-        else if (!write_png(path)) send_error("cannot write the PNG file");
-        else {
-            Json j = { 0 };
-            json_raw(&j, "{\"ok\":true,\"path\":");
-            json_str(&j, path);
-            json_close(&j, '}');
-            send_line(&j);
-        }
+        handle_screenshot(request);
     } else {
         send_error("unknown cmd");
     }
@@ -1124,7 +1158,7 @@ int control_open(const char *path)
     return 1;
 }
 
-int control_is_turn_pending(void) { return turn.pending; }
+bool control_is_turn_pending(void) { return turn.pending; }
 
 void control_poll(void)
 {

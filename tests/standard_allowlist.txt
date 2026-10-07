@@ -1,7 +1,6 @@
 # Open exceptions of tests/test_standard.py. One per line: <check> <target> <reason>.
 # Targets are paths relative to port/src/, constant names, or function names.
 bool engine/action.h open: Task 9
-bool platform/control.h open: Task 11
 bool engine/game.h open: Task 9
 bool engine/group.h open: Task 10
 bool engine/magic.h open: Task 9
@@ -12,7 +11,6 @@ bool engine/sensor.h open: Task 9
 bool engine/timeline_process.h open: Task 10
 decimal engine/action.c open: Task 9
 decimal engine/champion.c open: Task 9
-decimal platform/control.c open: Task 11
 decimal data/csbimage.c open: Task 8
 decimal data/csbtext.c open: Task 8
 decimal ui/draw.c open: Task 11
@@ -61,8 +59,6 @@ hex ui/select.c open: Task 11
 hex ui/ui.c open: Task 11
 long engine/action.c:action_is_action_performed open: Task 9
 long ui/anim.c:anim_next_frame open: Task 11
-long platform/control.c:handle_request open: Task 11
-long platform/control.c:send_turn_result open: Task 11
 long engine/group.c:group_get_melee_action_damage open: Task 10
 long engine/group.c:group_get_move_result open: Task 10
 long engine/group.c:group_process_reaction_event open: Task 10
