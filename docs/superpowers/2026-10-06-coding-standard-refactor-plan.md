@@ -612,6 +612,14 @@ Do the steps for one file at a time. Run the full suite after each file.
 - [ ] **Step 6: Run the standard test and the full suite.** `uv run pytest -q`. Expected: all pass.
 - [ ] **Step 7: Commit the file.** `git commit -am "refactor: coding standard in <file>"`.
 
+Decisions made during Task 10:
+- A cast that only converts a value for an assignment, an initializer, a return, or a prototype parameter of the same type changes nothing: it goes. A cast in an expression goes only when both operands are known to be non-negative and below 32768 (map coordinates, cells, directions, damage after a positive check). Casts kept with a comment: the unsigned damage compare in `group_get_damage_creature_outcome` (a negative damage kills), the 16-bit products and wraps in `group.c` and `projectile.c` (`<< 6`, `* 8`, `range + random - 3`, `max - 5`, experience), the `-1`/`-2` tick additions of an attacking creature (they add 65535/65534 ticks), and the unsigned map bounds check of `projectile_fuse_action`.
+- `savegame.c`: the save file keeps the next free index of a free event slot in the high word: `SAVED_FREE_INDEX_SHIFT`.
+- `timeline_process.c`: `update_projectile_event` uses `projectile_event_c` of `projectile.h` (same bits: `x << 11` keeps only the low 5 bits of x in 16 bits). `event_is_door_destroyed_by_attack` returns `bool` and takes `uint16_t ticks`. Split: `process_effect_event` (poison and spell effect ends).
+- `projectile.c`: `creature_fire_resistance` and `FIRE_IMMUNE` move to `group.h` beside the poison resistance. Splits: `explosion_random_damage` (shared by the explosion damage and the explosion step), `flask_explosion_of`, `spell_explosion_attack`.
+- `group.h`: `CREATURE_INFO_NIBBLE`, `creature_hearing_range` (ranges bits 4-7, docs/rules-creatures.md: the roll next to the party adds the hearing and smell ranges), `GROUP_RECORD_*` byte and bit names, `PARTY_SCENT_*` for the scent word. `move.c` (`scent_of`) and `champion.c` build the same scent word (Task 9 files): one owner is needed after the merge.
+- `group.c`: `GROUP_THING_TYPE` (`THING_GROUP << 10`) until `map.h` offers a thing builder (`THING_MAKE` of `dungeon.c`). `group_is_creature_allowed_on_map` uses `map_creature_type_count`. Splits: `melee_hit_damage`, `wait_after_attack`, `can_attack_from_cell`, `wander_off_party_map`, `postpone_for_freeze_life`, `add_reaction_event`, `set_current_group`, `process_behavior_event`, and `follow_destination_squares` and `enter_destination` with the `GroupMove` state. No `long` line stays.
+
 ---
 
 ### Task 12: Final check and release notes
