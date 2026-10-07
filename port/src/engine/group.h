@@ -4,7 +4,6 @@
 #include "game.h"
 #include "map.h"
 #include "tables.h"
-#include "things.h"
 #include "timeline_process.h"
 
 /* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules-creatures.md. */
@@ -65,8 +64,8 @@ static inline void group_set_direction_field(uint16_t group, uint16_t direction)
 static inline void group_clear_do_not_discard(uint16_t group) { REC(group)[14] &= 0xfb; }
 
 /* On the party map the cells byte of the record holds the index of the active group. */
-static inline ActiveGroup *group_active(uint16_t group) { return &g_active_groups[group_cells_byte(group)]; }
-static inline const CreatureInfo *group_info(uint16_t group) { return tables_creature_info(group_creature_type(group)); }
+static inline ActiveGroup *group_active(uint16_t group) { return &g_active_groups[rec_group_cells_byte(group)]; }
+static inline const CreatureInfo *group_info(uint16_t group) { return tables_creature_info(rec_group_creature_type(group)); }
 
 /* Creature info fields that pack several values. */
 static inline uint16_t creature_sight_range(const CreatureInfo *info) { return info->ranges & 15; }

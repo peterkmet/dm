@@ -337,14 +337,14 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
     lib = game.lib
     assert lib.gameloop_new_game(str(GAME).encode())
     recruit_and_hold_object(game)
-    lib.group_get_thing.restype = u16
+    lib.get_square_group.restype = u16
     spot = None
     for level in range(1, 14):
         lib.group_remove_all_active_groups()
         lib.set_current_map_and_party_map(level)
         lib.group_add_all_active_groups()
         width, height = game.value("g_current_map_width"), game.value("g_current_map_height")
-        groups = {(x, y) for x in range(width) for y in range(height) if lib.group_get_thing(x, y) != 0xFFFE}
+        groups = {(x, y) for x in range(width) for y in range(height) if lib.get_square_group(x, y) != 0xFFFE}
         spot = next(
             ((x - STEP[d][0], y - STEP[d][1], d, (x, y)) for x, y in sorted(groups) for d in range(4)
              if 0 <= x - STEP[d][0] < width and 0 <= y - STEP[d][1] < height
@@ -356,12 +356,12 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
     px, py, direction, lord_square = spot
     for name, v in (("g_party_map_x", px), ("g_party_map_y", py), ("g_party_direction", direction)):
         ctypes.c_int16.in_dll(lib, name).value = v
-    lord = lib.group_get_thing(*lord_square)
+    lord = lib.get_square_group(*lord_square)
     lib.fuse_sequence()
     assert game.value("g_game_won") == 1 and game.value("g_return_to_entrance") == 1 and game.value("g_quit_requested") == 0
     assert lib.dungeon_get_thing_data(lord)[4] == 26  # Grey Lord
     # the other groups are gone; the test group is not caged and can walk away and go too
-    assert {(x, y) for x in range(width) for y in range(height) if lib.group_get_thing(x, y) != 0xFFFE} <= {lord_square}
+    assert {(x, y) for x in range(width) for y in range(height) if lib.get_square_group(x, y) != 0xFFFE} <= {lord_square}
     assert lib.gameloop_new_game(str(GAME).encode())  # a new game draws fluxcages again for the other tests
     assert game.value("g_do_not_draw_fluxcages") == 0 and game.value("g_game_won") == 0
 

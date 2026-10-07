@@ -414,7 +414,7 @@ static void remove_fluxcages(int16_t x, int16_t y)
 {
     uint16_t t = get_square_first_object(x, y);
     while (t != THING_ENDOFLIST) {
-        if (THING_TYPE(t) == THING_EXPLOSION && explosion_type(t) == EXPLOSION_FLUXCAGE) {
+        if (THING_TYPE(t) == THING_EXPLOSION && rec_explosion_type(t) == EXPLOSION_FLUXCAGE) {
             unlink_thing_from_list(t, 0, x, y);
             thing_set_free(t);
             t = get_square_first_object(x, y);
@@ -474,7 +474,7 @@ static void delete_other_groups(int16_t x, int16_t y)
 {
     for (int16_t gx = 0; gx < g_current_map_width; gx++)
         for (int16_t gy = 0; gy < g_current_map_height; gy++)
-            if (group_get_thing(gx, gy) != THING_ENDOFLIST && (gx != x || gy != y)) group_delete(gx, gy);
+            if (get_square_group(gx, gy) != THING_ENDOFLIST && (gx != x || gy != y)) group_delete(gx, gy);
 }
 
 void fuse_sequence(void)
@@ -488,7 +488,7 @@ void fuse_sequence(void)
     ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX);
     fuse_update();
     update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
-    uint16_t lord = group_get_thing(x, y);
+    uint16_t lord = get_square_group(x, y);
     if (lord == THING_ENDOFLIST) return;
     group_set_health(lord, 0, FUSE_LORD_HEALTH);
     group_set_cells(lord, CELLS_CENTERED, g_party_map_index);

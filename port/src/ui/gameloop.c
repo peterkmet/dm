@@ -209,7 +209,7 @@ static void decrease_torches_light_power(void)
             int16_t icon = object_get_icon_index(thing);
             if (icon < ICON_TORCH_UNLIT || icon > ICON_TORCH_LAST || !weapon_charges(thing)) continue;
             weapon_set_charges(thing, weapon_charges(thing) - 1);
-            if (!weapon_charges(thing)) object_clear_important(thing);
+            if (!weapon_charges(thing)) rec_object_clear_important(thing);
         }
 }
 

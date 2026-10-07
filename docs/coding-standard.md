@@ -12,7 +12,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
    - Graphic and layout zone numbers: named constants in `port/src/data/ids.h`, for example `GFX_WALLSET_FIRST`, `ZONE_VIEWPORT`.
    - Plain numbers are allowed only for 0, 1, -1, and 2 when it halves or doubles a value. Every other number is a named constant, also decimal game values such as divisors, limits, and thresholds.
    - Each constant has one definition, in the header of the module that owns it. Other modules include that header. They do not define the value again under the same or another name.
-2. Do not index raw record bytes outside one accessor module. Put field access in small functions or macros with names, for example `sensor_type(t)`, `sensor_disable(t)`, `door_state(t)`, `group_count(t)`. One module (`map.c` and `map.h`) owns the record layout.
+2. Do not index raw record bytes outside one accessor module. Put field access in small functions or macros with names, for example `rec_sensor_type(t)`, `rec_sensor_disable(t)`, `door_state(t)`, `group_count(t)`. One module (`map.c` and `map.h`) owns the record layout.
 3. Write C, not decompiler output.
    - No names like `uVar1`, `iVar3`, `local_10`, `arg_8`.
    - Game values keep the 16-bit types of the original (`int16_t`, `uint16_t`). One value has one type on its whole path: field, parameter, local variable, and return value. Then no cast is needed to pass it on. Use `int` only for values that are not game values, for example sizes, file offsets, and loop counters over C arrays.

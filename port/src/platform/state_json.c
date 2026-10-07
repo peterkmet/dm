@@ -17,7 +17,6 @@
 #include "projectile.h"
 #include "spells.h"
 #include "tables.h"
-#include "things.h"
 #include "ui.h"
 #include "view.h"
 #include "automap.h"
@@ -498,15 +497,15 @@ static int wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
     f->lock_ornament = f->other_ornament = -1;
     for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_CELL(t) != face) continue;
-        if (THING_TYPE(t) == THING_TEXT && text_is_visible(t)) f->text = t;
+        if (THING_TYPE(t) == THING_TEXT && rec_text_is_visible(t)) f->text = t;
         if (THING_TYPE(t) != THING_SENSOR) continue;
-        if (sensor_type(t) == SENSOR_WALL_CHAMPION_PORTRAIT) f->mirror = 1;
-        else if (sensor_ornament_ordinal(t) && sensor_type(t) == SENSOR_WALL_ORNAMENT_CLICK) f->switch_ = 1;
-        else if (sensor_ornament_ordinal(t) && sensor_takes_object(sensor_type(t))) {
-            if (sensor_data(t) >= ICON_TORCH_UNLIT && sensor_data(t) <= ICON_TORCH_LAST) f->torch_holder = 1;  /* it wants a torch */
+        if (rec_sensor_type(t) == SENSOR_WALL_CHAMPION_PORTRAIT) f->mirror = 1;
+        else if (rec_sensor_ornament_ordinal(t) && rec_sensor_type(t) == SENSOR_WALL_ORNAMENT_CLICK) f->switch_ = 1;
+        else if (rec_sensor_ornament_ordinal(t) && sensor_takes_object(rec_sensor_type(t))) {
+            if (rec_sensor_data(t) >= ICON_TORCH_UNLIT && rec_sensor_data(t) <= ICON_TORCH_LAST) f->torch_holder = 1;  /* it wants a torch */
             else {
                 f->lock = 1;
-                f->lock_ornament = view_wall_ornament_index(sensor_ornament_ordinal(t));
+                f->lock_ornament = view_wall_ornament_index(rec_sensor_ornament_ordinal(t));
             }
         }
     }
@@ -604,11 +603,11 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
     for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         uint16_t type = THING_TYPE(t);
         if (type == THING_GROUP) {
-            uint16_t creature = group_creature_type(t);
+            uint16_t creature = rec_group_creature_type(t);
             json_key(j, "creatures");
             json_open(j, '{');
             key_str(j, "type", state_json_creature_name(creature));
-            key_int(j, "count", group_last_creature_index(t) + 1);
+            key_int(j, "count", rec_group_last_creature_index(t) + 1);
             json_close(j, '}');
         } else if (is_object(t)) {
             json_open(&objects, '{');
@@ -616,7 +615,7 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
             key_str(&objects, "name", object_name(t));
             json_close(&objects, '}');
         } else if (type == THING_PROJECTILE) {
-            uint16_t slot = projectile_slot(t);
+            uint16_t slot = rec_projectile_slot(t);
             json_open(&flying, '{');
             key_str(&flying, "kind", "projectile");
             key_str(&flying, "name", is_object(slot) ? object_name(slot) : "spell");
@@ -624,9 +623,9 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
         } else if (type == THING_EXPLOSION) {
             json_open(&flying, '{');
             key_str(&flying, "kind", "explosion");
-            key_int(&flying, "type", explosion_type(t));
+            key_int(&flying, "type", rec_explosion_type(t));
             json_key(&flying, "name");
-            state_json_explosion_name(&flying, explosion_type(t));
+            state_json_explosion_name(&flying, rec_explosion_type(t));
             json_close(&flying, '}');
         }
     }

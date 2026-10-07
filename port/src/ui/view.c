@@ -11,7 +11,6 @@
 #include "map.h"
 #include "projectile.h"
 #include "tables.h"
-#include "things.h"
 #include "graphics.h"
 #include "layout.h"
 #include "random.h"
@@ -243,7 +242,7 @@ static uint16_t random_ordinal(int allowed, int16_t count, int16_t x, int16_t y)
 {
     if (!allowed) return 0;
     uint16_t square_seed = (uint16_t)(y + x * 32 + 2000), map_seed = (uint16_t)(mh + mw + map * 64 + 3000);
-    uint16_t hash = (uint16_t)(dungeon_ornament_seed() + ((uint16_t)(square_seed * 31417u) >> 1) + (uint16_t)(map_seed * 11u)) >> 2;
+    uint16_t hash = (uint16_t)(rec_dungeon_ornament_seed() + ((uint16_t)(square_seed * 31417u) >> 1) + (uint16_t)(map_seed * 11u)) >> 2;
     uint16_t i = hash % ORNAMENT_RANDOM_MODULO;
     return (int16_t)i < count ? i + 1 : 0;
 }
@@ -304,17 +303,17 @@ static void aspect(Aspect *a, int16_t dir, int16_t x, int16_t y)
         break;
     }
     for (; thing != THING_ENDOFLIST && THING_TYPE(thing) <= THING_SENSOR; thing = get_next_thing(thing)) {
-        if (scan == SCAN_FLOOR && THING_TYPE(thing) == THING_SENSOR) a->floor_ornament = sensor_ornament_ordinal(thing);
+        if (scan == SCAN_FLOOR && THING_TYPE(thing) == THING_SENSOR) a->floor_ornament = rec_sensor_ornament_ordinal(thing);
         if (scan != SCAN_WALL && scan != SCAN_FAKE_WALL) continue;
         uint16_t *side = &a->side[(THING_CELL(thing) - dir) & 3];
         if (THING_TYPE(thing) == THING_TEXT) {
-            if (text_is_visible(thing)) {
+            if (rec_text_is_visible(thing)) {
                 *side = inscription + 1;
                 a->text = thing;
             }
         } else {
-            *side = sensor_ornament_ordinal(thing);
-            if (sensor_type(thing) == SENSOR_WALL_CHAMPION_PORTRAIT) a->portrait = sensor_data(thing) + 1;
+            *side = rec_sensor_ornament_ordinal(thing);
+            if (rec_sensor_type(thing) == SENSOR_WALL_CHAMPION_PORTRAIT) a->portrait = rec_sensor_data(thing) + 1;
         }
     }
     /* a closed fake wall shows its things only when the party stands in its row or column */
@@ -508,7 +507,7 @@ typedef struct {
 
 static void group(uint16_t thing, Group *s)
 {
-    uint8_t index = group_cells_byte(thing);
+    uint8_t index = rec_group_cells_byte(thing);
     s->thing = thing;
     s->info = group_info(thing);
     s->aspect = kaos_ptr(CREATURE_ASPECTS + CREATURE_ASPECT_SIZE * s->info->aspect_index);
@@ -520,7 +519,7 @@ static void group(uint16_t thing, Group *s)
         memcpy(s->look, a->aspect, sizeof s->look);
     } else {
         s->cells = index;
-        s->dirs = kaos_u8(GROUP_DIRS + group_direction(thing));
+        s->dirs = kaos_u8(GROUP_DIRS + rec_group_direction(thing));
         memset(s->look, 0, sizeof s->look);
     }
 }
@@ -532,7 +531,7 @@ static uint16_t creature_direction(const Group *s, int16_t creature) { return s-
 static int16_t ordinal_in_cell(const Group *s, uint16_t cell)
 {
     if (s->cells == CELLS_CENTERED) return 1;
-    int16_t i = group_last_creature_index(s->thing);
+    int16_t i = rec_group_last_creature_index(s->thing);
     if (s->size == CREATURE_SIZE_HALF) {
         if ((cell & 1) == (s->dirs & 1)) cell = (cell - 1) & 3;
         for (; i >= 0; i--)
@@ -600,7 +599,7 @@ static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int
             if (!sideways) { /* facing the party or away: both creatures side by side */
                 done = 1;
                 if (index < 0) index = 0;
-                second = group_last_creature_index(s->thing);
+                second = rec_group_last_creature_index(s->thing);
                 uint16_t c = creature_cell(s, creature_index);
                 pos = c == dir || ((dir - 1) & 3) == c ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
             } else {
@@ -677,7 +676,7 @@ void view_set_motion(int16_t step, int16_t steps)
    its direction of flight and scaled by depth (and kinetic energy). */
 static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_t cell, int16_t lane, int16_t depth, int16_t coord)
 {
-    int16_t zone = ZONE_PROJECTILE_FIRST + coord * ZONE_OBJECT_CELLS + cell, aspect_index = projectile_aspect(projectile_slot(thing));
+    int16_t zone = ZONE_PROJECTILE_FIRST + coord * ZONE_OBJECT_CELLS + cell, aspect_index = projectile_aspect(rec_projectile_slot(thing));
     if (aspect_index >= 0) {
         drawn_box.w = 0;
         begin_projectile(thing);
@@ -687,7 +686,7 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
     }
     const uint8_t *aspect = kaos_ptr(PROJECTILE_ASPECTS + PROJECTILE_ASPECT_SIZE * -aspect_index);
     int16_t kind = aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_KIND, by_energy = aspect[PROJECTILE_ASPECT_SCALE_FLAGS] & PROJECTILE_SCALE_WITH_ENERGY, scale = SCALE_NATIVE, row = 0, pose, flip = 0;
-    uint8_t energy = projectile_kinetic_energy(thing);
+    uint8_t energy = rec_projectile_kinetic_energy(thing);
     if ((by_energy && energy != KINETIC_ENERGY_MAX) || depth) {
         row = depth * 2 - (cell >> 1);
         scale = kaos_u8(PROJECTILE_SCALES + row);
@@ -696,7 +695,7 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
     int rotates = kind == PROJECTILE_BACK_AND_ROTATION, odd_square = rotates && ((x + y) & 1);
     if (kind == PROJECTILE_NO_BACK_NO_ROTATION) pose = POSE_FRONT;
     else {
-        uint16_t flight = g_timeline_events ? projectile_event_direction(&g_timeline_events[projectile_event_index(thing)]) : (uint16_t)dir;
+        uint16_t flight = g_timeline_events ? projectile_event_direction(&g_timeline_events[rec_projectile_event_index(thing)]) : (uint16_t)dir;
         if ((dir & 1) == (flight & 1)) { /* flying away from or toward the party: front or back pose */
             pose = kind < PROJECTILE_NO_BACK && (kind != PROJECTILE_BACK || flight == dir) && !odd_square ? POSE_BACK : POSE_FRONT;
             if (rotates && cell < VIEW_CELL_FRONT_RIGHT) flip = FLIP_V;
@@ -747,7 +746,7 @@ static const Bitmap *explosion_bitmap(int16_t aspect, int16_t scale, Bitmap *own
 static void explosion_on_party(uint16_t thing, int16_t aspect)
 {
     int smoke = aspect == EXPLOSION_ASPECT_SMOKE;
-    int16_t strength = explosion_attack(thing) >> EXPLOSION_STRENGTH_SHIFT;
+    int16_t strength = rec_explosion_attack(thing) >> EXPLOSION_STRENGTH_SHIFT;
     const Bitmap *units = gfx_bitmap(GFX_EXPLOSION_PATTERN_FIRST + (aspect - smoke) * EXPLOSION_PATTERN_STRENGTHS + (strength != 0) + (strength > 3));
     Bitmap own = { 0 };
     if (units && smoke && (own.px = malloc((size_t)units->w * units->h))) {
@@ -771,7 +770,7 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
     for (; thing != THING_END; thing = get_next_thing(thing)) {
         if (THING_TYPE(thing) != THING_EXPLOSION) continue;
         uint16_t cell = THING_CELL(thing);
-        int16_t g, type = explosion_type(thing), rebirth = type >= EXPLOSION_REBIRTH_STEP_1, aspect, zone, scale;
+        int16_t g, type = rec_explosion_type(thing), rebirth = type >= EXPLOSION_REBIRTH_STEP_1, aspect, zone, scale;
         if (rebirth && !(coord >= 0 && cell == mcell)) continue;
         int16_t flip = random_2bits();
         Bitmap own = { 0 };
@@ -800,8 +799,8 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
             scale = kaos_u8(REBIRTH_SCALES + coord);
         } else {
             int far_side = !(cell == dir || ((dir - 1) & 3) == cell);
-            zone = explosion_is_centered(thing) ? ZONE_EXPLOSION_CENTERED_FIRST + explosion_coord : ZONE_EXPLOSION_FIRST + explosion_coord * ZONE_EXPLOSION_SIDES + far_side;
-            scale = (int16_t)(max16(EXPLOSION_ATTACK_MIN, explosion_attack(thing) + 1) * kaos_u8(EXPLOSION_SCALES + depth)) >> 8;
+            zone = rec_explosion_is_centered(thing) ? ZONE_EXPLOSION_CENTERED_FIRST + explosion_coord : ZONE_EXPLOSION_FIRST + explosion_coord * ZONE_EXPLOSION_SIDES + far_side;
+            scale = (int16_t)(max16(EXPLOSION_ATTACK_MIN, rec_explosion_attack(thing) + 1) * kaos_u8(EXPLOSION_SCALES + depth)) >> 8;
         }
         in_zone(explosion_bitmap(aspect, scale, &own), &vp, zone, flip, TRANSPARENT_COLOR);
         free(own.px);
@@ -1686,14 +1685,14 @@ static int map_footprints(const Aspect *a, int16_t x, int16_t y)
 /* The tile of a flying thing, or -1: spell projectiles and a flying zokathra. */
 static int16_t map_projectile_tile(uint16_t projectile, int16_t dir)
 {
-    uint16_t slot = projectile_slot(projectile);
+    uint16_t slot = rec_projectile_slot(projectile);
     switch (projectile_aspect(slot)) {
     case -PROJECTILE_ASPECT_FIREBALL: return MAP_TILE_FIREBALL_FIRST;
     case -PROJECTILE_ASPECT_SPELL: return MAP_TILE_SPELL_FIRST;
     case -PROJECTILE_ASPECT_POISON: return MAP_TILE_POISON_FIRST;
     case -PROJECTILE_ASPECT_SLIME: return MAP_TILE_SLIME_FIRST;
     case -PROJECTILE_ASPECT_LIGHTNING: {
-        const TimelineEvent *event = &g_timeline_events[projectile_event_index(projectile)];
+        const TimelineEvent *event = &g_timeline_events[rec_projectile_event_index(projectile)];
         return (int16_t)(MAP_TILE_LIGHTNING_FIRST + ((projectile_event_direction(event) & 1) != (dir & 1) ? MAP_TILE_LIGHTNING_ACROSS : 0));
     }
     }
@@ -1703,12 +1702,12 @@ static int16_t map_projectile_tile(uint16_t projectile, int16_t dir)
 /* The tile of an explosion, or -1: smoke and rebirth do not show. */
 static int16_t map_explosion_tile(uint16_t explosion)
 {
-    switch (explosion_type(explosion)) {
+    switch (rec_explosion_type(explosion)) {
     case EXPLOSION_FIREBALL: case EXPLOSION_LIGHTNING_BOLT: return MAP_TILE_EXPLOSION_FIRE;
     case EXPLOSION_POISON_BOLT: case EXPLOSION_POISON_CLOUD: return (int16_t)(MAP_TILE_POISON_CLOUD_FIRST + random_2bits());
     case EXPLOSION_FLUXCAGE: return (int16_t)(MAP_TILE_FLUXCAGE_FIRST + random_2bits());
     }
-    return explosion_type(explosion) < EXPLOSION_SMOKE ? MAP_TILE_EXPLOSION_OTHER : -1;
+    return rec_explosion_type(explosion) < EXPLOSION_SMOKE ? MAP_TILE_EXPLOSION_OTHER : -1;
 }
 
 /* The tiles of square (x, y) seen in direction dir at (px, py): the square, then with DAIN the footprints, the

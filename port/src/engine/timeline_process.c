@@ -40,7 +40,7 @@ static int16_t is_party_on(int16_t x, int16_t y)
 /* A group that a door or a fake wall can hit: it is not non-material. */
 static int16_t is_material_group_on(int16_t x, int16_t y, uint16_t *attributes)
 {
-    uint16_t group = group_get_thing(x, y);
+    uint16_t group = get_square_group(x, y);
     if (group == THING_ENDOFLIST)
         return 0;
     *attributes = get_creature_attributes(group);
@@ -82,7 +82,7 @@ void event_door_animation(TimelineEvent *event)
             return;
         }
         if (is_material_group_on(x, y, &attributes)) {
-            int16_t height = door_is_vertical(get_square_first_thing(x, y)) ? creature_height(attributes) : 1;
+            int16_t height = door_is_vertical(get_square_first_thing(x, y)) ? rec_creature_height(attributes) : 1;
             if (height <= state) {
                 group_door_damages_creatures(x, y);
                 *square = square_with_door_state(*square, state != DOOR_OPEN ? state - 1 : DOOR_OPEN);
@@ -162,9 +162,9 @@ void event_pit(TimelineEvent *event) { open_or_close(event); }
 /* Shows, hides, or toggles a text. Returns 1 when the text becomes visible. */
 static int16_t change_text_visibility(uint16_t text, int16_t effect)
 {
-    int16_t was_visible = text_is_visible(text);
-    text_set_visible(text, effect == EFFECT_TOGGLE ? !was_visible : effect == EFFECT_SET);
-    return !was_visible && text_is_visible(text);
+    int16_t was_visible = rec_text_is_visible(text);
+    rec_text_set_visible(text, effect == EFFECT_TOGGLE ? !was_visible : effect == EFFECT_SET);
+    return !was_visible && rec_text_is_visible(text);
 }
 
 /* A group generator plays its sound, disables itself, and comes back after its regeneration delay.
@@ -172,13 +172,13 @@ static int16_t change_text_visibility(uint16_t text, int16_t effect)
 static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event, int16_t x, int16_t y)
 {
     group_generate_from_sensor(sensor, x, y);
-    if (sensor_is_audible(sensor))
+    if (rec_sensor_is_audible(sensor))
         sound_request_play(SOUND_TELEPORT, x, y, SOUND_MODE_AFTER_TICK);
-    uint16_t delay = sensor_generator_delay(sensor);
-    if (!sensor_is_once_only(sensor) && !delay)
+    uint16_t delay = rec_sensor_generator_delay(sensor);
+    if (!rec_sensor_is_once_only(sensor) && !delay)
         return;
-    sensor_disable(sensor);
-    if (sensor_is_once_only(sensor))
+    rec_sensor_disable(sensor);
+    if (rec_sensor_is_once_only(sensor))
         return;
     if (delay > GENERATOR_DELAY_LONG)
         delay = (delay - (GENERATOR_DELAY_LONG - 1)) * GENERATOR_DELAY_UNIT;
@@ -194,7 +194,7 @@ void event_corridor(TimelineEvent *event)
         if (THING_TYPE(t) == THING_TEXT) {
             if (change_text_visibility(t, EVENT_EFFECT(event)) && is_party_on(x, y))
                 print_text(t);
-        } else if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_FLOOR_GROUP_GENERATOR) {
+        } else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_FLOOR_GROUP_GENERATOR) {
             trigger_group_generator(t, event, x, y);
         }
     }
@@ -204,8 +204,8 @@ void event_corridor(TimelineEvent *event)
 void event_enable_group_generator(TimelineEvent *event)
 {
     for (uint16_t t = get_square_first_thing(EVENT_X(event), EVENT_Y(event)); t != THING_NONE && t != THING_ENDOFLIST; t = get_next_thing(t)) {
-        if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_DISABLED) {
-            sensor_set_type(t, SENSOR_FLOOR_GROUP_GENERATOR);
+        if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_DISABLED) {
+            rec_sensor_set_type(t, SENSOR_FLOOR_GROUP_GENERATOR);
             return;
         }
     }
@@ -214,17 +214,17 @@ void event_enable_group_generator(TimelineEvent *event)
 /* A hold sensor sets or clears with the condition (inverted by the revert bit). Other sensors trigger when it is true. */
 static void trigger_on_condition(uint16_t sensor, int16_t condition, int16_t x, int16_t y, int16_t cell)
 {
-    int16_t clear = sensor_revert(sensor) == condition;
-    if (sensor_effect(sensor) == EFFECT_HOLD)
+    int16_t clear = rec_sensor_revert(sensor) == condition;
+    if (rec_sensor_effect(sensor) == EFFECT_HOLD)
         sensor_trigger_effect(sensor, clear ? EFFECT_CLEAR : EFFECT_SET, x, y, cell);
     else if (!clear)
-        sensor_trigger_effect(sensor, sensor_effect(sensor), x, y, cell);
+        sensor_trigger_effect(sensor, rec_sensor_effect(sensor), x, y, cell);
 }
 
 /* A counter counts up (set) or down, and triggers at 0. */
 static void count(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
 {
-    uint16_t data = sensor_data(sensor);
+    uint16_t data = rec_sensor_data(sensor);
     if (!data)
         return;
     if (effect == EFFECT_SET) {
@@ -233,22 +233,22 @@ static void count(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t
     } else {
         data--;
     }
-    sensor_set_data(sensor, data);
-    if (sensor_effect(sensor) == EFFECT_HOLD)
-        sensor_trigger_effect(sensor, sensor_revert(sensor) == (data == 0) ? EFFECT_CLEAR : EFFECT_SET, x, y, cell);
+    rec_sensor_set_data(sensor, data);
+    if (rec_sensor_effect(sensor) == EFFECT_HOLD)
+        sensor_trigger_effect(sensor, rec_sensor_revert(sensor) == (data == 0) ? EFFECT_CLEAR : EFFECT_SET, x, y, cell);
     else if (!data)
-        sensor_trigger_effect(sensor, sensor_effect(sensor), x, y, cell);   /* the revert bit does not apply here */
+        sensor_trigger_effect(sensor, rec_sensor_effect(sensor), x, y, cell);   /* the revert bit does not apply here */
 }
 
 /* An AND/OR gate sets, clears, or toggles the input of the cell, and triggers when the inputs match. */
 static void gate(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
 {
-    uint16_t data = sensor_data(sensor), input = 1 << cell;
+    uint16_t data = rec_sensor_data(sensor), input = 1 << cell;
     if (effect == EFFECT_TOGGLE ? (data & input) != 0 : effect != EFFECT_SET)
         data &= ~input;
     else
         data |= input;
-    sensor_set_data(sensor, data);
+    rec_sensor_set_data(sensor, data);
     trigger_on_condition(sensor, GATE_EXPECTED(data) == GATE_INPUTS(data), x, y, cell);
 }
 
@@ -260,16 +260,16 @@ void event_wall(TimelineEvent *event)
     for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_TYPE(t) == THING_TEXT && THING_CELL(t) == (uint16_t)cell)
             change_text_visibility(t, effect);
-        else if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_WALL_COUNTER)
+        else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_COUNTER)
             count(t, effect, x, y, cell);
-        else if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_WALL_AND_OR_GATE)
+        else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_AND_OR_GATE)
             gate(t, effect, x, y, cell);
-        else if (THING_TYPE(t) == THING_SENSOR && sensor_is_launcher(t) && THING_CELL(t) == (uint16_t)cell) {
+        else if (THING_TYPE(t) == THING_SENSOR && projectile_is_launcher_sensor(t) && THING_CELL(t) == (uint16_t)cell) {
             projectile_trigger_launcher(t, event);
-            if (sensor_is_once_only(t))
-                sensor_set_type(t, SENSOR_DISABLED);
-        } else if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_WALL_ENDGAME) {
-            if (g_endgame_sensor_hook) g_endgame_sensor_hook(sensor_delay(t));
+            if (rec_sensor_is_once_only(t))
+                rec_sensor_set_type(t, SENSOR_DISABLED);
+        } else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_ENDGAME) {
+            if (g_endgame_sensor_hook) g_endgame_sensor_hook(rec_sensor_delay(t));
         }
     }
     sensor_process_rotation_effect();
@@ -278,7 +278,7 @@ void event_wall(TimelineEvent *event)
 /* A moved projectile keeps its step energy and gets its new square, direction, cell, and map. */
 static void update_projectile_event(uint16_t projectile)
 {
-    TimelineEvent *e = &g_timeline_events[projectile_event_index(projectile)];
+    TimelineEvent *e = &g_timeline_events[rec_projectile_event_index(projectile)];
     e->c = (uint16_t)((e->c & PROJECTILE_EVENT_STEP_ENERGY) | g_move_result_map_x << 11 | (g_move_result_map_y & 31) << 6 |
                       (g_move_result_direction & 3) << 4);
     e->b = THING_WITH_CELL(projectile, g_move_result_cell);
@@ -303,7 +303,7 @@ void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
 {
     if (is_party_on(x, y))
         move_get_move_result(THING_NONE, x, y, x, y);
-    uint16_t group = group_get_thing(x, y);
+    uint16_t group = get_square_group(x, y);
     if (group != THING_ENDOFLIST)
         move_get_move_result(group, x, y, x, y);
     uint16_t thing = get_square_first_object(x, y);

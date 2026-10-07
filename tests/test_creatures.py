@@ -53,7 +53,7 @@ def lib():
     for name, res, args in [
         ("projectile_get_impact_attack", u16, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
         ("projectile_create", None, [u16, c16, c16, c16, c16, u8, u8, u8]), ("get_square", u8, [c16, c16]),
-        ("get_square_first_thing", u16, [c16, c16]), ("get_next_thing", u16, [u16]), ("group_get_thing", u16, [c16, c16]),
+        ("get_square_first_thing", u16, [c16, c16]), ("get_next_thing", u16, [u16]), ("get_square_group", u16, [c16, c16]),
         ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("dungeon_square", u8, [c16, c16, c16]),
         ("dungeon_square_first_thing", u16, [c16, c16, c16]),
         ("timeline_is_first_event_expired", c16, []), ("timeline_extract_first_event", None, [event_p]),
@@ -292,7 +292,7 @@ class Things:
 def adjacent_group(lib, x, y):
     """A group on a square next to (x, y) on the current map, or None."""
     for nx, ny in ((x, y - 1), (x + 1, y), (x, y + 1), (x - 1, y)):
-        group = lib.group_get_thing(nx, ny)
+        group = lib.get_square_group(nx, ny)
         if group != 0xFFFE:
             return group
     return None
@@ -373,16 +373,16 @@ def test_creature_dies_and_drops_possessions(lib):
     assert found, "no map allows skeletons"
     m, party_square, (x, y) = found
     place_party(lib, m, *party_square, 2)
-    assert lib.group_get_thing(x, y) == 0xFFFE
+    assert lib.get_square_group(x, y) == 0xFFFE
     # Like the original, the result is THING_NONE when the new group becomes active on the party map.
     assert lib.group_get_generated(CREATURE_SKELETON, 1, 0, 0, x, y) == 0xFFFF
-    group = lib.group_get_thing(x, y)
+    group = lib.get_square_group(x, y)
     assert group != 0xFFFE and lib.dungeon_get_thing_data(group)[4] == CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10, 1) == 0  # 10 damage: the skeleton survives
-    assert lib.group_get_thing(x, y) == group
+    assert lib.get_square_group(x, y) == group
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 2000, 1) == 2
-    assert lib.group_get_thing(x, y) == 0xFFFE
+    assert lib.get_square_group(x, y) == 0xFFFE
     assert var(lib, u16, "g_active_group_count").value == active - 1
     drops = things_of_type(lib, x, y, THING_WEAPON) + things_of_type(lib, x, y, THING_ARMOUR)
     assert drops  # the skeleton drops its falchion and helmet

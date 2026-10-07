@@ -150,7 +150,7 @@ static int16_t object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint
 {
     uint16_t type = THING_TYPE(thing);
     *stat = STAT_LUCK;
-    if ((type == THING_WEAPON || type == THING_ARMOUR) && slot <= CURSED_SLOT_LAST && object_is_cursed(thing))
+    if ((type == THING_WEAPON || type == THING_ARMOUR) && slot <= CURSED_SLOT_LAST && rec_object_is_cursed(thing))
         return CURSED_LUCK;
     if (icon == ICON_RABBITS_FOOT && slot < SLOT_COUNT)
         return 10;

@@ -97,17 +97,17 @@ void sensor_process_rotation_effect(void)
 /* A remote effect becomes a square event on the target after the sensor delay. Only a wall target keeps the target cell. */
 void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
 {
-    if (sensor_is_once_only(sensor))
-        sensor_disable(sensor);
-    if (sensor_is_local(sensor)) {
-        sensor_trigger_local_effect(sensor_local_effect(sensor), x, y, cell);
+    if (rec_sensor_is_once_only(sensor))
+        rec_sensor_disable(sensor);
+    if (rec_sensor_is_local(sensor)) {
+        sensor_trigger_local_effect(rec_sensor_local_effect(sensor), x, y, cell);
         return;
     }
-    int16_t target_x = sensor_target_x(sensor), target_y = sensor_target_y(sensor);
+    int16_t target_x = rec_sensor_target_x(sensor), target_y = rec_sensor_target_y(sensor);
     int16_t target_type = SQUARE_TYPE(g_current_map_data[target_x][target_y]);
-    int16_t target_cell = target_type == SQUARE_WALL ? sensor_target_cell(sensor) : 0;
+    int16_t target_cell = target_type == SQUARE_WALL ? rec_sensor_target_cell(sensor) : 0;
     sensor_add_event(kaos_u8(KAOS_SQUARE_TYPE_TO_EVENT_TYPE + target_type), target_x, target_y, target_cell, effect,
-                     g_game_time + sensor_delay(sensor));
+                     g_game_time + rec_sensor_delay(sensor));
 }
 
 /* The first object of the type in the cell (or in any cell), or THING_NONE. */
@@ -168,7 +168,7 @@ int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell
         }
         uint16_t sensor = t, sensor_cell = THING_CELL(t);
         remaining[sensor_cell]--;
-        uint16_t type = sensor_type(sensor), data = sensor_data(sensor), effect = sensor_effect(sensor);
+        uint16_t type = rec_sensor_type(sensor), data = rec_sensor_data(sensor), effect = rec_sensor_effect(sensor);
         if (type == SENSOR_DISABLED || (g_leader_index == -1 && type != SENSOR_WALL_CHAMPION_PORTRAIT) || sensor_cell != cell)
             continue;
         int16_t skip;
@@ -179,7 +179,7 @@ int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell
             skip = 0;
             break;
         case SENSOR_WALL_ANY_OBJECT:
-            skip = sensor_revert(sensor) != g_leader_empty_handed;
+            skip = rec_sensor_revert(sensor) != g_leader_empty_handed;
             break;
         case SENSOR_WALL_SINGLE_OBJECT_STORAGE:
         case SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED:
@@ -188,7 +188,7 @@ int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell
             /* fall through */
         case SENSOR_WALL_OBJECT:
         case SENSOR_WALL_OBJECT_REMOVED:
-            skip = sensor_revert(sensor) == holds_object_type(data);
+            skip = rec_sensor_revert(sensor) == holds_object_type(data);
             if (!skip && type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED && t != previous) {
                 thing_set_next(previous, get_next_thing(sensor));
                 thing_set_free(sensor);
@@ -248,7 +248,7 @@ int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell
         if (skip)
             continue;
         triggered = 1;
-        if (sensor_is_audible(sensor))
+        if (rec_sensor_is_audible(sensor))
             sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
         if (!g_leader_empty_handed && (type == SENSOR_WALL_OBJECT_REMOVED || type == SENSOR_WALL_SINGLE_OBJECT_STORAGE ||
                                        type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED)) {
@@ -264,13 +264,13 @@ int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell
 /* The revert bit inverts the value. A hold sensor sets or clears with the value; other sensors trigger on a true value. */
 static void trigger(uint16_t sensor, int16_t value, int16_t x, int16_t y)
 {
-    int16_t effect = sensor_effect(sensor);
-    value ^= sensor_revert(sensor);
+    int16_t effect = rec_sensor_effect(sensor);
+    value ^= rec_sensor_revert(sensor);
     if (effect == EFFECT_HOLD)
         effect = value ? EFFECT_SET : EFFECT_CLEAR;
     else if (!value)
         return;
-    if (sensor_is_audible(sensor))
+    if (rec_sensor_is_audible(sensor))
         sound_request_play(SOUND_SWITCH, x, y, SOUND_MODE_AFTER_TICK);
     sensor_trigger_effect(sensor, effect, x, y, ANY_CELL);
 }
@@ -286,7 +286,7 @@ static void print_text(uint16_t text)
 static void process_wall_sensor(uint16_t sensor, int16_t object_type, int16_t objects_present, int16_t same_type_present,
                                 int16_t other_type_present, int16_t add, int16_t x, int16_t y)
 {
-    uint16_t type = sensor_type(sensor), data = sensor_data(sensor);
+    uint16_t type = rec_sensor_type(sensor), data = rec_sensor_data(sensor);
     if ((type == SENSOR_WALL_ORNAMENT_CLICK && !objects_present) ||
         (type == SENSOR_WALL_ANY_OBJECT && !same_type_present && object_type == (int16_t)data) ||
         (type == SENSOR_WALL_OBJECT && !other_type_present && object_type != (int16_t)data))
@@ -329,7 +329,7 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
                 break;
             continue;
         }
-        uint16_t type = sensor_type(t), data = sensor_data(t);
+        uint16_t type = rec_sensor_type(t), data = rec_sensor_data(t);
         if (type == SENSOR_DISABLED)
             continue;
         if (wall) {

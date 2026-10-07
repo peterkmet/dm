@@ -46,7 +46,7 @@ The target folder of each existing file:
 | Folder | Files |
 |---|---|
 | `port/src/data/` | `adventure.c/.h`, `csbimage.c/.h`, `csbtext.c/.h`, `ftl.c/.h`, `graphics.c/.h`, `ids.h`, `spells.c/.h`, `tables.c/.h`, `bytes.h` (new) |
-| `port/src/engine/` | `action.c/.h`, `champion.c/.h`, `dungeon.c/.h`, `game.c/.h`, `group.c/.h`, `inventory.c/.h`, `magic.c/.h`, `map.c/.h`, `message.c/.h`, `move.c/.h`, `projectile.c/.h`, `random.c/.h`, `recruit.c/.h`, `savefile.c/.h`, `savegame.c/.h`, `sensor.c/.h`, `sound.c/.h`, `things.h`, `timeline_process.c/.h`, `explored.c/.h` (new) |
+| `port/src/engine/` | `action.c/.h`, `champion.c/.h`, `dungeon.c/.h`, `game.c/.h`, `group.c/.h`, `inventory.c/.h`, `magic.c/.h`, `map.c/.h`, `message.c/.h`, `move.c/.h`, `projectile.c/.h`, `random.c/.h`, `recruit.c/.h`, `savefile.c/.h`, `savegame.c/.h`, `sensor.c/.h`, `sound.c/.h`, `timeline_process.c/.h`, `explored.c/.h` (new) |
 | `port/src/ui/` | `advanced.c/.h`, `anim.c/.h`, `automap.c/.h`, `command.c/.h`, `dialog.c/.h`, `draw.c/.h`, `gameloop.c/.h`, `layout.c/.h`, `logo.c/.h`, `music.c/.h`, `musicmap.c`, `dr_mp3.h`, `select.c/.h`, `startend.c/.h`, `text.c/.h`, `ui.c/.h`, `ui_champion.c`, `ui_menus.c`, `video.c/.h`, `view.c/.h` |
 | `port/src/platform/` | `main.c`, `platform.c/.h`, `scale.c/.h`, `control.c/.h`, `state_json.c/.h` |
 
@@ -585,7 +585,7 @@ Each of these tasks does the same work on its files. The files:
 
 | Task | Files |
 |---|---|
-| 8 | `data/*`, `engine/random.c`, `engine/map.c`, `engine/map.h`, `engine/things.h`, `engine/dungeon.c`, `engine/savefile.c`, `engine/explored.c` |
+| 8 | `data/*`, `engine/random.c`, `engine/map.c`, `engine/map.h`, `engine/dungeon.c`, `engine/savefile.c`, `engine/explored.c` |
 | 9 | `engine/champion.c`, `engine/action.c`, `engine/inventory.c`, `engine/magic.c`, `engine/sensor.c`, `engine/move.c`, `engine/game.c`, `engine/recruit.c`, `engine/message.c`, `engine/sound.c` |
 | 10 | `engine/group.c`, `engine/projectile.c`, `engine/timeline_process.c`, `engine/savegame.c` |
 | 11 | `ui/*`, `platform/*` |

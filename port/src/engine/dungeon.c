@@ -166,7 +166,7 @@ static int16_t read_maps(int16_t maps, uint16_t *sum)
 /* Reads the column index, the square first things, and the text words. A new game adds free square entries. */
 static int16_t read_square_things_and_text(int new_game, uint16_t *sum)
 {
-    uint16_t square_things = dungeon_square_first_thing_count(), extra = new_game ? FREE_SQUARE_THINGS : 0;
+    uint16_t square_things = rec_dungeon_square_first_thing_count(), extra = new_game ? FREE_SQUARE_THINGS : 0;
     if (square_things > UINT16_MAX - extra)
         return 0;
     WR16(g_dungeon_header + HEADER_SQUARE_THINGS, square_things + extra);
@@ -305,7 +305,7 @@ static int16_t validate_squares(void)
                 uint8_t square = g_dungeon_map_data[m][x][y];
                 int16_t type = SQUARE_TYPE(square);
                 if (square & SQUARE_HAS_THINGS) {
-                    if (index >= dungeon_square_first_thing_count() || !valid_link(BE16(g_square_first_things + index * 2)))
+                    if (index >= rec_dungeon_square_first_thing_count() || !valid_link(BE16(g_square_first_things + index * 2)))
                         return 0;
                     index++;
                 }
@@ -374,7 +374,7 @@ uint8_t *dungeon_save(uint32_t *size)
     };
     uint32_t bytes[DUNGEON_PART_COUNT] = {
         HEADER_BYTES, (uint32_t)dungeon_map_count() * MAP_BYTES, (uint32_t)g_dungeon_column_count * 2,
-        (uint32_t)dungeon_square_first_thing_count() * 2, (uint32_t)text_words() * 2,
+        (uint32_t)rec_dungeon_square_first_thing_count() * 2, (uint32_t)text_words() * 2,
     };
     for (int16_t t = 0; t < THING_TYPE_COUNT; t++) {
         part[PART_THINGS_FIRST + t] = g_thing_data[t];
@@ -432,7 +432,7 @@ uint16_t dungeon_square_first_thing(int16_t map, int16_t x, int16_t y)
     uint16_t index = column_first_thing_index(map, x);
     for (int16_t i = 0; i < y; i++)
         index += (col[i] & SQUARE_HAS_THINGS) != 0;
-    if (index >= dungeon_square_first_thing_count())
+    if (index >= rec_dungeon_square_first_thing_count())
         return THING_ENDOFLIST;
     return BE16(g_square_first_things + index * 2);
 }
@@ -516,7 +516,7 @@ int16_t decode_text(char *dst, int16_t dst_size, uint16_t text_thing, int16_t mo
         return 0;
     TextOut o = {dst, dst + dst_size - 1, 1};
     uint16_t offset = BE16(REC(text_thing) + 2) >> 3; /* text word offset in bits 3-15 */
-    if (text_is_visible(text_thing) || mode < 0) {
+    if (rec_text_is_visible(text_thing) || mode < 0) {
         mode &= MODE_MASK;
         decode_codes(&o, offset, mode);
     }

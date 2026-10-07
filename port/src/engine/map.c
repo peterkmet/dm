@@ -184,7 +184,7 @@ void link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
     if (x >= 0) {
         uint8_t *square = &g_current_map_data[x][y];
         if (!(*square & SQUARE_HAS_THINGS)) {
-            uint16_t count = dungeon_square_first_thing_count();
+            uint16_t count = rec_dungeon_square_first_thing_count();
             if (BE16(g_square_first_things + (count - 1) * 2) != THING_NONE)
                 fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
             *square |= SQUARE_HAS_THINGS;
@@ -215,7 +215,7 @@ void unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
         if (after == THING_NONE && thing == THING_STRIP_CELL(BE16(first)))
             report_free_record("unlink of a free record", x, y); /* its next is gone: remove the whole entry */
         if ((after == THING_ENDOFLIST || after == THING_NONE) && thing == THING_STRIP_CELL(BE16(first))) {
-            uint16_t last = dungeon_square_first_thing_count() - 1;
+            uint16_t last = rec_dungeon_square_first_thing_count() - 1;
             g_current_map_data[x][y] &= ~SQUARE_HAS_THINGS;
             memmove(first, first + 2, (last - index) * 2);
             WR16(g_square_first_things + last * 2, THING_NONE);
@@ -244,7 +244,7 @@ void unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
     thing_set_next(thing, THING_ENDOFLIST);
 }
 
-uint16_t group_get_thing(int16_t x, int16_t y)
+uint16_t get_square_group(int16_t x, int16_t y)
 {
     uint16_t thing = get_square_first_thing(x, y);
     while (thing != THING_ENDOFLIST && THING_TYPE(thing) != THING_GROUP)
@@ -254,7 +254,7 @@ uint16_t group_get_thing(int16_t x, int16_t y)
 
 uint16_t get_creature_attributes(uint16_t group_thing)
 {
-    return kaos_u16(KAOS_CREATURE_INFO + group_creature_type(group_thing) * CREATURE_INFO_SIZE + CREATURE_INFO_ATTRIBUTES);
+    return kaos_u16(KAOS_CREATURE_INFO + rec_group_creature_type(group_thing) * CREATURE_INFO_SIZE + CREATURE_INFO_ATTRIBUTES);
 }
 
 #define TYPE_MASK 0x7f
@@ -288,9 +288,9 @@ uint16_t potion_type(uint16_t thing) { return dungeon_get_thing_data(thing)[2] &
 uint16_t potion_power(uint16_t thing) { return dungeon_get_thing_data(thing)[3]; }
 uint16_t container_type(uint16_t thing) { return (dungeon_get_thing_data(thing)[5] & 6) >> 1; }
 uint16_t container_first_thing(uint16_t thing) { return BE16(dungeon_get_thing_data(thing) + 2); }
-int16_t object_is_cursed(uint16_t thing) { return dungeon_get_thing_data(thing)[2] & 1; }
-void object_set_important(uint16_t thing) { dungeon_get_thing_data(thing)[3] |= IMPORTANT; }
-void object_clear_important(uint16_t thing) { dungeon_get_thing_data(thing)[3] &= (uint8_t)~IMPORTANT; }
+int16_t rec_object_is_cursed(uint16_t thing) { return dungeon_get_thing_data(thing)[2] & 1; }
+void rec_object_set_important(uint16_t thing) { dungeon_get_thing_data(thing)[3] |= IMPORTANT; }
+void rec_object_clear_important(uint16_t thing) { dungeon_get_thing_data(thing)[3] &= (uint8_t)~IMPORTANT; }
 int16_t weapon_is_lit(uint16_t thing) { return dungeon_get_thing_data(thing)[2] >> 7; }
 uint16_t weapon_charges(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x3c) >> 2; }
 uint16_t junk_charges(uint16_t thing) { return dungeon_get_thing_data(thing)[2] >> 6; }
@@ -341,13 +341,13 @@ void potion_set_type(uint16_t thing, uint16_t type)
 void potion_set_power(uint16_t thing, uint16_t power) { dungeon_get_thing_data(thing)[3] = (uint8_t)power; }
 
 /* Weapon, armour, and junk: the type in word 2 bits 0-6; the important bit stays. */
-void object_set_type(uint16_t thing, uint16_t type)
+void rec_object_set_type(uint16_t thing, uint16_t type)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
     d[3] = (uint8_t)((d[3] & IMPORTANT) | (type & TYPE_MASK));
 }
 
-void object_set_cursed(uint16_t thing, int16_t cursed)
+void rec_object_set_cursed(uint16_t thing, int16_t cursed)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
     d[2] = (uint8_t)((d[2] & ~1) | (cursed != 0));
@@ -361,4 +361,4 @@ void scroll_set_closed(uint16_t thing, int16_t closed)
 }
 
 /* Sensor type 0 does nothing. The sensor data stays. */
-void sensor_disable(uint16_t thing) { dungeon_get_thing_data(thing)[3] &= 0x80; }
+void rec_sensor_disable(uint16_t thing) { dungeon_get_thing_data(thing)[3] &= 0x80; }

@@ -10,7 +10,6 @@ bool engine/map.h open: Task 8
 bool engine/move.h open: Task 9
 bool engine/projectile.h open: Task 10
 bool engine/sensor.h open: Task 9
-bool engine/things.h open: Task 8
 bool engine/timeline_process.h open: Task 10
 decimal engine/action.c open: Task 9
 decimal engine/champion.c open: Task 9
@@ -45,7 +44,6 @@ decimal engine/savegame.c open: Task 10
 decimal data/spells.c open: Task 8
 decimal platform/state_json.c open: Task 11
 decimal data/tables.c open: Task 8
-decimal engine/things.h open: Task 8
 decimal engine/timeline_process.c open: Task 10
 decimal ui/ui_champion.c open: Task 11
 decimal ui/ui_menus.c open: Task 11
@@ -61,7 +59,6 @@ hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
 hex engine/projectile.h open: Task 10
 hex ui/select.c open: Task 11
-hex engine/things.h open: Task 8
 hex ui/ui.c open: Task 11
 long engine/action.c:action_is_action_performed open: Task 9
 long ui/anim.c:anim_next_frame open: Task 11
@@ -141,7 +138,6 @@ prefix ui/startend.h open: Task 7
 prefix platform/state_json.h open: Task 7
 prefix data/tables.h open: Task 7
 prefix ui/text.h open: Task 7
-prefix engine/things.h open: Task 7
 prefix engine/timeline_process.h open: Task 7
 prefix ui/ui.h open: Task 7
 prefix ui/video.h open: Task 7

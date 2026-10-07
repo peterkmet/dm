@@ -132,7 +132,7 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
             start_direction = g_party_direction;
         }
         if (type == THING_PROJECTILE)
-            g_move_result_direction = PROJECTILE_EVENT_DIRECTION(&g_timeline_events[projectile_event_index(thing)]);
+            g_move_result_direction = PROJECTILE_EVENT_DIRECTION(&g_timeline_events[rec_projectile_event_index(thing)]);
         for (int16_t n = SQUARE_CHAIN_MAXIMUM; n; n--) {
             uint8_t square = g_current_map_data[dst_x][dst_y];
             int16_t square_type = SQUARE_TYPE(square);
@@ -215,7 +215,7 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
     if (dst_x >= 0) {
         set_current_map(map);
         if (party) {
-            uint16_t group = group_get_thing(g_party_map_x, g_party_map_y);
+            uint16_t group = get_square_group(g_party_map_x, g_party_map_y);
             if (group != THING_ENDOFLIST) {
                 group_drop_group_possessions(g_party_map_x, g_party_map_y, group, SOUND_MODE_AFTER_TICK);
                 group_delete(g_party_map_x, g_party_map_y);
@@ -340,7 +340,7 @@ void move_party(int16_t command)
         if (blocked) {
             bump_into_wall(x, y, arrow);
         } else {
-            blocked = group_get_thing(x, y) != THING_ENDOFLIST;
+            blocked = get_square_group(x, y) != THING_ENDOFLIST;
             if (blocked)
                 group_process_reaction_event(x, y, REACTION_PARTY_IS_ADJACENT, 0);
         }

@@ -506,13 +506,13 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
     case THING_WEAPON:
         potential = ATTRIBUTE_POISONED | ATTRIBUTE_BROKEN | ATTRIBUTE_CURSED;
         actual = (weapon_is_poisoned(thing) ? ATTRIBUTE_POISONED : 0) | (weapon_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) |
-                 (object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
+                 (rec_object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
         if (icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST && !weapon_charges(thing))
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_string(TEXT_BURNT_OUT));
         break;
     case THING_ARMOUR:
         potential = ATTRIBUTE_BROKEN | ATTRIBUTE_CURSED;
-        actual = (armour_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) | (object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
+        actual = (armour_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) | (rec_object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
         break;
     case THING_POTION:
         potential = ATTRIBUTE_CONSUMABLE;
@@ -628,8 +628,8 @@ static void insert_creature_name(char *text, size_t size)
         if (!name) {
             int16_t x = g_party_map_x, y = g_party_map_y;
             update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
-            uint16_t group = group_get_thing(x, y);
-            name = gfx_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE : (int16_t)(TEXT_CREATURE_NAME_FIRST + group_creature_type(group)));
+            uint16_t group = get_square_group(x, y);
+            name = gfx_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE : (int16_t)(TEXT_CREATURE_NAME_FIRST + rec_group_creature_type(group)));
             scroll_redraw = 1;
         }
         size_t rest = strlen(at + length), n = strlen(name);

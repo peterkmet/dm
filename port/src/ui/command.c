@@ -398,7 +398,7 @@ static void grab_object(int16_t pile)
     if (g_leader_index == -1) return;
     if (pile >= VIEW_CELL_FRONT_FIRST) {
         front_square(&x, &y);
-        uint16_t group = group_get_thing(x, y);
+        uint16_t group = get_square_group(x, y);
         if (group != THING_ENDOFLIST && !move_is_levitating(group) &&
             group_get_creature_ordinal_in_cell(group, (uint16_t)NORMALIZE(pile + g_party_direction)))
             return;

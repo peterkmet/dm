@@ -193,14 +193,14 @@ def party(alib):
 
 def test_sword_attack_hurts_group_and_gains_experience(fighter):
     lib, c, (x, y) = fighter
-    group = lib.group_get_thing(x, y + 1)
+    group = lib.get_square_group(x, y + 1)
     health = struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0]
     experience = c.skills[SKILL_SWING].experience
     damage = []
     for _ in range(20):
         lib.action_is_action_performed(0, ACTION_SWING)
         damage.append(var(lib, c16, "g_action_damage").value)
-        group = lib.group_get_thing(x, y + 1)
+        group = lib.get_square_group(x, y + 1)
         if group == 0xFFFE or struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0] < health:
             break
     assert any(d > 0 for d in damage)

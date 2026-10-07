@@ -20,7 +20,6 @@
 #include "inventory.h"
 #include "map.h"
 #include "message.h"
-#include "things.h"
 #include "savegame.h"
 #include "startend.h"
 #include "state_json.h"
@@ -615,7 +614,7 @@ static void witness(void)
     StateJsonSeenThing things[WITNESSED_EXPLOSIONS_MAX];
     int count = state_json_visible_things(THING_EXPLOSION, things, WITNESSED_EXPLOSIONS_MAX);
     for (int i = 0; i < count; i++) {
-        uint8_t type = explosion_type(things[i].thing);
+        uint8_t type = rec_explosion_type(things[i].thing);
         int known = 0;
         for (int k = 0; k < witnessed.explosion_count; k++)
             known |= witnessed.explosions[k].type == type && witnessed.explosions[k].at.x == things[i].x && witnessed.explosions[k].at.y == things[i].y;
@@ -628,9 +627,9 @@ static void witness(void)
         int k = 0;
         while (k < witnessed.group_count && witnessed.groups[k].at.thing != things[i].thing) k++;
         if (k == WITNESSED_GROUPS_MAX) continue;
-        int16_t creatures = (int16_t)(group_last_creature_index(things[i].thing) + 1);
+        int16_t creatures = (int16_t)(rec_group_last_creature_index(things[i].thing) + 1);
         if (k == witnessed.group_count) {  /* a group seen first: count it once, not on each tick */
-            witnessed.groups[k] = (WitnessedGroup){ .creature = group_creature_type(things[i].thing), .before = creatures };
+            witnessed.groups[k] = (WitnessedGroup){ .creature = rec_group_creature_type(things[i].thing), .before = creatures };
             witnessed.group_count++;
         }
         witnessed.groups[k].at = things[i];

@@ -40,7 +40,7 @@ The possessions stay in the wall square list until the player accepts the candid
 | Command | Effect |
 |---|---|
 | `PANEL_CANCEL` | Removes the candidate. When it was the only champion, the party has no leader and no caster. |
-| `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`sensor_disable`). Prints "<name> RESURRECTED." |
+| `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`rec_sensor_disable`). Prints "<name> RESURRECTED." |
 | `PANEL_REINCARNATE` | As resurrect. Also clears all experience and adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The original also asks for a new name. The port keeps the name. |
 
 With the first champion, the time of the last party move becomes the game time.

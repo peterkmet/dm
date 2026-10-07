@@ -97,7 +97,7 @@ uint16_t recruit_text_thing(int16_t map, int16_t x, int16_t y) {
 
 /* A champion portrait sensor keeps the portrait index in its data. Else -1. */
 int16_t recruit_portrait_index(uint16_t sensor_thing) {
-    return sensor_type(sensor_thing) == SENSOR_WALL_CHAMPION_PORTRAIT ? (int16_t)sensor_data(sensor_thing) : -1;
+    return rec_sensor_type(sensor_thing) == SENSOR_WALL_CHAMPION_PORTRAIT ? (int16_t)rec_sensor_data(sensor_thing) : -1;
 }
 
 /* Top-left of the portrait in the champion portraits graphic. */

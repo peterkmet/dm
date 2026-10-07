@@ -6,9 +6,9 @@ This page describes the creature rules of the C port: creature groups and their 
 
 | Thing type | Size | Accessors | Content |
 |---|---|---|---|
-| 4 group | 16 bytes | `group.h`, `things.h` | Next thing, possessions, creature type, cells byte, 4 health words, flags in word 14 (direction, last creature index, behavior). |
-| 14 projectile | 8 bytes | `projectile.h`, `things.h` | Next thing, flying thing (slot), kinetic energy, attack, timeline event index. |
-| 15 explosion | 4 bytes | `projectile.h`, `things.h` | Next thing, attack, type in bits 0–6, centered flag in bit 7. |
+| 4 group | 16 bytes | `group.h`, `map.h` | Next thing, possessions, creature type, cells byte, 4 health words, flags in word 14 (direction, last creature index, behavior). |
+| 14 projectile | 8 bytes | `projectile.h`, `map.h` | Next thing, flying thing (slot), kinetic energy, attack, timeline event index. |
+| 15 explosion | 4 bytes | `projectile.h`, `map.h` | Next thing, attack, type in bits 0–6, centered flag in bit 7. |
 
 The flying thing of a spell projectile is an explosion thing `0xff80 + type` (`EXPLOSION_THING(type)`), not a record.
 
@@ -127,7 +127,7 @@ Event 5 (corridor) on a group generator sensor calls `group_generate_from_sensor
 - Each creature gets `base health × multiplier + random(base health / 4 + 1)` health.
 - The group enters the square with a random direction and plays a buzz sound.
 
-`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case. Use `group_get_thing(x, y)` to find it.
+`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case. Use `get_square_group(x, y)` to find it.
 
 Event 65 enables a generator again after its delay (see [rules-movement.md](rules-movement.md)).
 

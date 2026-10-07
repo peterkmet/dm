@@ -42,7 +42,7 @@ Call `map_reset()` after `load_dungeon`. The current map pointers then point to 
 | `get_next_thing(thing)` | `0x10abb4` | Next-thing word of the record. |
 | `link_thing_to_list(thing, list, x, y)` | `0x10acba` | See [Thing lists](#thing-lists). |
 | `unlink_thing_from_list(thing, list, x, y)` | `0x10adf4` | See [Thing lists](#thing-lists). |
-| `group_get_thing(x, y)` | `0x10bb5c` | First group thing, or `0xfffe`. |
+| `get_square_group(x, y)` | `0x10bb5c` | First group thing, or `0xfffe`. |
 | `object_get_type(thing)` | `0x1079a4` | Object type from the object info table (`0x101068`). −1 for `0xffff` and for a thing that is not an object. |
 | `get_creature_attributes(group)` | `0x10a6e4` | Attribute word of the creature type (`0x10192e + type * 0x1a + 2`). |
 

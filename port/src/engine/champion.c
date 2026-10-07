@@ -329,7 +329,7 @@ void champion_click_in_resurrect_reincarnate_panel(int16_t command)
     uint16_t mirror = get_square_first_thing(x, y);
     while (THING_TYPE(mirror) != THING_SENSOR)
         mirror = get_next_thing(mirror);
-    sensor_disable(mirror);
+    rec_sensor_disable(mirror);
     if (command == PANEL_REINCARNATE)
         reincarnate(c);
     if (g_party_champion_count == 1)
@@ -712,7 +712,7 @@ void champion_kill(uint16_t champion_index)
     uint16_t bones = get_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
     if (bones != THING_NONE) {
         junk_set_type(bones, JUNK_BONES);
-        object_set_important(bones);
+        rec_object_set_important(bones);
         junk_set_charges(bones, champion_index);
         drop_on_party_square(bones, c->cell);
     }

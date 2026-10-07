@@ -314,7 +314,7 @@ static int16_t is_climbed_down(void)
 {
     int16_t x, y;
     step_forward(g_party_direction, &x, &y);
-    if (SQUARE_TYPE(get_square(x, y)) != SQUARE_PIT || group_get_thing(x, y) != THING_ENDOFLIST)
+    if (SQUARE_TYPE(get_square(x, y)) != SQUARE_PIT || get_square_group(x, y) != THING_ENDOFLIST)
         return 0;
     g_use_rope_to_climb_down_pit = 1;
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, x, y);
@@ -340,7 +340,7 @@ int16_t action_is_action_performed(uint16_t champion_index, int16_t action)
         return 0;
     int16_t x, y;
     step_forward(c->direction, &x, &y);
-    g_action_target_group_thing = group_get_thing(x, y);
+    g_action_target_group_thing = get_square_group(x, y);
     const ActionInfo *info = tables_action_info(action);
     uint16_t disabled_ticks = info->disabled_ticks, skill_index = info->skill_index;
     int16_t stamina = (int16_t)(random_bit() + info->stamina);

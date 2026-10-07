@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include "game.h"
 #include "map.h"
-#include "things.h"
 #include "timeline_process.h"
 
 /* Projectiles, explosions, fluxcages, and launchers (KAOS range 7, PROJEXPL.C): docs/rules-creatures.md. */
@@ -29,9 +28,9 @@ enum {
     SENSOR_WALL_LAUNCHER_TWO_EXPLOSIONS = 10, SENSOR_WALL_LAUNCHER_SQUARE_OBJECT = 14,
     SENSOR_WALL_LAUNCHER_TWO_SQUARE_OBJECTS = 15
 };
-static inline int16_t sensor_is_launcher(uint16_t sensor)
+static inline int16_t projectile_is_launcher_sensor(uint16_t sensor)
 {
-    uint16_t type = sensor_type(sensor);
+    uint16_t type = rec_sensor_type(sensor);
     return (type >= SENSOR_WALL_LAUNCHER_OBJECT && type <= SENSOR_WALL_LAUNCHER_TWO_EXPLOSIONS) ||
            type == SENSOR_WALL_LAUNCHER_SQUARE_OBJECT || type == SENSOR_WALL_LAUNCHER_TWO_SQUARE_OBJECTS;
 }

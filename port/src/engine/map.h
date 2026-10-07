@@ -52,9 +52,9 @@ uint16_t potion_type(uint16_t thing);
 uint16_t potion_power(uint16_t thing);
 uint16_t container_type(uint16_t thing);
 uint16_t container_first_thing(uint16_t thing);
-int16_t object_is_cursed(uint16_t thing);
-void object_set_important(uint16_t thing);
-void object_clear_important(uint16_t thing);
+int16_t rec_object_is_cursed(uint16_t thing);
+void rec_object_set_important(uint16_t thing);
+void rec_object_clear_important(uint16_t thing);
 int16_t weapon_is_lit(uint16_t thing);
 uint16_t weapon_charges(uint16_t thing);
 uint16_t junk_charges(uint16_t thing);
@@ -72,8 +72,8 @@ void armour_set_charges(uint16_t thing, uint16_t charges);
 void junk_set_type(uint16_t thing, uint16_t type);
 void potion_set_type(uint16_t thing, uint16_t type);
 void potion_set_power(uint16_t thing, uint16_t power);
-void object_set_type(uint16_t thing, uint16_t type);
-void object_set_cursed(uint16_t thing, int16_t cursed);
+void rec_object_set_type(uint16_t thing, uint16_t type);
+void rec_object_set_cursed(uint16_t thing, int16_t cursed);
 void scroll_set_closed(uint16_t thing, int16_t closed);
 
 /* Sensor record (thing type 3). */
@@ -87,31 +87,31 @@ enum { SENSOR_WALL_ORNAMENT_CLICK = 1, SENSOR_WALL_ANY_OBJECT = 2, SENSOR_WALL_O
        SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED = 17, SENSOR_WALL_ENDGAME = 18, SENSOR_WALL_CHAMPION_PORTRAIT = 127 };
 enum { SENSOR_TYPE_MASK = 0x7f, SENSOR_DATA_SHIFT = 7 };
 
-static inline uint16_t sensor_type(uint16_t thing) { return BE16(REC(thing) + 2) & SENSOR_TYPE_MASK; }
-static inline uint16_t sensor_data(uint16_t thing) { return BE16(REC(thing) + 2) >> SENSOR_DATA_SHIFT; }
-static inline void sensor_set_type(uint16_t thing, uint16_t type) { WR16(REC(thing) + 2, (BE16(REC(thing) + 2) & ~SENSOR_TYPE_MASK) | type); }
-static inline void sensor_set_data(uint16_t thing, uint16_t data) { WR16(REC(thing) + 2, data << SENSOR_DATA_SHIFT | sensor_type(thing)); }
-void sensor_disable(uint16_t thing);
-static inline int16_t sensor_is_local(uint16_t thing) { return (REC(thing)[4] & 0x08) != 0; }
-static inline uint16_t sensor_delay(uint16_t thing) { return BE16(REC(thing) + 4) >> 7 & 15; }
-static inline int16_t sensor_is_once_only(uint16_t thing) { return (REC(thing)[5] & 0x04) != 0; }
-static inline uint16_t sensor_effect(uint16_t thing) { return (REC(thing)[5] & 0x18) >> 3; }
-static inline uint16_t sensor_revert(uint16_t thing) { return (REC(thing)[5] & 0x20) >> 5; }
-static inline int16_t sensor_is_audible(uint16_t thing) { return (REC(thing)[5] & 0x40) != 0; }
-static inline int16_t sensor_target_x(uint16_t thing) { return BE16(REC(thing) + 6) >> 6 & 31; }
-static inline int16_t sensor_target_y(uint16_t thing) { return REC(thing)[6] >> 3; }
-static inline int16_t sensor_target_cell(uint16_t thing) { return (REC(thing)[7] & 0x30) >> 4; }
-static inline int16_t sensor_local_effect(uint16_t thing) { return BE16(REC(thing) + 6) >> 4; }
-static inline uint16_t sensor_generator_delay(uint16_t thing) { return REC(thing)[6]; }
-static inline uint16_t sensor_ornament_ordinal(uint16_t thing) { return REC(thing)[4] >> 4; }
+static inline uint16_t rec_sensor_type(uint16_t thing) { return BE16(REC(thing) + 2) & SENSOR_TYPE_MASK; }
+static inline uint16_t rec_sensor_data(uint16_t thing) { return BE16(REC(thing) + 2) >> SENSOR_DATA_SHIFT; }
+static inline void rec_sensor_set_type(uint16_t thing, uint16_t type) { WR16(REC(thing) + 2, (BE16(REC(thing) + 2) & ~SENSOR_TYPE_MASK) | type); }
+static inline void rec_sensor_set_data(uint16_t thing, uint16_t data) { WR16(REC(thing) + 2, data << SENSOR_DATA_SHIFT | rec_sensor_type(thing)); }
+void rec_sensor_disable(uint16_t thing);
+static inline int16_t rec_sensor_is_local(uint16_t thing) { return (REC(thing)[4] & 0x08) != 0; }
+static inline uint16_t rec_sensor_delay(uint16_t thing) { return BE16(REC(thing) + 4) >> 7 & 15; }
+static inline int16_t rec_sensor_is_once_only(uint16_t thing) { return (REC(thing)[5] & 0x04) != 0; }
+static inline uint16_t rec_sensor_effect(uint16_t thing) { return (REC(thing)[5] & 0x18) >> 3; }
+static inline uint16_t rec_sensor_revert(uint16_t thing) { return (REC(thing)[5] & 0x20) >> 5; }
+static inline int16_t rec_sensor_is_audible(uint16_t thing) { return (REC(thing)[5] & 0x40) != 0; }
+static inline int16_t rec_sensor_target_x(uint16_t thing) { return BE16(REC(thing) + 6) >> 6 & 31; }
+static inline int16_t rec_sensor_target_y(uint16_t thing) { return REC(thing)[6] >> 3; }
+static inline int16_t rec_sensor_target_cell(uint16_t thing) { return (REC(thing)[7] & 0x30) >> 4; }
+static inline int16_t rec_sensor_local_effect(uint16_t thing) { return BE16(REC(thing) + 6) >> 4; }
+static inline uint16_t rec_sensor_generator_delay(uint16_t thing) { return REC(thing)[6]; }
+static inline uint16_t rec_sensor_ornament_ordinal(uint16_t thing) { return REC(thing)[4] >> 4; }
 /* Group generator: creature type in the data low byte, count field in word 4 bits 7-10, health multiplier in
    word 6 bits 4-7. */
-static inline uint16_t sensor_generator_creature_type(uint16_t thing) { return sensor_data(thing) & 0xff; }
-static inline uint16_t sensor_generator_count_field(uint16_t thing) { return BE16(REC(thing) + 4) >> 7 & 15; }
-static inline uint16_t sensor_generator_health_multiplier(uint16_t thing) { return BE16(REC(thing) + 6) >> 4 & 15; }
+static inline uint16_t rec_sensor_generator_creature_type(uint16_t thing) { return rec_sensor_data(thing) & 0xff; }
+static inline uint16_t rec_sensor_generator_count_field(uint16_t thing) { return BE16(REC(thing) + 4) >> 7 & 15; }
+static inline uint16_t rec_sensor_generator_health_multiplier(uint16_t thing) { return BE16(REC(thing) + 6) >> 4 & 15; }
 /* Launcher: kinetic energy in word 6 bits 4-11, step energy in bits 12-15. */
-static inline uint8_t sensor_launcher_kinetic_energy(uint16_t thing) { return (uint8_t)(BE16(REC(thing) + 6) >> 4); }
-static inline uint8_t sensor_launcher_step_energy(uint16_t thing) { return (uint8_t)(BE16(REC(thing) + 6) >> 12); }
+static inline uint8_t rec_sensor_launcher_kinetic_energy(uint16_t thing) { return (uint8_t)(BE16(REC(thing) + 6) >> 4); }
+static inline uint8_t rec_sensor_launcher_step_energy(uint16_t thing) { return (uint8_t)(BE16(REC(thing) + 6) >> 12); }
 
 /* Teleporter record (thing type 1). Scope: 1 creatures, 2 party, 3 everything. */
 enum { TELEPORTER_SCOPE_CREATURES = 1, TELEPORTER_SCOPE_PARTY = 2, TELEPORTER_SCOPE_ALL = 3 };
@@ -134,16 +134,16 @@ static inline uint16_t door_ornament_ordinal(uint16_t thing) { return (REC(thing
 static inline int16_t door_info_defense(uint16_t door_info) { return door_info & 0xff; }
 
 /* Text record (thing type 2). */
-static inline int16_t text_is_visible(uint16_t thing) { return REC(thing)[3] & 1; }
-static inline void text_set_visible(uint16_t thing, int16_t visible) { REC(thing)[3] = (uint8_t)((REC(thing)[3] & ~1) | (visible != 0)); }
+static inline int16_t rec_text_is_visible(uint16_t thing) { return REC(thing)[3] & 1; }
+static inline void rec_text_set_visible(uint16_t thing, int16_t visible) { REC(thing)[3] = (uint8_t)((REC(thing)[3] & ~1) | (visible != 0)); }
 
 /* Group record (thing type 4) and creature attributes. */
 enum { CREATURE_LEVITATES = 0x20, CREATURE_NON_MATERIAL = 0x40 };
-static inline uint16_t group_creature_type(uint16_t thing) { return REC(thing)[4]; }
-static inline int16_t creature_height(uint16_t attributes) { return attributes >> 7 & 3; }
+static inline uint16_t rec_group_creature_type(uint16_t thing) { return REC(thing)[4]; }
+static inline int16_t rec_creature_height(uint16_t attributes) { return attributes >> 7 & 3; }
 
 /* Projectile record (thing type 14): the timeline event that moves it. */
-static inline uint16_t projectile_event_index(uint16_t thing) { return BE16(REC(thing) + 6); }
+static inline uint16_t rec_projectile_event_index(uint16_t thing) { return BE16(REC(thing) + 6); }
 
 /* Map descriptor, 16 bytes. */
 #define MAP_DESCRIPTOR(map) (g_dungeon_maps + (map) * 16)
@@ -155,7 +155,7 @@ static inline int16_t map_last_y(int16_t map) { return MAP_DESCRIPTOR(map)[8] >>
 static inline int16_t map_door_set(int16_t map, int16_t door_type) { return door_type ? MAP_DESCRIPTOR(map)[14] >> 4 : MAP_DESCRIPTOR(map)[14] & 15; }
 
 /* Dungeon header: the size of the square first thing table. */
-static inline uint16_t dungeon_square_first_thing_count(void) { return BE16(g_dungeon_header + 10); }
+static inline uint16_t rec_dungeon_square_first_thing_count(void) { return BE16(g_dungeon_header + 10); }
 
 extern int16_t g_current_map_index, g_current_map_width, g_current_map_height;
 extern uint8_t **g_current_map_data;
@@ -183,8 +183,43 @@ uint16_t get_square_first_thing(int16_t x, int16_t y);
 uint16_t get_square_first_object(int16_t x, int16_t y);
 void link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
 void unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
-uint16_t group_get_thing(int16_t x, int16_t y);
+uint16_t get_square_group(int16_t x, int16_t y);
 
 uint16_t get_creature_attributes(uint16_t group_thing);
+
+/* Record fields that the dungeon view reads (big-endian, see
+   docs/symbols/range-4-6.md and range-7-9.md). */
+
+/* Weapon record: word 2 bits 0-6 weapon type. */
+static inline uint16_t thing_weapon_type(uint16_t weapon) { return REC(weapon)[3] & 0x7f; }
+
+/* Group record, 16 bytes. */
+/* 2 bits per creature, 0xff for one centered creature; on the party map the active group index. */
+static inline uint8_t rec_group_cells_byte(uint16_t group) { return REC(group)[5]; }
+static inline uint8_t rec_group_last_creature_index(uint16_t group) { return (REC(group)[15] & 0x60) >> 5; }
+static inline uint8_t rec_group_direction(uint16_t group) { return REC(group)[14] & 3; }
+
+/* Projectile record, 8 bytes. */
+static inline uint16_t rec_projectile_slot(uint16_t projectile) { return BE16(REC(projectile) + 2); }
+static inline uint8_t rec_projectile_kinetic_energy(uint16_t projectile) { return REC(projectile)[4]; }
+
+/* Explosion record, 4 bytes. */
+static inline uint8_t rec_explosion_attack(uint16_t explosion) { return REC(explosion)[2]; }
+static inline uint8_t rec_explosion_type(uint16_t explosion) { return REC(explosion)[3] & 0x7f; }
+static inline int rec_explosion_is_centered(uint16_t explosion) { return REC(explosion)[3] >> 7; }
+
+/* Map descriptor bytes of the view: ornament counts, difficulty, creature types, graphic sets. */
+static inline int16_t map_random_floor_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[10] >> 4; }
+static inline int16_t map_floor_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[10] & 15; }
+static inline int16_t map_random_wall_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[11] >> 4; }
+static inline int16_t map_wall_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[11] & 15; }
+static inline int16_t map_difficulty(int16_t map) { return MAP_DESCRIPTOR(map)[12] >> 4; }
+static inline int16_t map_door_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[13] & 15; }
+static inline int16_t map_creature_type_count(int16_t map) { return MAP_DESCRIPTOR(map)[13] >> 4; }
+static inline int16_t map_floor_set(int16_t map) { return MAP_DESCRIPTOR(map)[15] & 15; }
+static inline int16_t map_wall_set(int16_t map) { return MAP_DESCRIPTOR(map)[15] >> 4; }
+
+/* Dungeon header word 0: the seed of the random wall and floor ornaments. */
+static inline uint16_t rec_dungeon_ornament_seed(void) { return BE16(g_dungeon_header); }
 
 #endif
