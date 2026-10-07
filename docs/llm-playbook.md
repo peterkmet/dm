@@ -123,7 +123,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 - One `wait` with many ticks stops by itself on damage, a new creature, or a message.
 - A script may compute a route or an action list from `get_map` and send it as one `act_many`.
 - A script must not loop over `get_state`, `get_view`, `wait`, or `choose_action`: each turn is your decision.
-- Ask for `get_map` only when you plan a route. The `act`, `act_many`, and `wait` responses already contain the state and the view.
+- Ask for `get_map` only when you plan a route: one `get_map` per route plan, not one per step. A script reads the map once and sends the whole route. The `act`, `act_many`, and `wait` responses already contain the state and the view.
 - The view gives wall texts (`text`) and the picture of each lock (`lock`). Use screenshots only to check a suspected bug.
 - Chosen runes stay after a stopped or failed cast. Before you add runes, check `state.spell.chosen` and send `delete_rune` until it is empty.
 
