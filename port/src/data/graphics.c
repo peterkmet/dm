@@ -14,8 +14,8 @@
    Bit 7 set = a long command: kind in bits 4-5, bit 6 a 16-bit count. */
 enum { CMD_LONG = 0x80, CMD_WIDE_COUNT = 0x40, CMD_KIND_MASK = 0x30, CMD_COLOR_MASK = 15 };
 enum { KIND_FILL = 0x00, KIND_RAW = 0x10, KIND_SKIP = 0x20, KIND_COPY_ABOVE = 0x30 };
-/* Skip lengths 29-31 read the length from the next bytes. */
-enum { SKIP_BYTE = 29, SKIP_BYTE_PLUS_256 = 30, SKIP_WORD = 31 };
+/* Skip lengths 29-31 read the length from the next bytes. Bit 6 of a skip adds 16 to its length. */
+enum { SKIP_BYTE = 29, SKIP_BYTE_PLUS_256 = 30, SKIP_WORD = 31, SKIP_WIDE = 16, SKIP_BYTE_BASE = 256 };
 
 static uint8_t *dat;
 static size_t dat_len;
@@ -83,9 +83,9 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
             continue;
         }
         if ((cmd & CMD_KIND_MASK) == KIND_SKIP) { /* leave pixels transparent */
-            unsigned k = c | (cmd & CMD_WIDE_COUNT ? 16 : 0);
+            unsigned k = c | (cmd & CMD_WIDE_COUNT ? SKIP_WIDE : 0);
             if (k == SKIP_BYTE) k = NEXT();
-            else if (k == SKIP_BYTE_PLUS_256) k = 256 + NEXT();
+            else if (k == SKIP_BYTE_PLUS_256) k = SKIP_BYTE_BASE + NEXT();
             else if (k == SKIP_WORD) { k = NEXT() << 8; k |= NEXT(); }
             pos += k + 1;
             continue;
@@ -102,7 +102,7 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
             for (cnt /= 2; cnt; cnt--) {
                 uint8_t b = NEXT();
                 PUT(b >> 4);
-                PUT(b & 15);
+                PUT(b & CMD_COLOR_MASK);
             }
             break;
         default: /* KIND_COPY_ABOVE, then one pixel of color c */
