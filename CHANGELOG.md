@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.0 - 2026-10-07
+
+### Added
+
+- `--saves DIR` selects the folder of the save files (`DMGAME.DAT`, `CSBGAME.DAT`, their `.BAK` files, and `QUICK.DAT`). The default is the data folder.
+
+### Changed
+
+- All tools are in `tools/`: the Python package `dmtools` (was `src/dmtools/`), the Ghidra scripts, `decompile-all.sh`, and `csb_match.py`. The CSB save prototype is `dmtools.csb_mini`; its differential test is `tests/csb_diff.py`.
+- The decompiled modules are in `decomp/dm/`, `decomp/csb-a/`, and `decomp/csb-b/`.
+- The LLM runs and the personal play folder are in `.playthroughs/`. Each run has `player/`, `coordinator/`, `game/` (the live save), and `saves/`. `make -C port lego` copies only the program; the play folder keeps its saves and reads the game files from `game/`.
+
 ## 0.12.0 - 2026-10-07
 
 ### Changed
