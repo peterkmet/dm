@@ -1,34 +1,10 @@
 # Open exceptions of tests/test_standard.py. One per line: <check> <target> <reason>.
 # Targets are paths relative to port/src/, constant names, or function names.
-bool ui/automap.h open: Task 11
-bool platform/control.h open: Task 11
-decimal platform/control.c open: Task 11
-decimal ui/draw.c open: Task 11
-decimal platform/main.c open: Task 11
-decimal ui/music.c open: Task 11
-decimal ui/musicmap.c open: Task 11
-decimal platform/platform.c open: Task 11
-decimal platform/state_json.c open: Task 11
-decimal ui/ui_champion.c open: Task 11
-decimal ui/ui_menus.c open: Task 11
-decimal ui/ui.c open: Task 11
-decimal ui/video.c open: Task 11
-decimal ui/view.c open: Task 11
-hex ui/anim.c open: Task 11
 hex data/csbimage.c addresses of the APPB tables
 hex data/csbtext.c addresses of the APPB tables
-hex platform/main.c open: Task 11
 hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
-hex ui/select.c open: Task 11
-hex ui/ui.c open: Task 11
-long ui/anim.c:anim_next_frame open: Task 11
-long platform/control.c:handle_request open: Task 11
-long platform/control.c:send_turn_result open: Task 11
-long ui/layout.c:layout_get_zone open: Task 11
-long platform/main.c:main open: Task 11
-long platform/state_json.c:champion_json open: Task 11
-long ui/view.c:aspect open: Task 11
-long ui/view.c:map_square open: Task 11
 decimal data/csbimage.c byte sizes in the table of APPB addresses
 long engine/action.c:action_is_action_performed one short case for each action of the action table
+decimal ui/musicmap.c the FM-Towns CSB track of each square: table data of the CHTWE.EXP soundtrack table, not in the game files
+decimal ui/music.c the FM-Towns level tracks and the Super NES trigger squares: table data of the soundtracks, not in the game files

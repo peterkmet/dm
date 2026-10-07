@@ -233,11 +233,8 @@ static void endgame_print_text(int x, int y, uint8_t color, const char *text)
 static void set_endgame_click_box(int16_t entry_index, const Box *b)
 {
     uint8_t *box = kaos_ptr(ui_mouse_table_address(UI_INPUT_ENDGAME) + (uint32_t)entry_index * MOUSE_ENTRY_BYTES + MOUSE_ENTRY_BOX);
-    int16_t words[MOUSE_BOX_WORDS] = { b->x, (int16_t)(b->x + b->w - 1), b->y, (int16_t)(b->y + b->h - 1) };
-    for (int i = 0; i < MOUSE_BOX_WORDS; i++) {
-        box[2 * i] = (uint8_t)((uint16_t)words[i] >> 8);
-        box[2 * i + 1] = (uint8_t)words[i];
-    }
+    int16_t words[MOUSE_BOX_WORDS] = { b->x, b->x + b->w - 1, b->y, b->y + b->h - 1 };
+    for (int i = 0; i < MOUSE_BOX_WORDS; i++) WR16(box + 2 * i, words[i]);
 }
 
 /* A framed button with a text; its box becomes the click box of the endgame mouse table entry. */
@@ -247,11 +244,11 @@ static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_in
     int tw, th;
     Box b;
     if (!text_size(text, &tw, &th)) return;
-    int16_t w = (int16_t)tw, h = (int16_t)th, inner_x = kaos_s16(BUTTON_INNER_BORDER), inner_y = kaos_s16(BUTTON_INNER_BORDER + 2);
+    int16_t w = tw, h = th, inner_x = kaos_s16(BUTTON_INNER_BORDER), inner_y = kaos_s16(BUTTON_INNER_BORDER + 2);
     if (!layout_get_zone(zone, 0, 0, &b, &w, &h)) return;
-    int16_t dx = (int16_t)(inner_x + kaos_s16(BUTTON_BORDER)), dy = (int16_t)(inner_y + kaos_s16(BUTTON_BORDER + 2));
-    Box outer = { (int16_t)(b.x - dx), (int16_t)(b.y - dy), (int16_t)(b.w + 2 * dx), (int16_t)(b.h + 2 * dy) };
-    Box inner = { (int16_t)(outer.x + inner_x), (int16_t)(outer.y + inner_y), (int16_t)(outer.w - 2 * inner_x), (int16_t)(outer.h - 2 * inner_y) };
+    int16_t dx = inner_x + kaos_s16(BUTTON_BORDER), dy = inner_y + kaos_s16(BUTTON_BORDER + 2);
+    Box outer = { b.x - dx, b.y - dy, b.w + 2 * dx, b.h + 2 * dy };
+    Box inner = { outer.x + inner_x, outer.y + inner_y, outer.w - 2 * inner_x, outer.h - 2 * inner_y };
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
     draw_fill(&screen, &inner, COLOR_BLACK);
     ui_print_zone(&screen, zone, COLOR_CYAN, COLOR_BLACK, text);
@@ -262,7 +259,7 @@ static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_in
 static void print_champion_skills(uint16_t champion_index, int y)
 {
     for (int16_t skill = 0; skill < SKILL_BASE_COUNT; skill++) {
-        int16_t level = champion_get_skill_level((int16_t)champion_index, (uint16_t)(skill | SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE));
+        int16_t level = champion_get_skill_level(champion_index, skill | SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
         if (level > MAX_SKILL_LEVEL) level = MAX_SKILL_LEVEL;
         if (level == 1) continue;
         char line[ENDGAME_TEXT_SIZE];
@@ -281,11 +278,11 @@ static void draw_champion_parade(void)
     memset(fb, COLOR_DARKEST_GRAY, sizeof fb);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         const Champion *c = &g_champions[i];
-        ui_blit_graphic(&screen, GFX_CHAMPION_FRAME, (int16_t)(ZONE_CHAMPION_FRAME_FIRST + i), COLOR_FLESH);
+        ui_blit_graphic(&screen, GFX_CHAMPION_FRAME, ZONE_CHAMPION_FRAME_FIRST + i, COLOR_FLESH);
         int16_t w = pw, h = ph;
         Box b;
-        Bitmap portrait = ui_champion_portrait((int16_t)i);
-        if (layout_get_zone((int16_t)(ZONE_CHAMPION_PORTRAIT_FIRST + i), pw, ph, &b, &w, &h))
+        Bitmap portrait = ui_champion_portrait(i);
+        if (layout_get_zone(ZONE_CHAMPION_PORTRAIT_FIRST + i, pw, ph, &b, &w, &h))
             draw_blit(&portrait, w, h, &screen, &b, COLOR_DARK_GRAY, 0);
         char name[sizeof c->name + 1] = { 0 }, title[sizeof c->title + 1] = { 0 };
         memcpy(name, c->name, sizeof c->name);
@@ -428,7 +425,7 @@ static void remove_fluxcages(int16_t x, int16_t y)
 static void fuse_explosions(uint16_t type, int16_t x, int16_t y)
 {
     for (uint16_t attack = FUSE_FIRST_ATTACK; attack <= FUSE_LAST_ATTACK; attack += FUSE_ATTACK_STEP) {
-        explosion_create(EXPLOSION_THING(type), attack, (uint16_t)x, (uint16_t)y, CELL_CENTERED);
+        explosion_create(EXPLOSION_THING(type), attack, x, y, CELL_CENTERED);
         fuse_update();
     }
 }
@@ -502,8 +499,8 @@ void fuse_sequence(void)
     fuse_update();
     fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     flash_lords(lord, x, y);
-    explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_LAST_ATTACK, (uint16_t)x, (uint16_t)y, CELL_CENTERED);
-    explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_LAST_ATTACK, (uint16_t)x, (uint16_t)y, CELL_CENTERED);
+    explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_LAST_ATTACK, x, y, CELL_CENTERED);
+    explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_LAST_ATTACK, x, y, CELL_CENTERED);
     fuse_update();
     group_set_creature_type(lord, CREATURE_GREY_LORD);
     fuse_update();
@@ -535,7 +532,7 @@ void endgame_sensor(uint16_t delay)
         csb_ending();
         return;
     }
-    wait_frames((int16_t)(delay * SENSOR_DELAY_FRAMES));
+    wait_frames(delay * SENSOR_DELAY_FRAMES);
     g_saved_game_exists = 0;
     g_game_won = 1;
     endgame(1);

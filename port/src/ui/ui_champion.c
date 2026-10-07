@@ -18,6 +18,7 @@
 #include "tables.h"
 #include "text.h"
 #include "ui.h"
+#include "video.h"
 #include "view.h"
 
 /* KAOS data addresses. */
@@ -40,6 +41,8 @@
 #define LOAD_WARNING_NUMERATOR 5         /* yellow above 5/8 of the maximum load */
 #define LOAD_WARNING_DENOMINATOR 8
 #define VALUE_WIDTH 3
+#define VALUE_PAIR_SIZE 16              /* "current/maximum" */
+#define CHAMPION_ICON_MAX 64             /* the icon buffer holds up to 64 x 64 pixels */
 #define PANEL_OBJECT_TEXT_Y 87           /* baseline of the first description line */
 #define PANEL_LINE_WRAP 18               /* longer lines break at a space */
 #define SCROLL_FONT_SHIFT 0x60           /* '{' to '~' print as scroll font codes 27-30 */
@@ -89,16 +92,16 @@ void ui_draw_champion_bar_graphs(int16_t champion_index)
     Bitmap screen = ui_screen();
     for (int k = 0; k < BAR_COUNT; k++) {
         Box bar, empty;
-        if (!ui_zone_box((int16_t)(ZONE_BAR_FIRST + BAR_ZONE_STEP * k + champion_index), &bar)) continue;
+        if (!ui_zone_box(ZONE_BAR_FIRST + BAR_ZONE_STEP * k + champion_index, &bar)) continue;
         if (v[k][0] < v[k][1]) {
             empty = bar;
             if (v[k][0]) {
-                int16_t filled = (int16_t)((int32_t)v[k][0] * empty.h / v[k][1]);
+                int16_t filled = (int32_t)v[k][0] * empty.h / v[k][1];
                 empty.h -= filled > 1 ? filled : 1;
             }
             if (empty.h > 0) {
                 draw_fill(&screen, &empty, COLOR_DARKEST_GRAY);
-                bar.y = (int16_t)(empty.h + empty.y);
+                bar.y = empty.h + empty.y;
                 bar.h -= empty.h;
             }
         }
@@ -109,8 +112,8 @@ void ui_draw_champion_bar_graphs(int16_t champion_index)
 /* Prints "current/maximum" in the inventory. */
 static void value_pair(int16_t zone, int16_t value, int16_t maximum)
 {
-    char a[8], b[8], s[16];
-    snprintf(s, sizeof s, "%s/%s", number(a, (uint16_t)value, 1, VALUE_WIDTH), number(b, (uint16_t)maximum, 1, VALUE_WIDTH));
+    char a[8], b[8], s[VALUE_PAIR_SIZE];
+    snprintf(s, sizeof s, "%s/%s", number(a, value, 1, VALUE_WIDTH), number(b, maximum, 1, VALUE_WIDTH));
     ui_print_zone(ui_viewport(), zone, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
 }
 
@@ -125,19 +128,19 @@ void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
     Bitmap screen = ui_screen();
     Box b;
     if (inv) {
-        slot_box = (int16_t)(slot + UI_SLOT_BOX_INVENTORY_FIRST);
+        slot_box = slot + UI_SLOT_BOX_INVENTORY_FIRST;
     } else {
         if (slot > SLOT_HAND_ACTION || champion_index + 1 == g_candidate_champion_ordinal) return;
-        slot_box = (int16_t)(slot + champion_index * 2);
+        slot_box = slot + champion_index * 2;
     }
     uint16_t thing = slot < SLOT_COUNT ? c->slots[slot] : g_open_chest_slots[slot - SLOT_CHEST_FIRST];
     int wounded = slot < UI_BODY_SLOT_COUNT && (c->wounds & 1 << slot);
     if (thing == THING_NONE) {
         if (slot < UI_BODY_SLOT_COUNT) {
-            icon = (int16_t)(ICON_EMPTY_BODY_SLOT_FIRST + slot * 2 + wounded);
+            icon = ICON_EMPTY_BODY_SLOT_FIRST + slot * 2 + wounded;
             border = wounded ? GFX_SLOT_BOX_WOUNDED : GFX_SLOT_BOX_NORMAL;
         } else if (slot >= SLOT_NECK && slot <= SLOT_BACKPACK_FIRST) {
-            icon = (int16_t)(ICON_EMPTY_NECK_POUCH_BASE + slot);
+            icon = ICON_EMPTY_NECK_POUCH_BASE + slot;
         } else {
             icon = ICON_EMPTY_SLOT;
         }
@@ -158,10 +161,10 @@ void ui_draw_champion_damage(int16_t champion_index, int16_t damage)
     Bitmap screen = ui_screen();
     char buf[8];
     int inv = champion_index + 1 == g_inventory_champion_ordinal;
-    int16_t zone = (int16_t)(champion_index + (inv ? ZONE_PORTRAIT_DAMAGE_FIRST : ZONE_STATUS_BOX_DAMAGE_FIRST));
+    int16_t zone = champion_index + (inv ? ZONE_PORTRAIT_DAMAGE_FIRST : ZONE_STATUS_BOX_DAMAGE_FIRST);
     ui_blit_graphic(&screen, inv ? GFX_DAMAGE_PORTRAIT : GFX_DAMAGE_STATUS_BOX, zone, COLOR_FLESH);
-    ui_print_zone(&screen, zone, COLOR_WHITE, COLOR_RED, number(buf, (uint16_t)damage, 0, VALUE_WIDTH));
-    ui_draw_champion_state((uint16_t)champion_index);
+    ui_print_zone(&screen, zone, COLOR_WHITE, COLOR_RED, number(buf, damage, 0, VALUE_WIDTH));
+    ui_draw_champion_state(champion_index);
 }
 
 /* Draws the party icon of a champion (top right, at its cell, facing its direction relative to
@@ -170,18 +173,18 @@ static void draw_icon(uint16_t champion_index)
 {
     const Champion *c = &g_champions[champion_index];
     int16_t w = kaos_s16(CHAMPION_ICON_SIZE), h = kaos_s16(CHAMPION_ICON_SIZE + 2);
-    uint8_t px[64 * 64];
-    Bitmap bm = { (uint16_t)w, (uint16_t)h, px }, screen = ui_screen();
+    uint8_t px[CHAMPION_ICON_MAX * CHAMPION_ICON_MAX];
+    Bitmap bm = { w, h, px }, screen = ui_screen();
     const Bitmap *icons = gfx_bitmap(GFX_CHAMPION_ICONS);
     int invisible = g_party.event71_count_invisibility != 0;
     if (w * h > (int)sizeof px) return;
-    int16_t cell = (int16_t)NORMALIZE(c->cell + 4 - g_party_direction);
-    memset(px, invisible ? COLOR_DARK_GRAY : champion_color((int16_t)champion_index), sizeof px);
-    if (icons) draw_blit(icons, (int16_t)(NORMALIZE(c->direction + 4 - g_party_direction) * w), 0, &bm, &(Box){ 0, 0, w, h }, COLOR_DARKEST_GRAY, 0);
+    int16_t cell = NORMALIZE(c->cell - g_party_direction);
+    memset(px, invisible ? COLOR_DARK_GRAY : champion_color(champion_index), sizeof px);
+    if (icons) draw_blit(icons, NORMALIZE(c->direction - g_party_direction) * w, 0, &bm, &(Box){ 0, 0, w, h }, COLOR_DARKEST_GRAY, 0);
     if (invisible)
-        for (int i = 0; i < w * h; i++) px[i] = kaos_u8(INVISIBILITY_PALETTE + (px[i] & 15));
-    ui_fill_zone(&screen, (int16_t)(ZONE_CHAMPION_ICON_FIRST + cell), COLOR_BLACK);
-    ui_blit_zone(&screen, &bm, (int16_t)(ZONE_CHAMPION_ICON_FIRST + cell), COLOR_NONE);
+        for (int i = 0; i < w * h; i++) px[i] = kaos_u8(INVISIBILITY_PALETTE + (px[i] & COLOR_INDEX_MASK));
+    ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + cell, COLOR_BLACK);
+    ui_blit_zone(&screen, &bm, ZONE_CHAMPION_ICON_FIRST + cell, COLOR_NONE);
 }
 
 Bitmap ui_champion_portrait(int16_t champion_index)
@@ -193,7 +196,7 @@ Bitmap ui_champion_portrait(int16_t champion_index)
 void ui_draw_status_box_portrait(int16_t champion_index)
 {
     Bitmap screen = ui_screen(), portrait = ui_champion_portrait(champion_index);
-    int16_t zone = (int16_t)(ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index);
+    int16_t zone = ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index;
     Box b;
     if (!ui_zone_box(zone, &b)) return;
     b.w = kaos_s16(PORTRAIT_SIZE);
@@ -210,7 +213,7 @@ static void draw_inventory_statistics(uint16_t champion_index)
     Bitmap *vp = ui_viewport();
     Box b;
     value_pair(ZONE_HEALTH_VALUE, c->current_health, c->maximum_health);
-    value_pair(ZONE_HEALTH_VALUE + 1, (int16_t)(c->current_stamina / 10), (int16_t)(c->maximum_stamina / 10)); /* stamina shows in tenths */
+    value_pair(ZONE_HEALTH_VALUE + 1, c->current_stamina / STAMINA_DISPLAY_UNIT, c->maximum_stamina / STAMINA_DISPLAY_UNIT); /* stamina shows in tenths */
     value_pair(ZONE_HEALTH_VALUE + 2, c->current_mana, c->maximum_mana);
     int16_t mouth = c->food < 0 || c->water < 0 || c->poison_event_count ? GFX_SLOT_BOX_WOUNDED : GFX_SLOT_BOX_NORMAL, eye = GFX_SLOT_BOX_NORMAL;
     if (ui_icon_zone_box(ZONE_MOUTH, 1, &b)) ui_blit_graphic_box(vp, mouth, &b, COLOR_DARKEST_GRAY);
@@ -228,10 +231,10 @@ static void draw_load(uint16_t champion_index)
     const Champion *c = &g_champions[champion_index];
     uint16_t max = champion_get_maximum_load(c);
     uint8_t color = max < c->load ? COLOR_RED : (int32_t)max * LOAD_WARNING_NUMERATOR < (int32_t)c->load * LOAD_WARNING_DENOMINATOR ? COLOR_YELLOW : COLOR_LIGHT_GRAY;
-    char text[40], a[8], b[8], d[8]; /* the load is in tenths of a kilogram */
+    char text[PANEL_LINE_SIZE], a[8], b[8], d[8]; /* the load is in tenths of a kilogram */
     ui_print_zone(ui_viewport(), ZONE_LOAD_LABEL, color, COLOR_DARKEST_GRAY, gfx_string(TEXT_LOAD));
-    snprintf(text, sizeof text, "%s%s%s/%s%s", number(a, c->load / 10, 1, VALUE_WIDTH), gfx_string(TEXT_DECIMAL_POINT), number(d, c->load % 10, 0, 1),
-             number(b, (uint16_t)(max + 5) / 10, 1, VALUE_WIDTH), gfx_string(TEXT_KG));
+    snprintf(text, sizeof text, "%s%s%s/%s%s", number(a, c->load / WEIGHT_TENTHS, 1, VALUE_WIDTH), gfx_string(TEXT_DECIMAL_POINT), number(d, c->load % WEIGHT_TENTHS, 0, 1),
+             number(b, (uint16_t)(max + WEIGHT_TENTHS / 2) / WEIGHT_TENTHS, 1, VALUE_WIDTH), gfx_string(TEXT_KG)); /* 16-bit sum as in the original */
     ui_print_zone(ui_viewport(), ZONE_LOAD_VALUE, color, COLOR_DARKEST_GRAY, text);
 }
 
@@ -242,14 +245,14 @@ static uint16_t draw_status_box(uint16_t champion_index, uint16_t attr, int inv)
     Bitmap screen = ui_screen();
     int16_t shields[3], n = 0;
     Box box;
-    ui_zone_box((int16_t)(ZONE_STATUS_BOX_FIRST + champion_index), &box);
+    ui_zone_box(ZONE_STATUS_BOX_FIRST + champion_index, &box);
     draw_fill(&screen, &box, COLOR_DARKEST_GRAY);
     if (g_party.fire_shield_defense > 0) shields[n++] = GFX_SHIELD_FIRE;
     if (g_party.spell_shield_defense > 0) shields[n++] = GFX_SHIELD_SPELL;
     if (g_party.shield_defense > 0 || c->shield_defense) shields[n++] = GFX_SHIELD_PARTY;
     while (n--) ui_blit_graphic_box(&screen, shields[n], &box, COLOR_FLESH);
     if (inv) {
-        ui_draw_status_box_portrait((int16_t)champion_index);
+        ui_draw_status_box_portrait(champion_index);
         return attr | CHAMPION_ATTR_STATISTICS;
     }
     return attr | CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_WOUNDS | CHAMPION_ATTR_STATISTICS | CHAMPION_ATTR_NAME_TITLE;
@@ -260,13 +263,13 @@ static uint16_t draw_name(uint16_t champion_index, uint16_t attr, int inv)
 {
     const Champion *c = &g_champions[champion_index];
     Bitmap screen = ui_screen();
-    uint8_t color = (int16_t)champion_index == g_leader_index ? COLOR_GOLD : COLOR_LIGHT_GRAY;
+    uint8_t color = champion_index == g_leader_index ? COLOR_GOLD : COLOR_LIGHT_GRAY;
     if (!inv) {
-        ui_fill_zone(&screen, (int16_t)(ZONE_STATUS_BOX_NAME_FIRST + champion_index), COLOR_DARK_GRAY);
-        ui_print_zone(&screen, (int16_t)(ZONE_STATUS_BOX_NAME_TEXT_FIRST + champion_index), color, COLOR_DARK_GRAY, c->name);
+        ui_fill_zone(&screen, ZONE_STATUS_BOX_NAME_FIRST + champion_index, COLOR_DARK_GRAY);
+        ui_print_zone(&screen, ZONE_STATUS_BOX_NAME_TEXT_FIRST + champion_index, color, COLOR_DARK_GRAY, c->name);
         return attr;
     }
-    char s[40];
+    char s[PANEL_LINE_SIZE];
     int joined = c->title[0] && strchr(",;-", c->title[0]); /* "NAME, TITLE" without a space */
     snprintf(s, sizeof s, "%.8s%s%.20s", c->name, joined ? "" : " ", c->title);
     ui_print_zone(ui_viewport(), ZONE_NAME_TITLE, color, COLOR_DARKEST_GRAY, s);
@@ -286,15 +289,15 @@ void ui_draw_champion_state(uint16_t champion_index)
             attr = draw_status_box(champion_index, attr, inv);
         } else {
             Box box;
-            if (ui_zone_box((int16_t)(ZONE_STATUS_BOX_FIRST + champion_index), &box)) ui_blit_graphic_box(&screen, GFX_STATUS_BOX_DEAD, &box, COLOR_NONE);
-            ui_print_zone(&screen, (int16_t)(ZONE_STATUS_BOX_NAME_TEXT_FIRST + champion_index), COLOR_LIGHT_GRAY, COLOR_DARK_GRAY, c->name);
+            if (ui_zone_box(ZONE_STATUS_BOX_FIRST + champion_index, &box)) ui_blit_graphic_box(&screen, GFX_STATUS_BOX_DEAD, &box, COLOR_NONE);
+            ui_print_zone(&screen, ZONE_STATUS_BOX_NAME_TEXT_FIRST + champion_index, COLOR_LIGHT_GRAY, COLOR_DARK_GRAY, c->name);
             menus_draw_action_icon(champion_index);
         }
     }
     if (c->current_health) {
         if (attr & CHAMPION_ATTR_NAME_TITLE) attr = draw_name(champion_index, attr, inv);
         if (attr & CHAMPION_ATTR_STATISTICS) {
-            ui_draw_champion_bar_graphs((int16_t)champion_index);
+            ui_draw_champion_bar_graphs(champion_index);
             if (inv) {
                 draw_inventory_statistics(champion_index);
                 attr |= CHAMPION_ATTR_VIEWPORT;
@@ -302,7 +305,7 @@ void ui_draw_champion_state(uint16_t champion_index)
         }
         if (attr & CHAMPION_ATTR_WOUNDS) {
             if (inv) attr |= CHAMPION_ATTR_VIEWPORT;
-            for (int s = inv ? UI_BODY_SLOT_COUNT - 1 : SLOT_HAND_ACTION; s >= 0; s--) ui_draw_champion_slot(champion_index, (uint16_t)s);
+            for (int s = inv ? UI_BODY_SLOT_COUNT - 1 : SLOT_HAND_ACTION; s >= 0; s--) ui_draw_champion_slot(champion_index, s);
         }
         if (attr & CHAMPION_ATTR_LOAD && inv) {
             draw_load(champion_index);
@@ -339,7 +342,7 @@ static void food_water_bar(int16_t value, int16_t zone, uint8_t color)
     Box b;
     if (value < FOOD_WATER_LOW) color = COLOR_RED;
     else if (value < 0) color = COLOR_YELLOW;
-    if (!layout_get_zone_box(zone, (int16_t)((int32_t)(value - FOOD_WATER_MINIMUM) * 10000 / FOOD_WATER_RANGE), 10000, &b)) return;
+    if (!layout_get_zone_box(zone, (int32_t)(value - FOOD_WATER_MINIMUM) * ZONE_SCALE_FULL / FOOD_WATER_RANGE, ZONE_SCALE_FULL, &b)) return;
     Box shadow = b;
     shadow.x += kaos_s16(BAR_SHADOW);
     shadow.y += kaos_s16(BAR_SHADOW);
@@ -406,7 +409,7 @@ void ui_draw_champion_skills_and_statistics(void)
     int16_t ci = g_inventory_champion_ordinal - 1, x, y, vx;
     const Champion *c = &g_champions[ci];
     Bitmap *vp = ui_viewport();
-    char s[40], a[8], b[8];
+    char s[PANEL_LINE_SIZE], a[8], b[8];
     close_chest();
     ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
     zone_point(ZONE_PANEL_SKILLS, &x, &y);
@@ -435,8 +438,8 @@ void ui_draw_inventory_open(int16_t champion_index)
     Bitmap screen = ui_screen(), *vp = ui_viewport();
     const Bitmap *bg = gfx_bitmap(GFX_INVENTORY);
     if (!g_inventory_champion_ordinal) ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
-    g_inventory_champion_ordinal = (int16_t)(champion_index + 1);
-    if (bg) draw_blit(bg, 0, 0, vp, &(Box){ 0, 0, (int16_t)vp->w, (int16_t)vp->h }, COLOR_NONE, 0);
+    g_inventory_champion_ordinal = champion_index + 1;
+    if (bg) draw_blit(bg, 0, 0, vp, &(Box){ 0, 0, vp->w, vp->h }, COLOR_NONE, 0);
     if (g_candidate_champion_ordinal) { /* a candidate cannot save, sleep, or close */
         ui_fill_zone(vp, ZONE_INVENTORY_SAVE, COLOR_DARKEST_GRAY);
         ui_fill_zone(vp, ZONE_INVENTORY_SLEEP, COLOR_DARKEST_GRAY);
@@ -445,9 +448,9 @@ void ui_draw_inventory_open(int16_t champion_index)
     ui_print_zone(vp, ZONE_HEALTH_LABEL, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(TEXT_HEALTH));
     ui_print_zone(vp, ZONE_HEALTH_LABEL + 1, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(TEXT_STAMINA));
     ui_print_zone(vp, ZONE_HEALTH_LABEL + 2, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(TEXT_MANA));
-    for (uint16_t s = 0; s < SLOT_COUNT; s++) ui_draw_champion_slot((uint16_t)champion_index, s);
+    for (uint16_t s = 0; s < SLOT_COUNT; s++) ui_draw_champion_slot(champion_index, s);
     g_champions[champion_index].attributes |= CHAMPION_ATTR_INVENTORY_ALL;
-    ui_draw_champion_state((uint16_t)champion_index);
+    ui_draw_champion_state(champion_index);
 }
 
 /* Closes the inventory on the screen: the status box returns and the movement arrows come back.
@@ -458,7 +461,7 @@ void ui_draw_inventory_close(int16_t champion_index)
     close_chest();
     if (g_champions[champion_index].current_health && !g_candidate_champion_ordinal) {
         g_champions[champion_index].attributes |= CHAMPION_ATTR_STATUS_BOX;
-        ui_draw_champion_state((uint16_t)champion_index);
+        ui_draw_champion_state(champion_index);
     }
     if (!g_party_is_sleeping) menus_draw_movement_arrows();
 }
@@ -480,7 +483,7 @@ static void attributes_text(uint16_t potential, uint16_t actual, char *dst, size
     append(dst, size, (const char *)kaos_ptr(ATTRIBUTES_PREFIX));
     for (int16_t i = 0; i < ATTRIBUTE_COUNT; i++) {
         if (!(bits >> i & 1)) continue;
-        append(dst, size, gfx_string((int16_t)(TEXT_CONSUMABLE + i)));
+        append(dst, size, gfx_string(TEXT_CONSUMABLE + i));
         left--;
         if (left > 1) append(dst, size, (const char *)kaos_ptr(LIST_SEPARATOR));
         else if (left == 1) append(dst, size, gfx_string(TEXT_AND));
@@ -498,7 +501,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
     if (icon == ICON_BONES)
         snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[junk_charges(thing)].name, (const char *)kaos_ptr(BONES_SEPARATOR), gfx_object_name(icon));
     else if (type == THING_POTION && icon != ICON_WATER_FLASK && g_inventory_champion_ordinal &&
-             champion_get_skill_level((int16_t)(g_inventory_champion_ordinal - 1), SKILL_PRIEST) > 1)
+             champion_get_skill_level(g_inventory_champion_ordinal - 1, SKILL_PRIEST) > 1)
         snprintf(name, PANEL_LINE_SIZE, "%c %s", POTION_POWER_SYMBOL_FIRST + potion_power(thing) / POTION_POWER_SYMBOL_STEP, gfx_object_name(icon));
     else
         snprintf(name, PANEL_LINE_SIZE, "%s", gfx_object_name(icon));
@@ -522,7 +525,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
         if (icon <= ICON_COMPASS_NORTH + DIRECTION_WEST)
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s", gfx_string(TEXT_PARTY_FACING), gfx_string(kaos_s16(DIRECTION_STRINGS + 2 * icon)));
         else if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
-            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_string((int16_t)(TEXT_WATERSKIN_EMPTY + junk_charges(thing))));
+            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_string(TEXT_WATERSKIN_EMPTY + junk_charges(thing)));
         else {
             potential = ATTRIBUTE_CONSUMABLE;
             actual = tables_object_info(inventory_get_object_info_index(thing))->allowed_slots;
@@ -532,8 +535,8 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
     attributes_text(potential, actual, lines[n], PANEL_LINE_SIZE);
     if (lines[n][0]) n++;
     char a[8], b[8];
-    snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s%s%s%s", gfx_string(TEXT_WEIGHS), number(a, weight / 10, 0, 0), gfx_string(TEXT_DECIMAL_POINT),
-             number(b, weight % 10, 0, 0), gfx_string(TEXT_KG_PERIOD)); /* the weight is in tenths of a kilogram */
+    snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s%s%s%s", gfx_string(TEXT_WEIGHS), number(a, weight / WEIGHT_TENTHS, 0, 0), gfx_string(TEXT_DECIMAL_POINT),
+             number(b, weight % WEIGHT_TENTHS, 0, 0), gfx_string(TEXT_KG_PERIOD)); /* the weight is in tenths of a kilogram */
     return n;
 }
 
@@ -610,7 +613,7 @@ static void draw_scroll_line(int16_t x, int16_t y, char *text)
         else if (*c >= '{') *c = (char)(*c - SCROLL_FONT_SHIFT);
     }
     if (!text_size(text, &w, &h)) return;
-    int16_t left = (int16_t)(x - (w >> 1));
+    int16_t left = x - (w >> 1);
     text_draw(ui_viewport(), left, y, COLOR_BLACK, COLOR_WHITE, text);
     for (int i = 0; g_advanced_features && text[i]; i++) {
         char glyph[2] = { text[i], 0 };
@@ -629,7 +632,7 @@ static void insert_creature_name(char *text, size_t size)
             int16_t x = g_party_map_x, y = g_party_map_y;
             update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
             uint16_t group = get_square_group(x, y);
-            name = gfx_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE : (int16_t)(TEXT_CREATURE_NAME_FIRST + rec_group_creature_type(group)));
+            name = gfx_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE : TEXT_CREATURE_NAME_FIRST + rec_group_creature_type(group));
             scroll_redraw = 1;
         }
         size_t rest = strlen(at + length), n = strlen(name);
@@ -655,7 +658,7 @@ static int draw_panel_magic_map(const char *text)
     ui_blit_graphic(vp, GFX_PANEL_MAGIC_MAP, ZONE_PANEL, COLOR_RED);
     for (int16_t i = 0; i < MAGIC_MAP_RUNE_COUNT; i++) {
         char rune[2] = { (char)(MAGIC_MAP_RUNE_FIRST + i), 0 };
-        ui_print_zone(vp, (int16_t)(ZONE_MAGIC_MAP_RUNE_FIRST + i), spells[rune_spell[i]] ? COLOR_RED : COLOR_BLACK, COLOR_WHITE, rune);
+        ui_print_zone(vp, ZONE_MAGIC_MAP_RUNE_FIRST + i, spells[rune_spell[i]] ? COLOR_RED : COLOR_BLACK, COLOR_WHITE, rune);
     }
     zone_point(ZONE_MAGIC_MAP, &x, &y);
     view_draw_magic_map(vp, spells, x, y);
@@ -667,7 +670,7 @@ static void draw_panel_scroll(uint16_t scroll)
 {
     char text[SCROLL_TEXT_SIZE];
     int16_t x, y, count = 1;
-    decode_text(text, sizeof text, (uint16_t)(THING_TEXT << 10 | scroll_text_index(scroll)), TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
+    decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(scroll)), TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
     if (g_adventure == ADVENTURE_CSB) {
         insert_creature_name(text, sizeof text);
         if (draw_panel_magic_map(text)) return;
@@ -685,7 +688,7 @@ static void draw_panel_scroll(uint16_t scroll)
     }
     ui_blit_graphic(ui_viewport(), GFX_PANEL_SCROLL, ZONE_PANEL, COLOR_RED);
     zone_point(ZONE_PANEL_SCROLL_CENTER, &x, &y);
-    y = (int16_t)(y - (((MESSAGE_ROW_HEIGHT * count - TEXT_BASELINE_GAP - 1) >> 1) - TEXT_LINE_HEIGHT));
+    y -= ((MESSAGE_ROW_HEIGHT * count - TEXT_BASELINE_GAP - 1) >> 1) - TEXT_LINE_HEIGHT;
     draw_scroll_line(x, y, text);
     while (*rest) {
         char *nl = strchr(rest, '\n');
@@ -725,11 +728,11 @@ static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t va
 {
     Bitmap *vp = ui_viewport();
     char text[8];
-    int16_t bar_x = (int16_t)(x + METER_LABEL_CHARS * TEXT_CHAR_WIDTH), top = (int16_t)(y - METER_BAR_ABOVE_BASELINE);
-    int16_t filled = (int16_t)(value >= maximum ? METER_BAR_WIDTH : value * METER_BAR_WIDTH / maximum);
+    int16_t bar_x = x + METER_LABEL_CHARS * TEXT_CHAR_WIDTH, top = y - METER_BAR_ABOVE_BASELINE;
+    int16_t filled = value >= maximum ? METER_BAR_WIDTH : value * METER_BAR_WIDTH / maximum;
     if (value && !filled) filled = 1; /* a small value still shows */
     text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, label);
-    Box shadow = { (int16_t)(bar_x + 1), (int16_t)(top + 1), filled, METER_BAR_HEIGHT };
+    Box shadow = { bar_x + 1, top + 1, filled, METER_BAR_HEIGHT };
     Box bar = { bar_x, top, filled, METER_BAR_HEIGHT };
     if (filled) {
         draw_fill(vp, &shadow, COLOR_BLACK);
@@ -779,7 +782,7 @@ static void open_and_draw_chest(uint16_t chest, int16_t pressing_eye)
     ui_blit_graphic(ui_viewport(), GFX_PANEL_CHEST, ZONE_PANEL, COLOR_RED);
     for (int16_t i = 0; i < SLOT_CHEST_COUNT; i++) {
         uint16_t thing = g_open_chest_slots[i];
-        ui_draw_icon_in_slot_box((int16_t)(SLOT_BOX_CHEST_FIRST + i), thing == THING_NONE ? -1 : object_get_icon_index(thing));
+        ui_draw_icon_in_slot_box(SLOT_BOX_CHEST_FIRST + i, thing == THING_NONE ? -1 : object_get_icon_index(thing));
     }
 }
 
@@ -828,7 +831,7 @@ void panel_redraw_scroll(void)
         return;
     }
     g_champions[g_inventory_champion_ordinal - 1].attributes |= CHAMPION_ATTR_PANEL;
-    ui_draw_champion_state((uint16_t)(g_inventory_champion_ordinal - 1));
+    ui_draw_champion_state(g_inventory_champion_ordinal - 1);
 }
 
 /* A click in the open chest panel swaps the leader hand object with the clicked chest slot. */
@@ -837,8 +840,8 @@ void panel_click_in_chest(int16_t x, int16_t y)
     if (g_panel_content != PANEL_CONTENT_CHEST || g_leader_index == -1) return;
     int16_t command = ui_command_from_mouse(UI_INPUT_CHEST, x, y, UI_BUTTON_LEFT);
     if (!command) return;
-    uint16_t slot_box = (uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST);
+    uint16_t slot_box = command - COMMAND_CLICK_SLOT_BOX_FIRST;
     inventory_click_on_slot_box(slot_box);
-    ui_draw_champion_slot((uint16_t)(g_inventory_champion_ordinal - 1), (uint16_t)(slot_box - UI_SLOT_BOX_INVENTORY_FIRST));
+    ui_draw_champion_slot(g_inventory_champion_ordinal - 1, slot_box - UI_SLOT_BOX_INVENTORY_FIRST);
     ui_draw_viewport();
 }

@@ -44,7 +44,7 @@ static int in_dungeon_view(void)
 static void draw_readout(Bitmap *vp)
 {
     char line[READOUT_TEXT_SIZE];
-    int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN, y = (int16_t)(AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP);
+    int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN, y = AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP;
     snprintf(line, sizeof line, "LEVEL %u X %d Y %d", map_level(g_party_map_index), g_party_map_x, g_party_map_y);
     text_draw(vp, x, y, COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)], gameloop_party_light());
@@ -61,7 +61,7 @@ static void draw_readout(Bitmap *vp)
 void advanced_draw_automap(void)
 {
     Bitmap *vp = ui_viewport();
-    Box area = { 0, 0, (int16_t)vp->w, (int16_t)vp->h };
+    Box area = { 0, 0, vp->w, vp->h };
     automap_draw(vp, area, g_party_map_index);
     draw_readout(vp);
     ui_draw_viewport();
@@ -77,7 +77,7 @@ static void close_automap(void)
 void advanced_drag(int16_t x, int16_t y)
 {
     if (!drag.active || !g_automap_open) return;
-    int16_t dx = (int16_t)((x - drag.x) / AUTOMAP_CELL_SIZE), dy = (int16_t)((y - drag.y) / AUTOMAP_CELL_SIZE);
+    int16_t dx = (x - drag.x) / AUTOMAP_CELL_SIZE, dy = (y - drag.y) / AUTOMAP_CELL_SIZE;
     if (!dx && !dy) return;
     drag.x += dx * AUTOMAP_CELL_SIZE;
     drag.y += dy * AUTOMAP_CELL_SIZE;

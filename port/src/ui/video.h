@@ -8,6 +8,8 @@
 #define PALETTE_COLORS 16   /* colors of one palette half */
 #define COLOR_INDEX_MASK (PALETTE_COLORS - 1)
 #define FRAMES_PER_SECOND 50 /* PAL vertical blank */
+#define ARGB_RED_SHIFT 16   /* bit position of the red byte in a video_argb color */
+#define ARGB_GREEN_SHIFT 8
 
 extern uint8_t fb[SCREEN_H][SCREEN_W];
 /* Palette split of the copper list: rows palette_split_top to palette_split_bottom - 1 use the

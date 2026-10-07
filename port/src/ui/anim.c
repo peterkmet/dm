@@ -36,6 +36,7 @@
 #define MUSIC_VOLUME 30
 #define MUSIC_PASSES 6        /* the sequence plays 6 times, then the music ends */
 #define MUSIC_SEQUENCE_END 0xff
+#define MUSIC_COUNT_SIGN 0x80 /* high byte of a negative item count */
 #define MUSIC_FADE_FRAMES 3   /* 0x102e4c: the volume goes down by 1 every 3 ticks */
 
 /* Chunk tags that the player runs. The other tags (AN, DO, P8, music, sample files) do nothing for ENDA.DAT and TITL.DAT. */
@@ -128,13 +129,13 @@ static void play_music(uint16_t number)
     if (number < 1 || number > music_count || !music[number - 1]) return;
     const uint8_t *m = music[number - 1];
     size_t size = music_sizes[number - 1];
-    if (size < 2 || m[0] & 0x80) return;
+    if (size < 2 || m[0] & MUSIC_COUNT_SIGN) return;
     uint16_t n = BE16(m);
     size_t items = 2 + 4 * (size_t)n, offsets[UINT8_MAX + 1];
     if (!n || n > UINT8_MAX || items > size || BE16(m + 2) != BE16(m + 2 + 2 * n)) return;
     for (uint16_t i = 0, at = 0; i < n; i++) {
         offsets[i] = items + at;
-        at = (uint16_t)(at + BE16(m + 2 + 2 * (n + i)));
+        at += BE16(m + 2 + 2 * (n + i));
     }
     const int8_t *segments[SOUND_MUSIC_SEGMENTS];
     uint16_t lengths[SOUND_MUSIC_SEGMENTS];
@@ -171,7 +172,7 @@ static void set_colors(const uint8_t *payload, uint16_t length)
     for (uint16_t i = 0; i < count && PALETTE_COUNT_BYTES + (i + 1) * PALETTE_ENTRY_BYTES <= length; i++) {
         const uint8_t *e = payload + PALETTE_COUNT_BYTES + i * PALETTE_ENTRY_BYTES;
         if (e[0] < PALETTE_COLORS)
-            colors[e[0]] = (uint16_t)((e[1] & COLOR_NIBBLE) << RED_SHIFT | (e[2] & COLOR_NIBBLE) << GREEN_SHIFT | (e[3] & COLOR_NIBBLE));
+            colors[e[0]] = (e[1] & COLOR_NIBBLE) << RED_SHIFT | (e[2] & COLOR_NIBBLE) << GREEN_SHIFT | (e[3] & COLOR_NIBBLE);
     }
     palette_changed = 1;
 }
@@ -187,6 +188,25 @@ static void play_sample(size_t at, uint16_t number)
     uint8_t volumes[SAMPLE_VOLUME_BYTES] = { (uint8_t)((file[at + CHUNK_HEADER] + 1) >> SAMPLE_VOLUME_SHIFT),
                            (uint8_t)((file[at + CHUNK_HEADER + 1] + 1) >> SAMPLE_VOLUME_SHIFT) };
     sound_play_data((const int8_t *)s + SAMPLE_HEADER, length, ANIMATION_SAMPLE_PERIOD, volumes);
+}
+
+/* FO, NE, and BN: the start of a loop of parameter passes, the end of a pass, and the jump back to the loop body. */
+static void loop_chunk(uint16_t tag, uint16_t parameter)
+{
+    switch (tag) {
+    case TAG_LOOP: /* the chunk after FO runs once, the loop body starts after it */
+        if (loop_depth < MAX_LOOP_DEPTH) loops[loop_depth++] = (Loop){ next_chunk(pos), parameter - 1 };
+        break;
+    case TAG_LOOP_NEXT: /* the last pass skips the two chunks after NE: the end-of-pass chunk and BN */
+        if (loop_depth && loops[loop_depth - 1].count-- == 0) {
+            loop_depth--;
+            pos = next_chunk(next_chunk(pos));
+        }
+        break;
+    case TAG_LOOP_BACK:
+        if (loop_depth) pos = loops[loop_depth - 1].start;
+        break;
+    }
 }
 
 int16_t anim_next_frame(void)
@@ -217,7 +237,7 @@ int16_t anim_next_frame(void)
             const uint8_t *data = load_named_file(payload, length, &size);
             if (sample_count < MAX_SAMPLES) {
                 samples[sample_count] = data;
-                sample_sizes[sample_count++] = (uint16_t)(size < UINT16_MAX ? size : UINT16_MAX);
+                sample_sizes[sample_count++] = size < UINT16_MAX ? size : UINT16_MAX;
             }
             break;
         }
@@ -230,17 +250,10 @@ int16_t anim_next_frame(void)
         case TAG_MUSIC:
             play_music(parameter);
             break;
-        case TAG_LOOP: /* the chunk after FO runs once, the loop body starts after it */
-            if (loop_depth < MAX_LOOP_DEPTH) loops[loop_depth++] = (Loop){ next_chunk(pos), (int16_t)(parameter - 1) };
-            break;
-        case TAG_LOOP_NEXT: /* the last pass skips the two chunks after NE: the end-of-pass chunk and BN */
-            if (loop_depth && loops[loop_depth - 1].count-- == 0) {
-                loop_depth--;
-                pos = next_chunk(next_chunk(pos));
-            }
-            break;
+        case TAG_LOOP:
+        case TAG_LOOP_NEXT:
         case TAG_LOOP_BACK:
-            if (loop_depth) pos = loops[loop_depth - 1].start;
+            loop_chunk(BE16(chunk), parameter);
             break;
         case TAG_FULL_FRAME:
         case TAG_DELTA_FRAME: { /* a delta frame skips the unchanged pixels */
@@ -248,7 +261,7 @@ int16_t anim_next_frame(void)
             gfx_expand_over(payload, length, &screen);
             if (palette_changed) ui_set_screen_palette(colors);
             palette_changed = 0;
-            return (int16_t)parameter;
+            return parameter;
         }
         }
     }

@@ -103,10 +103,10 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
     for (int16_t side = 0; side < 2; side++) {
         const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
         w = h = 0;
-        if (!bm || !layout_get_zone((int16_t)(ZONE_ENTRANCE_LEFT_DOOR + side), bm->w, bm->h, &door, &w, &h)) continue;
+        if (!bm || !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, bm->w, bm->h, &door, &w, &h)) continue;
         door.x += work.x;
         door.y += work.y;
-        door.w = (int16_t)max16(0, door.w - opened);
+        door.w = max16(0, door.w - opened);
         if (side == 0) w += opened;  /* the left door slides left, the right door slides right */
         else door.x += opened;
         if (door.w) shown = 1;
@@ -142,7 +142,7 @@ void entrance_press_button(int resume)
     int16_t sx = 0, sy = 0;
     if (!g_frame_hook) return;
     if (bm && layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
-        draw_blit(bm, sx, (int16_t)(sy + (resume ? BUTTON_HEIGHT : 0)), &screen, &box, COLOR_NONE, 0);
+        draw_blit(bm, sx, sy + (resume ? BUTTON_HEIGHT : 0), &screen, &box, COLOR_NONE, 0);
     sound_play_sample(SOUND_SWITCH, volumes);
     wait_frames(BUTTON_FRAMES);
 }
@@ -161,7 +161,7 @@ void entrance_open_doors(void)
     if (!g_frame_hook || !load_dungeon(path) || !ui_zone_box(ZONE_VIEWPORT, &box)) return;
     view_set_light(g_party_map_index, 0);
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
-    Bitmap view = { (uint16_t)box.w, (uint16_t)box.h, view_px };
+    Bitmap view = { box.w, box.h, view_px };
     for (int16_t y = 0; y < box.h; y++) memcpy(view_px + y * box.w, &fb[box.y + y][box.x], (size_t)box.w);
     set_entrance_palette();
     for (int16_t opened = 0, frames = 0; draw_entrance_doors(&view, opened) && !g_quit_requested; opened += DOOR_STEP) {
@@ -180,7 +180,7 @@ int16_t gameloop_party_light(void)
         for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--, n++) {
             uint16_t thing = g_champions[i].slots[hand];
             int16_t type = object_get_type(thing);
-            if (type >= ICON_TORCH_UNLIT && type <= ICON_TORCH_LAST) power[n] = (int16_t)weapon_charges(thing);
+            if (type >= ICON_TORCH_UNLIT && type <= ICON_TORCH_LAST) power[n] = weapon_charges(thing);
         }
     /* the original sorts only the 4 brightest: the fifth light is any of the rest */
     for (int i = 0; i < LIGHT_SOURCES_USED - 1; i++)
@@ -518,7 +518,7 @@ static int pointer_shape(int16_t x, int16_t y, int in_game)
         int16_t champion = kaos_s16(z + POINTER_ZONE_CHAMPION);
         if (!champion && !kaos_s16(z + POINTER_ZONE_SHAPE)) return POINTER_ARROW;
         /* a status box: the arrow over a living champion with its inventory open, or over its name */
-        int16_t index = (int16_t)((champion & ZONE_CHAMPION_INDEX_MASK) - 1);
+        int16_t index = (champion & ZONE_CHAMPION_INDEX_MASK) - 1;
         if (champion && index < g_party_champion_count && g_champions[index].current_health &&
             (index + 1 == g_inventory_champion_ordinal || champion >= ZONE_CHAMPION_NAME))
             return POINTER_ARROW;
