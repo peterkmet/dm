@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define NORMALIZE(direction) ((direction) & 3)
+#define CELL_COUNT 4                   /* cells of a square, one for each direction */
 #define CHAMPION_MAX_COUNT 4
 #define STAT_LIMIT 170                 /* no statistic grows above this value */
 #define PARTY_SCENT_COUNT 24

@@ -20,7 +20,6 @@
 /* KAOS data addresses. */
 #define SLOT_DROP_ORDER 0x100d0e   /* g_slot_drop_order[30] */
 
-#define CELL_COUNT 4
 #define INITIAL_FOOD_WATER 1500
 #define MAXIMUM_HEALTH 999
 #define MAXIMUM_STAMINA 9999
