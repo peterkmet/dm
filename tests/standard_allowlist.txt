@@ -26,8 +26,8 @@ decimal engine/map.c open: Task 8
 decimal engine/map.h open: Task 8
 decimal engine/message.c open: Task 9
 decimal engine/move.c open: Task 9
+decimal ui/musicmap.c the FM-Towns CSB track of each square: table data of the CHTWE.EXP soundtrack table, not in the game files
 decimal ui/music.c the FM-Towns level tracks and the Super NES trigger squares: table data of the soundtracks, not in the game files
-decimal ui/musicmap.c open: Task 11
 decimal platform/platform.c open: Task 11
 decimal engine/projectile.c open: Task 10
 decimal engine/projectile.h open: Task 10
