@@ -41,7 +41,7 @@ int logo_play(const char *path)
     memset(fb, 0, sizeof fb);
     ui_set_screen_palette(colors);
     gfx_expand_over(at + LOGO_GRAPHIC, SAMPLE_PERIOD - LOGO_GRAPHIC, &screen);
-    sound_play_data((const int8_t *)at + SAMPLE_DATA, (uint16_t)length, period, volumes);
+    sound_play_data((const int8_t *)at + SAMPLE_DATA, (uint16_t)length, period, volumes); /* the voice takes a word length */
     /* the module waits for the end of the sample */
     int32_t frames = (int32_t)(((uint64_t)length * period * FRAMES_PER_SECOND + SOUND_PAL_CLOCK - 1) / SOUND_PAL_CLOCK);
     for (uint32_t e = PALETTE_SCRIPT; e < PALETTE_SCRIPT_END; e += SCRIPT_ENTRY_BYTES) {
