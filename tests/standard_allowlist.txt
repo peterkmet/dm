@@ -4,7 +4,6 @@ bool engine/action.h open: Task 9
 bool ui/automap.h open: Task 11
 bool platform/control.h open: Task 11
 bool engine/game.h open: Task 9
-bool engine/group.h open: Task 10
 bool engine/magic.h open: Task 9
 bool engine/map.h open: Task 8
 bool engine/move.h open: Task 9
@@ -20,8 +19,6 @@ decimal data/ftl.c open: Task 8
 decimal engine/game.c open: Task 9
 decimal engine/game.h open: Task 9
 decimal data/graphics.c open: Task 8
-decimal engine/group.c open: Task 10
-decimal engine/group.h open: Task 10
 decimal engine/inventory.c open: Task 9
 decimal engine/magic.c open: Task 9
 decimal platform/main.c open: Task 11
@@ -47,7 +44,6 @@ decimal ui/view.c open: Task 11
 hex ui/anim.c open: Task 11
 hex data/csbimage.c addresses of the APPB tables
 hex data/csbtext.c addresses of the APPB tables
-hex engine/group.h open: Task 10
 hex platform/main.c open: Task 11
 hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
@@ -57,10 +53,6 @@ long engine/action.c:action_is_action_performed open: Task 9
 long ui/anim.c:anim_next_frame open: Task 11
 long platform/control.c:handle_request open: Task 11
 long platform/control.c:send_turn_result open: Task 11
-long engine/group.c:group_get_melee_action_damage open: Task 10
-long engine/group.c:group_get_move_result open: Task 10
-long engine/group.c:group_process_reaction_event open: Task 10
-long engine/group.c:process_creature_behavior open: Task 10
 long ui/layout.c:layout_get_zone open: Task 11
 long platform/main.c:main open: Task 11
 long engine/move.c:move_get_move_result open: Task 9
