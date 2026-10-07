@@ -19,12 +19,15 @@ enum { VIEW_DEPTH_COUNT = 4 };      /* the view draws the party row and 3 rows a
    view cells 0-3 (D0 back cells, D1C front cells), the alcove pile, and the front wall ornament or
    door button. */
 enum { VIEW_CLICK_BOX_ALCOVE = 4, VIEW_CLICK_BOX_WALL = 5, VIEW_CLICK_BOX_COUNT = 6 };
+enum { VIEW_PILE_OBJECT_MAX = 32 };  /* a pile records at most this many objects; the view drops the rest */
 /* View element of the square ahead (g_square_ahead_element): a wall, a door seen from the front. */
 enum { VIEW_ELEMENT_WALL = 0, VIEW_ELEMENT_DOOR_FRONT = 0x11 };
 
 extern int16_t g_do_not_draw_fluxcages;
 extern Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
 extern uint16_t g_pile_top_objects[VIEW_CLICK_BOX_WALL];   /* top object of each pile box */
+extern uint16_t g_pile_objects[VIEW_CLICK_BOX_WALL][VIEW_PILE_OBJECT_MAX]; /* objects of each pile box in draw order */
+extern int16_t g_pile_object_counts[VIEW_CLICK_BOX_WALL];
 extern int16_t g_square_ahead_element;
 extern int16_t g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 

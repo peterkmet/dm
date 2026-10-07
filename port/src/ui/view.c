@@ -223,6 +223,8 @@ static int16_t vi_altar, fountain;           /* wall ornament index of the vi al
 int16_t g_do_not_draw_fluxcages;
 Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
 uint16_t g_pile_top_objects[VIEW_CLICK_BOX_WALL];
+uint16_t g_pile_objects[VIEW_CLICK_BOX_WALL][VIEW_PILE_OBJECT_MAX];
+int16_t g_pile_object_counts[VIEW_CLICK_BOX_WALL];
 int16_t g_square_ahead_element;
 int16_t g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 
@@ -469,7 +471,7 @@ static int16_t projectile_aspect(uint16_t thing)
 }
 
 /* The pile box of a near object grows by the drawn box; a single object gets at least
-   CLICK_BOX_MIN_W x CLICK_BOX_MIN_H pixels around its center. The object becomes the pile top. */
+   CLICK_BOX_MIN_W x CLICK_BOX_MIN_H pixels around its center. The object becomes the pile top and joins the pile list. */
 static void add_clickable_object(int16_t index, uint16_t thing)
 {
     Box *c = &g_dungeon_view_clickable_boxes[index];
@@ -491,6 +493,7 @@ static void add_clickable_object(int16_t index, uint16_t thing)
         c->h = bottom - c->y;
     }
     g_pile_top_objects[index] = thing;
+    if (g_pile_object_counts[index] < VIEW_PILE_OBJECT_MAX) g_pile_objects[index][g_pile_object_counts[index]++] = thing;
 }
 
 /* One object on the floor or in an alcove. pile counts the objects of the cell for their shift;
@@ -1875,6 +1878,7 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
     memset(px, 0, sizeof px);
     if (!motion_steps) start_tracks(dir, x, y);
     for (int i = 0; i < VIEW_CLICK_BOX_COUNT; i++) g_dungeon_view_clickable_boxes[i].x = -1;
+    memset(g_pile_object_counts, 0, sizeof g_pile_object_counts);
     reset_wall_set_ids();
     parity = (dir + x + y) & 1;
     if (parity) { /* the mirrored-walls memory option is on, as on a 1 MB Amiga */

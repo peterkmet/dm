@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.14.0 - 2026-10-07
+
+### Added
+
+- `view.piles[]` has `objects`: every object of the pile, top first; `take_object` takes `objects[0]`. `dm-play --brief` prints the whole pile.
+
+### Changed
+
+- LLM player rules: when stuck, reread the own notes on locks, keys, and doors and try each key in each known lock; take every object of a pile.
+
 ## 0.13.2 - 2026-10-07
 
 ### Changed
