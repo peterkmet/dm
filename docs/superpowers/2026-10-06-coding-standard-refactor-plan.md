@@ -616,6 +616,7 @@ Decisions made during Task 9:
 - A cast to the type of an assignment, a parameter, or a return value gives the same result as the implicit conversion, so it goes. A cast inside an expression stays when it can change the result (unsigned shift or compare, 16-bit wrap or truncation), with a one-line comment.
 - The champion index keeps its type in each signature (`uint16_t` in most, `int16_t` where -1 means no champion). The values are 0 to 3, so both types give the same result. One type for all signatures would change most engine headers and their `ctypes` bindings.
 - `champion.c`: the constants are local `#define`s of `champion.c`, as its other rule constants. `with_cell` is `THING_WITH_CELL` of `map.h`. The scent word of `fade_scents` is `move_get_scent` (was the static `scent_of` of `move.c`).
+- `action.c`: `action_is_action_performed` gets the static `is_door_bashed`, `is_explosion_action_cast`, and `is_action_hand_object_thrown`. It stays above 60 lines (one short case for each action): `long` line with this reason. The static predicates of the file return `bool` too. `tests/test_actions.py` and `tests/test_csb_rules.py` bind `action_is_action_performed` with `restype = ctypes.c_bool`.
 
 ---
 

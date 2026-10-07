@@ -39,7 +39,7 @@ MELEE_ACTIONS = [2, 6, 7, 9, 13, 14, 15, 16, 17, 18, 19, 24, 25, 28, 29, 30, 31]
 @pytest.fixture
 def alib(lib):  # noqa: F811
     for name, res, args in [
-        ("action_is_action_performed", c16, [u16, c16]), ("champion_poison", None, [c16, u16]),
+        ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("champion_poison", None, [c16, u16]),
         ("group_get_melee_action_damage", c16, [c16, u16, c16, c16, c16, u16, u16, c16]),
         ("timeline_delete_event", None, [u16]), ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]),
         ("link_thing_to_list", None, [u16, u16, c16, c16]), ("tables_action_info", ctypes.c_void_p, [ctypes.c_int]),

@@ -1,6 +1,7 @@
 #ifndef ACTION_H
 #define ACTION_H
 /* Prefixes: action_ */
+#include <stdbool.h>
 #include <stdint.h>
 
 /* Champion actions of the action area (KAOS range 8, MENU.C): docs/rules-champions.md#actions. */
@@ -34,20 +35,20 @@ extern uint16_t g_action_target_group_thing;
 
 /* Commands 113-115: runs action list entry 0-2 of the acting champion. Returns 1 when the action was performed. */
 int16_t action_did_click_trigger_action(int16_t action_list_index);
-int16_t action_is_action_performed(uint16_t champion_index, int16_t action);
-int16_t action_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y, int16_t skill_index);
-int16_t action_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y);
+bool action_is_action_performed(uint16_t champion_index, int16_t action);
+bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y, int16_t skill_index);
+bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y);
 void action_decrement_charges(uint16_t champion_index);
 void action_print_action_message(uint16_t champion_index, const char *text);
 
 /* Throwing: slot SLOT_HAND_ACTION, or the leader hand object with action_is_leader_hand_object_thrown. side 1 throws
    from the right side of the party. */
-int16_t action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side);
-int16_t action_is_leader_hand_object_thrown(int16_t side);
+bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side);
+bool action_is_leader_hand_object_thrown(int16_t side);
 int16_t action_get_throwing_stamina_cost(uint16_t thing);
 
 /* Ammunition in the quiver for the launcher in the weapon slot. */
-int16_t action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot);
+bool action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot);
 void action_move_weapon_from_quiver_to_slot(uint16_t champion_index, uint16_t slot);
 
 #endif
