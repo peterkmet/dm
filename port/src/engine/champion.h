@@ -61,7 +61,7 @@ void champion_add_candidate_to_party(int16_t portrait_index);
 void champion_click_in_resurrect_reincarnate_panel(int16_t command);
 void champion_resurrect(uint16_t champion_index);
 int16_t champion_get_index_in_cell(int16_t cell);
-void command_set_leader(int16_t champion_index);
+void champion_set_leader(int16_t champion_index);
 void champion_wake_up(void);
 
 int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flags);

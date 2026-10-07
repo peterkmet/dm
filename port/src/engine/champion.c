@@ -147,7 +147,7 @@ int16_t champion_get_index_in_cell(int16_t cell)
 }
 
 /* The leader carries the hand object, so its weight moves to the new leader. */
-void command_set_leader(int16_t champion_index)
+void champion_set_leader(int16_t champion_index)
 {
     if (champion_index == g_leader_index || (champion_index != -1 && !g_champions[champion_index].current_health))
         return;
@@ -276,7 +276,7 @@ void champion_add_candidate_to_party(int16_t portrait_index)
     g_candidate_champion_ordinal = index + 1;
     c->attributes |= CHAMPION_ATTR_ACTION_HAND;
     if (++g_party_champion_count == 1) {
-        command_set_leader(0);
+        champion_set_leader(0);
         g_magic_caster_champion_index = 0;
     }
     add_candidate_possessions(index);
@@ -315,7 +315,7 @@ void champion_click_in_resurrect_reincarnate_panel(int16_t command)
     g_candidate_champion_ordinal = 0;
     if (command == PANEL_CANCEL) {
         if (g_party_champion_count == 1) {
-            command_set_leader(-1);
+            champion_set_leader(-1);
             g_magic_caster_champion_index = -1;
         }
         g_party_champion_count--;
@@ -730,7 +730,7 @@ void champion_kill(uint16_t champion_index)
         return;
     }
     if (champion_index == g_leader_index)
-        command_set_leader(alive);
+        champion_set_leader(alive);
     if (champion_index == g_magic_caster_champion_index) {
         g_magic_caster_champion_index = (int16_t)alive;
         g_redraw |= REDRAW_SPELL_AREA;

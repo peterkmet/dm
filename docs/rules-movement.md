@@ -22,7 +22,7 @@ The game loop calls these functions in this order on each tick:
 1. `move_process_new_party_map()`. When `g_new_party_map_index` is not −1, the party map changes, the party enters its square on the new map, and `g_new_party_map_index` becomes −1.
 2. `timeline_process()`. Repeat step 1 while `g_new_party_map_index` is not −1.
 3. Increment `g_game_time`.
-4. The command step calls `command_move_party(command)` or `command_turn_party(command)`.
+4. The command step calls `move_party(command)` or `move_turn_party(command)`.
 
 ## Current map
 
@@ -63,25 +63,25 @@ Call `map_reset()` after `load_dungeon`. The current map pointers then point to 
 
 | Command | Value | Function |
 |---|---|---|
-| Turn left | 1 | `command_turn_party` |
-| Turn right | 2 | `command_turn_party` |
-| Move forward | 3 | `command_move_party` |
-| Move right | 4 | `command_move_party` |
-| Move backward | 5 | `command_move_party` |
-| Move left | 6 | `command_move_party` |
+| Turn left | 1 | `move_turn_party` |
+| Turn right | 2 | `move_turn_party` |
+| Move forward | 3 | `move_party` |
+| Move right | 4 | `move_party` |
+| Move backward | 5 | `move_party` |
+| Move left | 6 | `move_party` |
 
-`command_move_party(command)`:
+`move_party(command)`:
 
 1. Each living champion loses `load * 3 / maximum_load + 1` stamina (`champion_decrement_stamina`).
-2. On stairs, a backward move takes the stairs (`command_take_stairs`).
+2. On stairs, a backward move takes the stairs (`move_take_stairs`).
 3. The target square is the party square plus the step counts of the arrow (`0x103c56`: forward 1, 0, −1, 0; `0x103c5e`: right 0, 1, 0, −1), relative to the party direction.
 4. A stairs target: the party leaves its square, moves onto the stairs square, and takes the stairs.
 5. These targets block the move: a wall, a door with state 2, 3, or 4, and a fake wall with bit 2 (open) and bit 0 (imaginary) clear. With champions, a group on the target also blocks the move.
 6. Else the party moves with `move_get_move_result`. On stairs, the party only enters the new square. `g_disabled_movement_ticks` becomes the maximum of 1 and `champion_get_movement_ticks` of each living champion. `g_projectile_disabled_movement_ticks` becomes 0.
 
-`command_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`move_set_party_direction`), and enters the floor sensors again.
+`move_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`move_set_party_direction`), and enters the floor sensors again.
 
-`command_take_stairs(up)` removes the party from its square, sets `g_new_party_map_index` with `get_location_after_level_change` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
+`move_take_stairs(up)` removes the party from its square, sets `g_new_party_map_index` with `get_location_after_level_change` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
 `move_set_party_direction(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
 

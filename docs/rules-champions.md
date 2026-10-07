@@ -144,7 +144,7 @@ Sleep keeps the selected runes of the magic caster, in the original (command 145
 | `inventory_get_object_removed_from_slot` | The reverse. A torch in a hand goes out. A scroll leaving the action hand closes. |
 | `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand` | The hand object counts in the leader load. |
 | `inventory_click_on_slot_box` | Swaps the hand object and the slot object when the slot mask accepts the hand object. |
-| `command_set_leader` | Moves the hand object weight to the new leader and turns the leader to the party direction. |
+| `champion_set_leader` | Moves the hand object weight to the new leader and turns the leader to the party direction. |
 
 Object modifiers (removed with the opposite sign):
 

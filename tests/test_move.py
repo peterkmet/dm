@@ -100,7 +100,7 @@ def test_start_position(game):
 
 @pytest.mark.parametrize("command", [LEFT, RIGHT])
 def test_move_into_wall_stays(game, command):
-    game.command_move_party(command)
+    game.move_party(command)
     assert party(game) == (0, 1, 3, 2)
     assert var(game, "g_disabled_movement_ticks").value == 0
 
@@ -113,7 +113,7 @@ def test_move_along_corridor(game):
         a = command - FORWARD
         x += forward[a] * east[d] + right[a] * east[(d + 1) & 3]
         y += forward[a] * north[d] + right[a] * north[(d + 1) & 3]
-        game.command_move_party(command)
+        game.move_party(command)
         assert party(game) == (0, x, y, d)
         assert var(game, "g_disabled_movement_ticks").value == 1
     assert party(game) == (0, 1, 6, 2)
@@ -123,19 +123,19 @@ def test_turning(game):
     champion = recruit(game)
     champion.cell = 1
     for command, direction, cell in ((TURN_RIGHT, 3, 2), (TURN_LEFT, 2, 1), (TURN_LEFT, 1, 0), (TURN_LEFT, 0, 3), (TURN_LEFT, 3, 2)):
-        game.command_turn_party(command)
+        game.move_turn_party(command)
         assert party(game)[3] == direction and champion.cell == cell
     assert party(game)[1:3] == (1, 3)
 
 
 def test_stairs_change_map(game):
     place(game, 0, 4, 15, 3)
-    game.command_move_party(FORWARD)
+    game.move_party(FORWARD)
     assert var(game, "g_new_party_map_index").value == 1
     game.move_process_new_party_map()
     assert party(game) == (1, 3, 1, 0)
     assert var(game, "g_new_party_map_index").value == -1 and var(game, "g_current_map_index").value == 1
-    game.command_move_party(FORWARD)
+    game.move_party(FORWARD)
     assert party(game) == (1, 3, 0, 0)
 
 
@@ -144,7 +144,7 @@ def test_floor_sensor_opens_door(game):
     place(game, 0, 7, 9, 3)
     door = lambda: game.dungeon_square(0, 5, 9) & 7
     assert game.dungeon_square(0, 5, 9) >> 5 == 4 and door() == 4
-    game.command_move_party(FORWARD)
+    game.move_party(FORWARD)
     assert party(game) == (0, 6, 9, 3)
     states = []
     for _ in range(5):
@@ -167,7 +167,7 @@ def test_door_event_toggles_door(game):
 
 def test_teleporter_moves_party(game):
     place(game, 1, 29, 3, 1)
-    game.command_move_party(FORWARD)
+    game.move_party(FORWARD)
     assert party(game) == (1, 30, 1, 0)  # teleporter (30, 3): target (30, 1), absolute rotation 0
     assert var(game, "g_new_party_map_index").value == -1
 
@@ -178,7 +178,7 @@ def test_pit_drops_party(game):
     x, y = c16(7), c16(8)
     below = game.get_location_after_level_change(1, 1, ctypes.byref(x), ctypes.byref(y))
     assert below == 2
-    game.command_move_party(FORWARD)
+    game.move_party(FORWARD)
     assert var(game, "g_new_party_map_index").value == below
     assert party(game)[1:3] == (x.value, y.value)
     assert 0 < (c16 * 4).in_dll(game, "g_champion_pending_damage")[0] < 100
@@ -188,7 +188,7 @@ def test_pit_drops_party(game):
 
 def test_turn_on_stairs_takes_stairs(game):
     place(game, 1, 3, 1, 0)
-    game.command_turn_party(TURN_LEFT)
+    game.move_turn_party(TURN_LEFT)
     game.move_process_new_party_map()
     assert party(game)[0] == 0 and game.dungeon_square(0, *party(game)[1:3]) >> 5 == 3
 

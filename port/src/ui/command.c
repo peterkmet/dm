@@ -350,12 +350,12 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
 static void click_in_status_box(int16_t champion_index, int16_t x, int16_t y)
 {
     if (champion_index + 1 == g_inventory_champion_ordinal) {
-        command_set_leader(champion_index);
+        champion_set_leader(champion_index);
         return;
     }
     int16_t command = ui_command_from_mouse(UI_INPUT_STATUS_BOX, x, y, CLICK_LEFT_PRESS);
     if (command >= COMMAND_SET_LEADER_FIRST && command < COMMAND_SET_LEADER_FIRST + CHAMPION_MAX_COUNT)
-        command_set_leader(command - COMMAND_SET_LEADER_FIRST);
+        champion_set_leader(command - COMMAND_SET_LEADER_FIRST);
     else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST && command < COMMAND_CLICK_SLOT_BOX_FIRST + HAND_SLOT_BOX_COUNT)
         inventory_click_on_slot_box((uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST));
 }
@@ -706,11 +706,11 @@ static void move_or_turn(int16_t command)
     g_stop_waiting_for_input = 1;
     highlight_zone((int16_t)(ZONE_MOVEMENT_ARROW_BEFORE_FIRST + command));
     if (command <= COMMAND_TURN_RIGHT) {
-        command_turn_party(command);
+        move_turn_party(command);
         ui_draw_all_champion_states(CHAMPION_ATTR_ICON);
         return;
     }
-    command_move_party(command);
+    move_party(command);
     if (x == g_party_map_x && y == g_party_map_y && map == g_party_map_index && g_new_party_map_index == -1) {
         command_discard_all_input();
         g_stop_waiting_for_input = 0;

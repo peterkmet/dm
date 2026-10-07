@@ -587,7 +587,7 @@ address,name,signature,subsystem
 0x124a2c,command_process_pending_click,void command_process_pending_click(void),command
 0x124a4a,command_process_key,void command_process_key(int16_t key),command
 0x124b04,command_process_click_in_champion_status_box,"void command_process_click_in_champion_status_box(uint16_t champion_index, int16_t x, int16_t y)",command
-0x124b78,command_set_leader,void command_set_leader(int16_t champion_index),command
+0x124b78,champion_set_leader,void champion_set_leader(int16_t champion_index),command
 0x124c54,command_process_click_in_panel,"int16_t command_process_click_in_panel(int16_t x, int16_t y)",command
 0x124ce2,command_draw_sleep_screen,void command_draw_sleep_screen(void),command
 0x124d10,protect_dummy_124d10,,protect
@@ -602,9 +602,9 @@ address,name,signature,subsystem
 0x1257a6,highlight_box_enable,void highlight_box_enable(const int16_t *box),command
 0x1257de,highlight_zone_enable,void highlight_zone_enable(int16_t zone_index),command
 0x125802,highlight_box_disable,void highlight_box_disable(void),command
-0x12581a,command_take_stairs,void command_take_stairs(int16_t stairs_go_up),command
-0x12588c,command_turn_party,void command_turn_party(int16_t command),command
-0x125932,command_move_party,void command_move_party(int16_t command),command
+0x12581a,move_take_stairs,void move_take_stairs(int16_t stairs_go_up),command
+0x12588c,move_turn_party,void move_turn_party(int16_t command),command
+0x125932,move_party,void move_party(int16_t command),command
 0x125c16,command_process_click_in_spell_area,"void command_process_click_in_spell_area(int16_t x, int16_t y)",command
 0x125d24,command_process_click_in_action_area,"void command_process_click_in_action_area(int16_t x, int16_t y)",command
 0x125e18,action_print_action_message,void action_print_action_message(const char *text),menus

@@ -211,9 +211,9 @@ def test_png_after_walking(game):
     mark_here(game)
     for _ in range(20):
         before = party(game)
-        game.command_move_party(FORWARD)
+        game.move_party(FORWARD)
         if party(game) == before:
-            game.command_turn_party(TURN_LEFT)
+            game.move_turn_party(TURN_LEFT)
         mark_here(game)
     w, h, scale = VIEWPORT.w, VIEWPORT.h, 3
     px = draw(game, w, h, Box(0, 0, w, h))

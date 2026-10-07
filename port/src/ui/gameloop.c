@@ -320,7 +320,7 @@ static void reset_champions_of_loaded_game(void)
     inventory_put_object_in_leader_hand(hand);
     for (uint16_t i = 0; i < g_party_champion_count; i++) g_champions[i].attributes &= CHAMPION_ATTR_KEEP_MASK;
     ui_draw_all_champion_states(CHAMPION_ATTR_ICON | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ACTION_HAND);
-    if (leader != -1) command_set_leader(leader);
+    if (leader != -1) champion_set_leader(leader);
     g_magic_caster_champion_index = -1;
     if (caster != -1) menus_set_magic_caster(caster);
 }

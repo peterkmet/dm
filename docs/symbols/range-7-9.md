@@ -436,8 +436,8 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 
 | Command | Action |
 |---|---|
-| 1, 2 | Turn left, right (`command_turn_party`). |
-| 3–6 | Move forward, right, backward, left (`command_move_party`). |
+| 1, 2 | Turn left, right (`move_turn_party`). |
+| 3–6 | Move forward, right, backward, left (`move_party`). |
 | 7–10 | Toggle inventory of champion 0–3. 11 closes the inventory. |
 | 12–15 | Click in champion status box 0–3. |
 | 16–19 | Set leader 0–3 (from status box). |
@@ -475,9 +475,9 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 
 #### Party movement
 
-`command_move_party(command)` charges every living champion `load × 3 / max_load + 1` stamina. It highlights the arrow zone `command + 0x43`. It computes the target square with `g_movement_arrow_to_step_forward_count` and `g_movement_arrow_to_step_right_count`. Stairs lead to `command_take_stairs`. Walls, closed doors (state not 0, 1, or 5), and solid fake walls block the move. A blocked move hurts the two front champions (24 damage, wound mask 2) and plays sound 15. A group on the target square blocks the move and gets event −1 (`group_process_events_29_to_41`). A successful move sets `g_disabled_movement_ticks` to the maximum movement ticks of the living champions.
+`move_party(command)` charges every living champion `load × 3 / max_load + 1` stamina. It highlights the arrow zone `command + 0x43`. It computes the target square with `g_movement_arrow_to_step_forward_count` and `g_movement_arrow_to_step_right_count`. Stairs lead to `move_take_stairs`. Walls, closed doors (state not 0, 1, or 5), and solid fake walls block the move. A blocked move hurts the two front champions (24 damage, wound mask 2) and plays sound 15. A group on the target square blocks the move and gets event −1 (`group_process_events_29_to_41`). A successful move sets `g_disabled_movement_ticks` to the maximum movement ticks of the living champions.
 
-`command_turn_party` turns the party. On stairs it takes the stairs. It removes the party from the square sensors before the turn and adds it after the turn.
+`move_turn_party` turns the party. On stairs it takes the stairs. It removes the party from the square sensors before the turn and adds it after the turn.
 
 #### Dungeon view clicks
 

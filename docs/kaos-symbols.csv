@@ -883,7 +883,7 @@ address,name,signature,subsystem
 0x104bd2,jt_command_init_mouse_zones,,jump_table
 0x104bda,jt_command_discard_all_input,,jump_table
 0x104be2,jt_fun_1210e8,,jump_table
-0x104bea,jt_command_set_leader,,jump_table
+0x104bea,jt_champion_set_leader,,jump_table
 0x104bf2,jt_command_process_click,,jump_table
 0x104bfa,jt_command_process_key,,jump_table
 0x104c02,jt_command_process_queue,,jump_table
@@ -1551,7 +1551,7 @@ address,name,signature,subsystem
 0x120e82,command_process_pending_click,void command_process_pending_click(void),command
 0x120ea0,command_process_key,void command_process_key(int16_t key),command
 0x120f2e,command_process_click_in_champion_status_box,"void command_process_click_in_champion_status_box(uint16_t champion_index, int16_t x, int16_t y)",command
-0x120f9e,command_set_leader,void command_set_leader(int16_t champion_index),command
+0x120f9e,champion_set_leader,void champion_set_leader(int16_t champion_index),command
 0x121060,command_process_click_in_panel,"int16_t command_process_click_in_panel(int16_t x, int16_t y)",command
 0x1210e8,command_draw_sleep_screen,void command_draw_sleep_screen(void),command
 0x121118,command_process_queue,void command_process_queue(void),command
@@ -1564,9 +1564,9 @@ address,name,signature,subsystem
 0x121af6,highlight_box_enable,void highlight_box_enable(const int16_t *box),command
 0x121b28,highlight_zone_enable,void highlight_zone_enable(int16_t zone_index),command
 0x121b4c,highlight_box_disable,void highlight_box_disable(void),command
-0x121b64,command_take_stairs,void command_take_stairs(int16_t stairs_go_up),command
-0x121bc4,command_turn_party,void command_turn_party(int16_t command),command
-0x121c5e,command_move_party,void command_move_party(int16_t command),command
+0x121b64,move_take_stairs,void move_take_stairs(int16_t stairs_go_up),command
+0x121bc4,move_turn_party,void move_turn_party(int16_t command),command
+0x121c5e,move_party,void move_party(int16_t command),command
 0x121f04,command_process_click_in_spell_area,"void command_process_click_in_spell_area(int16_t x, int16_t y)",command
 0x121fe0,command_process_click_in_action_area,"void command_process_click_in_action_area(int16_t x, int16_t y)",command
 0x1220b2,menus_init,void menus_init(void),menus

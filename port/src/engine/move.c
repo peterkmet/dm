@@ -260,7 +260,7 @@ void move_party_enter_dungeon(void)
 }
 
 /* The party leaves the stairs square and arrives on the other level facing out of the stairs. */
-void command_take_stairs(int16_t stairs_go_up)
+void move_take_stairs(int16_t stairs_go_up)
 {
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);
     g_new_party_map_index = get_location_after_level_change(g_party_map_index, stairs_go_up ? LEVEL_UP : LEVEL_DOWN, &g_party_map_x, &g_party_map_y);
@@ -270,11 +270,11 @@ void command_take_stairs(int16_t stairs_go_up)
 }
 
 /* On stairs, a turn takes the stairs. The party leaves the square sensors before the turn and enters them after it. */
-void command_turn_party(int16_t command)
+void move_turn_party(int16_t command)
 {
     uint8_t square = get_square(g_party_map_x, g_party_map_y);
     if (SQUARE_TYPE(square) == SQUARE_STAIRS) {
-        command_take_stairs(square & STAIRS_UP);
+        move_take_stairs(square & STAIRS_UP);
         return;
     }
     sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, 1, 0);
@@ -313,7 +313,7 @@ static void bump_into_wall(int16_t x, int16_t y, int16_t arrow)
 
 /* One step of the party. With champions, a bump hurts two champions and a group in the way blocks the step and
    reacts to the party. */
-void command_move_party(int16_t command)
+void move_party(int16_t command)
 {
     for (int16_t i = 0; i < g_party_champion_count; i++)
         if (g_champions[i].current_health)
@@ -322,7 +322,7 @@ void command_move_party(int16_t command)
     uint8_t square = get_square(x, y);
     int16_t on_stairs = SQUARE_TYPE(square) == SQUARE_STAIRS;
     if (on_stairs && command == COMMAND_MOVE_BACKWARD) {
-        command_take_stairs(square & STAIRS_UP);
+        move_take_stairs(square & STAIRS_UP);
         return;
     }
     update_map_coordinates_after_relative_movement(g_party_direction, kaos_s16(KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD + arrow * 2),
@@ -332,7 +332,7 @@ void command_move_party(int16_t command)
         move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);
         g_party_map_x = x;
         g_party_map_y = y;
-        command_take_stairs(square & STAIRS_UP);
+        move_take_stairs(square & STAIRS_UP);
         return;
     }
     int16_t blocked = is_square_blocking(square);
