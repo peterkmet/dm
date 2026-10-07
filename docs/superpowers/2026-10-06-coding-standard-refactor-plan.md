@@ -544,7 +544,7 @@ Decisions of the user on 2026-10-07, before the task:
 
 Decisions made during the task:
 - One commit for each prefix group. A name gets the prefix of its header in place of the old prefix. Where this gives a bad name, the name changes more (see the list below).
-- `engine/things.h` merges into `engine/map.h`, and `things.h` is deleted. Reason: a prefix belongs to one header only, so `rec_` cannot be in both headers. The 4 files that included `things.h` include `map.h`. The `bool`, `decimal`, and `hex` lines of `things.h` go, because `map.h` has the same lines.
+- `engine/things.h` merges into `engine/map.h`, and `things.h` is deleted. Reason: a prefix belongs to one header only, so `rec_` cannot be in both headers. The 5 files that included `things.h` include `map.h`. The `bool`, `decimal`, and `hex` lines of `things.h` go, because `map.h` has the same lines.
 - `rec_` is for an accessor of a thing record (`REC(thing)`), of the creature attribute bits, and of the dungeon header, when its name collides with a module prefix: `sensor_` (22), `text_` (2), `object_` (5), `group_` (4), `projectile_` (3), `explosion_` (3), `creature_height`, and `dungeon_` (2). Accessors without a collision keep their prefix: `door_`, `weapon_`, `armour_`, `junk_`, `potion_`, `container_`, `scroll_`, `teleporter_`, `thing_`. The map descriptor accessors of `things.h` (`map_floor_set`, ...) are of the same kind as `map_offset_x` of `map.h`. After the merge they do not collide, so they keep `map_`.
 - `group_get_thing` of `map.h` finds the group on a square. It is not a record accessor: `get_square_group`, as `get_square_first_object`.
 - `inventory.h` keeps `object_` (`object_get_type`, `object_get_icon_index`), because the `object_` accessors of `map.h` become `rec_`.
