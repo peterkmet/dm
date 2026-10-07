@@ -1,5 +1,6 @@
 #ifndef STARTEND_H
 #define STARTEND_H
+/* Prefixes: startend_ wait_ endgame fuse_ */
 #include <stdint.h>
 
 /* Sequences outside the game loop (KAOS STARTEND.C and save_game): the save dialog, resuming a

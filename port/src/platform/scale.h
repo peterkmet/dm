@@ -1,5 +1,6 @@
 #ifndef SCALE_H
 #define SCALE_H
+/* Prefixes: scale2x scale3x */
 #include <stdint.h>
 
 /* AdvMAME Scale2x/Scale3x on palette indices; dst is (w*n) x (h*n), edges replicate. */

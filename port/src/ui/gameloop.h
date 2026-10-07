@@ -1,5 +1,6 @@
 #ifndef GAMELOOP_H
 #define GAMELOOP_H
+/* Prefixes: gameloop_ entrance_ */
 #include <stdint.h>
 
 /* Game start and the main loop (KAOS initialize_game, start_game, game_loop, process_entrance). */

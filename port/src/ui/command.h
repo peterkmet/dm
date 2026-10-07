@@ -1,5 +1,6 @@
 #ifndef COMMAND_H
 #define COMMAND_H
+/* Prefixes: command_ */
 #include <stdint.h>
 #include "move.h"
 

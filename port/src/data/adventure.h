@@ -1,5 +1,6 @@
 #ifndef ADVENTURE_H
 #define ADVENTURE_H
+/* Prefixes: adventure_ */
 #include <stdint.h>
 
 /* The adventure of the run: Dungeon Master or Chaos Strikes Back. Its data folder and save file names. */

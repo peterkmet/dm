@@ -1,5 +1,6 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
+/* Prefixes: inventory_ object_ process_ chest_ close_ */
 #include <stdint.h>
 #include "map.h"
 #include "tables.h"

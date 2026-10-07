@@ -1,5 +1,6 @@
 #ifndef SPELLS_H
 #define SPELLS_H
+/* Prefixes: spell_ */
 #include <stdint.h>
 
 #define DM_SPELL_COUNT 25 /* CSB has CSB_SPELL_COUNT */

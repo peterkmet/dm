@@ -1,5 +1,6 @@
 #ifndef AUTOMAP_H
 #define AUTOMAP_H
+/* Prefixes: automap_ */
 #include <stdint.h>
 #include "draw.h"
 

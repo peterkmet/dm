@@ -1,5 +1,6 @@
 #ifndef GROUP_H
 #define GROUP_H
+/* Prefixes: group_ creature_ party_ */
 #include <stdint.h>
 #include "game.h"
 #include "map.h"

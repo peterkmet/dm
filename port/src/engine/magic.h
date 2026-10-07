@@ -1,5 +1,6 @@
 #ifndef MAGIC_H
 #define MAGIC_H
+/* Prefixes: magic_ */
 #include <stdint.h>
 
 /* Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C): docs/rules-creatures.md. */

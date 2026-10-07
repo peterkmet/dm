@@ -1,5 +1,6 @@
 #ifndef ADVANCED_H
 #define ADVANCED_H
+/* Prefixes: advanced_ */
 #include <stdint.h>
 #include "game.h"
 

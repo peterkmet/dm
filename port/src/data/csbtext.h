@@ -1,5 +1,6 @@
 #ifndef CSBTEXT_H
 #define CSBTEXT_H
+/* Prefixes: csb_text_ */
 #include "ftl.h"
 
 /* The CSB texts as Graphics.DAT text items: CSB keeps them in the APPB data, not in items 699 and 700. */

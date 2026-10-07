@@ -1,5 +1,6 @@
 #ifndef CHAMPION_H
 #define CHAMPION_H
+/* Prefixes: champion_ */
 #include <stdint.h>
 #include "game.h"
 #include "tables.h"

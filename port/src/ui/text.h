@@ -1,5 +1,6 @@
 #ifndef TEXT_H
 #define TEXT_H
+/* Prefixes: text_ */
 #include <stdint.h>
 #include "graphics.h"
 #include "ids.h"

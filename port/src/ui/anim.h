@@ -1,5 +1,6 @@
 #ifndef ANIM_H
 #define ANIM_H
+/* Prefixes: anim_ */
 #include <stdint.h>
 
 /* The animation player of ANIM.FTL for the chunk files (CSB ENDA.DAT). Format: docs/csb-data.md

@@ -1,5 +1,6 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
+/* Prefixes: message_ */
 #include <stdint.h>
 #include "graphics.h"
 

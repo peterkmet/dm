@@ -1,5 +1,6 @@
 #ifndef DRAW_H
 #define DRAW_H
+/* Prefixes: draw_ */
 #include <stdint.h>
 #include "graphics.h"
 

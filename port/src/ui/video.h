@@ -1,5 +1,6 @@
 #ifndef VIDEO_H
 #define VIDEO_H
+/* Prefixes: video_ */
 #include <stdint.h>
 
 #define SCREEN_W 320

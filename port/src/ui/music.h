@@ -1,5 +1,6 @@
 #ifndef MUSIC_H
 #define MUSIC_H
+/* Prefixes: music_ */
 #include <stdint.h>
 
 /* Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and

@@ -1,5 +1,6 @@
 #ifndef RECRUIT_H
 #define RECRUIT_H
+/* Prefixes: recruit_ */
 #include <stdint.h>
 #include "champion.h"
 

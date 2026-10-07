@@ -1,5 +1,6 @@
 #ifndef VIEW_H
 #define VIEW_H
+/* Prefixes: view_ */
 #include <stdint.h>
 #include "draw.h"
 

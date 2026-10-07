@@ -1,5 +1,6 @@
 #ifndef UI_H
 #define UI_H
+/* Prefixes: ui_ panel_ menus_ */
 #include <stdint.h>
 #include "champion.h"
 #include "draw.h"

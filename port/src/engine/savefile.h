@@ -1,5 +1,6 @@
 #ifndef SAVEFILE_H
 #define SAVEFILE_H
+/* Prefixes: save_ */
 #include <stdint.h>
 
 /* DM v3.60 save file container (DMGAME~.DAT); CSB (CSBGAME.DAT) with g_adventure. Layout: docs/save-format.md,

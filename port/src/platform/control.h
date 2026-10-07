@@ -1,5 +1,6 @@
 #ifndef CONTROL_H
 #define CONTROL_H
+/* Prefixes: control_ */
 
 /* Turn-based control over a Unix domain socket: one JSON request per line, one JSON response per
    line (docs/llm-mode.md). Plain POSIX, no SDL. */

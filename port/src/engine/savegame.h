@@ -1,5 +1,6 @@
 #ifndef SAVEGAME_H
 #define SAVEGAME_H
+/* Prefixes: savegame_ */
 #include <stdint.h>
 
 /* Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and load_game, LOADSAVE.C).

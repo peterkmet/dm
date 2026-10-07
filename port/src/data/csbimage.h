@@ -1,5 +1,6 @@
 #ifndef CSBIMAGE_H
 #define CSBIMAGE_H
+/* Prefixes: csb_image_ */
 #include "ftl.h"
 
 /* The CSB engine (APPB.FTL) as a KAOS-layout image: each table that the port reads sits at its DM address. */

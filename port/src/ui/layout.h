@@ -1,5 +1,6 @@
 #ifndef LAYOUT_H
 #define LAYOUT_H
+/* Prefixes: layout_ */
 #include <stdint.h>
 #include "draw.h"
 

@@ -1,5 +1,6 @@
 #ifndef MOVE_H
 #define MOVE_H
+/* Prefixes: move_ */
 #include <stdint.h>
 
 /* Party and object movement (KAOS range 8, MOVESENS.C and COMMAND.C). */

@@ -1,5 +1,6 @@
 #ifndef STATE_JSON_H
 #define STATE_JSON_H
+/* Prefixes: json_ state_ */
 #include <stddef.h>
 #include <stdint.h>
 

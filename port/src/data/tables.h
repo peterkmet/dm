@@ -1,5 +1,6 @@
 #ifndef TABLES_H
 #define TABLES_H
+/* Prefixes: tables_ */
 #include <stdint.h>
 
 /* Static rule tables of KAOS.FTL, decoded once from the loaded image. Field bits: docs/tables.md. */

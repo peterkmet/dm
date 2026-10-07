@@ -1,5 +1,6 @@
 #ifndef ACTION_H
 #define ACTION_H
+/* Prefixes: action_ */
 #include <stdint.h>
 
 /* Champion actions of the action area (KAOS range 8, MENU.C): docs/rules-champions.md#actions. */

@@ -1,5 +1,6 @@
 #ifndef DIALOG_H
 #define DIALOG_H
+/* Prefixes: dialog_ */
 #include <stdint.h>
 
 /* The message box with one to four choices (KAOS dialog_draw, dialog_get_choice; DIALOG.C). */

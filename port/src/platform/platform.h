@@ -1,5 +1,6 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
+/* Prefixes: plat_ */
 #include <stdint.h>
 #include "video.h"
 

@@ -1,5 +1,6 @@
 #ifndef LOGO_H
 #define LOGO_H
+/* Prefixes: logo_ */
 
 /* The FTL logo of SWSH.FTL (not KAOS): the original shows it before the DM title. */
 

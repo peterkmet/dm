@@ -1,5 +1,6 @@
 #ifndef RANDOM_H
 #define RANDOM_H
+/* Prefixes: random_ random16 */
 #include <stdint.h>
 
 extern uint32_t g_random_seed;

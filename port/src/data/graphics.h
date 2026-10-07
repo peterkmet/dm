@@ -1,5 +1,6 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
+/* Prefixes: gfx_ */
 #include <stddef.h>
 #include <stdint.h>
 

@@ -1,5 +1,6 @@
 #ifndef SENSOR_H
 #define SENSOR_H
+/* Prefixes: sensor_ */
 #include <stdint.h>
 
 /* Floor and wall sensors. Coordinates are on the current map. */

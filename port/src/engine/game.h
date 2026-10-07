@@ -1,5 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
+/* Prefixes: game_ min16 max16 bounded_ scale_ update_ timeline_ adjust_ */
 #include <stdint.h>
 
 #define NORMALIZE(direction) ((direction) & 3)

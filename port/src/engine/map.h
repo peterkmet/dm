@@ -1,5 +1,6 @@
 #ifndef MAP_H
 #define MAP_H
+/* Prefixes: door_ square_ thing_ get_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ set_ is_ link_ unlink_ */
 #include <stdint.h>
 #include "bytes.h"
 #include "dungeon.h"

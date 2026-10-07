@@ -1,5 +1,6 @@
 #ifndef FTL_H
 #define FTL_H
+/* Prefixes: ftl_ read_ kaos_ */
 #include <stddef.h>
 #include <stdint.h>
 

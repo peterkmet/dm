@@ -1,5 +1,6 @@
 #ifndef TIMELINE_PROCESS_H
 #define TIMELINE_PROCESS_H
+/* Prefixes: event_ */
 #include <stdint.h>
 #include "game.h"
 

@@ -1,5 +1,6 @@
 #ifndef PROJECTILE_H
 #define PROJECTILE_H
+/* Prefixes: projectile_ explosion_ */
 #include <stdint.h>
 #include "game.h"
 #include "map.h"

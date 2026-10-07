@@ -1,5 +1,6 @@
 #ifndef SOUND_H
 #define SOUND_H
+/* Prefixes: sound_ */
 #include <stdint.h>
 
 #define SOUND_COUNT 35

@@ -1,5 +1,6 @@
 #ifndef DUNGEON_H
 #define DUNGEON_H
+/* Prefixes: decompress_ load_ dungeon_ decode_ */
 #include <stdint.h>
 
 #define THING_TYPE_COUNT 16
