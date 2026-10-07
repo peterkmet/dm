@@ -10,8 +10,8 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 |---|---|---|
 | State, view, and map as JSON | `port/src/platform/state_json.c` | Done, tested |
 | Socket server and turns | `port/src/platform/control.c` | Done, tested in process |
-| MCP server | `src/dmtools/mcp_server.py` | Done, tested against the socket |
-| Command-line client `dm-play` | `src/dmtools/play.py` | Done, tested against the socket |
+| MCP server | `tools/dmtools/mcp_server.py` | Done, tested against the socket |
+| Command-line client `dm-play` | `tools/dmtools/play.py` | Done, tested against the socket |
 | `--mode turnbased --control PATH` | `port/src/platform/main.c` | Done, tested headless |
 
 ## Play with Claude Code
@@ -56,25 +56,30 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
 ## Runs and checkpoints
 
-A run is one playthrough from a start save. All run folders are git-ignored (`.playthrough*/`).
+A run is one playthrough from a start save. All run folders are in `.playthroughs/`, which is git-ignored.
 
 ```text
-.playthrough/                 the player memory of the current run (the player sees only this)
-.playthrough_run<N>/          the coordinator files of run N
-  checkpoints/<name>/         a save DMGAME.DAT and a copy of .playthrough/ in files/
-  session_costs.md            the cost of each session
-  calls.log                   one line per dm-play call of the player (through the link .playthrough_log)
-  level_stats.md              at the end of the run: game time, calls, and tokens at the arrival on each level
-playthrough_template/         the player files with their headers (in git), and the start save DMGAME.DAT (local only, git-ignored: a game file)
+.playthroughs/
+  current -> run<N>             a link to the folder of the current run
+  run<N>/                       the files of run N
+    player/                     the player memory (the player sees only this)
+    coordinator/                the coordinator files
+      session_costs.md          the cost of each session
+      calls.log                 one line per dm-play call of the player
+      level_stats.md            at the end of the run: game time, calls, and tokens at the arrival on each level
+    game/                       the live save of the run: `build/dm --saves .playthroughs/current/game`
+    saves/<name>/               a checkpoint: a save DMGAME.DAT and a copy of player/ in files/
+  lego/                         the personal play folder: `make -C port lego`, then `.playthroughs/lego/dm --data game --saves .playthroughs/lego`
+playthrough_template/           the player files with their headers (in git), and the start save DMGAME.DAT (local only, git-ignored: a game file)
 ```
 
-- Start a new run N: copy the `*.md` files of `playthrough_template/` to an empty `.playthrough/`. Copy `playthrough_template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/DMGAME.DAT`. Create `.playthrough_run<N>/checkpoints/start/` with the start save and a copy of `.playthrough/`. Point the call log to the run: `ln -sfn .playthrough_run<N> .playthrough_log`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
-- Start a new run with the memory of an earlier run: as above, but copy into `.playthrough/` the files of the earlier run that describe the game, not its state: `map_L<n>.md`, `lessons.md`, `spells.md`, and `bestiary.md`. `progress.md`, `party.md`, `items.md`, and `bugs.md` come from the templates. Tell the player in the first session that the run starts again and that these notes come from its earlier game.
-- Make a checkpoint after a session: copy `game/DMGAME.DAT` and `.playthrough/` (as `files/`) to `.playthrough_run<N>/checkpoints/<name>/`. Add a row to `session_costs.md`; count the calls of the session in `calls.log`.
+- Start a new run N: create `.playthroughs/run<N>/` with the folders `player/`, `coordinator/`, `game/`, and `saves/`. Copy the `*.md` files of `playthrough_template/` to `player/`. Copy `playthrough_template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/`. Create `saves/start/` with the start save and a copy of `player/` in `files/`. Point the link to the run: `ln -sfn run<N> .playthroughs/current`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves .playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Start a new run with the memory of an earlier run: as above, but copy into `player/` the files of the earlier run that describe the game, not its state: `map_L<n>.md`, `lessons.md`, `spells.md`, and `bestiary.md`. `progress.md`, `party.md`, `items.md`, and `bugs.md` come from the templates. Tell the player in the first session that the run starts again and that these notes come from its earlier game.
+- Make a checkpoint after a session: copy `game/DMGAME.DAT` of the run and `player/` (as `files/`) to `saves/<name>/`. Add a row to `coordinator/session_costs.md`; count the calls of the session in `coordinator/calls.log`.
 - The coordinator's own `dm-play` calls stay out of the log: `DM_PLAY_LOG_DIR=none uv run dm-play ...`.
-- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `.playthrough/`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
-- Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `.playthrough/`. Give the player the current goal and the limit of `dm-play` calls. The player shell must run in the repository root: `dm-play` finds `.playthrough_log` relative to it, else `calls.log` stays empty.
-- End a run: copy `.playthrough/` and the last save into `.playthrough_run<N>/`, and write `level_stats.md`.
+- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/` of the run and its `files/` to `player/`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves .playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `.playthroughs/current/player/`. Give the player the current goal and the limit of `dm-play` calls. The player shell must run in the repository root: `dm-play` writes its log to `.playthroughs/current/coordinator/` relative to it, else `calls.log` stays empty.
+- End a run: copy the last save to `saves/end/`, and write `coordinator/level_stats.md`.
 
 ## Play Chaos Strikes Back
 
@@ -191,7 +196,7 @@ uv run dm-play new_game
 ```
 
 - `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, `health_lost`, and `BUMPED` after a bump), the party position (the first line has `| CSB` in a CSB game), the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side squares (also at depth 0, `here left` and `here right`) with a door and its state, an open pit, a wall face, a floor ornament, or creatures, every side square ahead that is not a wall (a side passage), and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A response with `seen` has a line such as `seen: fireball at ahead 2; a group of 1 Screamer at ahead 2 was killed` (or `lost <n>`) after the turn line.
-- `dm-play` does not import the `mcp` package. The socket helpers are in `src/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
+- `dm-play` does not import the `mcp` package. The socket helpers are in `tools/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
 - A relative `path` becomes an absolute path, because the game runs in another directory.
 - The exit code is 1 when the response has `"ok": false`, also when the game is not running.
 

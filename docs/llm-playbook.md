@@ -4,7 +4,7 @@ You play the original Dungeon Master (Amiga v3.60). Your goal is to win: find th
 
 ## Your notes
 
-Your files in `.playthrough/` are your memory. Keep each file short and up to date. Each file starts with a header that says what to write and in which format: keep the header and follow it. For a new level, copy the header of `map_L1.md`.
+Your files in `.playthroughs/current/player/` are your memory. Keep each file short and up to date. Each file starts with a header that says what to write and in which format: keep the header and follow it. For a new level, copy the header of `map_L1.md`.
 
 | File | Content |
 |---|---|
@@ -95,7 +95,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 ### Start of a session
 
 1. Read this file.
-2. Read your files in `.playthrough/`: `progress.md`, `lessons.md`, the map of the current level, `party.md`, `spells.md`.
+2. Read your files in `.playthroughs/current/player/`: `progress.md`, `lessons.md`, the map of the current level, `party.md`, `spells.md`.
 3. Run `uv run dm-play --brief get_state`. If the position or the time does not match `progress.md`, run `uv run dm-play load` and check again.
 
 ### Rules
@@ -121,7 +121,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 | Pass time | `uv run dm-play wait '{"ticks":50}'` |
 | Save, load | `uv run dm-play save`, `uv run dm-play load` |
 | Sleep | `uv run dm-play act sleep`, then `wait`, then `uv run dm-play act wake` |
-| See the screen | `uv run dm-play screenshot '{"path":"/Users/lego/github/dm/.playthrough/shot.png"}'`, then read the PNG |
+| See the screen | `uv run dm-play screenshot '{"path":"/Users/lego/github/dm/.playthroughs/current/player/shot.png"}'`, then read the PNG |
 
 ### dm-play
 

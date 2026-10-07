@@ -663,3 +663,42 @@ def test_party_death_during_a_turn_reports_game_over(game):
         c16.in_dll(lib, "g_return_to_entrance").value = 0
         set_mode(game, VANILLA)
         assert lib.gameloop_new_game(str(GAME).encode())
+
+
+def test_turnbased_save_goes_to_the_saves_folder(tmp_path):
+    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    data, saves = tmp_path / "game", tmp_path / "saves"
+    shutil.copytree(ROOT / "game", data, ignore=shutil.ignore_patterns("DMGAME.*", "QUICK.DAT"))
+    saves.mkdir()
+    sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
+    path = os.path.join(sock_dir, "control.sock")
+    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
+    program = subprocess.Popen([str(ROOT / "build/dm"), "--mode", "turnbased", "--data", str(data), "--saves", str(saves),
+                                "--control", path, "--frames", "100000"], cwd=ROOT, env=env,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        while not os.path.exists(path):
+            time.sleep(0.001)
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+            s.settimeout(60)
+            s.connect(path)
+            lines = s.makefile("rw")
+
+            def call(**payload):
+                lines.write(json.dumps(payload) + "\n")
+                lines.flush()
+                return json.loads(lines.readline())
+
+            while not call(cmd="get_state")["ok"]:
+                time.sleep(0.05)
+            assert call(cmd="save")["ok"]
+            assert call(cmd="load")["ok"]
+    finally:
+        program.send_signal(signal.SIGINT)
+        try:
+            program.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            program.kill()
+        shutil.rmtree(sock_dir, ignore_errors=True)
+    assert (saves / "DMGAME.DAT").exists()
+    assert not (data / "DMGAME.DAT").exists()

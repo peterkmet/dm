@@ -4,8 +4,8 @@ This page compares the data files of Chaos Strikes Back (CSB) for the Amiga with
 
 Inputs:
 
-- DM files: `game/`. DM engine: `KAOS.FTL`, decompiled to `decomp/KAOS.c`.
-- CSB disk A (game disk): `game-csb/`. CSB engine: `APPB.FTL` (the disk label says V3.1), decompiled to `decomp-csb/A/APPB.c`. Load base `0x100000`, data base (A5) `0x10511e`.
+- DM files: `game/`. DM engine: `KAOS.FTL`, decompiled to `decomp/dm/KAOS.c`.
+- CSB disk A (game disk): `game-csb/`. CSB engine: `APPB.FTL` (the disk label says V3.1), decompiled to `decomp/csb-a/APPB.c`. Load base `0x100000`, data base (A5) `0x10511e`.
 - CSB disk B (utility disk): `game-csb/disk-b/`.
 
 All addresses in this page are image addresses after `dm-ftl` with base `0x100000`. "Verified" means a test output or a code address supports the statement. "Unverified" marks an inference.
@@ -179,7 +179,7 @@ Evidence: the writer at `0x128cc0` and the reader at `0x129b3e` use the same off
 - `save_game` starts with a disk check that reads raw MFM data from the drive (`0x128cc0`, custom chip and CIA access). This is probably copy protection (unverified).
 - After a save, the dialog closes. When the player chose save and quit, the save calls the endgame `0x128374(0)`.
 
-Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`, and then also checks the block 2 checksum. `tests/test_csb_save.py` decodes `MINI.DAT` with the port. The original CEDT reader (`tools/csb/diff_test.py`) accepts a file that the port writes.
+Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVENTURE_CSB`, and then also checks the block 2 checksum. `tests/test_csb_save.py` decodes `MINI.DAT` with the port. The original CEDT reader (`tests/csb_diff.py`) accepts a file that the port writes.
 
 ## ENDA.DAT and the endgame
 

@@ -1,19 +1,16 @@
-"""Differential test: csb_mini.py against the original CEDT.FTL routines in dmtools.emu.
+"""Differential test: dmtools.csb_mini against the original CEDT.FTL routines in dmtools.emu.
 
-Run: uv run python diff_test.py   (from /Users/lego/github/dm)
+Run: uv run python tests/csb_diff.py   (from /Users/lego/github/dm)
 """
 
 import struct
-import sys
 from pathlib import Path
 
+from dmtools import csb_mini as cm
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
 
-sys.path.insert(0, str(Path(__file__).parent))
-import csb_mini as cm  # noqa: E402
-
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 MINI = (ROOT / "game-csb/disk-b/MINI.DAT").read_bytes()
 
 CURSOR, HEAP_PTR, READ_STUB, ALLOC_STUB = 0x2F0000, 0x2F0010, 0x2F0100, 0x2F0200

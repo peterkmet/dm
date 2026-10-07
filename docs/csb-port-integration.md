@@ -12,7 +12,7 @@ Status: proposal. Nothing is implemented. The user approved the user-facing flow
 4. New flag `--adventure dm|csb`. When `--adventure` and `--mode` are both given, the selection screens are skipped.
 5. When the CSB data is missing, CHAOS STRIKES BACK is grey and cannot be selected.
 6. LLM mode goes straight into the dungeon after the selection, as `turnbased` does today.
-7. Data folders: DM in `game/`. CSB disk A in `game-csb/`. CSB disk B in `game-csb/disk-b/`. CSB save: `game-csb/CSBGAME.DAT` and `game-csb/CSBGAME.BAK`.
+7. Data folders: DM in `game/`. CSB disk A in `game-csb/`. CSB disk B in `game-csb/disk-b/`. CSB save: `CSBGAME.DAT` and `CSBGAME.BAK` in `game-csb/`, or in the folder of `--saves`.
 
 ## Summary of the audit
 
@@ -36,7 +36,7 @@ Facts from the files:
 
 CSB disk B (`game-csb/disk-b/`): `MINI.DAT` (42784 bytes, the first bytes are not the `0x8104` magic), `CEDT.FTL`, `HINT.FTL`, `HCSB.DAT`, `HCSB.HTC`, `ANIM.DAT`, `TITL.DAT`, `Portrait/*.CMP` (24 files), `Sound/`, `MIDI/`.
 
-Conclusion (to verify with the decompilation in `decomp-csb/`): the main module of CSB is `APPB.FTL` of disk A. The port cannot run CSB until it loads that module and maps its addresses.
+Conclusion (to verify with the decompilation in `decomp/csb-a/`): the main module of CSB is `APPB.FTL` of disk A. The port cannot run CSB until it loads that module and maps its addresses.
 
 Code that depends on the KAOS image:
 
@@ -66,7 +66,7 @@ This is a separate work item ("CSB engine"). It needs a decision first: one addr
 | `port/src/ui/startend.c` | `save_dir` | Default `"."`. `startend_set_save_dir` is called by `gameloop_load_data`. |
 | `port/src/engine/dungeon.c` | `g_dungeon_id` | Default `10` (the DM dungeon id). The save header stores it. |
 | `port/src/engine/savefile.h` | `SAVE_*_BYTES` | DM save layout, including `SAVE_HEADER_EXTRA_BYTES` 134. The CSB save format is not known. |
-| `.gitignore` | | `game-csb/` and `decomp-csb/` are ignored (the file has an uncommitted change). |
+| `.gitignore` | | `game-csb/` and `decomp/` are ignored (the file has an uncommitted change). |
 | `game/CSBGAME.DAT` | | An empty file (0 bytes) in the DM folder. The port ignores it. |
 
 The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads only this item. It needs no KAOS image.
@@ -116,12 +116,12 @@ These items are not selection work. The CSB engine work item must check them.
 
 | Place | Assumption |
 |---|---|
-| `src/dmtools/control_client.py` | `DEFAULT_SOCKET = "~/.dm/control.sock"`. One socket for all adventures. No change needed. |
-| `src/dmtools/mcp_server.py`: `INSTRUCTIONS` | "Dungeon Master (1987)", "find the Firestaff, defeat Lord Chaos", "recruit up to four champions from the mirrors in the Hall of Champions on the first level". |
+| `tools/dmtools/control_client.py` | `DEFAULT_SOCKET = "~/.dm/control.sock"`. One socket for all adventures. No change needed. |
+| `tools/dmtools/mcp_server.py`: `INSTRUCTIONS` | "Dungeon Master (1987)", "find the Firestaff, defeat Lord Chaos", "recruit up to four champions from the mirrors in the Hall of Champions on the first level". |
 | `mcp_server.py`: `save_game` docstring | Names `DMGAME.DAT` and `DMGAME.BAK`. |
 | `mcp_server.py`: `new_game`, `load_game` | Names the same files in the descriptions. The socket commands use the loaded adventure, so the code needs no change. |
-| `src/dmtools/play.py` | The prog description "Dungeon Master control socket". The log folder `.playthrough`. The view and state text is generic. |
-| `docs/llm-playbook.md` | Playthrough rules for DM (goal, mirrors, `.playthrough/progress.md`). The save names in the "Save, load" lines are not file names. |
+| `tools/dmtools/play.py` | The prog description "Dungeon Master control socket". The log folder `.playthroughs/current/coordinator`. The view and state text is generic. |
+| `docs/llm-playbook.md` | Playthrough rules for DM (goal, mirrors, `.playthroughs/current/player/progress.md`). The save names in the "Save, load" lines are not file names. |
 | `docs/llm-mode.md` | The sections "Prerequisites" (`game/`), the socket table (`save`, `load`, `new_game` name `DMGAME.DAT`, `Dungeon.DAT`), and "Saved games" (save directory is `game/`). |
 | `docs/superpowers/status.md` | The resume steps copy `DMGAME.DAT` to `game/`. |
 

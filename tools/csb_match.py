@@ -34,7 +34,7 @@ import machine68k
 from dmtools import ftl
 
 KAOS_FTL, KAOS_CSV = "game/KAOS.FTL", "docs/kaos-symbols.csv"
-CSB_FTL, CSB_C = "game-csb/APPB.FTL", "decomp-csb/A/APPB.c"
+CSB_FTL, CSB_C = "game-csb/APPB.FTL", "decomp/csb-a/APPB.c"
 BASE = 0x100000
 
 A5_RE = re.compile(r"\((-?)\$([0-9a-f]+),A5\)")

@@ -4,7 +4,6 @@ import ctypes
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
@@ -28,7 +27,6 @@ PAYLOAD_START, PAYLOAD_REST = slice(0x100, 0x138), slice(0x162, 0x200)  # the pa
 NAME = "CSBGAME.DAT"
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
 
-sys.path.insert(0, str(ROOT / "tools/csb"))
 pytestmark = [
     pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
     pytest.mark.skipif(not all((GAME_CSB / f).exists() for f in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT")) or not MINI.exists(),
@@ -110,7 +108,7 @@ def assert_in_adventure(game, names):
 
 
 def test_merge_equals_the_python_merge(game, saves):
-    import csb_mini as cm
+    from dmtools import csb_mini as cm
 
     names = new_prison_game(game, 3)
     game.champions[1].cell = game.champions[0].cell  # the cell fix of the merge
@@ -132,9 +130,9 @@ def test_merge_equals_the_python_merge(game, saves):
     assert raw[0x200:] != MINI.read_bytes()[0x200:]  # new block keys
     assert_in_adventure(game, names)
     if CEDT.exists():
-        import diff_test
+        import csb_diff
 
-        diff_test.check_decode(raw, "port CSBGAME.DAT")
+        csb_diff.check_decode(raw, "port CSBGAME.DAT")
 
 
 def test_prison_save_continues_in_the_adventure(game, saves):

@@ -1,7 +1,6 @@
 *.adf
 game/
 /ghidra/
-tools/ghidra-amiga/build/
 .venv/
 __pycache__/
 .pytest_cache/
@@ -9,9 +8,6 @@ __pycache__/
 decomp/
 build/
 game-csb/
-decomp-csb/
-.playthrough*/
+.playthroughs/
 playthrough_template/DMGAME.DAT
-.playthrough_log
-music/
 origs/

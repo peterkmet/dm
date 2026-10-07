@@ -2,7 +2,7 @@
 
 This page describes how the original Chaos Strikes Back (CSB) for the Amiga starts a new game. It covers the menu flow, the format of `MINI.DAT`, the merge that makes `CSBGAME.DAT`, and the champion selection in the prison.
 
-The sources are the decompiled modules in `decomp-csb/` (base `0x100000`). All addresses are code addresses in these images. "CEDT" means `decomp-csb/B/CEDT.bin` (disk B). "APPB A" means `decomp-csb/A/APPB.bin` (disk A). Ghidra drops the arguments of calls through the `A5` jump table, so the claims come from the disassembly, not from the `.c` files.
+The sources are the decompiled modules in `decomp/csb-a/` (disk A) and `decomp/csb-b/` (disk B) (base `0x100000`). All addresses are code addresses in these images. "CEDT" means `decomp/csb-b/CEDT.bin` (disk B). "APPB A" means `decomp/csb-a/APPB.bin` (disk A). Ghidra drops the arguments of calls through the `A5` jump table, so the claims come from the disassembly, not from the `.c` files.
 
 ## Summary
 
@@ -190,25 +190,25 @@ Values in the new `CSBGAME.DAT`:
 
 ## Prototype
 
-The prototype is in `tools/csb/`.
+The prototype is the module `dmtools.csb_mini`, and its differential test is a helper of the tests.
 
 | File | Content |
 |---|---|
-| `csb_mini.py` | `decode_save`, `dungeon_dat`, `can_make_adventure`, `merge`, `encode_save`. |
-| `diff_test.py` | Differential test against the original CEDT routines in `dmtools.emu`. |
+| `tools/dmtools/csb_mini.py` | `decode_save`, `dungeon_dat`, `can_make_adventure`, `merge`, `encode_save`. |
+| `tests/csb_diff.py` | Differential test against the original CEDT routines in `dmtools.emu`. |
 
 Write the CSB dungeon as an uncompressed `Dungeon.DAT`, and optionally build a new adventure. Run the commands from `/Users/lego/github/dm`:
 
 ```sh
-uv run python tools/csb/csb_mini.py game-csb/disk-b/MINI.DAT csb_dungeon.dat
-uv run python tools/csb/csb_mini.py game-csb/disk-b/MINI.DAT csb_dungeon.dat <saved game> CSBGAME.DAT
+uv run python -m dmtools.csb_mini game-csb/disk-b/MINI.DAT csb_dungeon.dat
+uv run python -m dmtools.csb_mini game-csb/disk-b/MINI.DAT csb_dungeon.dat <saved game> CSBGAME.DAT
 ```
 
 `<saved game>` is a CSB prison save or a DM save.
 
 ## Verification
 
-`diff_test.py` runs the original CEDT routines in `dmtools.emu`. It replaces three things: the file read service (`A5+0x20a`) with a memory reader, `0x105020` (allocate) with a bump allocator, and `0x105036` (free) with `RTS`.
+`tests/csb_diff.py` runs the original CEDT routines in `dmtools.emu`. It replaces three things: the file read service (`A5+0x20a`) with a memory reader, `0x105020` (allocate) with a bump allocator, and `0x105036` (free) with `RTS`.
 
 | Check | Result |
 |---|---|
