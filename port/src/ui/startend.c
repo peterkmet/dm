@@ -491,8 +491,8 @@ void fuse_sequence(void)
     uint16_t lord = group_get_thing(x, y);
     if (lord == THING_ENDOFLIST) return;
     group_set_health(lord, 0, FUSE_LORD_HEALTH);
-    set_group_cells(lord, CELLS_CENTERED, g_party_map_index);
-    set_group_directions(lord, (uint8_t)NORMALIZE(g_party_direction + 2), g_party_map_index); /* faces the party */
+    group_set_cells(lord, CELLS_CENTERED, g_party_map_index);
+    group_set_directions(lord, (uint8_t)NORMALIZE(g_party_direction + 2), g_party_map_index); /* faces the party */
     remove_fluxcages(g_party_map_x, g_party_map_y);
     remove_fluxcages(x, y);
     fuse_update();

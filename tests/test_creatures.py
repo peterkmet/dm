@@ -65,7 +65,7 @@ def lib():
         ("group_get_generated", u16, [u16, c16, u16, c16, c16, c16]),
         ("group_get_damage_all_creatures_outcome", c16, [u16, c16, c16, c16, c16]),
         ("magic_get_champion_spell_cast_result", c16, [u16]), ("get_unused_thing", u16, [u16]),
-        ("object_get_icon_index", c16, [u16]), ("is_creature_allowed_on_map", c16, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
+        ("object_get_icon_index", c16, [u16]), ("group_is_creature_allowed_on_map", c16, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
@@ -353,7 +353,7 @@ def skeleton_map_and_squares(lib):
     """A map that allows skeletons, and two empty corridor squares on it, two squares apart in a straight line."""
     probe = lib.get_unused_thing(THING_GROUP)
     lib.dungeon_get_thing_data(probe)[4] = CREATURE_SKELETON
-    maps = [m for m in range(lib.dungeon_map_count()) if lib.is_creature_allowed_on_map(probe, m)]
+    maps = [m for m in range(lib.dungeon_map_count()) if lib.group_is_creature_allowed_on_map(probe, m)]
     data = lib.dungeon_get_thing_data(probe)
     data[0] = data[1] = 0xFF  # free the probe record again
     for m in maps:

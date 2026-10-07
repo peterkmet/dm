@@ -113,7 +113,7 @@ Record fields that the code in these ranges uses (word at offset 2 unless stated
 
 The bytes after the last column of squares are the map metadata (`g_current_map_metadata`): the creature types, then the wall ornament indices, the floor ornament indices, and the door ornament indices. `set_current_map_and_party_map` copies the three ornament lists into `g_current_map_wall_ornament_indices`, `g_current_map_floor_ornament_indices`, and `g_current_map_door_ornament_indices`. It writes 0 after the wall list. That slot is the inscription ornament (`g_current_map_inscription_ornament_index` = wall ornament count).
 
-`is_creature_allowed_on_map(group_thing, map)` searches the creature type list of the map for the creature type of the group.
+`group_is_creature_allowed_on_map(group_thing, map)` searches the creature type list of the map for the creature type of the group.
 
 ### First-thing index
 

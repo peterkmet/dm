@@ -83,7 +83,7 @@ uint8_t group_get_cells(uint16_t group, int16_t map)
     return map == g_party_map_index ? group_active(group)->cells : group_cells_byte(group);
 }
 
-void set_group_cells(uint16_t group, uint8_t cells, int16_t map)
+void group_set_cells(uint16_t group, uint8_t cells, int16_t map)
 {
     if (map == g_party_map_index)
         group_active(group)->cells = cells;
@@ -100,7 +100,7 @@ uint8_t group_get_directions(uint16_t group, int16_t map)
     return direction | direction << 2 | direction << 4 | direction << 6;
 }
 
-void set_group_directions(uint16_t group, uint8_t directions, int16_t map)
+void group_set_directions(uint16_t group, uint8_t directions, int16_t map)
 {
     if (map == g_party_map_index)
         group_active(group)->directions = directions;
@@ -109,7 +109,7 @@ void set_group_directions(uint16_t group, uint8_t directions, int16_t map)
 }
 
 /* The creature type list of a map follows its last square. */
-int16_t is_creature_allowed_on_map(uint16_t group, int16_t map)
+int16_t group_is_creature_allowed_on_map(uint16_t group, int16_t map)
 {
     const uint8_t *types = &g_dungeon_map_data[map][map_last_x(map)][map_last_y(map) + 1];
     for (int16_t n = MAP_DESCRIPTOR(map)[13] >> 4; n > 0; n--, types++)
@@ -540,8 +540,8 @@ int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_inde
             if (on_party_map)
                 active->aspect[i] = active->aspect[i + 1];
         }
-        set_group_cells(group, cells & CELLS_OF_THREE_CREATURES, g_current_map_index);
-        set_group_directions(group, directions, g_current_map_index);
+        group_set_cells(group, cells & CELLS_OF_THREE_CREATURES, g_current_map_index);
+        group_set_directions(group, directions, g_current_map_index);
         group_set_last_creature_index(group, last - 1);
         outcome = OUTCOME_SOME_CREATURES_KILLED;
     }
@@ -792,7 +792,7 @@ static int16_t group_is_movement_possible(const CreatureInfo *info, int16_t x, i
     }
     if (type == SQUARE_TELEPORTER && (square & TELEPORTER_OPEN) && creature_wariness(info) >= WARINESS_AVOIDS_FORBIDDEN_TELEPORTER) {
         uint16_t teleporter = get_square_first_thing(x, y);
-        if ((teleporter_scope(teleporter) & TELEPORTER_SCOPE_CREATURES) && !is_creature_allowed_on_map(g_current_group_thing, teleporter_target_map(teleporter))) {
+        if ((teleporter_scope(teleporter) & TELEPORTER_SCOPE_CREATURES) && !group_is_creature_allowed_on_map(g_current_group_thing, teleporter_target_map(teleporter))) {
             movement_blocked_by_wall = 1;
             return 0;
         }
@@ -1854,8 +1854,8 @@ static int16_t move_get_teleporter_rotated_group_result(uint16_t teleporter, uin
             old_cells >>= 2;
         }
     }
-    set_group_directions(group, directions, map);
-    set_group_cells(group, cells, map);
+    group_set_directions(group, directions, map);
+    group_set_cells(group, cells, map);
     if (map == g_party_map_index && group_behavior(group) == BEHAVIOR_ATTACK)
         return group_cells_byte(group) + 2;
     return 1;
@@ -1918,7 +1918,7 @@ int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int1
                 break;
             }
         }
-        if (killed || !is_creature_allowed_on_map(group, map)) {
+        if (killed || !group_is_creature_allowed_on_map(group, map)) {
             group_drop_moving_creature_fixed_possessions(group, dst_x, dst_y);
             group_drop_group_possessions(dst_x, dst_y, group, SOUND_MODE_ONE_TICK_LATER);
             set_current_map(src_map);

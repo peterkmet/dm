@@ -89,10 +89,10 @@ extern int16_t g_current_group_primary_direction_to_party, g_current_group_secon
 extern int16_t g_dungeon_view_palette_index;   /* 0 (bright) to 5; the view step sets it */
 
 uint8_t group_get_cells(uint16_t group, int16_t map);
-void set_group_cells(uint16_t group, uint8_t cells, int16_t map);
+void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
 uint8_t group_get_directions(uint16_t group, int16_t map);
-void set_group_directions(uint16_t group, uint8_t directions, int16_t map);
-int16_t is_creature_allowed_on_map(uint16_t group, int16_t map);
+void group_set_directions(uint16_t group, uint8_t directions, int16_t map);
+int16_t group_is_creature_allowed_on_map(uint16_t group, int16_t map);
 
 int16_t group_get_creature_ordinal_in_cell(uint16_t group, uint16_t cell);
 int16_t group_get_melee_target_creature_ordinal(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y, int16_t champion_cell);

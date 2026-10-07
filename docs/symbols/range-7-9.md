@@ -276,7 +276,7 @@ Algorithm:
    - Open pit (type 2, bit 3 set, bit 0 clear), when the thing does not levitate: go one level down with `get_location_after_level_change(map, +1, &x, &y)`. The party takes `champion_damage_all(20, 0x30, 2)` and sound 7. When `g_use_rope_to_climb_down_pit` is set, each champion instead loses stamina `load × 25 / max_load + 1`. A falling group takes 20 damage through `group_get_damage_all_creatures_outcome`. Outcome 2 (all dead) ends the loop.
    - Stairs (type 3) for things other than the party and projectiles: go one level up or down (bit 2 clear: down), then step out in the stairs exit direction. The new cell faces away from the stairs.
    - Any other square ends the loop.
-4. A group that died, or that is not allowed on the target map (`is_creature_allowed_on_map`), drops its possessions and is deleted.
+4. A group that died, or that is not allowed on the target map (`group_is_creature_allowed_on_map`), drops its possessions and is deleted.
 5. Store the result in `g_move_result_map_x/y`, `g_move_result_map_index`, `g_move_result_cell`, and `g_move_result_direction`.
 6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `champion_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `move_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
 7. Remove the thing from the source with `sensor_process_thing_addition_or_removal(..., add=0)`. A levitating thing skips sensors and only unlinks.

@@ -225,16 +225,16 @@ address,name,signature,subsystem
 0x10bdfe,module_cleanup,void module_cleanup(void),main
 0x10be04,rt_setjmp,int16_t rt_setjmp(int32_t *env),runtime
 0x10be12,rt_longjmp,"void rt_longjmp(int32_t *env, int16_t value)",runtime
-0x10be24,is_creature_allowed_on_map,"int16_t is_creature_allowed_on_map(uint16_t group_thing, uint16_t map_index)",dungeon
+0x10be24,group_is_creature_allowed_on_map,"int16_t group_is_creature_allowed_on_map(uint16_t group_thing, uint16_t map_index)",dungeon
 0x10bebe,inventory_get_object_weight,uint16_t inventory_get_object_weight(uint16_t thing),dungeon
 0x10bfb2,inventory_get_object_info_index,int16_t inventory_get_object_info_index(uint16_t thing),dungeon
 0x10c02c,get_projectile_aspect,uint16_t get_projectile_aspect(uint16_t thing),dungeon
 0x10c0c8,inventory_get_armour_defense,"uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)",dungeon
 0x10c108,get_creature_attributes,uint16_t get_creature_attributes(uint16_t group_thing),dungeon
 0x10c136,group_get_cells,"uint8_t group_get_cells(const Group *group, int16_t map_index)",dungeon
-0x10c16e,set_group_cells,"void set_group_cells(Group *group, uint8_t cells, int16_t map_index)",dungeon
+0x10c16e,group_set_cells,"void group_set_cells(Group *group, uint8_t cells, int16_t map_index)",dungeon
 0x10c1aa,group_get_directions,"uint8_t group_get_directions(const Group *group, int16_t map_index)",dungeon
-0x10c1f6,set_group_directions,"void set_group_directions(Group *group, int16_t directions, int16_t map_index)",dungeon
+0x10c1f6,group_set_directions,"void group_set_directions(Group *group, int16_t directions, int16_t map_index)",dungeon
 0x10c240,is_wall_ornament_an_alcove,int16_t is_wall_ornament_an_alcove(int16_t ornament_index),dungeon
 0x10c278,is_wall_ornament_a_fountain,int16_t is_wall_ornament_a_fountain(int16_t ornament_index),dungeon
 0x10c2b0,protect_check_10c2b0,,protect

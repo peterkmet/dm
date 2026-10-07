@@ -719,16 +719,16 @@ address,name,signature,subsystem
 0x1046b2,jt_get_discarded_thing,,jump_table
 0x1046ba,jt_projectile_get_object_for_launcher_or_generator,,jump_table
 0x1046c2,jt_decode_text,,jump_table
-0x1046ca,jt_is_creature_allowed_on_map,,jump_table
+0x1046ca,jt_group_is_creature_allowed_on_map,,jump_table
 0x1046d2,jt_inventory_get_object_weight,,jump_table
 0x1046da,jt_inventory_get_object_info_index,,jump_table
 0x1046e2,jt_get_projectile_aspect,,jump_table
 0x1046ea,jt_inventory_get_armour_defense,,jump_table
 0x1046f2,jt_get_creature_attributes,,jump_table
 0x1046fa,jt_group_get_cells,,jump_table
-0x104702,jt_set_group_cells,,jump_table
+0x104702,jt_group_set_cells,,jump_table
 0x10470a,jt_group_get_directions,,jump_table
-0x104712,jt_set_group_directions,,jump_table
+0x104712,jt_group_set_directions,,jump_table
 0x10471a,jt_is_wall_ornament_an_alcove,,jump_table
 0x104722,jt_is_wall_ornament_a_fountain,,jump_table
 0x10472a,jt_set_current_map,,jump_table
@@ -1183,16 +1183,16 @@ address,name,signature,subsystem
 0x10a2ec,trackdisk_get_change_count_from_handler,int32_t trackdisk_get_change_count_from_handler(int16_t unit),trackdisk
 0x10a34c,trackdisk_get_disk_state,int16_t trackdisk_get_disk_state(int16_t unit),trackdisk
 0x10a3a6,draw_format_progress,"void draw_format_progress(int16_t total, int16_t done)",trackdisk
-0x10a432,is_creature_allowed_on_map,"int16_t is_creature_allowed_on_map(uint16_t group_thing, uint16_t map_index)",dungeon
+0x10a432,group_is_creature_allowed_on_map,"int16_t group_is_creature_allowed_on_map(uint16_t group_thing, uint16_t map_index)",dungeon
 0x10a4ac,inventory_get_object_weight,uint16_t inventory_get_object_weight(uint16_t thing),dungeon
 0x10a594,inventory_get_object_info_index,int16_t inventory_get_object_info_index(uint16_t thing),dungeon
 0x10a618,get_projectile_aspect,uint16_t get_projectile_aspect(uint16_t thing),dungeon
 0x10a6a6,inventory_get_armour_defense,"uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)",dungeon
 0x10a6e4,get_creature_attributes,uint16_t get_creature_attributes(uint16_t group_thing),dungeon
 0x10a70e,group_get_cells,"uint8_t group_get_cells(const Group *group, int16_t map_index)",dungeon
-0x10a73e,set_group_cells,"void set_group_cells(Group *group, uint8_t cells, int16_t map_index)",dungeon
+0x10a73e,group_set_cells,"void group_set_cells(Group *group, uint8_t cells, int16_t map_index)",dungeon
 0x10a772,group_get_directions,"uint8_t group_get_directions(const Group *group, int16_t map_index)",dungeon
-0x10a7b2,set_group_directions,"void set_group_directions(Group *group, int16_t directions, int16_t map_index)",dungeon
+0x10a7b2,group_set_directions,"void group_set_directions(Group *group, int16_t directions, int16_t map_index)",dungeon
 0x10a7f4,is_wall_ornament_an_alcove,int16_t is_wall_ornament_an_alcove(int16_t ornament_index),dungeon
 0x10a828,is_wall_ornament_a_fountain,int16_t is_wall_ornament_a_fountain(int16_t ornament_index),dungeon
 0x10a85c,update_map_coordinates_after_relative_movement,"void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t *map_x, int16_t *map_y)",dungeon
