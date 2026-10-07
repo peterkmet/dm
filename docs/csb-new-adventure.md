@@ -190,25 +190,25 @@ Values in the new `CSBGAME.DAT`:
 
 ## Prototype
 
-The prototype is in `tools/csb/`.
+The prototype is the module `dmtools.csb_mini`, and its differential test is a helper of the tests.
 
 | File | Content |
 |---|---|
-| `csb_mini.py` | `decode_save`, `dungeon_dat`, `can_make_adventure`, `merge`, `encode_save`. |
-| `diff_test.py` | Differential test against the original CEDT routines in `dmtools.emu`. |
+| `src/dmtools/csb_mini.py` | `decode_save`, `dungeon_dat`, `can_make_adventure`, `merge`, `encode_save`. |
+| `tests/csb_diff.py` | Differential test against the original CEDT routines in `dmtools.emu`. |
 
 Write the CSB dungeon as an uncompressed `Dungeon.DAT`, and optionally build a new adventure. Run the commands from `/Users/lego/github/dm`:
 
 ```sh
-uv run python tools/csb/csb_mini.py game-csb/disk-b/MINI.DAT csb_dungeon.dat
-uv run python tools/csb/csb_mini.py game-csb/disk-b/MINI.DAT csb_dungeon.dat <saved game> CSBGAME.DAT
+uv run python -m dmtools.csb_mini game-csb/disk-b/MINI.DAT csb_dungeon.dat
+uv run python -m dmtools.csb_mini game-csb/disk-b/MINI.DAT csb_dungeon.dat <saved game> CSBGAME.DAT
 ```
 
 `<saved game>` is a CSB prison save or a DM save.
 
 ## Verification
 
-`diff_test.py` runs the original CEDT routines in `dmtools.emu`. It replaces three things: the file read service (`A5+0x20a`) with a memory reader, `0x105020` (allocate) with a bump allocator, and `0x105036` (free) with `RTS`.
+`tests/csb_diff.py` runs the original CEDT routines in `dmtools.emu`. It replaces three things: the file read service (`A5+0x20a`) with a memory reader, `0x105020` (allocate) with a bump allocator, and `0x105036` (free) with `RTS`.
 
 | Check | Result |
 |---|---|

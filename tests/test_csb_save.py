@@ -3,7 +3,6 @@
 import ctypes
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -24,7 +23,6 @@ CHAMPION_BYTES, MAGIC_MAP = 0x140, 0x118
 G_MAX_ACTIVE_GROUP_COUNT = 46
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
-sys.path.insert(0, str(ROOT / "tools/csb"))
 pytestmark = [
     pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
     pytest.mark.skipif(not all((GAME_CSB / f).exists() for f in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT")) or not MINI.exists(),
@@ -69,7 +67,7 @@ def save(game, folder):
 
 
 def test_mini_decodes_like_csb_mini(game):
-    import csb_mini as cm
+    from dmtools import csb_mini as cm
 
     raw = MINI.read_bytes()
     py = cm.decode_save(raw)
@@ -87,7 +85,7 @@ def test_mini_decodes_like_csb_mini(game):
 
 
 def test_mini_loads_the_csb_start(game, tmp_path):
-    import csb_mini as cm
+    from dmtools import csb_mini as cm
 
     load_mini(game, tmp_path)
     lib = game.lib
@@ -98,7 +96,7 @@ def test_mini_loads_the_csb_start(game, tmp_path):
 
 
 def test_loaded_game_saves_and_loads_back(game, tmp_path):
-    import csb_mini as cm
+    from dmtools import csb_mini as cm
 
     load_mini(game, tmp_path)
     for i in range(4):
@@ -114,7 +112,7 @@ def test_loaded_game_saves_and_loads_back(game, tmp_path):
 
 
 def test_new_prison_game_saves_and_loads_back(game, tmp_path):
-    import csb_mini as cm
+    from dmtools import csb_mini as cm
 
     assert game.lib.gameloop_new_game(str(GAME_CSB).encode())
     assert value(game.lib, "g_max_active_group_count", u16) == 60
@@ -127,15 +125,15 @@ def test_new_prison_game_saves_and_loads_back(game, tmp_path):
 
 @pytest.mark.skipif(not CEDT.exists(), reason="CEDT.FTL missing")
 def test_original_reader_accepts_the_file(game, tmp_path):
-    import diff_test
+    import csb_diff
 
     load_mini(game, tmp_path)
     raw = save(game, tmp_path / "out")
-    diff_test.check_decode(raw, "port CSBGAME.DAT")
+    csb_diff.check_decode(raw, "port CSBGAME.DAT")
 
 
 def test_damaged_champion_block_is_rejected(game, tmp_path):
-    import csb_mini as cm
+    from dmtools import csb_mini as cm
 
     load_mini(game, tmp_path)
     good = save(game, tmp_path)
