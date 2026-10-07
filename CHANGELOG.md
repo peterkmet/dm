@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.14.1 - 2026-10-07
+
+### Added
+
+- Agent definitions `dm-coordinator` and `dm-player` in `.claude/agents/` for the LLM runs.
+
+### Changed
+
+- LLM player rules: read the bestiary before a fight with a known creature, check wounds before a timed action, keep the commentary of a call short.
+
 ## 0.14.0 - 2026-10-07
 
 ### Added
