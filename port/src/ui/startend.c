@@ -124,7 +124,7 @@ static int confirm_quit(void)
     return dialog_get_choice(2) != QUIT_CHOICE_CANCEL;
 }
 
-int save_current_game(const char **reason)
+int startend_save_current_game(const char **reason)
 {
     char mini[SAVE_DIR_SIZE];
     *reason = NULL;
@@ -148,7 +148,7 @@ static void save_game_csb(void)
     if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
         dialog_draw(NULL, gfx_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
         const char *reason;
-        int saved = save_current_game(&reason);
+        int saved = startend_save_current_game(&reason);
         if (!saved) {
             dialog_draw(reason ? reason : gfx_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_string(TEXT_OK), NULL, NULL, NULL);
             dialog_get_choice(1);
@@ -164,7 +164,7 @@ static void save_game_csb(void)
 }
 
 /* save_game without disks: the dialog stays after a save until CANCEL or QUIT. */
-void save_game(void)
+void startend_save_game(void)
 {
     const char *message = NULL;
     if (g_adventure == ADVENTURE_CSB) {
@@ -197,7 +197,7 @@ void save_game(void)
     command_unfreeze_game();
 }
 
-int16_t load_saved_game(void)
+int16_t startend_load_saved_game(void)
 {
     g_game_screen_inactive = 1;
     for (;;) {
@@ -355,7 +355,7 @@ static int wait_for_restart(void)
     command_set_only_mouse_input(-1);
     if (!g_restart_requested || g_quit_requested) return 0;
     memset(fb, COLOR_BLACK, sizeof fb);
-    int16_t loaded = load_saved_game();
+    int16_t loaded = startend_load_saved_game();
     g_restart_requested = 0;
     if (!loaded) return 0;
     gameloop_start_loaded_game();

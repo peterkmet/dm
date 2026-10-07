@@ -728,7 +728,7 @@ static void process_other_command(int16_t command)
     case COMMAND_UNFREEZE_GAME: unfreeze_game(); break;
     case COMMAND_ENTRANCE_ENTER: case COMMAND_ENTRANCE_ENTER_DUNGEON_B: g_new_game = ENTRANCE_NEW_GAME; break;
     case COMMAND_ENTRANCE_RESUME: g_new_game = ENTRANCE_RESUME; break;
-    case COMMAND_SAVE_GAME: save_game(); break;
+    case COMMAND_SAVE_GAME: startend_save_game(); break;
     case COMMAND_DIALOG_CHOICE_FIRST: case COMMAND_DIALOG_CHOICE_FIRST + 1: case COMMAND_DIALOG_CHOICE_FIRST + 2:
     case COMMAND_DIALOG_CHOICE_FIRST + 3: g_dialog_choice = (int16_t)(command - COMMAND_DIALOG_CHOICE_FIRST + 1); break;
     case COMMAND_RESTART_GAME: g_restart_requested = 1; break;

@@ -1054,7 +1054,7 @@ static void handle_request(const char *request)
         send_error("game over");
     } else if (!strcmp(cmd, "save")) {
         const char *reason;
-        int saved = save_current_game(&reason);
+        int saved = startend_save_current_game(&reason);
         if (!saved) send_error(reason ? reason : "cannot write the save file");
         else {
             if (saved == SAVED_NEW_ADVENTURE) gameloop_start_loaded_game();

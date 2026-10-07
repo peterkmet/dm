@@ -257,7 +257,7 @@ static int entrance_frame(const char *data)
     }
     if (g_new_game == ENTRANCE_RESUME || g_new_game == ENTRANCE_NEW_GAME) entrance_press_button(g_new_game == ENTRANCE_RESUME);
     if (g_new_game == ENTRANCE_RESUME) {
-        if (load_saved_game()) {
+        if (startend_load_saved_game()) {
             gameloop_start_loaded_game();
             mode = MODE_GAME;
         } else {
@@ -351,7 +351,7 @@ static int start_csb(void)
     if (choice == CSB_NEW_ADVENTURE && !auto_enter) play_csb_intro();
     if (choice == CSB_NEW_ADVENTURE) {
         if (!gameloop_new_game(data)) return SDL_Log("cannot load %s/Dungeon.DAT", data), 0;
-    } else if (load_saved_game()) {
+    } else if (startend_load_saved_game()) {
         gameloop_start_loaded_game();
     } else if (turnbased) {
         entrance_draw();

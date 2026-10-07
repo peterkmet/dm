@@ -51,7 +51,7 @@ def game(tmp_path_factory):
     lib.savegame_make_adventure.restype = c16
     lib.savegame_save_as.restype = c16
     lib.savegame_load_from.restype = c16
-    lib.load_saved_game.restype = c16
+    lib.startend_load_saved_game.restype = c16
     lib.control_open.argtypes = [ctypes.c_char_p]
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
@@ -93,7 +93,7 @@ def new_prison_game(game, champions):
 
 def save_now(game):
     reason = ctypes.c_char_p()
-    return game.lib.save_current_game(ctypes.byref(reason)), reason.value
+    return game.lib.startend_save_current_game(ctypes.byref(reason)), reason.value
 
 
 def assert_in_adventure(game, names):
@@ -172,11 +172,11 @@ def test_resume_loads_csbgame(game, saves):
     names = new_prison_game(game, 2)
     assert save_now(game) == (SAVED_NEW_ADVENTURE, None)
     assert game.lib.gameloop_new_game(str(GAME_CSB).encode())
-    assert game.lib.load_saved_game() == 1
+    assert game.lib.startend_load_saved_game() == 1
     game.lib.gameloop_start_loaded_game()
     assert_in_adventure(game, names)
     (saves / NAME).unlink()
-    assert game.lib.load_saved_game() == 0  # CAN'T FIND SAVED GAME without frames: cancelled
+    assert game.lib.startend_load_saved_game() == 0  # CAN'T FIND SAVED GAME without frames: cancelled
 
 
 def run_save_dialog(game, choices):
@@ -194,7 +194,7 @@ def run_save_dialog(game, choices):
             lib.command_process_key(KEY_RETURN)
 
     frames = Frames(lib, action)
-    lib.save_game()
+    lib.startend_save_game()
     frames.remove()
     return sum(unplanned)
 

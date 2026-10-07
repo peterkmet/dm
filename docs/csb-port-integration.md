@@ -78,7 +78,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
 | `command.c`: `command_set_entrance_input`, `KEYS_ENTRANCE` (`0x10393c`), `UI_INPUT_ENTRANCE` | Mouse table and key table come from the KAOS data. |
 | `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_new_game = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
-| `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_new_game(data)` or `load_saved_game()`. |
+| `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_new_game(data)` or `startend_load_saved_game()`. |
 | `main.c`: `main` | `MODE_ENTRANCE` is the first mode after the start. `DM_AUTO_ENTER` (and `turnbased`) presses Return at the start. |
 
 ### Endgame and credits
@@ -88,7 +88,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | `startend.c`: `endgame`, `show_credits`, `draw_the_end`, `draw_champion_parade` | DM graphics `GFX_CREDITS` 5, `GFX_THE_END` 6, `GFX_CHAMPION_FRAME` 346. Palette `CREDITS_PALETTE`. |
 | `startend.c`: `fuse_sequence`, `endgame_sensor`, `show_final_texts` | The fusion of Lord Chaos and Lord Order. Final texts on square (0, 0). CSB ends differently (`ENDA.DAT`). |
 | `startend.c`: `endgame` sets `g_return_to_entrance` | `main.c` then shows the DM entrance. For CSB this must show the CSB entrance. |
-| `startend.c`: `load_saved_game` | Uses `savegame_load(save_dir)`. The texts come from DM `gfx_string`. |
+| `startend.c`: `startend_load_saved_game` | Uses `savegame_load(save_dir)`. The texts come from DM `gfx_string`. |
 
 ### Mode handling
 
@@ -297,7 +297,7 @@ Changes in `main.c`:
 - NEW ADVENTURE: `select_csb_choice() == CSB_NEW_ADVENTURE`. `start_adventure` calls `csb_new_adventure(dir)`: build `CSBGAME.DAT` from `disk-b/MINI.DAT`, then open the champion selection.
 - RESUME: `CSB_RESUME`. `start_adventure` calls the CSB loader for `<dir>/CSBGAME.DAT`, or `CSBGAME.BAK` when the first file is missing (same rule as `savegame_load`).
 - QUIT: ends the program.
-- RESUME with no save file: show the existing dialog `TEXT_CANT_FIND_SAVED_GAME` (`load_saved_game` does this for DM).
+- RESUME with no save file: show the existing dialog `TEXT_CANT_FIND_SAVED_GAME` (`startend_load_saved_game` does this for DM).
 
 ### Dependencies for play
 
