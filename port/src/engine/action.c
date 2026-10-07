@@ -245,7 +245,7 @@ static bool is_spell_action_cast(uint16_t champion_index, uint16_t explosion_typ
         attack = max16(SPELL_ACTION_ATTACK_MINIMUM, (int16_t)(c->current_mana * attack) / mana_cost); /* 16-bit product */
         mana_cost = c->current_mana;
     }
-    int16_t cast = magic_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), attack, mana_cost);
+    bool cast = magic_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), attack, mana_cost);
     action_decrement_charges(champion_index);
     return cast;
 }

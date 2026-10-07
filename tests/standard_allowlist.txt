@@ -4,7 +4,6 @@ bool ui/automap.h open: Task 11
 bool platform/control.h open: Task 11
 bool engine/game.h open: Task 9
 bool engine/group.h open: Task 10
-bool engine/magic.h open: Task 9
 bool engine/map.h open: Task 8
 bool engine/move.h open: Task 9
 bool engine/projectile.h open: Task 10
@@ -21,7 +20,6 @@ decimal engine/game.h open: Task 9
 decimal data/graphics.c open: Task 8
 decimal engine/group.c open: Task 10
 decimal engine/group.h open: Task 10
-decimal engine/magic.c open: Task 9
 decimal platform/main.c open: Task 11
 decimal engine/map.c open: Task 8
 decimal engine/map.h open: Task 8

@@ -1,6 +1,7 @@
 #ifndef MAGIC_H
 #define MAGIC_H
 /* Prefixes: magic_ */
+#include <stdbool.h>
 #include <stdint.h>
 
 /* Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C): docs/rules-creatures.md. */
@@ -22,11 +23,11 @@ enum {
 int16_t magic_get_champion_spell_cast_result(uint16_t champion_index);
 int16_t magic_get_click_on_spell_cast_result(void);
 void magic_print_spell_failure_message(uint16_t champion_index, int16_t failure_type, uint16_t skill_index);
-int16_t magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana);
-int16_t magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, int16_t spell_shield, uint16_t ticks, int16_t use_mana);
+bool magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana);
+bool magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, int16_t spell_shield, uint16_t ticks, int16_t use_mana);
 void magic_create_light_event(int16_t light_power, int16_t ticks);
 void magic_disable_action(uint16_t champion_index, uint16_t ticks);
-/* CSB: 1 when a scroll text (or its first line) is the magic map text MAGICMAP. */
-int magic_map_is_text(const char *text);
+/* CSB: true when a scroll text (or its first line) is the magic map text MAGICMAP. */
+bool magic_map_is_text(const char *text);
 
 #endif
