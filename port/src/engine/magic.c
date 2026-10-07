@@ -154,10 +154,10 @@ static int16_t cast_potion(uint16_t champion_index, uint16_t potion_type, int16_
         magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_FLASK_IN_HAND, 0);
         return 0;
     }
-    uint16_t empty_weight = get_object_weight(flask);
+    uint16_t empty_weight = inventory_get_object_weight(flask);
     potion_set_type(flask, potion_type);
     potion_set_power(flask, power * POTION_POWER_PER_LEVEL + (random16() & 15));
-    c->load += get_object_weight(flask) - empty_weight;
+    c->load += inventory_get_object_weight(flask) - empty_weight;
     if (champion_index + 1 == g_inventory_champion_ordinal)
         c->attributes |= CHAMPION_ATTR_LOAD;
     return 1;

@@ -31,7 +31,7 @@ int16_t dungeon_map_width(int16_t map);
 int16_t dungeon_map_height(int16_t map);
 uint8_t dungeon_square(int16_t map, int16_t x, int16_t y);
 uint16_t dungeon_square_first_thing(int16_t map, int16_t x, int16_t y);
-uint8_t *get_thing_data(uint16_t thing);
+uint8_t *dungeon_get_thing_data(uint16_t thing);
 /* decode_text modes and buffer sizes. */
 #define TEXT_MODE_MESSAGE 1
 #define TEXT_MODE_SCROLL 2

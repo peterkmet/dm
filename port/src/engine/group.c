@@ -23,7 +23,7 @@ enum { GRAPHIC_FLIP_NON_ATTACK = 0x0004, GRAPHIC_FLIP_ATTACK = 0x0200, GRAPHIC_F
 #define GRAPHIC_VERTICAL_OFFSET_RANGE(info) ((info) >> 14)
 enum { ASPECT_OFFSET_MASK = 7, ASPECT_VERTICAL_OFFSET_SHIFT = 3, ASPECT_KEEP_FLAGS = ASPECT_ATTACKING | ASPECT_FLIPPED };
 
-/* Object info index ranges of the fixed possessions (see get_object_info_index). */
+/* Object info index ranges of the fixed possessions (see inventory_get_object_info_index). */
 enum { OBJECT_INFO_FIRST_WEAPON = 0x17, OBJECT_INFO_FIRST_ARMOUR = 0x45, OBJECT_INFO_FIRST_JUNK = 0x7f };
 enum { FIXED_POSSESSION_RANDOM_DROP = 0x8000, FIXED_POSSESSION_INDEX_MASK = 0x7fff };
 
@@ -78,7 +78,7 @@ static int16_t creature_movement_sound(uint16_t creature_type)
     return tables_creature_sound(ordinal - 1)->movement;
 }
 
-uint8_t get_group_cells(uint16_t group, int16_t map)
+uint8_t group_get_cells(uint16_t group, int16_t map)
 {
     return map == g_party_map_index ? group_active(group)->cells : group_cells_byte(group);
 }
@@ -92,7 +92,7 @@ void set_group_cells(uint16_t group, uint8_t cells, int16_t map)
 }
 
 /* Off the party map all creatures of a group share the direction of the record. */
-uint8_t get_group_directions(uint16_t group, int16_t map)
+uint8_t group_get_directions(uint16_t group, int16_t map)
 {
     if (map == g_party_map_index)
         return group_active(group)->directions;
@@ -121,11 +121,11 @@ int16_t is_creature_allowed_on_map(uint16_t group, int16_t map)
 /* Ordinal (index + 1) of the creature in a cell, or 0. Half-square creatures fill two cells side by side. */
 int16_t group_get_creature_ordinal_in_cell(uint16_t group, uint16_t cell)
 {
-    uint8_t cells = get_group_cells(group, g_current_map_index);
+    uint8_t cells = group_get_cells(group, g_current_map_index);
     if (cells == CELLS_CENTERED)
         return 1;
     int16_t half_square = creature_size(group_info(group)) == CREATURE_SIZE_HALF;
-    if (half_square && (cell & 1) == (get_group_directions(group, g_current_map_index) & 1))
+    if (half_square && (cell & 1) == (group_get_directions(group, g_current_map_index) & 1))
         cell = (cell - 1) & 3;
     for (int16_t i = group_last_creature_index(group); i >= 0; i--) {
         uint16_t creature_cell = cell_of(cells, i);
@@ -432,7 +432,7 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
 {
     uint16_t type = group_creature_type(group);
     if (sound_mode >= 0 && (tables_creature_info(type)->attributes & CREATURE_DROPS_FIXED_POSSESSIONS)) {
-        uint8_t cells = get_group_cells(group, g_current_map_index);
+        uint8_t cells = group_get_cells(group, g_current_map_index);
         for (int16_t i = group_last_creature_index(group); i >= 0; i--)
             group_drop_creature_fixed_possessions(type, x, y, cells == CELLS_CENTERED ? CELLS_CENTERED : cell_of(cells, i), sound_mode);
     }
@@ -502,7 +502,7 @@ int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_inde
             group_set_health(group, creature_index, group_health(group, creature_index) - damage);
         return OUTCOME_NO_CREATURE_KILLED;
     }
-    uint8_t cells = get_group_cells(group, g_current_map_index);
+    uint8_t cells = group_get_cells(group, g_current_map_index);
     uint16_t cell = cells == CELLS_CENTERED ? CELLS_CENTERED : cell_of(cells, creature_index);
     uint16_t last = group_last_creature_index(group);
     int16_t outcome;
@@ -513,7 +513,7 @@ int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_inde
         }
         outcome = OUTCOME_ALL_CREATURES_KILLED;
     } else {
-        uint16_t directions = get_group_directions(group, g_current_map_index);
+        uint16_t directions = group_get_directions(group, g_current_map_index);
         if (info->attributes & CREATURE_DROPS_FIXED_POSSESSIONS) {
             if (notify)
                 group_drop_creature_fixed_possessions(type, x, y, cell, SOUND_MODE_ONE_TICK_LATER);
@@ -677,7 +677,7 @@ static int16_t group_get_distance_between_unblocked_squares(int16_t src_x, int16
             }
         }
     } while (abs16(x - src_x) + abs16(y - src_y) > 1);
-    return get_square_distance(src_x, src_y, dst_x, dst_y);
+    return group_get_square_distance(src_x, src_y, dst_x, dst_y);
 }
 
 /* Distance to the party when a creature (or any creature with -1) sees it, else 0. Light, invisibility, and
@@ -955,7 +955,7 @@ static void group_add_event(TimelineEvent *event, uint32_t aspect_update_time)
     timeline_add_event(event);
 }
 
-int16_t get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 {
     return abs16(x1 - x2) + abs16(y1 - y2);
 }
@@ -1804,7 +1804,7 @@ void group_process_events_29_to_41(int16_t x, int16_t y, int16_t event_type, uin
     g_current_group_thing = group;
     for (int16_t i = 0; i < 4; i++)
         movement_tested_directions[i] = 0;
-    g_current_group_distance_to_party = get_square_distance(x, y, g_party_map_x, g_party_map_y);
+    g_current_group_distance_to_party = group_get_square_distance(x, y, g_party_map_x, g_party_map_y);
     g_current_group_primary_direction_to_party = group_get_directions_to_destination(x, y, g_party_map_x, g_party_map_y);
     g_current_group_secondary_direction_to_party = g_group_secondary_direction;
     t->ticks_delay_next_event = 1;
@@ -1838,9 +1838,9 @@ static int16_t move_get_teleporter_rotated_group_result(uint16_t teleporter, uin
 {
     uint16_t rotation = teleporter_rotation(teleporter);
     int16_t absolute = teleporter_is_rotation_absolute(teleporter);
-    uint16_t old_directions = get_group_directions(group, map);
+    uint16_t old_directions = group_get_directions(group, map);
     uint16_t directions = absolute ? rotation : (old_directions + rotation) & 3;
-    uint16_t cells = get_group_cells(group, map);
+    uint16_t cells = group_get_cells(group, map);
     if (cells != CELLS_CENTERED) {
         int16_t quarter = creature_size(group_info(group)) == CREATURE_SIZE_QUARTER;
         uint16_t cell_turn = (directions + 4 - old_directions) & 3, old_cells = cells;

@@ -36,7 +36,7 @@ uint16_t g_open_chest_slots[SLOT_CHEST_COUNT] = {THING_NONE, THING_NONE, THING_N
 uint16_t g_open_chest = THING_NONE;
 
 /* The object info record of an object thing, or -1. */
-int16_t get_object_info_index(uint16_t thing)
+int16_t inventory_get_object_info_index(uint16_t thing)
 {
     switch (THING_TYPE(thing)) {
     case THING_WEAPON: return INFO_WEAPON + weapon_type(thing);
@@ -54,7 +54,7 @@ int16_t object_get_type(uint16_t thing)
 {
     if (thing == THING_NONE)
         return -1;
-    int16_t i = get_object_info_index(thing);
+    int16_t i = inventory_get_object_info_index(thing);
     return i == -1 ? -1 : tables_object_info(i)->type;
 }
 
@@ -87,7 +87,7 @@ int16_t object_get_icon_index(uint16_t thing)
 }
 
 /* Tenths of a kilogram. A chest weighs 5 kg plus its contents. */
-uint16_t get_object_weight(uint16_t thing)
+uint16_t inventory_get_object_weight(uint16_t thing)
 {
     if (thing == THING_NONE)
         return 0;
@@ -100,7 +100,7 @@ uint16_t get_object_weight(uint16_t thing)
     case THING_CONTAINER:
         weight = CHEST_WEIGHT;
         for (uint16_t t = container_first_thing(thing); t != THING_END; t = get_next_thing(t))
-            weight += get_object_weight(t);
+            weight += inventory_get_object_weight(t);
         return weight;
     case THING_JUNK:
         weight = *tables_junk_weight(junk_type(thing));
@@ -110,7 +110,7 @@ uint16_t get_object_weight(uint16_t thing)
 }
 
 /* Sharp attacks use the sharp resistance (attributes bits 0-2) of the armour. */
-uint16_t get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)
+uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)
 {
     uint16_t defense = info->defense;
     return use_sharp_defense ? scale_value(defense, 3, (info->attributes & 7) + 4) : defense;
@@ -123,7 +123,7 @@ void inventory_put_object_in_leader_hand(uint16_t thing)
     g_leader_empty_handed = 0;
     g_leader_hand_object = thing;
     if (g_leader_index != -1) {
-        g_champions[g_leader_index].load += get_object_weight(thing);
+        g_champions[g_leader_index].load += inventory_get_object_weight(thing);
         g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
     }
 }
@@ -135,7 +135,7 @@ uint16_t inventory_get_object_removed_from_leader_hand(void)
     if (thing != THING_NONE) {
         g_leader_hand_object = THING_NONE;
         if (g_leader_index != -1) {
-            g_champions[g_leader_index].load -= get_object_weight(thing);
+            g_champions[g_leader_index].load -= inventory_get_object_weight(thing);
             g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
         }
     }
@@ -240,7 +240,7 @@ uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_
         if (inventory_open && slot == SLOT_HAND_ACTION && (icon == ICON_CHEST_CLOSED || is_scroll(icon)))
             c->attributes |= CHAMPION_ATTR_PANEL;
     }
-    c->load -= get_object_weight(thing);
+    c->load -= inventory_get_object_weight(thing);
     c->attributes |= CHAMPION_ATTR_LOAD;
     return thing;
 }
@@ -252,7 +252,7 @@ void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint1
         return;
     Champion *c = &g_champions[champion_index];
     *slot_ptr(c, slot) = thing;
-    c->load += get_object_weight(thing);
+    c->load += inventory_get_object_weight(thing);
     c->attributes |= CHAMPION_ATTR_LOAD;
     int16_t icon = object_get_icon_index(thing);
     int inventory_open = champion_index + 1 == g_inventory_champion_ordinal;
@@ -297,7 +297,7 @@ void inventory_click_on_slot_box(uint16_t slot_box)
     uint16_t thing = *slot_ptr(&g_champions[champion_index], slot);
     if (thing == THING_NONE && hand == THING_NONE)
         return;
-    if (hand != THING_NONE && !(*tables_slot_mask(slot) & tables_object_info(get_object_info_index(hand))->allowed_slots))
+    if (hand != THING_NONE && !(*tables_slot_mask(slot) & tables_object_info(inventory_get_object_info_index(hand))->allowed_slots))
         return;
     if (hand != THING_NONE)
         inventory_get_object_removed_from_leader_hand();
@@ -410,10 +410,10 @@ int16_t process_click_on_mouth(void)
 {
     uint16_t thing = g_leader_hand_object;
     if (g_leader_empty_handed || g_candidate_champion_ordinal ||
-        !(tables_object_info(get_object_info_index(thing))->allowed_slots & OBJECT_EDIBLE))
+        !(tables_object_info(inventory_get_object_info_index(thing))->allowed_slots & OBJECT_EDIBLE))
         return MOUTH_REFUSED;
     int16_t icon = object_get_icon_index(thing);
-    uint16_t type = THING_TYPE(thing), weight = get_object_weight(thing);
+    uint16_t type = THING_TYPE(thing), weight = inventory_get_object_weight(thing);
     uint16_t champion_index = g_inventory_champion_ordinal - 1;
     Champion *c = &g_champions[champion_index];
     int consumed = 0;
@@ -438,7 +438,7 @@ int16_t process_click_on_mouth(void)
         c->current_health = c->maximum_health;
     if (!consumed) {
         /* The leader carries the hand object, also when another champion drinks. */
-        g_champions[g_leader_index].load += get_object_weight(thing) - weight;
+        g_champions[g_leader_index].load += inventory_get_object_weight(thing) - weight;
         g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
     }
     c->attributes |= CHAMPION_ATTR_STATISTICS;

@@ -75,7 +75,7 @@ def lib(tmp_path_factory):
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     for name, res, args in [
-        ("get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
+        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
         ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("get_unused_thing", u16, [u16]),
         ("link_thing_to_list", None, [u16, u16, c16, c16]), ("unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("decode_text", c16, [ctypes.c_char_p, c16, u16, c16]), ("tables_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
@@ -106,7 +106,7 @@ def things(lib, x, y):
 
 
 def text_thing(lib, scroll):
-    rec = lib.get_thing_data(scroll)
+    rec = lib.dungeon_get_thing_data(scroll)
     return 2 << 10 | ((rec[2] << 8 | rec[3]) & 0x3FF)
 
 
@@ -120,7 +120,7 @@ def set_scroll_text(lib, scroll, text):
     """Writes text (letters and spaces) as 5-bit codes over the text words of the scroll."""
     codes = [CODE_SPACE if ch == " " else CODE_SEPARATOR if ch == "\n" else ord(ch) - ord("A") for ch in text] + [CODE_END]
     codes += [CODE_END] * (-len(codes) % 3)
-    rec = lib.get_thing_data(text_thing(lib, scroll))
+    rec = lib.dungeon_get_thing_data(text_thing(lib, scroll))
     offset = (rec[2] << 8 | rec[3]) >> 3
     data = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_text_data"), ctypes.POINTER(ctypes.c_uint8))
     for i in range(0, len(codes), 3):
@@ -344,7 +344,7 @@ def test_dain_shows_an_explosion(lib, csb):
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y)))
     explosion = lib.get_unused_thing(THING_EXPLOSION)
-    rec = lib.get_thing_data(explosion)
+    rec = lib.dungeon_get_thing_data(explosion)
     rec[2], rec[3] = 100, 0  # attack, fireball
     lib.link_thing_to_list(explosion, 0, fx, fy)
     before = panel(lib)
@@ -426,7 +426,7 @@ def test_creaname_becomes_the_creature_name(lib, csb, group_ahead):
     x, y = value(lib, "g_party_map_x").value, value(lib, "g_party_map_y").value
     d = value(lib, "g_party_direction").value
     group = next((t for t in things(lib, x + STEP_EAST[d], y + STEP_NORTH[d]) if t >> 10 & 15 == THING_GROUP), None)
-    name = lib.gfx_string(107 if group is None else 108 + lib.get_thing_data(group)[4]).decode()
+    name = lib.gfx_string(107 if group is None else 108 + lib.dungeon_get_thing_data(group)[4]).decode()
     replaced = panel(lib)
     set_scroll_text(lib, scroll, name)
     assert panel(lib) == replaced
@@ -572,7 +572,7 @@ def test_dain_explosion_tile(lib, csb):
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: empty_corridor(lib, x, y))
     explosion = lib.get_unused_thing(THING_EXPLOSION)
-    rec = lib.get_thing_data(explosion)
+    rec = lib.dungeon_get_thing_data(explosion)
     rec[2], rec[3] = 100, 0  # attack, fireball
     lib.link_thing_to_list(explosion, 0, fx, fy)
     c.magic_map[DAIN] = 1
@@ -680,7 +680,7 @@ def test_door_tiles(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_DOOR)
-    door = lib.get_thing_data(lib.get_square_first_thing(fx, fy))
+    door = lib.dungeon_get_thing_data(lib.get_square_first_thing(fx, fy))
     square = lib.get_square(fx, fy) & ~DOOR_STATE_MASK
     side = (party_dir(lib) & 1) == bool(square & DOOR_NORTH_SOUTH)
     for state in (DOOR_CLOSED, DOOR_OPEN, DOOR_DESTROYED):
@@ -705,7 +705,7 @@ def test_stairs_tiles(lib, csb):
 
 def link_new(lib, thing_type, fx, fy, cell, fill):
     thing = lib.get_unused_thing(thing_type)
-    fill(lib.get_thing_data(thing))
+    fill(lib.dungeon_get_thing_data(thing))
     lib.link_thing_to_list(thing | cell << 14, 0, fx, fy)
 
 

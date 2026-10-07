@@ -138,7 +138,7 @@ Sleep keeps the selected runes of the magic caster, in the original (command 145
 
 | Function | Rule |
 |---|---|
-| `get_object_weight` | Weapon and armour weight from the tables. Scroll 1. Potion 3, empty flask 1. Chest 50 plus its contents. Junk weight from the table; the waterskin adds 2 for each charge. |
+| `inventory_get_object_weight` | Weapon and armour weight from the tables. Scroll 1. Potion 3, empty flask 1. Chest 50 plus its contents. Junk weight from the table; the waterskin adds 2 for each charge. |
 | `object_get_icon_index` | The object type, plus the state for types 0–30: compass direction, lit torch charge, waterskin and worn jewel charges, weapon charges, closed scroll. |
 | `inventory_add_object_in_slot` | Adds the weight to the load and applies the object modifiers. A torch in a hand burns. A scroll in the action hand opens. A jewel on the neck is worn; the Illumulet adds light. |
 | `inventory_get_object_removed_from_slot` | The reverse. A torch in a hand goes out. A scroll leaving the action hand closes. |

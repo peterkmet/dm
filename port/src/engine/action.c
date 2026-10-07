@@ -490,7 +490,7 @@ int16_t action_did_click_trigger_action(int16_t action_list_index)
 /* Stamina cost of a throw: half the weight, 1 to 10, plus half of each 10 above. */
 int16_t action_get_throwing_stamina_cost(uint16_t thing)
 {
-    uint16_t weight = get_object_weight(thing) >> 1;
+    uint16_t weight = inventory_get_object_weight(thing) >> 1;
     int16_t cost = bounded_value(1, (int16_t)weight, THROW_STAMINA_MAXIMUM);
     for (int16_t rest = (int16_t)weight - 10; rest > 0; rest -= 10)
         cost += rest >> 1;

@@ -160,7 +160,7 @@ def test_melee_damage_matches_original(alib, seed):
 
 def new_object(lib, thing_type, object_type):
     thing = lib.get_unused_thing(thing_type)
-    lib.get_thing_data(thing)[3] = object_type
+    lib.dungeon_get_thing_data(thing)[3] = object_type
     return thing
 
 
@@ -194,14 +194,14 @@ def party(alib):
 def test_sword_attack_hurts_group_and_gains_experience(fighter):
     lib, c, (x, y) = fighter
     group = lib.group_get_thing(x, y + 1)
-    health = struct.unpack(">H", bytes(lib.get_thing_data(group)[6:8]))[0]
+    health = struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0]
     experience = c.skills[SKILL_SWING].experience
     damage = []
     for _ in range(20):
         lib.action_is_action_performed(0, ACTION_SWING)
         damage.append(var(lib, c16, "g_action_damage").value)
         group = lib.group_get_thing(x, y + 1)
-        if group == 0xFFFE or struct.unpack(">H", bytes(lib.get_thing_data(group)[6:8]))[0] < health:
+        if group == 0xFFFE or struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0] < health:
             break
     assert any(d > 0 for d in damage)
     assert c.skills[SKILL_SWING].experience > experience
@@ -294,7 +294,7 @@ def test_event_12_hides_damage(party):
 def test_vi_altar_rebirth(party):
     lib, c, (x, y) = party
     bones = new_object(lib, THING_JUNK, JUNK_BONES)
-    lib.get_thing_data(bones)[2] = 0  # charges: champion 0
+    lib.dungeon_get_thing_data(bones)[2] = 0  # charges: champion 0
     lib.link_thing_to_list(bones | 1 << 14, 0, x, y)
     c.current_health = 0
     now = var(lib, ctypes.c_uint32, "g_game_time").value

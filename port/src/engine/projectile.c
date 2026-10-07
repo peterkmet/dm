@@ -206,7 +206,7 @@ uint16_t projectile_get_impact_attack(uint16_t projectile, uint16_t thing)
         } else {
             base = random_2bits();
         }
-        attack = get_object_weight(thing) + base;
+        attack = inventory_get_object_weight(thing) + base;
     }
     uint16_t value = ((uint16_t)(kinetic_energy + attack) >> 4) + 1;
     uint16_t spread = random16();
@@ -272,7 +272,7 @@ static int16_t hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t 
             passes = thing >= EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL);
         } else {
             passes = (random16() & PROJECTILE_DOOR_PASS_RANDOM_MASK) < projectile_attack(projectile) &&
-                     (tables_object_info(get_object_info_index(thing))->allowed_slots & OBJECT_PASSES_DOOR_GRATE);
+                     (tables_object_info(inventory_get_object_info_index(thing))->allowed_slots & OBJECT_PASSES_DOOR_GRATE);
             if (passes && THING_TYPE(thing) == THING_JUNK) {
                 int16_t icon = object_get_icon_index(thing);
                 passes = icon < ICON_JUNK_SOLID_FIRST || icon > ICON_JUNK_SOLID_LAST;
@@ -640,7 +640,7 @@ int16_t move_is_killed_by_projectile_impact(int16_t src_x, int16_t src_y, int16_
             return 0;
     }
     int16_t test_destination = 0;
-    if (dst_x >= 0 && get_square_distance(src_x, src_y, dst_x, dst_y) == 1) {
+    if (dst_x >= 0 && group_get_square_distance(src_x, src_y, dst_x, dst_y) == 1) {
         uint16_t primary = group_get_directions_to_destination(src_x, src_y, dst_x, dst_y);
         uint16_t next = (primary + 1) & 3;
         crossed[(primary + 3) & 3] = occupied[primary];
@@ -713,11 +713,11 @@ void timeline_trigger_projectile_launcher(uint16_t sensor, const TimelineEvent *
                 unlink_thing_from_list(second, 0, x, y);
         }
     } else {
-        first = get_object_for_launcher_or_generator(data);
+        first = projectile_get_object_for_launcher_or_generator(data);
         if (first == THING_NONE)
             return;
         if (!single) {
-            second = get_object_for_launcher_or_generator(data);
+            second = projectile_get_object_for_launcher_or_generator(data);
             if (second == THING_NONE)
                 single = 1;
         }
@@ -736,7 +736,7 @@ void timeline_trigger_projectile_launcher(uint16_t sensor, const TimelineEvent *
 
 /* A new weapon or junk object for an object info index: torches, daggers, arrows, slayers, rocks, poison darts,
    throwing stars, boulders. THING_NONE for other indices. */
-uint16_t get_object_for_launcher_or_generator(int16_t object_info_index)
+uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_index)
 {
     if ((uint16_t)object_info_index >= LAUNCHER_INFO_TORCH_FIRST && (uint16_t)object_info_index <= LAUNCHER_INFO_TORCH_LAST)
         object_info_index = LAUNCHER_INFO_TORCH_FIRST;

@@ -148,7 +148,7 @@ static int16_t holds_object_type(uint16_t object_type)
 }
 
 /* Click on the front wall cell with the leader hand. Returns 1 when a sensor triggered. The object
-   generator gives no object until get_object_for_launcher_or_generator exists. */
+   generator gives no object until projectile_get_object_for_launcher_or_generator exists. */
 int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
 {
     int16_t triggered = 0, remaining[4] = {0};

@@ -19,11 +19,11 @@ extern int16_t g_leader_empty_handed;
 extern uint16_t g_open_chest_slots[8];        /* slots SLOT_CHEST_FIRST and up */
 extern uint16_t g_open_chest;                 /* THING_NONE: no chest is open */
 
-int16_t get_object_info_index(uint16_t thing);
+int16_t inventory_get_object_info_index(uint16_t thing);
 int16_t object_get_type(uint16_t thing);
 int16_t object_get_icon_index(uint16_t thing);
-uint16_t get_object_weight(uint16_t thing);
-uint16_t get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense);
+uint16_t inventory_get_object_weight(uint16_t thing);
+uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense);
 
 void inventory_put_object_in_leader_hand(uint16_t thing);
 uint16_t inventory_get_object_removed_from_leader_hand(void);

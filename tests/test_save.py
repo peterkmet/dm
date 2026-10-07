@@ -40,14 +40,14 @@ pytestmark = [
 def game():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
-    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.get_square_first_thing.restype = u16
     lib.get_next_thing.restype = u16
     lib.get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     lib.dungeon_save.restype = ctypes.c_void_p
     lib.free.argtypes = [ctypes.c_void_p]
-    lib.get_object_weight.restype = u16
+    lib.inventory_get_object_weight.restype = u16
     lib.savegame_save.restype = c16
     lib.savegame_load.restype = c16
     assert lib.gameloop_load_data(str(GAME).encode())
@@ -125,7 +125,7 @@ def test_save_and_load_round_trip(game, tmp_path):
 
     # the file keeps the leader load without the object in the hand; starting the game adds it again
     leader = before["g_leader_index"]
-    weight = lib.get_object_weight(hand)
+    weight = lib.inventory_get_object_weight(hand)
     load = struct.unpack_from(">H", before["champions"][leader], 0x110)[0]
     assert struct.unpack_from(">H", after["champions"][leader], 0x110)[0] == load - weight
     after["champions"][leader] = before["champions"][leader]
@@ -359,7 +359,7 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
     lord = lib.group_get_thing(*lord_square)
     lib.fuse_sequence()
     assert game.value("g_game_won") == 1 and game.value("g_return_to_entrance") == 1 and game.value("g_quit_requested") == 0
-    assert lib.get_thing_data(lord)[4] == 26  # Grey Lord
+    assert lib.dungeon_get_thing_data(lord)[4] == 26  # Grey Lord
     # the other groups are gone; the test group is not caged and can walk away and go too
     assert {(x, y) for x in range(width) for y in range(height) if lib.group_get_thing(x, y) != 0xFFFE} <= {lord_square}
     assert lib.gameloop_new_game(str(GAME).encode())  # a new game draws fluxcages again for the other tests

@@ -458,11 +458,11 @@ static void fill_at_fountain(void)
 {
     uint16_t thing = g_leader_hand_object;
     int16_t icon = object_get_icon_index(thing);
-    uint16_t weight = get_object_weight(thing);
+    uint16_t weight = inventory_get_object_weight(thing);
     if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL) junk_set_charges(thing, FILLED_WATERSKIN_CHARGES);
     else if (icon == ICON_EMPTY_FLASK) potion_set_type(thing, POTION_WATER);
     else return;
-    g_champions[g_leader_index].load += get_object_weight(thing) - weight;
+    g_champions[g_leader_index].load += inventory_get_object_weight(thing) - weight;
     g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
 }
 

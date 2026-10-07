@@ -200,7 +200,7 @@ static void pack_champions(uint8_t *champions)
     for (int i = 0; i < CHAMPION_MAX_COUNT; i++) champion_pack(&g_champions[i], champions + i * CHAMPION_RECORD_SIZE);
     if (!g_leader_empty_handed && g_leader_index != -1) {
         Champion leader = g_champions[g_leader_index];
-        leader.load -= get_object_weight(g_leader_hand_object);
+        leader.load -= inventory_get_object_weight(g_leader_hand_object);
         champion_pack(&leader, champions + g_leader_index * CHAMPION_RECORD_SIZE);
     }
     pack_party(champions + CHAMPION_MAX_COUNT * CHAMPION_RECORD_SIZE);

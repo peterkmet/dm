@@ -36,7 +36,7 @@ class Box(ctypes.Structure):
 def game():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
-    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.get_square_first_thing.restype = u16
     lib.get_next_thing.restype = u16
     lib.get_square.restype = ctypes.c_uint8
@@ -106,7 +106,7 @@ class Game:
     def mirror_cell(self, x, y):
         thing = self.lib.get_square_first_thing(x, y)
         while thing not in (0xFFFE, 0xFFFF):
-            data = self.lib.get_thing_data(thing)
+            data = self.lib.dungeon_get_thing_data(thing)
             if thing >> 10 & 15 == SENSOR and (data[2] << 8 | data[3]) & 0x7F == CHAMPION_PORTRAIT:
                 return thing >> 14
             thing = self.lib.get_next_thing(thing)
@@ -316,7 +316,7 @@ def test_hand_object_name_follows_the_icon(game):
     junk = next(j for j in range(53) if lib.tables_object_info(0x7F + j).contents[0] == 8)  # waterskin
     lib.get_unused_thing.restype = u16
     skin = lib.get_unused_thing(10)
-    data = lib.get_thing_data(skin)
+    data = lib.dungeon_get_thing_data(skin)
     data[3], data[2] = junk, 1 << 6  # one charge
     lib.inventory_put_object_in_leader_hand(skin)
     game.key(KEY_F1)
@@ -327,7 +327,7 @@ def test_hand_object_name_follows_the_icon(game):
     name = lambda: [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
     before = name()
     game.click_zone(545)  # the mouth
-    assert lib.get_thing_data(skin)[2] >> 6 == 0
+    assert lib.dungeon_get_thing_data(skin)[2] >> 6 == 0
     assert name() != before
     game.key(KEY_F1)
     game.run()

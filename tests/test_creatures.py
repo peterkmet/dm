@@ -51,14 +51,14 @@ def lib():
     lib = ctypes.CDLL(str(path))
     event_p = ctypes.POINTER(TimelineEvent)
     for name, res, args in [
-        ("projectile_get_impact_attack", u16, [u16, u16]), ("get_object_for_launcher_or_generator", u16, [c16]),
+        ("projectile_get_impact_attack", u16, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
         ("projectile_create", None, [u16, c16, c16, c16, c16, u8, u8, u8]), ("get_square", u8, [c16, c16]),
         ("get_square_first_thing", u16, [c16, c16]), ("get_next_thing", u16, [u16]), ("group_get_thing", u16, [c16, c16]),
         ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("dungeon_square", u8, [c16, c16, c16]),
         ("dungeon_square_first_thing", u16, [c16, c16, c16]),
         ("timeline_is_first_event_expired", c16, []), ("timeline_extract_first_event", None, [event_p]),
         ("projectile_process_events_48_to_49", None, [event_p]), ("explosion_process_event_25", None, [event_p]),
-        ("set_current_map", None, [c16]), ("get_thing_data", ctypes.POINTER(u8), [u16]),
+        ("set_current_map", None, [c16]), ("dungeon_get_thing_data", ctypes.POINTER(u8), [u16]),
         ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", c16, [c16, c16, c16, c16]),
         ("group_is_destination_visible_from_source", c16, [c16, c16, c16, c16, c16]),
         ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
@@ -224,7 +224,7 @@ def test_object_for_launcher_matches_original(lib):
     for index in list(range(-3, 201)) + [0x7FFF]:
         for t in (5, 10):  # one free weapon and one free junk record
             w.write_record(t, 0, b"\xff\xff" + bytes(2))
-        got = lib.get_object_for_launcher_or_generator(index)
+        got = lib.projectile_get_object_for_launcher_or_generator(index)
         want = w.emu.call(LAUNCHER_OBJECT, [(2, index & 0xFFFF)]) & 0xFFFF
         assert got == want, index
         for t in (5, 10):
@@ -306,7 +306,7 @@ def mummy_in_corridor(lib, m):
             t = lib.dungeon_square_first_thing(m, x, y)
             while t != 0xFFFE and t >> 10 & 15 != THING_GROUP:
                 t = lib.get_next_thing(t)
-            if t == 0xFFFE or lib.get_thing_data(t)[4] != CREATURE_MUMMY:
+            if t == 0xFFFE or lib.dungeon_get_thing_data(t)[4] != CREATURE_MUMMY:
                 continue
             for direction, (sx, sy) in enumerate(((0, -1), (1, 0), (0, 1), (-1, 0))):
                 squares = [(x + sx * k, y + sy * k) for k in (1, 2, 3)]
@@ -331,7 +331,7 @@ def test_group_activates_and_approaches_party(lib):
             break
     assert group is not None, "no group came next to the party"
     assert seen & {32, 37}  # group aspect and behavior events ran
-    assert lib.get_thing_data(group)[15] & 15 in (BEHAVIOR_APPROACH, BEHAVIOR_ATTACK)
+    assert lib.dungeon_get_thing_data(group)[15] & 15 in (BEHAVIOR_APPROACH, BEHAVIOR_ATTACK)
 
 
 def test_group_attacks_adjacent_party(lib):
@@ -352,9 +352,9 @@ def test_group_attacks_adjacent_party(lib):
 def skeleton_map_and_squares(lib):
     """A map that allows skeletons, and two empty corridor squares on it, two squares apart in a straight line."""
     probe = lib.get_unused_thing(THING_GROUP)
-    lib.get_thing_data(probe)[4] = CREATURE_SKELETON
+    lib.dungeon_get_thing_data(probe)[4] = CREATURE_SKELETON
     maps = [m for m in range(lib.dungeon_map_count()) if lib.is_creature_allowed_on_map(probe, m)]
-    data = lib.get_thing_data(probe)
+    data = lib.dungeon_get_thing_data(probe)
     data[0] = data[1] = 0xFF  # free the probe record again
     for m in maps:
         empty = lambda x, y: (0 <= x < lib.dungeon_map_width(m) and 0 <= y < lib.dungeon_map_height(m)
@@ -377,7 +377,7 @@ def test_creature_dies_and_drops_possessions(lib):
     # Like the original, the result is THING_NONE when the new group becomes active on the party map.
     assert lib.group_get_generated(CREATURE_SKELETON, 1, 0, 0, x, y) == 0xFFFF
     group = lib.group_get_thing(x, y)
-    assert group != 0xFFFE and lib.get_thing_data(group)[4] == CREATURE_SKELETON
+    assert group != 0xFFFE and lib.dungeon_get_thing_data(group)[4] == CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10, 1) == 0  # 10 damage: the skeleton survives
     assert lib.group_get_thing(x, y) == group
@@ -460,11 +460,11 @@ def test_potion_spell_fills_empty_flask(caster):
     lib, c = caster
     assert cast(lib, c, [0x62, 0x66]) == 3  # power 3, no flask in hand
     flask = lib.get_unused_thing(THING_POTION)
-    lib.get_thing_data(flask)[2] = POTION_EMPTY_FLASK
+    lib.dungeon_get_thing_data(flask)[2] = POTION_EMPTY_FLASK
     assert lib.object_get_icon_index(flask) == ICON_EMPTY_FLASK
     c.slots[SLOT_ACTION_HAND] = flask
     assert cast(lib, c, [0x62, 0x66]) == 1
-    data = lib.get_thing_data(flask)
+    data = lib.dungeon_get_thing_data(flask)
     assert data[2] & 0x7F == 11 and 3 * 40 <= data[3] < 3 * 40 + 16
 
 
@@ -490,5 +490,5 @@ def test_fireball_spell_shoots_projectile(caster):
     assert cast(lib, c, [0x63, 0x69, 0x6F]) == 1  # power 4, FUL IR: fireball
     x, y = c16.in_dll(lib, "g_party_map_x").value, c16.in_dll(lib, "g_party_map_y").value
     projectiles = things_of_type(lib, x, y, THING_PROJECTILE)
-    assert len(projectiles) == 1 and struct.unpack(">H", bytes(lib.get_thing_data(projectiles[0])[2:4]))[0] == FIREBALL
+    assert len(projectiles) == 1 and struct.unpack(">H", bytes(lib.dungeon_get_thing_data(projectiles[0])[2:4]))[0] == FIREBALL
     assert c.current_mana == mana

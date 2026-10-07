@@ -193,7 +193,7 @@ static void action_list_json(Json *j, int16_t index)
     int16_t set_index = ACTION_SET_EMPTY_HAND;
     json_open(j, '[');
     if (c->slots[SLOT_HAND_ACTION] != THING_NONE) {
-        const ObjectInfo *info = tables_object_info(get_object_info_index(c->slots[SLOT_HAND_ACTION]));
+        const ObjectInfo *info = tables_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
         set_index = info ? info->action_set_index : 0;
     }
     const ActionSet *set = set_index ? tables_action_set(set_index) : NULL;

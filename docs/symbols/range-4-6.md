@@ -47,7 +47,7 @@ A thing is a word:
 | 10–13 | Thing type. |
 | 14–15 | Cell (0–3) on the square. |
 
-`0xfffe` ends a list. `0xffff` means "no thing". `get_thing_data(thing)` returns `g_thing_data[type] + g_thing_data_byte_count[type] * index`.
+`0xfffe` ends a list. `0xffff` means "no thing". `dungeon_get_thing_data(thing)` returns `g_thing_data[type] + g_thing_data_byte_count[type] * index`.
 
 Thing types and record sizes:
 
@@ -174,7 +174,7 @@ ordinal = allowed && index < count ? index + 1 : 0;
 | 6 | 4 words | Health of each creature. |
 | 14 | word | Bits 0–3: behavior (0 wander, 2/3 react, 5 flee, 6 attack, 7 approach). Bits 5–6: creature count − 1. Bits 8–9: direction. Bit 10: do not discard. |
 
-`get_group_cells` and `get_group_directions` read the active group when the map is the party map. Otherwise they read the record. A group off the party map has one direction for all creatures. `g_group_directions_packed[d]` expands it to 2 bits for each creature.
+`group_get_cells` and `group_get_directions` read the active group when the map is the party map. Otherwise they read the record. A group off the party map has one direction for all creatures. `g_group_directions_packed[d]` expands it to 2 bits for each creature.
 
 ### Active group
 

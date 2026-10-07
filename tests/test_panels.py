@@ -28,8 +28,8 @@ PRIEST = 2
 def setup(lib):
     lib.panel_object_text.argtypes = [u16, ctypes.c_char_p, ctypes.c_char_p]
     lib.panel_object_text.restype = c16
-    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.get_thing_data.argtypes = [u16]
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_get_thing_data.argtypes = [u16]
     lib.get_next_thing.restype = u16
     lib.get_next_thing.argtypes = [u16]
     lib.gfx_string.restype = lib.gfx_object_name.restype = ctypes.c_char_p
@@ -48,11 +48,11 @@ def things_of(lib, t):
     """Every used record of thing type t in the dungeon."""
     header = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_header"), ctypes.POINTER(ctypes.c_uint8))
     count = header[12 + 2 * t] << 8 | header[13 + 2 * t]
-    return [t << 10 | i for i in range(count) if bytes(lib.get_thing_data(t << 10 | i)[:2]) != b"\xff\xff"], count
+    return [t << 10 | i for i in range(count) if bytes(lib.dungeon_get_thing_data(t << 10 | i)[:2]) != b"\xff\xff"], count
 
 
 def chest_content(lib, chest):
-    rec = lib.get_thing_data(chest)
+    rec = lib.dungeon_get_thing_data(chest)
     out, t = [], rec[2] << 8 | rec[3]
     while t != END:
         out.append(t)
@@ -82,7 +82,7 @@ class Original:
         addr = THING_BUF
         for t in RECORD_SIZE:
             _, count = things_of(lib, t)
-            emu.write(addr, ctypes.string_at(lib.get_thing_data(t << 10), count * RECORD_SIZE[t]))
+            emu.write(addr, ctypes.string_at(lib.dungeon_get_thing_data(t << 10), count * RECORD_SIZE[t]))
             emu.write(THING_DATA + 4 * t, struct.pack(">I", addr))
             addr += 0x2000
         at = TEXT_BUF
@@ -165,7 +165,7 @@ def test_object_text_matches_original(game, party):
         # flags that the dungeon objects rarely have: poisoned, broken, cursed, no charges (burnt out torch)
         for t, flags in ((5, 0x43), (6, 0x21)):
             for thing in things_of(game, t)[0]:
-                rec = game.get_thing_data(thing)
+                rec = game.dungeon_get_thing_data(thing)
                 saved = rec[2]
                 for value in (saved | flags, saved | flags & 0x41, saved | 0x01, saved & ~0x3C):
                     rec[2] = value
@@ -263,7 +263,7 @@ def test_eat_food_redraws_the_food_bar(game, party):
     game.tables_object_info.restype = ctypes.POINTER(u16 * 3)
     junk = next(j for j in range(53) if 0xA8 <= game.tables_object_info(0x7F + j).contents[0] < 0xB0)
     thing = game.get_unused_thing(10)
-    game.get_thing_data(thing)[3] = junk
+    game.dungeon_get_thing_data(thing)[3] = junk
     party[0].food = 100
     game.ui_draw_inventory_open(0)
     c16.in_dll(game, "g_panel_content").value = 1  # food and water

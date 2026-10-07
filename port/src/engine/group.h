@@ -88,9 +88,9 @@ extern uint16_t g_current_group_thing, g_current_group_distance_to_party;
 extern int16_t g_current_group_primary_direction_to_party, g_current_group_secondary_direction_to_party;
 extern int16_t g_dungeon_view_palette_index;   /* 0 (bright) to 5; the view step sets it */
 
-uint8_t get_group_cells(uint16_t group, int16_t map);
+uint8_t group_get_cells(uint16_t group, int16_t map);
 void set_group_cells(uint16_t group, uint8_t cells, int16_t map);
-uint8_t get_group_directions(uint16_t group, int16_t map);
+uint8_t group_get_directions(uint16_t group, int16_t map);
 void set_group_directions(uint16_t group, uint8_t directions, int16_t map);
 int16_t is_creature_allowed_on_map(uint16_t group, int16_t map);
 
@@ -121,7 +121,7 @@ int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack);
 void group_door_damages_creatures(int16_t x, int16_t y);
 
-int16_t get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 int16_t group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x, int16_t group_y, int16_t group_cell);

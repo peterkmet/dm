@@ -89,7 +89,7 @@ void menus_set_acting_champion(uint16_t champion_index)
     int16_t set = ACTION_SET_EMPTY_HAND;
     if (c->attributes & CHAMPION_ATTR_ACTION_DISABLED || !c->current_health) return;
     if (c->slots[SLOT_HAND_ACTION] != THING_NONE) {
-        const ObjectInfo *info = tables_object_info(get_object_info_index(c->slots[SLOT_HAND_ACTION]));
+        const ObjectInfo *info = tables_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
         if (!info || !(set = info->action_set_index)) return;
     }
     g_acting_champion_ordinal = (int16_t)(champion_index + 1);
@@ -116,7 +116,7 @@ void menus_draw_action_icon(uint16_t champion_index)
         ui_fill_zone(&screen, zone, COLOR_BLACK);
         return;
     }
-    const ObjectInfo *info = thing == THING_NONE ? NULL : tables_object_info(get_object_info_index(thing));
+    const ObjectInfo *info = thing == THING_NONE ? NULL : tables_object_info(inventory_get_object_info_index(thing));
     if (info && !info->action_set_index) { /* an object without actions: an empty box */
         memset(px, COLOR_CYAN, sizeof px);
     } else {

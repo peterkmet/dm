@@ -494,7 +494,7 @@ static void attributes_text(uint16_t potential, uint16_t actual, char *dst, size
 int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE])
 {
     int16_t icon = object_get_icon_index(thing), n = 0;
-    uint16_t type = THING_TYPE(thing), potential = 0, actual = 0, weight = get_object_weight(thing);
+    uint16_t type = THING_TYPE(thing), potential = 0, actual = 0, weight = inventory_get_object_weight(thing);
     if (icon == ICON_BONES)
         snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[junk_charges(thing)].name, (const char *)kaos_ptr(BONES_SEPARATOR), gfx_object_name(icon));
     else if (type == THING_POTION && icon != ICON_WATER_FLASK && g_inventory_champion_ordinal &&
@@ -516,7 +516,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
         break;
     case THING_POTION:
         potential = ATTRIBUTE_CONSUMABLE;
-        actual = tables_object_info(get_object_info_index(thing))->allowed_slots;
+        actual = tables_object_info(inventory_get_object_info_index(thing))->allowed_slots;
         break;
     case THING_JUNK:
         if (icon <= ICON_COMPASS_NORTH + DIRECTION_WEST)
@@ -525,7 +525,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_string((int16_t)(TEXT_WATERSKIN_EMPTY + junk_charges(thing))));
         else {
             potential = ATTRIBUTE_CONSUMABLE;
-            actual = tables_object_info(get_object_info_index(thing))->allowed_slots;
+            actual = tables_object_info(inventory_get_object_info_index(thing))->allowed_slots;
         }
         break;
     }
@@ -765,7 +765,7 @@ static void draw_stat_meters(uint16_t thing, int16_t x, int16_t y)
         draw_stat_meter(x, y, label, value, attack ? largest_attack() : largest_defense(), attack ? COLOR_GOLD : COLOR_BLUE, 1);
         y += MESSAGE_ROW_HEIGHT;
     }
-    draw_stat_meter(x, y, "WEIGHT", get_object_weight(thing), largest_weight(), COLOR_LIGHT_BROWN, 0);
+    draw_stat_meter(x, y, "WEIGHT", inventory_get_object_weight(thing), largest_weight(), COLOR_LIGHT_BROWN, 0);
 }
 
 /* Opens a chest in the panel and draws its slots. While the eye is pressed, the action hand keeps

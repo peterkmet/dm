@@ -50,7 +50,7 @@ def lib():
     lib.message_print.argtypes = [c16, ctypes.c_char_p, ctypes.c_uint32]
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
     lib.dungeon_square_first_thing.restype = u16
-    lib.get_thing_data.restype = ctypes.POINTER(u8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(u8)
     lib.recruit_portrait_index.argtypes = [u16]
     lib.recruit_text_thing.restype = u16
     return lib

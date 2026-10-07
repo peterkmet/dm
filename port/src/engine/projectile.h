@@ -80,7 +80,7 @@ void projectile_reset(void);
 
 int16_t move_is_killed_by_projectile_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing);
 void timeline_trigger_projectile_launcher(uint16_t sensor, const TimelineEvent *event);
-uint16_t get_object_for_launcher_or_generator(int16_t object_info_index);
+uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_index);
 void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint8_t kinetic_energy, uint8_t attack, uint8_t step_energy);
 
 #endif

@@ -421,7 +421,7 @@ static const uint8_t *object_pal(int16_t distance)
     return distance == 1 ? kaos_ptr(PAL_OBJECT_D2) : distance == 2 ? kaos_ptr(PAL_OBJECT_D3) : NULL;
 }
 
-static int16_t object_aspect(uint16_t thing) { return tables_object_info(get_object_info_index(thing))->aspect_index; }
+static int16_t object_aspect(uint16_t thing) { return tables_object_info(inventory_get_object_info_index(thing))->aspect_index; }
 
 /* The object aspect of a flying thing, or minus its projectile aspect. */
 static int16_t projectile_aspect(uint16_t thing)

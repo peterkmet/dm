@@ -437,7 +437,7 @@ uint16_t dungeon_square_first_thing(int16_t map, int16_t x, int16_t y)
     return BE16(g_square_first_things + index * 2);
 }
 
-uint8_t *get_thing_data(uint16_t thing)
+uint8_t *dungeon_get_thing_data(uint16_t thing)
 {
     uint16_t type = THING_TYPE(thing);
     return g_thing_data[type] + g_thing_data_byte_count[type] * THING_INDEX(thing);

@@ -151,7 +151,7 @@ Event 48 or 49 (`projectile_process_events_48_to_49`) moves a projectile one cel
 - A Ful bomb or Ven bomb flask explodes into a fireball or a poison cloud.
 - A spell projectile becomes an explosion of its type. A lightning bolt keeps half its kinetic energy as attack, a poison bolt a quarter.
 
-`projectile_get_impact_attack` and `get_object_for_launcher_or_generator` match the original exactly (differential tests).
+`projectile_get_impact_attack` and `projectile_get_object_for_launcher_or_generator` match the original exactly (differential tests).
 
 ### Launchers
 

@@ -36,7 +36,7 @@ enum { THING_DOOR, THING_TELEPORTER, THING_TEXT, THING_SENSOR, THING_GROUP, THIN
 #define THING_STRIP_CELL(thing) ((thing) & 0x3fff)
 #define THING_WITH_CELL(thing, cell) ((uint16_t)(((cell) & 3) << 14 | THING_STRIP_CELL(thing)))
 
-#define REC(thing) get_thing_data(thing)
+#define REC(thing) dungeon_get_thing_data(thing)
 
 /* Every record starts with the next thing of its list. 0xffff marks a free record. */
 static inline void thing_set_next(uint16_t thing, uint16_t next) { WR16(REC(thing), next); }

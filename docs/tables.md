@@ -71,7 +71,7 @@ Each table ends where the next named table starts. The tests check this.
 
 ## Object info
 
-`ObjectInfo`, 6 bytes per object info index. `get_object_info_index` maps a thing to the index: scroll 0, container 1, potion 2 + type, weapon `0x17` + type, armour `0x45` + type, junk `0x7f` + type.
+`ObjectInfo`, 6 bytes per object info index. `inventory_get_object_info_index` maps a thing to the index: scroll 0, container 1, potion 2 + type, weapon `0x17` + type, armour `0x45` + type, junk `0x7f` + type.
 
 | Offset | Field | Meaning |
 |---|---|---|
@@ -100,11 +100,11 @@ Each table ends where the next named table starts. The tests check this.
 |---|---|---|
 | 0 | `weight` | Weight in tenths of a kilogram. |
 | 1 | `defense` | Defense. |
-| 2 | `attributes` | Bits 0–2 sharp resistance (`get_armour_defense`). Bit 7 shield. |
+| 2 | `attributes` | Bits 0–2 sharp resistance (`inventory_get_armour_defense`). Bit 7 shield. |
 
 ## Junk weights and food values
 
-- Junk weight: 1 byte per junk type. Junk type 1 adds 2 for each charge (`get_object_weight`). Potions, scrolls, and containers have no weight table. `get_object_weight` uses fixed values for them.
+- Junk weight: 1 byte per junk type. Junk type 1 adds 2 for each charge (`inventory_get_object_weight`). Potions, scrolls, and containers have no weight table. `inventory_get_object_weight` uses fixed values for them.
 - Food value: 1 signed word per food icon `0xa8`–`0xaf`. Eating adds the value to the champion food, with a maximum of 2048.
 
 ## Door info

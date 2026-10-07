@@ -34,7 +34,7 @@ def game(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
-    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.get_square_first_thing.restype = ctypes.c_uint16
     lib.get_next_thing.restype = ctypes.c_uint16
     lib.get_square.restype = ctypes.c_uint8
@@ -419,7 +419,7 @@ THING_GROUP, SCREAMER = 4, 6
 def add_screamer(lib, x, y):
     """A screamer on square (x, y) of the party map, active but without behavior events (map 0 allows no creatures)."""
     group = lib.get_unused_thing(THING_GROUP)
-    data = lib.get_thing_data(group)
+    data = lib.dungeon_get_thing_data(group)
     data[2], data[3] = 0xFF, 0xFE  # no possessions
     data[4], data[5] = SCREAMER, 0xFF  # centered on the square
     data[7] = 50  # health
@@ -708,7 +708,7 @@ def chest_with_content(game):
     lib = game.lib
     header = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_header"), ctypes.POINTER(ctypes.c_uint8))
     for chest in (9 << 10 | i for i in range(header[12 + 2 * 9] << 8 | header[13 + 2 * 9])):
-        data, content = lib.get_thing_data(chest), []
+        data, content = lib.dungeon_get_thing_data(chest), []
         if bytes(data[:2]) == b"\xff\xff":
             continue
         thing = data[2] << 8 | data[3]
@@ -757,7 +757,7 @@ def test_take_put_and_look_in_an_open_chest(game):
         client.sock.close()
         removed = lib.inventory_get_object_removed_from_leader_hand()
     assert removed == chest
-    data = lib.get_thing_data(chest)
+    data = lib.dungeon_get_thing_data(chest)
     assert data[2] << 8 | data[3] == content[0]
 
 
@@ -910,7 +910,7 @@ def test_unlinking_a_freed_last_thing_empties_the_square(game, capfd):
     lib.unlink_thing_from_list(thing, 0, x, y)
     assert not lib.get_square(x, y) & HAS_THINGS
     assert "square list guard: unlink of a free record" in capfd.readouterr().err
-    record = lib.get_thing_data(thing)
+    record = lib.dungeon_get_thing_data(thing)
     record[0], record[1] = THING_END >> 8, THING_END & 0xFF  # next: end of list
     lib.link_thing_to_list(thing, 0, x, y)  # the fixture game again as before
     assert lib.get_square_first_thing(x, y) == thing
@@ -924,7 +924,7 @@ def test_torch_holder_is_not_a_lock(game):
         for x in range(lib.dungeon_map_width(0)):
             t = lib.get_square_first_thing(x, y)
             while t not in (0xFFFE, 0xFFFF):
-                data = lib.get_thing_data(t)
+                data = lib.dungeon_get_thing_data(t)
                 if t >> 10 & 15 == 3 and 4 <= (data[2] << 8 | data[3]) >> 7 <= 7:  # a sensor that wants a torch
                     holder = (x, y, t >> 14)
                 t = lib.get_next_thing(t)

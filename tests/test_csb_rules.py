@@ -44,7 +44,7 @@ def lib(tmp_path_factory):
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     for name, res, args in [
-        ("get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
+        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
         ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
         ("action_is_action_performed", c16, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
         ("sensor_add_event", None, [c16, c16, c16, c16, c16, u32]),
@@ -198,7 +198,7 @@ def version_checker(lib, data):
                           for t in things(lib, sx, sy) if t >> 10 & 15 == THING_SENSOR)
     lib.unlink_thing_from_list(sensor, 0, sx, sy)
     x, y = face_empty_corridor(lib)
-    record = lib.get_thing_data(sensor)
+    record = lib.dungeon_get_thing_data(sensor)
     word = data << 7 | SENSOR_FLOOR_VERSION_CHECKER
     target = y << 11 | x << 6
     record[2], record[3], record[4], record[5], record[6], record[7] = word >> 8, word & 0xFF, 0, 0, target >> 8, target & 0xFF

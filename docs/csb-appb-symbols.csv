@@ -226,14 +226,14 @@ address,name,signature,subsystem
 0x10be04,rt_setjmp,int16_t rt_setjmp(int32_t *env),runtime
 0x10be12,rt_longjmp,"void rt_longjmp(int32_t *env, int16_t value)",runtime
 0x10be24,is_creature_allowed_on_map,"int16_t is_creature_allowed_on_map(uint16_t group_thing, uint16_t map_index)",dungeon
-0x10bebe,get_object_weight,uint16_t get_object_weight(uint16_t thing),dungeon
-0x10bfb2,get_object_info_index,int16_t get_object_info_index(uint16_t thing),dungeon
+0x10bebe,inventory_get_object_weight,uint16_t inventory_get_object_weight(uint16_t thing),dungeon
+0x10bfb2,inventory_get_object_info_index,int16_t inventory_get_object_info_index(uint16_t thing),dungeon
 0x10c02c,get_projectile_aspect,uint16_t get_projectile_aspect(uint16_t thing),dungeon
-0x10c0c8,get_armour_defense,"uint16_t get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)",dungeon
+0x10c0c8,inventory_get_armour_defense,"uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)",dungeon
 0x10c108,get_creature_attributes,uint16_t get_creature_attributes(uint16_t group_thing),dungeon
-0x10c136,get_group_cells,"uint8_t get_group_cells(const Group *group, int16_t map_index)",dungeon
+0x10c136,group_get_cells,"uint8_t group_get_cells(const Group *group, int16_t map_index)",dungeon
 0x10c16e,set_group_cells,"void set_group_cells(Group *group, uint8_t cells, int16_t map_index)",dungeon
-0x10c1aa,get_group_directions,"uint8_t get_group_directions(const Group *group, int16_t map_index)",dungeon
+0x10c1aa,group_get_directions,"uint8_t group_get_directions(const Group *group, int16_t map_index)",dungeon
 0x10c1f6,set_group_directions,"void set_group_directions(Group *group, int16_t directions, int16_t map_index)",dungeon
 0x10c240,is_wall_ornament_an_alcove,int16_t is_wall_ornament_an_alcove(int16_t ornament_index),dungeon
 0x10c278,is_wall_ornament_a_fountain,int16_t is_wall_ornament_a_fountain(int16_t ornament_index),dungeon
@@ -245,7 +245,7 @@ address,name,signature,subsystem
 0x10c53a,get_relative_square_type,"int16_t get_relative_square_type(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t map_x, int16_t map_y)",dungeon
 0x10c564,get_location_after_level_change,"int16_t get_location_after_level_change(int16_t map_index, int16_t level_delta, int16_t *map_x, int16_t *map_y)",dungeon
 0x10c638,get_stairs_exit_direction,"int16_t get_stairs_exit_direction(int16_t map_x, int16_t map_y)",dungeon
-0x10c6a6,get_thing_data,void *get_thing_data(uint16_t thing),dungeon
+0x10c6a6,dungeon_get_thing_data,void *dungeon_get_thing_data(uint16_t thing),dungeon
 0x10c6d6,get_square_first_thing_data,"void *get_square_first_thing_data(int16_t map_x, int16_t map_y)",dungeon
 0x10c6f4,get_weapon_info,const WeaponInfo *get_weapon_info(uint16_t weapon_thing),dungeon
 0x10c720,get_next_thing,uint16_t get_next_thing(uint16_t thing),dungeon
@@ -256,7 +256,7 @@ address,name,signature,subsystem
 0x10c9ba,unlink_thing_from_list,"void unlink_thing_from_list(uint16_t thing, uint16_t list_thing, int16_t map_x, int16_t map_y)",dungeon
 0x10cb16,get_discarded_thing,uint16_t get_discarded_thing(uint16_t thing_type),dungeon
 0x10cdd2,get_unused_thing,uint16_t get_unused_thing(uint16_t thing_type),dungeon
-0x10ce92,get_object_for_launcher_or_generator,uint16_t get_object_for_launcher_or_generator(uint16_t object_info_index),dungeon
+0x10ce92,projectile_get_object_for_launcher_or_generator,uint16_t projectile_get_object_for_launcher_or_generator(uint16_t object_info_index),dungeon
 0x10cf4e,decode_text,"void decode_text(char *dst, uint16_t text_thing, int16_t mode)",dungeon
 0x10d0ea,get_random_ornament_index,"uint16_t get_random_ornament_index(uint16_t seed1, uint16_t seed2, uint16_t modulo)",dungeon
 0x10d11a,get_random_ornament_ordinal,"int16_t get_random_ornament_ordinal(int16_t allowed, int16_t ornament_count, int16_t map_x, int16_t map_y, int16_t modulo)",dungeon
@@ -523,7 +523,7 @@ address,name,signature,subsystem
 0x11fc40,projectile_get_impact_count,"int16_t projectile_get_impact_count(int16_t impact_type, int16_t map_x, int16_t map_y, int16_t cell)",projectile
 0x11fcd2,projectile_process_events_48_to_49,void projectile_process_events_48_to_49(TimelineEvent *event),projectile
 0x11ffe2,explosion_process_event_25,void explosion_process_event_25(TimelineEvent *event),projectile
-0x12030a,get_square_distance,"int16_t get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2)",group
+0x12030a,group_get_square_distance,"int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2)",group
 0x12035a,group_is_destination_visible_from_source,"int16_t group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
 0x1203da,group_get_directions_to_destination,"int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
 0x1204d4,group_set_ordered_cells_to_attack,"void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x, int16_t group_y, int16_t group_cell)",group

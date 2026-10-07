@@ -240,7 +240,7 @@ These rules need later steps. The port has no code for them yet:
 - Groups: `move_get_move_result` returns 0 for a group and does not move it. The party that arrives on a group square does not delete the group. A blocked move into a group does not send event −1 to the group. The closing door does not damage a group. The group generator does not create a group.
 - Projectiles: wall launchers (sensor types 7–10, 14, 15) do not launch. `move_is_killed_by_projectile_impact` does not run.
 - Champions: a blocked move does not damage the two front champions and plays no sound. This needs `group_get_target_champion_index` and `group_set_ordered_cells_to_attack`.
-- Objects: wall sensor type 12 does not create an object (`get_object_for_launcher_or_generator`).
+- Objects: wall sensor type 12 does not create an object (`projectile_get_object_for_launcher_or_generator`).
 - Endgame: wall sensor type 18 does nothing.
 - Drawing: the pit fall animation and the redraw calls are not part of the rules.
 

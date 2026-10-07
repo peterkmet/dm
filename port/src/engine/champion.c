@@ -154,14 +154,14 @@ void champion_set_leader(int16_t champion_index)
     if (g_leader_index != -1) {
         Champion *old = &g_champions[g_leader_index];
         old->attributes |= CHAMPION_ATTR_LOAD | CHAMPION_ATTR_NAME_TITLE;
-        old->load -= get_object_weight(g_leader_hand_object);
+        old->load -= inventory_get_object_weight(g_leader_hand_object);
         g_leader_index = -1;
     }
     if (champion_index != -1) {
         Champion *c = &g_champions[champion_index];
         g_leader_index = champion_index;
         c->direction = g_party_direction;
-        c->load += get_object_weight(g_leader_hand_object);
+        c->load += inventory_get_object_weight(g_leader_hand_object);
         if (champion_index + 1 != g_candidate_champion_ordinal)
             c->attributes |= CHAMPION_ATTR_LOAD | CHAMPION_ATTR_NAME_TITLE | CHAMPION_ATTR_ICON;
     }
@@ -176,7 +176,7 @@ void champion_wake_up(void)
 /* The slot that a candidate possession goes to: hands, body, pouches, neck, then the backpack. */
 static uint16_t candidate_slot(const Champion *c, uint16_t thing, uint16_t *next_backpack_slot)
 {
-    uint16_t allowed = tables_object_info(get_object_info_index(thing))->allowed_slots;
+    uint16_t allowed = tables_object_info(inventory_get_object_info_index(thing))->allowed_slots;
     int neck_free = allowed & *tables_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
     uint16_t slot = THING_NONE;
     switch (THING_TYPE(thing)) {
@@ -533,7 +533,7 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
 {
     const Champion *c = &g_champions[champion_index];
     int16_t strength = c->statistics[STAT_STRENGTH][STAT_CURRENT] + (random16() & 15);
-    uint16_t thing = c->slots[slot], weight = get_object_weight(thing);
+    uint16_t thing = c->slots[slot], weight = inventory_get_object_weight(thing);
     uint16_t light = champion_get_maximum_load(c) >> 4;
     if (light >= weight) {
         strength += weight - 12;
@@ -577,7 +577,7 @@ int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_fla
         uint16_t thing = c->slots[hand];
         if (THING_TYPE(thing) != THING_ARMOUR || !(armour_info(thing)->attributes & ARMOUR_SHIELD))
             continue;
-        uint16_t sum = champion_get_strength(champion_index, hand) + get_armour_defense(armour_info(thing), sharp);
+        uint16_t sum = champion_get_strength(champion_index, hand) + inventory_get_armour_defense(armour_info(thing), sharp);
         shields += (uint16_t)(sum * *tables_wound_defense_factor(slot)) >> (hand == slot ? 4 : 5);
     }
     uint16_t luck = random16() % ((c->statistics[STAT_VITALITY][STAT_CURRENT] >> 3) + 1);
@@ -585,7 +585,7 @@ int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_fla
         luck >>= 1;
     int16_t defense = luck + c->action_defense + c->shield_defense + g_party.shield_defense + shields;
     if (slot > SLOT_HAND_ACTION && THING_TYPE(c->slots[slot]) == THING_ARMOUR)
-        defense += get_armour_defense(armour_info(c->slots[slot]), sharp);
+        defense += inventory_get_armour_defense(armour_info(c->slots[slot]), sharp);
     if (c->wounds & 1 << slot)
         defense -= random_2bits() + 8;
     if (g_party_is_sleeping)

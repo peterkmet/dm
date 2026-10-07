@@ -174,7 +174,7 @@ def test_strides_and_bases_match_decompiled_code():
     assert re.search(r"rt_lmul\(\*\(byte \*\)\(iVar1 \+ 3\) & 0x7f,6\);\s+return g_weapon_info \+ iVar1;", c)
     assert "g_armour_info + (uint)(*(byte *)(iVar1 + 3) & 0x7f) * 4" in c
     assert "g_junk_weights[*(byte *)(iVar1 + 3) & 0x7f]" in c
-    # get_object_info_index: weapon base 0x17, armour base 0x45, junk base 0x7f
+    # inventory_get_object_info_index: weapon base 0x17, armour base 0x45, junk base 0x7f
     for base in ("0x17", "0x45", "0x7f"):
         assert f"((*(byte *)(iVar1 + 3) & 0x7f) + {base})" in c
     assert "g_food_values + (uint)(ushort)(uVar6 - 0xa8) * 2" in c

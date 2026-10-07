@@ -117,7 +117,7 @@ int16_t get_stairs_exit_direction(int16_t x, int16_t y)
 
 uint16_t get_next_thing(uint16_t thing)
 {
-    return BE16(get_thing_data(thing));
+    return BE16(dungeon_get_thing_data(thing));
 }
 
 /* Index of the first thing of the square in the square first thing table, or -1. */
@@ -280,85 +280,85 @@ uint16_t get_unused_thing(uint16_t thing_type)
     return THING_NONE;
 }
 
-void thing_set_free(uint16_t thing) { WR16(get_thing_data(thing), THING_NONE); }
-uint16_t weapon_type(uint16_t thing) { return get_thing_data(thing)[3] & TYPE_MASK; }
-uint16_t armour_type(uint16_t thing) { return get_thing_data(thing)[3] & TYPE_MASK; }
-uint16_t junk_type(uint16_t thing) { return get_thing_data(thing)[3] & TYPE_MASK; }
-uint16_t potion_type(uint16_t thing) { return get_thing_data(thing)[2] & TYPE_MASK; }
-uint16_t potion_power(uint16_t thing) { return get_thing_data(thing)[3]; }
-uint16_t container_type(uint16_t thing) { return (get_thing_data(thing)[5] & 6) >> 1; }
-uint16_t container_first_thing(uint16_t thing) { return BE16(get_thing_data(thing) + 2); }
-int16_t object_is_cursed(uint16_t thing) { return get_thing_data(thing)[2] & 1; }
-void object_set_important(uint16_t thing) { get_thing_data(thing)[3] |= IMPORTANT; }
-void object_clear_important(uint16_t thing) { get_thing_data(thing)[3] &= (uint8_t)~IMPORTANT; }
-int16_t weapon_is_lit(uint16_t thing) { return get_thing_data(thing)[2] >> 7; }
-uint16_t weapon_charges(uint16_t thing) { return (get_thing_data(thing)[2] & 0x3c) >> 2; }
-uint16_t junk_charges(uint16_t thing) { return get_thing_data(thing)[2] >> 6; }
-uint16_t armour_charges(uint16_t thing) { return (get_thing_data(thing)[2] & 0x1e) >> 1; }
-int16_t scroll_is_closed(uint16_t thing) { return (get_thing_data(thing)[2] & 0xfc) != 0; }
-int16_t weapon_is_poisoned(uint16_t thing) { return (get_thing_data(thing)[2] & 0x02) != 0; }
-int16_t weapon_is_broken(uint16_t thing) { return (get_thing_data(thing)[2] & 0x40) != 0; }
-int16_t armour_is_broken(uint16_t thing) { return (get_thing_data(thing)[2] & 0x20) != 0; }
-uint16_t scroll_text_index(uint16_t thing) { return BE16(get_thing_data(thing) + 2) & 0x3ff; }
-void container_set_first_thing(uint16_t thing, uint16_t first) { WR16(get_thing_data(thing) + 2, first); }
+void thing_set_free(uint16_t thing) { WR16(dungeon_get_thing_data(thing), THING_NONE); }
+uint16_t weapon_type(uint16_t thing) { return dungeon_get_thing_data(thing)[3] & TYPE_MASK; }
+uint16_t armour_type(uint16_t thing) { return dungeon_get_thing_data(thing)[3] & TYPE_MASK; }
+uint16_t junk_type(uint16_t thing) { return dungeon_get_thing_data(thing)[3] & TYPE_MASK; }
+uint16_t potion_type(uint16_t thing) { return dungeon_get_thing_data(thing)[2] & TYPE_MASK; }
+uint16_t potion_power(uint16_t thing) { return dungeon_get_thing_data(thing)[3]; }
+uint16_t container_type(uint16_t thing) { return (dungeon_get_thing_data(thing)[5] & 6) >> 1; }
+uint16_t container_first_thing(uint16_t thing) { return BE16(dungeon_get_thing_data(thing) + 2); }
+int16_t object_is_cursed(uint16_t thing) { return dungeon_get_thing_data(thing)[2] & 1; }
+void object_set_important(uint16_t thing) { dungeon_get_thing_data(thing)[3] |= IMPORTANT; }
+void object_clear_important(uint16_t thing) { dungeon_get_thing_data(thing)[3] &= (uint8_t)~IMPORTANT; }
+int16_t weapon_is_lit(uint16_t thing) { return dungeon_get_thing_data(thing)[2] >> 7; }
+uint16_t weapon_charges(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x3c) >> 2; }
+uint16_t junk_charges(uint16_t thing) { return dungeon_get_thing_data(thing)[2] >> 6; }
+uint16_t armour_charges(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x1e) >> 1; }
+int16_t scroll_is_closed(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0xfc) != 0; }
+int16_t weapon_is_poisoned(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x02) != 0; }
+int16_t weapon_is_broken(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x40) != 0; }
+int16_t armour_is_broken(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x20) != 0; }
+uint16_t scroll_text_index(uint16_t thing) { return BE16(dungeon_get_thing_data(thing) + 2) & 0x3ff; }
+void container_set_first_thing(uint16_t thing, uint16_t first) { WR16(dungeon_get_thing_data(thing) + 2, first); }
 
 void weapon_set_lit(uint16_t thing, int16_t lit)
 {
-    uint8_t *d = get_thing_data(thing);
+    uint8_t *d = dungeon_get_thing_data(thing);
     d[2] = lit ? d[2] | 0x80 : d[2] & 0x7f;
 }
 
 void weapon_set_charges(uint16_t thing, uint16_t charges)
 {
-    uint8_t *d = get_thing_data(thing);
+    uint8_t *d = dungeon_get_thing_data(thing);
     d[2] = (uint8_t)((d[2] & ~0x3c) | (charges & 15) << 2);
 }
 
 void armour_set_charges(uint16_t thing, uint16_t charges)
 {
-    uint8_t *d = get_thing_data(thing);
+    uint8_t *d = dungeon_get_thing_data(thing);
     d[2] = (uint8_t)((d[2] & ~0x1e) | (charges & 15) << 1);
 }
 
 void junk_set_charges(uint16_t thing, uint16_t charges)
 {
-    uint8_t *d = get_thing_data(thing);
+    uint8_t *d = dungeon_get_thing_data(thing);
     d[2] = (uint8_t)((d[2] & 0x3f) | charges << 6);
 }
 
 void junk_set_type(uint16_t thing, uint16_t type)
 {
-    uint8_t *d = get_thing_data(thing);
+    uint8_t *d = dungeon_get_thing_data(thing);
     d[3] = (uint8_t)((d[3] & IMPORTANT) | type);
 }
 
 void potion_set_type(uint16_t thing, uint16_t type)
 {
-    uint8_t *d = get_thing_data(thing);
+    uint8_t *d = dungeon_get_thing_data(thing);
     d[2] = (uint8_t)((d[2] & IMPORTANT) | type);
 }
 
-void potion_set_power(uint16_t thing, uint16_t power) { get_thing_data(thing)[3] = (uint8_t)power; }
+void potion_set_power(uint16_t thing, uint16_t power) { dungeon_get_thing_data(thing)[3] = (uint8_t)power; }
 
 /* Weapon, armour, and junk: the type in word 2 bits 0-6; the important bit stays. */
 void object_set_type(uint16_t thing, uint16_t type)
 {
-    uint8_t *d = get_thing_data(thing);
+    uint8_t *d = dungeon_get_thing_data(thing);
     d[3] = (uint8_t)((d[3] & IMPORTANT) | (type & TYPE_MASK));
 }
 
 void object_set_cursed(uint16_t thing, int16_t cursed)
 {
-    uint8_t *d = get_thing_data(thing);
+    uint8_t *d = dungeon_get_thing_data(thing);
     d[2] = (uint8_t)((d[2] & ~1) | (cursed != 0));
 }
 
 /* The closed bits are 10-15; bits 8-9 stay. */
 void scroll_set_closed(uint16_t thing, int16_t closed)
 {
-    uint8_t *d = get_thing_data(thing);
+    uint8_t *d = dungeon_get_thing_data(thing);
     d[2] = (uint8_t)((d[2] & 3) | (closed ? 4 : 0));
 }
 
 /* Sensor type 0 does nothing. The sensor data stays. */
-void sensor_disable(uint16_t thing) { get_thing_data(thing)[3] &= 0x80; }
+void sensor_disable(uint16_t thing) { dungeon_get_thing_data(thing)[3] &= 0x80; }

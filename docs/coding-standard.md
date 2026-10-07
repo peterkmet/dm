@@ -39,7 +39,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
 - hex literals outside constant definitions,
 - decimal literals of 10 or more outside constant definitions,
 - decompiler names,
-- raw record access (`g_current_map[`, `get_thing_data(...)[`) outside `map.c` and `map.h`,
+- raw record access (`g_current_map[`, `dungeon_get_thing_data(...)[`) outside `map.c` and `map.h`,
 - constant names defined in more than one header.
 
 `tests/standard_allowlist.txt` lists the accepted exceptions, one per line with a reason.

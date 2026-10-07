@@ -48,7 +48,7 @@ def lib(tmp_path_factory):
     lib = ctypes.CDLL(str(out))
     for name, res, args in [
         ("anim_open", ctypes.c_int, [ctypes.c_char_p]), ("anim_next_frame", c16, []), ("anim_close", None, []),
-        ("get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
+        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
         ("get_next_thing", u16, [u16]), ("set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]), ("savegame_save", c16, [ctypes.c_char_p]),
         ("timeline_process_event6_wall", None, [ctypes.POINTER(TimelineEvent)]), ("kaos_s16", c16, [u32]),
@@ -384,7 +384,7 @@ def endgame_sensor_square(lib):
             for y in range(value(lib, "g_current_map_height").value):
                 t = lib.get_square_first_thing(x, y)
                 while t != THING_ENDOFLIST:
-                    rec = lib.get_thing_data(t)
+                    rec = lib.dungeon_get_thing_data(t)
                     if t >> 10 & 15 == THING_SENSOR and (rec[2] << 8 | rec[3]) & 0x7F == SENSOR_WALL_ENDGAME:
                         return m, x, y, t
                     t = lib.get_next_thing(t)
