@@ -17,8 +17,8 @@ $(B)/libdm.dylib: $(SRC)
 	@mkdir -p $(B)
 	$(CC) $(CFLAGS) $(INCLUDES) -dynamiclib -o $@ $(GAME)
 
-# The personal play folder: the latest game; the saves there stay. Run: .playthroughs/lego/dm --data game --saves .playthroughs/lego
-LEGO = ../.playthroughs/lego
+# The personal play folder: the latest game; the saves there stay. Run: playthroughs/lego/dm --data game --saves playthroughs/lego
+LEGO = ../playthroughs/lego
 lego: $(B)/dm
 	@mkdir -p $(LEGO)
 	cp $(B)/dm $(LEGO)/dm.new && mv $(LEGO)/dm.new $(LEGO)/dm # a new file: a running game keeps the old one

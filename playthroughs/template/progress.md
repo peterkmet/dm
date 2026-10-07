@@ -4,7 +4,9 @@
 Format:
 ## Now
 - Level, square (x,y), facing, game time of the last save.
-- Current goal.
+- Current goal. Before the party goes down to a new level, it must beat the creatures of the current level:
+  the party wins each fight without a retreat and without a long rest after it. Else the goal is training
+  on the current level: fight the creatures that the party can beat, and cast spells, until the skill levels rise.
 - Next 3 steps.
 - Open problems.
 ## Not tried yet
