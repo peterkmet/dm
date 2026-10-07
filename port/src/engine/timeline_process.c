@@ -22,7 +22,6 @@
 #define GENERATOR_DELAY_LONG 127       /* a delay above this value counts in units of 64 ticks above 126 */
 #define GENERATOR_DELAY_UNIT 64
 #define LIGHT_STEP_TICKS 4
-#define PROJECTILE_EVENT_STEP_ENERGY 0x000f
 #define REBIRTH_EXPLOSION_TICKS 5
 
 int16_t g_game_won;
@@ -32,17 +31,17 @@ void (*g_endgame_sensor_hook)(uint16_t delay);
 #define GATE_INPUTS(data) ((data) & 15)
 #define GATE_EXPECTED(data) ((data) >> 4 & 15)
 
-static int16_t is_party_on(int16_t x, int16_t y)
+static bool is_party_on(int16_t x, int16_t y)
 {
     return g_current_map_index == g_party_map_index && x == g_party_map_x && y == g_party_map_y;
 }
 
 /* A group that a door or a fake wall can hit: it is not non-material. */
-static int16_t is_material_group_on(int16_t x, int16_t y, uint16_t *attributes)
+static bool is_material_group_on(int16_t x, int16_t y, uint16_t *attributes)
 {
     uint16_t group = get_square_group(x, y);
     if (group == THING_ENDOFLIST)
-        return 0;
+        return false;
     *attributes = get_creature_attributes(group);
     return !(*attributes & CREATURE_NON_MATERIAL);
 }
@@ -258,13 +257,13 @@ void event_wall(TimelineEvent *event)
 {
     int16_t x = EVENT_X(event), y = EVENT_Y(event), cell = EVENT_CELL(event), effect = EVENT_EFFECT(event);
     for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
-        if (THING_TYPE(t) == THING_TEXT && THING_CELL(t) == (uint16_t)cell)
+        if (THING_TYPE(t) == THING_TEXT && THING_CELL(t) == cell)
             change_text_visibility(t, effect);
         else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_COUNTER)
             count(t, effect, x, y, cell);
         else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_AND_OR_GATE)
             gate(t, effect, x, y, cell);
-        else if (THING_TYPE(t) == THING_SENSOR && projectile_is_launcher_sensor(t) && THING_CELL(t) == (uint16_t)cell) {
+        else if (THING_TYPE(t) == THING_SENSOR && projectile_is_launcher_sensor(t) && THING_CELL(t) == cell) {
             projectile_trigger_launcher(t, event);
             if (rec_sensor_is_once_only(t))
                 rec_sensor_set_type(t, SENSOR_DISABLED);
@@ -279,8 +278,7 @@ void event_wall(TimelineEvent *event)
 static void update_projectile_event(uint16_t projectile)
 {
     TimelineEvent *e = &g_timeline_events[rec_projectile_event_index(projectile)];
-    e->c = (uint16_t)((e->c & PROJECTILE_EVENT_STEP_ENERGY) | g_move_result_map_x << 11 | (g_move_result_map_y & 31) << 6 |
-                      (g_move_result_direction & 3) << 4);
+    e->c = projectile_event_c(g_move_result_map_x, g_move_result_map_y, g_move_result_direction, projectile_event_step_energy(e));
     e->b = THING_WITH_CELL(projectile, g_move_result_cell);
     e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
 }
@@ -326,7 +324,7 @@ void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
 /* The event holds the signed light power. Each step applies one step of the light table and adds the rest later. */
 void event_light(TimelineEvent *event)
 {
-    int16_t power = (int16_t)event->b;
+    int16_t power = event->b;
     if (!power)
         return;
     int16_t negative = power < 0;
@@ -340,28 +338,28 @@ void event_light(TimelineEvent *event)
     }
     g_party.magical_light_amount += delta;
     if (rest) {
-        TimelineEvent next = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + LIGHT_STEP_TICKS), .type = EVENT_LIGHT, .b = (uint16_t)rest};
+        TimelineEvent next = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + LIGHT_STEP_TICKS), .type = EVENT_LIGHT, .b = rest};
         timeline_add_event(&next);
     }
 }
 
 /* A closed door breaks when the attack reaches its defense and the door accepts the attack kind (force or magic).
-   ticks 0 breaks it at once, else a door destruction event breaks it later. Returns 1 when the door breaks. */
-int16_t event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, int16_t ticks)
+   ticks 0 breaks it at once, else a door destruction event breaks it later. Returns true when the door breaks. */
+bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, uint16_t ticks)
 {
     uint16_t door = get_square_first_thing(x, y);
     if (magic_attack ? !door_breaks_by_magic(door) : !door_breaks_by_force(door))
-        return 0;
+        return false;
     uint8_t *square = &g_current_map_data[x][y];
     if (attack < door_info_defense(g_current_map_door_info[door_type(door)]) || door_state(*square) != DOOR_CLOSED)
-        return 0;
+        return false;
     if (!ticks) {
         *square = square_with_door_state(*square, DOOR_DESTROYED);
     } else {
-        TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + (uint16_t)ticks), .type = EVENT_DOOR_DESTRUCTION, .b = EVENT_SQUARE(x, y)};
+        TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + ticks), .type = EVENT_DOOR_DESTRUCTION, .b = EVENT_SQUARE(x, y)};
         timeline_add_event(&event);
     }
-    return 1;
+    return true;
 }
 
 /* The action hand works again: the action defense ends. After a shot the next ammunition of the quiver goes to the
@@ -412,7 +410,7 @@ void event_vi_altar_rebirth(TimelineEvent *event)
         return;
     }
     if (step == 2) {
-        explosion_create(EXPLOSION_THING(EXPLOSION_REBIRTH_STEP_1), 0, (uint16_t)x, (uint16_t)y, cell);
+        explosion_create(EXPLOSION_THING(EXPLOSION_REBIRTH_STEP_1), 0, x, y, cell);
         event->map_time += REBIRTH_EXPLOSION_TICKS;
     } else {
         uint16_t thing = get_square_first_thing(x, y);
@@ -427,6 +425,28 @@ void event_vi_altar_rebirth(TimelineEvent *event)
     }
     EVENT_SET_EFFECT(event, step - 1);
     timeline_add_event(event);
+}
+
+/* A poison step, or the end of a spell effect on the party or a champion. */
+static void process_effect_event(const TimelineEvent *event)
+{
+    switch (event->type) {
+    case EVENT_INVISIBILITY_END: g_party.event71_count_invisibility--; break;
+    case EVENT_CHAMPION_SHIELD_END: g_champions[event->priority].shield_defense -= event->b; break;
+    case EVENT_THIEVES_EYE_END: g_party.event73_count_thieves_eye--; break;
+    case EVENT_PARTY_SHIELD_END: g_party.shield_defense -= event->b; break;
+    case EVENT_POISON:
+        g_champions[event->priority].poison_event_count--;
+        champion_poison(event->priority, event->b);
+        break;
+    case EVENT_SPELL_SHIELD_END: g_party.spell_shield_defense -= event->b; break;
+    case EVENT_FIRE_SHIELD_END: g_party.fire_shield_defense -= event->b; break;
+    case EVENT_FOOTPRINTS_END: g_party.event79_count_footprints--; break;
+    case EVENT_MAGIC_MAP_DAIN_END:
+    case EVENT_MAGIC_MAP_ROS_END:
+    case EVENT_MAGIC_MAP_KU_END: g_champions[event->priority].magic_map[event->type - EVENT_MAGIC_MAP_DAIN_END]--; break;
+    case EVENT_MAGIC_MAP_NETA_END: g_champions[event->priority].magic_map[MAGIC_MAP_NETA] = 0; break;
+    }
 }
 
 /* Runs every expired event on its map. Event types without a handler here belong to later steps. */
@@ -448,11 +468,11 @@ void event_process_expired(void)
         case EVENT_ENABLE_CHAMPION_ACTION:
             event_enable_champion_action(event.priority);
             if (event.b >> 8)   /* after a throw: the slot + 1 that gets the next weapon of the quiver */
-                action_move_weapon_from_quiver_to_slot(event.priority, (uint16_t)((int8_t)(event.b >> 8) - 1));
+                action_move_weapon_from_quiver_to_slot(event.priority, (int8_t)(event.b >> 8) - 1);
             break;
         case EVENT_HIDE_DAMAGE_RECEIVED: event_hide_damage_received(event.priority); break;
         case EVENT_VI_ALTAR_REBIRTH: event_vi_altar_rebirth(&event); break;
-        case EVENT_PLAY_SOUND: sound_request_play((int16_t)event.c, EVENT_X(&event), EVENT_Y(&event), SOUND_MODE_AFTER_TICK); break;
+        case EVENT_PLAY_SOUND: sound_request_play(event.c, EVENT_X(&event), EVENT_Y(&event), SOUND_MODE_AFTER_TICK); break;
         case EVENT_REMOVE_FLUXCAGE:
             if (!g_game_won) {
                 unlink_thing_from_list(event.c, 0, EVENT_X(&event), EVENT_Y(&event));
@@ -470,24 +490,11 @@ void event_process_expired(void)
             set_current_map(g_party_map_index);
             event_light(&event);
             break;
-        case EVENT_INVISIBILITY_END: g_party.event71_count_invisibility--; break;
-        case EVENT_CHAMPION_SHIELD_END: g_champions[event.priority].shield_defense -= (int16_t)event.b; break;
-        case EVENT_THIEVES_EYE_END: g_party.event73_count_thieves_eye--; break;
-        case EVENT_PARTY_SHIELD_END: g_party.shield_defense -= (int16_t)event.b; break;
-        case EVENT_POISON:
-            g_champions[event.priority].poison_event_count--;
-            champion_poison(event.priority, event.b);
-            break;
-        case EVENT_SPELL_SHIELD_END: g_party.spell_shield_defense -= (int16_t)event.b; break;
-        case EVENT_FIRE_SHIELD_END: g_party.fire_shield_defense -= (int16_t)event.b; break;
-        case EVENT_FOOTPRINTS_END: g_party.event79_count_footprints--; break;
-        case EVENT_MAGIC_MAP_DAIN_END:
-        case EVENT_MAGIC_MAP_ROS_END:
-        case EVENT_MAGIC_MAP_KU_END: g_champions[event.priority].magic_map[event.type - EVENT_MAGIC_MAP_DAIN_END]--; break;
-        case EVENT_MAGIC_MAP_NETA_END: g_champions[event.priority].magic_map[MAGIC_MAP_NETA] = 0; break;
         default:
             if (event.type >= EVENT_GROUP_REACTION_DANGER_ON_SQUARE && event.type <= EVENT_UPDATE_BEHAVIOR_CREATURE_3)
-                group_process_reaction_event(EVENT_X(&event), EVENT_Y(&event), event.type, (uint16_t)EVENT_CELL(&event));
+                group_process_reaction_event(EVENT_X(&event), EVENT_Y(&event), event.type, EVENT_CELL(&event));
+            else
+                process_effect_event(&event);
             break;
         }
         set_current_map(g_party_map_index);

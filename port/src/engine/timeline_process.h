@@ -1,6 +1,7 @@
 #ifndef TIMELINE_PROCESS_H
 #define TIMELINE_PROCESS_H
 /* Prefixes: event_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "game.h"
 
@@ -63,6 +64,6 @@ void event_vi_altar_rebirth(TimelineEvent *event);
 void event_enable_group_generator(TimelineEvent *event);
 void event_light(TimelineEvent *event);
 void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y);
-int16_t event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, int16_t ticks);
+bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, uint16_t ticks);
 
 #endif
