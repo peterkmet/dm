@@ -2,7 +2,6 @@
 # Targets are paths relative to port/src/, constant names, or function names.
 bool ui/automap.h open: Task 11
 bool platform/control.h open: Task 11
-bool engine/game.h open: Task 9
 bool engine/group.h open: Task 10
 bool engine/map.h open: Task 8
 bool engine/projectile.h open: Task 10
@@ -13,8 +12,6 @@ decimal data/csbtext.c open: Task 8
 decimal ui/draw.c open: Task 11
 decimal engine/dungeon.c open: Task 8
 decimal data/ftl.c open: Task 8
-decimal engine/game.c open: Task 9
-decimal engine/game.h open: Task 9
 decimal data/graphics.c open: Task 8
 decimal engine/group.c open: Task 10
 decimal engine/group.h open: Task 10

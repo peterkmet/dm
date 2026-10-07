@@ -22,6 +22,10 @@
 #define ATTACK_FACTOR_MIN 16           /* below this, the statistic factor divides the attack by 8 */
 #define ATTACK_FACTOR_SHIFT 7
 #define LUCK_STEP 2                    /* luck change after each luck test */
+#define PERCENT_RANGE 100              /* a luck test draws random16() % 100 */
+#define ATTACK_LOW_FACTOR_SHIFT 3      /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
+#define SHIFT_COUNT_MASK 63            /* the 68000 takes a shift count modulo 64 */
+#define LONG_SHIFT_MAXIMUM 31          /* a larger shift of a 32-bit value leaves only the sign */
 
 Party g_party;
 Champion g_champions[CHAMPION_MAX_COUNT];
@@ -89,16 +93,16 @@ int16_t bounded_value(int16_t min, int16_t value, int16_t max)
 int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
 {
     int32_t product = (int32_t)((uint32_t)a * b);
-    shift &= 63;
-    return shift > 31 ? (product < 0 ? -1 : 0) : product >> shift;
+    shift &= SHIFT_COUNT_MASK;
+    return shift > LONG_SHIFT_MAXIMUM ? (product < 0 ? -1 : 0) : product >> shift;
 }
 
 /* Moves map coordinates by steps forward and to the right of a direction. */
 void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t *map_x, int16_t *map_y)
 {
     int16_t right = NORMALIZE(direction + 1);
-    *map_x = (int16_t)(*map_x + steps_forward * kaos_s16(DIRECTION_TO_STEP_EAST + direction * 2) + steps_right * kaos_s16(DIRECTION_TO_STEP_EAST + right * 2));
-    *map_y = (int16_t)(*map_y + steps_forward * kaos_s16(DIRECTION_TO_STEP_NORTH + direction * 2) + steps_right * kaos_s16(DIRECTION_TO_STEP_NORTH + right * 2));
+    *map_x = *map_x + steps_forward * kaos_s16(DIRECTION_TO_STEP_EAST + direction * 2) + steps_right * kaos_s16(DIRECTION_TO_STEP_EAST + right * 2);
+    *map_y = *map_y + steps_forward * kaos_s16(DIRECTION_TO_STEP_NORTH + direction * 2) + steps_right * kaos_s16(DIRECTION_TO_STEP_NORTH + right * 2);
 }
 
 /* New game only. A free slot keeps the next free index in map_time. */
@@ -125,7 +129,7 @@ void timeline_reset(void)
     g_first_unused_event_index = -1;
     for (int16_t i = 0; i < g_event_max_count; i++) {
         if (g_timeline_events[i].type) {
-            g_event_high_water = (uint16_t)(i + 1);
+            g_event_high_water = i + 1;
             continue;
         }
         if (last_free == -1) g_first_unused_event_index = i;
@@ -136,7 +140,7 @@ void timeline_reset(void)
 }
 
 /* Earlier time first, then higher type and priority, then the lower slot. */
-int16_t timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b)
+bool timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b)
 {
     uint32_t time_a = a->map_time & EVENT_TIME_MASK, time_b = b->map_time & EVENT_TIME_MASK;
     uint16_t key_a = a->type << 8 | a->priority, key_b = b->type << 8 | b->priority;
@@ -165,19 +169,19 @@ uint16_t timeline_get_index(uint16_t event_index)
 void timeline_fix_chronology(uint16_t timeline_index)
 {
     uint16_t count = g_timeline_count, i = timeline_index, slot = g_timeline[i];
-    int moved = 0;
+    bool moved = false;
     if (count == 1)
         return;
     while (i) {
-        uint16_t parent = (uint16_t)(i - 1) >> 1;
+        uint16_t parent = (i - 1) >> 1;
         if (!BEFORE(slot, g_timeline[parent]))
             break;
         g_timeline[i] = g_timeline[parent];
         i = parent;
-        moved = 1;
+        moved = true;
     }
     if (!moved)
-        while (i <= (uint16_t)(count - 2) >> 1) {
+        while (i <= (uint16_t)(count - 2) >> 1) {   /* unsigned as in the original: no children below 2 entries */
             uint16_t child = 2 * i + 1;
             if (child + 1 < g_timeline_count && BEFORE(g_timeline[child + 1], g_timeline[child]))
                 child++;
@@ -193,7 +197,7 @@ void timeline_fix_chronology(uint16_t timeline_index)
 void timeline_delete_event(uint16_t event_index)
 {
     g_timeline_events[event_index].type = 0;
-    g_timeline_events[event_index].map_time = (uint16_t)g_first_unused_event_index;
+    g_timeline_events[event_index].map_time = (uint16_t)g_first_unused_event_index;   /* -1 becomes FREE_LIST_END */
     g_first_unused_event_index = event_index;
     if (--g_timeline_count) {
         uint16_t i = timeline_get_index(event_index);
@@ -253,13 +257,13 @@ int16_t timeline_add_event(TimelineEvent *event)
 {
     if (!event->type)
         return -1;
-    if (g_timeline_count == (uint16_t)g_event_max_count)
+    if (g_timeline_count == (uint16_t)g_event_max_count)   /* unsigned compare as in the original */
         fatal_error(SYSTEM_ERROR_TIMELINE_FULL);
     int16_t index = timeline_find_mergeable_event(event);
     if (index >= 0)
         return index;
     index = g_first_unused_event_index;
-    g_first_unused_event_index = (int16_t)g_timeline_events[index].map_time;
+    g_first_unused_event_index = g_timeline_events[index].map_time;
     g_timeline_events[index] = *event;
     if (g_event_high_water <= index)
         g_event_high_water = index + 1;
@@ -276,7 +280,7 @@ void timeline_extract_first_event(TimelineEvent *event)
     timeline_delete_event(index);
 }
 
-int16_t timeline_is_first_event_expired(void)
+bool timeline_is_first_event_expired(void)
 {
     return g_timeline_count && (g_timeline_events[g_timeline[0]].map_time & EVENT_TIME_MASK) <= g_game_time;
 }
@@ -304,7 +308,7 @@ int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)
 {
     int16_t half = champion->maximum_stamina >> 1;
     if (champion->current_stamina < half)
-        value = (int16_t)((value >> 1) + (int16_t)((int32_t)value * champion->current_stamina / half));
+        value = (value >> 1) + (int16_t)((int32_t)value * champion->current_stamina / half);   /* 16-bit quotient */
     return value;
 }
 
@@ -312,7 +316,7 @@ int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)
 uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)
 {
     int16_t factor = STAT_LIMIT - champion->statistics[statistic][STAT_CURRENT];
-    return factor < ATTACK_FACTOR_MIN ? attack >> 3 : (uint16_t)scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
+    return factor < ATTACK_FACTOR_MIN ? attack >> ATTACK_LOW_FACTOR_SHIFT : scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
 }
 
 /* Changes a current statistic within its minimum and the limit; high values grow slower. */
@@ -331,12 +335,13 @@ void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int1
 
 /* Luck test against a percentage. A lucky test lowers luck, a failed one raises it.
    The original reads the luck bytes as signed. A lucky first roll does not change luck. */
-int16_t game_is_lucky(Champion *champion, uint16_t percentage)
+bool game_is_lucky(Champion *champion, uint16_t percentage)
 {
     uint8_t *luck = champion->statistics[STAT_LUCK];
-    if (random_bit() && percentage < random16() % 100)
-        return 1;
-    int16_t lucky = (int8_t)luck[STAT_CURRENT] > 0 && percentage < random16() % (uint16_t)(luck[STAT_CURRENT] * 2);
+    if (random_bit() && percentage < random16() % PERCENT_RANGE)
+        return true;
+    bool lucky = (int8_t)luck[STAT_CURRENT] > 0 && percentage < random16() % (luck[STAT_CURRENT] * 2);
+
     int16_t change = lucky ? -LUCK_STEP : LUCK_STEP;
     luck[STAT_CURRENT] = (uint8_t)bounded_value((int8_t)luck[STAT_MINIMUM], (int8_t)luck[STAT_CURRENT] + change, (int8_t)luck[STAT_MAXIMUM]);
     return lucky;

@@ -56,7 +56,7 @@ def lib():
         ("get_square_first_thing", u16, [c16, c16]), ("get_next_thing", u16, [u16]), ("get_square_group", u16, [c16, c16]),
         ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("dungeon_square", u8, [c16, c16, c16]),
         ("dungeon_square_first_thing", u16, [c16, c16, c16]),
-        ("timeline_is_first_event_expired", c16, []), ("timeline_extract_first_event", None, [event_p]),
+        ("timeline_is_first_event_expired", ctypes.c_bool, []), ("timeline_extract_first_event", None, [event_p]),
         ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
         ("set_current_map", None, [c16]), ("dungeon_get_thing_data", ctypes.POINTER(u8), [u16]),
         ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", c16, [c16, c16, c16, c16]),
