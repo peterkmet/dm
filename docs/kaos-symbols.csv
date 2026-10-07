@@ -743,7 +743,7 @@ address,name,signature,subsystem
 0x104772,jt_ui_draw_status_box_portrait,,jump_table
 0x10477a,jt_process_click_on_eye,,jump_table
 0x104782,jt_draw_stop_pressing_eye,,jump_table
-0x10478a,jt_inventory_toggle,,jump_table
+0x10478a,jt_command_toggle_inventory,,jump_table
 0x104792,jt_champion_get_scent_ordinal,,jump_table
 0x10479a,jt_champion_delete_scent,,jump_table
 0x1047a2,jt_move_add_scent_strength,,jump_table
@@ -1290,7 +1290,7 @@ address,name,signature,subsystem
 0x10ff32,process_click_on_eye,void process_click_on_eye(void),inventory
 0x10ff94,draw_stop_pressing_eye,void draw_stop_pressing_eye(void),inventory
 0x10fff0,ui_draw_status_box_portrait,void ui_draw_status_box_portrait(int16_t champion_index),inventory
-0x11005a,inventory_toggle,void inventory_toggle(int16_t champion_index),inventory
+0x11005a,command_toggle_inventory,void command_toggle_inventory(int16_t champion_index),inventory
 0x110254,move_set_party_direction,void move_set_party_direction(int16_t direction),champion
 0x110296,champion_get_index_in_cell,int16_t champion_get_index_in_cell(int16_t cell),champion
 0x1102d2,group_get_target_champion_index,"int16_t group_get_target_champion_index(int16_t map_x, int16_t map_y, int16_t cell)",champion

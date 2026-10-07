@@ -111,8 +111,8 @@ void ui_draw_champion_damage(int16_t champion_index, int16_t damage);
 void ui_draw_champion_state(uint16_t champion_index);
 void ui_draw_all_champion_states(uint16_t attributes);
 void ui_draw_status_box_portrait(int16_t champion_index);
-void inventory_draw_open(int16_t champion_index);
-void inventory_draw_close(int16_t champion_index);
+void ui_draw_inventory_open(int16_t champion_index);
+void ui_draw_inventory_close(int16_t champion_index);
 void ui_draw_panel(void);
 /* Draws an object icon in an icon zone of the viewport. */
 void ui_draw_icon_to_viewport(int16_t icon, int16_t zone);

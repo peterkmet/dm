@@ -333,7 +333,7 @@ address,name,signature,subsystem
 0x1128b0,process_click_on_eye,void process_click_on_eye(void),inventory
 0x11291a,draw_stop_pressing_eye,void draw_stop_pressing_eye(void),inventory
 0x11297c,ui_draw_status_box_portrait,void ui_draw_status_box_portrait(int16_t champion_index),inventory
-0x1129ec,inventory_toggle,void inventory_toggle(int16_t champion_index),inventory
+0x1129ec,command_toggle_inventory,void command_toggle_inventory(int16_t champion_index),inventory
 0x112c00,move_set_party_direction,void move_set_party_direction(int16_t direction),champion
 0x112c42,champion_get_index_in_cell,int16_t champion_get_index_in_cell(int16_t cell),champion
 0x112c80,group_get_target_champion_index,"int16_t group_get_target_champion_index(int16_t map_x, int16_t map_y, int16_t cell)",champion

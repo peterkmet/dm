@@ -205,7 +205,7 @@ def test_chest_open_swap_close(game, party):
     open_chest = u16.in_dll(game, "g_open_chest")
     slots = (u16 * CHEST_SLOTS).in_dll(game, "g_open_chest_slots")
     render(game, "base")
-    game.inventory_draw_open(0)
+    game.ui_draw_inventory_open(0)
     put_in_action_hand(game, party, chest)
     assert c16.in_dll(game, "g_panel_content").value == 6
     assert open_chest.value == chest
@@ -225,16 +225,16 @@ def test_chest_open_swap_close(game, party):
     assert slots[len(content)] == content[0]
     assert u16.in_dll(game, "g_leader_hand_object").value == NONE
 
-    game.inventory_draw_close(0)
+    game.ui_draw_inventory_close(0)
     assert open_chest.value == NONE and list(slots) == [NONE] * CHEST_SLOTS
     assert chest_content(game, chest) == [hand] + content[1:] + [content[0]]
 
-    game.inventory_draw_open(0)
+    game.ui_draw_inventory_open(0)
     assert open_chest.value == chest
     game.inventory_get_object_removed_from_slot(0, 1)
     assert open_chest.value == NONE
     assert chest_content(game, chest) == [hand] + content[1:] + [content[0]]
-    game.inventory_draw_close(0)
+    game.ui_draw_inventory_close(0)
 
 
 @needs_game
@@ -242,7 +242,7 @@ def test_render_scroll_and_eye(game, party):
     scrolls = things_of(game, SCROLL)[0]
     assert scrolls
     render(game, "base")
-    game.inventory_draw_open(0)
+    game.ui_draw_inventory_open(0)
     put_in_action_hand(game, party, scrolls[0])
     assert c16.in_dll(game, "g_panel_content").value == 5
     save_png(game, "scroll")
@@ -255,7 +255,7 @@ def test_render_scroll_and_eye(game, party):
     assert name == b"SWORD" and lines[-1].startswith(b"WEIGHS ")
     game.inventory_get_object_removed_from_leader_hand()
     party[0].slots[1] = NONE
-    game.inventory_draw_close(0)
+    game.ui_draw_inventory_close(0)
 
 
 @needs_game
@@ -265,7 +265,7 @@ def test_eat_food_redraws_the_food_bar(game, party):
     thing = game.get_unused_thing(10)
     game.get_thing_data(thing)[3] = junk
     party[0].food = 100
-    game.inventory_draw_open(0)
+    game.ui_draw_inventory_open(0)
     c16.in_dll(game, "g_panel_content").value = 1  # food and water
     game.ui_draw_panel()
     game.inventory_put_object_in_leader_hand(thing)
@@ -275,4 +275,4 @@ def test_eat_food_redraws_the_food_bar(game, party):
     game.command_click_on_mouth()
     assert viewport.px[: viewport.w * viewport.h] != before
     assert not party[0].attributes & 0x0900  # statistics and panel drawn
-    game.inventory_draw_close(0)
+    game.ui_draw_inventory_close(0)

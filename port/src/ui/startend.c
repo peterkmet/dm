@@ -481,7 +481,7 @@ void fuse_sequence(void)
 {
     int16_t x = g_party_map_x, y = g_party_map_y;
     g_game_won = 1;
-    if (g_inventory_champion_ordinal) inventory_toggle(CHAMPION_MAX_COUNT);
+    if (g_inventory_champion_ordinal) command_toggle_inventory(CHAMPION_MAX_COUNT);
     command_highlight_disable();
     g_party.magical_light_amount = FUSE_MAGICAL_LIGHT;
     g_party.shield_defense = g_party.spell_shield_defense = g_party.fire_shield_defense = FUSE_SHIELD;

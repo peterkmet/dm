@@ -430,7 +430,7 @@ void ui_draw_champion_skills_and_statistics(void)
 
 /* Opens the inventory of a champion on the screen: dims the movement arrows and draws the
    inventory background, labels, all slots, and the champion state. Sets g_inventory_champion_ordinal. */
-void inventory_draw_open(int16_t champion_index)
+void ui_draw_inventory_open(int16_t champion_index)
 {
     Bitmap screen = ui_screen(), *vp = ui_viewport();
     const Bitmap *bg = gfx_bitmap(GFX_INVENTORY);
@@ -452,7 +452,7 @@ void inventory_draw_open(int16_t champion_index)
 
 /* Closes the inventory on the screen: the status box returns and the movement arrows come back.
    The caller redraws the dungeon view. */
-void inventory_draw_close(int16_t champion_index)
+void ui_draw_inventory_close(int16_t champion_index)
 {
     g_inventory_champion_ordinal = 0;
     close_chest();

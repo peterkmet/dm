@@ -188,7 +188,7 @@ void ui_draw_interface(void)
     if (g_inventory_champion_ordinal) {
         int16_t i = g_inventory_champion_ordinal - 1;
         g_inventory_champion_ordinal = 0;
-        inventory_draw_open(i);
+        ui_draw_inventory_open(i);
     } else {
         menus_draw_movement_arrows();
     }

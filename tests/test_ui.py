@@ -274,7 +274,7 @@ def test_render_inventory(game):
     reset(game)
     recruit(game, 2)
     render(game, "base")
-    game.inventory_draw_open(0)
+    game.ui_draw_inventory_open(0)
     fb, rows = rgb_rows(game)
     if SCRATCH.exists():
         png(SCRATCH / "ui_inventory.png", rows)
@@ -285,5 +285,5 @@ def test_render_inventory(game):
     _, rows = rgb_rows(game)
     if SCRATCH.exists():
         png(SCRATCH / "ui_inventory_eye.png", rows)
-    game.inventory_draw_close(0)
+    game.ui_draw_inventory_close(0)
     assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 0

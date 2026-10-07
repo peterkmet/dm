@@ -35,8 +35,8 @@
 #define QUEUE_CLICK_LIMIT 5           /* a click or a key waits only when fewer commands wait */
 #define QUEUE_RELEASE_LIMIT 7
 #define NO_TABLE (-1)
-#define INVENTORY_CLOSE 4             /* inventory_toggle argument: close the open inventory */
-#define INVENTORY_REDRAW 5            /* inventory_toggle argument: draw the open inventory again */
+#define INVENTORY_CLOSE 4             /* command_toggle_inventory argument: close the open inventory */
+#define INVENTORY_REDRAW 5            /* command_toggle_inventory argument: draw the open inventory again */
 #define WAIT_FOR_INPUT_FRAMES 12
 #define FOUNTAIN_WATER 2048
 #define FILLED_WATERSKIN_CHARGES 3
@@ -247,13 +247,13 @@ void game_unfreeze(void)
     } else {
         int16_t open = g_inventory_champion_ordinal;
         g_inventory_champion_ordinal = 0;
-        inventory_toggle(open - 1);
+        command_toggle_inventory(open - 1);
     }
 }
 
 /* Opens the inventory of a champion, closes it (INVENTORY_CLOSE or the open champion again), or
    draws it again (INVENTORY_REDRAW). The inventory has its own mouse table. */
-void inventory_toggle(int16_t champion_index)
+void command_toggle_inventory(int16_t champion_index)
 {
     int16_t open = g_inventory_champion_ordinal;
     if (pressing_fake_wall) return;
@@ -262,7 +262,7 @@ void inventory_toggle(int16_t champion_index)
     g_stop_waiting_for_input = 1;
     if (open == champion_index + 1) champion_index = INVENTORY_CLOSE;
     if (open && champion_index != INVENTORY_REDRAW) {
-        inventory_draw_close(open - 1);
+        ui_draw_inventory_close(open - 1);
         if (g_party_is_sleeping) return;
         if (champion_index == INVENTORY_CLOSE) {
             secondary_mouse = UI_INPUT_MOVEMENT;
@@ -273,7 +273,7 @@ void inventory_toggle(int16_t champion_index)
     }
     if (champion_index == INVENTORY_CLOSE) return;
     if (champion_index == INVENTORY_REDRAW) champion_index = g_inventory_champion_ordinal - 1;
-    inventory_draw_open(champion_index);
+    ui_draw_inventory_open(champion_index);
     secondary_mouse = UI_INPUT_INVENTORY;
     secondary_keys = 0;
     command_discard_all_input();
@@ -305,7 +305,7 @@ void command_release_dead_champion(uint16_t champion_index, int16_t leader_index
     int16_t icon_cell = NORMALIZE(g_champions[champion_index].cell - g_party_direction);
     if (champion_index + 1 == g_inventory_champion_ordinal) {
         pressing_eye = pressing_mouth = g_mouse_pointer_hidden = 0;
-        inventory_toggle(INVENTORY_CLOSE);
+        command_toggle_inventory(INVENTORY_CLOSE);
     }
     if (champion_index == leader_index && pressing_fake_wall) pressing_fake_wall = g_mouse_pointer_hidden = 0;
     if (icon_cell + 1 == dragged_icon_cell_plus_1) dragged_icon_cell_plus_1 = 0;
@@ -317,7 +317,7 @@ static void show_candidate(void)
 {
     int16_t index = g_candidate_champion_ordinal - 1;
     g_inventory_champion_ordinal = 0;
-    inventory_toggle(index);
+    command_toggle_inventory(index);
     game_freeze();
 }
 
@@ -331,7 +331,7 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
     uint8_t cell = g_champions[index].cell;
     champion_click_in_resurrect_reincarnate_panel(command);
     g_inventory_champion_ordinal = index + 1; /* the rule clears it; the panel closes here */
-    inventory_toggle(INVENTORY_CLOSE);
+    command_toggle_inventory(INVENTORY_CLOSE);
     if (command == PANEL_CANCEL) {
         ui_fill_zone(&screen, (int16_t)(ZONE_STATUS_BOX_FIRST + index), COLOR_BLACK);
         ui_fill_zone(&screen, (int16_t)(ZONE_CHAMPION_ICON_FIRST + NORMALIZE(cell - g_party_direction)), COLOR_BLACK);
@@ -659,7 +659,7 @@ static void left_release(void)
 static void go_to_sleep(void)
 {
     if (g_candidate_champion_ordinal) return;
-    if (g_inventory_champion_ordinal) inventory_toggle(INVENTORY_CLOSE);
+    if (g_inventory_champion_ordinal) command_toggle_inventory(INVENTORY_CLOSE);
     game_freeze();
     g_party_is_sleeping = 1;
     draw_viewport_message(TEXT_WAKE_UP);
@@ -769,9 +769,9 @@ int command_process_queue(void)
         if (g_leader_index != -1) inventory_click_on_slot_box((uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST));
     } else if (command >= COMMAND_TOGGLE_INVENTORY_FIRST && command <= COMMAND_CLOSE_INVENTORY) {
         int16_t index = command - COMMAND_TOGGLE_INVENTORY_FIRST;
-        if ((index == INVENTORY_CLOSE || index < (int16_t)g_party_champion_count) && !g_candidate_champion_ordinal) inventory_toggle(index);
+        if ((index == INVENTORY_CLOSE || index < (int16_t)g_party_champion_count) && !g_candidate_champion_ordinal) command_toggle_inventory(index);
     } else if (command == COMMAND_TOGGLE_INVENTORY_LEADER) {
-        if (g_leader_index != -1) inventory_toggle(g_leader_index);
+        if (g_leader_index != -1) command_toggle_inventory(g_leader_index);
     } else if (command == COMMAND_CLICK_SPELL_AREA) {
         if (!g_candidate_champion_ordinal && g_magic_caster_champion_index != -1) click_in_spell_area(x, y);
     } else if (command == COMMAND_CLICK_ACTION_AREA) {
