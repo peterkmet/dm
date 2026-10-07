@@ -1,7 +1,6 @@
 # Open exceptions of tests/test_standard.py. One per line: <check> <target> <reason>.
 # Targets are paths relative to port/src/, constant names, or function names.
 bool engine/action.h open: Task 9
-bool ui/automap.h open: Task 11
 bool platform/control.h open: Task 11
 bool engine/game.h open: Task 9
 bool engine/group.h open: Task 10

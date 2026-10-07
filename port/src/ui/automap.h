@@ -1,6 +1,7 @@
 #ifndef AUTOMAP_H
 #define AUTOMAP_H
 /* Prefixes: automap_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "draw.h"
 
@@ -18,7 +19,7 @@ int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir);
 void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* A side square of the view of a party at (x, y) facing dir is seen when the square ahead at its depth or the side
    square one row nearer is open; squares of the center lane and of the party row are always seen. */
-int automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side);
+bool automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side);
 
 /* Draws the seen squares of map into area of target, centered on the party when it is on map, moved by
    the scroll. The map has a white frame; the top ruler numbers each second column, the left ruler each row. */

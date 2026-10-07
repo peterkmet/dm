@@ -10,27 +10,24 @@
 #include "ui.h"
 #include "view.h"
 
-/* Square flags that map.h does not name yet. */
-enum { DOOR_PASSAGE_NORTH_SOUTH = 8 };
-
 enum { LABEL_WIDTH = 11, LABEL_BASELINE = 4 }; /* two digits; the font cell starts 4 rows above the baseline */
 static int16_t scroll_x, scroll_y; /* squares between the party and the center of the drawn map */
 
-static int is_on_map(int16_t map, int16_t x, int16_t y)
+static bool is_on_map(int16_t map, int16_t x, int16_t y)
 {
     return map >= 0 && map < dungeon_map_count() && x >= 0 && x < dungeon_map_width(map) && y >= 0 && y < dungeon_map_height(map);
 }
 
 /* A square the view cannot look through: a wall, a fake wall that looks like a wall, a closed door. */
-static int blocks_sight(int16_t map, int16_t x, int16_t y)
+static bool blocks_sight(int16_t map, int16_t x, int16_t y)
 {
-    if (!is_on_map(map, x, y)) return 1;
+    if (!is_on_map(map, x, y)) return true;
     uint8_t square = dungeon_square(map, x, y);
     switch (SQUARE_TYPE(square)) {
-    case SQUARE_WALL: return 1;
+    case SQUARE_WALL: return true;
     case SQUARE_FAKE_WALL: return !(square & FAKE_WALL_OPEN);
     case SQUARE_DOOR: return door_state(square) == DOOR_CLOSED;
-    default: return 0;
+    default: return false;
     }
 }
 
@@ -58,9 +55,9 @@ int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir)
 }
 
 /* A side square is seen when the square ahead at its depth or the side square one row nearer is open. */
-int automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side)
+bool automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side)
 {
-    if (depth == 0 || side == 0) return 1;
+    if (depth == 0 || side == 0) return true;
     int16_t ahead_x = x, ahead_y = y, near_x = x, near_y = y;
     update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
     update_map_coordinates_after_relative_movement(dir, depth - 1, side, &near_x, &near_y);
@@ -91,7 +88,7 @@ static void fill_clipped(Bitmap *target, Box area, int16_t x, int16_t y, int16_t
 
 /* One seen square at screen position (left, top): a light floor with a 1 pixel grid gap, or a full dark wall.
    pad: a pressure pad that the view draws, as a gray square in the middle of the floor. */
-static void draw_square(Bitmap *target, Box area, uint8_t square, int pad, int16_t left, int16_t top)
+static void draw_square(Bitmap *target, Box area, uint8_t square, bool pad, int16_t left, int16_t top)
 {
     const int16_t size = AUTOMAP_CELL_SIZE, floor = AUTOMAP_CELL_SIZE - 1;
     const int16_t bar = AUTOMAP_CELL_SIZE / 3, middle = (AUTOMAP_CELL_SIZE - AUTOMAP_CELL_SIZE / 3) / 2;
@@ -109,7 +106,7 @@ static void draw_square(Bitmap *target, Box area, uint8_t square, int pad, int16
     if (type != SQUARE_DOOR) return;
     int state = door_state(square);
     uint8_t door_color = state == DOOR_OPEN || state == DOOR_DESTROYED ? COLOR_BROWN : COLOR_LIGHT_BROWN;
-    if (square & DOOR_PASSAGE_NORTH_SOUTH) fill_clipped(target, area, left, top + middle, floor, bar, door_color);
+    if (square & DOOR_NORTH_SOUTH) fill_clipped(target, area, left, top + middle, floor, bar, door_color);
     else fill_clipped(target, area, left + middle, top, bar, floor, door_color);
 }
 
@@ -131,7 +128,7 @@ static void draw_party_arrow(Bitmap *target, Box area, int16_t left, int16_t top
 /* The square at the center of the drawn map. */
 static void draw_center(int16_t map, int16_t *center_x, int16_t *center_y)
 {
-    int party_here = map == g_party_map_index;
+    bool party_here = map == g_party_map_index;
     *center_x = (party_here ? g_party_map_x : dungeon_map_width(map) / 2) + scroll_x;
     *center_y = (party_here ? g_party_map_y : dungeon_map_height(map) / 2) + scroll_y;
 }
@@ -166,7 +163,7 @@ void automap_draw(Bitmap *target, Box area, int16_t map)
     Box top = { area.x + AUTOMAP_RULER_WIDTH, area.y, area.w - AUTOMAP_RULER_WIDTH, AUTOMAP_RULER_HEIGHT };
     Box left = { area.x, area.y + AUTOMAP_RULER_HEIGHT, AUTOMAP_RULER_WIDTH, area.h - AUTOMAP_RULER_HEIGHT };
     Box maps = { top.x, left.y, top.w, left.h };
-    int party_here = map == g_party_map_index;
+    bool party_here = map == g_party_map_index;
     int16_t center_x, center_y, w = dungeon_map_width(map), h = dungeon_map_height(map);
     draw_center(map, &center_x, &center_y);
     int16_t origin_x = maps.x + (maps.w - AUTOMAP_CELL_SIZE) / 2 - center_x * AUTOMAP_CELL_SIZE;
