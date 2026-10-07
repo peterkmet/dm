@@ -18,7 +18,6 @@ decimal engine/group.h open: Task 10
 decimal platform/main.c open: Task 11
 decimal engine/map.c open: Task 8
 decimal engine/map.h open: Task 8
-decimal engine/message.c open: Task 9
 decimal ui/music.c open: Task 11
 decimal ui/musicmap.c open: Task 11
 decimal platform/platform.c open: Task 11
