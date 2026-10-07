@@ -8,7 +8,6 @@ bool engine/group.h open: Task 10
 bool engine/magic.h open: Task 9
 bool engine/map.h open: Task 8
 bool engine/move.h open: Task 9
-bool engine/projectile.h open: Task 10
 bool engine/sensor.h open: Task 9
 decimal engine/action.c open: Task 9
 decimal engine/champion.c open: Task 9
@@ -33,8 +32,6 @@ decimal engine/move.c open: Task 9
 decimal ui/music.c open: Task 11
 decimal ui/musicmap.c open: Task 11
 decimal platform/platform.c open: Task 11
-decimal engine/projectile.c open: Task 10
-decimal engine/projectile.h open: Task 10
 decimal engine/random.c open: Task 8
 decimal engine/recruit.c open: Task 9
 decimal engine/recruit.h open: Task 9
@@ -54,7 +51,6 @@ hex engine/group.h open: Task 10
 hex platform/main.c open: Task 11
 hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
-hex engine/projectile.h open: Task 10
 hex ui/select.c open: Task 11
 hex ui/ui.c open: Task 11
 long engine/action.c:action_is_action_performed open: Task 9
@@ -68,8 +64,6 @@ long engine/group.c:process_creature_behavior open: Task 10
 long ui/layout.c:layout_get_zone open: Task 11
 long platform/main.c:main open: Task 11
 long engine/move.c:move_get_move_result open: Task 9
-long engine/projectile.c:explosion_process_step_event open: Task 10
-long engine/projectile.c:projectile_has_impact_occurred open: Task 10
 long engine/sensor.c:sensor_is_triggered_by_click_on_wall open: Task 9
 long engine/sensor.c:sensor_process_thing_addition_or_removal open: Task 9
 long platform/state_json.c:champion_json open: Task 11

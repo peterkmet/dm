@@ -19,7 +19,7 @@ enum {
 };
 enum { CREATURE_SIZE_QUARTER, CREATURE_SIZE_HALF, CREATURE_SIZE_FULL };
 enum { CREATURE_IMMOBILE = 255, CREATURE_NO_ATTACK = 255, CREATURE_INVULNERABLE = 255, CREATURE_NEVER_HITS = 255 };
-enum { FEAR_RESISTANCE_NONE_FEARLESS = 15, POISON_IMMUNE = 15 };
+enum { FEAR_RESISTANCE_NONE_FEARLESS = 15, POISON_IMMUNE = 15, FIRE_IMMUNE = 15 };
 
 /* Creature types with special rules. */
 enum {
@@ -75,6 +75,7 @@ static inline uint16_t creature_attack_range(const CreatureInfo *info) { return 
 static inline uint16_t creature_fear_resistance(const CreatureInfo *info) { return info->properties >> 4 & 15; }
 static inline uint16_t creature_experience(const CreatureInfo *info) { return info->properties >> 8 & 15; }
 static inline uint16_t creature_wariness(const CreatureInfo *info) { return info->properties >> 12; }
+static inline uint16_t creature_fire_resistance(const CreatureInfo *info) { return info->resistances >> 4 & 15; }
 static inline uint16_t creature_poison_resistance(const CreatureInfo *info) { return info->resistances >> 8 & 15; }
 static inline uint16_t creature_ticks_after_attack(const CreatureInfo *info) { return info->animation_ticks & 15; }
 static inline uint16_t creature_ticks_non_attack_aspect(const CreatureInfo *info) { return info->animation_ticks >> 4 & 15; }
