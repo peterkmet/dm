@@ -548,7 +548,7 @@ static void add_champion_symbol(int16_t symbol)
     Champion *c = &g_champions[g_magic_caster_champion_index];
     uint16_t step = c->symbol_step, cost = *tables_symbol_base_mana_cost(step, symbol);
     if (step) /* 16-bit product as in the original */
-        cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >> MANA_MULTIPLIER_SHIFT;
+        cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >> SPELL_MANA_MULTIPLIER_SHIFT;
     if (cost > (uint16_t)c->current_mana) return; /* unsigned compare as in the original */
     c->current_mana -= cost;
     c->attributes |= CHAMPION_ATTR_STATISTICS;

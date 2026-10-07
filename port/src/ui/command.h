@@ -47,7 +47,6 @@ enum {
     COMMAND_LEFT_RELEASE = 254,
 };
 
-#define MANA_MULTIPLIER_SHIFT 3 /* the cost multiplier of the first rune is in eighths */
 
 /* Click kinds of the input handler. */
 enum { CLICK_RIGHT_PRESS = 1, CLICK_LEFT_PRESS = 2, CLICK_LEFT_RELEASE = 4, CLICK_RIGHT_RELEASE = 8 };

@@ -767,7 +767,7 @@ static uint16_t group_get_distance_to_visible_party(uint16_t group, int16_t crea
 /* Ordinal of the latest party scent on a square (champion_get_scent_ordinal), or 0. */
 uint16_t party_scent_ordinal(int16_t x, int16_t y)
 {
-    uint16_t scent = x << PARTY_SCENT_X_SHIFT | (y & PARTY_SCENT_XY_MASK) << PARTY_SCENT_Y_SHIFT | (g_current_map_index & PARTY_SCENT_MAP_MASK);
+    uint16_t scent = x << POSITION_X_SHIFT | (y & POSITION_XY_MASK) << POSITION_Y_SHIFT | (g_current_map_index & POSITION_MAP_MASK);
     for (uint16_t ordinal = g_party.scent_count; ordinal; ordinal--)
         if (g_party.scents[ordinal - 1] == scent)
             return ordinal;
@@ -788,7 +788,7 @@ static int16_t group_get_smelled_party_direction_ordinal(const CreatureInfo *inf
     uint16_t ordinal = party_scent_ordinal(x, y);
     if (ordinal && SCENT_TRAIL_THRESHOLD - 2 * smell < random_2bits() + g_party.scent_strengths[ordinal - 1]) {
         uint16_t next = g_party.scents[ordinal];
-        return group_get_directions_to_destination(x, y, next >> PARTY_SCENT_X_SHIFT, next >> PARTY_SCENT_Y_SHIFT & PARTY_SCENT_XY_MASK) + 1;
+        return group_get_directions_to_destination(x, y, next >> POSITION_X_SHIFT, next >> POSITION_Y_SHIFT & POSITION_XY_MASK) + 1;
     }
     return 0;
 }

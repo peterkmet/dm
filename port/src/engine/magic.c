@@ -27,7 +27,6 @@
 #define POTION_POWER_PER_LEVEL 40
 #define LIGHT_POWER_MAXIMUM 15
 #define MAGIC_MAP_TEXT "MAGICMAP"        /* the text of a magic map scroll */
-#define TEXT_THING_TYPE_BITS (THING_TEXT * 0x400)   /* thing word: type in bits 10-13 */
 /* Projectile spells: mana bonus min(8, maximum mana / 8); step energy 10 - bonus. A weak cast (kinetic energy
    below 4 * step energy) gets 3 more kinetic energy and step energy 9 - bonus. */
 #define SPELL_MANA_BONUS_MAXIMUM 8
@@ -288,7 +287,7 @@ static bool is_magic_map(uint16_t thing)
 {
     char text[SCROLL_TEXT_SIZE];
     if (THING_TYPE(thing) != THING_SCROLL) return false;
-    decode_text(text, sizeof text, TEXT_THING_TYPE_BITS | scroll_text_index(thing), TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
+    decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(thing)), TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
     return magic_map_is_text(text);
 }
 
