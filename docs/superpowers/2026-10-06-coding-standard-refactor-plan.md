@@ -615,6 +615,8 @@ Do the steps for one file at a time. Run the full suite after each file.
 Decisions made during Task 8:
 - `data/adventure.c`, `data/bytes.h`, and `data/ids.h` need no change: no allowlist line, no predicate, and no 16-bit cast that only passes a value on.
 - `data/csbimage.c`: the only `decimal` hits are the byte sizes in `csb_copies`, the table of KAOS and APPB addresses. A name for each of the 100 sizes does not help the reader, and the sizes are of the same kind as the addresses of the permanent `hex` line. The allowlist keeps the permanent line `decimal data/csbimage.c byte sizes in the table of APPB addresses`. Task 12 Step 1 accepts it too.
+- Casts: a cast that narrows a wider value (a `size_t` size, a 32-bit seed) to 16 bits stays: it can truncate. A cast that converts a value that always fits is deleted.
+- `data/csbtext.c`: `TEXT_SKILL_LEVEL_COUNT` (15) in `data/ids.h`, next to `TEXT_SKILL_LEVEL_FIRST`. The counts 4 (directions) and 7 (statistics) stay plain: their names are in `engine/map.h` and `engine/game.h`, which `data/` cannot include.
 
 ---
 
