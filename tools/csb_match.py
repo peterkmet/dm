@@ -1,6 +1,6 @@
 """Match the functions of the CSB engine (game-csb/APPB.FTL) to DM KAOS.FTL.
 
-Usage: uv run python decomp/tools/csb_match.py [--csv OUT] [--report OUT] [--diff KAOS_ADDR]
+Usage: uv run python tools/csb_match.py [--csv OUT] [--report OUT] [--diff KAOS_ADDR]
 
 The two modules come from different compilers: CSB keeps locals on the stack,
 DM keeps them in registers. A byte or instruction compare does not work, so each

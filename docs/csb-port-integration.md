@@ -66,7 +66,7 @@ This is a separate work item ("CSB engine"). It needs a decision first: one addr
 | `port/src/ui/startend.c` | `save_dir` | Default `"."`. `startend_set_save_dir` is called by `gameloop_load_data`. |
 | `port/src/engine/dungeon.c` | `g_dungeon_id` | Default `10` (the DM dungeon id). The save header stores it. |
 | `port/src/engine/savefile.h` | `SAVE_*_BYTES` | DM save layout, including `SAVE_HEADER_EXTRA_BYTES` 134. The CSB save format is not known. |
-| `.gitignore` | | `game-csb/` and `decomp/` (except `decomp/tools/`) are ignored (the file has an uncommitted change). |
+| `.gitignore` | | `game-csb/` and `decomp/` are ignored (the file has an uncommitted change). |
 | `game/CSBGAME.DAT` | | An empty file (0 bytes) in the DM folder. The port ignores it. |
 
 The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads only this item. It needs no KAOS image.
@@ -116,11 +116,11 @@ These items are not selection work. The CSB engine work item must check them.
 
 | Place | Assumption |
 |---|---|
-| `src/dmtools/control_client.py` | `DEFAULT_SOCKET = "~/.dm/control.sock"`. One socket for all adventures. No change needed. |
-| `src/dmtools/mcp_server.py`: `INSTRUCTIONS` | "Dungeon Master (1987)", "find the Firestaff, defeat Lord Chaos", "recruit up to four champions from the mirrors in the Hall of Champions on the first level". |
+| `tools/dmtools/control_client.py` | `DEFAULT_SOCKET = "~/.dm/control.sock"`. One socket for all adventures. No change needed. |
+| `tools/dmtools/mcp_server.py`: `INSTRUCTIONS` | "Dungeon Master (1987)", "find the Firestaff, defeat Lord Chaos", "recruit up to four champions from the mirrors in the Hall of Champions on the first level". |
 | `mcp_server.py`: `save_game` docstring | Names `DMGAME.DAT` and `DMGAME.BAK`. |
 | `mcp_server.py`: `new_game`, `load_game` | Names the same files in the descriptions. The socket commands use the loaded adventure, so the code needs no change. |
-| `src/dmtools/play.py` | The prog description "Dungeon Master control socket". The log folder `.playthroughs/current/coordinator`. The view and state text is generic. |
+| `tools/dmtools/play.py` | The prog description "Dungeon Master control socket". The log folder `.playthroughs/current/coordinator`. The view and state text is generic. |
 | `docs/llm-playbook.md` | Playthrough rules for DM (goal, mirrors, `.playthroughs/current/player/progress.md`). The save names in the "Save, load" lines are not file names. |
 | `docs/llm-mode.md` | The sections "Prerequisites" (`game/`), the socket table (`save`, `load`, `new_game` name `DMGAME.DAT`, `Dungeon.DAT`), and "Saved games" (save directory is `game/`). |
 | `docs/superpowers/status.md` | The resume steps copy `DMGAME.DAT` to `game/`. |

@@ -5,8 +5,7 @@ game/
 __pycache__/
 .pytest_cache/
 .DS_Store
-decomp/*
-!decomp/tools/
+decomp/
 build/
 game-csb/
 .playthroughs/

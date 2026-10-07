@@ -33,7 +33,7 @@ Global correction: `g_creature_info` starts at `0x10192e`, not `0x101930`. The t
 - Read every function in `decomp/dm/KAOS.c` for the three ranges.
 - Read the disassembly (capstone) for jump-table calls, register helpers, and the clipping tail of `get_zone`.
 - Built a call graph from the disassembly to find callers.
-- Checked `expand_graphic` in the emulator (`src/dmtools/emu.py`) against a Python model on every bitmap in `Graphics.DAT`. Result: 687 of 688 bitmap-sized items decode to identical bytes. The other item (graphic 672) is not a bitmap. Its "dimensions" are a size field.
+- Checked `expand_graphic` in the emulator (`tools/dmtools/emu.py`) against a Python model on every bitmap in `Graphics.DAT`. Result: 687 of 688 bitmap-sized items decode to identical bytes. The other item (graphic 672) is not a bitmap. Its "dimensions" are a size field.
 
 ## Dungeon data access (range 4, DUNGEON.C)
 

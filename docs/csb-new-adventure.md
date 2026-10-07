@@ -194,7 +194,7 @@ The prototype is the module `dmtools.csb_mini`, and its differential test is a h
 
 | File | Content |
 |---|---|
-| `src/dmtools/csb_mini.py` | `decode_save`, `dungeon_dat`, `can_make_adventure`, `merge`, `encode_save`. |
+| `tools/dmtools/csb_mini.py` | `decode_save`, `dungeon_dat`, `can_make_adventure`, `merge`, `encode_save`. |
 | `tests/csb_diff.py` | Differential test against the original CEDT routines in `dmtools.emu`. |
 
 Write the CSB dungeon as an uncompressed `Dungeon.DAT`, and optionally build a new adventure. Run the commands from `/Users/lego/github/dm`:

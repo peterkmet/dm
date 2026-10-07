@@ -16,10 +16,10 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 
 ## Function mapping
 
-`decomp/tools/csb_match.py` builds the mapping and writes `docs/csb-appb-symbols.csv`.
+`tools/csb_match.py` builds the mapping and writes `docs/csb-appb-symbols.csv`.
 
 ```sh
-uv run python decomp/tools/csb_match.py --report /tmp/csb-report.txt
+uv run python tools/csb_match.py --report /tmp/csb-report.txt
 ```
 
 The report file has one line per function: class, CSB address, DM address, name, instruction counts, and similarity.

@@ -10,8 +10,8 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 |---|---|---|
 | State, view, and map as JSON | `port/src/platform/state_json.c` | Done, tested |
 | Socket server and turns | `port/src/platform/control.c` | Done, tested in process |
-| MCP server | `src/dmtools/mcp_server.py` | Done, tested against the socket |
-| Command-line client `dm-play` | `src/dmtools/play.py` | Done, tested against the socket |
+| MCP server | `tools/dmtools/mcp_server.py` | Done, tested against the socket |
+| Command-line client `dm-play` | `tools/dmtools/play.py` | Done, tested against the socket |
 | `--mode turnbased --control PATH` | `port/src/platform/main.c` | Done, tested headless |
 
 ## Play with Claude Code
@@ -196,7 +196,7 @@ uv run dm-play new_game
 ```
 
 - `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, `health_lost`, and `BUMPED` after a bump), the party position (the first line has `| CSB` in a CSB game), the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side squares (also at depth 0, `here left` and `here right`) with a door and its state, an open pit, a wall face, a floor ornament, or creatures, every side square ahead that is not a wall (a side passage), and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A response with `seen` has a line such as `seen: fireball at ahead 2; a group of 1 Screamer at ahead 2 was killed` (or `lost <n>`) after the turn line.
-- `dm-play` does not import the `mcp` package. The socket helpers are in `src/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
+- `dm-play` does not import the `mcp` package. The socket helpers are in `tools/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
 - A relative `path` becomes an absolute path, because the game runs in another directory.
 - The exit code is 1 when the response has `"ok": false`, also when the game is not running.
 
