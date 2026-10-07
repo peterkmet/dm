@@ -30,7 +30,7 @@ void explored_reset(void)
     seen = calloc(seen_size ? seen_size : 1, 1);
 }
 
-static int is_on_map(int16_t map, int16_t x, int16_t y)
+static bool is_on_map(int16_t map, int16_t x, int16_t y)
 {
     return map >= 0 && map < dungeon_map_count() && x >= 0 && x < dungeon_map_width(map) && y >= 0 && y < dungeon_map_height(map);
 }
@@ -81,7 +81,7 @@ int explored_load(const uint8_t *buf, size_t len)
 {
     int16_t map_count = dungeon_map_count();
     size_t expected = SAVE_HEADER_SIZE + 2 * (size_t)map_count + map_first_square(map_count);
-    if (!buf || len != expected || memcmp(buf, SAVE_MAGIC, SAVE_MAGIC_SIZE) || buf[4] != SAVE_VERSION || buf[5] != map_count)
+    if (!buf || len != expected || memcmp(buf, SAVE_MAGIC, SAVE_MAGIC_SIZE) || buf[SAVE_MAGIC_SIZE] != SAVE_VERSION || buf[SAVE_MAGIC_SIZE + 1] != map_count)
         return -1;
     const uint8_t *p = buf + SAVE_HEADER_SIZE;
     for (int16_t map = 0; map < map_count; map++, p += 2)
