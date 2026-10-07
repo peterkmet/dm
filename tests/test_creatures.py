@@ -60,12 +60,12 @@ def lib():
         ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
         ("set_current_map", None, [c16]), ("dungeon_get_thing_data", ctypes.POINTER(u8), [u16]),
         ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", c16, [c16, c16, c16, c16]),
-        ("group_is_destination_visible_from_source", c16, [c16, c16, c16, c16, c16]),
+        ("group_is_destination_visible_from_source", ctypes.c_bool, [c16, c16, c16, c16, c16]),
         ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
         ("group_get_generated", u16, [u16, c16, u16, c16, c16, c16]),
         ("group_get_damage_all_creatures_outcome", c16, [u16, c16, c16, c16, c16]),
         ("magic_get_champion_spell_cast_result", c16, [u16]), ("get_unused_thing", u16, [u16]),
-        ("object_get_icon_index", c16, [u16]), ("group_is_creature_allowed_on_map", c16, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
+        ("object_get_icon_index", c16, [u16]), ("group_is_creature_allowed_on_map", ctypes.c_bool, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args

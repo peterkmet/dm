@@ -23,6 +23,7 @@
 #define NEW_ADVENTURE_RANDOM_MASK 0xff
 #define NEW_ADVENTURE_STAT_MINIMUM 30
 #define NEW_ADVENTURE_LUCK_MINIMUM 10
+#define SAVED_FREE_INDEX_SHIFT 16   /* a free event slot of the file keeps the next free index in the high word */
 
 /* Party record (g_party) offsets. */
 enum {
@@ -47,21 +48,21 @@ static void pack_globals(uint8_t *g)
     WR32(g + G_RANDOM_SEED, g_random_seed);
     WR16(g + G_LEADER_HAND_OBJECT, g_leader_hand_object);
     WR16(g + G_PARTY_CHAMPION_COUNT, g_party_champion_count);
-    WR16(g + G_PARTY_MAP_X, (uint16_t)g_party_map_x);
-    WR16(g + G_PARTY_MAP_Y, (uint16_t)g_party_map_y);
-    WR16(g + G_PARTY_DIRECTION, (uint16_t)g_party_direction);
-    WR16(g + G_PARTY_MAP_INDEX, (uint16_t)g_party_map_index);
-    WR16(g + G_LEADER_INDEX, (uint16_t)g_leader_index);
-    WR16(g + G_MAGIC_CASTER, (uint16_t)g_magic_caster_champion_index);
+    WR16(g + G_PARTY_MAP_X, g_party_map_x);
+    WR16(g + G_PARTY_MAP_Y, g_party_map_y);
+    WR16(g + G_PARTY_DIRECTION, g_party_direction);
+    WR16(g + G_PARTY_MAP_INDEX, g_party_map_index);
+    WR16(g + G_LEADER_INDEX, g_leader_index);
+    WR16(g + G_MAGIC_CASTER, g_magic_caster_champion_index);
     WR16(g + G_TIMELINE_COUNT, g_timeline_count);
-    WR16(g + G_FIRST_UNUSED_EVENT, (uint16_t)g_first_unused_event_index);
-    WR16(g + G_EVENT_MAX_COUNT, (uint16_t)g_event_max_count);
+    WR16(g + G_FIRST_UNUSED_EVENT, g_first_unused_event_index);
+    WR16(g + G_EVENT_MAX_COUNT, g_event_max_count);
     WR16(g + G_ACTIVE_GROUP_COUNT, g_active_group_count);
     WR32(g + G_LAST_CREATURE_ATTACK_TIME, (uint32_t)g_last_creature_attack_time);
     WR32(g + G_LAST_PARTY_MOVEMENT_TIME, (uint32_t)g_last_party_movement_time);
-    WR16(g + G_DISABLED_MOVEMENT_TICKS, (uint16_t)g_disabled_movement_ticks);
-    WR16(g + G_PROJECTILE_DISABLED_MOVEMENT_TICKS, (uint16_t)g_projectile_disabled_movement_ticks);
-    WR16(g + G_LAST_PROJECTILE_DIRECTION, (uint16_t)g_last_projectile_disabled_movement_direction);
+    WR16(g + G_DISABLED_MOVEMENT_TICKS, g_disabled_movement_ticks);
+    WR16(g + G_PROJECTILE_DISABLED_MOVEMENT_TICKS, g_projectile_disabled_movement_ticks);
+    WR16(g + G_LAST_PROJECTILE_DIRECTION, g_last_projectile_disabled_movement_direction);
     WR16(g + G_MAX_ACTIVE_GROUP_COUNT, g_max_active_group_count);
 }
 
@@ -72,21 +73,21 @@ static void unpack_globals(const uint8_t *g)
     g_random_seed = BE32(g + G_RANDOM_SEED);
     g_leader_hand_object = BE16(g + G_LEADER_HAND_OBJECT);
     g_party_champion_count = BE16(g + G_PARTY_CHAMPION_COUNT);
-    g_party_map_x = (int16_t)BE16(g + G_PARTY_MAP_X);
-    g_party_map_y = (int16_t)BE16(g + G_PARTY_MAP_Y);
-    g_party_direction = (int16_t)BE16(g + G_PARTY_DIRECTION);
-    g_party_map_index = (int16_t)BE16(g + G_PARTY_MAP_INDEX);
-    g_leader_index = (int16_t)BE16(g + G_LEADER_INDEX);
-    g_magic_caster_champion_index = (int16_t)BE16(g + G_MAGIC_CASTER);
+    g_party_map_x = BE16(g + G_PARTY_MAP_X);
+    g_party_map_y = BE16(g + G_PARTY_MAP_Y);
+    g_party_direction = BE16(g + G_PARTY_DIRECTION);
+    g_party_map_index = BE16(g + G_PARTY_MAP_INDEX);
+    g_leader_index = BE16(g + G_LEADER_INDEX);
+    g_magic_caster_champion_index = BE16(g + G_MAGIC_CASTER);
     g_timeline_count = BE16(g + G_TIMELINE_COUNT);
-    g_first_unused_event_index = (int16_t)BE16(g + G_FIRST_UNUSED_EVENT);
-    g_event_max_count = (int16_t)BE16(g + G_EVENT_MAX_COUNT);
+    g_first_unused_event_index = BE16(g + G_FIRST_UNUSED_EVENT);
+    g_event_max_count = BE16(g + G_EVENT_MAX_COUNT);
     g_active_group_count = BE16(g + G_ACTIVE_GROUP_COUNT);
     g_last_creature_attack_time = (int32_t)BE32(g + G_LAST_CREATURE_ATTACK_TIME);
     g_last_party_movement_time = (int32_t)BE32(g + G_LAST_PARTY_MOVEMENT_TIME);
-    g_disabled_movement_ticks = (int16_t)BE16(g + G_DISABLED_MOVEMENT_TICKS);
-    g_projectile_disabled_movement_ticks = (int16_t)BE16(g + G_PROJECTILE_DISABLED_MOVEMENT_TICKS);
-    g_last_projectile_disabled_movement_direction = (int16_t)BE16(g + G_LAST_PROJECTILE_DIRECTION);
+    g_disabled_movement_ticks = BE16(g + G_DISABLED_MOVEMENT_TICKS);
+    g_projectile_disabled_movement_ticks = BE16(g + G_PROJECTILE_DISABLED_MOVEMENT_TICKS);
+    g_last_projectile_disabled_movement_direction = BE16(g + G_LAST_PROJECTILE_DIRECTION);
     g_max_active_group_count = BE16(g + G_MAX_ACTIVE_GROUP_COUNT);
 }
 
@@ -94,12 +95,12 @@ static void unpack_globals(const uint8_t *g)
 static void pack_party(uint8_t *p)
 {
     memset(p, 0, SAVE_PARTY_BYTES);
-    WR16(p + P_MAGICAL_LIGHT, (uint16_t)g_party.magical_light_amount);
+    WR16(p + P_MAGICAL_LIGHT, g_party.magical_light_amount);
     p[P_THIEVES_EYE] = g_party.event73_count_thieves_eye;
     p[P_FOOTPRINTS] = g_party.event79_count_footprints;
-    WR16(p + P_SHIELD, (uint16_t)g_party.shield_defense);
-    WR16(p + P_FIRE_SHIELD, (uint16_t)g_party.fire_shield_defense);
-    WR16(p + P_SPELL_SHIELD, (uint16_t)g_party.spell_shield_defense);
+    WR16(p + P_SHIELD, g_party.shield_defense);
+    WR16(p + P_FIRE_SHIELD, g_party.fire_shield_defense);
+    WR16(p + P_SPELL_SHIELD, g_party.spell_shield_defense);
     p[P_SCENT_COUNT] = g_party.scent_count;
     p[P_FREEZE_LIFE] = g_party.freeze_life_ticks;
     p[P_FIRST_SCENT] = g_party.first_scent_index;
@@ -112,12 +113,12 @@ static void pack_party(uint8_t *p)
 static void unpack_party(const uint8_t *p)
 {
     memset(&g_party, 0, sizeof g_party);
-    g_party.magical_light_amount = (int16_t)BE16(p + P_MAGICAL_LIGHT);
+    g_party.magical_light_amount = BE16(p + P_MAGICAL_LIGHT);
     g_party.event73_count_thieves_eye = p[P_THIEVES_EYE];
     g_party.event79_count_footprints = p[P_FOOTPRINTS];
-    g_party.shield_defense = (int16_t)BE16(p + P_SHIELD);
-    g_party.fire_shield_defense = (int16_t)BE16(p + P_FIRE_SHIELD);
-    g_party.spell_shield_defense = (int16_t)BE16(p + P_SPELL_SHIELD);
+    g_party.shield_defense = BE16(p + P_SHIELD);
+    g_party.fire_shield_defense = BE16(p + P_FIRE_SHIELD);
+    g_party.spell_shield_defense = BE16(p + P_SPELL_SHIELD);
     g_party.scent_count = p[P_SCENT_COUNT];
     g_party.freeze_life_ticks = p[P_FREEZE_LIFE];
     g_party.first_scent_index = p[P_FIRST_SCENT];
@@ -130,7 +131,7 @@ static void unpack_party(const uint8_t *p)
 /* A free slot keeps the next free index in the high word, as timeline_reset writes it. */
 static void pack_event(const TimelineEvent *e, uint8_t *p)
 {
-    WR32(p + E_MAP_TIME, e->type ? e->map_time : e->map_time << 16);
+    WR32(p + E_MAP_TIME, e->type ? e->map_time : e->map_time << SAVED_FREE_INDEX_SHIFT);
     p[E_TYPE] = e->type;
     p[E_PRIORITY] = e->priority;
     WR16(p + E_B, e->b);
@@ -149,13 +150,13 @@ static void unpack_event(const uint8_t *p, TimelineEvent *e)
 /* An active group: the group index, then the creature state bytes as they are. */
 static void pack_active_group(const ActiveGroup *a, uint8_t *p)
 {
-    WR16(p + A_GROUP_INDEX, (uint16_t)a->group_index);
+    WR16(p + A_GROUP_INDEX, a->group_index);
     memcpy(p + A_BYTES, &a->directions, SAVE_ACTIVE_GROUP_BYTES - A_BYTES);
 }
 
 static void unpack_active_group(const uint8_t *p, ActiveGroup *a)
 {
-    a->group_index = (int16_t)BE16(p + A_GROUP_INDEX);
+    a->group_index = BE16(p + A_GROUP_INDEX);
     memcpy(&a->directions, p + A_BYTES, SAVE_ACTIVE_GROUP_BYTES - A_BYTES);
 }
 
@@ -171,7 +172,7 @@ static void portrait_to_interleaved(const uint8_t *px, uint8_t *out)
                 for (int k = 0; k < PIXELS_PER_WORD; k++) {
                     int x = c * PIXELS_PER_WORD + k;
                     if (x < CHAMPION_PORTRAIT_WIDTH && px[y * CHAMPION_PORTRAIT_WIDTH + x] >> plane & 1)
-                        word |= (uint16_t)(1u << (PIXELS_PER_WORD - 1 - k));
+                        word |= 1u << (PIXELS_PER_WORD - 1 - k);
                 }
                 WR16(out, word);
             }
@@ -211,8 +212,8 @@ static uint8_t *encode_game(uint32_t *size)
 {
     uint8_t header[SAVE_HEADER_BYTES], globals[SAVE_GLOBALS_BYTES], champions[SAVE_CHAMPIONS_BYTES];
     uint8_t portraits[SAVE_PORTRAITS_BYTES];
-    uint16_t group_bytes = (uint16_t)(g_max_active_group_count * SAVE_ACTIVE_GROUP_BYTES);
-    uint16_t event_bytes = (uint16_t)(g_event_max_count * SAVE_EVENT_BYTES), timeline_bytes = (uint16_t)(g_event_max_count * TIMELINE_ENTRY_BYTES);
+    uint16_t group_bytes = g_max_active_group_count * SAVE_ACTIVE_GROUP_BYTES;
+    uint16_t event_bytes = g_event_max_count * SAVE_EVENT_BYTES, timeline_bytes = g_event_max_count * TIMELINE_ENTRY_BYTES;
     uint8_t *groups = malloc(group_bytes), *events = malloc(event_bytes), *timeline = malloc(timeline_bytes);
     uint32_t dungeon_size = 0;
     uint8_t *dungeon = dungeon_save(&dungeon_size), *file = NULL;
@@ -355,8 +356,8 @@ static void reset_for_new_adventure(Champion *c, int16_t turn)
     c->current_stamina = c->maximum_stamina;
     c->current_mana = c->maximum_mana;
     c->action_defense = 0;
-    c->food = (int16_t)(NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK));
-    c->water = (int16_t)(NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK));
+    c->food = NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK);
+    c->water = NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK);
     for (int s = 0; s < STAT_COUNT; s++) {
         c->statistics[s][STAT_MINIMUM] = NEW_ADVENTURE_STAT_MINIMUM;
         c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM];
@@ -385,7 +386,7 @@ static void merge_party(SaveFile *mini)
 {
     Champion party[CHAMPION_MAX_COUNT];
     uint8_t *globals = mini->block[SAVE_BLOCK_GLOBALS];
-    int16_t turn = (int16_t)(BE16(globals + G_PARTY_DIRECTION) - g_party_direction);
+    int16_t turn = BE16(globals + G_PARTY_DIRECTION) - g_party_direction;
     memcpy(party, g_champions, sizeof party);
     for (uint16_t i = 0; i < g_party_champion_count; i++) reset_for_new_adventure(&party[i], turn);
     for (uint16_t i = 0; i < g_party_champion_count; i++) /* each champion gets a cell of its own */

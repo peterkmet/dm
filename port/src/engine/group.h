@@ -1,6 +1,7 @@
 #ifndef GROUP_H
 #define GROUP_H
 /* Prefixes: group_ creature_ party_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "game.h"
 #include "map.h"
@@ -19,7 +20,7 @@ enum {
 };
 enum { CREATURE_SIZE_QUARTER, CREATURE_SIZE_HALF, CREATURE_SIZE_FULL };
 enum { CREATURE_IMMOBILE = 255, CREATURE_NO_ATTACK = 255, CREATURE_INVULNERABLE = 255, CREATURE_NEVER_HITS = 255 };
-enum { FEAR_RESISTANCE_NONE_FEARLESS = 15, POISON_IMMUNE = 15 };
+enum { FEAR_RESISTANCE_NONE_FEARLESS = 15, POISON_IMMUNE = 15, FIRE_IMMUNE = 15 };
 
 /* Creature types with special rules. */
 enum {
@@ -51,34 +52,43 @@ enum { CELLS_CENTERED = 0xff };
 /* Active group aspect byte: bit 7 attacking, bit 6 flipped, bits 3-5 vertical offset, bits 0-2 horizontal offset. */
 enum { ASPECT_ATTACKING = 0x80, ASPECT_FLIPPED = 0x40 };
 
-/* Group record, 16 bytes (thing type 4): next, possessions, type, cells, 4 health words, word 14 flags. */
+/* Group record, 16 bytes (thing type 4): next, possessions, type, cells, 4 health words, word 14 flags.
+   Byte 14: direction in bits 0-1, do not discard in bit 2. Byte 15: behavior in bits 0-3, last creature index in bits 5-6. */
+enum {
+    GROUP_RECORD_DIRECTION_BYTE = 14, GROUP_RECORD_BEHAVIOR_BYTE = 15,
+    GROUP_RECORD_DIRECTION_MASK = 3, GROUP_RECORD_DO_NOT_DISCARD = 0x04, GROUP_RECORD_BEHAVIOR_MASK = 0x0f,
+    GROUP_RECORD_LAST_CREATURE_MASK = 0x60, GROUP_RECORD_LAST_CREATURE_SHIFT = 5
+};
 static inline uint16_t group_possessions(uint16_t group) { return BE16(REC(group) + 2); }
 static inline void group_set_possessions(uint16_t group, uint16_t thing) { WR16(REC(group) + 2, thing); }
 static inline void group_set_creature_type(uint16_t group, uint16_t type) { REC(group)[4] = (uint8_t)type; }
 static inline void group_set_cells_byte(uint16_t group, uint8_t cells) { REC(group)[5] = cells; }
 static inline uint16_t group_health(uint16_t group, int16_t creature) { return BE16(REC(group) + 6 + 2 * creature); }
 static inline void group_set_health(uint16_t group, int16_t creature, uint16_t health) { WR16(REC(group) + 6 + 2 * creature, health); }
-static inline uint16_t group_behavior(uint16_t group) { return REC(group)[15] & 15; }
-static inline void group_set_behavior(uint16_t group, uint16_t behavior) { REC(group)[15] = (uint8_t)((REC(group)[15] & 0xf0) | behavior); }
-static inline void group_set_last_creature_index(uint16_t group, uint16_t index) { REC(group)[15] = (uint8_t)((REC(group)[15] & 0x9f) | (index & 3) << 5); }
-static inline void group_set_direction_field(uint16_t group, uint16_t direction) { REC(group)[14] = (uint8_t)((REC(group)[14] & 0xfc) | (direction & 3)); }
-static inline void group_clear_do_not_discard(uint16_t group) { REC(group)[14] &= 0xfb; }
+static inline uint16_t group_behavior(uint16_t group) { return REC(group)[GROUP_RECORD_BEHAVIOR_BYTE] & GROUP_RECORD_BEHAVIOR_MASK; }
+static inline void group_set_behavior(uint16_t group, uint16_t behavior) { REC(group)[GROUP_RECORD_BEHAVIOR_BYTE] = (uint8_t)((REC(group)[GROUP_RECORD_BEHAVIOR_BYTE] & ~GROUP_RECORD_BEHAVIOR_MASK) | behavior); }
+static inline void group_set_last_creature_index(uint16_t group, uint16_t index) { REC(group)[GROUP_RECORD_BEHAVIOR_BYTE] = (uint8_t)((REC(group)[GROUP_RECORD_BEHAVIOR_BYTE] & ~GROUP_RECORD_LAST_CREATURE_MASK) | (index & 3) << GROUP_RECORD_LAST_CREATURE_SHIFT); }
+static inline void group_set_direction_field(uint16_t group, uint16_t direction) { REC(group)[GROUP_RECORD_DIRECTION_BYTE] = (uint8_t)((REC(group)[GROUP_RECORD_DIRECTION_BYTE] & ~GROUP_RECORD_DIRECTION_MASK) | (direction & GROUP_RECORD_DIRECTION_MASK)); }
+static inline void group_clear_do_not_discard(uint16_t group) { REC(group)[GROUP_RECORD_DIRECTION_BYTE] &= ~GROUP_RECORD_DO_NOT_DISCARD; }
 
 /* On the party map the cells byte of the record holds the index of the active group. */
 static inline ActiveGroup *group_active(uint16_t group) { return &g_active_groups[rec_group_cells_byte(group)]; }
 static inline const CreatureInfo *group_info(uint16_t group) { return tables_creature_info(rec_group_creature_type(group)); }
 
-/* Creature info fields that pack several values. */
-static inline uint16_t creature_sight_range(const CreatureInfo *info) { return info->ranges & 15; }
-static inline uint16_t creature_smell_range(const CreatureInfo *info) { return info->ranges >> 8 & 15; }
-static inline uint16_t creature_attack_range(const CreatureInfo *info) { return info->ranges >> 12; }
-static inline uint16_t creature_fear_resistance(const CreatureInfo *info) { return info->properties >> 4 & 15; }
-static inline uint16_t creature_experience(const CreatureInfo *info) { return info->properties >> 8 & 15; }
-static inline uint16_t creature_wariness(const CreatureInfo *info) { return info->properties >> 12; }
-static inline uint16_t creature_poison_resistance(const CreatureInfo *info) { return info->resistances >> 8 & 15; }
-static inline uint16_t creature_ticks_after_attack(const CreatureInfo *info) { return info->animation_ticks & 15; }
-static inline uint16_t creature_ticks_non_attack_aspect(const CreatureInfo *info) { return info->animation_ticks >> 4 & 15; }
-static inline uint16_t creature_ticks_attack_aspect(const CreatureInfo *info) { return info->animation_ticks >> 8 & 15; }
+/* Creature info fields that pack several values, 4 bits each. */
+enum { CREATURE_INFO_NIBBLE = 15, CREATURE_INFO_HIGH_NIBBLE_SHIFT = 12 };
+static inline uint16_t creature_sight_range(const CreatureInfo *info) { return info->ranges & CREATURE_INFO_NIBBLE; }
+static inline uint16_t creature_hearing_range(const CreatureInfo *info) { return info->ranges >> 4 & CREATURE_INFO_NIBBLE; }
+static inline uint16_t creature_smell_range(const CreatureInfo *info) { return info->ranges >> 8 & CREATURE_INFO_NIBBLE; }
+static inline uint16_t creature_attack_range(const CreatureInfo *info) { return info->ranges >> CREATURE_INFO_HIGH_NIBBLE_SHIFT; }
+static inline uint16_t creature_fear_resistance(const CreatureInfo *info) { return info->properties >> 4 & CREATURE_INFO_NIBBLE; }
+static inline uint16_t creature_experience(const CreatureInfo *info) { return info->properties >> 8 & CREATURE_INFO_NIBBLE; }
+static inline uint16_t creature_wariness(const CreatureInfo *info) { return info->properties >> CREATURE_INFO_HIGH_NIBBLE_SHIFT; }
+static inline uint16_t creature_fire_resistance(const CreatureInfo *info) { return info->resistances >> 4 & CREATURE_INFO_NIBBLE; }
+static inline uint16_t creature_poison_resistance(const CreatureInfo *info) { return info->resistances >> 8 & CREATURE_INFO_NIBBLE; }
+static inline uint16_t creature_ticks_after_attack(const CreatureInfo *info) { return info->animation_ticks & CREATURE_INFO_NIBBLE; }
+static inline uint16_t creature_ticks_non_attack_aspect(const CreatureInfo *info) { return info->animation_ticks >> 4 & CREATURE_INFO_NIBBLE; }
+static inline uint16_t creature_ticks_attack_aspect(const CreatureInfo *info) { return info->animation_ticks >> 8 & CREATURE_INFO_NIBBLE; }
 static inline uint16_t creature_size(const CreatureInfo *info) { return info->attributes & CREATURE_SIZE_MASK; }
 
 extern int16_t g_creature_damage_outcome;
@@ -92,7 +102,7 @@ uint8_t group_get_cells(uint16_t group, int16_t map);
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
 uint8_t group_get_directions(uint16_t group, int16_t map);
 void group_set_directions(uint16_t group, uint8_t directions, int16_t map);
-int16_t group_is_creature_allowed_on_map(uint16_t group, int16_t map);
+bool group_is_creature_allowed_on_map(uint16_t group, int16_t map);
 
 int16_t group_get_creature_ordinal_in_cell(uint16_t group, uint16_t cell);
 int16_t group_get_melee_target_creature_ordinal(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y, int16_t champion_cell);
@@ -106,6 +116,8 @@ void group_remove_active_group(uint16_t active_index);
 void group_remove_all_active_groups(void);
 void group_add_all_active_groups(void);
 void group_reset(void);
+/* Party scent word (g_party.scents): x in bits 11-15, y in bits 6-10, map in bits 0-5. */
+enum { PARTY_SCENT_X_SHIFT = 11, PARTY_SCENT_Y_SHIFT = 6, PARTY_SCENT_XY_MASK = 31, PARTY_SCENT_MAP_MASK = 63 };
 /* Ordinal of the latest party scent on a square of the current map, or 0. */
 uint16_t party_scent_ordinal(int16_t x, int16_t y);
 
@@ -122,7 +134,7 @@ uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int
 void group_door_damages_creatures(int16_t x, int16_t y);
 
 int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
-int16_t group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
+bool group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x, int16_t group_y, int16_t group_cell);
 int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell);

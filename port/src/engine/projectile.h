@@ -1,6 +1,7 @@
 #ifndef PROJECTILE_H
 #define PROJECTILE_H
 /* Prefixes: projectile_ explosion_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "game.h"
 #include "map.h"
@@ -29,7 +30,7 @@ enum {
     SENSOR_WALL_LAUNCHER_TWO_EXPLOSIONS = 10, SENSOR_WALL_LAUNCHER_SQUARE_OBJECT = 14,
     SENSOR_WALL_LAUNCHER_TWO_SQUARE_OBJECTS = 15
 };
-static inline int16_t projectile_is_launcher_sensor(uint16_t sensor)
+static inline bool projectile_is_launcher_sensor(uint16_t sensor)
 {
     uint16_t type = rec_sensor_type(sensor);
     return (type >= SENSOR_WALL_LAUNCHER_OBJECT && type <= SENSOR_WALL_LAUNCHER_TWO_EXPLOSIONS) ||
@@ -44,18 +45,21 @@ static inline void projectile_set_attack(uint16_t projectile, uint8_t value) { R
 static inline void projectile_set_event_index(uint16_t projectile, uint16_t index) { WR16(REC(projectile) + 6, index); }
 
 /* Explosion record, 4 bytes (thing type 15): next, attack, type in bits 0-6, centered in bit 7. */
+enum { EXPLOSION_RECORD_TYPE_MASK = 0x7f, EXPLOSION_RECORD_CENTERED = 0x80 };
 static inline void explosion_set_attack(uint16_t explosion, uint8_t attack) { REC(explosion)[2] = attack; }
-static inline void explosion_set_type(uint16_t explosion, uint16_t type) { REC(explosion)[3] = (uint8_t)((REC(explosion)[3] & 0x80) | (type & 0x7f)); }
-static inline void explosion_set_centered(uint16_t explosion, int16_t centered) { REC(explosion)[3] = (uint8_t)((REC(explosion)[3] & 0x7f) | (centered ? 0x80 : 0)); }
+static inline void explosion_set_type(uint16_t explosion, uint16_t type) { REC(explosion)[3] = (uint8_t)((REC(explosion)[3] & EXPLOSION_RECORD_CENTERED) | (type & EXPLOSION_RECORD_TYPE_MASK)); }
+static inline void explosion_set_centered(uint16_t explosion, int16_t centered) { REC(explosion)[3] = (uint8_t)((REC(explosion)[3] & EXPLOSION_RECORD_TYPE_MASK) | (centered ? EXPLOSION_RECORD_CENTERED : 0)); }
 
 /* Projectile move event: b = projectile thing, c = x bits 11-15, y bits 6-10, direction bits 4-5, step energy bits 0-3. */
-static inline int16_t projectile_event_x(const TimelineEvent *event) { return event->c >> 11; }
-static inline int16_t projectile_event_y(const TimelineEvent *event) { return event->c >> 6 & 31; }
+enum { PROJECTILE_EVENT_X_SHIFT = 11, PROJECTILE_EVENT_Y_SHIFT = 6, PROJECTILE_EVENT_XY_MASK = 31, PROJECTILE_EVENT_STEP_ENERGY_MASK = 15 };
+static inline int16_t projectile_event_x(const TimelineEvent *event) { return event->c >> PROJECTILE_EVENT_X_SHIFT; }
+static inline int16_t projectile_event_y(const TimelineEvent *event) { return event->c >> PROJECTILE_EVENT_Y_SHIFT & PROJECTILE_EVENT_XY_MASK; }
 static inline uint16_t projectile_event_direction(const TimelineEvent *event) { return event->c >> 4 & 3; }
-static inline uint16_t projectile_event_step_energy(const TimelineEvent *event) { return event->c & 15; }
+static inline uint16_t projectile_event_step_energy(const TimelineEvent *event) { return event->c & PROJECTILE_EVENT_STEP_ENERGY_MASK; }
 static inline uint16_t projectile_event_c(int16_t x, int16_t y, uint16_t direction, uint16_t step_energy)
 {
-    return (uint16_t)((x & 31) << 11 | (y & 31) << 6 | (direction & 3) << 4 | (step_energy & 15));
+    return (x & PROJECTILE_EVENT_XY_MASK) << PROJECTILE_EVENT_X_SHIFT | (y & PROJECTILE_EVENT_XY_MASK) << PROJECTILE_EVENT_Y_SHIFT |
+           (direction & 3) << 4 | (step_energy & PROJECTILE_EVENT_STEP_ENERGY_MASK);
 }
 
 extern int16_t g_create_launcher_projectile;
@@ -67,18 +71,18 @@ void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_comb
 void projectile_delete_event(uint16_t projectile);
 void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x, int16_t y);
 uint16_t projectile_get_impact_attack(uint16_t projectile, uint16_t thing);
-int16_t projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_t y_combo, int16_t cell, uint16_t projectile);
+bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_t y_combo, int16_t cell, uint16_t projectile);
 int16_t projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t y, int16_t cell);
 void projectile_process_move_event(TimelineEvent *event);
 void explosion_process_step_event(TimelineEvent *event);
 
-int16_t projectile_is_fluxcage_on_square(int16_t x, int16_t y);
+bool projectile_is_fluxcage_on_square(int16_t x, int16_t y);
 uint16_t projectile_get_lord_chaos_on_square(int16_t x, int16_t y);
 void projectile_fluxcage_action(int16_t x, int16_t y);
 void projectile_fuse_action(int16_t x, int16_t y);
 void projectile_reset(void);
 
-int16_t projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing);
+bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing);
 void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event);
 uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_index);
 void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint8_t kinetic_energy, uint8_t attack, uint8_t step_energy);
