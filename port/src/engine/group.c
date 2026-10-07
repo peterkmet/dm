@@ -579,7 +579,7 @@ void group_door_damages_creatures(int16_t x, int16_t y)
 {
     uint16_t group = group_get_thing(x, y);
     if (group_get_damage_all_creatures_outcome(group, x, y, DOOR_DAMAGE, 1) != OUTCOME_ALL_CREATURES_KILLED)
-        group_process_events_29_to_41(x, y, REACTION_DANGER_ON_SQUARE, 0);
+        group_process_reaction_event(x, y, REACTION_DANGER_ON_SQUARE, 0);
 }
 
 /* A Giggler steals objects from random slots while the champion fails the dexterity and luck checks, then flees. */
@@ -1180,11 +1180,11 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
         champion_decrement_stamina(champion_index, random_bit() + 2);
     }
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
-        group_process_events_29_to_41(x, y, REACTION_PARTY_IS_ADJACENT, 0);
+        group_process_reaction_event(x, y, REACTION_PARTY_IS_ADJACENT, 0);
     return damage;
 }
 
-/* State of one run of group_process_events_29_to_41. */
+/* State of one run of group_process_reaction_event. */
 typedef struct {
     int16_t x, y;
     int16_t event_type;              /* reactions are REACTION_* here */
@@ -1734,7 +1734,7 @@ static void process_creature_behavior(GroupTurn *t)
 
 /* Events 32-41 and the reactions -1..-3 (events 29-31 later) of the group on a square. Off the party map a group
    only wanders. Lord Chaos ignores Freeze Life. */
-void group_process_events_29_to_41(int16_t x, int16_t y, int16_t event_type, uint16_t ticks)
+void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint16_t ticks)
 {
     if (g_current_map_index != g_party_map_index && event_type != EVENT_UPDATE_BEHAVIOR_GROUP && event_type != EVENT_UPDATE_ASPECT_GROUP &&
         event_type != EVENT_UPDATE_BEHAVIOR_CREATURE_0 && event_type != EVENT_UPDATE_ASPECT_CREATURE_0)

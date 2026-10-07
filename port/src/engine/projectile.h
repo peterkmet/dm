@@ -69,8 +69,8 @@ void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x
 uint16_t projectile_get_impact_attack(uint16_t projectile, uint16_t thing);
 int16_t projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_t y_combo, int16_t cell, uint16_t projectile);
 int16_t projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t y, int16_t cell);
-void projectile_process_events_48_to_49(TimelineEvent *event);
-void explosion_process_event_25(TimelineEvent *event);
+void projectile_process_move_event(TimelineEvent *event);
+void explosion_process_step_event(TimelineEvent *event);
 
 int16_t projectile_is_fluxcage_on_square(int16_t x, int16_t y);
 uint16_t projectile_get_lord_chaos_on_square(int16_t x, int16_t y);

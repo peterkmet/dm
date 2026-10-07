@@ -459,9 +459,9 @@ void event_process_expired(void)
                 thing_set_free(event.c);
             }
             break;
-        case EVENT_EXPLOSION: explosion_process_event_25(&event); break;
+        case EVENT_EXPLOSION: explosion_process_step_event(&event); break;
         case EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS:
-        case EVENT_MOVE_PROJECTILE: projectile_process_events_48_to_49(&event); break;
+        case EVENT_MOVE_PROJECTILE: projectile_process_move_event(&event); break;
         case EVENT_WATCHDOG: timeline_add_watchdog_event(); break;
         case EVENT_MOVE_GROUP_SILENT:
         case EVENT_MOVE_GROUP_AUDIBLE: group_process_move_event(&event); break;
@@ -487,7 +487,7 @@ void event_process_expired(void)
         case EVENT_MAGIC_MAP_NETA_END: g_champions[event.priority].magic_map[MAGIC_MAP_NETA] = 0; break;
         default:
             if (event.type >= EVENT_GROUP_REACTION_DANGER_ON_SQUARE && event.type <= EVENT_UPDATE_BEHAVIOR_CREATURE_3)
-                group_process_events_29_to_41(EVENT_X(&event), EVENT_Y(&event), event.type, (uint16_t)EVENT_CELL(&event));
+                group_process_reaction_event(EVENT_X(&event), EVENT_Y(&event), event.type, (uint16_t)EVENT_CELL(&event));
             break;
         }
         set_current_map(g_party_map_index);

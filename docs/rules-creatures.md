@@ -26,7 +26,7 @@ The party map has active groups. Other maps do not.
 
 ## Group events
 
-The timeline sends events 29–41 to `group_process_events_29_to_41(x, y, type, ticks)`. Other rules send a reaction with a negative type. The reaction becomes event 32 + reaction after a short delay.
+The timeline sends events 29–41 to `group_process_reaction_event(x, y, type, ticks)`. Other rules send a reaction with a negative type. The reaction becomes event 32 + reaction after a short delay.
 
 | Event | Reaction | Meaning |
 |---|---|---|
@@ -135,7 +135,7 @@ Event 65 enables a generator again after its delay (see [rules-movement.md](rule
 
 `projectile_create(thing, x, y, cell, direction, kinetic_energy, attack, step_energy)` puts a projectile in a cell of a square. It adds event 48 after 1 tick, or event 49 for a launcher projectile. Event 48 ignores impacts on the first step. Without a free projectile record, an object drops to the square.
 
-Event 48 or 49 (`projectile_process_events_48_to_49`) moves a projectile one cell forward:
+Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell forward:
 
 1. Event 49 tests the party and the group on the square. A hit ends the projectile.
 2. The step energy is subtracted from the kinetic energy and from the attack. A projectile without kinetic energy drops to the square.
@@ -165,7 +165,7 @@ Event 6 (wall) on a launcher sensor (type 7–10, 14, or 15) in the event cell c
 
 `explosion_create(thing, attack, x, y, cell)` puts an explosion on a square and adds event 25 after 1 tick (5 for the first rebirth step). A fireball or lightning bolt damages the party or the group on the target square at once: `random(attack / 2 + 1) + attack / 2 + 2`, half for lightning. Fire resistance reduces the damage to creatures.
 
-Event 25 (`explosion_process_event_25`):
+Event 25 (`explosion_process_step_event`):
 
 | Type | Effect |
 |---|---|

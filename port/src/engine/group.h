@@ -39,7 +39,7 @@ enum {
 /* A behavior event is an aspect event + 5. */
 enum { EVENT_BEHAVIOR_TO_ASPECT = 5 };
 
-/* Reactions that other rules send to group_process_events_29_to_41. Reaction r becomes event 32 + r. */
+/* Reactions that other rules send to group_process_reaction_event. Reaction r becomes event 32 + r. */
 enum { REACTION_DANGER_ON_SQUARE = -3, REACTION_HIT_BY_PROJECTILE = -2, REACTION_PARTY_IS_ADJACENT = -1 };
 
 /* Results of the damage functions (g_creature_damage_outcome). */
@@ -131,7 +131,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index);
 int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, int16_t creature_index, int16_t x, int16_t y,
                                       uint16_t hit_probability, uint16_t damage_factor, int16_t skill_index);
 
-void group_process_events_29_to_41(int16_t x, int16_t y, int16_t event_type, uint16_t ticks);
+void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint16_t ticks);
 
 int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, int16_t audible);

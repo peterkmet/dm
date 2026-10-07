@@ -342,7 +342,7 @@ void move_party(int16_t command)
         } else {
             blocked = group_get_thing(x, y) != THING_ENDOFLIST;
             if (blocked)
-                group_process_events_29_to_41(x, y, REACTION_PARTY_IS_ADJACENT, 0);
+                group_process_reaction_event(x, y, REACTION_PARTY_IS_ADJACENT, 0);
         }
     }
     if (blocked)

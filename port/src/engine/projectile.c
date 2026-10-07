@@ -241,7 +241,7 @@ static int16_t hit_creature(uint16_t projectile, uint16_t thing, int16_t is_expl
     uint16_t poison = group_get_resistance_adjusted_poison_attack(creature_type, g_projectile_poison_attack);
     int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, x, y, attack + poison, 1);
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
-        group_process_events_29_to_41(x, y, REACTION_HIT_BY_PROJECTILE, 0);
+        group_process_reaction_event(x, y, REACTION_HIT_BY_PROJECTILE, 0);
     g_creature_damage_outcome = outcome;
     if (!is_explosion && outcome == OUTCOME_NO_CREATURE_KILLED && THING_TYPE(thing) == THING_WEAPON &&
         (info->attributes & CREATURE_KEEPS_THROWN_SHARP_WEAPONS)) {
@@ -382,7 +382,7 @@ int16_t projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t y, i
 
 /* Moves a projectile one cell forward: within the square, or into the next square. Each step outside the first one
    tests the party and the creatures on the square and costs kinetic energy and attack. */
-void projectile_process_events_48_to_49(TimelineEvent *event)
+void projectile_process_move_event(TimelineEvent *event)
 {
     TimelineEvent next = *event;
     uint16_t projectile = next.b;
@@ -453,7 +453,7 @@ static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t dama
 
 /* One explosion step: poison clouds and smoke fade over several events, a rebirth explosion becomes its second
    step, harm non-material hurts non-material creatures, fireball and lightning break doors. Then it disappears. */
-void explosion_process_event_25(TimelineEvent *event)
+void explosion_process_step_event(TimelineEvent *event)
 {
     uint16_t explosion = event->c;
     int16_t x = EVENT_X(event), y = EVENT_Y(event);
@@ -477,7 +477,7 @@ void explosion_process_event_25(TimelineEvent *event)
             damage = group_get_resistance_adjusted_poison_attack(group_creature_type(group), damage);
             if (damage && group_get_damage_all_creatures_outcome(group, x, y, damage, 1) != OUTCOME_ALL_CREATURES_KILLED &&
                 damage > POISON_REACTION_MIN_DAMAGE)
-                group_process_events_29_to_41(x, y, REACTION_DANGER_ON_SQUARE, 0);
+                group_process_reaction_event(x, y, REACTION_DANGER_ON_SQUARE, 0);
         }
         if (attack > POISON_CLOUD_MIN_ATTACK) {
             explosion_set_attack(explosion, attack - POISON_CLOUD_FADE);
@@ -569,7 +569,7 @@ void projectile_fluxcage_action(int16_t x, int16_t y)
         cages = projectile_is_fluxcage_on_square(x - 1, lord_y) + projectile_is_fluxcage_on_square(x, lord_y + 1) + projectile_is_fluxcage_on_square(x + 1, lord_y);
     }
     if (cages == 2)
-        group_process_events_29_to_41(lord_x, lord_y, REACTION_DANGER_ON_SQUARE, 0);
+        group_process_reaction_event(lord_x, lord_y, REACTION_DANGER_ON_SQUARE, 0);
 }
 
 /* Fuse: a harm non-material explosion. Lord Chaos in 4 fluxcages starts the fuse sequence; otherwise he escapes

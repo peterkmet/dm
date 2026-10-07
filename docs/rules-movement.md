@@ -224,9 +224,9 @@ Event types without effect in the port:
 | 11 | `event_enable_champion_action` | Champions |
 | 12 | `event_hide_damage_received` | Champions |
 | 13 | `event_vi_altar_rebirth` | Champions |
-| 25 | `explosion_process_event_25` | Projectiles |
-| 29–41 | `group_process_events_29_to_41` | Creatures |
-| 48, 49 | `projectile_process_events_48_to_49` | Projectiles |
+| 25 | `explosion_process_step_event` | Projectiles |
+| 29–41 | `group_process_reaction_event` | Creatures |
+| 48, 49 | `projectile_process_move_event` | Projectiles |
 | 60, 61 | `group_process_move_event` | Creatures |
 | 75 | `champion_poison` | Champions |
 | 0, 3, 4, 14–19, 21–23, 26–28, 42–47, 50–52, 54–59, 62–64, 66–69, 76, 80 and higher | None in the original | — |
