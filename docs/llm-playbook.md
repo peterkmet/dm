@@ -65,6 +65,8 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 - Each champion attacks with the object in the hand. The action menu of the object shows the attacks.
 - Some creatures take damage only from magic or special weapons.
 - A closed door blocks creatures. A door that closes on a creature hurts it.
+- Before a fight with a creature type that is in `bestiary.md`, read its section again. Use what works against it, and avoid what does not work.
+- Before a timed action (a timed switch, a door that closes, a run past a trap), check `wounds`, health, and stamina of each champion. A wound or low stamina makes the party slower. Heal first.
 
 ## The dungeon
 
@@ -115,6 +117,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 - Your general knowledge of Dungeon Master is allowed.
 - Do not start or stop the game program. The coordinator runs it.
 - The user watches the window. Before each `dm-play` call, write one short line of text: what you do next and why.
+- Each call costs tokens. Use `--brief` for each call. Plan several steps per call: a whole route or a whole fight in one `act_many`, a long rest in one `wait`. Keep your text and your thinking per call short: do not repeat the state, decide the next steps.
 - Plan a corridor or a fight in one `act_many` call. It stops early when something happens (see [Batches](#batches)). Check why it stopped before you continue.
 - One `wait` with many ticks stops by itself on damage, a new creature, or a message.
 - A script may compute a route or an action list from `get_map` and send it as one `act_many`.
