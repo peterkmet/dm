@@ -612,6 +612,19 @@ Do the steps for one file at a time. Run the full suite after each file.
 - [ ] **Step 6: Run the standard test and the full suite.** `uv run pytest -q`. Expected: all pass.
 - [ ] **Step 7: Commit the file.** `git commit -am "refactor: coding standard in <file>"`.
 
+#### Task 11 notes
+
+Decisions made during Task 11 (`ui/*`, `platform/*`):
+- Casts: a `(int16_t)` or `(uint16_t)` cast that only converts a value to the type of its target (a parameter, a variable, a field, a return value) gives the same value as the implicit conversion. These casts are deleted. Casts that change the result stay with a one-line comment: the 16-bit products and sums of the original (mana cost in `command.c` and `state_json.c`, ornament hash, shrink sizes, projectile and explosion scales in `view.c`, maximum load in `ui_champion.c`), the unsigned compare of the mana in `command.c`, the unsigned half in `dialog.c`, the word length of the logo sample, and the signed words (`S8`, `S16`, `DECODE_MESSAGE_INVISIBLE`).
+- Cross-file edits outside Task 11: `THING_MAKE(type, index)` moves from `engine/dungeon.c` to `engine/map.h`, because `ui_champion.c`, `view.c`, and `state_json.c` build thing words with it (`THING_TEXT << 10 | index`). `engine/magic.c` and `engine/group.c` still build thing words with `<< 10`: Tasks 9 and 10 can use `THING_MAKE`.
+- Owners of the new or moved constants: `view.h` (`DOOR_NORTH_SOUTH` from `view.c` and `automap.c`; `VIEWPORT_MAX_W`, `VIEWPORT_MAX_H` from `view.c`, `ui.c`, `dialog.c`), `layout.h` (`ZONE_SCALE_FULL` from `layout.c`; the layout bitmap record `LAYOUT_BITMAP_*` from `view.c` and `dialog.c`), `ui.h` (`STAMINA_DISPLAY_UNIT` from `state_json.c`, `WEIGHT_TENTHS`, the `RGB_*` interface colors that `select.c` and the window icon of `main.c` use), `video.h` (`ARGB_RED_SHIFT`, `ARGB_GREEN_SHIFT`), `command.h` (`MANA_MULTIPLIER_SHIFT` from `command.c`), `state_json.h` (`DECIMAL_BASE` for `control.c` and `state_json.c`). The square bits `DOOR_NORTH_SOUTH`, `PIT_INVISIBLE`, and `SQUARE_RANDOM_ORNAMENT` belong to `engine/map.h` by rule 1; Task 11 does not touch `map.h` for them.
+- Existing constants replace copies: `PATH_SIZE` (for `MUSIC_PATH_SIZE` and the paths of `control.c`), `THING_WEAPON`, `THING_ARMOUR`, `THING_JUNK` (for `THING_TYPE_*` of `ui_menus.c`), `SYMBOL_COUNT` (for `SYMBOLS_PER_STEP`), `PANEL_LINE_SIZE`, `PALETTE_COLORS`, `COLOR_INDEX_MASK`, `PIXELS_PER_WORD`, `2 * INPUT_X2` (for `MOUSE_ENTRY_ZONE` of `dialog.c`), `SDL_ALPHA_OPAQUE`. `startend.c` writes the endgame click box with `WR16`, and `layout.c` reads its words with `BE16` (rule 9).
+- `wall_ornament_names` in `state_json.c` lists every index with `NULL` for the gaps instead of designated indices; the JSON output is the same.
+- Table data with a reason in the allowlist: `decimal ui/music.c` (FM-Towns level tracks, Super NES trigger squares) and `decimal ui/musicmap.c` (FM-Towns CSB track of each square). The KAOS addresses of the mouse input tables in `ui.c` are named constants now.
+- Splits: `control.c` (`look_json`, `handle_save`, `handle_wait`, `handle_screenshot`), `main.c` (`run_frame`), `state_json.c` (`skills_json`), `view.c` (`random_wall_ornaments`, `scan_ornament_things`, `map_square_things`), `anim.c` (`loop_chunk`), `layout.c` (`place_in_parents`). No `long` line of Task 11 stays.
+- `text.c` and `scale.c` need no change. `logo.c` gets one comment.
+- Not done: a full sweep of the plain numbers 3 to 9 in the big files (`view.c`, `ui_champion.c`, `command.c`). Only the numbers on the changed lines got names.
+
 ---
 
 ### Task 12: Final check and release notes
