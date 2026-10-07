@@ -280,7 +280,7 @@ static int16_t cast_magic_map(uint16_t champion_index, uint16_t type, int16_t po
                 break;
             }
         c->magic_map[MAGIC_MAP_NETA] = (uint8_t)(g_party_direction + 1);
-        magic_map_set_position(c->magic_map, g_party_map_index, g_party_map_x, g_party_map_y);
+        game_set_magic_map_position(c->magic_map, g_party_map_index, g_party_map_x, g_party_map_y);
         *disabled_ticks = (uint16_t)(d * d) >> 1;
         ticks = (uint16_t)(*disabled_ticks * 4);
     } else {

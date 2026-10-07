@@ -50,7 +50,7 @@ enum { MAGIC_MAP_DAIN, MAGIC_MAP_ROS, MAGIC_MAP_KU, MAGIC_MAP_NETA, MAGIC_MAP_PO
 enum { MAGIC_MAP_X_SHIFT = 11, MAGIC_MAP_Y_SHIFT = 6, MAGIC_MAP_XY_MASK = 31, MAGIC_MAP_MAP_MASK = 63 };
 
 /* Stores the kept map position of NETA in the magic map bytes. */
-static inline void magic_map_set_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)
+static inline void game_set_magic_map_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)
 {
     uint16_t word = (uint16_t)(x << MAGIC_MAP_X_SHIFT | (y & MAGIC_MAP_XY_MASK) << MAGIC_MAP_Y_SHIFT | (map & MAGIC_MAP_MAP_MASK));
     spells[MAGIC_MAP_POSITION] = (uint8_t)(word >> 8);
@@ -58,7 +58,7 @@ static inline void magic_map_set_position(uint8_t *spells, int16_t map, int16_t 
 }
 
 /* Reads the kept map position of NETA from the magic map bytes. */
-static inline void magic_map_position(const uint8_t *spells, int16_t *map, int16_t *x, int16_t *y)
+static inline void game_get_magic_map_position(const uint8_t *spells, int16_t *map, int16_t *x, int16_t *y)
 {
     uint16_t word = (uint16_t)(spells[MAGIC_MAP_POSITION] << 8 | spells[MAGIC_MAP_POSITION + 1]);
     *map = (int16_t)(word & MAGIC_MAP_MAP_MASK);

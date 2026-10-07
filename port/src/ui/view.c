@@ -1798,7 +1798,7 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
     int16_t party_px = -1, party_py = 0;
     if (map != g_party_map_index) view_load_map(g_party_map_index);
     if (spells[MAGIC_MAP_NETA]) {
-        magic_map_position(spells, &m, &x, &y);
+        game_get_magic_map_position(spells, &m, &x, &y);
         dir = (int16_t)(spells[MAGIC_MAP_NETA] - 1);
     }
     set_current_map(m);
