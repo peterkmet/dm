@@ -38,7 +38,6 @@
 #define WITNESSED_EXPLOSIONS_MAX 32
 #define WITNESSED_GROUPS_MAX 16
 #define KEY_PATTERN_SIZE 64           /* a quoted request key */
-#define NUMBER_BASE 10                /* request numbers are decimal */
 #define SLOT_REQUEST_SIZE 64
 #define CHOICE_SIZE 16
 #define CMD_SIZE 32
@@ -226,7 +225,7 @@ static long get_int(const char *line, const char *key, long missing)
     const char *p = find_value(line, key);
     char *end;
     if (!p) return missing;
-    long value = strtol(p, &end, NUMBER_BASE);
+    long value = strtol(p, &end, DECIMAL_BASE);
     return end == p ? missing : value;
 }
 

@@ -36,6 +36,7 @@ enum { THING_DOOR, THING_TELEPORTER, THING_TEXT, THING_SENSOR, THING_GROUP, THIN
 #define THING_INDEX(thing) ((thing) & 0x3ff) /* record index without type and cell */
 #define THING_STRIP_CELL(thing) ((thing) & 0x3fff)
 #define THING_WITH_CELL(thing, cell) ((uint16_t)(((cell) & 3) << 14 | THING_STRIP_CELL(thing)))
+#define THING_MAKE(type, index) ((uint16_t)((type) << 10 | (index)))
 
 #define REC(thing) dungeon_get_thing_data(thing)
 

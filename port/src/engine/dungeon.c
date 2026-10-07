@@ -46,8 +46,6 @@ const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, 16, 4, 4,
 /* Save order: header, maps, column index, square things, text, the 16 thing types, raw map data. */
 enum { PART_THINGS_FIRST = 5, PART_RAW_MAPS = PART_THINGS_FIRST + THING_TYPE_COUNT, DUNGEON_PART_COUNT };
 
-#define THING_MAKE(type, index) ((uint16_t)((type) << 10 | (index)))
-
 static void *blocks[32];
 static int block_count;
 static const uint8_t *load_ptr;

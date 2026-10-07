@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +26,8 @@
 #define MAP_MAX_SIZE 63               /* the widest map row (a map is at most 32 squares wide) */
 #define MAP_GRID_PREFIX 3             /* "yy " in front of a grid row */
 #define STAMINA_DISPLAY_UNIT 10       /* the inventory shows stamina in tenths of the stored value */
+#define JSON_START_SIZE 1024          /* the first buffer of a JSON text */
+#define NUMBER_TEXT_SIZE 24           /* a long in decimal digits with its sign */
 
 static const char *const direction_names[4] = { "north", "east", "south", "west" };
 static const char *const statistic_names[STAT_COUNT] = { "luck", "strength", "dexterity", "wisdom", "vitality", "antimagic", "antifire" };
@@ -53,7 +56,7 @@ static const char *const creature_names[CREATURE_TYPE_COUNT] = {
 static void put(Json *j, const char *text, size_t n)
 {
     if (j->len + n + 1 > j->cap) {
-        size_t cap = j->cap ? j->cap : 1024;
+        size_t cap = j->cap ? j->cap : JSON_START_SIZE;
         while (cap < j->len + n + 1) cap *= 2;
         char *s = realloc(j->s, cap);
         if (!s) abort();
@@ -78,7 +81,7 @@ void json_bool(Json *j, int value) { separate(j); json_raw(j, value ? "true" : "
 
 void json_int(Json *j, long value)
 {
-    char buf[24];
+    char buf[NUMBER_TEXT_SIZE];
     separate(j);
     snprintf(buf, sizeof buf, "%ld", value);
     json_raw(j, buf);
@@ -119,9 +122,9 @@ static void key_bool(Json *j, const char *key, int value) { json_key(j, key); js
 /* A value in tenths as a decimal number, as the load line shows it. */
 static void tenths(Json *j, long value)
 {
-    char buf[24];
+    char buf[NUMBER_TEXT_SIZE];
     separate(j);
-    snprintf(buf, sizeof buf, "%ld.%ld", value / 10, value % 10);
+    snprintf(buf, sizeof buf, "%ld.%ld", value / DECIMAL_BASE, value % DECIMAL_BASE);
     json_raw(j, buf);
 }
 
@@ -149,7 +152,7 @@ static const char *object_kind(uint16_t thing)
     return "other";
 }
 
-static int is_object(uint16_t thing) { return THING_TYPE(thing) >= THING_WEAPON && THING_TYPE(thing) <= THING_JUNK; }
+static bool is_object(uint16_t thing) { return THING_TYPE(thing) >= THING_WEAPON && THING_TYPE(thing) <= THING_JUNK; }
 
 static const char *object_name(uint16_t thing) { return gfx_object_name(object_get_icon_index(thing)); }
 
@@ -165,7 +168,7 @@ static void object_json(Json *j, uint16_t thing, int held)
     key_str(j, "kind", object_kind(thing));
     if (held && THING_TYPE(thing) == THING_SCROLL) {
         char text[STATE_TEXT_SIZE];
-        uint16_t text_thing = (uint16_t)(THING_TEXT << 10 | scroll_text_index(thing));
+        uint16_t text_thing = THING_MAKE(THING_TEXT, scroll_text_index(thing));
         if (decode_text(text, sizeof text, text_thing, TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY)) key_str(j, "text", text);
     }
     json_close(j, '}');
@@ -216,6 +219,24 @@ static void runes_json(Json *j, const char *symbols, int count)
     json_close(j, ']');
 }
 
+/* The level and the rank name of each base skill of a champion. */
+static void skills_json(Json *j, int16_t index)
+{
+    json_open(j, '{');
+    for (int s = 0; s < SKILL_BASE_COUNT; s++) {
+        int16_t level = champion_get_skill_level(index, s);
+        const char *rank = ui_skill_rank_name(level);
+        json_key(j, skill_names[s]);
+        json_open(j, '{');
+        key_int(j, "level", level);
+        json_key(j, "rank");
+        if (rank) json_str(j, rank);
+        else json_null(j);
+        json_close(j, '}');
+    }
+    json_close(j, '}');
+}
+
 static void champion_json(Json *j, int16_t index)
 {
     const Champion *c = &g_champions[index];
@@ -242,19 +263,7 @@ static void champion_json(Json *j, int16_t index)
     for (int s = 0; s < STAT_COUNT; s++) pair(j, statistic_names[s], c->statistics[s][STAT_CURRENT], c->statistics[s][STAT_MAXIMUM]);
     json_close(j, '}');
     json_key(j, "skills");
-    json_open(j, '{');
-    for (int s = 0; s < SKILL_BASE_COUNT; s++) {
-        int16_t level = champion_get_skill_level(index, (uint16_t)s);
-        const char *rank = ui_skill_rank_name(level);
-        json_key(j, skill_names[s]);
-        json_open(j, '{');
-        key_int(j, "level", level);
-        json_key(j, "rank");
-        if (rank) json_str(j, rank);
-        else json_null(j);
-        json_close(j, '}');
-    }
-    json_close(j, '}');
+    skills_json(j, index);
     json_key(j, "wounds");
     json_open(j, '[');
     for (int w = 0; w < UI_BODY_SLOT_COUNT; w++)
@@ -313,6 +322,7 @@ static void spell_json(Json *j)
     json_open(j, '[');
     for (int s = 0; s < SYMBOL_COUNT; s++) {
         uint16_t cost = *tables_symbol_base_mana_cost(c->symbol_step, s);
+        /* 16-bit product as in the original */
         if (c->symbol_step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >> 3;
         json_open(j, '{');
         key_int(j, "symbol", s);
@@ -379,7 +389,7 @@ void state_json_state(Json *j)
     key_bool(j, "dead", g_party_dead);
     json_close(j, '}');
     /* A shown candidate is the last champion record, but not yet in the party. */
-    int16_t members = (int16_t)g_party_champion_count, candidate = -1;
+    int16_t members = g_party_champion_count, candidate = -1;
     if (g_candidate_champion_ordinal && members) candidate = --members;
     json_key(j, "leader");
     if (g_leader_index < 0 || g_leader_index == candidate) json_null(j);
@@ -466,16 +476,14 @@ typedef struct {
 
 /* The wall ornaments of DM and CSB, by index, named from their picture. */
 static const char *const wall_ornament_names[] = {
-    [1] = "square_alcove", [2] = "vi_altar", [3] = "arched_alcove", [4] = "hook", [5] = "iron_lock", [6] = "plate_ring",
-    [7] = "dent", [8] = "tiny_button", [10] = "iron_ring", [11] = "crack", [12] = "slime_outlet", [14] = "green_button",
-    [15] = "blue_button", [16] = "grate", [17] = "coin_slot", [19] = "wooden_lock", [20] = "rune_lock", [21] = "framed_lock",
-    [22] = "studded_lock", [23] = "cross_lock", [24] = "gold_lock", [25] = "skull_lock", [26] = "ornate_gold_lock",
-    [27] = "blue_lock", [28] = "green_lock", [29] = "diamond_lock", [30] = "sun_lock", [31] = "black_lock", [32] = "gem_hole",
-    [33] = "creeper", [34] = "manacles", [35] = "fountain", [36] = "iron_ornament", [37] = "demon_face", [38] = "scratches",
-    [39] = "tiny_hole", [40] = "round_hole", [41] = "narrow_slot", [43] = "mirror", [44] = "torch_holder",
-    [45] = "empty_torch_holder", [46] = "long_holder", [47] = "red_button", [48] = "eye_socket", [49] = "grey_button",
-    [50] = "small_crack", [51] = "green_gem", [52] = "blue_gem", [53] = "brown_button", [54] = "wall_slot", [55] = "wide_crack",
-    [56] = "red_gem_roots", [57] = "blue_gem_roots", [58] = "rock_face", [59] = "lord_order",
+    NULL, "square_alcove", "vi_altar", "arched_alcove", "hook", "iron_lock", "plate_ring", "dent", "tiny_button", NULL,
+    "iron_ring", "crack", "slime_outlet", NULL, "green_button", "blue_button", "grate", "coin_slot", NULL,
+    "wooden_lock", "rune_lock", "framed_lock", "studded_lock", "cross_lock", "gold_lock", "skull_lock",
+    "ornate_gold_lock", "blue_lock", "green_lock", "diamond_lock", "sun_lock", "black_lock", "gem_hole", "creeper",
+    "manacles", "fountain", "iron_ornament", "demon_face", "scratches", "tiny_hole", "round_hole", "narrow_slot", NULL,
+    "mirror", "torch_holder", "empty_torch_holder", "long_holder", "red_button", "eye_socket", "grey_button",
+    "small_crack", "green_gem", "blue_gem", "brown_button", "wall_slot", "wide_crack", "red_gem_roots",
+    "blue_gem_roots", "rock_face", "lord_order",
 };
 enum { WALL_ORNAMENT_NAME_COUNT = sizeof wall_ornament_names / sizeof *wall_ornament_names };
 
@@ -640,7 +648,7 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
 }
 
 /* A square of the view that the screen draws: a side square behind a wall at its depth and one row nearer is hidden. */
-static int side_seen(int16_t depth, int16_t side)
+static bool side_seen(int16_t depth, int16_t side)
 {
     return automap_side_is_visible(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction, depth, side);
 }
@@ -727,17 +735,17 @@ int state_json_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX])
 }
 
 /* Explored squares: the automap and the squares of the current view, which the automap marks at the next tick. */
-static int is_seen(int16_t x, int16_t y)
+static bool is_seen(int16_t x, int16_t y)
 {
-    if (explored_is_seen(g_party_map_index, x, y)) return 1;
+    if (explored_is_seen(g_party_map_index, x, y)) return true;
     for (int16_t depth = 0; depth < visible_depths(); depth++)
         for (int16_t side = -1; side <= 1; side++) {
             int16_t vx, vy;
             if (!side_seen(depth, side)) continue;
             view_square(depth, side, &vx, &vy);
-            if (vx == x && vy == y) return 1;
+            if (vx == x && vy == y) return true;
         }
-    return 0;
+    return false;
 }
 
 static char map_char(int16_t x, int16_t y)
@@ -786,7 +794,7 @@ void state_json_map(Json *j)
     json_key(j, "grid");
     json_open(j, '[');
     memset(line, ' ', MAP_GRID_PREFIX);
-    for (int16_t x = 0; x < w; x++) line[MAP_GRID_PREFIX + x] = (char)('0' + x % 10);
+    for (int16_t x = 0; x < w; x++) line[MAP_GRID_PREFIX + x] = (char)('0' + x % DECIMAL_BASE);
     line[MAP_GRID_PREFIX + w] = 0;
     json_str(j, line);
     for (int16_t y = 0; y < h; y++) {
