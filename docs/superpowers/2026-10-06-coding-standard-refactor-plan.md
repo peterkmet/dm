@@ -612,6 +612,10 @@ Do the steps for one file at a time. Run the full suite after each file.
 - [ ] **Step 6: Run the standard test and the full suite.** `uv run pytest -q`. Expected: all pass.
 - [ ] **Step 7: Commit the file.** `git commit -am "refactor: coding standard in <file>"`.
 
+Decisions made during Task 8:
+- `data/adventure.c`, `data/bytes.h`, and `data/ids.h` need no change: no allowlist line, no predicate, and no 16-bit cast that only passes a value on.
+- `data/csbimage.c`: the only `decimal` hits are the byte sizes in `csb_copies`, the table of KAOS and APPB addresses. A name for each of the 100 sizes does not help the reader, and the sizes are of the same kind as the addresses of the permanent `hex` line. The allowlist keeps the permanent line `decimal data/csbimage.c byte sizes in the table of APPB addresses`. Task 12 Step 1 accepts it too.
+
 ---
 
 ### Task 12: Final check and release notes
