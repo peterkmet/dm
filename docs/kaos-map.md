@@ -60,11 +60,11 @@ Ghidra drops most arguments of a jump-table call. For example, `game_loop` pushe
 
 1. If `g_new_party_map_index != -1`: `process_new_party_map`, `move_get_move_result(party)`, `command_discard_all_input`.
 2. `timeline_process`. Repeat step 1 if the party changed maps.
-3. If the party is not sleeping: `command_unfreeze_game` (no candidate champion), then `draw_dungeon_view(direction, x, y)` when no inventory is open, then update the mouse pointer.
+3. If the party is not sleeping: `game_unfreeze` (no candidate champion), then `draw_dungeon_view(direction, x, y)` when no inventory is open, then update the mouse pointer.
 4. `highlight_box_disable`, `sound_play_pending`, `champion_apply_and_draw_pending_damage_and_wounds`.
 5. Leave the loop when `g_party_dead` is set.
 6. Increment `g_game_time`. Every 512 ticks: `decrease_torches_light_power`. Decrement the freeze-life ticks.
-7. `menus_refresh_action_area`. Every 64 ticks (16 when sleeping): `champion_apply_time_effects`. Optional `ui_draw_all_champion_states`. Decrement the movement-disable counters.
+7. `menus_refresh_action_area`. Every 64 ticks (16 when sleeping): `champion_apply_time_effects`. Optional `champion_draw_all_states`. Decrement the movement-disable counters.
 8. `message_area_clear_expired_rows`.
 9. Input loop: read each key from the key queue and call `command_process_key`. Call `command_process_queue`. Repeat until `g_stop_waiting_for_input` and `g_game_time_ticking` are set. The vertical-blank handler sets `g_stop_waiting_for_input` after `g_wait_for_input_max_vblank_count` (12) frames.
 

@@ -195,11 +195,11 @@ Explosion things are `0xff80 + type`: 0 fireball, 1 slime, 2 lightning bolt, 3 h
 
 ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 
-- `projectile_is_fluxcage_on_square(x, y)`: true when an explosion of type 50 is on the square.
-- `projectile_get_lord_chaos_on_square(x, y)`: the group thing when creature type 23 (Lord Chaos) is there, else 0.
-- `projectile_fluxcage_action(x, y)` (was unnamed): creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event −3 to his group. The existing CSV name `projectile_fluxcage_action` at `0x11cda2` was wrong.
-- `projectile_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
-- `group_get_square_distance`: Manhattan distance.
+- `group_is_fluxcage_on_square(x, y)`: true when an explosion of type 50 is on the square.
+- `group_get_lord_chaos_on_square(x, y)`: the group thing when creature type 23 (Lord Chaos) is there, else 0.
+- `group_fluxcage_action(x, y)` (was unnamed): creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event −3 to his group. The existing CSV name `group_fluxcage_action` at `0x11cda2` was wrong.
+- `group_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
+- `get_square_distance`: Manhattan distance.
 - `group_is_destination_visible_from_source(direction, sx, sy, dx, dy)`: true when the destination is in the 90° cone in that direction.
 - `group_get_directions_to_destination(sx, sy, dx, dy)` returns the main direction and writes the second direction to `g_group_secondary_direction`.
 - `group_set_ordered_cells_to_attack` copies 4 cells from `g_ordered_cells_to_attack[direction * 2 + side]`.
@@ -269,25 +269,25 @@ Bits 5–7 hold the square type (0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 
 
 Algorithm:
 
-1. When a group moves on the party map, `projectile_is_killed_by_impact` runs first. When it returns true, the function returns 1.
+1. When a group moves on the party map, `move_is_killed_by_projectile_impact` runs first. When it returns true, the function returns 1.
 2. Store the destination. For the party set `g_party_map_x/y`. Choose a teleporter scope mask: 1 creature, 2 party, 3 object.
 3. Loop at most 99 times over the destination square:
-   - Teleporter (type 5, open bit 3): the teleporter thing is the first thing of the square. Check its scope bits (byte 2 bits 5–6). Read target X (byte 3 bits 0–4), target Y (word 2 bits 5–9), target map (byte 4). Byte 2 bit 7 is audible: play sound 14. Byte 2 bit 4 selects absolute rotation; bits 2–3 hold the rotation. The party turns with `move_set_party_direction`. Objects rotate their cell. Stop when the teleporter points to itself.
+   - Teleporter (type 5, open bit 3): the teleporter thing is the first thing of the square. Check its scope bits (byte 2 bits 5–6). Read target X (byte 3 bits 0–4), target Y (word 2 bits 5–9), target map (byte 4). Byte 2 bit 7 is audible: play sound 14. Byte 2 bit 4 selects absolute rotation; bits 2–3 hold the rotation. The party turns with `champion_set_party_direction`. Objects rotate their cell. Stop when the teleporter points to itself.
    - Open pit (type 2, bit 3 set, bit 0 clear), when the thing does not levitate: go one level down with `get_location_after_level_change(map, +1, &x, &y)`. The party takes `champion_damage_all(20, 0x30, 2)` and sound 7. When `g_use_rope_to_climb_down_pit` is set, each champion instead loses stamina `load × 25 / max_load + 1`. A falling group takes 20 damage through `group_get_damage_all_creatures_outcome`. Outcome 2 (all dead) ends the loop.
    - Stairs (type 3) for things other than the party and projectiles: go one level up or down (bit 2 clear: down), then step out in the stairs exit direction. The new cell faces away from the stairs.
    - Any other square ends the loop.
-4. A group that died, or that is not allowed on the target map (`group_is_creature_allowed_on_map`), drops its possessions and is deleted.
+4. A group that died, or that is not allowed on the target map (`is_creature_allowed_on_map`), drops its possessions and is deleted.
 5. Store the result in `g_move_result_map_x/y`, `g_move_result_map_index`, `g_move_result_cell`, and `g_move_result_direction`.
-6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `champion_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `move_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
+6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `champion_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `champion_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
 7. Remove the thing from the source with `sensor_process_thing_addition_or_removal(..., add=0)`. A levitating thing skips sensors and only unlinks.
 8. Add the thing at the destination:
    - Party on a new map: set `g_new_party_map_index`. The game loop changes the map.
    - Party on the same map: a group on the square drops its possessions and is deleted. Then sensors run with `add=1`.
-   - Group: when the square is free, play the creature move sound (`move_get_creature_sound`), add or remove the active group, link the group through the sensors, and call `group_start_wandering`. When the square is occupied, remove the group and create event 60/61 (`group_create_event_move_group`) to retry 5 ticks later.
+   - Group: when the square is free, play the creature move sound (`move_get_creature_sound`), add or remove the active group, link the group through the sensors, and call `group_start_wandering`. When the square is occupied, remove the group and create event 60/61 (`move_create_event_move_group`) to retry 5 ticks later.
 
 `move_is_levitating(thing)` returns true for a group with the levitation attribute (creature attributes bit 5), and for projectiles (type 14) and explosions (type 15).
 
-`projectile_is_killed_by_impact` builds a 4-byte table of occupied cells (party champions or group creatures). For a move to an adjacent square, it also checks the two cells that the mover crosses. It calls `projectile_has_impact_occurred` for every projectile on the squares whose event type is not 48 (ignore impacts). The projectile event index is in projectile data offset 6. The function returns true when the group died (`g_creature_damage_outcome == 2`, global `0x103158`, owned by range 7).
+`move_is_killed_by_projectile_impact` builds a 4-byte table of occupied cells (party champions or group creatures). For a move to an adjacent square, it also checks the two cells that the mover crosses. It calls `projectile_has_impact_occurred` for every projectile on the squares whose event type is not 48 (ignore impacts). The projectile event index is in projectile data offset 6. The function returns true when the group died (`g_creature_damage_outcome == 2`, global `0x103158`, owned by range 7).
 
 `move_get_creature_sound(type)` returns -1 when the party sleeps or the creature has no sound. Otherwise it reads the sound ordinal from creature record byte 1 and maps it through the word table at `0x101bea` (low byte).
 
@@ -410,7 +410,7 @@ Square event effects: 0 = set (open, activate), 1 = clear (close, deactivate), 2
 - `timeline_move_teleporter_or_pit_square_things(x, y)` re-runs `move_get_move_result(thing, x, y, x, y)` for the party, the group, and each object. Projectiles and explosions get their event data updated from the `g_move_result_*` globals.
 - Corridor (5): text things toggle visibility (byte 3 bit 0). The party sees new text as a message. Group generator sensors (type 6) create a group with `group_get_generated`, play sound 14 when audible, and disable themselves. A non-once-only generator re-enables through event 65 after its regeneration delay.
 - Wall (6): text things in the event cell toggle. Counter sensors (6) count up (effect 0, max 511) or down, and trigger at 0. AND/OR gates (5) set or clear bit `cell` of the data, and compare bits 4–7 with bits 0–3. Launchers in the event cell call `timeline_trigger_projectile_launcher`. Sensor 18 waits `delay × 60` frames, sets `g_game_won`, and calls `endgame(1)`.
-- `timeline_trigger_projectile_launcher(sensor, event)`: types 7, 8, 14 launch one projectile, types 9, 10, 15 launch two. Types 8 and 10 launch explosions (`data − 128`). Types 14 and 15 launch objects from the launcher square (cells in front). Types 7 and 9 create objects with `projectile_get_object_for_launcher_or_generator`. Kinetic energy is word 6 bits 4–11. Step energy is word 6 bits 12–15. The attack is 100. A single projectile picks a random side cell. The projectile starts on the adjacent square in direction `cell` with `g_create_launcher_projectile` set.
+- `timeline_trigger_projectile_launcher(sensor, event)`: types 7, 8, 14 launch one projectile, types 9, 10, 15 launch two. Types 8 and 10 launch explosions (`data − 128`). Types 14 and 15 launch objects from the launcher square (cells in front). Types 7 and 9 create objects with `get_object_for_launcher_or_generator`. Kinetic energy is word 6 bits 4–11. Step energy is word 6 bits 12–15. The attack is 100. A single projectile picks a random side cell. The projectile starts on the adjacent square in direction `cell` with `g_create_launcher_projectile` set.
 - Move group (60/61): when the party or a group still blocks the square, retry at time + 5. Lord Chaos (creature type 23) can instead step to a random adjacent free square (1 in 4).
 - Enable champion action (11): clear the action event index (+0x2c) and the "action disabled" flag, remove the action defense, redraw the action hand. When the last action was SHOOT (32) and the ready hand is empty, move ammunition from the quiver (slot 12, then 7–9).
 - Vi altar rebirth (13): byte 9 is the step. Step 2 creates explosion thing `0xffe4` at the altar, step 1 removes the bones (icon 0x93) of the champion, step 0 resurrects the champion (`0x113a12`, range 5). Each step re-adds the event.
@@ -436,8 +436,8 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 
 | Command | Action |
 |---|---|
-| 1, 2 | Turn left, right (`move_turn_party`). |
-| 3–6 | Move forward, right, backward, left (`move_party`). |
+| 1, 2 | Turn left, right (`command_turn_party`). |
+| 3–6 | Move forward, right, backward, left (`command_move_party`). |
 | 7–10 | Toggle inventory of champion 0–3. 11 closes the inventory. |
 | 12–15 | Click in champion status box 0–3. |
 | 16–19 | Set leader 0–3 (from status box). |
@@ -475,9 +475,9 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 
 #### Party movement
 
-`move_party(command)` charges every living champion `load × 3 / max_load + 1` stamina. It highlights the arrow zone `command + 0x43`. It computes the target square with `g_movement_arrow_to_step_forward_count` and `g_movement_arrow_to_step_right_count`. Stairs lead to `move_take_stairs`. Walls, closed doors (state not 0, 1, or 5), and solid fake walls block the move. A blocked move hurts the two front champions (24 damage, wound mask 2) and plays sound 15. A group on the target square blocks the move and gets event −1 (`group_process_events_29_to_41`). A successful move sets `g_disabled_movement_ticks` to the maximum movement ticks of the living champions.
+`command_move_party(command)` charges every living champion `load × 3 / max_load + 1` stamina. It highlights the arrow zone `command + 0x43`. It computes the target square with `g_movement_arrow_to_step_forward_count` and `g_movement_arrow_to_step_right_count`. Stairs lead to `command_take_stairs`. Walls, closed doors (state not 0, 1, or 5), and solid fake walls block the move. A blocked move hurts the two front champions (24 damage, wound mask 2) and plays sound 15. A group on the target square blocks the move and gets event −1 (`group_process_events_29_to_41`). A successful move sets `g_disabled_movement_ticks` to the maximum movement ticks of the living champions.
 
-`move_turn_party` turns the party. On stairs it takes the stairs. It removes the party from the square sensors before the turn and adds it after the turn.
+`command_turn_party` turns the party. On stairs it takes the stairs. It removes the party from the square sensors before the turn and adds it after the turn.
 
 #### Dungeon view clicks
 
@@ -486,7 +486,7 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 - Door button: `sensor_add_event(10, front, cell 0, toggle, time + 1)`.
 - Empty hand on an object cell: `command_grab_leader_hand_object`.
 - Empty hand on the wall ornament: drink from a fountain (water of the leader = 2048, sound 8), or `command_touch_front_wall`.
-- Hand object over zones `0x2e4`–`0x2e7`: `command_drop_leader_hand_object`. Over zones `0x2e9`/`0x2ea` (`0x2ec`/`0x2ed` with a door): throw (`action_is_leader_hand_object_thrown`).
+- Hand object over zones `0x2e4`–`0x2e7`: `command_drop_leader_hand_object`. Over zones `0x2e9`/`0x2ea` (`0x2ec`/`0x2ed` with a door): throw (`champion_is_leader_hand_object_thrown`).
 - Hand object on an alcove: drop into the alcove (cell 4). On a vi altar, bones (icon 0x93) create event 13.
 - Hand object on a fountain: fill a flask (icon 8 or 9 sets 3 charges) or a waterskin (icon 0xc3), then touch the wall.
 
@@ -508,7 +508,7 @@ Per-action tables (44 bytes each, indexed by action):
 
 | Address | Global | Use |
 |---|---|---|
-| `0x103eac` | `g_action_disabled_ticks` | `magic_disable_action` duration. |
+| `0x103eac` | `g_action_disabled_ticks` | `champion_disable_action` duration. |
 | `0x103ed8` | `g_action_damage_factor` | Melee damage factor. |
 | `0x103f04` | `g_action_hit_probability` | Melee hit probability (bit 15 added for SHOOT-like actions). |
 | `0x103f30` | `g_action_stamina` | Stamina cost (plus a random bit). |
@@ -516,9 +516,9 @@ Per-action tables (44 bytes each, indexed by action):
 | `0x103f88` | `g_action_skill_index` | Skill that the action trains. |
 | `0x103fb4` | `g_action_experience_gain` | Experience gain. |
 
-`action_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB, 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB, 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`0x11d5e0`). Other melee actions call `action_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
+`menus_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB, 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB, 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`0x11d5e0`). Other melee actions call `menus_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
 
-`action_is_group_frightened_by_action` (WAR CRY, BLOW HORN, CONFUSE, CALM, BRANDISH) compares `random16() % (skill + bonus)` with the creature fear resistance. A frightened group flees for `(16 − fear) × 4 / movement_ticks`.
+`menus_is_group_frightened_by_action` (WAR CRY, BLOW HORN, CONFUSE, CALM, BRANDISH) compares `random16() % (skill + bonus)` with the creature fear resistance. A frightened group flees for `(16 − fear) × 4 / movement_ticks`.
 
 `menus_refresh_action_area` runs every tick from the game loop. It also turns idle champions to the direction stored at +0x28 (set by damage) when the flag at +0x29 is set.
 
@@ -537,7 +537,7 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the s
 | 5 | Skill index. |
 | 6 | Word: bits 0–3 kind (1 potion, 2 projectile, 3 other), bits 4–9 type, bits 10–15 action disabled ticks. |
 
-`magic_get_champion_spell_cast_result`:
+`menus_get_champion_spell_cast_result`:
 
 1. Find the spell (`menus_get_spell_from_symbols`). No match: message "meaningless spell".
 2. Power = first symbol − 0x5f (1–6). Required level = power + base level. Experience = `(random & 7) + 16 × level + 8 × (power − 1) × base + D3²`. The intended last term is `level²` (ReDMCSB). The compiled code squares register D3 before it stores the level in D3, so it uses a stale value from the caller. A port should use `level²`.
@@ -546,7 +546,7 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the s
 5. Projectile: turn the champion to the party direction and shoot explosion `type − 128` with kinetic energy `bounded(21, (power + 2) × (4 + 2 × skill), 255)`. Type 4 doubles the skill.
 6. Other: 0 light, 1 darkness, 2 thieves eye (event 73), 3 invisibility (event 71), 4 party shield (event 74), 5 magic torch, 6 footprints (event 79), 7 zokathra (creates junk 10), 8 fire shield.
 
-`magic_print_spell_failure_message`: type 0 = more practice (strings 0x33/0x34 for skill 3, else 0x35/0x36), type 1 = meaningless (0x37/0x38), type 10 = need flask (0x39/0x3a).
+`menus_print_spell_failure_message`: type 0 = more practice (strings 0x33/0x34 for skill 3, else 0x35/0x36), type 1 = meaningless (0x37/0x38), type 10 = need flask (0x39/0x3a).
 
 ### Uncertain items
 
@@ -642,7 +642,7 @@ The dialog system shows a message box with one to four choices. ReDMCSB calls it
 
 #### Globals
 
-- `g_game_screen_inactive` (`0x104024`) starts at 1. `game_loop` sets it to 0. `endgame` sets it to 1. `start_game` sets it to 0 for a new game. When it is 1, the dialog uses the full screen: `dialog_draw` fades the palette to black, clears the screen, and `dialog_draw_viewport` blits the viewport bitmap to screen zone 5. When it is 0, `dialog_draw_viewport` calls `draw_viewport(0)`. `command_freeze_game` and `command_unfreeze_game` do nothing when it is 1.
+- `g_game_screen_inactive` (`0x104024`) starts at 1. `game_loop` sets it to 0. `endgame` sets it to 1. `start_game` sets it to 0 for a new game. When it is 1, the dialog uses the full screen: `dialog_draw` fades the palette to black, clears the screen, and `dialog_draw_viewport` blits the viewport bitmap to screen zone 5. When it is 0, `dialog_draw_viewport` calls `draw_viewport(0)`. `game_freeze` and `game_unfreeze` do nothing when it is 1.
 - `g_dialog_choice` (`0x10402a`). The command handler writes the clicked choice number here. The value 99 means "no choice yet".
 - `g_dialog_message_colors` (`0x104026`): text colors of message 1 (11) and message 2 (9).
 - `g_dialog_version_text` (`0x10402c`): the string `V3.6`. The dialog prints it in zone `0x1c2`.
@@ -709,8 +709,8 @@ A C port with enough memory can use the first set and skip this search.
 
 #### Freeze
 
-- `command_freeze_game`: only when not frozen and the game screen is active. Set `g_game_frozen`. Restore the champion mouse pointer, disable the highlight box, clear zone 9 (or close the open chest when an inventory is open), clear zones 13 and 11, and set the default mouse pointer.
-- `command_unfreeze_game`: only when frozen and the game screen is active. When the party sleeps, redraw the sleep screen (`0x1210e8`, `draw_viewport(0)`) and stay frozen. Otherwise clear the flag, redraw the magic caster and action area, then the viewport or the open inventory, then refresh the mouse pointer.
+- `game_freeze`: only when not frozen and the game screen is active. Set `g_game_frozen`. Restore the champion mouse pointer, disable the highlight box, clear zone 9 (or close the open chest when an inventory is open), clear zones 13 and 11, and set the default mouse pointer.
+- `game_unfreeze`: only when frozen and the game screen is active. When the party sleeps, redraw the sleep screen (`0x1210e8`, `draw_viewport(0)`) and stay frozen. Otherwise clear the flag, redraw the magic caster and action area, then the viewport or the open inventory, then refresh the mouse pointer.
 
 #### Entrance
 
@@ -825,12 +825,12 @@ The checksum is the same for the plain and the encrypted data, because it adds b
 
 #### `save_game`
 
-1. `command_freeze_game`, `timeline_reset`. Allocate a 512-byte header.
+1. `game_freeze`, `timeline_reset`. Allocate a 512-byte header.
 2. Show "PUT THE GAME SAVE DISK IN ~". Choices: when `g_save_dialog_format_choice` (`0x104060`, value 1) is set: SAVE, QUIT, FORMAT FLOPPY, CANCEL. Else: CANCEL, SAVE, QUIT.
 3. QUIT: when the last save and the last load (`g_last_save_game_time`, `g_last_load_game_time`) are both more than 100 ticks old, ask "THE GAME IS NOT SAVED, IS IT OK TO QUIT?". Then clear `g_saved_game_exists` and call `endgame(0)`.
 4. FORMAT FLOPPY: `format_save_disk_dialog`.
 5. SAVE: check the disk with `is_save_disk_inserted(0)` and show the error ("CAN'T MODIFY DUNGEON MASTER DISK!", "THAT DISK IS UNREADABLE", "THAT DISK IS WRITE-PROTECTED!", "THERE IS NO DISK IN ~!"). Show "SAVING GAME . . .". Delete `DMGAME~.BAK`, rename `DMGAME~.DAT` to `.BAK`, write a new `DMGAME~.DAT`. On error show "UNABLE TO SAVE GAME!". On success set `g_saved_game_exists` and `g_last_save_game_time`, and show the dialog again.
-6. At the end: `ensure_master_disk(0)`, `command_unfreeze_game`.
+6. At the end: `ensure_master_disk(0)`, `game_unfreeze`.
 
 #### `load_game`
 
@@ -847,7 +847,7 @@ Returns 1 on success, −1 on cancel (restart path).
 2. Read the parts with `save_read_summed_block`. Allocate them only when no restart is in progress (`g_restart_requested` = 0). The parts, the new-game extras (300 free square-first-thing entries, extra thing records per type from the table at `0x101058`, capped at 1024, 768 for type 15), and the event max count (100 + counts of type 4 and types 14–15) are as in the module map.
 3. Read the checksum word. Accept the dungeon when the word is missing or equal to the byte sum.
 4. Build the column pointer table `g_dungeon_map_data`: one pointer per map, then one pointer per column. Column `c` of map `m` starts at `raw + map.offset + c × height`.
-5. New game: `timeline_init`, `game_init_active_groups`.
+5. New game: `timeline_init`, `group_init_active_groups`.
 
 `decompress_dungeon` decodes a bit stream (MSB first, read in big-endian words). The first 20 bytes of the data after the 8-byte header are two tables: `t4` (4 bytes) and `t16` (16 bytes). The stream starts at byte 20. Codes:
 

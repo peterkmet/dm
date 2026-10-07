@@ -63,7 +63,7 @@ In DM, `KAOS.FTL` holds the game and `APPB.FTL` holds the intro. In CSB, `APPB.F
 | Memory heap (simpler than DM) | `heap_init` C`0x117754`, `heap_setup_regions` C`0x117814`, `compute_graphics_memory` C`0x12b532` |
 | Copy protection | 16 functions with subsystem `protect`, see [Copy protection](#copy-protection) |
 
-The DM-only functions are the language support (`set_language_file_names`, `load_string_table`, `get_string`, `graphics_get_language_index`), the DM heap and graphics area manager (`heap_*`, `gfx_area_*`), Fuse and Lord Chaos (`projectile_fluxcage_action`, `projectile_fuse_action`, `projectile_is_fluxcage_on_square`, `projectile_get_lord_chaos_on_square`, `fuse_sequence`, `fuse_sequence_update`), the DM victory screen (`endgame_print_text`, `endgame_draw_button`), and `format_save_disk_dialog`.
+The DM-only functions are the language support (`set_language_file_names`, `load_string_table`, `get_string`, `graphics_get_language_index`), the DM heap and graphics area manager (`heap_*`, `gfx_area_*`), Fuse and Lord Chaos (`group_fluxcage_action`, `group_fuse_action`, `group_is_fluxcage_on_square`, `group_get_lord_chaos_on_square`, `fuse_sequence`, `fuse_sequence_update`), the DM victory screen (`endgame_print_text`, `endgame_draw_button`), and `format_save_disk_dialog`.
 
 ## Data tables
 
@@ -163,7 +163,7 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 | `CREDITS_PALETTE`, `ENTRANCE_PALETTE` (CSB values) | `0x100a46`, `0x100a66` | `0x100f18`, `0x100f38` | `entrance_show_credits`, `entrance_draw` |
 | `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b8a` | `0x10105e` | `group_steal_from_champion` C`0x10e7f6` |
 | `LIST_SEPARATOR` ", " | `0x101ebe` | `0x10264a` | `build_object_attributes_string` C`0x110dcc` |
-| `BONES_SEPARATOR` " ", `ATTRIBUTES_SUFFIX` ")", `ATTRIBUTES_PREFIX` "(" | `0x101ec6`, `0x101ec8`, `0x101eca` | `0x10267a`, `0x1026ec`, `0x1026ea` | `ui_draw_panel_object` C`0x111cba`, `0x111f12`, `0x111f16` |
+| `BONES_SEPARATOR` " ", `ATTRIBUTES_SUFFIX` ")", `ATTRIBUTES_PREFIX` "(" | `0x101ec6`, `0x101ec8`, `0x101eca` | `0x10267a`, `0x1026ec`, `0x1026ea` | `draw_panel_object` C`0x111cba`, `0x111f12`, `0x111f16` |
 | `VIEWPORT_ORIGIN` | `0x10293a` | `0x103298` | `command_init_mouse_input_table` |
 | `MESSAGE_LINE_PAD` | `0x102966` | `0x1032ca` | `dialog_draw` C`0x128176` |
 | `DAMAGE_SIZE_LARGE`, `DAMAGE_SIZE_SMALL` | `0x102978`, `0x10297c` | `0x1032dc`, `0x1032e0` | `menus_draw_action_damage` |
@@ -175,7 +175,7 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 | Endgame mouse input (RESTART only) | `0x1031d4` | `0x103c60` | `endgame` C`0x1284c2` |
 | Other mouse input tables | `0x1031f8` … `0x10378c` | `0x103c78` … `0x10420c` | CSV names |
 | `KEYS_ENTRANCE` (1 entry), `KEYS_INTERFACE`, `KEYS_MOVEMENT` | `0x10393c`, `0x103948`, `0x103964` | `0x1043bc`, `0x1043c4`, `0x1043e0` | `process_entrance`, `start_game` |
-| `ACTION_EXPERIENCE_GAIN`, `VERSION_TEXT`, `MESSAGE_COLORS` | `0x103fb4`, `0x10402c`, `0x104026` | `0x104ae8`, `0x104c24`, `0x104c20` | `action_is_action_performed`, `dialog_draw` |
+| `ACTION_EXPERIENCE_GAIN`, `VERSION_TEXT`, `MESSAGE_COLORS` | `0x103fb4`, `0x10402c`, `0x104026` | `0x104ae8`, `0x104c24`, `0x104c20` | `menus_is_action_performed`, `dialog_draw` |
 
 Not in the CSB image:
 
@@ -221,13 +221,13 @@ Code references (Step 3 verified each address: a `pea` or `lea` with A5 = C`0x10
 |---|---|
 | `0x104680`, `0x104688` | `command_draw_sleep_screen`, `command_process_queue` |
 | `0x10264e` | `build_object_attributes_string` |
-| `0x10267c`–`0x10269a`, `0x1026a2`, `0x1026ae`, `0x1026bc`–`0x1026e2`, `0x1026ee`–`0x1026f8`, `0x102578` | `ui_draw_panel_object` |
-| `0x102dc2`, `0x102dcc` | `ui_draw_champion_state` |
-| `0x102740`, `0x102748`, `0x102750` | `command_toggle_inventory` |
-| `0x102524`, `0x102588`, `0x102d56` | `ui_draw_champion_skills_and_statistics` (`0x102d56` also in `champion_add_skill_experience` and `magic_print_spell_failure_message`) |
-| `0x104b7a`, `0x104b9a`, `0x104ba2`, `0x104bc0`, `0x104bea` | `magic_print_spell_failure_message` |
+| `0x10267c`–`0x10269a`, `0x1026a2`, `0x1026ae`, `0x1026bc`–`0x1026e2`, `0x1026ee`–`0x1026f8`, `0x102578` | `draw_panel_object` |
+| `0x102dc2`, `0x102dcc` | `champion_draw_state` |
+| `0x102740`, `0x102748`, `0x102750` | `inventory_toggle` |
+| `0x102524`, `0x102588`, `0x102d56` | `draw_champion_skills_and_statistics` (`0x102d56` also in `champion_add_skill_experience` and `menus_print_spell_failure_message`) |
+| `0x104b7a`, `0x104b9a`, `0x104ba2`, `0x104bc0`, `0x104bea` | `menus_print_spell_failure_message` |
 | `0x102d3e`, `0x102d4e` | `champion_add_skill_experience` |
-| `0x104b2a`, `0x104b3e` | `action_is_action_performed` |
+| `0x104b2a`, `0x104b3e` | `menus_is_action_performed` |
 | `0x104b64`, `0x104b70` | `menus_draw_action_damage` |
 | `0x102dec`, `0x102dfa` | `champion_click_in_resurrect_reincarnate_panel` |
 | `0x104c56` | `endgame` |
@@ -245,12 +245,12 @@ Port implementation (Step 3):
 
 ### Actions
 
-`action_is_action_performed` (K`0x122892`, C`0x12663e`, switch at C`0x126764`, cases 2–42, default C`0x126caa`):
+`menus_is_action_performed` (K`0x122892`, C`0x12663e`, switch at C`0x126764`, cases 2–42, default C`0x126caa`):
 
-- INVOKE (27), FLUXCAGE (35), and FUSE (43) go to the default branch in CSB. They only apply the common part: disabled ticks, stamina, experience, and the state redraw. The function returns 1. DM uses `random16` for INVOKE and calls `projectile_fluxcage_action` and `projectile_fuse_action`.
+- INVOKE (27), FLUXCAGE (35), and FUSE (43) go to the default branch in CSB. They only apply the common part: disabled ticks, stamina, experience, and the state redraw. The function returns 1. DM uses `random16` for INVOKE and calls `group_fluxcage_action` and `group_fuse_action`.
 - Action set 1 = {27, 43, 35} still exists in CSB (C`0x1047ac`).
 - All other actions are the same as DM, including FIREBALL, DISPELL, LIGHTNING, SPIT, door bash, coin flip, shields, HEAL, LIGHT, WINDOW, FREEZE LIFE, THROW, SHOOT, and CLIMB DOWN.
-- `action_is_group_frightened_by_action`, `action_decrement_charges`, and `menus_get_action_hand_charge_count` are the same as DM.
+- `menus_is_group_frightened_by_action`, `menus_decrement_charges`, and `menus_get_action_hand_charge_count` are the same as DM.
 
 Port change: `port/src/engine/action.c` `action_is_action_performed` (INVOKE, FLUXCAGE, FUSE do nothing in CSB), `port/src/data/tables.c` (experience gain table).
 
@@ -267,7 +267,7 @@ New spells (records 25–28 of `g_spells`, C`0x1046c2`, kind 4, skill 12):
 | 27 | OH GOR KU | 2 | 82 | `0x11a` |
 | 28 | ZO IR NETA | 3 | 83 | `0x11b` |
 
-Cast (`magic_get_champion_spell_cast_result`, C`0x126e0e`, case kind 4 at C`0x12705c`):
+Cast (`menus_get_champion_spell_cast_result`, C`0x126e0e`, case kind 4 at C`0x12705c`):
 
 1. `is_magic_map_in_hand` (C`0x111080`) must be true for the object in the action hand (champion slot word `0xd6`). Else the spell fails with message 11 and the function returns 3.
 2. `D6 = (power + 1) × 4`, power = power symbol − `0x5f`.
@@ -322,7 +322,7 @@ The footprints bit (`set_square_aspect` C`0x10d630`–`0x10d654`): for a corrido
 
 `set_current_map` (C`0x10d666`) changes the map, its size, and its door types. The ornament lists, the alcove, vi altar, and fountain indices, and the inscription index come from `load_current_map_graphics` of the party map. Thus a stored map of another level shows its squares with the ornament data of the party map. The port does the same.
 
-Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn panel content 9 or 10, CSB sets the panel attribute of the inventory champion and calls `draw_champion_state` each tick. `draw_champion_state` (C`0x115a04`) draws `ui_draw_panel_object(leader hand object, 1)` while the eye is pressed and the drawn panel content is 9 or 10. Thus the map and the creature name follow the game.
+Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn panel content 9 or 10, CSB sets the panel attribute of the inventory champion and calls `draw_champion_state` each tick. `draw_champion_state` (C`0x115a04`) draws `draw_panel_object(leader hand object, 1)` while the eye is pressed and the drawn panel content is 9 or 10. Thus the map and the creature name follow the game.
 
 Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_drawn` (C`0x1024cc`: 5, 9, or 10), not `g_panel_content` (C`0x1024ca`).
 
@@ -340,7 +340,7 @@ Port (Step 7): `magic.c` `cast_magic_map`, `timeline_process.c` events 80–83, 
 
 ### Creatures
 
-- `game_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `port/src/engine/game.h`, `MIN_ACTIVE_GROUP_COUNT` in `port/src/engine/savegame.c`.
+- `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `port/src/engine/game.h`, `MIN_ACTIVE_GROUP_COUNT` in `port/src/engine/savegame.c`.
 - `group_steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. Step 7 check: the APPB code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
 
 ### Champions

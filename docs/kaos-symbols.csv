@@ -172,7 +172,7 @@ address,name,signature,subsystem
 0x100f24,g_message_area_copy_pending,int16_t,message_area
 0x100f26,g_font_bitmap,uint8_t *,text
 0x100f2a,g_message_area_row_bitmap,uint8_t *,message_area
-0x100f2e,g_load_text,"char g_load_text[]; /* ""nn.n/nn KG"" built by ui_draw_champion_state */",champion
+0x100f2e,g_load_text,"char g_load_text[]; /* ""nn.n/nn KG"" built by champion_draw_state */",champion
 0x100fc4,g_message_area_box,int16_t[4],message_area
 0x100fcc,g_message_area_top_offset,int16_t,message_area
 0x100fce,g_message_area_second_line_offset,int16_t,message_area
@@ -631,7 +631,7 @@ address,name,signature,subsystem
 0x1043f2,jt_load_object_names,,jump_table
 0x1043fa,jt_object_get_type,,jump_table
 0x104402,jt_object_get_icon_index,,jump_table
-0x10440a,jt_ui_draw_leader_hand_object_name,,jump_table
+0x10440a,jt_draw_leader_hand_object_name,,jump_table
 0x104412,jt_clear_leader_hand_object_name,,jump_table
 0x10441a,jt_extract_object_icon,,jump_table
 0x104422,jt_get_slot_box_zone,,jump_table
@@ -698,7 +698,7 @@ address,name,signature,subsystem
 0x10460a,jt_group_get_resistance_adjusted_poison_attack,,jump_table
 0x104612,jt_group_remove_all_active_groups,,jump_table
 0x10461a,jt_group_add_all_active_groups,,jump_table
-0x104622,jt_game_init_active_groups,,jump_table
+0x104622,jt_group_init_active_groups,,jump_table
 0x10462a,jt_group_process_events_29_to_41,,jump_table
 0x104632,jt_load_string_table,,jump_table
 0x10463a,jt_get_string,,jump_table
@@ -708,7 +708,7 @@ address,name,signature,subsystem
 0x10465a,jt_update_map_coordinates_after_relative_movement,,jump_table
 0x104662,jt_get_stairs_exit_direction,,jump_table
 0x10466a,jt_set_square_aspect,,jump_table
-0x104672,jt_dungeon_get_thing_data,,jump_table
+0x104672,jt_get_thing_data,,jump_table
 0x10467a,jt_get_square_first_thing_data,,jump_table
 0x104682,jt_get_weapon_info,,jump_table
 0x10468a,jt_get_next_thing,,jump_table
@@ -717,18 +717,18 @@ address,name,signature,subsystem
 0x1046a2,jt_link_thing_to_list,,jump_table
 0x1046aa,jt_unlink_thing_from_list,,jump_table
 0x1046b2,jt_get_discarded_thing,,jump_table
-0x1046ba,jt_projectile_get_object_for_launcher_or_generator,,jump_table
+0x1046ba,jt_get_object_for_launcher_or_generator,,jump_table
 0x1046c2,jt_decode_text,,jump_table
-0x1046ca,jt_group_is_creature_allowed_on_map,,jump_table
-0x1046d2,jt_inventory_get_object_weight,,jump_table
-0x1046da,jt_inventory_get_object_info_index,,jump_table
+0x1046ca,jt_is_creature_allowed_on_map,,jump_table
+0x1046d2,jt_get_object_weight,,jump_table
+0x1046da,jt_get_object_info_index,,jump_table
 0x1046e2,jt_get_projectile_aspect,,jump_table
-0x1046ea,jt_inventory_get_armour_defense,,jump_table
+0x1046ea,jt_get_armour_defense,,jump_table
 0x1046f2,jt_get_creature_attributes,,jump_table
-0x1046fa,jt_group_get_cells,,jump_table
-0x104702,jt_group_set_cells,,jump_table
-0x10470a,jt_group_get_directions,,jump_table
-0x104712,jt_group_set_directions,,jump_table
+0x1046fa,jt_get_group_cells,,jump_table
+0x104702,jt_set_group_cells,,jump_table
+0x10470a,jt_get_group_directions,,jump_table
+0x104712,jt_set_group_directions,,jump_table
 0x10471a,jt_is_wall_ornament_an_alcove,,jump_table
 0x104722,jt_is_wall_ornament_a_fountain,,jump_table
 0x10472a,jt_set_current_map,,jump_table
@@ -740,45 +740,45 @@ address,name,signature,subsystem
 0x10475a,jt_close_chest,,jump_table
 0x104762,jt_process_click_on_mouth,,jump_table
 0x10476a,jt_draw_stop_pressing_mouth,,jump_table
-0x104772,jt_ui_draw_status_box_portrait,,jump_table
+0x104772,jt_draw_status_box_portrait,,jump_table
 0x10477a,jt_process_click_on_eye,,jump_table
 0x104782,jt_draw_stop_pressing_eye,,jump_table
-0x10478a,jt_command_toggle_inventory,,jump_table
+0x10478a,jt_inventory_toggle,,jump_table
 0x104792,jt_champion_get_scent_ordinal,,jump_table
 0x10479a,jt_champion_delete_scent,,jump_table
-0x1047a2,jt_move_add_scent_strength,,jump_table
-0x1047aa,jt_move_set_party_direction,,jump_table
+0x1047a2,jt_champion_add_scent_strength,,jump_table
+0x1047aa,jt_champion_set_party_direction,,jump_table
 0x1047b2,jt_champion_get_index_in_cell,,jump_table
-0x1047ba,jt_group_get_target_champion_index,,jump_table
-0x1047c2,jt_inventory_put_object_in_leader_hand,,jump_table
-0x1047ca,jt_inventory_get_object_removed_from_leader_hand,,jump_table
-0x1047d2,jt_inventory_get_object_removed_from_slot,,jump_table
-0x1047da,jt_inventory_add_object_in_slot,,jump_table
-0x1047e2,jt_inventory_click_on_slot_box,,jump_table
+0x1047ba,jt_champion_get_target_champion_index,,jump_table
+0x1047c2,jt_champion_put_object_in_leader_hand,,jump_table
+0x1047ca,jt_champion_get_object_removed_from_leader_hand,,jump_table
+0x1047d2,jt_champion_get_object_removed_from_slot,,jump_table
+0x1047da,jt_champion_add_object_in_slot,,jump_table
+0x1047e2,jt_champion_click_on_slot_box,,jump_table
 0x1047ea,jt_champion_decrement_stamina,,jump_table
-0x1047f2,jt_magic_disable_action,,jump_table
+0x1047f2,jt_champion_disable_action,,jump_table
 0x1047fa,jt_champion_add_pending_damage_and_wounds,,jump_table
 0x104802,jt_champion_poison,,jump_table
 0x10480a,jt_champion_damage_all,,jump_table
 0x104812,jt_champion_apply_and_draw_pending_damage_and_wounds,,jump_table
 0x10481a,jt_champion_add_skill_experience,,jump_table
 0x104822,jt_champion_get_skill_level,,jump_table
-0x10482a,jt_game_get_statistic_adjusted_attack,,jump_table
-0x104832,jt_game_is_lucky,,jump_table
+0x10482a,jt_champion_get_statistic_adjusted_attack,,jump_table
+0x104832,jt_champion_is_lucky,,jump_table
 0x10483a,jt_champion_get_maximum_load,,jump_table
 0x104842,jt_champion_get_movement_ticks,,jump_table
 0x10484a,jt_champion_get_dexterity,,jump_table
 0x104852,jt_champion_get_strength,,jump_table
 0x10485a,jt_fun_11035c,,jump_table
-0x104862,jt_action_is_leader_hand_object_thrown,,jump_table
-0x10486a,jt_action_is_object_thrown,,jump_table
+0x104862,jt_champion_is_leader_hand_object_thrown,,jump_table
+0x10486a,jt_champion_is_object_thrown,,jump_table
 0x104872,jt_fun_111d04,,jump_table
 0x10487a,jt_fun_111d5c,,jump_table
 0x104882,jt_champion_wake_up,,jump_table
 0x10488a,jt_champion_apply_time_effects,,jump_table
 0x104892,jt_fun_1123cc,,jump_table
-0x10489a,jt_ui_draw_champion_state,,jump_table
-0x1048a2,jt_ui_draw_all_champion_states,,jump_table
+0x10489a,jt_champion_draw_state,,jump_table
+0x1048a2,jt_champion_draw_all_states,,jump_table
 0x1048aa,jt_champion_draw_changed_object_icons,,jump_table
 0x1048b2,jt_fun_112f5c,,jump_table
 0x1048ba,jt_fun_112ffe,,jump_table
@@ -863,7 +863,7 @@ address,name,signature,subsystem
 0x104b32,jt_fun_11c4e8,,jump_table
 0x104b3a,jt_explosion_create,,jump_table
 0x104b42,jt_fun_11cc04,,jump_table
-0x104b4a,jt_projectile_fluxcage_action,,jump_table
+0x104b4a,jt_group_fluxcage_action,,jump_table
 0x104b52,jt_fun_11cefe,,jump_table
 0x104b5a,jt_fun_11cf42,,jump_table
 0x104b62,jt_fun_11cfba,,jump_table
@@ -883,7 +883,7 @@ address,name,signature,subsystem
 0x104bd2,jt_command_init_mouse_zones,,jump_table
 0x104bda,jt_command_discard_all_input,,jump_table
 0x104be2,jt_fun_1210e8,,jump_table
-0x104bea,jt_champion_set_leader,,jump_table
+0x104bea,jt_command_set_leader,,jump_table
 0x104bf2,jt_command_process_click,,jump_table
 0x104bfa,jt_command_process_key,,jump_table
 0x104c02,jt_command_process_queue,,jump_table
@@ -893,8 +893,8 @@ address,name,signature,subsystem
 0x104c22,jt_check_save_disk,,jump_table
 0x104c2a,jt_save_game,,jump_table
 0x104c32,jt_fun_1270c8,,jump_table
-0x104c3a,jt_command_freeze_game,,jump_table
-0x104c42,jt_command_unfreeze_game,,jump_table
+0x104c3a,jt_game_freeze,,jump_table
+0x104c42,jt_game_unfreeze,,jump_table
 0x104c4a,jt_initialize_game,,jump_table
 0x104c52,jt_fun_127ad4,,jump_table
 0x104c5a,jt_fun_127ba6,,jump_table
@@ -1109,7 +1109,7 @@ address,name,signature,subsystem
 0x10791c,load_object_names,void load_object_names(void),object
 0x1079a4,object_get_type,int16_t object_get_type(uint16_t thing),object
 0x1079dc,object_get_icon_index,int16_t object_get_icon_index(uint16_t thing),object
-0x107abe,ui_draw_leader_hand_object_name,void ui_draw_leader_hand_object_name(uint16_t thing),object
+0x107abe,draw_leader_hand_object_name,void draw_leader_hand_object_name(uint16_t thing),object
 0x107baa,clear_leader_hand_object_name,void clear_leader_hand_object_name(void),object
 0x107bb8,extract_object_icon,"void extract_object_icon(int16_t icon_index, uint8_t *bitmap)",object
 0x107c3a,get_slot_box_zone,"void get_slot_box_zone(int16_t zone, int16_t *box)",object
@@ -1183,16 +1183,16 @@ address,name,signature,subsystem
 0x10a2ec,trackdisk_get_change_count_from_handler,int32_t trackdisk_get_change_count_from_handler(int16_t unit),trackdisk
 0x10a34c,trackdisk_get_disk_state,int16_t trackdisk_get_disk_state(int16_t unit),trackdisk
 0x10a3a6,draw_format_progress,"void draw_format_progress(int16_t total, int16_t done)",trackdisk
-0x10a432,group_is_creature_allowed_on_map,"int16_t group_is_creature_allowed_on_map(uint16_t group_thing, uint16_t map_index)",dungeon
-0x10a4ac,inventory_get_object_weight,uint16_t inventory_get_object_weight(uint16_t thing),dungeon
-0x10a594,inventory_get_object_info_index,int16_t inventory_get_object_info_index(uint16_t thing),dungeon
+0x10a432,is_creature_allowed_on_map,"int16_t is_creature_allowed_on_map(uint16_t group_thing, uint16_t map_index)",dungeon
+0x10a4ac,get_object_weight,uint16_t get_object_weight(uint16_t thing),dungeon
+0x10a594,get_object_info_index,int16_t get_object_info_index(uint16_t thing),dungeon
 0x10a618,get_projectile_aspect,uint16_t get_projectile_aspect(uint16_t thing),dungeon
-0x10a6a6,inventory_get_armour_defense,"uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)",dungeon
+0x10a6a6,get_armour_defense,"uint16_t get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)",dungeon
 0x10a6e4,get_creature_attributes,uint16_t get_creature_attributes(uint16_t group_thing),dungeon
-0x10a70e,group_get_cells,"uint8_t group_get_cells(const Group *group, int16_t map_index)",dungeon
-0x10a73e,group_set_cells,"void group_set_cells(Group *group, uint8_t cells, int16_t map_index)",dungeon
-0x10a772,group_get_directions,"uint8_t group_get_directions(const Group *group, int16_t map_index)",dungeon
-0x10a7b2,group_set_directions,"void group_set_directions(Group *group, int16_t directions, int16_t map_index)",dungeon
+0x10a70e,get_group_cells,"uint8_t get_group_cells(const Group *group, int16_t map_index)",dungeon
+0x10a73e,set_group_cells,"void set_group_cells(Group *group, uint8_t cells, int16_t map_index)",dungeon
+0x10a772,get_group_directions,"uint8_t get_group_directions(const Group *group, int16_t map_index)",dungeon
+0x10a7b2,set_group_directions,"void set_group_directions(Group *group, int16_t directions, int16_t map_index)",dungeon
 0x10a7f4,is_wall_ornament_an_alcove,int16_t is_wall_ornament_an_alcove(int16_t ornament_index),dungeon
 0x10a828,is_wall_ornament_a_fountain,int16_t is_wall_ornament_a_fountain(int16_t ornament_index),dungeon
 0x10a85c,update_map_coordinates_after_relative_movement,"void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t *map_x, int16_t *map_y)",dungeon
@@ -1201,7 +1201,7 @@ address,name,signature,subsystem
 0x10a9e4,get_relative_square_type,"int16_t get_relative_square_type(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t map_x, int16_t map_y)",dungeon
 0x10aa0c,get_location_after_level_change,"int16_t get_location_after_level_change(int16_t map_index, int16_t level_delta, int16_t *map_x, int16_t *map_y)",dungeon
 0x10aad2,get_stairs_exit_direction,"int16_t get_stairs_exit_direction(int16_t map_x, int16_t map_y)",dungeon
-0x10ab3c,dungeon_get_thing_data,void *dungeon_get_thing_data(uint16_t thing),dungeon
+0x10ab3c,get_thing_data,void *get_thing_data(uint16_t thing),dungeon
 0x10ab6c,get_square_first_thing_data,"void *get_square_first_thing_data(int16_t map_x, int16_t map_y)",dungeon
 0x10ab86,get_weapon_info,const WeaponInfo *get_weapon_info(uint16_t weapon_thing),dungeon
 0x10abb4,get_next_thing,uint16_t get_next_thing(uint16_t thing),dungeon
@@ -1212,7 +1212,7 @@ address,name,signature,subsystem
 0x10adf4,unlink_thing_from_list,"void unlink_thing_from_list(uint16_t thing, uint16_t list_thing, int16_t map_x, int16_t map_y)",dungeon
 0x10af2e,get_discarded_thing,uint16_t get_discarded_thing(uint16_t thing_type),dungeon
 0x10b1a6,get_unused_thing,uint16_t get_unused_thing(uint16_t thing_type),dungeon
-0x10b24e,projectile_get_object_for_launcher_or_generator,uint16_t projectile_get_object_for_launcher_or_generator(uint16_t object_info_index),dungeon
+0x10b24e,get_object_for_launcher_or_generator,uint16_t get_object_for_launcher_or_generator(uint16_t object_info_index),dungeon
 0x10b312,decode_text,"void decode_text(char *dst, uint16_t text_thing, int16_t mode)",dungeon
 0x10b47c,get_random_ornament_index,"uint16_t get_random_ornament_index(uint16_t seed1, uint16_t seed2, uint16_t modulo)",dungeon
 0x10b4aa,get_random_ornament_ordinal,"int16_t get_random_ornament_ordinal(int16_t allowed, int16_t ornament_count, int16_t map_x, int16_t map_y, int16_t modulo)",dungeon
@@ -1244,7 +1244,7 @@ address,name,signature,subsystem
 0x10c9de,group_steal_from_champion,"uint8_t group_steal_from_champion(Group *group, uint16_t champion_index)",group
 0x10cad0,group_remove_all_active_groups,void group_remove_all_active_groups(void),group
 0x10cafa,group_add_all_active_groups,void group_add_all_active_groups(void),group
-0x10cb76,game_init_active_groups,void game_init_active_groups(void),group
+0x10cb76,group_init_active_groups,void group_init_active_groups(void),group
 0x10cbcc,group_is_view_party_blocked,"int16_t group_is_view_party_blocked(uint16_t map_x, uint16_t map_y)",group
 0x10cc54,group_is_smell_party_blocked,"int16_t group_is_smell_party_blocked(uint16_t map_x, uint16_t map_y)",group
 0x10cc98,group_get_distance_between_unblocked_squares,"int16_t group_get_distance_between_unblocked_squares(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, int16_t (*is_blocked)(uint16_t map_x, uint16_t map_y))",group
@@ -1268,7 +1268,7 @@ address,name,signature,subsystem
 0x10e898,blit_shrink_with_palette_changes,"void blit_shrink_with_palette_changes(const uint8_t *src, uint8_t *dst, int16_t src_width, int16_t src_height, int16_t dst_width, int16_t dst_height, const uint8_t *palette_changes)",video
 0x10eae2,flip_bitmap_horizontal_raw,"void flip_bitmap_horizontal_raw(uint8_t *pixels, int16_t width, int16_t height)",video
 0x10eb38,g_byte_bit_reverse,const uint8_t g_byte_bit_reverse[256]; /* in code section */,video
-0x10ec40,ui_draw_icon_to_viewport,"void ui_draw_icon_to_viewport(int16_t icon_index, int16_t zone)",inventory
+0x10ec40,draw_icon_to_viewport,"void draw_icon_to_viewport(int16_t icon_index, int16_t zone)",inventory
 0x10ec88,panel_print_line,void panel_print_line(const char *text),inventory
 0x10ed20,build_object_attributes_string,"void build_object_attributes_string(uint16_t potential_attributes, uint16_t actual_attributes, const char **attribute_strings, char *dst, const char *prefix, const char *suffix)",inventory
 0x10edd6,set_dungeon_view_palette,void set_dungeon_view_palette(void),inventory
@@ -1278,35 +1278,35 @@ address,name,signature,subsystem
 0x10f048,draw_panel_scroll,void draw_panel_scroll(const Scroll *scroll),inventory
 0x10f14c,open_and_draw_chest,"void open_and_draw_chest(uint16_t chest_thing, Container *chest, int16_t pressing_eye)",inventory
 0x10f208,close_chest,void close_chest(void),inventory
-0x10f28a,ui_draw_panel_object,"void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye)",inventory
+0x10f28a,draw_panel_object,"void draw_panel_object(uint16_t thing, int16_t pressing_eye)",inventory
 0x10f6ac,draw_panel_horizontal_bar,"void draw_panel_horizontal_bar(int16_t value, int16_t zone, int16_t color)",inventory
-0x10f74e,ui_draw_panel_food_water_poisoned,void ui_draw_panel_food_water_poisoned(void),inventory
+0x10f74e,draw_panel_food_water_poisoned,void draw_panel_food_water_poisoned(void),inventory
 0x10f7d2,draw_panel_resurrect_reincarnate,void draw_panel_resurrect_reincarnate(void),inventory
-0x10f7ee,ui_draw_panel,void ui_draw_panel(void),inventory
+0x10f7ee,draw_panel,void draw_panel(void),inventory
 0x10f860,adjust_statistic_current_value,"void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta)",inventory
 0x10f8da,process_click_on_mouth,void process_click_on_mouth(void),inventory
 0x10fcf0,draw_stop_pressing_mouth,void draw_stop_pressing_mouth(void),inventory
-0x10fd08,ui_draw_champion_skills_and_statistics,void ui_draw_champion_skills_and_statistics(void),inventory
+0x10fd08,draw_champion_skills_and_statistics,void draw_champion_skills_and_statistics(void),inventory
 0x10ff32,process_click_on_eye,void process_click_on_eye(void),inventory
 0x10ff94,draw_stop_pressing_eye,void draw_stop_pressing_eye(void),inventory
-0x10fff0,ui_draw_status_box_portrait,void ui_draw_status_box_portrait(int16_t champion_index),inventory
-0x11005a,command_toggle_inventory,void command_toggle_inventory(int16_t champion_index),inventory
-0x110254,move_set_party_direction,void move_set_party_direction(int16_t direction),champion
+0x10fff0,draw_status_box_portrait,void draw_status_box_portrait(int16_t champion_index),inventory
+0x11005a,inventory_toggle,void inventory_toggle(int16_t champion_index),inventory
+0x110254,champion_set_party_direction,void champion_set_party_direction(int16_t direction),champion
 0x110296,champion_get_index_in_cell,int16_t champion_get_index_in_cell(int16_t cell),champion
-0x1102d2,group_get_target_champion_index,"int16_t group_get_target_champion_index(int16_t map_x, int16_t map_y, int16_t cell)",champion
-0x11035c,action_is_ammunition_compatible_with_weapon,"int16_t action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)",champion
-0x11040c,inventory_put_object_in_leader_hand,"void inventory_put_object_in_leader_hand(uint16_t thing, int16_t set_pointer_in_main_loop)",champion
-0x1104a2,inventory_get_object_removed_from_leader_hand,uint16_t inventory_get_object_removed_from_leader_hand(void),champion
+0x1102d2,champion_get_target_champion_index,"int16_t champion_get_target_champion_index(int16_t map_x, int16_t map_y, int16_t cell)",champion
+0x11035c,champion_is_ammunition_compatible_with_weapon,"int16_t champion_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)",champion
+0x11040c,champion_put_object_in_leader_hand,"void champion_put_object_in_leader_hand(uint16_t thing, int16_t set_pointer_in_main_loop)",champion
+0x1104a2,champion_get_object_removed_from_leader_hand,uint16_t champion_get_object_removed_from_leader_hand(void),champion
 0x110510,champion_apply_object_modifiers,"void champion_apply_object_modifiers(Champion *champion, uint16_t slot, int16_t icon_index, int16_t sign, uint16_t thing)",champion
-0x110714,inventory_get_object_removed_from_slot,"uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)",champion
-0x1108aa,inventory_add_object_in_slot,"void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot)",champion
-0x110a12,inventory_click_on_slot_box,void inventory_click_on_slot_box(uint16_t slot_box),champion
+0x110714,champion_get_object_removed_from_slot,"uint16_t champion_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)",champion
+0x1108aa,champion_add_object_in_slot,"void champion_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot)",champion
+0x110a12,champion_click_on_slot_box,void champion_click_on_slot_box(uint16_t slot_box),champion
 0x110b20,champion_get_skill_level,"int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flags)",champion
 0x110c2e,champion_add_skill_experience,"void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint16_t experience)",champion
-0x110f0c,action_get_throwing_stamina_cost,int16_t action_get_throwing_stamina_cost(uint16_t thing),champion
-0x110f4c,game_get_stamina_adjusted_value,"int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)",champion
-0x110f88,game_get_statistic_adjusted_attack,"uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)",champion
-0x110fc8,game_is_lucky,"int16_t game_is_lucky(Champion *champion, uint16_t percentage)",champion
+0x110f0c,champion_get_throwing_stamina_cost,int16_t champion_get_throwing_stamina_cost(uint16_t thing),champion
+0x110f4c,champion_get_stamina_adjusted_value,"int16_t champion_get_stamina_adjusted_value(const Champion *champion, int16_t value)",champion
+0x110f88,champion_get_statistic_adjusted_attack,"uint16_t champion_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)",champion
+0x110fc8,champion_is_lucky,"int16_t champion_is_lucky(Champion *champion, uint16_t percentage)",champion
 0x111056,champion_get_maximum_load,uint16_t champion_get_maximum_load(const Champion *champion),champion
 0x1110c2,champion_get_movement_ticks,int16_t champion_get_movement_ticks(const Champion *champion),champion
 0x11112e,champion_get_dexterity,int16_t champion_get_dexterity(const Champion *champion),champion
@@ -1315,7 +1315,7 @@ address,name,signature,subsystem
 0x111440,champion_wake_up,void champion_wake_up(void),champion
 0x11147a,champion_get_scent_ordinal,"uint16_t champion_get_scent_ordinal(int16_t map_x, int16_t map_y)",champion
 0x1114f0,champion_delete_scent,void champion_delete_scent(uint16_t scent_index),champion
-0x111584,move_add_scent_strength,"void move_add_scent_strength(int16_t map_x, int16_t map_y, int16_t strength_and_flags)",champion
+0x111584,champion_add_scent_strength,"void champion_add_scent_strength(int16_t map_x, int16_t map_y, int16_t strength_and_flags)",champion
 0x111642,champion_drop_all_objects,void champion_drop_all_objects(uint16_t champion_index),champion
 0x1116b4,champion_kill,void champion_kill(uint16_t champion_index),champion
 0x11187e,champion_apply_and_draw_pending_damage_and_wounds,void champion_apply_and_draw_pending_damage_and_wounds(void),champion
@@ -1324,22 +1324,22 @@ address,name,signature,subsystem
 0x111be4,champion_unpoison,void champion_unpoison(int16_t champion_index),champion
 0x111c3a,champion_damage_all,"int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t attack_type)",champion
 0x111ca2,champion_decrement_stamina,"void champion_decrement_stamina(int16_t champion_index, int16_t decrement)",champion
-0x111d04,projectile_shoot_from_champion,"void projectile_shoot_from_champion(const Champion *champion, uint16_t thing, uint8_t kinetic_energy, uint8_t attack, uint8_t step_energy)",champion
-0x111d5c,magic_is_projectile_spell_cast,"int16_t magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana)",champion
-0x111dd4,action_is_object_thrown,"int16_t action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side)",champion
-0x111f5e,action_is_leader_hand_object_thrown,int16_t action_is_leader_hand_object_thrown(int16_t side),champion
-0x111f82,magic_disable_action,"void magic_disable_action(uint16_t champion_index, uint16_t ticks)",champion
+0x111d04,champion_shoot_projectile,"void champion_shoot_projectile(const Champion *champion, uint16_t thing, uint8_t kinetic_energy, uint8_t attack, uint8_t step_energy)",champion
+0x111d5c,champion_is_projectile_spell_cast,"int16_t champion_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana)",champion
+0x111dd4,champion_is_object_thrown,"int16_t champion_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side)",champion
+0x111f5e,champion_is_leader_hand_object_thrown,int16_t champion_is_leader_hand_object_thrown(int16_t side),champion
+0x111f82,champion_disable_action,"void champion_disable_action(uint16_t champion_index, uint16_t ticks)",champion
 0x11202c,champion_apply_time_effects,void champion_apply_time_effects(void),champion
 0x1123b6,champion_clear_icon,void champion_clear_icon(int16_t relative_cell),champion
 0x1123cc,champion_build_icon_bitmap,"uint8_t *champion_build_icon_bitmap(uint8_t *bitmap, int16_t champion_index)",champion
-0x11246c,ui_draw_champion_bar_graphs,void ui_draw_champion_bar_graphs(int16_t champion_index),champion
+0x11246c,champion_draw_bar_graphs,void champion_draw_bar_graphs(int16_t champion_index),champion
 0x112594,champion_get_string_from_integer,"char *champion_get_string_from_integer(uint16_t value, int16_t pad_with_spaces, int16_t digits)",champion
 0x1125d0,champion_draw_value_pair,"void champion_draw_value_pair(int16_t zone, int16_t value, int16_t maximum)",champion
 0x112624,champion_draw_health_stamina_mana_values,void champion_draw_health_stamina_mana_values(const Champion *champion),champion
-0x112676,ui_draw_champion_slot,"void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)",champion
-0x11281c,ui_draw_champion_damage,"void ui_draw_champion_damage(int16_t champion_index, int16_t damage)",champion
-0x112880,ui_draw_champion_state,void ui_draw_champion_state(uint16_t champion_index),champion
-0x112d2c,ui_draw_all_champion_states,void ui_draw_all_champion_states(uint16_t attributes),champion
+0x112676,champion_draw_slot,"void champion_draw_slot(uint16_t champion_index, uint16_t slot)",champion
+0x11281c,champion_draw_damage,"void champion_draw_damage(int16_t champion_index, int16_t damage)",champion
+0x112880,champion_draw_state,void champion_draw_state(uint16_t champion_index),champion
+0x112d2c,champion_draw_all_states,void champion_draw_all_states(uint16_t attributes),champion
 0x112d62,champion_has_object_icon_in_slot_box_changed,"int16_t champion_has_object_icon_in_slot_box_changed(int16_t slot_box, uint16_t thing)",champion
 0x112dd2,champion_draw_changed_object_icons,void champion_draw_changed_object_icons(void),champion
 0x112f5c,champion_portraits_to_interleaved,void champion_portraits_to_interleaved(void),champion
@@ -1486,11 +1486,11 @@ address,name,signature,subsystem
 0x11c4e8,projectile_get_impact_count,"int16_t projectile_get_impact_count(int16_t impact_type, int16_t map_x, int16_t map_y, int16_t cell)",projectile
 0x11c578,projectile_process_events_48_to_49,void projectile_process_events_48_to_49(TimelineEvent *event),projectile
 0x11c84a,explosion_process_event_25,void explosion_process_event_25(TimelineEvent *event),projectile
-0x11cb3e,projectile_is_fluxcage_on_square,"int16_t projectile_is_fluxcage_on_square(int16_t map_x, int16_t map_y)",group
-0x11cbc4,projectile_get_lord_chaos_on_square,"uint16_t projectile_get_lord_chaos_on_square(int16_t map_x, int16_t map_y)",group
-0x11cc04,projectile_fluxcage_action,"void projectile_fluxcage_action(int16_t map_x, int16_t map_y)",group
-0x11cda2,projectile_fuse_action,"void projectile_fuse_action(int16_t map_x, int16_t map_y)",group
-0x11cefe,group_get_square_distance,"int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2)",group
+0x11cb3e,group_is_fluxcage_on_square,"int16_t group_is_fluxcage_on_square(int16_t map_x, int16_t map_y)",group
+0x11cbc4,group_get_lord_chaos_on_square,"uint16_t group_get_lord_chaos_on_square(int16_t map_x, int16_t map_y)",group
+0x11cc04,group_fluxcage_action,"void group_fluxcage_action(int16_t map_x, int16_t map_y)",group
+0x11cda2,group_fuse_action,"void group_fuse_action(int16_t map_x, int16_t map_y)",group
+0x11cefe,get_square_distance,"int16_t get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2)",group
 0x11cf42,group_is_destination_visible_from_source,"int16_t group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
 0x11cfba,group_get_directions_to_destination,"int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
 0x11d0b2,group_set_ordered_cells_to_attack,"void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x, int16_t group_y, int16_t group_cell)",group
@@ -1500,8 +1500,8 @@ address,name,signature,subsystem
 0x11d6aa,move_get_teleporter_rotated_group_result,"int16_t move_get_teleporter_rotated_group_result(Teleporter *teleporter, uint16_t group_thing, int16_t map_index)",move
 0x11d7f0,move_get_teleporter_rotated_projectile_thing,"uint16_t move_get_teleporter_rotated_projectile_thing(Teleporter *teleporter, uint16_t thing)",move
 0x11d842,move_is_levitating,int16_t move_is_levitating(uint16_t thing),move
-0x11d882,group_create_event_move_group,"void group_create_event_move_group(uint16_t group_thing, int16_t map_x, int16_t map_y, int16_t map_index, int16_t audible)",move
-0x11d8ce,projectile_is_killed_by_impact,"int16_t projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)",move
+0x11d882,move_create_event_move_group,"void move_create_event_move_group(uint16_t group_thing, int16_t map_x, int16_t map_y, int16_t map_index, int16_t audible)",move
+0x11d8ce,move_is_killed_by_projectile_impact,"int16_t move_is_killed_by_projectile_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)",move
 0x11db22,move_get_move_result,"int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",move
 0x11e4ec,move_get_creature_sound,int16_t move_get_creature_sound(uint16_t creature_type),move
 0x11e526,sensor_add_event,"void sensor_add_event(int16_t event_type, int16_t map_x, int16_t map_y, int16_t cell, int16_t effect, int32_t time)",sensor
@@ -1551,7 +1551,7 @@ address,name,signature,subsystem
 0x120e82,command_process_pending_click,void command_process_pending_click(void),command
 0x120ea0,command_process_key,void command_process_key(int16_t key),command
 0x120f2e,command_process_click_in_champion_status_box,"void command_process_click_in_champion_status_box(uint16_t champion_index, int16_t x, int16_t y)",command
-0x120f9e,champion_set_leader,void champion_set_leader(int16_t champion_index),command
+0x120f9e,command_set_leader,void command_set_leader(int16_t champion_index),command
 0x121060,command_process_click_in_panel,"int16_t command_process_click_in_panel(int16_t x, int16_t y)",command
 0x1210e8,command_draw_sleep_screen,void command_draw_sleep_screen(void),command
 0x121118,command_process_queue,void command_process_queue(void),command
@@ -1564,30 +1564,30 @@ address,name,signature,subsystem
 0x121af6,highlight_box_enable,void highlight_box_enable(const int16_t *box),command
 0x121b28,highlight_zone_enable,void highlight_zone_enable(int16_t zone_index),command
 0x121b4c,highlight_box_disable,void highlight_box_disable(void),command
-0x121b64,move_take_stairs,void move_take_stairs(int16_t stairs_go_up),command
-0x121bc4,move_turn_party,void move_turn_party(int16_t command),command
-0x121c5e,move_party,void move_party(int16_t command),command
+0x121b64,command_take_stairs,void command_take_stairs(int16_t stairs_go_up),command
+0x121bc4,command_turn_party,void command_turn_party(int16_t command),command
+0x121c5e,command_move_party,void command_move_party(int16_t command),command
 0x121f04,command_process_click_in_spell_area,"void command_process_click_in_spell_area(int16_t x, int16_t y)",command
 0x121fe0,command_process_click_in_action_area,"void command_process_click_in_action_area(int16_t x, int16_t y)",command
 0x1220b2,menus_init,void menus_init(void),menus
-0x1220e0,action_print_action_message,void action_print_action_message(const char *text),menus
+0x1220e0,menus_print_action_message,void menus_print_action_message(const char *text),menus
 0x122160,menus_get_action_hand_charge_count,uint16_t menus_get_action_hand_charge_count(void),menus
 0x1221c4,menus_set_action_list,void menus_set_action_list(const uint8_t *action_set),menus
 0x122278,menus_clear_acting_champion,void menus_clear_acting_champion(void),menus
 0x1222aa,menus_set_acting_champion,void menus_set_acting_champion(uint16_t champion_index),menus
 0x12233a,menus_refresh_action_area,void menus_refresh_action_area(void),menus
-0x122404,action_did_click_trigger_action,int16_t action_did_click_trigger_action(int16_t action_list_index),menus
-0x122484,action_is_group_frightened_by_action,"int16_t action_is_group_frightened_by_action(int16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y)",menus
-0x1225a2,action_is_melee_action_performed,"int16_t action_is_melee_action_performed(uint16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y, int16_t skill_index)",menus
-0x1226c6,magic_is_party_spell_or_fire_shield_successful,"int16_t magic_is_party_spell_or_fire_shield_successful(Champion *champion, int16_t spell_shield, uint16_t ticks, int16_t use_mana)",menus
-0x122788,magic_create_light_event,"void magic_create_light_event(int16_t light_power, int16_t ticks)",menus
-0x1227c6,action_decrement_charges,void action_decrement_charges(Champion *champion),menus
+0x122404,menus_did_click_trigger_action,int16_t menus_did_click_trigger_action(int16_t action_list_index),menus
+0x122484,menus_is_group_frightened_by_action,"int16_t menus_is_group_frightened_by_action(int16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y)",menus
+0x1225a2,menus_is_melee_action_performed,"int16_t menus_is_melee_action_performed(uint16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y, int16_t skill_index)",menus
+0x1226c6,menus_is_party_spell_or_fire_shield_successful,"int16_t menus_is_party_spell_or_fire_shield_successful(Champion *champion, int16_t spell_shield, uint16_t ticks, int16_t use_mana)",menus
+0x122788,menus_create_event70_light,"void menus_create_event70_light(int16_t light_power, int16_t ticks)",menus
+0x1227c6,menus_decrement_charges,void menus_decrement_charges(Champion *champion),menus
 0x12286a,menus_set_champion_direction_to_party_direction,void menus_set_champion_direction_to_party_direction(Champion *champion),menus
-0x122892,action_is_action_performed,"int16_t action_is_action_performed(uint16_t champion_index, int16_t action_index)",menus
-0x122f84,magic_get_click_on_spell_cast_result,int16_t magic_get_click_on_spell_cast_result(void),menus
+0x122892,menus_is_action_performed,"int16_t menus_is_action_performed(uint16_t champion_index, int16_t action_index)",menus
+0x122f84,menus_get_click_on_spell_cast_result,int16_t menus_get_click_on_spell_cast_result(void),menus
 0x122fdc,menus_get_spell_from_symbols,Spell *menus_get_spell_from_symbols(const uint8_t *symbols),menus
 0x123042,menus_get_empty_flask_in_hand,"Potion *menus_get_empty_flask_in_hand(Champion *champion, uint16_t *flask_thing)",menus
-0x12308e,magic_get_champion_spell_cast_result,int16_t magic_get_champion_spell_cast_result(uint16_t champion_index),menus
+0x12308e,menus_get_champion_spell_cast_result,int16_t menus_get_champion_spell_cast_result(uint16_t champion_index),menus
 0x1234fc,menus_add_champion_symbol,void menus_add_champion_symbol(int16_t symbol_index),menus
 0x1235a4,menus_delete_champion_symbol,void menus_delete_champion_symbol(void),menus
 0x1235fe,menus_draw_movement_arrows,void menus_draw_movement_arrows(void),menus
@@ -1599,7 +1599,7 @@ address,name,signature,subsystem
 0x123804,menus_draw_action_damage,void menus_draw_action_damage(int16_t damage),menus
 0x1238f8,menus_draw_action_icon,void menus_draw_action_icon(uint16_t champion_index),menus
 0x123a02,menus_draw_action_area,void menus_draw_action_area(void),menus
-0x123ae2,magic_print_spell_failure_message,"void magic_print_spell_failure_message(Champion *champion, int16_t failure_type, uint16_t skill_index)",menus
+0x123ae2,menus_print_spell_failure_message,"void menus_print_spell_failure_message(Champion *champion, int16_t failure_type, uint16_t skill_index)",menus
 0x123ba6,os_add_int_server,"void os_add_int_server(uint32_t int_number, void *interrupt)",os_stub
 0x123bc8,os_add_port,void os_add_port(void *port),os_stub
 0x123be6,os_alert,"void os_alert(uint32_t alert_number, void *parameters)",os_stub
@@ -1704,8 +1704,8 @@ address,name,signature,subsystem
 0x1270c8,entrance_show_credits,void entrance_show_credits(void),startend
 0x12712c,decompress_dungeon,"void decompress_dungeon(const uint8_t *source, uint8_t *dest, int32_t byte_count)",loadsave
 0x127186,decompress_get_bits,uint16_t decompress_get_bits(void),loadsave
-0x1271a2,command_freeze_game,void command_freeze_game(void),startend
-0x1271fa,command_unfreeze_game,void command_unfreeze_game(void),startend
+0x1271a2,game_freeze,void game_freeze(void),startend
+0x1271fa,game_unfreeze,void game_unfreeze(void),startend
 0x12726a,graphic_get_bitmap_byte_count,uint16_t graphic_get_bitmap_byte_count(int16_t graphic_index),startend
 0x127298,layout_alloc_graphic_bitmap,"void layout_alloc_graphic_bitmap(int16_t layout_index, int16_t graphic_index)",startend
 0x1272ce,layout_share_bitmap,"void layout_share_bitmap(int16_t source_layout_index, int16_t dest_layout_index)",startend
