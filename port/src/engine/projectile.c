@@ -619,7 +619,7 @@ void group_fuse_action(int16_t x, int16_t y)
 
 /* Projectiles in the cells of the party (thing 0xffff) or of a group hit before it moves. A move to an adjacent
    square also tests the projectiles on the destination that the movers cross. Returns 1 when the group died. */
-int16_t move_is_killed_by_projectile_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)
+int16_t projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)
 {
     uint8_t occupied[4] = {0}, crossed[4] = {0};
     int16_t impact_type;

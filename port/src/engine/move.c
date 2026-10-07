@@ -122,7 +122,7 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
     int16_t src_map = g_current_map_index, map = src_map, same_square = 0, start_direction = 0;
     if (type == THING_GROUP)
         return group_get_move_result(thing, src_x, src_y, dst_x, dst_y);
-    if (party && src_x >= 0 && move_is_killed_by_projectile_impact(src_x, src_y, dst_x, dst_y, THING_NONE))
+    if (party && src_x >= 0 && projectile_is_killed_by_impact(src_x, src_y, dst_x, dst_y, THING_NONE))
         return 1;
     if (dst_x >= 0) {
         uint16_t scope = party ? TELEPORTER_SCOPE_PARTY : TELEPORTER_SCOPE_ALL;

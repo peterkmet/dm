@@ -1870,7 +1870,7 @@ int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int1
     int16_t levitating = (get_creature_attributes(group) & CREATURE_LEVITATES) != 0;
     uint16_t src_cell = THING_CELL(group);
     int16_t result = 0, audible = 0, removed_from_party_map = 0;
-    if (src_x >= 0 && g_current_map_index == g_party_map_index && move_is_killed_by_projectile_impact(src_x, src_y, dst_x, dst_y, group))
+    if (src_x >= 0 && g_current_map_index == g_party_map_index && projectile_is_killed_by_impact(src_x, src_y, dst_x, dst_y, group))
         return 1;
     if (dst_x >= 0) {
         int16_t killed = 0;
@@ -1954,7 +1954,7 @@ int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int1
             group_delete_events(src_x, src_y);
         if (removed_from_party_map)
             group_remove_active_group(active_index);
-        move_create_event_move_group(group, dst_x, dst_y, map, audible);
+        group_create_event_move_group(group, dst_x, dst_y, map, audible);
         return 1;
     }
     sound_request_play(creature_movement_sound(group_creature_type(group)), dst_x, dst_y, SOUND_MODE_AFTER_TICK);
@@ -1982,7 +1982,7 @@ int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int1
 }
 
 /* The group waits off the map and tries to enter the square 5 ticks later (event 61 plays the teleporter sound). */
-void move_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, int16_t audible)
+void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, int16_t audible)
 {
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(map, g_game_time + MOVE_GROUP_RETRY_TICKS),

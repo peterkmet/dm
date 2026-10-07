@@ -269,7 +269,7 @@ Bits 5–7 hold the square type (0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 
 
 Algorithm:
 
-1. When a group moves on the party map, `move_is_killed_by_projectile_impact` runs first. When it returns true, the function returns 1.
+1. When a group moves on the party map, `projectile_is_killed_by_impact` runs first. When it returns true, the function returns 1.
 2. Store the destination. For the party set `g_party_map_x/y`. Choose a teleporter scope mask: 1 creature, 2 party, 3 object.
 3. Loop at most 99 times over the destination square:
    - Teleporter (type 5, open bit 3): the teleporter thing is the first thing of the square. Check its scope bits (byte 2 bits 5–6). Read target X (byte 3 bits 0–4), target Y (word 2 bits 5–9), target map (byte 4). Byte 2 bit 7 is audible: play sound 14. Byte 2 bit 4 selects absolute rotation; bits 2–3 hold the rotation. The party turns with `move_set_party_direction`. Objects rotate their cell. Stop when the teleporter points to itself.
@@ -283,11 +283,11 @@ Algorithm:
 8. Add the thing at the destination:
    - Party on a new map: set `g_new_party_map_index`. The game loop changes the map.
    - Party on the same map: a group on the square drops its possessions and is deleted. Then sensors run with `add=1`.
-   - Group: when the square is free, play the creature move sound (`move_get_creature_sound`), add or remove the active group, link the group through the sensors, and call `group_start_wandering`. When the square is occupied, remove the group and create event 60/61 (`move_create_event_move_group`) to retry 5 ticks later.
+   - Group: when the square is free, play the creature move sound (`move_get_creature_sound`), add or remove the active group, link the group through the sensors, and call `group_start_wandering`. When the square is occupied, remove the group and create event 60/61 (`group_create_event_move_group`) to retry 5 ticks later.
 
 `move_is_levitating(thing)` returns true for a group with the levitation attribute (creature attributes bit 5), and for projectiles (type 14) and explosions (type 15).
 
-`move_is_killed_by_projectile_impact` builds a 4-byte table of occupied cells (party champions or group creatures). For a move to an adjacent square, it also checks the two cells that the mover crosses. It calls `projectile_has_impact_occurred` for every projectile on the squares whose event type is not 48 (ignore impacts). The projectile event index is in projectile data offset 6. The function returns true when the group died (`g_creature_damage_outcome == 2`, global `0x103158`, owned by range 7).
+`projectile_is_killed_by_impact` builds a 4-byte table of occupied cells (party champions or group creatures). For a move to an adjacent square, it also checks the two cells that the mover crosses. It calls `projectile_has_impact_occurred` for every projectile on the squares whose event type is not 48 (ignore impacts). The projectile event index is in projectile data offset 6. The function returns true when the group died (`g_creature_damage_outcome == 2`, global `0x103158`, owned by range 7).
 
 `move_get_creature_sound(type)` returns -1 when the party sleeps or the creature has no sound. Otherwise it reads the sound ordinal from creature record byte 1 and maps it through the word table at `0x101bea` (low byte).
 

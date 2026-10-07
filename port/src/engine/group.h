@@ -134,7 +134,7 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
 void group_process_events_29_to_41(int16_t x, int16_t y, int16_t event_type, uint16_t ticks);
 
 int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
-void move_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, int16_t audible);
+void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, int16_t audible);
 void timeline_process_event60_61_move_group(TimelineEvent *event);
 
 #endif

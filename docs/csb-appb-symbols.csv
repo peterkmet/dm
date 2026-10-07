@@ -534,8 +534,8 @@ address,name,signature,subsystem
 0x120b6e,move_get_teleporter_rotated_group_result,"int16_t move_get_teleporter_rotated_group_result(Teleporter *teleporter, uint16_t group_thing, int16_t map_index)",move
 0x120cc6,move_get_teleporter_rotated_projectile_thing,"uint16_t move_get_teleporter_rotated_projectile_thing(Teleporter *teleporter, uint16_t thing)",move
 0x120d26,move_is_levitating,int16_t move_is_levitating(uint16_t thing),move
-0x120d6c,move_create_event_move_group,"void move_create_event_move_group(uint16_t group_thing, int16_t map_x, int16_t map_y, int16_t map_index, int16_t audible)",move
-0x120dba,move_is_killed_by_projectile_impact,"int16_t move_is_killed_by_projectile_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)",move
+0x120d6c,group_create_event_move_group,"void group_create_event_move_group(uint16_t group_thing, int16_t map_x, int16_t map_y, int16_t map_index, int16_t audible)",move
+0x120dba,projectile_is_killed_by_impact,"int16_t projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)",move
 0x12107e,move_get_move_result,"int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",move
 0x121b60,move_get_creature_sound,int16_t move_get_creature_sound(uint16_t creature_type),move
 0x121ba8,sensor_add_event,"void sensor_add_event(int16_t event_type, int16_t map_x, int16_t map_y, int16_t cell, int16_t effect, int32_t time)",sensor
