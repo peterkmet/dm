@@ -31,12 +31,8 @@ const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, 16, 4, 4,
 #define HEADER_MAP_COUNT 4
 #define HEADER_TEXT_WORDS 6
 #define HEADER_PARTY_START 8 /* x in bits 0-4, y in bits 5-9, direction in bits 10-11 */
-#define HEADER_SQUARE_THINGS 10
-#define HEADER_THING_COUNTS 12 /* a word per thing type */
 
-#define MAP_BYTES 16
 #define MAP_RAW_DATA_OFFSET 0
-#define MAP_COORD_MASK 31
 
 #define FREE_SQUARE_THINGS 300 /* free square-first-thing entries of a new game */
 #define NEW_GAME_EVENT_COUNT 100
@@ -45,8 +41,6 @@ const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, 16, 4, 4,
 
 /* Save order: header, maps, column index, square things, text, the 16 thing types, raw map data. */
 enum { PART_THINGS_FIRST = 5, PART_RAW_MAPS = PART_THINGS_FIRST + THING_TYPE_COUNT, DUNGEON_PART_COUNT };
-
-#define THING_MAKE(type, index) ((uint16_t)((type) << 10 | (index)))
 
 static void *blocks[32];
 static int block_count;
@@ -122,8 +116,8 @@ static void dungeon_free(void)
 
 static uint16_t raw_map_bytes(void) { return BE16(g_dungeon_header + HEADER_RAW_MAP_BYTES); }
 static uint16_t text_words(void) { return BE16(g_dungeon_header + HEADER_TEXT_WORDS); }
-static uint16_t thing_count(int16_t type) { return BE16(g_dungeon_header + HEADER_THING_COUNTS + type * 2); }
-static void set_thing_count(int16_t type, uint16_t count) { WR16(g_dungeon_header + HEADER_THING_COUNTS + type * 2, count); }
+static uint16_t thing_count(int16_t type) { return BE16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2); }
+static void set_thing_count(int16_t type, uint16_t count) { WR16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2, count); }
 static uint16_t map_raw_data_offset(int16_t map) { return BE16(MAP_DESCRIPTOR(map) + MAP_RAW_DATA_OFFSET); }
 static uint16_t column_first_thing_index(int16_t map, int16_t x)
 {
@@ -169,7 +163,7 @@ static int16_t read_square_things_and_text(int new_game, uint16_t *sum)
     uint16_t square_things = rec_dungeon_square_first_thing_count(), extra = new_game ? FREE_SQUARE_THINGS : 0;
     if (square_things > UINT16_MAX - extra)
         return 0;
-    WR16(g_dungeon_header + HEADER_SQUARE_THINGS, square_things + extra);
+    WR16(g_dungeon_header + DUNGEON_HEADER_SQUARE_THINGS, square_things + extra);
     g_dungeon_column_first_thing_index = alloc(g_dungeon_column_count * 2);
     g_square_first_things = alloc((square_things + extra) * 2);
     g_dungeon_text_data = alloc(text_words() * 2);

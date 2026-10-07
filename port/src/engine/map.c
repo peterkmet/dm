@@ -50,7 +50,7 @@ void set_current_map_and_party_map(int16_t map)
     set_current_map(map);
 }
 
-static int16_t is_corridor_or_pit(uint8_t square)
+static bool is_corridor_or_pit(uint8_t square)
 {
     return SQUARE_TYPE(square) == SQUARE_CORRIDOR || SQUARE_TYPE(square) == SQUARE_PIT;
 }
@@ -81,7 +81,7 @@ int16_t get_square_type(int16_t x, int16_t y)
 }
 
 /* Corridor, pit, door, or teleporter. */
-int16_t is_square_open(int16_t x, int16_t y)
+bool is_square_open(int16_t x, int16_t y)
 {
     int16_t type = get_square_type(x, y);
     return type == SQUARE_CORRIDOR || type == SQUARE_TELEPORTER || type == SQUARE_PIT || type == SQUARE_DOOR;
@@ -93,7 +93,7 @@ int16_t get_location_after_level_change(int16_t map, int16_t level_delta, int16_
     if (g_party_map_index == NO_DUNGEON_MAP)
         return -1;
     int16_t dungeon_x = *x + map_offset_x(map), dungeon_y = *y + map_offset_y(map);
-    uint16_t level = (uint16_t)(map_level(map) + level_delta);
+    uint16_t level = (uint16_t)(map_level(map) + level_delta); /* level 0 up wraps to no level */
     for (int16_t m = 0; m < dungeon_map_count(); m++) {
         if (level == map_level(m) && map_offset_x(m) <= dungeon_x && dungeon_x <= map_offset_x(m) + map_last_x(m) &&
             map_offset_y(m) <= dungeon_y && dungeon_y <= map_offset_y(m) + map_last_y(m)) {
@@ -125,7 +125,7 @@ int16_t get_square_first_thing_index(int16_t x, int16_t y)
 {
     if (x < 0 || x >= g_current_map_width || y < 0 || y >= g_current_map_height || !(g_current_map_data[x][y] & SQUARE_HAS_THINGS))
         return -1;
-    int16_t index = (int16_t)BE16(column_first_thing_index + x * 2);
+    int16_t index = (int16_t)BE16(column_first_thing_index + x * 2); /* the word read as signed */
     for (int16_t i = 0; i < y; i++)
         index += (g_current_map_data[x][i] & SQUARE_HAS_THINGS) != 0;
     return index;
@@ -189,7 +189,7 @@ void link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
                 fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
             *square |= SQUARE_HAS_THINGS;
             add_to_later_columns(x, 1);
-            uint16_t index = (uint16_t)get_square_first_thing_index(x, y);
+            uint16_t index = get_square_first_thing_index(x, y);
             uint8_t *p = g_square_first_things + index * 2;
             memmove(p + 2, p, (count - index - 1) * 2);
             WR16(p, thing);
@@ -209,7 +209,7 @@ void unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
         return;
     thing = THING_STRIP_CELL(thing);
     if (x >= 0) {
-        uint16_t index = (uint16_t)get_square_first_thing_index(x, y);
+        uint16_t index = get_square_first_thing_index(x, y);
         uint8_t *first = g_square_first_things + index * 2;
         uint16_t after = get_next_thing(thing);
         if (after == THING_NONE && thing == THING_STRIP_CELL(BE16(first)))
@@ -266,7 +266,7 @@ uint16_t get_creature_attributes(uint16_t group_thing)
 uint16_t get_unused_thing(uint16_t thing_type)
 {
     uint16_t type = thing_type & ~NO_JUNK_RESERVE, size = g_thing_data_byte_count[type];
-    int16_t count = (int16_t)BE16(g_dungeon_header + 12 + type * 2);
+    int16_t count = BE16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2);
     if (thing_type == THING_JUNK)
         count -= JUNK_RESERVED_COUNT;
     for (int16_t i = 0; i < count; i++) {
@@ -274,7 +274,7 @@ uint16_t get_unused_thing(uint16_t thing_type)
         if (BE16(record) == THING_NONE) {
             memset(record, 0, size);
             WR16(record, THING_END);
-            return (uint16_t)(type << 10 | i);
+            return THING_MAKE(type, i);
         }
     }
     return THING_NONE;
@@ -288,17 +288,17 @@ uint16_t potion_type(uint16_t thing) { return dungeon_get_thing_data(thing)[2] &
 uint16_t potion_power(uint16_t thing) { return dungeon_get_thing_data(thing)[3]; }
 uint16_t container_type(uint16_t thing) { return (dungeon_get_thing_data(thing)[5] & 6) >> 1; }
 uint16_t container_first_thing(uint16_t thing) { return BE16(dungeon_get_thing_data(thing) + 2); }
-int16_t rec_object_is_cursed(uint16_t thing) { return dungeon_get_thing_data(thing)[2] & 1; }
+bool rec_object_is_cursed(uint16_t thing) { return dungeon_get_thing_data(thing)[2] & 1; }
 void rec_object_set_important(uint16_t thing) { dungeon_get_thing_data(thing)[3] |= IMPORTANT; }
 void rec_object_clear_important(uint16_t thing) { dungeon_get_thing_data(thing)[3] &= (uint8_t)~IMPORTANT; }
-int16_t weapon_is_lit(uint16_t thing) { return dungeon_get_thing_data(thing)[2] >> 7; }
+bool weapon_is_lit(uint16_t thing) { return dungeon_get_thing_data(thing)[2] >> 7; }
 uint16_t weapon_charges(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x3c) >> 2; }
 uint16_t junk_charges(uint16_t thing) { return dungeon_get_thing_data(thing)[2] >> 6; }
 uint16_t armour_charges(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x1e) >> 1; }
-int16_t scroll_is_closed(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0xfc) != 0; }
-int16_t weapon_is_poisoned(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x02) != 0; }
-int16_t weapon_is_broken(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x40) != 0; }
-int16_t armour_is_broken(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x20) != 0; }
+bool scroll_is_closed(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0xfc) != 0; }
+bool weapon_is_poisoned(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x02) != 0; }
+bool weapon_is_broken(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x40) != 0; }
+bool armour_is_broken(uint16_t thing) { return (dungeon_get_thing_data(thing)[2] & 0x20) != 0; }
 uint16_t scroll_text_index(uint16_t thing) { return BE16(dungeon_get_thing_data(thing) + 2) & 0x3ff; }
 void container_set_first_thing(uint16_t thing, uint16_t first) { WR16(dungeon_get_thing_data(thing) + 2, first); }
 
@@ -311,13 +311,13 @@ void weapon_set_lit(uint16_t thing, int16_t lit)
 void weapon_set_charges(uint16_t thing, uint16_t charges)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[2] = (uint8_t)((d[2] & ~0x3c) | (charges & 15) << 2);
+    d[2] = (uint8_t)((d[2] & ~0x3c) | (charges << 2 & 0x3c));
 }
 
 void armour_set_charges(uint16_t thing, uint16_t charges)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[2] = (uint8_t)((d[2] & ~0x1e) | (charges & 15) << 1);
+    d[2] = (uint8_t)((d[2] & ~0x1e) | (charges << 1 & 0x1e));
 }
 
 void junk_set_charges(uint16_t thing, uint16_t charges)
