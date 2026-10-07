@@ -28,7 +28,6 @@ enum { OBJECT_INFO_FIRST_WEAPON = 0x17, OBJECT_INFO_FIRST_ARMOUR = 0x45, OBJECT_
 enum { FIXED_POSSESSION_RANDOM_DROP = 0x8000, FIXED_POSSESSION_INDEX_MASK = 0x7fff };
 
 enum { SYSTEM_ERROR_NO_FREE_ACTIVE_GROUP = 71, ACTIVE_GROUP_RESERVE = 5 };
-enum { GROUP_THING_TYPE = THING_GROUP << 10 };   /* the type bits of a group thing */
 enum { MOVEMENT_TICKS_OF_IMMOBILE_CREATURE = 100, FREEZE_LIFE_RETRY_TICKS = 4, MOVE_GROUP_RETRY_TICKS = 5 };
 enum { WARINESS_AVOIDS_FORBIDDEN_TELEPORTER = 10, FALL_DAMAGE = 20, DOOR_DAMAGE = 5 };
 enum { SKILL_PARRY_DEFENSE = 7, INVISIBLE_PARTY_DODGE_BONUS = 16, LUCK_PERCENT_AGAINST_CREATURE = 60, LUCK_PERCENT_AGAINST_MISS = 75 };
@@ -94,7 +93,7 @@ static uint8_t drop_moving_creature_possessions_cells[GROUP_MAX_CREATURES];
 static uint32_t set_direction_time;
 static const ActiveGroup *set_direction_group;
 
-static uint16_t group_thing_of_active(const ActiveGroup *active) { return GROUP_THING_TYPE | active->group_index; }
+static uint16_t group_thing_of_active(const ActiveGroup *active) { return THING_MAKE(THING_GROUP, active->group_index); }
 static uint16_t cell_of(uint16_t packed, int16_t creature) { return packed >> (2 * creature) & 3; }
 static int16_t abs16(int16_t value) { return value < 0 ? -value : value; }
 static bool is_party_on(int16_t x, int16_t y) { return g_current_map_index == g_party_map_index && x == g_party_map_x && y == g_party_map_y; }
