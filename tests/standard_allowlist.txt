@@ -37,7 +37,6 @@ decimal engine/recruit.h open: Task 9
 decimal engine/savefile.c open: Task 8
 decimal engine/savegame.c open: Task 10
 decimal platform/state_json.c open: Task 11
-decimal data/tables.c open: Task 8
 decimal engine/timeline_process.c open: Task 10
 decimal ui/ui_champion.c open: Task 11
 decimal ui/ui_menus.c open: Task 11

@@ -619,6 +619,7 @@ Decisions made during Task 8:
 - `data/csbtext.c`: `TEXT_SKILL_LEVEL_COUNT` (15) in `data/ids.h`, next to `TEXT_SKILL_LEVEL_FIRST`. The counts 4 (directions) and 7 (statistics) stay plain: their names are in `engine/map.h` and `engine/game.h`, which `data/` cannot include.
 - `data/ftl.c`: the jump table and the relocation write with `WR16`/`WR32` of `bytes.h`. A comparison of the loaded KAOS.FTL and APPB.FTL images against the old `ftl.c` gives the same bytes.
 - `data/spells.c`: `SPELL_MANA_MULTIPLIER_SHIFT` (3) is in `data/spells.h`. `ui/command.c` defines the same value as `MANA_MULTIPLIER_SHIFT`: Task 11 replaces it with the `spells.h` name.
+- `data/tables.c`: the creature info offsets are the `CREATURE_AT_*` enum (docs/tables.md). The spell table constants had a second definition in `tables.c` (`SPELLS`, `SYMBOL_BASE_MANA_COST`, `SYMBOL_MANA_COST_MULTIPLIER`, the kind and type macros) and in `spells.c` (`SPELL_ENTRY_SIZE`). `data/spells.h` owns them now: `G_SPELLS`, `G_SYMBOL_*`, `SPELL_BYTES` (from `tables.h`), `SPELL_ENTRY_*`, and the existing masks. `data/csbimage.c` includes `spells.h` for `SPELL_BYTES`.
 
 ---
 

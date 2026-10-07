@@ -3,6 +3,7 @@
 #include "bytes.h"
 #include "csbimage.h"
 #include "csbtext.h"
+#include "spells.h"
 #include "tables.h"
 
 /* KAOS and APPB addresses of the tables that need a conversion. Sources: docs/csb-engine-diff.md "Data tables". */

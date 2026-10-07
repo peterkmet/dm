@@ -4,14 +4,6 @@
 #include "csbimage.h"
 #include "ftl.h"
 
-#define G_SYMBOL_BASE_MANA_COST 0x103c66       /* uint8_t[4][6] */
-#define G_SYMBOL_MANA_COST_MULTIPLIER 0x103c7e /* uint8_t[6], by power symbol */
-#define G_SPELLS 0x103c84                      /* SpellRecord[25], 8 bytes each */
-
-#define SPELL_ENTRY_SIZE 8
-#define SPELL_ENTRY_LEVEL 4        /* byte offsets in an entry: base required level, skill, attributes */
-#define SPELL_ENTRY_SKILL 5
-#define SPELL_ENTRY_ATTRIBUTES 6
 #define SPELL_FIRST_SYMBOL_SHIFT 24 /* the first symbol is in bits 24-31 of the symbols */
 #define SPELL_EXPERIENCE_POWER_FACTOR 8
 #define SPELL_EXPERIENCE_LEVEL_FACTOR 16
@@ -28,7 +20,7 @@ int16_t spell_count(void) { return g_adventure == ADVENTURE_CSB ? CSB_SPELL_COUN
 
 /* Spell table entry with its symbols, required level, skill and attributes. */
 SpellRecord spell_get(int16_t index) {
-    uint32_t a = spells_address() + (uint32_t)index * SPELL_ENTRY_SIZE;
+    uint32_t a = spells_address() + (uint32_t)index * SPELL_BYTES;
     return (SpellRecord){kaos_u32(a), kaos_u8(a + SPELL_ENTRY_LEVEL), kaos_u8(a + SPELL_ENTRY_SKILL), kaos_u16(a + SPELL_ENTRY_ATTRIBUTES)};
 }
 
@@ -50,7 +42,7 @@ int16_t spell_find(const uint8_t *symbols) {
             break;
     }
     for (int16_t i = 0; i < spell_count(); i++) {
-        uint32_t s = kaos_u32(spells_address() + (uint32_t)i * SPELL_ENTRY_SIZE);
+        uint32_t s = kaos_u32(spells_address() + (uint32_t)i * SPELL_BYTES);
         /* a spell without a power symbol matches any power */
         if ((s & SPELL_POWER_SYMBOL_MASK) ? packed == s : (packed & ~SPELL_POWER_SYMBOL_MASK) == s)
             return i;
