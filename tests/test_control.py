@@ -812,7 +812,7 @@ def test_map_grid_has_indexes(game, monkeypatch, capsys):
 def test_the_tests_do_not_log_into_a_run():
     from dmtools import play
 
-    assert not play.LOG_DIR.startswith(".playthrough")
+    assert not play.LOG_DIR.startswith("playthroughs")
 
 
 def test_a_bump_reports_the_health_lost_of_the_step(game):

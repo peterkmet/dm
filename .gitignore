@@ -8,6 +8,7 @@ __pycache__/
 decomp/
 build/
 game-csb/
-.playthroughs/
-playthrough_template/DMGAME.DAT
+playthroughs/*
+!playthroughs/template/
+playthroughs/template/DMGAME.DAT
 origs/

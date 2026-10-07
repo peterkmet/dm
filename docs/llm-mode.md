@@ -54,12 +54,23 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
    The server instructions and the tool descriptions tell the LLM how to play. A long playthrough uses `dm-play` and the player instructions instead: see [Runs and checkpoints](#runs-and-checkpoints).
 
+## Goal of the runs
+
+Each run measures how much the LLM player gets better: from session to session in the run, and against the earlier runs. To finish the game is the long-term goal, not the measure of one run.
+
+- Measure each run with `coordinator/level_stats.md`: the game time, the calls, and the tokens at the arrival on each level. Compare the run with the earlier runs.
+- Between sessions and between runs, you may change the player instructions: `docs/llm-playbook.md` and the headers in `playthroughs/template/`. Change them in small steps. Write each change, its reason, and the session where it starts in `coordinator/instruction_changes.md`, so that you can compare its effect.
+- Allowed changes: general rules about how to play and about the game, for example survival, fights, food and water, training, saves, the use of the commands, and how to keep the memory.
+- Not allowed: hints for this dungeon, for example a position, a map, the solution of a puzzle, where an item lies, which key opens which door, or the way to the next level. The player finds these itself.
+- The memory of an earlier run (maps, lessons) is the player's own knowledge, not a hint.
+
 ## Runs and checkpoints
 
-A run is one playthrough from a start save. All run folders are in `.playthroughs/`, which is git-ignored.
+A run is one playthrough from a start save. All run folders are in `playthroughs/`. Only `playthroughs/template/` is in git, without its `DMGAME.DAT`.
 
 ```text
-.playthroughs/
+playthroughs/
+  template/                     the player files with their headers (in git), and the start save DMGAME.DAT (local only: a game file)
   current -> run<N>             a link to the folder of the current run
   run<N>/                       the files of run N
     player/                     the player memory (the player sees only this)
@@ -67,18 +78,19 @@ A run is one playthrough from a start save. All run folders are in `.playthrough
       session_costs.md          the cost of each session
       calls.log                 one line per dm-play call of the player
       level_stats.md            at the end of the run: game time, calls, and tokens at the arrival on each level
-    game/                       the live save of the run: `build/dm --saves .playthroughs/current/game`
+      instruction_changes.md    each change of the player instructions: what, why, and from which session
+    game/                       the live save of the run: `build/dm --saves playthroughs/current/game`
     saves/<name>/               a checkpoint: a save DMGAME.DAT and a copy of player/ in files/
-  lego/                         the personal play folder: `make -C port lego`, then `.playthroughs/lego/dm --data game --saves .playthroughs/lego`
-playthrough_template/           the player files with their headers (in git), and the start save DMGAME.DAT (local only, git-ignored: a game file)
+  lego/                         the personal play folder: `make -C port lego`, then `playthroughs/lego/dm --data game --saves playthroughs/lego`
 ```
 
-- Start a new run N: create `.playthroughs/run<N>/` with the folders `player/`, `coordinator/`, `game/`, and `saves/`. Copy the `*.md` files of `playthrough_template/` to `player/`. Copy `playthrough_template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/`. Create `saves/start/` with the start save and a copy of `player/` in `files/`. Point the link to the run: `ln -sfn run<N> .playthroughs/current`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves .playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Start a new run N: create `playthroughs/run<N>/` with the folders `player/`, `coordinator/`, `game/`, and `saves/`. Copy the `*.md` files of `playthroughs/template/` to `player/`. Copy `playthroughs/template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/`. Create `saves/start/` with the start save and a copy of `player/` in `files/`. Point the link to the run: `ln -sfn run<N> playthroughs/current`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
 - Start a new run with the memory of an earlier run: as above, but copy into `player/` the files of the earlier run that describe the game, not its state: `map_L<n>.md`, `lessons.md`, `spells.md`, and `bestiary.md`. `progress.md`, `party.md`, `items.md`, and `bugs.md` come from the templates. Tell the player in the first session that the run starts again and that these notes come from its earlier game.
-- Make a checkpoint after a session: copy `game/DMGAME.DAT` of the run and `player/` (as `files/`) to `saves/<name>/`. Add a row to `coordinator/session_costs.md`; count the calls of the session in `coordinator/calls.log`.
+- Make a checkpoint after a session: copy `game/DMGAME.DAT` of the run and the `*.md` files of `player/` (as `files/`) to `saves/s<session>-level<level>/`, for example `saves/s3-level2/`. Add a row to `coordinator/session_costs.md`; count the calls of the session in `coordinator/calls.log`.
 - The coordinator's own `dm-play` calls stay out of the log: `DM_PLAY_LOG_DIR=none uv run dm-play ...`.
-- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/` of the run and its `files/` to `player/`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves .playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
-- Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `.playthroughs/current/player/`. Give the player the current goal and the limit of `dm-play` calls. The player shell must run in the repository root: `dm-play` writes its log to `.playthroughs/current/coordinator/` relative to it, else `calls.log` stays empty.
+- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/` of the run and its `files/` to `player/`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Before a player session: the game runs with `--saves playthroughs/current/game` (start it as in Resume when it does not run), and `DM_PLAY_LOG_DIR=none uv run dm-play --brief get_state` shows the position of `player/progress.md`. After the session: make the checkpoint, then stop the game or leave it for the next session. When the player reports a bad save, restore the checkpoint that it asks for (see Resume).
+- Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `playthroughs/current/player/`. Give the player the current goal and the limit of `dm-play` calls. The player counts its calls in `coordinator/calls.log` and stops 20 calls before the limit. The player shell must run in the repository root: `dm-play` writes its log to `playthroughs/current/coordinator/` relative to it, else `calls.log` stays empty.
 - End a run: copy the last save to `saves/end/`, and write `coordinator/level_stats.md`.
 
 ## Play Chaos Strikes Back
@@ -95,7 +107,7 @@ The game selects NEW ADVENTURE at the start. `new_game` starts it again. `state.
 2. Send `save`. In the prison, the save makes the adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, and continues at the start of the CSB dungeon (map 4).
 3. The answer of `save` is `{"ok":true}` only. Send `get_state` to see the new position.
 
-After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the CSB data folder.
+After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the folder of `--saves`, else the CSB data folder.
 
 ## MCP tools
 
@@ -158,7 +170,7 @@ During a turn, each frame is a tick: the game does not wait 12 frames for input.
 
 ### Save and load
 
-There is one save slot. The save directory is the data directory (`game/`), the same as for the SAVE button of the game. `save` and `load` use the same functions as the SAVE dialog and the RESUME button (`savegame_save`, `savegame_load`, `gameloop_start_loaded_game`).
+There is one save slot. The save directory is the folder of `--saves`, else the data directory (`game/`), the same as for the SAVE button of the game. A run uses `--saves playthroughs/current/game`. `save` and `load` use the same functions as the SAVE dialog and the RESUME button (`savegame_save`, `savegame_load`, `gameloop_start_loaded_game`).
 
 - `load` without a save file returns `{"ok": false, "error": "no saved game (use save first)"}`. Nothing changes.
 - `load` of a damaged file returns an error. After that, only `load` and `new_game` work, because the game state can be incomplete.

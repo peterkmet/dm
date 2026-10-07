@@ -154,7 +154,7 @@ def act(action: str, args: dict | None = None) -> dict:
 @mcp.tool()
 def act_many(actions: list) -> dict:
     """Runs a list of actions in order, each as one act turn, and returns {ok, ticks, ran,
-    stopped, error?, game_over, bumped?, health_lost?, state, view} after the last turn. Each item is an action
+    stopped, error?, game_over, bumped?, health_lost?, action_damage?, seen?, state, view} after the last turn. Each item is an action
     name ("move_forward") or {"action": ..., "args": {...}}. stopped: done, damage (a champion lost
     health), creature (a creature group came into view that was not in view
     before the step), message (a new message), bumped (a move did not
@@ -166,7 +166,7 @@ def act_many(actions: list) -> dict:
 @mcp.tool()
 def wait(ticks: int = 10) -> dict:
     """Lets ticks (1-5000) of game time pass without input; returns {ok, ticks, stopped,
-    game_over, health_lost?, state, view}. It stops early on news: stopped is done (all ticks ran), damage
+    game_over, health_lost?, seen?, state, view}. It stops early on news: stopped is done (all ticks ran), damage
     (a champion lost health), creature (a new creature group came into view), message (a new
     message), or game_over; ticks gives the ticks that ran. Also while the party sleeps.
     Use it to rest, to wait for action_disabled to clear, or for doors to open."""

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.1 - 2026-10-07
+
+### Changed
+
+- The run folders are in `playthroughs/` (was `.playthroughs/`), and the player templates in `playthroughs/template/` (was `playthrough_template/`).
+- LLM player rules: saves before risks and after milestones, training before a new level (food and water first), food and water rates, route scripts, at most 80 lines per memory file, the player counts its calls, and asks for a checkpoint when the save is bad.
+- LLM coordinator rules: the goal of the runs, the instruction changes that are allowed (general rules, no dungeon hints), the session preparation, and the checkpoint names `s<session>-level<level>`.
+
 ## 0.13.0 - 2026-10-07
 
 ### Added
