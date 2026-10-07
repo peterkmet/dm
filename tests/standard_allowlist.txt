@@ -49,7 +49,6 @@ long engine/group.c:group_get_melee_action_damage open: Task 10
 long engine/group.c:group_get_move_result open: Task 10
 long engine/group.c:group_process_reaction_event open: Task 10
 long engine/group.c:process_creature_behavior open: Task 10
-long ui/layout.c:layout_get_zone open: Task 11
 long engine/move.c:move_get_move_result open: Task 9
 long engine/projectile.c:explosion_process_step_event open: Task 10
 long engine/projectile.c:projectile_has_impact_occurred open: Task 10
