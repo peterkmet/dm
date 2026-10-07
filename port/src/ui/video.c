@@ -20,7 +20,7 @@ uint32_t video_argb(uint16_t amiga)
     uint32_t r = amiga >> 2 * AMIGA_CHANNEL_BITS & AMIGA_CHANNEL_MASK;
     uint32_t g = amiga >> AMIGA_CHANNEL_BITS & AMIGA_CHANNEL_MASK;
     uint32_t b = amiga & AMIGA_CHANNEL_MASK;
-    return ARGB_OPAQUE | (r * CHANNEL_4_TO_8_BITS) << 16 | (g * CHANNEL_4_TO_8_BITS) << 8 | b * CHANNEL_4_TO_8_BITS;
+    return ARGB_OPAQUE | (r * CHANNEL_4_TO_8_BITS) << ARGB_RED_SHIFT | (g * CHANNEL_4_TO_8_BITS) << ARGB_GREEN_SHIFT | b * CHANNEL_4_TO_8_BITS;
 }
 
 void video_layout(int out_w, int out_h, int *scale, int *ox, int *oy)
