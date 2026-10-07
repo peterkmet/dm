@@ -4,7 +4,7 @@ You play the original Dungeon Master (Amiga v3.60). Your goal is to win: find th
 
 ## Your notes
 
-Your files in `playthroughs/current/player/` are your memory. Keep each file short and up to date. Each file starts with a header that says what to write and in which format: keep the header and follow it. For a new level, copy the header of `map_L1.md`.
+Your files in `playthroughs/current/player/` are your memory. Keep each file short and up to date. Each file starts with a header that says what to write and in which format: keep the header and follow it. For a new level, copy the header of `map_L1.md`. Limit: `lessons.md` and each map have at most 80 lines. When a file is longer, merge and shorten it before the end of the session.
 
 | File | Content |
 |---|---|
@@ -36,8 +36,9 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 ## Food, water, sleep
 
 - The champions eat and drink all the time. Without food or water they lose stamina and then health.
+- The maximum of `food` and `water` is 2048. Estimates from an earlier run: about 1 water per 25 ticks awake; a sleep of 1500 ticks costs 200-300 food and 130-170 water. Half of the maximum is enough for about 4 long sleeps.
 - Food and water containers feed the champion who uses them. Fountains fill water containers.
-- Sleep gives back health, stamina, and mana, but time goes on: food and water go down and creatures move. Damage wakes the party.
+- Sleep gives back health, stamina, and mana, but time goes on: food and water go down and creatures move. Damage, a creature near the party, or `wake` wakes the party. The party does not wake by itself.
 
 ## Light and load
 
@@ -50,6 +51,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 - Each champion has 4 skills: fighter, ninja, priest, and wizard. A skill gets a new level when the champion uses it.
 - Fighter: hand-to-hand attacks. Ninja: fast attacks, throwing, shooting. Priest: priest spells and potions. Wizard: wizard spells.
 - A new level gives more health, stamina, or mana and better attributes.
+- Before the stairs down to a new level, follow the training rule in `progress.md`.
 
 ## Magic
 
@@ -78,6 +80,10 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 ## Saves
 
 - A save keeps the game. After a death or a mistake, load goes back to the last save.
+- There is one save slot. `save` overwrites it. Save after each milestone (key, door, puzzle, new level) and before each risk: a pit, a fight with a new creature type, a timed switch, a teleporter.
+- Do not save while a champion is poisoned, starving, or below 25 health, or when the party is in a fight: you cannot undo a bad save.
+- The coordinator keeps a checkpoint after each session. When the save is bad or the party cannot survive from it, ask in your report for the checkpoint of an earlier game time.
+- A win ends the game: the turn response has `"game_over": true` and `state.party.dead` is `false`. Save before you enter the level of Lord Chaos.
 
 ## When you are stuck
 
@@ -97,6 +103,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 1. Read this file.
 2. Read your files in `playthroughs/current/player/`: `progress.md`, `lessons.md`, the map of the current level, `party.md`, `spells.md`.
 3. Run `uv run dm-play --brief get_state`. If the position or the time does not match `progress.md`, run `uv run dm-play load` and check again.
+4. When the coordinator gives you a goal, it replaces the goal in `progress.md`. Write it into `progress.md` first.
 
 ### Rules
 
@@ -105,7 +112,9 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 - Do not start or stop the game program. The coordinator runs it.
 - The user watches the window. Before each `dm-play` call, write one short line of text: what you do next and why.
 - Plan a corridor or a fight in one `act_many` call. It stops early when something happens (see [Batches](#batches)). Check why it stopped before you continue.
-- One `wait` with many ticks stops by itself on damage, a new creature, or a message. Do not write helper loops that call `get_state`, `get_view`, or short `wait`s again and again.
+- One `wait` with many ticks stops by itself on damage, a new creature, or a message.
+- A script may compute a route or an action list from `get_map` and send it as one `act_many`.
+- A script must not loop over `get_state`, `get_view`, `wait`, or `choose_action`: each turn is your decision.
 - Ask for `get_map` only when you plan a route. The `act`, `act_many`, and `wait` responses already contain the state and the view.
 - The view gives wall texts (`text`) and the picture of each lock (`lock`). Use screenshots only to check a suspected bug.
 - Chosen runes stay after a stopped or failed cast. Before you add runes, check `state.spell.chosen` and send `delete_rune` until it is empty.
@@ -121,7 +130,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 | Pass time | `uv run dm-play wait '{"ticks":50}'` |
 | Save, load | `uv run dm-play save`, `uv run dm-play load` |
 | Sleep | `uv run dm-play act sleep`, then `wait`, then `uv run dm-play act wake` |
-| See the screen | `uv run dm-play screenshot '{"path":"/Users/lego/github/dm/playthroughs/current/player/shot.png"}'`, then read the PNG |
+| See the screen | `uv run dm-play screenshot '{"path":"/Users/lego/github/dm/playthroughs/current/coordinator/shot.png"}'`, then read the PNG |
 
 ### dm-play
 
@@ -210,7 +219,7 @@ Example: a fireball kills a screamer two squares ahead.
 
 ### Game over
 
-When the party dies or the game is won during a turn, the turn ends. The response has `"game_over": true`, and `state.party.dead` is `true` after a death. The endgame runs without waiting for input, and the window shows the entrance. After that, `act`, `act_many`, `wait`, and `save` return `{"ok": false, "error": "game over"}`. `get_state`, `get_view`, `get_map`, and `screenshot` still work. To play again, send `load` or `new_game`.
+When the party dies or the game is won during a turn, the turn ends. The response has `"game_over": true`, and `state.party.dead` is `true` after a death and `false` after a win. The endgame runs without waiting for input, and the window shows the entrance. After that, `act`, `act_many`, `wait`, and `save` return `{"ok": false, "error": "game over"}`. `get_state`, `get_view`, `get_map`, and `screenshot` still work. To play again, send `load` or `new_game`.
 
 ### Actions
 
@@ -314,4 +323,4 @@ A floor square with a pressure pad (`pressure_pad`, `round_pressure_pad`, `tiny_
 
 ### End of a session
 
-Stop when the coordinator's limit is reached, when the game stops answering, or when a bug blocks progress. Before you stop, save the game and update your files. The report: where the party is, party status, what you achieved, the current goal, and bugs found.
+Stop when the coordinator's limit is reached, when the game stops answering, or when a bug blocks progress. Before you stop, save the game and update your files. The report: where the party is, party status, what you achieved, the current goal, bugs found, and a request for an earlier checkpoint when the save is bad.

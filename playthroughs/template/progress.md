@@ -4,9 +4,10 @@
 Format:
 ## Now
 - Level, square (x,y), facing, game time of the last save.
-- Current goal. Before the party goes down to a new level, it must beat the creatures of the current level:
-  the party wins each fight without a retreat and without a long rest after it. Else the goal is training
-  on the current level: fight the creatures that the party can beat, and cast spells, until the skill levels rise.
+- Current goal. Before the stairs down to a new level: the party wins a fight against each creature type of
+  the level with no retreat and no champion below 25 health. Else the goal is training on the current level:
+  fight the creatures that the party can beat, and cast spells. Food and water come before training: train
+  only while the lowest food and water are above half.
 - Next 3 steps.
 - Open problems.
 - Food and water: the lowest food and water of the champions (state `food`, `water`), and where the next
