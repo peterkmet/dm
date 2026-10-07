@@ -8,14 +8,12 @@
 #include "text.h"
 #include "ui.h"
 #include "video.h"
+#include "view.h"
 
 /* KAOS data addresses. */
 #define VERSION_TEXT 0x10402c          /* g_dialog_version_text: "V3.6" */
 #define MESSAGE_COLORS 0x104026        /* g_dialog_message_colors[2] */
 #define MESSAGE_LINE_PAD 0x102966      /* pixels above and below a message line */
-#define LAYOUT_BITMAP_BYTES 14
-#define LAYOUT_BITMAP_SOURCE 2         /* source x, y, width, height (0: the bitmap size) */
-#define VIEWPORT_PIXELS (224 * 136)    /* the viewport bitmap of ui_viewport */
 #define MAX_CHOICES 4
 #define MESSAGE_COUNT 2
 #define MESSAGE_LINE_SIZE 64
@@ -36,7 +34,6 @@
 #define ZONE_CHOICE_BOTTOM_RIGHT 467
 #define ZONE_MESSAGE_ONE_CHOICE 469
 #define ZONE_MESSAGE 471
-#define MOUSE_ENTRY_ZONE 4             /* the zone word of an entry with a negative x1 */
 #define PRESS_FRAMES 5
 #define WIDE_MESSAGE_SHIFT 3           /* a message wider than 7/8 of the zone takes two lines */
 
@@ -61,15 +58,16 @@ static void patch_dividers(Bitmap *vp, int16_t count)
 {
     static const int16_t patch_zone[MAX_CHOICES] = { ZONE_PATCH_ONE_CHOICE, ZONE_PATCH_TWO_CHOICES, 0, ZONE_PATCH_FOUR_CHOICES };
     static const int16_t patch_layout[MAX_CHOICES] = { LAYOUT_PATCH_ONE_CHOICE, LAYOUT_PATCH_TWO_CHOICES, 0, LAYOUT_PATCH_FOUR_CHOICES };
-    static uint8_t copy_px[VIEWPORT_PIXELS];
+    static uint8_t copy_px[VIEWPORT_MAX_W * VIEWPORT_MAX_H];
     if (!patch_zone[count - 1]) return;
     Bitmap copy = { vp->w, vp->h, copy_px };
-    uint32_t source = LAYOUT_BITMAPS + (uint32_t)(patch_layout[count - 1] - 1) * LAYOUT_BITMAP_BYTES + LAYOUT_BITMAP_SOURCE;
-    int16_t sx = kaos_s16(source), sy = kaos_s16(source + 2), w = kaos_s16(source + 4), h = kaos_s16(source + 6);
+    uint32_t source = LAYOUT_BITMAPS + (uint32_t)(patch_layout[count - 1] - 1) * LAYOUT_BITMAP_SIZE;
+    int16_t sx = kaos_s16(source + LAYOUT_BITMAP_X), sy = kaos_s16(source + LAYOUT_BITMAP_Y);
+    int16_t w = kaos_s16(source + LAYOUT_BITMAP_W), h = kaos_s16(source + LAYOUT_BITMAP_H);
     Box b;
     memcpy(copy_px, vp->px, (size_t)vp->w * vp->h);
-    if (layout_get_zone(patch_zone[count - 1], (int16_t)copy.w, (int16_t)copy.h, &b, &w, &h))
-        draw_blit(&copy, (int16_t)(sx + w), (int16_t)(sy + h), vp, &b, COLOR_NONE, 0);
+    if (layout_get_zone(patch_zone[count - 1], copy.w, copy.h, &b, &w, &h))
+        draw_blit(&copy, sx + w, sy + h, vp, &b, COLOR_NONE, 0);
 }
 
 /* The choice texts in the zones for their count. */
@@ -97,7 +95,7 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
         total += (height + pad * 2 - TEXT_BASELINE_GAP + 1) * lines[i];
     }
     if (!total) return;
-    int y = TEXT_LINE_HEIGHT + box.y + ((uint16_t)(box.h + pad * 2 - total) >> 1) - 1;
+    int y = TEXT_LINE_HEIGHT + box.y + ((uint16_t)(box.h + pad * 2 - total) >> 1) - 1; /* unsigned half as in the original */
     for (int i = 0; i < MESSAGE_COUNT; i++) {
         if (!lines[i]) continue;
         uint8_t color = (uint8_t)kaos_s16(MESSAGE_COLORS + 2 * i);
@@ -121,7 +119,7 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
     Bitmap *vp = ui_viewport();
     const Bitmap *graphic = gfx_bitmap(GFX_DIALOG);
     const char *choice[MAX_CHOICES] = { choice1, choice2, choice3, choice4 }, *message[MESSAGE_COUNT] = { message1, message2 };
-    Box all = { 0, 0, (int16_t)vp->w, (int16_t)vp->h };
+    Box all = { 0, 0, vp->w, vp->h };
     if (graphic) draw_blit(graphic, 0, 0, vp, &all, COLOR_NONE, 0);
     ui_print_zone(vp, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, (const char *)kaos_ptr(VERSION_TEXT));
     int16_t count = 1;
@@ -135,7 +133,7 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
 /* Fills a rectangle of the viewport with one color. */
 static void fill(Bitmap *vp, int x, int y, int w, int h, uint8_t color)
 {
-    Box b = { (int16_t)x, (int16_t)y, (int16_t)w, (int16_t)h };
+    Box b = { x, y, w, h };
     draw_fill(vp, &b, color);
 }
 
@@ -145,7 +143,7 @@ static void draw_pressed_button(int16_t table, int16_t choice)
     Bitmap *vp = ui_viewport();
     uint32_t entry = ui_mouse_table_address(table) + (uint32_t)(choice - 1) * MOUSE_ENTRY_BYTES;
     Box b;
-    if (!ui_zone_box(kaos_s16(entry + MOUSE_ENTRY_ZONE), &b)) return;
+    if (!ui_zone_box(kaos_s16(entry + 2 * INPUT_X2), &b)) return; /* the zone word of an entry with a negative x1 */
     int x = b.x, y = b.y, w = b.w, h = b.h;
     fill(vp, x - 2, y - 2, w + 5, 1, COLOR_LIGHT_BROWN);
     fill(vp, x + w + 2, y - 2, 1, h + 4, COLOR_BLACK);
@@ -167,7 +165,7 @@ static void draw_pressed_button(int16_t table, int16_t choice)
 int16_t dialog_get_choice(int16_t choice_count)
 {
     /* One mouse table per choice count, first for the game screen, then for the inactive screen. */
-    int16_t table = (int16_t)(UI_INPUT_DIALOG_FIRST + g_game_screen_inactive * MAX_CHOICES + choice_count - 1);
+    int16_t table = UI_INPUT_DIALOG_FIRST + g_game_screen_inactive * MAX_CHOICES + choice_count - 1;
     command_save_input();
     command_set_only_mouse_input(table);
     command_discard_all_input();

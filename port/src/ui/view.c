@@ -70,8 +70,6 @@ enum { PILE_FLOOR_SHIFTS = 16, PILE_ODD_CELL = 8, PILE_ALCOVE_FIRST = 2, PILE_AL
 
 #define S8(a) ((int16_t)(int8_t)kaos_u8(a)) /* signed table byte */
 
-/* Layout bitmap record (14 bytes): the source rectangle of the slot in its graphic. */
-enum { LAYOUT_BITMAP_SIZE = 14, LAYOUT_BITMAP_X = 2, LAYOUT_BITMAP_Y = 4, LAYOUT_BITMAP_W = 6, LAYOUT_BITMAP_H = 8 };
 enum { LAYOUT_SLOTS = 64 };
 
 enum { WALL_COUNT = 15 };
