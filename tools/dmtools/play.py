@@ -86,7 +86,7 @@ def view_lines(view: dict) -> list[str]:
             if opening or square["element"] == "pit" or any(key in square for key in ("door", "side_face", "floor_ornament", "creatures")):
                 lines.append(f"{name} {side}: {square_text(square)}")
     if view["piles"]:
-        lines.append("piles: " + ", ".join(f"cell {p['cell']} {p['top']}" for p in view["piles"]))
+        lines.append("piles: " + "; ".join(f"cell {p['cell']}: {', '.join(p['objects'])}" for p in view["piles"]) + " (top first)")
     return lines
 
 

@@ -652,6 +652,29 @@ static bool side_seen(int16_t depth, int16_t side)
     return automap_side_is_visible(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction, depth, side);
 }
 
+/* The piles that take_object reaches, each with its top object and all its objects, top first. */
+static void piles_json(Json *j)
+{
+    json_key(j, "piles");
+    json_open(j, '[');
+    for (int16_t pile = 0; pile < VIEW_CLICK_BOX_WALL; pile++) {
+        uint16_t thing = g_pile_top_objects[pile];
+        if (g_dungeon_view_clickable_boxes[pile].x == -1 || object_get_icon_index(thing) == -1) continue;
+        json_open(j, '{');
+        key_int(j, "cell", pile);
+        key_str(j, "top", object_name(thing));
+        json_key(j, "objects");
+        json_open(j, '[');
+        for (int16_t i = g_pile_object_counts[pile] - 1; i >= 0; i--) {
+            uint16_t object = g_pile_objects[pile][i];
+            if (object_get_icon_index(object) != -1) json_str(j, object_name(object));
+        }
+        json_close(j, ']');
+        json_close(j, '}');
+    }
+    json_close(j, ']');
+}
+
 void state_json_view(Json *j)
 {
     json_open(j, '{');
@@ -690,17 +713,7 @@ void state_json_view(Json *j)
             json_close(j, '}');
         }
     json_close(j, ']');
-    json_key(j, "piles");
-    json_open(j, '[');
-    for (int16_t pile = 0; pile < VIEW_CLICK_BOX_WALL; pile++) {
-        uint16_t thing = g_pile_top_objects[pile];
-        if (g_dungeon_view_clickable_boxes[pile].x == -1 || object_get_icon_index(thing) == -1) continue;
-        json_open(j, '{');
-        key_int(j, "cell", pile);
-        key_str(j, "top", object_name(thing));
-        json_close(j, '}');
-    }
-    json_close(j, ']');
+    piles_json(j);
     key_bool(j, "wall_ahead_clickable", g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL].x != -1);
     int wall_ahead = g_square_ahead_element == VIEW_ELEMENT_WALL; /* the view sets the facing flags only for a wall ahead */
     key_bool(j, "alcove", wall_ahead && g_facing_alcove);

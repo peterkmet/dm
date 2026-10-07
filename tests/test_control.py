@@ -762,6 +762,47 @@ def test_take_put_and_look_in_an_open_chest(game):
     assert data[2] << 8 | data[3] == content[0]
 
 
+def test_a_pile_lists_all_its_objects_top_first_in_take_order(game, monkeypatch, capsys):
+    client = Client(game)
+    try:
+        slots = {s["slot"]: s["object"]["name"] for s in client.call(cmd="get_state")["state"]["champions"][0]["slots"]}
+        names = {}
+        for slot, name in slots.items():
+            names.setdefault(name, slot)
+        dropped = list(names.values())[:3]
+        assert len(dropped) == 3, slots
+        for slot in dropped:
+            client.act("open_inventory", champion=0)
+            client.act("take_from_slot", champion=0, slot=slot)
+            client.act("close_inventory")
+            client.act("drop_object", cell=0)
+        pile = next(p for p in client.call(cmd="get_view")["view"]["piles"] if p["cell"] == 0)
+        assert sorted(pile["objects"]) == sorted(slots[s] for s in dropped)
+        assert pile["objects"][0] == pile["top"] == slots[dropped[-1]]  # the last dropped object lies on top
+
+        monkeypatch.setenv("DM_CONTROL", game.socket)
+        client.sock.close()  # the game serves one client at a time
+        with pumped(game):
+            from dmtools import play
+
+            assert play.main(["--brief", "get_view"]) == 0
+            assert f"piles: cell 0: {', '.join(pile['objects'])} (top first)" in capsys.readouterr().out
+        client = Client(game)
+
+        taken = client.act("take_object", cell=0)["state"]["leader_hand"]["name"]
+        assert taken == pile["objects"][0]
+        after = next(p for p in client.call(cmd="get_view")["view"]["piles"] if p["cell"] == 0)
+        assert after["objects"] == pile["objects"][1:]
+        client.act("drop_object", cell=0)
+        for slot in reversed(dropped):  # each take gets the top: the last dropped object
+            client.act("take_object", cell=0)
+            client.act("open_inventory", champion=0)
+            client.act("put_in_slot", champion=0, slot=slot)
+            client.act("close_inventory")
+    finally:
+        client.sock.close()
+
+
 def test_brief_prints_creatures_on_side_squares():
     from dmtools.play import view_lines
 
