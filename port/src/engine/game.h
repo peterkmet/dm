@@ -143,7 +143,7 @@ void timeline_extract_first_event(TimelineEvent *event);
 int16_t timeline_is_first_event_expired(void);
 void timeline_add_watchdog_event(void);
 
-void group_init_active_groups(void);
+void game_init_active_groups(void);
 
 int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value);
 uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack);

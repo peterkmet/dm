@@ -169,7 +169,7 @@ Note: [range-7-9.md](symbols/range-7-9.md) says that "any other new type" delete
 
 `ActiveGroup` has the 16-byte layout of the original: `group_index` (`int16_t`, −1 is a free entry), `directions`, `cells`, `last_move_time`, `delay_fleeing`, `target_x`, `target_y`, `prior_x`, `prior_y`, `home_x`, `home_y`, and `aspect[4]`. All fields after `group_index` are `uint8_t`.
 
-`group_init_active_groups` (`0x10cb76`) allocates 110 entries and sets `group_index` to −1 in each entry. The port has only the new-game path.
+`game_init_active_groups` (`0x10cb76`) allocates 110 entries and sets `group_index` to −1 in each entry. The port has only the new-game path.
 
 ## Projectiles and explosions
 
@@ -182,7 +182,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 1. Clear `g_party` and `g_champions`. Set the champion count to 0, the leader and the magic caster to −1, and the leader hand object to `0xffff`.
 2. Set `g_game_time`, the sleep and death flags, the movement counters, and `g_active_group_count` to 0.
 3. Set `g_game_id` to the product of two `random16()` values.
-4. Call `timeline_init` and `group_init_active_groups`.
+4. Call `timeline_init` and `game_init_active_groups`.
 
 `load_dungeon` sets the party position and direction from the dungeon header, and `g_party_map_index` to 0.
 

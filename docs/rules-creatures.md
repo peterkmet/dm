@@ -180,8 +180,8 @@ Then the explosion disappears.
 
 ### Fluxcage and fuse
 
-- `group_fluxcage_action(x, y)` puts a fluxcage (type 50) on a square that is not a wall or stairs. Event 24 removes it after 100 ticks. When this fluxcage is the third one around Lord Chaos on an adjacent square, Lord Chaos senses danger.
-- `group_fuse_action(x, y)` creates a Harm Non-Material explosion with attack 255. Lord Chaos in 4 fluxcages sets `g_fuse_sequence_requested`. Else Lord Chaos escapes through a free side to an open square.
+- `projectile_fluxcage_action(x, y)` puts a fluxcage (type 50) on a square that is not a wall or stairs. Event 24 removes it after 100 ticks. When this fluxcage is the third one around Lord Chaos on an adjacent square, Lord Chaos senses danger.
+- `projectile_fuse_action(x, y)` creates a Harm Non-Material explosion with attack 255. Lord Chaos in 4 fluxcages sets `g_fuse_sequence_requested`. Else Lord Chaos escapes through a free side to an open square.
 
 ## Spells
 

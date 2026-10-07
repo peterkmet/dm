@@ -516,7 +516,7 @@ void explosion_process_event_25(TimelineEvent *event)
 }
 
 /* A fluxcage explosion stands on the square (never on a wall or stairs). */
-int16_t group_is_fluxcage_on_square(int16_t x, int16_t y)
+int16_t projectile_is_fluxcage_on_square(int16_t x, int16_t y)
 {
     int16_t type = SQUARE_TYPE(get_square(x, y));
     if (type == SQUARE_WALL || type == SQUARE_STAIRS)
@@ -528,7 +528,7 @@ int16_t group_is_fluxcage_on_square(int16_t x, int16_t y)
 }
 
 /* The group thing of Lord Chaos on the square, or 0. */
-uint16_t group_get_lord_chaos_on_square(int16_t x, int16_t y)
+uint16_t projectile_get_lord_chaos_on_square(int16_t x, int16_t y)
 {
     uint16_t group = group_get_thing(x, y);
     if (group == THING_END || group_creature_type(group) != CREATURE_LORD_CHAOS)
@@ -537,7 +537,7 @@ uint16_t group_get_lord_chaos_on_square(int16_t x, int16_t y)
 }
 
 /* A fluxcage for 100 ticks. When it closes the third side around an adjacent Lord Chaos, he senses danger. */
-void group_fluxcage_action(int16_t x, int16_t y)
+void projectile_fluxcage_action(int16_t x, int16_t y)
 {
     int16_t type = SQUARE_TYPE(get_square(x, y));
     if (type == SQUARE_WALL || type == SQUARE_STAIRS)
@@ -555,18 +555,18 @@ void group_fluxcage_action(int16_t x, int16_t y)
     };
     timeline_add_event(&event);
     int16_t lord_x = x, lord_y = y, cages = 0;
-    if (group_get_lord_chaos_on_square(x, y - 1)) {
+    if (projectile_get_lord_chaos_on_square(x, y - 1)) {
         lord_y = y - 1;
-        cages = group_is_fluxcage_on_square(x + 1, lord_y) + group_is_fluxcage_on_square(x, lord_y - 1) + group_is_fluxcage_on_square(x - 1, lord_y);
-    } else if (group_get_lord_chaos_on_square(x - 1, y)) {
+        cages = projectile_is_fluxcage_on_square(x + 1, lord_y) + projectile_is_fluxcage_on_square(x, lord_y - 1) + projectile_is_fluxcage_on_square(x - 1, lord_y);
+    } else if (projectile_get_lord_chaos_on_square(x - 1, y)) {
         lord_x = x - 1;
-        cages = group_is_fluxcage_on_square(lord_x, y + 1) + group_is_fluxcage_on_square(lord_x, y - 1) + group_is_fluxcage_on_square(lord_x - 1, y);
-    } else if (group_get_lord_chaos_on_square(x + 1, y)) {
+        cages = projectile_is_fluxcage_on_square(lord_x, y + 1) + projectile_is_fluxcage_on_square(lord_x, y - 1) + projectile_is_fluxcage_on_square(lord_x - 1, y);
+    } else if (projectile_get_lord_chaos_on_square(x + 1, y)) {
         lord_x = x + 1;
-        cages = group_is_fluxcage_on_square(lord_x, y - 1) + group_is_fluxcage_on_square(lord_x, y + 1) + group_is_fluxcage_on_square(lord_x + 1, y);
-    } else if (group_get_lord_chaos_on_square(x, y + 1)) {
+        cages = projectile_is_fluxcage_on_square(lord_x, y - 1) + projectile_is_fluxcage_on_square(lord_x, y + 1) + projectile_is_fluxcage_on_square(lord_x + 1, y);
+    } else if (projectile_get_lord_chaos_on_square(x, y + 1)) {
         lord_y = y + 1;
-        cages = group_is_fluxcage_on_square(x - 1, lord_y) + group_is_fluxcage_on_square(x, lord_y + 1) + group_is_fluxcage_on_square(x + 1, lord_y);
+        cages = projectile_is_fluxcage_on_square(x - 1, lord_y) + projectile_is_fluxcage_on_square(x, lord_y + 1) + projectile_is_fluxcage_on_square(x + 1, lord_y);
     }
     if (cages == 2)
         group_process_events_29_to_41(lord_x, lord_y, REACTION_DANGER_ON_SQUARE, 0);
@@ -574,18 +574,18 @@ void group_fluxcage_action(int16_t x, int16_t y)
 
 /* Fuse: a harm non-material explosion. Lord Chaos in 4 fluxcages starts the fuse sequence; otherwise he escapes
    through a free side to an open square. */
-void group_fuse_action(int16_t x, int16_t y)
+void projectile_fuse_action(int16_t x, int16_t y)
 {
     if ((uint16_t)x >= (uint16_t)g_current_map_width || (uint16_t)y >= (uint16_t)g_current_map_height)
         return;
     explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), 255, x, y, CELL_CENTERED);
-    uint16_t lord_chaos = group_get_lord_chaos_on_square(x, y);
+    uint16_t lord_chaos = projectile_get_lord_chaos_on_square(x, y);
     if (!lord_chaos)
         return;
     /* Sides: 0 west, 1 east, 2 north, 3 south. */
     int16_t cages[4] = {
-        group_is_fluxcage_on_square(x - 1, y), group_is_fluxcage_on_square(x + 1, y),
-        group_is_fluxcage_on_square(x, y - 1), group_is_fluxcage_on_square(x, y + 1),
+        projectile_is_fluxcage_on_square(x - 1, y), projectile_is_fluxcage_on_square(x + 1, y),
+        projectile_is_fluxcage_on_square(x, y - 1), projectile_is_fluxcage_on_square(x, y + 1),
     };
     uint16_t count = cages[0] + cages[1] + cages[2] + cages[3];
     int16_t escape_x, escape_y;

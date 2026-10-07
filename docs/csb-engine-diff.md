@@ -63,7 +63,7 @@ In DM, `KAOS.FTL` holds the game and `APPB.FTL` holds the intro. In CSB, `APPB.F
 | Memory heap (simpler than DM) | `heap_init` C`0x117754`, `heap_setup_regions` C`0x117814`, `compute_graphics_memory` C`0x12b532` |
 | Copy protection | 16 functions with subsystem `protect`, see [Copy protection](#copy-protection) |
 
-The DM-only functions are the language support (`set_language_file_names`, `load_string_table`, `get_string`, `graphics_get_language_index`), the DM heap and graphics area manager (`heap_*`, `gfx_area_*`), Fuse and Lord Chaos (`group_fluxcage_action`, `group_fuse_action`, `group_is_fluxcage_on_square`, `group_get_lord_chaos_on_square`, `fuse_sequence`, `fuse_sequence_update`), the DM victory screen (`endgame_print_text`, `endgame_draw_button`), and `format_save_disk_dialog`.
+The DM-only functions are the language support (`set_language_file_names`, `load_string_table`, `get_string`, `graphics_get_language_index`), the DM heap and graphics area manager (`heap_*`, `gfx_area_*`), Fuse and Lord Chaos (`projectile_fluxcage_action`, `projectile_fuse_action`, `projectile_is_fluxcage_on_square`, `projectile_get_lord_chaos_on_square`, `fuse_sequence`, `fuse_sequence_update`), the DM victory screen (`endgame_print_text`, `endgame_draw_button`), and `format_save_disk_dialog`.
 
 ## Data tables
 
@@ -247,7 +247,7 @@ Port implementation (Step 3):
 
 `action_is_action_performed` (K`0x122892`, C`0x12663e`, switch at C`0x126764`, cases 2–42, default C`0x126caa`):
 
-- INVOKE (27), FLUXCAGE (35), and FUSE (43) go to the default branch in CSB. They only apply the common part: disabled ticks, stamina, experience, and the state redraw. The function returns 1. DM uses `random16` for INVOKE and calls `group_fluxcage_action` and `group_fuse_action`.
+- INVOKE (27), FLUXCAGE (35), and FUSE (43) go to the default branch in CSB. They only apply the common part: disabled ticks, stamina, experience, and the state redraw. The function returns 1. DM uses `random16` for INVOKE and calls `projectile_fluxcage_action` and `projectile_fuse_action`.
 - Action set 1 = {27, 43, 35} still exists in CSB (C`0x1047ac`).
 - All other actions are the same as DM, including FIREBALL, DISPELL, LIGHTNING, SPIT, door bash, coin flip, shields, HEAL, LIGHT, WINDOW, FREEZE LIFE, THROW, SHOOT, and CLIMB DOWN.
 - `action_is_group_frightened_by_action`, `action_decrement_charges`, and `menus_get_action_hand_charge_count` are the same as DM.
@@ -340,7 +340,7 @@ Port (Step 7): `magic.c` `cast_magic_map`, `timeline_process.c` events 80–83, 
 
 ### Creatures
 
-- `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `port/src/engine/game.h`, `MIN_ACTIVE_GROUP_COUNT` in `port/src/engine/savegame.c`.
+- `game_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `port/src/engine/game.h`, `MIN_ACTIVE_GROUP_COUNT` in `port/src/engine/savegame.c`.
 - `group_steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. Step 7 check: the APPB code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
 
 ### Champions

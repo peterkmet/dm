@@ -195,10 +195,10 @@ Explosion things are `0xff80 + type`: 0 fireball, 1 slime, 2 lightning bolt, 3 h
 
 ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 
-- `group_is_fluxcage_on_square(x, y)`: true when an explosion of type 50 is on the square.
-- `group_get_lord_chaos_on_square(x, y)`: the group thing when creature type 23 (Lord Chaos) is there, else 0.
-- `group_fluxcage_action(x, y)` (was unnamed): creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event −3 to his group. The existing CSV name `group_fluxcage_action` at `0x11cda2` was wrong.
-- `group_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
+- `projectile_is_fluxcage_on_square(x, y)`: true when an explosion of type 50 is on the square.
+- `projectile_get_lord_chaos_on_square(x, y)`: the group thing when creature type 23 (Lord Chaos) is there, else 0.
+- `projectile_fluxcage_action(x, y)` (was unnamed): creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event −3 to his group. The existing CSV name `projectile_fluxcage_action` at `0x11cda2` was wrong.
+- `projectile_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
 - `group_get_square_distance`: Manhattan distance.
 - `group_is_destination_visible_from_source(direction, sx, sy, dx, dy)`: true when the destination is in the 90° cone in that direction.
 - `group_get_directions_to_destination(sx, sy, dx, dy)` returns the main direction and writes the second direction to `g_group_secondary_direction`.
@@ -847,7 +847,7 @@ Returns 1 on success, −1 on cancel (restart path).
 2. Read the parts with `save_read_summed_block`. Allocate them only when no restart is in progress (`g_restart_requested` = 0). The parts, the new-game extras (300 free square-first-thing entries, extra thing records per type from the table at `0x101058`, capped at 1024, 768 for type 15), and the event max count (100 + counts of type 4 and types 14–15) are as in the module map.
 3. Read the checksum word. Accept the dungeon when the word is missing or equal to the byte sum.
 4. Build the column pointer table `g_dungeon_map_data`: one pointer per map, then one pointer per column. Column `c` of map `m` starts at `raw + map.offset + c × height`.
-5. New game: `timeline_init`, `group_init_active_groups`.
+5. New game: `timeline_init`, `game_init_active_groups`.
 
 `decompress_dungeon` decodes a bit stream (MSB first, read in big-endian words). The first 20 bytes of the data after the 8-byte header are two tables: `t4` (4 bytes) and `t16` (16 bytes). The stream starts at byte 20. Codes:
 

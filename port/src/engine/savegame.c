@@ -419,7 +419,7 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
 }
 
 /* Allocates the timeline and the active groups for the saved counts, as timeline_init and
-   group_init_active_groups do for a loaded game. CSB allocates exactly the saved count. */
+   game_init_active_groups do for a loaded game. CSB allocates exactly the saved count. */
 static int allocate_tables(void)
 {
     uint16_t groups = g_max_active_group_count;

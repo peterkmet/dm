@@ -73,7 +73,7 @@ void game_new(void)
     uint32_t r = random16();
     g_game_id = r * random16();
     timeline_init();
-    group_init_active_groups();
+    game_init_active_groups();
 }
 
 int16_t min16(int16_t a, int16_t b) { return b <= a ? b : a; }
@@ -289,7 +289,7 @@ void timeline_add_watchdog_event(void)
 }
 
 /* New game only: all active group entries are free. */
-void group_init_active_groups(void)
+void game_init_active_groups(void)
 {
     g_max_active_group_count = g_adventure == ADVENTURE_CSB ? CSB_ACTIVE_GROUP_MAX_COUNT : ACTIVE_GROUP_MAX_COUNT;
     free(g_active_groups);

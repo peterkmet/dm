@@ -431,7 +431,7 @@ int16_t action_is_action_performed(uint16_t champion_index, int16_t action)
         break;
     case ACTION_FLUXCAGE:
         champion_face_party_direction(c);
-        group_fluxcage_action(x, y);
+        projectile_fluxcage_action(x, y);
         break;
     case ACTION_HEAL:
         experience = heal(champion_index, experience);
@@ -458,7 +458,7 @@ int16_t action_is_action_performed(uint16_t champion_index, int16_t action)
         champion_face_party_direction(c);
         int16_t fuse_x, fuse_y;
         step_forward(g_party_direction, &fuse_x, &fuse_y);
-        group_fuse_action(fuse_x, fuse_y);
+        projectile_fuse_action(fuse_x, fuse_y);
         break;
     }
     }

@@ -222,12 +222,12 @@ The code is in `port/src/engine/action.c`. The rules follow `action_is_action_pe
 | Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, else fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
 | Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_action_damage = −2`, no experience. |
 | Spellshield, Fireshield | `magic_is_party_spell_or_fire_shield_successful` for 280 ticks with mana. Success uses a charge. Failure quarters the experience and halves the disabled ticks. |
-| Fluxcage | `group_fluxcage_action` on the square in front. |
+| Fluxcage | `projectile_fluxcage_action` on the square in front. |
 | Heal | While mana remains: health + `min(10, heal level)`, mana − 2, experience + 2 (start 2). |
 | Light | Light power 2 now, event 70 takes it back after 2500 ticks. Uses a charge. |
 | Window | Thieves eye (event 73) for `random % (level + 8) + 5` ticks. Uses a charge. |
 | Throw | `action_is_object_thrown` from the action hand. The event 11 gets byte 6 = 2: when it runs, the next weapon of the quiver goes to the action hand. |
-| Fuse | `group_fuse_action` on the square in front of the party. |
+| Fuse | `projectile_fuse_action` on the square in front of the party. |
 
 Block, Hit, and the other actions only add the action defense, the disabled ticks, the stamina cost, and the experience. The champion turns to the party direction for the spell, shoot, throw, fluxcage, and fuse actions.
 

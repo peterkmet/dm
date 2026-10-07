@@ -72,10 +72,10 @@ int16_t projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t y, i
 void projectile_process_events_48_to_49(TimelineEvent *event);
 void explosion_process_event_25(TimelineEvent *event);
 
-int16_t group_is_fluxcage_on_square(int16_t x, int16_t y);
-uint16_t group_get_lord_chaos_on_square(int16_t x, int16_t y);
-void group_fluxcage_action(int16_t x, int16_t y);
-void group_fuse_action(int16_t x, int16_t y);
+int16_t projectile_is_fluxcage_on_square(int16_t x, int16_t y);
+uint16_t projectile_get_lord_chaos_on_square(int16_t x, int16_t y);
+void projectile_fluxcage_action(int16_t x, int16_t y);
+void projectile_fuse_action(int16_t x, int16_t y);
 void projectile_reset(void);
 
 int16_t projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing);
