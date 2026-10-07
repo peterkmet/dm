@@ -38,7 +38,6 @@ decimal engine/savegame.c open: Task 10
 decimal data/spells.c open: Task 8
 decimal data/tables.c open: Task 8
 decimal engine/timeline_process.c open: Task 10
-decimal ui/view.c open: Task 11
 hex ui/anim.c open: Task 11
 hex data/csbimage.c addresses of the APPB tables
 hex data/csbtext.c addresses of the APPB tables
@@ -61,8 +60,6 @@ long engine/projectile.c:projectile_has_impact_occurred open: Task 10
 long engine/sensor.c:sensor_is_triggered_by_click_on_wall open: Task 9
 long engine/sensor.c:sensor_process_thing_addition_or_removal open: Task 9
 long engine/timeline_process.c:event_process_expired open: Task 10
-long ui/view.c:aspect open: Task 11
-long ui/view.c:map_square open: Task 11
 numbered explosion_process_step_event open: Task 7
 numbered group_process_reaction_event open: Task 7
 numbered magic_create_light_event open: Task 7
