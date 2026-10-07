@@ -211,7 +211,6 @@ static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, 
         return skip;
     case SENSOR_WALL_SINGLE_OBJECT_EXCHANGER:
         return exchange_single_object(sensor, x, y);
-
     case SENSOR_WALL_OBJECT_EXCHANGER: {
         if (remaining)
             return CLICK_IGNORED;

@@ -503,7 +503,6 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     case ACTION_THROW:
         performed = is_action_hand_object_thrown(champion_index);
         break;
-
     case ACTION_FUSE: {
         champion_face_party_direction(c);
         int16_t fuse_x, fuse_y;
@@ -605,7 +604,6 @@ bool action_is_leader_hand_object_thrown(int16_t side)
     if (g_leader_index == -1)
         return 0;
     return action_is_object_thrown(g_leader_index, -1, side);
-
 }
 
 /* 1 when the weapon slot holds a bow and the ammunition slot an arrow, or a sling and a sling stone. */

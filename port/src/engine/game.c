@@ -339,7 +339,6 @@ bool game_is_lucky(Champion *champion, uint16_t percentage)
     if (random_bit() && percentage < random16() % PERCENT_RANGE)
         return true;
     bool lucky = (int8_t)luck[STAT_CURRENT] > 0 && percentage < random16() % (luck[STAT_CURRENT] * 2);
-
     int16_t change = lucky ? -LUCK_STEP : LUCK_STEP;
     luck[STAT_CURRENT] = (uint8_t)bounded_value((int8_t)luck[STAT_MINIMUM], (int8_t)luck[STAT_CURRENT] + change, (int8_t)luck[STAT_MAXIMUM]);
     return lucky;

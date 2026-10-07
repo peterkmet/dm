@@ -377,7 +377,6 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
 int16_t magic_get_click_on_spell_cast_result(void)
 {
     int16_t result = magic_get_champion_spell_cast_result(g_magic_caster_champion_index);
-
     if (result == SPELL_CAST_FAILURE_NEEDS_FLASK)
         return SPELL_CAST_FAILURE;
     Champion *c = &g_champions[g_magic_caster_champion_index];

@@ -343,7 +343,6 @@ void move_party(int16_t command)
     for (int16_t i = 0; i < g_party_champion_count; i++)
         if (g_champions[i].current_health)
             champion_decrement_stamina(i, (uint16_t)(g_champions[i].load * MOVE_STAMINA_FACTOR) / champion_get_maximum_load(&g_champions[i]) + 1); /* 16-bit wrap */
-
     int16_t arrow = command - COMMAND_MOVE_FORWARD, x = g_party_map_x, y = g_party_map_y;
     uint8_t square = get_square(x, y);
     int16_t on_stairs = SQUARE_TYPE(square) == SQUARE_STAIRS;

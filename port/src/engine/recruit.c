@@ -106,5 +106,4 @@ int16_t recruit_portrait_index(uint16_t sensor_thing) {
 void recruit_portrait_origin(int16_t portrait_index, int16_t *x, int16_t *y) {
     *x = (portrait_index & (PORTRAITS_PER_ROW - 1)) * kaos_s16(G_PORTRAIT_WIDTH);
     *y = (uint16_t)portrait_index / PORTRAITS_PER_ROW * kaos_s16(G_PORTRAIT_HEIGHT);   /* unsigned division as in the original */
-
 }

@@ -92,6 +92,8 @@
 #define IDLE_TICKS_VERY_HUNGRY 250
 #define HEALTH_GAIN_VITALITY_BONUS 12
 #define HEALTH_GAIN_SHIFT 7                /* health gain: maximum health / 128 + 1 */
+#define POISON_DAMAGE_SHIFT 6              /* a poison step deals attack / 64 */
+#define DAMAGE_ALL_SPREAD_SHIFT 3          /* damage to all champions spreads by attack / 8 */
 /* The regeneration chance shuffles the game time bits 6, 7, and 8. */
 #define TIME_BIT_6 0x40
 #define TIME_BIT_7 0x80
@@ -802,7 +804,7 @@ void champion_poison(int16_t champion_index, uint16_t attack)
     if (champion_index == -1 || champion_index + 1 == g_candidate_champion_ordinal)
         return;
     Champion *c = &g_champions[champion_index];
-    champion_add_pending_damage_and_wounds(champion_index, max16(1, attack >> 6), 0, ATTACK_RAW);
+    champion_add_pending_damage_and_wounds(champion_index, max16(1, attack >> POISON_DAMAGE_SHIFT), 0, ATTACK_RAW);
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     if (--attack) {
         c->poison_event_count++;
@@ -827,7 +829,7 @@ int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t at
 {
     if (!attack)
         return 0;
-    uint16_t spread = (attack >> 3) + 1;
+    uint16_t spread = (attack >> DAMAGE_ALL_SPREAD_SHIFT) + 1;
     attack -= spread;
     spread *= 2;
     int16_t count = 0;

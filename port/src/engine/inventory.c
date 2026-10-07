@@ -199,7 +199,6 @@ static int16_t object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint
             return STAFF_OF_CLAWS_MANA;
         if (icon >= ICON_STAFF && icon <= ICON_SCEPTRE_OF_LYF)
             return staff_mana[icon - ICON_STAFF];
-
         return icon == ICON_VORPAL_BLADE ? VORPAL_BLADE_MANA : icon == ICON_DELTA ? DELTA_MANA : icon == ICON_INQUISITOR ? INQUISITOR_MANA : 0;
     case SLOT_LEGS:
         return icon == ICON_POWERTOWERS ? (*stat = STAT_STRENGTH, POWERTOWERS_STRENGTH) : 0;
@@ -434,7 +433,6 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
     case POTION_VI:
         c->current_health += (uint16_t)c->maximum_health / divisor;   /* unsigned division as in the original */
         heal_wounds(c, max16(1, power / VI_WOUND_ROLL_DIVISOR));
-
         c->attributes |= CHAMPION_ATTR_WOUNDS | CHAMPION_ATTR_LOAD;
         break;
     case POTION_WATER:

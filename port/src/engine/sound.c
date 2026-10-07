@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include "dungeon.h"
-
 #include "ftl.h"
 #include "game.h"
 #include "graphics.h"
