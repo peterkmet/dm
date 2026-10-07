@@ -28,7 +28,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
    - Global variables: `g_` prefix. Module-private globals and functions are `static`.
    - Types: `PascalCase`. Constants and enum values: `UPPER_CASE`.
    - No event numbers or original addresses in names. Name the game task, for example `group_process_reaction_event`, not `group_process_events_29_to_41`.
-8. The source has four layers in subfolders of `port/src/`: `data/`, `engine/`, `ui/`, and `platform/`. A file includes only headers of its own layer and of the layers before it in this list. Game rules in `engine/` do not call the user interface: they set redraw flags. Only `platform/` includes SDL.
+8. The source has four layers in subfolders of `port/src/`: `data/`, `engine/`, `ui/`, and `platform/`. A file includes only headers of its own layer and of the layers before it in this list. Game rules in `engine/` do not call the user interface: they set redraw flags. Exception: a hook that `ui/` sets, for an event that must run the user interface inside the rule, for example `g_endgame_sensor_hook`. Only `platform/` includes SDL.
 9. Big-endian read and write helpers (`BE16`, `WR16`, `BE32`, `WR32`) live in one header. Modules do not define their own copies.
 10. Code that differs between Dungeon Master and Chaos Strikes Back tests `g_adventure == ADVENTURE_CSB`, or reads a table from the game data. No other way detects the adventure.
 
