@@ -104,6 +104,7 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 2. Read your files in `playthroughs/current/player/`: `progress.md`, `lessons.md`, the map of the current level, `party.md`, `spells.md`.
 3. Run `uv run dm-play --brief get_state`. If the position or the time does not match `progress.md`, run `uv run dm-play load` and check again.
 4. When the coordinator gives you a goal, it replaces the goal in `progress.md`. Write it into `progress.md` first.
+5. Count the calls of the run: `wc -l < playthroughs/current/coordinator/calls.log`. Note the number. The call limit of the coordinator counts from it.
 
 ### Rules
 
@@ -323,4 +324,4 @@ A floor square with a pressure pad (`pressure_pad`, `round_pressure_pad`, `tiny_
 
 ### End of a session
 
-Stop when the coordinator's limit is reached, when the game stops answering, or when a bug blocks progress. Before you stop, save the game and update your files. The report: where the party is, party status, what you achieved, the current goal, bugs found, and a request for an earlier checkpoint when the save is bad.
+Stop when the coordinator's limit is reached, when the game stops answering, or when a bug blocks progress. Count the calls with `wc -l < playthroughs/current/coordinator/calls.log` from time to time. 20 calls before the limit, save the game and update your files, then stop. The report: where the party is, party status, what you achieved, the current goal, bugs found, and a request for an earlier checkpoint when the save is bad.
