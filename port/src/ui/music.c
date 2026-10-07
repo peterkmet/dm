@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include "adventure.h"
 #include "dungeon.h"
@@ -11,7 +12,6 @@
 #include "dr_mp3.h"
 #pragma clang diagnostic pop
 
-#define MUSIC_PATH_SIZE 1024
 #define MUSIC_VOLUME_DIVISOR 6   /* the music under the game sounds; raise it for quieter music */
 #define MUSIC_MIX_FRAMES 1024
 #define MUSIC_CHANNELS 2
@@ -49,7 +49,7 @@ void music_stop(void)
 /* Stops the current track and starts track; a missing or unusable file gives silence. */
 static void play(int16_t track)
 {
-    char path[MUSIC_PATH_SIZE];
+    char path[PATH_SIZE];
     music_stop();
     g_music_last_track = track;
     snprintf(path, sizeof path, "%s/music/%s,Track_%02d,Music.mp3", gameloop_data_dir(),
@@ -75,7 +75,7 @@ void music_select(int16_t soundtrack)
 
 /* FM-Towns CSB: the prison plays its track; in the adventure a zone requests its track, which starts
    when the current track ends. A level change stops the music. */
-static void update_fm_towns_csb(int16_t new_map)
+static void update_fm_towns_csb(bool new_map)
 {
     if (g_dungeon_id == CSB_PRISON_DUNGEON_ID) {
         if (g_music_last_track != FM_TOWNS_CSB_PRISON_TRACK) play(FM_TOWNS_CSB_PRISON_TRACK);
@@ -89,7 +89,7 @@ static void update_fm_towns_csb(int16_t new_map)
 }
 
 /* Super NES: a step on a trigger square starts its track; the same track goes on. */
-static void update_super_nes(int16_t moved)
+static void update_super_nes(bool moved)
 {
     if (!moved) return;
     for (size_t i = 0; i < sizeof super_nes_triggers / sizeof super_nes_triggers[0]; i++)
@@ -100,8 +100,8 @@ static void update_super_nes(int16_t moved)
 
 void music_update(void)
 {
-    int16_t new_map = party_map != NO_POSITION && party_map != g_party_map_index;
-    int16_t moved = party_map != g_party_map_index || party_x != g_party_map_x || party_y != g_party_map_y;
+    bool new_map = party_map != NO_POSITION && party_map != g_party_map_index;
+    bool moved = party_map != g_party_map_index || party_x != g_party_map_x || party_y != g_party_map_y;
     party_map = g_party_map_index;
     party_x = g_party_map_x;
     party_y = g_party_map_y;
@@ -130,7 +130,7 @@ void music_mix(int16_t *out, int frames)
         int got = (int)drmp3_read_pcm_frames_s16(&decoder, (drmp3_uint64)wanted, pcm);
         for (int i = 0; i < got * MUSIC_CHANNELS; i++) {
             int sample = out[done * MUSIC_CHANNELS + i] + pcm[i] / MUSIC_VOLUME_DIVISOR;
-            out[done * MUSIC_CHANNELS + i] = (int16_t)(sample > INT16_MAX ? INT16_MAX : sample < INT16_MIN ? INT16_MIN : sample);
+            out[done * MUSIC_CHANNELS + i] = sample > INT16_MAX ? INT16_MAX : sample < INT16_MIN ? INT16_MIN : sample;
         }
         done += got;
         if (got < wanted) music_stop();  /* the track ended */
