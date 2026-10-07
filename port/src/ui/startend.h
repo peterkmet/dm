@@ -42,7 +42,5 @@ void endgame(int16_t party_dead);
 void fuse_sequence(void);
 /* Sensor 18: waits delay seconds, then the won endgame. CSB: the ending animation (ENDA.DAT) at once. */
 void endgame_sensor(uint16_t delay);
-/* Runs endgame_sensor when the last tick triggered an endgame sensor. */
-void endgame_check_sensor(void);
 
 #endif

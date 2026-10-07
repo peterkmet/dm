@@ -114,7 +114,7 @@ def test_track_plays_one_time(game):
 
 
 @pytest.mark.skipif(not TRACK_02.exists(), reason="FM-Towns MP3 files missing")
-def test_sound_stop_all_stops_the_track(game):
+def test_music_stop_after_sound_stop_all_stops_the_track_and_keeps_the_soundtrack(game):
     update_at(game, 0, 1, 1)
     game.lib.music_select(FM_TOWNS)
     game.lib.sound_stop_all()

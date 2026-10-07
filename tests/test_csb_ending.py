@@ -19,8 +19,9 @@ MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 DM, CSB = 0, 1
 SCREEN_W, SCREEN_H = 320, 200
 ANIM_END = -1
-ENDGAME_NONE = 0xFFFF
-THING_SENSOR, THING_ENDOFLIST, SENSOR_WALL_ENDGAME = 3, 0xFFFE, 18
+THING_SENSOR, THING_WEAPON, THING_ENDOFLIST, SENSOR_WALL_ENDGAME = 3, 5, 0xFFFE, 18
+EVENT_WALL, EVENT_REMOVE_FLUXCAGE = 6, 24
+PARTY_KILLING_DAMAGE = 10000
 COLOR_BLACK, COLOR_DARK_GRAY, COLOR_CYAN = 0, 1, 4
 CSB_RESTART_BOXES = 0x104248  # outer and inner box: x, y, width, height
 ENDGAME_TABLE = 0x1031D4
@@ -55,6 +56,7 @@ def lib(tmp_path_factory):
         ("command_process_click", None, [c16, c16, c16]), ("command_process_key", None, [u16]),
         ("anim_play", ctypes.c_int, [ctypes.c_char_p]), ("endgame_sensor", None, [u16]),
         ("sound_mix", None, [ctypes.POINTER(c16), ctypes.c_int]), ("sound_stop_all", None, []),
+        ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]), ("gameloop_tick", None, []),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
@@ -389,19 +391,6 @@ def endgame_sensor_square(lib):
     raise AssertionError("no endgame sensor")
 
 
-def test_sensor_18_sets_the_endgame_delay(lib, tmp_path, reset):
-    load_mini(lib, tmp_path)
-    m, x, y, sensor = endgame_sensor_square(lib)
-    rec = lib.get_thing_data(sensor)
-    delay = (rec[4] << 8 | rec[5]) >> 7 & 15
-    lib.set_current_map(m)
-    event = TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)
-    lib.timeline_process_event6_wall(ctypes.byref(event))
-    assert value(lib, "g_endgame_delay", u16).value == delay
-    assert value(lib, "g_game_won").value == 0
-    value(lib, "g_endgame_delay", u16).value = ENDGAME_NONE
-
-
 def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     load_mini(lib, tmp_path)
     m, x, y, sensor = endgame_sensor_square(lib)
@@ -414,9 +403,56 @@ def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     lib.set_current_map(m)
     event = TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)
     lib.timeline_process_event6_wall(ctypes.byref(event))
-    lib.endgame_check_sensor()
     assert value(lib, "g_game_won").value == 1 and value(lib, "g_return_to_entrance").value == 1
     assert screen(lib) == first_frame and palette(lib) == first_palette
+
+
+def add_event(lib, event_type, m, time, b, c=0):
+    event = TimelineEvent(map_time=m << 24 | time, type=event_type, b=b, c=c)
+    lib.timeline_add_event(ctypes.byref(event))
+
+
+def add_sensor_event(lib, time):
+    m, x, y, sensor = endgame_sensor_square(lib)
+    add_event(lib, EVENT_WALL, m, time, x << 8 | y, (sensor >> 14) << 8)
+
+
+def test_sensor_18_in_a_tick_starts_the_ending(lib, tmp_path, reset):
+    load_mini(lib, tmp_path)
+    add_sensor_event(lib, value(lib, "g_game_time", u32).value)
+    lib.gameloop_tick()
+    assert value(lib, "g_game_won").value == 1 and value(lib, "g_return_to_entrance").value == 1
+
+
+def test_sensor_18_wins_over_a_party_death_in_the_same_tick(lib, tmp_path, reset):
+    load_mini(lib, tmp_path)
+    pending = (c16 * 4).in_dll(lib, "g_champion_pending_damage")
+    assert value(lib, "g_party_champion_count", u16).value
+    for i in range(value(lib, "g_party_champion_count", u16).value):
+        pending[i] = PARTY_KILLING_DAMAGE
+    add_sensor_event(lib, value(lib, "g_game_time", u32).value)
+    lib.gameloop_tick()
+    assert value(lib, "g_party_dead").value == 1 and value(lib, "g_game_won").value == 1
+    value(lib, "g_return_to_entrance").value = 0
+    load_mini(lib, tmp_path)
+    lib.gameloop_tick()
+    assert value(lib, "g_game_won").value == 0 and value(lib, "g_return_to_entrance").value == 0
+
+
+def test_an_event_after_sensor_18_in_the_same_tick_sees_the_won_game(lib, tmp_path, reset):
+    """The fluxcage stays: the removal event comes after the sensor in the same timeline run."""
+    load_mini(lib, tmp_path)
+    time = value(lib, "g_game_time", u32).value
+    m = endgame_sensor_square(lib)[0]
+    lib.set_current_map(m)
+    thing, x, y = next((t, x, y) for x in range(value(lib, "g_current_map_width").value)
+                       for y in range(value(lib, "g_current_map_height").value)
+                       for t in [lib.get_square_first_thing(x, y)] if t != THING_ENDOFLIST and t >> 10 & 15 >= THING_WEAPON)
+    add_sensor_event(lib, time - 1)
+    add_event(lib, EVENT_REMOVE_FLUXCAGE, m, time, x << 8 | y, thing)
+    lib.gameloop_tick()
+    lib.set_current_map(m)
+    assert value(lib, "g_game_won").value == 1 and lib.get_square_first_thing(x, y) == thing
 
 
 def test_sensor_18_with_frames_plays_at_once_and_waits_for_input(lib, model, tmp_path, reset):

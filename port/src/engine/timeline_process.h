@@ -44,6 +44,8 @@ enum { EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS = 48, EVENT_MOVE_PROJECTILE = 49 };
 #define PROJECTILE_EVENT_DIRECTION(event) ((event)->c >> 4 & 3)
 
 extern int16_t g_game_won;
+/* The endgame of an endgame sensor, set by the user interface: it runs inside the sensor event. */
+extern void (*g_endgame_sensor_hook)(uint16_t delay);
 
 void timeline_process(void);
 void timeline_process_event1_door_animation(TimelineEvent *event);

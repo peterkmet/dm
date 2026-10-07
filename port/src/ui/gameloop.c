@@ -78,6 +78,7 @@ int gameloop_load_data(const char *dir)
     if (kaos_load(path)) return 0;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     startend_set_save_dir(dir);
+    g_endgame_sensor_hook = endgame_sensor;
     return gfx_open(path) >= 0 && !layout_init() && !text_init() && !tables_init() && !ui_init();
 }
 
@@ -462,7 +463,6 @@ void gameloop_tick(void)
     advance_game_time();
     message_clear_expired_rows(g_game_time);
     refresh_interface();
-    endgame_check_sensor();
     run_requested_sequence();
 }
 

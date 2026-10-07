@@ -26,6 +26,7 @@
 #define REBIRTH_EXPLOSION_TICKS 5
 
 int16_t g_game_won;
+void (*g_endgame_sensor_hook)(uint16_t delay);
 
 /* AND/OR gate data: bits 0-3 are the inputs (one per cell), bits 4-7 are the expected inputs. */
 #define GATE_INPUTS(data) ((data) & 15)
@@ -268,7 +269,7 @@ void timeline_process_event6_wall(TimelineEvent *event)
             if (sensor_is_once_only(t))
                 sensor_set_type(t, SENSOR_DISABLED);
         } else if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_WALL_ENDGAME) {
-            g_endgame_delay = sensor_delay(t);
+            if (g_endgame_sensor_hook) g_endgame_sensor_hook(sensor_delay(t));
         }
     }
     sensor_process_rotation_effect();
