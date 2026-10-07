@@ -12,7 +12,7 @@ from dmtools.ftl import load_image, parse
 
 ROOT = Path(__file__).resolve().parents[1]
 KAOS = ROOT / "game" / "KAOS.FTL"
-DECOMP = ROOT / "decomp" / "dm" / "KAOS.c"
+DECOMP = ROOT / "reference" / "decomp" / "dm" / "KAOS.c"
 BASE = 0x100000
 
 pytestmark = pytest.mark.skipif(not shutil.which("clang") or not KAOS.exists(), reason="clang or game files missing")
@@ -167,7 +167,7 @@ def test_counts_follow_layout(lib):
 
 def test_strides_and_bases_match_decompiled_code():
     if not DECOMP.exists():
-        pytest.skip("decomp/dm/KAOS.c not found")
+        pytest.skip("reference/decomp/dm/KAOS.c not found")
     c = DECOMP.read_text()
     assert re.search(r"g_creature_info \+ \(short\)\(ushort\)\*\(byte \*\)\(\w+ \+ 4\) \* 0x1a", c)
     assert "*(short *)(&g_object_info + sVar1 * 6)" in c

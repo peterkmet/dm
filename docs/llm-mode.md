@@ -93,6 +93,37 @@ playthroughs/
 - Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `playthroughs/current/player/`. Give the player the current goal and the limit of `dm-play` calls. The player counts its calls in `coordinator/calls.log` and stops 20 calls before the limit. The player shell must run in the repository root: `dm-play` writes its log to `playthroughs/current/coordinator/` relative to it, else `calls.log` stays empty.
 - End a run: copy the last save to `saves/end/`, and write `coordinator/level_stats.md`.
 
+## Coordinator as a subagent
+
+The main session starts the coordinator as a background subagent, so that the coordinator has a clean context and the main session stays free. The coordinator plays a batch of sessions and then hands over to the next coordinator.
+
+- The coordinator reads `docs/llm-mode.md`, `docs/llm-playbook.md`, the files of the current run, and `coordinator/handover.md` when it exists.
+- For each session, the coordinator starts a new player subagent with the player prompt below. It waits for the report of the player.
+- After each session: make the checkpoint, add a row to `coordinator/session_costs.md` (the tokens, the tool calls, and the minutes from the usage of the player subagent, and the calls from `calls.log`), and update `coordinator/level_stats.md` when the party arrived on a new level.
+- When the player asks for an earlier checkpoint, restore it (see Resume) before the next session.
+- A batch has at most 5 sessions. At the end of the batch, write `coordinator/handover.md`: the state of the run, the goal of the next session, open problems, and the instruction changes of the batch. Then return a short report to the main session.
+- When the coordinator cannot start a subagent, it returns at once with the player prompt of the next session. The main session then starts the player, and gives the report to the next coordinator.
+
+Player prompt (replace `<session>`, `<goal>`, and `<limit>`):
+
+```text
+You are the player of a Dungeon Master game (Amiga v3.60 port). The game is already running; you control it
+only with `uv run dm-play ...` from the shell. Your working directory is the repository root; run every
+command there.
+
+Read first, and follow exactly: the player manual `docs/llm-playbook.md`. Your memory is
+`playthroughs/current/player/`. Read nothing else in the repository: no source code, no game data, no
+decompiled code, no other docs, no other folders under `playthroughs/` (exceptions from the manual: the call
+count in `playthroughs/current/coordinator/calls.log`, and screenshots into `playthroughs/current/coordinator/`).
+Do not search the internet.
+
+This is session <session> of the run. Goal of the run: win the game. Goal of this session: <goal>.
+Call limit for this session: <limit> `dm-play` calls, counted as the manual says.
+
+The user watches the game window: before each dm-play call write one short line of what you do and why.
+At the end, report as the manual says, and add the number of dm-play calls that you used.
+```
+
 ## Play Chaos Strikes Back
 
 The CSB files must be in `game-csb/` (see the [README](../README.md)). Start the game with `--adventure csb`:

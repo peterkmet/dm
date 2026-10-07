@@ -12,7 +12,7 @@ CSB_PRISON_DUNGEON_ID, CSB_DUNGEON_ID = 12, 13
 CSB_MAPS, CSB_MAP_SIZE = 10, 32
 MIX_FRAMES = 44100
 TRACK_02 = GAME / "music/FM-Towns,Track_02,Music.mp3"
-MUSIC_MAP = GAME.parent / "origs/extracted/music_map.json"
+MUSIC_MAP = GAME.parent / "reference/extracted/music_map.json"
 
 
 def var(game, name, kind=c16):
