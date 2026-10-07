@@ -1,6 +1,7 @@
 #ifndef MOVE_H
 #define MOVE_H
 /* Prefixes: move_ */
+#include <stdbool.h>
 #include <stdint.h>
 
 /* Party and object movement (KAOS range 8, MOVESENS.C and COMMAND.C). */
@@ -13,7 +14,7 @@ extern uint16_t g_move_result_map_index, g_move_result_cell, g_move_result_direc
 extern int16_t g_use_rope_to_climb_down_pit;
 extern int g_party_teleport_count;           /* port only: teleporters that moved the party */
 
-int16_t move_is_levitating(uint16_t thing);
+bool move_is_levitating(uint16_t thing);
 uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing);
 int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 void move_process_new_party_map(void);
