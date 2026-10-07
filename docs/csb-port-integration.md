@@ -12,7 +12,7 @@ Status: proposal. Nothing is implemented. The user approved the user-facing flow
 4. New flag `--adventure dm|csb`. When `--adventure` and `--mode` are both given, the selection screens are skipped.
 5. When the CSB data is missing, CHAOS STRIKES BACK is grey and cannot be selected.
 6. LLM mode goes straight into the dungeon after the selection, as `turnbased` does today.
-7. Data folders: DM in `game/`. CSB disk A in `game-csb/`. CSB disk B in `game-csb/disk-b/`. CSB save: `game-csb/CSBGAME.DAT` and `game-csb/CSBGAME.BAK`.
+7. Data folders: DM in `game/`. CSB disk A in `game-csb/`. CSB disk B in `game-csb/disk-b/`. CSB save: `CSBGAME.DAT` and `CSBGAME.BAK` in `game-csb/`, or in the folder of `--saves`.
 
 ## Summary of the audit
 

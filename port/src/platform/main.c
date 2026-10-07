@@ -153,7 +153,7 @@ enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
 
 static int mode, turnbased, auto_enter, title_pending;
 static int loaded_adventure = -1; /* the adventure whose game files are loaded */ /* title_pending: the DM title plays before the entrance */
-static const char *data, *data_override, *control, *csb_dir;
+static const char *data, *data_override, *saves, *control, *csb_dir;
 
 /* Keys and clicks of the start screens. Ctrl+Q quits. */
 static void select_input(const PlatEvent *e)
@@ -347,6 +347,7 @@ static int start_csb(void)
         SDL_Log("adventure csb, mode %s", game_mode_names[g_game_mode]);
         data = adventure_dir();
         if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
+        if (saves) startend_set_save_dir(saves);
         loaded_adventure = ADVENTURE_CSB;
     }
     if (!apply_mode()) return 0;
@@ -373,6 +374,7 @@ static int start_adventure(void)
     SDL_Log("adventure dm, mode %s", game_mode_names[g_game_mode]);
     data = adventure_dir();
     if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
+    if (saves) startend_set_save_dir(saves);
     loaded_adventure = ADVENTURE_DM;
     if (!apply_mode()) return 0;
     entrance_draw();
@@ -443,6 +445,7 @@ int main(int argc, char **argv)
     for (int i = 1; i < argc - 1; i++) {
         if (!strcmp(argv[i], "--frames")) frames = atol(argv[i + 1]);
         if (!strcmp(argv[i], "--data")) data_override = argv[i + 1];
+        if (!strcmp(argv[i], "--saves")) saves = argv[i + 1];
         if (!strcmp(argv[i], "--show")) graphic = atol(argv[i + 1]);
         if (!strcmp(argv[i], "--filter")) filter = argv[i + 1];
         if (!strcmp(argv[i], "--control")) control = argv[i + 1];

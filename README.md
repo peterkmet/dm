@@ -134,7 +134,7 @@ The new adventure starts on level 4 at (22, 18), facing south. Each champion has
 
 ### Saved games
 
-The game saves to `DMGAME.DAT` in the data folder (`game/`, or the folder of `--data`). The save file of CSB is `CSBGAME.DAT` (backup `CSBGAME.BAK`) in the CSB data folder (`game-csb/`, or the folder of `--data`). Before a save, the old `DMGAME.DAT` becomes `DMGAME.BAK`. The file has the format of the original Amiga save file, see [save-format.md](docs/save-format.md).
+The game saves to `DMGAME.DAT` in the data folder (`game/`, or the folder of `--data`). The save file of CSB is `CSBGAME.DAT` (backup `CSBGAME.BAK`) in the CSB data folder (`game-csb/`, or the folder of `--data`). `--saves DIR` puts the save files and `QUICK.DAT` in `DIR` instead; the folder must exist. Before a save, the old `DMGAME.DAT` becomes `DMGAME.BAK`. The file has the format of the original Amiga save file, see [save-format.md](docs/save-format.md).
 
 - Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. After SAVE the dialog stays open. CANCEL continues the game. QUIT ends the game. When the game was not saved or loaded in the last 100 ticks, QUIT asks first.
 - Resume: click RESUME at the entrance. The game loads `DMGAME.DAT`, or `DMGAME.BAK` when `DMGAME.DAT` is missing. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
@@ -223,6 +223,7 @@ Options:
 - `--adventure dm|csb` selects the adventure: Dungeon Master (data in `game/`) or Chaos Strikes Back (data in `game-csb/`). With `--adventure csb`, the program stops with exit code 1 when the CSB files are missing.
 - `--mode vanilla|advanced|turnbased` selects the game mode.
 - `--data DIR` selects the data folder (disk A) of the selected adventure. The CSB file check uses `DIR` only with `--adventure csb`. Else it uses `game-csb/`.
+- `--saves DIR` selects the folder of the save files (`DMGAME.DAT`, `CSBGAME.DAT`, their `.BAK` files, and `QUICK.DAT`). The default is the data folder. The folder must exist.
 - `--control PATH` selects the socket of the `turnbased` mode. The default is `~/.dm/control.sock`.
 - `--filter none|scale2x|scale3x` selects the pixel-art upscale filter.
 - `--frames N` quits after N frames (50 frames per second).

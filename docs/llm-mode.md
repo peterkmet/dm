@@ -67,16 +67,17 @@ A run is one playthrough from a start save. All run folders are in `.playthrough
       session_costs.md          the cost of each session
       calls.log                 one line per dm-play call of the player
       level_stats.md            at the end of the run: game time, calls, and tokens at the arrival on each level
+    game/                       the live save of the run: `build/dm --saves .playthroughs/current/game`
     saves/<name>/               a checkpoint: a save DMGAME.DAT and a copy of player/ in files/
-  lego/                         the personal play folder (`make -C port lego`)
+  lego/                         the personal play folder: `make -C port lego`, then `.playthroughs/lego/dm --data game --saves .playthroughs/lego`
 playthrough_template/           the player files with their headers (in git), and the start save DMGAME.DAT (local only, git-ignored: a game file)
 ```
 
-- Start a new run N: create `.playthroughs/run<N>/` with the folders `player/`, `coordinator/`, and `saves/`. Copy the `*.md` files of `playthrough_template/` to `player/`. Copy `playthrough_template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/DMGAME.DAT`. Create `saves/start/` with the start save and a copy of `player/` in `files/`. Point the link to the run: `ln -sfn run<N> .playthroughs/current`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Start a new run N: create `.playthroughs/run<N>/` with the folders `player/`, `coordinator/`, `game/`, and `saves/`. Copy the `*.md` files of `playthrough_template/` to `player/`. Copy `playthrough_template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/`. Create `saves/start/` with the start save and a copy of `player/` in `files/`. Point the link to the run: `ln -sfn run<N> .playthroughs/current`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves .playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
 - Start a new run with the memory of an earlier run: as above, but copy into `player/` the files of the earlier run that describe the game, not its state: `map_L<n>.md`, `lessons.md`, `spells.md`, and `bestiary.md`. `progress.md`, `party.md`, `items.md`, and `bugs.md` come from the templates. Tell the player in the first session that the run starts again and that these notes come from its earlier game.
-- Make a checkpoint after a session: copy `game/DMGAME.DAT` and `player/` (as `files/`) to `saves/<name>/`. Add a row to `coordinator/session_costs.md`; count the calls of the session in `coordinator/calls.log`.
+- Make a checkpoint after a session: copy `game/DMGAME.DAT` of the run and `player/` (as `files/`) to `saves/<name>/`. Add a row to `coordinator/session_costs.md`; count the calls of the session in `coordinator/calls.log`.
 - The coordinator's own `dm-play` calls stay out of the log: `DM_PLAY_LOG_DIR=none uv run dm-play ...`.
-- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/DMGAME.DAT` and its `files/` to `player/`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
+- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/` of the run and its `files/` to `player/`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves .playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
 - Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `.playthroughs/current/player/`. Give the player the current goal and the limit of `dm-play` calls. The player shell must run in the repository root: `dm-play` writes its log to `.playthroughs/current/coordinator/` relative to it, else `calls.log` stays empty.
 - End a run: copy the last save to `saves/end/`, and write `coordinator/level_stats.md`.
 
