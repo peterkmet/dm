@@ -3,9 +3,18 @@
 /* Prefixes: spell_ */
 #include <stdint.h>
 
+#define G_SYMBOL_BASE_MANA_COST 0x103c66       /* uint8_t[4][6] */
+#define G_SYMBOL_MANA_COST_MULTIPLIER 0x103c7e /* uint8_t[6], by power symbol */
+#define G_SPELLS 0x103c84                      /* SpellRecord[25], 8 bytes each */
+#define SPELL_BYTES 8
+#define SPELL_ENTRY_LEVEL 4        /* byte offsets in an entry: base required level, skill, attributes */
+#define SPELL_ENTRY_SKILL 5
+#define SPELL_ENTRY_ATTRIBUTES 6
+
 #define DM_SPELL_COUNT 25 /* CSB has CSB_SPELL_COUNT */
 #define SPELL_SYMBOL_FIRST 0x60       /* font character of the first symbol: power 1 at step 0 */
 #define SPELL_SYMBOLS_PER_STEP 6
+#define SPELL_MANA_MULTIPLIER_SHIFT 3 /* the mana cost multiplier of the power symbol counts eighths */
 #define SPELL_POWER_SYMBOL_MASK 0xff000000u
 #define SPELL_KIND_MASK 15
 #define SPELL_TYPE_SHIFT 4

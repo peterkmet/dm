@@ -7,7 +7,6 @@
 
 /* KAOS data addresses. */
 #define DOOR_INFO 0x1016e2 /* g_door_info[], high byte attributes */
-#define SPELL_BYTES 8
 
 enum {
     CREATURE_TYPE_COUNT = 27,

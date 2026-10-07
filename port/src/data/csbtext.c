@@ -53,7 +53,7 @@ static const struct { int16_t text; uint32_t appb; } single_texts[] = {
    table that gets the DM text indices, or 0. */
 static const struct { int16_t text; uint32_t appb; uint8_t count; uint32_t kaos_indices; } table_texts[] = {
     { TEXT_CLASS_FIRST, APPB_CLASS_NAMES, SKILL_BASE_COUNT, 0x102472 }, /* FIGHTER, NINJA, PRIEST, WIZARD */
-    { TEXT_SKILL_LEVEL_FIRST, 0x102524, 15, 0x101e74 },               /* NEOPHYTE ... ARCHMASTER */
+    { TEXT_SKILL_LEVEL_FIRST, 0x102524, TEXT_SKILL_LEVEL_COUNT, 0x101e74 }, /* NEOPHYTE ... ARCHMASTER */
     { TEXT_DIRECTION_FIRST, 0x102578, 4, 0x101e92 },                  /* NORTH, EAST, SOUTH, WEST */
     { TEXT_STATISTIC_FIRST, 0x102588, 7, 0x101e9a },                  /* L, STRENGTH ... ANTI-FIRE */
     { TEXT_CREATURE_NAME_FIRST, 0x102164, CREATURE_TYPE_COUNT, 0 },
@@ -145,7 +145,7 @@ int csb_text_build(const FtlImage *appb, FtlImage *out)
         if (!(parts[single_texts[i].text][0] = appb_string(appb, single_texts[i].appb))) return -1;
     for (int i = 0; i < COUNT(table_texts); i++) {
         for (int k = 0; k < table_texts[i].count; k++) {
-            int16_t text = (int16_t)(table_texts[i].text + k);
+            int16_t text = table_texts[i].text + k;
             if (!(parts[text][0] = appb_pointed_string(appb, table_texts[i].appb + 4 * k))) return -1;
             /* the string index table gives the text in the CSB order */
             if (table_texts[i].kaos_indices) {

@@ -11,9 +11,6 @@
 #define ARMOUR_INFO 0x1015b4
 #define JUNK_WEIGHTS 0x10169c
 #define FOOD_VALUES 0x1016d2
-#define SPELLS 0x103c84
-#define SYMBOL_BASE_MANA_COST 0x103c66
-#define SYMBOL_MANA_COST_MULTIPLIER 0x103c7e
 #define ACTION_SETS 0x103d4c
 #define ACTION_DISABLED_TICKS 0x103eac
 #define ACTION_DAMAGE_FACTOR 0x103ed8
@@ -35,10 +32,14 @@
 #define ARMOUR_INFO_BYTES 4
 #define ACTION_SET_BYTES 8
 
-/* Spell word 3: kind in bits 0-3, type in bits 4-9, disabled ticks in bits 10-15. */
-#define SPELL_KIND(w) ((w) & 15)
-#define SPELL_TYPE(w) ((w) >> 4 & 63)
-#define SPELL_DISABLED_TICKS(w) ((w) >> 10)
+/* Byte offsets of the creature info fields (docs/tables.md); bytes 13 and 25 are pad bytes. */
+enum {
+    CREATURE_AT_ASPECT_INDEX, CREATURE_AT_ATTACK_SOUND_ORDINAL, CREATURE_AT_ATTRIBUTES, CREATURE_AT_GRAPHIC_INFO = 4,
+    CREATURE_AT_MOVEMENT_TICKS = 6, CREATURE_AT_ATTACK_TICKS, CREATURE_AT_DEFENSE, CREATURE_AT_BASE_HEALTH, CREATURE_AT_ATTACK,
+    CREATURE_AT_POISON_ATTACK, CREATURE_AT_DEXTERITY, CREATURE_AT_RANGES = 14, CREATURE_AT_PROPERTIES = 16,
+    CREATURE_AT_RESISTANCES = 18, CREATURE_AT_ANIMATION_TICKS = 20, CREATURE_AT_WOUND_PROBABILITIES = 22,
+    CREATURE_AT_ATTACK_TYPE = 24,
+};
 
 static int ready;
 static CreatureInfo creature_info[CREATURE_TYPE_COUNT];
@@ -67,11 +68,14 @@ static void read_creatures(void)
     for (uint32_t i = 0; i < CREATURE_TYPE_COUNT; i++) {
         uint32_t a = CREATURE_INFO + i * CREATURE_INFO_BYTES;
         creature_info[i] = (CreatureInfo){
-            kaos_u8(a), kaos_u8(a + 1), kaos_u16(a + 2), kaos_u16(a + 4),
-            kaos_u8(a + 6), kaos_u8(a + 7), kaos_u8(a + 8), kaos_u8(a + 9),
-            kaos_u8(a + 10), kaos_u8(a + 11), kaos_u8(a + 12),
-            kaos_u16(a + 14), kaos_u16(a + 16), kaos_u16(a + 18), kaos_u16(a + 20),
-            kaos_u16(a + 22), kaos_u8(a + 24),
+            kaos_u8(a + CREATURE_AT_ASPECT_INDEX), kaos_u8(a + CREATURE_AT_ATTACK_SOUND_ORDINAL),
+            kaos_u16(a + CREATURE_AT_ATTRIBUTES), kaos_u16(a + CREATURE_AT_GRAPHIC_INFO),
+            kaos_u8(a + CREATURE_AT_MOVEMENT_TICKS), kaos_u8(a + CREATURE_AT_ATTACK_TICKS),
+            kaos_u8(a + CREATURE_AT_DEFENSE), kaos_u8(a + CREATURE_AT_BASE_HEALTH), kaos_u8(a + CREATURE_AT_ATTACK),
+            kaos_u8(a + CREATURE_AT_POISON_ATTACK), kaos_u8(a + CREATURE_AT_DEXTERITY),
+            kaos_u16(a + CREATURE_AT_RANGES), kaos_u16(a + CREATURE_AT_PROPERTIES), kaos_u16(a + CREATURE_AT_RESISTANCES),
+            kaos_u16(a + CREATURE_AT_ANIMATION_TICKS), kaos_u16(a + CREATURE_AT_WOUND_PROBABILITIES),
+            kaos_u8(a + CREATURE_AT_ATTACK_TYPE),
         };
     }
     for (uint32_t i = 0; i < CREATURE_SOUND_COUNT; i++)
@@ -107,15 +111,16 @@ static void read_magic(void)
     int csb = g_adventure == ADVENTURE_CSB;
     loaded_spell_count = csb ? CSB_SPELL_COUNT : DM_SPELL_COUNT;
     for (uint32_t i = 0; i < (uint32_t)loaded_spell_count; i++) {
-        uint32_t a = (csb ? CSB_SPELLS : SPELLS) + i * SPELL_BYTES;
-        uint16_t w = kaos_u16(a + 6);
-        spells[i] = (Spell){kaos_u32(a), kaos_u8(a + 4), kaos_u8(a + 5), SPELL_KIND(w), SPELL_TYPE(w), SPELL_DISABLED_TICKS(w)};
+        uint32_t a = (csb ? CSB_SPELLS : G_SPELLS) + i * SPELL_BYTES;
+        uint16_t w = kaos_u16(a + SPELL_ENTRY_ATTRIBUTES);
+        spells[i] = (Spell){kaos_u32(a), kaos_u8(a + SPELL_ENTRY_LEVEL), kaos_u8(a + SPELL_ENTRY_SKILL), w & SPELL_KIND_MASK,
+                            w >> SPELL_TYPE_SHIFT & SPELL_TYPE_MASK, w >> SPELL_DISABLED_TICKS_SHIFT};
     }
     for (uint32_t s = 0; s < SYMBOL_STEP_COUNT; s++)
         for (uint32_t n = 0; n < SYMBOL_COUNT; n++)
-            symbol_base_mana_cost[s][n] = kaos_u8(SYMBOL_BASE_MANA_COST + s * SYMBOL_COUNT + n);
+            symbol_base_mana_cost[s][n] = kaos_u8(G_SYMBOL_BASE_MANA_COST + s * SYMBOL_COUNT + n);
     for (uint32_t i = 0; i < SYMBOL_COUNT; i++)
-        symbol_mana_cost_multiplier[i] = kaos_u8(SYMBOL_MANA_COST_MULTIPLIER + i);
+        symbol_mana_cost_multiplier[i] = kaos_u8(G_SYMBOL_MANA_COST_MULTIPLIER + i);
 }
 
 /* Action sets of the objects and the properties of each action. */

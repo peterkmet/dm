@@ -113,6 +113,7 @@
 /* Strings of graphic 700. */
 #define TEXT_CLASS_FIRST 0               /* + index of g_base_skill_string_indices */
 #define TEXT_SKILL_LEVEL_FIRST 4         /* + index of g_skill_level_string_indices: level 2-16 */
+#define TEXT_SKILL_LEVEL_COUNT 15
 #define TEXT_DIRECTION_FIRST 22          /* + index of g_direction_string_indices */
 #define TEXT_STATISTIC_FIRST 41          /* + index of g_statistic_string_indices */
 #define TEXT_PARTY_FACING 21

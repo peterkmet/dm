@@ -70,7 +70,7 @@ static uint16_t payload_sum(const uint8_t *h) {
 static uint16_t header_chain(uint8_t *h, int set_last, uint16_t sum) {
     uint16_t acc = 0;
     for (int g = 0; g < H_GROUP_COUNT; g++, h += H_GROUP_BYTES) {
-        uint16_t x = (uint16_t)((BE16(h + 2) ^ (uint16_t)(BE16(h) + acc)) - BE16(h + 4));
+        uint16_t x = (uint16_t)((BE16(h + 2) ^ (uint16_t)(BE16(h) + acc)) - BE16(h + 4)); /* 16-bit wraps */
         if (set_last && g == H_GROUP_COUNT - 1) WR16(h + 6, sum ^ x);
         acc = BE16(h + 6) ^ x;
     }
@@ -160,8 +160,7 @@ void save_header_init(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const u
     h[field(H_BYTE_12A)] = HEADER_BYTE_12A;
     h[field(H_PLATFORM)] = PLATFORM_AMIGA;
     WR16(h + field(H_DIALOG_CHOICE), DIALOG_CHOICE_SAVE);
-    WR16(h + field(H_GAME_ID), (uint16_t)(game_id >> 16));
-    WR16(h + field(H_GAME_ID) + 2, (uint16_t)game_id);
+    WR32(h + field(H_GAME_ID), game_id);
     WR16(h + field(H_FORMAT), SAVE_FORMAT);
     WR16(h + field(H_DUNGEON_ID), dungeon_id);
     if (extra) memcpy(h + field(H_EXTRA), extra, save_header_extra_size());
@@ -172,14 +171,13 @@ void save_header_init(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const u
 void save_header_new_adventure(uint8_t *h, uint32_t game_id)
 {
     memset(h + H_PAYLOAD, 0, H_SAVED_GAME_BYTES);
-    WR16(h + field(H_GAME_ID), (uint16_t)((game_id + 1) >> 16));
-    WR16(h + field(H_GAME_ID) + 2, (uint16_t)(game_id + 1));
+    WR32(h + field(H_GAME_ID), game_id + 1);
     WR16(h + field(H_FORMAT), SAVE_FORMAT);
     h[field(H_BYTE_12A)] = HEADER_BYTE_NEW_ADVENTURE;
     save_header_randomize(h);
 }
 
-uint32_t save_header_game_id(const uint8_t *h) { return (uint32_t)BE16(h + field(H_GAME_ID)) << 16 | BE16(h + field(H_GAME_ID) + 2); }
+uint32_t save_header_game_id(const uint8_t *h) { return BE32(h + field(H_GAME_ID)); }
 uint16_t save_header_dungeon_id(const uint8_t *h) { return BE16(h + field(H_DUNGEON_ID)); }
 const uint8_t *save_header_extra(const uint8_t *h) { return h + field(H_EXTRA); }
-uint16_t save_header_extra_size(void) { return (uint16_t)(SAVE_HEADER_BYTES - field(H_EXTRA)); }
+uint16_t save_header_extra_size(void) { return SAVE_HEADER_BYTES - field(H_EXTRA); }

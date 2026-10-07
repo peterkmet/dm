@@ -32,9 +32,10 @@ def lib():
         getattr(lib, name).restype = ctypes.c_uint8
     for name in ("get_square_first_thing", "dungeon_square_first_thing"):
         getattr(lib, name).restype = ctypes.c_uint16
-    for name in ("get_location_after_level_change", "get_stairs_exit_direction", "is_square_open",
+    for name in ("get_location_after_level_change", "get_stairs_exit_direction",
                  "dungeon_map_width", "dungeon_map_height", "dungeon_map_count", "move_get_move_result"):
         getattr(lib, name).restype = c16
+    lib.is_square_open.restype = ctypes.c_bool
     lib.get_location_after_level_change.argtypes = [c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
     lib.dungeon_square.restype = ctypes.c_uint8
     lib.dungeon_get_thing_data.restype = u8p
