@@ -62,7 +62,7 @@ static void print_text(uint16_t text)
 
 /* One door step per tick: set opens (state down to open), clear closes (state up to closed). A closing door
    that hits the party or a group goes back one step; the group takes damage. */
-void timeline_process_event1_door_animation(TimelineEvent *event)
+void event_door_animation(TimelineEvent *event)
 {
     int16_t x = EVENT_X(event), y = EVENT_Y(event), effect = EVENT_EFFECT(event);
     uint8_t *square = &g_current_map_data[x][y];
@@ -102,14 +102,14 @@ void timeline_process_event1_door_animation(TimelineEvent *event)
     }
 }
 
-void timeline_process_event2_door_destruction(TimelineEvent *event)
+void event_door_destruction(TimelineEvent *event)
 {
     uint8_t *square = &g_current_map_data[EVENT_X(event)][EVENT_Y(event)];
     *square = square_with_door_state(*square, DOOR_DESTROYED);
 }
 
 /* A door event becomes a door animation event at the same time. Toggle closes an open door and opens any other. */
-void timeline_process_event10_door(TimelineEvent *event)
+void event_door(TimelineEvent *event)
 {
     int16_t state = door_state(g_current_map_data[EVENT_X(event)][EVENT_Y(event)]);
     if (state == DOOR_DESTROYED)
@@ -123,7 +123,7 @@ void timeline_process_event10_door(TimelineEvent *event)
 }
 
 /* Opens or closes a fake wall. Closing waits while the party or a material group is on the square. */
-void timeline_process_event7_fake_wall(TimelineEvent *event)
+void event_fake_wall(TimelineEvent *event)
 {
     int16_t x = EVENT_X(event), y = EVENT_Y(event), effect = EVENT_EFFECT(event);
     uint8_t *square = &g_current_map_data[x][y];
@@ -150,14 +150,14 @@ static void open_or_close(TimelineEvent *event)
         EVENT_SET_EFFECT(event, *square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
     if (EVENT_EFFECT(event) == EFFECT_SET) {
         *square |= TELEPORTER_OPEN;
-        timeline_move_teleporter_or_pit_square_things(x, y);
+        event_move_teleporter_or_pit_square_things(x, y);
     } else {
         *square &= ~TELEPORTER_OPEN;
     }
 }
 
-void timeline_process_event8_teleporter(TimelineEvent *event) { open_or_close(event); }
-void timeline_process_event9_pit(TimelineEvent *event) { open_or_close(event); }
+void event_teleporter(TimelineEvent *event) { open_or_close(event); }
+void event_pit(TimelineEvent *event) { open_or_close(event); }
 
 /* Shows, hides, or toggles a text. Returns 1 when the text becomes visible. */
 static int16_t change_text_visibility(uint16_t text, int16_t effect)
@@ -187,7 +187,7 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
 }
 
 /* Texts on the corridor change visibility, and group generators run. */
-void timeline_process_event5_corridor(TimelineEvent *event)
+void event_corridor(TimelineEvent *event)
 {
     int16_t x = EVENT_X(event), y = EVENT_Y(event);
     for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
@@ -201,7 +201,7 @@ void timeline_process_event5_corridor(TimelineEvent *event)
 }
 
 /* The first disabled sensor of the square becomes a group generator again. */
-void timeline_process_event65_enable_group_generator(TimelineEvent *event)
+void event_enable_group_generator(TimelineEvent *event)
 {
     for (uint16_t t = get_square_first_thing(EVENT_X(event), EVENT_Y(event)); t != THING_NONE && t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_DISABLED) {
@@ -254,7 +254,7 @@ static void gate(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t 
 
 /* Texts of the event cell change visibility. Counters, AND/OR gates, and projectile launchers of the cell run.
    An endgame sensor ends the game. */
-void timeline_process_event6_wall(TimelineEvent *event)
+void event_wall(TimelineEvent *event)
 {
     int16_t x = EVENT_X(event), y = EVENT_Y(event), cell = EVENT_CELL(event), effect = EVENT_EFFECT(event);
     for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
@@ -265,7 +265,7 @@ void timeline_process_event6_wall(TimelineEvent *event)
         else if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_WALL_AND_OR_GATE)
             gate(t, effect, x, y, cell);
         else if (THING_TYPE(t) == THING_SENSOR && sensor_is_launcher(t) && THING_CELL(t) == (uint16_t)cell) {
-            timeline_trigger_projectile_launcher(t, event);
+            projectile_trigger_launcher(t, event);
             if (sensor_is_once_only(t))
                 sensor_set_type(t, SENSOR_DISABLED);
         } else if (THING_TYPE(t) == THING_SENSOR && sensor_type(t) == SENSOR_WALL_ENDGAME) {
@@ -299,7 +299,7 @@ static void update_explosion_events(uint16_t explosion)
 }
 
 /* The party, the group, and each object on the square move again, for example into an opened pit. */
-void timeline_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
+void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
 {
     if (is_party_on(x, y))
         move_get_move_result(THING_NONE, x, y, x, y);
@@ -324,7 +324,7 @@ void timeline_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
 }
 
 /* The event holds the signed light power. Each step applies one step of the light table and adds the rest later. */
-void timeline_process_event70_light(TimelineEvent *event)
+void event_light(TimelineEvent *event)
 {
     int16_t power = (int16_t)event->b;
     if (!power)
@@ -347,7 +347,7 @@ void timeline_process_event70_light(TimelineEvent *event)
 
 /* A closed door breaks when the attack reaches its defense and the door accepts the attack kind (force or magic).
    ticks 0 breaks it at once, else a door destruction event breaks it later. Returns 1 when the door breaks. */
-int16_t group_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, int16_t ticks)
+int16_t event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, int16_t ticks)
 {
     uint16_t door = get_square_first_thing(x, y);
     if (magic_attack ? !door_breaks_by_magic(door) : !door_breaks_by_force(door))
@@ -366,7 +366,7 @@ int16_t group_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, 
 
 /* The action hand works again: the action defense ends. After a shot the next ammunition of the quiver goes to the
    ready hand (quiver line 1 first, then slots 7-9). */
-void timeline_process_event11_enable_champion_action(uint16_t champion_index)
+void event_enable_champion_action(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     c->enable_action_event_index = -1;
@@ -389,7 +389,7 @@ void timeline_process_event11_enable_champion_action(uint16_t champion_index)
 }
 
 /* The damage number on the champion portrait disappears. */
-void timeline_process_event12_hide_damage_received(uint16_t champion_index)
+void event_hide_damage_received(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     c->hide_damage_received_event_index = -1;
@@ -403,7 +403,7 @@ void timeline_process_event12_hide_damage_received(uint16_t champion_index)
 
 /* Vi altar rebirth in three steps (event cell byte: the step): 2 the rebirth explosion, 1 the bones of the champion
    disappear, 0 the champion lives again. The bones hold the champion index in their charges. */
-void timeline_process_event13_vi_altar_rebirth(TimelineEvent *event)
+void event_vi_altar_rebirth(TimelineEvent *event)
 {
     int16_t x = EVENT_X(event), y = EVENT_Y(event), cell = EVENT_CELL(event), step = EVENT_EFFECT(event);
     uint16_t champion_index = event->priority;
@@ -430,28 +430,28 @@ void timeline_process_event13_vi_altar_rebirth(TimelineEvent *event)
 }
 
 /* Runs every expired event on its map. Event types without a handler here belong to later steps. */
-void timeline_process(void)
+void event_process_expired(void)
 {
     while (timeline_is_first_event_expired()) {
         TimelineEvent event;
         timeline_extract_first_event(&event);
         set_current_map(EVENT_MAP(&event));
         switch (event.type) {
-        case EVENT_DOOR_ANIMATION: timeline_process_event1_door_animation(&event); break;
-        case EVENT_DOOR_DESTRUCTION: timeline_process_event2_door_destruction(&event); break;
-        case EVENT_CORRIDOR: timeline_process_event5_corridor(&event); break;
-        case EVENT_WALL: timeline_process_event6_wall(&event); break;
-        case EVENT_FAKE_WALL: timeline_process_event7_fake_wall(&event); break;
-        case EVENT_TELEPORTER: timeline_process_event8_teleporter(&event); break;
-        case EVENT_PIT: timeline_process_event9_pit(&event); break;
-        case EVENT_DOOR: timeline_process_event10_door(&event); break;
+        case EVENT_DOOR_ANIMATION: event_door_animation(&event); break;
+        case EVENT_DOOR_DESTRUCTION: event_door_destruction(&event); break;
+        case EVENT_CORRIDOR: event_corridor(&event); break;
+        case EVENT_WALL: event_wall(&event); break;
+        case EVENT_FAKE_WALL: event_fake_wall(&event); break;
+        case EVENT_TELEPORTER: event_teleporter(&event); break;
+        case EVENT_PIT: event_pit(&event); break;
+        case EVENT_DOOR: event_door(&event); break;
         case EVENT_ENABLE_CHAMPION_ACTION:
-            timeline_process_event11_enable_champion_action(event.priority);
+            event_enable_champion_action(event.priority);
             if (event.b >> 8)   /* after a throw: the slot + 1 that gets the next weapon of the quiver */
-                timeline_move_weapon_from_quiver_to_slot(event.priority, (uint16_t)((int8_t)(event.b >> 8) - 1));
+                action_move_weapon_from_quiver_to_slot(event.priority, (uint16_t)((int8_t)(event.b >> 8) - 1));
             break;
-        case EVENT_HIDE_DAMAGE_RECEIVED: timeline_process_event12_hide_damage_received(event.priority); break;
-        case EVENT_VI_ALTAR_REBIRTH: timeline_process_event13_vi_altar_rebirth(&event); break;
+        case EVENT_HIDE_DAMAGE_RECEIVED: event_hide_damage_received(event.priority); break;
+        case EVENT_VI_ALTAR_REBIRTH: event_vi_altar_rebirth(&event); break;
         case EVENT_PLAY_SOUND: sound_request_play((int16_t)event.c, EVENT_X(&event), EVENT_Y(&event), SOUND_MODE_AFTER_TICK); break;
         case EVENT_REMOVE_FLUXCAGE:
             if (!g_game_won) {
@@ -464,11 +464,11 @@ void timeline_process(void)
         case EVENT_MOVE_PROJECTILE: projectile_process_events_48_to_49(&event); break;
         case EVENT_WATCHDOG: timeline_add_watchdog_event(); break;
         case EVENT_MOVE_GROUP_SILENT:
-        case EVENT_MOVE_GROUP_AUDIBLE: timeline_process_event60_61_move_group(&event); break;
-        case EVENT_ENABLE_GROUP_GENERATOR: timeline_process_event65_enable_group_generator(&event); break;
+        case EVENT_MOVE_GROUP_AUDIBLE: group_process_move_event(&event); break;
+        case EVENT_ENABLE_GROUP_GENERATOR: event_enable_group_generator(&event); break;
         case EVENT_LIGHT:
             set_current_map(g_party_map_index);
-            timeline_process_event70_light(&event);
+            event_light(&event);
             break;
         case EVENT_INVISIBILITY_END: g_party.event71_count_invisibility--; break;
         case EVENT_CHAMPION_SHIELD_END: g_champions[event.priority].shield_defense -= (int16_t)event.b; break;

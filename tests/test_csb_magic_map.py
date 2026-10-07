@@ -307,7 +307,7 @@ def test_events_end_the_map_spells(lib, csb):
     assert sorted(spell for _, spell in ends) == [DAIN, DAIN, ROS, KU, NETA]
     for time in sorted({time for time, _ in ends}):
         value(lib, "g_game_time", u32).value = time
-        lib.timeline_process()
+        lib.event_process_expired()
         for spell in (spell for t, spell in ends if t == time):
             expected[spell] = 0 if spell == NETA else expected[spell] - 1
         assert list(c.magic_map[:4]) == expected
@@ -496,7 +496,7 @@ def test_map_spells_of_another_champion(lib, csb):
     assert len(mine) == 4 and {e.priority for e in mine} == {1}
     assert list(c1.magic_map[:4]) == [1, 1, 1, value(lib, "g_party_direction").value + 1] and bytes(c0.magic_map) == bytes(6)
     value(lib, "g_game_time", u32).value = max(e.map_time & TIME_MASK for e in mine)
-    lib.timeline_process()
+    lib.event_process_expired()
     assert list(c1.magic_map[:4]) == [0, 0, 0, 0] and bytes(c0.magic_map) == bytes(6)
 
 

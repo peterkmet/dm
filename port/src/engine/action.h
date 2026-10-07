@@ -47,6 +47,6 @@ int16_t action_get_throwing_stamina_cost(uint16_t thing);
 
 /* Ammunition in the quiver for the launcher in the weapon slot. */
 int16_t action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot);
-void timeline_move_weapon_from_quiver_to_slot(uint16_t champion_index, uint16_t slot);
+void action_move_weapon_from_quiver_to_slot(uint16_t champion_index, uint16_t slot);
 
 #endif

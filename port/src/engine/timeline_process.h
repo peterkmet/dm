@@ -47,21 +47,21 @@ extern int16_t g_game_won;
 /* The endgame of an endgame sensor, set by the user interface: it runs inside the sensor event. */
 extern void (*g_endgame_sensor_hook)(uint16_t delay);
 
-void timeline_process(void);
-void timeline_process_event1_door_animation(TimelineEvent *event);
-void timeline_process_event2_door_destruction(TimelineEvent *event);
-void timeline_process_event5_corridor(TimelineEvent *event);
-void timeline_process_event6_wall(TimelineEvent *event);
-void timeline_process_event7_fake_wall(TimelineEvent *event);
-void timeline_process_event8_teleporter(TimelineEvent *event);
-void timeline_process_event9_pit(TimelineEvent *event);
-void timeline_process_event10_door(TimelineEvent *event);
-void timeline_process_event11_enable_champion_action(uint16_t champion_index);
-void timeline_process_event12_hide_damage_received(uint16_t champion_index);
-void timeline_process_event13_vi_altar_rebirth(TimelineEvent *event);
-void timeline_process_event65_enable_group_generator(TimelineEvent *event);
-void timeline_process_event70_light(TimelineEvent *event);
-void timeline_move_teleporter_or_pit_square_things(int16_t x, int16_t y);
-int16_t group_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, int16_t ticks);
+void event_process_expired(void);
+void event_door_animation(TimelineEvent *event);
+void event_door_destruction(TimelineEvent *event);
+void event_corridor(TimelineEvent *event);
+void event_wall(TimelineEvent *event);
+void event_fake_wall(TimelineEvent *event);
+void event_teleporter(TimelineEvent *event);
+void event_pit(TimelineEvent *event);
+void event_door(TimelineEvent *event);
+void event_enable_champion_action(uint16_t champion_index);
+void event_hide_damage_received(uint16_t champion_index);
+void event_vi_altar_rebirth(TimelineEvent *event);
+void event_enable_group_generator(TimelineEvent *event);
+void event_light(TimelineEvent *event);
+void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y);
+int16_t event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, int16_t ticks);
 
 #endif

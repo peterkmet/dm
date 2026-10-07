@@ -354,7 +354,7 @@ int16_t action_is_action_performed(uint16_t champion_index, int16_t action)
         if (SQUARE_TYPE(square) == SQUARE_DOOR && door_state(square) == DOOR_CLOSED) {
             sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
             disabled_ticks = DOOR_BASH_DISABLED_TICKS;
-            group_is_door_destroyed_by_attack(x, y, champion_get_strength((int16_t)champion_index, SLOT_HAND_ACTION), 0,
+            event_is_door_destroyed_by_attack(x, y, champion_get_strength((int16_t)champion_index, SLOT_HAND_ACTION), 0,
                                               DOOR_BASH_DESTRUCTION_TICKS);
             sound_request_play(SOUND_WOODEN_THUD, g_party_map_x, g_party_map_y, SOUND_MODE_ONE_TICK_LATER);
             break;
@@ -584,7 +584,7 @@ static int16_t has_weapon_moved_to_slot(uint16_t champion_index, uint16_t quiver
 }
 
 /* After a throw: the next weapon of the quiver goes to the empty slot (quiver line 1 first, then line 2). */
-void timeline_move_weapon_from_quiver_to_slot(uint16_t champion_index, uint16_t slot)
+void action_move_weapon_from_quiver_to_slot(uint16_t champion_index, uint16_t slot)
 {
     if (g_champions[champion_index].slots[slot] != THING_NONE || has_weapon_moved_to_slot(champion_index, SLOT_QUIVER_LINE1_1, slot))
         return;

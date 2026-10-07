@@ -135,6 +135,6 @@ void group_process_events_29_to_41(int16_t x, int16_t y, int16_t event_type, uin
 
 int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, int16_t audible);
-void timeline_process_event60_61_move_group(TimelineEvent *event);
+void group_process_move_event(TimelineEvent *event);
 
 #endif

@@ -155,7 +155,7 @@ Event 48 or 49 (`projectile_process_events_48_to_49`) moves a projectile one cel
 
 ### Launchers
 
-Event 6 (wall) on a launcher sensor (type 7–10, 14, or 15) in the event cell calls `timeline_trigger_projectile_launcher`. It shoots one or two objects or explosions from the square in front of the wall. Types 14 and 15 shoot objects that lie in the launch cells. Sensor word 6 holds the kinetic energy (bits 4–11) and the step energy (bits 12–15). The attack is 100.
+Event 6 (wall) on a launcher sensor (type 7–10, 14, or 15) in the event cell calls `projectile_trigger_launcher`. It shoots one or two objects or explosions from the square in front of the wall. Types 14 and 15 shoot objects that lie in the launch cells. Sensor word 6 holds the kinetic energy (bits 4–11) and the step energy (bits 12–15). The attack is 100.
 
 ### Champion projectiles
 

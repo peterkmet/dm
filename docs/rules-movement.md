@@ -1,6 +1,6 @@
 # Movement, sensors, and timeline rules
 
-This page describes the movement rules of the C port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `timeline_process`. The code is in `port/src/engine/map.c`, `port/src/engine/move.c`, `port/src/engine/sensor.c`, and `port/src/engine/timeline_process.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md) for the record layouts.
+This page describes the movement rules of the C port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `event_process_expired`. The code is in `port/src/engine/map.c`, `port/src/engine/move.c`, `port/src/engine/sensor.c`, and `port/src/engine/timeline_process.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md) for the record layouts.
 
 ## Start a game
 
@@ -20,7 +20,7 @@ move_party_enter_dungeon();
 The game loop calls these functions in this order on each tick:
 
 1. `move_process_new_party_map()`. When `g_new_party_map_index` is not −1, the party map changes, the party enters its square on the new map, and `g_new_party_map_index` becomes −1.
-2. `timeline_process()`. Repeat step 1 while `g_new_party_map_index` is not −1.
+2. `event_process_expired()`. Repeat step 1 while `g_new_party_map_index` is not −1.
 3. Increment `g_game_time`.
 4. The command step calls `move_party(command)` or `move_turn_party(command)`.
 
@@ -174,12 +174,12 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 - A closing door on the party square (state not 0) opens fully when the party has champions, damages the party (`champion_damage_all(5, 4, 2)`, sound 15), and tries again at time + 2.
 - A closing door with a group that is not non-material (creature attribute bit 6) goes back one step when the creature height is at most the state, plays sound 4, and tries again at time + 2. The height is 1, or creature attribute bits 7–8 for a door with bit 5 of byte 3.
 - Event 2 (door destruction): the state becomes 5.
-- `group_is_door_destroyed_by_attack(x, y, attack, magic_attack, ticks)` (`0x11d5e0`): force (`magic_attack` 0) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Else event 2 destroys it after `ticks`. Returns 1 when the door breaks.
+- `event_is_door_destroyed_by_attack(x, y, attack, magic_attack, ticks)` (`0x11d5e0`): force (`magic_attack` 0) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Else event 2 destroys it after `ticks`. Returns 1 when the door breaks.
 
 ## Pits, teleporters, and fake walls
 
-- Event 8 (teleporter) and event 9 (pit): toggle becomes 1 for an open square (bit 3), else 0. Effect 0 sets bit 3 and calls `timeline_move_teleporter_or_pit_square_things`. Other effects clear bit 3.
-- `timeline_move_teleporter_or_pit_square_things(x, y)` moves the party, the group, and each object of the square again with `move_get_move_result(thing, x, y, x, y)`. It updates the events of moved projectiles and explosions.
+- Event 8 (teleporter) and event 9 (pit): toggle becomes 1 for an open square (bit 3), else 0. Effect 0 sets bit 3 and calls `event_move_teleporter_or_pit_square_things`. Other effects clear bit 3.
+- `event_move_teleporter_or_pit_square_things(x, y)` moves the party, the group, and each object of the square again with `move_get_move_result(thing, x, y, x, y)`. It updates the events of moved projectiles and explosions.
 - Event 7 (fake wall): bit 2 is open. Toggle becomes 1 for an open wall, else 0. Effect 1 closes the wall. It waits (time + 1) while the party or a material group is on the square. Other effects open it.
 
 ## Square events on corridors and walls
@@ -190,25 +190,25 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 
 ## Timeline dispatch
 
-`timeline_process()` runs every expired event. For each event it selects the event map, calls the handler, and selects the party map again. Event 70 runs on the party map.
+`event_process_expired()` runs every expired event. For each event it selects the event map, calls the handler, and selects the party map again. Event 70 runs on the party map.
 
 Implemented event types:
 
 | Type | Action |
 |---|---|
-| 1 | `timeline_process_event1_door_animation` |
-| 2 | `timeline_process_event2_door_destruction` |
-| 5 | `timeline_process_event5_corridor` |
-| 6 | `timeline_process_event6_wall` |
-| 7 | `timeline_process_event7_fake_wall` |
-| 8 | `timeline_process_event8_teleporter` |
-| 9 | `timeline_process_event9_pit` |
-| 10 | `timeline_process_event10_door` |
+| 1 | `event_door_animation` |
+| 2 | `event_door_destruction` |
+| 5 | `event_corridor` |
+| 6 | `event_wall` |
+| 7 | `event_fake_wall` |
+| 8 | `event_teleporter` |
+| 9 | `event_pit` |
+| 10 | `event_door` |
 | 20 | `sound_request_play(c, x, y, 1)` |
 | 24 | Unlinks and frees the fluxcage thing in `c`, unless `g_game_won` is set. |
 | 53 | `timeline_add_watchdog_event` |
-| 65 | `timeline_process_event65_enable_group_generator` |
-| 70 | `timeline_process_event70_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |
+| 65 | `event_enable_group_generator` |
+| 70 | `event_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |
 | 71 | Decrements the invisibility count. |
 | 72 | Subtracts `b` from the shield defense of champion `priority`. |
 | 73 | Decrements the thieves eye count. |
@@ -221,13 +221,13 @@ Event types without effect in the port:
 
 | Type | Original handler | Step |
 |---|---|---|
-| 11 | `timeline_process_event11_enable_champion_action` | Champions |
-| 12 | `timeline_process_event12_hide_damage_received` | Champions |
-| 13 | `timeline_process_event13_vi_altar_rebirth` | Champions |
+| 11 | `event_enable_champion_action` | Champions |
+| 12 | `event_hide_damage_received` | Champions |
+| 13 | `event_vi_altar_rebirth` | Champions |
 | 25 | `explosion_process_event_25` | Projectiles |
 | 29–41 | `group_process_events_29_to_41` | Creatures |
 | 48, 49 | `projectile_process_events_48_to_49` | Projectiles |
-| 60, 61 | `timeline_process_event60_61_move_group` | Creatures |
+| 60, 61 | `group_process_move_event` | Creatures |
 | 75 | `champion_poison` | Champions |
 | 0, 3, 4, 14–19, 21–23, 26–28, 42–47, 50–52, 54–59, 62–64, 66–69, 76, 80 and higher | None in the original | — |
 

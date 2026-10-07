@@ -437,7 +437,7 @@ void gameloop_tick(void)
             command_discard_all_input();
         }
         gameloop_set_light();  /* the creature rules see the light also while the view is not drawn */
-        timeline_process();
+        event_process_expired();
     } while (g_new_party_map_index != -1);
     music_update();
     if (!g_party_is_sleeping) {

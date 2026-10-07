@@ -402,7 +402,7 @@ void endgame(int16_t party_dead)
 /* fuse_sequence_update: one game tick with the view and the sounds. */
 static void fuse_update(void)
 {
-    timeline_process();
+    event_process_expired();
     gameloop_draw_view();
     sound_play_pending();
     g_game_time++;

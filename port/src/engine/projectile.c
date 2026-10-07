@@ -283,7 +283,7 @@ static int16_t hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t 
     }
     uint16_t attack = projectile_get_impact_attack(projectile, thing) + 1;
     uint16_t bonus = random16() % attack;
-    group_is_door_destroyed_by_attack(x, y, attack + bonus, 0, 0);
+    event_is_door_destroyed_by_attack(x, y, attack + bonus, 0, 0);
     return 1;
 }
 
@@ -510,7 +510,7 @@ void explosion_process_event_25(TimelineEvent *event)
         break;
     }
     if (breaks_door && SQUARE_TYPE(square) == SQUARE_DOOR)
-        group_is_door_destroyed_by_attack(x, y, damage, 1, 0);
+        event_is_door_destroyed_by_attack(x, y, damage, 1, 0);
     unlink_thing_from_list(explosion, 0, x, y);
     thing_set_free(explosion);
 }
@@ -691,7 +691,7 @@ static uint16_t square_object_in_cells(int16_t x, int16_t y, uint16_t cell)
 }
 
 /* A wall launcher (sensor 7-10, 14, 15) shoots one or two objects or explosions from the square in front of it. */
-void timeline_trigger_projectile_launcher(uint16_t sensor, const TimelineEvent *event)
+void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event)
 {
     int16_t x = EVENT_X(event), y = EVENT_Y(event);
     uint16_t direction = EVENT_CELL(event), cell = (direction + 2) & 3;

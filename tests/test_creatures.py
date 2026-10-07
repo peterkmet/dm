@@ -104,7 +104,7 @@ def tick(lib, seen=None):
         heap = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline"), ctypes.POINTER(u16))
         if var(lib, u16, "g_timeline_count").value:
             seen.add(timeline[heap[0]].type)
-    lib.timeline_process()
+    lib.event_process_expired()
     var(lib, ctypes.c_uint32, "g_game_time").value += 1
 
 

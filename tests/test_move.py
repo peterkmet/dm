@@ -81,7 +81,7 @@ def recruit(lib):
 
 def tick(lib):
     """One game_loop tick: the timeline, then the game time."""
-    lib.timeline_process()
+    lib.event_process_expired()
     ctypes.c_uint32.in_dll(lib, "g_game_time").value += 1
 
 

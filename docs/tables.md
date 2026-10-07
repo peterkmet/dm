@@ -109,7 +109,7 @@ Each table ends where the next named table starts. The tests check this.
 
 ## Door info
 
-`DoorInfo`, 2 bytes per door type. Byte 0 `attributes`, byte 1 `defense`. `group_is_door_destroyed_by_attack` compares an attack with `defense`. Each map selects 2 door types (map record byte 14).
+`DoorInfo`, 2 bytes per door type. Byte 0 `attributes`, byte 1 `defense`. `event_is_door_destroyed_by_attack` compares an attack with `defense`. Each map selects 2 door types (map record byte 14).
 
 ## Spells and symbols
 

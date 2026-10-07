@@ -1992,7 +1992,7 @@ void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t
 }
 
 /* A waiting group enters its square when the square is free. Lord Chaos may take an adjacent open square. */
-void timeline_process_event60_61_move_group(TimelineEvent *event)
+void group_process_move_event(TimelineEvent *event)
 {
     int16_t x = EVENT_X(event), y = EVENT_Y(event), retried = 0;
     for (;;) {

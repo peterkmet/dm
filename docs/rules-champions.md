@@ -213,7 +213,7 @@ The code is in `port/src/engine/action.c`. The rules follow `action_is_action_pe
 
 | Action | Effect |
 |---|---|
-| Chop, Kick, Swing, Hack, Berzerk, Bash on a closed door | Bashes the door with the action-hand strength (`group_is_door_destroyed_by_attack`, destruction after 2 ticks). Disabled ticks become 6. |
+| Chop, Kick, Swing, Hack, Berzerk, Bash on a closed door | Bashes the door with the action-hand strength (`event_is_door_destroyed_by_attack`, destruction after 2 ticks). Disabled ticks become 6. |
 | Melee actions (the above without a door, Punch, Stab, Thrust, Jab, Parry, Disrupt, Melee, Slash, Cleave, Stun) | `action_is_melee_action_performed`. A miss of the target (no group, no creature in reach) halves the experience and the disabled ticks. |
 | War Cry, Blow Horn, Calm, Brandish, Confuse | `action_is_group_frightened_by_action`. Confuse uses a charge. War Cry plays sound 17, Blow Horn sound 18. |
 | Flip | Prints heads or tails (text 0x45 or 0x46) by a random bit. |
@@ -257,9 +257,9 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 | Event | Handler | Effect |
 |---|---|---|
-| 11 | `timeline_process_event11_enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 − 1` (`timeline_move_weapon_from_quiver_to_slot`). |
-| 12 | `timeline_process_event12_hide_damage_received` | Hides the damage number of the champion. |
-| 13 | `timeline_process_event13_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
+| 11 | `event_enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 − 1` (`action_move_weapon_from_quiver_to_slot`). |
+| 12 | `event_hide_damage_received` | Hides the damage number of the champion. |
+| 13 | `event_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
 | 75 | `champion_poison` | One poison step: the poison event count decreases, then `champion_poison(champion, word 6)`. |
 
 ## Save files
