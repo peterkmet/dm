@@ -9,6 +9,12 @@ Format:
   on the current level: fight the creatures that the party can beat, and cast spells, until the skill levels rise.
 - Next 3 steps.
 - Open problems.
+- Food and water: the lowest food and water of the champions (state `food`, `water`), and where the next
+  food and water come from (a fountain, food on this level). When a value falls below half, food and water
+  are the current goal. Without food or water the champions lose stamina, then health, and die.
+- Training and food places: a place where creatures appear again and again after you kill them. Some of
+  these creatures leave food. Such a place gives training and food at the same time. Watch for it: the same
+  creature type comes back to the same area. Write each such place in the map of its level and here.
 ## Not tried yet
 - Only when stuck: the list from "When you are stuck", each item with its result when done.
 ## Milestones
