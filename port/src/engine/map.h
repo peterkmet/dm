@@ -153,7 +153,7 @@ static inline uint16_t rec_projectile_event_index(uint16_t thing) { return BE16(
 /* Map descriptor, 16 bytes. */
 #define MAP_BYTES 16
 enum { MAP_OFFSET_X_BYTE = 6, MAP_OFFSET_Y_BYTE, MAP_LAST_XY_BYTE, MAP_LEVEL_BYTE, MAP_FLOOR_ORNAMENTS_BYTE,
-       MAP_WALL_ORNAMENTS_BYTE, MAP_DIFFICULTY_BYTE, MAP_DOOR_ORNAMENTS_BYTE, MAP_DOOR_SETS_BYTE, MAP_GRAPHIC_SETS_BYTE };
+       MAP_WALL_ORNAMENTS_BYTE, MAP_DIFFICULTY_BYTE, MAP_DOOR_ORNAMENTS_CREATURES_BYTE, MAP_DOOR_SETS_BYTE, MAP_GRAPHIC_SETS_BYTE };
 #define MAP_DESCRIPTOR(map) (g_dungeon_maps + (map) * MAP_BYTES)
 static inline int16_t map_offset_x(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_OFFSET_X_BYTE]; }
 static inline int16_t map_offset_y(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_OFFSET_Y_BYTE]; }
@@ -226,8 +226,8 @@ static inline int16_t map_floor_ornament_count(int16_t map) { return MAP_DESCRIP
 static inline int16_t map_random_wall_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_WALL_ORNAMENTS_BYTE] >> 4; }
 static inline int16_t map_wall_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_WALL_ORNAMENTS_BYTE] & 0x0f; }
 static inline int16_t map_difficulty(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_DIFFICULTY_BYTE] >> MAP_DIFFICULTY_SHIFT; }
-static inline int16_t map_door_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_DOOR_ORNAMENTS_BYTE] & 0x0f; }
-static inline int16_t map_creature_type_count(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_DOOR_ORNAMENTS_BYTE] >> 4; }
+static inline int16_t map_door_ornament_count(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_DOOR_ORNAMENTS_CREATURES_BYTE] & 0x0f; }
+static inline int16_t map_creature_type_count(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_DOOR_ORNAMENTS_CREATURES_BYTE] >> 4; }
 static inline int16_t map_floor_set(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_GRAPHIC_SETS_BYTE] & 0x0f; }
 static inline int16_t map_wall_set(int16_t map) { return MAP_DESCRIPTOR(map)[MAP_GRAPHIC_SETS_BYTE] >> 4; }
 
