@@ -1,3 +1,4 @@
+#include <limits.h>
 #include "spells.h"
 #include "adventure.h"
 #include "csbimage.h"
@@ -8,6 +9,15 @@
 #define G_SPELLS 0x103c84                      /* SpellRecord[25], 8 bytes each */
 
 #define SPELL_ENTRY_SIZE 8
+#define SPELL_ENTRY_LEVEL 4        /* byte offsets in an entry: base required level, skill, attributes */
+#define SPELL_ENTRY_SKILL 5
+#define SPELL_ENTRY_ATTRIBUTES 6
+#define SPELL_FIRST_SYMBOL_SHIFT 24 /* the first symbol is in bits 24-31 of the symbols */
+#define SPELL_EXPERIENCE_POWER_FACTOR 8
+#define SPELL_EXPERIENCE_LEVEL_FACTOR 16
+#define SPELL_EXPERIENCE_RANDOM_MASK 7
+#define LSR_COUNT_MODULO 64        /* the 68000 LSR takes the shift count modulo 64 */
+#define WORD_BITS 16
 #define SPELL_WISDOM_BONUS 15      /* added to wisdom for the failure draw */
 #define SPELL_WISDOM_LIMIT 115     /* the failure draw limit never goes above this */
 #define SPELL_DRAW_RANGE 128
@@ -19,7 +29,7 @@ int16_t spell_count(void) { return g_adventure == ADVENTURE_CSB ? CSB_SPELL_COUN
 /* Spell table entry with its symbols, required level, skill and attributes. */
 SpellRecord spell_get(int16_t index) {
     uint32_t a = spells_address() + (uint32_t)index * SPELL_ENTRY_SIZE;
-    return (SpellRecord){kaos_u32(a), kaos_u8(a + 4), kaos_u8(a + 5), kaos_u16(a + 6)};
+    return (SpellRecord){kaos_u32(a), kaos_u8(a + SPELL_ENTRY_LEVEL), kaos_u8(a + SPELL_ENTRY_SKILL), kaos_u16(a + SPELL_ENTRY_ATTRIBUTES)};
 }
 
 uint16_t spell_kind(const SpellRecord *spell) { return spell->attributes & SPELL_KIND_MASK; }
@@ -34,7 +44,7 @@ int16_t spell_find(const uint8_t *symbols) {
     if (symbols[1] == 0)
         return -1;
     uint32_t packed = 0;
-    for (int shift = 24; shift >= 0; shift -= 8, symbols++) {
+    for (int shift = SPELL_FIRST_SYMBOL_SHIFT; shift >= 0; shift -= CHAR_BIT, symbols++) {
         packed |= (uint32_t)*symbols << shift;
         if (symbols[1] == 0)
             break;
@@ -57,7 +67,7 @@ uint8_t spell_symbol(uint16_t step, int16_t symbol_index) {
 uint16_t spell_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t power_symbol) {
     uint16_t cost = kaos_u8(G_SYMBOL_BASE_MANA_COST + step * SPELL_SYMBOLS_PER_STEP + symbol_index);
     if (step != 0)
-        cost = (uint16_t)(cost * kaos_u8(G_SYMBOL_MANA_COST_MULTIPLIER + power_index(power_symbol))) >> 3;
+        cost = cost * kaos_u8(G_SYMBOL_MANA_COST_MULTIPLIER + power_index(power_symbol)) >> SPELL_MANA_MULTIPLIER_SHIFT;
     return cost;
 }
 
@@ -69,8 +79,8 @@ uint16_t spell_required_level(uint8_t power_symbol, const SpellRecord *spell) {
 /* ponytail: the original squares a stale D3 from the caller; this uses required_level² as ReDMCSB intends. */
 uint16_t spell_experience(uint8_t power_symbol, const SpellRecord *spell, uint16_t random) {
     uint16_t level = spell_required_level(power_symbol, spell);
-    return (uint16_t)(level * level + power_index(power_symbol) * spell->base_required_level * 8 + level * 16 +
-                      (random & 7));
+    return (uint16_t)(level * level + power_index(power_symbol) * spell->base_required_level * SPELL_EXPERIENCE_POWER_FACTOR +
+                      level * SPELL_EXPERIENCE_LEVEL_FACTOR + (random & SPELL_EXPERIENCE_RANDOM_MASK));
 }
 
 /* One draw per missing skill level; the cast fails on the first draw that returns 1. */
@@ -81,6 +91,6 @@ int16_t spell_draw_fails(uint8_t current_wisdom, uint16_t random) {
 
 /* Experience on failure: shifted right once per missing level (68000 LSR.W, count modulo 64). */
 uint16_t spell_failure_experience(uint16_t experience, uint16_t required_level, uint16_t skill_level) {
-    uint16_t n = (uint8_t)(required_level - skill_level) % 64;
-    return n < 16 ? experience >> n : 0;
+    uint16_t n = (uint8_t)(required_level - skill_level) % LSR_COUNT_MODULO;
+    return n < WORD_BITS ? experience >> n : 0;
 }

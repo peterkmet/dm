@@ -6,6 +6,7 @@
 #define DM_SPELL_COUNT 25 /* CSB has CSB_SPELL_COUNT */
 #define SPELL_SYMBOL_FIRST 0x60       /* font character of the first symbol: power 1 at step 0 */
 #define SPELL_SYMBOLS_PER_STEP 6
+#define SPELL_MANA_MULTIPLIER_SHIFT 3 /* the mana cost multiplier of the power symbol counts eighths */
 #define SPELL_POWER_SYMBOL_MASK 0xff000000u
 #define SPELL_KIND_MASK 15
 #define SPELL_TYPE_SHIFT 4
