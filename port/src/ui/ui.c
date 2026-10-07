@@ -255,7 +255,7 @@ static int bones_champion(uint16_t thing) { return junk_charges(thing); }
 
 /* Shows the name of the object in the leader hand above the action area. Bones show the name of
    their champion first (English order). */
-void draw_leader_hand_object_name(uint16_t thing)
+void ui_draw_leader_hand_object_name(uint16_t thing)
 {
     Bitmap screen = ui_screen();
     char buf[32];

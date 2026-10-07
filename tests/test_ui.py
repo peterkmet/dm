@@ -280,7 +280,7 @@ def test_render_inventory(game):
         png(SCRATCH / "ui_inventory.png", rows)
     assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 1
     assert len(set(fb[320 * 33:320 * 169])) > 6
-    game.draw_champion_skills_and_statistics()
+    game.ui_draw_champion_skills_and_statistics()
     game.ui_draw_viewport()
     _, rows = rgb_rows(game)
     if SCRATCH.exists():

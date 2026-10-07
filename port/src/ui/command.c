@@ -288,7 +288,7 @@ void command_click_on_mouth(void)
     uint16_t champion_index = g_inventory_champion_ordinal - 1;
     if (result == MOUTH_USED_UP)
         for (int16_t blink = MOUTH_BLINK_COUNT; blink > 0; blink--) {
-            draw_icon_to_viewport(ICON_MOUTH + !(blink & 1), ZONE_MOUTH);
+            ui_draw_icon_to_viewport(ICON_MOUTH + !(blink & 1), ZONE_MOUTH);
             ui_draw_viewport();
             wait_frames(MOUTH_BLINK_FRAMES);
         }
@@ -639,7 +639,7 @@ static void click_on_eye(void)
     pressing_eye = g_mouse_pointer_hidden = 1;
     command_discard_all_input();
     draw_viewport_icon(ICON_EYE_LOOKING, ZONE_EYE);
-    draw_panel_eye();
+    ui_draw_panel_eye();
     ui_draw_viewport();
 }
 
@@ -649,7 +649,7 @@ static void left_release(void)
     if (pressing_eye) {
         pressing_eye = 0;
         draw_viewport_icon(ICON_EYE, ZONE_EYE);
-        draw_panel();
+        ui_draw_panel();
         ui_draw_viewport();
     }
     pressing_mouth = pressing_fake_wall = g_mouse_pointer_hidden = 0;

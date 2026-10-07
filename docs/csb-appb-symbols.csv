@@ -126,7 +126,7 @@ address,name,signature,subsystem
 0x108280,load_object_names,void load_object_names(void),object
 0x108344,object_get_type,int16_t object_get_type(uint16_t thing),object
 0x10837e,object_get_icon_index,int16_t object_get_icon_index(uint16_t thing),object
-0x108454,draw_leader_hand_object_name,void draw_leader_hand_object_name(uint16_t thing),object
+0x108454,ui_draw_leader_hand_object_name,void ui_draw_leader_hand_object_name(uint16_t thing),object
 0x1084f8,clear_leader_hand_object_name,void clear_leader_hand_object_name(void),object
 0x108506,extract_object_icon,"void extract_object_icon(int16_t icon_index, uint8_t *bitmap)",object
 0x108596,get_slot_box_zone,"void get_slot_box_zone(int16_t zone, int16_t *box)",object
@@ -307,7 +307,7 @@ address,name,signature,subsystem
 0x110880,fill_screen_zone_pattern,"void fill_screen_zone_pattern(int16_t zone, int16_t color)",video
 0x1108b0,blit_shrink_with_palette_changes,"void blit_shrink_with_palette_changes(const uint8_t *src, uint8_t *dst, int16_t src_width, int16_t src_height, int16_t dst_width, int16_t dst_height, const uint8_t *palette_changes)",video
 0x110afa,g_byte_bit_reverse,const uint8_t g_byte_bit_reverse[256]; /* in code section */,video
-0x110c58,draw_icon_to_viewport,"void draw_icon_to_viewport(int16_t icon_index, int16_t zone)",inventory
+0x110c58,ui_draw_icon_to_viewport,"void ui_draw_icon_to_viewport(int16_t icon_index, int16_t zone)",inventory
 0x110cae,panel_print_line,void panel_print_line(const char *text),inventory
 0x110d4e,build_object_attributes_string,"void build_object_attributes_string(uint16_t potential_attributes, uint16_t actual_attributes, const char **attribute_strings, char *dst, const char *prefix, const char *suffix)",inventory
 0x110e0a,set_dungeon_view_palette,void set_dungeon_view_palette(void),inventory
@@ -321,18 +321,18 @@ address,name,signature,subsystem
 0x111764,draw_panel_scroll,void draw_panel_scroll(const Scroll *scroll),inventory
 0x111aaa,open_and_draw_chest,"void open_and_draw_chest(uint16_t chest_thing, Container *chest, int16_t pressing_eye)",inventory
 0x111b76,close_chest,void close_chest(void),inventory
-0x111c02,draw_panel_object,"void draw_panel_object(uint16_t thing, int16_t pressing_eye)",inventory
+0x111c02,ui_draw_panel_object,"void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye)",inventory
 0x111fd4,draw_panel_horizontal_bar,"void draw_panel_horizontal_bar(int16_t value, int16_t zone, int16_t color)",inventory
-0x11208a,draw_panel_food_water_poisoned,void draw_panel_food_water_poisoned(void),inventory
+0x11208a,ui_draw_panel_food_water_poisoned,void ui_draw_panel_food_water_poisoned(void),inventory
 0x11211e,draw_panel_resurrect_reincarnate,void draw_panel_resurrect_reincarnate(void),inventory
-0x11213c,draw_panel,void draw_panel(void),inventory
+0x11213c,ui_draw_panel,void ui_draw_panel(void),inventory
 0x1121b2,adjust_statistic_current_value,"void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta)",inventory
 0x112246,process_click_on_mouth,void process_click_on_mouth(void),inventory
 0x11268e,draw_stop_pressing_mouth,void draw_stop_pressing_mouth(void),inventory
-0x1126a6,draw_champion_skills_and_statistics,void draw_champion_skills_and_statistics(void),inventory
+0x1126a6,ui_draw_champion_skills_and_statistics,void ui_draw_champion_skills_and_statistics(void),inventory
 0x1128b0,process_click_on_eye,void process_click_on_eye(void),inventory
 0x11291a,draw_stop_pressing_eye,void draw_stop_pressing_eye(void),inventory
-0x11297c,draw_status_box_portrait,void draw_status_box_portrait(int16_t champion_index),inventory
+0x11297c,ui_draw_status_box_portrait,void ui_draw_status_box_portrait(int16_t champion_index),inventory
 0x1129ec,inventory_toggle,void inventory_toggle(int16_t champion_index),inventory
 0x112c00,move_set_party_direction,void move_set_party_direction(int16_t direction),champion
 0x112c42,champion_get_index_in_cell,int16_t champion_get_index_in_cell(int16_t cell),champion

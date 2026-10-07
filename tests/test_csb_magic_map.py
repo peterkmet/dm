@@ -642,7 +642,7 @@ def test_eye_keeps_the_leader_map(lib, csb):
     panel(lib)
     value(lib, "g_leader_hand_object", u16).value = take(lib, scrolls[b"MAGICMAP"])
     value(lib, "g_leader_empty_handed").value = 0
-    lib.draw_panel_eye()
+    lib.ui_draw_panel_eye()
     expected = grid_pixels(lib)
     assert grid_after_tick(lib) == expected
 

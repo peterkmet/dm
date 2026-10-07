@@ -380,11 +380,11 @@ def test_render_advanced_panels(game):
     for thing, name in ((hand, "adv_stat_meters.png"), (armour, "adv_stat_meters_armour.png")):
         leader_hand.value, empty_handed.value = thing, 0  # the eye shows the description of the leader hand object
         set_mode(game, VANILLA)
-        lib.draw_panel_eye()
+        lib.ui_draw_panel_eye()
         lib.ui_draw_viewport()
         plain = pixels(game, ZONE_VIEWPORT)
         set_mode(game, ADVANCED)
-        lib.draw_panel_eye()
+        lib.ui_draw_panel_eye()
         lib.ui_draw_viewport()
         assert pixels(game, ZONE_VIEWPORT) != plain
         screenshot(game, name)
@@ -394,11 +394,11 @@ def test_render_advanced_panels(game):
     for index in range(thing_count(game, THING_SCROLL)):
         champion.slots[SLOT_HAND_ACTION] = THING_SCROLL << 10 | index
         set_mode(game, VANILLA)
-        lib.draw_panel()
+        lib.ui_draw_panel()
         lib.ui_draw_viewport()
         plain_red = pixels(game, ZONE_VIEWPORT).count(COLOR_RED)
         set_mode(game, ADVANCED)
-        lib.draw_panel()
+        lib.ui_draw_panel()
         lib.ui_draw_viewport()
         if pixels(game, ZONE_VIEWPORT).count(COLOR_RED) > plain_red:
             runes = True

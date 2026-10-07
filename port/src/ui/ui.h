@@ -92,7 +92,7 @@ void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon);
 int16_t ui_get_icon_in_slot_box(int16_t slot_box);
 int ui_icon_zone_box(int16_t zone, int border, Box *box);   /* get_slot_box_zone, _border_zone */
 int ui_slot_box_zone(int16_t slot_box, int border, Box *box);
-void draw_leader_hand_object_name(uint16_t thing);
+void ui_draw_leader_hand_object_name(uint16_t thing);
 
 /* Hit tests. */
 int16_t ui_point_in_zone(int16_t zone, int16_t x, int16_t y);
@@ -110,14 +110,14 @@ void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot);
 void ui_draw_champion_damage(int16_t champion_index, int16_t damage);
 void ui_draw_champion_state(uint16_t champion_index);
 void ui_draw_all_champion_states(uint16_t attributes);
-void draw_status_box_portrait(int16_t champion_index);
+void ui_draw_status_box_portrait(int16_t champion_index);
 void inventory_draw_open(int16_t champion_index);
 void inventory_draw_close(int16_t champion_index);
-void draw_panel(void);
+void ui_draw_panel(void);
 /* Draws an object icon in an icon zone of the viewport. */
-void draw_icon_to_viewport(int16_t icon, int16_t zone);
-void draw_panel_food_water_poisoned(void);
-void draw_champion_skills_and_statistics(void);
+void ui_draw_icon_to_viewport(int16_t icon, int16_t zone);
+void ui_draw_panel_food_water_poisoned(void);
+void ui_draw_champion_skills_and_statistics(void);
 
 /* Inventory panel content (g_panel_content). */
 enum { PANEL_CONTENT_FOOD_WATER = 1, PANEL_CONTENT_SCROLL = 5, PANEL_CONTENT_CHEST = 6, PANEL_CONTENT_RESURRECT = 7 };
@@ -126,8 +126,8 @@ extern int16_t g_panel_content;
 int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
 /* The ATTACK (weapon) or DEFENSE (armour) meter of the advanced object panel: 1 with its label and value, else 0. */
 int panel_object_meter(uint16_t thing, const char **label, uint16_t *value);
-void draw_panel_object(uint16_t thing, int16_t pressing_eye);
-void draw_panel_eye(void);
+void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye);
+void ui_draw_panel_eye(void);
 void panel_redraw_scroll(void);
 void panel_click_in_chest(int16_t x, int16_t y);
 

@@ -163,7 +163,7 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 | `CREDITS_PALETTE`, `ENTRANCE_PALETTE` (CSB values) | `0x100a46`, `0x100a66` | `0x100f18`, `0x100f38` | `entrance_show_credits`, `entrance_draw` |
 | `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b8a` | `0x10105e` | `group_steal_from_champion` C`0x10e7f6` |
 | `LIST_SEPARATOR` ", " | `0x101ebe` | `0x10264a` | `build_object_attributes_string` C`0x110dcc` |
-| `BONES_SEPARATOR` " ", `ATTRIBUTES_SUFFIX` ")", `ATTRIBUTES_PREFIX` "(" | `0x101ec6`, `0x101ec8`, `0x101eca` | `0x10267a`, `0x1026ec`, `0x1026ea` | `draw_panel_object` C`0x111cba`, `0x111f12`, `0x111f16` |
+| `BONES_SEPARATOR` " ", `ATTRIBUTES_SUFFIX` ")", `ATTRIBUTES_PREFIX` "(" | `0x101ec6`, `0x101ec8`, `0x101eca` | `0x10267a`, `0x1026ec`, `0x1026ea` | `ui_draw_panel_object` C`0x111cba`, `0x111f12`, `0x111f16` |
 | `VIEWPORT_ORIGIN` | `0x10293a` | `0x103298` | `command_init_mouse_input_table` |
 | `MESSAGE_LINE_PAD` | `0x102966` | `0x1032ca` | `dialog_draw` C`0x128176` |
 | `DAMAGE_SIZE_LARGE`, `DAMAGE_SIZE_SMALL` | `0x102978`, `0x10297c` | `0x1032dc`, `0x1032e0` | `menus_draw_action_damage` |
@@ -221,10 +221,10 @@ Code references (Step 3 verified each address: a `pea` or `lea` with A5 = C`0x10
 |---|---|
 | `0x104680`, `0x104688` | `command_draw_sleep_screen`, `command_process_queue` |
 | `0x10264e` | `build_object_attributes_string` |
-| `0x10267c`–`0x10269a`, `0x1026a2`, `0x1026ae`, `0x1026bc`–`0x1026e2`, `0x1026ee`–`0x1026f8`, `0x102578` | `draw_panel_object` |
+| `0x10267c`–`0x10269a`, `0x1026a2`, `0x1026ae`, `0x1026bc`–`0x1026e2`, `0x1026ee`–`0x1026f8`, `0x102578` | `ui_draw_panel_object` |
 | `0x102dc2`, `0x102dcc` | `ui_draw_champion_state` |
 | `0x102740`, `0x102748`, `0x102750` | `inventory_toggle` |
-| `0x102524`, `0x102588`, `0x102d56` | `draw_champion_skills_and_statistics` (`0x102d56` also in `champion_add_skill_experience` and `magic_print_spell_failure_message`) |
+| `0x102524`, `0x102588`, `0x102d56` | `ui_draw_champion_skills_and_statistics` (`0x102d56` also in `champion_add_skill_experience` and `magic_print_spell_failure_message`) |
 | `0x104b7a`, `0x104b9a`, `0x104ba2`, `0x104bc0`, `0x104bea` | `magic_print_spell_failure_message` |
 | `0x102d3e`, `0x102d4e` | `champion_add_skill_experience` |
 | `0x104b2a`, `0x104b3e` | `action_is_action_performed` |
@@ -322,7 +322,7 @@ The footprints bit (`set_square_aspect` C`0x10d630`–`0x10d654`): for a corrido
 
 `set_current_map` (C`0x10d666`) changes the map, its size, and its door types. The ornament lists, the alcove, vi altar, and fountain indices, and the inscription index come from `load_current_map_graphics` of the party map. Thus a stored map of another level shows its squares with the ornament data of the party map. The port does the same.
 
-Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn panel content 9 or 10, CSB sets the panel attribute of the inventory champion and calls `draw_champion_state` each tick. `draw_champion_state` (C`0x115a04`) draws `draw_panel_object(leader hand object, 1)` while the eye is pressed and the drawn panel content is 9 or 10. Thus the map and the creature name follow the game.
+Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn panel content 9 or 10, CSB sets the panel attribute of the inventory champion and calls `draw_champion_state` each tick. `draw_champion_state` (C`0x115a04`) draws `ui_draw_panel_object(leader hand object, 1)` while the eye is pressed and the drawn panel content is 9 or 10. Thus the map and the creature name follow the game.
 
 Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_drawn` (C`0x1024cc`: 5, 9, or 10), not `g_panel_content` (C`0x1024ca`).
 

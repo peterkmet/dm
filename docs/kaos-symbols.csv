@@ -631,7 +631,7 @@ address,name,signature,subsystem
 0x1043f2,jt_load_object_names,,jump_table
 0x1043fa,jt_object_get_type,,jump_table
 0x104402,jt_object_get_icon_index,,jump_table
-0x10440a,jt_draw_leader_hand_object_name,,jump_table
+0x10440a,jt_ui_draw_leader_hand_object_name,,jump_table
 0x104412,jt_clear_leader_hand_object_name,,jump_table
 0x10441a,jt_extract_object_icon,,jump_table
 0x104422,jt_get_slot_box_zone,,jump_table
@@ -740,7 +740,7 @@ address,name,signature,subsystem
 0x10475a,jt_close_chest,,jump_table
 0x104762,jt_process_click_on_mouth,,jump_table
 0x10476a,jt_draw_stop_pressing_mouth,,jump_table
-0x104772,jt_draw_status_box_portrait,,jump_table
+0x104772,jt_ui_draw_status_box_portrait,,jump_table
 0x10477a,jt_process_click_on_eye,,jump_table
 0x104782,jt_draw_stop_pressing_eye,,jump_table
 0x10478a,jt_inventory_toggle,,jump_table
@@ -1109,7 +1109,7 @@ address,name,signature,subsystem
 0x10791c,load_object_names,void load_object_names(void),object
 0x1079a4,object_get_type,int16_t object_get_type(uint16_t thing),object
 0x1079dc,object_get_icon_index,int16_t object_get_icon_index(uint16_t thing),object
-0x107abe,draw_leader_hand_object_name,void draw_leader_hand_object_name(uint16_t thing),object
+0x107abe,ui_draw_leader_hand_object_name,void ui_draw_leader_hand_object_name(uint16_t thing),object
 0x107baa,clear_leader_hand_object_name,void clear_leader_hand_object_name(void),object
 0x107bb8,extract_object_icon,"void extract_object_icon(int16_t icon_index, uint8_t *bitmap)",object
 0x107c3a,get_slot_box_zone,"void get_slot_box_zone(int16_t zone, int16_t *box)",object
@@ -1268,7 +1268,7 @@ address,name,signature,subsystem
 0x10e898,blit_shrink_with_palette_changes,"void blit_shrink_with_palette_changes(const uint8_t *src, uint8_t *dst, int16_t src_width, int16_t src_height, int16_t dst_width, int16_t dst_height, const uint8_t *palette_changes)",video
 0x10eae2,flip_bitmap_horizontal_raw,"void flip_bitmap_horizontal_raw(uint8_t *pixels, int16_t width, int16_t height)",video
 0x10eb38,g_byte_bit_reverse,const uint8_t g_byte_bit_reverse[256]; /* in code section */,video
-0x10ec40,draw_icon_to_viewport,"void draw_icon_to_viewport(int16_t icon_index, int16_t zone)",inventory
+0x10ec40,ui_draw_icon_to_viewport,"void ui_draw_icon_to_viewport(int16_t icon_index, int16_t zone)",inventory
 0x10ec88,panel_print_line,void panel_print_line(const char *text),inventory
 0x10ed20,build_object_attributes_string,"void build_object_attributes_string(uint16_t potential_attributes, uint16_t actual_attributes, const char **attribute_strings, char *dst, const char *prefix, const char *suffix)",inventory
 0x10edd6,set_dungeon_view_palette,void set_dungeon_view_palette(void),inventory
@@ -1278,18 +1278,18 @@ address,name,signature,subsystem
 0x10f048,draw_panel_scroll,void draw_panel_scroll(const Scroll *scroll),inventory
 0x10f14c,open_and_draw_chest,"void open_and_draw_chest(uint16_t chest_thing, Container *chest, int16_t pressing_eye)",inventory
 0x10f208,close_chest,void close_chest(void),inventory
-0x10f28a,draw_panel_object,"void draw_panel_object(uint16_t thing, int16_t pressing_eye)",inventory
+0x10f28a,ui_draw_panel_object,"void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye)",inventory
 0x10f6ac,draw_panel_horizontal_bar,"void draw_panel_horizontal_bar(int16_t value, int16_t zone, int16_t color)",inventory
-0x10f74e,draw_panel_food_water_poisoned,void draw_panel_food_water_poisoned(void),inventory
+0x10f74e,ui_draw_panel_food_water_poisoned,void ui_draw_panel_food_water_poisoned(void),inventory
 0x10f7d2,draw_panel_resurrect_reincarnate,void draw_panel_resurrect_reincarnate(void),inventory
-0x10f7ee,draw_panel,void draw_panel(void),inventory
+0x10f7ee,ui_draw_panel,void ui_draw_panel(void),inventory
 0x10f860,adjust_statistic_current_value,"void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta)",inventory
 0x10f8da,process_click_on_mouth,void process_click_on_mouth(void),inventory
 0x10fcf0,draw_stop_pressing_mouth,void draw_stop_pressing_mouth(void),inventory
-0x10fd08,draw_champion_skills_and_statistics,void draw_champion_skills_and_statistics(void),inventory
+0x10fd08,ui_draw_champion_skills_and_statistics,void ui_draw_champion_skills_and_statistics(void),inventory
 0x10ff32,process_click_on_eye,void process_click_on_eye(void),inventory
 0x10ff94,draw_stop_pressing_eye,void draw_stop_pressing_eye(void),inventory
-0x10fff0,draw_status_box_portrait,void draw_status_box_portrait(int16_t champion_index),inventory
+0x10fff0,ui_draw_status_box_portrait,void ui_draw_status_box_portrait(int16_t champion_index),inventory
 0x11005a,inventory_toggle,void inventory_toggle(int16_t champion_index),inventory
 0x110254,move_set_party_direction,void move_set_party_direction(int16_t direction),champion
 0x110296,champion_get_index_in_cell,int16_t champion_get_index_in_cell(int16_t cell),champion

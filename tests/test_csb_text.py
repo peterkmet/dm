@@ -143,7 +143,7 @@ def test_prison_recruit_shows_csb_text(lib):
     lib.champion_add_candidate_to_party(lib.recruit_portrait_index(t))
     assert c16.in_dll(lib, "g_party_champion_count").value == 1
     lib.inventory_draw_open(0)
-    lib.draw_champion_skills_and_statistics()
+    lib.ui_draw_champion_skills_and_statistics()
     lib.champion_click_in_resurrect_reincarnate_panel(PANEL_RESURRECT)
     lib.magic_print_spell_failure_message(0, SPELL_FAILURE_NEEDS_MORE_PRACTICE, SKILL_WIZARD)
     rows = message_rows(lib)

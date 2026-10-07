@@ -190,7 +190,7 @@ Bitmap ui_champion_portrait(int16_t champion_index)
 }
 
 /* Draws the portrait in the status box while the inventory is open. */
-void draw_status_box_portrait(int16_t champion_index)
+void ui_draw_status_box_portrait(int16_t champion_index)
 {
     Bitmap screen = ui_screen(), portrait = ui_champion_portrait(champion_index);
     int16_t zone = (int16_t)(ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index);
@@ -249,7 +249,7 @@ static uint16_t draw_status_box(uint16_t champion_index, uint16_t attr, int inv)
     if (g_party.shield_defense > 0 || c->shield_defense) shields[n++] = GFX_SHIELD_PARTY;
     while (n--) ui_blit_graphic_box(&screen, shields[n], &box, COLOR_FLESH);
     if (inv) {
-        draw_status_box_portrait((int16_t)champion_index);
+        ui_draw_status_box_portrait((int16_t)champion_index);
         return attr | CHAMPION_ATTR_STATISTICS;
     }
     return attr | CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_WOUNDS | CHAMPION_ATTR_STATISTICS | CHAMPION_ATTR_NAME_TITLE;
@@ -310,7 +310,7 @@ void ui_draw_champion_state(uint16_t champion_index)
         }
         if (attr & CHAMPION_ATTR_ICON) draw_icon(champion_index);
         if (attr & CHAMPION_ATTR_PANEL && inv) {
-            draw_panel();
+            ui_draw_panel();
             attr |= CHAMPION_ATTR_VIEWPORT;
         }
         if (attr & CHAMPION_ATTR_ACTION_HAND) {
@@ -348,7 +348,7 @@ static void food_water_bar(int16_t value, int16_t zone, uint8_t color)
 }
 
 /* Draws the food and water panel of the inventory, with "POISONED" when poisoned. */
-void draw_panel_food_water_poisoned(void)
+void ui_draw_panel_food_water_poisoned(void)
 {
     scroll_redraw = 0;
     const Champion *c = &g_champions[g_inventory_champion_ordinal - 1];
@@ -364,7 +364,7 @@ void draw_panel_food_water_poisoned(void)
 
 /* Draws the inventory panel: resurrect/reincarnate for a candidate, the open scroll or chest in
    the action hand, else food and water. */
-void draw_panel(void)
+void ui_draw_panel(void)
 {
     scroll_redraw = 0;
     close_chest();
@@ -377,8 +377,8 @@ void draw_panel(void)
     g_panel_content = thing == THING_NONE ? PANEL_CONTENT_FOOD_WATER
                     : THING_TYPE(thing) == THING_SCROLL ? PANEL_CONTENT_SCROLL
                     : THING_TYPE(thing) == THING_CONTAINER ? PANEL_CONTENT_CHEST : PANEL_CONTENT_FOOD_WATER;
-    if (g_panel_content == PANEL_CONTENT_FOOD_WATER) draw_panel_food_water_poisoned();
-    else draw_panel_object(thing, 0);
+    if (g_panel_content == PANEL_CONTENT_FOOD_WATER) ui_draw_panel_food_water_poisoned();
+    else ui_draw_panel_object(thing, 0);
 }
 
 /* The position of zone (a 1 x 1 box). */
@@ -400,7 +400,7 @@ const char *ui_skill_rank_name(int16_t level)
 
 /* Draws the eye panel: base skill levels above 1 (green after a level up), then the six
    statistics with current value (red below maximum, green above) and maximum value. */
-void draw_champion_skills_and_statistics(void)
+void ui_draw_champion_skills_and_statistics(void)
 {
     scroll_redraw = 0;
     int16_t ci = g_inventory_champion_ordinal - 1, x, y, vx;
@@ -558,7 +558,7 @@ static void print_panel_line(int16_t x, int16_t *y, const char *text)
 }
 
 /* Draws an object icon in an icon zone of the viewport. */
-void draw_icon_to_viewport(int16_t icon, int16_t zone)
+void ui_draw_icon_to_viewport(int16_t icon, int16_t zone)
 {
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap bm = { UI_ICON_SIZE, UI_ICON_SIZE, px };
@@ -785,7 +785,7 @@ static void open_and_draw_chest(uint16_t chest, int16_t pressing_eye)
 
 /* Draws an object in the panel: the open scroll, the open chest, or the name, icon, and
    description of any other object; then the arrow, or the eye while it is pressed. */
-void draw_panel_object(uint16_t thing, int16_t pressing_eye)
+void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye)
 {
     Bitmap *vp = ui_viewport();
     scroll_redraw = 0;
@@ -801,7 +801,7 @@ void draw_panel_object(uint16_t thing, int16_t pressing_eye)
         ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
         ui_blit_graphic(vp, GFX_PANEL_OBJECT_CIRCLE, ZONE_PANEL_OBJECT_CIRCLE, COLOR_DARKEST_GRAY);
         ui_print_zone(vp, ZONE_PANEL_OBJECT_NAME, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, name);
-        draw_icon_to_viewport(object_get_icon_index(thing), ZONE_PANEL_OBJECT_ICON);
+        ui_draw_icon_to_viewport(object_get_icon_index(thing), ZONE_PANEL_OBJECT_ICON);
         zone_point(ZONE_PANEL_OBJECT_TEXT, &x, &y);
         y = PANEL_OBJECT_TEXT_Y;
         for (int16_t i = 0; i < count; i++) print_panel_line(x, &y, lines[i]);
@@ -812,10 +812,10 @@ void draw_panel_object(uint16_t thing, int16_t pressing_eye)
 
 /* The panel while the eye is pressed: the leader hand object, or the skills and statistics.
    ponytail: the leader hand object name stays; the original clears it until the eye is released. */
-void draw_panel_eye(void)
+void ui_draw_panel_eye(void)
 {
-    if (!g_leader_empty_handed) draw_panel_object(g_leader_hand_object, 1);
-    else draw_champion_skills_and_statistics();
+    if (!g_leader_empty_handed) ui_draw_panel_object(g_leader_hand_object, 1);
+    else ui_draw_champion_skills_and_statistics();
 }
 
 /* CSB, each tick with the inventory open: a scroll with a creature name or the magic map draws again. */
@@ -823,7 +823,7 @@ void panel_redraw_scroll(void)
 {
     if (!scroll_redraw) return;
     if (scroll_redraw_eye) {
-        draw_panel_eye();
+        ui_draw_panel_eye();
         ui_draw_viewport();
         return;
     }

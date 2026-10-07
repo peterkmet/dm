@@ -13,7 +13,7 @@ from test_view import SCRATCH, png
 
 # Original addresses (docs/kaos-symbols.csv).
 DRAW_PANEL_OBJECT, PANEL_PRINT_LINE, PRINT_ZONE = 0x10F28A, 0x10EC88, 0x109A04
-STUBS = (0x1072C6, 0x10EC40, 0x10EFAC)  # blit_graphic_to_viewport_zone, draw_icon_to_viewport, draw_panel_arrow_or_eye
+STUBS = (0x1072C6, 0x10EC40, 0x10EFAC)  # blit_graphic_to_viewport_zone, ui_draw_icon_to_viewport, draw_panel_arrow_or_eye
 THING_DATA, STRINGS, STRING_COUNT, OBJECT_NAMES = 0x101CEA, 0x101E58, 0x101E52, 0x100266
 CHAMPIONS, INVENTORY_ORDINAL, COUNT, DIRECTION = 0x101F54, 0x101EA8, 0x1001E8, 0x1001EA
 RTS = b"\x4e\x75"
@@ -67,7 +67,7 @@ def port_text(lib, thing):
 
 
 class Original:
-    """draw_panel_object of KAOS with the dungeon things, strings, and champions of the port; the
+    """ui_draw_panel_object of KAOS with the dungeon things, strings, and champions of the port; the
     name print and panel_print_line record their text, the graphics calls return at once."""
 
     def __init__(self, lib):
@@ -248,7 +248,7 @@ def test_render_scroll_and_eye(game, party):
     save_png(game, "scroll")
     sword = next(t for t in things_of(game, 5)[0] if game.gfx_object_name(game.object_get_icon_index(t)) == b"SWORD")
     game.inventory_put_object_in_leader_hand(sword)
-    game.draw_panel_eye()
+    game.ui_draw_panel_eye()
     game.ui_draw_viewport()
     save_png(game, "eye_sword")
     name, lines = port_text(game, sword)
@@ -267,7 +267,7 @@ def test_eat_food_redraws_the_food_bar(game, party):
     party[0].food = 100
     game.inventory_draw_open(0)
     c16.in_dll(game, "g_panel_content").value = 1  # food and water
-    game.draw_panel()
+    game.ui_draw_panel()
     game.inventory_put_object_in_leader_hand(thing)
     game.ui_viewport.restype = ctypes.POINTER(Bitmap)
     viewport = game.ui_viewport().contents

@@ -252,7 +252,7 @@ static void refresh_interface(void)
         shown_hand_object = g_leader_hand_object;
         shown_hand_icon = icon;
         if (shown_hand_object == THING_NONE) ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
-        else draw_leader_hand_object_name(shown_hand_object);
+        else ui_draw_leader_hand_object_name(shown_hand_object);
     }
     ui_draw_message_area();
 }

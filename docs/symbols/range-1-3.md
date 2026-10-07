@@ -155,7 +155,7 @@ The [main loop](../kaos-map.md#main-loop) section of the map describes `game_loo
 - `object_get_icon_index(thing)` starts from `g_object_info[i].type` and adds an offset for some icons: compass (0) + party direction, lit torch (4) + `g_torch_charge_to_icon_offset[charges]`, and +1 for some items when charge bits are set.
 - Icons are 16 per row in graphics `0x2a`–`0x30`. `g_icon_graphic_first_index` holds the first icon of each graphic (0, 32, ..., 192).
 - `g_slot_boxes` has 4-byte entries: zone index, current icon index. Entries 0–7 are on the screen (action hands), higher entries are in the viewport (inventory and chest).
-- `draw_leader_hand_object_name` writes the object name into zone `0x11`. For a champion bones object (icon `0x93`), it combines the champion name and a suffix. The order depends on `g_language` (French puts the suffix first).
+- `ui_draw_leader_hand_object_name` writes the object name into zone `0x11`. For a champion bones object (icon `0x93`), it combines the champion name and a suffix. The order depends on `g_language` (French puts the suffix first).
 
 ## Memory helpers
 
