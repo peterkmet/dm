@@ -16,6 +16,7 @@
 #define FTL_HEADER_BYTES 20
 #define FTL_ENTRY_BYTES 12
 #define FTL_MAX_ENTRIES 100
+#define FTL_CHECKSUM_WEIGHTS 256      /* entry byte i counts i % 256 + 1 times */
 enum { SECTION_INFO = 16, SECTION_DATA, SECTION_CODE, SECTION_COUNT = 3 };
 
 /* Info section fields. The entry point offsets follow the fixed fields. */
@@ -38,6 +39,7 @@ enum { SECTION_INFO = 16, SECTION_DATA, SECTION_CODE, SECTION_COUNT = 3 };
 #define JUMP_ENTRY_BYTES 8
 #define JUMP_ENTRY_JMP 2
 #define JMP_ABS_LONG_OPCODE 0x4ef9
+#define JMP_ABS_LONG_BYTES 6          /* opcode word and address long */
 
 /* Packed code section: magic, word count, a dictionary of 1920 words, then the nibble stream. */
 #define RSHARP_MAGIC 0x5223
@@ -46,6 +48,8 @@ enum { SECTION_INFO = 16, SECTION_DATA, SECTION_CODE, SECTION_COUNT = 3 };
 #define RSHARP_SHORT_CODES 128
 #define RSHARP_STREAM (RSHARP_DICTIONARY + 2 * (RSHARP_SHORT_CODES + 7 * 256))
 #define RSHARP_LITERAL 15
+#define NIBBLE_BITS 4
+#define NIBBLE_MASK 15
 
 FtlImage kaos;
 
@@ -72,7 +76,7 @@ static unsigned nib(Nibbles *b, int count)
 {
     unsigned v = 0;
     for (; count; count--, b->pos++)
-        v = v << 4 | (b->pos < b->n ? b->s[b->pos / 2] >> (b->pos % 2 ? 0 : 4) & 15 : 0);
+        v = v << NIBBLE_BITS | (b->pos < b->n ? b->s[b->pos / 2] >> (b->pos % 2 ? 0 : NIBBLE_BITS) & NIBBLE_MASK : 0);
     return v;
 }
 
@@ -116,8 +120,8 @@ static int find_sections(const uint8_t *raw, size_t len, const uint8_t *sec[SECT
     count = BE16(raw + FTL_HEADER_ENTRY_COUNT);
     if (count > FTL_MAX_ENTRIES || len < FTL_HEADER_BYTES + count * FTL_ENTRY_BYTES) return -1;
     for (int i = FTL_HEADER_VERSION; i < FTL_HEADER_BYTES; i++) s += raw[i] * i;
-    for (uint32_t i = 0; i < count * FTL_ENTRY_BYTES; i++) s += raw[FTL_HEADER_BYTES + i] * (i % 256 + 1);
-    if ((uint16_t)s != BE16(raw + FTL_HEADER_CHECKSUM)) return -1;
+    for (uint32_t i = 0; i < count * FTL_ENTRY_BYTES; i++) s += raw[FTL_HEADER_BYTES + i] * (i % FTL_CHECKSUM_WEIGHTS + 1);
+    if ((uint16_t)s != BE16(raw + FTL_HEADER_CHECKSUM)) return -1; /* the checksum is the low word of the sum */
     for (uint32_t i = 0; i < count; i++) {
         const uint8_t *e = raw + FTL_HEADER_BYTES + i * FTL_ENTRY_BYTES;
         uint16_t tag = BE16(e);
@@ -150,10 +154,10 @@ static int64_t expand_data(const uint8_t *r, uint32_t rle_len, uint8_t *mem, uin
 static int relocate(const uint8_t *table, uint32_t reloc_len, uint8_t *mem, uint64_t size, uint64_t data_offset, uint32_t data_base)
 {
     for (const uint8_t *p = table; p + 1 < table + reloc_len; p += 2) {
-        int64_t at = (int64_t)data_offset + (int16_t)BE16(p);
+        int64_t at = (int64_t)data_offset + (int16_t)BE16(p); /* signed offset */
         if (at < 0 || (uint64_t)at + 4 > size) return -1;
         uint32_t v = BE32(mem + at) + data_base;
-        for (int k = 0; k < 4; k++) mem[at + k] = v >> (24 - 8 * k);
+        WR32(mem + at, v);
     }
     return 0;
 }
@@ -164,9 +168,9 @@ static int write_jump_table(const uint8_t *info, uint32_t info_size, uint8_t *me
     for (uint32_t i = 0; INFO_ENTRY_POINTS + i * 4 + 4 <= info_size; i++) {
         uint64_t at = table_offset + i * JUMP_ENTRY_BYTES + JUMP_ENTRY_JMP;
         uint32_t v = code_base + BE32(info + INFO_ENTRY_POINTS + i * 4);
-        if (at + 6 > size) return -1;
-        uint8_t jmp[6] = { JMP_ABS_LONG_OPCODE >> 8, JMP_ABS_LONG_OPCODE & 255, v >> 24, v >> 16, v >> 8, v };
-        memcpy(mem + at, jmp, 6);
+        if (at + JMP_ABS_LONG_BYTES > size) return -1;
+        WR16(mem + at, JMP_ABS_LONG_OPCODE);
+        WR32(mem + at + 2, v);
     }
     return 0;
 }
@@ -185,7 +189,7 @@ int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
     uint32_t jt_off = BE32(info + INFO_JUMP_TABLE), csize = BE32(info + INFO_CODE_SIZE);
     uint16_t info_chk = BE16(info + INFO_CHECKSUM), ws = 0;
     for (uint32_t i = 0; i + 1 < secsz[0]; i += 2) ws += BE16(info + i);
-    if ((uint16_t)(ws - info_chk) != info_chk || sum8(data, secsz[1]) != BE16(info + INFO_DATA_SUM)) return -1;
+    if ((uint16_t)(ws - info_chk) != info_chk || sum8(data, secsz[1]) != BE16(info + INFO_DATA_SUM)) return -1; /* 16-bit wrap */
     uint32_t code_len = secsz[2];
     const uint8_t *codep = sec[2];
     if (BE16(info + INFO_CODE_PACKED) && !(codep = code = unpack(sec[2], secsz[2], &code_len))) return -1;

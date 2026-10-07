@@ -16,7 +16,6 @@ decimal engine/champion.c open: Task 9
 decimal platform/control.c open: Task 11
 decimal ui/draw.c open: Task 11
 decimal engine/dungeon.c open: Task 8
-decimal data/ftl.c open: Task 8
 decimal engine/game.c open: Task 9
 decimal engine/game.h open: Task 9
 decimal data/graphics.c open: Task 8
