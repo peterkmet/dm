@@ -30,7 +30,6 @@ decimal engine/projectile.c open: Task 10
 decimal engine/projectile.h open: Task 10
 decimal engine/recruit.c open: Task 9
 decimal engine/recruit.h open: Task 9
-decimal engine/savefile.c open: Task 8
 decimal engine/savegame.c open: Task 10
 decimal platform/state_json.c open: Task 11
 decimal engine/timeline_process.c open: Task 10
