@@ -617,6 +617,7 @@ Decisions made during Task 9:
 - The champion index keeps its type in each signature (`uint16_t` in most, `int16_t` where -1 means no champion). The values are 0 to 3, so both types give the same result. One type for all signatures would change most engine headers and their `ctypes` bindings.
 - `champion.c`: the constants are local `#define`s of `champion.c`, as its other rule constants. `with_cell` is `THING_WITH_CELL` of `map.h`. The scent word of `fade_scents` is `move_get_scent` (was the static `scent_of` of `move.c`).
 - `action.c`: `action_is_action_performed` gets the static `is_door_bashed`, `is_explosion_action_cast`, and `is_action_hand_object_thrown`. It stays above 60 lines (one short case for each action): `long` line with this reason. The static predicates of the file return `bool` too. `tests/test_actions.py` and `tests/test_csb_rules.py` bind `action_is_action_performed` with `restype = ctypes.c_bool`.
+- `inventory.c`: the object modifier and potion values are local `#define`s, one for each object (the staff mana table names the 9 staffs and wands of icons 58-66). `ARMOUR_SHARP_RESISTANCE` (bits 0-2) joins `ARMOUR_SHIELD` in `inventory.h`. The unsigned divisions, compare, and shift of the Mon, Ee, and Vi potions keep their casts: a negative maximum or a current mana above 900 gives another result without them.
 
 ---
 

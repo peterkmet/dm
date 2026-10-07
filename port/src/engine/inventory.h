@@ -12,7 +12,7 @@ enum {
     POTION_VI, POTION_WATER, POTION_EMPTY_FLASK = 20,
 };
 enum { JUNK_BONES = 5 };
-enum { ARMOUR_SHIELD = 0x80 };            /* ArmourInfo.attributes */
+enum { ARMOUR_SHARP_RESISTANCE = 0x07, ARMOUR_SHIELD = 0x80 };   /* ArmourInfo.attributes */
 enum { OBJECT_EDIBLE = 1 };               /* ObjectInfo.allowed_slots: the mouth */
 
 extern int16_t g_inventory_champion_ordinal;  /* 0: no inventory open */

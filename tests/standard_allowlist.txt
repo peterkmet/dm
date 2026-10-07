@@ -21,7 +21,6 @@ decimal engine/game.h open: Task 9
 decimal data/graphics.c open: Task 8
 decimal engine/group.c open: Task 10
 decimal engine/group.h open: Task 10
-decimal engine/inventory.c open: Task 9
 decimal engine/magic.c open: Task 9
 decimal platform/main.c open: Task 11
 decimal engine/map.c open: Task 8
