@@ -30,7 +30,7 @@ Ghidra shows this call as an indirect call through a global, for example `(*DAT_
 
 `kaos-symbols.csv` labels every slot as `jt_<target name>` (or `jt_fun_<address>` when the target has no name yet). The decompiled C then shows `(*jt_timeline_process)()`.
 
-Seven slots are also function pointers: interrupt handlers and callbacks (`0x1041d2`, `0x104282`, `0x104552`, `0x10456a`, `0x10457a`, `0x104582`, `0x104a32`). Ghidra turns them into thunk functions, so `decomp/dm/KAOS.c` has 756 function headers.
+Seven slots are also function pointers: interrupt handlers and callbacks (`0x1041d2`, `0x104282`, `0x104552`, `0x10456a`, `0x10457a`, `0x104582`, `0x104a32`). Ghidra turns them into thunk functions, so `reference/decomp/dm/KAOS.c` has 756 function headers.
 
 Ghidra drops most arguments of a jump-table call. For example, `game_loop` pushes direction, X, and Y before `jt_draw_dungeon_view`, but the C output shows one argument. Read the disassembly for jump-table calls.
 

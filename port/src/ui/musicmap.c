@@ -1,7 +1,7 @@
 #include "music.h"
 
 /* FM-Towns CSB 3.1: the CD track of each square (CHTWE.EXP table), 0: no change.
-   Index: map, y, x on the CSB maps 0-9; squares outside a map are 0. Source: origs/extracted/music_map.json. */
+   Index: map, y, x on the CSB maps 0-9; squares outside a map are 0. Source: reference/extracted/music_map.json. */
 const uint8_t g_music_csb_square_tracks[MUSIC_CSB_MAP_COUNT][MUSIC_CSB_MAP_SIZE][MUSIC_CSB_MAP_SIZE] = {
     { /* map 0 */
         {  0,  0,  7,  0,  2,  2,  2,  2,  2,  2,  2,  2,  2,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,  2,  2,  0,  0,  0,  0,  0 },

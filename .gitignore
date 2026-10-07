@@ -5,10 +5,9 @@ game/
 __pycache__/
 .pytest_cache/
 .DS_Store
-decomp/
+reference/
 build/
 game-csb/
 playthroughs/*
 !playthroughs/template/
 playthroughs/template/DMGAME.DAT
-origs/

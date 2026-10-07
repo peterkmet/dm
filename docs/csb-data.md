@@ -4,8 +4,8 @@ This page compares the data files of Chaos Strikes Back (CSB) for the Amiga with
 
 Inputs:
 
-- DM files: `game/`. DM engine: `KAOS.FTL`, decompiled to `decomp/dm/KAOS.c`.
-- CSB disk A (game disk): `game-csb/`. CSB engine: `APPB.FTL` (the disk label says V3.1), decompiled to `decomp/csb-a/APPB.c`. Load base `0x100000`, data base (A5) `0x10511e`.
+- DM files: `game/`. DM engine: `KAOS.FTL`, decompiled to `reference/decomp/dm/KAOS.c`.
+- CSB disk A (game disk): `game-csb/`. CSB engine: `APPB.FTL` (the disk label says V3.1), decompiled to `reference/decomp/csb-a/APPB.c`. Load base `0x100000`, data base (A5) `0x10511e`.
 - CSB disk B (utility disk): `game-csb/disk-b/`.
 
 All addresses in this page are image addresses after `dm-ftl` with base `0x100000`. "Verified" means a test output or a code address supports the statement. "Unverified" marks an inference.
