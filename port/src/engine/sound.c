@@ -1,5 +1,7 @@
+#include <stdbool.h>
 #include <string.h>
 #include "dungeon.h"
+
 #include "ftl.h"
 #include "game.h"
 #include "graphics.h"
@@ -11,6 +13,8 @@
 #define G_SOUND_VOLUME_TABLE 0x100696 /* uint8_t[25][25] */
 
 #define SOUND_ENTRY_SIZE 12
+#define SOUND_ENTRY_RATE 3                  /* byte offsets in a sound entry */
+#define SOUND_ENTRY_PRIORITY 4
 #define SOUND_SAMPLE_HEADER 2               /* bytes before the sample data in the graphic */
 #define SOUND_PERIOD_PER_RATE 72800         /* Paula period = this / sound rate */
 #define SOUND_HEARING_RANGE 12              /* squares to each side and ahead or behind */
@@ -46,11 +50,11 @@ uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][SIDE_COUNT];
 
 /* Graphic of a sound; negative when the sound has no sample. */
 static int16_t sound_graphic(int16_t sound) { return kaos_s16(G_SOUNDS + SOUND_ENTRY_SIZE * sound); }
-static uint8_t sound_rate(int16_t sound) { return kaos_u8(G_SOUNDS + SOUND_ENTRY_SIZE * sound + 3); }
+static uint8_t sound_rate(int16_t sound) { return kaos_u8(G_SOUNDS + SOUND_ENTRY_SIZE * sound + SOUND_ENTRY_RATE); }
 /* Priority of a sound: a higher value replaces a pending sound of the same loudness. */
-static uint8_t sound_priority(int16_t sound) { return kaos_u8(G_SOUNDS + SOUND_ENTRY_SIZE * sound + 4); }
+static uint8_t sound_priority(int16_t sound) { return kaos_u8(G_SOUNDS + SOUND_ENTRY_SIZE * sound + SOUND_ENTRY_PRIORITY); }
 
-static int sound_exists(int16_t sound)
+static bool sound_exists(int16_t sound)
 {
     return sound >= 0 && sound < SOUND_COUNT && sound_graphic(sound) >= 0;
 }
@@ -107,7 +111,7 @@ static uint64_t voice_position(const Voice *v)
     return (uint64_t)v->frame * SOUND_PAL_CLOCK / ((uint64_t)v->period * SOUND_OUTPUT_RATE);
 }
 
-static int voice_busy(const Voice *v)
+static bool voice_busy(const Voice *v)
 {
     return v->data && voice_position(v) < v->length;
 }
@@ -168,7 +172,7 @@ void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mo
     if (!sound_exists(sound)) return;
     if (mode > SOUND_MODE_AFTER_TICK) {
         TimelineEvent e = { EVENT_MAP_TIME(g_party_map_index, g_game_time + (mode - 1)), EVENT_PLAY_SOUND,
-                            sound_priority(sound), EVENT_SQUARE(map_x, map_y), (uint16_t)sound };
+                            sound_priority(sound), EVENT_SQUARE(map_x, map_y), sound };
         timeline_add_event(&e);
         return;
     }
@@ -252,13 +256,13 @@ void sound_mix(int16_t *out, int frames)
             mix[c] = v->data[i] * v->volume * 2;
             v->frame++;
         }
-        out[2 * f] = (int16_t)(mix[0] + mix[3]);
-        out[2 * f + 1] = (int16_t)(mix[1] + mix[2]);
+        out[2 * f] = mix[0] + mix[3];
+        out[2 * f + 1] = mix[1] + mix[2];
     }
 }
 
 /* Plays a sound at full volume on both sides. */
 void sound_demo_play(int index)
 {
-    sound_play_sample((int16_t)index, (const uint8_t[]){ SOUND_MAX_VOLUME, SOUND_MAX_VOLUME });
+    sound_play_sample(index, (const uint8_t[]){ SOUND_MAX_VOLUME, SOUND_MAX_VOLUME });
 }
