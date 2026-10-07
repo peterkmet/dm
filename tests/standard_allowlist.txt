@@ -38,7 +38,6 @@ decimal engine/savegame.c open: Task 10
 decimal data/spells.c open: Task 8
 decimal data/tables.c open: Task 8
 decimal engine/timeline_process.c open: Task 10
-decimal ui/ui_champion.c open: Task 11
 decimal ui/ui_menus.c open: Task 11
 decimal ui/ui.c open: Task 11
 decimal ui/video.c open: Task 11

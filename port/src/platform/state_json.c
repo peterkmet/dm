@@ -25,7 +25,6 @@
 #define STATE_TEXT_SIZE 512
 #define MAP_MAX_SIZE 63               /* the widest map row (a map is at most 32 squares wide) */
 #define MAP_GRID_PREFIX 3             /* "yy " in front of a grid row */
-#define STAMINA_DISPLAY_UNIT 10       /* the inventory shows stamina in tenths of the stored value */
 #define JSON_START_SIZE 1024          /* the first buffer of a JSON text */
 #define NUMBER_TEXT_SIZE 24           /* a long in decimal digits with its sign */
 
@@ -119,12 +118,12 @@ static void key_int(Json *j, const char *key, long value) { json_key(j, key); js
 static void key_str(Json *j, const char *key, const char *text) { json_key(j, key); json_str(j, text); }
 static void key_bool(Json *j, const char *key, int value) { json_key(j, key); json_bool(j, value); }
 
-/* A value in tenths as a decimal number, as the load line shows it. */
+/* A weight in tenths of a kilogram as a decimal number, as the load line shows it. */
 static void tenths(Json *j, long value)
 {
     char buf[NUMBER_TEXT_SIZE];
     separate(j);
-    snprintf(buf, sizeof buf, "%ld.%ld", value / DECIMAL_BASE, value % DECIMAL_BASE);
+    snprintf(buf, sizeof buf, "%ld.%ld", value / WEIGHT_TENTHS, value % WEIGHT_TENTHS);
     json_raw(j, buf);
 }
 
