@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.2 - 2026-10-07
+
+### Changed
+
+- `reference/` holds the local research material: the original disks and archives (`media/`, was `origs/`), the music collection (`music/`), the extracted versions of the other platforms (`extracted/`), and the decompiled code (`decomp/`, was `decomp/` at the root).
+- The research scripts of the other platforms are in `tools/platforms/` and in git (were in `origs/extracted/`).
+- The LLM coordinator runs as a subagent: it starts a player subagent per session, plays a batch of sessions, and hands over in `coordinator/handover.md`.
+
 ## 0.13.1 - 2026-10-07
 
 ### Changed
