@@ -607,24 +607,24 @@ address,name,signature,subsystem
 0x125932,command_move_party,void command_move_party(int16_t command),command
 0x125c16,command_process_click_in_spell_area,"void command_process_click_in_spell_area(int16_t x, int16_t y)",command
 0x125d24,command_process_click_in_action_area,"void command_process_click_in_action_area(int16_t x, int16_t y)",command
-0x125e18,menus_print_action_message,void menus_print_action_message(const char *text),menus
+0x125e18,action_print_action_message,void action_print_action_message(const char *text),menus
 0x125eb0,menus_get_action_hand_charge_count,uint16_t menus_get_action_hand_charge_count(void),menus
 0x125f18,menus_set_action_list,void menus_set_action_list(const uint8_t *action_set),menus
 0x125fd6,menus_clear_acting_champion,void menus_clear_acting_champion(void),menus
 0x12600a,menus_set_acting_champion,void menus_set_acting_champion(uint16_t champion_index),menus
 0x1260a6,menus_refresh_action_area,void menus_refresh_action_area(void),menus
-0x126174,menus_did_click_trigger_action,int16_t menus_did_click_trigger_action(int16_t action_list_index),menus
-0x1261fc,menus_is_group_frightened_by_action,"int16_t menus_is_group_frightened_by_action(int16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y)",menus
-0x126328,menus_is_melee_action_performed,"int16_t menus_is_melee_action_performed(uint16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y, int16_t skill_index)",menus
-0x126460,menus_is_party_spell_or_fire_shield_successful,"int16_t menus_is_party_spell_or_fire_shield_successful(Champion *champion, int16_t spell_shield, uint16_t ticks, int16_t use_mana)",menus
-0x126524,menus_create_event70_light,"void menus_create_event70_light(int16_t light_power, int16_t ticks)",menus
-0x126564,menus_decrement_charges,void menus_decrement_charges(Champion *champion),menus
+0x126174,action_did_click_trigger_action,int16_t action_did_click_trigger_action(int16_t action_list_index),menus
+0x1261fc,action_is_group_frightened_by_action,"int16_t action_is_group_frightened_by_action(int16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y)",menus
+0x126328,action_is_melee_action_performed,"int16_t action_is_melee_action_performed(uint16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y, int16_t skill_index)",menus
+0x126460,magic_is_party_spell_or_fire_shield_successful,"int16_t magic_is_party_spell_or_fire_shield_successful(Champion *champion, int16_t spell_shield, uint16_t ticks, int16_t use_mana)",menus
+0x126524,magic_create_light_event,"void magic_create_light_event(int16_t light_power, int16_t ticks)",menus
+0x126564,action_decrement_charges,void action_decrement_charges(Champion *champion),menus
 0x126616,menus_set_champion_direction_to_party_direction,void menus_set_champion_direction_to_party_direction(Champion *champion),menus
-0x12663e,menus_is_action_performed,"int16_t menus_is_action_performed(uint16_t champion_index, int16_t action_index)",menus
-0x126cf6,menus_get_click_on_spell_cast_result,int16_t menus_get_click_on_spell_cast_result(void),menus
+0x12663e,action_is_action_performed,"int16_t action_is_action_performed(uint16_t champion_index, int16_t action_index)",menus
+0x126cf6,magic_get_click_on_spell_cast_result,int16_t magic_get_click_on_spell_cast_result(void),menus
 0x126d4c,menus_get_spell_from_symbols,Spell *menus_get_spell_from_symbols(const uint8_t *symbols),menus
 0x126dbc,menus_get_empty_flask_in_hand,"Potion *menus_get_empty_flask_in_hand(Champion *champion, uint16_t *flask_thing)",menus
-0x126e0e,menus_get_champion_spell_cast_result,int16_t menus_get_champion_spell_cast_result(uint16_t champion_index),menus
+0x126e0e,magic_get_champion_spell_cast_result,int16_t magic_get_champion_spell_cast_result(uint16_t champion_index),menus
 0x1273ca,menus_add_champion_symbol,void menus_add_champion_symbol(int16_t symbol_index),menus
 0x12748a,menus_delete_champion_symbol,void menus_delete_champion_symbol(void),menus
 0x1274e8,menus_draw_movement_arrows,void menus_draw_movement_arrows(void),menus
@@ -636,7 +636,7 @@ address,name,signature,subsystem
 0x127716,menus_draw_action_damage,void menus_draw_action_damage(int16_t damage),menus
 0x12780c,menus_draw_action_icon,void menus_draw_action_icon(uint16_t champion_index),menus
 0x127928,menus_draw_action_area,void menus_draw_action_area(void),menus
-0x127a1a,menus_print_spell_failure_message,"void menus_print_spell_failure_message(Champion *champion, int16_t failure_type, uint16_t skill_index)",menus
+0x127a1a,magic_print_spell_failure_message,"void magic_print_spell_failure_message(Champion *champion, int16_t failure_type, uint16_t skill_index)",menus
 0x127abe,dialog_draw_viewport,void dialog_draw_viewport(void),dialog
 0x127ae2,dialog_get_choice,"int16_t dialog_get_choice(int16_t choice_count, int16_t disk_change_drive, int16_t disk_change_choice)",dialog
 0x127e28,dialog_draw,"void dialog_draw(const char *message1, const char *message2, const char *choice1, const char *choice2, const char *choice3, const char *choice4)",dialog

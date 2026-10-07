@@ -46,7 +46,7 @@ def lib(tmp_path_factory):
     for name, res, args in [
         ("get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
         ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
-        ("menus_is_action_performed", c16, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
+        ("action_is_action_performed", c16, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
         ("sensor_add_event", None, [c16, c16, c16, c16, c16, u32]),
         ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, c16, c16]),
         ("champion_click_in_resurrect_reincarnate_panel", None, [c16]), ("unlink_thing_from_list", None, [u16, u16, c16, c16]),
@@ -141,7 +141,7 @@ def test_removed_actions(world, action):
     skills = [(s.temporary_experience, s.experience) for s in c.skills]
     fluxcages = sum(e.type == EVENT_REMOVE_FLUXCAGE for e in timeline(lib))
     value(lib, "g_random_seed", u32).value = SEED
-    assert lib.menus_is_action_performed(0, action) == 1
+    assert lib.action_is_action_performed(0, action) == 1
     seed = value(lib, "g_random_seed", u32).value
     explosions = [t for t in things(lib, *front) if t >> 10 & 15 == THING_EXPLOSION]
     new_fluxcages = sum(e.type == EVENT_REMOVE_FLUXCAGE for e in timeline(lib)) - fluxcages
@@ -174,7 +174,7 @@ def test_action_without_branch_draws_only_the_stamina_bit(world):
     face_empty_corridor(lib)
     put_champion(lib)
     value(lib, "g_random_seed", u32).value = SEED
-    assert lib.menus_is_action_performed(0, ACTION_NONE_IN_BOTH) == 1
+    assert lib.action_is_action_performed(0, ACTION_NONE_IN_BOTH) == 1
     assert value(lib, "g_random_seed", u32).value == seed_after_random_bit(lib)
 
 

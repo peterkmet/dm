@@ -100,7 +100,7 @@ static void champion_face_party_direction(Champion *c)
 }
 
 /* Prints "<text>" in the action color; "@p" in the text becomes the champion name. */
-void menus_print_action_message(uint16_t champion_index, const char *text)
+void action_print_action_message(uint16_t champion_index, const char *text)
 {
     char out[MESSAGE_SIZE];
     size_t n = 0;
@@ -124,7 +124,7 @@ void menus_print_action_message(uint16_t champion_index, const char *text)
 }
 
 /* The object in the action hand loses one charge: weapons, armour, and junk keep their charges in different bits. */
-void menus_decrement_charges(uint16_t champion_index)
+void action_decrement_charges(uint16_t champion_index)
 {
     uint16_t thing = g_champions[champion_index].slots[SLOT_HAND_ACTION];
     switch (THING_TYPE(thing)) {
@@ -146,7 +146,7 @@ void menus_decrement_charges(uint16_t champion_index)
 
 /* War cry, blow horn, confuse, calm, brandish: the group in front flees when the influence roll beats its fear
    resistance. The champion gains influence experience, half of it when the group stays. */
-int16_t menus_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y)
+int16_t action_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y)
 {
     uint16_t group = g_action_target_group_thing;
     if (group == THING_ENDOFLIST)
@@ -182,7 +182,7 @@ int16_t menus_is_group_frightened_by_action(uint16_t champion_index, int16_t act
 
 /* A melee hit on the group in front. A champion in a back cell reaches only past an empty front cell ("can't
    reach"). Disrupt hits only non-material creatures. Returns 0 when the champion hits nothing. */
-int16_t menus_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y, int16_t skill_index)
+int16_t action_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y, int16_t skill_index)
 {
     const Champion *c = &g_champions[champion_index];
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
@@ -220,7 +220,7 @@ static int16_t is_spell_action_cast(uint16_t champion_index, uint16_t explosion_
         mana_cost = c->current_mana;
     }
     int16_t cast = magic_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), attack, (uint16_t)mana_cost);
-    menus_decrement_charges(champion_index);
+    action_decrement_charges(champion_index);
     return cast;
 }
 
@@ -267,7 +267,7 @@ static void freeze_life(uint16_t champion_index)
         thing_set_free(thing);
     } else {
         ticks = FREEZE_LIFE_TICKS_CHARGE;
-        menus_decrement_charges(champion_index);
+        action_decrement_charges(champion_index);
     }
     g_party.freeze_life_ticks = (uint8_t)min16(FREEZE_LIFE_TICKS_MAXIMUM, ticks + g_party.freeze_life_ticks);
 }
@@ -331,7 +331,7 @@ static int16_t is_removed_in_csb(int16_t action)
 /* Runs one action of a champion against the square in front of the champion. After the action the action hand is
    disabled for the action ticks, the champion loses stamina, and the action skill gains experience. A failed
    melee action halves the ticks and the experience. Returns 0 when the action fails. */
-int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
+int16_t action_is_action_performed(uint16_t champion_index, int16_t action)
 {
     if (champion_index >= g_party_champion_count)
         return 0;
@@ -362,24 +362,24 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
         /* fall through: no closed door, a melee attack */
     case ACTION_PUNCH: case ACTION_STAB_1: case ACTION_STAB_2: case ACTION_THRUST: case ACTION_JAB: case ACTION_PARRY:
     case ACTION_DISRUPT: case ACTION_MELEE: case ACTION_SLASH: case ACTION_CLEAVE: case ACTION_STUN:
-        performed = menus_is_melee_action_performed(champion_index, action, x, y, (int16_t)skill_index);
+        performed = action_is_melee_action_performed(champion_index, action, x, y, (int16_t)skill_index);
         if (!performed) {
             experience = (uint16_t)((int16_t)experience >> 1);
             disabled_ticks >>= 1;
         }
         break;
     case ACTION_CONFUSE:
-        menus_decrement_charges(champion_index);
+        action_decrement_charges(champion_index);
         /* fall through */
     case ACTION_BLOW_HORN: case ACTION_WAR_CRY: case ACTION_CALM: case ACTION_BRANDISH:
         if (action == ACTION_WAR_CRY)
             sound_request_play(SOUND_WAR_CRY, x, y, SOUND_MODE_NOW);
         if (action == ACTION_BLOW_HORN)
             sound_request_play(SOUND_BLOW_HORN, x, y, SOUND_MODE_NOW);
-        performed = menus_is_group_frightened_by_action(champion_index, action, x, y);
+        performed = action_is_group_frightened_by_action(champion_index, action, x, y);
         break;
     case ACTION_FLIP:
-        menus_print_action_message(champion_index, gfx_string(random_bit() ? TEXT_FLIP_HEADS : TEXT_FLIP_TAILS));
+        action_print_action_message(champion_index, gfx_string(random_bit() ? TEXT_FLIP_HEADS : TEXT_FLIP_TAILS));
         break;
     case ACTION_CLIMB_DOWN:
         if (!is_climbed_down())
@@ -422,8 +422,8 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
         break;
     case ACTION_SPELLSHIELD:
     case ACTION_FIRESHIELD:
-        if (menus_is_party_spell_or_fire_shield_successful(champion_index, action == ACTION_SPELLSHIELD, SHIELD_ACTION_TICKS, 1)) {
-            menus_decrement_charges(champion_index);
+        if (magic_is_party_spell_or_fire_shield_successful(champion_index, action == ACTION_SPELLSHIELD, SHIELD_ACTION_TICKS, 1)) {
+            action_decrement_charges(champion_index);
         } else {
             experience = (uint16_t)((int16_t)experience >> 2);
             disabled_ticks >>= 1;
@@ -438,12 +438,12 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
         break;
     case ACTION_LIGHT:
         g_party.magical_light_amount += *tables_light_power_to_light_amount(LIGHT_ACTION_POWER);
-        menus_create_event70_light(-LIGHT_ACTION_POWER, LIGHT_ACTION_TICKS);
-        menus_decrement_charges(champion_index);
+        magic_create_light_event(-LIGHT_ACTION_POWER, LIGHT_ACTION_TICKS);
+        action_decrement_charges(champion_index);
         break;
     case ACTION_WINDOW:
         window(champion_index, skill_index);
-        menus_decrement_charges(champion_index);
+        action_decrement_charges(champion_index);
         break;
     case ACTION_THROW: {
         champion_face_party_direction(c);
@@ -472,7 +472,7 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
 }
 
 /* Commands 113-115: the action defense applies while the action runs; the action menu closes. */
-int16_t menus_did_click_trigger_action(int16_t action_list_index)
+int16_t action_did_click_trigger_action(int16_t action_list_index)
 {
     if (!g_acting_champion_ordinal || g_action_list_indices[action_list_index] == ACTION_NONE)
         return 0;
@@ -481,7 +481,7 @@ int16_t menus_did_click_trigger_action(int16_t action_list_index)
     uint8_t action = g_action_list_indices[action_list_index];
     c->action_defense += tables_action_info(action)->defense;
     c->attributes |= CHAMPION_ATTR_STATISTICS;
-    int16_t performed = menus_is_action_performed(champion_index, action);
+    int16_t performed = action_is_action_performed(champion_index, action);
     c->action_index = action;
     action_clear_acting_champion();
     return performed;

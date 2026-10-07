@@ -42,7 +42,7 @@ static void set_attributes_of_all(uint16_t attributes)
 }
 
 /* Light comes now; event 70 takes it back step by step after the ticks. */
-void menus_create_event70_light(int16_t light_power, int16_t ticks)
+void magic_create_light_event(int16_t light_power, int16_t ticks)
 {
     TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks), .type = EVENT_LIGHT, .b = (uint16_t)light_power};
     timeline_add_event(&event);
@@ -70,7 +70,7 @@ void magic_disable_action(uint16_t champion_index, uint16_t ticks)
 }
 
 /* Prints "<text> <champion name> <text>" for a failed cast. */
-void menus_print_spell_failure_message(uint16_t champion_index, int16_t failure_type, uint16_t skill_index)
+void magic_print_spell_failure_message(uint16_t champion_index, int16_t failure_type, uint16_t skill_index)
 {
     int16_t first;
     if (failure_type == SPELL_FAILURE_NEEDS_MORE_PRACTICE) {
@@ -111,7 +111,7 @@ int16_t magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, 
 }
 
 /* Spell shield (event 77) or fire shield (event 78) for the ticks. With mana, it costs 4 and half the ticks when short. */
-int16_t menus_is_party_spell_or_fire_shield_successful(uint16_t champion_index, int16_t spell_shield, uint16_t ticks, int16_t use_mana)
+int16_t magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, int16_t spell_shield, uint16_t ticks, int16_t use_mana)
 {
     Champion *c = &g_champions[champion_index];
     int16_t success = 1;
@@ -151,7 +151,7 @@ static int16_t cast_potion(uint16_t champion_index, uint16_t potion_type, int16_
     Champion *c = &g_champions[champion_index];
     uint16_t flask = empty_flask_in_hand(c);
     if (flask == THING_NONE) {
-        menus_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_FLASK_IN_HAND, 0);
+        magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_FLASK_IN_HAND, 0);
         return 0;
     }
     uint16_t empty_weight = get_object_weight(flask);
@@ -181,7 +181,7 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
 static void cast_light(uint16_t light_power, int16_t ticks)
 {
     g_party.magical_light_amount += *tables_light_power_to_light_amount(light_power);
-    menus_create_event70_light(-(int16_t)light_power, ticks);
+    magic_create_light_event(-(int16_t)light_power, ticks);
 }
 
 /* Zokathra: a new junk object in an empty hand, else on the party square. */
@@ -210,7 +210,7 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
         break;
     case SPELL_OTHER_DARKNESS:
         g_party.magical_light_amount -= *tables_light_power_to_light_amount(ticks >> 2);
-        menus_create_event70_light((int16_t)(ticks >> 2), LIGHT_MAXIMUM_TICKS_DARKNESS);
+        magic_create_light_event((int16_t)(ticks >> 2), LIGHT_MAXIMUM_TICKS_DARKNESS);
         break;
     case SPELL_OTHER_THIEVES_EYE:
         g_party.event73_count_thieves_eye++;
@@ -247,7 +247,7 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
         cast_zokathra(champion_index);
         break;
     case SPELL_OTHER_FIRE_SHIELD:
-        menus_is_party_spell_or_fire_shield_successful(champion_index, 0, (uint16_t)(ticks * ticks + FIRE_SHIELD_BASE_TICKS), 0);
+        magic_is_party_spell_or_fire_shield_successful(champion_index, 0, (uint16_t)(ticks * ticks + FIRE_SHIELD_BASE_TICKS), 0);
         break;
     }
 }
@@ -269,7 +269,7 @@ static int16_t cast_magic_map(uint16_t champion_index, uint16_t type, int16_t po
 {
     Champion *c = &g_champions[champion_index];
     if (!is_magic_map(c->slots[SLOT_HAND_ACTION])) {
-        menus_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MAGIC_MAP, 0);
+        magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MAGIC_MAP, 0);
         return 0;
     }
     uint16_t d = (uint16_t)((power + 1) * 4), ticks;
@@ -296,7 +296,7 @@ static int16_t cast_magic_map(uint16_t champion_index, uint16_t type, int16_t po
 }
 
 /* Casts the spell of the champion symbols. Each missing skill level is a chance to fail against wisdom. */
-int16_t menus_get_champion_spell_cast_result(uint16_t champion_index)
+int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
 {
     if (champion_index >= g_party_champion_count)
         return SPELL_CAST_FAILURE;
@@ -305,7 +305,7 @@ int16_t menus_get_champion_spell_cast_result(uint16_t champion_index)
         return SPELL_CAST_FAILURE;
     int16_t index = spell_find((const uint8_t *)c->symbols);
     if (index < 0) {
-        menus_print_spell_failure_message(champion_index, SPELL_FAILURE_MEANINGLESS_SPELL, 0);
+        magic_print_spell_failure_message(champion_index, SPELL_FAILURE_MEANINGLESS_SPELL, 0);
         return SPELL_CAST_FAILURE;
     }
     const Spell *spell = tables_spell(index);
@@ -319,7 +319,7 @@ int16_t menus_get_champion_spell_cast_result(uint16_t champion_index)
     for (uint16_t missing = skill_level < required_level ? required_level - skill_level : 0; missing; missing--) {
         if (spell_draw_fails(c->statistics[STAT_WISDOM][STAT_CURRENT], random16())) {
             champion_add_skill_experience(champion_index, spell->skill_index, spell_failure_experience(experience, required_level, skill_level));
-            menus_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MORE_PRACTICE, spell->skill_index);
+            magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MORE_PRACTICE, spell->skill_index);
             return SPELL_CAST_FAILURE;
         }
     }
@@ -346,9 +346,9 @@ int16_t menus_get_champion_spell_cast_result(uint16_t champion_index)
 }
 
 /* Cast button: casts for the magic caster; the symbols clear unless a flask is missing. */
-int16_t menus_get_click_on_spell_cast_result(void)
+int16_t magic_get_click_on_spell_cast_result(void)
 {
-    int16_t result = menus_get_champion_spell_cast_result((uint16_t)g_magic_caster_champion_index);
+    int16_t result = magic_get_champion_spell_cast_result((uint16_t)g_magic_caster_champion_index);
     if (result == SPELL_CAST_FAILURE_NEEDS_FLASK)
         return SPELL_CAST_FAILURE;
     Champion *c = &g_champions[g_magic_caster_champion_index];

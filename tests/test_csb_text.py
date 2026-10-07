@@ -145,7 +145,7 @@ def test_prison_recruit_shows_csb_text(lib):
     lib.inventory_draw_open(0)
     lib.draw_champion_skills_and_statistics()
     lib.champion_click_in_resurrect_reincarnate_panel(PANEL_RESURRECT)
-    lib.menus_print_spell_failure_message(0, SPELL_FAILURE_NEEDS_MORE_PRACTICE, SKILL_WIZARD)
+    lib.magic_print_spell_failure_message(0, SPELL_FAILURE_NEEDS_MORE_PRACTICE, SKILL_WIZARD)
     rows = message_rows(lib)
     assert any(r.endswith(" RESURRECTED.") and len(r) > len(" RESURRECTED.") for r in rows), rows
     assert any(r.endswith(" NEEDS MORE PRACTICE WITH THIS WIZARD SPELL.") for r in rows), rows

@@ -79,7 +79,7 @@ def lib(tmp_path_factory):
         ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("get_unused_thing", u16, [u16]),
         ("link_thing_to_list", None, [u16, u16, c16, c16]), ("unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("decode_text", c16, [ctypes.c_char_p, c16, u16, c16]), ("tables_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
-        ("menus_get_champion_spell_cast_result", c16, [u16]), ("get_creature_attributes", u16, [u16]),
+        ("magic_get_champion_spell_cast_result", c16, [u16]), ("get_creature_attributes", u16, [u16]),
         ("ui_viewport", ctypes.POINTER(Bitmap), []), ("gfx_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_int, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
@@ -188,7 +188,7 @@ def message_rows(lib):
 def cast(lib, c, spell_index, power, index=0):
     s = lib.tables_spell(spell_index).contents
     c.symbols = bytes([POWER_SYMBOL_BEFORE_FIRST + power, s.symbols >> 16 & 0xFF, s.symbols >> 8 & 0xFF, s.symbols & 0xFF, 0])
-    return lib.menus_get_champion_spell_cast_result(index)
+    return lib.magic_get_champion_spell_cast_result(index)
 
 
 def panel(lib):

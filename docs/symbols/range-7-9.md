@@ -516,9 +516,9 @@ Per-action tables (44 bytes each, indexed by action):
 | `0x103f88` | `g_action_skill_index` | Skill that the action trains. |
 | `0x103fb4` | `g_action_experience_gain` | Experience gain. |
 
-`menus_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB, 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB, 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`0x11d5e0`). Other melee actions call `menus_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
+`action_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB, 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB, 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`0x11d5e0`). Other melee actions call `action_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
 
-`menus_is_group_frightened_by_action` (WAR CRY, BLOW HORN, CONFUSE, CALM, BRANDISH) compares `random16() % (skill + bonus)` with the creature fear resistance. A frightened group flees for `(16 − fear) × 4 / movement_ticks`.
+`action_is_group_frightened_by_action` (WAR CRY, BLOW HORN, CONFUSE, CALM, BRANDISH) compares `random16() % (skill + bonus)` with the creature fear resistance. A frightened group flees for `(16 − fear) × 4 / movement_ticks`.
 
 `menus_refresh_action_area` runs every tick from the game loop. It also turns idle champions to the direction stored at +0x28 (set by damage) when the flag at +0x29 is set.
 
@@ -537,7 +537,7 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the s
 | 5 | Skill index. |
 | 6 | Word: bits 0–3 kind (1 potion, 2 projectile, 3 other), bits 4–9 type, bits 10–15 action disabled ticks. |
 
-`menus_get_champion_spell_cast_result`:
+`magic_get_champion_spell_cast_result`:
 
 1. Find the spell (`menus_get_spell_from_symbols`). No match: message "meaningless spell".
 2. Power = first symbol − 0x5f (1–6). Required level = power + base level. Experience = `(random & 7) + 16 × level + 8 × (power − 1) × base + D3²`. The intended last term is `level²` (ReDMCSB). The compiled code squares register D3 before it stores the level in D3, so it uses a stale value from the caller. A port should use `level²`.
@@ -546,7 +546,7 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the s
 5. Projectile: turn the champion to the party direction and shoot explosion `type − 128` with kinetic energy `bounded(21, (power + 2) × (4 + 2 × skill), 255)`. Type 4 doubles the skill.
 6. Other: 0 light, 1 darkness, 2 thieves eye (event 73), 3 invisibility (event 71), 4 party shield (event 74), 5 magic torch, 6 footprints (event 79), 7 zokathra (creates junk 10), 8 fire shield.
 
-`menus_print_spell_failure_message`: type 0 = more practice (strings 0x33/0x34 for skill 3, else 0x35/0x36), type 1 = meaningless (0x37/0x38), type 10 = need flask (0x39/0x3a).
+`magic_print_spell_failure_message`: type 0 = more practice (strings 0x33/0x34 for skill 3, else 0x35/0x36), type 1 = meaningless (0x37/0x38), type 10 = need flask (0x39/0x3a).
 
 ### Uncertain items
 

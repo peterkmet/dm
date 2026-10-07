@@ -583,7 +583,7 @@ static void click_in_spell_area(int16_t x, int16_t y)
     } else if (command == COMMAND_CAST_SPELL) {
         if (!g_champions[g_magic_caster_champion_index].symbols[0]) return;
         highlight_zone(ZONE_SPELL_CAST_BOX);
-        g_stop_waiting_for_input = menus_get_click_on_spell_cast_result();
+        g_stop_waiting_for_input = magic_get_click_on_spell_cast_result();
     } else if (command >= COMMAND_SPELL_SYMBOL_FIRST && command < COMMAND_SPELL_SYMBOL_FIRST + SYMBOL_COUNT) {
         highlight_zone((int16_t)(ZONE_SPELL_SYMBOL_BOX_FIRST + command - COMMAND_SPELL_SYMBOL_FIRST));
         add_champion_symbol(command - COMMAND_SPELL_SYMBOL_FIRST);
@@ -597,7 +597,7 @@ static void click_in_spell_area(int16_t x, int16_t y)
    action took place. */
 static int16_t trigger_action(int16_t list_index)
 {
-    if (list_index >= 0) return menus_did_click_trigger_action(list_index);
+    if (list_index >= 0) return action_did_click_trigger_action(list_index);
     menus_clear_acting_champion();
     return 0;
 }

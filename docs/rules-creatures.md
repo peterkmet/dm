@@ -185,7 +185,7 @@ Then the explosion disappears.
 
 ## Spells
 
-`menus_get_champion_spell_cast_result(champion)` casts the spell of the champion symbols. It returns `SPELL_CAST_SUCCESS` (1), `SPELL_CAST_FAILURE` (0), or `SPELL_CAST_FAILURE_NEEDS_FLASK` (3).
+`magic_get_champion_spell_cast_result(champion)` casts the spell of the champion symbols. It returns `SPELL_CAST_SUCCESS` (1), `SPELL_CAST_FAILURE` (0), or `SPELL_CAST_FAILURE_NEEDS_FLASK` (3).
 
 1. A dead champion or an unknown symbol string fails. An unknown string prints "meaningless spell".
 2. The required level is `power + base level of the spell`. Each missing skill level is a draw against wisdom. A failed draw gives reduced experience and prints "needs more practice".
@@ -195,7 +195,7 @@ Then the explosion disappears.
    - Other: Light, Darkness, Thieves Eye, Invisibility, Party Shield, Magic Torch, Footprints, Zokathra, Fire Shield. Each effect adds its end event (70–79).
 4. The champion gets the experience and an action delay (event 11).
 
-`menus_get_click_on_spell_cast_result` casts for the magic caster and clears the symbols, except when a flask is missing.
+`magic_get_click_on_spell_cast_result` casts for the magic caster and clears the symbols, except when a flask is missing.
 
 ## Fixed original bugs
 

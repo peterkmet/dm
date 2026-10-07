@@ -64,7 +64,7 @@ def lib():
         ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
         ("group_get_generated", u16, [u16, c16, u16, c16, c16, c16]),
         ("group_get_damage_all_creatures_outcome", c16, [u16, c16, c16, c16, c16]),
-        ("menus_get_champion_spell_cast_result", c16, [u16]), ("get_unused_thing", u16, [u16]),
+        ("magic_get_champion_spell_cast_result", c16, [u16]), ("get_unused_thing", u16, [u16]),
         ("object_get_icon_index", c16, [u16]), ("is_creature_allowed_on_map", c16, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
     ]:
         f = getattr(lib, name)
@@ -437,7 +437,7 @@ def caster(lib):
 
 def cast(lib, c, symbols):
     c.symbols = bytes(symbols)
-    return lib.menus_get_champion_spell_cast_result(0)
+    return lib.magic_get_champion_spell_cast_result(0)
 
 
 def events(lib, event_type):
