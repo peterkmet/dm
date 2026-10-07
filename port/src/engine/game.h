@@ -13,6 +13,8 @@
 #define ACTIVE_GROUP_MAX_COUNT 110     /* creature groups that can act at the same time */
 #define CSB_ACTIVE_GROUP_MAX_COUNT 60  /* active group slots of a new CSB game */
 #define WATCHDOG_INTERVAL 300          /* game ticks between two watchdog events */
+#define SHIFT_COUNT_MASK 63            /* the 68000 takes a shift count modulo 64 */
+#define LONG_SHIFT_MAXIMUM 31          /* a larger shift of a 32-bit value leaves only the sign or 0 */
 
 enum { STAT_LUCK, STAT_STRENGTH, STAT_DEXTERITY, STAT_WISDOM, STAT_VITALITY, STAT_ANTIMAGIC, STAT_ANTIFIRE, STAT_COUNT };
 enum { STAT_MAXIMUM, STAT_CURRENT, STAT_MINIMUM, STAT_VALUE_COUNT };

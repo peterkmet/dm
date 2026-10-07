@@ -8,8 +8,8 @@
 
 /* Candidate champion data from the mirror text, as champion_add_candidate_to_party sets it. */
 typedef struct {
-    char name[8];
-    char title[20];
+    char name[CHAMPION_NAME_SIZE];
+    char title[CHAMPION_TITLE_SIZE];
     uint8_t male;
     int16_t current_health, maximum_health;
     int16_t current_stamina, maximum_stamina;

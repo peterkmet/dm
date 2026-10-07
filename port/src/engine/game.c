@@ -24,8 +24,6 @@
 #define LUCK_STEP 2                    /* luck change after each luck test */
 #define PERCENT_RANGE 100              /* a luck test draws random16() % 100 */
 #define ATTACK_LOW_FACTOR_SHIFT 3      /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
-#define SHIFT_COUNT_MASK 63            /* the 68000 takes a shift count modulo 64 */
-#define LONG_SHIFT_MAXIMUM 31          /* a larger shift of a 32-bit value leaves only the sign */
 
 Party g_party;
 Champion g_champions[CHAMPION_MAX_COUNT];
