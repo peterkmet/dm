@@ -93,6 +93,14 @@ Run the game. Dungeon Master needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT`
 build/dm
 ```
 
+Run the personal game. The binary and the save files are in `playthroughs/lego/`.
+
+```sh
+playthroughs/lego/dm --data game --saves playthroughs/lego
+```
+
+`make -C port lego` copies a new build to `playthroughs/lego/dm`.
+
 ### Start screens
 
 Without `--adventure` and `--mode`, the game shows two screens in the game font:
