@@ -29,7 +29,7 @@ static const Screen screens[] = {
 
 /* The interface colors that the screens use: the KAOS palette is not loaded yet. */
 static const uint16_t select_palette[PALETTE_COLORS] = {
-    [COLOR_DARK_GRAY] = 0x666, [COLOR_LIGHT_GRAY] = 0xaaa, [COLOR_GOLD] = 0xfa0,
+    [COLOR_DARK_GRAY] = RGB_DARK_GRAY, [COLOR_LIGHT_GRAY] = RGB_LIGHT_GRAY, [COLOR_GOLD] = RGB_GOLD,
 };
 
 static int screen = SCREEN_DONE, cursor, csb_enabled, adventure_given, mode_given, csb_choice;
@@ -91,11 +91,11 @@ static void activate(void)
 {
     switch (screen) {
     case SCREEN_ADVENTURE:
-        g_adventure = (int16_t)cursor;
+        g_adventure = cursor;
         show(SCREEN_MODE);
         break;
     case SCREEN_MODE:
-        set_mode((int16_t)cursor);
+        set_mode(cursor);
         show_after_mode();
         break;
     case SCREEN_CSB:
@@ -131,10 +131,10 @@ int select_item_box(int item, Box *box)
     int w, h;
     if (screen == SCREEN_DONE || item < 0 || item >= screens[screen].count) return 0;
     text_size(screens[screen].items[item], &w, &h);
-    box->w = (int16_t)(w + 2 * ITEM_MARGIN);
+    box->w = w + 2 * ITEM_MARGIN;
     box->h = LINE_HEIGHT;
-    box->x = (int16_t)((SCREEN_W - box->w) / 2);
-    box->y = (int16_t)(ITEM_TOP + item * ITEM_STEP);
+    box->x = (SCREEN_W - box->w) / 2;
+    box->y = ITEM_TOP + item * ITEM_STEP;
     return 1;
 }
 

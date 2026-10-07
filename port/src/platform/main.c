@@ -22,6 +22,7 @@
 #include "random.h"
 #include "select.h"
 #include "text.h"
+#include "ui.h"
 
 #define WINDOW_SCALE 3
 #define GRAY_STEP 0x111          /* one step of the gray ramp: equal red, green, and blue */
@@ -298,8 +299,10 @@ static int load_font(void)
 /* The window icon from the open Graphics.DAT in the colors of the interface. Without the graphic, SDL keeps its icon. */
 static void set_icon(void)
 {
-    static const uint16_t colors[PALETTE_COLORS] = { 0x000, 0x666, 0x888, 0x620, 0x0cc, 0x840, 0x080, 0x0c0,
-                                                     0xf00, 0xfa0, 0xc86, 0xff0, 0x444, 0xaaa, 0x00f, 0xfff };
+    static const uint16_t colors[PALETTE_COLORS] = {
+        RGB_BLACK, RGB_DARK_GRAY, RGB_GRAY, RGB_BROWN, RGB_CYAN, RGB_LIGHT_BROWN, RGB_DARK_GREEN, RGB_GREEN,
+        RGB_RED, RGB_GOLD, RGB_FLESH, RGB_YELLOW, RGB_DARKEST_GRAY, RGB_LIGHT_GRAY, RGB_BLUE, RGB_WHITE,
+    };
     const Bitmap *bm = gfx_bitmap(ICON_GRAPHIC);
     if (bm) plat_set_icon(bm->px, bm->w, bm->h, ICON_TRANSPARENT_COLOR, colors);
 }

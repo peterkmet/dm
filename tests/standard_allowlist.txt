@@ -41,11 +41,9 @@ decimal engine/timeline_process.c open: Task 10
 hex data/csbimage.c addresses of the APPB tables
 hex data/csbtext.c addresses of the APPB tables
 hex engine/group.h open: Task 10
-hex platform/main.c the interface palette of the window icon: table data, the game files are not loaded before the start screens
 hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
 hex engine/projectile.h open: Task 10
-hex ui/select.c open: Task 11
 long engine/action.c:action_is_action_performed open: Task 9
 long engine/group.c:group_get_melee_action_damage open: Task 10
 long engine/group.c:group_get_move_result open: Task 10
