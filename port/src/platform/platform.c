@@ -130,7 +130,7 @@ void plat_present(void)
     SDL_GetCurrentRenderOutputSize(ren, &w, &h);
     video_layout(w, h, &s, &ox, &oy);
     SDL_FRect dst = { ox, oy, SCREEN_W * s, SCREEN_H * s };
-    SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(ren, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(ren);
     SDL_RenderTexture(ren, tex, NULL, &dst);
     SDL_RenderPresent(ren);
