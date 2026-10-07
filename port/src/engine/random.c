@@ -3,6 +3,7 @@
 
 #define RANDOM_MULTIPLIER 0xBB40E62Du
 #define RANDOM_INCREMENT 11
+#define NANOSECONDS_PER_MICROSECOND 1000
 
 uint32_t g_random_seed;
 
@@ -11,7 +12,7 @@ void random_init(void)
 {
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
-    g_random_seed = (uint32_t)(ts.tv_nsec / 1000);
+    g_random_seed = (uint32_t)(ts.tv_nsec / NANOSECONDS_PER_MICROSECOND);
 }
 
 /* Next value of the linear congruential generator: bits 8-23 of the new seed. */
