@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <string.h>
 #include "command.h"
 #include "action.h"
@@ -42,7 +43,6 @@
 #define FILLED_WATERSKIN_CHARGES 3
 enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 };  /* the mouth blinks when it eats an object up */
 #define VI_ALTAR_REBIRTH_EFFECT 2     /* event 13 effect byte */
-#define MANA_MULTIPLIER_SHIFT 3       /* the cost multiplier of the first rune is in eighths */
 #define HAND_SLOT_BOX_COUNT (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
 #define ZONE_THROW_LEFT 745           /* + 1 right: the upper view where a thrown object flies */
 #define ZONE_THROW_DOOR_LEFT 748      /* + 1 right: the same with a door in front */
@@ -131,8 +131,8 @@ void command_process_click(int16_t x, int16_t y, int16_t kind)
     if (queue_count >= (kind == CLICK_LEFT_RELEASE ? QUEUE_RELEASE_LIMIT : QUEUE_CLICK_LIMIT)) return;
     int16_t command = COMMAND_LEFT_RELEASE;
     if (kind != CLICK_LEFT_RELEASE) {
-        command = ui_command_from_mouse(primary_mouse, x, y, (uint16_t)kind);
-        if (!command) command = ui_command_from_mouse(secondary_mouse, x, y, (uint16_t)kind);
+        command = ui_command_from_mouse(primary_mouse, x, y, kind);
+        if (!command) command = ui_command_from_mouse(secondary_mouse, x, y, kind);
     }
     if (command) queue_put(command, x, y);
 }
@@ -309,7 +309,7 @@ void command_release_dead_champion(uint16_t champion_index, int16_t leader_index
     }
     if (champion_index == leader_index && pressing_fake_wall) pressing_fake_wall = g_mouse_pointer_hidden = 0;
     if (icon_cell + 1 == dragged_icon_cell_plus_1) dragged_icon_cell_plus_1 = 0;
-    ui_fill_zone(&screen, (int16_t)(ZONE_CHAMPION_ICON_FIRST + icon_cell), COLOR_BLACK);
+    ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + icon_cell, COLOR_BLACK);
 }
 
 /* The candidate inventory shows the resurrect and reincarnate panel; the game is frozen meanwhile. */
@@ -333,8 +333,8 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
     g_inventory_champion_ordinal = index + 1; /* the rule clears it; the panel closes here */
     command_toggle_inventory(INVENTORY_CLOSE);
     if (command == PANEL_CANCEL) {
-        ui_fill_zone(&screen, (int16_t)(ZONE_STATUS_BOX_FIRST + index), COLOR_BLACK);
-        ui_fill_zone(&screen, (int16_t)(ZONE_CHAMPION_ICON_FIRST + NORMALIZE(cell - g_party_direction)), COLOR_BLACK);
+        ui_fill_zone(&screen, ZONE_STATUS_BOX_FIRST + index, COLOR_BLACK);
+        ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + NORMALIZE(cell - g_party_direction), COLOR_BLACK);
         if (!g_party_champion_count) menus_set_magic_caster(-1);
     } else {
         int16_t caster = g_magic_caster_champion_index;
@@ -357,7 +357,7 @@ static void click_in_status_box(int16_t champion_index, int16_t x, int16_t y)
     if (command >= COMMAND_SET_LEADER_FIRST && command < COMMAND_SET_LEADER_FIRST + CHAMPION_MAX_COUNT)
         champion_set_leader(command - COMMAND_SET_LEADER_FIRST);
     else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST && command < COMMAND_CLICK_SLOT_BOX_FIRST + HAND_SLOT_BOX_COUNT)
-        inventory_click_on_slot_box((uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST));
+        inventory_click_on_slot_box(command - COMMAND_CLICK_SLOT_BOX_FIRST);
 }
 
 /* First click on a champion icon picks the champion; the second click moves it to the clicked
@@ -379,15 +379,15 @@ static void click_on_champion_icon(int16_t cell)
     if (cell != from) {
         int16_t other = champion_get_index_in_cell(NORMALIZE(cell + g_party_direction));
         if (other < 0) {
-            ui_fill_zone(&screen, (int16_t)(ZONE_CHAMPION_ICON_FIRST + from), COLOR_BLACK);
+            ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + from, COLOR_BLACK);
         } else {
             g_champions[other].cell = (uint8_t)NORMALIZE(from + g_party_direction);
             g_champions[other].attributes |= CHAMPION_ATTR_ICON;
-            ui_draw_champion_state((uint16_t)other);
+            ui_draw_champion_state(other);
         }
         g_champions[moved].cell = (uint8_t)NORMALIZE(cell + g_party_direction);
     }
-    ui_draw_champion_state((uint16_t)moved);
+    ui_draw_champion_state(moved);
 }
 
 /* The leader takes the top object of a pile in view cell 0-3 or the alcove. A creature in a
@@ -400,7 +400,7 @@ static void grab_object(int16_t pile)
         front_square(&x, &y);
         uint16_t group = get_square_group(x, y);
         if (group != THING_ENDOFLIST && !move_is_levitating(group) &&
-            group_get_creature_ordinal_in_cell(group, (uint16_t)NORMALIZE(pile + g_party_direction)))
+            group_get_creature_ordinal_in_cell(group, NORMALIZE(pile + g_party_direction)))
             return;
     }
     uint16_t thing = g_pile_top_objects[pile];
@@ -439,7 +439,7 @@ static void touch_front_wall(void)
     if (x < 0 || x >= g_current_map_width || y < 0 || y >= g_current_map_height) return;
     int16_t candidate = g_candidate_champion_ordinal;
     /* the wall side that faces the party */
-    g_stop_waiting_for_input = sensor_is_triggered_by_click_on_wall(x, y, (uint16_t)NORMALIZE(g_party_direction + 2));
+    g_stop_waiting_for_input = sensor_is_triggered_by_click_on_wall(x, y, NORMALIZE(g_party_direction + 2));
     if (!candidate && g_candidate_champion_ordinal) show_candidate();
 }
 
@@ -473,13 +473,13 @@ static int16_t in_box(const Box *b, int16_t x, int16_t y)
 }
 
 /* The leader throws the hand object when the click is in the left or right throw zone. */
-static int16_t is_leader_hand_object_thrown(int16_t x, int16_t y)
+static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
 {
     int16_t zone = g_square_ahead_element == VIEW_ELEMENT_DOOR_FRONT ? ZONE_THROW_DOOR_LEFT : ZONE_THROW_LEFT;
     int16_t thrown = 0;
     if (ui_point_in_zone(zone, x, y))
         thrown = action_is_leader_hand_object_thrown(0);
-    else if (ui_point_in_zone((int16_t)(zone + 1), x, y))
+    else if (ui_point_in_zone(zone + 1, x, y))
         thrown = action_is_leader_hand_object_thrown(1);
     if (thrown)
         g_stop_waiting_for_input = 1;
@@ -529,7 +529,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
     if ((g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall) && is_leader_hand_object_thrown(x, y)) return;
     int16_t cells = g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall ? VIEW_CELL_COUNT : VIEW_CELL_FRONT_FIRST;
     for (int16_t i = 0; i < cells; i++)
-        if (ui_point_in_zone((int16_t)(ZONE_DROP_CELL_FIRST + i), x, y)) {
+        if (ui_point_in_zone(ZONE_DROP_CELL_FIRST + i, x, y)) {
             drop_object(i);
             return;
         }
@@ -547,16 +547,17 @@ static void add_champion_symbol(int16_t symbol)
 {
     Champion *c = &g_champions[g_magic_caster_champion_index];
     uint16_t step = c->symbol_step, cost = *tables_symbol_base_mana_cost(step, symbol);
-    if (step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >> MANA_MULTIPLIER_SHIFT;
-    if (cost > (uint16_t)c->current_mana) return;
+    if (step) /* 16-bit product as in the original */
+        cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >> MANA_MULTIPLIER_SHIFT;
+    if (cost > (uint16_t)c->current_mana) return; /* unsigned compare as in the original */
     c->current_mana -= cost;
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     c->symbols[step] = (char)(SPELL_SYMBOL_FIRST + step * SYMBOL_COUNT + symbol);
     c->symbols[step + 1] = 0;
     c->symbol_step = (uint8_t)NORMALIZE(step + 1);
     menus_draw_available_symbols(c->symbol_step);
-    menus_draw_champion_symbols((uint16_t)g_magic_caster_champion_index);
-    ui_draw_champion_state((uint16_t)g_magic_caster_champion_index);
+    menus_draw_champion_symbols(g_magic_caster_champion_index);
+    ui_draw_champion_state(g_magic_caster_champion_index);
 }
 
 /* The magic caster removes the last rune; the mana stays spent. */
@@ -567,7 +568,7 @@ static void delete_champion_symbol(void)
     c->symbol_step = (uint8_t)NORMALIZE(c->symbol_step - 1);
     c->symbols[c->symbol_step] = 0;
     menus_draw_available_symbols(c->symbol_step);
-    menus_draw_champion_symbols((uint16_t)g_magic_caster_champion_index);
+    menus_draw_champion_symbols(g_magic_caster_champion_index);
 }
 
 /* Click in the spell area: a caster tab, a rune, delete, or cast. */
@@ -576,8 +577,8 @@ static void click_in_spell_area(int16_t x, int16_t y)
     int16_t command = ui_command_from_mouse(UI_INPUT_SPELL_AREA, x, y, CLICK_LEFT_PRESS);
     if (command == COMMAND_CHANGE_MAGIC_CASTER) {
         for (uint16_t i = 0; i < g_party_champion_count; i++)
-            if (ui_point_in_zone((int16_t)(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + i), x, y)) {
-                menus_set_magic_caster((int16_t)i);
+            if (ui_point_in_zone(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + i, x, y)) {
+                menus_set_magic_caster(i);
                 return;
             }
     } else if (command == COMMAND_CAST_SPELL) {
@@ -585,7 +586,7 @@ static void click_in_spell_area(int16_t x, int16_t y)
         highlight_zone(ZONE_SPELL_CAST_BOX);
         g_stop_waiting_for_input = magic_get_click_on_spell_cast_result();
     } else if (command >= COMMAND_SPELL_SYMBOL_FIRST && command < COMMAND_SPELL_SYMBOL_FIRST + SYMBOL_COUNT) {
-        highlight_zone((int16_t)(ZONE_SPELL_SYMBOL_BOX_FIRST + command - COMMAND_SPELL_SYMBOL_FIRST));
+        highlight_zone(ZONE_SPELL_SYMBOL_BOX_FIRST + command - COMMAND_SPELL_SYMBOL_FIRST);
         add_champion_symbol(command - COMMAND_SPELL_SYMBOL_FIRST);
     } else if (command == COMMAND_DELETE_SYMBOL) {
         highlight_zone(ZONE_SPELL_DELETE_BOX);
@@ -609,15 +610,15 @@ static void click_in_action_area(int16_t x, int16_t y)
         if (!g_action_area_contains_icons) return;
         int16_t command = ui_command_from_mouse(UI_INPUT_ACTION_ICONS, x, y, CLICK_LEFT_PRESS);
         int16_t index = command - COMMAND_SELECT_ACTING_CHAMPION_FIRST;
-        if (command && index >= 0 && index < (int16_t)g_party_champion_count) menus_set_acting_champion((uint16_t)index);
+        if (command && index >= 0 && index < g_party_champion_count) menus_set_acting_champion(index);
         return;
     }
     int16_t command = ui_command_from_mouse(UI_INPUT_ACTION_NAMES, x, y, CLICK_LEFT_PRESS);
     if (command == COMMAND_PASS) {
         highlight_zone(ZONE_ACTION_PASS_BOX);
         trigger_action(-1);
-    } else if (command > COMMAND_PASS && command - COMMAND_PASS <= (int16_t)g_action_count) {
-        highlight_zone((int16_t)(ZONE_ACTION_NAME_BOX_FIRST + command - COMMAND_ACTION_FIRST));
+    } else if (command > COMMAND_PASS && command - COMMAND_PASS <= g_action_count) {
+        highlight_zone(ZONE_ACTION_NAME_BOX_FIRST + command - COMMAND_ACTION_FIRST);
         g_stop_waiting_for_input = trigger_action(command - COMMAND_ACTION_FIRST);
     }
 }
@@ -704,7 +705,7 @@ static void move_or_turn(int16_t command)
 {
     int16_t x = g_party_map_x, y = g_party_map_y, map = g_party_map_index;
     g_stop_waiting_for_input = 1;
-    highlight_zone((int16_t)(ZONE_MOVEMENT_ARROW_BEFORE_FIRST + command));
+    highlight_zone(ZONE_MOVEMENT_ARROW_BEFORE_FIRST + command);
     if (command <= COMMAND_TURN_RIGHT) {
         move_turn_party(command);
         ui_draw_all_champion_states(CHAMPION_ATTR_ICON);
@@ -730,7 +731,7 @@ static void process_other_command(int16_t command)
     case COMMAND_ENTRANCE_RESUME: g_new_game = ENTRANCE_RESUME; break;
     case COMMAND_SAVE_GAME: startend_save_game(); break;
     case COMMAND_DIALOG_CHOICE_FIRST: case COMMAND_DIALOG_CHOICE_FIRST + 1: case COMMAND_DIALOG_CHOICE_FIRST + 2:
-    case COMMAND_DIALOG_CHOICE_FIRST + 3: g_dialog_choice = (int16_t)(command - COMMAND_DIALOG_CHOICE_FIRST + 1); break;
+    case COMMAND_DIALOG_CHOICE_FIRST + 3: g_dialog_choice = command - COMMAND_DIALOG_CHOICE_FIRST + 1; break;
     case COMMAND_RESTART_GAME: g_restart_requested = 1; break;
     case COMMAND_QUIT: g_quit_requested = 1; break;
     default: break; /* ponytail: credits (203) and name entry are not ported yet */
@@ -759,17 +760,17 @@ int command_process_queue(void)
     if (command == COMMAND_LEFT_RELEASE) left_release();
     else if (command >= COMMAND_TURN_LEFT && command <= COMMAND_MOVE_LEFT) move_or_turn(command);
     else if (command >= COMMAND_CLICK_STATUS_BOX_FIRST && command < COMMAND_CLICK_STATUS_BOX_FIRST + CHAMPION_MAX_COUNT) {
-        if (command - COMMAND_CLICK_STATUS_BOX_FIRST < (int16_t)g_party_champion_count && !g_candidate_champion_ordinal)
+        if (command - COMMAND_CLICK_STATUS_BOX_FIRST < g_party_champion_count && !g_candidate_champion_ordinal)
             click_in_status_box(command - COMMAND_CLICK_STATUS_BOX_FIRST, x, y);
     } else if (command >= COMMAND_CLICK_CHAMPION_ICON_FIRST && command <= COMMAND_CLICK_CHAMPION_ICON_LAST) {
         click_on_champion_icon(command - COMMAND_CLICK_CHAMPION_ICON_FIRST);
     } else if (command == COMMAND_RIGHT_RELEASE) {
         dragged_icon_cell_plus_1 = 0;
     } else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST && command <= COMMAND_CLICK_SLOT_BOX_LAST) {
-        if (g_leader_index != -1) inventory_click_on_slot_box((uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST));
+        if (g_leader_index != -1) inventory_click_on_slot_box(command - COMMAND_CLICK_SLOT_BOX_FIRST);
     } else if (command >= COMMAND_TOGGLE_INVENTORY_FIRST && command <= COMMAND_CLOSE_INVENTORY) {
         int16_t index = command - COMMAND_TOGGLE_INVENTORY_FIRST;
-        if ((index == INVENTORY_CLOSE || index < (int16_t)g_party_champion_count) && !g_candidate_champion_ordinal) command_toggle_inventory(index);
+        if ((index == INVENTORY_CLOSE || index < g_party_champion_count) && !g_candidate_champion_ordinal) command_toggle_inventory(index);
     } else if (command == COMMAND_TOGGLE_INVENTORY_LEADER) {
         if (g_leader_index != -1) command_toggle_inventory(g_leader_index);
     } else if (command == COMMAND_CLICK_SPELL_AREA) {
@@ -781,7 +782,7 @@ int command_process_queue(void)
     } else if (command == COMMAND_CLICK_EYE) {
         click_on_eye();
     } else if (command == COMMAND_CLICK_DUNGEON_VIEW) {
-        click_in_dungeon_view((int16_t)(x - kaos_s16(VIEWPORT_ORIGIN)), (int16_t)(y - kaos_s16(VIEWPORT_ORIGIN + 2)));
+        click_in_dungeon_view(x - kaos_s16(VIEWPORT_ORIGIN), y - kaos_s16(VIEWPORT_ORIGIN + 2));
     } else if (command == COMMAND_CLICK_PANEL) {
         if (g_candidate_champion_ordinal) click_in_candidate_panel(x, y);
         else panel_click_in_chest(x, y);

@@ -322,7 +322,7 @@ static void spell_json(Json *j)
     for (int s = 0; s < SYMBOL_COUNT; s++) {
         uint16_t cost = *tables_symbol_base_mana_cost(c->symbol_step, s);
         /* 16-bit product as in the original */
-        if (c->symbol_step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >> 3;
+        if (c->symbol_step) cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >> MANA_MULTIPLIER_SHIFT;
         json_open(j, '{');
         key_int(j, "symbol", s);
         key_str(j, "name", g_rune_names[c->symbol_step * SYMBOL_COUNT + s]);
