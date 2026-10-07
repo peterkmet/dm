@@ -110,7 +110,7 @@ static uint16_t amiga_key(int key, int modifiers)
     case SDLK_HELP: case SDLK_INSERT: case SDLK_KP_9: return KEY_HELP;
     case SDLK_RETURN: case SDLK_KP_ENTER: return KEY_RETURN;
     case SDLK_ESCAPE: return KEY_ESCAPE;
-    case SDLK_F1: case SDLK_F2: case SDLK_F3: case SDLK_F4: return (uint16_t)(KEY_F1 + ((key - SDLK_F1) << 8));
+    case SDLK_F1: case SDLK_F2: case SDLK_F3: case SDLK_F4: return KEY_F1 + ((key - SDLK_F1) << 8);
     }
     if (g_game_mode == GAME_MODE_VANILLA) return 0;
     switch (key) {
@@ -142,7 +142,7 @@ static void set_pointer(int in_game)
     uint8_t px[POINTER_SIZE * POINTER_SIZE];
     int x, y, w, h, hot_x, hot_y;
     plat_mouse_position(&x, &y);
-    if (gameloop_pointer((int16_t)x, (int16_t)y, in_game, px, &w, &h, &hot_x, &hot_y))
+    if (gameloop_pointer(x, y, in_game, px, &w, &h, &hot_x, &hot_y))
         plat_set_pointer(px, w, h, hot_x, hot_y, gameloop_pointer_palette());
     else
         plat_set_pointer(NULL, 0, 0, 0, 0, NULL);
@@ -187,7 +187,7 @@ static void read_input(void)
         }
         uint16_t key = e.type == PLAT_KEY ? amiga_key(e.key, e.modifiers) : 0;
         if (key) command_process_key(key);
-        if (e.type == PLAT_MOUSE || e.type == PLAT_MOUSE_UP) command_process_click((int16_t)e.x, (int16_t)e.y, click_kind(&e));
+        if (e.type == PLAT_MOUSE || e.type == PLAT_MOUSE_UP) command_process_click(e.x, e.y, click_kind(&e));
     }
 }
 
@@ -382,6 +382,53 @@ static int start_adventure(void)
     return 1;
 }
 
+enum { RUN_NEXT_FRAME, RUN_QUIT, RUN_FAILED };
+
+/* One frame of the program: the input, the control socket, the start screens or the game, and the picture. */
+static int run_frame(void)
+{
+    read_input();
+    if (g_quit_requested) return RUN_QUIT;
+    control_poll();
+    int tick = 0;
+    if (mode == MODE_SELECT) {
+        if (select_screen() == SCREEN_DONE && !start_adventure()) return RUN_FAILED;
+        if (mode == MODE_SELECT) select_draw();
+    }
+    if (mode == MODE_ENTRANCE) {
+        if (title_pending) play_title();
+        if (!entrance_frame(data)) return RUN_FAILED;
+    } else if (mode == MODE_GAME && (!turnbased || control_is_turn_pending())) {
+        tick = gameloop_frame();
+        if (g_return_to_entrance) tick = 0;
+    }
+    if (g_quit_requested) return RUN_QUIT;
+    if (mode >= MODE_ENTRANCE || loaded_adventure >= 0) set_pointer(mode == MODE_GAME); /* the arrow on the start screens after QUIT */
+    if (mode == MODE_GAME) {
+        int mouse_x, mouse_y;
+        plat_mouse_position(&mouse_x, &mouse_y);
+        advanced_drag(mouse_x, mouse_y);
+    }
+    plat_present();
+    if (tick) gameloop_tick();
+    if (g_quit_requested) return RUN_QUIT;
+    if (g_return_to_entrance) {
+        g_return_to_entrance = 0;
+        music_stop(); /* the start screens have no music */
+        if (turnbased) {
+            entrance_draw(); /* the game mode stays: load and new_game over the socket start the next game */
+        } else if (g_adventure == ADVENTURE_CSB) {
+            mode = MODE_SELECT;
+            select_start_csb(NULL);
+        } else {
+            mode = MODE_ENTRANCE;
+            show_entrance();
+        }
+    }
+    plat_wait_tick();
+    return RUN_NEXT_FRAME;
+}
+
 int main(int argc, char **argv)
 {
     long frames = -1, graphic = -1;
@@ -391,9 +438,9 @@ int main(int argc, char **argv)
     for (int i = 1; i < argc; i++)
         if (!strcmp(argv[i], "--view")) view = 1;
     for (int i = 1; i < argc - 1; i++) {
-        if (!strcmp(argv[i], "--frames")) frames = strtol(argv[i + 1], NULL, 10);
+        if (!strcmp(argv[i], "--frames")) frames = atol(argv[i + 1]);
         if (!strcmp(argv[i], "--data")) data_override = argv[i + 1];
-        if (!strcmp(argv[i], "--show")) graphic = strtol(argv[i + 1], NULL, 10);
+        if (!strcmp(argv[i], "--show")) graphic = atol(argv[i + 1]);
         if (!strcmp(argv[i], "--filter")) filter = argv[i + 1];
         if (!strcmp(argv[i], "--control")) control = argv[i + 1];
         if (!strcmp(argv[i], "--mode") && (mode_arg = game_mode_of(argv[i + 1])) < 0)
@@ -407,12 +454,12 @@ int main(int argc, char **argv)
     csb_dir = data_override && adventure == ADVENTURE_CSB ? data_override : adventure_default_dir(ADVENTURE_CSB);
     int csb_present = adventure_csb_present(csb_dir);
     if (adventure == ADVENTURE_CSB && !csb_present) return SDL_Log("CSB data is missing in %s", csb_dir), 1;
-    select_start((int16_t)adventure, (int16_t)mode_arg, csb_present);
+    select_start(adventure, mode_arg, csb_present);
     data = adventure_dir();
 
     random_init();
     for (int i = 0; i < PALETTE_COLORS; i++) /* gray ramp */
-        palette[i] = (uint16_t)(i * GRAY_STEP);
+        palette[i] = i * GRAY_STEP;
     mode = graphic >= 0 ? MODE_SHOW : view ? MODE_VIEW : MODE_SELECT;
     if (mode == MODE_SHOW && !show(data, graphic)) return 1;
     if (mode == MODE_VIEW && !view_start(data)) return 1;
@@ -427,45 +474,9 @@ int main(int argc, char **argv)
         select_key(SELECT_KEY_ENTER);
 
     for (long frame = 0; frames < 0 || frame < frames; frame++) {
-        read_input();
-        if (g_quit_requested) break;
-        control_poll();
-        int tick = 0;
-        if (mode == MODE_SELECT) {
-            if (select_screen() == SCREEN_DONE && !start_adventure()) return 1;
-            if (mode == MODE_SELECT) select_draw();
-        }
-        if (mode == MODE_ENTRANCE) {
-            if (title_pending) play_title();
-            if (!entrance_frame(data)) return 1;
-        } else if (mode == MODE_GAME && (!turnbased || control_is_turn_pending())) {
-            tick = gameloop_frame();
-            if (g_return_to_entrance) tick = 0;
-        }
-        if (g_quit_requested) break;
-        if (mode >= MODE_ENTRANCE || loaded_adventure >= 0) set_pointer(mode == MODE_GAME); /* the arrow on the start screens after QUIT */
-        if (mode == MODE_GAME) {
-            int mouse_x, mouse_y;
-            plat_mouse_position(&mouse_x, &mouse_y);
-            advanced_drag((int16_t)mouse_x, (int16_t)mouse_y);
-        }
-        plat_present();
-        if (tick) gameloop_tick();
-        if (g_quit_requested) break;
-        if (g_return_to_entrance) {
-            g_return_to_entrance = 0;
-            music_stop(); /* the start screens have no music */
-            if (turnbased) {
-                entrance_draw(); /* the game mode stays: load and new_game over the socket start the next game */
-            } else if (g_adventure == ADVENTURE_CSB) {
-                mode = MODE_SELECT;
-                select_start_csb(NULL);
-            } else {
-                mode = MODE_ENTRANCE;
-                show_entrance();
-            }
-        }
-        plat_wait_tick();
+        int result = run_frame();
+        if (result == RUN_FAILED) return 1;
+        if (result == RUN_QUIT) break;
     }
 
     control_close();
