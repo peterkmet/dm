@@ -116,7 +116,6 @@ void group_remove_active_group(uint16_t active_index);
 void group_remove_all_active_groups(void);
 void group_add_all_active_groups(void);
 void group_reset(void);
-/* Party scent word (g_party.scents): x in bits 11-15, y in bits 6-10, map in bits 0-5. */
 /* Ordinal of the latest party scent on a square of the current map, or 0. */
 uint16_t party_scent_ordinal(int16_t x, int16_t y);
 

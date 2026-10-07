@@ -658,6 +658,14 @@ Decisions made during Task 11 (`ui/*`, `platform/*`):
 - `text.c` and `scale.c` need no change. `logo.c` gets one comment.
 - Not done: a full sweep of the plain numbers 3 to 9 in the big files (`view.c`, `ui_champion.c`, `command.c`). Only the numbers on the changed lines got names.
 
+
+Decisions made at the merge of Tasks 8 to 11:
+- The scent word uses `POSITION_*` of `game.h`; the `PARTY_SCENT_*` names of `group.h` are deleted.
+- `ui/command.c` and `platform/state_json.c` use `SPELL_MANA_MULTIPLIER_SHIFT` of `data/spells.h`; `MANA_MULTIPLIER_SHIFT` of `command.h` is deleted.
+- `engine/magic.c` builds the text thing with `THING_MAKE`, and `engine/group.c` builds the group thing with `THING_MAKE`.
+- `NUMBER_TEXT_SIZE` of `state_json.c` is `LONG_TEXT_SIZE`: `message.c` has a `NUMBER_TEXT_SIZE` with another value.
+- Map byte 13 is `MAP_DOOR_ORNAMENTS_CREATURES_BYTE`: it holds the door ornament count and the creature type count.
+
 ---
 
 ### Task 12: Final check and release notes

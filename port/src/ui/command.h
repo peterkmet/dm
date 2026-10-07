@@ -47,7 +47,6 @@ enum {
     COMMAND_LEFT_RELEASE = 254,
 };
 
-
 /* Click kinds of the input handler. */
 enum { CLICK_RIGHT_PRESS = 1, CLICK_LEFT_PRESS = 2, CLICK_LEFT_RELEASE = 4, CLICK_RIGHT_RELEASE = 8 };
 
