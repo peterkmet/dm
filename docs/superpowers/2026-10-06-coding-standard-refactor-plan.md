@@ -612,6 +612,11 @@ Do the steps for one file at a time. Run the full suite after each file.
 - [ ] **Step 6: Run the standard test and the full suite.** `uv run pytest -q`. Expected: all pass.
 - [ ] **Step 7: Commit the file.** `git commit -am "refactor: coding standard in <file>"`.
 
+Decisions made during Task 9:
+- A cast to the type of an assignment, a parameter, or a return value gives the same result as the implicit conversion, so it goes. A cast inside an expression stays when it can change the result (unsigned shift or compare, 16-bit wrap or truncation), with a one-line comment.
+- The champion index keeps its type in each signature (`uint16_t` in most, `int16_t` where -1 means no champion). The values are 0 to 3, so both types give the same result. One type for all signatures would change most engine headers and their `ctypes` bindings.
+- `champion.c`: the constants are local `#define`s of `champion.c`, as its other rule constants. `with_cell` is `THING_WITH_CELL` of `map.h`. The scent word of `fade_scents` is `move_get_scent` (was the static `scent_of` of `move.c`).
+
 ---
 
 ### Task 12: Final check and release notes
