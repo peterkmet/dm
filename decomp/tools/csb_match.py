@@ -1,6 +1,6 @@
 """Match the functions of the CSB engine (game-csb/APPB.FTL) to DM KAOS.FTL.
 
-Usage: uv run python tools/csb_match.py [--csv OUT] [--report OUT] [--diff KAOS_ADDR]
+Usage: uv run python decomp/tools/csb_match.py [--csv OUT] [--report OUT] [--diff KAOS_ADDR]
 
 The two modules come from different compilers: CSB keeps locals on the stack,
 DM keeps them in registers. A byte or instruction compare does not work, so each
@@ -34,7 +34,7 @@ import machine68k
 from dmtools import ftl
 
 KAOS_FTL, KAOS_CSV = "game/KAOS.FTL", "docs/kaos-symbols.csv"
-CSB_FTL, CSB_C = "game-csb/APPB.FTL", "decomp-csb/A/APPB.c"
+CSB_FTL, CSB_C = "game-csb/APPB.FTL", "decomp/csb-a/APPB.c"
 BASE = 0x100000
 
 A5_RE = re.compile(r"\((-?)\$([0-9a-f]+),A5\)")

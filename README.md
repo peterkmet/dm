@@ -43,10 +43,10 @@ The detailed plan is in [docs/superpowers/2026-10-04-dm-c-port-plan.md](docs/sup
 
    The command prints one line for each file: SHA-256, size, and path.
 
-4. Decompile all FTL modules to `decomp/`.
+4. Decompile all FTL modules to `decomp/dm/`.
 
    ```sh
-   tools/decompile-all.sh
+   decomp/tools/decompile-all.sh
    ```
 
    For each module, the script writes `decomp/<MODULE>.bin` (memory image), `decomp/<MODULE>.c` (decompiled C), and `decomp/<MODULE>.c.log` (Ghidra log). A full run takes about 20 seconds.
@@ -60,7 +60,7 @@ The detailed plan is in [docs/superpowers/2026-10-04-dm-c-port-plan.md](docs/sup
 
    Replace `<disk A>` and `<disk B>` with the paths to your CSB ADF files.
 
-The `.gitignore` file excludes `*.adf`, `game/`, `game-csb/`, and `decomp/`. Do not commit game content.
+The `.gitignore` file excludes `*.adf`, `game/`, `game-csb/`, and `decomp/` except `decomp/tools/`. Do not commit game content.
 
 ## Tools
 
@@ -68,8 +68,8 @@ The `.gitignore` file excludes `*.adf`, `game/`, `game-csb/`, and `decomp/`. Do 
 |---|---|
 | `uv run dm-extract <adf> [out_dir]` | Extract all files from an AmigaDOS ADF. The default `out_dir` is `game`. |
 | `uv run dm-ftl <module.FTL> <out.bin> [--base ADDR]` | Load an FTL module into a flat memory image, as `BJELoad_R` does. Prints the addresses and the arguments for `decompile.sh`. The default base is `0x100000`. |
-| `[SYMBOLS=<csv>] tools/ghidra/decompile.sh <image.bin> <base> <out.c> [REG=VALUE] [ENTRY ...]` | Decompile a flat 68000 image with Ghidra headless. |
-| `tools/decompile-all.sh` | Run `dm-ftl` and `decompile.sh` for every module in `game/`. It uses `docs/<module>-symbols.csv` as `SYMBOLS` (for example `docs/kaos-symbols.csv`). |
+| `[SYMBOLS=<csv>] decomp/tools/ghidra/decompile.sh <image.bin> <base> <out.c> [REG=VALUE] [ENTRY ...]` | Decompile a flat 68000 image with Ghidra headless. |
+| `decomp/tools/decompile-all.sh` | Run `dm-ftl` and `decompile.sh` for every module in `game/`. It uses `docs/<module>-symbols.csv` as `SYMBOLS` (for example `docs/kaos-symbols.csv`). |
 | `dmtools.emu` (Python) | Run a function of a module image in a 68000 emulator. `Emu(image).call(addr, [(size, value), ...])` pushes the arguments right to left and returns `D0`. Access to custom chips, CIA, or ExecBase stops the call with `EmuError`. Use `allow_hw=True` to permit this access. |
 
 ## C port
@@ -238,7 +238,7 @@ Set `DM_FILTER` to select a pixel-art upscale filter. The values are `none` (def
 
 ## Known limitations
 
-- Some decompiled code still contains `>> 0x10` casts, for example `(short)((uint)x >> 0x10)`. `grep -c '>> 0x10' decomp/KAOS.c` gives 92 lines (281 lines without `InferParams.java` and `ResolveJumpTable.java`). Most of these lines are the high word of a 32-bit value in D0 or D1, for example in `CONCAT22` or `in_D0 >> 0x10`.
+- Some decompiled code still contains `>> 0x10` casts, for example `(short)((uint)x >> 0x10)`. `grep -c '>> 0x10' decomp/dm/KAOS.c` gives 92 lines (281 lines without `InferParams.java` and `ResolveJumpTable.java`). Most of these lines are the high word of a 32-bit value in D0 or D1, for example in `CONCAT22` or `in_D0 >> 0x10`.
 - The decompiled C does not compile. Names, types, and register calling conventions still need work in stages 2–3.
 
 ## How decompile.sh finds functions

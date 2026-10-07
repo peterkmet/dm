@@ -2,8 +2,8 @@
 
 This page lists the differences between the Chaos Strikes Back (CSB) engine and the Dungeon Master v3.60 (DM) engine that matter to the C port in `port/`. Read it before you add CSB support to the port.
 
-- DM engine: `game/KAOS.FTL`. Image `decomp/KAOS.bin`, base `0x100000`, data base (A5) `0x104160`. Names: [kaos-symbols.csv](kaos-symbols.csv).
-- CSB engine: `game-csb/APPB.FTL`. Image `decomp-csb/A/APPB.bin`, base `0x100000`, data base (A5) `0x10511e`, code base `0x105ede`. Names: [csb-appb-symbols.csv](csb-appb-symbols.csv).
+- DM engine: `game/KAOS.FTL`. Image `decomp/dm/KAOS.bin`, base `0x100000`, data base (A5) `0x104160`. Names: [kaos-symbols.csv](kaos-symbols.csv).
+- CSB engine: `game-csb/APPB.FTL`. Image `decomp/csb-a/APPB.bin`, base `0x100000`, data base (A5) `0x10511e`, code base `0x105ede`. Names: [csb-appb-symbols.csv](csb-appb-symbols.csv).
 
 All addresses are image addresses. "K" marks a DM address, "C" marks a CSB address. "UNVERIFIED" marks a claim that the code reading did not prove.
 
@@ -16,10 +16,10 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 
 ## Function mapping
 
-`tools/csb_match.py` builds the mapping and writes `docs/csb-appb-symbols.csv`.
+`decomp/tools/csb_match.py` builds the mapping and writes `docs/csb-appb-symbols.csv`.
 
 ```sh
-uv run python tools/csb_match.py --report /tmp/csb-report.txt
+uv run python decomp/tools/csb_match.py --report /tmp/csb-report.txt
 ```
 
 The report file has one line per function: class, CSB address, DM address, name, instruction counts, and similarity.
@@ -233,7 +233,7 @@ Code references (Step 3 verified each address: a `pea` or `lea` with A5 = C`0x10
 | `0x104c56` | `endgame` |
 | `0x102654`, `0x102164` | `scroll_text_insert_creature_name` |
 | `0x1048b4` | `menus_get_action_name` |
-| `0x104d08` + 4·n | Read with `move.l` (no `lea`), for example `decomp-csb/A/APPB.c` line 38716 (entry 0) and line 37116 (save dialog: entries 24, 21, 22) |
+| `0x104d08` + 4·n | Read with `move.l` (no `lea`), for example `decomp/csb-a/APPB.c` line 38716 (entry 0) and line 37116 (save dialog: entries 24, 21, 22) |
 
 The pointer table C`0x104d08` has 26 entries. Entry n gives DM text: 78, 94, 79, 80, 81, 82, 95, 92, 84, 90, 85, 86, 97, 96, 98, 87, 88, 89, 83, 91, 101, 102 (SAVE AND PLAY), 103 (SAVE AND QUIT), 105, 106, 104.
 
@@ -372,7 +372,7 @@ The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`):
 Other load and save differences:
 
 - No new game in the engine. `load_game` opens `CSBGame.dat`, then `CSBGame.bak`. Then it tries `DungeonMaster:Dungeon.FTL` (C`0x129d74`). That file is not on the disk. `Dungeon.DAT` on disk A is a 2622-byte stub (compressed, signature `0x8104`).
-- The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`, `decomp-csb/A/APPB.c` from line 36964). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
+- The save dialog has CANCEL, SAVE AND PLAY, SAVE AND QUIT, and FORMAT FLOPPY (`save_game` C`0x128cc0`, `decomp/csb-a/APPB.c` from line 36964). Without the floppy option (`A5-0x4b6` = 0), the dialog has 3 choices: 1 CANCEL, 2 SAVE AND PLAY, 3 SAVE AND QUIT. With the option, it has 4: 1 SAVE AND PLAY, 2 SAVE AND QUIT, 3 FORMAT FLOPPY, 4 CANCEL.
   - CANCEL closes the dialog.
   - SAVE AND PLAY and SAVE AND QUIT write the file. The header field dialog choice (`0x132`) is 1 for SAVE AND PLAY and 0 for SAVE AND QUIT.
   - After a successful SAVE AND PLAY, `A5-0xe0` becomes 1 and the game continues. The dialog does not stay open (the DM port keeps the DM dialog open after SAVE).

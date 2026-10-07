@@ -1,15 +1,14 @@
 *.adf
 game/
 /ghidra/
-tools/ghidra-amiga/build/
 .venv/
 __pycache__/
 .pytest_cache/
 .DS_Store
-decomp/
+decomp/*
+!decomp/tools/
 build/
 game-csb/
-decomp-csb/
 .playthroughs/
 playthrough_template/DMGAME.DAT
 origs/

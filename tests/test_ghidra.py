@@ -51,7 +51,7 @@ def test_params_and_symbols(tmp_path):
     )
     out = tmp_path / "t.c"
     subprocess.run(
-        [ROOT / "tools/ghidra/decompile.sh", image, "0x100000", out, "0x100000"],
+        [ROOT / "decomp/tools/ghidra/decompile.sh", image, "0x100000", out, "0x100000"],
         env={**os.environ, "SYMBOLS": str(symbols)},
         check=True,
     )
