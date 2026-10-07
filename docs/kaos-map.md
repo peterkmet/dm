@@ -60,7 +60,7 @@ Ghidra drops most arguments of a jump-table call. For example, `game_loop` pushe
 
 1. If `g_new_party_map_index != -1`: `process_new_party_map`, `move_get_move_result(party)`, `command_discard_all_input`.
 2. `timeline_process`. Repeat step 1 if the party changed maps.
-3. If the party is not sleeping: `game_unfreeze` (no candidate champion), then `draw_dungeon_view(direction, x, y)` when no inventory is open, then update the mouse pointer.
+3. If the party is not sleeping: `command_unfreeze_game` (no candidate champion), then `draw_dungeon_view(direction, x, y)` when no inventory is open, then update the mouse pointer.
 4. `highlight_box_disable`, `sound_play_pending`, `champion_apply_and_draw_pending_damage_and_wounds`.
 5. Leave the loop when `g_party_dead` is set.
 6. Increment `g_game_time`. Every 512 ticks: `decrease_torches_light_power`. Decrement the freeze-life ticks.

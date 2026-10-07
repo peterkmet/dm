@@ -142,7 +142,7 @@ int save_current_game(const char **reason)
    closes after a save; CSB has no quit without a save. */
 static void save_game_csb(void)
 {
-    game_freeze();
+    command_freeze_game();
     dialog_draw(NULL, NULL, gfx_string(TEXT_CANCEL), gfx_string(TEXT_SAVE), gfx_string(TEXT_QUIT), NULL);
     int16_t choice = dialog_get_choice(3);
     if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
@@ -160,7 +160,7 @@ static void save_game_csb(void)
         }
         if (saved && g_advanced_features) advanced_print_message("GAME SAVED");
     }
-    game_unfreeze();
+    command_unfreeze_game();
 }
 
 /* save_game without disks: the dialog stays after a save until CANCEL or QUIT. */
@@ -171,7 +171,7 @@ void save_game(void)
         save_game_csb();
         return;
     }
-    game_freeze();
+    command_freeze_game();
     for (;;) {
         dialog_draw(message, NULL, gfx_string(TEXT_CANCEL), gfx_string(TEXT_SAVE), gfx_string(TEXT_QUIT), NULL);
         message = NULL;
@@ -194,7 +194,7 @@ void save_game(void)
         }
         break;
     }
-    game_unfreeze();
+    command_unfreeze_game();
 }
 
 int16_t load_saved_game(void)

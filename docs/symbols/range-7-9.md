@@ -642,7 +642,7 @@ The dialog system shows a message box with one to four choices. ReDMCSB calls it
 
 #### Globals
 
-- `g_game_screen_inactive` (`0x104024`) starts at 1. `game_loop` sets it to 0. `endgame` sets it to 1. `start_game` sets it to 0 for a new game. When it is 1, the dialog uses the full screen: `dialog_draw` fades the palette to black, clears the screen, and `dialog_draw_viewport` blits the viewport bitmap to screen zone 5. When it is 0, `dialog_draw_viewport` calls `draw_viewport(0)`. `game_freeze` and `game_unfreeze` do nothing when it is 1.
+- `g_game_screen_inactive` (`0x104024`) starts at 1. `game_loop` sets it to 0. `endgame` sets it to 1. `start_game` sets it to 0 for a new game. When it is 1, the dialog uses the full screen: `dialog_draw` fades the palette to black, clears the screen, and `dialog_draw_viewport` blits the viewport bitmap to screen zone 5. When it is 0, `dialog_draw_viewport` calls `draw_viewport(0)`. `command_freeze_game` and `command_unfreeze_game` do nothing when it is 1.
 - `g_dialog_choice` (`0x10402a`). The command handler writes the clicked choice number here. The value 99 means "no choice yet".
 - `g_dialog_message_colors` (`0x104026`): text colors of message 1 (11) and message 2 (9).
 - `g_dialog_version_text` (`0x10402c`): the string `V3.6`. The dialog prints it in zone `0x1c2`.
@@ -709,8 +709,8 @@ A C port with enough memory can use the first set and skip this search.
 
 #### Freeze
 
-- `game_freeze`: only when not frozen and the game screen is active. Set `g_game_frozen`. Restore the champion mouse pointer, disable the highlight box, clear zone 9 (or close the open chest when an inventory is open), clear zones 13 and 11, and set the default mouse pointer.
-- `game_unfreeze`: only when frozen and the game screen is active. When the party sleeps, redraw the sleep screen (`0x1210e8`, `draw_viewport(0)`) and stay frozen. Otherwise clear the flag, redraw the magic caster and action area, then the viewport or the open inventory, then refresh the mouse pointer.
+- `command_freeze_game`: only when not frozen and the game screen is active. Set `g_game_frozen`. Restore the champion mouse pointer, disable the highlight box, clear zone 9 (or close the open chest when an inventory is open), clear zones 13 and 11, and set the default mouse pointer.
+- `command_unfreeze_game`: only when frozen and the game screen is active. When the party sleeps, redraw the sleep screen (`0x1210e8`, `draw_viewport(0)`) and stay frozen. Otherwise clear the flag, redraw the magic caster and action area, then the viewport or the open inventory, then refresh the mouse pointer.
 
 #### Entrance
 
@@ -825,12 +825,12 @@ The checksum is the same for the plain and the encrypted data, because it adds b
 
 #### `save_game`
 
-1. `game_freeze`, `timeline_reset`. Allocate a 512-byte header.
+1. `command_freeze_game`, `timeline_reset`. Allocate a 512-byte header.
 2. Show "PUT THE GAME SAVE DISK IN ~". Choices: when `g_save_dialog_format_choice` (`0x104060`, value 1) is set: SAVE, QUIT, FORMAT FLOPPY, CANCEL. Else: CANCEL, SAVE, QUIT.
 3. QUIT: when the last save and the last load (`g_last_save_game_time`, `g_last_load_game_time`) are both more than 100 ticks old, ask "THE GAME IS NOT SAVED, IS IT OK TO QUIT?". Then clear `g_saved_game_exists` and call `endgame(0)`.
 4. FORMAT FLOPPY: `format_save_disk_dialog`.
 5. SAVE: check the disk with `is_save_disk_inserted(0)` and show the error ("CAN'T MODIFY DUNGEON MASTER DISK!", "THAT DISK IS UNREADABLE", "THAT DISK IS WRITE-PROTECTED!", "THERE IS NO DISK IN ~!"). Show "SAVING GAME . . .". Delete `DMGAME~.BAK`, rename `DMGAME~.DAT` to `.BAK`, write a new `DMGAME~.DAT`. On error show "UNABLE TO SAVE GAME!". On success set `g_saved_game_exists` and `g_last_save_game_time`, and show the dialog again.
-6. At the end: `ensure_master_disk(0)`, `game_unfreeze`.
+6. At the end: `ensure_master_disk(0)`, `command_unfreeze_game`.
 
 #### `load_game`
 

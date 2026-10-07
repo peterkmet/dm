@@ -215,7 +215,7 @@ static void draw_viewport_message(int16_t text)
 }
 
 /* Dims the movement arrows (or the closed inventory panel), the spell area, and the action area. */
-void game_freeze(void)
+void command_freeze_game(void)
 {
     Bitmap screen = ui_screen();
     if (g_game_frozen) return;
@@ -229,7 +229,7 @@ void game_freeze(void)
 
 /* Draws the spell area, action area, and the view or the inventory again. A sleeping party stays
    frozen on the sleep screen. */
-void game_unfreeze(void)
+void command_unfreeze_game(void)
 {
     if (!g_game_frozen) return;
     if (g_party_is_sleeping) {
@@ -318,7 +318,7 @@ static void show_candidate(void)
     int16_t index = g_candidate_champion_ordinal - 1;
     g_inventory_champion_ordinal = 0;
     command_toggle_inventory(index);
-    game_freeze();
+    command_freeze_game();
 }
 
 /* Click in the resurrect/reincarnate panel of the candidate: accept or cancel it. */
@@ -660,7 +660,7 @@ static void go_to_sleep(void)
 {
     if (g_candidate_champion_ordinal) return;
     if (g_inventory_champion_ordinal) command_toggle_inventory(INVENTORY_CLOSE);
-    game_freeze();
+    command_freeze_game();
     g_party_is_sleeping = 1;
     draw_viewport_message(TEXT_WAKE_UP);
     g_wait_for_input_max_frames = 0;
@@ -683,7 +683,7 @@ void command_wake_up(void)
 static void freeze_game(void)
 {
     g_game_time_ticking = 0;
-    game_freeze();
+    command_freeze_game();
     draw_viewport_message(TEXT_GAME_FROZEN);
     frozen_input = current_input();
     set_input((InputTables){ UI_INPUT_FROZEN, NO_TABLE, KEYS_FROZEN, 0 });
@@ -694,7 +694,7 @@ static void freeze_game(void)
 static void unfreeze_game(void)
 {
     g_game_time_ticking = 1;
-    game_unfreeze();
+    command_unfreeze_game();
     set_input(frozen_input);
     command_discard_all_input();
 }

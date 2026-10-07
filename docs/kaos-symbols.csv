@@ -893,8 +893,8 @@ address,name,signature,subsystem
 0x104c22,jt_check_save_disk,,jump_table
 0x104c2a,jt_save_game,,jump_table
 0x104c32,jt_fun_1270c8,,jump_table
-0x104c3a,jt_game_freeze,,jump_table
-0x104c42,jt_game_unfreeze,,jump_table
+0x104c3a,jt_command_freeze_game,,jump_table
+0x104c42,jt_command_unfreeze_game,,jump_table
 0x104c4a,jt_initialize_game,,jump_table
 0x104c52,jt_fun_127ad4,,jump_table
 0x104c5a,jt_fun_127ba6,,jump_table
@@ -1704,8 +1704,8 @@ address,name,signature,subsystem
 0x1270c8,entrance_show_credits,void entrance_show_credits(void),startend
 0x12712c,decompress_dungeon,"void decompress_dungeon(const uint8_t *source, uint8_t *dest, int32_t byte_count)",loadsave
 0x127186,decompress_get_bits,uint16_t decompress_get_bits(void),loadsave
-0x1271a2,game_freeze,void game_freeze(void),startend
-0x1271fa,game_unfreeze,void game_unfreeze(void),startend
+0x1271a2,command_freeze_game,void command_freeze_game(void),startend
+0x1271fa,command_unfreeze_game,void command_unfreeze_game(void),startend
 0x12726a,graphic_get_bitmap_byte_count,uint16_t graphic_get_bitmap_byte_count(int16_t graphic_index),startend
 0x127298,layout_alloc_graphic_bitmap,"void layout_alloc_graphic_bitmap(int16_t layout_index, int16_t graphic_index)",startend
 0x1272ce,layout_share_bitmap,"void layout_share_bitmap(int16_t source_layout_index, int16_t dest_layout_index)",startend

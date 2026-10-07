@@ -442,7 +442,7 @@ void gameloop_tick(void)
     music_update();
     if (!g_party_is_sleeping) {
         command_wake_up();
-        if (!g_candidate_champion_ordinal) game_unfreeze();
+        if (!g_candidate_champion_ordinal) command_unfreeze_game();
         if (!g_inventory_champion_ordinal) gameloop_draw_view();
         else if (g_adventure == ADVENTURE_CSB) panel_redraw_scroll();
     }

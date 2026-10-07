@@ -82,8 +82,8 @@ void command_wake_up(void);
 
 extern int16_t g_mouse_pointer_hidden;           /* the eye, or an imaginary wall, is pressed */
 
-void game_freeze(void);
-void game_unfreeze(void);
+void command_freeze_game(void);
+void command_unfreeze_game(void);
 void command_toggle_inventory(int16_t champion_index);
 void command_click_on_mouth(void);
 void command_release_dead_champion(uint16_t champion_index, int16_t leader_index);

@@ -673,8 +673,8 @@ address,name,signature,subsystem
 0x12a6e2,show_title,,startend
 0x12a8d0,decompress_dungeon,"void decompress_dungeon(const uint8_t *source, uint8_t *dest, int32_t byte_count)",loadsave
 0x12a92a,decompress_get_bits,uint16_t decompress_get_bits(void),loadsave
-0x12a946,game_freeze,void game_freeze(void),startend
-0x12a9a2,game_unfreeze,void game_unfreeze(void),startend
+0x12a946,command_freeze_game,void command_freeze_game(void),startend
+0x12a9a2,command_unfreeze_game,void command_unfreeze_game(void),startend
 0x12aa18,graphic_get_bitmap_byte_count,uint16_t graphic_get_bitmap_byte_count(int16_t graphic_index),startend
 0x12aa4c,layout_alloc_graphic_bitmap,"void layout_alloc_graphic_bitmap(int16_t layout_index, int16_t graphic_index)",startend
 0x12aa8c,layout_share_bitmap,"void layout_share_bitmap(int16_t source_layout_index, int16_t dest_layout_index)",startend
