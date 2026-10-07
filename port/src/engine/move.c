@@ -50,7 +50,7 @@ uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint1
 }
 
 /* Turns the party. Each champion keeps its place relative to the party. The loop also runs one time without champions. */
-void champion_set_party_direction(int16_t direction)
+void move_set_party_direction(int16_t direction)
 {
     int16_t delta = direction - g_party_direction;
     g_party_direction = direction;
@@ -71,7 +71,7 @@ static uint16_t scent_of(int16_t x, int16_t y, int16_t map)
 
 /* Adds strength to the party scent on a square, or keeps the larger strength. The original compares scent i
    with strength count - 1 - i; the port keeps this. */
-void champion_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags)
+void move_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags)
 {
     if (!g_party.scent_count)
         return;
@@ -97,14 +97,14 @@ static void add_party_scent(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t
     for (; n >= PARTY_SCENT_COUNT; n--)
         champion_delete_scent(0);
     if (n)
-        champion_add_scent_strength(src_x, src_y, (int16_t)((uint16_t)g_game_time - (uint16_t)g_last_party_movement_time));   /* 16-bit difference */
+        move_add_scent_strength(src_x, src_y, (int16_t)((uint16_t)g_game_time - (uint16_t)g_last_party_movement_time));   /* 16-bit difference */
     g_last_party_movement_time = (int32_t)g_game_time;
     g_party.scent_count++;
     if (g_party.event79_count_footprints)
         g_party.last_scent_index = g_party.scent_count;
     g_party.scents[n] = scent_of(dst_x, dst_y, map);
     g_party.scent_strengths[n] = 0;
-    champion_add_scent_strength(dst_x, dst_y, (int16_t)(SCENT_KEEP_LARGER | SCENT_NEW_STRENGTH));
+    move_add_scent_strength(dst_x, dst_y, (int16_t)(SCENT_KEEP_LARGER | SCENT_NEW_STRENGTH));
 }
 
 static int16_t is_party_on(int16_t x, int16_t y)
@@ -155,7 +155,7 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
                     g_party_teleport_count += !points_to_itself;
                     if (teleporter_is_audible(teleporter))
                         sound_request_play(SOUND_TELEPORT, dst_x, dst_y, SOUND_MODE_NOW);
-                    champion_set_party_direction(teleporter_is_rotation_absolute(teleporter) ? rotation : NORMALIZE(g_party_direction + rotation));
+                    move_set_party_direction(teleporter_is_rotation_absolute(teleporter) ? rotation : NORMALIZE(g_party_direction + rotation));
                 } else if (type == THING_PROJECTILE) {
                     thing = move_get_teleporter_rotated_projectile_thing(teleporter, thing);
                 } else if (!teleporter_is_rotation_absolute(teleporter) && src_x != NO_TELEPORTER_ROTATION) {
@@ -265,7 +265,7 @@ void command_take_stairs(int16_t stairs_go_up)
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);
     g_new_party_map_index = get_location_after_level_change(g_party_map_index, stairs_go_up ? LEVEL_UP : LEVEL_DOWN, &g_party_map_x, &g_party_map_y);
     set_current_map(g_new_party_map_index);
-    champion_set_party_direction(get_stairs_exit_direction(g_party_map_x, g_party_map_y));
+    move_set_party_direction(get_stairs_exit_direction(g_party_map_x, g_party_map_y));
     set_current_map(g_party_map_index);
 }
 
@@ -278,7 +278,7 @@ void command_turn_party(int16_t command)
         return;
     }
     sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, 1, 0);
-    champion_set_party_direction(NORMALIZE(g_party_direction + (command == COMMAND_TURN_RIGHT ? 1 : -1)));
+    move_set_party_direction(NORMALIZE(g_party_direction + (command == COMMAND_TURN_RIGHT ? 1 : -1)));
     sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, 1, 1);
 }
 
@@ -302,9 +302,9 @@ static int16_t is_square_blocking(uint8_t square)
 static void bump_into_wall(int16_t x, int16_t y, int16_t arrow)
 {
     int16_t cell = NORMALIZE(g_party_direction + arrow + 2);
-    int16_t first = champion_get_target_champion_index(x, y, cell);
+    int16_t first = group_get_target_champion_index(x, y, cell);
     int16_t damaged = champion_add_pending_damage_and_wounds(first, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
-    int16_t second = champion_get_target_champion_index(x, y, NORMALIZE(cell + 1));
+    int16_t second = group_get_target_champion_index(x, y, NORMALIZE(cell + 1));
     if (second != first)
         damaged |= champion_add_pending_damage_and_wounds(second, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
     if (damaged)

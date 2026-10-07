@@ -722,11 +722,11 @@ def chest_with_content(game):
 
 def test_take_put_and_look_in_an_open_chest(game):
     lib = game.lib
-    lib.champion_put_object_in_leader_hand.argtypes = [ctypes.c_uint16]
-    lib.champion_get_object_removed_from_leader_hand.restype = ctypes.c_uint16
+    lib.inventory_put_object_in_leader_hand.argtypes = [ctypes.c_uint16]
+    lib.inventory_get_object_removed_from_leader_hand.restype = ctypes.c_uint16
     chest, content = chest_with_content(game)
     free = 30 + len(content)
-    lib.champion_put_object_in_leader_hand(chest)  # the chest stays in its square list; the test gives it back unchanged
+    lib.inventory_put_object_in_leader_hand(chest)  # the chest stays in its square list; the test gives it back unchanged
     client = Client(game)
     try:
         client.act("open_inventory", champion=0)
@@ -755,7 +755,7 @@ def test_take_put_and_look_in_an_open_chest(game):
         client.act("close_inventory")
     finally:
         client.sock.close()
-        removed = lib.champion_get_object_removed_from_leader_hand()
+        removed = lib.inventory_get_object_removed_from_leader_hand()
     assert removed == chest
     data = lib.get_thing_data(chest)
     assert data[2] << 8 | data[3] == content[0]

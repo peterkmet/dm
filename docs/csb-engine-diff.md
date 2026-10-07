@@ -222,7 +222,7 @@ Code references (Step 3 verified each address: a `pea` or `lea` with A5 = C`0x10
 | `0x104680`, `0x104688` | `command_draw_sleep_screen`, `command_process_queue` |
 | `0x10264e` | `build_object_attributes_string` |
 | `0x10267c`–`0x10269a`, `0x1026a2`, `0x1026ae`, `0x1026bc`–`0x1026e2`, `0x1026ee`–`0x1026f8`, `0x102578` | `draw_panel_object` |
-| `0x102dc2`, `0x102dcc` | `champion_draw_state` |
+| `0x102dc2`, `0x102dcc` | `ui_draw_champion_state` |
 | `0x102740`, `0x102748`, `0x102750` | `inventory_toggle` |
 | `0x102524`, `0x102588`, `0x102d56` | `draw_champion_skills_and_statistics` (`0x102d56` also in `champion_add_skill_experience` and `menus_print_spell_failure_message`) |
 | `0x104b7a`, `0x104b9a`, `0x104ba2`, `0x104bc0`, `0x104bea` | `menus_print_spell_failure_message` |

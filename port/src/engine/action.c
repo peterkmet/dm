@@ -219,7 +219,7 @@ static int16_t is_spell_action_cast(uint16_t champion_index, uint16_t explosion_
         attack = max16(2, (int16_t)(c->current_mana * attack) / mana_cost);
         mana_cost = c->current_mana;
     }
-    int16_t cast = champion_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), attack, (uint16_t)mana_cost);
+    int16_t cast = magic_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), attack, (uint16_t)mana_cost);
     menus_decrement_charges(champion_index);
     return cast;
 }
@@ -245,11 +245,11 @@ static int16_t is_shot(uint16_t champion_index)
         step_energy -= WEAPON_CLASS_FIRST_SLING;
     }
     champion_face_party_direction(c);
-    uint16_t thing = champion_get_object_removed_from_slot(champion_index, SLOT_HAND_READY);
+    uint16_t thing = inventory_get_object_removed_from_slot(champion_index, SLOT_HAND_READY);
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
     int16_t level = champion_get_skill_level((int16_t)champion_index, SKILL_SHOOT);
     /* The attack is a byte: the launcher shoot attack plus the level, doubled. */
-    champion_shoot_projectile((int16_t)champion_index, thing, (uint8_t)(missile->kinetic_energy + launcher->kinetic_energy),
+    projectile_shoot_from_champion((int16_t)champion_index, thing, (uint8_t)(missile->kinetic_energy + launcher->kinetic_energy),
                               (uint8_t)((level + (launcher->attributes & WEAPON_SHOOT_ATTACK_MASK)) << 1), (uint8_t)step_energy);
     return 1;
 }
@@ -263,7 +263,7 @@ static void freeze_life(uint16_t champion_index)
     uint16_t type = junk_type(thing);
     if (type == JUNK_MAGICAL_BOX_BLUE || type == JUNK_MAGICAL_BOX_GREEN) {
         ticks = type == JUNK_MAGICAL_BOX_BLUE ? FREEZE_LIFE_TICKS_BLUE_BOX : FREEZE_LIFE_TICKS_GREEN_BOX;
-        champion_get_object_removed_from_slot(champion_index, SLOT_HAND_ACTION);
+        inventory_get_object_removed_from_slot(champion_index, SLOT_HAND_ACTION);
         thing_set_free(thing);
     } else {
         ticks = FREEZE_LIFE_TICKS_CHARGE;
@@ -448,7 +448,7 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
     case ACTION_THROW: {
         champion_face_party_direction(c);
         int16_t side = NORMALIZE(g_party_direction + 1) == c->cell || NORMALIZE(g_party_direction + 2) == c->cell;
-        performed = champion_is_object_thrown(champion_index, SLOT_HAND_ACTION, side);
+        performed = action_is_object_thrown(champion_index, SLOT_HAND_ACTION, side);
         if (performed) /* event 11 moves the next weapon from the quiver to the action hand */
             g_timeline_events[c->enable_action_event_index].b = (uint16_t)((SLOT_HAND_ACTION + 1) << QUIVER_SLOT_SHIFT |
                                                                            (g_timeline_events[c->enable_action_event_index].b & EVENT_B_LOW_BYTE));
@@ -463,7 +463,7 @@ int16_t menus_is_action_performed(uint16_t champion_index, int16_t action)
     }
     }
     if (disabled_ticks)
-        champion_disable_action(champion_index, disabled_ticks);
+        magic_disable_action(champion_index, disabled_ticks);
     if (stamina)
         champion_decrement_stamina((int16_t)champion_index, stamina);
     if (experience)
@@ -488,7 +488,7 @@ int16_t menus_did_click_trigger_action(int16_t action_list_index)
 }
 
 /* Stamina cost of a throw: half the weight, 1 to 10, plus half of each 10 above. */
-int16_t champion_get_throwing_stamina_cost(uint16_t thing)
+int16_t action_get_throwing_stamina_cost(uint16_t thing)
 {
     uint16_t weight = get_object_weight(thing) >> 1;
     int16_t cost = bounded_value(1, (int16_t)weight, THROW_STAMINA_MAXIMUM);
@@ -499,7 +499,7 @@ int16_t champion_get_throwing_stamina_cost(uint16_t thing)
 
 /* The champion throws the object of the slot (or, with slot < 0, the leader hand object) from the left or right
    front cell. Kinetic energy comes from the strength, the weapon, and the throw level. */
-int16_t champion_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side)
+int16_t action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t thing;
@@ -507,7 +507,7 @@ int16_t champion_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t
     if (slot < 0) {
         if (g_leader_empty_handed)
             return 0;
-        thing = champion_get_object_removed_from_leader_hand();
+        thing = inventory_get_object_removed_from_leader_hand();
         /* The strength counts the thrown object as if it were in the action hand. */
         uint16_t action_hand = c->slots[SLOT_HAND_ACTION];
         c->slots[SLOT_HAND_ACTION] = thing;
@@ -516,13 +516,13 @@ int16_t champion_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t
         c->slots[SLOT_HAND_ACTION] = action_hand;
     } else {
         strength = champion_get_strength((int16_t)champion_index, slot);
-        thing = champion_get_object_removed_from_slot(champion_index, (uint16_t)slot);
+        thing = inventory_get_object_removed_from_slot(champion_index, (uint16_t)slot);
         if (thing == THING_NONE)
             return 0;
     }
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
-    champion_decrement_stamina((int16_t)champion_index, champion_get_throwing_stamina_cost(thing));
-    champion_disable_action(champion_index, THROW_DISABLED_TICKS);
+    champion_decrement_stamina((int16_t)champion_index, action_get_throwing_stamina_cost(thing));
+    magic_disable_action(champion_index, THROW_DISABLED_TICKS);
     int16_t experience = THROW_EXPERIENCE, weapon_energy = 1;
     if (THING_TYPE(thing) == THING_WEAPON) {
         experience = THROW_WEAPON_EXPERIENCE;
@@ -550,15 +550,15 @@ int16_t champion_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t
 }
 
 /* The leader throws the object in the leader hand (a click in the upper dungeon view). */
-int16_t champion_is_leader_hand_object_thrown(int16_t side)
+int16_t action_is_leader_hand_object_thrown(int16_t side)
 {
     if (g_leader_index == -1)
         return 0;
-    return champion_is_object_thrown((uint16_t)g_leader_index, -1, side);
+    return action_is_object_thrown((uint16_t)g_leader_index, -1, side);
 }
 
 /* 1 when the weapon slot holds a bow and the ammunition slot an arrow, or a sling and a sling stone. */
-int16_t champion_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)
+int16_t action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)
 {
     const Champion *c = &g_champions[champion_index];
     uint16_t weapon = c->slots[weapon_slot], ammunition = c->slots[ammunition_slot];
@@ -579,7 +579,7 @@ static int16_t has_weapon_moved_to_slot(uint16_t champion_index, uint16_t quiver
 {
     if (THING_TYPE(g_champions[champion_index].slots[quiver_slot]) != THING_WEAPON)
         return 0;
-    champion_add_object_in_slot(champion_index, champion_get_object_removed_from_slot(champion_index, quiver_slot), slot);
+    inventory_add_object_in_slot(champion_index, inventory_get_object_removed_from_slot(champion_index, quiver_slot), slot);
     return 1;
 }
 

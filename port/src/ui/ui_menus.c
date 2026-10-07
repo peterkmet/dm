@@ -79,7 +79,7 @@ void menus_clear_acting_champion(void)
 {
     int16_t ordinal = g_acting_champion_ordinal;
     action_clear_acting_champion();
-    if (ordinal) champion_draw_state((uint16_t)(ordinal - 1));
+    if (ordinal) ui_draw_champion_state((uint16_t)(ordinal - 1));
 }
 
 /* Opens the action menu of a champion: the actions of the object in the action hand. */
@@ -96,7 +96,7 @@ void menus_set_acting_champion(uint16_t champion_index)
     menus_set_action_list(set);
     g_action_area_contains_icons = 0;
     c->attributes |= CHAMPION_ATTR_ACTION_HAND;
-    champion_draw_state(champion_index);
+    ui_draw_champion_state(champion_index);
     menus_draw_action_area();
 }
 
@@ -189,7 +189,7 @@ void menus_refresh_action_area(void)
                 c->direction != c->direction_maximum_damage_received) {
                 c->direction = c->direction_maximum_damage_received;
                 c->attributes |= CHAMPION_ATTR_ICON;
-                champion_draw_state(i);
+                ui_draw_champion_state(i);
             }
             c->maximum_damage_received = 0;
         }
@@ -204,7 +204,7 @@ void menus_refresh_action_area(void)
     if (g_acting_champion_ordinal) {
         g_action_area_contains_icons = 0;
         g_champions[g_acting_champion_ordinal - 1].attributes |= CHAMPION_ATTR_ACTION_HAND;
-        champion_draw_state((uint16_t)(g_acting_champion_ordinal - 1));
+        ui_draw_champion_state((uint16_t)(g_acting_champion_ordinal - 1));
         menus_draw_action_area();
     } else if (!g_action_damage) {
         g_action_area_contains_icons = 1;

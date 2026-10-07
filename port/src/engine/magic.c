@@ -50,7 +50,7 @@ void menus_create_event70_light(int16_t light_power, int16_t ticks)
 }
 
 /* The action hand is disabled for the ticks; an earlier disable is merged into one event 11. */
-void champion_disable_action(uint16_t champion_index, uint16_t ticks)
+void magic_disable_action(uint16_t champion_index, uint16_t ticks)
 {
     Champion *c = &g_champions[champion_index];
     uint32_t time = g_game_time + ticks;
@@ -93,7 +93,7 @@ void menus_print_spell_failure_message(uint16_t champion_index, int16_t failure_
 }
 
 /* Spends the mana and shoots the spell; a weak cast with little maximum mana gets a slower step energy. */
-int16_t champion_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana)
+int16_t magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana)
 {
     Champion *c = &g_champions[champion_index];
     if ((uint16_t)c->current_mana < required_mana)
@@ -106,7 +106,7 @@ int16_t champion_is_projectile_spell_cast(uint16_t champion_index, uint16_t thin
         kinetic_energy += 3;
         step_energy = 9 - mana_bonus;
     }
-    champion_shoot_projectile((int16_t)champion_index, thing, (uint8_t)kinetic_energy, SPELL_PROJECTILE_ATTACK, (uint8_t)step_energy);
+    projectile_shoot_from_champion((int16_t)champion_index, thing, (uint8_t)kinetic_energy, SPELL_PROJECTILE_ATTACK, (uint8_t)step_energy);
     return 1;
 }
 
@@ -174,7 +174,7 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
     if (explosion_type == EXPLOSION_OPEN_DOOR)
         skill_level *= 2;
     int16_t kinetic_energy = bounded_value(21, (int16_t)((power + 2) * (skill_level * 2 + 4)), 255);
-    champion_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), kinetic_energy, 0);
+    magic_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), kinetic_energy, 0);
 }
 
 /* Light now, taken back by event 70 after the ticks. */
@@ -194,7 +194,7 @@ static void cast_zokathra(uint16_t champion_index)
     const Champion *c = &g_champions[champion_index];
     int16_t slot = c->slots[SLOT_HAND_READY] == THING_NONE ? SLOT_HAND_READY : c->slots[SLOT_HAND_ACTION] == THING_NONE ? SLOT_HAND_ACTION : -1;
     if (slot >= 0) {
-        champion_add_object_in_slot(champion_index, thing, (uint16_t)slot);
+        inventory_add_object_in_slot(champion_index, thing, (uint16_t)slot);
     } else {
         move_get_move_result(thing, -1, 0, g_party_map_x, g_party_map_y);
     }
@@ -341,7 +341,7 @@ int16_t menus_get_champion_spell_cast_result(uint16_t champion_index)
         break;
     }
     champion_add_skill_experience(champion_index, spell->skill_index, experience);
-    champion_disable_action(champion_index, disabled_ticks);
+    magic_disable_action(champion_index, disabled_ticks);
     return SPELL_CAST_SUCCESS;
 }
 

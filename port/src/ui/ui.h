@@ -61,7 +61,7 @@ extern int16_t g_action_area_contains_icons;
 extern uint8_t g_action_list_minimum_skill_levels[3];
 extern uint16_t g_action_count;
 /* The portrait of a champion as a bitmap. */
-Bitmap champion_portrait(int16_t champion_index);
+Bitmap ui_champion_portrait(int16_t champion_index);
 
 /* Setup: call after kaos_load, gfx_open, layout_init, text_init, and tables_init. */
 int ui_init(void);
@@ -105,11 +105,11 @@ uint32_t ui_mouse_table_address(int16_t table); /* KAOS address of a mouse input
 extern const char *const g_rune_names[UI_RUNE_COUNT];
 
 /* Champions and the inventory panel (ui_champion.c). */
-void champion_draw_bar_graphs(int16_t champion_index);
-void champion_draw_slot(uint16_t champion_index, uint16_t slot);
-void champion_draw_damage(int16_t champion_index, int16_t damage);
-void champion_draw_state(uint16_t champion_index);
-void champion_draw_all_states(uint16_t attributes);
+void ui_draw_champion_bar_graphs(int16_t champion_index);
+void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot);
+void ui_draw_champion_damage(int16_t champion_index, int16_t damage);
+void ui_draw_champion_state(uint16_t champion_index);
+void ui_draw_all_champion_states(uint16_t attributes);
 void draw_status_box_portrait(int16_t champion_index);
 void inventory_draw_open(int16_t champion_index);
 void inventory_draw_close(int16_t champion_index);

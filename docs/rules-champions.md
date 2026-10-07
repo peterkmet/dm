@@ -140,10 +140,10 @@ Sleep keeps the selected runes of the magic caster, in the original (command 145
 |---|---|
 | `get_object_weight` | Weapon and armour weight from the tables. Scroll 1. Potion 3, empty flask 1. Chest 50 plus its contents. Junk weight from the table; the waterskin adds 2 for each charge. |
 | `object_get_icon_index` | The object type, plus the state for types 0–30: compass direction, lit torch charge, waterskin and worn jewel charges, weapon charges, closed scroll. |
-| `champion_add_object_in_slot` | Adds the weight to the load and applies the object modifiers. A torch in a hand burns. A scroll in the action hand opens. A jewel on the neck is worn; the Illumulet adds light. |
-| `champion_get_object_removed_from_slot` | The reverse. A torch in a hand goes out. A scroll leaving the action hand closes. |
-| `champion_put_object_in_leader_hand`, `champion_get_object_removed_from_leader_hand` | The hand object counts in the leader load. |
-| `champion_click_on_slot_box` | Swaps the hand object and the slot object when the slot mask accepts the hand object. |
+| `inventory_add_object_in_slot` | Adds the weight to the load and applies the object modifiers. A torch in a hand burns. A scroll in the action hand opens. A jewel on the neck is worn; the Illumulet adds light. |
+| `inventory_get_object_removed_from_slot` | The reverse. A torch in a hand goes out. A scroll leaving the action hand closes. |
+| `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand` | The hand object counts in the leader load. |
+| `inventory_click_on_slot_box` | Swaps the hand object and the slot object when the slot mask accepts the hand object. |
 | `command_set_leader` | Moves the hand object weight to the new leader and turns the leader to the party direction. |
 
 Object modifiers (removed with the opposite sign):
@@ -209,7 +209,7 @@ The code is in `port/src/engine/action.c`. The rules follow `menus_is_action_per
 1. The target group is the group on that square (`g_action_target_group_thing`).
 2. Stamina cost is `random_bit() + stamina`. For skills 16–19 and the wizard skill, the mana cost of a spell action is `7 − min(6, skill level)`.
 3. The action runs (table below).
-4. The action hand is disabled for the action ticks (event 11, `champion_disable_action`). Stamina decreases. The action skill gets the experience. A value of 0 skips each step.
+4. The action hand is disabled for the action ticks (event 11, `magic_disable_action`). Stamina decreases. The action skill gets the experience. A value of 0 skips each step.
 
 | Action | Effect |
 |---|---|
@@ -226,7 +226,7 @@ The code is in `port/src/engine/action.c`. The rules follow `menus_is_action_per
 | Heal | While mana remains: health + `min(10, heal level)`, mana − 2, experience + 2 (start 2). |
 | Light | Light power 2 now, event 70 takes it back after 2500 ticks. Uses a charge. |
 | Window | Thieves eye (event 73) for `random % (level + 8) + 5` ticks. Uses a charge. |
-| Throw | `champion_is_object_thrown` from the action hand. The event 11 gets byte 6 = 2: when it runs, the next weapon of the quiver goes to the action hand. |
+| Throw | `action_is_object_thrown` from the action hand. The event 11 gets byte 6 = 2: when it runs, the next weapon of the quiver goes to the action hand. |
 | Fuse | `group_fuse_action` on the square in front of the party. |
 
 Block, Hit, and the other actions only add the action defense, the disabled ticks, the stamina cost, and the experience. The champion turns to the party direction for the spell, shoot, throw, fluxcage, and fuse actions.
@@ -241,9 +241,9 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 ### Throwing
 
-`champion_is_object_thrown(champion, slot, side)` throws the object of the slot. With slot < 0 it throws the leader hand object (`champion_is_leader_hand_object_thrown`, a click in the throw zones of the dungeon view); the strength then counts the object as if it were in the action hand.
+`action_is_object_thrown(champion, slot, side)` throws the object of the slot. With slot < 0 it throws the leader hand object (`action_is_leader_hand_object_thrown`, a click in the throw zones of the dungeon view); the strength then counts the object as if it were in the action hand.
 
-1. Stamina cost: half the weight, bounded 1–10, plus half of each 10 above (`champion_get_throwing_stamina_cost`). The action hand is disabled for 4 ticks.
+1. Stamina cost: half the weight, bounded 1–10, plus half of each 10 above (`action_get_throwing_stamina_cost`). The action hand is disabled for 4 ticks.
 2. Experience to the throw skill: 8 for objects, 12 for weapons, plus kinetic energy / 4 for weapons of class 0–12.
 3. Kinetic energy (a byte): `level + e / 2 + random(16) + e` with `e` = strength + the weapon kinetic energy (class 0–12) or 1.
 4. Attack: `bounded(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 − level)`.

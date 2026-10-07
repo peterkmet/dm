@@ -272,13 +272,13 @@ Algorithm:
 1. When a group moves on the party map, `move_is_killed_by_projectile_impact` runs first. When it returns true, the function returns 1.
 2. Store the destination. For the party set `g_party_map_x/y`. Choose a teleporter scope mask: 1 creature, 2 party, 3 object.
 3. Loop at most 99 times over the destination square:
-   - Teleporter (type 5, open bit 3): the teleporter thing is the first thing of the square. Check its scope bits (byte 2 bits 5–6). Read target X (byte 3 bits 0–4), target Y (word 2 bits 5–9), target map (byte 4). Byte 2 bit 7 is audible: play sound 14. Byte 2 bit 4 selects absolute rotation; bits 2–3 hold the rotation. The party turns with `champion_set_party_direction`. Objects rotate their cell. Stop when the teleporter points to itself.
+   - Teleporter (type 5, open bit 3): the teleporter thing is the first thing of the square. Check its scope bits (byte 2 bits 5–6). Read target X (byte 3 bits 0–4), target Y (word 2 bits 5–9), target map (byte 4). Byte 2 bit 7 is audible: play sound 14. Byte 2 bit 4 selects absolute rotation; bits 2–3 hold the rotation. The party turns with `move_set_party_direction`. Objects rotate their cell. Stop when the teleporter points to itself.
    - Open pit (type 2, bit 3 set, bit 0 clear), when the thing does not levitate: go one level down with `get_location_after_level_change(map, +1, &x, &y)`. The party takes `champion_damage_all(20, 0x30, 2)` and sound 7. When `g_use_rope_to_climb_down_pit` is set, each champion instead loses stamina `load × 25 / max_load + 1`. A falling group takes 20 damage through `group_get_damage_all_creatures_outcome`. Outcome 2 (all dead) ends the loop.
    - Stairs (type 3) for things other than the party and projectiles: go one level up or down (bit 2 clear: down), then step out in the stairs exit direction. The new cell faces away from the stairs.
    - Any other square ends the loop.
 4. A group that died, or that is not allowed on the target map (`is_creature_allowed_on_map`), drops its possessions and is deleted.
 5. Store the result in `g_move_result_map_x/y`, `g_move_result_map_index`, `g_move_result_cell`, and `g_move_result_direction`.
-6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `champion_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `champion_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
+6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `champion_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `move_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
 7. Remove the thing from the source with `sensor_process_thing_addition_or_removal(..., add=0)`. A levitating thing skips sensors and only unlinks.
 8. Add the thing at the destination:
    - Party on a new map: set `g_new_party_map_index`. The game loop changes the map.
@@ -486,7 +486,7 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 - Door button: `sensor_add_event(10, front, cell 0, toggle, time + 1)`.
 - Empty hand on an object cell: `command_grab_leader_hand_object`.
 - Empty hand on the wall ornament: drink from a fountain (water of the leader = 2048, sound 8), or `command_touch_front_wall`.
-- Hand object over zones `0x2e4`–`0x2e7`: `command_drop_leader_hand_object`. Over zones `0x2e9`/`0x2ea` (`0x2ec`/`0x2ed` with a door): throw (`champion_is_leader_hand_object_thrown`).
+- Hand object over zones `0x2e4`–`0x2e7`: `command_drop_leader_hand_object`. Over zones `0x2e9`/`0x2ea` (`0x2ec`/`0x2ed` with a door): throw (`action_is_leader_hand_object_thrown`).
 - Hand object on an alcove: drop into the alcove (cell 4). On a vi altar, bones (icon 0x93) create event 13.
 - Hand object on a fountain: fill a flask (icon 8 or 9 sets 3 charges) or a waterskin (icon 0xc3), then touch the wall.
 
@@ -508,7 +508,7 @@ Per-action tables (44 bytes each, indexed by action):
 
 | Address | Global | Use |
 |---|---|---|
-| `0x103eac` | `g_action_disabled_ticks` | `champion_disable_action` duration. |
+| `0x103eac` | `g_action_disabled_ticks` | `magic_disable_action` duration. |
 | `0x103ed8` | `g_action_damage_factor` | Melee damage factor. |
 | `0x103f04` | `g_action_hit_probability` | Melee hit probability (bit 15 added for SHOOT-like actions). |
 | `0x103f30` | `g_action_stamina` | Stamina cost (plus a random bit). |

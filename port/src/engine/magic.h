@@ -21,10 +21,10 @@ enum {
 int16_t menus_get_champion_spell_cast_result(uint16_t champion_index);
 int16_t menus_get_click_on_spell_cast_result(void);
 void menus_print_spell_failure_message(uint16_t champion_index, int16_t failure_type, uint16_t skill_index);
-int16_t champion_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana);
+int16_t magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana);
 int16_t menus_is_party_spell_or_fire_shield_successful(uint16_t champion_index, int16_t spell_shield, uint16_t ticks, int16_t use_mana);
 void menus_create_event70_light(int16_t light_power, int16_t ticks);
-void champion_disable_action(uint16_t champion_index, uint16_t ticks);
+void magic_disable_action(uint16_t champion_index, uint16_t ticks);
 /* CSB: 1 when a scroll text (or its first line) is the magic map text MAGICMAP. */
 int magic_map_is_text(const char *text);
 

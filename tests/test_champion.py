@@ -73,7 +73,7 @@ def lib():
         "champion_damage_all": (c16, [u16, u16, c16]), "champion_decrement_stamina": (None, [c16, c16]),
         "get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "get_unused_thing": (u16, [u16]),
         "champion_add_candidate_to_party": (None, [c16]), "champion_click_in_resurrect_reincarnate_panel": (None, [c16]),
-        "champion_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [u16]),
+        "inventory_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [u16]),
         "champion_pack": (None, [cp, ctypes.c_char_p]), "champion_unpack": (None, [ctypes.c_char_p, cp]),
         "recruit_text_thing": (u16, [c16, c16, c16]), "recruit_portrait_index": (c16, [u16]),
         "dungeon_square_first_thing": (u16, [c16, c16, c16]), "get_thing_data": (ctypes.POINTER(u8), [u16]),
@@ -448,7 +448,7 @@ def test_eat_food(lib, party):
     thing = lib.get_unused_thing(10)
     lib.get_thing_data(thing)[3] = junk
     ch.food, load = 100, ch.load
-    lib.champion_put_object_in_leader_hand(thing)
+    lib.inventory_put_object_in_leader_hand(thing)
     assert ch.load == load + lib.get_object_weight(thing)
     lib.process_click_on_mouth()
     assert ch.food == min(100 + food_value, 2048) and ch.load == load

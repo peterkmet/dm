@@ -25,11 +25,11 @@ int16_t object_get_icon_index(uint16_t thing);
 uint16_t get_object_weight(uint16_t thing);
 uint16_t get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense);
 
-void champion_put_object_in_leader_hand(uint16_t thing);
-uint16_t champion_get_object_removed_from_leader_hand(void);
-uint16_t champion_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot);
-void champion_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot);
-void champion_click_on_slot_box(uint16_t slot_box);
+void inventory_put_object_in_leader_hand(uint16_t thing);
+uint16_t inventory_get_object_removed_from_leader_hand(void);
+uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot);
+void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot);
+void inventory_click_on_slot_box(uint16_t slot_box);
 /* Results of process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
 enum { MOUTH_REFUSED, MOUTH_SWALLOWED, MOUTH_USED_UP };
 int16_t process_click_on_mouth(void);

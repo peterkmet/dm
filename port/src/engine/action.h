@@ -39,14 +39,14 @@ int16_t menus_is_group_frightened_by_action(uint16_t champion_index, int16_t act
 void menus_decrement_charges(uint16_t champion_index);
 void menus_print_action_message(uint16_t champion_index, const char *text);
 
-/* Throwing: slot SLOT_HAND_ACTION, or the leader hand object with champion_is_leader_hand_object_thrown. side 1 throws
+/* Throwing: slot SLOT_HAND_ACTION, or the leader hand object with action_is_leader_hand_object_thrown. side 1 throws
    from the right side of the party. */
-int16_t champion_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side);
-int16_t champion_is_leader_hand_object_thrown(int16_t side);
-int16_t champion_get_throwing_stamina_cost(uint16_t thing);
+int16_t action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side);
+int16_t action_is_leader_hand_object_thrown(int16_t side);
+int16_t action_get_throwing_stamina_cost(uint16_t thing);
 
 /* Ammunition in the quiver for the launcher in the weapon slot. */
-int16_t champion_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot);
+int16_t action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot);
 void timeline_move_weapon_from_quiver_to_slot(uint16_t champion_index, uint16_t slot);
 
 #endif

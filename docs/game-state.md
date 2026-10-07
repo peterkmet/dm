@@ -195,12 +195,12 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 | `scale_value(a, shift, b)` | `0x1076f8` | `(a * b) >> shift`: unsigned 16 × 16 multiply, arithmetic shift of the 32-bit result. Callers use the low word. |
 | `update_map_coordinates_after_relative_movement` | `0x10a85c` | Adds forward and right steps. Reads the step tables from KAOS: `g_direction_to_step_east` (`0x101038`: 0, 1, 0, −1) and `g_direction_to_step_north` (`0x101040`: −1, 0, 1, 0). |
 | `NORMALIZE(direction)` | — | `direction & 3`. |
-| `champion_get_stamina_adjusted_value` | `0x110f4c` | When current stamina is below half of the maximum: `value / 2 + value * stamina / (maximum / 2)`. |
-| `champion_get_statistic_adjusted_attack` | `0x110f88` | `d = 170 − current statistic`. Returns `attack >> 3` when `d < 16`, else `scale_value(attack, 7, d)`. |
+| `game_get_stamina_adjusted_value` | `0x110f4c` | When current stamina is below half of the maximum: `value / 2 + value * stamina / (maximum / 2)`. |
+| `game_get_statistic_adjusted_attack` | `0x110f88` | `d = 170 − current statistic`. Returns `attack >> 3` when `d < 16`, else `scale_value(attack, 7, d)`. |
 | `adjust_statistic_current_value` | `0x10f860` | Adds a delta to a current statistic. A negative delta stops at the minimum. Above 120 the delta is halved, above 150 quartered (plus 1). The result stops at 170. |
-| `champion_is_lucky` | `0x110fc8` | See below. |
+| `game_is_lucky` | `0x110fc8` | See below. |
 
-`champion_is_lucky(champion, percentage)`:
+`game_is_lucky(champion, percentage)`:
 
 1. When `random_bit()` is 1 and `percentage < random16() % 100`, return 1. Luck does not change.
 2. Lucky is true when the current luck is above 0 and `percentage < random16() % (2 * luck)`.

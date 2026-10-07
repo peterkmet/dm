@@ -294,7 +294,7 @@ void command_click_on_mouth(void)
         }
     sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
     if (g_panel_content == PANEL_CONTENT_FOOD_WATER) g_champions[champion_index].attributes |= CHAMPION_ATTR_PANEL;
-    champion_draw_state(champion_index);
+    ui_draw_champion_state(champion_index);
 }
 
 /* A champion dies: its open inventory closes, also during a press on the eye or the mouth; a dead
@@ -340,7 +340,7 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
         int16_t caster = g_magic_caster_champion_index;
         g_magic_caster_champion_index = -1;
         menus_set_magic_caster(caster);
-        champion_draw_all_states(CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_NAME_TITLE | CHAMPION_ATTR_STATISTICS |
+        ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_NAME_TITLE | CHAMPION_ATTR_STATISTICS |
                                  CHAMPION_ATTR_ICON | CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_WOUNDS);
     }
     g_redraw |= REDRAW_ACTION_AREA;
@@ -357,7 +357,7 @@ static void click_in_status_box(int16_t champion_index, int16_t x, int16_t y)
     if (command >= COMMAND_SET_LEADER_FIRST && command < COMMAND_SET_LEADER_FIRST + CHAMPION_MAX_COUNT)
         command_set_leader(command - COMMAND_SET_LEADER_FIRST);
     else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST && command < COMMAND_CLICK_SLOT_BOX_FIRST + HAND_SLOT_BOX_COUNT)
-        champion_click_on_slot_box((uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST));
+        inventory_click_on_slot_box((uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST));
 }
 
 /* First click on a champion icon picks the champion; the second click moves it to the clicked
@@ -383,11 +383,11 @@ static void click_on_champion_icon(int16_t cell)
         } else {
             g_champions[other].cell = (uint8_t)NORMALIZE(from + g_party_direction);
             g_champions[other].attributes |= CHAMPION_ATTR_ICON;
-            champion_draw_state((uint16_t)other);
+            ui_draw_champion_state((uint16_t)other);
         }
         g_champions[moved].cell = (uint8_t)NORMALIZE(cell + g_party_direction);
     }
-    champion_draw_state((uint16_t)moved);
+    ui_draw_champion_state((uint16_t)moved);
 }
 
 /* The leader takes the top object of a pile in view cell 0-3 or the alcove. A creature in a
@@ -406,7 +406,7 @@ static void grab_object(int16_t pile)
     uint16_t thing = g_pile_top_objects[pile];
     if (object_get_icon_index(thing) != -1) {
         move_get_move_result(thing, x, y, -1, 0);
-        champion_put_object_in_leader_hand(thing);
+        inventory_put_object_in_leader_hand(thing);
     }
     g_stop_waiting_for_input = 1;
 }
@@ -420,7 +420,7 @@ static void drop_object(int16_t pile)
     if (alcove) pile = VIEW_CELL_FRONT_FIRST;
     if (pile >= VIEW_CELL_FRONT_FIRST) front_square(&x, &y);
     int16_t cell = NORMALIZE(pile + g_party_direction);
-    uint16_t thing = champion_get_object_removed_from_leader_hand();
+    uint16_t thing = inventory_get_object_removed_from_leader_hand();
     move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, x, y);
     if (alcove && g_facing_vi_altar && object_get_icon_index(thing) == ICON_BONES) {
         TimelineEvent rebirth = { .map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + 1), .type = EVENT_VI_ALTAR_REBIRTH,
@@ -478,9 +478,9 @@ static int16_t is_leader_hand_object_thrown(int16_t x, int16_t y)
     int16_t zone = g_square_ahead_element == VIEW_ELEMENT_DOOR_FRONT ? ZONE_THROW_DOOR_LEFT : ZONE_THROW_LEFT;
     int16_t thrown = 0;
     if (ui_point_in_zone(zone, x, y))
-        thrown = champion_is_leader_hand_object_thrown(0);
+        thrown = action_is_leader_hand_object_thrown(0);
     else if (ui_point_in_zone((int16_t)(zone + 1), x, y))
-        thrown = champion_is_leader_hand_object_thrown(1);
+        thrown = action_is_leader_hand_object_thrown(1);
     if (thrown)
         g_stop_waiting_for_input = 1;
     return thrown;
@@ -556,7 +556,7 @@ static void add_champion_symbol(int16_t symbol)
     c->symbol_step = (uint8_t)NORMALIZE(step + 1);
     menus_draw_available_symbols(c->symbol_step);
     menus_draw_champion_symbols((uint16_t)g_magic_caster_champion_index);
-    champion_draw_state((uint16_t)g_magic_caster_champion_index);
+    ui_draw_champion_state((uint16_t)g_magic_caster_champion_index);
 }
 
 /* The magic caster removes the last rune; the mana stays spent. */
@@ -707,7 +707,7 @@ static void move_or_turn(int16_t command)
     highlight_zone((int16_t)(ZONE_MOVEMENT_ARROW_BEFORE_FIRST + command));
     if (command <= COMMAND_TURN_RIGHT) {
         command_turn_party(command);
-        champion_draw_all_states(CHAMPION_ATTR_ICON);
+        ui_draw_all_champion_states(CHAMPION_ATTR_ICON);
         return;
     }
     command_move_party(command);
@@ -766,7 +766,7 @@ int command_process_queue(void)
     } else if (command == COMMAND_RIGHT_RELEASE) {
         dragged_icon_cell_plus_1 = 0;
     } else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST && command <= COMMAND_CLICK_SLOT_BOX_LAST) {
-        if (g_leader_index != -1) champion_click_on_slot_box((uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST));
+        if (g_leader_index != -1) inventory_click_on_slot_box((uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST));
     } else if (command >= COMMAND_TOGGLE_INVENTORY_FIRST && command <= COMMAND_CLOSE_INVENTORY) {
         int16_t index = command - COMMAND_TOGGLE_INVENTORY_FIRST;
         if ((index == INVENTORY_CLOSE || index < (int16_t)g_party_champion_count) && !g_candidate_champion_ordinal) inventory_toggle(index);

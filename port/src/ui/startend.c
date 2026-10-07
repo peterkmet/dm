@@ -284,7 +284,7 @@ static void draw_champion_parade(void)
         ui_blit_graphic(&screen, GFX_CHAMPION_FRAME, (int16_t)(ZONE_CHAMPION_FRAME_FIRST + i), COLOR_FLESH);
         int16_t w = pw, h = ph;
         Box b;
-        Bitmap portrait = champion_portrait((int16_t)i);
+        Bitmap portrait = ui_champion_portrait((int16_t)i);
         if (layout_get_zone((int16_t)(ZONE_CHAMPION_PORTRAIT_FIRST + i), pw, ph, &b, &w, &h))
             draw_blit(&portrait, w, h, &screen, &b, COLOR_DARK_GRAY, 0);
         char name[sizeof c->name + 1] = { 0 }, title[sizeof c->title + 1] = { 0 };
@@ -485,7 +485,7 @@ void fuse_sequence(void)
     command_highlight_disable();
     g_party.magical_light_amount = FUSE_MAGICAL_LIGHT;
     g_party.shield_defense = g_party.spell_shield_defense = g_party.fire_shield_defense = FUSE_SHIELD;
-    champion_draw_all_states(CHAMPION_ATTR_STATUS_BOX);
+    ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX);
     fuse_update();
     update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
     uint16_t lord = group_get_thing(x, y);

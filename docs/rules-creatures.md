@@ -159,7 +159,7 @@ Event 6 (wall) on a launcher sensor (type 7–10, 14, or 15) in the event cell c
 
 ### Champion projectiles
 
-`champion_shoot_projectile` shoots from the front cell of the side of the champion. The party cannot move in that direction for 4 ticks.
+`projectile_shoot_from_champion` shoots from the front cell of the side of the champion. The party cannot move in that direction for 4 ticks.
 
 ## Explosions
 

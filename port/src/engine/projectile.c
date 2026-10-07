@@ -761,7 +761,7 @@ uint16_t get_object_for_launcher_or_generator(int16_t object_info_index)
 }
 
 /* A champion throws or shoots from the front cell of his side; the party cannot move into it for 4 ticks. */
-void champion_shoot_projectile(int16_t champion_index, uint16_t thing, uint8_t kinetic_energy, uint8_t attack, uint8_t step_energy)
+void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint8_t kinetic_energy, uint8_t attack, uint8_t step_energy)
 {
     const Champion *champion = &g_champions[champion_index];
     uint16_t direction = champion->direction;

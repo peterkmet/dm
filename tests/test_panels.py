@@ -39,7 +39,7 @@ def setup(lib):
     lib.champion_pack.argtypes = [ctypes.POINTER(Champion), ctypes.c_char_p]
     lib.get_unused_thing.restype = u16
     lib.get_unused_thing.argtypes = [u16]
-    lib.champion_get_object_removed_from_slot.argtypes = [u16, u16]
+    lib.inventory_get_object_removed_from_slot.argtypes = [u16, u16]
     lib.panel_click_in_chest.argtypes = [c16, c16]
     lib.ui_slot_box_zone.argtypes = [c16, ctypes.c_int, ctypes.POINTER(Box)]
 
@@ -187,7 +187,7 @@ def test_object_text_matches_original(game, party):
 def put_in_action_hand(game, champions, thing):
     champions[0].slots[1] = thing
     champions[0].attributes |= 0x0800  # panel
-    game.champion_draw_state(0)
+    game.ui_draw_champion_state(0)
 
 
 def save_png(game, name):
@@ -213,7 +213,7 @@ def test_chest_open_swap_close(game, party):
     save_png(game, "chest")
 
     hand = game.get_unused_thing(5)
-    game.champion_put_object_in_leader_hand(hand)
+    game.inventory_put_object_in_leader_hand(hand)
     box = Box()
     assert game.ui_slot_box_zone(SLOT_BOX_CHEST_FIRST, 0, ctypes.byref(box))
     game.panel_click_in_chest(box.x + box.w // 2, box.y + box.h // 2 + VIEWPORT_Y)
@@ -231,7 +231,7 @@ def test_chest_open_swap_close(game, party):
 
     game.inventory_draw_open(0)
     assert open_chest.value == chest
-    game.champion_get_object_removed_from_slot(0, 1)
+    game.inventory_get_object_removed_from_slot(0, 1)
     assert open_chest.value == NONE
     assert chest_content(game, chest) == [hand] + content[1:] + [content[0]]
     game.inventory_draw_close(0)
@@ -247,13 +247,13 @@ def test_render_scroll_and_eye(game, party):
     assert c16.in_dll(game, "g_panel_content").value == 5
     save_png(game, "scroll")
     sword = next(t for t in things_of(game, 5)[0] if game.gfx_object_name(game.object_get_icon_index(t)) == b"SWORD")
-    game.champion_put_object_in_leader_hand(sword)
+    game.inventory_put_object_in_leader_hand(sword)
     game.draw_panel_eye()
     game.ui_draw_viewport()
     save_png(game, "eye_sword")
     name, lines = port_text(game, sword)
     assert name == b"SWORD" and lines[-1].startswith(b"WEIGHS ")
-    game.champion_get_object_removed_from_leader_hand()
+    game.inventory_get_object_removed_from_leader_hand()
     party[0].slots[1] = NONE
     game.inventory_draw_close(0)
 
@@ -268,7 +268,7 @@ def test_eat_food_redraws_the_food_bar(game, party):
     game.inventory_draw_open(0)
     c16.in_dll(game, "g_panel_content").value = 1  # food and water
     game.draw_panel()
-    game.champion_put_object_in_leader_hand(thing)
+    game.inventory_put_object_in_leader_hand(thing)
     game.ui_viewport.restype = ctypes.POINTER(Bitmap)
     viewport = game.ui_viewport().contents
     before = viewport.px[: viewport.w * viewport.h]

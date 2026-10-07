@@ -79,11 +79,11 @@ Call `map_reset()` after `load_dungeon`. The current map pointers then point to 
 5. These targets block the move: a wall, a door with state 2, 3, or 4, and a fake wall with bit 2 (open) and bit 0 (imaginary) clear. With champions, a group on the target also blocks the move.
 6. Else the party moves with `move_get_move_result`. On stairs, the party only enters the new square. `g_disabled_movement_ticks` becomes the maximum of 1 and `champion_get_movement_ticks` of each living champion. `g_projectile_disabled_movement_ticks` becomes 0.
 
-`command_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`champion_set_party_direction`), and enters the floor sensors again.
+`command_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`move_set_party_direction`), and enters the floor sensors again.
 
 `command_take_stairs(up)` removes the party from its square, sets `g_new_party_map_index` with `get_location_after_level_change` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
-`champion_set_party_direction(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
+`move_set_party_direction(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
 
 ### `move_get_move_result`
 
@@ -99,14 +99,14 @@ The function repeats these rules on the destination square, at most 99 times:
 After the loop:
 
 - `g_move_result_map_x`, `g_move_result_map_y`, `g_move_result_map_index`, and `g_move_result_cell` hold the result.
-- A party move to a new square adds a scent. The scent list keeps 24 entries. `champion_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count − 1 − i`. The port keeps this.
+- A party move to a new square adds a scent. The scent list keeps 24 entries. `move_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count − 1 − i`. The port keeps this.
 - A move to the same square does nothing when the party direction or the object cell did not change.
 - The thing leaves the source square with `sensor_process_thing_addition_or_removal(..., 0)`. A levitating object (projectile, explosion) only unlinks.
 - The party on a new map sets `g_new_party_map_index`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
 
 ### Champion functions
 
-Movement calls these functions of `port/src/engine/champion.c` and `port/src/engine/inventory.c` (see `docs/rules-champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `champion_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `champion_put_object_in_leader_hand`, `champion_get_object_removed_from_leader_hand`, and `object_get_type`. `object_get_type` needs `tables_init()`.
+Movement calls these functions of `port/src/engine/champion.c` and `port/src/engine/inventory.c` (see `docs/rules-champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `champion_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand`, and `object_get_type`. `object_get_type` needs `tables_init()`.
 
 ## Sensors
 
@@ -231,7 +231,7 @@ Event types without effect in the port:
 | 75 | `champion_poison` | Champions |
 | 0, 3, 4, 14–19, 21–23, 26–28, 42–47, 50–52, 54–59, 62–64, 66–69, 76, 80 and higher | None in the original | — |
 
-The redraw calls of events 70–79 (`set_dungeon_view_palette`, `champion_draw_state`) belong to the drawing step.
+The redraw calls of events 70–79 (`set_dungeon_view_palette`, `ui_draw_champion_state`) belong to the drawing step.
 
 ## Gaps
 
@@ -239,7 +239,7 @@ These rules need later steps. The port has no code for them yet:
 
 - Groups: `move_get_move_result` returns 0 for a group and does not move it. The party that arrives on a group square does not delete the group. A blocked move into a group does not send event −1 to the group. The closing door does not damage a group. The group generator does not create a group.
 - Projectiles: wall launchers (sensor types 7–10, 14, 15) do not launch. `move_is_killed_by_projectile_impact` does not run.
-- Champions: a blocked move does not damage the two front champions and plays no sound. This needs `champion_get_target_champion_index` and `group_set_ordered_cells_to_attack`.
+- Champions: a blocked move does not damage the two front champions and plays no sound. This needs `group_get_target_champion_index` and `group_set_ordered_cells_to_attack`.
 - Objects: wall sensor type 12 does not create an object (`get_object_for_launcher_or_generator`).
 - Endgame: wall sensor type 18 does nothing.
 - Drawing: the pit fall animation and the redraw calls are not part of the rules.

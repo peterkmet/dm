@@ -142,7 +142,7 @@ Each table ends where the next named table starts. The tests check this.
 
 | Address | Field | Meaning |
 |---|---|---|
-| `0x103eac` | `disabled_ticks` | Duration of `champion_disable_action`. |
+| `0x103eac` | `disabled_ticks` | Duration of `magic_disable_action`. |
 | `0x103ed8` | `damage_factor` | Melee damage factor. |
 | `0x103f04` | `hit_probability` | Melee hit probability. |
 | `0x103f30` | `stamina` | Stamina cost. |

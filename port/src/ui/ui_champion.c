@@ -82,7 +82,7 @@ static uint8_t champion_color(int16_t champion_index) { return kaos_u8(CHAMPION_
 
 /* Draws the health, stamina, and mana bars of the status box: the empty top part dark gray, the
    rest in the champion color. */
-void champion_draw_bar_graphs(int16_t champion_index)
+void ui_draw_champion_bar_graphs(int16_t champion_index)
 {
     const Champion *c = &g_champions[champion_index];
     const int16_t v[BAR_COUNT][2] = { { c->current_health, c->maximum_health }, { c->current_stamina, c->maximum_stamina }, { c->current_mana, c->maximum_mana } };
@@ -117,7 +117,7 @@ static void value_pair(int16_t zone, int16_t value, int16_t maximum)
 /* Draws one slot: a hand in the status box, or any slot (and the chest slots) in the inventory of
    the champion. Empty body slots show their empty icon; wounded body slots get a red border, the
    action hand of the acting champion the acting border. */
-void champion_draw_slot(uint16_t champion_index, uint16_t slot)
+void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
 {
     const Champion *c = &g_champions[champion_index];
     int inv = champion_index + 1 == g_inventory_champion_ordinal;
@@ -153,7 +153,7 @@ void champion_draw_slot(uint16_t champion_index, uint16_t slot)
 
 /* Shows the damage a champion took: a splat with the number on the status box, or on the
    portrait while the inventory of the champion is open. */
-void champion_draw_damage(int16_t champion_index, int16_t damage)
+void ui_draw_champion_damage(int16_t champion_index, int16_t damage)
 {
     Bitmap screen = ui_screen();
     char buf[8];
@@ -161,7 +161,7 @@ void champion_draw_damage(int16_t champion_index, int16_t damage)
     int16_t zone = (int16_t)(champion_index + (inv ? ZONE_PORTRAIT_DAMAGE_FIRST : ZONE_STATUS_BOX_DAMAGE_FIRST));
     ui_blit_graphic(&screen, inv ? GFX_DAMAGE_PORTRAIT : GFX_DAMAGE_STATUS_BOX, zone, COLOR_FLESH);
     ui_print_zone(&screen, zone, COLOR_WHITE, COLOR_RED, number(buf, (uint16_t)damage, 0, VALUE_WIDTH));
-    champion_draw_state((uint16_t)champion_index);
+    ui_draw_champion_state((uint16_t)champion_index);
 }
 
 /* Draws the party icon of a champion (top right, at its cell, facing its direction relative to
@@ -184,7 +184,7 @@ static void draw_icon(uint16_t champion_index)
     ui_blit_zone(&screen, &bm, (int16_t)(ZONE_CHAMPION_ICON_FIRST + cell), COLOR_NONE);
 }
 
-Bitmap champion_portrait(int16_t champion_index)
+Bitmap ui_champion_portrait(int16_t champion_index)
 {
     return (Bitmap){ CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champion_portraits[champion_index] };
 }
@@ -192,7 +192,7 @@ Bitmap champion_portrait(int16_t champion_index)
 /* Draws the portrait in the status box while the inventory is open. */
 void draw_status_box_portrait(int16_t champion_index)
 {
-    Bitmap screen = ui_screen(), portrait = champion_portrait(champion_index);
+    Bitmap screen = ui_screen(), portrait = ui_champion_portrait(champion_index);
     int16_t zone = (int16_t)(ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index);
     Box b;
     if (!ui_zone_box(zone, &b)) return;
@@ -274,7 +274,7 @@ static uint16_t draw_name(uint16_t champion_index, uint16_t attr, int inv)
 }
 
 /* Draws the parts of a champion that have a redraw flag in its attributes, then clears the flags. */
-void champion_draw_state(uint16_t champion_index)
+void ui_draw_champion_state(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t attr = c->attributes;
@@ -294,7 +294,7 @@ void champion_draw_state(uint16_t champion_index)
     if (c->current_health) {
         if (attr & CHAMPION_ATTR_NAME_TITLE) attr = draw_name(champion_index, attr, inv);
         if (attr & CHAMPION_ATTR_STATISTICS) {
-            champion_draw_bar_graphs((int16_t)champion_index);
+            ui_draw_champion_bar_graphs((int16_t)champion_index);
             if (inv) {
                 draw_inventory_statistics(champion_index);
                 attr |= CHAMPION_ATTR_VIEWPORT;
@@ -302,7 +302,7 @@ void champion_draw_state(uint16_t champion_index)
         }
         if (attr & CHAMPION_ATTR_WOUNDS) {
             if (inv) attr |= CHAMPION_ATTR_VIEWPORT;
-            for (int s = inv ? UI_BODY_SLOT_COUNT - 1 : SLOT_HAND_ACTION; s >= 0; s--) champion_draw_slot(champion_index, (uint16_t)s);
+            for (int s = inv ? UI_BODY_SLOT_COUNT - 1 : SLOT_HAND_ACTION; s >= 0; s--) ui_draw_champion_slot(champion_index, (uint16_t)s);
         }
         if (attr & CHAMPION_ATTR_LOAD && inv) {
             draw_load(champion_index);
@@ -314,7 +314,7 @@ void champion_draw_state(uint16_t champion_index)
             attr |= CHAMPION_ATTR_VIEWPORT;
         }
         if (attr & CHAMPION_ATTR_ACTION_HAND) {
-            champion_draw_slot(champion_index, SLOT_HAND_ACTION);
+            ui_draw_champion_slot(champion_index, SLOT_HAND_ACTION);
             menus_draw_action_icon(champion_index);
             if (inv) attr |= CHAMPION_ATTR_VIEWPORT;
         }
@@ -324,11 +324,11 @@ void champion_draw_state(uint16_t champion_index)
 }
 
 /* Sets redraw flags on all champions and draws them. */
-void champion_draw_all_states(uint16_t attributes)
+void ui_draw_all_champion_states(uint16_t attributes)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         g_champions[i].attributes |= attributes;
-        champion_draw_state(i);
+        ui_draw_champion_state(i);
     }
 }
 
@@ -445,9 +445,9 @@ void inventory_draw_open(int16_t champion_index)
     ui_print_zone(vp, ZONE_HEALTH_LABEL, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(TEXT_HEALTH));
     ui_print_zone(vp, ZONE_HEALTH_LABEL + 1, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(TEXT_STAMINA));
     ui_print_zone(vp, ZONE_HEALTH_LABEL + 2, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(TEXT_MANA));
-    for (uint16_t s = 0; s < SLOT_COUNT; s++) champion_draw_slot((uint16_t)champion_index, s);
+    for (uint16_t s = 0; s < SLOT_COUNT; s++) ui_draw_champion_slot((uint16_t)champion_index, s);
     g_champions[champion_index].attributes |= CHAMPION_ATTR_INVENTORY_ALL;
-    champion_draw_state((uint16_t)champion_index);
+    ui_draw_champion_state((uint16_t)champion_index);
 }
 
 /* Closes the inventory on the screen: the status box returns and the movement arrows come back.
@@ -458,7 +458,7 @@ void inventory_draw_close(int16_t champion_index)
     close_chest();
     if (g_champions[champion_index].current_health && !g_candidate_champion_ordinal) {
         g_champions[champion_index].attributes |= CHAMPION_ATTR_STATUS_BOX;
-        champion_draw_state((uint16_t)champion_index);
+        ui_draw_champion_state((uint16_t)champion_index);
     }
     if (!g_party_is_sleeping) menus_draw_movement_arrows();
 }
@@ -828,7 +828,7 @@ void panel_redraw_scroll(void)
         return;
     }
     g_champions[g_inventory_champion_ordinal - 1].attributes |= CHAMPION_ATTR_PANEL;
-    champion_draw_state((uint16_t)(g_inventory_champion_ordinal - 1));
+    ui_draw_champion_state((uint16_t)(g_inventory_champion_ordinal - 1));
 }
 
 /* A click in the open chest panel swaps the leader hand object with the clicked chest slot. */
@@ -838,7 +838,7 @@ void panel_click_in_chest(int16_t x, int16_t y)
     int16_t command = ui_command_from_mouse(UI_INPUT_CHEST, x, y, UI_BUTTON_LEFT);
     if (!command) return;
     uint16_t slot_box = (uint16_t)(command - COMMAND_CLICK_SLOT_BOX_FIRST);
-    champion_click_on_slot_box(slot_box);
-    champion_draw_slot((uint16_t)(g_inventory_champion_ordinal - 1), (uint16_t)(slot_box - UI_SLOT_BOX_INVENTORY_FIRST));
+    inventory_click_on_slot_box(slot_box);
+    ui_draw_champion_slot((uint16_t)(g_inventory_champion_ordinal - 1), (uint16_t)(slot_box - UI_SLOT_BOX_INVENTORY_FIRST));
     ui_draw_viewport();
 }

@@ -18,7 +18,7 @@ ACTION_DAMAGE, PALETTE_INDEX, MAP_X = 0x103FF6, 0x1001E6, 0x1001EC
 ACTION_INFO = 0x103EAC
 RTS = b"\x4e\x75"
 TICKS_AT, GROUP_BUF = 0x2F0000, 0x230000
-# move.w 6(a7),TICKS_AT.l; rts: keeps the ticks argument of champion_disable_action.
+# move.w 6(a7),TICKS_AT.l; rts: keeps the ticks argument of magic_disable_action.
 CAPTURE_TICKS = b"\x33\xef\x00\x06" + struct.pack(">I", TICKS_AT) + RTS
 
 THING_GROUP, THING_WEAPON, THING_JUNK = 4, 5, 10
@@ -51,7 +51,7 @@ def alib(lib):  # noqa: F811
 
 def action_world(lib, seed):
     """A World whose square in front of the party is an empty wall, in the C library and in the emulator."""
-    new_game(lib)  # the C timeline for champion_disable_action
+    new_game(lib)  # the C timeline for magic_disable_action
     w = World(lib, seed)
     for addr, code in ((SOUND_REQUEST_PLAY, RTS), (GET_SQUARE, b"\x70\x00" + RTS), (GROUP_GET_THING, b"\x70\xfe" + RTS),
                        (GROUP_EVENTS, RTS), (DISABLE_ACTION, CAPTURE_TICKS)):

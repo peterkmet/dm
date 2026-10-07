@@ -125,7 +125,7 @@ int16_t get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 int16_t group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x, int16_t group_y, int16_t group_cell);
-int16_t champion_get_target_champion_index(int16_t x, int16_t y, int16_t cell);
+int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell);
 
 int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index);
 int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, int16_t creature_index, int16_t x, int16_t y,

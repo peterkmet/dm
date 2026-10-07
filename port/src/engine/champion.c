@@ -217,7 +217,7 @@ static void add_candidate_possessions(uint16_t champion_index)
         /* Fix: the original reuses a stale slot for things that are not objects; none lie on mirror walls. */
         if (type < THING_WEAPON || type > THING_JUNK || THING_CELL(t) != cell)
             continue;
-        champion_add_object_in_slot(champion_index, t, candidate_slot(&g_champions[champion_index], t, &backpack));
+        inventory_add_object_in_slot(champion_index, t, candidate_slot(&g_champions[champion_index], t, &backpack));
     }
 }
 
@@ -486,7 +486,7 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
 /* Tenths of a kilogram, rounded up to whole kilograms. */
 uint16_t champion_get_maximum_load(const Champion *c)
 {
-    uint16_t load = champion_get_stamina_adjusted_value(c, c->statistics[STAT_STRENGTH][STAT_CURRENT] * 8 + 100);
+    uint16_t load = game_get_stamina_adjusted_value(c, c->statistics[STAT_STRENGTH][STAT_CURRENT] * 8 + 100);
     if (c->wounds)
         load -= load >> (c->wounds & WOUND_LEGS ? 2 : 3);
     if (object_get_icon_index(c->slots[SLOT_FEET]) == ICON_ELVEN_BOOTS)
@@ -556,7 +556,7 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
             skill += champion_get_skill_level(champion_index, SKILL_SHOOT);
         strength += skill * 2;
     }
-    strength = champion_get_stamina_adjusted_value(c, strength);
+    strength = game_get_stamina_adjusted_value(c, strength);
     if (c->wounds & (slot == SLOT_HAND_READY ? WOUND_READY_HAND : WOUND_ACTION_HAND))
         strength >>= 1;
     return bounded_value(0, strength >> 1, 100);
@@ -607,13 +607,13 @@ static int16_t resisted_attack(int16_t champion_index, int16_t attack, uint16_t 
         defense /= count;
     switch (attack_type) {
     case ATTACK_FIRE:
-        attack = champion_get_statistic_adjusted_attack(c, STAT_ANTIFIRE, attack) - g_party.fire_shield_defense;
+        attack = game_get_statistic_adjusted_attack(c, STAT_ANTIFIRE, attack) - g_party.fire_shield_defense;
         break;
     case ATTACK_SELF:
         defense = (defense >> 1) + champion_get_skill_level(champion_index, SKILL_NINJA);
         break;
     case ATTACK_MAGIC:
-        return champion_get_statistic_adjusted_attack(c, STAT_ANTIMAGIC, attack) - g_party.spell_shield_defense;
+        return game_get_statistic_adjusted_attack(c, STAT_ANTIMAGIC, attack) - g_party.spell_shield_defense;
     case ATTACK_PSYCHIC: {
         int16_t wisdom = 115 - c->statistics[STAT_WISDOM][STAT_CURRENT];
         return wisdom <= 0 ? 0 : (int16_t)scale_value(attack, 6, wisdom);
@@ -634,7 +634,7 @@ int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t a
         attack = resisted_attack(champion_index, attack, allowed_wounds, attack_type);
         if (attack <= 0)
             return 0;
-        int16_t threshold = champion_get_statistic_adjusted_attack(c, STAT_VITALITY, (random16() & 127) + 10);
+        int16_t threshold = game_get_statistic_adjusted_attack(c, STAT_VITALITY, (random16() & 127) + 10);
         if (threshold < attack)
             do {
                 g_champion_pending_wounds[champion_index] |= allowed_wounds & 1 << (random16() & 7);
@@ -691,7 +691,7 @@ void champion_drop_all_objects(uint16_t champion_index)
 {
     uint16_t cell = g_champions[champion_index].cell;
     for (uint16_t i = 0; i < SLOT_COUNT; i++) {
-        uint16_t thing = champion_get_object_removed_from_slot(champion_index, kaos_u16(SLOT_DROP_ORDER + i * 2));
+        uint16_t thing = inventory_get_object_removed_from_slot(champion_index, kaos_u16(SLOT_DROP_ORDER + i * 2));
         if (thing != THING_NONE)
             drop_on_party_square(thing, cell);
     }

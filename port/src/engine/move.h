@@ -19,8 +19,8 @@ void move_process_new_party_map(void);
 void move_party_enter_dungeon(void);
 void move_reset(void);
 
-void champion_set_party_direction(int16_t direction);
-void champion_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags);
+void move_set_party_direction(int16_t direction);
+void move_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags);
 
 void command_take_stairs(int16_t stairs_go_up);
 void command_turn_party(int16_t command);

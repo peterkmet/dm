@@ -210,12 +210,12 @@ int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell
                 if (object == THING_NONE)
                     continue;
                 unlink_thing_from_list(object, 0, x, y);
-                champion_put_object_in_leader_hand(object);
+                inventory_put_object_in_leader_hand(object);
             } else {
                 if (!holds_object_type(data) || sensor_get_object_of_type_in_cell(x, y, sensor_cell, data) != THING_NONE)
                     continue;
                 uint16_t object = g_leader_hand_object;
-                champion_get_object_removed_from_leader_hand();
+                inventory_get_object_removed_from_leader_hand();
                 link_thing_to_list(THING_WITH_CELL(object, sensor_cell), 0, x, y);
             }
             sensor_trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
@@ -229,9 +229,9 @@ int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell
                 continue;
             unlink_thing_from_list(object, 0, x, y);
             uint16_t hand = g_leader_hand_object;
-            champion_get_object_removed_from_leader_hand();
+            inventory_get_object_removed_from_leader_hand();
             link_thing_to_list(THING_WITH_CELL(hand, sensor_cell), 0, x, y);
-            champion_put_object_in_leader_hand(object);
+            inventory_put_object_in_leader_hand(object);
             skip = 0;
             break;
         }
@@ -253,7 +253,7 @@ int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell
         if (!g_leader_empty_handed && (type == SENSOR_WALL_OBJECT_REMOVED || type == SENSOR_WALL_SINGLE_OBJECT_STORAGE ||
                                        type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED)) {
             thing_set_free(g_leader_hand_object);
-            champion_get_object_removed_from_leader_hand();
+            inventory_get_object_removed_from_leader_hand();
         }
         sensor_trigger_effect(sensor, effect, x, y, sensor_cell);
     }

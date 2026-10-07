@@ -116,7 +116,7 @@ uint16_t get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)
     return use_sharp_defense ? scale_value(defense, 3, (info->attributes & 7) + 4) : defense;
 }
 
-void champion_put_object_in_leader_hand(uint16_t thing)
+void inventory_put_object_in_leader_hand(uint16_t thing)
 {
     if (thing == THING_NONE)
         return;
@@ -128,7 +128,7 @@ void champion_put_object_in_leader_hand(uint16_t thing)
     }
 }
 
-uint16_t champion_get_object_removed_from_leader_hand(void)
+uint16_t inventory_get_object_removed_from_leader_hand(void)
 {
     uint16_t thing = g_leader_hand_object;
     g_leader_empty_handed = 1;
@@ -210,7 +210,7 @@ static int is_scroll(int16_t icon) { return icon == ICON_SCROLL_OPEN || icon == 
 static int is_torch(int16_t icon) { return icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST; }
 
 /* Takes an object from a slot: bonuses end, a torch goes out, a scroll closes. */
-uint16_t champion_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)
+uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t *p = slot_ptr(c, slot), thing = *p;
@@ -246,7 +246,7 @@ uint16_t champion_get_object_removed_from_slot(uint16_t champion_index, uint16_t
 }
 
 /* Puts an object in a slot: bonuses start, a torch in a hand burns, a scroll opens. */
-void champion_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot)
+void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot)
 {
     if (thing == THING_NONE)
         return;
@@ -278,7 +278,7 @@ void champion_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16
 
 /* Slot boxes 0-7: the two hands of champions 0-3. 8 and up: slot (box - 8) of the open inventory.
    Swaps the leader hand object with the slot object when the slot accepts it. */
-void champion_click_on_slot_box(uint16_t slot_box)
+void inventory_click_on_slot_box(uint16_t slot_box)
 {
     enum { HAND_BOX_COUNT = 8 };
     uint16_t champion_index, slot, hand = g_leader_hand_object;
@@ -300,13 +300,13 @@ void champion_click_on_slot_box(uint16_t slot_box)
     if (hand != THING_NONE && !(*tables_slot_mask(slot) & tables_object_info(get_object_info_index(hand))->allowed_slots))
         return;
     if (hand != THING_NONE)
-        champion_get_object_removed_from_leader_hand();
+        inventory_get_object_removed_from_leader_hand();
     if (thing != THING_NONE) {
-        champion_get_object_removed_from_slot(champion_index, slot);
-        champion_put_object_in_leader_hand(thing);
+        inventory_get_object_removed_from_slot(champion_index, slot);
+        inventory_put_object_in_leader_hand(thing);
     }
     if (hand != THING_NONE)
-        champion_add_object_in_slot(champion_index, hand, slot);
+        inventory_add_object_in_slot(champion_index, hand, slot);
 }
 
 /* Opens a chest in the panel: its first 8 objects go to the chest slots, the other slots are empty. */
@@ -427,7 +427,7 @@ int16_t process_click_on_mouth(void)
         consumed = 1;
     }
     if (consumed)
-        champion_get_object_removed_from_leader_hand();
+        inventory_get_object_removed_from_leader_hand();
     if (type == THING_POTION)
         drink_potion(champion_index, thing);
     else if (icon >= ICON_FOOD_FIRST && icon <= ICON_FOOD_LAST)

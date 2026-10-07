@@ -588,11 +588,11 @@ static void group_steal_from_champion(uint16_t group, uint16_t champion_index)
     Champion *champion = &g_champions[champion_index];
     int16_t stole = 0, chance = 100 - champion_get_dexterity(champion);
     uint16_t slot_index = random16();
-    while (chance > 0 && !champion_is_lucky(champion, chance)) {
+    while (chance > 0 && !game_is_lucky(champion, chance)) {
         uint16_t slot = kaos_u8(KAOS_SLOTS_TO_STEAL_FROM + (slot_index & 7));
         if (champion->slots[slot] != THING_NONE) {
             stole = 1;
-            uint16_t thing = champion_get_object_removed_from_slot(champion_index, slot);
+            uint16_t thing = inventory_get_object_removed_from_slot(champion_index, slot);
             if (group_possessions(group) == THING_ENDOFLIST)
                 group_set_possessions(group, thing);
             else
@@ -900,7 +900,7 @@ static int16_t group_is_creature_attacking(uint16_t group, int16_t x, int16_t y,
     if (creature_attack_range(info) <= 1 || (g_current_group_distance_to_party <= 1 && !random_bit())) {
         int16_t champion_index;
         if (!(info->attributes & CREATURE_ATTACK_ANY_CHAMPION)) {
-            champion_index = champion_get_target_champion_index(x, y, cell);
+            champion_index = group_get_target_champion_index(x, y, cell);
             if (champion_index < 0)
                 return 0;
         } else {
@@ -1018,7 +1018,7 @@ void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x,
 }
 
 /* The champion that a creature on an adjacent square attacks, or -1. */
-int16_t champion_get_target_champion_index(int16_t x, int16_t y, int16_t cell)
+int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell)
 {
     if (!g_party_champion_count || abs16(x - g_party_map_x) + abs16(y - g_party_map_y) > 1)
         return -1;
@@ -1070,7 +1070,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
         uint16_t aim = (random16() & 31) + info->dexterity + difficulty + dodge_bonus - 16;
         if (aim <= dexterity && random_2bits())
             return 0;
-        if (champion_is_lucky(champion, LUCK_PERCENT_AGAINST_CREATURE))
+        if (game_is_lucky(champion, LUCK_PERCENT_AGAINST_CREATURE))
             return 0;
     }
     uint16_t wounds = creature_hit_wounds(info);
@@ -1094,7 +1094,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
         return 0;
     sound_request_play(SOUND_CHAMPION_0_DAMAGED + champion_index, g_party_map_x, g_party_map_y, SOUND_MODE_ONE_TICK_LATER);
     if (info->poison_attack && random_bit()) {
-        uint16_t poison = champion_get_statistic_adjusted_attack(champion, STAT_VITALITY, info->poison_attack);
+        uint16_t poison = game_get_statistic_adjusted_attack(champion, STAT_VITALITY, info->poison_attack);
         champion_poison(champion_index, poison);
     }
     return damage;
@@ -1136,7 +1136,7 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
         if (!(info->attributes & CREATURE_NON_MATERIAL) || always_hits) {
             uint16_t dexterity = champion_get_dexterity(champion);
             uint16_t defense = (random16() & 31) + info->dexterity + difficulty + g_dungeon_view_palette_index * 2 - 16;
-            hit = defense < dexterity || !random_2bits() || champion_is_lucky(champion, LUCK_PERCENT_AGAINST_MISS - hit_probability);
+            hit = defense < dexterity || !random_2bits() || game_is_lucky(champion, LUCK_PERCENT_AGAINST_MISS - hit_probability);
         }
         if (hit) {
             /* Bug fix: without strength the original uses a stale register as the base; the port uses 0. */

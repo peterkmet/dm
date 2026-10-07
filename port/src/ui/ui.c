@@ -192,7 +192,7 @@ void ui_draw_interface(void)
     } else {
         menus_draw_movement_arrows();
     }
-    champion_draw_all_states(CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ICON);
+    ui_draw_all_champion_states(CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ICON);
     int16_t caster = g_magic_caster_champion_index;
     g_magic_caster_champion_index = -1;
     menus_set_magic_caster(caster);

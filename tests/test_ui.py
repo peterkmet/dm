@@ -249,7 +249,7 @@ def test_render_party(game, n):
         colors = {fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)}
         assert len(colors) > 3
     if n == 4:
-        game.champion_draw_damage(1, 37)
+        game.ui_draw_champion_damage(1, 37)
         game.menus_draw_action_damage(25)
         _, rows = rgb_rows(game)
         if SCRATCH.exists():

@@ -239,12 +239,12 @@ static void mark_seen_squares(void)
 static void refresh_interface(void)
 {
     Bitmap screen = ui_screen();
-    champion_draw_all_states(0);
+    ui_draw_all_champion_states(0);
     menus_refresh_spell_area();
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].current_health) continue;
         int inventory = i + 1 == g_inventory_champion_ordinal && !g_game_frozen;  /* the frozen screen covers it */
-        for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++) champion_draw_slot(i, slot);
+        for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++) ui_draw_champion_slot(i, slot);
         if (inventory) ui_draw_viewport();
     }
     int16_t icon = g_leader_hand_object == THING_NONE ? -1 : object_get_icon_index(g_leader_hand_object);
@@ -317,9 +317,9 @@ static void reset_champions_of_loaded_game(void)
     g_leader_empty_handed = 1;
     g_leader_hand_object = THING_NONE;
     g_leader_index = -1;
-    champion_put_object_in_leader_hand(hand);
+    inventory_put_object_in_leader_hand(hand);
     for (uint16_t i = 0; i < g_party_champion_count; i++) g_champions[i].attributes &= CHAMPION_ATTR_KEEP_MASK;
-    champion_draw_all_states(CHAMPION_ATTR_ICON | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ACTION_HAND);
+    ui_draw_all_champion_states(CHAMPION_ATTR_ICON | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ACTION_HAND);
     if (leader != -1) command_set_leader(leader);
     g_magic_caster_champion_index = -1;
     if (caster != -1) menus_set_magic_caster(caster);
@@ -455,7 +455,7 @@ void gameloop_tick(void)
     champion_apply_and_draw_pending_damage_and_wounds();
     release_dead_champions(leader);
     if (g_party_dead) {
-        champion_draw_all_states(0);  /* the dead champions show during the death scream */
+        ui_draw_all_champion_states(0);  /* the dead champions show during the death scream */
         draw_spell_area_before_last_death(before);
         endgame(1);
         return;

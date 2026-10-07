@@ -145,9 +145,9 @@ void timeline_add_watchdog_event(void);
 
 void group_init_active_groups(void);
 
-int16_t champion_get_stamina_adjusted_value(const Champion *champion, int16_t value);
-uint16_t champion_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack);
+int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value);
+uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack);
 void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta);
-int16_t champion_is_lucky(Champion *champion, uint16_t percentage);
+int16_t game_is_lucky(Champion *champion, uint16_t percentage);
 
 #endif

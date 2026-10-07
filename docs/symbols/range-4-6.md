@@ -278,7 +278,7 @@ Several callees are in range 7 and have no names yet: `0x11cefe` (distance), `0x
 | `0x114` | long | Pointer to the portrait bitmap (32 × 29). |
 | `0x1e`, `0x1f`, `0x23`–`0x27`, `0x118`–`0x13f` | — | No code reference found. |
 
-Attribute flags at `0x30`: `0x0008` disable action, `0x0010` male, `0x0080` name and title, `0x0100` statistics, `0x0200` load, `0x0400` icon, `0x0800` panel, `0x1000` status box, `0x2000` wounds, `0x4000` viewport, `0x8000` action hand. `champion_draw_state` draws the parts that have a flag and then keeps only bits 0–6.
+Attribute flags at `0x30`: `0x0008` disable action, `0x0010` male, `0x0080` name and title, `0x0100` statistics, `0x0200` load, `0x0400` icon, `0x0800` panel, `0x1000` status box, `0x2000` wounds, `0x4000` viewport, `0x8000` action hand. `ui_draw_champion_state` draws the parts that have a flag and then keeps only bits 0–6.
 
 ### Party record
 
@@ -305,7 +305,7 @@ Attribute flags at `0x30`: `0x0008` disable action, `0x0010` male, `0x0080` name
 - Skill level (`champion_get_skill_level(champion, skill | flags)`): returns 1 while the party sleeps. Experience is the long of the skill plus the temporary experience (flag `0x8000` ignores the temporary part). For a hidden skill, add the base skill `(skill − 4) / 4` and halve. Level starts at 1 and adds 1 for each halving while experience ≥ 500. Without flag `0x4000`, add object bonuses (action hand icons 27 and 28, neck icons 120, 124, 121, 122 for specific skills).
 - Experience (`champion_add_skill_experience`): halve for skills 4–11 when the last creature attack is more than 150 ticks ago. Multiply by the map difficulty when it is not 0. Double for hidden skills when the last creature attack is less than 25 ticks ago. On a new level, raise statistics, maximum health, stamina, and mana, set `g_champion_skill_level_up`, and print the message.
 - Maximum load: `stamina_adjusted(current_strength * 8 + 100)`. Subtract 1/8 when the champion has a wound (1/4 with a leg wound). Add 1/16 with icon 119 on the neck. Round up to a multiple of 10.
-- Luck (`champion_is_lucky`) changes the current luck by ±2 within its minimum and maximum each time.
+- Luck (`game_is_lucky`) changes the current luck by ±2 within its minimum and maximum each time.
 - Damage pipeline: `champion_add_pending_damage_and_wounds` adds to `g_champion_pending_damage` and `g_champion_pending_wounds`. The main loop calls `champion_apply_and_draw_pending_damage_and_wounds`, which subtracts the damage, kills the champion at 0 health, draws the damage, and schedules event 12 after 5 ticks.
 - `champion_apply_time_effects` runs every 64 ticks (16 while sleeping). It ages scents, regenerates mana, decrements temporary experience, consumes food and water, decrements stamina, regenerates health, and moves current statistics toward their maximum every 256 ticks (64 while sleeping).
 - Candidate data: `champion_add_candidate_to_party` decodes the text on the portrait square. Line 1 is the name, lines 2–3 the title, then `M`/`F`, then 4-character values for health, stamina, and mana, then 2-character statistic values, then one character for each hidden skill. `champion_get_decoded_value` reads each character as `c − 'A'` (4 bits). A hidden skill gets `125 << (c − 'A')` experience. Each base skill is the sum of its 4 hidden skills.
@@ -541,7 +541,7 @@ These globals appear in ranges 4–6 but belong to other source files. They are 
 
 ## Uncertain items
 
-- `champion_draw_damage` (`0x11281c`), `champion_clear_icon`, `champion_build_icon_bitmap`, `champion_resurrect`: names come from behavior. ReDMCSB names were not confirmed.
+- `ui_draw_champion_damage` (`0x11281c`), `champion_clear_icon`, `champion_build_icon_bitmap`, `champion_resurrect`: names come from behavior. ReDMCSB names were not confirmed.
 - `is_square_open` (`0x10bce6`): true for corridor, pit, door, and teleporter. Callers are the fluxcage code and the timeline.
 - `select_display_buffer` has no caller. The difference between the two copper lists (220 and 200 instructions) is not traced.
 - Behavior codes of the group record are from ReDMCSB and only partly checked.

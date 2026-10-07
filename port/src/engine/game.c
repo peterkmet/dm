@@ -300,7 +300,7 @@ void group_init_active_groups(void)
 }
 
 /* Below half stamina, a value drops toward half of it. */
-int16_t champion_get_stamina_adjusted_value(const Champion *champion, int16_t value)
+int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)
 {
     int16_t half = champion->maximum_stamina >> 1;
     if (champion->current_stamina < half)
@@ -309,7 +309,7 @@ int16_t champion_get_stamina_adjusted_value(const Champion *champion, int16_t va
 }
 
 /* An attack value scaled down by how far the statistic is below the limit. */
-uint16_t champion_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)
+uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)
 {
     int16_t factor = STAT_LIMIT - champion->statistics[statistic][STAT_CURRENT];
     return factor < ATTACK_FACTOR_MIN ? attack >> 3 : (uint16_t)scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
@@ -331,7 +331,7 @@ void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int1
 
 /* Luck test against a percentage. A lucky test lowers luck, a failed one raises it.
    The original reads the luck bytes as signed. A lucky first roll does not change luck. */
-int16_t champion_is_lucky(Champion *champion, uint16_t percentage)
+int16_t game_is_lucky(Champion *champion, uint16_t percentage)
 {
     uint8_t *luck = champion->statistics[STAT_LUCK];
     if (random_bit() && percentage < random16() % 100)

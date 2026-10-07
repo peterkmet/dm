@@ -318,7 +318,7 @@ def test_hand_object_name_follows_the_icon(game):
     skin = lib.get_unused_thing(10)
     data = lib.get_thing_data(skin)
     data[3], data[2] = junk, 1 << 6  # one charge
-    lib.champion_put_object_in_leader_hand(skin)
+    lib.inventory_put_object_in_leader_hand(skin)
     game.key(KEY_F1)
     game.run()
     box = Box()
