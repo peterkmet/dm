@@ -1,18 +1,31 @@
 #ifndef GAME_H
 #define GAME_H
 /* Prefixes: game_ min16 max16 bounded_ scale_ update_ timeline_ adjust_ */
+#include <stdbool.h>
 #include <stdint.h>
+#include "tables.h"
 
 #define NORMALIZE(direction) ((direction) & 3)
+#define CELL_COUNT 4                   /* cells of a square, one for each direction */
 #define CHAMPION_MAX_COUNT 4
 #define STAT_LIMIT 170                 /* no statistic grows above this value */
 #define PARTY_SCENT_COUNT 24
 #define ACTIVE_GROUP_MAX_COUNT 110     /* creature groups that can act at the same time */
 #define CSB_ACTIVE_GROUP_MAX_COUNT 60  /* active group slots of a new CSB game */
 #define WATCHDOG_INTERVAL 300          /* game ticks between two watchdog events */
+#define SHIFT_COUNT_MASK 63            /* the 68000 takes a shift count modulo 64 */
+#define LONG_SHIFT_MAXIMUM 31          /* a larger shift of a 32-bit value leaves only the sign or 0 */
 
 enum { STAT_LUCK, STAT_STRENGTH, STAT_DEXTERITY, STAT_WISDOM, STAT_VITALITY, STAT_ANTIMAGIC, STAT_ANTIFIRE, STAT_COUNT };
 enum { STAT_MAXIMUM, STAT_CURRENT, STAT_MINIMUM, STAT_VALUE_COUNT };
+/* Champion slots (Champion.slots), then the slots of the open chest. */
+enum {
+    SLOT_HAND_READY, SLOT_HAND_ACTION, SLOT_HEAD, SLOT_TORSO, SLOT_LEGS, SLOT_FEET,
+    SLOT_POUCH_2, SLOT_QUIVER_LINE2_1, SLOT_QUIVER_LINE1_2, SLOT_QUIVER_LINE2_2, SLOT_NECK, SLOT_POUCH_1,
+    SLOT_QUIVER_LINE1_1, SLOT_BACKPACK_FIRST, SLOT_COUNT = 30, SLOT_CHEST_FIRST = 30, SLOT_CHEST_COUNT = 8,
+};
+#define CHAMPION_NAME_SIZE 8
+#define CHAMPION_TITLE_SIZE 20
 
 typedef struct {
     int16_t temporary_experience;
@@ -20,8 +33,8 @@ typedef struct {
 } Skill;
 
 typedef struct {
-    char name[8];
-    char title[20];
+    char name[CHAMPION_NAME_SIZE];
+    char title[CHAMPION_TITLE_SIZE];
     uint8_t direction, cell;
     uint8_t action_index;                      /* 255: none */
     uint8_t symbol_step;
@@ -38,8 +51,8 @@ typedef struct {
     int16_t action_defense;
     int16_t food, water;
     uint8_t statistics[STAT_COUNT][STAT_VALUE_COUNT];
-    Skill skills[20];                          /* SKILL_COUNT */
-    uint16_t slots[30];                        /* SLOT_COUNT */
+    Skill skills[SKILL_COUNT];
+    uint16_t slots[SLOT_COUNT];
     uint16_t load;
     int16_t shield_defense;
     uint8_t magic_map[6];                      /* CSB record bytes 0x118-0x11d, kept as they are */
@@ -48,12 +61,13 @@ typedef struct {
 /* Champion.magic_map: the DAIN, ROS, and KU spell counts; NETA holds direction + 1 of the kept map; the
    kept position is a big-endian word with x in bits 11-15, y in bits 6-10, and the map in bits 0-5. */
 enum { MAGIC_MAP_DAIN, MAGIC_MAP_ROS, MAGIC_MAP_KU, MAGIC_MAP_NETA, MAGIC_MAP_POSITION };
-enum { MAGIC_MAP_X_SHIFT = 11, MAGIC_MAP_Y_SHIFT = 6, MAGIC_MAP_XY_MASK = 31, MAGIC_MAP_MAP_MASK = 63 };
+/* A position word (kept map position, party scents): x in bits 11-15, y in bits 6-10, the map in bits 0-5. */
+enum { POSITION_X_SHIFT = 11, POSITION_Y_SHIFT = 6, POSITION_XY_MASK = 31, POSITION_MAP_MASK = 63 };
 
 /* Stores the kept map position of NETA in the magic map bytes. */
 static inline void game_set_magic_map_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)
 {
-    uint16_t word = (uint16_t)(x << MAGIC_MAP_X_SHIFT | (y & MAGIC_MAP_XY_MASK) << MAGIC_MAP_Y_SHIFT | (map & MAGIC_MAP_MAP_MASK));
+    uint16_t word = x << POSITION_X_SHIFT | (y & POSITION_XY_MASK) << POSITION_Y_SHIFT | (map & POSITION_MAP_MASK);
     spells[MAGIC_MAP_POSITION] = (uint8_t)(word >> 8);
     spells[MAGIC_MAP_POSITION + 1] = (uint8_t)word;
 }
@@ -61,10 +75,10 @@ static inline void game_set_magic_map_position(uint8_t *spells, int16_t map, int
 /* Reads the kept map position of NETA from the magic map bytes. */
 static inline void game_get_magic_map_position(const uint8_t *spells, int16_t *map, int16_t *x, int16_t *y)
 {
-    uint16_t word = (uint16_t)(spells[MAGIC_MAP_POSITION] << 8 | spells[MAGIC_MAP_POSITION + 1]);
-    *map = (int16_t)(word & MAGIC_MAP_MAP_MASK);
-    *x = (int16_t)(word >> MAGIC_MAP_X_SHIFT);
-    *y = (int16_t)(word >> MAGIC_MAP_Y_SHIFT & MAGIC_MAP_XY_MASK);
+    uint16_t word = spells[MAGIC_MAP_POSITION] << 8 | spells[MAGIC_MAP_POSITION + 1];
+    *map = word & POSITION_MAP_MASK;
+    *x = word >> POSITION_X_SHIFT;
+    *y = word >> POSITION_Y_SHIFT & POSITION_XY_MASK;
 }
 
 typedef struct {
@@ -134,14 +148,14 @@ void update_map_coordinates_after_relative_movement(int16_t direction, int16_t s
 
 void timeline_init(void);
 void timeline_reset(void);
-int16_t timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b);
+bool timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b);
 uint16_t timeline_get_index(uint16_t event_index);
 void timeline_fix_chronology(uint16_t timeline_index);
 void timeline_delete_event(uint16_t event_index);
 int16_t timeline_find_mergeable_event(TimelineEvent *event);
 int16_t timeline_add_event(TimelineEvent *event);
 void timeline_extract_first_event(TimelineEvent *event);
-int16_t timeline_is_first_event_expired(void);
+bool timeline_is_first_event_expired(void);
 void timeline_add_watchdog_event(void);
 
 void game_init_active_groups(void);
@@ -149,6 +163,6 @@ void game_init_active_groups(void);
 int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value);
 uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack);
 void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta);
-int16_t game_is_lucky(Champion *champion, uint16_t percentage);
+bool game_is_lucky(Champion *champion, uint16_t percentage);
 
 #endif

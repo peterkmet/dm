@@ -1,6 +1,7 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 /* Prefixes: sensor_ */
+#include <stdbool.h>
 #include <stdint.h>
 
 /* Floor and wall sensors. Coordinates are on the current map. */
@@ -18,8 +19,8 @@ void sensor_process_rotation_effect(void);
 void sensor_reset(void);
 void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell);
 uint16_t sensor_get_object_of_type_in_cell(int16_t x, int16_t y, int16_t cell, int16_t object_type);
-int16_t sensor_is_object_in_party_possession(int16_t object_type);
-int16_t sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell);
+bool sensor_is_object_in_party_possession(int16_t object_type);
+bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell);
 void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, int16_t party_on_square, int16_t add);
 
 #endif

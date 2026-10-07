@@ -1,28 +1,13 @@
 # Open exceptions of tests/test_standard.py. One per line: <check> <target> <reason>.
 # Targets are paths relative to port/src/, constant names, or function names.
-bool engine/action.h open: Task 9
 bool ui/automap.h open: Task 11
 bool platform/control.h open: Task 11
-bool engine/game.h open: Task 9
-bool engine/magic.h open: Task 9
-bool engine/move.h open: Task 9
-bool engine/sensor.h open: Task 9
-decimal engine/action.c open: Task 9
-decimal engine/champion.c open: Task 9
 decimal platform/control.c open: Task 11
 decimal ui/draw.c open: Task 11
-decimal engine/game.c open: Task 9
-decimal engine/game.h open: Task 9
-decimal engine/inventory.c open: Task 9
-decimal engine/magic.c open: Task 9
 decimal platform/main.c open: Task 11
-decimal engine/message.c open: Task 9
-decimal engine/move.c open: Task 9
 decimal ui/music.c open: Task 11
 decimal ui/musicmap.c open: Task 11
 decimal platform/platform.c open: Task 11
-decimal engine/recruit.c open: Task 9
-decimal engine/recruit.h open: Task 9
 decimal platform/state_json.c open: Task 11
 decimal ui/ui_champion.c open: Task 11
 decimal ui/ui_menus.c open: Task 11
@@ -37,16 +22,13 @@ hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
 hex ui/select.c open: Task 11
 hex ui/ui.c open: Task 11
-long engine/action.c:action_is_action_performed open: Task 9
 long ui/anim.c:anim_next_frame open: Task 11
 long platform/control.c:handle_request open: Task 11
 long platform/control.c:send_turn_result open: Task 11
 long ui/layout.c:layout_get_zone open: Task 11
 long platform/main.c:main open: Task 11
-long engine/move.c:move_get_move_result open: Task 9
-long engine/sensor.c:sensor_is_triggered_by_click_on_wall open: Task 9
-long engine/sensor.c:sensor_process_thing_addition_or_removal open: Task 9
 long platform/state_json.c:champion_json open: Task 11
 long ui/view.c:aspect open: Task 11
 long ui/view.c:map_square open: Task 11
 decimal data/csbimage.c byte sizes in the table of APPB addresses
+long engine/action.c:action_is_action_performed one short case for each action of the action table

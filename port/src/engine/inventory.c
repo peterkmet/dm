@@ -7,6 +7,7 @@
 #include "random.h"
 #include "sound.h"
 #include "timeline_process.h"
+#include <stdbool.h>
 
 /* KAOS data addresses. */
 #define TORCH_CHARGE_TO_ICON_OFFSET 0x100ba0   /* g_torch_charge_to_icon_offset[16] */
@@ -29,6 +30,31 @@ enum { INFO_SCROLL = 0, INFO_CONTAINER = 1, INFO_POTION = 2, INFO_WEAPON = 23, I
 #define MAXIMUM_POTION_MANA 900
 #define HEAL_WOUND_TRIES 10
 #define STAT_MANA STAT_COUNT              /* object_modifier: the change goes to the maximum mana */
+#define ARMOUR_SHARP_DEFENSE_BASE 4       /* sharp defense: defense * (sharp resistance + 4) / 8 */
+#define ARMOUR_SHARP_DEFENSE_SHIFT 3
+/* Object modifiers: the bonus of each object. */
+#define RABBITS_FOOT_LUCK 10
+#define MACE_OF_ORDER_STRENGTH 5
+#define STAFF_OF_CLAWS_MANA 4
+#define VORPAL_BLADE_MANA 4
+#define DELTA_MANA 1
+#define INQUISITOR_MANA 2
+#define POWERTOWERS_STRENGTH 10
+#define CROWN_OF_NERRA_WISDOM 10
+#define DEXHELM_DEXTERITY 10
+#define FLAMEBAIN_ANTIFIRE 12
+#define CLOAK_OF_NIGHT_DEXTERITY 8
+#define JEWEL_SYMAL_ANTIMAGIC 15
+#define MOONSTONE_MANA 3
+/* Potions of power p: amount = p / 25 + 8, divisor = (511 - p) / ((p + 1) / 8 + 32) / 2. */
+#define POTION_AMOUNT_DIVISOR 25
+#define POTION_AMOUNT_BASE 8
+#define POTION_DIVISOR_BASE 511
+#define POTION_DIVISOR_POWER_SHIFT 3
+#define POTION_DIVISOR_OFFSET 32
+#define KU_STRENGTH_DIVISOR 35            /* Ku: strength + p / 35 + 5 */
+#define KU_STRENGTH_BASE 5
+#define VI_WOUND_ROLL_DIVISOR 42          /* Vi: max(1, p / 42) wound rolls */
 
 int16_t g_inventory_champion_ordinal;
 int16_t g_leader_empty_handed = 1;
@@ -113,7 +139,7 @@ uint16_t inventory_get_object_weight(uint16_t thing)
 uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)
 {
     uint16_t defense = info->defense;
-    return use_sharp_defense ? scale_value(defense, 3, (info->attributes & 7) + 4) : defense;
+    return use_sharp_defense ? scale_value(defense, ARMOUR_SHARP_DEFENSE_SHIFT, (info->attributes & ARMOUR_SHARP_RESISTANCE) + ARMOUR_SHARP_DEFENSE_BASE) : defense;
 }
 
 void inventory_put_object_in_leader_hand(uint16_t thing)
@@ -142,8 +168,18 @@ uint16_t inventory_get_object_removed_from_leader_hand(void)
     return thing;
 }
 
-/* Mana bonus of staffs and wands in the action hand, from the Staff to the Sceptre of Lyf. */
-static const int8_t staff_mana[] = {2, 1, 6, 4, 10, 8, 16, 7, 5};
+/* Mana bonus of staffs and wands in the action hand, from the Staff to the Sceptre of Lyf (icons 58-66). */
+#define STAFF_MANA 2
+#define WAND_MANA 1
+#define TEOWAND_MANA 6
+#define YEW_STAFF_MANA 4
+#define STAFF_OF_MANAR_MANA 10
+#define SNAKE_STAFF_MANA 8
+#define CONDUIT_MANA 16
+#define DRAGON_SPIT_MANA 7
+#define SCEPTRE_OF_LYF_MANA 5
+static const int8_t staff_mana[] = {STAFF_MANA, WAND_MANA, TEOWAND_MANA, YEW_STAFF_MANA, STAFF_OF_MANAR_MANA,
+                                    SNAKE_STAFF_MANA, CONDUIT_MANA, DRAGON_SPIT_MANA, SCEPTRE_OF_LYF_MANA};
 
 /* The statistic (or STAT_MANA) and the bonus of an object in a slot. Returns 0 for no bonus. */
 static int16_t object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint16_t *stat)
@@ -153,33 +189,34 @@ static int16_t object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint
     if ((type == THING_WEAPON || type == THING_ARMOUR) && slot <= CURSED_SLOT_LAST && rec_object_is_cursed(thing))
         return CURSED_LUCK;
     if (icon == ICON_RABBITS_FOOT && slot < SLOT_COUNT)
-        return 10;
+        return RABBITS_FOOT_LUCK;
     switch (slot) {
     case SLOT_HAND_ACTION:
         *stat = STAT_MANA;
         if (icon == ICON_MACE_OF_ORDER)
-            return *stat = STAT_STRENGTH, 5;
+            return *stat = STAT_STRENGTH, MACE_OF_ORDER_STRENGTH;
         if (icon >= ICON_STAFF_OF_CLAWS && icon <= ICON_STAFF_OF_CLAWS_LAST)
-            return 4;
+            return STAFF_OF_CLAWS_MANA;
         if (icon >= ICON_STAFF && icon <= ICON_SCEPTRE_OF_LYF)
             return staff_mana[icon - ICON_STAFF];
-        return icon == ICON_VORPAL_BLADE ? 4 : icon == ICON_DELTA ? 1 : icon == ICON_INQUISITOR ? 2 : 0;
+
+        return icon == ICON_VORPAL_BLADE ? VORPAL_BLADE_MANA : icon == ICON_DELTA ? DELTA_MANA : icon == ICON_INQUISITOR ? INQUISITOR_MANA : 0;
     case SLOT_LEGS:
-        return icon == ICON_POWERTOWERS ? (*stat = STAT_STRENGTH, 10) : 0;
+        return icon == ICON_POWERTOWERS ? (*stat = STAT_STRENGTH, POWERTOWERS_STRENGTH) : 0;
     case SLOT_HEAD:
         if (icon == ICON_CROWN_OF_NERRA)
-            return *stat = STAT_WISDOM, 10;
-        return icon == ICON_DEXHELM ? (*stat = STAT_DEXTERITY, 10) : 0;
+            return *stat = STAT_WISDOM, CROWN_OF_NERRA_WISDOM;
+        return icon == ICON_DEXHELM ? (*stat = STAT_DEXTERITY, DEXHELM_DEXTERITY) : 0;
     case SLOT_TORSO:
         if (icon == ICON_FLAMEBAIN)
-            return *stat = STAT_ANTIFIRE, 12;
-        return icon == ICON_CLOAK_OF_NIGHT ? (*stat = STAT_DEXTERITY, 8) : 0;
+            return *stat = STAT_ANTIFIRE, FLAMEBAIN_ANTIFIRE;
+        return icon == ICON_CLOAK_OF_NIGHT ? (*stat = STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY) : 0;
     case SLOT_NECK:
         if (icon == ICON_JEWEL_SYMAL || icon == ICON_JEWEL_SYMAL_WORN)
-            return *stat = STAT_ANTIMAGIC, 15;
+            return *stat = STAT_ANTIMAGIC, JEWEL_SYMAL_ANTIMAGIC;
         if (icon == ICON_CLOAK_OF_NIGHT)
-            return *stat = STAT_DEXTERITY, 8;
-        return icon == ICON_MOONSTONE ? (*stat = STAT_MANA, 3) : 0;
+            return *stat = STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY;
+        return icon == ICON_MOONSTONE ? (*stat = STAT_MANA, MOONSTONE_MANA) : 0;
     }
     return 0;
 }
@@ -204,10 +241,10 @@ static uint16_t *slot_ptr(Champion *c, uint16_t slot)
     return slot < SLOT_COUNT ? &c->slots[slot] : &g_open_chest_slots[slot - SLOT_CHEST_FIRST];
 }
 
-static int is_illumulet(int16_t icon) { return icon == ICON_ILLUMULET || icon == ICON_ILLUMULET_WORN; }
-static int is_neck_jewel(int16_t icon) { return icon >= ICON_JEWEL_SYMAL && icon <= ICON_ILLUMULET_WORN; }
-static int is_scroll(int16_t icon) { return icon == ICON_SCROLL_OPEN || icon == ICON_SCROLL_CLOSED; }
-static int is_torch(int16_t icon) { return icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST; }
+static bool is_illumulet(int16_t icon) { return icon == ICON_ILLUMULET || icon == ICON_ILLUMULET_WORN; }
+static bool is_neck_jewel(int16_t icon) { return icon >= ICON_JEWEL_SYMAL && icon <= ICON_ILLUMULET_WORN; }
+static bool is_scroll(int16_t icon) { return icon == ICON_SCROLL_OPEN || icon == ICON_SCROLL_CLOSED; }
+static bool is_torch(int16_t icon) { return icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST; }
 
 /* Takes an object from a slot: bonuses end, a torch goes out, a scroll closes. */
 uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)
@@ -363,15 +400,16 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t power = potion_power(potion);
-    uint16_t divisor = (uint16_t)((511 - power) / (((power + 1) >> 3) + 32)) >> 1;
-    uint16_t amount = power / 25 + 8;
+    uint16_t divisor = (POTION_DIVISOR_BASE - power) / (((power + 1) >> POTION_DIVISOR_POWER_SHIFT) + POTION_DIVISOR_OFFSET) >> 1;
+    uint16_t amount = power / POTION_AMOUNT_DIVISOR + POTION_AMOUNT_BASE;
     switch (potion_type(potion)) {
     case POTION_ROS: adjust_statistic_current_value(c, STAT_DEXTERITY, amount); break;
-    case POTION_KU: adjust_statistic_current_value(c, STAT_STRENGTH, power / 35 + 5); break;
+    case POTION_KU: adjust_statistic_current_value(c, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE); break;
     case POTION_DANE: adjust_statistic_current_value(c, STAT_WISDOM, amount); break;
     case POTION_NETA: adjust_statistic_current_value(c, STAT_VITALITY, amount); break;
     case POTION_ANTIVENIN: champion_unpoison(champion_index); break;
     case POTION_MON:
+        /* unsigned division as in the original */
         c->current_stamina += min16(c->maximum_stamina - c->current_stamina, (uint16_t)c->maximum_stamina / divisor);
         break;
     case POTION_YA: {
@@ -379,22 +417,24 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
         if (c->shield_defense > SHIELD_POTION_STRONG)
             amount >>= 2;
         c->shield_defense += amount;
-        TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + (uint16_t)(amount * amount)),
+        TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + (uint16_t)(amount * amount)), /* 16-bit product */
                            EVENT_CHAMPION_SHIELD_END, champion_index, amount, 0};
         timeline_add_event(&e);
         c->attributes |= CHAMPION_ATTR_STATUS_BOX;
         break;
     }
     case POTION_EE: {
-        uint16_t mana = min16(MAXIMUM_POTION_MANA, c->current_mana + amount + (amount - 8));
+        uint16_t mana = min16(MAXIMUM_POTION_MANA, c->current_mana + amount + (amount - POTION_AMOUNT_BASE));
+        /* unsigned compare and shift as in the original */
         if (mana > (uint16_t)c->maximum_mana)
             mana -= (uint16_t)(mana - max16(c->current_mana, c->maximum_mana)) >> 1;
         c->current_mana = mana;
         break;
     }
     case POTION_VI:
-        c->current_health += (uint16_t)c->maximum_health / divisor;
-        heal_wounds(c, max16(1, power / 42));
+        c->current_health += (uint16_t)c->maximum_health / divisor;   /* unsigned division as in the original */
+        heal_wounds(c, max16(1, power / VI_WOUND_ROLL_DIVISOR));
+
         c->attributes |= CHAMPION_ATTR_WOUNDS | CHAMPION_ATTR_LOAD;
         break;
     case POTION_WATER:

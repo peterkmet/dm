@@ -2,6 +2,9 @@
 #include <string.h>
 #include "message.h"
 
+#define MESSAGE_WRAP_LINE_SIZE 100   /* one wrapped line: at most MESSAGE_COLS characters */
+#define NUMBER_TEXT_SIZE 14     /* a 32-bit number with its sign */
+
 MessageArea g_message = { .cursor_row = MESSAGE_LAST_ROW, .expiry = { MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY } };
 
 /* Empties row r and stops its expiry. */
@@ -94,7 +97,7 @@ int message_next_word_line(const char *s, char *line, int *pos, int max_width)
 /* Prints s with word wrap; '\n' starts a new row, a wrapped row continues indented. */
 void message_print(int16_t color, const char *s, uint32_t game_time)
 {
-    char line[100];
+    char line[MESSAGE_WRAP_LINE_SIZE];
     int pos = 0;
     while (s[pos]) {
         int w = message_next_word_line(s, line, &pos, MESSAGE_ROW_WIDTH - g_message.cursor_x);
@@ -117,7 +120,7 @@ void message_print(int16_t color, const char *s, uint32_t game_time)
 /* Prints a number and a space. */
 void message_print_number(int16_t color, int32_t value, uint32_t game_time)
 {
-    char buf[14];
+    char buf[NUMBER_TEXT_SIZE];
     snprintf(buf, sizeof buf, "%d", (int)value);
     message_print(color, buf, game_time);
     message_print(color, " ", game_time);

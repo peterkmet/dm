@@ -20,7 +20,6 @@
 /* KAOS data addresses. */
 #define SLOT_DROP_ORDER 0x100d0e   /* g_slot_drop_order[30] */
 
-#define CELL_COUNT 4
 #define INITIAL_FOOD_WATER 1500
 #define MAXIMUM_HEALTH 999
 #define MAXIMUM_STAMINA 9999
@@ -39,6 +38,66 @@
 #define RESURRECTION_MINIMUM_HEALTH 25
 #define SCENT_STRENGTH_MINIMUM 0
 #define PIT_ATTACK 20
+#define FOOD_WATER_RANDOM_MASK 255         /* random part of the start food and water */
+#define RESURRECTION_HEALTH_LOSS_SHIFT 6   /* the Vi altar takes 1/64 of the maximum health */
+/* Level gain: stamina gain = maximum stamina / divisor, or >> shift. */
+#define FIGHTER_STAMINA_GAIN_SHIFT 4
+#define NINJA_STAMINA_GAIN_DIVISOR 21
+#define PRIEST_STAMINA_GAIN_DIVISOR 25
+#define WIZARD_STAMINA_GAIN_SHIFT 5
+#define FIGHTER_HEALTH_GAIN_FACTOR 3
+#define TEMPORARY_EXPERIENCE_GAIN_SHIFT 3  /* temporary experience gains experience / 8 */
+#define TEMPORARY_EXPERIENCE_GAIN_MAXIMUM 100
+/* Maximum load: strength * 8 + 100 tenths of a kilogram. */
+#define LOAD_PER_STRENGTH 8
+#define LOAD_BASE 100
+#define LOAD_UNIT 10                       /* tenths of a kilogram in a kilogram */
+#define WOUNDED_LOAD_SHIFT 3               /* a wound takes 1/8 of the maximum load */
+#define WOUNDED_LEGS_LOAD_SHIFT 2          /* a leg wound takes 1/4 */
+#define ELVEN_BOOTS_LOAD_SHIFT 4           /* Elven Boots add 1/16 */
+/* Movement ticks: heavy above 5/8 of the maximum load; overloaded (load - maximum) * 4 / maximum + 4. */
+#define HEAVY_LOAD_NUMERATOR 5
+#define HEAVY_LOAD_DENOMINATOR 8
+#define MOVE_TICKS_HEAVY 3
+#define MOVE_TICKS_NORMAL 2
+#define OVERLOAD_TICKS_FACTOR 4
+#define OVERLOAD_TICKS_BASE 4
+#define ROLL_MAXIMUM 100                   /* dexterity, strength, and wound defense are at most 100 */
+#define DEXTERITY_RANDOM_MASK 7
+#define DEXTERITY_MINIMUM 2
+#define STRENGTH_RANDOM_MASK 15
+#define LIGHT_LOAD_SHIFT 4                 /* an object up to 1/16 of the maximum load is light */
+#define STRENGTH_WEIGHT_OFFSET 12          /* strength changes by weight - 12 for a light object */
+/* Wound defense: a shield adds (strength + defense) * factor >> 4 in its own slot, >> 5 in the other slots. */
+#define SHIELD_DEFENSE_OWN_SLOT_SHIFT 4
+#define SHIELD_DEFENSE_SHIFT 5
+#define VITALITY_DEFENSE_SHIFT 3           /* the random defense is up to vitality / 8 */
+#define WOUND_DEFENSE_PENALTY 8            /* a wounded slot loses random_2bits() + 8 */
+/* Damage: attack * (limit - defense) / 64. */
+#define DAMAGE_SCALE_SHIFT 6
+#define ARMOUR_DEFENSE_LIMIT 130
+#define PSYCHIC_WISDOM_LIMIT 115
+#define WOUND_THRESHOLD_RANDOM_MASK 127    /* wound threshold: (random16() & 127) + 10 */
+#define WOUND_THRESHOLD_BASE 10
+#define WOUND_SLOT_RANDOM_MASK 7           /* a wound hits a random bit of the allowed wounds */
+#define ROPE_STAMINA_FACTOR 25             /* rope climb stamina cost: load * 25 / maximum load + 1 */
+/* Time effects. */
+#define MANA_GAIN_DIVISOR 40
+#define MANA_STAMINA_COST_MINIMUM 7        /* stamina for one mana: max(7, 16 - wizard and priest levels) */
+#define MANA_STAMINA_COST_BASE 16
+#define FOOD_WATER_LAST_STEPS 4
+#define STAMINA_RATE_SHIFT 8               /* stamina loss rate: maximum stamina / 256 - 1, from 1 to 6 */
+#define STAMINA_RATE_MAXIMUM 6
+#define IDLE_TICKS_HUNGRY 80               /* a party that does not move gets hungry faster */
+#define IDLE_TICKS_VERY_HUNGRY 250
+#define HEALTH_GAIN_VITALITY_BONUS 12
+#define HEALTH_GAIN_SHIFT 7                /* health gain: maximum health / 128 + 1 */
+/* The regeneration chance shuffles the game time bits 6, 7, and 8. */
+#define TIME_BIT_6 0x40
+#define TIME_BIT_7 0x80
+#define TIME_BIT_8 0x100
+#define STATISTICS_RESTORE_MASK 255        /* statistics move every 256 ticks */
+#define STATISTICS_RESTORE_SLEEPING_MASK 63
 
 /* Weapon classes that use the swing, throw, and shoot skills. */
 enum { CLASS_SWING_WEAPON = 0, CLASS_DAGGER_AND_AXES = 2, CLASS_FIRST_AMMUNITION = 16, CLASS_AMMUNITION_END = 112 };
@@ -101,16 +160,16 @@ void champion_unpack(const uint8_t *in, Champion *c)
     c->poison_event_count = in[REC_POISON_EVENTS];
     int16_t *words[REC_WORD_COUNT] = {WORDS(c)};
     for (int i = 0; i < REC_WORD_COUNT; i++)
-        *words[i] = (int16_t)BE16(in + REC_WORDS + 2 * i);
+        *words[i] = BE16(in + REC_WORDS + 2 * i);
     memcpy(c->statistics, in + REC_STATISTICS, sizeof c->statistics);
     for (int i = 0; i < SKILL_COUNT; i++) {
-        c->skills[i].temporary_experience = (int16_t)BE16(in + REC_SKILLS + REC_SKILL_SIZE * i);
+        c->skills[i].temporary_experience = BE16(in + REC_SKILLS + REC_SKILL_SIZE * i);
         c->skills[i].experience = (int32_t)BE32(in + REC_SKILLS + REC_SKILL_SIZE * i + 2);
     }
     for (int i = 0; i < SLOT_COUNT; i++)
         c->slots[i] = BE16(in + REC_SLOTS + 2 * i);
     c->load = BE16(in + REC_LOAD);
-    c->shield_defense = (int16_t)BE16(in + REC_SHIELD);
+    c->shield_defense = BE16(in + REC_SHIELD);
     memcpy(c->magic_map, in + REC_MAGIC_MAP, sizeof c->magic_map);
 }
 
@@ -128,13 +187,6 @@ static void square_in_front(int16_t *x, int16_t *y)
 {
     *x = g_party_map_x, *y = g_party_map_y;
     update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, x, y);
-}
-
-#define THING_WITHOUT_CELL 0x3fff
-
-static uint16_t with_cell(uint16_t thing, uint16_t cell)
-{
-    return cell << 14 | (thing & THING_WITHOUT_CELL);
 }
 
 /* The living champion in a cell of the party square, or -1. */
@@ -244,7 +296,7 @@ void champion_add_candidate_to_party(int16_t portrait_index)
     if (!g_leader_empty_handed || g_party_champion_count >= CHAMPION_MAX_COUNT)
         return;
     uint16_t index = g_party_champion_count;
-    champion_set_portrait((int16_t)index, portrait_index);
+    champion_set_portrait(index, portrait_index);
     Champion *c = &g_champions[index];
     memset(c, 0, sizeof *c);
     c->action_index = ACTION_NONE;
@@ -256,8 +308,8 @@ void champion_add_candidate_to_party(int16_t portrait_index)
     c->cell = (g_party_direction + n) % CELL_COUNT;
     c->attributes = CHAMPION_ATTR_ICON;
     c->direction_maximum_damage_received = g_party_direction;
-    c->food = (random16() & 255) + INITIAL_FOOD_WATER;
-    c->water = (random16() & 255) + INITIAL_FOOD_WATER;
+    c->food = (random16() & FOOD_WATER_RANDOM_MASK) + INITIAL_FOOD_WATER;
+    c->water = (random16() & FOOD_WATER_RANDOM_MASK) + INITIAL_FOOD_WATER;
     for (int s = 0; s < SLOT_COUNT; s++)
         c->slots[s] = THING_NONE;
     RecruitData r;
@@ -350,7 +402,8 @@ void champion_resurrect(uint16_t champion_index)
     c->load = 0;
     for (int s = 0; s < SLOT_COUNT; s++)
         c->slots[s] = THING_NONE;
-    int16_t health = max16(RESURRECTION_MINIMUM_HEALTH, c->maximum_health - ((uint16_t)c->maximum_health >> 6) - 1);
+    /* unsigned shift as in the original */
+    int16_t health = max16(RESURRECTION_MINIMUM_HEALTH, c->maximum_health - ((uint16_t)c->maximum_health >> RESURRECTION_HEALTH_LOSS_SHIFT) - 1);
     c->maximum_health = health;
     c->current_health = health >> 1;
     c->direction = g_party_direction;
@@ -387,6 +440,7 @@ int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flag
     uint16_t skill = skill_and_flags & ~(SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
     int temporary = !(skill_and_flags & SKILL_IGNORE_TEMPORARY_EXPERIENCE);
     uint32_t experience = c->skills[skill].experience;
+    /* The original adds the temporary experience as an unsigned word. */
     if (temporary)
         experience += (uint16_t)c->skills[skill].temporary_experience;
     if (skill >= SKILL_BASE_COUNT) {
@@ -408,7 +462,7 @@ int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flag
 static void gain_level(uint16_t champion_index, uint16_t base, uint16_t level)
 {
     Champion *c = &g_champions[champion_index];
-    uint8_t (*maximum)[3] = c->statistics;
+    uint8_t (*maximum)[STAT_VALUE_COUNT] = c->statistics;
     uint16_t r1 = random_bit(), r2 = random_bit() + 1, vitality = random_bit();
     if (base != SKILL_PRIEST)
         vitality &= level;
@@ -417,13 +471,13 @@ static void gain_level(uint16_t champion_index, uint16_t base, uint16_t level)
     maximum[STAT_ANTIFIRE][STAT_MAXIMUM] += ~level & random_bit();
     switch (base) {
     case SKILL_FIGHTER:
-        stamina_gain >>= 4;
-        health_gain = level * 3;
+        stamina_gain >>= FIGHTER_STAMINA_GAIN_SHIFT;
+        health_gain = level * FIGHTER_HEALTH_GAIN_FACTOR;
         maximum[STAT_STRENGTH][STAT_MAXIMUM] += r2;
         maximum[STAT_DEXTERITY][STAT_MAXIMUM] += r1;
         break;
     case SKILL_NINJA:
-        stamina_gain /= 21;
+        stamina_gain /= NINJA_STAMINA_GAIN_DIVISOR;
         health_gain = level * 2;
         maximum[STAT_STRENGTH][STAT_MAXIMUM] += r1;
         maximum[STAT_DEXTERITY][STAT_MAXIMUM] += r2;
@@ -431,12 +485,12 @@ static void gain_level(uint16_t champion_index, uint16_t base, uint16_t level)
     case SKILL_PRIEST:
     case SKILL_WIZARD:
         if (base == SKILL_PRIEST) {
-            stamina_gain /= 25;
+            stamina_gain /= PRIEST_STAMINA_GAIN_DIVISOR;
             c->maximum_mana += level;
             health_gain = level + ((level + 1) >> 1);
             maximum[STAT_WISDOM][STAT_MAXIMUM] += r1;
         } else {
-            stamina_gain >>= 5;
+            stamina_gain >>= WIZARD_STAMINA_GAIN_SHIFT;
             c->maximum_mana += level + (level >> 1);
             maximum[STAT_WISDOM][STAT_MAXIMUM] += r2;
         }
@@ -474,8 +528,8 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
         experience *= 2;
     Skill *s = &c->skills[skill];
     s->experience = (uint32_t)s->experience + experience; /* 32-bit wrap */
-    if ((uint16_t)s->temporary_experience < TEMPORARY_EXPERIENCE_LIMIT)
-        s->temporary_experience += bounded_value(1, experience >> 3, 100);
+    if ((uint16_t)s->temporary_experience < TEMPORARY_EXPERIENCE_LIMIT) /* unsigned compare as in the original */
+        s->temporary_experience += bounded_value(1, experience >> TEMPORARY_EXPERIENCE_GAIN_SHIFT, TEMPORARY_EXPERIENCE_GAIN_MAXIMUM);
     if (skill >= SKILL_BASE_COUNT)
         c->skills[base].experience = (uint32_t)c->skills[base].experience + experience;
     uint16_t level = champion_get_skill_level(champion_index, base | flags);
@@ -486,13 +540,13 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
 /* Tenths of a kilogram, rounded up to whole kilograms. */
 uint16_t champion_get_maximum_load(const Champion *c)
 {
-    uint16_t load = game_get_stamina_adjusted_value(c, c->statistics[STAT_STRENGTH][STAT_CURRENT] * 8 + 100);
+    uint16_t load = game_get_stamina_adjusted_value(c, c->statistics[STAT_STRENGTH][STAT_CURRENT] * LOAD_PER_STRENGTH + LOAD_BASE);
     if (c->wounds)
-        load -= load >> (c->wounds & WOUND_LEGS ? 2 : 3);
+        load -= load >> (c->wounds & WOUND_LEGS ? WOUNDED_LEGS_LOAD_SHIFT : WOUNDED_LOAD_SHIFT);
     if (object_get_icon_index(c->slots[SLOT_FEET]) == ICON_ELVEN_BOOTS)
-        load += load >> 4;
-    load += 9;
-    return load - load % 10;
+        load += load >> ELVEN_BOOTS_LOAD_SHIFT;
+    load += LOAD_UNIT - 1;
+    return load - load % LOAD_UNIT;
 }
 
 /* Ticks between two party moves for this champion: more when the load is heavy. */
@@ -501,10 +555,11 @@ int16_t champion_get_movement_ticks(const Champion *c)
     uint16_t maximum = champion_get_maximum_load(c), load = c->load;
     int16_t ticks, wounded_feet;
     if (load < maximum) {
-        ticks = (int32_t)maximum * 5 < (int32_t)load * 8 ? 3 : 2;
+        ticks = (int32_t)maximum * HEAVY_LOAD_NUMERATOR < (int32_t)load * HEAVY_LOAD_DENOMINATOR ? MOVE_TICKS_HEAVY : MOVE_TICKS_NORMAL;
         wounded_feet = 1;
     } else {
-        ticks = (uint16_t)((load - maximum) * 4) / maximum + 4;
+        /* 16-bit wrap as in the original */
+        ticks = (uint16_t)((load - maximum) * OVERLOAD_TICKS_FACTOR) / maximum + OVERLOAD_TICKS_BASE;
         wounded_feet = 2;
     }
     if (c->wounds & WOUND_FEET)
@@ -517,14 +572,14 @@ int16_t champion_get_movement_ticks(const Champion *c)
 /* Dexterity for hit and dodge rolls, lower with a heavy load, between 1 and 100. */
 int16_t champion_get_dexterity(const Champion *c)
 {
-    int16_t dexterity = c->statistics[STAT_DEXTERITY][STAT_CURRENT] + (random16() & 7);
+    int16_t dexterity = c->statistics[STAT_DEXTERITY][STAT_CURRENT] + (random16() & DEXTERITY_RANDOM_MASK);
     int32_t product = (int32_t)((uint32_t)c->load * (uint32_t)(dexterity >> 1)); /* 32-bit signed product */
     dexterity -= product / champion_get_maximum_load(c);
-    dexterity = max16(2, dexterity);
+    dexterity = max16(DEXTERITY_MINIMUM, dexterity);
     if (g_party_is_sleeping)
         dexterity >>= 1;
-    int16_t high = 100 - (random16() & 7);
-    int16_t low = (random16() & 7) + 1;
+    int16_t high = ROLL_MAXIMUM - (random16() & DEXTERITY_RANDOM_MASK);
+    int16_t low = (random16() & DEXTERITY_RANDOM_MASK) + 1;
     return bounded_value(low, dexterity >> 1, high);
 }
 
@@ -532,15 +587,16 @@ int16_t champion_get_dexterity(const Champion *c)
 int16_t champion_get_strength(int16_t champion_index, int16_t slot)
 {
     const Champion *c = &g_champions[champion_index];
-    int16_t strength = c->statistics[STAT_STRENGTH][STAT_CURRENT] + (random16() & 15);
+    int16_t strength = c->statistics[STAT_STRENGTH][STAT_CURRENT] + (random16() & STRENGTH_RANDOM_MASK);
     uint16_t thing = c->slots[slot], weight = inventory_get_object_weight(thing);
-    uint16_t light = champion_get_maximum_load(c) >> 4;
+    uint16_t light = champion_get_maximum_load(c) >> LIGHT_LOAD_SHIFT;
     if (light >= weight) {
-        strength += weight - 12;
+        strength += weight - STRENGTH_WEIGHT_OFFSET;
     } else {
-        uint16_t heavy = light + ((uint16_t)(light - 12) >> 1);
+        /* unsigned shift as in the original: light below 12 gives a large value */
+        uint16_t heavy = light + ((uint16_t)(light - STRENGTH_WEIGHT_OFFSET) >> 1);
         if (heavy >= weight)
-            strength += (uint16_t)(weight - light) >> 1;
+            strength += (weight - light) >> 1;
         else
             strength -= (weight - heavy) * 2;
     }
@@ -559,7 +615,7 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
     strength = game_get_stamina_adjusted_value(c, strength);
     if (c->wounds & (slot == SLOT_HAND_READY ? WOUND_READY_HAND : WOUND_ACTION_HAND))
         strength >>= 1;
-    return bounded_value(0, strength >> 1, 100);
+    return bounded_value(0, strength >> 1, ROLL_MAXIMUM);
 }
 
 static const ArmourInfo *armour_info(uint16_t thing)
@@ -578,19 +634,20 @@ int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_fla
         if (THING_TYPE(thing) != THING_ARMOUR || !(armour_info(thing)->attributes & ARMOUR_SHIELD))
             continue;
         uint16_t sum = champion_get_strength(champion_index, hand) + inventory_get_armour_defense(armour_info(thing), sharp);
-        shields += (uint16_t)(sum * *tables_wound_defense_factor(slot)) >> (hand == slot ? 4 : 5);
+        /* 16-bit truncation of the product as in the original */
+        shields += (uint16_t)(sum * *tables_wound_defense_factor(slot)) >> (hand == slot ? SHIELD_DEFENSE_OWN_SLOT_SHIFT : SHIELD_DEFENSE_SHIFT);
     }
-    uint16_t luck = random16() % ((c->statistics[STAT_VITALITY][STAT_CURRENT] >> 3) + 1);
+    uint16_t luck = random16() % ((c->statistics[STAT_VITALITY][STAT_CURRENT] >> VITALITY_DEFENSE_SHIFT) + 1);
     if (sharp)
         luck >>= 1;
     int16_t defense = luck + c->action_defense + c->shield_defense + g_party.shield_defense + shields;
     if (slot > SLOT_HAND_ACTION && THING_TYPE(c->slots[slot]) == THING_ARMOUR)
         defense += inventory_get_armour_defense(armour_info(c->slots[slot]), sharp);
     if (c->wounds & 1 << slot)
-        defense -= random_2bits() + 8;
+        defense -= random_2bits() + WOUND_DEFENSE_PENALTY;
     if (g_party_is_sleeping)
         defense >>= 1;
-    return bounded_value(0, defense >> 1, 100);
+    return bounded_value(0, defense >> 1, ROLL_MAXIMUM);
 }
 
 /* Attack after the champion's resistances; armour (wound defense) reduces normal attacks. */
@@ -615,11 +672,11 @@ static int16_t resisted_attack(int16_t champion_index, int16_t attack, uint16_t 
     case ATTACK_MAGIC:
         return game_get_statistic_adjusted_attack(c, STAT_ANTIMAGIC, attack) - g_party.spell_shield_defense;
     case ATTACK_PSYCHIC: {
-        int16_t wisdom = 115 - c->statistics[STAT_WISDOM][STAT_CURRENT];
-        return wisdom <= 0 ? 0 : (int16_t)scale_value(attack, 6, wisdom);
+        int16_t wisdom = PSYCHIC_WISDOM_LIMIT - c->statistics[STAT_WISDOM][STAT_CURRENT];
+        return wisdom <= 0 ? 0 : scale_value(attack, DAMAGE_SCALE_SHIFT, wisdom);
     }
     }
-    return attack <= 0 ? 0 : (int16_t)scale_value(attack, 6, 130 - defense);
+    return attack <= 0 ? 0 : scale_value(attack, DAMAGE_SCALE_SHIFT, ARMOUR_DEFENSE_LIMIT - defense);
 }
 
 /* Damage arrives at the end of the tick. Attack type ATTACK_RAW skips defense and wounds. */
@@ -634,10 +691,10 @@ int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t a
         attack = resisted_attack(champion_index, attack, allowed_wounds, attack_type);
         if (attack <= 0)
             return 0;
-        int16_t threshold = game_get_statistic_adjusted_attack(c, STAT_VITALITY, (random16() & 127) + 10);
+        int16_t threshold = game_get_statistic_adjusted_attack(c, STAT_VITALITY, (random16() & WOUND_THRESHOLD_RANDOM_MASK) + WOUND_THRESHOLD_BASE);
         if (threshold < attack)
             do {
-                g_champion_pending_wounds[champion_index] |= allowed_wounds & 1 << (random16() & 7);
+                g_champion_pending_wounds[champion_index] |= allowed_wounds & 1 << (random16() & WOUND_SLOT_RANDOM_MASK);
                 threshold *= 2;
             } while (threshold < attack && threshold);
         if (g_party_is_sleeping)
@@ -683,7 +740,7 @@ void champion_apply_and_draw_pending_damage_and_wounds(void)
 
 static void drop_on_party_square(uint16_t thing, uint16_t cell)
 {
-    move_get_move_result(with_cell(thing, cell), -1, 0, g_party_map_x, g_party_map_y);
+    move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, g_party_map_x, g_party_map_y);
 }
 
 /* All objects fall to the floor in the champion's cell. */
@@ -722,7 +779,7 @@ void champion_kill(uint16_t champion_index)
     c->maximum_damage_received = 0;
     if (c->poison_event_count)
         champion_unpoison(champion_index);
-    uint16_t alive = 0;
+    int16_t alive = 0;
     while (alive < g_party_champion_count && !g_champions[alive].current_health)
         alive++;
     if (alive == g_party_champion_count) {
@@ -732,7 +789,7 @@ void champion_kill(uint16_t champion_index)
     if (champion_index == g_leader_index)
         champion_set_leader(alive);
     if (champion_index == g_magic_caster_champion_index) {
-        g_magic_caster_champion_index = (int16_t)alive;
+        g_magic_caster_champion_index = alive;
         g_redraw |= REDRAW_SPELL_AREA;
     } else {
         g_redraw |= REDRAW_SPELL_TABS;
@@ -790,7 +847,7 @@ void champion_decrement_stamina(int16_t champion_index, int16_t decrement)
     int16_t stamina = c->current_stamina;
     if (stamina <= 0) {
         c->current_stamina = 0;
-        champion_add_pending_damage_and_wounds(champion_index, (int16_t)-stamina >> 1, 0, ATTACK_RAW);
+        champion_add_pending_damage_and_wounds(champion_index, (int16_t)-stamina >> 1, 0, ATTACK_RAW); /* 16-bit wrap as in the original */
     } else if (stamina > c->maximum_stamina) {
         c->current_stamina = c->maximum_stamina;
     }
@@ -810,7 +867,7 @@ void champion_fall_damage(int16_t use_rope)
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         Champion *c = &g_champions[i];
         if (c->current_health)
-            champion_decrement_stamina(i, (uint16_t)(c->load * 25) / champion_get_maximum_load(c) + 1);
+            champion_decrement_stamina(i, (uint16_t)(c->load * ROPE_STAMINA_FACTOR) / champion_get_maximum_load(c) + 1); /* 16-bit wrap */
     }
 }
 
@@ -831,7 +888,7 @@ void champion_delete_scent(uint16_t scent_index)
 /* Scents away from the party fade; a faded first scent is removed. */
 static void fade_scents(void)
 {
-    uint16_t here = (g_party_map_x & 31) << 11 | (g_party_map_y & 31) << 6 | (g_party_map_index & 63);
+    uint16_t here = move_get_scent(g_party_map_x, g_party_map_y, g_party_map_index);
     for (int16_t i = 0; i < g_party.scent_count - 1;) {
         if (g_party.scents[i] != here) {
             g_party.scent_strengths[i] = max16(SCENT_STRENGTH_MINIMUM, g_party.scent_strengths[i] - 1);
@@ -850,13 +907,13 @@ static void regenerate_mana(uint16_t i, uint16_t chance)
     Champion *c = &g_champions[i];
     if (c->current_mana < c->maximum_mana) {
         int16_t levels = champion_get_skill_level(i, SKILL_WIZARD) + champion_get_skill_level(i, SKILL_PRIEST);
-        if ((uint16_t)(levels + c->statistics[STAT_WISDOM][STAT_CURRENT]) <= chance)
+        if (levels + c->statistics[STAT_WISDOM][STAT_CURRENT] <= chance)
             return;
-        int16_t gain = c->maximum_mana / 40;
+        int16_t gain = c->maximum_mana / MANA_GAIN_DIVISOR;
         if (g_party_is_sleeping)
             gain *= 2;
         gain++;
-        champion_decrement_stamina(i, max16(7, 16 - levels) * gain);
+        champion_decrement_stamina(i, max16(MANA_STAMINA_COST_MINIMUM, MANA_STAMINA_COST_BASE - levels) * gain);
         c->current_mana += min16(gain, c->maximum_mana - c->current_mana);
     } else if (c->current_mana > c->maximum_mana) {
         c->current_mana--;
@@ -868,18 +925,18 @@ static void consume_food_and_water(uint16_t i, uint16_t time)
 {
     Champion *c = &g_champions[i];
     int16_t food = c->food, water = c->water;
-    uint16_t steps = 4;
+    uint16_t steps = FOOD_WATER_LAST_STEPS;
     for (int16_t half = c->maximum_stamina >> 1; half > c->current_stamina; half >>= 1)
         steps += 2;
     int16_t loss = 0;
-    int16_t rate = bounded_value(1, (c->maximum_stamina >> 8) - 1, 6);
+    int16_t rate = bounded_value(1, (c->maximum_stamina >> STAMINA_RATE_SHIFT) - 1, STAMINA_RATE_MAXIMUM);
     if (g_party_is_sleeping)
         rate *= 2;
-    uint16_t idle = time - (uint16_t)g_last_party_movement_time;
-    if (idle > 80)
-        rate += idle > 250 ? 2 : 1;
+    uint16_t idle = time - g_last_party_movement_time;   /* 16-bit difference */
+    if (idle > IDLE_TICKS_HUNGRY)
+        rate += idle > IDLE_TICKS_VERY_HUNGRY ? 2 : 1;
     do {
-        int last_steps = steps <= 4;
+        int last_steps = steps <= FOOD_WATER_LAST_STEPS;
         if (c->food < FOOD_WATER_STARVING) {
             if (last_steps)
                 loss += rate, c->food -= 2;
@@ -910,9 +967,9 @@ static void consume_food_and_water(uint16_t i, uint16_t time)
 static void regenerate_health(Champion *c, uint16_t chance)
 {
     if (c->current_health >= c->maximum_health || c->maximum_stamina >> 2 > c->current_stamina ||
-        c->statistics[STAT_VITALITY][STAT_CURRENT] + 12 <= chance)
+        c->statistics[STAT_VITALITY][STAT_CURRENT] + HEALTH_GAIN_VITALITY_BONUS <= chance)
         return;
-    int16_t gain = (c->maximum_health >> 7) + 1;
+    int16_t gain = (c->maximum_health >> HEALTH_GAIN_SHIFT) + 1;
     if (g_party_is_sleeping)
         gain *= 2;
     if (object_get_icon_index(c->slots[SLOT_NECK]) == ICON_EKKHARD_CROSS)
@@ -939,7 +996,7 @@ void champion_apply_time_effects(void)
         return;
     fade_scents();
     uint16_t time = g_game_time;
-    uint16_t chance = ((time & 128) + ((time & 256) >> 2) + ((time & 64) << 2)) >> 2; /* time bits 6-8 shuffled: 0-112 */
+    uint16_t chance = ((time & TIME_BIT_7) + ((time & TIME_BIT_8) >> 2) + ((time & TIME_BIT_6) << 2)) >> 2; /* time bits 6-8 shuffled: 0-112 */
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         Champion *c = &g_champions[i];
         if (!c->current_health || i + 1 == g_candidate_champion_ordinal)
@@ -950,7 +1007,7 @@ void champion_apply_time_effects(void)
                 c->skills[s].temporary_experience--;
         consume_food_and_water(i, time);
         regenerate_health(c, chance);
-        if (!(time & (g_party_is_sleeping ? 63 : 255)))
+        if (!(time & (g_party_is_sleeping ? STATISTICS_RESTORE_SLEEPING_MASK : STATISTICS_RESTORE_MASK)))
             restore_statistics(c);
         if (!g_party_is_sleeping && c->direction != g_party_direction && g_game_time - TURN_BACK_TICKS > (uint32_t)g_last_creature_attack_time) {
             c->direction = g_party_direction;

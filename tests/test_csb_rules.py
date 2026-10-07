@@ -46,7 +46,7 @@ def lib(tmp_path_factory):
     for name, res, args in [
         ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
         ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
-        ("action_is_action_performed", c16, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
+        ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
         ("sensor_add_event", None, [c16, c16, c16, c16, c16, u32]),
         ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, c16, c16]),
         ("champion_click_in_resurrect_reincarnate_panel", None, [c16]), ("unlink_thing_from_list", None, [u16, u16, c16, c16]),

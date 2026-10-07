@@ -66,8 +66,8 @@ def lib():
         getattr(lib, name).restype = ctypes.c_uint16
     lib.scale_value.restype = ctypes.c_int32
     lib.scale_value.argtypes = [ctypes.c_uint16, c16, ctypes.c_uint16]
-    for name in ("min16", "max16", "bounded_value", "timeline_add_event", "timeline_is_first_event_expired",
-                 "game_get_stamina_adjusted_value", "game_is_lucky"):
+    for name in ("min16", "max16", "bounded_value", "timeline_add_event",
+                 "game_get_stamina_adjusted_value"):
         getattr(lib, name).restype = c16
     lib.min16.argtypes = lib.max16.argtypes = [c16, c16]
     lib.bounded_value.argtypes = [c16, c16, c16]
@@ -76,6 +76,7 @@ def lib():
     lib.game_get_statistic_adjusted_attack.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, ctypes.c_uint16]
     lib.adjust_statistic_current_value.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, c16]
     lib.game_is_lucky.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16]
+    lib.game_is_lucky.restype = lib.timeline_is_first_event_expired.restype = ctypes.c_bool
     lib.update_map_coordinates_after_relative_movement.argtypes = [c16, c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
     return lib
 
