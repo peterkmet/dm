@@ -22,6 +22,7 @@ CURRENT_MAP, THING_DATA, PENDING_DAMAGE, PENDING_WOUNDS, LEVEL_UP = 0x101CBC, 0x
 SKILL_LEVEL, ADD_EXPERIENCE, MAX_LOAD, MOVE_TICKS, DEXTERITY = 0x110B20, 0x110C2E, 0x111056, 0x1110C2, 0x11112E
 STRENGTH, WOUND_DEFENSE, PENDING, DAMAGE_ALL, TIME_EFFECTS = 0x1111B6, 0x1112EA, 0x111984, 0x111C3A, 0x11202C
 WEIGHT, ICON = 0x10A4AC, 0x1079DC
+ATTR_STATUS_BOX, REDRAW_SPELL_AREA = 0x1000, 2
 RTS = b"\x4e\x75"
 STUBS = {0x112880: RTS, 0x112D2C: RTS, 0x1098A6: RTS, 0x10999E: RTS,  # draw state, draw all, message print, new line
          0x111440: b"\x42\x6d\xc0\x7e" + RTS}  # champion_wake_up: clr.w g_party_is_sleeping
@@ -70,12 +71,12 @@ def lib():
         "champion_get_dexterity": (c16, [cp]), "champion_get_strength": (c16, [c16, c16]),
         "champion_get_wound_defense": (c16, [c16, u16]), "champion_add_pending_damage_and_wounds": (c16, [c16, c16, u16, c16]),
         "champion_damage_all": (c16, [u16, u16, c16]), "champion_decrement_stamina": (None, [c16, c16]),
-        "get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "get_unused_thing": (u16, [u16]),
+        "inventory_get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "get_unused_thing": (u16, [u16]),
         "champion_add_candidate_to_party": (None, [c16]), "champion_click_in_resurrect_reincarnate_panel": (None, [c16]),
-        "champion_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [u16]),
+        "inventory_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [u16]),
         "champion_pack": (None, [cp, ctypes.c_char_p]), "champion_unpack": (None, [ctypes.c_char_p, cp]),
         "recruit_text_thing": (u16, [c16, c16, c16]), "recruit_portrait_index": (c16, [u16]),
-        "dungeon_square_first_thing": (u16, [c16, c16, c16]), "get_thing_data": (ctypes.POINTER(u8), [u16]),
+        "dungeon_square_first_thing": (u16, [c16, c16, c16]), "dungeon_get_thing_data": (ctypes.POINTER(u8), [u16]),
         "set_current_map_and_party_map": (None, [c16]),
     }
     for name, (res, args) in sig.items():
@@ -246,7 +247,7 @@ def test_object_weight_and_icon_match_original(lib):
     for party_direction in range(4):
         w.globals(0, 1000, 0, 0, 0, party_direction)
         for t in w.things + [0xFFFF]:
-            assert lib.get_object_weight(t) == w.emu.call(WEIGHT, [(2, t)]) & 0xFFFF, hex(t)
+            assert lib.inventory_get_object_weight(t) == w.emu.call(WEIGHT, [(2, t)]) & 0xFFFF, hex(t)
             assert lib.object_get_icon_index(t) == s16(w.emu.call(ICON, [(2, t)])), hex(t)
 
 
@@ -361,7 +362,7 @@ def square_things(lib, m, x, y):
     t = lib.dungeon_square_first_thing(m, x, y)
     while t != 0xFFFE:
         yield t
-        d = lib.get_thing_data(t)
+        d = lib.dungeon_get_thing_data(t)
         t = d[0] << 8 | d[1]
 
 
@@ -414,7 +415,7 @@ def test_recruit_first_mirror_champion(lib, party):
     assert ch.direction == ch.cell == party["direction"] and ch.action_index == 255 and ch.hide_damage_received_event_index == -1
     slots = [s for s in ch.slots if s != 0xFFFF]
     assert sorted(slots) == sorted(party["possessions"])
-    assert ch.load == sum(lib.get_object_weight(t) for t in slots)
+    assert ch.load == sum(lib.inventory_get_object_weight(t) for t in slots)
     lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
     assert var(lib, c16, "g_candidate_champion_ordinal").value == 0
     wall = list(square_things(lib, party["m"], *party["wall"]))
@@ -445,14 +446,14 @@ def test_eat_food(lib, party):
     junk = next(j for j in range(53) if 0xA8 <= lib.tables_object_info(0x7F + j).contents[0] < 0xB0)
     food_value = lib.tables_food_value(lib.tables_object_info(0x7F + junk).contents[0] - 0xA8)[0]
     thing = lib.get_unused_thing(10)
-    lib.get_thing_data(thing)[3] = junk
+    lib.dungeon_get_thing_data(thing)[3] = junk
     ch.food, load = 100, ch.load
-    lib.champion_put_object_in_leader_hand(thing)
-    assert ch.load == load + lib.get_object_weight(thing)
+    lib.inventory_put_object_in_leader_hand(thing)
+    assert ch.load == load + lib.inventory_get_object_weight(thing)
     lib.process_click_on_mouth()
     assert ch.food == min(100 + food_value, 2048) and ch.load == load
     assert var(lib, u16, "g_leader_hand_object").value == 0xFFFF and var(lib, c16, "g_leader_empty_handed").value == 1
-    d = lib.get_thing_data(thing)
+    d = lib.dungeon_get_thing_data(thing)
     assert d[0] << 8 | d[1] == 0xFFFF  # record freed
 
 
@@ -470,9 +471,37 @@ def test_damage_until_death(lib, party):
     assert all(s == 0xFFFF for s in ch.slots) and ch.load == 0
     dropped = list(square_things(lib, party["m"], *party["square"]))
     assert {t & 0x3FFF for t in slots} <= {t & 0x3FFF for t in dropped}
-    bones = [t for t in dropped if t >> 10 & 15 == 10 and lib.get_thing_data(t)[3] & 0x7F == 5]
-    assert len(bones) == 1 and lib.get_thing_data(bones[0])[2] >> 6 == 0 and bones[0] >> 14 == ch.cell
+    bones = [t for t in dropped if t >> 10 & 15 == 10 and lib.dungeon_get_thing_data(t)[3] & 0x7F == 5]
+    assert len(bones) == 1 and lib.dungeon_get_thing_data(bones[0])[2] >> 6 == 0 and bones[0] >> 14 == ch.cell
 
+
+def test_death_sets_redraw_flags(lib, party):
+    lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
+    cs = champions(lib)
+    ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
+    cs[1].cell = (cs[0].cell + 1) & 3
+    var(lib, u16, "g_party_champion_count").value = 2
+    var(lib, c16, "g_leader_index").value = 1
+    var(lib, c16, "g_magic_caster_champion_index").value = 0
+    redraw = var(lib, u16, "g_redraw")
+    redraw.value = 0
+    lib.champion_kill(0)
+    assert cs[0].attributes & ATTR_STATUS_BOX  # the user interface draws the dead champion after the tick
+    assert var(lib, c16, "g_magic_caster_champion_index").value == 1 and redraw.value == REDRAW_SPELL_AREA
+
+
+
+def test_death_marks_the_champion_for_release(lib, party):
+    lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
+    cs = champions(lib)
+    ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
+    cs[1].cell = (cs[0].cell + 1) & 3
+    var(lib, u16, "g_party_champion_count").value = 2
+    dead = var(lib, u16, "g_dead_champions")
+    dead.value = 0
+    lib.champion_kill(1)
+    assert dead.value == 1 << 1  # the user interface releases the champion after the tick
+    dead.value = 0
 
 SET_DUNGEON_VIEW_PALETTE, PALETTE_INDEX, PARTY = 0x10EDD6, 0x1001E6, 0x101ED4
 BRIGHT_THRESHOLD = 99  # g_palette_light_thresholds[0]

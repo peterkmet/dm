@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, game_sources
 from test_control import Client, pump
 from test_gameloop import CORRIDOR, KEY_ESCAPE, KEY_F1, KEY_RETURN, KEY_UP, LEFT_PRESS, LEFT_RELEASE, STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 
@@ -40,10 +41,10 @@ pytestmark = [
 def game(tmp_path_factory):
     """A new game with one recruited champion in a private build of libdm."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
-    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.get_square_first_thing.restype = u16
     lib.get_next_thing.restype = u16
     lib.get_square.restype = ctypes.c_uint8
@@ -105,7 +106,8 @@ def screenshot(game, name):
 
 def seen(game):
     lib, m = game.lib, game.value("g_party_map_index")
-    return {(x, y) for x in range(lib.dungeon_map_width(m)) for y in range(lib.dungeon_map_height(m)) if lib.automap_is_seen(m, x, y)}
+    lib.explored_is_seen.restype = ctypes.c_bool
+    return {(x, y) for x in range(lib.dungeon_map_width(m)) for y in range(lib.dungeon_map_height(m)) if lib.explored_is_seen(m, x, y)}
 
 
 def thing_count(game, thing_type):
@@ -334,7 +336,7 @@ def test_save_and_load_keep_the_automap(game, tmp_path):
     vanilla, advanced = (vanilla_dir / SAVE).read_bytes(), (advanced_dir / SAVE).read_bytes()
     assert len(advanced) > len(vanilla) and advanced[: len(vanilla)] == vanilla
 
-    lib.automap_reset()
+    lib.explored_reset()
     assert seen(game) == set()
     assert lib.savegame_load(str(advanced_dir).encode()) == 1
     assert seen(game) == explored
@@ -378,11 +380,11 @@ def test_render_advanced_panels(game):
     for thing, name in ((hand, "adv_stat_meters.png"), (armour, "adv_stat_meters_armour.png")):
         leader_hand.value, empty_handed.value = thing, 0  # the eye shows the description of the leader hand object
         set_mode(game, VANILLA)
-        lib.draw_panel_eye()
+        lib.ui_draw_panel_eye()
         lib.ui_draw_viewport()
         plain = pixels(game, ZONE_VIEWPORT)
         set_mode(game, ADVANCED)
-        lib.draw_panel_eye()
+        lib.ui_draw_panel_eye()
         lib.ui_draw_viewport()
         assert pixels(game, ZONE_VIEWPORT) != plain
         screenshot(game, name)
@@ -392,11 +394,11 @@ def test_render_advanced_panels(game):
     for index in range(thing_count(game, THING_SCROLL)):
         champion.slots[SLOT_HAND_ACTION] = THING_SCROLL << 10 | index
         set_mode(game, VANILLA)
-        lib.draw_panel()
+        lib.ui_draw_panel()
         lib.ui_draw_viewport()
         plain_red = pixels(game, ZONE_VIEWPORT).count(COLOR_RED)
         set_mode(game, ADVANCED)
-        lib.draw_panel()
+        lib.ui_draw_panel()
         lib.ui_draw_viewport()
         if pixels(game, ZONE_VIEWPORT).count(COLOR_RED) > plain_red:
             runes = True

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, game_sources
 from test_champion import Champion, Party
 from test_creatures import TimelineEvent
 
@@ -70,19 +71,19 @@ class Box(ctypes.Structure):
 def lib(tmp_path_factory):
     """A private build of libdm."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     for name, res, args in [
-        ("get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
+        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
         ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("get_unused_thing", u16, [u16]),
         ("link_thing_to_list", None, [u16, u16, c16, c16]), ("unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("decode_text", c16, [ctypes.c_char_p, c16, u16, c16]), ("tables_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
-        ("menus_get_champion_spell_cast_result", c16, [u16]), ("get_creature_attributes", u16, [u16]),
-        ("ui_viewport", ctypes.POINTER(Bitmap), []), ("ui_string", ctypes.c_char_p, [c16]),
+        ("magic_get_champion_spell_cast_result", c16, [u16]), ("get_creature_attributes", u16, [u16]),
+        ("ui_viewport", ctypes.POINTER(Bitmap), []), ("gfx_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_int, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
-        ("inventory_draw_open", None, [c16]), ("gfx_bitmap", ctypes.POINTER(Bitmap), [c16]),
+        ("ui_draw_inventory_open", None, [c16]), ("gfx_bitmap", ctypes.POINTER(Bitmap), [c16]),
         ("get_stairs_exit_direction", c16, [c16, c16]), ("view_wall_ornament", c16, [c16, c16, c16]),
         ("view_floor_ornament", c16, [c16, c16]), ("set_current_map_and_party_map", None, [c16]),
         ("text_size", ctypes.c_int, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
@@ -105,7 +106,7 @@ def things(lib, x, y):
 
 
 def text_thing(lib, scroll):
-    rec = lib.get_thing_data(scroll)
+    rec = lib.dungeon_get_thing_data(scroll)
     return 2 << 10 | ((rec[2] << 8 | rec[3]) & 0x3FF)
 
 
@@ -119,7 +120,7 @@ def set_scroll_text(lib, scroll, text):
     """Writes text (letters and spaces) as 5-bit codes over the text words of the scroll."""
     codes = [CODE_SPACE if ch == " " else CODE_SEPARATOR if ch == "\n" else ord(ch) - ord("A") for ch in text] + [CODE_END]
     codes += [CODE_END] * (-len(codes) % 3)
-    rec = lib.get_thing_data(text_thing(lib, scroll))
+    rec = lib.dungeon_get_thing_data(text_thing(lib, scroll))
     offset = (rec[2] << 8 | rec[3]) >> 3
     data = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_text_data"), ctypes.POINTER(ctypes.c_uint8))
     for i in range(0, len(codes), 3):
@@ -187,13 +188,13 @@ def message_rows(lib):
 def cast(lib, c, spell_index, power, index=0):
     s = lib.tables_spell(spell_index).contents
     c.symbols = bytes([POWER_SYMBOL_BEFORE_FIRST + power, s.symbols >> 16 & 0xFF, s.symbols >> 8 & 0xFF, s.symbols & 0xFF, 0])
-    return lib.menus_get_champion_spell_cast_result(index)
+    return lib.magic_get_champion_spell_cast_result(index)
 
 
 def panel(lib):
     """The viewport after the inventory of champion 0 opens; the same random seed for the teleporter tiles."""
     value(lib, "g_random_seed", u32).value = SEED
-    lib.inventory_draw_open(0)
+    lib.ui_draw_inventory_open(0)
     vp = lib.ui_viewport().contents
     return bytes(vp.px[:vp.w * vp.h])
 
@@ -306,7 +307,7 @@ def test_events_end_the_map_spells(lib, csb):
     assert sorted(spell for _, spell in ends) == [DAIN, DAIN, ROS, KU, NETA]
     for time in sorted({time for time, _ in ends}):
         value(lib, "g_game_time", u32).value = time
-        lib.timeline_process()
+        lib.event_process_expired()
         for spell in (spell for t, spell in ends if t == time):
             expected[spell] = 0 if spell == NETA else expected[spell] - 1
         assert list(c.magic_map[:4]) == expected
@@ -343,7 +344,7 @@ def test_dain_shows_an_explosion(lib, csb):
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y)))
     explosion = lib.get_unused_thing(THING_EXPLOSION)
-    rec = lib.get_thing_data(explosion)
+    rec = lib.dungeon_get_thing_data(explosion)
     rec[2], rec[3] = 100, 0  # attack, fireball
     lib.link_thing_to_list(explosion, 0, fx, fy)
     before = panel(lib)
@@ -425,7 +426,7 @@ def test_creaname_becomes_the_creature_name(lib, csb, group_ahead):
     x, y = value(lib, "g_party_map_x").value, value(lib, "g_party_map_y").value
     d = value(lib, "g_party_direction").value
     group = next((t for t in things(lib, x + STEP_EAST[d], y + STEP_NORTH[d]) if t >> 10 & 15 == THING_GROUP), None)
-    name = lib.ui_string(107 if group is None else 108 + lib.get_thing_data(group)[4]).decode()
+    name = lib.gfx_string(107 if group is None else 108 + lib.dungeon_get_thing_data(group)[4]).decode()
     replaced = panel(lib)
     set_scroll_text(lib, scroll, name)
     assert panel(lib) == replaced
@@ -495,7 +496,7 @@ def test_map_spells_of_another_champion(lib, csb):
     assert len(mine) == 4 and {e.priority for e in mine} == {1}
     assert list(c1.magic_map[:4]) == [1, 1, 1, value(lib, "g_party_direction").value + 1] and bytes(c0.magic_map) == bytes(6)
     value(lib, "g_game_time", u32).value = max(e.map_time & TIME_MASK for e in mine)
-    lib.timeline_process()
+    lib.event_process_expired()
     assert list(c1.magic_map[:4]) == [0, 0, 0, 0] and bytes(c0.magic_map) == bytes(6)
 
 
@@ -571,7 +572,7 @@ def test_dain_explosion_tile(lib, csb):
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: empty_corridor(lib, x, y))
     explosion = lib.get_unused_thing(THING_EXPLOSION)
-    rec = lib.get_thing_data(explosion)
+    rec = lib.dungeon_get_thing_data(explosion)
     rec[2], rec[3] = 100, 0  # attack, fireball
     lib.link_thing_to_list(explosion, 0, fx, fy)
     c.magic_map[DAIN] = 1
@@ -641,7 +642,7 @@ def test_eye_keeps_the_leader_map(lib, csb):
     panel(lib)
     value(lib, "g_leader_hand_object", u16).value = take(lib, scrolls[b"MAGICMAP"])
     value(lib, "g_leader_empty_handed").value = 0
-    lib.draw_panel_eye()
+    lib.ui_draw_panel_eye()
     expected = grid_pixels(lib)
     assert grid_after_tick(lib) == expected
 
@@ -679,7 +680,7 @@ def test_door_tiles(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_DOOR)
-    door = lib.get_thing_data(lib.get_square_first_thing(fx, fy))
+    door = lib.dungeon_get_thing_data(lib.get_square_first_thing(fx, fy))
     square = lib.get_square(fx, fy) & ~DOOR_STATE_MASK
     side = (party_dir(lib) & 1) == bool(square & DOOR_NORTH_SOUTH)
     for state in (DOOR_CLOSED, DOOR_OPEN, DOOR_DESTROYED):
@@ -704,7 +705,7 @@ def test_stairs_tiles(lib, csb):
 
 def link_new(lib, thing_type, fx, fy, cell, fill):
     thing = lib.get_unused_thing(thing_type)
-    fill(lib.get_thing_data(thing))
+    fill(lib.dungeon_get_thing_data(thing))
     lib.link_thing_to_list(thing | cell << 14, 0, fx, fy)
 
 

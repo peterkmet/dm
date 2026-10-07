@@ -4,8 +4,8 @@ This page describes the Dungeon Master v3.60 save file `DMGAME~.DAT` and the C c
 
 The C code has two layers:
 
-- `port/src/savefile.c` handles the container: the header, the cipher, and the checksums.
-- `port/src/savegame.c` copies the game state into the blocks and back. `port/src/dungeon.c` writes and reads the dungeon part.
+- `port/src/engine/savefile.c` handles the container: the header, the cipher, and the checksums.
+- `port/src/engine/savegame.c` copies the game state into the blocks and back. `port/src/engine/dungeon.c` writes and reads the dungeon part.
 
 The English version replaces `~` in the file name with nothing. The port writes `DMGAME.DAT` and `DMGAME.BAK`.
 
@@ -139,7 +139,7 @@ The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps
 
 ## C API
 
-The header `port/src/savefile.h` declares the API. All buffers keep the big-endian byte layout.
+The header `port/src/engine/savefile.h` declares the API. All buffers keep the big-endian byte layout.
 
 ### `SaveFile`
 
@@ -223,7 +223,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 
 After a damaged file, the dungeon is not loaded and the globals can be partly changed. The entrance starts a new game from `Dungeon.DAT`, which sets all state again.
 
-`gameloop_start_loaded_game` then does the rest of `start_game`: it makes the party map current (`group_remove_all_active_groups`, `set_current_map_and_party_map`, `group_add_all_active_groups`), shows "GAME LOADED, READY TO PLAY.", draws the interface, and runs `champion_reset_data_to_start_game`: the hand object goes back into the hand, `command_set_leader` adds its weight to the leader load again, and the magic caster comes back.
+`gameloop_start_loaded_game` then does the rest of `start_game`: it makes the party map current (`group_remove_all_active_groups`, `set_current_map_and_party_map`, `group_add_all_active_groups`), shows "GAME LOADED, READY TO PLAY.", draws the interface, and runs `champion_reset_data_to_start_game`: the hand object goes back into the hand, `champion_set_leader` adds its weight to the leader load again, and the magic caster comes back.
 
 ### Block contents
 

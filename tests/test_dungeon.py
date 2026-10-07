@@ -30,7 +30,7 @@ def lib():
     lib.decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
     lib.dungeon_square_first_thing.restype = ctypes.c_uint16
     lib.dungeon_square.restype = ctypes.c_uint8
-    lib.get_thing_data.restype = u8p
+    lib.dungeon_get_thing_data.restype = u8p
     lib.kaos_ptr.restype = ctypes.c_void_p
     lib.kaos_ptr.argtypes = [ctypes.c_uint32]
     return lib
@@ -87,7 +87,7 @@ def test_dungeon_matches_dmcsb(lib, name):
                 assert (first != 0xFFFE) == bool(sq & 0x10)
                 if (x, y) in located:
                     assert first >> 14 == located[(x, y)]["cell"]
-                    assert struct.unpack(">H", bytes(lib.get_thing_data(first)[:2]))[0] == located[(x, y)]["thing"]["Next"]
+                    assert struct.unpack(">H", bytes(lib.dungeon_get_thing_data(first)[:2]))[0] == located[(x, y)]["thing"]["Next"]
     for t, (tname, size, _) in enumerate(THING_TYPES):
         n = d.hdr["ThingCount"][t]
         total = min(0x300 if t == 15 else 0x400, n + extra[t])
@@ -267,6 +267,14 @@ def test_bad_text_offset_and_small_buffer(lib):
     assert lib.decode_text(buf, 8, 2 << 10, 2 | -0x8000) == 0  # text 0 is longer than 7 bytes
     assert len(buf.value) == 7
     words = struct.unpack(">H", mem(lib, "g_dungeon_header", 8)[6:8])[0]
-    rec = lib.get_thing_data(2 << 10)
+    rec = lib.dungeon_get_thing_data(2 << 10)
     rec[2], rec[3] = (words << 3 | 1) >> 8 & 0xFF, (words << 3 | 1) & 0xFF
     assert lib.decode_text(buf, 8, 2 << 10, 2) == 0
+
+
+def test_door_vertical_bit(lib):
+    need(lib, "Dungeon.DAT")
+    doors = load(lib, GAME / "Dungeon.DAT").things["Door"]
+    assert {d["Vertical"] for d in doors} == {0, 1}
+    for i, door in enumerate(doors):
+        assert (lib.dungeon_get_thing_data(i)[3] & 0x20 != 0) == door["Vertical"]  # door_is_vertical

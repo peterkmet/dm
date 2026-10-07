@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, game_sources
 from dmtools import ftl
 
 ROOT = Path(__file__).parent.parent
@@ -51,8 +52,8 @@ def image(path):
 def lib(tmp_path_factory):
     """A private build of libdm."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     lib.kaos_ptr.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.spell_find.restype = c16

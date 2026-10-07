@@ -1,14 +1,14 @@
 # Creature, projectile, and magic rules
 
-This page describes the creature rules of the C port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `port/src/group.c`, `port/src/projectile.c`, and `port/src/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md) for the record layouts and the original addresses. See [rules-movement.md](rules-movement.md) for the game loop and the timeline dispatch.
+This page describes the creature rules of the C port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `port/src/engine/group.c`, `port/src/engine/projectile.c`, and `port/src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md) for the record layouts and the original addresses. See [rules-movement.md](rules-movement.md) for the game loop and the timeline dispatch.
 
 ## Records
 
 | Thing type | Size | Accessors | Content |
 |---|---|---|---|
-| 4 group | 16 bytes | `group.h`, `things.h` | Next thing, possessions, creature type, cells byte, 4 health words, flags in word 14 (direction, last creature index, behavior). |
-| 14 projectile | 8 bytes | `projectile.h`, `things.h` | Next thing, flying thing (slot), kinetic energy, attack, timeline event index. |
-| 15 explosion | 4 bytes | `projectile.h`, `things.h` | Next thing, attack, type in bits 0–6, centered flag in bit 7. |
+| 4 group | 16 bytes | `group.h`, `map.h` | Next thing, possessions, creature type, cells byte, 4 health words, flags in word 14 (direction, last creature index, behavior). |
+| 14 projectile | 8 bytes | `projectile.h`, `map.h` | Next thing, flying thing (slot), kinetic energy, attack, timeline event index. |
+| 15 explosion | 4 bytes | `projectile.h`, `map.h` | Next thing, attack, type in bits 0–6, centered flag in bit 7. |
 
 The flying thing of a spell projectile is an explosion thing `0xff80 + type` (`EXPLOSION_THING(type)`), not a record.
 
@@ -26,7 +26,7 @@ The party map has active groups. Other maps do not.
 
 ## Group events
 
-The timeline sends events 29–41 to `group_process_events_29_to_41(x, y, type, ticks)`. Other rules send a reaction with a negative type. The reaction becomes event 32 + reaction after a short delay.
+The timeline sends events 29–41 to `group_process_reaction_event(x, y, type, ticks)`. Other rules send a reaction with a negative type. The reaction becomes event 32 + reaction after a short delay.
 
 | Event | Reaction | Meaning |
 |---|---|---|
@@ -127,7 +127,7 @@ Event 5 (corridor) on a group generator sensor calls `group_generate_from_sensor
 - Each creature gets `base health × multiplier + random(base health / 4 + 1)` health.
 - The group enters the square with a random direction and plays a buzz sound.
 
-`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case. Use `group_get_thing(x, y)` to find it.
+`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case. Use `get_square_group(x, y)` to find it.
 
 Event 65 enables a generator again after its delay (see [rules-movement.md](rules-movement.md)).
 
@@ -135,7 +135,7 @@ Event 65 enables a generator again after its delay (see [rules-movement.md](rule
 
 `projectile_create(thing, x, y, cell, direction, kinetic_energy, attack, step_energy)` puts a projectile in a cell of a square. It adds event 48 after 1 tick, or event 49 for a launcher projectile. Event 48 ignores impacts on the first step. Without a free projectile record, an object drops to the square.
 
-Event 48 or 49 (`projectile_process_events_48_to_49`) moves a projectile one cell forward:
+Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell forward:
 
 1. Event 49 tests the party and the group on the square. A hit ends the projectile.
 2. The step energy is subtracted from the kinetic energy and from the attack. A projectile without kinetic energy drops to the square.
@@ -151,21 +151,21 @@ Event 48 or 49 (`projectile_process_events_48_to_49`) moves a projectile one cel
 - A Ful bomb or Ven bomb flask explodes into a fireball or a poison cloud.
 - A spell projectile becomes an explosion of its type. A lightning bolt keeps half its kinetic energy as attack, a poison bolt a quarter.
 
-`projectile_get_impact_attack` and `get_object_for_launcher_or_generator` match the original exactly (differential tests).
+`projectile_get_impact_attack` and `projectile_get_object_for_launcher_or_generator` match the original exactly (differential tests).
 
 ### Launchers
 
-Event 6 (wall) on a launcher sensor (type 7–10, 14, or 15) in the event cell calls `timeline_trigger_projectile_launcher`. It shoots one or two objects or explosions from the square in front of the wall. Types 14 and 15 shoot objects that lie in the launch cells. Sensor word 6 holds the kinetic energy (bits 4–11) and the step energy (bits 12–15). The attack is 100.
+Event 6 (wall) on a launcher sensor (type 7–10, 14, or 15) in the event cell calls `projectile_trigger_launcher`. It shoots one or two objects or explosions from the square in front of the wall. Types 14 and 15 shoot objects that lie in the launch cells. Sensor word 6 holds the kinetic energy (bits 4–11) and the step energy (bits 12–15). The attack is 100.
 
 ### Champion projectiles
 
-`champion_shoot_projectile` shoots from the front cell of the side of the champion. The party cannot move in that direction for 4 ticks.
+`projectile_shoot_from_champion` shoots from the front cell of the side of the champion. The party cannot move in that direction for 4 ticks.
 
 ## Explosions
 
 `explosion_create(thing, attack, x, y, cell)` puts an explosion on a square and adds event 25 after 1 tick (5 for the first rebirth step). A fireball or lightning bolt damages the party or the group on the target square at once: `random(attack / 2 + 1) + attack / 2 + 2`, half for lightning. Fire resistance reduces the damage to creatures.
 
-Event 25 (`explosion_process_event_25`):
+Event 25 (`explosion_process_step_event`):
 
 | Type | Effect |
 |---|---|
@@ -180,12 +180,12 @@ Then the explosion disappears.
 
 ### Fluxcage and fuse
 
-- `group_fluxcage_action(x, y)` puts a fluxcage (type 50) on a square that is not a wall or stairs. Event 24 removes it after 100 ticks. When this fluxcage is the third one around Lord Chaos on an adjacent square, Lord Chaos senses danger.
-- `group_fuse_action(x, y)` creates a Harm Non-Material explosion with attack 255. Lord Chaos in 4 fluxcages sets `g_fuse_sequence_requested`. Else Lord Chaos escapes through a free side to an open square.
+- `projectile_fluxcage_action(x, y)` puts a fluxcage (type 50) on a square that is not a wall or stairs. Event 24 removes it after 100 ticks. When this fluxcage is the third one around Lord Chaos on an adjacent square, Lord Chaos senses danger.
+- `projectile_fuse_action(x, y)` creates a Harm Non-Material explosion with attack 255. Lord Chaos in 4 fluxcages sets `g_fuse_sequence_requested`. Else Lord Chaos escapes through a free side to an open square.
 
 ## Spells
 
-`menus_get_champion_spell_cast_result(champion)` casts the spell of the champion symbols. It returns `SPELL_CAST_SUCCESS` (1), `SPELL_CAST_FAILURE` (0), or `SPELL_CAST_FAILURE_NEEDS_FLASK` (3).
+`magic_get_champion_spell_cast_result(champion)` casts the spell of the champion symbols. It returns `SPELL_CAST_SUCCESS` (1), `SPELL_CAST_FAILURE` (0), or `SPELL_CAST_FAILURE_NEEDS_FLASK` (3).
 
 1. A dead champion or an unknown symbol string fails. An unknown string prints "meaningless spell".
 2. The required level is `power + base level of the spell`. Each missing skill level is a draw against wisdom. A failed draw gives reduced experience and prints "needs more practice".
@@ -195,7 +195,7 @@ Then the explosion disappears.
    - Other: Light, Darkness, Thieves Eye, Invisibility, Party Shield, Magic Torch, Footprints, Zokathra, Fire Shield. Each effect adds its end event (70–79).
 4. The champion gets the experience and an action delay (event 11).
 
-`menus_get_click_on_spell_cast_result` casts for the magic caster and clears the symbols, except when a flask is missing.
+`magic_get_click_on_spell_cast_result` casts for the magic caster and clears the symbols, except when a flask is missing.
 
 ## Fixed original bugs
 

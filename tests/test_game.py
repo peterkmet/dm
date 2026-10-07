@@ -66,16 +66,17 @@ def lib():
         getattr(lib, name).restype = ctypes.c_uint16
     lib.scale_value.restype = ctypes.c_int32
     lib.scale_value.argtypes = [ctypes.c_uint16, c16, ctypes.c_uint16]
-    for name in ("min16", "max16", "bounded_value", "timeline_add_event", "timeline_is_first_event_expired",
-                 "champion_get_stamina_adjusted_value", "champion_is_lucky"):
+    for name in ("min16", "max16", "bounded_value", "timeline_add_event",
+                 "game_get_stamina_adjusted_value"):
         getattr(lib, name).restype = c16
     lib.min16.argtypes = lib.max16.argtypes = [c16, c16]
     lib.bounded_value.argtypes = [c16, c16, c16]
-    lib.champion_get_stamina_adjusted_value.argtypes = [ctypes.POINTER(Champion), c16]
-    lib.champion_get_statistic_adjusted_attack.restype = ctypes.c_uint16
-    lib.champion_get_statistic_adjusted_attack.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, ctypes.c_uint16]
+    lib.game_get_stamina_adjusted_value.argtypes = [ctypes.POINTER(Champion), c16]
+    lib.game_get_statistic_adjusted_attack.restype = ctypes.c_uint16
+    lib.game_get_statistic_adjusted_attack.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, ctypes.c_uint16]
     lib.adjust_statistic_current_value.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, c16]
-    lib.champion_is_lucky.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16]
+    lib.game_is_lucky.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16]
+    lib.game_is_lucky.restype = lib.timeline_is_first_event_expired.restype = ctypes.c_bool
     lib.update_map_coordinates_after_relative_movement.argtypes = [c16, c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
     return lib
 
@@ -161,9 +162,9 @@ def test_champion_helpers_match_original(lib, emu):
             ch.statistics[s][:] = [rng.choice([0, 1, 30, 120, 127, 128, 150, 170, 255, rng.randint(0, 255)]) for _ in range(3)]
         stat, value = rng.randrange(7), rng.randint(-200, 200)
         emu.write(BUF, champion_bytes(ch))
-        assert lib.champion_get_stamina_adjusted_value(ch, value) == s16(emu.call(STAMINA_ADJUSTED, [(4, BUF), (2, value)]))
+        assert lib.game_get_stamina_adjusted_value(ch, value) == s16(emu.call(STAMINA_ADJUSTED, [(4, BUF), (2, value)]))
         attack = rng.randint(0, 0xFFFF)
-        assert lib.champion_get_statistic_adjusted_attack(ch, stat, attack) == emu.call(ADJUSTED_ATTACK, [(4, BUF), (2, stat), (2, attack)]) & 0xFFFF
+        assert lib.game_get_statistic_adjusted_attack(ch, stat, attack) == emu.call(ADJUSTED_ATTACK, [(4, BUF), (2, stat), (2, attack)]) & 0xFFFF
         lib.adjust_statistic_current_value(ch, stat, value)
         emu.call(ADJUST_STATISTIC, [(4, BUF), (2, stat), (2, value)])
         assert ch.statistics[stat][1] == emu.read(BUF + 0x47 + 3 * stat, 1)[0]
@@ -171,7 +172,7 @@ def test_champion_helpers_match_original(lib, emu):
         put(emu, SEED, ">I", i * 7919)
         emu.write(BUF, champion_bytes(ch))
         percentage = rng.choice([0, 10, 50, 99, 100, 300])
-        assert lib.champion_is_lucky(ch, percentage) == s16(emu.call(IS_LUCKY, [(4, BUF), (2, percentage)]))
+        assert lib.game_is_lucky(ch, percentage) == s16(emu.call(IS_LUCKY, [(4, BUF), (2, percentage)]))
         assert ch.statistics[0][1] == emu.read(BUF + 0x47, 1)[0]
         assert seed_c.value == struct.unpack(">I", emu.read(SEED, 4))[0]
 

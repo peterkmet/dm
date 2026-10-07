@@ -1,6 +1,6 @@
 # Movement, sensors, and timeline rules
 
-This page describes the movement rules of the C port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `timeline_process`. The code is in `port/src/map.c`, `port/src/move.c`, `port/src/sensor.c`, and `port/src/timeline_process.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md) for the record layouts.
+This page describes the movement rules of the C port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `event_process_expired`. The code is in `port/src/engine/map.c`, `port/src/engine/move.c`, `port/src/engine/sensor.c`, and `port/src/engine/timeline_process.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md) for the record layouts.
 
 ## Start a game
 
@@ -20,9 +20,9 @@ move_party_enter_dungeon();
 The game loop calls these functions in this order on each tick:
 
 1. `move_process_new_party_map()`. When `g_new_party_map_index` is not −1, the party map changes, the party enters its square on the new map, and `g_new_party_map_index` becomes −1.
-2. `timeline_process()`. Repeat step 1 while `g_new_party_map_index` is not −1.
+2. `event_process_expired()`. Repeat step 1 while `g_new_party_map_index` is not −1.
 3. Increment `g_game_time`.
-4. The command step calls `command_move_party(command)` or `command_turn_party(command)`.
+4. The command step calls `move_party(command)` or `move_turn_party(command)`.
 
 ## Current map
 
@@ -42,7 +42,7 @@ Call `map_reset()` after `load_dungeon`. The current map pointers then point to 
 | `get_next_thing(thing)` | `0x10abb4` | Next-thing word of the record. |
 | `link_thing_to_list(thing, list, x, y)` | `0x10acba` | See [Thing lists](#thing-lists). |
 | `unlink_thing_from_list(thing, list, x, y)` | `0x10adf4` | See [Thing lists](#thing-lists). |
-| `group_get_thing(x, y)` | `0x10bb5c` | First group thing, or `0xfffe`. |
+| `get_square_group(x, y)` | `0x10bb5c` | First group thing, or `0xfffe`. |
 | `object_get_type(thing)` | `0x1079a4` | Object type from the object info table (`0x101068`). −1 for `0xffff` and for a thing that is not an object. |
 | `get_creature_attributes(group)` | `0x10a6e4` | Attribute word of the creature type (`0x10192e + type * 0x1a + 2`). |
 
@@ -63,27 +63,27 @@ Call `map_reset()` after `load_dungeon`. The current map pointers then point to 
 
 | Command | Value | Function |
 |---|---|---|
-| Turn left | 1 | `command_turn_party` |
-| Turn right | 2 | `command_turn_party` |
-| Move forward | 3 | `command_move_party` |
-| Move right | 4 | `command_move_party` |
-| Move backward | 5 | `command_move_party` |
-| Move left | 6 | `command_move_party` |
+| Turn left | 1 | `move_turn_party` |
+| Turn right | 2 | `move_turn_party` |
+| Move forward | 3 | `move_party` |
+| Move right | 4 | `move_party` |
+| Move backward | 5 | `move_party` |
+| Move left | 6 | `move_party` |
 
-`command_move_party(command)`:
+`move_party(command)`:
 
 1. Each living champion loses `load * 3 / maximum_load + 1` stamina (`champion_decrement_stamina`).
-2. On stairs, a backward move takes the stairs (`command_take_stairs`).
+2. On stairs, a backward move takes the stairs (`move_take_stairs`).
 3. The target square is the party square plus the step counts of the arrow (`0x103c56`: forward 1, 0, −1, 0; `0x103c5e`: right 0, 1, 0, −1), relative to the party direction.
 4. A stairs target: the party leaves its square, moves onto the stairs square, and takes the stairs.
 5. These targets block the move: a wall, a door with state 2, 3, or 4, and a fake wall with bit 2 (open) and bit 0 (imaginary) clear. With champions, a group on the target also blocks the move.
 6. Else the party moves with `move_get_move_result`. On stairs, the party only enters the new square. `g_disabled_movement_ticks` becomes the maximum of 1 and `champion_get_movement_ticks` of each living champion. `g_projectile_disabled_movement_ticks` becomes 0.
 
-`command_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`champion_set_party_direction`), and enters the floor sensors again.
+`move_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`move_set_party_direction`), and enters the floor sensors again.
 
-`command_take_stairs(up)` removes the party from its square, sets `g_new_party_map_index` with `get_location_after_level_change` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
+`move_take_stairs(up)` removes the party from its square, sets `g_new_party_map_index` with `get_location_after_level_change` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
-`champion_set_party_direction(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
+`move_set_party_direction(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
 
 ### `move_get_move_result`
 
@@ -99,14 +99,14 @@ The function repeats these rules on the destination square, at most 99 times:
 After the loop:
 
 - `g_move_result_map_x`, `g_move_result_map_y`, `g_move_result_map_index`, and `g_move_result_cell` hold the result.
-- A party move to a new square adds a scent. The scent list keeps 24 entries. `champion_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count − 1 − i`. The port keeps this.
+- A party move to a new square adds a scent. The scent list keeps 24 entries. `move_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count − 1 − i`. The port keeps this.
 - A move to the same square does nothing when the party direction or the object cell did not change.
 - The thing leaves the source square with `sensor_process_thing_addition_or_removal(..., 0)`. A levitating object (projectile, explosion) only unlinks.
 - The party on a new map sets `g_new_party_map_index`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
 
 ### Champion functions
 
-Movement calls these functions of `port/src/champion.c` and `port/src/inventory.c` (see `docs/rules-champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `champion_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `champion_put_object_in_leader_hand`, `champion_get_object_removed_from_leader_hand`, and `object_get_type`. `object_get_type` needs `tables_init()`.
+Movement calls these functions of `port/src/engine/champion.c` and `port/src/engine/inventory.c` (see `docs/rules-champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `champion_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand`, and `object_get_type`. `object_get_type` needs `tables_init()`.
 
 ## Sensors
 
@@ -174,12 +174,12 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 - A closing door on the party square (state not 0) opens fully when the party has champions, damages the party (`champion_damage_all(5, 4, 2)`, sound 15), and tries again at time + 2.
 - A closing door with a group that is not non-material (creature attribute bit 6) goes back one step when the creature height is at most the state, plays sound 4, and tries again at time + 2. The height is 1, or creature attribute bits 7–8 for a door with bit 5 of byte 3.
 - Event 2 (door destruction): the state becomes 5.
-- `group_is_door_destroyed_by_attack(x, y, attack, magic_attack, ticks)` (`0x11d5e0`): force (`magic_attack` 0) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Else event 2 destroys it after `ticks`. Returns 1 when the door breaks.
+- `event_is_door_destroyed_by_attack(x, y, attack, magic_attack, ticks)` (`0x11d5e0`): force (`magic_attack` 0) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Else event 2 destroys it after `ticks`. Returns 1 when the door breaks.
 
 ## Pits, teleporters, and fake walls
 
-- Event 8 (teleporter) and event 9 (pit): toggle becomes 1 for an open square (bit 3), else 0. Effect 0 sets bit 3 and calls `timeline_move_teleporter_or_pit_square_things`. Other effects clear bit 3.
-- `timeline_move_teleporter_or_pit_square_things(x, y)` moves the party, the group, and each object of the square again with `move_get_move_result(thing, x, y, x, y)`. It updates the events of moved projectiles and explosions.
+- Event 8 (teleporter) and event 9 (pit): toggle becomes 1 for an open square (bit 3), else 0. Effect 0 sets bit 3 and calls `event_move_teleporter_or_pit_square_things`. Other effects clear bit 3.
+- `event_move_teleporter_or_pit_square_things(x, y)` moves the party, the group, and each object of the square again with `move_get_move_result(thing, x, y, x, y)`. It updates the events of moved projectiles and explosions.
 - Event 7 (fake wall): bit 2 is open. Toggle becomes 1 for an open wall, else 0. Effect 1 closes the wall. It waits (time + 1) while the party or a material group is on the square. Other effects open it.
 
 ## Square events on corridors and walls
@@ -190,25 +190,25 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 
 ## Timeline dispatch
 
-`timeline_process()` runs every expired event. For each event it selects the event map, calls the handler, and selects the party map again. Event 70 runs on the party map.
+`event_process_expired()` runs every expired event. For each event it selects the event map, calls the handler, and selects the party map again. Event 70 runs on the party map.
 
 Implemented event types:
 
 | Type | Action |
 |---|---|
-| 1 | `timeline_process_event1_door_animation` |
-| 2 | `timeline_process_event2_door_destruction` |
-| 5 | `timeline_process_event5_corridor` |
-| 6 | `timeline_process_event6_wall` |
-| 7 | `timeline_process_event7_fake_wall` |
-| 8 | `timeline_process_event8_teleporter` |
-| 9 | `timeline_process_event9_pit` |
-| 10 | `timeline_process_event10_door` |
+| 1 | `event_door_animation` |
+| 2 | `event_door_destruction` |
+| 5 | `event_corridor` |
+| 6 | `event_wall` |
+| 7 | `event_fake_wall` |
+| 8 | `event_teleporter` |
+| 9 | `event_pit` |
+| 10 | `event_door` |
 | 20 | `sound_request_play(c, x, y, 1)` |
 | 24 | Unlinks and frees the fluxcage thing in `c`, unless `g_game_won` is set. |
 | 53 | `timeline_add_watchdog_event` |
-| 65 | `timeline_process_event65_enable_group_generator` |
-| 70 | `timeline_process_event70_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |
+| 65 | `event_enable_group_generator` |
+| 70 | `event_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |
 | 71 | Decrements the invisibility count. |
 | 72 | Subtracts `b` from the shield defense of champion `priority`. |
 | 73 | Decrements the thieves eye count. |
@@ -221,26 +221,26 @@ Event types without effect in the port:
 
 | Type | Original handler | Step |
 |---|---|---|
-| 11 | `timeline_process_event11_enable_champion_action` | Champions |
-| 12 | `timeline_process_event12_hide_damage_received` | Champions |
-| 13 | `timeline_process_event13_vi_altar_rebirth` | Champions |
-| 25 | `explosion_process_event_25` | Projectiles |
-| 29–41 | `group_process_events_29_to_41` | Creatures |
-| 48, 49 | `projectile_process_events_48_to_49` | Projectiles |
-| 60, 61 | `timeline_process_event60_61_move_group` | Creatures |
+| 11 | `event_enable_champion_action` | Champions |
+| 12 | `event_hide_damage_received` | Champions |
+| 13 | `event_vi_altar_rebirth` | Champions |
+| 25 | `explosion_process_step_event` | Projectiles |
+| 29–41 | `group_process_reaction_event` | Creatures |
+| 48, 49 | `projectile_process_move_event` | Projectiles |
+| 60, 61 | `group_process_move_event` | Creatures |
 | 75 | `champion_poison` | Champions |
 | 0, 3, 4, 14–19, 21–23, 26–28, 42–47, 50–52, 54–59, 62–64, 66–69, 76, 80 and higher | None in the original | — |
 
-The redraw calls of events 70–79 (`set_dungeon_view_palette`, `champion_draw_state`) belong to the drawing step.
+The redraw calls of events 70–79 (`set_dungeon_view_palette`, `ui_draw_champion_state`) belong to the drawing step.
 
 ## Gaps
 
 These rules need later steps. The port has no code for them yet:
 
 - Groups: `move_get_move_result` returns 0 for a group and does not move it. The party that arrives on a group square does not delete the group. A blocked move into a group does not send event −1 to the group. The closing door does not damage a group. The group generator does not create a group.
-- Projectiles: wall launchers (sensor types 7–10, 14, 15) do not launch. `move_is_killed_by_projectile_impact` does not run.
-- Champions: a blocked move does not damage the two front champions and plays no sound. This needs `champion_get_target_champion_index` and `group_set_ordered_cells_to_attack`.
-- Objects: wall sensor type 12 does not create an object (`get_object_for_launcher_or_generator`).
+- Projectiles: wall launchers (sensor types 7–10, 14, 15) do not launch. `projectile_is_killed_by_impact` does not run.
+- Champions: a blocked move does not damage the two front champions and plays no sound. This needs `group_get_target_champion_index` and `group_set_ordered_cells_to_attack`.
+- Objects: wall sensor type 12 does not create an object (`projectile_get_object_for_launcher_or_generator`).
 - Endgame: wall sensor type 18 does nothing.
 - Drawing: the pit fall animation and the redraw calls are not part of the rules.
 

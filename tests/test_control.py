@@ -12,11 +12,14 @@ from pathlib import Path
 
 import pytest
 
-from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Game
+from conftest import PORT_INCLUDES, game_sources
+from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 DIRECTIONS = ["north", "east", "south", "west"]
+ZONE_SPELL_CAST_BOX, COLOR_CYAN = 252, 4
+RUNE_CELL_PIXELS = 4 * 5 * 6  # the four rune cells of the cast box, 5 x 6 pixels each
 
 pytestmark = [
     pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
@@ -28,16 +31,17 @@ pytestmark = [
 def game(tmp_path_factory):
     """A new game in a private build of libdm (other tests rebuild build/ in parallel)."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
-    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.get_square_first_thing.restype = ctypes.c_uint16
     lib.get_next_thing.restype = ctypes.c_uint16
     lib.get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = ctypes.c_int16
     lib.state_json_string.restype = ctypes.c_void_p
     lib.control_open.argtypes = [ctypes.c_char_p]
+    lib.control_is_turn_pending.restype = ctypes.c_bool
     assert lib.gameloop_load_data(str(GAME).encode())
     assert lib.gameloop_new_game(str(GAME).encode())
     game = Game(lib)
@@ -284,7 +288,8 @@ def map_size(game):
 
 def test_view_stops_at_a_closed_door(game):
     lib, m = game.lib, game.value("g_party_map_index")
-    lib.automap_is_seen.argtypes = [ctypes.c_int16] * 3
+    lib.explored_is_seen.argtypes = [ctypes.c_int16] * 3
+    lib.explored_is_seen.restype = ctypes.c_bool
     width, height = map_size(game)
     for x in range(width):
         for y in range(height):
@@ -299,7 +304,7 @@ def test_view_stops_at_a_closed_door(game):
                         view, game_map = state_json(game, 1), state_json(game, 2)
                     assert max(s["depth"] for s in view["squares"]) == 1
                     assert next(s for s in view["squares"] if s["depth"] == 1 and s["side"] == "center")["door"] == "closed"
-                    if not lib.automap_is_seen(m, bx, by):
+                    if not lib.explored_is_seen(m, bx, by):
                         assert game_map["rows"][by][bx] == " "
                     return
     pytest.skip("no closed door with floor in front on this map")
@@ -375,6 +380,27 @@ def test_a_rune_without_enough_mana_fails(game):
         client.sock.close()
 
 
+def test_a_cast_leaves_the_cleared_runes_inverted_as_with_the_mouse(game):
+    """The cast clears the runes inside the highlighted cast box; the tick inverts the box back over them."""
+    lib = game.lib
+    client = Client(game)
+    champion = game.champions[0]
+    mana = champion.current_mana
+    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    try:
+        champion.current_mana = 100
+        client.act("set_caster", champion=0)
+        client.act("add_rune", symbol=0)
+        assert client.call(cmd="act", action="cast", args={})["ok"]
+        box = Box()
+        assert lib.ui_zone_box(ZONE_SPELL_CAST_BOX, ctypes.byref(box))
+        cast_box = [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
+        assert cast_box.count(COLOR_CYAN) == RUNE_CELL_PIXELS
+    finally:
+        champion.current_mana = mana
+        client.sock.close()
+
+
 def test_wait_runs_all_ticks_or_stops_on_damage(game):
     client = Client(game)
     try:
@@ -394,7 +420,7 @@ THING_GROUP, SCREAMER = 4, 6
 def add_screamer(lib, x, y):
     """A screamer on square (x, y) of the party map, active but without behavior events (map 0 allows no creatures)."""
     group = lib.get_unused_thing(THING_GROUP)
-    data = lib.get_thing_data(group)
+    data = lib.dungeon_get_thing_data(group)
     data[2], data[3] = 0xFF, 0xFE  # no possessions
     data[4], data[5] = SCREAMER, 0xFF  # centered on the square
     data[7] = 50  # health
@@ -683,7 +709,7 @@ def chest_with_content(game):
     lib = game.lib
     header = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_header"), ctypes.POINTER(ctypes.c_uint8))
     for chest in (9 << 10 | i for i in range(header[12 + 2 * 9] << 8 | header[13 + 2 * 9])):
-        data, content = lib.get_thing_data(chest), []
+        data, content = lib.dungeon_get_thing_data(chest), []
         if bytes(data[:2]) == b"\xff\xff":
             continue
         thing = data[2] << 8 | data[3]
@@ -697,11 +723,11 @@ def chest_with_content(game):
 
 def test_take_put_and_look_in_an_open_chest(game):
     lib = game.lib
-    lib.champion_put_object_in_leader_hand.argtypes = [ctypes.c_uint16]
-    lib.champion_get_object_removed_from_leader_hand.restype = ctypes.c_uint16
+    lib.inventory_put_object_in_leader_hand.argtypes = [ctypes.c_uint16]
+    lib.inventory_get_object_removed_from_leader_hand.restype = ctypes.c_uint16
     chest, content = chest_with_content(game)
     free = 30 + len(content)
-    lib.champion_put_object_in_leader_hand(chest)  # the chest stays in its square list; the test gives it back unchanged
+    lib.inventory_put_object_in_leader_hand(chest)  # the chest stays in its square list; the test gives it back unchanged
     client = Client(game)
     try:
         client.act("open_inventory", champion=0)
@@ -730,9 +756,9 @@ def test_take_put_and_look_in_an_open_chest(game):
         client.act("close_inventory")
     finally:
         client.sock.close()
-        removed = lib.champion_get_object_removed_from_leader_hand()
+        removed = lib.inventory_get_object_removed_from_leader_hand()
     assert removed == chest
-    data = lib.get_thing_data(chest)
+    data = lib.dungeon_get_thing_data(chest)
     assert data[2] << 8 | data[3] == content[0]
 
 
@@ -885,7 +911,7 @@ def test_unlinking_a_freed_last_thing_empties_the_square(game, capfd):
     lib.unlink_thing_from_list(thing, 0, x, y)
     assert not lib.get_square(x, y) & HAS_THINGS
     assert "square list guard: unlink of a free record" in capfd.readouterr().err
-    record = lib.get_thing_data(thing)
+    record = lib.dungeon_get_thing_data(thing)
     record[0], record[1] = THING_END >> 8, THING_END & 0xFF  # next: end of list
     lib.link_thing_to_list(thing, 0, x, y)  # the fixture game again as before
     assert lib.get_square_first_thing(x, y) == thing
@@ -899,7 +925,7 @@ def test_torch_holder_is_not_a_lock(game):
         for x in range(lib.dungeon_map_width(0)):
             t = lib.get_square_first_thing(x, y)
             while t not in (0xFFFE, 0xFFFF):
-                data = lib.get_thing_data(t)
+                data = lib.dungeon_get_thing_data(t)
                 if t >> 10 & 15 == 3 and 4 <= (data[2] << 8 | data[3]) >> 7 <= 7:  # a sensor that wants a torch
                     holder = (x, y, t >> 14)
                 t = lib.get_next_thing(t)

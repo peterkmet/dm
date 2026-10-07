@@ -18,7 +18,7 @@ ACTION_DAMAGE, PALETTE_INDEX, MAP_X = 0x103FF6, 0x1001E6, 0x1001EC
 ACTION_INFO = 0x103EAC
 RTS = b"\x4e\x75"
 TICKS_AT, GROUP_BUF = 0x2F0000, 0x230000
-# move.w 6(a7),TICKS_AT.l; rts: keeps the ticks argument of champion_disable_action.
+# move.w 6(a7),TICKS_AT.l; rts: keeps the ticks argument of magic_disable_action.
 CAPTURE_TICKS = b"\x33\xef\x00\x06" + struct.pack(">I", TICKS_AT) + RTS
 
 THING_GROUP, THING_WEAPON, THING_JUNK = 4, 5, 10
@@ -26,7 +26,8 @@ WEAPON_DAGGER, WEAPON_SWORD, JUNK_BONES = 8, 10, 5
 SLOT_HAND_READY, SLOT_HAND_ACTION, SLOT_QUIVER_LINE1_1 = 0, 1, 12
 ACTION_BLOCK, ACTION_SWING, ACTION_SHOOT, ACTION_THROW = 1, 13, 32, 42
 SKILL_SWING = 4
-ATTR_ACTION_DISABLED = 0x0008
+ATTR_ACTION_DISABLED, ATTR_ACTION_HAND = 0x0008, 0x8000
+REDRAW_ACTION_AREA = 1
 EVENT_ENABLE_ACTION, EVENT_HIDE_DAMAGE, EVENT_REBIRTH, EVENT_POISON = 11, 12, 13, 75
 FAR = 60  # a square outside every map: a wall without things
 
@@ -38,7 +39,7 @@ MELEE_ACTIONS = [2, 6, 7, 9, 13, 14, 15, 16, 17, 18, 19, 24, 25, 28, 29, 30, 31]
 @pytest.fixture
 def alib(lib):  # noqa: F811
     for name, res, args in [
-        ("menus_is_action_performed", c16, [u16, c16]), ("champion_poison", None, [c16, u16]),
+        ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("champion_poison", None, [c16, u16]),
         ("group_get_melee_action_damage", c16, [c16, u16, c16, c16, c16, u16, u16, c16]),
         ("timeline_delete_event", None, [u16]), ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]),
         ("link_thing_to_list", None, [u16, u16, c16, c16]), ("tables_action_info", ctypes.c_void_p, [ctypes.c_int]),
@@ -50,7 +51,7 @@ def alib(lib):  # noqa: F811
 
 def action_world(lib, seed):
     """A World whose square in front of the party is an empty wall, in the C library and in the emulator."""
-    new_game(lib)  # the C timeline for champion_disable_action
+    new_game(lib)  # the C timeline for magic_disable_action
     w = World(lib, seed)
     for addr, code in ((SOUND_REQUEST_PLAY, RTS), (GET_SQUARE, b"\x70\x00" + RTS), (GROUP_GET_THING, b"\x70\xfe" + RTS),
                        (GROUP_EVENTS, RTS), (DISABLE_ACTION, CAPTURE_TICKS)):
@@ -109,7 +110,7 @@ def test_action_matches_original(alib, seed):
             w.emu.write(ACTION_DAMAGE, b"\0\0")
             w.emu.write(TICKS_AT, b"\0\0")
             w.seed(seed * 10007 + round_ * 101 + action)
-            got = lib.menus_is_action_performed(i, action)
+            got = lib.action_is_action_performed(i, action)
             want = s16(w.emu.call(ACTION_PERFORMED, [(2, i), (2, action)]))
             assert got == want, (round_, action)
             assert disabled_ticks(lib, i) == struct.unpack(">H", w.emu.read(TICKS_AT, 2))[0], (round_, action)
@@ -159,7 +160,7 @@ def test_melee_damage_matches_original(alib, seed):
 
 def new_object(lib, thing_type, object_type):
     thing = lib.get_unused_thing(thing_type)
-    lib.get_thing_data(thing)[3] = object_type
+    lib.dungeon_get_thing_data(thing)[3] = object_type
     return thing
 
 
@@ -192,15 +193,15 @@ def party(alib):
 
 def test_sword_attack_hurts_group_and_gains_experience(fighter):
     lib, c, (x, y) = fighter
-    group = lib.group_get_thing(x, y + 1)
-    health = struct.unpack(">H", bytes(lib.get_thing_data(group)[6:8]))[0]
+    group = lib.get_square_group(x, y + 1)
+    health = struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0]
     experience = c.skills[SKILL_SWING].experience
     damage = []
     for _ in range(20):
-        lib.menus_is_action_performed(0, ACTION_SWING)
+        lib.action_is_action_performed(0, ACTION_SWING)
         damage.append(var(lib, c16, "g_action_damage").value)
-        group = lib.group_get_thing(x, y + 1)
-        if group == 0xFFFE or struct.unpack(">H", bytes(lib.get_thing_data(group)[6:8]))[0] < health:
+        group = lib.get_square_group(x, y + 1)
+        if group == 0xFFFE or struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0] < health:
             break
     assert any(d > 0 for d in damage)
     assert c.skills[SKILL_SWING].experience > experience
@@ -216,7 +217,7 @@ def test_back_row_champion_cannot_reach(fighter):
     var(lib, u16, "g_party_champion_count").value = 2
     found = False
     for _ in range(10):
-        lib.menus_is_action_performed(0, ACTION_SWING)
+        lib.action_is_action_performed(0, ACTION_SWING)
         if var(lib, c16, "g_action_damage").value == -1:
             found = True
             break
@@ -227,7 +228,7 @@ def test_throw_creates_projectile_and_event_11_refills_hand(fighter):
     lib, c, (x, y) = fighter
     c.slots[SLOT_HAND_ACTION] = new_object(lib, THING_WEAPON, WEAPON_DAGGER)
     c.slots[SLOT_QUIVER_LINE1_1] = second = new_object(lib, THING_WEAPON, WEAPON_DAGGER)
-    assert lib.menus_is_action_performed(0, ACTION_THROW) == 1
+    assert lib.action_is_action_performed(0, ACTION_THROW) == 1
     assert things_of_type(lib, x, y, THING_PROJECTILE)
     assert c.slots[SLOT_HAND_ACTION] == 0xFFFF
     timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
@@ -244,7 +245,7 @@ def test_event_11_ends_action_defense(party):
     info = ctypes.cast(lib.tables_action_info(ACTION_BLOCK), ctypes.POINTER(u8 * 7)).contents
     defense = ctypes.c_int8(info[4]).value
     c.action_defense, c.action_index = defense, ACTION_BLOCK
-    lib.menus_is_action_performed(0, ACTION_BLOCK)
+    lib.action_is_action_performed(0, ACTION_BLOCK)
     ticks = info[0]
     assert c.attributes & ATTR_ACTION_DISABLED
     for _ in range(ticks):
@@ -252,6 +253,19 @@ def test_event_11_ends_action_defense(party):
     assert c.attributes & ATTR_ACTION_DISABLED  # still disabled until the last tick runs
     tick(lib)
     assert not c.attributes & ATTR_ACTION_DISABLED and c.action_defense == 0 and c.action_index == 255
+
+
+def test_triggered_action_closes_menu_and_asks_for_action_area(party):
+    lib, c, _ = party
+    lib.action_did_click_trigger_action.restype, lib.action_did_click_trigger_action.argtypes = c16, [c16]
+    redraw = ctypes.c_uint16.in_dll(lib, "g_redraw")
+    redraw.value = 0
+    var(lib, c16, "g_acting_champion_ordinal").value = 1
+    (u8 * 3).in_dll(lib, "g_action_list_indices")[0] = ACTION_BLOCK
+    lib.action_did_click_trigger_action(0)
+    assert var(lib, c16, "g_acting_champion_ordinal").value == 0
+    assert redraw.value & REDRAW_ACTION_AREA
+    assert c.attributes & ATTR_ACTION_HAND
 
 
 def test_poison_event_deals_damage_each_step(party):
@@ -280,7 +294,7 @@ def test_event_12_hides_damage(party):
 def test_vi_altar_rebirth(party):
     lib, c, (x, y) = party
     bones = new_object(lib, THING_JUNK, JUNK_BONES)
-    lib.get_thing_data(bones)[2] = 0  # charges: champion 0
+    lib.dungeon_get_thing_data(bones)[2] = 0  # charges: champion 0
     lib.link_thing_to_list(bones | 1 << 14, 0, x, y)
     c.current_health = 0
     now = var(lib, ctypes.c_uint32, "g_game_time").value

@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, game_sources
 from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Game
 from test_save import KEY_RETURN, Frames
 
@@ -39,10 +40,10 @@ pytestmark = [
 def game(tmp_path_factory):
     """A private build of libdm with the CSB data loaded."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
-    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.get_square_first_thing.restype = u16
     lib.get_next_thing.restype = u16
     lib.get_square.restype = ctypes.c_uint8
@@ -50,7 +51,7 @@ def game(tmp_path_factory):
     lib.savegame_make_adventure.restype = c16
     lib.savegame_save_as.restype = c16
     lib.savegame_load_from.restype = c16
-    lib.load_saved_game.restype = c16
+    lib.startend_load_saved_game.restype = c16
     lib.control_open.argtypes = [ctypes.c_char_p]
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
@@ -92,7 +93,7 @@ def new_prison_game(game, champions):
 
 def save_now(game):
     reason = ctypes.c_char_p()
-    return game.lib.save_current_game(ctypes.byref(reason)), reason.value
+    return game.lib.startend_save_current_game(ctypes.byref(reason)), reason.value
 
 
 def assert_in_adventure(game, names):
@@ -171,11 +172,11 @@ def test_resume_loads_csbgame(game, saves):
     names = new_prison_game(game, 2)
     assert save_now(game) == (SAVED_NEW_ADVENTURE, None)
     assert game.lib.gameloop_new_game(str(GAME_CSB).encode())
-    assert game.lib.load_saved_game() == 1
+    assert game.lib.startend_load_saved_game() == 1
     game.lib.gameloop_start_loaded_game()
     assert_in_adventure(game, names)
     (saves / NAME).unlink()
-    assert game.lib.load_saved_game() == 0  # CAN'T FIND SAVED GAME without frames: cancelled
+    assert game.lib.startend_load_saved_game() == 0  # CAN'T FIND SAVED GAME without frames: cancelled
 
 
 def run_save_dialog(game, choices):
@@ -193,7 +194,7 @@ def run_save_dialog(game, choices):
             lib.command_process_key(KEY_RETURN)
 
     frames = Frames(lib, action)
-    lib.save_game()
+    lib.startend_save_game()
     frames.remove()
     return sum(unplanned)
 

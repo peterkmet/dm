@@ -1,6 +1,6 @@
 # Dungeon.DAT format
 
-This page describes the `Dungeon.DAT` format as `port/src/dungeon.c` implements it. The port follows `load_dungeon` (`0x1260ee`) in `KAOS.FTL`. The language variants `DungeonF.DAT` and `DungeonG.DAT` use the same format.
+This page describes the `Dungeon.DAT` format as `port/src/engine/dungeon.c` implements it. The port follows `load_dungeon` (`0x1260ee`) in `KAOS.FTL`. The language variants `DungeonF.DAT` and `DungeonG.DAT` use the same format.
 
 All words and longs are big-endian. "Word" means 16 bits.
 
@@ -93,7 +93,7 @@ The loader builds `g_dungeon_map_data`. `g_dungeon_map_data[map][x]` points to c
 
 Each word of the column table is the index of the first square-first-thing entry of that column. To find the first thing of square (x, y), start at the column entry and add 1 for each square above `y` that has bit 4 set. `dungeon_square_first_thing(map, x, y)` does this. It returns `0xfffe` when the square has no things.
 
-A thing is a word: bits 0–9 index, bits 10–13 type, bits 14–15 cell. Each record starts with the word of the next thing. `0xfffe` ends a list. `get_thing_data(thing)` returns the record.
+A thing is a word: bits 0–9 index, bits 10–13 type, bits 14–15 cell. Each record starts with the word of the next thing. `0xfffe` ends a list. `dungeon_get_thing_data(thing)` returns the record.
 
 Record sizes (`g_thing_data_byte_count`):
 
@@ -181,5 +181,5 @@ The function reads all three tables from the KAOS image. The single characters f
 ## Not ported
 
 - Loading a dungeon from a saved game (no new-game extras) and the restart path that reuses buffers.
-- `timeline_init` and `group_init_active_groups` at the end of `load_dungeon`.
+- `timeline_init` and `game_init_active_groups` at the end of `load_dungeon`.
 - The current-map functions (`get_square`, `get_square_first_thing` on `g_current_map_data`). The port uses functions with a map argument for now.

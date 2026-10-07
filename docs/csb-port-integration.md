@@ -54,18 +54,18 @@ This is a separate work item ("CSB engine"). It needs a decision first: one addr
 
 | File | Place | Hard-coded value |
 |---|---|---|
-| `port/src/main.c` | `main` | `data = "game"` (default). |
+| `port/src/platform/main.c` | `main` | `data = "game"` (default). |
 | | `load_kaos_and_graphics` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Used by `--show` and `--view`. |
 | | `view_start` | `"%s/Dungeon.DAT"`. |
 | | `show` (`--show`) | The palette comes from the KAOS address `DUNGEON_PALETTE` (`0x100aa6`). |
-| `port/src/gameloop.c` | `gameloop_load_data` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Sets the save directory to `dir`. |
+| `port/src/ui/gameloop.c` | `gameloop_load_data` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Sets the save directory to `dir`. |
 | | `gameloop_new_game` | `"%s/Dungeon.DAT"`. |
-| `port/src/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_data_dir()`, so the folder is right. |
+| `port/src/platform/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_data_dir()`, so the folder is right. |
 | | `handle_load`, `handle_request` (`save`) | Use `startend_save_dir()` and `savegame_load/save`. The folder is right. |
-| `port/src/savegame.h` | `SAVE_FILE_NAME`, `SAVE_BACKUP_FILE_NAME` | `"DMGAME.DAT"`, `"DMGAME.BAK"`. Used in `savegame.c`: `savegame_save` and `savegame_load` (4 places). |
-| `port/src/startend.c` | `save_dir` | Default `"."`. `startend_set_save_dir` is called by `gameloop_load_data`. |
-| `port/src/dungeon.c` | `g_dungeon_id` | Default `10` (the DM dungeon id). The save header stores it. |
-| `port/src/savefile.h` | `SAVE_*_BYTES` | DM save layout, including `SAVE_HEADER_EXTRA_BYTES` 134. The CSB save format is not known. |
+| `port/src/engine/savegame.h` | `SAVE_FILE_NAME`, `SAVE_BACKUP_FILE_NAME` | `"DMGAME.DAT"`, `"DMGAME.BAK"`. Used in `savegame.c`: `savegame_save` and `savegame_load` (4 places). |
+| `port/src/ui/startend.c` | `save_dir` | Default `"."`. `startend_set_save_dir` is called by `gameloop_load_data`. |
+| `port/src/engine/dungeon.c` | `g_dungeon_id` | Default `10` (the DM dungeon id). The save header stores it. |
+| `port/src/engine/savefile.h` | `SAVE_*_BYTES` | DM save layout, including `SAVE_HEADER_EXTRA_BYTES` 134. The CSB save format is not known. |
 | `.gitignore` | | `game-csb/` and `decomp-csb/` are ignored (the file has an uncommitted change). |
 | `game/CSBGAME.DAT` | | An empty file (0 bytes) in the DM folder. The port ignores it. |
 
@@ -78,7 +78,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
 | `command.c`: `command_set_entrance_input`, `KEYS_ENTRANCE` (`0x10393c`), `UI_INPUT_ENTRANCE` | Mouse table and key table come from the KAOS data. |
 | `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_new_game = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
-| `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_new_game(data)` or `load_saved_game()`. |
+| `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_new_game(data)` or `startend_load_saved_game()`. |
 | `main.c`: `main` | `MODE_ENTRANCE` is the first mode after the start. `DM_AUTO_ENTER` (and `turnbased`) presses Return at the start. |
 
 ### Endgame and credits
@@ -88,7 +88,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | `startend.c`: `endgame`, `show_credits`, `draw_the_end`, `draw_champion_parade` | DM graphics `GFX_CREDITS` 5, `GFX_THE_END` 6, `GFX_CHAMPION_FRAME` 346. Palette `CREDITS_PALETTE`. |
 | `startend.c`: `fuse_sequence`, `endgame_sensor`, `show_final_texts` | The fusion of Lord Chaos and Lord Order. Final texts on square (0, 0). CSB ends differently (`ENDA.DAT`). |
 | `startend.c`: `endgame` sets `g_return_to_entrance` | `main.c` then shows the DM entrance. For CSB this must show the CSB entrance. |
-| `startend.c`: `load_saved_game` | Uses `savegame_load(save_dir)`. The texts come from DM `ui_string`. |
+| `startend.c`: `startend_load_saved_game` | Uses `savegame_load(save_dir)`. The texts come from DM `gfx_string`. |
 
 ### Mode handling
 
@@ -149,7 +149,7 @@ The socket protocol needs no new command. The game starts one adventure for each
 
 ### The adventure value
 
-New files `port/src/adventure.h` and `port/src/adventure.c`.
+New files `port/src/data/adventure.h` and `port/src/data/adventure.c`.
 
 ```c
 enum { ADVENTURE_DM, ADVENTURE_CSB };
@@ -188,7 +188,7 @@ data = data_override ? data_override : adventure_default_dir(g_adventure);
 
 ### The selection module
 
-New files `port/src/select.h` and `port/src/select.c`. The module has no SDL calls. It owns the three menu screens and their state.
+New files `port/src/ui/select.h` and `port/src/ui/select.c`. The module has no SDL calls. It owns the three menu screens and their state.
 
 ```c
 enum { SCREEN_ADVENTURE, SCREEN_MODE, SCREEN_CSB, SCREEN_DONE };
@@ -297,7 +297,7 @@ Changes in `main.c`:
 - NEW ADVENTURE: `select_csb_choice() == CSB_NEW_ADVENTURE`. `start_adventure` calls `csb_new_adventure(dir)`: build `CSBGAME.DAT` from `disk-b/MINI.DAT`, then open the champion selection.
 - RESUME: `CSB_RESUME`. `start_adventure` calls the CSB loader for `<dir>/CSBGAME.DAT`, or `CSBGAME.BAK` when the first file is missing (same rule as `savegame_load`).
 - QUIT: ends the program.
-- RESUME with no save file: show the existing dialog `TEXT_CANT_FIND_SAVED_GAME` (`load_saved_game` does this for DM).
+- RESUME with no save file: show the existing dialog `TEXT_CANT_FIND_SAVED_GAME` (`startend_load_saved_game` does this for DM).
 
 ### Dependencies for play
 

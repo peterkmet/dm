@@ -50,7 +50,7 @@ def lib():
     lib.message_print.argtypes = [c16, ctypes.c_char_p, ctypes.c_uint32]
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
     lib.dungeon_square_first_thing.restype = u16
-    lib.get_thing_data.restype = ctypes.POINTER(u8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(u8)
     lib.recruit_portrait_index.argtypes = [u16]
     lib.recruit_text_thing.restype = u16
     return lib
@@ -249,7 +249,7 @@ def test_render_party(game, n):
         colors = {fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)}
         assert len(colors) > 3
     if n == 4:
-        game.champion_draw_damage(1, 37)
+        game.ui_draw_champion_damage(1, 37)
         game.menus_draw_action_damage(25)
         _, rows = rgb_rows(game)
         if SCRATCH.exists():
@@ -274,16 +274,16 @@ def test_render_inventory(game):
     reset(game)
     recruit(game, 2)
     render(game, "base")
-    game.inventory_draw_open(0)
+    game.ui_draw_inventory_open(0)
     fb, rows = rgb_rows(game)
     if SCRATCH.exists():
         png(SCRATCH / "ui_inventory.png", rows)
     assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 1
     assert len(set(fb[320 * 33:320 * 169])) > 6
-    game.draw_champion_skills_and_statistics()
+    game.ui_draw_champion_skills_and_statistics()
     game.ui_draw_viewport()
     _, rows = rgb_rows(game)
     if SCRATCH.exists():
         png(SCRATCH / "ui_inventory_eye.png", rows)
-    game.inventory_draw_close(0)
+    game.ui_draw_inventory_close(0)
     assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 0

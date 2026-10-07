@@ -19,6 +19,7 @@ ZONE_RESURRECT, ZONE_DROP_PARTY_CELL, ZONE_BACKPACK_FIRST_SLOT = 570, 740, 520
 SLOT_HAND_ACTION, SLOT_BACKPACK_FIRST = 1, 13
 SENSOR, CORRIDOR, CHAMPION_PORTRAIT = 3, 1, 127
 ATTACK_RAW = 0
+ZONE_SPELL_AREA, SPELL_SYMBOL_FIRST = 13, 0x60
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
 
 pytestmark = [
@@ -35,7 +36,7 @@ class Box(ctypes.Structure):
 def game():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
-    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.get_square_first_thing.restype = u16
     lib.get_next_thing.restype = u16
     lib.get_square.restype = ctypes.c_uint8
@@ -105,7 +106,7 @@ class Game:
     def mirror_cell(self, x, y):
         thing = self.lib.get_square_first_thing(x, y)
         while thing not in (0xFFFE, 0xFFFF):
-            data = self.lib.get_thing_data(thing)
+            data = self.lib.dungeon_get_thing_data(thing)
             if thing >> 10 & 15 == SENSOR and (data[2] << 8 | data[3]) & 0x7F == CHAMPION_PORTRAIT:
                 return thing >> 14
             thing = self.lib.get_next_thing(thing)
@@ -315,9 +316,9 @@ def test_hand_object_name_follows_the_icon(game):
     junk = next(j for j in range(53) if lib.tables_object_info(0x7F + j).contents[0] == 8)  # waterskin
     lib.get_unused_thing.restype = u16
     skin = lib.get_unused_thing(10)
-    data = lib.get_thing_data(skin)
+    data = lib.dungeon_get_thing_data(skin)
     data[3], data[2] = junk, 1 << 6  # one charge
-    lib.champion_put_object_in_leader_hand(skin)
+    lib.inventory_put_object_in_leader_hand(skin)
     game.key(KEY_F1)
     game.run()
     box = Box()
@@ -326,7 +327,7 @@ def test_hand_object_name_follows_the_icon(game):
     name = lambda: [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
     before = name()
     game.click_zone(545)  # the mouth
-    assert lib.get_thing_data(skin)[2] >> 6 == 0
+    assert lib.dungeon_get_thing_data(skin)[2] >> 6 == 0
     assert name() != before
     game.key(KEY_F1)
     game.run()
@@ -363,3 +364,57 @@ def test_pointer_over_the_status_box_hands(game):
     assert pointer(lib, *hand) == arrow
     game.key(KEY_F1)
     game.run()
+
+
+def two_champions_with_runes(game):
+    """A new game with two recruited champions; the second has chosen a rune, the first is the caster."""
+    lib = game.lib
+    assert lib.gameloop_new_game(str(GAME).encode())
+    game.run(26)
+    mirrors = set()
+    for _ in range(2):
+        path, direction = game.path_to_mirror(mirrors)
+        game.walk(path)
+        game.face(direction)
+        game.run()
+        game.click_box(game.boxes[5])
+        game.click_zone(ZONE_RESURRECT)
+        mirrors.add((path[-1][0] + STEP_EAST[direction], path[-1][1] + STEP_NORTH[direction]))
+    assert game.value("g_party_champion_count", u16) == 2 and game.value("g_magic_caster_champion_index") == 0
+    game.champions[1].symbol_step, game.champions[1].symbols = 1, bytes([SPELL_SYMBOL_FIRST])
+
+
+def spell_area(game):
+    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(game.lib, "fb")
+    box = Box()
+    assert game.lib.ui_zone_box(ZONE_SPELL_AREA, ctypes.byref(box))
+    return [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
+
+
+def test_a_party_that_dies_in_one_tick_shows_the_spell_area_of_the_last_caster(game):
+    """The caster dies first: the spell area goes to the last champion as it was before its own death in the same tick."""
+    lib = game.lib
+    pending = (c16 * 4).in_dll(lib, "g_champion_pending_damage")
+    two_champions_with_runes(game)
+    pending[0] = game.champions[0].current_health
+    lib.gameloop_tick()
+    assert game.champions[1].current_health and game.value("g_magic_caster_champion_index") == 1
+    expected = spell_area(game)
+
+    two_champions_with_runes(game)
+    frames = []
+
+    @ctypes.CFUNCTYPE(None)
+    def first_frame():
+        if not frames:
+            frames.append(spell_area(game))
+        c16.in_dll(lib, "g_quit_requested").value = 1  # leaves the death scream
+
+    ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = ctypes.cast(first_frame, ctypes.c_void_p).value
+    try:
+        pending[0], pending[1] = game.champions[0].current_health, game.champions[1].current_health
+        lib.gameloop_tick()
+    finally:
+        ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
+        c16.in_dll(lib, "g_quit_requested").value = 0
+    assert game.value("g_party_dead") and frames[0] == expected

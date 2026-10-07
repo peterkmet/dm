@@ -1,6 +1,6 @@
 # Static game tables
 
-This page describes the static rule tables of `KAOS.FTL` and the C accessors in `port/src/tables.h`. The port does not copy table values into the source. `tables_init` reads the tables from the loaded KAOS image at run time.
+This page describes the static rule tables of `KAOS.FTL` and the C accessors in `port/src/data/tables.h`. The port does not copy table values into the source. `tables_init` reads the tables from the loaded KAOS image at run time.
 
 All addresses are original KAOS addresses (see [KAOS module map](kaos-map.md)). All multi-byte values are big-endian in the image. The C structs hold native values.
 
@@ -71,7 +71,7 @@ Each table ends where the next named table starts. The tests check this.
 
 ## Object info
 
-`ObjectInfo`, 6 bytes per object info index. `get_object_info_index` maps a thing to the index: scroll 0, container 1, potion 2 + type, weapon `0x17` + type, armour `0x45` + type, junk `0x7f` + type.
+`ObjectInfo`, 6 bytes per object info index. `inventory_get_object_info_index` maps a thing to the index: scroll 0, container 1, potion 2 + type, weapon `0x17` + type, armour `0x45` + type, junk `0x7f` + type.
 
 | Offset | Field | Meaning |
 |---|---|---|
@@ -100,16 +100,16 @@ Each table ends where the next named table starts. The tests check this.
 |---|---|---|
 | 0 | `weight` | Weight in tenths of a kilogram. |
 | 1 | `defense` | Defense. |
-| 2 | `attributes` | Bits 0–2 sharp resistance (`get_armour_defense`). Bit 7 shield. |
+| 2 | `attributes` | Bits 0–2 sharp resistance (`inventory_get_armour_defense`). Bit 7 shield. |
 
 ## Junk weights and food values
 
-- Junk weight: 1 byte per junk type. Junk type 1 adds 2 for each charge (`get_object_weight`). Potions, scrolls, and containers have no weight table. `get_object_weight` uses fixed values for them.
+- Junk weight: 1 byte per junk type. Junk type 1 adds 2 for each charge (`inventory_get_object_weight`). Potions, scrolls, and containers have no weight table. `inventory_get_object_weight` uses fixed values for them.
 - Food value: 1 signed word per food icon `0xa8`–`0xaf`. Eating adds the value to the champion food, with a maximum of 2048.
 
 ## Door info
 
-`DoorInfo`, 2 bytes per door type. Byte 0 `attributes`, byte 1 `defense`. `group_is_door_destroyed_by_attack` compares an attack with `defense`. Each map selects 2 door types (map record byte 14).
+`DoorInfo`, 2 bytes per door type. Byte 0 `attributes`, byte 1 `defense`. `event_is_door_destroyed_by_attack` compares an attack with `defense`. Each map selects 2 door types (map record byte 14).
 
 ## Spells and symbols
 
@@ -142,7 +142,7 @@ Each table ends where the next named table starts. The tests check this.
 
 | Address | Field | Meaning |
 |---|---|---|
-| `0x103eac` | `disabled_ticks` | Duration of `champion_disable_action`. |
+| `0x103eac` | `disabled_ticks` | Duration of `magic_disable_action`. |
 | `0x103ed8` | `damage_factor` | Melee damage factor. |
 | `0x103f04` | `hit_probability` | Melee hit probability. |
 | `0x103f30` | `stamina` | Stamina cost. |

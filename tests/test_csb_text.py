@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from conftest import PORT_INCLUDES, game_sources
+
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 GAME_CSB = ROOT / "game-csb"
@@ -55,14 +57,14 @@ OBJECT_NAMES = {0: "COMPASS", 23: "STORM", 24: "STORM", 158: "ANTIVENIN", 174: "
 def lib(tmp_path_factory):
     """A private build of libdm."""
     out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = [str(p) for p in sorted((ROOT / "port/src").glob("*.c")) if p.name not in ("main.c", "platform.c")]
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", "-o", str(out), *sources], check=True)
+    sources = game_sources()
+    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
-    for f in ("ui_string", "ui_action_name", "ui_object_name", "ui_skill_rank_name"):
+    for f in ("gfx_string", "gfx_action_name", "gfx_object_name", "ui_skill_rank_name"):
         getattr(lib, f).restype = ctypes.c_char_p
     lib.recruit_text_thing.restype = ctypes.c_uint16
     lib.dungeon_square_first_thing.restype = ctypes.c_uint16
-    lib.get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     yield lib
     c16.in_dll(lib, "g_adventure").value = DM
 
@@ -74,20 +76,20 @@ def load(lib, adventure, folder):
 
 def texts(lib, adventure, folder):
     load(lib, adventure, folder)
-    return ([lib.ui_string(i).decode() for i in range(TEXT_COUNT)], [lib.ui_action_name(i).decode() for i in range(ACTION_COUNT)],
-            [lib.ui_object_name(i).decode() for i in range(OBJECT_NAME_COUNT)])
+    return ([lib.gfx_string(i).decode() for i in range(TEXT_COUNT)], [lib.gfx_action_name(i).decode() for i in range(ACTION_COUNT)],
+            [lib.gfx_object_name(i).decode() for i in range(OBJECT_NAME_COUNT)])
 
 
 def test_strings(lib):
     load(lib, CSB, GAME_CSB)
-    assert {i: lib.ui_string(i).decode() for i in EXPECTED} == EXPECTED
+    assert {i: lib.gfx_string(i).decode() for i in EXPECTED} == EXPECTED
 
 
 def test_string_index_tables(lib):
     load(lib, CSB, GAME_CSB)
 
     def table(addr, n):
-        return [lib.ui_string(lib.kaos_s16(addr + 2 * k)).decode() for k in range(n)]
+        return [lib.gfx_string(lib.kaos_s16(addr + 2 * k)).decode() for k in range(n)]
 
     assert table(BASE_SKILL_STRINGS, 4) == ["FIGHTER", "NINJA", "PRIEST", "WIZARD"]
     assert table(DIRECTION_STRINGS, 4) == ["NORTH", "EAST", "SOUTH", "WEST"]
@@ -99,8 +101,8 @@ def test_string_index_tables(lib):
 
 def test_action_and_object_names(lib):
     load(lib, CSB, GAME_CSB)
-    assert [lib.ui_action_name(i) for i in (0, 4, 27, 43, 44)] == [b"N", b"BLOW HORN", b"INVOKE", b"FUSE", b""]
-    assert {i: lib.ui_object_name(i).decode() for i in OBJECT_NAMES} == OBJECT_NAMES
+    assert [lib.gfx_action_name(i) for i in (0, 4, 27, 43, 44)] == [b"N", b"BLOW HORN", b"INVOKE", b"FUSE", b""]
+    assert {i: lib.gfx_object_name(i).decode() for i in OBJECT_NAMES} == OBJECT_NAMES
 
 
 @needs_dm
@@ -119,7 +121,7 @@ def things(lib, x, y):
     t = lib.dungeon_square_first_thing(0, x, y)
     while t != 0xFFFE:
         yield t
-        d = lib.get_thing_data(t)
+        d = lib.dungeon_get_thing_data(t)
         t = d[0] << 8 | d[1]
 
 
@@ -140,10 +142,10 @@ def test_prison_recruit_shows_csb_text(lib):
     lib.message_clear()
     lib.champion_add_candidate_to_party(lib.recruit_portrait_index(t))
     assert c16.in_dll(lib, "g_party_champion_count").value == 1
-    lib.inventory_draw_open(0)
-    lib.draw_champion_skills_and_statistics()
+    lib.ui_draw_inventory_open(0)
+    lib.ui_draw_champion_skills_and_statistics()
     lib.champion_click_in_resurrect_reincarnate_panel(PANEL_RESURRECT)
-    lib.menus_print_spell_failure_message(0, SPELL_FAILURE_NEEDS_MORE_PRACTICE, SKILL_WIZARD)
+    lib.magic_print_spell_failure_message(0, SPELL_FAILURE_NEEDS_MORE_PRACTICE, SKILL_WIZARD)
     rows = message_rows(lib)
     assert any(r.endswith(" RESURRECTED.") and len(r) > len(" RESURRECTED.") for r in rows), rows
     assert any(r.endswith(" NEEDS MORE PRACTICE WITH THIS WIZARD SPELL.") for r in rows), rows

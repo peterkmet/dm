@@ -26,8 +26,10 @@ dev = [
     "dmcsb>=0.2.1",
     "pytest>=8",
     "pytest-timeout>=2.4.0",
+    "pytest-xdist>=3.8.0",
 ]
 
 [tool.pytest.ini_options]
 timeout = 120
+addopts = "-n auto --dist loadfile"
 testpaths = ["tests"]
