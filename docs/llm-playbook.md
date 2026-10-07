@@ -88,9 +88,11 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 ## When you are stuck
 
 1. Stop moving. Save.
-2. Write a list into `progress.md` under "Not tried yet": wall features you have not clicked, keys and items you have not tried on each lock or alcove, piles you did not empty, wall texts you did not read, unexplored edges of the map, walls you did not test for an illusion, doors you could not open.
-3. Rank the list. Visible things come first: keys, piles, alcoves, switches, buttons, locks, doors. Hidden switches and illusory walls come last.
-4. Try the most probable item first. After each result, rank again.
+2. Read your own notes again: every lock, key, and door in the map of the level and in `items.md`. Try each key that you carry in each lock that you know, also in locks that you did not list as exits.
+3. Walk over each square of the area once and look at the objects on the floor in the view. Turn to each wall of a dead end.
+4. Write a list into `progress.md` under "Not tried yet": wall features you have not clicked, keys and items you have not tried on each lock or alcove, piles you did not empty, wall texts you did not read, unexplored edges of the map, walls you did not test for an illusion, doors you could not open.
+5. Rank the list. Visible things come first: keys, piles, alcoves, switches, buttons, locks, doors. Hidden switches and illusory walls come last.
+6. Try the most probable item first. After each result, rank again.
 
 ## Bugs
 
