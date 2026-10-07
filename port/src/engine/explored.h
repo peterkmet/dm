@@ -1,6 +1,5 @@
 #ifndef EXPLORED_H
 #define EXPLORED_H
-/* Prefixes: explored_ */
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
