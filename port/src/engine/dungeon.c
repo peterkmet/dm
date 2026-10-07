@@ -1,4 +1,5 @@
 #include "dungeon.h"
+#include "adventure.h"
 #include "ftl.h"
 #include "map.h"
 #include <stdlib.h>
@@ -9,11 +10,11 @@ uint8_t *g_square_first_things, *g_dungeon_text_data, *g_thing_data[THING_TYPE_C
 int16_t *g_dungeon_map_first_column;
 int16_t g_dungeon_column_count;
 uint8_t ***g_dungeon_map_data;
-uint16_t g_dungeon_id = 10;
+uint16_t g_dungeon_id = DM_DUNGEON_ID;
 int16_t g_event_max_count;
 int16_t g_party_map_x, g_party_map_y, g_party_direction, g_party_map_index;
 
-const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, 16, 4, 4, 4, 4, 8, 4, 0, 0, 0, 8, 4};
+const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_RECORD_BYTES, 4, 4, 4, 4, 8, 4, 0, 0, 0, 8, 4};
 /* KAOS tables, read at run time: kaos_load() must run first. */
 #define NEW_GAME_EXTRA_THINGS 0x101058 /* free records per thing type for a new game */
 #define MESSAGE_ESCAPES 0x1016ea       /* 8-byte strings */
@@ -31,6 +32,8 @@ const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, 16, 4, 4,
 #define HEADER_MAP_COUNT 4
 #define HEADER_TEXT_WORDS 6
 #define HEADER_PARTY_START 8 /* x in bits 0-4, y in bits 5-9, direction in bits 10-11 */
+#define PARTY_START_Y_SHIFT 5
+#define PARTY_START_DIRECTION_SHIFT 10
 
 #define MAP_RAW_DATA_OFFSET 0
 
@@ -38,11 +41,12 @@ const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, 16, 4, 4,
 #define NEW_GAME_EVENT_COUNT 100
 #define MAX_THINGS 1024
 #define MAX_EXPLOSIONS 768
+#define MAX_BLOCKS 32 /* the buffers of one loaded dungeon */
 
 /* Save order: header, maps, column index, square things, text, the 16 thing types, raw map data. */
 enum { PART_THINGS_FIRST = 5, PART_RAW_MAPS = PART_THINGS_FIRST + THING_TYPE_COUNT, DUNGEON_PART_COUNT };
 
-static void *blocks[32];
+static void *blocks[MAX_BLOCKS];
 static int block_count;
 static const uint8_t *load_ptr;
 static int32_t load_remaining;
@@ -76,9 +80,9 @@ static uint16_t get_bits(BitReader *b, int16_t n)
     if (b->avail < n) {
         if (b->end - b->p < 2)
             return b->ok = 0;
-        b->acc = b->acc << 16 | BE16(b->p);
+        b->acc = b->acc << WORD_BITS | BE16(b->p);
         b->p += 2;
-        b->avail += 16;
+        b->avail += WORD_BITS;
     }
     b->avail -= n;
     return b->acc >> b->avail & ((1u << n) - 1);
@@ -133,8 +137,8 @@ static int16_t read_header(int new_game, uint16_t *sum)
     if (new_game) {
         uint16_t start = BE16(h + HEADER_PARTY_START);
         g_party_map_x = start & MAP_COORD_MASK;
-        g_party_map_y = start >> 5 & MAP_COORD_MASK;
-        g_party_direction = start >> 10 & 3;
+        g_party_map_y = start >> PARTY_START_Y_SHIFT & MAP_COORD_MASK;
+        g_party_direction = start >> PARTY_START_DIRECTION_SHIFT & 3;
         g_party_map_index = 0;
     }
     return 1;
@@ -440,6 +444,7 @@ uint8_t *dungeon_get_thing_data(uint16_t thing)
 /* decode_text modes; MODE_ANY_VISIBILITY also decodes an invisible text. */
 enum { MODE_INSCRIPTION, MODE_MESSAGE, MODE_SCROLL, MODE_MASK = 0x7fff };
 /* 5-bit text codes: 0-25 letters, then space, period, separator, two escapes, end. */
+enum { TEXT_CODE_BITS = 5, TEXT_CODE_MASK = 31, TEXT_CODES_PER_WORD = 3 };
 enum { CODE_SPACE = 26, CODE_PERIOD, CODE_SEPARATOR, CODE_ESCAPE_REPLACEMENT, CODE_ESCAPE_STRING, CODE_END };
 #define INSCRIPTION_SEPARATOR ((char)0x80) /* the wall text font ends a line here */
 #define INSCRIPTION_END ((char)0x81)
@@ -477,7 +482,7 @@ static void decode_codes(TextOut *o, uint16_t w, int16_t mode)
     uint16_t word = 0, escape = 0;
     if (mode == MODE_MESSAGE)
         put(o, '\n');
-    for (int16_t k = 0; o->ok; k = (k + 1) % 3) {
+    for (int16_t k = 0; o->ok; k = (k + 1) % TEXT_CODES_PER_WORD) {
         if (k == 0) {
             if (w >= text_words()) {
                 o->ok = 0;
@@ -486,7 +491,7 @@ static void decode_codes(TextOut *o, uint16_t w, int16_t mode)
             word = BE16(g_dungeon_text_data + w * 2);
             w++;
         }
-        uint16_t code = word >> (10 - 5 * k) & 31;
+        uint16_t code = word >> (TEXT_CODES_PER_WORD - 1 - k) * TEXT_CODE_BITS & TEXT_CODE_MASK;
         if (escape) {
             put_string(o, escape_string(escape, code, mode));
             escape = 0;

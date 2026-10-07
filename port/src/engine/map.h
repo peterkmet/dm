@@ -204,6 +204,7 @@ uint16_t get_creature_attributes(uint16_t group_thing);
 static inline uint16_t thing_weapon_type(uint16_t weapon) { return REC(weapon)[3] & 0x7f; }
 
 /* Group record, 16 bytes. */
+#define GROUP_RECORD_BYTES 16
 /* 2 bits per creature, 0xff for one centered creature; on the party map the active group index. */
 static inline uint8_t rec_group_cells_byte(uint16_t group) { return REC(group)[5]; }
 enum { GROUP_DIRECTION_BYTE = 14, GROUP_LAST_CREATURE_BYTE = 15 };

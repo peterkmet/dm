@@ -1,6 +1,7 @@
 #include <limits.h>
 #include "spells.h"
 #include "adventure.h"
+#include "bytes.h"
 #include "csbimage.h"
 #include "ftl.h"
 
@@ -9,7 +10,6 @@
 #define SPELL_EXPERIENCE_LEVEL_FACTOR 16
 #define SPELL_EXPERIENCE_RANDOM_MASK 7
 #define LSR_COUNT_MODULO 64        /* the 68000 LSR takes the shift count modulo 64 */
-#define WORD_BITS 16
 #define SPELL_WISDOM_BONUS 15      /* added to wisdom for the failure draw */
 #define SPELL_WISDOM_LIMIT 115     /* the failure draw limit never goes above this */
 #define SPELL_DRAW_RANGE 128
