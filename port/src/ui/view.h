@@ -12,6 +12,7 @@
 
 /* Door square bit that map.h does not name: the door passage runs north-south. */
 enum { DOOR_NORTH_SOUTH = 8 };
+enum { VIEWPORT_MAX_W = 224, VIEWPORT_MAX_H = 136 }; /* the largest viewport bitmap */
 enum { VIEW_DEPTH_COUNT = 4 };      /* the view draws the party row and 3 rows ahead */
 
 /* Clickable boxes of the dungeon view, in viewport coordinates (x = -1: empty): the object piles of

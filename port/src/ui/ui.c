@@ -20,9 +20,24 @@
 #define ICON_FIRST 0x100b92       /* g_icon_graphic_first_index[7] */
 #define SLOT_BOXES 0x100bb0       /* g_slot_boxes[46]: zone, current icon */
 #define SLOT_BOX_BORDER 0x102956  /* g_slot_box_border */
+#define MOUSE_INPUT_INTERFACE 0x1031f8
+#define MOUSE_INPUT_MOVEMENT 0x1032e8
+#define MOUSE_INPUT_INVENTORY 0x103354
+#define MOUSE_INPUT_SLEEPING 0x10351c
+#define MOUSE_INPUT_FROZEN 0x103540
+#define MOUSE_INPUT_ACTION_NAMES 0x103564
+#define MOUSE_INPUT_ACTION_ICONS 0x1035a0
+#define MOUSE_INPUT_SPELL_AREA 0x1035dc
+#define MOUSE_INPUT_STATUS_BOX 0x103654
+#define MOUSE_INPUT_CHEST 0x1036f0
+#define MOUSE_INPUT_RESURRECT 0x10375c
+#define MOUSE_INPUT_NAME_ENTRY 0x10378c
+#define MOUSE_INPUT_ENTRANCE 0x10318c
+#define MOUSE_INPUT_ENDGAME 0x1031d4
 static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
-    0x1031f8, 0x1032e8, 0x103354, 0x10351c, 0x103540, 0x103564,
-    0x1035a0, 0x1035dc, 0x103654, 0x1036f0, 0x10375c, 0x10378c, 0x10318c, 0x1031d4,
+    MOUSE_INPUT_INTERFACE, MOUSE_INPUT_MOVEMENT, MOUSE_INPUT_INVENTORY, MOUSE_INPUT_SLEEPING, MOUSE_INPUT_FROZEN,
+    MOUSE_INPUT_ACTION_NAMES, MOUSE_INPUT_ACTION_ICONS, MOUSE_INPUT_SPELL_AREA, MOUSE_INPUT_STATUS_BOX, MOUSE_INPUT_CHEST,
+    MOUSE_INPUT_RESURRECT, MOUSE_INPUT_NAME_ENTRY, MOUSE_INPUT_ENTRANCE, MOUSE_INPUT_ENDGAME,
 };
 #define DIALOG_MOUSE_INPUTS 0x103bd4 /* g_dialog_mouse_inputs[8]: pointers to the dialog tables */
 
@@ -31,12 +46,14 @@ static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
 #define ICON_SHEET_COUNT 7
 #define ICONS_PER_ROW 16
 #define LEADER_HAND_NAME_LENGTH 14
+#define PADDED_TEXT_SIZE 80
+#define BONES_NAME_SIZE 32         /* champion name and the bones name */
 
 /* INPUT_X1 values that make INPUT_X2 a zone: on the screen, relative to the viewport origin,
    relative to the centered viewport. */
 enum { INPUT_ZONE_SCREEN = -1, INPUT_ZONE_VIEWPORT = -2, INPUT_ZONE_CENTERED_VIEWPORT = -3 };
 
-static uint8_t viewport_px[224 * 136];
+static uint8_t viewport_px[VIEWPORT_MAX_W * VIEWPORT_MAX_H];
 static Bitmap viewport;
 static int16_t slot_box_icon[SLOT_BOX_COUNT];
 
@@ -52,7 +69,7 @@ int ui_init(void)
 Bitmap ui_screen(void) { return (Bitmap){ SCREEN_W, SCREEN_H, &fb[0][0] }; }
 Bitmap *ui_viewport(void) { return &viewport; }
 
-int ui_zone_box(int16_t zone, Box *box) { return layout_get_zone_box(zone, 10000, 10000, box); }
+int ui_zone_box(int16_t zone, Box *box) { return layout_get_zone_box(zone, ZONE_SCALE_FULL, ZONE_SCALE_FULL, box); }
 
 /* Fills the box of zone with one color. */
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color)
@@ -108,14 +125,14 @@ void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char
     int tw, th;
     Box b;
     if (!text_size(text, &tw, &th)) return;
-    int16_t w = (int16_t)tw, h = (int16_t)th;
+    int16_t w = tw, h = th;
     if (layout_get_zone(zone, 0, 0, &b, &w, &h)) text_draw(dst, b.x, b.y + b.h - 1, fg, bg, text);
 }
 
 /* Prints text padded with spaces to length characters, so it covers older text. */
 void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t length)
 {
-    char buf[80];
+    char buf[PADDED_TEXT_SIZE];
     int n = 0;
     for (; text[n] && n < (int)sizeof buf - 1; n++) buf[n] = text[n];
     for (; n < length && n < (int)sizeof buf - 1; n++) buf[n] = ' ';
@@ -127,7 +144,7 @@ void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, con
 void ui_draw_viewport(void)
 {
     Bitmap screen = ui_screen();
-    for (int i = 0; i < 16; i++) palette[i] = kaos_u16(BOTTOM_PALETTE + 2 * i);
+    for (int i = 0; i < PALETTE_COLORS; i++) palette[i] = kaos_u16(BOTTOM_PALETTE + 2 * i);
     ui_blit_zone(&screen, &viewport, ZONE_VIEWPORT, COLOR_NONE);
 }
 
@@ -136,7 +153,7 @@ void ui_draw_viewport(void)
 /* One palette for all rows: the 16 colors, or the interface palette for NULL (dialogs, endgame). */
 void ui_set_screen_palette(const uint16_t *colors)
 {
-    for (int i = 0; i < 16; i++) palette[i] = colors ? colors[i] : kaos_u16(BOTTOM_PALETTE + 2 * i);
+    for (int i = 0; i < PALETTE_COLORS; i++) palette[i] = colors ? colors[i] : kaos_u16(BOTTOM_PALETTE + 2 * i);
     palette_split_top = 0;
     palette_split_bottom = SCREEN_H;
 }
@@ -144,13 +161,13 @@ void ui_set_screen_palette(const uint16_t *colors)
 void ui_set_palette(const uint16_t *top)
 {
     Box b;
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < PALETTE_COLORS; i++) {
         if (top) palette[i] = top[i];
-        palette[16 + i] = kaos_u16(BOTTOM_PALETTE + 2 * i);
+        palette[PALETTE_COLORS + i] = kaos_u16(BOTTOM_PALETTE + 2 * i);
     }
     if (ui_zone_box(ZONE_VIEWPORT, &b)) {
         palette_split_top = b.y;
-        palette_split_bottom = (int16_t)(b.y + b.h);
+        palette_split_bottom = b.y + b.h;
     }
 }
 
@@ -206,11 +223,11 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
 {
     int sheet = 0;
     while (sheet < ICON_SHEET_COUNT && kaos_s16(ICON_FIRST + 2 * sheet) <= icon) sheet++;
-    int16_t i = (int16_t)(icon - kaos_s16(ICON_FIRST + 2 * (sheet - 1)));
+    int16_t i = icon - kaos_s16(ICON_FIRST + 2 * (sheet - 1));
     const Bitmap *bm = gfx_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     out->w = out->h = UI_ICON_SIZE;
     memset(out->px, 0, UI_ICON_SIZE * UI_ICON_SIZE);
-    if (bm) draw_blit(bm, (int16_t)(i % ICONS_PER_ROW * UI_ICON_SIZE), (int16_t)(i / ICONS_PER_ROW * UI_ICON_SIZE), out, &(Box){ 0, 0, UI_ICON_SIZE, UI_ICON_SIZE }, COLOR_NONE, 0);
+    if (bm) draw_blit(bm, i % ICONS_PER_ROW * UI_ICON_SIZE, i / ICONS_PER_ROW * UI_ICON_SIZE, out, &(Box){ 0, 0, UI_ICON_SIZE, UI_ICON_SIZE }, COLOR_NONE, 0);
 }
 
 /* The icon box of zone; with border, grown by the slot box border. */
@@ -258,7 +275,7 @@ static int bones_champion(uint16_t thing) { return junk_charges(thing); }
 void ui_draw_leader_hand_object_name(uint16_t thing)
 {
     Bitmap screen = ui_screen();
-    char buf[32];
+    char buf[BONES_NAME_SIZE];
     ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
     int16_t icon = object_get_icon_index(thing);
     const char *name = gfx_object_name(icon);
@@ -302,8 +319,8 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
             px -= kaos_s16(VIEWPORT_ORIGIN);
             py -= kaos_s16(VIEWPORT_ORIGIN + 2);
         } else if (x1 == INPUT_ZONE_CENTERED_VIEWPORT) {
-            px -= (int16_t)((SCREEN_W - viewport.w) / 2);
-            py -= (int16_t)((SCREEN_H - viewport.h) / 2);
+            px -= (SCREEN_W - viewport.w) / 2;
+            py -= (SCREEN_H - viewport.h) / 2;
         }
         if (buttons && ui_point_in_zone(x2, px, py)) return command;
     }

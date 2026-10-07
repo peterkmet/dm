@@ -164,7 +164,6 @@ enum {
 };
 
 enum { LIGHT_LEVELS = 6, LIGHT_DARKEST = LIGHT_LEVELS - 1 };
-enum { VIEWPORT_MAX_W = 224, VIEWPORT_MAX_H = 136 };
 
 /* set_square_aspect: what the view draws of a square. */
 typedef struct {
