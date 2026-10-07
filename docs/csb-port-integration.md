@@ -120,8 +120,8 @@ These items are not selection work. The CSB engine work item must check them.
 | `src/dmtools/mcp_server.py`: `INSTRUCTIONS` | "Dungeon Master (1987)", "find the Firestaff, defeat Lord Chaos", "recruit up to four champions from the mirrors in the Hall of Champions on the first level". |
 | `mcp_server.py`: `save_game` docstring | Names `DMGAME.DAT` and `DMGAME.BAK`. |
 | `mcp_server.py`: `new_game`, `load_game` | Names the same files in the descriptions. The socket commands use the loaded adventure, so the code needs no change. |
-| `src/dmtools/play.py` | The prog description "Dungeon Master control socket". The log folder `.playthrough`. The view and state text is generic. |
-| `docs/llm-playbook.md` | Playthrough rules for DM (goal, mirrors, `.playthrough/progress.md`). The save names in the "Save, load" lines are not file names. |
+| `src/dmtools/play.py` | The prog description "Dungeon Master control socket". The log folder `.playthroughs/current/coordinator`. The view and state text is generic. |
+| `docs/llm-playbook.md` | Playthrough rules for DM (goal, mirrors, `.playthroughs/current/player/progress.md`). The save names in the "Save, load" lines are not file names. |
 | `docs/llm-mode.md` | The sections "Prerequisites" (`game/`), the socket table (`save`, `load`, `new_game` name `DMGAME.DAT`, `Dungeon.DAT`), and "Saved games" (save directory is `game/`). |
 | `docs/superpowers/status.md` | The resume steps copy `DMGAME.DAT` to `game/`. |
 
