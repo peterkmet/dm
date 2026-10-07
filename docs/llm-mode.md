@@ -54,6 +54,16 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
    The server instructions and the tool descriptions tell the LLM how to play. A long playthrough uses `dm-play` and the player instructions instead: see [Runs and checkpoints](#runs-and-checkpoints).
 
+## Goal of the runs
+
+The runs measure how fast the LLM player gets better from run to run. To finish the game is the long-term goal, not the measure of one run.
+
+- Measure each run with `coordinator/level_stats.md`: the game time, the calls, and the tokens at the arrival on each level. Compare the run with the earlier runs.
+- Between sessions and between runs, you may change the player instructions: `docs/llm-playbook.md` and the headers in `playthroughs/template/`. Change them in small steps. Write each change, its reason, and the session where it starts in `coordinator/instruction_changes.md`, so that you can compare its effect.
+- Allowed changes: general rules about how to play and about the game, for example survival, fights, food and water, training, saves, the use of the commands, and how to keep the memory.
+- Not allowed: hints for this dungeon, for example a position, a map, the solution of a puzzle, where an item lies, which key opens which door, or the way to the next level. The player finds these itself.
+- The memory of an earlier run (maps, lessons) is the player's own knowledge, not a hint.
+
 ## Runs and checkpoints
 
 A run is one playthrough from a start save. All run folders are in `playthroughs/`. Only `playthroughs/template/` is in git, without its `DMGAME.DAT`.
@@ -68,6 +78,7 @@ playthroughs/
       session_costs.md          the cost of each session
       calls.log                 one line per dm-play call of the player
       level_stats.md            at the end of the run: game time, calls, and tokens at the arrival on each level
+      instruction_changes.md    each change of the player instructions: what, why, and from which session
     game/                       the live save of the run: `build/dm --saves playthroughs/current/game`
     saves/<name>/               a checkpoint: a save DMGAME.DAT and a copy of player/ in files/
   lego/                         the personal play folder: `make -C port lego`, then `playthroughs/lego/dm --data game --saves playthroughs/lego`
