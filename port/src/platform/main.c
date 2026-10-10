@@ -30,6 +30,7 @@
 #define ICON_TRANSPARENT_COLOR 4  /* the see-through color of the creature graphics */
 #define LOGO_FILE "SWSH.FTL"       /* the FTL logo, before the DM title */
 #define TITLE_FILE "TITL.DAT"      /* the DM title animation, before the entrance */
+#define DISK_IMAGE_EXTENSION ".adf" /* the original game disks, extracted at start */
 #define DEFAULT_CONTROL_SOCKET ".dm/control.sock" /* in the home directory */
 
 /* Loads the engine module and Graphics.DAT from dir. Returns 0 with a log line when a file is missing. */
@@ -332,6 +333,30 @@ static const char *adventure_dir(void)
     return data_override ? data_override : adventure_default_dir(ADVENTURE_DM);
 }
 
+/* Loads the game files of g_adventure from data after the check that they are the Amiga files. Returns 0 with a log line. */
+static int load_game_files(void)
+{
+    static const char *const titles[] = { "Dungeon Master v3.60", "Chaos Strikes Back" };
+    const char *bad = adventure_bad_file(g_adventure, data);
+    if (bad) return SDL_Log("%s/%s is missing or is not the file of %s for the Amiga", data, bad, titles[g_adventure]), 0;
+    if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
+    return 1;
+}
+
+/* Extracts a game disk image (.adf) of the current folder into its game folder, once. */
+static SDL_EnumerationResult SDLCALL install_disk(void *userdata, const char *dirname, const char *name)
+{
+    (void)userdata;
+    (void)dirname;
+    size_t len = strlen(name), ext = strlen(DISK_IMAGE_EXTENSION);
+    if (len <= ext || SDL_strcasecmp(name + len - ext, DISK_IMAGE_EXTENSION)) return SDL_ENUM_CONTINUE;
+    const char *dir = NULL;
+    int r = adventure_install_disk(name, &dir);
+    if (r > 0) SDL_Log("extracted %s into %s", name, dir);
+    if (r < 0) SDL_Log("cannot extract %s into %s", name, dir);
+    return SDL_ENUM_CONTINUE;
+}
+
 /* The choice of the CSB screen: NEW ADVENTURE starts the prison, RESUME loads CSBGAME.DAT. The game
    files and the game mode are loaded at the first start only. A failed resume shows the CSB screen
    again; in turn-based mode, load and new_game over the socket start the game. Returns 0 when the
@@ -346,7 +371,7 @@ static int start_csb(void)
     if (loaded_adventure != ADVENTURE_CSB) {
         SDL_Log("adventure csb, mode %s", game_mode_names[g_game_mode]);
         data = adventure_dir();
-        if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
+        if (!load_game_files()) return 0;
         if (saves) startend_set_save_dir(saves);
         loaded_adventure = ADVENTURE_CSB;
     }
@@ -373,7 +398,7 @@ static int start_adventure(void)
     if (g_adventure == ADVENTURE_CSB) return start_csb();
     SDL_Log("adventure dm, mode %s", game_mode_names[g_game_mode]);
     data = adventure_dir();
-    if (!gameloop_load_data(data)) return SDL_Log("cannot load the game files in %s", data), 0;
+    if (!load_game_files()) return 0;
     if (saves) startend_set_save_dir(saves);
     loaded_adventure = ADVENTURE_DM;
     if (!apply_mode()) return 0;
@@ -456,6 +481,7 @@ int main(int argc, char **argv)
     }
     /* DM_AUTO_ENTER, --show, and --view show no start screen: the mode is vanilla unless --mode says otherwise */
     if ((auto_enter || view || graphic >= 0) && mode_arg < 0) mode_arg = GAME_MODE_VANILLA;
+    SDL_EnumerateDirectory(".", install_disk, NULL);
     /* --data is the CSB folder only with --adventure csb */
     csb_dir = data_override && adventure == ADVENTURE_CSB ? data_override : adventure_default_dir(ADVENTURE_CSB);
     int csb_present = adventure_csb_present(csb_dir);

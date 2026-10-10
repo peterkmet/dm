@@ -321,7 +321,7 @@ def test_load_failure_leaves_no_control_socket(tmp_path):
     sock.unlink(missing_ok=True)
     result = run_dm("--mode", "turnbased", "--data", str(tmp_path / "missing"), "--control", str(sock))
     assert result.returncode == 1
-    assert "cannot load the game files" in result.stderr
+    assert "KAOS.FTL is missing or is not the file" in result.stderr
     assert not sock.exists()
 
 

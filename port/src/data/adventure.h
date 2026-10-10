@@ -27,5 +27,10 @@ const char *adventure_save_name(void);
 const char *adventure_backup_name(void);
 /* 1 when dir has the CSB files: APPB.FTL, Graphics.DAT, Dungeon.DAT, and disk-b/MINI.DAT. */
 int adventure_csb_present(const char *dir);
+/* The first game file in dir that is missing or differs from the Amiga disk of the adventure (CRC32), or NULL. */
+const char *adventure_bad_file(int16_t adventure, const char *dir);
+/* Extracts a game disk image into its default folder: DM, CSB disk A, or CSB disk B. Returns 1 and the folder in
+   *dir, 0 when the disk is no game disk or the folder has its files already, or -1 when the extraction fails. */
+int adventure_install_disk(const char *adf_path, const char **dir);
 
 #endif
