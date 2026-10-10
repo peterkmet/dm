@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- The game extracts the Amiga disk images (`.adf`) in the current folder into `game/`, `game-csb/`, and `game-csb/disk-b/` at start.
+- Before an adventure loads, the game checks the CRC32 of its required files against the Amiga disks and names the first wrong file.
+
+### Changed
+
+- The picture scales smoothly with the window size and follows a live resize.
+- `tools/make-dist.sh` no longer puts game files into the zip; the player adds the disk images.
+
 ## 0.14.1 - 2026-10-07
 
 ### Added

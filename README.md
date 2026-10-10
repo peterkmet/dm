@@ -89,6 +89,10 @@ make -C port
 
 Run the game. Dungeon Master needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/`. `--data DIR` selects another folder for the selected adventure.
 
+At start, the game extracts each `.adf` disk image in the current folder once: the Dungeon Master v3.60 disk to `game/`, CSB disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. A folder that already has the files stays as it is. Before an adventure loads, the CRC32 of its required files must match the Amiga disks; else the game logs the first wrong file and exits.
+
+`tools/make-dist.sh` builds `build/DungeonMaster.zip`: the game and SDL3 without game files. The player copies the disk images into the folder of the game.
+
 ```sh
 build/dm
 ```

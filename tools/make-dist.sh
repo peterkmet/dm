@@ -1,14 +1,11 @@
 #!/bin/bash
-# Build build/DungeonMaster.zip: the game, SDL3, game/ and game-csb/ without music and saves.
+# Build build/DungeonMaster.zip: the game and SDL3. The player adds the game disk images.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 make -C port
 out=build/dist/DungeonMaster
 rm -rf build/dist build/DungeonMaster.zip
 mkdir -p "$out"
-for d in game game-csb; do
-  rsync -a --exclude music --exclude .DS_Store --exclude '*GAME.DAT' --exclude '*GAME.BAK' --exclude QUICK.DAT "$d/" "$out/$d/"
-done
 cp build/dm "$out/dm"
 sdl="$(brew --prefix sdl3)/lib/libSDL3.0.dylib"
 cp -L "$sdl" "$out/libSDL3.0.dylib"
@@ -23,6 +20,12 @@ EOF
 chmod +x "$out/Dungeon Master.command"
 cat > "$out/README.txt" <<'EOF'
 Dungeon Master and Chaos Strikes Back for macOS (Apple Silicon).
+
+The game files are not included. Copy your Amiga disk images (.adf) into this folder:
+- Dungeon Master v3.60 (one disk).
+- Optional: Chaos Strikes Back for the Amiga, disks A and B.
+At the first start the game extracts them into game/ and game-csb/. Disks of other
+versions (DOS, Atari ST, other Amiga versions) do not work: the game names the wrong file.
 
 1. Open Terminal in this folder and remove the quarantine:
    xattr -d com.apple.quarantine dm "Dungeon Master.command" libSDL3.0.dylib
