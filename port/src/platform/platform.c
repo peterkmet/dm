@@ -23,6 +23,16 @@ static uint8_t pointer_px[POINTER_MAX * POINTER_MAX];
 static uint32_t pointer_argb[PALETTE_COLORS];
 static int pointer_w, pointer_h, pointer_hot_x, pointer_hot_y, mouse_x, mouse_y;
 
+static void render_frame(void);
+
+/* Redraws the last frame while macOS blocks the main loop during a live window resize. */
+static bool SDLCALL on_expose(void *userdata, SDL_Event *ev)
+{
+    (void)userdata;
+    if (ev->type == SDL_EVENT_WINDOW_EXPOSED && tex) render_frame();
+    return true;
+}
+
 int plat_init(int scale)
 {
     if (!SDL_Init(SDL_INIT_VIDEO) ||
@@ -31,6 +41,7 @@ int plat_init(int scale)
         SDL_Log("SDL: %s", SDL_GetError());
         return 0;
     }
+    SDL_AddEventWatch(on_expose, NULL);
     const char *name = SDL_getenv("DM_FILTER");
     if (!plat_set_filter(name ? plat_filter_factor(name) : 1)) return 0;
     next_tick = SDL_GetTicksNS() + TICK_NS;
@@ -55,7 +66,7 @@ int plat_set_filter(int factor)
         SDL_Log("SDL: %s", SDL_GetError());
         return 0;
     }
-    SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_NEAREST);
+    SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_PIXELART); /* even pixels at a fractional scale */
     return 1;
 }
 
@@ -112,7 +123,7 @@ static void draw_pointer(uint32_t *px, int stride)
 void plat_present(void)
 {
     uint32_t pal[2 * PALETTE_COLORS], *px;
-    int pitch, w, h, s, ox, oy, tw = SCREEN_W * filter;
+    int pitch, tw = SCREEN_W * filter;
     const uint8_t *src = filter == 1 ? &fb[0][0] : &big[0][0];
     if (filter == 2) scale2x(&fb[0][0], SCREEN_W, SCREEN_H, &big[0][0]);
     if (filter == 3) scale3x(&fb[0][0], SCREEN_W, SCREEN_H, &big[0][0]);
@@ -126,7 +137,14 @@ void plat_present(void)
     }
     draw_pointer(px, stride);
     SDL_UnlockTexture(tex);
+    render_frame();
+}
 
+/* Draws the frame texture letterboxed into the window. */
+static void render_frame(void)
+{
+    int w, h;
+    float s, ox, oy;
     SDL_GetCurrentRenderOutputSize(ren, &w, &h);
     video_layout(w, h, &s, &ox, &oy);
     SDL_FRect dst = { ox, oy, SCREEN_W * s, SCREEN_H * s };

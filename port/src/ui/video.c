@@ -1,3 +1,4 @@
+#include <math.h>
 #include "video.h"
 
 #define ARGB_OPAQUE 0xff000000u
@@ -23,11 +24,11 @@ uint32_t video_argb(uint16_t amiga)
     return ARGB_OPAQUE | (r * CHANNEL_4_TO_8_BITS) << ARGB_RED_SHIFT | (g * CHANNEL_4_TO_8_BITS) << ARGB_GREEN_SHIFT | b * CHANNEL_4_TO_8_BITS;
 }
 
-void video_layout(int out_w, int out_h, int *scale, int *ox, int *oy)
+void video_layout(int out_w, int out_h, float *scale, float *ox, float *oy)
 {
-    int sx = out_w / SCREEN_W, sy = out_h / SCREEN_H;
-    int s = sx < sy ? sx : sy;
-    if (s < 1) s = 1;
+    float sx = (float)out_w / SCREEN_W, sy = (float)out_h / SCREEN_H;
+    float s = sx < sy ? sx : sy;
+    if (s <= 0) s = 1; /* minimized window: avoid a zero scale */
     *scale = s;
     *ox = (out_w - SCREEN_W * s) / 2;
     *oy = (out_h - SCREEN_H * s) / 2;
@@ -37,8 +38,8 @@ static int clamp(int v, int max) { return v < 0 ? 0 : v > max ? max : v; }
 
 void video_map_mouse(int out_w, int out_h, int x, int y, int *gx, int *gy)
 {
-    int s, ox, oy;
+    float s, ox, oy;
     video_layout(out_w, out_h, &s, &ox, &oy);
-    *gx = clamp((x - ox) / s, SCREEN_W - 1);
-    *gy = clamp((y - oy) / s, SCREEN_H - 1);
+    *gx = clamp((int)floorf((x - ox) / s), SCREEN_W - 1);
+    *gy = clamp((int)floorf((y - oy) / s), SCREEN_H - 1);
 }
