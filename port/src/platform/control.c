@@ -13,6 +13,7 @@
 #include "adventure.h"
 #include "champion.h"
 #include "command.h"
+#include "crc32.h"
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
@@ -538,29 +539,11 @@ static const struct {
 
 /* Screenshot: fb as an RGB PNG with stored (uncompressed) deflate blocks. */
 
-#define CRC32_POLYNOMIAL 0xedb88320u   /* reflected CRC-32 of PNG */
 #define ZLIB_METHOD 0x78               /* deflate, 32 KB window */
 #define ZLIB_FLAGS 0x01                /* no dictionary; header check bits */
-#define BYTE_MASK 0xff
-#define CRC_TABLE_SIZE 256            /* one entry for each byte value */
 #define ADLER32_MODULUS 65521         /* the largest prime below 65536 */
 #define ADLER32_HIGH_SHIFT 16
 #define PNG_IHDR_SIZE 13
-
-static uint32_t crc_table[CRC_TABLE_SIZE];
-
-static uint32_t crc32_update(uint32_t crc, const uint8_t *p, size_t n)
-{
-    if (!crc_table[1])
-        for (uint32_t i = 0; i < CRC_TABLE_SIZE; i++) {
-            uint32_t c = i;
-            for (int k = 0; k < 8; k++) c = c & 1 ? CRC32_POLYNOMIAL ^ c >> 1 : c >> 1;
-            crc_table[i] = c;
-        }
-    crc = ~crc;
-    while (n--) crc = crc_table[(crc ^ *p++) & BYTE_MASK] ^ crc >> 8;
-    return ~crc;
-}
 
 static void png_chunk(FILE *f, const char *type, const uint8_t *data, uint32_t n)
 {
