@@ -6,6 +6,7 @@
 
 - The game extracts the Amiga disk images (`.adf`) in the current folder into `game/`, `game-csb/`, and `game-csb/disk-b/` at start.
 - Before an adventure loads, the game checks the CRC32 of its required files against the Amiga disks and names the first wrong file.
+- Windows build: `make -C port windows` (MinGW-w64) and `tools/make-dist-win.sh` for a Windows zip. No LLM mode on Windows.
 
 ### Changed
 
