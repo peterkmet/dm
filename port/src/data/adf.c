@@ -5,6 +5,12 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#define make_folder(path) _mkdir(path)
+#else
+#define make_folder(path) mkdir(path, ADF_DIR_MODE)
+#endif
 #include "adf.h"
 #include "adventure.h"
 #include "bytes.h"
@@ -99,10 +105,10 @@ static int make_folders(const char *path)
     for (char *s = p + 1; *s; s++) {
         if (*s != '/') continue;
         *s = '\0';
-        if (mkdir(p, ADF_DIR_MODE) && errno != EEXIST) return -1;
+        if (make_folder(p) && errno != EEXIST) return -1;
         *s = '/';
     }
-    return mkdir(p, ADF_DIR_MODE) && errno != EEXIST ? -1 : 0;
+    return make_folder(p) && errno != EEXIST ? -1 : 0;
 }
 
 /* Writes the file of a file header block: its data blocks in their chain. Returns 0, or -1. */
