@@ -74,6 +74,7 @@ typedef struct {
     bool ok;
 } BitReader;
 
+/* The next n bits of the compressed dungeon, high bit first; at the end of the data it clears ok. */
 static uint16_t get_bits(BitReader *b, int16_t n)
 {
     if (b->avail < n) {
@@ -105,6 +106,7 @@ bool dungeon_decompress(const uint8_t *src, int32_t src_size, uint8_t *dst, int3
     return b.ok;
 }
 
+/* Frees the loaded dungeon and clears its pointers. */
 static void dungeon_free(void)
 {
     while (block_count)
@@ -496,6 +498,7 @@ typedef struct {
     bool ok;
 } TextOut;
 
+/* Appends one character of a decoded text; a full buffer clears ok. */
 static void put(TextOut *o, char c)
 {
     if (o->p == o->end)

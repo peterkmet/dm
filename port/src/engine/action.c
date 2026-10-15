@@ -160,7 +160,7 @@ void action_decrement_charges(uint16_t champion_index)
             junk_set_charges(thing, junk_charges(thing) - 1);
         break;
     }
-    /* champion_draw_changed_object_icons: the interface redraws the icons from the slots. */
+    /* The interface redraws the changed object icons from the slots. */
 }
 
 /* War cry, blow horn, confuse, calm, brandish: the group in front flees when the influence roll beats its fear

@@ -99,6 +99,7 @@ static uint8_t *unpack(const uint8_t *p, size_t len, uint32_t *out_len)
     return out;
 }
 
+/* The 16-bit sum of the bytes of a section: the FTL checksum. */
 static uint16_t sum8(const uint8_t *p, size_t n)
 {
     uint32_t s = 0;

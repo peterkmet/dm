@@ -45,7 +45,7 @@ static int16_t get_zone_y(const uint8_t *r)
     return S16(r, 3);
 } /* or the height of a size record */
 
-/* init_layout: keeps the raw layout graphic. Returns 0 on success. */
+/* Keeps the raw layout graphic. Returns 0 on success. */
 int layout_init(void)
 {
     layout_data = gfx_get_item(GFX_LAYOUT, &layout_size);
@@ -57,7 +57,7 @@ int layout_init(void)
     return 0;
 }
 
-/* layout_find_zone: the 4-word record (type, parent, x, y) of zone n, or NULL. */
+/* The 4-word record (type, parent, x, y) of zone n, or NULL. */
 static const uint8_t *find(int16_t n)
 {
     if (!layout_data || n == 0)
@@ -221,7 +221,7 @@ static bool place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip
     return true;
 }
 
-/* get_zone: places an item of *w x *h pixels (0 = bitmap size) in zone and clips it to the
+/* Places an item of *w x *h pixels (0 = bitmap size) in zone and clips it to the
    parent rectangles. ZONE_SHIFTED adds *w, *h to the position and takes the bitmap size.
    On return *w, *h hold the source offset of the clipped box. Returns false when nothing is visible. */
 bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, int16_t *w, int16_t *h)
@@ -280,7 +280,7 @@ bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box,
     return box->w > 0 && box->h > 0;
 }
 
-/* get_zone_box_clipped: the box of zone with the size record of its parent, scaled by
+/* The box of zone with the size record of its parent, scaled by
    wp / ZONE_SCALE_FULL and hp / ZONE_SCALE_FULL. Returns 0 when nothing is visible. */
 int layout_get_zone_box(int16_t zone, int16_t wp, int16_t hp, Box *box)
 {

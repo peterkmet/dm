@@ -55,7 +55,7 @@ enum { STEP_FRACTION_BITS = 10, SAMPLE_FRACTION_BITS = 16, SAMPLE_ROUNDING = 0x7
 /* Scales the step to the 16 fraction bits of a sample at half-pixel positions. */
 enum { SAMPLE_STEP_SCALE = 1 << (SAMPLE_FRACTION_BITS - STEP_FRACTION_BITS - 1) };
 
-/* blit_shrink_with_palette_changes: samples the source at the pixel centers with the 16.16 step of
+/* Samples the source at the pixel centers with the 16.16 step of
    the original. Rows after the first sample one row higher, as the original does. */
 int draw_shrink(const Bitmap *src, int16_t dw, int16_t dh, const uint8_t *palette_changes, Bitmap *out)
 {

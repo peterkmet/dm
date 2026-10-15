@@ -26,7 +26,7 @@ void gameloop_start_loaded_game(void);
 void gameloop_continue_loaded_game(void);
 /* The light amount of the party: light sources in the hands and the light spells. */
 int16_t gameloop_party_light(void);
-/* set_dungeon_view_palette: sets the darkness from the party light. Returns the party light amount. */
+/* Sets the darkness of the dungeon view from the party light. Returns the party light amount. */
 int16_t gameloop_set_light(void);
 /* The dungeon view of the party in the light of the party (draw_dungeon_view). */
 void gameloop_draw_view(void);

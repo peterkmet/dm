@@ -322,21 +322,21 @@ const uint8_t *tables_pointer_planes(bool hand, int16_t *w, int16_t *h);
 
 /* Mouse input tables of COMMAND.C, in the order of their KAOS addresses. */
 enum {
-    UI_INPUT_INTERFACE,    /* g_mouse_input_interface */
-    UI_INPUT_MOVEMENT,     /* g_mouse_input_movement */
-    UI_INPUT_INVENTORY,    /* g_mouse_input_champion_inventory */
-    UI_INPUT_SLEEPING,     /* g_mouse_input_party_sleeping */
-    UI_INPUT_FROZEN,       /* g_mouse_input_frozen_game */
-    UI_INPUT_ACTION_NAMES, /* g_mouse_input_action_area_names */
-    UI_INPUT_ACTION_ICONS, /* g_mouse_input_action_area_icons */
-    UI_INPUT_SPELL_AREA,   /* g_mouse_input_spell_area */
-    UI_INPUT_STATUS_BOX,   /* g_mouse_input_champion_status_box */
-    UI_INPUT_CHEST,        /* g_mouse_input_panel_chest */
-    UI_INPUT_RESURRECT,    /* g_mouse_input_panel_resurrect_reincarnate */
-    UI_INPUT_NAME_ENTRY,   /* g_mouse_input_champion_name_entry */
+    UI_INPUT_INTERFACE,    /* the champion bars, the action and spell areas */
+    UI_INPUT_MOVEMENT,     /* the movement arrows and the dungeon view */
+    UI_INPUT_INVENTORY,    /* the open inventory */
+    UI_INPUT_SLEEPING,     /* the sleeping party: a click wakes it */
+    UI_INPUT_FROZEN,       /* the frozen game: a click goes on */
+    UI_INPUT_ACTION_NAMES, /* the action names of the action menu */
+    UI_INPUT_ACTION_ICONS, /* the action icons of the champions */
+    UI_INPUT_SPELL_AREA,   /* the runes and the cast button */
+    UI_INPUT_STATUS_BOX,   /* the status boxes of the champions */
+    UI_INPUT_CHEST,        /* the slots of an open chest */
+    UI_INPUT_RESURRECT,    /* the resurrect and reincarnate buttons */
+    UI_INPUT_NAME_ENTRY,   /* the keyboard of the champion name entry */
     UI_INPUT_ENTRANCE,     /* the entrance buttons */
     UI_INPUT_ENDGAME,      /* RESTART THIS GAME and QUIT of the endgame screen */
-    UI_INPUT_DIALOG_FIRST, /* g_dialog_mouse_inputs: + full screen * 4 + choice count - 1 */
+    UI_INPUT_DIALOG_FIRST, /* the dialog tables: + full screen * 4 + choice count - 1 */
     UI_INPUT_COUNT = UI_INPUT_DIALOG_FIRST + 8
 };
 /* Mouse input entry: a command (0 ends a table), a box x1-x2, y1-y2, and the buttons. A negative x1 marks a

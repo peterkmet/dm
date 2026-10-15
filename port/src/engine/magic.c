@@ -65,7 +65,7 @@ void magic_create_light_event(int16_t light_power, int16_t ticks)
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks), .type = EVENT_LIGHT, .b = light_power};
     timeline_add_event(&event);
-    /* set_dungeon_view_palette: the view step recomputes the palette from the light amount. */
+    /* The view step recomputes the dungeon palette from the light amount. */
 }
 
 /* The action hand is disabled for the ticks; an earlier disable is merged into one event 11. */

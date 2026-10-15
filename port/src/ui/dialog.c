@@ -21,7 +21,7 @@
 int16_t g_dialog_choice = DIALOG_NO_CHOICE;
 bool g_game_screen_inactive = true;
 
-/* dialog_draw_viewport: the viewport in the game, or centered on the inactive screen. */
+/* The viewport in the game, or centered on the inactive screen. */
 static void draw_viewport(void)
 {
     if (!g_game_screen_inactive) {

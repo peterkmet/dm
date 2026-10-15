@@ -72,10 +72,10 @@ int ui_init(void);
 
 /* Shared helpers (ui.c). */
 Bitmap ui_get_screen(void);
-Bitmap *ui_get_viewport(void); /* g_viewport_bitmap, 224 x 136 */
+Bitmap *ui_get_viewport(void); /* the dungeon view bitmap, 224 x 136 */
 /* The rank name that the eye panel shows for a skill level (NEOPHYTE ...), or NULL for level 1. */
 const char *ui_get_skill_rank_name(int16_t level);
-int ui_zone_box(int16_t zone, Box *box); /* get_zone_box */
+int ui_zone_box(int16_t zone, Box *box); /* the box of a layout zone on the screen */
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color);
 void ui_fill_zone_pattern(Bitmap *dst, int16_t zone, uint8_t color);
 void ui_xor_screen_zone(int16_t zone);
@@ -94,7 +94,7 @@ void ui_draw_message_area(void);
 void ui_extract_icon(int16_t icon, Bitmap *out); /* out->px holds 16 x 16 bytes */
 void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon);
 int16_t ui_get_icon_in_slot_box(int16_t slot_box);
-int ui_get_icon_zone_box(int16_t zone, int border, Box *box); /* get_slot_box_zone, _border_zone */
+int ui_get_icon_zone_box(int16_t zone, int border, Box *box); /* the box of a slot zone, with border the frame */
 bool ui_get_slot_box_zone(int16_t slot_box, int border, Box *box);
 void ui_draw_leader_hand_object_name(uint16_t thing);
 

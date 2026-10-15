@@ -44,7 +44,8 @@ enum { A_GROUP_INDEX = 0, A_BYTES = 2 };
 
 bool g_saved_game_exists;
 uint32_t g_last_save_game_time, g_last_load_game_time;
-static uint8_t header_extra[SAVE_HEADER_EXTRA_BYTES]; /* g_save_header_extra */
+static uint8_t header_extra
+    [SAVE_HEADER_EXTRA_BYTES]; /* the extra save header bytes of the loaded game, copied unchanged into the next save */
 
 /* Block 0: game time, random seed, party position, leader, and the timeline and group counts. */
 static void pack_globals(uint8_t *g)
@@ -171,7 +172,7 @@ static void unpack_active_group(const uint8_t *p, ActiveGroup *a)
 
 #define PORTRAIT_COLUMNS ((CHAMPION_PORTRAIT_WIDTH + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD)
 
-/* champion_portraits_to_interleaved: per row and per 16-pixel column, one word for each bit plane. */
+/* A portrait in the save: per row and per 16-pixel column, one word for each bit plane. */
 static void portrait_to_interleaved(const uint8_t *px, uint8_t *out)
 {
     for (int y = 0; y < CHAMPION_PORTRAIT_HEIGHT; y++)
@@ -187,7 +188,7 @@ static void portrait_to_interleaved(const uint8_t *px, uint8_t *out)
             }
 }
 
-/* champion_portraits_from_interleaved: the reverse of portrait_to_interleaved. */
+/* A portrait from the save: the reverse of portrait_to_interleaved. */
 static void portrait_from_interleaved(const uint8_t *in, uint8_t *px)
 {
     memset(px, 0, CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT);

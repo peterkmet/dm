@@ -223,7 +223,7 @@ bool startend_load_saved_game(void)
     }
 }
 
-/* endgame_print_text: capitals in the endgame font on the dark background. */
+/* Capitals in the endgame font on the dark background. */
 static void endgame_print_text(int x, int y, uint8_t color, const char *text)
 {
     char s[ENDGAME_TEXT_SIZE];
@@ -418,7 +418,7 @@ void startend_run_endgame(int16_t party_dead)
     g_return_to_entrance = true;
 }
 
-/* fuse_sequence_update: one game tick with the view and the sounds. */
+/* One game tick with the view and the sounds. */
 static void fuse_update(void)
 {
     event_process_expired();

@@ -6,8 +6,8 @@
 
 #define MESSAGE_ROWS        4
 #define MESSAGE_LAST_ROW    (MESSAGE_ROWS - 1)
-#define MESSAGE_ROW_HEIGHT  7   /* g_message_area_row_height */
-#define MESSAGE_ROW_WIDTH   320 /* g_message_area_row_bitmap_width */
+#define MESSAGE_ROW_HEIGHT  7   /* pixel rows of one message line */
+#define MESSAGE_ROW_WIDTH   320 /* pixels of one message line */
 #define MESSAGE_COLS        (MESSAGE_ROW_WIDTH / TEXT_CHAR_WIDTH)
 #define MESSAGE_LIFETIME    70 /* game ticks until a row expires */
 #define MESSAGE_NO_EXPIRY   UINT32_MAX

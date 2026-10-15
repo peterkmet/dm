@@ -74,6 +74,7 @@ static void put(Json *j, const char *text, size_t n)
     j->s[j->len] = 0;
 }
 
+/* Puts a comma before the next value unless it opens an object, a list, or follows a key. */
 static void separate(Json *j)
 {
     if (j->len && !strchr("{[:", j->s[j->len - 1]))
@@ -112,6 +113,7 @@ void json_int(Json *j, int64_t value)
     json_raw(j, buf);
 }
 
+/* A JSON string with the quote, backslash, and control characters escaped. */
 void json_str(Json *j, const char *text)
 {
     char buf[8];
@@ -165,6 +167,7 @@ static void tenths(Json *j, int64_t value)
     json_raw(j, buf);
 }
 
+/* A key with a list of two numbers, for example current and maximum health. */
 static void pair(Json *j, const char *key, int64_t a, int64_t b)
 {
     json_key(j, key);
@@ -269,6 +272,7 @@ static void action_list_json(Json *j, int16_t index)
     json_close(j, ']');
 }
 
+/* The rune names of a spell in progress. */
 static void runes_json(Json *j, const char *symbols, int count)
 {
     json_open(j, '[');
@@ -297,6 +301,7 @@ static void skills_json(Json *j, int16_t index)
     json_close(j, '}');
 }
 
+/* One champion: name, bars, statistics, skills, slots, and state. */
 static void champion_json(Json *j, int16_t index)
 {
     const Champion *champion = &g_champions[index];
@@ -403,6 +408,7 @@ static void spell_json(Json *j)
     json_close(j, '}');
 }
 
+/* The protocol name of the content of the inventory panel. */
 static const char *panel_name(void)
 {
     switch (g_panel_content) {
@@ -556,6 +562,7 @@ static int16_t visible_depths(void)
     return automap_get_visible_depths(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
 }
 
+/* The map square depth squares ahead of the party and side squares to the right. */
 static void view_square(int16_t depth, int16_t side, int16_t *x, int16_t *y)
 {
     *x = g_party_map_x;
@@ -637,6 +644,7 @@ static const char *const wall_ornament_names[] = {
 };
 enum { WALL_ORNAMENT_NAME_COUNT = ARRAY_COUNT(wall_ornament_names) };
 
+/* True for a wall sensor type that reacts to an object put on the wall. */
 static bool sensor_takes_object(uint16_t type)
 {
     switch (type) {
@@ -987,6 +995,7 @@ static bool is_seen(int16_t x, int16_t y)
     return false;
 }
 
+/* The character of square (x, y) of the party map in the text map. */
 static char map_char(int16_t x, int16_t y)
 {
     uint8_t square = dungeon_get_square(g_party_map_index, x, y);

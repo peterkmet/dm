@@ -59,8 +59,8 @@ enum {
     CHAMPION_ATTR_INVENTORY_ALL = 0x5f80, /* everything the inventory shows */
 };
 
-#define CHAMPION_PORTRAIT_WIDTH  32 /* g_portrait_width */
-#define CHAMPION_PORTRAIT_HEIGHT 29 /* g_portrait_height */
+#define CHAMPION_PORTRAIT_WIDTH  32 /* pixels of a champion portrait */
+#define CHAMPION_PORTRAIT_HEIGHT 29 /* rows of a champion portrait */
 /* The portrait bitmap of each champion (the portrait bitmap pointer at champion +0x114). */
 extern uint8_t g_champion_portraits[CHAMPION_MAX_COUNT][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 /* Copies portrait portrait_index of graphic 26 into the portrait of the champion. */

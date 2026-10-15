@@ -13,7 +13,7 @@
 #define KAOS_ARMOUR_INFO     0x1015b4
 #define KAOS_JUNK_WEIGHTS    0x10169c
 #define KAOS_FOOD_VALUES     0x1016d2
-#define KAOS_DOOR_INFO       0x1016e2 /* g_door_info[], high byte attributes */
+#define KAOS_DOOR_INFO       0x1016e2 /* door info per door type, high byte attributes */
 
 /* Spells and actions. */
 #define KAOS_SYMBOL_BASE_MANA_COST       0x103c66 /* uint8_t[4][6] */

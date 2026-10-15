@@ -77,6 +77,7 @@ static int each_entry(const uint8_t *img, const uint8_t *folder, EntryVisit visi
     return 0;
 }
 
+/* True for a file (not a folder) of the disk with the name in ctx, without case. */
 static int match_name(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
 {
     (void)img;
@@ -142,6 +143,7 @@ bool adf_is_safe_name(const char *name)
     return true;
 }
 
+/* Writes one file of the disk into the target folder, or makes a folder and extracts its entries. */
 static int extract_entry(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
 {
     const ExtractTarget *at = ctx;

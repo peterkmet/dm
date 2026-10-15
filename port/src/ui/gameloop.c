@@ -112,6 +112,7 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
     return shown;
 }
 
+/* The entrance palette over the whole screen. */
 static void set_entrance_palette(void)
 {
     tables_palette(TABLES_PALETTE_ENTRANCE, palette);
@@ -128,7 +129,7 @@ void entrance_draw(void)
     draw_entrance_doors(NULL, 0);
 }
 
-/* process_entrance: ENTER or RESUME shows its pressed button, plays the switch sound, and waits 20 frames. */
+/* ENTER or RESUME shows its pressed button, plays the switch sound, and waits 20 frames. */
 void entrance_press_button(int resume)
 {
     enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20 };
@@ -147,7 +148,7 @@ void entrance_press_button(int resume)
     wait_frames(BUTTON_FRAMES);
 }
 
-/* entrance_open_doors: after ENTER the doors slide apart, 2 pixels each 2 frames, over the dungeon view
+/* After ENTER the doors slide apart, 2 pixels each 2 frames, over the dungeon view
    in the entrance palette. The door sound plays at the start and every 40 frames.
    ponytail: the original draws a made-up corridor; this draws the view of the start square. */
 void entrance_open_doors(void)
@@ -271,7 +272,7 @@ static void refresh_interface(void)
     ui_draw_message_area();
 }
 
-/* start_game, the part for both a new and a loaded game: interface state and input. */
+/* The start of a game, the part for both a new and a loaded game: interface state and input. */
 static void start_game(void)
 {
     g_candidate_champion_ordinal = 0;
@@ -470,7 +471,7 @@ static void draw_spell_area_before_last_death(const Champion *before)
     g_champions[caster] = dead;
 }
 
-/* game_loop: one tick of the game. A dead party ends in the endgame. */
+/* One tick of the game. A dead party ends in the endgame. */
 void gameloop_tick(void)
 {
     frames_waiting = 0;
@@ -596,6 +597,7 @@ bool gameloop_get_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *
     return true;
 }
 
+/* The palette of the mouse pointer. */
 const uint16_t *gameloop_get_pointer_palette(void)
 {
     static uint16_t colors[PALETTE_COLORS];

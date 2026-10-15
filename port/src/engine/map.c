@@ -144,6 +144,7 @@ uint16_t map_get_square_first_object(int16_t x, int16_t y)
     return thing;
 }
 
+/* Adds delta to the first-thing index of each map column after column x: a square list was added or removed. */
 static void add_to_later_columns(int16_t x, int16_t delta)
 {
     int16_t global_x = x + g_dungeon_map_first_column[g_current_map_index];
@@ -239,6 +240,7 @@ void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_
     thing_set_next(thing, THING_ENDOFLIST);
 }
 
+/* The first group on square (x, y), or THING_ENDOFLIST. */
 uint16_t map_get_square_group(int16_t x, int16_t y)
 {
     uint16_t thing = map_get_square_first_thing(x, y);

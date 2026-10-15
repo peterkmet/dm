@@ -41,7 +41,7 @@ enum {
 #define SAVE_PAYLOAD_WORDS      128
 #define SAVE_PORTRAIT_BYTES     464 /* ((32 + 15) & ~15) / 2 * 29 */
 #define SAVE_PORTRAITS_BYTES    (4 * SAVE_PORTRAIT_BYTES)
-#define SAVE_HEADER_EXTRA_BYTES 134 /* g_save_header_extra, copied unchanged; CSB has 132 */
+#define SAVE_HEADER_EXTRA_BYTES 134 /* extra header bytes, copied unchanged; CSB has 132 */
 
 /* All buffers keep the big-endian byte layout of the original memory. */
 typedef struct {

@@ -166,7 +166,7 @@ enum {
 enum { BUTTON_D3R, BUTTON_D3C, BUTTON_D2C, BUTTON_D1C }; /* door button views */
 enum { DOOR_DEPTH_D3, DOOR_DEPTH_D2, DOOR_DEPTH_D1, DOOR_DEPTHS };
 enum { DOOR_TYPES = 2 };
-enum { ALCOVE_ORNAMENT_COUNT = 3 }; /* g_alcove_ornament_indices */
+enum { ALCOVE_ORNAMENT_COUNT = 3 }; /* wall ornaments that are alcoves */
 enum { DOOR_ANIMATED = 0x400 };     /* door info attribute: the door mirrors at random on each draw */
 
 /* Ornaments: ordinal = index + 1, 0 = none. */
@@ -210,7 +210,7 @@ enum {
 
 enum { LIGHT_LEVELS = 6, LIGHT_DARKEST = LIGHT_LEVELS - 1 };
 
-/* set_square_aspect: what the view draws of a square. */
+/* What the view draws of a square. */
 typedef struct {
     uint16_t element;     /* square type, or a door or stairs element */
     uint16_t square;      /* square byte */
@@ -224,30 +224,30 @@ typedef struct {
             uint16_t state, door, floor_ornament;
         }; /* door state, pit invisible, stairs up; door thing */
     };
-    uint16_t text;     /* g_inscription_thing */
-    uint16_t portrait; /* g_champion_portrait_ordinal */
+    uint16_t text;     /* the text thing of an inscription on the wall */
+    uint16_t portrait; /* a champion portrait on the wall: portrait index + 1, or 0 */
 } Aspect;
 
 typedef struct {
     int16_t graphic, coord; /* first graphic, coordinate set */
 } Ornament;
 
-static Bitmap viewport;                              /* g_viewport_bitmap */
+static Bitmap viewport;                              /* the dungeon view bitmap */
 static int16_t view_map = -1, map_width, map_height; /* current map and its size */
-static int16_t wall_set_ids[WS_COUNT];               /* g_wall_set_layout_ids, swapped for mirrored views */
+static int16_t wall_set_ids[WS_COUNT];               /* layout ids of the wall set, swapped for mirrored views */
 static int16_t slot_graphics[LAYOUT_SLOTS];          /* graphic of each layout bitmap slot */
 static uint8_t slot_flip[LAYOUT_SLOTS];              /* slot holds the mirrored graphic */
 static Ornament wall_ornaments[MAP_ORNAMENTS], floor_ornaments[MAP_ORNAMENTS],
     door_ornaments[DOOR_ORNAMENT_THIEVES_EYE];
 static int16_t alcoves[ALCOVE_ORNAMENT_COUNT], inscription, stairs, door_graphics[DOOR_DEPTHS][DOOR_TYPES];
 static uint16_t door_type_attributes[DOOR_TYPES];
-static int16_t use_flipped_walls, zone_relative_x,
-    zone_relative_y; /* g_use_flipped_wall_bitmaps, g_zone_relative_x/y */
+static int16_t use_flipped_walls;                /* the view draws the mirrored wall set */
+static int16_t zone_relative_x, zone_relative_y; /* the relative position that a zone passes to layout_get_zone */
 static uint16_t dungeon_palettes[LIGHT_LEVELS]
-                                [PALETTE_COLORS]; /* g_dungeon_palettes with the creature replacement colors */
+                                [PALETTE_COLORS]; /* the dungeon palettes with the creature replacement colors */
 static uint8_t creature_palette_changes_d3[PALETTE_COLORS],
-    creature_palette_changes_d2[PALETTE_COLORS]; /* g_palette_changes_creature_d3/d2 of the map */
-static Box drawn_box;                            /* g_drawn_box: the box of the last draw_bitmap_in_zone */
+    creature_palette_changes_d2[PALETTE_COLORS]; /* the D3 and D2 creature palette changes of the map */
+static Box drawn_box;                            /* the box of the last draw_bitmap_in_zone */
 
 /* Smooth projectile flight (advanced feature, no rule change): the box of each projectile at the
    last tick and at the tick before. Between ticks the view is drawn with each projectile part of the
@@ -303,7 +303,7 @@ static bool is_alcove(int16_t i)
     return i >= 0 && (i == alcoves[0] || i == alcoves[1] || i == alcoves[2]);
 }
 
-/* get_random_ornament_ordinal: a pseudo-random ornament ordinal (0: none) from the square position. */
+/* A pseudo-random ornament ordinal (0: none) from the square position. */
 static uint16_t get_random_ornament_ordinal(int allowed, int16_t count, int16_t x, int16_t y)
 {
     if (!allowed)
@@ -441,7 +441,7 @@ static void draw_wall_bitmap(int16_t id, int16_t zone, int mode)
         draw_blit(bm, w + sx, h + sy, &viewport, &b, mode == BLIT_OPAQUE ? -1 : TRANSPARENT_COLOR, flip);
 }
 
-/* draw_bitmap_in_zone. ZONE_SHIFTED or ZONE_SIZED pass g_zone_relative_x/y to layout_get_zone: a shift, or
+/* ZONE_SHIFTED or ZONE_SIZED pass zone_relative_x/y to layout_get_zone: a shift, or
    the item size. Returns true and sets drawn_box (g_drawn_box) when it drew. */
 static bool draw_bitmap_in_zone(const Bitmap *bm, Bitmap *dst, int16_t zone, int flip, int16_t transparent)
 {
@@ -662,6 +662,8 @@ typedef struct {
     int16_t size;
 } Group;
 
+/* The creature type, cells, directions, and poses of a group for the view: from its active group on the party map,
+   else from the group record. */
 static void load_group_aspect(uint16_t thing, Group *s)
 {
     uint8_t index = rec_group_cells_byte(thing);
@@ -861,6 +863,7 @@ static void end_projectile(uint16_t thing, int drawn)
     tracks[track_count++] = (ProjectileTrack){thing, last ? last->to : drawn_box, drawn_box};
 }
 
+/* True when a projectile of the last view moved between the last two ticks. */
 bool view_has_moving_projectiles(void)
 {
     for (int i = 0; i < track_count; i++)
@@ -1256,7 +1259,7 @@ static void draw_wall_portrait(int16_t champion)
                   PORTRAIT_TRANSPARENT, 0);
 }
 
-/* draw_wall_ornament: the ornament or inscription on a view wall, and on the D1C wall the champion
+/* The ornament or inscription on a view wall, and on the D1C wall the champion
    portrait and the facing flags. Returns 1 for an alcove. */
 static int draw_wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
 {
@@ -1315,7 +1318,7 @@ static int draw_wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
     return alcove;
 }
 
-/* draw_floor_ornament: the floor ornament on a floor view; FLOOR_ORNAMENT_WITH_FOOTPRINTS adds the footprints. */
+/* The floor ornament on a floor view; FLOOR_ORNAMENT_WITH_FOOTPRINTS adds the footprints. */
 static void draw_floor_ornament(uint16_t ordinal, int16_t view)
 {
     if (!ordinal)
@@ -1334,7 +1337,7 @@ static void draw_floor_ornament(uint16_t ordinal, int16_t view)
         draw_floor_ornament(FLOOR_ORNAMENT_FOOTPRINTS + 1, view);
 }
 
-/* draw_door_ornament: an ornament or mask on the door bitmap, scaled for D3 and D2. */
+/* An ornament or mask on the door bitmap, scaled for D3 and D2. */
 static void draw_door_ornament(uint16_t ordinal, int16_t depth, Bitmap *draw_door)
 {
     if (!ordinal)
@@ -1356,7 +1359,7 @@ static void draw_door_ornament(uint16_t ordinal, int16_t depth, Bitmap *draw_doo
     free(own.px);
 }
 
-/* draw_door_button: the button beside a door. The D1C button is clickable. */
+/* The button beside a door. The D1C button is clickable. */
 static void draw_door_button(int16_t view)
 {
     Bitmap own = {0};
@@ -1375,7 +1378,7 @@ static void draw_door_button(int16_t view)
     free(own.px);
 }
 
-/* draw_door: a copy of the door graphic with its ornaments, placed by the door state. A door that does not
+/* A copy of the door graphic with its ornaments, placed by the door state. A door that does not
    move vertically opens as two halves that slide apart. */
 static void draw_door(uint16_t door_thing, int16_t state, int16_t view)
 {
@@ -1431,7 +1434,7 @@ static int16_t get_location_after_level_change(int16_t from, int16_t delta, int1
     return -1;
 }
 
-/* draw_ceiling_pit: the hole of an open pit on the map above. */
+/* The hole of an open pit on the map above. */
 static void draw_ceiling_pit(int16_t graphic, int16_t zone, int16_t x, int16_t y, int mode)
 {
     int16_t m = get_location_after_level_change(view_map, LEVEL_UP, &x, &y);
@@ -2008,7 +2011,7 @@ static void d0c(int16_t dir, int16_t x, int16_t y)
         draw_teleporter_field(VIEW_SQUARE_D0C, ZONE_WALL_D0C);
 }
 
-/* apply_creature_replacement_colors: color 9 or 10 of the 6 light palettes and of the creature
+/* Color 9 or 10 of the 6 light palettes and of the creature
    palette changes from replacement set n. */
 enum { COLOR_CREATURE_1 = 9, COLOR_CREATURE_2 = 10, REPLACEMENT_DEFAULT_1 = 8, REPLACEMENT_DEFAULT_2 = 12 };
 enum {
@@ -2016,6 +2019,7 @@ enum {
     REPLACEMENT_SET_SHIFT = 4
 }; /* creature aspect byte: set of color 9, then of color 10 */
 
+/* Puts replacement color set n of a creature type into color of the dungeon palettes and the D2 and D3 changes. */
 static void set_creature_replacement_colors(int16_t color, int16_t n)
 {
     for (int l = 0; l < LIGHT_LEVELS; l++) /* a color per light level, then the D2 and D3 color */
@@ -2045,7 +2049,7 @@ static void set_slot(int entry, int16_t graphic, int flip)
    mirrored graphic. */
 static void load_wall_set(int16_t floor_set, int16_t wall_set)
 {
-    /* copy_wall_bitmap_and_flip_horizontal: the mirrored entries hold the mirror of these walls */
+    /* The mirrored entries hold the mirror of these walls */
     static const uint8_t mirrored_walls[WALL_COUNT] = {
         WS_WALL_D0L, WS_WALL_D0R, WS_WALL_D1L,  WS_WALL_D1R,  WS_WALL_D1C, WS_WALL_D2L2, WS_WALL_D2R2, WS_WALL_D2L,
         WS_WALL_D2R, WS_WALL_D2C, WS_WALL_D3L2, WS_WALL_D3R2, WS_WALL_D3L, WS_WALL_D3R,  WS_WALL_D3C,
@@ -2064,7 +2068,8 @@ static void load_wall_set(int16_t floor_set, int16_t wall_set)
     set_slot(WS_DOOR_FRAME_TOP_D1C, first + WALLSET_DOOR_FRAME_TOP_D1, 0);
     set_slot(WS_DOOR_FRAME_TOP_D2C, first + WALLSET_DOOR_FRAME_TOP_D2, 0);
     set_slot(WS_DOOR_FRAME_RIGHT_D1C, first + WALLSET_DOOR_FRAME_D1C, 1);
-    set_slot(WS_DOOR_FRAME_TOP_D2R, first + WALLSET_DOOR_FRAME_TOP_D2, 0); /* layout_share_bitmap */
+    set_slot(WS_DOOR_FRAME_TOP_D2R, first + WALLSET_DOOR_FRAME_TOP_D2,
+             0); /* the same bitmap as the D2C door frame top */
     set_slot(WS_DOOR_FRAME_TOP_D2L, first + WALLSET_DOOR_FRAME_TOP_D2, 0);
     set_slot(WS_DOOR_FRAME_TOP_D1R, first + WALLSET_DOOR_FRAME_TOP_D1, 0);
     set_slot(WS_DOOR_FRAME_TOP_D1L, first + WALLSET_DOOR_FRAME_TOP_D1, 0);
@@ -2171,7 +2176,7 @@ void view_load_map(int16_t m)
     load_creature_colors(creature_types, creature_type_count);
 }
 
-/* set_dungeon_view_palette: the darkness of the party light amount on map m (a map of difficulty 0 is
+/* The darkness of the party light amount on map m (a map of difficulty 0 is
    always bright) for the view and the creature rules. */
 void view_set_light(int16_t m, int16_t amount)
 {
@@ -2187,14 +2192,14 @@ void view_set_light(int16_t m, int16_t amount)
         g_dungeon_view_palette_index++;
 }
 
-/* update_map_coordinates_after_relative_movement: the square forward and right of (x, y) in direction dir. */
+/* The square forward and right of (x, y) in direction dir. */
 static void get_relative_square(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_t *y)
 {
     *x += forward * tables_step_east(dir) + right * tables_step_east(turn_right(dir));
     *y += forward * tables_step_north(dir) + right * tables_step_north(turn_right(dir));
 }
 
-/* draw_dungeon_view: ceiling, floor, the objects of D4, then the 16 squares back to front, then draw_viewport. */
+/* Ceiling, floor, the objects of D4, then the 16 squares back to front, then draw_viewport. */
 int16_t view_get_wall_ornament(int16_t x, int16_t y, int16_t face)
 {
     Aspect a;
@@ -2530,6 +2535,7 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
         map_set_current_map(saved_map);
 }
 
+/* Draws the dungeon view of square (x, y) in direction dir: ceiling and floor, D4, then the squares back to front. */
 void view_draw(int16_t dir, int16_t x, int16_t y)
 {
     static void (*const squares[DRAWN_SQUARE_COUNT])(int16_t, int16_t, int16_t) = {
