@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, clear_folder_hooks, game_sources, set_folder_hooks
 from test_creatures import TimelineEvent
 
 ROOT = Path(__file__).parent.parent
@@ -60,8 +60,11 @@ def lib(tmp_path_factory):
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
+    hooks = set_folder_hooks(lib)
     yield lib
     lib.anim_close()
+    clear_folder_hooks(lib)
+    del hooks
     c16.in_dll(lib, "g_adventure").value = DM
 
 

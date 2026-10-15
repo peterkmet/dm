@@ -1,8 +1,6 @@
-#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include "anim.h"
 #include "adventure.h"
 #include "bytes.h"
@@ -10,6 +8,7 @@
 #include "ftl.h"
 #include "graphics.h"
 #include "music.h"
+#include "os.h"
 #include "sound.h"
 #include "startend.h"
 #include "ui.h"
@@ -91,6 +90,18 @@ void anim_close(void)
     music_count = music_started = 0;
 }
 
+typedef struct {
+    const char *wanted;
+    char match[PATH_SIZE]; /* the first name in the folder that equals wanted without case, or empty */
+} NameSearch;
+
+static void keep_first_match(const char *name, void *data)
+{
+    NameSearch *search = data;
+    if (!search->match[0] && !os_compare_names(name, search->wanted))
+        snprintf(search->match, sizeof search->match, "%s", name);
+}
+
 /* Reads the file name relative to the animation folder. AmigaDOS ignores the case of the names. */
 static uint8_t *read_file_any_case(const char *name, size_t *len)
 {
@@ -99,14 +110,10 @@ static uint8_t *read_file_any_case(const char *name, size_t *len)
     for (const char *p = name; *p;) {
         size_t n = strcspn(p, "/");
         snprintf(part, sizeof part, "%.*s", (int)n, p);
-        DIR *d = opendir(path);
-        struct dirent *e;
-        while (d && (e = readdir(d)) && strcasecmp(e->d_name, part))
-            ;
+        NameSearch search = {part, ""};
+        os_list_folder(path, keep_first_match, &search);
         size_t used = strlen(path);
-        snprintf(path + used, sizeof path - used, "/%s", d && e ? e->d_name : part);
-        if (d)
-            closedir(d);
+        snprintf(path + used, sizeof path - used, "/%s", search.match[0] ? search.match : part);
         p += n + (p[n] == '/');
     }
     return read_file(path, len);

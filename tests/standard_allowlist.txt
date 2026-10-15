@@ -45,6 +45,3 @@ packed engine/game.c open: module cleanup
 packed engine/projectile.c open: module cleanup
 packed data/graphics.c open: module cleanup
 packed engine/random.c open: module cleanup
-platform engine/map.c open: module cleanup
-platform data/adf.c open: module cleanup
-platform ui/anim.c open: module cleanup

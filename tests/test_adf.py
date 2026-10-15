@@ -10,6 +10,7 @@ from amitools.fs.ADFSVolume import ADFSVolume
 from amitools.fs.blkdev.BlkDevFactory import BlkDevFactory
 from amitools.fs.FSString import FSString
 
+from conftest import clear_folder_hooks, set_folder_hooks
 from dmtools.extract import extract
 
 ROOT = Path(__file__).parent.parent
@@ -33,7 +34,10 @@ def lib():
     lib.adf_has_file.restype = ctypes.c_bool
     lib.adventure_bad_file.restype = ctypes.c_char_p
     lib.adventure_bad_file.argtypes = [ctypes.c_int16, ctypes.c_char_p]
-    return lib
+    hooks = set_folder_hooks(lib)
+    yield lib
+    clear_folder_hooks(lib)
+    del hooks
 
 
 def make_adf(path):

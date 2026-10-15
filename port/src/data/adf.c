@@ -1,20 +1,12 @@
-#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
-#include <sys/stat.h>
-#ifdef _WIN32
-#include <direct.h>
-#define make_folder(path) _mkdir(path)
-#else
-#define make_folder(path) mkdir(path, ADF_DIR_MODE)
-#endif
 #include "adf.h"
 #include "adventure.h"
 #include "bytes.h"
 #include "ftl.h"
+#include "os.h"
 
 /* Layout of the Amiga Old File System on a double-density floppy. Offsets are bytes in a block. */
 #define ADF_BLOCK_SIZE        512
@@ -41,7 +33,6 @@
 #define ADF_DATA_OFFSET       24
 #define ADF_DATA_MAX          (ADF_BLOCK_SIZE - ADF_DATA_OFFSET)
 #define ADF_FOLDER_DEPTH      8 /* deeper folders mean a broken image */
-#define ADF_DIR_MODE          0755
 
 typedef int (*EntryVisit)(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx);
 
@@ -88,7 +79,7 @@ static int each_entry(const uint8_t *img, const uint8_t *folder, EntryVisit visi
 static int match_name(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
 {
     (void)img;
-    return (int32_t)BE32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER && !strcasecmp(name, ctx);
+    return (int32_t)BE32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER && !os_compare_names(name, ctx);
 }
 
 bool adf_has_file(const char *adf_path, const char *name)
@@ -108,11 +99,11 @@ static int make_folders(const char *path)
         if (*s != '/')
             continue;
         *s = '\0';
-        if (make_folder(p) && errno != EEXIST)
+        if (!os_make_folder(p))
             return -1;
         *s = '/';
     }
-    return make_folder(p) && errno != EEXIST ? -1 : 0;
+    return os_make_folder(p) ? 0 : -1;
 }
 
 /* Writes the file of a file header block: its data blocks in their chain. Returns 0, or -1. */

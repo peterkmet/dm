@@ -2,9 +2,6 @@
 #include "dungeon.h"
 #include "game.h"
 #include "tables.h"
-#ifndef _WIN32
-#include <execinfo.h> /* the backtrace of the square list guard; Windows has none */
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -163,11 +160,6 @@ static void report_free_record(const char *action, int16_t x, int16_t y)
 {
     fprintf(stderr, "square list guard: %s, map %d (%d,%d), game time %lu\n", action, g_current_map_index, x, y,
             (unsigned long)g_game_time);
-#ifndef _WIN32
-    enum { BACKTRACE_FRAMES = 16 };
-    void *frames[BACKTRACE_FRAMES];
-    backtrace_symbols_fd(frames, backtrace(frames, BACKTRACE_FRAMES), 2);
-#endif
 }
 
 /* x >= 0: append the thing to the list of square (x, y). x < 0: append it to the list that starts at list. */

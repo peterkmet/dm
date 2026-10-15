@@ -15,6 +15,7 @@
 #include "layout.h"
 #include "map.h"
 #include "music.h"
+#include "os.h"
 #include "platform.h"
 #include "tables.h"
 #include "view.h"
@@ -349,6 +350,32 @@ static int entrance_frame(const char *data)
     return 1;
 }
 
+/* The folder hook of data/: makes the folder and its parents. */
+static bool make_folder(const char *path)
+{
+    return SDL_CreateDirectory(path);
+}
+
+typedef struct {
+    void (*found)(const char *name, void *data);
+    void *data;
+} FolderVisit;
+
+static SDL_EnumerationResult SDLCALL visit_name(void *userdata, const char *dirname, const char *fname)
+{
+    (void)dirname;
+    const FolderVisit *visit = userdata;
+    visit->found(fname, visit->data);
+    return SDL_ENUM_CONTINUE;
+}
+
+/* The folder hook of data/: calls found for each name in the folder. */
+static void list_folder(const char *path, void (*found)(const char *name, void *data), void *data)
+{
+    FolderVisit visit = {found, data};
+    SDL_EnumerateDirectory(path, visit_name, &visit);
+}
+
 static const char *const game_mode_names[] = {"vanilla", "advanced", "turnbased"};
 
 /* The game mode of a --mode value, or -1. */
@@ -598,6 +625,8 @@ int main(int argc, char **argv)
     /* DM_AUTO_ENTER, --show, and --view show no start screen: the mode is vanilla unless --mode says otherwise */
     if ((auto_enter || view || graphic >= 0) && mode_arg < 0)
         mode_arg = GAME_MODE_VANILLA;
+    g_os_make_folder_hook = make_folder;
+    g_os_list_folder_hook = list_folder;
     SDL_EnumerateDirectory(".", install_disk, NULL);
     /* --data is the CSB folder only with --adventure csb */
     csb_dir = data_override && adventure == ADVENTURE_CSB ? data_override : adventure_default_dir(ADVENTURE_CSB);
