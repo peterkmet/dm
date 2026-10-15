@@ -178,9 +178,11 @@ void ui_draw_champion_damage(int16_t champion_index, int16_t damage)
 static void draw_icon(uint16_t champion_index)
 {
     const Champion *c = &g_champions[champion_index];
-    int16_t w = tables_champion_icon_width(), h = tables_champion_icon_height();
+    int16_t w = tables_champion_icon_width();
+    int16_t h = tables_champion_icon_height();
     uint8_t px[CHAMPION_ICON_MAX * CHAMPION_ICON_MAX];
-    Bitmap bm = {w, h, px}, screen = ui_screen();
+    Bitmap bm = {w, h, px};
+    Bitmap screen = ui_screen();
     const Bitmap *icons = gfx_bitmap(GFX_CHAMPION_ICONS);
     bool invisible = g_party.event71_count_invisibility != 0;
     if (w * h > (int)sizeof px)
@@ -207,7 +209,8 @@ Bitmap ui_champion_portrait(int16_t champion_index)
 /* Draws the portrait in the status box while the inventory is open. */
 void ui_draw_status_box_portrait(int16_t champion_index)
 {
-    Bitmap screen = ui_screen(), portrait = ui_champion_portrait(champion_index);
+    Bitmap screen = ui_screen();
+    Bitmap portrait = ui_champion_portrait(champion_index);
     int16_t zone = ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index;
     Box b;
     if (!ui_zone_box(zone, &b))
@@ -230,8 +233,8 @@ static void draw_inventory_statistics(uint16_t champion_index)
     value_pair(ZONE_HEALTH_VALUE + 1, c->current_stamina / STAMINA_DISPLAY_UNIT,
                c->maximum_stamina / STAMINA_DISPLAY_UNIT); /* stamina shows in tenths */
     value_pair(ZONE_HEALTH_VALUE + 2, c->current_mana, c->maximum_mana);
-    int16_t mouth = c->food < 0 || c->water < 0 || c->poison_event_count ? GFX_SLOT_BOX_WOUNDED : GFX_SLOT_BOX_NORMAL,
-            eye = GFX_SLOT_BOX_NORMAL;
+    int16_t mouth = c->food < 0 || c->water < 0 || c->poison_event_count ? GFX_SLOT_BOX_WOUNDED : GFX_SLOT_BOX_NORMAL;
+    int16_t eye = GFX_SLOT_BOX_NORMAL;
     if (ui_icon_zone_box(ZONE_MOUTH, 1, &b))
         ui_blit_graphic_box(vp, mouth, &b, COLOR_DARKEST_GRAY);
     for (int s = STAT_STRENGTH; s <= STAT_ANTIFIRE; s++)
@@ -432,7 +435,8 @@ void ui_draw_panel(void)
 /* The position of zone (a 1 x 1 box). */
 static void zone_point(int16_t zone, int16_t *x, int16_t *y)
 {
-    int16_t w = 1, h = 1;
+    int16_t w = 1;
+    int16_t h = 1;
     Box b = {0};
     layout_get_zone(zone, 0, 0, &b, &w, &h);
     *x = b.x;
@@ -470,7 +474,8 @@ void ui_draw_champion_skills_and_statistics(void)
     }
     zone_point(ZONE_PANEL_STATISTICS, &vx, &y);
     for (int k = STAT_STRENGTH; k <= STAT_ANTIFIRE; k++) {
-        uint8_t cur = c->statistics[k][STAT_CURRENT], max = c->statistics[k][STAT_MAXIMUM];
+        uint8_t cur = c->statistics[k][STAT_CURRENT];
+        uint8_t max = c->statistics[k][STAT_MAXIMUM];
         text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(tables_statistic_text(k)));
         text_draw(vp, vx, y,
                   cur < max   ? COLOR_RED
@@ -487,7 +492,8 @@ void ui_draw_champion_skills_and_statistics(void)
    inventory background, labels, all slots, and the champion state. Sets g_inventory_champion_ordinal. */
 void ui_draw_inventory_open(int16_t champion_index)
 {
-    Bitmap screen = ui_screen(), *vp = ui_viewport();
+    Bitmap screen = ui_screen();
+    Bitmap *vp = ui_viewport();
     const Bitmap *bg = gfx_bitmap(GFX_INVENTORY);
     if (!g_inventory_champion_ordinal)
         ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
@@ -557,8 +563,12 @@ static void attributes_text(uint16_t potential, uint16_t actual, char *dst, size
    level, attributes, weight). Returns the line count. */
 int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE])
 {
-    int16_t icon = object_get_icon_index(thing), n = 0;
-    uint16_t type = THING_TYPE(thing), potential = 0, actual = 0, weight = inventory_get_object_weight(thing);
+    int16_t icon = object_get_icon_index(thing);
+    int16_t n = 0;
+    uint16_t type = THING_TYPE(thing);
+    uint16_t potential = 0;
+    uint16_t actual = 0;
+    uint16_t weight = inventory_get_object_weight(thing);
     if (icon == ICON_BONES)
         snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[junk_charges(thing)].name,
                  tables_text(TABLES_TEXT_BONES_SEPARATOR), gfx_object_name(icon));
@@ -670,8 +680,10 @@ static void add_rune_symbols(const char *text, const char *gap, char *out, size_
         if (n >= size)
             return;
         word += length;
-        while (*word == ' ' && n + 1 < size)
-            out[n++] = *word++, out[n] = 0;
+        while (*word == ' ' && n + 1 < size) {
+            out[n++] = *word++;
+            out[n] = 0;
+        }
     }
 }
 
@@ -711,14 +723,16 @@ static void insert_creature_name(char *text, size_t size)
     size_t length = strlen(CREATURE_NAME_TEXT);
     for (char *at = strstr(text, CREATURE_NAME_TEXT); at; at = strstr(at, CREATURE_NAME_TEXT)) {
         if (!name) {
-            int16_t x = g_party_map_x, y = g_party_map_y;
+            int16_t x = g_party_map_x;
+            int16_t y = g_party_map_y;
             update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
             uint16_t group = get_square_group(x, y);
             name = gfx_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE
                                                        : TEXT_CREATURE_NAME_FIRST + rec_group_creature_type(group));
             scroll_redraw = 1;
         }
-        size_t rest = strlen(at + length), n = strlen(name);
+        size_t rest = strlen(at + length);
+        size_t n = strlen(name);
         if ((size_t)(at - text) + n + rest >= size)
             n = size - 1 - (size_t)(at - text) - rest;
         memmove(at + n, at + length, rest + 1);
@@ -827,7 +841,8 @@ static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t va
 {
     Bitmap *vp = ui_viewport();
     char text[8];
-    int16_t bar_x = x + METER_LABEL_CHARS * TEXT_CHAR_WIDTH, top = y - METER_BAR_ABOVE_BASELINE;
+    int16_t bar_x = x + METER_LABEL_CHARS * TEXT_CHAR_WIDTH;
+    int16_t top = y - METER_BAR_ABOVE_BASELINE;
     int16_t filled = value >= maximum ? METER_BAR_WIDTH : value * METER_BAR_WIDTH / maximum;
     if (value && !filled)
         filled = 1; /* a small value still shows */

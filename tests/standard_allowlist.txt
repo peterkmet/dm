@@ -17,16 +17,7 @@ hex data/csbtext.c addresses of the APPB tables
 hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
 long engine/action.c:action_is_action_performed one short case for each action of the action table
-long engine/group.c:group_get_damage_creature_outcome open: module cleanup
-long engine/projectile.c:projectile_has_impact_occurred open: module cleanup
-long engine/projectile.c:projectile_is_killed_by_impact open: module cleanup
-long engine/timeline_process.c:event_process_expired open: module cleanup
-long platform/main.c:amiga_key open: module cleanup
-long platform/main.c:main open: module cleanup
-long ui/command.c:click_in_dungeon_view open: module cleanup
-long ui/view.c:explosions open: module cleanup
-long ui/view.c:things open: module cleanup
-long ui/view.c:map_square open: module cleanup
+long engine/timeline_process.c:event_process_expired one short case for each timeline event type
 numbered HEADER_BYTE_12A open: module cleanup
 numbered event79_count_footprints open: module cleanup
 numbered event73_count_thieves_eye open: module cleanup

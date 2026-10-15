@@ -38,7 +38,9 @@ static int screen = SCREEN_DONE, cursor, csb_choice;
 static bool csb_enabled, adventure_given, mode_given;
 static bool llm_enabled;
 static const char *message;
-static int16_t adventure_flag = -1, mode_flag = -1; /* --adventure and --mode, -1 when absent */
+/* --adventure and --mode, -1 when absent */
+static int16_t adventure_flag = -1;
+static int16_t mode_flag = -1;
 
 /* Only CHAOS STRIKES BACK can be disabled: its files are missing. */
 static bool enabled(int item)

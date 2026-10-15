@@ -127,7 +127,8 @@ static int find_sections(const uint8_t *raw, size_t len, const uint8_t *sec[SECT
     for (uint32_t i = 0; i < count; i++) {
         const uint8_t *e = raw + FTL_HEADER_BYTES + i * FTL_ENTRY_BYTES;
         uint16_t tag = BE16(e);
-        uint32_t off = BE32(e + 4), size = BE32(e + 8);
+        uint32_t off = BE32(e + 4);
+        uint32_t size = BE32(e + 8);
         if (tag < SECTION_INFO || tag > SECTION_CODE)
             continue;
         if (BE16(e + 2) != 1 || sec[tag - SECTION_INFO] || off > len || size > len - off)
@@ -192,30 +193,41 @@ int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
 {
     const uint8_t *sec[SECTION_COUNT] = {0};
     uint32_t secsz[SECTION_COUNT] = {0};
-    uint8_t *code = NULL, *mem = NULL;
+    uint8_t *code = NULL;
+    uint8_t *mem = NULL;
     if (find_sections(raw, len, sec, secsz))
         return -1;
-    const uint8_t *info = sec[0], *data = sec[1];
+    const uint8_t *info = sec[0];
+    const uint8_t *data = sec[1];
     if (!info || !data || !sec[2] || secsz[0] < INFO_ENTRY_POINTS || secsz[1] < DATA_HEADER_BYTES)
         return -1;
 
-    uint32_t region = BE32(info + INFO_REGION_SIZE), dsize = BE32(info + INFO_DATA_SIZE);
-    uint32_t jt_off = BE32(info + INFO_JUMP_TABLE), csize = BE32(info + INFO_CODE_SIZE);
-    uint16_t info_chk = BE16(info + INFO_CHECKSUM), ws = 0;
+    uint32_t region = BE32(info + INFO_REGION_SIZE);
+    uint32_t dsize = BE32(info + INFO_DATA_SIZE);
+    uint32_t jt_off = BE32(info + INFO_JUMP_TABLE);
+    uint32_t csize = BE32(info + INFO_CODE_SIZE);
+    uint16_t info_chk = BE16(info + INFO_CHECKSUM);
+    uint16_t ws = 0;
     for (uint32_t i = 0; i + 1 < secsz[0]; i += 2)
         ws += BE16(info + i);
     if ((uint16_t)(ws - info_chk) != info_chk || sum8(data, secsz[1]) != BE16(info + INFO_DATA_SUM))
         return -1; /* 16-bit wrap */
     uint32_t code_len = secsz[2];
     const uint8_t *codep = sec[2];
-    if (BE16(info + INFO_CODE_PACKED) && !(codep = code = unpack(sec[2], secsz[2], &code_len)))
-        return -1;
+    if (BE16(info + INFO_CODE_PACKED)) {
+        code = unpack(sec[2], secsz[2], &code_len);
+        if (!code)
+            return -1;
+        codep = code;
+    }
     if (code_len < csize || sum8(codep, csize) != BE16(info + INFO_CODE_SUM))
         goto fail;
 
-    uint64_t data_base = base + ((dsize + 1ull) & ~1ull), code_base = (data_base + region + 1) & ~1ull;
+    uint64_t data_base = base + ((dsize + 1ull) & ~1ull);
+    uint64_t code_base = (data_base + region + 1) & ~1ull;
     uint64_t size = code_base - base + csize;
-    uint32_t rle_len = BE32(data + DATA_RLE_SIZE), reloc_len = BE32(data + DATA_RELOC_SIZE);
+    uint32_t rle_len = BE32(data + DATA_RLE_SIZE);
+    uint32_t reloc_len = BE32(data + DATA_RELOC_SIZE);
     uint32_t tables_len = secsz[1] - DATA_HEADER_BYTES;
     if (size > FTL_MAX_SIZE || base + size > UINT32_MAX || rle_len > tables_len || reloc_len > tables_len - rle_len ||
         !(mem = calloc(size + 1, 1)))

@@ -113,7 +113,8 @@ static int write_file(const uint8_t *img, const uint8_t *header, const char *pat
     FILE *f = fopen(path, "wb");
     if (!f)
         return -1;
-    uint32_t left = BE32(header + ADF_BYTE_SIZE_OFFSET), n = BE32(header + ADF_FIRST_DATA_OFFSET);
+    uint32_t left = BE32(header + ADF_BYTE_SIZE_OFFSET);
+    uint32_t n = BE32(header + ADF_FIRST_DATA_OFFSET);
     for (int guard = 0; left; guard++) {
         const uint8_t *data = block(img, n);
         uint32_t size = data ? BE32(data + ADF_DATA_SIZE_OFFSET) : 0;

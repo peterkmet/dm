@@ -60,7 +60,9 @@ static void print_text(uint16_t text)
    that hits the party or a group goes back one step; the group takes damage. */
 void event_door_animation(TimelineEvent *event)
 {
-    int16_t x = event_square_x(event), y = event_square_y(event), effect = event_effect(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
+    int16_t effect = event_effect(event);
     uint8_t *square = &g_current_map_data[x][y];
     int16_t state = door_state(*square);
     if (state == DOOR_DESTROYED)
@@ -121,7 +123,9 @@ void event_door(TimelineEvent *event)
 /* Opens or closes a fake wall. Closing waits while the party or a material group is on the square. */
 void event_fake_wall(TimelineEvent *event)
 {
-    int16_t x = event_square_x(event), y = event_square_y(event), effect = event_effect(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
+    int16_t effect = event_effect(event);
     uint8_t *square = &g_current_map_data[x][y];
     uint16_t attributes;
     if (effect == EFFECT_TOGGLE)
@@ -140,7 +144,8 @@ void event_fake_wall(TimelineEvent *event)
 /* Opens or closes a teleporter or a pit. Opening moves the things on the square. */
 static void open_or_close(TimelineEvent *event)
 {
-    int16_t x = event_square_x(event), y = event_square_y(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
     uint8_t *square = &g_current_map_data[x][y];
     if (event_effect(event) == EFFECT_TOGGLE)
         event_set_effect(event, *square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
@@ -193,7 +198,8 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
 /* Texts on the corridor change visibility, and group generators run. */
 void event_corridor(TimelineEvent *event)
 {
-    int16_t x = event_square_x(event), y = event_square_y(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
     for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_TYPE(t) == THING_TEXT) {
             if (change_text_visibility(t, event_effect(event)) && is_party_on(x, y))
@@ -248,7 +254,8 @@ static void count(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t
 /* An AND/OR gate sets, clears, or toggles the input of the cell, and triggers when the inputs match. */
 static void gate(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
 {
-    uint16_t data = rec_sensor_data(sensor), input = 1 << cell;
+    uint16_t data = rec_sensor_data(sensor);
+    uint16_t input = 1 << cell;
     if (effect == EFFECT_TOGGLE ? (data & input) != 0 : effect != EFFECT_SET)
         data &= ~input;
     else
@@ -261,8 +268,10 @@ static void gate(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t 
    An endgame sensor ends the game. */
 void event_wall(TimelineEvent *event)
 {
-    int16_t x = event_square_x(event), y = event_square_y(event), cell = event_cell(event),
-            effect = event_effect(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
+    int16_t cell = event_cell(event);
+    int16_t effect = event_effect(event);
     for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_TYPE(t) == THING_TEXT && THING_CELL(t) == cell)
             change_text_visibility(t, effect);
@@ -319,7 +328,8 @@ void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
         objects += THING_TYPE(t) > THING_GROUP;
     while (thing != THING_ENDOFLIST && objects) {
         objects--;
-        uint16_t next = get_next_thing(thing), type = THING_TYPE(thing);
+        uint16_t next = get_next_thing(thing);
+        uint16_t type = THING_TYPE(thing);
         if (type > THING_GROUP)
             move_get_move_result(thing, x, y, x, y);
         if (type == THING_PROJECTILE)
@@ -419,7 +429,10 @@ void event_hide_damage_received(uint16_t champion_index)
    disappear, 0 the champion lives again. The bones hold the champion index in their charges. */
 void event_vi_altar_rebirth(TimelineEvent *event)
 {
-    int16_t x = event_square_x(event), y = event_square_y(event), cell = event_cell(event), step = event_effect(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
+    int16_t cell = event_cell(event);
+    int16_t step = event_effect(event);
     uint16_t champion_index = event->priority;
     if (step == 0) {
         champion_resurrect(champion_index);

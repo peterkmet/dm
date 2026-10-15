@@ -85,10 +85,12 @@ void anim_close(void)
     music_stop();
     free(file);
     file = NULL;
-    file_len = pos = 0;
+    file_len = 0;
+    pos = 0;
     while (loaded_count)
         free(loaded[--loaded_count]);
-    music_count = music_started = false;
+    music_count = 0;
+    music_started = false;
 }
 
 typedef struct {
@@ -156,7 +158,8 @@ static void play_music(uint16_t number)
     }
     const int8_t *segments[SOUND_MUSIC_SEGMENTS];
     uint16_t lengths[SOUND_MUSIC_SEGMENTS];
-    int sequence_length = 0, count = 0;
+    int sequence_length = 0;
+    int count = 0;
     while (offsets[0] + sequence_length < size && m[offsets[0] + sequence_length] != MUSIC_SEQUENCE_END)
         sequence_length++;
     for (int i = 0; sequence_length && i < MUSIC_PASSES * sequence_length && count < SOUND_MUSIC_SEGMENTS; i++) {
@@ -181,9 +184,14 @@ int anim_open(const char *path)
     size_t at = 0;
     while (at + CHUNK_HEADER <= file_len)
         at = next_chunk(at);
-    if (at != file_len)
-        return anim_close(), -1;
-    sample_count = loop_depth = palette_changed = input_stops = 0;
+    if (at != file_len) {
+        anim_close();
+        return -1;
+    }
+    sample_count = 0;
+    loop_depth = 0;
+    palette_changed = 0;
+    input_stops = 0;
     memset(colors, 0, sizeof colors);
     return 0;
 }
@@ -238,11 +246,24 @@ static void loop_chunk(uint16_t tag, uint16_t parameter)
     }
 }
 
+/* A sample in a file of its own, numbered with the SD samples; a missing file keeps its number. */
+static void add_sample_file(const uint8_t *name, uint16_t length)
+{
+    size_t size;
+    const uint8_t *data = load_named_file(name, length, &size);
+    if (sample_count < MAX_SAMPLES) {
+        samples[sample_count] = data;
+        sample_sizes[sample_count++] = size < UINT16_MAX ? size : UINT16_MAX;
+    }
+}
+
 int16_t anim_next_frame(void)
 {
     while (pos < file_len) {
-        const uint8_t *chunk = file + pos, *payload = chunk + CHUNK_HEADER;
-        uint16_t length = BE16(chunk + CHUNK_LENGTH), parameter = BE16(chunk + CHUNK_PARAMETER);
+        const uint8_t *chunk = file + pos;
+        const uint8_t *payload = chunk + CHUNK_HEADER;
+        uint16_t length = BE16(chunk + CHUNK_LENGTH);
+        uint16_t parameter = BE16(chunk + CHUNK_PARAMETER);
         size_t at = pos;
         pos = next_chunk(at);
         switch (BE16(chunk)) {
@@ -261,15 +282,9 @@ int16_t anim_next_frame(void)
         case TAG_PLAY_SAMPLE:
             play_sample(at, parameter);
             break;
-        case TAG_SAMPLE_FILE: { /* numbered with the SD samples; a missing file keeps its number */
-            size_t size;
-            const uint8_t *data = load_named_file(payload, length, &size);
-            if (sample_count < MAX_SAMPLES) {
-                samples[sample_count] = data;
-                sample_sizes[sample_count++] = size < UINT16_MAX ? size : UINT16_MAX;
-            }
+        case TAG_SAMPLE_FILE:
+            add_sample_file(payload, length);
             break;
-        }
         case TAG_MUSIC_FILE:
             if (music_count < MAX_MUSIC) {
                 music[music_count] = load_named_file(payload, length, &music_sizes[music_count]);

@@ -8,13 +8,15 @@
 void draw_blit(const Bitmap *src, int16_t sx, int16_t sy, Bitmap *dst, const Box *box, int16_t transparent, int flip)
 {
     for (int y = 0; y < box->h; y++) {
-        int dy = box->y + y, ry = sy + y;
+        int dy = box->y + y;
+        int ry = sy + y;
         if (flip & FLIP_V)
             ry = src->h - 1 - ry;
         if (dy < 0 || dy >= dst->h || ry < 0 || ry >= src->h)
             continue;
         for (int x = 0; x < box->w; x++) {
-            int dx = box->x + x, rx = sx + x;
+            int dx = box->x + x;
+            int rx = sx + x;
             if (flip & FLIP_H)
                 rx = src->w - 1 - rx;
             if (dx < 0 || dx >= dst->w || rx < 0 || rx >= src->w)
@@ -91,11 +93,15 @@ void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bi
 {
     if (box->w < 1 || box->h < 1)
         return;
-    if ((transparent & FILL_OPAQUE) == FILL_OPAQUE)
-        mask = NULL, transparent = -1;
-    else if (transparent & FILL_NO_MASK)
-        mask = NULL, transparent &= ~FILL_NO_MASK;
-    int words = (box->w - 1) / PIXELS_PER_WORD + 1, temp_w = words * PIXELS_PER_WORD;
+    if ((transparent & FILL_OPAQUE) == FILL_OPAQUE) {
+        mask = NULL;
+        transparent = -1;
+    } else if (transparent & FILL_NO_MASK) {
+        mask = NULL;
+        transparent &= ~FILL_NO_MASK;
+    }
+    int words = (box->w - 1) / PIXELS_PER_WORD + 1;
+    int temp_w = words * PIXELS_PER_WORD;
     int unit_words = (units->w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD;
     int mask_words = mask ? (mask->w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD : 0; /* words per row */
     uint8_t *temp = malloc((size_t)temp_w * box->h);
@@ -104,10 +110,12 @@ void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bi
     int16_t u = first_unit;
     for (int k = 0; k < words * box->h; k++) {
         for (int p = 0; p < PIXELS_PER_WORD; p++) {
-            int ux = u % unit_words * PIXELS_PER_WORD + p, uy = u / unit_words;
+            int ux = u % unit_words * PIXELS_PER_WORD + p;
+            int uy = u / unit_words;
             uint8_t c = ux < units->w && uy < units->h ? units->px[uy * units->w + ux] : 0;
             if (mask) {
-                int mx = k % mask_words * PIXELS_PER_WORD + p, my = k / mask_words;
+                int mx = k % mask_words * PIXELS_PER_WORD + p;
+                int my = k / mask_words;
                 if (mask_flip)
                     mx = mask_words * PIXELS_PER_WORD - 1 - mx;
                 if (!(mx < mask->w && my < mask->h && mask->px[my * mask->w + mx] & 1))
@@ -120,7 +128,8 @@ void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bi
     }
     for (int y = 0; y < box->h; y++)
         for (int x = 0; x < box->w; x++) {
-            int dx = box->x + x, dy = box->y + y;
+            int dx = box->x + x;
+            int dy = box->y + y;
             int64_t i = (int64_t)(sy + y) * temp_w + sx + x;
             if (dx < 0 || dx >= dst->w || dy < 0 || dy >= dst->h || i < 0 || i >= (int64_t)temp_w * box->h)
                 continue;

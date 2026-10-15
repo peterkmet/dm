@@ -64,7 +64,8 @@ void move_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags)
 {
     if (!g_party.scent_count)
         return;
-    int16_t keep_larger = strength_and_flags & SCENT_KEEP_LARGER, found = 0;
+    int16_t keep_larger = strength_and_flags & SCENT_KEEP_LARGER;
+    int16_t found = 0;
     int16_t value = keep_larger ? strength_and_flags & ~SCENT_KEEP_LARGER : strength_and_flags;
     uint16_t scent = position_pack(g_current_map_index, x, y);
     for (uint16_t i = 0; i < g_party.scent_count; i++) {
@@ -118,8 +119,9 @@ static bool is_teleported(uint16_t *thing, uint8_t square, int16_t src_x, int16_
     if (teleporter_scope_bits == TELEPORTER_SCOPE_CREATURES ||
         (scope != TELEPORTER_SCOPE_ALL && !(scope & teleporter_scope_bits)))
         return false;
-    int16_t x = teleporter_target_x(teleporter), y = teleporter_target_y(teleporter),
-            rotation = teleporter_rotation(teleporter);
+    int16_t x = teleporter_target_x(teleporter);
+    int16_t y = teleporter_target_y(teleporter);
+    int16_t rotation = teleporter_rotation(teleporter);
     bool points_to_itself = x == *dst_x && y == *dst_y && teleporter_target_map(teleporter) == *map;
     *dst_x = x;
     *dst_y = y;
@@ -218,7 +220,9 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
     int16_t type = party ? -1 : THING_TYPE(thing);
     uint16_t src_cell = party ? 0 : THING_CELL(thing);
     bool levitating = party ? false : move_is_levitating(thing);
-    int16_t src_map = g_current_map_index, map = src_map, start_direction = 0;
+    int16_t src_map = g_current_map_index;
+    int16_t map = src_map;
+    int16_t start_direction = 0;
     bool same_square = false;
     if (type == THING_GROUP)
         return group_get_move_result(thing, src_x, src_y, dst_x, dst_y);
@@ -346,7 +350,9 @@ void move_party(int16_t command)
             champion_decrement_stamina(i, (uint16_t)(g_champions[i].load * MOVE_STAMINA_FACTOR) /
                                                   champion_get_maximum_load(&g_champions[i]) +
                                               1); /* 16-bit wrap */
-    int16_t arrow = command - COMMAND_MOVE_FORWARD, x = g_party_map_x, y = g_party_map_y;
+    int16_t arrow = command - COMMAND_MOVE_FORWARD;
+    int16_t x = g_party_map_x;
+    int16_t y = g_party_map_y;
     uint8_t square = get_square(x, y);
     bool on_stairs = SQUARE_TYPE(square) == SQUARE_STAIRS;
     if (on_stairs && command == COMMAND_MOVE_BACKWARD) {

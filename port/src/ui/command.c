@@ -53,15 +53,17 @@ uint16_t g_last_key;
 
 static QueuedCommand queue[QUEUE_SIZE];
 static int16_t queue_first, queue_count;
-static int16_t primary_mouse = NO_TABLE, secondary_mouse = NO_TABLE;
-static int16_t primary_keys = TABLES_KEYS_NONE, secondary_keys = TABLES_KEYS_NONE;
+static int16_t primary_mouse = NO_TABLE;
+static int16_t secondary_mouse = NO_TABLE;
+static int16_t primary_keys = TABLES_KEYS_NONE;
+static int16_t secondary_keys = TABLES_KEYS_NONE;
 typedef struct {
     int16_t primary_mouse, secondary_mouse;
     int16_t primary_keys, secondary_keys;
 } InputTables;
 
-static InputTables frozen_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE},
-                   dialog_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE};
+static InputTables frozen_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE};
+static InputTables dialog_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE};
 static bool left_button_down, pressing_eye, pressing_mouth, pressing_fake_wall;
 static int16_t dragged_icon_cell_plus_1;
 static Box highlight;
@@ -320,11 +322,15 @@ void command_release_dead_champion(uint16_t champion_index, int16_t leader_index
     Bitmap screen = ui_screen();
     int16_t icon_cell = NORMALIZE(g_champions[champion_index].cell - g_party_direction);
     if (champion_index + 1 == g_inventory_champion_ordinal) {
-        pressing_eye = pressing_mouth = g_mouse_pointer_hidden = false;
+        pressing_eye = false;
+        pressing_mouth = false;
+        g_mouse_pointer_hidden = false;
         command_toggle_inventory(INVENTORY_CLOSE);
     }
-    if (champion_index == leader_index && pressing_fake_wall)
-        pressing_fake_wall = g_mouse_pointer_hidden = false;
+    if (champion_index == leader_index && pressing_fake_wall) {
+        pressing_fake_wall = false;
+        g_mouse_pointer_hidden = false;
+    }
     if (icon_cell + 1 == dragged_icon_cell_plus_1)
         dragged_icon_cell_plus_1 = 0;
     ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + icon_cell, COLOR_BLACK);
@@ -416,7 +422,8 @@ static void click_on_champion_icon(int16_t cell)
    front cell protects the objects under it. */
 static void grab_object(int16_t pile)
 {
-    int16_t x = g_party_map_x, y = g_party_map_y;
+    int16_t x = g_party_map_x;
+    int16_t y = g_party_map_y;
     if (g_leader_index == -1)
         return;
     if (pile >= VIEW_CELL_FRONT_FIRST) {
@@ -438,7 +445,8 @@ static void grab_object(int16_t pile)
    on a vi altar start the rebirth of their champion. */
 static void drop_object(int16_t pile)
 {
-    int16_t x = g_party_map_x, y = g_party_map_y;
+    int16_t x = g_party_map_x;
+    int16_t y = g_party_map_y;
     bool alcove = pile == VIEW_CLICK_BOX_ALCOVE;
     if (g_leader_index == -1)
         return;
@@ -482,8 +490,10 @@ static void touch_front_square_empty_handed(int16_t imaginary_wall, int16_t x, i
         return;
     if (!imaginary_wall)
         sound_request_play(SOUND_WOODEN_THUD, x, y, SOUND_MODE_NOW);
-    else if (left_button_down)
-        pressing_fake_wall = g_mouse_pointer_hidden = true;
+    else if (left_button_down) {
+        pressing_fake_wall = true;
+        g_mouse_pointer_hidden = true;
+    }
     g_stop_waiting_for_input = true;
 }
 
@@ -523,6 +533,35 @@ static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
     return thrown;
 }
 
+/* An empty-handed click in the dungeon view: grab an object, drink at a fountain, touch the wall, or touch the
+   square ahead. */
+static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, int16_t imaginary_wall)
+{
+    for (int16_t i = 0; i < VIEW_CLICK_BOX_COUNT; i++) {
+        if (!in_box(&g_dungeon_view_clickable_boxes[i], x, y))
+            continue;
+        if (i != VIEW_CLICK_BOX_WALL) {
+            grab_object(i);
+            return;
+        }
+        if (g_facing_fountain && g_leader_index != -1) {
+            g_champions[g_leader_index].water = FOUNTAIN_WATER;
+            /* With the advanced features, every living champion drinks. */
+            for (uint16_t i = 0; g_advanced_features && i < g_party_champion_count; i++)
+                if (g_champions[i].current_health)
+                    g_champions[i].water = FOUNTAIN_WATER;
+            sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
+        }
+        if (!g_facing_alcove)
+            touch_front_wall();
+        return;
+    }
+    if (g_square_ahead_element != VIEW_ELEMENT_WALL)
+        return;
+    if (ui_point_in_zone(ZONE_THROW_LEFT, x, y) || ui_point_in_zone(ZONE_THROW_LEFT + 1, x, y))
+        touch_front_square_empty_handed(imaginary_wall, fx, fy);
+}
+
 /* Click in the dungeon view (x, y in viewport coordinates): door buttons, objects, the front wall. */
 static void click_in_dungeon_view(int16_t x, int16_t y)
 {
@@ -545,29 +584,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
     int16_t imaginary_wall =
         SQUARE_TYPE(square) == SQUARE_FAKE_WALL && (square & FAKE_WALL_IMAGINARY) && !(square & FAKE_WALL_OPEN);
     if (g_leader_empty_handed) {
-        for (int16_t i = 0; i < VIEW_CLICK_BOX_COUNT; i++) {
-            if (!in_box(&g_dungeon_view_clickable_boxes[i], x, y))
-                continue;
-            if (i != VIEW_CLICK_BOX_WALL) {
-                grab_object(i);
-                return;
-            }
-            if (g_facing_fountain && g_leader_index != -1) {
-                g_champions[g_leader_index].water = FOUNTAIN_WATER;
-                /* With the advanced features, every living champion drinks. */
-                for (uint16_t i = 0; g_advanced_features && i < g_party_champion_count; i++)
-                    if (g_champions[i].current_health)
-                        g_champions[i].water = FOUNTAIN_WATER;
-                sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
-            }
-            if (!g_facing_alcove)
-                touch_front_wall();
-            return;
-        }
-        if (g_square_ahead_element != VIEW_ELEMENT_WALL)
-            return;
-        if (ui_point_in_zone(ZONE_THROW_LEFT, x, y) || ui_point_in_zone(ZONE_THROW_LEFT + 1, x, y))
-            touch_front_square_empty_handed(imaginary_wall, fx, fy);
+        click_empty_handed(x, y, fx, fy, imaginary_wall);
         return;
     }
     if ((g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall) && is_leader_hand_object_thrown(x, y))
@@ -593,7 +610,8 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
 static void add_champion_symbol(int16_t symbol)
 {
     Champion *c = &g_champions[g_magic_caster_champion_index];
-    uint16_t step = c->symbol_step, cost = *tables_symbol_base_mana_cost(step, symbol);
+    uint16_t step = c->symbol_step;
+    uint16_t cost = *tables_symbol_base_mana_cost(step, symbol);
     if (step) /* 16-bit product as in the original */
         cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >>
                SPELL_MANA_MULTIPLIER_SHIFT;
@@ -693,7 +711,8 @@ static void click_on_eye(void)
 {
     if (!left_button_down)
         return;
-    pressing_eye = g_mouse_pointer_hidden = true;
+    pressing_eye = true;
+    g_mouse_pointer_hidden = true;
     command_discard_all_input();
     draw_viewport_icon(ICON_EYE_LOOKING, ZONE_EYE);
     ui_draw_panel_eye();
@@ -709,7 +728,9 @@ static void left_release(void)
         ui_draw_panel();
         ui_draw_viewport();
     }
-    pressing_mouth = pressing_fake_wall = g_mouse_pointer_hidden = false;
+    pressing_mouth = false;
+    pressing_fake_wall = false;
+    g_mouse_pointer_hidden = false;
 }
 
 /* The party sleeps: the game runs at full speed and only the wake up input is active. */
@@ -762,7 +783,9 @@ static void unfreeze_game(void)
 /* A movement command: the arrow lights up; a step that does not move the party ends the input wait. */
 static void move_or_turn(int16_t command)
 {
-    int16_t x = g_party_map_x, y = g_party_map_y, map = g_party_map_index;
+    int16_t x = g_party_map_x;
+    int16_t y = g_party_map_y;
+    int16_t map = g_party_map_index;
     g_stop_waiting_for_input = true;
     highlight_zone(ZONE_MOVEMENT_ARROW_BEFORE_FIRST + command);
     if (command <= COMMAND_TURN_RIGHT) {
@@ -840,7 +863,9 @@ bool command_process_queue(void)
     if (!queue_count)
         return false;
     QueuedCommand q = queue[queue_first];
-    int16_t command = q.command, x = q.x, y = q.y;
+    int16_t command = q.command;
+    int16_t x = q.x;
+    int16_t y = q.y;
     if (movement_blocked(command))
         return false;
     queue_first = (queue_first + 1) % QUEUE_SIZE;
@@ -894,11 +919,18 @@ bool command_process_queue(void)
    speed, or waiting commands; the game input tables are active. */
 void command_reset(void)
 {
-    left_button_down = pressing_eye = pressing_mouth = pressing_fake_wall = false;
-    dragged_icon_cell_plus_1 = highlight_enabled = false;
-    g_mouse_pointer_hidden = g_stop_waiting_for_input = g_game_frozen = false;
+    left_button_down = false;
+    pressing_eye = false;
+    pressing_mouth = false;
+    pressing_fake_wall = false;
+    dragged_icon_cell_plus_1 = 0;
+    highlight_enabled = false;
+    g_mouse_pointer_hidden = false;
+    g_stop_waiting_for_input = false;
+    g_game_frozen = false;
     g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
-    queue_first = queue_count = 0;
+    queue_first = 0;
+    queue_count = 0;
     g_input_received = false;
     g_last_key = 0;
     command_set_game_input();

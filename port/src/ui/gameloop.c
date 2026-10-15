@@ -77,13 +77,16 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
 {
     Bitmap screen = ui_screen();
     Box doors, work, door;
-    int16_t w = 0, h = 0, shown = 0;
+    int16_t w = 0;
+    int16_t h = 0;
+    int16_t shown = 0;
     ui_blit_graphic(&screen, GFX_ENTRANCE, ZONE_SCREEN, COLOR_NONE);
     if (!ui_zone_box(ZONE_ENTRANCE_DOORS, &doors))
         return 0;
     if (!layout_get_zone(ZONE_ENTRANCE_WORK, doors.w, doors.h, &work, &w, &h))
         return 0;
-    w = h = 0;
+    w = 0;
+    h = 0;
     if (view && layout_get_zone(ZONE_ENTRANCE_VIEWPORT, view->w, view->h, &door, &w, &h)) {
         door.x += work.x;
         door.y += work.y;
@@ -91,7 +94,8 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
     }
     for (int16_t side = 0; side < 2; side++) {
         const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
-        w = h = 0;
+        w = 0;
+        h = 0;
         if (!bm || !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, bm->w, bm->h, &door, &w, &h))
             continue;
         door.x += work.x;
@@ -132,7 +136,8 @@ void entrance_press_button(int resume)
     const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_BUTTONS);
     Bitmap screen = ui_screen();
     Box box;
-    int16_t sx = 0, sy = 0;
+    int16_t sx = 0;
+    int16_t sy = 0;
     if (!g_frame_hook)
         return;
     if (bm &&
@@ -173,7 +178,10 @@ void entrance_open_doors(void)
    with a falling weight (set_dungeon_view_palette). */
 int16_t gameloop_party_light(void)
 {
-    int16_t power[LIGHT_SOURCE_COUNT] = {0}, n = 0, total = 0, shift = LIGHT_FIRST_SHIFT;
+    int16_t power[LIGHT_SOURCE_COUNT] = {0};
+    int16_t n = 0;
+    int16_t total = 0;
+    int16_t shift = LIGHT_FIRST_SHIFT;
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--, n++) {
             uint16_t thing = g_champions[i].slots[hand];
@@ -268,8 +276,12 @@ static void start_game(void)
 {
     g_candidate_champion_ordinal = 0;
     g_party_is_sleeping = false;
-    g_game_won = g_do_not_draw_fluxcages = false;
-    g_automap_open = g_cheat_light = g_cheat_immortal = g_cheat_food = false;
+    g_game_won = false;
+    g_do_not_draw_fluxcages = false;
+    g_automap_open = false;
+    g_cheat_light = false;
+    g_cheat_immortal = false;
+    g_cheat_food = false;
     music_select(MUSIC_ORIGINAL);
     automap_scroll_reset();
     memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
@@ -319,7 +331,8 @@ bool gameloop_new_game(const char *dir)
    and the magic caster come back; all champion states are drawn. */
 static void reset_champions_of_loaded_game(void)
 {
-    int16_t leader = g_leader_index, caster = g_magic_caster_champion_index;
+    int16_t leader = g_leader_index;
+    int16_t caster = g_magic_caster_champion_index;
     uint16_t hand = g_leader_hand_object;
     g_leader_empty_handed = true;
     g_leader_hand_object = THING_NONE;
@@ -507,7 +520,8 @@ static void planar_pointer(bool hand, uint8_t *px, int *w, int *h)
     const uint8_t *planes = tables_pointer_planes(hand, &pw, &ph);
     *w = (uint16_t)pw; /* the size words are unsigned */
     *h = (uint16_t)ph;
-    int row_bytes = (*w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD * 2, plane = row_bytes * *h;
+    int row_bytes = (*w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD * 2;
+    int plane = row_bytes * *h;
     for (int y = 0; y < *h; y++)
         for (int x = 0; x < *w; x++) {
             uint8_t c = 0;
@@ -524,7 +538,8 @@ static void object_pointer(uint8_t *px, int *w, int *h)
 {
     uint8_t icon_px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap icon = {UI_ICON_SIZE, UI_ICON_SIZE, icon_px};
-    int16_t dx = tables_pointer_shadow_dx(), dy = tables_pointer_shadow_dy();
+    int16_t dx = tables_pointer_shadow_dx();
+    int16_t dy = tables_pointer_shadow_dy();
     const uint8_t *shadows = tables_palette_changes(TABLES_CHANGES_POINTER_SHADOW);
     ui_extract_icon(object_get_icon_index(g_leader_hand_object), &icon);
     *w = UI_ICON_SIZE + dx;

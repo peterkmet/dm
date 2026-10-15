@@ -109,8 +109,12 @@ static void dungeon_free(void)
 {
     while (block_count)
         free(blocks[--block_count]);
-    g_dungeon_header = g_dungeon_maps = g_dungeon_column_first_thing_index = NULL;
-    g_square_first_things = g_dungeon_text_data = g_dungeon_raw_map_data = NULL;
+    g_dungeon_header = NULL;
+    g_dungeon_maps = NULL;
+    g_dungeon_column_first_thing_index = NULL;
+    g_square_first_things = NULL;
+    g_dungeon_text_data = NULL;
+    g_dungeon_raw_map_data = NULL;
     memset(g_thing_data, 0, sizeof g_thing_data);
     g_dungeon_map_first_column = NULL;
     g_dungeon_map_data = NULL;
@@ -145,7 +149,8 @@ static uint16_t column_first_thing_index(int16_t map, int16_t x)
 /* Reads the header. A new game takes the party start from it. */
 static bool read_header(bool new_game, uint16_t *sum)
 {
-    uint8_t *h = g_dungeon_header = alloc(HEADER_BYTES);
+    g_dungeon_header = alloc(HEADER_BYTES);
+    uint8_t *h = g_dungeon_header;
     if (!read_summed_block(h, sum, HEADER_BYTES))
         return false;
     if (new_game) {
@@ -178,7 +183,8 @@ static bool read_maps(int16_t maps, uint16_t *sum)
 /* Reads the column index, the square first things, and the text words. A new game adds free square entries. */
 static bool read_square_things_and_text(bool new_game, uint16_t *sum)
 {
-    uint16_t square_things = rec_dungeon_square_first_thing_count(), extra = new_game ? FREE_SQUARE_THINGS : 0;
+    uint16_t square_things = rec_dungeon_square_first_thing_count();
+    uint16_t extra = new_game ? FREE_SQUARE_THINGS : 0;
     if (square_things > UINT16_MAX - extra)
         return false;
     WR16(g_dungeon_header + DUNGEON_HEADER_SQUARE_THINGS, square_things + extra);
@@ -200,9 +206,11 @@ static bool read_things(bool new_game, uint16_t *sum)
     if (new_game)
         g_event_max_count = NEW_GAME_EVENT_COUNT;
     for (int16_t t = 0; t < THING_TYPE_COUNT; t++) {
-        int16_t count = (int16_t)thing_count(t),
-                size = g_thing_data_byte_count[t]; /* a count above 32767 is negative */
-        int16_t total = count, cap = t == THING_EXPLOSION ? MAX_EXPLOSIONS : MAX_THINGS;
+        /* a count above 32767 is negative */
+        int16_t count = (int16_t)thing_count(t);
+        int16_t size = g_thing_data_byte_count[t];
+        int16_t total = count;
+        int16_t cap = t == THING_EXPLOSION ? MAX_EXPLOSIONS : MAX_THINGS;
         if (count < 0 || count > cap)
             return false;
         if (new_game) {
@@ -232,7 +240,8 @@ static bool build_map_columns(int16_t maps)
     if (!g_dungeon_map_data || !cols)
         return false;
     for (int16_t m = 0; m < maps; m++) {
-        uint8_t **c = g_dungeon_map_data[m] = cols + g_dungeon_map_first_column[m];
+        g_dungeon_map_data[m] = cols + g_dungeon_map_first_column[m];
+        uint8_t **c = g_dungeon_map_data[m];
         for (int16_t x = 0; x < dungeon_map_width(m); x++)
             c[x] = g_dungeon_raw_map_data + map_raw_data_offset(m) + x * dungeon_map_height(m);
     }
@@ -278,7 +287,9 @@ static uint16_t carried_first_thing(uint16_t thing)
 /* The map one level up or down that covers the dungeon position of (x, y) on map, or -1. */
 static int16_t map_at_level(int16_t map, int16_t level_delta, int16_t x, int16_t y)
 {
-    int16_t dungeon_x = x + map_offset_x(map), dungeon_y = y + map_offset_y(map), level = map_level(map) + level_delta;
+    int16_t dungeon_x = x + map_offset_x(map);
+    int16_t dungeon_y = y + map_offset_y(map);
+    int16_t level = map_level(map) + level_delta;
     for (int16_t m = 0; m < dungeon_map_count(); m++) {
         if (map_level(m) == level && map_offset_x(m) <= dungeon_x &&
             dungeon_x < map_offset_x(m) + dungeon_map_width(m) && map_offset_y(m) <= dungeon_y &&
@@ -301,7 +312,8 @@ static bool validate_records(void)
 {
     for (int16_t type = 0; type < THING_TYPE_COUNT; type++) {
         for (uint16_t i = 0; g_thing_data_byte_count[type] && i < thing_count(type); i++) {
-            uint16_t thing = THING_MAKE(type, i), next = get_next_thing(thing);
+            uint16_t thing = THING_MAKE(type, i);
+            uint16_t next = get_next_thing(thing);
             if (next == THING_NONE)
                 continue;
             if (!valid_link(next))
@@ -352,7 +364,8 @@ bool dungeon_validate(void)
 bool load_dungeon(const char *path)
 {
     size_t size;
-    uint8_t *file = file_read(path, &size), *unpacked = NULL;
+    uint8_t *file = file_read(path, &size);
+    uint8_t *unpacked = NULL;
     bool ok = kaos.data && file && size >= COMPRESSED_HEADER_BYTES;
     dungeon_free();
     load_ptr = file;
@@ -360,7 +373,8 @@ bool load_dungeon(const char *path)
     if (ok && BE16(file) == DUNGEON_COMPRESSED_MAGIC) {
         load_remaining = BE32(file + 2);
         g_dungeon_id = BE16(file + 6);
-        load_ptr = unpacked = load_remaining > 0 && load_remaining <= MAX_DUNGEON_SIZE ? malloc(load_remaining) : NULL;
+        unpacked = load_remaining > 0 && load_remaining <= MAX_DUNGEON_SIZE ? malloc(load_remaining) : NULL;
+        load_ptr = unpacked;
         ok = unpacked && decompress_dungeon(file + COMPRESSED_HEADER_BYTES, (int32_t)size - COMPRESSED_HEADER_BYTES,
                                             unpacked, load_remaining);
     }
@@ -410,7 +424,8 @@ uint8_t *dungeon_save(uint32_t *size)
     uint32_t total = 2;
     for (int i = 0; i < DUNGEON_PART_COUNT; i++)
         total += bytes[i];
-    uint8_t *out = malloc(total), *p = out;
+    uint8_t *out = malloc(total);
+    uint8_t *p = out;
     if (!out)
         return NULL;
     uint16_t sum = 0;
@@ -507,7 +522,8 @@ static const char *escape_string(uint16_t escape, uint16_t code, int16_t mode)
 static void decode_codes(TextOut *o, uint16_t w, int16_t mode)
 {
     char separator = mode == MODE_INSCRIPTION ? INSCRIPTION_SEPARATOR : mode == MODE_MESSAGE ? ' ' : '\n';
-    uint16_t word = 0, escape = 0;
+    uint16_t word = 0;
+    uint16_t escape = 0;
     if (mode == MODE_MESSAGE)
         put(o, '\n');
     for (int16_t k = 0; o->ok; k = (k + 1) % TEXT_CODES_PER_WORD) {

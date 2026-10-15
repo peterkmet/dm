@@ -186,6 +186,13 @@ static const int8_t staff_mana[] = {STAFF_MANA,     WAND_MANA,           TEOWAND
                                     YEW_STAFF_MANA, STAFF_OF_MANAR_MANA, SNAKE_STAFF_MANA,
                                     CONDUIT_MANA,   DRAGON_SPIT_MANA,    SCEPTRE_OF_LYF_MANA};
 
+/* Sets the statistic that an object raises and returns the bonus. */
+static int16_t stat_bonus(uint16_t *stat, uint16_t statistic, int16_t bonus)
+{
+    *stat = statistic;
+    return bonus;
+}
+
 /* The statistic (or STAT_MANA) and the bonus of an object in a slot. Returns 0 for no bonus. */
 static int16_t object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint16_t *stat)
 {
@@ -199,7 +206,7 @@ static int16_t object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint
     case SLOT_HAND_ACTION:
         *stat = STAT_MANA;
         if (icon == ICON_MACE_OF_ORDER)
-            return *stat = STAT_STRENGTH, MACE_OF_ORDER_STRENGTH;
+            return stat_bonus(stat, STAT_STRENGTH, MACE_OF_ORDER_STRENGTH);
         if (icon >= ICON_STAFF_OF_CLAWS && icon <= ICON_STAFF_OF_CLAWS_LAST)
             return STAFF_OF_CLAWS_MANA;
         if (icon >= ICON_STAFF && icon <= ICON_SCEPTRE_OF_LYF)
@@ -209,21 +216,21 @@ static int16_t object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint
                : icon == ICON_INQUISITOR ? INQUISITOR_MANA
                                          : 0;
     case SLOT_LEGS:
-        return icon == ICON_POWERTOWERS ? (*stat = STAT_STRENGTH, POWERTOWERS_STRENGTH) : 0;
+        return icon == ICON_POWERTOWERS ? stat_bonus(stat, STAT_STRENGTH, POWERTOWERS_STRENGTH) : 0;
     case SLOT_HEAD:
         if (icon == ICON_CROWN_OF_NERRA)
-            return *stat = STAT_WISDOM, CROWN_OF_NERRA_WISDOM;
-        return icon == ICON_DEXHELM ? (*stat = STAT_DEXTERITY, DEXHELM_DEXTERITY) : 0;
+            return stat_bonus(stat, STAT_WISDOM, CROWN_OF_NERRA_WISDOM);
+        return icon == ICON_DEXHELM ? stat_bonus(stat, STAT_DEXTERITY, DEXHELM_DEXTERITY) : 0;
     case SLOT_TORSO:
         if (icon == ICON_FLAMEBAIN)
-            return *stat = STAT_ANTIFIRE, FLAMEBAIN_ANTIFIRE;
-        return icon == ICON_CLOAK_OF_NIGHT ? (*stat = STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY) : 0;
+            return stat_bonus(stat, STAT_ANTIFIRE, FLAMEBAIN_ANTIFIRE);
+        return icon == ICON_CLOAK_OF_NIGHT ? stat_bonus(stat, STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY) : 0;
     case SLOT_NECK:
         if (icon == ICON_JEWEL_SYMAL || icon == ICON_JEWEL_SYMAL_WORN)
-            return *stat = STAT_ANTIMAGIC, JEWEL_SYMAL_ANTIMAGIC;
+            return stat_bonus(stat, STAT_ANTIMAGIC, JEWEL_SYMAL_ANTIMAGIC);
         if (icon == ICON_CLOAK_OF_NIGHT)
-            return *stat = STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY;
-        return icon == ICON_MOONSTONE ? (*stat = STAT_MANA, MOONSTONE_MANA) : 0;
+            return stat_bonus(stat, STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY);
+        return icon == ICON_MOONSTONE ? stat_bonus(stat, STAT_MANA, MOONSTONE_MANA) : 0;
     }
     return 0;
 }
@@ -269,7 +276,8 @@ static bool is_torch(int16_t icon)
 uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)
 {
     Champion *c = &g_champions[champion_index];
-    uint16_t *p = slot_ptr(c, slot), thing = *p;
+    uint16_t *p = slot_ptr(c, slot);
+    uint16_t thing = *p;
     *p = THING_NONE;
     if (thing == THING_NONE)
         return THING_NONE;
@@ -383,7 +391,8 @@ void close_chest(void)
 {
     if (g_open_chest == THING_NONE)
         return;
-    uint16_t chest = g_open_chest, last = THING_NONE;
+    uint16_t chest = g_open_chest;
+    uint16_t last = THING_NONE;
     g_open_chest = THING_NONE;
     container_set_first_thing(chest, THING_END);
     for (int i = 0; i < SLOT_CHEST_COUNT; i++) {
@@ -484,7 +493,8 @@ int16_t process_click_on_mouth(void)
         !(tables_object_info(inventory_get_object_info_index(thing))->allowed_slots & OBJECT_EDIBLE))
         return MOUTH_REFUSED;
     int16_t icon = object_get_icon_index(thing);
-    uint16_t type = THING_TYPE(thing), weight = inventory_get_object_weight(thing);
+    uint16_t type = THING_TYPE(thing);
+    uint16_t weight = inventory_get_object_weight(thing);
     uint16_t champion_index = g_inventory_champion_ordinal - 1;
     Champion *c = &g_champions[champion_index];
     bool consumed = false;

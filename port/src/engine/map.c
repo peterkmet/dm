@@ -52,7 +52,8 @@ static bool is_corridor_or_pit(uint8_t square)
 /* Outside the map: a wall, with the "ornament allowed" bit when the adjacent square is a corridor or a pit. */
 uint8_t get_square(int16_t x, int16_t y)
 {
-    bool in_x = x >= 0 && x < g_current_map_width, in_y = y >= 0 && y < g_current_map_height;
+    bool in_x = x >= 0 && x < g_current_map_width;
+    bool in_y = y >= 0 && y < g_current_map_height;
     if (in_x && in_y)
         return g_current_map_data[x][y];
     if (in_x) {
@@ -86,7 +87,8 @@ int16_t get_location_after_level_change(int16_t map, int16_t level_delta, int16_
 {
     if (g_party_map_index == NO_DUNGEON_MAP)
         return -1;
-    int16_t dungeon_x = *x + map_offset_x(map), dungeon_y = *y + map_offset_y(map);
+    int16_t dungeon_x = *x + map_offset_x(map);
+    int16_t dungeon_y = *y + map_offset_y(map);
     uint16_t level = (uint16_t)(map_level(map) + level_delta); /* level 0 up wraps to no level */
     for (int16_t m = 0; m < dungeon_map_count(); m++) {
         if (level == map_level(m) && map_offset_x(m) <= dungeon_x && dungeon_x <= map_offset_x(m) + map_last_x(m) &&
@@ -103,7 +105,8 @@ int16_t get_location_after_level_change(int16_t map, int16_t level_delta, int16_
 int16_t get_stairs_exit_direction(int16_t x, int16_t y)
 {
     int16_t direction = get_square(x, y) & STAIRS_NORTH_SOUTH ? DIRECTION_NORTH : DIRECTION_EAST;
-    int16_t ahead_x = x, ahead_y = y;
+    int16_t ahead_x = x;
+    int16_t ahead_y = y;
     update_map_coordinates_after_relative_movement(direction, 1, 0, &ahead_x, &ahead_y);
     int16_t type = get_square_type(ahead_x, ahead_y);
     return type == SQUARE_WALL || type == SQUARE_STAIRS ? turn_back(direction) : direction;
@@ -257,7 +260,8 @@ uint16_t get_creature_attributes(uint16_t group_thing)
    ponytail: no get_discarded_thing yet; returns THING_NONE when no record is free. */
 uint16_t get_unused_thing(uint16_t thing_type)
 {
-    uint16_t type = thing_type & ~NO_JUNK_RESERVE, size = g_thing_data_byte_count[type];
+    uint16_t type = thing_type & ~NO_JUNK_RESERVE;
+    uint16_t size = g_thing_data_byte_count[type];
     int16_t count = BE16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2);
     if (thing_type == THING_JUNK)
         count -= JUNK_RESERVED_COUNT;

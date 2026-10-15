@@ -255,7 +255,8 @@ static void action_list_json(Json *j, int16_t index)
     if (set) {
         json_str(j, gfx_action_name(set->action_indices[0]));
         for (int k = 1; k < ACTION_LIST_COUNT; k++) {
-            uint8_t action = set->action_indices[k], level = set->minimum_skill_levels[k - 1];
+            uint8_t action = set->action_indices[k];
+            uint8_t level = set->minimum_skill_levels[k - 1];
             const ActionInfo *info = tables_action_info(action);
             if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charges(c)))
                 continue;
@@ -459,7 +460,8 @@ void state_json_state(Json *j)
     key_bool(j, "dead", g_party_dead);
     json_close(j, '}');
     /* A shown candidate is the last champion record, but not yet in the party. */
-    int16_t members = g_party_champion_count, candidate = -1;
+    int16_t members = g_party_champion_count;
+    int16_t candidate = -1;
     if (g_candidate_champion_ordinal && members)
         candidate = --members;
     json_key(j, "leader");
@@ -553,7 +555,8 @@ static int16_t visible_depths(void)
 
 static void view_square(int16_t depth, int16_t side, int16_t *x, int16_t *y)
 {
-    *x = g_party_map_x, *y = g_party_map_y;
+    *x = g_party_map_x;
+    *y = g_party_map_y;
     update_map_coordinates_after_relative_movement(g_party_direction, depth, side, x, y);
 }
 
@@ -651,7 +654,8 @@ static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
 {
     memset(f, 0, sizeof *f);
     f->text = THING_NONE;
-    f->lock_ornament = f->other_ornament = -1;
+    f->lock_ornament = -1;
+    f->other_ornament = -1;
     for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
          t = get_next_thing(t)) {
         if (THING_CELL(t) != face)
@@ -809,7 +813,8 @@ void state_json_explosion_name(Json *j, uint16_t type)
 /* Creature groups, objects per cell, projectiles, and explosions on a square. */
 static void square_things_json(Json *j, int16_t x, int16_t y)
 {
-    Json objects = {0}, flying = {0};
+    Json objects = {0};
+    Json flying = {0};
     json_open(&objects, '[');
     json_open(&flying, '[');
     for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
@@ -1008,7 +1013,8 @@ static void map_row(int16_t y, int16_t w, char *out)
 
 void state_json_map(Json *j)
 {
-    int16_t w = dungeon_map_width(g_party_map_index), h = dungeon_map_height(g_party_map_index);
+    int16_t w = dungeon_map_width(g_party_map_index);
+    int16_t h = dungeon_map_height(g_party_map_index);
     char line[MAP_GRID_PREFIX + MAP_MAX_SIZE + 1];
     if (w > MAP_MAX_SIZE)
         w = MAP_MAX_SIZE;

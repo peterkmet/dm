@@ -47,7 +47,8 @@ uint16_t save_block_xor(uint8_t *bytes, uint16_t key, uint16_t word_count)
 {
     uint16_t sum = key;
     for (uint16_t i = word_count; i != 0; i--, bytes += 2) {
-        uint16_t old = BE16(bytes), new = old ^ key;
+        uint16_t old = BE16(bytes);
+        uint16_t new = old ^ key;
         WR16(bytes, new);
         sum = sum + new + old;
         key = key + i;
@@ -100,7 +101,8 @@ bool save_decode(const uint8_t *file, uint32_t size, SaveFile *s)
     memset(s, 0, sizeof *s);
     if (!file || size < SAVE_HEADER_BYTES || !(s->data = malloc(size)))
         return false;
-    uint8_t *d = s->header = s->data;
+    s->header = s->data;
+    uint8_t *d = s->header;
     memcpy(d, file, size);
     save_block_xor(d + H_PAYLOAD, BE16(d + payload_key()), SAVE_PAYLOAD_WORDS);
     if (header_chain(d, false, 0) != payload_sum(d) || d[field(H_PLATFORM)] == PLATFORM_REFUSED ||

@@ -9,7 +9,8 @@
 
 uint8_t fb[SCREEN_H][SCREEN_W] = {0};
 uint16_t palette[2 * PALETTE_COLORS];
-int16_t palette_split_top = 0, palette_split_bottom = SCREEN_H;
+int16_t palette_split_top = 0;
+int16_t palette_split_bottom = SCREEN_H;
 
 uint16_t video_color(int y, uint8_t c)
 {
@@ -28,7 +29,8 @@ uint32_t video_argb(uint16_t amiga)
 
 void video_layout(int out_w, int out_h, float *scale, float *ox, float *oy)
 {
-    float sx = (float)out_w / SCREEN_W, sy = (float)out_h / SCREEN_H;
+    float sx = (float)out_w / SCREEN_W;
+    float sy = (float)out_h / SCREEN_H;
     float s = sx < sy ? sx : sy;
     if (s <= 0)
         s = 1; /* minimized window: avoid a zero scale */

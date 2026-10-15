@@ -50,8 +50,10 @@ int layout_init(void)
 {
     data = gfx_item(GFX_LAYOUT, &size);
     if (!data || size < LAYOUT_HEADER_BYTES || BE16(data) != LAYOUT_SIGNATURE ||
-        LAYOUT_HEADER_BYTES + RANGE_BYTES * S16(data, 1) > size)
-        return data = NULL, -1;
+        LAYOUT_HEADER_BYTES + RANGE_BYTES * S16(data, 1) > size) {
+        data = NULL;
+        return -1;
+    }
     return 0;
 }
 
@@ -63,7 +65,8 @@ static const uint8_t *find(int16_t n)
     int16_t ranges = S16(data, 1);
     const uint8_t *rec = data + LAYOUT_HEADER_BYTES + RANGE_BYTES * ranges;
     for (int16_t i = 0; i < ranges; i++) {
-        int16_t first = S16(data, 2 + 2 * i), last = S16(data, 3 + 2 * i);
+        int16_t first = S16(data, 2 + 2 * i);
+        int16_t last = S16(data, 3 + 2 * i);
         if (first <= n && n <= last)
             return rec + ZONE_RECORD_BYTES * (n - first) + ZONE_RECORD_BYTES <= data + size
                        ? rec + ZONE_RECORD_BYTES * (n - first)
@@ -76,7 +79,8 @@ static const uint8_t *find(int16_t n)
 /* Top left corner of a w x h rectangle whose alignment point a is at (*x, *y). */
 static void align(int16_t a, int16_t w, int16_t h, int16_t *x, int16_t *y)
 {
-    int16_t cx = (w + 1) >> 1, cy = (h + 1) >> 1;
+    int16_t cx = (w + 1) >> 1;
+    int16_t cy = (h + 1) >> 1;
     switch (a) {
     case ALIGN_CENTER:
         *x -= cx;
@@ -112,7 +116,8 @@ static void align(int16_t a, int16_t w, int16_t h, int16_t *x, int16_t *y)
 /* Alignment point a of a w x h rectangle with its top left corner at (*x, *y). */
 static void anchor(int16_t a, int16_t w, int16_t h, int16_t *x, int16_t *y)
 {
-    int16_t cx = (w + 1) >> 1, cy = (h + 1) >> 1;
+    int16_t cx = (w + 1) >> 1;
+    int16_t cy = (h + 1) >> 1;
     switch (a) {
     case ALIGN_CENTER:
         *x += cx;
@@ -169,7 +174,8 @@ static bool place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip
         if (t < RECORD_INNER_POINT || t > RECORD_INNER_POINT_LAST) {
             if (!(p = find(zone_parent(r))))
                 break;
-            int16_t a = zone_x(p), b = zone_y(p);
+            int16_t a = zone_x(p);
+            int16_t b = zone_y(p);
             if (zone_type(p) == RECORD_TRANSLATION) {
                 *x += a;
                 *y += b;
@@ -196,7 +202,10 @@ static bool place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip
         } else { /* a point inside the rectangle of another point */
             if (!(p = find(zone_parent(r))) || !(s = find(zone_parent(p))))
                 break;
-            int16_t a = zone_x(p), b = zone_y(p), sw = zone_x(s), sh = zone_y(s);
+            int16_t a = zone_x(p);
+            int16_t b = zone_y(p);
+            int16_t sw = zone_x(s);
+            int16_t sh = zone_y(s);
             if (zone_type(p) >= RECORD_SIZE)
                 return false;
             align(zone_type(p), sw, sh, &a, &b);
@@ -224,7 +233,9 @@ bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box,
     if (!r)
         return false;
     Box clip = {0, 0, CLIP_NONE, CLIP_NONE};
-    int16_t type = zone_type(r), x = 0, y = 0;
+    int16_t type = zone_type(r);
+    int16_t x = 0;
+    int16_t y = 0;
     if (type < RECORD_SIZE) {
         x = zone_x(r);
         y = zone_y(r);
@@ -238,15 +249,18 @@ bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box,
     if (shifted) {
         x += *w;
         y += *h;
-        *w = *h = 0;
+        *w = 0;
+        *h = 0;
     }
     if (!place_in_parents(r, &x, &y, &clip))
         return false;
-    int16_t iw = *w ? *w : bitmap_w, ih = *h ? *h : bitmap_h;
+    int16_t iw = *w ? *w : bitmap_w;
+    int16_t ih = *h ? *h : bitmap_h;
     box->x = x;
     box->y = y;
     align(type, iw, ih, &box->x, &box->y);
-    int16_t dx = clip.x - box->x, dy = clip.y - box->y;
+    int16_t dx = clip.x - box->x;
+    int16_t dy = clip.y - box->y;
     if (dx < 1) {
         *w = 0;
         box->w = iw < dx + clip.w ? iw : dx + clip.w;

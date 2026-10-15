@@ -133,8 +133,10 @@ void champion_pack(const Champion *c, uint8_t *out)
     memset(out, 0, CHAMPION_RECORD_SIZE);
     memcpy(out + REC_NAME, c->name, sizeof c->name);
     memcpy(out + REC_TITLE, c->title, sizeof c->title);
-    out[REC_DIRECTION] = c->direction, out[REC_CELL] = c->cell;
-    out[REC_ACTION] = c->action_index, out[REC_SYMBOL_STEP] = c->symbol_step;
+    out[REC_DIRECTION] = c->direction;
+    out[REC_CELL] = c->cell;
+    out[REC_ACTION] = c->action_index;
+    out[REC_SYMBOL_STEP] = c->symbol_step;
     memcpy(out + REC_SYMBOLS, c->symbols, sizeof c->symbols);
     out[REC_DAMAGE_DIRECTION] = c->direction_maximum_damage_received;
     out[REC_MAXIMUM_DAMAGE] = c->maximum_damage_received;
@@ -159,8 +161,10 @@ void champion_unpack(const uint8_t *in, Champion *c)
     memset(c, 0, sizeof *c);
     memcpy(c->name, in + REC_NAME, sizeof c->name);
     memcpy(c->title, in + REC_TITLE, sizeof c->title);
-    c->direction = in[REC_DIRECTION], c->cell = in[REC_CELL];
-    c->action_index = in[REC_ACTION], c->symbol_step = in[REC_SYMBOL_STEP];
+    c->direction = in[REC_DIRECTION];
+    c->cell = in[REC_CELL];
+    c->action_index = in[REC_ACTION];
+    c->symbol_step = in[REC_SYMBOL_STEP];
     memcpy(c->symbols, in + REC_SYMBOLS, sizeof c->symbols);
     c->direction_maximum_damage_received = in[REC_DAMAGE_DIRECTION];
     c->maximum_damage_received = in[REC_MAXIMUM_DAMAGE];
@@ -192,7 +196,8 @@ static void print_champion_message(uint16_t champion_index, int16_t text)
 
 static void square_in_front(int16_t *x, int16_t *y)
 {
-    *x = g_party_map_x, *y = g_party_map_y;
+    *x = g_party_map_x;
+    *y = g_party_map_y;
     update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, x, y);
 }
 
@@ -270,7 +275,8 @@ static void add_candidate_possessions(uint16_t champion_index)
 {
     int16_t x, y;
     square_in_front(&x, &y);
-    uint16_t cell = (g_party_direction + 2) % CELL_COUNT, backpack = SLOT_BACKPACK_FIRST;
+    uint16_t cell = (g_party_direction + 2) % CELL_COUNT;
+    uint16_t backpack = SLOT_BACKPACK_FIRST;
     for (uint16_t t = get_square_first_thing(x, y); t != THING_END; t = get_next_thing(t)) {
         uint16_t type = THING_TYPE(t);
         /* Fix: the original reuses a stale slot for things that are not objects; none lie on mirror walls. */
@@ -292,7 +298,8 @@ void champion_set_portrait(int16_t champion_index, int16_t portrait_index)
         return;
     for (int row = 0; row < CHAMPION_PORTRAIT_HEIGHT; row++)
         for (int column = 0; column < CHAMPION_PORTRAIT_WIDTH; column++) {
-            int sx = x + column, sy = y + row;
+            int sx = x + column;
+            int sy = y + row;
             if (sx >= 0 && sx < portraits->w && sy >= 0 && sy < portraits->h)
                 px[row * CHAMPION_PORTRAIT_WIDTH + column] = portraits->px[sy * portraits->w + sx];
         }
@@ -308,7 +315,8 @@ void champion_add_candidate_to_party(int16_t portrait_index)
     Champion *c = &g_champions[index];
     memset(c, 0, sizeof *c);
     c->action_index = ACTION_NONE;
-    c->enable_action_event_index = c->hide_damage_received_event_index = -1;
+    c->enable_action_event_index = -1;
+    c->hide_damage_received_event_index = -1;
     c->direction = g_party_direction;
     int16_t n = 0;
     while (champion_get_index_in_cell((g_party_direction + n) % CELL_COUNT) != -1)
@@ -327,9 +335,12 @@ void champion_add_candidate_to_party(int16_t portrait_index)
     memcpy(c->title, r.title, sizeof c->title);
     if (r.male)
         c->attributes |= CHAMPION_ATTR_MALE;
-    c->current_health = r.current_health, c->maximum_health = r.maximum_health;
-    c->current_stamina = r.current_stamina, c->maximum_stamina = r.maximum_stamina;
-    c->current_mana = r.current_mana, c->maximum_mana = r.maximum_mana;
+    c->current_health = r.current_health;
+    c->maximum_health = r.maximum_health;
+    c->current_stamina = r.current_stamina;
+    c->maximum_stamina = r.maximum_stamina;
+    c->current_mana = r.current_mana;
+    c->maximum_mana = r.maximum_mana;
     memcpy(c->statistics, r.statistics, sizeof c->statistics);
     for (int s = 0; s < SKILL_COUNT; s++)
         c->skills[s].experience = r.experience[s];
@@ -352,11 +363,15 @@ static void reincarnate(Champion *c)
         for (int s = STAT_STRENGTH; s < STAT_COUNT; s++) {
             int16_t value = c->statistics[s][STAT_CURRENT];
             value = max16(c->statistics[s][STAT_MINIMUM], value - (value >> CSB_REINCARNATION_STAT_LOSS_SHIFT));
-            c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM] = value;
+            c->statistics[s][STAT_MAXIMUM] = value;
+            c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM];
         }
-        c->current_health >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_health >>= CSB_REINCARNATION_BAR_SHIFT;
-        c->current_stamina >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_stamina >>= CSB_REINCARNATION_BAR_SHIFT;
-        c->current_mana >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_mana >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->current_health >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->maximum_health >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->current_stamina >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->maximum_stamina >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->current_mana >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->maximum_mana >>= CSB_REINCARNATION_BAR_SHIFT;
     }
     for (int i = 0; i < REINCARNATION_POINTS; i++) {
         uint16_t s = random16() % STAT_COUNT;
@@ -476,11 +491,14 @@ static void gain_level(uint16_t champion_index, uint16_t base, uint16_t level)
 {
     Champion *c = &g_champions[champion_index];
     uint8_t (*maximum)[STAT_VALUE_COUNT] = c->statistics;
-    uint16_t r1 = random_bit(), r2 = random_bit() + 1, vitality = random_bit();
+    uint16_t r1 = random_bit();
+    uint16_t r2 = random_bit() + 1;
+    uint16_t vitality = random_bit();
     if (base != SKILL_PRIEST)
         vitality &= level;
     maximum[STAT_VITALITY][STAT_MAXIMUM] += vitality;
-    uint16_t stamina_gain = c->maximum_stamina, health_gain = level;
+    uint16_t stamina_gain = c->maximum_stamina;
+    uint16_t health_gain = level;
     maximum[STAT_ANTIFIRE][STAT_MAXIMUM] += ~level & random_bit();
     switch (base) {
     case SKILL_FIGHTER:
@@ -536,7 +554,8 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
     if (difficulty)
         experience *= difficulty;
     Champion *c = &g_champions[champion_index];
-    uint16_t base = base_skill(skill), flags = SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE;
+    uint16_t base = base_skill(skill);
+    uint16_t flags = SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE;
     uint16_t old_level = champion_get_skill_level(champion_index, base | flags);
     if (skill >= SKILL_BASE_COUNT && g_game_time - RECENT_ATTACK_TICKS < (uint32_t)g_last_creature_attack_time)
         experience *= 2;
@@ -568,7 +587,8 @@ uint16_t champion_get_maximum_load(const Champion *c)
 /* Ticks between two party moves for this champion: more when the load is heavy. */
 int16_t champion_get_movement_ticks(const Champion *c)
 {
-    uint16_t maximum = champion_get_maximum_load(c), load = c->load;
+    uint16_t maximum = champion_get_maximum_load(c);
+    uint16_t load = c->load;
     int16_t ticks, wounded_feet;
     if (load < maximum) {
         ticks = (int32_t)maximum * HEAVY_LOAD_NUMERATOR < (int32_t)load * HEAVY_LOAD_DENOMINATOR ? MOVE_TICKS_HEAVY
@@ -605,7 +625,8 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
 {
     const Champion *c = &g_champions[champion_index];
     int16_t strength = c->statistics[STAT_STRENGTH][STAT_CURRENT] + (random16() & STRENGTH_RANDOM_MASK);
-    uint16_t thing = c->slots[slot], weight = inventory_get_object_weight(thing);
+    uint16_t thing = c->slots[slot];
+    uint16_t weight = inventory_get_object_weight(thing);
     uint16_t light = champion_get_maximum_load(c) >> LIGHT_LOAD_SHIFT;
     if (light >= weight) {
         strength += weight - STRENGTH_WEIGHT_OFFSET;
@@ -645,7 +666,8 @@ int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_fla
 {
     const Champion *c = &g_champions[champion_index];
     bool sharp = slot_and_flags & WOUND_DEFENSE_USE_SHARP;
-    uint16_t slot = slot_and_flags & ~WOUND_DEFENSE_USE_SHARP, shields = 0;
+    uint16_t slot = slot_and_flags & ~WOUND_DEFENSE_USE_SHARP;
+    uint16_t shields = 0;
     for (int16_t hand = SLOT_HAND_READY; hand <= SLOT_HAND_ACTION; hand++) {
         uint16_t thing = c->slots[hand];
         if (THING_TYPE(thing) != THING_ARMOUR || !(armour_info(thing)->attributes & ARMOUR_SHIELD))
@@ -673,7 +695,8 @@ int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_fla
 static int16_t resisted_attack(int16_t champion_index, int16_t attack, uint16_t allowed_wounds, int16_t attack_type)
 {
     const Champion *c = &g_champions[champion_index];
-    uint16_t count = 0, defense = 0;
+    uint16_t count = 0;
+    uint16_t defense = 0;
     for (int16_t slot = SLOT_HAND_READY; slot <= SLOT_FEET; slot++)
         if (allowed_wounds & 1 << slot) {
             count++;
@@ -952,7 +975,8 @@ static void regenerate_mana(uint16_t i, uint16_t chance)
 static void consume_food_and_water(uint16_t i, uint16_t time)
 {
     Champion *c = &g_champions[i];
-    int16_t food = c->food, water = c->water;
+    int16_t food = c->food;
+    int16_t water = c->water;
     uint16_t steps = FOOD_WATER_LAST_STEPS;
     for (int16_t half = c->maximum_stamina >> 1; half > c->current_stamina; half >>= 1)
         steps += 2;
@@ -966,16 +990,20 @@ static void consume_food_and_water(uint16_t i, uint16_t time)
     do {
         bool last_steps = steps <= FOOD_WATER_LAST_STEPS;
         if (c->food < FOOD_WATER_STARVING) {
-            if (last_steps)
-                loss += rate, c->food -= 2;
+            if (last_steps) {
+                loss += rate;
+                c->food -= 2;
+            }
         } else {
             if (c->food >= 0)
                 loss -= rate;
             c->food -= last_steps ? 2 : steps >> 1;
         }
         if (c->water < FOOD_WATER_STARVING) {
-            if (last_steps)
-                loss += rate, c->water -= 1;
+            if (last_steps) {
+                loss += rate;
+                c->water -= 1;
+            }
         } else {
             if (c->water >= 0)
                 loss -= rate;
@@ -987,8 +1015,10 @@ static void consume_food_and_water(uint16_t i, uint16_t time)
         c->food = FOOD_WATER_MINIMUM;
     if (c->water < FOOD_WATER_MINIMUM)
         c->water = FOOD_WATER_MINIMUM;
-    if (g_cheat_food)
-        c->food = food, c->water = water;
+    if (g_cheat_food) {
+        c->food = food;
+        c->water = water;
+    }
 }
 
 /* Health comes back while stamina is above a quarter; vitality makes it more likely. */

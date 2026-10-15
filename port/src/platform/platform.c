@@ -121,7 +121,8 @@ static void draw_pointer(uint32_t *px, int stride)
     for (int y = 0; y < pointer_h; y++)
         for (int x = 0; x < pointer_w; x++) {
             uint8_t c = pointer_px[y * pointer_w + x];
-            int sx = mouse_x - pointer_hot_x + x, sy = mouse_y - pointer_hot_y + y;
+            int sx = mouse_x - pointer_hot_x + x;
+            int sy = mouse_y - pointer_hot_y + y;
             if (!c || sx < 0 || sy < 0 || sx >= SCREEN_W || sy >= SCREEN_H)
                 continue;
             for (int dy = 0; dy < filter; dy++)
@@ -145,7 +146,8 @@ void plat_present(void)
         return;
     int stride = pitch / ARGB_BYTES;
     for (int y = 0; y < SCREEN_H * filter; y++) {
-        int row = y / filter, half = row >= palette_split_top && row < palette_split_bottom ? 0 : PALETTE_COLORS;
+        int row = y / filter;
+        int half = row >= palette_split_top && row < palette_split_bottom ? 0 : PALETTE_COLORS;
         for (int x = 0; x < tw; x++)
             px[y * stride + x] = pal[(src[y * tw + x] & COLOR_INDEX_MASK) | half];
     }

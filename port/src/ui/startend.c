@@ -248,11 +248,14 @@ static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_in
     Box b;
     if (!text_size(text, &tw, &th))
         return;
-    int16_t w = tw, h = th, inner_x = tables_button_inner_border(TABLES_AXIS_X),
-            inner_y = tables_button_inner_border(TABLES_AXIS_Y);
+    int16_t w = tw;
+    int16_t h = th;
+    int16_t inner_x = tables_button_inner_border(TABLES_AXIS_X);
+    int16_t inner_y = tables_button_inner_border(TABLES_AXIS_Y);
     if (!layout_get_zone(zone, 0, 0, &b, &w, &h))
         return;
-    int16_t dx = inner_x + tables_button_border(TABLES_AXIS_X), dy = inner_y + tables_button_border(TABLES_AXIS_Y);
+    int16_t dx = inner_x + tables_button_border(TABLES_AXIS_X);
+    int16_t dy = inner_y + tables_button_border(TABLES_AXIS_Y);
     Box outer = {b.x - dx, b.y - dy, b.w + 2 * dx, b.h + 2 * dy};
     Box inner = {outer.x + inner_x, outer.y + inner_y, outer.w - 2 * inner_x, outer.h - 2 * inner_y};
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
@@ -280,17 +283,20 @@ static void print_champion_skills(uint16_t champion_index, int y)
 static void draw_champion_parade(void)
 {
     Bitmap screen = ui_screen();
-    int16_t pw = tables_portrait_width(), ph = tables_portrait_height();
+    int16_t pw = tables_portrait_width();
+    int16_t ph = tables_portrait_height();
     memset(fb, COLOR_DARKEST_GRAY, sizeof fb);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         const Champion *c = &g_champions[i];
         ui_blit_graphic(&screen, GFX_CHAMPION_FRAME, ZONE_CHAMPION_FRAME_FIRST + i, COLOR_FLESH);
-        int16_t w = pw, h = ph;
+        int16_t w = pw;
+        int16_t h = ph;
         Box b;
         Bitmap portrait = ui_champion_portrait(i);
         if (layout_get_zone(ZONE_CHAMPION_PORTRAIT_FIRST + i, pw, ph, &b, &w, &h))
             draw_blit(&portrait, w, h, &screen, &b, COLOR_DARK_GRAY, 0);
-        char name[sizeof c->name + 1] = {0}, title[sizeof c->title + 1] = {0};
+        char name[sizeof c->name + 1] = {0};
+        char title[sizeof c->title + 1] = {0};
         memcpy(name, c->name, sizeof c->name);
         memcpy(title, c->title, sizeof c->title);
         int name_y = i * ENDGAME_ROW_HEIGHT + ENDGAME_NAME_Y;
@@ -315,7 +321,8 @@ static Box csb_box(bool inner)
 static void csb_draw_restart_button(void)
 {
     Bitmap screen = ui_screen();
-    Box outer = csb_box(false), inner = csb_box(true);
+    Box outer = csb_box(false);
+    Box inner = csb_box(true);
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
     draw_fill(&screen, &inner, COLOR_BLACK);
     text_draw_screen(CSB_RESTART_TEXT_X, CSB_RESTART_TEXT_Y, COLOR_CYAN, COLOR_BLACK,
@@ -496,13 +503,16 @@ static void delete_other_groups(int16_t x, int16_t y)
 
 void fuse_sequence(void)
 {
-    int16_t x = g_party_map_x, y = g_party_map_y;
+    int16_t x = g_party_map_x;
+    int16_t y = g_party_map_y;
     g_game_won = true;
     if (g_inventory_champion_ordinal)
         command_toggle_inventory(CHAMPION_MAX_COUNT);
     command_highlight_disable();
     g_party.magical_light_amount = FUSE_MAGICAL_LIGHT;
-    g_party.shield_defense = g_party.spell_shield_defense = g_party.fire_shield_defense = FUSE_SHIELD;
+    g_party.shield_defense = FUSE_SHIELD;
+    g_party.spell_shield_defense = FUSE_SHIELD;
+    g_party.fire_shield_defense = FUSE_SHIELD;
     ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX);
     fuse_update();
     update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);

@@ -44,8 +44,8 @@ static bool in_dungeon_view(void)
 static void draw_readout(Bitmap *vp)
 {
     char line[READOUT_TEXT_SIZE];
-    int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN,
-            y = AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP;
+    int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN;
+    int16_t y = AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP;
     snprintf(line, sizeof line, "LEVEL %u X %d Y %d", map_level(g_party_map_index), g_party_map_x, g_party_map_y);
     text_draw(vp, x, y, COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)], gameloop_party_light());
@@ -72,7 +72,8 @@ void advanced_draw_automap(void)
 
 static void close_automap(void)
 {
-    g_automap_open = drag.active = false;
+    g_automap_open = false;
+    drag.active = false;
     automap_scroll_reset();
     gameloop_draw_view();
 }
@@ -81,7 +82,8 @@ void advanced_drag(int16_t x, int16_t y)
 {
     if (!drag.active || !g_automap_open)
         return;
-    int16_t dx = (x - drag.x) / AUTOMAP_CELL_SIZE, dy = (y - drag.y) / AUTOMAP_CELL_SIZE;
+    int16_t dx = (x - drag.x) / AUTOMAP_CELL_SIZE;
+    int16_t dy = (y - drag.y) / AUTOMAP_CELL_SIZE;
     if (!dx && !dy)
         return;
     drag.x += dx * AUTOMAP_CELL_SIZE;
@@ -100,7 +102,9 @@ bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
         drag.active = false;
     } else if (kind == CLICK_LEFT_PRESS && ui_zone_box(ZONE_VIEWPORT, &b) && x >= b.x && x < b.x + b.w && y >= b.y &&
                y < b.y + b.h) {
-        drag.active = true, drag.x = x, drag.y = y;
+        drag.active = true;
+        drag.x = x;
+        drag.y = y;
     }
     return true;
 }
@@ -131,7 +135,8 @@ static void quick_load(void)
     if (result == SAVEGAME_LOADED) {
         gameloop_continue_loaded_game();
         g_saved_game_exists = exists;
-        g_last_save_game_time = g_last_load_game_time = 0;
+        g_last_save_game_time = 0;
+        g_last_load_game_time = 0;
     }
     advanced_print_message(result == SAVEGAME_LOADED    ? "GAME LOADED"
                            : result == SAVEGAME_MISSING ? "NO QUICK SAVE"

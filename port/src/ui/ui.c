@@ -104,7 +104,8 @@ void ui_blit_graphic_box(Bitmap *dst, int16_t graphic, const Box *box, int16_t t
 /* Draws a bitmap placed in zone. */
 void ui_blit_zone(Bitmap *dst, const Bitmap *src, int16_t zone, int16_t transparent)
 {
-    int16_t w = 0, h = 0;
+    int16_t w = 0;
+    int16_t h = 0;
     Box b;
     if (src && layout_get_zone(zone, src->w, src->h, &b, &w, &h))
         draw_blit(src, w, h, dst, &b, transparent, 0);
@@ -117,7 +118,8 @@ void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char
     Box b;
     if (!text_size(text, &tw, &th))
         return;
-    int16_t w = tw, h = th;
+    int16_t w = tw;
+    int16_t h = th;
     if (layout_get_zone(zone, 0, 0, &b, &w, &h))
         text_draw(dst, b.x, b.y + b.h - 1, fg, bg, text);
 }
@@ -226,7 +228,8 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
         sheet++;
     int16_t i = icon - tables_icon_sheet_first(sheet - 1);
     const Bitmap *bm = gfx_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
-    out->w = out->h = UI_ICON_SIZE;
+    out->w = UI_ICON_SIZE;
+    out->h = UI_ICON_SIZE;
     memset(out->px, 0, UI_ICON_SIZE * UI_ICON_SIZE);
     if (bm)
         draw_blit(bm, i % ICONS_PER_ROW * UI_ICON_SIZE, i / ICONS_PER_ROW * UI_ICON_SIZE, out,
@@ -236,11 +239,15 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
 /* The icon box of zone; with border, grown by the slot box border. */
 int ui_icon_zone_box(int16_t zone, int border, Box *box)
 {
-    int16_t w = UI_ICON_SIZE, h = UI_ICON_SIZE;
+    int16_t w = UI_ICON_SIZE;
+    int16_t h = UI_ICON_SIZE;
     int ok = layout_get_zone(zone, 0, 0, box, &w, &h);
     if (border) {
         int16_t d = tables_slot_box_border();
-        box->x -= d, box->y -= d, box->w += 2 * d, box->h += 2 * d;
+        box->x -= d;
+        box->y -= d;
+        box->w += 2 * d;
+        box->h += 2 * d;
     }
     return ok;
 }
@@ -255,7 +262,8 @@ bool ui_slot_box_zone(int16_t slot_box, int border, Box *box)
 void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon)
 {
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
-    Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px}, screen = ui_screen();
+    Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
+    Bitmap screen = ui_screen();
     Box b;
     if (slot_box < 0 || slot_box >= SLOT_BOX_COUNT)
         return;
@@ -317,7 +325,8 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
                 return in.command;
             continue;
         }
-        int16_t px = x, py = y;
+        int16_t px = x;
+        int16_t py = y;
         if (in.x1 == INPUT_ZONE_VIEWPORT) {
             px -= tables_viewport_x();
             py -= tables_viewport_y();

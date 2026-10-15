@@ -67,7 +67,8 @@ int explored_save(uint8_t **buf, size_t *len)
         explored_reset();
     int16_t map_count = dungeon_map_count();
     size_t size = SAVE_HEADER_SIZE + 2 * (size_t)map_count + seen_size;
-    uint8_t *out = malloc(size), *p = out;
+    uint8_t *out = malloc(size);
+    uint8_t *p = out;
     if (!out)
         return -1;
     memcpy(p, SAVE_MAGIC, SAVE_MAGIC_SIZE);

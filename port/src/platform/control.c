@@ -51,7 +51,8 @@
 #define SEND_FLAGS 0 /* SO_NOSIGPIPE does the same (macOS) */
 #endif
 
-static int listen_fd = -1, client_fd = -1;
+static int listen_fd = -1;
+static int client_fd = -1;
 static char socket_path[sizeof(((struct sockaddr_un *)0)->sun_path)];
 static char input[INPUT_SIZE];
 static size_t input_length;
@@ -150,15 +151,18 @@ static void viewport_origin(int16_t *x, int16_t *y)
 /* A screen point inside box b (moved by dx, dy) where the table gives command, or 0. */
 static bool find_in_box(int16_t table, int16_t command, Box b, int16_t dx, int16_t dy, int16_t *x, int16_t *y)
 {
-    int16_t cx = b.x + dx + b.w / 2, cy = b.y + dy + b.h / 2;
+    int16_t cx = b.x + dx + b.w / 2;
+    int16_t cy = b.y + dy + b.h / 2;
     if (ui_command_from_mouse(table, cx, cy, UI_BUTTON_LEFT) == command) {
-        *x = cx, *y = cy;
+        *x = cx;
+        *y = cy;
         return true;
     }
     for (int16_t py = b.y + dy; py < b.y + dy + b.h; py++)
         for (int16_t px = b.x + dx; px < b.x + dx + b.w; px++)
             if (ui_command_from_mouse(table, px, py, UI_BUTTON_LEFT) == command) {
-                *x = px, *y = py;
+                *x = px;
+                *y = py;
                 return true;
             }
     return false;
@@ -180,7 +184,8 @@ static bool find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
     for (int16_t entry = 0; tables_mouse_input(table, entry, &in); entry++) {
         if (in.command != command)
             continue;
-        int16_t x1 = in.x1, x2 = in.x2;
+        int16_t x1 = in.x1;
+        int16_t x2 = in.x2;
         Box b = {x1, in.y1, x2 - x1 + 1, 0};
         if (x1 >= 0) {
             b.h = in.y2 - b.y + 1;
@@ -283,7 +288,8 @@ static const char *movement(uint16_t key)
 static const char *step(uint16_t key, int16_t forward, int16_t right)
 {
     turn.moving = true;
-    turn.step_forward = forward, turn.step_right = right;
+    turn.step_forward = forward;
+    turn.step_right = right;
     return movement(key);
 }
 
@@ -303,7 +309,8 @@ static bool turn_bumped(void)
 /* The party was turned or moved by something else than its action: a spinner, a teleporter, a pit, stairs. */
 static const char *turn_displaced(void)
 {
-    int16_t x = turn.x, y = turn.y;
+    int16_t x = turn.x;
+    int16_t y = turn.y;
     if (turn.moving)
         update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
     bool stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
@@ -698,19 +705,28 @@ static bool write_png(const char *path)
         *p++ = 0; /* filter: none */
         for (int x = 0; x < SCREEN_W; x++) {
             uint32_t argb = video_argb(video_color(y, fb[y][x]));
-            *p++ = video_argb_red(argb), *p++ = video_argb_green(argb), *p++ = video_argb_blue(argb);
+            *p++ = video_argb_red(argb);
+            *p++ = video_argb_green(argb);
+            *p++ = video_argb_blue(argb);
         }
     }
     uint8_t *q = z;
-    *q++ = ZLIB_METHOD, *q++ = ZLIB_FLAGS;
-    uint32_t a = 1, b = 0;
+    *q++ = ZLIB_METHOD;
+    *q++ = ZLIB_FLAGS;
+    uint32_t a = 1;
+    uint32_t b = 0;
     for (size_t done = 0; done < RAW;) {
         size_t n = RAW - done < BLOCK ? RAW - done : BLOCK;
         *q++ = done + n == RAW;
-        *q++ = (uint8_t)n, *q++ = (uint8_t)(n >> BYTE_BITS), *q++ = (uint8_t)~n, *q++ = (uint8_t)(~n >> BYTE_BITS);
+        *q++ = (uint8_t)n;
+        *q++ = (uint8_t)(n >> BYTE_BITS);
+        *q++ = (uint8_t)~n;
+        *q++ = (uint8_t)(~n >> BYTE_BITS);
         memcpy(q, raw + done, n);
-        for (size_t i = 0; i < n; i++)
-            a = (a + raw[done + i]) % ADLER32_MODULUS, b = (b + a) % ADLER32_MODULUS;
+        for (size_t i = 0; i < n; i++) {
+            a = (a + raw[done + i]) % ADLER32_MODULUS;
+            b = (b + a) % ADLER32_MODULUS;
+        }
         q += n;
         done += n;
     }
@@ -988,8 +1004,13 @@ static const char *run_action(const char *name, const char *request)
             return "a candidate is shown: answer with recruit first";
         if (g_party_is_sleeping && strcmp(name, "wake"))
             return "the party sleeps: use wake or wait";
-        turn.has_damage = look_text.shown = turn.moving = turn.rotation = 0;
-        turn.map = g_party_map_index, turn.x = g_party_map_x, turn.y = g_party_map_y,
+        turn.has_damage = 0;
+        look_text.shown = 0;
+        turn.moving = 0;
+        turn.rotation = 0;
+        turn.map = g_party_map_index;
+        turn.x = g_party_map_x;
+        turn.y = g_party_map_y;
         turn.direction = g_party_direction;
         turn.teleports = g_party_teleport_count;
         return actions[k].run(request);
@@ -1168,7 +1189,8 @@ static void handle_act_many(const char *request)
     batch.active = true;
     batch.damage_count = 0;
     batch.start_time = g_game_time;
-    turn.has_damage = turn.moving = false;
+    turn.has_damage = false;
+    turn.moving = false;
     start_witnessing();
     batch_next();
 }
@@ -1224,7 +1246,9 @@ static void handle_wait(const char *request)
     if (ticks < 1 || ticks > WAIT_MAX_TICKS)
         send_error("ticks must be 1-5000");
     else {
-        turn.has_damage = look_text.shown = turn.moving = false;
+        turn.has_damage = false;
+        look_text.shown = false;
+        turn.moving = false;
         snapshot();
         start_witnessing();
         start_turn(ticks, ticks, 1);

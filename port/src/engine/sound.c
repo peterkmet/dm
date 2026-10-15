@@ -70,7 +70,8 @@ static uint16_t loudness_class(const uint8_t *v)
 /* 1 when a is louder than b, 0 when equal, -1 when quieter. */
 int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)
 {
-    uint16_t ca = loudness_class(a), cb = loudness_class(b);
+    uint16_t ca = loudness_class(a);
+    uint16_t cb = loudness_class(b);
     return cb < ca ? 1 : cb == ca ? 0 : -1;
 }
 
@@ -78,7 +79,10 @@ int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)
    Returns false when the square is out of hearing range. */
 bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
 {
-    int16_t dx = map_x - g_party_map_x, dy = map_y - g_party_map_y, side = 0, ahead = 0;
+    int16_t dx = map_x - g_party_map_x;
+    int16_t dy = map_y - g_party_map_y;
+    int16_t side = 0;
+    int16_t ahead = 0;
     switch (g_party_direction) {
     case DIRECTION_NORTH:
         side = dx;

@@ -57,7 +57,8 @@ void menus_set_action_list(int16_t action_set_index)
     g_action_list_indices[0] = set->action_indices[0];
     g_action_list_minimum_skill_levels[0] = 1;
     for (int k = 1; k < ACTION_LIST_COUNT; k++) {
-        uint8_t action = set->action_indices[k], level = set->minimum_skill_levels[k - 1];
+        uint8_t action = set->action_indices[k];
+        uint8_t level = set->minimum_skill_levels[k - 1];
         const ActionInfo *info = tables_action_info(action);
         if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charge_count()))
             continue;

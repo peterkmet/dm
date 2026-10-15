@@ -277,7 +277,8 @@ static bool is_open_floor(uint8_t square)
    faces an open floor square at the map edge. */
 static uint8_t square(int16_t x, int16_t y)
 {
-    bool in_x = x >= 0 && x < mw, in_y = y >= 0 && y < mh;
+    bool in_x = x >= 0 && x < mw;
+    bool in_y = y >= 0 && y < mh;
     if (in_x && in_y)
         return dungeon_square(map, x, y);
     if (in_x) {
@@ -414,7 +415,12 @@ static void aspect(Aspect *a, int16_t dir, int16_t x, int16_t y)
    (id < 0) at zone. */
 static void wall(int16_t id, int16_t zone, int mode)
 {
-    int16_t graphic = id, flip = mode == BLIT_FLIPPED, sx = 0, sy = 0, w = 0, h = 0;
+    int16_t graphic = id;
+    int16_t flip = mode == BLIT_FLIPPED;
+    int16_t sx = 0;
+    int16_t sy = 0;
+    int16_t w = 0;
+    int16_t h = 0;
     if (id < 0) { /* the slot gives the graphic and the source rectangle */
         int16_t slot = -1 - id;
         TablesRect r = tables_layout_bitmap(slot);
@@ -435,7 +441,8 @@ static void wall(int16_t id, int16_t zone, int mode)
    the item size. Returns true and sets drawn_box (g_drawn_box) when it drew. */
 static bool in_zone(const Bitmap *bm, Bitmap *dst, int16_t zone, int flip, int16_t transparent)
 {
-    int16_t w = 0, h = 0;
+    int16_t w = 0;
+    int16_t h = 0;
     Box b;
     if (!bm || zone == -1)
         return false;
@@ -590,8 +597,8 @@ static void add_clickable_object(int16_t index, uint16_t thing)
             c->x += (drawn_box.w >> 1) - CLICK_BOX_CENTER_OFFSET;
         }
     } else {
-        int16_t right = max16(c->x + c->w, drawn_box.x + drawn_box.w),
-                bottom = max16(c->y + c->h, drawn_box.y + drawn_box.h);
+        int16_t right = max16(c->x + c->w, drawn_box.x + drawn_box.w);
+        int16_t bottom = max16(c->y + c->h, drawn_box.y + drawn_box.h);
         c->x = min16(c->x, drawn_box.x);
         c->y = min16(c->y, drawn_box.y);
         c->w = right - c->x;
@@ -609,7 +616,8 @@ static void object(uint16_t thing, int16_t aspect_index, int16_t cell, int16_t l
 {
     const uint8_t *aspect = tables_object_aspect(aspect_index);
     bool alcove_graphic = alcove_front && (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_HAS_ALCOVE_GRAPHIC);
-    int16_t g = GFX_OBJECT_FIRST + aspect[OBJECT_ASPECT_GRAPHIC] + alcove_graphic, distance = 0;
+    int16_t g = GFX_OBJECT_FIRST + aspect[OBJECT_ASPECT_GRAPHIC] + alcove_graphic;
+    int16_t distance = 0;
     int flip = (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_FLIP_ON_RIGHT) && !alcove_graphic &&
                (lane >= 1 || (lane == 0 && (cell == VIEW_CELL_BACK_RIGHT || cell == VIEW_CELL_FRONT_RIGHT)));
     Bitmap own;
@@ -703,8 +711,12 @@ static int16_t ordinal_in_cell(const Group *s, uint16_t cell)
 static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos, int16_t coord, int16_t depth)
 {
     uint16_t info = s->info->graphic_info;
-    int16_t g = GFX_CREATURE_FIRST + BE16(s->aspect + CREATURE_ASPECT_GRAPHIC), distance = 0;
-    bool side = (info & GRAPHIC_HAS_SIDE) && (facing & 1), back = false, attack = false, front_flip = false;
+    int16_t g = GFX_CREATURE_FIRST + BE16(s->aspect + CREATURE_ASPECT_GRAPHIC);
+    int16_t distance = 0;
+    bool side = (info & GRAPHIC_HAS_SIDE) && (facing & 1);
+    bool back = false;
+    bool attack = false;
+    bool front_flip = false;
     if (side)
         g++;
     else {
@@ -745,7 +757,11 @@ static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos,
 static bool creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int16_t cell, uint16_t mcell,
                       uint16_t rest, int16_t pass, bool front)
 {
-    int16_t coord = tables_view_square(vs).creature_coord, ordinal, index, second = 0, pos = cell;
+    int16_t coord = tables_view_square(vs).creature_coord;
+    int16_t ordinal;
+    int16_t index;
+    int16_t second = 0;
+    int16_t pos = cell;
     bool done = false;
     if (coord < 0)
         return true;
@@ -754,9 +770,12 @@ static bool creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, in
         if (s->size != CREATURE_SIZE_HALF)
             return false;
         index = -1;
-    } else
-        index = creature_index = ordinal - 1;
-    uint16_t relative = dir - creature_direction(s, creature_index), facing = NORMALIZE(relative);
+    } else {
+        creature_index = ordinal - 1;
+        index = creature_index;
+    }
+    uint16_t relative = dir - creature_direction(s, creature_index);
+    uint16_t facing = NORMALIZE(relative);
     int sideways = relative & 1;
     if (s->cells == CELL_CENTERED) { /* one creature in the middle, drawn after the last cell */
         if (rest || pass == DOOR_PASS_BACK)
@@ -788,14 +807,10 @@ static bool creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, in
     if (s->size == CREATURE_SIZE_QUARTER && ((vs == VIEW_SQUARE_D0L && pos != VIEW_CELL_FRONT_RIGHT) ||
                                              (vs == VIEW_SQUARE_D0R && pos != VIEW_CELL_FRONT_LEFT)))
         return done;
-    for (uint8_t look = s->look[index];;) {
-        creature(s, look, facing, pos, coord, depth);
-        if (!second)
-            break;
-        second = 0;
-        look = s->look[index == 0];
-        pos = pos == VIEW_CELL_BACK_RIGHT ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
-    }
+    creature(s, s->look[index], facing, pos, coord, depth);
+    if (second) /* the other creature of a half-size pair, beside it */
+        creature(s, s->look[index == 0], facing,
+                 pos == VIEW_CELL_BACK_RIGHT ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT, coord, depth);
     return done;
 }
 
@@ -832,7 +847,8 @@ static void begin_projectile(uint16_t thing)
 /* At a tick: remembers where the projectile was drawn, and where it was at the tick before. */
 static void end_projectile(uint16_t thing, int drawn)
 {
-    shift_x = shift_y = 0;
+    shift_x = 0;
+    shift_y = 0;
     if (motion_steps || !drawn || track_count == PROJECTILE_TRACK_COUNT)
         return;
     const ProjectileTrack *last = find_track(last_tracks, last_track_count, thing);
@@ -853,33 +869,15 @@ void view_set_motion(int16_t step, int16_t steps)
     motion_steps = steps;
 }
 
-/* A projectile in view cell cell: an object in flight, or a projectile graphic posed and mirrored by
-   its direction of flight and scaled by depth (and kinetic energy). */
-static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_t cell, int16_t lane, int16_t depth,
-                       int16_t coord)
+/* The pose of a projectile graphic by its direction of flight, and its mirror flags in flip_out. */
+static int16_t get_projectile_pose(const uint8_t *aspect, uint16_t thing, int16_t dir, int16_t x, int16_t y,
+                                   int16_t cell, int16_t lane, int16_t *flip_out)
 {
-    int16_t zone = ZONE_PROJECTILE_FIRST + coord * ZONE_OBJECT_CELLS + cell,
-            aspect_index = projectile_aspect(rec_projectile_slot(thing));
-    if (aspect_index >= 0) {
-        drawn_box.w = 0;
-        begin_projectile(thing);
-        object(thing, aspect_index, cell, lane, depth, 0, zone, NULL, 0, 0);
-        end_projectile(thing, drawn_box.w > 0);
-        return;
-    }
-    const uint8_t *aspect = tables_projectile_aspect(-aspect_index);
-    int16_t kind = aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_KIND,
-            by_energy = aspect[PROJECTILE_ASPECT_SCALE_FLAGS] & PROJECTILE_SCALE_WITH_ENERGY, scale = SCALE_NATIVE,
-            row = 0, pose, flip = 0;
-    uint8_t energy = rec_projectile_kinetic_energy(thing);
-    if ((by_energy && energy != KINETIC_ENERGY_MAXIMUM) || depth) {
-        row = depth * 2 - (cell >> 1);
-        scale = tables_projectile_scale(row);
-        if (by_energy) /* 16-bit product and signed byte as in the original */
-            scale = max16(PROJECTILE_SCALE_MIN, (int8_t)((uint16_t)(max16(PROJECTILE_ENERGY_MIN, energy + 1) * scale) >>
-                                                         PROJECTILE_ENERGY_SCALE_SHIFT));
-    }
-    bool rotates = kind == PROJECTILE_BACK_AND_ROTATION, odd_square = rotates && ((x + y) & 1);
+    int16_t kind = aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_KIND;
+    int16_t pose;
+    int16_t flip = 0;
+    bool rotates = kind == PROJECTILE_BACK_AND_ROTATION;
+    bool odd_square = rotates && ((x + y) & 1);
     if (kind == PROJECTILE_NO_BACK_NO_ROTATION)
         pose = POSE_FRONT;
     else {
@@ -907,6 +905,38 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
             }
         }
     }
+    *flip_out = flip;
+    return pose;
+}
+
+/* A projectile in view cell cell: an object in flight, or a projectile graphic posed and mirrored by
+   its direction of flight and scaled by depth (and kinetic energy). */
+static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_t cell, int16_t lane, int16_t depth,
+                       int16_t coord)
+{
+    int16_t zone = ZONE_PROJECTILE_FIRST + coord * ZONE_OBJECT_CELLS + cell;
+    int16_t aspect_index = projectile_aspect(rec_projectile_slot(thing));
+    if (aspect_index >= 0) {
+        drawn_box.w = 0;
+        begin_projectile(thing);
+        object(thing, aspect_index, cell, lane, depth, 0, zone, NULL, 0, 0);
+        end_projectile(thing, drawn_box.w > 0);
+        return;
+    }
+    const uint8_t *aspect = tables_projectile_aspect(-aspect_index);
+    int16_t by_energy = aspect[PROJECTILE_ASPECT_SCALE_FLAGS] & PROJECTILE_SCALE_WITH_ENERGY;
+    int16_t scale = SCALE_NATIVE;
+    int16_t row = 0;
+    int16_t flip;
+    uint8_t energy = rec_projectile_kinetic_energy(thing);
+    if ((by_energy && energy != KINETIC_ENERGY_MAXIMUM) || depth) {
+        row = depth * 2 - (cell >> 1);
+        scale = tables_projectile_scale(row);
+        if (by_energy) /* 16-bit product and signed byte as in the original */
+            scale = max16(PROJECTILE_SCALE_MIN, (int8_t)((uint16_t)(max16(PROJECTILE_ENERGY_MIN, energy + 1) * scale) >>
+                                                         PROJECTILE_ENERGY_SCALE_SHIFT));
+    }
+    int16_t pose = get_projectile_pose(aspect, thing, dir, x, y, cell, lane, &flip);
     int16_t distance = row >> 1 == 2 ? 1 : row >> 1 == 3 ? 2 : 0; /* D2 or D3 palette changes */
     Bitmap own;
     const Bitmap *bm = shrunk(GFX_PROJECTILE_FIRST + aspect[PROJECTILE_ASPECT_GRAPHIC] + pose, scale,
@@ -920,18 +950,23 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
    start in the pattern so that it sparkles. */
 static void draw_field(const uint8_t *aspect, int16_t zone)
 {
-    int16_t w = aspect[FIELD_WIDTH], h = aspect[FIELD_HEIGHT], sx = 0, flip = 0;
+    int16_t w = aspect[FIELD_WIDTH];
+    int16_t h = aspect[FIELD_HEIGHT];
+    int16_t sx = 0;
+    int16_t flip = 0;
     Box b;
     if (!layout_get_zone(zone, 0, 0, &b, &w, &h))
         return;
-    const Bitmap *mask = NULL, *units = gfx_bitmap(GFX_FIELD_PATTERN_FIRST + aspect[FIELD_PATTERN]);
+    const Bitmap *mask = NULL;
+    const Bitmap *units = gfx_bitmap(GFX_FIELD_PATTERN_FIRST + aspect[FIELD_PATTERN]);
     if (aspect[FIELD_MASK] != FIELD_NO_MASK) {
         mask = gfx_bitmap(GFX_FIELD_MASK_FIRST + (aspect[FIELD_MASK] & ~FIELD_MASK_FLIPPED));
         flip = !!(aspect[FIELD_MASK] & FIELD_MASK_FLIPPED);
         if (flip && mask && mask->w % PIXELS_PER_WORD)
             sx = PIXELS_PER_WORD - mask->w % PIXELS_PER_WORD;
     }
-    int16_t first = random16() & FIELD_FIRST_UNIT_RANGE, last = aspect[FIELD_LAST_UNIT] + random_bit();
+    int16_t first = random16() & FIELD_FIRST_UNIT_RANGE;
+    int16_t last = aspect[FIELD_LAST_UNIT] + random_bit();
     if (units)
         draw_masked_fill(units, mask, flip, &vp, &b, last, first, aspect[FIELD_TRANSPARENT], sx, 0);
 }
@@ -960,12 +995,52 @@ static void explosion_on_party(uint16_t thing, int16_t aspect)
             own.px[i] = changes[units->px[i]] & COLOR_INDEX_MASK;
         units = &own;
     }
-    int16_t first = random16() & EXPLOSION_FILL_FIRST_UNIT_RANGE, last = random_2bits() + EXPLOSION_FILL_LAST_UNIT,
-            w = 0, h = 0;
+    int16_t first = random16() & EXPLOSION_FILL_FIRST_UNIT_RANGE;
+    int16_t last = random_2bits() + EXPLOSION_FILL_LAST_UNIT;
+    int16_t w = 0;
+    int16_t h = 0;
     Box b;
     if (units && layout_get_zone(ZONE_VIEWPORT_BOX, vp.w, vp.h, &b, &w, &h))
         draw_masked_fill(units, NULL, 0, &vp, &b, last, first, EXPLOSION_FILL_TRANSPARENT, 0, 0);
     free(own.px);
+}
+
+/* The explosion graphic of an explosion type: fire, poison, smoke, or spell. */
+static int16_t get_explosion_aspect(int16_t type)
+{
+    switch (type) {
+    case EXPLOSION_FIREBALL:
+    case EXPLOSION_LIGHTNING_BOLT:
+    case EXPLOSION_REBIRTH_STEP_2:
+        return EXPLOSION_ASPECT_FIRE;
+    case EXPLOSION_POISON_BOLT:
+    case EXPLOSION_POISON_CLOUD:
+        return EXPLOSION_ASPECT_POISON;
+    case EXPLOSION_SMOKE:
+        return EXPLOSION_ASPECT_SMOKE;
+    default:
+        return EXPLOSION_ASPECT_SPELL;
+    }
+}
+
+/* The first step of a vi altar rebirth: the back pose of the lightning projectile. */
+static void draw_rebirth_step_1(int16_t coord, int16_t flip)
+{
+    Bitmap own = {0};
+    int16_t scale = tables_rebirth_scale(TABLES_REBIRTH_STEP_1, coord);
+    int16_t g = GFX_PROJECTILE_FIRST +
+                tables_projectile_aspect(PROJECTILE_ASPECT_LIGHTNING)[PROJECTILE_ASPECT_GRAPHIC] + POSE_BACK;
+    in_zone(shrunk(g, scale, NULL, &own), &vp, ZONE_REBIRTH_STEP1_FIRST + coord, flip, TRANSPARENT_COLOR);
+    free(own.px);
+}
+
+/* A fluxcage: the field of the square with the pattern after the teleporter pattern. */
+static void draw_fluxcage(int16_t field_index)
+{
+    uint8_t aspect[FIELD_ASPECT_SIZE];
+    memcpy(aspect, tables_field_aspect(field_index), FIELD_ASPECT_SIZE);
+    aspect[FIELD_PATTERN]++; /* the fluxcage pattern follows the teleporter pattern */
+    draw_field(aspect, ZONE_FIELD_FIRST + field_index);
 }
 
 /* The explosions of a square, each mirrored at random, then a fluxcage as a field. */
@@ -973,7 +1048,8 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
                        int16_t pass)
 {
     ViewSquare square = tables_view_square(vs);
-    int16_t explosion_coord = square.explosion_coord, field_index = square.field_aspect;
+    int16_t explosion_coord = square.explosion_coord;
+    int16_t field_index = square.field_aspect;
     int fluxcage = 0;
     if (explosion_coord < 0 && field_index < 0)
         return;
@@ -981,37 +1057,23 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
         if (THING_TYPE(thing) != THING_EXPLOSION)
             continue;
         uint16_t cell = THING_CELL(thing);
-        int16_t g, type = rec_explosion_type(thing), rebirth = type >= EXPLOSION_REBIRTH_STEP_1, aspect, zone, scale;
+        int16_t type = rec_explosion_type(thing);
+        int16_t rebirth = type >= EXPLOSION_REBIRTH_STEP_1;
+        int16_t zone;
+        int16_t scale;
         if (rebirth && !(coord >= 0 && cell == mcell))
             continue;
         int16_t flip = random_2bits();
-        Bitmap own = {0};
-        switch (type) {
-        case EXPLOSION_FIREBALL:
-        case EXPLOSION_LIGHTNING_BOLT:
-        case EXPLOSION_REBIRTH_STEP_2:
-            aspect = EXPLOSION_ASPECT_FIRE;
-            break;
-        case EXPLOSION_POISON_BOLT:
-        case EXPLOSION_POISON_CLOUD:
-            aspect = EXPLOSION_ASPECT_POISON;
-            break;
-        case EXPLOSION_SMOKE:
-            aspect = EXPLOSION_ASPECT_SMOKE;
-            break;
-        case EXPLOSION_REBIRTH_STEP_1: /* the back pose of the lightning projectile */
-            scale = tables_rebirth_scale(TABLES_REBIRTH_STEP_1, coord);
-            g = GFX_PROJECTILE_FIRST +
-                tables_projectile_aspect(PROJECTILE_ASPECT_LIGHTNING)[PROJECTILE_ASPECT_GRAPHIC] + POSE_BACK;
-            in_zone(shrunk(g, scale, NULL, &own), &vp, ZONE_REBIRTH_STEP1_FIRST + coord, flip, TRANSPARENT_COLOR);
-            free(own.px);
+        if (type == EXPLOSION_REBIRTH_STEP_1) {
+            draw_rebirth_step_1(coord, flip);
             continue;
-        case EXPLOSION_FLUXCAGE:
+        }
+        if (type == EXPLOSION_FLUXCAGE) {
             fluxcage |= depth < DEPTH_D4;
             continue;
-        default:
-            aspect = EXPLOSION_ASPECT_SPELL;
         }
+        int16_t aspect = get_explosion_aspect(type);
+        Bitmap own = {0};
         if (explosion_coord < 0)
             continue;
         if (vs == VIEW_SQUARE_D0C) {
@@ -1033,11 +1095,40 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
         in_zone(explosion_bitmap(aspect, scale, &own), &vp, zone, flip, TRANSPARENT_COLOR);
         free(own.px);
     }
-    if (fluxcage && field_index >= 0 && pass != DOOR_PASS_BACK && !g_do_not_draw_fluxcages) {
-        uint8_t aspect[FIELD_ASPECT_SIZE];
-        memcpy(aspect, tables_field_aspect(field_index), FIELD_ASPECT_SIZE);
-        aspect[FIELD_PATTERN]++; /* the fluxcage pattern follows the teleporter pattern */
-        draw_field(aspect, ZONE_FIELD_FIRST + field_index);
+    if (fluxcage && field_index >= 0 && pass != DOOR_PASS_BACK && !g_do_not_draw_fluxcages)
+        draw_fluxcage(field_index);
+}
+
+/* D3 squares show only their front cells, D0 squares only their back cells. */
+static bool is_cell_in_view(int16_t depth, int16_t cell)
+{
+    return (depth != DEPTH_D3 || cell >= VIEW_CELL_FRONT_RIGHT) && (depth != DEPTH_D0 || cell < VIEW_CELL_FRONT_RIGHT);
+}
+
+/* The objects of map cell mcell, drawn in view cell cell; pile counts the objects drawn on the pile. */
+static void draw_cell_objects(uint16_t first, int16_t cell, uint16_t mcell, int16_t lane, int16_t depth, int16_t coord,
+                              bool alcove, int16_t *pile)
+{
+    if (coord < 0 || !is_cell_in_view(depth, cell))
+        return;
+    for (uint16_t t = first; t != THING_END; t = get_next_thing(t)) {
+        int16_t type = THING_TYPE(t);
+        if (type >= THING_WEAPON && type <= THING_JUNK && THING_CELL(t) == mcell)
+            object(t, object_aspect(t), cell, lane, depth, alcove && lane == 0, 0, pile, coord, alcove);
+    }
+}
+
+/* The last group of a square, and whether the square has projectiles and explosions. */
+static void find_square_things(uint16_t first, uint16_t *group_thing, bool *has_projectiles, bool *has_explosions)
+{
+    for (uint16_t t = first; t != THING_END; t = get_next_thing(t)) {
+        int16_t type = THING_TYPE(t);
+        if (type == THING_GROUP)
+            *group_thing = t;
+        else if (type == THING_PROJECTILE)
+            *has_projectiles = true;
+        else if (type == THING_EXPLOSION)
+            *has_explosions = true;
     }
 }
 
@@ -1053,12 +1144,21 @@ static void things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs
         pass = (order & 1) ? DOOR_PASS_FRONT : DOOR_PASS_BACK;
         order >>= CELL_ORDER_BITS;
     }
-    uint16_t rest = order, mcell = 0, group_thing = THING_NONE;
-    bool alcove = rest == 0, has_projectiles = false, has_explosions = false, group_done = false, loaded = false;
+    uint16_t rest = order;
+    uint16_t mcell = 0;
+    uint16_t group_thing = THING_NONE;
+    bool alcove = rest == 0;
+    bool has_projectiles = false;
+    bool has_explosions = false;
+    bool group_done = false;
+    bool loaded = false;
     ViewSquare square = tables_view_square(vs);
-    int16_t lane = square.lane, depth = square.depth, coord = alcove ? square.alcove_coord : square.object_coord,
-            count = 0;
+    int16_t lane = square.lane;
+    int16_t depth = square.depth;
+    int16_t coord = alcove ? square.alcove_coord : square.object_coord;
+    int16_t count = 0;
     Group s;
+    find_square_things(first, &group_thing, &has_projectiles, &has_explosions);
     do {
         int16_t cell, pile;
         if (!alcove) {
@@ -1073,36 +1173,22 @@ static void things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs
             pile = PILE_ALCOVE_FIRST;
         }
         pile += (mcell & 1) * PILE_ODD_CELL; /* odd map cells start in the second half of the shifts */
-        for (uint16_t t = first; t != THING_END; t = get_next_thing(t)) {
-            int16_t type = THING_TYPE(t);
-            if (type == THING_GROUP)
-                group_thing = t;
-            else if (type == THING_PROJECTILE)
-                has_projectiles = true;
-            else if (type == THING_EXPLOSION)
-                has_explosions = true;
-            else if (type >= THING_WEAPON && type <= THING_JUNK && coord >= 0 && THING_CELL(t) == mcell &&
-                     (depth != DEPTH_D3 || cell >= VIEW_CELL_FRONT_RIGHT) &&
-                     (depth != DEPTH_D0 || cell < VIEW_CELL_FRONT_RIGHT))
-                object(t, object_aspect(t), cell, lane, depth, alcove && lane == 0, 0, &pile, coord, alcove);
-        }
+        draw_cell_objects(first, cell, mcell, lane, depth, coord, alcove, &pile);
         if (alcove || depth >= DEPTH_D4)
             break;
         bool front = (cell < VIEW_CELL_FRONT_RIGHT || count == 1) &&
                      (rest == 0 || (rest & CELL_ORDER_MASK) - 1 >= VIEW_CELL_FRONT_RIGHT);
         if (group_thing != THING_NONE && !group_done) {
-            if (!loaded)
-                group(group_thing, &s), loaded = true;
+            if (!loaded) {
+                group(group_thing, &s);
+                loaded = true;
+            }
             group_done = creatures(&s, dir, vs, depth, cell, mcell, rest, pass, front);
         }
-        int16_t projectile_coord = square.object_coord;
-        if (projectile_coord < 0)
-            has_projectiles = false;
-        else if (has_projectiles && (depth != DEPTH_D3 || cell >= VIEW_CELL_FRONT_RIGHT) &&
-                 (depth != DEPTH_D0 || cell < VIEW_CELL_FRONT_RIGHT))
+        if (has_projectiles && square.object_coord >= 0 && is_cell_in_view(depth, cell))
             for (uint16_t t = first; t != THING_END; t = get_next_thing(t))
                 if (THING_TYPE(t) == THING_PROJECTILE && THING_CELL(t) == mcell)
-                    projectile(t, dir, x, y, cell, lane, depth, projectile_coord);
+                    projectile(t, dir, x, y, cell, lane, depth, square.object_coord);
     } while (rest);
     if (has_explosions)
         explosions(first, dir, vs, depth, coord, mcell, pass);
@@ -1128,14 +1214,16 @@ static void scaled(int16_t g, int16_t scale_x, int16_t scale_y, const uint8_t *p
 static void wall_text(const uint8_t *text)
 {
     const Bitmap *font = gfx_bitmap(GFX_WALL_TEXT_FONT);
-    int16_t glyph_w = tables_glyph_width(), glyph_h = tables_glyph_height();
+    int16_t glyph_w = tables_glyph_width();
+    int16_t glyph_h = tables_glyph_height();
     wall(LAYOUT_INSCRIPTION_WALL, ZONE_INSCRIPTION_WALL_D1C, BLIT_TRANSPARENT);
     for (int16_t line = 0; font; line++) {
         int16_t n = 0;
         while (text[n] < WALL_TEXT_NEW_LINE)
             n++;
         Box b;
-        int16_t w = glyph_w * n, h = glyph_h;
+        int16_t w = glyph_w * n;
+        int16_t h = glyph_h;
         if (n && layout_get_zone(ZONE_WALL_TEXT_LINE_FIRST + line, 0, 0, &b, &w, &h))
             for (b.w = glyph_w; n; n--, text++, b.x += glyph_w)
                 draw_blit(font, *text * glyph_w, 0, &vp, &b, TRANSPARENT_COLOR, 0);
@@ -1149,7 +1237,10 @@ static void wall_text(const uint8_t *text)
 static void wall_portrait(int16_t champion)
 {
     const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
-    int16_t pw = tables_portrait_width(), ph = tables_portrait_height(), w = pw, h = ph;
+    int16_t pw = tables_portrait_width();
+    int16_t ph = tables_portrait_height();
+    int16_t w = pw;
+    int16_t h = ph;
     Box b;
     if (portraits && layout_get_zone(ZONE_WALL_PORTRAIT, 0, 0, &b, &w, &h))
         draw_blit(portraits, champion % PORTRAITS_PER_ROW * pw, champion / PORTRAITS_PER_ROW * ph, &vp, &b,
@@ -1162,8 +1253,10 @@ static int wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
 {
     if (!ordinal)
         return 0;
-    int16_t i = ordinal - 1, zone = ZONE_WALL_ORNAMENT_FIRST + ZONE_WALL_ORNAMENT_VIEWS * wall_orn[i].coord + view;
-    bool alcove = is_alcove(i), text = i == inscription;
+    int16_t i = ordinal - 1;
+    int16_t zone = ZONE_WALL_ORNAMENT_FIRST + ZONE_WALL_ORNAMENT_VIEWS * wall_orn[i].coord + view;
+    bool alcove = is_alcove(i);
+    bool text = i == inscription;
     int mirrored = view == VIEW_WALL_D3R2_LEFT || view == VIEW_WALL_D3R_LEFT || view == VIEW_WALL_D2R_LEFT ||
                    view == VIEW_WALL_D1R_LEFT;
     int side = mirrored || view == VIEW_WALL_D3L2_RIGHT || view == VIEW_WALL_D3L_RIGHT || view == VIEW_WALL_D2L_RIGHT ||
@@ -1295,7 +1388,10 @@ static void door(uint16_t door_thing, int16_t state, int16_t view)
     else if (state != DOOR_CLOSED) { /* partly open: the zone moves with the state */
         zone += state;
         if (!door_is_vertical(door_thing)) {
-            int16_t w = rel_x = t.w >> 1, h = rel_y = 0;
+            rel_x = t.w >> 1;
+            rel_y = 0;
+            int16_t w = rel_x;
+            int16_t h = rel_y;
             Box b;
             if (layout_get_zone(zone + ZONE_DOOR_RIGHT_HALF, t.w, t.h, &b, &w, &h))
                 draw_blit(&t, rel_x + w, h, &vp, &b, TRANSPARENT_COLOR, 0);
@@ -1310,7 +1406,8 @@ static void door(uint16_t door_thing, int16_t state, int16_t view)
    level up or down, or -1. */
 static int16_t level_change(int16_t from, int16_t delta, int16_t *x, int16_t *y)
 {
-    int16_t dungeon_x = *x + map_offset_x(from), dungeon_y = *y + map_offset_y(from);
+    int16_t dungeon_x = *x + map_offset_x(from);
+    int16_t dungeon_y = *y + map_offset_y(from);
     for (int16_t m = 0; m < dungeon_map_count(); m++) {
         if (delta + map_level(from) == map_level(m) && map_offset_x(m) <= dungeon_x &&
             dungeon_x <= map_offset_x(m) + map_last_x(m) && map_offset_y(m) <= dungeon_y &&
@@ -1796,7 +1893,9 @@ static void d1c(int16_t dir, int16_t x, int16_t y)
     g_square_ahead_element = a.element;
     switch (a.element) {
     case SQUARE_WALL: /* ponytail: no thieves eye hole yet, needs the party spell state (step 9) */
-        g_facing_alcove = g_facing_vi_altar = g_facing_fountain = false;
+        g_facing_alcove = false;
+        g_facing_vi_altar = false;
+        g_facing_fountain = false;
         wall(wall_set_ids[WS_WALL_D1C], ZONE_WALL_D1C, BLIT_OPAQUE);
         if (wall_ornament(a.front, VIEW_WALL_D1C_FRONT, &a))
             things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, CELLS_ALCOVE);
@@ -1981,11 +2080,15 @@ static void load_doors(int16_t m)
    inscription plaque, the footprints, and the door masks. */
 static void load_ornaments(int16_t m, const uint8_t *ornaments)
 {
-    int16_t walls = map_wall_ornament_count(m), floors = map_floor_ornament_count(m),
-            doors = map_door_ornament_count(m);
+    int16_t walls = map_wall_ornament_count(m);
+    int16_t floors = map_floor_ornament_count(m);
+    int16_t doors = map_door_ornament_count(m);
     int16_t alcove_count = 0;
-    alcoves[0] = alcoves[1] = alcoves[2] = -1;
-    vi_altar = fountain = -1;
+    alcoves[0] = -1;
+    alcoves[1] = -1;
+    alcoves[2] = -1;
+    vi_altar = -1;
+    fountain = -1;
     inscription = walls; /* after the map ornaments: the inscription plaque, ornament 0 */
     for (int16_t i = 0; i <= walls; i++) {
         uint8_t o = i < walls ? ornaments[i] : 0;
@@ -2240,7 +2343,9 @@ static int16_t map_explosion_tile(uint16_t explosion)
 static void map_square_things(Bitmap *dst, const uint8_t *spells, const Aspect *a, int blink, int16_t dir, int16_t px,
                               int16_t py)
 {
-    uint16_t explosion = THING_ENDOFLIST, projectile = THING_ENDOFLIST, group = THING_ENDOFLIST;
+    uint16_t explosion = THING_ENDOFLIST;
+    uint16_t projectile = THING_ENDOFLIST;
+    uint16_t group = THING_ENDOFLIST;
     for (uint16_t t = a->first_thing; t != THING_ENDOFLIST; t = get_next_thing(t)) {
         int16_t type = THING_TYPE(t);
         if (type == THING_GROUP && spells[MAGIC_MAP_KU])
@@ -2271,6 +2376,38 @@ static void map_square_things(Bitmap *dst, const uint8_t *spells, const Aspect *
     }
 }
 
+/* A wall on the magic map: blinking when ROS shows a fake wall, else the wall with its vi altar, alcove, and
+   fountain sides. */
+static void draw_map_wall(Bitmap *dst, const uint8_t *spells, const Aspect *a, bool blink, int16_t px, int16_t py)
+{
+    if (spells[MAGIC_MAP_ROS] && blink && (g_game_time & MAP_TIME_BLINK_WALL)) {
+        map_tile(dst, MAP_TILE_FAKE_WALL_BLINK, px, py);
+        return;
+    }
+    map_tile(dst, MAP_TILE_WALL, px, py);
+    for (int16_t k = 0; k < WALL_SIDES; k++) {
+        int16_t i = a->side[k] - 1;
+        int16_t first = !a->side[k]     ? -1
+                        : i == vi_altar ? MAP_TILE_VI_ALTAR_FIRST
+                        : is_alcove(i)  ? MAP_TILE_ALCOVE_FIRST
+                        : i == fountain ? MAP_TILE_FOUNTAIN_FIRST
+                                        : -1;
+        if (first >= 0)
+            map_tile(dst, first + k, px, py);
+    }
+}
+
+/* The magic map tile of a door: front or side, with or without a button, open or closed. */
+static int16_t get_map_door_tile(const Aspect *a)
+{
+    int16_t tile = a->element == ELEMENT_DOOR_SIDE ? MAP_TILE_DOOR_SIDE : MAP_TILE_DOOR_FRONT;
+    if (!door_button_present(THING_MAKE(THING_DOOR, a->door)))
+        tile += MAP_TILE_DOOR_NO_BUTTON;
+    if (a->state == DOOR_OPEN || a->state == DOOR_DESTROYED)
+        tile += MAP_TILE_DOOR_OPEN;
+    return tile;
+}
+
 /* The tiles of square (x, y) seen in direction dir at (px, py): the square, then with DAIN the footprints, the
    zokathra objects, the projectiles, and the explosions, with ROS the fake walls and invisible pits, with KU the
    creatures. */
@@ -2289,21 +2426,7 @@ static void map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16_t y,
     }
     switch (a.element) {
     case SQUARE_WALL:
-        if (spells[MAGIC_MAP_ROS] && blink && (g_game_time & MAP_TIME_BLINK_WALL)) {
-            map_tile(dst, MAP_TILE_FAKE_WALL_BLINK, px, py);
-            break;
-        }
-        map_tile(dst, MAP_TILE_WALL, px, py);
-        for (int16_t k = 0; k < WALL_SIDES; k++) {
-            int16_t i = a.side[k] - 1;
-            int16_t first = !a.side[k]      ? -1
-                            : i == vi_altar ? MAP_TILE_VI_ALTAR_FIRST
-                            : is_alcove(i)  ? MAP_TILE_ALCOVE_FIRST
-                            : i == fountain ? MAP_TILE_FOUNTAIN_FIRST
-                                            : -1;
-            if (first >= 0)
-                map_tile(dst, first + k, px, py);
-        }
+        draw_map_wall(dst, spells, &a, blink, px, py);
         break;
     case SQUARE_CORRIDOR: {
         map_tile(dst, MAP_TILE_FLOOR, px, py);
@@ -2319,15 +2442,9 @@ static void map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16_t y,
         map_tile(dst, MAP_TILE_TELEPORTER_FIRST + random_2bits(), px, py);
         break;
     case ELEMENT_DOOR_FRONT:
-    case ELEMENT_DOOR_SIDE: {
-        int16_t tile = a.element == ELEMENT_DOOR_SIDE ? MAP_TILE_DOOR_SIDE : MAP_TILE_DOOR_FRONT;
-        if (!door_button_present(THING_MAKE(THING_DOOR, a.door)))
-            tile += MAP_TILE_DOOR_NO_BUTTON;
-        if (a.state == DOOR_OPEN || a.state == DOOR_DESTROYED)
-            tile += MAP_TILE_DOOR_OPEN;
-        map_tile(dst, tile, px, py);
+    case ELEMENT_DOOR_SIDE:
+        map_tile(dst, get_map_door_tile(&a), px, py);
         break;
-    }
     case ELEMENT_STAIRS_SIDE:
     case ELEMENT_STAIRS_FRONT: {
         int16_t side = NORMALIZE(get_stairs_exit_direction(x, y) - dir);
@@ -2352,9 +2469,13 @@ static void map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16_t y,
    NETA keeps. The party square is drawn last. The ornaments are those of the party map, as in the original. */
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py)
 {
-    int16_t m = g_party_map_index, x = g_party_map_x, y = g_party_map_y, dir = g_party_direction,
-            saved_map = g_current_map_index;
-    int16_t party_px = -1, party_py = 0;
+    int16_t m = g_party_map_index;
+    int16_t x = g_party_map_x;
+    int16_t y = g_party_map_y;
+    int16_t dir = g_party_direction;
+    int16_t saved_map = g_current_map_index;
+    int16_t party_px = -1;
+    int16_t party_py = 0;
     if (map != g_party_map_index)
         view_load_map(g_party_map_index);
     if (spells[MAGIC_MAP_NETA]) {
@@ -2367,7 +2488,9 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
     mh = dungeon_map_height(m);
     step(dir, MAP_HALF, -MAP_HALF, &x, &y);
     for (int16_t row = 0; row < MAP_SQUARES; row++, py += MAP_TILE_H + MAP_GAP_Y) {
-        int16_t sx = x, sy = y, cx = px;
+        int16_t sx = x;
+        int16_t sy = y;
+        int16_t cx = px;
         for (int16_t col = 0; col < MAP_SQUARES; col++, cx += MAP_TILE_W + MAP_GAP_X) {
             if (m == g_party_map_index && sx == g_party_map_x && sy == g_party_map_y) {
                 party_px = cx;
@@ -2392,8 +2515,8 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
 {
     static void (*const squares[DRAWN_SQUARE_COUNT])(int16_t, int16_t, int16_t) = {
         d3l2, d3r2, d3l, d3r, d3c, d2l2, d2r2, d2l, d2r, d2c, d1l, d1r, d1c, d0l, d0r, d0c};
-    static const int8_t forward[DRAWN_SQUARE_COUNT] = {3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0},
-                        right[DRAWN_SQUARE_COUNT] = {-2, 2, -1, 1, 0, -2, 2, -1, 1, 0, -1, 1, 0, -1, 1, 0};
+    static const int8_t forward[DRAWN_SQUARE_COUNT] = {3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0};
+    static const int8_t right[DRAWN_SQUARE_COUNT] = {-2, 2, -1, 1, 0, -2, 2, -1, 1, 0, -1, 1, 0, -1, 1, 0};
     static const int8_t d4_right[D4_SQUARE_COUNT] = {-1, 1, 0};
     static const int16_t d4_squares[D4_SQUARE_COUNT] = {VIEW_SQUARE_D4L, VIEW_SQUARE_D4R, VIEW_SQUARE_D4C};
     static uint8_t px[VIEWPORT_MAX_H * VIEWPORT_MAX_W];
@@ -2418,17 +2541,20 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
         wall(wall_set_ids[WS_FLOOR], ZONE_FLOOR, BLIT_OPAQUE);
     }
     for (int i = 0; i < D4_SQUARE_COUNT; i++) { /* objects only on D4L, D4R, D4C */
-        int16_t sx = x, sy = y;
+        int16_t sx = x;
+        int16_t sy = y;
         step(dir, DEPTH_D4, d4_right[i], &sx, &sy);
         things(dungeon_square_first_thing(map, sx, sy), dir, sx, sy, d4_squares[i], CELLS_BL);
     }
     for (int i = 0; i < DRAWN_SQUARE_COUNT; i++) {
-        int16_t sx = x, sy = y;
+        int16_t sx = x;
+        int16_t sy = y;
         step(dir, forward[i], right[i], &sx, &sy);
         squares[i](dir, sx, sy);
     }
     Bitmap screen = {SCREEN_W, SCREEN_H, &fb[0][0]};
-    int16_t w = vp.w, h = vp.h;
+    int16_t w = vp.w;
+    int16_t h = vp.h;
     Box b;
     if (layout_get_zone(ZONE_VIEWPORT, vp.w, vp.h, &b, &w, &h))
         draw_blit(&vp, w, h, &screen, &b, -1, 0);

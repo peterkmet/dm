@@ -75,7 +75,8 @@ void sensor_process_rotation_effect(void)
         return;
     if (g_sensor_rotation_effect == LOCAL_EFFECT_ROTATE_SENSORS_1 ||
         g_sensor_rotation_effect == LOCAL_EFFECT_ROTATE_SENSORS) {
-        int16_t x = g_sensor_rotation_effect_map_x, y = g_sensor_rotation_effect_map_y;
+        int16_t x = g_sensor_rotation_effect_map_x;
+        int16_t y = g_sensor_rotation_effect_map_y;
         uint16_t first = get_square_first_thing(x, y);
         while (first != THING_ENDOFLIST && !is_rotation_sensor(first))
             first = get_next_thing(first);
@@ -105,7 +106,8 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
         sensor_trigger_local_effect(rec_sensor_local_effect(sensor), x, y, cell);
         return;
     }
-    int16_t target_x = rec_sensor_target_x(sensor), target_y = rec_sensor_target_y(sensor);
+    int16_t target_x = rec_sensor_target_x(sensor);
+    int16_t target_y = rec_sensor_target_y(sensor);
     int16_t target_type = SQUARE_TYPE(g_current_map_data[target_x][target_y]);
     int16_t target_cell = target_type == SQUARE_WALL ? rec_sensor_target_cell(sensor) : 0;
     sensor_add_event(tables_square_type_event(target_type), target_x, target_y, target_cell, effect,
@@ -180,8 +182,10 @@ static int16_t exchange_single_object(uint16_t sensor, int16_t x, int16_t y)
    here. A removed sensor sets *t to the thing before it. */
 static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, int16_t remaining)
 {
-    uint16_t sensor = *t, sensor_cell = THING_CELL(sensor);
-    uint16_t type = rec_sensor_type(sensor), effect = rec_sensor_effect(sensor);
+    uint16_t sensor = *t;
+    uint16_t sensor_cell = THING_CELL(sensor);
+    uint16_t type = rec_sensor_type(sensor);
+    uint16_t effect = rec_sensor_effect(sensor);
     int16_t data = rec_sensor_data(sensor), skip;
     switch (type) {
     case SENSOR_WALL_ORNAMENT_CLICK:
@@ -253,9 +257,11 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
                 break;
             continue;
         }
-        uint16_t sensor = t, sensor_cell = THING_CELL(t);
+        uint16_t sensor = t;
+        uint16_t sensor_cell = THING_CELL(t);
         remaining[sensor_cell]--;
-        uint16_t type = rec_sensor_type(sensor), effect = rec_sensor_effect(sensor);
+        uint16_t type = rec_sensor_type(sensor);
+        uint16_t effect = rec_sensor_effect(sensor);
         if (type == SENSOR_DISABLED || (g_leader_index == -1 && type != SENSOR_WALL_CHAMPION_PORTRAIT) ||
             sensor_cell != cell)
             continue;
@@ -351,7 +357,9 @@ static void process_wall_sensor(uint16_t sensor, const SquareChange *s)
 /* A floor sensor: each type tests the thing and what else lies on the square. */
 static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t square)
 {
-    int16_t x = s->x, y = s->y, data = rec_sensor_data(sensor);
+    int16_t x = s->x;
+    int16_t y = s->y;
+    int16_t data = rec_sensor_data(sensor);
     bool add = s->add;
     switch (rec_sensor_type(sensor)) {
     case SENSOR_FLOOR_ANY:
@@ -435,5 +443,7 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
 void sensor_reset(void)
 {
     g_sensor_rotation_effect = -1;
-    g_sensor_rotation_effect_map_x = g_sensor_rotation_effect_map_y = g_sensor_rotation_effect_cell = 0;
+    g_sensor_rotation_effect_map_x = 0;
+    g_sensor_rotation_effect_map_y = 0;
+    g_sensor_rotation_effect_cell = 0;
 }

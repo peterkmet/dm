@@ -25,7 +25,8 @@ bool swsh_load(const char *path, SwshLogo *out)
     }
     const uint8_t *at = out->image.data - SWSH_BASE;
     out->palette_script = at + SWSH_PALETTE_SCRIPT;
-    out->palette_script_end = out->logo = at + SWSH_LOGO_GRAPHIC;
+    out->logo = at + SWSH_LOGO_GRAPHIC;
+    out->palette_script_end = out->logo;
     out->logo_bytes = SWSH_SAMPLE_PERIOD - SWSH_LOGO_GRAPHIC;
     out->period = BE16(at + SWSH_SAMPLE_PERIOD);
     out->sample_length = BE32(at + SWSH_SAMPLE_LENGTH);

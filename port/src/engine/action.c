@@ -170,7 +170,8 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
     uint16_t group = g_action_target_group_thing;
     if (group == THING_ENDOFLIST)
         return false;
-    uint16_t bonus = 0, experience = 0;
+    uint16_t bonus = 0;
+    uint16_t experience = 0;
     switch (action) {
     case ACTION_CONFUSE:
         bonus = FEAR_BONUS_CONFUSE;
@@ -441,7 +442,8 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     step_forward(c->direction, &x, &y);
     g_action_target_group_thing = get_square_group(x, y);
     const ActionInfo *info = tables_action_info(action);
-    uint16_t disabled_ticks = info->disabled_ticks, skill_index = info->skill_index;
+    uint16_t disabled_ticks = info->disabled_ticks;
+    uint16_t skill_index = info->skill_index;
     int16_t stamina = random_bit() + info->stamina;
     uint16_t experience = info->experience_gain;
     uint8_t square = get_square(x, y);
@@ -617,7 +619,8 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
     champion_decrement_stamina(champion_index, action_get_throwing_stamina_cost(thing));
     magic_disable_action(champion_index, THROW_DISABLED_TICKS);
-    int16_t experience = THROW_EXPERIENCE, weapon_energy = 1;
+    int16_t experience = THROW_EXPERIENCE;
+    int16_t weapon_energy = 1;
     if (THING_TYPE(thing) == THING_WEAPON) {
         experience = THROW_WEAPON_EXPERIENCE;
         const WeaponInfo *info = tables_weapon_info(weapon_type(thing));
@@ -656,7 +659,8 @@ bool action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16
                                                  uint16_t ammunition_slot)
 {
     const Champion *c = &g_champions[champion_index];
-    uint16_t weapon = c->slots[weapon_slot], ammunition = c->slots[ammunition_slot];
+    uint16_t weapon = c->slots[weapon_slot];
+    uint16_t ammunition = c->slots[ammunition_slot];
     if (THING_TYPE(weapon) != THING_WEAPON)
         return false;
     uint8_t weapon_class = tables_weapon_info(weapon_type(weapon))->weapon_class, needed;

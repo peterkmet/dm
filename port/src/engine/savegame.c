@@ -75,7 +75,8 @@ static void pack_globals(uint8_t *g)
 /* Block 0 back into the globals; the game time also becomes the time of the last load. */
 static void unpack_globals(const uint8_t *g)
 {
-    g_game_time = g_last_load_game_time = BE32(g + G_GAME_TIME);
+    g_last_load_game_time = BE32(g + G_GAME_TIME);
+    g_game_time = g_last_load_game_time;
     g_random_seed = BE32(g + G_RANDOM_SEED);
     g_leader_hand_object = BE16(g + G_LEADER_HAND_OBJECT);
     g_party_champion_count = BE16(g + G_PARTY_CHAMPION_COUNT);
@@ -222,11 +223,14 @@ static uint8_t *encode_game(uint32_t *size)
     uint8_t header[SAVE_HEADER_BYTES], globals[SAVE_GLOBALS_BYTES], champions[SAVE_CHAMPIONS_BYTES];
     uint8_t portraits[SAVE_PORTRAITS_BYTES];
     uint16_t group_bytes = g_max_active_group_count * SAVE_ACTIVE_GROUP_BYTES;
-    uint16_t event_bytes = g_event_max_count * SAVE_EVENT_BYTES,
-             timeline_bytes = g_event_max_count * TIMELINE_ENTRY_BYTES;
-    uint8_t *groups = malloc(group_bytes), *events = malloc(event_bytes), *timeline = malloc(timeline_bytes);
+    uint16_t event_bytes = g_event_max_count * SAVE_EVENT_BYTES;
+    uint16_t timeline_bytes = g_event_max_count * TIMELINE_ENTRY_BYTES;
+    uint8_t *groups = malloc(group_bytes);
+    uint8_t *events = malloc(event_bytes);
+    uint8_t *timeline = malloc(timeline_bytes);
     uint32_t dungeon_size = 0;
-    uint8_t *dungeon = dungeon_save(&dungeon_size), *file = NULL;
+    uint8_t *dungeon = dungeon_save(&dungeon_size);
+    uint8_t *file = NULL;
     if (!groups || !events || !timeline || !dungeon)
         goto done;
 
@@ -377,8 +381,11 @@ static void reset_for_new_adventure(Champion *c, int16_t turn)
     c->action_index = ACTION_NONE;
     c->symbol_step = 0;
     c->symbols[0] = 0;
-    c->direction_maximum_damage_received = c->maximum_damage_received = c->poison_event_count = 0;
-    c->enable_action_event_index = c->hide_damage_received_event_index = -1;
+    c->direction_maximum_damage_received = 0;
+    c->maximum_damage_received = 0;
+    c->poison_event_count = 0;
+    c->enable_action_event_index = -1;
+    c->hide_damage_received_event_index = -1;
     c->attributes &= CHAMPION_ATTR_MALE;
     c->wounds = 0;
     c->current_health = c->maximum_health;
@@ -444,7 +451,8 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
         return ADVENTURE_NAMES_NOT_UNIQUE;
     size_t size = 0;
     uint32_t out_size = 0;
-    uint8_t *data = file_read(mini_path, &size), *out = NULL;
+    uint8_t *data = file_read(mini_path, &size);
+    uint8_t *out = NULL;
     SaveFile mini;
     if (data && save_decode(data, (uint32_t)size, &mini)) {
         merge_party(&mini);
@@ -505,7 +513,8 @@ static bool restore_game(const SaveFile *s)
     g_game_id = save_header_game_id(s->header);
     g_dungeon_id = save_header_dungeon_id(s->header);
     memcpy(header_extra, save_header_extra(s->header), save_header_extra_size());
-    g_party_dead = g_party_is_sleeping = false;
+    g_party_dead = false;
+    g_party_is_sleeping = false;
     g_saved_game_exists = true;
     return true;
 }
@@ -519,7 +528,8 @@ int16_t savegame_load(const char *dir)
    map is selected again, because the dungeon has new buffers. */
 static void restore_snapshot(const uint8_t *data, uint32_t size)
 {
-    bool exists = g_saved_game_exists, dead = g_party_dead;
+    bool exists = g_saved_game_exists;
+    bool dead = g_party_dead;
     int16_t current = g_current_map_index;
     uint32_t loaded = g_last_load_game_time;
     SaveFile s;

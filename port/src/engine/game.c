@@ -26,7 +26,8 @@
 Party g_party;
 Champion g_champions[CHAMPION_MAX_COUNT];
 uint16_t g_party_champion_count;
-int16_t g_leader_index = -1, g_magic_caster_champion_index = -1;
+int16_t g_leader_index = -1;
+int16_t g_magic_caster_champion_index = -1;
 uint16_t g_leader_hand_object = THING_NONE;
 bool g_party_is_sleeping, g_party_dead;
 uint32_t g_game_time, g_game_id;
@@ -60,12 +61,16 @@ void game_new(void)
     memset(g_champion_pending_damage, 0, sizeof g_champion_pending_damage);
     memset(g_champion_pending_wounds, 0, sizeof g_champion_pending_wounds);
     g_party_champion_count = 0;
-    g_leader_index = g_magic_caster_champion_index = -1;
+    g_leader_index = -1;
+    g_magic_caster_champion_index = -1;
     g_leader_hand_object = THING_NONE;
-    g_party_is_sleeping = g_party_dead = false;
+    g_party_is_sleeping = false;
+    g_party_dead = false;
     g_game_time = 0;
-    g_last_creature_attack_time = g_last_party_movement_time = 0;
-    g_disabled_movement_ticks = g_projectile_disabled_movement_ticks = 0;
+    g_last_creature_attack_time = 0;
+    g_last_party_movement_time = 0;
+    g_disabled_movement_ticks = 0;
+    g_projectile_disabled_movement_ticks = 0;
     g_last_projectile_disabled_movement_direction = 0;
     g_redraw = 0;
     g_dead_champions = 0;
@@ -120,7 +125,8 @@ void timeline_init(void)
     for (uint16_t i = 0; i < g_event_max_count; i++)
         g_timeline_events[i].map_time = i + 1;
     g_timeline_events[g_event_max_count - 1].map_time = FREE_LIST_END;
-    g_event_high_water = g_timeline_count = 0;
+    g_event_high_water = 0;
+    g_timeline_count = 0;
     g_first_unused_event_index = 0;
     timeline_add_watchdog_event();
 }
@@ -148,9 +154,10 @@ void timeline_reset(void)
 /* Earlier time first, then higher type and priority, then the lower slot. */
 bool timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b)
 {
-    uint32_t time_a = a->map_time & EVENT_TIME_MASK, time_b = b->map_time & EVENT_TIME_MASK;
-    uint16_t key_a = a->type << EVENT_KEY_TYPE_SHIFT | a->priority,
-             key_b = b->type << EVENT_KEY_TYPE_SHIFT | b->priority;
+    uint32_t time_a = a->map_time & EVENT_TIME_MASK;
+    uint32_t time_b = b->map_time & EVENT_TIME_MASK;
+    uint16_t key_a = a->type << EVENT_KEY_TYPE_SHIFT | a->priority;
+    uint16_t key_b = b->type << EVENT_KEY_TYPE_SHIFT | b->priority;
     if (time_a != time_b)
         return time_a < time_b;
     if (key_a != key_b)
@@ -175,7 +182,9 @@ uint16_t timeline_get_index(uint16_t event_index)
 /* Moves a heap entry up or down until the timeline is in time order again. */
 void timeline_fix_chronology(uint16_t timeline_index)
 {
-    uint16_t count = g_timeline_count, i = timeline_index, slot = g_timeline[i];
+    uint16_t count = g_timeline_count;
+    uint16_t i = timeline_index;
+    uint16_t slot = g_timeline[i];
     bool moved = false;
     if (count == 1)
         return;
@@ -296,7 +305,8 @@ bool timeline_is_first_event_expired(void)
 /* The original leaves priority, b, and c as stack garbage. */
 void timeline_add_watchdog_event(void)
 {
-    TimelineEvent event = {.map_time = g_watchdog_time = g_game_time + WATCHDOG_INTERVAL, .type = EVENT_WATCHDOG};
+    g_watchdog_time = g_game_time + WATCHDOG_INTERVAL;
+    TimelineEvent event = {.map_time = g_watchdog_time, .type = EVENT_WATCHDOG};
     timeline_add_event(&event);
 }
 

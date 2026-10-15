@@ -17,7 +17,8 @@ void os_list_folder(const char *path, void (*found)(const char *name, void *data
 
 int os_compare_names(const char *a, const char *b)
 {
-    const unsigned char *p = (const unsigned char *)a, *q = (const unsigned char *)b;
+    const unsigned char *p = (const unsigned char *)a;
+    const unsigned char *q = (const unsigned char *)b;
     while (*p && tolower(*p) == tolower(*q)) {
         p++;
         q++;

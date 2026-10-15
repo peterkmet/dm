@@ -25,7 +25,8 @@ void message_move_cursor(int16_t column, int16_t row)
         column = 0;
     if (column > MESSAGE_COLS - 1)
         column = MESSAGE_COLS - 1;
-    int16_t x = column * TEXT_CHAR_WIDTH, max = MESSAGE_ROW_WIDTH - TEXT_CHAR_WIDTH;
+    int16_t x = column * TEXT_CHAR_WIDTH;
+    int16_t max = MESSAGE_ROW_WIDTH - TEXT_CHAR_WIDTH;
     g_message.cursor_x = x < max ? x : max;
     g_message.cursor_row = row < 0 ? 0 : row > MESSAGE_LAST_ROW ? MESSAGE_LAST_ROW : row;
 }
@@ -76,7 +77,12 @@ static void print_string(int16_t color, const char *s, uint32_t game_time)
    space that fits (*pos skips the space). */
 int message_next_word_line(const char *s, char *line, int *pos, int max_width)
 {
-    int w = 0, space = -1, space_w = 0, space_n = 0, p = *pos, n = 0;
+    int w = 0;
+    int space = -1;
+    int space_w = 0;
+    int space_n = 0;
+    int p = *pos;
+    int n = 0;
     for (;; p++, n++) {
         line[n] = 0;
         if (s[p] == '\n' || s[p] == 0) {

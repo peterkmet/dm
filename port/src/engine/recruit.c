@@ -57,7 +57,8 @@ static int32_t hidden_skill_experience(uint16_t level)
 bool recruit_parse_text(const char *text, RecruitData *out)
 {
     memset(out, 0, sizeof *out);
-    int n = 0, t = 0;
+    int n = 0;
+    int t = 0;
     const char *p = copy_line(text, out->name, sizeof out->name, &n);
     if (p)
         p = copy_line(p + 1, out->title, sizeof out->title, &t);
@@ -66,9 +67,12 @@ bool recruit_parse_text(const char *text, RecruitData *out)
     if (!p || strlen(p) < VALUES_LENGTH)
         return false;
     out->male = p[VALUES_GENDER] == 'M';
-    out->current_health = out->maximum_health = recruit_decoded_value(p + VALUES_HEALTH, BAR_VALUE_CHARS);
-    out->current_stamina = out->maximum_stamina = recruit_decoded_value(p + VALUES_STAMINA, BAR_VALUE_CHARS);
-    out->current_mana = out->maximum_mana = recruit_decoded_value(p + VALUES_MANA, BAR_VALUE_CHARS);
+    out->maximum_health = recruit_decoded_value(p + VALUES_HEALTH, BAR_VALUE_CHARS);
+    out->current_health = out->maximum_health;
+    out->maximum_stamina = recruit_decoded_value(p + VALUES_STAMINA, BAR_VALUE_CHARS);
+    out->current_stamina = out->maximum_stamina;
+    out->maximum_mana = recruit_decoded_value(p + VALUES_MANA, BAR_VALUE_CHARS);
+    out->current_mana = out->maximum_mana;
     for (int i = 0; i < STAT_COUNT; i++) {
         int16_t v = recruit_decoded_value(p + VALUES_STATISTICS + i * STATISTIC_CHARS, STATISTIC_CHARS);
         out->statistics[i][STAT_MAXIMUM] = out->statistics[i][STAT_CURRENT] =

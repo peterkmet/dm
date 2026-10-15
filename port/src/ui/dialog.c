@@ -46,7 +46,10 @@ static void patch_dividers(Bitmap *vp, int16_t count)
         return;
     Bitmap copy = {vp->w, vp->h, copy_px};
     TablesRect source = tables_layout_bitmap(patch_layout[count - 1] - 1);
-    int16_t sx = source.x, sy = source.y, w = source.w, h = source.h;
+    int16_t sx = source.x;
+    int16_t sy = source.y;
+    int16_t w = source.w;
+    int16_t h = source.h;
     Box b;
     memcpy(copy_px, vp->px, (size_t)vp->w * vp->h);
     if (layout_get_zone(patch_zone[count - 1], copy.w, copy.h, &b, &w, &h))
@@ -71,7 +74,11 @@ static void draw_choices(Bitmap *vp, const char *choice[MAX_CHOICES], int16_t co
 static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_t zone)
 {
     Box box;
-    int width[MESSAGE_COUNT] = {0}, lines[MESSAGE_COUNT] = {0}, total = 0, height, pad = tables_message_line_pad();
+    int width[MESSAGE_COUNT] = {0};
+    int lines[MESSAGE_COUNT] = {0};
+    int total = 0;
+    int height;
+    int pad = tables_message_line_pad();
     if (!ui_zone_box(zone, &box))
         return;
     for (int i = 0; i < MESSAGE_COUNT; i++) {
@@ -108,8 +115,8 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
 {
     Bitmap *vp = ui_viewport();
     const Bitmap *graphic = gfx_bitmap(GFX_DIALOG);
-    const char *choice[MAX_CHOICES] = {choice1, choice2, choice3, choice4},
-               *message[MESSAGE_COUNT] = {message1, message2};
+    const char *choice[MAX_CHOICES] = {choice1, choice2, choice3, choice4};
+    const char *message[MESSAGE_COUNT] = {message1, message2};
     Box all = {0, 0, vp->w, vp->h};
     if (graphic)
         draw_blit(graphic, 0, 0, vp, &all, COLOR_NONE, 0);
@@ -140,7 +147,10 @@ static void draw_pressed_button(int16_t table, int16_t choice)
     Box b;
     if (!tables_mouse_input(table, choice - 1, &entry) || !ui_zone_box(entry.x2, &b))
         return; /* the zone word of an entry with a negative x1 */
-    int x = b.x, y = b.y, w = b.w, h = b.h;
+    int x = b.x;
+    int y = b.y;
+    int w = b.w;
+    int h = b.h;
     fill(vp, x - 2, y - 2, w + 5, 1, COLOR_LIGHT_BROWN);
     fill(vp, x + w + 2, y - 2, 1, h + 4, COLOR_BLACK);
     fill(vp, x - 4, y + h + 1, w + 7, 2, COLOR_BLACK);

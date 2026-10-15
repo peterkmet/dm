@@ -96,7 +96,8 @@ void music_select(int16_t soundtrack)
         return;
     music_stop();
     g_music_soundtrack = soundtrack;
-    g_music_last_track = g_music_requested_track = 0;
+    g_music_last_track = 0;
+    g_music_requested_track = 0;
     party_map = NO_POSITION;
     music_update();
 }
@@ -112,7 +113,9 @@ static void update_fm_towns_csb(bool new_map)
     }
     if (new_map)
         music_stop();
-    int16_t map = g_party_map_index, x = g_party_map_x, y = g_party_map_y;
+    int16_t map = g_party_map_index;
+    int16_t x = g_party_map_x;
+    int16_t y = g_party_map_y;
     if (map < MUSIC_CSB_MAP_COUNT && x < MUSIC_CSB_MAP_SIZE && y < MUSIC_CSB_MAP_SIZE &&
         g_music_csb_square_tracks[map][y][x])
         g_music_requested_track = g_music_csb_square_tracks[map][y][x];

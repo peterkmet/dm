@@ -108,7 +108,8 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
     ByteReader in = {p, end};
     PixelWriter out = {px, 0, n};
     while (out.pos < n) {
-        uint8_t cmd = next_byte(&in), c = cmd & CMD_COLOR_MASK;
+        uint8_t cmd = next_byte(&in);
+        uint8_t c = cmd & CMD_COLOR_MASK;
         unsigned cnt;
         if (!(cmd & CMD_LONG)) {
             for (cnt = (cmd >> 4) + 1; cnt; cnt--)
@@ -220,7 +221,8 @@ static StringList strings, action_names, object_names;
 static int load_strings(int graphic, StringList *list)
 {
     uint16_t size;
-    bool csb = g_adventure == ADVENTURE_CSB, bit7_ends = csb && graphic == GFX_OBJECT_NAMES;
+    bool csb = g_adventure == ADVENTURE_CSB;
+    bool bit7_ends = csb && graphic == GFX_OBJECT_NAMES;
     const uint8_t *p = csb ? csb_text_item(graphic, &size) : NULL;
     if (!p)
         p = gfx_item(graphic, &size);
