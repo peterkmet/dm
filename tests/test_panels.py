@@ -8,8 +8,7 @@ import pytest
 import dmtools.emu as emu_module
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_ui import GAME, Bitmap, Box, Champion, c16, game, lib, needs_game, recruit, render, reset, rgb_rows, u16  # noqa: F401
-from test_view import SCRATCH, png
+from test_ui import GAME, Bitmap, Box, Champion, c16, game, lib, needs_game, recruit, render, reset, u16  # noqa: F401
 
 # Original addresses (docs/kaos-symbols.csv).
 DRAW_PANEL_OBJECT, PANEL_PRINT_LINE, PRINT_ZONE = 0x10F28A, 0x10EC88, 0x109A04
@@ -190,12 +189,6 @@ def put_in_action_hand(game, champions, thing):
     game.ui_draw_champion_state(0)
 
 
-def save_png(game, name):
-    _, rows = rgb_rows(game)
-    if SCRATCH.exists():
-        png(SCRATCH / f"panel_{name}.png", rows)
-
-
 @needs_game
 def test_chest_open_swap_close(game, party):
     chests = [c for c in things_of(game, CHEST)[0] if 2 <= len(chest_content(game, c)) < CHEST_SLOTS]
@@ -210,7 +203,6 @@ def test_chest_open_swap_close(game, party):
     assert c16.in_dll(game, "g_panel_content").value == 6
     assert open_chest.value == chest
     assert list(slots) == content + [NONE] * (CHEST_SLOTS - len(content))
-    save_png(game, "chest")
 
     hand = game.get_unused_thing(5)
     game.inventory_put_object_in_leader_hand(hand)
@@ -245,12 +237,10 @@ def test_render_scroll_and_eye(game, party):
     game.ui_draw_inventory_open(0)
     put_in_action_hand(game, party, scrolls[0])
     assert c16.in_dll(game, "g_panel_content").value == 5
-    save_png(game, "scroll")
     sword = next(t for t in things_of(game, 5)[0] if game.gfx_object_name(game.object_get_icon_index(t)) == b"SWORD")
     game.inventory_put_object_in_leader_hand(sword)
     game.ui_draw_panel_eye()
     game.ui_draw_viewport()
-    save_png(game, "eye_sword")
     name, lines = port_text(game, sword)
     assert name == b"SWORD" and lines[-1].startswith(b"WEIGHS ")
     game.inventory_get_object_removed_from_leader_hand()

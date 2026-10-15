@@ -1,8 +1,6 @@
 import ctypes
 import struct
 import subprocess
-import zlib
-from pathlib import Path
 
 import pytest
 
@@ -138,18 +136,9 @@ def test_zones_match_original(lib, emu):
     assert checked > 500
 
 
-def png(path, rgb_rows):
-    h, w = len(rgb_rows), len(rgb_rows[0]) // 3
-    raw = b"".join(b"\0" + bytes(row) for row in rgb_rows)
-    chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))
-    Path(path).write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
-
-
 def screen(lib):
     fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
-    pal = (ctypes.c_uint16 * 16).in_dll(lib, "palette")
-    rgb = [[(pal[c] >> s & 15) * 17 for c in (fb[y * 320 + x] for x in range(320)) for s in (8, 4, 0)] for y in range(200)]
-    return bytes(fb), rgb
+    return bytes(fb)
 
 
 @pytest.fixture(scope="module")
@@ -169,14 +158,14 @@ VIEWS = {"start": None, "door": (0, 1, 13, 2), "ornament": (0, 4, 9, 3), "text":
 
 @needs_game
 @pytest.mark.parametrize("name", list(VIEWS))
-def test_render_view(game, tmp_path, name):
+def test_render_view(game, name):
     lib, party = game
     m, x, y, d = VIEWS[name] or party
     ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, 320 * 200)
     assert lib.view_render(m, x, y, d)
-    first, rgb = screen(lib)
+    first = screen(lib)
     assert lib.view_render(m, x, y, d)
-    assert screen(lib)[0] == first
+    assert screen(lib) == first
     assert len(set(first)) > 4
 
 
@@ -282,11 +271,11 @@ def test_render_things(game, name):
     lib.view_set_light.argtypes = [ctypes.c_int16] * 2
     lib.view_set_light(m, light)
     assert lib.view_render(m, x, y, d)
-    plain = screen(lib)[0]
+    plain = screen(lib)
     undo = add_explosion(lib, *explosion) if explosion else None
     try:
         assert lib.view_render(m, x, y, d)
-        first, rgb = screen(lib)
+        first = screen(lib)
     finally:
         if undo:
             undo()

@@ -8,7 +8,7 @@ from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
 from test_port import BUILD, ROOT, sdl3_installed
 from test_recruit import RecruitData, mirrors
-from test_view import SCRATCH, Bitmap, Box, png, zone_records
+from test_view import Bitmap, Box, zone_records
 
 GAME = ROOT / "game"
 GET_ZONE_BOX_CLIPPED, COMMAND_FROM_MOUSE, LAYOUT_ZONES = 0x11686A, 0x120CC6, 0x102990
@@ -150,18 +150,6 @@ def test_mouse_commands_match_original(game, emu, table):
     assert hits > 0
 
 
-def rgb_rows(lib):
-    """The screen as RGB rows, with the palette split of the copper list."""
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
-    pal = (ctypes.c_uint16 * 32).in_dll(lib, "palette")
-    top, bottom = c16.in_dll(lib, "palette_split_top").value, c16.in_dll(lib, "palette_split_bottom").value
-    rows = []
-    for y in range(200):
-        base = 0 if top <= y < bottom else 16
-        rows.append([(pal[base + fb[y * 320 + x]] >> s & 15) * 17 for x in range(320) for s in (8, 4, 0)])
-    return bytes(fb), rows
-
-
 def recruit(lib, n):
     """Fills champions 0..n-1 from real mirror texts, with objects in hands and body slots."""
     champions = (Champion * 4).in_dll(lib, "g_champions")
@@ -205,9 +193,7 @@ def render(lib, name):
     assert lib.view_render(*party)
     lib.ui_set_palette(None)
     lib.ui_draw_interface()
-    fb, rows = rgb_rows(lib)
-    if SCRATCH.exists():
-        png(SCRATCH / f"ui_{name}.png", rows)
+    fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb"))
     return fb
 
 
@@ -251,9 +237,6 @@ def test_render_party(game, n):
     if n == 4:
         game.ui_draw_champion_damage(1, 37)
         game.menus_draw_action_damage(25)
-        _, rows = rgb_rows(game)
-        if SCRATCH.exists():
-            png(SCRATCH / "ui_damage.png", rows)
 
 
 @needs_game
@@ -264,9 +247,6 @@ def test_render_action_menu(game):
     game.menus_set_acting_champion(0)
     assert c16.in_dll(game, "g_acting_champion_ordinal").value == 1
     assert (ctypes.c_uint8 * 3).in_dll(game, "g_action_list_indices")[0] != 0xFF
-    _, rows = rgb_rows(game)
-    if SCRATCH.exists():
-        png(SCRATCH / "ui_action_menu.png", rows)
 
 
 @needs_game
@@ -275,15 +255,10 @@ def test_render_inventory(game):
     recruit(game, 2)
     render(game, "base")
     game.ui_draw_inventory_open(0)
-    fb, rows = rgb_rows(game)
-    if SCRATCH.exists():
-        png(SCRATCH / "ui_inventory.png", rows)
+    fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(game, "fb"))
     assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 1
     assert len(set(fb[320 * 33:320 * 169])) > 6
     game.ui_draw_champion_skills_and_statistics()
     game.ui_draw_viewport()
-    _, rows = rgb_rows(game)
-    if SCRATCH.exists():
-        png(SCRATCH / "ui_inventory_eye.png", rows)
     game.ui_draw_inventory_close(0)
     assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 0
