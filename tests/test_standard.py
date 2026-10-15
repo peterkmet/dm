@@ -148,8 +148,7 @@ def test_no_event_numbers_or_offsets_in_names():
 
 def test_predicates_return_bool():
     ok = allowed()
-    report("bool", [f"bool {rel(path)}  | {ret} {name}" for path in sources() if path.suffix == ".h"
-                    and ("bool", rel(path)) not in ok
+    report("bool", [f"bool {rel(path)}  | {ret} {name}" for path in sources() if ("bool", rel(path)) not in ok
                     for ret, name in declarations(path) if PREDICATE.search(name) and ret != "bool"])
 
 
@@ -225,6 +224,69 @@ def test_no_packed_fields_at_call_sites():
 def test_byte_order_helpers_only_in_bytes_header():
     report("byteorder", [f"byteorder {rel(path)}  | {name}" for path in sources() if path.name != "bytes.h"
                          for name in DEFINE.findall(strip(path.read_text(errors="replace"))) if name in BYTE_ORDER])
+
+
+KAOS_CALL = re.compile(r"\bkaos_\w+\s*\(")
+KAOS_HEADER = re.compile(r'^\s*#\s*include\s*"kaos_addresses\.h"', re.M)
+IMAGE_ADDRESS = re.compile(r"\b0x10[0-9a-fA-F]{4}\b")
+ADDRESS_PREFIXES = ("KAOS_", "CSB_", "SWSH_")
+
+
+def test_kaos_image_only_in_data():
+    ok = allowed()
+    found = []
+    for path in sources():
+        if path.parent.name == "data" or ("kaos", rel(path)) in ok:
+            continue
+        text = path.read_text(errors="replace")
+        lines = [m.group() for m in KAOS_HEADER.finditer(text)]
+        lines += [line for line in strip(text).splitlines() if KAOS_CALL.search(line) or IMAGE_ADDRESS.search(line)]
+        for line in lines:
+            found.append(f"kaos {rel(path)}  | {line.strip()}")
+    report("kaos", found)
+
+
+def test_each_image_address_has_one_name():
+    names = defaultdict(set)
+    for path in sources():
+        for name, literal in CONST_VALUE.findall(strip(path.read_text(errors="replace"))):
+            if IMAGE_ADDRESS.fullmatch(literal):
+                names[(name.split("_")[0], literal.lower())].add(name)
+    ok = allowed()
+    report("address", [f"address {literal}  | {sorted(n)}" for (prefix, literal), n in sorted(names.items())
+                       if (len(n) > 1 or not all(x.startswith(ADDRESS_PREFIXES) for x in n)) and ("address", literal) not in ok])
+
+
+PLATFORM_CODE = re.compile(r"^\s*#\s*if.*\b_WIN32\b|^\s*#\s*include\s*<(?:unistd|dirent|strings|execinfo|fcntl)\.h>|^\s*#\s*include\s*<sys/", re.M)
+
+
+def test_platform_code_only_in_platform():
+    ok = allowed()
+    report("platform", [f"platform {rel(path)}  | {m.group().strip()}" for path in sources()
+                        if path.parent.name != "platform" and ("platform", rel(path)) not in ok
+                        for m in PLATFORM_CODE.finditer(path.read_text(errors="replace"))])
+
+
+EXTERN = re.compile(r"\bextern\b([^;]*);")
+REDRAW_FLAG_WRITE = re.compile(r"\battributes\s*[|&]=\s*~?\s*\(?\s*CHAMPION_ATTR_|\bg_redraw\s*[|&]=")
+
+
+def engine_globals():
+    names = set()
+    for path in (SRC / "engine").glob("*.h"):
+        for decl in EXTERN.findall(strip(path.read_text(errors="replace"))):
+            names.update(n for n in re.findall(r"\b(g_\w+)", decl) if not n.endswith("_hook"))
+    return names
+
+
+def test_ui_does_not_write_engine_variables():
+    alt = "|".join(sorted(engine_globals(), key=len, reverse=True))
+    target = rf"\b(?:{alt})\b(?:\s*\[[^\]]*\]|\s*(?:\.|->)\s*\w+)*"
+    write = re.compile(rf"(?:\+\+|--)\s*{target}|{target}\s*(?:\+\+|--|(?:[-+*/|&^]|<<|>>)?=(?!=))")
+    ok = allowed()
+    report("engine-write", [f"engine-write {rel(path)}  | {n}: {line.strip()}" for path in sorted((SRC / "ui").glob("*.c"))
+                            if ("engine-write", rel(path)) not in ok
+                            for n, line in code_lines(path) if write.search(line) and not REDRAW_FLAG_WRITE.search(line)])
 
 
 LAYERS = ["data", "engine", "ui", "platform"]
