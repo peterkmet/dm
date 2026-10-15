@@ -31,8 +31,8 @@ KAOS has no other random function. Callers compute `random16() % n` inline.
 | Offset | C field | Type |
 |---|---|---|
 | `0x00` | `magical_light_amount` | `int16_t` |
-| `0x02` | `event73_count_thieves_eye` | `uint8_t` |
-| `0x03` | `event79_count_footprints` | `uint8_t` |
+| `0x02` | `thieves_eye_count` | `uint8_t` |
+| `0x03` | `footprints_count` | `uint8_t` |
 | `0x04` | `shield_defense` | `int16_t` |
 | `0x06` | `fire_shield_defense` | `int16_t` |
 | `0x08` | `spell_shield_defense` | `int16_t` |
@@ -42,7 +42,7 @@ KAOS has no other random function. Callers compute `random16() % n` inline.
 | `0x0d` | `last_scent_index` | `uint8_t` |
 | `0x0e` | `scents[24]` | `uint16_t`: X bits 11–15, Y bits 6–10, map bits 0–5 |
 | `0x3e` | `scent_strengths[24]` | `uint8_t` |
-| `0x56` | `event71_count_invisibility` | `uint8_t` |
+| `0x56` | `invisibility_count` | `uint8_t` |
 
 The party position is in `dungeon.h`: `g_party_map_x` (`0x1001ec`), `g_party_map_y` (`0x1001ee`), `g_party_direction` (`0x1001ea`), `g_party_map_index` (`0x1001f0`).
 

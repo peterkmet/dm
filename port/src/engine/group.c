@@ -812,7 +812,7 @@ static uint16_t group_get_distance_to_visible_party(uint16_t group, int16_t crea
             return 0;
     }
     uint16_t range = creature_sight_range(info);
-    if (g_party.event71_count_invisibility && !(info->attributes & CREATURE_SEES_INVISIBLE))
+    if (g_party.invisibility_count && !(info->attributes & CREATURE_SEES_INVISIBLE))
         range = INVISIBLE_PARTY_SIGHT_RANGE;
     else if (!(info->attributes & CREATURE_NIGHT_VISION))
         range -= g_dungeon_view_palette_index >> 1;
@@ -1197,7 +1197,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
     const CreatureInfo *info = group_info(group);
     champion_add_skill_experience(champion_index, SKILL_PARRY, creature_experience(info));
     int16_t dodge_bonus;
-    if (g_party.event71_count_invisibility && !(info->attributes & CREATURE_SEES_INVISIBLE))
+    if (g_party.invisibility_count && !(info->attributes & CREATURE_SEES_INVISIBLE))
         dodge_bonus = INVISIBLE_PARTY_DODGE_BONUS;
     else if (info->attributes & CREATURE_NIGHT_VISION)
         dodge_bonus = 0;

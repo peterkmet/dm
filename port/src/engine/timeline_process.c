@@ -462,13 +462,13 @@ static void process_effect_event(const TimelineEvent *event)
 {
     switch (event->type) {
     case EVENT_INVISIBILITY_END:
-        g_party.event71_count_invisibility--;
+        g_party.invisibility_count--;
         break;
     case EVENT_CHAMPION_SHIELD_END:
         g_champions[event->priority].shield_defense -= event->b;
         break;
     case EVENT_THIEVES_EYE_END:
-        g_party.event73_count_thieves_eye--;
+        g_party.thieves_eye_count--;
         break;
     case EVENT_PARTY_SHIELD_END:
         g_party.shield_defense -= event->b;
@@ -484,7 +484,7 @@ static void process_effect_event(const TimelineEvent *event)
         g_party.fire_shield_defense -= event->b;
         break;
     case EVENT_FOOTPRINTS_END:
-        g_party.event79_count_footprints--;
+        g_party.footprints_count--;
         break;
     case EVENT_MAGIC_MAP_DAIN_END:
     case EVENT_MAGIC_MAP_ROS_END:

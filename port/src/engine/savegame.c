@@ -103,8 +103,8 @@ static void pack_party(uint8_t *p)
 {
     memset(p, 0, SAVE_PARTY_BYTES);
     WR16(p + P_MAGICAL_LIGHT, g_party.magical_light_amount);
-    p[P_THIEVES_EYE] = g_party.event73_count_thieves_eye;
-    p[P_FOOTPRINTS] = g_party.event79_count_footprints;
+    p[P_THIEVES_EYE] = g_party.thieves_eye_count;
+    p[P_FOOTPRINTS] = g_party.footprints_count;
     WR16(p + P_SHIELD, g_party.shield_defense);
     WR16(p + P_FIRE_SHIELD, g_party.fire_shield_defense);
     WR16(p + P_SPELL_SHIELD, g_party.spell_shield_defense);
@@ -115,15 +115,15 @@ static void pack_party(uint8_t *p)
     for (int i = 0; i < PARTY_SCENT_COUNT; i++)
         WR16(p + P_SCENTS + 2 * i, g_party.scents[i]);
     memcpy(p + P_SCENT_STRENGTHS, g_party.scent_strengths, sizeof g_party.scent_strengths);
-    p[P_INVISIBILITY] = g_party.event71_count_invisibility;
+    p[P_INVISIBILITY] = g_party.invisibility_count;
 }
 
 static void unpack_party(const uint8_t *p)
 {
     memset(&g_party, 0, sizeof g_party);
     g_party.magical_light_amount = BE16(p + P_MAGICAL_LIGHT);
-    g_party.event73_count_thieves_eye = p[P_THIEVES_EYE];
-    g_party.event79_count_footprints = p[P_FOOTPRINTS];
+    g_party.thieves_eye_count = p[P_THIEVES_EYE];
+    g_party.footprints_count = p[P_FOOTPRINTS];
     g_party.shield_defense = BE16(p + P_SHIELD);
     g_party.fire_shield_defense = BE16(p + P_FIRE_SHIELD);
     g_party.spell_shield_defense = BE16(p + P_SPELL_SHIELD);
@@ -134,7 +134,7 @@ static void unpack_party(const uint8_t *p)
     for (int i = 0; i < PARTY_SCENT_COUNT; i++)
         g_party.scents[i] = BE16(p + P_SCENTS + 2 * i);
     memcpy(g_party.scent_strengths, p + P_SCENT_STRENGTHS, sizeof g_party.scent_strengths);
-    g_party.event71_count_invisibility = p[P_INVISIBILITY];
+    g_party.invisibility_count = p[P_INVISIBILITY];
 }
 
 /* A free slot keeps the next free index in the high word, as timeline_reset writes it. */

@@ -84,10 +84,10 @@
 #define HEALTH_GAIN_SHIFT                 7 /* health gain: maximum health / 128 + 1 */
 #define POISON_DAMAGE_SHIFT               6 /* a poison step deals attack / 64 */
 #define DAMAGE_ALL_SPREAD_SHIFT           3 /* damage to all champions spreads by attack / 8 */
-/* The regeneration chance shuffles the game time bits 6, 7, and 8. */
-#define TIME_BIT_6                        0x40
-#define TIME_BIT_7                        0x80
-#define TIME_BIT_8                        0x100
+/* The regeneration chance (0-112) takes the game time bits 6, 7, and 8 as its bits for 64, 32, and 16. */
+#define TIME_CHANCE_HIGH_BIT              0x40
+#define TIME_CHANCE_MIDDLE_BIT            0x80
+#define TIME_CHANCE_LOW_BIT               0x100
 #define STATISTICS_RESTORE_MASK           0xff /* statistics move every 256 ticks */
 #define STATISTICS_RESTORE_SLEEPING_MASK  0x3f
 
@@ -1054,7 +1054,8 @@ void champion_apply_time_effects(void)
         return;
     fade_scents();
     uint16_t time = g_game_time;
-    uint16_t chance = ((time & TIME_BIT_7) + ((time & TIME_BIT_8) >> 2) + ((time & TIME_BIT_6) << 2)) >>
+    uint16_t chance = ((time & TIME_CHANCE_MIDDLE_BIT) + ((time & TIME_CHANCE_LOW_BIT) >> 2) +
+                       ((time & TIME_CHANCE_HIGH_BIT) << 2)) >>
                       2; /* time bits 6-8 shuffled: 0-112 */
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         Champion *c = &g_champions[i];

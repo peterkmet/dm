@@ -34,7 +34,7 @@ WeaponInfo = S(("weight", u8), ("weapon_class", u8), ("strength", u8), ("kinetic
 ArmourInfo = S(("weight", u8), ("defense", u8), ("attributes", u8))
 DoorInfo = S(("attributes", u8), ("defense", u8))
 Spell = S(("symbols", u32), ("base_required_skill_level", u8), ("skill_index", u8), ("kind", u8), ("type", u8), ("disabled_ticks", u8))
-ActionSet = S(("action_indices", u8 * 3), ("minimum_skill_levels", u8 * 2), ("byte_6", u8))
+ActionSet = S(("action_indices", u8 * 3), ("minimum_skill_levels", u8 * 2), ("flags", u8))
 ActionInfo = S(("disabled_ticks", u8), ("damage_factor", u8), ("hit_probability", u8), ("stamina", u8), ("defense", s8),
                ("skill_index", u8), ("experience_gain", u8))
 

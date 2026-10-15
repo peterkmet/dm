@@ -135,12 +135,12 @@ static inline void game_get_magic_map_position(const uint8_t *spells, int16_t *m
 
 typedef struct {
     int16_t magical_light_amount;
-    uint8_t event73_count_thieves_eye, event79_count_footprints;
+    uint8_t thieves_eye_count, footprints_count;
     int16_t shield_defense, fire_shield_defense, spell_shield_defense;
     uint8_t scent_count, freeze_life_ticks, first_scent_index, last_scent_index;
     uint16_t scents[PARTY_SCENT_COUNT]; /* x bits 11-15, y bits 6-10, map bits 0-5 */
     uint8_t scent_strengths[PARTY_SCENT_COUNT];
-    uint8_t event71_count_invisibility;
+    uint8_t invisibility_count;
 } Party;
 
 typedef struct {

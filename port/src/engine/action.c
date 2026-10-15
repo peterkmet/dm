@@ -345,7 +345,7 @@ static void window(uint16_t champion_index, uint16_t skill_index)
     TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks),
                            .type = EVENT_THIEVES_EYE_END};
     timeline_add_event(&event);
-    g_party.event73_count_thieves_eye++;
+    g_party.thieves_eye_count++;
 }
 
 /* Climb down: the party goes down the pit in front with the rope, without fall damage. Returns false without a pit. */

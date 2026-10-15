@@ -91,7 +91,7 @@ static void add_party_scent(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t
         move_add_scent_strength(src_x, src_y, g_game_time - g_last_party_movement_time); /* 16-bit difference */
     g_last_party_movement_time = g_game_time;
     g_party.scent_count++;
-    if (g_party.event79_count_footprints)
+    if (g_party.footprints_count)
         g_party.last_scent_index = g_party.scent_count;
     g_party.scents[n] = position_pack(map, dst_x, dst_y);
     g_party.scent_strengths[n] = 0;

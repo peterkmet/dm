@@ -18,8 +18,3 @@ hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
 long engine/action.c:action_is_action_performed one short case for each action of the action table
 long engine/timeline_process.c:event_process_expired one short case for each timeline event type
-numbered HEADER_BYTE_12A open: module cleanup
-numbered event79_count_footprints open: module cleanup
-numbered event73_count_thieves_eye open: module cleanup
-numbered event71_count_invisibility open: module cleanup
-numbered H_BYTE_12A open: module cleanup

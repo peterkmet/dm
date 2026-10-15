@@ -197,7 +197,7 @@ Each table ends where the next named table starts. The tests check this.
 | 0 | `action_indices[3]` | Action of each menu row. `0xff` = none. |
 | 3 | — | Padding. |
 | 4 | `minimum_skill_levels[2]` | Minimum skill level of actions 1 and 2. Bit 7 = the action needs charges. |
-| 6 | `byte_6` | Copied to `0x103fea`. No reader is known. |
+| 6 | `flags` | Copied to `0x103fea`. No reader is known. |
 | 7 | — | Padding. |
 
 `ActionInfo` joins seven byte tables of 44 entries each, indexed by action:

@@ -241,12 +241,12 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
         magic_create_light_event(ticks >> 2, LIGHT_MAXIMUM_TICKS_DARKNESS);
         break;
     case SPELL_OTHER_THIEVES_EYE:
-        g_party.event73_count_thieves_eye++;
+        g_party.thieves_eye_count++;
         ticks >>= 1;
         add_party_event(EVENT_THIEVES_EYE_END, ticks * ticks, 0);
         break;
     case SPELL_OTHER_INVISIBILITY:
-        if (!g_party.event71_count_invisibility++) {
+        if (!g_party.invisibility_count++) {
             if (g_inventory_champion_ordinal)
                 g_champions[g_inventory_champion_ordinal - 1].attributes |= CHAMPION_ATTR_STATUS_BOX;
             set_attributes_of_all(CHAMPION_ATTR_ICON);
@@ -267,7 +267,7 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
                    (power * SPELL_DURATION_FACTOR + 1) * MAGIC_TORCH_TICKS_FACTOR + MAGIC_TORCH_BASE_TICKS);
         break;
     case SPELL_OTHER_FOOTPRINTS:
-        g_party.event79_count_footprints++;
+        g_party.footprints_count++;
         g_party.first_scent_index = g_party.scent_count;
         g_party.last_scent_index = power < FOOTPRINTS_STRONG_POWER ? g_party.scent_count : 0;
         add_party_event(EVENT_FOOTPRINTS_END, ticks * ticks, 0);

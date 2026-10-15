@@ -184,7 +184,7 @@ static void draw_icon(uint16_t champion_index)
     Bitmap bm = {w, h, px};
     Bitmap screen = ui_screen();
     const Bitmap *icons = gfx_bitmap(GFX_CHAMPION_ICONS);
-    bool invisible = g_party.event71_count_invisibility != 0;
+    bool invisible = g_party.invisibility_count != 0;
     if (w * h > (int)sizeof px)
         return;
     int16_t cell = NORMALIZE(c->cell - g_party_direction);
@@ -218,7 +218,7 @@ void ui_draw_status_box_portrait(int16_t champion_index)
     b.w = tables_portrait_width();
     b.h = tables_portrait_height();
     draw_blit(&portrait, 0, 0, &screen, &b, COLOR_NONE, 0);
-    if (g_party.event71_count_invisibility)
+    if (g_party.invisibility_count)
         ui_fill_zone_pattern(&screen, zone, COLOR_DARKEST_GRAY);
 }
 
