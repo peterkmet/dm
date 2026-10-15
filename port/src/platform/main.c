@@ -89,9 +89,9 @@ static void view_key(int key)
     else if (key == SDLK_DOWN)
         forward = -1;
     else if (key == SDLK_LEFT)
-        d = NORMALIZE(d - 1);
+        d = turn_left(d);
     else if (key == SDLK_RIGHT)
-        d = NORMALIZE(d + 1);
+        d = turn_right(d);
     else if (key == SDLK_A)
         right = -1;
     else if (key == SDLK_D)

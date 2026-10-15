@@ -468,7 +468,7 @@ static void touch_front_wall(void)
         return;
     int16_t candidate = g_candidate_champion_ordinal;
     /* the wall side that faces the party */
-    g_stop_waiting_for_input = sensor_is_triggered_by_click_on_wall(x, y, NORMALIZE(g_party_direction + 2));
+    g_stop_waiting_for_input = sensor_is_triggered_by_click_on_wall(x, y, turn_back(g_party_direction));
     if (!candidate && g_candidate_champion_ordinal)
         show_candidate();
 }

@@ -335,12 +335,12 @@ static const char *move_right(const char *r)
     (void)r;
     return step(KEY_RIGHT, 0, 1);
 }
-static const char *turn_left(const char *r)
+static const char *turn_party_left(const char *r)
 {
     (void)r;
     return rotate(KEY_DEL, -1);
 }
-static const char *turn_right(const char *r)
+static const char *turn_party_right(const char *r)
 {
     (void)r;
     return rotate(KEY_HELP, 1);
@@ -642,8 +642,8 @@ static const struct {
     {"move_back",        move_back       },
     {"move_left",        move_left       },
     {"move_right",       move_right      },
-    {"turn_left",        turn_left       },
-    {"turn_right",       turn_right      },
+    {"turn_left",        turn_party_left },
+    {"turn_right",       turn_party_right},
     {"click_wall_ahead", click_wall_ahead},
     {"take_object",      take_object     },
     {"drop_object",      drop_object     },

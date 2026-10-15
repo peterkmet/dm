@@ -1,6 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
-/* Prefixes: game_ min16 max16 bounded_ scale_ update_ timeline_ adjust_ position_ */
+/* Prefixes: game_ min16 max16 bounded_ scale_ update_ timeline_ adjust_ position_ turn_ */
 #include <stdbool.h>
 #include <stdint.h>
 #include "tables.h"
@@ -16,6 +16,20 @@
 #define WATCHDOG_INTERVAL          300  /* game ticks between two watchdog events */
 #define SHIFT_COUNT_MASK           0x3f /* the 68000 takes a shift count modulo 64 */
 #define LONG_SHIFT_MAXIMUM         31   /* a larger shift of a 32-bit value leaves only the sign or 0 */
+
+/* The direction or cell a quarter turn right, a half turn, or a quarter turn left of this one. */
+static inline int16_t turn_right(int16_t direction)
+{
+    return NORMALIZE(direction + 1);
+}
+static inline int16_t turn_back(int16_t direction)
+{
+    return NORMALIZE(direction + 2);
+}
+static inline int16_t turn_left(int16_t direction)
+{
+    return NORMALIZE(direction + 3);
+}
 
 enum {
     STAT_LUCK,

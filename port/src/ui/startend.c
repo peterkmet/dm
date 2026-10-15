@@ -510,7 +510,7 @@ void fuse_sequence(void)
         return;
     group_set_health(lord, 0, FUSE_LORD_HEALTH);
     group_set_cells(lord, CELL_CENTERED, g_party_map_index);
-    group_set_directions(lord, (uint8_t)NORMALIZE(g_party_direction + 2), g_party_map_index); /* faces the party */
+    group_set_directions(lord, (uint8_t)turn_back(g_party_direction), g_party_map_index); /* faces the party */
     remove_fluxcages(g_party_map_x, g_party_map_y);
     remove_fluxcages(x, y);
     fuse_update();

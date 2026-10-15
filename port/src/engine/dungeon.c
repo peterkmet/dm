@@ -1,6 +1,7 @@
 #include "dungeon.h"
 #include "adventure.h"
 #include "ftl.h"
+#include "game.h"
 #include "map.h"
 #include "tables.h"
 #include <stdlib.h>
@@ -149,7 +150,7 @@ static int16_t read_header(int new_game, uint16_t *sum)
         uint16_t start = BE16(h + HEADER_PARTY_START);
         g_party_map_x = start & MAP_COORD_MASK;
         g_party_map_y = start >> PARTY_START_Y_SHIFT & MAP_COORD_MASK;
-        g_party_direction = start >> PARTY_START_DIRECTION_SHIFT & 3;
+        g_party_direction = NORMALIZE(start >> PARTY_START_DIRECTION_SHIFT);
         g_party_map_index = 0;
     }
     return 1;

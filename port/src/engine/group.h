@@ -221,6 +221,12 @@ bool group_is_creature_allowed_on_map(uint16_t group, int16_t map);
 int16_t group_get_creature_ordinal_in_cell(uint16_t group, uint16_t cell);
 int16_t group_get_melee_target_creature_ordinal(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y,
                                                 int16_t champion_cell);
+/* The cells and directions of a group: two bits for each creature. */
+enum { GROUP_CELL_BITS = 2, GROUP_CELL_MASK = 3 };
+static inline uint16_t group_cell(uint16_t packed, int16_t creature)
+{
+    return packed >> (GROUP_CELL_BITS * creature) & GROUP_CELL_MASK;
+}
 uint16_t group_set_cell_value(uint16_t packed, uint16_t creature_index, uint16_t value);
 uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t creature_index, int16_t attacking);
 void group_start_wandering(int16_t x, int16_t y);

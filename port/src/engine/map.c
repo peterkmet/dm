@@ -106,7 +106,7 @@ int16_t get_stairs_exit_direction(int16_t x, int16_t y)
     int16_t ahead_x = x, ahead_y = y;
     update_map_coordinates_after_relative_movement(direction, 1, 0, &ahead_x, &ahead_y);
     int16_t type = get_square_type(ahead_x, ahead_y);
-    return type == SQUARE_WALL || type == SQUARE_STAIRS ? NORMALIZE(direction + 2) : direction;
+    return type == SQUARE_WALL || type == SQUARE_STAIRS ? turn_back(direction) : direction;
 }
 
 uint16_t get_next_thing(uint16_t thing)

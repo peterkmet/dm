@@ -321,7 +321,7 @@ enum { SCAN_NONE, SCAN_FLOOR, SCAN_WALL, SCAN_FAKE_WALL }; /* things that set_sq
 static void random_wall_ornaments(Aspect *a, uint8_t s, int16_t dir, int16_t x, int16_t y)
 {
     for (int k = 0; k < WALL_SIDES; k++) {
-        int16_t face = (dir + k) & 3;
+        int16_t face = NORMALIZE(dir + k);
         a->side[k] =
             random_ordinal(s & WALL_ORNAMENT_FACE(face), map_random_wall_ornament_count(map), x, (face + 1) * (y + 1));
     }
@@ -340,7 +340,7 @@ static uint16_t scan_ornament_things(Aspect *a, uint16_t thing, int16_t dir, int
             a->floor_ornament = rec_sensor_ornament_ordinal(thing);
         if (scan != SCAN_WALL && scan != SCAN_FAKE_WALL)
             continue;
-        uint16_t *side = &a->side[(THING_CELL(thing) - dir) & 3];
+        uint16_t *side = &a->side[NORMALIZE(THING_CELL(thing) - dir)];
         if (THING_TYPE(thing) == THING_TEXT) {
             if (rec_text_is_visible(thing)) {
                 *side = inscription + 1;
@@ -672,11 +672,11 @@ static void group(uint16_t thing, Group *s)
 
 static uint16_t creature_cell(const Group *s, int16_t creature)
 {
-    return s->cells >> 2 * creature & 3;
+    return group_cell(s->cells, creature);
 }
 static uint16_t creature_direction(const Group *s, int16_t creature)
 {
-    return s->dirs >> 2 * creature & 3;
+    return group_cell(s->dirs, creature);
 }
 
 /* The creature number + 1 that stands in a map cell, or 0. A half-square creature fills two cells. */
@@ -687,9 +687,9 @@ static int16_t ordinal_in_cell(const Group *s, uint16_t cell)
     int16_t i = rec_group_last_creature_index(s->thing);
     if (s->size == CREATURE_SIZE_HALF) {
         if ((cell & 1) == (s->dirs & 1))
-            cell = (cell - 1) & 3;
+            cell = turn_left(cell);
         for (; i >= 0; i--)
-            if (cell == creature_cell(s, i) || ((cell + 1) & 3) == creature_cell(s, i))
+            if (cell == creature_cell(s, i) || turn_right(cell) == creature_cell(s, i))
                 return i + 1;
     } else
         for (; i >= 0; i--)
@@ -755,7 +755,7 @@ static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int
         index = -1;
     } else
         index = creature_index = ordinal - 1;
-    uint16_t relative = dir - creature_direction(s, creature_index), facing = relative & 3;
+    uint16_t relative = dir - creature_direction(s, creature_index), facing = NORMALIZE(relative);
     int sideways = relative & 1;
     if (s->cells == CELL_CENTERED) { /* one creature in the middle, drawn after the last cell */
         if (rest || pass == DOOR_PASS_BACK)
@@ -772,7 +772,7 @@ static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int
                     index = 0;
                 second = rec_group_last_creature_index(s->thing);
                 uint16_t c = creature_cell(s, creature_index);
-                pos = c == dir || ((dir - 1) & 3) == c ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
+                pos = c == dir || turn_left(dir) == c ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
             } else {
                 if (index < 0)
                     return 0;
@@ -896,7 +896,7 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
             pose = kind == PROJECTILE_NO_BACK ? POSE_BACK
                                               : POSE_SIDE; /* without a back graphic the side graphic is second */
             if (!rotates)
-                flip = ((dir + 1) & 3) == flight;
+                flip = turn_right(dir) == flight;
             else {
                 flip = cell == VIEW_CELL_BACK_LEFT || cell == VIEW_CELL_FRONT_LEFT;
                 if (!odd_square)
@@ -1021,7 +1021,7 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
             zone = ZONE_REBIRTH_STEP2_FIRST + coord;
             scale = tables_rebirth_scale(TABLES_REBIRTH_STEP_2, coord);
         } else {
-            int far_side = !(cell == dir || ((dir - 1) & 3) == cell);
+            int far_side = !(cell == dir || turn_left(dir) == cell);
             zone = rec_explosion_is_centered(thing)
                        ? ZONE_EXPLOSION_CENTERED_FIRST + explosion_coord
                        : ZONE_EXPLOSION_FIRST + explosion_coord * ZONE_EXPLOSION_SIDES + far_side;
@@ -1064,11 +1064,11 @@ static void things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs
             cell = (rest & CELL_ORDER_MASK) - 1;
             rest >>= CELL_ORDER_BITS;
             count++;
-            mcell = (cell + dir) & 3;
+            mcell = NORMALIZE(cell + dir);
             pile = 0;
         } else {
             cell = VIEW_CELL_CENTER;
-            mcell = (dir + 2) & 3; /* the alcove side of the wall faces the party */
+            mcell = turn_back(dir); /* the alcove side of the wall faces the party */
             pile = PILE_ALCOVE_FIRST;
         }
         pile += (mcell & 1) * PILE_ODD_CELL; /* odd map cells start in the second half of the shifts */
@@ -2069,8 +2069,8 @@ void view_set_light(int16_t m, int16_t amount)
 /* update_map_coordinates_after_relative_movement: the square forward and right of (x, y) in direction dir. */
 static void step(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_t *y)
 {
-    *x += forward * tables_step_east(dir) + right * tables_step_east((dir + 1) & 3);
-    *y += forward * tables_step_north(dir) + right * tables_step_north((dir + 1) & 3);
+    *x += forward * tables_step_east(dir) + right * tables_step_east(turn_right(dir));
+    *y += forward * tables_step_north(dir) + right * tables_step_north(turn_right(dir));
 }
 
 /* draw_dungeon_view: ceiling, floor, the objects of D4, then the 16 squares back to front, then draw_viewport. */
@@ -2331,7 +2331,7 @@ static void map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16_t y,
     case ELEMENT_STAIRS_FRONT: {
         int16_t side = NORMALIZE(get_stairs_exit_direction(x, y) - dir);
         if (a.state)
-            side = NORMALIZE(side + 2);
+            side = turn_back(side);
         map_tile(dst, MAP_TILE_STAIRS_FIRST + side, px, py);
         break;
     }
@@ -2443,6 +2443,6 @@ int view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
         view_load_map(m);
     int16_t light = g_cheat_light ? 0 : g_dungeon_view_palette_index;
     memcpy(palette, pals[light], sizeof pals[light]);
-    view_draw(dir & 3, x, y);
+    view_draw(NORMALIZE(dir), x, y);
     return 1;
 }

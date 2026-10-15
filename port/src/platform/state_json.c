@@ -741,7 +741,7 @@ static void wall_faces_json(Json *j, int16_t depth, int16_t side, int16_t x, int
     if (side && depth >= 1)
         wall_face_json(j, "side_face", x, y, NORMALIZE(g_party_direction - side));
     if ((!side && depth >= 1) || depth >= 2)
-        wall_face_json(j, "front_face", x, y, NORMALIZE(g_party_direction + 2));
+        wall_face_json(j, "front_face", x, y, turn_back(g_party_direction));
 }
 
 /* The floor ornaments of the game graphics, by index. */

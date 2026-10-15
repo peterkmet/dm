@@ -412,7 +412,7 @@ static bool is_action_hand_object_thrown(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     champion_face_party_direction(c);
-    int16_t side = NORMALIZE(g_party_direction + 1) == c->cell || NORMALIZE(g_party_direction + 2) == c->cell;
+    int16_t side = turn_right(g_party_direction) == c->cell || turn_back(g_party_direction) == c->cell;
     if (!action_is_object_thrown(champion_index, SLOT_HAND_ACTION, side))
         return false;
     event_set_quiver_slot(&g_timeline_events[c->enable_action_event_index], SLOT_HAND_ACTION);

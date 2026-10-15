@@ -5,6 +5,7 @@
 #define RANDOM_INCREMENT            11
 #define NANOSECONDS_PER_MICROSECOND 1000
 #define RANDOM_VALUE_SHIFT          8 /* a value is bits 8-23 of the seed */
+#define RANDOM_2BITS_MASK           3
 
 uint32_t g_random_seed;
 
@@ -33,5 +34,5 @@ uint16_t random_bit(void)
 }
 uint16_t random_2bits(void)
 {
-    return next() & 3;
+    return next() & RANDOM_2BITS_MASK;
 }

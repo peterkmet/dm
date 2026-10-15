@@ -103,7 +103,7 @@ int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
 void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
                                                     int16_t *map_x, int16_t *map_y)
 {
-    int16_t right = NORMALIZE(direction + 1);
+    int16_t right = turn_right(direction);
     *map_x = *map_x + steps_forward * tables_step_east(direction) + steps_right * tables_step_east(right);
     *map_y = *map_y + steps_forward * tables_step_north(direction) + steps_right * tables_step_north(right);
 }

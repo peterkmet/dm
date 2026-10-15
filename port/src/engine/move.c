@@ -170,7 +170,7 @@ static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_
             }
             int16_t exit = get_stairs_exit_direction(*dst_x, *dst_y);
             update_map_coordinates_after_relative_movement(exit, 1, 0, dst_x, dst_y);
-            *start_direction = NORMALIZE(exit + 2);
+            *start_direction = turn_back(exit);
             /* The object takes the cell on the side it came from, next to the stairs. */
             uint16_t cell = *start_direction + ((((THING_CELL(thing) - *start_direction) + 1) & 2) >> 1);
             thing = THING_WITH_CELL(thing, cell);
@@ -326,7 +326,7 @@ static void bump_into_wall(int16_t x, int16_t y, int16_t arrow)
     int16_t cell = NORMALIZE(g_party_direction + arrow + 2);
     int16_t first = group_get_target_champion_index(x, y, cell);
     int16_t damaged = champion_add_pending_damage_and_wounds(first, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
-    int16_t second = group_get_target_champion_index(x, y, NORMALIZE(cell + 1));
+    int16_t second = group_get_target_champion_index(x, y, turn_right(cell));
     if (second != first)
         damaged |= champion_add_pending_damage_and_wounds(second, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
     if (damaged)
