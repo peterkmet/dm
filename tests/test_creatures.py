@@ -475,6 +475,40 @@ def test_meaningless_spell_fails(caster):
     assert c.enable_action_event_index == -1
 
 
+def test_spell_level_and_experience_rule(caster):
+    lib, c = caster
+    lib.random16.restype = u16
+    lib.champion_get_skill_level.restype, lib.champion_get_skill_level.argtypes = c16, [c16, u16]
+    seed = var(lib, ctypes.c_uint32, "g_random_seed")
+    var(lib, ctypes.c_uint32, "g_game_time").value = 100000
+    var(lib, ctypes.c_int32, "g_last_creature_attack_time").value = 0  # no recent attack: no double experience
+    wizard, skill = 3, 0x12  # spell 1: 00667073 01 12 4863, skill 0x12 under the wizard skill
+    c.statistics[3][1] = 0  # wisdom 0: a draw fails above 15
+
+    def cast_at(power, skill_level, start):
+        experience = 0 if skill_level == 1 else 500 << (skill_level - 2)
+        for s in (wizard, skill):
+            c.skills[s].experience, c.skills[s].temporary_experience = experience, 0
+        assert lib.champion_get_skill_level(0, skill) == skill_level
+        c.enable_action_event_index = -1
+        seed.value = start
+        result = cast(lib, c, [power, 0x66, 0x70, 0x73])
+        return result, c.skills[skill].experience - experience
+
+    failures = 0
+    for power in range(0x60, 0x66):
+        level = power - 0x5F + 1
+        for start in (1, 2, 3):
+            seed.value = start
+            r, draw = lib.random16(), lib.random16()
+            gain = (level * level + (power - 0x60) * 8 + level * 16 + (r & 7)) & 0xFFFF
+            assert cast_at(power, level, start) == (1, gain)  # the required level: no draw
+            if draw % 128 > 15:
+                assert cast_at(power, level - 1, start) == (0, gain >> 1)  # one level missing: the draw fails
+                failures += 1
+    assert failures
+
+
 def test_party_shield_adds_defense_and_event(caster):
     lib, c = caster
     party = Party.in_dll(lib, "g_party")
