@@ -58,8 +58,8 @@ typedef struct {
     int16_t count; /* passes left after this one */
 } Loop;
 
-static uint8_t *file;
-static size_t file_len, pos; /* pos: offset of the next chunk */
+static uint8_t *chunk_file;
+static size_t chunk_file_size, chunk_offset; /* chunk_offset: offset of the next chunk */
 static const uint8_t *samples[MAX_SAMPLES];
 static uint16_t sample_sizes[MAX_SAMPLES];
 static int sample_count, loop_depth, palette_changed,
@@ -76,17 +76,17 @@ static bool music_started;
 /* Offset of the chunk after the chunk at offset at. */
 static size_t next_chunk(size_t at)
 {
-    return at < file_len ? at + CHUNK_HEADER + BE16(file + at + CHUNK_LENGTH) : file_len;
+    return at < chunk_file_size ? at + CHUNK_HEADER + BE16(chunk_file + at + CHUNK_LENGTH) : chunk_file_size;
 }
 
 void anim_close(void)
 {
     sound_stop_all(); /* the voices point into the file and the loaded files */
     music_stop();
-    free(file);
-    file = NULL;
-    file_len = 0;
-    pos = 0;
+    free(chunk_file);
+    chunk_file = NULL;
+    chunk_file_size = 0;
+    chunk_offset = 0;
     while (loaded_count)
         free(loaded[--loaded_count]);
     music_count = 0;
@@ -179,12 +179,12 @@ int anim_open(const char *path)
     anim_close();
     const char *slash = strrchr(path, '/');
     snprintf(directory, sizeof directory, "%.*s", slash ? (int)(slash - path) : 1, slash ? path : ".");
-    if (!(file = file_read(path, &file_len)))
+    if (!(chunk_file = file_read(path, &chunk_file_size)))
         return -1;
     size_t at = 0;
-    while (at + CHUNK_HEADER <= file_len)
+    while (at + CHUNK_HEADER <= chunk_file_size)
         at = next_chunk(at);
-    if (at != file_len) {
+    if (at != chunk_file_size) {
         anim_close();
         return -1;
     }
@@ -214,14 +214,14 @@ static void set_colors(const uint8_t *payload, uint16_t length)
 static void play_sample(size_t at, uint16_t number)
 {
     if (number < 1 || number > sample_count || !samples[number - 1] ||
-        at + CHUNK_HEADER + SAMPLE_VOLUME_BYTES > file_len)
+        at + CHUNK_HEADER + SAMPLE_VOLUME_BYTES > chunk_file_size)
         return;
     const uint8_t *s = samples[number - 1];
     uint16_t length = BE16(s);
     if (length > sample_sizes[number - 1] - SOUND_SAMPLE_HEADER)
         return;
-    uint8_t volumes[SAMPLE_VOLUME_BYTES] = {(uint8_t)((file[at + CHUNK_HEADER] + 1) >> SAMPLE_VOLUME_SHIFT),
-                                            (uint8_t)((file[at + CHUNK_HEADER + 1] + 1) >> SAMPLE_VOLUME_SHIFT)};
+    uint8_t volumes[SAMPLE_VOLUME_BYTES] = {(uint8_t)((chunk_file[at + CHUNK_HEADER] + 1) >> SAMPLE_VOLUME_SHIFT),
+                                            (uint8_t)((chunk_file[at + CHUNK_HEADER + 1] + 1) >> SAMPLE_VOLUME_SHIFT)};
     sound_play_data((const int8_t *)s + SOUND_SAMPLE_HEADER, length, ANIMATION_SAMPLE_PERIOD, volumes);
 }
 
@@ -231,17 +231,17 @@ static void loop_chunk(uint16_t tag, uint16_t parameter)
     switch (tag) {
     case TAG_LOOP: /* the chunk after FO runs once, the loop body starts after it */
         if (loop_depth < MAX_LOOP_DEPTH)
-            loops[loop_depth++] = (Loop){next_chunk(pos), parameter - 1};
+            loops[loop_depth++] = (Loop){next_chunk(chunk_offset), parameter - 1};
         break;
     case TAG_LOOP_NEXT: /* the last pass skips the two chunks after NE: the end-of-pass chunk and BN */
         if (loop_depth && loops[loop_depth - 1].count-- == 0) {
             loop_depth--;
-            pos = next_chunk(next_chunk(pos));
+            chunk_offset = next_chunk(next_chunk(chunk_offset));
         }
         break;
     case TAG_LOOP_BACK:
         if (loop_depth)
-            pos = loops[loop_depth - 1].start;
+            chunk_offset = loops[loop_depth - 1].start;
         break;
     }
 }
@@ -259,13 +259,13 @@ static void add_sample_file(const uint8_t *name, uint16_t length)
 
 int16_t anim_next_frame(void)
 {
-    while (pos < file_len) {
-        const uint8_t *chunk = file + pos;
+    while (chunk_offset < chunk_file_size) {
+        const uint8_t *chunk = chunk_file + chunk_offset;
         const uint8_t *payload = chunk + CHUNK_HEADER;
         uint16_t length = BE16(chunk + CHUNK_LENGTH);
         uint16_t parameter = BE16(chunk + CHUNK_PARAMETER);
-        size_t at = pos;
-        pos = next_chunk(at);
+        size_t at = chunk_offset;
+        chunk_offset = next_chunk(at);
         switch (BE16(chunk)) {
         case TAG_PALETTE:
             set_colors(payload, length);
@@ -301,7 +301,7 @@ int16_t anim_next_frame(void)
             break;
         case TAG_FULL_FRAME:
         case TAG_DELTA_FRAME: { /* a delta frame skips the unchanged pixels */
-            Bitmap screen = ui_screen();
+            Bitmap screen = ui_get_screen();
             gfx_expand_over(payload, length, &screen);
             if (palette_changed)
                 ui_set_screen_palette(colors);

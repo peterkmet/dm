@@ -78,7 +78,7 @@ static void play(int16_t track)
     char path[PATH_SIZE];
     music_stop();
     g_music_last_track = track;
-    snprintf(path, sizeof path, "%s/music/%s,Track_%02d,Music.mp3", gameloop_data_dir(),
+    snprintf(path, sizeof path, "%s/music/%s,Track_%02d,Music.mp3", gameloop_get_data_dir(),
              g_music_soundtrack == MUSIC_SUPER_NES ? "Super_NES" : "FM-Towns", track);
     if (!drmp3_init_file(&decoder, path, NULL))
         return;

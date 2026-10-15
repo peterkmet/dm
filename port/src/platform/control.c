@@ -122,7 +122,7 @@ static struct {
 static bool load_failed; /* a damaged save file left no game to play */
 
 /* The party died, or the game is won: the endgame ran and no turn can follow until load or new_game. */
-static bool game_over(void)
+static bool is_game_over(void)
 {
     return g_party_dead || g_game_won;
 }
@@ -142,7 +142,7 @@ static void press_key(uint16_t key)
     gameloop_run_commands();
 }
 
-static void viewport_origin(int16_t *x, int16_t *y)
+static void get_viewport_origin(int16_t *x, int16_t *y)
 {
     *x = tables_viewport_x();
     *y = tables_viewport_y();
@@ -172,9 +172,9 @@ static bool find_in_box(int16_t table, int16_t command, Box b, int16_t dx, int16
    in the viewport, or in the centered viewport. */
 static bool find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
 {
-    const Bitmap *vp = ui_viewport();
+    const Bitmap *vp = ui_get_viewport();
     int16_t ox, oy;
-    viewport_origin(&ox, &oy);
+    get_viewport_origin(&ox, &oy);
     const int16_t offsets[3][2] = {
         {0,                      0                     },
         {ox,                     oy                    },
@@ -215,7 +215,7 @@ static bool click_command(int16_t table, int16_t command)
 static void click_view_box(const Box *b)
 {
     int16_t ox, oy;
-    viewport_origin(&ox, &oy);
+    get_viewport_origin(&ox, &oy);
     click(ox + b->x + b->w / 2, oy + b->y + b->h / 2);
 }
 
@@ -260,7 +260,7 @@ static int64_t get_int(const char *line, const char *key, int64_t missing)
 
 typedef const char *(*ActionFn)(const char *request);
 
-static bool champion_arg(const char *request, int16_t *champion)
+static bool parse_champion_arg(const char *request, int16_t *champion)
 {
     int64_t c = get_int(request, "champion", -1);
     if (c < 0 || c >= g_party_champion_count || !g_champions[c].current_health)
@@ -276,7 +276,7 @@ static const char *need_movement_input(void)
     return NULL;
 }
 
-static const char *movement(uint16_t key)
+static const char *parse_movement(uint16_t key)
 {
     const char *error = need_movement_input();
     if (!error)
@@ -290,13 +290,13 @@ static const char *step(uint16_t key, int16_t forward, int16_t right)
     turn.moving = true;
     turn.step_forward = forward;
     turn.step_right = right;
-    return movement(key);
+    return parse_movement(key);
 }
 
 static const char *rotate(uint16_t key, int16_t rotation)
 {
     turn.rotation = rotation;
-    return movement(key);
+    return parse_movement(key);
 }
 
 /* The step of the turn left the party on its square: a wall, a closed door, or a creature is in the way. */
@@ -404,7 +404,7 @@ static const char *drop_object(const char *r)
 static const char *open_inventory(const char *r)
 {
     int16_t c;
-    if (!champion_arg(r, &c))
+    if (!parse_champion_arg(r, &c))
         return "no living champion with this index";
     if (g_inventory_champion_ordinal != c + 1)
         press_key(command_champion_key(c));
@@ -425,7 +425,7 @@ static const char *click_slot(const char *r)
 {
     int16_t c;
     int64_t slot = get_int(r, "slot", -1);
-    if (!champion_arg(r, &c))
+    if (!parse_champion_arg(r, &c))
         return "no living champion with this index";
     if (g_leader_index == -1)
         return "no leader";
@@ -452,15 +452,15 @@ static void press_eye(int16_t x, int16_t y)
     command_process_click(x, y, CLICK_LEFT_PRESS);
     gameloop_run_commands();
     look_text.shown = true;
-    look_text.count = panel_object_text(g_leader_hand_object, look_text.name, look_text.lines);
-    if (g_advanced_features && panel_object_meter(g_leader_hand_object, &label, &value))
+    look_text.count = panel_draw_object_text(g_leader_hand_object, look_text.name, look_text.lines);
+    if (g_advanced_features && panel_draw_object_meter(g_leader_hand_object, &label, &value))
         snprintf(look_text.lines[look_text.count++], PANEL_LINE_SIZE, "%s %u", label, value);
     command_process_click(x, y, CLICK_LEFT_RELEASE);
     gameloop_run_commands();
 }
 
 /* The eye on the leader hand object; with a slot, the hand takes the slot object first and puts it back after. */
-static const char *look(const char *r)
+static const char *send_look(const char *r)
 {
     int16_t x, y;
     int64_t slot = get_int(r, "slot", -1);
@@ -520,7 +520,7 @@ static const char *choose_action(const char *r)
 {
     int16_t c;
     int64_t index = get_int(r, "index", -1);
-    if (!champion_arg(r, &c))
+    if (!parse_champion_arg(r, &c))
         return "no living champion with this index";
     if (g_acting_champion_ordinal && g_acting_champion_ordinal != c + 1)
         return "another champion's action menu is open: use pass first";
@@ -552,7 +552,7 @@ static const char *set_caster(const char *r)
 {
     int16_t c;
     Box b;
-    if (!champion_arg(r, &c))
+    if (!parse_champion_arg(r, &c))
         return "no living champion with this index";
     if (g_magic_caster_champion_index == -1)
         return "no spell area";
@@ -617,7 +617,7 @@ static const char *recruit(const char *r)
 static const char *set_leader(const char *r)
 {
     int16_t c;
-    if (!champion_arg(r, &c))
+    if (!parse_champion_arg(r, &c))
         return "no living champion with this index";
     click_command(UI_INPUT_STATUS_BOX, COMMAND_SET_LEADER_FIRST + c);
     return NULL;
@@ -672,7 +672,7 @@ static const struct {
     {"sleep",            sleep_party     },
     {"wake",             wake            },
     {"swap_champions",   swap_champions  },
-    {"look",             look            },
+    {"look",             send_look       },
 };
 
 /* Screenshot: fb as an RGB PNG with stored (uncompressed) deflate blocks. */
@@ -704,7 +704,7 @@ static bool write_png(const char *path)
         uint8_t *p = raw + y * ROW;
         *p++ = 0; /* filter: none */
         for (int x = 0; x < SCREEN_W; x++) {
-            uint32_t argb = video_argb(video_color(y, fb[y][x]));
+            uint32_t argb = video_convert_argb(video_get_color(y, fb[y][x]));
             *p++ = video_argb_red(argb);
             *p++ = video_argb_green(argb);
             *p++ = video_argb_blue(argb);
@@ -750,10 +750,10 @@ static bool write_png(const char *path)
 /* What the party saw during a request. */
 
 /* Adds the explosions and the creature counts that the party sees now to the record of the request. */
-static void witness(void)
+static void record_witnessed(void)
 {
     StateJsonSeenThing things[WITNESSED_EXPLOSIONS_MAX];
-    int count = state_json_visible_things(THING_EXPLOSION, things, WITNESSED_EXPLOSIONS_MAX);
+    int count = state_json_write_visible_things(THING_EXPLOSION, things, WITNESSED_EXPLOSIONS_MAX);
     for (int i = 0; i < count; i++) {
         uint8_t type = rec_explosion_type(things[i].thing);
         int known = 0;
@@ -765,7 +765,7 @@ static void witness(void)
     }
     for (int k = 0; k < witnessed.group_count; k++)
         witnessed.groups[k].in_view = false;
-    count = state_json_visible_things(THING_GROUP, things, STATE_JSON_VISIBLE_GROUPS_MAX);
+    count = state_json_write_visible_things(THING_GROUP, things, STATE_JSON_VISIBLE_GROUPS_MAX);
     for (int i = 0; i < count; i++) {
         int k = 0;
         while (k < witnessed.group_count && witnessed.groups[k].at.thing != things[i].thing)
@@ -794,7 +794,7 @@ static void start_witnessing(void)
     witnessed.champion_count = g_party_champion_count;
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         witnessed.health[i] = g_champions[i].current_health;
-    witness();
+    record_witnessed();
 }
 
 static void seen_place_json(Json *j, const StateJsonSeenThing *at)
@@ -930,7 +930,7 @@ static void send_turn_result(void)
         json_key(&j, "stopped");
         json_str(&j, turn.stop ? turn.stop : "done");
     }
-    if (!turn.wait_only && !batch.active && !game_over() && turn_displaced()) {
+    if (!turn.wait_only && !batch.active && !is_game_over() && turn_displaced()) {
         json_key(&j, "stopped");
         json_str(&j, turn_displaced());
     }
@@ -945,7 +945,7 @@ static void send_turn_result(void)
         }
     }
     json_key(&j, "game_over");
-    json_bool(&j, game_over());
+    json_bool(&j, is_game_over());
     if (turn_bumped()) {
         json_key(&j, "bumped");
         json_bool(&j, 1);
@@ -964,9 +964,9 @@ static void send_turn_result(void)
     look_json(&j);
     seen_json(&j);
     json_key(&j, "state");
-    state_json_state(&j);
+    state_json_write_state(&j);
     json_key(&j, "view");
-    state_json_view(&j);
+    state_json_write_view(&j);
     json_close(&j, '}');
     send_line(&j);
 }
@@ -1046,11 +1046,11 @@ static uint32_t latest_message_expiry(void)
 }
 
 /* Remembers what the news checks compare during and after the next turn. */
-static void snapshot(void)
+static void take_snapshot(void)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         seen.health[i] = g_champions[i].current_health;
-    seen.group_count = state_json_visible_groups(seen.groups);
+    seen.group_count = state_json_write_visible_groups(seen.groups);
     seen.message_expiry = latest_message_expiry();
 }
 
@@ -1058,7 +1058,7 @@ static void snapshot(void)
 static bool new_group_in_view(void)
 {
     uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX];
-    int count = state_json_visible_groups(groups);
+    int count = state_json_write_visible_groups(groups);
     for (int i = 0; i < count; i++) {
         int known = 0;
         for (int k = 0; k < seen.group_count; k++)
@@ -1070,9 +1070,9 @@ static bool new_group_in_view(void)
 }
 
 /* What happened since the snapshot that the player must see, or NULL. */
-static const char *news(void)
+static const char *send_news(void)
 {
-    if (game_over())
+    if (is_game_over())
         return "game_over";
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         if (g_champions[i].current_health < seen.health[i])
@@ -1087,12 +1087,12 @@ static const char *news(void)
 /* Why a batch stops after a turn, or NULL to go on. */
 static const char *batch_stop_reason(void)
 {
-    if (game_over())
-        return news();
+    if (is_game_over())
+        return send_news();
     if (turn_bumped())
         return "bumped";                      /* before damage: a bump into a wall hurts */
     const char *displaced = turn_displaced(); /* before damage: a pit fall hurts */
-    return displaced ? displaced : news();
+    return displaced ? displaced : send_news();
 }
 
 static void batch_finish(const char *stop, const char *error)
@@ -1147,7 +1147,7 @@ static void batch_next(void)
 {
     const char *error;
     char element[INPUT_SIZE / 4], name[ACTION_NAME_SIZE];
-    snapshot();
+    take_snapshot();
     int found = next_element(element, sizeof element);
     if (found <= 0) {
         batch_finish(found ? "failed" : "done", found ? "an item of actions is not an action name or object" : NULL);
@@ -1209,18 +1209,18 @@ static void handle_load(void)
         return;
     }
     gameloop_start_loaded_game();
-    send_part("state", state_json_state);
+    send_part("state", state_json_write_state);
 }
 
 /* Starts a new game on the start square, as ENTER at the entrance does, and answers with the state. */
 static void handle_new_game(void)
 {
-    if (!gameloop_new_game(gameloop_data_dir())) {
+    if (!gameloop_start_new_game(gameloop_get_data_dir())) {
         send_error("cannot start the new game");
         return;
     }
     load_failed = false;
-    send_part("state", state_json_state);
+    send_part("state", state_json_write_state);
 }
 
 /* Writes the save file of the adventure, as the SAVE button does. */
@@ -1249,7 +1249,7 @@ static void handle_wait(const char *request)
         turn.has_damage = false;
         look_text.shown = false;
         turn.moving = false;
-        snapshot();
+        take_snapshot();
         start_witnessing();
         start_turn(ticks, ticks, 1);
     }
@@ -1292,12 +1292,12 @@ static void handle_request(const char *request)
         return;
     }
     if (!strcmp(cmd, "get_state")) {
-        send_part("state", state_json_state);
+        send_part("state", state_json_write_state);
     } else if (!strcmp(cmd, "get_view")) {
-        send_part("view", state_json_view);
+        send_part("view", state_json_write_view);
     } else if (!strcmp(cmd, "get_map")) {
         send_part("map", state_json_map);
-    } else if (game_over() &&
+    } else if (is_game_over() &&
                (!strcmp(cmd, "act") || !strcmp(cmd, "act_many") || !strcmp(cmd, "wait") || !strcmp(cmd, "save"))) {
         send_error("game over");
     } else if (!strcmp(cmd, "save")) {
@@ -1320,9 +1320,9 @@ static void handle_request(const char *request)
 static bool turn_finished(void)
 {
     int64_t ticks = g_game_time - turn.start_time;
-    if (turn.wait_only && (turn.stop = news()))
+    if (turn.wait_only && (turn.stop = send_news()))
         return true;
-    if (game_over())
+    if (is_game_over())
         return true;
     if (ticks >= turn.max_ticks || turn.frames > turn.max_ticks * FRAMES_PER_TICK_LIMIT)
         return true;
@@ -1370,7 +1370,7 @@ void control_poll(void)
     if (listen_fd < 0)
         return;
     if (turn.pending) {
-        witness();
+        record_witnessed();
         if (!turn_finished()) {
             turn.frames++;
             gameloop_run_commands();

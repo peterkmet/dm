@@ -219,8 +219,8 @@ static void set_pointer(bool in_game)
     uint8_t px[POINTER_SIZE * POINTER_SIZE];
     int x, y, w, h, hot_x, hot_y;
     plat_mouse_position(&x, &y);
-    if (gameloop_pointer(x, y, in_game, px, &w, &h, &hot_x, &hot_y))
-        plat_set_pointer(px, w, h, hot_x, hot_y, gameloop_pointer_palette());
+    if (gameloop_get_pointer(x, y, in_game, px, &w, &h, &hot_x, &hot_y))
+        plat_set_pointer(px, w, h, hot_x, hot_y, gameloop_get_pointer_palette());
     else
         plat_set_pointer(NULL, 0, 0, 0, 0, NULL);
 }
@@ -230,7 +230,7 @@ enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
 static int mode;
 static bool turnbased, auto_enter, title_pending; /* title_pending: the DM title plays before the entrance */
 static int loaded_adventure = -1;                 /* the adventure whose game files are loaded */
-static const char *data, *data_override, *saves, *control, *csb_dir;
+static const char *data_dir, *data_override, *saves_dir, *control_socket, *csb_dir;
 
 /* Keys and clicks of the start screens. Ctrl+Q quits. */
 static void select_input(const PlatEvent *e)
@@ -290,7 +290,7 @@ static void read_input(void)
 }
 
 /* One frame of a dialog, the endgame, or the fuse sequence. */
-static void frame_hook(void)
+static void run_frame_hook(void)
 {
     read_input();
     set_pointer(false);
@@ -312,9 +312,9 @@ static void play_title(void)
 {
     char path[PATH_SIZE];
     title_pending = false;
-    snprintf(path, sizeof path, "%s/%s", data, LOGO_FILE);
+    snprintf(path, sizeof path, "%s/%s", data_dir, LOGO_FILE);
     logo_play(path);
-    snprintf(path, sizeof path, "%s/%s", data, TITLE_FILE);
+    snprintf(path, sizeof path, "%s/%s", data_dir, TITLE_FILE);
     anim_play(path);
     show_entrance();
 }
@@ -323,9 +323,9 @@ static void play_title(void)
 static void play_csb_intro(void)
 {
     char path[PATH_SIZE];
-    snprintf(path, sizeof path, "%s/%s", data, LOGO_FILE);
+    snprintf(path, sizeof path, "%s/%s", data_dir, LOGO_FILE);
     logo_play(path);
-    snprintf(path, sizeof path, "%s/%s", data, CSB_INTRO_FILE);
+    snprintf(path, sizeof path, "%s/%s", data_dir, CSB_INTRO_FILE);
     anim_play(path);
     command_discard_all_input();
 }
@@ -343,7 +343,7 @@ static void quit_to_start(void)
 
 /* Runs the entrance commands; RESUME loads the saved game, ENTER starts a new game. Returns 0
    when the dungeon cannot be loaded. */
-static int entrance_frame(const char *data)
+static int entrance_frame(const char *data_dir)
 {
     if (g_quit_requested)
         return 1;
@@ -366,8 +366,8 @@ static int entrance_frame(const char *data)
     }
     if (g_new_game == ENTRANCE_NEW_GAME) {
         entrance_open_doors();
-        if (!gameloop_new_game(data)) {
-            SDL_Log("cannot load %s/Dungeon.DAT", data);
+        if (!gameloop_start_new_game(data_dir)) {
+            SDL_Log("cannot load %s/Dungeon.DAT", data_dir);
             return 0;
         }
         mode = MODE_GAME;
@@ -395,16 +395,16 @@ static SDL_EnumerationResult SDLCALL visit_name(void *userdata, const char *dirn
 }
 
 /* The folder hook of data/: calls found for each name in the folder. */
-static void list_folder(const char *path, void (*found)(const char *name, void *data), void *data)
+static void list_folder(const char *path, void (*found)(const char *name, void *data_dir), void *data_dir)
 {
-    FolderVisit visit = {found, data};
+    FolderVisit visit = {found, data_dir};
     SDL_EnumerateDirectory(path, visit_name, &visit);
 }
 
 static const char *const game_mode_names[] = {"vanilla", "advanced", "turnbased"};
 
 /* The game mode of a --mode value, or -1. */
-static int game_mode_of(const char *name)
+static int get_game_mode(const char *name)
 {
     for (int i = 0; i < ARRAY_COUNT(game_mode_names); i++)
         if (!strcmp(name, game_mode_names[i]))
@@ -448,40 +448,40 @@ static int apply_mode(void)
     if (turnbased)
         auto_enter = true;
     /* turn-based: no frames inside the endgame and dialogs, so a dead party ends the turn at once */
-    g_frame_hook = turnbased ? NULL : frame_hook;
+    g_frame_hook = turnbased ? NULL : run_frame_hook;
     if (!turnbased)
         return 1;
-    if (!control) {
+    if (!control_socket) {
         const char *home = SDL_getenv("HOME");
         snprintf(default_control, sizeof default_control, "%s/%s", home ? home : ".", DEFAULT_CONTROL_SOCKET);
-        control = default_control;
+        control_socket = default_control;
     }
-    if (!control_open(control)) {
-        SDL_Log("cannot open the control socket %s", control);
+    if (!control_open(control_socket)) {
+        SDL_Log("cannot open the control socket %s", control_socket);
         return 0;
     }
     return 1;
 }
 
 /* The disk A folder of g_adventure: CSB uses csb_dir, DM the --data folder or game/. */
-static const char *adventure_dir(void)
+static const char *get_adventure_dir(void)
 {
     if (g_adventure == ADVENTURE_CSB)
         return csb_dir;
     return data_override ? data_override : adventure_default_dir(ADVENTURE_DM);
 }
 
-/* Loads the game files of g_adventure from data after the check that they are the Amiga files. Returns 0 with a log line. */
+/* Loads the game files of g_adventure from data_dir after the check that they are the Amiga files. Returns 0 with a log line. */
 static int load_game_files(void)
 {
-    const char *bad = adventure_bad_file(g_adventure, data);
+    const char *bad = adventure_bad_file(g_adventure, data_dir);
     if (bad) {
-        SDL_Log("%s/%s is missing or is not the file of %s for the Amiga", data, bad,
+        SDL_Log("%s/%s is missing or is not the file of %s for the Amiga", data_dir, bad,
                 adventure_get(g_adventure)->title);
         return 0;
     }
-    if (!gameloop_load_data(data)) {
-        SDL_Log("cannot load the game files in %s", data);
+    if (!gameloop_load_data(data_dir)) {
+        SDL_Log("cannot load the game files in %s", data_dir);
         return 0;
     }
     return 1;
@@ -518,11 +518,11 @@ static bool start_csb(void)
     }
     if (loaded_adventure != ADVENTURE_CSB) {
         SDL_Log("adventure csb, mode %s", game_mode_names[g_game_mode]);
-        data = adventure_dir();
+        data_dir = get_adventure_dir();
         if (!load_game_files())
             return false;
-        if (saves)
-            startend_set_save_dir(saves);
+        if (saves_dir)
+            startend_set_save_dir(saves_dir);
         loaded_adventure = ADVENTURE_CSB;
     }
     if (!apply_mode())
@@ -531,8 +531,8 @@ static bool start_csb(void)
     if (choice == CSB_NEW_ADVENTURE && !auto_enter)
         play_csb_intro();
     if (choice == CSB_NEW_ADVENTURE) {
-        if (!gameloop_new_game(data)) {
-            SDL_Log("cannot load %s/Dungeon.DAT", data);
+        if (!gameloop_start_new_game(data_dir)) {
+            SDL_Log("cannot load %s/Dungeon.DAT", data_dir);
             return 0;
         }
     } else if (startend_load_saved_game()) {
@@ -553,11 +553,11 @@ static bool start_adventure(void)
     if (g_adventure == ADVENTURE_CSB)
         return start_csb();
     SDL_Log("adventure dm, mode %s", game_mode_names[g_game_mode]);
-    data = adventure_dir();
+    data_dir = get_adventure_dir();
     if (!load_game_files())
         return false;
-    if (saves)
-        startend_set_save_dir(saves);
+    if (saves_dir)
+        startend_set_save_dir(saves_dir);
     loaded_adventure = ADVENTURE_DM;
     if (!apply_mode())
         return false;
@@ -568,7 +568,7 @@ static bool start_adventure(void)
     if (auto_enter)
         command_process_key(KEY_RETURN);
     /* turn-based: the game starts before the first socket request, so an early load cannot keep the entrance */
-    if (turnbased && !entrance_frame(data))
+    if (turnbased && !entrance_frame(data_dir))
         return false;
     return true;
 }
@@ -592,10 +592,10 @@ static int run_frame(void)
     if (mode == MODE_ENTRANCE) {
         if (title_pending)
             play_title();
-        if (!entrance_frame(data))
+        if (!entrance_frame(data_dir))
             return RUN_FAILED;
     } else if (mode == MODE_GAME && (!turnbased || control_is_turn_pending())) {
-        tick = gameloop_frame();
+        tick = gameloop_run_frame();
         if (g_return_to_entrance)
             tick = 0;
     }
@@ -653,14 +653,14 @@ static bool parse_options(int argc, char **argv, Options *o)
         if (!strcmp(argv[i], "--data"))
             data_override = argv[i + 1];
         if (!strcmp(argv[i], "--saves"))
-            saves = argv[i + 1];
+            saves_dir = argv[i + 1];
         if (!strcmp(argv[i], "--show"))
             o->graphic = atoll(argv[i + 1]);
         if (!strcmp(argv[i], "--filter"))
             o->filter = argv[i + 1];
         if (!strcmp(argv[i], "--control"))
-            control = argv[i + 1];
-        if (!strcmp(argv[i], "--mode") && (o->mode = game_mode_of(argv[i + 1])) < 0) {
+            control_socket = argv[i + 1];
+        if (!strcmp(argv[i], "--mode") && (o->mode = get_game_mode(argv[i + 1])) < 0) {
             SDL_Log("--mode must be vanilla, advanced, or turnbased");
             return false;
         }
@@ -696,15 +696,15 @@ int main(int argc, char **argv)
         return 1;
     }
     select_start(o.adventure, o.mode, csb_present, control_is_available());
-    data = adventure_dir();
+    data_dir = get_adventure_dir();
 
     random_init();
     for (int i = 0; i < PALETTE_COLORS; i++) /* gray ramp */
         palette[i] = i * GRAY_STEP;
     mode = o.graphic >= 0 ? MODE_SHOW : o.view ? MODE_VIEW : MODE_SELECT;
-    if (mode == MODE_SHOW && !show(data, o.graphic))
+    if (mode == MODE_SHOW && !show(data_dir, o.graphic))
         return 1;
-    if (mode == MODE_VIEW && !view_start(data))
+    if (mode == MODE_VIEW && !view_start(data_dir))
         return 1;
     if (mode == MODE_SELECT && select_screen() != SCREEN_DONE && !load_font())
         return 1;

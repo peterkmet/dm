@@ -12,13 +12,13 @@ uint16_t palette[2 * PALETTE_COLORS];
 int16_t palette_split_top = 0;
 int16_t palette_split_bottom = SCREEN_H;
 
-uint16_t video_color(int y, uint8_t c)
+uint16_t video_get_color(int y, uint8_t c)
 {
     bool bottom = y < palette_split_top || y >= palette_split_bottom;
     return palette[(c & COLOR_INDEX_MASK) | (bottom ? PALETTE_COLORS : 0)];
 }
 
-uint32_t video_argb(uint16_t amiga)
+uint32_t video_convert_argb(uint16_t amiga)
 {
     uint32_t r = amiga >> 2 * AMIGA_CHANNEL_BITS & AMIGA_CHANNEL_MASK;
     uint32_t g = amiga >> AMIGA_CHANNEL_BITS & AMIGA_CHANNEL_MASK;

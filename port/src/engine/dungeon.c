@@ -46,7 +46,7 @@ enum { PART_THINGS_FIRST = 5, PART_RAW_MAPS = PART_THINGS_FIRST + THING_TYPE_COU
 
 static void *blocks[MAX_BLOCKS];
 static int block_count;
-static const uint8_t *load_ptr;
+static const uint8_t *load_cursor;
 static int32_t load_remaining;
 
 static void *alloc(size_t n)
@@ -59,8 +59,8 @@ static bool read_summed_block(uint8_t *dst, uint16_t *sum, int32_t n)
 {
     if (!dst || load_remaining < n)
         return false;
-    memcpy(dst, load_ptr, n);
-    load_ptr += n;
+    memcpy(dst, load_cursor, n);
+    load_cursor += n;
     load_remaining -= n;
     while (n--)
         *sum += *dst++;
@@ -248,7 +248,7 @@ static bool build_map_columns(int16_t maps)
     return true;
 }
 
-/* dungeon_load: reads the parts from load_ptr. A new game takes the party start from the header
+/* dungeon_load: reads the parts from load_cursor. A new game takes the party start from the header
    and adds free records; a saved game has them already. */
 static bool parse_dungeon(bool new_game)
 {
@@ -261,7 +261,7 @@ static bool parse_dungeon(bool new_game)
     g_dungeon_raw_map_data = alloc(raw_map_bytes());
     if (!read_summed_block(g_dungeon_raw_map_data, &sum, raw_map_bytes()))
         return false;
-    if (load_remaining >= 2 && BE16(load_ptr) != sum)
+    if (load_remaining >= 2 && BE16(load_cursor) != sum)
         return false;
     return build_map_columns(maps) && dungeon_validate();
 }
@@ -368,13 +368,13 @@ bool dungeon_load(const char *path)
     uint8_t *unpacked = NULL;
     bool ok = kaos.data && file && size >= COMPRESSED_HEADER_BYTES;
     dungeon_free();
-    load_ptr = file;
+    load_cursor = file;
     load_remaining = size;
     if (ok && BE16(file) == DUNGEON_COMPRESSED_MAGIC) {
         load_remaining = BE32(file + 2);
         g_dungeon_id = BE16(file + 6);
         unpacked = load_remaining > 0 && load_remaining <= MAX_DUNGEON_SIZE ? malloc(load_remaining) : NULL;
-        load_ptr = unpacked;
+        load_cursor = unpacked;
         ok = unpacked && dungeon_decompress(file + COMPRESSED_HEADER_BYTES, (int32_t)size - COMPRESSED_HEADER_BYTES,
                                             unpacked, load_remaining);
     }
@@ -390,7 +390,7 @@ bool dungeon_load(const char *path)
 bool dungeon_load_saved(const uint8_t *data, uint32_t size)
 {
     dungeon_free();
-    load_ptr = data;
+    load_cursor = data;
     load_remaining = size;
     bool ok = data && size <= MAX_DUNGEON_SIZE && parse_dungeon(false);
     if (!ok)

@@ -65,16 +65,16 @@ extern bool g_action_area_contains_icons;
 extern uint8_t g_action_list_minimum_skill_levels[3];
 extern uint16_t g_action_count;
 /* The portrait of a champion as a bitmap. */
-Bitmap ui_champion_portrait(int16_t champion_index);
+Bitmap ui_draw_champion_portrait(int16_t champion_index);
 
 /* Setup: call after kaos_load, gfx_open, layout_init, text_init, and tables_init. */
 int ui_init(void);
 
 /* Shared helpers (ui.c). */
-Bitmap ui_screen(void);
-Bitmap *ui_viewport(void); /* g_viewport_bitmap, 224 x 136 */
+Bitmap ui_get_screen(void);
+Bitmap *ui_get_viewport(void); /* g_viewport_bitmap, 224 x 136 */
 /* The rank name that the eye panel shows for a skill level (NEOPHYTE ...), or NULL for level 1. */
-const char *ui_skill_rank_name(int16_t level);
+const char *ui_get_skill_rank_name(int16_t level);
 int ui_zone_box(int16_t zone, Box *box); /* get_zone_box */
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color);
 void ui_fill_zone_pattern(Bitmap *dst, int16_t zone, uint8_t color);
@@ -94,12 +94,12 @@ void ui_draw_message_area(void);
 void ui_extract_icon(int16_t icon, Bitmap *out); /* out->px holds 16 x 16 bytes */
 void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon);
 int16_t ui_get_icon_in_slot_box(int16_t slot_box);
-int ui_icon_zone_box(int16_t zone, int border, Box *box); /* get_slot_box_zone, _border_zone */
-bool ui_slot_box_zone(int16_t slot_box, int border, Box *box);
+int ui_get_icon_zone_box(int16_t zone, int border, Box *box); /* get_slot_box_zone, _border_zone */
+bool ui_get_slot_box_zone(int16_t slot_box, int border, Box *box);
 void ui_draw_leader_hand_object_name(uint16_t thing);
 
 /* Hit tests. */
-bool ui_point_in_zone(int16_t zone, int16_t x, int16_t y);
+bool ui_is_point_in_zone(int16_t zone, int16_t x, int16_t y);
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask);
 
 /* Rune names by font character - 0x60: power, element, form, alignment. The original shows only
@@ -128,9 +128,9 @@ enum { PANEL_LINE_COUNT = 3, PANEL_LINE_SIZE = 40 };
 #define STAMINA_DISPLAY_UNIT 10 /* the inventory shows stamina in tenths of the stored value */
 #define WEIGHT_TENTHS        10 /* loads and object weights are in tenths of a kilogram */
 extern int16_t g_panel_content;
-int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
+int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
 /* The ATTACK (weapon) or DEFENSE (armour) meter of the advanced object panel: 1 with its label and value, else 0. */
-bool panel_object_meter(uint16_t thing, const char **label, uint16_t *value);
+bool panel_draw_object_meter(uint16_t thing, const char **label, uint16_t *value);
 void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye);
 void ui_draw_panel_eye(void);
 void panel_redraw_scroll(void);

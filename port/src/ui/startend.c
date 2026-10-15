@@ -124,7 +124,7 @@ int startend_save_current_game(const char **reason)
     *reason = NULL;
     if (g_adventure != ADVENTURE_CSB || g_dungeon_id != CSB_PRISON_DUNGEON_ID)
         return savegame_save(save_dir) ? SAVED_GAME : 0;
-    snprintf(mini, sizeof mini, "%s/%s", gameloop_data_dir(), CSB_MINI_FILE);
+    snprintf(mini, sizeof mini, "%s/%s", gameloop_get_data_dir(), CSB_MINI_FILE);
     switch (savegame_make_adventure(save_dir, mini)) {
     case ADVENTURE_MADE:
         return SAVED_NEW_ADVENTURE;
@@ -154,7 +154,7 @@ static void save_game_csb(void)
             dialog_draw(reason ? reason : gfx_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_string(TEXT_OK), NULL, NULL, NULL);
             dialog_get_choice(1);
         } else if (choice == SAVE_CHOICE_QUIT) {
-            endgame(0);
+            startend_run_endgame(0);
             return;
         } else if (saved == SAVED_NEW_ADVENTURE) {
             gameloop_start_loaded_game();
@@ -192,7 +192,7 @@ void startend_save_game(void)
             if (!confirm_quit())
                 continue;
             g_saved_game_exists = false;
-            endgame(0);
+            startend_run_endgame(0);
             return;
         }
         break;
@@ -243,10 +243,10 @@ static void set_endgame_click_box(int16_t entry_index, const Box *b)
 /* A framed button with a text; its box becomes the click box of the endgame mouse table entry. */
 static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_index)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     int tw, th;
     Box b;
-    if (!text_size(text, &tw, &th))
+    if (!text_get_size(text, &tw, &th))
         return;
     int16_t w = tw;
     int16_t h = th;
@@ -273,7 +273,7 @@ static void print_champion_skills(uint16_t champion_index, int y)
         if (level == 1)
             continue;
         char line[ENDGAME_TEXT_SIZE];
-        snprintf(line, sizeof line, "%s %s", ui_skill_rank_name(level), gfx_string(tables_base_skill_text(skill)));
+        snprintf(line, sizeof line, "%s %s", ui_get_skill_rank_name(level), gfx_string(tables_base_skill_text(skill)));
         y += ENDGAME_SKILL_LINE;
         endgame_print_text(ENDGAME_SKILL_X, y, COLOR_LIGHT_GRAY, line);
     }
@@ -282,23 +282,23 @@ static void print_champion_skills(uint16_t champion_index, int y)
 /* The won game: each champion in a frame with the portrait, name, title, and base skill levels. */
 static void draw_champion_parade(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     int16_t pw = tables_portrait_width();
     int16_t ph = tables_portrait_height();
     memset(fb, COLOR_DARKEST_GRAY, sizeof fb);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
-        const Champion *c = &g_champions[i];
+        const Champion *champion = &g_champions[i];
         ui_blit_graphic(&screen, GFX_CHAMPION_FRAME, ZONE_CHAMPION_FRAME_FIRST + i, COLOR_FLESH);
         int16_t w = pw;
         int16_t h = ph;
         Box b;
-        Bitmap portrait = ui_champion_portrait(i);
+        Bitmap portrait = ui_draw_champion_portrait(i);
         if (layout_get_zone(ZONE_CHAMPION_PORTRAIT_FIRST + i, pw, ph, &b, &w, &h))
             draw_blit(&portrait, w, h, &screen, &b, COLOR_DARK_GRAY, 0);
-        char name[sizeof c->name + 1] = {0};
-        char title[sizeof c->title + 1] = {0};
-        memcpy(name, c->name, sizeof c->name);
-        memcpy(title, c->title, sizeof c->title);
+        char name[sizeof champion->name + 1] = {0};
+        char title[sizeof champion->title + 1] = {0};
+        memcpy(name, champion->name, sizeof champion->name);
+        memcpy(title, champion->title, sizeof champion->title);
         int name_y = i * ENDGAME_ROW_HEIGHT + ENDGAME_NAME_Y;
         int title_x = ENDGAME_NAME_X + (int)strlen(name) * TEXT_CHAR_WIDTH;
         if (title[0] != ',' && title[0] != ';' && title[0] != '-')
@@ -311,7 +311,7 @@ static void draw_champion_parade(void)
 }
 
 /* The outer or the inner box of the CSB endgame button. */
-static Box csb_box(bool inner)
+static Box get_csb_box(bool inner)
 {
     TablesRect r = tables_csb_restart_box(inner);
     return (Box){r.x, r.y, r.w, r.h};
@@ -320,9 +320,9 @@ static Box csb_box(bool inner)
 /* CSB: RESTART THIS GAME in its fixed boxes. The click box is in the endgame mouse table. */
 static void csb_draw_restart_button(void)
 {
-    Bitmap screen = ui_screen();
-    Box outer = csb_box(false);
-    Box inner = csb_box(true);
+    Bitmap screen = ui_get_screen();
+    Box outer = get_csb_box(false);
+    Box inner = get_csb_box(true);
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
     draw_fill(&screen, &inner, COLOR_BLACK);
     text_draw_screen(CSB_RESTART_TEXT_X, CSB_RESTART_TEXT_Y, COLOR_CYAN, COLOR_BLACK,
@@ -332,7 +332,7 @@ static void csb_draw_restart_button(void)
 /* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. CSB has no QUIT. */
 static void draw_the_end(bool with_buttons)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     uint16_t colors[PALETTE_COLORS];
     for (int i = 0; i < PALETTE_COLORS; i++)
         colors[i] = THE_END_BACKGROUND;
@@ -382,7 +382,7 @@ static bool wait_for_restart(void)
 /* The credits screen until a key or a button is pressed. */
 static void show_credits(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     ui_blit_graphic(&screen, GFX_CREDITS, ZONE_SCREEN, COLOR_NONE);
     uint16_t credits_colors[PALETTE_COLORS];
     tables_palette(TABLES_PALETTE_CREDITS, credits_colors);
@@ -391,7 +391,7 @@ static void show_credits(void)
 }
 
 /* The port shows the entrance after the credits instead of quitting (deliberate deviation). */
-void endgame(int16_t party_dead)
+void startend_run_endgame(int16_t party_dead)
 {
     command_set_only_mouse_input(-1);
     if (party_dead)
@@ -444,7 +444,7 @@ static void remove_fluxcages(int16_t x, int16_t y)
 }
 
 /* Six explosions of rising power on the square of Lord Chaos. */
-static void fuse_explosions(uint16_t type, int16_t x, int16_t y)
+static void draw_fuse_explosions(uint16_t type, int16_t x, int16_t y)
 {
     for (uint16_t attack = FUSE_FIRST_ATTACK; attack <= FUSE_ACTION_ATTACK; attack += FUSE_ATTACK_STEP) {
         explosion_create(EXPLOSION_THING(type), attack, x, y, CELL_CENTERED);
@@ -501,7 +501,7 @@ static void delete_other_groups(int16_t x, int16_t y)
                 group_delete(gx, gy);
 }
 
-void fuse_sequence(void)
+void startend_run_fuse_sequence(void)
 {
     int16_t x = g_party_map_x;
     int16_t y = g_party_map_y;
@@ -525,11 +525,11 @@ void fuse_sequence(void)
     remove_fluxcages(g_party_map_x, g_party_map_y);
     remove_fluxcages(x, y);
     fuse_update();
-    fuse_explosions(EXPLOSION_FIREBALL, x, y);
+    draw_fuse_explosions(EXPLOSION_FIREBALL, x, y);
     sound_request_play(SOUND_FUSE, x, y, SOUND_MODE_AFTER_TICK);
     group_set_creature_type(lord, CREATURE_LORD_ORDER);
     fuse_update();
-    fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
+    draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     flash_lords(lord, x, y);
     explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_ACTION_ATTACK, x, y, CELL_CENTERED);
     explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_ACTION_ATTACK, x, y, CELL_CENTERED);
@@ -541,32 +541,32 @@ void fuse_sequence(void)
     delete_other_groups(x, y);
     fuse_update();
     show_final_texts();
-    fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
+    draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     wait_frames(FUSE_END_FRAMES);
     g_saved_game_exists = false;
-    endgame(1);
+    startend_run_endgame(1);
 }
 
 /* CSB won game: the ending animation, then the CSB screen after a key or a click (the original stays on the last frame). */
-static void csb_ending(void)
+static void play_csb_ending(void)
 {
     char path[SAVE_DIR_SIZE];
     g_game_screen_inactive = true;
-    snprintf(path, sizeof path, "%s/%s", gameloop_data_dir(), CSB_ENDING_FILE);
+    snprintf(path, sizeof path, "%s/%s", gameloop_get_data_dir(), CSB_ENDING_FILE);
     if (!anim_play(path))
         wait_for_input();
     g_return_to_entrance = true;
 }
 
-void endgame_sensor(uint16_t delay)
+void startend_run_endgame_sensor(uint16_t delay)
 {
     if (g_adventure == ADVENTURE_CSB) { /* no delay, and the saved game stays */
         g_game_won = true;
-        csb_ending();
+        play_csb_ending();
         return;
     }
     wait_frames(delay * SENSOR_DELAY_FRAMES);
     g_saved_game_exists = false;
     g_game_won = true;
-    endgame(1);
+    startend_run_endgame(1);
 }

@@ -59,8 +59,8 @@ This is a separate work item ("CSB engine"). It needs a decision first: one addr
 | | `view_start` | `"%s/Dungeon.DAT"`. |
 | | `show` (`--show`) | The palette comes from the KAOS address `KAOS_DUNGEON_PALETTES` (`0x100aa6`). |
 | `port/src/ui/gameloop.c` | `gameloop_load_data` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Sets the save directory to `dir`. |
-| | `gameloop_new_game` | `"%s/Dungeon.DAT"`. |
-| `port/src/platform/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_data_dir()`, so the folder is right. |
+| | `gameloop_start_new_game` | `"%s/Dungeon.DAT"`. |
+| `port/src/platform/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_get_data_dir()`, so the folder is right. |
 | | `handle_load`, `handle_request` (`save`) | Use `startend_save_dir()` and `savegame_load/save`. The folder is right. |
 | `port/src/engine/savegame.h` | `SAVE_FILE_NAME`, `SAVE_BACKUP_FILE_NAME` | `"DMGAME.DAT"`, `"DMGAME.BAK"`. Used in `savegame.c`: `savegame_save` and `savegame_load` (4 places). |
 | `port/src/ui/startend.c` | `save_dir` | Default `"."`. `startend_set_save_dir` is called by `gameloop_load_data`. |
@@ -78,16 +78,16 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `KAOS_ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
 | `command.c`: `command_set_entrance_input`, `KAOS_KEYS_ENTRANCE` (`0x10393c`), `UI_INPUT_ENTRANCE` | Mouse table and key table come from the KAOS data. |
 | `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_new_game = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
-| `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_new_game(data)` or `startend_load_saved_game()`. |
+| `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_start_new_game(data)` or `startend_load_saved_game()`. |
 | `main.c`: `main` | `MODE_ENTRANCE` is the first mode after the start. `DM_AUTO_ENTER` (and `turnbased`) presses Return at the start. |
 
 ### Endgame and credits
 
 | Place | Assumption |
 |---|---|
-| `startend.c`: `endgame`, `show_credits`, `draw_the_end`, `draw_champion_parade` | DM graphics `GFX_CREDITS` 5, `GFX_THE_END` 6, `GFX_CHAMPION_FRAME` 346. Palette `KAOS_CREDITS_PALETTE`. |
-| `startend.c`: `fuse_sequence`, `endgame_sensor`, `show_final_texts` | The fusion of Lord Chaos and Lord Order. Final texts on square (0, 0). CSB ends differently (`ENDA.DAT`). |
-| `startend.c`: `endgame` sets `g_return_to_entrance` | `main.c` then shows the DM entrance. For CSB this must show the CSB entrance. |
+| `startend.c`: `startend_run_endgame`, `show_credits`, `draw_the_end`, `draw_champion_parade` | DM graphics `GFX_CREDITS` 5, `GFX_THE_END` 6, `GFX_CHAMPION_FRAME` 346. Palette `KAOS_CREDITS_PALETTE`. |
+| `startend.c`: `startend_run_fuse_sequence`, `startend_run_endgame_sensor`, `show_final_texts` | The fusion of Lord Chaos and Lord Order. Final texts on square (0, 0). CSB ends differently (`ENDA.DAT`). |
+| `startend.c`: `startend_run_endgame` sets `g_return_to_entrance` | `main.c` then shows the DM entrance. For CSB this must show the CSB entrance. |
 | `startend.c`: `startend_load_saved_game` | Uses `savegame_load(save_dir)`. The texts come from DM `gfx_string`. |
 
 ### Mode handling
@@ -95,10 +95,10 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | Place | Assumption |
 |---|---|
 | `advanced.h`: `GAME_MODE_VANILLA`, `GAME_MODE_ADVANCED`, `GAME_MODE_TURNBASED`, `g_game_mode` | The value is set only by `--mode`. |
-| `main.c`: `game_mode_of`, `main` | The parser reads `--mode` in a loop over `argv`. `g_advanced_features` and the local `turnbased` are set once, before the window opens. `auto_enter` and the control socket (`control_open`) depend on `turnbased` at the start. The loop uses `turnbased` in five places. |
+| `main.c`: `get_game_mode`, `main` | The parser reads `--mode` in a loop over `argv`. `g_advanced_features` and the local `turnbased` are set once, before the window opens. `auto_enter` and the control socket (`control_open`) depend on `turnbased` at the start. The loop uses `turnbased` in five places. |
 | `main.c`: `read_input` | Drops all input when `turnbased` and `mode >= MODE_ENTRANCE`. Escape quits for `mode < MODE_ENTRANCE` (`--show`, `--view`). |
 | `main.c`: `amiga_key` | Maps the advanced keys only outside vanilla. |
-| `main.c`: `g_frame_hook` | `NULL` in `turnbased`, else `frame_hook`. |
+| `main.c`: `g_frame_hook` | `NULL` in `turnbased`, else `run_frame_hook`. |
 
 ### Hard-coded DM knowledge in game rules
 
@@ -131,7 +131,7 @@ The socket protocol needs no new command. The game starts one adventure for each
 
 | Test file | Assumption |
 |---|---|
-| `tests/test_gameloop.py`, `test_modes.py`, `test_port_data.py`, others | `GAME = ROOT / "game"`. They load the library and call `gameloop_load_data(GAME)` and `gameloop_new_game(GAME)`. They skip when `KAOS.FTL`, `Graphics.DAT`, or `Dungeon.DAT` is missing. |
+| `tests/test_gameloop.py`, `test_modes.py`, `test_port_data.py`, others | `GAME = ROOT / "game"`. They load the library and call `gameloop_load_data(GAME)` and `gameloop_start_new_game(GAME)`. They skip when `KAOS.FTL`, `Graphics.DAT`, or `Dungeon.DAT` is missing. |
 | `tests/test_modes.py`, `test_save.py`, `test_control.py` | `SAVE = "DMGAME.DAT"`, `BACKUP = "DMGAME.BAK"`. |
 | `tests/test_gameloop.py` (the `--frames 100` run) | Starts `build/dm` with `DM_AUTO_ENTER=1` and no `--mode`. |
 | `tests/test_modes.py` (the turn-based program test) | Starts `build/dm --mode turnbased --control PATH` with no `--adventure`. |
@@ -175,10 +175,10 @@ Changes that use it:
 |---|---|
 | `savegame.h` | Remove `SAVE_FILE_NAME` and `SAVE_BACKUP_FILE_NAME`. |
 | `savegame.c` | `savegame_save` and `savegame_load` call `adventure_save_name()` and `adventure_backup_name()`. The comment in `savegame.h` names both files. |
-| `gameloop.c` | `gameloop_load_data` and `gameloop_new_game` stay as they are for DM. The CSB branch is part of the CSB engine work item (see [Dependencies](#dependencies-for-play)). |
+| `gameloop.c` | `gameloop_load_data` and `gameloop_start_new_game` stay as they are for DM. The CSB branch is part of the CSB engine work item (see [Dependencies](#dependencies-for-play)). |
 | `control.c` | `handle_new_game` error text becomes `"cannot start the new game"` (no file name). |
 
-The data folder is not stored in a second global. `gameloop_data_dir()` already returns the folder that `gameloop_load_data` read. `main` computes the folder once:
+The data folder is not stored in a second global. `gameloop_get_data_dir()` already returns the folder that `gameloop_load_data` read. `main` computes the folder once:
 
 ```c
 data = data_override ? data_override : adventure_default_dir(g_adventure);
@@ -216,7 +216,7 @@ State and rules (all in `select.c`):
 - `SCREEN_ADVENTURE`: activating sets `g_adventure`. The next screen is `SCREEN_MODE`, except when `--mode` was given (then `SCREEN_DONE`, or `SCREEN_CSB` for CSB).
 - `SCREEN_MODE`: activating sets `g_game_mode` (VANILLA 0, ADVANCED 1, LLM = `GAME_MODE_TURNBASED` 2) and sets `g_advanced_features = g_game_mode != GAME_MODE_VANILLA`. The next screen is `SCREEN_DONE` for DM and `SCREEN_CSB` for CSB. Escape goes back to `SCREEN_ADVENTURE` (when `--adventure` was given, Escape does nothing).
 - `SCREEN_CSB`: NEW ADVENTURE, RESUME, QUIT. Activating stores the choice and goes to `SCREEN_DONE`. QUIT sets `g_quit_requested`. Escape goes back to `SCREEN_MODE` (see [Open decisions](#open-decisions)).
-- Cursor and click boxes use the same item rectangles, computed from `text_size` of the item. There are no mouse tables from the KAOS data.
+- Cursor and click boxes use the same item rectangles, computed from `text_get_size` of the item. There are no mouse tables from the KAOS data.
 
 #### Drawing with the DM font
 
@@ -226,7 +226,7 @@ Reuse these existing functions. Do not add a font renderer.
 |---|---|---|
 | Load the font without KAOS | `gfx_open(path)` and `text_init()` | `graphics.c`, `text.c` |
 | Text on `fb` | `text_draw_screen(x, y, fg, bg, s)` | `text.c` |
-| Centered text width | `text_size(s, &w, &h)`, `TEXT_CHAR_WIDTH`, `TEXT_LINE_HEIGHT` | `text.c`, `text.h` |
+| Centered text width | `text_get_size(s, &w, &h)`, `TEXT_CHAR_WIDTH`, `TEXT_LINE_HEIGHT` | `text.c`, `text.h` |
 | Black background | `memset(fb, COLOR_BLACK, sizeof fb)` | `video.h` |
 | Own palette, no KAOS | `ui_set_screen_palette(colors)` with a 16-entry array | `ui.c` |
 | Color names | `COLOR_BLACK`, `COLOR_DARK_GRAY`, `COLOR_LIGHT_GRAY`, `COLOR_GOLD` | `ui.h` |

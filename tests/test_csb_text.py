@@ -61,8 +61,8 @@ def lib(tmp_path_factory):
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_new_game.restype = ctypes.c_bool
-    for f in ("gfx_string", "gfx_action_name", "gfx_object_name", "ui_skill_rank_name"):
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
+    for f in ("gfx_string", "gfx_action_name", "gfx_object_name", "ui_get_skill_rank_name"):
         getattr(lib, f).restype = ctypes.c_char_p
     lib.recruit_text_thing.restype = ctypes.c_uint16
     lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
@@ -98,7 +98,7 @@ def test_string_index_tables(lib):
     assert table(STATISTIC_STRINGS, 7) == ["L", "STRENGTH", "DEXTERITY", "WISDOM", "VITALITY", "ANTI-MAGIC", "ANTI-FIRE"]
     levels = table(SKILL_LEVEL_STRINGS, 15)
     assert levels[0] == "NEOPHYTE" and levels[8] == "` MASTER" and levels[14] == "ARCHMASTER"
-    assert lib.ui_skill_rank_name(16) == b"ARCHMASTER"
+    assert lib.ui_get_skill_rank_name(16) == b"ARCHMASTER"
 
 
 def test_action_and_object_names(lib):
@@ -134,7 +134,7 @@ def message_rows(lib):
 
 def test_prison_recruit_shows_csb_text(lib):
     load(lib, CSB, GAME_CSB)
-    assert lib.gameloop_new_game(str(GAME_CSB).encode())
+    assert lib.gameloop_start_new_game(str(GAME_CSB).encode())
     mirror = next((t, x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
                   for t in things(lib, x, y) if t >> 10 & 15 == 3 and lib.recruit_portrait_index(t) >= 0)
     t, x, y = mirror

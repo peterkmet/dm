@@ -414,7 +414,7 @@ CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:
 - 900 frames, or RESTART: `load_game`, then `start_game`. When the load fails, the credits.
 - The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, THE END again (without the 300 frames); else `quit_game`.
 
-Port (`port/src/ui/startend.c`): `endgame_sensor` plays `ENDA.DAT` with `port/src/ui/anim.c` for CSB, waits for a key or a click, and shows the CSB screen. `draw_the_end` draws the CSB button from the boxes, which the image copies to `0x104248` (`CSB_RESTART_BOXES`). After the credits, the port shows the CSB screen (deliberate deviation, as for DM); it does not go back to THE END.
+Port (`port/src/ui/startend.c`): `startend_run_endgame_sensor` plays `ENDA.DAT` with `port/src/ui/anim.c` for CSB, waits for a key or a click, and shows the CSB screen. `draw_the_end` draws the CSB button from the boxes, which the image copies to `0x104248` (`CSB_RESTART_BOXES`). After the credits, the port shows the CSB screen (deliberate deviation, as for DM); it does not go back to THE END.
 
 ### Copy protection
 

@@ -38,7 +38,7 @@ def game(tmp_path_factory):
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.kaos_s16.restype = c16
     lib.dungeon_save.restype = ctypes.c_void_p
     lib.free.argtypes = [ctypes.c_void_p]
@@ -117,7 +117,7 @@ def test_loaded_game_saves_and_loads_back(game, tmp_path):
 def test_new_prison_game_saves_and_loads_back(game, tmp_path):
     from dmtools import csb_mini as cm
 
-    assert game.lib.gameloop_new_game(str(GAME_CSB).encode())
+    assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
     assert value(game.lib, "g_max_active_group_count", u16) == 60
     before = state(game)
     raw = save(game, tmp_path)

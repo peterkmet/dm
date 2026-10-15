@@ -41,11 +41,11 @@ int ui_init(void)
     return gfx_load_strings();
 }
 
-Bitmap ui_screen(void)
+Bitmap ui_get_screen(void)
 {
     return (Bitmap){SCREEN_W, SCREEN_H, &fb[0][0]};
 }
-Bitmap *ui_viewport(void)
+Bitmap *ui_get_viewport(void)
 {
     return &viewport;
 }
@@ -116,7 +116,7 @@ void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char
 {
     int tw, th;
     Box b;
-    if (!text_size(text, &tw, &th))
+    if (!text_get_size(text, &tw, &th))
         return;
     int16_t w = tw;
     int16_t h = th;
@@ -140,7 +140,7 @@ void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, con
 /* Shows the viewport bitmap (inventory) on the screen with the interface palette. */
 void ui_draw_viewport(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     tables_palette(TABLES_PALETTE_INTERFACE, palette);
     ui_blit_zone(&screen, &viewport, ZONE_VIEWPORT, COLOR_NONE);
 }
@@ -191,7 +191,7 @@ static void draw_messages(Bitmap *bm, int x, int y)
 /* Draws the message area at the bottom of the screen. */
 void ui_draw_message_area(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     Box b;
     if (ui_zone_box(ZONE_MESSAGE_AREA, &b))
         draw_messages(&screen, b.x, b.y);
@@ -200,7 +200,7 @@ void ui_draw_message_area(void)
 /* Draws the whole screen outside the viewport, as at the start of a game. */
 void ui_draw_interface(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     ui_fill_zone(&screen, ZONE_SCREEN_TOP, COLOR_BLACK);
     ui_fill_zone(&screen, ZONE_SCREEN_RIGHT, COLOR_BLACK);
     ui_fill_zone(&screen, ZONE_SCREEN_BOTTOM, COLOR_BLACK);
@@ -237,7 +237,7 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
 }
 
 /* The icon box of zone; with border, grown by the slot box border. */
-int ui_icon_zone_box(int16_t zone, int border, Box *box)
+int ui_get_icon_zone_box(int16_t zone, int border, Box *box)
 {
     int16_t w = UI_ICON_SIZE;
     int16_t h = UI_ICON_SIZE;
@@ -253,9 +253,10 @@ int ui_icon_zone_box(int16_t zone, int border, Box *box)
 }
 
 /* The icon box of a slot box. */
-bool ui_slot_box_zone(int16_t slot_box, int border, Box *box)
+bool ui_get_slot_box_zone(int16_t slot_box, int border, Box *box)
 {
-    return slot_box >= 0 && slot_box < SLOT_BOX_COUNT && ui_icon_zone_box(tables_slot_box_zone(slot_box), border, box);
+    return slot_box >= 0 && slot_box < SLOT_BOX_COUNT &&
+           ui_get_icon_zone_box(tables_slot_box_zone(slot_box), border, box);
 }
 
 /* Draws an icon in a slot box: the hands are on the screen, the other slots in the viewport. */
@@ -263,12 +264,12 @@ void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon)
 {
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     Box b;
     if (slot_box < 0 || slot_box >= SLOT_BOX_COUNT)
         return;
     slot_box_icon[slot_box] = icon;
-    if (icon == -1 || !ui_slot_box_zone(slot_box, 0, &b))
+    if (icon == -1 || !ui_get_slot_box_zone(slot_box, 0, &b))
         return;
     ui_extract_icon(icon, &bm);
     draw_blit(&bm, 0, 0, slot_box < SLOT_BOX_SCREEN_COUNT ? &screen : &viewport, &b, COLOR_NONE, 0);
@@ -290,7 +291,7 @@ static int bones_champion(uint16_t thing)
    their champion first (English order). */
 void ui_draw_leader_hand_object_name(uint16_t thing)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     char buf[BONES_NAME_SIZE];
     ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
     int16_t icon = object_get_icon_index(thing);
@@ -305,7 +306,7 @@ void ui_draw_leader_hand_object_name(uint16_t thing)
 }
 
 /* Tells whether (x, y) is in the box of zone. */
-bool ui_point_in_zone(int16_t zone, int16_t x, int16_t y)
+bool ui_is_point_in_zone(int16_t zone, int16_t x, int16_t y)
 {
     Box b;
     return ui_zone_box(zone, &b) && x >= b.x && x <= b.x + b.w - 1 && y >= b.y && y <= b.y + b.h - 1;
@@ -334,7 +335,7 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
             px -= (SCREEN_W - viewport.w) / 2;
             py -= (SCREEN_H - viewport.h) / 2;
         }
-        if (buttons && ui_point_in_zone(in.x2, px, py))
+        if (buttons && ui_is_point_in_zone(in.x2, px, py))
             return in.command;
     }
     return 0;

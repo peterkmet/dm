@@ -244,11 +244,12 @@ static uint16_t action_hand_charges(const Champion *c)
 /* The action menu that the action hand of a champion opens, as menus_set_action_list builds it. */
 static void action_list_json(Json *j, int16_t index)
 {
-    const Champion *c = &g_champions[index];
+    const Champion *champion = &g_champions[index];
     int16_t set_index = ACTION_SET_EMPTY_HAND;
     json_open(j, '[');
-    if (c->slots[SLOT_HAND_ACTION] != THING_NONE) {
-        const ObjectInfo *info = tables_get_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
+    if (champion->slots[SLOT_HAND_ACTION] != THING_NONE) {
+        const ObjectInfo *info =
+            tables_get_object_info(inventory_get_object_info_index(champion->slots[SLOT_HAND_ACTION]));
         set_index = info ? info->action_set_index : 0;
     }
     const ActionSet *set = set_index ? tables_get_action_set(set_index) : NULL;
@@ -258,7 +259,8 @@ static void action_list_json(Json *j, int16_t index)
             uint8_t action = set->action_indices[k];
             uint8_t level = set->minimum_skill_levels[k - 1];
             const ActionInfo *info = tables_get_action_info(action);
-            if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charges(c)))
+            if (action == ACTION_NONE || !info ||
+                ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charges(champion)))
                 continue;
             if ((level & ~ACTION_LEVEL_NEEDS_CHARGES) <= champion_get_skill_level(index, info->skill_index))
                 json_str(j, gfx_action_name(action));
@@ -281,7 +283,7 @@ static void skills_json(Json *j, int16_t index)
     json_open(j, '{');
     for (int s = 0; s < SKILL_BASE_COUNT; s++) {
         int16_t level = champion_get_skill_level(index, s);
-        const char *rank = ui_skill_rank_name(level);
+        const char *rank = ui_get_skill_rank_name(level);
         json_key(j, skill_names[s]);
         json_open(j, '{');
         key_int(j, "level", level);
@@ -297,55 +299,56 @@ static void skills_json(Json *j, int16_t index)
 
 static void champion_json(Json *j, int16_t index)
 {
-    const Champion *c = &g_champions[index];
+    const Champion *champion = &g_champions[index];
     json_open(j, '{');
     key_int(j, "index", index);
-    key_str(j, "name", c->name);
-    key_str(j, "title", c->title);
-    key_bool(j, "alive", c->current_health > 0);
-    pair(j, "health", c->current_health, c->maximum_health);
-    pair(j, "stamina", c->current_stamina / STAMINA_DISPLAY_UNIT, c->maximum_stamina / STAMINA_DISPLAY_UNIT);
-    pair(j, "mana", c->current_mana, c->maximum_mana);
-    key_int(j, "food", c->food);
-    key_int(j, "water", c->water);
+    key_str(j, "name", champion->name);
+    key_str(j, "title", champion->title);
+    key_bool(j, "alive", champion->current_health > 0);
+    pair(j, "health", champion->current_health, champion->maximum_health);
+    pair(j, "stamina", champion->current_stamina / STAMINA_DISPLAY_UNIT,
+         champion->maximum_stamina / STAMINA_DISPLAY_UNIT);
+    pair(j, "mana", champion->current_mana, champion->maximum_mana);
+    key_int(j, "food", champion->food);
+    key_int(j, "water", champion->water);
     json_key(j, "load_kg");
     json_open(j, '[');
-    tenths(j, c->load);
-    tenths(j, champion_get_maximum_load(c));
+    tenths(j, champion->load);
+    tenths(j, champion_get_maximum_load(champion));
     json_close(j, ']');
-    key_str(j, "position", party_cell_names[NORMALIZE(c->cell - g_party_direction)]);
-    key_bool(j, "poisoned", c->poison_event_count > 0);
-    key_bool(j, "action_disabled", (c->attributes & CHAMPION_ATTR_ACTION_DISABLED) != 0);
+    key_str(j, "position", party_cell_names[NORMALIZE(champion->cell - g_party_direction)]);
+    key_bool(j, "poisoned", champion->poison_event_count > 0);
+    key_bool(j, "action_disabled", (champion->attributes & CHAMPION_ATTR_ACTION_DISABLED) != 0);
     json_key(j, "statistics");
     json_open(j, '{');
     for (int s = 0; s < STAT_COUNT; s++)
-        pair(j, statistic_names[s], c->statistics[s][STAT_CURRENT], c->statistics[s][STAT_MAXIMUM]);
+        pair(j, statistic_names[s], champion->statistics[s][STAT_CURRENT], champion->statistics[s][STAT_MAXIMUM]);
     json_close(j, '}');
     json_key(j, "skills");
     skills_json(j, index);
     json_key(j, "wounds");
     json_open(j, '[');
     for (int w = 0; w < UI_BODY_SLOT_COUNT; w++)
-        if (c->wounds & 1 << w)
+        if (champion->wounds & 1 << w)
             json_str(j, wound_names[w]);
     json_close(j, ']');
     json_key(j, "slots");
     json_open(j, '[');
     for (int s = 0; s < SLOT_COUNT; s++) {
-        if (c->slots[s] == THING_NONE)
+        if (champion->slots[s] == THING_NONE)
             continue;
         json_open(j, '{');
         key_int(j, "slot", s);
         key_str(j, "where", slot_names[s]);
         json_key(j, "object");
-        object_json(j, c->slots[s], 1);
+        object_json(j, champion->slots[s], 1);
         json_close(j, '}');
     }
     json_close(j, ']');
     json_key(j, "actions");
     action_list_json(j, index);
     json_key(j, "runes");
-    runes_json(j, c->symbols, CHAMPION_SYMBOL_COUNT);
+    runes_json(j, champion->symbols, CHAMPION_SYMBOL_COUNT);
     json_close(j, '}');
 }
 
@@ -376,23 +379,23 @@ static void spell_json(Json *j)
         json_null(j);
         return;
     }
-    const Champion *c = &g_champions[caster];
+    const Champion *champion = &g_champions[caster];
     json_open(j, '{');
     key_int(j, "caster", caster);
     json_key(j, "chosen");
-    runes_json(j, c->symbols, CHAMPION_SYMBOL_COUNT);
+    runes_json(j, champion->symbols, CHAMPION_SYMBOL_COUNT);
     json_key(j, "available");
     json_open(j, '[');
     for (int s = 0; s < SYMBOL_COUNT; s++) {
-        uint16_t cost = *tables_get_symbol_base_mana_cost(c->symbol_step, s);
+        uint16_t cost = *tables_get_symbol_base_mana_cost(champion->symbol_step, s);
         /* 16-bit product as in the original */
-        if (c->symbol_step)
-            cost = (uint16_t)(cost *
-                              *tables_get_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >>
+        if (champion->symbol_step)
+            cost = (uint16_t)(cost * *tables_get_symbol_mana_cost_multiplier((uint8_t)champion->symbols[0] -
+                                                                             SPELL_SYMBOL_FIRST)) >>
                    SPELL_MANA_MULTIPLIER_SHIFT;
         json_open(j, '{');
         key_int(j, "symbol", s);
-        key_str(j, "name", g_rune_names[c->symbol_step * SYMBOL_COUNT + s]);
+        key_str(j, "name", g_rune_names[champion->symbol_step * SYMBOL_COUNT + s]);
         key_int(j, "mana", cost);
         json_close(j, '}');
     }
@@ -442,7 +445,7 @@ static void inventory_json(Json *j)
     json_close(j, '}');
 }
 
-void state_json_state(Json *j)
+void state_json_write_state(Json *j)
 {
     json_open(j, '{');
     key_int(j, "time", g_game_time);
@@ -550,7 +553,7 @@ static uint8_t party_map_square(int16_t x, int16_t y)
 /* The rows of the view the party sees now: up to the first center square that blocks sight. */
 static int16_t visible_depths(void)
 {
-    return automap_visible_depths(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
+    return automap_get_visible_depths(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
 }
 
 static void view_square(int16_t depth, int16_t side, int16_t *x, int16_t *y)
@@ -673,11 +676,11 @@ static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
                 f->torch_holder = 1; /* it wants a torch */
             else {
                 f->lock = 1;
-                f->lock_ornament = view_wall_ornament_index(rec_sensor_ornament_ordinal(t));
+                f->lock_ornament = view_get_wall_ornament_index(rec_sensor_ornament_ordinal(t));
             }
         }
     }
-    switch (view_wall_ornament(x, y, face)) {
+    switch (view_get_wall_ornament(x, y, face)) {
     case VIEW_ORNAMENT_ALCOVE:
         f->alcove = 1;
         break;
@@ -689,7 +692,7 @@ static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
         break;
     case VIEW_ORNAMENT_OTHER:
         f->ornament = !f->mirror && !f->switch_ && !f->lock && !f->torch_holder;
-        f->other_ornament = view_wall_face_ornament_index(x, y, face);
+        f->other_ornament = view_get_wall_face_ornament_index(x, y, face);
         break;
     }
     return f->text != THING_NONE || f->mirror || f->switch_ || f->lock || f->torch_holder || f->alcove || f->fountain ||
@@ -758,7 +761,7 @@ enum { FLOOR_ORNAMENT_COUNT = ARRAY_COUNT(floor_ornament_names) };
 /* The floor ornament that the view draws on the square; an unknown ornament gets its index. */
 static void floor_ornament_json(Json *j, int16_t x, int16_t y)
 {
-    int16_t ornament = view_floor_ornament(x, y);
+    int16_t ornament = view_get_floor_ornament(x, y);
     if (ornament < 0)
         return;
     if (ornament < FLOOR_ORNAMENT_COUNT)
@@ -888,7 +891,7 @@ static void piles_json(Json *j)
     json_close(j, ']');
 }
 
-void state_json_view(Json *j)
+void state_json_write_view(Json *j)
 {
     json_open(j, '{');
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
@@ -939,7 +942,7 @@ void state_json_view(Json *j)
     json_close(j, '}');
 }
 
-int state_json_visible_things(uint16_t type, StateJsonSeenThing *out, int max)
+int state_json_write_visible_things(uint16_t type, StateJsonSeenThing *out, int max)
 {
     int count = 0;
     for (int16_t depth = 0; depth < visible_depths(); depth++)
@@ -958,10 +961,10 @@ int state_json_visible_things(uint16_t type, StateJsonSeenThing *out, int max)
     return count;
 }
 
-int state_json_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX])
+int state_json_write_visible_groups(uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX])
 {
     StateJsonSeenThing seen[STATE_JSON_VISIBLE_GROUPS_MAX];
-    int count = state_json_visible_things(THING_GROUP, seen, STATE_JSON_VISIBLE_GROUPS_MAX);
+    int count = state_json_write_visible_things(THING_GROUP, seen, STATE_JSON_VISIBLE_GROUPS_MAX);
     for (int i = 0; i < count; i++)
         groups[i] = seen[i].thing;
     return count;
@@ -1000,7 +1003,7 @@ static char map_char(int16_t x, int16_t y)
         return 'T';
     if (!strcmp(name, "door"))
         return door_state(square) == DOOR_OPEN || door_state(square) == DOOR_DESTROYED ? 'd' : 'D';
-    return view_floor_pressure_pad(x, y) ? '_' : '.';
+    return view_is_pressure_pad(x, y) ? '_' : '.';
 }
 
 /* Map row y in out: one character per square, a space for a square not explored. */
@@ -1052,14 +1055,14 @@ void state_json_map(Json *j)
     json_close(j, '}');
 }
 
-char *state_json_string(int part)
+char *state_json_get_string(int part)
 {
     Json j = {0};
     if (part == STATE_JSON_VIEW)
-        state_json_view(&j);
+        state_json_write_view(&j);
     else if (part == STATE_JSON_MAP)
         state_json_map(&j);
     else
-        state_json_state(&j);
+        state_json_write_state(&j);
     return j.s;
 }

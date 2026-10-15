@@ -77,7 +77,7 @@ void command_set_entrance_input(void)
     secondary_keys = TABLES_KEYS_NONE;
 }
 
-static InputTables current_input(void)
+static InputTables get_current_input(void)
 {
     return (InputTables){primary_mouse, secondary_mouse, primary_keys, secondary_keys};
 }
@@ -97,7 +97,7 @@ void command_set_only_mouse_input(int16_t table)
 
 void command_save_input(void)
 {
-    dialog_input = current_input();
+    dialog_input = get_current_input();
 }
 void command_restore_input(void)
 {
@@ -202,7 +202,7 @@ void command_highlight_disable(void)
 }
 
 /* The square in front of the party. */
-static void front_square(int16_t *x, int16_t *y)
+static void get_front_square(int16_t *x, int16_t *y)
 {
     *x = g_party_map_x;
     *y = g_party_map_y;
@@ -212,7 +212,7 @@ static void front_square(int16_t *x, int16_t *y)
 /* Shows a text in the empty viewport: the sleep and freeze screens. */
 static void draw_viewport_message(int16_t text)
 {
-    Bitmap *vp = ui_viewport();
+    Bitmap *vp = ui_get_viewport();
     memset(vp->px, COLOR_BLACK, (size_t)vp->w * vp->h);
     ui_print_zone(vp, ZONE_VIEWPORT_MESSAGE, COLOR_CYAN, COLOR_BLACK, gfx_string(text));
     ui_draw_viewport();
@@ -221,7 +221,7 @@ static void draw_viewport_message(int16_t text)
 /* Dims the movement arrows (or the closed inventory panel), the spell area, and the action area. */
 void command_freeze_game(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     if (g_game_frozen)
         return;
     g_game_frozen = true;
@@ -319,7 +319,7 @@ void command_click_on_mouth(void)
    leader ends a press on an imaginary wall; its icon is cleared and is no longer dragged. */
 void command_release_dead_champion(uint16_t champion_index, int16_t leader_index)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     int16_t icon_cell = NORMALIZE(g_champions[champion_index].cell - g_party_direction);
     if (champion_index + 1 == g_inventory_champion_ordinal) {
         pressing_eye = false;
@@ -348,7 +348,7 @@ static void show_candidate(void)
 /* Click in the resurrect/reincarnate panel of the candidate: accept or cancel it. */
 static void click_in_candidate_panel(int16_t x, int16_t y)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     int16_t command = ui_command_from_mouse(UI_INPUT_RESURRECT, x, y, CLICK_LEFT_PRESS);
     int16_t index = g_party_champion_count - 1;
     if (!command || !g_leader_empty_handed)
@@ -390,7 +390,7 @@ static void click_in_status_box(int16_t champion_index, int16_t x, int16_t y)
    cell and swaps it with the champion there. */
 static void click_on_champion_icon(int16_t cell)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     if (!dragged_icon_cell_plus_1) {
         if (champion_get_index_in_cell(NORMALIZE(cell + g_party_direction)) == -1)
             return;
@@ -427,7 +427,7 @@ static void grab_object(int16_t pile)
     if (g_leader_index == -1)
         return;
     if (pile >= VIEW_CELL_FRONT_FIRST) {
-        front_square(&x, &y);
+        get_front_square(&x, &y);
         uint16_t group = map_get_square_group(x, y);
         if (group != THING_ENDOFLIST && !move_is_levitating(group) &&
             group_get_creature_ordinal_in_cell(group, NORMALIZE(pile + g_party_direction)))
@@ -453,7 +453,7 @@ static void drop_object(int16_t pile)
     if (alcove)
         pile = VIEW_CELL_FRONT_FIRST;
     if (pile >= VIEW_CELL_FRONT_FIRST)
-        front_square(&x, &y);
+        get_front_square(&x, &y);
     int16_t cell = NORMALIZE(pile + g_party_direction);
     uint16_t thing = inventory_get_object_removed_from_leader_hand();
     move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, x, y);
@@ -472,7 +472,7 @@ static void drop_object(int16_t pile)
 static void touch_front_wall(void)
 {
     int16_t x, y;
-    front_square(&x, &y);
+    get_front_square(&x, &y);
     if (x < 0 || x >= g_current_map_width || y < 0 || y >= g_current_map_height)
         return;
     int16_t candidate = g_candidate_champion_ordinal;
@@ -514,7 +514,7 @@ static void fill_at_fountain(void)
 }
 
 /* A point in a clickable box of the view; x -1 marks an unused box. */
-static bool in_box(const Box *b, int16_t x, int16_t y)
+static bool is_in_box(const Box *b, int16_t x, int16_t y)
 {
     return b->x != -1 && x >= b->x && x < b->x + b->w && y >= b->y && y < b->y + b->h;
 }
@@ -524,9 +524,9 @@ static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
 {
     int16_t zone = g_square_ahead_element == VIEW_ELEMENT_DOOR_FRONT ? ZONE_THROW_DOOR_LEFT : ZONE_THROW_LEFT;
     int16_t thrown = 0;
-    if (ui_point_in_zone(zone, x, y))
+    if (ui_is_point_in_zone(zone, x, y))
         thrown = action_is_leader_hand_object_thrown(0);
-    else if (ui_point_in_zone(zone + 1, x, y))
+    else if (ui_is_point_in_zone(zone + 1, x, y))
         thrown = action_is_leader_hand_object_thrown(1);
     if (thrown)
         g_stop_waiting_for_input = true;
@@ -538,7 +538,7 @@ static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
 static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, int16_t imaginary_wall)
 {
     for (int16_t i = 0; i < VIEW_CLICK_BOX_COUNT; i++) {
-        if (!in_box(&g_dungeon_view_clickable_boxes[i], x, y))
+        if (!is_in_box(&g_dungeon_view_clickable_boxes[i], x, y))
             continue;
         if (i != VIEW_CLICK_BOX_WALL) {
             grab_object(i);
@@ -558,7 +558,7 @@ static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, int
     }
     if (g_square_ahead_element != VIEW_ELEMENT_WALL)
         return;
-    if (ui_point_in_zone(ZONE_THROW_LEFT, x, y) || ui_point_in_zone(ZONE_THROW_LEFT + 1, x, y))
+    if (ui_is_point_in_zone(ZONE_THROW_LEFT, x, y) || ui_is_point_in_zone(ZONE_THROW_LEFT + 1, x, y))
         touch_front_square_empty_handed(imaginary_wall, fx, fy);
 }
 
@@ -567,14 +567,14 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
 {
     int16_t fx, fy;
     const Box *wall_box = &g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL];
-    front_square(&fx, &fy);
+    get_front_square(&fx, &fy);
     if (g_square_ahead_element == VIEW_ELEMENT_DOOR_FRONT) {
         if (g_leader_index == -1)
             return;
         if (!g_leader_empty_handed && is_leader_hand_object_thrown(x, y))
             return;
         if (g_leader_empty_handed && door_button_present(map_get_square_first_thing(fx, fy)) &&
-            in_box(wall_box, x, y)) {
+            is_in_box(wall_box, x, y)) {
             sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
             sensor_add_event(EVENT_DOOR, fx, fy, 0, EFFECT_TOGGLE, (uint32_t)(g_game_time + 1));
             g_stop_waiting_for_input = true;
@@ -592,11 +592,11 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
         return;
     int16_t cells = g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall ? CELL_COUNT : VIEW_CELL_FRONT_FIRST;
     for (int16_t i = 0; i < cells; i++)
-        if (ui_point_in_zone(ZONE_DROP_CELL_FIRST + i, x, y)) {
+        if (ui_is_point_in_zone(ZONE_DROP_CELL_FIRST + i, x, y)) {
             drop_object(i);
             return;
         }
-    if (cells == CELL_COUNT || !in_box(wall_box, x, y))
+    if (cells == CELL_COUNT || !is_in_box(wall_box, x, y))
         return;
     if (g_facing_alcove) {
         drop_object(VIEW_CLICK_BOX_ALCOVE);
@@ -647,8 +647,8 @@ static void click_in_spell_area(int16_t x, int16_t y)
     int16_t command = ui_command_from_mouse(UI_INPUT_SPELL_AREA, x, y, CLICK_LEFT_PRESS);
     if (command == COMMAND_CHANGE_MAGIC_CASTER) {
         for (uint16_t i = 0; i < g_party_champion_count; i++)
-            if (ui_point_in_zone(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + i, x,
-                                 y)) {
+            if (ui_is_point_in_zone(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + i, x,
+                                    y)) {
                 menus_set_magic_caster(i);
                 return;
             }
@@ -704,7 +704,7 @@ static void draw_viewport_icon(int16_t icon, int16_t zone)
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
     ui_extract_icon(icon, &bm);
-    ui_blit_zone(ui_viewport(), &bm, zone, COLOR_NONE);
+    ui_blit_zone(ui_get_viewport(), &bm, zone, COLOR_NONE);
 }
 
 /* While the left button stays down on the eye, the panel shows the skills and statistics, or the
@@ -722,7 +722,7 @@ static void click_on_eye(void)
 }
 
 /* The left button release ends a press on the eye, the mouth, or an imaginary wall. */
-static void left_release(void)
+static void process_left_release(void)
 {
     if (pressing_eye) {
         pressing_eye = false;
@@ -768,7 +768,7 @@ static void freeze_game(void)
     g_game_time_ticking = false;
     command_freeze_game();
     draw_viewport_message(TEXT_GAME_FROZEN);
-    frozen_input = current_input();
+    frozen_input = get_current_input();
     set_input((InputTables){UI_INPUT_FROZEN, NO_TABLE, TABLES_KEYS_FROZEN, TABLES_KEYS_NONE});
     command_discard_all_input();
 }
@@ -848,7 +848,7 @@ static void process_other_command(int16_t command)
 }
 
 /* A step waits while the party cannot move, or while a projectile blocks this direction. */
-static bool movement_blocked(int16_t command)
+static bool is_movement_blocked(int16_t command)
 {
     if (command < COMMAND_MOVE_FORWARD || command > COMMAND_MOVE_LEFT)
         return false;
@@ -868,12 +868,12 @@ bool command_process_queue(void)
     int16_t command = q.command;
     int16_t x = q.x;
     int16_t y = q.y;
-    if (movement_blocked(command))
+    if (is_movement_blocked(command))
         return false;
     queue_first = (queue_first + 1) % QUEUE_SIZE;
     queue_count--;
     if (command == COMMAND_LEFT_RELEASE)
-        left_release();
+        process_left_release();
     else if (command >= COMMAND_TURN_LEFT && command <= COMMAND_MOVE_LEFT)
         move_or_turn(command);
     else if (command >= COMMAND_CLICK_STATUS_BOX_FIRST &&

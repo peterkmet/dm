@@ -43,7 +43,7 @@ static int16_t adventure_flag = -1;
 static int16_t mode_flag = -1;
 
 /* Only CHAOS STRIKES BACK can be disabled: its files are missing. */
-static bool enabled(int item)
+static bool is_item_enabled(int item)
 {
     return screen != SCREEN_ADVENTURE || item != ADVENTURE_CSB || csb_enabled;
 }
@@ -138,7 +138,7 @@ static void activate(void)
 static void move(int step)
 {
     for (int i = cursor + step; i >= 0 && i < item_count(screen); i += step)
-        if (enabled(i)) {
+        if (is_item_enabled(i)) {
             cursor = i;
             return;
         }
@@ -166,7 +166,7 @@ bool select_item_box(int item, Box *box)
     int w, h;
     if (screen == SCREEN_DONE || item < 0 || item >= item_count(screen))
         return false;
-    text_size(screens[screen].items[item], &w, &h);
+    text_get_size(screens[screen].items[item], &w, &h);
     box->w = w + 2 * ITEM_MARGIN;
     box->h = LINE_HEIGHT;
     box->x = (SCREEN_W - box->w) / 2;
@@ -180,7 +180,7 @@ void select_click(int x, int y)
     for (int i = 0; select_item_box(i, &b); i++) {
         if (x < b.x || x >= b.x + b.w || y < b.y || y >= b.y + b.h)
             continue;
-        if (enabled(i)) {
+        if (is_item_enabled(i)) {
             cursor = i;
             activate();
         }
@@ -190,7 +190,7 @@ void select_click(int x, int y)
 
 void select_draw(void)
 {
-    Bitmap bm = ui_screen();
+    Bitmap bm = ui_get_screen();
     Box b;
     memset(fb, COLOR_BLACK, sizeof fb);
     ui_set_screen_palette(select_palette);
@@ -199,7 +199,7 @@ void select_draw(void)
     text_draw_box(&bm, 0, HEADING_TOP, SCREEN_W, LINE_HEIGHT, true, COLOR_LIGHT_GRAY, COLOR_BLACK,
                   screens[screen].heading);
     for (int i = 0; select_item_box(i, &b); i++) {
-        uint8_t color = !enabled(i) ? COLOR_DARK_GRAY : i == cursor ? COLOR_GOLD : COLOR_LIGHT_GRAY;
+        uint8_t color = !is_item_enabled(i) ? COLOR_DARK_GRAY : i == cursor ? COLOR_GOLD : COLOR_LIGHT_GRAY;
         text_draw_box(&bm, b.x, b.y, b.w, b.h, true, color, COLOR_BLACK, screens[screen].items[i]);
     }
     if (message)

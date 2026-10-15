@@ -25,8 +25,8 @@ PRIEST = 2
 
 
 def setup(lib):
-    lib.panel_object_text.argtypes = [u16, ctypes.c_char_p, ctypes.c_char_p]
-    lib.panel_object_text.restype = c16
+    lib.panel_draw_object_text.argtypes = [u16, ctypes.c_char_p, ctypes.c_char_p]
+    lib.panel_draw_object_text.restype = c16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.dungeon_get_thing_data.argtypes = [u16]
     lib.map_get_next_thing.restype = u16
@@ -40,8 +40,8 @@ def setup(lib):
     lib.map_get_unused_thing.argtypes = [u16]
     lib.inventory_get_object_removed_from_slot.argtypes = [u16, u16]
     lib.panel_click_in_chest.argtypes = [c16, c16]
-    lib.ui_slot_box_zone.argtypes = [c16, ctypes.c_int, ctypes.POINTER(Box)]
-    lib.ui_slot_box_zone.restype = ctypes.c_bool
+    lib.ui_get_slot_box_zone.argtypes = [c16, ctypes.c_int, ctypes.POINTER(Box)]
+    lib.ui_get_slot_box_zone.restype = ctypes.c_bool
 
 
 def things_of(lib, t):
@@ -62,7 +62,7 @@ def chest_content(lib, chest):
 
 def port_text(lib, thing):
     name, lines = ctypes.create_string_buffer(40), ctypes.create_string_buffer(3 * 40)
-    n = lib.panel_object_text(thing, name, lines)
+    n = lib.panel_draw_object_text(thing, name, lines)
     return name.value, tuple(lines.raw[40 * i:40 * (i + 1)].split(b"\0")[0] for i in range(n))
 
 
@@ -208,12 +208,12 @@ def test_chest_open_swap_close(game, party):
     hand = game.map_get_unused_thing(5)
     game.inventory_put_object_in_leader_hand(hand)
     box = Box()
-    assert game.ui_slot_box_zone(SLOT_BOX_CHEST_FIRST, 0, ctypes.byref(box))
+    assert game.ui_get_slot_box_zone(SLOT_BOX_CHEST_FIRST, 0, ctypes.byref(box))
     game.panel_click_in_chest(box.x + box.w // 2, box.y + box.h // 2 + VIEWPORT_Y)
     assert u16.in_dll(game, "g_leader_hand_object").value == content[0]
     assert slots[0] == hand
     assert slots[len(content)] == NONE
-    assert game.ui_slot_box_zone(SLOT_BOX_CHEST_FIRST + len(content), 0, ctypes.byref(box))
+    assert game.ui_get_slot_box_zone(SLOT_BOX_CHEST_FIRST + len(content), 0, ctypes.byref(box))
     game.panel_click_in_chest(box.x + box.w // 2, box.y + box.h // 2 + VIEWPORT_Y)  # the hand object goes to an empty slot
     assert slots[len(content)] == content[0]
     assert u16.in_dll(game, "g_leader_hand_object").value == NONE
@@ -260,8 +260,8 @@ def test_eat_food_redraws_the_food_bar(game, party):
     c16.in_dll(game, "g_panel_content").value = 1  # food and water
     game.ui_draw_panel()
     game.inventory_put_object_in_leader_hand(thing)
-    game.ui_viewport.restype = ctypes.POINTER(Bitmap)
-    viewport = game.ui_viewport().contents
+    game.ui_get_viewport.restype = ctypes.POINTER(Bitmap)
+    viewport = game.ui_get_viewport().contents
     before = viewport.px[: viewport.w * viewport.h]
     game.command_click_on_mouth()
     assert viewport.px[: viewport.w * viewport.h] != before

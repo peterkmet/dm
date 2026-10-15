@@ -46,7 +46,7 @@ def game(tmp_path_factory):
     lib = ctypes.CDLL(str(out))
     lib.control_open.restype = ctypes.c_bool
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = u16
     lib.map_get_next_thing.restype = u16
@@ -56,11 +56,11 @@ def game(tmp_path_factory):
     lib.dungeon_map_height.restype = c16
     lib.savegame_save.restype = c16
     lib.savegame_load.restype = c16
-    lib.video_color.restype = u16
-    lib.video_argb.restype = u32
+    lib.video_get_color.restype = u16
+    lib.video_convert_argb.restype = u32
     lib.control_open.argtypes = [ctypes.c_char_p]
     assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     game = Game(lib)
     game.run(26)
     path, direction = game.path_to_mirror()
@@ -100,7 +100,7 @@ def screenshot(game, name):
     fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
     rows = []
     for y in range(200):
-        row = b"".join(lib.video_argb(lib.video_color(y, fb[y * 320 + x])).to_bytes(4, "big")[1:] * scale for x in range(320))
+        row = b"".join(lib.video_convert_argb(lib.video_get_color(y, fb[y * 320 + x])).to_bytes(4, "big")[1:] * scale for x in range(320))
         rows += [b"\0" + row] * scale
     chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))
     header = struct.pack(">IIBBBBB", 320 * scale, 200 * scale, 8, 2, 0, 0, 0)
@@ -520,7 +520,7 @@ def test_smooth_projectile_flight(game):
         frames = []
         for _ in range(3 * 13):
             seed = game.value("g_random_seed", u32)
-            ticked = lib.gameloop_frame()
+            ticked = lib.gameloop_run_frame()
             if ticked:
                 lib.gameloop_tick()
             else:
@@ -665,7 +665,7 @@ def test_party_death_during_a_turn_reports_game_over(game):
         shutil.rmtree(sock_dir, ignore_errors=True)
         ctypes.c_bool.in_dll(lib, "g_return_to_entrance").value = 0
         set_mode(game, VANILLA)
-        assert lib.gameloop_new_game(str(GAME).encode())
+        assert lib.gameloop_start_new_game(str(GAME).encode())
 
 
 def test_turnbased_save_goes_to_the_saves_folder(tmp_path):

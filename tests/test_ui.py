@@ -94,8 +94,8 @@ def test_palette_split(lib):
     top, bottom = c16.in_dll(lib, "palette_split_top"), c16.in_dll(lib, "palette_split_bottom")
     saved = list(pal), top.value, bottom.value
     pal[3], pal[19], top.value, bottom.value = 0x123, 0x456, 33, 169
-    lib.video_color.restype = u16
-    assert [lib.video_color(y, 3) for y in (0, 32, 33, 168, 169, 199)] == [0x456, 0x456, 0x123, 0x123, 0x456, 0x456]
+    lib.video_get_color.restype = u16
+    assert [lib.video_get_color(y, 3) for y in (0, 32, 33, 168, 169, 199)] == [0x456, 0x456, 0x123, 0x123, 0x456, 0x456]
     pal[:], top.value, bottom.value = saved
 
 

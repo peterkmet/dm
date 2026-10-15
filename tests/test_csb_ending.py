@@ -53,9 +53,9 @@ def lib(tmp_path_factory):
         ("map_get_next_thing", u16, [u16]), ("map_set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]), ("savegame_save", c16, [ctypes.c_char_p]),
         ("event_process_wall", None, [ctypes.POINTER(TimelineEvent)]), ("kaos_s16", c16, [u32]),
-        ("endgame", None, [c16]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
+        ("startend_run_endgame", None, [c16]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
         ("command_process_click", None, [c16, c16, c16]), ("command_process_key", None, [u16]),
-        ("anim_play", ctypes.c_int, [ctypes.c_char_p]), ("endgame_sensor", None, [u16]),
+        ("anim_play", ctypes.c_int, [ctypes.c_char_p]), ("startend_run_endgame_sensor", None, [u16]),
         ("sound_mix", None, [ctypes.POINTER(c16), ctypes.c_int]), ("sound_stop_all", None, []),
         ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]), ("gameloop_tick", None, []),
     ]:
@@ -471,7 +471,7 @@ def test_sensor_18_with_frames_plays_at_once_and_waits_for_input(lib, model, tmp
             click(lib, 10, 10)
 
     frames = Frames(lib, action)
-    lib.endgame_sensor(5)
+    lib.startend_run_endgame_sensor(5)
     frames.remove()
     assert frames.shots[0] == (model[0][1], model[0][2])  # no delay before the first frame
     assert len(frames.shots) == total + 10 and not any(entrance)
@@ -507,7 +507,7 @@ def test_death_shows_restart_only_and_restart_loads_the_save(lib, tmp_path, rese
 
     hook = HOOK(frame)
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = ctypes.cast(hook, ctypes.c_void_p).value
-    lib.endgame(1)
+    lib.startend_run_endgame(1)
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
     before, after = shots[DEATH_FRAMES + THE_END_FRAMES], shots[DEATH_FRAMES + THE_END_FRAMES + 1]
     bx, by, bw, bh = (lib.kaos_s16(CSB_RESTART_BOXES + 2 * i) for i in range(4))

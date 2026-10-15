@@ -1,6 +1,6 @@
 #ifndef STARTEND_H
 #define STARTEND_H
-/* Prefixes: startend_ wait_ endgame fuse_ */
+/* Prefixes: startend_ wait_ */
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -39,10 +39,10 @@ bool startend_load_saved_game(void);
 /* The end of the game: game over (party_dead 1), won (g_game_won), or quit (party_dead 0). It
    returns after RESTART THIS GAME loaded the saved game, or after the credits with
    g_return_to_entrance set. */
-void endgame(int16_t party_dead);
+void startend_run_endgame(int16_t party_dead);
 /* The party fused Lord Chaos: the final explosions, the texts of square (0, 0), then the endgame. */
-void fuse_sequence(void);
+void startend_run_fuse_sequence(void);
 /* Sensor 18: waits delay seconds, then the won endgame. CSB: the ending animation (ENDA.DAT) at once. */
-void endgame_sensor(uint16_t delay);
+void startend_run_endgame_sensor(uint16_t delay);
 
 #endif

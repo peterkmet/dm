@@ -59,7 +59,7 @@ void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s)
 }
 
 /* Pixel size of s. Returns false for an empty text. */
-bool text_size(const char *s, int *w, int *h)
+bool text_get_size(const char *s, int *w, int *h)
 {
     int n = s ? (int)strlen(s) : 0;
     if (n * TEXT_CHAR_WIDTH - TEXT_CHAR_GAP < 1)
@@ -74,7 +74,7 @@ bool text_size(const char *s, int *w, int *h)
 void text_draw_box(Bitmap *bm, int x, int y, int w, int h, bool centered, uint8_t fg, uint8_t bg, const char *s)
 {
     int tw, th;
-    if (!text_size(s, &tw, &th))
+    if (!text_get_size(s, &tw, &th))
         return;
     if (centered)
         x += (w - tw) / 2;

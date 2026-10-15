@@ -62,11 +62,11 @@ bool gameloop_load_data(const char *dir)
         return false;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     startend_set_save_dir(dir);
-    g_endgame_sensor_hook = endgame_sensor;
+    g_endgame_sensor_hook = startend_run_endgame_sensor;
     return gfx_open(path) >= 0 && !layout_init() && !text_init() && !ui_init();
 }
 
-const char *gameloop_data_dir(void)
+const char *gameloop_get_data_dir(void)
 {
     return data_dir;
 }
@@ -75,7 +75,7 @@ const char *gameloop_data_dir(void)
    opened pixels. Returns 1 while a part of a door shows. */
 static int draw_entrance_doors(const Bitmap *view, int16_t opened)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     Box doors, work, door;
     int16_t w = 0;
     int16_t h = 0;
@@ -134,7 +134,7 @@ void entrance_press_button(int resume)
     enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20 };
     static const uint8_t volumes[2] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
     const Bitmap *bm = gfx_get_bitmap(GFX_ENTRANCE_BUTTONS);
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     Box box;
     int16_t sx = 0;
     int16_t sy = 0;
@@ -247,7 +247,7 @@ static void mark_seen_squares(void)
    the name of the leader hand object, the message area. */
 static void refresh_interface(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     ui_draw_all_champion_states(0);
     menus_refresh_spell_area();
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
@@ -310,7 +310,7 @@ static void show_game(void)
     command_discard_all_input();
 }
 
-bool gameloop_new_game(const char *dir)
+bool gameloop_start_new_game(const char *dir)
 {
     char path[PATH_SIZE];
     snprintf(path, sizeof path, "%s/Dungeon.DAT", dir);
@@ -384,7 +384,7 @@ static void run_requested_sequence(void)
     if (!g_fuse_sequence_requested)
         return;
     g_fuse_sequence_requested = false;
-    fuse_sequence();
+    startend_run_fuse_sequence();
 }
 
 /* Advanced feature: between two ticks the view shows the projectiles part of the way to their new
@@ -392,7 +392,7 @@ static void run_requested_sequence(void)
 static void draw_projectile_motion(void)
 {
     if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_party_is_sleeping ||
-        g_inventory_champion_ordinal || !view_projectiles_moving())
+        g_inventory_champion_ordinal || !view_has_moving_projectiles())
         return;
     uint32_t seed = g_random_seed;
     view_set_motion(frames_waiting, g_wait_for_input_max_frames + 1);
@@ -401,7 +401,7 @@ static void draw_projectile_motion(void)
     g_random_seed = seed;
 }
 
-int gameloop_frame(void)
+int gameloop_run_frame(void)
 {
     int ran = 0;
     if (g_automap_open)
@@ -504,7 +504,7 @@ void gameloop_tick(void)
     if (g_party_dead) {
         ui_draw_all_champion_states(0); /* the dead champions show during the death scream */
         draw_spell_area_before_last_death(before);
-        endgame(1);
+        startend_run_endgame(1);
         return;
     }
     advance_game_time();
@@ -514,7 +514,7 @@ void gameloop_tick(void)
 }
 
 /* Reads the 4 bit plane bitmap of the arrow or the hand pointer into one color per pixel. */
-static void planar_pointer(bool hand, uint8_t *px, int *w, int *h)
+static void decode_planar_pointer(bool hand, uint8_t *px, int *w, int *h)
 {
     int16_t pw, ph;
     const uint8_t *planes = tables_pointer_planes(hand, &pw, &ph);
@@ -534,7 +534,7 @@ static void planar_pointer(bool hand, uint8_t *px, int *w, int *h)
 }
 
 /* The object icon of the leader hand with a black shadow at the shadow offset (build_mouse_pointer_bitmap). */
-static void object_pointer(uint8_t *px, int *w, int *h)
+static void make_object_pointer(uint8_t *px, int *w, int *h)
 {
     uint8_t icon_px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap icon = {UI_ICON_SIZE, UI_ICON_SIZE, icon_px};
@@ -561,7 +561,7 @@ static void object_pointer(uint8_t *px, int *w, int *h)
 
 /* The pointer shape of a screen position: the hand or the object over the zones that use it
    (viewport, hands of the status boxes) when there is a leader, else the arrow. */
-static int pointer_shape(int16_t x, int16_t y, bool in_game)
+static int get_pointer_shape(int16_t x, int16_t y, bool in_game)
 {
     if (!in_game || g_leader_index == -1)
         return POINTER_ARROW;
@@ -582,21 +582,21 @@ static int pointer_shape(int16_t x, int16_t y, bool in_game)
     return POINTER_ARROW;
 }
 
-bool gameloop_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *w, int *h, int *hot_x, int *hot_y)
+bool gameloop_get_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *w, int *h, int *hot_x, int *hot_y)
 {
     if (in_game && g_mouse_pointer_hidden)
         return false;
-    int shape = pointer_shape(x, y, in_game);
+    int shape = get_pointer_shape(x, y, in_game);
     if (shape == POINTER_OBJECT)
-        object_pointer(px, w, h);
+        make_object_pointer(px, w, h);
     else
-        planar_pointer(shape == POINTER_HAND, px, w, h);
+        decode_planar_pointer(shape == POINTER_HAND, px, w, h);
     *hot_x = tables_pointer_hotspot_x(shape);
     *hot_y = tables_pointer_hotspot_y(shape);
     return true;
 }
 
-const uint16_t *gameloop_pointer_palette(void)
+const uint16_t *gameloop_get_pointer_palette(void)
 {
     static uint16_t colors[PALETTE_COLORS];
     tables_palette(TABLES_PALETTE_POINTER, colors);

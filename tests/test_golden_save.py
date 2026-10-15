@@ -54,9 +54,9 @@ def saved_game(tmp_path):
     lib.kaos_s16.restype = c16
     lib.inventory_get_object_weight.restype = u16
     lib.savegame_save.restype = c16
-    lib.gameloop_load_data.restype = lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.gameloop_load_data.restype = lib.gameloop_start_new_game.restype = ctypes.c_bool
     assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     ctypes.c_uint32.in_dll(lib, "g_random_seed").value = SEED
     game = Game(lib)
     recruit_and_hold_object(game)

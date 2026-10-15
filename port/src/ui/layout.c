@@ -24,23 +24,23 @@ enum { CLIP_NONE = 20000 };
 /* The layout graphic: signature and range count words, ranges of 2 words, then zone records of 4 words. */
 enum { LAYOUT_HEADER_BYTES = 4, RANGE_BYTES = 4, ZONE_RECORD_BYTES = 8 };
 
-static const uint8_t *data; /* graphic 696: signature, range count, ranges, zone records */
-static uint16_t size;
+static const uint8_t *layout_data; /* graphic 696: signature, range count, ranges, zone records */
+static uint16_t layout_size;
 
 /* Words of a zone record. */
-static int16_t zone_type(const uint8_t *r)
+static int16_t get_zone_type(const uint8_t *r)
 {
     return S16(r, 0);
 }
-static int16_t zone_parent(const uint8_t *r)
+static int16_t get_zone_parent(const uint8_t *r)
 {
     return S16(r, 1);
 }
-static int16_t zone_x(const uint8_t *r)
+static int16_t get_zone_x(const uint8_t *r)
 {
     return S16(r, 2);
 } /* or the width of a size record */
-static int16_t zone_y(const uint8_t *r)
+static int16_t get_zone_y(const uint8_t *r)
 {
     return S16(r, 3);
 } /* or the height of a size record */
@@ -48,10 +48,10 @@ static int16_t zone_y(const uint8_t *r)
 /* init_layout: keeps the raw layout graphic. Returns 0 on success. */
 int layout_init(void)
 {
-    data = gfx_get_item(GFX_LAYOUT, &size);
-    if (!data || size < LAYOUT_HEADER_BYTES || BE16(data) != LAYOUT_SIGNATURE ||
-        LAYOUT_HEADER_BYTES + RANGE_BYTES * S16(data, 1) > size) {
-        data = NULL;
+    layout_data = gfx_get_item(GFX_LAYOUT, &layout_size);
+    if (!layout_data || layout_size < LAYOUT_HEADER_BYTES || BE16(layout_data) != LAYOUT_SIGNATURE ||
+        LAYOUT_HEADER_BYTES + RANGE_BYTES * S16(layout_data, 1) > layout_size) {
+        layout_data = NULL;
         return -1;
     }
     return 0;
@@ -60,15 +60,15 @@ int layout_init(void)
 /* layout_find_zone: the 4-word record (type, parent, x, y) of zone n, or NULL. */
 static const uint8_t *find(int16_t n)
 {
-    if (!data || n == 0)
+    if (!layout_data || n == 0)
         return NULL;
-    int16_t ranges = S16(data, 1);
-    const uint8_t *rec = data + LAYOUT_HEADER_BYTES + RANGE_BYTES * ranges;
+    int16_t ranges = S16(layout_data, 1);
+    const uint8_t *rec = layout_data + LAYOUT_HEADER_BYTES + RANGE_BYTES * ranges;
     for (int16_t i = 0; i < ranges; i++) {
-        int16_t first = S16(data, 2 + 2 * i);
-        int16_t last = S16(data, 3 + 2 * i);
+        int16_t first = S16(layout_data, 2 + 2 * i);
+        int16_t last = S16(layout_data, 3 + 2 * i);
         if (first <= n && n <= last)
-            return rec + ZONE_RECORD_BYTES * (n - first) + ZONE_RECORD_BYTES <= data + size
+            return rec + ZONE_RECORD_BYTES * (n - first) + ZONE_RECORD_BYTES <= layout_data + layout_size
                        ? rec + ZONE_RECORD_BYTES * (n - first)
                        : NULL;
         rec += ZONE_RECORD_BYTES * (last - first + 1);
@@ -169,23 +169,23 @@ static bool place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip
 {
     const uint8_t *p, *s;
     int16_t pending = 0;
-    while (zone_parent(r)) {
-        int16_t t = zone_type(r);
+    while (get_zone_parent(r)) {
+        int16_t t = get_zone_type(r);
         if (t < RECORD_INNER_POINT || t > RECORD_INNER_POINT_LAST) {
-            if (!(p = find(zone_parent(r))))
+            if (!(p = find(get_zone_parent(r))))
                 break;
-            int16_t a = zone_x(p);
-            int16_t b = zone_y(p);
-            if (zone_type(p) == RECORD_TRANSLATION) {
+            int16_t a = get_zone_x(p);
+            int16_t b = get_zone_y(p);
+            if (get_zone_type(p) == RECORD_TRANSLATION) {
                 *x += a;
                 *y += b;
                 clip->x += a;
                 clip->y += b;
-            } else if (zone_type(p) == RECORD_SIZE) { /* the rectangle of the point r */
+            } else if (get_zone_type(p) == RECORD_SIZE) { /* the rectangle of the point r */
                 if (t < RECORD_SIZE) {
-                    a = zone_x(r);
-                    b = zone_y(r);
-                    align(t, zone_x(p), zone_y(p), &a, &b);
+                    a = get_zone_x(r);
+                    b = get_zone_y(r);
+                    align(t, get_zone_x(p), get_zone_y(p), &a, &b);
                 }
                 if (pending) {
                     pending = 0;
@@ -194,27 +194,27 @@ static bool place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip
                     clip->x += a;
                     clip->y += b;
                 }
-                clip_to(clip, a, b, zone_x(p), zone_y(p));
-            } else if (zone_type(p) < RECORD_SIZE) {
+                clip_to(clip, a, b, get_zone_x(p), get_zone_y(p));
+            } else if (get_zone_type(p) < RECORD_SIZE) {
                 pending = 1;
             }
             r = p;
         } else { /* a point inside the rectangle of another point */
-            if (!(p = find(zone_parent(r))) || !(s = find(zone_parent(p))))
+            if (!(p = find(get_zone_parent(r))) || !(s = find(get_zone_parent(p))))
                 break;
-            int16_t a = zone_x(p);
-            int16_t b = zone_y(p);
-            int16_t sw = zone_x(s);
-            int16_t sh = zone_y(s);
-            if (zone_type(p) >= RECORD_SIZE)
+            int16_t a = get_zone_x(p);
+            int16_t b = get_zone_y(p);
+            int16_t sw = get_zone_x(s);
+            int16_t sh = get_zone_y(s);
+            if (get_zone_type(p) >= RECORD_SIZE)
                 return false;
-            align(zone_type(p), sw, sh, &a, &b);
+            align(get_zone_type(p), sw, sh, &a, &b);
             clip->x += a;
             clip->y += b;
             clip_to(clip, a, b, sw, sh);
             anchor(t - RECORD_INNER_POINT, sw, sh, &a, &b);
-            *x += a + zone_x(r);
-            *y += b + zone_y(r);
+            *x += a + get_zone_x(r);
+            *y += b + get_zone_y(r);
             r = s;
         }
     }
@@ -233,12 +233,12 @@ bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box,
     if (!r)
         return false;
     Box clip = {0, 0, CLIP_NONE, CLIP_NONE};
-    int16_t type = zone_type(r);
+    int16_t type = get_zone_type(r);
     int16_t x = 0;
     int16_t y = 0;
     if (type < RECORD_SIZE) {
-        x = zone_x(r);
-        y = zone_y(r);
+        x = get_zone_x(r);
+        y = get_zone_y(r);
     } else {
         if (type == RECORD_SIZE)
             return false;
@@ -285,10 +285,10 @@ bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box,
 int layout_get_zone_box(int16_t zone, int16_t wp, int16_t hp, Box *box)
 {
     const uint8_t *r = find(zone), *p;
-    if (!r || !zone_parent(r) || !(p = find(zone_parent(r))) || zone_type(p) != RECORD_SIZE)
+    if (!r || !get_zone_parent(r) || !(p = find(get_zone_parent(r))) || get_zone_type(p) != RECORD_SIZE)
         return 0;
-    int16_t w = wp == ZONE_SCALE_FULL ? zone_x(p) : (int32_t)zone_x(p) * wp / ZONE_SCALE_FULL;
-    int16_t h = hp == ZONE_SCALE_FULL ? zone_y(p) : (int32_t)zone_y(p) * hp / ZONE_SCALE_FULL;
+    int16_t w = wp == ZONE_SCALE_FULL ? get_zone_x(p) : (int32_t)get_zone_x(p) * wp / ZONE_SCALE_FULL;
+    int16_t h = hp == ZONE_SCALE_FULL ? get_zone_y(p) : (int32_t)get_zone_y(p) * hp / ZONE_SCALE_FULL;
     if (w <= 0 || h <= 0)
         return 0;
     return layout_get_zone(zone, 0, 0, box, &w, &h);

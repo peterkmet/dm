@@ -11,7 +11,7 @@
 int text_init(void);
 void text_draw(Bitmap *bm, int x, int y, uint8_t fg, uint8_t bg, const char *s);
 void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s);
-bool text_size(const char *s, int *w, int *h);
+bool text_get_size(const char *s, int *w, int *h);
 void text_draw_box(Bitmap *bm, int x, int y, int w, int h, bool centered, uint8_t fg, uint8_t bg, const char *s);
 
 #endif

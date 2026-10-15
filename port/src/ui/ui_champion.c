@@ -64,7 +64,7 @@ static int16_t
 static bool scroll_redraw_eye; /* the scroll is the leader hand object while the eye is pressed */
 
 /* A number as text: right aligned in width characters, or not padded. */
-static const char *number(char *buf, uint16_t value, int pad, int width)
+static const char *format_number(char *buf, uint16_t value, int pad, int width)
 {
     if (pad)
         snprintf(buf, 8, "%*u", width, value);
@@ -82,13 +82,13 @@ static uint8_t champion_color(int16_t champion_index)
    rest in the champion color. */
 void ui_draw_champion_bar_graphs(int16_t champion_index)
 {
-    const Champion *c = &g_champions[champion_index];
+    const Champion *champion = &g_champions[champion_index];
     const int16_t v[BAR_COUNT][2] = {
-        {c->current_health,  c->maximum_health },
-        {c->current_stamina, c->maximum_stamina},
-        {c->current_mana,    c->maximum_mana   }
+        {champion->current_health,  champion->maximum_health },
+        {champion->current_stamina, champion->maximum_stamina},
+        {champion->current_mana,    champion->maximum_mana   }
     };
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     for (int k = 0; k < BAR_COUNT; k++) {
         Box bar, empty;
         if (!ui_zone_box(ZONE_BAR_FIRST + BAR_ZONE_STEP * k + champion_index, &bar))
@@ -111,11 +111,11 @@ void ui_draw_champion_bar_graphs(int16_t champion_index)
 }
 
 /* Prints "current/maximum" in the inventory. */
-static void value_pair(int16_t zone, int16_t value, int16_t maximum)
+static void draw_value_pair(int16_t zone, int16_t value, int16_t maximum)
 {
     char a[8], b[8], s[VALUE_PAIR_SIZE];
-    snprintf(s, sizeof s, "%s/%s", number(a, value, 1, VALUE_WIDTH), number(b, maximum, 1, VALUE_WIDTH));
-    ui_print_zone(ui_viewport(), zone, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
+    snprintf(s, sizeof s, "%s/%s", format_number(a, value, 1, VALUE_WIDTH), format_number(b, maximum, 1, VALUE_WIDTH));
+    ui_print_zone(ui_get_viewport(), zone, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
 }
 
 /* Draws one slot: a hand in the status box, or any slot (and the chest slots) in the inventory of
@@ -123,10 +123,10 @@ static void value_pair(int16_t zone, int16_t value, int16_t maximum)
    action hand of the acting champion the acting border. */
 void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
 {
-    const Champion *c = &g_champions[champion_index];
+    const Champion *champion = &g_champions[champion_index];
     bool inv = champion_index + 1 == g_inventory_champion_ordinal;
     int16_t slot_box, border = -1, icon;
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     Box b;
     if (inv) {
         slot_box = slot + UI_SLOT_BOX_INVENTORY_FIRST;
@@ -135,8 +135,8 @@ void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
             return;
         slot_box = slot + champion_index * 2;
     }
-    uint16_t thing = slot < SLOT_COUNT ? c->slots[slot] : g_open_chest_slots[slot - SLOT_CHEST_FIRST];
-    bool wounded = slot < UI_BODY_SLOT_COUNT && (c->wounds & 1 << slot);
+    uint16_t thing = slot < SLOT_COUNT ? champion->slots[slot] : g_open_chest_slots[slot - SLOT_CHEST_FIRST];
+    bool wounded = slot < UI_BODY_SLOT_COUNT && (champion->wounds & 1 << slot);
     if (thing == THING_NONE) {
         if (slot < UI_BODY_SLOT_COUNT) {
             icon = ICON_EMPTY_BODY_SLOT_FIRST + slot * 2 + wounded;
@@ -155,8 +155,8 @@ void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
     }
     if (slot == SLOT_HAND_ACTION && champion_index + 1 == g_acting_champion_ordinal)
         border = GFX_SLOT_BOX_ACTING_HAND;
-    if (border != -1 && ui_slot_box_zone(slot_box, 1, &b))
-        ui_blit_graphic_box(inv ? ui_viewport() : &screen, border, &b, COLOR_DARKEST_GRAY);
+    if (border != -1 && ui_get_slot_box_zone(slot_box, 1, &b))
+        ui_blit_graphic_box(inv ? ui_get_viewport() : &screen, border, &b, COLOR_DARKEST_GRAY);
     ui_draw_icon_in_slot_box(slot_box, icon);
 }
 
@@ -164,12 +164,12 @@ void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
    portrait while the inventory of the champion is open. */
 void ui_draw_champion_damage(int16_t champion_index, int16_t damage)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     char buf[8];
     bool inv = champion_index + 1 == g_inventory_champion_ordinal;
     int16_t zone = champion_index + (inv ? ZONE_PORTRAIT_DAMAGE_FIRST : ZONE_STATUS_BOX_DAMAGE_FIRST);
     ui_blit_graphic(&screen, inv ? GFX_DAMAGE_PORTRAIT : GFX_DAMAGE_STATUS_BOX, zone, COLOR_FLESH);
-    ui_print_zone(&screen, zone, COLOR_WHITE, COLOR_RED, number(buf, damage, 0, VALUE_WIDTH));
+    ui_print_zone(&screen, zone, COLOR_WHITE, COLOR_RED, format_number(buf, damage, 0, VALUE_WIDTH));
     ui_draw_champion_state(champion_index);
 }
 
@@ -177,20 +177,20 @@ void ui_draw_champion_damage(int16_t champion_index, int16_t damage)
    the party); light gray and recolored while the party is invisible. */
 static void draw_icon(uint16_t champion_index)
 {
-    const Champion *c = &g_champions[champion_index];
+    const Champion *champion = &g_champions[champion_index];
     int16_t w = tables_champion_icon_width();
     int16_t h = tables_champion_icon_height();
     uint8_t px[CHAMPION_ICON_MAX * CHAMPION_ICON_MAX];
     Bitmap bm = {w, h, px};
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     const Bitmap *icons = gfx_get_bitmap(GFX_CHAMPION_ICONS);
     bool invisible = g_party.invisibility_count != 0;
     if (w * h > (int)sizeof px)
         return;
-    int16_t cell = NORMALIZE(c->cell - g_party_direction);
+    int16_t cell = NORMALIZE(champion->cell - g_party_direction);
     memset(px, invisible ? COLOR_DARK_GRAY : champion_color(champion_index), sizeof px);
     if (icons)
-        draw_blit(icons, NORMALIZE(c->direction - g_party_direction) * w, 0, &bm, &(Box){0, 0, w, h},
+        draw_blit(icons, NORMALIZE(champion->direction - g_party_direction) * w, 0, &bm, &(Box){0, 0, w, h},
                   COLOR_DARKEST_GRAY, 0);
     if (invisible) {
         const uint8_t *changes = tables_palette_changes(TABLES_CHANGES_INVISIBILITY);
@@ -201,7 +201,7 @@ static void draw_icon(uint16_t champion_index)
     ui_blit_zone(&screen, &bm, ZONE_CHAMPION_ICON_FIRST + cell, COLOR_NONE);
 }
 
-Bitmap ui_champion_portrait(int16_t champion_index)
+Bitmap ui_draw_champion_portrait(int16_t champion_index)
 {
     return (Bitmap){CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champion_portraits[champion_index]};
 }
@@ -209,8 +209,8 @@ Bitmap ui_champion_portrait(int16_t champion_index)
 /* Draws the portrait in the status box while the inventory is open. */
 void ui_draw_status_box_portrait(int16_t champion_index)
 {
-    Bitmap screen = ui_screen();
-    Bitmap portrait = ui_champion_portrait(champion_index);
+    Bitmap screen = ui_get_screen();
+    Bitmap portrait = ui_draw_champion_portrait(champion_index);
     int16_t zone = ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index;
     Box b;
     if (!ui_zone_box(zone, &b))
@@ -226,23 +226,24 @@ void ui_draw_status_box_portrait(int16_t champion_index)
    (red when hungry, thirsty, or poisoned, and when a statistic is below its maximum). */
 static void draw_inventory_statistics(uint16_t champion_index)
 {
-    const Champion *c = &g_champions[champion_index];
-    Bitmap *vp = ui_viewport();
+    const Champion *champion = &g_champions[champion_index];
+    Bitmap *vp = ui_get_viewport();
     Box b;
-    value_pair(ZONE_HEALTH_VALUE, c->current_health, c->maximum_health);
-    value_pair(ZONE_HEALTH_VALUE + 1, c->current_stamina / STAMINA_DISPLAY_UNIT,
-               c->maximum_stamina / STAMINA_DISPLAY_UNIT); /* stamina shows in tenths */
-    value_pair(ZONE_HEALTH_VALUE + 2, c->current_mana, c->maximum_mana);
-    int16_t mouth = c->food < 0 || c->water < 0 || c->poison_event_count ? GFX_SLOT_BOX_WOUNDED : GFX_SLOT_BOX_NORMAL;
+    draw_value_pair(ZONE_HEALTH_VALUE, champion->current_health, champion->maximum_health);
+    draw_value_pair(ZONE_HEALTH_VALUE + 1, champion->current_stamina / STAMINA_DISPLAY_UNIT,
+                    champion->maximum_stamina / STAMINA_DISPLAY_UNIT); /* stamina shows in tenths */
+    draw_value_pair(ZONE_HEALTH_VALUE + 2, champion->current_mana, champion->maximum_mana);
+    int16_t mouth = champion->food < 0 || champion->water < 0 || champion->poison_event_count ? GFX_SLOT_BOX_WOUNDED
+                                                                                              : GFX_SLOT_BOX_NORMAL;
     int16_t eye = GFX_SLOT_BOX_NORMAL;
-    if (ui_icon_zone_box(ZONE_MOUTH, 1, &b))
+    if (ui_get_icon_zone_box(ZONE_MOUTH, 1, &b))
         ui_blit_graphic_box(vp, mouth, &b, COLOR_DARKEST_GRAY);
     for (int s = STAT_STRENGTH; s <= STAT_ANTIFIRE; s++)
-        if (c->statistics[s][STAT_CURRENT] < c->statistics[s][STAT_MAXIMUM]) {
+        if (champion->statistics[s][STAT_CURRENT] < champion->statistics[s][STAT_MAXIMUM]) {
             eye = GFX_SLOT_BOX_WOUNDED;
             break;
         }
-    if (ui_icon_zone_box(ZONE_EYE, 1, &b))
+    if (ui_get_icon_zone_box(ZONE_EYE, 1, &b))
         ui_blit_graphic_box(vp, eye, &b, COLOR_DARKEST_GRAY);
 }
 
@@ -256,19 +257,19 @@ static void draw_load(uint16_t champion_index)
                         ? COLOR_YELLOW
                         : COLOR_LIGHT_GRAY;
     char text[PANEL_LINE_SIZE], a[8], b[8], d[8]; /* the load is in tenths of a kilogram */
-    ui_print_zone(ui_viewport(), ZONE_LOAD_LABEL, color, COLOR_DARKEST_GRAY, gfx_string(TEXT_LOAD));
-    snprintf(text, sizeof text, "%s%s%s/%s%s", number(a, c->load / WEIGHT_TENTHS, 1, VALUE_WIDTH),
-             gfx_string(TEXT_DECIMAL_POINT), number(d, c->load % WEIGHT_TENTHS, 0, 1),
-             number(b, (uint16_t)(max + WEIGHT_TENTHS / 2) / WEIGHT_TENTHS, 1, VALUE_WIDTH),
+    ui_print_zone(ui_get_viewport(), ZONE_LOAD_LABEL, color, COLOR_DARKEST_GRAY, gfx_string(TEXT_LOAD));
+    snprintf(text, sizeof text, "%s%s%s/%s%s", format_number(a, c->load / WEIGHT_TENTHS, 1, VALUE_WIDTH),
+             gfx_string(TEXT_DECIMAL_POINT), format_number(d, c->load % WEIGHT_TENTHS, 0, 1),
+             format_number(b, (uint16_t)(max + WEIGHT_TENTHS / 2) / WEIGHT_TENTHS, 1, VALUE_WIDTH),
              gfx_string(TEXT_KG)); /* 16-bit sum as in the original */
-    ui_print_zone(ui_viewport(), ZONE_LOAD_VALUE, color, COLOR_DARKEST_GRAY, text);
+    ui_print_zone(ui_get_viewport(), ZONE_LOAD_VALUE, color, COLOR_DARKEST_GRAY, text);
 }
 
 /* Draws the status box of a living champion: background, shields, and the parts that follow. */
 static uint16_t draw_status_box(uint16_t champion_index, uint16_t attr, int inv)
 {
-    const Champion *c = &g_champions[champion_index];
-    Bitmap screen = ui_screen();
+    const Champion *champion = &g_champions[champion_index];
+    Bitmap screen = ui_get_screen();
     int16_t shields[3], n = 0;
     Box box;
     ui_zone_box(ZONE_STATUS_BOX_FIRST + champion_index, &box);
@@ -277,7 +278,7 @@ static uint16_t draw_status_box(uint16_t champion_index, uint16_t attr, int inv)
         shields[n++] = GFX_SHIELD_FIRE;
     if (g_party.spell_shield_defense > 0)
         shields[n++] = GFX_SHIELD_SPELL;
-    if (g_party.shield_defense > 0 || c->shield_defense)
+    if (g_party.shield_defense > 0 || champion->shield_defense)
         shields[n++] = GFX_SHIELD_PARTY;
     while (n--)
         ui_blit_graphic_box(&screen, shields[n], &box, COLOR_FLESH);
@@ -293,7 +294,7 @@ static uint16_t draw_status_box(uint16_t champion_index, uint16_t attr, int inv)
 static uint16_t draw_name(uint16_t champion_index, uint16_t attr, int inv)
 {
     const Champion *c = &g_champions[champion_index];
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     uint8_t color = champion_index == g_leader_index ? COLOR_GOLD : COLOR_LIGHT_GRAY;
     if (!inv) {
         ui_fill_zone(&screen, ZONE_STATUS_BOX_NAME_FIRST + champion_index, COLOR_DARK_GRAY);
@@ -303,32 +304,32 @@ static uint16_t draw_name(uint16_t champion_index, uint16_t attr, int inv)
     char s[PANEL_LINE_SIZE];
     bool joined = c->title[0] && strchr(",;-", c->title[0]); /* "NAME, TITLE" without a space */
     snprintf(s, sizeof s, "%.8s%s%.20s", c->name, joined ? "" : " ", c->title);
-    ui_print_zone(ui_viewport(), ZONE_NAME_TITLE, color, COLOR_DARKEST_GRAY, s);
+    ui_print_zone(ui_get_viewport(), ZONE_NAME_TITLE, color, COLOR_DARKEST_GRAY, s);
     return attr | CHAMPION_ATTR_VIEWPORT;
 }
 
 /* Draws the parts of a champion that have a redraw flag in its attributes, then clears the flags. */
 void ui_draw_champion_state(uint16_t champion_index)
 {
-    Champion *c = &g_champions[champion_index];
-    uint16_t attr = c->attributes;
-    Bitmap screen = ui_screen();
+    Champion *champion = &g_champions[champion_index];
+    uint16_t attr = champion->attributes;
+    Bitmap screen = ui_get_screen();
     bool inv = champion_index + 1 == g_inventory_champion_ordinal;
     if (!(attr & CHAMPION_ATTR_REDRAW_MASK))
         return;
     if (attr & CHAMPION_ATTR_STATUS_BOX) {
-        if (c->current_health) {
+        if (champion->current_health) {
             attr = draw_status_box(champion_index, attr, inv);
         } else {
             Box box;
             if (ui_zone_box(ZONE_STATUS_BOX_FIRST + champion_index, &box))
                 ui_blit_graphic_box(&screen, GFX_STATUS_BOX_DEAD, &box, COLOR_NONE);
             ui_print_zone(&screen, ZONE_STATUS_BOX_NAME_TEXT_FIRST + champion_index, COLOR_LIGHT_GRAY, COLOR_DARK_GRAY,
-                          c->name);
+                          champion->name);
             menus_draw_action_icon(champion_index);
         }
     }
-    if (c->current_health) {
+    if (champion->current_health) {
         if (attr & CHAMPION_ATTR_NAME_TITLE)
             attr = draw_name(champion_index, attr, inv);
         if (attr & CHAMPION_ATTR_STATISTICS) {
@@ -363,7 +364,7 @@ void ui_draw_champion_state(uint16_t champion_index)
         if (attr & CHAMPION_ATTR_VIEWPORT)
             ui_draw_viewport();
     }
-    c->attributes &= CHAMPION_ATTR_KEEP_MASK;
+    champion->attributes &= CHAMPION_ATTR_KEEP_MASK;
 }
 
 /* Sets redraw flags on all champions and draws them. */
@@ -377,7 +378,7 @@ void ui_draw_all_champion_states(uint16_t attributes)
 
 /* Draws a food or water bar with a black shadow: length by value (-1024 to 2048), yellow below
    0, red below -512. */
-static void food_water_bar(int16_t value, int16_t zone, uint8_t color)
+static void draw_food_water_bar(int16_t value, int16_t zone, uint8_t color)
 {
     Box b;
     if (value < FOOD_WATER_STARVING)
@@ -390,8 +391,8 @@ static void food_water_bar(int16_t value, int16_t zone, uint8_t color)
     Box shadow = b;
     shadow.x += tables_bar_shadow();
     shadow.y += tables_bar_shadow();
-    draw_fill(ui_viewport(), &shadow, COLOR_BLACK);
-    draw_fill(ui_viewport(), &b, color);
+    draw_fill(ui_get_viewport(), &shadow, COLOR_BLACK);
+    draw_fill(ui_get_viewport(), &b, color);
 }
 
 /* Draws the food and water panel of the inventory, with "POISONED" when poisoned. */
@@ -399,15 +400,15 @@ void ui_draw_panel_food_water_poisoned(void)
 {
     scroll_redraw = 0;
     const Champion *c = &g_champions[g_inventory_champion_ordinal - 1];
-    Bitmap *vp = ui_viewport();
+    Bitmap *vp = ui_get_viewport();
     inventory_close_chest();
     ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
     ui_blit_graphic(vp, GFX_PANEL_FOOD_LABEL, ZONE_PANEL_FOOD_LABEL, COLOR_DARKEST_GRAY);
     ui_blit_graphic(vp, GFX_PANEL_WATER_LABEL, ZONE_PANEL_WATER_LABEL, COLOR_DARKEST_GRAY);
     if (c->poison_event_count)
         ui_blit_graphic(vp, GFX_PANEL_POISONED_LABEL, ZONE_PANEL_POISONED_LABEL, COLOR_DARKEST_GRAY);
-    food_water_bar(c->food, ZONE_PANEL_FOOD_BAR, COLOR_LIGHT_BROWN);
-    food_water_bar(c->water, ZONE_PANEL_WATER_BAR, COLOR_BLUE);
+    draw_food_water_bar(c->food, ZONE_PANEL_FOOD_BAR, COLOR_LIGHT_BROWN);
+    draw_food_water_bar(c->water, ZONE_PANEL_WATER_BAR, COLOR_BLUE);
 }
 
 /* Draws the inventory panel: resurrect/reincarnate for a candidate, the open scroll or chest in
@@ -418,7 +419,7 @@ void ui_draw_panel(void)
     inventory_close_chest();
     if (g_candidate_champion_ordinal) {
         g_panel_content = PANEL_CONTENT_RESURRECT;
-        ui_blit_graphic(ui_viewport(), GFX_PANEL_RESURRECT_REINCARNATE, ZONE_PANEL, COLOR_DARK_GREEN);
+        ui_blit_graphic(ui_get_viewport(), GFX_PANEL_RESURRECT_REINCARNATE, ZONE_PANEL, COLOR_DARK_GREEN);
         return;
     }
     uint16_t thing = g_champions[g_inventory_champion_ordinal - 1].slots[SLOT_HAND_ACTION];
@@ -433,7 +434,7 @@ void ui_draw_panel(void)
 }
 
 /* The position of zone (a 1 x 1 box). */
-static void zone_point(int16_t zone, int16_t *x, int16_t *y)
+static void get_zone_point(int16_t zone, int16_t *x, int16_t *y)
 {
     int16_t w = 1;
     int16_t h = 1;
@@ -443,7 +444,7 @@ static void zone_point(int16_t zone, int16_t *x, int16_t *y)
     *y = b.y;
 }
 
-const char *ui_skill_rank_name(int16_t level)
+const char *ui_get_skill_rank_name(int16_t level)
 {
     if (level <= 1)
         return NULL;
@@ -458,31 +459,31 @@ void ui_draw_champion_skills_and_statistics(void)
 {
     scroll_redraw = 0;
     int16_t ci = g_inventory_champion_ordinal - 1, x, y, vx;
-    const Champion *c = &g_champions[ci];
-    Bitmap *vp = ui_viewport();
+    const Champion *champion = &g_champions[ci];
+    Bitmap *vp = ui_get_viewport();
     char s[PANEL_LINE_SIZE], a[8], b[8];
     inventory_close_chest();
     ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
-    zone_point(ZONE_PANEL_SKILLS, &x, &y);
+    get_zone_point(ZONE_PANEL_SKILLS, &x, &y);
     for (uint16_t k = 0; k < SKILL_BASE_COUNT; k++) {
         int16_t level = champion_get_skill_level(ci, k | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
         if (level == 1)
             continue;
-        snprintf(s, sizeof s, "%s %s", ui_skill_rank_name(level), gfx_string(tables_base_skill_text(k)));
+        snprintf(s, sizeof s, "%s %s", ui_get_skill_rank_name(level), gfx_string(tables_base_skill_text(k)));
         text_draw(vp, x, y, g_champion_skill_level_up[ci][k] ? COLOR_GREEN : COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
         y += MESSAGE_ROW_HEIGHT;
     }
-    zone_point(ZONE_PANEL_STATISTICS, &vx, &y);
+    get_zone_point(ZONE_PANEL_STATISTICS, &vx, &y);
     for (int k = STAT_STRENGTH; k <= STAT_ANTIFIRE; k++) {
-        uint8_t cur = c->statistics[k][STAT_CURRENT];
-        uint8_t max = c->statistics[k][STAT_MAXIMUM];
+        uint8_t cur = champion->statistics[k][STAT_CURRENT];
+        uint8_t max = champion->statistics[k][STAT_MAXIMUM];
         text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(tables_statistic_text(k)));
         text_draw(vp, vx, y,
                   cur < max   ? COLOR_RED
                   : cur > max ? COLOR_GREEN
                               : COLOR_LIGHT_GRAY,
-                  COLOR_DARKEST_GRAY, number(a, cur, 1, VALUE_WIDTH));
-        snprintf(s, sizeof s, "/%s", number(b, max, 1, VALUE_WIDTH));
+                  COLOR_DARKEST_GRAY, format_number(a, cur, 1, VALUE_WIDTH));
+        snprintf(s, sizeof s, "/%s", format_number(b, max, 1, VALUE_WIDTH));
         text_draw(vp, vx + TEXT_CHAR_WIDTH * VALUE_WIDTH, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
         y += MESSAGE_ROW_HEIGHT;
     }
@@ -492,8 +493,8 @@ void ui_draw_champion_skills_and_statistics(void)
    inventory background, labels, all slots, and the champion state. Sets g_inventory_champion_ordinal. */
 void ui_draw_inventory_open(int16_t champion_index)
 {
-    Bitmap screen = ui_screen();
-    Bitmap *vp = ui_viewport();
+    Bitmap screen = ui_get_screen();
+    Bitmap *vp = ui_get_viewport();
     const Bitmap *bg = gfx_get_bitmap(GFX_INVENTORY);
     if (!g_inventory_champion_ordinal)
         ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
@@ -535,7 +536,7 @@ static void append(char *dst, size_t size, const char *s)
 }
 
 /* The attribute list "(POISONED, BROKEN AND CURSED)" of the bits in both masks, or "" for none. */
-static void attributes_text(uint16_t potential, uint16_t actual, char *dst, size_t size)
+static void format_attributes_text(uint16_t potential, uint16_t actual, char *dst, size_t size)
 {
     uint16_t bits = potential & actual;
     int16_t left = 0;
@@ -561,7 +562,7 @@ static void attributes_text(uint16_t potential, uint16_t actual, char *dst, size
 /* The object panel text: the name (bones with the champion name, a potion with its power rune
    for a priest above level 1) and the description lines (burnt out, compass direction, waterskin
    level, attributes, weight). Returns the line count. */
-int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE])
+int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE])
 {
     int16_t icon = object_get_icon_index(thing);
     int16_t n = 0;
@@ -608,13 +609,13 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
         }
         break;
     }
-    attributes_text(potential, actual, lines[n], PANEL_LINE_SIZE);
+    format_attributes_text(potential, actual, lines[n], PANEL_LINE_SIZE);
     if (lines[n][0])
         n++;
     char a[8], b[8];
     snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s%s%s%s", gfx_string(TEXT_WEIGHS),
-             number(a, weight / WEIGHT_TENTHS, 0, 0), gfx_string(TEXT_DECIMAL_POINT),
-             number(b, weight % WEIGHT_TENTHS, 0, 0),
+             format_number(a, weight / WEIGHT_TENTHS, 0, 0), gfx_string(TEXT_DECIMAL_POINT),
+             format_number(b, weight % WEIGHT_TENTHS, 0, 0),
              gfx_string(TEXT_KG_PERIOD)); /* the weight is in tenths of a kilogram */
     return n;
 }
@@ -634,7 +635,7 @@ static void print_panel_line(int16_t x, int16_t *y, const char *text)
             *space = 0;
             rest = space + 1;
         }
-        text_draw(ui_viewport(), x, *y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
+        text_draw(ui_get_viewport(), x, *y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
         *y += MESSAGE_ROW_HEIGHT;
         s = rest;
     }
@@ -646,14 +647,14 @@ void ui_draw_icon_to_viewport(int16_t icon, int16_t zone)
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
     Box b;
-    if (!ui_icon_zone_box(zone, 0, &b))
+    if (!ui_get_icon_zone_box(zone, 0, &b))
         return;
     ui_extract_icon(icon, &bm);
-    draw_blit(&bm, 0, 0, ui_viewport(), &b, COLOR_NONE, 0);
+    draw_blit(&bm, 0, 0, ui_get_viewport(), &b, COLOR_NONE, 0);
 }
 
 /* The rune of a word on a scroll ("FUL", "IR." ...), or -1. *core_length gets the length without the punctuation. */
-static int rune_of_word(const char *word, size_t length, size_t *core_length)
+static int get_rune_of_word(const char *word, size_t length, size_t *core_length)
 {
     while (length && (word[length - 1] == '.' || word[length - 1] == ','))
         length--;
@@ -671,7 +672,7 @@ static void add_rune_symbols(const char *text, const char *gap, char *out, size_
     out[0] = 0;
     for (const char *word = text; *word;) {
         size_t length = strcspn(word, " "), core;
-        int rune = rune_of_word(word, length, &core);
+        int rune = get_rune_of_word(word, length, &core);
         if (rune < 0)
             n += (size_t)snprintf(out + n, size - n, "%.*s", (int)length, word);
         else
@@ -705,14 +706,14 @@ static void draw_scroll_line(int16_t x, int16_t y, char *text)
         else if (*c >= '{')
             *c = (char)(*c - SCROLL_FONT_SHIFT);
     }
-    if (!text_size(text, &w, &h))
+    if (!text_get_size(text, &w, &h))
         return;
     int16_t left = x - (w >> 1);
-    text_draw(ui_viewport(), left, y, COLOR_BLACK, COLOR_WHITE, text);
+    text_draw(ui_get_viewport(), left, y, COLOR_BLACK, COLOR_WHITE, text);
     for (int i = 0; g_advanced_features && text[i]; i++) {
         char glyph[2] = {text[i], 0};
         if ((uint8_t)text[i] >= RUNE_FIRST && (uint8_t)text[i] < RUNE_FIRST + UI_RUNE_COUNT)
-            text_draw(ui_viewport(), left + i * TEXT_CHAR_WIDTH, y, COLOR_RED, COLOR_WHITE, glyph);
+            text_draw(ui_get_viewport(), left + i * TEXT_CHAR_WIDTH, y, COLOR_RED, COLOR_WHITE, glyph);
     }
 }
 
@@ -752,7 +753,7 @@ static bool draw_panel_magic_map(const char *text)
     const uint8_t *spells = g_champions[g_inventory_champion_ordinal - 1].magic_map;
     static const int8_t rune_spell[MAGIC_MAP_RUNE_COUNT] = {MAGIC_MAP_KU, MAGIC_MAP_ROS, MAGIC_MAP_DAIN,
                                                             MAGIC_MAP_NETA};
-    Bitmap *vp = ui_viewport();
+    Bitmap *vp = ui_get_viewport();
     int16_t x, y;
     scroll_redraw = 1;
     ui_blit_graphic(vp, GFX_PANEL_MAGIC_MAP, ZONE_PANEL, COLOR_RED);
@@ -761,7 +762,7 @@ static bool draw_panel_magic_map(const char *text)
         ui_print_zone(vp, ZONE_MAGIC_MAP_RUNE_FIRST + i, spells[rune_spell[i]] ? COLOR_RED : COLOR_BLACK, COLOR_WHITE,
                       rune);
     }
-    zone_point(ZONE_MAGIC_MAP, &x, &y);
+    get_zone_point(ZONE_MAGIC_MAP, &x, &y);
     view_draw_magic_map(vp, spells, x, y);
     return true;
 }
@@ -792,8 +793,8 @@ static void draw_panel_scroll(uint16_t scroll)
     } else {
         rest = text + strlen(text);
     }
-    ui_blit_graphic(ui_viewport(), GFX_PANEL_SCROLL, ZONE_PANEL, COLOR_RED);
-    zone_point(ZONE_PANEL_SCROLL_CENTER, &x, &y);
+    ui_blit_graphic(ui_get_viewport(), GFX_PANEL_SCROLL, ZONE_PANEL, COLOR_RED);
+    get_zone_point(ZONE_PANEL_SCROLL_CENTER, &x, &y);
     y -= ((MESSAGE_ROW_HEIGHT * count - TEXT_BASELINE_GAP - 1) >> 1) - TEXT_LINE_HEIGHT;
     draw_scroll_line(x, y, text);
     while (*rest) {
@@ -815,7 +816,7 @@ static uint16_t largest_attack(void)
     return most;
 }
 
-static uint16_t largest_defense(void)
+static uint16_t get_largest_defense(void)
 {
     uint16_t most = 1;
     for (int i = 0; i < ARMOUR_TYPE_COUNT; i++)
@@ -823,7 +824,7 @@ static uint16_t largest_defense(void)
     return most;
 }
 
-static uint16_t largest_weight(void)
+static uint16_t get_largest_weight(void)
 {
     uint16_t most = 1;
     for (int i = 0; i < WEAPON_TYPE_COUNT; i++)
@@ -839,7 +840,7 @@ static uint16_t largest_weight(void)
 static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t value, uint16_t maximum, uint8_t color,
                             bool show_value)
 {
-    Bitmap *vp = ui_viewport();
+    Bitmap *vp = ui_get_viewport();
     char text[8];
     int16_t bar_x = x + METER_LABEL_CHARS * TEXT_CHAR_WIDTH;
     int16_t top = y - METER_BAR_ABOVE_BASELINE;
@@ -859,7 +860,7 @@ static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t va
     text_draw(vp, bar_x + METER_BAR_WIDTH + METER_VALUE_GAP, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, text);
 }
 
-bool panel_object_meter(uint16_t thing, const char **label, uint16_t *value)
+bool panel_draw_object_meter(uint16_t thing, const char **label, uint16_t *value)
 {
     if (THING_TYPE(thing) == THING_WEAPON) {
         *label = "ATTACK";
@@ -879,13 +880,13 @@ static void draw_stat_meters(uint16_t thing, int16_t x, int16_t y)
 {
     const char *label;
     uint16_t value;
-    if (panel_object_meter(thing, &label, &value)) {
+    if (panel_draw_object_meter(thing, &label, &value)) {
         bool attack = THING_TYPE(thing) == THING_WEAPON;
-        draw_stat_meter(x, y, label, value, attack ? largest_attack() : largest_defense(),
+        draw_stat_meter(x, y, label, value, attack ? largest_attack() : get_largest_defense(),
                         attack ? COLOR_GOLD : COLOR_BLUE, true);
         y += MESSAGE_ROW_HEIGHT;
     }
-    draw_stat_meter(x, y, "WEIGHT", inventory_get_object_weight(thing), largest_weight(), COLOR_LIGHT_BROWN, false);
+    draw_stat_meter(x, y, "WEIGHT", inventory_get_object_weight(thing), get_largest_weight(), COLOR_LIGHT_BROWN, false);
 }
 
 /* Opens a chest in the panel and draws its slots. While the eye is pressed, the action hand keeps
@@ -898,7 +899,7 @@ static void open_and_draw_chest(uint16_t chest, int16_t pressing_eye)
     inventory_open_chest(chest);
     if (!pressing_eye)
         ui_draw_icon_in_slot_box(SLOT_BOX_ACTION_HAND, ICON_CHEST_OPEN);
-    ui_blit_graphic(ui_viewport(), GFX_PANEL_CHEST, ZONE_PANEL, COLOR_RED);
+    ui_blit_graphic(ui_get_viewport(), GFX_PANEL_CHEST, ZONE_PANEL, COLOR_RED);
     for (int16_t i = 0; i < SLOT_CHEST_COUNT; i++) {
         uint16_t thing = g_open_chest_slots[i];
         ui_draw_icon_in_slot_box(SLOT_BOX_CHEST_FIRST + i, thing == THING_NONE ? -1 : object_get_icon_index(thing));
@@ -909,7 +910,7 @@ static void open_and_draw_chest(uint16_t chest, int16_t pressing_eye)
    description of any other object; then the arrow, or the eye while it is pressed. */
 void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye)
 {
-    Bitmap *vp = ui_viewport();
+    Bitmap *vp = ui_get_viewport();
     scroll_redraw = 0;
     scroll_redraw_eye = pressing_eye;
     inventory_close_chest();
@@ -919,12 +920,12 @@ void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye)
         open_and_draw_chest(thing, pressing_eye);
     } else {
         char name[PANEL_LINE_SIZE], lines[PANEL_LINE_COUNT][PANEL_LINE_SIZE];
-        int16_t count = panel_object_text(thing, name, lines), x, y;
+        int16_t count = panel_draw_object_text(thing, name, lines), x, y;
         ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
         ui_blit_graphic(vp, GFX_PANEL_OBJECT_CIRCLE, ZONE_PANEL_OBJECT_CIRCLE, COLOR_DARKEST_GRAY);
         ui_print_zone(vp, ZONE_PANEL_OBJECT_NAME, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, name);
         ui_draw_icon_to_viewport(object_get_icon_index(thing), ZONE_PANEL_OBJECT_ICON);
-        zone_point(ZONE_PANEL_OBJECT_TEXT, &x, &y);
+        get_zone_point(ZONE_PANEL_OBJECT_TEXT, &x, &y);
         y = PANEL_OBJECT_TEXT_Y;
         for (int16_t i = 0; i < count; i++)
             print_panel_line(x, &y, lines[i]);

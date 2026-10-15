@@ -28,9 +28,9 @@ static void draw_viewport(void)
         ui_draw_viewport();
         return;
     }
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     ui_set_screen_palette(NULL);
-    ui_blit_zone(&screen, ui_viewport(), ZONE_DIALOG_ON_SCREEN, COLOR_NONE);
+    ui_blit_zone(&screen, ui_get_viewport(), ZONE_DIALOG_ON_SCREEN, COLOR_NONE);
 }
 
 /* The dialog graphic has the dividers of three choices. For 1, 2, or 4 choices a part of the
@@ -82,7 +82,7 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
     if (!ui_zone_box(zone, &box))
         return;
     for (int i = 0; i < MESSAGE_COUNT; i++) {
-        if (!message[i] || !text_size(message[i], &width[i], &height))
+        if (!message[i] || !text_get_size(message[i], &width[i], &height))
             continue;
         lines[i] = box.w - (box.w >> WIDE_MESSAGE_SHIFT) < width[i] ? 2 : 1;
         total += (height + pad * 2 - TEXT_BASELINE_GAP + 1) * lines[i];
@@ -102,7 +102,7 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
             int line_width = message_next_word_line(message[i], line, &pos, max < box.w ? max : box.w);
             text_draw(vp, (vp->w - line_width) >> 1, y, color, COLOR_LIGHT_BROWN, line);
             y += pad + MESSAGE_ROW_HEIGHT;
-            if (!text_size(message[i] + pos, &width[i], &height))
+            if (!text_get_size(message[i] + pos, &width[i], &height))
                 continue;
         }
         text_draw(vp, (vp->w - width[i]) >> 1, y, color, COLOR_LIGHT_BROWN, message[i] + pos);
@@ -113,7 +113,7 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
 void dialog_draw(const char *message1, const char *message2, const char *choice1, const char *choice2,
                  const char *choice3, const char *choice4)
 {
-    Bitmap *vp = ui_viewport();
+    Bitmap *vp = ui_get_viewport();
     const Bitmap *graphic = gfx_get_bitmap(GFX_DIALOG);
     const char *choice[MAX_CHOICES] = {choice1, choice2, choice3, choice4};
     const char *message[MESSAGE_COUNT] = {message1, message2};
@@ -142,7 +142,7 @@ static void fill(Bitmap *vp, int x, int y, int w, int h, uint8_t color)
 /* The button of the choice: a raised frame, then after PRESS_FRAMES frames a pressed frame. */
 static void draw_pressed_button(int16_t table, int16_t choice)
 {
-    Bitmap *vp = ui_viewport();
+    Bitmap *vp = ui_get_viewport();
     MouseInput entry;
     Box b;
     if (!tables_mouse_input(table, choice - 1, &entry) || !ui_zone_box(entry.x2, &b))

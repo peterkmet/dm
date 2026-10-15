@@ -38,16 +38,16 @@ def game():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_new_game.restype = ctypes.c_bool
-    lib.gameloop_pointer.restype = ctypes.c_bool
-    lib.ui_slot_box_zone.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
+    lib.gameloop_get_pointer.restype = ctypes.c_bool
+    lib.ui_get_slot_box_zone.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = u16
     lib.map_get_next_thing.restype = u16
     lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     return Game(lib)
 
 
@@ -66,7 +66,7 @@ class Game:
 
     def run(self, frames=13):
         for _ in range(frames):
-            if self.lib.gameloop_frame():
+            if self.lib.gameloop_run_frame():
                 self.lib.gameloop_tick()
 
     def until(self, condition, limit=400):
@@ -164,7 +164,7 @@ def test_new_game_recruit_take_and_store(game):
     weapon = game.champions[0].slots[SLOT_HAND_ACTION]
     assert weapon != 0xFFFF
     box = Box()
-    assert game.lib.ui_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
+    assert game.lib.ui_get_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
     game.click_box(box, viewport=False)
     assert game.value("g_leader_hand_object", u16) == weapon
     assert game.champions[0].slots[SLOT_HAND_ACTION] == 0xFFFF
@@ -189,7 +189,7 @@ def test_new_game_recruit_take_and_store(game):
 
 
 def test_champion_dies_with_inventory_open(game):
-    assert game.lib.gameloop_new_game(str(GAME).encode())
+    assert game.lib.gameloop_start_new_game(str(GAME).encode())
     game.run(26)
     mirrors = set()
     for _ in range(2):
@@ -213,7 +213,7 @@ def test_champion_dies_with_inventory_open(game):
     game.click_zone(ZONE_BACKPACK_FIRST_SLOT)  # the dungeon view takes the click; no slot of champion -1
 
     box = Box()
-    assert game.lib.ui_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
+    assert game.lib.ui_get_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
     game.click_box(box, viewport=False)
     assert game.value("g_leader_hand_object", u16) != 0xFFFF
     game.click_zone(ZONE_DROP_PARTY_CELL)
@@ -238,7 +238,7 @@ def viewport_pixels(game):
 
 
 def test_freeze_covers_open_inventory(game):
-    assert game.lib.gameloop_new_game(str(GAME).encode())
+    assert game.lib.gameloop_start_new_game(str(GAME).encode())
     game.run(26)
     path, direction = game.path_to_mirror()
     game.walk(path)
@@ -270,8 +270,8 @@ def test_party_light_sets_the_darkness_of_view_and_rules(game):
     from test_champion import Party
 
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
-    lib.automap_visible_depths.restype = c16
+    assert lib.gameloop_start_new_game(str(GAME).encode())
+    lib.automap_get_visible_depths.restype = c16
     party = Party.in_dll(lib, "g_party")
     darkness = c16.in_dll(lib, "g_dungeon_view_palette_index")
     pal = (u16 * 16).in_dll(lib, "palette")
@@ -281,7 +281,7 @@ def test_party_light_sets_the_darkness_of_view_and_rules(game):
     def view(light):
         party.magical_light_amount = light
         lib.gameloop_draw_view()
-        return darkness.value, list(pal), lib.automap_visible_depths(1, 14, 4, 3)
+        return darkness.value, list(pal), lib.automap_get_visible_depths(1, 14, 4, 3)
 
     try:
         for n, v in zip(place, (1, 14, 4, 3)):  # map 1 has darkness, a long corridor ahead
@@ -309,7 +309,7 @@ def test_party_light_sets_the_darkness_of_view_and_rules(game):
 def test_hand_object_name_follows_the_icon(game):
     """The last drink from a waterskin changes its icon and its name from WATER to WATERSKIN."""
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     game.run(26)
     path, direction = game.path_to_mirror()
     game.walk(path)
@@ -342,14 +342,14 @@ def pointer(lib, x, y):
     """The pointer at (x, y) in the game: width, height, and hot spot (they differ by shape)."""
     px = (ctypes.c_uint8 * (32 * 32))()
     out = [ctypes.c_int() for _ in range(4)]
-    assert lib.gameloop_pointer(x, y, 1, px, *[ctypes.byref(v) for v in out])
+    assert lib.gameloop_get_pointer(x, y, 1, px, *[ctypes.byref(v) for v in out])
     return tuple(v.value for v in out)
 
 
 def test_pointer_over_the_status_box_hands(game):
     """KAOS 0x108530: over the hands of a champion, the pointer shows the hand object, unless that inventory is open."""
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     game.run(26)
     path, direction = game.path_to_mirror()
     game.walk(path)
@@ -358,7 +358,7 @@ def test_pointer_over_the_status_box_hands(game):
     game.click_box(game.boxes[5])
     game.click_zone(ZONE_RESURRECT)
     box = Box()
-    assert lib.ui_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
+    assert lib.ui_get_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
     game.click_box(box, viewport=False)  # the weapon goes into the leader hand
     hand = (box.x + box.w // 2, box.y + box.h // 2)
     viewport_object, arrow = pointer(lib, 100, 100), pointer(lib, 300, 100)
@@ -374,7 +374,7 @@ def test_pointer_over_the_status_box_hands(game):
 def two_champions_with_runes(game):
     """A new game with two recruited champions; the second has chosen a rune, the first is the caster."""
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     game.run(26)
     mirrors = set()
     for _ in range(2):

@@ -14,7 +14,7 @@
 
 /* The rows of the view that the party sees from (x, y) looking in direction dir: the party row and the
    rows ahead up to the first center square that blocks sight (a wall, a closed fake wall, a closed door). */
-int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir);
+int16_t automap_get_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* Marks the squares the dungeon view shows from (x, y) looking in direction dir on map. */
 void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* A side square of the view of a party at (x, y) facing dir is seen when the square ahead at its depth or the side

@@ -41,8 +41,8 @@ def game():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_new_game.restype = ctypes.c_bool
-    lib.ui_slot_box_zone.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
+    lib.ui_get_slot_box_zone.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = u16
     lib.map_get_next_thing.restype = u16
@@ -54,7 +54,7 @@ def game():
     lib.savegame_save.restype = c16
     lib.savegame_load.restype = c16
     assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     return Game(lib)
 
 
@@ -101,7 +101,7 @@ def recruit_and_hold_object(game):
     game.click_zone(ZONE_RESURRECT)
     assert game.value("g_party_champion_count", u16) == 1
     box = Box()
-    assert game.lib.ui_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
+    assert game.lib.ui_get_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
     game.click_box(box, viewport=False)
     assert game.value("g_leader_hand_object", u16) != 0xFFFF
     game.run(50)
@@ -121,7 +121,7 @@ def test_save_and_load_round_trip(game, tmp_path):
     before = {**state(game), "g_random_seed": seed}
     hand = before["g_leader_hand_object"]
 
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     assert game.value("g_party_champion_count", u16) == 0
     assert lib.savegame_load(str(tmp_path).encode()) == LOADED
     after = state(game)
@@ -276,7 +276,7 @@ def quit_reset(game):
 
 def test_save_command_runs_the_dialog(game, tmp_path, quit_reset):
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     lib.startend_set_save_dir(str(tmp_path).encode())
     choices = ["save", "cancel"]
     origin = game.origin
@@ -299,7 +299,7 @@ def test_save_command_runs_the_dialog(game, tmp_path, quit_reset):
 
 def test_party_death_returns_to_the_entrance_headless(game, quit_reset):
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     recruit_and_hold_object(game)
     kill_party(game)
     lib.gameloop_tick()
@@ -309,7 +309,7 @@ def test_party_death_returns_to_the_entrance_headless(game, quit_reset):
 
 def test_party_death_restart_loads_the_saved_game(game, tmp_path, quit_reset):
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     recruit_and_hold_object(game)
     lib.startend_set_save_dir(str(tmp_path).encode())
     assert lib.savegame_save(str(tmp_path).encode()) == 1
@@ -339,7 +339,7 @@ def test_party_death_restart_loads_the_saved_game(game, tmp_path, quit_reset):
 
 def test_fuse_sequence_ends_the_game(game, quit_reset):
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     recruit_and_hold_object(game)
     lib.map_get_square_group.restype = u16
     spot = None
@@ -361,12 +361,12 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
     for name, v in (("g_party_map_x", px), ("g_party_map_y", py), ("g_party_direction", direction)):
         ctypes.c_int16.in_dll(lib, name).value = v
     lord = lib.map_get_square_group(*lord_square)
-    lib.fuse_sequence()
+    lib.startend_run_fuse_sequence()
     assert game.value("g_game_won") == 1 and game.value("g_return_to_entrance") == 1 and game.value("g_quit_requested") == 0
     assert lib.dungeon_get_thing_data(lord)[4] == 26  # Grey Lord
     # the other groups are gone; the test group is not caged and can walk away and go too
     assert {(x, y) for x in range(width) for y in range(height) if lib.map_get_square_group(x, y) != 0xFFFE} <= {lord_square}
-    assert lib.gameloop_new_game(str(GAME).encode())  # a new game draws fluxcages again for the other tests
+    assert lib.gameloop_start_new_game(str(GAME).encode())  # a new game draws fluxcages again for the other tests
     assert game.value("g_do_not_draw_fluxcages") == 0 and game.value("g_game_won") == 0
 
 
@@ -378,13 +378,13 @@ SLEEP_CLICK = (187, 35)  # ZZZ in the open inventory
 
 def test_new_game_after_sleep_runs_at_normal_speed(game):
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     recruit_and_hold_object(game)
     game.key(0x5000)  # F1
     game.run()
     game.click(*SLEEP_CLICK)
     assert game.value("g_party_is_sleeping") == 1
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     start = game.value("g_game_time", u32)
     game.run(130)
     assert game.value("g_game_time", u32) - start == 10
@@ -392,7 +392,7 @@ def test_new_game_after_sleep_runs_at_normal_speed(game):
 
 def test_endgame_quit_button_shows_the_credits_then_the_entrance(game, tmp_path, quit_reset):
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     recruit_and_hold_object(game)
     assert lib.savegame_save(str(tmp_path).encode()) == 1
     kill_party(game)

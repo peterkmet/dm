@@ -36,17 +36,17 @@ def game(tmp_path_factory):
     lib = ctypes.CDLL(str(out))
     lib.control_open.restype = ctypes.c_bool
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = ctypes.c_uint16
     lib.map_get_next_thing.restype = ctypes.c_uint16
     lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = ctypes.c_int16
-    lib.state_json_string.restype = ctypes.c_void_p
+    lib.state_json_get_string.restype = ctypes.c_void_p
     lib.control_open.argtypes = [ctypes.c_char_p]
     lib.control_is_turn_pending.restype = ctypes.c_bool
     assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     game = Game(lib)
     game.run(26)
     path, direction = game.path_to_mirror()
@@ -66,7 +66,7 @@ def game(tmp_path_factory):
 
 
 def state_json(game, part):
-    pointer = game.lib.state_json_string(part)
+    pointer = game.lib.state_json_get_string(part)
     text = ctypes.string_at(pointer).decode()
     ctypes.CDLL(None).free(ctypes.c_void_p(pointer))
     return json.loads(text)
@@ -75,7 +75,7 @@ def state_json(game, part):
 def pump(lib):
     """One frame of the turn-based main loop."""
     lib.control_poll()
-    if lib.control_is_turn_pending() and lib.gameloop_frame():
+    if lib.control_is_turn_pending() and lib.gameloop_run_frame():
         lib.gameloop_tick()
 
 
@@ -963,7 +963,7 @@ def test_unlinking_a_freed_last_thing_empties_the_square(game, capfd):
 
 def test_torch_holder_is_not_a_lock(game):
     lib = game.lib
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     holder = None
     for y in range(lib.dungeon_map_height(0)):
         for x in range(lib.dungeon_map_width(0)):

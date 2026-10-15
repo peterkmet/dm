@@ -56,7 +56,7 @@ def lib(tmp_path_factory):
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.layout_get_zone.restype = ctypes.c_bool
     lib.view_render.restype = ctypes.c_bool
     lib.kaos_ptr.restype = ctypes.POINTER(ctypes.c_uint8)
@@ -177,11 +177,11 @@ def test_layout_zones_equal_but_endgame_buttons(lib):
 def test_prison_new_game_runs_and_renders(lib):
     set_adventure(lib, CSB)
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
-    assert lib.gameloop_new_game(str(GAME_CSB).encode())
+    assert lib.gameloop_start_new_game(str(GAME_CSB).encode())
     position = [c16.in_dll(lib, n).value for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")]
     assert position == [0, 9, 0, 2]
     for _ in range(50):
-        if lib.gameloop_frame():
+        if lib.gameloop_run_frame():
             lib.gameloop_tick()
     assert lib.view_render(*position)
 

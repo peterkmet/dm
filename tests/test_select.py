@@ -38,7 +38,7 @@ def lib(tmp_path_factory):
     lib = ctypes.CDLL(str(out))
     lib.adventure_csb_present.restype = ctypes.c_bool
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.select_restart.restype = ctypes.c_bool
     lib.select_item_box.restype = ctypes.c_bool
     lib.adventure_default_dir.restype = ctypes.c_char_p
@@ -124,7 +124,7 @@ def test_csb_present_in_game_csb(lib):
 @needs_dm
 def test_save_writes_csb_name(lib, tmp_path):
     assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     set_value(lib, "g_adventure", CSB)
     try:
         assert lib.savegame_save(str(tmp_path).encode()) == 1

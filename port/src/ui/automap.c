@@ -53,7 +53,7 @@ static int16_t light_depths(void)
     return VIEW_DEPTH_COUNT;
 }
 
-int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir)
+int16_t automap_get_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir)
 {
     int16_t limit = light_depths();
     for (int16_t depth = 1; depth < limit; depth++) {
@@ -82,7 +82,7 @@ bool automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int
 
 void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir)
 {
-    int16_t depths = automap_visible_depths(map, x, y, dir);
+    int16_t depths = automap_get_visible_depths(map, x, y, dir);
     for (int16_t depth = 0; depth < depths; depth++)
         for (int16_t side = -1; side <= 1; side++) {
             if (!automap_side_is_visible(map, x, y, dir, depth, side))
@@ -219,7 +219,7 @@ void automap_draw(Bitmap *target, Box area, int16_t map)
     for (int16_t x = 0; x < w; x++)
         for (int16_t y = 0; y < h; y++)
             if (explored_is_seen(map, x, y))
-                draw_square(target, maps, dungeon_get_square(map, x, y), party_here && view_floor_pressure_pad(x, y),
+                draw_square(target, maps, dungeon_get_square(map, x, y), party_here && view_is_pressure_pad(x, y),
                             origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
     /* The frame lies in the grid gap around the outer squares. */
     int16_t right = origin_x + w * AUTOMAP_CELL_SIZE - 1;

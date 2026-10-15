@@ -27,7 +27,7 @@ uint16_t g_action_count;
 /* Draws the movement arrows. */
 void menus_draw_movement_arrows(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     ui_blit_graphic(&screen, GFX_MOVEMENT_ARROWS, ZONE_MOVEMENT_ARROWS, COLOR_NONE);
 }
 
@@ -107,15 +107,15 @@ void menus_set_acting_champion(uint16_t champion_index)
    shown, or the party sleeps. */
 void menus_draw_action_icon(uint16_t champion_index)
 {
-    const Champion *c = &g_champions[champion_index];
-    Bitmap screen = ui_screen();
+    const Champion *champion = &g_champions[champion_index];
+    Bitmap screen = ui_get_screen();
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap icon = {UI_ICON_SIZE, UI_ICON_SIZE, px};
     int16_t zone = ZONE_ACTION_ICON_BOX_FIRST + champion_index;
-    uint16_t thing = c->slots[SLOT_HAND_ACTION];
+    uint16_t thing = champion->slots[SLOT_HAND_ACTION];
     if (!g_action_area_contains_icons)
         return;
-    if (!c->current_health) {
+    if (!champion->current_health) {
         ui_fill_zone(&screen, zone, COLOR_BLACK);
         return;
     }
@@ -133,7 +133,7 @@ void menus_draw_action_icon(uint16_t champion_index)
     }
     ui_fill_zone(&screen, zone, COLOR_CYAN);
     ui_blit_zone(&screen, &icon, ZONE_ACTION_ICON_FIRST + champion_index, COLOR_NONE);
-    if (c->attributes & CHAMPION_ATTR_ACTION_DISABLED || g_candidate_champion_ordinal || g_party_is_sleeping)
+    if (champion->attributes & CHAMPION_ATTR_ACTION_DISABLED || g_candidate_champion_ordinal || g_party_is_sleeping)
         ui_fill_zone_pattern(&screen, zone, COLOR_BLACK);
 }
 
@@ -141,7 +141,7 @@ void menus_draw_action_icon(uint16_t champion_index)
    champion (its name and up to three action names). */
 void menus_draw_action_area(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     ui_fill_zone(&screen, ZONE_ACTION_AREA, COLOR_BLACK);
     if (g_action_area_contains_icons) {
         for (uint16_t i = 0; i < g_party_champion_count; i++)
@@ -168,7 +168,7 @@ void menus_draw_action_area(void)
    for small damage). */
 void menus_draw_action_damage(int16_t damage)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     char buf[8];
     ui_fill_zone(&screen, ZONE_ACTION_AREA, COLOR_BLACK);
     if (damage < 0) {
@@ -196,14 +196,14 @@ void menus_refresh_action_area(void)
         return;
     if (!g_party_is_sleeping && !g_candidate_champion_ordinal) {
         for (uint16_t i = 0; i < g_party_champion_count; i++) {
-            Champion *c = &g_champions[i];
-            if (i != g_leader_index && i + 1 != g_acting_champion_ordinal && c->maximum_damage_received &&
-                c->direction != c->direction_maximum_damage_received) {
-                c->direction = c->direction_maximum_damage_received;
-                c->attributes |= CHAMPION_ATTR_ICON;
+            Champion *champion = &g_champions[i];
+            if (i != g_leader_index && i + 1 != g_acting_champion_ordinal && champion->maximum_damage_received &&
+                champion->direction != champion->direction_maximum_damage_received) {
+                champion->direction = champion->direction_maximum_damage_received;
+                champion->attributes |= CHAMPION_ATTR_ICON;
                 ui_draw_champion_state(i);
             }
-            c->maximum_damage_received = 0;
+            champion->maximum_damage_received = 0;
         }
     } else {
         if (g_acting_champion_ordinal) {
@@ -233,7 +233,7 @@ void menus_refresh_action_area(void)
    the caster on its tab. */
 void menus_draw_spell_area_controls(uint16_t champion_index)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     ui_fill_zone(&screen, ZONE_SPELL_AREA_TABS, COLOR_BLACK);
     for (uint16_t i = 0; i < 4; i++)
         if (i < g_party_champion_count && g_champions[i].current_health)
@@ -245,7 +245,7 @@ void menus_draw_spell_area_controls(uint16_t champion_index)
 /* Draws the six runes that the caster can choose at its symbol step. */
 void menus_draw_available_symbols(uint16_t symbol_step)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     char s[2] = {0, 0};
     for (int k = 0; k < SYMBOL_COUNT; k++) {
         s[0] = (char)(SPELL_SYMBOL_FIRST + symbol_step * SYMBOL_COUNT + k);
@@ -256,7 +256,7 @@ void menus_draw_available_symbols(uint16_t symbol_step)
 /* Draws the runes that the champion has chosen so far. */
 void menus_draw_champion_symbols(uint16_t champion_index)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     const char *symbols = g_champions[champion_index].symbols;
     size_t n = 0;
     char s[2] = {0, 0};
@@ -271,7 +271,7 @@ void menus_draw_champion_symbols(uint16_t champion_index)
 /* Draws the spell area of the magic caster; without a caster it is black. */
 static void draw_spell_area(void)
 {
-    Bitmap screen = ui_screen();
+    Bitmap screen = ui_get_screen();
     int16_t caster = g_magic_caster_champion_index;
     if (caster == -1) {
         ui_fill_zone(&screen, ZONE_SPELL_AREA, COLOR_BLACK);

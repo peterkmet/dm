@@ -17,8 +17,8 @@ enum { KIND_FILL = 0x00, KIND_RAW = 0x10, KIND_SKIP = 0x20, KIND_COPY_ABOVE = 0x
 /* Skip lengths 29-31 read the length from the next bytes. Bit 6 of a skip adds 16 to its length. */
 enum { SKIP_BYTE = 29, SKIP_BYTE_PLUS_256 = 30, SKIP_WORD = 31, SKIP_WIDE = 16, SKIP_BYTE_BASE = 256 };
 
-static uint8_t *dat;
-static size_t dat_len;
+static uint8_t *graphics_data;
+static size_t graphics_data_size;
 static uint16_t count;
 static uint32_t *offsets; /* count + 1 file offsets */
 static Bitmap *decoded;   /* count bitmaps, decoded on first use */
@@ -29,26 +29,26 @@ int gfx_open(const char *path)
     for (int i = 0; decoded && i < count; i++)
         free(decoded[i].px);
     free(decoded);
-    free(dat);
+    free(graphics_data);
     free(offsets);
     offsets = NULL;
     decoded = NULL;
     count = 0;
-    if (!(dat = file_read(path, &dat_len)) || dat_len < 4)
+    if (!(graphics_data = file_read(path, &graphics_data_size)) || graphics_data_size < 4)
         return -1;
-    if (BE16(dat) != GRAPHICS_DAT_FORMAT_1)
+    if (BE16(graphics_data) != GRAPHICS_DAT_FORMAT_1)
         return -1;
-    uint16_t n = BE16(dat + 2);
+    uint16_t n = BE16(graphics_data + 2);
     uint32_t off = 4 + n * 8u;
-    const uint8_t *sizes = dat + 4;
-    if (off > dat_len || !(offsets = malloc((n + 1) * sizeof *offsets)))
+    const uint8_t *sizes = graphics_data + 4;
+    if (off > graphics_data_size || !(offsets = malloc((n + 1) * sizeof *offsets)))
         return -1;
     for (int i = 0; i < n; i++) {
         offsets[i] = off;
         off += BE16(sizes + 2 * i);
     }
     offsets[n] = off;
-    if (off > dat_len || !(decoded = calloc(n, sizeof *decoded)))
+    if (off > graphics_data_size || !(decoded = calloc(n, sizeof *decoded)))
         return -1;
     return count = n;
 }
@@ -64,7 +64,7 @@ const uint8_t *gfx_get_item(int i, uint16_t *size)
     if (i < 0 || i >= count)
         return NULL;
     *size = offsets[i + 1] - offsets[i];
-    return dat + offsets[i];
+    return graphics_data + offsets[i];
 }
 
 /* Skips the pad words and reads the size of a packed graphic. Returns the start of the commands or NULL. */

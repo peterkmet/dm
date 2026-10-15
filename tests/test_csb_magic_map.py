@@ -40,7 +40,7 @@ DOOR_OPEN, DOOR_CLOSED, DOOR_DESTROYED, DOOR_BUTTON = 0, 4, 5, 0x40
 THING_PROJECTILE, THING_JUNK, EXPLOSION_FIREBALL_THING, JUNK_ZOKATHRA = 14, 10, 0xFF80, 51
 TILE_DOOR_FRONT, TILE_DOOR_SIDE, TILE_DOOR_NO_BUTTON, TILE_DOOR_OPEN, TILE_STAIRS_FIRST = 10, 11, 2, 4, 18
 TILE_ZOKATHRA_FIRST, TILE_IN_WALL, TILE_FIREBALL_FIRST, TILE_FLOOR_ORNAMENT_FIRST = 34, 4, 50, 78
-ORNAMENT_ALCOVE, ORNAMENT_FOUNTAIN, ORNAMENT_VI_ALTAR = 3, 4, 5  # view_wall_ornament
+ORNAMENT_ALCOVE, ORNAMENT_FOUNTAIN, ORNAMENT_VI_ALTAR = 3, 4, 5  # view_get_wall_ornament
 TILE_WALL_ORNAMENT_FIRST = {ORNAMENT_ALCOVE: 22, ORNAMENT_VI_ALTAR: 26, ORNAMENT_FOUNTAIN: 30}
 WALL_ORNAMENT_MAP = 5  # has alcoves, a fountain, and vi altars
 TIME_MASK = 0xFFFFFF
@@ -75,20 +75,20 @@ def lib(tmp_path_factory):
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     for name, res, args in [
         ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
         ("map_get_next_thing", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("map_get_unused_thing", u16, [u16]),
         ("map_link_thing_to_list", None, [u16, u16, c16, c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("dungeon_decode_text", ctypes.c_bool, [ctypes.c_char_p, c16, u16, c16]), ("tables_get_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
         ("magic_get_champion_spell_cast_result", c16, [u16]), ("map_get_creature_attributes", u16, [u16]),
-        ("ui_viewport", ctypes.POINTER(Bitmap), []), ("gfx_string", ctypes.c_char_p, [c16]),
+        ("ui_get_viewport", ctypes.POINTER(Bitmap), []), ("gfx_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_bool, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
         ("ui_draw_inventory_open", None, [c16]), ("gfx_get_bitmap", ctypes.POINTER(Bitmap), [c16]),
-        ("map_get_stairs_exit_direction", c16, [c16, c16]), ("view_wall_ornament", c16, [c16, c16, c16]),
-        ("view_floor_ornament", c16, [c16, c16]), ("map_set_current_map_and_party_map", None, [c16]),
-        ("text_size", ctypes.c_bool, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
+        ("map_get_stairs_exit_direction", c16, [c16, c16]), ("view_get_wall_ornament", c16, [c16, c16, c16]),
+        ("view_get_floor_ornament", c16, [c16, c16]), ("map_set_current_map_and_party_map", None, [c16]),
+        ("text_get_size", ctypes.c_bool, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
@@ -197,7 +197,7 @@ def panel(lib):
     """The viewport after the inventory of champion 0 opens; the same random seed for the teleporter tiles."""
     value(lib, "g_random_seed", u32).value = SEED
     lib.ui_draw_inventory_open(0)
-    vp = lib.ui_viewport().contents
+    vp = lib.ui_get_viewport().contents
     return bytes(vp.px[:vp.w * vp.h])
 
 
@@ -209,7 +209,7 @@ def map_origin(lib):
 
 def changed_cells(lib, before, after):
     """The map cells (column, row) where the two viewports differ; -1 for a pixel outside the grid."""
-    width = lib.ui_viewport().contents.w
+    width = lib.ui_get_viewport().contents.w
     ox, oy = map_origin(lib)
     cells = set()
     for i, (a, b) in enumerate(zip(before, after)):
@@ -392,7 +392,7 @@ def test_neta_keeps_the_map(lib, csb):
 
 def grid_after_tick(lib):
     """The grid pixels after the viewport is cleared and one game tick runs."""
-    vp = lib.ui_viewport().contents
+    vp = lib.ui_get_viewport().contents
     ctypes.memset(vp.px, 0, vp.w * vp.h)
     lib.gameloop_tick()
     ox, oy = map_origin(lib)
@@ -439,7 +439,7 @@ def test_creaname_becomes_the_creature_name(lib, csb, group_ahead):
 def test_dm_scroll_panel_unchanged(lib, text):
     c16.in_dll(lib, "g_adventure").value = DM
     assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     c = setup_champion(lib)
     scroll = next(t for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
                   for t in things(lib, x, y) if t >> 10 & 15 == THING_SCROLL)
@@ -463,7 +463,7 @@ def cell_origin(lib, col, row):
 
 def assert_tile(lib, view, col, row, tile):
     """The cell shows the opaque pixels of the tile of graphic 12."""
-    tiles, width = bitmap(lib, GFX_TILES), lib.ui_viewport().contents.w
+    tiles, width = bitmap(lib, GFX_TILES), lib.ui_get_viewport().contents.w
     px, py = cell_origin(lib, col, row)
     sx, sy = tile % TILES_PER_ROW * TILE_W, tile // TILES_PER_ROW * TILE_W
     for y in range(TILE_W):
@@ -475,7 +475,7 @@ def assert_tile(lib, view, col, row, tile):
 
 def border(lib, view, col, row):
     """The colors of the 1 pixel ring around a cell."""
-    width = lib.ui_viewport().contents.w
+    width = lib.ui_get_viewport().contents.w
     px, py = cell_origin(lib, col, row)
     ring = [(x, y) for x in range(px - 1, px + TILE_W + 1) for y in (py - 1, py + TILE_W)]
     ring += [(x, y) for x in (px - 1, px + TILE_W) for y in range(py, py + TILE_W)]
@@ -511,7 +511,7 @@ def test_panel_shows_the_magic_map_graphic(lib, csb):
     box, w, h = Box(), c16(0), c16(0)
     assert lib.layout_get_zone(ZONE_PANEL, graphic.w, graphic.h, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
     ox, oy = map_origin(lib)
-    width = lib.ui_viewport().contents.w
+    width = lib.ui_get_viewport().contents.w
     checked = 0
     for y in range(box.h):
         for x in range(box.w):
@@ -536,10 +536,10 @@ def rune_points(lib):
 def rune_colors(lib, view, i):
     """The colors in the box of rune zone i (the box of ui_print_zone)."""
     tw, th = ctypes.c_int(), ctypes.c_int()
-    assert lib.text_size(bytes([0x72 + i]), ctypes.byref(tw), ctypes.byref(th))
+    assert lib.text_get_size(bytes([0x72 + i]), ctypes.byref(tw), ctypes.byref(th))
     box, w, h = Box(), c16(tw.value), c16(th.value)
     assert lib.layout_get_zone(ZONE_RUNE_FIRST + i, 0, 0, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
-    width = lib.ui_viewport().contents.w
+    width = lib.ui_get_viewport().contents.w
     return {view[y * width + x] for y in range(box.y, box.y + box.h) for x in range(box.x, box.x + box.w)}
 
 
@@ -630,7 +630,7 @@ def test_party_and_footprint_borders(lib, csb):
     view = panel(lib)
     assert border(lib, view, 3, 3) == {COLOR_RED}  # the party square comes last and keeps its border
     px, py = cell_origin(lib, 4, 3)
-    width = lib.ui_viewport().contents.w
+    width = lib.ui_get_viewport().contents.w
     assert {view[yy * width + px + TILE_W] for yy in range(py - 1, py + TILE_W + 1)} == {COLOR_CYAN}  # the right side
 
 
@@ -650,7 +650,7 @@ def test_eye_keeps_the_leader_map(lib, csb):
 
 
 def grid_pixels(lib):
-    vp = lib.ui_viewport().contents
+    vp = lib.ui_get_viewport().contents
     ox, oy = map_origin(lib)
     return [vp.px[y * vp.w + x] for y in range(oy, oy + 7 * MAP_CELL) for x in range(ox, ox + 7 * MAP_CELL)]
 
@@ -746,8 +746,8 @@ def test_floor_ornament_tile(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     panel(lib)  # the view has the party map
-    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and lib.view_floor_ornament(x, y) >= 0)
-    assert_tile(lib, panel(lib), 3, 2, TILE_FLOOR_ORNAMENT_FIRST + lib.view_floor_ornament(fx, fy))
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and lib.view_get_floor_ornament(x, y) >= 0)
+    assert_tile(lib, panel(lib), 3, 2, TILE_FLOOR_ORNAMENT_FIRST + lib.view_get_floor_ornament(fx, fy))
 
 
 @needs_csb
@@ -757,8 +757,8 @@ def test_wall_ornament_tiles(lib, csb, ornament):
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     lib.map_set_current_map_and_party_map(WALL_ORNAMENT_MAP)
     panel(lib)  # the view loads the party map
-    fx, fy = face_free_square(lib, lambda x, y: any(lib.view_wall_ornament(x, y, f) == ornament for f in range(4)))
+    fx, fy = face_free_square(lib, lambda x, y: any(lib.view_get_wall_ornament(x, y, f) == ornament for f in range(4)))
     view = panel(lib)
     for face in range(4):
-        if lib.view_wall_ornament(fx, fy, face) == ornament:
+        if lib.view_get_wall_ornament(fx, fy, face) == ornament:
             assert_tile(lib, view, 3, 2, TILE_WALL_ORNAMENT_FIRST[ornament] + (face - party_dir(lib)) % 4)

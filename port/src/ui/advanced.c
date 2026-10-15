@@ -63,7 +63,7 @@ static void draw_readout(Bitmap *vp)
 
 void advanced_draw_automap(void)
 {
-    Bitmap *vp = ui_viewport();
+    Bitmap *vp = ui_get_viewport();
     Box area = {0, 0, vp->w, vp->h};
     automap_draw(vp, area, g_party_map_index);
     draw_readout(vp);

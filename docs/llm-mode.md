@@ -254,9 +254,9 @@ With champions, each champion has one line, for example `0 <name> (front_left): 
 | `int control_is_turn_pending(void)` | 1 while a turn runs. |
 | `void control_close(void)` | Closes the sockets and removes the socket file. |
 
-The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gameloop_data_dir()`. `gameloop_load_data` sets both directories.
+The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gameloop_get_data_dir()`. `gameloop_load_data` sets both directories.
 
-`state_json.h` (in `libdm`, no SDL): `state_json_state`, `state_json_view`, `state_json_map` append one JSON object to a `Json` buffer. `state_json_string(part)` returns a new string. Release it with `free`.
+`state_json.h` (in `libdm`, no SDL): `state_json_write_state`, `state_json_write_view`, `state_json_map` append one JSON object to a `Json` buffer. `state_json_get_string(part)` returns a new string. Release it with `free`.
 
 ## Integration in main.c
 
@@ -266,7 +266,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 2. It presses ENTER at the entrance (as `DM_AUTO_ENTER` does). The entrance frames run without a turn.
 3. `read_input` keeps only the quit event. Keys and clicks do not go to the command queue.
 4. Each frame calls `control_poll()` after `read_input()`.
-5. In the game, each frame calls `gameloop_frame()` and `gameloop_tick()` only when `control_is_turn_pending()` returns 1. The window still shows each frame.
+5. In the game, each frame calls `gameloop_run_frame()` and `gameloop_tick()` only when `control_is_turn_pending()` returns 1. The window still shows each frame.
 6. `g_frame_hook` is `NULL`, so the endgame, the dialogs, and the fuse sequence do not wait for frames or input.
 7. After a game over, the program stays in the game mode and shows the entrance. `load` and `new_game` start the next game.
 8. It calls `control_close()` before `plat_quit()`.
@@ -281,7 +281,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 `tests/test_control.py` builds a private `libdm`, starts a new game, and recruits one champion. It checks:
 
-- The JSON of `state_json_string` parses and has the expected fields.
+- The JSON of `state_json_get_string` parses and has the expected fields.
 - A socket session: `get_state`, `act move_forward` changes the party position, walking to a mirror, `click_wall_ahead`, `recruit`, and `wait`.
 - The MCP tool functions, called directly against the socket, including `save_game` and `load_game`.
 - `save`, then a move and `wait`, then `load` restores the party position and the game time.
