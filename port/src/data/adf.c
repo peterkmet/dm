@@ -32,7 +32,8 @@
 #define ADF_NEXT_DATA_OFFSET  16
 #define ADF_DATA_OFFSET       24
 #define ADF_DATA_MAX          (ADF_BLOCK_SIZE - ADF_DATA_OFFSET)
-#define ADF_FOLDER_DEPTH      8 /* deeper folders mean a broken image */
+#define ADF_FOLDER_DEPTH      8             /* deeper folders mean a broken image */
+#define ADF_UNSAFE_NAME_CHARS "/\\:*?\"<>|" /* characters that macOS or Windows do not accept in a file name */
 
 typedef int (*EntryVisit)(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx);
 
@@ -130,11 +131,21 @@ typedef struct {
     int depth;
 } ExtractTarget;
 
+bool adf_is_safe_name(const char *name)
+{
+    if (!*name || !strcmp(name, ".") || !strcmp(name, ".."))
+        return false;
+    for (const unsigned char *p = (const unsigned char *)name; *p; p++)
+        if (*p < ' ' || strchr(ADF_UNSAFE_NAME_CHARS, *p))
+            return false;
+    return true;
+}
+
 static int extract_entry(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
 {
     const ExtractTarget *at = ctx;
     char path[PATH_SIZE];
-    if (!*name || strchr(name, '/') || !strcmp(name, ".") || !strcmp(name, ".."))
+    if (!adf_is_safe_name(name))
         return -1;
     snprintf(path, sizeof path, "%s/%s", at->dir, name);
     if ((int32_t)BE32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER)

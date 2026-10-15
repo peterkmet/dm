@@ -87,6 +87,15 @@ def test_extract_rejects_other_files(lib, tmp_path):
     assert lib.adf_extract(str(bad).encode(), str(tmp_path / "out").encode()) == -1
 
 
+@pytest.mark.parametrize("name, safe", [("Dungeon.DAT", True), ("a\\b", False), ("a:b", False), ("a*b", False), ("a?b", False),
+                                        ('a"b', False), ("a<b", False), ("a>b", False), ("a|b", False), ("a\x01b", False),
+                                        ("a/b", False), ("", False), (".", False), ("..", False)])
+def test_unsafe_amiga_names_are_rejected(lib, name, safe):
+    lib.adf_is_safe_name.restype = ctypes.c_bool
+    lib.adf_is_safe_name.argtypes = [ctypes.c_char_p]
+    assert lib.adf_is_safe_name(name.encode("latin-1")) == safe
+
+
 @needs_disks
 @pytest.mark.parametrize("disk", DISKS)
 def test_game_disk_matches_amitools(lib, tmp_path, disk):

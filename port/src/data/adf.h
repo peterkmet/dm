@@ -8,7 +8,10 @@
 /* true when the root folder of the disk image has a file of this name (the case does not matter). */
 bool adf_has_file(const char *adf_path, const char *name);
 /* Writes every file of the disk image below out_dir and makes the folders. Returns 0, or -1 when the
-   image is not an OFS floppy or a file cannot be written. */
+   image is not an OFS floppy, a file name is not safe (adf_is_safe_name), or a file cannot be written. */
 int adf_extract(const char *adf_path, const char *out_dir);
+/* true when an Amiga file name is a safe file name on macOS and Windows: not empty, not "." or "..", no
+   control character and none of / \ : * ? " < > |. */
+bool adf_is_safe_name(const char *name);
 
 #endif
