@@ -619,6 +619,8 @@ int main(int argc, char **argv)
             control = argv[i + 1];
         if (!strcmp(argv[i], "--mode") && (mode_arg = game_mode_of(argv[i + 1])) < 0)
             return SDL_Log("--mode must be vanilla, advanced, or turnbased"), 1;
+        if (mode_arg == GAME_MODE_TURNBASED && !control_is_available())
+            return SDL_Log("turn-based mode needs macOS"), 1;
         if (!strcmp(argv[i], "--adventure") && (adventure = adventure_of(argv[i + 1])) < 0)
             return SDL_Log("--adventure must be dm or csb"), 1;
     }
@@ -633,7 +635,7 @@ int main(int argc, char **argv)
     int csb_present = adventure_csb_present(csb_dir);
     if (adventure == ADVENTURE_CSB && !csb_present)
         return SDL_Log("CSB data is missing in %s", csb_dir), 1;
-    select_start(adventure, mode_arg, csb_present);
+    select_start(adventure, mode_arg, csb_present, control_is_available());
     data = adventure_dir();
 
     random_init();

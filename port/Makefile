@@ -4,7 +4,7 @@ SDL = $(shell brew --prefix sdl3)
 B = ../build
 LAYERS = data engine ui platform
 INCLUDES = $(addprefix -Isrc/,$(LAYERS))
-GAME = $(filter-out src/platform/main.c src/platform/platform.c,$(wildcard $(addsuffix /*.c,$(addprefix src/,$(LAYERS)))))
+GAME = $(filter-out src/platform/main.c src/platform/platform.c src/platform/control_win.c,$(wildcard $(addsuffix /*.c,$(addprefix src/,$(LAYERS)))))
 SRC = $(wildcard $(addsuffix /*.[ch],$(addprefix src/,$(LAYERS))))
 
 all: $(B)/dm $(B)/libdm.dylib

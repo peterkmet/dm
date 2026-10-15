@@ -54,7 +54,7 @@ def set_value(lib, name, v):
 
 def start(lib, adventure=-1, mode=-1, csb_present=1):
     set_value(lib, "g_quit_requested", 0)
-    lib.select_start(adventure, mode, csb_present)
+    lib.select_start(adventure, mode, csb_present, True)
 
 
 def keys(lib, *ks):

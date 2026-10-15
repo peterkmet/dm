@@ -12,8 +12,8 @@ PORT_INCLUDES = [f"-I{PORT_SRC / layer}" for layer in ("data", "engine", "ui", "
 
 
 def game_sources():
-    """The .c files of libdm: all layers without the SDL entry point and window."""
-    return [str(p) for p in sorted(PORT_SRC.rglob("*.c")) if p.name not in ("main.c", "platform.c")]
+    """The .c files of libdm: all layers without the SDL entry point and window, and without the Windows stubs."""
+    return [str(p) for p in sorted(PORT_SRC.rglob("*.c")) if p.name not in ("main.c", "platform.c", "control_win.c")]
 
 
 FOUND = ctypes.CFUNCTYPE(None, ctypes.c_char_p, ctypes.c_void_p)

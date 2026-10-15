@@ -1329,6 +1329,11 @@ int control_open(const char *path)
     return 1;
 }
 
+bool control_is_available(void)
+{
+    return true;
+}
+
 bool control_is_turn_pending(void)
 {
     return turn.pending;

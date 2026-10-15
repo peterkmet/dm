@@ -94,7 +94,7 @@ At start, the game extracts each `.adf` disk image in the current folder once: t
 
 `tools/make-dist.sh` builds `build/DungeonMaster.zip`: the game and SDL3 without game files. The player copies the disk images into the folder of the game.
 
-Windows (x86-64): `make -C port windows` cross-builds `build/dm.exe` with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. `tools/make-dist-win.sh` builds `build/DungeonMaster-win.zip` with `dm.exe` and `SDL3.dll`. The Windows build has no control socket, so the LLM mode cannot start there. Test it with Wine.
+Windows (x86-64): `make -C port windows` cross-builds `build/dm.exe` with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. `tools/make-dist-win.sh` builds `build/DungeonMaster-win.zip` with `dm.exe` and `SDL3.dll`. The Windows build has no control socket, so the LLM mode cannot start there: the mode screen offers VANILLA and ADVANCED only, and `--mode turnbased` stops with an error. Test it with Wine.
 
 ```sh
 build/dm

@@ -35,6 +35,7 @@ static const uint16_t select_palette[PALETTE_COLORS] = {
 };
 
 static int screen = SCREEN_DONE, cursor, csb_enabled, adventure_given, mode_given, csb_choice;
+static bool llm_enabled;
 static const char *message;
 static int16_t adventure_flag = -1, mode_flag = -1; /* --adventure and --mode, -1 when absent */
 
@@ -42,6 +43,12 @@ static int16_t adventure_flag = -1, mode_flag = -1; /* --adventure and --mode, -
 static int enabled(int item)
 {
     return screen != SCREEN_ADVENTURE || item != ADVENTURE_CSB || csb_enabled;
+}
+
+/* The items of screen s: the mode screen has no LLM item where the control socket is missing. */
+static int item_count(int s)
+{
+    return screens[s].count - (s == SCREEN_MODE && !llm_enabled);
 }
 
 /* Shows screen s with the cursor on the first item, which is always enabled. */
@@ -64,11 +71,12 @@ static void set_mode(int16_t mode)
     g_advanced_features = mode != GAME_MODE_VANILLA;
 }
 
-void select_start(int16_t adventure, int16_t mode, int csb_present)
+void select_start(int16_t adventure, int16_t mode, int csb_present, bool llm_mode_available)
 {
     adventure_flag = adventure;
     mode_flag = mode;
     csb_enabled = csb_present;
+    llm_enabled = llm_mode_available;
     adventure_given = adventure >= 0;
     mode_given = mode >= 0;
     g_adventure = adventure_given ? adventure : ADVENTURE_DM;
@@ -91,7 +99,7 @@ void select_start_csb(const char *text)
 
 int select_restart(void)
 {
-    select_start(adventure_flag, mode_flag, csb_enabled);
+    select_start(adventure_flag, mode_flag, csb_enabled, llm_enabled);
     return screen != SCREEN_DONE;
 }
 
@@ -126,7 +134,7 @@ static void activate(void)
 /* Moves the cursor by step to the next enabled item. It stops at the list ends. */
 static void move(int step)
 {
-    for (int i = cursor + step; i >= 0 && i < screens[screen].count; i += step)
+    for (int i = cursor + step; i >= 0 && i < item_count(screen); i += step)
         if (enabled(i)) {
             cursor = i;
             return;
@@ -153,7 +161,7 @@ void select_key(int key)
 int select_item_box(int item, Box *box)
 {
     int w, h;
-    if (screen == SCREEN_DONE || item < 0 || item >= screens[screen].count)
+    if (screen == SCREEN_DONE || item < 0 || item >= item_count(screen))
         return 0;
     text_size(screens[screen].items[item], &w, &h);
     box->w = w + 2 * ITEM_MARGIN;

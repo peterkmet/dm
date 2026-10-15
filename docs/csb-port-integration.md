@@ -196,7 +196,7 @@ enum { CSB_NEW_ADVENTURE, CSB_RESUME, CSB_QUIT };
 enum { SELECT_KEY_UP, SELECT_KEY_DOWN, SELECT_KEY_ENTER, SELECT_KEY_ESCAPE };
 
 /* Starts at the first screen that --adventure and --mode do not skip. adventure and mode are -1 when the flag is absent. */
-void select_start(int16_t adventure, int16_t mode, int csb_present);
+void select_start(int16_t adventure, int16_t mode, int csb_present, bool llm_mode_available);
 /* Starts the CSB screen alone: after a game of CSB ends, and after Escape on the DM side. */
 void select_start_csb(void);
 int select_screen(void);               /* the current screen, or SCREEN_DONE */
@@ -248,7 +248,7 @@ if (!strcmp(argv[i], "--adventure") && (adventure = adventure_of(argv[i + 1])) <
     return SDL_Log("--adventure must be dm or csb"), 1;
 ```
 
-`--mode` writes to a local `mode_arg` (-1 when absent) instead of `g_game_mode`. `select_start(adventure, mode_arg, csb_present)` sets the globals.
+`--mode` writes to a local `mode_arg` (-1 when absent) instead of `g_game_mode`. `select_start(adventure, mode_arg, csb_present, control_is_available())` sets the globals.
 
 Rules for the flags (see [Open decisions](#open-decisions), point 1):
 

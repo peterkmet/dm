@@ -6,6 +6,8 @@
 /* Turn-based control over a Unix domain socket: one JSON request per line, one JSON response per
    line (docs/llm-mode.md). Plain POSIX, no SDL. */
 
+/* True where the control socket exists (macOS); false on Windows, which has no turn-based mode. */
+bool control_is_available(void);
 /* Listens on the socket path (an old socket file is replaced). Returns 1 on success. */
 int control_open(const char *path);
 /* Call once per frame: accepts a client, reads requests, answers them, and ends a finished turn. */

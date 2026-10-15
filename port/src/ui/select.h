@@ -1,6 +1,7 @@
 #ifndef SELECT_H
 #define SELECT_H
 /* Prefixes: select_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "draw.h"
 
@@ -12,8 +13,9 @@ enum { CSB_NEW_ADVENTURE, CSB_RESUME, CSB_QUIT };
 enum { SELECT_KEY_UP, SELECT_KEY_DOWN, SELECT_KEY_ENTER, SELECT_KEY_ESCAPE };
 
 /* Starts at the first screen that --adventure and --mode do not skip; adventure and mode are -1
-   when the flag is absent. --mode alone means DM. csb_present 0 disables CHAOS STRIKES BACK. */
-void select_start(int16_t adventure, int16_t mode, int csb_present);
+   when the flag is absent. --mode alone means DM. csb_present 0 disables CHAOS STRIKES BACK.
+   llm_mode_available false removes the LLM item from the mode screen. */
+void select_start(int16_t adventure, int16_t mode, int csb_present, bool llm_mode_available);
 /* Shows the CSB screen again, with a message line below the items when message is not NULL. After
    it, Escape does not go back to the mode screen. */
 void select_start_csb(const char *message);
