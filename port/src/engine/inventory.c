@@ -138,7 +138,7 @@ uint16_t inventory_get_object_weight(uint16_t thing)
 }
 
 /* Sharp attacks use the sharp resistance (attributes bits 0-2) of the armour. */
-uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)
+uint16_t inventory_get_armour_defense(const ArmourInfo *info, bool use_sharp_defense)
 {
     uint16_t defense = info->defense;
     return use_sharp_defense ? scale_value(defense, ARMOUR_SHARP_DEFENSE_SHIFT,
@@ -273,7 +273,7 @@ uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_
     *p = THING_NONE;
     if (thing == THING_NONE)
         return THING_NONE;
-    int inventory_open = champion_index + 1 == g_inventory_champion_ordinal;
+    bool inventory_open = champion_index + 1 == g_inventory_champion_ordinal;
     int16_t icon = object_get_icon_index(thing);
     apply_object_modifiers(c, slot, icon, -1, thing);
     if (slot == SLOT_NECK && is_neck_jewel(icon)) {
@@ -287,10 +287,10 @@ uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_
         if (slot == SLOT_HAND_ACTION) {
             c->attributes |= CHAMPION_ATTR_ACTION_HAND;
             if (is_scroll(icon))
-                scroll_set_closed(thing, 1);
+                scroll_set_closed(thing, true);
         }
         if (is_torch(icon))
-            weapon_set_lit(thing, 0);
+            weapon_set_lit(thing, false);
         if (inventory_open && slot == SLOT_HAND_ACTION && icon == ICON_CHEST_CLOSED && thing == g_open_chest)
             close_chest();
         if (inventory_open && slot == SLOT_HAND_ACTION && (icon == ICON_CHEST_CLOSED || is_scroll(icon)))
@@ -311,16 +311,16 @@ void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint1
     c->load += inventory_get_object_weight(thing);
     c->attributes |= CHAMPION_ATTR_LOAD;
     int16_t icon = object_get_icon_index(thing);
-    int inventory_open = champion_index + 1 == g_inventory_champion_ordinal;
+    bool inventory_open = champion_index + 1 == g_inventory_champion_ordinal;
     apply_object_modifiers(c, slot, icon, 1, thing);
     if (slot <= SLOT_HAND_ACTION) {
         if (slot == SLOT_HAND_ACTION) {
             c->attributes |= CHAMPION_ATTR_ACTION_HAND;
             if (is_scroll(icon))
-                scroll_set_closed(thing, 0);
+                scroll_set_closed(thing, false);
         }
         if (icon == ICON_TORCH_UNLIT)
-            weapon_set_lit(thing, 1);
+            weapon_set_lit(thing, true);
         else if (inventory_open && slot == SLOT_HAND_ACTION && (icon == ICON_CHEST_CLOSED || is_scroll(icon)))
             c->attributes |= CHAMPION_ATTR_PANEL;
     } else if (slot == SLOT_NECK && is_neck_jewel(icon)) {
@@ -487,7 +487,7 @@ int16_t process_click_on_mouth(void)
     uint16_t type = THING_TYPE(thing), weight = inventory_get_object_weight(thing);
     uint16_t champion_index = g_inventory_champion_ordinal - 1;
     Champion *c = &g_champions[champion_index];
-    int consumed = 0;
+    bool consumed = false;
     if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL) {
         if (!junk_charges(thing))
             return MOUTH_REFUSED;
@@ -495,7 +495,7 @@ int16_t process_click_on_mouth(void)
         junk_set_charges(thing, junk_charges(thing) - 1);
     } else if (type != THING_POTION) {
         thing_set_free(thing);
-        consumed = 1;
+        consumed = true;
     }
     if (consumed)
         inventory_get_object_removed_from_leader_hand();

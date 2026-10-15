@@ -76,7 +76,7 @@ int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)
 
 /* Stereo volume of a sound on a square, relative to the party position and direction.
    Returns 0 when the square is out of hearing range. */
-int16_t sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
+bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
 {
     int16_t dx = map_x - g_party_map_x, dy = map_y - g_party_map_y, side = 0, ahead = 0;
     switch (g_party_direction) {
@@ -99,10 +99,10 @@ int16_t sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
     }
     if (side < -SOUND_HEARING_RANGE || side > SOUND_HEARING_RANGE || ahead < -SOUND_HEARING_RANGE ||
         ahead > SOUND_HEARING_RANGE)
-        return 0;
+        return false;
     volumes[SIDE_RIGHT] = tables_sound_volume(ahead, side);
     volumes[SIDE_LEFT] = tables_sound_volume(ahead, -side);
-    return 1;
+    return true;
 }
 
 /* Sample index that the voice plays now, at the output rate. */

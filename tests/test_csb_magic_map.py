@@ -78,7 +78,7 @@ def lib(tmp_path_factory):
         ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
         ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("get_unused_thing", u16, [u16]),
         ("link_thing_to_list", None, [u16, u16, c16, c16]), ("unlink_thing_from_list", None, [u16, u16, c16, c16]),
-        ("decode_text", c16, [ctypes.c_char_p, c16, u16, c16]), ("tables_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
+        ("decode_text", ctypes.c_bool, [ctypes.c_char_p, c16, u16, c16]), ("tables_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
         ("magic_get_champion_spell_cast_result", c16, [u16]), ("get_creature_attributes", u16, [u16]),
         ("ui_viewport", ctypes.POINTER(Bitmap), []), ("gfx_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_int, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),

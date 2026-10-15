@@ -14,14 +14,14 @@ void random_init(void)
 {
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
-    g_random_seed = (uint32_t)(ts.tv_nsec / NANOSECONDS_PER_MICROSECOND);
+    g_random_seed = ts.tv_nsec / NANOSECONDS_PER_MICROSECOND;
 }
 
 /* Next value of the linear congruential generator: bits 8-23 of the new seed. */
 static uint16_t next(void)
 {
     g_random_seed = g_random_seed * RANDOM_MULTIPLIER + RANDOM_INCREMENT;
-    return (uint16_t)(g_random_seed >> RANDOM_VALUE_SHIFT);
+    return g_random_seed >> RANDOM_VALUE_SHIFT;
 }
 
 uint16_t random16(void)

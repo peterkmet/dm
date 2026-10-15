@@ -54,29 +54,30 @@ static void *alloc(size_t n)
 }
 
 /* Copies the next n bytes of the dungeon file to dst and adds them to the checksum. */
-static int16_t read_summed_block(uint8_t *dst, uint16_t *sum, int32_t n)
+static bool read_summed_block(uint8_t *dst, uint16_t *sum, int32_t n)
 {
     if (!dst || load_remaining < n)
-        return 0;
+        return false;
     memcpy(dst, load_ptr, n);
     load_ptr += n;
     load_remaining -= n;
     while (n--)
         *sum += *dst++;
-    return 1;
+    return true;
 }
 
 typedef struct {
     const uint8_t *p, *end;
     uint32_t acc;
-    int16_t avail, ok;
+    int16_t avail;
+    bool ok;
 } BitReader;
 
 static uint16_t get_bits(BitReader *b, int16_t n)
 {
     if (b->avail < n) {
         if (b->end - b->p < 2)
-            return b->ok = 0;
+            return b->ok = false;
         b->acc = b->acc << WORD_BITS | BE16(b->p);
         b->p += 2;
         b->avail += WORD_BITS;
@@ -86,19 +87,19 @@ static uint16_t get_bits(BitReader *b, int16_t n)
 }
 
 /* Each byte is a 2-bit index into the first 4 dictionary bytes, a 4-bit index into the next 16, or a
-   literal byte. Returns 0 when the bit stream ends before byte_count bytes. */
-int16_t decompress_dungeon(const uint8_t *src, int32_t src_size, uint8_t *dst, int32_t byte_count)
+   literal byte. Returns false when the bit stream ends before byte_count bytes. */
+bool decompress_dungeon(const uint8_t *src, int32_t src_size, uint8_t *dst, int32_t byte_count)
 {
-    BitReader b = {src + COMPRESSED_DICTIONARY_BYTES, src + src_size, 0, 0, 1};
+    BitReader b = {src + COMPRESSED_DICTIONARY_BYTES, src + src_size, 0, 0, true};
     if (src_size < COMPRESSED_DICTIONARY_BYTES)
-        return 0;
+        return false;
     while (byte_count-- > 0 && b.ok) {
         if (!get_bits(&b, 1))
             *dst++ = src[get_bits(&b, 2)];
         else if (!get_bits(&b, 1))
             *dst++ = src[4 + get_bits(&b, 4)];
         else
-            *dst++ = (uint8_t)get_bits(&b, 8);
+            *dst++ = get_bits(&b, 8);
     }
     return b.ok;
 }
@@ -141,11 +142,11 @@ static uint16_t column_first_thing_index(int16_t map, int16_t x)
 }
 
 /* Reads the header. A new game takes the party start from it. */
-static int16_t read_header(int new_game, uint16_t *sum)
+static bool read_header(bool new_game, uint16_t *sum)
 {
     uint8_t *h = g_dungeon_header = alloc(HEADER_BYTES);
     if (!read_summed_block(h, sum, HEADER_BYTES))
-        return 0;
+        return false;
     if (new_game) {
         uint16_t start = BE16(h + HEADER_PARTY_START);
         g_party_map_x = start & MAP_COORD_MASK;
@@ -153,39 +154,39 @@ static int16_t read_header(int new_game, uint16_t *sum)
         g_party_direction = NORMALIZE(start >> PARTY_START_DIRECTION_SHIFT);
         g_party_map_index = 0;
     }
-    return 1;
+    return true;
 }
 
 /* Reads the map descriptors and numbers the columns of all maps. */
-static int16_t read_maps(int16_t maps, uint16_t *sum)
+static bool read_maps(int16_t maps, uint16_t *sum)
 {
     g_dungeon_maps = alloc(maps * MAP_BYTES);
     if (!read_summed_block(g_dungeon_maps, sum, maps * MAP_BYTES))
-        return 0;
+        return false;
     if (!(g_dungeon_map_first_column = alloc(maps * 2)))
-        return 0;
+        return false;
     int16_t columns = 0;
     for (int16_t m = 0; m < maps; m++) {
         g_dungeon_map_first_column[m] = columns;
         columns += dungeon_map_width(m);
     }
     g_dungeon_column_count = columns;
-    return 1;
+    return true;
 }
 
 /* Reads the column index, the square first things, and the text words. A new game adds free square entries. */
-static int16_t read_square_things_and_text(int new_game, uint16_t *sum)
+static bool read_square_things_and_text(bool new_game, uint16_t *sum)
 {
     uint16_t square_things = rec_dungeon_square_first_thing_count(), extra = new_game ? FREE_SQUARE_THINGS : 0;
     if (square_things > UINT16_MAX - extra)
-        return 0;
+        return false;
     WR16(g_dungeon_header + DUNGEON_HEADER_SQUARE_THINGS, square_things + extra);
     g_dungeon_column_first_thing_index = alloc(g_dungeon_column_count * 2);
     g_square_first_things = alloc((square_things + extra) * 2);
     g_dungeon_text_data = alloc(text_words() * 2);
     if (!read_summed_block(g_dungeon_column_first_thing_index, sum, g_dungeon_column_count * 2) ||
         !read_summed_block(g_square_first_things, sum, square_things * 2))
-        return 0;
+        return false;
     for (uint16_t i = square_things; i < square_things + extra; i++)
         WR16(g_square_first_things + i * 2, THING_NONE);
     return read_summed_block(g_dungeon_text_data, sum, text_words() * 2);
@@ -193,7 +194,7 @@ static int16_t read_square_things_and_text(int new_game, uint16_t *sum)
 
 /* Reads the records of each thing type. A new game adds free records from the KAOS table and counts the
    timeline events that groups, projectiles, and explosions can need. */
-static int16_t read_things(int new_game, uint16_t *sum)
+static bool read_things(bool new_game, uint16_t *sum)
 {
     if (new_game)
         g_event_max_count = NEW_GAME_EVENT_COUNT;
@@ -202,7 +203,7 @@ static int16_t read_things(int new_game, uint16_t *sum)
                 size = g_thing_data_byte_count[t]; /* a count above 32767 is negative */
         int16_t total = count, cap = t == THING_EXPLOSION ? MAX_EXPLOSIONS : MAX_THINGS;
         if (count < 0 || count > cap)
-            return 0;
+            return false;
         if (new_game) {
             int16_t extra = tables_new_game_extra_things(t);
             total = count + extra > cap ? cap : count + extra;
@@ -210,59 +211,59 @@ static int16_t read_things(int new_game, uint16_t *sum)
         set_thing_count(t, total);
         g_thing_data[t] = alloc(total * size);
         if (!read_summed_block(g_thing_data[t], sum, count * size))
-            return 0;
+            return false;
         if (new_game && (t == THING_GROUP || t == THING_PROJECTILE || t == THING_EXPLOSION))
             g_event_max_count += total;
         for (int16_t i = count; i < total; i++)
             WR16(g_thing_data[t] + i * size, THING_NONE);
     }
-    return 1;
+    return true;
 }
 
 /* Points each map column into the raw map data, after a check that each map fits in it. */
-static int16_t build_map_columns(int16_t maps)
+static bool build_map_columns(int16_t maps)
 {
     for (int16_t m = 0; m < maps; m++)
         if (map_raw_data_offset(m) + dungeon_map_width(m) * dungeon_map_height(m) > raw_map_bytes())
-            return 0;
+            return false;
     g_dungeon_map_data = alloc(maps * sizeof *g_dungeon_map_data);
     uint8_t **cols = alloc(g_dungeon_column_count * sizeof *cols);
     if (!g_dungeon_map_data || !cols)
-        return 0;
+        return false;
     for (int16_t m = 0; m < maps; m++) {
         uint8_t **c = g_dungeon_map_data[m] = cols + g_dungeon_map_first_column[m];
         for (int16_t x = 0; x < dungeon_map_width(m); x++)
             c[x] = g_dungeon_raw_map_data + map_raw_data_offset(m) + x * dungeon_map_height(m);
     }
-    return 1;
+    return true;
 }
 
 /* load_dungeon: reads the parts from load_ptr. A new game takes the party start from the header
    and adds free records; a saved game has them already. */
-static int16_t parse_dungeon(int new_game)
+static bool parse_dungeon(bool new_game)
 {
     uint16_t sum = 0;
     if (!read_header(new_game, &sum))
-        return 0;
+        return false;
     int16_t maps = dungeon_map_count();
     if (!maps || !read_maps(maps, &sum) || !read_square_things_and_text(new_game, &sum) || !read_things(new_game, &sum))
-        return 0;
+        return false;
     g_dungeon_raw_map_data = alloc(raw_map_bytes());
     if (!read_summed_block(g_dungeon_raw_map_data, &sum, raw_map_bytes()))
-        return 0;
+        return false;
     if (load_remaining >= 2 && BE16(load_ptr) != sum)
-        return 0;
+        return false;
     return build_map_columns(maps) && dungeon_validate();
 }
 
 /* A thing word that names an existing record. */
-static int valid_thing(uint16_t thing)
+static bool valid_thing(uint16_t thing)
 {
     uint16_t type = THING_TYPE(thing);
     return g_thing_data_byte_count[type] && THING_INDEX(thing) < thing_count(type);
 }
 
-static int valid_link(uint16_t thing)
+static bool valid_link(uint16_t thing)
 {
     return thing == THING_ENDOFLIST || valid_thing(thing);
 }
@@ -287,7 +288,7 @@ static int16_t map_at_level(int16_t map, int16_t level_delta, int16_t x, int16_t
 }
 
 /* A teleporter record points to a square inside a map. */
-static int valid_teleporter(uint16_t thing)
+static bool valid_teleporter(uint16_t thing)
 {
     int16_t map = teleporter_target_map(thing);
     return map < dungeon_map_count() && teleporter_target_x(thing) < dungeon_map_width(map) &&
@@ -295,7 +296,7 @@ static int valid_teleporter(uint16_t thing)
 }
 
 /* Checks the thing lists of all used records and the teleporter targets. */
-static int16_t validate_records(void)
+static bool validate_records(void)
 {
     for (int16_t type = 0; type < THING_TYPE_COUNT; type++) {
         for (uint16_t i = 0; g_thing_data_byte_count[type] && i < thing_count(type); i++) {
@@ -303,18 +304,18 @@ static int16_t validate_records(void)
             if (next == THING_NONE)
                 continue;
             if (!valid_link(next))
-                return 0;
+                return false;
             if ((type == THING_GROUP || type == THING_CONTAINER) && !valid_link(carried_first_thing(thing)))
-                return 0;
+                return false;
             if (type == THING_TELEPORTER && !valid_teleporter(thing))
-                return 0;
+                return false;
         }
     }
-    return 1;
+    return true;
 }
 
 /* Checks the square thing lists, and that stairs and open pits lead to a map. */
-static int16_t validate_squares(void)
+static bool validate_squares(void)
 {
     for (int16_t m = 0; m < dungeon_map_count(); m++) {
         for (int16_t x = 0; x < dungeon_map_width(m); x++) {
@@ -325,44 +326,44 @@ static int16_t validate_squares(void)
                 if (square & SQUARE_HAS_THINGS) {
                     if (index >= rec_dungeon_square_first_thing_count() ||
                         !valid_link(BE16(g_square_first_things + index * 2)))
-                        return 0;
+                        return false;
                     index++;
                 }
-                int16_t down = type == SQUARE_PIT && (square & PIT_OPEN) && !(square & PIT_IMAGINARY);
+                bool down = type == SQUARE_PIT && (square & PIT_OPEN) && !(square & PIT_IMAGINARY);
                 if (type == SQUARE_STAIRS && map_at_level(m, square & STAIRS_UP ? LEVEL_UP : LEVEL_DOWN, x, y) < 0)
-                    return 0;
+                    return false;
                 if (down && map_at_level(m, LEVEL_DOWN, x, y) < 0)
-                    return 0;
+                    return false;
             }
         }
     }
-    return 1;
+    return true;
 }
 
 /* Checks the links of the loaded dungeon: thing lists, square thing lists, teleporter targets, and the map below
    stairs and open pits. A corrupt file or save game fails here instead of crashing the game later. */
-int16_t dungeon_validate(void)
+bool dungeon_validate(void)
 {
     return validate_records() && validate_squares();
 }
 
-/* Loads a new game dungeon file, compressed or not. Returns 1, or 0 with nothing loaded. */
-int16_t load_dungeon(const char *path)
+/* Loads a new game dungeon file, compressed or not. Returns false with nothing loaded. */
+bool load_dungeon(const char *path)
 {
     size_t size;
     uint8_t *file = read_file(path, &size), *unpacked = NULL;
-    int16_t ok = kaos.data && file && size >= COMPRESSED_HEADER_BYTES;
+    bool ok = kaos.data && file && size >= COMPRESSED_HEADER_BYTES;
     dungeon_free();
     load_ptr = file;
-    load_remaining = (int32_t)size;
+    load_remaining = size;
     if (ok && BE16(file) == DUNGEON_COMPRESSED_MAGIC) {
-        load_remaining = (int32_t)BE32(file + 2);
+        load_remaining = BE32(file + 2);
         g_dungeon_id = BE16(file + 6);
         load_ptr = unpacked = load_remaining > 0 && load_remaining <= MAX_DUNGEON_SIZE ? malloc(load_remaining) : NULL;
         ok = unpacked && decompress_dungeon(file + COMPRESSED_HEADER_BYTES, (int32_t)size - COMPRESSED_HEADER_BYTES,
                                             unpacked, load_remaining);
     }
-    ok = ok && size <= MAX_DUNGEON_SIZE && parse_dungeon(1);
+    ok = ok && size <= MAX_DUNGEON_SIZE && parse_dungeon(true);
     if (!ok)
         dungeon_free();
     free(file);
@@ -371,12 +372,12 @@ int16_t load_dungeon(const char *path)
 }
 
 /* The dungeon part of a save file: the parts without compression and free records. */
-int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)
+bool dungeon_load_saved(const uint8_t *data, uint32_t size)
 {
     dungeon_free();
     load_ptr = data;
-    load_remaining = (int32_t)size;
-    int16_t ok = data && size <= MAX_DUNGEON_SIZE && parse_dungeon(0);
+    load_remaining = size;
+    bool ok = data && size <= MAX_DUNGEON_SIZE && parse_dungeon(false);
     if (!ok)
         dungeon_free();
     return ok;
@@ -476,13 +477,13 @@ enum { CODE_SPACE = 26, CODE_PERIOD, CODE_SEPARATOR, CODE_ESCAPE_REPLACEMENT, CO
 
 typedef struct {
     char *p, *end;
-    int16_t ok;
+    bool ok;
 } TextOut;
 
 static void put(TextOut *o, char c)
 {
     if (o->p == o->end)
-        o->ok = 0;
+        o->ok = false;
     else
         *o->p++ = c;
 }
@@ -511,7 +512,7 @@ static void decode_codes(TextOut *o, uint16_t w, int16_t mode)
     for (int16_t k = 0; o->ok; k = (k + 1) % TEXT_CODES_PER_WORD) {
         if (k == 0) {
             if (w >= text_words()) {
-                o->ok = 0;
+                o->ok = false;
                 break;
             }
             word = BE16(g_dungeon_text_data + w * 2);
@@ -534,12 +535,12 @@ static void decode_codes(TextOut *o, uint16_t w, int16_t mode)
 }
 
 /* Mode 0 inscription, 1 message, 2 scroll; bit 15 decodes an invisible text.
-   Returns 0 when the text offset is bad or the text does not fit in dst_size bytes. */
-int16_t decode_text(char *dst, int16_t dst_size, uint16_t text_thing, int16_t mode)
+   Returns false when the text offset is bad or the text does not fit in dst_size bytes. */
+bool decode_text(char *dst, int16_t dst_size, uint16_t text_thing, int16_t mode)
 {
     if (dst_size < 1)
-        return 0;
-    TextOut o = {dst, dst + dst_size - 1, 1};
+        return false;
+    TextOut o = {dst, dst + dst_size - 1, true};
     uint16_t offset = BE16(REC(text_thing) + 2) >> 3; /* text word offset in bits 3-15 */
     if (rec_text_is_visible(text_thing) || mode < 0) {
         mode &= MODE_MASK;

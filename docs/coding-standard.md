@@ -21,7 +21,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
    - Game values keep the 16-bit types of the original (`int16_t`, `uint16_t`). One value has one type on its whole path: field, parameter, local variable, and return value. Then no cast is needed to pass it on. Use `int` only for values that are not game values, for example sizes, file offsets, and loop counters over C arrays. Do not use `long`: it has 32 bits on Windows and 64 bits on macOS. A value wider than `int` uses a fixed-width type (`int64_t`, `uint32_t`) with the `<inttypes.h>` formats.
    - A cast is allowed only where it changes the result (16-bit wrap, sign, truncation). Add a short comment when the reason is not obvious.
    - No casts that only repeat the 68000 operand size.
-   - Predicates (`is_*`, `has_*`, `can_*`), also `static` ones, return `bool` from `<stdbool.h>`. Flags in game records keep their stored type.
+   - Predicates (`is_*`, `has_*`, `can_*`), also `static` ones, return `bool` from `<stdbool.h>`. Other truth values (local variables, parameters, return values) are `bool` too. Flags in game records and save files keep their stored type.
    - Use `for`, `while`, `switch`, and early `return`. Do not use `goto`, except for one cleanup label in a function that frees memory.
    - One function does one game task. Split a long original function when parts have their own meaning. A function longer than 60 lines needs a reason in its comment, or a split.
 4. Each non-trivial function has a one-line comment that tells what it does in game terms. The comment does not repeat the code, and does not give the original address. The address belongs in `docs/kaos-symbols.csv`.

@@ -85,7 +85,7 @@ void magic_disable_action(uint16_t champion_index, uint16_t ticks)
     }
     TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, time),
                            .type = EVENT_ENABLE_CHAMPION_ACTION,
-                           .priority = (uint8_t)champion_index};
+                           .priority = champion_index};
     c->enable_action_event_index = timeline_add_event(&event);
 }
 
@@ -133,8 +133,8 @@ bool magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int
 }
 
 /* Spell shield (event 77) or fire shield (event 78) for the ticks. With mana, it costs 4 and half the ticks when short. */
-bool magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, int16_t spell_shield, uint16_t ticks,
-                                                    int16_t use_mana)
+bool magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, bool spell_shield, uint16_t ticks,
+                                                    bool use_mana)
 {
     Champion *c = &g_champions[champion_index];
     bool success = true;
@@ -169,13 +169,13 @@ static uint16_t empty_flask_in_hand(const Champion *c)
 }
 
 /* Fills an empty flask in a hand with the potion. Returns 0 without a flask. */
-static int16_t cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t power)
+static bool cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t power)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t flask = empty_flask_in_hand(c);
     if (flask == THING_NONE) {
         magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_FLASK_IN_HAND, 0);
-        return 0;
+        return false;
     }
     uint16_t empty_weight = inventory_get_object_weight(flask);
     potion_set_type(flask, potion_type);
@@ -183,7 +183,7 @@ static int16_t cast_potion(uint16_t champion_index, uint16_t potion_type, int16_
     c->load += inventory_get_object_weight(flask) - empty_weight;
     if (champion_index + 1 == g_inventory_champion_ordinal)
         c->attributes |= CHAMPION_ATTR_LOAD;
-    return 1;
+    return true;
 }
 
 /* The champion turns to the party direction and shoots the explosion of the spell. */
@@ -191,7 +191,7 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
 {
     Champion *c = &g_champions[champion_index];
     if (c->direction != g_party_direction) {
-        c->direction = (uint8_t)g_party_direction;
+        c->direction = g_party_direction;
         c->attributes |= CHAMPION_ATTR_ICON;
     }
     if (explosion_type == EXPLOSION_OPEN_DOOR)
@@ -276,7 +276,8 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
         cast_zokathra(champion_index);
         break;
     case SPELL_OTHER_FIRE_SHIELD:
-        magic_is_party_spell_or_fire_shield_successful(champion_index, 0, ticks * ticks + FIRE_SHIELD_BASE_TICKS, 0);
+        magic_is_party_spell_or_fire_shield_successful(champion_index, false, ticks * ticks + FIRE_SHIELD_BASE_TICKS,
+                                                       false);
         break;
     }
 }
@@ -299,12 +300,12 @@ static bool is_magic_map(uint16_t thing)
 
 /* CSB map spells need a magic map in the action hand. DAIN, ROS, and KU add a map layer for a time;
    NETA keeps the map of the party square and direction. Returns 0 without the map. */
-static int16_t cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power, uint16_t *disabled_ticks)
+static bool cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power, uint16_t *disabled_ticks)
 {
     Champion *c = &g_champions[champion_index];
     if (!is_magic_map(c->slots[SLOT_HAND_ACTION])) {
         magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MAGIC_MAP, 0);
-        return 0;
+        return false;
     }
     uint16_t d = (power + 1) * SPELL_DURATION_FACTOR, ticks;
     if (type == MAGIC_MAP_NETA) {
@@ -314,7 +315,7 @@ static int16_t cast_magic_map(uint16_t champion_index, uint16_t type, int16_t po
                 timeline_delete_event(i);
                 break;
             }
-        c->magic_map[MAGIC_MAP_NETA] = (uint8_t)(g_party_direction + 1);
+        c->magic_map[MAGIC_MAP_NETA] = g_party_direction + 1;
         game_set_magic_map_position(c->magic_map, g_party_map_index, g_party_map_x, g_party_map_y);
         *disabled_ticks = d * d >> 1;
         ticks = *disabled_ticks * MAGIC_MAP_NETA_TICKS_FACTOR;
@@ -327,10 +328,10 @@ static int16_t cast_magic_map(uint16_t champion_index, uint16_t type, int16_t po
         ticks = d * d * 2;
     }
     TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks),
-                           .type = (uint8_t)(EVENT_MAGIC_MAP_DAIN_END + type),
-                           .priority = (uint8_t)champion_index};
+                           .type = EVENT_MAGIC_MAP_DAIN_END + type,
+                           .priority = champion_index};
     timeline_add_event(&event);
-    return 1;
+    return true;
 }
 
 /* Casts the spell of the champion symbols. Each missing skill level is a chance to fail against wisdom. */
@@ -347,7 +348,7 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
         return SPELL_CAST_FAILURE;
     }
     const Spell *spell = tables_spell(index);
-    uint8_t power_symbol = (uint8_t)c->symbols[0];
+    uint8_t power_symbol = c->symbols[0];
     int16_t power = (int8_t)power_symbol - (POWER_SYMBOL_FIRST - 1);
     uint16_t required_level = power + spell->base_required_skill_level;
     /* The original squares a stale register for the first term; the port uses required_level squared (spell_experience). */

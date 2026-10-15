@@ -1,6 +1,7 @@
 #ifndef SAVEFILE_H
 #define SAVEFILE_H
 /* Prefixes: save_ */
+#include <stdbool.h>
 #include <stdint.h>
 
 /* DM v3.60 save file container (DMGAME~.DAT); CSB (CSBGAME.DAT) with g_adventure. Layout: docs/save-format.md,
@@ -54,7 +55,7 @@ typedef struct {
 } SaveFile;
 
 uint16_t save_block_xor(uint8_t *bytes, uint16_t key, uint16_t word_count);
-int16_t save_decode(const uint8_t *file, uint32_t size, SaveFile *s);
+bool save_decode(const uint8_t *file, uint32_t size, SaveFile *s);
 uint8_t *save_encode(const SaveFile *s, uint32_t *size);
 void save_free(SaveFile *s);
 

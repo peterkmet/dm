@@ -35,6 +35,8 @@ def lib():
     subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
+    lib.decode_text.restype = lib.load_dungeon.restype = ctypes.c_bool
+    lib.recruit_parse_text.restype = lib.recruit_parse.restype = ctypes.c_bool
     lib.dungeon_square_first_thing.restype = ctypes.c_uint16
     lib.dungeon_get_thing_data.restype = u8p
     lib.recruit_decoded_value.argtypes = [ctypes.c_char_p, ctypes.c_int16]

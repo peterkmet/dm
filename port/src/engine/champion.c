@@ -171,7 +171,7 @@ void champion_unpack(const uint8_t *in, Champion *c)
     memcpy(c->statistics, in + REC_STATISTICS, sizeof c->statistics);
     for (int i = 0; i < SKILL_COUNT; i++) {
         c->skills[i].temporary_experience = BE16(in + REC_SKILLS + REC_SKILL_SIZE * i);
-        c->skills[i].experience = (int32_t)BE32(in + REC_SKILLS + REC_SKILL_SIZE * i + 2);
+        c->skills[i].experience = BE32(in + REC_SKILLS + REC_SKILL_SIZE * i + 2);
     }
     for (int i = 0; i < SLOT_COUNT; i++)
         c->slots[i] = BE16(in + REC_SLOTS + 2 * i);
@@ -236,7 +236,7 @@ void champion_wake_up(void)
 static uint16_t candidate_slot(const Champion *c, uint16_t thing, uint16_t *next_backpack_slot)
 {
     uint16_t allowed = tables_object_info(inventory_get_object_info_index(thing))->allowed_slots;
-    int neck_free = allowed & *tables_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
+    bool neck_free = allowed & *tables_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
     uint16_t slot = THING_NONE;
     switch (THING_TYPE(thing)) {
     case THING_ARMOUR:
@@ -352,7 +352,7 @@ static void reincarnate(Champion *c)
         for (int s = STAT_STRENGTH; s < STAT_COUNT; s++) {
             int16_t value = c->statistics[s][STAT_CURRENT];
             value = max16(c->statistics[s][STAT_MINIMUM], value - (value >> CSB_REINCARNATION_STAT_LOSS_SHIFT));
-            c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM] = (uint8_t)value;
+            c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM] = value;
         }
         c->current_health >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_health >>= CSB_REINCARNATION_BAR_SHIFT;
         c->current_stamina >>= CSB_REINCARNATION_BAR_SHIFT, c->maximum_stamina >>= CSB_REINCARNATION_BAR_SHIFT;
@@ -644,7 +644,7 @@ static const ArmourInfo *armour_info(uint16_t thing)
 int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_flags)
 {
     const Champion *c = &g_champions[champion_index];
-    int16_t sharp = slot_and_flags & WOUND_DEFENSE_USE_SHARP;
+    bool sharp = slot_and_flags & WOUND_DEFENSE_USE_SHARP;
     uint16_t slot = slot_and_flags & ~WOUND_DEFENSE_USE_SHARP, shields = 0;
     for (int16_t hand = SLOT_HAND_READY; hand <= SLOT_HAND_ACTION; hand++) {
         uint16_t thing = c->slots[hand];
@@ -882,7 +882,7 @@ void champion_decrement_stamina(int16_t champion_index, int16_t decrement)
 }
 
 /* The party falls into a pit. With a rope it loses stamina instead. */
-void champion_fall_damage(int16_t use_rope)
+void champion_fall_damage(bool use_rope)
 {
     if (!g_party_champion_count)
         return;
@@ -964,7 +964,7 @@ static void consume_food_and_water(uint16_t i, uint16_t time)
     if (idle > IDLE_TICKS_HUNGRY)
         rate += idle > IDLE_TICKS_VERY_HUNGRY ? 2 : 1;
     do {
-        int last_steps = steps <= FOOD_WATER_LAST_STEPS;
+        bool last_steps = steps <= FOOD_WATER_LAST_STEPS;
         if (c->food < FOOD_WATER_STARVING) {
             if (last_steps)
                 loss += rate, c->food -= 2;

@@ -49,8 +49,8 @@ uint16_t save_block_xor(uint8_t *bytes, uint16_t key, uint16_t word_count)
     for (uint16_t i = word_count; i != 0; i--, bytes += 2) {
         uint16_t old = BE16(bytes), new = old ^ key;
         WR16(bytes, new);
-        sum = (uint16_t)(sum + new + old);
-        key = (uint16_t)(key + i);
+        sum = sum + new + old;
+        key = key + i;
     }
     return sum;
 }
@@ -62,13 +62,13 @@ static uint16_t block_size(int i, const uint8_t *globals)
     case SAVE_BLOCK_GLOBALS:
         return SAVE_GLOBALS_BYTES;
     case SAVE_BLOCK_GROUPS:
-        return (uint16_t)(BE16(globals + G_MAX_ACTIVE_GROUP_COUNT) * SAVE_ACTIVE_GROUP_BYTES);
+        return BE16(globals + G_MAX_ACTIVE_GROUP_COUNT) * SAVE_ACTIVE_GROUP_BYTES;
     case SAVE_BLOCK_CHAMPIONS:
         return SAVE_CHAMPIONS_BYTES;
     case SAVE_BLOCK_EVENTS:
-        return (uint16_t)(BE16(globals + G_EVENT_MAX_COUNT) * SAVE_EVENT_BYTES);
+        return BE16(globals + G_EVENT_MAX_COUNT) * SAVE_EVENT_BYTES;
     default:
-        return (uint16_t)(BE16(globals + G_EVENT_MAX_COUNT) * 2);
+        return BE16(globals + G_EVENT_MAX_COUNT) * 2;
     }
 }
 
@@ -77,12 +77,12 @@ static uint16_t payload_sum(const uint8_t *h)
 {
     uint16_t sum = 0;
     for (int i = H_PAYLOAD; i < SAVE_HEADER_BYTES; i += 2)
-        sum = (uint16_t)(sum + BE16(h + i));
+        sum = sum + BE16(h + i);
     return sum;
 }
 
 /* Chain over the 32 random word groups; with set_last, picks the last w3 so the chain gives sum */
-static uint16_t header_chain(uint8_t *h, int set_last, uint16_t sum)
+static uint16_t header_chain(uint8_t *h, bool set_last, uint16_t sum)
 {
     uint16_t acc = 0;
     for (int g = 0; g < H_GROUP_COUNT; g++, h += H_GROUP_BYTES) {
@@ -94,16 +94,16 @@ static uint16_t header_chain(uint8_t *h, int set_last, uint16_t sum)
     return acc;
 }
 
-/* Decrypts a save file into s and checks the header chain and block checksums. Returns 1 or 0. */
-int16_t save_decode(const uint8_t *file, uint32_t size, SaveFile *s)
+/* Decrypts a save file into s and checks the header chain and block checksums. Returns false on a bad file. */
+bool save_decode(const uint8_t *file, uint32_t size, SaveFile *s)
 {
     memset(s, 0, sizeof *s);
     if (!file || size < SAVE_HEADER_BYTES || !(s->data = malloc(size)))
-        return 0;
+        return false;
     uint8_t *d = s->header = s->data;
     memcpy(d, file, size);
     save_block_xor(d + H_PAYLOAD, BE16(d + payload_key()), SAVE_PAYLOAD_WORDS);
-    if (header_chain(d, 0, 0) != payload_sum(d) || d[field(H_PLATFORM)] == PLATFORM_REFUSED ||
+    if (header_chain(d, false, 0) != payload_sum(d) || d[field(H_PLATFORM)] == PLATFORM_REFUSED ||
         BE16(d + field(H_FORMAT)) != SAVE_FORMAT)
         goto fail;
     uint32_t pos = SAVE_HEADER_BYTES;
@@ -124,10 +124,10 @@ int16_t save_decode(const uint8_t *file, uint32_t size, SaveFile *s)
     s->portraits = d + pos;
     s->dungeon = d + pos + SAVE_PORTRAITS_BYTES;
     s->dungeon_size = size - pos - SAVE_PORTRAITS_BYTES;
-    return 1;
+    return true;
 fail:
     save_free(s);
-    return 0;
+    return false;
 }
 
 /* Encrypts s into a new save file buffer. Returns NULL when s is incomplete. */
@@ -153,7 +153,7 @@ uint8_t *save_encode(const SaveFile *s, uint32_t *size)
         WR16(out + field(H_CHECKSUMS) + 2 * i, sum);
         pos += n;
     }
-    header_chain(out, 1, payload_sum(out));
+    header_chain(out, true, payload_sum(out));
     save_block_xor(out + H_PAYLOAD, BE16(out + payload_key()), SAVE_PAYLOAD_WORDS);
     memcpy(out + pos, s->portraits, SAVE_PORTRAITS_BYTES);
     if (s->dungeon_size)

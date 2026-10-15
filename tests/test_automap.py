@@ -36,6 +36,7 @@ def game():
     subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.dungeon_square.restype = ctypes.c_uint8
+    lib.load_dungeon.restype = ctypes.c_bool
     for name in ("dungeon_map_width", "dungeon_map_height"):
         getattr(lib, name).restype = c16
     lib.explored_save.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_size_t)]

@@ -68,7 +68,7 @@ void action_clear_acting_champion(void);
 extern uint16_t g_action_target_group_thing;
 
 /* Commands 113-115: runs action list entry 0-2 of the acting champion. Returns 1 when the action was performed. */
-int16_t action_did_click_trigger_action(int16_t action_list_index);
+bool action_did_click_trigger_action(int16_t action_list_index);
 bool action_is_action_performed(uint16_t champion_index, int16_t action);
 bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y,
                                       int16_t skill_index);

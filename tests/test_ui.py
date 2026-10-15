@@ -49,6 +49,8 @@ def lib():
     lib.ui_zone_box.argtypes = [c16, ctypes.POINTER(Box)]
     lib.message_print.argtypes = [c16, ctypes.c_char_p, ctypes.c_uint32]
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
+    lib.recruit_parse.restype = ctypes.c_bool
+    lib.load_dungeon.restype = ctypes.c_bool
     lib.dungeon_square_first_thing.restype = u16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(u8)
     lib.recruit_portrait_index.argtypes = [u16]

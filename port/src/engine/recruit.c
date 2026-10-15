@@ -53,9 +53,8 @@ static int32_t hidden_skill_experience(uint16_t level)
     return count <= LONG_SHIFT_MAXIMUM ? (int32_t)((uint32_t)SKILL_BASE_EXPERIENCE << count) : 0;
 }
 
-/* Reads name, title, gender, bar values, statistics and skills from a champion text.
-   Returns 0 when the text is too short. */
-int16_t recruit_parse_text(const char *text, RecruitData *out)
+/* Reads name, title, gender, bar values, statistics and skills from a champion text.   Returns false when the text is too short. */
+bool recruit_parse_text(const char *text, RecruitData *out)
 {
     memset(out, 0, sizeof *out);
     int n = 0, t = 0;
@@ -65,7 +64,7 @@ int16_t recruit_parse_text(const char *text, RecruitData *out)
     if (p)
         p = copy_line(p + 1, out->title, sizeof out->title, &t);
     if (!p || strlen(p) < VALUES_LENGTH)
-        return 0;
+        return false;
     out->male = p[VALUES_GENDER] == 'M';
     out->current_health = out->maximum_health = recruit_decoded_value(p + VALUES_HEALTH, BAR_VALUE_CHARS);
     out->current_stamina = out->maximum_stamina = recruit_decoded_value(p + VALUES_STAMINA, BAR_VALUE_CHARS);
@@ -81,11 +80,11 @@ int16_t recruit_parse_text(const char *text, RecruitData *out)
     for (int b = 0; b < SKILL_BASE_COUNT; b++)
         for (int h = 0; h < HIDDEN_SKILLS_PER_BASE; h++)
             out->experience[b] += out->experience[SKILL_BASE_COUNT + b * HIDDEN_SKILLS_PER_BASE + h];
-    return 1;
+    return true;
 }
 
 /* Decodes a champion text thing and reads the candidate data from it. */
-int16_t recruit_parse(uint16_t text_thing, RecruitData *out)
+bool recruit_parse(uint16_t text_thing, RecruitData *out)
 {
     char text[RECRUIT_TEXT_SIZE];
     return decode_text(text, sizeof text, text_thing, TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY) &&

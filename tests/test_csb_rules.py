@@ -48,7 +48,7 @@ def lib(tmp_path_factory):
         ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
         ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
         ("sensor_add_event", None, [c16, c16, c16, c16, c16, u32]),
-        ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, c16, c16]),
+        ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, ctypes.c_bool, ctypes.c_bool]),
         ("champion_click_in_resurrect_reincarnate_panel", None, [c16]), ("unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("tables_action_info", ctypes.POINTER(ActionInfo), [ctypes.c_int]),
         ("champion_add_skill_experience", None, [u16, u16, u16]),

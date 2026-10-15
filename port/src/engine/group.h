@@ -100,7 +100,7 @@ static inline void group_set_possessions(uint16_t group, uint16_t thing)
 }
 static inline void group_set_creature_type(uint16_t group, uint16_t type)
 {
-    REC(group)[4] = (uint8_t)type;
+    REC(group)[4] = type;
 }
 static inline void group_set_cells_byte(uint16_t group, uint8_t cells)
 {
@@ -121,19 +121,19 @@ static inline uint16_t group_behavior(uint16_t group)
 static inline void group_set_behavior(uint16_t group, uint16_t behavior)
 {
     REC(group)
-    [GROUP_BEHAVIOR_BYTE] = (uint8_t)((REC(group)[GROUP_BEHAVIOR_BYTE] & ~GROUP_RECORD_BEHAVIOR_MASK) | behavior);
+    [GROUP_BEHAVIOR_BYTE] = (REC(group)[GROUP_BEHAVIOR_BYTE] & ~GROUP_RECORD_BEHAVIOR_MASK) | behavior;
 }
 static inline void group_set_last_creature_index(uint16_t group, uint16_t index)
 {
     REC(group)
-    [GROUP_BEHAVIOR_BYTE] = (uint8_t)((REC(group)[GROUP_BEHAVIOR_BYTE] & ~GROUP_RECORD_LAST_CREATURE_MASK) |
-                                      (index & 3) << GROUP_RECORD_LAST_CREATURE_SHIFT);
+    [GROUP_BEHAVIOR_BYTE] = (REC(group)[GROUP_BEHAVIOR_BYTE] & ~GROUP_RECORD_LAST_CREATURE_MASK) |
+                            (index & 3) << GROUP_RECORD_LAST_CREATURE_SHIFT;
 }
 static inline void group_set_direction_field(uint16_t group, uint16_t direction)
 {
     REC(group)
-    [GROUP_DIRECTION_BYTE] = (uint8_t)((REC(group)[GROUP_DIRECTION_BYTE] & ~GROUP_RECORD_DIRECTION_MASK) |
-                                       (direction & GROUP_RECORD_DIRECTION_MASK));
+    [GROUP_DIRECTION_BYTE] =
+        (REC(group)[GROUP_DIRECTION_BYTE] & ~GROUP_RECORD_DIRECTION_MASK) | (direction & GROUP_RECORD_DIRECTION_MASK);
 }
 static inline void group_clear_do_not_discard(uint16_t group)
 {
@@ -228,7 +228,7 @@ static inline uint16_t group_cell(uint16_t packed, int16_t creature)
     return packed >> (GROUP_CELL_BITS * creature) & GROUP_CELL_MASK;
 }
 uint16_t group_set_cell_value(uint16_t packed, uint16_t creature_index, uint16_t value);
-uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t creature_index, int16_t attacking);
+uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t creature_index, bool attacking);
 void group_start_wandering(int16_t x, int16_t y);
 void group_delete_events(int16_t x, int16_t y);
 void group_stop_attacking(ActiveGroup *active, int16_t x, int16_t y);
@@ -250,8 +250,8 @@ void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int
 void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t sound_mode);
 void group_delete(int16_t x, int16_t y);
 int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, int16_t x, int16_t y, int16_t damage,
-                                          int16_t notify);
-int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, int16_t notify);
+                                          bool notify);
+int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, bool notify);
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack);
 void group_door_damages_creatures(int16_t x, int16_t y);
 
@@ -270,7 +270,7 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
 void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint16_t ticks);
 
 int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
-void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, int16_t audible);
+void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, bool audible);
 void group_process_move_event(TimelineEvent *event);
 
 #endif

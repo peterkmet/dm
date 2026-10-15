@@ -39,6 +39,7 @@ def lib():
     subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.save_decode.restype = ctypes.c_bool
     lib.save_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(ctypes.c_uint32)]
     lib.save_encode.restype = ctypes.c_void_p
     lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]

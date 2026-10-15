@@ -161,9 +161,9 @@ void event_pit(TimelineEvent *event)
 }
 
 /* Shows, hides, or toggles a text. Returns 1 when the text becomes visible. */
-static int16_t change_text_visibility(uint16_t text, int16_t effect)
+static bool change_text_visibility(uint16_t text, int16_t effect)
 {
-    int16_t was_visible = rec_text_is_visible(text);
+    bool was_visible = rec_text_is_visible(text);
     rec_text_set_visible(text, effect == EFFECT_TOGGLE ? !was_visible : effect == EFFECT_SET);
     return !was_visible && rec_text_is_visible(text);
 }
@@ -218,7 +218,7 @@ void event_enable_group_generator(TimelineEvent *event)
 /* A hold sensor sets or clears with the condition (inverted by the revert bit). Other sensors trigger when it is true. */
 static void trigger_on_condition(uint16_t sensor, int16_t condition, int16_t x, int16_t y, int16_t cell)
 {
-    int16_t clear = rec_sensor_revert(sensor) == condition;
+    bool clear = rec_sensor_revert(sensor) == condition;
     if (rec_sensor_effect(sensor) == EFFECT_HOLD)
         sensor_trigger_effect(sensor, clear ? EFFECT_CLEAR : EFFECT_SET, x, y, cell);
     else if (!clear)
@@ -335,7 +335,7 @@ void event_light(TimelineEvent *event)
     int16_t power = event->b;
     if (!power)
         return;
-    int16_t negative = power < 0;
+    bool negative = power < 0;
     if (negative)
         power = -power;
     int16_t rest = power - 1;

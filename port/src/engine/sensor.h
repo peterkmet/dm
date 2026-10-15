@@ -22,7 +22,6 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
 uint16_t sensor_get_object_of_type_in_cell(int16_t x, int16_t y, int16_t cell, int16_t object_type);
 bool sensor_is_object_in_party_possession(int16_t object_type);
 bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell);
-void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, int16_t party_on_square,
-                                              int16_t add);
+void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, bool party_on_square, bool add);
 
 #endif

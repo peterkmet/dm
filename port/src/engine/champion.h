@@ -1,6 +1,7 @@
 #ifndef CHAMPION_H
 #define CHAMPION_H
 /* Prefixes: champion_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "game.h"
 #include "tables.h"
@@ -99,7 +100,7 @@ void champion_poison(int16_t champion_index, uint16_t attack);
 void champion_unpoison(int16_t champion_index);
 int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t attack_type);
 void champion_decrement_stamina(int16_t champion_index, int16_t decrement);
-void champion_fall_damage(int16_t use_rope);
+void champion_fall_damage(bool use_rope);
 
 void champion_delete_scent(uint16_t scent_index);
 void champion_apply_time_effects(void);

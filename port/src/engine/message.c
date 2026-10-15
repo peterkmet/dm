@@ -66,7 +66,7 @@ static void print_string(int16_t color, const char *s, uint32_t game_time)
     /* ponytail: cells are TEXT_CHAR_WIDTH apart; the clamped cursor x 314 maps to cell 52 (x 312) */
     for (int c = g_message.cursor_x / TEXT_CHAR_WIDTH; *s && c < MESSAGE_COLS; s++, c++) {
         g_message.text[r][c] = *s;
-        g_message.color[r][c] = (uint8_t)color;
+        g_message.color[r][c] = color;
     }
     g_message.expiry[r] = game_time + MESSAGE_LIFETIME;
 }

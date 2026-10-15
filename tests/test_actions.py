@@ -257,7 +257,7 @@ def test_event_11_ends_action_defense(party):
 
 def test_triggered_action_closes_menu_and_asks_for_action_area(party):
     lib, c, _ = party
-    lib.action_did_click_trigger_action.restype, lib.action_did_click_trigger_action.argtypes = c16, [c16]
+    lib.action_did_click_trigger_action.restype, lib.action_did_click_trigger_action.argtypes = ctypes.c_bool, [c16]
     redraw = ctypes.c_uint16.in_dll(lib, "g_redraw")
     redraw.value = 0
     var(lib, c16, "g_acting_champion_ordinal").value = 1

@@ -26,7 +26,7 @@ void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, in
     static const uint8_t priority[3] = {[EFFECT_SET] = 1, [EFFECT_CLEAR] = 3, [EFFECT_TOGGLE] = 2};
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(g_current_map_index, time),
-        .type = (uint8_t)event_type,
+        .type = event_type,
         .priority = g_adventure == ADVENTURE_CSB                      ? 0
                     : effect >= EFFECT_SET && effect <= EFFECT_TOGGLE ? priority[effect]
                                                                       : 0,
@@ -37,7 +37,7 @@ void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, in
 }
 
 /* All living champions share the experience, or the leader gets all of it. */
-static void sensor_add_skill_experience(uint16_t skill, uint16_t experience, int16_t leader_only)
+static void sensor_add_skill_experience(uint16_t skill, uint16_t experience, bool leader_only)
 {
     if (leader_only) {
         if (g_leader_index != -1)
@@ -284,7 +284,7 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
 }
 
 /* The revert bit inverts the value. A hold sensor sets or clears with the value; other sensors trigger on a true value. */
-static void trigger(uint16_t sensor, int16_t value, int16_t x, int16_t y)
+static void trigger(uint16_t sensor, bool value, int16_t x, int16_t y)
 {
     int16_t effect = rec_sensor_effect(sensor);
     value ^= rec_sensor_revert(sensor);
@@ -306,28 +306,31 @@ static void print_text(uint16_t text)
 
 /* A thing that enters or leaves a square (THING_NONE: the party), and what else lies there. */
 typedef struct {
-    int16_t x, y, add, party, party_on_square, thing_type, object_type;
+    int16_t x, y;
+    bool add, party, party_on_square;
+    int16_t thing_type, object_type;
     uint16_t cell;
-    int16_t group_present, objects_present, same_type_present, other_type_present;
+    bool group_present, objects_present, same_type_present, other_type_present;
 } SquareChange;
 
 /* Finds the groups and the objects on the square: on a wall square only the objects in the cell of the thing. A party
    that enters a floor square reads its texts. */
-static void scan_square(SquareChange *s, int16_t wall)
+static void scan_square(SquareChange *s, bool wall)
 {
     for (uint16_t t = get_square_first_thing(s->x, s->y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
-        int16_t type = THING_TYPE(t), is_object;
+        int16_t type = THING_TYPE(t);
+        bool is_object;
         if (wall) {
             is_object = THING_CELL(t) == s->cell && type > THING_GROUP;
         } else {
             if (type == THING_GROUP)
-                s->group_present = 1;
+                s->group_present = true;
             if (type == THING_TEXT && s->party && s->add && !s->party_on_square)
                 print_text(t);
             is_object = type > THING_GROUP && type < THING_PROJECTILE;
         }
         if (is_object) {
-            s->objects_present = 1;
+            s->objects_present = true;
             s->same_type_present |= object_get_type(t) == s->object_type;
             s->other_type_present |= object_get_type(t) != s->object_type;
         }
@@ -348,7 +351,8 @@ static void process_wall_sensor(uint16_t sensor, const SquareChange *s)
 /* A floor sensor: each type tests the thing and what else lies on the square. */
 static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t square)
 {
-    int16_t x = s->x, y = s->y, add = s->add, data = rec_sensor_data(sensor);
+    int16_t x = s->x, y = s->y, data = rec_sensor_data(sensor);
+    bool add = s->add;
     switch (rec_sensor_type(sensor)) {
     case SENSOR_FLOOR_ANY:
         if (!s->party_on_square && !s->objects_present && !s->group_present)
@@ -393,10 +397,9 @@ static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t
 }
 
 /* thing THING_NONE is the party. A floor square runs its floor sensors. A wall square runs the sensors of the thing cell. */
-void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, int16_t party_on_square,
-                                              int16_t add)
+void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, bool party_on_square, bool add)
 {
-    int16_t party = thing == THING_NONE;
+    bool party = thing == THING_NONE;
     SquareChange s = {.x = x,
                       .y = y,
                       .add = add,
@@ -408,7 +411,7 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
     if (!add && !party)
         unlink_thing_from_list(thing, 0, x, y);
     uint8_t square = g_current_map_data[x][y];
-    int16_t wall = SQUARE_TYPE(square) == SQUARE_WALL;
+    bool wall = SQUARE_TYPE(square) == SQUARE_WALL;
     scan_square(&s, wall);
     if (add && !party)
         link_thing_to_list(thing, 0, x, y);

@@ -77,7 +77,7 @@ def lib():
         "champion_pack": (None, [cp, ctypes.c_char_p]), "champion_unpack": (None, [ctypes.c_char_p, cp]),
         "recruit_text_thing": (u16, [c16, c16, c16]), "recruit_portrait_index": (c16, [u16]),
         "dungeon_square_first_thing": (u16, [c16, c16, c16]), "dungeon_get_thing_data": (ctypes.POINTER(u8), [u16]),
-        "set_current_map_and_party_map": (None, [c16]),
+        "set_current_map_and_party_map": (None, [c16]), "load_dungeon": (ctypes.c_bool, [ctypes.c_char_p]),
     }
     for name, (res, args) in sig.items():
         f = getattr(lib, name)
@@ -402,6 +402,7 @@ def party(lib):
 def test_recruit_first_mirror_champion(lib, party):
     from test_recruit import RecruitData
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
+    lib.recruit_parse.restype = ctypes.c_bool
     r = RecruitData()
     assert lib.recruit_parse(party["text"], ctypes.byref(r)) == 1
     ch = champions(lib)[0]

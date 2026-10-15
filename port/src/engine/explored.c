@@ -73,10 +73,10 @@ int explored_save(uint8_t **buf, size_t *len)
     memcpy(p, SAVE_MAGIC, SAVE_MAGIC_SIZE);
     p += SAVE_MAGIC_SIZE;
     *p++ = SAVE_VERSION;
-    *p++ = (uint8_t)map_count;
+    *p++ = map_count;
     for (int16_t map = 0; map < map_count; map++) {
-        *p++ = (uint8_t)dungeon_map_width(map);
-        *p++ = (uint8_t)dungeon_map_height(map);
+        *p++ = dungeon_map_width(map);
+        *p++ = dungeon_map_height(map);
     }
     memcpy(p, seen, seen_size);
     *buf = out;

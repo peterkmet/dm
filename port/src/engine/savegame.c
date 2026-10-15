@@ -89,8 +89,8 @@ static void unpack_globals(const uint8_t *g)
     g_first_unused_event_index = BE16(g + G_FIRST_UNUSED_EVENT);
     g_event_max_count = BE16(g + G_EVENT_MAX_COUNT);
     g_active_group_count = BE16(g + G_ACTIVE_GROUP_COUNT);
-    g_last_creature_attack_time = (int32_t)BE32(g + G_LAST_CREATURE_ATTACK_TIME);
-    g_last_party_movement_time = (int32_t)BE32(g + G_LAST_PARTY_MOVEMENT_TIME);
+    g_last_creature_attack_time = BE32(g + G_LAST_CREATURE_ATTACK_TIME);
+    g_last_party_movement_time = BE32(g + G_LAST_PARTY_MOVEMENT_TIME);
     g_disabled_movement_ticks = BE16(g + G_DISABLED_MOVEMENT_TICKS);
     g_projectile_disabled_movement_ticks = BE16(g + G_PROJECTILE_DISABLED_MOVEMENT_TICKS);
     g_last_projectile_disabled_movement_direction = BE16(g + G_LAST_PROJECTILE_DIRECTION);
@@ -197,7 +197,7 @@ static void portrait_from_interleaved(const uint8_t *in, uint8_t *px)
                 for (int k = 0; k < PIXELS_PER_WORD; k++) {
                     int x = c * PIXELS_PER_WORD + k;
                     if (x < CHAMPION_PORTRAIT_WIDTH && word >> (PIXELS_PER_WORD - 1 - k) & 1)
-                        px[y * CHAMPION_PORTRAIT_WIDTH + x] |= (uint8_t)(1u << plane);
+                        px[y * CHAMPION_PORTRAIT_WIDTH + x] |= 1u << plane;
                 }
             }
 }
@@ -309,9 +309,9 @@ int16_t savegame_save(const char *dir)
     return savegame_save_as(dir, adventure_save_name(), adventure_backup_name());
 }
 
-/* Writes size bytes to dir/name; with a backup name, the old file becomes dir/backup first. Returns 1 on success. */
-static int write_save_file(const char *dir, const char *name, const char *backup_name, const uint8_t *data,
-                           uint32_t size)
+/* Writes size bytes to dir/name; with a backup name, the old file becomes dir/backup first. Returns true on success. */
+static bool write_save_file(const char *dir, const char *name, const char *backup_name, const uint8_t *data,
+                            uint32_t size)
 {
     char path[PATH_SIZE], backup[PATH_SIZE];
     file_path(path, dir, name);
@@ -321,39 +321,39 @@ static int write_save_file(const char *dir, const char *name, const char *backup
         rename(path, backup);
     }
     FILE *f = fopen(path, "wb");
-    int ok = f && fwrite(data, 1, size, f) == size;
+    bool ok = f && fwrite(data, 1, size, f) == size;
     if (f && fclose(f))
-        ok = 0;
+        ok = false;
     return ok;
 }
 
-int16_t savegame_save_as(const char *dir, const char *name, const char *backup_name)
+bool savegame_save_as(const char *dir, const char *name, const char *backup_name)
 {
     uint32_t size = 0;
     uint8_t *data = encode_game(&size);
     if (!data)
-        return 0;
+        return false;
     size = append_automap(&data, size);
-    int ok = size && write_save_file(dir, name, backup_name, data, size);
+    bool ok = size && write_save_file(dir, name, backup_name, data, size);
     free(data);
     if (!ok)
-        return 0;
+        return false;
     g_saved_game_exists = 1;
     g_last_save_game_time = g_game_time;
-    return 1;
+    return true;
 }
 
 /* CEDT check before the merge: each first name is not empty and differs from the others. */
-static int first_names_unique(void)
+static bool first_names_unique(void)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].name[0])
-            return 0;
+            return false;
         for (uint16_t k = i + 1; k < g_party_champion_count; k++)
             if (!strncmp(g_champions[i].name, g_champions[k].name, sizeof g_champions[i].name))
-                return 0;
+                return false;
     }
-    return 1;
+    return true;
 }
 
 /* The bytes of a text field after the first NUL become 0. */
@@ -371,8 +371,8 @@ static void reset_for_new_adventure(Champion *c, int16_t turn)
     clear_after_text(c->name, sizeof c->name);
     clear_after_text(c->title, sizeof c->title);
     if (turn) {
-        c->cell = (uint8_t)NORMALIZE(c->cell + turn);
-        c->direction = (uint8_t)NORMALIZE(c->direction + turn);
+        c->cell = NORMALIZE(c->cell + turn);
+        c->direction = NORMALIZE(c->direction + turn);
     }
     c->action_index = ACTION_NONE;
     c->symbol_step = 0;
@@ -404,7 +404,7 @@ static void reset_for_new_adventure(Champion *c, int16_t turn)
 static uint8_t free_cell(const Champion *party)
 {
     for (uint8_t cell = 0; cell < CHAMPION_MAX_COUNT; cell++) {
-        int used = 0;
+        bool used = false;
         for (uint16_t i = 0; i < g_party_champion_count; i++)
             used |= party[i].cell == cell;
         if (!used)
@@ -451,7 +451,7 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
         out = save_encode(&mini, &out_size);
         save_free(&mini);
     }
-    int ok = out && write_save_file(dir, adventure_save_name(), adventure_backup_name(), out, out_size);
+    bool ok = out && write_save_file(dir, adventure_save_name(), adventure_backup_name(), out, out_size);
     free(out);
     free(data);
     return ok && savegame_load(dir) == SAVEGAME_LOADED ? ADVENTURE_MADE : ADVENTURE_FAILED;
@@ -459,13 +459,13 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
 
 /* Allocates the timeline and the active groups for the saved counts, as timeline_init and
    game_init_active_groups do for a loaded game. CSB allocates exactly the saved count. */
-static int allocate_tables(void)
+static bool allocate_tables(void)
 {
     uint16_t groups = g_max_active_group_count;
     if (g_adventure == ADVENTURE_DM && groups < ACTIVE_GROUP_MAX_COUNT)
         groups = ACTIVE_GROUP_MAX_COUNT;
     if (g_event_max_count <= 0)
-        return 0;
+        return false;
     free(g_timeline_events);
     free(g_timeline);
     free(g_active_groups);
@@ -473,20 +473,20 @@ static int allocate_tables(void)
     g_timeline = calloc((size_t)g_event_max_count, sizeof *g_timeline);
     g_active_groups = malloc(groups * sizeof *g_active_groups);
     if (!g_timeline_events || !g_timeline || !g_active_groups)
-        return 0;
+        return false;
     for (uint16_t i = 0; i < groups; i++)
         g_active_groups[i].group_index = -1;
-    return 1;
+    return true;
 }
 
 /* The state of a decoded save file. Returns 0 when the dungeon part or the counts are bad. */
-static int restore_game(const SaveFile *s)
+static bool restore_game(const SaveFile *s)
 {
     if (!dungeon_load_saved(s->dungeon, s->dungeon_size))
-        return 0;
+        return false;
     unpack_globals(s->block[SAVE_BLOCK_GLOBALS]);
     if (!allocate_tables())
-        return 0;
+        return false;
     for (uint16_t i = 0; i < g_max_active_group_count; i++)
         unpack_active_group(s->block[SAVE_BLOCK_GROUPS] + i * SAVE_ACTIVE_GROUP_BYTES, &g_active_groups[i]);
     /* DM load_game raises the saved maximum to at least the DM maximum; CSB keeps it */
@@ -507,7 +507,7 @@ static int restore_game(const SaveFile *s)
     memcpy(header_extra, save_header_extra(s->header), save_header_extra_size());
     g_party_dead = g_party_is_sleeping = 0;
     g_saved_game_exists = 1;
-    return 1;
+    return true;
 }
 
 int16_t savegame_load(const char *dir)
@@ -542,7 +542,7 @@ int16_t savegame_load_from(const char *dir, const char *name, const char *backup
     if (backup_name)
         file_path(backup, dir, backup_name);
     uint8_t *data = read_file(path, &size);
-    int from_backup = !data && backup_name;
+    bool from_backup = !data && backup_name;
     if (from_backup)
         data = read_file(backup, &size);
     if (!data)
@@ -551,7 +551,7 @@ int16_t savegame_load_from(const char *dir, const char *name, const char *backup
     const uint8_t *automap = find_automap(data, &size, &automap_length);
     SaveFile s;
     uint8_t *snapshot = NULL;
-    int ok = save_decode(data, (uint32_t)size, &s);
+    bool ok = save_decode(data, (uint32_t)size, &s);
     if (ok) {
         /* restore_game frees the running dungeon before it checks the dungeon part */
         snapshot = g_dungeon_header ? encode_game(&snapshot_size) : NULL;

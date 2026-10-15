@@ -34,7 +34,7 @@ def lib():
     lib.gfx_item.restype = u8p
     lib.gfx_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
     lib.sound_compare_loudness.restype = ctypes.c_int16
-    lib.sound_get_volume.restype = ctypes.c_int16
+    lib.sound_get_volume.restype = ctypes.c_bool
     lib.sound_get_volume.argtypes = [ctypes.c_int16, ctypes.c_int16, u8p]
     lib.sound_request_play.argtypes = [ctypes.c_int16] * 3 + [ctypes.c_uint16]
     lib.sound_play_sample.argtypes = [ctypes.c_int16, u8p]

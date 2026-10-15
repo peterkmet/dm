@@ -73,11 +73,11 @@ enum {
 };
 static inline uint16_t event_square(int16_t x, int16_t y)
 {
-    return (uint16_t)((x & EVENT_BYTE_MASK) << EVENT_X_SHIFT | (y & EVENT_BYTE_MASK));
+    return (x & EVENT_BYTE_MASK) << EVENT_X_SHIFT | (y & EVENT_BYTE_MASK);
 }
 static inline uint16_t event_cell_effect(int16_t cell, int16_t effect)
 {
-    return (uint16_t)((cell & EVENT_BYTE_MASK) << EVENT_CELL_SHIFT | (effect & EVENT_BYTE_MASK));
+    return (cell & EVENT_BYTE_MASK) << EVENT_CELL_SHIFT | (effect & EVENT_BYTE_MASK);
 }
 static inline int16_t event_square_x(const TimelineEvent *event)
 {
@@ -93,16 +93,16 @@ static inline int16_t event_cell(const TimelineEvent *event)
 }
 static inline uint8_t event_effect(const TimelineEvent *event)
 {
-    return (uint8_t)event->c;
+    return event->c;
 }
 static inline void event_set_effect(TimelineEvent *event, uint8_t effect)
 {
-    event->c = (uint16_t)((event->c & EVENT_HIGH_BYTE_MASK) | effect);
+    event->c = (event->c & EVENT_HIGH_BYTE_MASK) | effect;
 }
 /* The c word of a group event that carries the ticks of the next update. */
 static inline uint16_t event_group_c(uint8_t ticks)
 {
-    return (uint16_t)(ticks << EVENT_GROUP_TICKS_SHIFT);
+    return ticks << EVENT_GROUP_TICKS_SHIFT;
 }
 static inline uint16_t event_group_ticks(const TimelineEvent *event)
 {
@@ -115,7 +115,7 @@ static inline int16_t event_quiver_slot(const TimelineEvent *event)
 }
 static inline void event_set_quiver_slot(TimelineEvent *event, int16_t slot)
 {
-    event->b = (uint16_t)((slot + 1) << EVENT_QUIVER_SLOT_SHIFT | (event->b & EVENT_BYTE_MASK));
+    event->b = (slot + 1) << EVENT_QUIVER_SLOT_SHIFT | (event->b & EVENT_BYTE_MASK);
 }
 
 extern int16_t g_game_won;

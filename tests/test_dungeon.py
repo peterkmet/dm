@@ -28,6 +28,8 @@ def lib():
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.decompress_dungeon.argtypes = [ctypes.c_char_p, ctypes.c_int32, ctypes.c_char_p, ctypes.c_int32]
     lib.decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
+    lib.decompress_dungeon.restype = lib.decode_text.restype = ctypes.c_bool
+    lib.load_dungeon.restype = lib.dungeon_validate.restype = ctypes.c_bool
     lib.dungeon_square_first_thing.restype = ctypes.c_uint16
     lib.dungeon_square.restype = ctypes.c_uint8
     lib.dungeon_get_thing_data.restype = u8p

@@ -181,6 +181,7 @@ def test_dm_load_raises_the_active_group_count_to_110(game, tmp_path):
 
     lib = game.lib
     lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.save_decode.restype = ctypes.c_bool
     lib.save_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(u32)]
     lib.save_encode.restype = ctypes.c_void_p
     lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]

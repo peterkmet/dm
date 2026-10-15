@@ -52,7 +52,7 @@ static bool is_corridor_or_pit(uint8_t square)
 /* Outside the map: a wall, with the "ornament allowed" bit when the adjacent square is a corridor or a pit. */
 uint8_t get_square(int16_t x, int16_t y)
 {
-    int16_t in_x = x >= 0 && x < g_current_map_width, in_y = y >= 0 && y < g_current_map_height;
+    bool in_x = x >= 0 && x < g_current_map_width, in_y = y >= 0 && y < g_current_map_height;
     if (in_x && in_y)
         return g_current_map_data[x][y];
     if (in_x) {
@@ -357,7 +357,7 @@ void container_set_first_thing(uint16_t thing, uint16_t first)
     WR16(dungeon_get_thing_data(thing) + 2, first);
 }
 
-void weapon_set_lit(uint16_t thing, int16_t lit)
+void weapon_set_lit(uint16_t thing, bool lit)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
     d[2] = lit ? d[2] | 0x80 : d[2] & 0x7f;
@@ -366,56 +366,56 @@ void weapon_set_lit(uint16_t thing, int16_t lit)
 void weapon_set_charges(uint16_t thing, uint16_t charges)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[2] = (uint8_t)((d[2] & ~0x3c) | (charges << 2 & 0x3c));
+    d[2] = (d[2] & ~0x3c) | (charges << 2 & 0x3c);
 }
 
 void armour_set_charges(uint16_t thing, uint16_t charges)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[2] = (uint8_t)((d[2] & ~0x1e) | (charges << 1 & 0x1e));
+    d[2] = (d[2] & ~0x1e) | (charges << 1 & 0x1e);
 }
 
 void junk_set_charges(uint16_t thing, uint16_t charges)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[2] = (uint8_t)((d[2] & 0x3f) | charges << 6);
+    d[2] = (d[2] & 0x3f) | charges << 6;
 }
 
 void junk_set_type(uint16_t thing, uint16_t type)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[3] = (uint8_t)((d[3] & IMPORTANT) | type);
+    d[3] = (d[3] & IMPORTANT) | type;
 }
 
 void potion_set_type(uint16_t thing, uint16_t type)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[2] = (uint8_t)((d[2] & IMPORTANT) | type);
+    d[2] = (d[2] & IMPORTANT) | type;
 }
 
 void potion_set_power(uint16_t thing, uint16_t power)
 {
-    dungeon_get_thing_data(thing)[3] = (uint8_t)power;
+    dungeon_get_thing_data(thing)[3] = power;
 }
 
 /* Weapon, armour, and junk: the type in word 2 bits 0-6; the important bit stays. */
 void rec_object_set_type(uint16_t thing, uint16_t type)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[3] = (uint8_t)((d[3] & IMPORTANT) | (type & TYPE_MASK));
+    d[3] = (d[3] & IMPORTANT) | (type & TYPE_MASK);
 }
 
-void rec_object_set_cursed(uint16_t thing, int16_t cursed)
+void rec_object_set_cursed(uint16_t thing, bool cursed)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[2] = (uint8_t)((d[2] & ~1) | (cursed != 0));
+    d[2] = (d[2] & ~1) | (cursed != 0);
 }
 
 /* The closed bits are 10-15; bits 8-9 stay. */
-void scroll_set_closed(uint16_t thing, int16_t closed)
+void scroll_set_closed(uint16_t thing, bool closed)
 {
     uint8_t *d = dungeon_get_thing_data(thing);
-    d[2] = (uint8_t)((d[2] & 3) | (closed ? 4 : 0));
+    d[2] = (d[2] & 3) | (closed ? 4 : 0);
 }
 
 /* Sensor type 0 does nothing. The sensor data stays. */

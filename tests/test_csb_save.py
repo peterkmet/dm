@@ -40,10 +40,11 @@ def game(tmp_path_factory):
     lib.kaos_s16.restype = c16
     lib.dungeon_save.restype = ctypes.c_void_p
     lib.free.argtypes = [ctypes.c_void_p]
-    lib.savegame_save_as.restype = c16
+    lib.savegame_save_as.restype = ctypes.c_bool
     lib.savegame_load_from.restype = c16
     lib.dungeon_map_count.restype = c16
     lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.save_decode.restype = ctypes.c_bool
     lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())

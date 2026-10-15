@@ -32,7 +32,7 @@ static inline int16_t door_state(uint8_t square)
 }
 static inline uint8_t square_with_door_state(uint8_t square, int16_t state)
 {
-    return (uint8_t)((square & ~DOOR_STATE_MASK) | (state & DOOR_STATE_MASK));
+    return (square & ~DOOR_STATE_MASK) | (state & DOOR_STATE_MASK);
 }
 
 /* Thing word: index in bits 0-9, type in bits 10-13, cell in bits 14-15. */
@@ -94,7 +94,7 @@ bool weapon_is_broken(uint16_t thing);
 bool armour_is_broken(uint16_t thing);
 uint16_t scroll_text_index(uint16_t thing); /* text record index of the scroll text */
 void container_set_first_thing(uint16_t thing, uint16_t first);
-void weapon_set_lit(uint16_t thing, int16_t lit);
+void weapon_set_lit(uint16_t thing, bool lit);
 void weapon_set_charges(uint16_t thing, uint16_t charges);
 void junk_set_charges(uint16_t thing, uint16_t charges);
 void armour_set_charges(uint16_t thing, uint16_t charges);
@@ -102,8 +102,8 @@ void junk_set_type(uint16_t thing, uint16_t type);
 void potion_set_type(uint16_t thing, uint16_t type);
 void potion_set_power(uint16_t thing, uint16_t power);
 void rec_object_set_type(uint16_t thing, uint16_t type);
-void rec_object_set_cursed(uint16_t thing, int16_t cursed);
-void scroll_set_closed(uint16_t thing, int16_t closed);
+void rec_object_set_cursed(uint16_t thing, bool cursed);
+void scroll_set_closed(uint16_t thing, bool closed);
 
 /* Sensor record (thing type 3). */
 enum {
@@ -217,7 +217,7 @@ static inline uint16_t rec_sensor_generator_health_multiplier(uint16_t thing)
 /* Launcher: kinetic energy in word 6 bits 4-11, step energy in bits 12-15. */
 static inline uint8_t rec_sensor_launcher_kinetic_energy(uint16_t thing)
 {
-    return (uint8_t)(BE16(REC(thing) + 6) >> 4);
+    return BE16(REC(thing) + 6) >> 4;
 }
 static inline uint8_t rec_sensor_launcher_step_energy(uint16_t thing)
 {
@@ -291,9 +291,9 @@ static inline bool rec_text_is_visible(uint16_t thing)
 {
     return REC(thing)[3] & 1;
 }
-static inline void rec_text_set_visible(uint16_t thing, int16_t visible)
+static inline void rec_text_set_visible(uint16_t thing, bool visible)
 {
-    REC(thing)[3] = (uint8_t)((REC(thing)[3] & ~1) | (visible != 0));
+    REC(thing)[3] = (REC(thing)[3] & ~1) | (visible != 0);
 }
 
 /* Group record (thing type 4) and creature attributes. */

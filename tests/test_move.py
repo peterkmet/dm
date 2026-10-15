@@ -36,6 +36,7 @@ def lib():
                  "dungeon_map_width", "dungeon_map_height", "dungeon_map_count", "move_get_move_result"):
         getattr(lib, name).restype = c16
     lib.is_square_open.restype = ctypes.c_bool
+    lib.load_dungeon.restype = ctypes.c_bool
     lib.get_location_after_level_change.argtypes = [c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
     lib.dungeon_square.restype = ctypes.c_uint8
     lib.dungeon_get_thing_data.restype = u8p

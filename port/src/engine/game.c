@@ -94,7 +94,7 @@ int16_t bounded_value(int16_t min, int16_t value, int16_t max)
    product's bit 31 and the shift count is taken modulo 64. */
 int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
 {
-    int32_t product = (int32_t)((uint32_t)a * b);
+    int32_t product = (int32_t)((uint32_t)a * b); /* unsigned multiply: no signed overflow */
     shift &= SHIFT_COUNT_MASK;
     return shift > LONG_SHIFT_MAXIMUM ? (product < 0 ? -1 : 0) : product >> shift;
 }
@@ -139,7 +139,7 @@ void timeline_reset(void)
         if (last_free == -1)
             g_first_unused_event_index = i;
         else
-            g_timeline_events[last_free].map_time = (uint32_t)i;
+            g_timeline_events[last_free].map_time = i;
         g_timeline_events[i].map_time = FREE_LIST_END;
         last_free = i;
     }
@@ -340,7 +340,7 @@ void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int1
             delta = (s[STAT_CURRENT] > STAT_VERY_HIGH ? delta >> 2 : delta >> 1) + 1;
         delta = min16(delta, STAT_LIMIT - s[STAT_CURRENT]);
     }
-    s[STAT_CURRENT] += (uint8_t)delta;
+    s[STAT_CURRENT] += delta;
 }
 
 /* Luck test against a percentage. A lucky test lowers luck, a failed one raises it.
@@ -352,7 +352,7 @@ bool game_is_lucky(Champion *champion, uint16_t percentage)
         return true;
     bool lucky = (int8_t)luck[STAT_CURRENT] > 0 && percentage < random16() % (luck[STAT_CURRENT] * 2);
     int16_t change = lucky ? -LUCK_STEP : LUCK_STEP;
-    luck[STAT_CURRENT] = (uint8_t)bounded_value((int8_t)luck[STAT_MINIMUM], (int8_t)luck[STAT_CURRENT] + change,
-                                                (int8_t)luck[STAT_MAXIMUM]);
+    luck[STAT_CURRENT] =
+        bounded_value((int8_t)luck[STAT_MINIMUM], (int8_t)luck[STAT_CURRENT] + change, (int8_t)luck[STAT_MAXIMUM]);
     return lucky;
 }

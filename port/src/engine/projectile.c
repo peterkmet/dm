@@ -114,7 +114,7 @@ static void explosion_damage_square(uint16_t explosion_thing, uint16_t attack, i
         damage >>= 2;
     int16_t resisted = damage - random16() % (resistance * 2 + 1);
     if (resisted)
-        g_creature_damage_outcome = group_get_damage_all_creatures_outcome(group, x, y, resisted, 1);
+        g_creature_damage_outcome = group_get_damage_all_creatures_outcome(group, x, y, resisted, true);
 }
 
 /* An explosion appears on a square for one event 25. A combined square puts the explosion on one square and
@@ -226,8 +226,8 @@ uint16_t projectile_get_impact_attack(uint16_t projectile, uint16_t thing)
 /* A creature hit: damage scaled by the creature defense, plus poison. A black flame eats fireballs. A creature that
    keeps sharp weapons catches the dagger, arrow, star, or dart. Returns 0 when no creature stands in the cell, 1 when
    the projectile hit, 2 when the black flame ate the fireball. */
-static int16_t hit_creature(uint16_t projectile, uint16_t thing, int16_t is_explosion, int16_t x, int16_t y,
-                            int16_t cell, uint16_t *possessing_group)
+static int16_t hit_creature(uint16_t projectile, uint16_t thing, bool is_explosion, int16_t x, int16_t y, int16_t cell,
+                            uint16_t *possessing_group)
 {
     uint16_t group = get_square_group(x, y);
     int16_t ordinal = group_get_creature_ordinal_in_cell(group, cell);
@@ -248,7 +248,7 @@ static int16_t hit_creature(uint16_t projectile, uint16_t thing, int16_t is_expl
     if (!attack)
         return 1;
     uint16_t poison = group_get_resistance_adjusted_poison_attack(creature_type, g_projectile_poison_attack);
-    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, x, y, attack + poison, 1);
+    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, x, y, attack + poison, true);
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
         group_process_reaction_event(x, y, REACTION_HIT_BY_PROJECTILE, 0);
     g_creature_damage_outcome = outcome;
@@ -263,20 +263,20 @@ static int16_t hit_creature(uint16_t projectile, uint16_t thing, int16_t is_expl
 }
 
 /* A door hit: an open-door spell opens a door with a button. Other projectiles may pass a grate, else they bash
-   the door. Returns 0 when the projectile does not hit. */
-static int16_t hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t y)
+   the door. Returns false when the projectile does not hit. */
+static bool hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t y)
 {
     int16_t state = door_state(g_current_map_data[x][y]);
     uint16_t door = get_square_first_thing(x, y);
     if (state != DOOR_DESTROYED && thing == EXPLOSION_THING(EXPLOSION_OPEN_DOOR)) {
         if (door_button_present(door))
             sensor_add_event(EVENT_DOOR, x, y, 0, EFFECT_TOGGLE, g_game_time + 1);
-        return 1;
+        return true;
     }
     if (state == DOOR_DESTROYED || state <= DOOR_ALMOST_OPEN)
-        return 0;
+        return false;
     if (door_attributes(door) & DOOR_PROJECTILES_PASS) {
-        int16_t passes;
+        bool passes;
         if (THING_TYPE(thing) == THING_EXPLOSION) {
             passes = thing >= EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL);
         } else {
@@ -289,12 +289,12 @@ static int16_t hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t 
             }
         }
         if (passes)
-            return 0;
+            return false;
     }
     uint16_t attack = projectile_get_impact_attack(projectile, thing) + 1;
     uint16_t bonus = random16() % attack;
     event_is_door_destroyed_by_attack(x, y, attack + bonus, 0, 0);
-    return 1;
+    return true;
 }
 
 /* A Ful bomb or Ven bomb flask explodes into a fireball or a poison cloud with the potion power. Else 0. */
@@ -330,9 +330,9 @@ bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_
     uint16_t explosion_attack = 0;
     g_creature_damage_outcome = OUTCOME_NO_CREATURE_KILLED;
     uint16_t flask_explosion = flask_explosion_of(thing, &explosion_attack);
-    int16_t flask_explodes = flask_explosion != 0;
-    int16_t is_explosion = thing_type == THING_EXPLOSION && thing != EXPLOSION_THING(EXPLOSION_SLIME) &&
-                           thing != EXPLOSION_THING(EXPLOSION_POISON_BOLT);
+    bool flask_explodes = flask_explosion != 0;
+    bool is_explosion = thing_type == THING_EXPLOSION && thing != EXPLOSION_THING(EXPLOSION_SLIME) &&
+                        thing != EXPLOSION_THING(EXPLOSION_POISON_BOLT);
     uint16_t possessing_group = THING_NONE, champion_attack = 0;
     int16_t x = x_combo, y = y_combo, target_x = x_combo, target_y = y_combo;
     if (x_combo >= SQUARE_COMBO_MIN) {
@@ -341,7 +341,7 @@ bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_
         target_x = x_combo & SQUARE_COMBO_TARGET_MASK;
         target_y = y_combo & SQUARE_COMBO_TARGET_MASK;
     }
-    int16_t effect_happens = 1;
+    bool effect_happens = true;
     if (impact_type == IMPACT_PARTY) {
         cell = champion_get_index_in_cell(cell);
         if (cell < 0)
@@ -432,7 +432,7 @@ void projectile_process_move_event(TimelineEvent *event)
             projectile, projectile_attack(projectile) < step_energy ? 0 : projectile_attack(projectile) - step_energy);
     }
     uint16_t direction = projectile_event_direction(&next);
-    int16_t leaves_square = cell == direction || cell == turn_right(direction);
+    bool leaves_square = cell == direction || cell == turn_right(direction);
     int16_t dst_x = x, dst_y = y;
     if (leaves_square) {
         update_map_coordinates_after_relative_movement(direction, 1, 0, &dst_x, &dst_y);
@@ -468,7 +468,7 @@ void projectile_process_move_event(TimelineEvent *event)
 static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t damage)
 {
     if (rec_group_creature_type(group) != CREATURE_MATERIALIZER || g_current_map_index != g_party_map_index) {
-        group_get_damage_all_creatures_outcome(group, x, y, damage, 1);
+        group_get_damage_all_creatures_outcome(group, x, y, damage, true);
         return;
     }
     for (int16_t i = rec_group_last_creature_index(group); i >= 0; i--) {
@@ -477,7 +477,7 @@ static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t dama
         uint16_t spread = random16();
         uint16_t extra = random_2bits();
         int16_t eighth = damage >> 3;
-        group_get_damage_creature_outcome(group, i, x, y, extra + (damage - eighth) + spread % (eighth * 2 + 1), 1);
+        group_get_damage_creature_outcome(group, i, x, y, extra + (damage - eighth) + spread % (eighth * 2 + 1), true);
     }
 }
 
@@ -493,7 +493,7 @@ void explosion_process_step_event(TimelineEvent *event)
     int16_t damage = type == EXPLOSION_POISON_CLOUD
                          ? max16(1, min16(attack >> 5, POISON_CLOUD_MAX_DAMAGE) + random_bit())
                          : explosion_random_damage(attack);
-    int16_t breaks_door = 0;
+    bool breaks_door = false;
     switch (type) {
     case EXPLOSION_POISON_CLOUD:
         if (is_party_on(x, y)) {
@@ -501,9 +501,9 @@ void explosion_process_step_event(TimelineEvent *event)
         } else if (group != THING_END) {
             damage = group_get_resistance_adjusted_poison_attack(rec_group_creature_type(group), damage);
             if (damage &&
-                group_get_damage_all_creatures_outcome(group, x, y, damage, 1) != OUTCOME_ALL_CREATURES_KILLED &&
+                group_get_damage_all_creatures_outcome(group, x, y, damage, true) != OUTCOME_ALL_CREATURES_KILLED &&
                 damage > POISON_REACTION_MIN_DAMAGE)
-                group_process_reaction_event(x, y, REACTION_DANGER_ON_SQUARE, 0);
+                group_process_reaction_event(x, y, REACTION_DANGER_ON_SQUARE, false);
         }
         if (attack > POISON_CLOUD_MIN_ATTACK) {
             explosion_set_attack(explosion, attack - POISON_CLOUD_FADE);
@@ -528,7 +528,7 @@ void explosion_process_step_event(TimelineEvent *event)
         breaks_door = damage != 0;
         break;
     case EXPLOSION_FIREBALL:
-        breaks_door = 1;
+        breaks_door = true;
         break;
     case EXPLOSION_HARM_NON_MATERIAL:
         if (group != THING_END && (group_info(group)->attributes & CREATURE_NON_MATERIAL))
@@ -672,7 +672,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
         if (!health)
             return false;
     }
-    int16_t test_destination = 0;
+    bool test_destination = false;
     if (dst_x >= 0 && group_get_square_distance(src_x, src_y, dst_x, dst_y) == 1) {
         uint16_t primary = group_get_directions_to_destination(src_x, src_y, dst_x, dst_y);
         uint16_t next = turn_right(primary);
@@ -710,7 +710,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
         y_combo = dst_y << SQUARE_COMBO_SHIFT | src_y;
         for (int16_t i = 0; i < 4; i++)
             occupied[i] = crossed[i];
-        test_destination = 0;
+        test_destination = false;
     }
 }
 

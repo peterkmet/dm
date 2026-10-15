@@ -53,8 +53,8 @@ void move_set_party_direction(int16_t direction)
         return;
     int16_t n = g_party_champion_count ? g_party_champion_count : 1;
     for (int16_t i = 0; i < n; i++) {
-        g_champions[i].cell = (uint8_t)NORMALIZE(g_champions[i].cell + delta);
-        g_champions[i].direction = (uint8_t)NORMALIZE(g_champions[i].direction + delta);
+        g_champions[i].cell = NORMALIZE(g_champions[i].cell + delta);
+        g_champions[i].direction = NORMALIZE(g_champions[i].direction + delta);
     }
 }
 
@@ -76,7 +76,7 @@ void move_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags)
             value = keep_larger ? max16(g_party.scent_strengths[s], value)
                                 : min16(SCENT_STRENGTH_MAXIMUM, value + g_party.scent_strengths[s]);
         }
-        g_party.scent_strengths[s] = (uint8_t)value;
+        g_party.scent_strengths[s] = value;
     }
 }
 
@@ -108,7 +108,8 @@ static bool is_party_on(int16_t x, int16_t y)
    that points to itself. */
 static bool is_teleported(uint16_t *thing, uint8_t square, int16_t src_x, int16_t *dst_x, int16_t *dst_y, int16_t *map)
 {
-    int16_t party = *thing == THING_NONE, type = party ? -1 : THING_TYPE(*thing);
+    bool party = *thing == THING_NONE;
+    int16_t type = party ? -1 : THING_TYPE(*thing);
     uint16_t scope = party ? TELEPORTER_SCOPE_PARTY : TELEPORTER_SCOPE_ALL;
     if (!(square & TELEPORTER_OPEN))
         return false;
@@ -119,7 +120,7 @@ static bool is_teleported(uint16_t *thing, uint8_t square, int16_t src_x, int16_
         return false;
     int16_t x = teleporter_target_x(teleporter), y = teleporter_target_y(teleporter),
             rotation = teleporter_rotation(teleporter);
-    int16_t points_to_itself = x == *dst_x && y == *dst_y && teleporter_target_map(teleporter) == *map;
+    bool points_to_itself = x == *dst_x && y == *dst_y && teleporter_target_map(teleporter) == *map;
     *dst_x = x;
     *dst_y = y;
     *map = teleporter_target_map(teleporter);
@@ -145,8 +146,9 @@ static bool is_teleported(uint16_t *thing, uint8_t square, int16_t src_x, int16_
 static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_x, int16_t *dst_y, int16_t *map,
                                     int16_t *start_direction)
 {
-    int16_t party = thing == THING_NONE, type = party ? -1 : THING_TYPE(thing);
-    int16_t levitating = party ? 0 : move_is_levitating(thing);
+    bool party = thing == THING_NONE;
+    int16_t type = party ? -1 : THING_TYPE(thing);
+    bool levitating = party ? false : move_is_levitating(thing);
     for (int16_t n = SQUARE_CHAIN_MAXIMUM; n; n--) {
         uint8_t square = g_current_map_data[*dst_x][*dst_y];
         int16_t square_type = SQUARE_TYPE(square);
@@ -184,7 +186,7 @@ static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_
 /* The thing arrives on its destination square. The party kills a group there and enters the square sensors, or waits
    for the map change on another map. A projectile only joins the square list. */
 static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16_t map, int16_t src_map,
-                             int16_t same_square)
+                             bool same_square)
 {
     set_current_map(map);
     if (thing == THING_NONE) {
@@ -194,7 +196,7 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
             group_delete(g_party_map_x, g_party_map_y);
         }
         if (map == src_map) {
-            sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, same_square, 1);
+            sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, same_square, true);
         } else {
             set_current_map(src_map);
             g_new_party_map_index = map;
@@ -204,7 +206,7 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
     if (THING_TYPE(thing) == THING_PROJECTILE)
         link_thing_to_list(thing, 0, dst_x, dst_y);
     else
-        sensor_process_thing_addition_or_removal(dst_x, dst_y, thing, is_party_on(dst_x, dst_y), 1);
+        sensor_process_thing_addition_or_removal(dst_x, dst_y, thing, is_party_on(dst_x, dst_y), true);
     set_current_map(src_map);
 }
 
@@ -212,10 +214,12 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
    pits, and stairs. Returns 0. A group moves with group_get_move_result (group.c). */
 int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)
 {
-    int16_t party = thing == THING_NONE, type = party ? -1 : THING_TYPE(thing);
+    bool party = thing == THING_NONE;
+    int16_t type = party ? -1 : THING_TYPE(thing);
     uint16_t src_cell = party ? 0 : THING_CELL(thing);
-    int16_t levitating = party ? 0 : move_is_levitating(thing);
-    int16_t src_map = g_current_map_index, map = src_map, same_square = 0, start_direction = 0;
+    bool levitating = party ? false : move_is_levitating(thing);
+    int16_t src_map = g_current_map_index, map = src_map, start_direction = 0;
+    bool same_square = false;
     if (type == THING_GROUP)
         return group_get_move_result(thing, src_x, src_y, dst_x, dst_y);
     if (party && src_x >= 0 && projectile_is_killed_by_impact(src_x, src_y, dst_x, dst_y, THING_NONE))
@@ -247,9 +251,9 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
     }
     if (src_x >= 0) {
         if (party)
-            sensor_process_thing_addition_or_removal(src_x, src_y, THING_NONE, same_square, 0);
+            sensor_process_thing_addition_or_removal(src_x, src_y, THING_NONE, same_square, false);
         else if (!levitating)
-            sensor_process_thing_addition_or_removal(src_x, src_y, thing, is_party_on(src_x, src_y), 0);
+            sensor_process_thing_addition_or_removal(src_x, src_y, thing, is_party_on(src_x, src_y), false);
         else
             unlink_thing_from_list(thing, 0, src_x, src_y);
     }
@@ -281,7 +285,7 @@ void move_party_enter_dungeon(void)
 }
 
 /* The party leaves the stairs square and arrives on the other level facing out of the stairs. */
-void move_take_stairs(int16_t stairs_go_up)
+void move_take_stairs(bool stairs_go_up)
 {
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);
     g_new_party_map_index = get_location_after_level_change(g_party_map_index, stairs_go_up ? LEVEL_UP : LEVEL_DOWN,
@@ -299,9 +303,9 @@ void move_turn_party(int16_t command)
         move_take_stairs(square & STAIRS_UP);
         return;
     }
-    sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, 1, 0);
+    sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, true, false);
     move_set_party_direction(NORMALIZE(g_party_direction + (command == COMMAND_TURN_RIGHT ? 1 : -1)));
-    sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, 1, 1);
+    sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, true, true);
 }
 
 /* A wall, a door that is not open enough, or a solid fake wall stops the party. */
@@ -344,7 +348,7 @@ void move_party(int16_t command)
                                               1); /* 16-bit wrap */
     int16_t arrow = command - COMMAND_MOVE_FORWARD, x = g_party_map_x, y = g_party_map_y;
     uint8_t square = get_square(x, y);
-    int16_t on_stairs = SQUARE_TYPE(square) == SQUARE_STAIRS;
+    bool on_stairs = SQUARE_TYPE(square) == SQUARE_STAIRS;
     if (on_stairs && command == COMMAND_MOVE_BACKWARD) {
         move_take_stairs(square & STAIRS_UP);
         return;
@@ -359,7 +363,7 @@ void move_party(int16_t command)
         move_take_stairs(square & STAIRS_UP);
         return;
     }
-    int16_t blocked = is_square_blocking(square);
+    bool blocked = is_square_blocking(square);
     if (g_party_champion_count) {
         if (blocked) {
             bump_into_wall(x, y, arrow);

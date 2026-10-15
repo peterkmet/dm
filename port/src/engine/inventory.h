@@ -1,6 +1,7 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
 /* Prefixes: inventory_ object_ process_ chest_ close_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "map.h"
 #include "tables.h"
@@ -54,7 +55,7 @@ int16_t inventory_get_object_info_index(uint16_t thing);
 int16_t object_get_type(uint16_t thing);
 int16_t object_get_icon_index(uint16_t thing);
 uint16_t inventory_get_object_weight(uint16_t thing);
-uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense);
+uint16_t inventory_get_armour_defense(const ArmourInfo *info, bool use_sharp_defense);
 
 void inventory_put_object_in_leader_hand(uint16_t thing);
 uint16_t inventory_get_object_removed_from_leader_hand(void);

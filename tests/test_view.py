@@ -31,6 +31,7 @@ def lib():
     lib.draw_shrink.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.c_char_p, ctypes.POINTER(Bitmap)]
     lib.layout_get_zone.argtypes = [ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Box), ctypes.POINTER(ctypes.c_int16), ctypes.POINTER(ctypes.c_int16)]
     lib.gfx_item.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.load_dungeon.restype = ctypes.c_bool
     lib.gfx_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
     lib.view_render.argtypes = [ctypes.c_int16] * 4
     return lib

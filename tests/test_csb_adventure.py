@@ -47,7 +47,7 @@ def game(tmp_path_factory):
     lib.get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     lib.savegame_make_adventure.restype = c16
-    lib.savegame_save_as.restype = c16
+    lib.savegame_save_as.restype = ctypes.c_bool
     lib.savegame_load_from.restype = c16
     lib.startend_load_saved_game.restype = c16
     lib.control_open.argtypes = [ctypes.c_char_p]

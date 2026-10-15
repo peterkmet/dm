@@ -83,12 +83,12 @@ static inline void explosion_set_attack(uint16_t explosion, uint8_t attack)
 static inline void explosion_set_type(uint16_t explosion, uint16_t type)
 {
     REC(explosion)
-    [3] = (uint8_t)((REC(explosion)[3] & EXPLOSION_RECORD_CENTERED) | (type & EXPLOSION_RECORD_TYPE_MASK));
+    [3] = (REC(explosion)[3] & EXPLOSION_RECORD_CENTERED) | (type & EXPLOSION_RECORD_TYPE_MASK);
 }
-static inline void explosion_set_centered(uint16_t explosion, int16_t centered)
+static inline void explosion_set_centered(uint16_t explosion, bool centered)
 {
     REC(explosion)
-    [3] = (uint8_t)((REC(explosion)[3] & EXPLOSION_RECORD_TYPE_MASK) | (centered ? EXPLOSION_RECORD_CENTERED : 0));
+    [3] = (REC(explosion)[3] & EXPLOSION_RECORD_TYPE_MASK) | (centered ? EXPLOSION_RECORD_CENTERED : 0);
 }
 
 /* Projectile move event: b = projectile thing, c = x bits 11-15, y bits 6-10, direction bits 4-5, step energy bits 0-3. */

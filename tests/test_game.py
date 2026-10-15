@@ -65,6 +65,7 @@ def lib():
     for name in ("random16", "random_bit", "random_2bits"):
         getattr(lib, name).restype = ctypes.c_uint16
     lib.scale_value.restype = ctypes.c_int32
+    lib.load_dungeon.restype = ctypes.c_bool
     lib.scale_value.argtypes = [ctypes.c_uint16, c16, ctypes.c_uint16]
     for name in ("min16", "max16", "bounded_value", "timeline_add_event",
                  "game_get_stamina_adjusted_value"):
