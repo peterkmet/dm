@@ -28,12 +28,15 @@ void scale3x(const uint8_t *src, int w, int h, uint8_t *dst)
 {
     for (int y = 0; y < h; y++)
         for (int x = 0; x < w; x++) {
-            uint8_t A = pixel(src, w, h, x - 1, y - 1), B = pixel(src, w, h, x, y - 1), C = pixel(src, w, h, x + 1, y - 1);
+            uint8_t A = pixel(src, w, h, x - 1, y - 1), B = pixel(src, w, h, x, y - 1),
+                    C = pixel(src, w, h, x + 1, y - 1);
             uint8_t D = pixel(src, w, h, x - 1, y), E = pixel(src, w, h, x, y), F = pixel(src, w, h, x + 1, y);
-            uint8_t G = pixel(src, w, h, x - 1, y + 1), H = pixel(src, w, h, x, y + 1), I = pixel(src, w, h, x + 1, y + 1);
+            uint8_t G = pixel(src, w, h, x - 1, y + 1), H = pixel(src, w, h, x, y + 1),
+                    I = pixel(src, w, h, x + 1, y + 1);
             uint8_t *o = dst + 3 * y * 3 * w + 3 * x, *o1 = o + 3 * w, *o2 = o1 + 3 * w;
             o[0] = o[1] = o[2] = o1[0] = o1[1] = o1[2] = o2[0] = o2[1] = o2[2] = E;
-            if (B == H || D == F) continue;
+            if (B == H || D == F)
+                continue;
             o[0] = D == B ? D : E;
             o[1] = (D == B && E != C) || (B == F && E != A) ? B : E;
             o[2] = B == F ? F : E;

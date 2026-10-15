@@ -8,7 +8,7 @@
 #include "ids.h"
 
 #define GRAPHICS_DAT_FORMAT_1 0x8001
-#define GRAPHIC_PAD_WORD 0xff81 /* skipped before the width and height */
+#define GRAPHIC_PAD_WORD      0xff81 /* skipped before the width and height */
 
 /* Graphic command byte: bit 7 clear = short fill of (bits 4-6) + 1 pixels of color (bits 0-3).
    Bit 7 set = a long command: kind in bits 4-5, bit 6 a 16-bit count. */
@@ -34,27 +34,35 @@ int gfx_open(const char *path)
     offsets = NULL;
     decoded = NULL;
     count = 0;
-    if (!(dat = read_file(path, &dat_len)) || dat_len < 4) return -1;
-    if (BE16(dat) != GRAPHICS_DAT_FORMAT_1) return -1;
+    if (!(dat = read_file(path, &dat_len)) || dat_len < 4)
+        return -1;
+    if (BE16(dat) != GRAPHICS_DAT_FORMAT_1)
+        return -1;
     uint16_t n = BE16(dat + 2);
     uint32_t off = 4 + n * 8u;
     const uint8_t *sizes = dat + 4;
-    if (off > dat_len || !(offsets = malloc((n + 1) * sizeof *offsets))) return -1;
+    if (off > dat_len || !(offsets = malloc((n + 1) * sizeof *offsets)))
+        return -1;
     for (int i = 0; i < n; i++) {
         offsets[i] = off;
         off += BE16(sizes + 2 * i);
     }
     offsets[n] = off;
-    if (off > dat_len || !(decoded = calloc(n, sizeof *decoded))) return -1;
+    if (off > dat_len || !(decoded = calloc(n, sizeof *decoded)))
+        return -1;
     return count = n;
 }
 
-int gfx_count(void) { return count; }
+int gfx_count(void)
+{
+    return count;
+}
 
 /* Packed bytes of item i. */
 const uint8_t *gfx_item(int i, uint16_t *size)
 {
-    if (i < 0 || i >= count) return NULL;
+    if (i < 0 || i >= count)
+        return NULL;
     *size = offsets[i + 1] - offsets[i];
     return dat + offsets[i];
 }
@@ -62,8 +70,10 @@ const uint8_t *gfx_item(int i, uint16_t *size)
 /* Skips the pad words and reads the size of a packed graphic. Returns the start of the commands or NULL. */
 static const uint8_t *graphic_size(const uint8_t *p, const uint8_t *end, uint16_t *w, uint16_t *h)
 {
-    while (end - p >= 2 && BE16(p) == GRAPHIC_PAD_WORD) p += 2;
-    if (end - p < 4) return NULL;
+    while (end - p >= 2 && BE16(p) == GRAPHIC_PAD_WORD)
+        p += 2;
+    if (end - p < 4)
+        return NULL;
     *w = BE16(p);
     *h = BE16(p + 2);
     return p + 4;
@@ -74,31 +84,45 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
 {
     size_t pos = 0;
 #define NEXT() (p < end ? *p++ : 0)
-#define PUT(c) do { if (pos < n) px[pos] = (c); pos++; } while (0)
+#define PUT(c)                                                                                                         \
+    do {                                                                                                               \
+        if (pos < n)                                                                                                   \
+            px[pos] = (c);                                                                                             \
+        pos++;                                                                                                         \
+    } while (0)
     while (pos < n) {
         uint8_t cmd = NEXT(), c = cmd & CMD_COLOR_MASK;
         unsigned cnt;
         if (!(cmd & CMD_LONG)) {
-            for (cnt = (cmd >> 4) + 1; cnt; cnt--) PUT(c);
+            for (cnt = (cmd >> 4) + 1; cnt; cnt--)
+                PUT(c);
             continue;
         }
         if ((cmd & CMD_KIND_MASK) == KIND_SKIP) { /* leave pixels transparent */
             unsigned k = c | (cmd & CMD_WIDE_COUNT ? SKIP_WIDE : 0);
-            if (k == SKIP_BYTE) k = NEXT();
-            else if (k == SKIP_BYTE_PLUS_256) k = SKIP_BYTE_BASE + NEXT();
-            else if (k == SKIP_WORD) { k = NEXT() << 8; k |= NEXT(); }
+            if (k == SKIP_BYTE)
+                k = NEXT();
+            else if (k == SKIP_BYTE_PLUS_256)
+                k = SKIP_BYTE_BASE + NEXT();
+            else if (k == SKIP_WORD) {
+                k = NEXT() << 8;
+                k |= NEXT();
+            }
             pos += k + 1;
             continue;
         }
         cnt = NEXT();
-        if (cmd & CMD_WIDE_COUNT) cnt = cnt << 8 | NEXT();
+        if (cmd & CMD_WIDE_COUNT)
+            cnt = cnt << 8 | NEXT();
         cnt++;
         switch (cmd & CMD_KIND_MASK) {
         case KIND_FILL:
-            while (cnt--) PUT(c);
+            while (cnt--)
+                PUT(c);
             break;
         case KIND_RAW: /* two pixels per byte */
-            if (cnt & 1) PUT(c);
+            if (cnt & 1)
+                PUT(c);
             for (cnt /= 2; cnt; cnt--) {
                 uint8_t b = NEXT();
                 PUT(b >> 4);
@@ -106,7 +130,8 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
             }
             break;
         default: /* KIND_COPY_ABOVE, then one pixel of color c */
-            for (; cnt; cnt--) PUT(pos >= w && pos < n ? px[pos - w] : 0);
+            for (; cnt; cnt--)
+                PUT(pos >= w && pos < n ? px[pos - w] : 0);
             PUT(c);
         }
     }
@@ -119,12 +144,14 @@ int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
 {
     const uint8_t *end = p + len;
     uint16_t w, h;
-    if (!(p = graphic_size(p, end, &w, &h))) return -1;
+    if (!(p = graphic_size(p, end, &w, &h)))
+        return -1;
     size_t n = (size_t)w * h;
     uint8_t *px = calloc(n ? n : 1, 1);
-    if (!px) return -1;
+    if (!px)
+        return -1;
     expand_commands(p, end, px, w, n);
-    *bm = (Bitmap){ w, h, px };
+    *bm = (Bitmap){w, h, px};
     return 0;
 }
 
@@ -133,7 +160,8 @@ int gfx_expand_over(const uint8_t *p, size_t len, Bitmap *bm)
 {
     const uint8_t *end = p + len;
     uint16_t w, h;
-    if (!(p = graphic_size(p, end, &w, &h)) || w != bm->w || h != bm->h) return -1;
+    if (!(p = graphic_size(p, end, &w, &h)) || w != bm->w || h != bm->h)
+        return -1;
     expand_commands(p, end, bm->px, w, (size_t)w * h);
     return 0;
 }
@@ -155,8 +183,10 @@ void gfx_free_bitmap(Bitmap *bm)
 /* Decoded graphic i, kept until the next gfx_open. NULL when it does not decode. */
 const Bitmap *gfx_bitmap(int i)
 {
-    if (i < 0 || i >= count) return NULL;
-    if (!decoded[i].px && gfx_load_bitmap(i, &decoded[i])) return NULL;
+    if (i < 0 || i >= count)
+        return NULL;
+    if (!decoded[i].px && gfx_load_bitmap(i, &decoded[i]))
+        return NULL;
     return &decoded[i];
 }
 
@@ -177,21 +207,26 @@ static int load_strings(int graphic, StringList *list)
     uint16_t size;
     int csb = g_adventure == ADVENTURE_CSB, bit7_ends = csb && graphic == GFX_OBJECT_NAMES;
     const uint8_t *p = csb ? csb_text_item(graphic, &size) : NULL;
-    if (!p) p = gfx_item(graphic, &size);
-    if (!p) return -1;
+    if (!p)
+        p = gfx_item(graphic, &size);
+    if (!p)
+        return -1;
     free(list->data);
     free(list->s);
     list->data = malloc(2 * (size_t)size + 1);
     list->s = malloc(((size_t)size + 1) * sizeof *list->s);
-    if (!list->data || !list->s) return -1;
+    if (!list->data || !list->s)
+        return -1;
     size_t n = 0;
     for (uint16_t i = 0; i < size; i++) {
         list->data[n++] = (char)(bit7_ends ? p[i] & ~NAME_END_BIT : p[i]);
-        if (bit7_ends && p[i] & NAME_END_BIT) list->data[n++] = 0;
+        if (bit7_ends && p[i] & NAME_END_BIT)
+            list->data[n++] = 0;
     }
     list->data[n] = 0;
     list->count = 0;
-    for (char *c = list->data; c < list->data + n; c += strlen(c) + 1) list->s[list->count++] = c;
+    for (char *c = list->data; c < list->data + n; c += strlen(c) + 1)
+        list->s[list->count++] = c;
     return 0;
 }
 
@@ -204,7 +239,19 @@ int gfx_load_strings(void)
     return 0;
 }
 
-static const char *list_get(const StringList *l, int16_t i) { return i >= 0 && i < l->count ? l->s[i] : ""; }
-const char *gfx_string(int16_t index) { return list_get(&strings, index); }
-const char *gfx_object_name(int16_t icon) { return list_get(&object_names, icon); }
-const char *gfx_action_name(int16_t action) { return list_get(&action_names, action); }
+static const char *list_get(const StringList *l, int16_t i)
+{
+    return i >= 0 && i < l->count ? l->s[i] : "";
+}
+const char *gfx_string(int16_t index)
+{
+    return list_get(&strings, index);
+}
+const char *gfx_object_name(int16_t icon)
+{
+    return list_get(&object_names, icon);
+}
+const char *gfx_action_name(int16_t action)
+{
+    return list_get(&action_names, action);
+}

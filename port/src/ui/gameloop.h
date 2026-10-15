@@ -5,7 +5,7 @@
 
 /* Game start and the main loop (KAOS initialize_game, start_game, game_loop, process_entrance). */
 
-#define POINTER_SIZE 32   /* largest pointer image, in pixels */
+#define POINTER_SIZE 32 /* largest pointer image, in pixels */
 
 /* Loads KAOS.FTL and Graphics.DAT from dir and sets up the interface. Returns 1 on success. */
 int gameloop_load_data(const char *dir);

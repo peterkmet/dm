@@ -30,23 +30,23 @@
 #include "video.h"
 #include "view.h"
 
-#define INPUT_SIZE 65536              /* longest request line */
-#define TURN_MIN_TICKS 2              /* an action shows its result, then the action area returns */
-#define TURN_MAX_TICKS 64
-#define WAIT_MAX_TICKS 5000
-#define FRAMES_PER_TICK_LIMIT 16      /* a frozen game ends a turn after this many frames per tick */
-#define ACTION_NAME_SIZE 32
+#define INPUT_SIZE               65536 /* longest request line */
+#define TURN_MIN_TICKS           2     /* an action shows its result, then the action area returns */
+#define TURN_MAX_TICKS           64
+#define WAIT_MAX_TICKS           5000
+#define FRAMES_PER_TICK_LIMIT    16 /* a frozen game ends a turn after this many frames per tick */
+#define ACTION_NAME_SIZE         32
 #define WITNESSED_EXPLOSIONS_MAX 32
-#define WITNESSED_GROUPS_MAX 16
-#define KEY_PATTERN_SIZE 64           /* a quoted request key */
-#define SLOT_REQUEST_SIZE 64
-#define CHOICE_SIZE 16
-#define CMD_SIZE 32
+#define WITNESSED_GROUPS_MAX     16
+#define KEY_PATTERN_SIZE         64 /* a quoted request key */
+#define SLOT_REQUEST_SIZE        64
+#define CHOICE_SIZE              16
+#define CMD_SIZE                 32
 
 #ifdef MSG_NOSIGNAL
-#define SEND_FLAGS MSG_NOSIGNAL       /* a closed client does not raise SIGPIPE (Linux) */
+#define SEND_FLAGS MSG_NOSIGNAL /* a closed client does not raise SIGPIPE (Linux) */
 #else
-#define SEND_FLAGS 0                  /* SO_NOSIGPIPE does the same (macOS) */
+#define SEND_FLAGS 0 /* SO_NOSIGPIPE does the same (macOS) */
 #endif
 
 static int listen_fd = -1, client_fd = -1;
@@ -60,12 +60,12 @@ static struct {
     long frames, min_ticks, max_ticks;
     int has_damage;
     int16_t damage;
-    int moving;                       /* the action was a step forward and to the right */
+    int moving; /* the action was a step forward and to the right */
     int16_t step_forward, step_right;
-    int16_t rotation;                 /* the action was a turn: 1 right, -1 left */
-    int16_t map, x, y, direction;     /* the party before the action */
-    int teleports;                    /* g_party_teleport_count before the action */
-    const char *stop;                 /* wait: the news that ended it early, or NULL */
+    int16_t rotation;             /* the action was a turn: 1 right, -1 left */
+    int16_t map, x, y, direction; /* the party before the action */
+    int teleports;                /* g_party_teleport_count before the action */
+    const char *stop;             /* wait: the news that ended it early, or NULL */
 } turn;
 
 /* A batch: act_many runs a list of actions; each step is one turn. */
@@ -74,7 +74,7 @@ static struct {
     int active, ran;
     int16_t damages[BATCH_DAMAGE_MAX]; /* the action damage of each choose_action, in order */
     int damage_count;
-    char *actions;                    /* a copy of the request; next is the rest of its actions array */
+    char *actions; /* a copy of the request; next is the rest of its actions array */
     const char *next;
     uint32_t start_time;
     const char *stop, *error;
@@ -115,10 +115,13 @@ static struct {
     char name[PANEL_LINE_SIZE], lines[PANEL_LINE_COUNT + 1][PANEL_LINE_SIZE];
 } look_text;
 
-static int load_failed;               /* a damaged save file left no game to play */
+static int load_failed; /* a damaged save file left no game to play */
 
 /* The party died, or the game is won: the endgame ran and no turn can follow until load or new_game. */
-static int game_over(void) { return g_party_dead || g_game_won; }
+static int game_over(void)
+{
+    return g_party_dead || g_game_won;
+}
 
 /* Input as the player gives it: clicks and keys go through the command queue. */
 
@@ -165,19 +168,27 @@ static int find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
     const Bitmap *vp = ui_viewport();
     int16_t ox, oy;
     viewport_origin(&ox, &oy);
-    const int16_t offsets[3][2] = { { 0, 0 }, { ox, oy }, { (SCREEN_W - vp->w) / 2, (SCREEN_H - vp->h) / 2 } };
+    const int16_t offsets[3][2] = {
+        {0,                      0                     },
+        {ox,                     oy                    },
+        {(SCREEN_W - vp->w) / 2, (SCREEN_H - vp->h) / 2}
+    };
     for (uint32_t a = ui_mouse_table_address(table); kaos_s16(a + 2 * INPUT_COMMAND); a += 2 * INPUT_WORDS) {
-        if (kaos_s16(a + 2 * INPUT_COMMAND) != command) continue;
+        if (kaos_s16(a + 2 * INPUT_COMMAND) != command)
+            continue;
         int16_t x1 = kaos_s16(a + 2 * INPUT_X1), x2 = kaos_s16(a + 2 * INPUT_X2);
-        Box b = { x1, kaos_s16(a + 2 * INPUT_Y1), x2 - x1 + 1, 0 };
+        Box b = {x1, kaos_s16(a + 2 * INPUT_Y1), x2 - x1 + 1, 0};
         if (x1 >= 0) {
             b.h = kaos_s16(a + 2 * INPUT_Y2) - b.y + 1;
-            if (find_in_box(table, command, b, 0, 0, x, y)) return 1;
+            if (find_in_box(table, command, b, 0, 0, x, y))
+                return 1;
             continue;
         }
-        if (!ui_zone_box(x2, &b)) continue;
+        if (!ui_zone_box(x2, &b))
+            continue;
         for (int k = 0; k < 3; k++)
-            if (find_in_box(table, command, b, offsets[k][0], offsets[k][1], x, y)) return 1;
+            if (find_in_box(table, command, b, offsets[k][0], offsets[k][1], x, y))
+                return 1;
     }
     return 0;
 }
@@ -185,7 +196,8 @@ static int find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
 static int click_command(int16_t table, int16_t command)
 {
     int16_t x, y;
-    if (!find_click(table, command, &x, &y)) return 0;
+    if (!find_click(table, command, &x, &y))
+        return 0;
     click(x, y);
     return 1;
 }
@@ -205,9 +217,11 @@ static const char *find_value(const char *line, const char *key)
     char pattern[KEY_PATTERN_SIZE];
     snprintf(pattern, sizeof pattern, "\"%s\"", key);
     const char *p = strstr(line, pattern);
-    if (!p) return NULL;
+    if (!p)
+        return NULL;
     p += strlen(pattern);
-    while (*p == ' ' || *p == ':') p++;
+    while (*p == ' ' || *p == ':')
+        p++;
     return p;
 }
 
@@ -215,8 +229,10 @@ static int get_string(const char *line, const char *key, char *out, size_t size)
 {
     const char *p = find_value(line, key);
     size_t n = 0;
-    if (!p || *p++ != '"') return 0;
-    while (*p && *p != '"' && n + 1 < size) out[n++] = *p++;
+    if (!p || *p++ != '"')
+        return 0;
+    while (*p && *p != '"' && n + 1 < size)
+        out[n++] = *p++;
     out[n] = 0;
     return 1;
 }
@@ -225,7 +241,8 @@ static long get_int(const char *line, const char *key, long missing)
 {
     const char *p = find_value(line, key);
     char *end;
-    if (!p) return missing;
+    if (!p)
+        return missing;
     long value = strtol(p, &end, DECIMAL_BASE);
     return end == p ? missing : value;
 }
@@ -237,21 +254,24 @@ typedef const char *(*ActionFn)(const char *request);
 static int champion_arg(const char *request, int16_t *champion)
 {
     long c = get_int(request, "champion", -1);
-    if (c < 0 || c >= (long)g_party_champion_count || !g_champions[c].current_health) return 0;
+    if (c < 0 || c >= (long)g_party_champion_count || !g_champions[c].current_health)
+        return 0;
     *champion = c;
     return 1;
 }
 
 static const char *need_movement_input(void)
 {
-    if (g_inventory_champion_ordinal) return "close the inventory first (close_inventory)";
+    if (g_inventory_champion_ordinal)
+        return "close the inventory first (close_inventory)";
     return NULL;
 }
 
 static const char *movement(uint16_t key)
 {
     const char *error = need_movement_input();
-    if (!error) press_key(key);
+    if (!error)
+        press_key(key);
     return error;
 }
 
@@ -280,27 +300,57 @@ static int turn_bumped(void)
 static const char *turn_displaced(void)
 {
     int16_t x = turn.x, y = turn.y;
-    if (turn.moving) update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
+    if (turn.moving)
+        update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
     int stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
-    if (g_party_map_index != turn.map || (!stayed && (g_party_map_x != x || g_party_map_y != y))) return "moved";
-    if (stayed && g_party_teleport_count != turn.teleports) return "moved"; /* a teleporter sent the party back */
-    if (g_party_direction != turn.direction && g_party_direction != NORMALIZE(turn.direction + turn.rotation)) return "turned";
+    if (g_party_map_index != turn.map || (!stayed && (g_party_map_x != x || g_party_map_y != y)))
+        return "moved";
+    if (stayed && g_party_teleport_count != turn.teleports)
+        return "moved"; /* a teleporter sent the party back */
+    if (g_party_direction != turn.direction && g_party_direction != NORMALIZE(turn.direction + turn.rotation))
+        return "turned";
     return NULL;
 }
 
-static const char *move_forward(const char *r) { (void)r; return step(KEY_UP, 1, 0); }
-static const char *move_back(const char *r) { (void)r; return step(KEY_DOWN, -1, 0); }
-static const char *move_left(const char *r) { (void)r; return step(KEY_LEFT, 0, -1); }
-static const char *move_right(const char *r) { (void)r; return step(KEY_RIGHT, 0, 1); }
-static const char *turn_left(const char *r) { (void)r; return rotate(KEY_DEL, -1); }
-static const char *turn_right(const char *r) { (void)r; return rotate(KEY_HELP, 1); }
+static const char *move_forward(const char *r)
+{
+    (void)r;
+    return step(KEY_UP, 1, 0);
+}
+static const char *move_back(const char *r)
+{
+    (void)r;
+    return step(KEY_DOWN, -1, 0);
+}
+static const char *move_left(const char *r)
+{
+    (void)r;
+    return step(KEY_LEFT, 0, -1);
+}
+static const char *move_right(const char *r)
+{
+    (void)r;
+    return step(KEY_RIGHT, 0, 1);
+}
+static const char *turn_left(const char *r)
+{
+    (void)r;
+    return rotate(KEY_DEL, -1);
+}
+static const char *turn_right(const char *r)
+{
+    (void)r;
+    return rotate(KEY_HELP, 1);
+}
 
 static const char *click_wall_ahead(const char *r)
 {
     (void)r;
     const Box *b = &g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL];
-    if (g_inventory_champion_ordinal) return "close the inventory first (close_inventory)";
-    if (b->x == -1) return "nothing to click on the wall ahead";
+    if (g_inventory_champion_ordinal)
+        return "close the inventory first (close_inventory)";
+    if (b->x == -1)
+        return "nothing to click on the wall ahead";
     click_view_box(b);
     return NULL;
 }
@@ -308,10 +358,14 @@ static const char *click_wall_ahead(const char *r)
 static const char *take_object(const char *r)
 {
     long cell = get_int(r, "cell", -1);
-    if (g_inventory_champion_ordinal) return "close the inventory first (close_inventory)";
-    if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE) return "cell must be 0-4 (see get_view piles)";
-    if (!g_leader_empty_handed) return "the leader hand is not empty: drop or store the object first";
-    if (g_dungeon_view_clickable_boxes[cell].x == -1) return "no object at this cell";
+    if (g_inventory_champion_ordinal)
+        return "close the inventory first (close_inventory)";
+    if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE)
+        return "cell must be 0-4 (see get_view piles)";
+    if (!g_leader_empty_handed)
+        return "the leader hand is not empty: drop or store the object first";
+    if (g_dungeon_view_clickable_boxes[cell].x == -1)
+        return "no object at this cell";
     click_view_box(&g_dungeon_view_clickable_boxes[cell]);
     return NULL;
 }
@@ -320,14 +374,18 @@ static const char *drop_object(const char *r)
 {
     long cell = get_int(r, "cell", 0);
     Box b;
-    if (g_inventory_champion_ordinal) return "close the inventory first (close_inventory)";
-    if (g_leader_empty_handed) return "the leader hand is empty";
+    if (g_inventory_champion_ordinal)
+        return "close the inventory first (close_inventory)";
+    if (g_leader_empty_handed)
+        return "the leader hand is empty";
     if (cell == VIEW_CLICK_BOX_ALCOVE) {
-        if (g_square_ahead_element != VIEW_ELEMENT_WALL || !g_facing_alcove) return "no alcove ahead";
+        if (g_square_ahead_element != VIEW_ELEMENT_WALL || !g_facing_alcove)
+            return "no alcove ahead";
         click_view_box(&g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL]);
         return NULL;
     }
-    if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE || !ui_zone_box(ZONE_DROP_CELL_FIRST + cell, &b)) return "cell must be 0-4";
+    if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE || !ui_zone_box(ZONE_DROP_CELL_FIRST + cell, &b))
+        return "cell must be 0-4";
     click_view_box(&b);
     return NULL;
 }
@@ -335,15 +393,18 @@ static const char *drop_object(const char *r)
 static const char *open_inventory(const char *r)
 {
     int16_t c;
-    if (!champion_arg(r, &c)) return "no living champion with this index";
-    if (g_inventory_champion_ordinal != c + 1) press_key(KEY_F1 + (c << 8));
+    if (!champion_arg(r, &c))
+        return "no living champion with this index";
+    if (g_inventory_champion_ordinal != c + 1)
+        press_key(KEY_F1 + (c << 8));
     return NULL;
 }
 
 static const char *close_inventory(const char *r)
 {
     (void)r;
-    if (g_inventory_champion_ordinal) press_key(KEY_F1 + ((g_inventory_champion_ordinal - 1) << 8));
+    if (g_inventory_champion_ordinal)
+        press_key(KEY_F1 + ((g_inventory_champion_ordinal - 1) << 8));
     return NULL;
 }
 
@@ -353,16 +414,22 @@ static const char *click_slot(const char *r)
 {
     int16_t c;
     long slot = get_int(r, "slot", -1);
-    if (!champion_arg(r, &c)) return "no living champion with this index";
-    if (g_leader_index == -1) return "no leader";
+    if (!champion_arg(r, &c))
+        return "no living champion with this index";
+    if (g_leader_index == -1)
+        return "no leader";
     if (g_inventory_champion_ordinal == c + 1) {
-        if (slot < 0 || slot >= SLOT_CHEST_FIRST + (g_open_chest != THING_NONE ? SLOT_CHEST_COUNT : 0)) return "slot out of range";
+        if (slot < 0 || slot >= SLOT_CHEST_FIRST + (g_open_chest != THING_NONE ? SLOT_CHEST_COUNT : 0))
+            return "slot out of range";
         int16_t table = slot >= SLOT_CHEST_FIRST ? UI_INPUT_CHEST : UI_INPUT_INVENTORY;
-        if (!click_command(table, COMMAND_CLICK_SLOT_BOX_FIRST + UI_SLOT_BOX_INVENTORY_FIRST + slot)) return "slot not found";
+        if (!click_command(table, COMMAND_CLICK_SLOT_BOX_FIRST + UI_SLOT_BOX_INVENTORY_FIRST + slot))
+            return "slot not found";
         return NULL;
     }
-    if (slot != SLOT_HAND_READY && slot != SLOT_HAND_ACTION) return "open the inventory of this champion first (open_inventory)";
-    if (!click_command(UI_INPUT_STATUS_BOX, COMMAND_CLICK_SLOT_BOX_FIRST + 2 * c + slot)) return "slot not found";
+    if (slot != SLOT_HAND_READY && slot != SLOT_HAND_ACTION)
+        return "open the inventory of this champion first (open_inventory)";
+    if (!click_command(UI_INPUT_STATUS_BOX, COMMAND_CLICK_SLOT_BOX_FIRST + 2 * c + slot))
+        return "slot not found";
     return NULL;
 }
 
@@ -387,18 +454,25 @@ static const char *look(const char *r)
     int16_t x, y;
     long slot = get_int(r, "slot", -1);
     char request[SLOT_REQUEST_SIZE];
-    if (!g_inventory_champion_ordinal) return "open an inventory first (open_inventory): the eye is in the inventory";
-    if (!find_click(UI_INPUT_INVENTORY, COMMAND_CLICK_EYE, &x, &y)) return "eye not found";
+    if (!g_inventory_champion_ordinal)
+        return "open an inventory first (open_inventory): the eye is in the inventory";
+    if (!find_click(UI_INPUT_INVENTORY, COMMAND_CLICK_EYE, &x, &y))
+        return "eye not found";
     if (slot < 0) {
-        if (g_leader_empty_handed) return "the leader hand is empty: take an object, or give champion and slot";
+        if (g_leader_empty_handed)
+            return "the leader hand is empty: take an object, or give champion and slot";
         press_eye(x, y);
         return NULL;
     }
-    if (!g_leader_empty_handed) return "the leader hand must be empty to look at a slot";
-    snprintf(request, sizeof request, "\"champion\":%ld,\"slot\":%ld", get_int(r, "champion", g_inventory_champion_ordinal - 1), slot);
+    if (!g_leader_empty_handed)
+        return "the leader hand must be empty to look at a slot";
+    snprintf(request, sizeof request, "\"champion\":%ld,\"slot\":%ld",
+             get_int(r, "champion", g_inventory_champion_ordinal - 1), slot);
     const char *error = click_slot(request);
-    if (error) return error;
-    if (g_leader_empty_handed) return "no object in this slot";
+    if (error)
+        return error;
+    if (g_leader_empty_handed)
+        return "no object in this slot";
     press_eye(x, y);
     click_slot(request);
     return NULL;
@@ -407,12 +481,15 @@ static const char *look(const char *r)
 /* Clicks the icon of champion a, then the icon of champion b: the two champions swap cells. */
 static const char *swap_champions(const char *r)
 {
-    long pair[2] = { get_int(r, "a", -1), get_int(r, "b", -1) };
+    long pair[2] = {get_int(r, "a", -1), get_int(r, "b", -1)};
     for (int k = 0; k < 2; k++)
-        if (pair[k] < 0 || pair[k] >= (long)g_party_champion_count || !g_champions[pair[k]].current_health) return "a and b must be living champions";
-    if (pair[0] == pair[1]) return "a and b must be different champions";
+        if (pair[k] < 0 || pair[k] >= (long)g_party_champion_count || !g_champions[pair[k]].current_health)
+            return "a and b must be living champions";
+    if (pair[0] == pair[1])
+        return "a and b must be different champions";
     for (int k = 0; k < 2; k++)
-        if (!click_command(UI_INPUT_INTERFACE, COMMAND_CLICK_CHAMPION_ICON_FIRST + NORMALIZE(g_champions[pair[k]].cell - g_party_direction)))
+        if (!click_command(UI_INPUT_INTERFACE, COMMAND_CLICK_CHAMPION_ICON_FIRST +
+                                                   NORMALIZE(g_champions[pair[k]].cell - g_party_direction)))
             return "champion icon not found";
     return NULL;
 }
@@ -420,8 +497,10 @@ static const char *swap_champions(const char *r)
 static const char *use_mouth(const char *r)
 {
     (void)r;
-    if (!g_inventory_champion_ordinal) return "open the inventory of the champion who eats or drinks first";
-    if (g_leader_empty_handed) return "take the food or drink in the leader hand first";
+    if (!g_inventory_champion_ordinal)
+        return "open the inventory of the champion who eats or drinks first";
+    if (g_leader_empty_handed)
+        return "take the food or drink in the leader hand first";
     click_command(UI_INPUT_INVENTORY, COMMAND_CLICK_MOUTH);
     return NULL;
 }
@@ -430,25 +509,31 @@ static const char *choose_action(const char *r)
 {
     int16_t c;
     long index = get_int(r, "index", -1);
-    if (!champion_arg(r, &c)) return "no living champion with this index";
-    if (g_acting_champion_ordinal && g_acting_champion_ordinal != c + 1) return "another champion's action menu is open: use pass first";
+    if (!champion_arg(r, &c))
+        return "no living champion with this index";
+    if (g_acting_champion_ordinal && g_acting_champion_ordinal != c + 1)
+        return "another champion's action menu is open: use pass first";
     if (!g_acting_champion_ordinal) {
         click_command(UI_INPUT_ACTION_ICONS, COMMAND_SELECT_ACTING_CHAMPION_FIRST + c);
-        if (g_acting_champion_ordinal != c + 1) return "this champion cannot act now (action disabled, or no actions)";
+        if (g_acting_champion_ordinal != c + 1)
+            return "this champion cannot act now (action disabled, or no actions)";
     }
-    if (index < 0 || index >= (long)g_action_count) return "index out of range of the action menu (see state action_menu)";
+    if (index < 0 || index >= (long)g_action_count)
+        return "index out of range of the action menu (see state action_menu)";
     turn.has_damage = 1;
     g_action_damage = 0;
     click_command(UI_INPUT_ACTION_NAMES, COMMAND_ACTION_FIRST + index);
     turn.damage = g_action_damage;
-    if (batch.active && batch.damage_count < BATCH_DAMAGE_MAX) batch.damages[batch.damage_count++] = g_action_damage;
+    if (batch.active && batch.damage_count < BATCH_DAMAGE_MAX)
+        batch.damages[batch.damage_count++] = g_action_damage;
     return NULL;
 }
 
 static const char *pass(const char *r)
 {
     (void)r;
-    if (g_acting_champion_ordinal) click_command(UI_INPUT_ACTION_NAMES, COMMAND_PASS);
+    if (g_acting_champion_ordinal)
+        click_command(UI_INPUT_ACTION_NAMES, COMMAND_PASS);
     return NULL;
 }
 
@@ -456,16 +541,20 @@ static const char *set_caster(const char *r)
 {
     int16_t c;
     Box b;
-    if (!champion_arg(r, &c)) return "no living champion with this index";
-    if (g_magic_caster_champion_index == -1) return "no spell area";
-    if (!ui_zone_box(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + c, &b)) return "caster tab not found";
+    if (!champion_arg(r, &c))
+        return "no living champion with this index";
+    if (g_magic_caster_champion_index == -1)
+        return "no spell area";
+    if (!ui_zone_box(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + c, &b))
+        return "caster tab not found";
     click(b.x + b.w / 2, b.y + b.h / 2);
     return NULL;
 }
 
 static const char *spell_click(int16_t command)
 {
-    if (g_magic_caster_champion_index == -1) return "no spell area";
+    if (g_magic_caster_champion_index == -1)
+        return "no spell area";
     click_command(UI_INPUT_SPELL_AREA, command);
     return NULL;
 }
@@ -473,24 +562,39 @@ static const char *spell_click(int16_t command)
 static const char *add_rune(const char *r)
 {
     long symbol = get_int(r, "symbol", -1);
-    if (symbol < 0 || symbol >= SYMBOL_COUNT) return "symbol must be 0-5";
-    if (g_magic_caster_champion_index == -1) return "no spell area";
+    if (symbol < 0 || symbol >= SYMBOL_COUNT)
+        return "symbol must be 0-5";
+    if (g_magic_caster_champion_index == -1)
+        return "no spell area";
     size_t before = strlen(g_champions[g_magic_caster_champion_index].symbols);
     spell_click(COMMAND_SPELL_SYMBOL_FIRST + symbol);
     /* the game ignores a rune that costs more mana than the caster has */
-    return strlen(g_champions[g_magic_caster_champion_index].symbols) == before ? "the rune was not added: not enough mana" : NULL;
+    return strlen(g_champions[g_magic_caster_champion_index].symbols) == before
+               ? "the rune was not added: not enough mana"
+               : NULL;
 }
 
-static const char *delete_rune(const char *r) { (void)r; return spell_click(COMMAND_DELETE_SYMBOL); }
-static const char *cast(const char *r) { (void)r; return spell_click(COMMAND_CAST_SPELL); }
+static const char *delete_rune(const char *r)
+{
+    (void)r;
+    return spell_click(COMMAND_DELETE_SYMBOL);
+}
+static const char *cast(const char *r)
+{
+    (void)r;
+    return spell_click(COMMAND_CAST_SPELL);
+}
 
 static const char *recruit(const char *r)
 {
-    static const char *const choices[3] = { "resurrect", "reincarnate", "cancel" };
+    static const char *const choices[3] = {"resurrect", "reincarnate", "cancel"};
     char choice[CHOICE_SIZE];
-    if (!g_candidate_champion_ordinal) return "no candidate: click a champion mirror first (click_wall_ahead)";
-    if (!g_leader_empty_handed) return "the leader hand must be empty";
-    if (!get_string(r, "choice", choice, sizeof choice)) return "choice must be resurrect, reincarnate, or cancel";
+    if (!g_candidate_champion_ordinal)
+        return "no candidate: click a champion mirror first (click_wall_ahead)";
+    if (!g_leader_empty_handed)
+        return "the leader hand must be empty";
+    if (!get_string(r, "choice", choice, sizeof choice))
+        return "choice must be resurrect, reincarnate, or cancel";
     for (int k = 0; k < 3; k++)
         if (!strcmp(choice, choices[k])) {
             click_command(UI_INPUT_RESURRECT, PANEL_RESURRECT + k);
@@ -502,7 +606,8 @@ static const char *recruit(const char *r)
 static const char *set_leader(const char *r)
 {
     int16_t c;
-    if (!champion_arg(r, &c)) return "no living champion with this index";
+    if (!champion_arg(r, &c))
+        return "no living champion with this index";
     click_command(UI_INPUT_STATUS_BOX, COMMAND_SET_LEADER_FIRST + c);
     return NULL;
 }
@@ -510,8 +615,10 @@ static const char *set_leader(const char *r)
 static const char *sleep_party(const char *r)
 {
     (void)r;
-    if (g_leader_index == -1) return "no leader";
-    if (!g_inventory_champion_ordinal) press_key(KEY_F1 + (g_leader_index << 8));
+    if (g_leader_index == -1)
+        return "no leader";
+    if (!g_inventory_champion_ordinal)
+        press_key(KEY_F1 + (g_leader_index << 8));
     click_command(UI_INPUT_INVENTORY, COMMAND_SLEEP);
     return NULL;
 }
@@ -519,7 +626,8 @@ static const char *sleep_party(const char *r)
 static const char *wake(const char *r)
 {
     (void)r;
-    if (g_party_is_sleeping) click_command(UI_INPUT_SLEEPING, COMMAND_WAKE_UP);
+    if (g_party_is_sleeping)
+        click_command(UI_INPUT_SLEEPING, COMMAND_WAKE_UP);
     return NULL;
 }
 
@@ -527,23 +635,42 @@ static const struct {
     const char *name;
     ActionFn run;
 } actions[] = {
-    { "move_forward", move_forward }, { "move_back", move_back }, { "move_left", move_left }, { "move_right", move_right },
-    { "turn_left", turn_left }, { "turn_right", turn_right }, { "click_wall_ahead", click_wall_ahead },
-    { "take_object", take_object }, { "drop_object", drop_object }, { "open_inventory", open_inventory },
-    { "close_inventory", close_inventory }, { "put_in_slot", click_slot }, { "take_from_slot", click_slot },
-    { "eat", use_mouth }, { "drink", use_mouth }, { "choose_action", choose_action }, { "pass", pass },
-    { "set_caster", set_caster }, { "add_rune", add_rune }, { "delete_rune", delete_rune }, { "cast", cast },
-    { "recruit", recruit }, { "set_leader", set_leader }, { "sleep", sleep_party }, { "wake", wake },
-    { "swap_champions", swap_champions }, { "look", look },
+    {"move_forward",     move_forward    },
+    {"move_back",        move_back       },
+    {"move_left",        move_left       },
+    {"move_right",       move_right      },
+    {"turn_left",        turn_left       },
+    {"turn_right",       turn_right      },
+    {"click_wall_ahead", click_wall_ahead},
+    {"take_object",      take_object     },
+    {"drop_object",      drop_object     },
+    {"open_inventory",   open_inventory  },
+    {"close_inventory",  close_inventory },
+    {"put_in_slot",      click_slot      },
+    {"take_from_slot",   click_slot      },
+    {"eat",              use_mouth       },
+    {"drink",            use_mouth       },
+    {"choose_action",    choose_action   },
+    {"pass",             pass            },
+    {"set_caster",       set_caster      },
+    {"add_rune",         add_rune        },
+    {"delete_rune",      delete_rune     },
+    {"cast",             cast            },
+    {"recruit",          recruit         },
+    {"set_leader",       set_leader      },
+    {"sleep",            sleep_party     },
+    {"wake",             wake            },
+    {"swap_champions",   swap_champions  },
+    {"look",             look            },
 };
 
 /* Screenshot: fb as an RGB PNG with stored (uncompressed) deflate blocks. */
 
-#define ZLIB_METHOD 0x78               /* deflate, 32 KB window */
-#define ZLIB_FLAGS 0x01                /* no dictionary; header check bits */
-#define ADLER32_MODULUS 65521         /* the largest prime below 65536 */
+#define ZLIB_METHOD        0x78  /* deflate, 32 KB window */
+#define ZLIB_FLAGS         0x01  /* no dictionary; header check bits */
+#define ADLER32_MODULUS    65521 /* the largest prime below 65536 */
 #define ADLER32_HIGH_SHIFT 16
-#define PNG_IHDR_SIZE 13
+#define PNG_IHDR_SIZE      13
 
 static void png_chunk(FILE *f, const char *type, const uint8_t *data, uint32_t n)
 {
@@ -578,19 +705,21 @@ static int write_png(const char *path)
         *q++ = done + n == RAW;
         *q++ = (uint8_t)n, *q++ = (uint8_t)(n >> 8), *q++ = (uint8_t)~n, *q++ = (uint8_t)(~n >> 8);
         memcpy(q, raw + done, n);
-        for (size_t i = 0; i < n; i++) a = (a + raw[done + i]) % ADLER32_MODULUS, b = (b + a) % ADLER32_MODULUS;
+        for (size_t i = 0; i < n; i++)
+            a = (a + raw[done + i]) % ADLER32_MODULUS, b = (b + a) % ADLER32_MODULUS;
         q += n;
         done += n;
     }
     WR32(q, b << ADLER32_HIGH_SHIFT | a);
     q += 4;
-    uint8_t ihdr[PNG_IHDR_SIZE] = { 0 };
+    uint8_t ihdr[PNG_IHDR_SIZE] = {0};
     WR32(ihdr, SCREEN_W);
     WR32(ihdr + 4, SCREEN_H);
     ihdr[8] = 8; /* bits per channel */
     ihdr[9] = 2; /* RGB */
     FILE *f = fopen(path, "wb");
-    if (!f) return 0;
+    if (!f)
+        return 0;
     fwrite("\x89PNG\r\n\x1a\n", 1, 8, f);
     png_chunk(f, "IHDR", ihdr, sizeof ihdr);
     png_chunk(f, "IDAT", z, (uint32_t)(q - z));
@@ -609,27 +738,33 @@ static void witness(void)
         uint8_t type = rec_explosion_type(things[i].thing);
         int known = 0;
         for (int k = 0; k < witnessed.explosion_count; k++)
-            known |= witnessed.explosions[k].type == type && witnessed.explosions[k].at.x == things[i].x && witnessed.explosions[k].at.y == things[i].y;
+            known |= witnessed.explosions[k].type == type && witnessed.explosions[k].at.x == things[i].x &&
+                     witnessed.explosions[k].at.y == things[i].y;
         if (!known && witnessed.explosion_count < WITNESSED_EXPLOSIONS_MAX)
-            witnessed.explosions[witnessed.explosion_count++] = (WitnessedExplosion){ things[i], type };
+            witnessed.explosions[witnessed.explosion_count++] = (WitnessedExplosion){things[i], type};
     }
-    for (int k = 0; k < witnessed.group_count; k++) witnessed.groups[k].in_view = 0;
+    for (int k = 0; k < witnessed.group_count; k++)
+        witnessed.groups[k].in_view = 0;
     count = state_json_visible_things(THING_GROUP, things, STATE_JSON_VISIBLE_GROUPS_MAX);
     for (int i = 0; i < count; i++) {
         int k = 0;
-        while (k < witnessed.group_count && witnessed.groups[k].at.thing != things[i].thing) k++;
-        if (k == WITNESSED_GROUPS_MAX) continue;
+        while (k < witnessed.group_count && witnessed.groups[k].at.thing != things[i].thing)
+            k++;
+        if (k == WITNESSED_GROUPS_MAX)
+            continue;
         int16_t creatures = rec_group_last_creature_index(things[i].thing) + 1;
-        if (k == witnessed.group_count) {  /* a group seen first: count it once, not on each tick */
-            witnessed.groups[k] = (WitnessedGroup){ .creature = rec_group_creature_type(things[i].thing), .before = creatures };
+        if (k == witnessed.group_count) { /* a group seen first: count it once, not on each tick */
+            witnessed.groups[k] =
+                (WitnessedGroup){.creature = rec_group_creature_type(things[i].thing), .before = creatures};
             witnessed.group_count++;
         }
         witnessed.groups[k].at = things[i];
         witnessed.groups[k].after = creatures;
         witnessed.groups[k].in_view = 1;
     }
-    for (int k = 0; k < witnessed.group_count; k++)  /* a killed group frees its record */
-        witnessed.groups[k].killed |= !witnessed.groups[k].in_view && get_next_thing(witnessed.groups[k].at.thing) == THING_NONE;
+    for (int k = 0; k < witnessed.group_count; k++) /* a killed group frees its record */
+        witnessed.groups[k].killed |=
+            !witnessed.groups[k].in_view && get_next_thing(witnessed.groups[k].at.thing) == THING_NONE;
 }
 
 /* Starts the record of what the party sees during a request. */
@@ -637,7 +772,8 @@ static void start_witnessing(void)
 {
     memset(&witnessed, 0, sizeof witnessed);
     witnessed.champion_count = g_party_champion_count;
-    for (uint16_t i = 0; i < g_party_champion_count; i++) witnessed.health[i] = g_champions[i].current_health;
+    for (uint16_t i = 0; i < g_party_champion_count; i++)
+        witnessed.health[i] = g_champions[i].current_health;
     witness();
 }
 
@@ -659,7 +795,8 @@ static void seen_json(Json *j)
     int changes = 0;
     for (int k = 0; k < witnessed.group_count; k++)
         changes += witnessed.groups[k].killed || witnessed.groups[k].after < witnessed.groups[k].before;
-    if (!changes && !witnessed.explosion_count) return;
+    if (!changes && !witnessed.explosion_count)
+        return;
     json_key(j, "seen");
     json_open(j, '{');
     json_key(j, "explosions");
@@ -675,7 +812,8 @@ static void seen_json(Json *j)
     json_key(j, "creature_changes");
     json_open(j, '[');
     for (int k = 0; k < witnessed.group_count; k++) {
-        if (!witnessed.groups[k].killed && witnessed.groups[k].after >= witnessed.groups[k].before) continue;
+        if (!witnessed.groups[k].killed && witnessed.groups[k].after >= witnessed.groups[k].before)
+            continue;
         json_open(j, '{');
         json_key(j, "type");
         json_str(j, state_json_creature_name(witnessed.groups[k].creature));
@@ -696,8 +834,10 @@ static void seen_json(Json *j)
 static void health_lost_json(Json *j)
 {
     int any = 0;
-    for (uint16_t i = 0; i < witnessed.champion_count; i++) any |= g_champions[i].current_health < witnessed.health[i];
-    if (!any) return;
+    for (uint16_t i = 0; i < witnessed.champion_count; i++)
+        any |= g_champions[i].current_health < witnessed.health[i];
+    if (!any)
+        return;
     json_key(j, "health_lost");
     json_open(j, '[');
     for (uint16_t i = 0; i < witnessed.champion_count; i++) {
@@ -709,7 +849,8 @@ static void health_lost_json(Json *j)
 
 static void close_client(void)
 {
-    if (client_fd >= 0) close(client_fd);
+    if (client_fd >= 0)
+        close(client_fd);
     client_fd = -1;
     input_length = 0;
 }
@@ -719,15 +860,17 @@ static void send_line(Json *j)
     json_raw(j, "\n");
     for (size_t sent = 0; client_fd >= 0 && sent < j->len;) {
         ssize_t n = send(client_fd, j->s + sent, j->len - sent, SEND_FLAGS);
-        if (n <= 0) close_client();
-        else sent += (size_t)n;
+        if (n <= 0)
+            close_client();
+        else
+            sent += (size_t)n;
     }
     free(j->s);
 }
 
 static void send_error(const char *error)
 {
-    Json j = { 0 };
+    Json j = {0};
     json_open(&j, '{');
     json_key(&j, "ok");
     json_bool(&j, 0);
@@ -740,14 +883,16 @@ static void send_error(const char *error)
 /* The eye panel text of a look action, only when the turn looked. */
 static void look_json(Json *j)
 {
-    if (!look_text.shown) return;
+    if (!look_text.shown)
+        return;
     json_key(j, "look");
     json_open(j, '{');
     json_key(j, "name");
     json_str(j, look_text.name);
     json_key(j, "lines");
     json_open(j, '[');
-    for (int16_t i = 0; i < look_text.count; i++) json_str(j, look_text.lines[i]);
+    for (int16_t i = 0; i < look_text.count; i++)
+        json_str(j, look_text.lines[i]);
     json_close(j, ']');
     json_close(j, '}');
 }
@@ -755,7 +900,7 @@ static void look_json(Json *j)
 /* The end of a turn: the ticks it took, the action damage, the state, and the view. */
 static void send_turn_result(void)
 {
-    Json j = { 0 };
+    Json j = {0};
     json_open(&j, '{');
     json_key(&j, "ok");
     json_bool(&j, 1);
@@ -788,7 +933,8 @@ static void send_turn_result(void)
     if (batch.active && batch.damage_count) {
         json_key(&j, "action_damage");
         json_open(&j, '[');
-        for (int i = 0; i < batch.damage_count; i++) json_int(&j, batch.damages[i]);
+        for (int i = 0; i < batch.damage_count; i++)
+            json_int(&j, batch.damages[i]);
         json_close(&j, ']');
     } else if (!batch.active && turn.has_damage) {
         json_key(&j, "action_damage");
@@ -807,7 +953,7 @@ static void send_turn_result(void)
 
 static void send_part(const char *key, void (*part)(Json *))
 {
-    Json j = { 0 };
+    Json j = {0};
     json_open(&j, '{');
     json_key(&j, "ok");
     json_bool(&j, 1);
@@ -832,11 +978,15 @@ static void start_turn(long min_ticks, long max_ticks, int wait_only)
 static const char *run_action(const char *name, const char *request)
 {
     for (size_t k = 0; k < sizeof actions / sizeof actions[0]; k++) {
-        if (strcmp(name, actions[k].name)) continue;
-        if (g_candidate_champion_ordinal && strcmp(name, "recruit")) return "a candidate is shown: answer with recruit first";
-        if (g_party_is_sleeping && strcmp(name, "wake")) return "the party sleeps: use wake or wait";
+        if (strcmp(name, actions[k].name))
+            continue;
+        if (g_candidate_champion_ordinal && strcmp(name, "recruit"))
+            return "a candidate is shown: answer with recruit first";
+        if (g_party_is_sleeping && strcmp(name, "wake"))
+            return "the party sleeps: use wake or wait";
         turn.has_damage = look_text.shown = turn.moving = turn.rotation = 0;
-        turn.map = g_party_map_index, turn.x = g_party_map_x, turn.y = g_party_map_y, turn.direction = g_party_direction;
+        turn.map = g_party_map_index, turn.x = g_party_map_x, turn.y = g_party_map_y,
+        turn.direction = g_party_direction;
         turn.teleports = g_party_teleport_count;
         return actions[k].run(request);
     }
@@ -852,8 +1002,10 @@ static void handle_act(const char *request)
     }
     start_witnessing();
     const char *error = run_action(name, request);
-    if (error) send_error(error);
-    else start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
+    if (error)
+        send_error(error);
+    else
+        start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
 }
 
 /* Batches. */
@@ -863,14 +1015,16 @@ static uint32_t latest_message_expiry(void)
 {
     uint32_t latest = 0;
     for (int r = 0; r < MESSAGE_ROWS; r++)
-        if (g_message.expiry[r] != MESSAGE_NO_EXPIRY && g_message.expiry[r] > latest) latest = g_message.expiry[r];
+        if (g_message.expiry[r] != MESSAGE_NO_EXPIRY && g_message.expiry[r] > latest)
+            latest = g_message.expiry[r];
     return latest;
 }
 
 /* Remembers what the news checks compare during and after the next turn. */
 static void snapshot(void)
 {
-    for (uint16_t i = 0; i < g_party_champion_count; i++) seen.health[i] = g_champions[i].current_health;
+    for (uint16_t i = 0; i < g_party_champion_count; i++)
+        seen.health[i] = g_champions[i].current_health;
     seen.group_count = state_json_visible_groups(seen.groups);
     seen.message_expiry = latest_message_expiry();
 }
@@ -882,8 +1036,10 @@ static int new_group_in_view(void)
     int count = state_json_visible_groups(groups);
     for (int i = 0; i < count; i++) {
         int known = 0;
-        for (int k = 0; k < seen.group_count; k++) known |= groups[i] == seen.groups[k];
-        if (!known) return 1;
+        for (int k = 0; k < seen.group_count; k++)
+            known |= groups[i] == seen.groups[k];
+        if (!known)
+            return 1;
     }
     return 0;
 }
@@ -891,20 +1047,26 @@ static int new_group_in_view(void)
 /* What happened since the snapshot that the player must see, or NULL. */
 static const char *news(void)
 {
-    if (game_over()) return "game_over";
+    if (game_over())
+        return "game_over";
     for (uint16_t i = 0; i < g_party_champion_count; i++)
-        if (g_champions[i].current_health < seen.health[i]) return "damage";
-    if (new_group_in_view()) return "creature";
-    if (latest_message_expiry() > seen.message_expiry) return "message";
+        if (g_champions[i].current_health < seen.health[i])
+            return "damage";
+    if (new_group_in_view())
+        return "creature";
+    if (latest_message_expiry() > seen.message_expiry)
+        return "message";
     return NULL;
 }
 
 /* Why a batch stops after a turn, or NULL to go on. */
 static const char *batch_stop_reason(void)
 {
-    if (game_over()) return news();
-    if (turn_bumped()) return "bumped";  /* before damage: a bump into a wall hurts */
-    const char *displaced = turn_displaced();  /* before damage: a pit fall hurts */
+    if (game_over())
+        return news();
+    if (turn_bumped())
+        return "bumped";                      /* before damage: a bump into a wall hurts */
+    const char *displaced = turn_displaced(); /* before damage: a pit fall hurts */
     return displaced ? displaced : news();
 }
 
@@ -922,25 +1084,33 @@ static void batch_finish(const char *stop, const char *error)
 static int next_element(char *out, size_t size)
 {
     const char *p = batch.next;
-    while (*p == ' ' || *p == ',') p++;
+    while (*p == ' ' || *p == ',')
+        p++;
     const char *start = p;
-    if (!*p || *p == ']') return 0;
+    if (!*p || *p == ']')
+        return 0;
     if (*p == '"') {
         p = strchr(p + 1, '"');
-        if (!p) return -1;
+        if (!p)
+            return -1;
         p++;
     } else if (*p == '{') {
         for (int depth = 0; *p; p++) {
-            if (*p == '"') p = strchr(p + 1, '"');  /* strings hold no '"' (docs/llm-mode.md) */
-            if (!p) return -1;
+            if (*p == '"')
+                p = strchr(p + 1, '"'); /* strings hold no '"' (docs/llm-mode.md) */
+            if (!p)
+                return -1;
             depth += (*p == '{') - (*p == '}');
-            if (!depth) break;
+            if (!depth)
+                break;
         }
-        if (!*p++) return -1;
+        if (!*p++)
+            return -1;
     } else {
         return -1;
     }
-    if ((size_t)(p - start) >= size) return -1;
+    if ((size_t)(p - start) >= size)
+        return -1;
     memcpy(out, start, (size_t)(p - start));
     out[p - start] = 0;
     batch.next = p;
@@ -958,11 +1128,15 @@ static void batch_next(void)
         batch_finish(found ? "failed" : "done", found ? "an item of actions is not an action name or object" : NULL);
         return;
     }
-    if (element[0] == '"') snprintf(name, sizeof name, "%.*s", (int)strlen(element) - 2, element + 1);
-    else if (!get_string(element, "action", name, sizeof name)) name[0] = 0;
+    if (element[0] == '"')
+        snprintf(name, sizeof name, "%.*s", (int)strlen(element) - 2, element + 1);
+    else if (!get_string(element, "action", name, sizeof name))
+        name[0] = 0;
     error = run_action(name, element);
-    if (error) batch_finish("failed", error);
-    else start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
+    if (error)
+        batch_finish("failed", error);
+    else
+        start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
 }
 
 /* After a turn of the batch: count it, stop on news, else start the next step. */
@@ -970,8 +1144,10 @@ static void batch_after_turn(void)
 {
     batch.ran++;
     const char *stop = batch_stop_reason();
-    if (stop) batch_finish(stop, NULL);
-    else batch_next();
+    if (stop)
+        batch_finish(stop, NULL);
+    else
+        batch_next();
 }
 
 static void handle_act_many(const char *request)
@@ -982,7 +1158,8 @@ static void handle_act_many(const char *request)
         return;
     }
     batch.actions = strdup(list + 1);
-    if (!batch.actions) abort();
+    if (!batch.actions)
+        abort();
     batch.next = batch.actions;
     batch.active = 1;
     batch.damage_count = 0;
@@ -1025,10 +1202,12 @@ static void handle_save(void)
 {
     const char *reason;
     int saved = startend_save_current_game(&reason);
-    if (!saved) send_error(reason ? reason : "cannot write the save file");
+    if (!saved)
+        send_error(reason ? reason : "cannot write the save file");
     else {
-        if (saved == SAVED_NEW_ADVENTURE) gameloop_start_loaded_game();
-        Json j = { 0 };
+        if (saved == SAVED_NEW_ADVENTURE)
+            gameloop_start_loaded_game();
+        Json j = {0};
         json_raw(&j, "{\"ok\":true}");
         send_line(&j);
     }
@@ -1038,7 +1217,8 @@ static void handle_save(void)
 static void handle_wait(const char *request)
 {
     long ticks = get_int(request, "ticks", 1);
-    if (ticks < 1 || ticks > WAIT_MAX_TICKS) send_error("ticks must be 1-5000");
+    if (ticks < 1 || ticks > WAIT_MAX_TICKS)
+        send_error("ticks must be 1-5000");
     else {
         turn.has_damage = look_text.shown = turn.moving = 0;
         snapshot();
@@ -1051,10 +1231,12 @@ static void handle_wait(const char *request)
 static void handle_screenshot(const char *request)
 {
     char path[PATH_SIZE];
-    if (!get_string(request, "path", path, sizeof path)) send_error("missing path");
-    else if (!write_png(path)) send_error("cannot write the PNG file");
+    if (!get_string(request, "path", path, sizeof path))
+        send_error("missing path");
+    else if (!write_png(path))
+        send_error("cannot write the PNG file");
     else {
-        Json j = { 0 };
+        Json j = {0};
         json_raw(&j, "{\"ok\":true,\"path\":");
         json_str(&j, path);
         json_close(&j, '}');
@@ -1087,8 +1269,8 @@ static void handle_request(const char *request)
         send_part("view", state_json_view);
     } else if (!strcmp(cmd, "get_map")) {
         send_part("map", state_json_map);
-    } else if (game_over() && (!strcmp(cmd, "act") || !strcmp(cmd, "act_many") || !strcmp(cmd, "wait") ||
-                               !strcmp(cmd, "save"))) {
+    } else if (game_over() &&
+               (!strcmp(cmd, "act") || !strcmp(cmd, "act_many") || !strcmp(cmd, "wait") || !strcmp(cmd, "save"))) {
         send_error("game over");
     } else if (!strcmp(cmd, "save")) {
         handle_save();
@@ -1110,17 +1292,21 @@ static void handle_request(const char *request)
 static int turn_finished(void)
 {
     long ticks = (long)(g_game_time - turn.start_time);
-    if (turn.wait_only && (turn.stop = news())) return 1;
-    if (game_over()) return 1;
-    if (ticks >= turn.max_ticks || turn.frames > turn.max_ticks * FRAMES_PER_TICK_LIMIT) return 1;
+    if (turn.wait_only && (turn.stop = news()))
+        return 1;
+    if (game_over())
+        return 1;
+    if (ticks >= turn.max_ticks || turn.frames > turn.max_ticks * FRAMES_PER_TICK_LIMIT)
+        return 1;
     return !turn.wait_only && ticks >= turn.min_ticks && !g_disabled_movement_ticks;
 }
 
 int control_open(const char *path)
 {
-    struct sockaddr_un address = { .sun_family = AF_UNIX };
+    struct sockaddr_un address = {.sun_family = AF_UNIX};
     char dir[sizeof socket_path];
-    if (strlen(path) >= sizeof address.sun_path) return 0;
+    if (strlen(path) >= sizeof address.sun_path)
+        return 0;
     snprintf(dir, sizeof dir, "%s", path);
     char *slash = strrchr(dir, '/');
     if (slash && slash != dir) {
@@ -1131,7 +1317,8 @@ int control_open(const char *path)
     snprintf(socket_path, sizeof socket_path, "%s", path);
     unlink(path);
     listen_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (listen_fd < 0) return 0;
+    if (listen_fd < 0)
+        return 0;
     if (bind(listen_fd, (struct sockaddr *)&address, sizeof address) || listen(listen_fd, 1) ||
         fcntl(listen_fd, F_SETFL, O_NONBLOCK)) {
         control_close();
@@ -1140,11 +1327,15 @@ int control_open(const char *path)
     return 1;
 }
 
-bool control_is_turn_pending(void) { return turn.pending; }
+bool control_is_turn_pending(void)
+{
+    return turn.pending;
+}
 
 void control_poll(void)
 {
-    if (listen_fd < 0) return;
+    if (listen_fd < 0)
+        return;
     if (turn.pending) {
         witness();
         if (!turn_finished()) {
@@ -1157,12 +1348,15 @@ void control_poll(void)
         if (client_fd < 0) {
             free(batch.actions);
             memset(&batch, 0, sizeof batch);
-        } else if (batch.active) batch_after_turn();
-        else send_turn_result();
+        } else if (batch.active)
+            batch_after_turn();
+        else
+            send_turn_result();
     }
     if (client_fd < 0) {
         client_fd = accept(listen_fd, NULL, NULL);
-        if (client_fd < 0) return;
+        if (client_fd < 0)
+            return;
         fcntl(client_fd, F_SETFL, 0); /* blocking writes; reads use MSG_DONTWAIT */
 #ifdef SO_NOSIGPIPE
         int on = 1;
@@ -1174,13 +1368,16 @@ void control_poll(void)
         close_client();
         return;
     }
-    if (n > 0) input_length += (size_t)n;
+    if (n > 0)
+        input_length += (size_t)n;
     input[input_length] = 0;
     char *end;
     while (client_fd >= 0 && !turn.pending && (end = strchr(input, '\n'))) {
         *end = 0;
-        if (end > input) handle_request(input);
-        if (client_fd < 0) return;
+        if (end > input)
+            handle_request(input);
+        if (client_fd < 0)
+            return;
         size_t used = (size_t)(end + 1 - input);
         memmove(input, end + 1, input_length - used + 1);
         input_length -= used;

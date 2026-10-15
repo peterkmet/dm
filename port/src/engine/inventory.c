@@ -10,67 +10,74 @@
 #include <stdbool.h>
 
 /* KAOS data addresses. */
-#define TORCH_CHARGE_TO_ICON_OFFSET 0x100ba0   /* g_torch_charge_to_icon_offset[16] */
+#define TORCH_CHARGE_TO_ICON_OFFSET 0x100ba0 /* g_torch_charge_to_icon_offset[16] */
 
 /* Object info index of the first record of each object type. */
 enum { INFO_SCROLL = 0, INFO_CONTAINER = 1, INFO_POTION = 2, INFO_WEAPON = 23, INFO_ARMOUR = 69, INFO_JUNK = 127 };
 
-#define WATERSKIN_WATER 800
-#define POTION_WATER_WATER 1600
-#define FOOD_WATER_MAXIMUM 2048
-#define CHEST_WEIGHT 50
-#define SCROLL_WEIGHT 1
-#define EMPTY_FLASK_WEIGHT 1
-#define POTION_WEIGHT 3
-#define JUNK_WATERSKIN 1                  /* each charge weighs 0.2 kg */
-#define LIGHT_POWER_ILLUMULET 2
-#define CURSED_SLOT_LAST 12               /* cursed objects lower luck in slots up to here */
-#define CURSED_LUCK (-3)
-#define SHIELD_POTION_STRONG 50           /* above this shield defense, a Ya potion adds a quarter */
-#define MAXIMUM_POTION_MANA 900
-#define HEAL_WOUND_TRIES 10
-#define STAT_MANA STAT_COUNT              /* object_modifier: the change goes to the maximum mana */
-#define ARMOUR_SHARP_DEFENSE_BASE 4       /* sharp defense: defense * (sharp resistance + 4) / 8 */
+#define WATERSKIN_WATER            800
+#define POTION_WATER_WATER         1600
+#define FOOD_WATER_MAXIMUM         2048
+#define CHEST_WEIGHT               50
+#define SCROLL_WEIGHT              1
+#define EMPTY_FLASK_WEIGHT         1
+#define POTION_WEIGHT              3
+#define JUNK_WATERSKIN             1 /* each charge weighs 0.2 kg */
+#define LIGHT_POWER_ILLUMULET      2
+#define CURSED_SLOT_LAST           12 /* cursed objects lower luck in slots up to here */
+#define CURSED_LUCK                (-3)
+#define SHIELD_POTION_STRONG       50 /* above this shield defense, a Ya potion adds a quarter */
+#define MAXIMUM_POTION_MANA        900
+#define HEAL_WOUND_TRIES           10
+#define STAT_MANA                  STAT_COUNT /* object_modifier: the change goes to the maximum mana */
+#define ARMOUR_SHARP_DEFENSE_BASE  4          /* sharp defense: defense * (sharp resistance + 4) / 8 */
 #define ARMOUR_SHARP_DEFENSE_SHIFT 3
 /* Object modifiers: the bonus of each object. */
-#define RABBITS_FOOT_LUCK 10
-#define MACE_OF_ORDER_STRENGTH 5
-#define STAFF_OF_CLAWS_MANA 4
-#define VORPAL_BLADE_MANA 4
-#define DELTA_MANA 1
-#define INQUISITOR_MANA 2
-#define POWERTOWERS_STRENGTH 10
-#define CROWN_OF_NERRA_WISDOM 10
-#define DEXHELM_DEXTERITY 10
-#define FLAMEBAIN_ANTIFIRE 12
-#define CLOAK_OF_NIGHT_DEXTERITY 8
-#define JEWEL_SYMAL_ANTIMAGIC 15
-#define MOONSTONE_MANA 3
+#define RABBITS_FOOT_LUCK          10
+#define MACE_OF_ORDER_STRENGTH     5
+#define STAFF_OF_CLAWS_MANA        4
+#define VORPAL_BLADE_MANA          4
+#define DELTA_MANA                 1
+#define INQUISITOR_MANA            2
+#define POWERTOWERS_STRENGTH       10
+#define CROWN_OF_NERRA_WISDOM      10
+#define DEXHELM_DEXTERITY          10
+#define FLAMEBAIN_ANTIFIRE         12
+#define CLOAK_OF_NIGHT_DEXTERITY   8
+#define JEWEL_SYMAL_ANTIMAGIC      15
+#define MOONSTONE_MANA             3
 /* Potions of power p: amount = p / 25 + 8, divisor = (511 - p) / ((p + 1) / 8 + 32) / 2. */
-#define POTION_AMOUNT_DIVISOR 25
-#define POTION_AMOUNT_BASE 8
-#define POTION_DIVISOR_BASE 511
+#define POTION_AMOUNT_DIVISOR      25
+#define POTION_AMOUNT_BASE         8
+#define POTION_DIVISOR_BASE        511
 #define POTION_DIVISOR_POWER_SHIFT 3
-#define POTION_DIVISOR_OFFSET 32
-#define KU_STRENGTH_DIVISOR 35            /* Ku: strength + p / 35 + 5 */
-#define KU_STRENGTH_BASE 5
-#define VI_WOUND_ROLL_DIVISOR 42          /* Vi: max(1, p / 42) wound rolls */
+#define POTION_DIVISOR_OFFSET      32
+#define KU_STRENGTH_DIVISOR        35 /* Ku: strength + p / 35 + 5 */
+#define KU_STRENGTH_BASE           5
+#define VI_WOUND_ROLL_DIVISOR      42 /* Vi: max(1, p / 42) wound rolls */
 
 int16_t g_inventory_champion_ordinal;
 int16_t g_leader_empty_handed = 1;
-uint16_t g_open_chest_slots[SLOT_CHEST_COUNT] = {THING_NONE, THING_NONE, THING_NONE, THING_NONE, THING_NONE, THING_NONE, THING_NONE, THING_NONE};
+uint16_t g_open_chest_slots[SLOT_CHEST_COUNT] = {THING_NONE, THING_NONE, THING_NONE, THING_NONE,
+                                                 THING_NONE, THING_NONE, THING_NONE, THING_NONE};
 uint16_t g_open_chest = THING_NONE;
 
 /* The object info record of an object thing, or -1. */
 int16_t inventory_get_object_info_index(uint16_t thing)
 {
     switch (THING_TYPE(thing)) {
-    case THING_WEAPON: return INFO_WEAPON + weapon_type(thing);
-    case THING_ARMOUR: return INFO_ARMOUR + armour_type(thing);
-    case THING_SCROLL: return INFO_SCROLL;
-    case THING_POTION: return INFO_POTION + potion_type(thing);
-    case THING_CONTAINER: return INFO_CONTAINER + container_type(thing);
-    case THING_JUNK: return INFO_JUNK + junk_type(thing);
+    case THING_WEAPON:
+        return INFO_WEAPON + weapon_type(thing);
+    case THING_ARMOUR:
+        return INFO_ARMOUR + armour_type(thing);
+    case THING_SCROLL:
+        return INFO_SCROLL;
+    case THING_POTION:
+        return INFO_POTION + potion_type(thing);
+    case THING_CONTAINER:
+        return INFO_CONTAINER + container_type(thing);
+    case THING_JUNK:
+        return INFO_JUNK + junk_type(thing);
     }
     return -1;
 }
@@ -119,10 +126,14 @@ uint16_t inventory_get_object_weight(uint16_t thing)
         return 0;
     uint16_t weight = 0;
     switch (THING_TYPE(thing)) {
-    case THING_WEAPON: return tables_weapon_info(weapon_type(thing))->weight;
-    case THING_ARMOUR: return tables_armour_info(armour_type(thing))->weight;
-    case THING_SCROLL: return SCROLL_WEIGHT;
-    case THING_POTION: return potion_type(thing) == POTION_EMPTY_FLASK ? EMPTY_FLASK_WEIGHT : POTION_WEIGHT;
+    case THING_WEAPON:
+        return tables_weapon_info(weapon_type(thing))->weight;
+    case THING_ARMOUR:
+        return tables_armour_info(armour_type(thing))->weight;
+    case THING_SCROLL:
+        return SCROLL_WEIGHT;
+    case THING_POTION:
+        return potion_type(thing) == POTION_EMPTY_FLASK ? EMPTY_FLASK_WEIGHT : POTION_WEIGHT;
     case THING_CONTAINER:
         weight = CHEST_WEIGHT;
         for (uint16_t t = container_first_thing(thing); t != THING_END; t = get_next_thing(t))
@@ -139,7 +150,9 @@ uint16_t inventory_get_object_weight(uint16_t thing)
 uint16_t inventory_get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)
 {
     uint16_t defense = info->defense;
-    return use_sharp_defense ? scale_value(defense, ARMOUR_SHARP_DEFENSE_SHIFT, (info->attributes & ARMOUR_SHARP_RESISTANCE) + ARMOUR_SHARP_DEFENSE_BASE) : defense;
+    return use_sharp_defense ? scale_value(defense, ARMOUR_SHARP_DEFENSE_SHIFT,
+                                           (info->attributes & ARMOUR_SHARP_RESISTANCE) + ARMOUR_SHARP_DEFENSE_BASE)
+                             : defense;
 }
 
 void inventory_put_object_in_leader_hand(uint16_t thing)
@@ -169,17 +182,18 @@ uint16_t inventory_get_object_removed_from_leader_hand(void)
 }
 
 /* Mana bonus of staffs and wands in the action hand, from the Staff to the Sceptre of Lyf (icons 58-66). */
-#define STAFF_MANA 2
-#define WAND_MANA 1
-#define TEOWAND_MANA 6
-#define YEW_STAFF_MANA 4
+#define STAFF_MANA          2
+#define WAND_MANA           1
+#define TEOWAND_MANA        6
+#define YEW_STAFF_MANA      4
 #define STAFF_OF_MANAR_MANA 10
-#define SNAKE_STAFF_MANA 8
-#define CONDUIT_MANA 16
-#define DRAGON_SPIT_MANA 7
+#define SNAKE_STAFF_MANA    8
+#define CONDUIT_MANA        16
+#define DRAGON_SPIT_MANA    7
 #define SCEPTRE_OF_LYF_MANA 5
-static const int8_t staff_mana[] = {STAFF_MANA, WAND_MANA, TEOWAND_MANA, YEW_STAFF_MANA, STAFF_OF_MANAR_MANA,
-                                    SNAKE_STAFF_MANA, CONDUIT_MANA, DRAGON_SPIT_MANA, SCEPTRE_OF_LYF_MANA};
+static const int8_t staff_mana[] = {STAFF_MANA,     WAND_MANA,           TEOWAND_MANA,
+                                    YEW_STAFF_MANA, STAFF_OF_MANAR_MANA, SNAKE_STAFF_MANA,
+                                    CONDUIT_MANA,   DRAGON_SPIT_MANA,    SCEPTRE_OF_LYF_MANA};
 
 /* The statistic (or STAT_MANA) and the bonus of an object in a slot. Returns 0 for no bonus. */
 static int16_t object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint16_t *stat)
@@ -199,7 +213,10 @@ static int16_t object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint
             return STAFF_OF_CLAWS_MANA;
         if (icon >= ICON_STAFF && icon <= ICON_SCEPTRE_OF_LYF)
             return staff_mana[icon - ICON_STAFF];
-        return icon == ICON_VORPAL_BLADE ? VORPAL_BLADE_MANA : icon == ICON_DELTA ? DELTA_MANA : icon == ICON_INQUISITOR ? INQUISITOR_MANA : 0;
+        return icon == ICON_VORPAL_BLADE ? VORPAL_BLADE_MANA
+               : icon == ICON_DELTA      ? DELTA_MANA
+               : icon == ICON_INQUISITOR ? INQUISITOR_MANA
+                                         : 0;
     case SLOT_LEGS:
         return icon == ICON_POWERTOWERS ? (*stat = STAT_STRENGTH, POWERTOWERS_STRENGTH) : 0;
     case SLOT_HEAD:
@@ -240,10 +257,22 @@ static uint16_t *slot_ptr(Champion *c, uint16_t slot)
     return slot < SLOT_COUNT ? &c->slots[slot] : &g_open_chest_slots[slot - SLOT_CHEST_FIRST];
 }
 
-static bool is_illumulet(int16_t icon) { return icon == ICON_ILLUMULET || icon == ICON_ILLUMULET_WORN; }
-static bool is_neck_jewel(int16_t icon) { return icon >= ICON_JEWEL_SYMAL && icon <= ICON_ILLUMULET_WORN; }
-static bool is_scroll(int16_t icon) { return icon == ICON_SCROLL_OPEN || icon == ICON_SCROLL_CLOSED; }
-static bool is_torch(int16_t icon) { return icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST; }
+static bool is_illumulet(int16_t icon)
+{
+    return icon == ICON_ILLUMULET || icon == ICON_ILLUMULET_WORN;
+}
+static bool is_neck_jewel(int16_t icon)
+{
+    return icon >= ICON_JEWEL_SYMAL && icon <= ICON_ILLUMULET_WORN;
+}
+static bool is_scroll(int16_t icon)
+{
+    return icon == ICON_SCROLL_OPEN || icon == ICON_SCROLL_CLOSED;
+}
+static bool is_torch(int16_t icon)
+{
+    return icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST;
+}
 
 /* Takes an object from a slot: bonuses end, a torch goes out, a scroll closes. */
 uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)
@@ -333,7 +362,8 @@ void inventory_click_on_slot_box(uint16_t slot_box)
     uint16_t thing = *slot_ptr(&g_champions[champion_index], slot);
     if (thing == THING_NONE && hand == THING_NONE)
         return;
-    if (hand != THING_NONE && !(*tables_slot_mask(slot) & tables_object_info(inventory_get_object_info_index(hand))->allowed_slots))
+    if (hand != THING_NONE &&
+        !(*tables_slot_mask(slot) & tables_object_info(inventory_get_object_info_index(hand))->allowed_slots))
         return;
     if (hand != THING_NONE)
         inventory_get_object_removed_from_leader_hand();
@@ -399,14 +429,25 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t power = potion_power(potion);
-    uint16_t divisor = (POTION_DIVISOR_BASE - power) / (((power + 1) >> POTION_DIVISOR_POWER_SHIFT) + POTION_DIVISOR_OFFSET) >> 1;
+    uint16_t divisor =
+        (POTION_DIVISOR_BASE - power) / (((power + 1) >> POTION_DIVISOR_POWER_SHIFT) + POTION_DIVISOR_OFFSET) >> 1;
     uint16_t amount = power / POTION_AMOUNT_DIVISOR + POTION_AMOUNT_BASE;
     switch (potion_type(potion)) {
-    case POTION_ROS: adjust_statistic_current_value(c, STAT_DEXTERITY, amount); break;
-    case POTION_KU: adjust_statistic_current_value(c, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE); break;
-    case POTION_DANE: adjust_statistic_current_value(c, STAT_WISDOM, amount); break;
-    case POTION_NETA: adjust_statistic_current_value(c, STAT_VITALITY, amount); break;
-    case POTION_ANTIVENIN: champion_unpoison(champion_index); break;
+    case POTION_ROS:
+        adjust_statistic_current_value(c, STAT_DEXTERITY, amount);
+        break;
+    case POTION_KU:
+        adjust_statistic_current_value(c, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE);
+        break;
+    case POTION_DANE:
+        adjust_statistic_current_value(c, STAT_WISDOM, amount);
+        break;
+    case POTION_NETA:
+        adjust_statistic_current_value(c, STAT_VITALITY, amount);
+        break;
+    case POTION_ANTIVENIN:
+        champion_unpoison(champion_index);
+        break;
     case POTION_MON:
         /* unsigned division as in the original */
         c->current_stamina += min16(c->maximum_stamina - c->current_stamina, (uint16_t)c->maximum_stamina / divisor);
@@ -416,8 +457,9 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
         if (c->shield_defense > SHIELD_POTION_STRONG)
             amount >>= 2;
         c->shield_defense += amount;
-        TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + (uint16_t)(amount * amount)), /* 16-bit product */
-                           EVENT_CHAMPION_SHIELD_END, champion_index, amount, 0};
+        TimelineEvent e = {
+            EVENT_MAP_TIME(g_party_map_index, g_game_time + (uint16_t)(amount * amount)), /* 16-bit product */
+            EVENT_CHAMPION_SHIELD_END, champion_index, amount, 0};
         timeline_add_event(&e);
         c->attributes |= CHAMPION_ATTR_STATUS_BOX;
         break;
@@ -431,7 +473,7 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
         break;
     }
     case POTION_VI:
-        c->current_health += (uint16_t)c->maximum_health / divisor;   /* unsigned division as in the original */
+        c->current_health += (uint16_t)c->maximum_health / divisor; /* unsigned division as in the original */
         heal_wounds(c, max16(1, power / VI_WOUND_ROLL_DIVISOR));
         c->attributes |= CHAMPION_ATTR_WOUNDS | CHAMPION_ATTR_LOAD;
         break;
@@ -488,5 +530,6 @@ void inventory_reset(void)
 {
     g_inventory_champion_ordinal = 0;
     g_open_chest = THING_NONE;
-    for (int i = 0; i < SLOT_CHEST_COUNT; i++) g_open_chest_slots[i] = THING_NONE;
+    for (int i = 0; i < SLOT_CHEST_COUNT; i++)
+        g_open_chest_slots[i] = THING_NONE;
 }

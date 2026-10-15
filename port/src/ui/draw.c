@@ -9,14 +9,19 @@ void draw_blit(const Bitmap *src, int16_t sx, int16_t sy, Bitmap *dst, const Box
 {
     for (int y = 0; y < box->h; y++) {
         int dy = box->y + y, ry = sy + y;
-        if (flip & FLIP_V) ry = src->h - 1 - ry;
-        if (dy < 0 || dy >= dst->h || ry < 0 || ry >= src->h) continue;
+        if (flip & FLIP_V)
+            ry = src->h - 1 - ry;
+        if (dy < 0 || dy >= dst->h || ry < 0 || ry >= src->h)
+            continue;
         for (int x = 0; x < box->w; x++) {
             int dx = box->x + x, rx = sx + x;
-            if (flip & FLIP_H) rx = src->w - 1 - rx;
-            if (dx < 0 || dx >= dst->w || rx < 0 || rx >= src->w) continue;
+            if (flip & FLIP_H)
+                rx = src->w - 1 - rx;
+            if (dx < 0 || dx >= dst->w || rx < 0 || rx >= src->w)
+                continue;
             uint8_t c = src->px[ry * src->w + rx];
-            if (transparent == -1 || c != (transparent & COLOR_INDEX_MASK)) dst->px[dy * dst->w + dx] = c;
+            if (transparent == -1 || c != (transparent & COLOR_INDEX_MASK))
+                dst->px[dy * dst->w + dx] = c;
         }
     }
 }
@@ -26,7 +31,8 @@ void draw_fill(Bitmap *dst, const Box *box, uint8_t color)
 {
     for (int y = box->y; y < box->y + box->h; y++)
         for (int x = box->x; x < box->x + box->w; x++)
-            if (y >= 0 && y < dst->h && x >= 0 && x < dst->w) dst->px[y * dst->w + x] = color;
+            if (y >= 0 && y < dst->h && x >= 0 && x < dst->w)
+                dst->px[y * dst->w + x] = color;
 }
 
 /* Mirrors bm in place. */
@@ -34,9 +40,10 @@ void draw_flip(Bitmap *bm, int flip)
 {
     size_t n = (size_t)bm->w * bm->h;
     uint8_t *copy = malloc(n ? n : 1);
-    if (!copy) return;
+    if (!copy)
+        return;
     memcpy(copy, bm->px, n);
-    draw_blit(&(Bitmap){ bm->w, bm->h, copy }, 0, 0, bm, &(Box){ 0, 0, bm->w, bm->h }, -1, flip);
+    draw_blit(&(Bitmap){bm->w, bm->h, copy}, 0, 0, bm, &(Box){0, 0, bm->w, bm->h}, -1, flip);
     free(copy);
 }
 
@@ -50,22 +57,26 @@ enum { SAMPLE_STEP_SCALE = 1 << (SAMPLE_FRACTION_BITS - STEP_FRACTION_BITS - 1) 
    the original. Rows after the first sample one row higher, as the original does. */
 int draw_shrink(const Bitmap *src, int16_t dw, int16_t dh, const uint8_t *palette_changes, Bitmap *out)
 {
-    if (dw < 1 || dh < 1 || !src->w || !src->h) return -1;
+    if (dw < 1 || dh < 1 || !src->w || !src->h)
+        return -1;
     uint8_t *px = malloc((size_t)dw * dh);
-    if (!px) return -1;
+    if (!px)
+        return -1;
     uint32_t step_x = (uint16_t)(((uint32_t)src->w << STEP_FRACTION_BITS) / dw);
     uint32_t step_y = (uint16_t)(((uint32_t)src->h << STEP_FRACTION_BITS) / dh);
     for (int y = 0; y < dh; y++) {
         int ry = (int)((SAMPLE_ROUNDING + step_y * SAMPLE_STEP_SCALE * (2 * y + 1)) >> SAMPLE_FRACTION_BITS) - (y > 0);
-        if (ry >= src->h) ry = src->h - 1;
+        if (ry >= src->h)
+            ry = src->h - 1;
         for (int x = 0; x < dw; x++) {
             int rx = (int)((SAMPLE_ROUNDING + step_x * SAMPLE_STEP_SCALE * (2 * x + 1)) >> SAMPLE_FRACTION_BITS);
-            if (rx >= src->w) rx = src->w - 1;
+            if (rx >= src->w)
+                rx = src->w - 1;
             uint8_t c = src->px[ry * src->w + rx];
             px[y * dw + x] = palette_changes ? palette_changes[c] & COLOR_INDEX_MASK : c;
         }
     }
-    *out = (Bitmap){ dw, dh, px };
+    *out = (Bitmap){dw, dh, px};
     return 0;
 }
 
@@ -75,16 +86,21 @@ int draw_shrink(const Bitmap *src, int16_t dw, int16_t dh, const uint8_t *palett
    clear), the mask words are read in row order; a 0 bit gives the transparent color. mask_flip mirrors
    the mask by whole words, as flip_bitmap_horizontal does. The temp bitmap is then blitted from
    (sx, sy) with the color key. */
-void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bitmap *dst, const Box *box, int16_t last_unit, int16_t first_unit, int16_t transparent, int16_t sx, int16_t sy)
+void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bitmap *dst, const Box *box,
+                      int16_t last_unit, int16_t first_unit, int16_t transparent, int16_t sx, int16_t sy)
 {
-    if (box->w < 1 || box->h < 1) return;
-    if ((transparent & FILL_OPAQUE) == FILL_OPAQUE) mask = NULL, transparent = -1;
-    else if (transparent & FILL_NO_MASK) mask = NULL, transparent &= ~FILL_NO_MASK;
+    if (box->w < 1 || box->h < 1)
+        return;
+    if ((transparent & FILL_OPAQUE) == FILL_OPAQUE)
+        mask = NULL, transparent = -1;
+    else if (transparent & FILL_NO_MASK)
+        mask = NULL, transparent &= ~FILL_NO_MASK;
     int words = (box->w - 1) / PIXELS_PER_WORD + 1, temp_w = words * PIXELS_PER_WORD;
     int unit_words = (units->w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD;
     int mask_words = mask ? (mask->w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD : 0; /* words per row */
     uint8_t *temp = malloc((size_t)temp_w * box->h);
-    if (!temp) return;
+    if (!temp)
+        return;
     int16_t u = first_unit;
     for (int k = 0; k < words * box->h; k++) {
         for (int p = 0; p < PIXELS_PER_WORD; p++) {
@@ -92,19 +108,24 @@ void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bi
             uint8_t c = ux < units->w && uy < units->h ? units->px[uy * units->w + ux] : 0;
             if (mask) {
                 int mx = k % mask_words * PIXELS_PER_WORD + p, my = k / mask_words;
-                if (mask_flip) mx = mask_words * PIXELS_PER_WORD - 1 - mx;
-                if (!(mx < mask->w && my < mask->h && mask->px[my * mask->w + mx] & 1)) c = transparent & COLOR_INDEX_MASK;
+                if (mask_flip)
+                    mx = mask_words * PIXELS_PER_WORD - 1 - mx;
+                if (!(mx < mask->w && my < mask->h && mask->px[my * mask->w + mx] & 1))
+                    c = transparent & COLOR_INDEX_MASK;
             }
             temp[k * PIXELS_PER_WORD + p] = c;
         }
-        if (++u == last_unit) u = 0;
+        if (++u == last_unit)
+            u = 0;
     }
     for (int y = 0; y < box->h; y++)
         for (int x = 0; x < box->w; x++) {
             int dx = box->x + x, dy = box->y + y;
             long i = (long)(sy + y) * temp_w + sx + x;
-            if (dx < 0 || dx >= dst->w || dy < 0 || dy >= dst->h || i < 0 || i >= (long)temp_w * box->h) continue;
-            if (transparent == -1 || temp[i] != (transparent & COLOR_INDEX_MASK)) dst->px[dy * dst->w + dx] = temp[i];
+            if (dx < 0 || dx >= dst->w || dy < 0 || dy >= dst->h || i < 0 || i >= (long)temp_w * box->h)
+                continue;
+            if (transparent == -1 || temp[i] != (transparent & COLOR_INDEX_MASK))
+                dst->px[dy * dst->w + dx] = temp[i];
         }
     free(temp);
 }

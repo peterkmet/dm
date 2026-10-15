@@ -1,6 +1,8 @@
 """Checks port/src against docs/coding-standard.md. Open exceptions: tests/standard_allowlist.txt."""
 
 import re
+import shutil
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 
@@ -183,3 +185,15 @@ def test_layers():
         if layer != "platform" and re.search(r"#include\s+<SDL", text):
             found.append(f"layer {rel(path)}:SDL  | SDL outside platform/")
     report("layer", found)
+
+
+CLANG_FORMAT_MAJOR = 23
+
+
+def test_sources_are_formatted():
+    exe = shutil.which("clang-format")
+    assert exe, "clang-format is missing: brew install clang-format"
+    version = subprocess.run([exe, "--version"], capture_output=True, text=True).stdout
+    assert re.search(rf"version {CLANG_FORMAT_MAJOR}\.", version), f"clang-format {CLANG_FORMAT_MAJOR} needed: {version.strip()}"
+    result = subprocess.run([exe, "--dry-run", "--Werror", *map(str, sources())], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr[-4000:]

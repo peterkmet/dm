@@ -9,7 +9,7 @@
 enum { SAVEGAME_DAMAGED = -1, SAVEGAME_MISSING = 0, SAVEGAME_LOADED = 1 };
 enum { ADVENTURE_FAILED, ADVENTURE_MADE, ADVENTURE_NO_CHAMPIONS, ADVENTURE_NAMES_NOT_UNIQUE };
 
-extern int16_t g_saved_game_exists;          /* 1 after a save or a load: the endgame offers a restart */
+extern int16_t g_saved_game_exists; /* 1 after a save or a load: the endgame offers a restart */
 extern uint32_t g_last_save_game_time, g_last_load_game_time;
 
 /* Writes the game to dir/name. With a backup name, the old file becomes dir/backup first. Returns 1 on success. */

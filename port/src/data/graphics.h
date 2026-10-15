@@ -5,13 +5,13 @@
 #include <stdint.h>
 
 /* Amiga planar graphics: 4 bitplanes, 16 pixels per word. */
-#define BITPLANE_COUNT 4
+#define BITPLANE_COUNT  4
 #define PIXELS_PER_WORD 16
 
 /* Text metrics of the built-in font. */
-#define TEXT_CHAR_WIDTH 6  /* g_text_char_width, advance per character */
-#define TEXT_CHAR_GAP 1    /* g_text_char_gap */
-#define TEXT_LINE_HEIGHT 6 /* g_text_line_height */
+#define TEXT_CHAR_WIDTH   6 /* g_text_char_width, advance per character */
+#define TEXT_CHAR_GAP     1 /* g_text_char_gap */
+#define TEXT_LINE_HEIGHT  6 /* g_text_line_height */
 #define TEXT_BASELINE_GAP 1 /* g_text_baseline_gap */
 
 typedef struct {
@@ -30,8 +30,8 @@ const Bitmap *gfx_bitmap(int i);
 
 /* Loads the string lists of the game data. Call after gfx_open and csb_text_build. */
 int gfx_load_strings(void);
-const char *gfx_string(int16_t index);          /* get_string: graphic 700 */
-const char *gfx_object_name(int16_t icon);      /* g_object_names: graphic 0x2b6 */
-const char *gfx_action_name(int16_t action);    /* menus_get_action_name: graphic 699 */
+const char *gfx_string(int16_t index);       /* get_string: graphic 700 */
+const char *gfx_object_name(int16_t icon);   /* g_object_names: graphic 0x2b6 */
+const char *gfx_action_name(int16_t action); /* menus_get_action_name: graphic 699 */
 
 #endif

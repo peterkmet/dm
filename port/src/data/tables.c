@@ -4,40 +4,52 @@
 #include "csbimage.h"
 #include "ftl.h"
 
-#define CREATURE_INFO 0x10192e
-#define CREATURE_SOUNDS 0x101bec
-#define OBJECT_INFO 0x101068
-#define WEAPON_INFO 0x1014a0
-#define ARMOUR_INFO 0x1015b4
-#define JUNK_WEIGHTS 0x10169c
-#define FOOD_VALUES 0x1016d2
-#define ACTION_SETS 0x103d4c
-#define ACTION_DISABLED_TICKS 0x103eac
-#define ACTION_DAMAGE_FACTOR 0x103ed8
-#define ACTION_HIT_PROBABILITY 0x103f04
-#define ACTION_STAMINA 0x103f30
-#define ACTION_DEFENSE 0x103f5c
-#define ACTION_SKILL_INDEX 0x103f88
-#define ACTION_EXPERIENCE_GAIN 0x103fb4
+#define CREATURE_INFO               0x10192e
+#define CREATURE_SOUNDS             0x101bec
+#define OBJECT_INFO                 0x101068
+#define WEAPON_INFO                 0x1014a0
+#define ARMOUR_INFO                 0x1015b4
+#define JUNK_WEIGHTS                0x10169c
+#define FOOD_VALUES                 0x1016d2
+#define ACTION_SETS                 0x103d4c
+#define ACTION_DISABLED_TICKS       0x103eac
+#define ACTION_DAMAGE_FACTOR        0x103ed8
+#define ACTION_HIT_PROBABILITY      0x103f04
+#define ACTION_STAMINA              0x103f30
+#define ACTION_DEFENSE              0x103f5c
+#define ACTION_SKILL_INDEX          0x103f88
+#define ACTION_EXPERIENCE_GAIN      0x103fb4
 #define LIGHT_POWER_TO_LIGHT_AMOUNT 0x100cb4
-#define PALETTE_LIGHT_THRESHOLDS 0x100cd4
-#define SLOT_MASKS 0x100c68
-#define WOUND_DEFENSE_FACTOR 0x100ce4
-#define FIXED_POSSESSIONS 0x101c10
+#define PALETTE_LIGHT_THRESHOLDS    0x100cd4
+#define SLOT_MASKS                  0x100c68
+#define WOUND_DEFENSE_FACTOR        0x100ce4
+#define FIXED_POSSESSIONS           0x101c10
 
 /* Record sizes in KAOS. */
 #define CREATURE_INFO_BYTES 26
-#define OBJECT_INFO_BYTES 6
-#define WEAPON_INFO_BYTES 6
-#define ARMOUR_INFO_BYTES 4
-#define ACTION_SET_BYTES 8
+#define OBJECT_INFO_BYTES   6
+#define WEAPON_INFO_BYTES   6
+#define ARMOUR_INFO_BYTES   4
+#define ACTION_SET_BYTES    8
 
 /* Byte offsets of the creature info fields (docs/tables.md); bytes 13 and 25 are pad bytes. */
 enum {
-    CREATURE_AT_ASPECT_INDEX, CREATURE_AT_ATTACK_SOUND_ORDINAL, CREATURE_AT_ATTRIBUTES, CREATURE_AT_GRAPHIC_INFO = 4,
-    CREATURE_AT_MOVEMENT_TICKS = 6, CREATURE_AT_ATTACK_TICKS, CREATURE_AT_DEFENSE, CREATURE_AT_BASE_HEALTH, CREATURE_AT_ATTACK,
-    CREATURE_AT_POISON_ATTACK, CREATURE_AT_DEXTERITY, CREATURE_AT_RANGES = 14, CREATURE_AT_PROPERTIES = 16,
-    CREATURE_AT_RESISTANCES = 18, CREATURE_AT_ANIMATION_TICKS = 20, CREATURE_AT_WOUND_PROBABILITIES = 22,
+    CREATURE_AT_ASPECT_INDEX,
+    CREATURE_AT_ATTACK_SOUND_ORDINAL,
+    CREATURE_AT_ATTRIBUTES,
+    CREATURE_AT_GRAPHIC_INFO = 4,
+    CREATURE_AT_MOVEMENT_TICKS = 6,
+    CREATURE_AT_ATTACK_TICKS,
+    CREATURE_AT_DEFENSE,
+    CREATURE_AT_BASE_HEALTH,
+    CREATURE_AT_ATTACK,
+    CREATURE_AT_POISON_ATTACK,
+    CREATURE_AT_DEXTERITY,
+    CREATURE_AT_RANGES = 14,
+    CREATURE_AT_PROPERTIES = 16,
+    CREATURE_AT_RESISTANCES = 18,
+    CREATURE_AT_ANIMATION_TICKS = 20,
+    CREATURE_AT_WOUND_PROBABILITIES = 22,
     CREATURE_AT_ATTACK_TYPE = 24,
 };
 
@@ -68,18 +80,20 @@ static void read_creatures(void)
     for (uint32_t i = 0; i < CREATURE_TYPE_COUNT; i++) {
         uint32_t a = CREATURE_INFO + i * CREATURE_INFO_BYTES;
         creature_info[i] = (CreatureInfo){
-            kaos_u8(a + CREATURE_AT_ASPECT_INDEX), kaos_u8(a + CREATURE_AT_ATTACK_SOUND_ORDINAL),
-            kaos_u16(a + CREATURE_AT_ATTRIBUTES), kaos_u16(a + CREATURE_AT_GRAPHIC_INFO),
-            kaos_u8(a + CREATURE_AT_MOVEMENT_TICKS), kaos_u8(a + CREATURE_AT_ATTACK_TICKS),
-            kaos_u8(a + CREATURE_AT_DEFENSE), kaos_u8(a + CREATURE_AT_BASE_HEALTH), kaos_u8(a + CREATURE_AT_ATTACK),
-            kaos_u8(a + CREATURE_AT_POISON_ATTACK), kaos_u8(a + CREATURE_AT_DEXTERITY),
-            kaos_u16(a + CREATURE_AT_RANGES), kaos_u16(a + CREATURE_AT_PROPERTIES), kaos_u16(a + CREATURE_AT_RESISTANCES),
+            kaos_u8(a + CREATURE_AT_ASPECT_INDEX),     kaos_u8(a + CREATURE_AT_ATTACK_SOUND_ORDINAL),
+            kaos_u16(a + CREATURE_AT_ATTRIBUTES),      kaos_u16(a + CREATURE_AT_GRAPHIC_INFO),
+            kaos_u8(a + CREATURE_AT_MOVEMENT_TICKS),   kaos_u8(a + CREATURE_AT_ATTACK_TICKS),
+            kaos_u8(a + CREATURE_AT_DEFENSE),          kaos_u8(a + CREATURE_AT_BASE_HEALTH),
+            kaos_u8(a + CREATURE_AT_ATTACK),           kaos_u8(a + CREATURE_AT_POISON_ATTACK),
+            kaos_u8(a + CREATURE_AT_DEXTERITY),        kaos_u16(a + CREATURE_AT_RANGES),
+            kaos_u16(a + CREATURE_AT_PROPERTIES),      kaos_u16(a + CREATURE_AT_RESISTANCES),
             kaos_u16(a + CREATURE_AT_ANIMATION_TICKS), kaos_u16(a + CREATURE_AT_WOUND_PROBABILITIES),
             kaos_u8(a + CREATURE_AT_ATTACK_TYPE),
         };
     }
     for (uint32_t i = 0; i < CREATURE_SOUND_COUNT; i++)
-        creature_sounds[i] = (CreatureSound){(int8_t)kaos_u8(CREATURE_SOUNDS + i * 2), (int8_t)kaos_u8(CREATURE_SOUNDS + i * 2 + 1)};
+        creature_sounds[i] =
+            (CreatureSound){(int8_t)kaos_u8(CREATURE_SOUNDS + i * 2), (int8_t)kaos_u8(CREATURE_SOUNDS + i * 2 + 1)};
 }
 
 /* Object, weapon, armour, junk, food, and door properties. */
@@ -113,8 +127,9 @@ static void read_magic(void)
     for (uint32_t i = 0; i < (uint32_t)loaded_spell_count; i++) {
         uint32_t a = (csb ? CSB_SPELLS : G_SPELLS) + i * SPELL_BYTES;
         uint16_t w = kaos_u16(a + SPELL_ENTRY_ATTRIBUTES);
-        spells[i] = (Spell){kaos_u32(a), kaos_u8(a + SPELL_ENTRY_LEVEL), kaos_u8(a + SPELL_ENTRY_SKILL), w & SPELL_KIND_MASK,
-                            w >> SPELL_TYPE_SHIFT & SPELL_TYPE_MASK, w >> SPELL_DISABLED_TICKS_SHIFT};
+        spells[i] =
+            (Spell){kaos_u32(a),         kaos_u8(a + SPELL_ENTRY_LEVEL),          kaos_u8(a + SPELL_ENTRY_SKILL),
+                    w & SPELL_KIND_MASK, w >> SPELL_TYPE_SHIFT & SPELL_TYPE_MASK, w >> SPELL_DISABLED_TICKS_SHIFT};
     }
     for (uint32_t s = 0; s < SYMBOL_STEP_COUNT; s++)
         for (uint32_t n = 0; n < SYMBOL_COUNT; n++)
@@ -128,11 +143,15 @@ static void read_actions(void)
 {
     for (uint32_t i = 0; i < ACTION_SET_COUNT; i++) {
         uint32_t a = ACTION_SETS + i * ACTION_SET_BYTES;
-        action_sets[i] = (ActionSet){{kaos_u8(a), kaos_u8(a + 1), kaos_u8(a + 2)}, {kaos_u8(a + 4), kaos_u8(a + 5)}, kaos_u8(a + 6)};
+        action_sets[i] = (ActionSet){
+            {kaos_u8(a), kaos_u8(a + 1), kaos_u8(a + 2)},
+            {kaos_u8(a + 4), kaos_u8(a + 5)},
+            kaos_u8(a + 6)
+        };
     }
     for (uint32_t i = 0; i < ACTION_COUNT; i++)
         action_info[i] = (ActionInfo){
-            kaos_u8(ACTION_DISABLED_TICKS + i), kaos_u8(ACTION_DAMAGE_FACTOR + i),
+            kaos_u8(ACTION_DISABLED_TICKS + i),  kaos_u8(ACTION_DAMAGE_FACTOR + i),
             kaos_u8(ACTION_HIT_PROBABILITY + i), kaos_u8(ACTION_STAMINA + i),
             (int8_t)kaos_u8(ACTION_DEFENSE + i), kaos_u8(ACTION_SKILL_INDEX + i),
             kaos_u8(ACTION_EXPERIENCE_GAIN + i),
@@ -169,23 +188,74 @@ int tables_init(void)
 
 #define GET(arr, i) (ready && (unsigned)(i) < sizeof(arr) / sizeof((arr)[0]) ? &(arr)[i] : NULL)
 
-const CreatureInfo *tables_creature_info(int i) { return GET(creature_info, i); }
-const CreatureSound *tables_creature_sound(int i) { return GET(creature_sounds, i); }
-const ObjectInfo *tables_object_info(int i) { return GET(object_info, i); }
-const WeaponInfo *tables_weapon_info(int i) { return GET(weapon_info, i); }
-const ArmourInfo *tables_armour_info(int i) { return GET(armour_info, i); }
-const uint8_t *tables_junk_weight(int i) { return GET(junk_weights, i); }
-const int16_t *tables_food_value(int i) { return GET(food_values, i); }
-const DoorInfo *tables_door_info(int i) { return GET(door_info, i); }
-const Spell *tables_spell(int i) { return i < loaded_spell_count ? GET(spells, i) : NULL; }
-const uint8_t *tables_symbol_mana_cost_multiplier(int i) { return GET(symbol_mana_cost_multiplier, i); }
-const ActionSet *tables_action_set(int i) { return GET(action_sets, i); }
-const ActionInfo *tables_action_info(int i) { return GET(action_info, i); }
-const int16_t *tables_light_power_to_light_amount(int i) { return GET(light_power_to_light_amount, i); }
-const int16_t *tables_palette_light_threshold(int i) { return GET(palette_light_thresholds, i); }
-const uint16_t *tables_slot_mask(int i) { return GET(slot_masks, i); }
-const uint8_t *tables_wound_defense_factor(int i) { return GET(wound_defense_factor, i); }
-const uint16_t *tables_fixed_possession(int i) { return GET(fixed_possessions, i); }
+const CreatureInfo *tables_creature_info(int i)
+{
+    return GET(creature_info, i);
+}
+const CreatureSound *tables_creature_sound(int i)
+{
+    return GET(creature_sounds, i);
+}
+const ObjectInfo *tables_object_info(int i)
+{
+    return GET(object_info, i);
+}
+const WeaponInfo *tables_weapon_info(int i)
+{
+    return GET(weapon_info, i);
+}
+const ArmourInfo *tables_armour_info(int i)
+{
+    return GET(armour_info, i);
+}
+const uint8_t *tables_junk_weight(int i)
+{
+    return GET(junk_weights, i);
+}
+const int16_t *tables_food_value(int i)
+{
+    return GET(food_values, i);
+}
+const DoorInfo *tables_door_info(int i)
+{
+    return GET(door_info, i);
+}
+const Spell *tables_spell(int i)
+{
+    return i < loaded_spell_count ? GET(spells, i) : NULL;
+}
+const uint8_t *tables_symbol_mana_cost_multiplier(int i)
+{
+    return GET(symbol_mana_cost_multiplier, i);
+}
+const ActionSet *tables_action_set(int i)
+{
+    return GET(action_sets, i);
+}
+const ActionInfo *tables_action_info(int i)
+{
+    return GET(action_info, i);
+}
+const int16_t *tables_light_power_to_light_amount(int i)
+{
+    return GET(light_power_to_light_amount, i);
+}
+const int16_t *tables_palette_light_threshold(int i)
+{
+    return GET(palette_light_thresholds, i);
+}
+const uint16_t *tables_slot_mask(int i)
+{
+    return GET(slot_masks, i);
+}
+const uint8_t *tables_wound_defense_factor(int i)
+{
+    return GET(wound_defense_factor, i);
+}
+const uint16_t *tables_fixed_possession(int i)
+{
+    return GET(fixed_possessions, i);
+}
 
 const uint8_t *tables_symbol_base_mana_cost(int step, int symbol)
 {

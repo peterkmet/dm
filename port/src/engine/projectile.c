@@ -10,9 +10,9 @@
 #include "timeline_process.h"
 
 /* Combined square argument: a value from 0x100 holds (x + 1) << 8 | target x (and y << 8 | target y). */
-#define SQUARE_COMBO_MIN 0x100
+#define SQUARE_COMBO_MIN         0x100
 #define SQUARE_COMBO_TARGET_MASK 0xff
-#define SQUARE_COMBO_SHIFT 8
+#define SQUARE_COMBO_SHIFT       8
 
 /* Potion types that explode when a flask hits something. */
 enum { POTION_FUL_BOMB = 19, POTION_VEN_BOMB = 3 };
@@ -29,9 +29,16 @@ enum { PROJECTILE_DOOR_PASS_RANDOM_MASK = 0x7f };
 enum { LAUNCHER_EXPLOSION_DATA_BASE = 128, LAUNCHER_ATTACK = 100 };
 /* Object info indices that a launcher or a wall generator creates. */
 enum {
-    LAUNCHER_INFO_TORCH_FIRST = 4, LAUNCHER_INFO_TORCH_LAST = 7, LAUNCHER_INFO_DAGGER = 32, LAUNCHER_INFO_ARROW = 51,
-    LAUNCHER_INFO_SLAYER = 52, LAUNCHER_INFO_NONE = 53, LAUNCHER_INFO_ROCK = 54, LAUNCHER_INFO_POISON_DART = 55,
-    LAUNCHER_INFO_THROWING_STAR = 56, LAUNCHER_INFO_BOULDER = 128
+    LAUNCHER_INFO_TORCH_FIRST = 4,
+    LAUNCHER_INFO_TORCH_LAST = 7,
+    LAUNCHER_INFO_DAGGER = 32,
+    LAUNCHER_INFO_ARROW = 51,
+    LAUNCHER_INFO_SLAYER = 52,
+    LAUNCHER_INFO_NONE = 53,
+    LAUNCHER_INFO_ROCK = 54,
+    LAUNCHER_INFO_POISON_DART = 55,
+    LAUNCHER_INFO_THROWING_STAR = 56,
+    LAUNCHER_INFO_BOULDER = 128
 };
 enum { WEAPON_TORCH = 2, WEAPON_ROCK = 30, JUNK_BOULDER = 25 };
 enum { WOUND_HEAD_AND_TORSO = WOUND_HEAD | WOUND_TORSO, WOUND_ALL = 0x3f };
@@ -56,7 +63,10 @@ static bool is_party_on(int16_t x, int16_t y)
     return g_current_map_index == g_party_map_index && x == g_party_map_x && y == g_party_map_y;
 }
 
-static uint16_t door_attributes(uint16_t door) { return g_current_map_door_info[door_type(door)] >> 8; }
+static uint16_t door_attributes(uint16_t door)
+{
+    return g_current_map_door_info[door_type(door)] >> 8;
+}
 
 static void add_event_one_tick_later(const TimelineEvent *event)
 {
@@ -66,7 +76,8 @@ static void add_event_one_tick_later(const TimelineEvent *event)
 }
 
 /* A flying thing enters a square. Without a free projectile record, the object drops to the square. */
-void projectile_create(uint16_t thing, int16_t x, int16_t y, int16_t cell, int16_t direction, uint8_t kinetic_energy, uint8_t attack, uint8_t step_energy)
+void projectile_create(uint16_t thing, int16_t x, int16_t y, int16_t cell, int16_t direction, uint8_t kinetic_energy,
+                       uint8_t attack, uint8_t step_energy)
 {
     uint16_t projectile = get_unused_thing(THING_PROJECTILE);
     if (projectile == THING_NONE) {
@@ -142,7 +153,8 @@ void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_comb
     explosion_set_type(explosion, explosion_thing - EXPLOSION_THING_BASE);
     explosion_set_attack(explosion, attack);
     if (explosion_thing < EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL))
-        sound_request_play(attack > WEAK_EXPLOSION_MAX_ATTACK ? SOUND_STRONG_EXPLOSION : SOUND_WEAK_EXPLOSION, x, y, SOUND_MODE_AFTER_TICK);
+        sound_request_play(attack > WEAK_EXPLOSION_MAX_ATTACK ? SOUND_STRONG_EXPLOSION : SOUND_WEAK_EXPLOSION, x, y,
+                           SOUND_MODE_AFTER_TICK);
     else if (explosion_thing != EXPLOSION_THING(EXPLOSION_SMOKE))
         sound_request_play(SOUND_SPELL, x, y, SOUND_MODE_AFTER_TICK);
     link_thing_to_list(explosion, 0, x, y);
@@ -154,7 +166,8 @@ void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_comb
         .c = explosion,
     };
     timeline_add_event(&event);
-    if (explosion_thing == EXPLOSION_THING(EXPLOSION_LIGHTNING_BOLT) || explosion_thing == EXPLOSION_THING(EXPLOSION_FIREBALL))
+    if (explosion_thing == EXPLOSION_THING(EXPLOSION_LIGHTNING_BOLT) ||
+        explosion_thing == EXPLOSION_THING(EXPLOSION_FIREBALL))
         explosion_damage_square(explosion_thing, attack, target_x, target_y);
 }
 
@@ -229,8 +242,8 @@ uint16_t projectile_get_impact_attack(uint16_t projectile, uint16_t thing)
 /* A creature hit: damage scaled by the creature defense, plus poison. A black flame eats fireballs. A creature that
    keeps sharp weapons catches the dagger, arrow, star, or dart. Returns 0 when no creature stands in the cell, 1 when
    the projectile hit, 2 when the black flame ate the fireball. */
-static int16_t hit_creature(uint16_t projectile, uint16_t thing, int16_t is_explosion, int16_t x, int16_t y, int16_t cell,
-                            uint16_t *possessing_group)
+static int16_t hit_creature(uint16_t projectile, uint16_t thing, int16_t is_explosion, int16_t x, int16_t y,
+                            int16_t cell, uint16_t *possessing_group)
 {
     uint16_t group = get_square_group(x, y);
     int16_t ordinal = group_get_creature_ordinal_in_cell(group, cell);
@@ -246,7 +259,8 @@ static int16_t hit_creature(uint16_t projectile, uint16_t thing, int16_t is_expl
     }
     if ((info->attributes & CREATURE_NON_MATERIAL) && thing != EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL))
         return 0;
-    uint16_t attack = (uint16_t)(projectile_get_impact_attack(projectile, thing) << 6) / info->defense;   /* 16-bit product as in the original */
+    uint16_t attack = (uint16_t)(projectile_get_impact_attack(projectile, thing) << 6) /
+                      info->defense; /* 16-bit product as in the original */
     if (!attack)
         return 1;
     uint16_t poison = group_get_resistance_adjusted_poison_attack(creature_type, g_projectile_poison_attack);
@@ -282,8 +296,9 @@ static int16_t hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t 
         if (THING_TYPE(thing) == THING_EXPLOSION) {
             passes = thing >= EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL);
         } else {
-            passes = (random16() & PROJECTILE_DOOR_PASS_RANDOM_MASK) < projectile_attack(projectile) &&
-                     (tables_object_info(inventory_get_object_info_index(thing))->allowed_slots & OBJECT_PASSES_DOOR_GRATE);
+            passes =
+                (random16() & PROJECTILE_DOOR_PASS_RANDOM_MASK) < projectile_attack(projectile) &&
+                (tables_object_info(inventory_get_object_info_index(thing))->allowed_slots & OBJECT_PASSES_DOOR_GRATE);
             if (passes && THING_TYPE(thing) == THING_JUNK) {
                 int16_t icon = object_get_icon_index(thing);
                 passes = icon < ICON_JUNK_SOLID_FIRST || icon > ICON_JUNK_SOLID_LAST;
@@ -323,7 +338,8 @@ static uint16_t spell_explosion_attack(uint16_t thing, uint16_t projectile)
 
 /* A projectile hits the party (impact -2), a creature (-1), or a wall, stairs, door, or fake wall (square type).
    The flying object drops or explodes and the projectile disappears. Returns false when nothing was hit. */
-bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_t y_combo, int16_t cell, uint16_t projectile)
+bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_t y_combo, int16_t cell,
+                                    uint16_t projectile)
 {
     uint16_t thing = rec_projectile_slot(projectile);
     int16_t thing_type = THING_TYPE(thing);
@@ -357,17 +373,21 @@ bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_
             return false;
     }
     if (effect_happens) {
-        if (champion_attack && champion_add_pending_damage_and_wounds(cell, champion_attack, WOUND_HEAD_AND_TORSO, g_projectile_attack_type) &&
+        if (champion_attack &&
+            champion_add_pending_damage_and_wounds(cell, champion_attack, WOUND_HEAD_AND_TORSO,
+                                                   g_projectile_attack_type) &&
             g_projectile_poison_attack && random_bit())
             champion_poison(cell, g_projectile_poison_attack);
         if (!is_explosion && !flask_explodes && thing != EXPLOSION_THING(EXPLOSION_POISON_BOLT)) {
-            sound_request_play(thing_type == THING_WEAPON ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, x, y, SOUND_MODE_AFTER_TICK);
+            sound_request_play(thing_type == THING_WEAPON ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, x, y,
+                               SOUND_MODE_AFTER_TICK);
         } else {
             uint16_t explosion = flask_explodes ? flask_explosion : thing;
             if (!flask_explodes)
                 explosion_attack = spell_explosion_attack(thing, projectile);
-            int16_t weakened_to_nothing = !flask_explodes && !explosion_attack &&
-                                          (thing == EXPLOSION_THING(EXPLOSION_POISON_BOLT) || thing == EXPLOSION_THING(EXPLOSION_LIGHTNING_BOLT));
+            int16_t weakened_to_nothing =
+                !flask_explodes && !explosion_attack &&
+                (thing == EXPLOSION_THING(EXPLOSION_POISON_BOLT) || thing == EXPLOSION_THING(EXPLOSION_LIGHTNING_BOLT));
             /* After a party hit, cell holds the champion index, as in the original. */
             if (!weakened_to_nothing)
                 explosion_create(explosion, explosion_attack, x_combo, y_combo,
@@ -415,7 +435,8 @@ void projectile_process_move_event(TimelineEvent *event)
     } else {
         if (is_party_on(x, y) && projectile_has_impact_occurred(IMPACT_PARTY, x, y, cell, projectile))
             return;
-        if (get_square_group(x, y) != THING_END && projectile_has_impact_occurred(IMPACT_CREATURE, x, y, cell, projectile))
+        if (get_square_group(x, y) != THING_END &&
+            projectile_has_impact_occurred(IMPACT_CREATURE, x, y, cell, projectile))
             return;
         if (rec_projectile_kinetic_energy(projectile) <= step_energy) {
             unlink_thing_from_list(projectile, 0, x, y);
@@ -423,7 +444,8 @@ void projectile_process_move_event(TimelineEvent *event)
             return;
         }
         projectile_set_kinetic_energy(projectile, rec_projectile_kinetic_energy(projectile) - step_energy);
-        projectile_set_attack(projectile, projectile_attack(projectile) < step_energy ? 0 : projectile_attack(projectile) - step_energy);
+        projectile_set_attack(
+            projectile, projectile_attack(projectile) < step_energy ? 0 : projectile_attack(projectile) - step_energy);
     }
     uint16_t direction = projectile_event_direction(&next);
     int16_t leaves_square = cell == direction || cell == ((direction + 1) & 3);
@@ -432,7 +454,8 @@ void projectile_process_move_event(TimelineEvent *event)
         update_map_coordinates_after_relative_movement(direction, 1, 0, &dst_x, &dst_y);
         uint8_t square = get_square(dst_x, dst_y);
         int16_t type = SQUARE_TYPE(square);
-        int16_t solid = type == SQUARE_WALL || (type == SQUARE_FAKE_WALL && !(square & (FAKE_WALL_OPEN | FAKE_WALL_IMAGINARY))) ||
+        int16_t solid = type == SQUARE_WALL ||
+                        (type == SQUARE_FAKE_WALL && !(square & (FAKE_WALL_OPEN | FAKE_WALL_IMAGINARY))) ||
                         (type == SQUARE_STAIRS && SQUARE_TYPE(g_current_map_data[x][y]) == SQUARE_STAIRS);
         if (solid && projectile_has_impact_occurred(type, x, y, cell, projectile))
             return;
@@ -440,7 +463,8 @@ void projectile_process_move_event(TimelineEvent *event)
     uint16_t new_cell = ((cell & 1) == (direction & 1) ? cell - 1 : cell + 1) & 3;
     uint16_t moved = THING_WITH_CELL(projectile, new_cell);
     if (!leaves_square) {
-        if (SQUARE_TYPE(get_square(x, y)) == SQUARE_DOOR && projectile_has_impact_occurred(SQUARE_DOOR, x, y, new_cell, projectile))
+        if (SQUARE_TYPE(get_square(x, y)) == SQUARE_DOOR &&
+            projectile_has_impact_occurred(SQUARE_DOOR, x, y, new_cell, projectile))
             return;
         unlink_thing_from_list(moved, 0, x, y);
         link_thing_to_list(moved, 0, x, y);
@@ -450,7 +474,8 @@ void projectile_process_move_event(TimelineEvent *event)
         moved = THING_WITH_CELL(projectile, g_move_result_cell);
         next.map_time = EVENT_MAP_TIME(g_move_result_map_index, next.map_time & EVENT_TIME_MASK);
     }
-    next.map_time += g_current_map_index == g_party_map_index ? PROJECTILE_STEP_TICKS_PARTY_MAP : PROJECTILE_STEP_TICKS_OTHER_MAP;
+    next.map_time +=
+        g_current_map_index == g_party_map_index ? PROJECTILE_STEP_TICKS_PARTY_MAP : PROJECTILE_STEP_TICKS_OTHER_MAP;
     next.b = moved;
     projectile_set_event_index(projectile, timeline_add_event(&next));
 }
@@ -481,8 +506,9 @@ void explosion_process_step_event(TimelineEvent *event)
     uint8_t square = g_current_map_data[x][y];
     uint16_t group = get_square_group(x, y);
     uint16_t type = rec_explosion_type(explosion), attack = rec_explosion_attack(explosion);
-    int16_t damage = type == EXPLOSION_POISON_CLOUD ? max16(1, min16(attack >> 5, POISON_CLOUD_MAX_DAMAGE) + random_bit())
-                                                    : explosion_random_damage(attack);
+    int16_t damage = type == EXPLOSION_POISON_CLOUD
+                         ? max16(1, min16(attack >> 5, POISON_CLOUD_MAX_DAMAGE) + random_bit())
+                         : explosion_random_damage(attack);
     int16_t breaks_door = 0;
     switch (type) {
     case EXPLOSION_POISON_CLOUD:
@@ -490,7 +516,8 @@ void explosion_process_step_event(TimelineEvent *event)
             champion_damage_all(damage, 0, ATTACK_RAW);
         } else if (group != THING_END) {
             damage = group_get_resistance_adjusted_poison_attack(rec_group_creature_type(group), damage);
-            if (damage && group_get_damage_all_creatures_outcome(group, x, y, damage, 1) != OUTCOME_ALL_CREATURES_KILLED &&
+            if (damage &&
+                group_get_damage_all_creatures_outcome(group, x, y, damage, 1) != OUTCOME_ALL_CREATURES_KILLED &&
                 damage > POISON_REACTION_MIN_DAMAGE)
                 group_process_reaction_event(x, y, REACTION_DANGER_ON_SQUARE, 0);
         }
@@ -572,16 +599,20 @@ void projectile_fluxcage_action(int16_t x, int16_t y)
     int16_t lord_x = x, lord_y = y, cages = 0;
     if (projectile_get_lord_chaos_on_square(x, y - 1)) {
         lord_y = y - 1;
-        cages = projectile_is_fluxcage_on_square(x + 1, lord_y) + projectile_is_fluxcage_on_square(x, lord_y - 1) + projectile_is_fluxcage_on_square(x - 1, lord_y);
+        cages = projectile_is_fluxcage_on_square(x + 1, lord_y) + projectile_is_fluxcage_on_square(x, lord_y - 1) +
+                projectile_is_fluxcage_on_square(x - 1, lord_y);
     } else if (projectile_get_lord_chaos_on_square(x - 1, y)) {
         lord_x = x - 1;
-        cages = projectile_is_fluxcage_on_square(lord_x, y + 1) + projectile_is_fluxcage_on_square(lord_x, y - 1) + projectile_is_fluxcage_on_square(lord_x - 1, y);
+        cages = projectile_is_fluxcage_on_square(lord_x, y + 1) + projectile_is_fluxcage_on_square(lord_x, y - 1) +
+                projectile_is_fluxcage_on_square(lord_x - 1, y);
     } else if (projectile_get_lord_chaos_on_square(x + 1, y)) {
         lord_x = x + 1;
-        cages = projectile_is_fluxcage_on_square(lord_x, y - 1) + projectile_is_fluxcage_on_square(lord_x, y + 1) + projectile_is_fluxcage_on_square(lord_x + 1, y);
+        cages = projectile_is_fluxcage_on_square(lord_x, y - 1) + projectile_is_fluxcage_on_square(lord_x, y + 1) +
+                projectile_is_fluxcage_on_square(lord_x + 1, y);
     } else if (projectile_get_lord_chaos_on_square(x, y + 1)) {
         lord_y = y + 1;
-        cages = projectile_is_fluxcage_on_square(x - 1, lord_y) + projectile_is_fluxcage_on_square(x, lord_y + 1) + projectile_is_fluxcage_on_square(x + 1, lord_y);
+        cages = projectile_is_fluxcage_on_square(x - 1, lord_y) + projectile_is_fluxcage_on_square(x, lord_y + 1) +
+                projectile_is_fluxcage_on_square(x + 1, lord_y);
     }
     if (cages == 2)
         group_process_reaction_event(lord_x, lord_y, REACTION_DANGER_ON_SQUARE, 0);
@@ -600,8 +631,10 @@ void projectile_fuse_action(int16_t x, int16_t y)
         return;
     /* Sides: 0 west, 1 east, 2 north, 3 south. */
     int16_t cages[FUSE_SIDES] = {
-        projectile_is_fluxcage_on_square(x - 1, y), projectile_is_fluxcage_on_square(x + 1, y),
-        projectile_is_fluxcage_on_square(x, y - 1), projectile_is_fluxcage_on_square(x, y + 1),
+        projectile_is_fluxcage_on_square(x - 1, y),
+        projectile_is_fluxcage_on_square(x + 1, y),
+        projectile_is_fluxcage_on_square(x, y - 1),
+        projectile_is_fluxcage_on_square(x, y + 1),
     };
     uint16_t count = cages[0] + cages[1] + cages[2] + cages[3];
     int16_t escape_x, escape_y;
@@ -674,7 +707,8 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
             hit = 0;
             for (uint16_t t = get_square_first_thing(x, y); t != THING_END; t = get_next_thing(t)) {
                 uint8_t target = occupied[THING_CELL(t)];
-                if (THING_TYPE(t) != THING_PROJECTILE || g_timeline_events[rec_projectile_event_index(t)].type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS ||
+                if (THING_TYPE(t) != THING_PROJECTILE ||
+                    g_timeline_events[rec_projectile_event_index(t)].type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS ||
                     !target || !projectile_has_impact_occurred(impact_type, x_combo, y_combo, target - 1, t))
                     continue;
                 projectile_delete_event(t);
@@ -712,7 +746,8 @@ void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event)
     int16_t x = EVENT_X(event), y = EVENT_Y(event);
     uint16_t direction = EVENT_CELL(event), cell = (direction + 2) & 3;
     uint16_t type = rec_sensor_type(sensor), data = rec_sensor_data(sensor);
-    int16_t single = type == SENSOR_WALL_LAUNCHER_OBJECT || type == SENSOR_WALL_LAUNCHER_EXPLOSION || type == SENSOR_WALL_LAUNCHER_SQUARE_OBJECT;
+    int16_t single = type == SENSOR_WALL_LAUNCHER_OBJECT || type == SENSOR_WALL_LAUNCHER_EXPLOSION ||
+                     type == SENSOR_WALL_LAUNCHER_SQUARE_OBJECT;
     uint16_t first, second = THING_NONE;
     if (type == SENSOR_WALL_LAUNCHER_EXPLOSION || type == SENSOR_WALL_LAUNCHER_TWO_EXPLOSIONS) {
         first = second = data - LAUNCHER_EXPLOSION_DATA_BASE;
@@ -742,11 +777,13 @@ void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event)
         cell = (cell + random_bit()) & 3;
     int16_t target_x = x, target_y = y;
     update_map_coordinates_after_relative_movement(direction, 1, 0, &target_x, &target_y);
-    uint8_t kinetic_energy = rec_sensor_launcher_kinetic_energy(sensor), step_energy = rec_sensor_launcher_step_energy(sensor);
+    uint8_t kinetic_energy = rec_sensor_launcher_kinetic_energy(sensor),
+            step_energy = rec_sensor_launcher_step_energy(sensor);
     g_create_launcher_projectile = 1;
     projectile_create(first, target_x, target_y, cell, direction, kinetic_energy, LAUNCHER_ATTACK, step_energy);
     if (!single)
-        projectile_create(second, target_x, target_y, (cell + 1) & 3, direction, kinetic_energy, LAUNCHER_ATTACK, step_energy);
+        projectile_create(second, target_x, target_y, (cell + 1) & 3, direction, kinetic_energy, LAUNCHER_ATTACK,
+                          step_energy);
     g_create_launcher_projectile = 0;
 }
 
@@ -758,15 +795,33 @@ uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_ind
         object_info_index = LAUNCHER_INFO_TORCH_FIRST;
     uint16_t thing_type = THING_WEAPON, object_type;
     switch (object_info_index) {
-    case LAUNCHER_INFO_TORCH_FIRST: object_type = WEAPON_TORCH; break;
-    case LAUNCHER_INFO_DAGGER: object_type = WEAPON_DAGGER; break;
-    case LAUNCHER_INFO_ARROW: object_type = WEAPON_ARROW; break;
-    case LAUNCHER_INFO_SLAYER: object_type = WEAPON_SLAYER; break;
-    case LAUNCHER_INFO_ROCK: object_type = WEAPON_ROCK; break;
-    case LAUNCHER_INFO_POISON_DART: object_type = WEAPON_POISON_DART; break;
-    case LAUNCHER_INFO_THROWING_STAR: object_type = WEAPON_THROWING_STAR; break;
-    case LAUNCHER_INFO_BOULDER: object_type = JUNK_BOULDER; thing_type = THING_JUNK; break;
-    default: return THING_NONE;
+    case LAUNCHER_INFO_TORCH_FIRST:
+        object_type = WEAPON_TORCH;
+        break;
+    case LAUNCHER_INFO_DAGGER:
+        object_type = WEAPON_DAGGER;
+        break;
+    case LAUNCHER_INFO_ARROW:
+        object_type = WEAPON_ARROW;
+        break;
+    case LAUNCHER_INFO_SLAYER:
+        object_type = WEAPON_SLAYER;
+        break;
+    case LAUNCHER_INFO_ROCK:
+        object_type = WEAPON_ROCK;
+        break;
+    case LAUNCHER_INFO_POISON_DART:
+        object_type = WEAPON_POISON_DART;
+        break;
+    case LAUNCHER_INFO_THROWING_STAR:
+        object_type = WEAPON_THROWING_STAR;
+        break;
+    case LAUNCHER_INFO_BOULDER:
+        object_type = JUNK_BOULDER;
+        thing_type = THING_JUNK;
+        break;
+    default:
+        return THING_NONE;
     }
     uint16_t thing = get_unused_thing(thing_type);
     if (thing == THING_NONE)
@@ -777,7 +832,8 @@ uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_ind
 }
 
 /* A champion throws or shoots from the front cell of his side; the party cannot move into it for 4 ticks. */
-void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint8_t kinetic_energy, uint8_t attack, uint8_t step_energy)
+void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint8_t kinetic_energy, uint8_t attack,
+                                    uint8_t step_energy)
 {
     const Champion *champion = &g_champions[champion_index];
     uint16_t direction = champion->direction;

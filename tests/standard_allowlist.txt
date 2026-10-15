@@ -6,5 +6,15 @@ hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
 decimal data/csbimage.c byte sizes in the table of APPB addresses
 long engine/action.c:action_is_action_performed one short case for each action of the action table
+long engine/group.c:group_get_damage_creature_outcome open: module cleanup
+long engine/projectile.c:projectile_has_impact_occurred open: module cleanup
+long engine/projectile.c:projectile_is_killed_by_impact open: module cleanup
+long engine/timeline_process.c:event_process_expired open: module cleanup
+long platform/main.c:amiga_key open: module cleanup
+long platform/main.c:main open: module cleanup
+long ui/command.c:click_in_dungeon_view open: module cleanup
+long ui/view.c:explosions open: module cleanup
+long ui/view.c:things open: module cleanup
+long ui/view.c:map_square open: module cleanup
 decimal ui/musicmap.c the FM-Towns CSB track of each square: table data of the CHTWE.EXP soundtrack table, not in the game files
 decimal ui/music.c the FM-Towns level tracks and the Super NES trigger squares: table data of the soundtracks, not in the game files

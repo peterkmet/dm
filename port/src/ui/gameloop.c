@@ -35,30 +35,37 @@
 #include "view.h"
 
 /* KAOS data addresses. */
-#define ENTRANCE_PALETTE 0x100a66     /* g_entrance_palette[16] */
-#define SPRITE_PALETTE 0x100190       /* pointer colors (the second half of g_initial_colormap) */
-#define ARROW_POINTER 0x1002b0        /* g_arrow_pointer_bitmap: 4 bit planes, size in the 4 bytes before */
-#define HAND_POINTER 0x1003d4         /* g_hand_pointer_bitmap */
-#define POINTER_ZONES 0x1004f8        /* g_mouse_pointer_zones[16]: x, y, width, height, shape, champion */
-#define POINTER_HOTSPOTS 0x1005c8     /* g_mouse_pointer_hotspots[4]: x, y, width, height */
+#define ENTRANCE_PALETTE      0x100a66 /* g_entrance_palette[16] */
+#define SPRITE_PALETTE        0x100190 /* pointer colors (the second half of g_initial_colormap) */
+#define ARROW_POINTER         0x1002b0 /* g_arrow_pointer_bitmap: 4 bit planes, size in the 4 bytes before */
+#define HAND_POINTER          0x1003d4 /* g_hand_pointer_bitmap */
+#define POINTER_ZONES         0x1004f8 /* g_mouse_pointer_zones[16]: x, y, width, height, shape, champion */
+#define POINTER_HOTSPOTS      0x1005c8 /* g_mouse_pointer_hotspots[4]: x, y, width, height */
 #define POINTER_SHADOW_OBJECT 0x1005fe /* g_pointer_shadow_colors_object[16] */
 #define POINTER_SHADOW_OFFSET 0x102952 /* g_pointer_shadow_dx, g_pointer_shadow_dy */
 
-#define TORCH_BURN_INTERVAL_MASK 511  /* torches lose one charge every 512 ticks */
-#define TIME_EFFECTS_MASK 63          /* champion time effects every 64 ticks */
-#define TIME_EFFECTS_SLEEPING_MASK 15 /* every 16 ticks while the party sleeps */
-#define LIGHT_SOURCE_COUNT (CHAMPION_MAX_COUNT * 2)
-#define LIGHT_SOURCES_USED 5          /* the brightest torches that add light */
-#define LIGHT_FIRST_SHIFT 6
-#define POINTER_ZONE_COUNT 16
-#define POINTER_ZONE_BYTES 12
-#define POINTER_HOTSPOT_BYTES 8
-#define POINTER_SHADOW_COLOR 12       /* black: the shadow, swapped with the transparent color 0 */
-#define POINTER_WIDTH_BEFORE 4        /* the bitmap width word comes 4 bytes before the planes */
-#define POINTER_HEIGHT_BEFORE 2
+#define TORCH_BURN_INTERVAL_MASK   511 /* torches lose one charge every 512 ticks */
+#define TIME_EFFECTS_MASK          63  /* champion time effects every 64 ticks */
+#define TIME_EFFECTS_SLEEPING_MASK 15  /* every 16 ticks while the party sleeps */
+#define LIGHT_SOURCE_COUNT         (CHAMPION_MAX_COUNT * 2)
+#define LIGHT_SOURCES_USED         5 /* the brightest torches that add light */
+#define LIGHT_FIRST_SHIFT          6
+#define POINTER_ZONE_COUNT         16
+#define POINTER_ZONE_BYTES         12
+#define POINTER_HOTSPOT_BYTES      8
+#define POINTER_SHADOW_COLOR       12 /* black: the shadow, swapped with the transparent color 0 */
+#define POINTER_WIDTH_BEFORE       4  /* the bitmap width word comes 4 bytes before the planes */
+#define POINTER_HEIGHT_BEFORE      2
 
 /* Byte offsets of the words of a pointer zone and of a pointer hotspot. */
-enum { POINTER_ZONE_X = 0, POINTER_ZONE_Y = 2, POINTER_ZONE_W = 4, POINTER_ZONE_H = 6, POINTER_ZONE_SHAPE = 8, POINTER_ZONE_CHAMPION = 10 };
+enum {
+    POINTER_ZONE_X = 0,
+    POINTER_ZONE_Y = 2,
+    POINTER_ZONE_W = 4,
+    POINTER_ZONE_H = 6,
+    POINTER_ZONE_SHAPE = 8,
+    POINTER_ZONE_CHAMPION = 10
+};
 /* POINTER_ZONE_CHAMPION: champion index + 1 in bits 0-2; 8 and more is the name zone of the champion */
 enum { ZONE_CHAMPION_INDEX_MASK = 7, ZONE_CHAMPION_NAME = 8 };
 enum { HOTSPOT_X = 0, HOTSPOT_Y = 2 };
@@ -67,7 +74,7 @@ enum { POINTER_ARROW, POINTER_HAND, POINTER_OBJECT };
 
 static int16_t frames_waiting;
 static uint16_t shown_hand_object = THING_NONE;
-static int16_t shown_hand_icon;  /* a waterskin or a torch changes its icon and its name */
+static int16_t shown_hand_icon; /* a waterskin or a torch changes its icon and its name */
 static char data_dir[PATH_SIZE];
 
 int gameloop_load_data(const char *dir)
@@ -75,14 +82,18 @@ int gameloop_load_data(const char *dir)
     char path[PATH_SIZE];
     snprintf(data_dir, sizeof data_dir, "%s", dir);
     snprintf(path, sizeof path, "%s/%s", dir, adventure_engine_name());
-    if (kaos_load(path)) return 0;
+    if (kaos_load(path))
+        return 0;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     startend_set_save_dir(dir);
     g_endgame_sensor_hook = endgame_sensor;
     return gfx_open(path) >= 0 && !layout_init() && !text_init() && !tables_init() && !ui_init();
 }
 
-const char *gameloop_data_dir(void) { return data_dir; }
+const char *gameloop_data_dir(void)
+{
+    return data_dir;
+}
 
 /* The entrance graphic, the view behind the doors (or nothing for NULL), and each door moved apart by
    opened pixels. Returns 1 while a part of a door shows. */
@@ -92,8 +103,10 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
     Box doors, work, door;
     int16_t w = 0, h = 0, shown = 0;
     ui_blit_graphic(&screen, GFX_ENTRANCE, ZONE_SCREEN, COLOR_NONE);
-    if (!ui_zone_box(ZONE_ENTRANCE_DOORS, &doors)) return 0;
-    if (!layout_get_zone(ZONE_ENTRANCE_WORK, doors.w, doors.h, &work, &w, &h)) return 0;
+    if (!ui_zone_box(ZONE_ENTRANCE_DOORS, &doors))
+        return 0;
+    if (!layout_get_zone(ZONE_ENTRANCE_WORK, doors.w, doors.h, &work, &w, &h))
+        return 0;
     w = h = 0;
     if (view && layout_get_zone(ZONE_ENTRANCE_VIEWPORT, view->w, view->h, &door, &w, &h)) {
         door.x += work.x;
@@ -103,13 +116,17 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
     for (int16_t side = 0; side < 2; side++) {
         const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
         w = h = 0;
-        if (!bm || !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, bm->w, bm->h, &door, &w, &h)) continue;
+        if (!bm || !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, bm->w, bm->h, &door, &w, &h))
+            continue;
         door.x += work.x;
         door.y += work.y;
         door.w = max16(0, door.w - opened);
-        if (side == 0) w += opened;  /* the left door slides left, the right door slides right */
-        else door.x += opened;
-        if (door.w) shown = 1;
+        if (side == 0)
+            w += opened; /* the left door slides left, the right door slides right */
+        else
+            door.x += opened;
+        if (door.w)
+            shown = 1;
         draw_blit(bm, w, h, &screen, &door, COLOR_NONE, 0);
     }
     return shown;
@@ -117,7 +134,8 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
 
 static void set_entrance_palette(void)
 {
-    for (int i = 0; i < PALETTE_COLORS; i++) palette[i] = kaos_u16(ENTRANCE_PALETTE + 2 * i);
+    for (int i = 0; i < PALETTE_COLORS; i++)
+        palette[i] = kaos_u16(ENTRANCE_PALETTE + 2 * i);
     palette_split_top = 0;
     palette_split_bottom = SCREEN_H;
 }
@@ -135,13 +153,15 @@ void entrance_draw(void)
 void entrance_press_button(int resume)
 {
     enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20, BUTTON_VOLUME = 64 };
-    static const uint8_t volumes[2] = { BUTTON_VOLUME, BUTTON_VOLUME };
+    static const uint8_t volumes[2] = {BUTTON_VOLUME, BUTTON_VOLUME};
     const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_BUTTONS);
     Bitmap screen = ui_screen();
     Box box;
     int16_t sx = 0, sy = 0;
-    if (!g_frame_hook) return;
-    if (bm && layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
+    if (!g_frame_hook)
+        return;
+    if (bm &&
+        layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
         draw_blit(bm, sx, sy + (resume ? BUTTON_HEIGHT : 0), &screen, &box, COLOR_NONE, 0);
     sound_play_sample(SOUND_SWITCH, volumes);
     wait_frames(BUTTON_FRAMES);
@@ -153,19 +173,22 @@ void entrance_press_button(int resume)
 void entrance_open_doors(void)
 {
     enum { DOOR_STEP = 2, STEP_FRAMES = 2, SOUND_FRAMES = 40, SOUND_ENTRANCE_DOOR = 3, DOOR_VOLUME = 64 };
-    static const uint8_t volumes[2] = { DOOR_VOLUME, DOOR_VOLUME };
+    static const uint8_t volumes[2] = {DOOR_VOLUME, DOOR_VOLUME};
     static uint8_t view_px[SCREEN_W * SCREEN_H];
     char path[PATH_SIZE];
     Box box;
     snprintf(path, sizeof path, "%s/Dungeon.DAT", data_dir);
-    if (!g_frame_hook || !load_dungeon(path) || !ui_zone_box(ZONE_VIEWPORT, &box)) return;
+    if (!g_frame_hook || !load_dungeon(path) || !ui_zone_box(ZONE_VIEWPORT, &box))
+        return;
     view_set_light(g_party_map_index, 0);
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
-    Bitmap view = { box.w, box.h, view_px };
-    for (int16_t y = 0; y < box.h; y++) memcpy(view_px + y * box.w, &fb[box.y + y][box.x], (size_t)box.w);
+    Bitmap view = {box.w, box.h, view_px};
+    for (int16_t y = 0; y < box.h; y++)
+        memcpy(view_px + y * box.w, &fb[box.y + y][box.x], (size_t)box.w);
     set_entrance_palette();
     for (int16_t opened = 0, frames = 0; draw_entrance_doors(&view, opened) && !g_quit_requested; opened += DOOR_STEP) {
-        if (frames % SOUND_FRAMES == 0) sound_play_sample(SOUND_ENTRANCE_DOOR, volumes);
+        if (frames % SOUND_FRAMES == 0)
+            sound_play_sample(SOUND_ENTRANCE_DOOR, volumes);
         for (int16_t f = 0; f < STEP_FRAMES && wait_frame(); f++, frames++)
             ;
     }
@@ -175,12 +198,13 @@ void entrance_open_doors(void)
    with a falling weight (set_dungeon_view_palette). */
 int16_t gameloop_party_light(void)
 {
-    int16_t power[LIGHT_SOURCE_COUNT] = { 0 }, n = 0, total = 0, shift = LIGHT_FIRST_SHIFT;
+    int16_t power[LIGHT_SOURCE_COUNT] = {0}, n = 0, total = 0, shift = LIGHT_FIRST_SHIFT;
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--, n++) {
             uint16_t thing = g_champions[i].slots[hand];
             int16_t type = object_get_type(thing);
-            if (type >= ICON_TORCH_UNLIT && type <= ICON_TORCH_LAST) power[n] = weapon_charges(thing);
+            if (type >= ICON_TORCH_UNLIT && type <= ICON_TORCH_LAST)
+                power[n] = weapon_charges(thing);
         }
     /* the original sorts only the 4 brightest: the fifth light is any of the rest */
     for (int i = 0; i < LIGHT_SOURCES_USED - 1; i++)
@@ -207,9 +231,11 @@ static void decrease_torches_light_power(void)
         for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--) {
             uint16_t thing = g_champions[i].slots[hand];
             int16_t icon = object_get_icon_index(thing);
-            if (icon < ICON_TORCH_UNLIT || icon > ICON_TORCH_LAST || !weapon_charges(thing)) continue;
+            if (icon < ICON_TORCH_UNLIT || icon > ICON_TORCH_LAST || !weapon_charges(thing))
+                continue;
             weapon_set_charges(thing, weapon_charges(thing) - 1);
-            if (!weapon_charges(thing)) rec_object_clear_important(thing);
+            if (!weapon_charges(thing))
+                rec_object_clear_important(thing);
         }
 }
 
@@ -242,17 +268,22 @@ static void refresh_interface(void)
     ui_draw_all_champion_states(0);
     menus_refresh_spell_area();
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
-        if (!g_champions[i].current_health) continue;
-        int inventory = i + 1 == g_inventory_champion_ordinal && !g_game_frozen;  /* the frozen screen covers it */
-        for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++) ui_draw_champion_slot(i, slot);
-        if (inventory) ui_draw_viewport();
+        if (!g_champions[i].current_health)
+            continue;
+        int inventory = i + 1 == g_inventory_champion_ordinal && !g_game_frozen; /* the frozen screen covers it */
+        for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++)
+            ui_draw_champion_slot(i, slot);
+        if (inventory)
+            ui_draw_viewport();
     }
     int16_t icon = g_leader_hand_object == THING_NONE ? -1 : object_get_icon_index(g_leader_hand_object);
     if (g_leader_hand_object != shown_hand_object || icon != shown_hand_icon) {
         shown_hand_object = g_leader_hand_object;
         shown_hand_icon = icon;
-        if (shown_hand_object == THING_NONE) ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
-        else ui_draw_leader_hand_object_name(shown_hand_object);
+        if (shown_hand_object == THING_NONE)
+            ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
+        else
+            ui_draw_leader_hand_object_name(shown_hand_object);
     }
     ui_draw_message_area();
 }
@@ -296,7 +327,8 @@ int gameloop_new_game(const char *dir)
 {
     char path[PATH_SIZE];
     snprintf(path, sizeof path, "%s/Dungeon.DAT", dir);
-    if (!load_dungeon(path)) return 0;
+    if (!load_dungeon(path))
+        return 0;
     game_new();
     g_saved_game_exists = 0;
     g_leader_empty_handed = 1;
@@ -318,11 +350,14 @@ static void reset_champions_of_loaded_game(void)
     g_leader_hand_object = THING_NONE;
     g_leader_index = -1;
     inventory_put_object_in_leader_hand(hand);
-    for (uint16_t i = 0; i < g_party_champion_count; i++) g_champions[i].attributes &= CHAMPION_ATTR_KEEP_MASK;
+    for (uint16_t i = 0; i < g_party_champion_count; i++)
+        g_champions[i].attributes &= CHAMPION_ATTR_KEEP_MASK;
     ui_draw_all_champion_states(CHAMPION_ATTR_ICON | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ACTION_HAND);
-    if (leader != -1) champion_set_leader(leader);
+    if (leader != -1)
+        champion_set_leader(leader);
     g_magic_caster_champion_index = -1;
-    if (caster != -1) menus_set_magic_caster(caster);
+    if (caster != -1)
+        menus_set_magic_caster(caster);
 }
 
 /* start_game for a loaded game; the "GAME LOADED" dialog shows when confirm is 1. */
@@ -346,13 +381,20 @@ static void start_loaded_game(int confirm)
     mark_seen_squares();
 }
 
-void gameloop_start_loaded_game(void) { start_loaded_game(1); }
-void gameloop_continue_loaded_game(void) { start_loaded_game(0); }
+void gameloop_start_loaded_game(void)
+{
+    start_loaded_game(1);
+}
+void gameloop_continue_loaded_game(void)
+{
+    start_loaded_game(0);
+}
 
 /* The fuse action and sensor 18 ask for a sequence that runs outside the commands and events. */
 static void run_requested_sequence(void)
 {
-    if (!g_fuse_sequence_requested) return;
+    if (!g_fuse_sequence_requested)
+        return;
     g_fuse_sequence_requested = 0;
     fuse_sequence();
 }
@@ -361,8 +403,8 @@ static void run_requested_sequence(void)
    place. The view draws fields and explosions with the game random numbers: the seed stays. */
 static void draw_projectile_motion(void)
 {
-    if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_party_is_sleeping || g_inventory_champion_ordinal ||
-        !view_projectiles_moving())
+    if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_party_is_sleeping ||
+        g_inventory_champion_ordinal || !view_projectiles_moving())
         return;
     uint32_t seed = g_random_seed;
     view_set_motion(frames_waiting, g_wait_for_input_max_frames + 1);
@@ -374,13 +416,18 @@ static void draw_projectile_motion(void)
 int gameloop_frame(void)
 {
     int ran = 0;
-    if (g_automap_open) return 0; /* the game time stops while the automap is open */
-    while ((!g_stop_waiting_for_input || !g_game_time_ticking) && command_process_queue()) ran = 1;
-    if (ran) refresh_interface();
+    if (g_automap_open)
+        return 0; /* the game time stops while the automap is open */
+    while ((!g_stop_waiting_for_input || !g_game_time_ticking) && command_process_queue())
+        ran = 1;
+    if (ran)
+        refresh_interface();
     run_requested_sequence();
-    if (++frames_waiting > g_wait_for_input_max_frames) g_stop_waiting_for_input = 1;
+    if (++frames_waiting > g_wait_for_input_max_frames)
+        g_stop_waiting_for_input = 1;
     int tick = g_stop_waiting_for_input && g_game_time_ticking;
-    if (!tick) draw_projectile_motion();
+    if (!tick)
+        draw_projectile_motion();
     return tick;
 }
 
@@ -388,8 +435,10 @@ int gameloop_frame(void)
 void gameloop_run_commands(void)
 {
     int ran = 0;
-    while (command_process_queue()) ran = 1;
-    if (ran) refresh_interface();
+    while (command_process_queue())
+        ran = 1;
+    if (ran)
+        refresh_interface();
 }
 
 /* The game time advances one tick: torches burn, freeze life and movement delays count down, and
@@ -397,12 +446,17 @@ void gameloop_run_commands(void)
 static void advance_game_time(void)
 {
     g_game_time++;
-    if (!(g_game_time & TORCH_BURN_INTERVAL_MASK)) decrease_torches_light_power();
-    if (g_party.freeze_life_ticks) g_party.freeze_life_ticks--;
+    if (!(g_game_time & TORCH_BURN_INTERVAL_MASK))
+        decrease_torches_light_power();
+    if (g_party.freeze_life_ticks)
+        g_party.freeze_life_ticks--;
     menus_refresh_action_area();
-    if (!(g_game_time & (g_party_is_sleeping ? TIME_EFFECTS_SLEEPING_MASK : TIME_EFFECTS_MASK))) champion_apply_time_effects();
-    if (g_disabled_movement_ticks) g_disabled_movement_ticks--;
-    if (g_projectile_disabled_movement_ticks) g_projectile_disabled_movement_ticks--;
+    if (!(g_game_time & (g_party_is_sleeping ? TIME_EFFECTS_SLEEPING_MASK : TIME_EFFECTS_MASK)))
+        champion_apply_time_effects();
+    if (g_disabled_movement_ticks)
+        g_disabled_movement_ticks--;
+    if (g_projectile_disabled_movement_ticks)
+        g_projectile_disabled_movement_ticks--;
 }
 
 /* The champions that died in the tick let go of the inventory, the presses, and their icons.
@@ -410,7 +464,8 @@ static void advance_game_time(void)
 static void release_dead_champions(int16_t leader)
 {
     for (uint16_t i = 0; i < CHAMPION_MAX_COUNT; i++)
-        if (g_dead_champions & 1 << i) command_release_dead_champion(i, leader);
+        if (g_dead_champions & 1 << i)
+            command_release_dead_champion(i, leader);
     g_dead_champions = 0;
 }
 
@@ -419,7 +474,8 @@ static void release_dead_champions(int16_t leader)
 static void draw_spell_area_before_last_death(const Champion *before)
 {
     int16_t caster = g_magic_caster_champion_index;
-    if (caster == -1) return;
+    if (caster == -1)
+        return;
     Champion dead = g_champions[caster];
     g_champions[caster] = before[caster];
     menus_refresh_spell_area();
@@ -436,15 +492,18 @@ void gameloop_tick(void)
             move_process_new_party_map();
             command_discard_all_input();
         }
-        gameloop_set_light();  /* the creature rules see the light also while the view is not drawn */
+        gameloop_set_light(); /* the creature rules see the light also while the view is not drawn */
         event_process_expired();
     } while (g_new_party_map_index != -1);
     music_update();
     if (!g_party_is_sleeping) {
         command_wake_up();
-        if (!g_candidate_champion_ordinal) command_unfreeze_game();
-        if (!g_inventory_champion_ordinal) gameloop_draw_view();
-        else if (g_adventure == ADVENTURE_CSB) panel_redraw_scroll();
+        if (!g_candidate_champion_ordinal)
+            command_unfreeze_game();
+        if (!g_inventory_champion_ordinal)
+            gameloop_draw_view();
+        else if (g_adventure == ADVENTURE_CSB)
+            panel_redraw_scroll();
     }
     mark_seen_squares();
     command_highlight_disable();
@@ -455,7 +514,7 @@ void gameloop_tick(void)
     champion_apply_and_draw_pending_damage_and_wounds();
     release_dead_champions(leader);
     if (g_party_dead) {
-        ui_draw_all_champion_states(0);  /* the dead champions show during the death scream */
+        ui_draw_all_champion_states(0); /* the dead champions show during the death scream */
         draw_spell_area_before_last_death(before);
         endgame(1);
         return;
@@ -487,7 +546,7 @@ static void planar_pointer(uint32_t address, uint8_t *px, int *w, int *h)
 static void object_pointer(uint8_t *px, int *w, int *h)
 {
     uint8_t icon_px[UI_ICON_SIZE * UI_ICON_SIZE];
-    Bitmap icon = { UI_ICON_SIZE, UI_ICON_SIZE, icon_px };
+    Bitmap icon = {UI_ICON_SIZE, UI_ICON_SIZE, icon_px};
     int16_t dx = kaos_s16(POINTER_SHADOW_OFFSET), dy = kaos_s16(POINTER_SHADOW_OFFSET + 2);
     ui_extract_icon(object_get_icon_index(g_leader_hand_object), &icon);
     *w = UI_ICON_SIZE + dx;
@@ -496,11 +555,13 @@ static void object_pointer(uint8_t *px, int *w, int *h)
     for (int y = 0; y < UI_ICON_SIZE; y++)
         for (int x = 0; x < UI_ICON_SIZE; x++) {
             uint8_t shadow = kaos_u8(POINTER_SHADOW_OBJECT + icon_px[y * UI_ICON_SIZE + x]);
-            if (shadow != POINTER_SHADOW_COLOR) px[(y + dy) * *w + x + dx] = shadow;
+            if (shadow != POINTER_SHADOW_COLOR)
+                px[(y + dy) * *w + x + dx] = shadow;
         }
     for (int y = 0; y < UI_ICON_SIZE; y++)
         for (int x = 0; x < UI_ICON_SIZE; x++)
-            if (icon_px[y * UI_ICON_SIZE + x] != POINTER_SHADOW_COLOR) px[y * *w + x] = icon_px[y * UI_ICON_SIZE + x];
+            if (icon_px[y * UI_ICON_SIZE + x] != POINTER_SHADOW_COLOR)
+                px[y * *w + x] = icon_px[y * UI_ICON_SIZE + x];
     for (int i = 0; i < *w * *h; i++) /* the transparent color becomes 0 and the shadow black */
         px[i] = px[i] == POINTER_SHADOW_COLOR ? 0 : px[i] == 0 ? POINTER_SHADOW_COLOR : px[i];
 }
@@ -509,14 +570,17 @@ static void object_pointer(uint8_t *px, int *w, int *h)
    (viewport, hands of the status boxes) when there is a leader, else the arrow. */
 static int pointer_shape(int16_t x, int16_t y, int in_game)
 {
-    if (!in_game || g_leader_index == -1) return POINTER_ARROW;
+    if (!in_game || g_leader_index == -1)
+        return POINTER_ARROW;
     for (int i = 0; i < POINTER_ZONE_COUNT; i++) {
         uint32_t z = POINTER_ZONES + POINTER_ZONE_BYTES * i;
         int16_t zx = kaos_s16(z + POINTER_ZONE_X), zy = kaos_s16(z + POINTER_ZONE_Y);
         int16_t zw = kaos_s16(z + POINTER_ZONE_W), zh = kaos_s16(z + POINTER_ZONE_H);
-        if (x < zx || x >= zx + zw || y < zy || y >= zy + zh) continue;
+        if (x < zx || x >= zx + zw || y < zy || y >= zy + zh)
+            continue;
         int16_t champion = kaos_s16(z + POINTER_ZONE_CHAMPION);
-        if (!champion && !kaos_s16(z + POINTER_ZONE_SHAPE)) return POINTER_ARROW;
+        if (!champion && !kaos_s16(z + POINTER_ZONE_SHAPE))
+            return POINTER_ARROW;
         /* a status box: the arrow over a living champion with its inventory open, or over its name */
         int16_t index = (champion & ZONE_CHAMPION_INDEX_MASK) - 1;
         if (champion && index < g_party_champion_count && g_champions[index].current_health &&
@@ -529,10 +593,13 @@ static int pointer_shape(int16_t x, int16_t y, int in_game)
 
 int gameloop_pointer(int16_t x, int16_t y, int in_game, uint8_t *px, int *w, int *h, int *hot_x, int *hot_y)
 {
-    if (in_game && g_mouse_pointer_hidden) return 0;
+    if (in_game && g_mouse_pointer_hidden)
+        return 0;
     int shape = pointer_shape(x, y, in_game);
-    if (shape == POINTER_OBJECT) object_pointer(px, w, h);
-    else planar_pointer(shape == POINTER_HAND ? HAND_POINTER : ARROW_POINTER, px, w, h);
+    if (shape == POINTER_OBJECT)
+        object_pointer(px, w, h);
+    else
+        planar_pointer(shape == POINTER_HAND ? HAND_POINTER : ARROW_POINTER, px, w, h);
     *hot_x = kaos_s16(POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + HOTSPOT_X);
     *hot_y = kaos_s16(POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + HOTSPOT_Y);
     return 1;
@@ -541,6 +608,7 @@ int gameloop_pointer(int16_t x, int16_t y, int in_game, uint8_t *px, int *w, int
 const uint16_t *gameloop_pointer_palette(void)
 {
     static uint16_t colors[PALETTE_COLORS];
-    for (int i = 0; i < PALETTE_COLORS; i++) colors[i] = kaos_u16(SPRITE_PALETTE + 2 * i);
+    for (int i = 0; i < PALETTE_COLORS; i++)
+        colors[i] = kaos_u16(SPRITE_PALETTE + 2 * i);
     return colors;
 }

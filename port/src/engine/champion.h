@@ -7,16 +7,32 @@
 
 /* Champion rules of KAOS (CHAMPION.C): docs/rules-champions.md. */
 
-#define CHAMPION_RECORD_SIZE 0x140
-#define ACTION_NONE 255
+#define CHAMPION_RECORD_SIZE  0x140
+#define ACTION_NONE           255
 #define CHAMPION_SYMBOL_COUNT 4
-#define FOOD_WATER_MINIMUM (-1024)
-#define CHAMPION_COLORS 0x100ce0 /* KAOS g_champion_colors[4] */
+#define FOOD_WATER_MINIMUM    (-1024)
+#define CHAMPION_COLORS       0x100ce0 /* KAOS g_champion_colors[4] */
 
 enum { SKILL_IGNORE_OBJECT_MODIFIERS = 0x4000, SKILL_IGNORE_TEMPORARY_EXPERIENCE = 0x8000 };
-enum { WOUND_READY_HAND = 1, WOUND_ACTION_HAND = 2, WOUND_HEAD = 4, WOUND_TORSO = 8, WOUND_LEGS = 0x10, WOUND_FEET = 0x20 };
+enum {
+    WOUND_READY_HAND = 1,
+    WOUND_ACTION_HAND = 2,
+    WOUND_HEAD = 4,
+    WOUND_TORSO = 8,
+    WOUND_LEGS = 0x10,
+    WOUND_FEET = 0x20
+};
 enum { WOUND_DEFENSE_USE_SHARP = 0x8000 };
-enum { ATTACK_RAW, ATTACK_FIRE, ATTACK_SELF, ATTACK_BLUNT, ATTACK_SHARP, ATTACK_MAGIC, ATTACK_PSYCHIC, ATTACK_LIGHTNING };
+enum {
+    ATTACK_RAW,
+    ATTACK_FIRE,
+    ATTACK_SELF,
+    ATTACK_BLUNT,
+    ATTACK_SHARP,
+    ATTACK_MAGIC,
+    ATTACK_PSYCHIC,
+    ATTACK_LIGHTNING
+};
 enum { PANEL_RESURRECT = 0xa0, PANEL_REINCARNATE = 0xa1, PANEL_CANCEL = 0xa2 };
 enum { CHAMPION_ATTR_MALE = 0x0010 };
 /* Champion attribute redraw flags (Champion.attributes). */
@@ -31,18 +47,18 @@ enum {
     CHAMPION_ATTR_WOUNDS = 0x2000,
     CHAMPION_ATTR_VIEWPORT = 0x4000,
     CHAMPION_ATTR_ACTION_HAND = 0x8000,
-    CHAMPION_ATTR_REDRAW_MASK = 0xff80,      /* all redraw flags */
-    CHAMPION_ATTR_KEEP_MASK = 0x007f,        /* flags that stay after a redraw */
-    CHAMPION_ATTR_INVENTORY_ALL = 0x5f80,    /* everything the inventory shows */
+    CHAMPION_ATTR_REDRAW_MASK = 0xff80,   /* all redraw flags */
+    CHAMPION_ATTR_KEEP_MASK = 0x007f,     /* flags that stay after a redraw */
+    CHAMPION_ATTR_INVENTORY_ALL = 0x5f80, /* everything the inventory shows */
 };
 
-#define CHAMPION_PORTRAIT_WIDTH 32   /* g_portrait_width */
-#define CHAMPION_PORTRAIT_HEIGHT 29  /* g_portrait_height */
+#define CHAMPION_PORTRAIT_WIDTH  32 /* g_portrait_width */
+#define CHAMPION_PORTRAIT_HEIGHT 29 /* g_portrait_height */
 /* The portrait bitmap of each champion (the portrait bitmap pointer at champion +0x114). */
 extern uint8_t g_champion_portraits[CHAMPION_MAX_COUNT][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 /* Copies portrait portrait_index of graphic 26 into the portrait of the champion. */
 void champion_set_portrait(int16_t champion_index, int16_t portrait_index);
-extern int16_t g_candidate_champion_ordinal;   /* 0: no candidate */
+extern int16_t g_candidate_champion_ordinal; /* 0: no candidate */
 extern int16_t g_champion_pending_damage[CHAMPION_MAX_COUNT];
 extern uint16_t g_champion_pending_wounds[CHAMPION_MAX_COUNT];
 extern int16_t g_champion_skill_level_up[CHAMPION_MAX_COUNT][SKILL_BASE_COUNT];
@@ -68,7 +84,8 @@ int16_t champion_get_dexterity(const Champion *champion);
 int16_t champion_get_strength(int16_t champion_index, int16_t slot);
 int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_flags);
 
-int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds, int16_t attack_type);
+int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
+                                               int16_t attack_type);
 void champion_apply_and_draw_pending_damage_and_wounds(void);
 void champion_kill(uint16_t champion_index);
 void champion_drop_all_objects(uint16_t champion_index);

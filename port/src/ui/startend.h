@@ -10,9 +10,9 @@
 /* Shows one 50 Hz frame and reads the input into the command queue. NULL (tests, headless):
    waits end at once and waits for input end without input. */
 extern void (*g_frame_hook)(void);
-extern int16_t g_quit_requested;       /* the player quits: the program ends */
-extern int16_t g_restart_requested;    /* RESTART THIS GAME on the endgame screen */
-extern int16_t g_return_to_entrance;   /* the endgame ended: the program shows the entrance */
+extern int16_t g_quit_requested;     /* the player quits: the program ends */
+extern int16_t g_restart_requested;  /* RESTART THIS GAME on the endgame screen */
+extern int16_t g_return_to_entrance; /* the endgame ended: the program shows the entrance */
 
 /* The directory of the save file of the adventure (DMGAME.DAT or CSBGAME.DAT). The default is the game data directory. */
 void startend_set_save_dir(const char *dir);

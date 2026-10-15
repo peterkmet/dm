@@ -14,46 +14,46 @@
 #include "random.h"
 #include "timeline_process.h"
 
-#define JUNK_ZOKATHRA 51
-#define POWER_SYMBOL_FIRST 0x60          /* symbol of power 1 is 0x60, power n is 0x5f + n */
-#define SPELL_PROJECTILE_ATTACK 90
-#define MESSAGE_COLOR_SPELL 4
-#define SHIELD_STRONG 50                 /* above this a new shield adds a quarter */
-#define SHIELD_MANA_COST 4
+#define JUNK_ZOKATHRA                51
+#define POWER_SYMBOL_FIRST           0x60 /* symbol of power 1 is 0x60, power n is 0x5f + n */
+#define SPELL_PROJECTILE_ATTACK      90
+#define MESSAGE_COLOR_SPELL          4
+#define SHIELD_STRONG                50 /* above this a new shield adds a quarter */
+#define SHIELD_MANA_COST             4
 #define LIGHT_MAXIMUM_TICKS_DARKNESS 98
-#define LIGHT_SPELL_BASE_TICKS 10000
-#define MAGIC_TORCH_BASE_TICKS 2000
-#define FIRE_SHIELD_BASE_TICKS 100
-#define POTION_POWER_PER_LEVEL 40
-#define LIGHT_POWER_MAXIMUM 15
-#define MAGIC_MAP_TEXT "MAGICMAP"        /* the text of a magic map scroll */
+#define LIGHT_SPELL_BASE_TICKS       10000
+#define MAGIC_TORCH_BASE_TICKS       2000
+#define FIRE_SHIELD_BASE_TICKS       100
+#define POTION_POWER_PER_LEVEL       40
+#define LIGHT_POWER_MAXIMUM          15
+#define MAGIC_MAP_TEXT               "MAGICMAP" /* the text of a magic map scroll */
 /* Projectile spells: mana bonus min(8, maximum mana / 8); step energy 10 - bonus. A weak cast (kinetic energy
    below 4 * step energy) gets 3 more kinetic energy and step energy 9 - bonus. */
-#define SPELL_MANA_BONUS_MAXIMUM 8
-#define SPELL_MANA_BONUS_SHIFT 3
-#define SPELL_STEP_ENERGY_BASE 10
-#define SPELL_WEAK_KINETIC_FACTOR 4
-#define SPELL_WEAK_KINETIC_BONUS 3
-#define SPELL_WEAK_STEP_ENERGY_BASE 9
+#define SPELL_MANA_BONUS_MAXIMUM     8
+#define SPELL_MANA_BONUS_SHIFT       3
+#define SPELL_STEP_ENERGY_BASE       10
+#define SPELL_WEAK_KINETIC_FACTOR    4
+#define SPELL_WEAK_KINETIC_BONUS     3
+#define SPELL_WEAK_STEP_ENERGY_BASE  9
 /* Kinetic energy of a projectile spell: (power + 2) * (2 * skill level + 4), from 21 to 255. */
-#define SPELL_KINETIC_POWER_BONUS 2
-#define SPELL_KINETIC_SKILL_BASE 4
+#define SPELL_KINETIC_POWER_BONUS    2
+#define SPELL_KINETIC_SKILL_BASE     4
 #define SPELL_KINETIC_ENERGY_MINIMUM 21
 #define SPELL_KINETIC_ENERGY_MAXIMUM 255
-#define SHIELD_DEFENSE_TICKS_SHIFT 5     /* a shield spell adds ticks / 32 defense */
-#define POTION_POWER_RANDOM_MASK 15
+#define SHIELD_DEFENSE_TICKS_SHIFT   5 /* a shield spell adds ticks / 32 defense */
+#define POTION_POWER_RANDOM_MASK     15
 /* Other spells: the duration base is (power + 1) * 4. */
-#define SPELL_DURATION_FACTOR 4
-#define LIGHT_SPELL_TICKS_FACTOR 512     /* Light: (power - 1) * 4 * 512 + 10000 ticks */
-#define MAGIC_TORCH_TICKS_FACTOR 128     /* Magic Torch: (power * 4 + 1) * 128 + 2000 ticks */
-#define INVISIBILITY_TICKS_FACTOR 8
-#define FOOTPRINTS_STRONG_POWER 3        /* from this power, footprints show all scents */
-#define MAGIC_MAP_NETA_TICKS_FACTOR 4
-#define MAGIC_MAP_ROS_DURATION_LOSS 2
+#define SPELL_DURATION_FACTOR        4
+#define LIGHT_SPELL_TICKS_FACTOR     512 /* Light: (power - 1) * 4 * 512 + 10000 ticks */
+#define MAGIC_TORCH_TICKS_FACTOR     128 /* Magic Torch: (power * 4 + 1) * 128 + 2000 ticks */
+#define INVISIBILITY_TICKS_FACTOR    8
+#define FOOTPRINTS_STRONG_POWER      3 /* from this power, footprints show all scents */
+#define MAGIC_MAP_NETA_TICKS_FACTOR  4
+#define MAGIC_MAP_ROS_DURATION_LOSS  2
 /* Experience of a cast: level² + (power - 1) * base level * 8 + level * 16 + random(8). */
 #define CAST_EXPERIENCE_POWER_FACTOR 8
 #define CAST_EXPERIENCE_LEVEL_FACTOR 16
-#define CAST_EXPERIENCE_RANDOM_MASK 7
+#define CAST_EXPERIENCE_RANDOM_MASK  7
 
 static void add_party_event(uint8_t type, uint16_t ticks, uint16_t b)
 {
@@ -71,7 +71,8 @@ static void set_attributes_of_all(uint16_t attributes)
 /* Light comes now; event 70 takes it back step by step after the ticks. */
 void magic_create_light_event(int16_t light_power, int16_t ticks)
 {
-    TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks), .type = EVENT_LIGHT, .b = light_power};
+    TimelineEvent event = {
+        .map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks), .type = EVENT_LIGHT, .b = light_power};
     timeline_add_event(&event);
     /* set_dungeon_view_palette: the view step recomputes the palette from the light amount. */
 }
@@ -91,7 +92,8 @@ void magic_disable_action(uint16_t champion_index, uint16_t ticks)
             time += (old - g_game_time) >> 1;
         timeline_delete_event(c->enable_action_event_index);
     }
-    TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, time), .type = EVENT_ENABLE_CHAMPION_ACTION,
+    TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, time),
+                           .type = EVENT_ENABLE_CHAMPION_ACTION,
                            .priority = (uint8_t)champion_index};
     c->enable_action_event_index = timeline_add_event(&event);
 }
@@ -120,10 +122,11 @@ void magic_print_spell_failure_message(uint16_t champion_index, int16_t failure_
 }
 
 /* Spends the mana and shoots the spell; a weak cast with little maximum mana gets a slower step energy. */
-bool magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana)
+bool magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy,
+                                    uint16_t required_mana)
 {
     Champion *c = &g_champions[champion_index];
-    if ((uint16_t)c->current_mana < required_mana)   /* unsigned compare as in the original */
+    if ((uint16_t)c->current_mana < required_mana) /* unsigned compare as in the original */
         return false;
     c->current_mana -= required_mana;
     c->attributes |= CHAMPION_ATTR_STATISTICS;
@@ -133,12 +136,14 @@ bool magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int
         kinetic_energy += SPELL_WEAK_KINETIC_BONUS;
         step_energy = SPELL_WEAK_STEP_ENERGY_BASE - mana_bonus;
     }
-    projectile_shoot_from_champion(champion_index, thing, (uint8_t)kinetic_energy, SPELL_PROJECTILE_ATTACK, (uint8_t)step_energy);
+    projectile_shoot_from_champion(champion_index, thing, (uint8_t)kinetic_energy, SPELL_PROJECTILE_ATTACK,
+                                   (uint8_t)step_energy);
     return true;
 }
 
 /* Spell shield (event 77) or fire shield (event 78) for the ticks. With mana, it costs 4 and half the ticks when short. */
-bool magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, int16_t spell_shield, uint16_t ticks, int16_t use_mana)
+bool magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, int16_t spell_shield, uint16_t ticks,
+                                                    int16_t use_mana)
 {
     Champion *c = &g_champions[champion_index];
     bool success = true;
@@ -200,8 +205,10 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
     }
     if (explosion_type == EXPLOSION_OPEN_DOOR)
         skill_level *= 2;
-    int16_t kinetic_energy = bounded_value(SPELL_KINETIC_ENERGY_MINIMUM, (power + SPELL_KINETIC_POWER_BONUS) * (skill_level * 2 + SPELL_KINETIC_SKILL_BASE),
-                                           SPELL_KINETIC_ENERGY_MAXIMUM);
+    int16_t kinetic_energy =
+        bounded_value(SPELL_KINETIC_ENERGY_MINIMUM,
+                      (power + SPELL_KINETIC_POWER_BONUS) * (skill_level * 2 + SPELL_KINETIC_SKILL_BASE),
+                      SPELL_KINETIC_ENERGY_MAXIMUM);
     magic_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), kinetic_energy, 0);
 }
 
@@ -220,7 +227,9 @@ static void cast_zokathra(uint16_t champion_index)
         return;
     junk_set_type(thing, JUNK_ZOKATHRA);
     const Champion *c = &g_champions[champion_index];
-    int16_t slot = c->slots[SLOT_HAND_READY] == THING_NONE ? SLOT_HAND_READY : c->slots[SLOT_HAND_ACTION] == THING_NONE ? SLOT_HAND_ACTION : -1;
+    int16_t slot = c->slots[SLOT_HAND_READY] == THING_NONE    ? SLOT_HAND_READY
+                   : c->slots[SLOT_HAND_ACTION] == THING_NONE ? SLOT_HAND_ACTION
+                                                              : -1;
     if (slot >= 0) {
         inventory_add_object_in_slot(champion_index, thing, slot);
     } else {
@@ -234,7 +243,8 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
     uint16_t ticks = (power + 1) * SPELL_DURATION_FACTOR;
     switch (type) {
     case SPELL_OTHER_LIGHT:
-        cast_light((ticks >> 1) - 1, (power - 1) * SPELL_DURATION_FACTOR * LIGHT_SPELL_TICKS_FACTOR + LIGHT_SPELL_BASE_TICKS);
+        cast_light((ticks >> 1) - 1,
+                   (power - 1) * SPELL_DURATION_FACTOR * LIGHT_SPELL_TICKS_FACTOR + LIGHT_SPELL_BASE_TICKS);
         break;
     case SPELL_OTHER_DARKNESS:
         g_party.magical_light_amount -= *tables_light_power_to_light_amount(ticks >> 2);
@@ -263,7 +273,8 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
         break;
     }
     case SPELL_OTHER_MAGIC_TORCH:
-        cast_light((ticks >> 2) + 1, (power * SPELL_DURATION_FACTOR + 1) * MAGIC_TORCH_TICKS_FACTOR + MAGIC_TORCH_BASE_TICKS);
+        cast_light((ticks >> 2) + 1,
+                   (power * SPELL_DURATION_FACTOR + 1) * MAGIC_TORCH_TICKS_FACTOR + MAGIC_TORCH_BASE_TICKS);
         break;
     case SPELL_OTHER_FOOTPRINTS:
         g_party.event79_count_footprints++;
@@ -280,14 +291,19 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
     }
 }
 
-bool magic_map_is_text(const char *text) { return !strcmp(text, MAGIC_MAP_TEXT); }
+bool magic_map_is_text(const char *text)
+{
+    return !strcmp(text, MAGIC_MAP_TEXT);
+}
 
 /* A magic map is a scroll with the text MAGICMAP. */
 static bool is_magic_map(uint16_t thing)
 {
     char text[SCROLL_TEXT_SIZE];
-    if (THING_TYPE(thing) != THING_SCROLL) return false;
-    decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(thing)), TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
+    if (THING_TYPE(thing) != THING_SCROLL)
+        return false;
+    decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(thing)),
+                TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
     return magic_map_is_text(text);
 }
 
@@ -303,7 +319,8 @@ static int16_t cast_magic_map(uint16_t champion_index, uint16_t type, int16_t po
     uint16_t d = (power + 1) * SPELL_DURATION_FACTOR, ticks;
     if (type == MAGIC_MAP_NETA) {
         for (uint16_t i = 0; c->magic_map[MAGIC_MAP_NETA] && i < g_event_high_water; i++)
-            if (g_timeline_events[i].type == EVENT_MAGIC_MAP_NETA_END && g_timeline_events[i].priority == champion_index) {
+            if (g_timeline_events[i].type == EVENT_MAGIC_MAP_NETA_END &&
+                g_timeline_events[i].priority == champion_index) {
                 timeline_delete_event(i);
                 break;
             }
@@ -312,12 +329,15 @@ static int16_t cast_magic_map(uint16_t champion_index, uint16_t type, int16_t po
         *disabled_ticks = d * d >> 1;
         ticks = *disabled_ticks * MAGIC_MAP_NETA_TICKS_FACTOR;
     } else {
-        if (type == MAGIC_MAP_ROS) d -= MAGIC_MAP_ROS_DURATION_LOSS;
-        else if (type == MAGIC_MAP_KU) d -= (d >> 2) - 1;
+        if (type == MAGIC_MAP_ROS)
+            d -= MAGIC_MAP_ROS_DURATION_LOSS;
+        else if (type == MAGIC_MAP_KU)
+            d -= (d >> 2) - 1;
         c->magic_map[type]++;
         ticks = d * d * 2;
     }
-    TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks), .type = (uint8_t)(EVENT_MAGIC_MAP_DAIN_END + type),
+    TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks),
+                           .type = (uint8_t)(EVENT_MAGIC_MAP_DAIN_END + type),
                            .priority = (uint8_t)champion_index};
     timeline_add_event(&event);
     return 1;
@@ -341,12 +361,14 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
     int16_t power = (int8_t)power_symbol - (POWER_SYMBOL_FIRST - 1);
     uint16_t required_level = power + spell->base_required_skill_level;
     /* The original squares a stale register for the first term; the port uses required_level squared (spell_experience). */
-    uint16_t experience = required_level * required_level + (power - 1) * spell->base_required_skill_level * CAST_EXPERIENCE_POWER_FACTOR +
+    uint16_t experience = required_level * required_level +
+                          (power - 1) * spell->base_required_skill_level * CAST_EXPERIENCE_POWER_FACTOR +
                           required_level * CAST_EXPERIENCE_LEVEL_FACTOR + (random16() & CAST_EXPERIENCE_RANDOM_MASK);
     uint16_t skill_level = champion_get_skill_level(champion_index, spell->skill_index);
     for (uint16_t missing = skill_level < required_level ? required_level - skill_level : 0; missing; missing--) {
         if (spell_draw_fails(c->statistics[STAT_WISDOM][STAT_CURRENT], random16())) {
-            champion_add_skill_experience(champion_index, spell->skill_index, spell_failure_experience(experience, required_level, skill_level));
+            champion_add_skill_experience(champion_index, spell->skill_index,
+                                          spell_failure_experience(experience, required_level, skill_level));
             magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MORE_PRACTICE, spell->skill_index);
             return SPELL_CAST_FAILURE;
         }

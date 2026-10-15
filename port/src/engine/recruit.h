@@ -15,7 +15,7 @@ typedef struct {
     int16_t current_stamina, maximum_stamina;
     int16_t current_mana, maximum_mana;
     uint8_t statistics[STAT_COUNT][STAT_VALUE_COUNT];
-    int32_t experience[SKILL_COUNT];  /* base skills: sum of their hidden skills */
+    int32_t experience[SKILL_COUNT]; /* base skills: sum of their hidden skills */
 } RecruitData;
 
 uint16_t recruit_decoded_value(const char *text, int16_t char_count);

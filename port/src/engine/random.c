@@ -1,8 +1,8 @@
 #include "random.h"
 #include <time.h>
 
-#define RANDOM_MULTIPLIER 0xBB40E62Du
-#define RANDOM_INCREMENT 11
+#define RANDOM_MULTIPLIER           0xBB40E62Du
+#define RANDOM_INCREMENT            11
 #define NANOSECONDS_PER_MICROSECOND 1000
 
 uint32_t g_random_seed;
@@ -22,6 +22,15 @@ static uint16_t next(void)
     return (uint16_t)(g_random_seed >> 8);
 }
 
-uint16_t random16(void) { return next(); }
-uint16_t random_bit(void) { return next() & 1; }
-uint16_t random_2bits(void) { return next() & 3; }
+uint16_t random16(void)
+{
+    return next();
+}
+uint16_t random_bit(void)
+{
+    return next() & 1;
+}
+uint16_t random_2bits(void)
+{
+    return next() & 3;
+}

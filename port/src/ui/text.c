@@ -2,11 +2,11 @@
 #include "text.h"
 #include "video.h"
 
-#define FONT_ROWS 6                           /* pixel rows of a character cell */
-#define FONT_STRIDE 128                       /* bytes per font row, one per character code */
-#define FONT_SIZE (FONT_ROWS * FONT_STRIDE)
-#define GLYPH_WIDTH 5                         /* drawn pixels per character; bit 4 is the left pixel */
-#define GLYPH_TOP_ABOVE_BASELINE 4            /* the cell starts 4 rows above the baseline */
+#define FONT_ROWS                6   /* pixel rows of a character cell */
+#define FONT_STRIDE              128 /* bytes per font row, one per character code */
+#define FONT_SIZE                (FONT_ROWS * FONT_STRIDE)
+#define GLYPH_WIDTH              5 /* drawn pixels per character; bit 4 is the left pixel */
+#define GLYPH_TOP_ABOVE_BASELINE 4 /* the cell starts 4 rows above the baseline */
 
 static uint8_t font_data[FONT_SIZE];
 static const uint8_t *font;
@@ -16,7 +16,8 @@ int text_init(void)
 {
     uint16_t size;
     const uint8_t *p = gfx_item(TEXT_FONT_ITEM, &size);
-    if (!p || size != FONT_SIZE) return -1;
+    if (!p || size != FONT_SIZE)
+        return -1;
     memcpy(font_data, p, FONT_SIZE);
     font = font_data;
     return 0;
@@ -27,19 +28,22 @@ static void draw_glyph_row(Bitmap *bm, int x, int py, uint8_t bits, uint8_t fg, 
 {
     for (int k = 0; k < GLYPH_WIDTH; k++) {
         int px = x + k;
-        if (px >= 0 && px < bm->w) bm->px[py * bm->w + px] = bits >> (GLYPH_WIDTH - 1 - k) & 1 ? fg : bg;
+        if (px >= 0 && px < bm->w)
+            bm->px[py * bm->w + px] = bits >> (GLYPH_WIDTH - 1 - k) & 1 ? fg : bg;
     }
 }
 
 /* Draws s with its baseline at y. The sixth column of each cell is not touched. */
 void text_draw(Bitmap *bm, int x, int y, uint8_t fg, uint8_t bg, const char *s)
 {
-    if (!font) return;
+    if (!font)
+        return;
     for (; *s; s++, x += TEXT_CHAR_WIDTH) {
         unsigned c = (uint8_t)*s;
         for (int r = 0; r < FONT_ROWS; r++) {
             int py = y - GLYPH_TOP_ABOVE_BASELINE + r;
-            if (py < 0 || py >= bm->h) continue;
+            if (py < 0 || py >= bm->h)
+                continue;
             /* codes >= 128 read into the next font rows, as in the original */
             unsigned i = c + r * FONT_STRIDE;
             draw_glyph_row(bm, x, py, i < FONT_SIZE ? font[i] : 0, fg, bg);
@@ -50,7 +54,7 @@ void text_draw(Bitmap *bm, int x, int y, uint8_t fg, uint8_t bg, const char *s)
 /* Draws s on the screen with its baseline at y. */
 void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s)
 {
-    Bitmap screen = { SCREEN_W, SCREEN_H, &fb[0][0] };
+    Bitmap screen = {SCREEN_W, SCREEN_H, &fb[0][0]};
     text_draw(&screen, x, y, fg, bg, s);
 }
 
@@ -58,7 +62,8 @@ void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s)
 int text_size(const char *s, int *w, int *h)
 {
     int n = s ? (int)strlen(s) : 0;
-    if (n * TEXT_CHAR_WIDTH - TEXT_CHAR_GAP < 1) return 0;
+    if (n * TEXT_CHAR_WIDTH - TEXT_CHAR_GAP < 1)
+        return 0;
     *w = n * TEXT_CHAR_WIDTH - TEXT_CHAR_GAP;
     *h = TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP;
     return 1;
@@ -69,9 +74,10 @@ int text_size(const char *s, int *w, int *h)
 void text_draw_box(Bitmap *bm, int x, int y, int w, int h, int centered, uint8_t fg, uint8_t bg, const char *s)
 {
     int tw, th;
-    if (!text_size(s, &tw, &th)) return;
-    if (centered) x += (w - tw) / 2;
+    if (!text_size(s, &tw, &th))
+        return;
+    if (centered)
+        x += (w - tw) / 2;
     y += (h - th) / 2;
     text_draw(bm, x, y + th - 1, fg, bg, s);
 }
-

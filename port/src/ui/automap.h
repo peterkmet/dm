@@ -8,9 +8,9 @@
 /* Automap (not in the original game): remembers the squares the party has seen and draws them
    as a top-down map. */
 
-#define AUTOMAP_CELL_SIZE 7 /* pixels per square: 32 squares fill the 224 pixel viewport */
-#define AUTOMAP_RULER_WIDTH 12 /* the left ruler with the row numbers: two digits and a gap */
-#define AUTOMAP_RULER_HEIGHT 7 /* the top ruler with the column numbers: one text row and a gap */
+#define AUTOMAP_CELL_SIZE    7  /* pixels per square: 32 squares fill the 224 pixel viewport */
+#define AUTOMAP_RULER_WIDTH  12 /* the left ruler with the row numbers: two digits and a gap */
+#define AUTOMAP_RULER_HEIGHT 7  /* the top ruler with the column numbers: one text row and a gap */
 
 /* The rows of the view that the party sees from (x, y) looking in direction dir: the party row and the
    rows ahead up to the first center square that blocks sight (a wall, a closed fake wall, a closed door). */

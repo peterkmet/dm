@@ -2,10 +2,13 @@
 #include <string.h>
 #include "message.h"
 
-#define MESSAGE_WRAP_LINE_SIZE 100   /* one wrapped line: at most MESSAGE_COLS characters */
-#define NUMBER_TEXT_SIZE 14     /* a 32-bit number with its sign */
+#define MESSAGE_WRAP_LINE_SIZE 100 /* one wrapped line: at most MESSAGE_COLS characters */
+#define NUMBER_TEXT_SIZE       14  /* a 32-bit number with its sign */
 
-MessageArea g_message = { .cursor_row = MESSAGE_LAST_ROW, .expiry = { MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY } };
+MessageArea g_message = {
+    .cursor_row = MESSAGE_LAST_ROW,
+    .expiry = {MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY, MESSAGE_NO_EXPIRY}
+};
 
 /* Empties row r and stops its expiry. */
 static void clear_row(int r)
@@ -18,8 +21,10 @@ static void clear_row(int r)
 /* Moves the cursor to a character column and a row, clamped to the area. */
 void message_move_cursor(int16_t column, int16_t row)
 {
-    if (column < 0) column = 0;
-    if (column > MESSAGE_COLS - 1) column = MESSAGE_COLS - 1;
+    if (column < 0)
+        column = 0;
+    if (column > MESSAGE_COLS - 1)
+        column = MESSAGE_COLS - 1;
     int16_t x = column * TEXT_CHAR_WIDTH, max = MESSAGE_ROW_WIDTH - TEXT_CHAR_WIDTH;
     g_message.cursor_x = x < max ? x : max;
     g_message.cursor_row = row < 0 ? 0 : row > MESSAGE_LAST_ROW ? MESSAGE_LAST_ROW : row;
@@ -29,14 +34,16 @@ void message_move_cursor(int16_t column, int16_t row)
 void message_clear(void)
 {
     message_move_cursor(0, MESSAGE_LAST_ROW);
-    for (int r = 0; r < MESSAGE_ROWS; r++) clear_row(r);
+    for (int r = 0; r < MESSAGE_ROWS; r++)
+        clear_row(r);
 }
 
 /* Empties the rows whose display time has run out. */
 void message_clear_expired_rows(uint32_t game_time)
 {
     for (int r = 0; r < MESSAGE_ROWS; r++)
-        if (g_message.expiry[r] != MESSAGE_NO_EXPIRY && g_message.expiry[r] <= game_time) clear_row(r);
+        if (g_message.expiry[r] != MESSAGE_NO_EXPIRY && g_message.expiry[r] <= game_time)
+            clear_row(r);
 }
 
 /* Moves the cursor down one row; on the last row the area scrolls up one row. */
@@ -81,7 +88,8 @@ int message_next_word_line(const char *s, char *line, int *pos, int max_width)
             space_w = w;
             space_n = n;
         }
-        if (max_width <= w + TEXT_CHAR_WIDTH) break;
+        if (max_width <= w + TEXT_CHAR_WIDTH)
+            break;
         w += TEXT_CHAR_WIDTH;
         line[n] = s[p];
     }
@@ -127,4 +135,7 @@ void message_print_number(int16_t color, int32_t value, uint32_t game_time)
 }
 
 /* Starts a new row. */
-void message_new_line(uint32_t game_time) { message_print(0, "\n", game_time); }
+void message_new_line(uint32_t game_time)
+{
+    message_print(0, "\n", game_time);
+}

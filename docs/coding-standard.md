@@ -31,6 +31,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
 8. The source has four layers in subfolders of `port/src/`: `data/`, `engine/`, `ui/`, and `platform/`. A file includes only headers of its own layer and of the layers before it in this list. Game rules in `engine/` do not call the user interface: they set redraw flags. Exception: a hook that `ui/` sets, for an event that must run the user interface inside the rule, for example `g_endgame_sensor_hook`. Only `platform/` includes SDL.
 9. Big-endian read and write helpers (`BE16`, `WR16`, `BE32`, `WR32`) live in one header. Modules do not define their own copies.
 10. Code that differs between Dungeon Master and Chaos Strikes Back tests `g_adventure == ADVENTURE_CSB`, or reads a table from the game data. No other way detects the adventure.
+11. Format: `.clang-format` in the repo root; `clang-format -i` before each commit.
 
 ## Check before a step is done
 
@@ -40,7 +41,8 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
 - decimal literals of 10 or more outside constant definitions,
 - decompiler names,
 - raw record access (`g_current_map[`, `dungeon_get_thing_data(...)[`) outside `map.c` and `map.h`,
-- constant names defined in more than one header.
+- constant names defined in more than one header,
+- source files that `clang-format --dry-run --Werror` (version 23) reports as not formatted.
 
 `tests/standard_allowlist.txt` lists the accepted exceptions, one per line with a reason.
 

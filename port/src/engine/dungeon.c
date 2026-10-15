@@ -14,34 +14,35 @@ uint16_t g_dungeon_id = DM_DUNGEON_ID;
 int16_t g_event_max_count;
 int16_t g_party_map_x, g_party_map_y, g_party_direction, g_party_map_index;
 
-const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_RECORD_BYTES, 4, 4, 4, 4, 8, 4, 0, 0, 0, 8, 4};
+const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_RECORD_BYTES, 4, 4, 4, 4, 8, 4, 0,
+                                                           0, 0, 8, 4};
 /* KAOS tables, read at run time: kaos_load() must run first. */
 #define NEW_GAME_EXTRA_THINGS 0x101058 /* free records per thing type for a new game */
-#define MESSAGE_ESCAPES 0x1016ea       /* 8-byte strings */
-#define REPLACEMENT_CHARS 0x1017ea     /* 2-byte strings */
-#define INSCRIPTION_ESCAPES 0x10182a   /* 8-byte strings */
+#define MESSAGE_ESCAPES       0x1016ea /* 8-byte strings */
+#define REPLACEMENT_CHARS     0x1017ea /* 2-byte strings */
+#define INSCRIPTION_ESCAPES   0x10182a /* 8-byte strings */
 
-#define MAX_DUNGEON_SIZE 0x100000
-#define DUNGEON_COMPRESSED_MAGIC 0x8104
-#define COMPRESSED_HEADER_BYTES 8      /* magic, unpacked size, dungeon id */
+#define MAX_DUNGEON_SIZE            0x100000
+#define DUNGEON_COMPRESSED_MAGIC    0x8104
+#define COMPRESSED_HEADER_BYTES     8  /* magic, unpacked size, dungeon id */
 #define COMPRESSED_DICTIONARY_BYTES 20 /* 4 two-bit codes, then 16 four-bit codes */
 
 /* Dungeon header fields. */
-#define HEADER_BYTES 44
-#define HEADER_RAW_MAP_BYTES 2
-#define HEADER_MAP_COUNT 4
-#define HEADER_TEXT_WORDS 6
-#define HEADER_PARTY_START 8 /* x in bits 0-4, y in bits 5-9, direction in bits 10-11 */
-#define PARTY_START_Y_SHIFT 5
+#define HEADER_BYTES                44
+#define HEADER_RAW_MAP_BYTES        2
+#define HEADER_MAP_COUNT            4
+#define HEADER_TEXT_WORDS           6
+#define HEADER_PARTY_START          8 /* x in bits 0-4, y in bits 5-9, direction in bits 10-11 */
+#define PARTY_START_Y_SHIFT         5
 #define PARTY_START_DIRECTION_SHIFT 10
 
 #define MAP_RAW_DATA_OFFSET 0
 
-#define FREE_SQUARE_THINGS 300 /* free square-first-thing entries of a new game */
+#define FREE_SQUARE_THINGS   300 /* free square-first-thing entries of a new game */
 #define NEW_GAME_EVENT_COUNT 100
-#define MAX_THINGS 1024
-#define MAX_EXPLOSIONS 768
-#define MAX_BLOCKS 32 /* the buffers of one loaded dungeon */
+#define MAX_THINGS           1024
+#define MAX_EXPLOSIONS       768
+#define MAX_BLOCKS           32 /* the buffers of one loaded dungeon */
 
 /* Save order: header, maps, column index, square things, text, the 16 thing types, raw map data. */
 enum { PART_THINGS_FIRST = 5, PART_RAW_MAPS = PART_THINGS_FIRST + THING_TYPE_COUNT, DUNGEON_PART_COUNT };
@@ -118,11 +119,26 @@ static void dungeon_free(void)
     g_dungeon_column_count = 0;
 }
 
-static uint16_t raw_map_bytes(void) { return BE16(g_dungeon_header + HEADER_RAW_MAP_BYTES); }
-static uint16_t text_words(void) { return BE16(g_dungeon_header + HEADER_TEXT_WORDS); }
-static uint16_t thing_count(int16_t type) { return BE16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2); }
-static void set_thing_count(int16_t type, uint16_t count) { WR16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2, count); }
-static uint16_t map_raw_data_offset(int16_t map) { return BE16(MAP_DESCRIPTOR(map) + MAP_RAW_DATA_OFFSET); }
+static uint16_t raw_map_bytes(void)
+{
+    return BE16(g_dungeon_header + HEADER_RAW_MAP_BYTES);
+}
+static uint16_t text_words(void)
+{
+    return BE16(g_dungeon_header + HEADER_TEXT_WORDS);
+}
+static uint16_t thing_count(int16_t type)
+{
+    return BE16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2);
+}
+static void set_thing_count(int16_t type, uint16_t count)
+{
+    WR16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2, count);
+}
+static uint16_t map_raw_data_offset(int16_t map)
+{
+    return BE16(MAP_DESCRIPTOR(map) + MAP_RAW_DATA_OFFSET);
+}
 static uint16_t column_first_thing_index(int16_t map, int16_t x)
 {
     return BE16(g_dungeon_column_first_thing_index + (g_dungeon_map_first_column[map] + x) * 2);
@@ -186,7 +202,8 @@ static int16_t read_things(int new_game, uint16_t *sum)
     if (new_game)
         g_event_max_count = NEW_GAME_EVENT_COUNT;
     for (int16_t t = 0; t < THING_TYPE_COUNT; t++) {
-        int16_t count = (int16_t)thing_count(t), size = g_thing_data_byte_count[t]; /* a count above 32767 is negative */
+        int16_t count = (int16_t)thing_count(t),
+                size = g_thing_data_byte_count[t]; /* a count above 32767 is negative */
         int16_t total = count, cap = t == THING_EXPLOSION ? MAX_EXPLOSIONS : MAX_THINGS;
         if (count < 0 || count > cap)
             return 0;
@@ -249,18 +266,25 @@ static int valid_thing(uint16_t thing)
     return g_thing_data_byte_count[type] && THING_INDEX(thing) < thing_count(type);
 }
 
-static int valid_link(uint16_t thing) { return thing == THING_ENDOFLIST || valid_thing(thing); }
+static int valid_link(uint16_t thing)
+{
+    return thing == THING_ENDOFLIST || valid_thing(thing);
+}
 
 /* Groups and containers: word 1 starts the list of the things they carry. */
-static uint16_t carried_first_thing(uint16_t thing) { return BE16(REC(thing) + 2); }
+static uint16_t carried_first_thing(uint16_t thing)
+{
+    return BE16(REC(thing) + 2);
+}
 
 /* The map one level up or down that covers the dungeon position of (x, y) on map, or -1. */
 static int16_t map_at_level(int16_t map, int16_t level_delta, int16_t x, int16_t y)
 {
     int16_t dungeon_x = x + map_offset_x(map), dungeon_y = y + map_offset_y(map), level = map_level(map) + level_delta;
     for (int16_t m = 0; m < dungeon_map_count(); m++) {
-        if (map_level(m) == level && map_offset_x(m) <= dungeon_x && dungeon_x < map_offset_x(m) + dungeon_map_width(m) &&
-            map_offset_y(m) <= dungeon_y && dungeon_y < map_offset_y(m) + dungeon_map_height(m))
+        if (map_level(m) == level && map_offset_x(m) <= dungeon_x &&
+            dungeon_x < map_offset_x(m) + dungeon_map_width(m) && map_offset_y(m) <= dungeon_y &&
+            dungeon_y < map_offset_y(m) + dungeon_map_height(m))
             return m;
     }
     return -1;
@@ -303,7 +327,8 @@ static int16_t validate_squares(void)
                 uint8_t square = g_dungeon_map_data[m][x][y];
                 int16_t type = SQUARE_TYPE(square);
                 if (square & SQUARE_HAS_THINGS) {
-                    if (index >= rec_dungeon_square_first_thing_count() || !valid_link(BE16(g_square_first_things + index * 2)))
+                    if (index >= rec_dungeon_square_first_thing_count() ||
+                        !valid_link(BE16(g_square_first_things + index * 2)))
                         return 0;
                     index++;
                 }
@@ -368,11 +393,15 @@ uint8_t *dungeon_save(uint32_t *size)
     if (!g_dungeon_header)
         return NULL;
     const uint8_t *part[DUNGEON_PART_COUNT] = {
-        g_dungeon_header, g_dungeon_maps, g_dungeon_column_first_thing_index, g_square_first_things, g_dungeon_text_data,
+        g_dungeon_header,      g_dungeon_maps,      g_dungeon_column_first_thing_index,
+        g_square_first_things, g_dungeon_text_data,
     };
     uint32_t bytes[DUNGEON_PART_COUNT] = {
-        HEADER_BYTES, (uint32_t)dungeon_map_count() * MAP_BYTES, (uint32_t)g_dungeon_column_count * 2,
-        (uint32_t)rec_dungeon_square_first_thing_count() * 2, (uint32_t)text_words() * 2,
+        HEADER_BYTES,
+        (uint32_t)dungeon_map_count() * MAP_BYTES,
+        (uint32_t)g_dungeon_column_count * 2,
+        (uint32_t)rec_dungeon_square_first_thing_count() * 2,
+        (uint32_t)text_words() * 2,
     };
     for (int16_t t = 0; t < THING_TYPE_COUNT; t++) {
         part[PART_THINGS_FIRST + t] = g_thing_data[t];
@@ -447,11 +476,14 @@ enum { MODE_INSCRIPTION, MODE_MESSAGE, MODE_SCROLL, MODE_MASK = 0x7fff };
 enum { TEXT_CODE_BITS = 5, TEXT_CODE_MASK = 31, TEXT_CODES_PER_WORD = 3 };
 enum { CODE_SPACE = 26, CODE_PERIOD, CODE_SEPARATOR, CODE_ESCAPE_REPLACEMENT, CODE_ESCAPE_STRING, CODE_END };
 #define INSCRIPTION_SEPARATOR ((char)0x80) /* the wall text font ends a line here */
-#define INSCRIPTION_END ((char)0x81)
-#define ESCAPE_STRING_BYTES 8
-#define REPLACEMENT_BYTES 2
+#define INSCRIPTION_END       ((char)0x81)
+#define ESCAPE_STRING_BYTES   8
+#define REPLACEMENT_BYTES     2
 
-typedef struct { char *p, *end; int16_t ok; } TextOut;
+typedef struct {
+    char *p, *end;
+    int16_t ok;
+} TextOut;
 
 static void put(TextOut *o, char c)
 {
@@ -472,7 +504,8 @@ static const char *escape_string(uint16_t escape, uint16_t code, int16_t mode)
 {
     if (escape == CODE_ESCAPE_REPLACEMENT)
         return (const char *)kaos_ptr(REPLACEMENT_CHARS + code * REPLACEMENT_BYTES);
-    return (const char *)kaos_ptr((mode == MODE_INSCRIPTION ? INSCRIPTION_ESCAPES : MESSAGE_ESCAPES) + code * ESCAPE_STRING_BYTES);
+    return (const char *)kaos_ptr((mode == MODE_INSCRIPTION ? INSCRIPTION_ESCAPES : MESSAGE_ESCAPES) +
+                                  code * ESCAPE_STRING_BYTES);
 }
 
 /* Decodes the 5-bit codes from word offset w, three per word, until the end code. */

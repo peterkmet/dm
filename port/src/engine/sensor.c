@@ -14,12 +14,13 @@
 /* KAOS table: the event type that a sensor sends to each square type. */
 #define KAOS_SQUARE_TYPE_TO_EVENT_TYPE 0x100d4a
 
-#define SENSOR_EXPERIENCE_SKILL 8   /* steal */
-#define SENSOR_EXPERIENCE 300
-#define VERSION_CHECKER_LIMIT 37   /* the version checker passes for data below this value */
+#define SENSOR_EXPERIENCE_SKILL   8 /* steal */
+#define SENSOR_EXPERIENCE         300
+#define VERSION_CHECKER_LIMIT     37 /* the version checker passes for data below this value */
 #define CSB_VERSION_CHECKER_LIMIT 32
 
-int16_t g_sensor_rotation_effect = -1, g_sensor_rotation_effect_map_x, g_sensor_rotation_effect_map_y, g_sensor_rotation_effect_cell;
+int16_t g_sensor_rotation_effect = -1, g_sensor_rotation_effect_map_x, g_sensor_rotation_effect_map_y,
+        g_sensor_rotation_effect_cell;
 
 /* Adds a square event on the current map. Clear events come first at equal time, then toggle, then set.
    CSB gives each sensor event priority 0. */
@@ -29,7 +30,9 @@ void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, in
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(g_current_map_index, time),
         .type = (uint8_t)event_type,
-        .priority = g_adventure == ADVENTURE_CSB ? 0 : effect >= EFFECT_SET && effect <= EFFECT_TOGGLE ? priority[effect] : 0,
+        .priority = g_adventure == ADVENTURE_CSB                      ? 0
+                    : effect >= EFFECT_SET && effect <= EFFECT_TOGGLE ? priority[effect]
+                                                                      : 0,
         .b = EVENT_SQUARE(x, y),
         .c = EVENT_CELL_EFFECT(cell, effect),
     };
@@ -73,7 +76,8 @@ void sensor_process_rotation_effect(void)
 {
     if (g_sensor_rotation_effect == -1)
         return;
-    if (g_sensor_rotation_effect == LOCAL_EFFECT_ROTATE_SENSORS_1 || g_sensor_rotation_effect == LOCAL_EFFECT_ROTATE_SENSORS) {
+    if (g_sensor_rotation_effect == LOCAL_EFFECT_ROTATE_SENSORS_1 ||
+        g_sensor_rotation_effect == LOCAL_EFFECT_ROTATE_SENSORS) {
         int16_t x = g_sensor_rotation_effect_map_x, y = g_sensor_rotation_effect_map_y;
         uint16_t first = get_square_first_thing(x, y);
         while (first != THING_ENDOFLIST && !is_rotation_sensor(first))
@@ -84,7 +88,8 @@ void sensor_process_rotation_effect(void)
         if (second != THING_ENDOFLIST) {
             unlink_thing_from_list(first, 0, x, y);
             uint16_t last = second;
-            for (uint16_t t = get_next_thing(second); t != THING_ENDOFLIST && THING_TYPE(t) == THING_SENSOR; t = get_next_thing(t))
+            for (uint16_t t = get_next_thing(second); t != THING_ENDOFLIST && THING_TYPE(t) == THING_SENSOR;
+                 t = get_next_thing(t))
                 if (is_rotation_sensor(t))
                     last = t;
             thing_set_next(first, get_next_thing(last));
@@ -254,7 +259,8 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
         uint16_t sensor = t, sensor_cell = THING_CELL(t);
         remaining[sensor_cell]--;
         uint16_t type = rec_sensor_type(sensor), effect = rec_sensor_effect(sensor);
-        if (type == SENSOR_DISABLED || (g_leader_index == -1 && type != SENSOR_WALL_CHAMPION_PORTRAIT) || sensor_cell != cell)
+        if (type == SENSOR_DISABLED || (g_leader_index == -1 && type != SENSOR_WALL_CHAMPION_PORTRAIT) ||
+            sensor_cell != cell)
             continue;
         int16_t skip = click_test(&t, previous, x, y, remaining[sensor_cell]);
         if (skip == CLICK_IGNORED)
@@ -268,8 +274,9 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
         triggered = true;
         if (rec_sensor_is_audible(sensor))
             sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
-        if (!g_leader_empty_handed && (type == SENSOR_WALL_OBJECT_REMOVED || type == SENSOR_WALL_SINGLE_OBJECT_STORAGE ||
-                                       type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED)) {
+        if (!g_leader_empty_handed &&
+            (type == SENSOR_WALL_OBJECT_REMOVED || type == SENSOR_WALL_SINGLE_OBJECT_STORAGE ||
+             type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED)) {
             thing_set_free(g_leader_hand_object);
             inventory_get_object_removed_from_leader_hand();
         }
@@ -361,7 +368,7 @@ static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t
             if (!s->party_on_square)
                 trigger(sensor, add, x, y);
         } else {
-            trigger(sensor, add && g_party_direction + 1 == data, x, y);   /* data is the direction + 1 */
+            trigger(sensor, add && g_party_direction + 1 == data, x, y); /* data is the direction + 1 */
         }
         break;
     case SENSOR_FLOOR_OBJECT:
@@ -382,17 +389,24 @@ static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t
         break;
     case SENSOR_FLOOR_VERSION_CHECKER:
         if (s->party && add && !s->party_on_square)
-            trigger(sensor, data < (g_adventure == ADVENTURE_CSB ? CSB_VERSION_CHECKER_LIMIT : VERSION_CHECKER_LIMIT), x, y);
+            trigger(sensor, data < (g_adventure == ADVENTURE_CSB ? CSB_VERSION_CHECKER_LIMIT : VERSION_CHECKER_LIMIT),
+                    x, y);
         break;
     }
 }
 
 /* thing THING_NONE is the party. A floor square runs its floor sensors. A wall square runs the sensors of the thing cell. */
-void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, int16_t party_on_square, int16_t add)
+void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, int16_t party_on_square,
+                                              int16_t add)
 {
     int16_t party = thing == THING_NONE;
-    SquareChange s = {.x = x, .y = y, .add = add, .party = party, .party_on_square = party_on_square,
-                      .thing_type = party ? -1 : THING_TYPE(thing), .object_type = party ? -1 : object_get_type(thing),
+    SquareChange s = {.x = x,
+                      .y = y,
+                      .add = add,
+                      .party = party,
+                      .party_on_square = party_on_square,
+                      .thing_type = party ? -1 : THING_TYPE(thing),
+                      .object_type = party ? -1 : object_get_type(thing),
                       .cell = THING_CELL(thing)};
     if (!add && !party)
         unlink_thing_from_list(thing, 0, x, y);

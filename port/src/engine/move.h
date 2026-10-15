@@ -6,13 +6,20 @@
 
 /* Party and object movement (KAOS range 8, MOVESENS.C and COMMAND.C). */
 
-enum { COMMAND_TURN_LEFT = 1, COMMAND_TURN_RIGHT, COMMAND_MOVE_FORWARD, COMMAND_MOVE_RIGHT, COMMAND_MOVE_BACKWARD, COMMAND_MOVE_LEFT };
+enum {
+    COMMAND_TURN_LEFT = 1,
+    COMMAND_TURN_RIGHT,
+    COMMAND_MOVE_FORWARD,
+    COMMAND_MOVE_RIGHT,
+    COMMAND_MOVE_BACKWARD,
+    COMMAND_MOVE_LEFT
+};
 
-extern int16_t g_new_party_map_index;           /* -1: no map change pending */
+extern int16_t g_new_party_map_index; /* -1: no map change pending */
 extern int16_t g_move_result_map_x, g_move_result_map_y;
 extern uint16_t g_move_result_map_index, g_move_result_cell, g_move_result_direction;
 extern int16_t g_use_rope_to_climb_down_pit;
-extern int g_party_teleport_count;           /* port only: teleporters that moved the party */
+extern int g_party_teleport_count; /* port only: teleporters that moved the party */
 
 bool move_is_levitating(uint16_t thing);
 uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing);

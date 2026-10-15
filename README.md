@@ -19,6 +19,7 @@ The detailed plan is in [docs/superpowers/2026-10-04-dm-c-port-plan.md](docs/sup
 
 - macOS with [Homebrew](https://brew.sh).
 - [uv](https://docs.astral.sh/uv/).
+- clang-format version 23, for the tests: `brew install clang-format`.
 - A Dungeon Master v3.60 Amiga disk image (`.adf`).
 
 ## Quickstart
@@ -272,6 +273,12 @@ After the auto-analysis, `decompile.sh` runs these Ghidra scripts in this order:
 
 ```sh
 uv run pytest
+```
+
+To hide the format commit in `git blame`:
+
+```sh
+git config blame.ignoreRevsFile .git-blame-ignore-revs
 ```
 
 `tests/test_port.py` builds the C port and tests it through `ctypes`. Pytest skips it when `clang` or SDL3 is not installed.

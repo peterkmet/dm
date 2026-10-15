@@ -11,19 +11,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DIRECTION_TO_STEP_EAST 0x101038
+#define DIRECTION_TO_STEP_EAST  0x101038
 #define DIRECTION_TO_STEP_NORTH 0x101040
 
 #define SYSTEM_ERROR_TIMELINE_FULL 45
-#define SYSTEM_ERROR_MEMORY 70         /* allocation failed, or an event is missing from the timeline */
-#define FREE_LIST_END 0xffff           /* map_time of the last free event slot */
-#define STAT_HIGH 120                  /* statistic gains above this value are halved */
-#define STAT_VERY_HIGH 150             /* statistic gains above this value are quartered */
-#define ATTACK_FACTOR_MIN 16           /* below this, the statistic factor divides the attack by 8 */
-#define ATTACK_FACTOR_SHIFT 7
-#define LUCK_STEP 2                    /* luck change after each luck test */
-#define PERCENT_RANGE 100              /* a luck test draws random16() % 100 */
-#define ATTACK_LOW_FACTOR_SHIFT 3      /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
+#define SYSTEM_ERROR_MEMORY        70     /* allocation failed, or an event is missing from the timeline */
+#define FREE_LIST_END              0xffff /* map_time of the last free event slot */
+#define STAT_HIGH                  120    /* statistic gains above this value are halved */
+#define STAT_VERY_HIGH             150    /* statistic gains above this value are quartered */
+#define ATTACK_FACTOR_MIN          16     /* below this, the statistic factor divides the attack by 8 */
+#define ATTACK_FACTOR_SHIFT        7
+#define LUCK_STEP                  2   /* luck change after each luck test */
+#define PERCENT_RANGE              100 /* a luck test draws random16() % 100 */
+#define ATTACK_LOW_FACTOR_SHIFT    3   /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
 
 Party g_party;
 Champion g_champions[CHAMPION_MAX_COUNT];
@@ -78,8 +78,14 @@ void game_new(void)
     game_init_active_groups();
 }
 
-int16_t min16(int16_t a, int16_t b) { return b <= a ? b : a; }
-int16_t max16(int16_t a, int16_t b) { return a <= b ? b : a; }
+int16_t min16(int16_t a, int16_t b)
+{
+    return b <= a ? b : a;
+}
+int16_t max16(int16_t a, int16_t b)
+{
+    return a <= b ? b : a;
+}
 
 int16_t bounded_value(int16_t min, int16_t value, int16_t max)
 {
@@ -96,11 +102,14 @@ int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
 }
 
 /* Moves map coordinates by steps forward and to the right of a direction. */
-void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t *map_x, int16_t *map_y)
+void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
+                                                    int16_t *map_x, int16_t *map_y)
 {
     int16_t right = NORMALIZE(direction + 1);
-    *map_x = *map_x + steps_forward * kaos_s16(DIRECTION_TO_STEP_EAST + direction * 2) + steps_right * kaos_s16(DIRECTION_TO_STEP_EAST + right * 2);
-    *map_y = *map_y + steps_forward * kaos_s16(DIRECTION_TO_STEP_NORTH + direction * 2) + steps_right * kaos_s16(DIRECTION_TO_STEP_NORTH + right * 2);
+    *map_x = *map_x + steps_forward * kaos_s16(DIRECTION_TO_STEP_EAST + direction * 2) +
+             steps_right * kaos_s16(DIRECTION_TO_STEP_EAST + right * 2);
+    *map_y = *map_y + steps_forward * kaos_s16(DIRECTION_TO_STEP_NORTH + direction * 2) +
+             steps_right * kaos_s16(DIRECTION_TO_STEP_NORTH + right * 2);
 }
 
 /* New game only. A free slot keeps the next free index in map_time. */
@@ -110,7 +119,8 @@ void timeline_init(void)
     free(g_timeline);
     g_timeline_events = calloc(g_event_max_count, sizeof *g_timeline_events);
     g_timeline = calloc(g_event_max_count, sizeof *g_timeline);
-    if (g_event_max_count <= 0 || !g_timeline_events || !g_timeline) fatal_error(SYSTEM_ERROR_MEMORY);
+    if (g_event_max_count <= 0 || !g_timeline_events || !g_timeline)
+        fatal_error(SYSTEM_ERROR_MEMORY);
     for (uint16_t i = 0; i < g_event_max_count; i++)
         g_timeline_events[i].map_time = i + 1;
     g_timeline_events[g_event_max_count - 1].map_time = FREE_LIST_END;
@@ -130,8 +140,10 @@ void timeline_reset(void)
             g_event_high_water = i + 1;
             continue;
         }
-        if (last_free == -1) g_first_unused_event_index = i;
-        else g_timeline_events[last_free].map_time = (uint32_t)i;
+        if (last_free == -1)
+            g_first_unused_event_index = i;
+        else
+            g_timeline_events[last_free].map_time = (uint32_t)i;
         g_timeline_events[i].map_time = FREE_LIST_END;
         last_free = i;
     }
@@ -179,7 +191,7 @@ void timeline_fix_chronology(uint16_t timeline_index)
         moved = true;
     }
     if (!moved)
-        while (i <= (uint16_t)(count - 2) >> 1) {   /* unsigned as in the original: no children below 2 entries */
+        while (i <= (uint16_t)(count - 2) >> 1) { /* unsigned as in the original: no children below 2 entries */
             uint16_t child = 2 * i + 1;
             if (child + 1 < g_timeline_count && BEFORE(g_timeline[child + 1], g_timeline[child]))
                 child++;
@@ -195,7 +207,7 @@ void timeline_fix_chronology(uint16_t timeline_index)
 void timeline_delete_event(uint16_t event_index)
 {
     g_timeline_events[event_index].type = 0;
-    g_timeline_events[event_index].map_time = (uint16_t)g_first_unused_event_index;   /* -1 becomes FREE_LIST_END */
+    g_timeline_events[event_index].map_time = (uint16_t)g_first_unused_event_index; /* -1 becomes FREE_LIST_END */
     g_first_unused_event_index = event_index;
     if (--g_timeline_count) {
         uint16_t i = timeline_get_index(event_index);
@@ -206,8 +218,8 @@ void timeline_delete_event(uint16_t event_index)
     }
 }
 
-#define IS_SQUARE_EVENT(type) ((type) >= EVENT_CORRIDOR && (type) <= EVENT_DOOR)
-#define SAME_PLACE(e, f) ((e)->map_time == (f)->map_time && (e)->b == (f)->b)
+#define IS_SQUARE_EVENT(type)   ((type) >= EVENT_CORRIDOR && (type) <= EVENT_DOOR)
+#define SAME_PLACE(e, f)        ((e)->map_time == (f)->map_time && (e)->b == (f)->b)
 /* Set becomes clear and clear becomes set. */
 #define OPPOSITE_EFFECT(effect) (EFFECT_CLEAR - (effect))
 
@@ -241,7 +253,8 @@ int16_t timeline_find_mergeable_event(TimelineEvent *event)
                 }
             }
         } else if (event->type == EVENT_DOOR_DESTRUCTION) {
-            if (e->b == event->b && EVENT_MAP(e) == EVENT_MAP(event) && (e->type == EVENT_DOOR_ANIMATION || e->type == EVENT_DOOR))
+            if (e->b == event->b && EVENT_MAP(e) == EVENT_MAP(event) &&
+                (e->type == EVENT_DOOR_ANIMATION || e->type == EVENT_DOOR))
                 timeline_delete_event(i);
         } else {
             break;
@@ -255,7 +268,7 @@ int16_t timeline_add_event(TimelineEvent *event)
 {
     if (!event->type)
         return -1;
-    if (g_timeline_count == (uint16_t)g_event_max_count)   /* unsigned compare as in the original */
+    if (g_timeline_count == (uint16_t)g_event_max_count) /* unsigned compare as in the original */
         fatal_error(SYSTEM_ERROR_TIMELINE_FULL);
     int16_t index = timeline_find_mergeable_event(event);
     if (index >= 0)
@@ -296,7 +309,8 @@ void game_init_active_groups(void)
     g_max_active_group_count = g_adventure == ADVENTURE_CSB ? CSB_ACTIVE_GROUP_MAX_COUNT : ACTIVE_GROUP_MAX_COUNT;
     free(g_active_groups);
     g_active_groups = malloc(g_max_active_group_count * sizeof *g_active_groups);
-    if (!g_active_groups) fatal_error(SYSTEM_ERROR_MEMORY);
+    if (!g_active_groups)
+        fatal_error(SYSTEM_ERROR_MEMORY);
     for (uint16_t i = 0; i < g_max_active_group_count; i++)
         g_active_groups[i].group_index = -1;
 }
@@ -306,7 +320,7 @@ int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)
 {
     int16_t half = champion->maximum_stamina >> 1;
     if (champion->current_stamina < half)
-        value = (value >> 1) + (int16_t)((int32_t)value * champion->current_stamina / half);   /* 16-bit quotient */
+        value = (value >> 1) + (int16_t)((int32_t)value * champion->current_stamina / half); /* 16-bit quotient */
     return value;
 }
 
@@ -314,7 +328,8 @@ int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)
 uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)
 {
     int16_t factor = STAT_LIMIT - champion->statistics[statistic][STAT_CURRENT];
-    return factor < ATTACK_FACTOR_MIN ? attack >> ATTACK_LOW_FACTOR_SHIFT : scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
+    return factor < ATTACK_FACTOR_MIN ? attack >> ATTACK_LOW_FACTOR_SHIFT
+                                      : scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
 }
 
 /* Changes a current statistic within its minimum and the limit; high values grow slower. */
@@ -340,6 +355,7 @@ bool game_is_lucky(Champion *champion, uint16_t percentage)
         return true;
     bool lucky = (int8_t)luck[STAT_CURRENT] > 0 && percentage < random16() % (luck[STAT_CURRENT] * 2);
     int16_t change = lucky ? -LUCK_STEP : LUCK_STEP;
-    luck[STAT_CURRENT] = (uint8_t)bounded_value((int8_t)luck[STAT_MINIMUM], (int8_t)luck[STAT_CURRENT] + change, (int8_t)luck[STAT_MAXIMUM]);
+    luck[STAT_CURRENT] = (uint8_t)bounded_value((int8_t)luck[STAT_MINIMUM], (int8_t)luck[STAT_CURRENT] + change,
+                                                (int8_t)luck[STAT_MAXIMUM]);
     return lucky;
 }

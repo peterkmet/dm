@@ -8,7 +8,14 @@ int control_open(const char *path)
     return 0;
 }
 
-void control_poll(void) {}
-bool control_is_turn_pending(void) { return false; }
-void control_close(void) {}
+void control_poll(void)
+{
+}
+bool control_is_turn_pending(void)
+{
+    return false;
+}
+void control_close(void)
+{
+}
 #endif

@@ -6,16 +6,16 @@
 #define THING_TYPE_COUNT 16
 
 /* All buffers keep the big-endian byte layout of the original memory. */
-extern uint8_t *g_dungeon_header;                   /* 44 bytes */
-extern uint8_t *g_dungeon_maps;                     /* 16 bytes per map */
-extern int16_t *g_dungeon_map_first_column;         /* native, one per map */
+extern uint8_t *g_dungeon_header;           /* 44 bytes */
+extern uint8_t *g_dungeon_maps;             /* 16 bytes per map */
+extern int16_t *g_dungeon_map_first_column; /* native, one per map */
 extern int16_t g_dungeon_column_count;
 extern uint8_t *g_dungeon_column_first_thing_index; /* word per column */
 extern uint8_t *g_square_first_things;              /* word per square with things */
 extern uint8_t *g_dungeon_text_data;
 extern uint8_t *g_thing_data[THING_TYPE_COUNT];
 extern uint8_t *g_dungeon_raw_map_data;
-extern uint8_t ***g_dungeon_map_data;               /* [map][x] -> column of squares */
+extern uint8_t ***g_dungeon_map_data; /* [map][x] -> column of squares */
 extern const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT];
 extern uint16_t g_dungeon_id;
 extern int16_t g_event_max_count;
@@ -34,11 +34,11 @@ uint8_t dungeon_square(int16_t map, int16_t x, int16_t y);
 uint16_t dungeon_square_first_thing(int16_t map, int16_t x, int16_t y);
 uint8_t *dungeon_get_thing_data(uint16_t thing);
 /* decode_text modes and buffer sizes. */
-#define TEXT_MODE_MESSAGE 1
-#define TEXT_MODE_SCROLL 2
+#define TEXT_MODE_MESSAGE        1
+#define TEXT_MODE_SCROLL         2
 #define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
-#define TEXT_SIZE 256
-#define SCROLL_TEXT_SIZE 200
+#define TEXT_SIZE                256
+#define SCROLL_TEXT_SIZE         200
 int16_t decode_text(char *dst, int16_t dst_size, uint16_t text_thing, int16_t mode);
 
 #endif

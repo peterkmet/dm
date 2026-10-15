@@ -13,14 +13,14 @@
 
 /* KAOS tables: forward and right steps of each movement arrow. */
 #define KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD 0x103c56
-#define KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT 0x103c5e
+#define KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT   0x103c5e
 
-#define SQUARE_CHAIN_MAXIMUM 99        /* teleporters, pits, and stairs that one move follows */
+#define SQUARE_CHAIN_MAXIMUM   99 /* teleporters, pits, and stairs that one move follows */
 #define SCENT_STRENGTH_MAXIMUM 80
-#define SCENT_KEEP_LARGER 0x8000       /* flag: keep the larger strength instead of adding */
-#define SCENT_NEW_STRENGTH 24
-#define MOVE_STAMINA_FACTOR 3          /* stamina cost of a step: load * 3 / maximum load + 1 */
-#define NO_TELEPORTER_ROTATION (-2)    /* src_x value: a teleporter does not rotate the object */
+#define SCENT_KEEP_LARGER      0x8000 /* flag: keep the larger strength instead of adding */
+#define SCENT_NEW_STRENGTH     24
+#define MOVE_STAMINA_FACTOR    3    /* stamina cost of a step: load * 3 / maximum load + 1 */
+#define NO_TELEPORTER_ROTATION (-2) /* src_x value: a teleporter does not rotate the object */
 
 int16_t g_new_party_map_index = -1;
 int16_t g_move_result_map_x, g_move_result_map_y;
@@ -84,7 +84,8 @@ void move_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags)
             continue;
         if (!found) {
             found = 1;
-            value = keep_larger ? max16(g_party.scent_strengths[s], value) : min16(SCENT_STRENGTH_MAXIMUM, value + g_party.scent_strengths[s]);
+            value = keep_larger ? max16(g_party.scent_strengths[s], value)
+                                : min16(SCENT_STRENGTH_MAXIMUM, value + g_party.scent_strengths[s]);
         }
         g_party.scent_strengths[s] = (uint8_t)value;
     }
@@ -97,14 +98,15 @@ static void add_party_scent(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t
     for (; n >= PARTY_SCENT_COUNT; n--)
         champion_delete_scent(0);
     if (n)
-        move_add_scent_strength(src_x, src_y, g_game_time - g_last_party_movement_time);   /* 16-bit difference */
+        move_add_scent_strength(src_x, src_y, g_game_time - g_last_party_movement_time); /* 16-bit difference */
     g_last_party_movement_time = g_game_time;
     g_party.scent_count++;
     if (g_party.event79_count_footprints)
         g_party.last_scent_index = g_party.scent_count;
     g_party.scents[n] = move_get_scent(dst_x, dst_y, map);
     g_party.scent_strengths[n] = 0;
-    move_add_scent_strength(dst_x, dst_y, (int16_t)(SCENT_KEEP_LARGER | SCENT_NEW_STRENGTH));   /* the flag is the sign bit */
+    move_add_scent_strength(dst_x, dst_y,
+                            (int16_t)(SCENT_KEEP_LARGER | SCENT_NEW_STRENGTH)); /* the flag is the sign bit */
 }
 
 static bool is_party_on(int16_t x, int16_t y)
@@ -123,9 +125,11 @@ static bool is_teleported(uint16_t *thing, uint8_t square, int16_t src_x, int16_
         return false;
     uint16_t teleporter = get_square_first_thing(*dst_x, *dst_y);
     uint16_t teleporter_scope_bits = teleporter_scope(teleporter);
-    if (teleporter_scope_bits == TELEPORTER_SCOPE_CREATURES || (scope != TELEPORTER_SCOPE_ALL && !(scope & teleporter_scope_bits)))
+    if (teleporter_scope_bits == TELEPORTER_SCOPE_CREATURES ||
+        (scope != TELEPORTER_SCOPE_ALL && !(scope & teleporter_scope_bits)))
         return false;
-    int16_t x = teleporter_target_x(teleporter), y = teleporter_target_y(teleporter), rotation = teleporter_rotation(teleporter);
+    int16_t x = teleporter_target_x(teleporter), y = teleporter_target_y(teleporter),
+            rotation = teleporter_rotation(teleporter);
     int16_t points_to_itself = x == *dst_x && y == *dst_y && teleporter_target_map(teleporter) == *map;
     *dst_x = x;
     *dst_y = y;
@@ -137,7 +141,8 @@ static bool is_teleported(uint16_t *thing, uint8_t square, int16_t src_x, int16_
         g_party_teleport_count += !points_to_itself;
         if (teleporter_is_audible(teleporter))
             sound_request_play(SOUND_TELEPORT, *dst_x, *dst_y, SOUND_MODE_NOW);
-        move_set_party_direction(teleporter_is_rotation_absolute(teleporter) ? rotation : NORMALIZE(g_party_direction + rotation));
+        move_set_party_direction(teleporter_is_rotation_absolute(teleporter) ? rotation
+                                                                             : NORMALIZE(g_party_direction + rotation));
     } else if (type == THING_PROJECTILE) {
         *thing = move_get_teleporter_rotated_projectile_thing(teleporter, *thing);
     } else if (!teleporter_is_rotation_absolute(teleporter) && src_x != NO_TELEPORTER_ROTATION) {
@@ -148,7 +153,8 @@ static bool is_teleported(uint16_t *thing, uint8_t square, int16_t src_x, int16_
 
 /* The destination follows teleporters, pits, and stairs. The party falls into a pit with its damage. An object on
    stairs rolls out of them. Returns the thing with its new cell. */
-static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_x, int16_t *dst_y, int16_t *map, int16_t *start_direction)
+static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_x, int16_t *dst_y, int16_t *map,
+                                    int16_t *start_direction)
 {
     int16_t party = thing == THING_NONE, type = party ? -1 : THING_TYPE(thing);
     int16_t levitating = party ? 0 : move_is_levitating(thing);
@@ -188,7 +194,8 @@ static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_
 
 /* The thing arrives on its destination square. The party kills a group there and enters the square sensors, or waits
    for the map change on another map. A projectile only joins the square list. */
-static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16_t map, int16_t src_map, int16_t same_square)
+static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16_t map, int16_t src_map,
+                             int16_t same_square)
 {
     set_current_map(map);
     if (thing == THING_NONE) {
@@ -288,7 +295,8 @@ void move_party_enter_dungeon(void)
 void move_take_stairs(int16_t stairs_go_up)
 {
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);
-    g_new_party_map_index = get_location_after_level_change(g_party_map_index, stairs_go_up ? LEVEL_UP : LEVEL_DOWN, &g_party_map_x, &g_party_map_y);
+    g_new_party_map_index = get_location_after_level_change(g_party_map_index, stairs_go_up ? LEVEL_UP : LEVEL_DOWN,
+                                                            &g_party_map_x, &g_party_map_y);
     set_current_map(g_new_party_map_index);
     move_set_party_direction(get_stairs_exit_direction(g_party_map_x, g_party_map_y));
     set_current_map(g_party_map_index);
@@ -342,7 +350,9 @@ void move_party(int16_t command)
 {
     for (int16_t i = 0; i < g_party_champion_count; i++)
         if (g_champions[i].current_health)
-            champion_decrement_stamina(i, (uint16_t)(g_champions[i].load * MOVE_STAMINA_FACTOR) / champion_get_maximum_load(&g_champions[i]) + 1); /* 16-bit wrap */
+            champion_decrement_stamina(i, (uint16_t)(g_champions[i].load * MOVE_STAMINA_FACTOR) /
+                                                  champion_get_maximum_load(&g_champions[i]) +
+                                              1); /* 16-bit wrap */
     int16_t arrow = command - COMMAND_MOVE_FORWARD, x = g_party_map_x, y = g_party_map_y;
     uint8_t square = get_square(x, y);
     int16_t on_stairs = SQUARE_TYPE(square) == SQUARE_STAIRS;
@@ -350,7 +360,8 @@ void move_party(int16_t command)
         move_take_stairs(square & STAIRS_UP);
         return;
     }
-    update_map_coordinates_after_relative_movement(g_party_direction, kaos_s16(KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD + arrow * 2),
+    update_map_coordinates_after_relative_movement(g_party_direction,
+                                                   kaos_s16(KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD + arrow * 2),
                                                    kaos_s16(KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT + arrow * 2), &x, &y);
     square = get_square(x, y);
     if (SQUARE_TYPE(square) == SQUARE_STAIRS) {
