@@ -196,7 +196,7 @@ int csb_text_build(const FtlImage *appb, FtlImage *out)
             /* the string index table gives the text in the CSB order */
             if (table_texts[i].kaos_indices) {
                 uint8_t *p = out->data + (table_texts[i].kaos_indices + 2 * k - out->base);
-                p[0] = (uint8_t)(text >> 8), p[1] = (uint8_t)text;
+                WR16(p, text);
             }
         }
     }

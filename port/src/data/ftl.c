@@ -101,11 +101,11 @@ static uint8_t *unpack(const uint8_t *p, size_t len, uint32_t *out_len)
         if (v == RSHARP_LITERAL)
             w = nib(&b, 4);
         else {
-            unsigned t = v < 8 ? v << 4 | nib(&b, 1) : RSHARP_SHORT_CODES + ((v - 8) << 8 | nib(&b, 2));
+            unsigned t =
+                v < 8 ? v << NIBBLE_BITS | nib(&b, 1) : RSHARP_SHORT_CODES + ((v - 8) << BYTE_BITS | nib(&b, 2));
             w = BE16(p + RSHARP_DICTIONARY + 2 * t);
         }
-        out[2 * i] = w >> 8;
-        out[2 * i + 1] = w;
+        WR16(out + 2 * i, w);
     }
     if (b.pos > b.n) {
         free(out);

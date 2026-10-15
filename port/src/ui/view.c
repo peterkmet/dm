@@ -498,7 +498,7 @@ enum {
     PROJECTILE_ASPECT_POISON = 14
 };
 enum { WEAPON_PROJECTILE_ASPECT_SHIFT = 8, WEAPON_PROJECTILE_ASPECT_MASK = 0x1f }; /* 0: the object aspect */
-enum { PROJECTILE_ENERGY_MIN = 96, PROJECTILE_SCALE_MIN = 2 };
+enum { PROJECTILE_ENERGY_MIN = 96, PROJECTILE_SCALE_MIN = 2, PROJECTILE_ENERGY_SCALE_SHIFT = 8 };
 
 /* Explosion graphics. */
 enum { EXPLOSION_ASPECT_FIRE, EXPLOSION_ASPECT_SPELL, EXPLOSION_ASPECT_POISON, EXPLOSION_ASPECT_SMOKE };
@@ -875,8 +875,8 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
         row = depth * 2 - (cell >> 1);
         scale = tables_projectile_scale(row);
         if (by_energy) /* 16-bit product and signed byte as in the original */
-            scale = max16(PROJECTILE_SCALE_MIN,
-                          (int8_t)((uint16_t)(max16(PROJECTILE_ENERGY_MIN, energy + 1) * scale) >> 8));
+            scale = max16(PROJECTILE_SCALE_MIN, (int8_t)((uint16_t)(max16(PROJECTILE_ENERGY_MIN, energy + 1) * scale) >>
+                                                         PROJECTILE_ENERGY_SCALE_SHIFT));
     }
     int rotates = kind == PROJECTILE_BACK_AND_ROTATION, odd_square = rotates && ((x + y) & 1);
     if (kind == PROJECTILE_NO_BACK_NO_ROTATION)

@@ -15,8 +15,6 @@
 #define SQUARE_COMBO_TARGET_MASK 0xff
 #define SQUARE_COMBO_SHIFT       8
 
-/* Door attributes (high byte of g_current_map_door_info): projectiles pass through the grate. */
-enum { DOOR_PROJECTILES_PASS = 2 };
 enum { PROJECTILE_DOOR_PASS_RANDOM_MASK = 0x7f };
 enum { LAUNCHER_EXPLOSION_DATA_BASE = 128, LAUNCHER_ATTACK = 100 };
 /* Object info indices that a launcher or a wall generator creates. */
@@ -52,11 +50,6 @@ int16_t g_fuse_sequence_requested;
 static bool is_party_on(int16_t x, int16_t y)
 {
     return g_current_map_index == g_party_map_index && x == g_party_map_x && y == g_party_map_y;
-}
-
-static uint16_t door_attributes(uint16_t door)
-{
-    return g_current_map_door_info[door_type(door)] >> 8;
 }
 
 static void add_event_one_tick_later(const TimelineEvent *event)

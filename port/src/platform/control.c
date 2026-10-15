@@ -12,6 +12,7 @@
 #include "action.h"
 #include "advanced.h"
 #include "adventure.h"
+#include "bytes.h"
 #include "champion.h"
 #include "command.h"
 #include "crc32.h"
@@ -398,7 +399,7 @@ static const char *open_inventory(const char *r)
     if (!champion_arg(r, &c))
         return "no living champion with this index";
     if (g_inventory_champion_ordinal != c + 1)
-        press_key(KEY_F1 + (c << 8));
+        press_key(command_champion_key(c));
     return NULL;
 }
 
@@ -406,7 +407,7 @@ static const char *close_inventory(const char *r)
 {
     (void)r;
     if (g_inventory_champion_ordinal)
-        press_key(KEY_F1 + ((g_inventory_champion_ordinal - 1) << 8));
+        press_key(command_champion_key(g_inventory_champion_ordinal - 1));
     return NULL;
 }
 
@@ -620,7 +621,7 @@ static const char *sleep_party(const char *r)
     if (g_leader_index == -1)
         return "no leader";
     if (!g_inventory_champion_ordinal)
-        press_key(KEY_F1 + (g_leader_index << 8));
+        press_key(command_champion_key(g_leader_index));
     click_command(UI_INPUT_INVENTORY, COMMAND_SLEEP);
     return NULL;
 }
@@ -696,7 +697,7 @@ static int write_png(const char *path)
         *p++ = 0; /* filter: none */
         for (int x = 0; x < SCREEN_W; x++) {
             uint32_t argb = video_argb(video_color(y, fb[y][x]));
-            *p++ = (uint8_t)(argb >> ARGB_RED_SHIFT), *p++ = (uint8_t)(argb >> ARGB_GREEN_SHIFT), *p++ = (uint8_t)argb;
+            *p++ = video_argb_red(argb), *p++ = video_argb_green(argb), *p++ = video_argb_blue(argb);
         }
     }
     uint8_t *q = z;
@@ -705,7 +706,7 @@ static int write_png(const char *path)
     for (size_t done = 0; done < RAW;) {
         size_t n = RAW - done < BLOCK ? RAW - done : BLOCK;
         *q++ = done + n == RAW;
-        *q++ = (uint8_t)n, *q++ = (uint8_t)(n >> 8), *q++ = (uint8_t)~n, *q++ = (uint8_t)(~n >> 8);
+        *q++ = (uint8_t)n, *q++ = (uint8_t)(n >> BYTE_BITS), *q++ = (uint8_t)~n, *q++ = (uint8_t)(~n >> BYTE_BITS);
         memcpy(q, raw + done, n);
         for (size_t i = 0; i < n; i++)
             a = (a + raw[done + i]) % ADLER32_MODULUS, b = (b + a) % ADLER32_MODULUS;

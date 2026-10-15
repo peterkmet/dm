@@ -1,9 +1,9 @@
 #include "crc32.h"
+#include "bytes.h"
 
 #define CRC32_POLYNOMIAL 0xedb88320u /* reflected CRC-32 of PNG */
 #define CRC_TABLE_SIZE   256         /* one entry for each byte value */
 #define BYTE_MASK        0xff
-#define BYTE_BITS        8
 
 static uint32_t crc_table[CRC_TABLE_SIZE];
 

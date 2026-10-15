@@ -21,6 +21,7 @@
 #define LUCK_STEP                  2   /* luck change after each luck test */
 #define PERCENT_RANGE              100 /* a luck test draws random16() % 100 */
 #define ATTACK_LOW_FACTOR_SHIFT    3   /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
+#define EVENT_KEY_TYPE_SHIFT       8   /* the sort key of an event: type in the high byte, priority in the low byte */
 
 Party g_party;
 Champion g_champions[CHAMPION_MAX_COUNT];
@@ -148,7 +149,8 @@ void timeline_reset(void)
 bool timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b)
 {
     uint32_t time_a = a->map_time & EVENT_TIME_MASK, time_b = b->map_time & EVENT_TIME_MASK;
-    uint16_t key_a = a->type << 8 | a->priority, key_b = b->type << 8 | b->priority;
+    uint16_t key_a = a->type << EVENT_KEY_TYPE_SHIFT | a->priority,
+             key_b = b->type << EVENT_KEY_TYPE_SHIFT | b->priority;
     if (time_a != time_b)
         return time_a < time_b;
     if (key_a != key_b)

@@ -58,12 +58,6 @@ void move_set_party_direction(int16_t direction)
     }
 }
 
-/* A scent word: x in bits 11-15, y in bits 6-10, map in bits 0-5. x can be negative (unsigned shift). */
-uint16_t move_get_scent(int16_t x, int16_t y, int16_t map)
-{
-    return (uint16_t)x << POSITION_X_SHIFT | (y & POSITION_XY_MASK) << POSITION_Y_SHIFT | (map & POSITION_MAP_MASK);
-}
-
 /* Adds strength to the party scent on a square, or keeps the larger strength. The original compares scent i
    with strength count - 1 - i; the port keeps this. */
 void move_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags)
@@ -72,7 +66,7 @@ void move_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags)
         return;
     int16_t keep_larger = strength_and_flags & SCENT_KEEP_LARGER, found = 0;
     int16_t value = keep_larger ? strength_and_flags & ~SCENT_KEEP_LARGER : strength_and_flags;
-    uint16_t scent = move_get_scent(x, y, g_current_map_index);
+    uint16_t scent = position_pack(g_current_map_index, x, y);
     for (uint16_t i = 0; i < g_party.scent_count; i++) {
         uint16_t s = g_party.scent_count - 1 - i;
         if (g_party.scents[i] != scent)
@@ -98,7 +92,7 @@ static void add_party_scent(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t
     g_party.scent_count++;
     if (g_party.event79_count_footprints)
         g_party.last_scent_index = g_party.scent_count;
-    g_party.scents[n] = move_get_scent(dst_x, dst_y, map);
+    g_party.scents[n] = position_pack(map, dst_x, dst_y);
     g_party.scent_strengths[n] = 0;
     move_add_scent_strength(dst_x, dst_y,
                             (int16_t)(SCENT_KEEP_LARGER | SCENT_NEW_STRENGTH)); /* the flag is the sign bit */

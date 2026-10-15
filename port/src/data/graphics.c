@@ -105,7 +105,7 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
             else if (k == SKIP_BYTE_PLUS_256)
                 k = SKIP_BYTE_BASE + NEXT();
             else if (k == SKIP_WORD) {
-                k = NEXT() << 8;
+                k = NEXT() << BYTE_BITS;
                 k |= NEXT();
             }
             pos += k + 1;
@@ -113,7 +113,7 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
         }
         cnt = NEXT();
         if (cmd & CMD_WIDE_COUNT_FLAG)
-            cnt = cnt << 8 | NEXT();
+            cnt = cnt << BYTE_BITS | NEXT();
         cnt++;
         switch (cmd & CMD_KIND_MASK) {
         case KIND_FILL:

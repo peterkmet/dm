@@ -118,9 +118,9 @@ static uint16_t amiga_key(int key, int modifiers)
     enum { RAW_Q = 0x10, RAW_S = 0x21, CTRL_ASCII = 0x80, CTRL_MASK = 0x3f };
     if (modifiers & SDL_KMOD_CTRL) {
         if (key == SDLK_Q)
-            return RAW_Q << 8 | CTRL_ASCII | ('Q' & CTRL_MASK);
+            return command_key(RAW_Q, CTRL_ASCII | ('Q' & CTRL_MASK));
         if (key == SDLK_S)
-            return RAW_S << 8 | CTRL_ASCII | ('S' & CTRL_MASK);
+            return command_key(RAW_S, CTRL_ASCII | ('S' & CTRL_MASK));
         return 0;
     }
     switch (key) {
@@ -153,7 +153,7 @@ static uint16_t amiga_key(int key, int modifiers)
     case SDLK_F2:
     case SDLK_F3:
     case SDLK_F4:
-        return KEY_F1 + ((key - SDLK_F1) << 8);
+        return command_champion_key(key - SDLK_F1);
     }
     if (g_game_mode == GAME_MODE_VANILLA)
         return 0;

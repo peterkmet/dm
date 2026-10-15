@@ -147,9 +147,12 @@ static void read_magic(void)
     for (uint32_t i = 0; i < (uint32_t)loaded_spell_count; i++) {
         uint32_t a = (csb ? CSB_SPELLS : KAOS_SPELLS) + i * SPELL_BYTES;
         uint16_t w = kaos_u16(a + SPELL_ENTRY_ATTRIBUTES);
-        spells[i] =
-            (Spell){kaos_u32(a),         kaos_u8(a + SPELL_ENTRY_LEVEL),          kaos_u8(a + SPELL_ENTRY_SKILL),
-                    w & SPELL_KIND_MASK, w >> SPELL_TYPE_SHIFT & SPELL_TYPE_MASK, w >> SPELL_DISABLED_TICKS_SHIFT};
+        spells[i] = (Spell){kaos_u32(a),
+                            kaos_u8(a + SPELL_ENTRY_LEVEL),
+                            kaos_u8(a + SPELL_ENTRY_SKILL),
+                            spell_attributes_kind(w),
+                            spell_attributes_type(w),
+                            spell_attributes_disabled_ticks(w)};
     }
     for (uint32_t s = 0; s < SYMBOL_STEP_COUNT; s++)
         for (uint32_t n = 0; n < SYMBOL_COUNT; n++)

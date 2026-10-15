@@ -31,6 +31,20 @@ typedef struct {
     uint16_t attributes; /* bits 0-3 kind, 4-9 type, 10-15 action disabled ticks */
 } SpellRecord;
 
+/* The fields of the attributes word of a spell entry. */
+static inline uint16_t spell_attributes_kind(uint16_t attributes)
+{
+    return attributes & SPELL_KIND_MASK;
+}
+static inline uint16_t spell_attributes_type(uint16_t attributes)
+{
+    return attributes >> SPELL_TYPE_SHIFT & SPELL_TYPE_MASK;
+}
+static inline uint16_t spell_attributes_disabled_ticks(uint16_t attributes)
+{
+    return attributes >> SPELL_DISABLED_TICKS_SHIFT;
+}
+
 int16_t spell_count(void);
 SpellRecord spell_get(int16_t index);
 uint16_t spell_kind(const SpellRecord *spell);

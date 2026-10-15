@@ -32,15 +32,3 @@ numbered event79_count_footprints open: module cleanup
 numbered event73_count_thieves_eye open: module cleanup
 numbered event71_count_invisibility open: module cleanup
 numbered H_BYTE_12A open: module cleanup
-packed engine/recruit.c open: module cleanup
-packed ui/view.c open: module cleanup
-packed platform/control.c open: module cleanup
-packed data/ftl.c open: module cleanup
-packed data/csbtext.c open: module cleanup
-packed data/tables.c open: module cleanup
-packed platform/main.c open: module cleanup
-packed engine/group.c open: module cleanup
-packed engine/game.c open: module cleanup
-packed engine/projectile.c open: module cleanup
-packed data/graphics.c open: module cleanup
-packed engine/random.c open: module cleanup

@@ -11,6 +11,20 @@
 #define ARGB_RED_SHIFT    16 /* bit position of the red byte in a video_argb color */
 #define ARGB_GREEN_SHIFT  8
 
+/* The channels of a video_argb color. */
+static inline uint8_t video_argb_red(uint32_t argb)
+{
+    return (uint8_t)(argb >> ARGB_RED_SHIFT);
+}
+static inline uint8_t video_argb_green(uint32_t argb)
+{
+    return (uint8_t)(argb >> ARGB_GREEN_SHIFT);
+}
+static inline uint8_t video_argb_blue(uint32_t argb)
+{
+    return (uint8_t)argb;
+}
+
 extern uint8_t fb[SCREEN_H][SCREEN_W];
 /* Palette split of the copper list: rows palette_split_top to palette_split_bottom - 1 use the
    top palette (palette[0..15], the dungeon view), the other rows the bottom palette (palette[16..31],

@@ -916,7 +916,7 @@ void champion_delete_scent(uint16_t scent_index)
 /* Scents away from the party fade; a faded first scent is removed. */
 static void fade_scents(void)
 {
-    uint16_t here = move_get_scent(g_party_map_x, g_party_map_y, g_party_map_index);
+    uint16_t here = position_pack(g_party_map_index, g_party_map_x, g_party_map_y);
     for (int16_t i = 0; i < g_party.scent_count - 1;) {
         if (g_party.scents[i] != here) {
             g_party.scent_strengths[i] = max16(SCENT_STRENGTH_MINIMUM, g_party.scent_strengths[i] - 1);

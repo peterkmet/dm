@@ -4,6 +4,7 @@
 #define RANDOM_MULTIPLIER           0xBB40E62Du
 #define RANDOM_INCREMENT            11
 #define NANOSECONDS_PER_MICROSECOND 1000
+#define RANDOM_VALUE_SHIFT          8 /* a value is bits 8-23 of the seed */
 
 uint32_t g_random_seed;
 
@@ -19,7 +20,7 @@ void random_init(void)
 static uint16_t next(void)
 {
     g_random_seed = g_random_seed * RANDOM_MULTIPLIER + RANDOM_INCREMENT;
-    return (uint16_t)(g_random_seed >> 8);
+    return (uint16_t)(g_random_seed >> RANDOM_VALUE_SHIFT);
 }
 
 uint16_t random16(void)

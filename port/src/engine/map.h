@@ -366,6 +366,17 @@ extern uint8_t **g_current_map_data;
 extern uint8_t *g_current_map;              /* map descriptor, 16 bytes */
 extern uint16_t g_current_map_door_info[2]; /* high byte attributes, low byte defense */
 
+/* Door attributes (high byte of the door info of the current map): the door is see-through, projectiles pass. */
+enum { DOOR_ATTRIBUTES_SHIFT = 8, DOOR_SEE_THROUGH = 1, DOOR_PROJECTILES_PASS = 2 };
+static inline uint16_t door_attributes(uint16_t door)
+{
+    return g_current_map_door_info[door_type(door)] >> DOOR_ATTRIBUTES_SHIFT;
+}
+static inline bool door_is_see_through(uint16_t door)
+{
+    return door_attributes(door) & DOOR_SEE_THROUGH;
+}
+
 /* Map descriptor byte 12: difficulty in bits 4-7. */
 enum { MAP_DIFFICULTY_SHIFT = 4 };
 /* Difficulty of the current map, 0 when no map is loaded. */

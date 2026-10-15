@@ -62,6 +62,18 @@ enum {
     KEY_LEFT = 0x4f00,
     KEY_F1 = 0x5000,
 };
+enum { KEY_RAW_SHIFT = 8 };
+
+/* The key word of a raw key and an ASCII code. */
+static inline uint16_t command_key(uint16_t raw, uint16_t ascii)
+{
+    return (uint16_t)(raw << KEY_RAW_SHIFT | ascii);
+}
+/* The key word of F1-F4: the key of the champion with this index. */
+static inline uint16_t command_champion_key(int16_t champion_index)
+{
+    return (uint16_t)(KEY_F1 + (champion_index << KEY_RAW_SHIFT));
+}
 
 /* Result of the entrance (g_new_game): ENTRANCE_WAITING until a button is pressed. */
 enum { ENTRANCE_RESUME = 0, ENTRANCE_NEW_GAME = 1, ENTRANCE_WAITING = 99 };

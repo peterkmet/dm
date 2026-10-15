@@ -1,6 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
-/* Prefixes: game_ min16 max16 bounded_ scale_ update_ timeline_ adjust_ */
+/* Prefixes: game_ min16 max16 bounded_ scale_ update_ timeline_ adjust_ position_ */
 #include <stdbool.h>
 #include <stdint.h>
 #include "tables.h"
@@ -89,10 +89,25 @@ enum { MAGIC_MAP_DAIN, MAGIC_MAP_ROS, MAGIC_MAP_KU, MAGIC_MAP_NETA, MAGIC_MAP_PO
 /* A position word (kept map position, party scents): x in bits 11-15, y in bits 6-10, the map in bits 0-5. */
 enum { POSITION_X_SHIFT = 11, POSITION_Y_SHIFT = 6, POSITION_XY_MASK = 0x1f, POSITION_MAP_MASK = 0x3f };
 
+/* A position word. x can be negative (unsigned shift). */
+static inline uint16_t position_pack(int16_t map, int16_t x, int16_t y)
+{
+    return (uint16_t)((uint16_t)x << POSITION_X_SHIFT | (y & POSITION_XY_MASK) << POSITION_Y_SHIFT |
+                      (map & POSITION_MAP_MASK));
+}
+static inline int16_t position_x(uint16_t word)
+{
+    return word >> POSITION_X_SHIFT;
+}
+static inline int16_t position_y(uint16_t word)
+{
+    return word >> POSITION_Y_SHIFT & POSITION_XY_MASK;
+}
+
 /* Stores the kept map position of NETA in the magic map bytes. */
 static inline void game_set_magic_map_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)
 {
-    uint16_t word = x << POSITION_X_SHIFT | (y & POSITION_XY_MASK) << POSITION_Y_SHIFT | (map & POSITION_MAP_MASK);
+    uint16_t word = position_pack(map, x, y);
     spells[MAGIC_MAP_POSITION] = (uint8_t)(word >> 8);
     spells[MAGIC_MAP_POSITION + 1] = (uint8_t)word;
 }
@@ -102,8 +117,8 @@ static inline void game_get_magic_map_position(const uint8_t *spells, int16_t *m
 {
     uint16_t word = spells[MAGIC_MAP_POSITION] << 8 | spells[MAGIC_MAP_POSITION + 1];
     *map = word & POSITION_MAP_MASK;
-    *x = word >> POSITION_X_SHIFT;
-    *y = word >> POSITION_Y_SHIFT & POSITION_XY_MASK;
+    *x = position_x(word);
+    *y = position_y(word);
 }
 
 typedef struct {
