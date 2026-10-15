@@ -44,7 +44,6 @@ static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
 
 #define SLOT_BOX_COUNT          46 /* 8 hands on the screen, 30 inventory and 8 chest slots */
 #define SLOT_BOX_SCREEN_COUNT   8
-#define ICON_SHEET_COUNT        7
 #define ICONS_PER_ROW           16
 #define LEADER_HAND_NAME_LENGTH 14
 #define PADDED_TEXT_SIZE        80

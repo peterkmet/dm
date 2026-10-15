@@ -38,6 +38,13 @@
 #define GFX_ACTION_NAMES                699
 #define GFX_FONT                        695 /* 6 rows of 128 bytes, one byte per character */
 #define GFX_STRINGS                     700
+#define GFX_DIALOG                      0
+#define GFX_CREDITS                     5
+#define GFX_THE_END                     6
+#define GFX_CHAMPION_FRAME              346
+#define GFX_LAYOUT                      696
+#define GFX_APP_ICON                    616 /* the front view of the mummy */
+#define ICON_SHEET_COUNT                7   /* object icon graphics GFX_OBJECT_ICONS_BEFORE_FIRST + 1 to + 7 */
 
 /* Interface zones on the screen. */
 #define ZONE_SCREEN_TOP                  401 /* status boxes row, above the viewport */
@@ -68,6 +75,25 @@
 #define ZONE_SPELL_CASTER_NAME_FIRST     228 /* + 5 * caster */
 #define ZONE_SPELL_SYMBOL_FIRST          255 /* + symbol 0-5 */
 #define ZONE_SPELL_CHAMPION_SYMBOL_FIRST 261 /* + symbol 0-3 */
+#define ZONE_DIALOG_ON_SCREEN            5   /* the viewport bitmap on the inactive game screen */
+#define ZONE_VERSION                     450
+#define ZONE_PATCH_ONE_CHOICE            451 /* hides the dividers of the 3-choice dialog graphic */
+#define ZONE_PATCH_TWO_CHOICES           452
+#define ZONE_PATCH_FOUR_CHOICES          453
+#define ZONE_CHOICE_SINGLE               462
+#define ZONE_CHOICE_TOP                  463
+#define ZONE_CHOICE_FOUR_FIRST           464 /* 464-467: four choices */
+#define ZONE_CHOICE_BOTTOM_LEFT          466
+#define ZONE_CHOICE_BOTTOM_RIGHT         467
+#define ZONE_MESSAGE_ONE_CHOICE          469
+#define ZONE_MESSAGE                     471
+#define ZONE_THE_END                     5
+#define ZONE_RESTART_BUTTON              437
+#define ZONE_QUIT_BUTTON                 438
+#define ZONE_CHAMPION_FRAME_FIRST        412 /* + champion */
+#define ZONE_CHAMPION_PORTRAIT_FIRST     416
+#define ZONE_THROW_LEFT                  745 /* + 1 right: the upper view where a thrown object flies */
+#define ZONE_THROW_DOOR_LEFT             748 /* + 1 right: the same with a door in front */
 
 /* Inventory zones in the viewport. */
 #define ZONE_PANEL                101
@@ -406,36 +432,10 @@
 #define ZONE_DOOR_LEFT_HALF            3 /* + door zone of the state: the halves of a sliding door */
 #define ZONE_DOOR_RIGHT_HALF           6
 
-/* Dialog, game end and thrown-object view ids. */
-#define GFX_DIALOG                   0
-#define ZONE_DIALOG_ON_SCREEN        5 /* the viewport bitmap on the inactive game screen */
-#define ZONE_VERSION                 450
-#define ZONE_PATCH_ONE_CHOICE        451 /* hides the dividers of the 3-choice dialog graphic */
-#define ZONE_PATCH_TWO_CHOICES       452
-#define ZONE_PATCH_FOUR_CHOICES      453
-#define LAYOUT_PATCH_ONE_CHOICE      54 /* layout bitmap -54: the part of the graphic to copy */
-#define LAYOUT_PATCH_TWO_CHOICES     55
-#define LAYOUT_PATCH_FOUR_CHOICES    56
-#define ZONE_CHOICE_SINGLE           462
-#define ZONE_CHOICE_TOP              463
-#define ZONE_CHOICE_FOUR_FIRST       464 /* 464-467: four choices */
-#define ZONE_CHOICE_BOTTOM_LEFT      466
-#define ZONE_CHOICE_BOTTOM_RIGHT     467
-#define ZONE_MESSAGE_ONE_CHOICE      469
-#define ZONE_MESSAGE                 471
-#define GFX_CREDITS                  5
-#define GFX_THE_END                  6
-#define GFX_CHAMPION_FRAME           346
-#define ZONE_THE_END                 5
-#define ZONE_RESTART_BUTTON          437
-#define ZONE_QUIT_BUTTON             438
-#define ZONE_CHAMPION_FRAME_FIRST    412 /* + champion */
-#define ZONE_CHAMPION_PORTRAIT_FIRST 416
-#define ZONE_THROW_LEFT              745 /* + 1 right: the upper view where a thrown object flies */
-#define ZONE_THROW_DOOR_LEFT         748 /* + 1 right: the same with a door in front */
-#define GFX_LAYOUT                   696
-
 /* Layout bitmap ids outside g_wall_set_layout_ids: parts of the D3L stairs and of the D1C wall. */
+#define LAYOUT_PATCH_ONE_CHOICE       54 /* layout bitmap -54: the part of the graphic to copy */
+#define LAYOUT_PATCH_TWO_CHOICES      55
+#define LAYOUT_PATCH_FOUR_CHOICES     56
 #define LAYOUT_STAIRS_UP_FRONT_D3L2   -33
 #define LAYOUT_STAIRS_UP_FRONT_D3R2   -34
 #define LAYOUT_STAIRS_DOWN_FRONT_D3L2 -35

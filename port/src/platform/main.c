@@ -10,6 +10,7 @@
 #include "dungeon.h"
 #include "ftl.h"
 #include "game.h"
+#include "ids.h"
 #include "graphics.h"
 #include "layout.h"
 #include "map.h"
@@ -26,7 +27,6 @@
 
 #define WINDOW_SCALE           3
 #define GRAY_STEP              0x111              /* one step of the gray ramp: equal red, green, and blue */
-#define ICON_GRAPHIC           616                /* the front view of the mummy */
 #define ICON_TRANSPARENT_COLOR 4                  /* the see-through color of the creature graphics */
 #define LOGO_FILE              "SWSH.FTL"         /* the FTL logo, before the DM title */
 #define TITLE_FILE             "TITL.DAT"         /* the DM title animation, before the entrance */
@@ -382,7 +382,7 @@ static void set_icon(void)
         RGB_BLACK, RGB_DARK_GRAY, RGB_GRAY,  RGB_BROWN,  RGB_CYAN,         RGB_LIGHT_BROWN, RGB_DARK_GREEN, RGB_GREEN,
         RGB_RED,   RGB_GOLD,      RGB_FLESH, RGB_YELLOW, RGB_DARKEST_GRAY, RGB_LIGHT_GRAY,  RGB_BLUE,       RGB_WHITE,
     };
-    const Bitmap *bm = gfx_bitmap(ICON_GRAPHIC);
+    const Bitmap *bm = gfx_bitmap(GFX_APP_ICON);
     if (bm)
         plat_set_icon(bm->px, bm->w, bm->h, ICON_TRANSPARENT_COLOR, colors);
 }
