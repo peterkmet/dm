@@ -11,7 +11,6 @@ from dmtools.ftl import load_image, parse
 from test_port import BUILD, ROOT, sdl3_installed
 
 GAME = ROOT / "game"
-SCRATCH = Path("/private/tmp/claude-501/-Users-lego-github-dm/a035dd1c-2cf2-40ec-9360-f301ae6b451f/scratchpad")
 GET_ZONE, SHRINK, LAYOUT_ZONES = 0x116296, 0x10E898, 0x102990
 
 pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not installed")
@@ -179,9 +178,6 @@ def test_render_view(game, tmp_path, name):
     assert lib.view_render(m, x, y, d)
     assert screen(lib)[0] == first
     assert len(set(first)) > 4
-    for out in (tmp_path, SCRATCH):
-        if out.exists():
-            png(out / f"view_{name}.png", rgb)
 
 
 MASKED_FILL, BLIT_BITMAP = 0x116A4E, 0x11739C
@@ -298,5 +294,3 @@ def test_render_things(game, name):
     assert len(set(first)) > 4
     if explosion:
         assert first != plain
-    if SCRATCH.exists():
-        png(SCRATCH / f"view7b_{name}.png", rgb)
