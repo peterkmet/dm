@@ -597,7 +597,7 @@ static int run_frame(void)
 
 int main(int argc, char **argv)
 {
-    long frames = -1, graphic = -1;
+    int64_t frames = -1, graphic = -1;
     const char *filter = NULL;
     int view = 0, adventure = -1, mode_arg = -1;
     auto_enter = SDL_getenv("DM_AUTO_ENTER") != NULL;
@@ -606,13 +606,13 @@ int main(int argc, char **argv)
             view = 1;
     for (int i = 1; i < argc - 1; i++) {
         if (!strcmp(argv[i], "--frames"))
-            frames = atol(argv[i + 1]);
+            frames = atoll(argv[i + 1]);
         if (!strcmp(argv[i], "--data"))
             data_override = argv[i + 1];
         if (!strcmp(argv[i], "--saves"))
             saves = argv[i + 1];
         if (!strcmp(argv[i], "--show"))
-            graphic = atol(argv[i + 1]);
+            graphic = atoll(argv[i + 1]);
         if (!strcmp(argv[i], "--filter"))
             filter = argv[i + 1];
         if (!strcmp(argv[i], "--control"))
@@ -659,7 +659,7 @@ int main(int argc, char **argv)
     if (mode == MODE_SELECT && select_screen() == SCREEN_CSB && (auto_enter || g_game_mode == GAME_MODE_TURNBASED))
         select_key(SELECT_KEY_ENTER);
 
-    for (long frame = 0; frames < 0 || frame < frames; frame++) {
+    for (int64_t frame = 0; frames < 0 || frame < frames; frame++) {
         int result = run_frame();
         if (result == RUN_FAILED)
             return 1;

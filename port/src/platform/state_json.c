@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +27,7 @@
 #define MAP_MAX_SIZE    63   /* the widest map row (a map is at most 32 squares wide) */
 #define MAP_GRID_PREFIX 3    /* "yy " in front of a grid row */
 #define JSON_START_SIZE 1024 /* the first buffer of a JSON text */
-#define LONG_TEXT_SIZE  24   /* a long in decimal digits with its sign */
+#define INT64_TEXT_SIZE 24   /* an int64_t in decimal digits with its sign */
 
 static const char *const direction_names[4] = {"north", "east", "south", "west"};
 static const char *const statistic_names[STAT_COUNT] = {"luck",     "strength",  "dexterity", "wisdom",
@@ -102,11 +103,11 @@ void json_bool(Json *j, int value)
     json_raw(j, value ? "true" : "false");
 }
 
-void json_int(Json *j, long value)
+void json_int(Json *j, int64_t value)
 {
-    char buf[LONG_TEXT_SIZE];
+    char buf[INT64_TEXT_SIZE];
     separate(j);
-    snprintf(buf, sizeof buf, "%ld", value);
+    snprintf(buf, sizeof buf, "%" PRId64, value);
     json_raw(j, buf);
 }
 
@@ -138,7 +139,7 @@ void json_key(Json *j, const char *key)
     put(j, ":", 1);
 }
 
-static void key_int(Json *j, const char *key, long value)
+static void key_int(Json *j, const char *key, int64_t value)
 {
     json_key(j, key);
     json_int(j, value);
@@ -155,15 +156,15 @@ static void key_bool(Json *j, const char *key, int value)
 }
 
 /* A weight in tenths of a kilogram as a decimal number, as the load line shows it. */
-static void tenths(Json *j, long value)
+static void tenths(Json *j, int64_t value)
 {
-    char buf[LONG_TEXT_SIZE];
+    char buf[INT64_TEXT_SIZE];
     separate(j);
-    snprintf(buf, sizeof buf, "%ld.%ld", value / WEIGHT_TENTHS, value % WEIGHT_TENTHS);
+    snprintf(buf, sizeof buf, "%" PRId64 ".%" PRId64, value / WEIGHT_TENTHS, value % WEIGHT_TENTHS);
     json_raw(j, buf);
 }
 
-static void pair(Json *j, const char *key, long a, long b)
+static void pair(Json *j, const char *key, int64_t a, int64_t b)
 {
     json_key(j, key);
     json_open(j, '[');
@@ -442,7 +443,7 @@ static void inventory_json(Json *j)
 void state_json_state(Json *j)
 {
     json_open(j, '{');
-    key_int(j, "time", (long)g_game_time);
+    key_int(j, "time", g_game_time);
     key_str(j, "adventure", g_adventure == ADVENTURE_CSB ? "csb" : "dm");
     json_key(j, "party");
     json_open(j, '{');

@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -57,7 +58,7 @@ static size_t input_length;
 static struct {
     int pending, wait_only;
     uint32_t start_time;
-    long frames, min_ticks, max_ticks;
+    int64_t frames, min_ticks, max_ticks;
     int has_damage;
     int16_t damage;
     int moving; /* the action was a step forward and to the right */
@@ -238,13 +239,13 @@ static int get_string(const char *line, const char *key, char *out, size_t size)
     return 1;
 }
 
-static long get_int(const char *line, const char *key, long missing)
+static int64_t get_int(const char *line, const char *key, int64_t missing)
 {
     const char *p = find_value(line, key);
     char *end;
     if (!p)
         return missing;
-    long value = strtol(p, &end, DECIMAL_BASE);
+    int64_t value = strtoll(p, &end, DECIMAL_BASE);
     return end == p ? missing : value;
 }
 
@@ -254,8 +255,8 @@ typedef const char *(*ActionFn)(const char *request);
 
 static int champion_arg(const char *request, int16_t *champion)
 {
-    long c = get_int(request, "champion", -1);
-    if (c < 0 || c >= (long)g_party_champion_count || !g_champions[c].current_health)
+    int64_t c = get_int(request, "champion", -1);
+    if (c < 0 || c >= g_party_champion_count || !g_champions[c].current_health)
         return 0;
     *champion = c;
     return 1;
@@ -358,7 +359,7 @@ static const char *click_wall_ahead(const char *r)
 
 static const char *take_object(const char *r)
 {
-    long cell = get_int(r, "cell", -1);
+    int64_t cell = get_int(r, "cell", -1);
     if (g_inventory_champion_ordinal)
         return "close the inventory first (close_inventory)";
     if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE)
@@ -373,7 +374,7 @@ static const char *take_object(const char *r)
 
 static const char *drop_object(const char *r)
 {
-    long cell = get_int(r, "cell", 0);
+    int64_t cell = get_int(r, "cell", 0);
     Box b;
     if (g_inventory_champion_ordinal)
         return "close the inventory first (close_inventory)";
@@ -414,7 +415,7 @@ static const char *close_inventory(const char *r)
 static const char *click_slot(const char *r)
 {
     int16_t c;
-    long slot = get_int(r, "slot", -1);
+    int64_t slot = get_int(r, "slot", -1);
     if (!champion_arg(r, &c))
         return "no living champion with this index";
     if (g_leader_index == -1)
@@ -453,7 +454,7 @@ static void press_eye(int16_t x, int16_t y)
 static const char *look(const char *r)
 {
     int16_t x, y;
-    long slot = get_int(r, "slot", -1);
+    int64_t slot = get_int(r, "slot", -1);
     char request[SLOT_REQUEST_SIZE];
     if (!g_inventory_champion_ordinal)
         return "open an inventory first (open_inventory): the eye is in the inventory";
@@ -467,7 +468,7 @@ static const char *look(const char *r)
     }
     if (!g_leader_empty_handed)
         return "the leader hand must be empty to look at a slot";
-    snprintf(request, sizeof request, "\"champion\":%ld,\"slot\":%ld",
+    snprintf(request, sizeof request, "\"champion\":%" PRId64 ",\"slot\":%" PRId64,
              get_int(r, "champion", g_inventory_champion_ordinal - 1), slot);
     const char *error = click_slot(request);
     if (error)
@@ -482,9 +483,9 @@ static const char *look(const char *r)
 /* Clicks the icon of champion a, then the icon of champion b: the two champions swap cells. */
 static const char *swap_champions(const char *r)
 {
-    long pair[2] = {get_int(r, "a", -1), get_int(r, "b", -1)};
+    int64_t pair[2] = {get_int(r, "a", -1), get_int(r, "b", -1)};
     for (int k = 0; k < 2; k++)
-        if (pair[k] < 0 || pair[k] >= (long)g_party_champion_count || !g_champions[pair[k]].current_health)
+        if (pair[k] < 0 || pair[k] >= g_party_champion_count || !g_champions[pair[k]].current_health)
             return "a and b must be living champions";
     if (pair[0] == pair[1])
         return "a and b must be different champions";
@@ -509,7 +510,7 @@ static const char *use_mouth(const char *r)
 static const char *choose_action(const char *r)
 {
     int16_t c;
-    long index = get_int(r, "index", -1);
+    int64_t index = get_int(r, "index", -1);
     if (!champion_arg(r, &c))
         return "no living champion with this index";
     if (g_acting_champion_ordinal && g_acting_champion_ordinal != c + 1)
@@ -519,7 +520,7 @@ static const char *choose_action(const char *r)
         if (g_acting_champion_ordinal != c + 1)
             return "this champion cannot act now (action disabled, or no actions)";
     }
-    if (index < 0 || index >= (long)g_action_count)
+    if (index < 0 || index >= g_action_count)
         return "index out of range of the action menu (see state action_menu)";
     turn.has_damage = 1;
     g_action_damage = 0;
@@ -562,7 +563,7 @@ static const char *spell_click(int16_t command)
 
 static const char *add_rune(const char *r)
 {
-    long symbol = get_int(r, "symbol", -1);
+    int64_t symbol = get_int(r, "symbol", -1);
     if (symbol < 0 || symbol >= SYMBOL_COUNT)
         return "symbol must be 0-5";
     if (g_magic_caster_champion_index == -1)
@@ -906,7 +907,7 @@ static void send_turn_result(void)
     json_key(&j, "ok");
     json_bool(&j, 1);
     json_key(&j, "ticks");
-    json_int(&j, (long)(g_game_time - (batch.active ? batch.start_time : turn.start_time)));
+    json_int(&j, g_game_time - (batch.active ? batch.start_time : turn.start_time));
     if (turn.wait_only) {
         json_key(&j, "stopped");
         json_str(&j, turn.stop ? turn.stop : "done");
@@ -964,7 +965,7 @@ static void send_part(const char *key, void (*part)(Json *))
     send_line(&j);
 }
 
-static void start_turn(long min_ticks, long max_ticks, int wait_only)
+static void start_turn(int64_t min_ticks, int64_t max_ticks, int wait_only)
 {
     turn.pending = 1;
     turn.wait_only = wait_only;
@@ -1217,7 +1218,7 @@ static void handle_save(void)
 /* Starts a turn of the given ticks without an action; it ends early on news. */
 static void handle_wait(const char *request)
 {
-    long ticks = get_int(request, "ticks", 1);
+    int64_t ticks = get_int(request, "ticks", 1);
     if (ticks < 1 || ticks > WAIT_MAX_TICKS)
         send_error("ticks must be 1-5000");
     else {
@@ -1292,7 +1293,7 @@ static void handle_request(const char *request)
    ends early on news. A game that does not tick ends the turn after a frame limit. */
 static int turn_finished(void)
 {
-    long ticks = (long)(g_game_time - turn.start_time);
+    int64_t ticks = g_game_time - turn.start_time;
     if (turn.wait_only && (turn.stop = news()))
         return 1;
     if (game_over())

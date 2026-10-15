@@ -18,7 +18,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
 2. Do not index raw record bytes outside one accessor module. Put field access in small functions or macros with names, for example `rec_sensor_type(t)`, `rec_sensor_disable(t)`, `door_state(t)`, `group_count(t)`. One module (`map.c` and `map.h`) owns the record layout.
 3. Write C, not decompiler output.
    - No names like `uVar1`, `iVar3`, `local_10`, `arg_8`.
-   - Game values keep the 16-bit types of the original (`int16_t`, `uint16_t`). One value has one type on its whole path: field, parameter, local variable, and return value. Then no cast is needed to pass it on. Use `int` only for values that are not game values, for example sizes, file offsets, and loop counters over C arrays.
+   - Game values keep the 16-bit types of the original (`int16_t`, `uint16_t`). One value has one type on its whole path: field, parameter, local variable, and return value. Then no cast is needed to pass it on. Use `int` only for values that are not game values, for example sizes, file offsets, and loop counters over C arrays. Do not use `long`: it has 32 bits on Windows and 64 bits on macOS. A value wider than `int` uses a fixed-width type (`int64_t`, `uint32_t`) with the `<inttypes.h>` formats.
    - A cast is allowed only where it changes the result (16-bit wrap, sign, truncation). Add a short comment when the reason is not obvious.
    - No casts that only repeat the 68000 operand size.
    - Predicates (`is_*`, `has_*`, `can_*`), also `static` ones, return `bool` from `<stdbool.h>`. Flags in game records keep their stored type.

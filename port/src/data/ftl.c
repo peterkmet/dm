@@ -58,7 +58,7 @@ uint8_t *read_file(const char *path, size_t *len)
 {
     FILE *f = fopen(path, "rb");
     uint8_t *buf = NULL;
-    long n;
+    int64_t n;
     if (!f)
         return NULL;
     if (!fseek(f, 0, SEEK_END) && (n = ftell(f)) >= 0 && !fseek(f, 0, SEEK_SET) && (buf = malloc(n ? n : 1)) &&

@@ -18,7 +18,7 @@ typedef struct {
 /* Writer: a value or key gets its comma before it when it is not the first in its object or array. */
 void json_raw(Json *j, const char *text);
 void json_key(Json *j, const char *key);
-void json_int(Json *j, long value);
+void json_int(Json *j, int64_t value);
 void json_bool(Json *j, int value);
 void json_null(Json *j);
 void json_str(Json *j, const char *text);

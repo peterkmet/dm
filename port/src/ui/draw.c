@@ -121,8 +121,8 @@ void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bi
     for (int y = 0; y < box->h; y++)
         for (int x = 0; x < box->w; x++) {
             int dx = box->x + x, dy = box->y + y;
-            long i = (long)(sy + y) * temp_w + sx + x;
-            if (dx < 0 || dx >= dst->w || dy < 0 || dy >= dst->h || i < 0 || i >= (long)temp_w * box->h)
+            int64_t i = (int64_t)(sy + y) * temp_w + sx + x;
+            if (dx < 0 || dx >= dst->w || dy < 0 || dy >= dst->h || i < 0 || i >= (int64_t)temp_w * box->h)
                 continue;
             if (transparent == -1 || temp[i] != (transparent & COLOR_INDEX_MASK))
                 dst->px[dy * dst->w + dx] = temp[i];
