@@ -1,25 +1,17 @@
 #include <stdbool.h>
 #include <string.h>
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "graphics.h"
 #include "map.h"
 #include "sound.h"
+#include "tables.h"
 #include "timeline_process.h"
 
-#define G_SOUNDS             0x100d52 /* 12-byte entries: graphic, rate, priority */
-#define G_SOUND_VOLUME_TABLE 0x100696 /* uint8_t[25][25] */
-
-#define SOUND_ENTRY_SIZE        12
-#define SOUND_ENTRY_RATE        3 /* byte offsets in a sound entry */
-#define SOUND_ENTRY_PRIORITY    4
-#define SOUND_PERIOD_PER_RATE   72800 /* Paula period = this / sound rate */
-#define SOUND_HEARING_RANGE     12    /* squares to each side and ahead or behind */
-#define SOUND_VOLUME_TABLE_SIDE (2 * SOUND_HEARING_RANGE + 1)
-#define LOUDNESS_MEDIUM_SUM     15   /* left + right volume of a medium sound */
-#define LOUDNESS_LOUD_SUM       26   /* left + right volume of a loud sound */
-#define NO_SOUND                (-1) /* empty pending slot */
+#define SOUND_PERIOD_PER_RATE 72800 /* Paula period = this / sound rate */
+#define LOUDNESS_MEDIUM_SUM   15    /* left + right volume of a medium sound */
+#define LOUDNESS_LOUD_SUM     26    /* left + right volume of a loud sound */
+#define NO_SOUND              (-1)  /* empty pending slot */
 
 enum { SIDE_LEFT, SIDE_RIGHT, SIDE_COUNT };
 enum { PAIR_A, PAIR_B, PAIR_COUNT };
@@ -48,24 +40,9 @@ static struct {
 int16_t g_pending_sounds[SOUND_PENDING_SLOTS] = {NO_SOUND, NO_SOUND};
 uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][SIDE_COUNT];
 
-/* Graphic of a sound; negative when the sound has no sample. */
-static int16_t sound_graphic(int16_t sound)
-{
-    return kaos_s16(G_SOUNDS + SOUND_ENTRY_SIZE * sound);
-}
-static uint8_t sound_rate(int16_t sound)
-{
-    return kaos_u8(G_SOUNDS + SOUND_ENTRY_SIZE * sound + SOUND_ENTRY_RATE);
-}
-/* Priority of a sound: a higher value replaces a pending sound of the same loudness. */
-static uint8_t sound_priority(int16_t sound)
-{
-    return kaos_u8(G_SOUNDS + SOUND_ENTRY_SIZE * sound + SOUND_ENTRY_PRIORITY);
-}
-
 static bool sound_exists(int16_t sound)
 {
-    return sound >= 0 && sound < SOUND_COUNT && sound_graphic(sound) >= 0;
+    return sound >= 0 && sound < SOUND_COUNT && tables_sound_graphic(sound) >= 0;
 }
 
 /* Sample data of a sound, its length in bytes and its Paula period. */
@@ -74,8 +51,8 @@ const int8_t *sound_sample(int16_t sound, uint16_t *length, uint16_t *period)
     uint16_t size;
     if (!sound_exists(sound))
         return NULL;
-    const uint8_t *p = gfx_item(sound_graphic(sound), &size);
-    uint8_t rate = sound_rate(sound);
+    const uint8_t *p = gfx_item(tables_sound_graphic(sound), &size);
+    uint8_t rate = tables_sound_rate(sound);
     if (!p || size < SOUND_SAMPLE_HEADER || !rate)
         return NULL;
     *length = size - SOUND_SAMPLE_HEADER;
@@ -123,9 +100,8 @@ int16_t sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
     if (side < -SOUND_HEARING_RANGE || side > SOUND_HEARING_RANGE || ahead < -SOUND_HEARING_RANGE ||
         ahead > SOUND_HEARING_RANGE)
         return 0;
-    uint32_t row = G_SOUND_VOLUME_TABLE + (ahead + SOUND_HEARING_RANGE) * SOUND_VOLUME_TABLE_SIDE;
-    volumes[SIDE_RIGHT] = kaos_u8(row + SOUND_HEARING_RANGE + side);
-    volumes[SIDE_LEFT] = kaos_u8(row + SOUND_HEARING_RANGE - side);
+    volumes[SIDE_RIGHT] = tables_sound_volume(ahead, side);
+    volumes[SIDE_LEFT] = tables_sound_volume(ahead, -side);
     return 1;
 }
 
@@ -181,12 +157,12 @@ static void queue_pending(int16_t sound, const uint8_t *v)
         }
     if (sound_compare_loudness(v, g_pending_sound_volumes[0]) != 1 &&
         sound_compare_loudness(v, g_pending_sound_volumes[1]) != 1) {
-        uint8_t priority = sound_priority(sound);
+        uint8_t priority = tables_sound_priority(sound);
         if (sound_compare_loudness(v, g_pending_sound_volumes[0]) == 0 &&
-            sound_priority(g_pending_sounds[0]) < priority)
+            tables_sound_priority(g_pending_sounds[0]) < priority)
             set_pending(0, sound, v);
         else if (sound_compare_loudness(v, g_pending_sound_volumes[1]) == 0 &&
-                 sound_priority(g_pending_sounds[1]) < priority)
+                 tables_sound_priority(g_pending_sounds[1]) < priority)
             set_pending(1, sound, v);
         return;
     }
@@ -202,7 +178,7 @@ void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mo
         return;
     if (mode > SOUND_MODE_AFTER_TICK) {
         TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + (mode - 1)), EVENT_PLAY_SOUND,
-                           sound_priority(sound), EVENT_SQUARE(map_x, map_y), sound};
+                           tables_sound_priority(sound), EVENT_SQUARE(map_x, map_y), sound};
         timeline_add_event(&e);
         return;
     }

@@ -5,6 +5,7 @@
 #include "bytes.h"
 #include "csbimage.h"
 #include "ftl.h"
+#include "kaos_addresses.h"
 
 #define FTL_MAX_SIZE (4u << 20)
 

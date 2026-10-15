@@ -1,7 +1,6 @@
 #include "group.h"
 #include "champion.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "ids.h"
 #include "inventory.h"
 #include "move.h"
@@ -9,14 +8,10 @@
 #include "random.h"
 #include "sensor.h"
 #include "sound.h"
+#include "tables.h"
 #include "timeline_process.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-/* KAOS data addresses. */
-#define KAOS_ORDERED_CELLS_TO_ATTACK         0x100b66 /* uint8_t[8][4] */
-#define KAOS_WOUND_PROBABILITY_INDEX_TO_MASK 0x100b86 /* uint8_t[5] */
-#define KAOS_SLOTS_TO_STEAL_FROM             0x100b8a /* uint8_t[8] */
 
 enum { ASPECT_KEEP_FLAGS = ASPECT_ATTACKING | ASPECT_FLIPPED };
 
@@ -672,7 +667,7 @@ static void group_steal_from_champion(uint16_t group, uint16_t champion_index)
     int16_t stole = 0, chance = STEAL_CHANCE_START - champion_get_dexterity(champion);
     uint16_t slot_index = random16();
     while (chance > 0 && !game_is_lucky(champion, chance)) {
-        uint16_t slot = kaos_u8(KAOS_SLOTS_TO_STEAL_FROM + (slot_index & 7));
+        uint16_t slot = tables_slot_to_steal_from(slot_index & 7);
         if (champion->slots[slot] != THING_NONE) {
             stole = 1;
             uint16_t thing = inventory_get_object_removed_from_slot(champion_index, slot);
@@ -1131,9 +1126,9 @@ void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x,
     int16_t direction = group_get_directions_to_destination(target_x, target_y, group_x, group_y);
     if (!(direction & 1))
         group_cell++;
-    uint32_t row = KAOS_ORDERED_CELLS_TO_ATTACK + (uint32_t)((((group_cell >> 1) & 1) + direction * 2) * 4);
+    int16_t row = ((group_cell >> 1) & 1) + direction * 2;
     for (int16_t i = 0; i < 4; i++)
-        ordered_cells[i] = kaos_u8(row + i);
+        ordered_cells[i] = tables_ordered_cell_to_attack(row, i);
 }
 
 /* The champion that a creature on an adjacent square attacks, or -1. */
@@ -1162,7 +1157,7 @@ static uint16_t creature_hit_wounds(const CreatureInfo *info)
         index++;
         probabilities >>= WOUND_PROBABILITY_BITS;
     }
-    return kaos_u8(KAOS_WOUND_PROBABILITY_INDEX_TO_MASK + index);
+    return tables_wound_probability_mask(index);
 }
 
 /* A creature hits a champion: dodge by dexterity and luck, damage from attack, map difficulty, and parry skill,

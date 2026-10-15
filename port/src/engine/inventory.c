@@ -1,17 +1,14 @@
 #include "inventory.h"
 #include "champion.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "ids.h"
 #include "magic.h"
 #include "random.h"
 #include "sound.h"
+#include "tables.h"
 #include "timeline_process.h"
 #include <stdbool.h>
-
-/* KAOS data addresses. */
-#define TORCH_CHARGE_TO_ICON_OFFSET 0x100ba0 /* g_torch_charge_to_icon_offset[16] */
 
 #define WATERSKIN_WATER            800
 #define POTION_WATER_WATER         1600
@@ -95,7 +92,7 @@ int16_t object_get_icon_index(uint16_t thing)
     case ICON_COMPASS_NORTH:
         return type + g_party_direction;
     case ICON_TORCH_UNLIT:
-        return weapon_is_lit(thing) ? type + kaos_u8(TORCH_CHARGE_TO_ICON_OFFSET + weapon_charges(thing)) : type;
+        return weapon_is_lit(thing) ? type + tables_torch_icon_offset(weapon_charges(thing)) : type;
     case ICON_WATERSKIN_EMPTY:
     case ICON_JEWEL_SYMAL:
     case ICON_ILLUMULET:

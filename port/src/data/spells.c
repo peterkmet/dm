@@ -4,6 +4,7 @@
 #include "bytes.h"
 #include "csbimage.h"
 #include "ftl.h"
+#include "kaos_addresses.h"
 
 #define SPELL_FIRST_SYMBOL_SHIFT 24  /* the first symbol is in bits 24-31 of the symbols */
 #define LSR_COUNT_MODULO         64  /* the 68000 LSR takes the shift count modulo 64 */
@@ -14,7 +15,7 @@
 /* The spell table of the engine: the CSB table with its 4 magic map spells lies after the KAOS data. */
 static uint32_t spells_address(void)
 {
-    return g_adventure == ADVENTURE_CSB ? CSB_SPELLS : G_SPELLS;
+    return g_adventure == ADVENTURE_CSB ? CSB_SPELLS : KAOS_SPELLS;
 }
 int16_t spell_count(void)
 {
@@ -77,9 +78,10 @@ uint8_t spell_symbol(uint16_t step, int16_t symbol_index)
 /* Mana cost of a symbol; after the power symbol, the cost is scaled by the power. */
 uint16_t spell_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t power_symbol)
 {
-    uint16_t cost = kaos_u8(G_SYMBOL_BASE_MANA_COST + step * SPELL_SYMBOLS_PER_STEP + symbol_index);
+    uint16_t cost = kaos_u8(KAOS_SYMBOL_BASE_MANA_COST + step * SPELL_SYMBOLS_PER_STEP + symbol_index);
     if (step != 0)
-        cost = cost * kaos_u8(G_SYMBOL_MANA_COST_MULTIPLIER + power_index(power_symbol)) >> SPELL_MANA_MULTIPLIER_SHIFT;
+        cost =
+            cost * kaos_u8(KAOS_SYMBOL_MANA_COST_MULTIPLIER + power_index(power_symbol)) >> SPELL_MANA_MULTIPLIER_SHIFT;
     return cost;
 }
 

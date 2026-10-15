@@ -3,15 +3,13 @@
 #include "bytes.h"
 #include "csbimage.h"
 #include "csbtext.h"
+#include "kaos_addresses.h"
 #include "spells.h"
 #include "tables.h"
 
 /* KAOS and APPB addresses of the tables that need a conversion. Sources: docs/csb-engine-diff.md "Data tables". */
-#define KAOS_ACTION_SETS         0x103d4c /* 44 records of 8 bytes: 3 actions, pad, 2 minimum levels, flags, pad */
 #define APPB_ACTION_SETS         0x1047ac /* 44 records of 6 bytes, no pad bytes */
-#define KAOS_DIALOG_MOUSE_INPUTS 0x103bd4 /* 8 pointers to the dialog mouse tables */
 #define APPB_DIALOG_MOUSE_INPUTS 0x104650
-#define KAOS_DIALOG_TABLES       0x103a84 /* the 8 dialog mouse tables, equal bytes in both engines */
 #define APPB_DIALOG_TABLES       0x104500
 #define DIALOG_TABLES_SIZE       336
 #define DIALOG_TABLE_COUNT       8

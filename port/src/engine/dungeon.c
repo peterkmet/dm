@@ -2,6 +2,7 @@
 #include "adventure.h"
 #include "ftl.h"
 #include "map.h"
+#include "tables.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,12 +17,6 @@ int16_t g_party_map_x, g_party_map_y, g_party_direction, g_party_map_index;
 
 const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_RECORD_BYTES, 4, 4, 4, 4, 8, 4, 0,
                                                            0, 0, 8, 4};
-/* KAOS tables, read at run time: kaos_load() must run first. */
-#define NEW_GAME_EXTRA_THINGS 0x101058 /* free records per thing type for a new game */
-#define MESSAGE_ESCAPES       0x1016ea /* 8-byte strings */
-#define REPLACEMENT_CHARS     0x1017ea /* 2-byte strings */
-#define INSCRIPTION_ESCAPES   0x10182a /* 8-byte strings */
-
 #define MAX_DUNGEON_SIZE            (1024 * 1024)
 #define DUNGEON_COMPRESSED_MAGIC    0x8104
 #define COMPRESSED_HEADER_BYTES     8  /* magic, unpacked size, dungeon id */
@@ -208,7 +203,7 @@ static int16_t read_things(int new_game, uint16_t *sum)
         if (count < 0 || count > cap)
             return 0;
         if (new_game) {
-            int16_t extra = kaos_u8(NEW_GAME_EXTRA_THINGS + t);
+            int16_t extra = tables_new_game_extra_things(t);
             total = count + extra > cap ? cap : count + extra;
         }
         set_thing_count(t, total);
@@ -477,8 +472,6 @@ enum { TEXT_CODE_BITS = 5, TEXT_CODE_MASK = 0x1f, TEXT_CODES_PER_WORD = 3 };
 enum { CODE_SPACE = 26, CODE_PERIOD, CODE_SEPARATOR, CODE_ESCAPE_REPLACEMENT, CODE_ESCAPE_STRING, CODE_END };
 #define INSCRIPTION_SEPARATOR ((char)0x80) /* the wall text font ends a line here */
 #define INSCRIPTION_END       ((char)0x81)
-#define ESCAPE_STRING_BYTES   8
-#define REPLACEMENT_BYTES     2
 
 typedef struct {
     char *p, *end;
@@ -503,9 +496,8 @@ static void put_string(TextOut *o, const char *s)
 static const char *escape_string(uint16_t escape, uint16_t code, int16_t mode)
 {
     if (escape == CODE_ESCAPE_REPLACEMENT)
-        return (const char *)kaos_ptr(REPLACEMENT_CHARS + code * REPLACEMENT_BYTES);
-    return (const char *)kaos_ptr((mode == MODE_INSCRIPTION ? INSCRIPTION_ESCAPES : MESSAGE_ESCAPES) +
-                                  code * ESCAPE_STRING_BYTES);
+        return tables_escape_replacement(code);
+    return mode == MODE_INSCRIPTION ? tables_inscription_escape(code) : tables_message_escape(code);
 }
 
 /* Decodes the 5-bit codes from word offset w, three per word, until the end code. */

@@ -4,8 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define KAOS_BASE 0x100000
-
 typedef struct {
     uint8_t *data; /* malloc'd memory image, loaded at base */
     uint32_t size, base, data_base, code_base;

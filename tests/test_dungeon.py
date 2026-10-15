@@ -41,6 +41,7 @@ def need(lib, *names):
     if missing:
         pytest.skip(f"missing game/{missing[0]}")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_init() == 0
 
 
 def load(lib, path):

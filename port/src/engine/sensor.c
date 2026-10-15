@@ -2,17 +2,14 @@
 #include "adventure.h"
 #include "champion.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "ids.h"
 #include "inventory.h"
 #include "map.h"
 #include "message.h"
 #include "sound.h"
+#include "tables.h"
 #include "timeline_process.h"
-
-/* KAOS table: the event type that a sensor sends to each square type. */
-#define KAOS_SQUARE_TYPE_TO_EVENT_TYPE 0x100d4a
 
 #define SENSOR_EXPERIENCE_SKILL   8 /* steal */
 #define SENSOR_EXPERIENCE         300
@@ -111,7 +108,7 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
     int16_t target_x = rec_sensor_target_x(sensor), target_y = rec_sensor_target_y(sensor);
     int16_t target_type = SQUARE_TYPE(g_current_map_data[target_x][target_y]);
     int16_t target_cell = target_type == SQUARE_WALL ? rec_sensor_target_cell(sensor) : 0;
-    sensor_add_event(kaos_u8(KAOS_SQUARE_TYPE_TO_EVENT_TYPE + target_type), target_x, target_y, target_cell, effect,
+    sensor_add_event(tables_square_type_event(target_type), target_x, target_y, target_cell, effect,
                      g_game_time + rec_sensor_delay(sensor));
 }
 

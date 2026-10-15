@@ -2,17 +2,14 @@
 # Targets are paths relative to port/src/, constant names, or function names.
 address 0x102bc3 open: module cleanup
 address 0x104650 open: module cleanup
-address 0x10169c open: module cleanup
 address 0x102e24 open: module cleanup
 address 0x1036f0 open: module cleanup
 address 0x100a46 open: module cleanup
 address 0x102bb4 open: module cleanup
 address 0x102e32 open: module cleanup
 address 0x100dcc open: module cleanup
-address 0x1017ea open: module cleanup
 address 0x102db8 open: module cleanup
 address 0x102e04 open: module cleanup
-address 0x103fb4 open: module cleanup
 address 0x102472 open: module cleanup
 address 0x101ebe open: module cleanup
 address 0x101eca open: module cleanup
@@ -23,16 +20,12 @@ address 0x102efa open: module cleanup
 address 0x102956 open: module cleanup
 address 0x102ac6 open: module cleanup
 address 0x10398c open: module cleanup
-address 0x1014a0 open: module cleanup
-address 0x103c66 open: module cleanup
 address 0x102aae open: module cleanup
 address 0x102c38 open: module cleanup
 address 0x10511e open: module cleanup
 address 0x10402c open: module cleanup
-address 0x103c84 open: module cleanup
 address 0x101ec8 open: module cleanup
 address 0x100b92 open: module cleanup
-address 0x103f88 open: module cleanup
 address 0x102c48 open: module cleanup
 address 0x102a96 open: module cleanup
 address 0x103354 open: module cleanup
@@ -40,28 +33,20 @@ address 0x1003d4 open: module cleanup
 address 0x10297c open: module cleanup
 address 0x1031f8 open: module cleanup
 address 0x100bb0 open: module cleanup
-address 0x1015b4 open: module cleanup
 address 0x1032e8 open: module cleanup
 address 0x102988 open: module cleanup
 address 0x102df4 open: module cleanup
-address 0x10192e open: module cleanup
-address 0x101c10 open: module cleanup
 address 0x100a66 open: module cleanup
 address 0x102c00 open: module cleanup
 address 0x102952 open: module cleanup
 address 0x10318c open: module cleanup
 address 0x1035dc open: module cleanup
-address 0x100ba0 open: module cleanup
-address 0x10182a open: module cleanup
-address 0x10295a open: module cleanup
 address 0x102e14 open: module cleanup
 address 0x1002b0 open: module cleanup
-address 0x101058 open: module cleanup
 address 0x102a22 open: module cleanup
 address 0x103ffa open: module cleanup
 address 0x104d08 open: module cleanup
 address 0x102d56 open: module cleanup
-address 0x100696 open: module cleanup
 address 0x102fd0 open: module cleanup
 address 0x102fb0 open: module cleanup
 address 0x100106 open: module cleanup
@@ -72,13 +57,10 @@ address 0x100a56 open: module cleanup
 address 0x1048b4 open: module cleanup
 address 0x102ba6 open: module cleanup
 address 0x102978 open: module cleanup
-address 0x103c7e open: module cleanup
 address 0x1016e2 open: module cleanup
 address 0x100a54 open: module cleanup
-address 0x100d52 open: module cleanup
 address 0x103654 open: module cleanup
 address 0x1047ac open: module cleanup
-address 0x103f5c open: module cleanup
 address 0x100aa6 open: module cleanup
 address 0x103540 open: module cleanup
 address 0x102fe8 open: module cleanup
@@ -86,13 +68,9 @@ address 0x100190 open: module cleanup
 address 0x102e58 open: module cleanup
 address 0x102af6 open: module cleanup
 address 0x102c18 open: module cleanup
-address 0x103f04 open: module cleanup
-address 0x103d4c open: module cleanup
-address 0x103f30 open: module cleanup
 address 0x102c0a open: module cleanup
 address 0x100ce0 open: module cleanup
 address 0x101e74 open: module cleanup
-address 0x1016ea open: module cleanup
 address 0x10393c open: module cleanup
 address 0x1025f2 open: module cleanup
 address 0x104026 open: module cleanup
@@ -105,9 +83,7 @@ address 0x102a7e open: module cleanup
 address 0x10351c open: module cleanup
 address 0x101038 open: module cleanup
 address 0x101040 open: module cleanup
-address 0x100c68 open: module cleanup
 address 0x100cd4 open: module cleanup
-address 0x101bec open: module cleanup
 address 0x10375c open: module cleanup
 address 0x103980 open: module cleanup
 address 0x102bc0 open: module cleanup
@@ -118,22 +94,15 @@ address 0x10247a open: module cleanup
 address 0x102b0e open: module cleanup
 address 0x101ec6 open: module cleanup
 address 0x102980 open: module cleanup
-address 0x100ce4 open: module cleanup
 address 0x100a5a open: module cleanup
-address 0x103ed8 open: module cleanup
-address 0x1016d2 open: module cleanup
 address 0x102bc4 open: module cleanup
 address 0x102e38 open: module cleanup
 address 0x103564 open: module cleanup
-address 0x101068 open: module cleanup
-address 0x100000 open: module cleanup
 address 0x104500 open: module cleanup
-address 0x100d0e open: module cleanup
 address 0x1035a0 open: module cleanup
 address 0x10296e open: module cleanup
 address 0x1004f8 open: module cleanup
 address 0x101e92 open: module cleanup
-address 0x103eac open: module cleanup
 address 0x1005c8 open: module cleanup
 address 0x103948 open: module cleanup
 address 0x1046c2 open: module cleanup
@@ -146,7 +115,6 @@ address 0x102b26 open: module cleanup
 address 0x10009a open: module cleanup
 address 0x102c57 open: module cleanup
 address 0x102958 open: module cleanup
-address 0x100cb4 open: module cleanup
 decimal data/csbimage.c byte sizes in the table of APPB addresses
 decimal ui/musicmap.c the FM-Towns CSB track of each square: table data of the CHTWE.EXP soundtrack table, not in the game files
 decimal ui/music.c the FM-Towns level tracks and the Super NES trigger squares: table data of the soundtracks, not in the game files
@@ -165,29 +133,18 @@ hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
 kaos engine/champion.h open: module cleanup
 kaos ui/logo.c open: module cleanup
-kaos engine/inventory.c open: module cleanup
 kaos ui/view.c open: module cleanup
-kaos engine/map.c open: module cleanup
-kaos engine/move.c open: module cleanup
-kaos engine/sound.c open: module cleanup
 kaos ui/view.h open: module cleanup
 kaos ui/command.c open: module cleanup
 kaos platform/control.c open: module cleanup
 kaos platform/main.c open: module cleanup
 kaos ui/ui.c open: module cleanup
-kaos engine/recruit.c open: module cleanup
-kaos engine/timeline_process.c open: module cleanup
 kaos ui/gameloop.c open: module cleanup
 kaos ui/startend.c open: module cleanup
-kaos engine/game.c open: module cleanup
 kaos ui/ui_menus.c open: module cleanup
-kaos engine/sensor.c open: module cleanup
-kaos engine/champion.c open: module cleanup
 kaos ui/dialog.c open: module cleanup
 kaos ui/layout.h open: module cleanup
 kaos ui/ui.h open: module cleanup
-kaos engine/group.c open: module cleanup
-kaos engine/dungeon.c open: module cleanup
 kaos ui/ui_champion.c open: module cleanup
 long engine/action.c:action_is_action_performed one short case for each action of the action table
 long engine/group.c:group_get_damage_creature_outcome open: module cleanup
@@ -202,12 +159,9 @@ long ui/view.c:things open: module cleanup
 long ui/view.c:map_square open: module cleanup
 notation DAMAGE_SIZE_SMALL a KAOS address in hex, not a size: Task 10 names it KAOS_*
 notation VIEWPORT_SIZE a KAOS address in hex, not a size: Task 11 names it KAOS_*
-notation G_PORTRAIT_HEIGHT a KAOS address in hex, not a size: Task 8 names it KAOS_*
-notation G_PORTRAIT_WIDTH a KAOS address in hex, not a size: Task 8 names it KAOS_*
 notation CHAMPION_ICON_SIZE a KAOS address in hex, not a size: Task 10 names it KAOS_*
 notation GLYPH_SIZE a KAOS address in hex, not a size: Task 9 names it KAOS_*
 notation DAMAGE_SIZE_LARGE a KAOS address in hex, not a size: Task 10 names it KAOS_*
-notation ACTION_DISABLED_TICKS a KAOS address in hex, not a size: Task 8 names it KAOS_*
 notation PORTRAIT_SIZE a KAOS address in hex, not a size: Task 10 names it KAOS_*
 numbered HEADER_BYTE_12A open: module cleanup
 numbered event79_count_footprints open: module cleanup

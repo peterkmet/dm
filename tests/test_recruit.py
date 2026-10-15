@@ -51,6 +51,7 @@ def need(lib):
         if not (GAME / n).exists():
             pytest.skip(f"missing game/{n}")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_init() == 0
     assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
 
 

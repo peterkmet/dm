@@ -16,6 +16,7 @@
 #include "map.h"
 #include "music.h"
 #include "platform.h"
+#include "tables.h"
 #include "view.h"
 #include "command.h"
 #include "gameloop.h"
@@ -38,7 +39,7 @@ static int load_kaos_and_graphics(const char *dir)
 {
     char path[PATH_SIZE];
     snprintf(path, sizeof path, "%s/%s", dir, adventure_engine_name());
-    if (kaos_load(path))
+    if (tables_load(path))
         return SDL_Log("cannot load %s", path), 0;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     if (gfx_open(path) < 0)

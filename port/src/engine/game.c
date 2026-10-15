@@ -2,17 +2,14 @@
 #include "adventure.h"
 #include "champion.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "map.h"
 #include "random.h"
 #include "sensor.h"
+#include "tables.h"
 #include "timeline_process.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define DIRECTION_TO_STEP_EAST  0x101038
-#define DIRECTION_TO_STEP_NORTH 0x101040
 
 #define SYSTEM_ERROR_TIMELINE_FULL 45
 #define SYSTEM_ERROR_MEMORY        70     /* allocation failed, or an event is missing from the timeline */
@@ -106,10 +103,8 @@ void update_map_coordinates_after_relative_movement(int16_t direction, int16_t s
                                                     int16_t *map_x, int16_t *map_y)
 {
     int16_t right = NORMALIZE(direction + 1);
-    *map_x = *map_x + steps_forward * kaos_s16(DIRECTION_TO_STEP_EAST + direction * 2) +
-             steps_right * kaos_s16(DIRECTION_TO_STEP_EAST + right * 2);
-    *map_y = *map_y + steps_forward * kaos_s16(DIRECTION_TO_STEP_NORTH + direction * 2) +
-             steps_right * kaos_s16(DIRECTION_TO_STEP_NORTH + right * 2);
+    *map_x = *map_x + steps_forward * tables_step_east(direction) + steps_right * tables_step_east(right);
+    *map_y = *map_y + steps_forward * tables_step_north(direction) + steps_right * tables_step_north(right);
 }
 
 /* New game only. A free slot keeps the next free index in map_time. */

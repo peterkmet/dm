@@ -1,7 +1,6 @@
 #include "move.h"
 #include "champion.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "group.h"
 #include "inventory.h"
@@ -9,11 +8,8 @@
 #include "projectile.h"
 #include "sensor.h"
 #include "sound.h"
+#include "tables.h"
 #include "timeline_process.h"
-
-/* KAOS tables: forward and right steps of each movement arrow. */
-#define KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD 0x103c56
-#define KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT   0x103c5e
 
 #define SCENT_STRENGTH_MAXIMUM 80
 #define SCENT_KEEP_LARGER      0x8000 /* flag: keep the larger strength instead of adding */
@@ -359,9 +355,8 @@ void move_party(int16_t command)
         move_take_stairs(square & STAIRS_UP);
         return;
     }
-    update_map_coordinates_after_relative_movement(g_party_direction,
-                                                   kaos_s16(KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD + arrow * 2),
-                                                   kaos_s16(KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT + arrow * 2), &x, &y);
+    update_map_coordinates_after_relative_movement(g_party_direction, tables_arrow_steps_forward(arrow),
+                                                   tables_arrow_steps_right(arrow), &x, &y);
     square = get_square(x, y);
     if (SQUARE_TYPE(square) == SQUARE_STAIRS) {
         move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);

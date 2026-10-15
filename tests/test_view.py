@@ -146,6 +146,7 @@ def game(lib):
     if not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")):
         pytest.skip("game files missing")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_init() == 0
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.layout_init() == 0
     assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode())

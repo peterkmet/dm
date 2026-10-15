@@ -75,27 +75,27 @@ These tables have the same bytes in CSB. Only the address changes.
 
 | Port name | DM | CSB |
 |---|---|---|
-| `CREATURE_INFO` (27 × 26 bytes) | `0x10192e` | `0x101e32` |
-| `CREATURE_SOUNDS` | `0x101bec` | `0x1020f0` |
-| `OBJECT_INFO` | `0x101068` | `0x10156a` |
-| `WEAPON_INFO` | `0x1014a0` | `0x1019a2` |
-| `ARMOUR_INFO` | `0x1015b4` | `0x101ab6` |
-| `JUNK_WEIGHTS` | `0x10169c` | `0x101ba0` |
-| `FOOD_VALUES` | `0x1016d2` | `0x101bd6` |
+| `KAOS_CREATURE_INFO` (27 × 26 bytes) | `0x10192e` | `0x101e32` |
+| `KAOS_CREATURE_SOUNDS` | `0x101bec` | `0x1020f0` |
+| `KAOS_OBJECT_INFO` | `0x101068` | `0x10156a` |
+| `KAOS_WEAPON_INFO` | `0x1014a0` | `0x1019a2` |
+| `KAOS_ARMOUR_INFO` | `0x1015b4` | `0x101ab6` |
+| `KAOS_JUNK_WEIGHTS` | `0x10169c` | `0x101ba0` |
+| `KAOS_FOOD_VALUES` | `0x1016d2` | `0x101bd6` |
 | `DOOR_INFO` | `0x1016e2` | `0x101be6` |
-| `FIXED_POSSESSIONS` | `0x101c10` | `0x102114` |
-| `NEW_GAME_EXTRA_THINGS` | `0x101058` | `0x10155a` |
-| `MESSAGE_ESCAPES`, `REPLACEMENT_CHARS`, `INSCRIPTION_ESCAPES` | `0x1016ea`, `0x1017ea`, `0x10182a` | `0x101bee`, `0x101cee`, `0x101d2e` |
+| `KAOS_FIXED_POSSESSIONS` | `0x101c10` | `0x102114` |
+| `KAOS_NEW_GAME_EXTRA_THINGS` | `0x101058` | `0x10155a` |
+| `KAOS_MESSAGE_ESCAPE_STRINGS`, `KAOS_ESCAPE_REPLACEMENT_CHARS`, `KAOS_INSCRIPTION_ESCAPE_STRINGS` | `0x1016ea`, `0x1017ea`, `0x10182a` | `0x101bee`, `0x101cee`, `0x101d2e` |
 | `SPELLS` (first 25 records) | `0x103c84` | `0x1046c2` |
 | `SYMBOL_BASE_MANA_COST`, `SYMBOL_MANA_COST_MULTIPLIER` | `0x103c66`, `0x103c7e` | `0x1046a4`, `0x1046bc` |
-| `ACTION_DISABLED_TICKS` … `ACTION_SKILL_INDEX` (6 tables) | `0x103eac` + 44·n | `0x1049e0` + 44·n |
-| `LIGHT_POWER_TO_LIGHT_AMOUNT`, `PALETTE_LIGHT_THRESHOLDS` | `0x100cb4`, `0x100cd4` | `0x10118a`, `0x1011aa` |
-| `SLOT_MASKS`, `WOUND_DEFENSE_FACTOR`, `CHAMPION_COLORS`, `SLOT_DROP_ORDER` | `0x100c68`, `0x100ce4`, `0x100ce0`, `0x100d0e` | `0x10113e`, `0x1011ba`, `0x1011b6`, `0x1011e4` |
-| `G_SOUNDS`, `G_SOUND_VOLUME_TABLE` | `0x100d52`, `0x100696` | `0x10122a`, `0x1009f2` |
+| `KAOS_ACTIONS_DISABLED` … `KAOS_ACTION_SKILL_INDEX` (6 tables) | `0x103eac` + 44·n | `0x1049e0` + 44·n |
+| `KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT`, `KAOS_PALETTE_LIGHT_THRESHOLDS` | `0x100cb4`, `0x100cd4` | `0x10118a`, `0x1011aa` |
+| `KAOS_SLOT_MASKS`, `KAOS_WOUND_DEFENSE_FACTOR`, `KAOS_CHAMPION_COLORS`, `KAOS_SLOT_DROP_ORDER` | `0x100c68`, `0x100ce4`, `0x100ce0`, `0x100d0e` | `0x10113e`, `0x1011ba`, `0x1011b6`, `0x1011e4` |
+| `KAOS_SOUNDS`, `KAOS_SOUND_VOLUMES` | `0x100d52`, `0x100696` | `0x10122a`, `0x1009f2` |
 | `KAOS_SQUARE_TYPE_TO_EVENT_TYPE` | `0x100d4a` | `0x101222` |
 | `KAOS_ORDERED_CELLS_TO_ATTACK`, `KAOS_WOUND_PROBABILITY_INDEX_TO_MASK`, `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b66`, `0x100b86`, `0x100b8a` | `0x10103a`, `0x10105a`, `0x10105e` |
-| `TORCH_CHARGE_TO_ICON_OFFSET`, `ICON_FIRST`, `SLOT_BOXES` | `0x100ba0`, `0x100b92`, `0x100bb0` | `0x101074`, `0x101066`, `0x101084` |
-| `DIRECTION_TO_STEP_EAST`, `DIRECTION_TO_STEP_NORTH`, `GROUP_DIRS` | `0x101038`, `0x101040`, `0x10192a` | `0x10153a`, `0x101542`, `0x101e2e` |
+| `KAOS_TORCH_CHARGE_TO_ICON_OFFSET`, `ICON_FIRST`, `SLOT_BOXES` | `0x100ba0`, `0x100b92`, `0x100bb0` | `0x101074`, `0x101066`, `0x101084` |
+| `KAOS_DIRECTION_TO_STEP_EAST`, `KAOS_DIRECTION_TO_STEP_NORTH`, `GROUP_DIRS` | `0x101038`, `0x101040`, `0x10192a` | `0x10153a`, `0x101542`, `0x101e2e` |
 | `KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD`, `..._RIGHT` | `0x103c56`, `0x103c5e` | `0x104694`, `0x10469c` |
 | `KEYS_INTERFACE`, `KEYS_MOVEMENT`, `KEYS_SLEEPING`, `KEYS_FROZEN` | `0x103948`, `0x103964`, `0x103980`, `0x10398c` | `0x1043c4`, `0x1043e0`, `0x1043fc`, `0x104408` |
 | `ARROW_POINTER`, `HAND_POINTER`, `POINTER_ZONES`, `POINTER_HOTSPOTS`, `POINTER_SHADOW_OBJECT` | `0x1002b0` … `0x1005fe` | `0x1005f0`, `0x100714`, `0x10084a`, `0x10091a`, `0x100984` |
@@ -117,13 +117,13 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 | `OBJECT_SCALES`, `PROJECTILE_SCALES`, `EXPLOSION_SCALES`, `PILE_SHIFTS` | `0x102e24`, `0x102e2a`, `0x102e32`, `0x102e38` | `0x1039b6`, `0x1039bb`, `0x1039c2`, `0x1039c7` | No pad bytes |
 | `REBIRTH_SCALES` (2 × 7) | `0x102fe8`, `0x102ff0` | `0x103b78`, `0x103b7f` | No pad byte |
 | `WALL_SET_IDS` (46 words) | `0x102a22`, one array | `0x10343c` (31 words) and `0x1034dc` (15 words) | Split into two arrays, equal values |
-| `ACTION_SETS` (44 records) | `0x103d4c`, 8 bytes each | `0x1047ac`, 6 bytes each | CSB has no pad bytes: 3 actions, 2 minimum skill levels, 1 flag byte. The index code is `uVar3 * 6 + A5 - 0x972` (C`menus_set_action_list` caller) |
+| `KAOS_ACTION_SETS` (44 records) | `0x103d4c`, 8 bytes each | `0x1047ac`, 6 bytes each | CSB has no pad bytes: 3 actions, 2 minimum skill levels, 1 flag byte. The index code is `uVar3 * 6 + A5 - 0x972` (C`menus_set_action_list` caller) |
 
 ### Tables with different values
 
 | Table | DM | CSB | Difference |
 |---|---|---|---|
-| `ACTION_EXPERIENCE_GAIN` | `0x103fb4` | `0x104ae8` (read at C`0x126704`) | BLOW HORN (4): 1 → 0. HEAL (36): 5 → 0. CALM (37): 1 → 0. BRANDISH (41): 3 → 0. |
+| `KAOS_ACTION_EXPERIENCE_GAIN` | `0x103fb4` | `0x104ae8` (read at C`0x126704`) | BLOW HORN (4): 1 → 0. HEAL (36): 5 → 0. CALM (37): 1 → 0. BRANDISH (41): 3 → 0. |
 | `SPELLS` | 25 records | 29 records at C`0x1046c2` | 4 new spells of kind 4, see [Magic map](#magic-map) |
 | `ENTRANCE_PALETTE` | `0x100a66` | `0x100f38` | Color 5: `0x0c0` → `0x422` |
 | `CREDITS_PALETTE` | `0x100a46` | `0x100f18` | All colors differ (CSB credits picture) |
@@ -175,7 +175,7 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 | Endgame mouse input (RESTART only) | `0x1031d4` | `0x103c60` | `endgame` C`0x1284c2` |
 | Other mouse input tables | `0x1031f8` … `0x10378c` | `0x103c78` … `0x10420c` | CSV names |
 | `KEYS_ENTRANCE` (1 entry), `KEYS_INTERFACE`, `KEYS_MOVEMENT` | `0x10393c`, `0x103948`, `0x103964` | `0x1043bc`, `0x1043c4`, `0x1043e0` | `process_entrance`, `start_game` |
-| `ACTION_EXPERIENCE_GAIN`, `VERSION_TEXT`, `MESSAGE_COLORS` | `0x103fb4`, `0x10402c`, `0x104026` | `0x104ae8`, `0x104c24`, `0x104c20` | `menus_is_action_performed`, `dialog_draw` |
+| `KAOS_ACTION_EXPERIENCE_GAIN`, `VERSION_TEXT`, `MESSAGE_COLORS` | `0x103fb4`, `0x10402c`, `0x104026` | `0x104ae8`, `0x104c24`, `0x104c20` | `menus_is_action_performed`, `dialog_draw` |
 
 Not in the CSB image:
 

@@ -82,12 +82,12 @@ int gameloop_load_data(const char *dir)
     char path[PATH_SIZE];
     snprintf(data_dir, sizeof data_dir, "%s", dir);
     snprintf(path, sizeof path, "%s/%s", dir, adventure_engine_name());
-    if (kaos_load(path))
+    if (tables_load(path))
         return 0;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     startend_set_save_dir(dir);
     g_endgame_sensor_hook = endgame_sensor;
-    return gfx_open(path) >= 0 && !layout_init() && !text_init() && !tables_init() && !ui_init();
+    return gfx_open(path) >= 0 && !layout_init() && !text_init() && !ui_init();
 }
 
 const char *gameloop_data_dir(void)

@@ -1,19 +1,13 @@
 #include "map.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
+#include "tables.h"
 #ifndef _WIN32
 #include <execinfo.h> /* the backtrace of the square list guard; Windows has none */
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/* KAOS tables. */
-#define KAOS_DOOR_INFO           0x1016e2
-#define KAOS_CREATURE_INFO       0x10192e
-#define CREATURE_INFO_SIZE       26
-#define CREATURE_INFO_ATTRIBUTES 2
 
 #define FATAL_SQUARE_FIRST_THINGS_FULL 72
 #define NO_DUNGEON_MAP                 0xff
@@ -41,7 +35,7 @@ void set_current_map(int16_t map)
     g_current_map_width = dungeon_map_width(map);
     g_current_map_height = dungeon_map_height(map);
     for (int16_t door = 0; door < 2; door++)
-        g_current_map_door_info[door] = kaos_u16(KAOS_DOOR_INFO + map_door_set(map, door) * 2);
+        g_current_map_door_info[door] = tables_door_attributes(map_door_set(map, door));
     column_first_thing_index = g_dungeon_column_first_thing_index + g_dungeon_map_first_column[map] * 2;
 }
 
@@ -259,8 +253,7 @@ uint16_t get_square_group(int16_t x, int16_t y)
 
 uint16_t get_creature_attributes(uint16_t group_thing)
 {
-    return kaos_u16(KAOS_CREATURE_INFO + rec_group_creature_type(group_thing) * CREATURE_INFO_SIZE +
-                    CREATURE_INFO_ATTRIBUTES);
+    return tables_creature_info(rec_group_creature_type(group_thing))->attributes;
 }
 
 #define TYPE_MASK           0x7f

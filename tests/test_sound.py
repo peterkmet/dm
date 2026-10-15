@@ -39,6 +39,7 @@ def lib():
     lib.sound_request_play.argtypes = [ctypes.c_int16] * 3 + [ctypes.c_uint16]
     lib.sound_play_sample.argtypes = [ctypes.c_int16, u8p]
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_init() == 0
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     return lib
 

@@ -2,7 +2,6 @@
 #include "action.h"
 #include "champion.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "group.h"
 #include "ids.h"
 #include "inventory.h"
@@ -13,9 +12,6 @@
 #include "sensor.h"
 #include "sound.h"
 #include "tables.h"
-
-/* KAOS table: the light amount of each light power. */
-#define KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT 0x100cb4
 
 #define DOOR_CLOSE_DAMAGE       5
 #define COUNTER_MAXIMUM         511 /* the counter data has 9 bits */
@@ -342,8 +338,7 @@ void event_light(TimelineEvent *event)
     if (negative)
         power = -power;
     int16_t rest = power - 1;
-    int16_t delta =
-        kaos_s16(KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT + power * 2) - kaos_s16(KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT + rest * 2);
+    int16_t delta = *tables_light_power_to_light_amount(power) - *tables_light_power_to_light_amount(rest);
     if (negative) {
         delta = -delta;
         rest = -rest;

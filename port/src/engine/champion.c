@@ -2,7 +2,6 @@
 #include "action.h"
 #include "adventure.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "graphics.h"
 #include "ids.h"
@@ -16,9 +15,6 @@
 #include "tables.h"
 #include "timeline_process.h"
 #include <string.h>
-
-/* KAOS data addresses. */
-#define SLOT_DROP_ORDER 0x100d0e /* g_slot_drop_order[30] */
 
 #define MAXIMUM_HEALTH                    999
 #define MAXIMUM_STAMINA                   9999
@@ -187,7 +183,7 @@ void champion_unpack(const uint8_t *in, Champion *c)
 /* "<prefix><name><suffix>" in the champion color on a new message line. */
 static void print_champion_message(uint16_t champion_index, int16_t text)
 {
-    int16_t color = kaos_u8(CHAMPION_COLORS + champion_index);
+    int16_t color = tables_champion_color(champion_index);
     message_new_line(g_game_time);
     message_print(color, gfx_string(text), g_game_time);
     message_print(color, g_champions[champion_index].name, g_game_time);
@@ -776,7 +772,7 @@ void champion_drop_all_objects(uint16_t champion_index)
 {
     uint16_t cell = g_champions[champion_index].cell;
     for (uint16_t i = 0; i < SLOT_COUNT; i++) {
-        uint16_t thing = inventory_get_object_removed_from_slot(champion_index, kaos_u16(SLOT_DROP_ORDER + i * 2));
+        uint16_t thing = inventory_get_object_removed_from_slot(champion_index, tables_slot_drop_order(i));
         if (thing != THING_NONE)
             drop_on_party_square(thing, cell);
     }

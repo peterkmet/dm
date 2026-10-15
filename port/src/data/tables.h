@@ -175,4 +175,34 @@ const uint16_t *tables_slot_mask(int slot);
 const uint8_t *tables_wound_defense_factor(int slot);
 const uint16_t *tables_fixed_possession(int index);
 
+/* Loads the engine module at path (kaos_load), then decodes the tables. Returns 0, or -1 as kaos_load. */
+int tables_load(const char *path);
+
+/* Squares ahead and to each side that a sound reaches; the volume table covers -range..range. */
+#define SOUND_HEARING_RANGE 12
+
+/* Each accessor below reads the loaded image at call time; it needs kaos_load, not tables_init. */
+int16_t tables_step_east(int16_t direction);
+int16_t tables_step_north(int16_t direction);
+int16_t tables_arrow_steps_forward(int16_t arrow);
+int16_t tables_arrow_steps_right(int16_t arrow);
+uint8_t tables_ordered_cell_to_attack(int16_t row, int16_t i);
+uint8_t tables_wound_probability_mask(int16_t index);
+uint8_t tables_slot_to_steal_from(int16_t index);
+uint8_t tables_torch_icon_offset(int16_t charges);
+uint16_t tables_slot_drop_order(int16_t i);
+uint8_t tables_champion_color(int16_t champion_index);
+uint8_t tables_square_type_event(int16_t square_type);
+int16_t tables_sound_graphic(int16_t sound);
+uint8_t tables_sound_rate(int16_t sound);
+uint8_t tables_sound_priority(int16_t sound);
+uint8_t tables_sound_volume(int16_t ahead, int16_t side);
+uint8_t tables_new_game_extra_things(int16_t thing_type);
+uint16_t tables_door_attributes(int16_t door_set);
+const char *tables_message_escape(int16_t code);
+const char *tables_inscription_escape(int16_t code);
+const char *tables_escape_replacement(int16_t code);
+int16_t tables_portrait_width(void);
+int16_t tables_portrait_height(void);
+
 #endif

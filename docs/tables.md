@@ -10,7 +10,30 @@ All addresses are original KAOS addresses (see [KAOS module map](kaos-map.md)). 
 2. Call `tables_init()`. It returns 0, or -1 when no KAOS image is loaded.
 3. Call an accessor, for example `tables_creature_info(type)`.
 
-Each accessor returns a pointer to a constant record. It returns `NULL` for an index out of range and before `tables_init`.
+`tables_load(path)` does steps 1 and 2. It returns 0 on success, or the error of `kaos_load`.
+
+Each accessor of the table list returns a pointer to a constant record. It returns `NULL` for an index out of range and before `tables_init`. Load the module again (CSB or DM), then call `tables_init` again.
+
+The image accessors read the loaded image at call time. They need `kaos_load`, not `tables_init`. They do not check the index. All addresses are in `port/src/data/kaos_addresses.h`.
+
+| Image accessor | Address | Element | Index |
+|---|---|---|---|
+| `tables_step_east`, `tables_step_north` | `0x101038`, `0x101040` | int16 × 4 | Direction |
+| `tables_arrow_steps_forward`, `tables_arrow_steps_right` | `0x103c56`, `0x103c5e` | int16 × 4 | Movement arrow |
+| `tables_ordered_cell_to_attack` | `0x100b66` | uint8 × 8 × 4 | Row (attacker side + 2 × direction), cell order |
+| `tables_wound_probability_mask` | `0x100b86` | uint8 × 4 | Wound probability index |
+| `tables_slot_to_steal_from` | `0x100b8a` | uint8 × 8 | Random index |
+| `tables_torch_icon_offset` | `0x100ba0` | uint8 × 16 | Torch charges |
+| `tables_slot_drop_order` | `0x100d0e` | uint16 × 30 | Drop order |
+| `tables_champion_color` | `0x100ce0` | uint8 × 4 | Champion |
+| `tables_square_type_event` | `0x100d4a` | uint8 × 8 | Square type |
+| `tables_sound_graphic`, `tables_sound_rate`, `tables_sound_priority` | `0x100d52` (+0, +3, +4) | 12-byte record × 35 | Sound |
+| `tables_sound_volume` | `0x100696` | uint8 × 25 × 25 | Squares ahead, squares to the side (−12 to 12) |
+| `tables_new_game_extra_things` | `0x101058` | uint8 × 16 | Thing type |
+| `tables_door_attributes` | `0x1016e2` | uint16 × 4 (attributes << 8, defense) | Door set |
+| `tables_message_escape`, `tables_inscription_escape` | `0x1016ea`, `0x10182a` | char[8] × 32 | Escape code |
+| `tables_escape_replacement` | `0x1017ea` | char[2] × 32 | Escape code |
+| `tables_portrait_width`, `tables_portrait_height` | `0x102958`, `0x10295a` | int16 | — |
 
 ## Table list
 

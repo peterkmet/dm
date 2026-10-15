@@ -1,11 +1,8 @@
 #include "recruit.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "map.h"
+#include "tables.h"
 #include <string.h>
-
-#define G_PORTRAIT_WIDTH  0x102958
-#define G_PORTRAIT_HEIGHT 0x10295a
 
 /* Offsets in the values line of a champion text, counted from its leading '\n'. */
 #define VALUES_GENDER         1
@@ -112,7 +109,7 @@ int16_t recruit_portrait_index(uint16_t sensor_thing)
 /* Top-left of the portrait in the champion portraits graphic. */
 void recruit_portrait_origin(int16_t portrait_index, int16_t *x, int16_t *y)
 {
-    *x = (portrait_index & (PORTRAITS_PER_ROW - 1)) * kaos_s16(G_PORTRAIT_WIDTH);
+    *x = (portrait_index & (PORTRAITS_PER_ROW - 1)) * tables_portrait_width();
     *y = (uint16_t)portrait_index / PORTRAITS_PER_ROW *
-         kaos_s16(G_PORTRAIT_HEIGHT); /* unsigned division as in the original */
+         tables_portrait_height(); /* unsigned division as in the original */
 }
