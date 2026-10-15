@@ -980,7 +980,7 @@ static void start_turn(int64_t min_ticks, int64_t max_ticks, int wait_only)
 /* Gives the input of action name with the args in request; NULL, or the reason why it cannot. */
 static const char *run_action(const char *name, const char *request)
 {
-    for (size_t k = 0; k < sizeof actions / sizeof actions[0]; k++) {
+    for (int k = 0; k < ARRAY_COUNT(actions); k++) {
         if (strcmp(name, actions[k].name))
             continue;
         if (g_candidate_champion_ordinal && strcmp(name, "recruit"))

@@ -145,32 +145,39 @@ const CsbCopy csb_copies[] = {
     {CSB_SPELLS,                           CSB_APPB_SPELLS,        CSB_SPELL_COUNT * SPELL_BYTES},
     {CSB_RESTART_BOXES,                    CSB_APPB_RESTART_BOXES, 2 * CSB_BOX_BYTES            },
 };
-const int csb_copy_count = sizeof csb_copies / sizeof csb_copies[0];
+const int csb_copy_count = ARRAY_COUNT(csb_copies);
+
+/* The byte of an image at a memory address of the original. */
+static uint8_t *appb_at(const FtlImage *img, uint32_t addr)
+{
+    return img->data + (addr - img->base);
+}
 
 /* Copies the tables, converts the action sets, moves the dialog pointers to the KAOS tables, and builds the texts. */
 int csb_image_build(const FtlImage *appb, FtlImage *out)
 {
     uint32_t size = CSB_IMAGE_END - KAOS_BASE;
     uint8_t *mem = calloc(size, 1);
-    if (!mem || appb->base != KAOS_BASE || appb->data_base != CSB_APPB_DATA_BASE)
-        return free(mem), -1;
-    const uint8_t *src = appb->data - KAOS_BASE;
-    uint8_t *dst = mem - KAOS_BASE;
+    if (!mem || appb->base != KAOS_BASE || appb->data_base != CSB_APPB_DATA_BASE) {
+        free(mem);
+        return -1;
+    }
+    FtlImage built = {mem, size, KAOS_BASE, CSB_SPELLS, 0};
     for (int i = 0; i < csb_copy_count; i++)
-        memcpy(dst + csb_copies[i].kaos, src + csb_copies[i].appb, csb_copies[i].size);
+        memcpy(appb_at(&built, csb_copies[i].kaos), appb_at(appb, csb_copies[i].appb), csb_copies[i].size);
     for (int i = 0; i < ACTION_SET_COUNT; i++) {
-        const uint8_t *a = src + CSB_APPB_ACTION_SETS + i * APPB_ACTION_SET_BYTES;
-        uint8_t *k = dst + KAOS_ACTION_SETS + i * KAOS_ACTION_SET_BYTES;
+        const uint8_t *a = appb_at(appb, CSB_APPB_ACTION_SETS + i * APPB_ACTION_SET_BYTES);
+        uint8_t *k = appb_at(&built, KAOS_ACTION_SETS + i * KAOS_ACTION_SET_BYTES);
         memcpy(k, a, ACTION_SET_ACTIONS);
         memcpy(k + KAOS_ACTION_SET_LEVELS, a + APPB_ACTION_SET_LEVELS, ACTION_SET_LEVELS);
         k[KAOS_ACTION_SET_FLAGS] = a[APPB_ACTION_SET_FLAGS];
     }
     /* the dialog pointers move with their tables */
     for (int i = 0; i < DIALOG_TABLE_COUNT; i++) {
-        const uint8_t *p = src + CSB_APPB_DIALOG_MOUSE_INPUTS + 4 * i;
+        const uint8_t *p = appb_at(appb, CSB_APPB_DIALOG_MOUSE_INPUTS + 4 * i);
         uint32_t table = BE32(p);
-        WR32(dst + KAOS_DIALOG_MOUSE_INPUTS + 4 * i, table - CSB_APPB_DIALOG_TABLES + KAOS_DIALOG_TABLES);
+        WR32(appb_at(&built, KAOS_DIALOG_MOUSE_INPUTS + 4 * i), table - CSB_APPB_DIALOG_TABLES + KAOS_DIALOG_TABLES);
     }
-    *out = (FtlImage){mem, size, KAOS_BASE, CSB_SPELLS, 0};
+    *out = built;
     return csb_text_build(appb, out);
 }

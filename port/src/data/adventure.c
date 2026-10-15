@@ -3,6 +3,7 @@
 #include <string.h>
 #include "adventure.h"
 #include "adf.h"
+#include "bytes.h"
 #include "crc32.h"
 #include "ftl.h"
 
@@ -48,7 +49,7 @@ static const struct {
 
 int adventure_of(const char *name)
 {
-    for (int i = 0; i < (int)(sizeof names / sizeof names[0]); i++)
+    for (int i = 0; i < ARRAY_COUNT(names); i++)
         if (!strcmp(name, names[i]))
             return i;
     return -1;
@@ -102,14 +103,16 @@ const char *adventure_bad_file(int16_t adventure, const char *dir)
 int adventure_install_disk(const char *adf_path, const char **dir)
 {
     char path[PATH_SIZE];
-    for (int i = 0; i < (int)(sizeof game_disks / sizeof game_disks[0]); i++) {
+    for (int i = 0; i < ARRAY_COUNT(game_disks); i++) {
         if (!adf_has_file(adf_path, game_disks[i].file))
             continue;
         *dir = game_disks[i].dir;
         snprintf(path, sizeof path, "%s/%s", *dir, game_disks[i].file);
         FILE *f = fopen(path, "rb");
-        if (f)
-            return fclose(f), 0;
+        if (f) {
+            fclose(f);
+            return 0;
+        }
         return adf_extract(adf_path, *dir) ? -1 : 1;
     }
     return 0;

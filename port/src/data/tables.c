@@ -209,7 +209,7 @@ int tables_init(void)
     return 0;
 }
 
-#define GET(arr, i) (ready && (unsigned)(i) < sizeof(arr) / sizeof((arr)[0]) ? &(arr)[i] : NULL)
+#define GET(arr, i) (ready && (i) >= 0 && (i) < ARRAY_COUNT(arr) ? &(arr)[i] : NULL)
 
 const CreatureInfo *tables_creature_info(int i)
 {

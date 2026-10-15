@@ -1,5 +1,6 @@
 #include "timeline_process.h"
 #include "action.h"
+#include "bytes.h"
 #include "champion.h"
 #include "dungeon.h"
 #include "group.h"
@@ -387,7 +388,7 @@ void event_enable_champion_action(uint16_t champion_index)
         if (c->action_index == ACTION_SHOOT && c->slots[SLOT_HAND_READY] == THING_NONE) {
             static const uint16_t quiver_order[] = {SLOT_QUIVER_LINE1_1, SLOT_QUIVER_LINE2_1, SLOT_QUIVER_LINE1_2,
                                                     SLOT_QUIVER_LINE2_2};
-            for (size_t i = 0; i < sizeof quiver_order / sizeof quiver_order[0]; i++) {
+            for (int i = 0; i < ARRAY_COUNT(quiver_order); i++) {
                 if (action_is_ammunition_compatible_with_weapon(champion_index, SLOT_HAND_ACTION, quiver_order[i])) {
                     inventory_add_object_in_slot(
                         champion_index, inventory_get_object_removed_from_slot(champion_index, quiver_order[i]),

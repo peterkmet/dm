@@ -127,7 +127,7 @@ static uint8_t *load_named_file(const uint8_t *payload, uint16_t length, size_t 
     char name[PATH_SIZE];
     snprintf(name, sizeof name, "%.*s", (int)length, (const char *)payload);
     *size = 0;
-    if (loaded_count >= (int)(sizeof loaded / sizeof loaded[0]))
+    if (loaded_count >= ARRAY_COUNT(loaded))
         return NULL;
     uint8_t *data = read_file_any_case(name, size);
     if (data)

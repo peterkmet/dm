@@ -11,4 +11,7 @@
 #define WORD_BITS  16 /* bits of a 68000 word */
 #define BYTE_BITS  8
 
+/* Number of elements of an array, as an int. */
+#define ARRAY_COUNT(a) ((int)(sizeof(a) / sizeof((a)[0])))
+
 #endif

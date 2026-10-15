@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 #include "advanced.h"
 #include "anim.h"
+#include "bytes.h"
 #include "logo.h"
 #include "adventure.h"
 #include "control.h"
@@ -381,7 +382,7 @@ static const char *const game_mode_names[] = {"vanilla", "advanced", "turnbased"
 /* The game mode of a --mode value, or -1. */
 static int game_mode_of(const char *name)
 {
-    for (int i = 0; i < (int)(sizeof game_mode_names / sizeof game_mode_names[0]); i++)
+    for (int i = 0; i < ARRAY_COUNT(game_mode_names); i++)
         if (!strcmp(name, game_mode_names[i]))
             return i;
     return -1;
@@ -392,7 +393,7 @@ static int load_font(void)
 {
     const char *dirs[] = {data_override, adventure_default_dir(ADVENTURE_DM), adventure_default_dir(ADVENTURE_CSB)};
     char path[PATH_SIZE];
-    for (int i = 0; i < (int)(sizeof dirs / sizeof dirs[0]); i++) {
+    for (int i = 0; i < ARRAY_COUNT(dirs); i++) {
         if (!dirs[i])
             continue;
         snprintf(path, sizeof path, "%s/Graphics.DAT", dirs[i]);

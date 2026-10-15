@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "adventure.h"
+#include "bytes.h"
 #include "dungeon.h"
 #include "gameloop.h"
 #include "music.h"
@@ -124,7 +125,7 @@ static void update_super_nes(bool moved)
 {
     if (!moved)
         return;
-    for (size_t i = 0; i < sizeof super_nes_triggers / sizeof super_nes_triggers[0]; i++)
+    for (int i = 0; i < ARRAY_COUNT(super_nes_triggers); i++)
         if (super_nes_triggers[i].map == g_party_map_index && super_nes_triggers[i].x == g_party_map_x &&
             super_nes_triggers[i].y == g_party_map_y && super_nes_triggers[i].track != g_music_track)
             play(super_nes_triggers[i].track);

@@ -79,64 +79,79 @@ static const uint8_t *graphic_size(const uint8_t *p, const uint8_t *end, uint16_
     return p + 4;
 }
 
+typedef struct {
+    const uint8_t *p, *end;
+} ByteReader;
+
+typedef struct {
+    uint8_t *px;
+    size_t pos, n;
+} PixelWriter;
+
+/* Reads the next command byte; past the end it reads zeros. */
+static inline uint8_t next_byte(ByteReader *r)
+{
+    return r->p < r->end ? *r->p++ : 0;
+}
+
+/* Writes the next pixel; past the bitmap it only counts. */
+static inline void put_pixel(PixelWriter *w, uint8_t c)
+{
+    if (w->pos < w->n)
+        w->px[w->pos] = c;
+    w->pos++;
+}
+
 /* Decodes the graphic commands into px (w * h pixels); skip commands leave pixels unchanged. */
 static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, uint16_t w, size_t n)
 {
-    size_t pos = 0;
-#define NEXT() (p < end ? *p++ : 0)
-#define PUT(c)                                                                                                         \
-    do {                                                                                                               \
-        if (pos < n)                                                                                                   \
-            px[pos] = (c);                                                                                             \
-        pos++;                                                                                                         \
-    } while (0)
-    while (pos < n) {
-        uint8_t cmd = NEXT(), c = cmd & CMD_COLOR_MASK;
+    ByteReader in = {p, end};
+    PixelWriter out = {px, 0, n};
+    while (out.pos < n) {
+        uint8_t cmd = next_byte(&in), c = cmd & CMD_COLOR_MASK;
         unsigned cnt;
         if (!(cmd & CMD_LONG)) {
             for (cnt = (cmd >> 4) + 1; cnt; cnt--)
-                PUT(c);
+                put_pixel(&out, c);
             continue;
         }
         if ((cmd & CMD_KIND_MASK) == KIND_SKIP) { /* leave pixels transparent */
             unsigned k = c | (cmd & CMD_WIDE_COUNT_FLAG ? SKIP_WIDE : 0);
             if (k == SKIP_BYTE)
-                k = NEXT();
+                k = next_byte(&in);
             else if (k == SKIP_BYTE_PLUS_256)
-                k = SKIP_BYTE_BASE + NEXT();
+                k = SKIP_BYTE_BASE + next_byte(&in);
             else if (k == SKIP_WORD) {
-                k = NEXT() << BYTE_BITS;
-                k |= NEXT();
+                k = next_byte(&in) << BYTE_BITS;
+                k |= next_byte(&in);
             }
-            pos += k + 1;
+            out.pos += k + 1;
             continue;
         }
-        cnt = NEXT();
+        cnt = next_byte(&in);
         if (cmd & CMD_WIDE_COUNT_FLAG)
-            cnt = cnt << BYTE_BITS | NEXT();
+            cnt = cnt << BYTE_BITS | next_byte(&in);
         cnt++;
         switch (cmd & CMD_KIND_MASK) {
         case KIND_FILL:
             while (cnt--)
-                PUT(c);
+                put_pixel(&out, c);
             break;
         case KIND_RAW: /* two pixels per byte */
             if (cnt & 1)
-                PUT(c);
+                put_pixel(&out, c);
             for (cnt /= 2; cnt; cnt--) {
-                uint8_t b = NEXT();
-                PUT(b >> 4);
-                PUT(b & CMD_COLOR_MASK);
+                uint8_t b = next_byte(&in);
+                put_pixel(&out, b >> 4);
+                put_pixel(&out, b & CMD_COLOR_MASK);
             }
             break;
         default: /* KIND_COPY_ABOVE, then one pixel of color c */
             for (; cnt; cnt--)
-                PUT(pos >= w && pos < n ? px[pos - w] : 0);
-            PUT(c);
+                put_pixel(&out, out.pos >= w && out.pos < n ? px[out.pos - w] : 0);
+            put_pixel(&out, c);
         }
     }
-#undef NEXT
-#undef PUT
 }
 
 /* Port of expand_graphic: decodes a packed graphic into a chunky bitmap. */

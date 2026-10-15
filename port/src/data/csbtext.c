@@ -116,8 +116,6 @@ static const struct {
     {TEXT_LEVEL_GAINED + 7,         0x102d3e, SKILL_WIZARD,  0x102d4e},
 };
 
-#define COUNT(a) (int)(sizeof(a) / sizeof(a)[0])
-
 static uint8_t *strings, *action_names;
 static uint16_t strings_size, action_names_size;
 
@@ -185,10 +183,10 @@ static int copy_action_names(const FtlImage *appb)
 int csb_text_build(const FtlImage *appb, FtlImage *out)
 {
     const char *parts[CSB_TEXT_COUNT][TEXT_PARTS] = {{0}};
-    for (int i = 0; i < COUNT(single_texts); i++)
+    for (int i = 0; i < ARRAY_COUNT(single_texts); i++)
         if (!(parts[single_texts[i].text][0] = appb_string(appb, single_texts[i].appb)))
             return -1;
-    for (int i = 0; i < COUNT(table_texts); i++) {
+    for (int i = 0; i < ARRAY_COUNT(table_texts); i++) {
         for (int k = 0; k < table_texts[i].count; k++) {
             int16_t text = table_texts[i].text + k;
             if (!(parts[text][0] = appb_pointed_string(appb, table_texts[i].appb + 4 * k)))
@@ -200,10 +198,10 @@ int csb_text_build(const FtlImage *appb, FtlImage *out)
             }
         }
     }
-    for (int i = 0; i < COUNT(disk_message_texts); i++)
+    for (int i = 0; i < ARRAY_COUNT(disk_message_texts); i++)
         if (!(parts[disk_message_texts[i]][0] = appb_pointed_string(appb, CSB_APPB_DISK_MESSAGES + 4 * i)))
             return -1;
-    for (int i = 0; i < COUNT(class_texts); i++) {
+    for (int i = 0; i < ARRAY_COUNT(class_texts); i++) {
         const char **p = parts[class_texts[i].text];
         p[0] = appb_string(appb, class_texts[i].prefix);
         p[1] = appb_pointed_string(appb, CSB_APPB_CLASS_NAMES + 4 * class_texts[i].skill);
@@ -216,9 +214,13 @@ int csb_text_build(const FtlImage *appb, FtlImage *out)
 
 const uint8_t *csb_text_item(int graphic, uint16_t *size)
 {
-    if (graphic == GFX_STRINGS)
-        return *size = strings_size, strings;
-    if (graphic == GFX_ACTION_NAMES)
-        return *size = action_names_size, action_names;
+    if (graphic == GFX_STRINGS) {
+        *size = strings_size;
+        return strings;
+    }
+    if (graphic == GFX_ACTION_NAMES) {
+        *size = action_names_size;
+        return action_names;
+    }
     return NULL;
 }
