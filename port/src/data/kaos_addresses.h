@@ -122,4 +122,37 @@
 #define KAOS_PALETTE_CHANGES_ACTION_ICON      0x103ffa
 #define KAOS_POINTER_SHADOW_COLORS            0x1005fe
 
+/* Interface and champion panel. */
+#define KAOS_ICON_GRAPHIC_FIRST_INDEX    0x100b92 /* int16_t[7]: first icon of each icon sheet */
+#define KAOS_SLOT_BOXES                  0x100bb0 /* 46 records of 4 bytes: zone, current icon */
+#define KAOS_SLOT_BOX_BORDER             0x102956
+#define KAOS_CHAMPION_ICON_WIDTH         0x10295c
+#define KAOS_CHAMPION_ICON_HEIGHT        0x10295e
+#define KAOS_BAR_SHADOW_OFFSET           0x102980
+#define KAOS_DAMAGE_SPLAT_LARGE_WIDTH    0x102978 /* the damage splat for 16-40 damage */
+#define KAOS_DAMAGE_SPLAT_LARGE_HEIGHT   0x10297a
+#define KAOS_DAMAGE_SPLAT_SMALL_WIDTH    0x10297c /* the damage splat below 16 damage */
+#define KAOS_DAMAGE_SPLAT_SMALL_HEIGHT   0x10297e
+#define KAOS_SKILL_LEVEL_STRING_INDICES  0x101e74 /* int16_t[15], level 2-16 */
+#define KAOS_BASE_SKILL_STRING_INDICES   0x102472 /* int16_t[4] */
+#define KAOS_STATISTIC_STRING_INDICES    0x101e9a /* int16_t[7] */
+#define KAOS_DIRECTION_STRING_INDICES    0x101e92 /* int16_t[4] */
+#define KAOS_LIST_SEPARATOR              0x101ebe /* ", " */
+#define KAOS_BONES_SEPARATOR             0x101ec6 /* " " between champion name and "BONES" */
+#define KAOS_ATTRIBUTES_SUFFIX           0x101ec8 /* ")" */
+#define KAOS_ATTRIBUTES_PREFIX           0x101eca /* "(" */
+#define KAOS_DIALOG_VERSION_TEXT         0x10402c /* "V3.6" */
+#define KAOS_DIALOG_MESSAGE_LINE_PAD     0x102966 /* pixels above and below a message line */
+#define KAOS_DIALOG_MESSAGE_COLORS       0x104026 /* int16_t[2], color in the low byte */
+#define KAOS_ENDGAME_BUTTON_BORDER       0x102988 /* outer border x, y of an endgame button */
+#define KAOS_ENDGAME_BUTTON_INNER_BORDER 0x10298c /* inner border x, y */
+
+/* Mouse pointer. */
+#define KAOS_ARROW_POINTER_BITMAP   0x1002b0 /* 4 bit planes, width and height words in the 4 bytes before */
+#define KAOS_HAND_POINTER_BITMAP    0x1003d4
+#define KAOS_MOUSE_POINTER_ZONES    0x1004f8 /* 16 records of 12 bytes: x, y, width, height, shape, champion */
+#define KAOS_MOUSE_POINTER_HOTSPOTS 0x1005c8 /* 4 records of 8 bytes: x, y, width, height */
+#define KAOS_POINTER_SHADOW_DX      0x102952
+#define KAOS_POINTER_SHADOW_DY      0x102954
+
 #endif

@@ -25,12 +25,27 @@
 #define REBIRTH_STEP_1_SCALES_BYTES 8 /* the step 1 scales follow the 7 step 2 scales and a pad byte */
 #define LAYOUT_BITMAP_BYTES         14
 #define PALETTE_BYTES               (TABLES_PALETTE_COLOR_COUNT * 2)
+#define SLOT_BOX_BYTES              4
+#define POINTER_ZONE_BYTES          12
+#define POINTER_HOTSPOT_BYTES       8
+#define POINTER_WIDTH_BEFORE        4 /* the bitmap width word comes 4 bytes before the planes */
+#define POINTER_HEIGHT_BEFORE       2
 
 enum { SOUND_ENTRY_RATE = 3, SOUND_ENTRY_PRIORITY = 4 };                        /* byte offsets in a sound entry */
 enum { ATTACK_CELL_COUNT = 4, SOUND_VOLUME_ROW = 2 * SOUND_HEARING_RANGE + 1 }; /* row lengths */
 
 /* Byte offsets in a replacement color set: a color word per light level, then the D2 and the D3 change. */
 enum { REPLACEMENT_AT_CHANGE_D2 = 12, REPLACEMENT_FIRST_CHANGE_DEPTH = 2 };
+/* Byte offsets of the words of a pointer zone and of a pointer hotspot. */
+enum {
+    POINTER_AT_X,
+    POINTER_AT_Y = 2,
+    POINTER_AT_W = 4,
+    POINTER_AT_H = 6,
+    POINTER_AT_SHAPE = 8,
+    POINTER_AT_CHAMPION = 10
+};
+enum { SKILL_LEVEL_TEXT_FIRST = 2 };                                         /* the level names start at level 2 */
 enum { LAYOUT_AT_X = 2, LAYOUT_AT_Y = 4, LAYOUT_AT_W = 6, LAYOUT_AT_H = 8 }; /* byte offsets in a layout bitmap */
 
 /* Byte offsets of the creature info fields (docs/tables.md); bytes 13 and 25 are pad bytes. */
@@ -551,16 +566,21 @@ TablesRect tables_layout_bitmap(int16_t slot)
                         kaos_s16(record + LAYOUT_AT_H)};
 }
 
-/* The colors of a palette. */
-void tables_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT])
+/* One color of a palette. */
+uint16_t tables_palette_color(int16_t palette, int16_t color)
 {
     static const uint32_t first[TABLES_PALETTE_DUNGEON] = {KAOS_INITIAL_COLORMAP, KAOS_INITIAL_COLORMAP + PALETTE_BYTES,
                                                            KAOS_CREDITS_PALETTE, KAOS_ENTRANCE_PALETTE};
     uint32_t at = palette < TABLES_PALETTE_DUNGEON
                       ? first[palette]
                       : KAOS_DUNGEON_PALETTES + PALETTE_BYTES * (palette - TABLES_PALETTE_DUNGEON);
-    for (int i = 0; i < TABLES_PALETTE_COLOR_COUNT; i++)
-        colors[i] = kaos_u16(at + 2 * i);
+    return kaos_u16(at + 2 * color);
+}
+/* The colors of a palette. */
+void tables_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT])
+{
+    for (int16_t i = 0; i < TABLES_PALETTE_COLOR_COUNT; i++)
+        colors[i] = tables_palette_color(palette, i);
 }
 
 /* The color map of a palette change. */
@@ -581,4 +601,134 @@ const uint8_t *tables_palette_changes(int16_t changes)
         KAOS_POINTER_SHADOW_COLORS,
     };
     return kaos_ptr(at[changes]);
+}
+
+/* First icon of an icon sheet. */
+int16_t tables_icon_sheet_first(int16_t sheet)
+{
+    return kaos_s16(KAOS_ICON_GRAPHIC_FIRST_INDEX + 2 * sheet);
+}
+/* Layout zone of a slot box. */
+int16_t tables_slot_box_zone(int16_t slot_box)
+{
+    return kaos_s16(KAOS_SLOT_BOXES + SLOT_BOX_BYTES * slot_box);
+}
+/* Pixels that a bordered slot box grows on each side. */
+int16_t tables_slot_box_border(void)
+{
+    return kaos_s16(KAOS_SLOT_BOX_BORDER);
+}
+/* Width of a champion party icon. */
+int16_t tables_champion_icon_width(void)
+{
+    return kaos_s16(KAOS_CHAMPION_ICON_WIDTH);
+}
+/* Height of a champion party icon. */
+int16_t tables_champion_icon_height(void)
+{
+    return kaos_s16(KAOS_CHAMPION_ICON_HEIGHT);
+}
+/* Offset of the shadow of a panel bar. */
+int16_t tables_bar_shadow(void)
+{
+    return kaos_s16(KAOS_BAR_SHADOW_OFFSET);
+}
+/* Width of the small or the large damage splat. */
+int16_t tables_damage_splat_width(bool large)
+{
+    return kaos_s16(large ? KAOS_DAMAGE_SPLAT_LARGE_WIDTH : KAOS_DAMAGE_SPLAT_SMALL_WIDTH);
+}
+/* Height of the small or the large damage splat. */
+int16_t tables_damage_splat_height(bool large)
+{
+    return kaos_s16(large ? KAOS_DAMAGE_SPLAT_LARGE_HEIGHT : KAOS_DAMAGE_SPLAT_SMALL_HEIGHT);
+}
+/* Text of a skill level name (level 2-16). */
+int16_t tables_skill_level_text(int16_t level)
+{
+    return kaos_s16(KAOS_SKILL_LEVEL_STRING_INDICES + 2 * (level - SKILL_LEVEL_TEXT_FIRST));
+}
+/* Text of a base skill name. */
+int16_t tables_base_skill_text(int16_t skill)
+{
+    return kaos_s16(KAOS_BASE_SKILL_STRING_INDICES + 2 * skill);
+}
+/* Text of a statistic name. */
+int16_t tables_statistic_text(int16_t statistic)
+{
+    return kaos_s16(KAOS_STATISTIC_STRING_INDICES + 2 * statistic);
+}
+/* Text of a direction name. */
+int16_t tables_direction_text(int16_t direction)
+{
+    return kaos_s16(KAOS_DIRECTION_STRING_INDICES + 2 * direction);
+}
+/* A short text of the image. */
+const char *tables_text(int16_t text)
+{
+    static const uint32_t at[TABLES_TEXT_COUNT] = {KAOS_LIST_SEPARATOR, KAOS_BONES_SEPARATOR, KAOS_ATTRIBUTES_PREFIX,
+                                                   KAOS_ATTRIBUTES_SUFFIX, KAOS_DIALOG_VERSION_TEXT};
+    return (const char *)kaos_ptr(at[text]);
+}
+/* Pixels above and below a dialog message line. */
+int16_t tables_message_line_pad(void)
+{
+    return kaos_s16(KAOS_DIALOG_MESSAGE_LINE_PAD);
+}
+/* Color of dialog message i. */
+uint8_t tables_message_color(int16_t i)
+{
+    return (uint8_t)kaos_s16(KAOS_DIALOG_MESSAGE_COLORS + 2 * i);
+}
+/* Outer border of an endgame button on one axis. */
+int16_t tables_button_border(int16_t axis)
+{
+    return kaos_s16(KAOS_ENDGAME_BUTTON_BORDER + 2 * axis);
+}
+/* Inner border of an endgame button on one axis. */
+int16_t tables_button_inner_border(int16_t axis)
+{
+    return kaos_s16(KAOS_ENDGAME_BUTTON_INNER_BORDER + 2 * axis);
+}
+/* CSB: the outer or the inner box of the RESTART THIS GAME button. */
+TablesRect tables_csb_restart_box(bool inner)
+{
+    uint32_t at = CSB_RESTART_BOXES + (inner ? CSB_BOX_BYTES : 0);
+    return (TablesRect){kaos_s16(at), kaos_s16(at + 2), kaos_s16(at + 4), kaos_s16(at + 6)};
+}
+
+/* Pointer zone i: a screen box, the pointer shape, and the champion + 1 of a status box. */
+PointerZone tables_pointer_zone(int16_t i)
+{
+    uint32_t z = KAOS_MOUSE_POINTER_ZONES + POINTER_ZONE_BYTES * i;
+    return (PointerZone){kaos_s16(z + POINTER_AT_X), kaos_s16(z + POINTER_AT_Y),     kaos_s16(z + POINTER_AT_W),
+                         kaos_s16(z + POINTER_AT_H), kaos_s16(z + POINTER_AT_SHAPE), kaos_s16(z + POINTER_AT_CHAMPION)};
+}
+/* Hotspot x of a pointer shape. */
+int16_t tables_pointer_hotspot_x(int16_t shape)
+{
+    return kaos_s16(KAOS_MOUSE_POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + POINTER_AT_X);
+}
+/* Hotspot y of a pointer shape. */
+int16_t tables_pointer_hotspot_y(int16_t shape)
+{
+    return kaos_s16(KAOS_MOUSE_POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + POINTER_AT_Y);
+}
+/* Shadow offset x of the object pointer. */
+int16_t tables_pointer_shadow_dx(void)
+{
+    return kaos_s16(KAOS_POINTER_SHADOW_DX);
+}
+/* Shadow offset y of the object pointer. */
+int16_t tables_pointer_shadow_dy(void)
+{
+    return kaos_s16(KAOS_POINTER_SHADOW_DY);
+}
+/* The bit planes of the arrow or the hand pointer and its size. */
+const uint8_t *tables_pointer_planes(bool hand, int16_t *w, int16_t *h)
+{
+    uint32_t at = hand ? KAOS_HAND_POINTER_BITMAP : KAOS_ARROW_POINTER_BITMAP;
+    *w = (int16_t)kaos_u16(at - POINTER_WIDTH_BEFORE);
+    *h = (int16_t)kaos_u16(at - POINTER_HEIGHT_BEFORE);
+    return kaos_ptr(at);
 }

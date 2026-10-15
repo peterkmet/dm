@@ -94,17 +94,17 @@ These tables have the same bytes in CSB. Only the address changes.
 | `KAOS_SOUNDS`, `KAOS_SOUND_VOLUMES` | `0x100d52`, `0x100696` | `0x10122a`, `0x1009f2` |
 | `KAOS_SQUARE_TYPE_TO_EVENT_TYPE` | `0x100d4a` | `0x101222` |
 | `KAOS_ORDERED_CELLS_TO_ATTACK`, `KAOS_WOUND_PROBABILITY_INDEX_TO_MASK`, `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b66`, `0x100b86`, `0x100b8a` | `0x10103a`, `0x10105a`, `0x10105e` |
-| `KAOS_TORCH_CHARGE_TO_ICON_OFFSET`, `ICON_FIRST`, `SLOT_BOXES` | `0x100ba0`, `0x100b92`, `0x100bb0` | `0x101074`, `0x101066`, `0x101084` |
+| `KAOS_TORCH_CHARGE_TO_ICON_OFFSET`, `KAOS_ICON_GRAPHIC_FIRST_INDEX`, `KAOS_SLOT_BOXES` | `0x100ba0`, `0x100b92`, `0x100bb0` | `0x101074`, `0x101066`, `0x101084` |
 | `KAOS_DIRECTION_TO_STEP_EAST`, `KAOS_DIRECTION_TO_STEP_NORTH`, `KAOS_GROUP_DIRECTIONS_PACKED` | `0x101038`, `0x101040`, `0x10192a` | `0x10153a`, `0x101542`, `0x101e2e` |
 | `KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD`, `..._RIGHT` | `0x103c56`, `0x103c5e` | `0x104694`, `0x10469c` |
 | `KEYS_INTERFACE`, `KEYS_MOVEMENT`, `KEYS_SLEEPING`, `KEYS_FROZEN` | `0x103948`, `0x103964`, `0x103980`, `0x10398c` | `0x1043c4`, `0x1043e0`, `0x1043fc`, `0x104408` |
-| `ARROW_POINTER`, `HAND_POINTER`, `POINTER_ZONES`, `POINTER_HOTSPOTS`, `POINTER_SHADOW_OBJECT` | `0x1002b0` … `0x1005fe` | `0x1005f0`, `0x100714`, `0x10084a`, `0x10091a`, `0x100984` |
-| `DUNGEON_PALETTE` | `0x100aa6` | `0x100f78` |
-| `LAYOUT_BITMAPS` | `0x1025f2` | `0x102f50` |
-| `INVISIBILITY_PALETTE`, `ACTION_ICON_PALETTE` | `0x10247a`, `0x103ffa` | `0x102d8a` (`champion_build_icon_bitmap` pushes it at C`0x1150b6`, as DM does), `0x104b52` |
+| `KAOS_ARROW_POINTER_BITMAP`, `KAOS_HAND_POINTER_BITMAP`, `KAOS_MOUSE_POINTER_ZONES`, `KAOS_MOUSE_POINTER_HOTSPOTS`, `KAOS_POINTER_SHADOW_COLORS` | `0x1002b0` … `0x1005fe` | `0x1005f0`, `0x100714`, `0x10084a`, `0x10091a`, `0x100984` |
+| `KAOS_DUNGEON_PALETTES` | `0x100aa6` | `0x100f78` |
+| `KAOS_LAYOUT_BITMAPS` | `0x1025f2` | `0x102f50` |
+| `KAOS_INVISIBILITY_PALETTE_CHANGES`, `KAOS_PALETTE_CHANGES_ACTION_ICON` | `0x10247a`, `0x103ffa` | `0x102d8a` (`champion_build_icon_bitmap` pushes it at C`0x1150b6`, as DM does), `0x104b52` |
 | View tables: `KAOS_WALL_ORNAMENT_DEPTHS` … `KAOS_PLAQUE_HEIGHTS`, `KAOS_OBJECT_ASPECTS`, `KAOS_PROJECTILE_ASPECTS`, `KAOS_PALETTE_CHANGES_*`, `KAOS_CREATURE_ASPECTS`, `KAOS_CREATURE_REPLACEMENT_COLOR_SETS`, `KAOS_CREATURE_SHIFT_SETS` | `0x102ba6` … `0x102fd0` | `0x10373a` … `0x103b60` |
 
-Small scalar values (`VIEWPORT_ORIGIN`, `PORTRAIT_SIZE`, `KAOS_WALL_TEXT_GLYPH_WIDTH`, `DAMAGE_SIZE_*`, `BAR_SHADOW`, `BUTTON_*`) are equal. Take their CSB address from the code reference, because a content search gives many hits. Example: `PORTRAIT_SIZE` is C`0x1032bc`, `VIEWPORT_SIZE` is C`0x1032a6`, `KAOS_WALL_TEXT_GLYPH_WIDTH` is C`0x1032d2`.
+Small scalar values (`VIEWPORT_ORIGIN`, `KAOS_PORTRAIT_WIDTH`, `KAOS_WALL_TEXT_GLYPH_WIDTH`, `KAOS_DAMAGE_SPLAT_*`, `KAOS_BAR_SHADOW_OFFSET`, `KAOS_ENDGAME_BUTTON_*`) are equal. Take their CSB address from the code reference, because a content search gives many hits. Example: `KAOS_PORTRAIT_WIDTH` is C`0x1032bc`, `VIEWPORT_SIZE` is C`0x1032a6`, `KAOS_WALL_TEXT_GLYPH_WIDTH` is C`0x1032d2`.
 
 ### Tables with a different layout
 
@@ -125,12 +125,12 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 |---|---|---|---|
 | `KAOS_ACTION_EXPERIENCE_GAIN` | `0x103fb4` | `0x104ae8` (read at C`0x126704`) | BLOW HORN (4): 1 → 0. HEAL (36): 5 → 0. CALM (37): 1 → 0. BRANDISH (41): 3 → 0. |
 | `SPELLS` | 25 records | 29 records at C`0x1046c2` | 4 new spells of kind 4, see [Magic map](#magic-map) |
-| `ENTRANCE_PALETTE` | `0x100a66` | `0x100f38` | Color 5: `0x0c0` → `0x422` |
-| `CREDITS_PALETTE` | `0x100a46` | `0x100f18` | All colors differ (CSB credits picture) |
+| `KAOS_ENTRANCE_PALETTE` | `0x100a66` | `0x100f38` | Color 5: `0x0c0` → `0x422` |
+| `KAOS_CREDITS_PALETTE` | `0x100a46` | `0x100f18` | All colors differ (CSB credits picture) |
 | `KEYS_ENTRANCE` | `0x10393c`, 2 entries | `0x1043bc`, 1 entry | CSB has only command `0xc8` |
-| `VERSION_TEXT` | `0x10402c` "V3.6" | `0x104c24` "V3.1" | Text |
+| `KAOS_DIALOG_VERSION_TEXT` | `0x10402c` "V3.6" | `0x104c24` "V3.1" | Text |
 | `DIALOG_MOUSE_INPUTS` | `0x103bd4` | `0x104650` (read in `dialog_get_choice` at C`0x127b06`) | Other pointer values. The 8 tables they point to (C`0x104500`, 336 bytes) have the same bytes as the DM tables (K`0x103a84`). |
-| String index tables `SKILL_LEVEL_STRINGS`, `BASE_SKILL_STRINGS`, `STATISTIC_STRINGS`, `DIRECTION_STRINGS` | indices into graphic 700 | pointer tables | See [Text](#text) |
+| String index tables `KAOS_SKILL_LEVEL_STRING_INDICES`, `KAOS_BASE_SKILL_STRING_INDICES`, `KAOS_STATISTIC_STRING_INDICES`, `KAOS_DIRECTION_STRING_INDICES` | indices into graphic 700 | pointer tables | See [Text](#text) |
 
 ### Graphics.DAT
 
@@ -158,16 +158,16 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 
 | Port name | DM | CSB | Reference |
 |---|---|---|---|
-| `BOTTOM_PALETTE`, `SPRITE_PALETTE` | `0x100170`, `0x100190` | `0x102f0a`, `0x102f2a` | `g_initial_colormap` and + 32 (`display_load_view`, `input_event_handler`) |
-| `ARROW_POINTER`, `HAND_POINTER` (with the 4 size bytes before) | `0x1002ac`, `0x1003d0` | `0x1005ec`, `0x100710` | `init_mouse_pointer` C`0x10898c`, `0x10899a` |
-| `CREDITS_PALETTE`, `ENTRANCE_PALETTE` (CSB values) | `0x100a46`, `0x100a66` | `0x100f18`, `0x100f38` | `entrance_show_credits`, `entrance_draw` |
+| `KAOS_INITIAL_COLORMAP` (interface, then pointer palette) | `0x100170`, `0x100190` | `0x102f0a`, `0x102f2a` | `g_initial_colormap` and + 32 (`display_load_view`, `input_event_handler`) |
+| `KAOS_ARROW_POINTER_BITMAP`, `KAOS_HAND_POINTER_BITMAP` (with the 4 size bytes before) | `0x1002ac`, `0x1003d0` | `0x1005ec`, `0x100710` | `init_mouse_pointer` C`0x10898c`, `0x10899a` |
+| `KAOS_CREDITS_PALETTE`, `KAOS_ENTRANCE_PALETTE` (CSB values) | `0x100a46`, `0x100a66` | `0x100f18`, `0x100f38` | `entrance_show_credits`, `entrance_draw` |
 | `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b8a` | `0x10105e` | `group_steal_from_champion` C`0x10e7f6` |
-| `LIST_SEPARATOR` ", " | `0x101ebe` | `0x10264a` | `build_object_attributes_string` C`0x110dcc` |
-| `BONES_SEPARATOR` " ", `ATTRIBUTES_SUFFIX` ")", `ATTRIBUTES_PREFIX` "(" | `0x101ec6`, `0x101ec8`, `0x101eca` | `0x10267a`, `0x1026ec`, `0x1026ea` | `draw_panel_object` C`0x111cba`, `0x111f12`, `0x111f16` |
+| `KAOS_LIST_SEPARATOR` ", " | `0x101ebe` | `0x10264a` | `build_object_attributes_string` C`0x110dcc` |
+| `KAOS_BONES_SEPARATOR` " ", `KAOS_ATTRIBUTES_SUFFIX` ")", `KAOS_ATTRIBUTES_PREFIX` "(" | `0x101ec6`, `0x101ec8`, `0x101eca` | `0x10267a`, `0x1026ec`, `0x1026ea` | `draw_panel_object` C`0x111cba`, `0x111f12`, `0x111f16` |
 | `VIEWPORT_ORIGIN` | `0x10293a` | `0x103298` | `command_init_mouse_input_table` |
-| `MESSAGE_LINE_PAD` | `0x102966` | `0x1032ca` | `dialog_draw` C`0x128176` |
-| `DAMAGE_SIZE_LARGE`, `DAMAGE_SIZE_SMALL` | `0x102978`, `0x10297c` | `0x1032dc`, `0x1032e0` | `menus_draw_action_damage` |
-| `BAR_SHADOW` | `0x102980` | `0x1032e4` | `draw_panel_horizontal_bar` C`0x11203e` |
+| `KAOS_DIALOG_MESSAGE_LINE_PAD` | `0x102966` | `0x1032ca` | `dialog_draw` C`0x128176` |
+| `KAOS_DAMAGE_SPLAT_LARGE_WIDTH`, `KAOS_DAMAGE_SPLAT_SMALL_WIDTH` | `0x102978`, `0x10297c` | `0x1032dc`, `0x1032e0` | `menus_draw_action_damage` |
+| `KAOS_BAR_SHADOW_OFFSET` | `0x102980` | `0x1032e4` | `draw_panel_horizontal_bar` C`0x11203e` |
 | `KAOS_WALL_ORNAMENT_DEPTHS` (14), `KAOS_FLOOR_ORNAMENT_VIEW_OFFSETS` (11), `KAOS_ALCOVE_ORNAMENT_INDICES` (3), `KAOS_FOUNTAIN_ORNAMENT_INDICES` (1) | `0x102ba6`, `0x102bb4`, `0x102bc0`, `0x102bc3` | `0x10373a`, `0x103748`, `0x103753`, `0x103757` | `draw_wall_ornament`, `draw_floor_ornament`, `load_current_map_graphics`, CSV |
 | `KAOS_FLOOR_ORNAMENT_COORD_SETS` (9), `KAOS_DOOR_ORNAMENT_COORD_SETS` (12), `KAOS_DOOR_BUTTON_COORD_SETS` (1) | `0x102c00`, `0x102c0a`, `0x102c16` | `0x103794`, `0x10379d`, `0x1037a9` | `load_current_map_graphics`, `draw_door_button` |
 | `KAOS_PLAQUE_HEIGHTS` + 1 | `0x102c58` | `0x1037ea` | `draw_wall_ornament` C`0x11b1ee` |
@@ -175,12 +175,12 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 | Endgame mouse input (RESTART only) | `0x1031d4` | `0x103c60` | `endgame` C`0x1284c2` |
 | Other mouse input tables | `0x1031f8` … `0x10378c` | `0x103c78` … `0x10420c` | CSV names |
 | `KEYS_ENTRANCE` (1 entry), `KEYS_INTERFACE`, `KEYS_MOVEMENT` | `0x10393c`, `0x103948`, `0x103964` | `0x1043bc`, `0x1043c4`, `0x1043e0` | `process_entrance`, `start_game` |
-| `KAOS_ACTION_EXPERIENCE_GAIN`, `VERSION_TEXT`, `MESSAGE_COLORS` | `0x103fb4`, `0x10402c`, `0x104026` | `0x104ae8`, `0x104c24`, `0x104c20` | `menus_is_action_performed`, `dialog_draw` |
+| `KAOS_ACTION_EXPERIENCE_GAIN`, `KAOS_DIALOG_VERSION_TEXT`, `KAOS_DIALOG_MESSAGE_COLORS` | `0x103fb4`, `0x10402c`, `0x104026` | `0x104ae8`, `0x104c24`, `0x104c20` | `menus_is_action_performed`, `dialog_draw` |
 
 Not in the CSB image:
 
-- `BUTTON_BORDER`, `BUTTON_INNER_BORDER` (K`0x102988`, `0x10298c`): only DM `endgame_draw_button` reads them. CSB has no such function. Step 8 (end of the game) decides the CSB endgame buttons.
-- The string index tables `SKILL_LEVEL_STRINGS`, `BASE_SKILL_STRINGS`, `STATISTIC_STRINGS`, `DIRECTION_STRINGS`: CSB has pointer tables. `csb_text_build` fills them with the text indices of the built strings (see [Text](#text)).
+- `KAOS_ENDGAME_BUTTON_BORDER`, `KAOS_ENDGAME_BUTTON_INNER_BORDER` (K`0x102988`, `0x10298c`): only DM `endgame_draw_button` reads them. CSB has no such function. Step 8 (end of the game) decides the CSB endgame buttons.
+- The string index tables `KAOS_SKILL_LEVEL_STRING_INDICES`, `KAOS_BASE_SKILL_STRING_INDICES`, `KAOS_STATISTIC_STRING_INDICES`, `KAOS_DIRECTION_STRING_INDICES`: CSB has pointer tables. `csb_text_build` fills them with the text indices of the built strings (see [Text](#text)).
 
 ### Text
 
@@ -188,14 +188,14 @@ DM 3.60 takes all text from `Graphics.DAT` item 700 (`get_string`), action names
 
 | DM string (port id) | CSB source |
 |---|---|
-| 0–3 class names (`BASE_SKILL_STRINGS`) | Pointer table C`0x102d56`[4] in skill order: FIGHTER, NINJA, PRIEST, WIZARD |
-| 4–18 skill levels (`SKILL_LEVEL_STRINGS`) | Pointer table C`0x102524`[level − 2] |
+| 0–3 class names (`KAOS_BASE_SKILL_STRING_INDICES`) | Pointer table C`0x102d56`[4] in skill order: FIGHTER, NINJA, PRIEST, WIZARD |
+| 4–18 skill levels (`KAOS_SKILL_LEVEL_STRING_INDICES`) | Pointer table C`0x102524`[level − 2] |
 | 19 WAKE UP, 20 GAME FROZEN | C`0x104680`, C`0x104688` |
 | 21 PARTY FACING, 22–25 directions | C`0x1026ae`, pointer table C`0x102578`[4] |
 | 26–29 CONSUMABLE … CURSED, 30 AND, 31 BURNT OUT | C`0x10267c`, `0x102688`, `0x102692`, `0x10269a`, C`0x10264e`, C`0x1026a2` |
 | 32–35 waterskin states | C`0x1026bc`, `0x1026c4`, `0x1026d4`, `0x1026e2` |
 | 36 LOAD, 37 WEIGHS, 38 ".", 39 " KG.", 40 " KG" | C`0x102dc2`, `0x1026ee`, `0x1026f6`, `0x1026f8`, `0x102dcc` |
-| 41–47 statistics (`STATISTIC_STRINGS`) | Pointer table C`0x102588`[7] |
+| 41–47 statistics (`KAOS_STATISTIC_STRING_INDICES`) | Pointer table C`0x102588`[7] |
 | 48–50 HEALTH, STAMINA, MANA | C`0x102740`, `0x102748`, `0x102750` |
 | 51–58 spell failure | Champion name + C`0x104b7a` + class name + C`0x104b9a`; C`0x104ba2`; C`0x104bc0` |
 | 61–68 level gained | Champion name + C`0x102d3e` " JUST GAINED A " + class name + C`0x102d4e` " LEVEL!" |

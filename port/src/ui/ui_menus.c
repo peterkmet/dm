@@ -15,11 +15,6 @@
 #include "ui.h"
 #include "video.h"
 
-/* KAOS data addresses. */
-#define ACTION_ICON_PALETTE 0x103ffa /* g_palette_changes_action_area_object_icon[16] */
-#define DAMAGE_SIZE_LARGE   0x102978 /* width, height of the damage splat for 16-40 damage */
-#define DAMAGE_SIZE_SMALL   0x10297c /* width, height of the damage splat below 16 damage */
-
 #define ACTING_NAME_LENGTH 7
 #define ACTION_NAME_LENGTH 12
 #define DAMAGE_SMALL_BELOW 16
@@ -129,7 +124,7 @@ void menus_draw_action_icon(uint16_t champion_index)
     } else {
         ui_extract_icon(thing == THING_NONE ? ICON_EMPTY_ACTION_HAND : object_get_icon_index(thing), &icon);
         for (size_t i = 0; i < sizeof px; i++) {
-            uint8_t stamp = kaos_u8(ACTION_ICON_PALETTE + (px[i] & COLOR_INDEX_MASK));
+            uint8_t stamp = tables_palette_changes(TABLES_CHANGES_ACTION_ICON)[px[i] & COLOR_INDEX_MASK];
             if (!g_advanced_features || stamp == COLOR_CYAN)
                 px[i] = stamp;
         }
@@ -182,8 +177,8 @@ void menus_draw_action_damage(int16_t damage)
     const Bitmap *splat = gfx_bitmap(GFX_DAMAGE_ACTION);
     Bitmap scaled = {0};
     if (splat && damage < DAMAGE_LARGE_BELOW) {
-        uint32_t size = damage < DAMAGE_SMALL_BELOW ? DAMAGE_SIZE_SMALL : DAMAGE_SIZE_LARGE;
-        draw_shrink(splat, kaos_s16(size), kaos_s16(size + 2), NULL, &scaled);
+        bool large = damage >= DAMAGE_SMALL_BELOW;
+        draw_shrink(splat, tables_damage_splat_width(large), tables_damage_splat_height(large), NULL, &scaled);
     }
     ui_blit_zone(&screen, scaled.px ? &scaled : splat, ZONE_ACTION_DAMAGE, COLOR_NONE);
     free(scaled.px);

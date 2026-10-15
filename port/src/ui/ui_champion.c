@@ -21,17 +21,6 @@
 #include "video.h"
 #include "view.h"
 
-/* KAOS data addresses. */
-#define INVISIBILITY_PALETTE 0x10247a /* g_invisibility_palette_changes[16] */
-#define STATISTIC_STRINGS    0x101e9a /* g_statistic_string_indices[7] */
-#define CHAMPION_ICON_SIZE   0x10295c /* g_champion_icon_width, g_champion_icon_height */
-#define BAR_SHADOW           0x102980 /* offset of the panel bar shadow */
-#define DIRECTION_STRINGS    0x101e92 /* g_direction_string_indices[4] */
-#define LIST_SEPARATOR       0x101ebe /* ", " */
-#define BONES_SEPARATOR      0x101ec6 /* " " between champion name and "BONES" */
-#define ATTRIBUTES_SUFFIX    0x101ec8 /* ")" */
-#define ATTRIBUTES_PREFIX    0x101eca /* "(" */
-
 #define BAR_COUNT                 3 /* health, stamina, mana */
 #define BAR_ZONE_STEP             4
 #define FOOD_WATER_RANGE          3072 /* -1024 to 2048 */
@@ -86,7 +75,7 @@ static const char *number(char *buf, uint16_t value, int pad, int width)
 
 static uint8_t champion_color(int16_t champion_index)
 {
-    return kaos_u8(CHAMPION_COLORS + champion_index);
+    return tables_champion_color(champion_index);
 }
 
 /* Draws the health, stamina, and mana bars of the status box: the empty top part dark gray, the
@@ -189,7 +178,7 @@ void ui_draw_champion_damage(int16_t champion_index, int16_t damage)
 static void draw_icon(uint16_t champion_index)
 {
     const Champion *c = &g_champions[champion_index];
-    int16_t w = kaos_s16(CHAMPION_ICON_SIZE), h = kaos_s16(CHAMPION_ICON_SIZE + 2);
+    int16_t w = tables_champion_icon_width(), h = tables_champion_icon_height();
     uint8_t px[CHAMPION_ICON_MAX * CHAMPION_ICON_MAX];
     Bitmap bm = {w, h, px}, screen = ui_screen();
     const Bitmap *icons = gfx_bitmap(GFX_CHAMPION_ICONS);
@@ -201,9 +190,11 @@ static void draw_icon(uint16_t champion_index)
     if (icons)
         draw_blit(icons, NORMALIZE(c->direction - g_party_direction) * w, 0, &bm, &(Box){0, 0, w, h},
                   COLOR_DARKEST_GRAY, 0);
-    if (invisible)
+    if (invisible) {
+        const uint8_t *changes = tables_palette_changes(TABLES_CHANGES_INVISIBILITY);
         for (int i = 0; i < w * h; i++)
-            px[i] = kaos_u8(INVISIBILITY_PALETTE + (px[i] & COLOR_INDEX_MASK));
+            px[i] = changes[px[i] & COLOR_INDEX_MASK];
+    }
     ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + cell, COLOR_BLACK);
     ui_blit_zone(&screen, &bm, ZONE_CHAMPION_ICON_FIRST + cell, COLOR_NONE);
 }
@@ -221,8 +212,8 @@ void ui_draw_status_box_portrait(int16_t champion_index)
     Box b;
     if (!ui_zone_box(zone, &b))
         return;
-    b.w = kaos_s16(PORTRAIT_SIZE);
-    b.h = kaos_s16(PORTRAIT_SIZE + 2);
+    b.w = tables_portrait_width();
+    b.h = tables_portrait_height();
     draw_blit(&portrait, 0, 0, &screen, &b, COLOR_NONE, 0);
     if (g_party.event71_count_invisibility)
         ui_fill_zone_pattern(&screen, zone, COLOR_DARKEST_GRAY);
@@ -394,8 +385,8 @@ static void food_water_bar(int16_t value, int16_t zone, uint8_t color)
                              ZONE_SCALE_FULL, &b))
         return;
     Box shadow = b;
-    shadow.x += kaos_s16(BAR_SHADOW);
-    shadow.y += kaos_s16(BAR_SHADOW);
+    shadow.x += tables_bar_shadow();
+    shadow.y += tables_bar_shadow();
     draw_fill(ui_viewport(), &shadow, COLOR_BLACK);
     draw_fill(ui_viewport(), &b, color);
 }
@@ -454,7 +445,7 @@ const char *ui_skill_rank_name(int16_t level)
         return NULL;
     if (level > SKILL_LEVEL_MAXIMUM)
         level = SKILL_LEVEL_MAXIMUM;
-    return gfx_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * (level - 2)));
+    return gfx_string(tables_skill_level_text(level));
 }
 
 /* Draws the eye panel: base skill levels above 1 (green after a level up), then the six
@@ -473,14 +464,14 @@ void ui_draw_champion_skills_and_statistics(void)
         int16_t level = champion_get_skill_level(ci, k | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
         if (level == 1)
             continue;
-        snprintf(s, sizeof s, "%s %s", ui_skill_rank_name(level), gfx_string(kaos_s16(BASE_SKILL_STRINGS + 2 * k)));
+        snprintf(s, sizeof s, "%s %s", ui_skill_rank_name(level), gfx_string(tables_base_skill_text(k)));
         text_draw(vp, x, y, g_champion_skill_level_up[ci][k] ? COLOR_GREEN : COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
         y += MESSAGE_ROW_HEIGHT;
     }
     zone_point(ZONE_PANEL_STATISTICS, &vx, &y);
     for (int k = STAT_STRENGTH; k <= STAT_ANTIFIRE; k++) {
         uint8_t cur = c->statistics[k][STAT_CURRENT], max = c->statistics[k][STAT_MAXIMUM];
-        text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(kaos_s16(STATISTIC_STRINGS + 2 * k)));
+        text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(tables_statistic_text(k)));
         text_draw(vp, vx, y,
                   cur < max   ? COLOR_RED
                   : cur > max ? COLOR_GREEN
@@ -547,18 +538,18 @@ static void attributes_text(uint16_t potential, uint16_t actual, char *dst, size
     dst[0] = 0;
     if (!left)
         return;
-    append(dst, size, (const char *)kaos_ptr(ATTRIBUTES_PREFIX));
+    append(dst, size, tables_text(TABLES_TEXT_ATTRIBUTES_PREFIX));
     for (int16_t i = 0; i < ATTRIBUTE_COUNT; i++) {
         if (!(bits >> i & 1))
             continue;
         append(dst, size, gfx_string(TEXT_CONSUMABLE + i));
         left--;
         if (left > 1)
-            append(dst, size, (const char *)kaos_ptr(LIST_SEPARATOR));
+            append(dst, size, tables_text(TABLES_TEXT_LIST_SEPARATOR));
         else if (left == 1)
             append(dst, size, gfx_string(TEXT_AND));
     }
-    append(dst, size, (const char *)kaos_ptr(ATTRIBUTES_SUFFIX));
+    append(dst, size, tables_text(TABLES_TEXT_ATTRIBUTES_SUFFIX));
 }
 
 /* The object panel text: the name (bones with the champion name, a potion with its power rune
@@ -570,7 +561,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
     uint16_t type = THING_TYPE(thing), potential = 0, actual = 0, weight = inventory_get_object_weight(thing);
     if (icon == ICON_BONES)
         snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[junk_charges(thing)].name,
-                 (const char *)kaos_ptr(BONES_SEPARATOR), gfx_object_name(icon));
+                 tables_text(TABLES_TEXT_BONES_SEPARATOR), gfx_object_name(icon));
     else if (type == THING_POTION && icon != ICON_WATER_FLASK && g_inventory_champion_ordinal &&
              champion_get_skill_level(g_inventory_champion_ordinal - 1, SKILL_PRIEST) > 1)
         snprintf(name, PANEL_LINE_SIZE, "%c %s",
@@ -598,7 +589,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
     case THING_JUNK:
         if (icon <= ICON_COMPASS_NORTH + DIRECTION_WEST)
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s", gfx_string(TEXT_PARTY_FACING),
-                     gfx_string(kaos_s16(DIRECTION_STRINGS + 2 * icon)));
+                     gfx_string(tables_direction_text(icon)));
         else if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_string(TEXT_WATERSKIN_EMPTY + junk_charges(thing)));
         else {

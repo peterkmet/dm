@@ -57,7 +57,7 @@ This is a separate work item ("CSB engine"). It needs a decision first: one addr
 | `port/src/platform/main.c` | `main` | `data = "game"` (default). |
 | | `load_kaos_and_graphics` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Used by `--show` and `--view`. |
 | | `view_start` | `"%s/Dungeon.DAT"`. |
-| | `show` (`--show`) | The palette comes from the KAOS address `DUNGEON_PALETTE` (`0x100aa6`). |
+| | `show` (`--show`) | The palette comes from the KAOS address `KAOS_DUNGEON_PALETTES` (`0x100aa6`). |
 | `port/src/ui/gameloop.c` | `gameloop_load_data` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Sets the save directory to `dir`. |
 | | `gameloop_new_game` | `"%s/Dungeon.DAT"`. |
 | `port/src/platform/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_data_dir()`, so the folder is right. |
@@ -75,7 +75,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 
 | Place | Assumption |
 |---|---|
-| `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
+| `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `KAOS_ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
 | `command.c`: `command_set_entrance_input`, `KEYS_ENTRANCE` (`0x10393c`), `UI_INPUT_ENTRANCE` | Mouse table and key table come from the KAOS data. |
 | `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_new_game = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
 | `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_new_game(data)` or `startend_load_saved_game()`. |
@@ -85,7 +85,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 
 | Place | Assumption |
 |---|---|
-| `startend.c`: `endgame`, `show_credits`, `draw_the_end`, `draw_champion_parade` | DM graphics `GFX_CREDITS` 5, `GFX_THE_END` 6, `GFX_CHAMPION_FRAME` 346. Palette `CREDITS_PALETTE`. |
+| `startend.c`: `endgame`, `show_credits`, `draw_the_end`, `draw_champion_parade` | DM graphics `GFX_CREDITS` 5, `GFX_THE_END` 6, `GFX_CHAMPION_FRAME` 346. Palette `KAOS_CREDITS_PALETTE`. |
 | `startend.c`: `fuse_sequence`, `endgame_sensor`, `show_final_texts` | The fusion of Lord Chaos and Lord Order. Final texts on square (0, 0). CSB ends differently (`ENDA.DAT`). |
 | `startend.c`: `endgame` sets `g_return_to_entrance` | `main.c` then shows the DM entrance. For CSB this must show the CSB entrance. |
 | `startend.c`: `startend_load_saved_game` | Uses `savegame_load(save_dir)`. The texts come from DM `gfx_string`. |

@@ -55,8 +55,22 @@ The image accessors read the loaded image at call time. They need `kaos_load`, n
 | `tables_glyph_width`, `tables_glyph_height` | `0x10296e`, `0x102970` | int16 | — |
 | `tables_viewport_x`, `tables_viewport_y`, `tables_viewport_width`, `tables_viewport_height` | `0x10293a`, `0x10293c`, `0x102948`, `0x10294a` | int16 | — |
 | `tables_layout_bitmap` | `0x1025f2` | 14-byte record (x, y, w, h at +2 … +8) | Layout bitmap slot |
-| `tables_palette` | `0x100170`, `0x100190`, `0x100a46`, `0x100a66`, `0x100aa6` | uint16 × 16 | `TABLES_PALETTE_*` (dungeon + light level) |
+| `tables_palette`, `tables_palette_color` | `0x100170`, `0x100190`, `0x100a46`, `0x100a66`, `0x100aa6` | uint16 × 16 | `TABLES_PALETTE_*` (dungeon + light level), color |
 | `tables_palette_changes` | `0x102c18` … `0x102fc0`, `0x10247a`, `0x103ffa`, `0x1005fe` | uint8 × 16 (pointer) | `TABLES_CHANGES_*` |
+| `tables_icon_sheet_first` | `0x100b92` | int16 × 7 | Icon sheet |
+| `tables_slot_box_zone` | `0x100bb0` | 4-byte record × 46 (zone word) | Slot box |
+| `tables_slot_box_border`, `tables_bar_shadow` | `0x102956`, `0x102980` | int16 | — |
+| `tables_champion_icon_width`, `tables_champion_icon_height` | `0x10295c`, `0x10295e` | int16 | — |
+| `tables_damage_splat_width`, `tables_damage_splat_height` | `0x10297c` (small), `0x102978` (large) | int16 × 2 | Large |
+| `tables_skill_level_text`, `tables_base_skill_text`, `tables_statistic_text`, `tables_direction_text` | `0x101e74`, `0x102472`, `0x101e9a`, `0x101e92` | int16 text index | Level 2-16, base skill, statistic, direction |
+| `tables_text` | `0x101ebe`, `0x101ec6`, `0x101eca`, `0x101ec8`, `0x10402c` | C string (pointer) | `TABLES_TEXT_*` |
+| `tables_message_line_pad`, `tables_message_color` | `0x102966`, `0x104026` | int16, int16 × 2 (low byte) | —, message |
+| `tables_button_border`, `tables_button_inner_border` | `0x102988`, `0x10298c` | int16 × 2 | `TABLES_AXIS_X`, `TABLES_AXIS_Y` |
+| `tables_csb_restart_box` | `0x104248` (CSB image) | 8-byte box × 2 | Inner |
+| `tables_pointer_zone` | `0x1004f8` | 12-byte record × 16 | Zone |
+| `tables_pointer_hotspot_x`, `tables_pointer_hotspot_y` | `0x1005c8` | 8-byte record × 4 | Pointer shape |
+| `tables_pointer_shadow_dx`, `tables_pointer_shadow_dy` | `0x102952`, `0x102954` | int16 | — |
+| `tables_pointer_planes` | `0x1002b0` (arrow), `0x1003d4` (hand) | 4 bit planes (pointer), size words before | Hand |
 
 ## Table list
 

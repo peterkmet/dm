@@ -28,11 +28,6 @@
 #include "video.h"
 #include "view.h"
 
-/* KAOS data addresses. */
-#define CREDITS_PALETTE     0x100a46 /* g_credits_palette[16] */
-#define BUTTON_BORDER       0x102988 /* outer border x, y of an endgame button */
-#define BUTTON_INNER_BORDER 0x10298c /* inner border x, y */
-
 #define QUIT_CONFIRM_TICKS       100 /* QUIT asks for confirmation when no save or load is this recent */
 #define DEATH_WAIT_FRAMES        240
 #define THE_END_WAIT_FRAMES      300
@@ -258,10 +253,11 @@ static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_in
     Box b;
     if (!text_size(text, &tw, &th))
         return;
-    int16_t w = tw, h = th, inner_x = kaos_s16(BUTTON_INNER_BORDER), inner_y = kaos_s16(BUTTON_INNER_BORDER + 2);
+    int16_t w = tw, h = th, inner_x = tables_button_inner_border(TABLES_AXIS_X),
+            inner_y = tables_button_inner_border(TABLES_AXIS_Y);
     if (!layout_get_zone(zone, 0, 0, &b, &w, &h))
         return;
-    int16_t dx = inner_x + kaos_s16(BUTTON_BORDER), dy = inner_y + kaos_s16(BUTTON_BORDER + 2);
+    int16_t dx = inner_x + tables_button_border(TABLES_AXIS_X), dy = inner_y + tables_button_border(TABLES_AXIS_Y);
     Box outer = {b.x - dx, b.y - dy, b.w + 2 * dx, b.h + 2 * dy};
     Box inner = {outer.x + inner_x, outer.y + inner_y, outer.w - 2 * inner_x, outer.h - 2 * inner_y};
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
@@ -276,13 +272,10 @@ static void print_champion_skills(uint16_t champion_index, int y)
     for (int16_t skill = 0; skill < SKILL_BASE_COUNT; skill++) {
         int16_t level = champion_get_skill_level(champion_index, skill | SKILL_IGNORE_OBJECT_MODIFIERS |
                                                                      SKILL_IGNORE_TEMPORARY_EXPERIENCE);
-        if (level > SKILL_LEVEL_MAXIMUM)
-            level = SKILL_LEVEL_MAXIMUM;
         if (level == 1)
             continue;
         char line[ENDGAME_TEXT_SIZE];
-        snprintf(line, sizeof line, "%s %s", gfx_string(kaos_s16(SKILL_LEVEL_STRINGS + 2 * (level - 2))),
-                 gfx_string(kaos_s16(BASE_SKILL_STRINGS + 2 * skill)));
+        snprintf(line, sizeof line, "%s %s", ui_skill_rank_name(level), gfx_string(tables_base_skill_text(skill)));
         y += ENDGAME_SKILL_LINE;
         endgame_print_text(ENDGAME_SKILL_X, y, COLOR_LIGHT_GRAY, line);
     }
@@ -292,7 +285,7 @@ static void print_champion_skills(uint16_t champion_index, int y)
 static void draw_champion_parade(void)
 {
     Bitmap screen = ui_screen();
-    int16_t pw = kaos_s16(PORTRAIT_SIZE), ph = kaos_s16(PORTRAIT_SIZE + 2);
+    int16_t pw = tables_portrait_width(), ph = tables_portrait_height();
     memset(fb, COLOR_DARKEST_GRAY, sizeof fb);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         const Champion *c = &g_champions[i];
@@ -316,17 +309,18 @@ static void draw_champion_parade(void)
     ui_set_screen_palette(NULL);
 }
 
-/* The box of a CSB endgame button: x, y, width, height words. */
-static Box csb_box(uint32_t address)
+/* The outer or the inner box of the CSB endgame button. */
+static Box csb_box(bool inner)
 {
-    return (Box){kaos_s16(address), kaos_s16(address + 2), kaos_s16(address + 4), kaos_s16(address + 6)};
+    TablesRect r = tables_csb_restart_box(inner);
+    return (Box){r.x, r.y, r.w, r.h};
 }
 
 /* CSB: RESTART THIS GAME in its fixed boxes. The click box is in the endgame mouse table. */
 static void csb_draw_restart_button(void)
 {
     Bitmap screen = ui_screen();
-    Box outer = csb_box(CSB_RESTART_BOXES), inner = csb_box(CSB_RESTART_BOXES + CSB_BOX_BYTES);
+    Box outer = csb_box(false), inner = csb_box(true);
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
     draw_fill(&screen, &inner, COLOR_BLACK);
     text_draw_screen(CSB_RESTART_TEXT_X, CSB_RESTART_TEXT_Y, COLOR_CYAN, COLOR_BLACK,
@@ -389,8 +383,7 @@ static void show_credits(void)
     Bitmap screen = ui_screen();
     ui_blit_graphic(&screen, GFX_CREDITS, ZONE_SCREEN, COLOR_NONE);
     uint16_t credits_colors[PALETTE_COLORS];
-    for (int i = 0; i < PALETTE_COLORS; i++)
-        credits_colors[i] = kaos_u16(CREDITS_PALETTE + 2 * i);
+    tables_palette(TABLES_PALETTE_CREDITS, credits_colors);
     ui_set_screen_palette(credits_colors);
     wait_for_input();
 }

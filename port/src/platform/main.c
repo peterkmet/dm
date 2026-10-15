@@ -55,8 +55,7 @@ static int show(const char *dir, int n)
         return 0;
     if (gfx_load_bitmap(n, &bm))
         return SDL_Log("cannot decode graphic %d", n), 0;
-    for (int i = 0; i < PALETTE_COLORS; i++)
-        palette[i] = kaos_u16(DUNGEON_PALETTE + 2 * i);
+    tables_palette(TABLES_PALETTE_DUNGEON, palette);
     memset(fb, 0, sizeof fb);
     for (int y = 0; y < bm.h && y < SCREEN_H; y++)
         for (int x = 0; x < bm.w && x < SCREEN_W; x++)

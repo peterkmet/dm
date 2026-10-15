@@ -21,7 +21,6 @@
 #define ORNAMENT_VI_ALTAR 2 /* the alcove ornament that is a vi altar */
 /* tables_pile_shift pair indices */
 enum { PILE_FLOOR_SHIFTS = 16, PILE_ODD_CELL = 8, PILE_ALCOVE_FIRST = 2, PILE_ALCOVE_LAST = 13 };
-enum { PILE_SHIFT_X, PILE_SHIFT_Y };
 
 enum { LAYOUT_SLOTS = 64 };
 
@@ -627,8 +626,8 @@ static void object(uint16_t thing, int16_t aspect_index, int16_t cell, int16_t l
         zone = ZONE_SHIFTED |
                (alcove ? ZONE_ALCOVE_OBJECT_FIRST + coord + aspect[OBJECT_ASPECT_ALCOVE_COORD] * ZONE_ALCOVE_VIEW_SETS
                        : ZONE_OBJECT_FIRST + cell + coord * ZONE_OBJECT_CELLS);
-        rel_x = tables_creature_shift(distance, tables_pile_shift(*pile, PILE_SHIFT_X));
-        rel_y = tables_creature_shift(distance, tables_pile_shift(*pile, PILE_SHIFT_Y));
+        rel_x = tables_creature_shift(distance, tables_pile_shift(*pile, TABLES_AXIS_X));
+        rel_y = tables_creature_shift(distance, tables_pile_shift(*pile, TABLES_AXIS_Y));
         ++*pile;
         if (!alcove)
             *pile &= PILE_FLOOR_SHIFTS - 1;

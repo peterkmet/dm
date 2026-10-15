@@ -1,6 +1,7 @@
 #ifndef TABLES_H
 #define TABLES_H
 /* Prefixes: tables_ */
+#include <stdbool.h>
 #include <stdint.h>
 
 /* Static rule tables of KAOS.FTL, decoded once from the loaded image. Field bits: docs/tables.md. */
@@ -210,6 +211,7 @@ const uint8_t *tables_object_aspect(int16_t index);
 const uint8_t *tables_projectile_aspect(int16_t index);
 const uint8_t *tables_field_aspect(int16_t index);
 int16_t tables_creature_shift(int16_t distance, int16_t index);
+enum { TABLES_AXIS_X, TABLES_AXIS_Y };
 uint8_t tables_pile_shift(int16_t pair, int16_t axis);
 uint8_t tables_object_scale(int16_t row);
 uint8_t tables_projectile_scale(int16_t row);
@@ -257,6 +259,7 @@ enum {
     TABLES_PALETTE_DUNGEON
 };
 void tables_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT]);
+uint16_t tables_palette_color(int16_t palette, int16_t color);
 
 /* Palette changes: a color map of TABLES_PALETTE_COLOR_COUNT bytes for draw_shrink. */
 enum {
@@ -275,5 +278,46 @@ enum {
     TABLES_CHANGES_COUNT
 };
 const uint8_t *tables_palette_changes(int16_t changes);
+
+/* Interface and champion panel tables; each accessor reads the loaded image at call time. */
+int16_t tables_icon_sheet_first(int16_t sheet);
+int16_t tables_slot_box_zone(int16_t slot_box);
+int16_t tables_slot_box_border(void);
+int16_t tables_champion_icon_width(void);
+int16_t tables_champion_icon_height(void);
+int16_t tables_bar_shadow(void);
+int16_t tables_damage_splat_width(bool large);
+int16_t tables_damage_splat_height(bool large);
+int16_t tables_skill_level_text(int16_t level);
+int16_t tables_base_skill_text(int16_t skill);
+int16_t tables_statistic_text(int16_t statistic);
+int16_t tables_direction_text(int16_t direction);
+/* Short texts of the image, as C strings. */
+enum {
+    TABLES_TEXT_LIST_SEPARATOR,
+    TABLES_TEXT_BONES_SEPARATOR,
+    TABLES_TEXT_ATTRIBUTES_PREFIX,
+    TABLES_TEXT_ATTRIBUTES_SUFFIX,
+    TABLES_TEXT_VERSION,
+    TABLES_TEXT_COUNT
+};
+const char *tables_text(int16_t text);
+int16_t tables_message_line_pad(void);
+uint8_t tables_message_color(int16_t i);
+int16_t tables_button_border(int16_t axis);
+int16_t tables_button_inner_border(int16_t axis);
+TablesRect tables_csb_restart_box(bool inner);
+
+/* Mouse pointer: the zones that select the pointer shape, the hotspots, the shadow, and the bitmaps. */
+typedef struct {
+    int16_t x, y, w, h, shape, champion;
+} PointerZone;
+PointerZone tables_pointer_zone(int16_t i);
+int16_t tables_pointer_hotspot_x(int16_t shape);
+int16_t tables_pointer_hotspot_y(int16_t shape);
+int16_t tables_pointer_shadow_dx(void);
+int16_t tables_pointer_shadow_dy(void);
+/* The 4 bit planes of the arrow or the hand pointer; *w and *h get its size. */
+const uint8_t *tables_pointer_planes(bool hand, int16_t *w, int16_t *h);
 
 #endif

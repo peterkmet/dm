@@ -11,8 +11,7 @@
 #define ACTION_NONE            255
 #define CHAMPION_SYMBOL_COUNT  4
 #define FOOD_WATER_MINIMUM     (-1024)
-#define CHAMPION_COLORS        0x100ce0 /* KAOS g_champion_colors[4] */
-#define INITIAL_FOOD_WATER     1500     /* food and water of a new champion: this + a random byte */
+#define INITIAL_FOOD_WATER     1500 /* food and water of a new champion: this + a random byte */
 #define FOOD_WATER_RANDOM_MASK 0xff
 #define FOOD_WATER_STARVING    (-512) /* below this the champion starves */
 #define MAXIMUM_MANA           900

@@ -16,10 +16,6 @@
 #include "view.h"
 
 /* KAOS data addresses. */
-#define BOTTOM_PALETTE           0x100170 /* g_initial_colormap[0..15]: interface palette */
-#define ICON_FIRST               0x100b92 /* g_icon_graphic_first_index[7] */
-#define SLOT_BOXES               0x100bb0 /* g_slot_boxes[46]: zone, current icon */
-#define SLOT_BOX_BORDER          0x102956 /* g_slot_box_border */
 #define MOUSE_INPUT_INTERFACE    0x1031f8
 #define MOUSE_INPUT_MOVEMENT     0x1032e8
 #define MOUSE_INPUT_INVENTORY    0x103354
@@ -166,8 +162,7 @@ void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, con
 void ui_draw_viewport(void)
 {
     Bitmap screen = ui_screen();
-    for (int i = 0; i < PALETTE_COLORS; i++)
-        palette[i] = kaos_u16(BOTTOM_PALETTE + 2 * i);
+    tables_palette(TABLES_PALETTE_INTERFACE, palette);
     ui_blit_zone(&screen, &viewport, ZONE_VIEWPORT, COLOR_NONE);
 }
 
@@ -177,7 +172,7 @@ void ui_draw_viewport(void)
 void ui_set_screen_palette(const uint16_t *colors)
 {
     for (int i = 0; i < PALETTE_COLORS; i++)
-        palette[i] = colors ? colors[i] : kaos_u16(BOTTOM_PALETTE + 2 * i);
+        palette[i] = colors ? colors[i] : tables_palette_color(TABLES_PALETTE_INTERFACE, i);
     palette_split_top = 0;
     palette_split_bottom = SCREEN_H;
 }
@@ -188,7 +183,7 @@ void ui_set_palette(const uint16_t *top)
     for (int i = 0; i < PALETTE_COLORS; i++) {
         if (top)
             palette[i] = top[i];
-        palette[PALETTE_COLORS + i] = kaos_u16(BOTTOM_PALETTE + 2 * i);
+        palette[PALETTE_COLORS + i] = tables_palette_color(TABLES_PALETTE_INTERFACE, i);
     }
     if (ui_zone_box(ZONE_VIEWPORT, &b)) {
         palette_split_top = b.y;
@@ -250,9 +245,9 @@ void ui_draw_interface(void)
 void ui_extract_icon(int16_t icon, Bitmap *out)
 {
     int sheet = 0;
-    while (sheet < ICON_SHEET_COUNT && kaos_s16(ICON_FIRST + 2 * sheet) <= icon)
+    while (sheet < ICON_SHEET_COUNT && tables_icon_sheet_first(sheet) <= icon)
         sheet++;
-    int16_t i = icon - kaos_s16(ICON_FIRST + 2 * (sheet - 1));
+    int16_t i = icon - tables_icon_sheet_first(sheet - 1);
     const Bitmap *bm = gfx_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     out->w = out->h = UI_ICON_SIZE;
     memset(out->px, 0, UI_ICON_SIZE * UI_ICON_SIZE);
@@ -267,7 +262,7 @@ int ui_icon_zone_box(int16_t zone, int border, Box *box)
     int16_t w = UI_ICON_SIZE, h = UI_ICON_SIZE;
     int ok = layout_get_zone(zone, 0, 0, box, &w, &h);
     if (border) {
-        int16_t d = kaos_s16(SLOT_BOX_BORDER);
+        int16_t d = tables_slot_box_border();
         box->x -= d, box->y -= d, box->w += 2 * d, box->h += 2 * d;
     }
     return ok;
@@ -276,8 +271,7 @@ int ui_icon_zone_box(int16_t zone, int border, Box *box)
 /* The icon box of a slot box. */
 int ui_slot_box_zone(int16_t slot_box, int border, Box *box)
 {
-    return slot_box >= 0 && slot_box < SLOT_BOX_COUNT &&
-           ui_icon_zone_box(kaos_s16(SLOT_BOXES + 4 * slot_box), border, box);
+    return slot_box >= 0 && slot_box < SLOT_BOX_COUNT && ui_icon_zone_box(tables_slot_box_zone(slot_box), border, box);
 }
 
 /* Draws an icon in a slot box: the hands are on the screen, the other slots in the viewport. */

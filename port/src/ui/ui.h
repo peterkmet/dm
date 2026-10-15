@@ -11,10 +11,6 @@
 
 #define UI_ICON_SIZE 16
 
-/* KAOS data addresses. */
-#define SKILL_LEVEL_STRINGS 0x101e74 /* g_skill_level_string_indices[15], level 2-16 */
-#define BASE_SKILL_STRINGS  0x102472 /* g_base_skill_string_indices[4] */
-
 #define SPELL_TAB_STEP 5 /* caster tab zones per caster */
 
 /* Colors of the interface palette. */

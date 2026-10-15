@@ -34,16 +34,6 @@
 #include "video.h"
 #include "view.h"
 
-/* KAOS data addresses. */
-#define ENTRANCE_PALETTE      0x100a66 /* g_entrance_palette[16] */
-#define SPRITE_PALETTE        0x100190 /* pointer colors (the second half of g_initial_colormap) */
-#define ARROW_POINTER         0x1002b0 /* g_arrow_pointer_bitmap: 4 bit planes, size in the 4 bytes before */
-#define HAND_POINTER          0x1003d4 /* g_hand_pointer_bitmap */
-#define POINTER_ZONES         0x1004f8 /* g_mouse_pointer_zones[16]: x, y, width, height, shape, champion */
-#define POINTER_HOTSPOTS      0x1005c8 /* g_mouse_pointer_hotspots[4]: x, y, width, height */
-#define POINTER_SHADOW_OBJECT 0x1005fe /* g_pointer_shadow_colors_object[16] */
-#define POINTER_SHADOW_OFFSET 0x102952 /* g_pointer_shadow_dx, g_pointer_shadow_dy */
-
 #define TORCH_BURN_INTERVAL_MASK   0x1ff /* torches lose one charge every 512 ticks */
 #define TIME_EFFECTS_MASK          0x3f  /* champion time effects every 64 ticks */
 #define TIME_EFFECTS_SLEEPING_MASK 0xf   /* every 16 ticks while the party sleeps */
@@ -51,24 +41,10 @@
 #define LIGHT_SOURCES_USED         5 /* the brightest torches that add light */
 #define LIGHT_FIRST_SHIFT          6
 #define POINTER_ZONE_COUNT         16
-#define POINTER_ZONE_BYTES         12
-#define POINTER_HOTSPOT_BYTES      8
 #define POINTER_SHADOW_COLOR       12 /* black: the shadow, swapped with the transparent color 0 */
-#define POINTER_WIDTH_BEFORE       4  /* the bitmap width word comes 4 bytes before the planes */
-#define POINTER_HEIGHT_BEFORE      2
 
-/* Byte offsets of the words of a pointer zone and of a pointer hotspot. */
-enum {
-    POINTER_ZONE_X = 0,
-    POINTER_ZONE_Y = 2,
-    POINTER_ZONE_W = 4,
-    POINTER_ZONE_H = 6,
-    POINTER_ZONE_SHAPE = 8,
-    POINTER_ZONE_CHAMPION = 10
-};
-/* POINTER_ZONE_CHAMPION: champion index + 1 in bits 0-2; 8 and more is the name zone of the champion */
+/* PointerZone.champion: champion index + 1 in bits 0-2; 8 and more is the name zone of the champion */
 enum { ZONE_CHAMPION_INDEX_MASK = 7, ZONE_CHAMPION_NAME = 8 };
-enum { HOTSPOT_X = 0, HOTSPOT_Y = 2 };
 
 enum { POINTER_ARROW, POINTER_HAND, POINTER_OBJECT };
 
@@ -134,8 +110,7 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
 
 static void set_entrance_palette(void)
 {
-    for (int i = 0; i < PALETTE_COLORS; i++)
-        palette[i] = kaos_u16(ENTRANCE_PALETTE + 2 * i);
+    tables_palette(TABLES_PALETTE_ENTRANCE, palette);
     palette_split_top = 0;
     palette_split_bottom = SCREEN_H;
 }
@@ -525,17 +500,19 @@ void gameloop_tick(void)
     run_requested_sequence();
 }
 
-/* Reads a 4 bit plane bitmap of the KAOS data into one color per pixel. */
-static void planar_pointer(uint32_t address, uint8_t *px, int *w, int *h)
+/* Reads the 4 bit plane bitmap of the arrow or the hand pointer into one color per pixel. */
+static void planar_pointer(bool hand, uint8_t *px, int *w, int *h)
 {
-    *w = kaos_u16(address - POINTER_WIDTH_BEFORE);
-    *h = kaos_u16(address - POINTER_HEIGHT_BEFORE);
+    int16_t pw, ph;
+    const uint8_t *planes = tables_pointer_planes(hand, &pw, &ph);
+    *w = (uint16_t)pw;
+    *h = (uint16_t)ph;
     int row_bytes = (*w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD * 2, plane = row_bytes * *h;
     for (int y = 0; y < *h; y++)
         for (int x = 0; x < *w; x++) {
             uint8_t c = 0;
             for (int p = 0; p < BITPLANE_COUNT; p++) {
-                uint8_t byte = kaos_u8(address + p * plane + y * row_bytes + x / CHAR_BIT);
+                uint8_t byte = planes[p * plane + y * row_bytes + x / CHAR_BIT];
                 c |= (uint8_t)((byte >> (CHAR_BIT - 1 - x % CHAR_BIT) & 1) << p);
             }
             px[y * *w + x] = c;
@@ -547,14 +524,15 @@ static void object_pointer(uint8_t *px, int *w, int *h)
 {
     uint8_t icon_px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap icon = {UI_ICON_SIZE, UI_ICON_SIZE, icon_px};
-    int16_t dx = kaos_s16(POINTER_SHADOW_OFFSET), dy = kaos_s16(POINTER_SHADOW_OFFSET + 2);
+    int16_t dx = tables_pointer_shadow_dx(), dy = tables_pointer_shadow_dy();
+    const uint8_t *shadows = tables_palette_changes(TABLES_CHANGES_POINTER_SHADOW);
     ui_extract_icon(object_get_icon_index(g_leader_hand_object), &icon);
     *w = UI_ICON_SIZE + dx;
     *h = UI_ICON_SIZE + dy;
     memset(px, POINTER_SHADOW_COLOR, (size_t)*w * *h);
     for (int y = 0; y < UI_ICON_SIZE; y++)
         for (int x = 0; x < UI_ICON_SIZE; x++) {
-            uint8_t shadow = kaos_u8(POINTER_SHADOW_OBJECT + icon_px[y * UI_ICON_SIZE + x]);
+            uint8_t shadow = shadows[icon_px[y * UI_ICON_SIZE + x]];
             if (shadow != POINTER_SHADOW_COLOR)
                 px[(y + dy) * *w + x + dx] = shadow;
         }
@@ -573,13 +551,11 @@ static int pointer_shape(int16_t x, int16_t y, int in_game)
     if (!in_game || g_leader_index == -1)
         return POINTER_ARROW;
     for (int i = 0; i < POINTER_ZONE_COUNT; i++) {
-        uint32_t z = POINTER_ZONES + POINTER_ZONE_BYTES * i;
-        int16_t zx = kaos_s16(z + POINTER_ZONE_X), zy = kaos_s16(z + POINTER_ZONE_Y);
-        int16_t zw = kaos_s16(z + POINTER_ZONE_W), zh = kaos_s16(z + POINTER_ZONE_H);
-        if (x < zx || x >= zx + zw || y < zy || y >= zy + zh)
+        PointerZone z = tables_pointer_zone(i);
+        if (x < z.x || x >= z.x + z.w || y < z.y || y >= z.y + z.h)
             continue;
-        int16_t champion = kaos_s16(z + POINTER_ZONE_CHAMPION);
-        if (!champion && !kaos_s16(z + POINTER_ZONE_SHAPE))
+        int16_t champion = z.champion;
+        if (!champion && !z.shape)
             return POINTER_ARROW;
         /* a status box: the arrow over a living champion with its inventory open, or over its name */
         int16_t index = (champion & ZONE_CHAMPION_INDEX_MASK) - 1;
@@ -599,16 +575,15 @@ int gameloop_pointer(int16_t x, int16_t y, int in_game, uint8_t *px, int *w, int
     if (shape == POINTER_OBJECT)
         object_pointer(px, w, h);
     else
-        planar_pointer(shape == POINTER_HAND ? HAND_POINTER : ARROW_POINTER, px, w, h);
-    *hot_x = kaos_s16(POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + HOTSPOT_X);
-    *hot_y = kaos_s16(POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + HOTSPOT_Y);
+        planar_pointer(shape == POINTER_HAND, px, w, h);
+    *hot_x = tables_pointer_hotspot_x(shape);
+    *hot_y = tables_pointer_hotspot_y(shape);
     return 1;
 }
 
 const uint16_t *gameloop_pointer_palette(void)
 {
     static uint16_t colors[PALETTE_COLORS];
-    for (int i = 0; i < PALETTE_COLORS; i++)
-        colors[i] = kaos_u16(SPRITE_PALETTE + 2 * i);
+    tables_palette(TABLES_PALETTE_POINTER, colors);
     return colors;
 }

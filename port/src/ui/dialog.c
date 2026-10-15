@@ -11,10 +11,6 @@
 #include "video.h"
 #include "view.h"
 
-/* KAOS data addresses. */
-#define VERSION_TEXT      0x10402c /* g_dialog_version_text: "V3.6" */
-#define MESSAGE_COLORS    0x104026 /* g_dialog_message_colors[2] */
-#define MESSAGE_LINE_PAD  0x102966 /* pixels above and below a message line */
 #define MAX_CHOICES       4
 #define MESSAGE_COUNT     2
 #define MESSAGE_LINE_SIZE 64
@@ -49,9 +45,8 @@ static void patch_dividers(Bitmap *vp, int16_t count)
     if (!patch_zone[count - 1])
         return;
     Bitmap copy = {vp->w, vp->h, copy_px};
-    uint32_t source = LAYOUT_BITMAPS + (uint32_t)(patch_layout[count - 1] - 1) * LAYOUT_BITMAP_SIZE;
-    int16_t sx = kaos_s16(source + LAYOUT_BITMAP_X), sy = kaos_s16(source + LAYOUT_BITMAP_Y);
-    int16_t w = kaos_s16(source + LAYOUT_BITMAP_W), h = kaos_s16(source + LAYOUT_BITMAP_H);
+    TablesRect source = tables_layout_bitmap(patch_layout[count - 1] - 1);
+    int16_t sx = source.x, sy = source.y, w = source.w, h = source.h;
     Box b;
     memcpy(copy_px, vp->px, (size_t)vp->w * vp->h);
     if (layout_get_zone(patch_zone[count - 1], copy.w, copy.h, &b, &w, &h))
@@ -76,7 +71,7 @@ static void draw_choices(Bitmap *vp, const char *choice[MAX_CHOICES], int16_t co
 static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_t zone)
 {
     Box box;
-    int width[MESSAGE_COUNT] = {0}, lines[MESSAGE_COUNT] = {0}, total = 0, height, pad = kaos_s16(MESSAGE_LINE_PAD);
+    int width[MESSAGE_COUNT] = {0}, lines[MESSAGE_COUNT] = {0}, total = 0, height, pad = tables_message_line_pad();
     if (!ui_zone_box(zone, &box))
         return;
     for (int i = 0; i < MESSAGE_COUNT; i++) {
@@ -92,7 +87,7 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
     for (int i = 0; i < MESSAGE_COUNT; i++) {
         if (!lines[i])
             continue;
-        uint8_t color = (uint8_t)kaos_s16(MESSAGE_COLORS + 2 * i);
+        uint8_t color = tables_message_color(i);
         int pos = 0;
         if (lines[i] == 2) {
             char line[MESSAGE_LINE_SIZE];
@@ -118,7 +113,7 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
     Box all = {0, 0, vp->w, vp->h};
     if (graphic)
         draw_blit(graphic, 0, 0, vp, &all, COLOR_NONE, 0);
-    ui_print_zone(vp, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, (const char *)kaos_ptr(VERSION_TEXT));
+    ui_print_zone(vp, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, tables_text(TABLES_TEXT_VERSION));
     int16_t count = 1;
     while (count < MAX_CHOICES && choice[count])
         count++;
