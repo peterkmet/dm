@@ -5,7 +5,7 @@
 #include "adventure.h"
 #include "bytes.h"
 #include "command.h"
-#include "ftl.h"
+#include "file.h"
 #include "graphics.h"
 #include "music.h"
 #include "os.h"
@@ -118,7 +118,7 @@ static uint8_t *read_file_any_case(const char *name, size_t *len)
             return NULL;
         p += n + (p[n] == '/');
     }
-    return read_file(path, len);
+    return file_read(path, len);
 }
 
 /* SF and MF: the file named by the payload, kept until anim_close. NULL when it cannot be read. */
@@ -175,7 +175,7 @@ int anim_open(const char *path)
     anim_close();
     const char *slash = strrchr(path, '/');
     snprintf(directory, sizeof directory, "%.*s", slash ? (int)(slash - path) : 1, slash ? path : ".");
-    if (!(file = read_file(path, &file_len)))
+    if (!(file = file_read(path, &file_len)))
         return -1;
     size_t at = 0;
     while (at + CHUNK_HEADER <= file_len)

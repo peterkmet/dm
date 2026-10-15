@@ -14,7 +14,15 @@ enum { ADVENTURE_DM, ADVENTURE_CSB };
 #define CSB_INTRO_FILE        "disk-b/ANIM.DAT" /* the CSB intro with music, in the CSB folder */
 #define PATH_SIZE             1024              /* longest file path */
 
+typedef struct {
+    const char *name, *dir, *title;     /* the --adventure value, the default disk A folder, the name in messages */
+    const char *engine, *save, *backup; /* the engine module, the save file and the backup file names */
+} Adventure;
+
 extern int16_t g_adventure; /* ADVENTURE_DM by default; game_new does not reset it */
+
+/* The names and files of an adventure: ADVENTURE_DM or ADVENTURE_CSB. */
+const Adventure *adventure_get(int16_t adventure);
 
 /* The adventure of a --adventure value ("dm" or "csb"), or -1. */
 int adventure_of(const char *name);

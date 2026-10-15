@@ -4,6 +4,7 @@
 #include "adventure.h"
 #include "bytes.h"
 #include "csbimage.h"
+#include "file.h"
 #include "ftl.h"
 #include "kaos_addresses.h"
 
@@ -53,23 +54,6 @@ enum { SECTION_INFO = 16, SECTION_DATA, SECTION_CODE, SECTION_COUNT = 3 };
 #define NIBBLE_MASK        0xf
 
 FtlImage kaos;
-
-uint8_t *read_file(const char *path, size_t *len)
-{
-    FILE *f = fopen(path, "rb");
-    uint8_t *buf = NULL;
-    int64_t n;
-    if (!f)
-        return NULL;
-    if (!fseek(f, 0, SEEK_END) && (n = ftell(f)) >= 0 && !fseek(f, 0, SEEK_SET) && (buf = malloc(n ? n : 1)) &&
-        fread(buf, 1, n, f) != (size_t)n) {
-        free(buf);
-        buf = NULL;
-    }
-    fclose(f);
-    *len = buf ? (size_t)n : 0;
-    return buf;
-}
 
 typedef struct {
     const uint8_t *s;
@@ -260,7 +244,7 @@ void ftl_free(FtlImage *img)
 int kaos_load(const char *path)
 {
     size_t len;
-    uint8_t *raw = read_file(path, &len);
+    uint8_t *raw = file_read(path, &len);
     FtlImage appb = {0};
     bool csb = g_adventure == ADVENTURE_CSB;
     ftl_free(&kaos);

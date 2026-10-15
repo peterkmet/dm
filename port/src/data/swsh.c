@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "swsh.h"
 #include "bytes.h"
+#include "file.h"
 
 /* SWSH.FTL image addresses. */
 #define SWSH_BASE           0x100000
@@ -14,7 +15,7 @@
 bool swsh_load(const char *path, SwshLogo *out)
 {
     size_t len;
-    uint8_t *raw = read_file(path, &len);
+    uint8_t *raw = file_read(path, &len);
     *out = (SwshLogo){0};
     bool loaded = raw && !ftl_load(raw, len, SWSH_BASE, &out->image) && out->image.size > SWSH_SAMPLE_DATA - SWSH_BASE;
     free(raw);

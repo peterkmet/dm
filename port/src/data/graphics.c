@@ -3,7 +3,7 @@
 #include "adventure.h"
 #include "bytes.h"
 #include "csbtext.h"
-#include "ftl.h"
+#include "file.h"
 #include "graphics.h"
 #include "ids.h"
 
@@ -34,7 +34,7 @@ int gfx_open(const char *path)
     offsets = NULL;
     decoded = NULL;
     count = 0;
-    if (!(dat = read_file(path, &dat_len)) || dat_len < 4)
+    if (!(dat = file_read(path, &dat_len)) || dat_len < 4)
         return -1;
     if (BE16(dat) != GRAPHICS_DAT_FORMAT_1)
         return -1;

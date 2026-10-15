@@ -63,7 +63,7 @@ TABLES = {
 @pytest.fixture(scope="module")
 def lib(tmp_path_factory):
     out = tmp_path_factory.mktemp("tables") / "libtables.dylib"
-    src = [str(next(PORT_SRC.rglob(f))) for f in ("tables.c", "ftl.c", "adventure.c", "adf.c", "os.c", "crc32.c", "csbimage.c", "csbtext.c")]
+    src = [str(next(PORT_SRC.rglob(f))) for f in ("tables.c", "ftl.c", "file.c", "adventure.c", "adf.c", "os.c", "crc32.c", "csbimage.c", "csbtext.c")]
     r = subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *src],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr

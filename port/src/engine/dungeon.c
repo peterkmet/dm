@@ -1,5 +1,6 @@
 #include "dungeon.h"
 #include "adventure.h"
+#include "file.h"
 #include "ftl.h"
 #include "game.h"
 #include "map.h"
@@ -351,7 +352,7 @@ bool dungeon_validate(void)
 bool load_dungeon(const char *path)
 {
     size_t size;
-    uint8_t *file = read_file(path, &size), *unpacked = NULL;
+    uint8_t *file = file_read(path, &size), *unpacked = NULL;
     bool ok = kaos.data && file && size >= COMPRESSED_HEADER_BYTES;
     dungeon_free();
     load_ptr = file;

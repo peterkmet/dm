@@ -5,7 +5,7 @@
 #include "adf.h"
 #include "adventure.h"
 #include "bytes.h"
-#include "ftl.h"
+#include "file.h"
 #include "os.h"
 
 /* Layout of the Amiga Old File System on a double-density floppy. Offsets are bytes in a block. */
@@ -47,7 +47,7 @@ static const uint8_t *block(const uint8_t *img, uint32_t n)
 static uint8_t *load(const char *path)
 {
     size_t len;
-    uint8_t *img = read_file(path, &len);
+    uint8_t *img = file_read(path, &len);
     if (img && (len != ADF_SIZE || memcmp(img, "DOS", ADF_DOS_TAG_SIZE) || img[ADF_FLAGS_OFFSET] & ADF_FFS_FLAG)) {
         free(img);
         img = NULL;

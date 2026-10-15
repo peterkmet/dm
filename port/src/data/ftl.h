@@ -1,6 +1,6 @@
 #ifndef FTL_H
 #define FTL_H
-/* Prefixes: ftl_ read_ kaos_ */
+/* Prefixes: ftl_ kaos_ */
 #include <stddef.h>
 #include <stdint.h>
 
@@ -11,7 +11,6 @@ typedef struct {
 
 int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img);
 void ftl_free(FtlImage *img);
-uint8_t *read_file(const char *path, size_t *len);
 
 extern FtlImage kaos;
 /* Loads the engine module at path: KAOS.FTL, or for CSB APPB.FTL as a KAOS-layout image. Returns 0 or -1. */

@@ -7,7 +7,7 @@
 #include "champion.h"
 #include "dungeon.h"
 #include "explored.h"
-#include "ftl.h"
+#include "file.h"
 #include "game.h"
 #include "graphics.h"
 #include "ids.h"
@@ -444,7 +444,7 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
         return ADVENTURE_NAMES_NOT_UNIQUE;
     size_t size = 0;
     uint32_t out_size = 0;
-    uint8_t *data = read_file(mini_path, &size), *out = NULL;
+    uint8_t *data = file_read(mini_path, &size), *out = NULL;
     SaveFile mini;
     if (data && save_decode(data, (uint32_t)size, &mini)) {
         merge_party(&mini);
@@ -541,10 +541,10 @@ int16_t savegame_load_from(const char *dir, const char *name, const char *backup
     file_path(path, dir, name);
     if (backup_name)
         file_path(backup, dir, backup_name);
-    uint8_t *data = read_file(path, &size);
+    uint8_t *data = file_read(path, &size);
     bool from_backup = !data && backup_name;
     if (from_backup)
-        data = read_file(backup, &size);
+        data = file_read(backup, &size);
     if (!data)
         return SAVEGAME_MISSING;
     size_t automap_length = 0;

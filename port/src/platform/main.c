@@ -447,10 +447,11 @@ static const char *adventure_dir(void)
 /* Loads the game files of g_adventure from data after the check that they are the Amiga files. Returns 0 with a log line. */
 static int load_game_files(void)
 {
-    static const char *const titles[] = {"Dungeon Master v3.60", "Chaos Strikes Back"};
     const char *bad = adventure_bad_file(g_adventure, data);
     if (bad)
-        return SDL_Log("%s/%s is missing or is not the file of %s for the Amiga", data, bad, titles[g_adventure]), 0;
+        return SDL_Log("%s/%s is missing or is not the file of %s for the Amiga", data, bad,
+                       adventure_get(g_adventure)->title),
+               0;
     if (!gameloop_load_data(data))
         return SDL_Log("cannot load the game files in %s", data), 0;
     return 1;

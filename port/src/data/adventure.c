@@ -5,15 +5,14 @@
 #include "adf.h"
 #include "bytes.h"
 #include "crc32.h"
-#include "ftl.h"
+#include "file.h"
 
 int16_t g_adventure = ADVENTURE_DM;
 
-static const char *const names[] = {"dm", "csb"};
-static const char *const dirs[] = {"game", "game-csb"};
-static const char *const engine_names[] = {"KAOS.FTL", "APPB.FTL"};
-static const char *const save_names[] = {"DMGAME.DAT", "CSBGAME.DAT"};
-static const char *const backup_names[] = {"DMGAME.BAK", "CSBGAME.BAK"};
+static const Adventure adventures[] = {
+    {"dm",  "game",     "Dungeon Master v3.60", "KAOS.FTL", "DMGAME.DAT",  "DMGAME.BAK" },
+    {"csb", "game-csb", "Chaos Strikes Back",   "APPB.FTL", "CSBGAME.DAT", "CSBGAME.BAK"},
+};
 
 /* CRC32 of the game files of Dungeon Master v3.60 and Chaos Strikes Back for the Amiga. */
 #define CRC_DM_KAOS      0x63c20344u
@@ -49,27 +48,31 @@ static const struct {
 
 int adventure_of(const char *name)
 {
-    for (int i = 0; i < ARRAY_COUNT(names); i++)
-        if (!strcmp(name, names[i]))
+    for (int i = 0; i < ARRAY_COUNT(adventures); i++)
+        if (!strcmp(name, adventures[i].name))
             return i;
     return -1;
 }
 
+const Adventure *adventure_get(int16_t adventure)
+{
+    return &adventures[adventure];
+}
 const char *adventure_default_dir(int16_t adventure)
 {
-    return dirs[adventure];
+    return adventures[adventure].dir;
 }
 const char *adventure_engine_name(void)
 {
-    return engine_names[g_adventure];
+    return adventures[g_adventure].engine;
 }
 const char *adventure_save_name(void)
 {
-    return save_names[g_adventure];
+    return adventures[g_adventure].save;
 }
 const char *adventure_backup_name(void)
 {
-    return backup_names[g_adventure];
+    return adventures[g_adventure].backup;
 }
 
 bool adventure_csb_present(const char *dir)
@@ -77,10 +80,8 @@ bool adventure_csb_present(const char *dir)
     char path[PATH_SIZE];
     for (int i = 0; i < GAME_FILES; i++) {
         snprintf(path, sizeof path, "%s/%s", dir, game_files[ADVENTURE_CSB][i].name);
-        FILE *f = fopen(path, "rb");
-        if (!f)
+        if (!file_exists(path))
             return false;
-        fclose(f);
     }
     return true;
 }
@@ -91,7 +92,7 @@ const char *adventure_bad_file(int16_t adventure, const char *dir)
     for (int i = 0; i < GAME_FILES && game_files[adventure][i].name; i++) {
         size_t len;
         snprintf(path, sizeof path, "%s/%s", dir, game_files[adventure][i].name);
-        uint8_t *data = read_file(path, &len);
+        uint8_t *data = file_read(path, &len);
         uint32_t crc = data ? crc32_update(0, data, len) : 0;
         free(data);
         if (!data || crc != game_files[adventure][i].crc)
@@ -108,11 +109,8 @@ int adventure_install_disk(const char *adf_path, const char **dir)
             continue;
         *dir = game_disks[i].dir;
         snprintf(path, sizeof path, "%s/%s", *dir, game_disks[i].file);
-        FILE *f = fopen(path, "rb");
-        if (f) {
-            fclose(f);
+        if (file_exists(path))
             return 0;
-        }
         return adf_extract(adf_path, *dir) ? -1 : 1;
     }
     return 0;
