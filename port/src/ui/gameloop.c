@@ -152,8 +152,8 @@ void entrance_open_doors(void)
     static uint8_t view_px[SCREEN_W * SCREEN_H];
     char path[PATH_SIZE];
     Box box;
-    snprintf(path, sizeof path, "%s/Dungeon.DAT", data_dir);
-    if (!g_frame_hook || !load_dungeon(path) || !ui_zone_box(ZONE_VIEWPORT, &box))
+    if (snprintf(path, sizeof path, "%s/Dungeon.DAT", data_dir) >= (int)sizeof path || !g_frame_hook ||
+        !load_dungeon(path) || !ui_zone_box(ZONE_VIEWPORT, &box))
         return;
     view_set_light(g_party_map_index, 0);
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);

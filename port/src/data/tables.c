@@ -575,10 +575,9 @@ uint16_t tables_palette_color(int16_t palette, int16_t color)
 {
     static const uint32_t first[TABLES_PALETTE_DUNGEON] = {KAOS_INITIAL_COLORMAP, KAOS_POINTER_PALETTE,
                                                            KAOS_CREDITS_PALETTE, KAOS_ENTRANCE_PALETTE};
-    uint32_t at = palette < TABLES_PALETTE_DUNGEON
-                      ? first[palette]
-                      : KAOS_DUNGEON_PALETTES + PALETTE_BYTES * (palette - TABLES_PALETTE_DUNGEON);
-    return kaos_u16(at + 2 * color);
+    if (palette < TABLES_PALETTE_DUNGEON)
+        return kaos_u16(first[palette] + 2 * color);
+    return kaos_u16(KAOS_DUNGEON_PALETTES + PALETTE_BYTES * (palette - TABLES_PALETTE_DUNGEON) + 2 * color);
 }
 /* The colors of a palette. */
 void tables_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT])

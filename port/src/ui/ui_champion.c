@@ -614,7 +614,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
 static void print_panel_line(int16_t x, int16_t *y, const char *text)
 {
     char buf[PANEL_LINE_SIZE];
-    snprintf(buf, sizeof buf, "%s", text);
+    snprintf(buf, sizeof buf, "%.*s", (int)sizeof buf - 1, text);
     for (char *s = buf; *s;) {
         char *rest = s + strlen(s);
         if (strlen(s) > PANEL_LINE_WRAP) {

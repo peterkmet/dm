@@ -40,6 +40,8 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
 
 ## Check before a step is done
 
+`make -C port` (clang) and `make -C port windows` (MinGW-w64 GCC) build with 0 warnings and no warning switches.
+
 `tests/test_standard.py` checks `port/src/` and fails on:
 
 - hex literals outside constant definitions,

@@ -6,11 +6,15 @@
 #include "music.h"
 #include "sound.h"
 
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
+#endif
 #define DR_MP3_IMPLEMENTATION
 #include "dr_mp3.h"
+#ifdef __clang__
 #pragma clang diagnostic pop
+#endif
 
 #define MUSIC_VOLUME_DIVISOR         6 /* the music under the game sounds; raise it for quieter music */
 #define MUSIC_MIX_FRAMES             1024

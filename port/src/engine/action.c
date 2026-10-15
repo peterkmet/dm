@@ -464,7 +464,8 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
             disabled_ticks = DOOR_BASH_DISABLED_TICKS;
             break;
         }
-        /* fall through: no closed door, a melee attack */
+        /* no closed door: a melee attack */
+        /* fall through */
     case ACTION_PUNCH:
     case ACTION_STAB_1:
     case ACTION_STAB_2:

@@ -24,11 +24,10 @@ lego: $(B)/dm
 	cp $(B)/dm $(LEGO)/dm.new && mv $(LEGO)/dm.new $(LEGO)/dm # a new file: a running game keeps the old one
 
 # Windows: cross-build with MinGW-w64 (brew install mingw-w64) and the SDL3 MinGW package, fetched into build/.
-# Windows has no control socket: control_win.c replaces control.c. The gcc-only checks are off; the clang build is the
-# reference with 0 warnings.
+# Windows has no control socket: control_win.c replaces control.c.
 SDL_MINGW_VERSION = 3.4.18
 SDL_MINGW = $(B)/sdl-mingw/SDL3-$(SDL_MINGW_VERSION)/x86_64-w64-mingw32
-WIN_CFLAGS = $(CFLAGS) -Wno-format-truncation -Wno-implicit-fallthrough -Wno-unknown-pragmas
+WIN_CFLAGS = $(CFLAGS)
 WIN_SRC = $(filter-out src/platform/control.c,$(wildcard $(addsuffix /*.c,$(addprefix src/,$(LAYERS)))))
 
 windows: $(B)/dm.exe

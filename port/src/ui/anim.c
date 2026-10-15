@@ -113,7 +113,9 @@ static uint8_t *read_file_any_case(const char *name, size_t *len)
         NameSearch search = {part, ""};
         os_list_folder(path, keep_first_match, &search);
         size_t used = strlen(path);
-        snprintf(path + used, sizeof path - used, "/%s", search.match[0] ? search.match : part);
+        if (snprintf(path + used, sizeof path - used, "/%s", search.match[0] ? search.match : part) >=
+            (int)(sizeof path - used))
+            return NULL;
         p += n + (p[n] == '/');
     }
     return read_file(path, len);

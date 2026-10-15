@@ -11,6 +11,7 @@
 #include "view.h"
 
 enum { LABEL_WIDTH = 11, LABEL_BASELINE = 4 }; /* two digits; the font cell starts 4 rows above the baseline */
+enum { LABEL_TEXT_SIZE = 7 };                  /* the longest int16_t, "-32768", and the end byte */
 static int16_t scroll_x, scroll_y;             /* squares between the party and the center of the drawn map */
 
 static bool is_on_map(int16_t map, int16_t x, int16_t y)
@@ -179,7 +180,7 @@ void automap_scroll_reset(void)
 /* The number n at (x, y), only when the whole number is inside area. */
 static void draw_label(Bitmap *target, Box area, int16_t x, int16_t y, int16_t n)
 {
-    char text[4];
+    char text[LABEL_TEXT_SIZE];
     if (x < area.x || x + LABEL_WIDTH > area.x + area.w || y < area.y || y + TEXT_LINE_HEIGHT > area.y + area.h)
         return;
     snprintf(text, sizeof text, "%02d", n);
