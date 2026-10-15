@@ -52,20 +52,20 @@ def lib():
     event_p = ctypes.POINTER(TimelineEvent)
     for name, res, args in [
         ("projectile_get_impact_attack", u16, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
-        ("projectile_create", None, [u16, c16, c16, c16, c16, u8, u8, u8]), ("get_square", u8, [c16, c16]),
-        ("get_square_first_thing", u16, [c16, c16]), ("get_next_thing", u16, [u16]), ("get_square_group", u16, [c16, c16]),
-        ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("dungeon_square", u8, [c16, c16, c16]),
-        ("dungeon_square_first_thing", u16, [c16, c16, c16]),
+        ("projectile_create", None, [u16, c16, c16, c16, c16, u8, u8, u8]), ("map_get_square", u8, [c16, c16]),
+        ("map_get_square_first_thing", u16, [c16, c16]), ("map_get_next_thing", u16, [u16]), ("map_get_square_group", u16, [c16, c16]),
+        ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("dungeon_get_square", u8, [c16, c16, c16]),
+        ("dungeon_get_square_first_thing", u16, [c16, c16, c16]),
         ("timeline_is_first_event_expired", ctypes.c_bool, []), ("timeline_extract_first_event", None, [event_p]),
         ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
-        ("set_current_map", None, [c16]), ("dungeon_get_thing_data", ctypes.POINTER(u8), [u16]),
+        ("map_set_current_map", None, [c16]), ("dungeon_get_thing_data", ctypes.POINTER(u8), [u16]),
         ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", c16, [c16, c16, c16, c16]),
         ("group_is_destination_visible_from_source", ctypes.c_bool, [c16, c16, c16, c16, c16]),
         ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
         ("group_get_generated", u16, [u16, c16, u16, c16, c16, c16]),
         ("group_get_damage_all_creatures_outcome", c16, [u16, c16, c16, c16, ctypes.c_bool]),
-        ("load_dungeon", ctypes.c_bool, [ctypes.c_char_p]),
-        ("magic_get_champion_spell_cast_result", c16, [u16]), ("get_unused_thing", u16, [u16]),
+        ("dungeon_load", ctypes.c_bool, [ctypes.c_char_p]),
+        ("magic_get_champion_spell_cast_result", c16, [u16]), ("map_get_unused_thing", u16, [u16]),
         ("object_get_icon_index", c16, [u16]), ("group_is_creature_allowed_on_map", ctypes.c_bool, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
     ]:
         f = getattr(lib, name)
@@ -91,9 +91,9 @@ def s16(v):
 
 def new_game(lib):
     need(lib, "Dungeon.DAT")
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     lib.map_reset()
-    lib.game_new()
+    lib.game_start_new()
     var(lib, c16, "g_dungeon_view_palette_index").value = 0  # the view sets it in the game; a bright view here
 
 
@@ -110,11 +110,11 @@ def tick(lib, seen=None):
 
 
 def things_of_type(lib, x, y, t):
-    found, thing = [], lib.get_square_first_thing(x, y)
+    found, thing = [], lib.map_get_square_first_thing(x, y)
     while thing != 0xFFFE:
         if thing >> 10 & 15 == t:
             found.append(thing)
-        thing = lib.get_next_thing(thing)
+        thing = lib.map_get_next_thing(thing)
     return found
 
 
@@ -293,7 +293,7 @@ class Things:
 def adjacent_group(lib, x, y):
     """A group on a square next to (x, y) on the current map, or None."""
     for nx, ny in ((x, y - 1), (x + 1, y), (x, y + 1), (x - 1, y)):
-        group = lib.get_square_group(nx, ny)
+        group = lib.map_get_square_group(nx, ny)
         if group != 0xFFFE:
             return group
     return None
@@ -301,12 +301,12 @@ def adjacent_group(lib, x, y):
 
 def mummy_in_corridor(lib, m):
     """A single mummy group on map m and a party square 3 squares away in a straight empty corridor."""
-    is_corridor = lambda x, y: lib.dungeon_square(m, x, y) >> 5 == 1 and lib.dungeon_square_first_thing(m, x, y) == 0xFFFE
+    is_corridor = lambda x, y: lib.dungeon_get_square(m, x, y) >> 5 == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE
     for x in range(lib.dungeon_map_width(m)):
         for y in range(lib.dungeon_map_height(m)):
-            t = lib.dungeon_square_first_thing(m, x, y)
+            t = lib.dungeon_get_square_first_thing(m, x, y)
             while t != 0xFFFE and t >> 10 & 15 != THING_GROUP:
-                t = lib.get_next_thing(t)
+                t = lib.map_get_next_thing(t)
             if t == 0xFFFE or lib.dungeon_get_thing_data(t)[4] != CREATURE_MUMMY:
                 continue
             for direction, (sx, sy) in enumerate(((0, -1), (1, 0), (0, 1), (-1, 0))):
@@ -352,14 +352,14 @@ def test_group_attacks_adjacent_party(lib):
 
 def skeleton_map_and_squares(lib):
     """A map that allows skeletons, and two empty corridor squares on it, two squares apart in a straight line."""
-    probe = lib.get_unused_thing(THING_GROUP)
+    probe = lib.map_get_unused_thing(THING_GROUP)
     lib.dungeon_get_thing_data(probe)[4] = CREATURE_SKELETON
     maps = [m for m in range(lib.dungeon_map_count()) if lib.group_is_creature_allowed_on_map(probe, m)]
     data = lib.dungeon_get_thing_data(probe)
     data[0] = data[1] = 0xFF  # free the probe record again
     for m in maps:
         empty = lambda x, y: (0 <= x < lib.dungeon_map_width(m) and 0 <= y < lib.dungeon_map_height(m)
-                              and lib.dungeon_square(m, x, y) >> 5 == 1 and lib.dungeon_square_first_thing(m, x, y) == 0xFFFE)
+                              and lib.dungeon_get_square(m, x, y) >> 5 == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE)
         for x in range(lib.dungeon_map_width(m)):
             for y in range(lib.dungeon_map_height(m)):
                 if empty(x, y) and empty(x, y + 1) and empty(x, y + 2):
@@ -374,16 +374,16 @@ def test_creature_dies_and_drops_possessions(lib):
     assert found, "no map allows skeletons"
     m, party_square, (x, y) = found
     place_party(lib, m, *party_square, 2)
-    assert lib.get_square_group(x, y) == 0xFFFE
+    assert lib.map_get_square_group(x, y) == 0xFFFE
     # Like the original, the result is THING_NONE when the new group becomes active on the party map.
     assert lib.group_get_generated(CREATURE_SKELETON, 1, 0, 0, x, y) == 0xFFFF
-    group = lib.get_square_group(x, y)
+    group = lib.map_get_square_group(x, y)
     assert group != 0xFFFE and lib.dungeon_get_thing_data(group)[4] == CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10, 1) == 0  # 10 damage: the skeleton survives
-    assert lib.get_square_group(x, y) == group
+    assert lib.map_get_square_group(x, y) == group
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 2000, 1) == 2
-    assert lib.get_square_group(x, y) == 0xFFFE
+    assert lib.map_get_square_group(x, y) == 0xFFFE
     assert var(lib, u16, "g_active_group_count").value == active - 1
     drops = things_of_type(lib, x, y, THING_WEAPON) + things_of_type(lib, x, y, THING_ARMOUR)
     assert drops  # the skeleton drops its falchion and helmet
@@ -397,9 +397,9 @@ def test_fireball_flies_and_explodes_on_wall(lib):
     new_game(lib)
     lib.move_party_enter_dungeon()
     px, py = c16.in_dll(lib, "g_party_map_x").value, c16.in_dll(lib, "g_party_map_y").value
-    corridor = lambda x, y: lib.get_square(x, y) >> 5 == 1 and lib.get_square_first_thing(x, y) == 0xFFFE and (x, y) != (px, py)
+    corridor = lambda x, y: lib.map_get_square(x, y) >> 5 == 1 and lib.map_get_square_first_thing(x, y) == 0xFFFE and (x, y) != (px, py)
     start = next((x, y) for y in range(lib.dungeon_map_height(0)) for x in range(lib.dungeon_map_width(0))
-                 if corridor(x, y) and corridor(x + 1, y) and corridor(x + 2, y) and lib.get_square(x + 3, y) >> 5 == 0)
+                 if corridor(x, y) and corridor(x + 1, y) and corridor(x + 2, y) and lib.map_get_square(x + 3, y) >> 5 == 0)
     x, y = start
     lib.projectile_create(FIREBALL, x, y, 0, 1, 100, 100, 1)  # east, back cell
     path, seen = [], set()
@@ -460,7 +460,7 @@ def test_light_spell_adds_light_event_and_experience(caster):
 def test_potion_spell_fills_empty_flask(caster):
     lib, c = caster
     assert cast(lib, c, [0x62, 0x66]) == 3  # power 3, no flask in hand
-    flask = lib.get_unused_thing(THING_POTION)
+    flask = lib.map_get_unused_thing(THING_POTION)
     lib.dungeon_get_thing_data(flask)[2] = POTION_EMPTY_FLASK
     assert lib.object_get_icon_index(flask) == ICON_EMPTY_FLASK
     c.slots[SLOT_HAND_ACTION] = flask

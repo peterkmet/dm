@@ -48,7 +48,7 @@ static int16_t zone_y(const uint8_t *r)
 /* init_layout: keeps the raw layout graphic. Returns 0 on success. */
 int layout_init(void)
 {
-    data = gfx_item(GFX_LAYOUT, &size);
+    data = gfx_get_item(GFX_LAYOUT, &size);
     if (!data || size < LAYOUT_HEADER_BYTES || BE16(data) != LAYOUT_SIGNATURE ||
         LAYOUT_HEADER_BYTES + RANGE_BYTES * S16(data, 1) > size) {
         data = NULL;

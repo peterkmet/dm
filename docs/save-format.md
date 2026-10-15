@@ -135,7 +135,7 @@ Four champion portrait bitmaps, not encrypted. Each bitmap has `((32 + 15) & ~15
 
 ### Dungeon
 
-The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `load_dungeon` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [dungeon-format.md](dungeon-format.md).
+The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [dungeon-format.md](dungeon-format.md).
 
 ## C API
 
@@ -223,7 +223,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 
 After a damaged file, the dungeon is not loaded and the globals can be partly changed. The entrance starts a new game from `Dungeon.DAT`, which sets all state again.
 
-`gameloop_start_loaded_game` then does the rest of `start_game`: it makes the party map current (`group_remove_all_active_groups`, `set_current_map_and_party_map`, `group_add_all_active_groups`), shows "GAME LOADED, READY TO PLAY.", draws the interface, and runs `champion_reset_data_to_start_game`: the hand object goes back into the hand, `champion_set_leader` adds its weight to the leader load again, and the magic caster comes back.
+`gameloop_start_loaded_game` then does the rest of `start_game`: it makes the party map current (`group_remove_all_active_groups`, `map_set_current_map_and_party_map`, `group_add_all_active_groups`), shows "GAME LOADED, READY TO PLAY.", draws the interface, and runs `champion_reset_data_to_start_game`: the hand object goes back into the hand, `champion_set_leader` adds its weight to the leader load again, and the magic caster comes back.
 
 ### Block contents
 
@@ -240,7 +240,7 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 ### Dungeon part (`dungeon.c`)
 
 - `uint8_t *dungeon_save(uint32_t *size)` writes the parts in the order of `save_game`: header, maps, column first-thing indices, square first things, text data, 16 thing arrays, raw map data. Then the 16-bit sum of all bytes. The header has the counts with the free records of the new game, so the load needs no extras.
-- `int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `load_dungeon` for a saved game: no compression, no party start from the header, no free records, and no new `g_event_max_count`. It checks the byte sum when the word is there.
+- `int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `dungeon_load` for a saved game: no compression, no party start from the header, no free records, and no new `g_event_max_count`. It checks the byte sum when the word is there.
 
 ## Tests
 

@@ -218,7 +218,7 @@ static void object_json(Json *j, uint16_t thing, int held)
     if (held && THING_TYPE(thing) == THING_SCROLL) {
         char text[STATE_TEXT_SIZE];
         uint16_t text_thing = THING_MAKE(THING_TEXT, scroll_text_index(thing));
-        if (decode_text(text, sizeof text, text_thing, TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY))
+        if (dungeon_decode_text(text, sizeof text, text_thing, TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY))
             key_str(j, "text", text);
     }
     json_close(j, '}');
@@ -248,16 +248,16 @@ static void action_list_json(Json *j, int16_t index)
     int16_t set_index = ACTION_SET_EMPTY_HAND;
     json_open(j, '[');
     if (c->slots[SLOT_HAND_ACTION] != THING_NONE) {
-        const ObjectInfo *info = tables_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
+        const ObjectInfo *info = tables_get_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
         set_index = info ? info->action_set_index : 0;
     }
-    const ActionSet *set = set_index ? tables_action_set(set_index) : NULL;
+    const ActionSet *set = set_index ? tables_get_action_set(set_index) : NULL;
     if (set) {
         json_str(j, gfx_action_name(set->action_indices[0]));
         for (int k = 1; k < ACTION_LIST_COUNT; k++) {
             uint8_t action = set->action_indices[k];
             uint8_t level = set->minimum_skill_levels[k - 1];
-            const ActionInfo *info = tables_action_info(action);
+            const ActionInfo *info = tables_get_action_info(action);
             if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charges(c)))
                 continue;
             if ((level & ~ACTION_LEVEL_NEEDS_CHARGES) <= champion_get_skill_level(index, info->skill_index))
@@ -384,12 +384,12 @@ static void spell_json(Json *j)
     json_key(j, "available");
     json_open(j, '[');
     for (int s = 0; s < SYMBOL_COUNT; s++) {
-        uint16_t cost = *tables_symbol_base_mana_cost(c->symbol_step, s);
+        uint16_t cost = *tables_get_symbol_base_mana_cost(c->symbol_step, s);
         /* 16-bit product as in the original */
         if (c->symbol_step)
-            cost =
-                (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >>
-                SPELL_MANA_MULTIPLIER_SHIFT;
+            cost = (uint16_t)(cost *
+                              *tables_get_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >>
+                   SPELL_MANA_MULTIPLIER_SHIFT;
         json_open(j, '{');
         key_int(j, "symbol", s);
         key_str(j, "name", g_rune_names[c->symbol_step * SYMBOL_COUNT + s]);
@@ -544,7 +544,7 @@ static bool in_party_map(int16_t x, int16_t y)
 
 static uint8_t party_map_square(int16_t x, int16_t y)
 {
-    return in_party_map(x, y) ? dungeon_square(g_party_map_index, x, y) : 0;
+    return in_party_map(x, y) ? dungeon_get_square(g_party_map_index, x, y) : 0;
 }
 
 /* The rows of the view the party sees now: up to the first center square that blocks sight. */
@@ -557,7 +557,7 @@ static void view_square(int16_t depth, int16_t side, int16_t *x, int16_t *y)
 {
     *x = g_party_map_x;
     *y = g_party_map_y;
-    update_map_coordinates_after_relative_movement(g_party_direction, depth, side, x, y);
+    game_update_map_coordinates_after_relative_movement(g_party_direction, depth, side, x, y);
 }
 
 /* What a wall face shows: inscription text, a champion mirror, a switch (button or lever), a lock (a keyhole
@@ -656,8 +656,8 @@ static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
     f->text = THING_NONE;
     f->lock_ornament = -1;
     f->other_ornament = -1;
-    for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
-         t = get_next_thing(t)) {
+    for (uint16_t t = dungeon_get_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
+         t = map_get_next_thing(t)) {
         if (THING_CELL(t) != face)
             continue;
         if (THING_TYPE(t) == THING_TEXT && rec_text_is_visible(t))
@@ -718,7 +718,7 @@ static void wall_face_json(Json *j, const char *key, int16_t x, int16_t y, int16
     json_open(j, '{');
     key_str(j, "facing", direction_names[face]);
     /* the message mode starts the text with a new line */
-    if (f.text != THING_NONE && decode_text(text, sizeof text, f.text, TEXT_MODE_MESSAGE))
+    if (f.text != THING_NONE && dungeon_decode_text(text, sizeof text, f.text, TEXT_MODE_MESSAGE))
         key_str(j, "text", text + (text[0] == '\n'));
     if (f.mirror)
         key_bool(j, "mirror", 1);
@@ -817,8 +817,8 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
     Json flying = {0};
     json_open(&objects, '[');
     json_open(&flying, '[');
-    for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
-         t = get_next_thing(t)) {
+    for (uint16_t t = dungeon_get_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
+         t = map_get_next_thing(t)) {
         uint16_t type = THING_TYPE(t);
         if (type == THING_GROUP) {
             uint16_t creature = rec_group_creature_type(t);
@@ -911,7 +911,7 @@ void state_json_view(Json *j)
             key_str(j, "element", name);
             if (in_party_map(x, y)) {
                 if (SQUARE_TYPE(square) == SQUARE_DOOR) {
-                    uint16_t door = dungeon_square_first_thing(g_party_map_index, x, y);
+                    uint16_t door = dungeon_get_square_first_thing(g_party_map_index, x, y);
                     key_str(j, "door", door_state_name(door_state(square)));
                     if (THING_TYPE(door) == THING_DOOR && door != THING_ENDOFLIST)
                         key_bool(j, "button", door_button_present(door));
@@ -950,8 +950,8 @@ int state_json_visible_things(uint16_t type, StateJsonSeenThing *out, int max)
             view_square(depth, side, &x, &y);
             if (!in_party_map(x, y) || !strcmp(square_name(party_map_square(x, y)), "wall"))
                 continue;
-            for (uint16_t t = dungeon_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
-                 t = get_next_thing(t))
+            for (uint16_t t = dungeon_get_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
+                 t = map_get_next_thing(t))
                 if (THING_TYPE(t) == type && count < max)
                     out[count++] = (StateJsonSeenThing){depth, x, y, side_names[side + 1], THING_STRIP_CELL(t)};
         }
@@ -986,7 +986,7 @@ static bool is_seen(int16_t x, int16_t y)
 
 static char map_char(int16_t x, int16_t y)
 {
-    uint8_t square = dungeon_square(g_party_map_index, x, y);
+    uint8_t square = dungeon_get_square(g_party_map_index, x, y);
     const char *name = square_name(square);
     if (!strcmp(name, "wall"))
         return '#';

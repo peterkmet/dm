@@ -42,7 +42,7 @@
 #define FUSE_SHIELD              100
 #define FUSE_TEXT_COUNT          8
 #define FUSE_TEXT_SIZE           200
-#define DECODE_MESSAGE_INVISIBLE ((int16_t)0x8001) /* decode_text: message mode, also invisible texts */
+#define DECODE_MESSAGE_INVISIBLE ((int16_t)0x8001) /* dungeon_decode_text: message mode, also invisible texts */
 #define ENDGAME_FONT_A           1                 /* the endgame font has A-Z at codes 1-26 */
 #define ENDGAME_TEXT_BACKGROUND  COLOR_DARKEST_GRAY
 #define ENDGAME_NAME_X           87
@@ -431,15 +431,15 @@ static void fuse_update(void)
 /* The fluxcage explosions on a square disappear. */
 static void remove_fluxcages(int16_t x, int16_t y)
 {
-    uint16_t t = get_square_first_object(x, y);
+    uint16_t t = map_get_square_first_object(x, y);
     while (t != THING_ENDOFLIST) {
         if (THING_TYPE(t) == THING_EXPLOSION && rec_explosion_type(t) == EXPLOSION_FLUXCAGE) {
-            unlink_thing_from_list(t, 0, x, y);
+            map_unlink_thing_from_list(t, 0, x, y);
             thing_set_free(t);
-            t = get_square_first_object(x, y);
+            t = map_get_square_first_object(x, y);
             continue;
         }
-        t = get_next_thing(t);
+        t = map_get_next_thing(t);
     }
 }
 
@@ -458,15 +458,15 @@ static void show_final_texts(void)
 {
     uint16_t texts[FUSE_TEXT_COUNT];
     int16_t count = 0;
-    for (uint16_t t = get_square_first_thing(0, 0); t != THING_ENDOFLIST && count < FUSE_TEXT_COUNT;
-         t = get_next_thing(t))
+    for (uint16_t t = map_get_square_first_thing(0, 0); t != THING_ENDOFLIST && count < FUSE_TEXT_COUNT;
+         t = map_get_next_thing(t))
         if (THING_TYPE(t) == THING_TEXT)
             texts[count++] = t;
     char letter = 'A';
     for (int16_t shown = 0; shown < count; shown++) {
         for (int16_t i = 0; i < count; i++) {
             char text[FUSE_TEXT_SIZE];
-            decode_text(text, sizeof text, texts[i], DECODE_MESSAGE_INVISIBLE);
+            dungeon_decode_text(text, sizeof text, texts[i], DECODE_MESSAGE_INVISIBLE);
             if (text[1] != letter)
                 continue;
             message_clear();
@@ -497,7 +497,7 @@ static void delete_other_groups(int16_t x, int16_t y)
 {
     for (int16_t gx = 0; gx < g_current_map_width; gx++)
         for (int16_t gy = 0; gy < g_current_map_height; gy++)
-            if (get_square_group(gx, gy) != THING_ENDOFLIST && (gx != x || gy != y))
+            if (map_get_square_group(gx, gy) != THING_ENDOFLIST && (gx != x || gy != y))
                 group_delete(gx, gy);
 }
 
@@ -515,8 +515,8 @@ void fuse_sequence(void)
     g_party.fire_shield_defense = FUSE_SHIELD;
     ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX);
     fuse_update();
-    update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
-    uint16_t lord = get_square_group(x, y);
+    game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
+    uint16_t lord = map_get_square_group(x, y);
     if (lord == THING_ENDOFLIST)
         return;
     group_set_health(lord, 0, FUSE_LORD_HEALTH);

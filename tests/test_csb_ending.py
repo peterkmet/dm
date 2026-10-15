@@ -49,10 +49,10 @@ def lib(tmp_path_factory):
     lib.gameloop_load_data.restype = ctypes.c_bool
     for name, res, args in [
         ("anim_open", ctypes.c_int, [ctypes.c_char_p]), ("anim_next_frame", c16, []), ("anim_close", None, []),
-        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
-        ("get_next_thing", u16, [u16]), ("set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
+        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
+        ("map_get_next_thing", u16, [u16]), ("map_set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]), ("savegame_save", c16, [ctypes.c_char_p]),
-        ("event_wall", None, [ctypes.POINTER(TimelineEvent)]), ("kaos_s16", c16, [u32]),
+        ("event_process_wall", None, [ctypes.POINTER(TimelineEvent)]), ("kaos_s16", c16, [u32]),
         ("endgame", None, [c16]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
         ("command_process_click", None, [c16, c16, c16]), ("command_process_key", None, [u16]),
         ("anim_play", ctypes.c_int, [ctypes.c_char_p]), ("endgame_sensor", None, [u16]),
@@ -383,15 +383,15 @@ def load_mini(lib, tmp_path):
 def endgame_sensor_square(lib):
     """Map, x, y, and sensor of the wall sensor 18 of the CSB dungeon."""
     for m in range(lib.dungeon_map_count()):
-        lib.set_current_map(m)
+        lib.map_set_current_map(m)
         for x in range(value(lib, "g_current_map_width").value):
             for y in range(value(lib, "g_current_map_height").value):
-                t = lib.get_square_first_thing(x, y)
+                t = lib.map_get_square_first_thing(x, y)
                 while t != THING_ENDOFLIST:
                     rec = lib.dungeon_get_thing_data(t)
                     if t >> 10 & 15 == THING_SENSOR and (rec[2] << 8 | rec[3]) & 0x7F == SENSOR_WALL_ENDGAME:
                         return m, x, y, t
-                    t = lib.get_next_thing(t)
+                    t = lib.map_get_next_thing(t)
     raise AssertionError("no endgame sensor")
 
 
@@ -404,9 +404,9 @@ def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     first_frame, first_palette = screen(lib), palette(lib)
     lib.anim_close()
     ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, SCREEN_W * SCREEN_H)
-    lib.set_current_map(m)
+    lib.map_set_current_map(m)
     event = TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)
-    lib.event_wall(ctypes.byref(event))
+    lib.event_process_wall(ctypes.byref(event))
     assert value(lib, "g_game_won").value == 1 and value(lib, "g_return_to_entrance").value == 1
     assert screen(lib) == first_frame and palette(lib) == first_palette
 
@@ -448,15 +448,15 @@ def test_an_event_after_sensor_18_in_the_same_tick_sees_the_won_game(lib, tmp_pa
     load_mini(lib, tmp_path)
     time = value(lib, "g_game_time", u32).value
     m = endgame_sensor_square(lib)[0]
-    lib.set_current_map(m)
+    lib.map_set_current_map(m)
     thing, x, y = next((t, x, y) for x in range(value(lib, "g_current_map_width").value)
                        for y in range(value(lib, "g_current_map_height").value)
-                       for t in [lib.get_square_first_thing(x, y)] if t != THING_ENDOFLIST and t >> 10 & 15 >= THING_WEAPON)
+                       for t in [lib.map_get_square_first_thing(x, y)] if t != THING_ENDOFLIST and t >> 10 & 15 >= THING_WEAPON)
     add_sensor_event(lib, time - 1)
     add_event(lib, EVENT_REMOVE_FLUXCAGE, m, time, x << 8 | y, thing)
     lib.gameloop_tick()
-    lib.set_current_map(m)
-    assert value(lib, "g_game_won").value == 1 and lib.get_square_first_thing(x, y) == thing
+    lib.map_set_current_map(m)
+    assert value(lib, "g_game_won").value == 1 and lib.map_get_square_first_thing(x, y) == thing
 
 
 def test_sensor_18_with_frames_plays_at_once_and_waits_for_input(lib, model, tmp_path, reset):

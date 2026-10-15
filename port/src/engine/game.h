@@ -1,6 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
-/* Prefixes: game_ min16 max16 bounded_ scale_ update_ timeline_ adjust_ position_ turn_ */
+/* Prefixes: game_ min16 max16 bounded_ scale_ timeline_ position_ turn_ */
 #include <stdbool.h>
 #include <stdint.h>
 #include "bytes.h"
@@ -190,14 +190,14 @@ extern bool g_cheat_light;    /* the view draws in full light; the creature rule
 extern bool g_cheat_immortal; /* the health of a champion stops at 1 */
 extern bool g_cheat_food;     /* food and water do not go down */
 
-void game_new(void);
+void game_start_new(void);
 
 int16_t min16(int16_t a, int16_t b);
 int16_t max16(int16_t a, int16_t b);
 int16_t bounded_value(int16_t min, int16_t value, int16_t max);
 int32_t scale_value(uint16_t a, int16_t shift, uint16_t b);
-void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
-                                                    int16_t *map_x, int16_t *map_y);
+void game_update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
+                                                         int16_t *map_x, int16_t *map_y);
 
 void timeline_init(void);
 void timeline_reset(void);
@@ -215,7 +215,7 @@ void game_init_active_groups(void);
 
 int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value);
 uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack);
-void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta);
+void game_adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta);
 bool game_is_lucky(Champion *champion, uint16_t percentage);
 
 #endif

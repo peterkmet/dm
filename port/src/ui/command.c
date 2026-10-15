@@ -206,7 +206,7 @@ static void front_square(int16_t *x, int16_t *y)
 {
     *x = g_party_map_x;
     *y = g_party_map_y;
-    update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, x, y);
+    game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, x, y);
 }
 
 /* Shows a text in the empty viewport: the sleep and freeze screens. */
@@ -229,7 +229,7 @@ void command_freeze_game(void)
     if (!g_inventory_champion_ordinal)
         ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
     else
-        close_chest();
+        inventory_close_chest();
     ui_fill_zone_pattern(&screen, ZONE_SPELL_AREA, COLOR_BLACK);
     ui_fill_zone_pattern(&screen, ZONE_ACTION_AREA, COLOR_BLACK);
 }
@@ -299,7 +299,7 @@ void command_toggle_inventory(int16_t champion_index)
    used up, then the champion swallows and its state is drawn. */
 void command_click_on_mouth(void)
 {
-    int16_t result = process_click_on_mouth();
+    int16_t result = inventory_process_click_on_mouth();
     if (result == MOUTH_REFUSED)
         return;
     uint16_t champion_index = g_inventory_champion_ordinal - 1;
@@ -428,7 +428,7 @@ static void grab_object(int16_t pile)
         return;
     if (pile >= VIEW_CELL_FRONT_FIRST) {
         front_square(&x, &y);
-        uint16_t group = get_square_group(x, y);
+        uint16_t group = map_get_square_group(x, y);
         if (group != THING_ENDOFLIST && !move_is_levitating(group) &&
             group_get_creature_ordinal_in_cell(group, NORMALIZE(pile + g_party_direction)))
             return;
@@ -573,14 +573,15 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
             return;
         if (!g_leader_empty_handed && is_leader_hand_object_thrown(x, y))
             return;
-        if (g_leader_empty_handed && door_button_present(get_square_first_thing(fx, fy)) && in_box(wall_box, x, y)) {
+        if (g_leader_empty_handed && door_button_present(map_get_square_first_thing(fx, fy)) &&
+            in_box(wall_box, x, y)) {
             sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
             sensor_add_event(EVENT_DOOR, fx, fy, 0, EFFECT_TOGGLE, (uint32_t)(g_game_time + 1));
             g_stop_waiting_for_input = true;
             return;
         }
     }
-    uint8_t square = get_square(fx, fy);
+    uint8_t square = map_get_square(fx, fy);
     int16_t imaginary_wall =
         SQUARE_TYPE(square) == SQUARE_FAKE_WALL && (square & FAKE_WALL_IMAGINARY) && !(square & FAKE_WALL_OPEN);
     if (g_leader_empty_handed) {
@@ -611,10 +612,11 @@ static void add_champion_symbol(int16_t symbol)
 {
     Champion *c = &g_champions[g_magic_caster_champion_index];
     uint16_t step = c->symbol_step;
-    uint16_t cost = *tables_symbol_base_mana_cost(step, symbol);
+    uint16_t cost = *tables_get_symbol_base_mana_cost(step, symbol);
     if (step) /* 16-bit product as in the original */
-        cost = (uint16_t)(cost * *tables_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >>
-               SPELL_MANA_MULTIPLIER_SHIFT;
+        cost =
+            (uint16_t)(cost * *tables_get_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >>
+            SPELL_MANA_MULTIPLIER_SHIFT;
     if (cost > (uint16_t)c->current_mana)
         return; /* unsigned compare as in the original */
     c->current_mana -= cost;

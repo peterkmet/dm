@@ -154,24 +154,24 @@ typedef struct {
 int tables_init(void);
 
 /* Each accessor returns NULL for an out-of-range index or before tables_init. */
-const CreatureInfo *tables_creature_info(int creature_type);
-const CreatureSound *tables_creature_sound(int index);
-const ObjectInfo *tables_object_info(int index);
-const WeaponInfo *tables_weapon_info(int weapon_type);
-const ArmourInfo *tables_armour_info(int armour_type);
-const uint8_t *tables_junk_weight(int junk_type);
-const int16_t *tables_food_value(int index);
-const DoorInfo *tables_door_info(int door_type);
-const Spell *tables_spell(int index);
-const uint8_t *tables_symbol_base_mana_cost(int step, int symbol);
-const uint8_t *tables_symbol_mana_cost_multiplier(int power);
-const ActionSet *tables_action_set(int index);
-const ActionInfo *tables_action_info(int action);
-const int16_t *tables_light_power_to_light_amount(int power);
-const int16_t *tables_palette_light_threshold(int index);
-const uint16_t *tables_slot_mask(int slot);
-const uint8_t *tables_wound_defense_factor(int slot);
-const uint16_t *tables_fixed_possession(int index);
+const CreatureInfo *tables_get_creature_info(int creature_type);
+const CreatureSound *tables_get_creature_sound(int index);
+const ObjectInfo *tables_get_object_info(int index);
+const WeaponInfo *tables_get_weapon_info(int weapon_type);
+const ArmourInfo *tables_get_armour_info(int armour_type);
+const uint8_t *tables_get_junk_weight(int junk_type);
+const int16_t *tables_get_food_value(int index);
+const DoorInfo *tables_get_door_info(int door_type);
+const Spell *tables_get_spell(int index);
+const uint8_t *tables_get_symbol_base_mana_cost(int step, int symbol);
+const uint8_t *tables_get_symbol_mana_cost_multiplier(int power);
+const ActionSet *tables_get_action_set(int index);
+const ActionInfo *tables_get_action_info(int action);
+const int16_t *tables_get_light_power_to_light_amount(int power);
+const int16_t *tables_get_palette_light_threshold(int index);
+const uint16_t *tables_get_slot_mask(int slot);
+const uint8_t *tables_get_wound_defense_factor(int slot);
+const uint16_t *tables_get_fixed_possession(int index);
 
 /* Loads the engine module at path (kaos_load), then decodes the tables. Returns 0, or -1 as kaos_load. */
 int tables_load(const char *path);

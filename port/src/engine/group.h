@@ -1,6 +1,6 @@
 #ifndef GROUP_H
 #define GROUP_H
-/* Prefixes: group_ creature_ party_ */
+/* Prefixes: group_ creature_ */
 #include <stdbool.h>
 #include <stdint.h>
 #include "game.h"
@@ -147,7 +147,7 @@ static inline ActiveGroup *group_active(uint16_t group)
 }
 static inline const CreatureInfo *group_info(uint16_t group)
 {
-    return tables_creature_info(rec_group_creature_type(group));
+    return tables_get_creature_info(rec_group_creature_type(group));
 }
 
 /* Creature info fields that pack several values, 4 bits each. */
@@ -238,7 +238,7 @@ void group_remove_all_active_groups(void);
 void group_add_all_active_groups(void);
 void group_reset(void);
 /* Ordinal of the latest party scent on a square of the current map, or 0. */
-uint16_t party_scent_ordinal(int16_t x, int16_t y);
+uint16_t group_get_party_scent_ordinal(int16_t x, int16_t y);
 
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index,
                              int16_t direction, int16_t x, int16_t y);

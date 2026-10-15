@@ -90,13 +90,13 @@ void ui_xor_screen_zone(int16_t zone)
 /* Draws a graphic placed in zone. */
 void ui_blit_graphic(Bitmap *dst, int16_t graphic, int16_t zone, int16_t transparent)
 {
-    ui_blit_zone(dst, gfx_bitmap(graphic), zone, transparent);
+    ui_blit_zone(dst, gfx_get_bitmap(graphic), zone, transparent);
 }
 
 /* Draws a graphic from its top left corner into box. */
 void ui_blit_graphic_box(Bitmap *dst, int16_t graphic, const Box *box, int16_t transparent)
 {
-    const Bitmap *bm = gfx_bitmap(graphic);
+    const Bitmap *bm = gfx_get_bitmap(graphic);
     if (bm)
         draw_blit(bm, 0, 0, dst, box, transparent, 0);
 }
@@ -227,7 +227,7 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
     while (sheet < ICON_SHEET_COUNT && tables_icon_sheet_first(sheet) <= icon)
         sheet++;
     int16_t i = icon - tables_icon_sheet_first(sheet - 1);
-    const Bitmap *bm = gfx_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
+    const Bitmap *bm = gfx_get_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     out->w = UI_ICON_SIZE;
     out->h = UI_ICON_SIZE;
     memset(out->px, 0, UI_ICON_SIZE * UI_ICON_SIZE);

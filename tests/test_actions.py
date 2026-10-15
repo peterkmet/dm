@@ -42,7 +42,7 @@ def alib(lib):  # noqa: F811
         ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("champion_poison", None, [c16, u16]),
         ("group_get_melee_action_damage", c16, [c16, u16, c16, c16, c16, u16, u16, c16]),
         ("timeline_delete_event", None, [u16]), ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]),
-        ("link_thing_to_list", None, [u16, u16, c16, c16]), ("tables_action_info", ctypes.c_void_p, [ctypes.c_int]),
+        ("map_link_thing_to_list", None, [u16, u16, c16, c16]), ("tables_get_action_info", ctypes.c_void_p, [ctypes.c_int]),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
@@ -159,7 +159,7 @@ def test_melee_damage_matches_original(alib, seed):
 
 
 def new_object(lib, thing_type, object_type):
-    thing = lib.get_unused_thing(thing_type)
+    thing = lib.map_get_unused_thing(thing_type)
     lib.dungeon_get_thing_data(thing)[3] = object_type
     return thing
 
@@ -193,14 +193,14 @@ def party(alib):
 
 def test_sword_attack_hurts_group_and_gains_experience(fighter):
     lib, c, (x, y) = fighter
-    group = lib.get_square_group(x, y + 1)
+    group = lib.map_get_square_group(x, y + 1)
     health = struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0]
     experience = c.skills[SKILL_SWING].experience
     damage = []
     for _ in range(20):
         lib.action_is_action_performed(0, ACTION_SWING)
         damage.append(var(lib, c16, "g_action_damage").value)
-        group = lib.get_square_group(x, y + 1)
+        group = lib.map_get_square_group(x, y + 1)
         if group == 0xFFFE or struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0] < health:
             break
     assert any(d > 0 for d in damage)
@@ -242,7 +242,7 @@ def test_throw_creates_projectile_and_event_11_refills_hand(fighter):
 
 def test_event_11_ends_action_defense(party):
     lib, c, _ = party
-    info = ctypes.cast(lib.tables_action_info(ACTION_BLOCK), ctypes.POINTER(u8 * 7)).contents
+    info = ctypes.cast(lib.tables_get_action_info(ACTION_BLOCK), ctypes.POINTER(u8 * 7)).contents
     defense = ctypes.c_int8(info[4]).value
     c.action_defense, c.action_index = defense, ACTION_BLOCK
     lib.action_is_action_performed(0, ACTION_BLOCK)
@@ -295,7 +295,7 @@ def test_vi_altar_rebirth(party):
     lib, c, (x, y) = party
     bones = new_object(lib, THING_JUNK, JUNK_BONES)
     lib.dungeon_get_thing_data(bones)[2] = 0  # charges: champion 0
-    lib.link_thing_to_list(bones | 1 << 14, 0, x, y)
+    lib.map_link_thing_to_list(bones | 1 << 14, 0, x, y)
     c.current_health = 0
     now = var(lib, ctypes.c_uint32, "g_game_time").value
     event = TimelineEvent(map_time=var(lib, c16, "g_party_map_index").value << 24 | (now + 1), type=EVENT_REBIRTH, priority=0,

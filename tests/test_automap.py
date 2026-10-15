@@ -35,8 +35,8 @@ def game():
         pytest.skip("missing game files")
     subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
-    lib.dungeon_square.restype = ctypes.c_uint8
-    lib.load_dungeon.restype = ctypes.c_bool
+    lib.dungeon_get_square.restype = ctypes.c_uint8
+    lib.dungeon_load.restype = ctypes.c_bool
     for name in ("dungeon_map_width", "dungeon_map_height"):
         getattr(lib, name).restype = c16
     lib.explored_save.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_size_t)]
@@ -44,9 +44,9 @@ def game():
     lib.explored_is_seen.restype = ctypes.c_bool
     lib.automap_draw.argtypes = [ctypes.POINTER(Bitmap), Box, c16]
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     assert lib.tables_init() == 0
-    lib.game_new()
+    lib.game_start_new()
     lib.move_party_enter_dungeon()
     lib.explored_reset()
     return lib
@@ -63,7 +63,7 @@ def on_map(lib, m, x, y):
 def blocks(lib, m, x, y):
     if not on_map(lib, m, x, y):
         return True
-    square = lib.dungeon_square(m, x, y)
+    square = lib.dungeon_get_square(m, x, y)
     kind = square >> 5
     return kind == WALL or (kind == FAKE_WALL and not square & FAKE_WALL_OPEN) or (kind == DOOR and square & 7 == DOOR_CLOSED)
 
@@ -181,7 +181,7 @@ def test_floors_are_light_and_walls_dark(game):
     left, top = RULER_W + (VIEWPORT.w - RULER_W - CELL) // 2 - x * CELL, RULER_H + (VIEWPORT.h - RULER_H - CELL) // 2 - y * CELL
     colors = {}
     for sx, sy in seen_squares(game, m) - {(x, y)}:
-        kind = game.dungeon_square(m, sx, sy) >> 5
+        kind = game.dungeon_get_square(m, sx, sy) >> 5
         if kind in (WALL, 1):  # wall, floor
             colors.setdefault(kind, set()).add(px[(top + sy * CELL) * VIEWPORT.w + left + sx * CELL])
     assert colors == {WALL: {DARKEST_GRAY}, 1: {LIGHT_GRAY}}
@@ -191,7 +191,7 @@ def test_a_pressure_pad_is_a_gray_square_in_the_floor(game):
     gray = 2
     for name, value in (("g_party_map_index", 1), ("g_party_map_x", 14), ("g_party_map_y", 1), ("g_party_direction", 1)):
         c16.in_dll(game, name).value = value
-    game.set_current_map_and_party_map(1)
+    game.map_set_current_map_and_party_map(1)
     game.view_load_map(1)
     mark_here(game)  # facing east into the room of nine pads of map 1
     px = draw(game, VIEWPORT.w, VIEWPORT.h, Box(0, 0, VIEWPORT.w, VIEWPORT.h))

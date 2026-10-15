@@ -40,9 +40,9 @@ static inline uint16_t spell_attributes_disabled_ticks(uint16_t attributes)
 
 int16_t spell_count(void);
 int16_t spell_find(const uint8_t *symbols);
-uint8_t spell_symbol(uint16_t step, int16_t symbol_index);
-uint16_t spell_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t power_symbol);
+uint8_t spell_get_symbol(uint16_t step, int16_t symbol_index);
+uint16_t spell_get_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t power_symbol);
 bool spell_draw_fails(uint8_t current_wisdom, uint16_t random);
-uint16_t spell_failure_experience(uint16_t experience, uint16_t required_level, uint16_t skill_level);
+uint16_t spell_get_failure_experience(uint16_t experience, uint16_t required_level, uint16_t skill_level);
 
 #endif

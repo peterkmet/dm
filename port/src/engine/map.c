@@ -16,14 +16,14 @@ uint8_t *g_current_map;
 uint16_t g_current_map_door_info[2];
 static uint8_t *column_first_thing_index;
 
-/* Forget the current map, for example after load_dungeon replaced the buffers. */
+/* Forget the current map, for example after dungeon_load replaced the buffers. */
 void map_reset(void)
 {
     g_current_map_index = -1;
 }
 
 /* Selects the map that the square and thing functions work on. */
-void set_current_map(int16_t map)
+void map_set_current_map(int16_t map)
 {
     if (map == g_current_map_index)
         return;
@@ -38,10 +38,10 @@ void set_current_map(int16_t map)
 }
 
 /* The party map becomes the current map. The ornament lists are view data (view_load_map). */
-void set_current_map_and_party_map(int16_t map)
+void map_set_current_map_and_party_map(int16_t map)
 {
     g_party_map_index = map;
-    set_current_map(map);
+    map_set_current_map(map);
 }
 
 static bool is_corridor_or_pit(uint8_t square)
@@ -50,7 +50,7 @@ static bool is_corridor_or_pit(uint8_t square)
 }
 
 /* Outside the map: a wall, with the "ornament allowed" bit when the adjacent square is a corridor or a pit. */
-uint8_t get_square(int16_t x, int16_t y)
+uint8_t map_get_square(int16_t x, int16_t y)
 {
     bool in_x = x >= 0 && x < g_current_map_width;
     bool in_y = y >= 0 && y < g_current_map_height;
@@ -70,20 +70,20 @@ uint8_t get_square(int16_t x, int16_t y)
     return SQUARE_WALL;
 }
 
-int16_t get_square_type(int16_t x, int16_t y)
+int16_t map_get_square_type(int16_t x, int16_t y)
 {
-    return SQUARE_TYPE(get_square(x, y));
+    return SQUARE_TYPE(map_get_square(x, y));
 }
 
 /* Corridor, pit, door, or teleporter. */
-bool is_square_open(int16_t x, int16_t y)
+bool map_is_square_open(int16_t x, int16_t y)
 {
-    int16_t type = get_square_type(x, y);
+    int16_t type = map_get_square_type(x, y);
     return type == SQUARE_CORRIDOR || type == SQUARE_TELEPORTER || type == SQUARE_PIT || type == SQUARE_DOOR;
 }
 
 /* The map one level below (LEVEL_DOWN) or above (LEVEL_UP) that covers the dungeon position of (x, y). -1 when none. */
-int16_t get_location_after_level_change(int16_t map, int16_t level_delta, int16_t *x, int16_t *y)
+int16_t map_get_location_after_level_change(int16_t map, int16_t level_delta, int16_t *x, int16_t *y)
 {
     if (g_party_map_index == NO_DUNGEON_MAP)
         return -1;
@@ -102,23 +102,23 @@ int16_t get_location_after_level_change(int16_t map, int16_t level_delta, int16_
 }
 
 /* The stairs axis is north-south or east-west. The exit side is the one that is not a wall or stairs. */
-int16_t get_stairs_exit_direction(int16_t x, int16_t y)
+int16_t map_get_stairs_exit_direction(int16_t x, int16_t y)
 {
-    int16_t direction = get_square(x, y) & STAIRS_NORTH_SOUTH ? DIRECTION_NORTH : DIRECTION_EAST;
+    int16_t direction = map_get_square(x, y) & STAIRS_NORTH_SOUTH ? DIRECTION_NORTH : DIRECTION_EAST;
     int16_t ahead_x = x;
     int16_t ahead_y = y;
-    update_map_coordinates_after_relative_movement(direction, 1, 0, &ahead_x, &ahead_y);
-    int16_t type = get_square_type(ahead_x, ahead_y);
+    game_update_map_coordinates_after_relative_movement(direction, 1, 0, &ahead_x, &ahead_y);
+    int16_t type = map_get_square_type(ahead_x, ahead_y);
     return type == SQUARE_WALL || type == SQUARE_STAIRS ? turn_back(direction) : direction;
 }
 
-uint16_t get_next_thing(uint16_t thing)
+uint16_t map_get_next_thing(uint16_t thing)
 {
     return BE16(dungeon_get_thing_data(thing));
 }
 
 /* Index of the first thing of the square in the square first thing table, or -1. */
-int16_t get_square_first_thing_index(int16_t x, int16_t y)
+int16_t map_get_square_first_thing_index(int16_t x, int16_t y)
 {
     if (x < 0 || x >= g_current_map_width || y < 0 || y >= g_current_map_height ||
         !(g_current_map_data[x][y] & SQUARE_HAS_THINGS))
@@ -129,18 +129,18 @@ int16_t get_square_first_thing_index(int16_t x, int16_t y)
     return index;
 }
 
-uint16_t get_square_first_thing(int16_t x, int16_t y)
+uint16_t map_get_square_first_thing(int16_t x, int16_t y)
 {
-    int16_t index = get_square_first_thing_index(x, y);
+    int16_t index = map_get_square_first_thing_index(x, y);
     return index == -1 ? THING_ENDOFLIST : BE16(g_square_first_things + (uint16_t)index * 2);
 }
 
 /* The first group, object, projectile, or explosion of the square. */
-uint16_t get_square_first_object(int16_t x, int16_t y)
+uint16_t map_get_square_first_object(int16_t x, int16_t y)
 {
-    uint16_t thing = get_square_first_thing(x, y);
+    uint16_t thing = map_get_square_first_thing(x, y);
     while (thing != THING_ENDOFLIST && THING_TYPE(thing) < THING_GROUP)
-        thing = get_next_thing(thing);
+        thing = map_get_next_thing(thing);
     return thing;
 }
 
@@ -153,7 +153,7 @@ static void add_to_later_columns(int16_t x, int16_t delta)
     }
 }
 
-static void fatal(int16_t code)
+static void stop_fatal(int16_t code)
 {
     fprintf(stderr, "System Error %d\n", code);
     exit(1);
@@ -167,7 +167,7 @@ static void report_free_record(const char *action, int16_t x, int16_t y)
 }
 
 /* x >= 0: append the thing to the list of square (x, y). x < 0: append it to the list that starts at list. */
-void link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
+void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
 {
     if (thing == THING_ENDOFLIST)
         return;
@@ -181,32 +181,32 @@ void link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
         if (!(*square & SQUARE_HAS_THINGS)) {
             uint16_t count = rec_dungeon_square_first_thing_count();
             if (BE16(g_square_first_things + (count - 1) * 2) != THING_NONE)
-                fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
+                stop_fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
             *square |= SQUARE_HAS_THINGS;
             add_to_later_columns(x, 1);
-            uint16_t index = get_square_first_thing_index(x, y);
+            uint16_t index = map_get_square_first_thing_index(x, y);
             uint8_t *p = g_square_first_things + index * 2;
             memmove(p + 2, p, (count - index - 1) * 2);
             WR16(p, thing);
             return;
         }
-        list = get_square_first_thing(x, y);
+        list = map_get_square_first_thing(x, y);
     }
-    for (uint16_t next = get_next_thing(list); next != THING_ENDOFLIST; next = get_next_thing(list))
+    for (uint16_t next = map_get_next_thing(list); next != THING_ENDOFLIST; next = map_get_next_thing(list))
         list = next;
     thing_set_next(list, thing);
 }
 
 /* Removes the thing from the square list (x >= 0) or from the list after list. Things compare without the cell. */
-void unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
+void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
 {
     if (thing == THING_ENDOFLIST)
         return;
     thing = THING_STRIP_CELL(thing);
     if (x >= 0) {
-        uint16_t index = get_square_first_thing_index(x, y);
+        uint16_t index = map_get_square_first_thing_index(x, y);
         uint8_t *first = g_square_first_things + index * 2;
-        uint16_t after = get_next_thing(thing);
+        uint16_t after = map_get_next_thing(thing);
         if (after == THING_NONE && thing == THING_STRIP_CELL(BE16(first)))
             report_free_record("unlink of a free record", x, y); /* its next is gone: remove the whole entry */
         if ((after == THING_ENDOFLIST || after == THING_NONE) && thing == THING_STRIP_CELL(BE16(first))) {
@@ -219,13 +219,13 @@ void unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
             return;
         }
         if (thing == THING_STRIP_CELL(BE16(first))) {
-            WR16(first, get_next_thing(thing));
+            WR16(first, map_get_next_thing(thing));
             thing_set_next(thing, THING_ENDOFLIST);
             return;
         }
         list = BE16(first);
     }
-    uint16_t next = get_next_thing(list);
+    uint16_t next = map_get_next_thing(list);
     while (thing != THING_STRIP_CELL(next)) {
         if (next == THING_ENDOFLIST || next == THING_NONE) {
             if (x >= 0)
@@ -233,23 +233,23 @@ void unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
             return;
         }
         list = next;
-        next = get_next_thing(next);
+        next = map_get_next_thing(next);
     }
-    thing_set_next(list, get_next_thing(next));
+    thing_set_next(list, map_get_next_thing(next));
     thing_set_next(thing, THING_ENDOFLIST);
 }
 
-uint16_t get_square_group(int16_t x, int16_t y)
+uint16_t map_get_square_group(int16_t x, int16_t y)
 {
-    uint16_t thing = get_square_first_thing(x, y);
+    uint16_t thing = map_get_square_first_thing(x, y);
     while (thing != THING_ENDOFLIST && THING_TYPE(thing) != THING_GROUP)
-        thing = get_next_thing(thing);
+        thing = map_get_next_thing(thing);
     return thing;
 }
 
-uint16_t get_creature_attributes(uint16_t group_thing)
+uint16_t map_get_creature_attributes(uint16_t group_thing)
 {
-    return tables_creature_info(rec_group_creature_type(group_thing))->attributes;
+    return tables_get_creature_info(rec_group_creature_type(group_thing))->attributes;
 }
 
 #define TYPE_MASK           0x7f
@@ -258,7 +258,7 @@ uint16_t get_creature_attributes(uint16_t group_thing)
 
 /* A free record of the type. Junk keeps 3 records in reserve unless NO_JUNK_RESERVE is set.
    ponytail: no get_discarded_thing yet; returns THING_NONE when no record is free. */
-uint16_t get_unused_thing(uint16_t thing_type)
+uint16_t map_get_unused_thing(uint16_t thing_type)
 {
     uint16_t type = thing_type & ~NO_JUNK_RESERVE;
     uint16_t size = g_thing_data_byte_count[type];

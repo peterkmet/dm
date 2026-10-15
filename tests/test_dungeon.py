@@ -26,12 +26,12 @@ u8p = ctypes.POINTER(ctypes.c_uint8)
 def lib():
     subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
-    lib.decompress_dungeon.argtypes = [ctypes.c_char_p, ctypes.c_int32, ctypes.c_char_p, ctypes.c_int32]
-    lib.decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
-    lib.decompress_dungeon.restype = lib.decode_text.restype = ctypes.c_bool
-    lib.load_dungeon.restype = lib.dungeon_validate.restype = ctypes.c_bool
-    lib.dungeon_square_first_thing.restype = ctypes.c_uint16
-    lib.dungeon_square.restype = ctypes.c_uint8
+    lib.dungeon_decompress.argtypes = [ctypes.c_char_p, ctypes.c_int32, ctypes.c_char_p, ctypes.c_int32]
+    lib.dungeon_decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
+    lib.dungeon_decompress.restype = lib.dungeon_decode_text.restype = ctypes.c_bool
+    lib.dungeon_load.restype = lib.dungeon_validate.restype = ctypes.c_bool
+    lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
+    lib.dungeon_get_square.restype = ctypes.c_uint8
     lib.dungeon_get_thing_data.restype = u8p
     lib.kaos_ptr.restype = ctypes.c_void_p
     lib.kaos_ptr.argtypes = [ctypes.c_uint32]
@@ -47,7 +47,7 @@ def need(lib, *names):
 
 
 def load(lib, path):
-    assert lib.load_dungeon(str(path).encode()) == 1
+    assert lib.dungeon_load(str(path).encode()) == 1
     return open_dungeon(str(path))
 
 
@@ -57,7 +57,7 @@ def mem(lib, name, n):
 
 def decode(lib, thing, mode, size=4096):
     buf = ctypes.create_string_buffer(size)
-    assert lib.decode_text(buf, size, thing, mode) == 1
+    assert lib.dungeon_decode_text(buf, size, thing, mode) == 1
     return buf
 
 
@@ -84,9 +84,9 @@ def test_dungeon_matches_dmcsb(lib, name):
             located.setdefault((t["x"], t["y"]), t)
         for x in range(w):
             for y in range(h):
-                sq = lib.dungeon_square(m, x, y)
+                sq = lib.dungeon_get_square(m, x, y)
                 assert sq == d.tile_data[offset + x * h + y]
-                first = lib.dungeon_square_first_thing(m, x, y)
+                first = lib.dungeon_get_square_first_thing(m, x, y)
                 assert (first != 0xFFFE) == bool(sq & 0x10)
                 if (x, y) in located:
                     assert first >> 14 == located[(x, y)]["cell"]
@@ -122,7 +122,7 @@ def test_text_matches_dmcsb(lib, name):
 @pytest.mark.parametrize("name", FILES)
 def test_decode_text_matches_original(lib, name):
     need(lib, f"{name}.DAT")
-    assert lib.load_dungeon(str(GAME / f"{name}.DAT").encode()) == 1
+    assert lib.dungeon_load(str(GAME / f"{name}.DAT").encode()) == 1
     hdr = mem(lib, "g_dungeon_header", 44)
     count, words = struct.unpack(">H", hdr[16:18])[0], struct.unpack(">H", hdr[6:8])[0]
     emu = kaos_emu()
@@ -146,7 +146,7 @@ def test_decompress_matches_original(lib):
     emu.write(0x200000, raw[8:])
     emu.call(DECOMPRESS, [(4, 0x200000), (4, 0x300000), (4, size)])
     out = ctypes.create_string_buffer(size)
-    lib.decompress_dungeon(raw[8:], len(raw) - 8, out, size)
+    lib.dungeon_decompress(raw[8:], len(raw) - 8, out, size)
     assert out.raw == bytes(emu.read(0x300000, size))
 
 
@@ -155,21 +155,21 @@ def plain_dungeon(lib):
     raw = (GAME / "Dungeon.DAT").read_bytes()
     size = struct.unpack(">I", raw[2:6])[0]
     out = ctypes.create_string_buffer(size)
-    assert lib.decompress_dungeon(raw[8:], len(raw) - 8, out, size) == 1
+    assert lib.dungeon_decompress(raw[8:], len(raw) - 8, out, size) == 1
     return bytearray(out.raw[:-2])
 
 
 def test_uncompressed_file(lib, tmp_path):
     need(lib, "Dungeon.DAT")
     plain = plain_dungeon(lib)
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     ref = mem(lib, "g_dungeon_raw_map_data", struct.unpack(">H", plain[2:4])[0])
     path = tmp_path / "plain.DAT"
     path.write_bytes(plain)
-    assert lib.load_dungeon(str(path).encode()) == 1
+    assert lib.dungeon_load(str(path).encode()) == 1
     assert mem(lib, "g_dungeon_raw_map_data", len(ref)) == ref
     path.write_bytes(plain + struct.pack(">H", (sum(plain) + 1) & 0xFFFF))
-    assert lib.load_dungeon(str(path).encode()) == 0  # bad checksum
+    assert lib.dungeon_load(str(path).encode()) == 0  # bad checksum
 
 
 def bad_count(d):
@@ -195,7 +195,7 @@ def test_bad_header_fails(lib, tmp_path, change):
     change(d)
     path = tmp_path / "bad.DAT"
     path.write_bytes(d)
-    assert lib.load_dungeon(str(path).encode()) == 0
+    assert lib.dungeon_load(str(path).encode()) == 0
     assert lib.dungeon_map_count() == 0
     assert not u8p.in_dll(lib, "g_dungeon_header")
 
@@ -247,11 +247,11 @@ def test_corrupt_links_fail(lib, tmp_path, change):
     d = plain_dungeon(lib)
     path = tmp_path / "bad.DAT"
     path.write_bytes(d)
-    assert lib.load_dungeon(str(path).encode()) == 1
+    assert lib.dungeon_load(str(path).encode()) == 1
     assert lib.dungeon_validate() == 1
     change(d)
     path.write_bytes(d)
-    assert lib.load_dungeon(str(path).encode()) == 0
+    assert lib.dungeon_load(str(path).encode()) == 0
     assert lib.dungeon_map_count() == 0
 
 
@@ -260,19 +260,19 @@ def test_truncated_file_fails(lib, tmp_path, cut):
     need(lib, "Dungeon.DAT")
     path = tmp_path / "cut.DAT"
     path.write_bytes((GAME / "Dungeon.DAT").read_bytes()[:cut])
-    assert lib.load_dungeon(str(path).encode()) == 0
+    assert lib.dungeon_load(str(path).encode()) == 0
 
 
 def test_bad_text_offset_and_small_buffer(lib):
     need(lib, "Dungeon.DAT")
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     buf = ctypes.create_string_buffer(8)
-    assert lib.decode_text(buf, 8, 2 << 10, 2 | -0x8000) == 0  # text 0 is longer than 7 bytes
+    assert lib.dungeon_decode_text(buf, 8, 2 << 10, 2 | -0x8000) == 0  # text 0 is longer than 7 bytes
     assert len(buf.value) == 7
     words = struct.unpack(">H", mem(lib, "g_dungeon_header", 8)[6:8])[0]
     rec = lib.dungeon_get_thing_data(2 << 10)
     rec[2], rec[3] = (words << 3 | 1) >> 8 & 0xFF, (words << 3 | 1) & 0xFF
-    assert lib.decode_text(buf, 8, 2 << 10, 2) == 0
+    assert lib.dungeon_decode_text(buf, 8, 2 << 10, 2) == 0
 
 
 def test_door_vertical_bit(lib):

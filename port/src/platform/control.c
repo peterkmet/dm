@@ -312,7 +312,7 @@ static const char *turn_displaced(void)
     int16_t x = turn.x;
     int16_t y = turn.y;
     if (turn.moving)
-        update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
+        game_update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
     bool stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
     if (g_party_map_index != turn.map || (!stayed && (g_party_map_x != x || g_party_map_y != y)))
         return "moved";
@@ -784,7 +784,7 @@ static void witness(void)
     }
     for (int k = 0; k < witnessed.group_count; k++) /* a killed group frees its record */
         witnessed.groups[k].killed |=
-            !witnessed.groups[k].in_view && get_next_thing(witnessed.groups[k].at.thing) == THING_NONE;
+            !witnessed.groups[k].in_view && map_get_next_thing(witnessed.groups[k].at.thing) == THING_NONE;
 }
 
 /* Starts the record of what the party sees during a request. */

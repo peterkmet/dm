@@ -19,7 +19,7 @@ typedef struct {
     const char *engine, *save, *backup; /* the engine module, the save file and the backup file names */
 } Adventure;
 
-extern int16_t g_adventure; /* ADVENTURE_DM by default; game_new does not reset it */
+extern int16_t g_adventure; /* ADVENTURE_DM by default; game_start_new does not reset it */
 
 /* The names and files of an adventure: ADVENTURE_DM or ADVENTURE_CSB. */
 const Adventure *adventure_get(int16_t adventure);

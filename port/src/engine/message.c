@@ -48,7 +48,7 @@ void message_clear_expired_rows(uint32_t game_time)
 }
 
 /* Moves the cursor down one row; on the last row the area scrolls up one row. */
-static void new_row(void)
+static void start_new_row(void)
 {
     if (g_message.cursor_row != MESSAGE_LAST_ROW) {
         g_message.cursor_row++;
@@ -116,7 +116,7 @@ void message_print(int16_t color, const char *s, uint32_t game_time)
     while (s[pos]) {
         int w = message_next_word_line(s, line, &pos, MESSAGE_ROW_WIDTH - g_message.cursor_x);
         if (s[pos] == '\n') {
-            new_row();
+            start_new_row();
             print_string(color, line, game_time);
             g_message.cursor_x = 0;
             pos++;
@@ -125,7 +125,7 @@ void message_print(int16_t color, const char *s, uint32_t game_time)
             g_message.cursor_x += w;
         } else {
             print_string(color, line, game_time);
-            new_row();
+            start_new_row();
             g_message.cursor_x = MESSAGE_WRAP_INDENT;
         }
     }

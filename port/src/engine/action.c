@@ -106,7 +106,7 @@ static void step_forward(int16_t direction, int16_t *x, int16_t *y)
 {
     *x = g_party_map_x;
     *y = g_party_map_y;
-    update_map_coordinates_after_relative_movement(direction, 1, 0, x, y);
+    game_update_map_coordinates_after_relative_movement(direction, 1, 0, x, y);
 }
 
 /* The champion turns to the party direction. */
@@ -235,9 +235,9 @@ bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, i
             return false;
         }
     }
-    if (action == ACTION_DISRUPT && !(get_creature_attributes(g_action_target_group_thing) & CREATURE_NON_MATERIAL))
+    if (action == ACTION_DISRUPT && !(map_get_creature_attributes(g_action_target_group_thing) & CREATURE_NON_MATERIAL))
         return false;
-    const ActionInfo *info = tables_action_info(action);
+    const ActionInfo *info = tables_get_action_info(action);
     uint16_t hit_probability = info->hit_probability;
     if (object_get_icon_index(c->slots[SLOT_HAND_ACTION]) == ICON_VORPAL_BLADE || action == ACTION_DISRUPT)
         hit_probability |= HIT_PROBABILITY_ALWAYS_HITS;
@@ -269,8 +269,8 @@ static bool is_shot(uint16_t champion_index)
     uint16_t ammunition = c->slots[SLOT_HAND_READY];
     if (THING_TYPE(ammunition) != THING_WEAPON)
         return false;
-    const WeaponInfo *launcher = tables_weapon_info(weapon_type(c->slots[SLOT_HAND_ACTION]));
-    const WeaponInfo *missile = tables_weapon_info(weapon_type(ammunition));
+    const WeaponInfo *launcher = tables_get_weapon_info(weapon_type(c->slots[SLOT_HAND_ACTION]));
+    const WeaponInfo *missile = tables_get_weapon_info(weapon_type(ammunition));
     int16_t step_energy = launcher->weapon_class;
     if (step_energy >= WEAPON_CLASS_FIRST_BOW && step_energy <= WEAPON_CLASS_LAST_BOW) {
         if (missile->weapon_class != WEAPON_CLASS_BOW_AMMUNITION)
@@ -293,7 +293,7 @@ static bool is_shot(uint16_t champion_index)
 }
 
 /* Freeze Life stops the creatures. A magical box is used up; other objects use a charge. */
-static void freeze_life(uint16_t champion_index)
+static void cast_freeze_life(uint16_t champion_index)
 {
     uint16_t thing = g_champions[champion_index].slots[SLOT_HAND_ACTION];
     int16_t ticks;
@@ -311,7 +311,7 @@ static void freeze_life(uint16_t champion_index)
 }
 
 /* Heal changes mana into health: up to min(10, heal level) health for each 2 mana. Returns the experience. */
-static uint16_t heal(uint16_t champion_index, uint16_t experience)
+static uint16_t heal_champion(uint16_t champion_index, uint16_t experience)
 {
     Champion *c = &g_champions[champion_index];
     int16_t missing = c->maximum_health - c->current_health;
@@ -337,7 +337,7 @@ static uint16_t heal(uint16_t champion_index, uint16_t experience)
 }
 
 /* Window: thieves eye for a random time by the skill level. */
-static void window(uint16_t champion_index, uint16_t skill_index)
+static void open_window(uint16_t champion_index, uint16_t skill_index)
 {
     uint16_t random = random16();
     int16_t level = champion_get_skill_level(champion_index, skill_index);
@@ -353,7 +353,7 @@ static bool is_climbed_down(void)
 {
     int16_t x, y;
     step_forward(g_party_direction, &x, &y);
-    if (SQUARE_TYPE(get_square(x, y)) != SQUARE_PIT || get_square_group(x, y) != THING_ENDOFLIST)
+    if (SQUARE_TYPE(map_get_square(x, y)) != SQUARE_PIT || map_get_square_group(x, y) != THING_ENDOFLIST)
         return false;
     g_use_rope_to_climb_down_pit = true;
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, x, y);
@@ -440,13 +440,13 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
         return false;
     int16_t x, y;
     step_forward(c->direction, &x, &y);
-    g_action_target_group_thing = get_square_group(x, y);
-    const ActionInfo *info = tables_action_info(action);
+    g_action_target_group_thing = map_get_square_group(x, y);
+    const ActionInfo *info = tables_get_action_info(action);
     uint16_t disabled_ticks = info->disabled_ticks;
     uint16_t skill_index = info->skill_index;
     int16_t stamina = random_bit() + info->stamina;
     uint16_t experience = info->experience_gain;
-    uint8_t square = get_square(x, y);
+    uint8_t square = map_get_square(x, y);
     bool performed = true;
     int16_t mana_cost = 0;
     if ((skill_index >= SKILL_COUNT - SKILL_BASE_COUNT && skill_index < SKILL_COUNT) || skill_index == SKILL_WIZARD)
@@ -503,7 +503,7 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
             disabled_ticks = 0;
         break;
     case ACTION_FREEZE_LIFE:
-        freeze_life(champion_index);
+        cast_freeze_life(champion_index);
         break;
     case ACTION_FIREBALL:
     case ACTION_DISPELL:
@@ -536,15 +536,15 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
         projectile_fluxcage_action(x, y);
         break;
     case ACTION_HEAL:
-        experience = heal(champion_index, experience);
+        experience = heal_champion(champion_index, experience);
         break;
     case ACTION_LIGHT:
-        g_party.magical_light_amount += *tables_light_power_to_light_amount(LIGHT_ACTION_POWER);
+        g_party.magical_light_amount += *tables_get_light_power_to_light_amount(LIGHT_ACTION_POWER);
         magic_create_light_event(-LIGHT_ACTION_POWER, LIGHT_ACTION_TICKS);
         action_decrement_charges(champion_index);
         break;
     case ACTION_WINDOW:
-        window(champion_index, skill_index);
+        open_window(champion_index, skill_index);
         action_decrement_charges(champion_index);
         break;
     case ACTION_THROW:
@@ -575,7 +575,7 @@ bool action_did_click_trigger_action(int16_t action_list_index)
     uint16_t champion_index = g_acting_champion_ordinal - 1;
     Champion *c = &g_champions[champion_index];
     uint8_t action = g_action_list_indices[action_list_index];
-    c->action_defense += tables_action_info(action)->defense;
+    c->action_defense += tables_get_action_info(action)->defense;
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     bool performed = action_is_action_performed(champion_index, action);
     c->action_index = action;
@@ -623,7 +623,7 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
     int16_t weapon_energy = 1;
     if (THING_TYPE(thing) == THING_WEAPON) {
         experience = THROW_WEAPON_EXPERIENCE;
-        const WeaponInfo *info = tables_weapon_info(weapon_type(thing));
+        const WeaponInfo *info = tables_get_weapon_info(weapon_type(thing));
         if (info->weapon_class < WEAPON_CLASS_KINETIC_THROW_LIMIT) {
             weapon_energy = info->kinetic_energy;
             experience += weapon_energy >> 2;
@@ -663,7 +663,7 @@ bool action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16
     uint16_t ammunition = c->slots[ammunition_slot];
     if (THING_TYPE(weapon) != THING_WEAPON)
         return false;
-    uint8_t weapon_class = tables_weapon_info(weapon_type(weapon))->weapon_class, needed;
+    uint8_t weapon_class = tables_get_weapon_info(weapon_type(weapon))->weapon_class, needed;
     if (weapon_class >= WEAPON_CLASS_FIRST_BOW && weapon_class <= WEAPON_CLASS_LAST_BOW)
         needed = WEAPON_CLASS_BOW_AMMUNITION;
     else if (weapon_class >= WEAPON_CLASS_FIRST_SLING && weapon_class <= WEAPON_CLASS_LAST_SLING)
@@ -671,7 +671,7 @@ bool action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16
     else
         return false;
     return THING_TYPE(ammunition) == THING_WEAPON &&
-           tables_weapon_info(weapon_type(ammunition))->weapon_class == needed;
+           tables_get_weapon_info(weapon_type(ammunition))->weapon_class == needed;
 }
 
 /* Moves a weapon from the quiver to the slot. */

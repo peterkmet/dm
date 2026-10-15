@@ -9,6 +9,6 @@
    fills the string index tables of the KAOS-layout image out. Returns 0 or -1. */
 int csb_text_build(const FtlImage *appb, FtlImage *out);
 /* The built text of graphic GFX_STRINGS or GFX_ACTION_NAMES as NUL-separated strings, else NULL. */
-const uint8_t *csb_text_item(int graphic, uint16_t *size);
+const uint8_t *csb_text_get_item(int graphic, uint16_t *size);
 
 #endif

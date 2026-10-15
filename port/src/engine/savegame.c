@@ -266,7 +266,7 @@ done:
 }
 
 /* dir/name in a buffer of PATH_SIZE bytes. */
-static void file_path(char *path, const char *dir, const char *name)
+static void make_file_path(char *path, const char *dir, const char *name)
 {
     snprintf(path, PATH_SIZE, "%s/%s", dir, name);
 }
@@ -318,9 +318,9 @@ static bool write_save_file(const char *dir, const char *name, const char *backu
                             uint32_t size)
 {
     char path[PATH_SIZE], backup[PATH_SIZE];
-    file_path(path, dir, name);
+    make_file_path(path, dir, name);
     if (backup_name) {
-        file_path(backup, dir, backup_name);
+        make_file_path(backup, dir, backup_name);
         remove(backup);
         rename(path, backup);
     }
@@ -348,7 +348,7 @@ bool savegame_save_as(const char *dir, const char *name, const char *backup_name
 }
 
 /* CEDT check before the merge: each first name is not empty and differs from the others. */
-static bool first_names_unique(void)
+static bool are_first_names_unique(void)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].name[0])
@@ -447,7 +447,7 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
 {
     if (!g_party_champion_count)
         return ADVENTURE_NO_CHAMPIONS;
-    if (!first_names_unique())
+    if (!are_first_names_unique())
         return ADVENTURE_NAMES_NOT_UNIQUE;
     size_t size = 0;
     uint32_t out_size = 0;
@@ -538,7 +538,7 @@ static void restore_snapshot(const uint8_t *data, uint32_t size)
     save_free(&s);
     map_reset();
     if (current >= 0)
-        set_current_map(current);
+        map_set_current_map(current);
     g_saved_game_exists = exists;
     g_party_dead = dead;
     g_last_load_game_time = loaded;
@@ -549,9 +549,9 @@ int16_t savegame_load_from(const char *dir, const char *name, const char *backup
     char path[PATH_SIZE], backup[PATH_SIZE];
     size_t size = 0;
     uint32_t snapshot_size = 0;
-    file_path(path, dir, name);
+    make_file_path(path, dir, name);
     if (backup_name)
-        file_path(backup, dir, backup_name);
+        make_file_path(backup, dir, backup_name);
     uint8_t *data = file_read(path, &size);
     bool from_backup = !data && backup_name;
     if (from_backup)

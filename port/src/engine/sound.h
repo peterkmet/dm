@@ -42,7 +42,7 @@ enum { SOUND_SWALLOW = 8 };
 extern int16_t g_pending_sounds[SOUND_PENDING_SLOTS];           /* -1: empty slot */
 extern uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][2]; /* left, right */
 
-const int8_t *sound_sample(int16_t sound, uint16_t *length, uint16_t *period);
+const int8_t *sound_get_sample(int16_t sound, uint16_t *length, uint16_t *period);
 int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b);
 bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes);
 void sound_play_sample(int16_t sound, const uint8_t *volumes);

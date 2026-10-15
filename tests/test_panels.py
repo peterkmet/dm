@@ -29,15 +29,15 @@ def setup(lib):
     lib.panel_object_text.restype = c16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.dungeon_get_thing_data.argtypes = [u16]
-    lib.get_next_thing.restype = u16
-    lib.get_next_thing.argtypes = [u16]
+    lib.map_get_next_thing.restype = u16
+    lib.map_get_next_thing.argtypes = [u16]
     lib.gfx_string.restype = lib.gfx_object_name.restype = ctypes.c_char_p
     lib.gfx_string.argtypes = lib.gfx_object_name.argtypes = [c16]
     lib.object_get_icon_index.argtypes = [u16]
     lib.object_get_icon_index.restype = c16
     lib.champion_pack.argtypes = [ctypes.POINTER(Champion), ctypes.c_char_p]
-    lib.get_unused_thing.restype = u16
-    lib.get_unused_thing.argtypes = [u16]
+    lib.map_get_unused_thing.restype = u16
+    lib.map_get_unused_thing.argtypes = [u16]
     lib.inventory_get_object_removed_from_slot.argtypes = [u16, u16]
     lib.panel_click_in_chest.argtypes = [c16, c16]
     lib.ui_slot_box_zone.argtypes = [c16, ctypes.c_int, ctypes.POINTER(Box)]
@@ -56,7 +56,7 @@ def chest_content(lib, chest):
     out, t = [], rec[2] << 8 | rec[3]
     while t != END:
         out.append(t)
-        t = lib.get_next_thing(t)
+        t = lib.map_get_next_thing(t)
     return out
 
 
@@ -205,7 +205,7 @@ def test_chest_open_swap_close(game, party):
     assert open_chest.value == chest
     assert list(slots) == content + [NONE] * (CHEST_SLOTS - len(content))
 
-    hand = game.get_unused_thing(5)
+    hand = game.map_get_unused_thing(5)
     game.inventory_put_object_in_leader_hand(hand)
     box = Box()
     assert game.ui_slot_box_zone(SLOT_BOX_CHEST_FIRST, 0, ctypes.byref(box))
@@ -251,9 +251,9 @@ def test_render_scroll_and_eye(game, party):
 
 @needs_game
 def test_eat_food_redraws_the_food_bar(game, party):
-    game.tables_object_info.restype = ctypes.POINTER(u16 * 3)
-    junk = next(j for j in range(53) if 0xA8 <= game.tables_object_info(0x7F + j).contents[0] < 0xB0)
-    thing = game.get_unused_thing(10)
+    game.tables_get_object_info.restype = ctypes.POINTER(u16 * 3)
+    junk = next(j for j in range(53) if 0xA8 <= game.tables_get_object_info(0x7F + j).contents[0] < 0xB0)
+    thing = game.map_get_unused_thing(10)
     game.dungeon_get_thing_data(thing)[3] = junk
     party[0].food = 100
     game.ui_draw_inventory_open(0)

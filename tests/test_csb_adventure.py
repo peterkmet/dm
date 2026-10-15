@@ -45,9 +45,9 @@ def game(tmp_path_factory):
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_new_game.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.get_square_first_thing.restype = u16
-    lib.get_next_thing.restype = u16
-    lib.get_square.restype = ctypes.c_uint8
+    lib.map_get_square_first_thing.restype = u16
+    lib.map_get_next_thing.restype = u16
+    lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     lib.savegame_make_adventure.restype = c16
     lib.savegame_save_as.restype = ctypes.c_bool

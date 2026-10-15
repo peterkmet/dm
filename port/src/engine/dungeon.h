@@ -1,6 +1,6 @@
 #ifndef DUNGEON_H
 #define DUNGEON_H
-/* Prefixes: decompress_ load_ dungeon_ decode_ */
+/* Prefixes: dungeon_ */
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -22,8 +22,8 @@ extern uint16_t g_dungeon_id;
 extern int16_t g_event_max_count;
 extern int16_t g_party_map_x, g_party_map_y, g_party_direction, g_party_map_index;
 
-bool decompress_dungeon(const uint8_t *src, int32_t src_size, uint8_t *dst, int32_t byte_count);
-bool load_dungeon(const char *path);
+bool dungeon_decompress(const uint8_t *src, int32_t src_size, uint8_t *dst, int32_t byte_count);
+bool dungeon_load(const char *path);
 bool dungeon_load_saved(const uint8_t *data, uint32_t size);
 bool dungeon_validate(void);
 uint8_t *dungeon_save(uint32_t *size);
@@ -31,15 +31,15 @@ uint8_t *dungeon_save(uint32_t *size);
 int16_t dungeon_map_count(void);
 int16_t dungeon_map_width(int16_t map);
 int16_t dungeon_map_height(int16_t map);
-uint8_t dungeon_square(int16_t map, int16_t x, int16_t y);
-uint16_t dungeon_square_first_thing(int16_t map, int16_t x, int16_t y);
+uint8_t dungeon_get_square(int16_t map, int16_t x, int16_t y);
+uint16_t dungeon_get_square_first_thing(int16_t map, int16_t x, int16_t y);
 uint8_t *dungeon_get_thing_data(uint16_t thing);
-/* decode_text modes and buffer sizes. */
+/* dungeon_decode_text modes and buffer sizes. */
 #define TEXT_MODE_MESSAGE        1
 #define TEXT_MODE_SCROLL         2
 #define TEXT_MODE_ANY_VISIBILITY ((int16_t)0x8000)
 #define TEXT_SIZE                256
 #define SCROLL_TEXT_SIZE         200
-bool decode_text(char *dst, int16_t dst_size, uint16_t text_thing, int16_t mode);
+bool dungeon_decode_text(char *dst, int16_t dst_size, uint16_t text_thing, int16_t mode);
 
 #endif

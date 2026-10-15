@@ -25,7 +25,7 @@ static bool blocks_sight(int16_t map, int16_t x, int16_t y)
 {
     if (!is_on_map(map, x, y))
         return true;
-    uint8_t square = dungeon_square(map, x, y);
+    uint8_t square = dungeon_get_square(map, x, y);
     switch (SQUARE_TYPE(square)) {
     case SQUARE_WALL:
         return true;
@@ -59,7 +59,7 @@ int16_t automap_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir)
     for (int16_t depth = 1; depth < limit; depth++) {
         int16_t ahead_x = x;
         int16_t ahead_y = y;
-        update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
+        game_update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
         if (blocks_sight(map, ahead_x, ahead_y))
             return depth + 1;
     }
@@ -75,8 +75,8 @@ bool automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int
     int16_t ahead_y = y;
     int16_t near_x = x;
     int16_t near_y = y;
-    update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
-    update_map_coordinates_after_relative_movement(dir, depth - 1, side, &near_x, &near_y);
+    game_update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
+    game_update_map_coordinates_after_relative_movement(dir, depth - 1, side, &near_x, &near_y);
     return !blocks_sight(map, ahead_x, ahead_y) || !blocks_sight(map, near_x, near_y);
 }
 
@@ -89,7 +89,7 @@ void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir)
                 continue;
             int16_t square_x = x;
             int16_t square_y = y;
-            update_map_coordinates_after_relative_movement(dir, depth, side, &square_x, &square_y);
+            game_update_map_coordinates_after_relative_movement(dir, depth, side, &square_x, &square_y);
             explored_mark(map, square_x, square_y);
         }
 }
@@ -219,7 +219,7 @@ void automap_draw(Bitmap *target, Box area, int16_t map)
     for (int16_t x = 0; x < w; x++)
         for (int16_t y = 0; y < h; y++)
             if (explored_is_seen(map, x, y))
-                draw_square(target, maps, dungeon_square(map, x, y), party_here && view_floor_pressure_pad(x, y),
+                draw_square(target, maps, dungeon_get_square(map, x, y), party_here && view_floor_pressure_pad(x, y),
                             origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
     /* The frame lies in the grid gap around the outer squares. */
     int16_t right = origin_x + w * AUTOMAP_CELL_SIZE - 1;

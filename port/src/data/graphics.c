@@ -59,7 +59,7 @@ int gfx_count(void)
 }
 
 /* Packed bytes of item i. */
-const uint8_t *gfx_item(int i, uint16_t *size)
+const uint8_t *gfx_get_item(int i, uint16_t *size)
 {
     if (i < 0 || i >= count)
         return NULL;
@@ -68,7 +68,7 @@ const uint8_t *gfx_item(int i, uint16_t *size)
 }
 
 /* Skips the pad words and reads the size of a packed graphic. Returns the start of the commands or NULL. */
-static const uint8_t *graphic_size(const uint8_t *p, const uint8_t *end, uint16_t *w, uint16_t *h)
+static const uint8_t *get_graphic_size(const uint8_t *p, const uint8_t *end, uint16_t *w, uint16_t *h)
 {
     while (end - p >= 2 && BE16(p) == GRAPHIC_PAD_WORD)
         p += 2;
@@ -160,7 +160,7 @@ int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
 {
     const uint8_t *end = p + len;
     uint16_t w, h;
-    if (!(p = graphic_size(p, end, &w, &h)))
+    if (!(p = get_graphic_size(p, end, &w, &h)))
         return -1;
     size_t n = (size_t)w * h;
     uint8_t *px = calloc(n ? n : 1, 1);
@@ -176,7 +176,7 @@ int gfx_expand_over(const uint8_t *p, size_t len, Bitmap *bm)
 {
     const uint8_t *end = p + len;
     uint16_t w, h;
-    if (!(p = graphic_size(p, end, &w, &h)) || w != bm->w || h != bm->h)
+    if (!(p = get_graphic_size(p, end, &w, &h)) || w != bm->w || h != bm->h)
         return -1;
     expand_commands(p, end, bm->px, w, (size_t)w * h);
     return 0;
@@ -186,7 +186,7 @@ int gfx_expand_over(const uint8_t *p, size_t len, Bitmap *bm)
 int gfx_load_bitmap(int i, Bitmap *bm)
 {
     uint16_t size;
-    const uint8_t *p = gfx_item(i, &size);
+    const uint8_t *p = gfx_get_item(i, &size);
     return p ? gfx_expand(p, size, bm) : -1;
 }
 
@@ -197,7 +197,7 @@ void gfx_free_bitmap(Bitmap *bm)
 }
 
 /* Decoded graphic i, kept until the next gfx_open. NULL when it does not decode. */
-const Bitmap *gfx_bitmap(int i)
+const Bitmap *gfx_get_bitmap(int i)
 {
     if (i < 0 || i >= count)
         return NULL;
@@ -223,9 +223,9 @@ static int load_strings(int graphic, StringList *list)
     uint16_t size;
     bool csb = g_adventure == ADVENTURE_CSB;
     bool bit7_ends = csb && graphic == GFX_OBJECT_NAMES;
-    const uint8_t *p = csb ? csb_text_item(graphic, &size) : NULL;
+    const uint8_t *p = csb ? csb_text_get_item(graphic, &size) : NULL;
     if (!p)
-        p = gfx_item(graphic, &size);
+        p = gfx_get_item(graphic, &size);
     if (!p)
         return -1;
     free(list->data);

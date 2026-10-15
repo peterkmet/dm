@@ -45,7 +45,7 @@ static const char *copy_line(const char *p, char *dst, int dst_size, int *len)
 
 /* Experience of a hidden skill level, as the original 125 << level with a 68000 LSL.L:
    the count is modulo 64, and counts of 32 and more give 0. */
-static int32_t hidden_skill_experience(uint16_t level)
+static int32_t get_hidden_skill_experience(uint16_t level)
 {
     if (level == 0)
         return 0;
@@ -80,7 +80,7 @@ bool recruit_parse_text(const char *text, RecruitData *out)
         out->statistics[i][STAT_MINIMUM] = STAT_MINIMUM_VALUE;
     }
     for (int s = SKILL_BASE_COUNT; s < SKILL_COUNT; s++)
-        out->experience[s] = hidden_skill_experience(p[VALUES_SKILLS + s - SKILL_BASE_COUNT] - 'A');
+        out->experience[s] = get_hidden_skill_experience(p[VALUES_SKILLS + s - SKILL_BASE_COUNT] - 'A');
     for (int b = 0; b < SKILL_BASE_COUNT; b++)
         for (int h = 0; h < HIDDEN_SKILLS_PER_BASE; h++)
             out->experience[b] += out->experience[SKILL_BASE_COUNT + b * HIDDEN_SKILLS_PER_BASE + h];
@@ -91,16 +91,16 @@ bool recruit_parse_text(const char *text, RecruitData *out)
 bool recruit_parse(uint16_t text_thing, RecruitData *out)
 {
     char text[RECRUIT_TEXT_SIZE];
-    return decode_text(text, sizeof text, text_thing, TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY) &&
+    return dungeon_decode_text(text, sizeof text, text_thing, TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY) &&
            recruit_parse_text(text, out);
 }
 
 /* The first text thing on the square, or THING_NONE. */
 uint16_t recruit_text_thing(int16_t map, int16_t x, int16_t y)
 {
-    uint16_t t = dungeon_square_first_thing(map, x, y);
+    uint16_t t = dungeon_get_square_first_thing(map, x, y);
     while (t != THING_ENDOFLIST && THING_TYPE(t) != THING_TEXT)
-        t = get_next_thing(t);
+        t = map_get_next_thing(t);
     return t == THING_ENDOFLIST ? THING_NONE : t;
 }
 

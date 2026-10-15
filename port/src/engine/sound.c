@@ -46,12 +46,12 @@ static bool sound_exists(int16_t sound)
 }
 
 /* Sample data of a sound, its length in bytes and its Paula period. */
-const int8_t *sound_sample(int16_t sound, uint16_t *length, uint16_t *period)
+const int8_t *sound_get_sample(int16_t sound, uint16_t *length, uint16_t *period)
 {
     uint16_t size;
     if (!sound_exists(sound))
         return NULL;
-    const uint8_t *p = gfx_item(tables_sound_graphic(sound), &size);
+    const uint8_t *p = gfx_get_item(tables_sound_graphic(sound), &size);
     uint8_t rate = tables_sound_rate(sound);
     if (!p || size < SOUND_SAMPLE_HEADER || !rate)
         return NULL;
@@ -61,7 +61,7 @@ const int8_t *sound_sample(int16_t sound, uint16_t *length, uint16_t *period)
 }
 
 /* Loudness class of a stereo volume: 0 quiet, 1 medium, 2 loud. */
-static uint16_t loudness_class(const uint8_t *v)
+static uint16_t get_loudness_class(const uint8_t *v)
 {
     uint16_t sum = v[SIDE_LEFT] + v[SIDE_RIGHT];
     return sum < LOUDNESS_MEDIUM_SUM ? 0 : sum < LOUDNESS_LOUD_SUM ? 1 : 2;
@@ -70,8 +70,8 @@ static uint16_t loudness_class(const uint8_t *v)
 /* 1 when a is louder than b, 0 when equal, -1 when quieter. */
 int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)
 {
-    uint16_t ca = loudness_class(a);
-    uint16_t cb = loudness_class(b);
+    uint16_t ca = get_loudness_class(a);
+    uint16_t cb = get_loudness_class(b);
     return cb < ca ? 1 : cb == ca ? 0 : -1;
 }
 
@@ -110,21 +110,21 @@ bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
 }
 
 /* Sample index that the voice plays now, at the output rate. */
-static uint64_t voice_position(const Voice *v)
+static uint64_t get_voice_position(const Voice *v)
 {
     return (uint64_t)v->frame * SOUND_PAL_CLOCK / ((uint64_t)v->period * SOUND_OUTPUT_RATE);
 }
 
-static bool voice_busy(const Voice *v)
+static bool is_voice_busy(const Voice *v)
 {
-    return v->data && voice_position(v) < v->length;
+    return v->data && get_voice_position(v) < v->length;
 }
 
 /* Starts a sound on a free stereo pair, or on the quieter pair when both play. */
 void sound_play_sample(int16_t sound, const uint8_t *volumes)
 {
     uint16_t length, period;
-    const int8_t *data = sound_sample(sound, &length, &period);
+    const int8_t *data = sound_get_sample(sound, &length, &period);
     sound_play_data(data, length, period, volumes);
 }
 
@@ -135,8 +135,8 @@ void sound_play_data(const int8_t *data, uint16_t length, uint16_t period, const
         return;
     /* while the music plays, a sample replaces the sample on pair A */
     int pair = music.count                                                               ? PAIR_A
-               : !voice_busy(&voices[pair_channels[PAIR_A][SIDE_LEFT]])                  ? PAIR_A
-               : !voice_busy(&voices[pair_channels[PAIR_B][SIDE_LEFT]])                  ? PAIR_B
+               : !is_voice_busy(&voices[pair_channels[PAIR_A][SIDE_LEFT]])               ? PAIR_A
+               : !is_voice_busy(&voices[pair_channels[PAIR_B][SIDE_LEFT]])               ? PAIR_B
                : sound_compare_loudness(pair_volumes[PAIR_A], pair_volumes[PAIR_B]) == 1 ? PAIR_B
                                                                                          : PAIR_A;
     memcpy(pair_volumes[pair], volumes, SIDE_COUNT);
@@ -244,7 +244,7 @@ void sound_music_stop(void)
 /* The next music segment starts on pair B when the one before ends; after the last one the music ends. */
 static void continue_music(void)
 {
-    if (!music.count || voice_busy(&voices[pair_channels[PAIR_B][SIDE_LEFT]]))
+    if (!music.count || is_voice_busy(&voices[pair_channels[PAIR_B][SIDE_LEFT]]))
         return;
     if (music.next >= music.count) {
         music.count = 0;
@@ -266,7 +266,7 @@ void sound_mix(int16_t *out, int frames)
             Voice *v = &voices[c];
             if (!v->data)
                 continue;
-            uint64_t i = voice_position(v);
+            uint64_t i = get_voice_position(v);
             if (i >= v->length) {
                 v->data = NULL;
                 continue;

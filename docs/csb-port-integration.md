@@ -154,7 +154,7 @@ New files `port/src/data/adventure.h` and `port/src/data/adventure.c`.
 ```c
 enum { ADVENTURE_DM, ADVENTURE_CSB };
 
-extern int16_t g_adventure;                 /* ADVENTURE_DM by default; not reset by game_new */
+extern int16_t g_adventure;                 /* ADVENTURE_DM by default; not reset by game_start_new */
 
 /* The adventure of a --adventure value, or -1. */
 int adventure_of(const char *name);
@@ -167,7 +167,7 @@ const char *adventure_backup_name(void);
 int adventure_csb_present(const char *dir);
 ```
 
-`g_adventure` is a global like `g_game_mode` (`advanced.c`). It is not in `game.c`, because `game_new` resets the game state and the adventure must live longer than one game.
+`g_adventure` is a global like `g_game_mode` (`advanced.c`). It is not in `game.c`, because `game_start_new` resets the game state and the adventure must live longer than one game.
 
 Changes that use it:
 

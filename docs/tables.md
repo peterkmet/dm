@@ -8,7 +8,7 @@ All addresses are original KAOS addresses (see [KAOS module map](kaos-map.md)). 
 
 1. Load the module with `kaos_load(path)`.
 2. Call `tables_init()`. It returns 0, or -1 when no KAOS image is loaded.
-3. Call an accessor, for example `tables_creature_info(type)`.
+3. Call an accessor, for example `tables_get_creature_info(type)`.
 
 `tables_load(path)` does steps 1 and 2. It returns 0 on success, or the error of `kaos_load`.
 
@@ -78,24 +78,24 @@ The image accessors read the loaded image at call time. They need `kaos_load`, n
 
 | Accessor | Address | Record size | Count | Index |
 |---|---|---|---|---|
-| `tables_creature_info` | `0x10192e` | 26 | 27 | Creature type |
-| `tables_creature_sound` | `0x101bec` | 2 | 18 | Sound ordinal − 1 |
-| `tables_object_info` | `0x101068` | 6 | 180 | Object info index |
-| `tables_weapon_info` | `0x1014a0` | 6 | 46 | Weapon type |
-| `tables_armour_info` | `0x1015b4` | 4 | 58 | Armour type |
-| `tables_junk_weight` | `0x10169c` | 1 | 53 | Junk type |
-| `tables_food_value` | `0x1016d2` | 2 | 8 | Icon − `0xa8` |
-| `tables_door_info` | `0x1016e2` | 2 | 4 | Door type |
-| `tables_spell` | `0x103c84` | 8 | 25 | Spell |
-| `tables_symbol_base_mana_cost` | `0x103c66` | 1 | 4 × 6 | Symbol step, symbol |
-| `tables_symbol_mana_cost_multiplier` | `0x103c7e` | 1 | 6 | Power symbol |
-| `tables_action_set` | `0x103d4c` | 8 | 44 | Object info action set index |
-| `tables_action_info` | `0x103eac`–`0x103fb4` | 7 × 1 | 44 | Action |
-| `tables_light_power_to_light_amount` | `0x100cb4` | 2 | 16 | Light power |
-| `tables_palette_light_threshold` | `0x100cd4` | 2 | 6 | Palette index |
-| `tables_slot_mask` | `0x100c68` | 2 | 38 | Champion slot (30), then chest slot (8) |
-| `tables_wound_defense_factor` | `0x100ce4` | 1 | 6 | Body slot |
-| `tables_fixed_possession` | `0x101c10` | 2 | 40 | Word in the list block |
+| `tables_get_creature_info` | `0x10192e` | 26 | 27 | Creature type |
+| `tables_get_creature_sound` | `0x101bec` | 2 | 18 | Sound ordinal − 1 |
+| `tables_get_object_info` | `0x101068` | 6 | 180 | Object info index |
+| `tables_get_weapon_info` | `0x1014a0` | 6 | 46 | Weapon type |
+| `tables_get_armour_info` | `0x1015b4` | 4 | 58 | Armour type |
+| `tables_get_junk_weight` | `0x10169c` | 1 | 53 | Junk type |
+| `tables_get_food_value` | `0x1016d2` | 2 | 8 | Icon − `0xa8` |
+| `tables_get_door_info` | `0x1016e2` | 2 | 4 | Door type |
+| `tables_get_spell` | `0x103c84` | 8 | 25 | Spell |
+| `tables_get_symbol_base_mana_cost` | `0x103c66` | 1 | 4 × 6 | Symbol step, symbol |
+| `tables_get_symbol_mana_cost_multiplier` | `0x103c7e` | 1 | 6 | Power symbol |
+| `tables_get_action_set` | `0x103d4c` | 8 | 44 | Object info action set index |
+| `tables_get_action_info` | `0x103eac`–`0x103fb4` | 7 × 1 | 44 | Action |
+| `tables_get_light_power_to_light_amount` | `0x100cb4` | 2 | 16 | Light power |
+| `tables_get_palette_light_threshold` | `0x100cd4` | 2 | 6 | Palette index |
+| `tables_get_slot_mask` | `0x100c68` | 2 | 38 | Champion slot (30), then chest slot (8) |
+| `tables_get_wound_defense_factor` | `0x100ce4` | 1 | 6 | Body slot |
+| `tables_get_fixed_possession` | `0x101c10` | 2 | 40 | Word in the list block |
 
 Each table ends where the next named table starts. The tests check this.
 
@@ -186,7 +186,7 @@ Each table ends where the next named table starts. The tests check this.
 | 6 | `type` | Bits 4–9: potion type, explosion type + 128, or other spell number. |
 | 6 | `disabled_ticks` | Bits 10–15: action disabled ticks after the cast. |
 
-`tables_symbol_base_mana_cost(step, n)` is the mana cost of symbol `n` at symbol step `step`. For steps after the first, the cost is `base × multiplier[power] >> 3`, where `multiplier` is `tables_symbol_mana_cost_multiplier`.
+`tables_get_symbol_base_mana_cost(step, n)` is the mana cost of symbol `n` at symbol step `step`. For steps after the first, the cost is `base × multiplier[power] >> 3`, where `multiplier` is `tables_get_symbol_mana_cost_multiplier`.
 
 ## Actions
 

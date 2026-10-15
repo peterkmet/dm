@@ -48,9 +48,9 @@ def game(tmp_path_factory):
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_new_game.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.get_square_first_thing.restype = u16
-    lib.get_next_thing.restype = u16
-    lib.get_square.restype = ctypes.c_uint8
+    lib.map_get_square_first_thing.restype = u16
+    lib.map_get_next_thing.restype = u16
+    lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     lib.dungeon_map_width.restype = c16
     lib.dungeon_map_height.restype = c16
@@ -510,7 +510,7 @@ def test_smooth_projectile_flight(game):
         game.run()
         x, y, _ = game.position()
         nx, ny = x + STEP_EAST[direction], y + STEP_NORTH[direction]
-        if lib.get_square(nx, ny) >> 5 == CORRIDOR:
+        if lib.map_get_square(nx, ny) >> 5 == CORRIDOR:
             break
     fireball = 0xFF80
     for mode in (VANILLA, ADVANCED):
@@ -545,7 +545,7 @@ def test_empty_hand_at_a_fountain(game, mode):
     ctypes.memmove(ctypes.byref(champions[1]), ctypes.byref(champions[0]), ctypes.sizeof(champions[0]))
     champions[1].cell = (champions[0].cell + 1) % 4
     count.value = 2
-    lib.set_current_map_and_party_map(1)
+    lib.map_set_current_map_and_party_map(1)
     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (0, 21, 2)):  # facing a fountain on level 2
         c16.in_dll(lib, name).value = v
     lib.gameloop_draw_view()
@@ -555,7 +555,7 @@ def test_empty_hand_at_a_fountain(game, mode):
     assert (champions[0].water, champions[1].water) == (2048, 2048 if mode == ADVANCED else 100)
     count.value = 1
     ctypes.memset(ctypes.byref(champions[1]), 0, ctypes.sizeof(champions[1]))
-    lib.set_current_map_and_party_map(start[0])
+    lib.map_set_current_map_and_party_map(start[0])
     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), start[1]):
         c16.in_dll(lib, name).value = v
     lib.gameloop_draw_view()

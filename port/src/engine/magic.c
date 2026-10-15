@@ -160,7 +160,7 @@ bool magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, boo
 }
 
 /* The empty flask in the action hand, else in the ready hand, or THING_NONE. */
-static uint16_t empty_flask_in_hand(const Champion *c)
+static uint16_t find_empty_flask_in_hand(const Champion *c)
 {
     for (int16_t slot = SLOT_HAND_ACTION; slot >= SLOT_HAND_READY; slot--)
         if (c->slots[slot] != THING_NONE && object_get_icon_index(c->slots[slot]) == ICON_EMPTY_FLASK)
@@ -172,7 +172,7 @@ static uint16_t empty_flask_in_hand(const Champion *c)
 static bool cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t power)
 {
     Champion *c = &g_champions[champion_index];
-    uint16_t flask = empty_flask_in_hand(c);
+    uint16_t flask = find_empty_flask_in_hand(c);
     if (flask == THING_NONE) {
         magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_FLASK_IN_HAND, 0);
         return false;
@@ -205,14 +205,14 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
 /* Light now, taken back by event 70 after the ticks. */
 static void cast_light(uint16_t light_power, int16_t ticks)
 {
-    g_party.magical_light_amount += *tables_light_power_to_light_amount(light_power);
+    g_party.magical_light_amount += *tables_get_light_power_to_light_amount(light_power);
     magic_create_light_event(-light_power, ticks);
 }
 
 /* Zokathra: a new junk object in an empty hand, else on the party square. */
 static void cast_zokathra(uint16_t champion_index)
 {
-    uint16_t thing = get_unused_thing(THING_JUNK);
+    uint16_t thing = map_get_unused_thing(THING_JUNK);
     if (thing == THING_NONE)
         return;
     junk_set_type(thing, JUNK_ZOKATHRA);
@@ -237,7 +237,7 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
                    (power - 1) * SPELL_DURATION_FACTOR * LIGHT_SPELL_TICKS_FACTOR + LIGHT_SPELL_BASE_TICKS);
         break;
     case SPELL_OTHER_DARKNESS:
-        g_party.magical_light_amount -= *tables_light_power_to_light_amount(ticks >> 2);
+        g_party.magical_light_amount -= *tables_get_light_power_to_light_amount(ticks >> 2);
         magic_create_light_event(ticks >> 2, LIGHT_MAXIMUM_TICKS_DARKNESS);
         break;
     case SPELL_OTHER_THIEVES_EYE:
@@ -293,8 +293,8 @@ static bool is_magic_map(uint16_t thing)
     char text[SCROLL_TEXT_SIZE];
     if (THING_TYPE(thing) != THING_SCROLL)
         return false;
-    decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(thing)),
-                TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
+    dungeon_decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(thing)),
+                        TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
     return magic_map_is_text(text);
 }
 
@@ -347,7 +347,7 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
         magic_print_spell_failure_message(champion_index, SPELL_FAILURE_MEANINGLESS_SPELL, 0);
         return SPELL_CAST_FAILURE;
     }
-    const Spell *spell = tables_spell(index);
+    const Spell *spell = tables_get_spell(index);
     uint8_t power_symbol = c->symbols[0];
     int16_t power = (int8_t)power_symbol - (POWER_SYMBOL_FIRST - 1);
     uint16_t required_level = power + spell->base_required_skill_level;
@@ -359,7 +359,7 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
     for (uint16_t missing = skill_level < required_level ? required_level - skill_level : 0; missing; missing--) {
         if (spell_draw_fails(c->statistics[STAT_WISDOM][STAT_CURRENT], random16())) {
             champion_add_skill_experience(champion_index, spell->skill_index,
-                                          spell_failure_experience(experience, required_level, skill_level));
+                                          spell_get_failure_experience(experience, required_level, skill_level));
             magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MORE_PRACTICE, spell->skill_index);
             return SPELL_CAST_FAILURE;
         }

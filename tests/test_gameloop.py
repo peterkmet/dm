@@ -42,9 +42,9 @@ def game():
     lib.gameloop_pointer.restype = ctypes.c_bool
     lib.ui_slot_box_zone.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.get_square_first_thing.restype = u16
-    lib.get_next_thing.restype = u16
-    lib.get_square.restype = ctypes.c_uint8
+    lib.map_get_square_first_thing.restype = u16
+    lib.map_get_next_thing.restype = u16
+    lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     assert lib.gameloop_load_data(str(GAME).encode())
     assert lib.gameloop_new_game(str(GAME).encode())
@@ -109,12 +109,12 @@ class Game:
             assert self.until(lambda: self.position()[:2] == [x1, y1])
 
     def mirror_cell(self, x, y):
-        thing = self.lib.get_square_first_thing(x, y)
+        thing = self.lib.map_get_square_first_thing(x, y)
         while thing not in (0xFFFE, 0xFFFF):
             data = self.lib.dungeon_get_thing_data(thing)
             if thing >> 10 & 15 == SENSOR and (data[2] << 8 | data[3]) & 0x7F == CHAMPION_PORTRAIT:
                 return thing >> 14
-            thing = self.lib.get_next_thing(thing)
+            thing = self.lib.map_get_next_thing(thing)
         return None
 
     def path_to_mirror(self, skip=()):
@@ -131,7 +131,7 @@ class Game:
                         path.append(square)
                         square = previous[square]
                     return path[::-1], d
-                if self.lib.get_square(nx, ny) >> 5 == CORRIDOR and (nx, ny) not in previous:
+                if self.lib.map_get_square(nx, ny) >> 5 == CORRIDOR and (nx, ny) not in previous:
                     previous[nx, ny] = (x, y)
                     queue.append((nx, ny))
         raise AssertionError("no mirror reachable")
@@ -317,10 +317,10 @@ def test_hand_object_name_follows_the_icon(game):
     game.run()
     game.click_box(game.boxes[5])
     game.click_zone(ZONE_RESURRECT)
-    lib.tables_object_info.restype = ctypes.POINTER(u16 * 3)
-    junk = next(j for j in range(53) if lib.tables_object_info(0x7F + j).contents[0] == 8)  # waterskin
-    lib.get_unused_thing.restype = u16
-    skin = lib.get_unused_thing(10)
+    lib.tables_get_object_info.restype = ctypes.POINTER(u16 * 3)
+    junk = next(j for j in range(53) if lib.tables_get_object_info(0x7F + j).contents[0] == 8)  # waterskin
+    lib.map_get_unused_thing.restype = u16
+    skin = lib.map_get_unused_thing(10)
     data = lib.dungeon_get_thing_data(skin)
     data[3], data[2] = junk, 1 << 6  # one charge
     lib.inventory_put_object_in_leader_hand(skin)

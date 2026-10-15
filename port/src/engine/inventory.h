@@ -1,6 +1,6 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
-/* Prefixes: inventory_ object_ process_ chest_ close_ */
+/* Prefixes: inventory_ object_ */
 #include <stdbool.h>
 #include <stdint.h>
 #include "map.h"
@@ -62,11 +62,11 @@ uint16_t inventory_get_object_removed_from_leader_hand(void);
 uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot);
 void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot);
 void inventory_click_on_slot_box(uint16_t slot_box);
-/* Results of process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
+/* Results of inventory_process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
 enum { MOUTH_REFUSED, MOUTH_SWALLOWED, MOUTH_USED_UP };
-int16_t process_click_on_mouth(void);
-void chest_open(uint16_t chest);
-void close_chest(void);
+int16_t inventory_process_click_on_mouth(void);
+void inventory_open_chest(uint16_t chest);
+void inventory_close_chest(void);
 void inventory_reset(void);
 
 #endif

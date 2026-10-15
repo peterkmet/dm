@@ -38,7 +38,7 @@ static bool is_on_map(int16_t map, int16_t x, int16_t y)
 }
 
 /* The byte of square (x, y), or NULL outside the map. */
-static uint8_t *seen_square(int16_t map, int16_t x, int16_t y)
+static uint8_t *get_seen_square(int16_t map, int16_t x, int16_t y)
 {
     if (!seen)
         explored_reset();
@@ -49,13 +49,13 @@ static uint8_t *seen_square(int16_t map, int16_t x, int16_t y)
 
 bool explored_is_seen(int16_t map, int16_t x, int16_t y)
 {
-    uint8_t *square = seen_square(map, x, y);
+    uint8_t *square = get_seen_square(map, x, y);
     return square && *square;
 }
 
 void explored_mark(int16_t map, int16_t x, int16_t y)
 {
-    uint8_t *square = seen_square(map, x, y);
+    uint8_t *square = get_seen_square(map, x, y);
     if (square)
         *square = 1;
 }

@@ -28,17 +28,17 @@ c16, u8p = ctypes.c_int16, ctypes.POINTER(ctypes.c_uint8)
 def lib():
     subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
-    for name in ("get_square",):
+    for name in ("map_get_square",):
         getattr(lib, name).restype = ctypes.c_uint8
-    for name in ("get_square_first_thing", "dungeon_square_first_thing"):
+    for name in ("map_get_square_first_thing", "dungeon_get_square_first_thing"):
         getattr(lib, name).restype = ctypes.c_uint16
-    for name in ("get_location_after_level_change", "get_stairs_exit_direction",
+    for name in ("map_get_location_after_level_change", "map_get_stairs_exit_direction",
                  "dungeon_map_width", "dungeon_map_height", "dungeon_map_count", "move_get_move_result"):
         getattr(lib, name).restype = c16
-    lib.is_square_open.restype = ctypes.c_bool
-    lib.load_dungeon.restype = ctypes.c_bool
-    lib.get_location_after_level_change.argtypes = [c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
-    lib.dungeon_square.restype = ctypes.c_uint8
+    lib.map_is_square_open.restype = ctypes.c_bool
+    lib.dungeon_load.restype = ctypes.c_bool
+    lib.map_get_location_after_level_change.argtypes = [c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
+    lib.dungeon_get_square.restype = ctypes.c_uint8
     lib.dungeon_get_thing_data.restype = u8p
     return lib
 
@@ -48,9 +48,9 @@ def game(lib):
     if not (GAME / "KAOS.FTL").exists() or not (GAME / "Dungeon.DAT").exists():
         pytest.skip("missing game files")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     assert lib.tables_init() == 0
-    lib.game_new()
+    lib.game_start_new()
     lib.move_party_enter_dungeon()
     return lib
 
@@ -144,8 +144,8 @@ def test_stairs_change_map(game):
 def test_floor_sensor_opens_door(game):
     recruit(game)
     place(game, 0, 7, 9, 3)
-    door = lambda: game.dungeon_square(0, 5, 9) & 7
-    assert game.dungeon_square(0, 5, 9) >> 5 == 4 and door() == 4
+    door = lambda: game.dungeon_get_square(0, 5, 9) & 7
+    assert game.dungeon_get_square(0, 5, 9) >> 5 == 4 and door() == 4
     game.move_party(FORWARD)
     assert party(game) == (0, 6, 9, 3)
     states = []
@@ -156,7 +156,7 @@ def test_floor_sensor_opens_door(game):
 
 
 def test_door_event_toggles_door(game):
-    door = lambda: game.dungeon_square(0, 5, 9) & 7
+    door = lambda: game.dungeon_get_square(0, 5, 9) & 7
     game.sensor_add_event(10, 5, 9, 0, 2, 1)
     for _ in range(6):
         tick(game)
@@ -178,7 +178,7 @@ def test_pit_drops_party(game):
     recruit(game)
     place(game, 1, 7, 9, 0)
     x, y = c16(7), c16(8)
-    below = game.get_location_after_level_change(1, 1, ctypes.byref(x), ctypes.byref(y))
+    below = game.map_get_location_after_level_change(1, 1, ctypes.byref(x), ctypes.byref(y))
     assert below == 2
     game.move_party(FORWARD)
     assert var(game, "g_new_party_map_index").value == below
@@ -192,7 +192,7 @@ def test_turn_on_stairs_takes_stairs(game):
     place(game, 1, 3, 1, 0)
     game.move_turn_party(TURN_LEFT)
     game.move_process_new_party_map()
-    assert party(game)[0] == 0 and game.dungeon_square(0, *party(game)[1:3]) >> 5 == 3
+    assert party(game)[0] == 0 and game.dungeon_get_square(0, *party(game)[1:3]) >> 5 == 3
 
 
 def emu_with_map(lib, m):
@@ -224,23 +224,23 @@ def emu_with_map(lib, m):
 @pytest.mark.parametrize("m", [0, 1, 2])
 def test_square_queries_match_original(game, m):
     emu = emu_with_map(game, m)
-    game.set_current_map(m)
+    game.map_set_current_map(m)
     w, h = game.dungeon_map_width(m), game.dungeon_map_height(m)
     for x in range(-2, w + 2):
         for y in range(-2, h + 2):
             args = [(2, x & 0xFFFF), (2, y & 0xFFFF)]
-            square = game.get_square(x, y)
+            square = game.map_get_square(x, y)
             assert square == emu.call(GET_SQUARE, args) & 0xFF, (x, y)
-            assert game.is_square_open(x, y) == emu.call(IS_SQUARE_OPEN, args) & 0xFFFF
+            assert game.map_is_square_open(x, y) == emu.call(IS_SQUARE_OPEN, args) & 0xFFFF
             if 0 <= x < w and 0 <= y < h:
-                assert game.get_square_first_thing(x, y) == emu.call(FIRST_THING, args) & 0xFFFF
+                assert game.map_get_square_first_thing(x, y) == emu.call(FIRST_THING, args) & 0xFFFF
             if square >> 5 == 3:
-                assert game.get_stairs_exit_direction(x, y) == emu.call(STAIRS_EXIT, args) & 0xFFFF
+                assert game.map_get_stairs_exit_direction(x, y) == emu.call(STAIRS_EXIT, args) & 0xFFFF
     for x in range(w):
         for y in range(h):
             for delta in (-1, 1):
                 cx, cy = c16(x), c16(y)
-                result = game.get_location_after_level_change(m, delta, ctypes.byref(cx), ctypes.byref(cy))
+                result = game.map_get_location_after_level_change(m, delta, ctypes.byref(cx), ctypes.byref(cy))
                 emu.write(BUF + 0x40000, struct.pack(">hh", x, y))
                 expected = c16(emu.call(LEVEL_CHANGE, [(2, m), (2, delta & 0xFFFF), (4, BUF + 0x40000), (4, BUF + 0x40002)]) & 0xFFFF).value
                 assert result == expected
@@ -250,19 +250,19 @@ def test_square_queries_match_original(game, m):
 
 def test_link_and_unlink_keep_lists(game):
     """An object dropped on an empty square makes a new list. Removing it restores all square first things."""
-    game.set_current_map(0)
+    game.map_set_current_map(0)
     count = struct.unpack(">H", bytes(u8p.in_dll(game, "g_dungeon_header")[10:12]))[0]
     before = bytes(u8p.in_dll(game, "g_square_first_things")[:2 * count])
     columns = c16.in_dll(game, "g_dungeon_column_count").value
     index_before = bytes(u8p.in_dll(game, "g_dungeon_column_first_thing_index")[:2 * columns])
-    assert game.get_square_first_thing(1, 5) == 0xFFFE
+    assert game.map_get_square_first_thing(1, 5) == 0xFFFE
     junk = 10 << 10 | 0  # junk record 0
     saved = bytes(game.dungeon_get_thing_data(junk)[:4])
-    game.link_thing_to_list(junk | 2 << 14, 0, 1, 5)
-    assert game.get_square_first_thing(1, 5) == junk | 2 << 14
-    assert game.dungeon_square(0, 1, 5) & 0x10
-    game.unlink_thing_from_list(junk, 0, 1, 5)
-    assert game.get_square_first_thing(1, 5) == 0xFFFE and not game.dungeon_square(0, 1, 5) & 0x10
+    game.map_link_thing_to_list(junk | 2 << 14, 0, 1, 5)
+    assert game.map_get_square_first_thing(1, 5) == junk | 2 << 14
+    assert game.dungeon_get_square(0, 1, 5) & 0x10
+    game.map_unlink_thing_from_list(junk, 0, 1, 5)
+    assert game.map_get_square_first_thing(1, 5) == 0xFFFE and not game.dungeon_get_square(0, 1, 5) & 0x10
     assert bytes(u8p.in_dll(game, "g_square_first_things")[:2 * count]) == before
     assert bytes(u8p.in_dll(game, "g_dungeon_column_first_thing_index")[:2 * columns]) == index_before
     ctypes.memmove(game.dungeon_get_thing_data(junk), saved, 4)

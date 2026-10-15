@@ -163,7 +163,7 @@ A statistic modifier changes the maximum, current, and minimum value.
 
 ## Eating and drinking
 
-`process_click_on_mouth()` uses the leader hand object on the inventory champion. The object must have the mouth bit (bit 0) in its allowed slots.
+`inventory_process_click_on_mouth()` uses the leader hand object on the inventory champion. The object must have the mouth bit (bit 0) in its allowed slots.
 
 - Waterskin: with charges, water +800 (maximum 2048) and one charge less.
 - Food: the object record becomes free. Food increases by the food value of the icon (maximum 2048).
@@ -171,7 +171,7 @@ A statistic modifier changes the maximum, current, and minimum value.
 
 | Potion | Effect |
 |---|---|
-| Ros | Dexterity + amount (`adjust_statistic_current_value`) |
+| Ros | Dexterity + amount (`game_adjust_statistic_current_value`) |
 | Ku | Strength + `p / 35 + 5` |
 | Dane | Wisdom + amount |
 | Neta | Vitality + amount |
@@ -259,7 +259,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 |---|---|---|
 | 11 | `event_enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 − 1` (`action_move_weapon_from_quiver_to_slot`). |
 | 12 | `event_hide_damage_received` | Hides the damage number of the champion. |
-| 13 | `event_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
+| 13 | `event_process_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
 | 75 | `champion_poison` | One poison step: the poison event count decreases, then `champion_poison(champion, word 6)`. |
 
 ## Save files
@@ -271,7 +271,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 - Drawing: status boxes, damage numbers, the inventory panel, and portraits (`ui_champion.c`).
 - Spells and creature attacks on champions (`magic.c`, `group.c`).
 - Scent creation on party moves (`move.c`).
-- `get_unused_thing` does not free discarded things yet (`map.c`).
+- `map_get_unused_thing` does not free discarded things yet (`map.c`).
 - Chest closing when the open chest leaves the action hand, and the light palette update after a torch or Illumulet change.
 
 ## Tests

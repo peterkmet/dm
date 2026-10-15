@@ -194,11 +194,11 @@ static void print_champion_message(uint16_t champion_index, int16_t text)
     message_print(color, gfx_string(text + 1), g_game_time);
 }
 
-static void square_in_front(int16_t *x, int16_t *y)
+static void get_square_in_front(int16_t *x, int16_t *y)
 {
     *x = g_party_map_x;
     *y = g_party_map_y;
-    update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, x, y);
+    game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, x, y);
 }
 
 /* The living champion in a cell of the party square, or -1. */
@@ -238,14 +238,14 @@ void champion_wake_up(void)
 }
 
 /* The slot that a candidate possession goes to: hands, body, pouches, neck, then the backpack. */
-static uint16_t candidate_slot(const Champion *c, uint16_t thing, uint16_t *next_backpack_slot)
+static uint16_t get_candidate_slot(const Champion *c, uint16_t thing, uint16_t *next_backpack_slot)
 {
-    uint16_t allowed = tables_object_info(inventory_get_object_info_index(thing))->allowed_slots;
-    bool neck_free = allowed & *tables_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
+    uint16_t allowed = tables_get_object_info(inventory_get_object_info_index(thing))->allowed_slots;
+    bool neck_free = allowed & *tables_get_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
     uint16_t slot = THING_NONE;
     switch (THING_TYPE(thing)) {
     case THING_ARMOUR:
-        for (slot = SLOT_HEAD; slot <= SLOT_FEET && !(allowed & *tables_slot_mask(slot)); slot++)
+        for (slot = SLOT_HEAD; slot <= SLOT_FEET && !(allowed & *tables_get_slot_mask(slot)); slot++)
             ;
         if (slot > SLOT_FEET)
             slot = neck_free ? SLOT_NECK : THING_NONE;
@@ -263,7 +263,7 @@ static uint16_t candidate_slot(const Champion *c, uint16_t thing, uint16_t *next
         break;
     }
     while (slot == THING_NONE || c->slots[slot] != THING_NONE) {
-        neck_free = allowed & *tables_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
+        neck_free = allowed & *tables_get_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
         slot = neck_free ? SLOT_NECK : (*next_backpack_slot)++;
     }
     return slot;
@@ -274,22 +274,22 @@ static uint16_t candidate_slot(const Champion *c, uint16_t thing, uint16_t *next
 static void add_candidate_possessions(uint16_t champion_index)
 {
     int16_t x, y;
-    square_in_front(&x, &y);
+    get_square_in_front(&x, &y);
     uint16_t cell = (g_party_direction + 2) % CELL_COUNT;
     uint16_t backpack = SLOT_BACKPACK_FIRST;
-    for (uint16_t t = get_square_first_thing(x, y); t != THING_END; t = get_next_thing(t)) {
+    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_END; t = map_get_next_thing(t)) {
         uint16_t type = THING_TYPE(t);
         /* Fix: the original reuses a stale slot for things that are not objects; none lie on mirror walls. */
         if (type < THING_WEAPON || type > THING_JUNK || THING_CELL(t) != cell)
             continue;
-        inventory_add_object_in_slot(champion_index, t, candidate_slot(&g_champions[champion_index], t, &backpack));
+        inventory_add_object_in_slot(champion_index, t, get_candidate_slot(&g_champions[champion_index], t, &backpack));
     }
 }
 
 /* Copies the portrait from the portrait sheet, clipped to the sheet; the pixels outside the sheet stay 0. */
 void champion_set_portrait(int16_t champion_index, int16_t portrait_index)
 {
-    const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
+    const Bitmap *portraits = gfx_get_bitmap(GFX_CHAMPION_PORTRAITS);
     uint8_t *px = g_champion_portraits[champion_index];
     int16_t x, y;
     memset(px, 0, CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT);
@@ -397,13 +397,13 @@ void champion_click_in_resurrect_reincarnate_panel(int16_t command)
         return;
     }
     int16_t x, y;
-    square_in_front(&x, &y);
+    get_square_in_front(&x, &y);
     for (uint16_t s = 0; s < SLOT_COUNT; s++)
         if (c->slots[s] != THING_NONE)
-            unlink_thing_from_list(c->slots[s], 0, x, y);
-    uint16_t mirror = get_square_first_thing(x, y);
+            map_unlink_thing_from_list(c->slots[s], 0, x, y);
+    uint16_t mirror = map_get_square_first_thing(x, y);
     while (THING_TYPE(mirror) != THING_SENSOR)
-        mirror = get_next_thing(mirror);
+        mirror = map_get_next_thing(mirror);
     rec_sensor_disable(mirror);
     if (command == PANEL_REINCARNATE)
         reincarnate(c);
@@ -434,13 +434,13 @@ void champion_resurrect(uint16_t champion_index)
     c->attributes |= CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ICON;
 }
 
-static uint16_t base_skill(uint16_t skill)
+static uint16_t get_base_skill(uint16_t skill)
 {
     return skill < SKILL_BASE_COUNT ? skill : (skill - SKILL_BASE_COUNT) / SKILL_BASE_COUNT;
 }
 
 /* Extra levels from the Firestaff in the action hand and from neck jewels. */
-static int16_t object_skill_bonus(const Champion *c, uint16_t skill)
+static int16_t get_object_skill_bonus(const Champion *c, uint16_t skill)
 {
     int16_t action = object_get_icon_index(c->slots[SLOT_HAND_ACTION]);
     int16_t neck = object_get_icon_index(c->slots[SLOT_NECK]);
@@ -472,7 +472,7 @@ int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flag
     if (temporary)
         experience += (uint16_t)c->skills[skill].temporary_experience;
     if (skill >= SKILL_BASE_COUNT) {
-        const Skill *base = &c->skills[base_skill(skill)];
+        const Skill *base = &c->skills[get_base_skill(skill)];
         experience += base->experience;
         if (temporary)
             experience += (uint16_t)base->temporary_experience;
@@ -482,7 +482,7 @@ int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flag
     for (; experience >= LEVEL_EXPERIENCE; experience >>= 1)
         level++;
     if (!(skill_and_flags & SKILL_IGNORE_OBJECT_MODIFIERS))
-        level += object_skill_bonus(c, skill);
+        level += get_object_skill_bonus(c, skill);
     return level;
 }
 
@@ -554,7 +554,7 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
     if (difficulty)
         experience *= difficulty;
     Champion *c = &g_champions[champion_index];
-    uint16_t base = base_skill(skill);
+    uint16_t base = get_base_skill(skill);
     uint16_t flags = SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE;
     uint16_t old_level = champion_get_skill_level(champion_index, base | flags);
     if (skill >= SKILL_BASE_COUNT && g_game_time - RECENT_ATTACK_TICKS < (uint32_t)g_last_creature_attack_time)
@@ -639,7 +639,7 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
             strength -= (weight - heavy) * 2;
     }
     if (THING_TYPE(thing) == THING_WEAPON) {
-        const WeaponInfo *w = tables_weapon_info(weapon_type(thing));
+        const WeaponInfo *w = tables_get_weapon_info(weapon_type(thing));
         int16_t skill = 0;
         strength += w->strength;
         if (w->weapon_class == CLASS_SWING_WEAPON || w->weapon_class == CLASS_DAGGER_AND_AXES)
@@ -656,9 +656,9 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
     return bounded_value(0, strength >> 1, ROLL_MAXIMUM);
 }
 
-static const ArmourInfo *armour_info(uint16_t thing)
+static const ArmourInfo *get_armour_info(uint16_t thing)
 {
-    return tables_armour_info(armour_type(thing));
+    return tables_get_armour_info(armour_type(thing));
 }
 
 /* Defense of one body part (slot 0-5). Shields in the hands count for every part. */
@@ -670,12 +670,12 @@ int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_fla
     uint16_t shields = 0;
     for (int16_t hand = SLOT_HAND_READY; hand <= SLOT_HAND_ACTION; hand++) {
         uint16_t thing = c->slots[hand];
-        if (THING_TYPE(thing) != THING_ARMOUR || !(armour_info(thing)->attributes & ARMOUR_SHIELD))
+        if (THING_TYPE(thing) != THING_ARMOUR || !(get_armour_info(thing)->attributes & ARMOUR_SHIELD))
             continue;
         uint16_t sum =
-            champion_get_strength(champion_index, hand) + inventory_get_armour_defense(armour_info(thing), sharp);
+            champion_get_strength(champion_index, hand) + inventory_get_armour_defense(get_armour_info(thing), sharp);
         /* 16-bit truncation of the product as in the original */
-        shields += (uint16_t)(sum * *tables_wound_defense_factor(slot)) >>
+        shields += (uint16_t)(sum * *tables_get_wound_defense_factor(slot)) >>
                    (hand == slot ? SHIELD_DEFENSE_OWN_SLOT_SHIFT : SHIELD_DEFENSE_SHIFT);
     }
     uint16_t luck = random16() % ((c->statistics[STAT_VITALITY][STAT_CURRENT] >> VITALITY_DEFENSE_SHIFT) + 1);
@@ -683,7 +683,7 @@ int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_fla
         luck >>= 1;
     int16_t defense = luck + c->action_defense + c->shield_defense + g_party.shield_defense + shields;
     if (slot > SLOT_HAND_ACTION && THING_TYPE(c->slots[slot]) == THING_ARMOUR)
-        defense += inventory_get_armour_defense(armour_info(c->slots[slot]), sharp);
+        defense += inventory_get_armour_defense(get_armour_info(c->slots[slot]), sharp);
     if (c->wounds & 1 << slot)
         defense -= random_2bits() + WOUND_DEFENSE_PENALTY;
     if (g_party_is_sleeping)
@@ -813,7 +813,7 @@ void champion_kill(uint16_t champion_index)
     c->attributes |= CHAMPION_ATTR_STATUS_BOX;
     g_dead_champions |= 1 << champion_index;
     champion_drop_all_objects(champion_index);
-    uint16_t bones = get_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
+    uint16_t bones = map_get_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
     if (bones != THING_NONE) {
         junk_set_type(bones, JUNK_BONES);
         rec_object_set_important(bones);

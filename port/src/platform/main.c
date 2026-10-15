@@ -83,7 +83,7 @@ static int view_start(const char *dir)
         return 0;
     }
     snprintf(path, sizeof path, "%s/Dungeon.DAT", dir);
-    if (!load_dungeon(path)) {
+    if (!dungeon_load(path)) {
         SDL_Log("cannot load %s", path);
         return 0;
     }
@@ -114,10 +114,10 @@ static void view_key(int key)
         right = 1;
     else
         return;
-    update_map_coordinates_after_relative_movement(d, forward, right, &x, &y);
+    game_update_map_coordinates_after_relative_movement(d, forward, right, &x, &y);
     if (x < 0 || x >= dungeon_map_width(m) || y < 0 || y >= dungeon_map_height(m))
         return;
-    uint8_t square = dungeon_square(m, x, y);
+    uint8_t square = dungeon_get_square(m, x, y);
     if (SQUARE_TYPE(square) == SQUARE_WALL || (SQUARE_TYPE(square) == SQUARE_FAKE_WALL && !(square & FAKE_WALL_OPEN)))
         return;
     g_party_map_x = x;
@@ -435,7 +435,7 @@ static void set_icon(void)
         RGB_BLACK, RGB_DARK_GRAY, RGB_GRAY,  RGB_BROWN,  RGB_CYAN,         RGB_LIGHT_BROWN, RGB_DARK_GREEN, RGB_GREEN,
         RGB_RED,   RGB_GOLD,      RGB_FLESH, RGB_YELLOW, RGB_DARKEST_GRAY, RGB_LIGHT_GRAY,  RGB_BLUE,       RGB_WHITE,
     };
-    const Bitmap *bm = gfx_bitmap(GFX_APP_ICON);
+    const Bitmap *bm = gfx_get_bitmap(GFX_APP_ICON);
     if (bm)
         plat_set_icon(bm->px, bm->w, bm->h, ICON_TRANSPARENT_COLOR, colors);
 }

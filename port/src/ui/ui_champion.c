@@ -183,7 +183,7 @@ static void draw_icon(uint16_t champion_index)
     uint8_t px[CHAMPION_ICON_MAX * CHAMPION_ICON_MAX];
     Bitmap bm = {w, h, px};
     Bitmap screen = ui_screen();
-    const Bitmap *icons = gfx_bitmap(GFX_CHAMPION_ICONS);
+    const Bitmap *icons = gfx_get_bitmap(GFX_CHAMPION_ICONS);
     bool invisible = g_party.invisibility_count != 0;
     if (w * h > (int)sizeof px)
         return;
@@ -400,7 +400,7 @@ void ui_draw_panel_food_water_poisoned(void)
     scroll_redraw = 0;
     const Champion *c = &g_champions[g_inventory_champion_ordinal - 1];
     Bitmap *vp = ui_viewport();
-    close_chest();
+    inventory_close_chest();
     ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
     ui_blit_graphic(vp, GFX_PANEL_FOOD_LABEL, ZONE_PANEL_FOOD_LABEL, COLOR_DARKEST_GRAY);
     ui_blit_graphic(vp, GFX_PANEL_WATER_LABEL, ZONE_PANEL_WATER_LABEL, COLOR_DARKEST_GRAY);
@@ -415,7 +415,7 @@ void ui_draw_panel_food_water_poisoned(void)
 void ui_draw_panel(void)
 {
     scroll_redraw = 0;
-    close_chest();
+    inventory_close_chest();
     if (g_candidate_champion_ordinal) {
         g_panel_content = PANEL_CONTENT_RESURRECT;
         ui_blit_graphic(ui_viewport(), GFX_PANEL_RESURRECT_REINCARNATE, ZONE_PANEL, COLOR_DARK_GREEN);
@@ -461,7 +461,7 @@ void ui_draw_champion_skills_and_statistics(void)
     const Champion *c = &g_champions[ci];
     Bitmap *vp = ui_viewport();
     char s[PANEL_LINE_SIZE], a[8], b[8];
-    close_chest();
+    inventory_close_chest();
     ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
     zone_point(ZONE_PANEL_SKILLS, &x, &y);
     for (uint16_t k = 0; k < SKILL_BASE_COUNT; k++) {
@@ -494,7 +494,7 @@ void ui_draw_inventory_open(int16_t champion_index)
 {
     Bitmap screen = ui_screen();
     Bitmap *vp = ui_viewport();
-    const Bitmap *bg = gfx_bitmap(GFX_INVENTORY);
+    const Bitmap *bg = gfx_get_bitmap(GFX_INVENTORY);
     if (!g_inventory_champion_ordinal)
         ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
     g_inventory_champion_ordinal = champion_index + 1;
@@ -519,7 +519,7 @@ void ui_draw_inventory_open(int16_t champion_index)
 void ui_draw_inventory_close(int16_t champion_index)
 {
     g_inventory_champion_ordinal = 0;
-    close_chest();
+    inventory_close_chest();
     if (g_champions[champion_index].current_health && !g_candidate_champion_ordinal) {
         g_champions[champion_index].attributes |= CHAMPION_ATTR_STATUS_BOX;
         ui_draw_champion_state(champion_index);
@@ -594,7 +594,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
         break;
     case THING_POTION:
         potential = ATTRIBUTE_CONSUMABLE;
-        actual = tables_object_info(inventory_get_object_info_index(thing))->allowed_slots;
+        actual = tables_get_object_info(inventory_get_object_info_index(thing))->allowed_slots;
         break;
     case THING_JUNK:
         if (icon <= ICON_COMPASS_NORTH + DIRECTION_WEST)
@@ -604,7 +604,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_string(TEXT_WATERSKIN_EMPTY + junk_charges(thing)));
         else {
             potential = ATTRIBUTE_CONSUMABLE;
-            actual = tables_object_info(inventory_get_object_info_index(thing))->allowed_slots;
+            actual = tables_get_object_info(inventory_get_object_info_index(thing))->allowed_slots;
         }
         break;
     }
@@ -725,8 +725,8 @@ static void insert_creature_name(char *text, size_t size)
         if (!name) {
             int16_t x = g_party_map_x;
             int16_t y = g_party_map_y;
-            update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
-            uint16_t group = get_square_group(x, y);
+            game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
+            uint16_t group = map_get_square_group(x, y);
             name = gfx_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE
                                                        : TEXT_CREATURE_NAME_FIRST + rec_group_creature_type(group));
             scroll_redraw = 1;
@@ -771,8 +771,8 @@ static void draw_panel_scroll(uint16_t scroll)
 {
     char text[SCROLL_TEXT_SIZE];
     int16_t x, y, count = 1;
-    decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(scroll)),
-                TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
+    dungeon_decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(scroll)),
+                        TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
     if (g_adventure == ADVENTURE_CSB) {
         insert_creature_name(text, sizeof text);
         if (draw_panel_magic_map(text))
@@ -811,7 +811,7 @@ static uint16_t largest_attack(void)
 {
     uint16_t most = 1;
     for (int i = 0; i < WEAPON_TYPE_COUNT; i++)
-        most = tables_weapon_info(i)->strength > most ? tables_weapon_info(i)->strength : most;
+        most = tables_get_weapon_info(i)->strength > most ? tables_get_weapon_info(i)->strength : most;
     return most;
 }
 
@@ -819,7 +819,7 @@ static uint16_t largest_defense(void)
 {
     uint16_t most = 1;
     for (int i = 0; i < ARMOUR_TYPE_COUNT; i++)
-        most = tables_armour_info(i)->defense > most ? tables_armour_info(i)->defense : most;
+        most = tables_get_armour_info(i)->defense > most ? tables_get_armour_info(i)->defense : most;
     return most;
 }
 
@@ -827,11 +827,11 @@ static uint16_t largest_weight(void)
 {
     uint16_t most = 1;
     for (int i = 0; i < WEAPON_TYPE_COUNT; i++)
-        most = tables_weapon_info(i)->weight > most ? tables_weapon_info(i)->weight : most;
+        most = tables_get_weapon_info(i)->weight > most ? tables_get_weapon_info(i)->weight : most;
     for (int i = 0; i < ARMOUR_TYPE_COUNT; i++)
-        most = tables_armour_info(i)->weight > most ? tables_armour_info(i)->weight : most;
+        most = tables_get_armour_info(i)->weight > most ? tables_get_armour_info(i)->weight : most;
     for (int i = 0; i < JUNK_TYPE_COUNT; i++)
-        most = *tables_junk_weight(i) > most ? *tables_junk_weight(i) : most;
+        most = *tables_get_junk_weight(i) > most ? *tables_get_junk_weight(i) : most;
     return most;
 }
 
@@ -863,12 +863,12 @@ bool panel_object_meter(uint16_t thing, const char **label, uint16_t *value)
 {
     if (THING_TYPE(thing) == THING_WEAPON) {
         *label = "ATTACK";
-        *value = tables_weapon_info(weapon_type(thing))->strength;
+        *value = tables_get_weapon_info(weapon_type(thing))->strength;
         return true;
     }
     if (THING_TYPE(thing) == THING_ARMOUR) {
         *label = "DEFENSE";
-        *value = tables_armour_info(armour_type(thing))->defense;
+        *value = tables_get_armour_info(armour_type(thing))->defense;
         return true;
     }
     return false;
@@ -894,8 +894,8 @@ static void open_and_draw_chest(uint16_t chest, int16_t pressing_eye)
 {
     if (g_open_chest == chest)
         return;
-    close_chest();
-    chest_open(chest);
+    inventory_close_chest();
+    inventory_open_chest(chest);
     if (!pressing_eye)
         ui_draw_icon_in_slot_box(SLOT_BOX_ACTION_HAND, ICON_CHEST_OPEN);
     ui_blit_graphic(ui_viewport(), GFX_PANEL_CHEST, ZONE_PANEL, COLOR_RED);
@@ -912,7 +912,7 @@ void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye)
     Bitmap *vp = ui_viewport();
     scroll_redraw = 0;
     scroll_redraw_eye = pressing_eye;
-    close_chest();
+    inventory_close_chest();
     if (THING_TYPE(thing) == THING_SCROLL) {
         draw_panel_scroll(thing);
     } else if (THING_TYPE(thing) == THING_CONTAINER) {

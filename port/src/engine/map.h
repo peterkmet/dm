@@ -1,6 +1,6 @@
 #ifndef MAP_H
 #define MAP_H
-/* Prefixes: door_ square_ thing_ get_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ set_ is_ link_ unlink_ */
+/* Prefixes: door_ square_ thing_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ */
 #include <stdbool.h>
 #include <stdint.h>
 #include "bytes.h"
@@ -73,7 +73,7 @@ void thing_set_free(uint16_t thing);
 
 /* Object records (types 5-10) and free records. */
 #define NO_JUNK_RESERVE 0x8000
-uint16_t get_unused_thing(uint16_t thing_type);
+uint16_t map_get_unused_thing(uint16_t thing_type);
 uint16_t weapon_type(uint16_t thing);
 uint16_t armour_type(uint16_t thing);
 uint16_t junk_type(uint16_t thing);
@@ -386,24 +386,24 @@ static inline uint16_t map_current_difficulty(void)
 }
 
 void map_reset(void);
-void set_current_map(int16_t map);
-void set_current_map_and_party_map(int16_t map);
+void map_set_current_map(int16_t map);
+void map_set_current_map_and_party_map(int16_t map);
 
-uint8_t get_square(int16_t x, int16_t y);
-int16_t get_square_type(int16_t x, int16_t y);
-bool is_square_open(int16_t x, int16_t y);
-int16_t get_location_after_level_change(int16_t map, int16_t level_delta, int16_t *x, int16_t *y);
-int16_t get_stairs_exit_direction(int16_t x, int16_t y);
+uint8_t map_get_square(int16_t x, int16_t y);
+int16_t map_get_square_type(int16_t x, int16_t y);
+bool map_is_square_open(int16_t x, int16_t y);
+int16_t map_get_location_after_level_change(int16_t map, int16_t level_delta, int16_t *x, int16_t *y);
+int16_t map_get_stairs_exit_direction(int16_t x, int16_t y);
 
-uint16_t get_next_thing(uint16_t thing);
-int16_t get_square_first_thing_index(int16_t x, int16_t y);
-uint16_t get_square_first_thing(int16_t x, int16_t y);
-uint16_t get_square_first_object(int16_t x, int16_t y);
-void link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
-void unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
-uint16_t get_square_group(int16_t x, int16_t y);
+uint16_t map_get_next_thing(uint16_t thing);
+int16_t map_get_square_first_thing_index(int16_t x, int16_t y);
+uint16_t map_get_square_first_thing(int16_t x, int16_t y);
+uint16_t map_get_square_first_object(int16_t x, int16_t y);
+void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
+void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
+uint16_t map_get_square_group(int16_t x, int16_t y);
 
-uint16_t get_creature_attributes(uint16_t group_thing);
+uint16_t map_get_creature_attributes(uint16_t group_thing);
 
 /* Record fields that the dungeon view reads (big-endian, see
    docs/symbols/range-4-6.md and range-7-9.md). */

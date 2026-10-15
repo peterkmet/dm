@@ -93,7 +93,7 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
         draw_blit(view, w, h, &screen, &door, COLOR_NONE, 0);
     }
     for (int16_t side = 0; side < 2; side++) {
-        const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
+        const Bitmap *bm = gfx_get_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
         w = 0;
         h = 0;
         if (!bm || !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, bm->w, bm->h, &door, &w, &h))
@@ -133,7 +133,7 @@ void entrance_press_button(int resume)
 {
     enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20 };
     static const uint8_t volumes[2] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
-    const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_BUTTONS);
+    const Bitmap *bm = gfx_get_bitmap(GFX_ENTRANCE_BUTTONS);
     Bitmap screen = ui_screen();
     Box box;
     int16_t sx = 0;
@@ -158,7 +158,7 @@ void entrance_open_doors(void)
     char path[PATH_SIZE];
     Box box;
     if (snprintf(path, sizeof path, "%s/Dungeon.DAT", data_dir) >= (int)sizeof path || !g_frame_hook ||
-        !load_dungeon(path) || !ui_zone_box(ZONE_VIEWPORT, &box))
+        !dungeon_load(path) || !ui_zone_box(ZONE_VIEWPORT, &box))
         return;
     view_set_light(g_party_map_index, 0);
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
@@ -200,7 +200,7 @@ int16_t gameloop_party_light(void)
     for (int i = 0; i < LIGHT_SOURCES_USED; i++)
         if (power[i]) {
             /* the 16-bit cast keeps the overflow of the original word arithmetic */
-            total += (int16_t)(*tables_light_power_to_light_amount(power[i]) << shift) >> LIGHT_FIRST_SHIFT;
+            total += (int16_t)(*tables_get_light_power_to_light_amount(power[i]) << shift) >> LIGHT_FIRST_SHIFT;
             shift = max16(0, shift - 1);
         }
     return g_party.magical_light_amount + total;
@@ -314,9 +314,9 @@ bool gameloop_new_game(const char *dir)
 {
     char path[PATH_SIZE];
     snprintf(path, sizeof path, "%s/Dungeon.DAT", dir);
-    if (!load_dungeon(path))
+    if (!dungeon_load(path))
         return false;
-    game_new();
+    game_start_new();
     g_saved_game_exists = false;
     g_leader_empty_handed = true;
     start_game();
@@ -355,7 +355,7 @@ static void start_loaded_game(int confirm)
     map_reset();
     g_new_party_map_index = -1;
     group_remove_all_active_groups();
-    set_current_map_and_party_map(g_party_map_index);
+    map_set_current_map_and_party_map(g_party_map_index);
     group_add_all_active_groups();
     if (confirm) {
         g_game_screen_inactive = true;

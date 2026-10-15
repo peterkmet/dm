@@ -77,17 +77,17 @@ def lib(tmp_path_factory):
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_new_game.restype = ctypes.c_bool
     for name, res, args in [
-        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
-        ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("get_unused_thing", u16, [u16]),
-        ("link_thing_to_list", None, [u16, u16, c16, c16]), ("unlink_thing_from_list", None, [u16, u16, c16, c16]),
-        ("decode_text", ctypes.c_bool, [ctypes.c_char_p, c16, u16, c16]), ("tables_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
-        ("magic_get_champion_spell_cast_result", c16, [u16]), ("get_creature_attributes", u16, [u16]),
+        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
+        ("map_get_next_thing", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("map_get_unused_thing", u16, [u16]),
+        ("map_link_thing_to_list", None, [u16, u16, c16, c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
+        ("dungeon_decode_text", ctypes.c_bool, [ctypes.c_char_p, c16, u16, c16]), ("tables_get_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
+        ("magic_get_champion_spell_cast_result", c16, [u16]), ("map_get_creature_attributes", u16, [u16]),
         ("ui_viewport", ctypes.POINTER(Bitmap), []), ("gfx_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_bool, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
-        ("ui_draw_inventory_open", None, [c16]), ("gfx_bitmap", ctypes.POINTER(Bitmap), [c16]),
-        ("get_stairs_exit_direction", c16, [c16, c16]), ("view_wall_ornament", c16, [c16, c16, c16]),
-        ("view_floor_ornament", c16, [c16, c16]), ("set_current_map_and_party_map", None, [c16]),
+        ("ui_draw_inventory_open", None, [c16]), ("gfx_get_bitmap", ctypes.POINTER(Bitmap), [c16]),
+        ("map_get_stairs_exit_direction", c16, [c16, c16]), ("view_wall_ornament", c16, [c16, c16, c16]),
+        ("view_floor_ornament", c16, [c16, c16]), ("map_set_current_map_and_party_map", None, [c16]),
         ("text_size", ctypes.c_bool, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
     ]:
         f = getattr(lib, name)
@@ -101,10 +101,10 @@ def value(lib, name, kind=c16):
 
 
 def things(lib, x, y):
-    thing = lib.get_square_first_thing(x, y)
+    thing = lib.map_get_square_first_thing(x, y)
     while thing != THING_ENDOFLIST:
         yield thing
-        thing = lib.get_next_thing(thing)
+        thing = lib.map_get_next_thing(thing)
 
 
 def text_thing(lib, scroll):
@@ -114,7 +114,7 @@ def text_thing(lib, scroll):
 
 def scroll_text(lib, scroll):
     buf = ctypes.create_string_buffer(200)
-    lib.decode_text(buf, 200, text_thing(lib, scroll), TEXT_MODE_SCROLL_ANY)
+    lib.dungeon_decode_text(buf, 200, text_thing(lib, scroll), TEXT_MODE_SCROLL_ANY)
     return buf.value
 
 
@@ -143,7 +143,7 @@ def map_scrolls(lib):
 
 def take(lib, found):
     thing, x, y = found
-    lib.unlink_thing_from_list(thing, 0, x, y)
+    lib.map_unlink_thing_from_list(thing, 0, x, y)
     return thing & 0x3FFF
 
 
@@ -188,7 +188,7 @@ def message_rows(lib):
 
 
 def cast(lib, c, spell_index, power, index=0):
-    s = lib.tables_spell(spell_index).contents
+    s = lib.tables_get_spell(spell_index).contents
     c.symbols = bytes([POWER_SYMBOL_BEFORE_FIRST + power, s.symbols >> 16 & 0xFF, s.symbols >> 8 & 0xFF, s.symbols & 0xFF, 0])
     return lib.magic_get_champion_spell_cast_result(index)
 
@@ -221,7 +221,7 @@ def changed_cells(lib, before, after):
 
 def calm(lib, x, y):
     """No teleporter and no explosion in the 7 x 7 squares around (x, y): the map draws no random tile."""
-    return all(lib.get_square(x + dx, y + dy) >> 5 != SQUARE_TELEPORTER
+    return all(lib.map_get_square(x + dx, y + dy) >> 5 != SQUARE_TELEPORTER
                and not any(t >> 10 & 15 == THING_EXPLOSION for t in things(lib, x + dx, y + dy))
                for dx in range(-3, 4) for dy in range(-3, 4))
 
@@ -233,7 +233,7 @@ def face_free_square(lib, accept):
         for y in range(height):
             for d in range(4):
                 fx, fy = x + STEP_EAST[d], y + STEP_NORTH[d]
-                if 0 <= fx < width and 0 <= fy < height and lib.get_square(x, y) >> 5 == SQUARE_CORRIDOR \
+                if 0 <= fx < width and 0 <= fy < height and lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR \
                         and not list(things(lib, x, y)) and accept(fx, fy) and calm(lib, x, y):
                     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (x, y, d)):
                         value(lib, name).value = v
@@ -246,7 +246,7 @@ def test_magic_map_scrolls_in_the_dungeon(lib, csb):
     _, scrolls = csb
     assert value(lib, "g_party_map_index").value == 4
     assert scrolls[b"MAGICMAP"][1:] == (20, 11) and scrolls[b"CREANAME"][1:] == (12, 13)
-    assert all(lib.tables_spell(i).contents.kind == SPELL_KIND_MAGIC_MAP for i in range(SPELL_MAGIC_MAP_FIRST, SPELL_MAGIC_MAP_FIRST + 4))
+    assert all(lib.tables_get_spell(i).contents.kind == SPELL_KIND_MAGIC_MAP for i in range(SPELL_MAGIC_MAP_FIRST, SPELL_MAGIC_MAP_FIRST + 4))
 
 
 @needs_csb
@@ -277,7 +277,7 @@ def test_spells_with_magic_map(lib, csb, power):
         events = timeline(lib)
         mine = [e for e in events if e.type == EVENT_MAGIC_MAP_FIRST + spell_type]
         assert len(mine) == 1 and mine[0].priority == 0 and mine[0].map_time >> 24 == 4
-        ticks = lib.tables_spell(SPELL_MAGIC_MAP_FIRST + spell_type).contents.disabled_ticks
+        ticks = lib.tables_get_spell(SPELL_MAGIC_MAP_FIRST + spell_type).contents.disabled_ticks
         if spell_type == NETA:
             ticks = d * d >> 1
             assert mine[0].map_time & TIME_MASK == now + 4 * ticks
@@ -333,7 +333,7 @@ def test_panel_draws_the_map_grid(lib, csb):
 def test_ku_shows_the_creature_ahead(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    face_free_square(lib, lambda x, y: any(t >> 10 & 15 == THING_GROUP and not lib.get_creature_attributes(t) & CREATURE_NOT_ON_MAP
+    face_free_square(lib, lambda x, y: any(t >> 10 & 15 == THING_GROUP and not lib.map_get_creature_attributes(t) & CREATURE_NOT_ON_MAP
                                            for t in things(lib, x, y)))
     before = panel(lib)
     c.magic_map[KU] = 1
@@ -344,11 +344,11 @@ def test_ku_shows_the_creature_ahead(lib, csb):
 def test_dain_shows_an_explosion(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y)))
-    explosion = lib.get_unused_thing(THING_EXPLOSION)
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y)))
+    explosion = lib.map_get_unused_thing(THING_EXPLOSION)
     rec = lib.dungeon_get_thing_data(explosion)
     rec[2], rec[3] = 100, 0  # attack, fireball
-    lib.link_thing_to_list(explosion, 0, fx, fy)
+    lib.map_link_thing_to_list(explosion, 0, fx, fy)
     before = panel(lib)
     c.magic_map[DAIN] = 1
     assert changed_cells(lib, before, panel(lib)) == {(3, 2), -1}  # the square ahead and the rune
@@ -358,7 +358,7 @@ def test_dain_shows_an_explosion(lib, csb):
 def test_ros_shows_an_invisible_pit(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y)))
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y)))
     data = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_map_data"), ctypes.POINTER(ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8))))
     data[4][fx][fy] = SQUARE_PIT << 5 | PIT_OPEN | PIT_INVISIBLE
     value(lib, "g_game_time", u32).value |= 1  # the blinking time
@@ -445,7 +445,7 @@ def test_dm_scroll_panel_unchanged(lib, text):
                   for t in things(lib, x, y) if t >> 10 & 15 == THING_SCROLL)
     c.slots[SLOT_HAND_ACTION] = scroll & 0x3FFF
     set_scroll_text(lib, scroll, text)
-    face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_CORRIDOR)
+    face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR)
     plain = panel(lib)
     for i in range(4):
         c.magic_map[i] = 1
@@ -453,7 +453,7 @@ def test_dm_scroll_panel_unchanged(lib, text):
 
 
 def bitmap(lib, graphic):
-    return lib.gfx_bitmap(graphic).contents
+    return lib.gfx_get_bitmap(graphic).contents
 
 
 def cell_origin(lib, col, row):
@@ -483,7 +483,7 @@ def border(lib, view, col, row):
 
 
 def empty_corridor(lib, x, y):
-    return lib.get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y))
+    return lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y))
 
 
 @needs_csb
@@ -560,7 +560,7 @@ def test_rune_of_each_spell(lib, csb, spell):
 def test_ku_creature_tile(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    face_free_square(lib, lambda x, y: any(t >> 10 & 15 == THING_GROUP and not lib.get_creature_attributes(t) & CREATURE_NOT_ON_MAP
+    face_free_square(lib, lambda x, y: any(t >> 10 & 15 == THING_GROUP and not lib.map_get_creature_attributes(t) & CREATURE_NOT_ON_MAP
                                        for t in things(lib, x, y)))
     c.magic_map[KU] = 1
     for time in (0, 1):
@@ -573,10 +573,10 @@ def test_dain_explosion_tile(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: empty_corridor(lib, x, y))
-    explosion = lib.get_unused_thing(THING_EXPLOSION)
+    explosion = lib.map_get_unused_thing(THING_EXPLOSION)
     rec = lib.dungeon_get_thing_data(explosion)
     rec[2], rec[3] = 100, 0  # attack, fireball
-    lib.link_thing_to_list(explosion, 0, fx, fy)
+    lib.map_link_thing_to_list(explosion, 0, fx, fy)
     c.magic_map[DAIN] = 1
     assert_tile(lib, panel(lib), 3, 2, TILE_EXPLOSION_FIRE)
 
@@ -681,9 +681,9 @@ def party_dir(lib):
 def test_door_tiles(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_DOOR)
-    door = lib.dungeon_get_thing_data(lib.get_square_first_thing(fx, fy))
-    square = lib.get_square(fx, fy) & ~DOOR_STATE_MASK
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_DOOR)
+    door = lib.dungeon_get_thing_data(lib.map_get_square_first_thing(fx, fy))
+    square = lib.map_get_square(fx, fy) & ~DOOR_STATE_MASK
     side = (party_dir(lib) & 1) == bool(square & DOOR_NORTH_SOUTH)
     for state in (DOOR_CLOSED, DOOR_OPEN, DOOR_DESTROYED):
         for button in (True, False):
@@ -697,18 +697,18 @@ def test_door_tiles(lib, csb):
 def test_stairs_tiles(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_STAIRS)
-    square = lib.get_square(fx, fy) & ~STAIRS_UP
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_STAIRS)
+    square = lib.map_get_square(fx, fy) & ~STAIRS_UP
     for up in (0, 2):
         set_square(lib, fx, fy, square | (STAIRS_UP if up else 0))
-        side = (lib.get_stairs_exit_direction(fx, fy) - party_dir(lib) + up) % 4
+        side = (lib.map_get_stairs_exit_direction(fx, fy) - party_dir(lib) + up) % 4
         assert_tile(lib, panel(lib), 3, 2, TILE_STAIRS_FIRST + side)
 
 
 def link_new(lib, thing_type, fx, fy, cell, fill):
-    thing = lib.get_unused_thing(thing_type)
+    thing = lib.map_get_unused_thing(thing_type)
     fill(lib.dungeon_get_thing_data(thing))
-    lib.link_thing_to_list(thing | cell << 14, 0, fx, fy)
+    lib.map_link_thing_to_list(thing | cell << 14, 0, fx, fy)
 
 
 @needs_csb
@@ -735,7 +735,7 @@ def test_zokathra_tile(lib, csb, in_wall):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     kind = SQUARE_WALL if in_wall else SQUARE_CORRIDOR
-    fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == kind and not list(things(lib, x, y)))
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == kind and not list(things(lib, x, y)))
     link_new(lib, THING_JUNK, fx, fy, (party_dir(lib) + 2) % 4, zokathra)
     c.magic_map[DAIN] = 1
     assert_tile(lib, panel(lib), 3, 2, TILE_ZOKATHRA_FIRST + 2 + (TILE_IN_WALL if in_wall else 0))
@@ -746,7 +746,7 @@ def test_floor_ornament_tile(lib, csb):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     panel(lib)  # the view has the party map
-    fx, fy = face_free_square(lib, lambda x, y: lib.get_square(x, y) >> 5 == SQUARE_CORRIDOR and lib.view_floor_ornament(x, y) >= 0)
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and lib.view_floor_ornament(x, y) >= 0)
     assert_tile(lib, panel(lib), 3, 2, TILE_FLOOR_ORNAMENT_FIRST + lib.view_floor_ornament(fx, fy))
 
 
@@ -755,7 +755,7 @@ def test_floor_ornament_tile(lib, csb):
 def test_wall_ornament_tiles(lib, csb, ornament):
     c, scrolls = csb
     c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    lib.set_current_map_and_party_map(WALL_ORNAMENT_MAP)
+    lib.map_set_current_map_and_party_map(WALL_ORNAMENT_MAP)
     panel(lib)  # the view loads the party map
     fx, fy = face_free_square(lib, lambda x, y: any(lib.view_wall_ornament(x, y, f) == ornament for f in range(4)))
     view = panel(lib)

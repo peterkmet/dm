@@ -50,7 +50,7 @@ static uint16_t action_hand_charge_count(void)
    champion has the skill level and, when the action needs them, charges. */
 void menus_set_action_list(int16_t action_set_index)
 {
-    const ActionSet *set = tables_action_set(action_set_index);
+    const ActionSet *set = tables_get_action_set(action_set_index);
     uint16_t n = 1;
     if (!set)
         return;
@@ -59,7 +59,7 @@ void menus_set_action_list(int16_t action_set_index)
     for (int k = 1; k < ACTION_LIST_COUNT; k++) {
         uint8_t action = set->action_indices[k];
         uint8_t level = set->minimum_skill_levels[k - 1];
-        const ActionInfo *info = tables_action_info(action);
+        const ActionInfo *info = tables_get_action_info(action);
         if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charge_count()))
             continue;
         level &= ~ACTION_LEVEL_NEEDS_CHARGES;
@@ -90,7 +90,7 @@ void menus_set_acting_champion(uint16_t champion_index)
     if (c->attributes & CHAMPION_ATTR_ACTION_DISABLED || !c->current_health)
         return;
     if (c->slots[SLOT_HAND_ACTION] != THING_NONE) {
-        const ObjectInfo *info = tables_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
+        const ObjectInfo *info = tables_get_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
         if (!info || !(set = info->action_set_index))
             return;
     }
@@ -119,7 +119,8 @@ void menus_draw_action_icon(uint16_t champion_index)
         ui_fill_zone(&screen, zone, COLOR_BLACK);
         return;
     }
-    const ObjectInfo *info = thing == THING_NONE ? NULL : tables_object_info(inventory_get_object_info_index(thing));
+    const ObjectInfo *info =
+        thing == THING_NONE ? NULL : tables_get_object_info(inventory_get_object_info_index(thing));
     if (info && !info->action_set_index) { /* an object without actions: an empty box */
         memset(px, COLOR_CYAN, sizeof px);
     } else {
@@ -175,7 +176,7 @@ void menus_draw_action_damage(int16_t damage)
                       gfx_string(damage == -1 ? TEXT_CANT_REACH : TEXT_NEED_AMMO));
         return;
     }
-    const Bitmap *splat = gfx_bitmap(GFX_DAMAGE_ACTION);
+    const Bitmap *splat = gfx_get_bitmap(GFX_DAMAGE_ACTION);
     Bitmap scaled = {0};
     if (splat && damage < DAMAGE_LARGE_BELOW) {
         bool large = damage >= DAMAGE_SMALL_BELOW;

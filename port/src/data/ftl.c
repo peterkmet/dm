@@ -61,7 +61,7 @@ typedef struct {
 } Nibbles;
 
 /* Reads count nibbles, high nibble first; past the end it reads zeros. */
-static unsigned nib(Nibbles *b, int count)
+static unsigned read_nibble(Nibbles *b, int count)
 {
     unsigned v = 0;
     for (; count; count--, b->pos++)
@@ -81,12 +81,12 @@ static uint8_t *unpack(const uint8_t *p, size_t len, uint32_t *out_len)
     if (!out)
         return NULL;
     for (uint32_t i = 0; i < words; i++) {
-        unsigned v = nib(&b, 1), w;
+        unsigned v = read_nibble(&b, 1), w;
         if (v == RSHARP_LITERAL)
-            w = nib(&b, 4);
+            w = read_nibble(&b, 4);
         else {
-            unsigned t =
-                v < 8 ? v << NIBBLE_BITS | nib(&b, 1) : RSHARP_SHORT_CODES + ((v - 8) << BYTE_BITS | nib(&b, 2));
+            unsigned t = v < 8 ? v << NIBBLE_BITS | read_nibble(&b, 1)
+                               : RSHARP_SHORT_CODES + ((v - 8) << BYTE_BITS | read_nibble(&b, 2));
             w = BE16(p + RSHARP_DICTIONARY + 2 * t);
         }
         WR16(out + 2 * i, w);
@@ -269,7 +269,7 @@ int kaos_load(const char *path)
 }
 
 /* Maps an original KAOS address into the loaded image; aborts outside the image. */
-static uint8_t *at(uint32_t addr, uint32_t n)
+static uint8_t *get_image_pointer(uint32_t addr, uint32_t n)
 {
     if (!kaos.data || addr < kaos.base || (uint64_t)addr - kaos.base + n > kaos.size) {
         fprintf(stderr, "kaos address %#x outside image\n", addr);
@@ -280,15 +280,15 @@ static uint8_t *at(uint32_t addr, uint32_t n)
 
 uint8_t *kaos_ptr(uint32_t addr)
 {
-    return at(addr, 1);
+    return get_image_pointer(addr, 1);
 }
 uint8_t kaos_u8(uint32_t addr)
 {
-    return *at(addr, 1);
+    return *get_image_pointer(addr, 1);
 }
 uint16_t kaos_u16(uint32_t addr)
 {
-    return BE16(at(addr, 2));
+    return BE16(get_image_pointer(addr, 2));
 }
 int16_t kaos_s16(uint32_t addr)
 {
@@ -296,5 +296,5 @@ int16_t kaos_s16(uint32_t addr)
 }
 uint32_t kaos_u32(uint32_t addr)
 {
-    return BE32(at(addr, 4));
+    return BE32(get_image_pointer(addr, 4));
 }

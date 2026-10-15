@@ -120,7 +120,7 @@ static uint8_t *strings, *action_names;
 static uint16_t strings_size, action_names_size;
 
 /* The NUL-terminated string at an APPB address, or NULL outside the module. */
-static const char *appb_string(const FtlImage *appb, uint32_t addr)
+static const char *get_appb_string(const FtlImage *appb, uint32_t addr)
 {
     if (addr < appb->base || addr >= appb->base + appb->size)
         return NULL;
@@ -129,12 +129,12 @@ static const char *appb_string(const FtlImage *appb, uint32_t addr)
 }
 
 /* The string that the APPB pointer at addr points to, or NULL. */
-static const char *appb_pointed_string(const FtlImage *appb, uint32_t addr)
+static const char *get_appb_pointed_string(const FtlImage *appb, uint32_t addr)
 {
     if (addr < appb->base || addr + 4 > appb->base + appb->size)
         return NULL;
     const uint8_t *p = appb->data + (addr - appb->base);
-    return appb_string(appb, BE32(p));
+    return get_appb_string(appb, BE32(p));
 }
 
 /* Joins the parts of each text into one block of NUL-terminated strings. */
@@ -166,7 +166,7 @@ static int copy_action_names(const FtlImage *appb)
 {
     uint32_t end = CSB_APPB_ACTION_NAMES;
     for (int i = 0; i < ACTION_COUNT; i++) {
-        const char *s = appb_string(appb, end);
+        const char *s = get_appb_string(appb, end);
         if (!s)
             return -1;
         end += (uint32_t)strlen(s) + 1;
@@ -184,12 +184,12 @@ int csb_text_build(const FtlImage *appb, FtlImage *out)
 {
     const char *parts[CSB_TEXT_COUNT][TEXT_PARTS] = {{0}};
     for (int i = 0; i < ARRAY_COUNT(single_texts); i++)
-        if (!(parts[single_texts[i].text][0] = appb_string(appb, single_texts[i].appb)))
+        if (!(parts[single_texts[i].text][0] = get_appb_string(appb, single_texts[i].appb)))
             return -1;
     for (int i = 0; i < ARRAY_COUNT(table_texts); i++) {
         for (int k = 0; k < table_texts[i].count; k++) {
             int16_t text = table_texts[i].text + k;
-            if (!(parts[text][0] = appb_pointed_string(appb, table_texts[i].appb + 4 * k)))
+            if (!(parts[text][0] = get_appb_pointed_string(appb, table_texts[i].appb + 4 * k)))
                 return -1;
             /* the string index table gives the text in the CSB order */
             if (table_texts[i].kaos_indices) {
@@ -199,20 +199,20 @@ int csb_text_build(const FtlImage *appb, FtlImage *out)
         }
     }
     for (int i = 0; i < ARRAY_COUNT(disk_message_texts); i++)
-        if (!(parts[disk_message_texts[i]][0] = appb_pointed_string(appb, CSB_APPB_DISK_MESSAGES + 4 * i)))
+        if (!(parts[disk_message_texts[i]][0] = get_appb_pointed_string(appb, CSB_APPB_DISK_MESSAGES + 4 * i)))
             return -1;
     for (int i = 0; i < ARRAY_COUNT(class_texts); i++) {
         const char **p = parts[class_texts[i].text];
-        p[0] = appb_string(appb, class_texts[i].prefix);
-        p[1] = appb_pointed_string(appb, CSB_APPB_CLASS_NAMES + 4 * class_texts[i].skill);
-        p[2] = appb_string(appb, class_texts[i].suffix);
+        p[0] = get_appb_string(appb, class_texts[i].prefix);
+        p[1] = get_appb_pointed_string(appb, CSB_APPB_CLASS_NAMES + 4 * class_texts[i].skill);
+        p[2] = get_appb_string(appb, class_texts[i].suffix);
         if (!p[0] || !p[1] || !p[2])
             return -1;
     }
     return join_texts(parts) || copy_action_names(appb) ? -1 : 0;
 }
 
-const uint8_t *csb_text_item(int graphic, uint16_t *size)
+const uint8_t *csb_text_get_item(int graphic, uint16_t *size)
 {
     if (graphic == GFX_STRINGS) {
         *size = strings_size;

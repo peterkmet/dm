@@ -46,13 +46,13 @@ def lib():
     lib.ui_command_from_mouse.argtypes = [c16, c16, c16, u16]
     lib.ui_command_from_mouse.restype = c16
     lib.view_render.argtypes = [c16] * 4
-    lib.gfx_bitmap.restype = ctypes.POINTER(Bitmap)
+    lib.gfx_get_bitmap.restype = ctypes.POINTER(Bitmap)
     lib.ui_zone_box.argtypes = [c16, ctypes.POINTER(Box)]
     lib.message_print.argtypes = [c16, ctypes.c_char_p, ctypes.c_uint32]
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
     lib.recruit_parse.restype = ctypes.c_bool
-    lib.load_dungeon.restype = ctypes.c_bool
-    lib.dungeon_square_first_thing.restype = u16
+    lib.dungeon_load.restype = ctypes.c_bool
+    lib.dungeon_get_square_first_thing.restype = u16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(u8)
     lib.recruit_portrait_index.argtypes = [u16]
     lib.recruit_text_thing.restype = u16
@@ -66,8 +66,8 @@ def game(lib):
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.layout_init() == 0 and lib.text_init() == 0 and lib.tables_init() == 0
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode())
-    lib.game_new()
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
+    lib.game_start_new()
     assert lib.ui_init() == 0
     return lib
 
@@ -77,8 +77,8 @@ def emu(game):
     """The original code with the layout zones of Graphics.DAT in memory."""
     emu = Emu(load_image(parse((GAME / "KAOS.FTL").read_bytes()), 0x100000), max_cycles=50_000_000)
     size = ctypes.c_uint16()
-    game.gfx_item.restype = ctypes.POINTER(ctypes.c_uint8)
-    raw = ctypes.string_at(game.gfx_item(696, ctypes.byref(size)), size.value)
+    game.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)
+    raw = ctypes.string_at(game.gfx_get_item(696, ctypes.byref(size)), size.value)
     chunks, at = zone_records(raw), 0x700000
     emu.write(LAYOUT_ZONES, struct.pack(">I", at))
     for i, (first, last, recs) in enumerate(chunks):
@@ -212,7 +212,7 @@ def test_render_empty_party(game):
     reset(game)
     recruit(game, 0)
     fb = render(game, "empty")
-    arrows = game.gfx_bitmap(ARROWS_GFX).contents
+    arrows = game.gfx_get_bitmap(ARROWS_GFX).contents
     box = Box()
     assert game.ui_zone_box(ARROWS_ZONE, ctypes.byref(box))
     assert all(fb[(box.y + y) * 320 + box.x + x] == arrows.px[y * arrows.w + x] for y in range(arrows.h) for x in range(arrows.w))

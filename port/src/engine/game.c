@@ -53,8 +53,8 @@ static void fatal_error(int16_t code)
     exit(1);
 }
 
-/* load_game (new game) and the end of load_dungeon. load_dungeon must run first. */
-void game_new(void)
+/* load_game (new game) and the end of load_dungeon. dungeon_load must run first. */
+void game_start_new(void)
 {
     memset(&g_party, 0, sizeof g_party);
     memset(g_champions, 0, sizeof g_champions);
@@ -105,8 +105,8 @@ int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
 }
 
 /* Moves map coordinates by steps forward and to the right of a direction. */
-void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
-                                                    int16_t *map_x, int16_t *map_y)
+void game_update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
+                                                         int16_t *map_x, int16_t *map_y)
 {
     int16_t right = turn_right(direction);
     *map_x = *map_x + steps_forward * tables_step_east(direction) + steps_right * tables_step_east(right);
@@ -340,7 +340,7 @@ uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t s
 }
 
 /* Changes a current statistic within its minimum and the limit; high values grow slower. */
-void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta)
+void game_adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta)
 {
     uint8_t *s = champion->statistics[statistic];
     if (delta < 0) {

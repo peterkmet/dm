@@ -77,20 +77,20 @@ void sensor_process_rotation_effect(void)
         g_sensor_rotation_effect == LOCAL_EFFECT_ROTATE_SENSORS) {
         int16_t x = g_sensor_rotation_effect_map_x;
         int16_t y = g_sensor_rotation_effect_map_y;
-        uint16_t first = get_square_first_thing(x, y);
+        uint16_t first = map_get_square_first_thing(x, y);
         while (first != THING_ENDOFLIST && !is_rotation_sensor(first))
-            first = get_next_thing(first);
-        uint16_t second = first == THING_ENDOFLIST ? THING_ENDOFLIST : get_next_thing(first);
+            first = map_get_next_thing(first);
+        uint16_t second = first == THING_ENDOFLIST ? THING_ENDOFLIST : map_get_next_thing(first);
         while (second != THING_ENDOFLIST && !is_rotation_sensor(second))
-            second = get_next_thing(second);
+            second = map_get_next_thing(second);
         if (second != THING_ENDOFLIST) {
-            unlink_thing_from_list(first, 0, x, y);
+            map_unlink_thing_from_list(first, 0, x, y);
             uint16_t last = second;
-            for (uint16_t t = get_next_thing(second); t != THING_ENDOFLIST && THING_TYPE(t) == THING_SENSOR;
-                 t = get_next_thing(t))
+            for (uint16_t t = map_get_next_thing(second); t != THING_ENDOFLIST && THING_TYPE(t) == THING_SENSOR;
+                 t = map_get_next_thing(t))
                 if (is_rotation_sensor(t))
                     last = t;
-            thing_set_next(first, get_next_thing(last));
+            thing_set_next(first, map_get_next_thing(last));
             thing_set_next(last, first);
         }
     }
@@ -117,7 +117,8 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
 /* The first object of the type in the cell (or in any cell), or THING_NONE. */
 uint16_t sensor_get_object_of_type_in_cell(int16_t x, int16_t y, int16_t cell, int16_t object_type)
 {
-    for (uint16_t thing = get_square_first_object(x, y); thing != THING_ENDOFLIST; thing = get_next_thing(thing))
+    for (uint16_t thing = map_get_square_first_object(x, y); thing != THING_ENDOFLIST;
+         thing = map_get_next_thing(thing))
         if (object_get_type(thing) == object_type && (cell == ANY_CELL || THING_CELL(thing) == cell))
             return thing;
     return THING_NONE;
@@ -129,7 +130,7 @@ static bool is_object_or_in_chest(uint16_t thing, int16_t object_type)
     if (type == object_type)
         return true;
     if (type == ICON_CHEST_CLOSED)
-        for (uint16_t t = container_first_thing(thing); t != THING_ENDOFLIST; t = get_next_thing(t))
+        for (uint16_t t = container_first_thing(thing); t != THING_ENDOFLIST; t = map_get_next_thing(t))
             if (object_get_type(t) == object_type)
                 return true;
     return false;
@@ -164,14 +165,14 @@ static int16_t exchange_single_object(uint16_t sensor, int16_t x, int16_t y)
         uint16_t object = sensor_get_object_of_type_in_cell(x, y, sensor_cell, data);
         if (object == THING_NONE)
             return CLICK_IGNORED;
-        unlink_thing_from_list(object, 0, x, y);
+        map_unlink_thing_from_list(object, 0, x, y);
         inventory_put_object_in_leader_hand(object);
     } else {
         if (!holds_object_type(data) || sensor_get_object_of_type_in_cell(x, y, sensor_cell, data) != THING_NONE)
             return CLICK_IGNORED;
         uint16_t object = g_leader_hand_object;
         inventory_get_object_removed_from_leader_hand();
-        link_thing_to_list(THING_WITH_CELL(object, sensor_cell), 0, x, y);
+        map_link_thing_to_list(THING_WITH_CELL(object, sensor_cell), 0, x, y);
     }
     sensor_trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
     return rec_sensor_effect(sensor) == EFFECT_HOLD && !g_leader_empty_handed;
@@ -201,7 +202,7 @@ static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, 
     case SENSOR_WALL_OBJECT_REMOVED:
         skip = rec_sensor_revert(sensor) == holds_object_type(data);
         if (!skip && type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED && sensor != previous) {
-            thing_set_next(previous, get_next_thing(sensor));
+            thing_set_next(previous, map_get_next_thing(sensor));
             thing_set_free(sensor);
             *t = previous;
         }
@@ -220,13 +221,13 @@ static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, 
     case SENSOR_WALL_OBJECT_EXCHANGER: {
         if (remaining)
             return CLICK_IGNORED;
-        uint16_t object = get_square_first_object(x, y);
+        uint16_t object = map_get_square_first_object(x, y);
         if (!holds_object_type(data) || object == THING_ENDOFLIST)
             return CLICK_IGNORED;
-        unlink_thing_from_list(object, 0, x, y);
+        map_unlink_thing_from_list(object, 0, x, y);
         uint16_t hand = g_leader_hand_object;
         inventory_get_object_removed_from_leader_hand();
-        link_thing_to_list(THING_WITH_CELL(hand, sensor_cell), 0, x, y);
+        map_link_thing_to_list(THING_WITH_CELL(hand, sensor_cell), 0, x, y);
         inventory_put_object_in_leader_hand(object);
         return 0;
     }
@@ -243,15 +244,15 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
 {
     bool triggered = false;
     int16_t remaining[CELL_COUNT] = {0};
-    uint16_t first = get_square_first_thing(x, y);
-    for (uint16_t t = first; t != THING_ENDOFLIST; t = get_next_thing(t)) {
+    uint16_t first = map_get_square_first_thing(x, y);
+    for (uint16_t t = first; t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
         if (THING_TYPE(t) == THING_SENSOR)
             remaining[THING_CELL(t)]++;
         else if (THING_TYPE(t) > THING_SENSOR)
             break;
     }
     uint16_t previous = first;
-    for (uint16_t t = first; t != THING_ENDOFLIST; previous = t, t = get_next_thing(t)) {
+    for (uint16_t t = first; t != THING_ENDOFLIST; previous = t, t = map_get_next_thing(t)) {
         if (THING_TYPE(t) != THING_SENSOR) {
             if (THING_TYPE(t) > THING_SENSOR)
                 break;
@@ -306,7 +307,7 @@ static void trigger(uint16_t sensor, bool value, int16_t x, int16_t y)
 static void print_text(uint16_t text)
 {
     char buffer[TEXT_SIZE];
-    decode_text(buffer, sizeof buffer, text, 1);
+    dungeon_decode_text(buffer, sizeof buffer, text, 1);
     message_print(SENSOR_TEXT_COLOR, buffer, g_game_time);
 }
 
@@ -323,7 +324,7 @@ typedef struct {
    that enters a floor square reads its texts. */
 static void scan_square(SquareChange *s, bool wall)
 {
-    for (uint16_t t = get_square_first_thing(s->x, s->y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
+    for (uint16_t t = map_get_square_first_thing(s->x, s->y); t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
         int16_t type = THING_TYPE(t);
         bool is_object;
         if (wall) {
@@ -417,13 +418,13 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
                       .object_type = party ? -1 : object_get_type(thing),
                       .cell = THING_CELL(thing)};
     if (!add && !party)
-        unlink_thing_from_list(thing, 0, x, y);
+        map_unlink_thing_from_list(thing, 0, x, y);
     uint8_t square = g_current_map_data[x][y];
     bool wall = SQUARE_TYPE(square) == SQUARE_WALL;
     scan_square(&s, wall);
     if (add && !party)
-        link_thing_to_list(thing, 0, x, y);
-    for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
+        map_link_thing_to_list(thing, 0, x, y);
+    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
         if (THING_TYPE(t) != THING_SENSOR) {
             if (THING_TYPE(t) > THING_SENSOR)
                 break;

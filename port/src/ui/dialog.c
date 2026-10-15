@@ -114,7 +114,7 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
                  const char *choice3, const char *choice4)
 {
     Bitmap *vp = ui_viewport();
-    const Bitmap *graphic = gfx_bitmap(GFX_DIALOG);
+    const Bitmap *graphic = gfx_get_bitmap(GFX_DIALOG);
     const char *choice[MAX_CHOICES] = {choice1, choice2, choice3, choice4};
     const char *message[MESSAGE_COUNT] = {message1, message2};
     Box all = {0, 0, vp->w, vp->h};

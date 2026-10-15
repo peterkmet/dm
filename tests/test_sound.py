@@ -29,10 +29,10 @@ u8p = ctypes.POINTER(ctypes.c_uint8)
 def lib():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
-    lib.sound_sample.restype = ctypes.POINTER(ctypes.c_int8)
-    lib.sound_sample.argtypes = [ctypes.c_int16, ctypes.POINTER(ctypes.c_uint16), ctypes.POINTER(ctypes.c_uint16)]
-    lib.gfx_item.restype = u8p
-    lib.gfx_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
+    lib.sound_get_sample.restype = ctypes.POINTER(ctypes.c_int8)
+    lib.sound_get_sample.argtypes = [ctypes.c_int16, ctypes.POINTER(ctypes.c_uint16), ctypes.POINTER(ctypes.c_uint16)]
+    lib.gfx_get_item.restype = u8p
+    lib.gfx_get_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
     lib.sound_compare_loudness.restype = ctypes.c_int16
     lib.sound_get_volume.restype = ctypes.c_bool
     lib.sound_get_volume.argtypes = [ctypes.c_int16, ctypes.c_int16, u8p]
@@ -57,7 +57,7 @@ def sounds():
 
 def sample(lib, sound):
     n, period = ctypes.c_uint16(), ctypes.c_uint16()
-    p = lib.sound_sample(sound, ctypes.byref(n), ctypes.byref(period))
+    p = lib.sound_get_sample(sound, ctypes.byref(n), ctypes.byref(period))
     return bytes(ctypes.cast(p, u8p)[: n.value]), period.value
 
 
@@ -65,9 +65,9 @@ def test_sample_decode(lib):
     for i, entry in enumerate(sounds()):
         graphic, rate = struct.unpack(">h", entry[:2])[0], entry[3]
         size = ctypes.c_uint16()
-        item = ctypes.cast(lib.gfx_item(graphic, ctypes.byref(size)), ctypes.c_void_p).value
+        item = ctypes.cast(lib.gfx_get_item(graphic, ctypes.byref(size)), ctypes.c_void_p).value
         n, period = ctypes.c_uint16(), ctypes.c_uint16()
-        data = ctypes.cast(lib.sound_sample(i, ctypes.byref(n), ctypes.byref(period)), ctypes.c_void_p).value
+        data = ctypes.cast(lib.sound_get_sample(i, ctypes.byref(n), ctypes.byref(period)), ctypes.c_void_p).value
         header = struct.unpack(">H", ctypes.string_at(item, 2))[0]
         assert (data, n.value, header, period.value) == (item + 2, size.value - 2, size.value - 2, 0x11C60 // rate), i
 

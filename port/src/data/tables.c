@@ -211,76 +211,76 @@ int tables_init(void)
 
 #define GET(arr, i) (ready && (i) >= 0 && (i) < ARRAY_COUNT(arr) ? &(arr)[i] : NULL)
 
-const CreatureInfo *tables_creature_info(int i)
+const CreatureInfo *tables_get_creature_info(int i)
 {
     return GET(creature_info, i);
 }
-const CreatureSound *tables_creature_sound(int i)
+const CreatureSound *tables_get_creature_sound(int i)
 {
     return GET(creature_sounds, i);
 }
-const ObjectInfo *tables_object_info(int i)
+const ObjectInfo *tables_get_object_info(int i)
 {
     return GET(object_info, i);
 }
-const WeaponInfo *tables_weapon_info(int i)
+const WeaponInfo *tables_get_weapon_info(int i)
 {
     return GET(weapon_info, i);
 }
-const ArmourInfo *tables_armour_info(int i)
+const ArmourInfo *tables_get_armour_info(int i)
 {
     return GET(armour_info, i);
 }
-const uint8_t *tables_junk_weight(int i)
+const uint8_t *tables_get_junk_weight(int i)
 {
     return GET(junk_weights, i);
 }
-const int16_t *tables_food_value(int i)
+const int16_t *tables_get_food_value(int i)
 {
     return GET(food_values, i);
 }
-const DoorInfo *tables_door_info(int i)
+const DoorInfo *tables_get_door_info(int i)
 {
     return GET(door_info, i);
 }
-const Spell *tables_spell(int i)
+const Spell *tables_get_spell(int i)
 {
     return i < loaded_spell_count ? GET(spells, i) : NULL;
 }
-const uint8_t *tables_symbol_mana_cost_multiplier(int i)
+const uint8_t *tables_get_symbol_mana_cost_multiplier(int i)
 {
     return GET(symbol_mana_cost_multiplier, i);
 }
-const ActionSet *tables_action_set(int i)
+const ActionSet *tables_get_action_set(int i)
 {
     return GET(action_sets, i);
 }
-const ActionInfo *tables_action_info(int i)
+const ActionInfo *tables_get_action_info(int i)
 {
     return GET(action_info, i);
 }
-const int16_t *tables_light_power_to_light_amount(int i)
+const int16_t *tables_get_light_power_to_light_amount(int i)
 {
     return GET(light_power_to_light_amount, i);
 }
-const int16_t *tables_palette_light_threshold(int i)
+const int16_t *tables_get_palette_light_threshold(int i)
 {
     return GET(palette_light_thresholds, i);
 }
-const uint16_t *tables_slot_mask(int i)
+const uint16_t *tables_get_slot_mask(int i)
 {
     return GET(slot_masks, i);
 }
-const uint8_t *tables_wound_defense_factor(int i)
+const uint8_t *tables_get_wound_defense_factor(int i)
 {
     return GET(wound_defense_factor, i);
 }
-const uint16_t *tables_fixed_possession(int i)
+const uint16_t *tables_get_fixed_possession(int i)
 {
     return GET(fixed_possessions, i);
 }
 
-const uint8_t *tables_symbol_base_mana_cost(int step, int symbol)
+const uint8_t *tables_get_symbol_base_mana_cost(int step, int symbol)
 {
     const uint8_t (*row)[SYMBOL_COUNT] = GET(symbol_base_mana_cost, step);
     return row ? GET(*row, symbol) : NULL;

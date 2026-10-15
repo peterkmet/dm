@@ -38,9 +38,9 @@ def game(tmp_path_factory):
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_new_game.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.get_square_first_thing.restype = ctypes.c_uint16
-    lib.get_next_thing.restype = ctypes.c_uint16
-    lib.get_square.restype = ctypes.c_uint8
+    lib.map_get_square_first_thing.restype = ctypes.c_uint16
+    lib.map_get_next_thing.restype = ctypes.c_uint16
+    lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = ctypes.c_int16
     lib.state_json_string.restype = ctypes.c_void_p
     lib.control_open.argtypes = [ctypes.c_char_p]
@@ -170,7 +170,7 @@ def test_control_session_moves_and_recruits(game):
     assert client.call(cmd="act", action="fly")["ok"] is False
 
     x, y, d = game.position()
-    free = next(k for k in range(4) if game.lib.get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
+    free = next(k for k in range(4) if game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
     while game.position()[2] != free:
         client.act("turn_right")
     response = client.act("move_forward")
@@ -232,7 +232,7 @@ def test_save_and_load_restore_the_position_and_the_time(game, tmp_path):
     saved = client.call(cmd="get_state")["state"]
 
     x, y, _ = game.position()
-    free = next(k for k in range(4) if game.lib.get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
+    free = next(k for k in range(4) if game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
     while game.position()[2] != free:
         client.act("turn_right")
     client.act("move_forward")
@@ -279,12 +279,12 @@ def placed(game, x, y, direction):
 
 
 def square_byte(game, x, y):
-    return game.lib.dungeon_square(game.value("g_party_map_index"), x, y)
+    return game.lib.dungeon_get_square(game.value("g_party_map_index"), x, y)
 
 
 def map_size(game):
     lib, m = game.lib, game.value("g_party_map_index")
-    lib.dungeon_square.restype = ctypes.c_uint8
+    lib.dungeon_get_square.restype = ctypes.c_uint8
     lib.dungeon_map_width.restype = lib.dungeon_map_height.restype = ctypes.c_int16
     return lib.dungeon_map_width(m), lib.dungeon_map_height(m)
 
@@ -332,7 +332,7 @@ def test_view_shows_a_mirror_on_a_side_wall(game):
 
 def free_direction(game):
     x, y, _ = game.position()
-    return next(k for k in range(4) if game.lib.get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
+    return next(k for k in range(4) if game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
 
 
 def test_act_many_runs_in_order_and_stops_on_failure_and_damage(game):
@@ -422,13 +422,13 @@ THING_GROUP, SCREAMER = 4, 6
 
 def add_screamer(lib, x, y):
     """A screamer on square (x, y) of the party map, active but without behavior events (map 0 allows no creatures)."""
-    group = lib.get_unused_thing(THING_GROUP)
+    group = lib.map_get_unused_thing(THING_GROUP)
     data = lib.dungeon_get_thing_data(group)
     data[2], data[3] = 0xFF, 0xFE  # no possessions
     data[4], data[5] = SCREAMER, 0xFF  # centered on the square
     data[7] = 50  # health
     lib.group_add_active_group(group, x, y)
-    lib.link_thing_to_list(group, 0, x, y)
+    lib.map_link_thing_to_list(group, 0, x, y)
 
 
 def square_with_floor_left_and_behind(game):
@@ -436,7 +436,7 @@ def square_with_floor_left_and_behind(game):
     width, height = map_size(game)
 
     def floor(x, y):
-        return 0 <= x < width and 0 <= y < height and game.lib.get_square(x, y) >> 5 == 1
+        return 0 <= x < width and 0 <= y < height and game.lib.map_get_square(x, y) >> 5 == 1
 
     for x in range(width):
         for y in range(height):
@@ -449,10 +449,10 @@ def square_with_floor_left_and_behind(game):
 
 def test_act_many_stops_only_on_a_new_creature_group(game):
     lib = game.lib
-    lib.get_unused_thing.restype = ctypes.c_uint16
-    lib.get_unused_thing.argtypes = [ctypes.c_uint16]
+    lib.map_get_unused_thing.restype = ctypes.c_uint16
+    lib.map_get_unused_thing.argtypes = [ctypes.c_uint16]
     lib.group_add_active_group.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
-    lib.link_thing_to_list.argtypes = [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
+    lib.map_link_thing_to_list.argtypes = [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
     lib.group_delete.argtypes = [ctypes.c_int16, ctypes.c_int16]
     x, y, f = square_with_floor_left_and_behind(game)
     left = (x + STEP_EAST[(f + 3) % 4], y + STEP_NORTH[(f + 3) % 4])
@@ -485,7 +485,7 @@ def square_with_floor_two_ahead(game):
     width, height = map_size(game)
 
     def floor(x, y):
-        return 0 <= x < width and 0 <= y < height and game.lib.get_square(x, y) >> 5 == 1
+        return 0 <= x < width and 0 <= y < height and game.lib.map_get_square(x, y) >> 5 == 1
 
     for x in range(width):
         for y in range(height):
@@ -499,10 +499,10 @@ def test_turn_reports_a_fireball_and_a_killed_creature_seen_during_the_turn(game
     from dmtools import play
 
     lib = game.lib
-    lib.get_unused_thing.restype = ctypes.c_uint16
-    lib.get_unused_thing.argtypes = [ctypes.c_uint16]
+    lib.map_get_unused_thing.restype = ctypes.c_uint16
+    lib.map_get_unused_thing.argtypes = [ctypes.c_uint16]
     lib.group_add_active_group.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
-    lib.link_thing_to_list.argtypes = [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
+    lib.map_link_thing_to_list.argtypes = [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
     lib.projectile_create.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.c_int16,
                                       ctypes.c_uint8, ctypes.c_uint8, ctypes.c_uint8]
     x, y, f = square_with_floor_two_ahead(game)
@@ -603,7 +603,7 @@ def test_goto_is_an_unknown_command(game):
 
 def wall_direction(game):
     x, y, _ = game.position()
-    return next(k for k in range(4) if game.lib.get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 0)
+    return next(k for k in range(4) if game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 0)
 
 
 def test_a_move_into_a_wall_bumps(game, monkeypatch, capsys):
@@ -718,7 +718,7 @@ def chest_with_content(game):
         thing = data[2] << 8 | data[3]
         while thing != 0xFFFE:
             content.append(thing)
-            thing = lib.get_next_thing(thing)
+            thing = lib.map_get_next_thing(thing)
         if 1 <= len(content) <= 6:
             return chest, content
     pytest.skip("no chest with 1-6 objects")
@@ -940,25 +940,25 @@ HAS_THINGS, THING_NONE, THING_END = 0x10, 0xFFFF, 0xFFFE
 def test_a_free_record_never_enters_a_square_list(game, capfd):
     lib = game.lib
     x, y = next((x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
-                if lib.get_square(x, y) >> 5 == 1 and not lib.get_square(x, y) & HAS_THINGS)
-    lib.link_thing_to_list(THING_NONE, 0, x, y)
-    assert not lib.get_square(x, y) & HAS_THINGS
+                if lib.map_get_square(x, y) >> 5 == 1 and not lib.map_get_square(x, y) & HAS_THINGS)
+    lib.map_link_thing_to_list(THING_NONE, 0, x, y)
+    assert not lib.map_get_square(x, y) & HAS_THINGS
     assert "square list guard: link of a free record" in capfd.readouterr().err
 
 
 def test_unlinking_a_freed_last_thing_empties_the_square(game, capfd):
     lib = game.lib
     x, y = next((x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
-                if lib.get_square(x, y) & HAS_THINGS and lib.get_next_thing(lib.get_square_first_thing(x, y)) == THING_END)
-    thing = lib.get_square_first_thing(x, y)
+                if lib.map_get_square(x, y) & HAS_THINGS and lib.map_get_next_thing(lib.map_get_square_first_thing(x, y)) == THING_END)
+    thing = lib.map_get_square_first_thing(x, y)
     lib.thing_set_free(thing)  # its next becomes THING_NONE
-    lib.unlink_thing_from_list(thing, 0, x, y)
-    assert not lib.get_square(x, y) & HAS_THINGS
+    lib.map_unlink_thing_from_list(thing, 0, x, y)
+    assert not lib.map_get_square(x, y) & HAS_THINGS
     assert "square list guard: unlink of a free record" in capfd.readouterr().err
     record = lib.dungeon_get_thing_data(thing)
     record[0], record[1] = THING_END >> 8, THING_END & 0xFF  # next: end of list
-    lib.link_thing_to_list(thing, 0, x, y)  # the fixture game again as before
-    assert lib.get_square_first_thing(x, y) == thing
+    lib.map_link_thing_to_list(thing, 0, x, y)  # the fixture game again as before
+    assert lib.map_get_square_first_thing(x, y) == thing
 
 
 def test_torch_holder_is_not_a_lock(game):
@@ -967,12 +967,12 @@ def test_torch_holder_is_not_a_lock(game):
     holder = None
     for y in range(lib.dungeon_map_height(0)):
         for x in range(lib.dungeon_map_width(0)):
-            t = lib.get_square_first_thing(x, y)
+            t = lib.map_get_square_first_thing(x, y)
             while t not in (0xFFFE, 0xFFFF):
                 data = lib.dungeon_get_thing_data(t)
                 if t >> 10 & 15 == 3 and 4 <= (data[2] << 8 | data[3]) >> 7 <= 7:  # a sensor that wants a torch
                     holder = (x, y, t >> 14)
-                t = lib.get_next_thing(t)
+                t = lib.map_get_next_thing(t)
     assert holder
     x, y, face = holder
     for name, value in (("g_party_map_x", x + STEP_EAST[face]), ("g_party_map_y", y + STEP_NORTH[face]), ("g_party_direction", (face + 2) & 3)):
@@ -995,13 +995,13 @@ def on_map(game, m, x, y, direction):
     lib, saved_map = game.lib, game.value("g_party_map_index")
     palette = ctypes.c_int16.in_dll(lib, "g_dungeon_view_palette_index")
     saved_palette, palette.value = palette.value, 0
-    lib.set_current_map_and_party_map(m)
+    lib.map_set_current_map_and_party_map(m)
     lib.view_load_map(m)
     try:
         with placed(game, x, y, direction):
             yield
     finally:
-        lib.set_current_map_and_party_map(saved_map)
+        lib.map_set_current_map_and_party_map(saved_map)
         lib.view_load_map(saved_map)
         palette.value = saved_palette
 
@@ -1009,9 +1009,9 @@ def on_map(game, m, x, y, direction):
 def test_a_lock_names_its_picture(game):
     lib = game.lib
     with on_map(game, 1, 0, 0, 0):
-        t = lib.get_square_first_thing(10, 1)  # the iron keyhole before the stairs of map 1
+        t = lib.map_get_square_first_thing(10, 1)  # the iron keyhole before the stairs of map 1
         while t >> 10 & 15 != 3:
-            t = lib.get_next_thing(t)
+            t = lib.map_get_next_thing(t)
     face = t >> 14
     with on_map(game, 1, 10 + STEP_EAST[face], 1 + STEP_NORTH[face], (face + 2) & 3):
         wall = ahead_square(state_json(game, 1))  # depth 1, center: the wall ahead
@@ -1101,11 +1101,11 @@ def test_view_and_map_show_the_pressure_pads_of_map_1(game, monkeypatch, capsys)
 
 def test_a_plate_without_an_ornament_stays_hidden(game):
     lib = game.lib
-    lib.dungeon_square.restype = ctypes.c_uint8
+    lib.dungeon_get_square.restype = ctypes.c_uint8
     hidden = (14, 14)  # a floor sensor of map 1 without an ornament
     for d in range(4):
         x, y = hidden[0] - STEP_EAST[d], hidden[1] - STEP_NORTH[d]
-        if lib.dungeon_square(1, x, y) >> 5 == 1:
+        if lib.dungeon_get_square(1, x, y) >> 5 == 1:
             with on_map(game, 1, x, y, d):
                 view, game_map = state_json(game, 1), state_json(game, 2)
             assert "floor_ornament" not in squares_by_place(view)[hidden]

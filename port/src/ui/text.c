@@ -15,7 +15,7 @@ static const uint8_t *font;
 int text_init(void)
 {
     uint16_t size;
-    const uint8_t *p = gfx_item(TEXT_FONT_ITEM, &size);
+    const uint8_t *p = gfx_get_item(TEXT_FONT_ITEM, &size);
     if (!p || size != FONT_SIZE)
         return -1;
     memcpy(font_data, p, FONT_SIZE);

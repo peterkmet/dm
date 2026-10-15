@@ -32,9 +32,9 @@ def lib():
     lib.draw_blit.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Bitmap), ctypes.POINTER(Box), ctypes.c_int16, ctypes.c_int]
     lib.draw_shrink.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.c_char_p, ctypes.POINTER(Bitmap)]
     lib.layout_get_zone.argtypes = [ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Box), ctypes.POINTER(ctypes.c_int16), ctypes.POINTER(ctypes.c_int16)]
-    lib.gfx_item.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.load_dungeon.restype = ctypes.c_bool
-    lib.gfx_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
+    lib.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_load.restype = ctypes.c_bool
+    lib.gfx_get_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
     lib.view_render.argtypes = [ctypes.c_int16] * 4
     return lib
 
@@ -116,7 +116,7 @@ def test_zones_match_original(lib, emu):
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.layout_init() == 0
     size = ctypes.c_uint16()
-    raw = ctypes.string_at(lib.gfx_item(696, ctypes.byref(size)), size.value)
+    raw = ctypes.string_at(lib.gfx_get_item(696, ctypes.byref(size)), size.value)
     chunks, at = zone_records(raw), 0x700000
     emu.write(LAYOUT_ZONES, struct.pack(">I", at))
     for i, (first, last, recs) in enumerate(chunks):
@@ -152,7 +152,7 @@ def game(lib):
     assert lib.tables_init() == 0
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.layout_init() == 0
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode())
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
     party = [ctypes.c_int16.in_dll(lib, n).value for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")]
     return lib, party
 
@@ -236,11 +236,11 @@ def thing_records(lib, thing_type):
 
 def add_explosion(lib, m, x, y, cell, attack, explosion_type):
     """Links a new explosion behind the first thing of a square with things. Returns an undo function."""
-    lib.dungeon_square_first_thing.restype = ctypes.c_uint16
+    lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     data, count = thing_records(lib, 15)
     index = next(i for i in range(count) if data[4 * i] == 0xFF and data[4 * i + 1] == 0xFF)
-    first = lib.dungeon_square_first_thing(m, x, y)
+    first = lib.dungeon_get_square_first_thing(m, x, y)
     assert first != 0xFFFE
     head = lib.dungeon_get_thing_data(first)
     thing = cell << 14 | 15 << 10 | index
