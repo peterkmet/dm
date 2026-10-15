@@ -22,27 +22,6 @@ int16_t spell_count(void)
     return g_adventure == ADVENTURE_CSB ? CSB_SPELL_COUNT : DM_SPELL_COUNT;
 }
 
-/* Spell table entry with its symbols, required level, skill and attributes. */
-SpellRecord spell_get(int16_t index)
-{
-    uint32_t a = spells_address() + (uint32_t)index * SPELL_BYTES;
-    return (SpellRecord){kaos_u32(a), kaos_u8(a + SPELL_ENTRY_LEVEL), kaos_u8(a + SPELL_ENTRY_SKILL),
-                         kaos_u16(a + SPELL_ENTRY_ATTRIBUTES)};
-}
-
-uint16_t spell_kind(const SpellRecord *spell)
-{
-    return spell->attributes & SPELL_KIND_MASK;
-}
-uint16_t spell_type(const SpellRecord *spell)
-{
-    return spell->attributes >> SPELL_TYPE_SHIFT & SPELL_TYPE_MASK;
-}
-uint16_t spell_disabled_ticks(const SpellRecord *spell)
-{
-    return spell->attributes >> SPELL_DISABLED_TICKS_SHIFT;
-}
-
 /* Power of a power symbol, from 0 for the lowest. The original reads the symbol as signed. */
 static int16_t power_index(uint8_t power_symbol)
 {
@@ -83,21 +62,6 @@ uint16_t spell_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t pow
         cost =
             cost * kaos_u8(KAOS_SYMBOL_MANA_COST_MULTIPLIER + power_index(power_symbol)) >> SPELL_MANA_MULTIPLIER_SHIFT;
     return cost;
-}
-
-/* Skill level that the spell needs at this power. */
-uint16_t spell_required_level(uint8_t power_symbol, const SpellRecord *spell)
-{
-    return power_index(power_symbol) + 1 + spell->base_required_level;
-}
-
-/* ponytail: the original squares a stale D3 from the caller; this uses required_level² as ReDMCSB intends. */
-uint16_t spell_experience(uint8_t power_symbol, const SpellRecord *spell, uint16_t random)
-{
-    uint16_t level = spell_required_level(power_symbol, spell);
-    return (uint16_t)(level * level +
-                      power_index(power_symbol) * spell->base_required_level * SPELL_EXPERIENCE_POWER_FACTOR +
-                      level * SPELL_EXPERIENCE_LEVEL_FACTOR + (random & SPELL_EXPERIENCE_RANDOM_MASK));
 }
 
 /* One draw per missing skill level; the cast fails on the first draw that returns 1. */

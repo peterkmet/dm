@@ -351,7 +351,7 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
     uint8_t power_symbol = c->symbols[0];
     int16_t power = (int8_t)power_symbol - (POWER_SYMBOL_FIRST - 1);
     uint16_t required_level = power + spell->base_required_skill_level;
-    /* The original squares a stale register for the first term; the port uses required_level squared (spell_experience). */
+    /* The original squares a stale register for the first term; the port uses required_level squared, as ReDMCSB intends. */
     uint16_t experience = required_level * required_level +
                           (power - 1) * spell->base_required_skill_level * SPELL_EXPERIENCE_POWER_FACTOR +
                           required_level * SPELL_EXPERIENCE_LEVEL_FACTOR + (random16() & SPELL_EXPERIENCE_RANDOM_MASK);

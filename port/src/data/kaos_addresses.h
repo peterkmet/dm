@@ -18,7 +18,7 @@
 /* Spells and actions. */
 #define KAOS_SYMBOL_BASE_MANA_COST       0x103c66 /* uint8_t[4][6] */
 #define KAOS_SYMBOL_MANA_COST_MULTIPLIER 0x103c7e /* uint8_t[6], by power symbol */
-#define KAOS_SPELLS                      0x103c84 /* SpellRecord[25], 8 bytes each */
+#define KAOS_SPELLS                      0x103c84 /* 25 spells, 8 bytes each */
 #define KAOS_ACTION_SETS            0x103d4c /* 44 records of 8 bytes: 3 actions, pad, 2 minimum levels, flags, pad */
 #define KAOS_ACTIONS_DISABLED       0x103eac /* ticks that each action disables the champion */
 #define KAOS_ACTION_DAMAGE_FACTOR   0x103ed8
