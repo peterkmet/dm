@@ -75,7 +75,8 @@
 #define KAOS_OBJECT_SCALES                   0x102e24 /* object scale by row */
 #define KAOS_PROJECTILE_SCALES               0x102e2a /* projectile scale by row */
 #define KAOS_EXPLOSION_SCALES                0x102e32 /* explosion scale by depth */
-#define KAOS_REBIRTH_SCALES                  0x102fe8 /* rebirth step 2, then step 1 scale by object coordinate set */
+#define KAOS_REBIRTH_SCALES                  0x102fe8 /* rebirth step 2 scale by object coordinate set */
+#define KAOS_REBIRTH_STEP_1_SCALES           0x102ff0
 #define KAOS_GROUP_DIRECTIONS_PACKED         0x10192a /* the 4 directions of a group, 2 bits per creature */
 
 /* Dungeon view: view squares, wall sets, ornaments, and the viewport. */
@@ -87,6 +88,7 @@
 #define KAOS_VIEW_SQUARE_EXPLOSION_COORD 0x102af6
 #define KAOS_VIEW_SQUARE_FIELD_ASPECT    0x102b0e
 #define KAOS_WALL_SET_LAYOUT_IDS         0x102a22 /* int16_t[46] */
+#define KAOS_MIRRORED_WALL_LAYOUT_IDS    0x102a60 /* entries 31-45 of the wall set layout ids */
 #define KAOS_WALL_ORNAMENT_DEPTHS        0x102ba6 /* depth of each wall ornament view (0-4) */
 #define KAOS_PLAQUE_HEIGHTS              0x102c57 /* one byte before the table: a line count starts at 1 */
 #define KAOS_FLOOR_ORNAMENT_VIEW_OFFSETS 0x102bb4 /* graphic offset of each floor ornament view */
@@ -105,7 +107,8 @@
 #define KAOS_LAYOUT_BITMAPS              0x1025f2 /* 14 bytes each, layout bitmap -1 - n */
 
 /* Palettes (16 colors) and palette changes (16-byte color maps). */
-#define KAOS_INITIAL_COLORMAP                 0x100170 /* interface palette, then the pointer palette */
+#define KAOS_INITIAL_COLORMAP                 0x100170 /* interface palette */
+#define KAOS_POINTER_PALETTE                  0x100190
 #define KAOS_CREDITS_PALETTE                  0x100a46
 #define KAOS_ENTRANCE_PALETTE                 0x100a66
 #define KAOS_DUNGEON_PALETTES                 0x100aa6 /* 6 light levels, full light first */
@@ -148,7 +151,11 @@
 #define KAOS_ENDGAME_BUTTON_INNER_BORDER 0x10298c /* inner border x, y */
 
 /* Mouse pointer. */
-#define KAOS_ARROW_POINTER_BITMAP   0x1002b0 /* 4 bit planes, width and height words in the 4 bytes before */
+#define KAOS_ARROW_POINTER_WIDTH    0x1002ac /* width and height words, then the 4 bit planes */
+#define KAOS_ARROW_POINTER_HEIGHT   0x1002ae
+#define KAOS_ARROW_POINTER_BITMAP   0x1002b0
+#define KAOS_HAND_POINTER_WIDTH     0x1003d0
+#define KAOS_HAND_POINTER_HEIGHT    0x1003d2
 #define KAOS_HAND_POINTER_BITMAP    0x1003d4
 #define KAOS_MOUSE_POINTER_ZONES    0x1004f8 /* 16 records of 12 bytes: x, y, width, height, shape, champion */
 #define KAOS_MOUSE_POINTER_HOTSPOTS 0x1005c8 /* 4 records of 8 bytes: x, y, width, height */

@@ -31,12 +31,12 @@
 #define GREEN_SHIFT             4
 #define SAMPLE_VOLUME_BYTES     2 /* SO: left and right volume bytes after the chunk header */
 #define MAX_MUSIC               32
-#define MUSIC_PERIOD            328 /* CSB disk B ANIM.FTL 0x101424: every music segment */
+#define MUSIC_PERIOD            328 /* the sample period of every music segment of the CSB disk B player */
 #define MUSIC_VOLUME            30
 #define MUSIC_PASSES            6 /* the sequence plays 6 times, then the music ends */
 #define MUSIC_SEQUENCE_END      0xff
 #define MUSIC_COUNT_SIGN_BIT    0x80 /* high byte of a negative item count */
-#define MUSIC_FADE_FRAMES       3    /* 0x102e4c: the volume goes down by 1 every 3 ticks */
+#define MUSIC_FADE_FRAMES       3    /* the volume goes down by 1 every 3 ticks */
 
 /* Chunk tags that the player runs. The other tags (AN, DO, P8, music, sample files) do nothing for ENDA.DAT and TITL.DAT. */
 enum {
@@ -304,7 +304,7 @@ int anim_play(const char *path)
         if (input_stops && g_input_received)
             running = 0;
     }
-    /* the music fades out at the end and after a stop (0x102e4c) */
+    /* the music fades out at the end and after a stop */
     for (int volume = MUSIC_VOLUME - 1; music_started && volume > 0 && !g_quit_requested; volume--) {
         sound_music_set_volume((uint8_t)volume);
         wait_frames(MUSIC_FADE_FRAMES);

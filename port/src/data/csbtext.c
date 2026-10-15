@@ -3,15 +3,16 @@
 #include "bytes.h"
 #include "csbtext.h"
 #include "ids.h"
+#include "kaos_addresses.h"
 #include "tables.h"
 
 /* APPB addresses of the CSB texts and the DM text index of each. Sources and code references:
    docs/csb-engine-diff.md "Text". */
-#define CSB_TEXT_COUNT     (TEXT_CREATURE_NAME_FIRST + CREATURE_TYPE_COUNT) /* CSB has no memory error texts 135-139 */
-#define APPB_ACTION_NAMES  0x1048b4 /* NUL-separated action names, index 0 = "N" */
-#define APPB_DISK_MESSAGES 0x104d08 /* pointers to the load, save, and disk messages */
-#define APPB_CLASS_NAMES   0x102d56 /* pointers to the class names, in base skill order */
-#define TEXT_PARTS         3
+#define CSB_TEXT_COUNT (TEXT_CREATURE_NAME_FIRST + CREATURE_TYPE_COUNT) /* CSB has no memory error texts 135-139 */
+#define CSB_APPB_ACTION_NAMES  0x1048b4                                 /* NUL-separated action names, index 0 = "N" */
+#define CSB_APPB_DISK_MESSAGES 0x104d08 /* pointers to the load, save, and disk messages */
+#define CSB_APPB_CLASS_NAMES   0x102d56 /* pointers to the class names, in base skill order */
+#define TEXT_PARTS             3
 
 /* Single strings: DM text index, APPB address. */
 static const struct {
@@ -60,14 +61,16 @@ static const struct {
     uint8_t count;
     uint32_t kaos_indices;
 } table_texts[] = {
-    {TEXT_CLASS_FIRST,         APPB_CLASS_NAMES, SKILL_BASE_COUNT,       0x102472}, /* FIGHTER, NINJA, PRIEST, WIZARD */
-    {TEXT_SKILL_LEVEL_FIRST,   0x102524,         TEXT_SKILL_LEVEL_COUNT, 0x101e74}, /* NEOPHYTE ... ARCHMASTER */
-    {TEXT_DIRECTION_FIRST,     0x102578,         4,                      0x101e92}, /* NORTH, EAST, SOUTH, WEST */
-    {TEXT_STATISTIC_FIRST,     0x102588,         7,                      0x101e9a}, /* L, STRENGTH ... ANTI-FIRE */
-    {TEXT_CREATURE_NAME_FIRST, 0x102164,         CREATURE_TYPE_COUNT,    0       },
+    {TEXT_CLASS_FIRST,         CSB_APPB_CLASS_NAMES, SKILL_BASE_COUNT,
+     KAOS_BASE_SKILL_STRING_INDICES                                                                       }, /* FIGHTER, NINJA, PRIEST, WIZARD */
+    {TEXT_SKILL_LEVEL_FIRST,   0x102524,             TEXT_SKILL_LEVEL_COUNT,
+     KAOS_SKILL_LEVEL_STRING_INDICES                                                                      }, /* NEOPHYTE ... ARCHMASTER */
+    {TEXT_DIRECTION_FIRST,     0x102578,             4,                      KAOS_DIRECTION_STRING_INDICES}, /* NORTH, EAST, SOUTH, WEST */
+    {TEXT_STATISTIC_FIRST,     0x102588,             7,                      KAOS_STATISTIC_STRING_INDICES}, /* L, STRENGTH ... ANTI-FIRE */
+    {TEXT_CREATURE_NAME_FIRST, 0x102164,             CREATURE_TYPE_COUNT,    0                            },
 };
 
-/* DM text index of each pointer at APPB_DISK_MESSAGES. TEXT_SAVE and TEXT_QUIT are SAVE AND PLAY and SAVE AND QUIT. */
+/* DM text index of each pointer at CSB_APPB_DISK_MESSAGES. TEXT_SAVE and TEXT_QUIT are SAVE AND PLAY and SAVE AND QUIT. */
 static const int16_t disk_message_texts[] = {
     TEXT_GAME_LOADED,
     TEXT_CANT_MODIFY_GAME_DISK,
@@ -163,7 +166,7 @@ static int join_texts(const char *parts[CSB_TEXT_COUNT][TEXT_PARTS])
 /* Copies the action names list. */
 static int copy_action_names(const FtlImage *appb)
 {
-    uint32_t end = APPB_ACTION_NAMES;
+    uint32_t end = CSB_APPB_ACTION_NAMES;
     for (int i = 0; i < ACTION_COUNT; i++) {
         const char *s = appb_string(appb, end);
         if (!s)
@@ -171,11 +174,11 @@ static int copy_action_names(const FtlImage *appb)
         end += (uint32_t)strlen(s) + 1;
     }
     free(action_names);
-    action_names_size = (uint16_t)(end - APPB_ACTION_NAMES);
+    action_names_size = (uint16_t)(end - CSB_APPB_ACTION_NAMES);
     action_names = malloc(action_names_size);
     if (!action_names)
         return -1;
-    memcpy(action_names, appb->data + (APPB_ACTION_NAMES - appb->base), action_names_size);
+    memcpy(action_names, appb->data + (CSB_APPB_ACTION_NAMES - appb->base), action_names_size);
     return 0;
 }
 
@@ -198,12 +201,12 @@ int csb_text_build(const FtlImage *appb, FtlImage *out)
         }
     }
     for (int i = 0; i < COUNT(disk_message_texts); i++)
-        if (!(parts[disk_message_texts[i]][0] = appb_pointed_string(appb, APPB_DISK_MESSAGES + 4 * i)))
+        if (!(parts[disk_message_texts[i]][0] = appb_pointed_string(appb, CSB_APPB_DISK_MESSAGES + 4 * i)))
             return -1;
     for (int i = 0; i < COUNT(class_texts); i++) {
         const char **p = parts[class_texts[i].text];
         p[0] = appb_string(appb, class_texts[i].prefix);
-        p[1] = appb_pointed_string(appb, APPB_CLASS_NAMES + 4 * class_texts[i].skill);
+        p[1] = appb_pointed_string(appb, CSB_APPB_CLASS_NAMES + 4 * class_texts[i].skill);
         p[2] = appb_string(appb, class_texts[i].suffix);
         if (!p[0] || !p[1] || !p[2])
             return -1;

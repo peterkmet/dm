@@ -16,24 +16,21 @@
 #define ESCAPE_STRING_BYTES 8
 #define REPLACEMENT_BYTES   2
 
-#define REPLACEMENT_SET_BYTES       14
-#define CREATURE_ASPECT_BYTES       6
-#define OBJECT_ASPECT_BYTES         4
-#define PROJECTILE_ASPECT_BYTES     4
-#define FIELD_ASPECT_BYTES          8
-#define CREATURE_SHIFT_SET_BYTES    8
-#define PILE_SHIFT_BYTES            2
-#define REBIRTH_STEP_1_SCALES_BYTES 8 /* the step 1 scales follow the 7 step 2 scales and a pad byte */
-#define LAYOUT_BITMAP_BYTES         14
-#define PALETTE_BYTES               (TABLES_PALETTE_COLOR_COUNT * 2)
-#define SLOT_BOX_BYTES              4
-#define POINTER_ZONE_BYTES          12
-#define MOUSE_INPUT_BYTES           12
-#define KEY_ENTRY_BYTES             4
-#define DIALOG_TABLE_POINTER_BYTES  4
-#define POINTER_HOTSPOT_BYTES       8
-#define POINTER_WIDTH_BEFORE        4 /* the bitmap width word comes 4 bytes before the planes */
-#define POINTER_HEIGHT_BEFORE       2
+#define REPLACEMENT_SET_BYTES      14
+#define CREATURE_ASPECT_BYTES      6
+#define OBJECT_ASPECT_BYTES        4
+#define PROJECTILE_ASPECT_BYTES    4
+#define FIELD_ASPECT_BYTES         8
+#define CREATURE_SHIFT_SET_BYTES   8
+#define PILE_SHIFT_BYTES           2
+#define LAYOUT_BITMAP_BYTES        14
+#define PALETTE_BYTES              (TABLES_PALETTE_COLOR_COUNT * 2)
+#define SLOT_BOX_BYTES             4
+#define POINTER_ZONE_BYTES         12
+#define MOUSE_INPUT_BYTES          12
+#define KEY_ENTRY_BYTES            4
+#define DIALOG_TABLE_POINTER_BYTES 4
+#define POINTER_HOTSPOT_BYTES      8
 
 enum { SOUND_ENTRY_RATE = 3, SOUND_ENTRY_PRIORITY = 4 };                        /* byte offsets in a sound entry */
 enum { ATTACK_CELL_COUNT = 4, SOUND_VOLUME_ROW = 2 * SOUND_HEARING_RANGE + 1 }; /* row lengths */
@@ -463,7 +460,7 @@ uint8_t tables_explosion_scale(int16_t depth)
 /* Scale of rebirth step 1 or 2 at an object coordinate set. */
 uint8_t tables_rebirth_scale(int16_t step, int16_t coord)
 {
-    return kaos_u8(KAOS_REBIRTH_SCALES + (step == TABLES_REBIRTH_STEP_1 ? REBIRTH_STEP_1_SCALES_BYTES : 0) + coord);
+    return kaos_u8((step == TABLES_REBIRTH_STEP_1 ? KAOS_REBIRTH_STEP_1_SCALES : KAOS_REBIRTH_SCALES) + coord);
 }
 /* The 4 creature directions of a group that faces one direction, 2 bits per creature. */
 uint8_t tables_group_directions(int16_t index)
@@ -576,7 +573,7 @@ TablesRect tables_layout_bitmap(int16_t slot)
 /* One color of a palette. */
 uint16_t tables_palette_color(int16_t palette, int16_t color)
 {
-    static const uint32_t first[TABLES_PALETTE_DUNGEON] = {KAOS_INITIAL_COLORMAP, KAOS_INITIAL_COLORMAP + PALETTE_BYTES,
+    static const uint32_t first[TABLES_PALETTE_DUNGEON] = {KAOS_INITIAL_COLORMAP, KAOS_POINTER_PALETTE,
                                                            KAOS_CREDITS_PALETTE, KAOS_ENTRANCE_PALETTE};
     uint32_t at = palette < TABLES_PALETTE_DUNGEON
                       ? first[palette]
@@ -734,10 +731,9 @@ int16_t tables_pointer_shadow_dy(void)
 /* The bit planes of the arrow or the hand pointer and its size. */
 const uint8_t *tables_pointer_planes(bool hand, int16_t *w, int16_t *h)
 {
-    uint32_t at = hand ? KAOS_HAND_POINTER_BITMAP : KAOS_ARROW_POINTER_BITMAP;
-    *w = (int16_t)kaos_u16(at - POINTER_WIDTH_BEFORE);
-    *h = (int16_t)kaos_u16(at - POINTER_HEIGHT_BEFORE);
-    return kaos_ptr(at);
+    *w = (int16_t)kaos_u16(hand ? KAOS_HAND_POINTER_WIDTH : KAOS_ARROW_POINTER_WIDTH);
+    *h = (int16_t)kaos_u16(hand ? KAOS_HAND_POINTER_HEIGHT : KAOS_ARROW_POINTER_HEIGHT);
+    return kaos_ptr(hand ? KAOS_HAND_POINTER_BITMAP : KAOS_ARROW_POINTER_BITMAP);
 }
 
 /* Image address of a mouse input table; the dialog tables come from a pointer table. */

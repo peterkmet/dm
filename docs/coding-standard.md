@@ -13,6 +13,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
    - Plain numbers are allowed only for 0, 1, -1, and 2 when it halves or doubles a value. Every other number is a named constant, also decimal game values such as divisors, limits, and thresholds.
    - Notation: hex for bit masks and flags, and for KAOS addresses and Amiga file format values. Decimal for counts, sizes, limits, thresholds, and ticks.
    - Each KAOS image address has one name with the prefix `KAOS_` in `data/kaos_addresses.h`, which only `data/` includes; other modules call `tables_*`.
+   - Addresses of other modules live in `data/` too: `CSB_` for the CSB image and `APPB.FTL` (`CSB_APPB_*`), `SWSH_` for `SWSH.FTL` (`data/swsh.c`). Each value has one name per prefix.
    - Each constant has one definition, in the header of the module that owns it. Other modules include that header. They do not define the value again under the same or another name.
 2. Do not index raw record bytes outside one accessor module. Put field access in small functions or macros with names, for example `rec_sensor_type(t)`, `rec_sensor_disable(t)`, `door_state(t)`, `group_count(t)`. One module (`map.c` and `map.h`) owns the record layout.
 3. Write C, not decompiler output.
