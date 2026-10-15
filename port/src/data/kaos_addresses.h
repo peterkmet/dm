@@ -155,4 +155,25 @@
 #define KAOS_POINTER_SHADOW_DX      0x102952
 #define KAOS_POINTER_SHADOW_DY      0x102954
 
+/* Input tables: mouse entries of 6 words, key entries of a command and a key word; command 0 ends a table. */
+#define KAOS_MOUSE_INPUT_ENTRANCE     0x10318c
+#define KAOS_MOUSE_INPUT_ENDGAME      0x1031d4
+#define KAOS_MOUSE_INPUT_INTERFACE    0x1031f8
+#define KAOS_MOUSE_INPUT_MOVEMENT     0x1032e8
+#define KAOS_MOUSE_INPUT_INVENTORY    0x103354
+#define KAOS_MOUSE_INPUT_SLEEPING     0x10351c
+#define KAOS_MOUSE_INPUT_FROZEN       0x103540
+#define KAOS_MOUSE_INPUT_ACTION_NAMES 0x103564
+#define KAOS_MOUSE_INPUT_ACTION_ICONS 0x1035a0
+#define KAOS_MOUSE_INPUT_SPELL_AREA   0x1035dc
+#define KAOS_MOUSE_INPUT_STATUS_BOX   0x103654
+#define KAOS_MOUSE_INPUT_CHEST        0x1036f0
+#define KAOS_MOUSE_INPUT_RESURRECT    0x10375c
+#define KAOS_MOUSE_INPUT_NAME_ENTRY   0x10378c
+#define KAOS_KEYS_ENTRANCE            0x10393c
+#define KAOS_KEYS_INTERFACE           0x103948 /* inventory keys F1-F4, save, freeze */
+#define KAOS_KEYS_MOVEMENT            0x103964 /* movement and turn keys */
+#define KAOS_KEYS_SLEEPING            0x103980
+#define KAOS_KEYS_FROZEN              0x10398c
+
 #endif

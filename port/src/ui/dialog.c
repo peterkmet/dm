@@ -136,9 +136,9 @@ static void fill(Bitmap *vp, int x, int y, int w, int h, uint8_t color)
 static void draw_pressed_button(int16_t table, int16_t choice)
 {
     Bitmap *vp = ui_viewport();
-    uint32_t entry = ui_mouse_table_address(table) + (uint32_t)(choice - 1) * MOUSE_ENTRY_BYTES;
+    MouseInput entry;
     Box b;
-    if (!ui_zone_box(kaos_s16(entry + 2 * INPUT_X2), &b))
+    if (!tables_mouse_input(table, choice - 1, &entry) || !ui_zone_box(entry.x2, &b))
         return; /* the zone word of an entry with a negative x1 */
     int x = b.x, y = b.y, w = b.w, h = b.h;
     fill(vp, x - 2, y - 2, w + 5, 1, COLOR_LIGHT_BROWN);

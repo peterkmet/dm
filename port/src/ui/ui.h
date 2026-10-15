@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "champion.h"
 #include "draw.h"
+#include "tables.h"
 
 /* Interface drawing on fb: champion status boxes, action and spell areas, inventory panel,
    object icons, message area (KAOS CHAMPION.C, MENU.C, panel parts of INVENTORY.C). Graphics,
@@ -55,31 +56,6 @@ enum {
 
 #define UI_SLOT_BOX_INVENTORY_FIRST 8 /* slot box of champion slot 0 in the inventory */
 
-/* Mouse input entry: 6 words: command, x1, x2, y1, y2, buttons. A negative x1 marks a zone entry;
-   x2 is then the zone. */
-enum { INPUT_COMMAND, INPUT_X1, INPUT_X2, INPUT_Y1, INPUT_Y2, INPUT_BUTTONS, INPUT_WORDS };
-#define MOUSE_ENTRY_BYTES (2 * INPUT_WORDS)
-
-/* Mouse input tables of COMMAND.C, in the order of their KAOS addresses. */
-enum {
-    UI_INPUT_INTERFACE,    /* g_mouse_input_interface */
-    UI_INPUT_MOVEMENT,     /* g_mouse_input_movement */
-    UI_INPUT_INVENTORY,    /* g_mouse_input_champion_inventory */
-    UI_INPUT_SLEEPING,     /* g_mouse_input_party_sleeping */
-    UI_INPUT_FROZEN,       /* g_mouse_input_frozen_game */
-    UI_INPUT_ACTION_NAMES, /* g_mouse_input_action_area_names */
-    UI_INPUT_ACTION_ICONS, /* g_mouse_input_action_area_icons */
-    UI_INPUT_SPELL_AREA,   /* g_mouse_input_spell_area */
-    UI_INPUT_STATUS_BOX,   /* g_mouse_input_champion_status_box */
-    UI_INPUT_CHEST,        /* g_mouse_input_panel_chest */
-    UI_INPUT_RESURRECT,    /* g_mouse_input_panel_resurrect_reincarnate */
-    UI_INPUT_NAME_ENTRY,   /* g_mouse_input_champion_name_entry */
-    UI_INPUT_ENTRANCE,     /* the entrance buttons */
-    UI_INPUT_ENDGAME,      /* RESTART THIS GAME and QUIT of the endgame screen */
-    UI_INPUT_DIALOG_FIRST, /* g_dialog_mouse_inputs: + full screen * 4 + choice count - 1 */
-    UI_INPUT_COUNT = UI_INPUT_DIALOG_FIRST + 8
-};
-
 /* Mouse button masks of the input tables (the click kinds of input_event_handler). */
 enum { UI_BUTTON_RIGHT = 1, UI_BUTTON_LEFT = 2 };
 
@@ -124,7 +100,6 @@ void ui_draw_leader_hand_object_name(uint16_t thing);
 /* Hit tests. */
 int16_t ui_point_in_zone(int16_t zone, int16_t x, int16_t y);
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask);
-uint32_t ui_mouse_table_address(int16_t table); /* KAOS address of a mouse input table */
 
 /* Rune names by font character - 0x60: power, element, form, alignment. The original shows only
    the glyphs; scrolls name the runes. */

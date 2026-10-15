@@ -1,39 +1,17 @@
 # Open exceptions of tests/test_standard.py. One per line: <check> <target> <reason>.
 # Targets are paths relative to port/src/, constant names, or function names.
 address 0x104650 open: module cleanup
-address 0x1036f0 open: module cleanup
 address 0x100dcc open: module cleanup
-address 0x1031d4 open: module cleanup
-address 0x103bd4 open: module cleanup
-address 0x10398c open: module cleanup
 address 0x10511e open: module cleanup
-address 0x103354 open: module cleanup
-address 0x1031f8 open: module cleanup
-address 0x1032e8 open: module cleanup
-address 0x10318c open: module cleanup
-address 0x1035dc open: module cleanup
 address 0x104d08 open: module cleanup
 address 0x102d56 open: module cleanup
 address 0x100106 open: module cleanup
 address 0x100a56 open: module cleanup
 address 0x1048b4 open: module cleanup
 address 0x100a54 open: module cleanup
-address 0x103654 open: module cleanup
 address 0x1047ac open: module cleanup
-address 0x103540 open: module cleanup
-address 0x10393c open: module cleanup
-address 0x102948 open: module cleanup
-address 0x10378c open: module cleanup
-address 0x10351c open: module cleanup
-address 0x10375c open: module cleanup
-address 0x103980 open: module cleanup
-address 0x10293a open: module cleanup
-address 0x103964 open: module cleanup
 address 0x100a5a open: module cleanup
-address 0x103564 open: module cleanup
 address 0x104500 open: module cleanup
-address 0x1035a0 open: module cleanup
-address 0x103948 open: module cleanup
 address 0x1046c2 open: module cleanup
 address 0x10009a open: module cleanup
 decimal data/csbimage.c byte sizes in the table of APPB addresses
@@ -53,12 +31,6 @@ hex data/csbtext.c addresses of the APPB tables
 hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
 kaos ui/logo.c open: module cleanup
-kaos ui/view.h open: module cleanup
-kaos ui/command.c open: module cleanup
-kaos platform/control.c open: module cleanup
-kaos ui/ui.c open: module cleanup
-kaos ui/startend.c open: module cleanup
-kaos ui/dialog.c open: module cleanup
 long engine/action.c:action_is_action_performed one short case for each action of the action table
 long engine/group.c:group_get_damage_creature_outcome open: module cleanup
 long engine/projectile.c:projectile_has_impact_occurred open: module cleanup
@@ -70,7 +42,6 @@ long ui/command.c:click_in_dungeon_view open: module cleanup
 long ui/view.c:explosions open: module cleanup
 long ui/view.c:things open: module cleanup
 long ui/view.c:map_square open: module cleanup
-notation VIEWPORT_SIZE a KAOS address in hex, not a size: Task 11 names it KAOS_*
 numbered HEADER_BYTE_12A open: module cleanup
 numbered event79_count_footprints open: module cleanup
 numbered event73_count_thieves_eye open: module cleanup

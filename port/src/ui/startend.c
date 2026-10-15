@@ -53,8 +53,6 @@
 #define THE_END_BACKGROUND       0x004 /* dark blue of the THE END palette */
 #define THE_END_WHITE            0xfff
 #define BUTTON_FRAME_COLOR       0x86f
-#define MOUSE_ENTRY_BOX          2 /* x1, x2, y1, y2 after the command word */
-#define MOUSE_BOX_WORDS          4
 #define ENDGAME_TEXT_SIZE        64
 #define FUSE_FLASH_ROUNDS        3 /* the lord flashes 4 times per round; round n lasts n ticks per flash */
 #define FUSE_FLASHES_PER_ROUND   4
@@ -238,11 +236,7 @@ static void endgame_print_text(int x, int y, uint8_t color, const char *text)
 /* Writes a box into an entry of the endgame mouse table: x1, x2, y1, y2 as big-endian words. */
 static void set_endgame_click_box(int16_t entry_index, const Box *b)
 {
-    uint8_t *box = kaos_ptr(ui_mouse_table_address(UI_INPUT_ENDGAME) + (uint32_t)entry_index * MOUSE_ENTRY_BYTES +
-                            MOUSE_ENTRY_BOX);
-    int16_t words[MOUSE_BOX_WORDS] = {b->x, b->x + b->w - 1, b->y, b->y + b->h - 1};
-    for (int i = 0; i < MOUSE_BOX_WORDS; i++)
-        WR16(box + 2 * i, words[i]);
+    tables_set_mouse_input_box(UI_INPUT_ENDGAME, entry_index, b->x, b->x + b->w - 1, b->y, b->y + b->h - 1);
 }
 
 /* A framed button with a text; its box becomes the click box of the endgame mouse table entry. */

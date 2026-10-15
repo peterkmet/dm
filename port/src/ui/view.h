@@ -4,10 +4,6 @@
 #include <stdint.h>
 #include "draw.h"
 
-/* KAOS data addresses. */
-#define VIEWPORT_ORIGIN 0x10293a /* viewport origin x, y on the screen */
-#define VIEWPORT_SIZE   0x102948 /* g_viewport_width, g_viewport_height */
-
 /* Door square bit that map.h does not name: the door passage runs north-south. */
 enum { DOOR_NORTH_SOUTH = 8 };
 enum { VIEWPORT_MAX_W = 224, VIEWPORT_MAX_H = 136 }; /* the largest viewport bitmap */

@@ -140,8 +140,8 @@ static void press_key(uint16_t key)
 
 static void viewport_origin(int16_t *x, int16_t *y)
 {
-    *x = kaos_s16(VIEWPORT_ORIGIN);
-    *y = kaos_s16(VIEWPORT_ORIGIN + 2);
+    *x = tables_viewport_x();
+    *y = tables_viewport_y();
 }
 
 /* A screen point inside box b (moved by dx, dy) where the table gives command, or 0. */
@@ -173,13 +173,14 @@ static int find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
         {ox,                     oy                    },
         {(SCREEN_W - vp->w) / 2, (SCREEN_H - vp->h) / 2}
     };
-    for (uint32_t a = ui_mouse_table_address(table); kaos_s16(a + 2 * INPUT_COMMAND); a += 2 * INPUT_WORDS) {
-        if (kaos_s16(a + 2 * INPUT_COMMAND) != command)
+    MouseInput in;
+    for (int16_t entry = 0; tables_mouse_input(table, entry, &in); entry++) {
+        if (in.command != command)
             continue;
-        int16_t x1 = kaos_s16(a + 2 * INPUT_X1), x2 = kaos_s16(a + 2 * INPUT_X2);
-        Box b = {x1, kaos_s16(a + 2 * INPUT_Y1), x2 - x1 + 1, 0};
+        int16_t x1 = in.x1, x2 = in.x2;
+        Box b = {x1, in.y1, x2 - x1 + 1, 0};
         if (x1 >= 0) {
-            b.h = kaos_s16(a + 2 * INPUT_Y2) - b.y + 1;
+            b.h = in.y2 - b.y + 1;
             if (find_in_box(table, command, b, 0, 0, x, y))
                 return 1;
             continue;

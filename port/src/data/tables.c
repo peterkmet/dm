@@ -1,6 +1,7 @@
 #include "tables.h"
 #include "spells.h"
 #include "adventure.h"
+#include "bytes.h"
 #include "csbimage.h"
 #include "ftl.h"
 #include "kaos_addresses.h"
@@ -27,6 +28,9 @@
 #define PALETTE_BYTES               (TABLES_PALETTE_COLOR_COUNT * 2)
 #define SLOT_BOX_BYTES              4
 #define POINTER_ZONE_BYTES          12
+#define MOUSE_INPUT_BYTES           12
+#define KEY_ENTRY_BYTES             4
+#define DIALOG_TABLE_POINTER_BYTES  4
 #define POINTER_HOTSPOT_BYTES       8
 #define POINTER_WIDTH_BEFORE        4 /* the bitmap width word comes 4 bytes before the planes */
 #define POINTER_HEIGHT_BEFORE       2
@@ -45,6 +49,9 @@ enum {
     POINTER_AT_SHAPE = 8,
     POINTER_AT_CHAMPION = 10
 };
+/* Byte offsets of the words of a mouse input entry and of a key entry. */
+enum { MOUSE_AT_COMMAND, MOUSE_AT_X1 = 2, MOUSE_AT_X2 = 4, MOUSE_AT_Y1 = 6, MOUSE_AT_Y2 = 8, MOUSE_AT_BUTTONS = 10 };
+enum { KEY_AT_COMMAND, KEY_AT_KEY = 2 };
 enum { SKILL_LEVEL_TEXT_FIRST = 2 };                                         /* the level names start at level 2 */
 enum { LAYOUT_AT_X = 2, LAYOUT_AT_Y = 4, LAYOUT_AT_W = 6, LAYOUT_AT_H = 8 }; /* byte offsets in a layout bitmap */
 
@@ -731,4 +738,55 @@ const uint8_t *tables_pointer_planes(bool hand, int16_t *w, int16_t *h)
     *w = (int16_t)kaos_u16(at - POINTER_WIDTH_BEFORE);
     *h = (int16_t)kaos_u16(at - POINTER_HEIGHT_BEFORE);
     return kaos_ptr(at);
+}
+
+/* Image address of a mouse input table; the dialog tables come from a pointer table. */
+static uint32_t mouse_table(int16_t table)
+{
+    static const uint32_t at[UI_INPUT_DIALOG_FIRST] = {
+        KAOS_MOUSE_INPUT_INTERFACE,    KAOS_MOUSE_INPUT_MOVEMENT,   KAOS_MOUSE_INPUT_INVENTORY,
+        KAOS_MOUSE_INPUT_SLEEPING,     KAOS_MOUSE_INPUT_FROZEN,     KAOS_MOUSE_INPUT_ACTION_NAMES,
+        KAOS_MOUSE_INPUT_ACTION_ICONS, KAOS_MOUSE_INPUT_SPELL_AREA, KAOS_MOUSE_INPUT_STATUS_BOX,
+        KAOS_MOUSE_INPUT_CHEST,        KAOS_MOUSE_INPUT_RESURRECT,  KAOS_MOUSE_INPUT_NAME_ENTRY,
+        KAOS_MOUSE_INPUT_ENTRANCE,     KAOS_MOUSE_INPUT_ENDGAME,
+    };
+    if (table >= UI_INPUT_DIALOG_FIRST)
+        return kaos_u32(KAOS_DIALOG_MOUSE_INPUTS + DIALOG_TABLE_POINTER_BYTES * (table - UI_INPUT_DIALOG_FIRST));
+    return at[table];
+}
+/* Entry of a mouse input table; false at the terminator. */
+bool tables_mouse_input(int16_t table, int16_t entry, MouseInput *out)
+{
+    uint32_t a = mouse_table(table) + MOUSE_INPUT_BYTES * entry;
+    int16_t command = kaos_s16(a + MOUSE_AT_COMMAND);
+    if (!command)
+        return false;
+    *out = (MouseInput){command,
+                        kaos_s16(a + MOUSE_AT_X1),
+                        kaos_s16(a + MOUSE_AT_X2),
+                        kaos_s16(a + MOUSE_AT_Y1),
+                        kaos_s16(a + MOUSE_AT_Y2),
+                        kaos_u16(a + MOUSE_AT_BUTTONS)};
+    return true;
+}
+/* Writes x1, x2, y1, y2 of an entry as big-endian words, as the endgame screen does. */
+void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_t x2, int16_t y1, int16_t y2)
+{
+    uint8_t *a = kaos_ptr(mouse_table(table) + MOUSE_INPUT_BYTES * entry);
+    WR16(a + MOUSE_AT_X1, x1);
+    WR16(a + MOUSE_AT_X2, x2);
+    WR16(a + MOUSE_AT_Y1, y1);
+    WR16(a + MOUSE_AT_Y2, y2);
+}
+/* The command of a key in a keyboard table, or 0. */
+int16_t tables_key_command(int16_t key_table, uint16_t key)
+{
+    static const uint32_t at[TABLES_KEYS_COUNT] = {KAOS_KEYS_ENTRANCE, KAOS_KEYS_INTERFACE, KAOS_KEYS_MOVEMENT,
+                                                   KAOS_KEYS_SLEEPING, KAOS_KEYS_FROZEN};
+    if (key_table == TABLES_KEYS_NONE)
+        return 0;
+    for (uint32_t entry = at[key_table]; kaos_s16(entry + KEY_AT_COMMAND); entry += KEY_ENTRY_BYTES)
+        if (kaos_u16(entry + KEY_AT_KEY) == key)
+            return kaos_s16(entry + KEY_AT_COMMAND);
+    return 0;
 }

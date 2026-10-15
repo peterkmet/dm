@@ -320,4 +320,47 @@ int16_t tables_pointer_shadow_dy(void);
 /* The 4 bit planes of the arrow or the hand pointer; *w and *h get its size. */
 const uint8_t *tables_pointer_planes(bool hand, int16_t *w, int16_t *h);
 
+/* Mouse input tables of COMMAND.C, in the order of their KAOS addresses. */
+enum {
+    UI_INPUT_INTERFACE,    /* g_mouse_input_interface */
+    UI_INPUT_MOVEMENT,     /* g_mouse_input_movement */
+    UI_INPUT_INVENTORY,    /* g_mouse_input_champion_inventory */
+    UI_INPUT_SLEEPING,     /* g_mouse_input_party_sleeping */
+    UI_INPUT_FROZEN,       /* g_mouse_input_frozen_game */
+    UI_INPUT_ACTION_NAMES, /* g_mouse_input_action_area_names */
+    UI_INPUT_ACTION_ICONS, /* g_mouse_input_action_area_icons */
+    UI_INPUT_SPELL_AREA,   /* g_mouse_input_spell_area */
+    UI_INPUT_STATUS_BOX,   /* g_mouse_input_champion_status_box */
+    UI_INPUT_CHEST,        /* g_mouse_input_panel_chest */
+    UI_INPUT_RESURRECT,    /* g_mouse_input_panel_resurrect_reincarnate */
+    UI_INPUT_NAME_ENTRY,   /* g_mouse_input_champion_name_entry */
+    UI_INPUT_ENTRANCE,     /* the entrance buttons */
+    UI_INPUT_ENDGAME,      /* RESTART THIS GAME and QUIT of the endgame screen */
+    UI_INPUT_DIALOG_FIRST, /* g_dialog_mouse_inputs: + full screen * 4 + choice count - 1 */
+    UI_INPUT_COUNT = UI_INPUT_DIALOG_FIRST + 8
+};
+/* Mouse input entry: a command (0 ends a table), a box x1-x2, y1-y2, and the buttons. A negative x1 marks a
+   zone entry; x2 is then the zone. */
+typedef struct {
+    int16_t command, x1, x2, y1, y2;
+    uint16_t buttons;
+} MouseInput;
+/* Entry of a mouse input table; false at the end of the table. */
+bool tables_mouse_input(int16_t table, int16_t entry, MouseInput *out);
+/* Writes the box of an entry into the mouse input table of the image. */
+void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_t x2, int16_t y1, int16_t y2);
+
+/* Keyboard input tables. */
+enum {
+    TABLES_KEYS_NONE = -1,
+    TABLES_KEYS_ENTRANCE,
+    TABLES_KEYS_INTERFACE,
+    TABLES_KEYS_MOVEMENT,
+    TABLES_KEYS_SLEEPING,
+    TABLES_KEYS_FROZEN,
+    TABLES_KEYS_COUNT
+};
+/* The command of a key in a keyboard table, or 0. */
+int16_t tables_key_command(int16_t key_table, uint16_t key);
+
 #endif

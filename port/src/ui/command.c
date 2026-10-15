@@ -23,15 +23,6 @@
 #include "video.h"
 #include "view.h"
 
-/* KAOS data addresses: keyboard input tables (command word, key word; command 0 ends a table). */
-#define KEYS_INTERFACE  0x103948 /* inventory keys F1-F4, save, freeze */
-#define KEYS_MOVEMENT   0x103964 /* movement and turn keys */
-#define KEYS_ENTRANCE   0x10393c
-#define KEYS_SLEEPING   0x103980
-#define KEYS_FROZEN     0x10398c
-#define KEY_ENTRY_BYTES 4
-#define KEY_ENTRY_KEY   2 /* the key word after the command word */
-
 #define QUEUE_SIZE               9
 #define QUEUE_CLICK_LIMIT        5 /* a click or a key waits only when fewer commands wait */
 #define QUEUE_RELEASE_LIMIT      7
@@ -63,13 +54,14 @@ uint16_t g_last_key;
 static QueuedCommand queue[QUEUE_SIZE];
 static int16_t queue_first, queue_count;
 static int16_t primary_mouse = NO_TABLE, secondary_mouse = NO_TABLE;
-static uint32_t primary_keys, secondary_keys;
+static int16_t primary_keys = TABLES_KEYS_NONE, secondary_keys = TABLES_KEYS_NONE;
 typedef struct {
     int16_t primary_mouse, secondary_mouse;
-    uint32_t primary_keys, secondary_keys;
+    int16_t primary_keys, secondary_keys;
 } InputTables;
 
-static InputTables frozen_input, dialog_input;
+static InputTables frozen_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE},
+                   dialog_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE};
 static int16_t left_button_down, pressing_eye, pressing_mouth, pressing_fake_wall;
 static int16_t dragged_icon_cell_plus_1;
 static Box highlight;
@@ -79,8 +71,8 @@ void command_set_entrance_input(void)
 {
     primary_mouse = UI_INPUT_ENTRANCE;
     secondary_mouse = NO_TABLE;
-    primary_keys = KEYS_ENTRANCE;
-    secondary_keys = 0;
+    primary_keys = TABLES_KEYS_ENTRANCE;
+    secondary_keys = TABLES_KEYS_NONE;
 }
 
 static InputTables current_input(void)
@@ -98,7 +90,7 @@ static void set_input(InputTables t)
 
 void command_set_only_mouse_input(int16_t table)
 {
-    set_input((InputTables){table, NO_TABLE, 0, 0});
+    set_input((InputTables){table, NO_TABLE, TABLES_KEYS_NONE, TABLES_KEYS_NONE});
 }
 
 void command_save_input(void)
@@ -114,8 +106,8 @@ void command_set_game_input(void)
 {
     primary_mouse = UI_INPUT_INTERFACE;
     secondary_mouse = UI_INPUT_MOVEMENT;
-    primary_keys = KEYS_INTERFACE;
-    secondary_keys = KEYS_MOVEMENT;
+    primary_keys = TABLES_KEYS_INTERFACE;
+    secondary_keys = TABLES_KEYS_MOVEMENT;
 }
 
 static void queue_put(int16_t command, int16_t x, int16_t y)
@@ -148,17 +140,6 @@ void command_process_click(int16_t x, int16_t y, int16_t kind)
         queue_put(command, x, y);
 }
 
-/* The command of a key word in a keyboard table, or 0. */
-static int16_t key_command(uint32_t table, uint16_t key)
-{
-    if (!table)
-        return COMMAND_NONE;
-    for (uint32_t entry = table; kaos_s16(entry); entry += KEY_ENTRY_BYTES)
-        if (kaos_u16(entry + KEY_ENTRY_KEY) == key)
-            return kaos_s16(entry);
-    return COMMAND_NONE;
-}
-
 /* A key press becomes the command of the key in the active tables. With the advanced features,
    Escape closes an open inventory instead of freezing the game, and Tab closes it too. */
 void command_process_key(uint16_t key)
@@ -169,9 +150,9 @@ void command_process_key(uint16_t key)
     g_last_key = key;
     if (queue_count >= QUEUE_CLICK_LIMIT)
         return;
-    int16_t command = key_command(primary_keys, key);
+    int16_t command = tables_key_command(primary_keys, key);
     if (!command)
-        command = key_command(secondary_keys, key);
+        command = tables_key_command(secondary_keys, key);
     if (g_advanced_features && ((key == KEY_ESCAPE && command == COMMAND_FREEZE_GAME) || key == KEY_TAB) &&
         g_inventory_champion_ordinal && !g_candidate_champion_ordinal)
         command = COMMAND_CLOSE_INVENTORY;
@@ -297,7 +278,7 @@ void command_toggle_inventory(int16_t champion_index)
             return;
         if (champion_index == INVENTORY_CLOSE) {
             secondary_mouse = UI_INPUT_MOVEMENT;
-            secondary_keys = KEYS_MOVEMENT;
+            secondary_keys = TABLES_KEYS_MOVEMENT;
             command_discard_all_input();
             return;
         }
@@ -308,7 +289,7 @@ void command_toggle_inventory(int16_t champion_index)
         champion_index = g_inventory_champion_ordinal - 1;
     ui_draw_inventory_open(champion_index);
     secondary_mouse = UI_INPUT_INVENTORY;
-    secondary_keys = 0;
+    secondary_keys = TABLES_KEYS_NONE;
     command_discard_all_input();
 }
 
@@ -741,7 +722,7 @@ static void go_to_sleep(void)
     g_party_is_sleeping = 1;
     draw_viewport_message(TEXT_WAKE_UP);
     g_wait_for_input_max_frames = 0;
-    set_input((InputTables){UI_INPUT_SLEEPING, NO_TABLE, KEYS_SLEEPING, 0});
+    set_input((InputTables){UI_INPUT_SLEEPING, NO_TABLE, TABLES_KEYS_SLEEPING, TABLES_KEYS_NONE});
     command_discard_all_input();
 }
 
@@ -764,7 +745,7 @@ static void freeze_game(void)
     command_freeze_game();
     draw_viewport_message(TEXT_GAME_FROZEN);
     frozen_input = current_input();
-    set_input((InputTables){UI_INPUT_FROZEN, NO_TABLE, KEYS_FROZEN, 0});
+    set_input((InputTables){UI_INPUT_FROZEN, NO_TABLE, TABLES_KEYS_FROZEN, TABLES_KEYS_NONE});
     command_discard_all_input();
 }
 
@@ -896,7 +877,7 @@ int command_process_queue(void)
     } else if (command == COMMAND_CLICK_EYE) {
         click_on_eye();
     } else if (command == COMMAND_CLICK_DUNGEON_VIEW) {
-        click_in_dungeon_view(x - kaos_s16(VIEWPORT_ORIGIN), y - kaos_s16(VIEWPORT_ORIGIN + 2));
+        click_in_dungeon_view(x - tables_viewport_x(), y - tables_viewport_y());
     } else if (command == COMMAND_CLICK_PANEL) {
         if (g_candidate_champion_ordinal)
             click_in_candidate_panel(x, y);

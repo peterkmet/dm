@@ -15,29 +15,6 @@
 #include "video.h"
 #include "view.h"
 
-/* KAOS data addresses. */
-#define MOUSE_INPUT_INTERFACE    0x1031f8
-#define MOUSE_INPUT_MOVEMENT     0x1032e8
-#define MOUSE_INPUT_INVENTORY    0x103354
-#define MOUSE_INPUT_SLEEPING     0x10351c
-#define MOUSE_INPUT_FROZEN       0x103540
-#define MOUSE_INPUT_ACTION_NAMES 0x103564
-#define MOUSE_INPUT_ACTION_ICONS 0x1035a0
-#define MOUSE_INPUT_SPELL_AREA   0x1035dc
-#define MOUSE_INPUT_STATUS_BOX   0x103654
-#define MOUSE_INPUT_CHEST        0x1036f0
-#define MOUSE_INPUT_RESURRECT    0x10375c
-#define MOUSE_INPUT_NAME_ENTRY   0x10378c
-#define MOUSE_INPUT_ENTRANCE     0x10318c
-#define MOUSE_INPUT_ENDGAME      0x1031d4
-static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
-    MOUSE_INPUT_INTERFACE,  MOUSE_INPUT_MOVEMENT,     MOUSE_INPUT_INVENTORY,    MOUSE_INPUT_SLEEPING,
-    MOUSE_INPUT_FROZEN,     MOUSE_INPUT_ACTION_NAMES, MOUSE_INPUT_ACTION_ICONS, MOUSE_INPUT_SPELL_AREA,
-    MOUSE_INPUT_STATUS_BOX, MOUSE_INPUT_CHEST,        MOUSE_INPUT_RESURRECT,    MOUSE_INPUT_NAME_ENTRY,
-    MOUSE_INPUT_ENTRANCE,   MOUSE_INPUT_ENDGAME,
-};
-#define DIALOG_MOUSE_INPUTS 0x103bd4 /* g_dialog_mouse_inputs[8]: pointers to the dialog tables */
-
 #define SLOT_BOX_COUNT          46 /* 8 hands on the screen, 30 inventory and 8 chest slots */
 #define SLOT_BOX_SCREEN_COUNT   8
 #define ICONS_PER_ROW           16
@@ -45,7 +22,7 @@ static const uint32_t mouse_tables[UI_INPUT_DIALOG_FIRST] = {
 #define PADDED_TEXT_SIZE        80
 #define BONES_NAME_SIZE         32 /* champion name and the bones name */
 
-/* INPUT_X1 values that make INPUT_X2 a zone: on the screen, relative to the viewport origin,
+/* MouseInput.x1 values that make x2 a zone: on the screen, relative to the viewport origin,
    relative to the centered viewport. */
 enum { INPUT_ZONE_SCREEN = -1, INPUT_ZONE_VIEWPORT = -2, INPUT_ZONE_CENTERED_VIEWPORT = -3 };
 
@@ -56,7 +33,7 @@ static int16_t slot_box_icon[SLOT_BOX_COUNT];
 /* Loads the strings, action names, and object names, and sets up the viewport bitmap. */
 int ui_init(void)
 {
-    viewport = (Bitmap){kaos_u16(VIEWPORT_SIZE), kaos_u16(VIEWPORT_SIZE + 2), viewport_px};
+    viewport = (Bitmap){tables_viewport_width(), tables_viewport_height(), viewport_px};
     if ((size_t)viewport.w * viewport.h > sizeof viewport_px)
         return -1;
     for (int i = 0; i < SLOT_BOX_COUNT; i++)
@@ -326,39 +303,30 @@ int16_t ui_point_in_zone(int16_t zone, int16_t x, int16_t y)
     return ui_zone_box(zone, &b) && x >= b.x && x <= b.x + b.w - 1 && y >= b.y && y <= b.y + b.h - 1;
 }
 
-uint32_t ui_mouse_table_address(int16_t table)
-{
-    if (table >= UI_INPUT_DIALOG_FIRST)
-        return kaos_u32(DIALOG_MOUSE_INPUTS + 4 * (uint32_t)(table - UI_INPUT_DIALOG_FIRST));
-    return mouse_tables[table];
-}
-
 /* The command of a click at (x, y) with button_mask in an original mouse input table, or 0.
    An entry is a fixed box, or a zone on the screen or relative to the viewport. */
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask)
 {
     if (table < 0 || table >= UI_INPUT_COUNT)
         return 0;
-    for (uint32_t a = ui_mouse_table_address(table);; a += 2 * INPUT_WORDS) {
-        int16_t command = kaos_s16(a + 2 * INPUT_COMMAND), x1 = kaos_s16(a + 2 * INPUT_X1),
-                x2 = kaos_s16(a + 2 * INPUT_X2);
-        int buttons = (kaos_u16(a + 2 * INPUT_BUTTONS) & button_mask) != 0;
-        if (!command)
-            return 0;
-        if (x1 >= 0) {
-            if (x >= x1 && x <= x2 && y >= kaos_s16(a + 2 * INPUT_Y1) && y <= kaos_s16(a + 2 * INPUT_Y2) && buttons)
-                return command;
+    MouseInput in;
+    for (int16_t entry = 0; tables_mouse_input(table, entry, &in); entry++) {
+        int buttons = (in.buttons & button_mask) != 0;
+        if (in.x1 >= 0) {
+            if (x >= in.x1 && x <= in.x2 && y >= in.y1 && y <= in.y2 && buttons)
+                return in.command;
             continue;
         }
         int16_t px = x, py = y;
-        if (x1 == INPUT_ZONE_VIEWPORT) {
-            px -= kaos_s16(VIEWPORT_ORIGIN);
-            py -= kaos_s16(VIEWPORT_ORIGIN + 2);
-        } else if (x1 == INPUT_ZONE_CENTERED_VIEWPORT) {
+        if (in.x1 == INPUT_ZONE_VIEWPORT) {
+            px -= tables_viewport_x();
+            py -= tables_viewport_y();
+        } else if (in.x1 == INPUT_ZONE_CENTERED_VIEWPORT) {
             px -= (SCREEN_W - viewport.w) / 2;
             py -= (SCREEN_H - viewport.h) / 2;
         }
-        if (buttons && ui_point_in_zone(x2, px, py))
-            return command;
+        if (buttons && ui_point_in_zone(in.x2, px, py))
+            return in.command;
     }
+    return 0;
 }
