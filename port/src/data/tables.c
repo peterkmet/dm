@@ -142,7 +142,7 @@ static void read_objects(void)
 /* Spells and the mana costs of the spell symbols. */
 static void read_magic(void)
 {
-    int csb = g_adventure == ADVENTURE_CSB;
+    bool csb = g_adventure == ADVENTURE_CSB;
     loaded_spell_count = csb ? CSB_SPELL_COUNT : DM_SPELL_COUNT;
     for (uint32_t i = 0; i < (uint32_t)loaded_spell_count; i++) {
         uint32_t a = (csb ? CSB_SPELLS : KAOS_SPELLS) + i * SPELL_BYTES;
@@ -438,7 +438,7 @@ const uint8_t *tables_field_aspect(int16_t index)
 /* Pixel shift index of a creature or a stacked object at a distance (0-2). */
 int16_t tables_creature_shift(int16_t distance, int16_t index)
 {
-    return (int8_t)kaos_u8(KAOS_CREATURE_SHIFT_SETS + CREATURE_SHIFT_SET_BYTES * distance + index);
+    return (int8_t)kaos_u8(KAOS_CREATURE_SHIFT_SETS + CREATURE_SHIFT_SET_BYTES * distance + index); /* a signed byte */
 }
 /* Shift index of a stacked object on one axis (0 x, 1 y). */
 uint8_t tables_pile_shift(int16_t pair, int16_t axis)
@@ -684,7 +684,7 @@ int16_t tables_message_line_pad(void)
 /* Color of dialog message i. */
 uint8_t tables_message_color(int16_t i)
 {
-    return (uint8_t)kaos_s16(KAOS_DIALOG_MESSAGE_COLORS + 2 * i);
+    return kaos_s16(KAOS_DIALOG_MESSAGE_COLORS + 2 * i);
 }
 /* Outer border of an endgame button on one axis. */
 int16_t tables_button_border(int16_t axis)
@@ -733,8 +733,8 @@ int16_t tables_pointer_shadow_dy(void)
 /* The bit planes of the arrow or the hand pointer and its size. */
 const uint8_t *tables_pointer_planes(bool hand, int16_t *w, int16_t *h)
 {
-    *w = (int16_t)kaos_u16(hand ? KAOS_HAND_POINTER_WIDTH : KAOS_ARROW_POINTER_WIDTH);
-    *h = (int16_t)kaos_u16(hand ? KAOS_HAND_POINTER_HEIGHT : KAOS_ARROW_POINTER_HEIGHT);
+    *w = kaos_s16(hand ? KAOS_HAND_POINTER_WIDTH : KAOS_ARROW_POINTER_WIDTH);
+    *h = kaos_s16(hand ? KAOS_HAND_POINTER_HEIGHT : KAOS_ARROW_POINTER_HEIGHT);
     return kaos_ptr(hand ? KAOS_HAND_POINTER_BITMAP : KAOS_ARROW_POINTER_BITMAP);
 }
 

@@ -124,7 +124,7 @@ static void value_pair(int16_t zone, int16_t value, int16_t maximum)
 void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
 {
     const Champion *c = &g_champions[champion_index];
-    int inv = champion_index + 1 == g_inventory_champion_ordinal;
+    bool inv = champion_index + 1 == g_inventory_champion_ordinal;
     int16_t slot_box, border = -1, icon;
     Bitmap screen = ui_screen();
     Box b;
@@ -136,7 +136,7 @@ void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
         slot_box = slot + champion_index * 2;
     }
     uint16_t thing = slot < SLOT_COUNT ? c->slots[slot] : g_open_chest_slots[slot - SLOT_CHEST_FIRST];
-    int wounded = slot < UI_BODY_SLOT_COUNT && (c->wounds & 1 << slot);
+    bool wounded = slot < UI_BODY_SLOT_COUNT && (c->wounds & 1 << slot);
     if (thing == THING_NONE) {
         if (slot < UI_BODY_SLOT_COUNT) {
             icon = ICON_EMPTY_BODY_SLOT_FIRST + slot * 2 + wounded;
@@ -166,7 +166,7 @@ void ui_draw_champion_damage(int16_t champion_index, int16_t damage)
 {
     Bitmap screen = ui_screen();
     char buf[8];
-    int inv = champion_index + 1 == g_inventory_champion_ordinal;
+    bool inv = champion_index + 1 == g_inventory_champion_ordinal;
     int16_t zone = champion_index + (inv ? ZONE_PORTRAIT_DAMAGE_FIRST : ZONE_STATUS_BOX_DAMAGE_FIRST);
     ui_blit_graphic(&screen, inv ? GFX_DAMAGE_PORTRAIT : GFX_DAMAGE_STATUS_BOX, zone, COLOR_FLESH);
     ui_print_zone(&screen, zone, COLOR_WHITE, COLOR_RED, number(buf, damage, 0, VALUE_WIDTH));
@@ -182,7 +182,7 @@ static void draw_icon(uint16_t champion_index)
     uint8_t px[CHAMPION_ICON_MAX * CHAMPION_ICON_MAX];
     Bitmap bm = {w, h, px}, screen = ui_screen();
     const Bitmap *icons = gfx_bitmap(GFX_CHAMPION_ICONS);
-    int invisible = g_party.event71_count_invisibility != 0;
+    bool invisible = g_party.event71_count_invisibility != 0;
     if (w * h > (int)sizeof px)
         return;
     int16_t cell = NORMALIZE(c->cell - g_party_direction);
@@ -298,7 +298,7 @@ static uint16_t draw_name(uint16_t champion_index, uint16_t attr, int inv)
         return attr;
     }
     char s[PANEL_LINE_SIZE];
-    int joined = c->title[0] && strchr(",;-", c->title[0]); /* "NAME, TITLE" without a space */
+    bool joined = c->title[0] && strchr(",;-", c->title[0]); /* "NAME, TITLE" without a space */
     snprintf(s, sizeof s, "%.8s%s%.20s", c->name, joined ? "" : " ", c->title);
     ui_print_zone(ui_viewport(), ZONE_NAME_TITLE, color, COLOR_DARKEST_GRAY, s);
     return attr | CHAMPION_ATTR_VIEWPORT;
@@ -310,7 +310,7 @@ void ui_draw_champion_state(uint16_t champion_index)
     Champion *c = &g_champions[champion_index];
     uint16_t attr = c->attributes;
     Bitmap screen = ui_screen();
-    int inv = champion_index + 1 == g_inventory_champion_ordinal;
+    bool inv = champion_index + 1 == g_inventory_champion_ordinal;
     if (!(attr & CHAMPION_ATTR_REDRAW_MASK))
         return;
     if (attr & CHAMPION_ATTR_STATUS_BOX) {
@@ -729,12 +729,12 @@ static void insert_creature_name(char *text, size_t size)
 
 /* CSB: the magic map panel when the first scroll line is MAGICMAP: the runes of the active map spells lit,
    and the map grid. Returns 0 for another scroll. */
-static int draw_panel_magic_map(const char *text)
+static bool draw_panel_magic_map(const char *text)
 {
     char line[SCROLL_TEXT_SIZE];
     snprintf(line, sizeof line, "%.*s", (int)strcspn(text, "\n"), text);
     if (!magic_map_is_text(line))
-        return 0;
+        return false;
     const uint8_t *spells = g_champions[g_inventory_champion_ordinal - 1].magic_map;
     static const int8_t rune_spell[MAGIC_MAP_RUNE_COUNT] = {MAGIC_MAP_KU, MAGIC_MAP_ROS, MAGIC_MAP_DAIN,
                                                             MAGIC_MAP_NETA};
@@ -749,7 +749,7 @@ static int draw_panel_magic_map(const char *text)
     }
     zone_point(ZONE_MAGIC_MAP, &x, &y);
     view_draw_magic_map(vp, spells, x, y);
-    return 1;
+    return true;
 }
 
 /* Draws the open scroll with its text, vertically centered. */
@@ -821,9 +821,9 @@ static uint16_t largest_weight(void)
     return most;
 }
 
-/* One stat meter at baseline y: the label, a bar with a black shadow, and the value when show_value is 1. */
+/* One stat meter at baseline y: the label, a bar with a black shadow, and the value when show_value is set. */
 static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t value, uint16_t maximum, uint8_t color,
-                            int show_value)
+                            bool show_value)
 {
     Bitmap *vp = ui_viewport();
     char text[8];
@@ -844,19 +844,19 @@ static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t va
     text_draw(vp, bar_x + METER_BAR_WIDTH + METER_VALUE_GAP, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, text);
 }
 
-int panel_object_meter(uint16_t thing, const char **label, uint16_t *value)
+bool panel_object_meter(uint16_t thing, const char **label, uint16_t *value)
 {
     if (THING_TYPE(thing) == THING_WEAPON) {
         *label = "ATTACK";
         *value = tables_weapon_info(weapon_type(thing))->strength;
-        return 1;
+        return true;
     }
     if (THING_TYPE(thing) == THING_ARMOUR) {
         *label = "DEFENSE";
         *value = tables_armour_info(armour_type(thing))->defense;
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 /* Advanced feature: attack (weapons), defense (armour), and weight meters below the description. */
@@ -865,12 +865,12 @@ static void draw_stat_meters(uint16_t thing, int16_t x, int16_t y)
     const char *label;
     uint16_t value;
     if (panel_object_meter(thing, &label, &value)) {
-        int attack = THING_TYPE(thing) == THING_WEAPON;
+        bool attack = THING_TYPE(thing) == THING_WEAPON;
         draw_stat_meter(x, y, label, value, attack ? largest_attack() : largest_defense(),
-                        attack ? COLOR_GOLD : COLOR_BLUE, 1);
+                        attack ? COLOR_GOLD : COLOR_BLUE, true);
         y += MESSAGE_ROW_HEIGHT;
     }
-    draw_stat_meter(x, y, "WEIGHT", inventory_get_object_weight(thing), largest_weight(), COLOR_LIGHT_BROWN, 0);
+    draw_stat_meter(x, y, "WEIGHT", inventory_get_object_weight(thing), largest_weight(), COLOR_LIGHT_BROWN, false);
 }
 
 /* Opens a chest in the panel and draws its slots. While the eye is pressed, the action hand keeps

@@ -53,13 +53,13 @@ static uint16_t shown_hand_object = THING_NONE;
 static int16_t shown_hand_icon; /* a waterskin or a torch changes its icon and its name */
 static char data_dir[PATH_SIZE];
 
-int gameloop_load_data(const char *dir)
+bool gameloop_load_data(const char *dir)
 {
     char path[PATH_SIZE];
     snprintf(data_dir, sizeof data_dir, "%s", dir);
     snprintf(path, sizeof path, "%s/%s", dir, adventure_engine_name());
     if (tables_load(path))
-        return 0;
+        return false;
     snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     startend_set_save_dir(dir);
     g_endgame_sensor_hook = endgame_sensor;
@@ -245,7 +245,7 @@ static void refresh_interface(void)
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].current_health)
             continue;
-        int inventory = i + 1 == g_inventory_champion_ordinal && !g_game_frozen; /* the frozen screen covers it */
+        bool inventory = i + 1 == g_inventory_champion_ordinal && !g_game_frozen; /* the frozen screen covers it */
         for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++)
             ui_draw_champion_slot(i, slot);
         if (inventory)
@@ -298,12 +298,12 @@ static void show_game(void)
     command_discard_all_input();
 }
 
-int gameloop_new_game(const char *dir)
+bool gameloop_new_game(const char *dir)
 {
     char path[PATH_SIZE];
     snprintf(path, sizeof path, "%s/Dungeon.DAT", dir);
     if (!load_dungeon(path))
-        return 0;
+        return false;
     game_new();
     g_saved_game_exists = 0;
     g_leader_empty_handed = 1;
@@ -312,7 +312,7 @@ int gameloop_new_game(const char *dir)
     move_party_enter_dungeon();
     show_game();
     mark_seen_squares();
-    return 1;
+    return true;
 }
 
 /* champion_reset_data_to_start_game for a loaded game: the hand object, the leader with its load,
@@ -400,7 +400,7 @@ int gameloop_frame(void)
     run_requested_sequence();
     if (++frames_waiting > g_wait_for_input_max_frames)
         g_stop_waiting_for_input = 1;
-    int tick = g_stop_waiting_for_input && g_game_time_ticking;
+    bool tick = g_stop_waiting_for_input && g_game_time_ticking;
     if (!tick)
         draw_projectile_motion();
     return tick;
@@ -505,7 +505,7 @@ static void planar_pointer(bool hand, uint8_t *px, int *w, int *h)
 {
     int16_t pw, ph;
     const uint8_t *planes = tables_pointer_planes(hand, &pw, &ph);
-    *w = (uint16_t)pw;
+    *w = (uint16_t)pw; /* the size words are unsigned */
     *h = (uint16_t)ph;
     int row_bytes = (*w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD * 2, plane = row_bytes * *h;
     for (int y = 0; y < *h; y++)
@@ -546,7 +546,7 @@ static void object_pointer(uint8_t *px, int *w, int *h)
 
 /* The pointer shape of a screen position: the hand or the object over the zones that use it
    (viewport, hands of the status boxes) when there is a leader, else the arrow. */
-static int pointer_shape(int16_t x, int16_t y, int in_game)
+static int pointer_shape(int16_t x, int16_t y, bool in_game)
 {
     if (!in_game || g_leader_index == -1)
         return POINTER_ARROW;
@@ -567,10 +567,10 @@ static int pointer_shape(int16_t x, int16_t y, int in_game)
     return POINTER_ARROW;
 }
 
-int gameloop_pointer(int16_t x, int16_t y, int in_game, uint8_t *px, int *w, int *h, int *hot_x, int *hot_y)
+bool gameloop_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *w, int *h, int *hot_x, int *hot_y)
 {
     if (in_game && g_mouse_pointer_hidden)
-        return 0;
+        return false;
     int shape = pointer_shape(x, y, in_game);
     if (shape == POINTER_OBJECT)
         object_pointer(px, w, h);
@@ -578,7 +578,7 @@ int gameloop_pointer(int16_t x, int16_t y, int in_game, uint8_t *px, int *w, int
         planar_pointer(shape == POINTER_HAND, px, w, h);
     *hot_x = tables_pointer_hotspot_x(shape);
     *hot_y = tables_pointer_hotspot_y(shape);
-    return 1;
+    return true;
 }
 
 const uint16_t *gameloop_pointer_palette(void)

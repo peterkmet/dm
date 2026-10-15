@@ -40,7 +40,7 @@ static const char *message;
 static int16_t adventure_flag = -1, mode_flag = -1; /* --adventure and --mode, -1 when absent */
 
 /* Only CHAOS STRIKES BACK can be disabled: its files are missing. */
-static int enabled(int item)
+static bool enabled(int item)
 {
     return screen != SCREEN_ADVENTURE || item != ADVENTURE_CSB || csb_enabled;
 }
@@ -71,7 +71,7 @@ static void set_mode(int16_t mode)
     g_advanced_features = mode != GAME_MODE_VANILLA;
 }
 
-void select_start(int16_t adventure, int16_t mode, int csb_present, bool llm_mode_available)
+void select_start(int16_t adventure, int16_t mode, bool csb_present, bool llm_mode_available)
 {
     adventure_flag = adventure;
     mode_flag = mode;
@@ -97,7 +97,7 @@ void select_start_csb(const char *text)
     message = text;
 }
 
-int select_restart(void)
+bool select_restart(void)
 {
     select_start(adventure_flag, mode_flag, csb_enabled, llm_enabled);
     return screen != SCREEN_DONE;
@@ -158,17 +158,17 @@ void select_key(int key)
         show(SCREEN_MODE);
 }
 
-int select_item_box(int item, Box *box)
+bool select_item_box(int item, Box *box)
 {
     int w, h;
     if (screen == SCREEN_DONE || item < 0 || item >= item_count(screen))
-        return 0;
+        return false;
     text_size(screens[screen].items[item], &w, &h);
     box->w = w + 2 * ITEM_MARGIN;
     box->h = LINE_HEIGHT;
     box->x = (SCREEN_W - box->w) / 2;
     box->y = ITEM_TOP + item * ITEM_STEP;
-    return 1;
+    return true;
 }
 
 void select_click(int x, int y)
@@ -193,12 +193,12 @@ void select_draw(void)
     ui_set_screen_palette(select_palette);
     if (screen == SCREEN_DONE)
         return;
-    text_draw_box(&bm, 0, HEADING_TOP, SCREEN_W, LINE_HEIGHT, 1, COLOR_LIGHT_GRAY, COLOR_BLACK,
+    text_draw_box(&bm, 0, HEADING_TOP, SCREEN_W, LINE_HEIGHT, true, COLOR_LIGHT_GRAY, COLOR_BLACK,
                   screens[screen].heading);
     for (int i = 0; select_item_box(i, &b); i++) {
         uint8_t color = !enabled(i) ? COLOR_DARK_GRAY : i == cursor ? COLOR_GOLD : COLOR_LIGHT_GRAY;
-        text_draw_box(&bm, b.x, b.y, b.w, b.h, 1, color, COLOR_BLACK, screens[screen].items[i]);
+        text_draw_box(&bm, b.x, b.y, b.w, b.h, true, color, COLOR_BLACK, screens[screen].items[i]);
     }
     if (message)
-        text_draw_box(&bm, 0, MESSAGE_TOP, SCREEN_W, LINE_HEIGHT, 1, COLOR_LIGHT_GRAY, COLOR_BLACK, message);
+        text_draw_box(&bm, 0, MESSAGE_TOP, SCREEN_W, LINE_HEIGHT, true, COLOR_LIGHT_GRAY, COLOR_BLACK, message);
 }

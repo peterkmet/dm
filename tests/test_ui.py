@@ -41,6 +41,7 @@ class Champion(ctypes.Structure):
 def lib():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
+    lib.view_render.restype = ctypes.c_bool
     lib.layout_get_zone_box.argtypes = [c16, c16, c16, ctypes.POINTER(Box)]
     lib.ui_command_from_mouse.argtypes = [c16, c16, c16, u16]
     lib.ui_command_from_mouse.restype = c16

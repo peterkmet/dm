@@ -246,7 +246,7 @@ int ui_icon_zone_box(int16_t zone, int border, Box *box)
 }
 
 /* The icon box of a slot box. */
-int ui_slot_box_zone(int16_t slot_box, int border, Box *box)
+bool ui_slot_box_zone(int16_t slot_box, int border, Box *box)
 {
     return slot_box >= 0 && slot_box < SLOT_BOX_COUNT && ui_icon_zone_box(tables_slot_box_zone(slot_box), border, box);
 }
@@ -297,7 +297,7 @@ void ui_draw_leader_hand_object_name(uint16_t thing)
 }
 
 /* Tells whether (x, y) is in the box of zone. */
-int16_t ui_point_in_zone(int16_t zone, int16_t x, int16_t y)
+bool ui_point_in_zone(int16_t zone, int16_t x, int16_t y)
 {
     Box b;
     return ui_zone_box(zone, &b) && x >= b.x && x <= b.x + b.w - 1 && y >= b.y && y <= b.y + b.h - 1;
@@ -311,7 +311,7 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
         return 0;
     MouseInput in;
     for (int16_t entry = 0; tables_mouse_input(table, entry, &in); entry++) {
-        int buttons = (in.buttons & button_mask) != 0;
+        bool buttons = (in.buttons & button_mask) != 0;
         if (in.x1 >= 0) {
             if (x >= in.x1 && x <= in.x2 && y >= in.y1 && y <= in.y2 && buttons)
                 return in.command;

@@ -185,14 +185,14 @@ static uint16_t amiga_key(int key, int modifiers)
 /* Mouse buttons as click kinds: left and right, pressed or released. */
 static int16_t click_kind(const PlatEvent *e)
 {
-    int left = e->button == SDL_BUTTON_LEFT;
+    bool left = e->button == SDL_BUTTON_LEFT;
     if (e->type == PLAT_MOUSE)
         return left ? CLICK_LEFT_PRESS : CLICK_RIGHT_PRESS;
     return left ? CLICK_LEFT_RELEASE : CLICK_RIGHT_RELEASE;
 }
 
 /* The pointer image of the mouse position: in the game it depends on the zone and the hand. */
-static void set_pointer(int in_game)
+static void set_pointer(bool in_game)
 {
     uint8_t px[POINTER_SIZE * POINTER_SIZE];
     int x, y, w, h, hot_x, hot_y;
@@ -270,7 +270,7 @@ static void read_input(void)
 static void frame_hook(void)
 {
     read_input();
-    set_pointer(0);
+    set_pointer(false);
     plat_present();
     plat_wait_tick();
 }
@@ -476,24 +476,24 @@ static SDL_EnumerationResult SDLCALL install_disk(void *userdata, const char *di
    files and the game mode are loaded at the first start only. A failed resume shows the CSB screen
    again; in turn-based mode, load and new_game over the socket start the game. Returns 0 when the
    game files or the control socket cannot be opened. */
-static int start_csb(void)
+static bool start_csb(void)
 {
     int choice = select_csb_choice();
     if (choice == CSB_QUIT) {
         quit_to_start();
-        return 1;
+        return true;
     }
     if (loaded_adventure != ADVENTURE_CSB) {
         SDL_Log("adventure csb, mode %s", game_mode_names[g_game_mode]);
         data = adventure_dir();
         if (!load_game_files())
-            return 0;
+            return false;
         if (saves)
             startend_set_save_dir(saves);
         loaded_adventure = ADVENTURE_CSB;
     }
     if (!apply_mode())
-        return 0;
+        return false;
     mode = MODE_GAME; /* the dialogs of RESUME read the game input */
     if (choice == CSB_NEW_ADVENTURE && !auto_enter)
         play_csb_intro();
@@ -508,24 +508,24 @@ static int start_csb(void)
         mode = MODE_SELECT;
         select_start_csb(NULL);
     }
-    return 1;
+    return true;
 }
 
 /* Starts the selected adventure. DM: the entrance. CSB: the choice of the CSB screen. Returns 0 when
    the game files or the control socket cannot be opened. */
-static int start_adventure(void)
+static bool start_adventure(void)
 {
     if (g_adventure == ADVENTURE_CSB)
         return start_csb();
     SDL_Log("adventure dm, mode %s", game_mode_names[g_game_mode]);
     data = adventure_dir();
     if (!load_game_files())
-        return 0;
+        return false;
     if (saves)
         startend_set_save_dir(saves);
     loaded_adventure = ADVENTURE_DM;
     if (!apply_mode())
-        return 0;
+        return false;
     entrance_draw();
     command_set_entrance_input();
     mode = MODE_ENTRANCE;
@@ -534,8 +534,8 @@ static int start_adventure(void)
         command_process_key(KEY_RETURN);
     /* turn-based: the game starts before the first socket request, so an early load cannot keep the entrance */
     if (turnbased && !entrance_frame(data))
-        return 0;
-    return 1;
+        return false;
+    return true;
 }
 
 enum { RUN_NEXT_FRAME, RUN_QUIT, RUN_FAILED };
@@ -632,7 +632,7 @@ int main(int argc, char **argv)
     SDL_EnumerateDirectory(".", install_disk, NULL);
     /* --data is the CSB folder only with --adventure csb */
     csb_dir = data_override && adventure == ADVENTURE_CSB ? data_override : adventure_default_dir(ADVENTURE_CSB);
-    int csb_present = adventure_csb_present(csb_dir);
+    bool csb_present = adventure_csb_present(csb_dir);
     if (adventure == ADVENTURE_CSB && !csb_present)
         return SDL_Log("CSB data is missing in %s", csb_dir), 1;
     select_start(adventure, mode_arg, csb_present, control_is_available());

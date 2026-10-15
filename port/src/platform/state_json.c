@@ -534,7 +534,7 @@ static const char *square_name(uint8_t square)
     return "wall";
 }
 
-static int in_party_map(int16_t x, int16_t y)
+static bool in_party_map(int16_t x, int16_t y)
 {
     return x >= 0 && y >= 0 && x < dungeon_map_width(g_party_map_index) && y < dungeon_map_height(g_party_map_index);
 }
@@ -630,7 +630,7 @@ static const char *const wall_ornament_names[] = {
 };
 enum { WALL_ORNAMENT_NAME_COUNT = sizeof wall_ornament_names / sizeof *wall_ornament_names };
 
-static int sensor_takes_object(uint16_t type)
+static bool sensor_takes_object(uint16_t type)
 {
     switch (type) {
     case SENSOR_WALL_ANY_OBJECT:
@@ -640,13 +640,13 @@ static int sensor_takes_object(uint16_t type)
     case SENSOR_WALL_SINGLE_OBJECT_EXCHANGER:
     case SENSOR_WALL_OBJECT_EXCHANGER:
     case SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED:
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 /* The side of wall square (x, y) that faces direction face. Returns 1 when it shows something. */
-static int wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
+static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
 {
     memset(f, 0, sizeof *f);
     f->text = THING_NONE;

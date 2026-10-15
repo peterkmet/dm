@@ -277,7 +277,7 @@ static bool is_open_floor(uint8_t square)
    faces an open floor square at the map edge. */
 static uint8_t square(int16_t x, int16_t y)
 {
-    int in_x = x >= 0 && x < mw, in_y = y >= 0 && y < mh;
+    bool in_x = x >= 0 && x < mw, in_y = y >= 0 && y < mh;
     if (in_x && in_y)
         return dungeon_square(map, x, y);
     if (in_x) {
@@ -433,24 +433,24 @@ static void wall(int16_t id, int16_t zone, int mode)
 
 /* draw_bitmap_in_zone. ZONE_SHIFTED or ZONE_SIZED pass g_zone_relative_x/y to layout_get_zone: a shift, or
    the item size. Returns 1 and sets drawn_box (g_drawn_box) when it drew. */
-static int in_zone(const Bitmap *bm, Bitmap *dst, int16_t zone, int flip, int16_t transparent)
+static bool in_zone(const Bitmap *bm, Bitmap *dst, int16_t zone, int flip, int16_t transparent)
 {
     int16_t w = 0, h = 0;
     Box b;
     if (!bm || zone == -1)
-        return 0;
+        return false;
     if (zone & (ZONE_SHIFTED | ZONE_SIZED)) {
         w = rel_x;
         h = rel_y;
         zone &= ~ZONE_SIZED;
     }
     if (!layout_get_zone(zone, bm->w, bm->h, &b, &w, &h))
-        return 0;
+        return false;
     drawn_box = b;
     b.x += shift_x;
     b.y += shift_y;
     draw_blit(bm, w, h, dst, &b, transparent, flip);
-    return 1;
+    return true;
 }
 
 enum { VIEW_CELL_BACK_LEFT, VIEW_CELL_BACK_RIGHT, VIEW_CELL_FRONT_RIGHT, VIEW_CELL_FRONT_LEFT, VIEW_CELL_CENTER };
@@ -608,7 +608,7 @@ static void object(uint16_t thing, int16_t aspect_index, int16_t cell, int16_t l
                    int16_t zone, int16_t *pile, int16_t coord, int alcove)
 {
     const uint8_t *aspect = tables_object_aspect(aspect_index);
-    int alcove_graphic = alcove_front && (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_HAS_ALCOVE_GRAPHIC);
+    bool alcove_graphic = alcove_front && (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_HAS_ALCOVE_GRAPHIC);
     int16_t g = GFX_OBJECT_FIRST + aspect[OBJECT_ASPECT_GRAPHIC] + alcove_graphic, distance = 0;
     int flip = (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_FLIP_ON_RIGHT) && !alcove_graphic &&
                (lane >= 1 || (lane == 0 && (cell == VIEW_CELL_BACK_RIGHT || cell == VIEW_CELL_FRONT_RIGHT)));
@@ -704,7 +704,7 @@ static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos,
 {
     uint16_t info = s->info->graphic_info;
     int16_t g = GFX_CREATURE_FIRST + BE16(s->aspect + CREATURE_ASPECT_GRAPHIC), distance = 0;
-    int side = (info & GRAPHIC_HAS_SIDE) && (facing & 1), back = 0, attack = 0, front_flip = 0;
+    bool side = (info & GRAPHIC_HAS_SIDE) && (facing & 1), back = false, attack = false, front_flip = false;
     if (side)
         g++;
     else {
@@ -717,9 +717,9 @@ static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos,
         else
             front_flip = (info & GRAPHIC_FLIP_NON_ATTACK) && (look & ASPECT_FLIPPED);
     }
-    int special_d2 = depth == DEPTH_D2 && (info & GRAPHIC_SPECIAL_D2_FRONT) && !side && !back && !attack;
-    int flip = (side && facing == FACING_LEFT) || (attack && (look & ASPECT_FLIPPED)) ||
-               (special_d2 && (info & GRAPHIC_D2_FRONT_FLIPPED)) || front_flip;
+    bool special_d2 = depth == DEPTH_D2 && (info & GRAPHIC_SPECIAL_D2_FRONT) && !side && !back && !attack;
+    bool flip = (side && facing == FACING_LEFT) || (attack && (look & ASPECT_FLIPPED)) ||
+                (special_d2 && (info & GRAPHIC_D2_FRONT_FLIPPED)) || front_flip;
     int16_t transparent = s->aspect[CREATURE_ASPECT_COORD] & CREATURE_ASPECT_TRANSPARENT;
     Bitmap own;
     const Bitmap *bm;
@@ -742,16 +742,17 @@ static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos,
 
 /* The creatures of the group in view cell cell (map cell mcell). rest holds the cells still to draw,
    front tells that the cell is a front cell of the pass. Returns 1 when the group is complete. */
-static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int16_t cell, uint16_t mcell,
-                     uint16_t rest, int16_t pass, int front)
+static bool creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int16_t cell, uint16_t mcell,
+                      uint16_t rest, int16_t pass, bool front)
 {
-    int16_t coord = tables_view_square(vs).creature_coord, ordinal, index, second = 0, pos = cell, done = 0;
+    int16_t coord = tables_view_square(vs).creature_coord, ordinal, index, second = 0, pos = cell;
+    bool done = false;
     if (coord < 0)
-        return 1;
+        return true;
     uint16_t creature_index = 0;
     if (!(ordinal = ordinal_in_cell(s, mcell))) {
         if (s->size != CREATURE_SIZE_HALF)
-            return 0;
+            return false;
         index = -1;
     } else
         index = creature_index = ordinal - 1;
@@ -759,15 +760,15 @@ static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int
     int sideways = relative & 1;
     if (s->cells == CELL_CENTERED) { /* one creature in the middle, drawn after the last cell */
         if (rest || pass == DOOR_PASS_BACK)
-            return 0;
-        done = 1;
+            return false;
+        done = true;
         pos = s->size == CREATURE_SIZE_HALF && sideways ? VIEW_CELL_FRONT_LEFT : VIEW_CELL_CENTER;
     } else if (s->size == CREATURE_SIZE_HALF && (front || !rest || index < 0)) {
         if (!front || pass == DOOR_PASS_FRONT) {
             if (pass == DOOR_PASS_BACK || rest)
-                return 0;
+                return false;
             if (!sideways) { /* facing the party or away: both creatures side by side */
-                done = 1;
+                done = true;
                 if (index < 0)
                     index = 0;
                 second = rec_group_last_creature_index(s->thing);
@@ -775,15 +776,15 @@ static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int
                 pos = c == dir || turn_left(dir) == c ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
             } else {
                 if (index < 0)
-                    return 0;
+                    return false;
                 pos = VIEW_CELL_CENTER;
             }
         } else if (index >= 0 && sideways)
             pos = VIEW_CELL_FRONT_RIGHT;
         else
-            return 0;
+            return false;
     } else if (s->size != CREATURE_SIZE_QUARTER)
-        return 0;
+        return false;
     if (s->size == CREATURE_SIZE_QUARTER && ((vs == VIEW_SQUARE_D0L && pos != VIEW_CELL_FRONT_RIGHT) ||
                                              (vs == VIEW_SQUARE_D0R && pos != VIEW_CELL_FRONT_LEFT)))
         return done;
@@ -838,12 +839,12 @@ static void end_projectile(uint16_t thing, int drawn)
     tracks[track_count++] = (ProjectileTrack){thing, last ? last->to : drawn_box, drawn_box};
 }
 
-int view_projectiles_moving(void)
+bool view_projectiles_moving(void)
 {
     for (int i = 0; i < track_count; i++)
         if (tracks[i].from.x != tracks[i].to.x || tracks[i].from.y != tracks[i].to.y)
-            return 1;
-    return 0;
+            return true;
+    return false;
 }
 
 void view_set_motion(int16_t step, int16_t steps)
@@ -878,7 +879,7 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
             scale = max16(PROJECTILE_SCALE_MIN, (int8_t)((uint16_t)(max16(PROJECTILE_ENERGY_MIN, energy + 1) * scale) >>
                                                          PROJECTILE_ENERGY_SCALE_SHIFT));
     }
-    int rotates = kind == PROJECTILE_BACK_AND_ROTATION, odd_square = rotates && ((x + y) & 1);
+    bool rotates = kind == PROJECTILE_BACK_AND_ROTATION, odd_square = rotates && ((x + y) & 1);
     if (kind == PROJECTILE_NO_BACK_NO_ROTATION)
         pose = POSE_FRONT;
     else {
@@ -946,7 +947,7 @@ static const Bitmap *explosion_bitmap(int16_t aspect, int16_t scale, Bitmap *own
 /* An explosion on the party square fills the whole viewport with its pattern. */
 static void explosion_on_party(uint16_t thing, int16_t aspect)
 {
-    int smoke = aspect == EXPLOSION_ASPECT_SMOKE;
+    bool smoke = aspect == EXPLOSION_ASPECT_SMOKE;
     int16_t strength = rec_explosion_attack(thing) >> EXPLOSION_STRENGTH_SHIFT;
     const Bitmap *units = gfx_bitmap(GFX_EXPLOSION_PATTERN_FIRST + (aspect - smoke) * EXPLOSION_PATTERN_STRENGTHS +
                                      (strength != 0) + (strength > 3));
@@ -1021,7 +1022,7 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
             zone = ZONE_REBIRTH_STEP2_FIRST + coord;
             scale = tables_rebirth_scale(TABLES_REBIRTH_STEP_2, coord);
         } else {
-            int far_side = !(cell == dir || turn_left(dir) == cell);
+            bool far_side = !(cell == dir || turn_left(dir) == cell);
             zone = rec_explosion_is_centered(thing)
                        ? ZONE_EXPLOSION_CENTERED_FIRST + explosion_coord
                        : ZONE_EXPLOSION_FIRST + explosion_coord * ZONE_EXPLOSION_SIDES + far_side;
@@ -1053,7 +1054,7 @@ static void things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs
         order >>= CELL_ORDER_BITS;
     }
     uint16_t rest = order, mcell = 0, group_thing = THING_NONE;
-    int alcove = rest == 0, has_projectiles = 0, has_explosions = 0, group_done = 0, loaded = 0;
+    bool alcove = rest == 0, has_projectiles = false, has_explosions = false, group_done = false, loaded = false;
     ViewSquare square = tables_view_square(vs);
     int16_t lane = square.lane, depth = square.depth, coord = alcove ? square.alcove_coord : square.object_coord,
             count = 0;
@@ -1077,9 +1078,9 @@ static void things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs
             if (type == THING_GROUP)
                 group_thing = t;
             else if (type == THING_PROJECTILE)
-                has_projectiles = 1;
+                has_projectiles = true;
             else if (type == THING_EXPLOSION)
-                has_explosions = 1;
+                has_explosions = true;
             else if (type >= THING_WEAPON && type <= THING_JUNK && coord >= 0 && THING_CELL(t) == mcell &&
                      (depth != DEPTH_D3 || cell >= VIEW_CELL_FRONT_RIGHT) &&
                      (depth != DEPTH_D0 || cell < VIEW_CELL_FRONT_RIGHT))
@@ -1087,16 +1088,16 @@ static void things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs
         }
         if (alcove || depth >= DEPTH_D4)
             break;
-        int front = (cell < VIEW_CELL_FRONT_RIGHT || count == 1) &&
-                    (rest == 0 || (rest & CELL_ORDER_MASK) - 1 >= VIEW_CELL_FRONT_RIGHT);
+        bool front = (cell < VIEW_CELL_FRONT_RIGHT || count == 1) &&
+                     (rest == 0 || (rest & CELL_ORDER_MASK) - 1 >= VIEW_CELL_FRONT_RIGHT);
         if (group_thing != THING_NONE && !group_done) {
             if (!loaded)
-                group(group_thing, &s), loaded = 1;
+                group(group_thing, &s), loaded = true;
             group_done = creatures(&s, dir, vs, depth, cell, mcell, rest, pass, front);
         }
         int16_t projectile_coord = square.object_coord;
         if (projectile_coord < 0)
-            has_projectiles = 0;
+            has_projectiles = false;
         else if (has_projectiles && (depth != DEPTH_D3 || cell >= VIEW_CELL_FRONT_RIGHT) &&
                  (depth != DEPTH_D0 || cell < VIEW_CELL_FRONT_RIGHT))
             for (uint16_t t = first; t != THING_END; t = get_next_thing(t))
@@ -1162,7 +1163,7 @@ static int wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
     if (!ordinal)
         return 0;
     int16_t i = ordinal - 1, zone = ZONE_WALL_ORNAMENT_FIRST + ZONE_WALL_ORNAMENT_VIEWS * wall_orn[i].coord + view;
-    int alcove = is_alcove(i), text = i == inscription;
+    bool alcove = is_alcove(i), text = i == inscription;
     int mirrored = view == VIEW_WALL_D3R2_LEFT || view == VIEW_WALL_D3R_LEFT || view == VIEW_WALL_D2R_LEFT ||
                    view == VIEW_WALL_D1R_LEFT;
     int side = mirrored || view == VIEW_WALL_D3L2_RIGHT || view == VIEW_WALL_D3L_RIGHT || view == VIEW_WALL_D2L_RIGHT ||
@@ -1219,9 +1220,9 @@ static void floor_ornament(uint16_t ordinal, int16_t view)
         return;
     int16_t i = (ordinal & ~FLOOR_ORNAMENT_WITH_FOOTPRINTS) - 1;
     if (i >= 0) {
-        int right = view == VIEW_D3R2 || view == VIEW_D3R || view == VIEW_D2R || view == VIEW_D1R;
-        int center = view == VIEW_D3C || view == VIEW_D2C || view == VIEW_D1C;
-        int flip = right || (i == FLOOR_ORNAMENT_FOOTPRINTS && parity && center);
+        bool right = view == VIEW_D3R2 || view == VIEW_D3R || view == VIEW_D2R || view == VIEW_D1R;
+        bool center = view == VIEW_D3C || view == VIEW_D2C || view == VIEW_D1C;
+        bool flip = right || (i == FLOOR_ORNAMENT_FOOTPRINTS && parity && center);
         in_zone(gfx_bitmap(floor_orn[i].graphic + tables_floor_ornament_view_offset(view)), &vp,
                 ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * floor_orn[i].coord + view, flip,
                 TRANSPARENT_COLOR);
@@ -1331,7 +1332,7 @@ static void ceiling_pit(int16_t graphic, int16_t zone, int16_t x, int16_t y, int
 }
 
 /* The front of a staircase: the up or down graphic at the up or down zone. */
-static void stairs_front(int up, int16_t graphic, int16_t up_zone, int mode)
+static void stairs_front(bool up, int16_t graphic, int16_t up_zone, int mode)
 {
     wall(stairs + graphic + (up ? 0 : STAIRS_DOWN), up ? up_zone : up_zone + ZONE_STAIRS_DOWN_DELTA, mode);
 }
@@ -1924,7 +1925,7 @@ static int16_t entry_slot(int entry)
 static void set_slot(int entry, int16_t graphic, int flip)
 {
     slot_gfx[entry_slot(entry)] = graphic;
-    slot_flip[entry_slot(entry)] = (uint8_t)flip;
+    slot_flip[entry_slot(entry)] = flip;
 }
 
 /* load_floor_set and load_wall_set: the graphic of each layout bitmap slot, and the slots that hold a
@@ -2112,7 +2113,7 @@ int16_t view_wall_ornament_index(uint16_t ordinal)
     return (wall_orn[ordinal - 1].graphic - GFX_WALL_ORNAMENT_FIRST) / WALL_ORNAMENT_GRAPHICS;
 }
 
-int view_floor_pressure_pad(int16_t x, int16_t y)
+bool view_floor_pressure_pad(int16_t x, int16_t y)
 {
     enum { PRESSURE_PAD = 1, ROUND_PRESSURE_PAD = 4, TINY_PRESSURE_PAD = 7 }; /* floor ornament graphics */
     int16_t ornament = view_floor_ornament(x, y);
@@ -2187,7 +2188,7 @@ static void map_tile(Bitmap *dst, int16_t tile, int16_t px, int16_t py)
 }
 
 /* Footprints of the footprints spell on a floor square (the footprints bit of set_square_aspect). */
-static int map_footprints(const Aspect *a, int16_t x, int16_t y)
+static bool map_footprints(const Aspect *a, int16_t x, int16_t y)
 {
     int allowed = a->element == SQUARE_PIT ? a->square & PIT_IMAGINARY
                                            : a->element != SQUARE_WALL && a->element != ELEMENT_STAIRS_SIDE &&
@@ -2277,7 +2278,7 @@ static void map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16_t y,
 {
     Aspect a;
     aspect(&a, dir, x, y);
-    int blink = SQUARE_TYPE(a.square) == SQUARE_FAKE_WALL && (a.square & FAKE_WALL_IMAGINARY);
+    bool blink = SQUARE_TYPE(a.square) == SQUARE_FAKE_WALL && (a.square & FAKE_WALL_IMAGINARY);
     int16_t color = x == g_party_map_x && y == g_party_map_y ? MAP_COLOR_PARTY
                     : spells[MAGIC_MAP_DAIN] && a.element != SQUARE_WALL && map_footprints(&a, x, y)
                         ? MAP_COLOR_FOOTPRINTS
@@ -2435,14 +2436,14 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
 
 /* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that view_set_light set.
    Returns 1 on success. */
-int view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
+bool view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
 {
     if (!g_dungeon_maps || m < 0 || m >= dungeon_map_count())
-        return 0;
+        return false;
     if (m != map)
         view_load_map(m);
     int16_t light = g_cheat_light ? 0 : g_dungeon_view_palette_index;
     memcpy(palette, pals[light], sizeof pals[light]);
     view_draw(NORMALIZE(dir), x, y);
-    return 1;
+    return true;
 }

@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "scale.h"
 
 /* The source pixel at (x, y); positions outside the image repeat the edge pixel. */
@@ -16,7 +17,7 @@ void scale2x(const uint8_t *src, int w, int h, uint8_t *dst)
             uint8_t B = pixel(src, w, h, x, y - 1), D = pixel(src, w, h, x - 1, y), E = pixel(src, w, h, x, y);
             uint8_t F = pixel(src, w, h, x + 1, y), H = pixel(src, w, h, x, y + 1);
             uint8_t *o = dst + 2 * y * 2 * w + 2 * x;
-            int on = B != H && D != F;
+            bool on = B != H && D != F;
             o[0] = on && D == B ? D : E;
             o[1] = on && B == F ? F : E;
             o[2 * w] = on && D == H ? D : E;

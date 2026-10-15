@@ -1,6 +1,7 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 /* Prefixes: plat_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "video.h"
 
@@ -14,15 +15,15 @@ typedef struct {
 } PlatEvent;
 
 /* Opens the window at scale times the game screen. DM_FILTER selects the upscale filter. */
-int plat_init(int scale);
+bool plat_init(int scale);
 /* The upscale factor of a filter name: "scale2x" 2, "scale3x" 3, else 1 (none). */
 int plat_filter_factor(const char *name);
-int plat_set_filter(int factor);
+bool plat_set_filter(int factor);
 void plat_quit(void);
 /* Shows fb with the split palette and the pointer, scaled into the window. */
 void plat_present(void);
 /* Returns 1 with the next key, mouse button, or quit event; mouse motion only moves the pointer. */
-int plat_poll(PlatEvent *e);
+bool plat_poll(PlatEvent *e);
 void plat_wait_tick(void);
 void plat_audio_pump(void);
 /* The mouse pointer, drawn over the game image: w x h pixels, color 0 transparent, other colors

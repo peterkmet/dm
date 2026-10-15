@@ -159,7 +159,7 @@ static int join_texts(const char *parts[CSB_TEXT_COUNT][TEXT_PARTS])
         }
         *o++ = 0;
     }
-    strings_size = (uint16_t)size;
+    strings_size = size;
     return 0;
 }
 
@@ -174,7 +174,7 @@ static int copy_action_names(const FtlImage *appb)
         end += (uint32_t)strlen(s) + 1;
     }
     free(action_names);
-    action_names_size = (uint16_t)(end - CSB_APPB_ACTION_NAMES);
+    action_names_size = end - CSB_APPB_ACTION_NAMES;
     action_names = malloc(action_names_size);
     if (!action_names)
         return -1;

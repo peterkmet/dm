@@ -41,6 +41,9 @@ def game(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.control_open.restype = ctypes.c_bool
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_new_game.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.get_square_first_thing.restype = u16
     lib.get_next_thing.restype = u16
@@ -49,7 +52,7 @@ def game(tmp_path_factory):
     lib.savegame_make_adventure.restype = c16
     lib.savegame_save_as.restype = ctypes.c_bool
     lib.savegame_load_from.restype = c16
-    lib.startend_load_saved_game.restype = c16
+    lib.startend_load_saved_game.restype = ctypes.c_bool
     lib.control_open.argtypes = [ctypes.c_char_p]
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())

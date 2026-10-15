@@ -161,7 +161,7 @@ static int64_t expand_data(const uint8_t *r, uint32_t rle_len, uint8_t *mem, uin
     const uint8_t *rend = r + rle_len;
     uint32_t n = 0;
     while (r + 1 < rend) {
-        int zero = !r[0] && !r[1];
+        bool zero = !r[0] && !r[1];
         if (n + 2 > size)
             return -1;
         mem[n++] = *r++;
@@ -262,7 +262,7 @@ int kaos_load(const char *path)
     size_t len;
     uint8_t *raw = read_file(path, &len);
     FtlImage appb = {0};
-    int csb = g_adventure == ADVENTURE_CSB;
+    bool csb = g_adventure == ADVENTURE_CSB;
     ftl_free(&kaos);
     int r = raw ? ftl_load(raw, len, KAOS_BASE, csb ? &appb : &kaos) : -1;
     free(raw);
@@ -296,7 +296,7 @@ uint16_t kaos_u16(uint32_t addr)
 }
 int16_t kaos_s16(uint32_t addr)
 {
-    return (int16_t)kaos_u16(addr);
+    return kaos_u16(addr);
 }
 uint32_t kaos_u32(uint32_t addr)
 {

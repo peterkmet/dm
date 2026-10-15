@@ -33,7 +33,7 @@ static const char *const direction_names[4] = {"NORTH", "EAST", "SOUTH", "WEST"}
 static const char *const soundtrack_names[3] = {"ORIGINAL", "SUPER NES", "FM-TOWNS"};
 
 /* The party walks the dungeon: no inventory, dialog, freeze, sleep, candidate, death, sequence, or won game. */
-static int in_dungeon_view(void)
+static bool in_dungeon_view(void)
 {
     return g_dungeon_maps && !g_game_screen_inactive && g_game_time_ticking && !g_game_frozen && !g_party_dead &&
            !g_inventory_champion_ordinal && !g_party_is_sleeping && !g_candidate_champion_ordinal && !g_waiting_frame &&
@@ -90,10 +90,10 @@ void advanced_drag(int16_t x, int16_t y)
     advanced_draw_automap();
 }
 
-int advanced_process_click(int16_t x, int16_t y, int16_t kind)
+bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
 {
     if (!g_automap_open)
-        return 0;
+        return false;
     Box b;
     if (kind == CLICK_LEFT_RELEASE) {
         advanced_drag(x, y);
@@ -102,7 +102,7 @@ int advanced_process_click(int16_t x, int16_t y, int16_t kind)
                y < b.y + b.h) {
         drag.active = 1, drag.x = x, drag.y = y;
     }
-    return 1;
+    return true;
 }
 
 /* A white line in the message area. */
@@ -138,10 +138,10 @@ static void quick_load(void)
                                                         : "QUICK SAVE DAMAGED");
 }
 
-int advanced_process_key(uint16_t key)
+bool advanced_process_key(uint16_t key)
 {
     if (g_game_mode == GAME_MODE_VANILLA)
-        return 0;
+        return false;
     if (g_automap_open) {
         if (key == KEY_M || key == KEY_TAB || key == KEY_ESCAPE)
             close_automap();
@@ -154,27 +154,27 @@ int advanced_process_key(uint16_t key)
             music_select(key == KEY_1 ? MUSIC_ORIGINAL : key == KEY_2 ? MUSIC_SUPER_NES : MUSIC_FM_TOWNS);
             advanced_draw_automap();
         }
-        return 1;
+        return true;
     }
     switch (key) {
     case KEY_F5:
     case KEY_F9:
         if (!in_dungeon_view())
-            return 1;
+            return true;
         if (key == KEY_F5)
             quick_save();
         else
             quick_load();
-        return 1;
+        return true;
     case KEY_M:
     case KEY_TAB:
         if (!in_dungeon_view())
             return !(key == KEY_TAB && g_inventory_champion_ordinal);
         g_automap_open = 1;
         advanced_draw_automap();
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 uint16_t advanced_letter_key(int letter)

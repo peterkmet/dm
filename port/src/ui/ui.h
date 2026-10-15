@@ -1,6 +1,7 @@
 #ifndef UI_H
 #define UI_H
 /* Prefixes: ui_ panel_ menus_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "champion.h"
 #include "draw.h"
@@ -94,11 +95,11 @@ void ui_extract_icon(int16_t icon, Bitmap *out); /* out->px holds 16 x 16 bytes 
 void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon);
 int16_t ui_get_icon_in_slot_box(int16_t slot_box);
 int ui_icon_zone_box(int16_t zone, int border, Box *box); /* get_slot_box_zone, _border_zone */
-int ui_slot_box_zone(int16_t slot_box, int border, Box *box);
+bool ui_slot_box_zone(int16_t slot_box, int border, Box *box);
 void ui_draw_leader_hand_object_name(uint16_t thing);
 
 /* Hit tests. */
-int16_t ui_point_in_zone(int16_t zone, int16_t x, int16_t y);
+bool ui_point_in_zone(int16_t zone, int16_t x, int16_t y);
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask);
 
 /* Rune names by font character - 0x60: power, element, form, alignment. The original shows only
@@ -129,7 +130,7 @@ enum { PANEL_LINE_COUNT = 3, PANEL_LINE_SIZE = 40 };
 extern int16_t g_panel_content;
 int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
 /* The ATTACK (weapon) or DEFENSE (armour) meter of the advanced object panel: 1 with its label and value, else 0. */
-int panel_object_meter(uint16_t thing, const char **label, uint16_t *value);
+bool panel_object_meter(uint16_t thing, const char **label, uint16_t *value);
 void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye);
 void ui_draw_panel_eye(void);
 void panel_redraw_scroll(void);

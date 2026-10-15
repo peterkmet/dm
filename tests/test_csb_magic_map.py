@@ -74,6 +74,8 @@ def lib(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_new_game.restype = ctypes.c_bool
     for name, res, args in [
         ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
         ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("get_unused_thing", u16, [u16]),
@@ -81,12 +83,12 @@ def lib(tmp_path_factory):
         ("decode_text", ctypes.c_bool, [ctypes.c_char_p, c16, u16, c16]), ("tables_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
         ("magic_get_champion_spell_cast_result", c16, [u16]), ("get_creature_attributes", u16, [u16]),
         ("ui_viewport", ctypes.POINTER(Bitmap), []), ("gfx_string", ctypes.c_char_p, [c16]),
-        ("layout_get_zone", ctypes.c_int, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
+        ("layout_get_zone", ctypes.c_bool, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
         ("ui_draw_inventory_open", None, [c16]), ("gfx_bitmap", ctypes.POINTER(Bitmap), [c16]),
         ("get_stairs_exit_direction", c16, [c16, c16]), ("view_wall_ornament", c16, [c16, c16, c16]),
         ("view_floor_ornament", c16, [c16, c16]), ("set_current_map_and_party_map", None, [c16]),
-        ("text_size", ctypes.c_int, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
+        ("text_size", ctypes.c_bool, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args

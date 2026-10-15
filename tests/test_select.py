@@ -36,6 +36,11 @@ def lib(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.adventure_csb_present.restype = ctypes.c_bool
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.select_restart.restype = ctypes.c_bool
+    lib.select_item_box.restype = ctypes.c_bool
     lib.adventure_default_dir.restype = ctypes.c_char_p
     lib.adventure_save_name.restype = ctypes.c_char_p
     lib.adventure_backup_name.restype = ctypes.c_char_p

@@ -36,6 +36,10 @@ class Box(ctypes.Structure):
 def game():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.gameloop_pointer.restype = ctypes.c_bool
+    lib.ui_slot_box_zone.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.get_square_first_thing.restype = u16
     lib.get_next_thing.restype = u16

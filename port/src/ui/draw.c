@@ -62,14 +62,14 @@ int draw_shrink(const Bitmap *src, int16_t dw, int16_t dh, const uint8_t *palett
     uint8_t *px = malloc((size_t)dw * dh);
     if (!px)
         return -1;
-    uint32_t step_x = (uint16_t)(((uint32_t)src->w << STEP_FRACTION_BITS) / dw);
-    uint32_t step_y = (uint16_t)(((uint32_t)src->h << STEP_FRACTION_BITS) / dh);
+    uint32_t step_x = (uint16_t)(((uint32_t)src->w << STEP_FRACTION_BITS) / dw); /* the step keeps 16 bits */
+    uint32_t step_y = (uint16_t)(((uint32_t)src->h << STEP_FRACTION_BITS) / dh); /* the step keeps 16 bits */
     for (int y = 0; y < dh; y++) {
         int ry = (int)((SAMPLE_ROUNDING + step_y * SAMPLE_STEP_SCALE * (2 * y + 1)) >> SAMPLE_FRACTION_BITS) - (y > 0);
         if (ry >= src->h)
             ry = src->h - 1;
         for (int x = 0; x < dw; x++) {
-            int rx = (int)((SAMPLE_ROUNDING + step_x * SAMPLE_STEP_SCALE * (2 * x + 1)) >> SAMPLE_FRACTION_BITS);
+            int rx = (SAMPLE_ROUNDING + step_x * SAMPLE_STEP_SCALE * (2 * x + 1)) >> SAMPLE_FRACTION_BITS;
             if (rx >= src->w)
                 rx = src->w - 1;
             uint8_t c = src->px[ry * src->w + rx];

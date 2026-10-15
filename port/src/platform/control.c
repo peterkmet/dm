@@ -120,7 +120,7 @@ static struct {
 static int load_failed; /* a damaged save file left no game to play */
 
 /* The party died, or the game is won: the endgame ran and no turn can follow until load or new_game. */
-static int game_over(void)
+static bool game_over(void)
 {
     return g_party_dead || g_game_won;
 }
@@ -147,25 +147,25 @@ static void viewport_origin(int16_t *x, int16_t *y)
 }
 
 /* A screen point inside box b (moved by dx, dy) where the table gives command, or 0. */
-static int find_in_box(int16_t table, int16_t command, Box b, int16_t dx, int16_t dy, int16_t *x, int16_t *y)
+static bool find_in_box(int16_t table, int16_t command, Box b, int16_t dx, int16_t dy, int16_t *x, int16_t *y)
 {
     int16_t cx = b.x + dx + b.w / 2, cy = b.y + dy + b.h / 2;
     if (ui_command_from_mouse(table, cx, cy, UI_BUTTON_LEFT) == command) {
         *x = cx, *y = cy;
-        return 1;
+        return true;
     }
     for (int16_t py = b.y + dy; py < b.y + dy + b.h; py++)
         for (int16_t px = b.x + dx; px < b.x + dx + b.w; px++)
             if (ui_command_from_mouse(table, px, py, UI_BUTTON_LEFT) == command) {
                 *x = px, *y = py;
-                return 1;
+                return true;
             }
-    return 0;
+    return false;
 }
 
 /* The screen point that a mouse input table maps to command: a fixed box, or a zone on the screen,
    in the viewport, or in the centered viewport. */
-static int find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
+static bool find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
 {
     const Bitmap *vp = ui_viewport();
     int16_t ox, oy;
@@ -184,25 +184,25 @@ static int find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
         if (x1 >= 0) {
             b.h = in.y2 - b.y + 1;
             if (find_in_box(table, command, b, 0, 0, x, y))
-                return 1;
+                return true;
             continue;
         }
         if (!ui_zone_box(x2, &b))
             continue;
         for (int k = 0; k < 3; k++)
             if (find_in_box(table, command, b, offsets[k][0], offsets[k][1], x, y))
-                return 1;
+                return true;
     }
-    return 0;
+    return false;
 }
 
-static int click_command(int16_t table, int16_t command)
+static bool click_command(int16_t table, int16_t command)
 {
     int16_t x, y;
     if (!find_click(table, command, &x, &y))
-        return 0;
+        return false;
     click(x, y);
-    return 1;
+    return true;
 }
 
 /* A click in the middle of a box of the dungeon view (viewport coordinates). */
@@ -228,16 +228,16 @@ static const char *find_value(const char *line, const char *key)
     return p;
 }
 
-static int get_string(const char *line, const char *key, char *out, size_t size)
+static bool get_string(const char *line, const char *key, char *out, size_t size)
 {
     const char *p = find_value(line, key);
     size_t n = 0;
     if (!p || *p++ != '"')
-        return 0;
+        return false;
     while (*p && *p != '"' && n + 1 < size)
         out[n++] = *p++;
     out[n] = 0;
-    return 1;
+    return true;
 }
 
 static int64_t get_int(const char *line, const char *key, int64_t missing)
@@ -254,13 +254,13 @@ static int64_t get_int(const char *line, const char *key, int64_t missing)
 
 typedef const char *(*ActionFn)(const char *request);
 
-static int champion_arg(const char *request, int16_t *champion)
+static bool champion_arg(const char *request, int16_t *champion)
 {
     int64_t c = get_int(request, "champion", -1);
     if (c < 0 || c >= g_party_champion_count || !g_champions[c].current_health)
-        return 0;
+        return false;
     *champion = c;
-    return 1;
+    return true;
 }
 
 static const char *need_movement_input(void)
@@ -293,7 +293,7 @@ static const char *rotate(uint16_t key, int16_t rotation)
 }
 
 /* The step of the turn left the party on its square: a wall, a closed door, or a creature is in the way. */
-static int turn_bumped(void)
+static bool turn_bumped(void)
 {
     return turn.moving && g_party_map_index == turn.map && g_party_map_x == turn.x && g_party_map_y == turn.y &&
            g_party_teleport_count == turn.teleports;
@@ -305,7 +305,7 @@ static const char *turn_displaced(void)
     int16_t x = turn.x, y = turn.y;
     if (turn.moving)
         update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
-    int stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
+    bool stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
     if (g_party_map_index != turn.map || (!stayed && (g_party_map_x != x || g_party_map_y != y)))
         return "moved";
     if (stayed && g_party_teleport_count != turn.teleports)
@@ -687,7 +687,7 @@ static void png_chunk(FILE *f, const char *type, const uint8_t *data, uint32_t n
     fwrite(head, 1, 4, f);
 }
 
-static int write_png(const char *path)
+static bool write_png(const char *path)
 {
     enum { ROW = 1 + 3 * SCREEN_W, RAW = ROW * SCREEN_H, BLOCK = 65535 };
     enum { BLOCKS = (RAW + BLOCK - 1) / BLOCK, ZLIB = 2 + RAW + 5 * BLOCKS + 4 };
@@ -722,7 +722,7 @@ static int write_png(const char *path)
     ihdr[9] = 2; /* RGB */
     FILE *f = fopen(path, "wb");
     if (!f)
-        return 0;
+        return false;
     fwrite("\x89PNG\r\n\x1a\n", 1, 8, f);
     png_chunk(f, "IHDR", ihdr, sizeof ihdr);
     png_chunk(f, "IDAT", z, (uint32_t)(q - z));
@@ -1033,7 +1033,7 @@ static void snapshot(void)
 }
 
 /* A creature group is in view that was not in view at the snapshot. */
-static int new_group_in_view(void)
+static bool new_group_in_view(void)
 {
     uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX];
     int count = state_json_visible_groups(groups);
@@ -1042,9 +1042,9 @@ static int new_group_in_view(void)
         for (int k = 0; k < seen.group_count; k++)
             known |= groups[i] == seen.groups[k];
         if (!known)
-            return 1;
+            return true;
     }
-    return 0;
+    return false;
 }
 
 /* What happened since the snapshot that the player must see, or NULL. */
@@ -1292,24 +1292,24 @@ static void handle_request(const char *request)
 
 /* A turn ends when the party can move again after the minimum ticks, or at the maximum. A wait
    ends early on news. A game that does not tick ends the turn after a frame limit. */
-static int turn_finished(void)
+static bool turn_finished(void)
 {
     int64_t ticks = g_game_time - turn.start_time;
     if (turn.wait_only && (turn.stop = news()))
-        return 1;
+        return true;
     if (game_over())
-        return 1;
+        return true;
     if (ticks >= turn.max_ticks || turn.frames > turn.max_ticks * FRAMES_PER_TICK_LIMIT)
-        return 1;
+        return true;
     return !turn.wait_only && ticks >= turn.min_ticks && !g_disabled_movement_ticks;
 }
 
-int control_open(const char *path)
+bool control_open(const char *path)
 {
     struct sockaddr_un address = {.sun_family = AF_UNIX};
     char dir[sizeof socket_path];
     if (strlen(path) >= sizeof address.sun_path)
-        return 0;
+        return false;
     snprintf(dir, sizeof dir, "%s", path);
     char *slash = strrchr(dir, '/');
     if (slash && slash != dir) {
@@ -1321,13 +1321,13 @@ int control_open(const char *path)
     unlink(path);
     listen_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (listen_fd < 0)
-        return 0;
+        return false;
     if (bind(listen_fd, (struct sockaddr *)&address, sizeof address) || listen(listen_fd, 1) ||
         fcntl(listen_fd, F_SETFL, O_NONBLOCK)) {
         control_close();
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
 }
 
 bool control_is_available(void)

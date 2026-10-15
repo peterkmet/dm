@@ -1,6 +1,7 @@
 #ifndef ADVENTURE_H
 #define ADVENTURE_H
 /* Prefixes: adventure_ */
+#include <stdbool.h>
 #include <stdint.h>
 
 /* The adventure of the run: Dungeon Master or Chaos Strikes Back. Its data folder and save file names. */
@@ -26,7 +27,7 @@ const char *adventure_save_name(void);
 /* The backup file name of g_adventure: DMGAME.BAK or CSBGAME.BAK. */
 const char *adventure_backup_name(void);
 /* 1 when dir has the CSB files: APPB.FTL, Graphics.DAT, Dungeon.DAT, and disk-b/MINI.DAT. */
-int adventure_csb_present(const char *dir);
+bool adventure_csb_present(const char *dir);
 /* The first game file in dir that is missing or differs from the Amiga disk of the adventure (CRC32), or NULL. */
 const char *adventure_bad_file(int16_t adventure, const char *dir);
 /* Extracts a game disk image into its default folder: DM, CSB disk A, or CSB disk B. Returns 1 and the folder in

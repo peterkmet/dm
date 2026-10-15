@@ -55,6 +55,10 @@ def lib(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_new_game.restype = ctypes.c_bool
+    lib.layout_get_zone.restype = ctypes.c_bool
+    lib.view_render.restype = ctypes.c_bool
     lib.kaos_ptr.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.spell_find.restype = c16
     lib.tables_spell.restype = ctypes.c_void_p

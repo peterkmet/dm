@@ -205,7 +205,7 @@ static StringList strings, action_names, object_names;
 static int load_strings(int graphic, StringList *list)
 {
     uint16_t size;
-    int csb = g_adventure == ADVENTURE_CSB, bit7_ends = csb && graphic == GFX_OBJECT_NAMES;
+    bool csb = g_adventure == ADVENTURE_CSB, bit7_ends = csb && graphic == GFX_OBJECT_NAMES;
     const uint8_t *p = csb ? csb_text_item(graphic, &size) : NULL;
     if (!p)
         p = gfx_item(graphic, &size);

@@ -41,6 +41,7 @@ def setup(lib):
     lib.inventory_get_object_removed_from_slot.argtypes = [u16, u16]
     lib.panel_click_in_chest.argtypes = [c16, c16]
     lib.ui_slot_box_zone.argtypes = [c16, ctypes.c_int, ctypes.POINTER(Box)]
+    lib.ui_slot_box_zone.restype = ctypes.c_bool
 
 
 def things_of(lib, t):

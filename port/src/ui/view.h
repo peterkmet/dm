@@ -1,6 +1,7 @@
 #ifndef VIEW_H
 #define VIEW_H
 /* Prefixes: view_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "draw.h"
 
@@ -47,17 +48,17 @@ int16_t view_wall_face_ornament_index(int16_t x, int16_t y, int16_t face);
    floor ornament graphics of the game, or -1 (none, or the view has not loaded the party map). */
 int16_t view_floor_ornament(int16_t x, int16_t y);
 /* 1 when the view draws a pressure pad on square (x, y) of the party map. */
-int view_floor_pressure_pad(int16_t x, int16_t y);
+bool view_floor_pressure_pad(int16_t x, int16_t y);
 void view_draw(int16_t dir, int16_t x, int16_t y);
 /* CSB: draws the magic map grid of a champion (Champion.magic_map) with its top left square at (px, py). */
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py);
 /* Sets g_dungeon_view_palette_index from the party light amount (magical light plus torches) on map m. */
 void view_set_light(int16_t m, int16_t amount);
-int view_render(int16_t map, int16_t x, int16_t y, int16_t dir);
+bool view_render(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* Smooth projectile flight: view_set_motion(step, steps) makes the next views show each projectile
    step/steps of the way from its place at the tick before to its place at the last tick; (0, 0) is a
    normal view. Returns 1 when a projectile of the last view changed its place. */
 void view_set_motion(int16_t step, int16_t steps);
-int view_projectiles_moving(void);
+bool view_projectiles_moving(void);
 
 #endif

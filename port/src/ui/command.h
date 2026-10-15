@@ -1,6 +1,7 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 /* Prefixes: command_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "move.h"
 
@@ -67,12 +68,12 @@ enum { KEY_RAW_SHIFT = 8 };
 /* The key word of a raw key and an ASCII code. */
 static inline uint16_t command_key(uint16_t raw, uint16_t ascii)
 {
-    return (uint16_t)(raw << KEY_RAW_SHIFT | ascii);
+    return raw << KEY_RAW_SHIFT | ascii;
 }
 /* The key word of F1-F4: the key of the champion with this index. */
 static inline uint16_t command_champion_key(int16_t champion_index)
 {
-    return (uint16_t)(KEY_F1 + (champion_index << KEY_RAW_SHIFT));
+    return KEY_F1 + (champion_index << KEY_RAW_SHIFT);
 }
 
 /* Result of the entrance (g_new_game): ENTRANCE_WAITING until a button is pressed. */
@@ -95,7 +96,7 @@ void command_save_input(void);
 void command_restore_input(void);
 void command_process_click(int16_t x, int16_t y, int16_t kind);
 void command_process_key(uint16_t key);
-int command_process_queue(void);
+bool command_process_queue(void);
 void command_discard_all_input(void);
 void command_highlight_disable(void);
 void command_wake_up(void);

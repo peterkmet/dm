@@ -14,15 +14,15 @@
 /* The channels of a video_argb color. */
 static inline uint8_t video_argb_red(uint32_t argb)
 {
-    return (uint8_t)(argb >> ARGB_RED_SHIFT);
+    return argb >> ARGB_RED_SHIFT;
 }
 static inline uint8_t video_argb_green(uint32_t argb)
 {
-    return (uint8_t)(argb >> ARGB_GREEN_SHIFT);
+    return argb >> ARGB_GREEN_SHIFT;
 }
 static inline uint8_t video_argb_blue(uint32_t argb)
 {
-    return (uint8_t)argb;
+    return argb;
 }
 
 extern uint8_t fb[SCREEN_H][SCREEN_W];

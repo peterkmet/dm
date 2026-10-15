@@ -26,6 +26,7 @@ class Spell(ctypes.Structure):
 def lib():
     subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib.spell_draw_fails.restype = ctypes.c_bool
     lib.spell_get.restype = Spell
     lib.spell_get.argtypes = [ctypes.c_int16]
     lib.spell_find.argtypes = [ctypes.c_char_p]

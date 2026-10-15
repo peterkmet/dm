@@ -160,7 +160,7 @@ static void clip_to(Box *c, int16_t x, int16_t y, int16_t w, int16_t h)
 
 /* The parent walk of get_zone: moves the point (*x, *y) and the clip box by the translations and the
    rectangles of the parents of record r. Returns 0 when nothing is visible. */
-static int place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip)
+static bool place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip)
 {
     const uint8_t *p, *s;
     int16_t pending = 0;
@@ -198,7 +198,7 @@ static int place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip)
                 break;
             int16_t a = zone_x(p), b = zone_y(p), sw = zone_x(s), sh = zone_y(s);
             if (zone_type(p) >= RECORD_SIZE)
-                return 0;
+                return false;
             align(zone_type(p), sw, sh, &a, &b);
             clip->x += a;
             clip->y += b;
@@ -209,20 +209,20 @@ static int place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip)
             r = s;
         }
     }
-    return 1;
+    return true;
 }
 
 /* get_zone: places an item of *w x *h pixels (0 = bitmap size) in zone and clips it to the
    parent rectangles. ZONE_SHIFTED adds *w, *h to the position and takes the bitmap size.
    On return *w, *h hold the source offset of the clipped box. Returns 0 when nothing is visible. */
-int layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, int16_t *w, int16_t *h)
+bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, int16_t *w, int16_t *h)
 {
     if (zone == -1)
-        return 0;
+        return false;
     int shifted = zone & ZONE_SHIFTED;
     const uint8_t *r = find(zone & (ZONE_SHIFTED - 1));
     if (!r)
-        return 0;
+        return false;
     Box clip = {0, 0, CLIP_NONE, CLIP_NONE};
     int16_t type = zone_type(r), x = 0, y = 0;
     if (type < RECORD_SIZE) {
@@ -230,18 +230,18 @@ int layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, 
         y = zone_y(r);
     } else {
         if (type == RECORD_SIZE)
-            return 0;
+            return false;
         type -= RECORD_INNER_POINT;
     }
     if (type < ALIGN_CENTER || type > ALIGN_CENTER_LEFT)
-        return 0;
+        return false;
     if (shifted) {
         x += *w;
         y += *h;
         *w = *h = 0;
     }
     if (!place_in_parents(r, &x, &y, &clip))
-        return 0;
+        return false;
     int16_t iw = *w ? *w : bitmap_w, ih = *h ? *h : bitmap_h;
     box->x = x;
     box->y = y;

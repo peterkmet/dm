@@ -396,18 +396,18 @@ static void click_on_champion_icon(int16_t cell)
     int16_t moved = champion_get_index_in_cell(NORMALIZE(from + g_party_direction));
     if (moved == -1)
         return;
-    g_champions[moved].direction = (uint8_t)g_party_direction;
+    g_champions[moved].direction = g_party_direction;
     g_champions[moved].attributes |= CHAMPION_ATTR_ICON;
     if (cell != from) {
         int16_t other = champion_get_index_in_cell(NORMALIZE(cell + g_party_direction));
         if (other < 0) {
             ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + from, COLOR_BLACK);
         } else {
-            g_champions[other].cell = (uint8_t)NORMALIZE(from + g_party_direction);
+            g_champions[other].cell = NORMALIZE(from + g_party_direction);
             g_champions[other].attributes |= CHAMPION_ATTR_ICON;
             ui_draw_champion_state(other);
         }
-        g_champions[moved].cell = (uint8_t)NORMALIZE(cell + g_party_direction);
+        g_champions[moved].cell = NORMALIZE(cell + g_party_direction);
     }
     ui_draw_champion_state(moved);
 }
@@ -438,7 +438,8 @@ static void grab_object(int16_t pile)
    on a vi altar start the rebirth of their champion. */
 static void drop_object(int16_t pile)
 {
-    int16_t x = g_party_map_x, y = g_party_map_y, alcove = pile == VIEW_CLICK_BOX_ALCOVE;
+    int16_t x = g_party_map_x, y = g_party_map_y;
+    bool alcove = pile == VIEW_CLICK_BOX_ALCOVE;
     if (g_leader_index == -1)
         return;
     if (alcove)
@@ -451,7 +452,7 @@ static void drop_object(int16_t pile)
     if (alcove && g_facing_vi_altar && object_get_icon_index(thing) == ICON_BONES) {
         TimelineEvent rebirth = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + 1),
                                  .type = EVENT_VI_ALTAR_REBIRTH,
-                                 .priority = (uint8_t)junk_charges(thing),
+                                 .priority = junk_charges(thing),
                                  .b = event_square(x, y),
                                  .c = event_cell_effect(cell, VI_ALTAR_REBIRTH_EFFECT)};
         timeline_add_event(&rebirth);
@@ -503,7 +504,7 @@ static void fill_at_fountain(void)
 }
 
 /* A point in a clickable box of the view; x -1 marks an unused box. */
-static int16_t in_box(const Box *b, int16_t x, int16_t y)
+static bool in_box(const Box *b, int16_t x, int16_t y)
 {
     return b->x != -1 && x >= b->x && x < b->x + b->w && y >= b->y && y < b->y + b->h;
 }
@@ -602,7 +603,7 @@ static void add_champion_symbol(int16_t symbol)
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     c->symbols[step] = (char)(SPELL_SYMBOL_FIRST + step * SYMBOL_COUNT + symbol);
     c->symbols[step + 1] = 0;
-    c->symbol_step = (uint8_t)NORMALIZE(step + 1);
+    c->symbol_step = NORMALIZE(step + 1);
     menus_draw_available_symbols(c->symbol_step);
     menus_draw_champion_symbols(g_magic_caster_champion_index);
     ui_draw_champion_state(g_magic_caster_champion_index);
@@ -614,7 +615,7 @@ static void delete_champion_symbol(void)
     Champion *c = &g_champions[g_magic_caster_champion_index];
     if (!c->symbols[0])
         return;
-    c->symbol_step = (uint8_t)NORMALIZE(c->symbol_step - 1);
+    c->symbol_step = NORMALIZE(c->symbol_step - 1);
     c->symbols[c->symbol_step] = 0;
     menus_draw_available_symbols(c->symbol_step);
     menus_draw_champion_symbols(g_magic_caster_champion_index);
@@ -822,26 +823,26 @@ static void process_other_command(int16_t command)
 }
 
 /* A step waits while the party cannot move, or while a projectile blocks this direction. */
-static int movement_blocked(int16_t command)
+static bool movement_blocked(int16_t command)
 {
     if (command < COMMAND_MOVE_FORWARD || command > COMMAND_MOVE_LEFT)
-        return 0;
+        return false;
     if (g_disabled_movement_ticks)
-        return 1;
+        return true;
     return g_projectile_disabled_movement_ticks && NORMALIZE(command + g_party_direction - COMMAND_MOVE_FORWARD) ==
                                                        g_last_projectile_disabled_movement_direction;
 }
 
 /* Takes the first waiting command and runs it. A movement command waits while the party cannot
    move. Returns 1 when it ran a command. */
-int command_process_queue(void)
+bool command_process_queue(void)
 {
     if (!queue_count)
-        return 0;
+        return false;
     QueuedCommand q = queue[queue_first];
     int16_t command = q.command, x = q.x, y = q.y;
     if (movement_blocked(command))
-        return 0;
+        return false;
     queue_first = (queue_first + 1) % QUEUE_SIZE;
     queue_count--;
     if (command == COMMAND_LEFT_RELEASE)
@@ -886,7 +887,7 @@ int command_process_queue(void)
     } else {
         process_other_command(command);
     }
-    return 1;
+    return true;
 }
 
 /* A new or loaded game starts without a pressed eye, mouth or wall, a highlight, a sleeping input

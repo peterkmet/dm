@@ -71,17 +71,17 @@ const char *adventure_backup_name(void)
     return backup_names[g_adventure];
 }
 
-int adventure_csb_present(const char *dir)
+bool adventure_csb_present(const char *dir)
 {
     char path[PATH_SIZE];
     for (int i = 0; i < GAME_FILES; i++) {
         snprintf(path, sizeof path, "%s/%s", dir, game_files[ADVENTURE_CSB][i].name);
         FILE *f = fopen(path, "rb");
         if (!f)
-            return 0;
+            return false;
         fclose(f);
     }
-    return 1;
+    return true;
 }
 
 const char *adventure_bad_file(int16_t adventure, const char *dir)

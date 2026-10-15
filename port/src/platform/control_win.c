@@ -6,10 +6,10 @@ bool control_is_available(void)
     return false;
 }
 
-int control_open(const char *path)
+bool control_open(const char *path)
 {
     (void)path;
-    return 0;
+    return false;
 }
 
 void control_poll(void)

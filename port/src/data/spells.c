@@ -72,7 +72,7 @@ int16_t spell_find(const uint8_t *symbols)
 /* Symbol character for button symbol_index (0-5) at a step (0-3). */
 uint8_t spell_symbol(uint16_t step, int16_t symbol_index)
 {
-    return (uint8_t)(SPELL_SYMBOL_FIRST + step * SPELL_SYMBOLS_PER_STEP + symbol_index);
+    return SPELL_SYMBOL_FIRST + step * SPELL_SYMBOLS_PER_STEP + symbol_index;
 }
 
 /* Mana cost of a symbol; after the power symbol, the cost is scaled by the power. */
@@ -88,7 +88,7 @@ uint16_t spell_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t pow
 /* Skill level that the spell needs at this power. */
 uint16_t spell_required_level(uint8_t power_symbol, const SpellRecord *spell)
 {
-    return (uint16_t)(power_index(power_symbol) + 1 + spell->base_required_level);
+    return power_index(power_symbol) + 1 + spell->base_required_level;
 }
 
 /* ponytail: the original squares a stale D3 from the caller; this uses required_level² as ReDMCSB intends. */
@@ -101,7 +101,7 @@ uint16_t spell_experience(uint8_t power_symbol, const SpellRecord *spell, uint16
 }
 
 /* One draw per missing skill level; the cast fails on the first draw that returns 1. */
-int16_t spell_draw_fails(uint8_t current_wisdom, uint16_t random)
+bool spell_draw_fails(uint8_t current_wisdom, uint16_t random)
 {
     uint16_t limit = current_wisdom + SPELL_WISDOM_BONUS < SPELL_WISDOM_LIMIT ? current_wisdom + SPELL_WISDOM_BONUS
                                                                               : SPELL_WISDOM_LIMIT;

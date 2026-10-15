@@ -9,7 +9,7 @@
 /* True where the control socket exists (macOS); false on Windows, which has no turn-based mode. */
 bool control_is_available(void);
 /* Listens on the socket path (an old socket file is replaced). Returns 1 on success. */
-int control_open(const char *path);
+bool control_open(const char *path);
 /* Call once per frame: accepts a client, reads requests, answers them, and ends a finished turn. */
 void control_poll(void);
 /* True while a turn runs: the main loop then runs game frames and ticks; else the game time stands still. */

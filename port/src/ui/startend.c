@@ -80,10 +80,10 @@ const char *startend_save_dir(void)
     return save_dir;
 }
 
-int wait_frame(void)
+bool wait_frame(void)
 {
     if (!g_frame_hook || g_quit_requested)
-        return 0;
+        return false;
     g_waiting_frame++;
     g_frame_hook();
     g_waiting_frame--;
@@ -97,21 +97,21 @@ void wait_frames(int16_t count)
 }
 
 /* Waits until a key or a button is pressed. Returns 0 when there are no frames. */
-static int wait_for_input(void)
+static bool wait_for_input(void)
 {
     command_discard_all_input();
     while (!g_input_received)
         if (!wait_frame())
-            return 0;
-    return 1;
+            return false;
+    return true;
 }
 
 /* The game asks before QUIT when neither a save nor a load is recent. Returns 1 to quit. */
-static int confirm_quit(void)
+static bool confirm_quit(void)
 {
     if (g_last_load_game_time + QUIT_CONFIRM_TICKS >= g_game_time ||
         g_last_save_game_time + QUIT_CONFIRM_TICKS >= g_game_time)
-        return 1;
+        return true;
     dialog_draw(NULL, gfx_string(TEXT_NOT_SAVED_OK_TO_QUIT), gfx_string(TEXT_QUIT), gfx_string(TEXT_CANCEL), NULL,
                 NULL);
     return dialog_get_choice(2) != QUIT_CHOICE_CANCEL;
@@ -199,26 +199,26 @@ void startend_save_game(void)
     command_unfreeze_game();
 }
 
-int16_t startend_load_saved_game(void)
+bool startend_load_saved_game(void)
 {
     g_game_screen_inactive = 1;
     for (;;) {
         int16_t result = savegame_load(save_dir);
         if (result == SAVEGAME_LOADED) {
             dialog_draw(NULL, gfx_string(TEXT_LOADING_GAME), NULL, NULL, NULL, NULL);
-            return 1;
+            return true;
         }
         if (result == SAVEGAME_DAMAGED) {
             /* The original quits here; the port goes back to the entrance. */
             dialog_draw(gfx_string(TEXT_GAME_DAMAGED), NULL, gfx_string(TEXT_OK), NULL, NULL, NULL);
             dialog_get_choice(1);
-            return 0;
+            return false;
         }
         dialog_draw(gfx_string(TEXT_CANT_FIND_SAVED_GAME), NULL, gfx_string(TEXT_LOAD_SAVED_GAME),
                     gfx_string(TEXT_CANCEL), NULL, NULL);
         int16_t choice = dialog_get_choice(2);
         if (!choice || choice == LOAD_CHOICE_CANCEL)
-            return 0;
+            return false;
     }
 }
 
@@ -322,7 +322,7 @@ static void csb_draw_restart_button(void)
 }
 
 /* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. CSB has no QUIT. */
-static void draw_the_end(int with_buttons)
+static void draw_the_end(bool with_buttons)
 {
     Bitmap screen = ui_screen();
     uint16_t colors[PALETTE_COLORS];
@@ -345,7 +345,7 @@ static void draw_the_end(int with_buttons)
 }
 
 /* Waits up to 900 frames for RESTART THIS GAME or QUIT. Returns 1 when the saved game is loaded. */
-static int wait_for_restart(void)
+static bool wait_for_restart(void)
 {
     command_set_only_mouse_input(UI_INPUT_ENDGAME);
     command_discard_all_input();
@@ -361,14 +361,14 @@ static int wait_for_restart(void)
     }
     command_set_only_mouse_input(-1);
     if (!g_restart_requested || g_quit_requested)
-        return 0;
+        return false;
     memset(fb, COLOR_BLACK, sizeof fb);
     int16_t loaded = startend_load_saved_game();
     g_restart_requested = 0;
     if (!loaded)
-        return 0;
+        return false;
     gameloop_start_loaded_game();
-    return 1;
+    return true;
 }
 
 /* The credits screen until a key or a button is pressed. */
@@ -398,10 +398,10 @@ void endgame(int16_t party_dead)
         wait_for_input();
     }
     if (party_dead) {
-        draw_the_end(0);
+        draw_the_end(false);
         wait_frames(THE_END_WAIT_FRAMES);
         if (g_saved_game_exists) {
-            draw_the_end(1);
+            draw_the_end(true);
             if (wait_for_restart())
                 return;
         }

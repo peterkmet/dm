@@ -167,7 +167,7 @@ void music_mix(int16_t *out, int frames)
     int16_t pcm[MUSIC_MIX_FRAMES * MUSIC_CHANNELS];
     for (int done = 0; decoding && done < frames;) {
         int wanted = frames - done < MUSIC_MIX_FRAMES ? frames - done : MUSIC_MIX_FRAMES;
-        int got = (int)drmp3_read_pcm_frames_s16(&decoder, (drmp3_uint64)wanted, pcm);
+        int got = drmp3_read_pcm_frames_s16(&decoder, (drmp3_uint64)wanted, pcm);
         for (int i = 0; i < got * MUSIC_CHANNELS; i++) {
             int sample = out[done * MUSIC_CHANNELS + i] + pcm[i] / MUSIC_VOLUME_DIVISOR;
             out[done * MUSIC_CHANNELS + i] = sample > INT16_MAX ? INT16_MAX : sample < INT16_MIN ? INT16_MIN : sample;

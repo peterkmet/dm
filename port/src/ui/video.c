@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdbool.h>
 #include "video.h"
 
 #define ARGB_OPAQUE         0xff000000u
@@ -12,7 +13,7 @@ int16_t palette_split_top = 0, palette_split_bottom = SCREEN_H;
 
 uint16_t video_color(int y, uint8_t c)
 {
-    int bottom = y < palette_split_top || y >= palette_split_bottom;
+    bool bottom = y < palette_split_top || y >= palette_split_bottom;
     return palette[(c & COLOR_INDEX_MASK) | (bottom ? PALETTE_COLORS : 0)];
 }
 

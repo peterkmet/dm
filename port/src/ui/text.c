@@ -59,19 +59,19 @@ void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s)
 }
 
 /* Pixel size of s. Returns 0 for an empty text. */
-int text_size(const char *s, int *w, int *h)
+bool text_size(const char *s, int *w, int *h)
 {
     int n = s ? (int)strlen(s) : 0;
     if (n * TEXT_CHAR_WIDTH - TEXT_CHAR_GAP < 1)
-        return 0;
+        return false;
     *w = n * TEXT_CHAR_WIDTH - TEXT_CHAR_GAP;
     *h = TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP;
-    return 1;
+    return true;
 }
 
 /* Draws s in the box (x, y, w, h), left aligned or centered, vertically centered.
    The original gets this position from the zone data (text_print_to_bitmap_zone). */
-void text_draw_box(Bitmap *bm, int x, int y, int w, int h, int centered, uint8_t fg, uint8_t bg, const char *s)
+void text_draw_box(Bitmap *bm, int x, int y, int w, int h, bool centered, uint8_t fg, uint8_t bg, const char *s)
 {
     int tw, th;
     if (!text_size(s, &tw, &th))

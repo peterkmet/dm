@@ -60,6 +60,8 @@ def lib(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_new_game.restype = ctypes.c_bool
     for f in ("gfx_string", "gfx_action_name", "gfx_object_name", "ui_skill_rank_name"):
         getattr(lib, f).restype = ctypes.c_char_p
     lib.recruit_text_thing.restype = ctypes.c_uint16

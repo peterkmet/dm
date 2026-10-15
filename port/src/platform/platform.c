@@ -34,19 +34,19 @@ static bool SDLCALL on_expose(void *userdata, SDL_Event *ev)
     return true;
 }
 
-int plat_init(int scale)
+bool plat_init(int scale)
 {
     if (!SDL_Init(SDL_INIT_VIDEO) || !SDL_CreateWindowAndRenderer("Dungeon Master", SCREEN_W * scale, SCREEN_H * scale,
                                                                   SDL_WINDOW_RESIZABLE, &win, &ren)) {
         SDL_Log("SDL: %s", SDL_GetError());
-        return 0;
+        return false;
     }
     SDL_AddEventWatch(on_expose, NULL);
     const char *name = SDL_getenv("DM_FILTER");
     if (!plat_set_filter(name ? plat_filter_factor(name) : 1))
-        return 0;
+        return false;
     next_tick = SDL_GetTicksNS() + TICK_NS;
-    return 1;
+    return true;
 }
 
 int plat_filter_factor(const char *name)
@@ -59,7 +59,7 @@ int plat_filter_factor(const char *name)
 }
 
 /* Selects the upscale filter (1 none, 2 Scale2x, 3 Scale3x) and recreates the texture. */
-int plat_set_filter(int factor)
+bool plat_set_filter(int factor)
 {
     filter = factor == 2 || factor == 3 ? factor : 1;
     if (tex)
@@ -68,10 +68,10 @@ int plat_set_filter(int factor)
                             SCREEN_H * filter);
     if (!tex) {
         SDL_Log("SDL: %s", SDL_GetError());
-        return 0;
+        return false;
     }
     SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_PIXELART); /* even pixels at a fractional scale */
-    return 1;
+    return true;
 }
 
 void plat_quit(void)
@@ -168,7 +168,7 @@ static void render_frame(void)
     SDL_RenderPresent(ren);
 }
 
-int plat_poll(PlatEvent *e)
+bool plat_poll(PlatEvent *e)
 {
     SDL_Event ev;
     int w, h;
@@ -177,14 +177,14 @@ int plat_poll(PlatEvent *e)
         switch (ev.type) {
         case SDL_EVENT_QUIT:
             e->type = PLAT_QUIT;
-            return 1;
+            return true;
         case SDL_EVENT_KEY_DOWN:
             if (ev.key.repeat)
                 break;
             e->type = PLAT_KEY;
             e->key = ev.key.key;
             e->modifiers = ev.key.mod;
-            return 1;
+            return true;
         case SDL_EVENT_MOUSE_MOTION:
             SDL_ConvertEventToRenderCoordinates(ren, &ev); /* window points -> output pixels */
             SDL_GetCurrentRenderOutputSize(ren, &w, &h);
@@ -199,10 +199,10 @@ int plat_poll(PlatEvent *e)
             video_map_mouse(w, h, (int)ev.button.x, (int)ev.button.y, &e->x, &e->y);
             mouse_x = e->x;
             mouse_y = e->y;
-            return 1;
+            return true;
         }
     }
-    return 0;
+    return false;
 }
 
 /* Sleeps until the next 50 Hz tick. */
