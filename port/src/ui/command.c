@@ -452,8 +452,8 @@ static void drop_object(int16_t pile)
         TimelineEvent rebirth = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + 1),
                                  .type = EVENT_VI_ALTAR_REBIRTH,
                                  .priority = (uint8_t)junk_charges(thing),
-                                 .b = EVENT_SQUARE(x, y),
-                                 .c = EVENT_CELL_EFFECT(cell, VI_ALTAR_REBIRTH_EFFECT)};
+                                 .b = event_square(x, y),
+                                 .c = event_cell_effect(cell, VI_ALTAR_REBIRTH_EFFECT)};
         timeline_add_event(&rebirth);
     }
     g_stop_waiting_for_input = 1;

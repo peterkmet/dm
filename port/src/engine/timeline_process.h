@@ -61,17 +61,62 @@ enum { EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS = 48, EVENT_MOVE_PROJECTILE = 49 };
 #define EVENT_TIME_MASK           0xffffff
 #define EVENT_MAP(event)          ((int16_t)((event)->map_time >> 24))
 
-/* Square events: b = x << 8 | y, c = cell << 8 | effect. */
-#define EVENT_SQUARE(x, y)              ((uint16_t)(((x) & 0xff) << 8 | ((y) & 0xff)))
-#define EVENT_CELL_EFFECT(cell, effect) ((uint16_t)(((cell) & 0xff) << 8 | ((effect) & 0xff)))
-#define EVENT_X(event)                  ((int16_t)((event)->b >> 8))
-#define EVENT_Y(event)                  ((int16_t)((event)->b & 0xff))
-#define EVENT_CELL(event)               ((int16_t)((event)->c >> 8))
-#define EVENT_EFFECT(event)             ((uint8_t)(event)->c)
-#define EVENT_SET_EFFECT(event, effect) ((event)->c = (uint16_t)(((event)->c & 0xff00) | (uint8_t)(effect)))
-
-/* Projectile move events: b = the projectile thing, c = x in bits 11-15, y in bits 6-10, direction in bits 4-5. */
-#define PROJECTILE_EVENT_DIRECTION(event) ((event)->c >> 4 & 3)
+/* Square events: b = x << 8 | y, c = cell << 8 | effect. Group events: c = ticks << 8. Event 11: b = quiver
+   slot + 1 << 8, 0: none. */
+enum {
+    EVENT_X_SHIFT = 8,
+    EVENT_CELL_SHIFT = 8,
+    EVENT_GROUP_TICKS_SHIFT = 8,
+    EVENT_QUIVER_SLOT_SHIFT = 8,
+    EVENT_BYTE_MASK = 0xff,
+    EVENT_HIGH_BYTE_MASK = 0xff00
+};
+static inline uint16_t event_square(int16_t x, int16_t y)
+{
+    return (uint16_t)((x & EVENT_BYTE_MASK) << EVENT_X_SHIFT | (y & EVENT_BYTE_MASK));
+}
+static inline uint16_t event_cell_effect(int16_t cell, int16_t effect)
+{
+    return (uint16_t)((cell & EVENT_BYTE_MASK) << EVENT_CELL_SHIFT | (effect & EVENT_BYTE_MASK));
+}
+static inline int16_t event_square_x(const TimelineEvent *event)
+{
+    return event->b >> EVENT_X_SHIFT;
+}
+static inline int16_t event_square_y(const TimelineEvent *event)
+{
+    return event->b & EVENT_BYTE_MASK;
+}
+static inline int16_t event_cell(const TimelineEvent *event)
+{
+    return event->c >> EVENT_CELL_SHIFT;
+}
+static inline uint8_t event_effect(const TimelineEvent *event)
+{
+    return (uint8_t)event->c;
+}
+static inline void event_set_effect(TimelineEvent *event, uint8_t effect)
+{
+    event->c = (uint16_t)((event->c & EVENT_HIGH_BYTE_MASK) | effect);
+}
+/* The c word of a group event that carries the ticks of the next update. */
+static inline uint16_t event_group_c(uint8_t ticks)
+{
+    return (uint16_t)(ticks << EVENT_GROUP_TICKS_SHIFT);
+}
+static inline uint16_t event_group_ticks(const TimelineEvent *event)
+{
+    return event->c >> EVENT_GROUP_TICKS_SHIFT;
+}
+/* Event 11 after a throw: the slot that gets the next weapon of the quiver, -1: none. */
+static inline int16_t event_quiver_slot(const TimelineEvent *event)
+{
+    return (int8_t)(event->b >> EVENT_QUIVER_SLOT_SHIFT) - 1;
+}
+static inline void event_set_quiver_slot(TimelineEvent *event, int16_t slot)
+{
+    event->b = (uint16_t)((slot + 1) << EVENT_QUIVER_SLOT_SHIFT | (event->b & EVENT_BYTE_MASK));
+}
 
 extern int16_t g_game_won;
 /* The endgame of an endgame sensor, set by the user interface: it runs inside the sensor event. */

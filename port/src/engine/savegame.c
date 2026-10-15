@@ -38,7 +38,7 @@ enum {
     P_INVISIBILITY = 86,
 };
 /* Timeline event record offsets. */
-enum { E_MAP_TIME = 0, E_TYPE = 4, E_PRIORITY = 5, E_B = 6, E_C = 8 };
+enum { E_MAP_TIME = 0, E_TYPE = 4, E_PRIORITY = 5, E_DATA_B = 6, E_DATA_C = 8 };
 /* Active group record offsets: group index, then 14 bytes in the order of ActiveGroup. */
 enum { A_GROUP_INDEX = 0, A_BYTES = 2 };
 
@@ -142,8 +142,8 @@ static void pack_event(const TimelineEvent *e, uint8_t *p)
     WR32(p + E_MAP_TIME, e->type ? e->map_time : e->map_time << SAVED_FREE_INDEX_SHIFT);
     p[E_TYPE] = e->type;
     p[E_PRIORITY] = e->priority;
-    WR16(p + E_B, e->b);
-    WR16(p + E_C, e->c);
+    WR16(p + E_DATA_B, e->b);
+    WR16(p + E_DATA_C, e->c);
 }
 
 static void unpack_event(const uint8_t *p, TimelineEvent *e)
@@ -151,8 +151,8 @@ static void unpack_event(const uint8_t *p, TimelineEvent *e)
     e->map_time = BE32(p + E_MAP_TIME);
     e->type = p[E_TYPE];
     e->priority = p[E_PRIORITY];
-    e->b = BE16(p + E_B);
-    e->c = BE16(p + E_C);
+    e->b = BE16(p + E_DATA_B);
+    e->c = BE16(p + E_DATA_C);
 }
 
 /* An active group: the group index, then the creature state bytes as they are. */

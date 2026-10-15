@@ -279,7 +279,7 @@ void group_start_wandering(int16_t x, int16_t y)
         .map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + 1),
         .type = EVENT_UPDATE_BEHAVIOR_GROUP,
         .priority = GROUP_EVENT_PRIORITY_MAX - group_info(group)->movement_ticks,
-        .b = EVENT_SQUARE(x, y),
+        .b = event_square(x, y),
     };
     timeline_add_event(&event);
 }
@@ -289,7 +289,7 @@ void group_delete_events(int16_t x, int16_t y)
     for (uint16_t i = 0; i < g_event_high_water; i++) {
         TimelineEvent *event = &g_timeline_events[i];
         if (EVENT_MAP(event) == g_current_map_index && event->type >= EVENT_GROUP_REACTION_DANGER_ON_SQUARE &&
-            event->type <= EVENT_UPDATE_BEHAVIOR_CREATURE_3 && EVENT_X(event) == x && EVENT_Y(event) == y)
+            event->type <= EVENT_UPDATE_BEHAVIOR_CREATURE_3 && event_square_x(event) == x && event_square_y(event) == y)
             timeline_delete_event(i);
     }
 }
@@ -545,7 +545,7 @@ static void shift_creature_events(int16_t x, int16_t y, uint16_t dead_creature)
 {
     for (uint16_t i = 0; i < g_event_high_water; i++) {
         TimelineEvent *event = &g_timeline_events[i];
-        if (EVENT_MAP(event) != g_current_map_index || EVENT_X(event) != x || EVENT_Y(event) != y ||
+        if (EVENT_MAP(event) != g_current_map_index || event_square_x(event) != x || event_square_y(event) != y ||
             event->type < EVENT_UPDATE_ASPECT_CREATURE_0 || event->type > EVENT_UPDATE_BEHAVIOR_CREATURE_3)
             continue;
         uint16_t first = event->type < EVENT_UPDATE_BEHAVIOR_GROUP ? EVENT_UPDATE_ASPECT_CREATURE_0
@@ -1047,10 +1047,10 @@ static void group_add_event(TimelineEvent *event, uint32_t aspect_update_time)
     uint32_t time = event->map_time & EVENT_TIME_MASK;
     if (aspect_update_time < time) {
         event->type -= EVENT_BEHAVIOR_TO_ASPECT;
-        event->c = (uint8_t)(time - aspect_update_time) << 8;
+        event->c = event_group_c(time - aspect_update_time);
         event->map_time = (event->map_time & ~(uint32_t)EVENT_TIME_MASK) | aspect_update_time;
     } else {
-        event->c = (uint8_t)(aspect_update_time - time) << 8;
+        event->c = event_group_c(aspect_update_time - time);
     }
     timeline_add_event(event);
 }
@@ -1408,7 +1408,7 @@ static int16_t try_move(GroupTurn *t, int16_t target_x, int16_t target_y)
     }
     if (move_get_move_result(t->group, t->x, t->y, target_x, target_y))
         return 1;
-    t->next.b = EVENT_SQUARE(g_move_result_map_x, g_move_result_map_y);
+    t->next.b = event_square(g_move_result_map_x, g_move_result_map_y);
     t->active->prior_x = t->x;
     t->active->prior_y = t->y;
     t->active->last_move_time = g_game_time;
@@ -1891,7 +1891,7 @@ static void wander_off_party_map(GroupTurn *t)
         step(direction, 1, &target_x, &target_y);
         if (move_get_move_result(t->group, t->x, t->y, target_x, target_y))
             return;
-        t->next.b = EVENT_SQUARE(g_move_result_map_x, g_move_result_map_y);
+        t->next.b = event_square(g_move_result_map_x, g_move_result_map_y);
     }
     t->next.type = EVENT_UPDATE_BEHAVIOR_GROUP;
     t->next.map_time += max16(abs16(g_current_map_index - g_party_map_index) << 4, t->info->movement_ticks * 2);
@@ -1904,7 +1904,7 @@ static void postpone_for_freeze_life(GroupTurn *t)
     if (t->event_type < 0)
         return;
     t->next.type = t->event_type;
-    t->next.c = (uint8_t)t->ticks << 8;
+    t->next.c = event_group_c(t->ticks);
     t->next.map_time += FREEZE_LIFE_RETRY_TICKS;
     timeline_add_event(&t->next);
 }
@@ -1976,7 +1976,7 @@ void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint
     t->next = (TimelineEvent){
         .map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time),
         .priority = GROUP_EVENT_PRIORITY_MAX - t->info->movement_ticks,
-        .b = EVENT_SQUARE(x, y),
+        .b = event_square(x, y),
     };
     if (g_current_map_index != g_party_map_index) {
         wander_off_party_map(t);
@@ -2208,7 +2208,7 @@ void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(map, g_game_time + MOVE_GROUP_RETRY_TICKS),
         .type = audible ? EVENT_MOVE_GROUP_AUDIBLE : EVENT_MOVE_GROUP_SILENT,
-        .b = EVENT_SQUARE(x, y),
+        .b = event_square(x, y),
         .c = group,
     };
     timeline_add_event(&event);
@@ -2217,7 +2217,7 @@ void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t
 /* A waiting group enters its square when the square is free. Lord Chaos may take an adjacent open square. */
 void group_process_move_event(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event), retried = 0;
+    int16_t x = event_square_x(event), y = event_square_y(event), retried = 0;
     for (;;) {
         if (!is_party_on(x, y) && get_square_group(x, y) == THING_ENDOFLIST) {
             if (event->type == EVENT_MOVE_GROUP_AUDIBLE)

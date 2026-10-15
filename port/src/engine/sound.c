@@ -178,7 +178,7 @@ void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mo
         return;
     if (mode > SOUND_MODE_AFTER_TICK) {
         TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + (mode - 1)), EVENT_PLAY_SOUND,
-                           tables_sound_priority(sound), EVENT_SQUARE(map_x, map_y), sound};
+                           tables_sound_priority(sound), event_square(map_x, map_y), sound};
         timeline_add_event(&e);
         return;
     }

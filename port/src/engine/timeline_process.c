@@ -59,7 +59,7 @@ static void print_text(uint16_t text)
    that hits the party or a group goes back one step; the group takes damage. */
 void event_door_animation(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event), effect = EVENT_EFFECT(event);
+    int16_t x = event_square_x(event), y = event_square_y(event), effect = event_effect(event);
     uint8_t *square = &g_current_map_data[x][y];
     int16_t state = door_state(*square);
     if (state == DOOR_DESTROYED)
@@ -99,19 +99,19 @@ void event_door_animation(TimelineEvent *event)
 
 void event_door_destruction(TimelineEvent *event)
 {
-    uint8_t *square = &g_current_map_data[EVENT_X(event)][EVENT_Y(event)];
+    uint8_t *square = &g_current_map_data[event_square_x(event)][event_square_y(event)];
     *square = square_with_door_state(*square, DOOR_DESTROYED);
 }
 
 /* A door event becomes a door animation event at the same time. Toggle closes an open door and opens any other. */
 void event_door(TimelineEvent *event)
 {
-    int16_t state = door_state(g_current_map_data[EVENT_X(event)][EVENT_Y(event)]);
+    int16_t state = door_state(g_current_map_data[event_square_x(event)][event_square_y(event)]);
     if (state == DOOR_DESTROYED)
         return;
-    if (EVENT_EFFECT(event) == EFFECT_TOGGLE)
-        EVENT_SET_EFFECT(event, state == DOOR_OPEN ? EFFECT_CLEAR : EFFECT_SET);
-    else if (EVENT_EFFECT(event) == EFFECT_SET ? state == DOOR_OPEN : state == DOOR_CLOSED)
+    if (event_effect(event) == EFFECT_TOGGLE)
+        event_set_effect(event, state == DOOR_OPEN ? EFFECT_CLEAR : EFFECT_SET);
+    else if (event_effect(event) == EFFECT_SET ? state == DOOR_OPEN : state == DOOR_CLOSED)
         return;
     event->type = EVENT_DOOR_ANIMATION;
     timeline_add_event(event);
@@ -120,7 +120,7 @@ void event_door(TimelineEvent *event)
 /* Opens or closes a fake wall. Closing waits while the party or a material group is on the square. */
 void event_fake_wall(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event), effect = EVENT_EFFECT(event);
+    int16_t x = event_square_x(event), y = event_square_y(event), effect = event_effect(event);
     uint8_t *square = &g_current_map_data[x][y];
     uint16_t attributes;
     if (effect == EFFECT_TOGGLE)
@@ -139,11 +139,11 @@ void event_fake_wall(TimelineEvent *event)
 /* Opens or closes a teleporter or a pit. Opening moves the things on the square. */
 static void open_or_close(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event);
+    int16_t x = event_square_x(event), y = event_square_y(event);
     uint8_t *square = &g_current_map_data[x][y];
-    if (EVENT_EFFECT(event) == EFFECT_TOGGLE)
-        EVENT_SET_EFFECT(event, *square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
-    if (EVENT_EFFECT(event) == EFFECT_SET) {
+    if (event_effect(event) == EFFECT_TOGGLE)
+        event_set_effect(event, *square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
+    if (event_effect(event) == EFFECT_SET) {
         *square |= TELEPORTER_OPEN;
         event_move_teleporter_or_pit_square_things(x, y);
     } else {
@@ -192,10 +192,10 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
 /* Texts on the corridor change visibility, and group generators run. */
 void event_corridor(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event);
+    int16_t x = event_square_x(event), y = event_square_y(event);
     for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_TYPE(t) == THING_TEXT) {
-            if (change_text_visibility(t, EVENT_EFFECT(event)) && is_party_on(x, y))
+            if (change_text_visibility(t, event_effect(event)) && is_party_on(x, y))
                 print_text(t);
         } else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_FLOOR_GROUP_GENERATOR) {
             trigger_group_generator(t, event, x, y);
@@ -206,8 +206,8 @@ void event_corridor(TimelineEvent *event)
 /* The first disabled sensor of the square becomes a group generator again. */
 void event_enable_group_generator(TimelineEvent *event)
 {
-    for (uint16_t t = get_square_first_thing(EVENT_X(event), EVENT_Y(event)); t != THING_NONE && t != THING_ENDOFLIST;
-         t = get_next_thing(t)) {
+    for (uint16_t t = get_square_first_thing(event_square_x(event), event_square_y(event));
+         t != THING_NONE && t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_DISABLED) {
             rec_sensor_set_type(t, SENSOR_FLOOR_GROUP_GENERATOR);
             return;
@@ -260,7 +260,8 @@ static void gate(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t 
    An endgame sensor ends the game. */
 void event_wall(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event), cell = EVENT_CELL(event), effect = EVENT_EFFECT(event);
+    int16_t x = event_square_x(event), y = event_square_y(event), cell = event_cell(event),
+            effect = event_effect(event);
     for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
         if (THING_TYPE(t) == THING_TEXT && THING_CELL(t) == cell)
             change_text_visibility(t, effect);
@@ -296,7 +297,7 @@ static void update_explosion_events(uint16_t explosion)
     for (uint16_t i = 0; i < g_event_high_water; i++) {
         TimelineEvent *e = &g_timeline_events[i];
         if (e->type == EVENT_EXPLOSION && e->c == explosion) {
-            e->b = EVENT_SQUARE(g_move_result_map_x, g_move_result_map_y);
+            e->b = event_square(g_move_result_map_x, g_move_result_map_y);
             e->c = THING_WITH_CELL(explosion, g_move_result_cell);
             e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
         }
@@ -367,7 +368,7 @@ bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int
     } else {
         TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + ticks),
                                .type = EVENT_DOOR_DESTRUCTION,
-                               .b = EVENT_SQUARE(x, y)};
+                               .b = event_square(x, y)};
         timeline_add_event(&event);
     }
     return true;
@@ -417,7 +418,7 @@ void event_hide_damage_received(uint16_t champion_index)
    disappear, 0 the champion lives again. The bones hold the champion index in their charges. */
 void event_vi_altar_rebirth(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event), cell = EVENT_CELL(event), step = EVENT_EFFECT(event);
+    int16_t x = event_square_x(event), y = event_square_y(event), cell = event_cell(event), step = event_effect(event);
     uint16_t champion_index = event->priority;
     if (step == 0) {
         champion_resurrect(champion_index);
@@ -438,7 +439,7 @@ void event_vi_altar_rebirth(TimelineEvent *event)
         thing_set_free(thing);
         event->map_time++;
     }
-    EVENT_SET_EFFECT(event, step - 1);
+    event_set_effect(event, step - 1);
     timeline_add_event(event);
 }
 
@@ -516,8 +517,8 @@ void event_process_expired(void)
             break;
         case EVENT_ENABLE_CHAMPION_ACTION:
             event_enable_champion_action(event.priority);
-            if (event.b >> 8) /* after a throw: the slot + 1 that gets the next weapon of the quiver */
-                action_move_weapon_from_quiver_to_slot(event.priority, (int8_t)(event.b >> 8) - 1);
+            if (event_quiver_slot(&event) != -1) /* after a throw: the slot that gets the next weapon of the quiver */
+                action_move_weapon_from_quiver_to_slot(event.priority, event_quiver_slot(&event));
             break;
         case EVENT_HIDE_DAMAGE_RECEIVED:
             event_hide_damage_received(event.priority);
@@ -526,11 +527,11 @@ void event_process_expired(void)
             event_vi_altar_rebirth(&event);
             break;
         case EVENT_PLAY_SOUND:
-            sound_request_play(event.c, EVENT_X(&event), EVENT_Y(&event), SOUND_MODE_AFTER_TICK);
+            sound_request_play(event.c, event_square_x(&event), event_square_y(&event), SOUND_MODE_AFTER_TICK);
             break;
         case EVENT_REMOVE_FLUXCAGE:
             if (!g_game_won) {
-                unlink_thing_from_list(event.c, 0, EVENT_X(&event), EVENT_Y(&event));
+                unlink_thing_from_list(event.c, 0, event_square_x(&event), event_square_y(&event));
                 thing_set_free(event.c);
             }
             break;
@@ -557,7 +558,8 @@ void event_process_expired(void)
             break;
         default:
             if (event.type >= EVENT_GROUP_REACTION_DANGER_ON_SQUARE && event.type <= EVENT_UPDATE_BEHAVIOR_CREATURE_3)
-                group_process_reaction_event(EVENT_X(&event), EVENT_Y(&event), event.type, EVENT_CELL(&event));
+                group_process_reaction_event(event_square_x(&event), event_square_y(&event), event.type,
+                                             event_group_ticks(&event));
             else
                 process_effect_event(&event);
             break;

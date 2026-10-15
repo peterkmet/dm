@@ -32,7 +32,6 @@ numbered event79_count_footprints open: module cleanup
 numbered event73_count_thieves_eye open: module cleanup
 numbered event71_count_invisibility open: module cleanup
 numbered H_BYTE_12A open: module cleanup
-packed engine/timeline_process.c open: module cleanup
 packed engine/recruit.c open: module cleanup
 packed ui/view.c open: module cleanup
 packed platform/control.c open: module cleanup

@@ -30,8 +30,8 @@ void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, in
         .priority = g_adventure == ADVENTURE_CSB                      ? 0
                     : effect >= EFFECT_SET && effect <= EFFECT_TOGGLE ? priority[effect]
                                                                       : 0,
-        .b = EVENT_SQUARE(x, y),
-        .c = EVENT_CELL_EFFECT(cell, effect),
+        .b = event_square(x, y),
+        .c = event_cell_effect(cell, effect),
     };
     timeline_add_event(&event);
 }

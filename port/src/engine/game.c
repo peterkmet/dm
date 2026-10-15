@@ -225,25 +225,25 @@ int16_t timeline_find_mergeable_event(TimelineEvent *event)
     for (int16_t i = 0; i < g_event_high_water; i++, e++) {
         if (IS_SQUARE_EVENT(event->type)) {
             if (IS_SQUARE_EVENT(e->type)) {
-                if (SAME_PLACE(e, event) && (e->type != EVENT_WALL || EVENT_CELL(e) == EVENT_CELL(event))) {
-                    EVENT_SET_EFFECT(e, event->c);
+                if (SAME_PLACE(e, event) && (e->type != EVENT_WALL || event_cell(e) == event_cell(event))) {
+                    event_set_effect(e, event->c);
                     return i;
                 }
             } else if (e->type == EVENT_DOOR_ANIMATION && SAME_PLACE(e, event)) {
-                if (EVENT_EFFECT(event) == EFFECT_TOGGLE)
-                    EVENT_SET_EFFECT(event, OPPOSITE_EFFECT(EVENT_EFFECT(e)));
+                if (event_effect(event) == EFFECT_TOGGLE)
+                    event_set_effect(event, OPPOSITE_EFFECT(event_effect(e)));
                 timeline_delete_event(i);
                 return -1;
             }
         } else if (event->type == EVENT_DOOR_ANIMATION) {
             if (SAME_PLACE(e, event)) {
                 if (e->type == EVENT_DOOR) {
-                    if (EVENT_EFFECT(e) == EFFECT_TOGGLE)
-                        EVENT_SET_EFFECT(e, OPPOSITE_EFFECT(EVENT_EFFECT(event)));
+                    if (event_effect(e) == EFFECT_TOGGLE)
+                        event_set_effect(e, OPPOSITE_EFFECT(event_effect(event)));
                     return i;
                 }
                 if (e->type == EVENT_DOOR_ANIMATION) {
-                    EVENT_SET_EFFECT(e, event->c);
+                    event_set_effect(e, event->c);
                     return i;
                 }
             }

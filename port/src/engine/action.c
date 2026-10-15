@@ -60,8 +60,6 @@ enum {
 #define THROW_STEP_ENERGY_MINIMUM     5
 #define WEAPON_CLASS_SKILL_LEVEL_STEP 8
 #define WEAPON_SHOOT_ATTACK_MASK      0xff /* weapon info attributes bits 0-7: the attack of a launcher */
-#define QUIVER_SLOT_SHIFT             8    /* event 11 b: slot + 1 for the next quiver weapon in the high byte */
-#define EVENT_B_LOW_BYTE              0xff
 #define SPELL_ACTION_ATTACK_MINIMUM   2    /* with too little mana: max(2, mana * attack / cost) */
 #define INVOKE_ACTION_RANDOM_MASK     0x7f /* Invoke attack: 100 + random(128) */
 #define HEAL_ACTION_EXPERIENCE_STEP   2    /* Heal experience: 2, plus 2 for each step */
@@ -417,9 +415,7 @@ static bool is_action_hand_object_thrown(uint16_t champion_index)
     int16_t side = NORMALIZE(g_party_direction + 1) == c->cell || NORMALIZE(g_party_direction + 2) == c->cell;
     if (!action_is_object_thrown(champion_index, SLOT_HAND_ACTION, side))
         return false;
-    g_timeline_events[c->enable_action_event_index].b =
-        (SLOT_HAND_ACTION + 1) << QUIVER_SLOT_SHIFT |
-        (g_timeline_events[c->enable_action_event_index].b & EVENT_B_LOW_BYTE);
+    event_set_quiver_slot(&g_timeline_events[c->enable_action_event_index], SLOT_HAND_ACTION);
     return true;
 }
 

@@ -153,7 +153,7 @@ void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_comb
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + delay),
         .type = EVENT_EXPLOSION,
-        .b = EVENT_SQUARE(x, y),
+        .b = event_square(x, y),
         .c = explosion,
     };
     timeline_add_event(&event);
@@ -493,7 +493,7 @@ static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t dama
 void explosion_process_step_event(TimelineEvent *event)
 {
     uint16_t explosion = event->c;
-    int16_t x = EVENT_X(event), y = EVENT_Y(event);
+    int16_t x = event_square_x(event), y = event_square_y(event);
     uint8_t square = g_current_map_data[x][y];
     uint16_t group = get_square_group(x, y);
     uint16_t type = rec_explosion_type(explosion), attack = rec_explosion_attack(explosion);
@@ -583,7 +583,7 @@ void projectile_fluxcage_action(int16_t x, int16_t y)
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + FLUXCAGE_LIFETIME),
         .type = EVENT_REMOVE_FLUXCAGE,
-        .b = EVENT_SQUARE(x, y),
+        .b = event_square(x, y),
         .c = fluxcage,
     };
     timeline_add_event(&event);
@@ -734,8 +734,8 @@ static uint16_t square_object_in_cells(int16_t x, int16_t y, uint16_t cell)
 /* A wall launcher (sensor 7-10, 14, 15) shoots one or two objects or explosions from the square in front of it. */
 void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event);
-    uint16_t direction = EVENT_CELL(event), cell = (direction + 2) & 3;
+    int16_t x = event_square_x(event), y = event_square_y(event);
+    uint16_t direction = event_cell(event), cell = (direction + 2) & 3;
     uint16_t type = rec_sensor_type(sensor), data = rec_sensor_data(sensor);
     int16_t single = type == SENSOR_WALL_LAUNCHER_OBJECT || type == SENSOR_WALL_LAUNCHER_EXPLOSION ||
                      type == SENSOR_WALL_LAUNCHER_SQUARE_OBJECT;

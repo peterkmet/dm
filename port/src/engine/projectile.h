@@ -95,6 +95,7 @@ static inline void explosion_set_centered(uint16_t explosion, int16_t centered)
 enum {
     PROJECTILE_EVENT_X_SHIFT = 11,
     PROJECTILE_EVENT_Y_SHIFT = 6,
+    PROJECTILE_EVENT_DIRECTION_SHIFT = 4,
     PROJECTILE_EVENT_XY_MASK = 0x1f,
     PROJECTILE_EVENT_STEP_ENERGY_MASK = 0xf
 };
@@ -108,7 +109,7 @@ static inline int16_t projectile_event_y(const TimelineEvent *event)
 }
 static inline uint16_t projectile_event_direction(const TimelineEvent *event)
 {
-    return event->c >> 4 & 3;
+    return event->c >> PROJECTILE_EVENT_DIRECTION_SHIFT & 3;
 }
 static inline uint16_t projectile_event_step_energy(const TimelineEvent *event)
 {
@@ -117,8 +118,8 @@ static inline uint16_t projectile_event_step_energy(const TimelineEvent *event)
 static inline uint16_t projectile_event_c(int16_t x, int16_t y, uint16_t direction, uint16_t step_energy)
 {
     return (x & PROJECTILE_EVENT_XY_MASK) << PROJECTILE_EVENT_X_SHIFT |
-           (y & PROJECTILE_EVENT_XY_MASK) << PROJECTILE_EVENT_Y_SHIFT | (direction & 3) << 4 |
-           (step_energy & PROJECTILE_EVENT_STEP_ENERGY_MASK);
+           (y & PROJECTILE_EVENT_XY_MASK) << PROJECTILE_EVENT_Y_SHIFT |
+           (direction & 3) << PROJECTILE_EVENT_DIRECTION_SHIFT | (step_energy & PROJECTILE_EVENT_STEP_ENERGY_MASK);
 }
 
 extern int16_t g_create_launcher_projectile;
