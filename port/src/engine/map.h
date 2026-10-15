@@ -10,14 +10,16 @@
    Coordinates are on the current map. All records keep the big-endian layout of Dungeon.DAT. */
 
 enum { DIRECTION_NORTH, DIRECTION_EAST, DIRECTION_SOUTH, DIRECTION_WEST };
+#define DIRECTION_BITS 2
 enum { LEVEL_UP = -1, LEVEL_DOWN = 1 };
-#define MAP_COORD_MASK 31 /* map coordinates are 5 bits */
+#define MAP_COORD_BITS 5 /* maps are at most 32 squares wide and high */
+#define MAP_COORD_MASK 0x1f
 
 /* Square byte: type in bits 5-7, a thing list in bit 4, type flags in bits 0-3. */
 enum { SQUARE_WALL, SQUARE_CORRIDOR, SQUARE_PIT, SQUARE_STAIRS, SQUARE_DOOR, SQUARE_TELEPORTER, SQUARE_FAKE_WALL };
-enum { SQUARE_HAS_THINGS = 0x10 };
+enum { SQUARE_HAS_THINGS = 0x10, SQUARE_RANDOM_ORNAMENT = 8 }; /* random ornament: corridor and open fake wall */
 enum { WALL_ORNAMENT_RIGHT = 1, WALL_ORNAMENT_ABOVE = 2, WALL_ORNAMENT_LEFT = 4, WALL_ORNAMENT_BELOW = 8 };
-enum { PIT_IMAGINARY = 1, PIT_OPEN = 8 };
+enum { PIT_IMAGINARY = 1, PIT_INVISIBLE = 4, PIT_OPEN = 8 };
 enum { STAIRS_UP = 4, STAIRS_NORTH_SOUTH = 8 };
 enum { DOOR_STATE_MASK = 7, DOOR_OPEN = 0, DOOR_ALMOST_OPEN = 1, DOOR_CLOSED = 4, DOOR_DESTROYED = 5 };
 enum { TELEPORTER_VISIBLE = 4, TELEPORTER_OPEN = 8 };
@@ -408,10 +410,10 @@ static inline uint8_t rec_group_cells_byte(uint16_t group)
 {
     return REC(group)[5];
 }
-enum { GROUP_DIRECTION_BYTE = 14, GROUP_LAST_CREATURE_BYTE = 15 };
+enum { GROUP_DIRECTION_BYTE = 14, GROUP_BEHAVIOR_BYTE = 15 }; /* behavior and last creature index */
 static inline uint8_t rec_group_last_creature_index(uint16_t group)
 {
-    return (REC(group)[GROUP_LAST_CREATURE_BYTE] & 0x60) >> 5;
+    return (REC(group)[GROUP_BEHAVIOR_BYTE] & 0x60) >> 5;
 }
 static inline uint8_t rec_group_direction(uint16_t group)
 {

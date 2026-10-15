@@ -36,6 +36,7 @@ enum {
     SKILL_WIZARD,
     SKILL_BASE_COUNT,
     SKILL_SWING = 4,
+    SKILL_PARRY = 7,
     SKILL_THROW = 10,
     SKILL_SHOOT,
     SKILL_HEAL = 13,
@@ -43,6 +44,34 @@ enum {
     SKILL_DEFEND,
     SKILL_COUNT = 20
 };
+#define HIDDEN_SKILLS_PER_BASE 4
+#define SKILL_LEVEL_MAXIMUM    16 /* the level names stop at this level */
+
+/* Object info index of the first record of each object type. */
+enum {
+    OBJECT_INFO_FIRST_SCROLL = 0,
+    OBJECT_INFO_FIRST_CONTAINER = 1,
+    OBJECT_INFO_FIRST_POTION = 2,
+    OBJECT_INFO_FIRST_WEAPON = 23,
+    OBJECT_INFO_FIRST_ARMOUR = 69,
+    OBJECT_INFO_FIRST_JUNK = 127
+};
+/* Object info allowed slots bit: the object passes through a door grate. */
+enum { OBJECT_PASSES_DOOR_GRATE = 0x0100 };
+
+/* Creature graphic info bits (CreatureInfo.graphic_info). */
+enum {
+    GRAPHIC_FLIP_NON_ATTACK = 0x0004,
+    GRAPHIC_HAS_SIDE = 0x0008,
+    GRAPHIC_HAS_BACK = 0x0010,
+    GRAPHIC_HAS_ATTACK = 0x0020,
+    GRAPHIC_SPECIAL_D2_FRONT = 0x0080,
+    GRAPHIC_D2_FRONT_FLIPPED = 0x0100,
+    GRAPHIC_FLIP_ATTACK = 0x0200,
+    GRAPHIC_FLIP_DURING_ATTACK = 0x0400
+};
+#define GRAPHIC_HORIZONTAL_OFFSET_RANGE(info) ((info) >> 12 & 3)
+#define GRAPHIC_VERTICAL_OFFSET_RANGE(info)   ((info) >> 14)
 
 typedef struct {
     uint8_t aspect_index;

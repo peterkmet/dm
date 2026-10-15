@@ -22,8 +22,8 @@
 #define H_CHECKSUMS        0x156
 #define H_FORMAT           0x176
 #define H_CSB_PAYLOAD_KEY  0x3a
-#define H_CSB_SHIFT        2    /* CSB moves the fields from 0x12a on by 2 bytes */
-#define H_SAVED_GAME_BYTES 0x28 /* payload bytes that the CEDT merge copies from the saved game */
+#define H_CSB_SHIFT        2  /* CSB moves the fields from 0x12a on by 2 bytes */
+#define H_SAVED_GAME_BYTES 40 /* payload bytes that the CEDT merge copies from the saved game */
 
 #define SAVE_FORMAT               3
 #define PLATFORM_AMIGA            5 /* save_game writes 5; a load refuses 1 */

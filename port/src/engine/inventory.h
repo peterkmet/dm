@@ -7,7 +7,18 @@
 
 /* Objects, slots, and the leader hand: docs/rules-champions.md. */
 
+/* Object types of the rules: the weapon, potion, and junk type of a record. */
 enum {
+    WEAPON_TORCH = 2,
+    WEAPON_DAGGER = 8,
+    WEAPON_ARROW = 27,
+    WEAPON_SLAYER = 28,
+    WEAPON_ROCK = 30,
+    WEAPON_POISON_DART = 31,
+    WEAPON_THROWING_STAR = 32
+};
+enum {
+    POTION_VEN_BOMB = 3,
     POTION_ROS = 6,
     POTION_KU,
     POTION_DANE,
@@ -18,9 +29,19 @@ enum {
     POTION_EE,
     POTION_VI,
     POTION_WATER,
+    POTION_FUL_BOMB = 19,
     POTION_EMPTY_FLASK = 20,
 };
-enum { JUNK_BONES = 5 };
+#define POTION_POWER_PER_LEVEL 40 /* potion power of one power symbol level */
+enum {
+    JUNK_WATERSKIN = 1, /* each charge weighs 0.2 kg */
+    JUNK_BONES = 5,
+    JUNK_BOULDER = 25,
+    JUNK_MAGICAL_BOX_BLUE = 42,
+    JUNK_MAGICAL_BOX_GREEN = 43,
+    JUNK_ZOKATHRA = 51
+};
+enum { OBJECT_TYPE_ZOKATHRA = 197 }; /* object type of the ZOKATHRA SPELL junk, that DAIN shows */
 enum { ARMOUR_SHARP_RESISTANCE = 0x07, ARMOUR_SHIELD = 0x80 }; /* ArmourInfo.attributes */
 enum { OBJECT_EDIBLE = 1 };                                    /* ObjectInfo.allowed_slots: the mouth */
 

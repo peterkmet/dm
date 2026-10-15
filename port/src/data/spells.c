@@ -5,14 +5,11 @@
 #include "csbimage.h"
 #include "ftl.h"
 
-#define SPELL_FIRST_SYMBOL_SHIFT      24 /* the first symbol is in bits 24-31 of the symbols */
-#define SPELL_EXPERIENCE_POWER_FACTOR 8
-#define SPELL_EXPERIENCE_LEVEL_FACTOR 16
-#define SPELL_EXPERIENCE_RANDOM_MASK  7
-#define LSR_COUNT_MODULO              64  /* the 68000 LSR takes the shift count modulo 64 */
-#define SPELL_WISDOM_BONUS            15  /* added to wisdom for the failure draw */
-#define SPELL_WISDOM_LIMIT            115 /* the failure draw limit never goes above this */
-#define SPELL_DRAW_RANGE              128
+#define SPELL_FIRST_SYMBOL_SHIFT 24  /* the first symbol is in bits 24-31 of the symbols */
+#define LSR_COUNT_MODULO         64  /* the 68000 LSR takes the shift count modulo 64 */
+#define SPELL_WISDOM_BONUS       15  /* added to wisdom for the failure draw */
+#define SPELL_WISDOM_LIMIT       115 /* the failure draw limit never goes above this */
+#define SPELL_DRAW_RANGE         128
 
 /* The spell table of the engine: the CSB table with its 4 magic map spells lies after the KAOS data. */
 static uint32_t spells_address(void)

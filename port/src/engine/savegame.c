@@ -16,12 +16,8 @@
 #include "random.h"
 #include "savefile.h"
 
-#define MIN_ACTIVE_GROUP_COUNT     110  /* DM load_game raises the saved maximum to at least this; CSB keeps it */
-#define TIMELINE_ENTRY_BYTES       2    /* one event index per timeline entry */
-#define EXTENSION_LENGTH_BYTES     4    /* the length of the automap block, after the block */
-#define NEW_ADVENTURE_FOOD_WATER   1500 /* food and water of a merged champion: this + a random byte */
-#define NEW_ADVENTURE_RANDOM_MASK  0xff
-#define NEW_ADVENTURE_STAT_MINIMUM 30
+#define TIMELINE_ENTRY_BYTES       2 /* one event index per timeline entry */
+#define EXTENSION_LENGTH_BYTES     4 /* the length of the automap block, after the block */
 #define NEW_ADVENTURE_LUCK_MINIMUM 10
 #define SAVED_FREE_INDEX_SHIFT     16 /* a free event slot of the file keeps the next free index in the high word */
 
@@ -389,10 +385,10 @@ static void reset_for_new_adventure(Champion *c, int16_t turn)
     c->current_stamina = c->maximum_stamina;
     c->current_mana = c->maximum_mana;
     c->action_defense = 0;
-    c->food = NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK);
-    c->water = NEW_ADVENTURE_FOOD_WATER + (random16() & NEW_ADVENTURE_RANDOM_MASK);
+    c->food = INITIAL_FOOD_WATER + (random16() & FOOD_WATER_RANDOM_MASK);
+    c->water = INITIAL_FOOD_WATER + (random16() & FOOD_WATER_RANDOM_MASK);
     for (int s = 0; s < STAT_COUNT; s++) {
-        c->statistics[s][STAT_MINIMUM] = NEW_ADVENTURE_STAT_MINIMUM;
+        c->statistics[s][STAT_MINIMUM] = STAT_MINIMUM_VALUE;
         c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM];
     }
     c->statistics[STAT_LUCK][STAT_MINIMUM] = NEW_ADVENTURE_LUCK_MINIMUM;
@@ -466,8 +462,8 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
 static int allocate_tables(void)
 {
     uint16_t groups = g_max_active_group_count;
-    if (g_adventure == ADVENTURE_DM && groups < MIN_ACTIVE_GROUP_COUNT)
-        groups = MIN_ACTIVE_GROUP_COUNT;
+    if (g_adventure == ADVENTURE_DM && groups < ACTIVE_GROUP_MAX_COUNT)
+        groups = ACTIVE_GROUP_MAX_COUNT;
     if (g_event_max_count <= 0)
         return 0;
     free(g_timeline_events);
@@ -493,8 +489,9 @@ static int restore_game(const SaveFile *s)
         return 0;
     for (uint16_t i = 0; i < g_max_active_group_count; i++)
         unpack_active_group(s->block[SAVE_BLOCK_GROUPS] + i * SAVE_ACTIVE_GROUP_BYTES, &g_active_groups[i]);
-    if (g_adventure == ADVENTURE_DM && g_max_active_group_count < MIN_ACTIVE_GROUP_COUNT)
-        g_max_active_group_count = MIN_ACTIVE_GROUP_COUNT;
+    /* DM load_game raises the saved maximum to at least the DM maximum; CSB keeps it */
+    if (g_adventure == ADVENTURE_DM && g_max_active_group_count < ACTIVE_GROUP_MAX_COUNT)
+        g_max_active_group_count = ACTIVE_GROUP_MAX_COUNT;
     for (int i = 0; i < CHAMPION_MAX_COUNT; i++)
         champion_unpack(s->block[SAVE_BLOCK_CHAMPIONS] + i * CHAMPION_RECORD_SIZE, &g_champions[i]);
     unpack_party(s->block[SAVE_BLOCK_CHAMPIONS] + CHAMPION_MAX_COUNT * CHAMPION_RECORD_SIZE);

@@ -20,11 +20,8 @@
 /* KAOS data addresses. */
 #define SLOT_DROP_ORDER 0x100d0e /* g_slot_drop_order[30] */
 
-#define INITIAL_FOOD_WATER                1500
 #define MAXIMUM_HEALTH                    999
 #define MAXIMUM_STAMINA                   9999
-#define MAXIMUM_MANA                      900
-#define FOOD_WATER_STARVING               (-512)
 #define LEVEL_EXPERIENCE                  500 /* experience for level 2; each level doubles it */
 #define TEMPORARY_EXPERIENCE_LIMIT        32000
 #define RECENT_ATTACK_TICKS               25  /* hidden skills gain double experience */
@@ -38,8 +35,7 @@
 #define RESURRECTION_MINIMUM_HEALTH       25
 #define SCENT_STRENGTH_MINIMUM            0
 #define PIT_ATTACK                        20
-#define FOOD_WATER_RANDOM_MASK            255 /* random part of the start food and water */
-#define RESURRECTION_HEALTH_LOSS_SHIFT    6   /* the Vi altar takes 1/64 of the maximum health */
+#define RESURRECTION_HEALTH_LOSS_SHIFT    6 /* the Vi altar takes 1/64 of the maximum health */
 /* Level gain: stamina gain = maximum stamina / divisor, or >> shift. */
 #define FIGHTER_STAMINA_GAIN_SHIFT        4
 #define NINJA_STAMINA_GAIN_DIVISOR        21
@@ -56,8 +52,6 @@
 #define WOUNDED_LEGS_LOAD_SHIFT           2  /* a leg wound takes 1/4 */
 #define ELVEN_BOOTS_LOAD_SHIFT            4  /* Elven Boots add 1/16 */
 /* Movement ticks: heavy above 5/8 of the maximum load; overloaded (load - maximum) * 4 / maximum + 4. */
-#define HEAVY_LOAD_NUMERATOR              5
-#define HEAVY_LOAD_DENOMINATOR            8
 #define MOVE_TICKS_HEAVY                  3
 #define MOVE_TICKS_NORMAL                 2
 #define OVERLOAD_TICKS_FACTOR             4
@@ -65,7 +59,7 @@
 #define ROLL_MAXIMUM                      100 /* dexterity, strength, and wound defense are at most 100 */
 #define DEXTERITY_RANDOM_MASK             7
 #define DEXTERITY_MINIMUM                 2
-#define STRENGTH_RANDOM_MASK              15
+#define STRENGTH_RANDOM_MASK              0xf
 #define LIGHT_LOAD_SHIFT                  4  /* an object up to 1/16 of the maximum load is light */
 #define STRENGTH_WEIGHT_OFFSET            12 /* strength changes by weight - 12 for a light object */
 /* Wound defense: a shield adds (strength + defense) * factor >> 4 in its own slot, >> 5 in the other slots. */
@@ -77,7 +71,7 @@
 #define DAMAGE_SCALE_SHIFT                6
 #define ARMOUR_DEFENSE_LIMIT              130
 #define PSYCHIC_WISDOM_LIMIT              115
-#define WOUND_THRESHOLD_RANDOM_MASK       127 /* wound threshold: (random16() & 127) + 10 */
+#define WOUND_THRESHOLD_RANDOM_MASK       0x7f /* wound threshold: (random16() & 127) + 10 */
 #define WOUND_THRESHOLD_BASE              10
 #define WOUND_SLOT_RANDOM_MASK            7  /* a wound hits a random bit of the allowed wounds */
 #define ROPE_STAMINA_FACTOR               25 /* rope climb stamina cost: load * 25 / maximum load + 1 */
@@ -98,8 +92,8 @@
 #define TIME_BIT_6                        0x40
 #define TIME_BIT_7                        0x80
 #define TIME_BIT_8                        0x100
-#define STATISTICS_RESTORE_MASK           255 /* statistics move every 256 ticks */
-#define STATISTICS_RESTORE_SLEEPING_MASK  63
+#define STATISTICS_RESTORE_MASK           0xff /* statistics move every 256 ticks */
+#define STATISTICS_RESTORE_SLEEPING_MASK  0x3f
 
 /* Weapon classes that use the swing, throw, and shoot skills. */
 enum { CLASS_SWING_WEAPON = 0, CLASS_DAGGER_AND_AXES = 2, CLASS_FIRST_AMMUNITION = 16, CLASS_AMMUNITION_END = 112 };

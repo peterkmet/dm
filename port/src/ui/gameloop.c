@@ -44,9 +44,9 @@
 #define POINTER_SHADOW_OBJECT 0x1005fe /* g_pointer_shadow_colors_object[16] */
 #define POINTER_SHADOW_OFFSET 0x102952 /* g_pointer_shadow_dx, g_pointer_shadow_dy */
 
-#define TORCH_BURN_INTERVAL_MASK   511 /* torches lose one charge every 512 ticks */
-#define TIME_EFFECTS_MASK          63  /* champion time effects every 64 ticks */
-#define TIME_EFFECTS_SLEEPING_MASK 15  /* every 16 ticks while the party sleeps */
+#define TORCH_BURN_INTERVAL_MASK   0x1ff /* torches lose one charge every 512 ticks */
+#define TIME_EFFECTS_MASK          0x3f  /* champion time effects every 64 ticks */
+#define TIME_EFFECTS_SLEEPING_MASK 0xf   /* every 16 ticks while the party sleeps */
 #define LIGHT_SOURCE_COUNT         (CHAMPION_MAX_COUNT * 2)
 #define LIGHT_SOURCES_USED         5 /* the brightest torches that add light */
 #define LIGHT_FIRST_SHIFT          6
@@ -152,8 +152,8 @@ void entrance_draw(void)
 /* process_entrance: ENTER or RESUME shows its pressed button, plays the switch sound, and waits 20 frames. */
 void entrance_press_button(int resume)
 {
-    enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20, BUTTON_VOLUME = 64 };
-    static const uint8_t volumes[2] = {BUTTON_VOLUME, BUTTON_VOLUME};
+    enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20 };
+    static const uint8_t volumes[2] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
     const Bitmap *bm = gfx_bitmap(GFX_ENTRANCE_BUTTONS);
     Bitmap screen = ui_screen();
     Box box;
@@ -172,8 +172,8 @@ void entrance_press_button(int resume)
    ponytail: the original draws a made-up corridor; this draws the view of the start square. */
 void entrance_open_doors(void)
 {
-    enum { DOOR_STEP = 2, STEP_FRAMES = 2, SOUND_FRAMES = 40, SOUND_ENTRANCE_DOOR = 3, DOOR_VOLUME = 64 };
-    static const uint8_t volumes[2] = {DOOR_VOLUME, DOOR_VOLUME};
+    enum { DOOR_STEP = 2, STEP_FRAMES = 2, SOUND_FRAMES = 40 };
+    static const uint8_t volumes[2] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
     static uint8_t view_px[SCREEN_W * SCREEN_H];
     char path[PATH_SIZE];
     Box box;

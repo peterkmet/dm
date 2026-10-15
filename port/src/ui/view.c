@@ -155,11 +155,8 @@ enum {
     ELEMENT_STAIRS_FRONT
 };
 
-/* Square bits that map.h does not name. */
-enum { SQUARE_RANDOM_ORNAMENT = 8, PIT_INVISIBLE = 4 };
-enum { WALL_ORNAMENT_NORTH_FACE = 8 };
-/* random ornament allowed on that side */
-#define WALL_ORNAMENT_FACE(direction) (WALL_ORNAMENT_NORTH_FACE >> (direction))
+/* random ornament allowed on that side: the north face is the bit of the ornament below on the map */
+#define WALL_ORNAMENT_FACE(direction) (WALL_ORNAMENT_BELOW >> (direction))
 enum { ORNAMENT_RANDOM_MODULO = 30 };
 /* Seeds and multipliers of the pseudo-random ornament hash of get_random_ornament_ordinal. */
 #define ORNAMENT_SEED_ROW         32
@@ -519,16 +516,7 @@ enum {
     CLICK_BOX_CENTER_OFFSET = 7
 }; /* smallest clickable object box */
 
-/* Creature graphic info bits. */
-enum {
-    CREATURE_FLIP_NON_ATTACK = 0x4,
-    CREATURE_HAS_SIDE = 0x8,
-    CREATURE_HAS_BACK = 0x10,
-    CREATURE_HAS_ATTACK = 0x20,
-    CREATURE_SPECIAL_D2_FRONT = 0x80,
-    CREATURE_D2_FRONT_FLIPPED = 0x100,
-};
-enum { ASPECT_SHIFT_MASK = 0x7, ASPECT_SHIFT_Y = 3 }; /* active group creature aspect: shift index x, then y */
+/* The aspect offsets of the active group (group.h) index the shift sets: x, then y. */
 
 /* Creature aspect record (6 bytes): graphic word, coordinate set and transparent color, replacement color sets. */
 enum {
@@ -561,11 +549,11 @@ enum {
     PROJECTILE_ASPECT_POISON = 14
 };
 enum { WEAPON_PROJECTILE_ASPECT_SHIFT = 8, WEAPON_PROJECTILE_ASPECT_MASK = 0x1f }; /* 0: the object aspect */
-enum { KINETIC_ENERGY_MAX = 255, PROJECTILE_ENERGY_MIN = 0x60, PROJECTILE_SCALE_MIN = 2 };
+enum { PROJECTILE_ENERGY_MIN = 96, PROJECTILE_SCALE_MIN = 2 };
 
 /* Explosion graphics. */
 enum { EXPLOSION_ASPECT_FIRE, EXPLOSION_ASPECT_SPELL, EXPLOSION_ASPECT_POISON, EXPLOSION_ASPECT_SMOKE };
-enum { EXPLOSION_ATTACK_MIN = 0x30, EXPLOSION_STRENGTH_SHIFT = 5, EXPLOSION_PATTERN_STRENGTHS = 3 };
+enum { EXPLOSION_ATTACK_MIN = 48, EXPLOSION_STRENGTH_SHIFT = 5, EXPLOSION_PATTERN_STRENGTHS = 3 };
 
 /* Field aspect bytes and the masked fill arguments. */
 enum {
@@ -743,7 +731,7 @@ static uint16_t creature_direction(const Group *s, int16_t creature)
 /* The creature number + 1 that stands in a map cell, or 0. A half-square creature fills two cells. */
 static int16_t ordinal_in_cell(const Group *s, uint16_t cell)
 {
-    if (s->cells == CELLS_CENTERED)
+    if (s->cells == CELL_CENTERED)
         return 1;
     int16_t i = rec_group_last_creature_index(s->thing);
     if (s->size == CREATURE_SIZE_HALF) {
@@ -765,22 +753,22 @@ static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos,
 {
     uint16_t info = s->info->graphic_info;
     int16_t g = GFX_CREATURE_FIRST + BE16(s->aspect + CREATURE_ASPECT_GRAPHIC), distance = 0;
-    int side = (info & CREATURE_HAS_SIDE) && (facing & 1), back = 0, attack = 0, front_flip = 0;
+    int side = (info & GRAPHIC_HAS_SIDE) && (facing & 1), back = 0, attack = 0, front_flip = 0;
     if (side)
         g++;
     else {
-        back = (info & CREATURE_HAS_BACK) && facing == FACING_AWAY;
-        attack = !back && (look & ASPECT_ATTACKING) && (info & CREATURE_HAS_ATTACK);
+        back = (info & GRAPHIC_HAS_BACK) && facing == FACING_AWAY;
+        attack = !back && (look & ASPECT_ATTACKING) && (info & GRAPHIC_HAS_ATTACK);
         if (attack)
-            g += 1 + !!(info & CREATURE_HAS_SIDE) + !!(info & CREATURE_HAS_BACK);
+            g += 1 + !!(info & GRAPHIC_HAS_SIDE) + !!(info & GRAPHIC_HAS_BACK);
         else if (back)
-            g += 1 + !!(info & CREATURE_HAS_SIDE);
+            g += 1 + !!(info & GRAPHIC_HAS_SIDE);
         else
-            front_flip = (info & CREATURE_FLIP_NON_ATTACK) && (look & ASPECT_FLIPPED);
+            front_flip = (info & GRAPHIC_FLIP_NON_ATTACK) && (look & ASPECT_FLIPPED);
     }
-    int special_d2 = depth == DEPTH_D2 && (info & CREATURE_SPECIAL_D2_FRONT) && !side && !back && !attack;
+    int special_d2 = depth == DEPTH_D2 && (info & GRAPHIC_SPECIAL_D2_FRONT) && !side && !back && !attack;
     int flip = (side && facing == FACING_LEFT) || (attack && (look & ASPECT_FLIPPED)) ||
-               (special_d2 && (info & CREATURE_D2_FRONT_FLIPPED)) || front_flip;
+               (special_d2 && (info & GRAPHIC_D2_FRONT_FLIPPED)) || front_flip;
     int16_t transparent = s->aspect[CREATURE_ASPECT_COORD] & CREATURE_ASPECT_TRANSPARENT;
     Bitmap own;
     const Bitmap *bm;
@@ -792,8 +780,8 @@ static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos,
         transparent = pal[transparent];
         bm = shrunk(g, depth == DEPTH_D2 ? SCALE_D2 : SCALE_D3, pal, &own);
     }
-    rel_x = S8(SHIFT_SETS + (look & ASPECT_SHIFT_MASK) + distance * SHIFT_SET_SIZE);
-    rel_y = S8(SHIFT_SETS + (look >> ASPECT_SHIFT_Y & ASPECT_SHIFT_MASK) + distance * SHIFT_SET_SIZE);
+    rel_x = S8(SHIFT_SETS + (look & ASPECT_OFFSET_MASK) + distance * SHIFT_SET_SIZE);
+    rel_y = S8(SHIFT_SETS + (look >> ASPECT_VERTICAL_OFFSET_SHIFT & ASPECT_OFFSET_MASK) + distance * SHIFT_SET_SIZE);
     int16_t set = s->aspect[CREATURE_ASPECT_COORD] >> CREATURE_ASPECT_COORD_SHIFT;
     in_zone(bm, &vp,
             ZONE_SHIFTED | (ZONE_CREATURE_FIRST + set * ZONE_CREATURE_SET + coord * ZONE_CREATURE_POSITIONS + pos),
@@ -818,7 +806,7 @@ static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int
         index = creature_index = ordinal - 1;
     uint16_t relative = dir - creature_direction(s, creature_index), facing = relative & 3;
     int sideways = relative & 1;
-    if (s->cells == CELLS_CENTERED) { /* one creature in the middle, drawn after the last cell */
+    if (s->cells == CELL_CENTERED) { /* one creature in the middle, drawn after the last cell */
         if (rest || pass == DOOR_PASS_BACK)
             return 0;
         done = 1;
@@ -862,8 +850,7 @@ static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int
 /* A tick view starts new tracks; the old tracks stay when the party still looks from the same place. */
 static void start_tracks(int16_t dir, int16_t x, int16_t y)
 {
-    enum { POSITION_BITS = 5, DIRECTION_BITS = 2 }; /* maps are at most 32 squares wide and high */
-    int32_t view = ((((int32_t)map << POSITION_BITS | x) << POSITION_BITS | y) << DIRECTION_BITS) | dir;
+    int32_t view = ((((int32_t)map << MAP_COORD_BITS | x) << MAP_COORD_BITS | y) << DIRECTION_BITS) | dir;
     last_track_count = view == track_view ? track_count : 0;
     memcpy(last_tracks, tracks, sizeof tracks[0] * (size_t)last_track_count);
     track_count = 0;
@@ -873,9 +860,8 @@ static void start_tracks(int16_t dir, int16_t x, int16_t y)
 /* The track of a projectile; the cell bits of the thing change while it flies. */
 static const ProjectileTrack *find_track(const ProjectileTrack *list, int count, uint16_t thing)
 {
-    enum { THING_CELL_BITS = 0xc000 };
     for (int i = 0; i < count; i++)
-        if ((list[i].thing & ~THING_CELL_BITS) == (thing & ~THING_CELL_BITS))
+        if (THING_STRIP_CELL(list[i].thing) == THING_STRIP_CELL(thing))
             return &list[i];
     return NULL;
 }
@@ -934,7 +920,7 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
             by_energy = aspect[PROJECTILE_ASPECT_SCALE_FLAGS] & PROJECTILE_SCALE_WITH_ENERGY, scale = SCALE_NATIVE,
             row = 0, pose, flip = 0;
     uint8_t energy = rec_projectile_kinetic_energy(thing);
-    if ((by_energy && energy != KINETIC_ENERGY_MAX) || depth) {
+    if ((by_energy && energy != KINETIC_ENERGY_MAXIMUM) || depth) {
         row = depth * 2 - (cell >> 1);
         scale = kaos_u8(PROJECTILE_SCALES + row);
         if (by_energy) /* 16-bit product and signed byte as in the original */
@@ -2234,8 +2220,6 @@ enum {
     MAP_TILE_CREATURE_FIRST = 76,
     MAP_TILE_FLOOR_ORNAMENT_FIRST = 78,
 };
-enum { OBJECT_TYPE_ZOKATHRA = 197 };                      /* the ZOKATHRA SPELL object, that DAIN shows */
-enum { CREATURE_NOT_ON_MAP = 0x4000 };                    /* creature attribute: KU does not show the creature */
 enum { MAP_TIME_BLINK_PIT = 1, MAP_TIME_BLINK_WALL = 2 }; /* game time bits of the blinking tiles */
 
 /* Draws one map tile at (px, py). */

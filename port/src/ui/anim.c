@@ -23,7 +23,6 @@
 #define MAX_SAMPLES             32
 #define MAX_LOOP_DEPTH          16
 #define ANIMATION_SAMPLE_PERIOD 650 /* Paula period of every animation sample */
-#define SAMPLE_HEADER           2   /* sample length word before the sample data */
 #define SAMPLE_VOLUME_SHIFT     2   /* volume = (byte + 1) >> 2 */
 #define PALETTE_COUNT_BYTES     2   /* PL: entry count word before the entries */
 #define PALETTE_ENTRY_BYTES     4   /* color index, red, green, blue: 4 bits each */
@@ -36,7 +35,7 @@
 #define MUSIC_VOLUME            30
 #define MUSIC_PASSES            6 /* the sequence plays 6 times, then the music ends */
 #define MUSIC_SEQUENCE_END      0xff
-#define MUSIC_COUNT_SIGN        0x80 /* high byte of a negative item count */
+#define MUSIC_COUNT_SIGN_BIT    0x80 /* high byte of a negative item count */
 #define MUSIC_FADE_FRAMES       3    /* 0x102e4c: the volume goes down by 1 every 3 ticks */
 
 /* Chunk tags that the player runs. The other tags (AN, DO, P8, music, sample files) do nothing for ENDA.DAT and TITL.DAT. */
@@ -135,7 +134,7 @@ static void play_music(uint16_t number)
         return;
     const uint8_t *m = music[number - 1];
     size_t size = music_sizes[number - 1];
-    if (size < 2 || m[0] & MUSIC_COUNT_SIGN)
+    if (size < 2 || m[0] & MUSIC_COUNT_SIGN_BIT)
         return;
     uint16_t n = BE16(m);
     size_t items = 2 + 4 * (size_t)n, offsets[UINT8_MAX + 1];
@@ -152,10 +151,10 @@ static void play_music(uint16_t number)
         sequence_length++;
     for (int i = 0; sequence_length && i < MUSIC_PASSES * sequence_length && count < SOUND_MUSIC_SEGMENTS; i++) {
         uint8_t item = m[offsets[0] + i % sequence_length];
-        if (item >= n || offsets[item] + SAMPLE_HEADER > size ||
-            BE16(m + offsets[item]) > size - offsets[item] - SAMPLE_HEADER)
+        if (item >= n || offsets[item] + SOUND_SAMPLE_HEADER > size ||
+            BE16(m + offsets[item]) > size - offsets[item] - SOUND_SAMPLE_HEADER)
             continue;
-        segments[count] = (const int8_t *)m + offsets[item] + SAMPLE_HEADER;
+        segments[count] = (const int8_t *)m + offsets[item] + SOUND_SAMPLE_HEADER;
         lengths[count++] = BE16(m + offsets[item]);
     }
     sound_music_play(segments, lengths, count, MUSIC_PERIOD, MUSIC_VOLUME);
@@ -201,11 +200,11 @@ static void play_sample(size_t at, uint16_t number)
         return;
     const uint8_t *s = samples[number - 1];
     uint16_t length = BE16(s);
-    if (length > sample_sizes[number - 1] - SAMPLE_HEADER)
+    if (length > sample_sizes[number - 1] - SOUND_SAMPLE_HEADER)
         return;
     uint8_t volumes[SAMPLE_VOLUME_BYTES] = {(uint8_t)((file[at + CHUNK_HEADER] + 1) >> SAMPLE_VOLUME_SHIFT),
                                             (uint8_t)((file[at + CHUNK_HEADER + 1] + 1) >> SAMPLE_VOLUME_SHIFT)};
-    sound_play_data((const int8_t *)s + SAMPLE_HEADER, length, ANIMATION_SAMPLE_PERIOD, volumes);
+    sound_play_data((const int8_t *)s + SOUND_SAMPLE_HEADER, length, ANIMATION_SAMPLE_PERIOD, volumes);
 }
 
 /* FO, NE, and BN: the start of a loop of parameter passes, the end of a pass, and the jump back to the loop body. */
@@ -244,7 +243,7 @@ int16_t anim_next_frame(void)
             input_stops = parameter != 0;
             break;
         case TAG_SAMPLE:
-            if (sample_count < MAX_SAMPLES && length >= SAMPLE_HEADER) {
+            if (sample_count < MAX_SAMPLES && length >= SOUND_SAMPLE_HEADER) {
                 samples[sample_count] = payload;
                 sample_sizes[sample_count++] = length;
             }

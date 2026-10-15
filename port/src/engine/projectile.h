@@ -29,8 +29,12 @@ enum {
 /* Impact type of projectile_has_impact_occurred: a square type (wall, stairs, door, fake wall) or these values. */
 enum { IMPACT_PARTY = -2, IMPACT_CREATURE = -1 };
 
-/* An explosion cell of 0xff centers the explosion on the square. */
-enum { CELL_CENTERED = 0xff };
+/* Kinetic energy of a projectile: one byte. */
+#define KINETIC_ENERGY_MAXIMUM       255
+/* Attack of the harm non-material explosion of the Fuse action, and of the last endgame fuse explosion. */
+#define FUSE_ACTION_ATTACK           255
+/* A shot or a throw stops the party movement for this many ticks. */
+#define SHOT_DISABLED_MOVEMENT_TICKS 4
 
 /* Projectile launcher sensor types. */
 enum {
@@ -91,8 +95,8 @@ static inline void explosion_set_centered(uint16_t explosion, int16_t centered)
 enum {
     PROJECTILE_EVENT_X_SHIFT = 11,
     PROJECTILE_EVENT_Y_SHIFT = 6,
-    PROJECTILE_EVENT_XY_MASK = 31,
-    PROJECTILE_EVENT_STEP_ENERGY_MASK = 15
+    PROJECTILE_EVENT_XY_MASK = 0x1f,
+    PROJECTILE_EVENT_STEP_ENERGY_MASK = 0xf
 };
 static inline int16_t projectile_event_x(const TimelineEvent *event)
 {

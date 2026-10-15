@@ -34,20 +34,14 @@
 
 #define BAR_COUNT                 3 /* health, stamina, mana */
 #define BAR_ZONE_STEP             4
-#define SKILL_LEVEL_MAXIMUM       16
-#define BASE_SKILL_COUNT          4
 #define FOOD_WATER_RANGE          3072 /* -1024 to 2048 */
-#define FOOD_WATER_LOW            (-512)
-#define LOAD_WARNING_NUMERATOR    5 /* yellow above 5/8 of the maximum load */
-#define LOAD_WARNING_DENOMINATOR  8
 #define VALUE_WIDTH               3
-#define VALUE_PAIR_SIZE           16   /* "current/maximum" */
-#define CHAMPION_ICON_MAX         64   /* the icon buffer holds up to 64 x 64 pixels */
-#define PANEL_OBJECT_TEXT_Y       87   /* baseline of the first description line */
-#define PANEL_LINE_WRAP           18   /* longer lines break at a space */
-#define SCROLL_FONT_SHIFT         0x60 /* '{' to '~' print as scroll font codes 27-30 */
-#define POTION_POWER_SYMBOL_FIRST '_'  /* + power / 40: the power rune before the name */
-#define POTION_POWER_SYMBOL_STEP  40
+#define VALUE_PAIR_SIZE           16         /* "current/maximum" */
+#define CHAMPION_ICON_MAX         64         /* the icon buffer holds up to 64 x 64 pixels */
+#define PANEL_OBJECT_TEXT_Y       87         /* baseline of the first description line */
+#define PANEL_LINE_WRAP           18         /* longer lines break at a space */
+#define SCROLL_FONT_SHIFT         0x60       /* '{' to '~' print as scroll font codes 27-30 */
+#define POTION_POWER_SYMBOL_FIRST '_'        /* + power / 40: the power rune before the name */
 #define SCROLL_LINE_CHARS         18         /* characters that fit on the parchment */
 #define RUNE_FIRST                0x60       /* font character of the first rune */
 #define CREATURE_NAME_TEXT        "CREANAME" /* CSB: scroll text replaced by the creature name ahead */
@@ -264,7 +258,7 @@ static void draw_load(uint16_t champion_index)
     const Champion *c = &g_champions[champion_index];
     uint16_t max = champion_get_maximum_load(c);
     uint8_t color = max < c->load ? COLOR_RED
-                    : (int32_t)max * LOAD_WARNING_NUMERATOR < (int32_t)c->load * LOAD_WARNING_DENOMINATOR
+                    : (int32_t)max * HEAVY_LOAD_NUMERATOR < (int32_t)c->load * HEAVY_LOAD_DENOMINATOR
                         ? COLOR_YELLOW
                         : COLOR_LIGHT_GRAY;
     char text[PANEL_LINE_SIZE], a[8], b[8], d[8]; /* the load is in tenths of a kilogram */
@@ -392,7 +386,7 @@ void ui_draw_all_champion_states(uint16_t attributes)
 static void food_water_bar(int16_t value, int16_t zone, uint8_t color)
 {
     Box b;
-    if (value < FOOD_WATER_LOW)
+    if (value < FOOD_WATER_STARVING)
         color = COLOR_RED;
     else if (value < 0)
         color = COLOR_YELLOW;
@@ -475,7 +469,7 @@ void ui_draw_champion_skills_and_statistics(void)
     close_chest();
     ui_blit_graphic(vp, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
     zone_point(ZONE_PANEL_SKILLS, &x, &y);
-    for (uint16_t k = 0; k < BASE_SKILL_COUNT; k++) {
+    for (uint16_t k = 0; k < SKILL_BASE_COUNT; k++) {
         int16_t level = champion_get_skill_level(ci, k | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
         if (level == 1)
             continue;
@@ -580,7 +574,7 @@ int16_t panel_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SI
     else if (type == THING_POTION && icon != ICON_WATER_FLASK && g_inventory_champion_ordinal &&
              champion_get_skill_level(g_inventory_champion_ordinal - 1, SKILL_PRIEST) > 1)
         snprintf(name, PANEL_LINE_SIZE, "%c %s",
-                 POTION_POWER_SYMBOL_FIRST + potion_power(thing) / POTION_POWER_SYMBOL_STEP, gfx_object_name(icon));
+                 POTION_POWER_SYMBOL_FIRST + potion_power(thing) / POTION_POWER_PER_LEVEL, gfx_object_name(icon));
     else
         snprintf(name, PANEL_LINE_SIZE, "%s", gfx_object_name(icon));
     switch (type) {

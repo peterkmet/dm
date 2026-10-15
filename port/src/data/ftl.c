@@ -49,7 +49,7 @@ enum { SECTION_INFO = 16, SECTION_DATA, SECTION_CODE, SECTION_COUNT = 3 };
 #define RSHARP_STREAM      (RSHARP_DICTIONARY + 2 * (RSHARP_SHORT_CODES + 7 * 256))
 #define RSHARP_LITERAL     15
 #define NIBBLE_BITS        4
-#define NIBBLE_MASK        15
+#define NIBBLE_MASK        0xf
 
 FtlImage kaos;
 

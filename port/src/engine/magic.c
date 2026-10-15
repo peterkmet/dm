@@ -14,17 +14,13 @@
 #include "random.h"
 #include "timeline_process.h"
 
-#define JUNK_ZOKATHRA                51
 #define POWER_SYMBOL_FIRST           0x60 /* symbol of power 1 is 0x60, power n is 0x5f + n */
 #define SPELL_PROJECTILE_ATTACK      90
-#define MESSAGE_COLOR_SPELL          4
-#define SHIELD_STRONG                50 /* above this a new shield adds a quarter */
 #define SHIELD_MANA_COST             4
 #define LIGHT_MAXIMUM_TICKS_DARKNESS 98
 #define LIGHT_SPELL_BASE_TICKS       10000
 #define MAGIC_TORCH_BASE_TICKS       2000
 #define FIRE_SHIELD_BASE_TICKS       100
-#define POTION_POWER_PER_LEVEL       40
 #define LIGHT_POWER_MAXIMUM          15
 #define MAGIC_MAP_TEXT               "MAGICMAP" /* the text of a magic map scroll */
 /* Projectile spells: mana bonus min(8, maximum mana / 8); step energy 10 - bonus. A weak cast (kinetic energy
@@ -39,9 +35,8 @@
 #define SPELL_KINETIC_POWER_BONUS    2
 #define SPELL_KINETIC_SKILL_BASE     4
 #define SPELL_KINETIC_ENERGY_MINIMUM 21
-#define SPELL_KINETIC_ENERGY_MAXIMUM 255
 #define SHIELD_DEFENSE_TICKS_SHIFT   5 /* a shield spell adds ticks / 32 defense */
-#define POTION_POWER_RANDOM_MASK     15
+#define POTION_POWER_RANDOM_MASK     0xf
 /* Other spells: the duration base is (power + 1) * 4. */
 #define SPELL_DURATION_FACTOR        4
 #define LIGHT_SPELL_TICKS_FACTOR     512 /* Light: (power - 1) * 4 * 512 + 10000 ticks */
@@ -50,10 +45,6 @@
 #define FOOTPRINTS_STRONG_POWER      3 /* from this power, footprints show all scents */
 #define MAGIC_MAP_NETA_TICKS_FACTOR  4
 #define MAGIC_MAP_ROS_DURATION_LOSS  2
-/* Experience of a cast: level² + (power - 1) * base level * 8 + level * 16 + random(8). */
-#define CAST_EXPERIENCE_POWER_FACTOR 8
-#define CAST_EXPERIENCE_LEVEL_FACTOR 16
-#define CAST_EXPERIENCE_RANDOM_MASK  7
 
 static void add_party_event(uint8_t type, uint16_t ticks, uint16_t b)
 {
@@ -116,9 +107,9 @@ void magic_print_spell_failure_message(uint16_t champion_index, int16_t failure_
         return;
     }
     message_new_line(g_game_time);
-    message_print(MESSAGE_COLOR_SPELL, gfx_string(first), g_game_time);
-    message_print(MESSAGE_COLOR_SPELL, g_champions[champion_index].name, g_game_time);
-    message_print(MESSAGE_COLOR_SPELL, gfx_string(first + 1), g_game_time);
+    message_print(MESSAGE_COLOR_CYAN, gfx_string(first), g_game_time);
+    message_print(MESSAGE_COLOR_CYAN, g_champions[champion_index].name, g_game_time);
+    message_print(MESSAGE_COLOR_CYAN, gfx_string(first + 1), g_game_time);
 }
 
 /* Spends the mana and shoots the spell; a weak cast with little maximum mana gets a slower step energy. */
@@ -205,10 +196,9 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
     }
     if (explosion_type == EXPLOSION_OPEN_DOOR)
         skill_level *= 2;
-    int16_t kinetic_energy =
-        bounded_value(SPELL_KINETIC_ENERGY_MINIMUM,
-                      (power + SPELL_KINETIC_POWER_BONUS) * (skill_level * 2 + SPELL_KINETIC_SKILL_BASE),
-                      SPELL_KINETIC_ENERGY_MAXIMUM);
+    int16_t kinetic_energy = bounded_value(
+        SPELL_KINETIC_ENERGY_MINIMUM,
+        (power + SPELL_KINETIC_POWER_BONUS) * (skill_level * 2 + SPELL_KINETIC_SKILL_BASE), KINETIC_ENERGY_MAXIMUM);
     magic_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), kinetic_energy, 0);
 }
 
@@ -362,8 +352,8 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
     uint16_t required_level = power + spell->base_required_skill_level;
     /* The original squares a stale register for the first term; the port uses required_level squared (spell_experience). */
     uint16_t experience = required_level * required_level +
-                          (power - 1) * spell->base_required_skill_level * CAST_EXPERIENCE_POWER_FACTOR +
-                          required_level * CAST_EXPERIENCE_LEVEL_FACTOR + (random16() & CAST_EXPERIENCE_RANDOM_MASK);
+                          (power - 1) * spell->base_required_skill_level * SPELL_EXPERIENCE_POWER_FACTOR +
+                          required_level * SPELL_EXPERIENCE_LEVEL_FACTOR + (random16() & SPELL_EXPERIENCE_RANDOM_MASK);
     uint16_t skill_level = champion_get_skill_level(champion_index, spell->skill_index);
     for (uint16_t missing = skill_level < required_level ? required_level - skill_level : 0; missing; missing--) {
         if (spell_draw_fails(c->statistics[STAT_WISDOM][STAT_CURRENT], random16())) {

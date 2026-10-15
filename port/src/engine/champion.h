@@ -7,11 +7,18 @@
 
 /* Champion rules of KAOS (CHAMPION.C): docs/rules-champions.md. */
 
-#define CHAMPION_RECORD_SIZE  0x140
-#define ACTION_NONE           255
-#define CHAMPION_SYMBOL_COUNT 4
-#define FOOD_WATER_MINIMUM    (-1024)
-#define CHAMPION_COLORS       0x100ce0 /* KAOS g_champion_colors[4] */
+#define CHAMPION_RECORD_SIZE   320
+#define ACTION_NONE            255
+#define CHAMPION_SYMBOL_COUNT  4
+#define FOOD_WATER_MINIMUM     (-1024)
+#define CHAMPION_COLORS        0x100ce0 /* KAOS g_champion_colors[4] */
+#define INITIAL_FOOD_WATER     1500     /* food and water of a new champion: this + a random byte */
+#define FOOD_WATER_RANDOM_MASK 0xff
+#define FOOD_WATER_STARVING    (-512) /* below this the champion starves */
+#define MAXIMUM_MANA           900
+/* A load above 5/8 of the maximum load is heavy. */
+#define HEAVY_LOAD_NUMERATOR   5
+#define HEAVY_LOAD_DENOMINATOR 8
 
 enum { SKILL_IGNORE_OBJECT_MODIFIERS = 0x4000, SKILL_IGNORE_TEMPORARY_EXPERIENCE = 0x8000 };
 enum {

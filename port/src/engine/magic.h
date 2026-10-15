@@ -6,6 +6,8 @@
 
 /* Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C): docs/rules-creatures.md. */
 
+#define SHIELD_STRONG 50 /* above this shield defense, a new shield or a Ya potion adds a quarter */
+
 /* Results of magic_get_champion_spell_cast_result. */
 enum { SPELL_CAST_FAILURE = 0, SPELL_CAST_SUCCESS = 1, SPELL_CAST_FAILURE_NEEDS_FLASK = 3 };
 

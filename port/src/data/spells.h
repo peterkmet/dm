@@ -11,15 +11,19 @@
 #define SPELL_ENTRY_SKILL             5
 #define SPELL_ENTRY_ATTRIBUTES        6
 
-#define DM_SPELL_COUNT              25   /* CSB has CSB_SPELL_COUNT */
-#define SPELL_SYMBOL_FIRST          0x60 /* font character of the first symbol: power 1 at step 0 */
-#define SPELL_SYMBOLS_PER_STEP      6
-#define SPELL_MANA_MULTIPLIER_SHIFT 3 /* the mana cost multiplier of the power symbol counts eighths */
-#define SPELL_POWER_SYMBOL_MASK     0xff000000u
-#define SPELL_KIND_MASK             15
-#define SPELL_TYPE_SHIFT            4
-#define SPELL_TYPE_MASK             63
-#define SPELL_DISABLED_TICKS_SHIFT  10
+#define DM_SPELL_COUNT                25   /* CSB has CSB_SPELL_COUNT */
+#define SPELL_SYMBOL_FIRST            0x60 /* font character of the first symbol: power 1 at step 0 */
+#define SPELL_SYMBOLS_PER_STEP        6
+#define SPELL_MANA_MULTIPLIER_SHIFT   3 /* the mana cost multiplier of the power symbol counts eighths */
+#define SPELL_POWER_SYMBOL_MASK       0xff000000u
+#define SPELL_KIND_MASK               0xf
+#define SPELL_TYPE_SHIFT              4
+#define SPELL_TYPE_MASK               0x3f
+#define SPELL_DISABLED_TICKS_SHIFT    10
+/* Experience of a cast: level² + (power - 1) * base level * 8 + level * 16 + random(8). */
+#define SPELL_EXPERIENCE_POWER_FACTOR 8
+#define SPELL_EXPERIENCE_LEVEL_FACTOR 16
+#define SPELL_EXPERIENCE_RANDOM_MASK  0x7
 enum { SPELL_KIND_POTION = 1, SPELL_KIND_PROJECTILE = 2, SPELL_KIND_OTHER = 3, SPELL_KIND_MAGIC_MAP = 4 };
 
 /* One entry of g_spells. */

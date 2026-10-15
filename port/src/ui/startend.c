@@ -43,14 +43,12 @@
 #define FUSE_LORD_HEALTH         10000
 #define FUSE_FIRST_ATTACK        55
 #define FUSE_ATTACK_STEP         40
-#define FUSE_LAST_ATTACK         255
 #define FUSE_MAGICAL_LIGHT       200
 #define FUSE_SHIELD              100
 #define FUSE_TEXT_COUNT          8
 #define FUSE_TEXT_SIZE           200
 #define DECODE_MESSAGE_INVISIBLE ((int16_t)0x8001) /* decode_text: message mode, also invisible texts */
-#define MAX_SKILL_LEVEL          16
-#define ENDGAME_FONT_A           1 /* the endgame font has A-Z at codes 1-26 */
+#define ENDGAME_FONT_A           1                 /* the endgame font has A-Z at codes 1-26 */
 #define ENDGAME_TEXT_BACKGROUND  COLOR_DARKEST_GRAY
 #define ENDGAME_NAME_X           87
 #define ENDGAME_SKILL_X          105
@@ -74,7 +72,7 @@
 enum { SAVE_CHOICE_CANCEL = 1, SAVE_CHOICE_SAVE = 2, SAVE_CHOICE_QUIT = 3 };
 enum { QUIT_CHOICE_CANCEL = 2 };
 enum { LOAD_CHOICE_CANCEL = 2 };
-enum { SOUND_SCREAM_DEATH = 7, SOUND_FUSE = 14 };
+enum { SOUND_FUSE = 14 };
 
 void (*g_frame_hook)(void);
 int16_t g_quit_requested, g_restart_requested, g_return_to_entrance, g_waiting_frame;
@@ -278,8 +276,8 @@ static void print_champion_skills(uint16_t champion_index, int y)
     for (int16_t skill = 0; skill < SKILL_BASE_COUNT; skill++) {
         int16_t level = champion_get_skill_level(champion_index, skill | SKILL_IGNORE_OBJECT_MODIFIERS |
                                                                      SKILL_IGNORE_TEMPORARY_EXPERIENCE);
-        if (level > MAX_SKILL_LEVEL)
-            level = MAX_SKILL_LEVEL;
+        if (level > SKILL_LEVEL_MAXIMUM)
+            level = SKILL_LEVEL_MAXIMUM;
         if (level == 1)
             continue;
         char line[ENDGAME_TEXT_SIZE];
@@ -404,7 +402,7 @@ void endgame(int16_t party_dead)
     if (party_dead)
         music_play_end(g_game_won);
     if (party_dead && !g_game_won) {
-        sound_request_play(SOUND_SCREAM_DEATH, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
+        sound_request_play(SOUND_SCREAM, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
         wait_frames(DEATH_WAIT_FRAMES);
     }
     g_game_screen_inactive = 1;
@@ -453,7 +451,7 @@ static void remove_fluxcages(int16_t x, int16_t y)
 /* Six explosions of rising power on the square of Lord Chaos. */
 static void fuse_explosions(uint16_t type, int16_t x, int16_t y)
 {
-    for (uint16_t attack = FUSE_FIRST_ATTACK; attack <= FUSE_LAST_ATTACK; attack += FUSE_ATTACK_STEP) {
+    for (uint16_t attack = FUSE_FIRST_ATTACK; attack <= FUSE_ACTION_ATTACK; attack += FUSE_ATTACK_STEP) {
         explosion_create(EXPLOSION_THING(type), attack, x, y, CELL_CENTERED);
         fuse_update();
     }
@@ -524,7 +522,7 @@ void fuse_sequence(void)
     if (lord == THING_ENDOFLIST)
         return;
     group_set_health(lord, 0, FUSE_LORD_HEALTH);
-    group_set_cells(lord, CELLS_CENTERED, g_party_map_index);
+    group_set_cells(lord, CELL_CENTERED, g_party_map_index);
     group_set_directions(lord, (uint8_t)NORMALIZE(g_party_direction + 2), g_party_map_index); /* faces the party */
     remove_fluxcages(g_party_map_x, g_party_map_y);
     remove_fluxcages(x, y);
@@ -535,8 +533,8 @@ void fuse_sequence(void)
     fuse_update();
     fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     flash_lords(lord, x, y);
-    explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_LAST_ATTACK, x, y, CELL_CENTERED);
-    explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_LAST_ATTACK, x, y, CELL_CENTERED);
+    explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_ACTION_ATTACK, x, y, CELL_CENTERED);
+    explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_ACTION_ATTACK, x, y, CELL_CENTERED);
     fuse_update();
     group_set_creature_type(lord, CREATURE_GREY_LORD);
     fuse_update();

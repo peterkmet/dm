@@ -19,9 +19,11 @@ enum {
     CREATURE_PREFER_BACK_ROW = 0x0008,
     CREATURE_ATTACK_ANY_CHAMPION = 0x0010,
     CREATURE_DROPS_FIXED_POSSESSIONS = 0x0200,
+    CREATURE_KEEPS_THROWN_SHARP_WEAPONS = 0x0400,
     CREATURE_SEES_INVISIBLE = 0x0800,
     CREATURE_NIGHT_VISION = 0x1000,
-    CREATURE_ARCHENEMY = 0x2000
+    CREATURE_ARCHENEMY = 0x2000,
+    CREATURE_NOT_ON_MAP = 0x4000 /* KU does not show the creature */
 };
 enum { CREATURE_SIZE_QUARTER, CREATURE_SIZE_HALF, CREATURE_SIZE_FULL };
 enum { CREATURE_IMMOBILE = 255, CREATURE_NO_ATTACK = 255, CREATURE_INVULNERABLE = 255, CREATURE_NEVER_HITS = 255 };
@@ -70,17 +72,18 @@ enum { REACTION_DANGER_ON_SQUARE = -3, REACTION_HIT_BY_PROJECTILE = -2, REACTION
 /* Results of the damage functions (g_creature_damage_outcome). */
 enum { OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, OUTCOME_ALL_CREATURES_KILLED };
 
-/* Cells byte of one creature that stands in the center of the square. */
-enum { CELLS_CENTERED = 0xff };
+/* Cells byte of one creature that stands in the center of the square; the cell of a centered explosion. */
+enum { CELL_CENTERED = 0xff };
 
 /* Active group aspect byte: bit 7 attacking, bit 6 flipped, bits 3-5 vertical offset, bits 0-2 horizontal offset. */
-enum { ASPECT_ATTACKING = 0x80, ASPECT_FLIPPED = 0x40 };
+enum { ASPECT_ATTACKING = 0x80, ASPECT_FLIPPED = 0x40, ASPECT_OFFSET_MASK = 0x7, ASPECT_VERTICAL_OFFSET_SHIFT = 3 };
+
+/* Hit probability argument of the melee damage: bit 15 hits non-material creatures too. */
+enum { HIT_PROBABILITY_ALWAYS_HITS = 0x8000, HIT_PROBABILITY_MASK = 0x7fff };
 
 /* Group record, 16 bytes (thing type 4): next, possessions, type, cells, 4 health words, word 14 flags.
    Byte 14: direction in bits 0-1, do not discard in bit 2. Byte 15: behavior in bits 0-3, last creature index in bits 5-6. */
 enum {
-    GROUP_RECORD_DIRECTION_BYTE = 14,
-    GROUP_RECORD_BEHAVIOR_BYTE = 15,
     GROUP_RECORD_DIRECTION_MASK = 3,
     GROUP_RECORD_DO_NOT_DISCARD = 0x04,
     GROUP_RECORD_BEHAVIOR_MASK = 0x0f,
@@ -113,30 +116,28 @@ static inline void group_set_health(uint16_t group, int16_t creature, uint16_t h
 }
 static inline uint16_t group_behavior(uint16_t group)
 {
-    return REC(group)[GROUP_RECORD_BEHAVIOR_BYTE] & GROUP_RECORD_BEHAVIOR_MASK;
+    return REC(group)[GROUP_BEHAVIOR_BYTE] & GROUP_RECORD_BEHAVIOR_MASK;
 }
 static inline void group_set_behavior(uint16_t group, uint16_t behavior)
 {
     REC(group)
-    [GROUP_RECORD_BEHAVIOR_BYTE] =
-        (uint8_t)((REC(group)[GROUP_RECORD_BEHAVIOR_BYTE] & ~GROUP_RECORD_BEHAVIOR_MASK) | behavior);
+    [GROUP_BEHAVIOR_BYTE] = (uint8_t)((REC(group)[GROUP_BEHAVIOR_BYTE] & ~GROUP_RECORD_BEHAVIOR_MASK) | behavior);
 }
 static inline void group_set_last_creature_index(uint16_t group, uint16_t index)
 {
     REC(group)
-    [GROUP_RECORD_BEHAVIOR_BYTE] =
-        (uint8_t)((REC(group)[GROUP_RECORD_BEHAVIOR_BYTE] & ~GROUP_RECORD_LAST_CREATURE_MASK) |
-                  (index & 3) << GROUP_RECORD_LAST_CREATURE_SHIFT);
+    [GROUP_BEHAVIOR_BYTE] = (uint8_t)((REC(group)[GROUP_BEHAVIOR_BYTE] & ~GROUP_RECORD_LAST_CREATURE_MASK) |
+                                      (index & 3) << GROUP_RECORD_LAST_CREATURE_SHIFT);
 }
 static inline void group_set_direction_field(uint16_t group, uint16_t direction)
 {
     REC(group)
-    [GROUP_RECORD_DIRECTION_BYTE] = (uint8_t)((REC(group)[GROUP_RECORD_DIRECTION_BYTE] & ~GROUP_RECORD_DIRECTION_MASK) |
-                                              (direction & GROUP_RECORD_DIRECTION_MASK));
+    [GROUP_DIRECTION_BYTE] = (uint8_t)((REC(group)[GROUP_DIRECTION_BYTE] & ~GROUP_RECORD_DIRECTION_MASK) |
+                                       (direction & GROUP_RECORD_DIRECTION_MASK));
 }
 static inline void group_clear_do_not_discard(uint16_t group)
 {
-    REC(group)[GROUP_RECORD_DIRECTION_BYTE] &= ~GROUP_RECORD_DO_NOT_DISCARD;
+    REC(group)[GROUP_DIRECTION_BYTE] &= ~GROUP_RECORD_DO_NOT_DISCARD;
 }
 
 /* On the party map the cells byte of the record holds the index of the active group. */

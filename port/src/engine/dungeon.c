@@ -22,7 +22,7 @@ const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_REC
 #define REPLACEMENT_CHARS     0x1017ea /* 2-byte strings */
 #define INSCRIPTION_ESCAPES   0x10182a /* 8-byte strings */
 
-#define MAX_DUNGEON_SIZE            0x100000
+#define MAX_DUNGEON_SIZE            (1024 * 1024)
 #define DUNGEON_COMPRESSED_MAGIC    0x8104
 #define COMPRESSED_HEADER_BYTES     8  /* magic, unpacked size, dungeon id */
 #define COMPRESSED_DICTIONARY_BYTES 20 /* 4 two-bit codes, then 16 four-bit codes */
@@ -473,7 +473,7 @@ uint8_t *dungeon_get_thing_data(uint16_t thing)
 /* decode_text modes; MODE_ANY_VISIBILITY also decodes an invisible text. */
 enum { MODE_INSCRIPTION, MODE_MESSAGE, MODE_SCROLL, MODE_MASK = 0x7fff };
 /* 5-bit text codes: 0-25 letters, then space, period, separator, two escapes, end. */
-enum { TEXT_CODE_BITS = 5, TEXT_CODE_MASK = 31, TEXT_CODES_PER_WORD = 3 };
+enum { TEXT_CODE_BITS = 5, TEXT_CODE_MASK = 0x1f, TEXT_CODES_PER_WORD = 3 };
 enum { CODE_SPACE = 26, CODE_PERIOD, CODE_SEPARATOR, CODE_ESCAPE_REPLACEMENT, CODE_ESCAPE_STRING, CODE_END };
 #define INSCRIPTION_SEPARATOR ((char)0x80) /* the wall text font ends a line here */
 #define INSCRIPTION_END       ((char)0x81)

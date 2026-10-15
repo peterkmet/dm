@@ -45,7 +45,7 @@ enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 };  /* the mouth blinks whe
 #define VI_ALTAR_REBIRTH_EFFECT 2                        /* event 13 effect byte */
 #define HAND_SLOT_BOX_COUNT     (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
 
-enum { VIEW_CELL_FRONT_FIRST = 2, VIEW_CELL_COUNT = 4 }; /* view cells 0-1 on the party square, 2-3 ahead */
+enum { VIEW_CELL_FRONT_FIRST = 2 }; /* view cells 0-1 on the party square, 2-3 ahead */
 
 typedef struct {
     int16_t x, y, command;
@@ -590,14 +590,13 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
     }
     if ((g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall) && is_leader_hand_object_thrown(x, y))
         return;
-    int16_t cells =
-        g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall ? VIEW_CELL_COUNT : VIEW_CELL_FRONT_FIRST;
+    int16_t cells = g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall ? CELL_COUNT : VIEW_CELL_FRONT_FIRST;
     for (int16_t i = 0; i < cells; i++)
         if (ui_point_in_zone(ZONE_DROP_CELL_FIRST + i, x, y)) {
             drop_object(i);
             return;
         }
-    if (cells == VIEW_CELL_COUNT || !in_box(wall_box, x, y))
+    if (cells == CELL_COUNT || !in_box(wall_box, x, y))
         return;
     if (g_facing_alcove) {
         drop_object(VIEW_CLICK_BOX_ALCOVE);

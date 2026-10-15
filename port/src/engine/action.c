@@ -17,11 +17,7 @@
 #include "tables.h"
 #include "timeline_process.h"
 
-#define MESSAGE_COLOR_ACTION 4
-#define MESSAGE_SIZE         100
-
-#define SOUND_WAR_CRY   17
-#define SOUND_BLOW_HORN 18
+#define MESSAGE_SIZE 100
 
 /* Weapon classes (WeaponInfo.weapon_class). */
 enum {
@@ -34,52 +30,44 @@ enum {
     WEAPON_CLASS_LAST_SLING = 47
 };
 
-/* The weapon with this icon hits non-material creatures. */
-#define ICON_WEAPON_HITS_NON_MATERIAL 40
-/* group_get_melee_action_damage: the hit can reach non-material creatures */
-#define HIT_PROBABILITY_NON_MATERIAL  0x8000
-
-#define JUNK_MAGICAL_BOX_BLUE       42
-#define JUNK_MAGICAL_BOX_GREEN      43
 #define FREEZE_LIFE_TICKS_BLUE_BOX  30
 #define FREEZE_LIFE_TICKS_GREEN_BOX 125
 #define FREEZE_LIFE_TICKS_CHARGE    70
 #define FREEZE_LIFE_TICKS_MAXIMUM   200
 
-#define SPELL_ACTION_MAXIMUM_LEVEL         6 /* the mana cost of a spell action is 7 - min(6, skill level) */
-#define FIREBALL_ACTION_ATTACK             150
-#define DISPELL_ACTION_ATTACK              150
-#define LIGHTNING_ACTION_ATTACK            180
-#define SPIT_ACTION_ATTACK                 250
-#define INVOKE_ACTION_BASE_ATTACK          100
-#define INVOKE_SPELL_COUNT                 6
-#define SHIELD_ACTION_TICKS                280
-#define LIGHT_ACTION_POWER                 2
-#define LIGHT_ACTION_TICKS                 2500
-#define WINDOW_ACTION_BASE_TICKS           5
-#define HEAL_ACTION_MAXIMUM_LEVEL          10
-#define HEAL_ACTION_MANA_PER_STEP          2
-#define DOOR_BASH_DISABLED_TICKS           6
-#define DOOR_BASH_DESTRUCTION_TICKS        2
-#define THROW_DISABLED_TICKS               4
-#define THROW_EXPERIENCE                   8
-#define THROW_WEAPON_EXPERIENCE            12
-#define THROW_STAMINA_MAXIMUM              10
-#define PROJECTILE_DISABLED_MOVEMENT_TICKS 4
-#define THROW_ATTACK_MINIMUM               40
-#define THROW_ATTACK_MAXIMUM               200
-#define THROW_STEP_ENERGY_BASE             11
-#define THROW_STEP_ENERGY_MINIMUM          5
-#define WEAPON_CLASS_SKILL_LEVEL_STEP      8
-#define WEAPON_SHOOT_ATTACK_MASK           0xff /* weapon info attributes bits 0-7: the attack of a launcher */
-#define QUIVER_SLOT_SHIFT                  8    /* event 11 b: slot + 1 for the next quiver weapon in the high byte */
-#define EVENT_B_LOW_BYTE                   0xff
-#define SPELL_ACTION_ATTACK_MINIMUM        2   /* with too little mana: max(2, mana * attack / cost) */
-#define INVOKE_ACTION_RANDOM_MASK          127 /* Invoke attack: 100 + random(128) */
-#define HEAL_ACTION_EXPERIENCE_STEP        2   /* Heal experience: 2, plus 2 for each step */
-#define WINDOW_ACTION_LEVEL_BONUS          8   /* Window ticks: random % (level + 8) + 5 */
-#define THROW_ENERGY_RANDOM_MASK           15
-#define THROW_ATTACK_RANDOM_MASK           31
+#define SPELL_ACTION_MAXIMUM_LEVEL    6 /* the mana cost of a spell action is 7 - min(6, skill level) */
+#define FIREBALL_ACTION_ATTACK        150
+#define DISPELL_ACTION_ATTACK         150
+#define LIGHTNING_ACTION_ATTACK       180
+#define SPIT_ACTION_ATTACK            250
+#define INVOKE_ACTION_BASE_ATTACK     100
+#define INVOKE_SPELL_COUNT            6
+#define SHIELD_ACTION_TICKS           280
+#define LIGHT_ACTION_POWER            2
+#define LIGHT_ACTION_TICKS            2500
+#define WINDOW_ACTION_BASE_TICKS      5
+#define HEAL_ACTION_MAXIMUM_LEVEL     10
+#define HEAL_ACTION_MANA_PER_STEP     2
+#define DOOR_BASH_DISABLED_TICKS      6
+#define DOOR_BASH_DESTRUCTION_TICKS   2
+#define THROW_DISABLED_TICKS          4
+#define THROW_EXPERIENCE              8
+#define THROW_WEAPON_EXPERIENCE       12
+#define THROW_STAMINA_MAXIMUM         10
+#define THROW_ATTACK_MINIMUM          40
+#define THROW_ATTACK_MAXIMUM          200
+#define THROW_STEP_ENERGY_BASE        11
+#define THROW_STEP_ENERGY_MINIMUM     5
+#define WEAPON_CLASS_SKILL_LEVEL_STEP 8
+#define WEAPON_SHOOT_ATTACK_MASK      0xff /* weapon info attributes bits 0-7: the attack of a launcher */
+#define QUIVER_SLOT_SHIFT             8    /* event 11 b: slot + 1 for the next quiver weapon in the high byte */
+#define EVENT_B_LOW_BYTE              0xff
+#define SPELL_ACTION_ATTACK_MINIMUM   2    /* with too little mana: max(2, mana * attack / cost) */
+#define INVOKE_ACTION_RANDOM_MASK     0x7f /* Invoke attack: 100 + random(128) */
+#define HEAL_ACTION_EXPERIENCE_STEP   2    /* Heal experience: 2, plus 2 for each step */
+#define WINDOW_ACTION_LEVEL_BONUS     8    /* Window ticks: random % (level + 8) + 5 */
+#define THROW_ENERGY_RANDOM_MASK      0xf
+#define THROW_ATTACK_RANDOM_MASK      0x1f
 
 /* Fear actions: the bonus to the influence roll and the experience. */
 #define FEAR_BONUS_CONFUSE        12
@@ -153,7 +141,7 @@ void action_print_action_message(uint16_t champion_index, const char *text)
     }
     out[n] = 0;
     if (out[1])
-        message_print(MESSAGE_COLOR_ACTION, out, g_game_time);
+        message_print(MESSAGE_COLOR_CYAN, out, g_game_time);
 }
 
 /* The object in the action hand loses one charge: weapons, armour, and junk keep their charges in different bits. */
@@ -252,8 +240,8 @@ bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, i
         return 0;
     const ActionInfo *info = tables_action_info(action);
     uint16_t hit_probability = info->hit_probability;
-    if (object_get_icon_index(c->slots[SLOT_HAND_ACTION]) == ICON_WEAPON_HITS_NON_MATERIAL || action == ACTION_DISRUPT)
-        hit_probability |= HIT_PROBABILITY_NON_MATERIAL;
+    if (object_get_icon_index(c->slots[SLOT_HAND_ACTION]) == ICON_VORPAL_BLADE || action == ACTION_DISRUPT)
+        hit_probability |= HIT_PROBABILITY_ALWAYS_HITS;
     g_action_damage = group_get_melee_action_damage(champion_index, g_action_target_group_thing, ordinal - 1, x, y,
                                                     hit_probability, info->damage_factor, skill_index);
     return 1;
@@ -652,7 +640,7 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
     uint8_t step_energy = (uint8_t)max16(THROW_STEP_ENERGY_MINIMUM, THROW_STEP_ENERGY_BASE - level);
     projectile_create(thing, g_party_map_x, g_party_map_y, NORMALIZE(side + g_party_direction), g_party_direction,
                       kinetic_energy, attack, step_energy);
-    g_projectile_disabled_movement_ticks = PROJECTILE_DISABLED_MOVEMENT_TICKS;
+    g_projectile_disabled_movement_ticks = SHOT_DISABLED_MOVEMENT_TICKS;
     g_last_projectile_disabled_movement_direction = g_party_direction;
     return 1;
 }

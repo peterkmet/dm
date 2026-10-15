@@ -32,7 +32,7 @@ THING_GROUP, THING_WEAPON, THING_ARMOUR, THING_PROJECTILE, THING_EXPLOSION = 4, 
 CREATURE_SKELETON, CREATURE_MUMMY = 12, 10
 BEHAVIOR_APPROACH, BEHAVIOR_ATTACK = 7, 6
 THING_POTION, POTION_EMPTY_FLASK, ICON_EMPTY_FLASK = 8, 20, 195
-SLOT_ACTION_HAND = 1
+SLOT_HAND_ACTION = 1
 EVENT_LIGHT, EVENT_PARTY_SHIELD_END = 70, 74
 
 pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
@@ -462,7 +462,7 @@ def test_potion_spell_fills_empty_flask(caster):
     flask = lib.get_unused_thing(THING_POTION)
     lib.dungeon_get_thing_data(flask)[2] = POTION_EMPTY_FLASK
     assert lib.object_get_icon_index(flask) == ICON_EMPTY_FLASK
-    c.slots[SLOT_ACTION_HAND] = flask
+    c.slots[SLOT_HAND_ACTION] = flask
     assert cast(lib, c, [0x62, 0x66]) == 1
     data = lib.dungeon_get_thing_data(flask)
     assert data[2] & 0x7F == 11 and 3 * 40 <= data[3] < 3 * 40 + 16

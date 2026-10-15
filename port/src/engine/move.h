@@ -6,6 +6,8 @@
 
 /* Party and object movement (KAOS range 8, MOVESENS.C and COMMAND.C). */
 
+#define SQUARE_CHAIN_MAXIMUM 99 /* teleporters, pits, and stairs that one move follows */
+
 enum {
     COMMAND_TURN_LEFT = 1,
     COMMAND_TURN_RIGHT,

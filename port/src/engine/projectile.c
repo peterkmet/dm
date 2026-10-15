@@ -1,6 +1,7 @@
 #include "projectile.h"
 #include "champion.h"
 #include "group.h"
+#include "ids.h"
 #include "inventory.h"
 #include "move.h"
 #include "random.h"
@@ -10,21 +11,12 @@
 #include "timeline_process.h"
 
 /* Combined square argument: a value from 0x100 holds (x + 1) << 8 | target x (and y << 8 | target y). */
-#define SQUARE_COMBO_MIN         0x100
+#define SQUARE_COMBO_MIN         256
 #define SQUARE_COMBO_TARGET_MASK 0xff
 #define SQUARE_COMBO_SHIFT       8
 
-/* Potion types that explode when a flask hits something. */
-enum { POTION_FUL_BOMB = 19, POTION_VEN_BOMB = 3 };
-/* Weapons that a creature with CREATURE_KEEPS_THROWN_SHARP_WEAPONS keeps after a hit. */
-enum { WEAPON_DAGGER = 8, WEAPON_ARROW = 27, WEAPON_SLAYER = 28, WEAPON_POISON_DART = 31, WEAPON_THROWING_STAR = 32 };
-enum { CREATURE_KEEPS_THROWN_SHARP_WEAPONS = 0x0400 };
 /* Door attributes (high byte of g_current_map_door_info): projectiles pass through the grate. */
 enum { DOOR_PROJECTILES_PASS = 2 };
-/* Object info allowed slots bit: the object passes through a door grate. */
-enum { OBJECT_PASSES_DOOR_GRATE = 0x0100 };
-/* Junk icons that never pass through a door grate. */
-enum { ICON_JUNK_SOLID_FIRST = 0xb0, ICON_JUNK_SOLID_LAST = 0xbf };
 enum { PROJECTILE_DOOR_PASS_RANDOM_MASK = 0x7f };
 enum { LAUNCHER_EXPLOSION_DATA_BASE = 128, LAUNCHER_ATTACK = 100 };
 /* Object info indices that a launcher or a wall generator creates. */
@@ -40,7 +32,6 @@ enum {
     LAUNCHER_INFO_THROWING_STAR = 56,
     LAUNCHER_INFO_BOULDER = 128
 };
-enum { WEAPON_TORCH = 2, WEAPON_ROCK = 30, JUNK_BOULDER = 25 };
 enum { WOUND_HEAD_AND_TORSO = WOUND_HEAD | WOUND_TORSO, WOUND_ALL = 0x3f };
 enum { MAX_CREATURE_HEALTH = 1000 };
 enum { FLUXCAGE_LIFETIME = 100, REBIRTH_STEP_1_DELAY = 5 };
@@ -48,11 +39,11 @@ enum { POISON_CLOUD_FADE = 3, POISON_CLOUD_MIN_ATTACK = 5, SMOKE_FADE = 40, SMOK
 enum { WEAK_EXPLOSION_MAX_ATTACK = 80, POISON_CLOUD_MAX_DAMAGE = 4, POISON_REACTION_MIN_DAMAGE = 2 };
 enum { PROJECTILE_STEP_TICKS_PARTY_MAP = 1, PROJECTILE_STEP_TICKS_OTHER_MAP = 3 };
 /* Impact attack of a slime, fireball, or lightning explosion: a base plus random parts; lightning adds 16 times it. */
-enum { SLIME_POISON_RANDOM_MASK = 15, SLIME_POISON_BASE = 10, SLIME_ATTACK_RANDOM_MASK = 31 };
-enum { FIRE_ATTACK_RANDOM_MASK = 15, FIRE_ATTACK_BASE = 10, LIGHTNING_ATTACK_FACTOR = 16 };
+enum { SLIME_POISON_RANDOM_MASK = 0xf, SLIME_POISON_BASE = 10, SLIME_ATTACK_RANDOM_MASK = 0x1f };
+enum { FIRE_ATTACK_RANDOM_MASK = 0xf, FIRE_ATTACK_BASE = 10, LIGHTNING_ATTACK_FACTOR = 16 };
 /* The projectile attack lowers this reduction of the impact attack. */
 enum { IMPACT_ATTACK_REDUCTION = 32 };
-enum { FUSE_ACTION_ATTACK = 255, FUSE_SIDES = 4, SHOT_DISABLED_MOVEMENT_TICKS = 4 };
+enum { FUSE_SIDES = 4 };
 
 int16_t g_create_launcher_projectile;
 int16_t g_projectile_poison_attack, g_projectile_attack_type;

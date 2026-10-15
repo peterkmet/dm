@@ -3,7 +3,7 @@
 
 #define ARGB_OPAQUE         0xff000000u
 #define AMIGA_CHANNEL_BITS  4
-#define AMIGA_CHANNEL_MASK  15
+#define AMIGA_CHANNEL_MASK  0xf
 #define CHANNEL_4_TO_8_BITS 17 /* 15 * 17 = 255 */
 
 uint8_t fb[SCREEN_H][SCREEN_W] = {0};

@@ -14,11 +14,9 @@
 #define SOUND_ENTRY_SIZE        12
 #define SOUND_ENTRY_RATE        3 /* byte offsets in a sound entry */
 #define SOUND_ENTRY_PRIORITY    4
-#define SOUND_SAMPLE_HEADER     2     /* bytes before the sample data in the graphic */
 #define SOUND_PERIOD_PER_RATE   72800 /* Paula period = this / sound rate */
 #define SOUND_HEARING_RANGE     12    /* squares to each side and ahead or behind */
 #define SOUND_VOLUME_TABLE_SIDE (2 * SOUND_HEARING_RANGE + 1)
-#define SOUND_MAX_VOLUME        64
 #define LOUDNESS_MEDIUM_SUM     15   /* left + right volume of a medium sound */
 #define LOUDNESS_LOUD_SUM       26   /* left + right volume of a loud sound */
 #define NO_SOUND                (-1) /* empty pending slot */

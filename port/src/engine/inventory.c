@@ -4,6 +4,7 @@
 #include "ftl.h"
 #include "game.h"
 #include "ids.h"
+#include "magic.h"
 #include "random.h"
 #include "sound.h"
 #include "timeline_process.h"
@@ -12,9 +13,6 @@
 /* KAOS data addresses. */
 #define TORCH_CHARGE_TO_ICON_OFFSET 0x100ba0 /* g_torch_charge_to_icon_offset[16] */
 
-/* Object info index of the first record of each object type. */
-enum { INFO_SCROLL = 0, INFO_CONTAINER = 1, INFO_POTION = 2, INFO_WEAPON = 23, INFO_ARMOUR = 69, INFO_JUNK = 127 };
-
 #define WATERSKIN_WATER            800
 #define POTION_WATER_WATER         1600
 #define FOOD_WATER_MAXIMUM         2048
@@ -22,15 +20,11 @@ enum { INFO_SCROLL = 0, INFO_CONTAINER = 1, INFO_POTION = 2, INFO_WEAPON = 23, I
 #define SCROLL_WEIGHT              1
 #define EMPTY_FLASK_WEIGHT         1
 #define POTION_WEIGHT              3
-#define JUNK_WATERSKIN             1 /* each charge weighs 0.2 kg */
 #define LIGHT_POWER_ILLUMULET      2
 #define CURSED_SLOT_LAST           12 /* cursed objects lower luck in slots up to here */
 #define CURSED_LUCK                (-3)
-#define SHIELD_POTION_STRONG       50 /* above this shield defense, a Ya potion adds a quarter */
-#define MAXIMUM_POTION_MANA        900
 #define HEAL_WOUND_TRIES           10
-#define STAT_MANA                  STAT_COUNT /* object_modifier: the change goes to the maximum mana */
-#define ARMOUR_SHARP_DEFENSE_BASE  4          /* sharp defense: defense * (sharp resistance + 4) / 8 */
+#define ARMOUR_SHARP_DEFENSE_BASE  4 /* sharp defense: defense * (sharp resistance + 4) / 8 */
 #define ARMOUR_SHARP_DEFENSE_SHIFT 3
 /* Object modifiers: the bonus of each object. */
 #define RABBITS_FOOT_LUCK          10
@@ -67,17 +61,17 @@ int16_t inventory_get_object_info_index(uint16_t thing)
 {
     switch (THING_TYPE(thing)) {
     case THING_WEAPON:
-        return INFO_WEAPON + weapon_type(thing);
+        return OBJECT_INFO_FIRST_WEAPON + weapon_type(thing);
     case THING_ARMOUR:
-        return INFO_ARMOUR + armour_type(thing);
+        return OBJECT_INFO_FIRST_ARMOUR + armour_type(thing);
     case THING_SCROLL:
-        return INFO_SCROLL;
+        return OBJECT_INFO_FIRST_SCROLL;
     case THING_POTION:
-        return INFO_POTION + potion_type(thing);
+        return OBJECT_INFO_FIRST_POTION + potion_type(thing);
     case THING_CONTAINER:
-        return INFO_CONTAINER + container_type(thing);
+        return OBJECT_INFO_FIRST_CONTAINER + container_type(thing);
     case THING_JUNK:
-        return INFO_JUNK + junk_type(thing);
+        return OBJECT_INFO_FIRST_JUNK + junk_type(thing);
     }
     return -1;
 }
@@ -454,7 +448,7 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
         break;
     case POTION_YA: {
         amount += amount >> 1;
-        if (c->shield_defense > SHIELD_POTION_STRONG)
+        if (c->shield_defense > SHIELD_STRONG)
             amount >>= 2;
         c->shield_defense += amount;
         TimelineEvent e = {
@@ -465,7 +459,7 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
         break;
     }
     case POTION_EE: {
-        uint16_t mana = min16(MAXIMUM_POTION_MANA, c->current_mana + amount + (amount - POTION_AMOUNT_BASE));
+        uint16_t mana = min16(MAXIMUM_MANA, c->current_mana + amount + (amount - POTION_AMOUNT_BASE));
         /* unsigned compare and shift as in the original */
         if (mana > (uint16_t)c->maximum_mana)
             mana -= (uint16_t)(mana - max16(c->current_mana, c->maximum_mana)) >> 1;

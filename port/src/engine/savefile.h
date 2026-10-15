@@ -33,7 +33,7 @@ enum {
     G_LAST_PROJECTILE_DIRECTION = 44,
     G_MAX_ACTIVE_GROUP_COUNT = 46,
 };
-#define SAVE_CHAMPIONS_BYTES    0x580 /* 4 champion records and 128 bytes of the party */
+#define SAVE_CHAMPIONS_BYTES    1408 /* 4 champion records and 128 bytes of the party */
 #define SAVE_PARTY_BYTES        128
 #define SAVE_ACTIVE_GROUP_BYTES 16
 #define SAVE_EVENT_BYTES        10

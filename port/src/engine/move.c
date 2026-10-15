@@ -15,7 +15,6 @@
 #define KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD 0x103c56
 #define KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT   0x103c5e
 
-#define SQUARE_CHAIN_MAXIMUM   99 /* teleporters, pits, and stairs that one move follows */
 #define SCENT_STRENGTH_MAXIMUM 80
 #define SCENT_KEEP_LARGER      0x8000 /* flag: keep the larger strength instead of adding */
 #define SCENT_NEW_STRENGTH     24

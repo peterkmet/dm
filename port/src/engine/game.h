@@ -9,12 +9,13 @@
 #define CELL_COUNT                 4 /* cells of a square, one for each direction */
 #define CHAMPION_MAX_COUNT         4
 #define STAT_LIMIT                 170 /* no statistic grows above this value */
+#define STAT_MINIMUM_VALUE         30  /* the minimum of each statistic of a new champion */
 #define PARTY_SCENT_COUNT          24
-#define ACTIVE_GROUP_MAX_COUNT     110 /* creature groups that can act at the same time */
-#define CSB_ACTIVE_GROUP_MAX_COUNT 60  /* active group slots of a new CSB game */
-#define WATCHDOG_INTERVAL          300 /* game ticks between two watchdog events */
-#define SHIFT_COUNT_MASK           63  /* the 68000 takes a shift count modulo 64 */
-#define LONG_SHIFT_MAXIMUM         31  /* a larger shift of a 32-bit value leaves only the sign or 0 */
+#define ACTIVE_GROUP_MAX_COUNT     110  /* creature groups that can act at the same time */
+#define CSB_ACTIVE_GROUP_MAX_COUNT 60   /* active group slots of a new CSB game */
+#define WATCHDOG_INTERVAL          300  /* game ticks between two watchdog events */
+#define SHIFT_COUNT_MASK           0x3f /* the 68000 takes a shift count modulo 64 */
+#define LONG_SHIFT_MAXIMUM         31   /* a larger shift of a 32-bit value leaves only the sign or 0 */
 
 enum {
     STAT_LUCK,
@@ -26,6 +27,7 @@ enum {
     STAT_ANTIFIRE,
     STAT_COUNT
 };
+#define STAT_MANA STAT_COUNT /* object modifiers: the change goes to the maximum mana */
 enum { STAT_MAXIMUM, STAT_CURRENT, STAT_MINIMUM, STAT_VALUE_COUNT };
 /* Champion slots (Champion.slots), then the slots of the open chest. */
 enum {
@@ -85,7 +87,7 @@ typedef struct {
    kept position is a big-endian word with x in bits 11-15, y in bits 6-10, and the map in bits 0-5. */
 enum { MAGIC_MAP_DAIN, MAGIC_MAP_ROS, MAGIC_MAP_KU, MAGIC_MAP_NETA, MAGIC_MAP_POSITION };
 /* A position word (kept map position, party scents): x in bits 11-15, y in bits 6-10, the map in bits 0-5. */
-enum { POSITION_X_SHIFT = 11, POSITION_Y_SHIFT = 6, POSITION_XY_MASK = 31, POSITION_MAP_MASK = 63 };
+enum { POSITION_X_SHIFT = 11, POSITION_Y_SHIFT = 6, POSITION_XY_MASK = 0x1f, POSITION_MAP_MASK = 0x3f };
 
 /* Stores the kept map position of NETA in the magic map bytes. */
 static inline void game_set_magic_map_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)

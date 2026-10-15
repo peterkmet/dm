@@ -21,11 +21,10 @@
 
 #define SCRIPT_SHOW        (-1)
 #define SCRIPT_ENTRY_BYTES 4
-#define LOGO_VOLUME        64
 
 int logo_play(const char *path)
 {
-    static const uint8_t volumes[2] = {LOGO_VOLUME, LOGO_VOLUME};
+    static const uint8_t volumes[2] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
     size_t len;
     uint8_t *raw = read_file(path, &len);
     FtlImage img = {0};

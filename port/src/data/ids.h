@@ -217,8 +217,10 @@
 #define ICON_SCROLL_CLOSED       31
 #define ICON_LAST_WITH_STATE     ICON_SCROLL_OPEN
 #define ICON_DELTA               38
-#define ICON_VORPAL_BLADE        40
+#define ICON_DIAMOND_EDGE        39
+#define ICON_VORPAL_BLADE        40 /* hits non-material creatures, half damage on others */
 #define ICON_INQUISITOR          41
+#define ICON_HARDCLEAVE          43
 #define ICON_MACE_OF_ORDER       45
 #define ICON_STAFF               58 /* 58-66: staffs and wands */
 #define ICON_SCEPTRE_OF_LYF      66
@@ -235,6 +237,8 @@
 #define ICON_POWERTOWERS         142
 #define ICON_FOOD_FIRST          168 /* apple to dragon steak: food value table index */
 #define ICON_FOOD_LAST           175
+#define ICON_JUNK_SOLID_FIRST    176 /* junk icons that never pass through a door grate */
+#define ICON_JUNK_SOLID_LAST     191
 #define ICON_BOOTS_OF_SPEED      194
 
 /* Champion rules: strings of graphic 700. Each message is a prefix, the name, and a suffix (+ 1). */

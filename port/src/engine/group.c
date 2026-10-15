@@ -2,6 +2,7 @@
 #include "champion.h"
 #include "dungeon.h"
 #include "ftl.h"
+#include "ids.h"
 #include "inventory.h"
 #include "move.h"
 #include "projectile.h"
@@ -17,33 +18,15 @@
 #define KAOS_WOUND_PROBABILITY_INDEX_TO_MASK 0x100b86 /* uint8_t[5] */
 #define KAOS_SLOTS_TO_STEAL_FROM             0x100b8a /* uint8_t[8] */
 
-/* Creature graphic info (CreatureInfo.graphic_info). */
-enum { GRAPHIC_FLIP_NON_ATTACK = 0x0004, GRAPHIC_FLIP_ATTACK = 0x0200, GRAPHIC_FLIP_DURING_ATTACK = 0x0400 };
-#define GRAPHIC_HORIZONTAL_OFFSET_RANGE(info) ((info) >> 12 & 3)
-#define GRAPHIC_VERTICAL_OFFSET_RANGE(info)   ((info) >> 14)
-enum {
-    ASPECT_OFFSET_MASK = 7,
-    ASPECT_VERTICAL_OFFSET_SHIFT = 3,
-    ASPECT_KEEP_FLAGS = ASPECT_ATTACKING | ASPECT_FLIPPED
-};
+enum { ASPECT_KEEP_FLAGS = ASPECT_ATTACKING | ASPECT_FLIPPED };
 
-/* Object info index ranges of the fixed possessions (see inventory_get_object_info_index). */
-enum { OBJECT_INFO_FIRST_WEAPON = 0x17, OBJECT_INFO_FIRST_ARMOUR = 0x45, OBJECT_INFO_FIRST_JUNK = 0x7f };
 enum { FIXED_POSSESSION_RANDOM_DROP = 0x8000, FIXED_POSSESSION_INDEX_MASK = 0x7fff };
 
 enum { SYSTEM_ERROR_NO_FREE_ACTIVE_GROUP = 71, ACTIVE_GROUP_RESERVE = 5 };
 enum { MOVEMENT_TICKS_OF_IMMOBILE_CREATURE = 100, FREEZE_LIFE_RETRY_TICKS = 4, MOVE_GROUP_RETRY_TICKS = 5 };
 enum { WARINESS_AVOIDS_FORBIDDEN_TELEPORTER = 10, FALL_DAMAGE = 20, DOOR_DAMAGE = 5 };
-enum {
-    SKILL_PARRY_DEFENSE = 7,
-    INVISIBLE_PARTY_DODGE_BONUS = 16,
-    LUCK_PERCENT_AGAINST_CREATURE = 60,
-    LUCK_PERCENT_AGAINST_MISS = 75
-};
-enum { ICON_DIAMOND_EDGE = 39, ICON_HALF_DAMAGE_ON_MATERIAL = 40, ICON_HARDCLEAVE = 43 };
-enum { SLOT_ACTION_HAND = 1 };
+enum { INVISIBLE_PARTY_DODGE_BONUS = 16, LUCK_PERCENT_AGAINST_CREATURE = 60, LUCK_PERCENT_AGAINST_MISS = 75 };
 enum { STEAL_CHANCE_STEP = 20 };
-enum { HIT_PROBABILITY_ALWAYS_HITS = 0x8000, HIT_PROBABILITY_MASK = 0x7fff };
 enum { CELLS_OF_THREE_CREATURES = 0x3f };
 enum { SMOKE_ATTACK_QUARTER = 110, SMOKE_ATTACK_HALF = 190, SMOKE_ATTACK_FULL = 255 };
 /* Faster creatures get a higher event priority: this minus the movement ticks. */
@@ -64,11 +47,11 @@ enum {
 };
 /* A frightened group flees for random(100 - 4 * fear) + 20 events; a thief for random(64) + 20. */
 enum {
-    FEAR_RANDOM_MASK = 15,
+    FEAR_RANDOM_MASK = 0xf,
     FLEE_DELAY_RANGE = 100,
     FLEE_DELAY_FEAR_STEP = 4,
     FLEE_DELAY_MINIMUM = 20,
-    THEFT_FLEE_RANDOM_MASK = 63
+    THEFT_FLEE_RANDOM_MASK = 0x3f
 };
 enum { STEAL_CHANCE_START = 100 };
 /* Line slopes in fixed point: 64 is one square across per square along. */
@@ -78,25 +61,19 @@ enum { INVISIBLE_PARTY_SIGHT_RANGE = -10, ADJACENT_SIGHT_BONUS = 5, SIGHT_ROLL_C
 /* A scent trail is followed when 30 - 2 * smell is below the scent strength plus a random part. */
 enum { SCENT_TRAIL_THRESHOLD = 30 };
 /* The spell projectile of a creature. */
-enum {
-    CREATURE_SPELL_MIN_KINETIC_ENERGY = 20,
-    CREATURE_SPELL_MAX_KINETIC_ENERGY = 255,
-    CREATURE_SPELL_STEP_ENERGY = 8
-};
+enum { CREATURE_SPELL_MIN_KINETIC_ENERGY = 20, CREATURE_SPELL_STEP_ENERGY = 8 };
 enum { POISON_ATTACK_FACTOR = 8 };
 /* Wound probabilities: four 4-bit thresholds, compared with a random nibble. */
-enum { WOUND_PROBABILITY_MASK = 15, WOUND_PROBABILITY_BITS = 4 };
+enum { WOUND_PROBABILITY_MASK = 0xf, WOUND_PROBABILITY_BITS = 4 };
 /* Hit rolls: random(32) - 16 around the aim of the attacker. */
-enum { AIM_RANDOM_MASK = 31, AIM_RANDOM_CENTER = 16, CREATURE_DAMAGE_RANDOM_MASK = 15, WEAK_HIT_RANDOM_MASK = 15 };
-enum { ARMOUR_RANDOM_MASK = 31, STRENGTH_DAMAGE_RANDOM_MASK = 31 };
+enum { AIM_RANDOM_MASK = 0x1f, AIM_RANDOM_CENTER = 16, CREATURE_DAMAGE_RANDOM_MASK = 0xf, WEAK_HIT_RANDOM_MASK = 0xf };
+enum { ARMOUR_RANDOM_MASK = 0x1f, STRENGTH_DAMAGE_RANDOM_MASK = 0x1f };
 /* A skill level above a random(64) doubles the melee damage and adds 10. */
-enum { DOUBLE_DAMAGE_RANDOM_MASK = 63, DOUBLE_DAMAGE_BONUS = 10, MELEE_EXPERIENCE_BONUS = 3, MELEE_HIT_STAMINA = 4 };
+enum { DOUBLE_DAMAGE_RANDOM_MASK = 0x3f, DOUBLE_DAMAGE_BONUS = 10, MELEE_EXPERIENCE_BONUS = 3, MELEE_HIT_STAMINA = 4 };
 /* Creatures farther than this on an axis update their aspect at a slow fixed pace. */
 enum { ASPECT_NEAR_DISTANCE = 3 };
 /* A creature with more attack ticks waits a random -2 to 5 ticks more. */
-enum { SLOW_ATTACK_TICKS = 15, ATTACK_RANGE_RANDOM_MASK = 15 };
-/* Teleporters, pits, and stairs that one move follows at most. */
-enum { MOVE_CHAIN_LIMIT = 99 };
+enum { SLOW_ATTACK_TICKS = 15, ATTACK_RANGE_RANDOM_MASK = 0xf };
 /* Random bits that must all be 0: a hit without weighted wounds (1 in 8), a single small creature that
    shifts (1 in 4), and its move to a new cell (1 in 8). */
 enum { PLAIN_HIT_RANDOM_BITS = 0x70, SHIFT_CELL_RANDOM_BITS = 0xc0, NEW_CELL_RANDOM_BITS = 0x38 };
@@ -198,7 +175,7 @@ bool group_is_creature_allowed_on_map(uint16_t group, int16_t map)
 int16_t group_get_creature_ordinal_in_cell(uint16_t group, uint16_t cell)
 {
     uint8_t cells = group_get_cells(group, g_current_map_index);
-    if (cells == CELLS_CENTERED)
+    if (cells == CELL_CENTERED)
         return 1;
     int16_t half_square = creature_size(group_info(group)) == CREATURE_SIZE_HALF;
     if (half_square && (cell & 1) == (group_get_directions(group, g_current_map_index) & 1))
@@ -412,7 +389,7 @@ uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, 
     /* Bug fix: the original starts a group of several creatures from a stale register; the port starts from 0. */
     uint16_t cells = 0, cell = 0;
     if (last_creature_index == 0)
-        cells = CELLS_CENTERED;
+        cells = CELL_CENTERED;
     else
         cell = random_2bits();
     group_set_creature_type(group, creature_type);
@@ -432,7 +409,7 @@ uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, 
     return group;
 }
 
-enum { GENERATOR_RANDOM_COUNT = 8, GENERATOR_COUNT_MASK = 7, GENERATOR_COUNT_FIELD_MASK = 15 };
+enum { GENERATOR_RANDOM_COUNT = 8, GENERATOR_COUNT_MASK = 7, GENERATOR_COUNT_FIELD_MASK = 0xf };
 
 /* The creature generator of a corridor event: count, health multiplier (0: map difficulty), random direction. */
 void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y)
@@ -505,7 +482,7 @@ void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, in
         rec_object_set_type(thing, object_type);
         rec_object_set_cursed(thing, cursed);
         uint16_t drop_cell = cell;
-        if (cell == CELLS_CENTERED || random_2bits() == 0)
+        if (cell == CELL_CENTERED || random_2bits() == 0)
             drop_cell = random_2bits();
         move_get_move_result(THING_WITH_CELL(thing, drop_cell), -1, 0, x, y);
     }
@@ -532,7 +509,7 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
         uint8_t cells = group_get_cells(group, g_current_map_index);
         for (int16_t i = rec_group_last_creature_index(group); i >= 0; i--)
             group_drop_creature_fixed_possessions(
-                type, x, y, cells == CELLS_CENTERED ? CELLS_CENTERED : cell_of(cells, i), sound_mode);
+                type, x, y, cells == CELL_CENTERED ? CELL_CENTERED : cell_of(cells, i), sound_mode);
     }
     uint16_t thing = group_possessions(group);
     if (thing == THING_ENDOFLIST)
@@ -604,7 +581,7 @@ int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_inde
         return OUTCOME_NO_CREATURE_KILLED;
     }
     uint8_t cells = group_get_cells(group, g_current_map_index);
-    uint16_t cell = cells == CELLS_CENTERED ? CELLS_CENTERED : cell_of(cells, creature_index);
+    uint16_t cell = cells == CELL_CENTERED ? CELL_CENTERED : cell_of(cells, creature_index);
     uint16_t last = rec_group_last_creature_index(group);
     int16_t outcome;
     if (last == 0) {
@@ -1022,7 +999,7 @@ static bool group_is_creature_attacking(uint16_t group, int16_t x, int16_t y, in
     uint16_t type = rec_group_creature_type(group);
     const CreatureInfo *info = tables_creature_info(type);
     uint8_t cells = group_active(group)->cells;
-    uint16_t side = cells == CELLS_CENTERED ? random_bit() : ((cell_of(cells, creature_index) + 5 - primary) & 2) >> 1;
+    uint16_t side = cells == CELL_CENTERED ? random_bit() : ((cell_of(cells, creature_index) + 5 - primary) & 2) >> 1;
     int16_t cell = (primary + side) & 3;
     if (creature_attack_range(info) <= 1 || (g_current_group_distance_to_party <= 1 && !random_bit())) {
         int16_t champion_index;
@@ -1056,10 +1033,9 @@ static bool group_is_creature_attacking(uint16_t group, int16_t x, int16_t y, in
         uint16_t kinetic_energy = (info->attack >> 2) + 1;
         kinetic_energy += random16() % kinetic_energy;
         kinetic_energy += random16() % kinetic_energy;
-        projectile_create(
-            EXPLOSION_THING(explosion), x, y, cell, primary,
-            bounded_value(CREATURE_SPELL_MIN_KINETIC_ENERGY, kinetic_energy, CREATURE_SPELL_MAX_KINETIC_ENERGY),
-            info->dexterity, CREATURE_SPELL_STEP_ENERGY);
+        projectile_create(EXPLOSION_THING(explosion), x, y, cell, primary,
+                          bounded_value(CREATURE_SPELL_MIN_KINETIC_ENERGY, kinetic_energy, KINETIC_ENERGY_MAXIMUM),
+                          info->dexterity, CREATURE_SPELL_STEP_ENERGY);
     }
     int16_t sound = info->attack_sound_ordinal ? tables_creature_sound(info->attack_sound_ordinal - 1)->attack : -1;
     if (sound != -1)
@@ -1200,7 +1176,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
         champion_wake_up();
     int16_t difficulty = map_current_difficulty() * 2;
     const CreatureInfo *info = group_info(group);
-    champion_add_skill_experience(champion_index, SKILL_PARRY_DEFENSE, creature_experience(info));
+    champion_add_skill_experience(champion_index, SKILL_PARRY, creature_experience(info));
     int16_t dodge_bonus;
     if (g_party.event71_count_invisibility && !(info->attributes & CREATURE_SEES_INVISIBLE))
         dodge_bonus = INVISIBLE_PARTY_DODGE_BONUS;
@@ -1219,7 +1195,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
     uint16_t wounds = creature_hit_wounds(info);
     uint16_t random = random16();
     int16_t damage = (random & CREATURE_DAMAGE_RANDOM_MASK) + info->attack + difficulty -
-                     2 * champion_get_skill_level(champion_index, SKILL_PARRY_DEFENSE);
+                     2 * champion_get_skill_level(champion_index, SKILL_PARRY);
     if (damage <= 1) {
         if (random_bit())
             return 0;
@@ -1268,7 +1244,7 @@ static int16_t melee_hit_damage(int16_t champion_index, const CreatureInfo *info
 {
     int16_t damage = 0;
     /* Bug fix: without strength the original uses a stale register as the base; the port uses 0. */
-    int16_t strength = champion_get_strength(champion_index, SLOT_ACTION_HAND), base = 0;
+    int16_t strength = champion_get_strength(champion_index, SLOT_HAND_ACTION), base = 0;
     if (strength) {
         strength += random16() % ((strength >> 1) + 1);
         damage = ((int32_t)strength * damage_factor) >> 5;
@@ -1290,7 +1266,7 @@ static int16_t melee_hit_damage(int16_t champion_index, const CreatureInfo *info
         damage += random16() % damage;
         damage >>= 2;
         damage += random_2bits() + 1;
-        if (icon == ICON_HALF_DAMAGE_ON_MATERIAL && !(info->attributes & CREATURE_NON_MATERIAL))
+        if (icon == ICON_VORPAL_BLADE && !(info->attributes & CREATURE_NON_MATERIAL))
             damage >>= 1;
     }
     return damage;
@@ -1310,7 +1286,7 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
     const CreatureInfo *info = group_info(group);
     int16_t hit = 0;
     if (info->dexterity != CREATURE_NEVER_HITS) {
-        int16_t icon = object_get_icon_index(champion->slots[SLOT_ACTION_HAND]);
+        int16_t icon = object_get_icon_index(champion->slots[SLOT_HAND_ACTION]);
         int16_t always_hits = (hit_probability & HIT_PROBABILITY_ALWAYS_HITS) != 0;
         hit_probability &= HIT_PROBABILITY_MASK;
         if (!(info->attributes & CREATURE_NON_MATERIAL) || always_hits) {
@@ -1786,11 +1762,11 @@ static int16_t shift_single_creature(GroupTurn *t)
     if (t->last_creature_index || t->size == CREATURE_SIZE_FULL || (random & SHIFT_CELL_RANDOM_BITS))
         return 0;
     uint16_t cell = random;
-    if (t->active->cells != CELLS_CENTERED) {
+    if (t->active->cells != CELL_CENTERED) {
         if (!(random & NEW_CELL_RANDOM_BITS))
             cell = ((random & 1 ? 1 : -1) + (t->active->cells & 3)) & 3;
         else
-            t->active->cells = CELLS_CENTERED;
+            t->active->cells = CELL_CENTERED;
     }
     if ((cell & NEW_CELL_RANDOM_BITS) || t->visible_distance == 1 || t->size != CREATURE_SIZE_QUARTER)
         return 0;
@@ -1806,7 +1782,7 @@ static int16_t move_creature_to_front(GroupTurn *t, int16_t creature)
 {
     uint16_t position = t->active->cells >> (2 * creature), cell = position & 3;
     if (!t->last_creature_index && random_bit()) {
-        t->active->cells = CELLS_CENTERED;
+        t->active->cells = CELL_CENTERED;
         return 0;
     }
     cell = ((position & 1) == (t->direction & 1) ? cell - 1 : cell + 1) & 3;
@@ -1844,7 +1820,7 @@ static bool can_attack_from_cell(const GroupTurn *t, int16_t creature, uint16_t 
     uint16_t attributes = t->info->attributes;
     if (range != 1 ||
         ((attributes & CREATURE_PREFER_BACK_ROW) && random_2bits() && (attributes & CREATURE_ATTACK_ANY_CHAMPION)) ||
-        t->size != CREATURE_SIZE_QUARTER || t->active->cells == CELLS_CENTERED)
+        t->size != CREATURE_SIZE_QUARTER || t->active->cells == CELL_CENTERED)
         return true;
     uint16_t cell = cell_of(t->active->cells, creature);
     return cell == t->direction || cell == ((t->direction + 1) & 3);
@@ -2056,7 +2032,7 @@ static int16_t move_get_teleporter_rotated_group_result(uint16_t teleporter, uin
     uint16_t old_directions = group_get_directions(group, map);
     uint16_t directions = absolute ? rotation : (old_directions + rotation) & 3;
     uint16_t cells = group_get_cells(group, map);
-    if (cells != CELLS_CENTERED) {
+    if (cells != CELL_CENTERED) {
         int16_t quarter = creature_size(group_info(group)) == CREATURE_SIZE_QUARTER;
         uint16_t cell_turn = (directions + 4 - old_directions) & 3, old_cells = cells;
         for (int16_t i = 0; i <= rec_group_last_creature_index(group); i++) {
@@ -2090,7 +2066,7 @@ typedef struct {
    killed all creatures. */
 static bool follow_destination_squares(GroupMove *m)
 {
-    for (int16_t n = MOVE_CHAIN_LIMIT; n; n--) {
+    for (int16_t n = SQUARE_CHAIN_MAXIMUM; n; n--) {
         uint8_t square = g_current_map_data[m->x][m->y];
         int16_t type = SQUARE_TYPE(square);
         if (type == SQUARE_TELEPORTER) {

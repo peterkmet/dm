@@ -8,20 +8,18 @@
 #define G_PORTRAIT_HEIGHT 0x10295a
 
 /* Offsets in the values line of a champion text, counted from its leading '\n'. */
-#define VALUES_GENDER          1
-#define VALUES_HEALTH          3
-#define VALUES_STAMINA         7
-#define VALUES_MANA            11
-#define VALUES_STATISTICS      16 /* 2 characters per statistic */
-#define VALUES_SKILLS          31 /* 1 character per hidden skill */
-#define VALUES_LENGTH          47
-#define BAR_VALUE_CHARS        4
-#define STATISTIC_CHARS        2
-#define RECRUIT_STAT_MINIMUM   30
-#define SKILL_BASE_EXPERIENCE  125 /* experience of skill level 1, doubled per level */
-#define HIDDEN_SKILLS_PER_BASE 4
-#define VALUE_BITS_PER_CHAR    4   /* a value character holds 4 bits */
-#define RECRUIT_TEXT_SIZE      128 /* a champion text fits */
+#define VALUES_GENDER         1
+#define VALUES_HEALTH         3
+#define VALUES_STAMINA        7
+#define VALUES_MANA           11
+#define VALUES_STATISTICS     16 /* 2 characters per statistic */
+#define VALUES_SKILLS         31 /* 1 character per hidden skill */
+#define VALUES_LENGTH         47
+#define BAR_VALUE_CHARS       4
+#define STATISTIC_CHARS       2
+#define SKILL_BASE_EXPERIENCE 125 /* experience of skill level 1, doubled per level */
+#define VALUE_BITS_PER_CHAR   4   /* a value character holds 4 bits */
+#define RECRUIT_TEXT_SIZE     128 /* a champion text fits */
 
 /* Decodes char_count letters, 4 bits each. Each character adds c - 'A' to the low byte only. */
 uint16_t recruit_decoded_value(const char *text, int16_t char_count)
@@ -77,8 +75,8 @@ int16_t recruit_parse_text(const char *text, RecruitData *out)
     for (int i = 0; i < STAT_COUNT; i++) {
         int16_t v = recruit_decoded_value(p + VALUES_STATISTICS + i * STATISTIC_CHARS, STATISTIC_CHARS);
         out->statistics[i][STAT_MAXIMUM] = out->statistics[i][STAT_CURRENT] =
-            (uint8_t)(v > RECRUIT_STAT_MINIMUM ? v : RECRUIT_STAT_MINIMUM);
-        out->statistics[i][STAT_MINIMUM] = RECRUIT_STAT_MINIMUM;
+            (uint8_t)(v > STAT_MINIMUM_VALUE ? v : STAT_MINIMUM_VALUE);
+        out->statistics[i][STAT_MINIMUM] = STAT_MINIMUM_VALUE;
     }
     for (int s = SKILL_BASE_COUNT; s < SKILL_COUNT; s++)
         out->experience[s] = hidden_skill_experience(p[VALUES_SKILLS + s - SKILL_BASE_COUNT] - 'A');
