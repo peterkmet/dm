@@ -21,7 +21,7 @@
 #define LIGHT_STEP_TICKS        4
 #define REBIRTH_EXPLOSION_TICKS 5
 
-int16_t g_game_won;
+bool g_game_won;
 void (*g_endgame_sensor_hook)(uint16_t delay);
 
 /* AND/OR gate data: bits 0-3 are the inputs (one per cell), bits 4-7 are the expected inputs. */
@@ -161,7 +161,7 @@ void event_pit(TimelineEvent *event)
     open_or_close(event);
 }
 
-/* Shows, hides, or toggles a text. Returns 1 when the text becomes visible. */
+/* Shows, hides, or toggles a text. Returns true when the text becomes visible. */
 static bool change_text_visibility(uint16_t text, int16_t effect)
 {
     bool was_visible = rec_text_is_visible(text);

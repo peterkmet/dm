@@ -48,7 +48,7 @@
 #define VI_WOUND_ROLL_DIVISOR      42 /* Vi: max(1, p / 42) wound rolls */
 
 int16_t g_inventory_champion_ordinal;
-int16_t g_leader_empty_handed = 1;
+bool g_leader_empty_handed = true;
 uint16_t g_open_chest_slots[SLOT_CHEST_COUNT] = {THING_NONE, THING_NONE, THING_NONE, THING_NONE,
                                                  THING_NONE, THING_NONE, THING_NONE, THING_NONE};
 uint16_t g_open_chest = THING_NONE;
@@ -150,7 +150,7 @@ void inventory_put_object_in_leader_hand(uint16_t thing)
 {
     if (thing == THING_NONE)
         return;
-    g_leader_empty_handed = 0;
+    g_leader_empty_handed = false;
     g_leader_hand_object = thing;
     if (g_leader_index != -1) {
         g_champions[g_leader_index].load += inventory_get_object_weight(thing);
@@ -161,7 +161,7 @@ void inventory_put_object_in_leader_hand(uint16_t thing)
 uint16_t inventory_get_object_removed_from_leader_hand(void)
 {
     uint16_t thing = g_leader_hand_object;
-    g_leader_empty_handed = 1;
+    g_leader_empty_handed = true;
     if (thing != THING_NONE) {
         g_leader_hand_object = THING_NONE;
         if (g_leader_index != -1) {

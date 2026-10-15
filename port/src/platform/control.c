@@ -57,12 +57,12 @@ static char input[INPUT_SIZE];
 static size_t input_length;
 
 static struct {
-    int pending, wait_only;
+    bool pending, wait_only;
     uint32_t start_time;
     int64_t frames, min_ticks, max_ticks;
-    int has_damage;
+    bool has_damage;
     int16_t damage;
-    int moving; /* the action was a step forward and to the right */
+    bool moving; /* the action was a step forward and to the right */
     int16_t step_forward, step_right;
     int16_t rotation;             /* the action was a turn: 1 right, -1 left */
     int16_t map, x, y, direction; /* the party before the action */
@@ -73,7 +73,8 @@ static struct {
 /* A batch: act_many runs a list of actions; each step is one turn. */
 enum { BATCH_DAMAGE_MAX = 64 };
 static struct {
-    int active, ran;
+    bool active;
+    int ran;
     int16_t damages[BATCH_DAMAGE_MAX]; /* the action damage of each choose_action, in order */
     int damage_count;
     char *actions; /* a copy of the request; next is the rest of its actions array */
@@ -100,7 +101,7 @@ typedef struct {
     StateJsonSeenThing at;
     uint16_t creature;
     int16_t before, after;
-    int in_view, killed;
+    bool in_view, killed;
 } WitnessedGroup;
 static struct {
     int explosion_count, group_count;
@@ -112,12 +113,12 @@ static struct {
 
 /* The eye panel text of a look action, for the turn result. */
 static struct {
-    int shown;
+    bool shown;
     int16_t count;
     char name[PANEL_LINE_SIZE], lines[PANEL_LINE_COUNT + 1][PANEL_LINE_SIZE];
 } look_text;
 
-static int load_failed; /* a damaged save file left no game to play */
+static bool load_failed; /* a damaged save file left no game to play */
 
 /* The party died, or the game is won: the endgame ran and no turn can follow until load or new_game. */
 static bool game_over(void)
@@ -281,7 +282,7 @@ static const char *movement(uint16_t key)
 /* A step remembers where it goes, so that the turn result can tell a bump or a move by the dungeon. */
 static const char *step(uint16_t key, int16_t forward, int16_t right)
 {
-    turn.moving = 1;
+    turn.moving = true;
     turn.step_forward = forward, turn.step_right = right;
     return movement(key);
 }
@@ -443,7 +444,7 @@ static void press_eye(int16_t x, int16_t y)
     uint16_t value;
     command_process_click(x, y, CLICK_LEFT_PRESS);
     gameloop_run_commands();
-    look_text.shown = 1;
+    look_text.shown = true;
     look_text.count = panel_object_text(g_leader_hand_object, look_text.name, look_text.lines);
     if (g_advanced_features && panel_object_meter(g_leader_hand_object, &label, &value))
         snprintf(look_text.lines[look_text.count++], PANEL_LINE_SIZE, "%s %u", label, value);
@@ -523,7 +524,7 @@ static const char *choose_action(const char *r)
     }
     if (index < 0 || index >= g_action_count)
         return "index out of range of the action menu (see state action_menu)";
-    turn.has_damage = 1;
+    turn.has_damage = true;
     g_action_damage = 0;
     click_command(UI_INPUT_ACTION_NAMES, COMMAND_ACTION_FIRST + index);
     turn.damage = g_action_damage;
@@ -747,7 +748,7 @@ static void witness(void)
             witnessed.explosions[witnessed.explosion_count++] = (WitnessedExplosion){things[i], type};
     }
     for (int k = 0; k < witnessed.group_count; k++)
-        witnessed.groups[k].in_view = 0;
+        witnessed.groups[k].in_view = false;
     count = state_json_visible_things(THING_GROUP, things, STATE_JSON_VISIBLE_GROUPS_MAX);
     for (int i = 0; i < count; i++) {
         int k = 0;
@@ -763,7 +764,7 @@ static void witness(void)
         }
         witnessed.groups[k].at = things[i];
         witnessed.groups[k].after = creatures;
-        witnessed.groups[k].in_view = 1;
+        witnessed.groups[k].in_view = true;
     }
     for (int k = 0; k < witnessed.group_count; k++) /* a killed group frees its record */
         witnessed.groups[k].killed |=
@@ -966,9 +967,9 @@ static void send_part(const char *key, void (*part)(Json *))
     send_line(&j);
 }
 
-static void start_turn(int64_t min_ticks, int64_t max_ticks, int wait_only)
+static void start_turn(int64_t min_ticks, int64_t max_ticks, bool wait_only)
 {
-    turn.pending = 1;
+    turn.pending = true;
     turn.wait_only = wait_only;
     turn.stop = NULL;
     turn.start_time = g_game_time;
@@ -1164,10 +1165,10 @@ static void handle_act_many(const char *request)
     if (!batch.actions)
         abort();
     batch.next = batch.actions;
-    batch.active = 1;
+    batch.active = true;
     batch.damage_count = 0;
     batch.start_time = g_game_time;
-    turn.has_damage = turn.moving = 0;
+    turn.has_damage = turn.moving = false;
     start_witnessing();
     batch_next();
 }
@@ -1196,7 +1197,7 @@ static void handle_new_game(void)
         send_error("cannot start the new game");
         return;
     }
-    load_failed = 0;
+    load_failed = false;
     send_part("state", state_json_state);
 }
 
@@ -1223,7 +1224,7 @@ static void handle_wait(const char *request)
     if (ticks < 1 || ticks > WAIT_MAX_TICKS)
         send_error("ticks must be 1-5000");
     else {
-        turn.has_damage = look_text.shown = turn.moving = 0;
+        turn.has_damage = look_text.shown = turn.moving = false;
         snapshot();
         start_witnessing();
         start_turn(ticks, ticks, 1);
@@ -1349,10 +1350,10 @@ void control_poll(void)
         if (!turn_finished()) {
             turn.frames++;
             gameloop_run_commands();
-            g_stop_waiting_for_input = 1; /* every frame of a turn is a tick */
+            g_stop_waiting_for_input = true; /* every frame of a turn is a tick */
             return;
         }
-        turn.pending = 0;
+        turn.pending = false;
         if (client_fd < 0) {
             free(batch.actions);
             memset(&batch, 0, sizeof batch);

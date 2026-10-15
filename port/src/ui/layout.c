@@ -159,7 +159,7 @@ static void clip_to(Box *c, int16_t x, int16_t y, int16_t w, int16_t h)
 }
 
 /* The parent walk of get_zone: moves the point (*x, *y) and the clip box by the translations and the
-   rectangles of the parents of record r. Returns 0 when nothing is visible. */
+   rectangles of the parents of record r. Returns false when nothing is visible. */
 static bool place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip)
 {
     const uint8_t *p, *s;
@@ -214,7 +214,7 @@ static bool place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip
 
 /* get_zone: places an item of *w x *h pixels (0 = bitmap size) in zone and clips it to the
    parent rectangles. ZONE_SHIFTED adds *w, *h to the position and takes the bitmap size.
-   On return *w, *h hold the source offset of the clipped box. Returns 0 when nothing is visible. */
+   On return *w, *h hold the source offset of the clipped box. Returns false when nothing is visible. */
 bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, int16_t *w, int16_t *h)
 {
     if (zone == -1)

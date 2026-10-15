@@ -70,7 +70,8 @@ static char directory[PATH_SIZE]; /* the folder of the animation file: SF and MF
 static uint8_t *loaded[MAX_SAMPLES + MAX_MUSIC]; /* the files of SF and MF */
 static size_t music_sizes[MAX_MUSIC];
 static const uint8_t *music[MAX_MUSIC];
-static int loaded_count, music_count, music_started;
+static int loaded_count, music_count;
+static bool music_started;
 
 /* Offset of the chunk after the chunk at offset at. */
 static size_t next_chunk(size_t at)
@@ -87,7 +88,7 @@ void anim_close(void)
     file_len = pos = 0;
     while (loaded_count)
         free(loaded[--loaded_count]);
-    music_count = music_started = 0;
+    music_count = music_started = false;
 }
 
 typedef struct {
@@ -167,7 +168,7 @@ static void play_music(uint16_t number)
         lengths[count++] = BE16(m + offsets[item]);
     }
     sound_music_play(segments, lengths, count, MUSIC_PERIOD, MUSIC_VOLUME);
-    music_started = 1;
+    music_started = true;
 }
 
 int anim_open(const char *path)
@@ -305,7 +306,7 @@ int anim_play(const char *path)
     ui_set_screen_palette(colors);
     int running = 1;
     command_discard_all_input();
-    g_input_received = 0;
+    g_input_received = false;
     /* a stop keeps the shown frame for its delay, as the original */
     for (int16_t delay; running && (delay = anim_next_frame()) != ANIM_END;) {
         while (delay-- > 0 && (running = wait_frame()))

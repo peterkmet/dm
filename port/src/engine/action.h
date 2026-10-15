@@ -67,7 +67,7 @@ void action_clear_acting_champion(void);
 /* The group on the square in front of the acting champion, or THING_ENDOFLIST. */
 extern uint16_t g_action_target_group_thing;
 
-/* Commands 113-115: runs action list entry 0-2 of the acting champion. Returns 1 when the action was performed. */
+/* Commands 113-115: runs action list entry 0-2 of the acting champion. Returns true when the action was performed. */
 bool action_did_click_trigger_action(int16_t action_list_index);
 bool action_is_action_performed(uint16_t champion_index, int16_t action);
 bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y,

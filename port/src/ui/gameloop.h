@@ -8,7 +8,7 @@
 
 #define POINTER_SIZE 32 /* largest pointer image, in pixels */
 
-/* Loads KAOS.FTL and Graphics.DAT from dir and sets up the interface. Returns 1 on success. */
+/* Loads KAOS.FTL and Graphics.DAT from dir and sets up the interface. Returns true on success. */
 bool gameloop_load_data(const char *dir);
 /* The directory that gameloop_load_data read the game files from. */
 const char *gameloop_data_dir(void);
@@ -18,7 +18,7 @@ void entrance_draw(void);
 void entrance_press_button(int resume);
 /* After ENTER: the doors open over the view of the start square. Needs the frames of g_frame_hook. */
 void entrance_open_doors(void);
-/* Loads Dungeon.DAT from dir and starts a new game on the start square. Returns 1 on success. */
+/* Loads Dungeon.DAT from dir and starts a new game on the start square. Returns true on success. */
 bool gameloop_new_game(const char *dir);
 /* start_game for a game that savegame_load restored: the party map, "GAME LOADED", the interface. */
 void gameloop_start_loaded_game(void);
@@ -38,7 +38,7 @@ void gameloop_run_commands(void);
 /* One game tick: map change, timeline, view, sounds, damage, time, champion effects, interface. */
 void gameloop_tick(void);
 /* The pointer image at screen position (x, y): px gets w x h colors (0 transparent) of the sprite
-   palette. Returns 0 when the pointer is hidden. */
+   palette. Returns false when the pointer is hidden. */
 bool gameloop_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *w, int *h, int *hot_x, int *hot_y);
 const uint16_t *gameloop_pointer_palette(void);
 

@@ -28,14 +28,14 @@ Champion g_champions[CHAMPION_MAX_COUNT];
 uint16_t g_party_champion_count;
 int16_t g_leader_index = -1, g_magic_caster_champion_index = -1;
 uint16_t g_leader_hand_object = THING_NONE;
-int16_t g_party_is_sleeping, g_party_dead;
+bool g_party_is_sleeping, g_party_dead;
 uint32_t g_game_time, g_game_id;
 int32_t g_last_creature_attack_time, g_last_party_movement_time, g_watchdog_time;
 int16_t g_disabled_movement_ticks, g_projectile_disabled_movement_ticks;
 int16_t g_last_projectile_disabled_movement_direction;
 uint16_t g_redraw;
 int16_t g_game_mode = GAME_MODE_VANILLA;
-int16_t g_cheat_light, g_cheat_immortal, g_cheat_food;
+bool g_cheat_light, g_cheat_immortal, g_cheat_food;
 
 TimelineEvent *g_timeline_events;
 uint16_t *g_timeline;
@@ -62,7 +62,7 @@ void game_new(void)
     g_party_champion_count = 0;
     g_leader_index = g_magic_caster_champion_index = -1;
     g_leader_hand_object = THING_NONE;
-    g_party_is_sleeping = g_party_dead = 0;
+    g_party_is_sleeping = g_party_dead = false;
     g_game_time = 0;
     g_last_creature_attack_time = g_last_party_movement_time = 0;
     g_disabled_movement_ticks = g_projectile_disabled_movement_ticks = 0;

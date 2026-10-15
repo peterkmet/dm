@@ -168,7 +168,7 @@ static uint16_t empty_flask_in_hand(const Champion *c)
     return THING_NONE;
 }
 
-/* Fills an empty flask in a hand with the potion. Returns 0 without a flask. */
+/* Fills an empty flask in a hand with the potion. Returns false without a flask. */
 static bool cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t power)
 {
     Champion *c = &g_champions[champion_index];
@@ -299,7 +299,7 @@ static bool is_magic_map(uint16_t thing)
 }
 
 /* CSB map spells need a magic map in the action hand. DAIN, ROS, and KU add a map layer for a time;
-   NETA keeps the map of the party square and direction. Returns 0 without the map. */
+   NETA keeps the map of the party square and direction. Returns false without the map. */
 static bool cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power, uint16_t *disabled_ticks)
 {
     Champion *c = &g_champions[champion_index];

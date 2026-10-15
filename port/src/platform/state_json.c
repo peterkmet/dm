@@ -646,7 +646,7 @@ static bool sensor_takes_object(uint16_t type)
     return false;
 }
 
-/* The side of wall square (x, y) that faces direction face. Returns 1 when it shows something. */
+/* The side of wall square (x, y) that faces direction face. Returns true when it shows something. */
 static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
 {
     memset(f, 0, sizeof *f);

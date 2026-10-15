@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, game_sources, global_type
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -50,11 +50,11 @@ def lib(tmp_path_factory):
 
 
 def value(lib, name):
-    return c16.in_dll(lib, name).value
+    return global_type(name, c16).in_dll(lib, name).value
 
 
 def set_value(lib, name, v):
-    c16.in_dll(lib, name).value = v
+    global_type(name, c16).in_dll(lib, name).value = v
 
 
 def start(lib, adventure=-1, mode=-1, csb_present=1):

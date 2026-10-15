@@ -260,13 +260,13 @@ static int32_t track_view = -1;           /* map, position, and direction of the
 static int16_t motion_step, motion_steps; /* the frame between two ticks; 0 steps: a tick view */
 static int16_t shift_x, shift_y;          /* in_zone moves the drawing by this offset */
 static int16_t vi_altar, fountain;        /* wall ornament index of the vi altar and the fountain, or -1 */
-int16_t g_do_not_draw_fluxcages;
+bool g_do_not_draw_fluxcages;
 Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
 uint16_t g_pile_top_objects[VIEW_CLICK_BOX_WALL];
 uint16_t g_pile_objects[VIEW_CLICK_BOX_WALL][VIEW_PILE_OBJECT_MAX];
 int16_t g_pile_object_counts[VIEW_CLICK_BOX_WALL];
 int16_t g_square_ahead_element;
-int16_t g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
+bool g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 
 static bool is_open_floor(uint8_t square)
 {
@@ -432,7 +432,7 @@ static void wall(int16_t id, int16_t zone, int mode)
 }
 
 /* draw_bitmap_in_zone. ZONE_SHIFTED or ZONE_SIZED pass g_zone_relative_x/y to layout_get_zone: a shift, or
-   the item size. Returns 1 and sets drawn_box (g_drawn_box) when it drew. */
+   the item size. Returns true and sets drawn_box (g_drawn_box) when it drew. */
 static bool in_zone(const Bitmap *bm, Bitmap *dst, int16_t zone, int flip, int16_t transparent)
 {
     int16_t w = 0, h = 0;
@@ -741,7 +741,7 @@ static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos,
 }
 
 /* The creatures of the group in view cell cell (map cell mcell). rest holds the cells still to draw,
-   front tells that the cell is a front cell of the pass. Returns 1 when the group is complete. */
+   front tells that the cell is a front cell of the pass. Returns true when the group is complete. */
 static bool creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int16_t cell, uint16_t mcell,
                       uint16_t rest, int16_t pass, bool front)
 {
@@ -1796,7 +1796,7 @@ static void d1c(int16_t dir, int16_t x, int16_t y)
     g_square_ahead_element = a.element;
     switch (a.element) {
     case SQUARE_WALL: /* ponytail: no thieves eye hole yet, needs the party spell state (step 9) */
-        g_facing_alcove = g_facing_vi_altar = g_facing_fountain = 0;
+        g_facing_alcove = g_facing_vi_altar = g_facing_fountain = false;
         wall(wall_set_ids[WS_WALL_D1C], ZONE_WALL_D1C, BLIT_OPAQUE);
         if (wall_ornament(a.front, VIEW_WALL_D1C_FRONT, &a))
             things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, CELLS_ALCOVE);
@@ -2435,7 +2435,7 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
 }
 
 /* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that view_set_light set.
-   Returns 1 on success. */
+   Returns true on success. */
 bool view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
 {
     if (!g_dungeon_maps || m < 0 || m >= dungeon_map_count())

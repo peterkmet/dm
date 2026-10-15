@@ -22,10 +22,10 @@
 #define READOUT_MARGIN      2 /* pixels between the rulers and the read-out */
 #define QUICK_MESSAGE_COLOR COLOR_WHITE
 
-int16_t g_advanced_features, g_automap_open;
+bool g_advanced_features, g_automap_open;
 
 static struct {
-    int active;
+    bool active;
     int16_t x, y; /* the mouse position that matches the current scroll */
 } drag;
 
@@ -72,7 +72,7 @@ void advanced_draw_automap(void)
 
 static void close_automap(void)
 {
-    g_automap_open = drag.active = 0;
+    g_automap_open = drag.active = false;
     automap_scroll_reset();
     gameloop_draw_view();
 }
@@ -97,10 +97,10 @@ bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
     Box b;
     if (kind == CLICK_LEFT_RELEASE) {
         advanced_drag(x, y);
-        drag.active = 0;
+        drag.active = false;
     } else if (kind == CLICK_LEFT_PRESS && ui_zone_box(ZONE_VIEWPORT, &b) && x >= b.x && x < b.x + b.w && y >= b.y &&
                y < b.y + b.h) {
-        drag.active = 1, drag.x = x, drag.y = y;
+        drag.active = true, drag.x = x, drag.y = y;
     }
     return true;
 }
@@ -115,7 +115,7 @@ void advanced_print_message(const char *text)
 /* A quick save is not a saved game: RESTART and the QUIT question look only at the save file. */
 static void quick_save(void)
 {
-    int16_t exists = g_saved_game_exists;
+    bool exists = g_saved_game_exists;
     uint32_t saved = g_last_save_game_time;
     advanced_print_message(savegame_save_as(startend_save_dir(), QUICK_SAVE_FILE_NAME, NULL) ? "GAME SAVED"
                                                                                              : "UNABLE TO SAVE");
@@ -126,7 +126,7 @@ static void quick_save(void)
 /* After a damaged file, savegame_load_from puts the running game back: the game goes on. */
 static void quick_load(void)
 {
-    int16_t exists = g_saved_game_exists;
+    bool exists = g_saved_game_exists;
     int16_t result = savegame_load_from(startend_save_dir(), QUICK_SAVE_FILE_NAME, NULL);
     if (result == SAVEGAME_LOADED) {
         gameloop_continue_loaded_game();
@@ -146,7 +146,7 @@ bool advanced_process_key(uint16_t key)
         if (key == KEY_M || key == KEY_TAB || key == KEY_ESCAPE)
             close_automap();
         if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I || key == KEY_F)) {
-            int16_t *cheat = key == KEY_L ? &g_cheat_light : key == KEY_I ? &g_cheat_immortal : &g_cheat_food;
+            bool *cheat = key == KEY_L ? &g_cheat_light : key == KEY_I ? &g_cheat_immortal : &g_cheat_food;
             *cheat = !*cheat;
             advanced_draw_automap();
         }
@@ -170,7 +170,7 @@ bool advanced_process_key(uint16_t key)
     case KEY_TAB:
         if (!in_dungeon_view())
             return !(key == KEY_TAB && g_inventory_champion_ordinal);
-        g_automap_open = 1;
+        g_automap_open = true;
         advanced_draw_automap();
         return true;
     }

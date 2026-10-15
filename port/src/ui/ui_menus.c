@@ -20,7 +20,7 @@
 #define DAMAGE_SMALL_BELOW 16
 #define DAMAGE_LARGE_BELOW 41
 
-int16_t g_action_area_contains_icons = 1;
+bool g_action_area_contains_icons = true;
 uint8_t g_action_list_minimum_skill_levels[ACTION_LIST_COUNT];
 uint16_t g_action_count;
 
@@ -95,7 +95,7 @@ void menus_set_acting_champion(uint16_t champion_index)
     }
     g_acting_champion_ordinal = champion_index + 1;
     menus_set_action_list(set);
-    g_action_area_contains_icons = 0;
+    g_action_area_contains_icons = false;
     c->attributes |= CHAMPION_ATTR_ACTION_HAND;
     ui_draw_champion_state(champion_index);
     menus_draw_action_area();
@@ -214,12 +214,12 @@ void menus_refresh_action_area(void)
     if (!(g_redraw & REDRAW_ACTION_AREA))
         return;
     if (g_acting_champion_ordinal) {
-        g_action_area_contains_icons = 0;
+        g_action_area_contains_icons = false;
         g_champions[g_acting_champion_ordinal - 1].attributes |= CHAMPION_ATTR_ACTION_HAND;
         ui_draw_champion_state(g_acting_champion_ordinal - 1);
         menus_draw_action_area();
     } else if (!g_action_damage) {
-        g_action_area_contains_icons = 1;
+        g_action_area_contains_icons = true;
         menus_draw_action_area();
     } else {
         menus_draw_action_damage(g_action_damage);
@@ -312,7 +312,7 @@ void menus_refresh_spell_area(void)
 void menus_reset(void)
 {
     g_acting_champion_ordinal = 0;
-    g_action_area_contains_icons = 1;
+    g_action_area_contains_icons = true;
     memset(g_action_list_indices, ACTION_NONE, sizeof g_action_list_indices);
     memset(g_action_list_minimum_skill_levels, 0, sizeof g_action_list_minimum_skill_levels);
     g_action_count = 0;

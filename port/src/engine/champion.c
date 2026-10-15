@@ -229,7 +229,7 @@ void champion_set_leader(int16_t champion_index)
 /* Input and screen changes of waking up belong to the interface. */
 void champion_wake_up(void)
 {
-    g_party_is_sleeping = 0;
+    g_party_is_sleeping = false;
 }
 
 /* The slot that a candidate possession goes to: hands, body, pouches, neck, then the backpack. */
@@ -807,7 +807,7 @@ void champion_kill(uint16_t champion_index)
     while (alive < g_party_champion_count && !g_champions[alive].current_health)
         alive++;
     if (alive == g_party_champion_count) {
-        g_party_dead = 1;
+        g_party_dead = true;
         return;
     }
     if (champion_index == g_leader_index)

@@ -20,7 +20,7 @@
 int16_t g_new_party_map_index = -1;
 int16_t g_move_result_map_x, g_move_result_map_y;
 uint16_t g_move_result_map_index, g_move_result_cell, g_move_result_direction;
-int16_t g_use_rope_to_climb_down_pit;
+bool g_use_rope_to_climb_down_pit;
 int g_party_teleport_count;
 
 /* Levitating groups, projectiles, and explosions do not fall into pits and do not trigger sensors when they leave a square. */
@@ -162,7 +162,7 @@ static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_
                 g_party_map_x = *dst_x;
                 g_party_map_y = *dst_y;
                 champion_fall_damage(g_use_rope_to_climb_down_pit);
-                g_use_rope_to_climb_down_pit = 0;
+                g_use_rope_to_climb_down_pit = false;
             }
         } else if (square_type == SQUARE_STAIRS && !party && type != THING_PROJECTILE) {
             /* An object on down stairs falls one level. On up stairs it only rolls out. */
@@ -391,5 +391,5 @@ void move_party(int16_t command)
 void move_reset(void)
 {
     g_new_party_map_index = -1;
-    g_use_rope_to_climb_down_pit = 0;
+    g_use_rope_to_climb_down_pit = false;
 }

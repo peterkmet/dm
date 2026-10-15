@@ -47,7 +47,7 @@ enum { ARMOUR_SHARP_RESISTANCE = 0x07, ARMOUR_SHIELD = 0x80 }; /* ArmourInfo.att
 enum { OBJECT_EDIBLE = 1 };                                    /* ObjectInfo.allowed_slots: the mouth */
 
 extern int16_t g_inventory_champion_ordinal; /* 0: no inventory open */
-extern int16_t g_leader_empty_handed;
+extern bool g_leader_empty_handed;
 extern uint16_t g_open_chest_slots[8]; /* slots SLOT_CHEST_FIRST and up */
 extern uint16_t g_open_chest;          /* THING_NONE: no chest is open */
 

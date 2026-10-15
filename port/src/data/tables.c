@@ -73,7 +73,7 @@ enum {
     CREATURE_AT_ATTACK_TYPE = 24,
 };
 
-static int ready;
+static bool ready;
 static CreatureInfo creature_info[CREATURE_TYPE_COUNT];
 static CreatureSound creature_sounds[CREATURE_SOUND_COUNT];
 static ObjectInfo object_info[OBJECT_INFO_COUNT];
@@ -205,7 +205,7 @@ int tables_init(void)
     read_magic();
     read_actions();
     read_champion_tables();
-    ready = 1;
+    ready = true;
     return 0;
 }
 

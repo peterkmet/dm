@@ -75,7 +75,7 @@ int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)
 }
 
 /* Stereo volume of a sound on a square, relative to the party position and direction.
-   Returns 0 when the square is out of hearing range. */
+   Returns false when the square is out of hearing range. */
 bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
 {
     int16_t dx = map_x - g_party_map_x, dy = map_y - g_party_map_y, side = 0, ahead = 0;

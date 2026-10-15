@@ -20,7 +20,7 @@ enum {
 extern int16_t g_new_party_map_index; /* -1: no map change pending */
 extern int16_t g_move_result_map_x, g_move_result_map_y;
 extern uint16_t g_move_result_map_index, g_move_result_cell, g_move_result_direction;
-extern int16_t g_use_rope_to_climb_down_pit;
+extern bool g_use_rope_to_climb_down_pit;
 extern int g_party_teleport_count; /* port only: teleporters that moved the party */
 
 bool move_is_levitating(uint16_t thing);

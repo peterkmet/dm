@@ -61,14 +61,14 @@ static const struct {
 int16_t g_music_soundtrack, g_music_track, g_music_last_track, g_music_requested_track;
 
 static drmp3 decoder;
-static int decoding; /* the decoder has an open file */
+static bool decoding; /* the decoder has an open file */
 static int16_t party_map = NO_POSITION, party_x, party_y;
 
 void music_stop(void)
 {
     if (decoding)
         drmp3_uninit(&decoder);
-    decoding = 0;
+    decoding = false;
     g_music_track = 0;
 }
 
@@ -86,7 +86,7 @@ static void play(int16_t track)
         drmp3_uninit(&decoder);
         return;
     }
-    decoding = 1;
+    decoding = true;
     g_music_track = track;
 }
 

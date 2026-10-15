@@ -206,8 +206,9 @@ static void set_pointer(bool in_game)
 
 enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
 
-static int mode, turnbased, auto_enter, title_pending; /* title_pending: the DM title plays before the entrance */
-static int loaded_adventure = -1;                      /* the adventure whose game files are loaded */
+static int mode;
+static bool turnbased, auto_enter, title_pending; /* title_pending: the DM title plays before the entrance */
+static int loaded_adventure = -1;                 /* the adventure whose game files are loaded */
 static const char *data, *data_override, *saves, *control, *csb_dir;
 
 /* Keys and clicks of the start screens. Ctrl+Q quits. */
@@ -218,7 +219,7 @@ static void select_input(const PlatEvent *e)
     if (e->type != PLAT_KEY)
         return;
     if (e->key == SDLK_Q && e->modifiers & SDL_KMOD_CTRL)
-        g_quit_requested = 1;
+        g_quit_requested = true;
     switch (e->key) {
     case SDLK_UP:
     case SDLK_KP_8:
@@ -245,7 +246,7 @@ static void read_input(void)
     PlatEvent e;
     while (plat_poll(&e)) {
         if (e.type == PLAT_QUIT)
-            g_quit_requested = 1;
+            g_quit_requested = true;
         if (mode == MODE_SELECT) {
             select_input(&e);
             continue;
@@ -254,7 +255,7 @@ static void read_input(void)
             continue;
         if (mode < MODE_ENTRANCE) {
             if (e.type == PLAT_KEY && e.key == SDLK_ESCAPE)
-                g_quit_requested = 1;
+                g_quit_requested = true;
             if (mode == MODE_VIEW && e.type == PLAT_KEY)
                 view_key(e.key);
             continue;
@@ -289,7 +290,7 @@ static void show_entrance(void)
 static void play_title(void)
 {
     char path[PATH_SIZE];
-    title_pending = 0;
+    title_pending = false;
     snprintf(path, sizeof path, "%s/%s", data, LOGO_FILE);
     logo_play(path);
     snprintf(path, sizeof path, "%s/%s", data, TITLE_FILE);
@@ -313,7 +314,7 @@ static void play_csb_intro(void)
 static void quit_to_start(void)
 {
     if (turnbased || !select_restart()) {
-        g_quit_requested = 1;
+        g_quit_requested = true;
         return;
     }
     mode = MODE_SELECT;
@@ -328,7 +329,7 @@ static int entrance_frame(const char *data)
     while (command_process_queue())
         ;
     if (g_quit_requested) { /* the QUIT button: closing the window and Ctrl+Q end the program before */
-        g_quit_requested = 0;
+        g_quit_requested = false;
         quit_to_start();
         return 1;
     }
@@ -421,7 +422,7 @@ static int apply_mode(void)
     static char default_control[PATH_SIZE];
     turnbased = g_game_mode == GAME_MODE_TURNBASED;
     if (turnbased)
-        auto_enter = 1;
+        auto_enter = true;
     /* turn-based: no frames inside the endgame and dialogs, so a dead party ends the turn at once */
     g_frame_hook = turnbased ? NULL : frame_hook;
     if (!turnbased)
@@ -476,7 +477,7 @@ static SDL_EnumerationResult SDLCALL install_disk(void *userdata, const char *di
 
 /* The choice of the CSB screen: NEW ADVENTURE starts the prison, RESUME loads CSBGAME.DAT. The game
    files and the game mode are loaded at the first start only. A failed resume shows the CSB screen
-   again; in turn-based mode, load and new_game over the socket start the game. Returns 0 when the
+   again; in turn-based mode, load and new_game over the socket start the game. Returns false when the
    game files or the control socket cannot be opened. */
 static bool start_csb(void)
 {
@@ -513,7 +514,7 @@ static bool start_csb(void)
     return true;
 }
 
-/* Starts the selected adventure. DM: the entrance. CSB: the choice of the CSB screen. Returns 0 when
+/* Starts the selected adventure. DM: the entrance. CSB: the choice of the CSB screen. Returns false when
    the game files or the control socket cannot be opened. */
 static bool start_adventure(void)
 {
@@ -581,7 +582,7 @@ static int run_frame(void)
     if (g_quit_requested)
         return RUN_QUIT;
     if (g_return_to_entrance) {
-        g_return_to_entrance = 0;
+        g_return_to_entrance = false;
         music_stop(); /* the start screens have no music */
         if (turnbased) {
             entrance_draw(); /* the game mode stays: load and new_game over the socket start the next game */

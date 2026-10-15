@@ -118,7 +118,7 @@ static inline void event_set_quiver_slot(TimelineEvent *event, int16_t slot)
     event->b = (slot + 1) << EVENT_QUIVER_SLOT_SHIFT | (event->b & EVENT_BYTE_MASK);
 }
 
-extern int16_t g_game_won;
+extern bool g_game_won;
 /* The endgame of an endgame sensor, set by the user interface: it runs inside the sensor event. */
 extern void (*g_endgame_sensor_hook)(uint16_t delay);
 

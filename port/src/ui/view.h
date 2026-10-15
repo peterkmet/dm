@@ -18,13 +18,13 @@ enum { VIEW_PILE_OBJECT_MAX = 32 }; /* a pile records at most this many objects;
 /* View element of the square ahead (g_square_ahead_element): a wall, a door seen from the front. */
 enum { VIEW_ELEMENT_WALL = 0, VIEW_ELEMENT_DOOR_FRONT = 0x11 };
 
-extern int16_t g_do_not_draw_fluxcages;
+extern bool g_do_not_draw_fluxcages;
 extern Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
 extern uint16_t g_pile_top_objects[VIEW_CLICK_BOX_WALL];                   /* top object of each pile box */
 extern uint16_t g_pile_objects[VIEW_CLICK_BOX_WALL][VIEW_PILE_OBJECT_MAX]; /* objects of each pile box in draw order */
 extern int16_t g_pile_object_counts[VIEW_CLICK_BOX_WALL];
 extern int16_t g_square_ahead_element;
-extern int16_t g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
+extern bool g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 
 void view_load_map(int16_t map);
 /* The ornament that the view draws on the side of wall square (x, y) of the party map that faces
@@ -47,7 +47,7 @@ int16_t view_wall_face_ornament_index(int16_t x, int16_t y, int16_t face);
 /* The floor ornament that the view draws on square (x, y) of the party map from depth 1: its index in the
    floor ornament graphics of the game, or -1 (none, or the view has not loaded the party map). */
 int16_t view_floor_ornament(int16_t x, int16_t y);
-/* 1 when the view draws a pressure pad on square (x, y) of the party map. */
+/* True when the view draws a pressure pad on square (x, y) of the party map. */
 bool view_floor_pressure_pad(int16_t x, int16_t y);
 void view_draw(int16_t dir, int16_t x, int16_t y);
 /* CSB: draws the magic map grid of a champion (Champion.magic_map) with its top left square at (px, py). */

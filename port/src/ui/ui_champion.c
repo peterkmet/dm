@@ -61,7 +61,7 @@ const char *const g_rune_names[UI_RUNE_COUNT] = {
 int16_t g_panel_content;
 static int16_t
     scroll_redraw; /* CSB: the panel scroll shows a creature name or the magic map, so it draws again each tick */
-static int16_t scroll_redraw_eye; /* the scroll is the leader hand object while the eye is pressed */
+static bool scroll_redraw_eye; /* the scroll is the leader hand object while the eye is pressed */
 
 /* A number as text: right aligned in width characters, or not padded. */
 static const char *number(char *buf, uint16_t value, int pad, int width)
@@ -728,7 +728,7 @@ static void insert_creature_name(char *text, size_t size)
 }
 
 /* CSB: the magic map panel when the first scroll line is MAGICMAP: the runes of the active map spells lit,
-   and the map grid. Returns 0 for another scroll. */
+   and the map grid. Returns false for another scroll. */
 static bool draw_panel_magic_map(const char *text)
 {
     char line[SCROLL_TEXT_SIZE];

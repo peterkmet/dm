@@ -215,7 +215,7 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
 }
 
 /* A melee hit on the group in front. A champion in a back cell reaches only past an empty front cell ("can't
-   reach"). Disrupt hits only non-material creatures. Returns 0 when the champion hits nothing. */
+   reach"). Disrupt hits only non-material creatures. Returns false when the champion hits nothing. */
 bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y,
                                       int16_t skill_index)
 {
@@ -260,7 +260,7 @@ static bool is_spell_action_cast(uint16_t champion_index, uint16_t explosion_typ
     return cast;
 }
 
-/* The bow or sling in the action hand shoots the ammunition of the ready hand. Returns 0 without matching
+/* The bow or sling in the action hand shoots the ammunition of the ready hand. Returns false without matching
    ammunition. */
 static bool is_shot(uint16_t champion_index)
 {
@@ -347,16 +347,16 @@ static void window(uint16_t champion_index, uint16_t skill_index)
     g_party.event73_count_thieves_eye++;
 }
 
-/* Climb down: the party goes down the pit in front with the rope, without fall damage. Returns 0 without a pit. */
+/* Climb down: the party goes down the pit in front with the rope, without fall damage. Returns false without a pit. */
 static bool is_climbed_down(void)
 {
     int16_t x, y;
     step_forward(g_party_direction, &x, &y);
     if (SQUARE_TYPE(get_square(x, y)) != SQUARE_PIT || get_square_group(x, y) != THING_ENDOFLIST)
         return false;
-    g_use_rope_to_climb_down_pit = 1;
+    g_use_rope_to_climb_down_pit = true;
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, x, y);
-    g_use_rope_to_climb_down_pit = 0;
+    g_use_rope_to_climb_down_pit = false;
     return true;
 }
 
@@ -428,7 +428,7 @@ static bool is_removed_in_csb(int16_t action)
 
 /* Runs one action of a champion against the square in front of the champion. After the action the action hand is
    disabled for the action ticks, the champion loses stamina, and the action skill gains experience. A failed
-   melee action halves the ticks and the experience. Returns 0 when the action fails. The function is long: one
+   melee action halves the ticks and the experience. Returns false when the action fails. The function is long: one
    short case for each action of the action table. */
 bool action_is_action_performed(uint16_t champion_index, int16_t action)
 {
@@ -651,7 +651,7 @@ bool action_is_leader_hand_object_thrown(int16_t side)
     return action_is_object_thrown(g_leader_index, -1, side);
 }
 
-/* 1 when the weapon slot holds a bow and the ammunition slot an arrow, or a sling and a sling stone. */
+/* True when the weapon slot holds a bow and the ammunition slot an arrow, or a sling and a sling stone. */
 bool action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot,
                                                  uint16_t ammunition_slot)
 {

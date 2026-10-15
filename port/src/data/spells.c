@@ -64,7 +64,7 @@ uint16_t spell_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t pow
     return cost;
 }
 
-/* One draw per missing skill level; the cast fails on the first draw that returns 1. */
+/* One draw per missing skill level; the cast fails on the first draw that returns true. */
 bool spell_draw_fails(uint8_t current_wisdom, uint16_t random)
 {
     uint16_t limit = current_wisdom + SPELL_WISDOM_BONUS < SPELL_WISDOM_LIMIT ? current_wisdom + SPELL_WISDOM_BONUS

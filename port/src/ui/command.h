@@ -79,13 +79,13 @@ static inline uint16_t command_champion_key(int16_t champion_index)
 /* Result of the entrance (g_new_game): ENTRANCE_WAITING until a button is pressed. */
 enum { ENTRANCE_RESUME = 0, ENTRANCE_NEW_GAME = 1, ENTRANCE_WAITING = 99 };
 
-extern int16_t g_stop_waiting_for_input;    /* set by commands that end the wait for the next tick */
-extern int16_t g_game_time_ticking;         /* 0 while the game is frozen */
+extern bool g_stop_waiting_for_input;       /* set by commands that end the wait for the next tick */
+extern bool g_game_time_ticking;            /* false while the game is frozen */
 extern int16_t g_wait_for_input_max_frames; /* frames of one tick without input: 12, 0 while sleeping */
-extern int16_t g_game_frozen;
+extern bool g_game_frozen;
 extern int16_t g_new_game;
-extern int16_t g_input_received; /* a key or button press since the last discard */
-extern uint16_t g_last_key;      /* the last key word since the last discard, 0: none */
+extern bool g_input_received; /* a key or button press since the last discard */
+extern uint16_t g_last_key;   /* the last key word since the last discard, 0: none */
 
 void command_set_entrance_input(void);
 void command_set_game_input(void);
@@ -101,7 +101,7 @@ void command_discard_all_input(void);
 void command_highlight_disable(void);
 void command_wake_up(void);
 
-extern int16_t g_mouse_pointer_hidden; /* the eye, or an imaginary wall, is pressed */
+extern bool g_mouse_pointer_hidden; /* the eye, or an imaginary wall, is pressed */
 
 void command_freeze_game(void);
 void command_unfreeze_game(void);

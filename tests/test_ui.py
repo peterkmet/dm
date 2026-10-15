@@ -203,7 +203,7 @@ def render(lib, name):
 def reset(lib):
     c16.in_dll(lib, "g_inventory_champion_ordinal").value = 0
     c16.in_dll(lib, "g_acting_champion_ordinal").value = 0
-    c16.in_dll(lib, "g_action_area_contains_icons").value = 1
+    ctypes.c_bool.in_dll(lib, "g_action_area_contains_icons").value = 1
     lib.message_clear()
 
 

@@ -686,7 +686,7 @@ def test_swap_champions_and_look(game, monkeypatch, capsys):
 
         client.act("take_from_slot", champion=0, slot=1)
         assert client.act("look")["look"] == response["look"]
-        advanced = ctypes.c_int16.in_dll(game.lib, "g_advanced_features")
+        advanced = ctypes.c_bool.in_dll(game.lib, "g_advanced_features")
         saved, advanced.value = advanced.value, 1
         try:
             assert client.act("look")["look"]["lines"][-1].startswith("ATTACK ")
@@ -910,7 +910,7 @@ def test_load_and_new_game_after_a_party_death(game, tmp_path):
         assert response["game_over"] is False and response["ticks"] >= 2
     finally:
         client.sock.close()
-        ctypes.c_int16.in_dll(lib, "g_return_to_entrance").value = 0
+        ctypes.c_bool.in_dll(lib, "g_return_to_entrance").value = 0
 
 
 

@@ -267,9 +267,9 @@ static void refresh_interface(void)
 static void start_game(void)
 {
     g_candidate_champion_ordinal = 0;
-    g_party_is_sleeping = 0;
-    g_game_won = g_do_not_draw_fluxcages = 0;
-    g_automap_open = g_cheat_light = g_cheat_immortal = g_cheat_food = 0;
+    g_party_is_sleeping = false;
+    g_game_won = g_do_not_draw_fluxcages = false;
+    g_automap_open = g_cheat_light = g_cheat_immortal = g_cheat_food = false;
     music_select(MUSIC_ORIGINAL);
     automap_scroll_reset();
     memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
@@ -288,12 +288,12 @@ static void start_game(void)
 /* The interface appears and the game time runs. */
 static void show_game(void)
 {
-    g_game_screen_inactive = 0;
+    g_game_screen_inactive = false;
     memset(fb, 0, sizeof fb);
     ui_set_palette(NULL);
     ui_draw_interface();
     gameloop_draw_view();
-    g_game_time_ticking = 1;
+    g_game_time_ticking = true;
     frames_waiting = 0;
     command_discard_all_input();
 }
@@ -305,8 +305,8 @@ bool gameloop_new_game(const char *dir)
     if (!load_dungeon(path))
         return false;
     game_new();
-    g_saved_game_exists = 0;
-    g_leader_empty_handed = 1;
+    g_saved_game_exists = false;
+    g_leader_empty_handed = true;
     start_game();
     explored_reset();
     move_party_enter_dungeon();
@@ -321,7 +321,7 @@ static void reset_champions_of_loaded_game(void)
 {
     int16_t leader = g_leader_index, caster = g_magic_caster_champion_index;
     uint16_t hand = g_leader_hand_object;
-    g_leader_empty_handed = 1;
+    g_leader_empty_handed = true;
     g_leader_hand_object = THING_NONE;
     g_leader_index = -1;
     inventory_put_object_in_leader_hand(hand);
@@ -345,7 +345,7 @@ static void start_loaded_game(int confirm)
     set_current_map_and_party_map(g_party_map_index);
     group_add_all_active_groups();
     if (confirm) {
-        g_game_screen_inactive = 1;
+        g_game_screen_inactive = true;
         memset(fb, 0, sizeof fb);
         dialog_draw(NULL, gfx_string(TEXT_GAME_LOADED), gfx_string(TEXT_OK), NULL, NULL, NULL);
         dialog_get_choice(1);
@@ -370,7 +370,7 @@ static void run_requested_sequence(void)
 {
     if (!g_fuse_sequence_requested)
         return;
-    g_fuse_sequence_requested = 0;
+    g_fuse_sequence_requested = false;
     fuse_sequence();
 }
 
@@ -399,7 +399,7 @@ int gameloop_frame(void)
         refresh_interface();
     run_requested_sequence();
     if (++frames_waiting > g_wait_for_input_max_frames)
-        g_stop_waiting_for_input = 1;
+        g_stop_waiting_for_input = true;
     bool tick = g_stop_waiting_for_input && g_game_time_ticking;
     if (!tick)
         draw_projectile_motion();
@@ -461,7 +461,7 @@ static void draw_spell_area_before_last_death(const Champion *before)
 void gameloop_tick(void)
 {
     frames_waiting = 0;
-    g_stop_waiting_for_input = 0;
+    g_stop_waiting_for_input = false;
     do {
         if (g_new_party_map_index != -1) {
             move_process_new_party_map();

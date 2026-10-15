@@ -58,7 +58,7 @@ void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s)
     text_draw(&screen, x, y, fg, bg, s);
 }
 
-/* Pixel size of s. Returns 0 for an empty text. */
+/* Pixel size of s. Returns false for an empty text. */
 bool text_size(const char *s, int *w, int *h)
 {
     int n = s ? (int)strlen(s) : 0;

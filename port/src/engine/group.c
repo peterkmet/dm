@@ -83,7 +83,7 @@ int16_t g_dungeon_view_palette_index;
 static uint8_t movement_tested_directions[4];
 static uint8_t flux_cages[4];
 static int16_t flux_cage_count;
-static int16_t movement_blocked_by_wall, movement_blocked_by_door, movement_blocked_by_party;
+static bool movement_blocked_by_wall, movement_blocked_by_door, movement_blocked_by_party;
 static uint16_t movement_blocked_by_group;
 static int16_t drop_moving_creature_possessions_cell_count;
 static uint8_t drop_moving_creature_possessions_cells[GROUP_MAX_CREATURES];
@@ -845,7 +845,7 @@ static bool group_is_movement_possible(const CreatureInfo *info, int16_t x, int1
 {
     movement_tested_directions[direction] = 1;
     movement_blocked_by_group = THING_ENDOFLIST;
-    movement_blocked_by_door = movement_blocked_by_party = 0;
+    movement_blocked_by_door = movement_blocked_by_party = false;
     if (info->movement_ticks == CREATURE_IMMOBILE)
         return false;
     step(direction, 1, &x, &y);
@@ -869,7 +869,7 @@ static bool group_is_movement_possible(const CreatureInfo *info, int16_t x, int1
             if (THING_TYPE(t) == THING_EXPLOSION && rec_explosion_type(t) == EXPLOSION_FLUXCAGE) {
                 flux_cages[direction] = 1;
                 flux_cage_count++;
-                movement_blocked_by_wall = 1;
+                movement_blocked_by_wall = true;
                 return false;
             }
         }
@@ -879,7 +879,7 @@ static bool group_is_movement_possible(const CreatureInfo *info, int16_t x, int1
         uint16_t teleporter = get_square_first_thing(x, y);
         if ((teleporter_scope(teleporter) & TELEPORTER_SCOPE_CREATURES) &&
             !group_is_creature_allowed_on_map(g_current_group_thing, teleporter_target_map(teleporter))) {
-            movement_blocked_by_wall = 1;
+            movement_blocked_by_wall = true;
             return false;
         }
     }
@@ -890,7 +890,7 @@ static bool group_is_movement_possible(const CreatureInfo *info, int16_t x, int1
         int16_t height = door_is_vertical(get_square_first_thing(x, y)) ? rec_creature_height(info->attributes) : 1;
         int16_t state = door_state(square);
         if (height < state && state != DOOR_DESTROYED && !(info->attributes & CREATURE_NON_MATERIAL)) {
-            movement_blocked_by_door = 1;
+            movement_blocked_by_door = true;
             return false;
         }
     }
@@ -1391,7 +1391,7 @@ static void set_behavior_attack(GroupTurn *t)
     }
 }
 
-/* The group moves one or two squares when its movement ticks have passed. Returns 1 when the move ended the turn
+/* The group moves one or two squares when its movement ticks have passed. Returns true when the move ended the turn
    (the group left the map, died, or changed its active entry). */
 static bool try_move(GroupTurn *t, int16_t target_x, int16_t target_y)
 {
@@ -1457,7 +1457,7 @@ static bool after_move(GroupTurn *t, int16_t direction)
     return archenemy_jump(t);
 }
 
-/* Lord Chaos jumps two squares over a free square, away from fluxcages. Returns 1 when the turn ended at once. */
+/* Lord Chaos jumps two squares over a free square, away from fluxcages. Returns true when the turn ended at once. */
 static bool archenemy_jump(GroupTurn *t)
 {
     for (;;) {
@@ -1746,7 +1746,7 @@ static void process_group_behavior(GroupTurn *t, uint16_t behavior)
 }
 
 /* A single small creature sometimes changes its cell; a projectile in the new cell may hit it.
-   Returns 1 when all creatures died. */
+   Returns true when all creatures died. */
 static bool shift_single_creature(GroupTurn *t)
 {
     uint16_t random = random16();
@@ -1768,7 +1768,7 @@ static bool shift_single_creature(GroupTurn *t)
     return false;
 }
 
-/* A creature steps to another cell of the square, toward the front. Returns 1 when all creatures died. */
+/* A creature steps to another cell of the square, toward the front. Returns true when all creatures died. */
 static bool move_creature_to_front(GroupTurn *t, int16_t creature)
 {
     uint16_t position = t->active->cells >> (GROUP_CELL_BITS * creature), cell = NORMALIZE(position);

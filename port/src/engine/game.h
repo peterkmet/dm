@@ -164,7 +164,7 @@ extern Champion g_champions[CHAMPION_MAX_COUNT];
 extern uint16_t g_party_champion_count;
 extern int16_t g_leader_index, g_magic_caster_champion_index;
 extern uint16_t g_leader_hand_object;
-extern int16_t g_party_is_sleeping, g_party_dead;
+extern bool g_party_is_sleeping, g_party_dead;
 extern uint32_t g_game_time, g_game_id;
 extern int32_t g_last_creature_attack_time, g_last_party_movement_time, g_watchdog_time;
 extern int16_t g_disabled_movement_ticks, g_projectile_disabled_movement_ticks;
@@ -186,9 +186,9 @@ enum { REDRAW_ACTION_AREA = 1, REDRAW_SPELL_AREA = 2, REDRAW_SPELL_TABS = 4, RED
 enum { GAME_MODE_VANILLA, GAME_MODE_ADVANCED, GAME_MODE_TURNBASED };
 extern int16_t g_game_mode; /* GAME_MODE_VANILLA by default */
 /* Cheats of the advanced mode, L, I, and F on the automap. Not saved; a new or loaded game turns them off. */
-extern int16_t g_cheat_light;    /* the view draws in full light; the creature rules keep the real light */
-extern int16_t g_cheat_immortal; /* the health of a champion stops at 1 */
-extern int16_t g_cheat_food;     /* food and water do not go down */
+extern bool g_cheat_light;    /* the view draws in full light; the creature rules keep the real light */
+extern bool g_cheat_immortal; /* the health of a champion stops at 1 */
+extern bool g_cheat_food;     /* food and water do not go down */
 
 void game_new(void);
 

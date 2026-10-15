@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from test_champion import Champion
+from conftest import global_type
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -58,7 +59,7 @@ class Game:
         self.origin = lib.kaos_s16(VIEWPORT_ORIGIN), lib.kaos_s16(VIEWPORT_ORIGIN + 2)
 
     def value(self, name, kind=c16):
-        return kind.in_dll(self.lib, name).value
+        return global_type(name, kind).in_dll(self.lib, name).value
 
     def position(self):
         return [self.value(n) for n in ("g_party_map_x", "g_party_map_y", "g_party_direction")]
@@ -289,7 +290,7 @@ def test_party_light_sets_the_darkness_of_view_and_rules(game):
         assert bright[0] == 0 and dark[0] == 5
         assert bright[1] != dark[1]
         assert dark[2] < bright[2]
-        sleeping = c16.in_dll(lib, "g_party_is_sleeping")
+        sleeping = ctypes.c_bool.in_dll(lib, "g_party_is_sleeping")
         sleeping.value = 1  # no view is drawn, the creature rules still see the light of this tick
         party.magical_light_amount = 1000
         lib.gameloop_tick()
@@ -412,7 +413,7 @@ def test_a_party_that_dies_in_one_tick_shows_the_spell_area_of_the_last_caster(g
     def first_frame():
         if not frames:
             frames.append(spell_area(game))
-        c16.in_dll(lib, "g_quit_requested").value = 1  # leaves the death scream
+        ctypes.c_bool.in_dll(lib, "g_quit_requested").value = 1  # leaves the death scream
 
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = ctypes.cast(first_frame, ctypes.c_void_p).value
     try:
@@ -420,5 +421,5 @@ def test_a_party_that_dies_in_one_tick_shows_the_spell_area_of_the_last_caster(g
         lib.gameloop_tick()
     finally:
         ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
-        c16.in_dll(lib, "g_quit_requested").value = 0
+        ctypes.c_bool.in_dll(lib, "g_quit_requested").value = 0
     assert game.value("g_party_dead") and frames[0] == expected

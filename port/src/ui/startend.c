@@ -68,7 +68,8 @@ enum { LOAD_CHOICE_CANCEL = 2 };
 enum { SOUND_FUSE = 14 };
 
 void (*g_frame_hook)(void);
-int16_t g_quit_requested, g_restart_requested, g_return_to_entrance, g_waiting_frame;
+bool g_quit_requested, g_restart_requested, g_return_to_entrance;
+int16_t g_waiting_frame;
 static char save_dir[SAVE_DIR_SIZE] = ".";
 
 void startend_set_save_dir(const char *dir)
@@ -96,7 +97,7 @@ void wait_frames(int16_t count)
         ;
 }
 
-/* Waits until a key or a button is pressed. Returns 0 when there are no frames. */
+/* Waits until a key or a button is pressed. Returns false when there are no frames. */
 static bool wait_for_input(void)
 {
     command_discard_all_input();
@@ -106,7 +107,7 @@ static bool wait_for_input(void)
     return true;
 }
 
-/* The game asks before QUIT when neither a save nor a load is recent. Returns 1 to quit. */
+/* The game asks before QUIT when neither a save nor a load is recent. Returns true to quit. */
 static bool confirm_quit(void)
 {
     if (g_last_load_game_time + QUIT_CONFIRM_TICKS >= g_game_time ||
@@ -190,7 +191,7 @@ void startend_save_game(void)
         if (choice == SAVE_CHOICE_QUIT) {
             if (!confirm_quit())
                 continue;
-            g_saved_game_exists = 0;
+            g_saved_game_exists = false;
             endgame(0);
             return;
         }
@@ -201,7 +202,7 @@ void startend_save_game(void)
 
 bool startend_load_saved_game(void)
 {
-    g_game_screen_inactive = 1;
+    g_game_screen_inactive = true;
     for (;;) {
         int16_t result = savegame_load(save_dir);
         if (result == SAVEGAME_LOADED) {
@@ -344,16 +345,16 @@ static void draw_the_end(bool with_buttons)
     ui_set_screen_palette(colors);
 }
 
-/* Waits up to 900 frames for RESTART THIS GAME or QUIT. Returns 1 when the saved game is loaded. */
+/* Waits up to 900 frames for RESTART THIS GAME or QUIT. Returns true when the saved game is loaded. */
 static bool wait_for_restart(void)
 {
     command_set_only_mouse_input(UI_INPUT_ENDGAME);
     command_discard_all_input();
-    g_restart_requested = 0;
+    g_restart_requested = false;
     for (int16_t frames = RESTART_WAIT_FRAMES; --frames && !g_restart_requested;) {
         command_process_queue();
         if (g_quit_requested) { /* the QUIT button: the credits, then the entrance */
-            g_quit_requested = 0;
+            g_quit_requested = false;
             break;
         }
         if (!g_restart_requested && !wait_frame())
@@ -364,7 +365,7 @@ static bool wait_for_restart(void)
         return false;
     memset(fb, COLOR_BLACK, sizeof fb);
     int16_t loaded = startend_load_saved_game();
-    g_restart_requested = 0;
+    g_restart_requested = false;
     if (!loaded)
         return false;
     gameloop_start_loaded_game();
@@ -392,7 +393,7 @@ void endgame(int16_t party_dead)
         sound_request_play(SOUND_SCREAM, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
         wait_frames(DEATH_WAIT_FRAMES);
     }
-    g_game_screen_inactive = 1;
+    g_game_screen_inactive = true;
     if (party_dead && g_game_won) {
         draw_champion_parade();
         wait_for_input();
@@ -407,7 +408,7 @@ void endgame(int16_t party_dead)
         }
     }
     show_credits();
-    g_return_to_entrance = 1;
+    g_return_to_entrance = true;
 }
 
 /* fuse_sequence_update: one game tick with the view and the sounds. */
@@ -496,7 +497,7 @@ static void delete_other_groups(int16_t x, int16_t y)
 void fuse_sequence(void)
 {
     int16_t x = g_party_map_x, y = g_party_map_y;
-    g_game_won = 1;
+    g_game_won = true;
     if (g_inventory_champion_ordinal)
         command_toggle_inventory(CHAMPION_MAX_COUNT);
     command_highlight_disable();
@@ -525,14 +526,14 @@ void fuse_sequence(void)
     fuse_update();
     group_set_creature_type(lord, CREATURE_GREY_LORD);
     fuse_update();
-    g_do_not_draw_fluxcages = 1;
+    g_do_not_draw_fluxcages = true;
     fuse_update();
     delete_other_groups(x, y);
     fuse_update();
     show_final_texts();
     fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     wait_frames(FUSE_END_FRAMES);
-    g_saved_game_exists = 0;
+    g_saved_game_exists = false;
     endgame(1);
 }
 
@@ -540,22 +541,22 @@ void fuse_sequence(void)
 static void csb_ending(void)
 {
     char path[SAVE_DIR_SIZE];
-    g_game_screen_inactive = 1;
+    g_game_screen_inactive = true;
     snprintf(path, sizeof path, "%s/%s", gameloop_data_dir(), CSB_ENDING_FILE);
     if (!anim_play(path))
         wait_for_input();
-    g_return_to_entrance = 1;
+    g_return_to_entrance = true;
 }
 
 void endgame_sensor(uint16_t delay)
 {
     if (g_adventure == ADVENTURE_CSB) { /* no delay, and the saved game stays */
-        g_game_won = 1;
+        g_game_won = true;
         csb_ending();
         return;
     }
     wait_frames(delay * SENSOR_DELAY_FRAMES);
-    g_saved_game_exists = 0;
-    g_game_won = 1;
+    g_saved_game_exists = false;
+    g_game_won = true;
     endgame(1);
 }

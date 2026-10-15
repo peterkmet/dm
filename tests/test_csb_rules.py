@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, game_sources, global_type
 from test_champion import Champion
 from test_creatures import THING_EXPLOSION, TimelineEvent
 from test_gameloop import Game
@@ -77,7 +77,7 @@ def world(request, lib):
 
 
 def value(lib, name, kind=c16):
-    return kind.in_dll(lib, name)
+    return global_type(name, kind).in_dll(lib, name)
 
 
 def things(lib, x, y):

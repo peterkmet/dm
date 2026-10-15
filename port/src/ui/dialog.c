@@ -19,7 +19,7 @@
 #define WIDE_MESSAGE_SHIFT 3 /* a message wider than 7/8 of the zone takes two lines */
 
 int16_t g_dialog_choice = DIALOG_NO_CHOICE;
-int16_t g_game_screen_inactive = 1;
+bool g_game_screen_inactive = true;
 
 /* dialog_draw_viewport: the viewport in the game, or centered on the inactive screen. */
 static void draw_viewport(void)

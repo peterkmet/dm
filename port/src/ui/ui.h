@@ -61,7 +61,7 @@ enum {
 enum { UI_BUTTON_RIGHT = 1, UI_BUTTON_LEFT = 2 };
 
 /* MENU.C state. */
-extern int16_t g_action_area_contains_icons;
+extern bool g_action_area_contains_icons;
 extern uint8_t g_action_list_minimum_skill_levels[3];
 extern uint16_t g_action_count;
 /* The portrait of a champion as a bitmap. */

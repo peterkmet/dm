@@ -37,6 +37,7 @@ def test_view_matches_the_golden_snapshot(game, m):
     lib, _ = game
     for name in ("dungeon_map_count", "dungeon_map_width", "dungeon_map_height"):
         getattr(lib, name).restype = ctypes.c_int16
+    lib.view_render.restype = ctypes.c_bool
     assert lib.dungeon_map_count() == MAP_COUNT
     got = map_rows(lib, m)
     golden = json.loads(GOLDEN.read_text()) if GOLDEN.exists() else {}

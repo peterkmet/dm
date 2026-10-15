@@ -42,13 +42,13 @@ typedef struct {
     int16_t x, y, command;
 } QueuedCommand;
 
-int16_t g_stop_waiting_for_input;
-int16_t g_game_time_ticking;
+bool g_stop_waiting_for_input;
+bool g_game_time_ticking;
 int16_t g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
-int16_t g_game_frozen;
+bool g_game_frozen;
 int16_t g_new_game = ENTRANCE_WAITING;
-int16_t g_mouse_pointer_hidden;
-int16_t g_input_received;
+bool g_mouse_pointer_hidden;
+bool g_input_received;
 uint16_t g_last_key;
 
 static QueuedCommand queue[QUEUE_SIZE];
@@ -62,10 +62,10 @@ typedef struct {
 
 static InputTables frozen_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE},
                    dialog_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE};
-static int16_t left_button_down, pressing_eye, pressing_mouth, pressing_fake_wall;
+static bool left_button_down, pressing_eye, pressing_mouth, pressing_fake_wall;
 static int16_t dragged_icon_cell_plus_1;
 static Box highlight;
-static int16_t highlight_enabled;
+static bool highlight_enabled;
 
 void command_set_entrance_input(void)
 {
@@ -121,11 +121,11 @@ static void queue_put(int16_t command, int16_t x, int16_t y)
 void command_process_click(int16_t x, int16_t y, int16_t kind)
 {
     if (kind == CLICK_LEFT_PRESS || kind == CLICK_RIGHT_PRESS)
-        g_input_received = 1;
+        g_input_received = true;
     if (kind == CLICK_LEFT_PRESS)
-        left_button_down = 1;
+        left_button_down = true;
     if (kind == CLICK_LEFT_RELEASE)
-        left_button_down = 0;
+        left_button_down = false;
     if (advanced_process_click(x, y, kind))
         return;
     if (queue_count >= (kind == CLICK_LEFT_RELEASE ? QUEUE_RELEASE_LIMIT : QUEUE_CLICK_LIMIT))
@@ -146,7 +146,7 @@ void command_process_key(uint16_t key)
 {
     if (advanced_process_key(key))
         return;
-    g_input_received = 1;
+    g_input_received = true;
     g_last_key = key;
     if (queue_count >= QUEUE_CLICK_LIMIT)
         return;
@@ -165,7 +165,7 @@ void command_discard_all_input(void)
 {
     QueuedCommand kept[QUEUE_SIZE];
     int16_t n = 0;
-    g_input_received = 0;
+    g_input_received = false;
     g_last_key = 0;
     for (int16_t i = 0; i < queue_count; i++) {
         QueuedCommand c = queue[(queue_first + i) % QUEUE_SIZE];
@@ -184,7 +184,7 @@ static void highlight_zone(int16_t zone)
     if (!ui_zone_box(zone, &highlight))
         return;
     ui_xor_screen_zone(zone);
-    highlight_enabled = 1;
+    highlight_enabled = true;
 }
 
 /* Inverts the highlighted zone back. */
@@ -196,7 +196,7 @@ void command_highlight_disable(void)
         for (int x = highlight.x; x < highlight.x + highlight.w; x++)
             if (x >= 0 && x < SCREEN_W && y >= 0 && y < SCREEN_H)
                 fb[y][x] ^= COLOR_CYAN;
-    highlight_enabled = 0;
+    highlight_enabled = false;
 }
 
 /* The square in front of the party. */
@@ -222,7 +222,7 @@ void command_freeze_game(void)
     Bitmap screen = ui_screen();
     if (g_game_frozen)
         return;
-    g_game_frozen = 1;
+    g_game_frozen = true;
     command_highlight_disable();
     if (!g_inventory_champion_ordinal)
         ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
@@ -242,12 +242,12 @@ void command_unfreeze_game(void)
         draw_viewport_message(TEXT_WAKE_UP);
         return;
     }
-    g_game_frozen = 0;
+    g_game_frozen = false;
     int16_t caster = g_magic_caster_champion_index;
     g_magic_caster_champion_index = -1;
     menus_set_magic_caster(caster);
     if (!g_acting_champion_ordinal)
-        g_action_area_contains_icons = 1;
+        g_action_area_contains_icons = true;
     menus_draw_action_area();
     if (!g_inventory_champion_ordinal) {
         menus_draw_movement_arrows();
@@ -269,7 +269,7 @@ void command_toggle_inventory(int16_t champion_index)
         return;
     if (champion_index != INVENTORY_REDRAW && (pressing_eye || pressing_mouth))
         return;
-    g_stop_waiting_for_input = 1;
+    g_stop_waiting_for_input = true;
     if (open == champion_index + 1)
         champion_index = INVENTORY_CLOSE;
     if (open && champion_index != INVENTORY_REDRAW) {
@@ -320,11 +320,11 @@ void command_release_dead_champion(uint16_t champion_index, int16_t leader_index
     Bitmap screen = ui_screen();
     int16_t icon_cell = NORMALIZE(g_champions[champion_index].cell - g_party_direction);
     if (champion_index + 1 == g_inventory_champion_ordinal) {
-        pressing_eye = pressing_mouth = g_mouse_pointer_hidden = 0;
+        pressing_eye = pressing_mouth = g_mouse_pointer_hidden = false;
         command_toggle_inventory(INVENTORY_CLOSE);
     }
     if (champion_index == leader_index && pressing_fake_wall)
-        pressing_fake_wall = g_mouse_pointer_hidden = 0;
+        pressing_fake_wall = g_mouse_pointer_hidden = false;
     if (icon_cell + 1 == dragged_icon_cell_plus_1)
         dragged_icon_cell_plus_1 = 0;
     ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + icon_cell, COLOR_BLACK);
@@ -431,7 +431,7 @@ static void grab_object(int16_t pile)
         move_get_move_result(thing, x, y, -1, 0);
         inventory_put_object_in_leader_hand(thing);
     }
-    g_stop_waiting_for_input = 1;
+    g_stop_waiting_for_input = true;
 }
 
 /* The leader puts the hand object on the floor of view cell 0-3 or into the alcove ahead. Bones
@@ -457,7 +457,7 @@ static void drop_object(int16_t pile)
                                  .c = event_cell_effect(cell, VI_ALTAR_REBIRTH_EFFECT)};
         timeline_add_event(&rebirth);
     }
-    g_stop_waiting_for_input = 1;
+    g_stop_waiting_for_input = true;
 }
 
 /* The leader hand touches the wall ahead: wall sensors and mirrors. */
@@ -483,8 +483,8 @@ static void touch_front_square_empty_handed(int16_t imaginary_wall, int16_t x, i
     if (!imaginary_wall)
         sound_request_play(SOUND_WOODEN_THUD, x, y, SOUND_MODE_NOW);
     else if (left_button_down)
-        pressing_fake_wall = g_mouse_pointer_hidden = 1;
-    g_stop_waiting_for_input = 1;
+        pressing_fake_wall = g_mouse_pointer_hidden = true;
+    g_stop_waiting_for_input = true;
 }
 
 /* A flask or a waterskin in the hand fills at a fountain. */
@@ -519,7 +519,7 @@ static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
     else if (ui_point_in_zone(zone + 1, x, y))
         thrown = action_is_leader_hand_object_thrown(1);
     if (thrown)
-        g_stop_waiting_for_input = 1;
+        g_stop_waiting_for_input = true;
     return thrown;
 }
 
@@ -537,7 +537,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
         if (g_leader_empty_handed && door_button_present(get_square_first_thing(fx, fy)) && in_box(wall_box, x, y)) {
             sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
             sensor_add_event(EVENT_DOOR, fx, fy, 0, EFFECT_TOGGLE, (uint32_t)(g_game_time + 1));
-            g_stop_waiting_for_input = 1;
+            g_stop_waiting_for_input = true;
             return;
         }
     }
@@ -646,14 +646,14 @@ static void click_in_spell_area(int16_t x, int16_t y)
     }
 }
 
-/* An action of the menu (or pass, -1) ends the menu of the acting champion. Returns 1 when the
+/* An action of the menu (or pass, -1) ends the menu of the acting champion. Returns true when the
    action took place. */
-static int16_t trigger_action(int16_t list_index)
+static bool trigger_action(int16_t list_index)
 {
     if (list_index >= 0)
         return action_did_click_trigger_action(list_index);
     menus_clear_acting_champion();
-    return 0;
+    return false;
 }
 
 /* Click in the action area: choose the acting champion, then an action or pass. */
@@ -693,7 +693,7 @@ static void click_on_eye(void)
 {
     if (!left_button_down)
         return;
-    pressing_eye = g_mouse_pointer_hidden = 1;
+    pressing_eye = g_mouse_pointer_hidden = true;
     command_discard_all_input();
     draw_viewport_icon(ICON_EYE_LOOKING, ZONE_EYE);
     ui_draw_panel_eye();
@@ -704,12 +704,12 @@ static void click_on_eye(void)
 static void left_release(void)
 {
     if (pressing_eye) {
-        pressing_eye = 0;
+        pressing_eye = false;
         draw_viewport_icon(ICON_EYE, ZONE_EYE);
         ui_draw_panel();
         ui_draw_viewport();
     }
-    pressing_mouth = pressing_fake_wall = g_mouse_pointer_hidden = 0;
+    pressing_mouth = pressing_fake_wall = g_mouse_pointer_hidden = false;
 }
 
 /* The party sleeps: the game runs at full speed and only the wake up input is active. */
@@ -720,7 +720,7 @@ static void go_to_sleep(void)
     if (g_inventory_champion_ordinal)
         command_toggle_inventory(INVENTORY_CLOSE);
     command_freeze_game();
-    g_party_is_sleeping = 1;
+    g_party_is_sleeping = true;
     draw_viewport_message(TEXT_WAKE_UP);
     g_wait_for_input_max_frames = 0;
     set_input((InputTables){UI_INPUT_SLEEPING, NO_TABLE, TABLES_KEYS_SLEEPING, TABLES_KEYS_NONE});
@@ -733,7 +733,7 @@ void command_wake_up(void)
     if (primary_mouse != UI_INPUT_SLEEPING)
         return;
     champion_wake_up();
-    g_stop_waiting_for_input = 1;
+    g_stop_waiting_for_input = true;
     g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
     command_set_game_input();
     command_discard_all_input();
@@ -742,7 +742,7 @@ void command_wake_up(void)
 /* The game time stops; only the unfreeze input is active. */
 static void freeze_game(void)
 {
-    g_game_time_ticking = 0;
+    g_game_time_ticking = false;
     command_freeze_game();
     draw_viewport_message(TEXT_GAME_FROZEN);
     frozen_input = current_input();
@@ -753,7 +753,7 @@ static void freeze_game(void)
 /* The game time runs again with the input of before the freeze. */
 static void unfreeze_game(void)
 {
-    g_game_time_ticking = 1;
+    g_game_time_ticking = true;
     command_unfreeze_game();
     set_input(frozen_input);
     command_discard_all_input();
@@ -763,7 +763,7 @@ static void unfreeze_game(void)
 static void move_or_turn(int16_t command)
 {
     int16_t x = g_party_map_x, y = g_party_map_y, map = g_party_map_index;
-    g_stop_waiting_for_input = 1;
+    g_stop_waiting_for_input = true;
     highlight_zone(ZONE_MOVEMENT_ARROW_BEFORE_FIRST + command);
     if (command <= COMMAND_TURN_RIGHT) {
         move_turn_party(command);
@@ -773,7 +773,7 @@ static void move_or_turn(int16_t command)
     move_party(command);
     if (x == g_party_map_x && y == g_party_map_y && map == g_party_map_index && g_new_party_map_index == -1) {
         command_discard_all_input();
-        g_stop_waiting_for_input = 0;
+        g_stop_waiting_for_input = false;
     }
 }
 
@@ -812,10 +812,10 @@ static void process_other_command(int16_t command)
         g_dialog_choice = command - COMMAND_DIALOG_CHOICE_FIRST + 1;
         break;
     case COMMAND_RESTART_GAME:
-        g_restart_requested = 1;
+        g_restart_requested = true;
         break;
     case COMMAND_QUIT:
-        g_quit_requested = 1;
+        g_quit_requested = true;
         break;
     default:
         break; /* ponytail: credits (203) and name entry are not ported yet */
@@ -834,7 +834,7 @@ static bool movement_blocked(int16_t command)
 }
 
 /* Takes the first waiting command and runs it. A movement command waits while the party cannot
-   move. Returns 1 when it ran a command. */
+   move. Returns true when it ran a command. */
 bool command_process_queue(void)
 {
     if (!queue_count)
@@ -894,12 +894,12 @@ bool command_process_queue(void)
    speed, or waiting commands; the game input tables are active. */
 void command_reset(void)
 {
-    left_button_down = pressing_eye = pressing_mouth = pressing_fake_wall = 0;
-    dragged_icon_cell_plus_1 = highlight_enabled = 0;
-    g_mouse_pointer_hidden = g_stop_waiting_for_input = g_game_frozen = 0;
+    left_button_down = pressing_eye = pressing_mouth = pressing_fake_wall = false;
+    dragged_icon_cell_plus_1 = highlight_enabled = false;
+    g_mouse_pointer_hidden = g_stop_waiting_for_input = g_game_frozen = false;
     g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
     queue_first = queue_count = 0;
-    g_input_received = 0;
+    g_input_received = false;
     g_last_key = 0;
     command_set_game_input();
 }

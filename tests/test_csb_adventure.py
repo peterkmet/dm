@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, game_sources, global_type
 from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Game
 from test_save import KEY_RETURN, Frames
 
@@ -66,12 +66,12 @@ def saves(game, tmp_path):
     game.lib.startend_set_save_dir(str(tmp_path).encode())
     yield tmp_path
     for name in ("g_quit_requested", "g_return_to_entrance"):
-        c16.in_dll(game.lib, name).value = 0
+        ctypes.c_bool.in_dll(game.lib, name).value = 0
     ctypes.c_void_p.in_dll(game.lib, "g_frame_hook").value = None
 
 
 def value(game, name, kind=c16):
-    return kind.in_dll(game.lib, name).value
+    return global_type(name, kind).in_dll(game.lib, name).value
 
 
 def new_prison_game(game, champions):

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, game_sources, global_type
 from test_gameloop import Game
 from test_save import state
 from test_savefile import SaveFile, u8p
@@ -55,7 +55,7 @@ def game(tmp_path_factory):
 
 
 def value(lib, name, kind=c16):
-    return kind.in_dll(lib, name).value
+    return global_type(name, kind).in_dll(lib, name).value
 
 
 def load_mini(game, tmp_path):

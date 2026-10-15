@@ -9,6 +9,7 @@ import pytest
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
+from conftest import global_type
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -169,7 +170,7 @@ class World:
 
     def globals(self, sleeping, time, attack, move, difficulty, direction=0):
         lib, emu = self.lib, self.emu
-        var(lib, c16, "g_party_is_sleeping").value = sleeping
+        var(lib, ctypes.c_bool, "g_party_is_sleeping").value = sleeping
         var(lib, ctypes.c_uint32, "g_game_time").value = time
         var(lib, ctypes.c_int32, "g_last_creature_attack_time").value = attack
         var(lib, ctypes.c_int32, "g_last_party_movement_time").value = move
@@ -233,7 +234,7 @@ class World:
         for i in range(4):
             assert pack(lib, cs[i]) == bytes(emu.read(CHAMPIONS + 0x140 * i, 0x140)), f"champion {i}"
         assert var(lib, ctypes.c_uint32, "g_random_seed").value == struct.unpack(">I", emu.read(SEED, 4))[0]
-        assert var(lib, c16, "g_party_is_sleeping").value == struct.unpack(">h", emu.read(SLEEPING, 2))[0]
+        assert var(lib, ctypes.c_bool, "g_party_is_sleeping").value == struct.unpack(">h", emu.read(SLEEPING, 2))[0]
         assert list((c16 * 4).in_dll(lib, "g_champion_pending_damage")) == list(struct.unpack(">4h", emu.read(PENDING_DAMAGE, 8)))
         assert list((u16 * 4).in_dll(lib, "g_champion_pending_wounds")) == list(struct.unpack(">4H", emu.read(PENDING_WOUNDS, 8)))
 
@@ -384,8 +385,8 @@ def party(lib):
     lib.map_reset()  # load_dungeon replaced the map buffers
     lib.game_new()
     for name in ("g_candidate_champion_ordinal", "g_inventory_champion_ordinal", "g_party_is_sleeping"):
-        var(lib, c16, name).value = 0
-    var(lib, c16, "g_leader_empty_handed").value = 1
+        var(lib, global_type(name, c16), name).value = 0
+    var(lib, ctypes.c_bool, "g_leader_empty_handed").value = 1
     var(lib, ctypes.c_uint32, "g_random_seed").value = 12345
     portrait, m, x, y, c = first_mirror(lib)
     lib.set_current_map_and_party_map(m)
@@ -453,7 +454,7 @@ def test_eat_food(lib, party):
     assert ch.load == load + lib.inventory_get_object_weight(thing)
     lib.process_click_on_mouth()
     assert ch.food == min(100 + food_value, 2048) and ch.load == load
-    assert var(lib, u16, "g_leader_hand_object").value == 0xFFFF and var(lib, c16, "g_leader_empty_handed").value == 1
+    assert var(lib, u16, "g_leader_hand_object").value == 0xFFFF and var(lib, ctypes.c_bool, "g_leader_empty_handed").value == 1
     d = lib.dungeon_get_thing_data(thing)
     assert d[0] << 8 | d[1] == 0xFFFF  # record freed
 
@@ -468,7 +469,7 @@ def test_damage_until_death(lib, party):
         lib.champion_apply_and_draw_pending_damage_and_wounds()
         hits += 1
         assert hits < 200
-    assert var(lib, c16, "g_party_dead").value == 1
+    assert var(lib, ctypes.c_bool, "g_party_dead").value == 1
     assert all(s == 0xFFFF for s in ch.slots) and ch.load == 0
     dropped = list(square_things(lib, party["m"], *party["square"]))
     assert {t & 0x3FFF for t in slots} <= {t & 0x3FFF for t in dropped}

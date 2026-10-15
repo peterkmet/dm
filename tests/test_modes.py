@@ -77,7 +77,7 @@ def game(tmp_path_factory):
 
 def set_mode(game, mode, features=None):
     c16.in_dll(game.lib, "g_game_mode").value = mode
-    c16.in_dll(game.lib, "g_advanced_features").value = int(mode != VANILLA) if features is None else features
+    ctypes.c_bool.in_dll(game.lib, "g_advanced_features").value = int(mode != VANILLA) if features is None else features
 
 
 def zone_box(game, zone):
@@ -378,7 +378,7 @@ def test_render_advanced_panels(game):
     assert game.value("g_inventory_champion_ordinal") == 1
     champion.slots[SLOT_HAND_ACTION] = hand
     leader_hand = u16.in_dll(lib, "g_leader_hand_object")
-    empty_handed = c16.in_dll(lib, "g_leader_empty_handed")
+    empty_handed = ctypes.c_bool.in_dll(lib, "g_leader_empty_handed")
     held, was_empty = leader_hand.value, empty_handed.value
     for thing, name in ((hand, "adv_stat_meters.png"), (armour, "adv_stat_meters_armour.png")):
         leader_hand.value, empty_handed.value = thing, 0  # the eye shows the description of the leader hand object
@@ -601,12 +601,12 @@ def test_cheat_light_draws_the_bright_palette(game):
         party.magical_light_amount = -1000
         lib.gameloop_draw_view()
         assert list(palette) != bright
-        c16.in_dll(lib, "g_cheat_light").value = 1
+        ctypes.c_bool.in_dll(lib, "g_cheat_light").value = 1
         lib.gameloop_draw_view()
         assert list(palette) == bright
         assert game.value("g_dungeon_view_palette_index") == 5  # the creatures still see the darkness
     finally:
-        c16.in_dll(lib, "g_cheat_light").value = 0
+        ctypes.c_bool.in_dll(lib, "g_cheat_light").value = 0
         party.magical_light_amount = 0
         for name, v in start.items():
             place[name].value = v
@@ -617,29 +617,29 @@ def test_cheat_immortal_keeps_1_health(game):
     lib, champion = game.lib, game.champions[0]
     health = champion.current_health
     lib.champion_damage_all.argtypes = [u16, u16, c16]
-    c16.in_dll(lib, "g_cheat_immortal").value = 1
+    ctypes.c_bool.in_dll(lib, "g_cheat_immortal").value = 1
     try:
         lib.champion_damage_all(5000, 0, 0)
         lib.champion_apply_and_draw_pending_damage_and_wounds()
         assert champion.current_health == 1
     finally:
-        c16.in_dll(lib, "g_cheat_immortal").value = 0
+        ctypes.c_bool.in_dll(lib, "g_cheat_immortal").value = 0
         champion.current_health = health
 
 def test_cheat_food_keeps_food_and_water(game):
     lib, champion = game.lib, game.champions[0]
     food, water = champion.food, champion.water
-    c16.in_dll(lib, "g_cheat_food").value = 1
+    ctypes.c_bool.in_dll(lib, "g_cheat_food").value = 1
     try:
         for _ in range(1000):
             lib.champion_apply_time_effects()
         assert (champion.food, champion.water) == (food, water)
-        c16.in_dll(lib, "g_cheat_food").value = 0
+        ctypes.c_bool.in_dll(lib, "g_cheat_food").value = 0
         for _ in range(1000):
             lib.champion_apply_time_effects()
         assert champion.food < food and champion.water < water
     finally:
-        c16.in_dll(lib, "g_cheat_food").value = 0
+        ctypes.c_bool.in_dll(lib, "g_cheat_food").value = 0
         champion.food, champion.water = food, water
 
 
@@ -663,7 +663,7 @@ def test_party_death_during_a_turn_reports_game_over(game):
     finally:
         lib.control_close()
         shutil.rmtree(sock_dir, ignore_errors=True)
-        c16.in_dll(lib, "g_return_to_entrance").value = 0
+        ctypes.c_bool.in_dll(lib, "g_return_to_entrance").value = 0
         set_mode(game, VANILLA)
         assert lib.gameloop_new_game(str(GAME).encode())
 

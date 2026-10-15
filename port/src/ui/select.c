@@ -34,7 +34,8 @@ static const uint16_t select_palette[PALETTE_COLORS] = {
     [COLOR_GOLD] = RGB_GOLD,
 };
 
-static int screen = SCREEN_DONE, cursor, csb_enabled, adventure_given, mode_given, csb_choice;
+static int screen = SCREEN_DONE, cursor, csb_choice;
+static bool csb_enabled, adventure_given, mode_given;
 static bool llm_enabled;
 static const char *message;
 static int16_t adventure_flag = -1, mode_flag = -1; /* --adventure and --mode, -1 when absent */
@@ -92,7 +93,7 @@ void select_start(int16_t adventure, int16_t mode, bool csb_present, bool llm_mo
 
 void select_start_csb(const char *text)
 {
-    mode_given = 1; /* the game mode is applied: Escape stays on the CSB screen */
+    mode_given = true; /* the game mode is applied: Escape stays on the CSB screen */
     show(SCREEN_CSB);
     message = text;
 }

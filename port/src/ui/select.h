@@ -20,7 +20,7 @@ void select_start(int16_t adventure, int16_t mode, bool csb_present, bool llm_mo
    it, Escape does not go back to the mode screen. */
 void select_start_csb(const char *message);
 /* QUIT on the DM entrance or the CSB screen: the first screen that --adventure and --mode do not skip.
-   Returns 0 when the flags skip every screen: then there is no screen to go back to. */
+   Returns false when the flags skip every screen: then there is no screen to go back to. */
 bool select_restart(void);
 /* The current screen, or SCREEN_DONE. */
 int select_screen(void);
@@ -30,7 +30,7 @@ int select_csb_choice(void);
 void select_key(int key);
 /* A left click at screen pixel (x, y): activates the enabled item under it. */
 void select_click(int x, int y);
-/* The click box of item index item on the current screen. Returns 0 when there is no such item. */
+/* The click box of item index item on the current screen. Returns false when there is no such item. */
 bool select_item_box(int item, Box *box);
 /* Draws the current screen on fb with its own palette. The font must be loaded (text_init). */
 void select_draw(void);

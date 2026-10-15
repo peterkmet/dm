@@ -42,7 +42,7 @@ enum { E_MAP_TIME = 0, E_TYPE = 4, E_PRIORITY = 5, E_DATA_B = 6, E_DATA_C = 8 };
 /* Active group record offsets: group index, then 14 bytes in the order of ActiveGroup. */
 enum { A_GROUP_INDEX = 0, A_BYTES = 2 };
 
-int16_t g_saved_game_exists;
+bool g_saved_game_exists;
 uint32_t g_last_save_game_time, g_last_load_game_time;
 static uint8_t header_extra[SAVE_HEADER_EXTRA_BYTES]; /* g_save_header_extra */
 
@@ -338,7 +338,7 @@ bool savegame_save_as(const char *dir, const char *name, const char *backup_name
     free(data);
     if (!ok)
         return false;
-    g_saved_game_exists = 1;
+    g_saved_game_exists = true;
     g_last_save_game_time = g_game_time;
     return true;
 }
@@ -479,7 +479,7 @@ static bool allocate_tables(void)
     return true;
 }
 
-/* The state of a decoded save file. Returns 0 when the dungeon part or the counts are bad. */
+/* The state of a decoded save file. Returns false when the dungeon part or the counts are bad. */
 static bool restore_game(const SaveFile *s)
 {
     if (!dungeon_load_saved(s->dungeon, s->dungeon_size))
@@ -505,8 +505,8 @@ static bool restore_game(const SaveFile *s)
     g_game_id = save_header_game_id(s->header);
     g_dungeon_id = save_header_dungeon_id(s->header);
     memcpy(header_extra, save_header_extra(s->header), save_header_extra_size());
-    g_party_dead = g_party_is_sleeping = 0;
-    g_saved_game_exists = 1;
+    g_party_dead = g_party_is_sleeping = false;
+    g_saved_game_exists = true;
     return true;
 }
 
@@ -519,7 +519,8 @@ int16_t savegame_load(const char *dir)
    map is selected again, because the dungeon has new buffers. */
 static void restore_snapshot(const uint8_t *data, uint32_t size)
 {
-    int16_t exists = g_saved_game_exists, dead = g_party_dead, current = g_current_map_index;
+    bool exists = g_saved_game_exists, dead = g_party_dead;
+    int16_t current = g_current_map_index;
     uint32_t loaded = g_last_load_game_time;
     SaveFile s;
     if (save_decode(data, size, &s))

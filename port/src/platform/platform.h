@@ -22,7 +22,7 @@ bool plat_set_filter(int factor);
 void plat_quit(void);
 /* Shows fb with the split palette and the pointer, scaled into the window. */
 void plat_present(void);
-/* Returns 1 with the next key, mouse button, or quit event; mouse motion only moves the pointer. */
+/* Returns true with the next key, mouse button, or quit event; mouse motion only moves the pointer. */
 bool plat_poll(PlatEvent *e);
 void plat_wait_tick(void);
 void plat_audio_pump(void);

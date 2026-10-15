@@ -133,7 +133,7 @@ def test_save_and_load_round_trip(game, tmp_path):
     assert struct.unpack_from(">H", after["champions"][leader], 0x110)[0] == load - weight
     after["champions"][leader] = before["champions"][leader]
     assert after == before
-    assert ctypes.c_int16.in_dll(lib, "g_saved_game_exists").value == 1
+    assert ctypes.c_bool.in_dll(lib, "g_saved_game_exists").value == 1
 
 
 def test_save_keeps_a_backup(game, tmp_path):
@@ -244,7 +244,7 @@ class Frames:
         self.count += 1
         self.action(self)
         if self.count > 5000:  # a sequence that does not end
-            ctypes.c_int16.in_dll(self.lib, "g_quit_requested").value = 1
+            ctypes.c_bool.in_dll(self.lib, "g_quit_requested").value = 1
 
     def remove(self):
         ctypes.c_void_p.in_dll(self.lib, "g_frame_hook").value = None
@@ -269,8 +269,8 @@ def kill_party(game):
 @pytest.fixture
 def quit_reset(game):
     yield
-    ctypes.c_int16.in_dll(game.lib, "g_quit_requested").value = 0
-    ctypes.c_int16.in_dll(game.lib, "g_return_to_entrance").value = 0
+    ctypes.c_bool.in_dll(game.lib, "g_quit_requested").value = 0
+    ctypes.c_bool.in_dll(game.lib, "g_return_to_entrance").value = 0
     ctypes.c_void_p.in_dll(game.lib, "g_frame_hook").value = None
 
 

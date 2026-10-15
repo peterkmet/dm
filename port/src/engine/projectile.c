@@ -43,9 +43,9 @@ enum { FIRE_ATTACK_RANDOM_MASK = 0xf, FIRE_ATTACK_BASE = 10, LIGHTNING_ATTACK_FA
 enum { IMPACT_ATTACK_REDUCTION = 32 };
 enum { FUSE_SIDES = 4 };
 
-int16_t g_create_launcher_projectile;
+bool g_create_launcher_projectile;
 int16_t g_projectile_poison_attack, g_projectile_attack_type;
-int16_t g_fuse_sequence_requested;
+bool g_fuse_sequence_requested;
 
 static bool is_party_on(int16_t x, int16_t y)
 {
@@ -624,7 +624,7 @@ void projectile_fuse_action(int16_t x, int16_t y)
     int16_t escape_x, escape_y;
     do {
         if (count >= FUSE_SIDES) {
-            g_fuse_sequence_requested = 1;
+            g_fuse_sequence_requested = true;
             return;
         }
         count++;
@@ -763,12 +763,12 @@ void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event)
     update_map_coordinates_after_relative_movement(direction, 1, 0, &target_x, &target_y);
     uint8_t kinetic_energy = rec_sensor_launcher_kinetic_energy(sensor),
             step_energy = rec_sensor_launcher_step_energy(sensor);
-    g_create_launcher_projectile = 1;
+    g_create_launcher_projectile = true;
     projectile_create(first, target_x, target_y, cell, direction, kinetic_energy, LAUNCHER_ATTACK, step_energy);
     if (!single)
         projectile_create(second, target_x, target_y, turn_right(cell), direction, kinetic_energy, LAUNCHER_ATTACK,
                           step_energy);
-    g_create_launcher_projectile = 0;
+    g_create_launcher_projectile = false;
 }
 
 /* A new weapon or junk object for an object info index: torches, daggers, arrows, slayers, rocks, poison darts,
@@ -830,7 +830,7 @@ void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint
 /* No launcher, poison attack, or fuse request carries into a new game. */
 void projectile_reset(void)
 {
-    g_create_launcher_projectile = 0;
+    g_create_launcher_projectile = false;
     g_projectile_poison_attack = g_projectile_attack_type = 0;
-    g_fuse_sequence_requested = 0;
+    g_fuse_sequence_requested = false;
 }

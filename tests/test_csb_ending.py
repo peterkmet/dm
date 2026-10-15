@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, clear_folder_hooks, game_sources, set_folder_hooks
+from conftest import PORT_INCLUDES, clear_folder_hooks, game_sources, set_folder_hooks, global_type
 from test_creatures import TimelineEvent
 
 ROOT = Path(__file__).parent.parent
@@ -70,7 +70,7 @@ def lib(tmp_path_factory):
 
 
 def value(lib, name, kind=c16):
-    return kind.in_dll(lib, name)
+    return global_type(name, kind).in_dll(lib, name)
 
 
 def screen(lib):
