@@ -15,8 +15,23 @@
 #define ESCAPE_STRING_BYTES 8
 #define REPLACEMENT_BYTES   2
 
+#define REPLACEMENT_SET_BYTES       14
+#define CREATURE_ASPECT_BYTES       6
+#define OBJECT_ASPECT_BYTES         4
+#define PROJECTILE_ASPECT_BYTES     4
+#define FIELD_ASPECT_BYTES          8
+#define CREATURE_SHIFT_SET_BYTES    8
+#define PILE_SHIFT_BYTES            2
+#define REBIRTH_STEP_1_SCALES_BYTES 8 /* the step 1 scales follow the 7 step 2 scales and a pad byte */
+#define LAYOUT_BITMAP_BYTES         14
+#define PALETTE_BYTES               (TABLES_PALETTE_COLOR_COUNT * 2)
+
 enum { SOUND_ENTRY_RATE = 3, SOUND_ENTRY_PRIORITY = 4 };                        /* byte offsets in a sound entry */
 enum { ATTACK_CELL_COUNT = 4, SOUND_VOLUME_ROW = 2 * SOUND_HEARING_RANGE + 1 }; /* row lengths */
+
+/* Byte offsets in a replacement color set: a color word per light level, then the D2 and the D3 change. */
+enum { REPLACEMENT_AT_CHANGE_D2 = 12, REPLACEMENT_FIRST_CHANGE_DEPTH = 2 };
+enum { LAYOUT_AT_X = 2, LAYOUT_AT_Y = 4, LAYOUT_AT_W = 6, LAYOUT_AT_H = 8 }; /* byte offsets in a layout bitmap */
 
 /* Byte offsets of the creature info fields (docs/tables.md); bytes 13 and 25 are pad bytes. */
 enum {
@@ -365,4 +380,205 @@ int16_t tables_portrait_width(void)
 int16_t tables_portrait_height(void)
 {
     return kaos_s16(KAOS_PORTRAIT_HEIGHT);
+}
+
+/* Color word of a creature replacement color set at a light level (0-5). */
+uint16_t tables_replacement_color(int16_t set, int16_t light)
+{
+    return kaos_u16(KAOS_CREATURE_REPLACEMENT_COLOR_SETS + REPLACEMENT_SET_BYTES * set + 2 * light);
+}
+/* Palette change of a creature replacement color set at depth 2 or 3. */
+uint8_t tables_replacement_change(int16_t set, int16_t depth)
+{
+    return kaos_u8(KAOS_CREATURE_REPLACEMENT_COLOR_SETS + REPLACEMENT_SET_BYTES * set + REPLACEMENT_AT_CHANGE_D2 +
+                   depth - REPLACEMENT_FIRST_CHANGE_DEPTH);
+}
+/* Aspect record of a creature: graphic, coordinate set, replacement color sets. */
+const uint8_t *tables_creature_aspect(int16_t creature_type)
+{
+    return kaos_ptr(KAOS_CREATURE_ASPECTS + CREATURE_ASPECT_BYTES * creature_type);
+}
+/* Aspect record of an object: graphic, flags, alcove coordinate set. */
+const uint8_t *tables_object_aspect(int16_t index)
+{
+    return kaos_ptr(KAOS_OBJECT_ASPECTS + OBJECT_ASPECT_BYTES * index);
+}
+/* Aspect record of a projectile (index 1-14): graphic, pose and scale flags. */
+const uint8_t *tables_projectile_aspect(int16_t index)
+{
+    return kaos_ptr(KAOS_PROJECTILE_ASPECTS + PROJECTILE_ASPECT_BYTES * index);
+}
+/* Aspect record of a field: the teleporter or fluxcage pattern of a view square. */
+const uint8_t *tables_field_aspect(int16_t index)
+{
+    return kaos_ptr(KAOS_FIELD_ASPECTS + FIELD_ASPECT_BYTES * index);
+}
+/* Pixel shift index of a creature or a stacked object at a distance (0-2). */
+int16_t tables_creature_shift(int16_t distance, int16_t index)
+{
+    return (int8_t)kaos_u8(KAOS_CREATURE_SHIFT_SETS + CREATURE_SHIFT_SET_BYTES * distance + index);
+}
+/* Shift index of a stacked object on one axis (0 x, 1 y). */
+uint8_t tables_pile_shift(int16_t pair, int16_t axis)
+{
+    return kaos_u8(KAOS_PILE_SHIFTS + PILE_SHIFT_BYTES * pair + axis);
+}
+/* Scale of an object at a view row. */
+uint8_t tables_object_scale(int16_t row)
+{
+    return kaos_u8(KAOS_OBJECT_SCALES + row);
+}
+/* Scale of a projectile at a view row. */
+uint8_t tables_projectile_scale(int16_t row)
+{
+    return kaos_u8(KAOS_PROJECTILE_SCALES + row);
+}
+/* Scale of an explosion at a depth. */
+uint8_t tables_explosion_scale(int16_t depth)
+{
+    return kaos_u8(KAOS_EXPLOSION_SCALES + depth);
+}
+/* Scale of rebirth step 1 or 2 at an object coordinate set. */
+uint8_t tables_rebirth_scale(int16_t step, int16_t coord)
+{
+    return kaos_u8(KAOS_REBIRTH_SCALES + (step == TABLES_REBIRTH_STEP_1 ? REBIRTH_STEP_1_SCALES_BYTES : 0) + coord);
+}
+/* The 4 creature directions of a group that faces one direction, 2 bits per creature. */
+uint8_t tables_group_directions(int16_t index)
+{
+    return kaos_u8(KAOS_GROUP_DIRECTIONS_PACKED + index);
+}
+
+/* Lane, depth, and coordinate sets of a view square. */
+ViewSquare tables_view_square(int16_t view_square)
+{
+    return (ViewSquare){
+        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_LANE + view_square),
+        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_DEPTH + view_square),
+        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_OBJECT_COORD + view_square),
+        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_ALCOVE_COORD + view_square),
+        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_CREATURE_COORD + view_square),
+        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_EXPLOSION_COORD + view_square),
+        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_FIELD_ASPECT + view_square),
+    };
+}
+/* Layout bitmap id of wall set entry i. */
+int16_t tables_wall_set_layout_id(int16_t i)
+{
+    return kaos_s16(KAOS_WALL_SET_LAYOUT_IDS + 2 * i);
+}
+/* Depth (0-4) of a wall ornament view. */
+uint8_t tables_wall_ornament_depth(int16_t view)
+{
+    return kaos_u8(KAOS_WALL_ORNAMENT_DEPTHS + view);
+}
+/* Visible plaque height of an inscription of 1-3 lines at a depth. */
+uint8_t tables_plaque_height(int16_t lines, int16_t depth)
+{
+    return kaos_u8(KAOS_PLAQUE_HEIGHTS + lines + TABLES_PLAQUE_LINES * depth);
+}
+/* Graphic offset of a floor ornament view. */
+uint8_t tables_floor_ornament_view_offset(int16_t view)
+{
+    return kaos_u8(KAOS_FLOOR_ORNAMENT_VIEW_OFFSETS + view);
+}
+/* Wall ornament k of the alcove ornaments. */
+uint8_t tables_alcove_ornament(int16_t k)
+{
+    return kaos_u8(KAOS_ALCOVE_ORNAMENT_INDICES + k);
+}
+/* The wall ornament that is a fountain. */
+uint8_t tables_fountain_ornament(void)
+{
+    return kaos_u8(KAOS_FOUNTAIN_ORNAMENT_INDICES);
+}
+/* Coordinate set of a wall ornament graphic. */
+uint8_t tables_wall_ornament_coord_set(int16_t ornament)
+{
+    return kaos_u8(KAOS_WALL_ORNAMENT_COORD_SETS + ornament);
+}
+/* Coordinate set of a floor ornament graphic. */
+uint8_t tables_floor_ornament_coord_set(int16_t ornament)
+{
+    return kaos_u8(KAOS_FLOOR_ORNAMENT_COORD_SETS + ornament);
+}
+/* Coordinate set of a door ornament graphic. */
+uint8_t tables_door_ornament_coord_set(int16_t ornament)
+{
+    return kaos_u8(KAOS_DOOR_ORNAMENT_COORD_SETS + ornament);
+}
+/* Coordinate set of the door button. */
+uint8_t tables_door_button_coord_set(void)
+{
+    return kaos_u8(KAOS_DOOR_BUTTON_COORD_SETS);
+}
+/* Width of a wall text glyph. */
+int16_t tables_glyph_width(void)
+{
+    return kaos_s16(KAOS_WALL_TEXT_GLYPH_WIDTH);
+}
+/* Height of a wall text glyph. */
+int16_t tables_glyph_height(void)
+{
+    return kaos_s16(KAOS_WALL_TEXT_GLYPH_HEIGHT);
+}
+/* Screen x of the viewport. */
+int16_t tables_viewport_x(void)
+{
+    return kaos_s16(KAOS_VIEWPORT_X);
+}
+/* Screen y of the viewport. */
+int16_t tables_viewport_y(void)
+{
+    return kaos_s16(KAOS_VIEWPORT_Y);
+}
+/* Width of the viewport. */
+int16_t tables_viewport_width(void)
+{
+    return kaos_s16(KAOS_VIEWPORT_WIDTH);
+}
+/* Height of the viewport. */
+int16_t tables_viewport_height(void)
+{
+    return kaos_s16(KAOS_VIEWPORT_HEIGHT);
+}
+
+/* Source rectangle of layout bitmap slot in its graphic. */
+TablesRect tables_layout_bitmap(int16_t slot)
+{
+    uint32_t record = KAOS_LAYOUT_BITMAPS + LAYOUT_BITMAP_BYTES * slot;
+    return (TablesRect){kaos_s16(record + LAYOUT_AT_X), kaos_s16(record + LAYOUT_AT_Y), kaos_s16(record + LAYOUT_AT_W),
+                        kaos_s16(record + LAYOUT_AT_H)};
+}
+
+/* The colors of a palette. */
+void tables_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT])
+{
+    static const uint32_t first[TABLES_PALETTE_DUNGEON] = {KAOS_INITIAL_COLORMAP, KAOS_INITIAL_COLORMAP + PALETTE_BYTES,
+                                                           KAOS_CREDITS_PALETTE, KAOS_ENTRANCE_PALETTE};
+    uint32_t at = palette < TABLES_PALETTE_DUNGEON
+                      ? first[palette]
+                      : KAOS_DUNGEON_PALETTES + PALETTE_BYTES * (palette - TABLES_PALETTE_DUNGEON);
+    for (int i = 0; i < TABLES_PALETTE_COLOR_COUNT; i++)
+        colors[i] = kaos_u16(at + 2 * i);
+}
+
+/* The color map of a palette change. */
+const uint8_t *tables_palette_changes(int16_t changes)
+{
+    static const uint32_t at[TABLES_CHANGES_COUNT] = {
+        KAOS_PALETTE_CHANGES_D3,
+        KAOS_PALETTE_CHANGES_D2,
+        KAOS_PALETTE_CHANGES_DOOR_ORNAMENT_D3,
+        KAOS_PALETTE_CHANGES_DOOR_ORNAMENT_D2,
+        KAOS_PALETTE_CHANGES_SMOKE,
+        KAOS_PALETTE_CHANGES_OBJECT_D3,
+        KAOS_PALETTE_CHANGES_OBJECT_D2,
+        KAOS_PALETTE_CHANGES_CREATURE_D3,
+        KAOS_PALETTE_CHANGES_CREATURE_D2,
+        KAOS_INVISIBILITY_PALETTE_CHANGES,
+        KAOS_PALETTE_CHANGES_ACTION_ICON,
+        KAOS_POINTER_SHADOW_COLORS,
+    };
+    return kaos_ptr(at[changes]);
 }

@@ -4,7 +4,6 @@
 #include "advanced.h"
 #include "draw.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "group.h"
 #include "ids.h"
@@ -19,57 +18,10 @@
 #include "video.h"
 #include "view.h"
 
-/* KAOS globals (original addresses). */
-#define STEP_EAST            0x101038 /* g_direction_to_step_east[4] */
-#define STEP_NORTH           0x101040 /* g_direction_to_step_north[4] */
-#define GLYPH_SIZE           0x10296e /* wall text glyph width, height */
-#define WALL_SET_IDS         0x102a22 /* g_wall_set_layout_ids[46] */
-#define WALL_ORN_DEPTH       0x102ba6 /* depth of each wall ornament view (0-4) */
-#define FLOOR_ORN_VIEW       0x102bb4 /* graphic offset of each floor ornament view */
-#define ALCOVES              0x102bc0 /* g_alcove_ornament_indices[3] */
-#define FOUNTAINS            0x102bc3 /* g_fountain_ornament_indices[1] */
-#define ORNAMENT_VI_ALTAR    2        /* the alcove ornament that is a vi altar */
-#define WALL_ORN_COORDS      0x102bc4 /* g_wall_ornament_coord_sets */
-#define FLOOR_ORN_COORDS     0x102c00 /* g_floor_ornament_coord_sets */
-#define DOOR_ORN_COORDS      0x102c0a /* g_door_ornament_coord_sets */
-#define DOOR_BUTTON_COORDS   0x102c16 /* g_door_button_coord_sets */
-#define PAL_D3               0x102c18 /* g_palette_changes_d3 */
-#define PAL_D2               0x102c28 /* g_palette_changes_d2 */
-#define PAL_DOOR_D3          0x102c38 /* g_palette_changes_door_ornament_d3 */
-#define PAL_DOOR_D2          0x102c48 /* g_palette_changes_door_ornament_d2 */
-#define TEXT_HEIGHTS         0x102c57 /* visible plaque height by line count and depth */
-#define LIGHT_THRESHOLDS     0x100cd4 /* g_palette_light_thresholds[6] */
-#define GROUP_DIRS           0x10192a /* g_group_directions_packed[4] */
-#define VS_LANE              0x102a7e /* g_view_square_lane[24] */
-#define VS_DEPTH             0x102a96 /* g_view_square_depth[24] */
-#define VS_OBJECT            0x102aae /* g_view_square_object_coord_index[24] */
-#define VS_ALCOVE            0x102ac6 /* g_view_square_alcove_object_coord_index[24] */
-#define VS_CREATURE          0x102ade /* g_view_square_creature_coord_index[24] */
-#define VS_EXPLOSION         0x102af6 /* g_view_square_explosion_coord_index[24] */
-#define VS_FIELD             0x102b0e /* g_view_square_field_aspect_index[24] */
-#define FIELD_ASPECTS        0x102b26 /* g_field_aspects[12], 8 bytes */
-#define OBJECT_ASPECTS       0x102c68 /* g_object_aspects[85], 4 bytes */
-#define PROJECTILE_ASPECTS   0x102db8 /* g_projectile_aspects[], 4 bytes, index 1-14 */
-#define PAL_SMOKE            0x102df4 /* g_palette_changes_smoke */
-#define PAL_OBJECT_D3        0x102e04 /* object and projectile palette changes, D3 */
-#define PAL_OBJECT_D2        0x102e14 /* object and projectile palette changes, D2 */
-#define OBJECT_SCALES        0x102e24 /* object scale by depth and row */
-#define PROJECTILE_SCALES    0x102e2a /* projectile scale by depth and row */
-#define EXPLOSION_SCALES     0x102e32 /* explosion scale by depth */
-#define PILE_SHIFTS          0x102e38 /* shift index pairs of stacked objects */
-#define CREATURE_ASPECTS     0x102e58 /* g_creature_aspects[27], 6 bytes */
-#define REPLACEMENT_COLORS   0x102efa /* g_creature_replacement_color_sets[13], 14 bytes */
-#define REPLACEMENT_SET_SIZE 14
-#define PAL_CREATURE_D3      0x102fb0 /* g_palette_changes_creature_d3 */
-#define PAL_CREATURE_D2      0x102fc0 /* g_palette_changes_creature_d2 */
-#define SHIFT_SETS           0x102fd0 /* g_creature_shift_sets[3][8] */
-#define SHIFT_SET_SIZE       8
-/* PILE_SHIFTS pair indices */
+#define ORNAMENT_VI_ALTAR 2 /* the alcove ornament that is a vi altar */
+/* tables_pile_shift pair indices */
 enum { PILE_FLOOR_SHIFTS = 16, PILE_ODD_CELL = 8, PILE_ALCOVE_FIRST = 2, PILE_ALCOVE_LAST = 13 };
-#define REBIRTH_SCALES        0x102fe8 /* rebirth step 2, then step 1 scale by object coordinate set */
-#define REBIRTH_STEP_1_SCALES 8
-
-#define S8(a) ((int16_t)(int8_t)kaos_u8(a)) /* signed table byte */
+enum { PILE_SHIFT_X, PILE_SHIFT_Y };
 
 enum { LAYOUT_SLOTS = 64 };
 
@@ -227,7 +179,7 @@ enum {
 };
 enum { FLOOR_ORNAMENT_WITH_FOOTPRINTS = 0x8000 }; /* floor ornament ordinal flag */
 enum { WALL_ORNAMENT_GRAPHICS = 2, WALL_ORNAMENT_FRONT = 1, FLOOR_ORNAMENT_GRAPHICS = 6, DOOR_MASK_COORD_SET = 1 };
-enum { TEXT_PLAQUE_LINES = 3, WALL_TEXT_NEW_LINE = 0x80, WALL_TEXT_END = 0x81 }; /* decode_text mode 0 codes */
+enum { WALL_TEXT_NEW_LINE = 0x80, WALL_TEXT_END = 0x81 }; /* decode_text mode 0 codes */
 enum { WALL_TEXT_SIZE = 80 };
 enum { SCALE_D3_FAR_SIDE_W = 30 }; /* the D3L2 and D3R2 wall sides are wider than high */
 
@@ -466,13 +418,13 @@ static void wall(int16_t id, int16_t zone, int mode)
     int16_t graphic = id, flip = mode == BLIT_FLIPPED, sx = 0, sy = 0, w = 0, h = 0;
     if (id < 0) { /* the slot gives the graphic and the source rectangle */
         int16_t slot = -1 - id;
-        uint32_t record = LAYOUT_BITMAPS + LAYOUT_BITMAP_SIZE * slot;
+        TablesRect r = tables_layout_bitmap(slot);
         graphic = slot_gfx[slot];
         flip ^= slot_flip[slot];
-        sx = kaos_s16(record + LAYOUT_BITMAP_X);
-        sy = kaos_s16(record + LAYOUT_BITMAP_Y);
-        w = kaos_s16(record + LAYOUT_BITMAP_W);
-        h = kaos_s16(record + LAYOUT_BITMAP_H);
+        sx = r.x;
+        sy = r.y;
+        w = r.w;
+        h = r.h;
     }
     const Bitmap *bm = gfx_bitmap(graphic);
     Box b;
@@ -523,12 +475,11 @@ enum {
     CREATURE_ASPECT_GRAPHIC = 0,
     CREATURE_ASPECT_COORD = 4,
     CREATURE_ASPECT_REPLACEMENT = 5,
-    CREATURE_ASPECT_SIZE = 6
 };
 enum { CREATURE_ASPECT_TRANSPARENT = 0xf, CREATURE_ASPECT_COORD_SHIFT = 4 };
 
 /* Object aspect record (4 bytes): graphic, flags, alcove coordinate set. */
-enum { OBJECT_ASPECT_GRAPHIC = 0, OBJECT_ASPECT_FLAGS = 2, OBJECT_ASPECT_ALCOVE_COORD = 3, OBJECT_ASPECT_SIZE = 4 };
+enum { OBJECT_ASPECT_GRAPHIC = 0, OBJECT_ASPECT_FLAGS = 2, OBJECT_ASPECT_ALCOVE_COORD = 3 };
 enum { OBJECT_FLIP_ON_RIGHT = 0x1, OBJECT_HAS_ALCOVE_GRAPHIC = 0x10 };
 
 /* Projectile aspect record (4 bytes): graphic, scale flags, pose flags. */
@@ -536,7 +487,6 @@ enum {
     PROJECTILE_ASPECT_GRAPHIC = 0,
     PROJECTILE_ASPECT_SCALE_FLAGS = 2,
     PROJECTILE_ASPECT_POSE_FLAGS = 3,
-    PROJECTILE_ASPECT_SIZE = 4
 };
 enum { PROJECTILE_SCALE_WITH_ENERGY = 0x1, PROJECTILE_FLIP_ON_LEFT = 0x10, PROJECTILE_KIND = 0x3 };
 enum { PROJECTILE_BACK_AND_ROTATION, PROJECTILE_BACK, PROJECTILE_NO_BACK, PROJECTILE_NO_BACK_NO_ROTATION };
@@ -587,7 +537,9 @@ static const Bitmap *shrunk(int16_t g, int16_t scale, const uint8_t *pal, Bitmap
 /* Palette changes of objects and projectiles: none near, then the D2 and D3 tables. */
 static const uint8_t *object_pal(int16_t distance)
 {
-    return distance == 1 ? kaos_ptr(PAL_OBJECT_D2) : distance == 2 ? kaos_ptr(PAL_OBJECT_D3) : NULL;
+    return distance == 1   ? tables_palette_changes(TABLES_CHANGES_OBJECT_D2)
+           : distance == 2 ? tables_palette_changes(TABLES_CHANGES_OBJECT_D3)
+                           : NULL;
 }
 
 static int16_t object_aspect(uint16_t thing)
@@ -656,7 +608,7 @@ static void add_clickable_object(int16_t index, uint16_t thing)
 static void object(uint16_t thing, int16_t aspect_index, int16_t cell, int16_t lane, int16_t depth, int alcove_front,
                    int16_t zone, int16_t *pile, int16_t coord, int alcove)
 {
-    const uint8_t *aspect = kaos_ptr(OBJECT_ASPECTS + OBJECT_ASPECT_SIZE * aspect_index);
+    const uint8_t *aspect = tables_object_aspect(aspect_index);
     int alcove_graphic = alcove_front && (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_HAS_ALCOVE_GRAPHIC);
     int16_t g = GFX_OBJECT_FIRST + aspect[OBJECT_ASPECT_GRAPHIC] + alcove_graphic, distance = 0;
     int flip = (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_FLIP_ON_RIGHT) && !alcove_graphic &&
@@ -669,14 +621,14 @@ static void object(uint16_t thing, int16_t aspect_index, int16_t cell, int16_t l
         int16_t row =
             depth * 2 - 1 - (cell == VIEW_CELL_CENTER ? 1 : cell >> 1); /* front cells count as one row nearer */
         distance = (row + 1) >> 1;
-        bm = shrunk(g, kaos_u8(OBJECT_SCALES + row), object_pal(distance), &own);
+        bm = shrunk(g, tables_object_scale(row), object_pal(distance), &own);
     }
     if (pile) {
         zone = ZONE_SHIFTED |
                (alcove ? ZONE_ALCOVE_OBJECT_FIRST + coord + aspect[OBJECT_ASPECT_ALCOVE_COORD] * ZONE_ALCOVE_VIEW_SETS
                        : ZONE_OBJECT_FIRST + cell + coord * ZONE_OBJECT_CELLS);
-        rel_x = S8(SHIFT_SETS + kaos_u8(PILE_SHIFTS + 2 * *pile) + distance * SHIFT_SET_SIZE);
-        rel_y = S8(SHIFT_SETS + kaos_u8(PILE_SHIFTS + 2 * *pile + 1) + distance * SHIFT_SET_SIZE);
+        rel_x = tables_creature_shift(distance, tables_pile_shift(*pile, PILE_SHIFT_X));
+        rel_y = tables_creature_shift(distance, tables_pile_shift(*pile, PILE_SHIFT_Y));
         ++*pile;
         if (!alcove)
             *pile &= PILE_FLOOR_SHIFTS - 1;
@@ -703,7 +655,7 @@ static void group(uint16_t thing, Group *s)
     uint8_t index = rec_group_cells_byte(thing);
     s->thing = thing;
     s->info = group_info(thing);
-    s->aspect = kaos_ptr(CREATURE_ASPECTS + CREATURE_ASPECT_SIZE * s->info->aspect_index);
+    s->aspect = tables_creature_aspect(s->info->aspect_index);
     s->size = creature_size(s->info);
     const ActiveGroup *a = g_active_groups && map == g_party_map_index && index < g_max_active_group_count
                                ? &g_active_groups[index]
@@ -714,7 +666,7 @@ static void group(uint16_t thing, Group *s)
         memcpy(s->look, a->aspect, sizeof s->look);
     } else {
         s->cells = index;
-        s->dirs = kaos_u8(GROUP_DIRS + rec_group_direction(thing));
+        s->dirs = tables_group_directions(rec_group_direction(thing));
         memset(s->look, 0, sizeof s->look);
     }
 }
@@ -780,8 +732,8 @@ static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos,
         transparent = pal[transparent];
         bm = shrunk(g, depth == DEPTH_D2 ? SCALE_D2 : SCALE_D3, pal, &own);
     }
-    rel_x = S8(SHIFT_SETS + (look & ASPECT_OFFSET_MASK) + distance * SHIFT_SET_SIZE);
-    rel_y = S8(SHIFT_SETS + (look >> ASPECT_VERTICAL_OFFSET_SHIFT & ASPECT_OFFSET_MASK) + distance * SHIFT_SET_SIZE);
+    rel_x = tables_creature_shift(distance, look & ASPECT_OFFSET_MASK);
+    rel_y = tables_creature_shift(distance, look >> ASPECT_VERTICAL_OFFSET_SHIFT & ASPECT_OFFSET_MASK);
     int16_t set = s->aspect[CREATURE_ASPECT_COORD] >> CREATURE_ASPECT_COORD_SHIFT;
     in_zone(bm, &vp,
             ZONE_SHIFTED | (ZONE_CREATURE_FIRST + set * ZONE_CREATURE_SET + coord * ZONE_CREATURE_POSITIONS + pos),
@@ -794,7 +746,7 @@ static void creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos,
 static int creatures(const Group *s, int16_t dir, int16_t vs, int16_t depth, int16_t cell, uint16_t mcell,
                      uint16_t rest, int16_t pass, int front)
 {
-    int16_t coord = S8(VS_CREATURE + vs), ordinal, index, second = 0, pos = cell, done = 0;
+    int16_t coord = tables_view_square(vs).creature_coord, ordinal, index, second = 0, pos = cell, done = 0;
     if (coord < 0)
         return 1;
     uint16_t creature_index = 0;
@@ -915,14 +867,14 @@ static void projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_
         end_projectile(thing, drawn_box.w > 0);
         return;
     }
-    const uint8_t *aspect = kaos_ptr(PROJECTILE_ASPECTS + PROJECTILE_ASPECT_SIZE * -aspect_index);
+    const uint8_t *aspect = tables_projectile_aspect(-aspect_index);
     int16_t kind = aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_KIND,
             by_energy = aspect[PROJECTILE_ASPECT_SCALE_FLAGS] & PROJECTILE_SCALE_WITH_ENERGY, scale = SCALE_NATIVE,
             row = 0, pose, flip = 0;
     uint8_t energy = rec_projectile_kinetic_energy(thing);
     if ((by_energy && energy != KINETIC_ENERGY_MAXIMUM) || depth) {
         row = depth * 2 - (cell >> 1);
-        scale = kaos_u8(PROJECTILE_SCALES + row);
+        scale = tables_projectile_scale(row);
         if (by_energy) /* 16-bit product and signed byte as in the original */
             scale = max16(PROJECTILE_SCALE_MIN,
                           (int8_t)((uint16_t)(max16(PROJECTILE_ENERGY_MIN, energy + 1) * scale) >> 8));
@@ -989,7 +941,7 @@ static const Bitmap *explosion_bitmap(int16_t aspect, int16_t scale, Bitmap *own
 {
     scale = bounded_value(SCALE_EXPLOSION_MIN, scale & ~1, SCALE_NATIVE);
     return shrunk(GFX_EXPLOSION_FIRST + min16(aspect, EXPLOSION_ASPECT_POISON), scale,
-                  aspect == EXPLOSION_ASPECT_SMOKE ? kaos_ptr(PAL_SMOKE) : NULL, own);
+                  aspect == EXPLOSION_ASPECT_SMOKE ? tables_palette_changes(TABLES_CHANGES_SMOKE) : NULL, own);
 }
 
 /* An explosion on the party square fills the whole viewport with its pattern. */
@@ -1001,10 +953,11 @@ static void explosion_on_party(uint16_t thing, int16_t aspect)
                                      (strength != 0) + (strength > 3));
     Bitmap own = {0};
     if (units && smoke && (own.px = malloc((size_t)units->w * units->h))) {
+        const uint8_t *changes = tables_palette_changes(TABLES_CHANGES_SMOKE);
         own.w = units->w;
         own.h = units->h;
         for (int i = 0; i < own.w * own.h; i++)
-            own.px[i] = kaos_u8(PAL_SMOKE + units->px[i]) & COLOR_INDEX_MASK;
+            own.px[i] = changes[units->px[i]] & COLOR_INDEX_MASK;
         units = &own;
     }
     int16_t first = random16() & EXPLOSION_FILL_FIRST_UNIT_RANGE, last = random_2bits() + EXPLOSION_FILL_LAST_UNIT,
@@ -1019,7 +972,8 @@ static void explosion_on_party(uint16_t thing, int16_t aspect)
 static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, int16_t coord, uint16_t mcell,
                        int16_t pass)
 {
-    int16_t explosion_coord = S8(VS_EXPLOSION + vs), field_index = S8(VS_FIELD + vs);
+    ViewSquare square = tables_view_square(vs);
+    int16_t explosion_coord = square.explosion_coord, field_index = square.field_aspect;
     int fluxcage = 0;
     if (explosion_coord < 0 && field_index < 0)
         return;
@@ -1046,11 +1000,9 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
             aspect = EXPLOSION_ASPECT_SMOKE;
             break;
         case EXPLOSION_REBIRTH_STEP_1: /* the back pose of the lightning projectile */
-            scale = kaos_u8(REBIRTH_SCALES + REBIRTH_STEP_1_SCALES + coord);
+            scale = tables_rebirth_scale(TABLES_REBIRTH_STEP_1, coord);
             g = GFX_PROJECTILE_FIRST +
-                kaos_u8(PROJECTILE_ASPECTS + PROJECTILE_ASPECT_SIZE * PROJECTILE_ASPECT_LIGHTNING +
-                        PROJECTILE_ASPECT_GRAPHIC) +
-                POSE_BACK;
+                tables_projectile_aspect(PROJECTILE_ASPECT_LIGHTNING)[PROJECTILE_ASPECT_GRAPHIC] + POSE_BACK;
             in_zone(shrunk(g, scale, NULL, &own), &vp, ZONE_REBIRTH_STEP1_FIRST + coord, flip, TRANSPARENT_COLOR);
             free(own.px);
             continue;
@@ -1068,14 +1020,14 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
         }
         if (rebirth) {
             zone = ZONE_REBIRTH_STEP2_FIRST + coord;
-            scale = kaos_u8(REBIRTH_SCALES + coord);
+            scale = tables_rebirth_scale(TABLES_REBIRTH_STEP_2, coord);
         } else {
             int far_side = !(cell == dir || ((dir - 1) & 3) == cell);
             zone = rec_explosion_is_centered(thing)
                        ? ZONE_EXPLOSION_CENTERED_FIRST + explosion_coord
                        : ZONE_EXPLOSION_FIRST + explosion_coord * ZONE_EXPLOSION_SIDES + far_side;
             scale = (int16_t)(max16(EXPLOSION_ATTACK_MIN, rec_explosion_attack(thing) + 1) *
-                              kaos_u8(EXPLOSION_SCALES + depth)) >>
+                              tables_explosion_scale(depth)) >>
                     8; /* 16-bit product as in the original */
         }
         in_zone(explosion_bitmap(aspect, scale, &own), &vp, zone, flip, TRANSPARENT_COLOR);
@@ -1083,7 +1035,7 @@ static void explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, i
     }
     if (fluxcage && field_index >= 0 && pass != DOOR_PASS_BACK && !g_do_not_draw_fluxcages) {
         uint8_t aspect[FIELD_ASPECT_SIZE];
-        memcpy(aspect, kaos_ptr(FIELD_ASPECTS + FIELD_ASPECT_SIZE * field_index), FIELD_ASPECT_SIZE);
+        memcpy(aspect, tables_field_aspect(field_index), FIELD_ASPECT_SIZE);
         aspect[FIELD_PATTERN]++; /* the fluxcage pattern follows the teleporter pattern */
         draw_field(aspect, ZONE_FIELD_FIRST + field_index);
     }
@@ -1103,7 +1055,8 @@ static void things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs
     }
     uint16_t rest = order, mcell = 0, group_thing = THING_NONE;
     int alcove = rest == 0, has_projectiles = 0, has_explosions = 0, group_done = 0, loaded = 0;
-    int16_t lane = S8(VS_LANE + vs), depth = S8(VS_DEPTH + vs), coord = S8((alcove ? VS_ALCOVE : VS_OBJECT) + vs),
+    ViewSquare square = tables_view_square(vs);
+    int16_t lane = square.lane, depth = square.depth, coord = alcove ? square.alcove_coord : square.object_coord,
             count = 0;
     Group s;
     do {
@@ -1142,7 +1095,7 @@ static void things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs
                 group(group_thing, &s), loaded = 1;
             group_done = creatures(&s, dir, vs, depth, cell, mcell, rest, pass, front);
         }
-        int16_t projectile_coord = S8(VS_OBJECT + vs);
+        int16_t projectile_coord = square.object_coord;
         if (projectile_coord < 0)
             has_projectiles = 0;
         else if (has_projectiles && (depth != DEPTH_D3 || cell >= VIEW_CELL_FRONT_RIGHT) &&
@@ -1158,24 +1111,24 @@ static void things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs
 /* The field of a teleporter square. */
 static void field(int16_t view_square, int16_t zone)
 {
-    draw_field(kaos_ptr(FIELD_ASPECTS + FIELD_ASPECT_SIZE * S8(VS_FIELD + view_square)), zone);
+    draw_field(tables_field_aspect(tables_view_square(view_square).field_aspect), zone);
 }
 
 /* The shrink of get_scaled_flipped_bitmap: scale/32 per axis. out->px is NULL on failure. */
-static void scaled(int16_t g, int16_t scale_x, int16_t scale_y, uint32_t palette_changes, Bitmap *out)
+static void scaled(int16_t g, int16_t scale_x, int16_t scale_y, const uint8_t *palette_changes, Bitmap *out)
 {
     const Bitmap *bm = gfx_bitmap(g);
     *out = (Bitmap){0};
     if (bm) /* 16-bit sizes as in the original */
         draw_shrink(bm, (int16_t)((scale_x >> 1) + bm->w * scale_x) >> SCALE_SHIFT,
-                    (int16_t)((scale_y >> 1) + bm->h * scale_y) >> SCALE_SHIFT, kaos_ptr(palette_changes), out);
+                    (int16_t)((scale_y >> 1) + bm->h * scale_y) >> SCALE_SHIFT, palette_changes, out);
 }
 
 /* The inscription of the D1C wall: the blank wall, then the glyphs of each text line. */
 static void wall_text(const uint8_t *text)
 {
     const Bitmap *font = gfx_bitmap(GFX_WALL_TEXT_FONT);
-    int16_t glyph_w = kaos_s16(GLYPH_SIZE), glyph_h = kaos_s16(GLYPH_SIZE + 2);
+    int16_t glyph_w = tables_glyph_width(), glyph_h = tables_glyph_height();
     wall(LAYOUT_INSCRIPTION_WALL, ZONE_INSCRIPTION_WALL_D1C, BLIT_TRANSPARENT);
     for (int16_t line = 0; font; line++) {
         int16_t n = 0;
@@ -1196,7 +1149,7 @@ static void wall_text(const uint8_t *text)
 static void wall_portrait(int16_t champion)
 {
     const Bitmap *portraits = gfx_bitmap(GFX_CHAMPION_PORTRAITS);
-    int16_t pw = kaos_s16(PORTRAIT_SIZE), ph = kaos_s16(PORTRAIT_SIZE + 2), w = pw, h = ph;
+    int16_t pw = tables_portrait_width(), ph = tables_portrait_height(), w = pw, h = ph;
     Box b;
     if (portraits && layout_get_zone(ZONE_WALL_PORTRAIT, 0, 0, &b, &w, &h))
         draw_blit(portraits, champion % PORTRAITS_PER_ROW * pw, champion / PORTRAITS_PER_ROW * ph, &vp, &b,
@@ -1232,11 +1185,11 @@ static int wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
     const Bitmap *bm;
     if (view < VIEW_WALL_D1L_RIGHT) { /* D3 and D2: scaled and recolored */
         if (view <= VIEW_WALL_D3R2_LEFT)
-            scaled(graphic, SCALE_D3_FAR_SIDE_W, SCALE_D3, PAL_D3, &own);
+            scaled(graphic, SCALE_D3_FAR_SIDE_W, SCALE_D3, tables_palette_changes(TABLES_CHANGES_D3), &own);
         else if (view <= VIEW_WALL_D3R_FRONT)
-            scaled(graphic, SCALE_D3, SCALE_D3, PAL_D3, &own);
+            scaled(graphic, SCALE_D3, SCALE_D3, tables_palette_changes(TABLES_CHANGES_D3), &own);
         else
-            scaled(graphic, SCALE_D2, SCALE_D2, PAL_D2, &own);
+            scaled(graphic, SCALE_D2, SCALE_D2, tables_palette_changes(TABLES_CHANGES_D2), &own);
         if (!own.px)
             return alcove;
         bm = &own;
@@ -1246,10 +1199,10 @@ static int wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
         int16_t lines = 1;
         for (const uint8_t *p = s; *p != WALL_TEXT_END; p++)
             lines += *p == WALL_TEXT_NEW_LINE;
-        if (lines <= TEXT_PLAQUE_LINES && bm) {
+        if (lines <= TABLES_PLAQUE_LINES && bm) {
             zone |= ZONE_SIZED;
             rel_x = bm->w;
-            rel_y = kaos_u8(TEXT_HEIGHTS + lines + TEXT_PLAQUE_LINES * kaos_u8(WALL_ORN_DEPTH + view));
+            rel_y = tables_plaque_height(lines, tables_wall_ornament_depth(view));
         }
     }
     if (in_zone(bm, &vp, zone, mirrored, TRANSPARENT_COLOR) && view == VIEW_WALL_D1C_FRONT)
@@ -1270,7 +1223,7 @@ static void floor_ornament(uint16_t ordinal, int16_t view)
         int right = view == VIEW_D3R2 || view == VIEW_D3R || view == VIEW_D2R || view == VIEW_D1R;
         int center = view == VIEW_D3C || view == VIEW_D2C || view == VIEW_D1C;
         int flip = right || (i == FLOOR_ORNAMENT_FOOTPRINTS && parity && center);
-        in_zone(gfx_bitmap(floor_orn[i].graphic + kaos_u8(FLOOR_ORN_VIEW + view)), &vp,
+        in_zone(gfx_bitmap(floor_orn[i].graphic + tables_floor_ornament_view_offset(view)), &vp,
                 ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * floor_orn[i].coord + view, flip,
                 TRANSPARENT_COLOR);
     }
@@ -1290,7 +1243,10 @@ static void door_ornament(uint16_t ordinal, int16_t depth, Bitmap *door)
         in_zone(gfx_bitmap(o->graphic), door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
     else {
         int16_t scale = depth == DOOR_DEPTH_D2 ? SCALE_D2 : SCALE_D3;
-        scaled(o->graphic, scale, scale, depth == DOOR_DEPTH_D2 ? PAL_DOOR_D2 : PAL_DOOR_D3, &own);
+        scaled(o->graphic, scale, scale,
+               tables_palette_changes(depth == DOOR_DEPTH_D2 ? TABLES_CHANGES_DOOR_ORNAMENT_D2
+                                                             : TABLES_CHANGES_DOOR_ORNAMENT_D3),
+               &own);
         if (own.px)
             in_zone(&own, door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
     }
@@ -1304,11 +1260,12 @@ static void door_button(int16_t view)
     const Bitmap *bm = gfx_bitmap(GFX_DOOR_BUTTON);
     if (view != BUTTON_D1C) {
         int16_t scale = view == BUTTON_D2C ? SCALE_D2 : SCALE_D3;
-        scaled(GFX_DOOR_BUTTON, scale, scale, view == BUTTON_D2C ? PAL_D2 : PAL_D3, &own);
+        scaled(GFX_DOOR_BUTTON, scale, scale,
+               tables_palette_changes(view == BUTTON_D2C ? TABLES_CHANGES_D2 : TABLES_CHANGES_D3), &own);
         bm = &own;
     }
     if (bm && bm->px &&
-        in_zone(bm, &vp, ZONE_DOOR_BUTTON_FIRST + kaos_u8(DOOR_BUTTON_COORDS) + view, 0, TRANSPARENT_COLOR) &&
+        in_zone(bm, &vp, ZONE_DOOR_BUTTON_FIRST + tables_door_button_coord_set() + view, 0, TRANSPARENT_COLOR) &&
         view == BUTTON_D1C)
         g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn_box;
     free(own.px);
@@ -1948,18 +1905,16 @@ enum {
 
 static void replacement_colors(int16_t color, int16_t n)
 {
-    uint32_t set =
-        REPLACEMENT_COLORS + REPLACEMENT_SET_SIZE * n; /* a color per light level, then the D2 and D3 color */
-    for (int l = 0; l < LIGHT_LEVELS; l++)
-        pals[l][color] = kaos_u16(set + 2 * l);
-    creature_d2[color] = kaos_u8(set + 2 * LIGHT_LEVELS);
-    creature_d3[color] = kaos_u8(set + 2 * LIGHT_LEVELS + 1);
+    for (int l = 0; l < LIGHT_LEVELS; l++) /* a color per light level, then the D2 and D3 color */
+        pals[l][color] = tables_replacement_color(n, l);
+    creature_d2[color] = tables_replacement_change(n, DEPTH_D2);
+    creature_d3[color] = tables_replacement_change(n, DEPTH_D3);
 }
 
 static void reset_wall_set_ids(void)
 {
     for (int i = 0; i < WS_COUNT; i++)
-        wall_set_ids[i] = kaos_s16(WALL_SET_IDS + 2 * i);
+        wall_set_ids[i] = tables_wall_set_layout_id(i);
 }
 
 static int16_t entry_slot(int entry)
@@ -2016,7 +1971,7 @@ static void load_doors(int16_t m)
 {
     for (int type = 0; type < DOOR_TYPES; type++) {
         int16_t set = map_door_set(m, type);
-        door_attr[type] = kaos_u16(DOOR_INFO + 2 * set);
+        door_attr[type] = tables_door_attributes(set);
         for (int depth = 0; depth < DOOR_DEPTHS; depth++)
             door_gfx[depth][type] = GFX_DOOR_FIRST + DOOR_DEPTHS * set + depth;
     }
@@ -2034,25 +1989,26 @@ static void load_ornaments(int16_t m, const uint8_t *ornaments)
     inscription = walls; /* after the map ornaments: the inscription plaque, ornament 0 */
     for (int16_t i = 0; i <= walls; i++) {
         uint8_t o = i < walls ? ornaments[i] : 0;
-        wall_orn[i] = (Ornament){GFX_WALL_ORNAMENT_FIRST + WALL_ORNAMENT_GRAPHICS * o, kaos_u8(WALL_ORN_COORDS + o)};
+        wall_orn[i] =
+            (Ornament){GFX_WALL_ORNAMENT_FIRST + WALL_ORNAMENT_GRAPHICS * o, tables_wall_ornament_coord_set(o)};
         for (int k = 0; k < ALCOVE_ORNAMENT_COUNT; k++)
-            if (kaos_u8(ALCOVES + k) == o) {
+            if (tables_alcove_ornament(k) == o) {
                 alcoves[alcove_count++] = i;
                 if (o == ORNAMENT_VI_ALTAR)
                     vi_altar = i;
             }
-        if (kaos_u8(FOUNTAINS) == o)
+        if (tables_fountain_ornament() == o)
             fountain = i;
     }
     for (int16_t i = 0; i < floors; i++) {
         uint8_t o = ornaments[walls + i];
         floor_orn[i] =
-            (Ornament){GFX_FLOOR_ORNAMENT_FIRST + FLOOR_ORNAMENT_GRAPHICS * o, kaos_u8(FLOOR_ORN_COORDS + o)};
+            (Ornament){GFX_FLOOR_ORNAMENT_FIRST + FLOOR_ORNAMENT_GRAPHICS * o, tables_floor_ornament_coord_set(o)};
     }
     floor_orn[FLOOR_ORNAMENT_FOOTPRINTS] = (Ornament){GFX_FOOTPRINTS, 0};
     for (int16_t i = 0; i < doors; i++) {
         uint8_t o = ornaments[walls + floors + i];
-        door_orn[i] = (Ornament){GFX_DOOR_ORNAMENT_FIRST + o, kaos_u8(DOOR_ORN_COORDS + o)};
+        door_orn[i] = (Ornament){GFX_DOOR_ORNAMENT_FIRST + o, tables_door_ornament_coord_set(o)};
     }
     door_orn[DOOR_ORNAMENT_DESTROYED - 1] = (Ornament){GFX_DOOR_MASK_DESTROYED, DOOR_MASK_COORD_SET};
     door_orn[DOOR_ORNAMENT_THIEVES_EYE - 1] = (Ornament){GFX_DOOR_MASK_THIEVES_EYE, DOOR_MASK_COORD_SET};
@@ -2065,15 +2021,13 @@ static void load_creature_colors(const uint8_t *creature_types, int16_t count)
     if (!tables_creature_info(0))
         tables_init();
     for (int l = 0; l < LIGHT_LEVELS; l++)
-        for (int i = 0; i < PALETTE_COLORS; i++)
-            pals[l][i] = kaos_u16(DUNGEON_PALETTE + sizeof pals[l] * l + 2 * i);
-    memcpy(creature_d3, kaos_ptr(PAL_CREATURE_D3), sizeof creature_d3);
-    memcpy(creature_d2, kaos_ptr(PAL_CREATURE_D2), sizeof creature_d2);
+        tables_palette(TABLES_PALETTE_DUNGEON + l, pals[l]);
+    memcpy(creature_d3, tables_palette_changes(TABLES_CHANGES_CREATURE_D3), sizeof creature_d3);
+    memcpy(creature_d2, tables_palette_changes(TABLES_CHANGES_CREATURE_D2), sizeof creature_d2);
     replacement_colors(COLOR_CREATURE_1, REPLACEMENT_DEFAULT_1);
     replacement_colors(COLOR_CREATURE_2, REPLACEMENT_DEFAULT_2);
     for (int i = 0; i < count; i++) { /* the original indexes the aspects by creature type */
-        uint8_t sets =
-            kaos_u8(CREATURE_ASPECTS + CREATURE_ASPECT_SIZE * creature_types[i] + CREATURE_ASPECT_REPLACEMENT);
+        uint8_t sets = tables_creature_aspect(creature_types[i])[CREATURE_ASPECT_REPLACEMENT];
         if (sets & REPLACEMENT_SET_MASK)
             replacement_colors(COLOR_CREATURE_1, (sets & REPLACEMENT_SET_MASK) - 1);
         if (sets >> REPLACEMENT_SET_SHIFT)
@@ -2108,15 +2062,16 @@ void view_set_light(int16_t m, int16_t amount)
         g_dungeon_view_palette_index = LIGHT_DARKEST;
         return;
     }
-    while (amount < kaos_s16(LIGHT_THRESHOLDS + 2 * g_dungeon_view_palette_index))
+    while (g_dungeon_view_palette_index < LIGHT_DARKEST &&
+           amount < *tables_palette_light_threshold(g_dungeon_view_palette_index))
         g_dungeon_view_palette_index++;
 }
 
 /* update_map_coordinates_after_relative_movement: the square forward and right of (x, y) in direction dir. */
 static void step(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_t *y)
 {
-    *x += forward * kaos_s16(STEP_EAST + 2 * dir) + right * kaos_s16(STEP_EAST + 2 * ((dir + 1) & 3));
-    *y += forward * kaos_s16(STEP_NORTH + 2 * dir) + right * kaos_s16(STEP_NORTH + 2 * ((dir + 1) & 3));
+    *x += forward * tables_step_east(dir) + right * tables_step_east((dir + 1) & 3);
+    *y += forward * tables_step_north(dir) + right * tables_step_north((dir + 1) & 3);
 }
 
 /* draw_dungeon_view: ceiling, floor, the objects of D4, then the 16 squares back to front, then draw_viewport. */
@@ -2442,7 +2397,7 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
     static const int8_t d4_right[D4_SQUARE_COUNT] = {-1, 1, 0};
     static const int16_t d4_squares[D4_SQUARE_COUNT] = {VIEW_SQUARE_D4L, VIEW_SQUARE_D4R, VIEW_SQUARE_D4C};
     static uint8_t px[VIEWPORT_MAX_H * VIEWPORT_MAX_W];
-    vp = (Bitmap){kaos_s16(VIEWPORT_SIZE), kaos_s16(VIEWPORT_SIZE + 2), px};
+    vp = (Bitmap){tables_viewport_width(), tables_viewport_height(), px};
     if (map < 0 || (size_t)vp.w * vp.h > sizeof px)
         return;
     memset(px, 0, sizeof px);

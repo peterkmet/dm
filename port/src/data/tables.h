@@ -5,9 +5,6 @@
 
 /* Static rule tables of KAOS.FTL, decoded once from the loaded image. Field bits: docs/tables.md. */
 
-/* KAOS data addresses. */
-#define DOOR_INFO 0x1016e2 /* g_door_info[], high byte attributes */
-
 enum {
     CREATURE_TYPE_COUNT = 27,
     CREATURE_SOUND_COUNT = 18,
@@ -204,5 +201,79 @@ const char *tables_inscription_escape(int16_t code);
 const char *tables_escape_replacement(int16_t code);
 int16_t tables_portrait_width(void);
 int16_t tables_portrait_height(void);
+
+/* Dungeon view tables; each accessor reads the loaded image at call time. */
+uint16_t tables_replacement_color(int16_t set, int16_t light);
+uint8_t tables_replacement_change(int16_t set, int16_t depth);
+const uint8_t *tables_creature_aspect(int16_t creature_type);
+const uint8_t *tables_object_aspect(int16_t index);
+const uint8_t *tables_projectile_aspect(int16_t index);
+const uint8_t *tables_field_aspect(int16_t index);
+int16_t tables_creature_shift(int16_t distance, int16_t index);
+uint8_t tables_pile_shift(int16_t pair, int16_t axis);
+uint8_t tables_object_scale(int16_t row);
+uint8_t tables_projectile_scale(int16_t row);
+uint8_t tables_explosion_scale(int16_t depth);
+enum { TABLES_REBIRTH_STEP_1 = 1, TABLES_REBIRTH_STEP_2 }; /* the two steps of a rebirth explosion */
+uint8_t tables_rebirth_scale(int16_t step, int16_t coord);
+uint8_t tables_group_directions(int16_t index);
+
+/* What the view sees of one view square; a negative coordinate set: the view draws no such thing there. */
+typedef struct {
+    int8_t lane, depth, object_coord, alcove_coord, creature_coord, explosion_coord, field_aspect;
+} ViewSquare;
+ViewSquare tables_view_square(int16_t view_square);
+int16_t tables_wall_set_layout_id(int16_t i);
+uint8_t tables_wall_ornament_depth(int16_t view);
+enum { TABLES_PLAQUE_LINES = 3 }; /* the most lines that an inscription plaque shows */
+uint8_t tables_plaque_height(int16_t lines, int16_t depth);
+uint8_t tables_floor_ornament_view_offset(int16_t view);
+uint8_t tables_alcove_ornament(int16_t k);
+uint8_t tables_fountain_ornament(void);
+uint8_t tables_wall_ornament_coord_set(int16_t ornament);
+uint8_t tables_floor_ornament_coord_set(int16_t ornament);
+uint8_t tables_door_ornament_coord_set(int16_t ornament);
+uint8_t tables_door_button_coord_set(void);
+int16_t tables_glyph_width(void);
+int16_t tables_glyph_height(void);
+int16_t tables_viewport_x(void);
+int16_t tables_viewport_y(void);
+int16_t tables_viewport_width(void);
+int16_t tables_viewport_height(void);
+
+/* Source rectangle of a layout bitmap slot in its graphic (0: the bitmap size). */
+typedef struct {
+    int16_t x, y, w, h;
+} TablesRect;
+TablesRect tables_layout_bitmap(int16_t slot);
+
+/* Palettes; TABLES_PALETTE_DUNGEON + light level (0-5) gives the dungeon palette of that light. */
+enum { TABLES_PALETTE_COLOR_COUNT = 16 };
+enum {
+    TABLES_PALETTE_INTERFACE,
+    TABLES_PALETTE_POINTER,
+    TABLES_PALETTE_CREDITS,
+    TABLES_PALETTE_ENTRANCE,
+    TABLES_PALETTE_DUNGEON
+};
+void tables_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT]);
+
+/* Palette changes: a color map of TABLES_PALETTE_COLOR_COUNT bytes for draw_shrink. */
+enum {
+    TABLES_CHANGES_D3,
+    TABLES_CHANGES_D2,
+    TABLES_CHANGES_DOOR_ORNAMENT_D3,
+    TABLES_CHANGES_DOOR_ORNAMENT_D2,
+    TABLES_CHANGES_SMOKE,
+    TABLES_CHANGES_OBJECT_D3,
+    TABLES_CHANGES_OBJECT_D2,
+    TABLES_CHANGES_CREATURE_D3,
+    TABLES_CHANGES_CREATURE_D2,
+    TABLES_CHANGES_INVISIBILITY,
+    TABLES_CHANGES_ACTION_ICON,
+    TABLES_CHANGES_POINTER_SHADOW,
+    TABLES_CHANGES_COUNT
+};
+const uint8_t *tables_palette_changes(int16_t changes);
 
 #endif

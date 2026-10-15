@@ -82,7 +82,7 @@ These tables have the same bytes in CSB. Only the address changes.
 | `KAOS_ARMOUR_INFO` | `0x1015b4` | `0x101ab6` |
 | `KAOS_JUNK_WEIGHTS` | `0x10169c` | `0x101ba0` |
 | `KAOS_FOOD_VALUES` | `0x1016d2` | `0x101bd6` |
-| `DOOR_INFO` | `0x1016e2` | `0x101be6` |
+| `KAOS_DOOR_INFO` | `0x1016e2` | `0x101be6` |
 | `KAOS_FIXED_POSSESSIONS` | `0x101c10` | `0x102114` |
 | `KAOS_NEW_GAME_EXTRA_THINGS` | `0x101058` | `0x10155a` |
 | `KAOS_MESSAGE_ESCAPE_STRINGS`, `KAOS_ESCAPE_REPLACEMENT_CHARS`, `KAOS_INSCRIPTION_ESCAPE_STRINGS` | `0x1016ea`, `0x1017ea`, `0x10182a` | `0x101bee`, `0x101cee`, `0x101d2e` |
@@ -95,16 +95,16 @@ These tables have the same bytes in CSB. Only the address changes.
 | `KAOS_SQUARE_TYPE_TO_EVENT_TYPE` | `0x100d4a` | `0x101222` |
 | `KAOS_ORDERED_CELLS_TO_ATTACK`, `KAOS_WOUND_PROBABILITY_INDEX_TO_MASK`, `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b66`, `0x100b86`, `0x100b8a` | `0x10103a`, `0x10105a`, `0x10105e` |
 | `KAOS_TORCH_CHARGE_TO_ICON_OFFSET`, `ICON_FIRST`, `SLOT_BOXES` | `0x100ba0`, `0x100b92`, `0x100bb0` | `0x101074`, `0x101066`, `0x101084` |
-| `KAOS_DIRECTION_TO_STEP_EAST`, `KAOS_DIRECTION_TO_STEP_NORTH`, `GROUP_DIRS` | `0x101038`, `0x101040`, `0x10192a` | `0x10153a`, `0x101542`, `0x101e2e` |
+| `KAOS_DIRECTION_TO_STEP_EAST`, `KAOS_DIRECTION_TO_STEP_NORTH`, `KAOS_GROUP_DIRECTIONS_PACKED` | `0x101038`, `0x101040`, `0x10192a` | `0x10153a`, `0x101542`, `0x101e2e` |
 | `KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD`, `..._RIGHT` | `0x103c56`, `0x103c5e` | `0x104694`, `0x10469c` |
 | `KEYS_INTERFACE`, `KEYS_MOVEMENT`, `KEYS_SLEEPING`, `KEYS_FROZEN` | `0x103948`, `0x103964`, `0x103980`, `0x10398c` | `0x1043c4`, `0x1043e0`, `0x1043fc`, `0x104408` |
 | `ARROW_POINTER`, `HAND_POINTER`, `POINTER_ZONES`, `POINTER_HOTSPOTS`, `POINTER_SHADOW_OBJECT` | `0x1002b0` … `0x1005fe` | `0x1005f0`, `0x100714`, `0x10084a`, `0x10091a`, `0x100984` |
 | `DUNGEON_PALETTE` | `0x100aa6` | `0x100f78` |
 | `LAYOUT_BITMAPS` | `0x1025f2` | `0x102f50` |
 | `INVISIBILITY_PALETTE`, `ACTION_ICON_PALETTE` | `0x10247a`, `0x103ffa` | `0x102d8a` (`champion_build_icon_bitmap` pushes it at C`0x1150b6`, as DM does), `0x104b52` |
-| View tables: `WALL_ORN_DEPTH` … `TEXT_HEIGHTS`, `OBJECT_ASPECTS`, `PROJECTILE_ASPECTS`, `PAL_*`, `CREATURE_ASPECTS`, `REPLACEMENT_COLORS`, `SHIFT_SETS` | `0x102ba6` … `0x102fd0` | `0x10373a` … `0x103b60` |
+| View tables: `KAOS_WALL_ORNAMENT_DEPTHS` … `KAOS_PLAQUE_HEIGHTS`, `KAOS_OBJECT_ASPECTS`, `KAOS_PROJECTILE_ASPECTS`, `KAOS_PALETTE_CHANGES_*`, `KAOS_CREATURE_ASPECTS`, `KAOS_CREATURE_REPLACEMENT_COLOR_SETS`, `KAOS_CREATURE_SHIFT_SETS` | `0x102ba6` … `0x102fd0` | `0x10373a` … `0x103b60` |
 
-Small scalar values (`VIEWPORT_ORIGIN`, `PORTRAIT_SIZE`, `GLYPH_SIZE`, `DAMAGE_SIZE_*`, `BAR_SHADOW`, `BUTTON_*`) are equal. Take their CSB address from the code reference, because a content search gives many hits. Example: `PORTRAIT_SIZE` is C`0x1032bc`, `VIEWPORT_SIZE` is C`0x1032a6`, `GLYPH_SIZE` is C`0x1032d2`.
+Small scalar values (`VIEWPORT_ORIGIN`, `PORTRAIT_SIZE`, `KAOS_WALL_TEXT_GLYPH_WIDTH`, `DAMAGE_SIZE_*`, `BAR_SHADOW`, `BUTTON_*`) are equal. Take their CSB address from the code reference, because a content search gives many hits. Example: `PORTRAIT_SIZE` is C`0x1032bc`, `VIEWPORT_SIZE` is C`0x1032a6`, `KAOS_WALL_TEXT_GLYPH_WIDTH` is C`0x1032d2`.
 
 ### Tables with a different layout
 
@@ -112,11 +112,11 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 
 | Table | DM | CSB | Change |
 |---|---|---|---|
-| View square tables `VS_LANE` … `VS_FIELD` (23 used bytes) | `0x102a7e` + 24·n | `0x103616` + 23·n | No pad byte |
-| `FIELD_ASPECTS` (12 × 8) | `0x102b26` | `0x1036b7` (odd address) | Address only |
-| `OBJECT_SCALES`, `PROJECTILE_SCALES`, `EXPLOSION_SCALES`, `PILE_SHIFTS` | `0x102e24`, `0x102e2a`, `0x102e32`, `0x102e38` | `0x1039b6`, `0x1039bb`, `0x1039c2`, `0x1039c7` | No pad bytes |
-| `REBIRTH_SCALES` (2 × 7) | `0x102fe8`, `0x102ff0` | `0x103b78`, `0x103b7f` | No pad byte |
-| `WALL_SET_IDS` (46 words) | `0x102a22`, one array | `0x10343c` (31 words) and `0x1034dc` (15 words) | Split into two arrays, equal values |
+| View square tables `KAOS_VIEW_SQUARE_LANE` … `KAOS_VIEW_SQUARE_FIELD_ASPECT` (23 used bytes) | `0x102a7e` + 24·n | `0x103616` + 23·n | No pad byte |
+| `KAOS_FIELD_ASPECTS` (12 × 8) | `0x102b26` | `0x1036b7` (odd address) | Address only |
+| `KAOS_OBJECT_SCALES`, `KAOS_PROJECTILE_SCALES`, `KAOS_EXPLOSION_SCALES`, `KAOS_PILE_SHIFTS` | `0x102e24`, `0x102e2a`, `0x102e32`, `0x102e38` | `0x1039b6`, `0x1039bb`, `0x1039c2`, `0x1039c7` | No pad bytes |
+| `KAOS_REBIRTH_SCALES` (2 × 7) | `0x102fe8`, `0x102ff0` | `0x103b78`, `0x103b7f` | No pad byte |
+| `KAOS_WALL_SET_LAYOUT_IDS` (46 words) | `0x102a22`, one array | `0x10343c` (31 words) and `0x1034dc` (15 words) | Split into two arrays, equal values |
 | `KAOS_ACTION_SETS` (44 records) | `0x103d4c`, 8 bytes each | `0x1047ac`, 6 bytes each | CSB has no pad bytes: 3 actions, 2 minimum skill levels, 1 flag byte. The index code is `uVar3 * 6 + A5 - 0x972` (C`menus_set_action_list` caller) |
 
 ### Tables with different values
@@ -168,9 +168,9 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 | `MESSAGE_LINE_PAD` | `0x102966` | `0x1032ca` | `dialog_draw` C`0x128176` |
 | `DAMAGE_SIZE_LARGE`, `DAMAGE_SIZE_SMALL` | `0x102978`, `0x10297c` | `0x1032dc`, `0x1032e0` | `menus_draw_action_damage` |
 | `BAR_SHADOW` | `0x102980` | `0x1032e4` | `draw_panel_horizontal_bar` C`0x11203e` |
-| `WALL_ORN_DEPTH` (14), `FLOOR_ORN_VIEW` (11), `ALCOVES` (3), `FOUNTAINS` (1) | `0x102ba6`, `0x102bb4`, `0x102bc0`, `0x102bc3` | `0x10373a`, `0x103748`, `0x103753`, `0x103757` | `draw_wall_ornament`, `draw_floor_ornament`, `load_current_map_graphics`, CSV |
-| `FLOOR_ORN_COORDS` (9), `DOOR_ORN_COORDS` (12), `DOOR_BUTTON_COORDS` (1) | `0x102c00`, `0x102c0a`, `0x102c16` | `0x103794`, `0x10379d`, `0x1037a9` | `load_current_map_graphics`, `draw_door_button` |
-| `TEXT_HEIGHTS` + 1 | `0x102c58` | `0x1037ea` | `draw_wall_ornament` C`0x11b1ee` |
+| `KAOS_WALL_ORNAMENT_DEPTHS` (14), `KAOS_FLOOR_ORNAMENT_VIEW_OFFSETS` (11), `KAOS_ALCOVE_ORNAMENT_INDICES` (3), `KAOS_FOUNTAIN_ORNAMENT_INDICES` (1) | `0x102ba6`, `0x102bb4`, `0x102bc0`, `0x102bc3` | `0x10373a`, `0x103748`, `0x103753`, `0x103757` | `draw_wall_ornament`, `draw_floor_ornament`, `load_current_map_graphics`, CSV |
+| `KAOS_FLOOR_ORNAMENT_COORD_SETS` (9), `KAOS_DOOR_ORNAMENT_COORD_SETS` (12), `KAOS_DOOR_BUTTON_COORD_SETS` (1) | `0x102c00`, `0x102c0a`, `0x102c16` | `0x103794`, `0x10379d`, `0x1037a9` | `load_current_map_graphics`, `draw_door_button` |
+| `KAOS_PLAQUE_HEIGHTS` + 1 | `0x102c58` | `0x1037ea` | `draw_wall_ornament` C`0x11b1ee` |
 | Entrance mouse input (4 entries, no 0xd8) | `0x10318c` | `0x103c24` | `process_entrance` C`0x12a550` |
 | Endgame mouse input (RESTART only) | `0x1031d4` | `0x103c60` | `endgame` C`0x1284c2` |
 | Other mouse input tables | `0x1031f8` … `0x10378c` | `0x103c78` … `0x10420c` | CSV names |
