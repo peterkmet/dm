@@ -21,7 +21,6 @@ ENUM = re.compile(r"\benum\b[^{};]*\{([^}]*)\}")
 DEFINE = re.compile(r"^\s*#define\s+([A-Z][A-Z0-9_]*)\b", re.M)
 DECL = re.compile(r"^((?:(?:static|inline|const|struct|unsigned)\s+)*[A-Za-z_]\w*[\s*]+)([a-z_]\w*)\s*\(", re.M)
 PREFIXES = re.compile(r"^/\* Prefixes: ([\w ]+?) \*/$", re.M)
-NUMBERED = re.compile(r"events?_?\d|_\d+_to_\d+")
 PREDICATE = re.compile(r"(?:^|_)(?:is|has|can)_")
 FUNC_START = re.compile(r"^(?:static\s+)?[A-Za-z_][\w *]*?\b([a-z_]\w*)\s*\([^;]*$")
 
@@ -133,10 +132,18 @@ def test_headers_state_unique_prefixes():
     report("prefix", found)
 
 
-def test_no_event_numbers_in_function_names():
+NUMBERED = re.compile(r"(?i:events?_?\d)|_\d+_to_\d+|(?:^|_)(?:BYTE|OFFSET|AT)_(?=[0-9A-Fa-f]*\d)[0-9A-Fa-f]{2,}(?:_|$)")
+IDENTIFIER = re.compile(r"\b[A-Za-z_]\w*\b")
+
+
+def test_no_event_numbers_or_offsets_in_names():
     ok = allowed()
-    report("numbered", [f"numbered {name}  | {rel(path)}" for path in sources() if path.suffix == ".h"
-                        for _, name in declarations(path) if NUMBERED.search(name) and ("numbered", name) not in ok])
+    where = defaultdict(set)
+    for path in sources():
+        for name in IDENTIFIER.findall(strip(path.read_text(errors="replace"))):
+            if NUMBERED.search(name) and ("numbered", name) not in ok:
+                where[name].add(rel(path))
+    report("numbered", [f"numbered {name}  | {sorted(paths)}" for name, paths in sorted(where.items())])
 
 
 def test_predicates_return_bool():
@@ -163,6 +170,61 @@ def test_functions_are_short():
                     found.append(f"long {key}  | {number - start + 1} lines")
                 name = None
     report("long", found)
+
+
+CONST_VALUE = re.compile(r"^\s*#define\s+([A-Z][A-Z0-9_]*)\s+\(?(-?(?:0x[0-9a-fA-F]+|\d+))[uUlL]*\)?\s*$", re.M)
+ENUM_VALUE = re.compile(r"\b([A-Z][A-Z0-9_]*)\s*=\s*\(?(-?(?:0x[0-9a-fA-F]+|\d+))[uUlL]*\)?\s*(?=[,}])")
+STATIC_CONST_VALUE = re.compile(r"\bconst\s+\w+\s+([A-Z][A-Z0-9_]*)\s*=\s*(-?(?:0x[0-9a-fA-F]+|\d+))[uUlL]*\s*;")
+HEX_LAST_PARTS = {"MASK", "FLAG", "FLAGS", "BIT"}
+DECIMAL_PARTS = {"COUNT", "SIZE", "BYTES", "TICKS", "MIN", "MAX", "LIMIT", "THRESHOLD", "WIDTH", "HEIGHT"}
+
+
+def constant_values(path):
+    """(name, literal) of each constant with a plain number value."""
+    text = strip(path.read_text(errors="replace"))
+    for pattern in (CONST_VALUE, ENUM_VALUE, STATIC_CONST_VALUE):
+        yield from pattern.findall(text)
+
+
+def notation_error(name, literal):
+    """Why the literal has the wrong base for the kind of value that the name tells, or None."""
+    parts = name.split("_")
+    is_hex = literal.lstrip("-").lower().startswith("0x")
+    if parts[-1] in HEX_LAST_PARTS:
+        return None if is_hex or abs(int(literal, 0)) < 10 else "a mask or flag in decimal"
+    if DECIMAL_PARTS & set(parts) and is_hex and parts[0] not in ("KAOS", "CSB", "SWSH"):
+        return "a count, size or limit in hex"
+    return None
+
+
+def test_number_notation():
+    ok = allowed()
+    report("notation", [f"notation {name}  | {rel(path)}: {literal}: {error}" for path in sources()
+                        for name, literal in constant_values(path)
+                        if (error := notation_error(name, literal)) and ("notation", name) not in ok])
+
+
+NAMED_SHIFT = re.compile(r"(?:<<|>>)\s*([A-Z][A-Z0-9_]*_SHIFT)\b")
+PACKED = re.compile(r"(?:<<|>>)\s*(?:8|16|24)\b|\((?:u?int(?:8|16|32)_t|unsigned|int)\)\s*\((?:u?int(?:8|16|32)_t|unsigned|int)\)")
+BYTE_ORDER = ("BE16", "WR16", "BE32", "WR32")
+
+
+def test_no_packed_fields_at_call_sites():
+    """Also a shift by a *_SHIFT constant of a header in a .c file of another module: the accessor belongs to the owner."""
+    ok = allowed()
+    owner = {name: path.stem for path in sources() if path.suffix == ".h"
+             for name in DEFINE.findall(strip(path.read_text(errors="replace"))) if name.endswith("_SHIFT")}
+    found = []
+    for path in sources():
+        if path.suffix == ".c" and ("packed", rel(path)) not in ok:
+            found += [f"packed {rel(path)}  | {n}: {line.strip()}" for n, line in code_lines(path)
+                      if PACKED.search(line) or any(owner.get(name, path.stem) != path.stem for name in NAMED_SHIFT.findall(line))]
+    report("packed", found)
+
+
+def test_byte_order_helpers_only_in_bytes_header():
+    report("byteorder", [f"byteorder {rel(path)}  | {name}" for path in sources() if path.name != "bytes.h"
+                         for name in DEFINE.findall(strip(path.read_text(errors="replace"))) if name in BYTE_ORDER])
 
 
 LAYERS = ["data", "engine", "ui", "platform"]

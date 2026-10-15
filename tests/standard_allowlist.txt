@@ -1,10 +1,12 @@
 # Open exceptions of tests/test_standard.py. One per line: <check> <target> <reason>.
 # Targets are paths relative to port/src/, constant names, or function names.
+decimal data/csbimage.c byte sizes in the table of APPB addresses
+decimal ui/musicmap.c the FM-Towns CSB track of each square: table data of the CHTWE.EXP soundtrack table, not in the game files
+decimal ui/music.c the FM-Towns level tracks and the Super NES trigger squares: table data of the soundtracks, not in the game files
 hex data/csbimage.c addresses of the APPB tables
 hex data/csbtext.c addresses of the APPB tables
 hex engine/map.c record layout accessors
 hex engine/map.h record layout accessors
-decimal data/csbimage.c byte sizes in the table of APPB addresses
 long engine/action.c:action_is_action_performed one short case for each action of the action table
 long engine/group.c:group_get_damage_creature_outcome open: module cleanup
 long engine/projectile.c:projectile_has_impact_occurred open: module cleanup
@@ -16,5 +18,77 @@ long ui/command.c:click_in_dungeon_view open: module cleanup
 long ui/view.c:explosions open: module cleanup
 long ui/view.c:things open: module cleanup
 long ui/view.c:map_square open: module cleanup
-decimal ui/musicmap.c the FM-Towns CSB track of each square: table data of the CHTWE.EXP soundtrack table, not in the game files
-decimal ui/music.c the FM-Towns level tracks and the Super NES trigger squares: table data of the soundtracks, not in the game files
+notation MAX_DUNGEON_SIZE open: module cleanup
+notation SLIME_POISON_RANDOM_MASK open: module cleanup
+notation TEXT_CODE_MASK open: module cleanup
+notation FEAR_RANDOM_MASK open: module cleanup
+notation TORCH_BURN_INTERVAL_MASK open: module cleanup
+notation CMD_WIDE_COUNT open: module cleanup
+notation WOUND_PROBABILITY_MASK open: module cleanup
+notation CHAMPION_RECORD_SIZE open: module cleanup
+notation GENERATOR_COUNT_FIELD_MASK open: module cleanup
+notation TIME_EFFECTS_SLEEPING_MASK open: module cleanup
+notation DAMAGE_SIZE_SMALL open: module cleanup
+notation STRENGTH_DAMAGE_RANDOM_MASK open: module cleanup
+notation VIEWPORT_SIZE open: module cleanup
+notation PROJECTILE_EVENT_STEP_ENERGY_MASK open: module cleanup
+notation G_PORTRAIT_HEIGHT open: module cleanup
+notation EXPLOSION_ATTACK_MIN open: module cleanup
+notation MUSIC_COUNT_SIGN open: module cleanup
+notation THROW_ATTACK_RANDOM_MASK open: module cleanup
+notation PROJECTILE_EVENT_XY_MASK open: module cleanup
+notation CMD_COLOR_MASK open: module cleanup
+notation FOOD_WATER_RANDOM_MASK open: module cleanup
+notation WEAK_HIT_RANDOM_MASK open: module cleanup
+notation PROJECTILE_ENERGY_MIN open: module cleanup
+notation POSITION_XY_MASK open: module cleanup
+notation MAP_COORD_MASK open: module cleanup
+notation INVOKE_ACTION_RANDOM_MASK open: module cleanup
+notation NIBBLE_MASK open: module cleanup
+notation THEFT_FLEE_RANDOM_MASK open: module cleanup
+notation FIRE_ATTACK_RANDOM_MASK open: module cleanup
+notation CREATURE_DAMAGE_RANDOM_MASK open: module cleanup
+notation G_PORTRAIT_WIDTH open: module cleanup
+notation CHAMPION_ICON_SIZE open: module cleanup
+notation POSITION_MAP_MASK open: module cleanup
+notation STATISTICS_RESTORE_MASK open: module cleanup
+notation STATISTICS_RESTORE_SLEEPING_MASK open: module cleanup
+notation GLYPH_SIZE open: module cleanup
+notation POTION_POWER_RANDOM_MASK open: module cleanup
+notation SAVE_CHAMPIONS_BYTES open: module cleanup
+notation STRENGTH_RANDOM_MASK open: module cleanup
+notation DAMAGE_SIZE_LARGE open: module cleanup
+notation H_SAVED_GAME_BYTES open: module cleanup
+notation TIME_EFFECTS_MASK open: module cleanup
+notation WOUND_THRESHOLD_RANDOM_MASK open: module cleanup
+notation ATTACK_RANGE_RANDOM_MASK open: module cleanup
+notation AMIGA_CHANNEL_MASK open: module cleanup
+notation AIM_RANDOM_MASK open: module cleanup
+notation DOUBLE_DAMAGE_RANDOM_MASK open: module cleanup
+notation SQUARE_COMBO_MIN open: module cleanup
+notation SHIFT_COUNT_MASK open: module cleanup
+notation SPELL_KIND_MASK open: module cleanup
+notation SPELL_TYPE_MASK open: module cleanup
+notation ARMOUR_RANDOM_MASK open: module cleanup
+notation ACTION_DISABLED_TICKS open: module cleanup
+notation PORTRAIT_SIZE open: module cleanup
+notation SLIME_ATTACK_RANDOM_MASK open: module cleanup
+notation THROW_ENERGY_RANDOM_MASK open: module cleanup
+numbered HEADER_BYTE_12A open: module cleanup
+numbered event79_count_footprints open: module cleanup
+numbered event73_count_thieves_eye open: module cleanup
+numbered event71_count_invisibility open: module cleanup
+numbered H_BYTE_12A open: module cleanup
+packed engine/timeline_process.c open: module cleanup
+packed engine/recruit.c open: module cleanup
+packed ui/view.c open: module cleanup
+packed platform/control.c open: module cleanup
+packed data/ftl.c open: module cleanup
+packed data/csbtext.c open: module cleanup
+packed data/tables.c open: module cleanup
+packed platform/main.c open: module cleanup
+packed engine/group.c open: module cleanup
+packed engine/game.c open: module cleanup
+packed engine/projectile.c open: module cleanup
+packed data/graphics.c open: module cleanup
+packed engine/random.c open: module cleanup
