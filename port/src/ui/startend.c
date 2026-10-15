@@ -33,15 +33,6 @@
 #define BUTTON_BORDER       0x102988 /* outer border x, y of an endgame button */
 #define BUTTON_INNER_BORDER 0x10298c /* inner border x, y */
 
-#define GFX_CREDITS                  5
-#define GFX_THE_END                  6
-#define GFX_CHAMPION_FRAME           346
-#define ZONE_THE_END                 5
-#define ZONE_RESTART_BUTTON          437
-#define ZONE_QUIT_BUTTON             438
-#define ZONE_CHAMPION_FRAME_FIRST    412 /* + champion */
-#define ZONE_CHAMPION_PORTRAIT_FIRST 416
-
 #define QUIT_CONFIRM_TICKS       100 /* QUIT asks for confirmation when no save or load is this recent */
 #define DEATH_WAIT_FRAMES        240
 #define THE_END_WAIT_FRAMES      300

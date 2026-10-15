@@ -144,15 +144,6 @@ enum {
     STAIRS_SIDE_D0L,
 };
 
-/* Layout bitmap ids outside g_wall_set_layout_ids: parts of the D3L stairs and of the D1C wall. */
-enum {
-    LAYOUT_STAIRS_UP_FRONT_D3L2 = -33,
-    LAYOUT_STAIRS_UP_FRONT_D3R2 = -34,
-    LAYOUT_STAIRS_DOWN_FRONT_D3L2 = -35,
-    LAYOUT_STAIRS_DOWN_FRONT_D3R2 = -36,
-    LAYOUT_INSCRIPTION_WALL = -51,
-};
-
 enum { BLIT_TRANSPARENT, BLIT_OPAQUE, BLIT_FLIPPED }; /* draw_wall_set_bitmap variants */
 enum { TRANSPARENT_COLOR = 10, DOOR_ORNAMENT_TRANSPARENT = 9, PORTRAIT_TRANSPARENT = 1 };
 

@@ -101,7 +101,7 @@ Layout (item 696). The scratch script `txt.py` compares the zone records with `d
 | `GFX_OBJECT_NAMES` | 694 | `ids.h`, `ui.c` | TXT1 encoding. |
 | `GFX_ACTION_NAMES` | 699 | `ids.h`, `ui.c` | Empty. |
 | `GFX_STRINGS` | 700 | `ids.h`, `ui.c`, `champion.c` | Empty. |
-| `LAYOUT_GRAPHIC` zones 437, 438 | 696 | `startend.c` | Zones are not present. |
+| `GFX_LAYOUT` zones 437, 438 | 696 | `startend.c` | Zones are not present. |
 | `GFX_CREATURE_FIRST` + aspect | 584–670 | `ids.h`, `view.c` | Other bitmaps and sizes. `view.c` reads the size from the bitmap. |
 | Wall ornaments 56–59 | 371–378 | `view.c` | Placeholders. CSB maps must not use them. |
 

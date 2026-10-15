@@ -240,7 +240,7 @@ void menus_draw_spell_area_controls(uint16_t champion_index)
     ui_fill_zone(&screen, ZONE_SPELL_AREA_TABS, COLOR_BLACK);
     for (uint16_t i = 0; i < 4; i++)
         if (i < g_party_champion_count && g_champions[i].current_health)
-            ui_xor_screen_zone(ZONE_SPELL_TAB_FIRST + champion_index * SPELL_TAB_STEP + i);
+            ui_xor_screen_zone(ZONE_SPELL_CASTER_TAB_FIRST + champion_index * SPELL_TAB_STEP + i);
     ui_print_zone(&screen, ZONE_SPELL_CASTER_NAME_FIRST + champion_index * SPELL_TAB_STEP, COLOR_BLACK, COLOR_CYAN,
                   g_champions[champion_index].name);
 }

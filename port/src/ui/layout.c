@@ -3,7 +3,6 @@
 #include "ids.h"
 #include "layout.h"
 
-#define LAYOUT_GRAPHIC   696
 #define LAYOUT_SIGNATURE 0xfc0d
 #define S16(p, i)        ((int16_t)BE16((p) + 2 * (i))) /* signed word i */
 
@@ -49,7 +48,7 @@ static int16_t zone_y(const uint8_t *r)
 /* init_layout: keeps the raw layout graphic. Returns 0 on success. */
 int layout_init(void)
 {
-    data = gfx_item(LAYOUT_GRAPHIC, &size);
+    data = gfx_item(GFX_LAYOUT, &size);
     if (!data || size < LAYOUT_HEADER_BYTES || BE16(data) != LAYOUT_SIGNATURE ||
         LAYOUT_HEADER_BYTES + RANGE_BYTES * S16(data, 1) > size)
         return data = NULL, -1;

@@ -2,6 +2,7 @@
 #include "dialog.h"
 #include "command.h"
 #include "ftl.h"
+#include "ids.h"
 #include "layout.h"
 #include "message.h"
 #include "startend.h"
@@ -18,24 +19,8 @@
 #define MESSAGE_COUNT     2
 #define MESSAGE_LINE_SIZE 64
 
-#define GFX_DIALOG                0
-#define ZONE_DIALOG_ON_SCREEN     5 /* the viewport bitmap on the inactive game screen */
-#define ZONE_VERSION              450
-#define ZONE_PATCH_ONE_CHOICE     451 /* hides the dividers of the 3-choice dialog graphic */
-#define ZONE_PATCH_TWO_CHOICES    452
-#define ZONE_PATCH_FOUR_CHOICES   453
-#define LAYOUT_PATCH_ONE_CHOICE   54 /* layout bitmap -54: the part of the graphic to copy */
-#define LAYOUT_PATCH_TWO_CHOICES  55
-#define LAYOUT_PATCH_FOUR_CHOICES 56
-#define ZONE_CHOICE_SINGLE        462
-#define ZONE_CHOICE_TOP           463
-#define ZONE_CHOICE_FOUR_FIRST    464 /* 464-467: four choices */
-#define ZONE_CHOICE_BOTTOM_LEFT   466
-#define ZONE_CHOICE_BOTTOM_RIGHT  467
-#define ZONE_MESSAGE_ONE_CHOICE   469
-#define ZONE_MESSAGE              471
-#define PRESS_FRAMES              5
-#define WIDE_MESSAGE_SHIFT        3 /* a message wider than 7/8 of the zone takes two lines */
+#define PRESS_FRAMES       5
+#define WIDE_MESSAGE_SHIFT 3 /* a message wider than 7/8 of the zone takes two lines */
 
 int16_t g_dialog_choice = DIALOG_NO_CHOICE;
 int16_t g_game_screen_inactive = 1;

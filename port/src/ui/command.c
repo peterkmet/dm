@@ -44,8 +44,6 @@
 enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 };  /* the mouth blinks when it eats an object up */
 #define VI_ALTAR_REBIRTH_EFFECT 2                        /* event 13 effect byte */
 #define HAND_SLOT_BOX_COUNT     (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
-#define ZONE_THROW_LEFT         745                      /* + 1 right: the upper view where a thrown object flies */
-#define ZONE_THROW_DOOR_LEFT    748                      /* + 1 right: the same with a door in front */
 
 enum { VIEW_CELL_FRONT_FIRST = 2, VIEW_CELL_COUNT = 4 }; /* view cells 0-1 on the party square, 2-3 ahead */
 
