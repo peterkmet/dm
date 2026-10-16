@@ -11,7 +11,7 @@
 
 /* Reads an animation file. Its chunks must end exactly at the file end. Returns 0 or -1. */
 int anim_open(const char *path);
-/* Runs the chunks up to the next frame and draws the frame into fb with its palette. Returns the
+/* Runs the chunks up to the next frame and draws the frame into g_screen with its palette. Returns the
    frames (50 Hz) that the frame stays, or ANIM_END. */
 int16_t anim_next_frame(void);
 void anim_close(void);

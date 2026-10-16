@@ -1128,7 +1128,7 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
         map_step(dir, square_views[i].forward, square_views[i].right, &sx, &sy);
         draw_square(&square_views[i], dir, (Location){sx, sy});
     }
-    Bitmap screen = {SCREEN_W, SCREEN_H, &fb[0][0]};
+    Bitmap screen = video_get_screen();
     int16_t width = g_view.viewport.w;
     int16_t height = g_view.viewport.h;
     Box box;
@@ -1442,7 +1442,7 @@ bool view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
     if (m != g_view.map)
         view_load_map(m);
     int16_t light = g_session.cheat_light ? 0 : g_party_light_level;
-    memcpy(palette, g_view.dungeon_palettes[light], sizeof g_view.dungeon_palettes[light]);
+    memcpy(g_screen.palette, g_view.dungeon_palettes[light], sizeof g_view.dungeon_palettes[light]);
     view_draw(NORMALIZE(dir), x, y);
     return true;
 }

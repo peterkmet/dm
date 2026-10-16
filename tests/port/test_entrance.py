@@ -6,6 +6,7 @@ import ctypes
 import pytest
 
 from dmtest import constants as C
+from dmtest.game import screen as video_screen
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -25,7 +26,7 @@ def lib():
 
 
 def screen(lib):
-    return bytes((ctypes.c_uint8 * (C.SCREEN_W * C.SCREEN_H)).in_dll(lib, "fb"))
+    return bytes(video_screen(lib).px)
 
 
 def test_doors_open_in_64_steps_of_2_frames(lib):
@@ -72,7 +73,7 @@ WHITE, GRAY, DARK, YELLOW = 0xFFF, 0xAAA, 0x444, 0xFF0
 @pytest.mark.skipif(not SWSH.exists(), reason="game/SWSH.FTL missing")
 def test_ftl_logo_lasts_as_its_sound(lib):
     """SWSH.FTL: the logo in a palette script, shown until the sound (9078 bytes at period 334) ends."""
-    pal = (ctypes.c_uint16 * 32).in_dll(lib, "palette")
+    pal = video_screen(lib).palette
     shots = []
     hook = HOOK(lambda: shots.append((screen(lib), list(pal[:16]))))
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = ctypes.cast(hook, ctypes.c_void_p).value

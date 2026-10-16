@@ -52,7 +52,7 @@ void text_draw(Bitmap *bm, int x, int y, uint8_t fg, uint8_t bg, const char *s)
 
 void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s)
 {
-    Bitmap screen = {SCREEN_W, SCREEN_H, &fb[0][0]};
+    Bitmap screen = video_get_screen();
     text_draw(&screen, x, y, fg, bg, s);
 }
 

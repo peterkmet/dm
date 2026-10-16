@@ -16,7 +16,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.control import Client
-from dmtest.game import (pending_damage, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
+from dmtest.game import (screen, pending_damage, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
                          start_game, session)
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
@@ -55,7 +55,7 @@ def zone_box(game, zone):
 
 
 def pixels(game, zone):
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(game.lib, "fb")
+    fb = screen(game.lib).px
     b = zone_box(game, zone)
     return [fb[(b.y + y) * 320 + b.x + x] for y in range(b.h) for x in range(b.w)]
 
@@ -65,7 +65,7 @@ def screenshot(game, name):
     if not PNG_DIR:
         return
     lib, scale = game.lib, 2
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    fb = screen(lib).px
     rows = []
     for y in range(200):
         row = b"".join(lib.video_convert_argb(lib.video_get_color(y, fb[y * 320 + x])).to_bytes(4, "big")[1:] * scale for x in range(320))
@@ -166,7 +166,7 @@ def test_automap_stops_the_game_time_and_draws_the_map(game):
     assert game.value("g_automap_open") == 1
     view = pixels(game, C.ZONE_VIEWPORT)
     assert C.COLOR_YELLOW in view  # the party arrow, in the interface palette
-    palette = list((u16 * 32).in_dll(game.lib, "palette"))
+    palette = list(screen(game.lib).palette)
     assert palette[:16] == palette[16:]  # the viewport rows use the interface palette
     screenshot(game, "adv_automap.png")
     press(game, C.KEY_UP, 50)
@@ -552,19 +552,19 @@ def test_cheat_light_draws_the_bright_palette(game):
     lib, party = game.lib, Party.in_dll(game.lib, "g_party")
     place = {n: c16.in_dll(lib, n) for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")}
     start = {n: v.value for n, v in place.items()}
-    palette = (u16 * 16).in_dll(lib, "palette")
+    palette = screen(lib).palette
     try:
         for name, v in zip(place, (1, 14, 4, 3)):  # map 1 has darkness
             place[name].value = v
         party.magical_light_amount = 1000
         lib.gameloop_draw_view()
-        bright = list(palette)
+        bright = palette[:16]
         party.magical_light_amount = -1000
         lib.gameloop_draw_view()
-        assert list(palette) != bright
+        assert palette[:16] != bright
         session(lib).cheat_light = 1
         lib.gameloop_draw_view()
-        assert list(palette) == bright
+        assert palette[:16] == bright
         assert game.value("g_party_light_level") == 5  # the creatures still see the darkness
     finally:
         session(lib).cheat_light = 0

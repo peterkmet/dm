@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import ActionList, Location, Party, Position, scrub_free_groups, state, session
+from dmtest.game import ActionList, Location, Party, Position, scrub_free_groups, state, session, screen
 from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
 from dmtest.markers import needs_dm
 
@@ -37,7 +37,7 @@ def snapshot(game):
     """SHA-256 of the saved game state and of the screen after a scenario."""
     scrub_free_groups(game.lib)
     s = state(game)
-    fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(game.lib, "fb"))
+    fb = bytes(screen(game.lib).px)
     return {"state": hashlib.sha256(repr(sorted(s.items())).encode()).hexdigest(), "screen": hashlib.sha256(fb).hexdigest()}
 
 

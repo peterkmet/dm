@@ -27,9 +27,7 @@
 #define PALETTE_COUNT_BYTES     2   /* PL: entry count word before the entries */
 #define PALETTE_ENTRY_BYTES     4   /* color index, red, green, blue: 4 bits each */
 #define COLOR_NIBBLE            15  /* one 4-bit color component */
-#define RED_SHIFT               8   /* Amiga color: red, green, blue nibbles */
-#define GREEN_SHIFT             4
-#define SAMPLE_VOLUME_BYTES     2 /* SO: left and right volume bytes after the chunk header */
+#define SAMPLE_VOLUME_BYTES     2   /* SO: left and right volume bytes after the chunk header */
 #define MAX_MUSIC               32
 #define MUSIC_PERIOD            328 /* the sample period of every music segment of the CSB disk B player */
 #define MUSIC_VOLUME            30
@@ -201,8 +199,7 @@ static void set_colors(const uint8_t *payload, uint16_t length)
     for (uint16_t i = 0; i < count && PALETTE_COUNT_BYTES + (i + 1) * PALETTE_ENTRY_BYTES <= length; i++) {
         const uint8_t *e = payload + PALETTE_COUNT_BYTES + i * PALETTE_ENTRY_BYTES;
         if (e[0] < PALETTE_COLORS)
-            colors[e[0]] =
-                (e[1] & COLOR_NIBBLE) << RED_SHIFT | (e[2] & COLOR_NIBBLE) << GREEN_SHIFT | (e[3] & COLOR_NIBBLE);
+            colors[e[0]] = video_amiga_color(e[1] & COLOR_NIBBLE, e[2] & COLOR_NIBBLE, e[3] & COLOR_NIBBLE);
     }
     palette_changed = 1;
 }
@@ -299,7 +296,7 @@ int16_t anim_next_frame(void)
             break;
         case TAG_FULL_FRAME:
         case TAG_DELTA_FRAME: { /* a delta frame skips the unchanged pixels */
-            Bitmap screen = ui_get_screen();
+            Bitmap screen = video_get_screen();
             gfx_expand_over(payload, length, &screen);
             if (palette_changed)
                 ui_set_screen_palette(colors);
@@ -315,7 +312,7 @@ int anim_play(const char *path)
 {
     if (anim_open(path))
         return -1;
-    memset(fb, 0, sizeof fb);
+    memset(g_screen.px, 0, sizeof g_screen.px);
     ui_set_screen_palette(colors);
     int running = 1;
     command_discard_all_input();

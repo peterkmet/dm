@@ -174,6 +174,16 @@ def session(lib):
     return Session.in_dll(lib, "g_session")
 
 
+class Screen(ctypes.Structure):
+    _fields_ = [("px", ctypes.c_uint8 * (320 * 200)), ("palette", ctypes.c_uint16 * 32),
+                ("split_top", ctypes.c_int16), ("split_bottom", ctypes.c_int16)]
+
+
+def screen(lib):
+    """The Screen of a loaded library."""
+    return Screen.in_dll(lib, "g_screen")
+
+
 class PendingDamage:
     """The pending damage of each champion, as the list of runtime fields."""
 
@@ -756,12 +766,12 @@ def recruit_from_mirrors(lib, n):
 
 def render(lib, name):
     """The dungeon view at the party start and the whole interface; saves a PNG in the scratchpad."""
-    ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, 320 * 200)
+    ctypes.memset(ctypes.addressof(screen(lib).px), 0, 320 * 200)
     party = [c16.in_dll(lib, n).value for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")]
     assert lib.view_render(*party)
     lib.ui_set_palette(None)
     lib.ui_draw_interface()
-    fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb"))
+    fb = bytes(screen(lib).px)
     return fb
 
 

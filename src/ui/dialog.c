@@ -30,7 +30,7 @@ static void draw_viewport(void)
         ui_draw_viewport();
         return;
     }
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     ui_set_screen_palette(NULL);
     ui_blit_zone(&screen, ui_get_viewport(), ZONE_DIALOG_ON_SCREEN, COLOR_NONE);
 }
@@ -127,7 +127,7 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
     while (count < MAX_CHOICES && choice[count])
         count++;
     if (!g_game_screen_shown)
-        memset(fb, COLOR_BLACK, sizeof fb);
+        memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px);
     if (choice1)
         draw_choices(viewport, choice, count);
     draw_messages(viewport, message, count == 1 ? ZONE_MESSAGE_ONE_CHOICE : ZONE_MESSAGE);

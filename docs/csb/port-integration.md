@@ -199,7 +199,7 @@ int select_screen(void);               /* the current screen, or SELECT_SCREEN_D
 int select_csb_choice(void);           /* SELECT_CSB_NEW_ADVENTURE, SELECT_CSB_RESUME, or SELECT_CSB_QUIT after SELECT_SCREEN_DONE */
 void select_key(int key);              /* SELECT_KEY_* */
 void select_click(int x, int y);       /* a left click in screen pixels */
-void select_draw(void);                /* draws the current screen on fb */
+void select_draw(void);                /* draws the current screen on g_screen */
 ```
 
 Results go to `g_adventure` and `g_session.mode`. `select_start` with both values given returns at once with `select_screen() == SELECT_SCREEN_DONE`.
@@ -221,9 +221,9 @@ Reuse these existing functions. Do not add a font renderer.
 | Need | Function | File |
 |---|---|---|
 | Load the font without KAOS | `gfx_open(path)` and `text_init()` | `graphics.c`, `text.c` |
-| Text on `fb` | `text_draw_screen(x, y, fg, bg, s)` | `text.c` |
+| Text on `g_screen` | `text_draw_screen(x, y, fg, bg, s)` | `text.c` |
 | Centered text width | `text_get_size(s, &w, &h)`, `FONT_CHAR_WIDTH`, `FONT_LINE_HEIGHT` | `text.c`, `text.h` |
-| Black background | `memset(fb, COLOR_BLACK, sizeof fb)` | `video.h` |
+| Black background | `memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px)` | `video.h` |
 | Own palette, no KAOS | `ui_set_screen_palette(colors)` with a 16-entry array | `ui.c` |
 | Color names | `COLOR_BLACK`, `COLOR_DARK_GRAY`, `COLOR_LIGHT_GRAY`, `COLOR_GOLD` | `ui.h` |
 

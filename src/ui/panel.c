@@ -22,6 +22,7 @@
 #include "ui/status.h"
 #include "ui/text.h"
 #include "ui/ui.h"
+#include "ui/video.h"
 #include "ui/view.h"
 #include <stdio.h>
 #include <string.h>
@@ -215,7 +216,7 @@ void panel_draw_skills(void)
 
 void panel_open(int16_t champion_index)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     Bitmap *viewport = ui_get_viewport();
     const Bitmap *bg = gfx_get_bitmap(GFX_INVENTORY);
     if (g_session.inventory_champion_index < 0)

@@ -677,7 +677,7 @@ static const struct {
     {"look",             send_look       },
 };
 
-/* Screenshot: fb as an RGB PNG with stored (uncompressed) deflate blocks. */
+/* Screenshot: g_screen as an RGB PNG with stored (uncompressed) deflate blocks. */
 
 #define ZLIB_METHOD        0x78  /* deflate, 32 KB window */
 #define ZLIB_FLAGS         0x01  /* no dictionary; header check bits */
@@ -702,11 +702,11 @@ static bool write_png(const char *path)
     enum { ROW = 1 + 3 * SCREEN_W, RAW = ROW * SCREEN_H, BLOCK = 65535 };
     enum { BLOCKS = (RAW + BLOCK - 1) / BLOCK, ZLIB = 2 + RAW + 5 * BLOCKS + 4 };
     static uint8_t raw[RAW], compressed[ZLIB];
-    for (int y = 0; y < SCREEN_H; y++) {
+    for (int16_t y = 0; y < SCREEN_H; y++) {
         uint8_t *pixel = raw + y * ROW;
         *pixel++ = 0; /* filter: none */
         for (int x = 0; x < SCREEN_W; x++) {
-            uint32_t argb = video_convert_argb(video_get_color(y, fb[y][x]));
+            uint32_t argb = video_convert_argb(video_get_color(y, g_screen.px[y][x]));
             *pixel++ = video_argb_red(argb);
             *pixel++ = video_argb_green(argb);
             *pixel++ = video_argb_blue(argb);

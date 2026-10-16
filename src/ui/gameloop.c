@@ -102,7 +102,7 @@ static void mark_seen_squares(void)
    the name of the leader hand object, the message area. */
 static void refresh_interface(void)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     status_draw_all(0);
     menus_refresh_spell_area(NULL);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
@@ -150,7 +150,7 @@ static void start_game(void)
 static void show_game(void)
 {
     g_game_screen_shown = true;
-    memset(fb, 0, sizeof fb);
+    memset(g_screen.px, 0, sizeof g_screen.px);
     ui_set_palette(NULL);
     ui_draw_interface();
     gameloop_draw_view();
@@ -200,7 +200,7 @@ static void start_loaded_game(bool confirm)
     group_add_all_active_groups();
     if (confirm) {
         g_game_screen_shown = false;
-        memset(fb, 0, sizeof fb);
+        memset(g_screen.px, 0, sizeof g_screen.px);
         dialog_draw(NULL, gfx_get_string(TEXT_GAME_LOADED), gfx_get_string(TEXT_OK), NULL, NULL, NULL);
         dialog_get_choice(1);
     }

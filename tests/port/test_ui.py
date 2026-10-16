@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import ActionList, Box, recruit_from_mirrors, render, reset, setup_ui, start_ui, zone_records, session
+from dmtest.game import ActionList, Box, recruit_from_mirrors, render, reset, setup_ui, start_ui, zone_records, session, screen
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
 
@@ -48,13 +48,12 @@ def emu(game):
 
 
 def test_palette_split(lib):
-    pal = (u16 * 32).in_dll(lib, "palette")
-    top, bottom = c16.in_dll(lib, "palette_split_top"), c16.in_dll(lib, "palette_split_bottom")
-    saved = list(pal), top.value, bottom.value
-    pal[3], pal[19], top.value, bottom.value = 0x123, 0x456, 33, 169
+    scr = screen(lib)
+    saved = list(scr.palette), scr.split_top, scr.split_bottom
+    scr.palette[3], scr.palette[19], scr.split_top, scr.split_bottom = 0x123, 0x456, 33, 169
     lib.video_get_color.restype = u16
     assert [lib.video_get_color(y, 3) for y in (0, 32, 33, 168, 169, 199)] == [0x456, 0x456, 0x123, 0x123, 0x456, 0x456]
-    pal[:], top.value, bottom.value = saved
+    scr.palette[:], scr.split_top, scr.split_bottom = saved
 
 
 @needs_dm
@@ -162,7 +161,7 @@ def test_render_inventory(game):
     recruit_from_mirrors(game, 2)
     render(game, "base")
     game.panel_open(0)
-    fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(game, "fb"))
+    fb = bytes(screen(game).px)
     assert session(game).inventory_champion_index == 0
     assert len(set(fb[320 * 33:320 * 169])) > 6
     game.panel_draw_skills()

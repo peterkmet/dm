@@ -63,11 +63,11 @@ static int show(const char *dir, int n)
         SDL_Log("cannot decode graphic %d", n);
         return 0;
     }
-    tables_get_palette(TABLES_PALETTE_DUNGEON, palette);
-    memset(fb, 0, sizeof fb);
+    tables_get_palette(TABLES_PALETTE_DUNGEON, g_screen.palette);
+    memset(g_screen.px, 0, sizeof g_screen.px);
     for (int y = 0; y < bm.h && y < SCREEN_H; y++)
         for (int x = 0; x < bm.w && x < SCREEN_W; x++)
-            fb[y][x] = bm.px[y * bm.w + x];
+            g_screen.px[y][x] = bm.px[y * bm.w + x];
     gfx_free_bitmap(&bm);
     return 1;
 }
@@ -87,7 +87,7 @@ static int view_start(const char *dir)
         SDL_Log("cannot load %s", path);
         return 0;
     }
-    memset(fb, 0, sizeof fb);
+    memset(g_screen.px, 0, sizeof g_screen.px);
     return view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
 }
 
@@ -707,7 +707,7 @@ int main(int argc, char **argv)
 
     random_init();
     for (int i = 0; i < PALETTE_COLORS; i++) /* gray ramp */
-        palette[i] = i * GRAY_STEP;
+        g_screen.palette[i] = i * GRAY_STEP;
     mode = options.graphic >= 0 ? MODE_SHOW : options.view ? MODE_VIEW : MODE_SELECT;
     if (mode == MODE_SHOW && !show(data_dir, options.graphic))
         return 1;

@@ -5,6 +5,7 @@ import struct
 import pytest
 
 from dmtest.game import Bitmap, Box, Position, setup_view, start_view, zone_records
+from dmtest.game import screen as video_screen
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
 
@@ -110,7 +111,7 @@ def test_zones_match_original(lib, emu):
 
 
 def screen(lib):
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    fb = video_screen(lib).px
     return bytes(fb)
 
 
@@ -127,7 +128,7 @@ VIEWS = {"start": None, "door": (0, 1, 13, 2), "ornament": (0, 4, 9, 3), "text":
 def test_render_view(game, name):
     lib, party = game
     m, x, y, d = VIEWS[name] or party
-    ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, 320 * 200)
+    ctypes.memset(ctypes.addressof(video_screen(lib).px), 0, 320 * 200)
     assert lib.view_render(m, x, y, d)
     first = screen(lib)
     assert lib.view_render(m, x, y, d)

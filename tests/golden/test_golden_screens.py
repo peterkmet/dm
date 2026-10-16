@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Golden snapshot of the champion screens: status boxes, the inventory panel, the action and spell areas."""
 
-import ctypes
 import hashlib
 import json
 import os
@@ -11,6 +10,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.golden import add_second_champion, golden_game, recruit, zone_box
+from dmtest.game import screen as video_screen
 from dmtest.markers import needs_dm
 
 GOLDEN = Path(__file__).with_name("screens.json")
@@ -24,7 +24,7 @@ def game():
 
 def screen(game):
     """SHA-256 of the frame buffer."""
-    return hashlib.sha256(bytes((ctypes.c_uint8 * (320 * 200)).in_dll(game.lib, "fb"))).hexdigest()
+    return hashlib.sha256(bytes(video_screen(game.lib).px)).hexdigest()
 
 
 def check(name, got):

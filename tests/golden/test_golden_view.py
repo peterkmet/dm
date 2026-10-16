@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from dmtest.game import setup_view, start_view
+from dmtest.game import setup_view, start_view, screen
 from dmtest.lib import load_lib
 from dmtest.markers import needs_dm
 
@@ -25,7 +25,7 @@ def game():
 
 def map_rows(lib, m):
     """CRC-32 of the frame buffer of all views of each row of map m."""
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    fb = screen(lib).px
     rows = []
     for y in range(lib.dungeon_map_height(m)):
         crc = 0

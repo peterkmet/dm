@@ -41,7 +41,7 @@ void select_key(int key);
 void select_click(int x, int y);
 /* The click box of item index item on the current screen. Returns false when there is no such item. */
 bool select_item_box(int item, Box *box);
-/* Draws the current screen on fb with its own palette. The font must be loaded (text_init). */
+/* Draws the current screen on g_screen with its own palette. The font must be loaded (text_init). */
 void select_draw(void);
 
 #endif

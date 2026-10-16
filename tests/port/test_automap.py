@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Position
+from dmtest.game import Position, screen
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -224,7 +224,7 @@ def test_png_after_walking(game):
     px = draw(game, w, h, Box(0, 0, w, h))
     assert len(set(px)) > 3
     game.ui_set_screen_palette(None)
-    pal = (ctypes.c_uint16 * 16).in_dll(game, "palette")
+    pal = screen(game).palette
     rows = [[(pal[px[y * w + x]] >> s & 15) * 17 for x in range(w) for _ in range(scale) for s in (8, 4, 0)] for y in range(h)]
     if PNG_DIR:
         png(Path(PNG_DIR) / "automap.png", [row for row in rows for _ in range(scale)])

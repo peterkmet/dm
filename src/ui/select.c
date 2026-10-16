@@ -192,9 +192,9 @@ void select_click(int x, int y)
 
 void select_draw(void)
 {
-    Bitmap bm = ui_get_screen();
+    Bitmap bm = video_get_screen();
     Box b;
-    memset(fb, COLOR_BLACK, sizeof fb);
+    memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px);
     ui_set_screen_palette(select_palette);
     if (screen == SELECT_SCREEN_DONE)
         return;

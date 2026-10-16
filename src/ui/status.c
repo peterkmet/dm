@@ -36,7 +36,7 @@ static void draw_bar_graphs(int16_t champion_index)
         {champion->current_stamina, champion->maximum_stamina},
         {champion->current_mana,    champion->maximum_mana   }
     };
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     for (int k = 0; k < BAR_COUNT; k++) {
         Box bar, empty;
         if (!ui_zone_box(ZONE_BAR_FIRST + BAR_ZONE_STEP * k + champion_index, &bar))
@@ -63,7 +63,7 @@ void status_draw_slot(int16_t champion_index, int16_t slot)
     const Champion *champion = &g_champions[champion_index];
     bool inv = champion_index == g_session.inventory_champion_index;
     int16_t slot_box, border = -1, icon;
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     Box border_box;
     if (inv) {
         slot_box = slot + UI_SLOT_BOX_INVENTORY_FIRST;
@@ -99,7 +99,7 @@ void status_draw_slot(int16_t champion_index, int16_t slot)
 
 void status_draw_damage(int16_t champion_index, int16_t damage)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     char buf[8];
     bool inv = champion_index == g_session.inventory_champion_index;
     int16_t zone = champion_index + (inv ? ZONE_PORTRAIT_DAMAGE_FIRST : ZONE_STATUS_BOX_DAMAGE_FIRST);
@@ -117,7 +117,7 @@ static void draw_icon(int16_t champion_index)
     int16_t icon_height = tables_get_champion_icon_height();
     uint8_t px[CHAMPION_ICON_MAX * CHAMPION_ICON_MAX];
     Bitmap icon = {icon_width, icon_height, px};
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     const Bitmap *icons = gfx_get_bitmap(GFX_CHAMPION_ICONS);
     bool invisible = g_party.invisibility_count != 0;
     if (icon_width * icon_height > (int)sizeof px)
@@ -139,7 +139,7 @@ static void draw_icon(int16_t champion_index)
 /* Draws the portrait in the status box while the inventory is open. */
 static void draw_portrait(int16_t champion_index)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     Bitmap portrait = ui_get_champion_portrait(champion_index);
     int16_t zone = ZONE_STATUS_BOX_PORTRAIT_FIRST + champion_index;
     Box b;
@@ -156,7 +156,7 @@ static void draw_portrait(int16_t champion_index)
 static uint16_t draw_status_box(int16_t champion_index, uint16_t attr, bool inv)
 {
     const Champion *champion = &g_champions[champion_index];
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     int16_t shields[3], n = 0;
     Box box;
     ui_zone_box(ZONE_STATUS_BOX_FIRST + champion_index, &box);
@@ -181,7 +181,7 @@ static uint16_t draw_status_box(int16_t champion_index, uint16_t attr, bool inv)
 static uint16_t draw_name(int16_t champion_index, uint16_t attr, bool inv)
 {
     const Champion *c = &g_champions[champion_index];
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     uint8_t color = champion_index == g_leader_index ? COLOR_GOLD : COLOR_LIGHT_GRAY;
     if (!inv) {
         ui_fill_zone(&screen, ZONE_STATUS_BOX_NAME_FIRST + champion_index, COLOR_DARK_GRAY);
@@ -199,7 +199,7 @@ void status_draw_champion(int16_t champion_index)
 {
     Champion *champion = &g_champions[champion_index];
     uint16_t attr = champion->attributes;
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     bool inv = champion_index == g_session.inventory_champion_index;
     if (!(attr & CHAMPION_ATTR_REDRAW_MASK))
         return;

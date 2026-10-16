@@ -11,7 +11,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.control import Client, pump, pumped, socket_dir
-from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game, Location, ProjectileLaunch, pending_damage
+from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game, Location, ProjectileLaunch, pending_damage, screen
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -327,7 +327,7 @@ def test_a_cast_leaves_the_cleared_runes_inverted_as_with_the_mouse(game):
     client = Client(game)
     champion = game.champions[0]
     mana = champion.current_mana
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    fb = screen(lib).px
     try:
         champion.current_mana = 100
         client.act("set_caster", champion=0)

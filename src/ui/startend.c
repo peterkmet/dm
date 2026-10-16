@@ -230,7 +230,7 @@ static void set_endgame_click_box(int16_t entry_index, const Box *b)
 /* A framed button with a text; its box becomes the click box of the endgame mouse table entry. */
 static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_index)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     int tw, th;
     Box button;
     if (!text_get_size(text, &tw, &th))
@@ -269,10 +269,10 @@ static void print_champion_skills(uint16_t champion_index, int y)
 /* The won game: each champion in a frame with the portrait, name, title, and base skill levels. */
 static void draw_champion_parade(void)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     int16_t portrait_width = tables_get_portrait_width();
     int16_t portrait_height = tables_get_portrait_height();
-    memset(fb, COLOR_DARKEST_GRAY, sizeof fb);
+    memset(g_screen.px, COLOR_DARKEST_GRAY, sizeof g_screen.px);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         const Champion *champion = &g_champions[i];
         ui_blit_graphic(&screen, GFX_CHAMPION_FRAME, ZONE_CHAMPION_FRAME_FIRST + i, COLOR_FLESH);
@@ -307,7 +307,7 @@ static Box get_csb_box(bool inner)
 /* CSB: RESTART THIS GAME in its fixed boxes. The click box is in the endgame mouse table. */
 static void csb_draw_restart_button(void)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     Box outer = get_csb_box(false);
     Box inner = get_csb_box(true);
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
@@ -319,12 +319,12 @@ static void csb_draw_restart_button(void)
 /* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. CSB has no QUIT. */
 static void draw_the_end(bool with_buttons)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     uint16_t colors[PALETTE_COLORS];
     for (int i = 0; i < PALETTE_COLORS; i++)
         colors[i] = THE_END_BACKGROUND;
     colors[COLOR_WHITE] = THE_END_WHITE;
-    memset(fb, COLOR_BLACK, sizeof fb);
+    memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px);
     ui_blit_graphic(&screen, GFX_THE_END, ZONE_DIALOG_ON_SCREEN, COLOR_NONE);
     if (with_buttons) {
         if (g_adventure == ADVENTURE_CSB) {
@@ -357,7 +357,7 @@ static bool wait_for_restart(void)
     command_set_only_mouse_input(-1);
     if (!g_restart_requested || g_quit_requested)
         return false;
-    memset(fb, COLOR_BLACK, sizeof fb);
+    memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px);
     int16_t loaded = startend_load_saved_game();
     g_restart_requested = false;
     if (!loaded)
@@ -369,7 +369,7 @@ static bool wait_for_restart(void)
 /* The credits screen until a key or a button is pressed. */
 static void show_credits(void)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     ui_blit_graphic(&screen, GFX_CREDITS, ZONE_SCREEN, COLOR_NONE);
     uint16_t credits_colors[PALETTE_COLORS];
     tables_get_palette(TABLES_PALETTE_CREDITS, credits_colors);

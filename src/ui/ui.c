@@ -55,10 +55,6 @@ bool ui_init(void)
     return gfx_load_strings();
 }
 
-Bitmap ui_get_screen(void)
-{
-    return (Bitmap){SCREEN_W, SCREEN_H, &fb[0][0]};
-}
 Bitmap *ui_get_viewport(void)
 {
     return &viewport;
@@ -95,7 +91,7 @@ void ui_xor_screen_zone(int16_t zone)
     for (int y = b.y; y < b.y + b.h; y++)
         for (int x = b.x; x < b.x + b.w; x++)
             if (x >= 0 && x < SCREEN_W && y >= 0 && y < SCREEN_H)
-                fb[y][x] ^= COLOR_CYAN;
+                g_screen.px[y][x] ^= COLOR_CYAN;
 }
 
 void ui_blit_graphic(Bitmap *dst, int16_t graphic, int16_t zone, int16_t transparent)
@@ -145,8 +141,8 @@ void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, con
 
 void ui_draw_viewport(void)
 {
-    Bitmap screen = ui_get_screen();
-    tables_get_palette(TABLES_PALETTE_INTERFACE, palette);
+    Bitmap screen = video_get_screen();
+    tables_get_palette(TABLES_PALETTE_INTERFACE, g_screen.palette);
     ui_blit_zone(&screen, &viewport, ZONE_VIEWPORT, COLOR_NONE);
 }
 
@@ -155,9 +151,9 @@ void ui_draw_viewport(void)
 void ui_set_screen_palette(const uint16_t *colors)
 {
     for (int i = 0; i < PALETTE_COLORS; i++)
-        palette[i] = colors ? colors[i] : tables_get_palette_color(TABLES_PALETTE_INTERFACE, i);
-    palette_split_top = 0;
-    palette_split_bottom = SCREEN_H;
+        g_screen.palette[i] = colors ? colors[i] : tables_get_palette_color(TABLES_PALETTE_INTERFACE, i);
+    g_screen.split_top = 0;
+    g_screen.split_bottom = SCREEN_H;
 }
 
 void ui_set_palette(const uint16_t *top)
@@ -165,12 +161,12 @@ void ui_set_palette(const uint16_t *top)
     Box b;
     for (int i = 0; i < PALETTE_COLORS; i++) {
         if (top)
-            palette[i] = top[i];
-        palette[PALETTE_COLORS + i] = tables_get_palette_color(TABLES_PALETTE_INTERFACE, i);
+            g_screen.palette[i] = top[i];
+        g_screen.palette[PALETTE_COLORS + i] = tables_get_palette_color(TABLES_PALETTE_INTERFACE, i);
     }
     if (ui_zone_box(ZONE_VIEWPORT, &b)) {
-        palette_split_top = b.y;
-        palette_split_bottom = b.y + b.h;
+        g_screen.split_top = b.y;
+        g_screen.split_bottom = b.y + b.h;
     }
 }
 
@@ -194,7 +190,7 @@ static void draw_messages(Bitmap *bm, int x, int y)
 
 void ui_draw_message_area(void)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     Box b;
     if (ui_zone_box(ZONE_MESSAGE_AREA, &b))
         draw_messages(&screen, b.x, b.y);
@@ -202,7 +198,7 @@ void ui_draw_message_area(void)
 
 void ui_draw_interface(void)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     ui_fill_zone(&screen, ZONE_SCREEN_TOP, COLOR_BLACK);
     ui_fill_zone(&screen, ZONE_SCREEN_RIGHT, COLOR_BLACK);
     ui_fill_zone(&screen, ZONE_SCREEN_BOTTOM, COLOR_BLACK);
@@ -264,7 +260,7 @@ void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon)
 {
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     Box b;
     if (slot_box < 0 || slot_box >= UI_SLOT_BOX_COUNT)
         return;
@@ -288,7 +284,7 @@ static int bones_champion(uint16_t thing)
 
 void ui_draw_leader_hand_object_name(uint16_t thing)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     char buf[BONES_NAME_SIZE];
     ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
     int16_t icon = object_get_icon_index(thing);

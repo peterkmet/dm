@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import global_type, session
+from dmtest.game import global_type, session, screen
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
 
@@ -264,7 +264,7 @@ def load_font(lib, folder):
 
 
 def colors_in(lib, box):
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    fb = screen(lib).px
     return {fb[y * 320 + x] for y in range(box.y, box.y + box.h) for x in range(box.x, box.x + box.w)}
 
 
@@ -273,7 +273,7 @@ def test_draw_items(lib):
     load_font(lib, GAME)
     start(lib)
     lib.select_draw()
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    fb = screen(lib).px
     assert fb[0] == fb[319] == fb[199 * 320] == fb[199 * 320 + 319] == C.COLOR_BLACK
     assert colors_in(lib, item_box(lib, DM)) == {C.COLOR_BLACK, C.COLOR_GOLD}
     assert colors_in(lib, item_box(lib, CSB)) == {C.COLOR_BLACK, C.COLOR_LIGHT_GRAY}

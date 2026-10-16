@@ -6,7 +6,7 @@ import subprocess
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import pending_damage, STEP_EAST, STEP_NORTH, Box, Party, Position, start_game, session
+from dmtest.game import pending_damage, STEP_EAST, STEP_NORTH, Box, Party, Position, start_game, session, screen
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
 
@@ -116,7 +116,7 @@ def test_game_runs_headless_with_auto_enter():
 
 
 def viewport_pixels(game):
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(game.lib, "fb")
+    fb = screen(game.lib).px
     x0, y0 = game.origin
     return [fb[(y0 + y) * 320 + x0 + x] for y in range(136) for x in range(224)]
 
@@ -157,14 +157,14 @@ def test_party_light_sets_the_darkness_of_view_and_rules(game):
     lib.explored_get_visible_depths.argtypes = [Position, c16]
     party = Party.in_dll(lib, "g_party")
     darkness = c16.in_dll(lib, "g_party_light_level")
-    pal = (u16 * 16).in_dll(lib, "palette")
+    pal = screen(lib).palette
     place = {n: c16.in_dll(lib, n) for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")}
     start = {n: v.value for n, v in place.items()}
 
     def view(light):
         party.magical_light_amount = light
         lib.gameloop_draw_view()
-        return darkness.value, list(pal), lib.explored_get_visible_depths(Position(1, 14, 4), 3)
+        return darkness.value, pal[:16], lib.explored_get_visible_depths(Position(1, 14, 4), 3)
 
     try:
         for n, v in zip(place, (1, 14, 4, 3)):  # map 1 has darkness, a long corridor ahead
@@ -210,7 +210,7 @@ def test_hand_object_name_follows_the_icon(game):
     game.run()
     box = Box()
     assert lib.ui_zone_box(17, ctypes.byref(box))  # the leader hand object name
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
+    fb = screen(lib).px
     name = lambda: [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
     before = name()
     game.click_zone(545)  # the mouth
@@ -272,7 +272,7 @@ def two_champions_with_runes(game):
 
 
 def spell_area(game):
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(game.lib, "fb")
+    fb = screen(game.lib).px
     box = Box()
     assert game.lib.ui_zone_box(C.ZONE_SPELL_AREA, ctypes.byref(box))
     return [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]

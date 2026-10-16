@@ -23,8 +23,8 @@ int logo_play(const char *path)
     uint16_t period = logo.period;
     uint32_t length = logo.sample_length;
     uint16_t colors[PALETTE_COLORS] = {0};
-    Bitmap screen = ui_get_screen();
-    memset(fb, 0, sizeof fb);
+    Bitmap screen = video_get_screen();
+    memset(g_screen.px, 0, sizeof g_screen.px);
     ui_set_screen_palette(colors);
     gfx_expand_over(logo.logo, logo.logo_bytes, &screen);
     audio_play_data((const int8_t *)logo.sample, (uint16_t)length, period, volumes); /* the voice takes a word length */

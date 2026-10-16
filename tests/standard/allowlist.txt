@@ -64,7 +64,6 @@ bool platform/main.c:load_kaos_and_graphics open: epic 11
 bool platform/platform.c:audio_open open: epic 11
 bool ui/anim.h:anim_open open: epic 8
 bool ui/layout.h:layout_get_zone_box open: epic 8
-global ui/video.h open: epic 8
 name ui/command.c:is_leader_hand_object_thrown open: epic 8
 name ui/command.c:touch_front_square_empty_handed open: epic 8
 name ui/gameloop.c:draw_spell_area_before_last_death open: epic 8

@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Interface drawing on fb: zones, blits, palette, object icons, hit tests, message area, action and
+/* Interface drawing on g_screen: zones, blits, palette, object icons, hit tests, message area, action and
    spell areas (KAOS MENU.C, parts of CHAMPION.C and INVENTORY.C). Graphics, zones, strings, and input
    tables come from Graphics.DAT and the KAOS image at run time. */
 
@@ -68,7 +68,6 @@
 bool ui_init(void);
 
 /* Shared helpers (ui.c). */
-Bitmap ui_get_screen(void);
 Bitmap *ui_get_viewport(void);            /* the dungeon view bitmap, 224 x 136 */
 bool ui_zone_box(int16_t zone, Box *box); /* the box of a layout zone on the screen */
 /* Fills the box of zone with one color. */

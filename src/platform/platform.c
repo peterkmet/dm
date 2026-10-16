@@ -135,19 +135,19 @@ void plat_present(void)
 {
     uint32_t pal[2 * PALETTE_COLORS], *px;
     int pitch, tw = SCREEN_W * filter;
-    const uint8_t *src = filter == 1 ? &fb[0][0] : &scaled_screen[0][0];
+    const uint8_t *src = filter == 1 ? &g_screen.px[0][0] : &scaled_screen[0][0];
     if (filter == 2)
-        scale2x(&fb[0][0], SCREEN_W, SCREEN_H, &scaled_screen[0][0]);
+        scale2x(&g_screen.px[0][0], SCREEN_W, SCREEN_H, &scaled_screen[0][0]);
     if (filter == 3)
-        scale3x(&fb[0][0], SCREEN_W, SCREEN_H, &scaled_screen[0][0]);
+        scale3x(&g_screen.px[0][0], SCREEN_W, SCREEN_H, &scaled_screen[0][0]);
     for (int i = 0; i < 2 * PALETTE_COLORS; i++)
-        pal[i] = video_convert_argb(palette[i]);
+        pal[i] = video_convert_argb(g_screen.palette[i]);
     if (!SDL_LockTexture(texture, NULL, (void **)&px, &pitch))
         return;
     int stride = pitch / ARGB_BYTES;
     for (int y = 0; y < SCREEN_H * filter; y++) {
         int row = y / filter;
-        int half = row >= palette_split_top && row < palette_split_bottom ? 0 : PALETTE_COLORS;
+        int half = row >= g_screen.split_top && row < g_screen.split_bottom ? 0 : PALETTE_COLORS;
         for (int x = 0; x < tw; x++)
             px[y * stride + x] = pal[(src[y * tw + x] & COLOR_INDEX_MASK) | half];
     }

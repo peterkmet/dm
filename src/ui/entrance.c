@@ -33,7 +33,7 @@ int16_t g_entrance_choice = ENTRANCE_WAITING;
    opened pixels. Returns true while a part of a door shows. */
 static bool show_doors(const Bitmap *view, int16_t opened)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     Box doors, work, door;
     int16_t width = 0;
     int16_t height = 0;
@@ -74,14 +74,14 @@ static bool show_doors(const Bitmap *view, int16_t opened)
 /* The entrance palette over the whole screen. */
 static void set_entrance_palette(void)
 {
-    tables_get_palette(TABLES_PALETTE_ENTRANCE, palette);
-    palette_split_top = 0;
-    palette_split_bottom = SCREEN_H;
+    tables_get_palette(TABLES_PALETTE_ENTRANCE, g_screen.palette);
+    g_screen.split_top = 0;
+    g_screen.split_bottom = SCREEN_H;
 }
 
 void entrance_draw(void)
 {
-    memset(fb, 0, sizeof fb);
+    memset(g_screen.px, 0, sizeof g_screen.px);
     set_entrance_palette();
     show_doors(NULL, 0);
 }
@@ -90,7 +90,7 @@ void entrance_press_button(bool resume)
 {
     static const uint8_t volumes[SIDE_COUNT] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
     const Bitmap *bm = gfx_get_bitmap(GFX_ENTRANCE_BUTTONS);
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     Box box;
     int16_t sx = 0;
     int16_t sy = 0;
@@ -116,7 +116,7 @@ void entrance_open_doors(void)
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
     Bitmap view = {box.w, box.h, view_px};
     for (int16_t y = 0; y < box.h; y++)
-        memcpy(view_px + y * box.w, &fb[box.y + y][box.x], (size_t)box.w);
+        memcpy(view_px + y * box.w, &g_screen.px[box.y + y][box.x], (size_t)box.w);
     set_entrance_palette();
     for (int16_t opened = 0, frames = 0; show_doors(&view, opened) && !g_quit_requested; opened += DOOR_STEP) {
         if (frames % SOUND_FRAMES == 0)

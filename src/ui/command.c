@@ -186,7 +186,7 @@ void command_highlight_disable(void)
     for (int y = highlight.y; y < highlight.y + highlight.h; y++)
         for (int x = highlight.x; x < highlight.x + highlight.w; x++)
             if (x >= 0 && x < SCREEN_W && y >= 0 && y < SCREEN_H)
-                fb[y][x] ^= COLOR_CYAN;
+                g_screen.px[y][x] ^= COLOR_CYAN;
     highlight_enabled = false;
 }
 
@@ -209,7 +209,7 @@ static void draw_viewport_message(int16_t text)
 
 void command_freeze_game(void)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     if (g_game_frozen)
         return;
     g_game_frozen = true;
@@ -306,7 +306,7 @@ void command_click_on_mouth(void)
 
 void command_release_dead_champion(uint16_t champion_index, int16_t leader_index)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     int16_t icon_cell = NORMALIZE(g_champions[champion_index].cell - g_party_direction);
     if (champion_index == g_session.inventory_champion_index) {
         pressing_eye = false;
@@ -335,7 +335,7 @@ static void show_candidate(void)
 /* Click in the resurrect/reincarnate panel of the candidate: accept or cancel it. */
 static void click_in_candidate_panel(int16_t x, int16_t y)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     int16_t command = ui_command_from_mouse(TABLES_MOUSE_RESURRECT, x, y, CLICK_LEFT_PRESS);
     int16_t index = g_party_champion_count - 1;
     if (!command || !g_leader_empty_handed)
@@ -376,7 +376,7 @@ static void click_in_status_box(int16_t champion_index, int16_t x, int16_t y)
    cell and swaps it with the champion there. */
 static void click_on_champion_icon(int16_t cell)
 {
-    Bitmap screen = ui_get_screen();
+    Bitmap screen = video_get_screen();
     if (dragged_icon_cell < 0) {
         if (champion_get_index_in_cell(NORMALIZE(cell + g_party_direction)) == -1)
             return;

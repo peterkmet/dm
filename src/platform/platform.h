@@ -26,7 +26,7 @@ int plat_filter_factor(const char *name);
 /* Selects the upscale filter (1 none, 2 Scale2x, 3 Scale3x) and recreates the texture. */
 bool plat_set_filter(int factor);
 void plat_quit(void);
-/* Shows fb with the split palette and the pointer, scaled into the window. */
+/* Shows g_screen with the split palette and the pointer, scaled into the window. */
 void plat_present(void);
 /* Returns true with the next key, mouse button, or quit event; mouse motion only moves the pointer. */
 bool plat_poll(PlatEvent *event);

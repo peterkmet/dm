@@ -10,6 +10,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.game import TimelineEvent, global_type, pending_damage, session
+from dmtest.game import screen as video_screen
 from dmtest.lib import clear_folder_hooks, load_lib, set_folder_hooks
 from dmtest.markers import GAME_CSB, ROOT, needs_csb, needs_csb_mini, needs_file
 
@@ -59,11 +60,11 @@ def value(lib, name, kind=c16):
 
 
 def screen(lib):
-    return bytes((ctypes.c_uint8 * (C.SCREEN_W * C.SCREEN_H)).in_dll(lib, "fb"))
+    return bytes(video_screen(lib).px)
 
 
 def palette(lib):
-    return list((u16 * 16).in_dll(lib, "palette"))
+    return video_screen(lib).palette[:16]
 
 
 def chunks(data):
@@ -389,7 +390,7 @@ def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     lib.anim_next_frame()
     first_frame, first_palette = screen(lib), palette(lib)
     lib.anim_close()
-    ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, C.SCREEN_W * C.SCREEN_H)
+    ctypes.memset(ctypes.addressof(video_screen(lib).px), 0, C.SCREEN_W * C.SCREEN_H)
     lib.map_set_current_map(m)
     event = TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)
     lib.event_process_wall(ctypes.byref(event))
