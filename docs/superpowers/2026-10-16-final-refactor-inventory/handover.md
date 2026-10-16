@@ -1,8 +1,8 @@
 # Final refactor: handover
 
-Date: 2026-10-16. State: survey done, PRD not written. Next session: read this file and the reports in this
-folder, ask the open questions below one at a time, write `docs/superpowers/2026-10-16-final-refactor.md`
-(PRD, gherkin for the epics), then one `prd-reviewer` pass (agentic-workflow step 3).
+Date: 2026-10-16. State: survey done, PRD written (`docs/superpowers/2026-10-16-final-refactor.md`), the
+user answered Q1-Q4 (see Decisions in the PRD). Next: the `prd-reviewer` pass (agentic-workflow step 3), then
+the plan (step 4) in `docs/superpowers/2026-10-16-final-refactor-plan.md`.
 
 The request (user, 2026-10-16): review the sources of the port (a reverse-engineered Amiga binary after a few
 refactor rounds) and propose the final refactor: readability, maintainability, coding standard, a clear
@@ -146,15 +146,21 @@ of the ctypes tests, the LLM protocol names.
 
 ## Open questions for the user (ask one at a time)
 
-- Q1. Rename `port/` to `src/` with the Makefile at the root (touches 25 docs and the commands in CLAUDE.md),
-  or keep `port/`? Recommendation: rename; the repository is the port now.
-- Q2. Global state scope: (a) only the result-passing globals become structs, every global gets `g_` and one
-  documented home; (b) also the engine state into a few structs (`Game`, `Party`, `Timeline`) with the ctypes
-  tests adapted. Recommendation: (a); (b) is a large churn with little gain for a port of a 1987 game.
+All four reports are in (2026-10-16, after the limit reset). Decided from the reports, no question needed:
+keep Make (no MSVC goal); a fifth layer `control/` for the LLM protocol (the socket stays in `platform/`);
+the soundtrack tables stay in source as a written exception of rule 6 (they are not in the game files);
+test folders by subject plus a `tests/dmtest/` helper package.
+
+- Q1. Keep `port/` (the reviewer's recommendation: less churn, `tools/dmtools` stays) with a root Makefile
+  front, or rename `port/src/` to `src/`?
+- Q2. Depth: (1) structural and mechanical only (modules, headers, layout, names, `bool`, statics, dead code,
+  tests, docs, build); (2) also the API shape (result globals to structs, `Square`/`Position` types, enum
+  results, one type per value, ordinals to indices, at most five parameters); (3) also the deep items (one
+  move chain for party, group and object; `Session` and `Screen` structs; the `view.c` placement context).
+  Recommendation: (2), with (3) as optional epics at the end of the plan.
 - Q3. License for the code (the game data stays excluded): MIT, GPL-3.0, or none.
-- Q4. CI on GitHub Actions (macOS: build with 0 warnings, clang-format, `test_standard`, the tests that skip
-  without game files): yes or no.
-- Q5. Build system: keep Make (incremental) or move to CMake. Recommendation: Make.
+- Q4. CI on GitHub Actions (macOS: build with 0 warnings, clang-format from PyPI, `test_standard`, the tests
+  that run without game files): yes or no.
 
 ## Agent briefs (to re-run a missing report)
 
