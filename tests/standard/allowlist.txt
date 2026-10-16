@@ -267,7 +267,6 @@ header ui/video.h open: epic 8
 header ui/view.h open: epic 8
 include engine/group.h:engine/event.h open: epic 5
 include engine/inventory.c:engine/sound.h open: epic 5
-include engine/inventory.h:engine/map.h open: epic 5
 include engine/move.c:engine/inventory.h open: epic 5
 include engine/move.c:engine/event.h open: epic 5
 include engine/projectile.h:engine/event.h open: epic 5
