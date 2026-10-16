@@ -37,9 +37,5 @@ extern int16_t palette_split_top, palette_split_bottom;
 uint32_t video_convert_argb(uint16_t amiga);
 /* Amiga color of index c on screen row y. */
 uint16_t video_get_color(int y, uint8_t c);
-/* Largest scale that fits the output with the screen's aspect ratio, centered (letterbox). */
-void video_layout(int out_w, int out_h, float *scale, float *ox, float *oy);
-/* Maps output pixel coordinates to game coordinates, clamped to the screen. */
-void video_map_mouse(int out_w, int out_h, int x, int y, int *gx, int *gy);
 
 #endif

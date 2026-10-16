@@ -23,6 +23,10 @@ def test_palette(lib):
     assert lib.video_convert_argb(0x0FFF) == 0xFFFFFFFF
 
 
+class OutputLayout(ctypes.Structure):
+    _fields_ = [("scale", ctypes.c_float), ("x", ctypes.c_float), ("y", ctypes.c_float)]
+
+
 @pytest.mark.parametrize(
     "out, pos, game",
     [
@@ -37,7 +41,9 @@ def test_palette(lib):
 )
 def test_mouse_mapping(lib, out, pos, game):
     gx, gy = ctypes.c_int(), ctypes.c_int()
-    lib.video_map_mouse(*out, *pos, ctypes.byref(gx), ctypes.byref(gy))
+    lib.output_layout.restype = OutputLayout
+    layout = lib.output_layout(*out)
+    lib.output_map_mouse(ctypes.byref(layout), *pos, ctypes.byref(gx), ctypes.byref(gy))
     assert (gx.value, gy.value) == game
 
 

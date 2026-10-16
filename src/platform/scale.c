@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "platform/scale.h"
+#include "ui/video.h"
+#include <math.h>
 #include <stdbool.h>
 
 /* The source pixel at (x, y); positions outside the image repeat the edge pixel. */
@@ -65,4 +67,25 @@ void scale3x(const uint8_t *src, int width, int height, uint8_t *dst)
             out_bottom[1] = (D == H && E != I) || (H == F && E != G) ? H : E;
             out_bottom[2] = H == F ? F : E;
         }
+}
+
+OutputLayout output_layout(int out_w, int out_h)
+{
+    float sx = (float)out_w / SCREEN_W;
+    float sy = (float)out_h / SCREEN_H;
+    float s = sx < sy ? sx : sy;
+    if (s <= 0)
+        s = 1; /* minimized window: avoid a zero scale */
+    return (OutputLayout){s, (out_w - SCREEN_W * s) / 2, (out_h - SCREEN_H * s) / 2};
+}
+
+static int clamp(int v, int max)
+{
+    return v < 0 ? 0 : v > max ? max : v;
+}
+
+void output_map_mouse(const OutputLayout *layout, int x, int y, int *gx, int *gy)
+{
+    *gx = clamp((int)floorf((x - layout->x) / layout->scale), SCREEN_W - 1);
+    *gy = clamp((int)floorf((y - layout->y) / layout->scale), SCREEN_H - 1);
 }

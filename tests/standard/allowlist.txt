@@ -376,8 +376,6 @@ params ui/text.h:text_draw_box open: epic 8
 params ui/ui.c:ui_print_zone_padded open: epic 8
 params ui/ui.h:ui_print_zone_padded open: epic 8
 params ui/ui_champion.c:draw_stat_meter open: epic 8
-params ui/video.c:video_map_mouse open: epic 8
-params ui/video.h:video_map_mouse open: epic 8
 params ui/view.c:draw_cell_objects open: epic 8
 params ui/view.c:draw_creature open: epic 8
 params ui/view.c:draw_creatures_in_cell open: epic 8
