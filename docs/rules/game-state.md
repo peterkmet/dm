@@ -106,7 +106,7 @@ These globals are the values that the save file header stores.
 | C name | Original | Type |
 |---|---|---|
 | `g_timeline.events` | `0x103178` | `TimelineEvent *`, `g_timeline.capacity` slots |
-| `g_timeline` | `0x10317c` | `uint16_t *`, binary min-heap of slot indices |
+| `g_timeline.heap` | `0x10317c` | `uint16_t *`, binary min-heap of slot indices |
 | `g_timeline.count` | `0x103180` | `uint16_t`, heap size |
 | `g_timeline.first_unused` | `0x103182` | `int16_t`, head of the free list |
 | `g_timeline.high_water` | `0x103176` | `uint16_t`, highest used slot + 1 |

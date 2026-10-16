@@ -349,10 +349,10 @@ Only sensors for the clicked cell count. Data is the object type. The function r
 
 The timeline keeps future events in two arrays:
 
-- `g_timeline_events`: `g_event_max_count` slots of 10 bytes.
-- `g_timeline`: a binary min-heap of slot indices (uint16). `g_timeline_count` (`0x103180`) holds the heap size.
-- `g_first_unused_event_index` (`0x103182`) heads the free list.
-- `g_event_high_water` (`0x103176`, CSV name `g_event_count`) holds the highest used slot + 1. Linear scans use it as a bound. `timeline_reset` rebuilds it, the free list, and the heap size after a load. The save file stores the heap, the heap size, and the free list head.
+- `g_timeline.events`: `g_timeline.capacity` slots of 10 bytes.
+- `g_timeline.heap`: a binary min-heap of slot indices (uint16). `g_timeline.count` (`0x103180`) holds the heap size.
+- `g_timeline.first_unused` (`0x103182`) heads the free list.
+- `g_timeline.high_water` (`0x103176`, CSV name `g_event_count`) holds the highest used slot + 1. Linear scans use it as a bound. `timeline_reset` rebuilds it, the free list, and the heap size after a load. The save file stores the heap, the heap size, and the free list head.
 
 Heap order (`timeline_is_event_a_before_b`): earlier time (bits 0–23) first. On equal time, the larger word at offset 4 (type × 256 + priority) first. On a full tie, the lower slot address first. `timeline_fix_chronology(i)` sifts the entry at heap position `i` up, and down when it did not move up. `timeline_get_index` finds a slot in the heap with a linear search. It calls `fatal_error(0x46)` when the slot is missing.
 
@@ -553,7 +553,7 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the s
 ### Uncertain items
 
 - `command_touch_front_square_empty_handed` (`0x12159a`): plays sound 4 on a normal front square. On an imaginary fake wall it hides the mouse pointer while the right button is down. The ReDMCSB name is not confirmed.
-- `g_event_high_water` replaces the CSV name `g_event_count` (`0x103176`). The CSV name is misleading: the real event count is `g_timeline_count` (`0x103180`).
+- `g_timeline.high_water` replaces the CSV name `g_event_count` (`0x103176`). The CSV name is misleading: the real event count is `g_timeline.count` (`0x103180`).
 - `0x103fea` (action set byte 6) has no known reader.
 - The setter of `g_pending_click_present` is not visible in the Ghidra output.
 

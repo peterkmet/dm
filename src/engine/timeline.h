@@ -17,7 +17,7 @@ typedef struct {
 typedef struct {
     TimelineEvent *events; /* capacity slots, owned */
     uint16_t *heap;        /* min-heap of slot indices, owned */
-    int16_t capacity;      /* was g_timeline.capacity: the dungeon loader and the save set it */
+    int16_t capacity;      /* the dungeon loader and the save set it */
     uint16_t count;        /* events in the heap */
     uint16_t high_water;   /* slots below this index were used */
     int16_t first_unused;  /* first free slot, -1 none */
