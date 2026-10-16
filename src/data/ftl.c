@@ -16,10 +16,22 @@
 #define FTL_ENTRY_BYTES        12
 #define FTL_MAX_ENTRIES        100
 #define FTL_CHECKSUM_WEIGHTS   256 /* entry byte i counts i % 256 + 1 times */
-#define SECTION_INFO           16
-#define SECTION_DATA           17
-#define SECTION_CODE           18
-#define SECTION_COUNT          3
+#define FTL_FORMAT_VERSION     2   /* word at FTL_HEADER_VERSION */
+#define FTL_FORMAT_REVISION    1   /* byte after the version word */
+#define FTL_FORMAT_LEVEL       0   /* byte after the revision */
+#define FTL_SECTION_INFO       16
+#define FTL_SECTION_DATA       17
+#define FTL_SECTION_CODE       18
+
+/* The number of section kinds: info, data, code. */
+#define FTL_SECTION_KINDS 3
+
+/* Fields of a section entry. */
+#define FTL_ENTRY_TAG     0
+#define FTL_ENTRY_VERSION 2
+#define FTL_ENTRY_OFFSET  4
+#define FTL_ENTRY_SIZE    8
+#define FTL_ENTRY_FORMAT  1 /* the entry version that the loader accepts */
 
 /* Info section fields. The entry point offsets follow the fixed fields. */
 #define INFO_REGION_SIZE  0
@@ -62,8 +74,12 @@ typedef struct {
 static unsigned read_nibble(Nibbles *b, int count)
 {
     unsigned v = 0;
-    for (; count; count--, b->pos++)
-        v = v << NIBBLE_BITS | (b->pos < b->n ? b->s[b->pos / 2] >> (b->pos % 2 ? 0 : NIBBLE_BITS) & NIBBLE_MASK : 0);
+    for (; count; count--, b->pos++) {
+        unsigned nibble = 0;
+        if (b->pos < b->n)
+            nibble = b->s[b->pos / 2] >> (b->pos % 2 ? 0 : NIBBLE_BITS) & NIBBLE_MASK;
+        v = v << NIBBLE_BITS | nibble;
+    }
     return v;
 }
 
@@ -107,12 +123,12 @@ static uint16_t sum8(const uint8_t *p, size_t n)
 }
 
 /* Checks the file header and finds the info, data, and code sections. Returns 0 or -1. */
-static int find_sections(const uint8_t *raw, size_t len, const uint8_t *sec[SECTION_COUNT],
-                         uint32_t secsz[SECTION_COUNT])
+static int find_sections(const uint8_t *raw, size_t len, const uint8_t *sec[FTL_SECTION_KINDS],
+                         uint32_t secsz[FTL_SECTION_KINDS])
 {
     uint32_t count, s = 0;
-    if (len < FTL_HEADER_BYTES || BE16(raw) != FTL_MAGIC || BE16(raw + FTL_HEADER_VERSION) != 2 ||
-        raw[FTL_HEADER_VERSION + 2] != 1 || raw[FTL_HEADER_VERSION + 3] != 0)
+    if (len < FTL_HEADER_BYTES || BE16(raw) != FTL_MAGIC || BE16(raw + FTL_HEADER_VERSION) != FTL_FORMAT_VERSION ||
+        raw[FTL_HEADER_VERSION + 2] != FTL_FORMAT_REVISION || raw[FTL_HEADER_VERSION + 3] != FTL_FORMAT_LEVEL)
         return -1;
     count = BE16(raw + FTL_HEADER_ENTRY_COUNT);
     if (count > FTL_MAX_ENTRIES || len < FTL_HEADER_BYTES + count * FTL_ENTRY_BYTES)
@@ -125,15 +141,16 @@ static int find_sections(const uint8_t *raw, size_t len, const uint8_t *sec[SECT
         return -1; /* the checksum is the low word of the sum */
     for (uint32_t i = 0; i < count; i++) {
         const uint8_t *e = raw + FTL_HEADER_BYTES + i * FTL_ENTRY_BYTES;
-        uint16_t tag = BE16(e);
-        uint32_t off = BE32(e + 4);
-        uint32_t size = BE32(e + 8);
-        if (tag < SECTION_INFO || tag > SECTION_CODE)
+        uint16_t tag = BE16(e + FTL_ENTRY_TAG);
+        uint32_t off = BE32(e + FTL_ENTRY_OFFSET);
+        uint32_t size = BE32(e + FTL_ENTRY_SIZE);
+        if (tag < FTL_SECTION_INFO || tag > FTL_SECTION_CODE)
             continue;
-        if (BE16(e + 2) != 1 || sec[tag - SECTION_INFO] || off > len || size > len - off)
+        if (BE16(e + FTL_ENTRY_VERSION) != FTL_ENTRY_FORMAT || sec[tag - FTL_SECTION_INFO] || off > len ||
+            size > len - off)
             return -1;
-        sec[tag - SECTION_INFO] = raw + off;
-        secsz[tag - SECTION_INFO] = size;
+        sec[tag - FTL_SECTION_INFO] = raw + off;
+        secsz[tag - FTL_SECTION_INFO] = size;
     }
     return 0;
 }
@@ -187,10 +204,16 @@ static int write_jump_table(const uint8_t *info, uint32_t info_size, uint8_t *me
     return 0;
 }
 
+/* The address rounded up to the next word: the loader aligns each part of the image to a word. */
+static uint64_t align_to_word(uint64_t address)
+{
+    return (address + 1) & ~(uint64_t)1;
+}
+
 int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
 {
-    const uint8_t *sec[SECTION_COUNT] = {0};
-    uint32_t secsz[SECTION_COUNT] = {0};
+    const uint8_t *sec[FTL_SECTION_KINDS] = {0};
+    uint32_t secsz[FTL_SECTION_KINDS] = {0};
     uint8_t *code = NULL;
     uint8_t *mem = NULL;
     if (find_sections(raw, len, sec, secsz))
@@ -221,8 +244,8 @@ int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
     if (code_len < csize || sum8(codep, csize) != BE16(info + INFO_CODE_SUM))
         goto fail;
 
-    uint64_t data_base = base + ((dsize + 1ull) & ~1ull);
-    uint64_t code_base = (data_base + region + 1) & ~1ull;
+    uint64_t data_base = align_to_word(base + dsize);
+    uint64_t code_base = align_to_word(data_base + region);
     uint64_t size = code_base - base + csize;
     uint32_t rle_len = BE32(data + DATA_RLE_SIZE);
     uint32_t reloc_len = BE32(data + DATA_RELOC_SIZE);
