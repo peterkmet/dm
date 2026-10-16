@@ -93,7 +93,7 @@ format:
 
 check:
 	uv run clang-format --dry-run --Werror $(C_FILES)
-	uv run pytest -q tests/test_standard.py
+	uv run pytest -q tests/standard
 	$(MAKE) test
 
 dist:

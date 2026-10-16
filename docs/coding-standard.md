@@ -104,7 +104,8 @@ refactor; until the run ends, the allowlist carries the difference.
     (`REC(`), `g_current_map_data[` or `g_dungeon_map_data[`. [record]
 12. Read game data at run time; do not copy a game table into the source. Exception: a table that is not in
     the game files (the soundtrack tables of the other versions) stays in the source, named in the allowlist
-    with this reason. [decimal, allowlist]
+    with this reason; the APPB address tables of the CSB image build (`data/csbimage.c`, `data/csbtext.c`) stay
+    in the source, named in the allowlist with this reason. [decimal, allowlist]
 
 ## 4. Naming
 
@@ -248,7 +249,7 @@ refactor; until the run ends, the allowlist carries the difference.
 
 1. A test module imports helpers from `tests/dmtest/` only, never from another test module.
 2. A C constant comes from the headers through `dmtest.constants`; no hand-mirrored value.
-3. A test calls the accessors of the port; it does not decode a record by bit shifts.
+3. A test calls the accessors of the port; it does not decode a record by bit shifts. [review only]
 4. No machine path in a test (`/Users/`, `/private/tmp/`).
 5. Each test module loads its own copy of the library (`dmtest.lib`); no test compiles the library.
 
