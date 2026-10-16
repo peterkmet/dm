@@ -467,7 +467,7 @@ static bool is_door_bashed(uint16_t champion_index, int16_t x, int16_t y, uint8_
     if (rec_square_type(square) != SQUARE_DOOR || rec_door_state(square) != DOOR_CLOSED)
         return false;
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
-    event_is_door_destroyed_by_attack(x, y, champion_get_strength(champion_index, SLOT_HAND_ACTION), 0,
+    event_is_door_destroyed_by_attack((Location){x, y}, champion_get_strength(champion_index, SLOT_HAND_ACTION), false,
                                       DOOR_BASH_DESTRUCTION_TICKS);
     sound_request_play(SOUND_WOODEN_THUD, g_party_map_x, g_party_map_y, SOUND_MODE_ONE_TICK_LATER);
     return true;

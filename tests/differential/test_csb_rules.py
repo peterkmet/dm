@@ -7,7 +7,7 @@ import ctypes
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Champion, Game, Timeline, TimelineEvent, global_type
+from dmtest.game import Champion, Game, Location, Timeline, TimelineEvent, global_type
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT
 
@@ -38,7 +38,7 @@ def lib():
         ("rec_write", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
         ("rec_thing_next", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
         ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
-        ("sensor_add_event", None, [c16, c16, c16, c16, c16, u32]),
+        ("sensor_add_event", None, [c16, Location, c16, c16, u32]),
         ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, ctypes.c_bool, ctypes.c_bool]),
         ("champion_click_in_resurrect_reincarnate_panel", None, [c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("tables_get_action_info", ctypes.POINTER(ActionInfo), [ctypes.c_int]),
@@ -175,7 +175,7 @@ def test_sensor_event_priority(world):
     lib = game.lib
     priorities = {}
     for effect, time in ((C.EFFECT_SET, 900001), (C.EFFECT_CLEAR, 900002), (C.EFFECT_TOGGLE, 900003)):
-        lib.sensor_add_event(1, 1, 1, 0, effect, time)
+        lib.sensor_add_event(1, Location(1, 1), 0, effect, time)
         priorities[effect] = next(e.priority for e in timeline(lib) if e.map_time & 0xFFFFFF == time)
     assert priorities == ({C.EFFECT_SET: 0, C.EFFECT_CLEAR: 0, C.EFFECT_TOGGLE: 0} if adventure == "csb"
                           else {C.EFFECT_SET: 1, C.EFFECT_CLEAR: 3, C.EFFECT_TOGGLE: 2})

@@ -2,6 +2,7 @@
 #ifndef DM_ENGINE_SENSOR_H
 #define DM_ENGINE_SENSOR_H
 /* Prefixes: sensor_ */
+#include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -17,12 +18,9 @@
 #define ANY_CELL                      (-1)
 #define VI_ALTAR_REBIRTH_EFFECT       2 /* event 13 effect byte */
 
-extern int16_t g_sensor_rotation_effect, g_sensor_rotation_effect_map_x, g_sensor_rotation_effect_map_y,
-    g_sensor_rotation_effect_cell;
-
 /* Adds a square event on the current map. Clear events come first at equal time, then toggle, then set.
    CSB gives each sensor event priority 0. */
-void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, int16_t effect, uint32_t time);
+void sensor_add_event(int16_t event_type, Location at, int16_t cell, int16_t effect, uint32_t time);
 /* Bones put into a vi altar: the rebirth of their champion starts next tick on the party map. */
 void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int16_t cell);
 /* A press on the button of the door at x, y: a switch sound and the door toggles next tick. */

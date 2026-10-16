@@ -281,7 +281,7 @@ static bool hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t y)
     uint16_t door = map_get_square_first_thing(x, y);
     if (state != DOOR_DESTROYED && thing == EXPLOSION_THING(EXPLOSION_OPEN_DOOR)) {
         if (rec_door_has_button(door))
-            sensor_add_event(EVENT_DOOR, x, y, 0, EFFECT_TOGGLE, g_game_time + 1);
+            sensor_add_event(EVENT_DOOR, (Location){x, y}, 0, EFFECT_TOGGLE, g_game_time + 1);
         return true;
     }
     if (state == DOOR_DESTROYED || state <= DOOR_ALMOST_OPEN)
@@ -304,7 +304,7 @@ static bool hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t y)
     }
     uint16_t attack = projectile_get_impact_attack(projectile, thing) + 1;
     uint16_t bonus = random16() % attack;
-    event_is_door_destroyed_by_attack(x, y, attack + bonus, 0, 0);
+    event_is_door_destroyed_by_attack((Location){x, y}, attack + bonus, false, 0);
     return true;
 }
 
@@ -557,7 +557,7 @@ void explosion_process_step_event(TimelineEvent *event)
         break;
     }
     if (breaks_door && rec_square_type(square) == SQUARE_DOOR)
-        event_is_door_destroyed_by_attack(x, y, damage, 1, 0);
+        event_is_door_destroyed_by_attack((Location){x, y}, damage, true, 0);
     map_unlink_thing_from_list(explosion, 0, x, y);
     rec_thing_set_free(explosion);
 }

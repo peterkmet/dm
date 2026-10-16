@@ -19,10 +19,14 @@
 #define VERSION_CHECKER_LIMIT     37 /* the version checker passes for data below this value */
 #define CSB_VERSION_CHECKER_LIMIT 32
 
-int16_t g_sensor_rotation_effect = -1, g_sensor_rotation_effect_map_x, g_sensor_rotation_effect_map_y,
-        g_sensor_rotation_effect_cell;
+/* The rotation effect that a sensor asked for in this pass. */
+static struct {
+    int16_t effect; /* -1: none */
+    Location at;
+    int16_t cell;
+} rotation = {.effect = -1};
 
-void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, int16_t effect, uint32_t time)
+void sensor_add_event(int16_t event_type, Location at, int16_t cell, int16_t effect, uint32_t time)
 {
     static const uint8_t priority[3] = {[EFFECT_SET] = 1, [EFFECT_CLEAR] = 3, [EFFECT_TOGGLE] = 2};
     TimelineEvent event = {
@@ -31,7 +35,7 @@ void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, in
         .priority = g_adventure == ADVENTURE_CSB                      ? 0
                     : effect >= EFFECT_SET && effect <= EFFECT_TOGGLE ? priority[effect]
                                                                       : 0,
-        .b = event_square(x, y),
+        .b = event_square(at.x, at.y),
         .c = event_cell_effect(cell, effect),
     };
     timeline_add_event(&event);
@@ -56,26 +60,23 @@ void sensor_trigger_local_effect(int16_t local_effect, int16_t x, int16_t y, int
         sensor_add_skill_experience(SENSOR_EXPERIENCE_SKILL, SENSOR_EXPERIENCE, cell != ANY_CELL);
         return;
     }
-    g_sensor_rotation_effect = local_effect;
-    g_sensor_rotation_effect_map_x = x;
-    g_sensor_rotation_effect_map_y = y;
-    g_sensor_rotation_effect_cell = cell;
+    rotation.effect = local_effect;
+    rotation.at = (Location){x, y};
+    rotation.cell = cell;
 }
 
 static bool is_rotation_sensor(uint16_t thing)
 {
-    return THING_TYPE(thing) == THING_SENSOR &&
-           (g_sensor_rotation_effect_cell == ANY_CELL || THING_CELL(thing) == g_sensor_rotation_effect_cell);
+    return THING_TYPE(thing) == THING_SENSOR && (rotation.cell == ANY_CELL || THING_CELL(thing) == rotation.cell);
 }
 
 void sensor_process_rotation_effect(void)
 {
-    if (g_sensor_rotation_effect == -1)
+    if (rotation.effect == -1)
         return;
-    if (g_sensor_rotation_effect == LOCAL_EFFECT_ROTATE_SENSORS_1 ||
-        g_sensor_rotation_effect == LOCAL_EFFECT_ROTATE_SENSORS) {
-        int16_t x = g_sensor_rotation_effect_map_x;
-        int16_t y = g_sensor_rotation_effect_map_y;
+    if (rotation.effect == LOCAL_EFFECT_ROTATE_SENSORS_1 || rotation.effect == LOCAL_EFFECT_ROTATE_SENSORS) {
+        int16_t x = rotation.at.x;
+        int16_t y = rotation.at.y;
         uint16_t first = map_get_square_first_thing(x, y);
         while (first != THING_ENDOFLIST && !is_rotation_sensor(first))
             first = rec_thing_next(first);
@@ -93,7 +94,7 @@ void sensor_process_rotation_effect(void)
             rec_thing_set_next(last, first);
         }
     }
-    g_sensor_rotation_effect = -1;
+    rotation.effect = -1;
 }
 
 void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
@@ -108,7 +109,7 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
     int16_t target_y = rec_sensor_target_y(sensor);
     int16_t target_type = rec_square_type(rec_square_byte(g_current_map_index, target_x, target_y));
     int16_t target_cell = target_type == SQUARE_WALL ? rec_sensor_target_cell(sensor) : 0;
-    sensor_add_event(tables_get_square_type_event(target_type), target_x, target_y, target_cell, effect,
+    sensor_add_event(tables_get_square_type_event(target_type), (Location){target_x, target_y}, target_cell, effect,
                      g_game_time + rec_sensor_delay(sensor));
 }
 
@@ -147,51 +148,81 @@ static bool holds_object_type(int16_t object_type)
     return object_get_type(g_leader_hand_object) == object_type;
 }
 
-/* Result of click_test: the sensor does nothing for this click. */
-#define CLICK_IGNORED (-1)
+/* Results of a wall sensor test for one click. */
+typedef enum {
+    CLICK_RESULT_IGNORED,  /* the sensor does nothing for this click */
+    CLICK_RESULT_MATCH,    /* the condition holds: the sensor triggers (a hold sensor sets) */
+    CLICK_RESULT_NO_MATCH, /* the condition fails (a hold sensor clears) */
+} ClickResult;
+
+typedef struct {
+    ClickResult result;
+    uint16_t thing; /* the thing where the sensor loop goes on */
+} ClickTest;
 
 /* Single object exchanger: an empty hand takes the object of the sensor type from the cell, a hand with that type puts
    it there. Returns the click_test result. */
-static int16_t exchange_single_object(uint16_t sensor, int16_t x, int16_t y)
+static ClickResult exchange_single_object(uint16_t sensor, int16_t x, int16_t y)
 {
     uint16_t sensor_cell = THING_CELL(sensor);
     int16_t data = rec_sensor_data(sensor);
     if (g_leader_empty_handed) {
         uint16_t object = sensor_get_object_of_type_in_cell(x, y, sensor_cell, data);
         if (object == THING_NONE)
-            return CLICK_IGNORED;
+            return CLICK_RESULT_IGNORED;
         map_unlink_thing_from_list(object, 0, x, y);
         inventory_put_object_in_leader_hand(object);
     } else {
         if (!holds_object_type(data) || sensor_get_object_of_type_in_cell(x, y, sensor_cell, data) != THING_NONE)
-            return CLICK_IGNORED;
+            return CLICK_RESULT_IGNORED;
         uint16_t object = g_leader_hand_object;
         inventory_get_object_removed_from_leader_hand();
         map_link_thing_to_list(THING_WITH_CELL(object, sensor_cell), 0, x, y);
     }
     sensor_trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
-    return rec_sensor_effect(sensor) == EFFECT_HOLD && !g_leader_empty_handed;
+    return rec_sensor_effect(sensor) == EFFECT_HOLD && !g_leader_empty_handed ? CLICK_RESULT_NO_MATCH
+                                                                              : CLICK_RESULT_MATCH;
 }
 
-/* The test of one wall sensor for a click with the leader hand: 0 passes, 1 fails (a hold sensor clears), or
-   CLICK_IGNORED. remaining counts the sensors after this one in its cell. Exchangers and storages move the objects
-   here. A removed sensor sets *t to the thing before it. */
-static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, int16_t remaining)
+/* Object exchanger: the hand object and the first object of the square swap places. */
+static ClickResult exchange_object(uint16_t sensor, Location at, int16_t remaining)
 {
-    uint16_t sensor = *t;
+    if (remaining)
+        return CLICK_RESULT_IGNORED;
+    int16_t x = at.x, y = at.y;
+    uint16_t object = map_get_square_first_object(x, y);
+    if (!holds_object_type(rec_sensor_data(sensor)) || object == THING_ENDOFLIST)
+        return CLICK_RESULT_IGNORED;
+    map_unlink_thing_from_list(object, 0, x, y);
+    uint16_t hand = g_leader_hand_object;
+    inventory_get_object_removed_from_leader_hand();
+    map_link_thing_to_list(THING_WITH_CELL(hand, THING_CELL(sensor)), 0, x, y);
+    inventory_put_object_in_leader_hand(object);
+    return CLICK_RESULT_MATCH;
+}
+
+/* The test of one wall sensor for a click with the leader hand. remaining counts the sensors after this one in its
+   cell. Exchangers and storages move the objects here. A removed sensor gives the thing before it as the loop cursor. */
+static ClickTest click_test(uint16_t thing, uint16_t previous, Location at, int16_t remaining)
+{
+    uint16_t sensor = thing;
+    int16_t x = at.x, y = at.y;
     uint16_t sensor_cell = THING_CELL(sensor);
     uint16_t type = rec_sensor_type(sensor);
     uint16_t effect = rec_sensor_effect(sensor);
-    int16_t data = rec_sensor_data(sensor), skip;
+    int16_t data = rec_sensor_data(sensor);
+    bool skip;
     switch (type) {
     case SENSOR_WALL_ORNAMENT_CLICK:
-        return effect == EFFECT_HOLD ? CLICK_IGNORED : 0;
+        return (ClickTest){effect == EFFECT_HOLD ? CLICK_RESULT_IGNORED : CLICK_RESULT_MATCH, thing};
     case SENSOR_WALL_ANY_OBJECT:
-        return rec_sensor_is_reverted(sensor) != g_leader_empty_handed;
+        return (ClickTest){rec_sensor_is_reverted(sensor) != g_leader_empty_handed ? CLICK_RESULT_NO_MATCH
+                                                                                   : CLICK_RESULT_MATCH,
+                           thing};
     case SENSOR_WALL_SINGLE_OBJECT_STORAGE:
     case SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED:
         if (remaining)
-            return CLICK_IGNORED;
+            return (ClickTest){CLICK_RESULT_IGNORED, thing};
         /* fall through */
         __attribute__((fallthrough));
     case SENSOR_WALL_OBJECT:
@@ -200,38 +231,27 @@ static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, 
         if (!skip && type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED && sensor != previous) {
             rec_thing_set_next(previous, rec_thing_next(sensor));
             rec_thing_set_free(sensor);
-            *t = previous;
+            thing = previous;
         }
         if (!skip && type == SENSOR_WALL_SINGLE_OBJECT_STORAGE)
             sensor_trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
-        return skip;
+        return (ClickTest){skip ? CLICK_RESULT_NO_MATCH : CLICK_RESULT_MATCH, thing};
     case SENSOR_WALL_OBJECT_GENERATOR:
         if (remaining)
-            return CLICK_IGNORED;
+            return (ClickTest){CLICK_RESULT_IGNORED, thing};
         skip = !g_leader_empty_handed;
         if (!skip)
             sensor_trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
-        return skip;
+        return (ClickTest){skip ? CLICK_RESULT_NO_MATCH : CLICK_RESULT_MATCH, thing};
     case SENSOR_WALL_SINGLE_OBJECT_EXCHANGER:
-        return exchange_single_object(sensor, x, y);
-    case SENSOR_WALL_OBJECT_EXCHANGER: {
-        if (remaining)
-            return CLICK_IGNORED;
-        uint16_t object = map_get_square_first_object(x, y);
-        if (!holds_object_type(data) || object == THING_ENDOFLIST)
-            return CLICK_IGNORED;
-        map_unlink_thing_from_list(object, 0, x, y);
-        uint16_t hand = g_leader_hand_object;
-        inventory_get_object_removed_from_leader_hand();
-        map_link_thing_to_list(THING_WITH_CELL(hand, sensor_cell), 0, x, y);
-        inventory_put_object_in_leader_hand(object);
-        return 0;
-    }
+        return (ClickTest){exchange_single_object(sensor, x, y), thing};
+    case SENSOR_WALL_OBJECT_EXCHANGER:
+        return (ClickTest){exchange_object(sensor, at, remaining), thing};
     case SENSOR_WALL_CHAMPION_PORTRAIT:
         champion_add_candidate_to_party(data);
-        return CLICK_IGNORED;
+        return (ClickTest){CLICK_RESULT_IGNORED, thing};
     }
-    return CLICK_IGNORED;
+    return (ClickTest){CLICK_RESULT_IGNORED, thing};
 }
 
 bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
@@ -260,14 +280,13 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
         if (type == SENSOR_DISABLED || (g_leader_index == -1 && type != SENSOR_WALL_CHAMPION_PORTRAIT) ||
             sensor_cell != cell)
             continue;
-        int16_t skip = click_test(&t, previous, x, y, remaining[sensor_cell]);
-        if (skip == CLICK_IGNORED)
+        ClickTest test = click_test(t, previous, (Location){x, y}, remaining[sensor_cell]);
+        t = test.thing;
+        if (test.result == CLICK_RESULT_IGNORED)
             continue;
-        if (effect == EFFECT_HOLD) {
-            effect = skip ? EFFECT_CLEAR : EFFECT_SET;
-            skip = 0;
-        }
-        if (skip)
+        if (effect == EFFECT_HOLD)
+            effect = test.result == CLICK_RESULT_NO_MATCH ? EFFECT_CLEAR : EFFECT_SET;
+        else if (test.result == CLICK_RESULT_NO_MATCH)
             continue;
         triggered = true;
         if (rec_sensor_is_audible(sensor))
@@ -428,10 +447,9 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
 
 void sensor_reset(void)
 {
-    g_sensor_rotation_effect = -1;
-    g_sensor_rotation_effect_map_x = 0;
-    g_sensor_rotation_effect_map_y = 0;
-    g_sensor_rotation_effect_cell = 0;
+    rotation.effect = -1;
+    rotation.at = (Location){0, 0};
+    rotation.cell = 0;
 }
 
 void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int16_t cell)
@@ -447,5 +465,5 @@ void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int
 void sensor_press_door_button(int16_t x, int16_t y)
 {
     sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
-    sensor_add_event(EVENT_DOOR, x, y, 0, EFFECT_TOGGLE, (uint32_t)(g_game_time + 1));
+    sensor_add_event(EVENT_DOOR, (Location){x, y}, 0, EFFECT_TOGGLE, (uint32_t)(g_game_time + 1));
 }

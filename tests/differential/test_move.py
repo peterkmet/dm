@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Champion
+from dmtest.game import Champion, Location
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -152,11 +152,11 @@ def test_floor_sensor_opens_door(game):
 
 def test_door_event_toggles_door(game):
     door = lambda: game.rec_square_byte(0, 5, 9) & 7
-    game.sensor_add_event(10, 5, 9, 0, 2, 1)
+    game.sensor_add_event(10, Location(5, 9), 0, 2, 1)
     for _ in range(6):
         tick(game)
     assert door() == 0
-    game.sensor_add_event(10, 5, 9, 0, 2, ctypes.c_uint32.in_dll(game, "g_game_time").value)
+    game.sensor_add_event(10, Location(5, 9), 0, 2, ctypes.c_uint32.in_dll(game, "g_game_time").value)
     for _ in range(5):
         tick(game)
     assert door() == 4
