@@ -47,7 +47,7 @@ The detailed plan is in [docs/superpowers/2026-10-04-dm-c-port-plan.md](docs/sup
 4. Decompile all FTL modules to `reference/decomp/dm/`.
 
    ```sh
-   tools/decompile-all.sh
+   tools/ghidra/decompile-all.sh
    ```
 
    For each module, the script writes `reference/decomp/dm/<MODULE>.bin` (memory image), `reference/decomp/dm/<MODULE>.c` (decompiled C), and `reference/decomp/dm/<MODULE>.c.log` (Ghidra log). A full run takes about 20 seconds.
@@ -70,8 +70,8 @@ The `.gitignore` file excludes `*.adf`, `game/`, `game-csb/`, and `reference/` (
 | `uv run dm-extract <adf> [out_dir]` | Extract all files from an AmigaDOS ADF. The default `out_dir` is `game`. |
 | `uv run dm-ftl <module.FTL> <out.bin> [--base ADDR]` | Load an FTL module into a flat memory image, as `BJELoad_R` does. Prints the addresses and the arguments for `decompile.sh`. The default base is `0x100000`. |
 | `[SYMBOLS=<csv>] tools/ghidra/decompile.sh <image.bin> <base> <out.c> [REG=VALUE] [ENTRY ...]` | Decompile a flat 68000 image with Ghidra headless. |
-| `tools/decompile-all.sh` | Run `dm-ftl` and `decompile.sh` for every module in `game/`. It uses `docs/<module>-symbols.csv` as `SYMBOLS` (for example `docs/kaos-symbols.csv`). |
-| `tools/platforms/` | Research scripts for the other versions (DOS, Atari ST, Apple IIGS, FM-Towns, Super NES, DM2): extract and compare sounds and music, build `reference/extracted/music_map.json`. They read `reference/extracted/` and need extra packages (`capstone`, `numpy`) for some scripts. |
+| `tools/ghidra/decompile-all.sh` | Run `dm-ftl` and `decompile.sh` for every module in `game/`. It uses `docs/<module>-symbols.csv` as `SYMBOLS` (for example `docs/kaos-symbols.csv`). |
+| `tools/research/platforms/` | Research scripts for the other versions (DOS, Atari ST, Apple IIGS, FM-Towns, Super NES, DM2): extract and compare sounds and music, build `reference/extracted/music_map.json`. They read `reference/extracted/` and need extra packages (`capstone`, `numpy`) for some scripts. |
 | `dmtools.emu` (Python) | Run a function of a module image in a 68000 emulator. `Emu(image).call(addr, [(size, value), ...])` pushes the arguments right to left and returns `D0`. Access to custom chips, CIA, or ExecBase stops the call with `EmuError`. Use `allow_hw=True` to permit this access. |
 
 ## C port
@@ -92,9 +92,9 @@ Run the game. Dungeon Master needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT`
 
 At start, the game extracts each `.adf` disk image in the current folder once: the Dungeon Master v3.60 disk to `game/`, CSB disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. A folder that already has the files stays as it is. Before an adventure loads, the CRC32 of its required files must match the Amiga disks; else the game logs the first wrong file and exits.
 
-`tools/make-dist.sh` builds `build/DungeonMaster.zip`: the game and SDL3 without game files. The player copies the disk images into the folder of the game.
+`tools/dist/make-dist.sh` builds `build/DungeonMaster.zip`: the game and SDL3 without game files. The player copies the disk images into the folder of the game.
 
-Windows (x86-64): `make -C port windows` cross-builds `build/dm.exe` with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. `tools/make-dist-win.sh` builds `build/DungeonMaster-win.zip` with `dm.exe` and `SDL3.dll`. The Windows build has no control socket, so the LLM mode cannot start there: the mode screen offers VANILLA and ADVANCED only, and `--mode turnbased` stops with an error. Test it with Wine.
+Windows (x86-64): `make -C port windows` cross-builds `build/dm.exe` with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. `tools/dist/make-dist-win.sh` builds `build/DungeonMaster-win.zip` with `dm.exe` and `SDL3.dll`. The Windows build has no control socket, so the LLM mode cannot start there: the mode screen offers VANILLA and ADVANCED only, and `--mode turnbased` stops with an error. Test it with Wine.
 
 ```sh
 build/dm

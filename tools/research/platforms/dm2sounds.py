@@ -102,7 +102,7 @@ This page lists the 292 sound effects of Dungeon Master II (Skullkeep, DOS) and 
 - Output: `sounds/c<category>_i<index>_e<entry>_<name>.wav`, 8-bit unsigned PCM, 11025 Hz, mono. Category and index are decimal. The entry is two hex digits.
 - Names: creatures from the developer labels (language `0xf`, entry 0). Items and champions from text entry `0x18`. Ornaments, doors, and explosions have no name in the GDAT.
 - The 292 items hold 107 different samples. The column "Same as" names the first file with the same data.
-- Tools: `tools/platforms/dm2gdat.py` (reader), `dm2sounds.py` (this extraction and page), `compare.py` (comparison page).
+- Tools: `tools/research/platforms/dm2gdat.py` (reader), `dm2sounds.py` (this extraction and page), `compare.py` (comparison page).
 
 ## How the game selects a sound
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build build/DungeonMaster.zip: the game and SDL3. The player adds the game disk images.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 make -C port
 out=build/dist/DungeonMaster
 rm -rf build/dist build/DungeonMaster.zip

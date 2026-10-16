@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build build/DungeonMaster-win.zip: the Windows game (x86-64) and SDL3. The player adds the game disk images.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 make -C port windows
 sdl_version="$(awk -F' = ' '/^SDL_MINGW_VERSION = / {print $2}' port/Makefile)"
 out=build/dist-win/DungeonMaster

@@ -28,6 +28,10 @@ dev = [
     "pytest-timeout>=2.4.0",
     "pytest-xdist>=3.8.0",
 ]
+research = [
+    "capstone>=5.0.9",
+    "numpy>=2.5.4",
+]
 
 [tool.pytest.ini_options]
 timeout = 120

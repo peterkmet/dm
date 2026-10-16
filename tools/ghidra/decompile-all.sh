@@ -2,7 +2,7 @@
 # Decompile every FTL module in game/ to reference/decomp/dm/<MODULE>.c with Ghidra headless.
 # docs/<module>-symbols.csv, if it exists, names functions and globals.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 mkdir -p reference/decomp/dm
 pids=()
 for ftl in game/*.FTL; do
