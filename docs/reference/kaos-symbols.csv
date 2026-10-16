@@ -1231,7 +1231,7 @@ address,name,signature,subsystem
 0x10bd54,group_get_creature_aspect_update_time,"int32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t creature_index, int16_t is_attacking)",group
 0x10bf0c,group_start_wandering,"void group_start_wandering(int16_t map_x, int16_t map_y)",group
 0x10bf8c,group_delete_events,"void group_delete_events(int16_t map_x, int16_t map_y)",group
-0x10bfee,group_stop_attacking,"void group_stop_attacking(ActiveGroup *active, int16_t map_x, int16_t map_y)",group
+0x10bfee,stop_attacking,"void stop_attacking(ActiveGroup *active, int16_t map_x, int16_t map_y)",group
 0x10c020,group_add_active_group,"void group_add_active_group(uint16_t group_thing, uint8_t map_x, uint8_t map_y)",group
 0x10c0d8,group_remove_active_group,void group_remove_active_group(uint16_t active_index),group
 0x10c150,group_get_generated,"uint16_t group_get_generated(uint8_t creature_type, int16_t health_multiplier, uint16_t creature_count_minus_1, int16_t direction, int16_t map_x, int16_t map_y)",group

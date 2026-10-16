@@ -267,13 +267,7 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
     if (roll < fear || fear == FEAR_RESISTANCE_NONE_FEARLESS) {
         experience >>= 1;
     } else {
-        ActiveGroup *active = group_active(group);
-        if (rec_group_behavior(group) == BEHAVIOR_ATTACK) {
-            group_stop_attacking(active, x, y);
-            group_start_wandering(x, y);
-        }
-        rec_group_set_behavior(group, BEHAVIOR_FLEE);
-        active->delay_fleeing = (FLEE_DELAY_FEAR_LIMIT - fear) * FLEE_DELAY_FACTOR / info->movement_ticks;
+        group_frighten(group, x, y, (FLEE_DELAY_FEAR_LIMIT - fear) * FLEE_DELAY_FACTOR / info->movement_ticks);
         frightened = true;
     }
     champion_add_skill_experience(champion_index, SKILL_INFLUENCE, experience);

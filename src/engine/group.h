@@ -115,11 +115,9 @@ void group_init_active_groups(void);
 /* Allocates count active group entries, all free. A failed allocation is a fatal error. */
 void group_allocate_active(uint16_t count);
 
-/* On the party map the cells byte of the record holds the index of the active group. */
-static inline ActiveGroup *group_active(uint16_t group)
-{
-    return &g_active_groups[rec_group_cells(group)];
-}
+/* The active group entry of a group on the party map (a corrupt index reads a free entry); NULL while the
+   active group table is not allocated. */
+const ActiveGroup *group_get_active(uint16_t group);
 static inline const CreatureInfo *group_info(uint16_t group)
 {
     return tables_get_creature_info(rec_group_creature_type(group));
@@ -214,7 +212,8 @@ uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t crea
 /* A new group behavior event (37) after one tick. Faster creatures get a higher event priority. */
 void group_start_wandering(int16_t x, int16_t y);
 void group_delete_events(int16_t x, int16_t y);
-void group_stop_attacking(ActiveGroup *active, int16_t x, int16_t y);
+/* A frightened group on the party map flees for delay_fleeing; an attacking group stops its attack first. */
+void group_frighten(uint16_t group, int16_t x, int16_t y, uint8_t delay_fleeing);
 /* A group on the party map gets an active group entry. The record keeps the entry index in its cells byte. */
 void group_add_active_group(uint16_t group, int16_t x, int16_t y);
 /* The record gets back its cells and one direction. A fleeing or attacking group wanders again. */

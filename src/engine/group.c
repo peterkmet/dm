@@ -120,6 +120,8 @@ static struct {
 /* Kept quirk: the party-blocked result of the last step test. random_move reads it also when it skips the test, as
    in the original; it survives between turns and group_reset does not clear it. */
 static bool last_blocked_by_party;
+/* The entry for a cells byte beyond the table (a corrupt save): reads give a free entry, writes are lost. */
+static ActiveGroup corrupt_entry;
 
 /* The result of one step test of a group. */
 typedef struct {
@@ -174,10 +176,29 @@ static int16_t get_creature_movement_sound(uint16_t creature_type)
     return tables_get_creature_sound(ordinal - 1)->movement;
 }
 
+/* The active group entry of a group on the party map. Deviation: the original reads beyond the table when the
+   cells byte of the record is too large. */
+static ActiveGroup *active_of(uint16_t group)
+{
+    uint16_t index = rec_group_cells(group);
+    if (index >= g_max_active_group_count) {
+        corrupt_entry = (ActiveGroup){.group_index = -1};
+        return &corrupt_entry;
+    }
+    return &g_active_groups[index];
+}
+
+const ActiveGroup *group_get_active(uint16_t group)
+{
+    if (!g_active_groups)
+        return NULL;
+    return active_of(group);
+}
+
 void group_allocate_active(uint16_t count)
 {
     free(g_active_groups);
-    g_active_groups = malloc(count * sizeof *g_active_groups);
+    g_active_groups = calloc(count, sizeof *g_active_groups);
     if (!g_active_groups)
         game_fatal(SYSTEM_ERROR_MEMORY);
     for (uint16_t i = 0; i < count; i++)
@@ -192,13 +213,13 @@ void group_init_active_groups(void)
 
 uint8_t group_get_cells(uint16_t group, int16_t map)
 {
-    return map == g_party_map_index ? group_active(group)->cells : rec_group_cells(group);
+    return map == g_party_map_index ? active_of(group)->cells : rec_group_cells(group);
 }
 
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map)
 {
     if (map == g_party_map_index)
-        group_active(group)->cells = cells;
+        active_of(group)->cells = cells;
     else
         rec_group_set_cells(group, cells);
 }
@@ -206,7 +227,7 @@ void group_set_cells(uint16_t group, uint8_t cells, int16_t map)
 uint8_t group_get_directions(uint16_t group, int16_t map)
 {
     if (map == g_party_map_index)
-        return group_active(group)->directions;
+        return active_of(group)->directions;
     uint16_t direction = rec_group_direction(group);
     return direction | direction << 2 | direction << 4 | direction << 6;
 }
@@ -214,7 +235,7 @@ uint8_t group_get_directions(uint16_t group, int16_t map)
 void group_set_directions(uint16_t group, uint8_t directions, int16_t map)
 {
     if (map == g_party_map_index)
-        group_active(group)->directions = directions;
+        active_of(group)->directions = directions;
     else
         rec_group_set_direction(group, directions);
 }
@@ -352,11 +373,23 @@ void group_delete_events(int16_t x, int16_t y)
     }
 }
 
-void group_stop_attacking(ActiveGroup *active, int16_t x, int16_t y)
+/* The creatures of the group stop their attack, and its pending group events go. */
+static void stop_attacking(ActiveGroup *active, int16_t x, int16_t y)
 {
     for (int16_t i = 0; i < GROUP_MAX_CREATURES; i++)
         active->aspect[i] &= ~ASPECT_ATTACKING;
     group_delete_events(x, y);
+}
+
+void group_frighten(uint16_t group, int16_t x, int16_t y, uint8_t delay_fleeing)
+{
+    ActiveGroup *active = active_of(group);
+    if (rec_group_behavior(group) == BEHAVIOR_ATTACK) {
+        stop_attacking(active, x, y);
+        group_start_wandering(x, y);
+    }
+    rec_group_set_behavior(group, BEHAVIOR_FLEE);
+    active->delay_fleeing = delay_fleeing;
 }
 
 void group_add_active_group(uint16_t group, int16_t x, int16_t y)
@@ -630,7 +663,7 @@ static void remove_dead_creature(uint16_t group, uint16_t creature_index, Locati
             drops->cells[drops->count++] = (uint8_t)cell;
     }
     bool on_party_map = g_current_map_index == g_party_map_index;
-    ActiveGroup *active = on_party_map ? group_active(group) : NULL;
+    ActiveGroup *active = on_party_map ? active_of(group) : NULL;
     if (rec_group_behavior(group) == BEHAVIOR_ATTACK) {
         shift_creature_events(at.x, at.y, creature_index);
         uint16_t fear = creature_fear_resistance(info);
@@ -758,7 +791,7 @@ static void group_steal_from_champion(uint16_t group, uint16_t champion_index)
     }
     if ((random16() & 7) && (!stole || !random_bit()))
         return;
-    group_active(group)->delay_fleeing = (random16() & THEFT_FLEE_RANDOM_MASK) + FLEE_DELAY_MINIMUM;
+    active_of(group)->delay_fleeing = (random16() & THEFT_FLEE_RANDOM_MASK) + FLEE_DELAY_MINIMUM;
     rec_group_set_behavior(group, BEHAVIOR_FLEE);
 }
 
@@ -851,7 +884,7 @@ static uint16_t group_get_distance_to_visible_party(const GroupTurn *t, uint16_t
 {
     const CreatureInfo *info = group_info(group);
     if (!(info->attributes & CREATURE_SIDE_ATTACK)) {
-        uint8_t directions = group_active(group)->directions;
+        uint8_t directions = active_of(group)->directions;
         uint16_t seen[GROUP_MAX_CREATURES];
         int16_t count = 0;
         if (creature_index < 0) {
@@ -1085,7 +1118,7 @@ static bool group_is_creature_attacking(const GroupTurn *t, uint16_t group, int1
     g_last_creature_attack_time = g_game_time;
     uint16_t type = rec_group_creature_type(group);
     const CreatureInfo *info = tables_get_creature_info(type);
-    uint8_t cells = group_active(group)->cells;
+    uint8_t cells = active_of(group)->cells;
     int16_t cell = cells == CELL_CENTERED ? NORMALIZE(primary + random_bit())
                                           : direction_front_cell(primary, group_cell(cells, creature_index));
     if (creature_attack_range(info) <= 1 || (t->distance_to_party <= 1 && !random_bit())) {
@@ -1498,7 +1531,7 @@ static void turn_and_finish(GroupTurn *t, int16_t direction)
             return;
         if (t->was_attacking)
             rec_group_set_behavior(t->group, BEHAVIOR_APPROACH);
-        group_stop_attacking(t->active, t->x, t->y);
+        stop_attacking(t->active, t->x, t->y);
     }
     add_wander_event(t);
 }
@@ -1931,7 +1964,7 @@ static void process_creature_behavior(GroupTurn *t)
         if (!group_get_distance_to_visible_party(t, t->group, -1, t->x, t->y)) {
             rec_group_set_behavior(t->group, BEHAVIOR_APPROACH);
             if (t->last_creature_index)
-                group_stop_attacking(active, t->x, t->y);
+                stop_attacking(active, t->x, t->y);
             approach_target(t);
             return;
         }
@@ -1948,7 +1981,7 @@ static void process_creature_behavior(GroupTurn *t)
         (random16() & ATTACK_RANGE_RANDOM_MASK) + 1 < range) {
         rec_group_set_behavior(t->group, BEHAVIOR_APPROACH);
         if (t->last_creature_index)
-            group_stop_attacking(active, t->x, t->y);
+            stop_attacking(active, t->x, t->y);
         approach_party(t);
         return;
     }
@@ -2041,7 +2074,7 @@ static void process_behavior_event(GroupTurn *t, uint16_t behavior)
     }
     if (behavior == BEHAVIOR_FLEE) {
         if (t->last_creature_index)
-            group_stop_attacking(t->active, t->x, t->y);
+            stop_attacking(t->active, t->x, t->y);
         flee(t);
         return;
     }
@@ -2067,7 +2100,7 @@ static void process_turn(GroupTurn *t)
     t->archenemy = (t->info->attributes & CREATURE_ARCHENEMY) != 0;
     if (t->archenemy && g_game_won)
         return;
-    t->active = group_active(group);
+    t->active = active_of(group);
     t->ticks_since_last_move = (uint8_t)g_game_time - t->active->last_move_time;
     if (t->ticks_since_last_move < 0)
         t->ticks_since_last_move += MOVE_TIME_WRAP;
@@ -2205,7 +2238,7 @@ MoveResult group_enter_square(const GroupArrival *arrival)
     map_set_current_map(arrival->source.map);
     if (arrival->source.x >= 0) {
         if (result == MOVE_RESULT_TURNED)
-            group_stop_attacking(&g_active_groups[arrival->turned_active], arrival->source.x, arrival->source.y);
+            stop_attacking(&g_active_groups[arrival->turned_active], arrival->source.x, arrival->source.y);
         else if (result == MOVE_RESULT_STOPPED)
             group_delete_events(arrival->source.x, arrival->source.y);
     }

@@ -20,7 +20,7 @@ The party map has active groups. Other maps do not.
 
 - `group_add_all_active_groups()` runs when the party enters a map. Each group on the map gets an `ActiveGroup` entry, its behavior events are deleted, and it starts to wander (event 37 after 1 tick).
 - `group_remove_all_active_groups()` runs when the party leaves a map. Each record gets back its cells byte and one direction. A group that flees or attacks wanders again.
-- On the party map, the cells byte of the group record holds the index of the active group. `group_active(group)` returns the entry. The entry holds the cells, the directions of the creatures, the aspect (graphic offsets, flip, attack) of each creature, the home square, the prior square, the target square, the time of the last move, and the flee delay.
+- On the party map, the cells byte of the group record holds the index of the active group. `group_get_active(group)` returns the entry; a cells byte beyond the table gives a free entry. The entry holds the cells, the directions of the creatures, the aspect (graphic offsets, flip, attack) of each creature, the home square, the prior square, the target square, the time of the last move, and the flee delay.
 - A group that enters the party map from another map becomes active. A group that leaves the party map becomes inactive.
 - More than `g_max_active_group_count` active groups is System Error 71.
 

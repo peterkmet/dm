@@ -499,7 +499,7 @@ static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t dama
         return;
     }
     for (int16_t i = rec_group_last_creature(group); i >= 0; i--) {
-        if (!(group_active(group)->aspect[i] & ASPECT_ATTACKING))
+        if (!(group_get_active(group)->aspect[i] & ASPECT_ATTACKING))
             continue;
         uint16_t spread = random16();
         uint16_t extra = random_2bits();

@@ -178,6 +178,10 @@ The function reads all three tables from the KAOS image. The single characters f
 - An uncompressed copy of `Dungeon.DAT` loads, and a wrong checksum fails.
 - Truncated files, a thing count above the limit, a bad map offset, a bad raw map data size, and a map count of 0 fail. A bad text offset and a small output buffer make `dungeon_decode_text` return 0.
 
+## Deviations
+
+- A creature type beyond the creature table has no attributes (`map_get_creature_attributes`).
+
 ## Not ported
 
 - Loading a dungeon from a saved game (no new-game extras) and the restart path that reuses buffers.

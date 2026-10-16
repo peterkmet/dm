@@ -265,5 +265,10 @@ int16_t map_find_level_map(int16_t map, int16_t level_delta, int16_t x, int16_t 
 
 uint16_t map_get_creature_attributes(uint16_t group_thing)
 {
-    return tables_get_creature_info(rec_group_creature_type(group_thing))->attributes;
+    uint16_t creature_type = rec_group_creature_type(group_thing);
+    /* Deviation: a creature type beyond the table (a corrupt dungeon) has no attributes; the original reads
+       beyond it. */
+    if (creature_type >= CREATURE_TYPE_COUNT)
+        return 0;
+    return tables_get_creature_info(creature_type)->attributes;
 }
