@@ -12,6 +12,7 @@
 #include "ui/view.h"
 #include <stdio.h>
 
+/* Ruler labels: the row and column numbers. */
 #define LABEL_WIDTH     11 /* two digits; the font cell starts 4 rows above the baseline */
 #define LABEL_BASELINE  4
 #define LABEL_TEXT_SIZE 7          /* the longest int16_t, "-32768", and the end byte */

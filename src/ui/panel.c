@@ -35,7 +35,7 @@
 #define POTION_POWER_SYMBOL_FIRST '_'        /* + power / 40: the power rune before the name */
 #define SCROLL_LINE_CHARS         18         /* characters that fit on the parchment */
 #define CREATURE_NAME_TEXT        "CREANAME" /* CSB: scroll text replaced by the creature name ahead */
-#define MAGIC_MAP_RUNE_FIRST      0x72       /* font character of the KU rune; ROS, DAIN, NETA follow */
+#define MAGIC_MAP_RUNE_FIRST      114        /* font character of the KU rune; ROS, DAIN, NETA follow */
 #define MAGIC_MAP_RUNE_COUNT      4
 #define METER_LABEL_CHARS         8 /* the bar starts after the longest label */
 #define METER_BAR_WIDTH           36

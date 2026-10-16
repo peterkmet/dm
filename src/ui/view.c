@@ -29,15 +29,17 @@
 
 /* random ornament allowed on that side: the north face is the bit of the ornament below on the map */
 #define WALL_ORNAMENT_FACE(direction) (WALL_ORNAMENT_BELOW >> (direction))
-#define ORNAMENT_RANDOM_MODULO        30
+
+/* Random wall and floor ornaments: the hash picks one of this many values. */
+#define ORNAMENT_RANDOM_MODULO    30
 /* Seeds and multipliers of the pseudo-random ornament hash of get_random_ornament. */
-#define ORNAMENT_SEED_ROW             32
-#define ORNAMENT_SEED_SQUARE_BASE     2000
-#define ORNAMENT_SEED_MAP_STEP        64
-#define ORNAMENT_SEED_MAP_BASE        3000
-#define ORNAMENT_HASH_SQUARE          31417u
-#define ORNAMENT_HASH_MAP             11u
-#define ORNAMENT_HASH_SHIFT           2
+#define ORNAMENT_SEED_ROW         32
+#define ORNAMENT_SEED_SQUARE_BASE 2000
+#define ORNAMENT_SEED_MAP_STEP    64
+#define ORNAMENT_SEED_MAP_BASE    3000
+#define ORNAMENT_HASH_SQUARE      31417u
+#define ORNAMENT_HASH_MAP         11u
+#define ORNAMENT_HASH_SHIFT       2
 
 View g_view = {.map = -1};
 
@@ -96,7 +98,8 @@ static int16_t get_random_ornament(bool allowed, int16_t count, int16_t x, int16
     return i < count ? i : -1;
 }
 
-#define SCAN_NONE      0 /* things that set_square_aspect reads */
+/* Things that set_square_aspect reads. */
+#define SCAN_NONE      0
 #define SCAN_FLOOR     1
 #define SCAN_WALL      2
 #define SCAN_FAKE_WALL 3
@@ -284,7 +287,8 @@ void view_free_scaled(ScaledBitmap *scaled)
     scaled->own.px = NULL;
 }
 
-#define DRAWN_SQUARE_COUNT 16 /* the squares that the view draws, and the D4 squares with objects */
+/* The squares that the view draws, and the D4 squares with objects. */
+#define DRAWN_SQUARE_COUNT 16
 #define D4_SQUARE_COUNT    3
 
 /* The 16 squares that the view draws, back to front. A field that the draw functions do not read for a row is -1.
@@ -869,8 +873,10 @@ static void show_square(const SquareView *s, int16_t dir, Location at)
 #define COLOR_CREATURE_2      10
 #define REPLACEMENT_DEFAULT_1 8
 #define REPLACEMENT_DEFAULT_2 12
-#define REPLACEMENT_SET_MASK  0xf /* creature aspect byte: set of color 9, then of color 10 */
 #define REPLACEMENT_SET_SHIFT 4
+
+/* Creature aspect byte: the set of color 9 in the low nibble, of color 10 in the high nibble. */
+#define REPLACEMENT_SET_MASK 0xf
 
 /* Puts replacement color set n of a creature type into color of the dungeon palettes and the D2 and D3 changes. */
 static void set_creature_replacement_colors(int16_t color, int16_t n)

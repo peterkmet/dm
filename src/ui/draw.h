@@ -9,9 +9,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define FLIP_H       1
-#define FLIP_V       2
-#define FILL_NO_MASK 0x80 /* draw_masked_fill transparent flags */
+/* Mirror flags of draw_blit. */
+#define FLIP_H 0x01
+#define FLIP_V 0x02
+
+/* Transparent flags of draw_masked_fill. */
+#define FILL_NO_MASK 0x80
 #define FILL_OPAQUE  0xff
 
 /* Copies box from src at (sx, sy). transparent -1 is opaque,

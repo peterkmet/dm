@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Commands of the mouse and key tables. */
 #define COMMAND_NONE                         0
 #define COMMAND_TOGGLE_INVENTORY_FIRST       7 /* + champion 0-3 */
 #define COMMAND_CLOSE_INVENTORY              11
@@ -55,25 +56,27 @@
 
 /* Key words: Amiga raw key in the high byte, ASCII in the low byte. TAB, M, F5, F9, L, I, F, 1, 2, and 3 are
    advanced keys that no original key table has. */
-#define KEY_1         0x0100
-#define KEY_2         0x0200
-#define KEY_3         0x0300
-#define KEY_I         0x1700
-#define KEY_F         0x2300
-#define KEY_L         0x2800
-#define KEY_M         0x3700
-#define KEY_TAB       0x4200
-#define KEY_RETURN    0x4400
-#define KEY_ESCAPE    0x4500
-#define KEY_DEL       0x4600
-#define KEY_UP        0x4c00
-#define KEY_DOWN      0x4d00
-#define KEY_RIGHT     0x4e00
-#define KEY_LEFT      0x4f00
-#define KEY_F1        0x5000
-#define KEY_F5        0x5400
-#define KEY_F9        0x5800
-#define KEY_HELP      0x5f00
+#define KEY_1      0x0100
+#define KEY_2      0x0200
+#define KEY_3      0x0300
+#define KEY_I      0x1700
+#define KEY_F      0x2300
+#define KEY_L      0x2800
+#define KEY_M      0x3700
+#define KEY_TAB    0x4200
+#define KEY_RETURN 0x4400
+#define KEY_ESCAPE 0x4500
+#define KEY_DEL    0x4600
+#define KEY_UP     0x4c00
+#define KEY_DOWN   0x4d00
+#define KEY_RIGHT  0x4e00
+#define KEY_LEFT   0x4f00
+#define KEY_F1     0x5000
+#define KEY_F5     0x5400
+#define KEY_F9     0x5800
+#define KEY_HELP   0x5f00
+
+/* Bit position of the raw key in a key word. */
 #define KEY_RAW_SHIFT 8
 
 /* The key word of a raw key and an ASCII code. */

@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Icon sheets and text buffers. */
 #define ICONS_PER_ROW           16
 #define LEADER_HAND_NAME_LENGTH 14
 #define PADDED_TEXT_SIZE        80

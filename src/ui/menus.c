@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Action area: name lengths and the damage size thresholds. */
 #define ACTING_NAME_LENGTH 7
 #define ACTION_NAME_LENGTH 12
 #define DAMAGE_SMALL_BELOW 16

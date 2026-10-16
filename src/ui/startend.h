@@ -23,6 +23,7 @@ const char *startend_save_dir(void);
    SAVED_NEW_ADVENTURE, or 0. On 0, *reason is the reason why the prison party cannot make the
    adventure, or NULL when the file cannot be written. */
 int startend_save_current_game(const char **reason);
+/* Results of startend_save_current_game. */
 #define SAVED_GAME          1
 #define SAVED_NEW_ADVENTURE 2
 /* The save command: CANCEL, SAVE, QUIT. QUIT ends the game through the endgame. CSB: CANCEL, SAVE AND

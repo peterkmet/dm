@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Endgame and fuse sequence: timing, layout and text sizes. */
 #define QUIT_CONFIRM_TICKS      100 /* QUIT asks for confirmation when no save or load is this recent */
 #define DEATH_WAIT_FRAMES       240
 #define THE_END_WAIT_FRAMES     300
@@ -50,16 +51,18 @@
 #define ENDGAME_ROW_HEIGHT      48
 #define ENDGAME_NAME_Y          14
 #define ENDGAME_SKILL_LINE      8
-#define THE_END_BACKGROUND      0x004 /* dark blue of the THE END palette */
-#define THE_END_WHITE           0xfff
-#define BUTTON_FRAME_COLOR      0x86f
 #define ENDGAME_TEXT_SIZE       64
 #define FUSE_FLASH_ROUNDS       3 /* the lord flashes 4 times per round; round n lasts n ticks per flash */
 #define FUSE_FLASHES_PER_ROUND  4
 #define SAVE_DIR_SIZE           1024
-#define CSB_RESTART_TEXT_X      110 /* RESTART THIS GAME text position of the CSB endgame */
-#define CSB_RESTART_TEXT_Y      154
-#define CSB_ENDING_FILE         "ENDA.DAT" /* the CSB ending animation, in the disk A folder */
+#define RESTART_TEXT_X          110 /* RESTART THIS GAME text position of the CSB endgame */
+#define RESTART_TEXT_Y          154
+#define ENDING_ANIMATION_FILE   "ENDA.DAT" /* the CSB ending animation, in the disk A folder */
+
+/* Amiga 12-bit colors of the THE END screen. */
+#define THE_END_BACKGROUND 0x004 /* dark blue of the THE END palette */
+#define THE_END_WHITE      0xfff
+#define BUTTON_FRAME_COLOR 0x86f
 
 /* Choices of the save dialog without the format choice. */
 #define SAVE_CHOICE_CANCEL 1
@@ -311,8 +314,7 @@ static void csb_draw_restart_button(void)
     Box inner = get_csb_box(true);
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
     draw_fill(&screen, &inner, COLOR_BLACK);
-    text_draw_screen(CSB_RESTART_TEXT_X, CSB_RESTART_TEXT_Y, COLOR_CYAN, COLOR_BLACK,
-                     gfx_get_string(TEXT_RESTART_THIS_GAME));
+    text_draw_screen(RESTART_TEXT_X, RESTART_TEXT_Y, COLOR_CYAN, COLOR_BLACK, gfx_get_string(TEXT_RESTART_THIS_GAME));
 }
 
 /* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. CSB has no QUIT. */
@@ -506,7 +508,7 @@ static void play_csb_ending(void)
 {
     char path[SAVE_DIR_SIZE];
     g_game_screen_shown = false;
-    snprintf(path, sizeof path, "%s/%s", gameloop_get_data_dir(), CSB_ENDING_FILE);
+    snprintf(path, sizeof path, "%s/%s", gameloop_get_data_dir(), ENDING_ANIMATION_FILE);
     if (anim_play(path))
         wait_for_input();
     g_return_to_entrance = true;

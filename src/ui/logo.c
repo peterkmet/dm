@@ -11,6 +11,7 @@
 #include "ui/video.h"
 #include <string.h>
 
+/* Palette script of the logo. */
 #define SCRIPT_SHOW        (-1)
 #define SCRIPT_ENTRY_BYTES 4
 

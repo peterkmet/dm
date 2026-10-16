@@ -39,13 +39,15 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Mouse pointer zones and the pointer shadow. */
 #define POINTER_ZONE_COUNT   16
 #define POINTER_SHADOW_COLOR 12 /* black: the shadow, swapped with the transparent color 0 */
 
 /* PointerZone.champion: champion index + 1 in bits 0-2; 8 and more is the name zone of the champion */
-#define ZONE_CHAMPION_INDEX_MASK 7
-#define ZONE_CHAMPION_NAME       8
+#define ZONE_CHAMPION_INDEX_MASK 0x07
+#define ZONE_CHAMPION_NAME       0x08
 
+/* Mouse pointer shapes. */
 #define POINTER_ARROW  0
 #define POINTER_HAND   1
 #define POINTER_OBJECT 2

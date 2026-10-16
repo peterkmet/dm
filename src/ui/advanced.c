@@ -18,6 +18,7 @@
 #include "ui/ui.h"
 #include <stdio.h>
 
+/* The automap read-out and the quick save and load messages. */
 #define READOUT_TEXT_SIZE   40
 #define READOUT_MARGIN      2 /* pixels between the rulers and the read-out */
 #define QUICK_MESSAGE_COLOR COLOR_WHITE

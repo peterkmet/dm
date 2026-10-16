@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Automap geometry, in pixels. */
 #define AUTOMAP_CELL_SIZE    7  /* pixels per square: 32 squares fill the 224 pixel viewport */
 #define AUTOMAP_RULER_WIDTH  12 /* the left ruler with the row numbers: two digits and a gap */
 #define AUTOMAP_RULER_HEIGHT 7  /* the top ruler with the column numbers: one text row and a gap */

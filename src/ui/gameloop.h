@@ -9,9 +9,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define POINTER_SIZE 32 /* largest pointer image, in pixels */
+/* The largest pointer image, in pixels. */
+#define POINTER_SIZE 32
 
-#define WAIT_FOR_INPUT_FRAMES 12 /* frames of one tick without input */
+/* Frames of one tick without input. */
+#define WAIT_FOR_INPUT_FRAMES 12
 
 extern bool g_stop_waiting_for_input;       /* set by commands that end the wait for the next tick */
 extern bool g_game_time_ticking;            /* false while the game is frozen */

@@ -8,11 +8,16 @@
 #include "data/graphics.h"
 #include <stdint.h>
 
+/* Screen size, palette size and frame rate. */
 #define SCREEN_W          320
 #define SCREEN_H          200
 #define PALETTE_COLORS    16 /* colors of one palette half */
-#define COLOR_INDEX_MASK  (PALETTE_COLORS - 1)
 #define FRAMES_PER_SECOND 50 /* PAL vertical blank */
+
+/* The palette index bits of a pixel. */
+#define COLOR_INDEX_MASK (PALETTE_COLORS - 1)
+
+/* Bit positions of the color components. */
 #define ARGB_RED_SHIFT    16 /* bit position of the red byte in a video_convert_argb color */
 #define ARGB_GREEN_SHIFT  8
 #define AMIGA_RED_SHIFT   8 /* bit position of the red nibble in an Amiga 12-bit color */

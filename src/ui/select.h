@@ -10,17 +10,22 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define SELECT_SCREEN_ADVENTURE  0
-#define SELECT_SCREEN_MODE       1
-#define SELECT_SCREEN_CSB        2
-#define SELECT_SCREEN_DONE       3
+/* Selection screens. */
+#define SELECT_SCREEN_ADVENTURE 0
+#define SELECT_SCREEN_MODE      1
+#define SELECT_SCREEN_CSB       2
+#define SELECT_SCREEN_DONE      3
+
+/* Choices of the CSB screen. */
 #define SELECT_CSB_NEW_ADVENTURE 0
 #define SELECT_CSB_RESUME        1
 #define SELECT_CSB_QUIT          2
-#define SELECT_KEY_UP            0
-#define SELECT_KEY_DOWN          1
-#define SELECT_KEY_ENTER         2
-#define SELECT_KEY_ESCAPE        3
+
+/* Keys of the selection screens. */
+#define SELECT_KEY_UP     0
+#define SELECT_KEY_DOWN   1
+#define SELECT_KEY_ENTER  2
+#define SELECT_KEY_ESCAPE 3
 
 /* Starts at the first screen that --adventure and --mode do not skip; adventure and mode are -1
    when the flag is absent. --mode alone means DM. csb_present 0 disables CHAOS STRIKES BACK.

@@ -22,7 +22,7 @@
 #define VIEW_CLICK_BOX_COUNT    6
 #define VIEW_PILE_OBJECT_MAX    32 /* a pile records at most this many objects; the view drops the rest */
 /* View element of the square ahead (ViewResult.square_ahead_element): a wall, a door seen from the front. */
-#define VIEW_ELEMENT_WALL       0
+#define VIEW_ELEMENT_WALL       0x00
 #define VIEW_ELEMENT_DOOR_FRONT 0x11
 
 extern bool g_do_not_draw_fluxcages;

@@ -9,6 +9,7 @@
 #include "ui/video.h"
 #include <string.h>
 
+/* Selection screen layout. */
 #define ITEM_MAX_COUNT 3   /* items of the longest screen */
 #define HEADING_TOP    56  /* top of the heading line */
 #define ITEM_TOP       88  /* top of the first item box */

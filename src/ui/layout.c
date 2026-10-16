@@ -4,6 +4,7 @@
 #include "data/graphics.h"
 #include "data/ids.h"
 
+/* First word of the layout data. */
 #define LAYOUT_SIGNATURE 0xfc0d
 #define S16(p, i)        ((int16_t)be16((p) + 2 * (i))) /* signed word i */
 

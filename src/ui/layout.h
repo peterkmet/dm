@@ -10,7 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define ZONE_SCALE_FULL 10000 /* layout_get_zone_box: the full zone size, in 1/10000 */
+/* layout_get_zone_box: the full zone size, in 1/10000. */
+#define ZONE_SCALE_FULL 10000
 
 /* Keeps the raw layout graphic. Returns true on success. */
 bool layout_init(void);

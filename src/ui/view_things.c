@@ -48,40 +48,54 @@ static struct {
     .track_view = {-1, -1, -1, -1}
 };
 
+/* View cells of the things on a square. */
 #define VIEW_CELL_BACK_LEFT   0
 #define VIEW_CELL_BACK_RIGHT  1
 #define VIEW_CELL_FRONT_RIGHT 2
 #define VIEW_CELL_FRONT_LEFT  3
 #define VIEW_CELL_CENTER      4
-#define FACING_AWAY           0 /* creature direction relative to the party */
-#define FACING_LEFT           1
-#define FACING_TOWARD         2
-#define FACING_RIGHT          3
 
-#define DOOR_PASS_BACK          1 /* door squares draw things behind, then in front of the door */
-#define DOOR_PASS_FRONT         2
-#define CELL_ORDER_DOOR_PASS    8
-#define CELL_ORDER_BITS         4
-#define CELL_ORDER_MASK         0xf
-#define CLICK_BOX_MIN_W         14 /* smallest clickable object box */
+/* Creature direction relative to the party. */
+#define FACING_AWAY   0
+#define FACING_LEFT   1
+#define FACING_TOWARD 2
+#define FACING_RIGHT  3
+
+/* Door squares draw things behind, then in front of the door; the cell order has one cell per nibble. */
+#define DOOR_PASS_BACK   1
+#define DOOR_PASS_FRONT  2
+#define CELL_ORDER_SHIFT 4
+
+/* A cell order nibble: bit 3 marks a door pass. */
+#define CELL_ORDER_DOOR_PASS 0x8
+#define CELL_ORDER_MASK      0xf
+
+/* The smallest clickable object box. */
+#define CLICK_BOX_MIN_W         14
 #define CLICK_BOX_MIN_H         11
 #define CLICK_BOX_CENTER_H      15
 #define CLICK_BOX_CENTER_OFFSET 7
 
 /* Object aspect record (4 bytes): graphic, flags, alcove coordinate set. */
 #define OBJECT_ASPECT_GRAPHIC      0
-#define OBJECT_ASPECT_FLAGS        2
+#define OBJECT_ASPECT_FLAG_BYTE    2
 #define OBJECT_ASPECT_ALCOVE_COORD 3
-#define OBJECT_FLIP_ON_RIGHT       0x1
-#define OBJECT_HAS_ALCOVE_GRAPHIC  0x10
+
+/* Object aspect flags. */
+#define OBJECT_FLIP_ON_RIGHT      0x01
+#define OBJECT_HAS_ALCOVE_GRAPHIC 0x10
 
 /* Projectile aspect record (4 bytes): graphic, scale flags, pose flags. */
-#define PROJECTILE_ASPECT_GRAPHIC      0
-#define PROJECTILE_ASPECT_SCALE_FLAGS  2
-#define PROJECTILE_ASPECT_POSE_FLAGS   3
-#define PROJECTILE_SCALE_WITH_ENERGY   0x1
-#define PROJECTILE_FLIP_ON_LEFT        0x10
-#define PROJECTILE_KIND                0x3
+#define PROJECTILE_ASPECT_GRAPHIC    0
+#define PROJECTILE_ASPECT_SCALE_BYTE 2
+#define PROJECTILE_ASPECT_POSE_BYTE  3
+
+/* Projectile aspect flags, and the kind in the pose flags. */
+#define PROJECTILE_SCALE_WITH_ENERGY 0x01
+#define PROJECTILE_FLIP_ON_LEFT      0x10
+#define PROJECTILE_KIND              0x03
+
+/* Projectile kinds: which poses the graphic set has. */
 #define PROJECTILE_BACK_AND_ROTATION   0
 #define PROJECTILE_BACK                1
 #define PROJECTILE_NO_BACK             2
@@ -90,10 +104,14 @@ static struct {
 #define POSE_BACK                      1
 #define POSE_SIDE                      2
 #define WEAPON_PROJECTILE_ASPECT_SHIFT 8 /* 0: the object aspect */
-#define WEAPON_PROJECTILE_ASPECT_MASK  0x1f
-#define PROJECTILE_ENERGY_MIN          96
-#define PROJECTILE_SCALE_MIN           2
-#define PROJECTILE_ENERGY_SCALE_SHIFT  8
+
+/* Projectile aspect of a weapon in its object info. */
+#define WEAPON_PROJECTILE_ASPECT_MASK 0x1f
+
+/* Projectile scale by energy. */
+#define PROJECTILE_ENERGY_MIN         96
+#define PROJECTILE_SCALE_MIN          2
+#define PROJECTILE_ENERGY_SCALE_SHIFT 8
 
 /* Explosion graphics. */
 #define EXPLOSION_ASPECT_FIRE       0
@@ -105,17 +123,19 @@ static struct {
 #define EXPLOSION_PATTERN_STRENGTHS 3
 
 /* Field aspect bytes and the masked fill arguments. */
-#define FIELD_PATTERN                   0
-#define FIELD_LAST_UNIT                 1
-#define FIELD_TRANSPARENT               2
-#define FIELD_MASK                      3
-#define FIELD_WIDTH                     4
-#define FIELD_HEIGHT                    5
-#define FIELD_ASPECT_SIZE               8
+#define FIELD_PATTERN            0
+#define FIELD_LAST_UNIT          1
+#define FIELD_TRANSPARENT        2
+#define FIELD_MASK_BYTE          3
+#define FIELD_WIDTH              4
+#define FIELD_HEIGHT             5
+#define FIELD_ASPECT_SIZE        8
+#define EXPLOSION_FILL_LAST_UNIT 87
+
+/* Masked fill arguments: no mask, a flipped mask, the random first unit. */
 #define FIELD_NO_MASK                   0xff
 #define FIELD_MASK_FLIPPED              0x80
 #define FIELD_FIRST_UNIT_RANGE          0x1f
-#define EXPLOSION_FILL_LAST_UNIT        0x57
 #define EXPLOSION_FILL_FIRST_UNIT_RANGE 0x3f
 #define EXPLOSION_FILL_TRANSPARENT      (FILL_NO_MASK | TRANSPARENT_COLOR)
 
@@ -218,10 +238,10 @@ static void show_object(const SquareDraw *sq, uint16_t thing, int16_t aspect_ind
     int16_t lane = sq->lane;
     int16_t *pile = spot->pile;
     const uint8_t *aspect = tables_get_object_aspect(aspect_index);
-    bool alcove_graphic = spot->alcove_front && (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_HAS_ALCOVE_GRAPHIC);
+    bool alcove_graphic = spot->alcove_front && (aspect[OBJECT_ASPECT_FLAG_BYTE] & OBJECT_HAS_ALCOVE_GRAPHIC);
     int16_t graphic = GFX_OBJECT_FIRST + aspect[OBJECT_ASPECT_GRAPHIC] + alcove_graphic;
     int16_t distance = 0;
-    int flip = (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_FLIP_ON_RIGHT) && !alcove_graphic &&
+    int flip = (aspect[OBJECT_ASPECT_FLAG_BYTE] & OBJECT_FLIP_ON_RIGHT) && !alcove_graphic &&
                (lane >= 1 || (lane == 0 && (cell == VIEW_CELL_BACK_RIGHT || cell == VIEW_CELL_FRONT_RIGHT)));
     ZoneBlit blit = {spot->zone, flip ? FLIP_H : 0, TRANSPARENT_COLOR, spot->place};
     ScaledBitmap scaled;
@@ -497,7 +517,7 @@ static ProjectilePose get_projectile_pose(const SquareDraw *sq, const uint8_t *a
     int16_t dir = sq->dir;
     int16_t cell = sq->cell;
     int16_t lane = sq->lane;
-    int16_t kind = aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_KIND;
+    int16_t kind = aspect[PROJECTILE_ASPECT_POSE_BYTE] & PROJECTILE_KIND;
     int16_t pose;
     int16_t flip = 0;
     bool rotates = kind == PROJECTILE_BACK_AND_ROTATION;
@@ -512,7 +532,7 @@ static ProjectilePose get_projectile_pose(const SquareDraw *sq, const uint8_t *a
                        : POSE_FRONT;
             if (rotates && cell < VIEW_CELL_FRONT_RIGHT)
                 flip = FLIP_V;
-            if ((aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_FLIP_ON_LEFT) && lane < 1 &&
+            if ((aspect[PROJECTILE_ASPECT_POSE_BYTE] & PROJECTILE_FLIP_ON_LEFT) && lane < 1 &&
                 (lane != 0 || (cell != VIEW_CELL_BACK_RIGHT && cell != VIEW_CELL_FRONT_RIGHT)))
                 flip |= FLIP_H;
         } else { /* flying across: side pose */
@@ -548,7 +568,7 @@ static void show_projectile(const SquareDraw *sq, uint16_t thing)
         return;
     }
     const uint8_t *aspect = tables_get_projectile_aspect(flight_aspect.index);
-    int16_t by_energy = aspect[PROJECTILE_ASPECT_SCALE_FLAGS] & PROJECTILE_SCALE_WITH_ENERGY;
+    int16_t by_energy = aspect[PROJECTILE_ASPECT_SCALE_BYTE] & PROJECTILE_SCALE_WITH_ENERGY;
     int16_t scale = SCALE_NATIVE;
     int16_t row = 0;
     uint8_t energy = rec_projectile_energy(thing);
@@ -583,9 +603,9 @@ static void show_field(const uint8_t *aspect, int16_t zone)
         return;
     const Bitmap *mask = NULL;
     const Bitmap *units = gfx_get_bitmap(GFX_FIELD_PATTERN_FIRST + aspect[FIELD_PATTERN]);
-    if (aspect[FIELD_MASK] != FIELD_NO_MASK) {
-        mask = gfx_get_bitmap(GFX_FIELD_MASK_FIRST + (aspect[FIELD_MASK] & ~FIELD_MASK_FLIPPED));
-        flip = !!(aspect[FIELD_MASK] & FIELD_MASK_FLIPPED);
+    if (aspect[FIELD_MASK_BYTE] != FIELD_NO_MASK) {
+        mask = gfx_get_bitmap(GFX_FIELD_MASK_FIRST + (aspect[FIELD_MASK_BYTE] & ~FIELD_MASK_FLIPPED));
+        flip = !!(aspect[FIELD_MASK_BYTE] & FIELD_MASK_FLIPPED);
         if (flip && mask && mask->w % PIXELS_PER_WORD)
             sx = PIXELS_PER_WORD - mask->w % PIXELS_PER_WORD;
     }
@@ -769,7 +789,7 @@ void view_draw_square_things(uint16_t first, int16_t dir, Location at, int16_t v
     sq.depth = square.depth;
     if (order & CELL_ORDER_DOOR_PASS) {
         sq.pass = (order & 1) ? DOOR_PASS_FRONT : DOOR_PASS_BACK;
-        order >>= CELL_ORDER_BITS;
+        order >>= CELL_ORDER_SHIFT;
     }
     uint16_t rest = order;
     uint16_t group_thing = THING_NONE;
@@ -786,7 +806,7 @@ void view_draw_square_things(uint16_t first, int16_t dir, Location at, int16_t v
         int16_t pile;
         if (!alcove) {
             sq.cell = (rest & CELL_ORDER_MASK) - 1;
-            rest >>= CELL_ORDER_BITS;
+            rest >>= CELL_ORDER_SHIFT;
             count++;
             sq.map_cell = NORMALIZE(sq.cell + dir);
             pile = 0;

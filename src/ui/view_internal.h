@@ -10,8 +10,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Layout slots of the dungeon view. */
 #define LAYOUT_SLOTS 64
 
+/* Wall squares of the view and the sides of a wall square. */
 #define WALL_COUNT 15
 #define WALL_SIDES 4 /* the sides of a wall square */
 
@@ -77,7 +79,8 @@
 #define STAIRS_DOWN_SIDE_D1L 16
 #define STAIRS_SIDE_D0L      17
 
-#define BLIT_TRANSPARENT          0 /* wall set bitmap draw modes: with transparent color, opaque, mirrored */
+/* Wall set bitmap draw modes (with transparent color, opaque, mirrored), and the transparent colors. */
+#define BLIT_TRANSPARENT          0
 #define BLIT_OPAQUE               1
 #define BLIT_FLIPPED              2
 #define TRANSPARENT_COLOR         10
@@ -135,7 +138,8 @@
 #define VIEW_WALL_D1R_LEFT   13
 #define VIEW_WALL_D1C_FRONT  14
 
-#define BUTTON_D3R            0 /* door button views */
+/* Door button views, door depths and counts. */
+#define BUTTON_D3R            0
 #define BUTTON_D3C            1
 #define BUTTON_D2C            2
 #define BUTTON_D1C            3
@@ -144,8 +148,10 @@
 #define DOOR_DEPTH_D1         2
 #define DOOR_DEPTHS           3
 #define DOOR_TYPES            2
-#define ALCOVE_ORNAMENT_COUNT 3     /* wall ornaments that are alcoves */
-#define DOOR_ANIMATED         0x400 /* door info attribute: the door mirrors at random on each draw */
+#define ALCOVE_ORNAMENT_COUNT 3 /* wall ornaments that are alcoves */
+
+/* Door info attribute: the door mirrors at random on each draw. */
+#define DOOR_ANIMATED 0x400
 
 /* Ornament indices; -1 for none. */
 #define MAP_ORNAMENTS             16
@@ -161,27 +167,28 @@
 /* Cell orders of the things on a square (objects, creatures, projectiles, explosions): a nibble per view cell + 1,
    low nibble first; 0 is the alcove. Bit 3 marks a door pass, bit 0 then selects the pass behind (0) or in front of
    the door (1), and the next nibbles hold the cells. B back, F front, L left, R right. */
-#define CELLS_ALCOVE      0
-#define CELLS_BL          0x1
-#define CELLS_BR          0x2
-#define CELLS_BL_BR       0x21
-#define CELLS_BL_FL       0x41
-#define CELLS_BR_FR       0x32
-#define CELLS_BL_BR_FR    0x321
-#define CELLS_BR_BL_FL    0x412
-#define CELLS_BR_FL_FR    0x342
-#define CELLS_BL_FR_FL    0x431
+#define CELLS_ALCOVE      0x0000
+#define CELLS_BL          0x0001
+#define CELLS_BR          0x0002
+#define CELLS_BL_BR       0x0021
+#define CELLS_BL_FL       0x0041
+#define CELLS_BR_FR       0x0032
+#define CELLS_BL_BR_FR    0x0321
+#define CELLS_BR_BL_FL    0x0412
+#define CELLS_BR_FL_FR    0x0342
+#define CELLS_BL_FR_FL    0x0431
 #define CELLS_BL_BR_FL_FR 0x3421
 #define CELLS_BR_BL_FR_FL 0x4312
-#define DOOR_BACK_BL      0x18
-#define DOOR_BACK_BR      0x28
-#define DOOR_BACK_BL_BR   0x218
-#define DOOR_BACK_BR_BL   0x128
-#define DOOR_FRONT_FL     0x49
-#define DOOR_FRONT_FR     0x39
-#define DOOR_FRONT_FL_FR  0x349
-#define DOOR_FRONT_FR_FL  0x439
+#define DOOR_BACK_BL      0x0018
+#define DOOR_BACK_BR      0x0028
+#define DOOR_BACK_BL_BR   0x0218
+#define DOOR_BACK_BR_BL   0x0128
+#define DOOR_FRONT_FL     0x0049
+#define DOOR_FRONT_FR     0x0039
+#define DOOR_FRONT_FL_FR  0x0349
+#define DOOR_FRONT_FR_FL  0x0439
 
+/* Light levels of the dungeon view palettes. */
 #define LIGHT_LEVELS 6
 
 /* Sides of Aspect.side, clockwise from the far side. */
@@ -264,6 +271,7 @@ typedef struct {
     Placement place;
 } ZoneBlit;
 
+/* View depths: D0 is the party square. */
 #define DEPTH_D0            0
 #define DEPTH_D1            1
 #define DEPTH_D2            2
@@ -280,8 +288,10 @@ typedef struct {
 #define CREATURE_ASPECT_GRAPHIC     0
 #define CREATURE_ASPECT_COORD       4
 #define CREATURE_ASPECT_REPLACEMENT 5
-#define CREATURE_ASPECT_TRANSPARENT 0xf
 #define CREATURE_ASPECT_COORD_SHIFT 4
+
+/* The coordinate byte of a creature aspect: the transparent color in the low nibble. */
+#define CREATURE_ASPECT_TRANSPARENT 0xf
 
 /* Projectile aspects of the spell projectiles. */
 #define PROJECTILE_ASPECT_LIGHTNING 4

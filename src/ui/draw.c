@@ -48,11 +48,14 @@ void draw_flip(Bitmap *bm, int flip)
 
 /* Step of draw_shrink: source pixels per destination pixel with 10 fraction bits, truncated to 16 bits.
    A sample position adds 15 more fraction bits and rounds to the pixel. */
-#define STEP_FRACTION_BITS   10
-#define SAMPLE_FRACTION_BITS 16
-#define SAMPLE_ROUNDING      0x7fff
+#define STEP_FRACTION_SHIFT   10
+#define SAMPLE_FRACTION_SHIFT 16
+
+/* Rounding of a sample position to the pixel. */
+#define SAMPLE_ROUNDING 0x7fff
+
 /* Scales the step to the 16 fraction bits of a sample at half-pixel positions. */
-#define SAMPLE_STEP_SCALE    (1 << (SAMPLE_FRACTION_BITS - STEP_FRACTION_BITS - 1))
+#define SAMPLE_STEP_SCALE (1 << (SAMPLE_FRACTION_SHIFT - STEP_FRACTION_SHIFT - 1))
 
 bool draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t *palette_changes, Bitmap *out)
 {
@@ -61,14 +64,14 @@ bool draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t
     uint8_t *px = malloc((size_t)width * height);
     if (!px)
         return false;
-    uint32_t step_x = (uint16_t)(((uint32_t)src->w << STEP_FRACTION_BITS) / width);  /* the step keeps 16 bits */
-    uint32_t step_y = (uint16_t)(((uint32_t)src->h << STEP_FRACTION_BITS) / height); /* the step keeps 16 bits */
+    uint32_t step_x = (uint16_t)(((uint32_t)src->w << STEP_FRACTION_SHIFT) / width);  /* the step keeps 16 bits */
+    uint32_t step_y = (uint16_t)(((uint32_t)src->h << STEP_FRACTION_SHIFT) / height); /* the step keeps 16 bits */
     for (int y = 0; y < height; y++) {
-        int ry = (int)((SAMPLE_ROUNDING + step_y * SAMPLE_STEP_SCALE * (2 * y + 1)) >> SAMPLE_FRACTION_BITS) - (y > 0);
+        int ry = (int)((SAMPLE_ROUNDING + step_y * SAMPLE_STEP_SCALE * (2 * y + 1)) >> SAMPLE_FRACTION_SHIFT) - (y > 0);
         if (ry >= src->h)
             ry = src->h - 1;
         for (int x = 0; x < width; x++) {
-            int rx = (SAMPLE_ROUNDING + step_x * SAMPLE_STEP_SCALE * (2 * x + 1)) >> SAMPLE_FRACTION_BITS;
+            int rx = (SAMPLE_ROUNDING + step_x * SAMPLE_STEP_SCALE * (2 * x + 1)) >> SAMPLE_FRACTION_SHIFT;
             if (rx >= src->w)
                 rx = src->w - 1;
             uint8_t c = src->px[ry * src->w + rx];

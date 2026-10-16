@@ -14,10 +14,12 @@
 #include "ui/view.h"
 #include <string.h>
 
+/* Dialog choices and message lines. */
 #define MAX_CHOICES       4
 #define MESSAGE_COUNT     2
 #define MESSAGE_LINE_SIZE 64
 
+/* The pressed button and the message wrap. */
 #define PRESS_FRAMES       5
 #define WIDE_MESSAGE_SHIFT 3 /* a message wider than 7/8 of the zone takes two lines */
 

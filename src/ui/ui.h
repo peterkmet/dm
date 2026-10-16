@@ -11,9 +11,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Object icons are square, in pixels. */
 #define UI_ICON_SIZE 16
 
-#define SPELL_TAB_STEP 5 /* caster tab zones per caster */
+/* Caster tab zones per caster. */
+#define SPELL_TAB_STEP 5
 
 /* Colors of the interface palette. */
 #define COLOR_BLACK        0
@@ -51,7 +53,8 @@
 #define RGB_BLUE           0x00f
 #define RGB_WHITE          0xfff
 
-#define UI_BODY_SLOT_COUNT 6 /* hands, head, torso, legs, feet */
+/* Body slots: hands, head, torso, legs, feet. */
+#define UI_BODY_SLOT_COUNT 6
 
 /* Slot boxes: the two hands of each status box, then the inventory slots, then the chest slots. */
 #define UI_SLOT_BOX_STATUS_FIRST    0

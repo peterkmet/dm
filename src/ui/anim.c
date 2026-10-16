@@ -17,6 +17,7 @@
 
 #define TAG(a, b) ((a) << 8 | (b))
 
+/* Animation chunks, samples and the music of the CSB ending. */
 #define CHUNK_HEADER            6 /* tag, payload length, parameter */
 #define CHUNK_LENGTH            2
 #define CHUNK_PARAMETER         4
@@ -26,15 +27,17 @@
 #define SAMPLE_VOLUME_SHIFT     2   /* volume = (byte + 1) >> 2 */
 #define PALETTE_COUNT_BYTES     2   /* PL: entry count word before the entries */
 #define PALETTE_ENTRY_BYTES     4   /* color index, red, green, blue: 4 bits each */
-#define COLOR_NIBBLE            15  /* one 4-bit color component */
 #define SAMPLE_VOLUME_BYTES     2   /* SO: left and right volume bytes after the chunk header */
 #define MAX_MUSIC               32
 #define MUSIC_PERIOD            328 /* the sample period of every music segment of the CSB disk B player */
 #define MUSIC_VOLUME            30
 #define MUSIC_PASSES            6 /* the sequence plays 6 times, then the music ends */
-#define MUSIC_SEQUENCE_END      0xff
-#define MUSIC_COUNT_SIGN_BIT    0x80 /* high byte of a negative item count */
-#define MUSIC_FADE_FRAMES       3    /* the volume goes down by 1 every 3 ticks */
+#define MUSIC_FADE_FRAMES       3 /* the volume goes down by 1 every 3 ticks */
+
+/* Animation bytes: a 4-bit color component, the end of the music sequence, the sign of an item count. */
+#define COLOR_NIBBLE       0x0f
+#define MUSIC_SEQUENCE_END 0xff
+#define MUSIC_NEGATIVE_BIT 0x80 /* high byte of a negative item count */
 
 /* Chunk tags that the player runs. The other tags (AN, DO, P8, music, sample files) do nothing for ENDA.DAT and TITL.DAT. */
 #define TAG_BREAK       (TAG('B', 'R'))
@@ -145,7 +148,7 @@ static void play_music(uint16_t number)
         return;
     const uint8_t *song = music[number - 1];
     size_t size = music_sizes[number - 1];
-    if (size < 2 || song[0] & MUSIC_COUNT_SIGN_BIT)
+    if (size < 2 || song[0] & MUSIC_NEGATIVE_BIT)
         return;
     uint16_t n = be16(song);
     size_t items = 2 + 4 * (size_t)n, offsets[UINT8_MAX + 1];

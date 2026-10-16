@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* g_dialog_choice before a click. */
 #define DIALOG_NO_CHOICE 99
 
 extern int16_t g_dialog_choice; /* the clicked choice, 1-4, or DIALOG_NO_CHOICE */

@@ -15,8 +15,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define WALL_TEXT_NEW_LINE  0x80 /* dungeon_decode_text mode 0 codes */
-#define WALL_TEXT_END       0x81
+/* Codes of dungeon_decode_text mode 0. */
+#define WALL_TEXT_NEW_LINE 0x80
+#define WALL_TEXT_END      0x81
+
+/* The wall text buffer and the D3 far wall sides. */
 #define WALL_TEXT_SIZE      80
 #define SCALE_D3_FAR_SIDE_W 30 /* the D3L2 and D3R2 wall sides are wider than high */
 

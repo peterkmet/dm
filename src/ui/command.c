@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+/* The command queue, the input tables and the mouth blink. */
 #define QUEUE_SIZE          9
 #define QUEUE_CLICK_LIMIT   5 /* a click or a key waits only when fewer commands wait */
 #define QUEUE_RELEASE_LIMIT 7
@@ -35,7 +36,8 @@
 #define MOUTH_BLINK_COUNT   4 /* the mouth blinks when it eats an object up */
 #define MOUTH_BLINK_FRAMES  8
 
-#define VIEW_CELL_FRONT_FIRST 2 /* view cells 0-1 on the party square, 2-3 ahead */
+/* View cells 0-1 are on the party square, 2-3 ahead. */
+#define VIEW_CELL_FRONT_FIRST 2
 
 typedef struct {
     int16_t x, y, command;

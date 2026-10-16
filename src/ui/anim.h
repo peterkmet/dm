@@ -9,7 +9,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define ANIM_END (-1) /* anim_next_frame: no frame left */
+/* Result of anim_next_frame: no frame left. */
+#define ANIM_END (-1)
 
 /* Stops the sound and frees the animation file and the files it loaded. */
 void anim_close(void); /* exported for the tests */

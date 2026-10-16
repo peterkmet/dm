@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* The font graphic. */
 #define TEXT_FONT_ITEM GFX_FONT
 
 /* Loads the font graphic. The graphics file must be open. Returns true on success. */
