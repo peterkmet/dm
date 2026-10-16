@@ -141,11 +141,12 @@ static void explosion_damage_square(uint16_t explosion_thing, uint16_t attack, i
         *outcome = group_get_damage_all_creatures_outcome(group, x, y, resisted);
 }
 
-static void place_explosion(uint16_t explosion_thing, uint16_t attack, Location at, int16_t cell)
+/* Returns false when no explosion thing is free. */
+static bool place_explosion(uint16_t explosion_thing, uint16_t attack, Location at, int16_t cell)
 {
     uint16_t explosion = rec_find_unused_thing(THING_EXPLOSION);
     if (explosion == THING_NONE)
-        return;
+        return false;
     int16_t x = at.x;
     int16_t y = at.y;
     rec_explosion_set_centered(explosion, cell == CELL_CENTERED);
@@ -167,6 +168,7 @@ static void place_explosion(uint16_t explosion_thing, uint16_t attack, Location 
         .c = explosion,
     };
     timeline_add_event(&event);
+    return true;
 }
 
 /* Fireball and lightning burn the target square; the damage outcome goes to the caller. */
@@ -180,8 +182,8 @@ static void burn_explosion_square(uint16_t explosion_thing, uint16_t attack, Loc
 void explosion_create(uint16_t explosion_thing, uint16_t attack, Location at, Location target, int16_t cell)
 {
     DamageOutcome ignored = OUTCOME_NO_CREATURE_KILLED;
-    place_explosion(explosion_thing, attack, at, cell);
-    burn_explosion_square(explosion_thing, attack, target, &ignored);
+    if (place_explosion(explosion_thing, attack, at, cell))
+        burn_explosion_square(explosion_thing, attack, target, &ignored);
 }
 
 void projectile_delete_event(uint16_t projectile)
@@ -364,9 +366,9 @@ static void create_impact_explosion(uint16_t thing, uint16_t projectile, FlaskEx
         (thing == EXPLOSION_THING(EXPLOSION_POISON_BOLT) || thing == EXPLOSION_THING(EXPLOSION_LIGHTNING_BOLT));
     /* After a party hit, cell holds the champion index, as in the original. */
     if (!weakened_to_nothing) {
-        place_explosion(explosion, explosion_attack, at,
-                        explosion == EXPLOSION_THING(EXPLOSION_POISON_CLOUD) ? CELL_CENTERED : cell);
-        burn_explosion_square(explosion, explosion_attack, target, outcome);
+        if (place_explosion(explosion, explosion_attack, at,
+                            explosion == EXPLOSION_THING(EXPLOSION_POISON_CLOUD) ? CELL_CENTERED : cell))
+            burn_explosion_square(explosion, explosion_attack, target, outcome);
     }
 }
 
