@@ -86,8 +86,8 @@ These tables have the same bytes in CSB. Only the address changes.
 | `KAOS_FIXED_POSSESSIONS` | `0x101c10` | `0x102114` |
 | `KAOS_NEW_GAME_EXTRA_THINGS` | `0x101058` | `0x10155a` |
 | `KAOS_MESSAGE_ESCAPE_STRINGS`, `KAOS_ESCAPE_REPLACEMENT_CHARS`, `KAOS_INSCRIPTION_ESCAPE_STRINGS` | `0x1016ea`, `0x1017ea`, `0x10182a` | `0x101bee`, `0x101cee`, `0x101d2e` |
-| `SPELLS` (first 25 records) | `0x103c84` | `0x1046c2` |
-| `SYMBOL_BASE_MANA_COST`, `SYMBOL_MANA_COST_MULTIPLIER` | `0x103c66`, `0x103c7e` | `0x1046a4`, `0x1046bc` |
+| `KAOS_SPELLS` (first 25 records) | `0x103c84` | `0x1046c2` |
+| `KAOS_SYMBOL_BASE_MANA_COST`, `KAOS_SYMBOL_MANA_COST_MULTIPLIER` | `0x103c66`, `0x103c7e` | `0x1046a4`, `0x1046bc` |
 | `KAOS_ACTIONS_DISABLED` … `KAOS_ACTION_SKILL_INDEX` (6 tables) | `0x103eac` + 44·n | `0x1049e0` + 44·n |
 | `KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT`, `KAOS_PALETTE_LIGHT_THRESHOLDS` | `0x100cb4`, `0x100cd4` | `0x10118a`, `0x1011aa` |
 | `KAOS_SLOT_MASKS`, `KAOS_WOUND_DEFENSE_FACTOR`, `KAOS_CHAMPION_COLORS`, `KAOS_SLOT_DROP_ORDER` | `0x100c68`, `0x100ce4`, `0x100ce0`, `0x100d0e` | `0x10113e`, `0x1011ba`, `0x1011b6`, `0x1011e4` |
@@ -158,8 +158,8 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 
 | Port name | DM | CSB | Reference |
 |---|---|---|---|
-| `KAOS_INITIAL_COLORMAP` (interface, then pointer palette) | `0x100170`, `0x100190` | `0x102f0a`, `0x102f2a` | `g_initial_colormap` and + 32 (`display_load_view`, `input_event_handler`) |
-| `KAOS_ARROW_POINTER_BITMAP`, `KAOS_HAND_POINTER_BITMAP` (with the 4 size bytes before) | `0x1002ac`, `0x1003d0` | `0x1005ec`, `0x100710` | `init_mouse_pointer` C`0x10898c`, `0x10899a` |
+| `KAOS_INITIAL_COLORMAP`, `KAOS_POINTER_PALETTE` (interface, then pointer palette) | `0x100170`, `0x100190` | `0x102f0a`, `0x102f2a` | `g_initial_colormap` and + 32 (`display_load_view`, `input_event_handler`) |
+| `KAOS_ARROW_POINTER_WIDTH`, `KAOS_HAND_POINTER_WIDTH` (the 4 size bytes, then the bitmap) | `0x1002ac`, `0x1003d0` | `0x1005ec`, `0x100710` | `init_mouse_pointer` C`0x10898c`, `0x10899a` |
 | `KAOS_CREDITS_PALETTE`, `KAOS_ENTRANCE_PALETTE` (CSB values) | `0x100a46`, `0x100a66` | `0x100f18`, `0x100f38` | `entrance_show_credits`, `entrance_draw` |
 | `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b8a` | `0x10105e` | `group_steal_from_champion` C`0x10e7f6` |
 | `KAOS_LIST_SEPARATOR` ", " | `0x101ebe` | `0x10264a` | `build_object_attributes_string` C`0x110dcc` |
