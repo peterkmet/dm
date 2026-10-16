@@ -73,6 +73,8 @@ extern uint16_t g_dead_champions;
 uint16_t champion_take_dead_champions(void);
 /* Asks the user interface to draw these parts of a champion again (CHAMPION_ATTR_* redraw flags). */
 void champion_add_redraw_flags(uint16_t champion_index, uint16_t attributes);
+/* The champion turns to the party direction. */
+void champion_face_party_direction(Champion *champion);
 /* The start of a game: no leader and an empty leader hand. Returns the hand object before, which a loaded
    game puts back. */
 uint16_t champion_reset_data_to_start_game(void);

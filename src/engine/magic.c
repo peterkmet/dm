@@ -186,10 +186,7 @@ static bool cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t p
 static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, int16_t power, uint16_t skill_level)
 {
     Champion *c = &g_champions[champion_index];
-    if (c->direction != g_party_direction) {
-        c->direction = g_party_direction;
-        c->attributes |= CHAMPION_ATTR_ICON;
-    }
+    champion_face_party_direction(c);
     if (explosion_type == EXPLOSION_OPEN_DOOR)
         skill_level *= 2;
     int16_t kinetic_energy = bounded_value(

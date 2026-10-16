@@ -192,15 +192,6 @@ static void step_forward(int16_t direction, int16_t *x, int16_t *y)
     game_update_map_coordinates_after_relative_movement(direction, 1, 0, x, y);
 }
 
-/* The champion turns to the party direction. */
-static void champion_face_party_direction(Champion *c)
-{
-    if (c->direction != g_party_direction) {
-        c->direction = g_party_direction;
-        c->attributes |= CHAMPION_ATTR_ICON;
-    }
-}
-
 void action_print_action_message(uint16_t champion_index, const char *text)
 {
     char out[MESSAGE_SIZE];

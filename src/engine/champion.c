@@ -1110,6 +1110,14 @@ void champion_add_redraw_flags(uint16_t champion_index, uint16_t attributes)
     g_champions[champion_index].attributes |= attributes;
 }
 
+void champion_face_party_direction(Champion *champion)
+{
+    if (champion->direction != g_party_direction) {
+        champion->direction = g_party_direction;
+        champion->attributes |= CHAMPION_ATTR_ICON;
+    }
+}
+
 uint16_t champion_reset_data_to_start_game(void)
 {
     uint16_t hand = g_leader_hand_object;
