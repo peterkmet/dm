@@ -43,9 +43,9 @@ def test_status_boxes(game):
     second = game.champions[1]
     second.wounds = WOUND_READY_AND_ACTION_HAND
     second.current_health //= 2
-    game.lib.ui_draw_all_champion_states(C.CHAMPION_ATTR_REDRAW_MASK)
+    game.lib.status_draw_all(C.CHAMPION_ATTR_REDRAW_MASK)
     got = [screen(game)]
-    game.lib.ui_draw_champion_damage(1, 37)
+    game.lib.status_draw_damage(1, 37)
     got.append(screen(game))
     check("status", got)
 

@@ -52,7 +52,7 @@ def lib():
     lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
-    for f in ("gfx_get_string", "gfx_get_action_name", "gfx_get_object_name", "ui_get_skill_rank_name"):
+    for f in ("gfx_get_string", "gfx_get_action_name", "gfx_get_object_name", "panel_get_rank_name"):
         getattr(lib, f).restype = ctypes.c_char_p
     lib.recruit_text_thing.restype = ctypes.c_uint16
     lib.map_get_first_thing_at.restype = ctypes.c_uint16
@@ -88,7 +88,7 @@ def test_string_index_tables(lib):
     assert table(STATISTIC_STRINGS, 7) == ["L", "STRENGTH", "DEXTERITY", "WISDOM", "VITALITY", "ANTI-MAGIC", "ANTI-FIRE"]
     levels = table(SKILL_LEVEL_STRINGS, 15)
     assert levels[0] == "NEOPHYTE" and levels[8] == "` MASTER" and levels[14] == "ARCHMASTER"
-    assert lib.ui_get_skill_rank_name(16) == b"ARCHMASTER"
+    assert lib.panel_get_rank_name(16) == b"ARCHMASTER"
 
 
 def test_action_and_object_names(lib):
@@ -134,8 +134,8 @@ def test_prison_recruit_shows_csb_text(lib):
     lib.message_clear()
     lib.champion_add_candidate_to_party(lib.recruit_portrait_index(t))
     assert c16.in_dll(lib, "g_party_champion_count").value == 1
-    lib.ui_draw_inventory_open(0)
-    lib.ui_draw_champion_skills_and_statistics()
+    lib.panel_open(0)
+    lib.panel_draw_skills()
     lib.champion_click_rebirth_panel(C.PANEL_RESURRECT)
     lib.magic_print_spell_failure(0, C.SPELL_FAILURE_NEEDS_MORE_PRACTICE, C.SKILL_WIZARD)
     rows = message_rows(lib)

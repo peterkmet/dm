@@ -13,14 +13,16 @@
 #include "ui/audio.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
+#include "ui/menus.h"
+#include "ui/panel.h"
+#include "ui/status.h"
 #include "ui/text.h"
 #include "ui/video.h"
 #include "ui/view.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define SLOT_BOX_COUNT          46 /* 8 hands on the screen, 30 inventory and 8 chest slots */
-#define SLOT_BOX_SCREEN_COUNT   8
 #define ICONS_PER_ROW           16
 #define LEADER_HAND_NAME_LENGTH 14
 #define PADDED_TEXT_SIZE        80
@@ -34,18 +36,23 @@
 
 static uint8_t viewport_px[VIEWPORT_MAX_W * VIEWPORT_MAX_H];
 static Bitmap viewport;
-static int16_t slot_box_icon[SLOT_BOX_COUNT];
+static int16_t slot_box_icon[UI_SLOT_BOX_COUNT];
+
+const char *const g_rune_names[UI_RUNE_COUNT] = {
+    "LO",  "UM", "ON",   "EE", "PAL", "MON", "YA", "VI",  "OH",   "FUL",  "DES", "ZO",
+    "VEN", "EW", "KATH", "IR", "BRO", "GOR", "KU", "ROS", "DAIN", "NETA", "RA",  "SAR",
+};
 
 /* Loads the strings, action names, and object names, and sets up the viewport bitmap. */
-int ui_init(void)
+bool ui_init(void)
 {
     audio_init();
     viewport = (Bitmap){tables_get_viewport_width(), tables_get_viewport_height(), viewport_px};
     if ((size_t)viewport.w * viewport.h > sizeof viewport_px)
-        return -1;
-    for (int i = 0; i < SLOT_BOX_COUNT; i++)
+        return false;
+    for (int i = 0; i < UI_SLOT_BOX_COUNT; i++)
         slot_box_icon[i] = -1;
-    return gfx_load_strings() ? 0 : -1;
+    return gfx_load_strings();
 }
 
 Bitmap ui_get_screen(void)
@@ -57,9 +64,9 @@ Bitmap *ui_get_viewport(void)
     return &viewport;
 }
 
-int ui_zone_box(int16_t zone, Box *box)
+bool ui_zone_box(int16_t zone, Box *box)
 {
-    return layout_get_zone_box(zone, ZONE_SCALE_FULL, ZONE_SCALE_FULL, box);
+    return layout_get_zone_box(zone, ZONE_SCALE_FULL, ZONE_SCALE_FULL, box) != 0;
 }
 
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color)
@@ -202,11 +209,11 @@ void ui_draw_interface(void)
     if (g_session.inventory_champion_index >= 0) {
         int16_t i = g_session.inventory_champion_index;
         inventory_set_open_champion(-1);
-        ui_draw_inventory_open(i);
+        panel_open(i);
     } else {
         menus_draw_movement_arrows();
     }
-    ui_draw_all_champion_states(CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ICON);
+    status_draw_all(CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ICON);
     menus_draw_spell_area();
     g_redraw |= REDRAW_ACTION_AREA;
     menus_refresh_action_area();
@@ -219,21 +226,24 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
     int sheet = 0;
     while (sheet < ICON_SHEET_COUNT && tables_get_icon_sheet_first(sheet) <= icon)
         sheet++;
-    int16_t i = icon - tables_get_icon_sheet_first(sheet - 1);
-    const Bitmap *bm = gfx_get_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     out->w = UI_ICON_SIZE;
     out->h = UI_ICON_SIZE;
     memset(out->px, 0, UI_ICON_SIZE * UI_ICON_SIZE);
+    /* an icon below the first sheet draws empty (the original reads before the table) */
+    if (sheet == 0)
+        return;
+    int16_t i = icon - tables_get_icon_sheet_first(sheet - 1);
+    const Bitmap *bm = gfx_get_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     if (bm)
         draw_blit(bm, i % ICONS_PER_ROW * UI_ICON_SIZE, i / ICONS_PER_ROW * UI_ICON_SIZE, out,
                   &(Box){0, 0, UI_ICON_SIZE, UI_ICON_SIZE}, COLOR_NONE, 0);
 }
 
-int ui_get_icon_zone_box(int16_t zone, int border, Box *box)
+bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box)
 {
     int16_t w = UI_ICON_SIZE;
     int16_t h = UI_ICON_SIZE;
-    int ok = layout_get_zone(zone, 0, 0, box, &w, &h);
+    bool ok = layout_get_zone(zone, 0, 0, box, &w, &h);
     if (border) {
         int16_t d = tables_get_slot_box_border();
         box->x -= d;
@@ -244,9 +254,9 @@ int ui_get_icon_zone_box(int16_t zone, int border, Box *box)
     return ok;
 }
 
-bool ui_get_slot_box_zone(int16_t slot_box, int border, Box *box)
+bool ui_get_slot_box_zone(int16_t slot_box, bool border, Box *box)
 {
-    return slot_box >= 0 && slot_box < SLOT_BOX_COUNT &&
+    return slot_box >= 0 && slot_box < UI_SLOT_BOX_COUNT &&
            ui_get_icon_zone_box(tables_get_slot_box_zone(slot_box), border, box);
 }
 
@@ -256,18 +266,18 @@ void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon)
     Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
     Bitmap screen = ui_get_screen();
     Box b;
-    if (slot_box < 0 || slot_box >= SLOT_BOX_COUNT)
+    if (slot_box < 0 || slot_box >= UI_SLOT_BOX_COUNT)
         return;
     slot_box_icon[slot_box] = icon;
-    if (icon == -1 || !ui_get_slot_box_zone(slot_box, 0, &b))
+    if (icon == -1 || !ui_get_slot_box_zone(slot_box, false, &b))
         return;
     ui_extract_icon(icon, &bm);
-    draw_blit(&bm, 0, 0, slot_box < SLOT_BOX_SCREEN_COUNT ? &screen : &viewport, &b, COLOR_NONE, 0);
+    draw_blit(&bm, 0, 0, slot_box < UI_SLOT_BOX_INVENTORY_FIRST ? &screen : &viewport, &b, COLOR_NONE, 0);
 }
 
 int16_t ui_get_icon_in_slot_box(int16_t slot_box)
 {
-    return slot_box >= 0 && slot_box < SLOT_BOX_COUNT ? slot_box_icon[slot_box] : -1;
+    return slot_box >= 0 && slot_box < UI_SLOT_BOX_COUNT ? slot_box_icon[slot_box] : -1;
 }
 
 /* The champion of a bones object: the charge bits of the junk record. */
@@ -324,4 +334,29 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
             return input.command;
     }
     return 0;
+}
+
+const char *ui_format_number(char *buf, size_t size, uint16_t number, bool pad, int16_t width)
+{
+    if (pad)
+        snprintf(buf, size, "%*u", width, number);
+    else
+        snprintf(buf, size, "%u", number);
+    return buf;
+}
+
+Bitmap ui_get_champion_portrait(int16_t champion_index)
+{
+    return (Bitmap){CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champions[champion_index].runtime.portrait};
+}
+
+void ui_draw_icon_to_viewport(int16_t icon, int16_t zone)
+{
+    uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
+    Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
+    Box b;
+    if (!ui_get_icon_zone_box(zone, 0, &b))
+        return;
+    ui_extract_icon(icon, &bm);
+    draw_blit(&bm, 0, 0, ui_get_viewport(), &b, COLOR_NONE, 0);
 }

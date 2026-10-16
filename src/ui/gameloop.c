@@ -30,8 +30,11 @@
 #include "ui/dialog.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
+#include "ui/menus.h"
 #include "ui/music.h"
+#include "ui/panel.h"
 #include "ui/startend.h"
+#include "ui/status.h"
 #include "ui/text.h"
 #include "ui/ui.h"
 #include "ui/video.h"
@@ -64,7 +67,7 @@ bool gameloop_load_data(const char *dir)
         return false;
     startend_set_save_dir(dir);
     g_endgame_sensor_hook = startend_run_endgame_sensor;
-    return !layout_init() && !text_init() && !ui_init();
+    return !layout_init() && !text_init() && ui_init();
 }
 
 const char *gameloop_get_data_dir(void)
@@ -202,14 +205,14 @@ static void mark_seen_squares(void)
 static void refresh_interface(void)
 {
     Bitmap screen = ui_get_screen();
-    ui_draw_all_champion_states(0);
+    status_draw_all(0);
     menus_refresh_spell_area(NULL);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].current_health)
             continue;
         bool inventory = i == g_session.inventory_champion_index && !g_game_frozen; /* the frozen screen covers it */
         for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++)
-            ui_draw_champion_slot(i, slot);
+            status_draw_slot(i, slot);
         if (inventory)
             ui_draw_viewport();
     }
@@ -283,7 +286,7 @@ static void reset_champions_of_loaded_game(void)
     inventory_put_hand_object(champion_reset_for_new_game());
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         g_champions[i].attributes &= CHAMPION_ATTR_KEEP_MASK;
-    ui_draw_all_champion_states(CHAMPION_ATTR_ICON | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ACTION_HAND);
+    status_draw_all(CHAMPION_ATTR_ICON | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ACTION_HAND);
     if (leader != -1)
         champion_set_leader(leader);
     menus_draw_spell_area();
@@ -427,7 +430,7 @@ void gameloop_tick(void)
     champion_apply_pending_damage();
     release_dead_champions(leader);
     if (g_session.party_dead) {
-        ui_draw_all_champion_states(0); /* the dead champions show during the death scream */
+        status_draw_all(0); /* the dead champions show during the death scream */
         draw_spell_area_before_last_death(before);
         startend_run_endgame(1);
         return;

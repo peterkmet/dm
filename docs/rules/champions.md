@@ -268,7 +268,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 ## Not in this module
 
-- Drawing: status boxes, damage numbers, the inventory panel, and portraits (`ui_champion.c`).
+- Drawing: status boxes, damage numbers, the inventory panel, and portraits (`status.c`, `panel.c`).
 - Spells and creature attacks on champions (`magic.c`, `group.c`).
 - Scent creation on party moves (`move.c`).
 - `rec_find_unused_thing` does not free discarded things yet (`record.c`).

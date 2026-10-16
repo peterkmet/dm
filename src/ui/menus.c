@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "ui/menus.h"
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/spells.h"
@@ -11,6 +12,7 @@
 #include "engine/magic.h"
 #include "ui/advanced.h"
 #include "ui/draw.h"
+#include "ui/status.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include <stdio.h>
@@ -24,7 +26,6 @@
 
 bool g_action_area_contains_icons = true;
 
-/* Draws the movement arrows. */
 void menus_draw_movement_arrows(void)
 {
     Bitmap screen = ui_get_screen();
@@ -36,19 +37,19 @@ void menus_clear_acting_champion(void)
     int16_t champion_index = g_session.acting_champion_index;
     action_clear_acting_champion();
     if (champion_index >= 0)
-        ui_draw_champion_state(champion_index);
+        status_draw_champion(champion_index);
 }
 
-void menus_set_acting_champion(uint16_t champion_index)
+void menus_set_acting_champion(int16_t champion_index)
 {
     if (!action_set_acting_champion(champion_index))
         return;
     g_action_area_contains_icons = false;
-    ui_draw_champion_state(champion_index);
+    status_draw_champion(champion_index);
     menus_draw_action_area();
 }
 
-void menus_draw_action_icon(uint16_t champion_index)
+void menus_draw_action_icon(int16_t champion_index)
 {
     const Champion *champion = &g_champions[champion_index];
     Bitmap screen = ui_get_screen();
@@ -136,7 +137,7 @@ void menus_refresh_action_area(void)
         uint16_t turned = champion_turn_to_last_attackers();
         for (uint16_t i = 0; i < g_party_champion_count; i++)
             if (turned & 1 << i)
-                ui_draw_champion_state(i);
+                status_draw_champion(i);
     } else {
         if (g_session.acting_champion_index >= 0) {
             menus_clear_acting_champion();
@@ -150,7 +151,7 @@ void menus_refresh_action_area(void)
     if (g_session.acting_champion_index >= 0) {
         g_action_area_contains_icons = false;
         g_champions[g_session.acting_champion_index].attributes |= CHAMPION_ATTR_ACTION_HAND;
-        ui_draw_champion_state(g_session.acting_champion_index);
+        status_draw_champion(g_session.acting_champion_index);
         menus_draw_action_area();
     } else if (!g_session.action_damage) {
         g_action_area_contains_icons = true;
@@ -162,7 +163,7 @@ void menus_refresh_action_area(void)
 
 /* Draws the caster tabs of the spell area: a cyan tab for each other living champion, the name of
    the caster on its tab. */
-static void draw_caster_tabs(uint16_t champion_index, const Champion *caster)
+static void draw_caster_tabs(int16_t champion_index, const Champion *caster)
 {
     Bitmap screen = ui_get_screen();
     ui_fill_zone(&screen, ZONE_SPELL_AREA_TABS, COLOR_BLACK);
@@ -175,12 +176,7 @@ static void draw_caster_tabs(uint16_t champion_index, const Champion *caster)
                   caster->name);
 }
 
-void menus_draw_spell_area_controls(uint16_t champion_index)
-{
-    draw_caster_tabs(champion_index, &g_champions[champion_index]);
-}
-
-void menus_draw_available_symbols(uint16_t symbol_step)
+void menus_draw_available_symbols(int16_t symbol_step)
 {
     Bitmap screen = ui_get_screen();
     char s[2] = {0, 0};
@@ -204,7 +200,7 @@ static void draw_chosen_symbols(const char *symbols)
     }
 }
 
-void menus_draw_champion_symbols(uint16_t champion_index)
+void menus_draw_champion_symbols(int16_t champion_index)
 {
     draw_chosen_symbols(g_champions[champion_index].symbols);
 }
@@ -249,7 +245,6 @@ void menus_set_magic_caster(int16_t champion_index)
         draw_spell_area();
 }
 
-/* Draws the parts of the spell area that the game rules changed: all of it, the caster tabs, or the runes. */
 void menus_refresh_spell_area(const Champion *caster)
 {
     int16_t caster_index = g_magic_caster_champion_index;

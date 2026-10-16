@@ -172,7 +172,7 @@ static void draw_party_arrow(Bitmap *target, Box area, int16_t left, int16_t top
 }
 
 /* The square at the center of the drawn map. */
-static void draw_center(int16_t map, int16_t *center_x, int16_t *center_y)
+static void get_map_center(int16_t map, int16_t *center_x, int16_t *center_y)
 {
     bool party_here = map == g_party_map_index;
     *center_x = (party_here ? g_party_map_x : dungeon_map_width(map) / 2) + scroll_x;
@@ -184,7 +184,7 @@ void automap_scroll(int16_t map, int16_t dx, int16_t dy)
     if (map < 0 || map >= dungeon_map_count())
         return;
     int16_t center_x, center_y;
-    draw_center(map, &center_x, &center_y);
+    get_map_center(map, &center_x, &center_y);
     scroll_x += max16(0, min16(dungeon_map_width(map) - 1, center_x + dx)) - center_x;
     scroll_y += max16(0, min16(dungeon_map_height(map) - 1, center_y + dy)) - center_y;
 }
@@ -218,7 +218,7 @@ void automap_draw(Bitmap *target, Box area, int16_t map)
     int16_t center_y;
     int16_t map_width = dungeon_map_width(map);
     int16_t map_height = dungeon_map_height(map);
-    draw_center(map, &center_x, &center_y);
+    get_map_center(map, &center_x, &center_y);
     int16_t origin_x = maps.x + (maps.w - AUTOMAP_CELL_SIZE) / 2 - center_x * AUTOMAP_CELL_SIZE;
     int16_t origin_y = maps.y + (maps.h - AUTOMAP_CELL_SIZE) / 2 - center_y * AUTOMAP_CELL_SIZE;
     for (int16_t x = 0; x < map_width; x++)

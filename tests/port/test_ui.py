@@ -142,7 +142,7 @@ def test_render_party(game, n):
         colors = {fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)}
         assert len(colors) > 3
     if n == 4:
-        game.ui_draw_champion_damage(1, 37)
+        game.status_draw_damage(1, 37)
         game.menus_draw_action_damage(25)
 
 
@@ -161,11 +161,11 @@ def test_render_inventory(game):
     reset(game)
     recruit_from_mirrors(game, 2)
     render(game, "base")
-    game.ui_draw_inventory_open(0)
+    game.panel_open(0)
     fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(game, "fb"))
     assert session(game).inventory_champion_index == 0
     assert len(set(fb[320 * 33:320 * 169])) > 6
-    game.ui_draw_champion_skills_and_statistics()
+    game.panel_draw_skills()
     game.ui_draw_viewport()
-    game.ui_draw_inventory_close(0)
+    game.panel_close(0)
     assert session(game).inventory_champion_index == -1

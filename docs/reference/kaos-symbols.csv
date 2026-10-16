@@ -1592,7 +1592,6 @@ address,name,signature,subsystem
 0x1234fc,menus_add_champion_symbol,void menus_add_champion_symbol(int16_t symbol_index),menus
 0x1235a4,menus_delete_champion_symbol,void menus_delete_champion_symbol(void),menus
 0x1235fe,menus_draw_movement_arrows,void menus_draw_movement_arrows(void),menus
-0x123618,menus_draw_spell_area_controls,void menus_draw_spell_area_controls(uint16_t champion_index),menus
 0x123694,menus_draw_available_symbols,void menus_draw_available_symbols(uint16_t symbol_step),menus
 0x1236e4,menus_draw_champion_symbols,void menus_draw_champion_symbols(Champion *champion),menus
 0x12374a,menus_set_magic_caster,void menus_set_magic_caster(int16_t champion_index),menus

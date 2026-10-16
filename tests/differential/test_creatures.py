@@ -309,7 +309,7 @@ def caster(lib):
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
     assert lib.layout_init() == 0 and lib.text_init() == 0
     new_game(lib)
-    assert lib.ui_init() == 0
+    assert lib.ui_init()
     lib.move_party_enter_dungeon()
     c = add_test_champion(lib)
     for s in range(20):

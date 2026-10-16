@@ -422,7 +422,7 @@ def test_load_colors(game):
     for load in (maximum // 2, maximum * 7 // 8, maximum + 1):  # light gray, yellow, red
         champion.load = load
         champion.attributes |= C.CHAMPION_ATTR_LOAD
-        lib.ui_draw_champion_state(0)
+        lib.status_draw_champion(0)
         got.append(snapshot(game))
     check("load", got)
 
