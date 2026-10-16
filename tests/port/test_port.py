@@ -5,9 +5,9 @@ import subprocess
 import pytest
 
 from dmtest.lib import load_lib
-from dmtest.markers import BUILD, sdl3_installed
+from dmtest.markers import BUILD, needs_sdl
 
-pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not installed")
+pytestmark = [needs_sdl]
 
 
 @pytest.fixture(scope="module")

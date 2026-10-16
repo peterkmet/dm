@@ -7,12 +7,11 @@ import subprocess
 import tempfile
 import time
 
-import pytest
 
-from dmtest.markers import GAME_CSB, ROOT, needs_sdl
+from dmtest.markers import GAME_CSB, ROOT, needs_csb, needs_csb_mini, needs_dm, needs_sdl
 
 
-pytestmark = pytest.mark.skipif(not (GAME_CSB / "disk-b" / "MINI.DAT").exists(), reason="game-csb missing")
+pytestmark = [needs_csb, needs_csb_mini]
 
 
 @needs_sdl
@@ -55,7 +54,7 @@ def test_csb_prison_state_through_the_tools(tmp_path, monkeypatch):
 
 
 @needs_sdl
-@pytest.mark.skipif(not (ROOT / "game" / "Dungeon.DAT").exists(), reason="game missing")
+@needs_dm
 def test_dm_state_through_the_tools(monkeypatch):
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")
     path = os.path.join(sock_dir, "control.sock")

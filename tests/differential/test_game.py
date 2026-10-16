@@ -1,13 +1,12 @@
 import ctypes
 import random
-import shutil
 import struct
 
 import pytest
 
 from dmtest.game import Champion
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -22,7 +21,7 @@ TIMELINE_COUNT, FIRST_UNUSED = 0x103180, 0x103182
 ADD_EVENT, EXTRACT_FIRST, IS_EXPIRED = 0x11F59C, 0x11F634, 0x11F662
 BUF = 0x200000  # free emulator RAM above the KAOS image
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
+pytestmark = [needs_dm]
 c16, c32 = ctypes.c_int16, ctypes.c_uint32
 
 
@@ -62,9 +61,6 @@ def lib():
 
 
 def need(lib, *names):
-    missing = [n for n in ("KAOS.FTL", *names) if not (GAME / n).exists()]
-    if missing:
-        pytest.skip(f"missing game/{missing[0]}")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.tables_init() == 0
 

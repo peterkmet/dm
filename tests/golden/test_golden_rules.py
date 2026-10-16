@@ -11,7 +11,7 @@ import pytest
 from dmtest import constants as C
 from dmtest.game import Party, scrub_free_groups, state
 from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
-from dmtest.markers import GAME
+from dmtest.markers import needs_dm
 
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
@@ -25,7 +25,6 @@ ATTACKED = 5, 0, 0, 0        # a map that allows skeletons, with a free corridor
 # (weapon type, charges): weapon 4 has an action that needs charges, once without and once with them
 WEAPONS = (C.WEAPON_TORCH, 0), (8, 0), (9, 0), (10, 0), (4, 0), (4, 3)
 
-needs_game = pytest.mark.skipif(not (GAME / "KAOS.FTL").exists(), reason="game files missing")
 
 
 @pytest.fixture
@@ -70,7 +69,7 @@ def set_mode(game, mode):
     ctypes.c_bool.in_dll(game.lib, "g_advanced_features").value = mode != VANILLA
 
 
-@needs_game
+@needs_dm
 def test_fill_at_a_fountain(game):
     lib = game.lib
     recruit(game)
@@ -89,7 +88,7 @@ def test_fill_at_a_fountain(game):
     check("fill", got)
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("mode", [VANILLA, ADVANCED])
 def test_drink_at_a_fountain(game, mode):
     recruit(game)
@@ -102,7 +101,7 @@ def test_drink_at_a_fountain(game, mode):
     check(f"drink {mode}", [snapshot(game)])
 
 
-@needs_game
+@needs_dm
 def test_bones_on_the_vi_altar(game):
     lib = game.lib
     recruit(game)
@@ -121,7 +120,7 @@ def test_bones_on_the_vi_altar(game):
     check("vi altar", got)
 
 
-@needs_game
+@needs_dm
 def test_door_button(game):
     recruit(game)
     place_party(game, *DOOR_BUTTON)
@@ -134,7 +133,7 @@ def test_door_button(game):
     check("door button", got)
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("mana", [100, 2])
 def test_runes(game, mana):
     recruit(game)
@@ -148,7 +147,7 @@ def test_runes(game, mana):
     check(f"runes {mana}", got)
 
 
-@needs_game
+@needs_dm
 def test_torch_burns(game):
     lib = game.lib
     recruit(game)
@@ -164,7 +163,7 @@ def test_torch_burns(game):
     check("torch", got)
 
 
-@needs_game
+@needs_dm
 def test_turn_to_attacker(game):
     lib = game.lib
     recruit(game)
@@ -180,7 +179,7 @@ def test_turn_to_attacker(game):
     check("turn to attacker", got)
 
 
-@needs_game
+@needs_dm
 def test_action_list(game):
     lib = game.lib
     recruit(game)
@@ -205,7 +204,7 @@ def test_action_list(game):
     check("action list", got)
 
 
-@needs_game
+@needs_dm
 def test_freeze_life_and_movement_ticks(game):
     lib = game.lib
     recruit(game)
@@ -261,7 +260,7 @@ def hold(game, thing):
     assert game.value("g_leader_hand_object", u16) == thing
 
 
-@needs_game
+@needs_dm
 def test_grab_and_drop(game):
     lib = game.lib
     recruit(game)
@@ -279,7 +278,7 @@ def test_grab_and_drop(game):
     check("grab and drop", got)
 
 
-@needs_game
+@needs_dm
 def test_grab_under_a_creature(game):
     lib = game.lib
     recruit(game)
@@ -310,7 +309,7 @@ def test_grab_under_a_creature(game):
     check("grab under a creature", got)
 
 
-@needs_game
+@needs_dm
 def test_alcove(game):
     lib = game.lib
     recruit(game)
@@ -340,7 +339,7 @@ def test_alcove(game):
     check("alcove", got)
 
 
-@needs_game
+@needs_dm
 def test_imaginary_wall(game):
     lib = game.lib
     recruit(game)
@@ -359,7 +358,7 @@ def test_imaginary_wall(game):
     check("imaginary wall", got)
 
 
-@needs_game
+@needs_dm
 def test_movement_blocked(game):
     lib = game.lib
     recruit(game)
@@ -382,7 +381,7 @@ def test_movement_blocked(game):
     check("movement blocked", got)
 
 
-@needs_game
+@needs_dm
 def test_fuse_sequence(game):
     lib = game.lib
     recruit(game)
@@ -410,7 +409,7 @@ def test_fuse_sequence(game):
     check("fuse", [snapshot(game)])
 
 
-@needs_game
+@needs_dm
 def test_load_colors(game):
     lib = game.lib
     recruit(game)
@@ -428,7 +427,7 @@ def test_load_colors(game):
     check("load", got)
 
 
-@needs_game
+@needs_dm
 def test_visibility(game):
     lib = game.lib
     for name in ("dungeon_map_width", "dungeon_map_height"):

@@ -1,13 +1,12 @@
 import ctypes
 import re
-import shutil
 import struct
 from pathlib import Path
 
 import pytest
 
 from dmtest.lib import load_lib
-from dmtest.markers import ROOT
+from dmtest.markers import ROOT, needs_dm
 
 from dmtools.ftl import load_image, parse
 
@@ -15,7 +14,7 @@ KAOS = ROOT / "game" / "KAOS.FTL"
 DECOMP = ROOT / "reference" / "decomp" / "dm" / "KAOS.c"
 BASE = 0x100000
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang") or not KAOS.exists(), reason="clang or game files missing")
+pytestmark = [needs_dm]
 
 u8, s8, u16, s16, u32 = ctypes.c_uint8, ctypes.c_int8, ctypes.c_uint16, ctypes.c_int16, ctypes.c_uint32
 

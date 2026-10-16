@@ -2,7 +2,6 @@
 
 import ctypes
 import random
-import shutil
 import struct
 
 import pytest
@@ -12,7 +11,7 @@ from dmtest.emu import need, s16, var
 from dmtest.game import (Party, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
                          things_of_type, tick)
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -31,7 +30,7 @@ THING_BUF, HEADER_BUF, GROUP_BUF = 0x200000, 0x220000, 0x230000
 FIREBALL = 0xFF80
 CREATURE_MUMMY = 10
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
+pytestmark = [needs_dm]
 
 
 @pytest.fixture(scope="module")
@@ -304,8 +303,6 @@ def test_fireball_flies_and_explodes_on_wall(lib):
 
 @pytest.fixture
 def caster(lib):
-    if not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")):
-        pytest.skip("missing game files")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.layout_init() == 0 and lib.text_init() == 0 and lib.tables_init() == 0

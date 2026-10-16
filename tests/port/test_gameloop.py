@@ -1,6 +1,5 @@
 import ctypes
 import os
-import shutil
 import subprocess
 
 import pytest
@@ -8,15 +7,12 @@ import pytest
 from dmtest import constants as C
 from dmtest.game import STEP_EAST, STEP_NORTH, Box, Party, start_game
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, ROOT, needs_sdl
+from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
 
 ZONE_RESURRECT, ZONE_DROP_PARTY_CELL, ZONE_BACKPACK_FIRST_SLOT = 570, 740, 520
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing"),
-]
+pytestmark = [needs_dm]
 
 
 @pytest.fixture(scope="module")

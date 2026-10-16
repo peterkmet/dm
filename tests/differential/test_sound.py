@@ -4,9 +4,8 @@ import struct
 
 import pytest
 
-from dmtest import constants as C
 from dmtest.lib import load_lib
-from dmtest.markers import ROOT, sdl3_installed
+from dmtest.markers import ROOT, needs_dm, needs_sdl
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -20,10 +19,7 @@ SOUND_COMPARE_LOUDNESS, SOUND_REQUEST_PLAY, SOUND_GET_VOLUME = 0x10871A, 0x108DF
 CLOCK, RATE = 3546895, 44100
 SCRATCH = 0x400000
 
-pytestmark = [
-    pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not installed"),
-    pytest.mark.skipif(not (GAME / "KAOS.FTL").exists() or not (GAME / "Graphics.DAT").exists(), reason="game files missing"),
-]
+pytestmark = [needs_sdl, needs_dm]
 u8p = ctypes.POINTER(ctypes.c_uint8)
 
 

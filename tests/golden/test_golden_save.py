@@ -6,11 +6,10 @@ import json
 import os
 from pathlib import Path
 
-import pytest
 
 from dmtest.game import Game, recruit_and_hold_object, scrub_free_groups
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 from dmtest.savefile import SAVE, decode
 
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
@@ -18,7 +17,6 @@ c16, u16 = ctypes.c_int16, ctypes.c_uint16
 GOLDEN = Path(__file__).with_name("save.json")
 SEED = 0x1234ABCD
 
-needs_game = pytest.mark.skipif(not (GAME / "KAOS.FTL").exists(), reason="game files missing")
 
 
 def digests(parts):
@@ -51,7 +49,7 @@ def saved_game(tmp_path):
     return decode(lib, (tmp_path / SAVE).read_bytes())
 
 
-@needs_game
+@needs_dm
 def test_save_matches_the_golden_snapshot(tmp_path):
     got = digests(saved_game(tmp_path))
     if os.environ.get("DM_UPDATE_GOLDEN"):

@@ -1,11 +1,10 @@
 import ctypes
-import shutil
 
 import pytest
 
 from dmtest.game import RecruitData, mirrors
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 from dmcsb import open_dungeon
 from dmcsb.dungeon import decode_champion
 
@@ -15,7 +14,7 @@ from dmtools.ftl import load_image, parse
 DECODED_VALUE = 0x1130AC
 BUF = 0x200000
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
+pytestmark = [needs_dm]
 u8p = ctypes.POINTER(ctypes.c_uint8)
 
 
@@ -37,9 +36,6 @@ def lib():
 
 
 def need(lib):
-    for n in ("KAOS.FTL", "Dungeon.DAT"):
-        if not (GAME / n).exists():
-            pytest.skip(f"missing game/{n}")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.tables_init() == 0
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1

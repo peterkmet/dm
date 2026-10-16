@@ -1,12 +1,11 @@
 import ctypes
-import shutil
 import struct
 
 import pytest
 
 from dmtest.game import Champion
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -19,7 +18,7 @@ STEP_EAST, STEP_NORTH, ARROW_FORWARD, ARROW_RIGHT = 0x101038, 0x101040, 0x103C56
 BUF = 0x200000
 FORWARD, RIGHT, BACKWARD, LEFT, TURN_LEFT, TURN_RIGHT = 3, 4, 5, 6, 1, 2
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
+pytestmark = [needs_dm]
 c16, u8p = ctypes.c_int16, ctypes.POINTER(ctypes.c_uint8)
 
 
@@ -43,8 +42,6 @@ def lib():
 
 @pytest.fixture
 def game(lib):
-    if not (GAME / "KAOS.FTL").exists() or not (GAME / "Dungeon.DAT").exists():
-        pytest.skip("missing game files")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     assert lib.tables_init() == 0

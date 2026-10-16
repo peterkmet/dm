@@ -5,7 +5,7 @@ import pytest
 
 from dmtest.game import Bitmap, Box, setup_view, start_view, zone_records
 from dmtest.lib import load_lib
-from dmtest.markers import ROOT, sdl3_installed
+from dmtest.markers import ROOT, needs_dm, needs_sdl
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -13,8 +13,7 @@ from dmtools.ftl import load_image, parse
 GAME = ROOT / "game"
 GET_ZONE, SHRINK, LAYOUT_ZONES = 0x116296, 0x10E898, 0x102990
 
-pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not installed")
-needs_game = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing")
+pytestmark = [needs_sdl]
 
 
 @pytest.fixture(scope="module")
@@ -63,12 +62,10 @@ def chunky(data, w, h):
 
 @pytest.fixture(scope="module")
 def emu():
-    if not (GAME / "KAOS.FTL").exists():
-        pytest.skip("game files missing")
     return Emu(load_image(parse((GAME / "KAOS.FTL").read_bytes()), 0x100000), max_cycles=50_000_000)
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("w, h, s", [(32, 40, 14), (45, 23, 21), (17, 64, 14), (24, 24, 30)])
 def test_shrink_matches_original(lib, emu, w, h, s):
     px = [[(x * 7 + y * 3 + x * y) % 16 for x in range(w)] for y in range(h)]
@@ -83,7 +80,7 @@ def test_shrink_matches_original(lib, emu, w, h, s):
     assert pixels(out) == chunky(emu.read(0x500000, (dw + 15) // 16 * 2 * dh * 4), dw, dh)
 
 
-@needs_game
+@needs_dm
 def test_zones_match_original(lib, emu):
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.layout_init() == 0
@@ -124,7 +121,7 @@ def game(lib):
 VIEWS = {"start": None, "door": (0, 1, 13, 2), "ornament": (0, 4, 9, 3), "text": (0, 4, 17, 1), "stairs": (0, 4, 15, 3)}  # map, x, y, direction
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("name", list(VIEWS))
 def test_render_view(game, name):
     lib, party = game
@@ -146,7 +143,7 @@ def word_flipped(px, w, h):
     return [[px[y][pw - 1 - x] if pw - 1 - x < w else 0 for x in range(pw)] for y in range(h)], pw
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("box, last, first, transparent, sx, mask_kind", [
     ((5, 3, 36, 20), 63, 7, 0x0A, 0, "plain"),
     ((0, 0, 36, 49), 64, 31, 0x0A, 12, "flipped"),
@@ -231,7 +228,7 @@ THINGS = {  # name: (map, x, y, direction, explosion (map x y cell attack type) 
 }
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("name", list(THINGS))
 def test_render_things(game, name):
     lib, _ = game

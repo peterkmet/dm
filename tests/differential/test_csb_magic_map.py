@@ -9,7 +9,7 @@ import pytest
 from dmtest import constants as C
 from dmtest.game import Champion, Party, TimelineEvent, global_type
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, GAME_CSB
+from dmtest.markers import GAME, GAME_CSB, needs_csb, needs_csb_mini, needs_dm
 
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 DM, CSB = 0, 1
@@ -37,10 +37,6 @@ TIME_MASK = 0xFFFFFF
 SEED = 0x12345
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
-needs_csb = pytest.mark.skipif(not all((GAME_CSB / f).exists() for f in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT")) or not MINI.exists(),
-                               reason="game-csb files missing")
-needs_dm = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing")
 
 
 class Spell(ctypes.Structure):
@@ -228,6 +224,7 @@ def face_free_square(lib, accept):
 
 
 @needs_csb
+@needs_csb_mini
 def test_magic_map_scrolls_in_the_dungeon(lib, csb):
     _, scrolls = csb
     assert value(lib, "g_party_map_index").value == 4
@@ -236,6 +233,7 @@ def test_magic_map_scrolls_in_the_dungeon(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 @pytest.mark.parametrize("hand", ["empty", "CREANAME"])
 def test_spell_needs_magic_map_in_action_hand(lib, csb, hand):
     c, scrolls = csb
@@ -250,6 +248,7 @@ def test_spell_needs_magic_map_in_action_hand(lib, csb, hand):
 
 
 @needs_csb
+@needs_csb_mini
 @pytest.mark.parametrize("power", [1, 6])
 def test_spells_with_magic_map(lib, csb, power):
     c, scrolls = csb
@@ -283,6 +282,7 @@ def test_spells_with_magic_map(lib, csb, power):
 
 
 @needs_csb
+@needs_csb_mini
 def test_events_end_the_map_spells(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -303,6 +303,7 @@ def test_events_end_the_map_spells(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_panel_draws_the_map_grid(lib, csb):
     c, scrolls = csb
     plain_scroll = take(lib, scrolls[b"CREANAME"])
@@ -316,6 +317,7 @@ def test_panel_draws_the_map_grid(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_ku_shows_the_creature_ahead(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -327,6 +329,7 @@ def test_ku_shows_the_creature_ahead(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_dain_shows_an_explosion(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -341,6 +344,7 @@ def test_dain_shows_an_explosion(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_ros_shows_an_invisible_pit(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -354,6 +358,7 @@ def test_ros_shows_an_invisible_pit(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_runes_light_with_the_spells(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -364,6 +369,7 @@ def test_runes_light_with_the_spells(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_neta_keeps_the_map(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -386,6 +392,7 @@ def grid_after_tick(lib):
 
 
 @needs_csb
+@needs_csb_mini
 @pytest.mark.parametrize("text", ["MAGICMAP", "CREANAME", "PRESS WESTWARD"])
 def test_panel_draws_again_each_tick(lib, csb, text):
     c, scrolls = csb
@@ -407,6 +414,7 @@ def face_with_creaname_scroll(lib, c, scrolls, group_ahead):
 
 
 @needs_csb
+@needs_csb_mini
 @pytest.mark.parametrize("group_ahead", [False, True])
 def test_creaname_becomes_the_creature_name(lib, csb, group_ahead):
     c, scrolls = csb
@@ -473,6 +481,7 @@ def empty_corridor(lib, x, y):
 
 
 @needs_csb
+@needs_csb_mini
 def test_map_spells_of_another_champion(lib, csb):
     c0, scrolls = csb
     c1 = setup_champion(lib, 1)
@@ -489,6 +498,7 @@ def test_map_spells_of_another_champion(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_panel_shows_the_magic_map_graphic(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -530,6 +540,7 @@ def rune_colors(lib, view, i):
 
 
 @needs_csb
+@needs_csb_mini
 @pytest.mark.parametrize("spell", [DAIN, ROS, KU, NETA])
 def test_rune_of_each_spell(lib, csb, spell):
     c, scrolls = csb
@@ -543,6 +554,7 @@ def test_rune_of_each_spell(lib, csb, spell):
 
 
 @needs_csb
+@needs_csb_mini
 def test_ku_creature_tile(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -555,6 +567,7 @@ def test_ku_creature_tile(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_dain_explosion_tile(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -573,6 +586,7 @@ def set_square(lib, x, y, square):
 
 
 @needs_csb
+@needs_csb_mini
 def test_ros_pit_and_fake_wall_tiles(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -599,6 +613,7 @@ def add_scent(lib, x, y):
 
 
 @needs_csb
+@needs_csb_mini
 def test_party_and_footprint_borders(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -621,6 +636,7 @@ def test_party_and_footprint_borders(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_eye_keeps_the_leader_map(lib, csb):
     c, scrolls = csb
     plain = take(lib, scrolls[b"CREANAME"])
@@ -642,6 +658,7 @@ def grid_pixels(lib):
 
 
 @needs_csb
+@needs_csb_mini
 @pytest.mark.parametrize("text, cast_ok, map_shown", [("MAGICMAP", True, True), ("MAGICMAPX", False, False),
                                                        ("MAGICMAP\nMORE", False, True), ("A\nMAGICMAP", False, False)])
 def test_only_the_exact_text_is_a_magic_map(lib, csb, text, cast_ok, map_shown):
@@ -664,6 +681,7 @@ def party_dir(lib):
 
 
 @needs_csb
+@needs_csb_mini
 def test_door_tiles(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -680,6 +698,7 @@ def test_door_tiles(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 def test_stairs_tiles(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -698,6 +717,7 @@ def link_new(lib, thing_type, fx, fy, cell, fill):
 
 
 @needs_csb
+@needs_csb_mini
 def test_fireball_projectile_tile(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -716,6 +736,7 @@ def zokathra(rec):
 
 
 @needs_csb
+@needs_csb_mini
 @pytest.mark.parametrize("in_wall", [False, True])
 def test_zokathra_tile(lib, csb, in_wall):
     c, scrolls = csb
@@ -728,6 +749,7 @@ def test_zokathra_tile(lib, csb, in_wall):
 
 
 @needs_csb
+@needs_csb_mini
 def test_floor_ornament_tile(lib, csb):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
@@ -737,6 +759,7 @@ def test_floor_ornament_tile(lib, csb):
 
 
 @needs_csb
+@needs_csb_mini
 @pytest.mark.parametrize("ornament", [ORNAMENT_ALCOVE, ORNAMENT_VI_ALTAR, ORNAMENT_FOUNTAIN])
 def test_wall_ornament_tiles(lib, csb, ornament):
     c, scrolls = csb

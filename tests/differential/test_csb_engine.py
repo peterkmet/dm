@@ -2,7 +2,6 @@
 
 import ctypes
 import os
-import shutil
 import struct
 import subprocess
 
@@ -10,7 +9,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, GAME_CSB, ROOT, needs_sdl
+from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
 
 from dmtools import ftl
 
@@ -27,11 +26,7 @@ EXPERIENCE_GAIN, VERSION_TEXT = 0x103FB4, 0x10402C
 DM_SPELLS = 1064068
 DIFFERENT = {CREDITS_PALETTE, ENTRANCE_PALETTE, ENTRANCE_MOUSE, ENDGAME_MOUSE, ENTRANCE_KEYS, EXPERIENCE_GAIN, VERSION_TEXT, C.CSB_SPELLS, C.CSB_RESTART_BOXES}
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME_CSB / f).exists() for f in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game-csb files missing"),
-]
-needs_dm = pytest.mark.skipif(not (GAME / "KAOS.FTL").exists(), reason="game files missing")
+pytestmark = [needs_csb]
 
 
 class CsbCopy(ctypes.Structure):

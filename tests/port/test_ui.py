@@ -5,7 +5,7 @@ import pytest
 
 from dmtest.game import Box, recruit_from_mirrors, render, reset, setup_ui, start_ui, zone_records
 from dmtest.lib import load_lib
-from dmtest.markers import ROOT, sdl3_installed
+from dmtest.markers import ROOT, needs_dm, needs_sdl
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -15,8 +15,7 @@ GET_ZONE_BOX_CLIPPED, COMMAND_FROM_MOUSE, LAYOUT_ZONES = 0x11686A, 0x120CC6, 0x1
 MOUSE_TABLES = [0x1031F8, 0x1032E8, 0x103354, 0x10351C, 0x103540, 0x103564, 0x1035A0, 0x1035DC, 0x103654, 0x1036F0, 0x10375C, 0x10378C]
 DUNGEON_PALETTE, ARROWS_GFX, ARROWS_ZONE = 0x100AA6, 13, 9
 ATTR_ALL = 0xFF80
-pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not installed")
-needs_game = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing")
+pytestmark = [needs_sdl]
 u8, u16, c16 = ctypes.c_uint8, ctypes.c_uint16, ctypes.c_int16
 
 
@@ -57,7 +56,7 @@ def test_palette_split(lib):
     pal[:], top.value, bottom.value = saved
 
 
-@needs_game
+@needs_dm
 def test_zone_box_matches_original(game, emu):
     checked = 0
     for zone in emu.zones:
@@ -99,7 +98,7 @@ def emu_zone_box(emu, zone, box):
     return True
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("table", range(len(MOUSE_TABLES)))
 def test_mouse_commands_match_original(game, emu, table):
     hits = 0
@@ -111,7 +110,7 @@ def test_mouse_commands_match_original(game, emu, table):
     assert hits > 0
 
 
-@needs_game
+@needs_dm
 def test_render_empty_party(game):
     reset(game)
     recruit_from_mirrors(game, 0)
@@ -123,7 +122,7 @@ def test_render_empty_party(game):
     assert set(fb[:320 * 33]) == {0}  # no status boxes
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("n", [1, 2, 3, 4])
 def test_render_party(game, n):
     reset(game)
@@ -146,7 +145,7 @@ def test_render_party(game, n):
         game.menus_draw_action_damage(25)
 
 
-@needs_game
+@needs_dm
 def test_render_action_menu(game):
     reset(game)
     recruit_from_mirrors(game, 4)
@@ -156,7 +155,7 @@ def test_render_action_menu(game):
     assert (ctypes.c_uint8 * 3).in_dll(game, "g_action_list_indices")[0] != 0xFF
 
 
-@needs_game
+@needs_dm
 def test_render_inventory(game):
     reset(game)
     recruit_from_mirrors(game, 2)

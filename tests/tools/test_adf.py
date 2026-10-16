@@ -1,7 +1,6 @@
 """The ADF reader of the port against amitools, the game file check, and the disk install."""
 
 import ctypes
-import shutil
 from pathlib import Path
 
 import pytest
@@ -23,7 +22,6 @@ DISKS = {
 DM, CSB = 0, 1
 SMALL, LARGE = b"\x61\x60abc", bytes(range(256)) * 160  # LARGE spans 84 data blocks
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
 needs_disks = pytest.mark.skipif(not all((MEDIA / d).exists() for d in DISKS), reason="ADF images missing")
 
 

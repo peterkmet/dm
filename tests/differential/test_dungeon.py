@@ -1,11 +1,10 @@
 import ctypes
-import shutil
 import struct
 
 import pytest
 
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 from dmcsb import THING_TYPES, open_dungeon
 from dmcsb.dungeon import _default_escape
 
@@ -17,7 +16,7 @@ NEW_GAME_EXTRA_THINGS = 0x101058
 DECOMPRESS, DECODE_TEXT = 0x12712C, 0x10B312
 G_THING_DATA_2, G_DUNGEON_TEXT_DATA = 0x101CF2, 0x101C72
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
+pytestmark = [needs_dm]
 u8p = ctypes.POINTER(ctypes.c_uint8)
 
 
@@ -37,9 +36,6 @@ def lib():
 
 
 def need(lib, *names):
-    missing = [n for n in ("KAOS.FTL", *names) if not (GAME / n).exists()]
-    if missing:
-        pytest.skip(f"missing game/{missing[0]}")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.tables_init() == 0
 

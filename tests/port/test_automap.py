@@ -1,4 +1,5 @@
 import ctypes
+import os
 import struct
 import zlib
 from pathlib import Path
@@ -7,9 +8,11 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 
-SCRATCH = Path("/private/tmp/claude-501/-Users-lego-github-dm/a035dd1c-2cf2-40ec-9360-f301ae6b451f/scratchpad")
+PNG_DIR = os.environ.get("DM_TEST_PNG_DIR")  # optional: a folder for PNG renders of the screen
+
+pytestmark = [needs_dm]
 c16 = ctypes.c_int16
 NORTH, EAST, SOUTH, WEST = range(4)
 STEP = {NORTH: (0, -1), EAST: (1, 0), SOUTH: (0, 1), WEST: (-1, 0)}
@@ -32,8 +35,6 @@ VIEWPORT = Box(0, 33, 224, 136)
 
 @pytest.fixture
 def game():
-    if not all((GAME / f).exists() for f in ("KAOS.FTL", "Dungeon.DAT")):
-        pytest.skip("missing game files")
     lib = load_lib()
     lib.dungeon_get_square.restype = ctypes.c_uint8
     lib.dungeon_load.restype = ctypes.c_bool
@@ -221,8 +222,8 @@ def test_png_after_walking(game):
     game.ui_set_screen_palette(None)
     pal = (ctypes.c_uint16 * 16).in_dll(game, "palette")
     rows = [[(pal[px[y * w + x]] >> s & 15) * 17 for x in range(w) for _ in range(scale) for s in (8, 4, 0)] for y in range(h)]
-    if SCRATCH.exists():
-        png(SCRATCH / "automap.png", [row for row in rows for _ in range(scale)])
+    if PNG_DIR:
+        png(Path(PNG_DIR) / "automap.png", [row for row in rows for _ in range(scale)])
 
 
 def test_darkness_shortens_the_visible_depth(game):

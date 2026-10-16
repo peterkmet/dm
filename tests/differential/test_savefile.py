@@ -1,12 +1,11 @@
 import ctypes
 import random
-import shutil
 import struct
 
 import pytest
 
 from dmtest.lib import load_lib
-from dmtest.markers import ROOT
+from dmtest.markers import ROOT, needs_dm
 from dmtest.savefile import (EVENTS, G_LOAD_FROM_MEMORY, MAX_GROUPS, PORTRAITS, SAVE_BLOCK_XOR, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER,
                              SIZES, SaveFile, decode, encode)
 
@@ -15,7 +14,7 @@ from dmtools.ftl import load_image, parse
 
 KAOS = ROOT / "game" / "KAOS.FTL"
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
+pytestmark = [needs_dm]
 
 
 @pytest.fixture(scope="module")
@@ -56,8 +55,6 @@ def test_round_trip(lib):
 
 
 def test_encode_matches_original(lib):
-    if not KAOS.exists():
-        pytest.skip("missing game/KAOS.FTL")
     header, blocks, portraits, dungeon = plain_parts(seed=7)
     file = encode(lib, header, blocks, portraits, dungeon)
     plain = decode(lib, file)["header"]

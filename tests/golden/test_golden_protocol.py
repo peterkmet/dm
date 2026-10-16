@@ -13,13 +13,11 @@ import pytest
 from dmtest.control import Client
 from dmtest.game import STEP_EAST, STEP_NORTH, Game
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 
 GOLDEN = Path(__file__).with_name("protocol.json")
 SEED = 0x1234ABCD
 
-needs_game = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")),
-                                reason="game files missing")
 
 
 @pytest.fixture
@@ -80,7 +78,7 @@ def session(game, client):
     return replies
 
 
-@needs_game
+@needs_dm
 def test_protocol_matches_the_golden_snapshot(game):
     client = Client(game)
     try:

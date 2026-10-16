@@ -6,7 +6,7 @@ import subprocess
 import pytest
 
 from dmtest.lib import load_lib
-from dmtest.markers import BUILD, ROOT, sdl3_installed
+from dmtest.markers import BUILD, ROOT, needs_dm, needs_sdl
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -16,8 +16,7 @@ BASE = 0x100000
 EXPAND_GRAPHIC = 0x113CC8
 PACKED, BITMAP = 0x400000, 0x500000
 
-pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not installed")
-needs_game = pytest.mark.skipif(not (GAME / "KAOS.FTL").exists() or not (GAME / "Graphics.DAT").exists(), reason="game files missing")
+pytestmark = [needs_sdl]
 
 
 class FtlImage(ctypes.Structure):
@@ -51,7 +50,7 @@ def c_image(lib, raw):
     return out
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("path", sorted(GAME.glob("*.FTL")), ids=lambda p: p.name)
 def test_ftl_image_matches_python(lib, path):
     raw = path.read_bytes()
@@ -59,7 +58,7 @@ def test_ftl_image_matches_python(lib, path):
     assert c_image(lib, raw) == (img.data, img.data_base, img.code_base)
 
 
-@needs_game
+@needs_dm
 def test_ftl_bad_checksum(lib):
     raw = bytearray((GAME / "KAOS.FTL").read_bytes())
     data_off = section(raw, 0x11)[0]
@@ -76,7 +75,7 @@ def section(raw, tag):
     return next(struct.unpack_from(">II", raw, 0x14 + i * 12 + 4) for i in range(count) if struct.unpack_from(">H", raw, 0x14 + i * 12)[0] == tag)
 
 
-@needs_game
+@needs_dm
 def test_ftl_huge_region(lib):
     raw = bytearray((GAME / "VDEO.FTL").read_bytes())
     off, size = section(raw, 0x10)
@@ -87,7 +86,7 @@ def test_ftl_huge_region(lib):
     assert c_image(lib, bytes(raw)) is None
 
 
-@needs_game
+@needs_dm
 def test_graphics_dat_rejects_bad_files(lib, tmp_path):
     dat = (GAME / "Graphics.DAT").read_bytes()
     for name, data in [("truncated", dat[:1000]), ("short", dat[:3]), ("format0", b"\x00\x01" + dat[4:])]:
@@ -96,7 +95,7 @@ def test_graphics_dat_rejects_bad_files(lib, tmp_path):
         assert lib.gfx_count() == 0
 
 
-@needs_game
+@needs_dm
 def test_kaos_accessors(lib):
     data = load_image(parse((GAME / "KAOS.FTL").read_bytes()), BASE).data
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
@@ -134,7 +133,7 @@ def bitmap_items(dat):
             yield i, item, w, h
 
 
-@needs_game
+@needs_dm
 def test_graphics_dat_items(lib):
     dat = (GAME / "Graphics.DAT").read_bytes()
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) == struct.unpack_from(">H", dat, 2)[0] == lib.gfx_count()
@@ -143,7 +142,7 @@ def test_graphics_dat_items(lib):
         assert ctypes.string_at(lib.gfx_get_item(i, ctypes.byref(size)), size.value) == item
 
 
-@needs_game
+@needs_dm
 def test_expand_graphic_matches_original(lib):
     dat = (GAME / "Graphics.DAT").read_bytes()
     emu = Emu(load_image(parse((GAME / "KAOS.FTL").read_bytes()), BASE))
@@ -163,7 +162,7 @@ def test_expand_graphic_matches_original(lib):
     assert compared == 687
 
 
-@needs_game
+@needs_dm
 def test_show_smoke_run(lib):
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     r = subprocess.run([BUILD / "dm", "--data", GAME, "--show", "1", "--frames", "5"], env=env, capture_output=True, timeout=10)

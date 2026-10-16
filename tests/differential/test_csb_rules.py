@@ -2,7 +2,6 @@
 adventures. DM keeps its behaviour, CSB has the new one."""
 
 import ctypes
-import shutil
 
 import pytest
 
@@ -26,7 +25,6 @@ class ActionInfo(ctypes.Structure):
                 ("experience_gain", ctypes.c_uint8)]
 
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
 
 
 @pytest.fixture(scope="module")

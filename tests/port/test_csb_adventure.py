@@ -13,7 +13,7 @@ from dmtest import constants as C
 from dmtest.control import Client
 from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Frames, Game, global_type
 from dmtest.lib import load_lib
-from dmtest.markers import GAME_CSB, ROOT, needs_sdl
+from dmtest.markers import GAME_CSB, ROOT, needs_csb, needs_csb_mini, needs_sdl
 
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 CEDT = GAME_CSB / "disk-b" / "CEDT.FTL"
@@ -25,11 +25,7 @@ PAYLOAD_START, PAYLOAD_REST = slice(0x100, 0x138), slice(0x162, 0x200)  # the pa
 NAME = "CSBGAME.DAT"
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME_CSB / f).exists() for f in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT")) or not MINI.exists(),
-                       reason="game-csb files missing"),
-]
+pytestmark = [needs_csb, needs_csb_mini]
 
 
 @pytest.fixture(scope="module")

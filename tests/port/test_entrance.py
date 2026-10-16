@@ -1,21 +1,17 @@
 """The DM entrance: the doors open after ENTER (KAOS entrance_open_doors 0x126c4a)."""
 
 import ctypes
-import shutil
 
 import pytest
 
 from dmtest import constants as C
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 
 
 HOOK = ctypes.CFUNCTYPE(None)
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing"),
-]
+pytestmark = [needs_dm]
 
 
 @pytest.fixture(scope="module")

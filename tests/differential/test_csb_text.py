@@ -1,13 +1,12 @@
 """CSB text from APPB.FTL and Graphics.DAT item 694 (docs/csb-engine-diff.md "Text")."""
 
 import ctypes
-import shutil
 
 import pytest
 
 from dmtest import constants as C
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, GAME_CSB
+from dmtest.markers import GAME, GAME_CSB, needs_csb, needs_dm
 
 
 DM, CSB = 0, 1
@@ -16,11 +15,7 @@ SKILL_LEVEL_STRINGS, BASE_SKILL_STRINGS, STATISTIC_STRINGS, DIRECTION_STRINGS = 
 STEP_EAST, STEP_NORTH = (0, 1, 0, -1), (-1, 0, 1, 0)
 c16 = ctypes.c_int16
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME_CSB / f).exists() for f in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game-csb files missing"),
-]
-needs_dm = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT")), reason="game files missing")
+pytestmark = [needs_csb]
 
 # DM text index -> CSB string, one or more per group of the doc table
 EXPECTED = {

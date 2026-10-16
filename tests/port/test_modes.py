@@ -18,17 +18,14 @@ from dmtest.control import Client
 from dmtest.game import (ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Party, press, recruit_first_champion, set_mode,
                          start_game)
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, ROOT, needs_sdl
+from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
 
-SCRATCH = Path("/private/tmp/claude-501/-Users-lego-github-dm/a035dd1c-2cf2-40ec-9360-f301ae6b451f/scratchpad")
+PNG_DIR = os.environ.get("DM_TEST_PNG_DIR")  # optional: a folder for PNG renders of the screen
 QUICK = "QUICK.DAT"
 SAVE = "DMGAME.DAT"
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing"),
-]
+pytestmark = [needs_dm]
 
 
 @pytest.fixture(scope="module")
@@ -63,8 +60,8 @@ def pixels(game, zone):
 
 
 def screenshot(game, name):
-    """The screen as a PNG in the scratchpad, 2 times larger."""
-    if not SCRATCH.exists():
+    """The screen as a PNG in DM_TEST_PNG_DIR, 2 times larger."""
+    if not PNG_DIR:
         return
     lib, scale = game.lib, 2
     fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
@@ -74,7 +71,7 @@ def screenshot(game, name):
         rows += [b"\0" + row] * scale
     chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))
     header = struct.pack(">IIBBBBB", 320 * scale, 200 * scale, 8, 2, 0, 0, 0)
-    (SCRATCH / name).write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(b"".join(rows))) + chunk(b"IEND", b""))
+    (Path(PNG_DIR) / name).write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(b"".join(rows))) + chunk(b"IEND", b""))
 
 
 def seen(game):

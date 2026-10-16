@@ -12,15 +12,12 @@ from dmtest import constants as C
 from dmtest.control import Client, pump, pumped, socket_dir
 from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 
 DIRECTIONS = ["north", "east", "south", "west"]
 RUNE_CELL_PIXELS = 4 * 5 * 6  # the four rune cells of the cast box, 5 x 6 pixels each
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing"),
-]
+pytestmark = [needs_dm]
 
 
 @pytest.fixture(scope="module")

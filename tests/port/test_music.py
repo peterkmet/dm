@@ -1,6 +1,5 @@
 import ctypes
 import json
-import shutil
 
 import pytest
 
@@ -18,7 +17,7 @@ MIX_FRAMES = 44100
 TRACK_02 = GAME / "music/FM-Towns,Track_02,Music.mp3"
 MUSIC_MAP = GAME.parent / "reference/extracted/music_map.json"
 
-pytestmark = [pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"), needs_dm]
+pytestmark = [needs_dm]
 
 
 @pytest.fixture(scope="module")

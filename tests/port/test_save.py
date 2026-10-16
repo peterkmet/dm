@@ -1,5 +1,4 @@
 import ctypes
-import shutil
 import struct
 
 import pytest
@@ -7,7 +6,7 @@ import pytest
 from dmtest import constants as C
 from dmtest.game import ACTIVE_GROUP_BYTES, Box, Frames, Game, recruit_and_hold_object, state
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 from dmtest.savefile import G_LOAD_FROM_MEMORY, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER, SaveFile, decode, encode
 
 from dmtools.emu import Emu
@@ -18,10 +17,7 @@ SAVE, BACKUP = "DMGAME.DAT", "DMGAME.BAK"
 LOADED, MISSING, DAMAGED = 1, 0, -1
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing"),
-]
+pytestmark = [needs_dm]
 
 
 @pytest.fixture(scope="module")

@@ -28,11 +28,19 @@ dev = [
     "pytest>=8",
     "pytest-timeout>=2.4.0",
     "pytest-xdist>=3.8.0",
+    "ruff>=0.17.1",
 ]
 research = [
     "capstone>=5.0.9",
     "numpy>=2.5.4",
 ]
+
+[tool.ruff]
+line-length = 160
+src = ["tests", "tools/dmtools"]
+
+[tool.ruff.lint]
+select = ["E4", "E9", "F"]
 
 [tool.pytest.ini_options]
 timeout = 120

@@ -8,7 +8,7 @@ import pytest
 from dmtest import constants as C
 from dmtest.game import Game, global_type, state
 from dmtest.lib import load_lib
-from dmtest.markers import GAME_CSB
+from dmtest.markers import GAME_CSB, needs_csb, needs_csb_mini
 from dmtest.savefile import SaveFile
 
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
@@ -19,11 +19,7 @@ NAME = b"CSBGAME.DAT"
 CHAMPION_BYTES, MAGIC_MAP = 0x140, 0x118
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME_CSB / f).exists() for f in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT")) or not MINI.exists(),
-                       reason="game-csb files missing"),
-]
+pytestmark = [needs_csb, needs_csb_mini]
 
 
 @pytest.fixture(scope="module")

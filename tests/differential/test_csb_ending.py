@@ -10,7 +10,7 @@ import pytest
 from dmtest import constants as C
 from dmtest.game import TimelineEvent, global_type
 from dmtest.lib import clear_folder_hooks, load_lib, set_folder_hooks
-from dmtest.markers import GAME_CSB, ROOT
+from dmtest.markers import GAME_CSB, ROOT, needs_csb, needs_csb_mini, needs_file
 
 ENDA = GAME_CSB / "ENDA.DAT"
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
@@ -23,11 +23,7 @@ DEATH_FRAMES, THE_END_FRAMES = 240, 300
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 HOOK = ctypes.CFUNCTYPE(None)
 
-pytestmark = [
-    pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
-    pytest.mark.skipif(not all((GAME_CSB / f).exists() for f in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT", "ENDA.DAT")) or not MINI.exists(),
-                       reason="game-csb files missing"),
-]
+pytestmark = [needs_csb, needs_csb_mini, needs_file(ENDA)]
 
 
 @pytest.fixture(scope="module")
@@ -280,7 +276,7 @@ def test_anim_play_holds_each_frame_for_its_delay(lib, model, reset):
 TITL = ROOT / "game" / "TITL.DAT"
 
 
-@pytest.mark.skipif(not TITL.exists(), reason="game/TITL.DAT missing")
+@needs_file(TITL)
 def test_dm_title_plays_and_stops_on_input(lib, reset):
     """TITL.DAT: 53 frames of one vertical blank; its BR chunk lets a key or a click stop it."""
     frames = Frames(lib)
@@ -511,7 +507,7 @@ def test_death_shows_restart_only_and_restart_loads_the_save(lib, tmp_path, rese
 
 
 INTRO = GAME_CSB / "disk-b" / "ANIM.DAT"
-needs_intro = pytest.mark.skipif(not (INTRO.exists() and (GAME_CSB / "disk-b" / "MIDI" / "NAKED.AMG").exists()), reason="CSB disk B intro missing")
+NAKED = GAME_CSB / "disk-b" / "MIDI" / "NAKED.AMG"
 
 
 def mix(lib, frames):
@@ -520,7 +516,8 @@ def mix(lib, frames):
     return list(out[0::2]), list(out[1::2])
 
 
-@needs_intro
+@needs_file(INTRO)
+@needs_file(NAKED)
 def test_csb_intro_frames_and_music(lib):
     """Disk B ANIM.DAT: 851 frames; MI starts NAKED.AMG, the same music on both sides."""
     assert lib.anim_open(str(INTRO).encode()) == 0
@@ -535,7 +532,8 @@ def test_csb_intro_frames_and_music(lib):
     assert not any(mix(lib, 100)[0])
 
 
-@needs_intro
+@needs_file(INTRO)
+@needs_file(NAKED)
 def test_csb_intro_sample_files_play_beside_the_music(lib):
     assert lib.anim_open(str(INTRO).encode()) == 0
     while lib.anim_next_frame() != C.ANIM_END:
@@ -547,7 +545,8 @@ def test_csb_intro_sample_files_play_beside_the_music(lib):
     lib.anim_close()
 
 
-@needs_intro
+@needs_file(INTRO)
+@needs_file(NAKED)
 def test_csb_intro_stops_on_input_and_fades_the_music(lib, reset):
     press = lambda n: n == 3 and setattr(value(lib, "g_input_received"), "value", 1)
     frames = Frames(lib, press)

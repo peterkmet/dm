@@ -1,11 +1,10 @@
 import ctypes
 import itertools
-import shutil
 
 import pytest
 
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -13,7 +12,7 @@ from dmtools.ftl import load_image, parse
 GET_SPELL_FROM_SYMBOLS, G_SPELLS = 0x122FDC, 0x103C84
 BUF = 0x200000
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
+pytestmark = [needs_dm]
 
 
 class Spell(ctypes.Structure):
@@ -34,8 +33,6 @@ def lib():
     lib.spell_draw_fails.argtypes = [ctypes.c_uint8, ctypes.c_uint16]
     lib.spell_get_failure_experience.argtypes = [ctypes.c_uint16] * 3
     lib.spell_get_failure_experience.restype = ctypes.c_uint16
-    if not (GAME / "KAOS.FTL").exists():
-        pytest.skip("missing game/KAOS.FTL")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.tables_init() == 0
     return lib

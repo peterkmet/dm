@@ -1,20 +1,11 @@
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
-import pytest
-from dmtest.markers import ROOT
+from dmtest.markers import ROOT, needs_ghidra
 
 
-def ghidra_installed():
-    if not shutil.which("brew"):
-        return False
-    prefix = subprocess.run(["brew", "--prefix", "ghidra"], capture_output=True, text=True).stdout.strip()
-    return Path(prefix, "libexec/support/analyzeHeadless").exists()
-
-
-@pytest.mark.skipif(not ghidra_installed(), reason="Ghidra not installed")
+@needs_ghidra
 def test_params_and_symbols(tmp_path):
     caller = bytes.fromhex(
         "4e560000"  # 100000: link a6,#0

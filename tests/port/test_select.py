@@ -1,6 +1,5 @@
 import ctypes
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -9,17 +8,14 @@ import pytest
 from dmtest import constants as C
 from dmtest.game import global_type
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, GAME_CSB, ROOT, needs_sdl
+from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
 
 DM, CSB = 0, 1
 VANILLA, ADVANCED, TURNBASED = 0, 1, 2
 UP, DOWN, ENTER, ESCAPE = 0, 1, 2, 3
 CSB_FILES = ["APPB.FTL", "Graphics.DAT", "Dungeon.DAT", "disk-b/MINI.DAT"]
 c16 = ctypes.c_int16
-needs_dm = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing")
-needs_csb = pytest.mark.skipif(not GAME_CSB.exists(), reason="game-csb files missing")
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
 
 
 class Box(ctypes.Structure):

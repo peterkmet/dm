@@ -1,5 +1,4 @@
 import ctypes
-import shutil
 import struct
 
 import pytest
@@ -9,7 +8,7 @@ from dmtest.emu import need, s16, var
 from dmtest.game import (CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Champion, Party, RecruitData, World, champions,
                          global_type, pack)
 from dmtest.lib import load_lib
-from dmtest.markers import GAME
+from dmtest.markers import GAME, needs_dm
 
 # Original addresses (docs/kaos-symbols.csv).
 PARTY_SHIELD, SCENT_COUNT, SCENTS, SCENT_STRENGTHS = 0x101ED8, 0x101EDE, 0x101EE2, 0x101F12
@@ -21,7 +20,7 @@ STRENGTH, WOUND_DEFENSE, PENDING, DAMAGE_ALL, TIME_EFFECTS = 0x1111B6, 0x1112EA,
 WEIGHT, ICON = 0x10A4AC, 0x1079DC
 ATTR_STATUS_BOX = 4096
 
-pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
+pytestmark = [needs_dm]
 c16, u16, u8 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint8
 
 
