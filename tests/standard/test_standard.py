@@ -818,3 +818,48 @@ def test_exports_have_users():
             if TEST_MARKER not in lines[line - 1] + comment_above(lines, line):
                 found.append(f"dead-api {key}  | no use outside {header.stem} and no test marker")
     report("dead-api", found)
+
+
+COMMENT_TEXT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
+EVENT_NUMBER = re.compile(r"(?i)\bevents?\s+#?\d+")
+TODO_MARKER = re.compile(r"\b(?:TODO|FIXME|XXX)\b|ponytail:")
+
+
+def comment_check(check, pattern):
+    ok = allowed()
+    found = []
+    for path in sources():
+        if (check, rel(path)) in ok:
+            continue
+        text = path.read_text(errors="replace")
+        for m in COMMENT_TEXT.finditer(text):
+            if (hit := pattern.search(m.group())):
+                found.append(f"{check} {rel(path)}  | {text.count(chr(10), 0, m.start()) + 1}: {hit.group()}")
+    report(check, found)
+
+
+def test_no_event_numbers_in_comments():
+    comment_check("event-comment", EVENT_NUMBER)
+
+
+def test_no_todo_markers():
+    comment_check("todo", TODO_MARKER)
+
+
+TEST_IMPORT = re.compile(r"^\s*(?:from\s+test_\w+\s+import|import\s+test_\w+)", re.M)
+MACHINE_PATH = re.compile("/" + "Users/|/" + "private/tmp/")
+CLANG_CALL = re.compile(r"""["']clang["']\s*,""")
+
+
+def test_tests_follow_the_rules():
+    """No test module imports another test module, names a machine path or compiles the library."""
+    ok = allowed()
+    found = []
+    for path in sorted(TESTS.rglob("*.py")):
+        target = path.relative_to(ROOT).as_posix()
+        if path.resolve() == Path(__file__).resolve() or ("tests", target) in ok:
+            continue
+        for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+            if TEST_IMPORT.match(line) or MACHINE_PATH.search(line) or CLANG_CALL.search(line):
+                found.append(f"tests {target}  | {number}: {line.strip()}")
+    report("tests", found)

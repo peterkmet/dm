@@ -249,7 +249,7 @@ refactor; until the run ends, the allowlist carries the difference.
 
 1. A test module imports helpers from `tests/dmtest/` only, never from another test module.
 2. A C constant comes from the headers through `dmtest.constants`; no hand-mirrored value.
-3. A test calls the accessors of the port; it does not decode a record by bit shifts.
+3. A test calls the accessors of the port; it does not decode a record by bit shifts. [review only]
 4. No machine path in a test (`/Users/`, `/private/tmp/`).
 5. Each test module loads its own copy of the library (`dmtest.lib`); no test compiles the library.
 
