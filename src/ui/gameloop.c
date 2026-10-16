@@ -201,7 +201,10 @@ static void start_loaded_game(bool confirm)
     if (confirm) {
         g_game_screen_shown = false;
         memset(g_screen.px, 0, sizeof g_screen.px);
-        dialog_draw(NULL, gfx_get_string(TEXT_GAME_LOADED), gfx_get_string(TEXT_OK), NULL, NULL, NULL);
+        dialog_draw(&(DialogText){
+            {NULL, gfx_get_string(TEXT_GAME_LOADED)},
+            {gfx_get_string(TEXT_OK)}
+        });
         dialog_get_choice(1);
     }
     show_game();

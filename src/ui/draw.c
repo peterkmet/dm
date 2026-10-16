@@ -82,9 +82,11 @@ bool draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t
     return true;
 }
 
-void draw_masked_fill(const Bitmap *units, const Bitmap *mask, bool mask_flip, Bitmap *dst, const Box *box,
-                      int16_t last_unit, int16_t first_unit, int16_t transparent, int16_t sx, int16_t sy)
+void draw_masked_fill(Bitmap *dst, const Box *box, const MaskedFill *fill)
 {
+    const Bitmap *units = fill->units;
+    const Bitmap *mask = fill->mask;
+    int16_t transparent = fill->transparent;
     if (box->w < 1 || box->h < 1)
         return;
     if ((transparent & FILL_OPAQUE) == FILL_OPAQUE) {
@@ -101,7 +103,7 @@ void draw_masked_fill(const Bitmap *units, const Bitmap *mask, bool mask_flip, B
     uint8_t *temp = malloc((size_t)temp_w * box->h);
     if (!temp)
         return;
-    int16_t unit = first_unit;
+    int16_t unit = fill->first_unit;
     for (int k = 0; k < words * box->h; k++) {
         for (int p = 0; p < PIXELS_PER_WORD; p++) {
             int ux = unit % unit_words * PIXELS_PER_WORD + p;
@@ -110,21 +112,21 @@ void draw_masked_fill(const Bitmap *units, const Bitmap *mask, bool mask_flip, B
             if (mask) {
                 int mx = k % mask_words * PIXELS_PER_WORD + p;
                 int my = k / mask_words;
-                if (mask_flip)
+                if (fill->mask_flip)
                     mx = mask_words * PIXELS_PER_WORD - 1 - mx;
                 if (!(mx < mask->w && my < mask->h && mask->px[my * mask->w + mx] & 1))
                     color = transparent & COLOR_INDEX_MASK;
             }
             temp[k * PIXELS_PER_WORD + p] = color;
         }
-        if (++unit == last_unit)
+        if (++unit == fill->last_unit)
             unit = 0;
     }
     for (int y = 0; y < box->h; y++)
         for (int x = 0; x < box->w; x++) {
             int dx = box->x + x;
             int dy = box->y + y;
-            int64_t i = (int64_t)(sy + y) * temp_w + sx + x;
+            int64_t i = (int64_t)(fill->sy + y) * temp_w + fill->sx + x;
             if (dx < 0 || dx >= dst->w || dy < 0 || dy >= dst->h || i < 0 || i >= (int64_t)temp_w * box->h)
                 continue;
             if (transparent == -1 || temp[i] != (transparent & COLOR_INDEX_MASK))

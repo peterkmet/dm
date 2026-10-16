@@ -145,6 +145,12 @@ def word_flipped(px, w, h):
     return [[px[y][pw - 1 - x] if pw - 1 - x < w else 0 for x in range(pw)] for y in range(h)], pw
 
 
+class MaskedFill(ctypes.Structure):
+    _fields_ = [("units", ctypes.POINTER(Bitmap)), ("mask", ctypes.POINTER(Bitmap)), ("mask_flip", ctypes.c_bool),
+                ("last_unit", ctypes.c_int16), ("first_unit", ctypes.c_int16), ("transparent", ctypes.c_int16),
+                ("sx", ctypes.c_int16), ("sy", ctypes.c_int16)]
+
+
 @needs_dm
 @pytest.mark.parametrize("box, last, first, transparent, sx, mask_kind", [
     ((5, 3, 36, 20), 63, 7, 0x0A, 0, "plain"),
@@ -153,7 +159,7 @@ def word_flipped(px, w, h):
     ((3, 4, 17, 9), 9, 0, 0x03, 2, "plain"),
 ])
 def test_masked_fill_matches_original(lib, emu, box, last, first, transparent, sx, mask_kind):
-    lib.draw_masked_fill.argtypes = [ctypes.POINTER(Bitmap), ctypes.POINTER(Bitmap), ctypes.c_int, ctypes.POINTER(Bitmap), ctypes.POINTER(Box)] + [ctypes.c_int16] * 5
+    lib.draw_masked_fill.argtypes = [ctypes.POINTER(Bitmap), ctypes.POINTER(Box), ctypes.POINTER(MaskedFill)]
     uw, uh, dw, dh = 32, 32, 64, 60
     units = [[(x * 5 + y * 3 + x * y) % 16 for x in range(uw)] for y in range(uh)]
     mw, mh = 36, 49
@@ -186,8 +192,11 @@ def test_masked_fill_matches_original(lib, emu, box, last, first, transparent, s
             if c != key:
                 expected[by + y][bx + x] = c
     out = bitmap(dst)
-    lib.draw_masked_fill(bitmap(units), bitmap([[int(m) for m in row] for row in mask]) if mask_kind else None,
-                         mask_kind == "flipped", out, Box(*box), last, first, transparent, sx, 0)
+    mask_bitmap = bitmap([[int(m) for m in row] for row in mask]) if mask_kind else None
+    units_bitmap = bitmap(units)
+    fill = MaskedFill(ctypes.pointer(units_bitmap), ctypes.pointer(mask_bitmap) if mask_bitmap is not None else None,
+                      mask_kind == "flipped", last, first, transparent, sx, 0)
+    lib.draw_masked_fill(out, Box(*box), fill)
     assert pixels(out) == expected
 
 

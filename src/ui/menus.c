@@ -96,11 +96,11 @@ void menus_draw_action_area(void)
         if (g_action_list.actions[1] == ACTION_NONE)
             zone = ZONE_ACTION_AREA_ONE_ACTION;
         ui_blit_graphic(&screen, GFX_ACTION_AREA_NAMES, zone, COLOR_NONE);
-        ui_print_zone_padded(&screen, ZONE_ACTING_CHAMPION_NAME, COLOR_BLACK, COLOR_CYAN,
+        ui_print_zone_padded(ZONE_ACTING_CHAMPION_NAME, COLOR_BLACK, COLOR_CYAN,
                              g_champions[g_session.acting_champion_index].name, ACTING_NAME_LENGTH);
         for (int k = 0; k < ACTION_LIST_COUNT; k++) {
             uint8_t action = g_action_list.actions[k];
-            ui_print_zone_padded(&screen, ZONE_ACTION_NAME_FIRST + k, COLOR_CYAN, COLOR_BLACK,
+            ui_print_zone_padded(ZONE_ACTION_NAME_FIRST + k, COLOR_CYAN, COLOR_BLACK,
                                  action == ACTION_NONE ? "" : gfx_get_action_name(action), ACTION_NAME_LENGTH);
         }
     }

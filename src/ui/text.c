@@ -63,14 +63,14 @@ bool text_get_size(const char *s, int16_t *w, int16_t *h)
     return true;
 }
 
-void text_draw_box(Bitmap *bm, int16_t x, int16_t y, int16_t w, int16_t h, bool centered, uint8_t fg, uint8_t bg,
-                   const char *s)
+void text_draw_box(const Box *box, bool centered, uint8_t fg, uint8_t bg, const char *s)
 {
     int16_t tw, th;
     if (!text_get_size(s, &tw, &th))
         return;
+    int16_t x = box->x;
     if (centered)
-        x = (int16_t)(x + (w - tw) / 2);
-    y = (int16_t)(y + (h - th) / 2);
-    text_draw(bm, x, (int16_t)(y + th - 1), fg, bg, s);
+        x = (int16_t)(x + (box->w - tw) / 2);
+    int16_t y = (int16_t)(box->y + (box->h - th) / 2);
+    text_draw_screen(x, (int16_t)(y + th - 1), fg, bg, s);
 }

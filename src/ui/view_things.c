@@ -612,7 +612,8 @@ static void show_field(const uint8_t *aspect, int16_t zone)
     int16_t first = random16() & FIELD_FIRST_UNIT_RANGE;
     int16_t last = aspect[FIELD_LAST_UNIT] + random_bit();
     if (units)
-        draw_masked_fill(units, mask, flip, &g_view.viewport, &box, last, first, aspect[FIELD_TRANSPARENT], sx, 0);
+        draw_masked_fill(&g_view.viewport, &box,
+                         &(MaskedFill){units, mask, flip, last, first, aspect[FIELD_TRANSPARENT], sx, 0});
 }
 
 /* An explosion of aspect at scale, recolored for smoke. */
@@ -645,7 +646,8 @@ static void show_explosion_on_party(uint16_t thing, int16_t aspect)
     int16_t height = 0;
     Box box;
     if (units && layout_get_zone(ZONE_VIEWPORT_BOX, g_view.viewport.w, g_view.viewport.h, &box, &width, &height))
-        draw_masked_fill(units, NULL, false, &g_view.viewport, &box, last, first, EXPLOSION_FILL_TRANSPARENT, 0, 0);
+        draw_masked_fill(&g_view.viewport, &box,
+                         &(MaskedFill){units, NULL, false, last, first, EXPLOSION_FILL_TRANSPARENT, 0, 0});
     free(own.px);
 }
 

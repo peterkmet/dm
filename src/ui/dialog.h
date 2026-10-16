@@ -12,11 +12,20 @@
 /* g_dialog_choice before a click. */
 #define DIALOG_NO_CHOICE 99
 
+/* The messages and choices of a dialog. */
+#define DIALOG_MESSAGE_COUNT 2
+#define DIALOG_CHOICE_COUNT  4
+
+/* The texts of a dialog: the messages (NULL: none) and the choices (NULL ends them). */
+typedef struct {
+    const char *messages[DIALOG_MESSAGE_COUNT];
+    const char *choices[DIALOG_CHOICE_COUNT];
+} DialogText;
+
 extern int16_t g_dialog_choice; /* the clicked choice, 1-4, or DIALOG_NO_CHOICE */
 
 /* Draws the dialog in the viewport: two messages (NULL: none) and the choices (NULL ends them). */
-void dialog_draw(const char *message1, const char *message2, const char *choice1, const char *choice2,
-                 const char *choice3, const char *choice4);
+void dialog_draw(const DialogText *dialog);
 /* Waits for a click on one of choice_count choices and shows the pressed button. Return selects
    a single choice. Returns the choice 1-4, or 0 when the wait ends without a choice (no frames,
    quit). */

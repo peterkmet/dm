@@ -99,8 +99,10 @@ static bool confirm_quit(void)
     if (g_session.last_load_time + QUIT_CONFIRM_TICKS >= g_game_time ||
         g_session.last_save_time + QUIT_CONFIRM_TICKS >= g_game_time)
         return true;
-    dialog_draw(NULL, gfx_get_string(TEXT_NOT_SAVED_OK_TO_QUIT), gfx_get_string(TEXT_QUIT), gfx_get_string(TEXT_CANCEL),
-                NULL, NULL);
+    dialog_draw(&(DialogText){
+        {NULL,                      gfx_get_string(TEXT_NOT_SAVED_OK_TO_QUIT)},
+        {gfx_get_string(TEXT_QUIT), gfx_get_string(TEXT_CANCEL)              }
+    });
     return dialog_get_choice(2) != QUIT_CHOICE_CANCEL;
 }
 
@@ -130,11 +132,16 @@ int startend_save_current_game(const char **reason)
 static int save_with_dialog(void)
 {
     const char *reason;
-    dialog_draw(NULL, gfx_get_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
+    dialog_draw(&(DialogText){
+        {NULL, gfx_get_string(TEXT_SAVING_GAME)},
+        {NULL}
+    });
     int saved = startend_save_current_game(&reason);
     if (!saved) {
-        dialog_draw(reason ? reason : gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_get_string(TEXT_OK), NULL, NULL,
-                    NULL);
+        dialog_draw(&(DialogText){
+            {reason ? reason : gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL},
+            {gfx_get_string(TEXT_OK)}
+        });
         dialog_get_choice(1);
     }
     return saved;
@@ -145,7 +152,10 @@ static int save_with_dialog(void)
 static void save_game_csb(void)
 {
     command_freeze_game();
-    dialog_draw(NULL, NULL, gfx_get_string(TEXT_CANCEL), gfx_get_string(TEXT_SAVE), gfx_get_string(TEXT_QUIT), NULL);
+    dialog_draw(&(DialogText){
+        {NULL, NULL},
+        {gfx_get_string(TEXT_CANCEL), gfx_get_string(TEXT_SAVE), gfx_get_string(TEXT_QUIT)}
+    });
     int16_t choice = dialog_get_choice(3);
     if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
         int saved = save_with_dialog();
@@ -170,8 +180,10 @@ void startend_save_game(void)
     }
     command_freeze_game();
     for (;;) {
-        dialog_draw(message, NULL, gfx_get_string(TEXT_CANCEL), gfx_get_string(TEXT_SAVE), gfx_get_string(TEXT_QUIT),
-                    NULL);
+        dialog_draw(&(DialogText){
+            {message, NULL},
+            {gfx_get_string(TEXT_CANCEL), gfx_get_string(TEXT_SAVE), gfx_get_string(TEXT_QUIT)}
+        });
         message = NULL;
         int16_t choice = dialog_get_choice(3);
         if (choice == SAVE_CHOICE_SAVE) {
@@ -197,17 +209,25 @@ bool startend_load_saved_game(void)
     for (;;) {
         SavegameResult result = savegame_load(save_dir);
         if (result == SAVEGAME_LOADED) {
-            dialog_draw(NULL, gfx_get_string(TEXT_LOADING_GAME), NULL, NULL, NULL, NULL);
+            dialog_draw(&(DialogText){
+                {NULL, gfx_get_string(TEXT_LOADING_GAME)},
+                {NULL}
+            });
             return true;
         }
         if (result == SAVEGAME_DAMAGED) {
             /* The original quits here; the port goes back to the entrance. */
-            dialog_draw(gfx_get_string(TEXT_GAME_DAMAGED), NULL, gfx_get_string(TEXT_OK), NULL, NULL, NULL);
+            dialog_draw(&(DialogText){
+                {gfx_get_string(TEXT_GAME_DAMAGED), NULL},
+                {gfx_get_string(TEXT_OK)}
+            });
             dialog_get_choice(1);
             return false;
         }
-        dialog_draw(gfx_get_string(TEXT_CANT_FIND_SAVED_GAME), NULL, gfx_get_string(TEXT_LOAD_SAVED_GAME),
-                    gfx_get_string(TEXT_CANCEL), NULL, NULL);
+        dialog_draw(&(DialogText){
+            {gfx_get_string(TEXT_CANT_FIND_SAVED_GAME), NULL                       },
+            {gfx_get_string(TEXT_LOAD_SAVED_GAME),      gfx_get_string(TEXT_CANCEL)}
+        });
         int16_t choice = dialog_get_choice(2);
         if (!choice || choice == LOAD_CHOICE_CANCEL)
             return false;

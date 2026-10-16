@@ -17,6 +17,16 @@
 #define FILL_NO_MASK 0x80
 #define FILL_OPAQUE  0xff
 
+/* The pattern of draw_masked_fill: the units, the mask (NULL: none), the color key, and the source point. */
+typedef struct {
+    const Bitmap *units;
+    const Bitmap *mask;
+    bool mask_flip;
+    int16_t last_unit, first_unit;
+    int16_t transparent;
+    int16_t sx, sy;
+} MaskedFill;
+
 /* Copies box from src at (sx, sy). transparent -1 is opaque,
    otherwise bits 0-3 are a color key. flip reads the mirrored source. Clips to both bitmaps. */
 void draw_blit(const Bitmap *src, int16_t sx, int16_t sy, Bitmap *dst, const Box *box, int16_t transparent, int flip);
@@ -33,7 +43,6 @@ bool draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t
    clear), the mask words are read in row order; a 0 bit gives the transparent color. mask_flip mirrors
    the mask by whole words, as the original does. The temp bitmap is then blitted from
    (sx, sy) with the color key. */
-void draw_masked_fill(const Bitmap *units, const Bitmap *mask, bool mask_flip, Bitmap *dst, const Box *box,
-                      int16_t last_unit, int16_t first_unit, int16_t transparent, int16_t sx, int16_t sy);
+void draw_masked_fill(Bitmap *dst, const Box *box, const MaskedFill *fill);
 
 #endif

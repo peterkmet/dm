@@ -14,9 +14,7 @@
 #include "ui/view.h"
 #include <string.h>
 
-/* Dialog choices and message lines. */
-#define MAX_CHOICES       4
-#define MESSAGE_COUNT     2
+/* Text size of one message line. */
 #define MESSAGE_LINE_SIZE 64
 
 /* The pressed button and the message wrap. */
@@ -41,10 +39,10 @@ static void show_viewport(void)
    graphic is copied over them. */
 static void patch_dividers(Bitmap *viewport, int16_t count)
 {
-    static const int16_t patch_zone[MAX_CHOICES] = {ZONE_PATCH_ONE_CHOICE, ZONE_PATCH_TWO_CHOICES, 0,
-                                                    ZONE_PATCH_FOUR_CHOICES};
-    static const int16_t patch_layout[MAX_CHOICES] = {LAYOUT_PATCH_ONE_CHOICE, LAYOUT_PATCH_TWO_CHOICES, 0,
-                                                      LAYOUT_PATCH_FOUR_CHOICES};
+    static const int16_t patch_zone[DIALOG_CHOICE_COUNT] = {ZONE_PATCH_ONE_CHOICE, ZONE_PATCH_TWO_CHOICES, 0,
+                                                            ZONE_PATCH_FOUR_CHOICES};
+    static const int16_t patch_layout[DIALOG_CHOICE_COUNT] = {LAYOUT_PATCH_ONE_CHOICE, LAYOUT_PATCH_TWO_CHOICES, 0,
+                                                              LAYOUT_PATCH_FOUR_CHOICES};
     static uint8_t copy_px[VIEWPORT_MAX_W * VIEWPORT_MAX_H];
     if (!patch_zone[count - 1])
         return;
@@ -61,9 +59,9 @@ static void patch_dividers(Bitmap *viewport, int16_t count)
 }
 
 /* The choice texts in the zones for their count. */
-static void show_choices(Bitmap *viewport, const char *choice[MAX_CHOICES], int16_t count)
+static void show_choices(Bitmap *viewport, const char *const choice[DIALOG_CHOICE_COUNT], int16_t count)
 {
-    static const int16_t zones[MAX_CHOICES][MAX_CHOICES] = {
+    static const int16_t zones[DIALOG_CHOICE_COUNT][DIALOG_CHOICE_COUNT] = {
         {ZONE_CHOICE_SINGLE},
         {ZONE_CHOICE_TOP, ZONE_CHOICE_SINGLE},
         {ZONE_CHOICE_TOP, ZONE_CHOICE_BOTTOM_LEFT, ZONE_CHOICE_BOTTOM_RIGHT},
@@ -75,17 +73,17 @@ static void show_choices(Bitmap *viewport, const char *choice[MAX_CHOICES], int1
 }
 
 /* The two messages centered in the viewport, in the vertical middle of the message zone. */
-static void show_messages(Bitmap *viewport, const char *message[MESSAGE_COUNT], int16_t zone)
+static void show_messages(Bitmap *viewport, const char *const message[DIALOG_MESSAGE_COUNT], int16_t zone)
 {
     Box box;
-    int16_t width[MESSAGE_COUNT] = {0};
-    int lines[MESSAGE_COUNT] = {0};
+    int16_t width[DIALOG_MESSAGE_COUNT] = {0};
+    int lines[DIALOG_MESSAGE_COUNT] = {0};
     int total = 0;
     int16_t height;
     int pad = tables_get_message_line_pad();
     if (!ui_zone_box(zone, &box))
         return;
-    for (int i = 0; i < MESSAGE_COUNT; i++) {
+    for (int i = 0; i < DIALOG_MESSAGE_COUNT; i++) {
         if (!message[i] || !text_get_size(message[i], &width[i], &height))
             continue;
         lines[i] = box.w - (box.w >> WIDE_MESSAGE_SHIFT) < width[i] ? 2 : 1;
@@ -95,7 +93,7 @@ static void show_messages(Bitmap *viewport, const char *message[MESSAGE_COUNT], 
         return;
     int y = FONT_LINE_HEIGHT + box.y + ((uint16_t)(box.h + pad * 2 - total) >> 1) -
             1; /* unsigned half as in the original */
-    for (int i = 0; i < MESSAGE_COUNT; i++) {
+    for (int i = 0; i < DIALOG_MESSAGE_COUNT; i++) {
         if (!lines[i])
             continue;
         uint8_t color = tables_get_message_color(i);
@@ -114,25 +112,23 @@ static void show_messages(Bitmap *viewport, const char *message[MESSAGE_COUNT], 
     }
 }
 
-void dialog_draw(const char *message1, const char *message2, const char *choice1, const char *choice2,
-                 const char *choice3, const char *choice4)
+void dialog_draw(const DialogText *dialog)
 {
     Bitmap *viewport = ui_get_viewport();
     const Bitmap *graphic = gfx_get_bitmap(GFX_DIALOG);
-    const char *choice[MAX_CHOICES] = {choice1, choice2, choice3, choice4};
-    const char *message[MESSAGE_COUNT] = {message1, message2};
+    const char *const *choice = dialog->choices;
     Box all = {0, 0, viewport->w, viewport->h};
     if (graphic)
         draw_blit(graphic, 0, 0, viewport, &all, COLOR_NONE, 0);
     ui_print_zone(viewport, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, tables_get_text(TABLES_TEXT_VERSION));
     int16_t count = 1;
-    while (count < MAX_CHOICES && choice[count])
+    while (count < DIALOG_CHOICE_COUNT && choice[count])
         count++;
     if (!g_game_screen_shown)
         memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px);
-    if (choice1)
+    if (choice[0])
         show_choices(viewport, choice, count);
-    show_messages(viewport, message, count == 1 ? ZONE_MESSAGE_ONE_CHOICE : ZONE_MESSAGE);
+    show_messages(viewport, dialog->messages, count == 1 ? ZONE_MESSAGE_ONE_CHOICE : ZONE_MESSAGE);
     show_viewport();
 }
 
@@ -168,7 +164,7 @@ static void show_pressed_button(int16_t table, int16_t choice)
 int16_t dialog_get_choice(int16_t choice_count)
 {
     /* One mouse table per choice count, first for the game screen, then for the inactive screen. */
-    int16_t table = TABLES_MOUSE_DIALOG_FIRST + !g_game_screen_shown * MAX_CHOICES + choice_count - 1;
+    int16_t table = TABLES_MOUSE_DIALOG_FIRST + !g_game_screen_shown * DIALOG_CHOICE_COUNT + choice_count - 1;
     command_save_input();
     command_set_only_mouse_input(table);
     command_discard_all_input();

@@ -195,18 +195,17 @@ void select_click(int16_t x, int16_t y)
 
 void select_draw(void)
 {
-    Bitmap bm = video_get_screen();
     Box b;
     memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px);
     ui_set_screen_palette(select_palette);
     if (screen == SELECT_SCREEN_DONE)
         return;
-    text_draw_box(&bm, 0, HEADING_TOP, SCREEN_W, LINE_HEIGHT, true, COLOR_LIGHT_GRAY, COLOR_BLACK,
+    text_draw_box(&(Box){0, HEADING_TOP, SCREEN_W, LINE_HEIGHT}, true, COLOR_LIGHT_GRAY, COLOR_BLACK,
                   screens[screen].heading);
     for (int i = 0; select_item_box(i, &b); i++) {
         uint8_t color = !is_item_enabled(i) ? COLOR_DARK_GRAY : i == cursor ? COLOR_GOLD : COLOR_LIGHT_GRAY;
-        text_draw_box(&bm, b.x, b.y, b.w, b.h, true, color, COLOR_BLACK, screens[screen].items[i]);
+        text_draw_box(&b, true, color, COLOR_BLACK, screens[screen].items[i]);
     }
     if (message)
-        text_draw_box(&bm, 0, MESSAGE_TOP, SCREEN_W, LINE_HEIGHT, true, COLOR_LIGHT_GRAY, COLOR_BLACK, message);
+        text_draw_box(&(Box){0, MESSAGE_TOP, SCREEN_W, LINE_HEIGHT}, true, COLOR_LIGHT_GRAY, COLOR_BLACK, message);
 }

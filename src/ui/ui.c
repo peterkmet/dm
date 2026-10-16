@@ -123,8 +123,9 @@ void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char
         text_draw(dst, b.x, b.y + b.h - 1, fg, bg, text);
 }
 
-void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t pad_length)
+void ui_print_zone_padded(int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t pad_length)
 {
+    Bitmap screen = video_get_screen();
     char buf[PADDED_TEXT_SIZE];
     int n = 0;
     for (; text[n] && n < (int)sizeof buf - 1; n++)
@@ -132,7 +133,7 @@ void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, con
     for (; n < pad_length && n < (int)sizeof buf - 1; n++)
         buf[n] = ' ';
     buf[n] = 0;
-    ui_print_zone(dst, zone, fg, bg, buf);
+    ui_print_zone(&screen, zone, fg, bg, buf);
 }
 
 void ui_draw_viewport(void)
@@ -282,7 +283,7 @@ void ui_draw_hand_object_name(uint16_t thing)
         strncat(buf, gfx_get_object_name(ICON_BONES), sizeof buf - strlen(buf) - 1);
         name = buf;
     }
-    ui_print_zone_padded(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_CYAN, COLOR_BLACK, name, LEADER_HAND_NAME_LENGTH);
+    ui_print_zone_padded(ZONE_LEADER_HAND_OBJECT_NAME, COLOR_CYAN, COLOR_BLACK, name, LEADER_HAND_NAME_LENGTH);
 }
 
 bool ui_is_point_in_zone(int16_t zone, int16_t x, int16_t y)
