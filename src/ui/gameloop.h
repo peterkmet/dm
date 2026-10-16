@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_UI_GAMELOOP_H
 #define DM_UI_GAMELOOP_H
-/* Prefixes: gameloop_ entrance_ */
+/* Prefixes: gameloop_ */
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -13,12 +13,6 @@
 bool gameloop_load_data(const char *dir);
 /* The directory that gameloop_load_data read the game files from. */
 const char *gameloop_get_data_dir(void);
-/* Shows the entrance: graphic 4 with the closed doors and the ENTER, RESUME, and QUIT buttons. */
-void entrance_draw(void);
-/* ENTER (resume 0) or RESUME (resume 1) was clicked: the pressed button, a click, a short wait. */
-void entrance_press_button(int resume);
-/* After ENTER: the doors open over the view of the start square. Needs the frames of g_frame_hook. */
-void entrance_open_doors(void);
 /* Loads Dungeon.DAT from dir and starts a new game on the start square. Returns true on success. */
 bool gameloop_start_new_game(const char *dir);
 /* start_game for a game that savegame_load restored: the party map, "GAME LOADED", the interface. */
@@ -27,9 +21,9 @@ void gameloop_start_loaded_game(void);
 void gameloop_continue_loaded_game(void);
 /* The dungeon view of the party in the light of the party (draw_dungeon_view). */
 void gameloop_draw_view(void);
-/* Runs the waiting commands of one 50 Hz frame. Returns 1 when the wait for input is over and a
+/* Runs the waiting commands of one 50 Hz frame. Returns true when the wait for input is over and a
    game tick is due (gameloop_tick). */
-int gameloop_run_frame(void);
+bool gameloop_run_frame(void);
 /* Runs all waiting commands and draws what they changed, without the wait for a tick. */
 void gameloop_run_commands(void);
 /* One game tick: map change, timeline, view, sounds, damage, time, champion effects, interface. */

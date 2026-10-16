@@ -69,7 +69,6 @@ bool platform/main.c:load_game_files open: epic 11
 bool platform/main.c:load_kaos_and_graphics open: epic 11
 bool platform/platform.c:audio_open open: epic 11
 bool ui/anim.h:anim_open open: epic 8
-bool ui/gameloop.c:draw_entrance_doors open: epic 8
 bool ui/gameloop.h:gameloop_run_frame open: epic 8
 bool ui/layout.h:layout_get_zone_box open: epic 8
 bool ui/view.c open: epic 8
@@ -131,7 +130,6 @@ static-prefix ui/dialog.c:draw_choices open: epic 8
 static-prefix ui/dialog.c:draw_messages open: epic 8
 static-prefix ui/dialog.c:draw_pressed_button open: epic 8
 static-prefix ui/dialog.c:draw_viewport open: epic 8
-static-prefix ui/gameloop.c:draw_entrance_doors open: epic 8
 static-prefix ui/gameloop.c:draw_projectile_motion open: epic 8
 static-prefix ui/gameloop.c:draw_spell_area_before_last_death open: epic 8
 static-prefix ui/startend.c:draw_champion_parade open: epic 8

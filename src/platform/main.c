@@ -16,6 +16,7 @@
 #include "ui/advanced.h"
 #include "ui/anim.h"
 #include "ui/command.h"
+#include "ui/entrance.h"
 #include "ui/frame.h"
 #include "ui/gameloop.h"
 #include "ui/layout.h"
@@ -308,7 +309,7 @@ static void show_entrance(void)
     entrance_draw();
     command_set_entrance_input();
     command_discard_all_input();
-    g_new_game = ENTRANCE_WAITING;
+    g_entrance_choice = ENTRANCE_WAITING;
 }
 
 /* The FTL logo, the title animation, then the entrance. In MODE_ENTRANCE the input goes to the commands: a key or a click stops it. */
@@ -358,9 +359,9 @@ static int entrance_frame(const char *folder)
         quit_to_start();
         return 1;
     }
-    if (g_new_game == ENTRANCE_RESUME || g_new_game == ENTRANCE_NEW_GAME)
-        entrance_press_button(g_new_game == ENTRANCE_RESUME);
-    if (g_new_game == ENTRANCE_RESUME) {
+    if (g_entrance_choice == ENTRANCE_RESUME || g_entrance_choice == ENTRANCE_NEW_GAME)
+        entrance_press_button(g_entrance_choice == ENTRANCE_RESUME);
+    if (g_entrance_choice == ENTRANCE_RESUME) {
         if (startend_load_saved_game()) {
             gameloop_start_loaded_game();
             mode = MODE_GAME;
@@ -368,7 +369,7 @@ static int entrance_frame(const char *folder)
             show_entrance();
         }
     }
-    if (g_new_game == ENTRANCE_NEW_GAME) {
+    if (g_entrance_choice == ENTRANCE_NEW_GAME) {
         entrance_open_doors();
         if (!gameloop_start_new_game(folder)) {
             SDL_Log("cannot load %s/Dungeon.DAT", folder);

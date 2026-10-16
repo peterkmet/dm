@@ -77,7 +77,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 |---|---|
 | `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `KAOS_ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
 | `command.c`: `command_set_entrance_input`, `KAOS_KEYS_ENTRANCE` (`0x10393c`), `TABLES_MOUSE_ENTRANCE` | Mouse table and key table come from the KAOS data. |
-| `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_new_game = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
+| `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_entrance_choice = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
 | `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_start_new_game(data)` or `startend_load_saved_game()`. |
 | `main.c`: `main` | `MODE_ENTRANCE` is the first mode after the start. `DM_AUTO_ENTER` (and `turnbased`) presses Return at the start. |
 
@@ -282,7 +282,7 @@ Changes in `main.c`:
    - CSB, choice QUIT: `g_quit_requested = 1`.
 6. The pointer: `set_pointer(...)` runs only for `mode >= MODE_ENTRANCE`. In `MODE_SELECT` the pointer shows the arrow from the KAOS data, which is not loaded. Use `plat_set_pointer(NULL, ...)` (system pointer) in `MODE_SELECT`. The mouse position is mapped to game pixels by the platform layer, so clicks work without a pointer image.
 7. `show_entrance` and the `g_return_to_entrance` branch: when `g_adventure == ADVENTURE_CSB`, call `select_start_csb()` and set `mode = MODE_SELECT` instead of `entrance_draw`. For DM nothing changes.
-8. `entrance_frame` stays for DM. The CSB choice is handled by `start_adventure`, not by `g_new_game`.
+8. `entrance_frame` stays for DM. The CSB choice is handled by `start_adventure`, not by `g_entrance_choice`.
 
 `turnbased` and the selection: the `LLM` item sets `g_session.mode = GAME_MODE_TURNBASED`. `apply_mode` then sets `auto_enter = 1`, so the program enters the dungeon without the entrance, as today. The socket opens after the selection, not before. A script that starts `build/dm` and waits for the socket sees the socket only after the user chooses LLM. Scripts must pass `--adventure` and `--mode` (or only `--mode`) to skip the screens.
 

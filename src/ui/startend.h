@@ -7,7 +7,7 @@
 
 /* Sequences outside the game loop (KAOS STARTEND.C and save_game): the save dialog, resuming a
    saved game, the endgame screens, and the fuse sequence with Lord Chaos. They wait frame by
-   frame like the original; the program shows each frame through g_frame_hook. */
+   frame like the original; the program shows each frame through g_frame_hook (ui/frame.h). */
 
 extern bool g_restart_requested;  /* RESTART THIS GAME on the endgame screen */
 extern bool g_return_to_entrance; /* the endgame ended: the program shows the entrance */

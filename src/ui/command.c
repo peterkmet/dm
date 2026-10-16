@@ -17,6 +17,7 @@
 #include "engine/sound.h"
 #include "ui/advanced.h"
 #include "ui/dialog.h"
+#include "ui/entrance.h"
 #include "ui/frame.h"
 #include "ui/startend.h"
 #include "ui/ui.h"
@@ -46,7 +47,6 @@ bool g_stop_waiting_for_input;
 bool g_game_time_ticking;
 int16_t g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
 bool g_game_frozen;
-int16_t g_new_game = ENTRANCE_WAITING;
 bool g_mouse_pointer_hidden;
 bool g_input_received;
 uint16_t g_last_key;
@@ -753,10 +753,10 @@ static void process_other_command(int16_t command)
         break;
     case COMMAND_ENTRANCE_ENTER:
     case COMMAND_ENTRANCE_ENTER_DUNGEON_B:
-        g_new_game = ENTRANCE_NEW_GAME;
+        g_entrance_choice = ENTRANCE_NEW_GAME;
         break;
     case COMMAND_ENTRANCE_RESUME:
-        g_new_game = ENTRANCE_RESUME;
+        g_entrance_choice = ENTRANCE_RESUME;
         break;
     case COMMAND_SAVE_GAME:
         startend_save_game();

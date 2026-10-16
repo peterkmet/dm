@@ -789,7 +789,7 @@ address,name,signature,subsystem
 0x10010c,g_file_info_block,struct FileInfoBlock *,disk
 0x10015a,g_vblank_interrupt,,video
 0x100174,g_viewport_bitmap,,video
-0x10017a,g_new_game,,main
+0x10017a,g_entrance_choice,,main
 0x10017c,g_candidate_champion_index,"int16_t g_candidate_champion_index; /* index, -1 for none; the original stores index + 1, 0 for none */",champion
 0x10017e,g_party_is_sleeping,,main
 0x100182,g_fade_display_on_exit,int16_t,startend

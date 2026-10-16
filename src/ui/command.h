@@ -76,16 +76,10 @@ static inline uint16_t command_champion_key(int16_t champion_index)
     return KEY_F1 + (champion_index << KEY_RAW_SHIFT);
 }
 
-/* Result of the entrance (g_new_game): ENTRANCE_WAITING until a button is pressed. */
-#define ENTRANCE_RESUME   0
-#define ENTRANCE_NEW_GAME 1
-#define ENTRANCE_WAITING  99
-
 extern bool g_stop_waiting_for_input;       /* set by commands that end the wait for the next tick */
 extern bool g_game_time_ticking;            /* false while the game is frozen */
 extern int16_t g_wait_for_input_max_frames; /* frames of one tick without input: 12, 0 while sleeping */
 extern bool g_game_frozen;
-extern int16_t g_new_game;
 extern bool g_input_received; /* a key or button press since the last discard */
 extern uint16_t g_last_key;   /* the last key word since the last discard, 0: none */
 
