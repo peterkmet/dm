@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Player input as the original command table (KAOS range 8, COMMAND.C): clicks and keys become
+/* Player input as the command table of the original: clicks and keys become
    queued commands; command_process_queue runs them. Movement commands (1-6) are in move.h. */
 
 #define COMMAND_NONE                         0
@@ -122,9 +122,11 @@ void command_freeze_game(void);
 /* Draws the spell area, action area, and the view or the inventory again. A sleeping party stays
    frozen on the sleep screen. */
 void command_unfreeze_game(void);
-/* Opens the inventory of a champion, closes it (INVENTORY_CLOSE or the open champion again), or
-   draws it again (INVENTORY_REDRAW). The inventory has its own mouse table. */
+/* Opens the inventory of a champion 0-3, or closes it when it is open already. The inventory has its own
+   mouse table; exported for the tests. */
 void command_toggle_inventory(int16_t champion_index);
+/* Closes the open inventory; the movement mouse table and keys return unless the party sleeps. */
+void command_close_inventory(void);
 /* The inventory champion eats or drinks the leader hand object. The mouth blinks when the object is
    used up, then the champion swallows and its state is drawn. */
 void command_click_on_mouth(void);

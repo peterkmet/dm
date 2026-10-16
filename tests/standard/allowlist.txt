@@ -311,7 +311,6 @@ type ui:width open: epic 8
 type ui:x open: epic 8
 type ui:y open: epic 8
 todo engine/sound.c open: epic 9
-todo ui/command.c open: epic 8
 block platform/platform.h open: epic 11
 block ui/command.h open: epic 8
 block ui/draw.h open: epic 8

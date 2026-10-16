@@ -469,7 +469,7 @@ void startend_run_fuse_sequence(void)
     int16_t x = g_party_map_x;
     int16_t y = g_party_map_y;
     if (g_session.inventory_champion_index >= 0)
-        command_toggle_inventory(CHAMPION_MAX_COUNT);
+        command_close_inventory();
     command_highlight_disable();
     game_start_fuse_sequence();
     status_draw_all(CHAMPION_ATTR_STATUS_BOX);

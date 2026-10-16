@@ -6,6 +6,7 @@ User wishes for future versions. Not planned yet.
 
 - `action_reset` (`src/engine/action.c`) also clears `g_redraw`, which is not action state.
 - `ui/view_walls.c`: the thieves eye hole is not drawn; it needs the party spell state.
+- `ui/command.c`: the credits command (203) and the name entry are not ported.
 - ui ignores the result of `inventory_fill_at_fountain`.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
 - `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing` (`docs/reference/symbols/range-4-6.md`). Port that rule.
