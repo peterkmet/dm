@@ -627,7 +627,7 @@ def setup_ui(lib):
     lib.view_render.argtypes = [c16] * 4
     lib.gfx_get_bitmap.restype = ctypes.POINTER(Bitmap)
     lib.ui_zone_box.argtypes = [c16, ctypes.POINTER(Box)]
-    lib.message_print.argtypes = [c16, ctypes.c_char_p, ctypes.c_uint32]
+    lib.message_print.argtypes = [c16, ctypes.c_char_p]
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
     lib.recruit_parse.restype = ctypes.c_bool
     lib.dungeon_load.restype = ctypes.c_bool

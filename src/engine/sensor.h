@@ -14,7 +14,6 @@
 #define LOCAL_EFFECT_ROTATE_SENSORS_1 1
 #define LOCAL_EFFECT_ROTATE_SENSORS   2
 #define LOCAL_EFFECT_EXPERIENCE       10
-#define SENSOR_TEXT_COLOR             15 /* white */
 #define ANY_CELL                      (-1)
 #define VI_ALTAR_REBIRTH_EFFECT       2 /* event 13 effect byte */
 

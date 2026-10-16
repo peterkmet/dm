@@ -132,8 +132,8 @@ def test_render_party(game, n):
         champions[3].current_health = 0
         champions[1].wounds = 0x3
         champions[2].attributes = 0x0008
-        game.message_print(15, b"\nWELCOME TO THE DUNGEON.", 0)
-        game.message_print(9, b"\nTHE PARTY IS READY.", 0)
+        game.message_print(15, b"\nWELCOME TO THE DUNGEON.")
+        game.message_print(9, b"\nTHE PARTY IS READY.")
         game.menus_set_magic_caster(1)
     fb = render(game, f"party{n}")
     box = Box()

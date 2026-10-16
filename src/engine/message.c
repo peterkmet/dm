@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/message.h"
+#include "engine/dungeon.h"
+#include "engine/game.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -38,10 +40,10 @@ void message_clear(void)
         clear_row(r);
 }
 
-void message_clear_expired_rows(uint32_t game_time)
+void message_clear_expired_rows(void)
 {
     for (int r = 0; r < MESSAGE_ROWS; r++)
-        if (g_message.expiry[r] != MESSAGE_NO_EXPIRY && g_message.expiry[r] <= game_time)
+        if (g_message.expiry[r] != MESSAGE_NO_EXPIRY && g_message.expiry[r] <= g_game_time)
             clear_row(r);
 }
 
@@ -59,7 +61,7 @@ static void start_new_row(void)
 }
 
 /* Writes s at the cursor without moving it and restarts the row's display time. */
-static void print_string(int16_t color, const char *s, uint32_t game_time)
+static void print_string(int16_t color, const char *s)
 {
     int r = g_message.cursor_row;
     /* ponytail: cells are FONT_CHAR_WIDTH apart; the clamped cursor x 314 maps to cell 52 (x 312) */
@@ -67,17 +69,17 @@ static void print_string(int16_t color, const char *s, uint32_t game_time)
         g_message.text[r][c] = *s;
         g_message.color[r][c] = color;
     }
-    g_message.expiry[r] = game_time + MESSAGE_LIFETIME;
+    g_message.expiry[r] = g_game_time + MESSAGE_LIFETIME;
 }
 
-int message_next_word_line(const char *s, char *line, int *pos, int max_width)
+int16_t message_next_word_line(const char *s, char *line, int16_t *pos, int16_t max_width)
 {
-    int w = 0;
-    int space = -1;
-    int space_w = 0;
-    int space_n = 0;
-    int p = *pos;
-    int n = 0;
+    int16_t w = 0;
+    int16_t space = -1;
+    int16_t space_w = 0;
+    int16_t space_n = 0;
+    int16_t p = *pos;
+    int16_t n = 0;
     for (;; p++, n++) {
         line[n] = 0;
         if (s[p] == '\n' || s[p] == 0) {
@@ -103,37 +105,44 @@ int message_next_word_line(const char *s, char *line, int *pos, int max_width)
     return space_w;
 }
 
-void message_print(int16_t color, const char *s, uint32_t game_time)
+void message_print(int16_t color, const char *s)
 {
     char line[MESSAGE_WRAP_LINE_SIZE];
-    int pos = 0;
+    int16_t pos = 0;
     while (s[pos]) {
-        int w = message_next_word_line(s, line, &pos, MESSAGE_ROW_WIDTH - g_message.cursor_x);
+        int16_t w = message_next_word_line(s, line, &pos, MESSAGE_ROW_WIDTH - g_message.cursor_x);
         if (s[pos] == '\n') {
             start_new_row();
-            print_string(color, line, game_time);
+            print_string(color, line);
             g_message.cursor_x = 0;
             pos++;
         } else if (s[pos] == 0) {
-            print_string(color, line, game_time);
+            print_string(color, line);
             g_message.cursor_x += w;
         } else {
-            print_string(color, line, game_time);
+            print_string(color, line);
             start_new_row();
             g_message.cursor_x = MESSAGE_WRAP_INDENT;
         }
     }
 }
 
-void message_print_number(int16_t color, int32_t value, uint32_t game_time)
+void message_print_number(int16_t color, int32_t value)
 {
     char buf[NUMBER_TEXT_SIZE];
     snprintf(buf, sizeof buf, "%d", (int)value);
-    message_print(color, buf, game_time);
-    message_print(color, " ", game_time);
+    message_print(color, buf);
+    message_print(color, " ");
 }
 
-void message_new_line(uint32_t game_time)
+void message_new_line(void)
 {
-    message_print(0, "\n", game_time);
+    message_print(0, "\n");
+}
+
+void message_print_dungeon_text(uint16_t text_thing)
+{
+    char buffer[TEXT_SIZE];
+    dungeon_decode_text(buffer, sizeof buffer, text_thing, TEXT_MODE_MESSAGE);
+    message_print(MESSAGE_COLOR_DUNGEON_TEXT, buffer);
 }

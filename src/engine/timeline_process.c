@@ -47,13 +47,6 @@ static void add_again_next_tick(TimelineEvent *event)
     timeline_add_event(event);
 }
 
-static void print_text(uint16_t text)
-{
-    char buffer[TEXT_SIZE];
-    dungeon_decode_text(buffer, sizeof buffer, text, 1);
-    message_print(SENSOR_TEXT_COLOR, buffer, g_game_time);
-}
-
 void event_process_door_animation(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
@@ -196,7 +189,7 @@ void event_process_corridor(TimelineEvent *event)
     for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
         if (THING_TYPE(t) == THING_TEXT) {
             if (change_text_visibility(t, event_effect(event)) && map_is_party_on((Location){x, y}))
-                print_text(t);
+                message_print_dungeon_text(t);
         } else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_FLOOR_GROUP_GENERATOR) {
             trigger_group_generator(t, event, x, y);
         }

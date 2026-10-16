@@ -191,10 +191,10 @@ void champion_unpack(const uint8_t *in, Champion *c)
 static void print_champion_message(uint16_t champion_index, int16_t text)
 {
     int16_t color = tables_get_champion_color(champion_index);
-    message_new_line(g_game_time);
-    message_print(color, gfx_get_string(text), g_game_time);
-    message_print(color, g_champions[champion_index].name, g_game_time);
-    message_print(color, gfx_get_string(text + 1), g_game_time);
+    message_new_line();
+    message_print(color, gfx_get_string(text));
+    message_print(color, g_champions[champion_index].name);
+    message_print(color, gfx_get_string(text + 1));
 }
 
 static void get_square_in_front(int16_t *x, int16_t *y)

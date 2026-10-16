@@ -96,11 +96,11 @@ static void draw_messages(Bitmap *viewport, const char *message[MESSAGE_COUNT], 
         if (!lines[i])
             continue;
         uint8_t color = tables_get_message_color(i);
-        int pos = 0;
+        int16_t pos = 0;
         if (lines[i] == 2) {
             char line[MESSAGE_LINE_SIZE];
-            int max = width[i] - (width[i] >> WIDE_MESSAGE_SHIFT);
-            int line_width = message_next_word_line(message[i], line, &pos, max < box.w ? max : box.w);
+            int16_t max = width[i] - (width[i] >> WIDE_MESSAGE_SHIFT);
+            int16_t line_width = message_next_word_line(message[i], line, &pos, max < box.w ? max : box.w);
             text_draw(viewport, (viewport->w - line_width) >> 1, y, color, COLOR_LIGHT_BROWN, line);
             y += pad + MESSAGE_ROW_HEIGHT;
             if (!text_get_size(message[i] + pos, &width[i], &height))

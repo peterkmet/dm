@@ -114,8 +114,8 @@ bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
 /* A white line in the message area. */
 void advanced_print_message(const char *text)
 {
-    message_new_line(g_game_time);
-    message_print(QUICK_MESSAGE_COLOR, text, g_game_time);
+    message_new_line();
+    message_print(QUICK_MESSAGE_COLOR, text);
 }
 
 /* A quick save is not a saved game: RESTART and the QUIT question look only at the save file. */

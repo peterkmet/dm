@@ -476,7 +476,7 @@ static void show_final_texts(void)
                 continue;
             message_clear();
             text[1] = '\n';
-            message_print(COLOR_WHITE, text + 1, g_game_time);
+            message_print(COLOR_WHITE, text + 1);
             fuse_update();
             wait_frames(FUSE_TEXT_FRAMES);
             letter++;

@@ -212,7 +212,7 @@ void action_print_action_message(uint16_t champion_index, const char *text)
     }
     out[n] = 0;
     if (out[1])
-        message_print(MESSAGE_COLOR_CYAN, out, g_game_time);
+        message_print(MESSAGE_COLOR_CYAN, out);
 }
 
 void action_decrement_charges(uint16_t champion_index)

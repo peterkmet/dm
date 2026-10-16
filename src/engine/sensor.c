@@ -297,13 +297,6 @@ static void trigger(uint16_t sensor, bool value, int16_t x, int16_t y)
     sensor_trigger_effect(sensor, effect, x, y, ANY_CELL);
 }
 
-static void print_text(uint16_t text)
-{
-    char buffer[TEXT_SIZE];
-    dungeon_decode_text(buffer, sizeof buffer, text, 1);
-    message_print(SENSOR_TEXT_COLOR, buffer, g_game_time);
-}
-
 /* A thing that enters or leaves a square (THING_NONE: the party), and what else lies there. */
 typedef struct {
     int16_t x, y;
@@ -326,7 +319,7 @@ static void scan_square(SquareChange *s, bool wall)
             if (type == THING_GROUP)
                 s->group_present = true;
             if (type == THING_TEXT && s->party && s->add && !s->party_on_square)
-                print_text(t);
+                message_print_dungeon_text(t);
             is_object = type > THING_GROUP && type < THING_PROJECTILE;
         }
         if (is_object) {
