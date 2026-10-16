@@ -42,7 +42,7 @@ Code that depends on the KAOS image:
 
 | Place | Dependency |
 |---|---|
-| `ftl.c`: `kaos_load`, `kaos_u8/u16/s16/u32/ptr`; `kaos_addresses.h`: `KAOS_BASE` | One global image. `kaos_*` abort when an address is outside the image. |
+| `kaos.c`: `kaos_load`, `kaos_u8/u16/s16/u32/ptr`; `kaos_addresses.h`: `KAOS_BASE` | One global image. `kaos_*` call `os_fatal` when an address is outside the image. |
 | 25 files with `kaos_*` calls | 147 `#define ... 0x10xxxx` data addresses (for example `gameloop.c`, `command.c`, `startend.c`, `dialog.c`, `ui.c`, `view.c`: 46 calls, `tables.c`: 26 calls). |
 | `tables.c`, `tables.h` | Table sizes of DM: `CREATURE_TYPE_COUNT` 27, `OBJECT_INFO_COUNT` 180, `WEAPON_TYPE_COUNT` 46, `ARMOUR_TYPE_COUNT` 58, `JUNK_TYPE_COUNT` 53, `FOOD_TYPE_COUNT` 8, `DOOR_TYPE_COUNT` 4, `SPELL_COUNT` 25, `ACTION_COUNT` 44, `SLOT_MASK_COUNT` 38, `FIXED_POSSESSION_COUNT` 40. |
 | `sound.h`, `sound.c` | `SOUND_COUNT` 35. Volume table at `0x100696`. |

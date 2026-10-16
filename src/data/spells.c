@@ -3,7 +3,7 @@
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/csbimage.h"
-#include "data/ftl.h"
+#include "data/kaos.h"
 #include "data/kaos_addresses.h"
 #include <limits.h>
 

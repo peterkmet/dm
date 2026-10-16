@@ -105,7 +105,8 @@ refactor; until the run ends, the allowlist carries the difference.
 12. Read game data at run time; do not copy a game table into the source. Exception: a table that is not in
     the game files (the soundtrack tables of the other versions) stays in the source, named in the allowlist
     with this reason; the APPB address tables of the CSB image build (`data/csbimage.c`, `data/csbtext.c`) stay
-    in the source, named in the allowlist with this reason. [decimal, allowlist]
+    in the source, named in the allowlist with this reason; the fixed CRC-32 table of a standard algorithm
+    (`data/crc32.c`) stays in the source, named in the allowlist with this reason. [decimal, hex, allowlist]
 
 ## 4. Naming
 

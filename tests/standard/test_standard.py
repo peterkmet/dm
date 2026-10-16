@@ -31,7 +31,7 @@ RECORD = re.compile(r"\bREC\s*\(|\bg_current_map_data\s*\[|\bg_dungeon_map_data\
 CONST_DEF = re.compile(r"\s*(?:static\s+)?const\s+\w+\s+[A-Z][A-Z0-9_]*\s*=")
 ENUM = re.compile(r"\benum\b[^{};]*\{([^}]*)\}")
 DEFINE = re.compile(r"^\s*#define\s+([A-Z][A-Z0-9_]*)\b", re.M)
-DECL = re.compile(r"^((?:(?:static|inline|const|struct|unsigned)\s+)*[A-Za-z_]\w*[\s*]+)([a-z_]\w*)\s*\(", re.M)
+DECL = re.compile(r"^((?:(?:static|inline|const|struct|unsigned|_Noreturn)\s+)*[A-Za-z_]\w*[\s*]+)([a-z_]\w*)\s*\(", re.M)
 PREFIXES = re.compile(r"^/\* Prefixes: ([\w ]+?) \*/$", re.M)
 PREDICATE = re.compile(r"(?:^|_)(?:is|has|can)_")
 FUNC_START = re.compile(r"^(?:static\s+)?[A-Za-z_][\w *]*?\b([a-z_]\w*)\s*\([^;]*$")
