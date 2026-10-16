@@ -14,7 +14,6 @@
 #define CSB_PRISON_DUNGEON_ID 12 /* the CSB Dungeon.DAT: champion selection; a save makes the adventure */
 #define CSB_MINI_FILE         "disk-b/MINI.DAT" /* the CSB adventure without champions, in the CSB folder */
 #define CSB_INTRO_FILE        "disk-b/ANIM.DAT" /* the CSB intro with music, in the CSB folder */
-#define PATH_SIZE             1024              /* longest file path */
 
 typedef struct {
     const char *name, *dir, *title;     /* the --adventure value, the default disk A folder, the name in messages */

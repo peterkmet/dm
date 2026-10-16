@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "data/adventure.h"
 #include "data/bytes.h"
+#include "data/file.h"
 #include "data/ftl.h"
 #include "data/graphics.h"
 #include "data/ids.h"

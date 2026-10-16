@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/anim.h"
-#include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/file.h"
 #include "data/graphics.h"
@@ -100,7 +99,7 @@ typedef struct {
 static void keep_first_match(const char *name, void *data)
 {
     NameSearch *search = data;
-    if (!search->match[0] && !os_compare_names(name, search->wanted))
+    if (!search->match[0] && !file_compare_names(name, search->wanted))
         snprintf(search->match, sizeof search->match, "%s", name);
 }
 

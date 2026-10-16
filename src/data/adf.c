@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "data/adf.h"
-#include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/file.h"
 #include "data/os.h"
@@ -82,7 +81,7 @@ static int each_entry(const uint8_t *img, const uint8_t *folder, EntryVisit visi
 static int match_name(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
 {
     (void)img;
-    return (int32_t)BE32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER && !os_compare_names(name, ctx);
+    return (int32_t)BE32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER && !file_compare_names(name, ctx);
 }
 
 bool adf_has_file(const char *adf_path, const char *name)
