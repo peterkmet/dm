@@ -4,8 +4,7 @@
 decimal data/csbimage.c rule 3.12: the APPB address tables of the CSB image build
 hex data/csbimage.c rule 3.12: the APPB address tables of the CSB image build
 hex data/csbtext.c rule 3.12: the APPB address tables of the CSB image build
-decimal ui/musicmap.c rule 3.12: the FM-Towns CSB track of each square, not in the game files
-decimal ui/music.c rule 3.12: the FM-Towns level tracks and the Super NES trigger squares, not in the game files
+decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions, not in the game files
 hex engine/map.c open: epic 5
 hex engine/map.h open: epic 5
 long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
@@ -628,7 +627,7 @@ include ui/ui_champion.c:data/ftl.h open: epic 8
 include ui/ui_menus.c:engine/dungeon.h open: epic 8
 include ui/view.c:ui/advanced.h open: epic 8
 module platform/main.c open: epic 11
-module ui/musicmap.c open: epic 9
+module ui/music_tables.c open: epic 9
 order data/adf.c open: epic 4
 order data/adventure.c open: epic 4
 order data/tables.c open: epic 4

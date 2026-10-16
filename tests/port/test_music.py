@@ -208,5 +208,6 @@ def test_end_of_the_game_track(game, adventure, soundtrack, won, track):
     var(game, "g_adventure").value = adventure
     var(game, "g_music_soundtrack").value = soundtrack
     var(game, "g_music_last_track").value = 0
+    game.lib.music_play_end.argtypes = [ctypes.c_bool]
     game.lib.music_play_end(won)
     assert last(game) == track

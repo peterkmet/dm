@@ -17,7 +17,6 @@ User wishes for future versions. Not planned yet.
 ## Truth values that are still int16_t
 
 - `savegame_quick_save` (`src/engine/savegame.h`) returns 1 or 0: make it `bool` (coding standard rule 3). `savegame_quick_load` keeps its `SAVEGAME_*` codes.
-- `music_play_end(int16_t won)` (`src/ui/music.h`): make the parameter `bool`.
 
 ## Small cleanups after the clean-code pass
 

@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/music.h"
 #include "data/adventure.h"
-#include "data/bytes.h"
 #include "engine/dungeon.h"
 #include "ui/audio.h"
 #include "ui/gameloop.h"
+#include "ui/music_internal.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -27,37 +27,6 @@
 #define FM_TOWNS_CSB_GAME_OVER_TRACK 17
 #define FM_TOWNS_CSB_PRISON_TRACK    6
 #define SUPER_NES_GAME_WON_TRACK     16 /* the end credits */
-
-/* FM-Towns DM 2.0: the CD track of each level (map 0-13). */
-static const uint8_t fm_towns_dm_level_tracks[] = {2, 8, 9, 14, 11, 6, 5, 12, 15, 16, 17, 10, 19, 3};
-
-/* Super NES DM: a track starts when the party steps on its square (map-relative Amiga squares). */
-static const struct {
-    uint8_t map, x, y, track;
-} super_nes_triggers[] = {
-    {0,  8,  4,  1 },
-    {2,  9,  17, 2 },
-    {2,  20, 12, 3 },
-    {4,  3,  20, 3 },
-    {9,  9,  29, 4 },
-    {7,  25, 3,  5 },
-    {2,  7,  4,  6 },
-    {4,  21, 17, 6 },
-    {9,  3,  12, 7 },
-    {1,  15, 26, 8 },
-    {13, 24, 6,  8 },
-    {1,  7,  12, 9 },
-    {3,  12, 8,  9 },
-    {5,  8,  20, 10},
-    {8,  8,  31, 10},
-    {6,  14, 6,  11},
-    {5,  20, 13, 12},
-    {3,  28, 30, 13},
-    {12, 12, 11, 13},
-    {11, 16, 25, 14},
-    {10, 3,  0,  17},
-    {11, 1,  22, 17},
-};
 
 int16_t g_music_soundtrack, g_music_track, g_music_last_track, g_music_requested_track;
 
@@ -129,10 +98,11 @@ static void update_super_nes(bool moved)
 {
     if (!moved)
         return;
-    for (int i = 0; i < ARRAY_COUNT(super_nes_triggers); i++)
-        if (super_nes_triggers[i].map == g_party_map_index && super_nes_triggers[i].x == g_party_map_x &&
-            super_nes_triggers[i].y == g_party_map_y && super_nes_triggers[i].track != g_music_track)
-            play(super_nes_triggers[i].track);
+    for (int i = 0; i < MUSIC_SUPER_NES_TRIGGERS; i++)
+        if (g_music_super_nes_triggers[i].map == g_party_map_index &&
+            g_music_super_nes_triggers[i].x == g_party_map_x && g_music_super_nes_triggers[i].y == g_party_map_y &&
+            g_music_super_nes_triggers[i].track != g_music_track)
+            play(g_music_super_nes_triggers[i].track);
 }
 
 void music_update(void)
@@ -148,12 +118,12 @@ void music_update(void)
         return;
     if (g_adventure == ADVENTURE_CSB)
         update_fm_towns_csb(new_map);
-    else if ((size_t)g_party_map_index < sizeof fm_towns_dm_level_tracks &&
-             fm_towns_dm_level_tracks[g_party_map_index] != g_music_last_track)
-        play(fm_towns_dm_level_tracks[g_party_map_index]);
+    else if ((size_t)g_party_map_index < MUSIC_FM_TOWNS_DM_LEVELS &&
+             g_music_fm_towns_dm_level_tracks[g_party_map_index] != g_music_last_track)
+        play(g_music_fm_towns_dm_level_tracks[g_party_map_index]);
 }
 
-void music_play_end(int16_t won)
+void music_play_end(bool won)
 {
     int16_t track = 0;
     if (g_music_soundtrack == MUSIC_FM_TOWNS && g_adventure == ADVENTURE_CSB) {
