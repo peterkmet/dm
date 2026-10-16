@@ -71,7 +71,6 @@ bool ui/anim.h:anim_open open: epic 8
 bool ui/gameloop.c:draw_entrance_doors open: epic 8
 bool ui/gameloop.h:gameloop_run_frame open: epic 8
 bool ui/layout.h:layout_get_zone_box open: epic 8
-bool ui/view.c open: epic 8
 global ui/video.h open: epic 8
 name ui/command.c:is_leader_hand_object_thrown open: epic 8
 name ui/command.c:touch_front_square_empty_handed open: epic 8
