@@ -392,11 +392,11 @@ static void spell_json(Json *j)
     json_key(j, "available");
     json_open(j, '[');
     for (int s = 0; s < SYMBOL_COUNT; s++) {
-        uint16_t cost = *tables_get_symbol_base_mana_cost(champion->symbol_step, s);
+        uint16_t cost = tables_get_symbol_base_mana_cost(champion->symbol_step, s);
         /* 16-bit product as in the original */
         if (champion->symbol_step)
-            cost = (uint16_t)(cost * *tables_get_symbol_mana_cost_multiplier((uint8_t)champion->symbols[0] -
-                                                                             SPELL_SYMBOL_FIRST)) >>
+            cost = (uint16_t)(cost * tables_get_symbol_mana_cost_multiplier((uint8_t)champion->symbols[0] -
+                                                                            SPELL_SYMBOL_FIRST)) >>
                    SPELL_MANA_MULTIPLIER_SHIFT;
         json_open(j, '{');
         key_int(j, "symbol", s);

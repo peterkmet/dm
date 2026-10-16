@@ -142,24 +142,26 @@ typedef struct {
 /* Loads the engine module at path (kaos_load), then decodes the tables. Returns 0, or -1 as kaos_load. */
 int tables_load(const char *path);
 
-/* Each accessor returns NULL for an out-of-range index. Call after tables_load. */
-const CreatureInfo *tables_get_creature_info(int creature_type);
-const CreatureSound *tables_get_creature_sound(int index);
-const ObjectInfo *tables_get_object_info(int index);
-const WeaponInfo *tables_get_weapon_info(int weapon_type);
-const ArmourInfo *tables_get_armour_info(int armour_type);
-const uint8_t *tables_get_junk_weight(int junk_type);
-const int16_t *tables_get_food_value(int index);
-const Spell *tables_get_spell(int index);
-const uint8_t *tables_get_symbol_base_mana_cost(int step, int symbol);
-const uint8_t *tables_get_symbol_mana_cost_multiplier(int power);
-const ActionSet *tables_get_action_set(int index);
-const ActionInfo *tables_get_action_info(int action);
-const int16_t *tables_get_light_power_to_light_amount(int power);
-const int16_t *tables_get_palette_light_threshold(int index);
-const uint16_t *tables_get_slot_mask(int slot);
-const uint8_t *tables_get_wound_defense_factor(int slot);
-const uint16_t *tables_get_fixed_possession(int index);
+/* Each struct accessor returns NULL for an out-of-range index. Call after tables_load. */
+const CreatureInfo *tables_get_creature_info(int16_t creature_type);
+const CreatureSound *tables_get_creature_sound(int16_t index);
+const ObjectInfo *tables_get_object_info(int16_t index);
+const WeaponInfo *tables_get_weapon_info(int16_t weapon_type);
+const ArmourInfo *tables_get_armour_info(int16_t armour_type);
+const Spell *tables_get_spell(int16_t index);
+const ActionSet *tables_get_action_set(int16_t index);
+const ActionInfo *tables_get_action_info(int16_t action);
+
+/* The scalar tables return the value, or 0 for an out-of-range index. */
+uint8_t tables_get_junk_weight(int16_t junk_type);
+int16_t tables_get_food_value(int16_t index);
+uint8_t tables_get_symbol_base_mana_cost(int16_t step, int16_t symbol);
+uint8_t tables_get_symbol_mana_cost_multiplier(int16_t power);
+int16_t tables_get_light_power_to_light_amount(int16_t power);
+int16_t tables_get_palette_light_threshold(int16_t index);
+uint16_t tables_get_slot_mask(int16_t slot);
+uint8_t tables_get_wound_defense_factor(int16_t slot);
+uint16_t tables_get_fixed_possession(int16_t index);
 
 /* Squares ahead and to each side that a sound reaches; the volume table covers -range..range. */
 #define SOUND_HEARING_RANGE 12

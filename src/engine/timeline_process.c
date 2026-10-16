@@ -346,7 +346,7 @@ void event_process_light(TimelineEvent *event)
     if (negative)
         power = -power;
     int16_t rest = power - 1;
-    int16_t delta = *tables_get_light_power_to_light_amount(power) - *tables_get_light_power_to_light_amount(rest);
+    int16_t delta = tables_get_light_power_to_light_amount(power) - tables_get_light_power_to_light_amount(rest);
     if (negative) {
         delta = -delta;
         rest = -rest;

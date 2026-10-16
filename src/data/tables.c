@@ -201,77 +201,80 @@ static void read_champion_tables(void)
         fixed_possessions[i] = kaos_u16(KAOS_FIXED_POSSESSIONS + i * 2);
 }
 
-#define GET(arr, i) ((i) >= 0 && (i) < ARRAY_COUNT(arr) ? &(arr)[i] : NULL)
+#define GET(arr, i)       ((i) >= 0 && (i) < ARRAY_COUNT(arr) ? &(arr)[i] : NULL)
+/* The table entry at i, or 0 outside the table: a defined value for a corrupt index. */
+#define GET_VALUE(arr, i) ((i) >= 0 && (i) < ARRAY_COUNT(arr) ? (arr)[i] : 0)
 
-const CreatureInfo *tables_get_creature_info(int i)
+const CreatureInfo *tables_get_creature_info(int16_t i)
 {
     return GET(creature_info, i);
 }
-const CreatureSound *tables_get_creature_sound(int i)
+const CreatureSound *tables_get_creature_sound(int16_t i)
 {
     return GET(creature_sounds, i);
 }
-const ObjectInfo *tables_get_object_info(int i)
+const ObjectInfo *tables_get_object_info(int16_t i)
 {
     return GET(object_info, i);
 }
-const WeaponInfo *tables_get_weapon_info(int i)
+const WeaponInfo *tables_get_weapon_info(int16_t i)
 {
     return GET(weapon_info, i);
 }
-const ArmourInfo *tables_get_armour_info(int i)
+const ArmourInfo *tables_get_armour_info(int16_t i)
 {
     return GET(armour_info, i);
 }
-const uint8_t *tables_get_junk_weight(int i)
+uint8_t tables_get_junk_weight(int16_t i)
 {
-    return GET(junk_weights, i);
+    return GET_VALUE(junk_weights, i);
 }
-const int16_t *tables_get_food_value(int i)
+int16_t tables_get_food_value(int16_t i)
 {
-    return GET(food_values, i);
+    return GET_VALUE(food_values, i);
 }
-const Spell *tables_get_spell(int i)
+const Spell *tables_get_spell(int16_t i)
 {
     return i < loaded_spell_count ? GET(spells, i) : NULL;
 }
-const uint8_t *tables_get_symbol_mana_cost_multiplier(int i)
+uint8_t tables_get_symbol_mana_cost_multiplier(int16_t i)
 {
-    return GET(symbol_mana_cost_multiplier, i);
+    return GET_VALUE(symbol_mana_cost_multiplier, i);
 }
-const ActionSet *tables_get_action_set(int i)
+const ActionSet *tables_get_action_set(int16_t i)
 {
     return GET(action_sets, i);
 }
-const ActionInfo *tables_get_action_info(int i)
+const ActionInfo *tables_get_action_info(int16_t i)
 {
     return GET(action_info, i);
 }
-const int16_t *tables_get_light_power_to_light_amount(int i)
+int16_t tables_get_light_power_to_light_amount(int16_t i)
 {
-    return GET(light_power_to_light_amount, i);
+    return GET_VALUE(light_power_to_light_amount, i);
 }
-const int16_t *tables_get_palette_light_threshold(int i)
+int16_t tables_get_palette_light_threshold(int16_t i)
 {
-    return GET(palette_light_thresholds, i);
+    return GET_VALUE(palette_light_thresholds, i);
 }
-const uint16_t *tables_get_slot_mask(int i)
+uint16_t tables_get_slot_mask(int16_t i)
 {
-    return GET(slot_masks, i);
+    return GET_VALUE(slot_masks, i);
 }
-const uint8_t *tables_get_wound_defense_factor(int i)
+uint8_t tables_get_wound_defense_factor(int16_t i)
 {
-    return GET(wound_defense_factor, i);
+    return GET_VALUE(wound_defense_factor, i);
 }
-const uint16_t *tables_get_fixed_possession(int i)
+uint16_t tables_get_fixed_possession(int16_t i)
 {
-    return GET(fixed_possessions, i);
+    return GET_VALUE(fixed_possessions, i);
 }
 
-const uint8_t *tables_get_symbol_base_mana_cost(int step, int symbol)
+uint8_t tables_get_symbol_base_mana_cost(int16_t step, int16_t symbol)
 {
-    const uint8_t (*row)[SYMBOL_COUNT] = GET(symbol_base_mana_cost, step);
-    return row ? GET(*row, symbol) : NULL;
+    if (step < 0 || step >= SYMBOL_STEP_COUNT)
+        return 0;
+    return GET_VALUE(symbol_base_mana_cost[step], symbol);
 }
 
 /* Fills the cached tables from the loaded image. */

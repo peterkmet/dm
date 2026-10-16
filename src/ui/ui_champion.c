@@ -812,7 +812,7 @@ static uint16_t get_largest_weight(void)
     for (int i = 0; i < ARMOUR_TYPE_COUNT; i++)
         most = tables_get_armour_info(i)->weight > most ? tables_get_armour_info(i)->weight : most;
     for (int i = 0; i < JUNK_TYPE_COUNT; i++)
-        most = *tables_get_junk_weight(i) > most ? *tables_get_junk_weight(i) : most;
+        most = tables_get_junk_weight(i) > most ? tables_get_junk_weight(i) : most;
     return most;
 }
 

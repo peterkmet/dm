@@ -470,7 +470,7 @@ void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, in
         return;
     bool cursed = creature_type == CREATURE_ANIMATED_ARMOUR;
     bool weapon_dropped = false;
-    for (uint16_t entry; (entry = *tables_get_fixed_possession(index)) != 0; index++) {
+    for (uint16_t entry; (entry = tables_get_fixed_possession(index)) != 0; index++) {
         if ((entry & FIXED_POSSESSION_RANDOM_DROP) && random_bit())
             continue;
         uint16_t info_index = entry & FIXED_POSSESSION_INDEX_MASK, thing_type, object_type;

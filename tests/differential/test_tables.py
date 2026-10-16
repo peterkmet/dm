@@ -63,9 +63,10 @@ def lib():
     lib = load_lib()
     for name, (rec, *_rest) in TABLES.items():
         f = getattr(lib, "tables_get_" + name)
-        f.argtypes, f.restype = [ctypes.c_int], ctypes.POINTER(rec)
-    lib.tables_get_symbol_base_mana_cost.argtypes = [ctypes.c_int, ctypes.c_int]
-    lib.tables_get_symbol_base_mana_cost.restype = ctypes.POINTER(u8)
+        scalar = not issubclass(rec, ctypes.Structure)
+        f.argtypes, f.restype = [ctypes.c_int16], rec if scalar else ctypes.POINTER(rec)
+    lib.tables_get_symbol_base_mana_cost.argtypes = [ctypes.c_int16, ctypes.c_int16]
+    lib.tables_get_symbol_base_mana_cost.restype = u8
     assert lib.tables_load(b"/nonexistent/KAOS.FTL") == -1
     assert lib.tables_load(str(KAOS).encode()) == 0
     return lib
@@ -78,6 +79,8 @@ def image():
 
 def get(lib, name, i):
     p = getattr(lib, "tables_get_" + name)(i)
+    if not issubclass(TABLES[name][0], ctypes.Structure):
+        return p
     return p[0] if p else None
 
 
@@ -94,9 +97,10 @@ def as_tuple(rec):
 @pytest.mark.parametrize("name", TABLES)
 def test_accessor_rejects_out_of_range(lib, name):
     count = TABLES[name][1]
-    assert get(lib, name, count - 1) is not None
-    for i in (-1, count, 0x7FFFFFFF):
-        assert get(lib, name, i) is None
+    scalar = not issubclass(TABLES[name][0], ctypes.Structure)
+    assert scalar or get(lib, name, count - 1) is not None
+    for i in (-1, count, 0x7FFF):
+        assert get(lib, name, i) == 0 if scalar else get(lib, name, i) is None
 
 
 def test_symbol_mana_cost_rejects_out_of_range(lib):
@@ -129,7 +133,7 @@ def test_action_info_matches_per_action_tables(lib, image):
 def test_symbol_base_mana_cost_matches_image(lib, image):
     for step in range(4):
         for sym in range(6):
-            assert lib.tables_get_symbol_base_mana_cost(step, sym)[0] == image[0x103C66 - BASE + step * 6 + sym]
+            assert lib.tables_get_symbol_base_mana_cost(step, sym) == image[0x103C66 - BASE + step * 6 + sym]
 
 
 def test_object_types_match_dmcsb_item_list(lib):
