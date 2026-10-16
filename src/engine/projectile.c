@@ -431,10 +431,11 @@ ImpactCount projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t 
 {
     ImpactCount result = {0, OUTCOME_NO_CREATURE_KILLED};
     ImpactSite site = {
-        impact_type, {x, y},
-         {x, y},
-         cell
+        .type = impact_type, .at = {x, y},
+             .target = {x, y},
+             .cell = cell
     };
+    ;
     do {
         uint16_t t = map_get_square_first_thing(x, y);
         while (t != THING_ENDOFLIST && !(THING_TYPE(t) == THING_PROJECTILE && THING_CELL(t) == cell &&
