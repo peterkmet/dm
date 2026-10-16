@@ -513,19 +513,19 @@ static int16_t get_object_skill_bonus(const Champion *c, uint16_t skill)
     return bonus;
 }
 
-int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flags)
+int16_t champion_get_skill_level(int16_t champion_index, int16_t skill_index, bool ignore_modifiers,
+                                 bool ignore_temporary)
 {
     if (g_party_is_sleeping)
         return 1;
     const Champion *c = &g_champions[champion_index];
-    uint16_t skill = skill_and_flags & ~(SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
-    int temporary = !(skill_and_flags & SKILL_IGNORE_TEMPORARY_EXPERIENCE);
-    uint32_t experience = c->skills[skill].experience;
+    bool temporary = !ignore_temporary;
+    uint32_t experience = c->skills[skill_index].experience;
     /* The original adds the temporary experience as an unsigned word. */
     if (temporary)
-        experience += (uint16_t)c->skills[skill].temporary_experience;
-    if (skill >= SKILL_BASE_COUNT) {
-        const Skill *base = &c->skills[get_base_skill(skill)];
+        experience += (uint16_t)c->skills[skill_index].temporary_experience;
+    if (skill_index >= SKILL_BASE_COUNT) {
+        const Skill *base = &c->skills[get_base_skill(skill_index)];
         experience += base->experience;
         if (temporary)
             experience += (uint16_t)base->temporary_experience;
@@ -534,8 +534,8 @@ int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flag
     int16_t level = 1;
     for (; experience >= LEVEL_EXPERIENCE; experience >>= 1)
         level++;
-    if (!(skill_and_flags & SKILL_IGNORE_OBJECT_MODIFIERS))
-        level += get_object_skill_bonus(c, skill);
+    if (!ignore_modifiers)
+        level += get_object_skill_bonus(c, skill_index);
     return level;
 }
 
@@ -607,8 +607,7 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
         experience *= difficulty;
     Champion *c = &g_champions[champion_index];
     uint16_t base = get_base_skill(skill);
-    uint16_t flags = SKILL_IGNORE_OBJECT_MODIFIERS | SKILL_IGNORE_TEMPORARY_EXPERIENCE;
-    uint16_t old_level = champion_get_skill_level(champion_index, base | flags);
+    uint16_t old_level = champion_get_skill_level(champion_index, base, true, true);
     if (skill >= SKILL_BASE_COUNT && g_game_time - RECENT_ATTACK_TICKS < (uint32_t)g_last_creature_attack_time)
         experience *= 2;
     Skill *s = &c->skills[skill];
@@ -618,15 +617,16 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
             bounded_value(1, experience >> TEMPORARY_EXPERIENCE_GAIN_SHIFT, TEMPORARY_EXPERIENCE_GAIN_MAXIMUM);
     if (skill >= SKILL_BASE_COUNT)
         c->skills[base].experience = (uint32_t)c->skills[base].experience + experience;
-    uint16_t level = champion_get_skill_level(champion_index, base | flags);
+    uint16_t level = champion_get_skill_level(champion_index, base, true, true);
     if (level > old_level)
         gain_level(champion_index, base, level);
 }
 
-uint16_t champion_get_maximum_load(const Champion *c)
+uint16_t champion_get_maximum_load(int16_t champion_index)
 {
-    uint16_t load =
-        champion_adjust_by_stamina(c, c->statistics[STAT_STRENGTH][STAT_CURRENT] * LOAD_PER_STRENGTH + LOAD_BASE);
+    const Champion *c = &g_champions[champion_index];
+    uint16_t load = champion_adjust_by_stamina(
+        champion_index, c->statistics[STAT_STRENGTH][STAT_CURRENT] * LOAD_PER_STRENGTH + LOAD_BASE);
     if (c->wounds)
         load -= load >> (c->wounds & WOUND_LEGS ? WOUNDED_LEGS_LOAD_SHIFT : WOUNDED_LOAD_SHIFT);
     if (object_get_icon_index(c->slots[SLOT_FEET]) == ICON_ELVEN_BOOTS)
@@ -635,9 +635,10 @@ uint16_t champion_get_maximum_load(const Champion *c)
     return load - load % LOAD_UNIT;
 }
 
-int16_t champion_get_movement_ticks(const Champion *c)
+int16_t champion_get_movement_ticks(int16_t champion_index)
 {
-    uint16_t maximum = champion_get_maximum_load(c);
+    const Champion *c = &g_champions[champion_index];
+    uint16_t maximum = champion_get_maximum_load(champion_index);
     uint16_t load = c->load;
     int16_t ticks, wounded_feet;
     if (load < maximum) {
@@ -656,11 +657,12 @@ int16_t champion_get_movement_ticks(const Champion *c)
     return ticks;
 }
 
-int16_t champion_get_dexterity(const Champion *c)
+int16_t champion_get_dexterity(int16_t champion_index)
 {
+    const Champion *c = &g_champions[champion_index];
     int16_t dexterity = c->statistics[STAT_DEXTERITY][STAT_CURRENT] + (random16() & DEXTERITY_RANDOM_MASK);
     int32_t product = (int32_t)((uint32_t)c->load * (uint32_t)(dexterity >> 1)); /* 32-bit signed product */
-    dexterity -= product / champion_get_maximum_load(c);
+    dexterity -= product / champion_get_maximum_load(champion_index);
     dexterity = max16(DEXTERITY_MINIMUM, dexterity);
     if (g_party_is_sleeping)
         dexterity >>= 1;
@@ -675,7 +677,7 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
     int16_t strength = c->statistics[STAT_STRENGTH][STAT_CURRENT] + (random16() & STRENGTH_RANDOM_MASK);
     uint16_t thing = c->slots[slot];
     uint16_t weight = inventory_get_object_weight(thing);
-    uint16_t light = champion_get_maximum_load(c) >> LIGHT_LOAD_SHIFT;
+    uint16_t light = champion_get_maximum_load(champion_index) >> LIGHT_LOAD_SHIFT;
     if (light >= weight) {
         strength += weight - STRENGTH_WEIGHT_OFFSET;
     } else {
@@ -691,14 +693,14 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
         int16_t skill = 0;
         strength += w->strength;
         if (w->weapon_class == CLASS_SWING_WEAPON || w->weapon_class == CLASS_DAGGER_AND_AXES)
-            skill = champion_get_skill_level(champion_index, SKILL_SWING);
+            skill = champion_get_skill_level(champion_index, SKILL_SWING, false, false);
         if (w->weapon_class != CLASS_SWING_WEAPON && w->weapon_class < CLASS_FIRST_AMMUNITION)
-            skill += champion_get_skill_level(champion_index, SKILL_THROW);
+            skill += champion_get_skill_level(champion_index, SKILL_THROW, false, false);
         if (w->weapon_class >= CLASS_FIRST_AMMUNITION && w->weapon_class < CLASS_AMMUNITION_END)
-            skill += champion_get_skill_level(champion_index, SKILL_SHOOT);
+            skill += champion_get_skill_level(champion_index, SKILL_SHOOT, false, false);
         strength += skill * 2;
     }
-    strength = champion_adjust_by_stamina(c, strength);
+    strength = champion_adjust_by_stamina(champion_index, strength);
     if (c->wounds & (slot == SLOT_HAND_READY ? WOUND_READY_HAND : WOUND_ACTION_HAND))
         strength >>= 1;
     return bounded_value(0, strength >> 1, ROLL_MAXIMUM);
@@ -709,11 +711,9 @@ static const ArmourInfo *get_armour_info(uint16_t thing)
     return tables_get_armour_info(rec_armour_type(thing));
 }
 
-int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_flags)
+int16_t champion_get_wound_defense(int16_t champion_index, int16_t slot, bool sharp)
 {
     const Champion *c = &g_champions[champion_index];
-    bool sharp = slot_and_flags & WOUND_DEFENSE_USE_SHARP;
-    uint16_t slot = slot_and_flags & ~WOUND_DEFENSE_USE_SHARP;
     uint16_t shields = 0;
     for (int16_t hand = SLOT_HAND_READY; hand <= SLOT_HAND_ACTION; hand++) {
         uint16_t thing = c->slots[hand];
@@ -747,20 +747,19 @@ static int16_t resisted_attack(int16_t champion_index, int16_t attack, uint16_t 
     for (int16_t slot = SLOT_HAND_READY; slot <= SLOT_FEET; slot++)
         if (allowed_wounds & 1 << slot) {
             count++;
-            defense += champion_get_wound_defense(champion_index,
-                                                  slot | (attack_type == ATTACK_SHARP ? WOUND_DEFENSE_USE_SHARP : 0));
+            defense += champion_get_wound_defense(champion_index, slot, attack_type == ATTACK_SHARP);
         }
     if (count)
         defense /= count;
     switch (attack_type) {
     case ATTACK_FIRE:
-        attack = champion_get_adjusted_attack(c, STAT_ANTIFIRE, attack) - g_party.fire_shield_defense;
+        attack = champion_get_adjusted_attack(champion_index, STAT_ANTIFIRE, attack) - g_party.fire_shield_defense;
         break;
     case ATTACK_SELF:
-        defense = (defense >> 1) + champion_get_skill_level(champion_index, SKILL_NINJA);
+        defense = (defense >> 1) + champion_get_skill_level(champion_index, SKILL_NINJA, false, false);
         break;
     case ATTACK_MAGIC:
-        return champion_get_adjusted_attack(c, STAT_ANTIMAGIC, attack) - g_party.spell_shield_defense;
+        return champion_get_adjusted_attack(champion_index, STAT_ANTIMAGIC, attack) - g_party.spell_shield_defense;
     case ATTACK_PSYCHIC: {
         int16_t wisdom = PSYCHIC_WISDOM_LIMIT - c->statistics[STAT_WISDOM][STAT_CURRENT];
         return wisdom <= 0 ? 0 : scale_value(attack, DAMAGE_SCALE_SHIFT, wisdom);
@@ -782,7 +781,7 @@ int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t a
         if (attack <= 0)
             return 0;
         int16_t threshold = champion_get_adjusted_attack(
-            c, STAT_VITALITY, (random16() & WOUND_THRESHOLD_RANDOM_MASK) + WOUND_THRESHOLD_BASE);
+            champion_index, STAT_VITALITY, (random16() & WOUND_THRESHOLD_RANDOM_MASK) + WOUND_THRESHOLD_BASE);
         if (threshold < attack)
             do {
                 g_champion_pending_wounds[champion_index] |=
@@ -953,7 +952,7 @@ void champion_fall_damage(bool use_rope)
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         Champion *c = &g_champions[i];
         if (c->current_health)
-            champion_decrement_stamina(i, (uint16_t)(c->load * ROPE_STAMINA_FACTOR) / champion_get_maximum_load(c) +
+            champion_decrement_stamina(i, (uint16_t)(c->load * ROPE_STAMINA_FACTOR) / champion_get_maximum_load(i) +
                                               1); /* 16-bit wrap */
     }
 }
@@ -979,7 +978,8 @@ static void regenerate_mana(uint16_t i, uint16_t chance)
 {
     Champion *c = &g_champions[i];
     if (c->current_mana < c->maximum_mana) {
-        int16_t levels = champion_get_skill_level(i, SKILL_WIZARD) + champion_get_skill_level(i, SKILL_PRIEST);
+        int16_t levels = champion_get_skill_level(i, SKILL_WIZARD, false, false) +
+                         champion_get_skill_level(i, SKILL_PRIEST, false, false);
         if (levels + c->statistics[STAT_WISDOM][STAT_CURRENT] <= chance)
             return;
         int16_t gain = c->maximum_mana / MANA_GAIN_DIVISOR;
@@ -1129,24 +1129,26 @@ uint16_t champion_reset_data_to_start_game(void)
     return hand;
 }
 
-int16_t champion_adjust_by_stamina(const Champion *champion, int16_t value)
+int16_t champion_adjust_by_stamina(int16_t champion_index, int16_t value)
 {
+    const Champion *champion = &g_champions[champion_index];
     int16_t half = champion->maximum_stamina >> 1;
     if (champion->current_stamina < half)
         value = (value >> 1) + (int16_t)((int32_t)value * champion->current_stamina / half); /* 16-bit quotient */
     return value;
 }
 
-uint16_t champion_get_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)
+uint16_t champion_get_adjusted_attack(int16_t champion_index, uint16_t statistic, uint16_t attack)
 {
+    const Champion *champion = &g_champions[champion_index];
     int16_t factor = STAT_LIMIT - champion->statistics[statistic][STAT_CURRENT];
     return factor < ATTACK_FACTOR_MIN ? attack >> ATTACK_LOW_FACTOR_SHIFT
                                       : scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
 }
 
-void champion_adjust_statistic(Champion *champion, uint16_t statistic, int16_t delta)
+void champion_adjust_statistic(int16_t champion_index, uint16_t statistic, int16_t delta)
 {
-    uint8_t *s = champion->statistics[statistic];
+    uint8_t *s = g_champions[champion_index].statistics[statistic];
     if (delta < 0) {
         delta = max16(delta, s[STAT_MINIMUM] - s[STAT_CURRENT]);
     } else {
@@ -1157,9 +1159,9 @@ void champion_adjust_statistic(Champion *champion, uint16_t statistic, int16_t d
     s[STAT_CURRENT] += delta;
 }
 
-bool champion_is_lucky(Champion *champion, uint16_t percentage)
+bool champion_is_lucky(int16_t champion_index, uint16_t percentage)
 {
-    uint8_t *luck = champion->statistics[STAT_LUCK];
+    uint8_t *luck = g_champions[champion_index].statistics[STAT_LUCK];
     if (random_bit() && percentage < random16() % PERCENT_RANGE)
         return true;
     bool lucky = (int8_t)luck[STAT_CURRENT] > 0 && percentage < random16() % (luck[STAT_CURRENT] * 2);

@@ -326,7 +326,7 @@ address,name,signature,subsystem
 0x11208a,draw_panel_food_water_poisoned,void draw_panel_food_water_poisoned(void),inventory
 0x11211e,draw_panel_resurrect_reincarnate,void draw_panel_resurrect_reincarnate(void),inventory
 0x11213c,draw_panel,void draw_panel(void),inventory
-0x1121b2,adjust_statistic_current_value,"void adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta)",inventory
+0x1121b2,adjust_statistic_current_value,"void adjust_statistic_current_value(int16_t champion_index, uint16_t statistic, int16_t delta)",inventory
 0x112246,process_click_on_mouth,void process_click_on_mouth(void),inventory
 0x11268e,draw_stop_pressing_mouth,void draw_stop_pressing_mouth(void),inventory
 0x1126a6,draw_champion_skills_and_statistics,void draw_champion_skills_and_statistics(void),inventory
@@ -344,17 +344,17 @@ address,name,signature,subsystem
 0x113112,champion_get_object_removed_from_slot,"uint16_t champion_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)",champion
 0x1132c0,champion_add_object_in_slot,"void champion_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot)",champion
 0x113444,champion_click_on_slot_box,void champion_click_on_slot_box(uint16_t slot_box),champion
-0x11356e,champion_get_skill_level,"int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flags)",champion
+0x11356e,champion_get_skill_level,"int16_t champion_get_skill_level(int16_t champion_index, int16_t skill_index, bool ignore_modifiers, bool ignore_temporary)",champion
 0x11368c,champion_add_skill_experience,"void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint16_t experience)",champion
 0x113950,champion_get_throwing_stamina_cost,int16_t champion_get_throwing_stamina_cost(uint16_t thing),champion
-0x113992,champion_get_stamina_adjusted_value,"int16_t champion_get_stamina_adjusted_value(const Champion *champion, int16_t value)",champion
-0x1139d8,champion_get_statistic_adjusted_attack,"uint16_t champion_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)",champion
-0x113a1e,champion_is_lucky,"int16_t champion_is_lucky(Champion *champion, uint16_t percentage)",champion
-0x113ab6,champion_get_maximum_load,uint16_t champion_get_maximum_load(const Champion *champion),champion
-0x113b26,champion_get_movement_ticks,int16_t champion_get_movement_ticks(const Champion *champion),champion
-0x113ba4,champion_get_dexterity,int16_t champion_get_dexterity(const Champion *champion),champion
+0x113992,champion_get_stamina_adjusted_value,"int16_t champion_get_stamina_adjusted_value(int16_t champion_index, int16_t value)",champion
+0x1139d8,champion_get_statistic_adjusted_attack,"uint16_t champion_get_statistic_adjusted_attack(int16_t champion_index, uint16_t statistic, uint16_t attack)",champion
+0x113a1e,champion_is_lucky,"int16_t champion_is_lucky(int16_t champion_index, uint16_t percentage)",champion
+0x113ab6,champion_get_maximum_load,uint16_t champion_get_maximum_load(int16_t champion_index),champion
+0x113b26,champion_get_movement_ticks,int16_t champion_get_movement_ticks(int16_t champion_index),champion
+0x113ba4,champion_get_dexterity,int16_t champion_get_dexterity(int16_t champion_index),champion
 0x113c46,champion_get_strength,"int16_t champion_get_strength(int16_t champion_index, int16_t slot)",champion
-0x113d8c,champion_get_wound_defense,"int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_flags)",champion
+0x113d8c,champion_get_wound_defense,"int16_t champion_get_wound_defense(int16_t champion_index, int16_t slot, bool sharp)",champion
 0x113f22,protect_check_113f22,,protect
 0x113f74,champion_wake_up,void champion_wake_up(void),champion
 0x113fae,champion_get_scent_ordinal,"uint16_t champion_get_scent_ordinal(int16_t map_x, int16_t map_y)",champion

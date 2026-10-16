@@ -415,8 +415,9 @@ def test_load_colors(game):
     lib = game.lib
     recruit(game)
     lib.champion_get_maximum_load.restype = u16
+    lib.champion_get_maximum_load.argtypes = [c16]
     champion = game.champions[0]
-    maximum = lib.champion_get_maximum_load(ctypes.byref(champion))
+    maximum = lib.champion_get_maximum_load(0)
     lib.command_toggle_inventory(0)
     game.run()
     got = []

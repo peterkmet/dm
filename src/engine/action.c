@@ -132,7 +132,7 @@ void action_set_action_list(int16_t action_set_index)
         if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charge_count()))
             continue;
         level &= ~ACTION_LEVEL_NEEDS_CHARGES;
-        if (level <= champion_get_skill_level(g_acting_champion_ordinal - 1, info->skill_index)) {
+        if (level <= champion_get_skill_level(g_acting_champion_ordinal - 1, info->skill_index, false, false)) {
             g_action_list_indices[n] = action;
             g_action_list_minimum_skill_levels[n++] = level;
         }
@@ -259,7 +259,7 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
         experience = FEAR_EXPERIENCE_CALM;
         break;
     }
-    uint16_t level = champion_get_skill_level(champion_index, SKILL_INFLUENCE);
+    uint16_t level = champion_get_skill_level(champion_index, SKILL_INFLUENCE, false, false);
     const CreatureInfo *info = group_info(group);
     uint16_t roll = random16() % (level + bonus);
     uint16_t fear = creature_fear_resistance(info);
@@ -347,7 +347,7 @@ static bool is_shot(uint16_t champion_index)
     champion_face_party_direction(c);
     uint16_t thing = inventory_get_object_removed_from_slot(champion_index, SLOT_HAND_READY);
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
-    int16_t level = champion_get_skill_level(champion_index, SKILL_SHOOT);
+    int16_t level = champion_get_skill_level(champion_index, SKILL_SHOOT, false, false);
     /* The attack is a byte: the launcher shoot attack plus the level, doubled. */
     projectile_shoot_from_champion(champion_index, thing, (uint8_t)(missile->kinetic_energy + launcher->kinetic_energy),
                                    (uint8_t)((level + (launcher->attributes & WEAPON_SHOOT_ATTACK_MASK)) << 1),
@@ -380,7 +380,7 @@ static uint16_t heal_champion(uint16_t champion_index, uint16_t experience)
     int16_t missing = c->maximum_health - c->current_health;
     if (missing <= 0 || !c->current_mana)
         return experience;
-    int16_t step = min16(HEAL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, SKILL_HEAL));
+    int16_t step = min16(HEAL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, SKILL_HEAL, false, false));
     experience = HEAL_ACTION_EXPERIENCE_STEP;
     for (;;) {
         int16_t amount = min16(missing, step);
@@ -403,7 +403,7 @@ static uint16_t heal_champion(uint16_t champion_index, uint16_t experience)
 static void open_window(uint16_t champion_index, uint16_t skill_index)
 {
     uint16_t random = random16();
-    int16_t level = champion_get_skill_level(champion_index, skill_index);
+    int16_t level = champion_get_skill_level(champion_index, skill_index, false, false);
     uint16_t ticks = random % (level + WINDOW_ACTION_LEVEL_BONUS) + WINDOW_ACTION_BASE_TICKS;
     TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks),
                            .type = EVENT_THIEVES_EYE_END};
@@ -514,8 +514,9 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     bool performed = true;
     int16_t mana_cost = 0;
     if ((skill_index >= SKILL_COUNT - SKILL_BASE_COUNT && skill_index < SKILL_COUNT) || skill_index == SKILL_WIZARD)
-        mana_cost = SPELL_ACTION_MAXIMUM_LEVEL + 1 -
-                    min16(SPELL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, skill_index));
+        mana_cost =
+            SPELL_ACTION_MAXIMUM_LEVEL + 1 -
+            min16(SPELL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, skill_index, false, false));
     switch (is_removed_in_csb(action) ? ACTION_NONE : action) {
     case ACTION_CHOP:
     case ACTION_KICK:
@@ -697,7 +698,7 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
         }
     }
     champion_add_skill_experience(champion_index, SKILL_THROW, experience);
-    int16_t level = champion_get_skill_level(champion_index, SKILL_THROW);
+    int16_t level = champion_get_skill_level(champion_index, SKILL_THROW, false, false);
     uint16_t energy_random = random16() & THROW_ENERGY_RANDOM_MASK;
     uint16_t attack_random = random16() & THROW_ATTACK_RANDOM_MASK;
     int16_t energy = weapon_energy + strength;

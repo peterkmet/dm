@@ -351,7 +351,7 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
     uint16_t experience = required_level * required_level +
                           (power - 1) * spell->base_required_skill_level * SPELL_EXPERIENCE_POWER_FACTOR +
                           required_level * SPELL_EXPERIENCE_LEVEL_FACTOR + (random16() & SPELL_EXPERIENCE_RANDOM_MASK);
-    uint16_t skill_level = champion_get_skill_level(champion_index, spell->skill_index);
+    uint16_t skill_level = champion_get_skill_level(champion_index, spell->skill_index, false, false);
     for (uint16_t missing = skill_level < required_level ? required_level - skill_level : 0; missing; missing--) {
         if (spell_draw_fails(c->statistics[STAT_WISDOM][STAT_CURRENT], random16())) {
             champion_add_skill_experience(champion_index, spell->skill_index,

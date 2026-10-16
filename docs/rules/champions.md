@@ -12,7 +12,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 |---|---|
 | Slots | `SLOT_HAND_READY` 0, `SLOT_HAND_ACTION` 1, `SLOT_HEAD` 2, `SLOT_TORSO` 3, `SLOT_LEGS` 4, `SLOT_FEET` 5, `SLOT_POUCH_2` 6, quiver 7–9 and 12, `SLOT_NECK` 10, `SLOT_POUCH_1` 11, `SLOT_BACKPACK_FIRST` 13 to 29. `SLOT_COUNT` is 30. Slots 30–37 (`SLOT_CHEST_FIRST`) are the open chest. |
 | Skills | Base skills `SKILL_FIGHTER` 0, `SKILL_NINJA` 1, `SKILL_PRIEST` 2, `SKILL_WIZARD` 3. Hidden skills 4–19. Hidden skill `s` belongs to base skill `(s − 4) / 4`. |
-| Skill flags | `SKILL_IGNORE_OBJECT_MODIFIERS` (`0x4000`), `SKILL_IGNORE_TEMPORARY_EXPERIENCE` (`0x8000`). |
+| Skill flags | `champion_get_skill_level` takes `ignore_modifiers` (original flag `0x4000`) and `ignore_temporary` (original flag `0x8000`). |
 | Wounds | Bit `n` is a wound of body slot `n` (0–5). |
 | Attack types | `ATTACK_RAW` 0, `ATTACK_FIRE` 1, `ATTACK_SELF` 2, `ATTACK_BLUNT` 3, `ATTACK_SHARP` 4, `ATTACK_MAGIC` 5, `ATTACK_PSYCHIC` 6, `ATTACK_LIGHTNING` 7. |
 
@@ -49,12 +49,12 @@ With the first champion, the time of the last party move becomes the game time.
 
 ## Skill level
 
-`champion_get_skill_level(index, skill | flags)`:
+`champion_get_skill_level(index, skill, ignore_modifiers, ignore_temporary)`:
 
 1. A sleeping party gives level 1.
-2. Experience is the skill experience plus the temporary experience (unless flag `0x8000`). A hidden skill adds the same of its base skill and halves the sum.
+2. Experience is the skill experience plus the temporary experience (unless `ignore_temporary`). A hidden skill adds the same of its base skill and halves the sum.
 3. Level is 1. It increases by 1 for each halving while the experience is 500 or more.
-4. Unless flag `0x4000`: The Firestaff in the action hand adds 1 (complete: 2) to all skills. Neck objects add 1: Gem of Ages (heal), Pendant Feral (wizard), Ekkhard Cross (defend), Moonstone (influence). The Sceptre of Lyf in the action hand adds 1 to heal.
+4. Unless `ignore_modifiers`: The Firestaff in the action hand adds 1 (complete: 2) to all skills. Neck objects add 1: Gem of Ages (heal), Pendant Feral (wizard), Ekkhard Cross (defend), Moonstone (influence). The Sceptre of Lyf in the action hand adds 1 to heal.
 
 ## Experience
 
@@ -89,7 +89,7 @@ With the first champion, the time of the last party move becomes the game time.
 
 ## Wound defense
 
-`champion_get_wound_defense(index, slot | WOUND_DEFENSE_USE_SHARP)`:
+`champion_get_wound_defense(index, slot, sharp)`:
 
 1. Each shield in a hand adds `(strength + armour defense) × wound_defense_factor[slot] >> 4`. The shift is 5 when the shield is not in the slot itself.
 2. Add `random16() % (vitality / 8 + 1)` (halved for sharp attacks), the action defense, the champion shield (Ya potion), and the party shield.

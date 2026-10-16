@@ -430,16 +430,16 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
     uint16_t amount = power / POTION_AMOUNT_DIVISOR + POTION_AMOUNT_BASE;
     switch (rec_potion_type(potion)) {
     case POTION_ROS:
-        champion_adjust_statistic(c, STAT_DEXTERITY, amount);
+        champion_adjust_statistic(champion_index, STAT_DEXTERITY, amount);
         break;
     case POTION_KU:
-        champion_adjust_statistic(c, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE);
+        champion_adjust_statistic(champion_index, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE);
         break;
     case POTION_DANE:
-        champion_adjust_statistic(c, STAT_WISDOM, amount);
+        champion_adjust_statistic(champion_index, STAT_WISDOM, amount);
         break;
     case POTION_NETA:
-        champion_adjust_statistic(c, STAT_VITALITY, amount);
+        champion_adjust_statistic(champion_index, STAT_VITALITY, amount);
         break;
     case POTION_ANTIVENIN:
         champion_unpoison(champion_index);

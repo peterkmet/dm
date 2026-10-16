@@ -353,7 +353,7 @@ def test_meaningless_spell_fails(caster):
 def test_spell_level_and_experience_rule(caster):
     lib, c = caster
     lib.random16.restype = u16
-    lib.champion_get_skill_level.restype, lib.champion_get_skill_level.argtypes = c16, [c16, u16]
+    lib.champion_get_skill_level.restype, lib.champion_get_skill_level.argtypes = c16, [c16, c16, ctypes.c_bool, ctypes.c_bool]
     seed = var(lib, ctypes.c_uint32, "g_random_seed")
     var(lib, ctypes.c_uint32, "g_game_time").value = 100000
     var(lib, ctypes.c_int32, "g_last_creature_attack_time").value = 0  # no recent attack: no double experience
@@ -364,7 +364,7 @@ def test_spell_level_and_experience_rule(caster):
         experience = 0 if skill_level == 1 else 500 << (skill_level - 2)
         for s in (wizard, skill):
             c.skills[s].experience, c.skills[s].temporary_experience = experience, 0
-        assert lib.champion_get_skill_level(0, skill) == skill_level
+        assert lib.champion_get_skill_level(0, skill, False, False) == skill_level
         c.enable_action_event_index = -1
         seed.value = start
         result = cast(lib, c, [power, 0x66, 0x70, 0x73])
