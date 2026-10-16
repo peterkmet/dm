@@ -126,7 +126,7 @@ static void quick_save(void)
 /* After a damaged file, savegame_load_from puts the running game back: the game goes on. */
 static void quick_load(void)
 {
-    int16_t result = savegame_quick_load(startend_save_dir());
+    SavegameResult result = savegame_quick_load(startend_save_dir());
     if (result == SAVEGAME_LOADED)
         gameloop_continue_loaded_game();
     advanced_print_message(result == SAVEGAME_LOADED    ? "GAME LOADED"

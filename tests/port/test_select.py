@@ -38,7 +38,7 @@ def lib():
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.select_restart.restype = ctypes.c_bool
     lib.select_item_box.restype = ctypes.c_bool
-    lib.savegame_save.restype = c16
+    lib.savegame_save.restype = ctypes.c_bool
     yield lib
     set_value(lib, "g_adventure", DM)
 
@@ -121,9 +121,9 @@ def test_save_writes_csb_name(lib, tmp_path):
     assert lib.gameloop_start_new_game(str(GAME).encode())
     set_value(lib, "g_adventure", CSB)
     try:
-        assert lib.savegame_save(str(tmp_path).encode()) == 1
+        assert lib.savegame_save(str(tmp_path).encode()) is True
         assert sorted(p.name for p in tmp_path.iterdir()) == ["CSBGAME.DAT"]
-        assert lib.savegame_save(str(tmp_path).encode()) == 1
+        assert lib.savegame_save(str(tmp_path).encode()) is True
         assert sorted(p.name for p in tmp_path.iterdir()) == ["CSBGAME.BAK", "CSBGAME.DAT"]
     finally:
         set_value(lib, "g_adventure", DM)

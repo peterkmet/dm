@@ -130,12 +130,12 @@ int startend_save_current_game(const char **reason)
         return savegame_save(save_dir) ? SAVED_GAME : 0;
     snprintf(mini, sizeof mini, "%s/%s", gameloop_get_data_dir(), CSB_MINI_FILE);
     switch (savegame_make_adventure(save_dir, mini)) {
-    case ADVENTURE_MADE:
+    case SAVEGAME_ADVENTURE_MADE:
         return SAVED_NEW_ADVENTURE;
-    case ADVENTURE_NO_CHAMPIONS:
+    case SAVEGAME_ADVENTURE_NO_CHAMPIONS:
         *reason = "CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS.";
         return 0;
-    case ADVENTURE_NAMES_NOT_UNIQUE:
+    case SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE:
         *reason = "EACH CHAMPION MUST HAVE A UNIQUE FIRST NAME!";
         return 0;
     default:
@@ -210,7 +210,7 @@ bool startend_load_saved_game(void)
 {
     g_game_screen_inactive = true;
     for (;;) {
-        int16_t result = savegame_load(save_dir);
+        SavegameResult result = savegame_load(save_dir);
         if (result == SAVEGAME_LOADED) {
             dialog_draw(NULL, gfx_get_string(TEXT_LOADING_GAME), NULL, NULL, NULL, NULL);
             return true;

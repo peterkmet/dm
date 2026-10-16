@@ -36,8 +36,8 @@ def game():
     lib.control_open.restype = ctypes.c_bool
     lib.dungeon_map_width.restype = c16
     lib.dungeon_map_height.restype = c16
-    lib.savegame_save.restype = c16
-    lib.savegame_load.restype = c16
+    lib.savegame_save.restype = ctypes.c_bool
+    lib.savegame_load.restype = ctypes.c_int
     lib.video_get_color.restype = u16
     lib.video_convert_argb.restype = u32
     lib.control_open.argtypes = [ctypes.c_char_p]
@@ -295,27 +295,27 @@ def test_save_and_load_keep_the_automap(game, tmp_path):
     vanilla_dir.mkdir()
     advanced_dir.mkdir()
     set_mode(game, VANILLA)
-    assert lib.savegame_save(str(vanilla_dir).encode()) == 1
+    assert lib.savegame_save(str(vanilla_dir).encode()) is True
     u32.in_dll(lib, "g_random_seed").value = seed
     set_mode(game, ADVANCED)
-    assert lib.savegame_save(str(advanced_dir).encode()) == 1
+    assert lib.savegame_save(str(advanced_dir).encode()) is True
     vanilla, advanced = (vanilla_dir / SAVE).read_bytes(), (advanced_dir / SAVE).read_bytes()
     assert len(advanced) > len(vanilla) and advanced[: len(vanilla)] == vanilla
 
     lib.explored_reset()
     assert seen(game) == set()
-    assert lib.savegame_load(str(advanced_dir).encode()) == 1
+    assert lib.savegame_load(str(advanced_dir).encode()) == C.SAVEGAME_LOADED
     assert seen(game) == explored
 
     set_mode(game, VANILLA)  # vanilla loads a file with the block, and the vanilla file without one
-    assert lib.savegame_load(str(advanced_dir).encode()) == 1
-    assert lib.savegame_load(str(vanilla_dir).encode()) == 1
+    assert lib.savegame_load(str(advanced_dir).encode()) == C.SAVEGAME_LOADED
+    assert lib.savegame_load(str(vanilla_dir).encode()) == C.SAVEGAME_LOADED
     assert seen(game) == set()
 
     damaged = bytearray(advanced)
     damaged[len(vanilla) + 4] ^= 0xFF  # the version byte of the block
     (advanced_dir / SAVE).write_bytes(bytes(damaged))
-    assert lib.savegame_load(str(advanced_dir).encode()) == 1
+    assert lib.savegame_load(str(advanced_dir).encode()) == C.SAVEGAME_LOADED
     assert seen(game) == set()
     lib.gameloop_start_loaded_game()
     assert len(seen(game)) > 0

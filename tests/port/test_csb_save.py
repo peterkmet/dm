@@ -15,7 +15,6 @@ from dmtest.savefile import SaveFile
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 CEDT = GAME_CSB / "disk-b" / "CEDT.FTL"
 DM, CSB = 0, 1
-LOADED, DAMAGED = 1, -1
 NAME = b"CSBGAME.DAT"
 CHAMPION_BYTES, MAGIC_MAP = 0x140, 0x118
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
@@ -33,7 +32,7 @@ def game():
     lib.dungeon_save.restype = ctypes.c_void_p
     lib.free.argtypes = [ctypes.c_void_p]
     lib.savegame_save_as.restype = ctypes.c_bool
-    lib.savegame_load_from.restype = c16
+    lib.savegame_load_from.restype = ctypes.c_int
     lib.dungeon_map_count.restype = c16
     lib.savefile_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
     lib.savefile_decode.restype = ctypes.c_bool
@@ -50,7 +49,7 @@ def value(lib, name, kind=c16):
 
 def load_mini(game, tmp_path):
     shutil.copy(MINI, tmp_path / "MINI.DAT")
-    assert game.lib.savegame_load_from(str(tmp_path).encode(), b"MINI.DAT", None) == LOADED
+    assert game.lib.savegame_load_from(str(tmp_path).encode(), b"MINI.DAT", None) == C.SAVEGAME_LOADED
 
 
 def save(game, folder):
@@ -96,7 +95,7 @@ def test_loaded_game_saves_and_loads_back(game, tmp_path):
         game.champions[i].magic_map[:] = [i + 1, 2, 3, 4, 0x5A, 0xC3]
     before = state(game)
     raw = save(game, tmp_path / "out")
-    assert game.lib.savegame_load_from(str(tmp_path / "out").encode(), NAME, None) == LOADED
+    assert game.lib.savegame_load_from(str(tmp_path / "out").encode(), NAME, None) == C.SAVEGAME_LOADED
     assert state(game) == before
     py = cm.decode_save(raw)
     assert py["layout"] == 2 and py["format"] == 3
@@ -111,7 +110,7 @@ def test_new_prison_game_saves_and_loads_back(game, tmp_path):
     assert value(game.lib, "g_max_active_group_count", u16) == 60
     before = state(game)
     raw = save(game, tmp_path)
-    assert game.lib.savegame_load_from(str(tmp_path).encode(), NAME, None) == LOADED
+    assert game.lib.savegame_load_from(str(tmp_path).encode(), NAME, None) == C.SAVEGAME_LOADED
     assert state(game) == before
     assert cm.w(cm.decode_save(raw)["blocks"][0], C.SAVE_GLOBAL_MAX_ACTIVE_GROUP_COUNT) == 60
 
@@ -139,6 +138,6 @@ def test_damaged_champion_block_is_rejected(game, tmp_path):
     assert same
     bad[pos + 1] ^= same & -same
     (tmp_path / NAME.decode()).write_bytes(bad)
-    assert game.lib.savegame_load_from(str(tmp_path).encode(), NAME, None) == DAMAGED
+    assert game.lib.savegame_load_from(str(tmp_path).encode(), NAME, None) == C.SAVEGAME_DAMAGED
     (tmp_path / NAME.decode()).write_bytes(good)
-    assert game.lib.savegame_load_from(str(tmp_path).encode(), NAME, None) == LOADED
+    assert game.lib.savegame_load_from(str(tmp_path).encode(), NAME, None) == C.SAVEGAME_LOADED

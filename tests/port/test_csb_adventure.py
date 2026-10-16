@@ -19,7 +19,6 @@ from dmtest.markers import GAME_CSB, ROOT, needs_csb, needs_csb_mini, needs_sdl
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 CEDT = GAME_CSB / "disk-b" / "CEDT.FTL"
 DM, CSB = 0, 1
-LOADED = 1
 CHOICE_CANCEL, CHOICE_SAVE_AND_PLAY, CHOICE_SAVE_AND_QUIT = 1, 2, 3
 CHAMPION_BYTES, FOOD, WATER = 0x140, 0x42, 0x44
 PAYLOAD_START, PAYLOAD_REST = slice(0x100, 0x138), slice(0x162, 0x200)  # the payload without block keys and checksums
@@ -41,9 +40,9 @@ def game():
     lib.rec_thing_next.restype = u16
     lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
-    lib.savegame_make_adventure.restype = c16
+    lib.savegame_make_adventure.restype = ctypes.c_int
     lib.savegame_save_as.restype = ctypes.c_bool
-    lib.savegame_load_from.restype = c16
+    lib.savegame_load_from.restype = ctypes.c_int
     lib.startend_load_saved_game.restype = ctypes.c_bool
     lib.control_open.argtypes = [ctypes.c_char_p]
     c16.in_dll(lib, "g_adventure").value = CSB
@@ -108,7 +107,7 @@ def test_merge_equals_the_python_merge(game, saves):
     names = new_prison_game(game, 3)
     game.champions[1].cell = game.champions[0].cell  # the cell fix of the merge
     assert game.lib.savegame_save_as(str(saves).encode(), b"PRISON.DAT", None) == 1
-    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.ADVENTURE_MADE
+    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.SAVEGAME_ADVENTURE_MADE
     raw = (saves / NAME).read_bytes()
     port = cm.decode_save(raw)
     b2 = port["blocks"][2]
@@ -138,7 +137,7 @@ def test_prison_save_continues_in_the_adventure(game, saves):
     assert_in_adventure(game, names)
     game.lib.gameloop_start_loaded_game()
     assert value(game, "g_game_screen_inactive") == 0
-    assert game.lib.savegame_load_from(str(saves).encode(), NAME.encode(), None) == LOADED
+    assert game.lib.savegame_load_from(str(saves).encode(), NAME.encode(), None) == C.SAVEGAME_LOADED
     assert_in_adventure(game, names)
     assert save_now(game) == (C.SAVED_GAME, None)  # outside the prison: a plain save
     assert value(game, "g_party_map_index") == 4
@@ -147,7 +146,7 @@ def test_prison_save_continues_in_the_adventure(game, saves):
 def test_merge_refuses_an_empty_party(game, saves):
     assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
     assert save_now(game) == (0, b"CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS.")
-    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.ADVENTURE_NO_CHAMPIONS
+    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.SAVEGAME_ADVENTURE_NO_CHAMPIONS
     assert not (saves / NAME).exists()
     assert value(game, "g_dungeon_id", u16) == 12
 
@@ -157,7 +156,7 @@ def test_merge_refuses_equal_first_names(game, saves):
     game.champions[1].name = game.champions[0].name
     assert save_now(game) == (0, b"EACH CHAMPION MUST HAVE A UNIQUE FIRST NAME!")
     game.champions[1].name = b""
-    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.ADVENTURE_NAMES_NOT_UNIQUE
+    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE
     assert not (saves / NAME).exists()
 
 
@@ -239,7 +238,7 @@ def test_advanced_save_keeps_the_automap_block(game, saves):
         raw = (saves / NAME).read_bytes()
         length = int.from_bytes(raw[-4:], "big")
         assert raw[-4 - length:][:4] == b"AMAP"
-        assert game.lib.savegame_load_from(str(saves).encode(), NAME.encode(), None) == LOADED
+        assert game.lib.savegame_load_from(str(saves).encode(), NAME.encode(), None) == C.SAVEGAME_LOADED
         assert_in_adventure(game, names)
     finally:
         c16.in_dll(game.lib, "g_game_mode").value = 0

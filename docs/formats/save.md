@@ -200,18 +200,18 @@ With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header: the paylo
 
 The save directory is the game data directory (`--data`, default `game/`). `startend_set_save_dir` changes it.
 
-`int16_t savegame_save(const char *dir)`:
+`bool savegame_save(const char *dir)`:
 
 1. `timeline_reset`. Then pack the globals, the active groups, the champions, the party, the timeline events, and the timeline index into the blocks.
 2. The leader load in the file does not count the object in the leader hand, as in `save_game`. The live state does not change.
 3. Write the portraits and the dungeon (`dungeon_save`).
 4. `savefile_init_header` with `g_game_id`, `g_dungeon_id`, and the extra bytes of the last load. `savefile_encode`.
 5. Delete `DMGAME.BAK`. Rename `DMGAME.DAT` to `DMGAME.BAK`. Write `DMGAME.DAT`.
-6. Set `g_saved_game_exists` and `g_last_save_game_time`. Return 1, or 0 on a write error.
+6. Set `g_saved_game_exists` and `g_last_save_game_time`. Return true, or false on a write error.
 
 The random header words come after the copy of the globals. Thus the saved random seed is the seed before the save, as in the original.
 
-`int16_t savegame_load(const char *dir)` returns `SAVEGAME_LOADED` (1), `SAVEGAME_MISSING` (0), or `SAVEGAME_DAMAGED` (−1):
+`SavegameResult savegame_load(const char *dir)` returns `SAVEGAME_LOADED` (1), `SAVEGAME_MISSING` (0), or `SAVEGAME_DAMAGED` (−1):
 
 1. Read `DMGAME.DAT`. When it is missing, read `DMGAME.BAK`.
 2. `savefile_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.

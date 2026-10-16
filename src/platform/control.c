@@ -1199,7 +1199,7 @@ static void handle_act_many(const char *request)
 /* Loads the save file of the adventure (DMGAME.DAT or CSBGAME.DAT) from the save directory, as RESUME does, and answers with the state. */
 static void handle_load(void)
 {
-    int16_t result = savegame_load(startend_save_dir());
+    SavegameResult result = savegame_load(startend_save_dir());
     if (result == SAVEGAME_MISSING) {
         send_error("no saved game (use save first)");
         return;
