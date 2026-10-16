@@ -198,7 +198,7 @@ static uint16_t amiga_key(int key, int modifiers)
     case SDLK_F4:
         return command_champion_key(key - SDLK_F1);
     }
-    if (g_game_mode == GAME_MODE_VANILLA)
+    if (g_session.mode == GAME_MODE_VANILLA)
         return 0;
     return advanced_key(key);
 }
@@ -275,7 +275,7 @@ static void read_input(void)
             select_input(&event);
             continue;
         }
-        if (g_game_mode == GAME_MODE_TURNBASED && mode >= MODE_ENTRANCE)
+        if (g_session.mode == GAME_MODE_TURNBASED && mode >= MODE_ENTRANCE)
             continue;
         if (mode < MODE_ENTRANCE) {
             if (event.type == PLAT_KEY && event.key == SDLK_ESCAPE)
@@ -447,7 +447,7 @@ static void set_icon(void)
 static int apply_mode(void)
 {
     static char default_control[PATH_SIZE];
-    turnbased = g_game_mode == GAME_MODE_TURNBASED;
+    turnbased = g_session.mode == GAME_MODE_TURNBASED;
     if (turnbased)
         auto_enter = true;
     /* turn-based: no frames inside the endgame and dialogs, so a dead party ends the turn at once */
@@ -520,7 +520,7 @@ static bool start_csb(void)
         return true;
     }
     if (loaded_adventure != ADVENTURE_CSB) {
-        SDL_Log("adventure csb, mode %s", game_mode_names[g_game_mode]);
+        SDL_Log("adventure csb, mode %s", game_mode_names[g_session.mode]);
         data_dir = get_adventure_dir();
         if (!load_game_files())
             return false;
@@ -555,7 +555,7 @@ static bool start_adventure(void)
 {
     if (g_adventure == ADVENTURE_CSB)
         return start_csb();
-    SDL_Log("adventure dm, mode %s", game_mode_names[g_game_mode]);
+    SDL_Log("adventure dm, mode %s", game_mode_names[g_session.mode]);
     data_dir = get_adventure_dir();
     if (!load_game_files())
         return false;
@@ -723,7 +723,7 @@ int main(int argc, char **argv)
     if (options.filter && !plat_set_filter(plat_filter_factor(options.filter)))
         return 1;
     /* turn-based and DM_AUTO_ENTER choose NEW ADVENTURE, as ENTER at the DM entrance */
-    if (mode == MODE_SELECT && select_screen() == SCREEN_CSB && (auto_enter || g_game_mode == GAME_MODE_TURNBASED))
+    if (mode == MODE_SELECT && select_screen() == SCREEN_CSB && (auto_enter || g_session.mode == GAME_MODE_TURNBASED))
         select_key(SELECT_KEY_ENTER);
 
     for (int64_t frame = 0; options.frames < 0 || frame < options.frames; frame++) {

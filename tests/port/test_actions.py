@@ -9,7 +9,7 @@ import pytest
 from dmtest import constants as C
 from dmtest.emu import s16, var
 from dmtest.game import (ActionList, pending_damage, CHAMPIONS, Champion, Location, MeleeAttack, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
-                         setup_creatures, skeleton_map_and_squares, things_of_type, tick)
+                         setup_creatures, skeleton_map_and_squares, things_of_type, tick, session)
 from dmtest.lib import load_lib
 
 c16, u16, u8 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint8
@@ -109,7 +109,7 @@ def test_action_matches_original(alib, seed):
         w.globals(0, 5000, 0, 0, w.rng.randrange(4), w.rng.randrange(4))
         for action in PURE_ACTIONS:
             i = w.rng.randrange(4)
-            var(lib, c16, "g_action_damage").value = 0
+            session(lib).action_damage = 0
             w.emu.write(ACTION_DAMAGE, b"\0\0")
             w.emu.write(TICKS_AT, b"\0\0")
             w.seed(seed * 10007 + round_ * 101 + action)
@@ -117,7 +117,7 @@ def test_action_matches_original(alib, seed):
             want = s16(w.emu.call(ACTION_PERFORMED, [(2, i), (2, action)]))
             assert got == want, (round_, action)
             assert disabled_ticks(lib, i) == struct.unpack(">H", w.emu.read(TICKS_AT, 2))[0], (round_, action)
-            assert var(lib, c16, "g_action_damage").value == struct.unpack(">h", w.emu.read(ACTION_DAMAGE, 2))[0]
+            assert session(lib).action_damage == struct.unpack(">h", w.emu.read(ACTION_DAMAGE, 2))[0]
             assert var(lib, ctypes.c_uint32, "g_random_seed").value == struct.unpack(">I", w.emu.read(0x100EF8, 4))[0]
             assert same_champion(lib, w, i), (round_, action)
 
@@ -204,7 +204,7 @@ def test_sword_attack_hurts_group_and_gains_experience(fighter):
     damage = []
     for _ in range(20):
         lib.action_is_action_performed(0, C.ACTION_SWING)
-        damage.append(var(lib, c16, "g_action_damage").value)
+        damage.append(session(lib).action_damage)
         group = lib.map_find_thing(Location(x, y + 1), C.THING_GROUP)
         if group == 0xFFFE or struct.unpack(">H", bytes(lib.rec_write(group)[6:8]))[0] < health:
             break
@@ -223,7 +223,7 @@ def test_back_row_champion_cannot_reach(fighter):
     found = False
     for _ in range(10):
         lib.action_is_action_performed(0, C.ACTION_SWING)
-        if var(lib, c16, "g_action_damage").value == -1:
+        if session(lib).action_damage == -1:
             found = True
             break
     assert found
@@ -265,10 +265,10 @@ def test_triggered_action_closes_menu_and_asks_for_action_area(party):
     lib.action_did_click_trigger_action.restype, lib.action_did_click_trigger_action.argtypes = ctypes.c_bool, [c16]
     redraw = ctypes.c_uint16.in_dll(lib, "g_redraw")
     redraw.value = 0
-    var(lib, c16, "g_acting_champion_index").value = 0
+    session(lib).acting_champion_index = 0
     ActionList.in_dll(lib, "g_action_list").actions[0] = C.ACTION_BLOCK
     lib.action_did_click_trigger_action(0)
-    assert var(lib, c16, "g_acting_champion_index").value == -1
+    assert session(lib).acting_champion_index == -1
     assert redraw.value & C.REDRAW_ACTION_AREA
     assert c.attributes & ATTR_ACTION_HAND
 

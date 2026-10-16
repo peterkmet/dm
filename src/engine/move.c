@@ -24,7 +24,6 @@
 #define MOVER_OBJECT     2
 #define MOVER_PROJECTILE 3
 
-int16_t g_new_party_map_index = -1;
 int g_party_teleport_count;
 
 bool move_is_levitating(uint16_t thing)
@@ -247,7 +246,7 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
             sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, same_square, true);
         } else {
             map_set_current_map(src_map);
-            g_new_party_map_index = map;
+            g_session.new_party_map = map;
         }
         return;
     }
@@ -358,20 +357,20 @@ MoveResult move_get_move_result(const Move *move, MoveDestination *destination)
 
 void move_process_new_party_map(void)
 {
-    if (g_new_party_map_index == -1)
+    if (g_session.new_party_map == -1)
         return;
     group_remove_all_active_groups();
-    map_set_current_map_and_party_map(g_new_party_map_index);
+    map_set_current_map_and_party_map(g_session.new_party_map);
     group_add_all_active_groups();
     move_get_move_result(&(Move){.thing = THING_NONE, .to.x = g_party_map_x, .to.y = g_party_map_y, .enters = true},
                          NULL);
-    g_new_party_map_index = -1;
+    g_session.new_party_map = -1;
 }
 
 void move_party_enter_dungeon(void)
 {
     map_reset();
-    g_new_party_map_index = -1;
+    g_session.new_party_map = -1;
     map_set_current_map_and_party_map(g_party_map_index);
     group_add_all_active_groups();
     move_get_move_result(&(Move){.thing = THING_NONE, .to.x = g_party_map_x, .to.y = g_party_map_y, .enters = true},
@@ -384,10 +383,10 @@ void move_take_stairs(bool stairs_go_up)
                          NULL);
     Position to = map_get_level_change_location((Position){g_party_map_index, g_party_map_x, g_party_map_y},
                                                 stairs_go_up ? LEVEL_UP : LEVEL_DOWN);
-    g_new_party_map_index = to.map;
+    g_session.new_party_map = to.map;
     g_party_map_x = to.x;
     g_party_map_y = to.y;
-    map_set_current_map(g_new_party_map_index);
+    map_set_current_map(g_session.new_party_map);
     move_set_party_direction(map_get_stairs_exit_direction(g_party_map_x, g_party_map_y));
     map_set_current_map(g_party_map_index);
 }
@@ -486,5 +485,5 @@ void move_party(int16_t command)
 
 void move_reset(void)
 {
-    g_new_party_map_index = -1;
+    g_session.new_party_map = -1;
 }

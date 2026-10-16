@@ -10,8 +10,6 @@
 #define WATCHDOG_INTERVAL   300 /* game ticks between two watchdog events */
 #define SYSTEM_ERROR_MEMORY 70  /* allocation failed, or an event is missing from the timeline */
 
-extern bool g_party_is_sleeping, g_party_dead;
-extern bool g_game_won;
 extern uint32_t g_game_time, g_game_id;
 
 /* Interface parts that the game rules changed: the user interface draws them again (g_redraw bits). */
@@ -25,14 +23,29 @@ extern uint16_t g_redraw;
 #define GAME_MODE_VANILLA   0
 #define GAME_MODE_ADVANCED  1
 #define GAME_MODE_TURNBASED 2
-extern int16_t g_game_mode; /* GAME_MODE_VANILLA by default */
 /* Cheats of the advanced mode, L, I, and F on the automap. Not saved; a new or loaded game turns them off. */
-extern bool g_cheat_light;    /* the view draws in full light; the creature rules keep the real light */
-extern bool g_cheat_immortal; /* the health of a champion stops at 1 */
-extern bool g_cheat_food;     /* food and water do not go down */
-#define CHEAT_LIGHT    0
-#define CHEAT_IMMORTAL 1
-#define CHEAT_FOOD     2
+#define CHEAT_LIGHT         0
+#define CHEAT_IMMORTAL      1
+#define CHEAT_FOOD          2
+
+/* The state of one run of the game: a new game or a load resets it, the save file does not hold it. */
+typedef struct {
+    int16_t mode; /* GAME_MODE_*; a load keeps it */
+    bool party_sleeping;
+    bool party_dead;
+    bool won;
+    bool cheat_light;       /* the view draws in full light; the creature rules keep the real light */
+    bool cheat_immortal;    /* the health of a champion stops at 1 */
+    bool cheat_food;        /* food and water do not go down */
+    bool saved_game_exists; /* set after a save or a load: the endgame offers a restart */
+    uint32_t last_save_time, last_load_time;
+    int16_t candidate_champion_index; /* -1: no candidate */
+    int16_t inventory_champion_index; /* -1: no inventory open */
+    int16_t acting_champion_index;    /* -1: none */
+    int16_t action_damage;            /* 0: none, -1 can't reach, -2 need ammo */
+    int16_t new_party_map;            /* -1: no map change pending */
+} Session;
+extern Session g_session;
 
 /* Stops the game with the "System Error" message of the original. */
 _Noreturn void game_fatal(int16_t code);

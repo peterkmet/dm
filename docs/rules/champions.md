@@ -25,7 +25,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 3. Food and water are `1500 + random16() & 255` each (two draws).
 4. All slots are empty.
 5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../../src/engine/recruit.h)).
-6. The champion becomes the candidate (`g_candidate_champion_index`: index, −1 for none). The first champion becomes leader and magic caster.
+6. The champion becomes the candidate (`g_session.candidate_champion_index`: index, −1 for none). The first champion becomes leader and magic caster.
 7. The objects in the cell of the wall square that faces the party become the possessions:
    - Armour goes to the first body slot (head to feet) that accepts it, else to the neck.
    - A weapon goes to the action hand.
@@ -132,7 +132,7 @@ Sleep keeps the selected runes of the magic caster, in the original (command 145
 2. All objects drop on the party square in the champion cell, in the order of `g_slot_drop_order` (`move_get_move_result`).
 3. A junk record (no reserve) becomes the bones (junk type 5, important, champion index in the charges) and drops in the same cell.
 4. The spell symbols clear. Poison ends.
-5. When no champion lives, `g_party_dead` becomes 1. Else the first living champion becomes leader or caster when the dead champion had that role.
+5. When no champion lives, `g_session.party_dead` becomes 1. Else the first living champion becomes leader or caster when the dead champion had that role.
 
 ## Inventory
 
@@ -220,7 +220,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Else no disabled ticks. |
 | Freeze Life | A blue magical box adds 30 freeze ticks, a green box 125; the box is used up. Other objects add 70 and use a charge. The maximum is 200. |
 | Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, else fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
-| Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_action_damage = −2`, no experience. |
+| Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_session.action_damage = −2`, no experience. |
 | Spellshield, Fireshield | `magic_is_party_spell_or_fire_shield_successful` for 280 ticks with mana. Success uses a charge. Failure quarters the experience and halves the disabled ticks. |
 | Fluxcage | `projectile_fluxcage_action` on the square in front. |
 | Heal | While mana remains: health + `min(10, heal level)`, mana − 2, experience + 2 (start 2). |
@@ -233,7 +233,7 @@ Block, Hit, and the other actions only add the action defense, the disabled tick
 
 ### Melee
 
-`action_is_melee_action_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, −1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](creatures.md)) gives the damage, which goes into `g_action_damage` for the action area.
+`action_is_melee_action_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, −1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_session.action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
 
 ### Fear
 

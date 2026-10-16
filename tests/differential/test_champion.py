@@ -6,7 +6,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import need, s16, var
-from dmtest.game import CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Champion, Party, Position, RecruitData, World, champions, pack
+from dmtest.game import CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Champion, Party, Position, RecruitData, World, champions, pack, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -161,7 +161,7 @@ def test_time_effects_match_original(lib, seed):
     for round_ in range(60):
         w.put_champions(w.rng.randint(1, 4))
         candidate = w.rng.choice([0, 0, 1, 2])
-        var(lib, c16, "g_candidate_champion_index").value = candidate - 1  # the original stores index + 1
+        session(lib).candidate_champion_index = candidate - 1  # the original stores index + 1
         w.emu.write(CANDIDATE, struct.pack(">h", candidate))
         time = w.rng.choice([w.rng.randint(0, 70000), 256 * w.rng.randint(0, 200), 64 * w.rng.randint(0, 900)])
         w.globals(w.rng.choice([0, 0, 1]), time, w.rng.randint(0, time), time - w.rng.randint(0, 400), 0, w.rng.randrange(4))
@@ -212,9 +212,8 @@ def party(lib):
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     lib.map_reset()  # dungeon_load replaced the map buffers
     lib.game_start_new()
-    for name in ("g_candidate_champion_index", "g_inventory_champion_index"):
-        var(lib, c16, name).value = -1
-    var(lib, ctypes.c_bool, "g_party_is_sleeping").value = 0
+    session(lib).candidate_champion_index = session(lib).inventory_champion_index = -1
+    session(lib).party_sleeping = 0
     var(lib, ctypes.c_bool, "g_leader_empty_handed").value = 1
     var(lib, ctypes.c_uint32, "g_random_seed").value = 12345
     portrait, m, x, y, c = first_mirror(lib)
@@ -236,7 +235,7 @@ def test_recruit_first_mirror_champion(lib, party):
     assert lib.recruit_parse(party["text"], ctypes.byref(r)) == 1
     ch = champions(lib)[0]
     assert var(lib, u16, "g_party_champion_count").value == 1
-    assert var(lib, c16, "g_candidate_champion_index").value == 0 and var(lib, c16, "g_leader_index").value == 0
+    assert session(lib).candidate_champion_index == 0 and var(lib, c16, "g_leader_index").value == 0
     assert (ch.name, ch.title) == (r.name, r.title)
     assert (ch.current_health, ch.maximum_health, ch.maximum_stamina, ch.maximum_mana) == (r.current_health, r.maximum_health, r.maximum_stamina, r.maximum_mana)
     assert [list(s) for s in ch.statistics] == [list(s) for s in r.statistics]
@@ -247,7 +246,7 @@ def test_recruit_first_mirror_champion(lib, party):
     assert sorted(slots) == sorted(party["possessions"])
     assert ch.load == sum(lib.inventory_get_object_weight(t) for t in slots)
     lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
-    assert var(lib, c16, "g_candidate_champion_index").value == -1
+    assert session(lib).candidate_champion_index == -1
     wall = list(square_things(lib, party["m"], *party["wall"]))
     assert not set(t & 0x3FFF for t in party["possessions"]) & set(t & 0x3FFF for t in wall)
     assert all(lib.recruit_portrait_index(t) == -1 for t in wall if t >> 10 & 15 == 3)  # mirror disabled
@@ -265,7 +264,7 @@ def test_recruit_copies_the_mirror_portrait(lib, party):
 def test_eat_food(lib, party):
     lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
     ch = champions(lib)[0]
-    var(lib, c16, "g_inventory_champion_index").value = 0
+    session(lib).inventory_champion_index = 0
     lib.tables_get_object_info.restype = ctypes.POINTER(u16 * 3)
     lib.tables_get_food_value.restype = c16
     junk = next(j for j in range(53) if 0xA8 <= lib.tables_get_object_info(0x7F + j).contents[0] < 0xB0)
@@ -292,7 +291,7 @@ def test_damage_until_death(lib, party):
         lib.champion_apply_and_draw_pending_damage_and_wounds()
         hits += 1
         assert hits < 200
-    assert var(lib, ctypes.c_bool, "g_party_dead").value == 1
+    assert session(lib).party_dead == 1
     assert all(s == 0xFFFF for s in ch.slots) and ch.load == 0
     dropped = list(square_things(lib, party["m"], *party["square"]))
     assert {t & 0x3FFF for t in slots} <= {t & 0x3FFF for t in dropped}

@@ -9,7 +9,6 @@
 #include "engine/event.h"
 #include "engine/game.h"
 #include "engine/group.h"
-#include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/party.h"
@@ -114,8 +113,8 @@ static bool wait_for_input(void)
 /* The game asks before QUIT when neither a save nor a load is recent. Returns true to quit. */
 static bool confirm_quit(void)
 {
-    if (g_last_load_game_time + QUIT_CONFIRM_TICKS >= g_game_time ||
-        g_last_save_game_time + QUIT_CONFIRM_TICKS >= g_game_time)
+    if (g_session.last_load_time + QUIT_CONFIRM_TICKS >= g_game_time ||
+        g_session.last_save_time + QUIT_CONFIRM_TICKS >= g_game_time)
         return true;
     dialog_draw(NULL, gfx_get_string(TEXT_NOT_SAVED_OK_TO_QUIT), gfx_get_string(TEXT_QUIT), gfx_get_string(TEXT_CANCEL),
                 NULL, NULL);
@@ -401,20 +400,20 @@ void startend_run_endgame(int16_t party_dead)
 {
     command_set_only_mouse_input(-1);
     if (party_dead)
-        music_play_end(g_game_won);
-    if (party_dead && !g_game_won) {
+        music_play_end(g_session.won);
+    if (party_dead && !g_session.won) {
         sound_request_play(SOUND_SCREAM, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
         wait_frames(DEATH_WAIT_FRAMES);
     }
     g_game_screen_inactive = true;
-    if (party_dead && g_game_won) {
+    if (party_dead && g_session.won) {
         draw_champion_parade();
         wait_for_input();
     }
     if (party_dead) {
         draw_the_end(false);
         wait_frames(THE_END_WAIT_FRAMES);
-        if (g_saved_game_exists) {
+        if (g_session.saved_game_exists) {
             draw_the_end(true);
             if (wait_for_restart())
                 return;
@@ -511,7 +510,7 @@ void startend_run_fuse_sequence(void)
 {
     int16_t x = g_party_map_x;
     int16_t y = g_party_map_y;
-    if (g_inventory_champion_index >= 0)
+    if (g_session.inventory_champion_index >= 0)
         command_toggle_inventory(CHAMPION_MAX_COUNT);
     command_highlight_disable();
     game_start_fuse_sequence();

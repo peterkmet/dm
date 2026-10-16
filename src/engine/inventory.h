@@ -42,7 +42,7 @@
 #define ARMOUR_SHIELD           0x80
 #define OBJECT_EDIBLE           1 /* ObjectInfo.allowed_slots: the mouth */
 
-extern int16_t g_inventory_champion_index; /* -1: no inventory open */
+/* differs from g_leader_hand_object == THING_NONE while a load restored the hand object and the game has not started */
 extern bool g_leader_empty_handed;
 extern uint16_t g_open_chest_slots[8]; /* slots SLOT_CHEST_FIRST and up */
 extern uint16_t g_open_chest;          /* THING_NONE: no chest is open */

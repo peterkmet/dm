@@ -424,12 +424,12 @@ static const char *panel_name(void)
 /* The inventory panel: whose inventory is open, what the panel shows, the open chest. */
 static void inventory_json(Json *j)
 {
-    if (g_inventory_champion_index < 0) {
+    if (g_session.inventory_champion_index < 0) {
         json_null(j);
         return;
     }
     json_open(j, '{');
-    key_int(j, "champion", g_inventory_champion_index);
+    key_int(j, "champion", g_session.inventory_champion_index);
     key_str(j, "panel", panel_name());
     if (g_open_chest != THING_NONE) {
         json_key(j, "chest");
@@ -462,13 +462,13 @@ void state_json_write_state(Json *j)
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
     key_int(j, "darkness", g_party_light_level);
     key_bool(j, "can_move", !g_disabled_movement_ticks);
-    key_bool(j, "sleeping", g_party_is_sleeping);
-    key_bool(j, "dead", g_party_dead);
+    key_bool(j, "sleeping", g_session.party_sleeping);
+    key_bool(j, "dead", g_session.party_dead);
     json_close(j, '}');
     /* A shown candidate is the last champion record, but not yet in the party. */
     int16_t members = g_party_champion_count;
     int16_t candidate = -1;
-    if (g_candidate_champion_index >= 0 && members)
+    if (g_session.candidate_champion_index >= 0 && members)
         candidate = --members;
     json_key(j, "leader");
     if (g_leader_index < 0 || g_leader_index == candidate)
@@ -488,9 +488,9 @@ void state_json_write_state(Json *j)
         champion_json(j, i);
     json_close(j, ']');
     json_key(j, "action_menu");
-    if (g_acting_champion_index >= 0) {
+    if (g_session.acting_champion_index >= 0) {
         json_open(j, '{');
-        key_int(j, "champion", g_acting_champion_index);
+        key_int(j, "champion", g_session.acting_champion_index);
         json_key(j, "actions");
         json_open(j, '[');
         for (int k = 0; k < ACTION_LIST_COUNT && g_action_list.actions[k] != ACTION_NONE; k++)

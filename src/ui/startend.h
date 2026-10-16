@@ -38,7 +38,7 @@ void startend_save_game(void);
 int startend_save_current_game(const char **reason);
 /* RESUME: loads the saved game with its dialogs. Returns true when the game is loaded. */
 bool startend_load_saved_game(void);
-/* The end of the game: game over (party_dead 1), won (g_game_won), or quit (party_dead 0). It
+/* The end of the game: game over (party_dead 1), won (g_session.won), or quit (party_dead 0). It
    returns after RESTART THIS GAME loaded the saved game, or after the credits with
    g_return_to_entrance set. */
 void startend_run_endgame(int16_t party_dead);

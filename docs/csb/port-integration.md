@@ -94,7 +94,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 
 | Place | Assumption |
 |---|---|
-| `advanced.h`: `GAME_MODE_VANILLA`, `GAME_MODE_ADVANCED`, `GAME_MODE_TURNBASED`, `g_game_mode` | The value is set only by `--mode`. |
+| `advanced.h`: `GAME_MODE_VANILLA`, `GAME_MODE_ADVANCED`, `GAME_MODE_TURNBASED`, `g_session.mode` | The value is set only by `--mode`. |
 | `main.c`: `get_game_mode`, `main` | The parser reads `--mode` in a loop over `argv`. `g_advanced_features` and the local `turnbased` are set once, before the window opens. `auto_enter` and the control socket (`control_open`) depend on `turnbased` at the start. The loop uses `turnbased` in five places. |
 | `main.c`: `read_input` | Drops all input when `turnbased` and `mode >= MODE_ENTRANCE`. Escape quits for `mode < MODE_ENTRANCE` (`--show`, `--view`). |
 | `main.c`: `amiga_key` | Maps the advanced keys only outside vanilla. |
@@ -163,7 +163,7 @@ const Adventure *adventure_get(int16_t adventure);
 bool adventure_is_csb_present(const char *dir);
 ```
 
-`g_adventure` is a global like `g_game_mode` (`advanced.c`). It is not in `game.c`, because `game_start_new` resets the game state and the adventure must live longer than one game.
+`g_adventure` is a global like `g_session.mode` (`advanced.c`). It is not in `game.c`, because `game_start_new` resets the game state and the adventure must live longer than one game.
 
 Changes that use it:
 
@@ -202,7 +202,7 @@ void select_click(int x, int y);       /* a left click in screen pixels */
 void select_draw(void);                /* draws the current screen on fb */
 ```
 
-Results go to `g_adventure` and `g_game_mode`. `select_start` with both values given returns at once with `select_screen() == SCREEN_DONE`.
+Results go to `g_adventure` and `g_session.mode`. `select_start` with both values given returns at once with `select_screen() == SCREEN_DONE`.
 
 State and rules (all in `select.c`):
 
@@ -210,7 +210,7 @@ State and rules (all in `select.c`):
 - Up and Down move the cursor. A disabled item is skipped. Return activates the item at the cursor. A click on an item moves the cursor to it and activates it. A click on a disabled item or outside every item does nothing.
 - The cursor starts on the first enabled item.
 - `SCREEN_ADVENTURE`: activating sets `g_adventure`. The next screen is `SCREEN_MODE`, except when `--mode` was given (then `SCREEN_DONE`, or `SCREEN_CSB` for CSB).
-- `SCREEN_MODE`: activating sets `g_game_mode` (VANILLA 0, ADVANCED 1, LLM = `GAME_MODE_TURNBASED` 2) and sets `g_advanced_features = g_game_mode != GAME_MODE_VANILLA`. The next screen is `SCREEN_DONE` for DM and `SCREEN_CSB` for CSB. Escape goes back to `SCREEN_ADVENTURE` (when `--adventure` was given, Escape does nothing).
+- `SCREEN_MODE`: activating sets `g_session.mode` (VANILLA 0, ADVANCED 1, LLM = `GAME_MODE_TURNBASED` 2) and sets `g_advanced_features = g_session.mode != GAME_MODE_VANILLA`. The next screen is `SCREEN_DONE` for DM and `SCREEN_CSB` for CSB. Escape goes back to `SCREEN_ADVENTURE` (when `--adventure` was given, Escape does nothing).
 - `SCREEN_CSB`: NEW ADVENTURE, RESUME, QUIT. Activating stores the choice and goes to `SCREEN_DONE`. QUIT sets `g_quit_requested`. Escape goes back to `SCREEN_MODE` (see [Open decisions](#open-decisions)).
 - Cursor and click boxes use the same item rectangles, computed from `text_get_size` of the item. There are no mouse tables from the KAOS data.
 
@@ -244,7 +244,7 @@ if (!strcmp(argv[i], "--adventure") && (adventure = adventure_find(argv[i + 1]))
     return SDL_Log("--adventure must be dm or csb"), 1;
 ```
 
-`--mode` writes to a local `mode_arg` (-1 when absent) instead of `g_game_mode`. `select_start(adventure, mode_arg, csb_present, control_is_available())` sets the globals.
+`--mode` writes to a local `mode_arg` (-1 when absent) instead of `g_session.mode`. `select_start(adventure, mode_arg, csb_present, control_is_available())` sets the globals.
 
 Rules for the flags (see [Open decisions](#open-decisions), point 1):
 
@@ -284,7 +284,7 @@ Changes in `main.c`:
 7. `show_entrance` and the `g_return_to_entrance` branch: when `g_adventure == ADVENTURE_CSB`, call `select_start_csb()` and set `mode = MODE_SELECT` instead of `entrance_draw`. For DM nothing changes.
 8. `entrance_frame` stays for DM. The CSB choice is handled by `start_adventure`, not by `g_new_game`.
 
-`turnbased` and the selection: the `LLM` item sets `g_game_mode = GAME_MODE_TURNBASED`. `apply_mode` then sets `auto_enter = 1`, so the program enters the dungeon without the entrance, as today. The socket opens after the selection, not before. A script that starts `build/dm` and waits for the socket sees the socket only after the user chooses LLM. Scripts must pass `--adventure` and `--mode` (or only `--mode`) to skip the screens.
+`turnbased` and the selection: the `LLM` item sets `g_session.mode = GAME_MODE_TURNBASED`. `apply_mode` then sets `auto_enter = 1`, so the program enters the dungeon without the entrance, as today. The socket opens after the selection, not before. A script that starts `build/dm` and waits for the socket sees the socket only after the user chooses LLM. Scripts must pass `--adventure` and `--mode` (or only `--mode`) to skip the screens.
 
 ### CSB entrance screen
 
@@ -346,13 +346,13 @@ Selection logic (no drawing):
 | Test | Check |
 |---|---|
 | `test_start_no_flags` | `select_start(-1, -1, 1)`: `select_screen() == SCREEN_ADVENTURE`. |
-| `test_start_both_flags_done` | `select_start(1, 2, 1)`: `SCREEN_CSB`. `select_start(0, 2, 1)`: `SCREEN_DONE`, `g_adventure == 0`, `g_game_mode == 2`. |
+| `test_start_both_flags_done` | `select_start(1, 2, 1)`: `SCREEN_CSB`. `select_start(0, 2, 1)`: `SCREEN_DONE`, `g_adventure == 0`, `g_session.mode == 2`. |
 | `test_start_adventure_only` | `select_start(0, -1, 1)`: `SCREEN_MODE`. |
 | `test_start_mode_only` | The rule "`--mode` alone means DM": `select_start(-1, 2, 1)` gives `SCREEN_DONE` and `g_adventure == 0`. |
 | `test_return_selects_dm` | Return on the first screen: `g_adventure == 0`, next `SCREEN_MODE`. |
 | `test_arrows_select_csb` | Down, Return: `g_adventure == 1`. Up from the second item returns to the first. |
 | `test_cursor_wraps_or_stops` | Up on the first item and Down on the last item do not leave the list (the chosen rule, see open decisions). |
-| `test_mode_screen_values` | For each of VANILLA, ADVANCED, LLM: Return on the item gives `g_game_mode` 0, 1, 2 and `g_advanced_features` 0, 1, 1. |
+| `test_mode_screen_values` | For each of VANILLA, ADVANCED, LLM: Return on the item gives `g_session.mode` 0, 1, 2 and `g_advanced_features` 0, 1, 1. |
 | `test_escape_back` | On the mode screen Escape gives `SCREEN_ADVENTURE`. Escape on the first screen stays on it. With `--adventure` given, Escape on the mode screen does nothing. |
 | `test_csb_disabled` | `select_start(-1, -1, 0)`: Down does not move onto CSB. Return selects DM. A click on the CSB item changes nothing and `g_adventure` stays 0. |
 | `test_click_activates` | `select_click` on the center of item 2 selects it. A click outside all items does nothing. (Item boxes come from the module, see below.) |

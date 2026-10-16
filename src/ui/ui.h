@@ -141,7 +141,7 @@ void ui_draw_all_champion_states(uint16_t attributes);
 /* Draws the portrait in the status box while the inventory is open. */
 void ui_draw_status_box_portrait(int16_t champion_index);
 /* Opens the inventory of a champion on the screen: dims the movement arrows and draws the
-   inventory background, labels, all slots, and the champion state. Sets g_inventory_champion_index. */
+   inventory background, labels, all slots, and the champion state. Sets g_session.inventory_champion_index. */
 void ui_draw_inventory_open(int16_t champion_index);
 /* Closes the inventory on the screen: the status box returns and the movement arrows come back.
    The caller redraws the dungeon view. */

@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import ActionList, Location, Party, scrub_free_groups, state
+from dmtest.game import ActionList, Location, Party, scrub_free_groups, state, session
 from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
 from dmtest.markers import needs_dm
 
@@ -66,7 +66,7 @@ def new_object(game, thing_type, object_type, byte=3):
 
 
 def set_mode(game, mode):
-    c16.in_dll(game.lib, "g_game_mode").value = mode
+    session(game.lib).mode = mode
     ctypes.c_bool.in_dll(game.lib, "g_advanced_features").value = mode != VANILLA
 
 
@@ -195,7 +195,7 @@ def test_action_list(game):
             lib.rec_weapon_set_charges(thing, charges)
             champion.slots[C.SLOT_HAND_ACTION] = thing
             game.click_box(zone_box(game, C.ZONE_ACTION_ICON_BOX_FIRST), viewport=False)  # + champion index: the action hand icon of the action area
-            assert game.value("g_acting_champion_index") == 0
+            assert game.session.acting_champion_index == 0
             names = [lib.gfx_get_action_name(action_list.actions[k]).decode() if action_list.actions[k] != 0xFF else "" for k in range(3)]
             got.append({"count": action_list.count, "levels": list(action_list.minimum_skill_levels), "names": names, **snapshot(game)})
             lib.menus_clear_acting_champion()
@@ -404,7 +404,7 @@ def test_fuse_sequence(game):
         c16.in_dll(lib, name).value = v
     lib.projectile_fluxcage_action(*lord_square)  # the sequence removes the fluxcage of the lord square
     lib.startend_run_fuse_sequence()
-    assert game.value("g_game_won")
+    assert game.session.won
     check("fuse", [snapshot(game)])
 
 

@@ -12,7 +12,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.control import Client
-from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Frames, Game, global_type
+from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Frames, Game, global_type, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME_CSB, ROOT, needs_csb, needs_csb_mini, needs_sdl
 
@@ -232,7 +232,7 @@ def test_cancel_and_refused_merge_go_back_to_the_game(game, saves):
 def test_advanced_save_keeps_the_automap_block(game, saves):
     names = new_prison_game(game, 1)
     assert save_now(game) == (C.SAVED_NEW_ADVENTURE, None)
-    c16.in_dll(game.lib, "g_game_mode").value = 1
+    session(game.lib).mode = 1
     try:
         assert save_now(game) == (C.SAVED_GAME, None)
         raw = (saves / NAME).read_bytes()
@@ -241,7 +241,7 @@ def test_advanced_save_keeps_the_automap_block(game, saves):
         assert game.lib.savegame_load_from(str(saves).encode(), NAME.encode(), None) == C.SAVEGAME_LOADED
         assert_in_adventure(game, names)
     finally:
-        c16.in_dll(game.lib, "g_game_mode").value = 0
+        session(game.lib).mode = 0
 
 
 def test_control_new_game_save_and_load(game, saves):

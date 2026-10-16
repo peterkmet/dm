@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 /* The start screens in the DM font: adventure, mode, and the CSB entrance. Keys and clicks move a
-   cursor over the items. The results go to g_adventure and g_game_mode. No SDL calls. */
+   cursor over the items. The results go to g_adventure and g_session.mode. No SDL calls. */
 
 #define SCREEN_ADVENTURE  0
 #define SCREEN_MODE       1

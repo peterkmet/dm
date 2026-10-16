@@ -53,8 +53,6 @@
 /* Size of the group index in the record. */
 #define SAVE_GROUP_BYTES 2
 
-bool g_saved_game_exists;
-uint32_t g_last_save_game_time, g_last_load_game_time;
 static uint8_t header_extra
     [SAVE_HEADER_EXTRA_BYTES]; /* the extra save header bytes of the loaded game, copied unchanged into the next save */
 
@@ -87,8 +85,8 @@ static void pack_globals(uint8_t *g)
 /* Block 0 back into the globals; the game time also becomes the time of the last load. */
 static void unpack_globals(const uint8_t *g)
 {
-    g_last_load_game_time = be32(g + SAVE_GLOBAL_GAME_TIME);
-    g_game_time = g_last_load_game_time;
+    g_session.last_load_time = be32(g + SAVE_GLOBAL_GAME_TIME);
+    g_game_time = g_session.last_load_time;
     g_random_seed = be32(g + SAVE_GLOBAL_RANDOM_SEED);
     g_leader_hand_object = be16(g + SAVE_GLOBAL_LEADER_HAND_OBJECT);
     g_party_champion_count = be16(g + SAVE_GLOBAL_PARTY_CHAMPION_COUNT);
@@ -289,7 +287,7 @@ static uint32_t append_automap(uint8_t **data, uint32_t size)
 {
     uint8_t *block = NULL, *grown;
     size_t length = 0;
-    if (g_game_mode == GAME_MODE_VANILLA)
+    if (g_session.mode == GAME_MODE_VANILLA)
         return size;
     if (!explored_save(&block, &length))
         return 0;
@@ -350,8 +348,8 @@ bool savegame_save_as(const char *dir, const char *name, const char *backup_name
     free(data);
     if (!ok)
         return false;
-    g_saved_game_exists = true;
-    g_last_save_game_time = g_game_time;
+    g_session.saved_game_exists = true;
+    g_session.last_save_time = g_game_time;
     return true;
 }
 
@@ -513,9 +511,9 @@ static bool restore_game(const SaveFile *s)
     g_game_id = savefile_get_game_id(s->header);
     g_dungeon_id = savefile_get_dungeon_id(s->header);
     memcpy(header_extra, savefile_get_header_extra(s->header), savefile_get_extra_size());
-    g_party_dead = false;
-    g_party_is_sleeping = false;
-    g_saved_game_exists = true;
+    g_session.party_dead = false;
+    g_session.party_sleeping = false;
+    g_session.saved_game_exists = true;
     return true;
 }
 
@@ -529,10 +527,10 @@ SavegameResult savegame_load(const char *dir)
    map is selected again, because the dungeon has new buffers. */
 static void restore_snapshot(const uint8_t *data, uint32_t size)
 {
-    bool exists = g_saved_game_exists;
-    bool dead = g_party_dead;
+    bool exists = g_session.saved_game_exists;
+    bool dead = g_session.party_dead;
     int16_t current = g_current_map_index;
-    uint32_t loaded = g_last_load_game_time;
+    uint32_t loaded = g_session.last_load_time;
     SaveFile s;
     if (savefile_decode(data, size, &s))
         restore_game(&s);
@@ -540,9 +538,9 @@ static void restore_snapshot(const uint8_t *data, uint32_t size)
     map_reset();
     if (current >= 0)
         map_set_current_map(current);
-    g_saved_game_exists = exists;
-    g_party_dead = dead;
-    g_last_load_game_time = loaded;
+    g_session.saved_game_exists = exists;
+    g_session.party_dead = dead;
+    g_session.last_load_time = loaded;
 }
 
 SavegameResult savegame_load_from(const char *dir, const char *name, const char *backup_name)
@@ -585,27 +583,27 @@ SavegameResult savegame_load_from(const char *dir, const char *name, const char 
 
 void savegame_forget(void)
 {
-    g_saved_game_exists = false;
+    g_session.saved_game_exists = false;
 }
 
 bool savegame_quick_save(const char *dir)
 {
-    bool exists = g_saved_game_exists;
-    uint32_t saved = g_last_save_game_time;
+    bool exists = g_session.saved_game_exists;
+    uint32_t saved = g_session.last_save_time;
     bool ok = savegame_save_as(dir, QUICK_SAVE_FILE_NAME, NULL);
-    g_saved_game_exists = exists;
-    g_last_save_game_time = saved;
+    g_session.saved_game_exists = exists;
+    g_session.last_save_time = saved;
     return ok;
 }
 
 SavegameResult savegame_quick_load(const char *dir)
 {
-    bool exists = g_saved_game_exists;
+    bool exists = g_session.saved_game_exists;
     SavegameResult result = savegame_load_from(dir, QUICK_SAVE_FILE_NAME, NULL);
     if (result == SAVEGAME_LOADED) {
-        g_saved_game_exists = exists;
-        g_last_save_game_time = 0;
-        g_last_load_game_time = 0;
+        g_session.saved_game_exists = exists;
+        g_session.last_save_time = 0;
+        g_session.last_load_time = 0;
     }
     return result;
 }

@@ -1,10 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/advanced.h"
 #include "data/ids.h"
-#include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
-#include "engine/inventory.h"
 #include "engine/message.h"
 #include "engine/party.h"
 #include "engine/record.h"
@@ -36,9 +34,9 @@ static const char *const soundtrack_names[3] = {"ORIGINAL", "SUPER NES", "FM-TOW
 /* The party walks the dungeon: no inventory, dialog, freeze, sleep, candidate, death, sequence, or won game. */
 static bool in_dungeon_view(void)
 {
-    return g_dungeon_maps && !g_game_screen_inactive && g_game_time_ticking && !g_game_frozen && !g_party_dead &&
-           g_inventory_champion_index < 0 && !g_party_is_sleeping && g_candidate_champion_index < 0 &&
-           !g_waiting_frame && !g_game_won;
+    return g_dungeon_maps && !g_game_screen_inactive && g_game_time_ticking && !g_game_frozen &&
+           !g_session.party_dead && g_session.inventory_champion_index < 0 && !g_session.party_sleeping &&
+           g_session.candidate_champion_index < 0 && !g_waiting_frame && !g_session.won;
 }
 
 /* Level, position, facing, and light in the top-left corner of the map, inside the rulers. */
@@ -51,12 +49,12 @@ static void draw_readout(Bitmap *viewport)
     text_draw(viewport, x, y, COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)], party_get_light());
     text_draw(viewport, x, y + FONT_LINE_HEIGHT + FONT_BASELINE_GAP, COLOR_WHITE, COLOR_BLACK, line);
-    if (g_game_mode != GAME_MODE_ADVANCED)
+    if (g_session.mode != GAME_MODE_ADVANCED)
         return;
-    snprintf(line, sizeof line, "L LIGHT %s I IMMORTAL %s", g_cheat_light ? "ON" : "OFF",
-             g_cheat_immortal ? "ON" : "OFF");
+    snprintf(line, sizeof line, "L LIGHT %s I IMMORTAL %s", g_session.cheat_light ? "ON" : "OFF",
+             g_session.cheat_immortal ? "ON" : "OFF");
     text_draw(viewport, x, y + 2 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
-    snprintf(line, sizeof line, "F FOOD AND WATER %s", g_cheat_food ? "ON" : "OFF");
+    snprintf(line, sizeof line, "F FOOD AND WATER %s", g_session.cheat_food ? "ON" : "OFF");
     text_draw(viewport, x, y + 3 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "1 2 3 MUSIC %s", soundtrack_names[g_music_soundtrack]);
     text_draw(viewport, x, y + 4 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
@@ -136,16 +134,16 @@ static void quick_load(void)
 
 bool advanced_process_key(uint16_t key)
 {
-    if (g_game_mode == GAME_MODE_VANILLA)
+    if (g_session.mode == GAME_MODE_VANILLA)
         return false;
     if (g_automap_open) {
         if (key == KEY_M || key == KEY_TAB || key == KEY_ESCAPE)
             close_automap();
-        if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I || key == KEY_F)) {
+        if (g_session.mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I || key == KEY_F)) {
             game_toggle_cheat(key == KEY_L ? CHEAT_LIGHT : key == KEY_I ? CHEAT_IMMORTAL : CHEAT_FOOD);
             advanced_draw_automap();
         }
-        if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_1 || key == KEY_2 || key == KEY_3)) {
+        if (g_session.mode == GAME_MODE_ADVANCED && (key == KEY_1 || key == KEY_2 || key == KEY_3)) {
             music_select(key == KEY_1 ? MUSIC_ORIGINAL : key == KEY_2 ? MUSIC_SUPER_NES : MUSIC_FM_TOWNS);
             advanced_draw_automap();
         }
@@ -164,7 +162,7 @@ bool advanced_process_key(uint16_t key)
     case KEY_M:
     case KEY_TAB:
         if (!in_dungeon_view())
-            return !(key == KEY_TAB && g_inventory_champion_index >= 0);
+            return !(key == KEY_TAB && g_session.inventory_champion_index >= 0);
         g_automap_open = true;
         advanced_draw_automap();
         return true;
@@ -174,7 +172,7 @@ bool advanced_process_key(uint16_t key)
 
 uint16_t advanced_letter_key(int letter)
 {
-    if (g_game_mode == GAME_MODE_VANILLA)
+    if (g_session.mode == GAME_MODE_VANILLA)
         return 0;
     switch (letter) {
     case 'w':

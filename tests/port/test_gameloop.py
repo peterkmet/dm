@@ -6,7 +6,7 @@ import subprocess
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import pending_damage, STEP_EAST, STEP_NORTH, Box, Party, start_game
+from dmtest.game import pending_damage, STEP_EAST, STEP_NORTH, Box, Party, start_game, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
 
@@ -36,14 +36,14 @@ def test_new_game_recruit_take_and_store(game):
     wall = game.boxes[5]
     assert wall.x != -1
     game.click_box(wall)
-    assert game.value("g_candidate_champion_index") == 0
-    assert game.value("g_inventory_champion_index") == 0
+    assert game.session.candidate_champion_index == 0
+    assert game.session.inventory_champion_index == 0
 
     game.click_zone(ZONE_RESURRECT)
-    assert game.value("g_candidate_champion_index") == -1
+    assert game.session.candidate_champion_index == -1
     assert game.value("g_party_champion_count", u16) == 1
     assert game.value("g_leader_index") == 0
-    assert game.value("g_inventory_champion_index") == -1
+    assert game.session.inventory_champion_index == -1
 
     weapon = game.champions[0].slots[C.SLOT_HAND_ACTION]
     assert weapon != 0xFFFF
@@ -66,7 +66,7 @@ def test_new_game_recruit_take_and_store(game):
 
     game.key(C.KEY_F1)
     game.run()
-    assert game.value("g_inventory_champion_index") == 0
+    assert game.session.inventory_champion_index == 0
     game.click_zone(ZONE_BACKPACK_FIRST_SLOT)
     assert game.value("g_leader_hand_object", u16) == 0xFFFF
     assert game.champions[0].slots[C.SLOT_BACKPACK_FIRST] & 0x3FFF == weapon & 0x3FFF
@@ -88,12 +88,12 @@ def test_champion_dies_with_inventory_open(game):
     assert game.value("g_party_champion_count", u16) == 2
     game.key(C.KEY_F1 + 0x100)
     game.run()
-    assert game.value("g_inventory_champion_index") == 1
+    assert game.session.inventory_champion_index == 1
 
     game.lib.champion_add_pending_damage_and_wounds(1, 10000, 0, C.ATTACK_RAW)
     game.run()
     assert game.champions[1].current_health == 0
-    assert game.value("g_inventory_champion_index") == -1
+    assert game.session.inventory_champion_index == -1
     game.click_zone(ZONE_BACKPACK_FIRST_SLOT)  # the dungeon view takes the click; no slot of champion -1
 
     box = Box()
@@ -132,7 +132,7 @@ def test_freeze_covers_open_inventory(game):
     game.click_zone(ZONE_RESURRECT)
     game.key(C.KEY_F1)
     game.run()
-    assert game.value("g_inventory_champion_index") == 0
+    assert game.session.inventory_champion_index == 0
     inventory = viewport_pixels(game)
 
     game.key(C.KEY_ESCAPE)
@@ -172,12 +172,11 @@ def test_party_light_sets_the_darkness_of_view_and_rules(game):
         assert bright[0] == 0 and dark[0] == 5
         assert bright[1] != dark[1]
         assert dark[2] < bright[2]
-        sleeping = ctypes.c_bool.in_dll(lib, "g_party_is_sleeping")
-        sleeping.value = 1  # no view is drawn, the creature rules still see the light of this tick
+        session(lib).party_sleeping = 1  # no view is drawn, the creature rules still see the light of this tick
         party.magical_light_amount = 1000
         lib.gameloop_tick()
         assert darkness.value == 0
-        sleeping.value = 0
+        session(lib).party_sleeping = 0
         for n, v in start.items():
             place[n].value = v
         assert view(-1000)[0] == 0  # map 0 has no darkness
@@ -304,4 +303,4 @@ def test_a_party_that_dies_in_one_tick_shows_the_spell_area_of_the_last_caster(g
     finally:
         ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
         ctypes.c_bool.in_dll(lib, "g_quit_requested").value = 0
-    assert game.value("g_party_dead") and frames[0] == expected
+    assert game.session.party_dead and frames[0] == expected

@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Champion, Location, Position, champions
+from dmtest.game import Champion, Location, Position, champions, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -93,7 +93,7 @@ def test_start_position(game):
     start = struct.unpack(">H", header[8:10])[0]
     assert party(game) == (0, start & 31, start >> 5 & 31, start >> 10 & 3) == (0, 1, 3, 2)
     assert var(game, "g_current_map_index").value == 0
-    assert var(game, "g_new_party_map_index").value == -1
+    assert session(game).new_party_map == -1
 
 
 @pytest.mark.parametrize("command", [LEFT, RIGHT])
@@ -129,10 +129,10 @@ def test_turning(game):
 def test_stairs_change_map(game):
     place(game, 0, 4, 15, 3)
     game.move_party(FORWARD)
-    assert var(game, "g_new_party_map_index").value == 1
+    assert session(game).new_party_map == 1
     game.move_process_new_party_map()
     assert party(game) == (1, 3, 1, 0)
-    assert var(game, "g_new_party_map_index").value == -1 and var(game, "g_current_map_index").value == 1
+    assert session(game).new_party_map == -1 and var(game, "g_current_map_index").value == 1
     game.move_party(FORWARD)
     assert party(game) == (1, 3, 0, 0)
 
@@ -167,7 +167,7 @@ def test_teleporter_moves_party(game):
     place(game, 1, 29, 3, 1)
     game.move_party(FORWARD)
     assert party(game) == (1, 30, 1, 0)  # teleporter (30, 3): target (30, 1), absolute rotation 0
-    assert var(game, "g_new_party_map_index").value == -1
+    assert session(game).new_party_map == -1
 
 
 def test_pit_drops_party(game):
@@ -176,7 +176,7 @@ def test_pit_drops_party(game):
     below = game.map_get_level_change_location(Position(1, 7, 8), 1)
     assert below.map == 2
     game.move_party(FORWARD)
-    assert var(game, "g_new_party_map_index").value == below.map
+    assert session(game).new_party_map == below.map
     assert party(game)[1:3] == (below.x, below.y)
     assert 0 < champions(game)[0].runtime.pending_damage < 100
     game.move_process_new_party_map()

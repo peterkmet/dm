@@ -176,7 +176,7 @@ static int16_t get_sound_index(const CreatureInfo *info)
 static int16_t get_creature_movement_sound(uint16_t creature_type)
 {
     int16_t sound_index = get_sound_index(tables_get_creature_info(creature_type));
-    if (g_party_is_sleeping || sound_index < 0)
+    if (g_session.party_sleeping || sound_index < 0)
         return -1;
     return tables_get_creature_sound(sound_index)->movement;
 }
@@ -1304,7 +1304,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
     Champion *champion = &g_champions[champion_index];
     if (champion_index >= g_party_champion_count || !champion->current_health)
         return 0;
-    if (g_party_is_sleeping)
+    if (g_session.party_sleeping)
         champion_wake_up();
     int16_t difficulty = rec_current_map_difficulty() * 2;
     const CreatureInfo *info = group_info(group);
@@ -1316,7 +1316,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
         dodge_bonus = 0;
     else
         dodge_bonus = g_party_light_level * 2;
-    if (!g_party_is_sleeping && info->dexterity != CREATURE_NEVER_HITS) {
+    if (!g_session.party_sleeping && info->dexterity != CREATURE_NEVER_HITS) {
         uint16_t dexterity = champion_get_dexterity(champion_index);
         uint16_t aim = (random16() & AIM_RANDOM_MASK) + info->dexterity + difficulty + dodge_bonus - AIM_RANDOM_CENTER;
         if (aim <= dexterity && random_2bits())
@@ -2118,7 +2118,7 @@ static void process_turn(GroupTurn *t)
         return;
     }
     t->archenemy = (t->info->attributes & CREATURE_ARCHENEMY) != 0;
-    if (t->archenemy && g_game_won)
+    if (t->archenemy && g_session.won)
         return;
     t->active = active_of(group);
     t->ticks_since_last_move = (uint8_t)g_game_time - t->active->last_move_time;

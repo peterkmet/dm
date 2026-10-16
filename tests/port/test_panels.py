@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Bitmap, Box, Champion, recruit_from_mirrors, render, reset, setup_ui, start_ui
+from dmtest.game import Bitmap, Box, Champion, recruit_from_mirrors, render, reset, setup_ui, start_ui, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -157,9 +157,9 @@ def party(game):
     setup(game)
     reset(game)
     champions = recruit_from_mirrors(game, 4)
-    c16.in_dll(game, "g_inventory_champion_index").value = 0
+    session(game).inventory_champion_index = 0
     yield champions
-    c16.in_dll(game, "g_inventory_champion_index").value = -1
+    session(game).inventory_champion_index = -1
 
 
 @needs_dm

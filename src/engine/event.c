@@ -333,7 +333,7 @@ void event_process_wall(TimelineEvent *event)
             if (rec_sensor_is_once_only(t))
                 rec_sensor_set_type(t, SENSOR_DISABLED);
         } else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_ENDGAME) {
-            g_game_won = true;
+            g_session.won = true;
             if (g_adventure != ADVENTURE_CSB) /* DM: the saved game no longer counts; CSB keeps it */
                 savegame_forget();
             if (g_endgame_sensor_hook)
@@ -422,7 +422,7 @@ static void event_hide_damage_received(uint16_t champion_index)
     c->hide_damage_received_event_index = -1;
     if (!c->current_health)
         return;
-    if (champion_index == g_inventory_champion_index)
+    if (champion_index == g_session.inventory_champion_index)
         c->attributes |= CHAMPION_ATTR_STATUS_BOX;
     else
         c->attributes |= CHAMPION_ATTR_NAME_TITLE;
@@ -547,7 +547,7 @@ void event_process_expired(void)
                                SOUND_MODE_AFTER_TICK, 0);
             break;
         case EVENT_REMOVE_FLUXCAGE:
-            if (!g_game_won) {
+            if (!g_session.won) {
                 map_unlink_thing_from_list(event.c, 0, event_square_x(&event), event_square_y(&event));
                 rec_thing_set_free(event.c);
             }

@@ -207,7 +207,7 @@ static void refresh_interface(void)
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].current_health)
             continue;
-        bool inventory = i == g_inventory_champion_index && !g_game_frozen; /* the frozen screen covers it */
+        bool inventory = i == g_session.inventory_champion_index && !g_game_frozen; /* the frozen screen covers it */
         for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++)
             ui_draw_champion_slot(i, slot);
         if (inventory)
@@ -329,8 +329,8 @@ static void run_requested_sequence(void)
    place. The view draws fields and explosions with the game random numbers: the seed stays. */
 static void draw_projectile_motion(void)
 {
-    if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_party_is_sleeping ||
-        g_inventory_champion_index >= 0 || !view_has_moving_projectiles())
+    if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_session.party_sleeping ||
+        g_session.inventory_champion_index >= 0 || !view_has_moving_projectiles())
         return;
     uint32_t seed = random_get_seed();
     view_set_motion(frames_waiting, g_wait_for_input_max_frames + 1);
@@ -401,19 +401,19 @@ void gameloop_tick(void)
     frames_waiting = 0;
     g_stop_waiting_for_input = false;
     do {
-        if (g_new_party_map_index != -1) {
+        if (g_session.new_party_map != -1) {
             move_process_new_party_map();
             command_discard_all_input();
         }
         set_party_light(); /* the creature rules see the light also while the view is not drawn */
         event_process_expired();
-    } while (g_new_party_map_index != -1);
+    } while (g_session.new_party_map != -1);
     music_update();
-    if (!g_party_is_sleeping) {
+    if (!g_session.party_sleeping) {
         command_wake_up();
-        if (g_candidate_champion_index < 0)
+        if (g_session.candidate_champion_index < 0)
             command_unfreeze_game();
-        if (g_inventory_champion_index < 0)
+        if (g_session.inventory_champion_index < 0)
             gameloop_draw_view();
         else if (g_adventure == ADVENTURE_CSB)
             panel_redraw_scroll();
@@ -426,7 +426,7 @@ void gameloop_tick(void)
     memcpy(before, g_champions, sizeof before);
     champion_apply_and_draw_pending_damage_and_wounds();
     release_dead_champions(leader);
-    if (g_party_dead) {
+    if (g_session.party_dead) {
         ui_draw_all_champion_states(0); /* the dead champions show during the death scream */
         draw_spell_area_before_last_death(before);
         startend_run_endgame(1);
@@ -500,7 +500,7 @@ static int get_pointer_shape(int16_t x, int16_t y, bool in_game)
         /* a status box: the arrow over a living champion with its inventory open, or over its name */
         int16_t index = (champion & ZONE_CHAMPION_INDEX_MASK) - 1;
         if (champion && index < g_party_champion_count && g_champions[index].current_health &&
-            (index == g_inventory_champion_index || champion >= ZONE_CHAMPION_NAME))
+            (index == g_session.inventory_champion_index || champion >= ZONE_CHAMPION_NAME))
             return POINTER_ARROW;
         return g_leader_empty_handed ? POINTER_HAND : POINTER_OBJECT;
     }

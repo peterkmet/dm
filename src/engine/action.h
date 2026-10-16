@@ -54,13 +54,9 @@
 #define ACTION_THROW       42
 #define ACTION_FUSE        43
 
-/* Values of g_action_damage other than a damage. */
+/* Values of g_session.action_damage other than a damage. */
 #define ACTION_DAMAGE_CANT_REACH    (-1)
 #define ACTION_DAMAGE_NO_AMMUNITION (-2)
-
-/* MENU.C state of the action menu. */
-extern int16_t g_acting_champion_index; /* -1: none */
-extern int16_t g_action_damage;         /* 0: none, -1 can't reach, -2 need ammo */
 
 /* The actions of the acting champion's action hand: up to ACTION_LIST_COUNT, ACTION_NONE for an empty line. */
 typedef struct {

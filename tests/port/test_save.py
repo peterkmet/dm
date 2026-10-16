@@ -5,7 +5,7 @@ import struct
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import ACTIVE_GROUP_BYTES, champions, Box, Frames, Game, Location, recruit_and_hold_object, state
+from dmtest.game import ACTIVE_GROUP_BYTES, champions, Box, Frames, Game, Location, recruit_and_hold_object, state, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 from dmtest.savefile import G_LOAD_FROM_MEMORY, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER, SaveFile, decode, encode
@@ -63,7 +63,7 @@ def test_save_and_load_round_trip(game, tmp_path):
     assert struct.unpack_from(">H", after["champions"][leader], 0x110)[0] == load - weight
     after["champions"][leader] = before["champions"][leader]
     assert after == before
-    assert ctypes.c_bool.in_dll(lib, "g_saved_game_exists").value == 1
+    assert session(lib).saved_game_exists == 1
 
 
 def test_save_keeps_a_backup(game, tmp_path):
@@ -174,7 +174,7 @@ def kill_party(game):
     for i in range(game.value("g_party_champion_count", u16)):
         game.champions[i].current_health = 0
         game.lib.champion_kill(i)
-    assert game.value("g_party_dead") == 1
+    assert game.session.party_dead == 1
 
 
 @pytest.fixture
@@ -205,7 +205,7 @@ def test_save_command_runs_the_dialog(game, tmp_path, quit_reset):
     assert not choices
     assert (tmp_path / SAVE).exists()
     assert game.value("g_game_frozen") == 0
-    assert game.value("g_saved_game_exists") == 1
+    assert game.session.saved_game_exists == 1
 
 
 def test_party_death_returns_to_the_entrance_headless(game, quit_reset):
@@ -241,7 +241,7 @@ def test_party_death_restart_loads_the_saved_game(game, tmp_path, quit_reset):
     lib.gameloop_tick()
     frames.remove()
     assert restart and game.value("g_quit_requested") == 0 and game.value("g_return_to_entrance") == 0
-    assert game.value("g_party_dead") == 0
+    assert game.session.party_dead == 0
     assert game.value("g_party_champion_count", u16) == 1
     assert game.champions[0].current_health > 0
     assert game.value("g_game_time", u32) == saved_time
@@ -273,12 +273,12 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
         ctypes.c_int16.in_dll(lib, name).value = v
     lord = lib.map_find_thing(Location(*lord_square), C.THING_GROUP)
     lib.startend_run_fuse_sequence()
-    assert game.value("g_game_won") == 1 and game.value("g_return_to_entrance") == 1 and game.value("g_quit_requested") == 0
+    assert game.session.won == 1 and game.value("g_return_to_entrance") == 1 and game.value("g_quit_requested") == 0
     assert lib.rec_write(lord)[4] == 26  # Grey Lord
     # the other groups are gone; the test group is not caged and can walk away and go too
     assert {(x, y) for x in range(width) for y in range(height) if lib.map_find_thing(Location(x, y), C.THING_GROUP) != 0xFFFE} <= {lord_square}
     assert lib.gameloop_start_new_game(str(GAME).encode())  # a new game draws fluxcages again for the other tests
-    assert game.value("g_do_not_draw_fluxcages") == 0 and game.value("g_game_won") == 0
+    assert game.value("g_do_not_draw_fluxcages") == 0 and game.session.won == 0
 
 
 STEP = [(0, -1), (1, 0), (0, 1), (-1, 0)]  # east, north steps of each direction
@@ -294,7 +294,7 @@ def test_new_game_after_sleep_runs_at_normal_speed(game):
     game.key(0x5000)  # F1
     game.run()
     game.click(*SLEEP_CLICK)
-    assert game.value("g_party_is_sleeping") == 1
+    assert game.session.party_sleeping == 1
     assert lib.gameloop_start_new_game(str(GAME).encode())
     start = game.value("g_game_time", u32)
     game.run(130)

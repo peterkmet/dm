@@ -125,7 +125,7 @@ static bool load_failed; /* a damaged save file left no game to play */
 /* The party died, or the game is won: the endgame ran and no turn can follow until load or new_game. */
 static bool is_game_over(void)
 {
-    return g_party_dead || g_game_won;
+    return g_session.party_dead || g_session.won;
 }
 
 /* Input as the player gives it: clicks and keys go through the command queue. */
@@ -272,7 +272,7 @@ static bool parse_champion_arg(const char *request, int16_t *champion)
 
 static const char *need_movement_input(void)
 {
-    if (g_inventory_champion_index >= 0)
+    if (g_session.inventory_champion_index >= 0)
         return "close the inventory first (close_inventory)";
     return NULL;
 }
@@ -359,7 +359,7 @@ static const char *click_wall_ahead(const char *args)
 {
     (void)args;
     const Box *b = &g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL];
-    if (g_inventory_champion_index >= 0)
+    if (g_session.inventory_champion_index >= 0)
         return "close the inventory first (close_inventory)";
     if (b->x == -1)
         return "nothing to click on the wall ahead";
@@ -370,7 +370,7 @@ static const char *click_wall_ahead(const char *args)
 static const char *take_object(const char *args)
 {
     int64_t cell = get_int(args, "cell", -1);
-    if (g_inventory_champion_index >= 0)
+    if (g_session.inventory_champion_index >= 0)
         return "close the inventory first (close_inventory)";
     if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE)
         return "cell must be 0-4 (see get_view piles)";
@@ -386,7 +386,7 @@ static const char *drop_object(const char *args)
 {
     int64_t cell = get_int(args, "cell", 0);
     Box b;
-    if (g_inventory_champion_index >= 0)
+    if (g_session.inventory_champion_index >= 0)
         return "close the inventory first (close_inventory)";
     if (g_leader_empty_handed)
         return "the leader hand is empty";
@@ -407,7 +407,7 @@ static const char *open_inventory(const char *args)
     int16_t champion_index;
     if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
-    if (g_inventory_champion_index != champion_index)
+    if (g_session.inventory_champion_index != champion_index)
         press_key(command_champion_key(champion_index));
     return NULL;
 }
@@ -415,8 +415,8 @@ static const char *open_inventory(const char *args)
 static const char *close_inventory(const char *args)
 {
     (void)args;
-    if (g_inventory_champion_index >= 0)
-        press_key(command_champion_key(g_inventory_champion_index));
+    if (g_session.inventory_champion_index >= 0)
+        press_key(command_champion_key(g_session.inventory_champion_index));
     return NULL;
 }
 
@@ -430,7 +430,7 @@ static const char *click_slot(const char *args)
         return "no living champion with this index";
     if (g_leader_index == -1)
         return "no leader";
-    if (g_inventory_champion_index == champion_index) {
+    if (g_session.inventory_champion_index == champion_index) {
         if (slot < 0 || slot >= SLOT_CHEST_FIRST + (g_open_chest != THING_NONE ? SLOT_CHEST_COUNT : 0))
             return "slot out of range";
         int16_t table = slot >= SLOT_CHEST_FIRST ? TABLES_MOUSE_CHEST : TABLES_MOUSE_INVENTORY;
@@ -466,7 +466,7 @@ static const char *send_look(const char *args)
     int16_t x, y;
     int64_t slot = get_int(args, "slot", -1);
     char request[SLOT_REQUEST_SIZE];
-    if (g_inventory_champion_index < 0)
+    if (g_session.inventory_champion_index < 0)
         return "open an inventory first (open_inventory): the eye is in the inventory";
     if (!find_click(TABLES_MOUSE_INVENTORY, COMMAND_CLICK_EYE, &x, &y))
         return "eye not found";
@@ -479,7 +479,7 @@ static const char *send_look(const char *args)
     if (!g_leader_empty_handed)
         return "the leader hand must be empty to look at a slot";
     snprintf(request, sizeof request, "\"champion\":%" PRId64 ",\"slot\":%" PRId64,
-             get_int(args, "champion", g_inventory_champion_index), slot);
+             get_int(args, "champion", g_session.inventory_champion_index), slot);
     const char *error = click_slot(request);
     if (error)
         return error;
@@ -509,7 +509,7 @@ static const char *swap_champions(const char *args)
 static const char *use_mouth(const char *args)
 {
     (void)args;
-    if (g_inventory_champion_index < 0)
+    if (g_session.inventory_champion_index < 0)
         return "open the inventory of the champion who eats or drinks first";
     if (g_leader_empty_handed)
         return "take the food or drink in the leader hand first";
@@ -523,28 +523,28 @@ static const char *choose_action(const char *args)
     int64_t index = get_int(args, "index", -1);
     if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
-    if (g_acting_champion_index >= 0 && g_acting_champion_index != champion_index)
+    if (g_session.acting_champion_index >= 0 && g_session.acting_champion_index != champion_index)
         return "another champion's action menu is open: use pass first";
-    if (g_acting_champion_index < 0) {
+    if (g_session.acting_champion_index < 0) {
         click_command(TABLES_MOUSE_ACTION_ICONS, COMMAND_SELECT_ACTING_CHAMPION_FIRST + champion_index);
-        if (g_acting_champion_index != champion_index)
+        if (g_session.acting_champion_index != champion_index)
             return "this champion cannot act now (action disabled, or no actions)";
     }
     if (index < 0 || index >= g_action_list.count)
         return "index out of range of the action menu (see state action_menu)";
     turn.has_damage = true;
-    g_action_damage = 0;
+    g_session.action_damage = 0;
     click_command(TABLES_MOUSE_ACTION_NAMES, COMMAND_ACTION_FIRST + index);
-    turn.damage = g_action_damage;
+    turn.damage = g_session.action_damage;
     if (batch.active && batch.damage_count < BATCH_DAMAGE_MAX)
-        batch.damages[batch.damage_count++] = g_action_damage;
+        batch.damages[batch.damage_count++] = g_session.action_damage;
     return NULL;
 }
 
 static const char *pass(const char *args)
 {
     (void)args;
-    if (g_acting_champion_index >= 0)
+    if (g_session.acting_champion_index >= 0)
         click_command(TABLES_MOUSE_ACTION_NAMES, COMMAND_PASS);
     return NULL;
 }
@@ -601,7 +601,7 @@ static const char *recruit(const char *args)
 {
     static const char *const choices[3] = {"resurrect", "reincarnate", "cancel"};
     char choice[CHOICE_SIZE];
-    if (g_candidate_champion_index < 0)
+    if (g_session.candidate_champion_index < 0)
         return "no candidate: click a champion mirror first (click_wall_ahead)";
     if (!g_leader_empty_handed)
         return "the leader hand must be empty";
@@ -629,7 +629,7 @@ static const char *sleep_party(const char *args)
     (void)args;
     if (g_leader_index == -1)
         return "no leader";
-    if (g_inventory_champion_index < 0)
+    if (g_session.inventory_champion_index < 0)
         press_key(command_champion_key(g_leader_index));
     click_command(TABLES_MOUSE_INVENTORY, COMMAND_SLEEP);
     return NULL;
@@ -638,7 +638,7 @@ static const char *sleep_party(const char *args)
 static const char *wake(const char *args)
 {
     (void)args;
-    if (g_party_is_sleeping)
+    if (g_session.party_sleeping)
         click_command(TABLES_MOUSE_SLEEPING, COMMAND_WAKE_UP);
     return NULL;
 }
@@ -1001,9 +1001,9 @@ static const char *run_action(const char *name, const char *request)
     for (int k = 0; k < ARRAY_COUNT(actions); k++) {
         if (strcmp(name, actions[k].name))
             continue;
-        if (g_candidate_champion_index >= 0 && strcmp(name, "recruit"))
+        if (g_session.candidate_champion_index >= 0 && strcmp(name, "recruit"))
             return "a candidate is shown: answer with recruit first";
-        if (g_party_is_sleeping && strcmp(name, "wake"))
+        if (g_session.party_sleeping && strcmp(name, "wake"))
             return "the party sleeps: use wake or wait";
         turn.has_damage = 0;
         look_text.shown = 0;

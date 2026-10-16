@@ -88,8 +88,6 @@ The portrait pointer (`0x114`) is not in the struct. Champion recruiting adds it
 | `g_leader_index` | `0x101ed2` | `int16_t`, −1 is no leader |
 | `g_magic_caster_champion_index` | `0x103fe0` | `int16_t`, −1 is none |
 | `g_leader_hand_object` | `0x102454` | `uint16_t` thing, `0xffff` is empty |
-| `g_party_is_sleeping` | `0x1001de` | `int16_t` |
-| `g_party_dead` | `0x1001e4` | `int16_t` |
 | `g_game_time` | `0x1001f8` | `uint32_t` |
 | `g_game_id` | `0x1040f2` | `uint32_t` |
 | `g_last_creature_attack_time` | `0x10314e` | `int32_t` |
@@ -100,6 +98,30 @@ The portrait pointer (`0x114`) is not in the struct. Champion recruiting adds it
 | `g_last_projectile_disabled_movement_direction` | `0x1001f6` | `int16_t` |
 
 These globals are the values that the save file header stores.
+
+## Session
+
+`Session g_session` (`engine/game.h`) holds the state of one run of the game. The save file does not hold it. Each
+field keeps its value until one of the listed functions changes it.
+
+| Field | Original | Type | Reset |
+|---|---|---|---|
+| `mode` | — | `int16_t`, `GAME_MODE_*` | `GAME_MODE_VANILLA` at program start; `game_set_mode` sets it; a load keeps it. |
+| `party_sleeping` | `0x1001de` | `bool` | Cleared by `game_start_new`, `game_reset_session`, and the load (`restore_game`). |
+| `party_dead` | `0x1001e4` | `bool` | Cleared by `game_start_new` and the load; a failed load keeps it (`restore_snapshot`). |
+| `won` | `0x1001e2` | `bool` | Cleared by `game_reset_session`. |
+| `cheat_light`, `cheat_immortal`, `cheat_food` | — | `bool` | Cleared by `game_reset_session`. |
+| `saved_game_exists` | `0x10415a` | `bool` | Set by a save and a load, cleared by `savegame_forget` (new game); a quick save, a quick load and a failed load keep it. |
+| `last_save_time` | `0x104062` | `uint32_t` | The game time of a save; a quick save keeps it; a quick load sets 0. |
+| `last_load_time` | `0x100200` | `uint32_t` | The game time of a load; a failed load keeps it; a quick load sets 0. |
+| `candidate_champion_index` | `0x1001dc` | `int16_t`, −1 is none | −1 at program start and in `game_reset_session`. |
+| `inventory_champion_index` | `0x101ea8` | `int16_t`, −1 is none | −1 at program start and in `inventory_reset`. |
+| `acting_champion_index` | `0x103fe2` | `int16_t`, −1 is none | −1 at program start and in `action_reset`. |
+| `action_damage` | `0x103ff6` | `int16_t`, 0 none, −1 can't reach, −2 need ammo | 0 in `action_reset`. |
+| `new_party_map` | `0x1001ce` | `int16_t`, −1 is no map change | −1 at program start and in `move_reset`. |
+
+`game_reset_session`, `inventory_reset`, `action_reset` and `move_reset` run at the start of a new or a loaded game
+(`start_game` in `ui/gameloop.c`).
 
 ## Timeline
 

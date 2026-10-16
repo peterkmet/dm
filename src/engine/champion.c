@@ -117,7 +117,6 @@ int16_t g_magic_caster_champion_index = -1;
 #define CLASS_FIRST_AMMUNITION 16
 #define CLASS_AMMUNITION_END   112
 
-int16_t g_candidate_champion_index = -1;
 uint16_t g_dead_champions;
 
 /* Offsets of the original record. */
@@ -236,19 +235,19 @@ void champion_set_leader(int16_t champion_index)
         g_leader_index = champion_index;
         c->direction = g_party_direction;
         c->load += inventory_get_object_weight(g_leader_hand_object);
-        if (champion_index != g_candidate_champion_index)
+        if (champion_index != g_session.candidate_champion_index)
             c->attributes |= CHAMPION_ATTR_LOAD | CHAMPION_ATTR_NAME_TITLE | CHAMPION_ATTR_ICON;
     }
 }
 
 void champion_wake_up(void)
 {
-    g_party_is_sleeping = false;
+    g_session.party_sleeping = false;
 }
 
 void champion_go_to_sleep(void)
 {
-    g_party_is_sleeping = true;
+    g_session.party_sleeping = true;
 }
 
 void champion_drink_from_fountain(bool whole_party)
@@ -265,7 +264,7 @@ uint16_t champion_turn_to_last_attackers(void)
     uint16_t turned = 0;
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         Champion *champion = &g_champions[i];
-        if (i != g_leader_index && i != g_acting_champion_index && champion->maximum_damage_received &&
+        if (i != g_leader_index && i != g_session.acting_champion_index && champion->maximum_damage_received &&
             champion->direction != champion->direction_maximum_damage_received) {
             champion->direction = champion->direction_maximum_damage_received;
             champion->attributes |= CHAMPION_ATTR_ICON;
@@ -400,14 +399,14 @@ void champion_add_candidate_to_party(int16_t portrait_index)
     memcpy(c->statistics, r.statistics, sizeof c->statistics);
     for (int s = 0; s < SKILL_COUNT; s++)
         c->skills[s].experience = r.experience[s];
-    g_candidate_champion_index = index;
+    g_session.candidate_champion_index = index;
     c->attributes |= CHAMPION_ATTR_ACTION_HAND;
     if (++g_party_champion_count == 1) {
         champion_set_leader(0);
         g_magic_caster_champion_index = 0;
     }
     add_candidate_possessions(index);
-    g_inventory_champion_index = index;
+    g_session.inventory_champion_index = index;
 }
 
 /* Reincarnation: all experience is lost and 12 random statistic points are gained. In CSB, the statistics but luck
@@ -440,8 +439,8 @@ void champion_click_in_resurrect_reincarnate_panel(int16_t command)
 {
     uint16_t index = g_party_champion_count - 1;
     Champion *c = &g_champions[index];
-    g_inventory_champion_index = -1;
-    g_candidate_champion_index = -1;
+    g_session.inventory_champion_index = -1;
+    g_session.candidate_champion_index = -1;
     if (command == PANEL_CANCEL) {
         if (g_party_champion_count == 1) {
             champion_set_leader(-1);
@@ -514,7 +513,7 @@ static int16_t get_object_skill_bonus(const Champion *c, uint16_t skill)
 int16_t champion_get_skill_level(int16_t champion_index, int16_t skill_index, bool ignore_modifiers,
                                  bool ignore_temporary)
 {
-    if (g_party_is_sleeping)
+    if (g_session.party_sleeping)
         return 1;
     const Champion *c = &g_champions[champion_index];
     bool temporary = !ignore_temporary;
@@ -662,7 +661,7 @@ int16_t champion_get_dexterity(int16_t champion_index)
     int32_t product = (int32_t)((uint32_t)c->load * (uint32_t)(dexterity >> 1)); /* 32-bit signed product */
     dexterity -= product / champion_get_maximum_load(champion_index);
     dexterity = max16(DEXTERITY_MINIMUM, dexterity);
-    if (g_party_is_sleeping)
+    if (g_session.party_sleeping)
         dexterity >>= 1;
     int16_t high = ROLL_MAXIMUM - (random16() & DEXTERITY_RANDOM_MASK);
     int16_t low = (random16() & DEXTERITY_RANDOM_MASK) + 1;
@@ -731,7 +730,7 @@ int16_t champion_get_wound_defense(int16_t champion_index, int16_t slot, bool sh
         defense += inventory_get_armour_defense(get_armour_info(c->slots[slot]), sharp);
     if (c->wounds & 1 << slot)
         defense -= random_2bits() + WOUND_DEFENSE_PENALTY;
-    if (g_party_is_sleeping)
+    if (g_session.party_sleeping)
         defense >>= 1;
     return bounded_value(0, defense >> 1, ROLL_MAXIMUM);
 }
@@ -769,7 +768,7 @@ static int16_t resisted_attack(int16_t champion_index, int16_t attack, uint16_t 
 int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
                                                int16_t attack_type)
 {
-    if (champion_index == -1 || champion_index == g_candidate_champion_index || attack <= 0)
+    if (champion_index == -1 || champion_index == g_session.candidate_champion_index || attack <= 0)
         return 0;
     const Champion *c = &g_champions[champion_index];
     if (!c->current_health)
@@ -786,7 +785,7 @@ int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t a
                     allowed_wounds & 1 << (random16() & WOUND_SLOT_RANDOM_MASK);
                 threshold *= 2;
             } while (threshold < attack && threshold);
-        if (g_party_is_sleeping)
+        if (g_session.party_sleeping)
             champion_wake_up();
     }
     g_champions[champion_index].runtime.pending_damage += attack;
@@ -807,7 +806,7 @@ void champion_apply_and_draw_pending_damage_and_wounds(void)
         if (!c->current_health)
             continue;
         int16_t health = c->current_health - damage;
-        if (health <= 0 && g_cheat_immortal)
+        if (health <= 0 && g_session.cheat_immortal)
             health = 1;
         if (health <= 0) {
             champion_kill(i);
@@ -848,7 +847,7 @@ void champion_drop_all_objects(uint16_t champion_index)
 void champion_kill(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
-    if (champion_index == g_acting_champion_index)
+    if (champion_index == g_session.acting_champion_index)
         action_clear_acting_champion();
     c->current_health = 0;
     c->attributes |= CHAMPION_ATTR_STATUS_BOX;
@@ -871,7 +870,7 @@ void champion_kill(uint16_t champion_index)
     while (alive < g_party_champion_count && !g_champions[alive].current_health)
         alive++;
     if (alive == g_party_champion_count) {
-        g_party_dead = true;
+        g_session.party_dead = true;
         return;
     }
     if (champion_index == g_leader_index)
@@ -886,7 +885,7 @@ void champion_kill(uint16_t champion_index)
 
 void champion_poison(int16_t champion_index, uint16_t attack)
 {
-    if (champion_index == -1 || champion_index == g_candidate_champion_index)
+    if (champion_index == -1 || champion_index == g_session.candidate_champion_index)
         return;
     Champion *c = &g_champions[champion_index];
     champion_add_pending_damage_and_wounds(champion_index, max16(1, attack >> POISON_DAMAGE_SHIFT), 0, ATTACK_RAW);
@@ -984,7 +983,7 @@ static void regenerate_mana(uint16_t i, uint16_t chance)
         if (levels + c->statistics[STAT_WISDOM][STAT_CURRENT] <= chance)
             return;
         int16_t gain = c->maximum_mana / MANA_GAIN_DIVISOR;
-        if (g_party_is_sleeping)
+        if (g_session.party_sleeping)
             gain *= 2;
         gain++;
         champion_decrement_stamina(i, max16(MANA_STAMINA_COST_MINIMUM, MANA_STAMINA_COST_BASE - levels) * gain);
@@ -1005,7 +1004,7 @@ static void consume_food_and_water(uint16_t i, uint16_t time)
         steps += 2;
     int16_t loss = 0;
     int16_t rate = bounded_value(1, (c->maximum_stamina >> STAMINA_RATE_SHIFT) - 1, STAMINA_RATE_MAXIMUM);
-    if (g_party_is_sleeping)
+    if (g_session.party_sleeping)
         rate *= 2;
     uint16_t idle = time - g_last_party_movement_time; /* 16-bit difference */
     if (idle > IDLE_TICKS_HUNGRY)
@@ -1038,7 +1037,7 @@ static void consume_food_and_water(uint16_t i, uint16_t time)
         c->food = FOOD_WATER_MINIMUM;
     if (c->water < FOOD_WATER_MINIMUM)
         c->water = FOOD_WATER_MINIMUM;
-    if (g_cheat_food) {
+    if (g_session.cheat_food) {
         c->food = food;
         c->water = water;
     }
@@ -1051,7 +1050,7 @@ static void regenerate_health(Champion *c, uint16_t chance)
         c->statistics[STAT_VITALITY][STAT_CURRENT] + HEALTH_GAIN_VITALITY_BONUS <= chance)
         return;
     int16_t gain = (c->maximum_health >> HEALTH_GAIN_SHIFT) + 1;
-    if (g_party_is_sleeping)
+    if (g_session.party_sleeping)
         gain *= 2;
     if (object_get_icon_index(c->slots[SLOT_NECK]) == ICON_EKKHARD_CROSS)
         gain += (gain >> 1) + 1;
@@ -1081,7 +1080,7 @@ void champion_apply_time_effects(void)
                       2; /* time bits 6-8 shuffled: 0-112 */
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         Champion *c = &g_champions[i];
-        if (!c->current_health || i == g_candidate_champion_index)
+        if (!c->current_health || i == g_session.candidate_champion_index)
             continue;
         regenerate_mana(i, chance);
         for (int16_t s = SKILL_COUNT - 1; s >= 0; s--)
@@ -1089,9 +1088,9 @@ void champion_apply_time_effects(void)
                 c->skills[s].temporary_experience--;
         consume_food_and_water(i, time);
         regenerate_health(c, chance);
-        if (!(time & (g_party_is_sleeping ? STATISTICS_RESTORE_SLEEPING_MASK : STATISTICS_RESTORE_MASK)))
+        if (!(time & (g_session.party_sleeping ? STATISTICS_RESTORE_SLEEPING_MASK : STATISTICS_RESTORE_MASK)))
             restore_statistics(c);
-        if (!g_party_is_sleeping && c->direction != g_party_direction &&
+        if (!g_session.party_sleeping && c->direction != g_party_direction &&
             g_game_time - TURN_BACK_TICKS > (uint32_t)g_last_creature_attack_time) {
             c->direction = g_party_direction;
             c->maximum_damage_received = 0;

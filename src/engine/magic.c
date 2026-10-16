@@ -181,7 +181,7 @@ static bool cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t p
     rec_potion_set_type(flask, potion_type);
     rec_potion_set_power(flask, power * POTION_POWER_PER_LEVEL + (random16() & POTION_POWER_RANDOM_MASK));
     c->load += inventory_get_object_weight(flask) - empty_weight;
-    if (champion_index == g_inventory_champion_index)
+    if (champion_index == g_session.inventory_champion_index)
         c->attributes |= CHAMPION_ATTR_LOAD;
     return true;
 }
@@ -245,8 +245,8 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
         break;
     case SPELL_OTHER_INVISIBILITY:
         if (!g_party.invisibility_count++) {
-            if (g_inventory_champion_index >= 0)
-                g_champions[g_inventory_champion_index].attributes |= CHAMPION_ATTR_STATUS_BOX;
+            if (g_session.inventory_champion_index >= 0)
+                g_champions[g_session.inventory_champion_index].attributes |= CHAMPION_ATTR_STATUS_BOX;
             set_attributes_of_all(CHAMPION_ATTR_ICON);
         }
         add_party_event(EVENT_INVISIBILITY_END, ticks * INVISIBILITY_TICKS_FACTOR, 0);

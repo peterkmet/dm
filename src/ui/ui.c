@@ -199,8 +199,8 @@ void ui_draw_interface(void)
     ui_fill_zone(&screen, ZONE_SCREEN_TOP, COLOR_BLACK);
     ui_fill_zone(&screen, ZONE_SCREEN_RIGHT, COLOR_BLACK);
     ui_fill_zone(&screen, ZONE_SCREEN_BOTTOM, COLOR_BLACK);
-    if (g_inventory_champion_index >= 0) {
-        int16_t i = g_inventory_champion_index;
+    if (g_session.inventory_champion_index >= 0) {
+        int16_t i = g_session.inventory_champion_index;
         inventory_set_open_champion(-1);
         ui_draw_inventory_open(i);
     } else {

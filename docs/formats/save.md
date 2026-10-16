@@ -207,7 +207,7 @@ The save directory is the game data directory (`--data`, default `game/`). `star
 3. Write the portraits and the dungeon (`dungeon_save`).
 4. `savefile_init_header` with `g_game_id`, `g_dungeon_id`, and the extra bytes of the last load. `savefile_encode`.
 5. Delete `DMGAME.BAK`. Rename `DMGAME.DAT` to `DMGAME.BAK`. Write `DMGAME.DAT`.
-6. Set `g_saved_game_exists` and `g_last_save_game_time`. Return true, or false on a write error.
+6. Set `g_session.saved_game_exists` and `g_session.last_save_time`. Return true, or false on a write error.
 
 The random header words come after the copy of the globals. Thus the saved random seed is the seed before the save, as in the original.
 
@@ -215,10 +215,10 @@ The random header words come after the copy of the globals. Thus the saved rando
 
 1. Read `DMGAME.DAT`. When it is missing, read `DMGAME.BAK`.
 2. `savefile_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
-3. Copy block 0 into the globals. `g_last_load_game_time` gets the game time.
+3. Copy block 0 into the globals. `g_session.last_load_time` gets the game time.
 4. Allocate the timeline for `g_timeline.capacity` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB allocates exactly the saved count and keeps it. A new CSB game has 60 entries.
 5. Find the portrait index of each party champion (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
-6. Clear `g_party_dead` and the sleep flag. Set `g_saved_game_exists`.
+6. Clear `g_session.party_dead` and the sleep flag. Set `g_session.saved_game_exists`.
 7. When the file was the backup, rename it to `DMGAME.DAT`.
 
 After a damaged file, the dungeon is not loaded and the globals can be partly changed. The entrance starts a new game from `Dungeon.DAT`, which sets all state again.

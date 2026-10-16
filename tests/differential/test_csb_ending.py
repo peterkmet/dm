@@ -9,7 +9,7 @@ import struct
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import TimelineEvent, global_type, pending_damage
+from dmtest.game import TimelineEvent, global_type, pending_damage, session
 from dmtest.lib import clear_folder_hooks, load_lib, set_folder_hooks
 from dmtest.markers import GAME_CSB, ROOT, needs_csb, needs_csb_mini, needs_file
 
@@ -191,7 +191,8 @@ class Frames:
 @pytest.fixture
 def reset(lib):
     yield
-    for name in ("g_game_won", "g_return_to_entrance", "g_quit_requested"):
+    session(lib).won = 0
+    for name in ("g_return_to_entrance", "g_quit_requested"):
         value(lib, name).value = 0
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
 
@@ -392,7 +393,7 @@ def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     lib.map_set_current_map(m)
     event = TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)
     lib.event_process_wall(ctypes.byref(event))
-    assert value(lib, "g_game_won").value == 1 and value(lib, "g_return_to_entrance").value == 1
+    assert session(lib).won == 1 and value(lib, "g_return_to_entrance").value == 1
     assert screen(lib) == first_frame and palette(lib) == first_palette
 
 
@@ -410,7 +411,7 @@ def test_sensor_18_in_a_tick_starts_the_ending(lib, tmp_path, reset):
     load_mini(lib, tmp_path)
     add_sensor_event(lib, value(lib, "g_game_time", u32).value)
     lib.gameloop_tick()
-    assert value(lib, "g_game_won").value == 1 and value(lib, "g_return_to_entrance").value == 1
+    assert session(lib).won == 1 and value(lib, "g_return_to_entrance").value == 1
 
 
 def test_sensor_18_wins_over_a_party_death_in_the_same_tick(lib, tmp_path, reset):
@@ -421,11 +422,11 @@ def test_sensor_18_wins_over_a_party_death_in_the_same_tick(lib, tmp_path, reset
         pending[i] = PARTY_KILLING_DAMAGE
     add_sensor_event(lib, value(lib, "g_game_time", u32).value)
     lib.gameloop_tick()
-    assert value(lib, "g_party_dead").value == 1 and value(lib, "g_game_won").value == 1
+    assert session(lib).party_dead == 1 and session(lib).won == 1
     value(lib, "g_return_to_entrance").value = 0
     load_mini(lib, tmp_path)
     lib.gameloop_tick()
-    assert value(lib, "g_game_won").value == 0 and value(lib, "g_return_to_entrance").value == 0
+    assert session(lib).won == 0 and value(lib, "g_return_to_entrance").value == 0
 
 
 def test_an_event_after_sensor_18_in_the_same_tick_sees_the_won_game(lib, tmp_path, reset):
@@ -441,12 +442,12 @@ def test_an_event_after_sensor_18_in_the_same_tick_sees_the_won_game(lib, tmp_pa
     add_event(lib, C.EVENT_REMOVE_FLUXCAGE, m, time, x << 8 | y, thing)
     lib.gameloop_tick()
     lib.map_set_current_map(m)
-    assert value(lib, "g_game_won").value == 1 and lib.map_get_square_first_thing(x, y) == thing
+    assert session(lib).won == 1 and lib.map_get_square_first_thing(x, y) == thing
 
 
 def test_sensor_18_with_frames_plays_at_once_and_waits_for_input(lib, model, tmp_path, reset):
     load_mini(lib, tmp_path)
-    value(lib, "g_saved_game_exists").value = 1
+    session(lib).saved_game_exists = 1
     total = sum(delay for delay, _, _ in model)
     entrance = []
 
@@ -462,8 +463,8 @@ def test_sensor_18_with_frames_plays_at_once_and_waits_for_input(lib, model, tmp
     frames.remove()
     assert frames.shots[0] == (model[0][1], model[0][2])  # no delay before the first frame
     assert len(frames.shots) == total + 10 and not any(entrance)
-    assert value(lib, "g_return_to_entrance").value == 1 and value(lib, "g_game_won").value == 1
-    assert value(lib, "g_saved_game_exists").value == 1
+    assert value(lib, "g_return_to_entrance").value == 1 and session(lib).won == 1
+    assert session(lib).saved_game_exists == 1
 
 
 def click(lib, x, y):
@@ -475,7 +476,7 @@ def test_death_shows_restart_only_and_restart_loads_the_save(lib, tmp_path, rese
     load_mini(lib, tmp_path)
     lib.startend_set_save_dir(str(tmp_path).encode())
     assert lib.savegame_save(str(tmp_path).encode()) is True
-    assert value(lib, "g_saved_game_exists").value == 1
+    assert session(lib).saved_game_exists == 1
     saved_time = value(lib, "g_game_time", u32).value
     value(lib, "g_game_time", u32).value = saved_time + 1000
     shots, frames = {}, [0]

@@ -229,7 +229,7 @@ The `SO` chunks play `SD` sample 2 (graphic item 683) three times.
 
 The endgame `0x128374` (party dead) goes to `0x1285e8` when there is no saved game. The won flag is 0 then, so the engine stops at C`0x128600` on the credits screen.
 
-Port: `startend_run_endgame_sensor` in `src/ui/startend.c` sets `g_game_won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
+Port: `startend_run_endgame_sensor` in `src/ui/startend.c` sets `g_session.won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
 
 ### TITL.DAT and ANIM.DAT on disk B
 

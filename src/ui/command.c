@@ -151,7 +151,7 @@ void command_process_key(uint16_t key)
     if (!command)
         command = tables_get_key_command(secondary_keys, key);
     if (g_advanced_features && ((key == KEY_ESCAPE && command == COMMAND_FREEZE_GAME) || key == KEY_TAB) &&
-        g_inventory_champion_index >= 0 && g_candidate_champion_index < 0)
+        g_session.inventory_champion_index >= 0 && g_session.candidate_champion_index < 0)
         command = COMMAND_CLOSE_INVENTORY;
     if (command)
         queue_put(command, 0, 0);
@@ -218,7 +218,7 @@ void command_freeze_game(void)
         return;
     g_game_frozen = true;
     command_highlight_disable();
-    if (g_inventory_champion_index < 0)
+    if (g_session.inventory_champion_index < 0)
         ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
     else
         inventory_close_chest();
@@ -230,19 +230,19 @@ void command_unfreeze_game(void)
 {
     if (!g_game_frozen)
         return;
-    if (g_party_is_sleeping) {
+    if (g_session.party_sleeping) {
         draw_viewport_message(TEXT_WAKE_UP);
         return;
     }
     g_game_frozen = false;
     menus_draw_spell_area();
-    if (g_acting_champion_index < 0)
+    if (g_session.acting_champion_index < 0)
         g_action_area_contains_icons = true;
     menus_draw_action_area();
-    if (g_inventory_champion_index < 0) {
+    if (g_session.inventory_champion_index < 0) {
         menus_draw_movement_arrows();
     } else {
-        int16_t open = g_inventory_champion_index;
+        int16_t open = g_session.inventory_champion_index;
         inventory_set_open_champion(-1);
         command_toggle_inventory(open);
     }
@@ -250,7 +250,7 @@ void command_unfreeze_game(void)
 
 void command_toggle_inventory(int16_t champion_index)
 {
-    int16_t open = g_inventory_champion_index;
+    int16_t open = g_session.inventory_champion_index;
     if (pressing_fake_wall)
         return;
     if (champion_index < CHAMPION_MAX_COUNT && !g_champions[champion_index].current_health)
@@ -262,7 +262,7 @@ void command_toggle_inventory(int16_t champion_index)
         champion_index = INVENTORY_CLOSE;
     if (open >= 0 && champion_index != INVENTORY_REDRAW) {
         ui_draw_inventory_close(open);
-        if (g_party_is_sleeping)
+        if (g_session.party_sleeping)
             return;
         if (champion_index == INVENTORY_CLOSE) {
             secondary_mouse = TABLES_MOUSE_MOVEMENT;
@@ -274,7 +274,7 @@ void command_toggle_inventory(int16_t champion_index)
     if (champion_index == INVENTORY_CLOSE)
         return;
     if (champion_index == INVENTORY_REDRAW)
-        champion_index = g_inventory_champion_index;
+        champion_index = g_session.inventory_champion_index;
     ui_draw_inventory_open(champion_index);
     secondary_mouse = TABLES_MOUSE_INVENTORY;
     secondary_keys = TABLES_KEYS_NONE;
@@ -286,7 +286,7 @@ void command_click_on_mouth(void)
     int16_t result = inventory_process_click_on_mouth();
     if (result == MOUTH_REFUSED)
         return;
-    uint16_t champion_index = g_inventory_champion_index;
+    uint16_t champion_index = g_session.inventory_champion_index;
     if (result == MOUTH_USED_UP)
         for (int16_t blink = MOUTH_BLINK_COUNT; blink > 0; blink--) {
             ui_draw_icon_to_viewport(ICON_MOUTH + !(blink & 1), ZONE_MOUTH);
@@ -303,7 +303,7 @@ void command_release_dead_champion(uint16_t champion_index, int16_t leader_index
 {
     Bitmap screen = ui_get_screen();
     int16_t icon_cell = NORMALIZE(g_champions[champion_index].cell - g_party_direction);
-    if (champion_index == g_inventory_champion_index) {
+    if (champion_index == g_session.inventory_champion_index) {
         pressing_eye = false;
         pressing_mouth = false;
         g_mouse_pointer_hidden = false;
@@ -321,7 +321,7 @@ void command_release_dead_champion(uint16_t champion_index, int16_t leader_index
 /* The candidate inventory shows the resurrect and reincarnate panel; the game is frozen meanwhile. */
 static void show_candidate(void)
 {
-    int16_t index = g_candidate_champion_index;
+    int16_t index = g_session.candidate_champion_index;
     inventory_set_open_champion(-1);
     command_toggle_inventory(index);
     command_freeze_game();
@@ -355,7 +355,7 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
 /* Left click in a champion status box: the name sets the leader, a hand is a slot box. */
 static void click_in_status_box(int16_t champion_index, int16_t x, int16_t y)
 {
-    if (champion_index == g_inventory_champion_index) {
+    if (champion_index == g_session.inventory_champion_index) {
         champion_set_leader(champion_index);
         return;
     }
@@ -443,10 +443,10 @@ static void touch_front_wall(void)
     get_front_square(&x, &y);
     if (x < 0 || x >= g_current_map_width || y < 0 || y >= g_current_map_height)
         return;
-    int16_t candidate = g_candidate_champion_index;
+    int16_t candidate = g_session.candidate_champion_index;
     /* the wall side that faces the party */
     g_stop_waiting_for_input = sensor_is_triggered_by_click_on_wall(x, y, direction_back(g_party_direction));
-    if (candidate < 0 && g_candidate_champion_index >= 0)
+    if (candidate < 0 && g_session.candidate_champion_index >= 0)
         show_candidate();
 }
 
@@ -610,7 +610,7 @@ static bool trigger_action(int16_t list_index)
 /* Click in the action area: choose the acting champion, then an action or pass. */
 static void click_in_action_area(int16_t x, int16_t y)
 {
-    if (g_acting_champion_index < 0) {
+    if (g_session.acting_champion_index < 0) {
         if (!g_action_area_contains_icons)
             return;
         int16_t command = ui_command_from_mouse(TABLES_MOUSE_ACTION_ICONS, x, y, CLICK_LEFT_PRESS);
@@ -669,9 +669,9 @@ static void process_left_release(void)
 /* The party sleeps: the game runs at full speed and only the wake up input is active. */
 static void go_to_sleep(void)
 {
-    if (g_candidate_champion_index >= 0)
+    if (g_session.candidate_champion_index >= 0)
         return;
-    if (g_inventory_champion_index >= 0)
+    if (g_session.inventory_champion_index >= 0)
         command_toggle_inventory(INVENTORY_CLOSE);
     command_freeze_game();
     champion_go_to_sleep();
@@ -726,7 +726,7 @@ static void move_or_turn(int16_t command)
         return;
     }
     move_party(command);
-    if (x == g_party_map_x && y == g_party_map_y && map == g_party_map_index && g_new_party_map_index == -1) {
+    if (x == g_party_map_x && y == g_party_map_y && map == g_party_map_index && g_session.new_party_map == -1) {
         command_discard_all_input();
         g_stop_waiting_for_input = false;
     }
@@ -806,7 +806,7 @@ bool command_process_queue(void)
         move_or_turn(command);
     else if (command >= COMMAND_CLICK_STATUS_BOX_FIRST &&
              command < COMMAND_CLICK_STATUS_BOX_FIRST + CHAMPION_MAX_COUNT) {
-        if (command - COMMAND_CLICK_STATUS_BOX_FIRST < g_party_champion_count && g_candidate_champion_index < 0)
+        if (command - COMMAND_CLICK_STATUS_BOX_FIRST < g_party_champion_count && g_session.candidate_champion_index < 0)
             click_in_status_box(command - COMMAND_CLICK_STATUS_BOX_FIRST, x, y);
     } else if (command >= COMMAND_CLICK_CHAMPION_ICON_FIRST && command <= COMMAND_CLICK_CHAMPION_ICON_LAST) {
         click_on_champion_icon(command - COMMAND_CLICK_CHAMPION_ICON_FIRST);
@@ -817,16 +817,16 @@ bool command_process_queue(void)
             inventory_click_on_slot_box(command - COMMAND_CLICK_SLOT_BOX_FIRST);
     } else if (command >= COMMAND_TOGGLE_INVENTORY_FIRST && command <= COMMAND_CLOSE_INVENTORY) {
         int16_t index = command - COMMAND_TOGGLE_INVENTORY_FIRST;
-        if ((index == INVENTORY_CLOSE || index < g_party_champion_count) && g_candidate_champion_index < 0)
+        if ((index == INVENTORY_CLOSE || index < g_party_champion_count) && g_session.candidate_champion_index < 0)
             command_toggle_inventory(index);
     } else if (command == COMMAND_TOGGLE_INVENTORY_LEADER) {
         if (g_leader_index != -1)
             command_toggle_inventory(g_leader_index);
     } else if (command == COMMAND_CLICK_SPELL_AREA) {
-        if (g_candidate_champion_index < 0 && g_magic_caster_champion_index != -1)
+        if (g_session.candidate_champion_index < 0 && g_magic_caster_champion_index != -1)
             click_in_spell_area(x, y);
     } else if (command == COMMAND_CLICK_ACTION_AREA) {
-        if (g_candidate_champion_index < 0)
+        if (g_session.candidate_champion_index < 0)
             click_in_action_area(x, y);
     } else if (command == COMMAND_CLICK_MOUTH) {
         command_click_on_mouth();
@@ -835,7 +835,7 @@ bool command_process_queue(void)
     } else if (command == COMMAND_CLICK_DUNGEON_VIEW) {
         click_in_dungeon_view(x - tables_get_viewport_x(), y - tables_get_viewport_y());
     } else if (command == COMMAND_CLICK_PANEL) {
-        if (g_candidate_champion_index >= 0)
+        if (g_session.candidate_champion_index >= 0)
             click_in_candidate_panel(x, y);
         else
             panel_click_in_chest(x, y);

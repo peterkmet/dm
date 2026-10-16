@@ -19,8 +19,8 @@ move_party_enter_dungeon();
 
 The game loop calls these functions in this order on each tick:
 
-1. `move_process_new_party_map()`. When `g_new_party_map_index` is not −1, the party map changes, the party enters its square on the new map, and `g_new_party_map_index` becomes −1.
-2. `event_process_expired()`. Repeat step 1 while `g_new_party_map_index` is not −1.
+1. `move_process_new_party_map()`. When `g_session.new_party_map` is not −1, the party map changes, the party enters its square on the new map, and `g_session.new_party_map` becomes −1.
+2. `event_process_expired()`. Repeat step 1 while `g_session.new_party_map` is not −1.
 3. Increment `g_game_time`.
 4. The command step calls `move_party(command)` or `move_turn_party(command)`.
 
@@ -81,7 +81,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 
 `move_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`move_set_party_direction`), and enters the floor sensors again.
 
-`move_take_stairs(up)` removes the party from its square, sets `g_new_party_map_index` and the party square with `map_get_level_change_location` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
+`move_take_stairs(up)` removes the party from its square, sets `g_session.new_party_map` and the party square with `map_get_level_change_location` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
 `move_set_party_direction(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
 
@@ -112,7 +112,7 @@ After the loop:
 - A group that died in a fall, or that reached a map that does not allow its creature type, drops its possessions and is deleted (`group_remove_after_move`).
 - A move to the same square does nothing when the party direction or the cell of an object or a group did not change.
 - The thing leaves the source square with `sensor_process_thing_addition_or_removal(..., 0)`. A levitating object (projectile, explosion) only unlinks.
-- The party on a new map sets `g_new_party_map_index`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
+- The party on a new map sets `g_session.new_party_map`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
 - A group enters the square with `group_enter_square` (see [creatures.md](creatures.md)).
 
 ### Champion functions
@@ -216,7 +216,7 @@ Implemented event types:
 | 9 | `event_process_pit` |
 | 10 | `event_process_door` |
 | 20 | `sound_request_play(c, at, SOUND_MODE_AFTER_TICK, 0)` |
-| 24 | Unlinks and frees the fluxcage thing in `c`, unless `g_game_won` is set. |
+| 24 | Unlinks and frees the fluxcage thing in `c`, unless `g_session.won` is set. |
 | 53 | `timeline_add_watchdog_event` |
 | 65 | `event_enable_group_generator` |
 | 70 | `event_process_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |

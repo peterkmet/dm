@@ -17,12 +17,13 @@
 #define FUSE_MAGICAL_LIGHT         200
 #define FUSE_SHIELD                100
 
-bool g_party_is_sleeping, g_party_dead;
-bool g_game_won;
 uint32_t g_game_time, g_game_id;
 uint16_t g_redraw;
-int16_t g_game_mode = GAME_MODE_VANILLA;
-bool g_cheat_light, g_cheat_immortal, g_cheat_food;
+Session g_session = {.mode = GAME_MODE_VANILLA,
+                     .candidate_champion_index = -1,
+                     .inventory_champion_index = -1,
+                     .acting_champion_index = -1,
+                     .new_party_map = -1};
 
 void game_fatal(int16_t code)
 {
@@ -37,8 +38,8 @@ void game_start_new(void)
     g_leader_index = -1;
     g_magic_caster_champion_index = -1;
     g_leader_hand_object = THING_NONE;
-    g_party_is_sleeping = false;
-    g_party_dead = false;
+    g_session.party_sleeping = false;
+    g_session.party_dead = false;
     g_game_time = 0;
     g_last_creature_attack_time = 0;
     g_last_party_movement_time = 0;
@@ -56,30 +57,32 @@ void game_start_new(void)
 
 void game_reset_session(void)
 {
-    g_candidate_champion_index = -1;
-    g_party_is_sleeping = false;
-    g_game_won = false;
-    g_cheat_light = false;
-    g_cheat_immortal = false;
-    g_cheat_food = false;
+    g_session.candidate_champion_index = -1;
+    g_session.party_sleeping = false;
+    g_session.won = false;
+    g_session.cheat_light = false;
+    g_session.cheat_immortal = false;
+    g_session.cheat_food = false;
     for (uint16_t i = 0; i < CHAMPION_MAX_COUNT; i++)
         memset(g_champions[i].runtime.skill_level_up, 0, sizeof g_champions[i].runtime.skill_level_up);
 }
 
 void game_set_mode(int16_t mode)
 {
-    g_game_mode = mode;
+    g_session.mode = mode;
 }
 
 void game_toggle_cheat(int16_t cheat)
 {
-    bool *flag = cheat == CHEAT_LIGHT ? &g_cheat_light : cheat == CHEAT_IMMORTAL ? &g_cheat_immortal : &g_cheat_food;
+    bool *flag = cheat == CHEAT_LIGHT      ? &g_session.cheat_light
+                 : cheat == CHEAT_IMMORTAL ? &g_session.cheat_immortal
+                                           : &g_session.cheat_food;
     *flag = !*flag;
 }
 
 void game_start_fuse_sequence(void)
 {
-    g_game_won = true;
+    g_session.won = true;
     g_party.magical_light_amount = FUSE_MAGICAL_LIGHT;
     g_party.shield_defense = FUSE_SHIELD;
     g_party.spell_shield_defense = FUSE_SHIELD;
@@ -102,7 +105,7 @@ void game_advance_time(void)
 
 void game_apply_tick_effects(void)
 {
-    if (!(g_game_time & (g_party_is_sleeping ? TIME_EFFECTS_SLEEPING_MASK : TIME_EFFECTS_MASK)))
+    if (!(g_game_time & (g_session.party_sleeping ? TIME_EFFECTS_SLEEPING_MASK : TIME_EFFECTS_MASK)))
         champion_apply_time_effects();
     if (g_disabled_movement_ticks)
         g_disabled_movement_ticks--;

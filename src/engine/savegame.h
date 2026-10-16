@@ -22,9 +22,6 @@ typedef enum {
     SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE,
 } SavegameAdventureResult;
 
-extern bool g_saved_game_exists; /* set after a save or a load: the endgame offers a restart */
-extern uint32_t g_last_save_game_time, g_last_load_game_time;
-
 /* Writes the game to dir/name. With a backup name, the old file becomes dir/backup first. Returns true on success. */
 bool savegame_save_as(const char *dir, const char *name, const char *backup);
 /* Reads dir/name, else dir/backup when backup is not NULL. Results as savegame_load. */

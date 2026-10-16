@@ -139,7 +139,6 @@ extern int16_t g_leader_index, g_magic_caster_champion_index;
 
 /* Copies portrait portrait_index of graphic 26 into the portrait of the champion. */
 void champion_set_portrait(int16_t champion_index, int16_t portrait_index);
-extern int16_t g_candidate_champion_index; /* -1: no candidate */
 /* Champions that died in the tick, one bit per champion index: the user interface releases them after the tick. */
 extern uint16_t g_dead_champions;
 /* The champions that died in the tick (one bit each); the notice is then cleared. */

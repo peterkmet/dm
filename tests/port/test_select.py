@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import global_type
+from dmtest.game import global_type, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
 
@@ -139,7 +139,7 @@ def test_start_both_flags(lib):
     assert lib.select_screen() == C.SCREEN_CSB
     start(lib, DM, TURNBASED)
     assert lib.select_screen() == C.SCREEN_DONE
-    assert (value(lib, "g_adventure"), value(lib, "g_game_mode"), value(lib, "g_advanced_features")) == (DM, TURNBASED, 1)
+    assert (value(lib, "g_adventure"), session(lib).mode, value(lib, "g_advanced_features")) == (DM, TURNBASED, 1)
 
 
 def test_start_adventure_only(lib):
@@ -173,17 +173,17 @@ def test_arrows_select_csb(lib):
 def test_cursor_stops_at_the_list_ends(lib):
     start(lib, DM)
     keys(lib, UP, ENTER)
-    assert value(lib, "g_game_mode") == VANILLA
+    assert session(lib).mode == VANILLA
     start(lib, DM)
     keys(lib, DOWN, DOWN, DOWN, DOWN, ENTER)
-    assert value(lib, "g_game_mode") == TURNBASED
+    assert session(lib).mode == TURNBASED
 
 
 @pytest.mark.parametrize("item, features", [(VANILLA, 0), (ADVANCED, 1), (TURNBASED, 1)])
 def test_mode_screen_values(lib, item, features):
     start(lib, DM)
     keys(lib, *[DOWN] * item, ENTER)
-    assert (value(lib, "g_game_mode"), value(lib, "g_advanced_features")) == (item, features)
+    assert (session(lib).mode, value(lib, "g_advanced_features")) == (item, features)
     assert lib.select_screen() == C.SCREEN_DONE
 
 
@@ -255,7 +255,7 @@ def test_done_ignores_keys(lib):
     start(lib, DM, VANILLA)
     keys(lib, ESCAPE, DOWN, ENTER)
     assert lib.select_screen() == C.SCREEN_DONE
-    assert (value(lib, "g_adventure"), value(lib, "g_game_mode")) == (DM, VANILLA)
+    assert (value(lib, "g_adventure"), session(lib).mode) == (DM, VANILLA)
 
 
 def load_font(lib, folder):

@@ -49,7 +49,7 @@ static bool blocks_sight(int16_t map, int16_t x, int16_t y)
 static int16_t light_depths(void)
 {
     /* ponytail: fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it */
-    if (g_cheat_light)
+    if (g_session.cheat_light)
         return VIEW_DEPTH_COUNT;
     if (g_party_light_level >= DARKEST_PALETTE)
         return VIEW_DEPTH_COUNT - 2;

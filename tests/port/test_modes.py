@@ -17,7 +17,7 @@ import pytest
 from dmtest import constants as C
 from dmtest.control import Client
 from dmtest.game import (pending_damage, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
-                         start_game)
+                         start_game, session)
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
 
@@ -94,13 +94,13 @@ def unfreeze(game):
 
 
 def test_vanilla_is_the_default_and_the_advanced_keys_do_nothing(game, tmp_path):
-    assert game.value("g_game_mode") == VANILLA and game.value("g_advanced_features") == 0
+    assert game.session.mode == VANILLA and game.value("g_advanced_features") == 0
     game.lib.startend_set_save_dir(str(tmp_path).encode())
     position = game.position()
     for key in (C.KEY_F5, C.KEY_F9, C.KEY_M, C.KEY_TAB):
         press(game, key)
     assert game.value("g_automap_open") == 0 and not (tmp_path / QUICK).exists()
-    assert game.value("g_inventory_champion_index") == -1 and game.position() == position
+    assert game.session.inventory_champion_index == -1 and game.position() == position
     assert [game.lib.advanced_letter_key(ord(c)) for c in "wsadqe"] == [0] * 6
 
 
@@ -134,7 +134,7 @@ def test_quick_save_and_quick_load(game, tmp_path):
     assert game.value("g_game_time", u32) < time_saved + 30
     assert "GAME LOADED" in message_text(game)
     assert game.value("g_game_screen_inactive") == 0 and game.value("g_game_time_ticking") == 1
-    assert game.value("g_saved_game_exists") == 0  # a quick save is not a saved game for RESTART
+    assert game.session.saved_game_exists == 0  # a quick save is not a saved game for RESTART
     good = (tmp_path / QUICK).read_bytes()
     for offset in (600, len(good) // 2):  # a checked block, then the dungeon part
         damaged = bytearray(good)
@@ -208,11 +208,11 @@ def test_a_drag_scrolls_the_automap(game):
 def test_automap_opens_only_in_the_dungeon_view(game):
     set_mode(game, ADVANCED)
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_index") == 0
+    assert game.session.inventory_champion_index == 0
     press(game, C.KEY_M)
     assert game.value("g_automap_open") == 0
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_index") == -1
+    assert game.session.inventory_champion_index == -1
     press(game, C.KEY_M)
     press(game, C.KEY_ESCAPE)
     assert game.value("g_automap_open") == 0 and game.value("g_game_frozen") == 0
@@ -260,14 +260,14 @@ def test_automap_shows_the_position_readout(game):
 def test_escape_rule(game, mode):
     set_mode(game, mode)
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_index") == 0
+    assert game.session.inventory_champion_index == 0
     press(game, C.KEY_ESCAPE)
     if mode == ADVANCED:
-        assert game.value("g_inventory_champion_index") == -1 and game.value("g_game_frozen") == 0
+        assert game.session.inventory_champion_index == -1 and game.value("g_game_frozen") == 0
         press(game, C.KEY_ESCAPE)
     assert game.value("g_game_frozen") == 1
     unfreeze(game)
-    if game.value("g_inventory_champion_index") >= 0:
+    if game.session.inventory_champion_index >= 0:
         press(game, C.KEY_F1)
     set_mode(game, VANILLA)
 
@@ -277,9 +277,9 @@ def test_tab_closes_the_inventory(game, mode):
     set_mode(game, mode)
     press(game, C.KEY_F1)
     press(game, C.KEY_TAB)
-    assert game.value("g_inventory_champion_index") == (-1 if mode == ADVANCED else 0)
+    assert game.session.inventory_champion_index == (-1 if mode == ADVANCED else 0)
     assert game.value("g_automap_open") == 0
-    if game.value("g_inventory_champion_index") >= 0:
+    if game.session.inventory_champion_index >= 0:
         press(game, C.KEY_F1)
     set_mode(game, VANILLA)
 
@@ -338,7 +338,7 @@ def test_render_advanced_panels(game):
     screenshot(game, "adv_action_icons.png")
 
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_index") == 0
+    assert game.session.inventory_champion_index == 0
     champion.slots[C.SLOT_HAND_ACTION] = hand
     leader_hand = u16.in_dll(lib, "g_leader_hand_object")
     empty_handed = ctypes.c_bool.in_dll(lib, "g_leader_empty_handed")
@@ -374,7 +374,7 @@ def test_render_advanced_panels(game):
 
     champion.slots[C.SLOT_HAND_ACTION] = hand
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_index") == -1
+    assert game.session.inventory_champion_index == -1
     set_mode(game, VANILLA)
 
 
@@ -531,19 +531,19 @@ def test_empty_hand_at_a_fountain(game, mode):
 def test_cheat_keys_work_only_on_the_advanced_automap(game, mode):
     set_mode(game, mode)
     press(game, C.KEY_L)  # not on the automap: nothing
-    assert game.value("g_cheat_light") == 0
+    assert game.session.cheat_light == 0
     press(game, C.KEY_M)
     press(game, C.KEY_L)
     press(game, C.KEY_I)
     press(game, C.KEY_F)
     on = mode == ADVANCED
-    assert (game.value("g_cheat_light"), game.value("g_cheat_immortal"), game.value("g_cheat_food")) == (on, on, on)
+    assert (game.session.cheat_light, game.session.cheat_immortal, game.session.cheat_food) == (on, on, on)
     if on:
         assert C.COLOR_WHITE in pixels(game, C.ZONE_VIEWPORT)[:224 * 24]  # the cheat line under the read-out
         press(game, C.KEY_L)
         press(game, C.KEY_I)
         press(game, C.KEY_F)
-        assert (game.value("g_cheat_light"), game.value("g_cheat_immortal"), game.value("g_cheat_food")) == (0, 0, 0)
+        assert (game.session.cheat_light, game.session.cheat_immortal, game.session.cheat_food) == (0, 0, 0)
     press(game, C.KEY_M)
     set_mode(game, VANILLA)
 
@@ -562,12 +562,12 @@ def test_cheat_light_draws_the_bright_palette(game):
         party.magical_light_amount = -1000
         lib.gameloop_draw_view()
         assert list(palette) != bright
-        ctypes.c_bool.in_dll(lib, "g_cheat_light").value = 1
+        session(lib).cheat_light = 1
         lib.gameloop_draw_view()
         assert list(palette) == bright
         assert game.value("g_party_light_level") == 5  # the creatures still see the darkness
     finally:
-        ctypes.c_bool.in_dll(lib, "g_cheat_light").value = 0
+        session(lib).cheat_light = 0
         party.magical_light_amount = 0
         for name, v in start.items():
             place[name].value = v
@@ -578,29 +578,29 @@ def test_cheat_immortal_keeps_1_health(game):
     lib, champion = game.lib, game.champions[0]
     health = champion.current_health
     lib.champion_damage_all.argtypes = [u16, u16, c16]
-    ctypes.c_bool.in_dll(lib, "g_cheat_immortal").value = 1
+    session(lib).cheat_immortal = 1
     try:
         lib.champion_damage_all(5000, 0, 0)
         lib.champion_apply_and_draw_pending_damage_and_wounds()
         assert champion.current_health == 1
     finally:
-        ctypes.c_bool.in_dll(lib, "g_cheat_immortal").value = 0
+        session(lib).cheat_immortal = 0
         champion.current_health = health
 
 def test_cheat_food_keeps_food_and_water(game):
     lib, champion = game.lib, game.champions[0]
     food, water = champion.food, champion.water
-    ctypes.c_bool.in_dll(lib, "g_cheat_food").value = 1
+    session(lib).cheat_food = 1
     try:
         for _ in range(1000):
             lib.champion_apply_time_effects()
         assert (champion.food, champion.water) == (food, water)
-        ctypes.c_bool.in_dll(lib, "g_cheat_food").value = 0
+        session(lib).cheat_food = 0
         for _ in range(1000):
             lib.champion_apply_time_effects()
         assert champion.food < food and champion.water < water
     finally:
-        ctypes.c_bool.in_dll(lib, "g_cheat_food").value = 0
+        session(lib).cheat_food = 0
         champion.food, champion.water = food, water
 
 

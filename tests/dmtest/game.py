@@ -32,15 +32,8 @@ THINGS = [(5, 46, 4), (6, 58, 4), (7, 1, 4), (8, 21, 4), (9, 1, 8), (10, 53, 4)]
 
 # Globals of libdm that hold a truth value: C bool, one byte.
 BOOL_GLOBALS = frozenset({
-    "g_party_is_sleeping",
-    "g_party_dead",
-    "g_cheat_light",
-    "g_cheat_immortal",
-    "g_cheat_food",
     "g_leader_empty_handed",
     "g_fuse_sequence_requested",
-    "g_saved_game_exists",
-    "g_game_won",
     "g_advanced_features",
     "g_automap_open",
     "g_game_screen_inactive",
@@ -162,8 +155,23 @@ class RecruitData(ctypes.Structure):
     ]
 
 
+class Session(ctypes.Structure):
+    _fields_ = [
+        ("mode", c16), ("party_sleeping", ctypes.c_bool), ("party_dead", ctypes.c_bool), ("won", ctypes.c_bool),
+        ("cheat_light", ctypes.c_bool), ("cheat_immortal", ctypes.c_bool), ("cheat_food", ctypes.c_bool),
+        ("saved_game_exists", ctypes.c_bool), ("last_save_time", u32), ("last_load_time", u32),
+        ("candidate_champion_index", c16), ("inventory_champion_index", c16), ("acting_champion_index", c16),
+        ("action_damage", c16), ("new_party_map", c16),
+    ]
+
+
 def champions(lib):
     return (Champion * 4).in_dll(lib, "g_champions")
+
+
+def session(lib):
+    """The per-run flags of the game (g_session)."""
+    return Session.in_dll(lib, "g_session")
 
 
 class PendingDamage:
@@ -227,13 +235,12 @@ class World:
         ctypes.c_void_p.in_dll(lib, "g_current_map").value = ctypes.addressof(self.map)
         self.emu.write(CURRENT_MAP, struct.pack(">I", MAP_BUF))
         ctypes.memset(ctypes.addressof(var(lib, Party, "g_party")), 0, ctypes.sizeof(Party))
-        for name in ("g_candidate_champion_index", "g_inventory_champion_index"):
-            var(lib, c16, name).value = -1
+        session(lib).candidate_champion_index = session(lib).inventory_champion_index = -1
         self.globals(sleeping=0, time=1000, attack=0, move=0, difficulty=0)
 
     def globals(self, sleeping, time, attack, move, difficulty, direction=0):
         lib, emu = self.lib, self.emu
-        var(lib, ctypes.c_bool, "g_party_is_sleeping").value = sleeping
+        session(lib).party_sleeping = sleeping
         var(lib, ctypes.c_uint32, "g_game_time").value = time
         var(lib, ctypes.c_int32, "g_last_creature_attack_time").value = attack
         var(lib, ctypes.c_int32, "g_last_party_movement_time").value = move
@@ -298,7 +305,7 @@ class World:
         for i in range(4):
             assert pack(lib, cs[i]) == bytes(emu.read(CHAMPIONS + 0x140 * i, 0x140)), f"champion {i}"
         assert var(lib, ctypes.c_uint32, "g_random_seed").value == struct.unpack(">I", emu.read(SEED, 4))[0]
-        assert var(lib, ctypes.c_bool, "g_party_is_sleeping").value == struct.unpack(">h", emu.read(SLEEPING, 2))[0]
+        assert session(lib).party_sleeping == struct.unpack(">h", emu.read(SLEEPING, 2))[0]
         assert [c.runtime.pending_damage for c in cs] == list(struct.unpack(">4h", emu.read(PENDING_DAMAGE, 8)))
         assert [c.runtime.pending_wounds for c in cs] == list(struct.unpack(">4H", emu.read(PENDING_WOUNDS, 8)))
 
@@ -308,6 +315,7 @@ class Game:
         self.lib = lib
         self.boxes = (Box * 6).in_dll(lib, "g_dungeon_view_clickable_boxes")
         self.champions = (Champion * 4).in_dll(lib, "g_champions")
+        self.session = session(lib)
         self.origin = lib.kaos_s16(VIEWPORT_ORIGIN), lib.kaos_s16(VIEWPORT_ORIGIN + 2)
 
     def value(self, name, kind=c16):
@@ -511,7 +519,7 @@ class Frames:
 
 
 def set_mode(game, mode, features=None):
-    c16.in_dll(game.lib, "g_game_mode").value = mode
+    session(game.lib).mode = mode
     ctypes.c_bool.in_dll(game.lib, "g_advanced_features").value = int(mode != VANILLA) if features is None else features
 
 
@@ -758,7 +766,7 @@ def render(lib, name):
 
 
 def reset(lib):
-    c16.in_dll(lib, "g_inventory_champion_index").value = -1
-    c16.in_dll(lib, "g_acting_champion_index").value = -1
+    session(lib).inventory_champion_index = -1
+    session(lib).acting_champion_index = -1
     ctypes.c_bool.in_dll(lib, "g_action_area_contains_icons").value = 1
     lib.message_clear()

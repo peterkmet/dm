@@ -54,7 +54,6 @@
 
 uint16_t g_leader_hand_object = THING_NONE;
 
-int16_t g_inventory_champion_index = -1;
 bool g_leader_empty_handed = true;
 uint16_t g_open_chest_slots[SLOT_CHEST_COUNT] = {THING_NONE, THING_NONE, THING_NONE, THING_NONE,
                                                  THING_NONE, THING_NONE, THING_NONE, THING_NONE};
@@ -286,7 +285,7 @@ uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_
     *p = THING_NONE;
     if (thing == THING_NONE)
         return THING_NONE;
-    bool inventory_open = champion_index == g_inventory_champion_index;
+    bool inventory_open = champion_index == g_session.inventory_champion_index;
     int16_t icon = object_get_icon_index(thing);
     apply_object_modifiers(c, slot, icon, -1, thing);
     if (slot == SLOT_NECK && is_neck_jewel(icon)) {
@@ -323,7 +322,7 @@ void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint1
     c->load += inventory_get_object_weight(thing);
     c->attributes |= CHAMPION_ATTR_LOAD;
     int16_t icon = object_get_icon_index(thing);
-    bool inventory_open = champion_index == g_inventory_champion_index;
+    bool inventory_open = champion_index == g_session.inventory_champion_index;
     apply_object_modifiers(c, slot, icon, 1, thing);
     if (slot <= SLOT_HAND_ACTION) {
         if (slot == SLOT_HAND_ACTION) {
@@ -350,14 +349,14 @@ void inventory_click_on_slot_box(uint16_t slot_box)
     uint16_t champion_index, slot, hand = g_leader_hand_object;
     if (slot_box < HAND_BOX_COUNT) {
         champion_index = slot_box >> 1;
-        if (g_candidate_champion_index >= 0 || champion_index >= g_party_champion_count ||
-            champion_index == g_inventory_champion_index || !g_champions[champion_index].current_health)
+        if (g_session.candidate_champion_index >= 0 || champion_index >= g_party_champion_count ||
+            champion_index == g_session.inventory_champion_index || !g_champions[champion_index].current_health)
             return;
         slot = slot_box & 1;
     } else {
-        if (g_inventory_champion_index < 0)
+        if (g_session.inventory_champion_index < 0)
             return;
-        champion_index = g_inventory_champion_index;
+        champion_index = g_session.inventory_champion_index;
         slot = slot_box - HAND_BOX_COUNT;
     }
     uint16_t thing = *get_slot_pointer(&g_champions[champion_index], slot);
@@ -487,13 +486,13 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
 int16_t inventory_process_click_on_mouth(void)
 {
     uint16_t thing = g_leader_hand_object;
-    if (g_leader_empty_handed || g_candidate_champion_index >= 0 ||
+    if (g_leader_empty_handed || g_session.candidate_champion_index >= 0 ||
         !(tables_get_object_info(inventory_get_object_info_index(thing))->allowed_slots & OBJECT_EDIBLE))
         return MOUTH_REFUSED;
     int16_t icon = object_get_icon_index(thing);
     uint16_t type = THING_TYPE(thing);
     uint16_t weight = inventory_get_object_weight(thing);
-    uint16_t champion_index = g_inventory_champion_index;
+    uint16_t champion_index = g_session.inventory_champion_index;
     Champion *c = &g_champions[champion_index];
     bool consumed = false;
     if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL) {
@@ -526,7 +525,7 @@ int16_t inventory_process_click_on_mouth(void)
 
 void inventory_reset(void)
 {
-    g_inventory_champion_index = -1;
+    g_session.inventory_champion_index = -1;
     g_open_chest = THING_NONE;
     for (int i = 0; i < SLOT_CHEST_COUNT; i++)
         g_open_chest_slots[i] = THING_NONE;
@@ -550,5 +549,5 @@ bool inventory_fill_leader_hand_at_fountain(void)
 
 void inventory_set_open_champion(int16_t champion_index)
 {
-    g_inventory_champion_index = champion_index;
+    g_session.inventory_champion_index = champion_index;
 }
