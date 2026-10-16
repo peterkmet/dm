@@ -1140,7 +1140,7 @@ address,name,signature,subsystem
 0x108788,sound_init,void sound_init(void),sound
 0x10878a,audio_stop_all,void audio_stop_all(void),sound
 0x10881e,sound_free_sample,int16_t sound_free_sample(int16_t sound),sound
-0x108850,play_sample,"void play_sample(int16_t sound, const uint8_t *volumes)",sound
+0x108850,audio_play_sample,"void audio_play_sample(int16_t sound, const uint8_t *volumes)",sound
 0x1089be,audio_device_open,void audio_device_open(void),sound
 0x108c68,audio_device_close,void audio_device_close(void),sound
 0x108d86,sound_disable_unloaded,void sound_disable_unloaded(void),sound

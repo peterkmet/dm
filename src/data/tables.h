@@ -141,6 +141,9 @@ typedef struct {
 /* Loads the engine module at path (kaos_load), then decodes the tables. Returns 0, or -1 as kaos_load. */
 int tables_load(const char *path);
 
+/* True after a successful tables_load. */
+bool tables_is_loaded(void);
+
 /* Each struct accessor returns NULL for an out-of-range index. Call after tables_load. */
 const CreatureInfo *tables_get_creature_info(int16_t creature_type);
 const CreatureSound *tables_get_creature_sound(int16_t index);

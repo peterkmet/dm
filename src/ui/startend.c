@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/startend.h"
 #include "data/adventure.h"
-#include "data/csbimage.h"
+#include "data/csb_image.h"
 #include "data/ftl.h"
 #include "data/ids.h"
 #include "engine/champion.h"

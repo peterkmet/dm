@@ -156,7 +156,7 @@ address,name,signature,subsystem
 0x1091ce,sound_load_samples,,sound
 0x10924c,sound_init,void sound_init(void),sound
 0x10924e,sound_free_sample,int16_t sound_free_sample(int16_t sound),sound
-0x109258,sound_play_sample,"void sound_play_sample(int16_t sound, uint16_t volumes)",sound
+0x109258,audio_play_sample,"void audio_play_sample(int16_t sound, const uint8_t *volumes)",sound
 0x1093fa,audio_device_open,void audio_device_open(void),sound
 0x1096c8,audio_device_close,void audio_device_close(void),sound
 0x1097e6,protect_disk_access,,protect

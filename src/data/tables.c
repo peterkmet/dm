@@ -2,7 +2,7 @@
 #include "data/tables.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
-#include "data/csbimage.h"
+#include "data/csb_image.h"
 #include "data/kaos.h"
 #include "data/kaos_addresses.h"
 #include "data/spells.h"
@@ -170,8 +170,8 @@ static void read_creatures(void)
         };
     }
     for (uint32_t i = 0; i < CREATURE_SOUND_COUNT; i++)
-        creature_sounds[i] = (CreatureSound){(int8_t)kaos_u8(KAOS_CREATURE_SOUNDS + i * 2),
-                                             (int8_t)kaos_u8(KAOS_CREATURE_SOUNDS + i * 2 + 1)};
+        creature_sounds[i] =
+            (CreatureSound){kaos_s8(KAOS_CREATURE_SOUNDS + i * 2), kaos_s8(KAOS_CREATURE_SOUNDS + i * 2 + 1)};
 }
 
 /* Object, weapon, armour, junk, food, and door properties. */
@@ -245,7 +245,7 @@ static void read_actions(void)
             .damage_factor = kaos_u8(KAOS_ACTION_DAMAGE_FACTOR + i),
             .hit_probability = kaos_u8(KAOS_ACTION_HIT_PROBABILITY + i),
             .stamina = kaos_u8(KAOS_ACTION_STAMINA + i),
-            .defense = (int8_t)kaos_u8(KAOS_ACTION_DEFENSE + i),
+            .defense = kaos_s8(KAOS_ACTION_DEFENSE + i),
             .skill_index = kaos_u8(KAOS_ACTION_SKILL_INDEX + i),
             .experience_gain = kaos_u8(KAOS_ACTION_EXPERIENCE_GAIN + i),
         };
@@ -358,6 +358,11 @@ int tables_load(const char *path)
     if (!r)
         decode_tables();
     return r;
+}
+
+bool tables_is_loaded(void)
+{
+    return kaos_is_loaded();
 }
 
 /* Map x step of one square in a direction. */
@@ -479,7 +484,7 @@ const uint8_t *tables_get_field_aspect(int16_t index)
 }
 int16_t tables_get_creature_shift(int16_t distance, int16_t index)
 {
-    return (int8_t)kaos_u8(KAOS_CREATURE_SHIFT_SETS + CREATURE_SHIFT_SET_BYTES * distance + index); /* a signed byte */
+    return kaos_s8(KAOS_CREATURE_SHIFT_SETS + CREATURE_SHIFT_SET_BYTES * distance + index); /* a signed byte */
 }
 uint8_t tables_get_pile_shift(int16_t pair, int16_t axis)
 {
@@ -509,13 +514,10 @@ uint8_t tables_get_group_directions(int16_t index)
 ViewSquare tables_get_view_square(int16_t view_square)
 {
     return (ViewSquare){
-        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_LANE + view_square),
-        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_DEPTH + view_square),
-        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_OBJECT_COORD + view_square),
-        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_ALCOVE_COORD + view_square),
-        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_CREATURE_COORD + view_square),
-        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_EXPLOSION_COORD + view_square),
-        (int8_t)kaos_u8(KAOS_VIEW_SQUARE_FIELD_ASPECT + view_square),
+        kaos_s8(KAOS_VIEW_SQUARE_LANE + view_square),           kaos_s8(KAOS_VIEW_SQUARE_DEPTH + view_square),
+        kaos_s8(KAOS_VIEW_SQUARE_OBJECT_COORD + view_square),   kaos_s8(KAOS_VIEW_SQUARE_ALCOVE_COORD + view_square),
+        kaos_s8(KAOS_VIEW_SQUARE_CREATURE_COORD + view_square), kaos_s8(KAOS_VIEW_SQUARE_EXPLOSION_COORD + view_square),
+        kaos_s8(KAOS_VIEW_SQUARE_FIELD_ASPECT + view_square),
     };
 }
 int16_t tables_get_wall_set_layout_id(int16_t i)

@@ -2,7 +2,6 @@
 #include "engine/dungeon.h"
 #include "data/adventure.h"
 #include "data/file.h"
-#include "data/kaos.h"
 #include "data/tables.h"
 #include "engine/game.h"
 #include "engine/map.h"
@@ -366,7 +365,7 @@ bool dungeon_load(const char *path)
     size_t size;
     uint8_t *file = file_read(path, &size);
     uint8_t *unpacked = NULL;
-    bool ok = kaos_is_loaded() && file && size >= COMPRESSED_HEADER_BYTES;
+    bool ok = tables_is_loaded() && file && size >= COMPRESSED_HEADER_BYTES;
     dungeon_free();
     load_cursor = file;
     load_remaining = size;

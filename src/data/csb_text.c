@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/csbtext.h"
+#include "data/csb_text.h"
 #include "data/bytes.h"
 #include "data/ids.h"
 #include "data/kaos_addresses.h"
@@ -132,10 +132,8 @@ static const char *get_appb_string(const FtlImage *appb, uint32_t addr)
 /* The string that the APPB pointer at addr points to, or NULL. */
 static const char *get_appb_pointed_string(const FtlImage *appb, uint32_t addr)
 {
-    if (addr < appb->base || addr + 4 > appb->base + appb->size)
-        return NULL;
-    const uint8_t *p = appb->data + (addr - appb->base);
-    return get_appb_string(appb, BE32(p));
+    const uint8_t *p = ftl_at(appb, addr, sizeof(uint32_t));
+    return p ? get_appb_string(appb, BE32(p)) : NULL;
 }
 
 /* Joins the parts of each text into one block of NUL-terminated strings. */
@@ -177,7 +175,13 @@ static int copy_action_names(const FtlImage *appb)
     action_names = malloc(action_names_size);
     if (!action_names)
         return -1;
-    memcpy(action_names, appb->data + (CSB_APPB_ACTION_NAMES - appb->base), action_names_size);
+    const uint8_t *names = ftl_at(appb, CSB_APPB_ACTION_NAMES, action_names_size);
+    if (!names) {
+        free(action_names);
+        action_names = NULL;
+        return -1;
+    }
+    memcpy(action_names, names, action_names_size);
     return 0;
 }
 
@@ -194,7 +198,9 @@ int csb_text_build(const FtlImage *appb, FtlImage *out)
                 return -1;
             /* the string index table gives the text in the CSB order */
             if (table_texts[i].kaos_indices) {
-                uint8_t *p = out->data + (table_texts[i].kaos_indices + 2 * k - out->base);
+                uint8_t *p = ftl_at(out, table_texts[i].kaos_indices + 2 * k, sizeof(uint16_t));
+                if (!p)
+                    return -1;
                 WR16(p, text);
             }
         }

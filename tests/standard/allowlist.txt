@@ -1,10 +1,10 @@
 # Accepted exceptions of tests/standard/test_standard.py. One per line: <check> <target> <reason>.
 # A reason is "rule <n.m>: <text>" for an exception that docs/coding-standard.md names, or "open: epic <N>"
 # for a violation that epic N of the final refactor removes. Targets are relative to src/.
-decimal data/csbimage.c rule 3.12: the APPB address tables of the CSB image build
+decimal data/csb_image.c rule 3.12: the APPB address tables of the CSB image build
 hex data/crc32.c rule 3.12: the CRC-32 table of PNG, a standard constant table
-hex data/csbimage.c rule 3.12: the APPB address tables of the CSB image build
-hex data/csbtext.c rule 3.12: the APPB address tables of the CSB image build
+hex data/csb_image.c rule 3.12: the APPB address tables of the CSB image build
+hex data/csb_text.c rule 3.12: the APPB address tables of the CSB image build
 decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions, not in the game files
 hex engine/map.c open: epic 5
 hex engine/map.h open: epic 5
@@ -16,7 +16,7 @@ platform engine/map.c open: epic 6
 block data/adventure.h open: epic 4
 block data/bytes.h open: epic 4
 block data/crc32.c open: epic 4
-block data/csbimage.h open: epic 4
+block data/csb_image.h open: epic 4
 block data/ftl.c open: epic 4
 block data/graphics.c open: epic 4
 block data/kaos_addresses.h open: epic 4
@@ -83,7 +83,7 @@ block ui/ui_menus.c open: epic 8
 block ui/video.c open: epic 8
 block ui/video.h open: epic 8
 block ui/view.c open: epic 8
-decimal data/csbtext.c open: epic 4
+decimal data/csb_text.c open: epic 4
 decimal data/ftl.c open: epic 4
 decimal data/tables.h open: epic 4
 decimal engine/action.h open: epic 6
@@ -117,9 +117,9 @@ notation data/adf.c open: epic 4
 notation data/adventure.h open: epic 4
 notation data/bytes.h open: epic 4
 notation data/crc32.c open: epic 4
-notation data/csbimage.c open: epic 4
-notation data/csbimage.h open: epic 4
-notation data/csbtext.c open: epic 4
+notation data/csb_image.c open: epic 4
+notation data/csb_image.h open: epic 4
+notation data/csb_text.c open: epic 4
 notation data/ftl.c open: epic 4
 notation data/kaos_addresses.h open: epic 4
 notation data/spells.h open: epic 4
@@ -149,8 +149,8 @@ notation ui/video.h open: epic 8
 bool data/adf.c:make_folders open: epic 4
 bool data/adf.c:write_file open: epic 4
 bool data/adf.h:adf_extract open: epic 4
-bool data/csbimage.h:csb_image_build open: epic 4
-bool data/csbtext.h:csb_text_build open: epic 4
+bool data/csb_image.h:csb_image_build open: epic 4
+bool data/csb_text.h:csb_text_build open: epic 4
 bool data/ftl.c:find_sections open: epic 4
 bool data/ftl.h:ftl_load open: epic 4
 bool data/ftl.c:relocate open: epic 4
@@ -497,7 +497,7 @@ static-prefix ui/view.c:draw_wall_ornament open: epic 8
 static-prefix ui/view.c:draw_wall_part open: epic 8
 static-prefix ui/view.c:draw_wall_portrait open: epic 8
 static-prefix ui/view.c:draw_wall_text open: epic 8
-comment data/csbimage.h open: epic 4
+comment data/csb_image.h open: epic 4
 comment data/ftl.h open: epic 4
 comment data/graphics.h open: epic 4
 comment data/swsh.h open: epic 4
@@ -544,8 +544,8 @@ header data/adf.h open: epic 4
 header data/adventure.h open: epic 4
 header data/bytes.h open: epic 4
 header data/crc32.h open: epic 4
-header data/csbimage.h open: epic 4
-header data/csbtext.h open: epic 4
+header data/csb_image.h open: epic 4
+header data/csb_text.h open: epic 4
 header data/file.h open: epic 4
 header data/graphics.h open: epic 4
 header data/ids.h open: epic 4
@@ -608,10 +608,10 @@ include ui/command.c:data/spells.h open: epic 8
 include ui/command.c:engine/timeline_process.h open: epic 8
 include ui/command.h:engine/move.h open: epic 8
 include ui/gameloop.c:data/ftl.h open: epic 8
-include ui/startend.c:data/csbimage.h open: epic 8
+include ui/startend.c:data/csb_image.h open: epic 8
 include ui/startend.c:data/ftl.h open: epic 8
 include ui/ui.c:data/adventure.h open: epic 8
-include ui/ui.c:data/csbtext.h open: epic 8
+include ui/ui.c:data/csb_text.h open: epic 8
 include ui/ui.c:engine/dungeon.h open: epic 8
 include ui/ui.h:data/tables.h open: epic 8
 include ui/ui.h:engine/champion.h open: epic 8
@@ -855,8 +855,8 @@ record engine/projectile.h open: epic 5
 record engine/sensor.c open: epic 5
 record engine/timeline_process.c open: epic 5
 record ui/view.c open: epic 8
-result data/csbimage.h:csb_image_build open: epic 4
-result data/csbtext.h:csb_text_build open: epic 4
+result data/csb_image.h:csb_image_build open: epic 4
+result data/csb_text.h:csb_text_build open: epic 4
 result data/ftl.c:find_sections open: epic 4
 result data/ftl.h:ftl_load open: epic 4
 result data/ftl.c:relocate open: epic 4
@@ -935,7 +935,7 @@ todo ui/command.c open: epic 8
 todo ui/gameloop.c open: epic 8
 todo ui/view.c open: epic 8
 todo ui/ui.h open: epic 8
-block data/csbimage.c open: epic 4
+block data/csb_image.c open: epic 4
 block engine/explored.c open: epic 6
 block engine/group.c open: epic 6
 block engine/projectile.c open: epic 6
@@ -965,7 +965,6 @@ dead-api data/os.h:g_os_log_hook open: epic 4
 dead-api data/os.h:g_os_fatal_hook open: epic 4
 dead-api data/kaos.h:kaos_free open: epic 4
 dead-api data/kaos.h:kaos_s8 open: epic 4
-kaos engine/dungeon.c open: epic 4
 dead-api data/file.h:file_write open: epic 5
 dead-api data/file.h:file_replace open: epic 5
 dead-api data/graphics.h:box_contains open: epic 8

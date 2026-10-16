@@ -76,7 +76,7 @@ class FtlImage(ctypes.Structure):
     _fields_ = [("data", ctypes.POINTER(ctypes.c_uint8)), ("size", ctypes.c_uint32), ("base", ctypes.c_uint32), ("data_base", ctypes.c_uint32), ("code_base", ctypes.c_uint32)]
 
 
-# file-local constant of src/data/csbtext.c: the pointers to the load, save, and disk messages
+# file-local constant of src/data/csb_text.c: the pointers to the load, save, and disk messages
 CSB_APPB_DISK_MESSAGES = 0x104D08
 
 

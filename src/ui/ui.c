@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/ui.h"
 #include "data/adventure.h"
-#include "data/csbtext.h"
+#include "data/csb_text.h"
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "engine/dungeon.h"

@@ -2,7 +2,7 @@
 #include "data/kaos.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
-#include "data/csbimage.h"
+#include "data/csb_image.h"
 #include "data/file.h"
 #include "data/ftl.h"
 #include "data/kaos_addresses.h"

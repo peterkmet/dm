@@ -148,8 +148,8 @@ CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have th
 
 Implemented in Step 2 of the CSB plan:
 
-- `kaos_load` (`src/data/kaos.c`) loads `APPB.FTL` when `g_adventure` is CSB. `csb_image_build` (`src/data/csbimage.c`) then makes a KAOS-layout image: each table that the port reads is at its DM address. The `KAOS_*` names of `src/data/kaos_addresses.h` do not change.
-- `g_csb_copies` in `src/data/csbimage.c` is the single address table: KAOS address (its `KAOS_*` name), APPB address, size. The APPB addresses of the converted tables have the prefix `CSB_APPB_`. Strided and split tables have one row per part.
+- `kaos_load` (`src/data/kaos.c`) loads `APPB.FTL` when `g_adventure` is CSB. `csb_image_build` (`src/data/csb_image.c`) then makes a KAOS-layout image: each table that the port reads is at its DM address. The `KAOS_*` names of `src/data/kaos_addresses.h` do not change.
+- `g_csb_copies` in `src/data/csb_image.c` is the single address table: KAOS address (its `KAOS_*` name), APPB address, size. The APPB addresses of the converted tables have the prefix `CSB_APPB_`. Strided and split tables have one row per part.
 - Conversions in code: the action sets (6-byte CSB records to the 8-byte DM layout), and the dialog pointers (moved to the DM tables).
 - The 29 CSB spells are at `0x104160`, after the KAOS data. `spells.c` and `tables.c` read 29 spells from there for CSB.
 - `adventure_get(g_adventure)->engine` gives the module file name: `KAOS.FTL` or `APPB.FTL`.
@@ -239,7 +239,7 @@ The pointer table C`0x104d08` has 26 entries. Entry n gives DM text: 78, 94, 79,
 
 Port implementation (Step 3):
 
-- `src/data/csbtext.c` `csb_text_build` (called by `csb_image_build`): builds DM texts 0–134 as one block of NUL-terminated strings (item 700 order) and the 44 action names (item 699). The spell failure and level gained texts join prefix, class name, and suffix. Each string index table entry k of the KAOS image gets text index first + k, so the class names (0–3) and directions (22–25) are in the CSB table order: text 2 is PRIEST, 3 is WIZARD, 23 is EAST, 24 is SOUTH. Only the index tables read these texts.
+- `src/data/csb_text.c` `csb_text_build` (called by `csb_image_build`): builds DM texts 0–134 as one block of NUL-terminated strings (item 700 order) and the 44 action names (item 699). The spell failure and level gained texts join prefix, class name, and suffix. Each string index table entry k of the KAOS image gets text index first + k, so the class names (0–3) and directions (22–25) are in the CSB table order: text 2 is PRIEST, 3 is WIZARD, 23 is EAST, 24 is SOUTH. Only the index tables read these texts.
 - `src/ui/ui.c` `load_strings`: for CSB, takes items 699 and 700 from `csb_text_get_item`, and ends each object name (item 694) at the byte with bit 7 set.
 - `src/engine/champion.c` reads its messages with `gfx_string`. The other files that show text do not change.
 

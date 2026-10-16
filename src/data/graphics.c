@@ -2,7 +2,7 @@
 #include "data/graphics.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
-#include "data/csbtext.h"
+#include "data/csb_text.h"
 #include "data/file.h"
 #include "data/ids.h"
 #include <stdlib.h>

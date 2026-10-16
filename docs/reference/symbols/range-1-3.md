@@ -202,7 +202,7 @@ The sample data starts 2 bytes after the graphic start. The length is the graphi
 
 - `sound_get_volume(map_x, map_y, volumes)` rotates the offset from the party into party space. It returns 0 when the source is more than 12 squares away. Otherwise it reads left and right volumes from `g_sound_volume_table` (25 × 25).
 - `sound_request_play(sound, x, y, mode)`: mode 0 plays now, mode 1 queues the sound for `sound_play_pending` (two slots, louder or higher priority wins), mode ≥ 2 adds timeline event type 20 at `g_game_time + mode − 1`.
-- `sound_play_sample(sound, volumes)` (high byte left, low byte right) picks a free pair. When both pairs play, it replaces the quieter pair (`sound_compare_loudness`). It stops the pair, writes both channels, and starts them together.
+- `audio_play_sample(sound, volumes)` (before: `sound_play_sample`; high byte left, low byte right) picks a free pair. When both pairs play, it replaces the quieter pair (`sound_compare_loudness`). It stops the pair, writes both channels, and starts them together.
 - `sound_compare_loudness(a, b)` (before: `sound_select_channel`) puts each left+right sum in a class (< 15, < 26, else) and returns 1, 0, or −1.
 - `sound_disable_unloaded` disables the sound groups (19, 9, 7 entries) whose flag at `0x1001d7`–`0x1001d9` is 0.
 
