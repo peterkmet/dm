@@ -1,11 +1,11 @@
-#include <stdlib.h>
-#include <string.h>
+#include "data/graphics.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/csbtext.h"
 #include "data/file.h"
-#include "data/graphics.h"
 #include "data/ids.h"
+#include <stdlib.h>
+#include <string.h>
 
 #define GRAPHICS_DAT_FORMAT_1 0x8001
 #define GRAPHIC_PAD_WORD      0xff81 /* skipped before the width and height */

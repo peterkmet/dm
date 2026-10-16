@@ -1,7 +1,7 @@
 #include "engine/map.h"
+#include "data/tables.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
-#include "data/tables.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>

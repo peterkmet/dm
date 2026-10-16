@@ -1,7 +1,7 @@
+#include "ui/layout.h"
 #include "data/bytes.h"
 #include "data/graphics.h"
 #include "data/ids.h"
-#include "ui/layout.h"
 
 #define LAYOUT_SIGNATURE 0xfc0d
 #define S16(p, i)        ((int16_t)BE16((p) + 2 * (i))) /* signed word i */

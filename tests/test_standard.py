@@ -316,7 +316,7 @@ CLANG_FORMAT_MAJOR = 23
 
 def test_sources_are_formatted():
     exe = shutil.which("clang-format")
-    assert exe, "clang-format is missing: brew install clang-format"
+    assert exe, "clang-format is missing: uv sync"
     version = subprocess.run([exe, "--version"], capture_output=True, text=True).stdout
     assert re.search(rf"version {CLANG_FORMAT_MAJOR}\.", version), f"clang-format {CLANG_FORMAT_MAJOR} needed: {version.strip()}"
     result = subprocess.run([exe, "--dry-run", "--Werror", *map(str, sources())], capture_output=True, text=True)

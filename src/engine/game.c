@@ -1,12 +1,12 @@
 #include "engine/game.h"
 #include "data/adventure.h"
+#include "data/tables.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/random.h"
 #include "engine/sensor.h"
-#include "data/tables.h"
 #include "engine/timeline_process.h"
 #include <stdio.h>
 #include <stdlib.h>

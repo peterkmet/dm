@@ -1,9 +1,9 @@
+#include "platform/platform.h"
+#include "engine/sound.h"
+#include "ui/music.h"
+#include "platform/scale.h"
 #include <SDL3/SDL.h>
 #include <string.h>
-#include "platform/platform.h"
-#include "platform/scale.h"
-#include "ui/music.h"
-#include "engine/sound.h"
 
 static SDL_Window *window;
 static SDL_Renderer *renderer;

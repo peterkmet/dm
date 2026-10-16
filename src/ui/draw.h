@@ -1,8 +1,8 @@
 #ifndef DRAW_H
 #define DRAW_H
 /* Prefixes: draw_ */
-#include <stdint.h>
 #include "data/graphics.h"
+#include <stdint.h>
 
 typedef struct {
     int16_t x, y, w, h;

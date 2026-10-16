@@ -1,11 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "data/adventure.h"
 #include "data/adf.h"
 #include "data/bytes.h"
 #include "data/crc32.h"
 #include "data/file.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int16_t g_adventure = ADVENTURE_DM;
 

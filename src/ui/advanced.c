@@ -1,22 +1,22 @@
-#include <stdio.h>
 #include "ui/advanced.h"
-#include "ui/automap.h"
+#include "data/ids.h"
 #include "engine/champion.h"
-#include "ui/command.h"
-#include "ui/dialog.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
-#include "ui/gameloop.h"
-#include "data/ids.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
-#include "ui/music.h"
 #include "engine/savegame.h"
+#include "engine/timeline_process.h"
+#include "ui/automap.h"
+#include "ui/command.h"
+#include "ui/dialog.h"
+#include "ui/gameloop.h"
+#include "ui/music.h"
 #include "ui/startend.h"
 #include "ui/text.h"
-#include "engine/timeline_process.h"
 #include "ui/ui.h"
+#include <stdio.h>
 
 #define READOUT_TEXT_SIZE   40
 #define READOUT_MARGIN      2 /* pixels between the rulers and the read-out */

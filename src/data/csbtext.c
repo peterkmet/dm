@@ -1,10 +1,10 @@
-#include <stdlib.h>
-#include <string.h>
-#include "data/bytes.h"
 #include "data/csbtext.h"
+#include "data/bytes.h"
 #include "data/ids.h"
 #include "data/kaos_addresses.h"
 #include "data/tables.h"
+#include <stdlib.h>
+#include <string.h>
 
 /* APPB addresses of the CSB texts and the DM text index of each. Sources and code references:
    docs/csb-engine-diff.md "Text". */

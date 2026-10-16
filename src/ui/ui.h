@@ -1,11 +1,11 @@
 #ifndef UI_H
 #define UI_H
 /* Prefixes: ui_ panel_ menus_ */
-#include <stdbool.h>
-#include <stdint.h>
+#include "data/tables.h"
 #include "engine/champion.h"
 #include "ui/draw.h"
-#include "data/tables.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Interface drawing on fb: champion status boxes, action and spell areas, inventory panel,
    object icons, message area (KAOS CHAMPION.C, MENU.C, panel parts of INVENTORY.C). Graphics,

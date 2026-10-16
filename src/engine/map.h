@@ -1,10 +1,10 @@
 #ifndef MAP_H
 #define MAP_H
 /* Prefixes: door_ square_ thing_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ */
-#include <stdbool.h>
-#include <stdint.h>
 #include "data/bytes.h"
 #include "engine/dungeon.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Current map, square bytes, thing lists, and the record fields that the movement rules use.
    Coordinates are on the current map. All records keep the big-endian layout of Dungeon.DAT. */

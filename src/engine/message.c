@@ -1,6 +1,6 @@
+#include "engine/message.h"
 #include <stdio.h>
 #include <string.h>
-#include "engine/message.h"
 
 #define MESSAGE_WRAP_LINE_SIZE 100 /* one wrapped line: at most MESSAGE_COLS characters */
 #define NUMBER_TEXT_SIZE       14  /* a 32-bit number with its sign */

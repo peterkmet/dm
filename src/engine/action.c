@@ -1,10 +1,11 @@
 #include "engine/action.h"
 #include "data/adventure.h"
+#include "data/graphics.h"
+#include "data/ids.h"
+#include "data/tables.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
-#include "data/graphics.h"
-#include "data/ids.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/magic.h"
@@ -14,7 +15,6 @@
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/sound.h"
-#include "data/tables.h"
 #include "engine/timeline_process.h"
 #include <string.h>
 

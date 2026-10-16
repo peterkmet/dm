@@ -1,6 +1,6 @@
-#include <string.h>
 #include "ui/text.h"
 #include "ui/video.h"
+#include <string.h>
 
 #define FONT_ROWS                6   /* pixel rows of a character cell */
 #define FONT_STRIDE              128 /* bytes per font row, one per character code */

@@ -1,9 +1,9 @@
 #ifndef ADVANCED_H
 #define ADVANCED_H
 /* Prefixes: advanced_ */
+#include "engine/game.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "engine/game.h"
 
 /* Game modes and the advanced features (not in the original game): automap with a position read-out,
    quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat

@@ -1,9 +1,9 @@
 #ifndef SELECT_H
 #define SELECT_H
 /* Prefixes: select_ */
+#include "ui/draw.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "ui/draw.h"
 
 /* The start screens in the DM font: adventure, mode, and the CSB entrance. Keys and clicks move a
    cursor over the items. The results go to g_adventure and g_game_mode. No SDL calls. */

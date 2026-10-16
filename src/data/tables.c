@@ -1,10 +1,10 @@
 #include "data/tables.h"
-#include "data/spells.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/csbimage.h"
 #include "data/ftl.h"
 #include "data/kaos_addresses.h"
+#include "data/spells.h"
 
 /* Record sizes in KAOS. */
 #define CREATURE_INFO_BYTES 26

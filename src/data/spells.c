@@ -1,10 +1,10 @@
-#include <limits.h>
 #include "data/spells.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/csbimage.h"
 #include "data/ftl.h"
 #include "data/kaos_addresses.h"
+#include <limits.h>
 
 #define SPELL_FIRST_SYMBOL_SHIFT 24  /* the first symbol is in bits 24-31 of the symbols */
 #define LSR_COUNT_MODULO         64  /* the 68000 LSR takes the shift count modulo 64 */

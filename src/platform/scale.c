@@ -1,5 +1,5 @@
-#include <stdbool.h>
 #include "platform/scale.h"
+#include <stdbool.h>
 
 /* The source pixel at (x, y); positions outside the image repeat the edge pixel. */
 static uint8_t pixel(const uint8_t *src, int w, int h, int x, int y)

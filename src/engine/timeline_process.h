@@ -1,9 +1,9 @@
 #ifndef TIMELINE_PROCESS_H
 #define TIMELINE_PROCESS_H
 /* Prefixes: event_ */
+#include "engine/game.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "engine/game.h"
 
 /* Timeline event types and the handlers of the square events. */
 

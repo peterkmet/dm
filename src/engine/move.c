@@ -1,4 +1,5 @@
 #include "engine/move.h"
+#include "data/tables.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
@@ -8,7 +9,6 @@
 #include "engine/projectile.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
-#include "data/tables.h"
 #include "engine/timeline_process.h"
 
 #define SCENT_STRENGTH_MAXIMUM 80

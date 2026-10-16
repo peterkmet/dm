@@ -1,10 +1,10 @@
 #ifndef TEXT_H
 #define TEXT_H
 /* Prefixes: text_ */
-#include <stdbool.h>
-#include <stdint.h>
 #include "data/graphics.h"
 #include "data/ids.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #define TEXT_FONT_ITEM GFX_FONT
 

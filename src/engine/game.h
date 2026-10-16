@@ -1,10 +1,10 @@
 #ifndef GAME_H
 #define GAME_H
 /* Prefixes: game_ min16 max16 bounded_ scale_ timeline_ position_ turn_ */
-#include <stdbool.h>
-#include <stdint.h>
 #include "data/bytes.h"
 #include "data/tables.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #define NORMALIZE(direction)       ((direction) & 3)
 #define CELL_COUNT                 4 /* cells of a square, one for each direction */

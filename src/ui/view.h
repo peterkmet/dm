@@ -1,9 +1,9 @@
 #ifndef VIEW_H
 #define VIEW_H
 /* Prefixes: view_ */
+#include "ui/draw.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "ui/draw.h"
 
 /* Door square bit that map.h does not name: the door passage runs north-south. */
 enum { DOOR_NORTH_SOUTH = 8 };

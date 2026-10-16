@@ -1,20 +1,20 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "engine/savegame.h"
-#include "data/bytes.h"
 #include "data/adventure.h"
+#include "data/bytes.h"
+#include "data/file.h"
+#include "data/graphics.h"
+#include "data/ids.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/explored.h"
-#include "data/file.h"
 #include "engine/game.h"
-#include "data/graphics.h"
-#include "data/ids.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/random.h"
 #include "engine/savefile.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define TIMELINE_ENTRY_BYTES       2 /* one event index per timeline entry */
 #define EXTENSION_LENGTH_BYTES     4 /* the length of the automap block, after the block */

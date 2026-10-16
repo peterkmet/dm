@@ -1,11 +1,12 @@
 #include "engine/timeline_process.h"
-#include "engine/action.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
+#include "data/ids.h"
+#include "data/tables.h"
+#include "engine/action.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/group.h"
-#include "data/ids.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
@@ -14,7 +15,6 @@
 #include "engine/savegame.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
-#include "data/tables.h"
 
 #define DOOR_CLOSE_DAMAGE       5
 #define COUNTER_MAXIMUM         511 /* the counter data has 9 bits */

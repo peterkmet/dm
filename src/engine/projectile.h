@@ -1,11 +1,11 @@
 #ifndef PROJECTILE_H
 #define PROJECTILE_H
 /* Prefixes: projectile_ explosion_ */
-#include <stdbool.h>
-#include <stdint.h>
 #include "engine/game.h"
 #include "engine/map.h"
 #include "engine/timeline_process.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Projectiles, explosions, fluxcages, and launchers (KAOS range 7, PROJEXPL.C): docs/rules-creatures.md. */
 

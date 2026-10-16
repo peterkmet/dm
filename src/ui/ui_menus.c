@@ -1,19 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "data/graphics.h"
+#include "data/ids.h"
+#include "data/spells.h"
+#include "data/tables.h"
 #include "engine/action.h"
-#include "ui/advanced.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
-#include "data/graphics.h"
-#include "data/ids.h"
 #include "engine/inventory.h"
 #include "engine/magic.h"
-#include "data/spells.h"
-#include "data/tables.h"
+#include "ui/advanced.h"
 #include "ui/ui.h"
 #include "ui/video.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define ACTING_NAME_LENGTH 7
 #define ACTION_NAME_LENGTH 12

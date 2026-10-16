@@ -1,9 +1,9 @@
 #ifndef RECRUIT_H
 #define RECRUIT_H
 /* Prefixes: recruit_ */
+#include "engine/champion.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "engine/champion.h"
 
 #define PORTRAITS_PER_ROW 8
 

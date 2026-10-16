@@ -1,12 +1,12 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "data/adf.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/file.h"
 #include "data/os.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* Layout of the Amiga Old File System on a double-density floppy. Offsets are bytes in a block. */
 #define ADF_BLOCK_SIZE        512

@@ -1,6 +1,6 @@
+#include "data/file.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "data/file.h"
 
 /* Reads all of an open file; NULL when a seek, the allocation or the read fails. */
 static uint8_t *read_open_file(FILE *f, size_t *len)

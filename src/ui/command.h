@@ -1,9 +1,9 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 /* Prefixes: command_ */
+#include "engine/move.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "engine/move.h"
 
 /* Player input as the original command table (KAOS range 8, COMMAND.C): clicks and keys become
    queued commands; command_process_queue runs them. Movement commands (1-6) are in move.h. */

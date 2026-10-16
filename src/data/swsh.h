@@ -1,9 +1,9 @@
 #ifndef SWSH_H
 #define SWSH_H
 /* Prefixes: swsh_ */
+#include "data/ftl.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "data/ftl.h"
 
 /* The FTL logo module SWSH.FTL: a palette script, the logo graphic, and its sound. */
 typedef struct {

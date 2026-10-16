@@ -1,10 +1,10 @@
 #ifndef CHAMPION_H
 #define CHAMPION_H
 /* Prefixes: champion_ */
+#include "data/tables.h"
+#include "engine/game.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "engine/game.h"
-#include "data/tables.h"
 
 /* Champion rules of KAOS (CHAMPION.C): docs/rules-champions.md. */
 

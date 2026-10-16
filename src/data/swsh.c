@@ -1,7 +1,7 @@
-#include <stdlib.h>
 #include "data/swsh.h"
 #include "data/bytes.h"
 #include "data/file.h"
+#include <stdlib.h>
 
 /* SWSH.FTL image addresses. */
 #define SWSH_BASE           0x100000

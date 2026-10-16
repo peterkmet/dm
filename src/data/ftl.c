@@ -1,12 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "data/ftl.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/csbimage.h"
 #include "data/file.h"
-#include "data/ftl.h"
 #include "data/kaos_addresses.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define FTL_MAX_SIZE (4u << 20)
 

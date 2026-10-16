@@ -1,12 +1,12 @@
-#include <stdbool.h>
-#include <string.h>
+#include "engine/sound.h"
+#include "data/graphics.h"
+#include "data/tables.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
-#include "data/graphics.h"
 #include "engine/map.h"
-#include "engine/sound.h"
-#include "data/tables.h"
 #include "engine/timeline_process.h"
+#include <stdbool.h>
+#include <string.h>
 
 #define SOUND_PERIOD_PER_RATE 72800 /* Paula period = this / sound rate */
 #define LOUDNESS_MEDIUM_SUM   15    /* left + right volume of a medium sound */

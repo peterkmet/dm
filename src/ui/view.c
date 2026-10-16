@@ -1,22 +1,22 @@
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include "ui/advanced.h"
-#include "ui/draw.h"
+#include "ui/view.h"
+#include "data/graphics.h"
+#include "data/ids.h"
+#include "data/tables.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/group.h"
-#include "data/ids.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/projectile.h"
-#include "data/tables.h"
-#include "data/graphics.h"
-#include "ui/layout.h"
 #include "engine/random.h"
 #include "engine/recruit.h"
+#include "ui/advanced.h"
+#include "ui/draw.h"
+#include "ui/layout.h"
 #include "ui/video.h"
-#include "ui/view.h"
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define ORNAMENT_VI_ALTAR 2 /* the alcove ornament that is a vi altar */
 /* tables_get_pile_shift pair indices */

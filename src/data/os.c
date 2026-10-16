@@ -1,5 +1,5 @@
-#include <ctype.h>
 #include "data/os.h"
+#include <ctype.h>
 
 OsMakeFolder g_os_make_folder_hook;
 OsListFolder g_os_list_folder_hook;

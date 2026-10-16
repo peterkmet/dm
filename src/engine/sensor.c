@@ -1,14 +1,14 @@
 #include "engine/sensor.h"
 #include "data/adventure.h"
+#include "data/ids.h"
+#include "data/tables.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
-#include "data/ids.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/sound.h"
-#include "data/tables.h"
 #include "engine/timeline_process.h"
 
 #define SENSOR_EXPERIENCE_SKILL   8 /* steal */

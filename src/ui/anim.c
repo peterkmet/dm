@@ -1,18 +1,18 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "ui/anim.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
-#include "ui/command.h"
 #include "data/file.h"
 #include "data/graphics.h"
-#include "ui/music.h"
 #include "data/os.h"
 #include "engine/sound.h"
+#include "ui/command.h"
+#include "ui/music.h"
 #include "ui/startend.h"
 #include "ui/ui.h"
 #include "ui/video.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define TAG(a, b) ((a) << 8 | (b))
 

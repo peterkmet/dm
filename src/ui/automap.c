@@ -1,14 +1,14 @@
 #include "ui/automap.h"
-#include "ui/advanced.h"
-#include <stdio.h>
 #include "engine/dungeon.h"
 #include "engine/explored.h"
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/map.h"
+#include "ui/advanced.h"
 #include "ui/text.h"
 #include "ui/ui.h"
 #include "ui/view.h"
+#include <stdio.h>
 
 enum { LABEL_WIDTH = 11, LABEL_BASELINE = 4 }; /* two digits; the font cell starts 4 rows above the baseline */
 enum { LABEL_TEXT_SIZE = 7 };                  /* the longest int16_t, "-32768", and the end byte */

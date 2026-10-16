@@ -1,25 +1,25 @@
-#include <stdio.h>
-#include <string.h>
-#include "engine/action.h"
-#include "ui/advanced.h"
 #include "data/adventure.h"
-#include "engine/champion.h"
-#include "ui/command.h"
-#include "engine/dungeon.h"
 #include "data/ftl.h"
-#include "engine/game.h"
 #include "data/graphics.h"
 #include "data/ids.h"
+#include "data/tables.h"
+#include "engine/action.h"
+#include "engine/champion.h"
+#include "engine/dungeon.h"
+#include "engine/game.h"
 #include "engine/inventory.h"
-#include "ui/layout.h"
-#include "engine/message.h"
 #include "engine/magic.h"
 #include "engine/map.h"
-#include "data/tables.h"
+#include "engine/message.h"
+#include "ui/advanced.h"
+#include "ui/command.h"
+#include "ui/layout.h"
 #include "ui/text.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include "ui/view.h"
+#include <stdio.h>
+#include <string.h>
 
 #define BAR_COUNT                 3 /* health, stamina, mana */
 #define BAR_ZONE_STEP             4

@@ -1,14 +1,14 @@
-#include <string.h>
 #include "ui/dialog.h"
-#include "ui/command.h"
 #include "data/ids.h"
-#include "ui/layout.h"
 #include "engine/message.h"
+#include "ui/command.h"
+#include "ui/layout.h"
 #include "ui/startend.h"
 #include "ui/text.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include "ui/view.h"
+#include <string.h>
 
 #define MAX_CHOICES       4
 #define MESSAGE_COUNT     2

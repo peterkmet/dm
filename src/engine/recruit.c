@@ -1,7 +1,7 @@
 #include "engine/recruit.h"
+#include "data/tables.h"
 #include "engine/dungeon.h"
 #include "engine/map.h"
-#include "data/tables.h"
 #include <string.h>
 
 /* Offsets in the values line of a champion text, counted from its leading '\n'. */

@@ -1,10 +1,10 @@
-#include <string.h>
 #include "ui/select.h"
-#include "ui/advanced.h"
 #include "data/adventure.h"
+#include "ui/advanced.h"
 #include "ui/text.h"
 #include "ui/ui.h"
 #include "ui/video.h"
+#include <string.h>
 
 #define ITEM_MAX_COUNT 3   /* items of the longest screen */
 #define HEADING_TOP    56  /* top of the heading line */

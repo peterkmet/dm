@@ -1,12 +1,12 @@
 #ifndef GROUP_H
 #define GROUP_H
 /* Prefixes: group_ creature_ */
-#include <stdbool.h>
-#include <stdint.h>
+#include "data/tables.h"
 #include "engine/game.h"
 #include "engine/map.h"
-#include "data/tables.h"
 #include "engine/timeline_process.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules-creatures.md. */
 

@@ -23,6 +23,7 @@ packages = ["tools/dmtools"]
 
 [dependency-groups]
 dev = [
+    "clang-format>=23.1,<24",
     "dmcsb>=0.2.1",
     "pytest>=8",
     "pytest-timeout>=2.4.0",

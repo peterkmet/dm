@@ -1,6 +1,6 @@
+#include "ui/video.h"
 #include <math.h>
 #include <stdbool.h>
-#include "ui/video.h"
 
 #define ARGB_OPAQUE         0xff000000u
 #define AMIGA_CHANNEL_BITS  4

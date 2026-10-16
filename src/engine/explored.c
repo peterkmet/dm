@@ -1,7 +1,7 @@
 #include "engine/explored.h"
+#include "engine/dungeon.h"
 #include <stdlib.h>
 #include <string.h>
-#include "engine/dungeon.h"
 
 enum { SAVE_VERSION = 1, SAVE_HEADER_SIZE = 6 }; /* magic, version, map count */
 static const char SAVE_MAGIC[] = EXPLORED_SAVE_MAGIC;

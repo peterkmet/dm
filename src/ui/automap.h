@@ -1,9 +1,9 @@
 #ifndef AUTOMAP_H
 #define AUTOMAP_H
 /* Prefixes: automap_ */
+#include "ui/draw.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "ui/draw.h"
 
 /* Automap (not in the original game): remembers the squares the party has seen and draws them
    as a top-down map. */

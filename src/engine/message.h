@@ -1,8 +1,8 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 /* Prefixes: message_ */
-#include <stdint.h>
 #include "data/graphics.h"
+#include <stdint.h>
 
 #define MESSAGE_ROWS        4
 #define MESSAGE_LAST_ROW    (MESSAGE_ROWS - 1)

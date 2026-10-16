@@ -1,18 +1,18 @@
-#include <stdlib.h>
-#include <string.h>
+#include "ui/ui.h"
 #include "data/adventure.h"
 #include "data/csbtext.h"
-#include "engine/dungeon.h"
-#include "engine/game.h"
 #include "data/graphics.h"
 #include "data/ids.h"
+#include "engine/dungeon.h"
+#include "engine/game.h"
 #include "engine/inventory.h"
-#include "ui/layout.h"
 #include "engine/message.h"
+#include "ui/layout.h"
 #include "ui/text.h"
-#include "ui/ui.h"
 #include "ui/video.h"
 #include "ui/view.h"
+#include <stdlib.h>
+#include <string.h>
 
 #define SLOT_BOX_COUNT          46 /* 8 hands on the screen, 30 inventory and 8 chest slots */
 #define SLOT_BOX_SCREEN_COUNT   8

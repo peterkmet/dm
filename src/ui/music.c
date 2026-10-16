@@ -1,11 +1,11 @@
-#include <stdbool.h>
-#include <stdio.h>
+#include "ui/music.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "engine/dungeon.h"
-#include "ui/gameloop.h"
-#include "ui/music.h"
 #include "engine/sound.h"
+#include "ui/gameloop.h"
+#include <stdbool.h>
+#include <stdio.h>
 
 #ifdef __clang__
 #pragma clang diagnostic push

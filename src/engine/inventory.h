@@ -1,10 +1,10 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
 /* Prefixes: inventory_ object_ */
+#include "data/tables.h"
+#include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "engine/map.h"
-#include "data/tables.h"
 
 /* Objects, slots, and the leader hand: docs/rules-champions.md. */
 

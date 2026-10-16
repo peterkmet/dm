@@ -1,13 +1,13 @@
-#include <string.h>
 #include "ui/logo.h"
 #include "data/bytes.h"
-#include "data/swsh.h"
 #include "data/graphics.h"
-#include "ui/music.h"
+#include "data/swsh.h"
 #include "engine/sound.h"
+#include "ui/music.h"
 #include "ui/startend.h"
 #include "ui/ui.h"
 #include "ui/video.h"
+#include <string.h>
 
 #define SCRIPT_SHOW        (-1)
 #define SCRIPT_ENTRY_BYTES 4

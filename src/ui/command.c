@@ -1,26 +1,26 @@
-#include <stdbool.h>
-#include <string.h>
 #include "ui/command.h"
+#include "data/ids.h"
+#include "data/spells.h"
 #include "engine/action.h"
-#include "ui/advanced.h"
-#include "ui/dialog.h"
-#include "ui/startend.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/group.h"
-#include "data/ids.h"
 #include "engine/inventory.h"
 #include "engine/magic.h"
-#include "data/spells.h"
 #include "engine/map.h"
 #include "engine/move.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
+#include "ui/advanced.h"
+#include "ui/dialog.h"
+#include "ui/startend.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include "ui/view.h"
+#include <stdbool.h>
+#include <string.h>
 
 #define QUEUE_SIZE            9
 #define QUEUE_CLICK_LIMIT     5 /* a click or a key waits only when fewer commands wait */

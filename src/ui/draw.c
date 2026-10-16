@@ -1,7 +1,7 @@
-#include <stdlib.h>
-#include <string.h>
 #include "ui/draw.h"
 #include "ui/video.h"
+#include <stdlib.h>
+#include <string.h>
 
 /* blit_bitmap on chunky pixels: copies box from src at (sx, sy). transparent -1 is opaque,
    otherwise bits 0-3 are a color key. flip reads the mirrored source. Clips to both bitmaps. */

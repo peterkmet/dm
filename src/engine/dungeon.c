@@ -2,9 +2,9 @@
 #include "data/adventure.h"
 #include "data/file.h"
 #include "data/ftl.h"
+#include "data/tables.h"
 #include "engine/game.h"
 #include "engine/map.h"
-#include "data/tables.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -1,11 +1,10 @@
-#include <string.h>
 #include "engine/magic.h"
+#include "data/graphics.h"
+#include "data/ids.h"
 #include "data/spells.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
-#include "data/graphics.h"
-#include "data/ids.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
@@ -13,6 +12,7 @@
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/timeline_process.h"
+#include <string.h>
 
 #define POWER_SYMBOL_FIRST           0x60 /* symbol of power 1 is 0x60, power n is 0x5f + n */
 #define SPELL_PROJECTILE_ATTACK      90

@@ -1,9 +1,9 @@
 #ifndef LAYOUT_H
 #define LAYOUT_H
 /* Prefixes: layout_ */
+#include "ui/draw.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "ui/draw.h"
 
 #define ZONE_SCALE_FULL 10000 /* layout_get_zone_box: the full zone size, in 1/10000 */
 

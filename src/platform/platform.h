@@ -1,9 +1,9 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 /* Prefixes: plat_ */
+#include "ui/video.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "ui/video.h"
 
 enum { PLAT_NONE, PLAT_QUIT, PLAT_KEY, PLAT_MOUSE, PLAT_MOUSE_UP };
 

@@ -2,7 +2,6 @@
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "engine/random.h"
-
 #include <stdlib.h>
 #include <string.h>
 

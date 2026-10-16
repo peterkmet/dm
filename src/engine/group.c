@@ -1,14 +1,14 @@
 #include "engine/group.h"
+#include "data/ids.h"
+#include "data/tables.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
-#include "data/ids.h"
 #include "engine/inventory.h"
 #include "engine/move.h"
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
-#include "data/tables.h"
 #include "engine/timeline_process.h"
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,11 +1,11 @@
-#include <stdlib.h>
-#include <string.h>
-#include "data/bytes.h"
 #include "data/csbimage.h"
+#include "data/bytes.h"
 #include "data/csbtext.h"
 #include "data/kaos_addresses.h"
 #include "data/spells.h"
 #include "data/tables.h"
+#include <stdlib.h>
+#include <string.h>
 
 /* KAOS and APPB addresses of the tables that need a conversion. Sources: docs/csb-engine-diff.md "Data tables". */
 #define CSB_APPB_ACTION_SETS         0x1047ac /* 44 records of 6 bytes, no pad bytes */
