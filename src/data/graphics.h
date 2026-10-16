@@ -30,7 +30,7 @@ bool box_contains(const Box *box, int16_t x, int16_t y);
 
 /* Frees Graphics.DAT and the decoded bitmaps. */
 void gfx_close(void);
-/* Reads a format 1 Graphics.DAT like graphics_dat_read_header. False when the file is missing or damaged. */
+/* Reads a format 1 Graphics.DAT like graphics_dat_read_header. False when the file is missing, damaged or has no items. */
 bool gfx_open(const char *path);
 /* The item count of the open Graphics.DAT; exported for the tests. */
 int gfx_count(void);

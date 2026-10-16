@@ -75,6 +75,8 @@ bool gfx_open(const char *path)
     if (be16(graphics.data) != GRAPHICS_DAT_FORMAT_1)
         goto fail;
     uint16_t n = be16(graphics.data + GFX_HEADER_ITEM_COUNT);
+    if (!n)
+        goto fail;
     uint32_t off = GFX_HEADER_BYTES + n * (uint32_t)GFX_ITEM_ENTRY_BYTES;
     const uint8_t *sizes = graphics.data + GFX_HEADER_BYTES;
     if (off > graphics.size || !(graphics.offsets = malloc((n + 1) * sizeof *graphics.offsets)))

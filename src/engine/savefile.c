@@ -171,7 +171,6 @@ void save_free(SaveFile *s)
 
 void save_header_randomize(uint8_t *h)
 {
-    /* WR16 reads its value twice: one random16 call per word. */
     for (int i = 0; i < H_KEY_COUNT; i++) {
         uint16_t key = random16();
         wr16(h + get_header_field_offset(H_KEYS) + 2 * i, key);
