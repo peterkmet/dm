@@ -15,7 +15,6 @@ from dmtools.ftl import load_image, parse
 
 KAOS = GAME / "KAOS.FTL"
 SAVE, BACKUP = "DMGAME.DAT", "DMGAME.BAK"
-LOADED, MISSING, DAMAGED = 1, 0, -1
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
 pytestmark = [needs_dm]
@@ -35,8 +34,8 @@ def game():
     lib.dungeon_save.restype = ctypes.c_void_p
     lib.free.argtypes = [ctypes.c_void_p]
     lib.inventory_get_object_weight.restype = u16
-    lib.savegame_save.restype = c16
-    lib.savegame_load.restype = c16
+    lib.savegame_save.restype = ctypes.c_bool
+    lib.savegame_load.restype = ctypes.c_int
     assert lib.gameloop_load_data(str(GAME).encode())
     assert lib.gameloop_start_new_game(str(GAME).encode())
     return Game(lib)
@@ -46,7 +45,7 @@ def test_save_and_load_round_trip(game, tmp_path):
     lib = game.lib
     recruit_and_hold_object(game)
     seed = game.value("g_random_seed", u32)
-    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    assert lib.savegame_save(str(tmp_path).encode()) is True
     assert (tmp_path / SAVE).exists()
     # the file keeps the seed from before the random header words
     before = {**state(game), "g_random_seed": seed}
@@ -54,7 +53,7 @@ def test_save_and_load_round_trip(game, tmp_path):
 
     assert lib.gameloop_start_new_game(str(GAME).encode())
     assert game.value("g_party_champion_count", u16) == 0
-    assert lib.savegame_load(str(tmp_path).encode()) == LOADED
+    assert lib.savegame_load(str(tmp_path).encode()) == C.SAVEGAME_LOADED
     after = state(game)
 
     # the file keeps the leader load without the object in the hand; starting the game adds it again
@@ -69,12 +68,12 @@ def test_save_and_load_round_trip(game, tmp_path):
 
 def test_save_keeps_a_backup(game, tmp_path):
     lib = game.lib
-    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    assert lib.savegame_save(str(tmp_path).encode()) is True
     first = (tmp_path / SAVE).read_bytes()
-    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    assert lib.savegame_save(str(tmp_path).encode()) is True
     assert (tmp_path / BACKUP).read_bytes() == first
     (tmp_path / SAVE).unlink()
-    assert lib.savegame_load(str(tmp_path).encode()) == LOADED
+    assert lib.savegame_load(str(tmp_path).encode()) == C.SAVEGAME_LOADED
     assert (tmp_path / SAVE).read_bytes() == first and not (tmp_path / BACKUP).exists()
 
 
@@ -84,7 +83,7 @@ def test_portraits_survive_save_and_load(game, tmp_path):
     keep, saved = tmp_path / "keep", tmp_path / "saved"
     keep.mkdir()
     saved.mkdir()
-    assert lib.savegame_save(str(keep).encode()) == 1
+    assert lib.savegame_save(str(keep).encode()) is True
     count = u16.in_dll(lib, "g_party_champion_count")
     count.value = 4
     cs = champions(lib)
@@ -92,24 +91,24 @@ def test_portraits_survive_save_and_load(game, tmp_path):
         for i in range(32 * 29):
             cs[k].runtime.portrait[i] = ((k * 32 * 29 + i) * 7 + (k * 32 * 29 + i) // 32) & 15
     before = b"".join(bytes(c.runtime.portrait) for c in cs)
-    assert lib.savegame_save(str(saved).encode()) == 1
+    assert lib.savegame_save(str(saved).encode()) is True
     for c in cs:
         ctypes.memset(c.runtime.portrait, 0, 32 * 29)
-    assert lib.savegame_load(str(saved).encode()) == LOADED
+    assert lib.savegame_load(str(saved).encode()) == C.SAVEGAME_LOADED
     assert count.value == 4 and b"".join(bytes(c.runtime.portrait) for c in cs) == before
-    assert lib.savegame_load(str(keep).encode()) == LOADED
+    assert lib.savegame_load(str(keep).encode()) == C.SAVEGAME_LOADED
 
 
 def test_load_fails_gracefully(game, tmp_path):
     lib = game.lib
-    assert lib.savegame_load(str(tmp_path).encode()) == MISSING
-    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    assert lib.savegame_load(str(tmp_path).encode()) == C.SAVEGAME_MISSING
+    assert lib.savegame_save(str(tmp_path).encode()) is True
     good = (tmp_path / SAVE).read_bytes()
     for bad in (good[:600], good[:-100] + bytes(100), good[:0x180] + bytes([good[0x180] ^ 1]) + good[0x181:], b"\0" * 4000):
         (tmp_path / SAVE).write_bytes(bad)
-        assert lib.savegame_load(str(tmp_path).encode()) == DAMAGED
+        assert lib.savegame_load(str(tmp_path).encode()) == C.SAVEGAME_DAMAGED
     (tmp_path / SAVE).write_bytes(good)
-    assert lib.savegame_load(str(tmp_path).encode()) == LOADED
+    assert lib.savegame_load(str(tmp_path).encode()) == C.SAVEGAME_LOADED
 
 
 def test_dm_load_raises_the_active_group_count_to_110(game, tmp_path):
@@ -119,7 +118,7 @@ def test_dm_load_raises_the_active_group_count_to_110(game, tmp_path):
     lib.savefile_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(u32)]
     lib.savefile_encode.restype = ctypes.c_void_p
     lib.savefile_free.argtypes = [ctypes.POINTER(SaveFile)]
-    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    assert lib.savegame_save(str(tmp_path).encode()) is True
     good = (tmp_path / SAVE).read_bytes()
     plain = decode(lib, good)
     groups = 20
@@ -128,15 +127,15 @@ def test_dm_load_raises_the_active_group_count_to_110(game, tmp_path):
     blocks[1] = blocks[1][: groups * ACTIVE_GROUP_BYTES]
     sizes = [len(b) for b in blocks]
     (tmp_path / SAVE).write_bytes(encode(lib, plain["header"], blocks, plain["portraits"], plain["dungeon"], sizes))
-    assert lib.savegame_load(str(tmp_path).encode()) == LOADED
+    assert lib.savegame_load(str(tmp_path).encode()) == C.SAVEGAME_LOADED
     assert u16.in_dll(lib, "g_max_active_group_count").value == 110
     (tmp_path / SAVE).write_bytes(good)
-    assert lib.savegame_load(str(tmp_path).encode()) == LOADED
+    assert lib.savegame_load(str(tmp_path).encode()) == C.SAVEGAME_LOADED
 
 
 def test_original_load_routines_accept_the_file(game, tmp_path):
     lib = game.lib
-    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    assert lib.savegame_save(str(tmp_path).encode()) is True
     file = (tmp_path / SAVE).read_bytes()
     plain = decode(lib, file)
     emu = Emu(load_image(parse(KAOS.read_bytes()), 0x100000))
@@ -224,7 +223,7 @@ def test_party_death_restart_loads_the_saved_game(game, tmp_path, quit_reset):
     assert lib.gameloop_start_new_game(str(GAME).encode())
     recruit_and_hold_object(game)
     lib.startend_set_save_dir(str(tmp_path).encode())
-    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    assert lib.savegame_save(str(tmp_path).encode()) is True
     saved_time = game.value("g_game_time", u32)
     game.run(20)
     kill_party(game)
@@ -306,7 +305,7 @@ def test_endgame_quit_button_shows_the_credits_then_the_entrance(game, tmp_path,
     lib = game.lib
     assert lib.gameloop_start_new_game(str(GAME).encode())
     recruit_and_hold_object(game)
-    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    assert lib.savegame_save(str(tmp_path).encode()) is True
     kill_party(game)
     clicked = []
 

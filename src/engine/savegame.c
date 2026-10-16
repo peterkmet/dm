@@ -320,7 +320,7 @@ static const uint8_t *find_automap(const uint8_t *data, size_t *size, size_t *le
     return block;
 }
 
-int16_t savegame_save(const char *dir)
+bool savegame_save(const char *dir)
 {
     const Adventure *adventure = adventure_get(g_adventure);
     return savegame_save_as(dir, adventure->save, adventure->backup);
@@ -451,12 +451,12 @@ static void merge_party(SaveFile *mini)
     savefile_make_adventure_header(mini->header, g_game_id);
 }
 
-int16_t savegame_make_adventure(const char *dir, const char *mini_path)
+SavegameAdventureResult savegame_make_adventure(const char *dir, const char *mini_path)
 {
     if (!g_party_champion_count)
-        return ADVENTURE_NO_CHAMPIONS;
+        return SAVEGAME_ADVENTURE_NO_CHAMPIONS;
     if (!are_first_names_unique())
-        return ADVENTURE_NAMES_NOT_UNIQUE;
+        return SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE;
     size_t size = 0;
     uint32_t out_size = 0;
     uint8_t *data = file_read(mini_path, &size);
@@ -471,7 +471,7 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
     bool ok = out && write_save_file(dir, adventure->save, adventure->backup, out, out_size);
     free(out);
     free(data);
-    return ok && savegame_load(dir) == SAVEGAME_LOADED ? ADVENTURE_MADE : ADVENTURE_FAILED;
+    return ok && savegame_load(dir) == SAVEGAME_LOADED ? SAVEGAME_ADVENTURE_MADE : SAVEGAME_ADVENTURE_FAILED;
 }
 
 /* Allocates the timeline and the active groups for the saved counts, as timeline_init and
@@ -519,7 +519,7 @@ static bool restore_game(const SaveFile *s)
     return true;
 }
 
-int16_t savegame_load(const char *dir)
+SavegameResult savegame_load(const char *dir)
 {
     const Adventure *adventure = adventure_get(g_adventure);
     return savegame_load_from(dir, adventure->save, adventure->backup);
@@ -545,7 +545,7 @@ static void restore_snapshot(const uint8_t *data, uint32_t size)
     g_last_load_game_time = loaded;
 }
 
-int16_t savegame_load_from(const char *dir, const char *name, const char *backup_name)
+SavegameResult savegame_load_from(const char *dir, const char *name, const char *backup_name)
 {
     char path[PATH_SIZE], backup[PATH_SIZE];
     size_t size = 0;
@@ -588,7 +588,7 @@ void savegame_forget(void)
     g_saved_game_exists = false;
 }
 
-int16_t savegame_quick_save(const char *dir)
+bool savegame_quick_save(const char *dir)
 {
     bool exists = g_saved_game_exists;
     uint32_t saved = g_last_save_game_time;
@@ -598,10 +598,10 @@ int16_t savegame_quick_save(const char *dir)
     return ok;
 }
 
-int16_t savegame_quick_load(const char *dir)
+SavegameResult savegame_quick_load(const char *dir)
 {
     bool exists = g_saved_game_exists;
-    int16_t result = savegame_load_from(dir, QUICK_SAVE_FILE_NAME, NULL);
+    SavegameResult result = savegame_load_from(dir, QUICK_SAVE_FILE_NAME, NULL);
     if (result == SAVEGAME_LOADED) {
         g_saved_game_exists = exists;
         g_last_save_game_time = 0;

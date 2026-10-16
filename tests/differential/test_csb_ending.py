@@ -36,7 +36,7 @@ def lib():
         ("anim_open", ctypes.c_int, [ctypes.c_char_p]), ("anim_next_frame", c16, []), ("anim_close", None, []),
         ("rec_write", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
         ("rec_thing_next", u16, [u16]), ("map_set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
-        ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]), ("savegame_save", c16, [ctypes.c_char_p]),
+        ("savegame_load_from", ctypes.c_int, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]), ("savegame_save", ctypes.c_bool, [ctypes.c_char_p]),
         ("event_process_wall", None, [ctypes.POINTER(TimelineEvent)]), ("kaos_s16", c16, [u32]),
         ("startend_run_endgame", None, [c16]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
         ("command_process_click", None, [c16, c16, c16]), ("command_process_key", None, [u16]),
@@ -361,7 +361,7 @@ def load_mini(lib, tmp_path):
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
     shutil.copy(MINI, tmp_path / "MINI.DAT")
-    assert lib.savegame_load_from(str(tmp_path).encode(), b"MINI.DAT", None) == 1
+    assert lib.savegame_load_from(str(tmp_path).encode(), b"MINI.DAT", None) == C.SAVEGAME_LOADED
     lib.gameloop_start_loaded_game()
 
 
@@ -474,7 +474,7 @@ def click(lib, x, y):
 def test_death_shows_restart_only_and_restart_loads_the_save(lib, tmp_path, reset):
     load_mini(lib, tmp_path)
     lib.startend_set_save_dir(str(tmp_path).encode())
-    assert lib.savegame_save(str(tmp_path).encode()) == 1
+    assert lib.savegame_save(str(tmp_path).encode()) is True
     assert value(lib, "g_saved_game_exists").value == 1
     saved_time = value(lib, "g_game_time", u32).value
     value(lib, "g_game_time", u32).value = saved_time + 1000

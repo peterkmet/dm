@@ -2,10 +2,6 @@
 
 User wishes for future versions. Not planned yet.
 
-## Truth values that are still int16_t
-
-- `savegame_quick_save` (`src/engine/savegame.h`) returns 1 or 0: make it `bool` (coding standard rule 3). `savegame_quick_load` keeps its `SAVEGAME_*` codes.
-
 ## Small cleanups after the clean-code pass
 
 - `action_reset` (`src/engine/action.c`) also clears `g_redraw`, which is not action state.

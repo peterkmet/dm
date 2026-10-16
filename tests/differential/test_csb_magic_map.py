@@ -67,7 +67,7 @@ def lib():
         ("magic_get_champion_spell_cast_result", c16, [u16]), ("map_get_creature_attributes", u16, [u16]),
         ("ui_get_viewport", ctypes.POINTER(Bitmap), []), ("gfx_get_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_bool, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
-        ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
+        ("savegame_load_from", ctypes.c_int, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
         ("ui_draw_inventory_open", None, [c16]), ("gfx_get_bitmap", ctypes.POINTER(Bitmap), [c16]),
         ("map_get_stairs_exit_direction", c16, [c16, c16]), ("view_get_wall_ornament", c16, [c16, c16, c16]),
         ("view_get_floor_ornament", c16, [c16, c16]), ("map_set_current_map_and_party_map", None, [c16]),
@@ -154,7 +154,7 @@ def csb(lib, tmp_path):
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
     shutil.copy(MINI, tmp_path / "MINI.DAT")
-    assert lib.savegame_load_from(str(tmp_path).encode(), b"MINI.DAT", None) == 1
+    assert lib.savegame_load_from(str(tmp_path).encode(), b"MINI.DAT", None) == C.SAVEGAME_LOADED
     lib.gameloop_start_loaded_game()
     return setup_champion(lib), map_scrolls(lib)
 

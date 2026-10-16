@@ -219,9 +219,7 @@ name engine/sensor.h:sensor_get_object_of_type_in_cell open: epic 6
 name engine/sensor.h:sensor_is_object_in_party_possession open: epic 6
 name engine/sensor.h:sensor_is_triggered_by_click_on_wall open: epic 6
 name engine/sensor.h:sensor_process_thing_addition_or_removal open: epic 6
-name engine/event.c:event_is_door_destroyed_by_attack open: epic 6
 name engine/event.c:event_move_teleporter_or_pit_square_things open: epic 6
-name engine/event.h:event_is_door_destroyed_by_attack open: epic 6
 name ui/command.c:is_leader_hand_object_thrown open: epic 8
 name ui/command.c:touch_front_square_empty_handed open: epic 8
 name ui/gameloop.c:draw_spell_area_before_last_death open: epic 8
@@ -570,10 +568,6 @@ dead-api engine/savefile.h:savefile_xor_block open: epic 7
 dead-api engine/savefile.h:savefile_randomize_header open: epic 7
 dead-api engine/savegame.h:savegame_load_from open: epic 7
 dead-api engine/savegame.h:savegame_save_as open: epic 7
-dead-api engine/sensor.h:g_sensor_rotation_effect open: epic 7
-dead-api engine/sensor.h:g_sensor_rotation_effect_cell open: epic 7
-dead-api engine/sensor.h:g_sensor_rotation_effect_map_x open: epic 7
-dead-api engine/sensor.h:g_sensor_rotation_effect_map_y open: epic 7
 dead-api engine/sensor.h:sensor_get_object_of_type_in_cell open: epic 7
 dead-api engine/sensor.h:sensor_is_object_in_party_possession open: epic 7
 dead-api engine/sensor.h:sensor_trigger_local_effect open: epic 7
@@ -612,8 +606,6 @@ params engine/projectile.c:create_impact_explosion open: epic 6
 params engine/projectile.c:hit_creature open: epic 6
 params engine/projectile.c:projectile_create open: epic 6
 params engine/projectile.h:projectile_create open: epic 6
-params engine/sensor.c:sensor_add_event open: epic 6
-params engine/sensor.h:sensor_add_event open: epic 6
 params platform/control.c:find_in_box open: epic 10
 params platform/platform.c:plat_set_pointer open: epic 11
 params platform/platform.h:plat_set_pointer open: epic 11
@@ -767,3 +759,5 @@ static-prefix engine/event.c:event_process_light open: epic 6
 static-prefix engine/event.c:event_process_pit open: epic 6
 static-prefix engine/event.c:event_process_teleporter open: epic 6
 static-prefix engine/event.c:event_process_vi_altar_rebirth open: epic 6
+name engine/event.c:event_is_door_destroyed_by_attack open: epic 6
+name engine/event.h:event_is_door_destroyed_by_attack open: epic 6

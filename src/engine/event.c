@@ -34,14 +34,19 @@ void (*g_endgame_sensor_hook)(uint16_t delay);
 #define GATE_INPUTS(data)   ((data) & 15)
 #define GATE_EXPECTED(data) ((data) >> 4 & 15)
 
+typedef struct {
+    bool material;
+    uint16_t attributes;
+} GroupMaterial;
+
 /* A group that a door or a fake wall can hit: it is not non-material. */
-static bool is_material_group_on(int16_t x, int16_t y, uint16_t *attributes)
+static GroupMaterial material_group_at(int16_t x, int16_t y)
 {
     uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
     if (group == THING_ENDOFLIST)
-        return false;
-    *attributes = map_get_creature_attributes(group);
-    return !(*attributes & CREATURE_NON_MATERIAL);
+        return (GroupMaterial){false, 0};
+    uint16_t attributes = map_get_creature_attributes(group);
+    return (GroupMaterial){!(attributes & CREATURE_NON_MATERIAL), attributes};
 }
 
 static void add_again_next_tick(TimelineEvent *event)
@@ -63,7 +68,6 @@ static void event_process_door_animation(TimelineEvent *event)
         return;
     event->map_time++;
     if (effect == EFFECT_CLEAR) {
-        uint16_t attributes;
         if (map_is_party_on((Location){x, y}) && state != DOOR_OPEN) {
             if (g_party_champion_count) {
                 rec_door_set_state(map, x, y, DOOR_OPEN);
@@ -73,8 +77,10 @@ static void event_process_door_animation(TimelineEvent *event)
             add_again_next_tick(event);
             return;
         }
-        if (is_material_group_on(x, y, &attributes)) {
-            int16_t height = rec_door_is_vertical(map_get_square_first_thing(x, y)) ? creature_height(attributes) : 1;
+        GroupMaterial group = material_group_at(x, y);
+        if (group.material) {
+            int16_t height =
+                rec_door_is_vertical(map_get_square_first_thing(x, y)) ? creature_height(group.attributes) : 1;
             if (height <= state) {
                 group_door_damages_creatures(x, y);
                 rec_door_set_state(map, x, y, state != DOOR_OPEN ? state - 1 : DOOR_OPEN);
@@ -121,14 +127,13 @@ static void event_process_fake_wall(TimelineEvent *event)
     int16_t effect = event_effect(event);
     int16_t map = g_current_map_index;
     uint8_t square = rec_square_byte(map, x, y);
-    uint16_t attributes;
     if (effect == EFFECT_TOGGLE)
         effect = square & FAKE_WALL_OPEN ? EFFECT_CLEAR : EFFECT_SET;
     if (effect != EFFECT_CLEAR) {
         rec_square_set_byte(map, x, y, square | FAKE_WALL_OPEN);
         return;
     }
-    if (map_is_party_on((Location){x, y}) || is_material_group_on(x, y, &attributes)) {
+    if (map_is_party_on((Location){x, y}) || material_group_at(x, y).material) {
         add_again_next_tick(event);
         return;
     }
@@ -362,10 +367,11 @@ static void event_process_light(TimelineEvent *event)
     }
 }
 
-bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, uint16_t ticks)
+bool event_is_door_destroyed_by_attack(Location at, int16_t attack, bool magic, uint16_t ticks)
 {
+    int16_t x = at.x, y = at.y;
     uint16_t door = map_get_square_first_thing(x, y);
-    if (magic_attack ? !rec_door_is_magic_breakable(door) : !rec_door_is_force_breakable(door))
+    if (magic ? !rec_door_is_magic_breakable(door) : !rec_door_is_force_breakable(door))
         return false;
     uint8_t square = rec_square_byte(g_current_map_index, x, y);
     if (attack < door_info_defense(g_current_map_door_info[rec_door_type(door)]) ||

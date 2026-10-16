@@ -67,11 +67,12 @@ void audio_play_data(const int8_t *data, uint16_t length, uint16_t period, const
     if (!data || !length)
         return;
     /* while the music plays, a sample replaces the sample on pair A */
-    int pair = audio.music.count                                                                     ? PAIR_A
-               : !is_voice_busy(&audio.voices[pair_channels[PAIR_A][SOUND_SIDE_LEFT]])               ? PAIR_A
-               : !is_voice_busy(&audio.voices[pair_channels[PAIR_B][SOUND_SIDE_LEFT]])               ? PAIR_B
-               : sound_compare_loudness(audio.pair_volumes[PAIR_A], audio.pair_volumes[PAIR_B]) == 1 ? PAIR_B
-                                                                                                     : PAIR_A;
+    int pair = audio.music.count                                                       ? PAIR_A
+               : !is_voice_busy(&audio.voices[pair_channels[PAIR_A][SOUND_SIDE_LEFT]]) ? PAIR_A
+               : !is_voice_busy(&audio.voices[pair_channels[PAIR_B][SOUND_SIDE_LEFT]]) ? PAIR_B
+               : sound_compare_loudness(audio.pair_volumes[PAIR_A], audio.pair_volumes[PAIR_B]) == LOUDNESS_HIGHER
+                   ? PAIR_B
+                   : PAIR_A;
     memcpy(audio.pair_volumes[pair], volumes, SOUND_SIDE_COUNT);
     memcpy(audio.pair_samples[pair], data, length);
     for (int side = 0; side < SOUND_SIDE_COUNT; side++)

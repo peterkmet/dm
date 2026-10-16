@@ -174,7 +174,7 @@ The trigger rule: XOR the value with the revert bit (byte 5 bit 5). Effect 3 (ho
 2. A local sensor (byte 4 bit 3) calls `sensor_trigger_local_effect(word 6 >> 4, ...)`. Local effect 10 gives 300 experience in skill 8: to the leader for a wall sensor, else shared by the living champions. Local effects 1 and 2 rotate the sensors of the cell (`sensor_process_rotation_effect`): the first sensor moves behind the last sensor of the cell.
 3. A remote sensor adds a square event at the target (word 6 bits 6–10: X, bits 11–15: Y) after the delay (word 4 bits 7–10). The target square type selects the event type (`0x100d4a`): wall 6, corridor 5, pit 9, stairs 0, door 10, teleporter 8, fake wall 7. Only a wall target keeps the target cell (word 6 bits 4–5).
 
-`sensor_add_event(type, x, y, cell, effect, time)` adds the event on the current map. The priority is 1 for effect 0, 3 for effect 1, 2 for effect 2, and 0 for other effects. Example: a door button click adds `sensor_add_event(10, x, y, 0, 2, g_game_time + 1)`.
+`sensor_add_event(type, at, cell, effect, time)` adds the event on the current map. The priority is 1 for effect 0, 3 for effect 1, 2 for effect 2, and 0 for other effects. Example: a door button click adds `sensor_add_event(10, at, 0, 2, g_game_time + 1)`.
 
 ## Doors
 
@@ -185,7 +185,7 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 - A closing door on the party square (state not 0) opens fully when the party has champions, damages the party (`champion_damage_all(5, 4, 2)`, sound 15), and tries again at time + 2.
 - A closing door with a group that is not non-material (creature attribute bit 6) goes back one step when the creature height is at most the state, plays sound 4, and tries again at time + 2. The height is 1, or creature attribute bits 7–8 for a door with bit 5 of byte 3.
 - Event 2 (door destruction): the state becomes 5.
-- `event_is_door_destroyed_by_attack(x, y, attack, magic_attack, ticks)` (`0x11d5e0`): force (`magic_attack` 0) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Else event 2 destroys it after `ticks`. Returns 1 when the door breaks.
+- `event_is_door_destroyed_by_attack(at, attack, magic, ticks)` (`0x11d5e0`): force (`magic` false) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Else event 2 destroys it after `ticks`. Returns 1 when the door breaks.
 
 ## Pits, teleporters, and fake walls
 
