@@ -14,13 +14,14 @@
 
 Project rules (CLAUDE.md, skills c-decomp-port and python-uv):
 
-- Work on branch `feature/2026-10-16-final-refactor` in the main checkout. No push, no merge to main.
+- Work on branch `feature/2026-10-16-final-refactor`; streams run in worktrees and package tails in the main
+  checkout (section Run). No push, no merge to main.
 - Game behavior and the drawn pixels do not change. Invariants: the golden snapshots `tests/golden/save.json`, `view.json`, `rules.json`, `screens.json` (Task 2), `protocol.json` (Task 1) stay equal; the differential tests pass; `Party`, `TimelineEvent`, `ActiveGroup` keep `sizeof` and field offsets; `Champion` keeps the offsets of its saved fields and appends runtime fields after them; the save file layout does not change; the state JSON names and the request names of the protocol do not change.
 - A difference in a differential or golden test during a rule move (move chain, rules out of ui) stops the run for the user.
 - C11, 0 warnings. From package B on, the flags are `-std=c11 -Wall -Wextra -Werror -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wvla -Wimplicit-fallthrough -O2 -g`, for `make` and `make windows`.
 - Every change in `src/` follows `docs/coding-standard.md` v2. A violation that a later epic removes goes into `tests/standard/allowlist.txt` as `<check> <target> open: epic N` (epic numbers in the Epic map below); the last task removes every `open:` line.
-- Commands before package B: build `make -C port`, one test file `uv run pytest -q tests/test_x.py`. From package B on: build `make` (game and library), `make lib` (library only), one test file `uv run pytest -q tests/<folder>/test_x.py`, full suite `make test` (`uv run pytest -q -n auto`).
-- The author runs the build and only the tests of the changed code, never the full suite. The controller runs the full suite.
+- Commands before package B: build `make -C port`, one test file `uv run pytest -q tests/test_x.py`. From package B on: build `make` (game and library), `make lib` (library only), full suite `make test` (`uv run pytest -q -n auto`); one test file `uv run pytest -q tests/test_x.py` until Task 18, then `uv run pytest -q tests/<folder>/test_x.py`.
+- The author runs the build and only the tests of the changed code, never the full suite. The controller runs the full suite. Exception: a task that rewrites files over the whole tree (the package tails, the test folder move of Task 18, the ruff fixes of Task 20, the private loader of Task 8) runs the full suite as its test step; the task says so.
 - Names, prefixes, types and signatures that this plan states are binding; a task that needs a name the plan does not state picks one by the standard and reports it.
 - Line numbers in this plan are of commit `72e24b5` (the plan base). Earlier tasks move code; find a place by the symbol name the plan gives, and use the line number only as a hint.
 - Mechanical changes over many files (moves, include rewrites, renames, enum-to-define) run as the script that the task gives; the script stays out of the repository unless the task says otherwise. A task that is a scripted rename may touch many files; every other task changes one module.
@@ -29,7 +30,7 @@ Project rules (CLAUDE.md, skills c-decomp-port and python-uv):
 - Keep existing comments. New comments only where needed, one line, about what the code does, never its history.
 - Conventional Commits, one type per commit, one logical change per commit; each commit builds and passes the tests of the changed code.
 - uv only (`uv add --dev`, `uv run`); never pip or the system python. No `-n auto` in `addopts`.
-- Do not download or run third-party code (libraries, CDN files, packages outside the project's lock file) to check behavior; report what you could not verify. The packages that the plan adds (`clang-format`, `ruff`) come in with `uv add --dev`.
+- Do not download or run third-party code (libraries, CDN files, packages outside the project's lock file) to check behavior; report what you could not verify. The packages that the plan adds come in with uv and the lock file: `clang-format`, `ruff` (`uv add --dev`), `capstone`, `numpy` (`uv add --group research`, Task 4). The SDL3 MinGW package that the `make windows` rule fetches is the one exception that exists today; no task deletes `build/sdl-mingw`.
 - No email address in any file, commit or request.
 
 Test list (CLAUDE.md §2; the review focus adds a test only for code on this list):
@@ -43,42 +44,42 @@ Weakened assertions (approval: pending):
 
 Each item removes or loosens an existing assertion; the owner approves the list once before the run.
 
-1. `tests/test_tables.py:76` `assert not lib.tables_get_creature_info(0)` before the load: removed (Task 30).
+1. `tests/test_tables.py:76` `assert not lib.tables_get_creature_info(0)` before the load: removed (Task 31).
    R4.3 removes the `ready` flag; before `tables_load` an accessor returns a pointer to zeroed tables, not NULL.
    `tables_load(b"/nonexistent/KAOS.FTL")` failing replaces the "no image" case.
-2. `tests/test_tables.py:77` `assert lib.tables_init() == -1`: removed (Task 30); `tables_init` becomes static.
+2. `tests/test_tables.py:77` `assert lib.tables_init() == -1`: removed (Task 31); `tables_init` becomes static.
    Same replacement as item 1.
 3. `tests/test_tables.py:35,50` the `door_info` row (the byte check of `DoorInfo` against the image): removed
-   (Task 30), because R4.3 deletes `tables_get_door_info` and its table.
+   (Task 31), because R4.3 deletes `tables_get_door_info` and its table.
 4. `tests/test_tables.py` `test_accessor_rejects_out_of_range` and `test_symbol_mana_cost_rejects_out_of_range`
-   for the nine scalar tables: `is None` becomes `== 0` (Task 31). R4.3 returns scalars by value; out of range
+   for the nine scalar tables: `is None` becomes `== 0` (Task 32). R4.3 returns scalars by value; out of range
    gives 0. The struct tables keep `is None`.
-5. `tests/test_tables.py` the out-of-range index `0x7FFFFFFF` becomes `0x7FFF` (Task 31): the parameter is
+5. `tests/test_tables.py` the out-of-range index `0x7FFFFFFF` becomes `0x7FFF` (Task 32): the parameter is
    `int16_t`.
-6. `tests/csb_diff.py` becomes `tests/differential/test_csb_mini.py` with assertions (Task 17); a comparison that
+6. `tests/csb_diff.py` becomes `tests/differential/test_csb_mini.py` with assertions (Task 18); a comparison that
    reports a known difference may stay out, named in the commit message. (New coverage; listed because the task
    chooses what to assert.)
 
 Not weakening, for the record: the harness changes (paths, imports, names, `bool` instead of `0/-1`, struct
-fields instead of globals), the stricter record and notation checks (Tasks 9-14), and the golden tests without
-`scrub_free_groups` (Task 67, stricter).
+fields instead of globals), the stricter record and notation checks (Tasks 10-15), and the golden tests without
+`scrub_free_groups` (Task 70, stricter).
 
 ## Review Focus
 
 The inputs and conditions that no task's own tests would meet, most likely first, each with its test:
 
-1. Two test modules in one xdist worker share a process: each must see its own C globals. Test: Task 7
+1. Two test modules in one xdist worker share a process: each must see its own C globals. Test: Task 8
    (`test_each_load_has_its_own_globals`).
 2. A CSB load that fails in `csb_text_build` must leave no loaded image (a real bug,
-   `port/src/data/csbimage.c:184-185`). Test: Task 36 (`test_failed_text_build_publishes_no_image`).
+   `port/src/data/csbimage.c:184-185`). Test: Task 37 (`test_failed_text_build_publishes_no_image`).
 3. A client of the control socket sends two requests in one write, or disconnects in the middle of a line: two
-   replies in order; the game keeps running and the next client gets answers. Test: Task 115.
+   replies in order; the game keeps running and the next client gets answers. Test: Task 121.
 4. A command line with an unknown option, a missing value or a bad number stops with an error; `--help` prints
-   the table. Test: Task 117 (`tests/port/test_options.py`; the options parser is a parser).
+   the table. Test: Task 123 (`tests/port/test_options.py`; the options parser is a parser).
 5. A change of one header rebuilds every object that includes it (`-MMD -MP`), so a stale object never links.
-   Check: Task 5, Step 8 (a Makefile step, not a pytest).
+   Check: Task 6, Step 7 (a Makefile step, not a pytest).
 
-The scroll text that starts with a newline (R8.9) is probably not a bug at `72e24b5` (`end - 2 >= text`); Task 95
+The scroll text that starts with a newline (R8.9) is probably not a bug at `72e24b5` (`end - 2 >= text`); Task 99
 checks it first and adds the guard and one regression test only when the read before the text exists.
 
 ## Packages and streams
@@ -91,14 +92,14 @@ streams, for work that rewrites many files. Packages run one after the other.
 | Package | Epics (for `open: epic N`) | PRD | Tasks | Streams | Tail |
 |---|---|---|---|---|---|
 | A | 1 | R10.5, R12.7, R8.3 scenarios | 1-3 | A1 protocol golden (1), A2 screens golden (2), A3 rule scenarios (3) | none |
-| B | 2 | R1, R2, R12.1, R14.3 | 4-8 | B1 one sequential stream (the tree moves touch every file) | none |
-| C | 3, 12, 13, 14 | R3, R12 without R12.6/R12.7, R13.3, R14.1/2/4 | 9-26 | C1 standard checks (9-14), C2 tests (15-19), C3 docs folders and repository files (20-22) | 23-26: SPDX and guards, enums to defines, comments to headers, stale lines |
-| D | 4, 9 | R4, R5.7, R9 | 27-47 | D1 os, kaos, ftl (27-29), D2 tables, spells, ids (30-35), D3 csb image, file, adventure, graphics (36-39), D4 audio (40-41) | 42-47 |
-| E | 5 | R5.1-R5.3, R5.5, R5.6 | 48-61 | E1 record module (48-49), E2 game.h split (50-56, the critical path), E3 helpers, message, savefile, explored (57-61) | none |
-| F | 5, 6, 7 | R5.4, R5.8, R6, R7 | 62-84 | F1 group and move, F2 champion, inventory, action, magic, F3 projectile, sensor, savegame, sound (62-76) | 77-84: damage outcome, sound requests, indices, Session, type table, dead API, game names, constants |
-| G | 8 | R8 | 85-109 | G1 view (85-92), G2 status, panel, menus (93-96), G3 frame, entrance, command, select (97-100), G4 rules out of ui (101-104) | 105-109: Screen, view result, copied code, types, comments |
-| H | 10, 11 | R10, R11 | 110-120 | H1 control and transport (110-116), H2 options, debug view, platform.c (117-119) | 120: `app.c`, `main.c` |
-| I | 13 | R13.1, R13.2, R13.4-R13.6 | 121-126 | I1 architecture (121), I2 README split (122), I3 CLAUDE.md, agents, todo, CHANGELOG (123-124) | 125-126: the last `open:` lines, the PRD acceptance |
+| B | 2 | R1, R2, R12.1, R14.3 | 4-9 | B1 one sequential stream (the tree moves touch every file) | none |
+| C | 3, 12, 13, 14 | R3, R12 without R12.6/R12.7, R13.3, R14.1/2/4 | 10-27 | C1 standard checks (10-15), C2 tests (16-20), C3 docs folders and repository files (21-23) | 24-27: SPDX and guards, enums to defines, comments to headers, stale lines and ruff |
+| D | 4, 9 | R4, R5.7, R9, R3.4 (data) | 28-49 | D1 os, kaos, ftl (28-30), D2 tables, spells, ids (31-36), D3 csb image, file, adventure, graphics (37-40), D4 audio (41-42) | 43-49 |
+| E | 5 | R5.1-R5.3, R5.5, R5.6 | 50-64 | E1 record module (50-51), E2 game.h split (52-58, the critical path), E3 helpers, message, savefile, explored (59-63) | 64: the renames over the merged tree |
+| F | 5, 6, 7 | R5.4, R5.8, R6, R7, R3.4 (engine) | 65-88 | F1 group and move (65-70), F2 champion, inventory, action, magic (71-74), F3 projectile, sensor, savegame, sound (75-79) | 80-88: damage outcome, sound requests, indices, Session, type table, dead API, game names, constants, short names |
+| G | 8 | R8, R3.4 (ui) | 89-115 | G1 view (89-96), G2 status, panel, menus, icon guard, load level (97-101), G3 frame, entrance, command, select (102-105), G4 rules out of ui (106-109) | 110-115: Screen, view result, copied code, types, comments, short names |
+| H | 10, 11 | R10, R11 | 116-126 | H1 control and transport (116-122), H2 options, debug view, platform.c (123-125) | 126: `app.c`, `main.c` |
+| I | 13 | R13.1, R13.2, R13.4-R13.6 | 127-132 | I1 architecture (127), I2 README split (128), I3 CLAUDE.md, agents, todo, CHANGELOG (129-130) | 131-132: the last `open:` lines, the PRD acceptance |
 
 Epic numbers: 1 golden snapshots, 2 tree and build, 3 standard checks, 4 data, 5 engine modules and records,
 6 engine API shape, 7 engine state, 8 ui, 9 audio, 10 control, 11 platform, 12 tests, 13 docs and repository
@@ -121,7 +122,7 @@ The owner's request replaces "the next task starts after a green full suite" and
 - **Merge:** when every stream of a package is done, the controller merges the stream branches into
   `feature/2026-10-16-final-refactor` with `git merge --no-ff`, in stream order. A conflict in an include block:
   take the union and run `make format`. A conflict in `tests/standard/allowlist.txt` cannot happen
-  (`merge=union`, Task 9). Any other conflict: the controller resolves it when both sides are
+  (`merge=union`, Task 10). Any other conflict: the controller resolves it when both sides are
   mechanical, else a fix author resolves it. Then the controller removes the worktrees and the stream branches.
 - **Full suite:** after the merge of a package and again after its tail, in the main checkout: `make` (before
   package B: `make -C port`), `make windows` once per package from package B on, and the full suite. On red: a
@@ -141,7 +142,7 @@ Names that tasks of several epics use; each is produced by the task named.
 - `src/engine/record.h`: `rec_<type>_<field>`, `rec_<type>_set_<field>`, `rec_read(thing)`, `rec_write(thing)` (Epic 5).
 - `src/engine/map.h`: `Location {int16_t x, y;}`, `Position {int16_t map, x, y;}`, `map_step`, `direction_right/back/left` (Epic 5).
 - `src/engine/game.h`: `Session g_session` (Epic 7); `src/ui/video.h`: `Screen g_screen` (Epic 8).
-- `src/engine/sound.h`: `g_sound_play_hook(sample, length, period, volumes)` (Epic 5), set by `ui/audio.c` (Epic 9).
+- `src/engine/sound.h`: `g_sound_play_hook(sample, length, period, volumes)` and its setter `ui/audio.c` (Task 41, package D).
 
 ---
 
@@ -149,31 +150,31 @@ Names that tasks of several epics use; each is produced by the task named.
 
 - Packages and streams (the owner's request): R12 without R12.6/R12.7, R13.3 and R14 move from the end into
   package C; the SPDX lines, the enum-to-define script and the comment move run in the package C tail (Tasks
-  23-25), so every later task works on final files.
+  24-26), so every later task works on final files.
 - Fall-through: clang does not accept `/* fall through */` in C; the five sites get `__attribute__((fallthrough));`
-  and keep the comment (Task 5).
-- `-isystem third_party` instead of `-Ithird_party`, so GCC with `-Werror` does not warn in `dr_mp3.h` (Task 5).
-- `conftest.py` runs `make all` when SDL3 is installed (five tests start `build/dm`), else `make lib` (Task 7).
-- `--import-mode=importlib` comes with the test folders (Task 17), because the test modules import each other
-  until Task 16; Task 7 removes `-n auto` and sets `pythonpath = ["tests"]`.
+  and keep the comment (Task 6).
+- `-isystem third_party` instead of `-Ithird_party`, so GCC with `-Werror` does not warn in `dr_mp3.h` (Task 6).
+- `conftest.py` runs `make all` when SDL3 is installed (five tests start `build/dm`), else `make lib` (Task 8).
+- `--import-mode=importlib` comes with the test folders (Task 18), because the test modules import each other
+  until Task 17; Task 8 removes `-n auto` and sets `pythonpath = ["tests"]`.
 - `dungeon.c` asks `tables_is_loaded()`, not `kaos_is_loaded()`: standard rule 3.6 keeps `kaos_*` calls in
-  `data/` (Tasks 28, 42).
+  `data/` (Tasks 29, 43).
 - The 16-bit helpers are C11 `inline` with one external definition in `arith.c`, not `static inline`: the
-  differential test calls them in the library (Task 50).
-- `game_fatal` and the record log go through `os_fatal` and `os_log` of `data/os.h` (Tasks 27, 51).
-- The move chain walker takes an `int16_t mover` with `MOVER_*` defines, not an enum (standard 3.2; Task 66).
+  differential test calls them in the library (Task 52).
+- `game_fatal` and the record log go through `os_fatal` and `os_log` of `data/os.h` (Tasks 28, 53).
+- The move chain walker takes an `int16_t mover` with `MOVER_*` defines, not an enum (standard 3.2; Task 69).
 - `g_current_group_map_x/_y` and `_thing` live across calls (the Couatl sound and the teleporter check,
-  `port/src/engine/group.c:233, 907`): they become a file-static `last_turn`, not `GroupTurn` fields (Task 62).
-- The view state shared by three files is `View g_view` in `view_internal.h`, not `static` (Task 92).
+  `port/src/engine/group.c:233, 907`): they become a file-static `last_turn`, not `GroupTurn` fields (Task 65).
+- The view state shared by three files is `View g_view` in `view_internal.h`, not `static` (Task 96).
 - `inventory_grab_object(thing, cell, at)` takes the pile top object from the view;
-  `inventory_drop_object(cell, at, onto_vi_altar)` tests the altar (Task 101). The output mapping becomes the
-  static `layout_output` and `map_mouse` in `platform.c` (Task 100), so the dead-API check passes.
-- The transport moves in stream H1 (Task 115), not in the tail; `transport_poll` steps a running turn before it
+  `inventory_drop_object(cell, at, onto_vi_altar)` tests the altar (Task 106). The output mapping becomes the
+  static `layout_output` and `map_mouse` in `platform.c` (Task 105), so the dead-API check passes.
+- The transport moves in stream H1 (Task 121), not in the tail; `transport_poll` steps a running turn before it
   reads requests, as `control_poll` does today, so the golden protocol does not change; `control_drop_client`
-  stops a batch when the client goes (Task 115).
-- The `decimal` check accepts the base `10` of `strtol` (one sentence in standard rule 3.1, Task 113).
+  stops a batch when the client goes (Task 121).
+- The `decimal` check accepts the base `10` of `strtol` (one sentence in standard rule 3.1, Task 119).
 - The two `ACTION_STAB_*` game names come from the game tables at run time (no source in `docs/` names them);
-  the run reports them (Task 83).
+  the run reports them (Task 86).
 
 ## Tasks
 
@@ -359,7 +360,7 @@ Shared files: none (imports helpers from `tests/test_golden_rules.py`, does not 
   (`port/src/ui/command.h:108`), `menus_draw_action_damage(int16_t)` (`port/src/ui/ui.h:143`).
 - Produces: `tests/golden/screens.json` with the keys `status`, `inventory`, `action`, `spell`; the gate of
   packages G and I. Later tasks rename the C functions that the test calls and the global `fb` (`g_screen`, Task
-  87); the hashes do not change.
+  110); the hashes do not change.
 
 Facts: `CHAMPION_ATTR_REDRAW_MASK = 0xff80` (`port/src/engine/champion.h:57`); `ui_draw_champion_damage(1, 37)`
 and `menus_draw_action_damage(25)` are called by `tests/test_ui.py:240-241`.
@@ -474,7 +475,7 @@ Shared files: none (`tests/test_golden_rules.py` and `tests/golden/rules.json` b
   `explored_reset(void)`, `explored_save(uint8_t **, size_t *)` (`port/src/engine/explored.h`),
   `champion_get_maximum_load(const Champion *)` (`port/src/engine/champion.h:97`).
 - Produces: the keys `grab and drop`, `grab under a creature`, `alcove`, `imaginary wall`, `movement blocked`,
-  `fuse`, `load`, `visibility` in `tests/golden/rules.json`: the gate of Task 88 (stream G4). G4 may change the C
+  `fuse`, `load`, `visibility` in `tests/golden/rules.json`: the gate of Tasks 106-109 (stream G4). G4 may change the C
   calls of these scenarios (the moved functions get engine names); it must not change the keys or the values.
 
 Rules and their source (each rule gets one scenario; the view copy of the level change is covered by
@@ -763,7 +764,7 @@ Facts for the package:
   `port/src/engine/action.c:550, 570`, `port/src/engine/sensor.c:201`, `port/src/ui/view.c:386, 1942`. Each site
   already has a `/* fall through */` comment; clang does not accept a comment in C, only
   `__attribute__((fallthrough));` (GCC accepts both). The MinGW GCC 16.2 `-fsyntax-only` run with the new flags
-  gives 0 warnings; optimizer warnings at `-O2` are not checked yet (Task 5 builds it).
+  gives 0 warnings; optimizer warnings at `-O2` are not checked yet (Task 6 builds it).
 - Tests: 31 `subprocess.run(["make", "-C", "port", ...])` calls in 26 files; 12 modules compile the library with
   clang (`tests/test_control.py:31-36` is the pattern; `game_sources()` and `PORT_INCLUDES` in
   `tests/conftest.py:10-16`); `tests/test_tables.py:63-70` compiles a data-only library; 19 modules load
@@ -783,14 +784,14 @@ Rulings of this package (record them in the ledger):
 
 - Fall-through: the five sites get `__attribute__((fallthrough));` on the line before the next label, and the
   existing `/* fall through */` comment stays. PRD R2.2 says "a `/* fall through */` comment", which clang does
-  not accept in Task 19.
+  not accept.
 - `third_party/` goes on the include path as `-isystem third_party`, not `-Ithird_party`: system headers give no
   warnings in clang and GCC, so `-Werror` does not depend on dr_mp3. The include still names the folder
   (`<dr_mp3/dr_mp3.h>`).
 - `conftest.py` builds `make all` when SDL3 is installed and `make lib` when it is not: five tests start
   `build/dm`. PRD R2.4 names `make lib` only.
-- `addopts` loses `-n auto` and `pythonpath = ["tests"]` comes in Task 7; `--import-mode=importlib` comes with
-  the test folders in Task 17, because test modules still import each other until Task 16.
+- `addopts` loses `-n auto` and `pythonpath = ["tests"]` comes in Task 8; `--import-mode=importlib` comes with
+  the test folders in Task 18, because test modules still import each other until Task 17.
 
 #### Stream B1: tree and build
 
@@ -807,7 +808,7 @@ Shared files: all of `src/`, `tests/`, `docs/` (single stream; no parallel work 
   `tools/csb_match.py` stays until stream C3), `tools/research/platforms/dm2sounds.py:105`
 
 **Interfaces:**
-- Produces: `tools/dist/make-dist.sh`, `tools/dist/make-dist-win.sh` (the `dist`, `dist-win` targets of Task 5
+- Produces: `tools/dist/make-dist.sh`, `tools/dist/make-dist-win.sh` (the `dist`, `dist-win` targets of Task 6
   call them); `tools/ghidra/decompile-all.sh`.
 
 - [ ] **Step 1: Move the files**
@@ -824,7 +825,7 @@ git mv tools/platforms tools/research/platforms
 
 In `tools/ghidra/decompile-all.sh:5`, `tools/dist/make-dist.sh:4` and `tools/dist/make-dist-win.sh:4`, replace
 `cd "$(dirname "$0")/.."` with `cd "$(dirname "$0")/../.."`. In both dist scripts keep `make -C port` for now
-(Task 5 changes it with the Makefile).
+(Task 6 changes it with the Makefile).
 
 - [ ] **Step 3: Write `tools/research/README.md`**
 
@@ -867,20 +868,47 @@ git add -A tools pyproject.toml uv.lock README.md
 git commit -m "refactor: move the dist, Ghidra and research scripts into their tool folders"
 ```
 
-### Task 5: Move the sources to `src/`, the Makefile to the root, and name the layer in every include
+### Task 5: Annotate the five fall-through cases
+
+**Files:**
+- Modify: `port/src/engine/action.c:550,570`, `port/src/engine/sensor.c:201`, `port/src/ui/view.c:386,1942`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: code that builds with `-Wimplicit-fallthrough` (Task 6 adds the flag).
+
+Fact: `clang -Wimplicit-fallthrough` reports these five sites at 72e24b5 (inventory handover, "Extra warnings");
+clang does not accept a `/* fall through */` comment as the annotation in C.
+
+- [ ] **Step 1: Annotate.** At each site, put `__attribute__((fallthrough));` on its own line directly before the
+  next `case` label and keep the comment. Example for `port/src/engine/action.c:549`:
+
+```c
+        /* no closed door: a melee attack */
+        /* fall through */
+        __attribute__((fallthrough));
+    case ACTION_PUNCH:
+```
+
+  For `port/src/ui/view.c:1942` (`draw_square_pit(s, a->state); /* fall through */`), keep the comment on that line
+  and add `__attribute__((fallthrough));` on the next line.
+- [ ] **Step 2: Check.** `make -C port CFLAGS="-std=c11 -Wall -Wextra -Wimplicit-fallthrough -O2 -g"`. Expected: 0
+  warnings. Then `make -C port` (the normal flags) and `uv run pytest -q tests/test_view.py tests/test_actions.py`.
+- [ ] **Step 3: Commit.** `git commit -am "build: annotate the five fall-through cases"`
+
+### Task 6: Move the sources to `src/`, the Makefile to the root, and name the layer in every include
 
 **Files:**
 - Move: `port/src/<layer>/*` → `src/<layer>/*` (four layers)
 - Move: `port/src/ui/dr_mp3.h` → `third_party/dr_mp3/dr_mp3.h`
 - Create: `third_party/dr_mp3/README.md`, `Makefile`
 - Delete: `port/Makefile`, `port/`
-- Modify: every `src/*/*.[ch]` (includes, by script); `src/engine/action.c:550,570`, `src/engine/sensor.c:201`,
-  `src/ui/view.c:386,1942` (fall-through); `src/ui/music.c:14` (dr_mp3 include);
+- Modify: every `src/*/*.[ch]` (includes, by script); `src/ui/music.c:14` (dr_mp3 include);
   `tests/conftest.py:10-16,86`; the 31 `make -C port` calls in `tests/`; `tests/test_standard.py:1,10-12,28-29,
   292-311`; `tests/standard_allowlist.txt:2`; `tools/dist/make-dist.sh:5`, `tools/dist/make-dist-win.sh:5-6`
 
 **Interfaces:**
-- Consumes: `tools/dist/*.sh` (Task 4).
+- Consumes: `tools/dist/*.sh` (Task 4); the fall-through annotations (Task 5).
 - Produces: the root `Makefile` with the targets `all lib windows test check format dist dist-win play clean`;
   the variables `SOURCES = $(wildcard src/*/*.c)` (a new layer folder such as `src/control/` joins without a
   Makefile change), `SDL_SOURCES`, `WINDOWS_ONLY`, `POSIX_ONLY` (package H renames `control.c` and
@@ -934,22 +962,7 @@ for path in sorted(SRC.glob("*/*.[ch]")):
 Run: `git grep -n -E '#\s*include\s+"[^/"]+"' -- src`
 Expected: nothing (every project include names its layer).
 
-- [ ] **Step 3: Annotate the five fall-through cases**
-
-At each site, put `__attribute__((fallthrough));` on its own line directly before the next `case` label and
-keep the comment. Example for `src/engine/action.c:549`:
-
-```c
-        /* no closed door: a melee attack */
-        /* fall through */
-        __attribute__((fallthrough));
-    case ACTION_PUNCH:
-```
-
-For `src/ui/view.c:1942` (`draw_square_pit(s, a->state); /* fall through */`), keep the comment on that line and
-add `__attribute__((fallthrough));` on the next line.
-
-- [ ] **Step 4: Write `third_party/dr_mp3/README.md`**
+- [ ] **Step 3: Write `third_party/dr_mp3/README.md`**
 
 ```markdown
 # dr_mp3
@@ -959,7 +972,7 @@ https://github.com/mackron/dr_libs. License: public domain or MIT-0, as the end 
 Vendored without change; outside the format check and the standard checks.
 ```
 
-- [ ] **Step 5: Write the root `Makefile`**
+- [ ] **Step 4: Write the root `Makefile`**
 
 ```make
 # The Dungeon Master port: the game, the test library, the Windows build, the checks.
@@ -973,6 +986,8 @@ ifeq ($(SANITIZE),1)
 CFLAGS  += -fsanitize=address,undefined
 LDFLAGS += -fsanitize=address,undefined
 endif
+# Extra flags for one build, for example a developer check: make lib CFLAGS_EXTRA=-DVIEW_MIRROR_CHECK
+CFLAGS += $(CFLAGS_EXTRA)
 
 # SDL3 from Homebrew. Recursively expanded: only the targets that compile or link SDL code run brew.
 SDL_PREFIX ?= $(shell brew --prefix sdl3)
@@ -1058,9 +1073,10 @@ clean:
 .PHONY: all lib windows test check format dist dist-win play clean
 ```
 
-Stream C1 changes the `check` line `tests/test_standard.py` to `tests/standard`; stream C2 adds `ruff`.
+Stream C1 (Task 10) changes the `check` line `tests/test_standard.py` to `tests/standard`; stream C2 (Task 20)
+adds the `ruff` line. Both edit the `check` recipe of `Makefile`: the merge keeps both lines.
 
-- [ ] **Step 6: Follow the move in the scripts and the tests**
+- [ ] **Step 5: Follow the move in the scripts and the tests**
 
 Run:
 ```bash
@@ -1074,10 +1090,10 @@ Expected: the last grep prints nothing. In `tests/conftest.py`, set
 `PORT_SRC = Path(__file__).resolve().parent.parent / "src"` and
 `PORT_INCLUDES = ["-Isrc", "-isystem", "third_party"]` with absolute paths
 (`[f"-I{PORT_SRC}", "-isystem", str(PORT_SRC.parent / "third_party")]`), and in `pytest_configure` run
-`["make"]` with `cwd=PORT_SRC.parent`. (Task 7 replaces both with the loader; this step keeps every commit
+`["make"]` with `cwd=PORT_SRC.parent`. (Task 8 replaces both with the loader; this step keeps every commit
 green.)
 
-- [ ] **Step 7: Follow the move in the standard check**
+- [ ] **Step 6: Follow the move in the standard check**
 
 In `tests/test_standard.py`: line 1 docstring `src/`, `SRC = ROOT / "src"`, the allowlist comment line of
 `tests/standard_allowlist.txt:2` says `src/`; remove `VENDORED` and its use in `sources()` (dr_mp3 is no longer
@@ -1096,7 +1112,7 @@ the include path, and an include without a layer fails:
 
 `home` (`:298`) goes.
 
-- [ ] **Step 8: Build and check the build rules**
+- [ ] **Step 7: Build and check the build rules**
 
 Run:
 ```bash
@@ -1110,26 +1126,26 @@ make windows 2>&1 | grep -c -E "warning|error"                         # Expecte
 If GCC reports a warning at `-O2` (only `-fsyntax-only` was checked), fix the code with the smallest change that
 keeps the behavior, and report it; if no such change exists, stop and ask.
 
-- [ ] **Step 9: Run the tests of the changed code**
+- [ ] **Step 8: Run the tests of the changed code**
 
 Run: `uv run pytest -q tests/test_standard.py tests/test_port.py tests/test_control.py tests/test_tables.py tests/test_gameloop.py`
 Expected: pass (the format check passes: the include rewrite keeps the line lengths under 120).
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add -A src third_party Makefile port tests tools/dist
 git commit -m "refactor: move the port to src/ with a root Makefile and layer-named includes"
 ```
 
-### Task 6: Sort the includes with clang-format 23 from PyPI
+### Task 7: Sort the includes with clang-format 23 from PyPI
 
 **Files:**
 - Modify: `.clang-format`, `pyproject.toml`, `uv.lock`, `tests/test_standard.py:316-322`, every `src/*/*.[ch]`
   (format), `.git-blame-ignore-revs`
 
 **Interfaces:**
-- Consumes: the layer-named includes (Task 5).
+- Consumes: the layer-named includes (Task 6).
 - Produces: `uv run clang-format` (version 23.1.x) for `make format`, `make check` and the format check; the
   include order of standard rule 2.3.
 
@@ -1197,7 +1213,7 @@ git add .git-blame-ignore-revs
 git commit -m "build: ignore the include sort commit in git blame"
 ```
 
-### Task 7: Load a private copy of the library in every test module; no test compiles the library
+### Task 8: Load a private copy of the library in every test module; no test compiles the library
 
 **Files:**
 - Create: `tests/dmtest/__init__.py`, `tests/dmtest/lib.py`, `tests/test_dmtest.py`
@@ -1359,14 +1375,14 @@ git add -A tests pyproject.toml
 git commit -m "test: load a private copy of libdm per test module and build it once"
 ```
 
-### Task 8: Follow the new layout in the docs, CLAUDE.md and the agents
+### Task 9: Follow the new layout in the docs, CLAUDE.md and the agents
 
 **Files:**
 - Modify: `CLAUDE.md`, `README.md`, `.claude/agents/dm-coordinator.md`, the 15 pages of `docs/` that name
   `port/...` (not `docs/superpowers/`, not `CHANGELOG.md`)
 
 **Interfaces:**
-- Consumes: the layout of Tasks 4-7.
+- Consumes: the layout of Tasks 4-8.
 - Produces: the project `CLAUDE.md` commands that every later task uses: build `make`, one test file
   `uv run pytest -q tests/test_x.py`, full suite `make test`, personal play `make play`.
 
@@ -1435,6 +1451,11 @@ Do not move `playthroughs/lego/` (git-ignored, the owner's saves; a game may run
 handover of the ledger: "The owner moves `playthroughs/lego/` to `playthroughs/local/` (`make play` writes there)."
 Stream I3 puts the same line into the manual test checklist.
 
+R14.3: `run.txt` leaves the root. It is an untracked file of the owner (one play command, the same as the "Run"
+line of `CLAUDE.md`): move it, do not delete it: `mkdir -p playthroughs/local && mv run.txt playthroughs/local/`
+(git-ignored). Delete the line `/ghidra/` from `.gitignore` (`.gitignore:3`; no `ghidra/` folder exists at the
+root).
+
 - [ ] **Step 4: Check the links of the moved paths**
 
 Run: `for f in $(git grep -h -o -E "\b(src|tools|third_party)/[A-Za-z0-9_./-]+\.(c|h|py|sh|md)\b" -- docs/*.md README.md CLAUDE.md | sort -u); do test -e "$f" || echo "missing $f"; done`
@@ -1443,7 +1464,7 @@ Expected: nothing missing.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A CLAUDE.md README.md .claude docs
+git add -A CLAUDE.md README.md .claude docs .gitignore
 git commit -m "docs: follow the src/ layout, the root Makefile and the local play folder"
 ```
 
@@ -1457,24 +1478,24 @@ Starts after package B. State that package B leaves (Assumption: each task check
 step): the sources are in `src/<layer>/` with layer-named includes; the root `Makefile` has `all`, `lib`, `format`;
 `clang-format` 23 is in the `dev` group; `tests/dmtest/lib.py` has `load_lib()`; `tests/conftest.py` builds the
 library once with `make lib`; no test compiles the library; `pyproject.toml` has `pythonpath = ["tests"]` and
-`addopts = "--dist loadfile"` (Task 17 adds `--import-mode=importlib`); the standard check is still `tests/test_standard.py` with
+`addopts = "--dist loadfile"` (Task 18 adds `--import-mode=importlib`); the standard check is still `tests/test_standard.py` with
 `SRC = ROOT / "src"` and `tests/standard_allowlist.txt`; the tools are in `tools/ghidra/`, `tools/dist/`,
 `tools/research/platforms/`, and `tools/csb_match.py` is still at the top of `tools/`.
 
 Three streams run in parallel; the tail runs after the merge.
 
-- Stream C1 (Tasks 9-14): the checks of the standard, in `tests/standard/`.
-- Stream C2 (Tasks 15-19): the test helpers and the test folders.
-- Stream C3 (Tasks 20-22): the docs folders, the stale docs, the repository files.
-- Tail (Tasks 23-26): the SPDX lines and the include guards, the enum-to-define script, the comment move, the
+- Stream C1 (Tasks 10-15): the checks of the standard, in `tests/standard/`.
+- Stream C2 (Tasks 16-20): the test helpers and the test folders.
+- Stream C3 (Tasks 21-23): the docs folders, the stale docs, the repository files.
+- Tail (Tasks 24-27): the SPDX lines and the include guards, the enum-to-define script, the comment move, the
   stale allowlist lines.
 
-Merge notes for the controller: `pyproject.toml` and `uv.lock` change in Task 19 (ruff) and Task 22 (mcp extra,
+Merge notes for the controller: `pyproject.toml` and `uv.lock` change in Task 20 (ruff) and Task 23 (mcp extra,
 `dm-csb-match`): merge `pyproject.toml` by hand, then run `uv lock` and commit the lock file. `tests/test_symbols.py`
-moves in Task 17 (to `tests/tools/`) and gets one path change in Task 20: git merges the rename and the edit.
-`tests/standard/` gets `test_standard.py` and `allowlist.txt` from C1 and `test_docs.py` from C12.
+moves in Task 18 (to `tests/tools/`) and gets one path change in Task 21: git merges the rename and the edit.
+`tests/standard/` gets `test_standard.py` and `allowlist.txt` from C1 and `test_docs.py` from Task 21.
 
-Epic numbers of the `open:` lines (the mapping that `tests/standard/open_lines.py` of Task 9 applies):
+Epic numbers of the `open:` lines (the mapping that `tests/standard/open_lines.py` of Task 10 applies):
 
 | Target | Epic |
 |---|---|
@@ -1494,13 +1515,14 @@ Epic numbers of the `open:` lines (the mapping that `tests/standard/open_lines.p
 Shared files: none (`tests/test_standard.py` and `tests/standard_allowlist.txt` move to `tests/standard/`; no
 other stream of package C touches them).
 
-### Task 9: Move the standard check to tests/standard/ and adapt it to five layers
+### Task 10: Move the standard check to tests/standard/ and adapt it to five layers
 
 **Files:**
 - Move: `tests/test_standard.py` → `tests/standard/test_standard.py`
 - Move: `tests/standard_allowlist.txt` → `tests/standard/allowlist.txt`
 - Create: `.gitattributes`
 - Create: `tests/standard/open_lines.py`
+- Modify: `Makefile` (the `check` recipe runs `uv run pytest -q tests/standard` instead of `tests/test_standard.py`)
 
 **Interfaces:**
 - Consumes: the tree of package B (`src/<layer>/`, includes `"layer/file.h"`, `.venv/bin/clang-format` from the
@@ -1770,15 +1792,20 @@ def test_allowlist_names_documented_reasons():
 
 - [ ] **Step 7: Rewrite the allowlist with the new reason format**
 
+First add the APPB tables to rule 3.12 of `docs/coding-standard.md` (it names only the soundtrack tables; the
+PRD R3 keeps "the APPB address tables" as an exception): append "; the APPB address tables of the CSB image build
+(`data/csbimage.c`, `data/csbtext.c`) stay in the source, named in the allowlist with this reason" to the
+exception sentence. Add `docs/coding-standard.md` to the commit of this task.
+
 Write `tests/standard/allowlist.txt` (the targets of the current lines, `tests/standard_allowlist.txt:3-11`):
 
 ```text
 # Accepted exceptions of tests/standard/test_standard.py. One per line: <check> <target> <reason>.
 # A reason is "rule <n.m>: <text>" for an exception that docs/coding-standard.md names, or "open: epic <N>"
 # for a violation that epic N of the final refactor removes. Targets are relative to src/.
-decimal data/csbimage.c rule 3.12: the APPB address tables, not in the game files
-hex data/csbimage.c rule 3.12: the APPB address tables, not in the game files
-hex data/csbtext.c rule 3.12: the APPB address tables, not in the game files
+decimal data/csbimage.c rule 3.12: the APPB address tables of the CSB image build
+hex data/csbimage.c rule 3.12: the APPB address tables of the CSB image build
+hex data/csbtext.c rule 3.12: the APPB address tables of the CSB image build
 decimal ui/musicmap.c rule 3.12: the FM-Towns CSB track of each square, not in the game files
 decimal ui/music.c rule 3.12: the FM-Towns level tracks and the Super NES trigger squares, not in the game files
 hex engine/map.c open: epic 5
@@ -1879,18 +1906,18 @@ stop and report it instead of allowlisting it.
 - [ ] **Step 10: Commit**
 
 ```bash
-git add .gitattributes tests/standard/
+git add .gitattributes tests/standard/ Makefile
 git commit -m "test: move the standard check to tests/standard and check five layers"
 ```
 
-### Task 10: Constant checks: enum, block, notation per block, single digits
+### Task 11: Constant checks: enum, block, notation per block, single digits
 
 **Files:**
 - Modify: `tests/standard/test_standard.py`
 - Modify: `tests/standard/allowlist.txt`
 
 **Interfaces:**
-- Consumes: Task 9 helpers.
+- Consumes: Task 10 helpers.
 - Produces: the checks `enum`, `block`, `notation` (per block), `decimal` (single digits in `[N]` and `< N;`,
   the base argument of `strto*` allowed). Targets are file paths (`enum data/ids.h`).
 
@@ -2001,8 +2028,8 @@ def test_number_notation():
 - [ ] **Step 5: Add the open lines and run the checks**
 
 Run: `uv run python tests/standard/open_lines.py -k "decimal or enum or block or notation" && uv run pytest -q tests/standard/test_standard.py`
-Expected: "N lines added", then PASS. The enum lines get the epic of their layer; the tail Task 24 converts the
-anonymous enums and Task 26 prunes the lines that no longer apply.
+Expected: "N lines added", then PASS. The enum lines get the epic of their layer; the tail Task 25 converts the
+anonymous enums and Task 27 prunes the lines that no longer apply.
 
 - [ ] **Step 6: Commit**
 
@@ -2011,14 +2038,14 @@ git add tests/standard/
 git commit -m "test: check enums, constant blocks and the notation per block"
 ```
 
-### Task 11: Name checks: name length, static prefix, globals, ordinals, truth values
+### Task 12: Name checks: name length, static prefix, globals, ordinals, truth values
 
 **Files:**
 - Modify: `tests/standard/test_standard.py`
 - Modify: `tests/standard/allowlist.txt`
 
 **Interfaces:**
-- Consumes: `functions(path)`, `comment_above`, `PREFIXES`, `PREDICATE`, `IDENTIFIER` (Task 9 and the current file).
+- Consumes: `functions(path)`, `comment_above`, `PREFIXES`, `PREDICATE`, `IDENTIFIER` (Task 10 and the current file).
 - Produces: the checks `name`, `static-prefix`, `global`, `ordinal`, and the extended `bool`. Targets:
   `<path>:<function>` for `name`, `static-prefix`, `bool`; `<path>` for `global`; the identifier for `ordinal`.
 
@@ -2148,14 +2175,14 @@ git add tests/standard/
 git commit -m "test: check function names, static prefixes, globals, ordinals and truth values"
 ```
 
-### Task 12: Module checks: module, header, include, comment, order
+### Task 13: Module checks: module, header, include, comment, order
 
 **Files:**
 - Modify: `tests/standard/test_standard.py`
 - Modify: `tests/standard/allowlist.txt`
 
 **Interfaces:**
-- Consumes: Task 9 helpers.
+- Consumes: Task 10 helpers.
 - Produces: the checks `module`, `header`, `include`, `comment`, `order`; the helper `module_files(header)`.
   Targets: file paths; `include` uses `<path>:<included header>`.
 
@@ -2330,8 +2357,8 @@ def test_file_order():
 - [ ] **Step 6: Add the open lines and run the checks**
 
 Run: `uv run python tests/standard/open_lines.py -k "module or header or includes or comments or order" && uv run pytest -q tests/standard/test_standard.py`
-Expected: "N lines added", then PASS. Most `header` and `comment` lines go in the tail (Tasks 23 and 25);
-Task 26 prunes them.
+Expected: "N lines added", then PASS. Most `header` and `comment` lines go in the tail (Tasks 24 and 26);
+Task 27 prunes them.
 
 - [ ] **Step 7: Commit**
 
@@ -2340,14 +2367,14 @@ git add tests/standard/
 git commit -m "test: check modules, header heads, dead includes, function comments and file order"
 ```
 
-### Task 13: API checks: type, result, params, dead-api, record
+### Task 14: API checks: type, result, params, dead-api, record
 
 **Files:**
 - Modify: `tests/standard/test_standard.py`
 - Modify: `tests/standard/allowlist.txt`
 
 **Interfaces:**
-- Consumes: Tasks 9, 12 helpers (`functions`, `module_files`, `comment_above`, `extern_names`).
+- Consumes: Tasks 10, 13 helpers (`functions`, `module_files`, `comment_above`, `extern_names`).
 - Produces: the checks `type` (target `<layer>:<parameter name>`), `result` and `params` (target
   `<path>:<function>`), `dead-api` (target `<header path>:<name>`), and the new `record` pattern with the owners
   `record.c`, `record.h`.
@@ -2471,14 +2498,14 @@ git add tests/standard/
 git commit -m "test: check parameter types, results, parameter counts, unused exports and record access"
 ```
 
-### Task 14: Comment and test checks: event-comment, todo, tests
+### Task 15: Comment and test checks: event-comment, todo, tests
 
 **Files:**
 - Modify: `tests/standard/test_standard.py`
 - Modify: `tests/standard/allowlist.txt`
 
 **Interfaces:**
-- Consumes: Task 9 helpers.
+- Consumes: Task 10 helpers.
 - Produces: the checks `event-comment`, `todo` (target: path) and `tests` (target: the test file path relative to
   the repository root, `tests/...`).
 
@@ -2513,6 +2540,10 @@ def test_no_todo_markers():
 
 - [ ] **Step 2: Add the tests check**
 
+The check covers rules 11.1, 11.2 (through Task 19), 11.4 and 11.5. Rule 11.3 (no record decoding by bit shifts
+in a test) has no reliable pattern: change its line in `docs/coding-standard.md` to end with "[review only]";
+Tasks 50 and 51 remove the decoding, and Task 132 greps for it.
+
 ```python
 TEST_IMPORT = re.compile(r"^\s*(?:from\s+test_\w+\s+import|import\s+test_\w+)", re.M)
 MACHINE_PATH = re.compile("/" + "Users/|/" + "private/tmp/")
@@ -2537,26 +2568,27 @@ def test_tests_follow_the_rules():
 
 Run: `uv run python tests/standard/open_lines.py -k "event or todo or tests_follow" && uv run pytest -q tests/standard/test_standard.py`
 Expected: "N lines added" (the `tests` lines get `open: epic 12`; stream C2 removes their cause in this package,
-Task 26 prunes the lines), then PASS.
+Task 27 prunes the lines), then PASS.
 
 - [ ] **Step 4: Check that every key of the standard table has a check**
 
 Run: `grep -o '^| \`[a-z-]*\`' docs/coding-standard.md | tr -d '|\` ' | sort -u > /tmp/keys-std.txt; grep -o 'report("[a-z-]*"\|line_check("[a-z-]*"\|comment_check("[a-z-]*"' tests/standard/test_standard.py | grep -o '"[a-z-]*"' | tr -d '"' | sort -u > /tmp/keys-test.txt; comm -3 /tmp/keys-std.txt /tmp/keys-test.txt`
 Expected: only `hex,`-style table rows that hold two keys (`hex`, `decimal`; `kaos`, `address`) appear, and each
-of those keys is in the test file. Any other key is a missing check: add it before the commit.
+of those keys is in the test file; `format` appears too, because `test_sources_are_formatted` uses `assert`, not
+`report`. Any other key is a missing check: add it before the commit.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/standard/
+git add tests/standard/ docs/coding-standard.md
 git commit -m "test: check event numbers in comments, TODO markers and the test rules"
 ```
 
 #### Stream C2: the test helpers and the test folders
 
-Shared files: `pyproject.toml`, `uv.lock` (C14 also changes them), `tests/test_symbols.py` (C12 changes one path).
+Shared files: `pyproject.toml`, `uv.lock` (Task 23 also changes them), `tests/test_symbols.py` (Task 21 changes one path).
 
-### Task 15: dmtest.constants and dmtest.markers
+### Task 16: dmtest.constants and dmtest.markers
 
 **Files:**
 - Create: `tests/dmtest/constants.py`
@@ -2776,20 +2808,28 @@ git add tests/dmtest/constants.py tests/dmtest/markers.py tests/tools/test_dmtes
 git commit -m "test: add dmtest constants from the C headers and the skip markers"
 ```
 
-### Task 16: Shared helpers in dmtest; no test module imports another
+### Task 17: Shared helpers in dmtest; no test module imports another
 
 **Files:**
 - Create: `tests/dmtest/game.py`, `tests/dmtest/savefile.py`, `tests/dmtest/control.py`, `tests/dmtest/emu.py`
-- Modify: the 20 test files that import from a test module (list in Step 1) and `tests/conftest.py`
+- Modify: the 23 test files that import from a test module (list in Step 1) and `tests/conftest.py`
 
 **Interfaces:**
-- Consumes: `dmtest.lib.load_lib()` (package B), `dmtest.markers` (Task 15).
+- Consumes: `dmtest.lib.load_lib()` (package B), `dmtest.markers` (Task 16).
 - Produces (later tasks and later packages import these; a rename of a C struct field changes these classes):
   - `dmtest.game`: `Box`, `Bitmap`, `Skill`, `Champion`, `Party`, `TimelineEvent`, `RecruitData`, `World`, `Game`,
     `Frames`, `BOOL_GLOBALS`, `global_type(name, default=c_int16)`, `STEP_EAST`, `STEP_NORTH`, `start_game(lib) -> Game`
     (load data, new game: the body of `tests/test_gameloop.py:37-51` without the `make` and `CDLL` lines),
     `recruit_first_champion(game)` (the recruit steps of `tests/test_modes.py:68-77`), `recruit_and_hold_object`,
-    `state`, `scrub_free_groups`, `pack`, `events`, `things_of_type`, `mirrors`, `zone_records`.
+    `state`, `scrub_free_groups`, `pack`, `events`, `things_of_type`, `mirrors`, `zone_records`, `new_game`
+    (`tests/test_creatures.py`), `CHAMPIONS`, `COUNT`, `champions(lib)` (the champion array as `Champion * 4`;
+    Task 72 uses it), `render`, `reset` (`tests/test_ui.py`), `press`, `set_mode`, `VANILLA`, `ADVANCED`,
+    `TURNBASED` (`tests/test_modes.py`).
+  - `dmtest.golden`: the `game` fixture body as `golden_game(tmp_path)`, `recruit`, `add_second_champion`,
+    `zone_box`, `ticks`, `hand_box` (`tests/test_golden_rules.py:41-140`; Task 2's `test_golden_screens.py` uses them).
+  - `dmtest.markers` (Task 16) also gets `sdl3_installed()` and `BUILD` (the build folder) from `tests/test_port.py`;
+    `needs_game` is `needs_dm`.
+  - C constants that modules import from each other (`KEY_M`, `ZONE_*`) come from `dmtest.constants`.
   - `dmtest.savefile`: `SaveFile`, `u8p`, `encode`, `decode`, the KAOS addresses `SAVE_READ_CHECKED_BLOCK`,
     `SAVE_READ_HEADER`, `G_LOAD_FROM_MEMORY`.
   - `dmtest.control`: `Client`, `pump`, `pumped`, `socket_dir()` (the `tempfile.mkdtemp(dir="/tmp")` of
@@ -2861,7 +2901,7 @@ git add tests/
 git commit -m "test: move the shared test helpers into dmtest"
 ```
 
-### Task 17: Test folders by what a test proves
+### Task 18: Test folders by what a test proves
 
 **Files:**
 - Move: every test file by the map below
@@ -2869,7 +2909,7 @@ git commit -m "test: move the shared test helpers into dmtest"
   stays `["tests"]`
 
 **Interfaces:**
-- Consumes: Task 16 (no test module imports another, so a move breaks no import).
+- Consumes: Task 17 (no test module imports another, so a move breaks no import).
 - Produces: the folders `tests/differential/`, `tests/port/`, `tests/golden/`, `tests/tools/`, `tests/standard/`;
   later tasks name test files by these paths (`uv run pytest -q tests/port/test_control.py`).
 
@@ -2881,8 +2921,8 @@ Move map (the classes of `docs/superpowers/2026-10-16-final-refactor-inventory/r
 | `csb_diff.py` | `tests/differential/test_csb_mini.py` (Step 3) |
 | `test_gameloop.py`, `test_control.py`, `test_modes.py`, `test_select.py`, `test_entrance.py`, `test_ui.py`, `test_panels.py`, `test_view.py`, `test_automap.py`, `test_save.py`, `test_actions.py`, `test_port.py`, `test_port_data.py`, `test_music.py`, `test_scale.py`, `test_csb_adventure.py`, `test_csb_save.py` | `tests/port/` |
 | `test_golden_rules.py`, `test_golden_save.py`, `test_golden_view.py` (and the files of package A: `test_golden_protocol.py`, `test_golden_screens.py`) | `tests/golden/` (beside `rules.json`, `save.json`, `view.json`) |
-| `test_adf.py`, `test_extract.py`, `test_ftl.py`, `test_emu.py`, `test_ghidra.py`, `test_symbols.py`, `test_csb_tools.py` | `tests/tools/` |
-| `test_standard.py`, `standard_allowlist.txt` | `tests/standard/` (Task 9) |
+| `test_adf.py`, `test_extract.py`, `test_ftl.py`, `test_emu.py`, `test_ghidra.py`, `test_symbols.py`, `test_csb_tools.py`, `test_dmtest.py` (Task 8) | `tests/tools/` |
+| `test_standard.py`, `standard_allowlist.txt` | `tests/standard/` (Task 10) |
 | `conftest.py` | stays in `tests/` |
 
 - [ ] **Step 1: Check that the list is complete**
@@ -2898,7 +2938,7 @@ mkdir -p tests/differential tests/port tests/tools
 for f in champion creatures move game dungeon spells sound text tables savefile recruit csb_rules csb_engine csb_magic_map csb_text csb_ending; do git mv tests/test_$f.py tests/differential/; done
 for f in gameloop control modes select entrance ui panels view automap save actions port port_data music scale csb_adventure csb_save; do git mv tests/test_$f.py tests/port/; done
 for f in tests/test_golden_*.py; do git mv "$f" tests/golden/; done
-for f in adf extract ftl emu ghidra symbols csb_tools; do git mv tests/test_$f.py tests/tools/; done
+for f in adf extract ftl emu ghidra symbols csb_tools dmtest; do git mv tests/test_$f.py tests/tools/; done
 ```
 
 - [ ] **Step 3: Turn `csb_diff.py` into a differential test**
@@ -2929,14 +2969,14 @@ git add -A tests/
 git commit -m "test: group the tests into differential, port, golden, tools and standard folders"
 ```
 
-### Task 18: C constants from dmtest.constants instead of mirrored values
+### Task 19: C constants from dmtest.constants instead of mirrored values
 
 **Files:**
 - Modify: the test files with mirrored C constants (Step 1 lists them)
 - Create: `/tmp`-free scratch script `$SCRATCH/mirrored.py` (not committed)
 
 **Interfaces:**
-- Consumes: `dmtest.constants` (Task 15), the folders of Task 17.
+- Consumes: `dmtest.constants` (Task 16), the folders of Task 18.
 - Produces: test files that read C values only through `C.<NAME>`.
 
 - [ ] **Step 1: Find the mirrored constants**
@@ -2993,14 +3033,14 @@ git add tests/
 git commit -m "test: read C constants from the headers instead of mirroring them"
 ```
 
-### Task 19: Skip markers, no machine paths, no make calls, ruff
+### Task 20: Skip markers, no machine paths, no make calls, ruff
 
 **Files:**
 - Modify: the test files with skip conditions, `make` calls or machine paths (Step 1)
 - Modify: `pyproject.toml`, `uv.lock`
 
 **Interfaces:**
-- Consumes: `dmtest.markers` (Task 15).
+- Consumes: `dmtest.markers` (Task 16).
 - Produces: `ruff` in the `dev` group with `[tool.ruff] line-length = 160`; `make check` (package B owns the
   Makefile; Assumption: B's `check` target already runs `uv run ruff check tests tools/dmtools` or has a place for
   it; Step 6 checks) runs it.
@@ -3051,9 +3091,10 @@ line-length = 160
 src = ["tests", "tools/dmtools"]
 ```
 
-Run: `uv run ruff check tests tools/dmtools`
-Fix each finding (unused imports, undefined names); `uv run ruff check --fix` for the safe fixes. Do not run
-`ruff format`.
+Run: `uv run ruff check tests tools/dmtools --exclude tests/test_standard.py`
+Fix each finding (unused imports, undefined names); `uv run ruff check --fix --exclude tests/test_standard.py`
+for the safe fixes. Do not run `ruff format`. `tests/test_standard.py` belongs to stream C1 (it moves it); Task 27
+runs ruff over the merged tree.
 
 - [ ] **Step 6: Wire ruff into make check**
 
@@ -3074,23 +3115,23 @@ git commit -m "test: use the dmtest skip markers, drop machine paths and make ca
 
 #### Stream C3: the docs folders, the stale docs and the repository files
 
-Shared files: `tests/test_symbols.py` (one path; Task 17 moves the file), `pyproject.toml` and `uv.lock` (Task 22; Task 19
+Shared files: `tests/test_symbols.py` (one path; Task 18 moves the file), `pyproject.toml` and `uv.lock` (Task 23; Task 20
 adds ruff), `src/**` comments that name a doc path (no other stream of package C changes `src/`).
 
-### Task 20: Docs folders and the link check
+### Task 21: Docs folders and the link check
 
 **Files:**
 - Move: the docs of the map below (git mv)
 - Modify: every file outside `docs/superpowers/` and `tests/` that names a moved doc (`README.md`, `CHANGELOG.md`,
   `CLAUDE.md`, `.claude/agents/*.md`, `docs/**/*.md`, `src/**/*.[ch]`, `tools/**`), and `tests/test_symbols.py:4`
-  (the CSV path; the file is `tests/tools/test_symbols.py` after Task 17)
+  (the CSV path; the file is `tests/tools/test_symbols.py` after Task 18)
 - Create: `tests/standard/test_docs.py`
 
 **Interfaces:**
 - Consumes: nothing of other streams.
 - Produces: the docs paths below (later packages write `docs/llm/llm-mode.md`, `docs/reference/kaos-symbols.csv`,
   `docs/rules/...`); `tests/standard/test_docs.py` with `test_doc_links_resolve` (package H adds the protocol
-  vocabulary check to this file); the script `$SCRATCH/relink.py` (Task 26 runs it again over `tests/`).
+  vocabulary check as `tests/standard/test_vocabulary.py`, Task 122); the script `$SCRATCH/relink.py` (Task 27 runs it again over `tests/`).
 
 Move map (`docs/` paths; the names drop the redundant folder word):
 
@@ -3185,7 +3226,7 @@ is not moved). `CHANGELOG.md` keeps its released entries: revert the hunks of `C
 - [ ] **Step 3: Fix the CSV path of the symbol test**
 
 `tests/test_symbols.py:4` (`CSV = ROOT / "docs" / "kaos-symbols.csv"`) becomes
-`CSV = ROOT / "docs" / "reference" / "kaos-symbols.csv"`. Do not change other test files: Task 26 relinks the
+`CSV = ROOT / "docs" / "reference" / "kaos-symbols.csv"`. Do not change other test files: Task 27 relinks the
 docstrings of `tests/` after the merge.
 
 - [ ] **Step 4: Write `tests/standard/test_docs.py`**
@@ -3216,7 +3257,7 @@ def test_doc_links_resolve():
 
 Run: `uv run pytest -q tests/standard/test_docs.py tests/test_symbols.py`
 Expected: `test_symbols` PASS; `test_doc_links_resolve` fails only on the three `range-*.csv` links of
-`docs/reference/symbols/range-*.md:3` (these CSV files do not exist; Task 21 fixes them). Any other broken link:
+`docs/reference/symbols/range-*.md:3` (these CSV files do not exist; Task 22 fixes them). Any other broken link:
 fix it in this task.
 
 - [ ] **Step 6: Commit**
@@ -3226,7 +3267,7 @@ git add -A docs README.md CHANGELOG.md CLAUDE.md .claude src tools tests/test_sy
 git commit -m "docs: group the docs into formats, rules, csb, llm and reference folders"
 ```
 
-### Task 21: Stale docs and the plan archive
+### Task 22: Stale docs and the plan archive
 
 **Files:**
 - Delete: `docs/superpowers/status.md`
@@ -3236,7 +3277,7 @@ git commit -m "docs: group the docs into formats, rules, csb, llm and reference 
   `docs/reference/kaos-map.md`, `README.md` (links only)
 
 **Interfaces:**
-- Consumes: Task 20 (`relink.py`, the new paths).
+- Consumes: Task 21 (`relink.py`, the new paths).
 - Produces: `docs/superpowers/archive/`; the active PRD, plan and inventory of the final refactor stay in
   `docs/superpowers/` (they are in use until the run ends).
 
@@ -3310,7 +3351,7 @@ git add -A docs src/ui README.md CLAUDE.md
 git commit -m "docs: archive the finished plans and fix the stale pages"
 ```
 
-### Task 22: Repository files: LICENSE, .editorconfig, the mcp extra, dm-csb-match
+### Task 23: Repository files: LICENSE, .editorconfig, the mcp extra, dm-csb-match
 
 **Files:**
 - Create: `LICENSE`, `.editorconfig`
@@ -3318,7 +3359,7 @@ git commit -m "docs: archive the finished plans and fix the stale pages"
 - Modify: `pyproject.toml`, `uv.lock`
 
 **Interfaces:**
-- Consumes: Task 20 (`docs/reference/` paths).
+- Consumes: Task 21 (`docs/reference/` paths).
 - Produces: `uv run dm-csb-match --kaos ... --kaos-csv ... --appb ... --appb-c ... --csv ...`;
   `uv sync --extra mcp`. Package I names both in `README.md` and `docs/development.md`, and the license sentence of
   R14.1 in `README.md`.
@@ -3403,7 +3444,7 @@ git commit -m "chore: add the GPL-3.0 license, .editorconfig, the mcp extra and 
 
 Shared files: every file of `src/`, `tests/`, `tools/dmtools/` (the tail runs after the merge of C1, C2, C3).
 
-### Task 23: SPDX lines and the include guard scheme
+### Task 24: SPDX lines and the include guard scheme
 
 **Files:**
 - Modify: every `src/**/*.[ch]`, `tests/**/*.py`, `tools/dmtools/**/*.py`
@@ -3463,7 +3504,7 @@ Expected: 0 warnings.
 - [ ] **Step 3: Run the header check and the tests of the helpers**
 
 Run: `uv run pytest -q tests/standard tests/tools/test_dmtest_constants.py`
-Expected: PASS (the `header` open lines of the guard and SPDX causes are stale now; Task 26 prunes them).
+Expected: PASS (the `header` open lines of the guard and SPDX causes are stale now; Task 27 prunes them).
 
 - [ ] **Step 4: Commit and record the commit in the blame ignore list**
 
@@ -3475,14 +3516,14 @@ git add .git-blame-ignore-revs
 git commit -m "chore: ignore the SPDX commit in git blame"
 ```
 
-### Task 24: Anonymous enums become #define lines
+### Task 25: Anonymous enums become #define lines
 
 **Files:**
 - Modify: every `src/**/*.[ch]` with an anonymous `enum { ... };`
 - Modify: `.git-blame-ignore-revs`
 
 **Interfaces:**
-- Consumes: `dmtest.constants.evaluate`, `VALUES` (Task 15); Task 23.
+- Consumes: `dmtest.constants.evaluate`, `VALUES` (Task 16); Task 24.
 - Produces: no anonymous enum in `src/`; each former enum is a block of `#define NAME value` lines with written
   values (PRD R3.5: the 829 anonymous members and the 133 implicit values). Named enums and enums that declare a
   field stay.
@@ -3579,13 +3620,13 @@ git add .git-blame-ignore-revs
 git commit -m "chore: ignore the enum-to-define commit in git blame"
 ```
 
-### Task 25: Public function comments move to the header
+### Task 26: Public function comments move to the header
 
 **Files:**
 - Modify: every `src/**/*.[ch]` with a public function whose comment stands above its definition
 
 **Interfaces:**
-- Consumes: Tasks 12 (`module_files`, `comment_above`, `definitions`, `functions`) and 23.
+- Consumes: Tasks 13 (`module_files`, `comment_above`, `definitions`, `functions`) and 23.
 - Produces: the comment of a public function stands above its prototype in the header (standard rule 9.1).
 
 - [ ] **Step 1: Write `$SCRATCH/move_comments.py`**
@@ -3643,20 +3684,20 @@ git add -A src
 git commit -m "refactor: move the public function comments to the headers"
 ```
 
-### Task 26: Docs paths in the tests and the stale allowlist lines
+### Task 27: Docs paths in the tests and the stale allowlist lines
 
 **Files:**
 - Modify: `tests/**/*.py` (doc paths in docstrings and comments), `tests/standard/allowlist.txt`
 
 **Interfaces:**
-- Consumes: `$SCRATCH/relink.py` (code in Task 20 Step 1), `tests/standard/open_lines.py --prune` (Task 9).
+- Consumes: `$SCRATCH/relink.py` (code in Task 21 Step 1), `tests/standard/open_lines.py --prune` (Task 10).
 - Produces: an allowlist with only live lines; the state that package D starts from.
 
 - [ ] **Step 1: Relink the doc paths of the tests**
 
 Run: `uv run python $SCRATCH/relink.py paths tests && git diff --stat tests | tail -1`
 Expected: the docstrings that named `docs/csb-engine-diff.md`, `docs/kaos-symbols.csv`, `docs/csb-data.md`,
-`docs/csb-new-adventure.md` now name the new paths. Create `relink.py` from Task 20 Step 1 if the workspace of
+`docs/csb-new-adventure.md` now name the new paths. Create `relink.py` from Task 21 Step 1 if the workspace of
 stream C3 is not at hand.
 
 - [ ] **Step 2: Prune the stale open lines**
@@ -3670,11 +3711,17 @@ instead); then PASS.
 Run: `grep -o 'open: epic [0-9]*' tests/standard/allowlist.txt | sort | uniq -c`
 Write the counts into the SDD ledger (the later packages remove them).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Ruff over the merged tree**
+
+Run: `uv run ruff check tests tools/dmtools`. Stream C2 ran ruff without `tests/test_standard.py`; the files of
+streams C1 and C3 (`tests/standard/*.py`, `tests/standard/test_docs.py`, `tools/dmtools/csb_match.py`) meet it
+here. Fix each finding; `--fix` for the safe ones. Expected after the fixes: no finding.
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add tests/
-git commit -m "test: relink the doc paths of the tests and prune the stale allowlist lines"
+git add tests/ tools/dmtools
+git commit -m "test: relink the doc paths of the tests, prune the stale allowlist lines, ruff over the merged tree"
 ```
 
 ---
@@ -3697,29 +3744,29 @@ Rules for every task of this package:
   added the line to every existing file) and, for a header, the head of standard rule 2.1.
 - Verification of a task: `make` (game and library, 0 warnings), then the named pytest command, then
   `uv run pytest -q tests/standard` (the checks must not fail on a line this task added).
-- The constant `enum` blocks of `data/` stay `enum` in this package; the constant script of the package F tail
-  (R6.7) turns them into `#define` lines for every layer at once.
+- Task 25 (package C tail) turned every anonymous `enum` of `src/` into `#define` lines; a task of this package
+  writes new constants as `#define` lines.
 
 Ruling of this package (record it in the ledger): the `kaos` check of the standard (rule 3.6, "a `kaos_*` call
-outside `data/`") wins over the wording of R4.1 ("`engine/dungeon.c:371` calls `kaos_is_loaded`"). Task 28
+outside `data/`") wins over the wording of R4.1 ("`engine/dungeon.c:371` calls `kaos_is_loaded`"). Task 29
 changes `dungeon.c` to `kaos_is_loaded()` with an `open: epic 4` line, because `tables.h` belongs to stream D2;
-Task 42 replaces it with `tables_is_loaded()` and deletes the line.
+Task 43 replaces it with `tables_is_loaded()` and deletes the line.
 
 #### Stream D1: kaos module, FTL loader, os hooks
 
-Shared files: `src/data/tables.c` (Task 28 changes `tables_init` lines `port/src/data/tables.c:199-202` and
+Shared files: `src/data/tables.c` (Task 29 changes `tables_init` lines `port/src/data/tables.c:199-202` and
 `tables_set_mouse_input_box` `port/src/data/tables.c:771-778`; stream D2 deletes the first block and keeps the
 second; at the merge take the stream D2 version of `tables_init` and the stream D1 version of
 `tables_set_mouse_input_box`), `src/engine/dungeon.c` (one line), `src/data/spells.c` (include line only).
 
-### Task 27: Log and fatal hooks in data/os
+### Task 28: Log and fatal hooks in data/os
 
 **Files:**
 - Modify: `src/data/os.h`, `src/data/os.c`
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces (used by Task 28 and by the packages E and F for `game_fatal`, `map.c:159`, `group.c:307`):
+- Produces (used by Task 29 and by the packages E and F for `game_fatal`, `map.c:159`, `group.c:307`):
   ```c
   typedef void (*OsLogHook)(const char *message);
   typedef void (*OsFatalHook)(const char *message);
@@ -3732,12 +3779,12 @@ second; at the merge take the stream D2 version of `tables_init` and the stream 
 Facts: `data/os.h` has only the folder hooks (`port/src/data/os.h:7-17`); the stderr writes of `data/` and
 `engine/` are `port/src/data/ftl.c:276-277`, `port/src/engine/game.c:58-59`, `port/src/engine/map.c:159-166`,
 `port/src/engine/group.c:307-308`. Standard rule 10.1: `data/os.c` holds the default (stderr and `exit`), and
-`os_fatal` never returns. This task adds the hooks only; Task 28 uses `os_fatal` in `data/`, the packages E and
+`os_fatal` never returns. This task adds the hooks only; Task 29 uses `os_fatal` in `data/`, the packages E and
 F replace the engine writes.
 
 - [ ] **Step 1: Add the declarations to `src/data/os.h`.** Insert them after the line `extern OsListFolder
   g_os_list_folder_hook;` (`port/src/data/os.h:10`), not at the end of the file: stream D3 deletes
-  `os_compare_names` at the end (Task 37), so the two hunks stay apart. The header needs no new include. Text:
+  `os_compare_names` at the end (Task 38), so the two hunks stay apart. The header needs no new include. Text:
 
   ```c
   /* Messages and fatal errors of data/ and engine/. platform/ sets the hooks to its log; tests set their own. */
@@ -3799,7 +3846,7 @@ F replace the engine writes.
 
 - [ ] **Step 4: Commit.** `git add src/data/os.h src/data/os.c && git commit -m "feat(data): log and fatal hooks in data/os"`
 
-### Task 28: The kaos module owns the engine image
+### Task 29: The kaos module owns the engine image
 
 **Files:**
 - Create: `src/data/kaos.h`, `src/data/kaos.c`
@@ -3808,22 +3855,22 @@ F replace the engine writes.
   `grep -rn '"kaos"' tests` in Step 1), `tests/standard/allowlist.txt`
 
 **Interfaces:**
-- Consumes: `os_fatal` (Task 27).
+- Consumes: `os_fatal` (Task 28).
 - Produces (`src/data/kaos.h`):
   ```c
-  int kaos_load(const char *path);               /* 0 or -1; Task 46 makes it bool */
+  int kaos_load(const char *path);               /* 0 or -1; Task 47 makes it bool */
   void kaos_free(void);
   bool kaos_is_loaded(void);
   const uint8_t *kaos_ptr(uint32_t address);
   uint8_t kaos_u8(uint32_t address);
-  int8_t kaos_s8(uint32_t address);              /* used by Task 42 */
+  int8_t kaos_s8(uint32_t address);              /* used by Task 43 */
   uint16_t kaos_u16(uint32_t address);
   int16_t kaos_s16(uint32_t address);
   uint32_t kaos_u32(uint32_t address);
   void kaos_write_u16(uint32_t address, uint16_t value);
   ```
   and in `src/data/ftl.h`: `uint8_t *ftl_at(const FtlImage *image, uint32_t address, uint32_t bytes);` (used
-  by Task 42 in `csb_image.c`).
+  by Task 43 in `csb_image.c`).
 
 Facts: `ftl.h` holds the loader and the KAOS singleton under two prefixes (`port/src/data/ftl.h:3,12-22`);
 `extern FtlImage kaos` has no `g_` (`port/src/data/ftl.h:15`); `kaos_load` and the readers are
@@ -4023,7 +4070,7 @@ converts a `uint16_t` to `int16_t` without a cast (`port/src/data/ftl.c:294-297`
   src/data/tables.c` lists 11 sites (`port/src/data/tables.c:384-773`); all but the one in Step 6 only read, so
   their local pointer types become `const uint8_t *` where the compiler asks. `engine/dungeon.c:371`:
   `kaos.data` becomes `kaos_is_loaded()`, and `dungeon.c` includes `"data/kaos.h"` instead of `"data/ftl.h"`;
-  add the line `kaos engine/dungeon.c open: epic 4` to the allowlist (Task 42 removes it).
+  add the line `kaos engine/dungeon.c open: epic 4` to the allowlist (Task 43 removes it).
 
 - [ ] **Step 7: Verify.** `make`; `make format`; `uv run pytest -q tests/*/test_port_data.py
   tests/*/test_tables.py tests/*/test_csb_engine.py tests/*/test_dungeon.py` (reference checks of the loader
@@ -4032,7 +4079,7 @@ converts a `uint16_t` to `int16_t` without a cast (`port/src/data/ftl.c:294-297`
 
 - [ ] **Step 8: Commit.** `git add -A src/data src/engine/dungeon.c tests/standard/allowlist.txt && git commit -m "refactor(data): kaos module owns the engine image, ftl_at computes image pointers"`
 
-### Task 29: FTL format names and a constant CRC table
+### Task 30: FTL format names and a constant CRC table
 
 **Files:**
 - Modify: `src/data/ftl.c`, `src/data/crc32.c`
@@ -4112,12 +4159,12 @@ original symbol `BJELoad_R` (`port/src/data/ftl.c:192`); `crc32_update` fills it
 
 #### Stream D2: tables, spells, ids
 
-Shared files: `src/data/tables.c` (with stream D1, see above), `src/data/spells.c` (include line, with Task 28),
+Shared files: `src/data/tables.c` (with stream D1, see above), `src/data/spells.c` (include line, with Task 29),
 `src/ui/view.c` (two lines and one comment), `src/engine/{inventory,champion,group,magic,action,timeline_process}.c`,
 `src/ui/ui_champion.c`, `src/ui/ui_menus.c`, `src/platform/state_json.c` (call sites),
 `src/ui/{command,dialog,startend,ui,ui_champion}.c`, `src/platform/control.c` (`UI_INPUT_` rename).
 
-### Task 30: tables_load is the only entry
+### Task 31: tables_load is the only entry
 
 **Files:**
 - Modify: `src/data/tables.h`, `src/data/tables.c`, `src/ui/view.c` (lazy init), `src/ui/ui.h:68` (comment),
@@ -4125,7 +4172,7 @@ Shared files: `src/data/tables.c` (with stream D1, see above), `src/data/spells.
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `int tables_load(const char *path);` (0 or -1; Task 46 makes it `bool`) is the only setup call of
+- Produces: `int tables_load(const char *path);` (0 or -1; Task 47 makes it `bool`) is the only setup call of
   `tables.h`; `tables_init` does not exist.
 
 Facts: `tables_init` is public (`port/src/data/tables.h:153-154`) with a `ready` flag
@@ -4180,14 +4227,14 @@ Facts: `tables_init` is public (`port/src/data/tables.h:153-154`) with a `ready`
   other changed test module (`git diff --name-only tests`).
 - [ ] **Step 6: Commit.** `git commit -am "refactor(data): tables_load is the only table setup, the door info table goes"`
 
-### Task 31: Table accessors take int16_t; scalar accessors return values
+### Task 32: Table accessors take int16_t; scalar accessors return values
 
 **Files:**
 - Modify: `src/data/tables.h`, `src/data/tables.c`, the 20 call sites (list below), `tests/*/test_tables.py`,
   `tests/*/test_champion.py`
 
 **Interfaces:**
-- Consumes: Task 30.
+- Consumes: Task 31.
 - Produces (binding for later packages):
   ```c
   const CreatureInfo *tables_get_creature_info(int16_t creature_type);
@@ -4247,7 +4294,7 @@ once (`port/src/data/tables.h:162-174`). Call sites (review-data finding 22, 20 
   the changed engine files: `uv run pytest -q tests/differential`.
 - [ ] **Step 7: Commit.** `git commit -am "refactor(data): table accessors take int16_t, scalar tables return values"`
 
-### Task 32: Named record offsets and designated initializers in tables.c
+### Task 33: Named record offsets and designated initializers in tables.c
 
 **Files:**
 - Modify: `src/data/tables.c`
@@ -4261,14 +4308,14 @@ offsets (`a + 2`, `a + 3`, `a + 4`, `port/src/data/tables.c:120-140`; `a + 4`, `
 
 - [ ] **Step 1: Read the struct fields** of `CreatureInfo`, `ObjectInfo`, `WeaponInfo`, `ArmourInfo`,
   `ActionSet`, `ActionInfo` (`port/src/data/tables.h:74-151`) and the layout in `docs/rules/tables.md` (after
-  package C; before, `docs/tables.md`).
+  package C; before, `docs/rules/tables.md`).
 - [ ] **Step 2: Name the offsets** as decimal blocks beside `CREATURE_AT_*`, one block per record:
   `OBJECT_AT_*` (the four fields of `ObjectInfo`), `WEAPON_AT_*` (five), `ARMOUR_AT_*` (three),
   `ACTION_SET_AT_ACTIONS 0`, `ACTION_SET_AT_LEVELS 4`, `ACTION_SET_AT_FLAGS 6`. The field names come from the
   struct fields; the values from the current expressions.
 - [ ] **Step 3: Use designated initializers** in `read_creatures`, `read_objects`, `read_actions` and the action
   info loop, for example `.aspect_index = kaos_u8(a + CREATURE_AT_ASPECT_INDEX)`. The `(int8_t)kaos_u8` casts
-  stay in this task (Task 42 replaces them by `kaos_s8`).
+  stay in this task (Task 43 replaces them by `kaos_s8`).
 - [ ] **Step 4: The flags byte.** `ActionSet.flags` has no reader (`grep -rn "\.flags" src | grep -i action`);
   delete the field and its read. Assumption: no test reads it; check `grep -n "flags" tests/*/test_tables.py`
   and adapt the `ActionSet` ctypes structure if a test mirrors it (a field removal changes the struct layout the
@@ -4277,14 +4324,14 @@ offsets (`a + 2`, `a + 3`, `a + 4`, `port/src/data/tables.c:120-140`; `a + 4`, `
   table against the bytes of the image).
 - [ ] **Step 6: Commit.** `git commit -am "refactor(data): named record offsets and designated initializers in the table reader"`
 
-### Task 33: Spells have one owner
+### Task 34: Spells have one owner
 
 **Files:**
 - Modify: `src/data/spells.h`, `src/data/spells.c`, `src/data/tables.c`, `src/engine/magic.c`,
   `src/ui/ui_menus.c`, `src/platform/state_json.c`, `tests/*/test_csb_engine.py`, `tests/*/test_spells.py`
 
 **Interfaces:**
-- Consumes: Task 31 (`tables_get_symbol_base_mana_cost` and `tables_get_symbol_mana_cost_multiplier` return
+- Consumes: Task 32 (`tables_get_symbol_base_mana_cost` and `tables_get_symbol_mana_cost_multiplier` return
   values).
 - Produces: `spells.h` without `SPELL_BYTES`, `SPELL_ENTRY_*`, the `spell_attributes_*` inlines, `spell_count`.
   `int16_t spell_find(const uint8_t *symbols);`, `uint8_t spell_get_symbol(uint16_t step, int16_t symbol_index);`,
@@ -4357,7 +4404,7 @@ original reads the symbol as signed". The values are equal for every valid power
   `state_json.c` changed.
 - [ ] **Step 8: Commit.** `git commit -am "refactor(data): one owner of the spell table and the rune rules"`
 
-### Task 34: Mouse table names TABLES_MOUSE_
+### Task 35: Mouse table names TABLES_MOUSE_
 
 **Files:**
 - Modify: `src/data/tables.h`, `src/data/tables.c`, `src/ui/command.c`, `src/ui/dialog.c`, `src/ui/startend.c`,
@@ -4380,7 +4427,7 @@ Facts: `UI_INPUT_*` is a data enum named after its consumer, with the comment "M
   `uv run pytest -q tests/golden`.
 - [ ] **Step 4: Commit.** `git commit -am "refactor(data): mouse input tables use the tables prefix"`
 
-### Task 35: ids.h grouped by kind, one name per value
+### Task 36: ids.h grouped by kind, one name per value
 
 **Files:**
 - Modify: `src/data/ids.h`, `src/ui/startend.c:340` (`ZONE_THE_END`)
@@ -4457,12 +4504,12 @@ is not a second name of the zone with the same number: it stays, in the block of
 
 #### Stream D3: CSB image, adventure, file, graphics
 
-Shared files: `src/data/os.h` and `src/data/os.c` (Task 37 deletes `os_compare_names` at the end of both;
-Task 27 inserts in the middle), `src/ui/anim.c`, `src/ui/gameloop.c`, `src/platform/main.c`,
+Shared files: `src/data/os.h` and `src/data/os.c` (Task 38 deletes `os_compare_names` at the end of both;
+Task 28 inserts in the middle), `src/ui/anim.c`, `src/ui/gameloop.c`, `src/platform/main.c`,
 `src/engine/savegame.c`, `src/ui/select.c`, `src/ui/draw.h`, `src/ui/text.c`, `src/engine/message.c`,
 `src/ui/{advanced,automap,dialog,startend,ui,ui_champion}.c` (call sites only).
 
-### Task 36: The CSB image is published only on success
+### Task 37: The CSB image is published only on success
 
 **Files:**
 - Modify: `src/data/csbimage.c`, `src/data/csbimage.h`, `tests/*/test_csb_engine.py`
@@ -4519,14 +4566,14 @@ start at `CSB_APPB_DISK_MESSAGES 0x104d08`, `port/src/data/csbtext.c:13`).
   Expected: PASS.
 - [ ] **Step 6: Commit.** `git commit -am "fix(data): a failed CSB text build no longer leaves the image loaded"`
 
-### Task 37: file.h owns paths, name compares and file writes
+### Task 38: file.h owns paths, name compares and file writes
 
 **Files:**
 - Modify: `src/data/file.h`, `src/data/file.c`, `src/data/os.h`, `src/data/os.c`, `src/data/adventure.h`,
   `src/data/adf.c`, `src/ui/anim.c`, users of `PATH_SIZE` that include only `adventure.h` for it
 
 **Interfaces:**
-- Produces (`src/data/file.h`, used by Task 38 and by package E for `savegame.c`, R5.5):
+- Produces (`src/data/file.h`, used by Task 39 and by package E for `savegame.c`, R5.5):
   ```c
   #define PATH_SIZE 1024 /* longest file path */
   bool file_write(const char *path, const uint8_t *data, size_t size);
@@ -4605,7 +4652,7 @@ Facts: `PATH_SIZE` is in `adventure.h` (`port/src/data/adventure.h:15`) and is u
   `file_replace` (package E calls them from `savegame.c` and removes the lines).
 - [ ] **Step 5: Commit.** `git commit -am "refactor(data): file.h owns the path size, name compares and file writes"`
 
-### Task 38: One Adventure record per adventure
+### Task 39: One Adventure record per adventure
 
 **Files:**
 - Modify: `src/data/adventure.h`, `src/data/adventure.c`, `src/platform/main.c`, `src/ui/gameloop.c`,
@@ -4613,7 +4660,7 @@ Facts: `PATH_SIZE` is in `adventure.h` (`port/src/data/adventure.h:15`) and is u
   `tests/*/test_adf.py`
 
 **Interfaces:**
-- Consumes: Task 37 (`PATH_SIZE` in `file.h`).
+- Consumes: Task 38 (`PATH_SIZE` in `file.h`).
 - Produces (binding):
   ```c
   typedef struct {
@@ -4709,7 +4756,7 @@ files), -1 → `ADVENTURE_DISK_FAILED`).
   tests/*/test_csb_adventure.py tests/*/test_save.py`.
 - [ ] **Step 8: Commit.** `git commit -am "refactor(data): one Adventure record per adventure, adventure_load_files"`
 
-### Task 39: graphics.h owns Box and the font metrics; gfx_close
+### Task 40: graphics.h owns Box and the font metrics; gfx_close
 
 **Files:**
 - Modify: `src/data/graphics.h`, `src/data/graphics.c`, `src/ui/draw.h`, users of `TEXT_CHAR_WIDTH`,
@@ -4787,7 +4834,7 @@ no `gfx_close`; `gfx_open` frees the previous state but keeps `graphics_data` wh
 Shared files: `src/ui/ui.c` (one line in `ui_init`), `src/ui/anim.c`, `src/ui/logo.c`, `src/ui/gameloop.c`
 (sound call sites), `src/platform/platform.c` (two names), `src/ui/startend.c:397` (one call).
 
-### Task 40: The engine plays sounds through g_sound_play_hook; ui/audio.c mixes
+### Task 41: The engine plays sounds through g_sound_play_hook; ui/audio.c mixes
 
 **Files:**
 - Create: `src/ui/audio.h`, `src/ui/audio.c`
@@ -4813,11 +4860,16 @@ Shared files: `src/ui/ui.c` (one line in `ui_init`), `src/ui/anim.c`, `src/ui/lo
   #define AUDIO_OUTPUT_RATE    44100
   #define AUDIO_PAL_CLOCK      3546895
   #define AUDIO_MUSIC_SEGMENTS 128
+  /* One segment of the intro music: sample data and its length in bytes (R7.3, was two parallel arrays). */
+  typedef struct {
+      const int8_t *data;
+      uint16_t length;
+  } MusicSegment;
   void audio_init(void);
   void audio_play_sample(int16_t sound, const uint8_t *volumes);
   void audio_play_data(const int8_t *data, uint16_t length, uint16_t period, const uint8_t *volumes);
   void audio_stop_all(void);
-  void audio_music_play(const int8_t *const *data, const uint16_t *lengths, int count, uint16_t period, uint8_t volume);
+  void audio_music_play(const MusicSegment *segments, int count, uint16_t period, uint8_t volume);
   void audio_music_set_volume(uint8_t volume);
   void audio_music_stop(void);
   void audio_mix(int16_t *out, int frames);
@@ -4867,7 +4919,7 @@ segments still point into the animation file, so `anim_close` stops the music.
   void audio_stop_all(void);
   /* Intro music: the segments play one after another, the same data on both sides of pair B. Samples go to pair
      A while it plays. The data stays owned by the caller until the music ends or stops. */
-  void audio_music_play(const int8_t *const *data, const uint16_t *lengths, int count, uint16_t period, uint8_t volume);
+  void audio_music_play(const MusicSegment *segments, int count, uint16_t period, uint8_t volume);
   void audio_music_set_volume(uint8_t volume);
   void audio_music_stop(void);
   /* Renders interleaved stereo int16 at AUDIO_OUTPUT_RATE. Paula has no interpolation: each sample holds for one
@@ -4931,7 +4983,9 @@ segments still point into the animation file, so `anim_close` stops the music.
 - [ ] **Step 4: Change the callers.** `ui/ui.c` `ui_init` calls `audio_init()` as its first line.
   `ui/gameloop.c:142,167`: `sound_play_sample` → `audio_play_sample`. `ui/anim.c`: `sound_music_play` →
   `audio_music_play`, `sound_music_set_volume` → `audio_music_set_volume`, `SOUND_MUSIC_SEGMENTS` →
-  `AUDIO_MUSIC_SEGMENTS`, `sound_play_data` → `audio_play_data`; `anim_close` (`port/src/ui/anim.c:84`) calls
+  `AUDIO_MUSIC_SEGMENTS`, `sound_play_data` → `audio_play_data`; the two parallel arrays of `anim.c`
+  (`port/src/ui/anim.c:159-160`) become one `MusicSegment segments[AUDIO_MUSIC_SEGMENTS]`, and the music state
+  of `audio.c` (was `port/src/engine/sound.c:34-35`) keeps one `const MusicSegment *` array; `anim_close` (`port/src/ui/anim.c:84`) calls
   `audio_music_stop();` with the comment `/* the music segments point into the file */` instead of
   `sound_stop_all()`. `ui/logo.c`: `sound_play_data` → `audio_play_data`, `SOUND_PAL_CLOCK` → `AUDIO_PAL_CLOCK`;
   the `sound_stop_all()` line of `port/src/ui/logo.c:45` goes (the voice plays a copy). `ui/music.c:85` and
@@ -4949,7 +5003,7 @@ segments still point into the animation file, so `anim_close` stops the music.
   includes no ui header).
 - [ ] **Step 7: Commit.** `git add src/ui/audio.h src/ui/audio.c && git commit -am "refactor(audio): the engine plays through g_sound_play_hook, ui/audio.c mixes"`
 
-### Task 41: The music module keeps its tables in music_tables.c
+### Task 42: The music module keeps its tables in music_tables.c
 
 **Files:**
 - Create: `src/ui/music_internal.h`
@@ -4958,7 +5012,7 @@ segments still point into the animation file, so `anim_close` stops the music.
   `tests/standard/allowlist.txt`, `docs/todo.md`
 
 **Interfaces:**
-- Consumes: Task 40 (`AUDIO_OUTPUT_RATE`).
+- Consumes: Task 41 (`AUDIO_OUTPUT_RATE`).
 - Produces: `void music_play_end(bool won);`; `src/ui/music_internal.h` declares
   `g_music_csb_square_tracks`, `g_music_fm_towns_dm_level_tracks`, `g_music_super_nes_triggers`,
   `MusicTrigger`, `MUSIC_FM_TOWNS_DM_LEVELS`, `MUSIC_SUPER_NES_TRIGGERS`.
@@ -5020,7 +5074,7 @@ The decoder include: R9.3 asks for `<dr_mp3/dr_mp3.h>`; package B moved the file
   `tests/*/test_music.py:195` sets `game.lib.music_play_end.argtypes = [ctypes.c_bool]`. Delete the item of
   `docs/todo.md:20`.
 - [ ] **Step 5: The allowlist.** Replace the two lines `decimal ui/musicmap.c ...` and `decimal ui/music.c ...`
-  by one line `decimal ui/music_tables.c the soundtrack tables of the other versions are not in the game files`
+  by one line `decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions, not in the game files`
   (standard rule 3.12); `music.c` has no table left.
 - [ ] **Step 6: Verify.** `make`; `uv run pytest -q tests/*/test_music.py tests/standard`.
 - [ ] **Step 7: Commit.** `git add -A src/ui tests docs/todo.md && git commit -m "refactor(audio): music tables in music_tables.c, music_play_end takes a bool"`
@@ -5029,7 +5083,7 @@ The decoder include: R9.3 asks for `<dr_mp3/dr_mp3.h>`; package B moved the file
 
 Runs after the four streams are merged and `make` is green. The tail tasks run in this order.
 
-### Task 42: Merge fix-ups: file names, ftl_at in the CSB image, tables_is_loaded, kaos_s8
+### Task 43: Merge fix-ups: file names, ftl_at in the CSB image, tables_is_loaded, kaos_s8
 
 **Files:**
 - Rename: `src/data/csbimage.{c,h}` → `src/data/csb_image.{c,h}`, `src/data/csbtext.{c,h}` →
@@ -5039,7 +5093,7 @@ Runs after the four streams are merged and `make` is green. The tail tasks run i
   the old file names
 
 **Interfaces:**
-- Consumes: `ftl_at`, `kaos_s8`, `kaos_is_loaded` (Task 28).
+- Consumes: `ftl_at`, `kaos_s8`, `kaos_is_loaded` (Task 29).
 - Produces: `bool tables_is_loaded(void);` in `src/data/tables.h` (`/* True after a successful tables_load. */`).
 
 Facts: the file names do not match their prefixes `csb_image_`, `csb_text_` (`port/src/data/csbimage.h:3`,
@@ -5047,7 +5101,7 @@ Facts: the file names do not match their prefixes `csb_image_`, `csb_text_` (`po
 (`port/src/data/csbimage.c:154-157`), and `csbtext.c` computes image pointers by hand
 (`out->data + (... - out->base)`, about `port/src/data/csbtext.c:196`); nine `(int8_t)kaos_u8(...)` casts in
 `tables.c` (`grep -c "(int8_t)kaos_u8" src/data/tables.c`: 11 at commit `72e24b5`, review-data finding 37 counts
-nine call lines); `engine/dungeon.c` calls `kaos_is_loaded` with an `open: epic 4` line (Task 28).
+nine call lines); `engine/dungeon.c` calls `kaos_is_loaded` with an `open: epic 4` line (Task 29).
 
 - [ ] **Step 1: Rename the files** with `git mv` and fix the includes and the docs:
   `grep -rl "csbimage\|csbtext" src tests docs tools CLAUDE.md | xargs sed -i '' -e 's/csbimage\.\([ch]\)/csb_image.\1/g' -e 's/csbtext\.\([ch]\)/csb_text.\1/g'`;
@@ -5055,7 +5109,7 @@ nine call lines); `engine/dungeon.c` calls `kaos_is_loaded` with an `open: epic 
   (its paths are evidence).
 - [ ] **Step 2: `ftl_at` in the CSB image.** Delete `appb_at`; every use calls `ftl_at(image, address, bytes)`
   with the byte count of the copy (`g_csb_copies[i].size`, `KAOS_ACTION_SET_BYTES`, `sizeof(uint32_t)` for a
-  pointer); a NULL result makes `csb_image_build` free and return -1 (the regression test of Task 36 still
+  pointer); a NULL result makes `csb_image_build` free and return -1 (the regression test of Task 37 still
   passes). The hand-made pointers of `csb_text.c` (`grep -n "\->base)" src/data/csb_text.c`) call `ftl_at`.
 - [ ] **Step 3: `tables_is_loaded`.** Add to `tables.h` (Queries section) and `tables.c`:
   `bool tables_is_loaded(void) { return kaos_is_loaded(); }`; `engine/dungeon.c` calls it and includes
@@ -5069,21 +5123,21 @@ nine call lines); `engine/dungeon.c` calls `kaos_is_loaded` with an `open: epic 
   tests/*/test_tables.py tests/*/test_dungeon.py tests/standard`.
 - [ ] **Step 7: Commit.** `git add -A && git commit -m "refactor(data): CSB file names match their prefixes, one image pointer helper"`
 
-### Task 43: Image address names follow their accessors
+### Task 44: Image address names follow their accessors
 
 **Files:**
-- Modify: `src/data/kaos_addresses.h`, `src/data/tables.c`, `src/data/csb_image.c`, `docs/csb/csb-engine-diff.md`
-  (after package C; was `docs/csb-engine-diff.md`), `docs/reference/kaos-symbols.csv` if it names them
+- Modify: `src/data/kaos_addresses.h`, `src/data/tables.c`, `src/data/csb_image.c`, `docs/csb/engine-diff.md`
+  (after package C; was `docs/csb/engine-diff.md`), `docs/reference/kaos-symbols.csv` if it names them
 
 **Interfaces:** none outside `data/`.
 
 Facts: `KAOS_PLAQUE_HEIGHTS 0x102c57` is one byte before the table (`port/src/data/kaos_addresses.h:93`), so
 `tables.c:500` indexes with a 1-based line count and `csbimage.c:103` copies from `KAOS_PLAQUE_HEIGHTS + 1`;
-`docs/csb-engine-diff.md:173` gives the real table start `0x102c58`. Names against their accessor nouns
+`docs/csb/engine-diff.md:173` gives the real table start `0x102c58`. Names against their accessor nouns
 (`port/src/data/kaos_addresses.h:23,78,96,110,124,129`): `KAOS_ACTIONS_DISABLED`, `KAOS_REBIRTH_SCALES` (step 2
 beside `KAOS_REBIRTH_STEP_1_SCALES`), `KAOS_FOUNTAIN_ORNAMENT_INDICES` (one byte), `KAOS_INITIAL_COLORMAP` (the
 interface palette), `KAOS_INVISIBILITY_PALETTE_CHANGES`, `KAOS_ICON_GRAPHIC_FIRST_INDEX`. Uses: `tables.c:177,466,500,515,579,605,615`,
-`csbimage.c:26,40,71,97,103,116,142`, `docs/csb-engine-diff.md:91,97,104,105,118,161,171,173`.
+`csbimage.c:26,40,71,97,103,116,142`, `docs/csb/engine-diff.md:91,97,104,105,118,161,171,173`.
 
 - [ ] **Step 1: Rename** with one sed over `src/data docs/csb docs/reference`:
 
@@ -5101,7 +5155,7 @@ interface palette), `KAOS_INVISIBILITY_PALETTE_CHANGES`, `KAOS_ICON_GRAPHIC_FIRS
 - [ ] **Step 2: The plaque table start.** `#define KAOS_PLAQUE_HEIGHTS 0x102c58 /* uint8_t: the height of a
   plaque by line count - 1 and depth */`; `tables_get_plaque_height` reads `KAOS_PLAQUE_HEIGHTS + (lines - 1) +
   TABLES_PLAQUE_LINES * depth` (`port/src/data/tables.c:500`; the address is the same for every call);
-  `csb_image.c:103` copies `KAOS_PLAQUE_HEIGHTS` (no `+ 1`); `docs/csb/csb-engine-diff.md:173` names
+  `csb_image.c:103` copies `KAOS_PLAQUE_HEIGHTS` (no `+ 1`); `docs/csb/engine-diff.md:173` names
   `KAOS_PLAQUE_HEIGHTS`.
 - [ ] **Step 3: Keep the blocks in order.** `KAOS_REBIRTH_STEP_2_SCALES` stays after `KAOS_REBIRTH_STEP_1_SCALES`
   only if the block is sorted by address; the block order of `kaos_addresses.h` is by address (check the block
@@ -5110,14 +5164,14 @@ interface palette), `KAOS_INVISIBILITY_PALETTE_CHANGES`, `KAOS_ICON_GRAPHIC_FIRS
   tests/golden tests/standard` (the `address` check: one name per address).
 - [ ] **Step 5: Commit.** `git commit -am "refactor(data): image address names follow their accessors"`
 
-### Task 44: Box in the tables API, a pointer struct, inline graphic fields
+### Task 45: Box in the tables API, a pointer struct, inline graphic fields
 
 **Files:**
 - Modify: `src/data/tables.h`, `src/data/tables.c`, `src/ui/dialog.c:47`, `src/ui/startend.c:315`,
   `src/ui/view.c:430`, `src/ui/gameloop.c:438`, `src/engine/group.c:223-226`
 
 **Interfaces:**
-- Consumes: `Box` (Task 39).
+- Consumes: `Box` (Task 40).
 - Produces:
   ```c
   Box tables_get_layout_bitmap(int16_t slot);
@@ -5147,7 +5201,7 @@ out-parameters (`port/src/data/tables.h:321`, standard rule 6.5), one caller `ui
   tests/*/test_ui.py tests/standard`.
 - [ ] **Step 5: Commit.** `git commit -am "refactor(data): Box in the tables API, a pointer bitmap struct, inline graphic fields"`
 
-### Task 45: Byte order helpers are static inline functions
+### Task 46: Byte order helpers are static inline functions
 
 **Files:**
 - Modify: `src/data/bytes.h` and every file that uses `BE16`, `BE32`, `WR16`, `WR32` (21 files, 262 uses at
@@ -5205,7 +5259,7 @@ Facts: the helpers are macros; `BE16` evaluates `p` twice and `WR16`/`WR32` use 
   tests/golden tests/*/test_port_data.py tests/*/test_ftl.py tests/standard` (the `byteorder` check).
 - [ ] **Step 4: Commit.** `git commit -am "refactor(data): byte order helpers are static inline functions"`
 
-### Task 46: Data results are bool or a result enum
+### Task 47: Data results are bool or a result enum
 
 **Files:**
 - Modify: `src/data/{ftl,kaos,tables,graphics,adf,csb_image,csb_text,adventure}.{h,c}`, their callers in
@@ -5233,7 +5287,7 @@ Facts: `int 0/-1` results in `data/` (review-data finding 24): `ftl_load`, `kaos
 `find_sections`, `join_texts`, `copy_action_names` return 0/-1 (`port/src/data/ftl.c:131`,
 `port/src/data/csbtext.c` lines 141, 165); the ADF visitor returns 1/0/-1 (`port/src/data/adf.c:38,59-90`).
 Standard rule 6.1: two outcomes are `bool`, more outcomes an enum type. `adventure_install_disk` got its enum in
-Task 38.
+Task 39.
 
 - [ ] **Step 1: List every result use:** `grep -rnwE "(ftl_load|kaos_load|tables_load|gfx_open|gfx_expand|gfx_expand_over|gfx_load_bitmap|gfx_load_strings|adf_extract|csb_image_build|csb_text_build)" src tests tools`.
   Each call site is read and rewritten by hand: `if (f(...))` meant failure and becomes `if (!f(...))`;
@@ -5254,7 +5308,7 @@ Task 38.
   delete its `open: epic 4` lines).
 - [ ] **Step 5: Commit.** `git commit -am "refactor(data): loaders return bool"`
 
-### Task 47: gfx_ functions get verbs
+### Task 48: gfx_ functions get verbs
 
 **Files:**
 - Modify: `src/data/graphics.h`, `src/data/graphics.c`, every caller (`gfx_string` 42 sites outside `data/`,
@@ -5278,14 +5332,48 @@ R4.8 names `gfx_get_string`); the comment of `gfx_object_name` names "graphic 0x
   epic 4" tests/standard/allowlist.txt` is empty after this task).
 - [ ] **Step 4: Commit.** `git commit -am "refactor(data): gfx functions get verbs"`
 
+### Task 49: Short names for the data functions (R3.4)
+
+**Files:**
+- Modify: `src/data/tables.h`, `src/data/tables.c` and every caller (`rename.py` over `src/`, `tests/`, `tools/`,
+  `docs/`)
+
+**Interfaces:**
+- Consumes: `rename.py` (Task 50 Step 4 text; package E has not run yet, so create it in the SDD workspace from the
+  plan text).
+- Produces: these names (72e24b5 name → new name; standard rule 4.1: at most four words after the prefix and 32
+  characters):
+
+| 72e24b5 name (`port/src/data/tables.h`) | New name |
+|---|---|
+| `tables_get_door_ornament_coord_set` | `tables_get_door_ornament_coords` |
+| `tables_get_floor_ornament_coord_set` | `tables_get_floor_ornament_coords` |
+| `tables_get_floor_ornament_view_offset` | `tables_get_floor_ornament_offset` |
+| `tables_get_light_power_to_light_amount` | `tables_get_light_amount` |
+| `tables_get_ordered_cell_to_attack` | `tables_get_attack_cell_order` |
+| `tables_get_palette_light_threshold` | `tables_get_light_threshold` |
+| `tables_get_symbol_mana_cost_multiplier` | `tables_get_mana_multiplier` |
+| `tables_get_wall_ornament_coord_set` | `tables_get_wall_ornament_coords` |
+| `tables_get_wound_probability_mask` | `tables_get_wound_mask` |
+
+- [ ] **Step 1: The list.** `uv run pytest -q tests/standard -k name` and keep the `name` lines of `data/`. A name of
+  the table that an earlier task of package D already changed: use the current name as the old name. A `data/`
+  name that the check reports and the table lacks: pick a name by rule 4.1 and list it in the ledger.
+- [ ] **Step 2: Rename.** Write the pairs to `renames-data.txt`; `uv run python rename.py renames-data.txt`;
+  `make format`.
+- [ ] **Step 3: Allowlist.** Delete the `name` lines of `data/` with `open: epic 4`.
+- [ ] **Step 4: Build and test.** `make`; `uv run pytest -q tests/standard tests/differential/test_tables.py`.
+  Expected: 0 warnings; PASS.
+- [ ] **Step 5: Commit.** `git commit -am "refactor(data): short table accessor names"`
+
 ---
 
 ## Package E: engine modules and records (Epic 5 without R5.4, R5.7, R5.8)
 
 Three streams. E1 makes `engine/record.h/.c` the one owner of the record, square, map descriptor and dungeon
 header bytes (R5.1). E2 splits `engine/game.h` (R5.2) and removes the `game_fatal` copies (R5.3 part). E3 removes
-the other copied helpers (R5.3), and renames `savefile` (R5.5), `explored` and `message` (R5.6). The package has
-no tail: the full suite runs after the three streams are merged.
+the other copied helpers (R5.3), and renames `savefile` (R5.5), `explored` and `message` (R5.6). A tail of one
+task (Task 64) applies the renames of the streams over the merged tree; the full suite runs after it.
 
 Package facts (commit `72e24b5`, `port/src/`; the paths below are the paths after package B: `src/...`):
 
@@ -5320,7 +5408,7 @@ Shared files: `src/engine/map.h`, `src/engine/map.c`, `src/engine/dungeon.c`, `s
 `src/control/state_json.c` (or `src/platform/state_json.c` before package H), `src/platform/main.c`, and the test
 modules that bind renamed names. E2 and E3 edit other lines of these files; expect merges.
 
-### Task 48: record module for the thing records
+### Task 50: record module for the thing records
 
 **Files:**
 - Create: `src/engine/record.h`, `src/engine/record.c`
@@ -5554,7 +5642,12 @@ static uint16_t bits(uint16_t word, int16_t shift, uint16_t mask)
   `rec_sensor_is_reverted`, `rec_door_is_*_breakable`, `rec_door_has_button` as numbers (grep each, for example
   `effect ^ rec_sensor_is_reverted(...)`) get an explicit `? 1 : 0` only where the value enters arithmetic.
   `dungeon.c:286` and `dungeon.c:564` use the accessors. `creature_height` and the two creature bits move to
-  `group.h`.
+  `group.h`. `dungeon_get_thing_data` goes everywhere: the 33 uses in `map.c` become `rec_read` (a read) or
+  `rec_write` (a write); in `tests/` and `tools/` (about 75 uses in 21 files, also the fixtures of Tasks 1 and 3
+  that write through the pointer) the name becomes `rec_write` with `restype = POINTER(c_uint8)`
+  (`git grep -n dungeon_get_thing_data src tests tools` is empty at the end). Tests (standard rule 11.3): a
+  write of an object type into a record byte (`data[byte] = (data[byte] & 0x80) | object_type` of Task 3, and the
+  like: `git grep -nE "\]\s*&\s*0x[0-9a-fA-F]+\)\s*\|" tests`) becomes the `rec_<type>_set_type` call.
 - [ ] **Step 6: Add the includes** with `add_includes.py` and the map `{"engine/record.h": [<every rec_ name>],
   "engine/group.h": ["creature_height", "CREATURE_LEVITATES", "CREATURE_NON_MATERIAL"]}`:
 
@@ -5595,7 +5688,7 @@ static uint16_t bits(uint16_t word, int16_t shift, uint16_t mask)
   changed them; check that each row still names one port function.
 - [ ] **Step 9: Commit.** `git add -A src tests tools docs && git commit -m "refactor: one record module owns the thing record layout"`
 
-### Task 49: record module for squares, map descriptors and the dungeon header
+### Task 51: record module for squares, map descriptors and the dungeon header
 
 **Files:**
 - Modify: `src/engine/record.h`, `src/engine/record.c`, `src/engine/map.h` (delete `SQUARE_TYPE`, `door_state`,
@@ -5610,7 +5703,7 @@ static uint16_t bits(uint16_t word, int16_t shift, uint16_t mask)
 - Modify: `tests/standard/allowlist.txt` (delete the `record ... open: epic 5` lines)
 
 **Interfaces:**
-- Consumes: `record.h` of Task 48.
+- Consumes: `record.h` of Task 50.
 - Produces (`record.h`):
   - Squares: `uint8_t rec_square_byte(int16_t map, int16_t x, int16_t y)` (was `dungeon_get_square`, no bound
     check), `void rec_square_set_byte(int16_t map, int16_t x, int16_t y, uint8_t square)`,
@@ -5650,7 +5743,7 @@ thing counts (one word per type). The values come from `map.h:318-329, 357-358` 
   descriptor, dungeon header, each with a section comment in `record.h` and `record.c`. `rec_square_byte` reads
   `g_dungeon_map_data[map][x][y]`. `rec_door_set_state` writes
   `(square & ~DOOR_STATE_MASK) | (state & DOOR_STATE_MASK)` (the body of `square_with_door_state`, `map.h:33-36`).
-- [ ] **Step 3: Rename** with `rename.py` (the script of Task 48, text below) and the list `SQUARE_TYPE rec_square_type`,
+- [ ] **Step 3: Rename** with `rename.py` (the script of Task 50, text below) and the list `SQUARE_TYPE rec_square_type`,
   `door_state rec_door_state`, `dungeon_get_square rec_square_byte`, `map_offset_x rec_map_offset_x`,
   `map_offset_y rec_map_offset_y`, `map_level rec_map_level`, `map_last_x rec_map_last_x`,
   `map_last_y rec_map_last_y`, `map_door_set rec_map_door_set`,
@@ -5689,16 +5782,18 @@ thing counts (one word per type). The values come from `map.h:318-329, 357-358` 
   `g_current_map_data[x][y] &= ~SQUARE_HAS_THINGS` (`map.c:215`) and the write of `map.c:181` become
   `rec_square_set_byte(...)` with the same bit operation. `group.c:158` and `view.c:2186` call `rec_map_type_lists`.
   `map_set_current_map` drops `g_current_map_data` and sets `g_current_map = rec_map_descriptor(map)`.
+  Tests (standard rule 11.3): a square type decoded by a shift (`lib.map_get_square(x, y) >> 5` and the like,
+  `git grep -nE "map_get_square\([^)]*\)\s*>>" tests`, also in Task 3) becomes `lib.rec_square_type(...)`.
 - [ ] **Step 5: The loader.** `build_map_columns` (`dungeon.c:238-252`) fills a local `uint8_t ***columns` and
   assigns `g_dungeon_map_data = columns` at the end, so the loader builds the column table without an indexed write
   of `g_dungeon_map_data`; `validate_squares` (`dungeon.c:339`) calls `rec_square_byte(m, x, y)`; `read_square_things_and_text`
   calls `rec_dungeon_set_square_things`; `thing_count`, `set_thing_count`, `map_raw_data_offset` go (callers use the
   `rec_` functions). The loader statics `raw_map_bytes`, `count_text_words` and `read_header` stay: they parse the
   file container that `dungeon.c` owns.
-- [ ] **Step 6: Add the includes** with `add_includes.py` (text in Task 48, Step 6) and a map of every new `rec_`
+- [ ] **Step 6: Add the includes** with `add_includes.py` (text in Task 50, Step 6) and a map of every new `rec_`
   name to `engine/record.h`; `make format`.
 - [ ] **Step 7: Build and test.** `make`; `uv run pytest -q tests/standard` (the `record` check passes with no
-  `open:` line for epic 5; delete those lines); the test selection of Task 48, Step 7, plus
+  `open:` line for epic 5; delete those lines); the test selection of Task 50, Step 7, plus
   `$(find tests -name 'test_automap.py' -o -name 'test_view.py' -o -name 'test_control.py' -o -name 'test_golden_protocol.py')`.
   Expected: all pass, golden snapshots unchanged.
 - [ ] **Step 8: Commit.** `git commit -am "refactor: the record module owns the square, map and header bytes"`
@@ -5769,7 +5864,7 @@ Each task of this stream: moves its rows, adds the includes with `add_includes.p
 `tests/`, `tools/`, `docs/` (not `docs/superpowers/`) and in the ctypes structures of `tests/dmtest/game.py`, and
 updates `docs/reference/kaos-symbols.csv` for each renamed function.
 
-### Task 50: arith module
+### Task 52: arith module
 
 **Files:**
 - Create: `src/engine/arith.h`, `src/engine/arith.c`
@@ -5848,7 +5943,7 @@ inline` function has no symbol in `libdm.dylib`, and the differential test would
 
 - [ ] **Step 1:** Write `arith.h` and `arith.c` as above. Delete `game.h:18-19, 203-206`, `game.c:151-172` and the
   static `abs16` of `group.c:97-100`.
-- [ ] **Step 2:** `add_includes.py` (text in Task 48, Step 6) with
+- [ ] **Step 2:** `add_includes.py` (text in Task 50, Step 6) with
   `{"engine/arith.h": ["min16", "max16", "abs16", "bounded_value", "scale_value", "SHIFT_COUNT_MASK", "LONG_SHIFT_MAXIMUM"]}`; `make format`.
 - [ ] **Step 3:** `make`; `nm -gU build/libdm.dylib | grep -E "_(min16|max16|abs16|bounded_value|scale_value)$"`.
   Expected: five lines.
@@ -5856,7 +5951,7 @@ inline` function has no symbol in `libdm.dylib`, and the differential test would
   changed files; `uv run pytest -q $(find tests -name 'test_game.py')`. Expected: pass.
 - [ ] **Step 5:** `git commit -am "refactor: the 16-bit helpers become the arith module"`
 
-### Task 51: one game_fatal
+### Task 53: one game_fatal
 
 **Files:**
 - Modify: `src/engine/game.h`, `src/engine/game.c:55-60` (static `fatal_error` becomes public `game_fatal`),
@@ -5868,17 +5963,17 @@ inline` function has no symbol in `libdm.dylib`, and the differential test would
   _Noreturn void game_fatal(int16_t code);`
 
 - [ ] **Step 1:** Rename `fatal_error` to `game_fatal`, make it public with `_Noreturn`, move its comment to the
-  prototype in `game.h`. Its body calls `os_fatal("System Error %d", code)` of `data/os.h` (Task 27, package D) instead of
+  prototype in `game.h`. Its body calls `os_fatal("System Error %d", code)` of `data/os.h` (Task 28, package D) instead of
   `fprintf(stderr, ...)` and `exit(1)`, with the same message text as `port/src/engine/game.c:58`; the
   `platform` lines of `engine/game.c` go from the allowlist (standard 10.1).
 - [ ] **Step 2:** `map.c:185` and `group.c:307-308` call `game_fatal(code)`; delete `stop_fatal`. `map.c` and
   `group.c` lose their `exit` and the `fprintf` of the system error; the `report_free_record` log of
-  `map.c:164` calls `os_log` (Task 27).
+  `map.c:164` calls `os_log` (Task 28).
 - [ ] **Step 3:** `make`; `uv run pytest -q tests/standard` (the `platform` lines of `engine/map.c` and
   `engine/group.c` for `exit(` go if no other `exit(` remains in the file); `uv run pytest -q $(find tests -name 'test_game.py')`.
 - [ ] **Step 4:** `git commit -am "refactor: one game_fatal for the system errors"`
 
-### Task 52: timeline module
+### Task 54: timeline module
 
 **Files:**
 - Create: `src/engine/timeline.h`, `src/engine/timeline.c`
@@ -5922,18 +6017,18 @@ bool timeline_allocate(int16_t capacity);
   `timeline_is_event_a_before_b`, `timeline_get_index`, `timeline_fix_chronology`, `timeline_delete_event`,
   `timeline_find_mergeable_event`, `timeline_add_event`, `timeline_extract_first_event`,
   `timeline_is_first_event_expired`, `timeline_add_watchdog_event`.
-- Consumes: `game_fatal` (Task 51).
+- Consumes: `game_fatal` (Task 53).
 
 - [ ] **Step 1:** Write `timeline.h` and move the bodies of `game.c:183-378` to `timeline.c` with their constants
   (`game.c:15-17, 25`: `SYSTEM_ERROR_TIMELINE_FULL`, `SYSTEM_ERROR_MEMORY` stays in `game.c` too if `game.c` still
   uses it, else it moves; `FREE_LIST_END`, `EVENT_KEY_TYPE_SHIFT`) and the macros `BEFORE`, `IS_SQUARE_EVENT`,
   `SAME_PLACE`, `OPPOSITE_EFFECT` (`game.c:247, 294-297`). `timeline.c` includes `engine/timeline_process.h` (after
-  Task 53: `engine/event.h`) for the event types and the event word accessors.
+  Task 55: `engine/event.h`) for the event types and the event word accessors.
 - [ ] **Step 2:** `timeline_allocate(capacity)` holds the shared part of `timeline_init` (`game.c:186-194`) and
   `allocate_tables` (`savegame.c:478-486`): free both arrays, `calloc` both, fill the free list, return false on a
-  failed allocation or `capacity <= 0`. `allocate_tables` calls it and keeps its group part (Task 55 changes that
+  failed allocation or `capacity <= 0`. `allocate_tables` calls it and keeps its group part (Task 57 changes that
   part).
-- [ ] **Step 3:** Replace the globals by `g_timeline` fields in `src/` (script `rename.py` of Task 48 cannot map a
+- [ ] **Step 3:** Replace the globals by `g_timeline` fields in `src/` (script `rename.py` of Task 50 cannot map a
   name to a field access with a different base; use `sed -E -i '' 's/\bg_timeline_events\b/g_timeline.events/g; s/\bg_timeline_count\b/g_timeline.count/g; s/\bg_event_high_water\b/g_timeline.high_water/g; s/\bg_first_unused_event_index\b/g_timeline.first_unused/g; s/\bg_event_max_count\b/g_timeline.capacity/g; s/\bg_watchdog_time\b/g_timeline.watchdog_time/g' $(grep -rlE "g_timeline_events|g_timeline_count|g_event_high_water|g_first_unused_event_index|g_event_max_count|g_watchdog_time" src)`
   first, then `sed -E -i '' 's/\bg_timeline\[/g_timeline.heap[/g'` over the same files). Check
   `grep -rn "g_timeline\b[^.]" src`: expected none.
@@ -5947,7 +6042,7 @@ bool timeline_allocate(int16_t capacity);
   Expected: pass; `tests/golden/save.json` unchanged (`TimelineEvent` keeps its layout).
 - [ ] **Step 7:** `git commit -am "refactor: the timeline module owns the event slots and the heap"`
 
-### Task 53: event module (was timeline_process)
+### Task 55: event module (was timeline_process)
 
 **Files:**
 - Rename: `git mv src/engine/timeline_process.c src/engine/event.c`, `git mv src/engine/timeline_process.h src/engine/event.h`
@@ -5985,7 +6080,7 @@ Callers outside `timeline_process.c` (grep at `72e24b5`): none for `event_proces
   `uv run pytest -q -n auto $(find tests -name 'test_csb_ending.py' -o -name 'test_move.py' -o -name 'test_creatures.py' -o -name 'test_game.py')`.
 - [ ] **Step 6:** `git commit -am "refactor: timeline_process becomes the event module with static handlers"`
 
-### Task 54: party module and the active groups
+### Task 56: party module and the active groups
 
 **Files:**
 - Create: `src/engine/party.h`, `src/engine/party.c`
@@ -6012,15 +6107,16 @@ Callers outside `timeline_process.c` (grep at `72e24b5`): none for `event_proces
 - Produces (`engine/group.h`): `ActiveGroup` (byte-identical), `ACTIVE_GROUP_MAX_COUNT`,
   `CSB_ACTIVE_GROUP_MAX_COUNT`, `g_active_groups`, `g_active_group_count`, `g_max_active_group_count`,
   `g_last_creature_attack_time`, `void group_init_active_groups(void)` (was `game_init_active_groups`),
-  `bool group_allocate_active(uint16_t count)` (the shared part of `game.c:384-389` and `savegame.c:476-489`:
-  free, `malloc`, fill `group_index = -1`; false on a failed allocation).
+  `void group_allocate_active(uint16_t count)` (the shared part of `game.c:384-389` and `savegame.c:476-489`:
+  free, `malloc`, fill `group_index = -1`; an allocation failure calls `game_fatal(SYSTEM_ERROR_MEMORY)`,
+  standard 10.3).
 
 - [ ] **Step 1:** Write `party.h`/`party.c` with the rows above; the bodies of the three light functions
   (`inventory.c:546-606`) and their constants move to `party.c` (`LIGHT_SOURCE_COUNT`, `LIGHT_SOURCES_USED`,
   `LIGHT_FIRST_SHIFT`, `LIGHT_DARKEST`: grep their definitions in `inventory.c`); `champion_delete_scent` and
   `move_add_scent_strength` move with their constants. The static scent helpers `fade_scents` (`champion.c:993`)
   and `add_party_scent` (`move.c:85`) stay with their callers.
-- [ ] **Step 2:** `rename.py` (Task 48) with `g_dungeon_view_palette_index g_party_light_level`,
+- [ ] **Step 2:** `rename.py` (Task 50) with `g_dungeon_view_palette_index g_party_light_level`,
   `inventory_get_party_light party_get_light`, `inventory_set_dungeon_view_palette party_set_light_level`,
   `inventory_decrease_torches_light_power party_burn_torches`, `champion_delete_scent party_delete_scent`,
   `move_add_scent_strength party_add_scent_strength`, `position_pack party_pack_position`,
@@ -6028,15 +6124,14 @@ Callers outside `timeline_process.c` (grep at `72e24b5`): none for `event_proces
   `POSITION_Y_SHIFT PARTY_POSITION_Y_SHIFT`, `POSITION_XY_MASK PARTY_POSITION_XY_MASK`,
   `POSITION_MAP_MASK PARTY_POSITION_MAP_MASK`, `game_init_active_groups group_init_active_groups`.
 - [ ] **Step 3:** Move `ActiveGroup`, the active group globals and `group_init_active_groups` to `group.h` /
-  `group.c`; write `group_allocate_active`; `group_init_active_groups` calls it and `game_fatal(SYSTEM_ERROR_MEMORY)`
-  on false; `allocate_tables` (`savegame.c:472`) calls it with its count (`savegame.c:474-476` keeps the DM minimum).
+  `group.c`; write `group_allocate_active`; `group_init_active_groups` calls it; `allocate_tables` (`savegame.c:472`) calls it with its count (`savegame.c:474-476` keeps the DM minimum).
   Move `g_last_creature_attack_time` to `group.h`.
 - [ ] **Step 4:** `add_includes.py` with every moved name mapped to its header; `make format`.
 - [ ] **Step 5:** `make`; `uv run pytest -q tests/standard`;
   `uv run pytest -q -n auto $(find tests -name 'test_champion.py' -o -name 'test_move.py' -o -name 'test_creatures.py' -o -name 'test_save.py' -o -name 'test_golden_save.py' -o -name 'test_golden_view.py' -o -name 'test_view.py')`.
 - [ ] **Step 6:** `git commit -am "refactor: the party module owns position, scents and light"`
 
-### Task 55: champion header takes the champion struct and the statistic rules
+### Task 57: champion header takes the champion struct and the statistic rules
 
 **Files:**
 - Modify: `src/engine/champion.h` (drops `#include "engine/game.h"`), `src/engine/champion.c`,
@@ -6054,13 +6149,13 @@ Callers outside `timeline_process.c` (grep at `72e24b5`): none for `event_proces
   R6.1). `engine/magic.h`: `MAGIC_MAP_*`, `magic_set_map_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)`,
   `magic_get_map_position(const uint8_t *spells, int16_t *map, int16_t *x, int16_t *y)` (package F, R6.4, makes
   the getter return a `Position`). `engine/inventory.h`: `g_leader_hand_object`.
-- Consumes: `party_pack_position`, `party_position_x`, `party_position_y` (Task 54) for the magic map helpers.
+- Consumes: `party_pack_position`, `party_position_x`, `party_position_y` (Task 56) for the magic map helpers.
 
 - [ ] **Step 1:** Move the rows of the split map to `champion.h`, `magic.h`, `inventory.h`; definitions of the
   globals to `champion.c` and `inventory.c`; the four statistic functions (`game.c:392-435`) with their constants
   (`game.c:18-24`: `STAT_HIGH`, `STAT_VERY_HIGH`, `ATTACK_FACTOR_MIN`, `ATTACK_FACTOR_SHIFT`, `LUCK_STEP`,
   `PERCENT_RANGE`, `ATTACK_LOW_FACTOR_SHIFT`) to `champion.c`.
-- [ ] **Step 2:** `rename.py` (Task 48) with `game_get_stamina_adjusted_value champion_adjust_by_stamina`,
+- [ ] **Step 2:** `rename.py` (Task 50) with `game_get_stamina_adjusted_value champion_adjust_by_stamina`,
   `game_get_statistic_adjusted_attack champion_scale_attack`, `game_adjust_statistic_current_value champion_adjust_statistic`,
   `game_is_lucky champion_is_lucky`, `game_set_magic_map_position magic_set_map_position`,
   `game_get_magic_map_position magic_get_map_position`.
@@ -6071,7 +6166,7 @@ Callers outside `timeline_process.c` (grep at `72e24b5`): none for `event_proces
   Expected: pass; `Champion` offsets unchanged (the golden save proves the packed form).
 - [ ] **Step 5:** `git commit -am "refactor: champion.h owns the champion struct and the statistic rules"`
 
-### Task 56: direction helpers, map_step, and the rest of game.h
+### Task 58: direction helpers, map_step, and the rest of game.h
 
 **Files:**
 - Modify: `src/engine/map.h`, `src/engine/map.c`, `src/engine/game.h` (only the session remains),
@@ -6094,7 +6189,7 @@ void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *x, int
   `/* Prefixes: game_ */`, purpose "The game session: the clock, the run flags, the modes and cheats, and the redraw
   flags that the rules raise.", and only the session rows of the split map plus `game_fatal`.
 
-- [ ] **Step 1:** Move `NORMALIZE`, `CELL_COUNT` and the three turn helpers to `map.h`; `rename.py` (Task 48) with
+- [ ] **Step 1:** Move `NORMALIZE`, `CELL_COUNT` and the three turn helpers to `map.h`; `rename.py` (Task 50) with
   `turn_right direction_right`, `turn_back direction_back`, `turn_left direction_left`,
   `game_update_map_coordinates_after_relative_movement map_step` over `src/` only (the tests use `turn_left` and
   `turn_right` as protocol action names: `tests/test_control.py:175, 184`; do not run the rename over `tests/`).
@@ -6122,14 +6217,17 @@ Shared files: `src/engine/map.h`, `src/engine/map.c`, `src/engine/dungeon.c` (`m
 `src/engine/recruit.c`, `src/engine/savegame.c`, `src/ui/view.c`, `src/ui/advanced.c`, `src/ui/startend.c`,
 `src/ui/gameloop.c`, `src/ui/dialog.c`, `state_json.c`.
 
-### Task 57: map helpers: party square, things of a type, the front cell, any map
+### Task 59: map helpers: party square, things of a type, the front cell, any map
 
 **Files:**
 - Modify: `src/engine/map.h`, `src/engine/map.c`, `src/engine/dungeon.h:35`, `src/engine/dungeon.c:289-301, 342-345,
   466-480`; callers: `is_party_on` in `group.c:101`, `projectile.c:50`, `timeline_process.c:33`, `move.c:102`; the
   side-of-cell formula in `group.c:1021`, `group.c:2141`, `move.c:179`, `projectile.c:859`; the first-thing loops
   `map.c:244-250`, `champion.c:457-459`; `dungeon_get_square_first_thing` in `recruit.c:101`, `ui/view.c:367, 2567`,
-  `state_json.c:670, 831, 925, 964`; `tests/test_csb_text.py:68, 123` (the test file of package C)
+  `state_json.c:670, 831, 925, 964`; the tests that call `dungeon_get_square_first_thing` or `map_get_square_group`
+  (`git grep -l "dungeon_get_square_first_thing\|map_get_square_group" tests`: at 72e24b5 `test_creatures`,
+  `test_view`, `test_move`, `test_dungeon`, `test_ui`, `test_champion`, `test_recruit`, `test_csb_text`,
+  `test_actions`, `test_save`, and `test_golden_rules` of Task 3)
 
 **Interfaces:**
 - Produces (`engine/map.h`):
@@ -6162,7 +6260,7 @@ static inline int16_t direction_front_cell(int16_t direction, int16_t cell)
 
   `map_get_square_group(x, y)` becomes `map_find_thing((Location){x, y}, THING_GROUP)` at its callers and goes;
   `dungeon_get_square_first_thing` and the static `map_at_level` go.
-- Consumes: `NORMALIZE` in `map.h` (Task 56 moves it; until the merge it is in `game.h`, which `map.c` includes):
+- Consumes: `NORMALIZE` in `map.h` (Task 58 moves it; until the merge it is in `game.h`, which `map.c` includes):
   this task uses `NORMALIZE` only in `map.h`; if `map.h` does not see it, put `direction_front_cell` in `map.c`
   as a public function instead of an inline.
 
@@ -6179,7 +6277,7 @@ that bound (`validate_squares` checks it, `dungeon.c:341-343`); the merged funct
 and differential tests confirm the same result.
 
 - [ ] **Step 1:** Write the types and functions in `map.h`/`map.c`. `map_get_first_thing_at` takes the body of
-  `dungeon_get_square_first_thing` (with `rec_square_byte` after Task 49, or `g_dungeon_map_data` until the merge);
+  `dungeon_get_square_first_thing` (with `rec_square_byte` after Task 51, or `g_dungeon_map_data` until the merge);
   `map_get_square_first_thing(x, y)` calls `map_get_first_thing_at((Position){g_current_map_index, x, y})`.
   Note: `map_get_square_first_thing_index` stays: `map_link_thing_to_list` and `map_unlink_thing_from_list` need the
   index.
@@ -6190,13 +6288,14 @@ and differential tests confirm the same result.
 - [ ] **Step 4:** Replace the four side-of-cell formulas by `direction_front_cell(direction, cell)`.
 - [ ] **Step 5:** `map.c:244-250` and `champion.c:457-459` use `map_find_thing`. The other loops of the survey
   (`sensor.c:81`, `projectile.c:569, 751`) test more than the type and stay. `recruit.c:101`, `view.c`, `state_json.c`
-  and the test call `map_get_first_thing_at`.
+  and the tests of the Files list call `map_get_first_thing_at` or `map_find_thing` (argtypes from
+  `dmtest.game`).
 - [ ] **Step 6:** `make format`; `make`; `uv run pytest -q tests/standard`;
   `uv run pytest -q -n auto $(find tests -name 'test_dungeon.py' -o -name 'test_move.py' -o -name 'test_creatures.py' -o -name 'test_recruit.py' -o -name 'test_csb_text.py' -o -name 'test_golden_*.py' -o -name 'test_view.py' -o -name 'test_control.py')`.
   Expected: pass, golden snapshots unchanged.
 - [ ] **Step 7:** `git commit -am "refactor: one copy of the party-square, front-cell and first-thing helpers"`
 
-### Task 58: champion faces the party direction
+### Task 60: champion faces the party direction
 
 **Files:**
 - Modify: `src/engine/champion.h`, `src/engine/champion.c`, `src/engine/action.c:195-201` (static
@@ -6215,7 +6314,7 @@ Facts: `action.c:195-201` and `magic.c:193-196` are equal (direction and `CHAMPI
   `uv run pytest -q -n auto $(find tests -name 'test_actions.py' -o -name 'test_spells.py' -o -name 'test_golden_rules.py')`.
 - [ ] **Step 3:** `git commit -am "refactor: one champion_face_party_direction"`
 
-### Task 59: message module: one dungeon text print, the game time, int16_t columns
+### Task 61: message module: one dungeon text print, the game time, int16_t columns
 
 **Files:**
 - Modify: `src/engine/message.h`, `src/engine/message.c`, `src/engine/sensor.h:11` (`SENSOR_TEXT_COLOR`),
@@ -6250,13 +6349,13 @@ and decode with mode 1 = `TEXT_MODE_MESSAGE` (`dungeon.h:38`).
   `uv run pytest -q -n auto $(find tests -name 'test_text.py' -o -name 'test_ui.py' -o -name 'test_golden_rules.py' -o -name 'test_csb_ending.py')`.
 - [ ] **Step 6:** `git commit -am "refactor: message functions read the game time; one dungeon text print"`
 
-### Task 60: savefile names and data ownership
+### Task 62: savefile names and data ownership
 
 **Files:**
 - Modify: `src/engine/savefile.h`, `src/engine/savefile.c` (`H_*` at 10-26), `src/engine/savegame.c` (`P_*`, `E_*`,
   `A_*` at 26-44; `write_save_file` 318-334; `rename` at 583), `src/engine/champion.c:106-126` (`REC_*`), callers
   of the `save_` functions (`savegame.c`), `tests/test_savefile.py`, `tests/test_save.py`, `tests/test_csb_save.py`,
-  `tools/csb_match.py` (or `tools/dmtools/csb_match.py` after package C), `docs/formats/save-format.md`,
+  `tools/csb_match.py` (or `tools/dmtools/csb_match.py` after package C), `docs/formats/save.md`,
   `docs/csb/*.md`, `docs/reference/kaos-symbols.csv`, `docs/reference/csb-appb-symbols.csv`, `docs/reference/kaos-map.md`,
   `docs/reference/symbols/range-7-9.md`
 
@@ -6292,7 +6391,7 @@ and decode with mode 1 = `TEXT_MODE_MESSAGE` (`dungeon.h:38`).
   one digit width per block (file format bytes, standard 3.4), one comment line above each block.
 
 - [ ] **Step 1:** Check `src/data/file.h` for `file_write` and `file_replace`; write down their signatures.
-- [ ] **Step 2:** `rename.py` (text in Task 48, Step 4) with the rows of the table that are whole-name renames and
+- [ ] **Step 2:** `rename.py` (text in Task 50, Step 4) with the rows of the table that are whole-name renames and
   the `G_`, `P_`, `E_`, `A_`, `H_`, `REC_` constants listed one by one (generate the list with
   `grep -ohE "\b(G|P|E|A|H)_[A-Z_]+\b" src/engine/savefile.[ch] src/engine/savegame.c | sort -u` and
   `grep -ohE "\bREC_[A-Z_]+\b" src/engine/champion.c | sort -u`; check that no other module uses a name of the list:
@@ -6309,7 +6408,7 @@ and decode with mode 1 = `TEXT_MODE_MESSAGE` (`dungeon.h:38`).
   Expected: pass, `tests/golden/save.json` unchanged.
 - [ ] **Step 7:** `git commit -am "refactor: savefile prefix, save offset names and data ownership"`
 
-### Task 61: explored module returns bool
+### Task 63: explored module returns bool
 
 **Files:**
 - Modify: `src/engine/explored.h:19-21`, `src/engine/explored.c:6-8, 14-25` and its returns, `src/engine/savegame.c:284,
@@ -6333,6 +6432,34 @@ Facts: `savegame.c:284` tests `if (explored_save(&block, &length))` as "failed" 
   `uv run pytest -q -n auto $(find tests -name 'test_automap.py' -o -name 'test_save.py')`.
 - [ ] **Step 5:** `git commit -am "refactor: explored save and load return bool"`
 
+#### Tail
+
+Runs in the main checkout after the merge of E1, E2 and E3: the three streams rename and move names in their own
+trees, so the merged tree can hold old names that another stream wrote.
+
+### Task 64: Apply the package renames over the merged tree
+
+**Files:**
+- Modify: the files of `src/`, `tests/`, `tools/` that the merge left with an old name or a missing include
+
+**Interfaces:**
+- Consumes: `renames-e1.txt` (Task 50), the rename list of Task 51 Step 3, the rename list of Task 58, `rename.py`
+  and `add_includes.py` (Task 50 Steps 4 and 6; create them from the plan text if the SDD workspace lost them).
+- Produces: a merged tree where every name of package E is the new name, and `make` and `tests/standard` pass.
+
+- [ ] **Step 1: Re-run the renames.** `uv run python rename.py renames-e1.txt`, then the same with the lists of
+  Task 51 Step 3 and Task 58. Expected: the files that stream E3 wrote with old names (`map.c`, `champion.c`,
+  `message.c`, the tests of Task 59) are printed; no other change.
+- [ ] **Step 2: Raw square reads of stream E3.** `git grep -n "g_dungeon_map_data\[\|g_current_map_data" src` outside
+  `src/engine/record.c`: each read becomes `rec_square_byte(map, x, y)` (Task 51 Step 4). Expected after: empty.
+- [ ] **Step 3: Includes.** `add_includes.py` with the map `{"engine/arith.h": [<the names of Task 52>],
+  "engine/map.h": ["map_step", "direction_right", "direction_back", "direction_left", "Location", "Position"],
+  "engine/record.h": [<every rec_ name>]}`; then `make format`.
+- [ ] **Step 4: Build and test.** `make`; `uv run pytest -q tests/standard`; the full suite (`make test`) as the
+  test step of this tail task. Expected: 0 warnings; PASS; the golden snapshots unchanged.
+- [ ] **Step 5: Commit.** `git commit -am "refactor: apply the package E renames over the merged tree"` (skip the
+  commit when Steps 1-3 changed nothing).
+
 ---
 
 ## Package F: engine API shape and state (Epics 6, 7; R5.4, R5.8)
@@ -6352,11 +6479,11 @@ Test commands find a module in its R1 folder with `git ls-files` (a pathspec `*`
 
 In this package, "the differential gate" is:
 `uv run pytest -q -n auto $(git ls-files 'tests/*test_creatures.py' 'tests/*test_move.py' 'tests/*test_champion.py' 'tests/*test_actions.py' 'tests/*test_csb_rules.py' 'tests/golden/test_*.py')`.
-A red differential or golden test after a task that moves a rule (Tasks 66, 67) stops the run for the user
+A red differential or golden test after a task that moves a rule (Tasks 69, 70) stops the run for the user
 (Global Constraints).
 
-New result types use this form; the Epic 3 `enum` check accepts a `typedef enum` whose type name ends in
-`Result`, `Outcome` or is listed in the task (reported to the controller when the check rejects it):
+New result types use this form; the Epic 3 `enum` check (Task 11) accepts an `enum` whose type name a function
+returns:
 
 ```c
 /* Results of move_get_move_result. */
@@ -6391,7 +6518,7 @@ also changes it), `src/engine/champion.c:843`, `src/engine/magic.c:226`, `src/en
 dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 also changes it),
 `src/engine/map.c`, `src/engine/map.h`, `src/ui/command.c:424, 445`, the tests named per task.
 
-### Task 62: Group turn state: current group and second direction
+### Task 65: Group turn state: current group and second direction
 
 **Files:**
 - Modify: `src/engine/group.c` (`port/src/engine/group.c:76-80` globals, `:1115-1144`
@@ -6400,7 +6527,7 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
 - Modify: `src/engine/group.h` (`port/src/engine/group.h:209-212` externs, the prototype of
   `group_get_directions_to_destination`)
 - Modify: `src/engine/projectile.c` (`port/src/engine/projectile.c:723` caller)
-- Modify: `tests/*/test_creatures.py` (`tests/test_creatures.py:158`), `docs/rules/rules-creatures.md` if it
+- Modify: `tests/*/test_creatures.py` (`tests/test_creatures.py:158`), `docs/rules/creatures.md` if it
   names the globals (grep)
 
 **Interfaces:**
@@ -6438,7 +6565,7 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
   `g_current_group_secondary_direction_to_party` (`855`), `g_group_secondary_direction` (Step 1 list) by the
   field. A static function that reads them without a `GroupTurn` gets `const GroupTurn *t` as its first
   parameter: `group_get_distance_to_visible_party` (`group.c:788`), `group_get_smelled_party_direction_ordinal`
-  (`847`), `group_is_creature_attacking` (`1011`). Keep the names of the static `*_ordinal` functions; Task 79
+  (`847`), `group_is_creature_attacking` (`1011`). Keep the names of the static `*_ordinal` functions; Task 82
   renames them.
 - [ ] **Step 4: Keep the last turn square as a kept quirk.** Replace `g_current_group_map_x/_y` and
   `g_current_group_thing` by one file-static struct and its comment:
@@ -6452,7 +6579,7 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
   ```
   `set_current_group` writes it; `group.c:233-234, 248` read `last_turn.at`; `group.c:907` reads
   `last_turn.thing`. `group_reset` (`group.c:2295`) clears it. Add one line on this quirk to the kept quirks of
-  `docs/rules/rules-creatures.md` (the section that lists kept quirks; grep "Quirk").
+  `docs/rules/creatures.md` (the section that lists kept quirks; grep "Quirk").
 - [ ] **Step 5: Callers.** `projectile.c:723` uses `.primary` of the returned pair. Delete the five externs from
   `group.h`. `grep -rn "g_current_group_\|g_group_secondary_direction" src tests tools docs` finds nothing
   outside `docs/superpowers/`.
@@ -6474,14 +6601,14 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
 - [ ] **Step 7: Build and test.** `make lib`, then the differential gate. Expected: all pass.
 - [ ] **Step 8: Commit.** `git commit -m "refactor(engine): group turn values travel in GroupTurn, not in globals"`
 
-### Task 63: Movement test result
+### Task 66: Movement test result
 
 **Files:**
 - Modify: `src/engine/group.c` (`port/src/engine/group.c:83-87` statics, `:868-948`, `:1497-1508`, `:1583`,
   `:1969-1970`, `:2020-2027`, `:2295-2302`)
 
 **Interfaces:**
-- Consumes: `GroupTurn` of Task 62.
+- Consumes: `GroupTurn` of Task 65.
 - Produces (file-static, in `group.c`):
   ```c
   /* The result of one step test of a group. */
@@ -6513,11 +6640,11 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
   `test_movement` stands above its first caller.
 - [ ] **Step 4: The helpers.** `group_get_first_possible_movement_direction_ordinal` and
   `group_is_archenemy_double_movement_possible` take `GroupTurn *t` instead of `info, x, y` (they keep their
-  names until Task 79). Delete the five statics of `group.c:83-87` and their resets in `group_reset`.
+  names until Task 82). Delete the five statics of `group.c:83-87` and their resets in `group_reset`.
 - [ ] **Step 5: Build and test.** `make lib`, then the differential gate. Expected: all pass.
 - [ ] **Step 6: Commit.** `git commit -m "refactor(engine): the group movement test returns a struct"`
 
-### Task 64: Group API: reactions, spell explosions, long parameter lists
+### Task 67: Group API: reactions, spell explosions, long parameter lists
 
 **Files:**
 - Modify: `src/engine/group.c`, `src/engine/group.h`
@@ -6527,7 +6654,7 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
   `group_get_melee_action_damage`; grep)
 
 **Interfaces:**
-- Consumes: `Location`, `DirectionPair` (Task 62).
+- Consumes: `Location`, `DirectionPair` (Task 65).
 - Produces:
   ```c
   /* A rule tells the group on a square about a danger, a projectile hit or the adjacent party (REACTION_*). */
@@ -6575,7 +6702,7 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
 - [ ] **Step 6: Build and test.** `make lib`, then the differential gate. Expected: all pass.
 - [ ] **Step 7: Commit.** `git commit -m "refactor(engine): one group entry for reactions, structs for long parameter lists"`
 
-### Task 65: Move API: request, destination and result
+### Task 68: Move API: request, destination and result
 
 **Files:**
 - Modify: `src/engine/move.h`, `src/engine/move.c` (`port/src/engine/move.c:21-23, 31-45, 110-261, 400`)
@@ -6585,7 +6712,7 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
 - Modify (call sites): `src/engine/event.c` (`port/src/engine/timeline_process.c:298-341`),
   `src/engine/projectile.c:69, 172, 473-476, 670`, `src/engine/champion.c:843`, `src/engine/magic.c:226`,
   `src/engine/action.c:439-442`, `src/ui/command.c:424, 445`, `src/engine/move.c:277-387`
-- Modify: `tests/conftest.py` (`BOOL_GLOBALS`: drop `g_use_rope_to_climb_down_pit`), `tests/*/test_move.py:36`
+- Modify: `tests/dmtest/game.py` (`BOOL_GLOBALS`: drop `g_use_rope_to_climb_down_pit`), `tests/*/test_move.py:36`
 
 **Interfaces:**
 - Consumes: `Location`, `Position`.
@@ -6635,7 +6762,7 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
   (`map.c:85-101`; returns -1 and leaves x, y unchanged when there is no map) by
   `map_get_level_change_location(Position from, int16_t level_delta)`: it returns `{-1, from.x, from.y}` when
   there is no map, else the new map and square. Update the callers `group.c:2124, 2134`, `move.c:161, 172, 295`.
-  The copy in `ui/view.c:1419-1435` stays for Task 88.
+  The copy in `ui/view.c:1419-1435` stays for Task 92.
 - [ ] **Step 3: Destination out-parameter.** In `move.c` and `group.c`, the walk writes a local
   `MoveDestination` instead of the five globals (`move.c:40-43, 238-244`, `group.c:2220-2224`; the projectile
   direction is the input of the walk at `move.c:238` and the rotation updates it at `move.c:40-43`). At the end
@@ -6656,17 +6783,17 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
   it (`group.c:2183-2184`). Callers that tested nonzero test `!= MOVE_RESULT_DONE`.
 - [ ] **Step 6: The rope.** `action.c:439-442` passes `.uses_rope = true`; `follow_square_chain` gets the flag
   from the request and passes it to `champion_fall_damage`. Delete `g_use_rope_to_climb_down_pit` and its reset
-  (`move.c:400`) and its name in `tests/conftest.py` `BOOL_GLOBALS`.
+  (`move.c:400`) and its name in `tests/dmtest/game.py` `BOOL_GLOBALS`.
 - [ ] **Step 7: Call sites.** Every caller builds a compound literal, for example
   `move_get_move_result(&(Move){.thing = thing, .to = {x, y}, .enters = true}, NULL)`. `group_get_move_result`
-  keeps its body for Task 66 but takes `(const Move *, MoveDestination *)` and stays callable only from
-  `move.c` (prototype in `group.h` until Task 66).
+  keeps its body for Task 69 but takes `(const Move *, MoveDestination *)` and stays callable only from
+  `move.c` (prototype in `group.h` until Task 69).
 - [ ] **Step 8: Tests.** `test_move.py:36` lists the symbol name only; keep it. `grep -rn "move_get_move_result\|
   map_get_location_after_level_change\|g_move_result" tests docs` and update every hit (docs name the new API).
 - [ ] **Step 9: Build and test.** `make lib`, then the differential gate. Expected: all pass.
 - [ ] **Step 10: Commit.** `git commit -m "refactor(engine): move requests and destinations instead of coordinate codes and globals"`
 
-### Task 66: One move chain for the party, groups, objects and projectiles
+### Task 69: One move chain for the party, groups, objects and projectiles
 
 **Files:**
 - Modify: `src/engine/move.c` (`port/src/engine/move.c:104-213` `is_teleported`, `follow_square_chain`,
@@ -6677,7 +6804,7 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
 - Modify: `src/engine/group.h`, `src/engine/move.h`
 
 **Interfaces:**
-- Consumes: `Move`, `MoveDestination`, `MoveResult` (Task 65); `map_step`, `direction_back` (package E).
+- Consumes: `Move`, `MoveDestination`, `MoveResult` (Task 68); `map_step`, `direction_back` (package E).
 - Produces: one walker in `move.c`, file-static:
   ```c
   /* Kinds of thing that move along a square chain: the chain rules differ per kind. */
@@ -6732,12 +6859,12 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
 - [ ] **Step 7: Build and test.** `make lib`, then the differential gate; compare with
   `"$SCRATCH/f5-before.txt"`. Expected: the same tests pass. A difference stops the task for the user (Global
   Constraints).
-- [ ] **Step 8: Docs.** `docs/rules/rules-movement.md` and `docs/rules/rules-creatures.md`: the sections that
+- [ ] **Step 8: Docs.** `docs/rules/movement.md` and `docs/rules/creatures.md`: the sections that
   name `follow_square_chain`, `follow_destination_squares` or `group_get_move_result` (grep) describe the one
   chain with the rule table of Step 2.
 - [ ] **Step 9: Commit.** `git commit -m "refactor(engine): one move chain for every mover"`
 
-### Task 67: Active groups: defined values on corrupt data, cleared allocation
+### Task 70: Active groups: defined values on corrupt data, cleared allocation
 
 **Files:**
 - Modify: `src/engine/group.c`, `src/engine/group.h` (`port/src/engine/group.h:143-147` `group_active`)
@@ -6745,7 +6872,7 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
   may have moved it, grep) and `port/src/engine/savegame.c:472-490`
 - Modify: `src/engine/map.c` (`port/src/engine/map.c:252-255` `map_get_creature_attributes`)
 - Modify: `tests/golden/test_golden_save.py:33-39, 63`, `tests/golden/test_golden_rules.py:14, 73`
-- Modify: `docs/formats/save-format.md` (section "Limits"), `docs/formats/dungeon-format.md` (section "Not
+- Modify: `docs/formats/save.md` (section "Limits"), `docs/formats/dungeon.md` (section "Not
   ported" or a new "Deviations" list), `docs/todo.md` (delete the two items "Uninitialized bytes of free active
   groups in a save" and "NULL read of creature attributes on a corrupt dungeon")
 
@@ -6754,9 +6881,8 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
   ```c
   /* The active group entry of a group on the party map (a corrupt index reads a free entry). */
   const ActiveGroup *group_get_active(uint16_t group);
-  /* Allocates count free active group entries, all bytes 0 except group_index -1. */
-  void group_allocate_active(uint16_t count);
   ```
+  Consumes `void group_allocate_active(uint16_t count)` of Task 56 and changes only its body (Step 3).
   The inline `group_active` of `group.h` goes; `group.c` uses a file-static `active_of(group)` that returns a
   writable pointer.
 
@@ -6784,28 +6910,29 @@ dispatch, square moves), `src/engine/savegame.c` (active group allocation; F3 al
   ```
   (`rec_group_cells_byte` is the 72e24b5 name; use the name of `engine/record.h`.) Replace the 9 `group_active(`
   calls in `group.c` (`grep -c` gives 9) by `active_of(`; `projectile.c:492` and `action.c:287` read only:
-  `group_get_active(`. `ui/view.c:674-675` changes in Task 82.
+  `group_get_active(`. `ui/view.c:674-675` changes in Task 85.
 - [ ] **Step 2: Creature attributes.** `map_get_creature_attributes` returns 0 (no attribute) for a creature type
   at or above the creature count of the table, with the comment
   `/* Deviation: a creature type beyond the table (a corrupt dungeon) has no attributes; the original reads
   beyond it. */`. Use the count accessor of `data/tables.h` (grep `CREATURE_TYPE_COUNT` or the table count);
   if none exists, add `#define CREATURE_TYPE_COUNT 27` beside the creature info accessor in `data/tables.h`
   (27 types: `tests/test_tables.py:161` iterates `range(27)`).
-- [ ] **Step 3: One allocation.** `group_allocate_active(count)` in `group.c`: `free(g_active_groups)`,
-  `calloc(count, sizeof *g_active_groups)`, abort on NULL through `game_fatal` (package E), every
-  `group_index = -1`, `g_max_active_group_count = count`. `game_init_active_groups` and the loader
+- [ ] **Step 3: Cleared allocation.** The body of `group_allocate_active(count)` (Task 56) in `group.c` uses
+  `calloc(count, sizeof *g_active_groups)` instead of `malloc`, so every byte is 0; it keeps the abort through
+  `game_fatal`, every `group_index = -1`, `g_max_active_group_count = count`. `group_init_active_groups` and the loader
   (`savegame.c:474-488`) call it. The loader keeps its order: it allocates before `unpack_active_group`
   (`savegame.c:500-501`), and the DM count raise at `savegame.c:503-504` stays after the unpack.
-- [ ] **Step 4: Drop the scrub.** Delete `scrub_free_groups` (`tests/test_golden_save.py:33-39`) and its two
-  calls (`test_golden_save.py:63`, `test_golden_rules.py:73`) and the import (`test_golden_rules.py:14`).
+- [ ] **Step 4: Drop the scrub.** Delete `scrub_free_groups` from `tests/dmtest/game.py` (Task 17 moved it there
+  from `tests/test_golden_save.py:33-39`) and its two calls (`tests/golden/test_golden_save.py`,
+  `tests/golden/test_golden_rules.py`: `grep -rn scrub_free_groups tests`) and the imports.
 - [ ] **Step 5: Golden gate.** `make lib`, then the golden gate. Expected: all pass with the unchanged
   `tests/golden/*.json`. If `save.json` or `rules.json` differs, an entry freed by `group_remove_active_group`
   (it sets only `group_index = -1`, `group.c:342`) kept old bytes in the scenario: stop and report (the PRD
   invariant says the snapshot stays equal).
-- [ ] **Step 6: Deviation entries.** `docs/formats/save-format.md`, section "Limits": "Free active group entries
+- [ ] **Step 6: Deviation entries.** `docs/formats/save.md`, section "Limits": "Free active group entries
   are saved with 0 bytes after a new game or a load; the original saves whatever its memory holds. An entry that
   a group leaves keeps its bytes, as in the original." and "A cells byte beyond the active group table reads a
-  free entry (`group_get_active`)." `docs/formats/dungeon-format.md`: "A creature type beyond the creature table
+  free entry (`group_get_active`)." `docs/formats/dungeon.md`: "A creature type beyond the creature table
   has no attributes (`map_get_creature_attributes`)."
 - [ ] **Step 7: Build and test.** `make lib`, the differential gate. Expected: all pass.
 - [ ] **Step 8: Commit.** `git commit -m "fix(engine): defined values for corrupt active group and creature indices, cleared active groups"`
@@ -6818,14 +6945,16 @@ Shared files: `src/engine/group.c` (calls of the champion helpers at `port/src/e
 `src/ui/ui_champion.c:206, 254, 469, 473, 578`, `src/ui/ui_menus.c:97-105`, `src/ui/view.c:2505`,
 `src/platform/state_json.c:261-322, 499-500`, the tests named per task.
 
-### Task 68: Champion functions take an index; skill and wound flags as parameters
+### Task 71: Champion functions take an index; skill and wound flags as parameters
 
 **Files:**
 - Modify: `src/engine/champion.h` (`port/src/engine/champion.h:95-101`), `src/engine/champion.c`
   (`port/src/engine/champion.c:516-540, 611-622, 628-670, 718-760`)
 - Modify: the four statistic helpers that package E moved from `game.c:392-435` into the champion module
   (`game_get_stamina_adjusted_value`, `game_get_statistic_adjusted_attack`, `game_adjust_statistic_current_value`,
-  `game_is_lucky` at `port/src/engine/game.h:225-228`; grep their current names)
+  `game_is_lucky` at `port/src/engine/game.h:224-227`; grep their current names)
+- Modify: `tests/golden/test_golden_rules.py` (`test_load_colors` of Task 3 passes `ctypes.byref(champion)` to
+  `champion_get_maximum_load`: it passes the index `0`, argtypes `[c16]`)
 - Modify (call sites): `src/engine/group.c`, `src/engine/move.c`, `src/engine/inventory.c:443-452`,
   `src/engine/magic.c:358`, `src/engine/action.c` (7 calls), `src/ui/startend.c:269-270`,
   `src/ui/ui_champion.c:254, 469, 578`, `src/platform/state_json.c:268, 289, 322`
@@ -6879,7 +7008,7 @@ Shared files: `src/engine/group.c` (calls of the champion helpers at `port/src/e
   Expected: all pass.
 - [ ] **Step 7: Commit.** `git commit -m "refactor(engine): champion functions take an index and explicit flags"`
 
-### Task 69: Runtime fields of a champion
+### Task 72: Runtime fields of a champion
 
 **Files:**
 - Modify: `src/engine/champion.h` (the `Champion` struct, which package E moved from
@@ -6940,11 +7069,11 @@ Shared files: `src/engine/group.c` (calls of the champion helpers at `port/src/e
 - [ ] **Step 7: Build and test.** `make`, then
   `uv run pytest -q -n auto $(git ls-files 'tests/*test_champion.py' 'tests/*test_save.py' 'tests/*test_control.py' 'tests/*test_actions.py' 'tests/*test_gameloop.py' 'tests/*test_csb_ending.py' 'tests/*test_move.py' 'tests/*test_creatures.py' 'tests/*test_modes.py' 'tests/golden/test_*.py')`.
   Expected: all pass; `tests/golden/save.json` unchanged (the packed form does not change).
-- [ ] **Step 8: Docs.** `docs/rules/game-state.md` and `docs/rules/rules-champions.md` name the fields instead of
+- [ ] **Step 8: Docs.** `docs/rules/game-state.md` and `docs/rules/champions.md` name the fields instead of
   the four arrays (grep).
 - [ ] **Step 9: Commit.** `git commit -m "refactor(engine): pending damage, level-ups and portraits are fields of the champion"`
 
-### Task 70: Action list and the action target
+### Task 73: Action list and the action target
 
 **Files:**
 - Modify: `src/engine/action.h` (`port/src/engine/action.h:60-64, 77`), `src/engine/action.c`
@@ -6987,7 +7116,7 @@ Shared files: `src/engine/group.c` (calls of the champion helpers at `port/src/e
   Expected: all pass.
 - [ ] **Step 6: Commit.** `git commit -m "refactor(engine): the action list is one struct, the action target a parameter"`
 
-### Task 71: Magic and inventory results as structs
+### Task 74: Magic and inventory results as structs
 
 **Files:**
 - Modify: `src/engine/magic.c` (`port/src/engine/magic.c:303-330, 375-385`), `src/engine/inventory.c`
@@ -7000,11 +7129,12 @@ Shared files: `src/engine/group.c` (calls of the champion helpers at `port/src/e
 - Produces:
   ```c
   /* The kept map position of NETA from the magic map bytes of a champion. */
-  Position game_get_magic_map_position(const uint8_t *spells);
+  Position magic_get_map_position(const uint8_t *spells);
   /* Stores the kept map position of NETA in the magic map bytes. */
-  void game_set_magic_map_position(uint8_t *spells, Position position);
+  void magic_set_map_position(uint8_t *spells, Position position);
   ```
-  (keep the prefix of the header that holds them after package E.) File-static in `magic.c`:
+  (Task 57 moved them to `engine/magic.h` as `magic_get_map_position`/`magic_set_map_position`; PRD R6.4 names
+  the old `game_` name.) File-static in `magic.c`:
   `typedef struct { bool cast; uint16_t disabled_ticks; } MagicMapCast;` returned by `cast_magic_map`. File-static
   in `inventory.c`: `typedef struct { int16_t bonus; uint16_t statistic; } ObjectModifier;` returned by
   `get_object_modifier`.
@@ -7026,18 +7156,18 @@ Shared files: `src/engine/group.c` (calls of the champion helpers at `port/src/e
 #### Stream F3: projectile, sensor, savegame, sound
 
 Shared files: `src/engine/group.c:637, 1055` (explosion and projectile creation in the creature attack; F1
-changes the lines around 1051 in Task 64: expect a merge near them), `src/engine/action.c:371, 724` (F2 changes
+changes the lines around 1051 in Task 67: expect a merge near them), `src/engine/action.c:371, 724` (F2 changes
 this file), `src/engine/magic.c:130` (F2 changes this file), `src/engine/event.c` (door attack, material group),
 `src/ui/startend.c:124-210, 449, 529-530`, `src/ui/advanced.c:123-133`, `src/platform/control.c:1200-1205`,
 `src/engine/savegame.c` (F1 and F2 change other lines), the tests named per task.
 
-### Task 72: Projectile impact and launch without globals
+### Task 75: Projectile impact and launch without globals
 
 **Files:**
 - Modify: `src/engine/projectile.h` (`port/src/engine/projectile.h:125-133, 152`), `src/engine/projectile.c`
   (`port/src/engine/projectile.c:46-47, 63-100, 180-225, 245-260, 380-390, 795-870`)
 - Modify (call sites): `src/engine/group.c:1055`, `src/engine/action.c:371, 724`, `src/engine/magic.c:130`
-- Modify: `tests/conftest.py` (`BOOL_GLOBALS`: drop `g_create_launcher_projectile`),
+- Modify: `tests/dmtest/game.py` (`BOOL_GLOBALS`: drop `g_create_launcher_projectile`),
   `tests/*/test_creatures.py:200-220`, the tests that call `projectile_create` (5 calls: grep)
 
 **Interfaces:**
@@ -7092,7 +7222,7 @@ this file), `src/engine/magic.c:130` (F2 changes this file), `src/engine/event.c
 - [ ] **Step 5: Build and test.** `make`, then the differential gate. Expected: all pass.
 - [ ] **Step 6: Commit.** `git commit -m "refactor(engine): projectile attack and launch values without globals"`
 
-### Task 73: Projectile squares and hit results
+### Task 76: Projectile squares and hit results
 
 **Files:**
 - Modify: `src/engine/projectile.h`, `src/engine/projectile.c` (`port/src/engine/projectile.c:14-16, 120-145,
@@ -7123,7 +7253,7 @@ this file), `src/engine/magic.c:130` (F2 changes this file), `src/engine/event.c
   src_x`, `y_combo = dst_y << 8 | src_y` (`projectile.c:739-740`); the decode gives the square `x = dst`, the
   target `target = src` (`projectile.c:131-136, 362-367`); a plain value is the same square for both. The only
   producer is `projectile_is_killed_by_impact`; every other caller passes a plain square.
-- [ ] **Step 2: Locations.** `explosion_create`, `projectile_has_impact_occurred` (static after Task 82, keep
+- [ ] **Step 2: Locations.** `explosion_create`, `projectile_has_impact_occurred` (static after Task 85, keep
   it public here), `create_impact_explosion` and `hit_creature` take `Location at, Location target` instead of the
   combos; `projectile_is_killed_by_impact` passes `(Location){dst_x, dst_y}` and `(Location){src_x, src_y}` for
   the destination pass and the source square twice for the first pass. Callers with a plain square pass it twice.
@@ -7137,7 +7267,7 @@ this file), `src/engine/magic.c:130` (F2 changes this file), `src/engine/event.c
 - [ ] **Step 5: Build and test.** `make`, then the differential gate. Expected: all pass.
 - [ ] **Step 6: Commit.** `git commit -m "refactor(engine): projectile squares as locations and hit results as an enum"`
 
-### Task 74: Sensor and event results
+### Task 77: Sensor and event results
 
 **Files:**
 - Modify: `src/engine/sensor.h` (`port/src/engine/sensor.h:13-18`), `src/engine/sensor.c`
@@ -7199,7 +7329,7 @@ this file), `src/engine/magic.c:130` (F2 changes this file), `src/engine/event.c
   Expected: all pass.
 - [ ] **Step 7: Commit.** `git commit -m "refactor(engine): sensor click results and rotation state without globals"`
 
-### Task 75: Save results
+### Task 78: Save results
 
 **Files:**
 - Modify: `src/engine/savegame.h` (`port/src/engine/savegame.h:10-38`), `src/engine/savegame.c`
@@ -7207,7 +7337,7 @@ this file), `src/engine/magic.c:130` (F2 changes this file), `src/engine/event.c
   `src/platform/control.c:1200-1205`
 - Modify: the tests that call the save functions (`grep -rln "savegame_" tests`: `test_save.py`,
   `test_csb_ending.py`, `test_select.py`, `test_csb_adventure.py`, `test_csb_save.py`, `test_golden_save.py`,
-  `test_csb_magic_map.py`, `test_modes.py`), `docs/formats/save-format.md` (C API section), `docs/todo.md` (the
+  `test_csb_magic_map.py`, `test_modes.py`), `docs/formats/save.md` (C API section), `docs/todo.md` (the
   `savegame_quick_save` line of "Truth values that are still int16_t")
 
 **Interfaces:**
@@ -7251,7 +7381,7 @@ this file), `src/engine/magic.c:130` (F2 changes this file), `src/engine/event.c
   Expected: all pass.
 - [ ] **Step 5: Commit.** `git commit -m "refactor(engine): save results as bool and named result types"`
 
-### Task 76: Pending sounds and loudness
+### Task 79: Pending sounds and loudness
 
 **Files:**
 - Modify: `src/engine/sound.h` (`port/src/engine/sound.h:42-46`), `src/engine/sound.c`
@@ -7294,7 +7424,7 @@ this file), `src/engine/magic.c:130` (F2 changes this file), `src/engine/event.c
 Shared files: the tail runs after the merge of the three streams, one task after the other; each task may touch
 every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
 
-### Task 77: Creature damage outcome as a return value
+### Task 80: Creature damage outcome as a return value
 
 **Files:**
 - Modify: `src/engine/group.h` (`port/src/engine/group.h:72-76, 208`), `src/engine/group.c`
@@ -7335,7 +7465,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
 - [ ] **Step 3: Build and test.** `make`, then the differential gate. Expected: all pass.
 - [ ] **Step 4: Commit.** `git commit -m "refactor(engine): the creature damage outcome is a return value"`
 
-### Task 78: Sound requests: mode and delay
+### Task 81: Sound requests: mode and delay
 
 **Files:**
 - Modify: `src/engine/sound.h` (`port/src/engine/sound.h:14-39`), `src/engine/sound.c`
@@ -7373,7 +7503,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
   `uv run pytest -q $(git ls-files 'tests/*test_sound.py')`. Expected: all pass.
 - [ ] **Step 6: Commit.** `git commit -m "refactor(engine): sound requests take a mode and a separate delay"`
 
-### Task 79: Indices instead of ordinals
+### Task 82: Indices instead of ordinals
 
 **Files:**
 - Modify: every file that names an ordinal (`grep -rlw "ordinal\|[a-z_]*_ordinal[a-z_]*" src tests docs`): at
@@ -7414,7 +7544,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
 - [ ] **Step 2: The three globals.** Initial value -1 (was 0: `action.c:92`, `champion.c:99`, `inventory.c:56`;
   `game.c:93` resets the candidate to -1). Rewrite each use: `!g_x_ordinal` → `g_x_index < 0`; `g_x_ordinal` as
   a truth value → `g_x_index >= 0`; `g_x_ordinal - 1` → `g_x_index`; `i + 1 == g_x_ordinal` → `i == g_x_index`;
-  an assignment of `i + 1` → `i`; of 0 → -1. Task 80 then moves them into `g_session`.
+  an assignment of `i + 1` → `i`; of 0 → -1. Task 83 then moves them into `g_session`.
 - [ ] **Step 3: The functions** of the table. A caller that tested `!= 0` tests `>= 0`; a caller that subtracted 1
   drops the subtraction.
 - [ ] **Step 4: Record and table ordinals.** `rec_sensor_ornament` and `rec_door_ornament` return the stored
@@ -7423,7 +7553,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
   uses.
 - [ ] **Step 5: The protocol stays.** `state_json.c:430-435, 474, 494-496` and the `control.c` lines of Step 1
   write the same JSON values as before (the JSON already holds indices: `"champion": ordinal - 1`).
-- [ ] **Step 6: Tests.** `tests/conftest.py`, `dmtest.game` and the tests of the files list read the new names;
+- [ ] **Step 6: Tests.** `dmtest.game` (`tests/dmtest/game.py`) and the tests of the files list read the new names;
   an assertion `== 1` on an ordinal becomes `== 0`, `== 0` becomes `== -1`, `== 2` becomes `== 1`; a write of
   `1` becomes `0`. The checked facts stay the same.
 - [ ] **Step 7: Docs.** `grep -rln "ordinal" docs | grep -v superpowers`; every hit that names a renamed symbol
@@ -7434,7 +7564,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
   `uv run pytest -q tests/standard -k ordinal` passes.
 - [ ] **Step 10: Commit.** `git commit -m "refactor: indices instead of ordinals"`
 
-### Task 80: The session struct
+### Task 83: The session struct
 
 **Files:**
 - Modify: `src/engine/game.h`, `src/engine/game.c` (`port/src/engine/game.c:38, 44-45, 62-100`),
@@ -7444,8 +7574,8 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
 - Modify (readers): every file that names a moved global (counts at 72e24b5: `g_party_is_sleeping` 31 in 12
   files, `g_party_dead` 11 in 8, `g_game_won` 13 in 8, `g_cheat_*` 19 in 5, `g_saved_game_exists` 12 in 3,
   `g_last_save_game_time` 7, `g_last_load_game_time` 8, `g_action_damage` 13 in 4, `g_new_party_map_index` 13 in
-  4, `g_game_mode` 16 in 6, the three champion indices of Task 79)
-- Modify: `tests/conftest.py` (`BOOL_GLOBALS`, `global_type`), `tests/dmtest/game.py` (the `Session` structure,
+  4, `g_game_mode` 16 in 6, the three champion indices of Task 82)
+- Modify: `tests/dmtest/game.py` (`BOOL_GLOBALS`, `global_type`), `tests/dmtest/game.py` (the `Session` structure,
   `Game.value`), the tests that read these globals (`grep -rln "g_party_is_sleeping\|g_party_dead\|g_game_won\|
   g_cheat_\|g_saved_game_exists\|g_last_load_game_time\|g_action_damage\|g_new_party_map_index\|g_game_mode\|
   _champion_index\|g_leader_empty_handed" tests`), `docs/rules/game-state.md`
@@ -7498,12 +7628,12 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
   `game.session.inventory_champion_index` (`Session.in_dll(lib, "g_session")`). `BOOL_GLOBALS` loses the moved
   names. The assertions keep their values.
 - [ ] **Step 5: Docs.** `docs/rules/game-state.md`: one table of the session fields with the reset points of
-  Step 1; the stale globals of `docs/game-state.md:196` (PRD current state) go.
+  Step 1; the stale globals of `docs/rules/game-state.md:196` (PRD current state) go.
 - [ ] **Step 6: Build and test.** `make`, `make windows`, `make test`. Expected: all pass, 0 warnings, the golden
   save and protocol snapshots unchanged.
 - [ ] **Step 7: Commit.** `git commit -m "refactor(engine): per-run flags live in g_session"`
 
-### Task 81: One type per game value
+### Task 84: One type per game value
 
 **Files:**
 - Modify: the engine headers and their `.c` files that the `type` check of `tests/standard/test_standard.py`
@@ -7537,7 +7667,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
   pass for `engine/`.
 - [ ] **Step 7: Commit.** `git commit -m "refactor(engine): one type per game value"`
 
-### Task 82: Dead API, test markers, private engine arrays
+### Task 85: Dead API, test markers, private engine arrays
 
 **Files:**
 - Modify: the engine headers and `.c` files that the `dead-api` check reports; `src/ui/view.c`
@@ -7545,7 +7675,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
   `src/engine/game.h` (or the headers of package E that hold `g_active_groups`, `g_timeline_events`)
 
 **Interfaces:**
-- Consumes: `group_get_active` (Task 67).
+- Consumes: `group_get_active` (Task 70).
 - Produces:
   ```c
   /* The flight direction of a projectile (from its move event). */
@@ -7555,7 +7685,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
   (they stay global inside the engine for `savegame.c` and the timeline module, declared in an `_internal.h`
   header of their module or in the module header with the marker if the tests read them).
 
-- [ ] **Step 1: The list.** `uv run pytest -q tests/standard -k dead` and save the report. At 72e24b5 about 70
+- [ ] **Step 1: The list.** `uv run pytest -q tests/standard -k exports` and save the report. At 72e24b5 about 70
   engine functions have no caller outside their file (engine review F44 lists them) and 17 are test-only:
   `dungeon_decompress`, `dungeon_validate`, `save_block_xor`, `recruit_decoded_value`, `recruit_parse_text`,
   `sound_compare_loudness`, `sound_demo_play`, `sound_get_sample`, `sound_get_volume`, `message_move_cursor`,
@@ -7579,7 +7709,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
 - [ ] **Step 6: Allowlist.** Delete the `dead-api` and `static-prefix` lines with `open: epic 7` for `engine/`.
 - [ ] **Step 7: Commit.** `git commit -m "refactor(engine): static for file-local functions, markers for test exports"`
 
-### Task 83: Names from the game
+### Task 86: Names from the game
 
 **Files:**
 - Modify: `src/engine/group.h` (`port/src/engine/group.h:57-63`), `src/engine/action.h`
@@ -7587,15 +7717,15 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
   `engine/champion.h`), `src/data/tables.h` (skill block, `WeaponInfo`), `src/engine/action.c:24-32`,
   `src/engine/champion.c:96`, `src/engine/sensor.c:14`, every `event->b` / `event->c` reader outside the timeline
   module and `savegame.c`
-- Modify: `docs/rules/rules-creatures.md:52-58`, `docs/reference/kaos-symbols.csv` (the symbol table lines of the
+- Modify: `docs/rules/creatures.md:52-58`, `docs/reference/kaos-symbols.csv` (the symbol table lines of the
   renamed constants, if any)
 
 **Interfaces:**
 - Produces: `BEHAVIOR_WANDER_NO_APPROACH` (was `BEHAVIOR_USELESS_2`), `BEHAVIOR_WANDER_NO_SMELL` (was
   `BEHAVIOR_USELESS_3`); the two stab names; one `WEAPON_CLASS_*` block in `data/tables.h`; `SKILL_STEAL 8`.
 
-- [ ] **Step 1: Behaviors.** No name for behavior 2 and 3 exists in `docs/kaos-symbols.csv` or `reference/`
-  (searched at plan time; ReDMCSB calls both "useless"). The rule names them: `docs/rules-creatures.md:55` "2, 3:
+- [ ] **Step 1: Behaviors.** No name for behavior 2 and 3 exists in `docs/reference/kaos-symbols.csv` or `reference/`
+  (searched at plan time; ReDMCSB calls both "useless"). The rule names them: `docs/rules/creatures.md:55` "2, 3:
   like wander, but does not follow the smell; behavior 2 does not approach". Rename: 2 →
   `BEHAVIOR_WANDER_NO_APPROACH`, 3 → `BEHAVIOR_WANDER_NO_SMELL`; the comparisons `> BEHAVIOR_USELESS_3`
   (`group.c:340`) keep the numeric order (comment above the block: "values in record order; the rules compare
@@ -7621,7 +7751,7 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
 - [ ] **Step 7: Build and test.** `make`, `make test`. Expected: all pass.
 - [ ] **Step 8: Commit.** `git commit -m "refactor(engine): constant names from the game rules"`
 
-### Task 84: Engine constants: defines, notation, unused names
+### Task 87: Engine constants: defines, notation, unused names
 
 **Files:**
 - Modify: every header and `.c` file of `src/engine/`
@@ -7631,8 +7761,8 @@ every engine file and its callers in `ui/`, `platform/`, `tests/`, `docs/`.
 - Produces: no anonymous `enum` in `src/engine/`; every constant is `#define NAME value` with the value written
   out; every block has one comment line and one notation; the result types of this package stay `typedef enum`.
 
-Task 24 (package C tail) has already turned every anonymous enum of `src/` into `#define` lines. Steps 1-2
-run the converter only on the enums that packages D, E and F added after Task 24 (Expected: none; a hit is a defect of
+Task 25 (package C tail) has already turned every anonymous enum of `src/` into `#define` lines. Steps 1-2
+run the converter only on the enums that packages D, E and F added after Task 25 (Expected: none; a hit is a defect of
 that task, fix it here).
 
 - [ ] **Step 1: The converter.** Write `$SCRATCH/engine_constants.py`: for each `enum { ... };` without a type name
@@ -7654,6 +7784,81 @@ that task, fix it here).
   for `engine/`; `uv run pytest -q tests/standard` passes with the remaining lines.
 - [ ] **Step 7: Commit.** `git commit -m "refactor(engine): constants as defines with one notation per block"`
 
+### Task 88: Short names for the engine functions (R3.4)
+
+**Files:**
+- Modify: the engine headers and `.c` files, and every caller (`rename.py` over `src/`, `tests/`, `tools/`, `docs/`)
+
+**Interfaces:**
+- Consumes: `rename.py` (Task 50 Step 4). Earlier tasks already renamed some names of the PRD list:
+  `game_update_map_coordinates_after_relative_movement` → `map_step` (Task 58),
+  `map_get_location_after_level_change` → `map_get_level_change_location` (Task 68),
+  `inventory_set_dungeon_view_palette` → `party_set_light_level` and `inventory_decrease_torches_light_power` →
+  `party_burn_torches` (Task 56), the record accessors (Tasks 50, 51), the `*_ordinal` functions (Task 82).
+- Produces: these names (72e24b5 name → new name; rule 4.1; a static function has no prefix, rule 4.2):
+
+| 72e24b5 name | New name |
+|---|---|
+| `action_is_ammunition_compatible_with_weapon` | `action_is_ammo_for_weapon` |
+| `action_is_group_frightened_by_action` | `action_is_group_frightened` |
+| `action_is_leader_hand_object_thrown` | `action_is_hand_object_thrown` |
+| `action_move_weapon_from_quiver_to_slot` | `action_refill_from_quiver` |
+| `champion_add_pending_damage_and_wounds` | `champion_add_pending_damage` |
+| `champion_apply_and_draw_pending_damage_and_wounds` | `champion_apply_pending_damage` |
+| `champion_click_in_resurrect_reincarnate_panel` | `champion_click_rebirth_panel` |
+| `champion_reset_data_to_start_game` | `champion_reset_for_new_game` |
+| `game_adjust_statistic_current_value` (a `champion_` name after Task 57) | `champion_adjust_statistic` |
+| `game_get_statistic_adjusted_attack` (a `champion_` name after Task 57) | `champion_get_adjusted_attack` |
+| `group_drop_creature_fixed_possessions` | `group_drop_possessions` |
+| `group_drop_moving_creature_fixed_possessions` | `group_drop_moving_possessions` |
+| `group_get_creature_aspect_update_time` | `group_get_aspect_update_time` |
+| `group_get_damage_all_creatures_outcome` | `group_damage_all_creatures` |
+| `group_get_damage_creature_outcome` | `group_damage_creature` |
+| `group_get_directions_to_destination` | `group_get_directions_to` |
+| `group_get_melee_target_creature_ordinal` (an index after Task 82) | `group_get_melee_target` |
+| `group_get_resistance_adjusted_poison_attack` | `group_get_poison_attack` |
+| `group_is_destination_visible_from_source` | `group_is_destination_visible` |
+| `group_set_ordered_cells_to_attack` | `group_set_attack_cell_order` |
+| `inventory_fill_leader_hand_at_fountain` | `inventory_fill_at_fountain` |
+| `inventory_get_object_removed_from_leader_hand` | `inventory_take_hand_object` |
+| `inventory_get_object_removed_from_slot` | `inventory_take_slot_object` |
+| `inventory_put_object_in_leader_hand` | `inventory_put_hand_object` |
+| `magic_get_champion_spell_cast_result` | `magic_cast_champion_spell` |
+| `magic_get_click_on_spell_cast_result` | `magic_click_cast_spell` |
+| `magic_is_party_spell_or_fire_shield_successful` | `magic_cast_party_spell` |
+| `magic_print_spell_failure_message` | `magic_print_spell_failure` |
+| `map_set_current_map_and_party_map` | `map_set_party_map` |
+| `move_get_teleporter_rotated_projectile_thing` | `move_rotate_projectile` |
+| `projectile_get_lord_chaos_on_square` | `projectile_find_lord_chaos` |
+| `projectile_get_object_for_launcher_or_generator` | `projectile_get_launch_object` |
+| `sensor_add_vi_altar_rebirth_event` | `sensor_add_rebirth_event` |
+| `sensor_get_object_of_type_in_cell` | `sensor_find_cell_object` |
+| `sensor_is_object_in_party_possession` | `sensor_is_party_possession` |
+| `sensor_is_triggered_by_click_on_wall` | `sensor_is_wall_triggered` |
+| `sensor_process_thing_addition_or_removal` | `sensor_process_thing_change` |
+| `event_is_door_destroyed_by_attack` | `event_is_door_destroyed` |
+| `event_move_teleporter_or_pit_square_things` | `event_move_square_things` |
+| static `group_get_distance_between_unblocked_squares` (`group.c`) | `get_unblocked_distance` |
+| static `group_get_distance_to_visible_party` | `get_visible_party_distance` |
+| static `group_get_smelled_party_direction_ordinal` | `get_smelled_party_direction` |
+| static `group_get_first_possible_movement_direction_ordinal` | `get_first_free_direction` |
+| static `group_is_archenemy_double_movement_possible` | `can_archenemy_move_twice` |
+| static `move_get_teleporter_rotated_group_result` (`group.c`) | `rotate_group_by_teleporter` |
+
+Facts: the list is every engine function name above 32 characters at 72e24b5 (a scan of `port/src/engine/*.h` and
+of the `static` definitions of `port/src/engine/*.c`); `inventory_take_hand_object` and
+`champion_apply_pending_damage` are the PRD names (R3.4); Task 106 consumes `inventory_take_hand_object`.
+
+- [ ] **Step 1: The list.** `uv run pytest -q tests/standard -k "name or static_prefix"` and keep the engine lines.
+  A table name that an earlier task changed: use its current name as the old name. A reported name that the table
+  lacks (above four words after the prefix but at most 32 characters): pick a name by rule 4.1 and list it in the
+  ledger.
+- [ ] **Step 2: Rename.** Write the pairs to `renames-engine.txt`; `uv run python rename.py renames-engine.txt`;
+  `make format`. A new name that collides with an existing name: stop and report.
+- [ ] **Step 3: Allowlist.** Delete the `name` lines of `engine/` with `open: epic 6`.
+- [ ] **Step 4: Build and test.** `make`; `make test` (the test step of this tail task). Expected: 0 warnings; PASS.
+- [ ] **Step 5: Commit.** `git commit -am "refactor(engine): function names of at most four words and 32 characters"`
+
 ---
 
 ## Package G: ui (Epic 8)
@@ -7664,7 +7869,7 @@ Paths: `src/...` (package B moved `port/src/`); tests in the R1 folders (package
 
 Consumes from earlier packages:
 - D3: `Box` and `bool box_contains(const Box *box, int16_t x, int16_t y)` in `src/data/graphics.h`.
-- E1: `src/engine/record.h` accessors; Assumption: E1 gives an accessor for the creature type list and the ornament list of a map (today `g_dungeon_map_data[m][map_width - 1] + map_height`, `port/src/ui/view.c:2185-2186`). Task 85 checks it first; if E1 has none, G1 adds `const uint8_t *rec_map_creature_types(int16_t map)` to `src/engine/record.h/.c` (the ornament list follows the creature types).
+- E1: `src/engine/record.h` accessors; Assumption: E1 gives an accessor for the creature type list and the ornament list of a map (today `g_dungeon_map_data[m][map_width - 1] + map_height`, `port/src/ui/view.c:2185-2186`). Task 89 checks it first; if E1 has none, G1 adds `const uint8_t *rec_map_creature_types(int16_t map)` to `src/engine/record.h/.c` (the ornament list follows the creature types).
 - E2: `Location`, `Position`, `map_step`, `direction_back/right/left`, `g_party_light_level` (was `g_dungeon_view_palette_index`).
 - F: `map_get_level_change_location` (R6.4, returns a struct), `group_get_active(thing)`, `projectile_get_flight_direction(thing)` (R7.5), `g_session` (R7.1) with `inventory_champion_index`, `acting_champion_index`, `candidate_champion_index` (-1 none).
 - A2, A3: the golden screen and rule scenarios.
@@ -7686,33 +7891,19 @@ Tail (after the merge): `Screen g_screen`, `ViewResult`, copied code and dead ex
 
 Shared files: `src/engine/map.h` (G4 adds two prototypes), `src/ui/automap.c` (G4 moves the visibility rule out), the state JSON writer (G4 changes the visibility calls), `src/data/ids.h`.
 
-The order puts the file split last, so that Tasks 85-90 edit one file and the split is a pure move.
+The order puts the file split last, so that Tasks 89-94 edit one file and the split is a pure move.
 
-### Task 85: view constants to their owners, engine reads through accessors
+### Task 89: view constants to their owners, engine reads through accessors
 
 **Files:**
 - Modify: `src/ui/view.c`, `src/ui/view.h`, `src/engine/map.h`, `src/data/ids.h`, `src/ui/automap.c` (one include line)
 - Test: `tests/golden/test_golden_view.py`, `tests/port/test_view.py`
 
 **Interfaces:**
-- Consumes: `map_get_level_change_location` (F, R6.4), `group_get_active(uint16_t thing)` and `projectile_get_flight_direction(uint16_t thing)` (F tail, R7.5), the map list accessor of E1.
+- Consumes: `map_get_level_change_location` (F, R6.4), `group_get_active(uint16_t thing)` and `projectile_get_flight_direction(uint16_t thing)` (F tail, R7.5), `rec_map_type_lists(int16_t map)` (Task 51).
 - Produces: `DOOR_NORTH_SOUTH` in `src/engine/map.h`; `GFX_ORNAMENT_VI_ALTAR`... see Step 3 for the exact names in `data/ids.h`.
 
-- [ ] **Step 1: Check the consumed names.** Run `grep -n "map_get_level_change_location\|group_get_active\|projectile_get_flight_direction\|rec_map_" src/engine/*.h`. Each must exist. If the map list accessor is missing, add to `src/engine/record.h`:
-
-```c
-/* The creature types of map (map_creature_type_count entries), followed by its ornament lists. */
-const uint8_t *rec_map_creature_types(int16_t map);
-```
-
-and to `src/engine/record.c`:
-
-```c
-const uint8_t *rec_map_creature_types(int16_t map)
-{
-    return g_dungeon_map_data[map][dungeon_map_width(map) - 1] + dungeon_map_height(map);
-}
-```
+- [ ] **Step 1: Check the consumed names.** Run `grep -n "map_get_level_change_location\|group_get_active\|projectile_get_flight_direction\|rec_map_type_lists" src/engine/*.h`. Each must exist; a missing one stops the task for the controller (an earlier task did not deliver it).
 
 - [ ] **Step 2: Move `DOOR_NORTH_SOUTH`.** Delete the line of `port/src/ui/view.h:9` and add it to the square bit block of `src/engine/map.h` beside `STAIRS_NORTH_SOUTH` (`port/src/engine/map.h:23`) in the notation of that block: `#define DOOR_NORTH_SOUTH 0x08 /* door square: the passage runs north-south */`. `src/ui/automap.c` (uses it at `port/src/ui/automap.c:137`) includes `engine/map.h` already; check with grep.
 
@@ -7728,10 +7919,10 @@ const uint8_t *rec_map_creature_types(int16_t map)
 
 If the `numbered`/`prefix` checks of `data/ids.h` reject the `ORNAMENT_` kind (C1 defines the kinds `GFX_ ZONE_ LAYOUT_ ICON_ TEXT_`), use `GFX_ORNAMENT_*` instead and report it.
 
-- [ ] **Step 4: Remove the level-change copy.** Delete `get_location_after_level_change` (`port/src/ui/view.c:1419-1435`). `draw_ceiling_pit` (`port/src/ui/view.c:1438-1444`) calls `map_get_level_change_location(view.map, LEVEL_UP, at)` (F's signature) instead. Assumption: the engine version differs only by its guard `g_party_map_index == NO_DUNGEON_MAP` (`port/src/engine/map.c:88-89`) and by the 16-bit level wrap (`port/src/engine/map.c:92`); the view draws only after a map load, so the guard never fires, and no map has level -1 or 0xffff. The golden view test checks it (Step 7).
+- [ ] **Step 4: Remove the level-change copy.** Delete `get_location_after_level_change` (`port/src/ui/view.c:1419-1435`). `draw_ceiling_pit` (`port/src/ui/view.c:1438-1444`) calls `map_get_level_change_location((Position){view.map, at.x, at.y}, LEVEL_UP)` (Task 68's signature `Position map_get_level_change_location(Position from, int16_t level_delta)`) instead. Assumption: the engine version differs only by its guard `g_party_map_index == NO_DUNGEON_MAP` (`port/src/engine/map.c:88-89`) and by the 16-bit level wrap (`port/src/engine/map.c:92`); the view draws only after a map load, so the guard never fires, and no map has level -1 or 0xffff. The golden view test checks it (Step 7).
 
 - [ ] **Step 5: Raw engine reads go.** Replace:
-  - `g_dungeon_map_data[m][map_width - 1] + map_height` (`port/src/ui/view.c:2185-2186`) by the accessor of Step 1.
+  - `view.c:2185-2186` already reads `rec_map_type_lists` (Task 51); check it, change nothing there.
   - The active-group read of `load_group_aspect` (`port/src/ui/view.c:674-677`: `g_active_groups && view_map == g_party_map_index && index < g_max_active_group_count ? &g_active_groups[index] : NULL`) by `view_map == g_party_map_index ? group_get_active(thing) : NULL`. Assumption: `group_get_active` returns NULL when the array is not allocated or the index is out of range (R5.8); check its comment.
   - `g_timeline_events[rec_projectile_event_index(thing)]` (`port/src/ui/view.c:894` and `:2338`) by `projectile_get_flight_direction(thing)`. At `:894` the fallback `g_timeline_events ? ... : dir` stays: Assumption: `projectile_get_flight_direction` returns -1 without a timeline; then use `dir`. Check its comment first.
 
@@ -7746,14 +7937,14 @@ git add -A src tests/standard/allowlist.txt
 git commit -m "refactor(view): constants to their owners, engine state through accessors"
 ```
 
-### Task 86: one View struct, Aspect without the union, bools
+### Task 90: one View struct, Aspect without the union, bools
 
 **Files:**
 - Modify: `src/ui/view.c`
 - Test: `tests/golden/test_golden_view.py`
 
 **Interfaces:**
-- Produces (inside `view.c`; moves to `view_internal.h` in Task 91):
+- Produces (inside `view.c`; moves to `view_internal.h` in Task 96):
 
 ```c
 /* An ornament graphic and its coordinate set. */
@@ -7802,13 +7993,13 @@ typedef struct {
 - [ ] **Step 2: Replace the union.** Write the `Aspect` above. `get_square_aspect` (`port/src/ui/view.c:364-418`) writes the separate fields. The ornament ordinals stay ordinals: the map record stores them (standard 4.8).
 - [ ] **Step 3: `portrait` becomes an index.** `portrait` holds "portrait index + 1, or 0" (`port/src/ui/view.c:225`). Write `index` or -1; `draw_wall_portrait` and its caller test `>= 0`. Grep `portrait` in `view.c` for every use.
 - [ ] **Step 4: One View struct.** Replace the 20 file statics of `port/src/ui/view.c:235-249,265` (not the track state of `:252-264`, Step 5 below) by `static View view = {.map = -1};`. Rename uses: `viewport` → `view.viewport`, `view_map` → `view.map`, `map_width` → `view.map_width`, and so on. `view_draw_magic_map` (`port/src/ui/view.c:2493-2535`) saves and restores the three map fields; it now copies `int16_t saved[3]` once before and writes them back once after (no logic change).
-- [ ] **Step 5: The flight state.** The track statics (`port/src/ui/view.c:252-264`) become `static struct { ProjectileTrack tracks[PROJECTILE_TRACK_COUNT], last_tracks[PROJECTILE_TRACK_COUNT]; int track_count, last_track_count; ViewPosition track_view; int16_t motion_step, motion_steps; } flight;` (`ViewPosition` comes in Task 89; until then keep `int32_t track_view`). `shift_x/y`, `zone_relative_x/y`, `drawn_box` stay for Task 87.
+- [ ] **Step 5: The flight state.** The track statics (`port/src/ui/view.c:252-264`) become `static struct { ProjectileTrack tracks[PROJECTILE_TRACK_COUNT], last_tracks[PROJECTILE_TRACK_COUNT]; int track_count, last_track_count; ViewPosition track_view; int16_t motion_step, motion_steps; } flight;` (`ViewPosition` comes in Task 93; until then keep `int32_t track_view`). `shift_x/y`, `zone_relative_x/y`, `drawn_box` stay for Task 91.
 - [ ] **Step 6: bools.** `bool` for: `alcove_front`, `alcove` (`port/src/ui/view.c:620`), `drawn` (`:856`), `allowed` (`:307`, `:2317`), `blink` (`:2365`), the return of `draw_wall_ornament` (`:1263`), `use_flipped_walls` (`:244`), the locals `fluxcage`, `rebirth`, `mirrored`, `side` (`:1064`, `:1072`, `:1271`, `:1273`), `slot_flip`. `int flip` parameters that hold `FLIP_H`/`0` stay `int16_t` (they are flag values, not truth values).
 - [ ] **Step 7: Names.** `Group` (`port/src/ui/view.c:657-664`) becomes `ViewGroup`; `get_creature_ordinal_in_cell` (`:698`) returns the creature index or -1 and becomes `get_creature_index_in_cell` (its callers subtract 1 today: grep `get_creature_ordinal_in_cell` and drop the `- 1`, change `!ordinal` tests to `index < 0`). `get_random_ornament_ordinal` keeps its name: it returns the ordinal that the map stores.
 - [ ] **Step 8: Build and test.** `make`; `uv run pytest -q tests/golden/test_golden_view.py tests/port/test_view.py`. Expected: 0 warnings, PASS.
 - [ ] **Step 9: Commit.** `git commit -am "refactor(view): module state in one View struct, Aspect without a union"`
 
-### Task 87: Placement and the drawn box as arguments
+### Task 91: Placement and the drawn box as arguments
 
 **Files:**
 - Modify: `src/ui/view.c`
@@ -7846,7 +8037,7 @@ static bool draw_in_zone(const Bitmap *bm, Bitmap *dst, const ZoneBlit *blit, Bo
 - [ ] **Step 7: Build and test.** `make`; `uv run pytest -q tests/golden/test_golden_view.py tests/port/test_view.py tests/port/test_modes.py` (smooth flight). Expected: PASS.
 - [ ] **Step 8: Commit.** `git commit -am "refactor(view): placement and drawn box as arguments, no hidden statics"`
 
-### Task 88: SquareDraw context, at most five parameters
+### Task 92: SquareDraw context, at most five parameters
 
 **Files:**
 - Modify: `src/ui/view.c`
@@ -7914,7 +8105,7 @@ static void draw_map_square(const MapDraw *m, Location at);
 - [ ] **Step 6: Build and test.** `make`; `uv run pytest -q tests/golden/test_golden_view.py tests/port/test_view.py tests/differential/test_csb_magic_map.py tests/differential/test_creatures.py`. Expected: PASS.
 - [ ] **Step 7: Commit.** `git commit -am "refactor(view): SquareDraw context replaces the long parameter lists"`
 
-### Task 89: types instead of encoded values
+### Task 93: types instead of encoded values
 
 **Files:**
 - Modify: `src/ui/view.c`
@@ -7956,7 +8147,7 @@ typedef struct {
 - [ ] **Step 5: Build and test.** `make`; `uv run pytest -q tests/golden/test_golden_view.py tests/port/test_view.py tests/port/test_modes.py`. Expected: PASS.
 - [ ] **Step 6: Commit.** `git commit -am "refactor(view): WallBitmap, ProjectileAspect, ScaledBitmap, ViewPosition"`
 
-### Task 90: the square table: derive the right rows, or mark every unread field
+### Task 94: the square table: derive the right rows, or mark every unread field
 
 **Files:**
 - Modify: `src/ui/view.c`
@@ -7978,13 +8169,13 @@ typedef struct {
 #endif
 ```
 
-  Build the library with `make lib CFLAGS_EXTRA=-DVIEW_MIRROR_CHECK` (Assumption: the Makefile of package B has a `CFLAGS_EXTRA` variable; else pass the flag the way its `SANITIZE` option does) and run `uv run pytest -q tests/golden/test_golden_view.py -s`. A `SquareView` is zero-initialized by its designated initializer, so `memcmp` over padding is defined (static storage).
+  Build the library with `make lib CFLAGS_EXTRA=-DVIEW_MIRROR_CHECK` (Task 6 adds `CFLAGS += $(CFLAGS_EXTRA)`; check it with `grep -n CFLAGS_EXTRA Makefile`) and run `uv run pytest -q tests/golden/test_golden_view.py -s`. A `SquareView` is zero-initialized by its designated initializer, so `memcmp` over padding is defined (static storage).
 - [ ] **Step 3a: The check passes** (no log line): keep only the left rows in `square_views_left[DRAWN_SQUARE_COUNT / 2 + ...]` and build the full table once in `view_load_map` (or at the first `view_draw`) into `static SquareView square_views[DRAWN_SQUARE_COUNT]`. The rows without a twin (center rows and D0 rows) stay written out. Remove the temporary block.
 - [ ] **Step 3b: The check fails:** remove `mirror_square_view` and the block; keep the table and write `-1` into every field that the draw functions do not read for that row (`docs/todo.md` lists the unread 0 fields and the literal D0C stairs zone; read the item and close it). Add one comment line above the table that names the table each id enum indexes (`WS_*`: wall set layout ids, `VIEW_SQUARE_*`: view square table, `VIEW_D*`: floor ornament and door views, `VIEW_WALL_*`: wall ornament views, `BUTTON_*`: door buttons).
 - [ ] **Step 4: Build and test.** `make`; `uv run pytest -q tests/golden/test_golden_view.py tests/port/test_view.py`. Expected: PASS, golden view unchanged.
 - [ ] **Step 5: Commit.** `git commit -am "refactor(view): square table derives the right rows"` (3a) or `"refactor(view): square table marks unread fields"` (3b); update `docs/todo.md` in the same commit.
 
-### Task 91: comments and markers of the view
+### Task 95: comments and markers of the view
 
 **Files:**
 - Modify: `src/ui/view.c`, `src/ui/view.h`, `docs/todo.md`
@@ -7997,7 +8188,7 @@ typedef struct {
 - [ ] **Step 6: Build.** `make`. Expected: 0 warnings.
 - [ ] **Step 7: Commit.** `git commit -am "docs(view): comments in game terms, open work to the todo list"`
 
-### Task 92: split view.c into three files with an internal header
+### Task 96: split view.c into three files with an internal header
 
 **Files:**
 - Create: `src/ui/view_internal.h`, `src/ui/view_walls.c`, `src/ui/view_things.c`
@@ -8005,7 +8196,7 @@ typedef struct {
 - Test: `tests/golden/test_golden_view.py`
 
 **Interfaces:**
-- Produces `src/ui/view_internal.h` (prefix `view_`, guard `DM_UI_VIEW_INTERNAL_H`): the types `View`, `Aspect`, `Ornament`, `SquareView`, `WallPart`, `WallBitmap`, `Placement`, `ZoneBlit`, `ScaledBitmap`, `SquareDraw`; the constants that two of the three files use; `extern View g_view;` (the `static View view` of Task 86 becomes `View g_view` in `view.c`: three files share it, so it cannot be `static`; the standard's rule 7.1 "module-private state is static" is met by declaring it only in the internal header); and these internal functions:
+- Produces `src/ui/view_internal.h` (prefix `view_`, guard `DM_UI_VIEW_INTERNAL_H`): the types `View`, `Aspect`, `Ornament`, `SquareView`, `WallPart`, `WallBitmap`, `Placement`, `ZoneBlit`, `ScaledBitmap`, `SquareDraw`; the constants that two of the three files use; `extern View g_view;` (the `static View view` of Task 90 becomes `View g_view` in `view.c`: three files share it, so it cannot be `static`; the standard's rule 7.1 "module-private state is static" is met by declaring it only in the internal header); and these internal functions:
 
 ```c
 /* view.c: shared drawing primitives */
@@ -8030,19 +8221,19 @@ void view_draw_teleporter_field(int16_t view_square, int16_t zone);
 void view_start_tracks(int16_t dir, Location at);
 ```
 
-  (`scaled_bitmap_free` of Task 89 becomes `view_free_scaled`.) If a function of this list is called from one file only after the split, it stays `static` in that file and leaves the list.
+  (`scaled_bitmap_free` of Task 93 becomes `view_free_scaled`.) If a function of this list is called from one file only after the split, it stays `static` in that file and leaves the list.
 
-Split map (every function of `port/src/ui/view.c` at commit 72e24b5; names after Tasks 86-89):
+Split map (every function of `port/src/ui/view.c` at commit 72e24b5; names after Tasks 90-93):
 
 | Function (`view.c` line) | Goes to |
 |---|---|
 | `is_open_floor` 274, `get_square` 281, `is_alcove` 301 (→ `view_is_alcove`), `get_random_ornament_ordinal` 307, `set_random_wall_ornaments` 325, `scan_ornament_things` 340, `get_square_aspect` 364 | `view.c` (the aspect of a square) |
 | `draw_wall_bitmap` 420 (→ `view_draw_wall_bitmap`), `draw_bitmap_in_zone` 446 (→ `view_draw_in_zone`), `get_shrunk_bitmap` 534 and `get_scaled_bitmap` 1215 (→ `view_get_scaled`) | `view.c` (shared primitives) |
-| `get_object_palette_changes` 548, `get_object_aspect` 555, `get_projectile_aspect` 561, `add_clickable_object` 590, `draw_object` 619, `load_group_aspect` 667, `get_creature_cell` 688, `get_creature_direction` 692, `get_creature_ordinal_in_cell` 698, `draw_creature` 718, `draw_creatures_in_cell` 765, `start_tracks` 826, `find_track` 836, `begin_projectile` 845, `end_projectile` 856, `view_has_moving_projectiles` 867, `view_set_motion` 875, `get_projectile_pose` 882, `draw_projectile` 923, `draw_field` 960, `get_explosion_bitmap` 984, `draw_explosion_on_party` 993, `get_explosion_aspect` 1019, `draw_rebirth_step_1` 1037, `draw_fluxcage` 1049, `draw_explosions` 1058, `is_cell_in_view` 1114, `draw_cell_objects` 1120, `find_square_things` 1133, `draw_square_things` 1149, `draw_teleporter_field` 1209 | `view_things.c`, with the flight state (`static struct { ... } flight;` of Task 86) |
+| `get_object_palette_changes` 548, `get_object_aspect` 555, `get_projectile_aspect` 561, `add_clickable_object` 590, `draw_object` 619, `load_group_aspect` 667, `get_creature_cell` 688, `get_creature_direction` 692, `get_creature_ordinal_in_cell` 698, `draw_creature` 718, `draw_creatures_in_cell` 765, `start_tracks` 826, `find_track` 836, `begin_projectile` 845, `end_projectile` 856, `view_has_moving_projectiles` 867, `view_set_motion` 875, `get_projectile_pose` 882, `draw_projectile` 923, `draw_field` 960, `get_explosion_bitmap` 984, `draw_explosion_on_party` 993, `get_explosion_aspect` 1019, `draw_rebirth_step_1` 1037, `draw_fluxcage` 1049, `draw_explosions` 1058, `is_cell_in_view` 1114, `draw_cell_objects` 1120, `find_square_things` 1133, `draw_square_things` 1149, `draw_teleporter_field` 1209 | `view_things.c`, with the flight state (`static struct { ... } flight;` of Task 90) |
 | `draw_wall_text` 1225, `draw_wall_portrait` 1248, `draw_wall_ornament` 1263, `draw_floor_ornament` 1322, `draw_door_ornament` 1341, `draw_door_button` 1363, `draw_door` 1383, `draw_ceiling_pit` 1438, `draw_stairs_front` 1446, `draw_wall_part` 1858, `draw_square_pit` 1864, `draw_square_stairs_side` 1871, `draw_square_ceiling_pit` 1880, `draw_square_wall` 1887, `draw_square_door_front` 1906, `draw_square_stairs_front` 1921 | `view_walls.c` |
 | `square_views` 1504, `draw_d0_side_square` 1931, `draw_d0c_square` 1954, `draw_square` 1972 | `view.c` (the square table and the dispatch) |
 | `set_creature_replacement_colors` 2037, `reset_wall_set_ids` 2045, `get_wall_set_slot` 2051, `set_slot` 2056, `load_wall_set` 2064, `load_doors` 2103, `load_ornaments` 2115, `load_creature_colors` 2157, `view_load_map` 2180 | `view.c` (the map load) |
-| `get_relative_square` 2195 (if Task 88 kept it), `view_get_wall_ornament` 2202, `view_get_wall_face_ornament_index` 2222, `view_get_wall_ornament_index` 2233, `view_is_pressure_pad` 2240, `view_get_floor_ornament` 2247 | `view.c` (the API) |
+| `get_relative_square` 2195 (if Task 92 kept it), `view_get_wall_ornament` 2202, `view_get_wall_face_ornament_index` 2222, `view_get_wall_ornament_index` 2233, `view_is_pressure_pad` 2240, `view_get_floor_ornament` 2247 | `view.c` (the API) |
 | `draw_map_tile` 2305, `has_map_footprints` 2315, `get_map_projectile_tile` 2325, `get_map_explosion_tile` 2348, `draw_map_square_things` 2365, `draw_map_wall` 2403, `get_map_door_tile` 2423, `draw_map_square` 2436, `view_draw_magic_map` 2493 | `view.c` (the magic map) |
 | `view_draw` 2538, `view_render` 2585 | `view.c` |
 
@@ -8060,9 +8251,9 @@ Split map (every function of `port/src/ui/view.c` at commit 72e24b5; names after
 
 #### Stream G2: status, panel, menus
 
-Shared files: `src/ui/command.c`, `src/ui/gameloop.c`, `src/ui/startend.c`, `src/ui/advanced.c`, `src/ui/automap.c`, `src/control/state_json.c` and `src/control/` users of the panel functions (call-site renames only), `src/engine/champion.h/.c` (Task 96 only), the tests that call the renamed functions.
+Shared files: `src/ui/command.c`, `src/ui/gameloop.c`, `src/ui/startend.c`, `src/ui/advanced.c`, `src/ui/automap.c`, `src/control/state_json.c` and `src/control/` users of the panel functions (call-site renames only), `src/engine/champion.h/.c` (Task 101 only), the tests that call the renamed functions.
 
-### Task 93: split ui_champion.c into status.c and panel.c
+### Task 97: split ui_champion.c into status.c and panel.c
 
 **Files:**
 - Create: `src/ui/status.h`, `src/ui/panel.h`
@@ -8136,7 +8327,7 @@ Split map of `port/src/ui/ui_champion.c` (line: function → file):
 
 - [ ] **Step 1: Move the file.** `git mv src/ui/ui_champion.c src/ui/panel.c`; commit nothing yet.
 - [ ] **Step 2: Cut the status functions** of the table into a new `src/ui/status.c`, the shared ones into `ui.c`. Write `status.h` and `panel.h` (SPDX, guard `DM_UI_STATUS_H`/`DM_UI_PANEL_H`, prefix line, purpose paragraph, the prototypes above with their one-line comments moved from the definitions).
-- [ ] **Step 3: `ui.h`** keeps the `ui_` part (zones, blits, icons, palette, hit tests, colors, `UI_ICON_SIZE`, `UI_BODY_SLOT_COUNT`, `UI_SLOT_BOX_INVENTORY_FIRST`, `UI_BUTTON_*`, `g_rune_names`, `g_action_area_contains_icons` moves to `menus.h` in Task 94); its prefix line becomes `/* Prefixes: ui_ */`. It stops including `engine/champion.h` and `data/tables.h` (finding 49 of `review-ui.md`); each `.c` that rode on them includes them itself (build errors list them).
+- [ ] **Step 3: `ui.h`** keeps the `ui_` part (zones, blits, icons, palette, hit tests, colors, `UI_ICON_SIZE`, `UI_BODY_SLOT_COUNT`, `UI_SLOT_BOX_INVENTORY_FIRST`, `UI_BUTTON_*`, `g_rune_names`, `g_action_area_contains_icons` moves to `menus.h` in Task 98); its prefix line becomes `/* Prefixes: ui_ */`. It stops including `engine/champion.h` and `data/tables.h` (finding 49 of `review-ui.md`); each `.c` that rode on them includes them itself (build errors list them).
 - [ ] **Step 4: Rename the calls** with this script (run from the repository root):
 
 ```bash
@@ -8158,7 +8349,7 @@ grep -rlw "ui_draw_panel" src tests tools docs | xargs sed -i '' 's/\bui_draw_pa
 - [ ] **Step 6: Test.** `uv run pytest -q tests/golden/test_golden_screens.py tests/port/test_panels.py tests/port/test_ui.py tests/port/test_control.py -n auto`. Expected: PASS, golden screens unchanged.
 - [ ] **Step 7: Commit.** `git add -A src tests tools docs && git commit -m "refactor(ui): status and panel modules from ui_champion.c"`
 
-### Task 94: menus module
+### Task 98: menus module
 
 **Files:**
 - Move: `src/ui/ui_menus.c` → `src/ui/menus.c`
@@ -8175,7 +8366,7 @@ grep -rlw "ui_draw_panel" src tests tools docs | xargs sed -i '' 's/\bui_draw_pa
 - [ ] **Step 4:** `make format && make`; `uv run pytest -q tests/golden/test_golden_screens.py tests/port/test_ui.py`. Expected: PASS.
 - [ ] **Step 5: Commit.** `git add -A src && git commit -m "refactor(ui): menus module with its own header"`
 
-### Task 95: ui, status, panel and menus: constants, types, names, two guards
+### Task 99: ui, status, panel and menus: constants, types, names, the scroll read
 
 **Files:**
 - Modify: `src/ui/ui.c`, `ui.h`, `status.c`, `panel.c`, `panel.h`, `menus.c`, `src/ui/command.c` (one block)
@@ -8195,12 +8386,31 @@ grep -rlw "ui_draw_panel" src tests tools docs | xargs sed -i '' 's/\bui_draw_pa
 - [ ] **Step 2: Rune font.** `SCROLL_FONT_SHIFT 0x60` and `RUNE_FIRST 0x60` (`port/src/ui/ui_champion.c:32,35`) and the comment "font character - 0x60" (`port/src/ui/ui.h:103`) use `SPELL_SYMBOL_FIRST` of `data/spells.h` (`port/src/data/spells.h:13`); delete the two defines.
 - [ ] **Step 3: Truth values and coordinates** (finding 17 and 19 of `review-ui.md`): `bool pad` (`ui_format_number`), `bool inv` (`draw_status_box`, `draw_name`), `bool pressing_eye` (`open_and_draw_chest`, `panel_draw_object`), `bool border` (`ui_get_icon_zone_box`, `ui_get_slot_box_zone`), `bool ui_zone_box(...)`, `bool ui_get_icon_zone_box(...)`, `bool ui_init(void)` (true on success; its caller `gameloop.c:60` and the tests test `!ui_init()` today: change to `ui_init()`). `champion_index` parameters `int16_t` (`status_draw_slot` and the others took `uint16_t`). Comments that say "Returns 1"/"1 ... else 0" say "Returns true".
 - [ ] **Step 4: Names** (finding 13): `largest_attack` → `get_largest_attack`. Add the missing comments of `get_largest_defense`, `get_largest_weight`, `append`.
-- [ ] **Step 5: The icon guard** (R8.9, `port/src/ui/ui.c:221-235`): when the loop ends with `sheet == 0` (the icon is below the first icon of the first sheet), `ui_extract_icon` fills `out` with color 0 and returns; it does not read `tables_get_icon_sheet_first(-1)`. Assumption: no game icon is below the first sheet (`tables_get_icon_sheet_first(0)` is 0); the guard changes no picture. One-line comment: "an icon below the first sheet draws empty (the original reads before the table)". Add the deviation line to the formats doc (`docs/formats/` page that lists the deviations; grep "deviation").
-- [ ] **Step 6: The scroll read** (R8.9, `port/src/ui/ui_champion.c:782-793`). Verify the PRD claim first: after `*rest++ = 0`, `rest` points after the first newline at `text + p` (p ≥ 0); `end[-1] == '\n'` holds only when `strlen(rest) >= 1`, so `end - 2 >= rest - 1 = text + p >= text`. The read of `end[-2]` never leaves the array. If this reading holds, change nothing, write the proof in the commit message of this task and tell the controller that R8.9's first item and the Review Focus test of the scroll are void (a regression test needs a real bug). If the reading is wrong, add the guard `end - rest >= 2` and the regression test of the Review Focus to `tests/port/test_panels.py`.
-- [ ] **Step 7: Build and test.** `make`; `uv run pytest -q tests/golden/test_golden_screens.py tests/port/test_ui.py tests/port/test_panels.py`. Expected: PASS.
-- [ ] **Step 8: Commit.** `git commit -am "refactor(ui): one slot box block, bool results and flags, icon guard"`
+- [ ] **Step 5: The scroll read** (R8.9, `port/src/ui/ui_champion.c:782-793`). Verify the PRD claim first: after `*rest++ = 0`, `rest` points after the first newline at `text + p` (p ≥ 0); `end[-1] == '\n'` holds only when `strlen(rest) >= 1`, so `end - 2 >= rest - 1 = text + p >= text`. The read of `end[-2]` never leaves the array. If this reading holds, change nothing, write the proof in the commit message of this task and tell the controller that R8.9's first item and the Review Focus test of the scroll are void (a regression test needs a real bug). If the reading is wrong, add the guard `end - rest >= 2` and the regression test of the Review Focus to `tests/port/test_panels.py`.
+- [ ] **Step 6: Build and test.** `make`; `uv run pytest -q tests/golden/test_golden_screens.py tests/port/test_ui.py tests/port/test_panels.py`. Expected: PASS.
+- [ ] **Step 7: Commit.** `git commit -am "refactor(ui): one slot box block, bool results and flags"`
 
-### Task 96: the load level is an engine rule
+### Task 100: An icon below the first sheet draws empty
+
+**Files:**
+- Modify: `src/ui/ui.c` (`ui_extract_icon`, `port/src/ui/ui.c:221-235`), the formats doc page that lists the
+  deviations (`grep -rln "eviation" docs/formats`)
+
+**Interfaces:**
+- Consumes: the ui files after Task 99.
+- Produces: no read of `tables_get_icon_sheet_first(-1)`.
+
+- [ ] **Step 1: The guard** (R8.9): when the loop ends with `sheet == 0` (the icon is below the first icon of the
+  first sheet), `ui_extract_icon` fills `out` with color 0 and returns; it does not read
+  `tables_get_icon_sheet_first(-1)`. One-line comment: "an icon below the first sheet draws empty (the original
+  reads before the table)". Assumption: no game icon is below the first sheet (`tables_get_icon_sheet_first(0)` is
+  0); check it with `uv run python -c` over the loaded table before the edit; the guard changes no picture.
+- [ ] **Step 2: The deviation.** Add one line to the deviation list of the formats doc.
+- [ ] **Step 3: Build and test.** `make`; `uv run pytest -q tests/golden/test_golden_screens.py tests/port/test_ui.py`.
+  Expected: PASS, golden screens unchanged.
+- [ ] **Step 4: Commit.** `git commit -am "fix(ui): an icon below the first sheet draws empty"`
+
+### Task 101: the load level is an engine rule
 
 **Files:**
 - Modify: `src/engine/champion.h`, `src/engine/champion.c`, `src/ui/panel.c`
@@ -8227,7 +8437,7 @@ enum LoadLevel champion_get_load_level(int16_t champion_index);
 
 Shared files: `src/ui/command.c` (G2, G4), `src/ui/gameloop.c` (G2), `src/ui/startend.c` (G2, G4), `src/ui/dialog.c`, `src/ui/anim.c`, `src/ui/logo.c`, `src/ui/advanced.c`, `src/platform/main.c`, `src/platform/platform.c`, the tests that call the renamed names.
 
-### Task 97: frame module
+### Task 102: frame module
 
 **Files:**
 - Create: `src/ui/frame.h`, `src/ui/frame.c`
@@ -8269,7 +8479,7 @@ void frame_wait_count(int16_t count);
 - [ ] **Step 4: Build and test.** `make format && make`; `uv run pytest -q tests/port/test_entrance.py tests/port/test_save.py tests/differential/test_csb_ending.py tests/port/test_gameloop.py -n auto`. Expected: PASS.
 - [ ] **Step 5: Commit.** `git add -A src tests tools docs && git commit -m "refactor(ui): frame wait in its own module at the bottom of the layer"`
 
-### Task 98: entrance module
+### Task 103: entrance module
 
 **Files:**
 - Create: `src/ui/entrance.h`, `src/ui/entrance.c`
@@ -8301,7 +8511,7 @@ void entrance_open_doors(void);
 - [ ] **Step 5:** `make format && make`; `uv run pytest -q tests/port/test_entrance.py tests/port/test_gameloop.py`. Expected: PASS.
 - [ ] **Step 6: Commit.** `git add -A src tests docs && git commit -m "refactor(ui): entrance module owns the entrance choice"`
 
-### Task 99: command header: keys, tick state, sentinels
+### Task 104: command header: keys, tick state, sentinels
 
 **Files:**
 - Modify: `src/ui/command.h`, `src/ui/command.c`, `src/ui/advanced.h`, `src/ui/advanced.c`, `src/ui/gameloop.h`, `src/ui/gameloop.c`, `src/ui/dialog.h`, `src/ui/startend.c`, `src/platform/main.c`
@@ -8319,13 +8529,13 @@ void entrance_open_doors(void);
 - [ ] **Step 7:** `make format && make`; `uv run pytest -q tests/port/test_gameloop.py tests/port/test_modes.py tests/port/test_ui.py tests/port/test_entrance.py -n auto`. Expected: PASS.
 - [ ] **Step 8: Commit.** `git add -A src tests docs && git commit -m "refactor(ui): one key table, tick state in gameloop, no inventory sentinels"`
 
-### Task 100: select names, output mapping to platform
+### Task 105: select names, output mapping to platform
 
 **Files:**
 - Modify: `src/ui/select.h`, `src/ui/select.c`, `src/ui/video.h`, `src/ui/video.c`, `src/platform/platform.c`, `src/platform/main.c`
 - Test: `tests/port/test_select.py`
 
-- [ ] **Step 1: select names.** `SCREEN_ADVENTURE/MODE/CSB/DONE` (`port/src/ui/select.h:11`) → `SELECT_SCREEN_*`; `CSB_NEW_ADVENTURE/RESUME/QUIT` (`:12`) → `SELECT_CSB_*`; the struct `Screen` of `port/src/ui/select.c:17-21` → `SelectScreen` (this frees the name `Screen` for the tail Task 105). Rename over `src tests` with `perl -pi -e 's/\bSCREEN_(ADVENTURE|MODE|CSB|DONE)\b/SELECT_SCREEN_$1/g; s/\bCSB_(NEW_ADVENTURE|RESUME|QUIT)\b/SELECT_CSB_$1/g'` (check with grep that `CSB_RESUME` has no second owner).
+- [ ] **Step 1: select names.** `SCREEN_ADVENTURE/MODE/CSB/DONE` (`port/src/ui/select.h:11`) → `SELECT_SCREEN_*`; `CSB_NEW_ADVENTURE/RESUME/QUIT` (`:12`) → `SELECT_CSB_*`; the struct `Screen` of `port/src/ui/select.c:17-21` → `SelectScreen` (this frees the name `Screen` for the tail Task 110). Rename over `src tests` with `perl -pi -e 's/\bSCREEN_(ADVENTURE|MODE|CSB|DONE)\b/SELECT_SCREEN_$1/g; s/\bCSB_(NEW_ADVENTURE|RESUME|QUIT)\b/SELECT_CSB_$1/g'` (check with grep that `CSB_RESUME` has no second owner).
 - [ ] **Step 2: Output mapping.** `video_layout` and `video_map_mouse` (`port/src/ui/video.c:30-53`) have callers only in `port/src/platform/platform.c:165,193,202`. Move them with `clamp` into `platform.c` as static functions `layout_output` and `map_mouse` (static: no prefix, standard 4.2; PRD R8.2 names `plat_layout`/`plat_map_mouse`, but an exported name with no outside user fails the dead-api check). `video.c` stops including `<math.h>`.
 - [ ] **Step 3: Casts.** `video_argb_red/green/blue` (`port/src/ui/video.h:15-26`) return `(uint8_t)(argb >> ARGB_RED_SHIFT)` with the comment "the low byte is the channel".
 - [ ] **Step 4:** `make format && make`; `uv run pytest -q tests/port/test_select.py tests/port/test_scale.py`. Expected: PASS.
@@ -8335,11 +8545,11 @@ void entrance_open_doors(void);
 
 #### Stream G4: rules out of ui
 
-Shared files: `src/ui/command.c` (G2, G3), `src/ui/startend.c` (G2, G3), `src/ui/gameloop.c` (G3: one call), `src/engine/map.h` (G1), the state JSON writer (G1), `src/engine/sound.h`.
+Shared files: `src/ui/command.c` (G2, G3), `src/ui/startend.c` (G2, G3), `src/ui/gameloop.c` (G3: one call), `src/engine/map.h` (G1), `src/ui/view.h` (G1: Task 109 deletes `VIEW_DEPTH_COUNT`, Task 89 deletes `view.h:9`; separate hunks), the state JSON writer (G1), `src/engine/sound.h`.
 
 Each task: first the A3 scenario of the rule passes on the unchanged code, then the move, then the scenario, the golden snapshots and the differential tests of the module pass. A difference stops the run for the user (Global Constraints).
 
-### Task 101: grab and drop are inventory rules
+### Task 106: grab and drop are inventory rules
 
 **Files:**
 - Modify: `src/engine/inventory.h`, `src/engine/inventory.c`, `src/ui/command.c`
@@ -8359,13 +8569,13 @@ void inventory_drop_object(int16_t cell, Location at, bool onto_vi_altar);
 
   (PRD R8.3 names `inventory_grab_object(cell, location)` and `inventory_drop_object(cell, location, into_alcove)`: the grab needs the pile top object, which only the view knows, and the drop needs "a vi altar", not "an alcove", because the rule tests the altar.)
 
-- [ ] **Step 1: Gate.** `uv run pytest -q tests/golden/test_golden_rules.py -k "grab or drop or altar"`. Expected: PASS.
+- [ ] **Step 1: Gate.** `uv run pytest -q tests/golden/test_golden_rules.py -k "grab or drop or altar or alcove"`. Expected: PASS.
 - [ ] **Step 2: Grab.** From `grab_object` (`port/src/ui/command.c:407-428`) the engine part goes to `inventory_grab_object`: the creature check `group != THING_ENDOFLIST && !move_is_levitating(group) && group_get_creature_ordinal_in_cell(group, cell)` (after F: the index form), the `object_get_icon_index(thing) != -1` test, `move_get_move_result(thing, at, ...)` (F's signature) and `inventory_put_object_in_leader_hand(thing)`. The ui keeps: the leader test, the front square, the pile top object, the cell `NORMALIZE(pile + g_party_direction)`, `g_stop_waiting_for_input = true`. Assumption: the ui checks the creature only for front piles (`pile >= VIEW_CELL_FRONT_FIRST`, `:415`) because no group stands on the party square; the engine checks it on every square. Check: `map_get_square_group` on the party square returns `THING_ENDOFLIST` in every A3 scenario and in `tests/port/test_actions.py`; if a test shows a group on the party square, keep the check only for the front square by passing `cell` through the caller and report it.
-- [ ] **Step 3: Drop.** From `drop_object` (`:432-449`) the engine part goes to `inventory_drop_object`: take the hand object (`inventory_take_hand_object`, was `inventory_get_object_removed_from_leader_hand`), `move_get_move_result` of the object with its cell (the `THING_WITH_CELL` packing moves with it), the bones test and `sensor_add_vi_altar_rebirth_event`. The ui passes `onto_vi_altar = alcove && g_facing_vi_altar` (the tail Task 106 changes the read to `view_get_result()`).
+- [ ] **Step 3: Drop.** From `drop_object` (`:432-449`) the engine part goes to `inventory_drop_object`: take the hand object (`inventory_take_hand_object`, was `inventory_get_object_removed_from_leader_hand`), `move_get_move_result` of the object with its cell (the `THING_WITH_CELL` packing moves with it), the bones test and `sensor_add_vi_altar_rebirth_event`. The ui passes `onto_vi_altar = alcove && g_facing_vi_altar` (the tail Task 111 changes the read to `view_get_result()`).
 - [ ] **Step 4: Build and test.** `make`; `uv run pytest -q tests/golden/test_golden_rules.py tests/port/test_actions.py tests/differential/test_champion.py tests/differential -k "inventory or grab or drop" -n auto`. Expected: PASS.
 - [ ] **Step 5: Commit.** `git commit -am "refactor(inventory): grab and drop rules leave the command module"`
 
-### Task 102: imaginary wall and the movement block
+### Task 107: imaginary wall and the movement block
 
 **Files:**
 - Modify: `src/engine/map.h`, `src/engine/map.c`, `src/engine/move.h`, `src/engine/move.c`, `src/ui/command.c`
@@ -8387,7 +8597,7 @@ bool move_is_blocked(int16_t command);
 - [ ] **Step 4:** `make`; `uv run pytest -q tests/golden/test_golden_rules.py tests/differential/test_move.py tests/port/test_gameloop.py`. Expected: PASS.
 - [ ] **Step 5: Commit.** `git commit -am "refactor(move): imaginary wall and movement block are engine rules"`
 
-### Task 103: the fuse sequence rules
+### Task 108: the fuse sequence rules
 
 **Files:**
 - Modify: `src/engine/game.h`, `src/engine/game.c`, `src/engine/map.h`, `src/engine/map.c`, `src/engine/group.h`, `src/engine/group.c`, `src/engine/sound.h`, `src/ui/startend.c`
@@ -8412,7 +8622,7 @@ void game_prepare_fuse_lord(uint16_t lord, Location at);
 - [ ] **Step 4:** `make`; `uv run pytest -q tests/golden/test_golden_rules.py tests/differential/test_sound.py` and the fuse test module. Expected: PASS.
 - [ ] **Step 5: Commit.** `git commit -am "refactor(game): fuse sequence rules leave the endgame module"`
 
-### Task 104: what the party sees is an engine query
+### Task 109: what the party sees is an engine query
 
 **Files:**
 - Modify: `src/engine/explored.h`, `src/engine/explored.c`, `src/ui/automap.h`, `src/ui/automap.c`, `src/ui/gameloop.c` (one call), the state JSON writer (`src/platform/state_json.c` or `src/control/state_json.c`, whichever exists), tests that call the old names
@@ -8433,7 +8643,7 @@ bool explored_is_side_visible(Position from, int16_t direction, int16_t depth, i
 void explored_mark_visible(Position from, int16_t direction);
 ```
 
-- [ ] **Step 1: Gate.** `uv run pytest -q tests/port/test_automap.py tests/golden/test_golden_rules.py -k "automap or seen or visible"`. Expected: PASS.
+- [ ] **Step 1: Gate.** `uv run pytest -q tests/port/test_automap.py tests/golden/test_golden_rules.py -k "automap or seen or visible or visibility"`. Expected: PASS.
 - [ ] **Step 2: Move** `is_on_map`, `blocks_sight`, `light_depths`, `automap_get_visible_depths`, `automap_side_is_visible`, `automap_mark_seen` (`port/src/ui/automap.c:17-95`) to `explored.c` with the names above. `light_depths` reads `g_party_light_level` (E2) and `g_cheat_light`; `DARKEST_PALETTE` moves with it. `VIEW_DEPTH_COUNT` (`port/src/ui/view.h:11`, 5 uses) becomes `EXPLORED_VIEW_DEPTHS` everywhere (view.h deletes it; the ui includes `engine/explored.h`). `game_update_map_coordinates_after_relative_movement` calls become `map_step` (E2).
 - [ ] **Step 3: The marker** `port/src/ui/automap.c:46` ("ponytail: fixed cut by palette index ...") moves as a line to `docs/todo.md`; the code keeps a plain comment "the darkest two light levels hide the far rows".
 - [ ] **Step 4: Callers.** `gameloop.c:190` calls `explored_mark_visible((Position){g_party_map_index, g_party_map_x, g_party_map_y}, g_party_direction)` (use E2's party position type if it has one); the state JSON writer (`port/src/platform/state_json.c:562`, `:874`) calls the two queries; the tests (`tests/port/test_gameloop.py:274-284`, `tests/port/test_automap.py:78-243`) call the new names with a `Position` ctypes structure from `dmtest.game` (add `Position` there if C2 did not).
@@ -8446,7 +8656,7 @@ void explored_mark_visible(Position from, int16_t direction);
 
 Runs after the four streams are merged and `make test` is green. Each task touches many ui files.
 
-### Task 105: one Screen struct
+### Task 110: one Screen struct
 
 **Files:**
 - Modify: `src/ui/video.h`, `src/ui/video.c`, every user of `fb`, `palette`, `palette_split_top`, `palette_split_bottom`, `ui_get_screen` (Step 3), `src/ui/anim.c`, `tests/dmtest/game.py`, the tests that bind the four globals
@@ -8499,7 +8709,7 @@ def screen(lib):
 - [ ] **Step 6:** `make format && make`; `uv run pytest -q tests/golden tests/port/test_ui.py tests/port/test_view.py tests/port/test_select.py tests/port/test_entrance.py tests/differential/test_csb_ending.py -n auto`. Expected: PASS, all goldens unchanged.
 - [ ] **Step 7: Commit.** `git add -A src tests && git commit -m "refactor(video): one Screen struct for pixels and palettes"`
 
-### Task 106: the view result
+### Task 111: the view result
 
 **Files:**
 - Modify: `src/ui/view.h`, `src/ui/view.c`, `view_walls.c`, `view_things.c`, `view_internal.h`, `src/ui/command.c`, the state JSON writer and `src/control/control.c` (or `src/platform/control.c`), `tests/dmtest/game.py`, `tests/conftest.py` (BOOL globals), tests that read the outputs
@@ -8526,12 +8736,12 @@ const ViewResult *view_get_result(void);
 - Produces in `tests/dmtest/game.py`: `class ViewResult(ctypes.Structure)` with the same fields and `def view_result(lib)` that calls `view_get_result` (restype `ctypes.POINTER(ViewResult)`) and returns `.contents`.
 
 - [ ] **Step 1:** `View` (`view_internal.h`) gets a `ViewResult result;` field; the nine globals of `port/src/ui/view.c:266-272` and their declarations (`port/src/ui/view.h:21-27`) go; inside the view they are `g_view.result.x`.
-- [ ] **Step 2: Callers** (measured at commit 72e24b5: 13 uses in `command.c`, 9 in `state_json.c`, 6 in `control.c`): each function that reads the result takes `const ViewResult *view = view_get_result();` once at its top. The read of `g_facing_vi_altar` in `drop_object` (Task 101) becomes `view->facing_vi_altar`.
-- [ ] **Step 3: Tests** (`tests/conftest.py` 3, `test_gameloop.py` 1, `test_golden_rules.py` 3, `test_modes.py` 1 at commit 72e24b5) read `view_result(lib).facing_fountain` and so on; the three names leave `BOOL_GLOBALS`.
+- [ ] **Step 2: Callers** (measured at commit 72e24b5: 13 uses in `command.c`, 9 in `state_json.c`, 6 in `control.c`): each function that reads the result takes `const ViewResult *view = view_get_result();` once at its top. The read of `g_facing_vi_altar` in `drop_object` (Task 106) becomes `view->facing_vi_altar`.
+- [ ] **Step 3: Tests** (`tests/dmtest/game.py` 3 (were in `tests/conftest.py`), `test_gameloop.py` 1, `test_golden_rules.py` 3, `test_modes.py` 1 at commit 72e24b5) read `view_result(lib).facing_fountain` and so on; the three names leave `BOOL_GLOBALS`.
 - [ ] **Step 4:** `make format && make`; `uv run pytest -q tests/golden tests/port/test_view.py tests/port/test_gameloop.py tests/port/test_modes.py tests/port/test_control.py -n auto`. Expected: PASS, golden protocol and rules unchanged.
 - [ ] **Step 5: Commit.** `git add -A src tests && git commit -m "refactor(view): view_get_result replaces the output globals"`
 
-### Task 107: copied code, dead exports, test markers
+### Task 112: copied code, dead exports, test markers
 
 **Files:**
 - Modify: `src/ui/ui.c`, `ui.h`, `command.c`, `select.c`, `advanced.c`, `gameloop.c`, `startend.c`, `menus.c/.h`, `status.c/.h`, `panel.c/.h`, `advanced.h`, `music.h` (markers only), `view.h`, `anim.h`, `select.h`, `frame.h`
@@ -8549,7 +8759,7 @@ const ViewResult *view_get_result(void);
 - [ ] **Step 7:** `make format && make`; `uv run pytest -q tests/standard tests/golden/test_golden_screens.py tests/port/test_ui.py tests/port/test_select.py`. Delete the `open: epic 8` `dead-api` lines of `ui/`.
 - [ ] **Step 8: Commit.** `git add -A src tests/standard/allowlist.txt && git commit -m "refactor(ui): shared helpers instead of copies, dead exports static"`
 
-### Task 108: the remaining types of ui
+### Task 113: the remaining types of ui
 
 **Files:**
 - Modify: `src/ui/text.h/.c`, `dialog.c`, `select.h/.c`, `draw.h/.c`, `layout.h/.c`, `anim.h/.c`, `logo.h/.c`, `startend.h/.c`, `automap.h/.c`, `gameloop.h/.c`, callers in `src/platform/` and the tests
@@ -8564,19 +8774,43 @@ const ViewResult *view_get_result(void);
 - [ ] **Step 7:** `make format && make && make windows`; `uv run pytest -q tests/differential/test_text.py tests/port/test_select.py tests/port/test_ui.py tests/differential/test_csb_ending.py tests/port/test_entrance.py tests/golden -n auto`. Expected: PASS. Delete the `open: epic 8` `bool`, `type`, `result` lines of `ui/`.
 - [ ] **Step 8: Commit.** `git add -A src tests && git commit -m "refactor(ui): int16_t pixel coordinates, bool results and flags"`
 
-### Task 109: comments and header paragraphs of ui
+### Task 114: comments and header paragraphs of ui
 
 **Files:**
 - Modify: every header of `src/ui/` without a purpose paragraph, the comments listed below, `docs/todo.md`, the deviations list of the formats doc
 - Test: `tests/standard`
 
 - [ ] **Step 1: Purpose paragraphs** (finding 28): `draw.h`, `text.h`, `layout.h`, `video.h` get one paragraph each: what the module owns and what it must not do. The headers made in this package have theirs.
-- [ ] **Step 2: Original names in comments** (finding 16), rewritten in game terms: `ui.h` ("MENU.C state" goes with Task 94; "draw_viewport(0): the viewport bitmap to zone 7" → "draws the dungeon view bitmap into its zone"), `draw.c:6`, `:85`, `:89`, `gameloop.c:454`, `text.c:73`, `layout.c:153`, `:166`, `gameloop.h:27`, `startend.h:28` ("Command 140" → "The save command"), `startend.h:45` ("Sensor 18" → "The endgame sensor"), `ui.h:69` ("call after kaos_load" → "call after tables_load"). Add each original name to `docs/reference/kaos-symbols.csv` if it is missing.
+- [ ] **Step 2: Original names in comments** (finding 16), rewritten in game terms: `ui.h` ("MENU.C state" goes with Task 98; "draw_viewport(0): the viewport bitmap to zone 7" → "draws the dungeon view bitmap into its zone"), `draw.c:6`, `:85`, `:89`, `gameloop.c:454`, `text.c:73`, `layout.c:153`, `:166`, `gameloop.h:27`, `startend.h:28` ("Command 140" → "The save command"), `startend.h:45` ("Sensor 18" → "The endgame sensor"), `ui.h:69` ("call after kaos_load" → "call after tables_load"). Add each original name to `docs/reference/kaos-symbols.csv` if it is missing.
 - [ ] **Step 3: Outdated comments** (finding 27): the two comment blocks of `ui_set_screen_palette` (`port/src/ui/ui.c:147-149`): the first describes `ui_set_palette`; move it there. `dialog.c:148` explains nothing to a reader: delete.
 - [ ] **Step 4: Comment place:** the one-line comment of each public ui function stands in its header; a definition repeats none (standard 9.1). The `comment` check lists the places; move them.
 - [ ] **Step 5: Markers.** `grep -rn "ponytail" src/ui` must find nothing; the panel marker (`port/src/ui/ui_champion.c:940`, "the leader hand object name stays") becomes a deviation comment and a deviations line.
 - [ ] **Step 6:** `make`; `uv run pytest -q tests/standard`. Delete the `open: epic 8` `comment`, `todo`, `header` lines of `ui/`.
 - [ ] **Step 7: Commit.** `git add -A src docs tests/standard/allowlist.txt && git commit -m "docs(ui): header paragraphs and comments in game terms"`
+
+### Task 115: Short names for the ui functions (R3.4)
+
+**Files:**
+- Modify: the ui headers and `.c` files, and every caller (`rename.py` over `src/`, `tests/`, `tools/`, `docs/`)
+
+**Interfaces:**
+- Consumes: `rename.py` (Task 50 Step 4); the status/panel names of Task 97.
+- Produces (72e24b5 name → new name):
+
+| 72e24b5 name | New name |
+|---|---|
+| `ui_draw_champion_skills_and_statistics` (a `panel_` name after Task 97) | `panel_draw_skills_statistics` |
+| `ui_draw_panel_food_water_poisoned` (a `panel_` name after Task 97) | `panel_draw_food_water` |
+| `view_get_wall_face_ornament_index` | `view_get_wall_ornament_index` |
+| static `draw_spell_area_before_last_death` (`gameloop.c`) | `draw_spell_area_at_death` |
+
+- [ ] **Step 1: The list.** `uv run pytest -q tests/standard -k "name or static_prefix"` and keep the `ui/` lines.
+  A table name that an earlier task changed: use its current name as the old name. A reported name that the table
+  lacks: pick a name by rule 4.1 and list it in the ledger.
+- [ ] **Step 2: Rename.** `renames-ui.txt`; `uv run python rename.py renames-ui.txt`; `make format`.
+- [ ] **Step 3: Allowlist.** Delete the `name` lines of `ui/` with `open: epic 8`.
+- [ ] **Step 4: Build and test.** `make`; `make test` (the test step of this tail task). Expected: 0 warnings; PASS.
+- [ ] **Step 5: Commit.** `git commit -am "refactor(ui): function names of at most four words and 32 characters"`
 
 ---
 
@@ -8628,23 +8862,23 @@ Rulings of this section (the main agent lists them for the user):
 - "The list scanner reuses the key search" (R10.1): the key search and the list scanner share one static
   `skip_string` helper in `request.c`; the object case of the list scanner does not call the key search, because
   the key search finds a key, not the end of an object.
-- The transport moves in stream H1 together with the dispatch (one split of one file, Task 115), not in the tail:
+- The transport moves in stream H1 together with the dispatch (one split of one file, Task 121), not in the tail:
   the protocol module `control_` and the socket cannot share the prefix in one tree. The tail is the application
   (`app.c`, `main.c`), which needs `transport_*` and `options_*`.
 - The debug view is two functions (`debug_view_open`, `debug_view_key`): the key handler runs from the input
   loop, the open function from the start.
-- The turn-based check of Windows moves from the option loop to `options_parse` after the loop (Task 120, when
+- The turn-based check of Windows moves from the option loop to `options_parse` after the loop (Task 126, when
   the transport exists in the same tree).
 
 #### Stream H1: the protocol in control/
 
-Shared files: `Makefile` (layer list, transport file choice; Task 118 adds `debug_view.c` to the SDL file list),
-`src/platform/main.c` (Task 115 changes six call sites; Task 118 moves the debug functions out),
-`src/engine/move.h`, `src/engine/move.c` (Task 114: the type of `g_party_teleport_count`),
+Shared files: `Makefile` (layer list, transport file choice; Task 124 adds `debug_view.c` to the SDL file list),
+`src/platform/main.c` (Task 121 changes six call sites; Task 124 moves the debug functions out),
+`src/engine/move.h`, `src/engine/move.c` (Task 120: the type of `g_party_teleport_count`),
 `tests/dmtest/control.py`, `tests/standard/allowlist.txt` (union merge), `tests/standard/test_standard.py`
-(Task 113: the base argument of `strtol`).
+(Task 119: the base argument of `strtol`).
 
-### Task 110: control/json: the JSON writer
+### Task 116: control/json: the JSON writer
 
 **Files:**
 - Create: `src/control/json.h`, `src/control/json.c`
@@ -8655,8 +8889,8 @@ Shared files: `Makefile` (layer list, transport file choice; Task 118 adds `debu
 - Test: none new (the golden protocol snapshot of Task 1 is the gate)
 
 **Interfaces:**
-- Consumes: the `Makefile` of Package B with its layer list (Assumption: a variable that lists the layers, e.g.
-  `LAYERS = data engine ui platform`; step 1 checks it).
+- Consumes: the `Makefile` of Task 6: `SOURCES = $(wildcard src/*/*.c)`, so `src/control/` joins without a
+  Makefile change.
 - Produces:
 
 ```c
@@ -8711,10 +8945,9 @@ void json_key_bool(Json *j, const char *key, bool value);
 #endif
 ```
 
-- [ ] **Step 1: Check the inputs.** Run `grep -n "LAYERS\|control" Makefile` and `grep -n "control" tests/standard/test_standard.py | head`.
-  Expected: the Makefile lists the layers in one variable; the layer check of Package C knows `control` between
-  `ui` and `platform` (`docs/coding-standard.md` rule 1.1). If the Makefile has no layer variable, add `control`
-  where the Makefile lists `ui` and `platform`.
+- [ ] **Step 1: Check the inputs.** Run `grep -n "SOURCES" Makefile` and `grep -n "control" tests/standard/test_standard.py | head`.
+  Expected: `SOURCES = $(wildcard src/*/*.c)`; the layer check of Package C knows `control` between `ui` and
+  `platform` (`docs/coding-standard.md` rule 1.1).
 - [ ] **Step 2: Create `src/control/json.h`** with the header above.
 - [ ] **Step 3: Create `src/control/json.c`.** Move the bodies of `put`, `separate`, `json_raw`, `json_open`,
   `json_close`, `json_null`, `json_bool`, `json_int`, `json_str`, `json_key` from
@@ -8751,7 +8984,7 @@ git add src/control/json.h src/control/json.c src/platform/state_json.h src/plat
 git commit -m "refactor: control/json holds the JSON writer of the protocol"
 ```
 
-### Task 111: control/request: the request reader
+### Task 117: control/request: the request reader
 
 **Files:**
 - Create: `src/control/request.h`, `src/control/request.c`, `tests/port/test_request.py`
@@ -8891,7 +9124,7 @@ def test_item_too_long():
   `next_element` (`1106-1142`) as `request_next_item(const char **cursor, char *out, size_t size)`: it reads and
   moves `*cursor` instead of `batch.next`, and returns `REQUEST_ITEM_END` (was 0), `REQUEST_ITEM_FOUND` (1),
   `REQUEST_ITEM_BAD` (-1). `KEY_PATTERN_SIZE` moves with them. The base of `strtoll` is the literal `10` (the
-  standard allows the base argument; Task 113 adapts the check). One static helper serves both scanners:
+  standard allows the base argument; Task 119 adapts the check). One static helper serves both scanners:
 
 ```c
 /* The closing quote of the string that starts at the quote p, or NULL. */
@@ -8917,7 +9150,7 @@ git add src/control/request.h src/control/request.c src/platform/control.c tests
 git commit -m "refactor: control/request reads the request lines of the protocol"
 ```
 
-### Task 112: control/png: the screenshot writer
+### Task 118: control/png: the screenshot writer
 
 **Files:**
 - Create: `src/control/png.h`, `src/control/png.c`, `tests/port/test_png.py`
@@ -9030,18 +9263,18 @@ git add src/control/png.h src/control/png.c src/platform/control.c tests/port/te
 git commit -m "refactor: control/png writes the screenshot and checks every write"
 ```
 
-### Task 113: control/state_json: the state writers with verbs
+### Task 119: control/state_json: the state writers with verbs
 
 **Files:**
 - Move: `git mv src/platform/state_json.h src/control/state_json.h`, `git mv src/platform/state_json.c src/control/state_json.c`
 - Modify: `src/control/state_json.h`, `src/control/state_json.c`, `src/platform/control.c` (callers),
   `tests/dmtest/control.py` (`state_json_get_string` → `state_get_string`), `tests/port/test_control.py`,
   `tests/standard/test_standard.py` (the base argument of `strtol`), `docs/llm/llm-mode.md` (names in the C API
-  section, Task 116 rewrites the section)
+  section, Task 122 rewrites the section)
 - Test: none new; the golden protocol snapshot is the gate
 
 **Interfaces:**
-- Consumes: `control/json.h` (Task 110).
+- Consumes: `control/json.h` (Task 116).
 - Produces:
 
 ```c
@@ -9163,7 +9396,7 @@ git add -A src/control src/platform tests docs
 git commit -m "refactor: control/state_json writes the state with verbs and one look per square"
 ```
 
-### Task 114: control/turn: the turn, the batch, and what the party saw
+### Task 120: control/turn: the turn, the batch, and what the party saw
 
 **Files:**
 - Create: `src/control/turn.h`, `src/control/turn.c`
@@ -9174,7 +9407,7 @@ git commit -m "refactor: control/state_json writes the state with verbs and one 
 - Test: none new (the golden protocol snapshot and `tests/port/test_control.py` cover the turn results)
 
 **Interfaces:**
-- Consumes: `control/json.h` (H1), `control/request.h` (H2), `control/state_json.h` (H4), `PANEL_LINE_SIZE`,
+- Consumes: `control/json.h` (Task 116), `control/request.h` (Task 117), `control/state_json.h` (Task 119), `PANEL_LINE_SIZE`,
   `PANEL_LINE_COUNT` (`ui/panel.h`, Package G; today `ui/ui.h`).
 - Produces:
 
@@ -9305,7 +9538,7 @@ git add src/control/turn.h src/control/turn.c src/platform/control.c src/engine/
 git commit -m "refactor: control/turn runs the turns and batches of the program player"
 ```
 
-### Task 115: control/control and platform/transport: the dispatch, the actions, and the socket
+### Task 121: control/control and platform/transport: the dispatch, the actions, and the socket
 
 **Files:**
 - Create: `src/control/control.h`, `src/control/control.c`, `src/control/actions.c`, `src/control/control_internal.h`
@@ -9517,7 +9750,7 @@ git add -A src/control src/platform Makefile tests
 git commit -m "refactor: control/ holds the protocol dispatch and actions, platform/transport the socket"
 ```
 
-### Task 116: the protocol vocabulary in the docs and its check
+### Task 122: the protocol vocabulary in the docs and its check
 
 **Files:**
 - Modify: `docs/llm/llm-mode.md` (a "Protocol vocabulary" section; the "C API" and "Integration in main.c"
@@ -9579,7 +9812,7 @@ def test_every_protocol_name_is_documented():
   (`control_handle_line`, `control_end_turn`, `control_is_turn_pending`, `control_drop_client`),
   `platform/transport.h` (`transport_open`, `transport_poll`, `transport_close`, `transport_is_available`),
   `control/state_json.h` (`state_write_state`, `state_write_view`, `state_write_map`, `state_get_string`), and the
-  frame loop of `platform/app.c` (Task 120: `transport_poll` once per frame, game frames only while
+  frame loop of `platform/app.c` (Task 126: `transport_poll` once per frame, game frames only while
   `control_is_turn_pending()`). Use `bool` where the code has `bool`.
 - [ ] **Step 5: Run the check and the docs checks.** Run `uv run pytest -q tests/standard`. Expected: PASS.
 - [ ] **Step 6: Commit.**
@@ -9591,16 +9824,16 @@ git commit -m "docs: the protocol vocabulary of the LLM mode, checked against th
 
 #### Stream H2: the platform modules
 
-Shared files: `src/platform/main.c` (Task 118 moves the debug functions; Task 115 changes other lines), `Makefile`
-(Task 118: `debug_view.c` in the SDL file list), `README.md` (Task 119: `DM_FILTER`),
+Shared files: `src/platform/main.c` (Task 124 moves the debug functions; Task 121 changes other lines), `Makefile`
+(Task 124: `debug_view.c` in the SDL file list), `README.md` (Task 125: `DM_FILTER`),
 `tests/standard/allowlist.txt` (union merge).
 
-### Task 117: platform/options: the command line from a table
+### Task 123: platform/options: the command line from a table
 
 **Files:**
 - Create: `src/platform/options.h`, `src/platform/options.c`, `tests/port/test_options.py`
 - Modify: `tests/standard/allowlist.txt` (`dead-api platform/options.h open: epic 11`: `main.c` uses the module
-  from Task 120 on)
+  from Task 126 on)
 - Test: `tests/port/test_options.py` (a parser: on the test list; Review Focus)
 
 **Interfaces:**
@@ -9761,7 +9994,7 @@ static const Option options_table[] = {
   and `get_game_mode` (`main.c:396-405`) here as `options_find_mode` and `options_get_mode_name`.
   `options_print_help` prints `Usage: dm [options]` and one line per table entry.
 - [ ] **Step 5: Add the allowlist line** `dead-api platform/options.h open: epic 11` (the game uses the parser from
-  Task 120 on; the test is not a user outside the file).
+  Task 126 on; the test is not a user outside the file).
 - [ ] **Step 6: Build and run the test.** Run `make` and `uv run pytest -q tests/port/test_options.py tests/standard`.
   Expected: 0 warnings; PASS. (`options.c` has no SDL, so it is in the library.)
 - [ ] **Step 7: Commit.**
@@ -9771,7 +10004,7 @@ git add src/platform/options.h src/platform/options.c tests/port/test_options.py
 git commit -m "feat: platform/options parses the command line from a table with --help and errors"
 ```
 
-### Task 118: platform/debug_view: the developer modes
+### Task 124: platform/debug_view: the developer modes
 
 **Files:**
 - Create: `src/platform/debug_view.h`, `src/platform/debug_view.c`
@@ -9781,8 +10014,7 @@ git commit -m "feat: platform/options parses the command line from a table with 
 - Test: none (developer tool; `tests/port/test_port_data.py:169` runs `--show` as a smoke run)
 
 **Interfaces:**
-- Consumes: `map_step` (Package E; Assumption: `bool map_step(int16_t direction, int16_t forward, int16_t right,
-  Location *at)` or the signature that `src/engine/map.h` declares; step 1 greps it), `adventure_load_files`
+- Consumes: `void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *x, int16_t *y)` (Task 58), `adventure_load_files`
   (Package D, R4.7: the engine module plus Graphics.DAT).
 - Produces:
 
@@ -9828,7 +10060,7 @@ git add src/platform/debug_view.h src/platform/debug_view.c src/platform/main.c 
 git commit -m "refactor: platform/debug_view holds the --show and --view developer modes"
 ```
 
-### Task 119: platform.c and scale.h: one filter option, bool, one declaration per line
+### Task 125: platform.c and scale.h: one filter option, bool, one declaration per line
 
 **Files:**
 - Modify: `src/platform/platform.c`, `src/platform/platform.h`, `src/platform/scale.h`, `src/platform/scale.c`,
@@ -9868,20 +10100,20 @@ git commit -m "refactor: one filter option, bool audio open, platform state in o
 
 Shared files: none (the tail runs after the merge of H1 and H2).
 
-### Task 120: platform/app: the application, and main.c as the entry point
+### Task 126: platform/app: the application, and main.c as the entry point
 
 **Files:**
 - Create: `src/platform/app.h`, `src/platform/app.c`
 - Modify: `src/platform/main.c` (about 30 lines), `src/platform/options.c` (the turn-based check),
-  `tests/standard/allowlist.txt` (remove the `open: epic 11` lines of Task 117 and of `platform/main.c`),
+  `tests/standard/allowlist.txt` (remove the `open: epic 11` lines of Task 123 and of `platform/main.c`),
   `Makefile` (`app.c` uses SDL: out of the library), `docs/llm/llm-mode.md` ("Integration" section names
   `app_run_frame`)
 - Test: none new; `tests/port/test_select.py` (subprocess runs of `build/dm` with options), `tests/tools/test_csb_tools.py`
   (turn-based end-to-end), `tests/port/test_port.py` (`--frames`) are the gate
 
 **Interfaces:**
-- Consumes: `options_parse`, `options_print_help`, `options_get_mode_name` (H8), `debug_view_open`,
-  `debug_view_key` (H9), `transport_*` (H6), `control_is_turn_pending` (H6).
+- Consumes: `options_parse`, `options_print_help`, `options_get_mode_name` (Task 123), `debug_view_open`,
+  `debug_view_key` (Task 124), `transport_*` (Task 121), `control_is_turn_pending` (Task 121).
 - Produces:
 
 ```c
@@ -10035,9 +10267,9 @@ fountain result, `group_cell`, `check()` of the golden rules: see each item).
 
 #### Stream I1: the architecture page
 
-Shared files: none (`README.md` links to the page; Task 122 writes the link).
+Shared files: none (`README.md` links to the page; Task 128 writes the link).
 
-### Task 121: docs/architecture.md
+### Task 127: docs/architecture.md
 
 **Files:**
 - Create: `docs/architecture.md`
@@ -10046,7 +10278,7 @@ Shared files: none (`README.md` links to the page; Task 122 writes the link).
 
 **Interfaces:**
 - Consumes: the purpose paragraph and the prefix line of every header in `src/` (R3: rule 2.1).
-- Produces: `docs/architecture.md` with the outline below; `README.md` (Task 122) and `docs/development.md` link to it.
+- Produces: `docs/architecture.md` with the outline below; `README.md` (Task 128) and `docs/development.md` link to it.
 
 Outline (each heading one short section; facts from the code, with `src/` paths):
 
@@ -10096,7 +10328,7 @@ data/       file formats, the engine image (KAOS.FTL, APPB.FTL) and its tables, 
     `make check`.
 
 - [ ] **Step 1: Check the inputs.** Run `ls tests/standard/` and `grep -ln "link" tests/standard/*.py`. Expected: a
-  docs link check exists. If none exists, report it; the tail (Task 125) runs the link scan of step 5 by hand.
+  docs link check exists. If none exists, report it; the tail (Task 131) runs the link scan of step 5 by hand.
 - [ ] **Step 2: Generate the module list** with a throw-away script (in the scratchpad, not committed):
 
 ```python
@@ -10130,7 +10362,7 @@ git commit -m "docs: architecture page: layers, modules, frame loop, turn, state
 
 Shared files: none.
 
-### Task 122: README.md short; docs/manual.md, docs/development.md, docs/decompiling.md
+### Task 128: README.md short; docs/manual.md, docs/development.md, docs/decompiling.md
 
 **Files:**
 - Create: `docs/manual.md`, `docs/development.md`, `docs/decompiling.md`
@@ -10140,11 +10372,12 @@ Shared files: none.
 **Interfaces:**
 - Consumes: `README.md` as Package H leaves it; the Makefile targets of Package B (`all`, `lib`, `windows`, `test`,
   `check`, `format`, `dist`, `dist-win`, `play`, `clean`; `SANITIZE=1`).
-- Produces: the four pages; the doc index in `README.md` links `docs/architecture.md` (Task 121).
+- Produces: the four pages. The doc index of `README.md` does not link `docs/architecture.md` yet: the page comes
+  from stream I1 (Task 127), and the link check runs in this worktree; Task 131 (tail) adds the link.
 
 - [ ] **Step 1: `docs/manual.md`** (the player manual): move `README.md` "C port" from Start screens to Modes
   (`README.md:111-255`) and the run part of the Quickstart; the options table as `build/dm --help` prints it (Task
-  120); saves; CSB; the Windows notes. Remove what is stale (no `DM_FILTER`).
+  126); saves; CSB; the Windows notes. Remove what is stale (no `DM_FILTER`).
 - [ ] **Step 2: `docs/development.md`**: the build (`make`, `make windows`, `SANITIZE=1`, `make play` with
   `PLAY_DIR`), the tests (`make test` = `uv run pytest -q -n auto`; one file
   `uv run pytest -q tests/<folder>/test_x.py`; the folders `differential`, `port`, `golden`, `tools`, `standard`
@@ -10158,14 +10391,14 @@ Shared files: none.
   plays; macOS and Windows; the LLM mode on macOS), the quickstart (`brew install sdl3`, `uv sync`, `make`,
   `build/dm --data game`, `make test`), the license ("The code is GPL-3.0-or-later (`LICENSE`). The game data of
   Dungeon Master and Chaos Strikes Back is not included."), and the doc index (manual, development, decompiling,
-  architecture, coding standard, formats, rules, CSB, LLM, reference). No person's name, no personal folder.
-- [ ] **Step 5: Fix the links into the old README sections.** Run `grep -rn "README.md#" docs CLAUDE.md .claude tools`
-  and point each hit to its new page.
+  coding standard, formats, rules, CSB, LLM, reference). No person's name, no personal folder.
+- [ ] **Step 5: Fix the links into the old README sections.** Run `grep -rn "README.md#" docs tools`
+  and point each hit to its new page. `CLAUDE.md` and `.claude/` belong to stream I3 (Task 129 runs the same grep).
 - [ ] **Step 6: Run the docs checks.** Run `uv run pytest -q tests/standard`. Expected: PASS.
 - [ ] **Step 7: Commit.**
 
 ```bash
-git add README.md docs/manual.md docs/development.md docs/decompiling.md docs CLAUDE.md .claude tools
+git add README.md docs/manual.md docs/development.md docs/decompiling.md docs tools
 git commit -m "docs: short README; manual, development and decompiling guides"
 ```
 
@@ -10173,7 +10406,7 @@ git commit -m "docs: short README; manual, development and decompiling guides"
 
 Shared files: none.
 
-### Task 123: CLAUDE.md and the agent files
+### Task 129: CLAUDE.md and the agent files
 
 **Files:**
 - Modify: `CLAUDE.md`, `.claude/agents/dm-coordinator.md`, `.claude/agents/dm-player.md`
@@ -10202,7 +10435,7 @@ git add CLAUDE.md .claude/agents
 git commit -m "docs: project CLAUDE.md and agent files follow the new layout"
 ```
 
-### Task 124: docs/todo.md and CHANGELOG.md
+### Task 130: docs/todo.md and CHANGELOG.md
 
 **Files:**
 - Modify: `docs/todo.md`, `CHANGELOG.md`
@@ -10238,7 +10471,7 @@ git commit -m "docs: todo items that the final refactor closed, and its CHANGELO
 
 Shared files: none.
 
-### Task 125: the allowlist without open lines
+### Task 131: the allowlist without open lines
 
 **Files:**
 - Modify: `tests/standard/allowlist.txt`, the source files that the checks then report
@@ -10247,7 +10480,9 @@ Shared files: none.
 **Interfaces:**
 - Consumes: every package.
 - Produces: an allowlist with only the documented exceptions (the soundtrack tables, the APPB address tables, the
-  per-type switch functions).
+  per-type switch functions); the link to `docs/architecture.md` in the doc index of `README.md` (Task 128 leaves
+  it out, because stream I1 writes the page in parallel); `uv run ruff check tests tools/dmtools` passes over the
+  merged tree.
 
 - [ ] **Step 1: List the open lines.** Run `grep -n "open:" tests/standard/allowlist.txt`. Expected: only stale
   lines (each epic removed its own lines). Note each line.
@@ -10261,16 +10496,18 @@ Shared files: none.
   `grep -rn "ctypes.Structure" tests | grep -v "tests/dmtest/"`. Expected: only structures of modules that the
   tests own (for example `Options` of `test_options.py`); a mirror of a game struct (`Champion`, `Party`,
   `Session`, `Screen`, `TimelineEvent`, `ActiveGroup`) moves to `tests/dmtest/game.py`.
-- [ ] **Step 6: Build and run the checks.** Run `make`, `make windows`, `uv run pytest -q tests/standard`.
+- [ ] **Step 6: The architecture link and ruff.** Add `docs/architecture.md` to the doc index of `README.md` (beside
+  the coding standard); run `uv run ruff check tests tools/dmtools` and fix each finding.
+- [ ] **Step 7: Build and run the checks.** Run `make`, `make windows`, `uv run pytest -q tests/standard`.
   Expected: 0 warnings; PASS.
-- [ ] **Step 7: Commit.**
+- [ ] **Step 8: Commit.**
 
 ```bash
-git add tests/standard/allowlist.txt
+git add -A tests src README.md tools/dmtools
 git commit -m "test: the standard allowlist holds only documented exceptions"
 ```
 
-### Task 126: the PRD acceptance
+### Task 132: the PRD acceptance
 
 **Files:**
 - Modify: none, unless a scenario fails (then the fix goes into the file that the failure names, with its own
@@ -10284,7 +10521,7 @@ git commit -m "test: the standard allowlist holds only documented exceptions"
 - [ ] **Step 1: Layout.**
   `ls -d src third_party tools/dmtools tools/research tests/dmtest docs/architecture.md LICENSE && test ! -e port && ! grep -rn "port/src" docs README.md CLAUDE.md .claude --exclude-dir=superpowers`.
   Expected: the paths exist; no `port/`; grep finds nothing.
-- [ ] **Step 2: Build.** `make clean && make 2>&1 | tee /tmp/dm-build-1.log; make; touch src/engine/random.c; make 2>&1 | tee /tmp/dm-build-3.log`.
+- [ ] **Step 2: Build.** `rm -rf build/obj build/dm build/libdm.dylib && make 2>&1 | tee /tmp/dm-build-1.log; make; touch src/engine/random.c; make 2>&1 | tee /tmp/dm-build-3.log`.
   Expected: no `warning:` in the first log; the third log compiles `random.c` only (one compile line) and links.
   Then `make windows 2>&1 | grep -c "warning:"`: expected `0`. Then `touch src/engine/map.h; make -n | grep -c " -c "`:
   expected one compile line per `.c` file that includes `engine/map.h` (compare with
@@ -10308,7 +10545,8 @@ git commit -m "test: the standard allowlist holds only documented exceptions"
 - [ ] **Step 9: Tests and docs.** `grep -rn "from test_\|/private/tmp\|/Users/" tests` finds nothing;
   `grep -rn "\"clang\"\|'clang'" tests` finds nothing; the dead-API check passes (step 3);
   `ls docs/architecture.md docs/manual.md docs/development.md && test ! -e docs/superpowers/status.md`; the docs
-  link check passes (step 3).
+  link check passes (step 3); `git grep -nE "map_get_square\([^)]*\)\s*>>|\]\s*&\s*0x[0-9a-fA-F]+\)\s*\|" tests`
+  finds nothing (standard rule 11.3); `test ! -e run.txt`.
 - [ ] **Step 10: Record.** Write one line per scenario into the ledger. A failed scenario gets a fix commit and the
   scenario runs again; a failure that needs a design decision stops the run for the user.
 
