@@ -5,7 +5,6 @@ Format and algorithm from CEDT.FTL (disk B), base 0x100000:
   0x108efe dungeon parts, 0x10a1a2 layout selection, 0x105c7e merge, 0x1085da save.
 """
 
-import random
 import struct
 import sys
 
