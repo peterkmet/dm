@@ -15,6 +15,7 @@
 #include "engine/random.h"
 #include "engine/recruit.h"
 #include "engine/sound.h"
+#include "engine/timeline.h"
 #include "engine/timeline_process.h"
 #include <string.h>
 
@@ -812,7 +813,7 @@ void champion_apply_and_draw_pending_damage_and_wounds(void)
             TimelineEvent event = {map_time, EVENT_HIDE_DAMAGE_RECEIVED, i, 0, 0};
             c->hide_damage_received_event_index = timeline_add_event(&event);
         } else {
-            g_timeline_events[e].map_time = map_time;
+            g_timeline.events[e].map_time = map_time;
             timeline_fix_chronology(timeline_get_index(e));
         }
     }
@@ -891,8 +892,8 @@ void champion_unpoison(int16_t champion_index)
 {
     if (champion_index == -1)
         return;
-    for (uint16_t i = 0; i < g_event_high_water; i++)
-        if (g_timeline_events[i].type == EVENT_POISON && g_timeline_events[i].priority == champion_index)
+    for (uint16_t i = 0; i < g_timeline.high_water; i++)
+        if (g_timeline.events[i].type == EVENT_POISON && g_timeline.events[i].priority == champion_index)
             timeline_delete_event(i);
     g_champions[champion_index].poison_event_count = 0;
 }

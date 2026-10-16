@@ -159,11 +159,9 @@ name engine/dungeon.c:read_square_things_and_text open: epic 6
 name engine/game.c:game_adjust_statistic_current_value open: epic 6
 name engine/game.c:game_get_statistic_adjusted_attack open: epic 6
 name engine/game.c:game_update_map_coordinates_after_relative_movement open: epic 6
-name engine/game.c:timeline_is_event_a_before_b open: epic 6
 name engine/game.h:game_adjust_statistic_current_value open: epic 6
 name engine/game.h:game_get_statistic_adjusted_attack open: epic 6
 name engine/game.h:game_update_map_coordinates_after_relative_movement open: epic 6
-name engine/game.h:timeline_is_event_a_before_b open: epic 6
 name engine/group.c:group_drop_creature_fixed_possessions open: epic 6
 name engine/group.c:group_drop_moving_creature_fixed_possessions open: epic 6
 name engine/group.c:group_get_active_group_thing open: epic 6
@@ -584,11 +582,7 @@ dead-api engine/dungeon.h:dungeon_decompress open: epic 7
 dead-api engine/dungeon.h:dungeon_validate open: epic 7
 dead-api engine/dungeon.h:g_dungeon_raw_map_data open: epic 7
 dead-api engine/dungeon.h:g_dungeon_text_data open: epic 7
-dead-api engine/game.h:g_watchdog_time open: epic 7
 dead-api engine/game.h:game_init_active_groups open: epic 7
-dead-api engine/game.h:timeline_find_mergeable_event open: epic 7
-dead-api engine/game.h:timeline_init open: epic 7
-dead-api engine/game.h:timeline_is_event_a_before_b open: epic 7
 dead-api engine/group.h:g_current_group_distance_to_party open: epic 7
 dead-api engine/group.h:g_current_group_map_x open: epic 7
 dead-api engine/group.h:g_current_group_map_y open: epic 7
@@ -860,3 +854,10 @@ static-prefix platform/platform.c:audio_open open: epic 11
 type ui:count open: epic 8
 type ui:length open: epic 8
 dead-api ui/audio.h:audio_music_stop open: epic 9
+dead-api engine/timeline.h:timeline_add_watchdog_event open: epic 7
+dead-api engine/timeline.h:timeline_extract_first_event open: epic 7
+dead-api engine/timeline.h:timeline_find_mergeable_event open: epic 7
+dead-api engine/timeline.h:timeline_is_event_a_before_b open: epic 7
+dead-api engine/timeline.h:timeline_is_first_event_expired open: epic 7
+name engine/timeline.c:timeline_is_event_a_before_b open: epic 6
+name engine/timeline.h:timeline_is_event_a_before_b open: epic 6

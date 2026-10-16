@@ -10,6 +10,7 @@
 #include "engine/magic.h"
 #include "engine/random.h"
 #include "engine/sound.h"
+#include "engine/timeline.h"
 #include "engine/timeline_process.h"
 #include <stdbool.h>
 

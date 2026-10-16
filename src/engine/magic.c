@@ -13,6 +13,7 @@
 #include "engine/move.h"
 #include "engine/projectile.h"
 #include "engine/random.h"
+#include "engine/timeline.h"
 #include "engine/timeline_process.h"
 #include <string.h>
 
@@ -76,7 +77,7 @@ void magic_disable_action(uint16_t champion_index, uint16_t ticks)
     if (c->enable_action_event_index < 0) {
         c->attributes |= CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_ACTION_DISABLED;
     } else {
-        uint32_t old = g_timeline_events[c->enable_action_event_index].map_time & EVENT_TIME_MASK;
+        uint32_t old = g_timeline.events[c->enable_action_event_index].map_time & EVENT_TIME_MASK;
         if ((int32_t)time < (int32_t)old)
             time = old + (ticks >> 1);
         else
@@ -306,9 +307,9 @@ static bool cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power
     }
     uint16_t d = (power + 1) * SPELL_DURATION_FACTOR, ticks;
     if (type == MAGIC_MAP_NETA) {
-        for (uint16_t i = 0; c->magic_map[MAGIC_MAP_NETA] && i < g_event_high_water; i++)
-            if (g_timeline_events[i].type == EVENT_MAGIC_MAP_NETA_END &&
-                g_timeline_events[i].priority == champion_index) {
+        for (uint16_t i = 0; c->magic_map[MAGIC_MAP_NETA] && i < g_timeline.high_water; i++)
+            if (g_timeline.events[i].type == EVENT_MAGIC_MAP_NETA_END &&
+                g_timeline.events[i].priority == champion_index) {
                 timeline_delete_event(i);
                 break;
             }

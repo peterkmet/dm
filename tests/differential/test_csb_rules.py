@@ -7,7 +7,7 @@ import ctypes
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Champion, Game, TimelineEvent, global_type
+from dmtest.game import Champion, Game, Timeline, TimelineEvent, global_type
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT
 
@@ -77,9 +77,9 @@ def things(lib, x, y):
 
 
 def timeline(lib):
-    events = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
-    heap = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline"), ctypes.POINTER(u16))
-    return [events[heap[i]] for i in range(value(lib, "g_timeline_count", u16).value)]
+    events = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
+    heap = ctypes.cast(Timeline.in_dll(lib, "g_timeline").heap, ctypes.POINTER(u16))
+    return [events[heap[i]] for i in range(Timeline.in_dll(lib, "g_timeline").count)]
 
 
 def face_empty_corridor(lib):
@@ -142,7 +142,7 @@ def test_removed_actions(world, action):
         info = lib.tables_get_action_info(action).contents
         value(lib, "g_random_seed", u32).value = SEED
         assert c.current_stamina == 1000 - (info.stamina + lib.random_bit())
-        events = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
+        events = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
         enable = events[c.enable_action_event_index]
         assert enable.type == EVENT_ENABLE_ACTION
         assert (enable.map_time & 0xFFFFFF) - value(lib, "g_game_time", u32).value == info.disabled_ticks
@@ -204,9 +204,9 @@ def test_version_checker_limit(world, data):
     lib = game.lib
     x, y = version_checker(lib, data)
     value(lib, "g_party_champion_count", u16).value = 1
-    count = value(lib, "g_timeline_count", u16).value
+    count = Timeline.in_dll(lib, "g_timeline").count
     lib.sensor_process_thing_addition_or_removal(x, y, 0xFFFF, 0, 1)
-    triggered = value(lib, "g_timeline_count", u16).value - count
+    triggered = Timeline.in_dll(lib, "g_timeline").count - count
     assert triggered == (data <= (31 if adventure == "csb" else 36))
 
 

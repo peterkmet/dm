@@ -10,6 +10,7 @@
 #include "engine/random.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
+#include "engine/timeline.h"
 #include "engine/timeline_process.h"
 
 /* Combined square argument: a value from 0x100 holds (x + 1) << 8 | target x (and y << 8 | target y). */
@@ -716,7 +717,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
             for (uint16_t t = map_get_square_first_thing(x, y); t != THING_END; t = map_get_next_thing(t)) {
                 uint8_t target = occupied[THING_CELL(t)];
                 if (THING_TYPE(t) != THING_PROJECTILE ||
-                    g_timeline_events[rec_projectile_event_index(t)].type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS ||
+                    g_timeline.events[rec_projectile_event_index(t)].type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS ||
                     !target || !projectile_has_impact_occurred(impact_type, x_combo, y_combo, target - 1, t))
                     continue;
                 projectile_delete_event(t);

@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Champion
+from dmtest.game import Champion, Timeline
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -155,17 +155,17 @@ def test_champion_helpers_match_original(lib, emu):
 
 
 def timeline_state(lib):
-    n = c16.in_dll(lib, "g_event_max_count").value
-    events = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(Event))
-    heap = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline"), ctypes.POINTER(ctypes.c_uint16))
-    count = ctypes.c_uint16.in_dll(lib, "g_timeline_count").value
-    first = c16.in_dll(lib, "g_first_unused_event_index").value
+    n = Timeline.in_dll(lib, "g_timeline").capacity
+    events = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(Event))
+    heap = ctypes.cast(Timeline.in_dll(lib, "g_timeline").heap, ctypes.POINTER(ctypes.c_uint16))
+    count = Timeline.in_dll(lib, "g_timeline").count
+    first = Timeline.in_dll(lib, "g_timeline").first_unused
     free, i = [], first
     while i != -1 and len(free) <= n:
         free.append(i)
         i = s16(events[i].map_time)
     live = {i: events[i].be() for i in range(n) if events[i].type}
-    return count, first, ctypes.c_uint16.in_dll(lib, "g_event_high_water").value, heap[:count], live, free
+    return count, first, Timeline.in_dll(lib, "g_timeline").high_water, heap[:count], live, free
 
 
 def emu_timeline_state(emu, n):
@@ -182,7 +182,7 @@ def emu_timeline_state(emu, n):
 
 def test_timeline_matches_original(lib, emu):
     n, arg = 40, BUF + 0x2000
-    c16.in_dll(lib, "g_event_max_count").value = n
+    Timeline.in_dll(lib, "g_timeline").capacity = n
     c32.in_dll(lib, "g_game_time").value = 0
     lib.timeline_init()
     put(emu, EVENT_MAX_COUNT, ">hHIIHhI", n, 0, BUF, BUF + 0x1000, 0, 0, 0)
@@ -213,7 +213,7 @@ def test_timeline_matches_original(lib, emu):
 
 
 def test_timeline_order(lib):
-    c16.in_dll(lib, "g_event_max_count").value = 10
+    Timeline.in_dll(lib, "g_timeline").capacity = 10
     c32.in_dll(lib, "g_game_time").value = 0
     lib.timeline_init()  # watchdog: time 300, type 53
     for t, typ, prio in [(5, 20, 0), (5, 25, 0), (2, 11, 3), (5, 20, 1), (2, 11, 1)]:
@@ -242,7 +242,7 @@ def test_game_new(lib):
     assert c32.in_dll(lib, "g_game_time").value == 0
     count, first, high_water, heap, live, free = timeline_state(lib)
     assert (count, first, high_water, heap, live) == (1, 1, 1, [0], {0: Event(300, 53).be()})
-    assert len(free) == c16.in_dll(lib, "g_event_max_count").value - 1
+    assert len(free) == Timeline.in_dll(lib, "g_timeline").capacity - 1
     groups = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_active_groups"), ctypes.POINTER(ActiveGroup))
     assert ctypes.c_uint16.in_dll(lib, "g_max_active_group_count").value == 110
     assert all(groups[i].group_index == -1 for i in range(110))

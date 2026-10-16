@@ -8,7 +8,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import s16, var
-from dmtest.game import (CHAMPIONS, Champion, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
+from dmtest.game import (CHAMPIONS, Champion, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
                          setup_creatures, skeleton_map_and_squares, things_of_type, tick)
 from dmtest.lib import load_lib
 
@@ -92,7 +92,7 @@ def disabled_ticks(lib, i):
     c = (Champion * 4).in_dll(lib, "g_champions")[i]
     if c.enable_action_event_index < 0:
         return 0
-    timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
+    timeline = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
     ticks = (timeline[c.enable_action_event_index].map_time & 0xFFFFFF) - var(lib, ctypes.c_uint32, "g_game_time").value
     lib.timeline_delete_event(c.enable_action_event_index)
     c.enable_action_event_index = -1
@@ -234,7 +234,7 @@ def test_throw_creates_projectile_and_event_11_refills_hand(fighter):
     assert lib.action_is_action_performed(0, C.ACTION_THROW) == 1
     assert things_of_type(lib, x, y, C.THING_PROJECTILE)
     assert c.slots[C.SLOT_HAND_ACTION] == 0xFFFF
-    timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
+    timeline = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
     event = timeline[c.enable_action_event_index]
     assert event.type == EVENT_ENABLE_ACTION and event.b >> 8 == C.SLOT_HAND_ACTION + 1
     for _ in range(5):

@@ -17,6 +17,7 @@
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/sound.h"
+#include "engine/timeline.h"
 #include "engine/timeline_process.h"
 #include <string.h>
 
@@ -494,7 +495,7 @@ static bool is_action_hand_object_thrown(uint16_t champion_index)
     int16_t side = turn_right(g_party_direction) == c->cell || turn_back(g_party_direction) == c->cell;
     if (!action_is_object_thrown(champion_index, SLOT_HAND_ACTION, side))
         return false;
-    event_set_quiver_slot(&g_timeline_events[c->enable_action_event_index], SLOT_HAND_ACTION);
+    event_set_quiver_slot(&g_timeline.events[c->enable_action_event_index], SLOT_HAND_ACTION);
     return true;
 }
 

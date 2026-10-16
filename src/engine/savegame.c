@@ -13,6 +13,7 @@
 #include "engine/map.h"
 #include "engine/random.h"
 #include "engine/savefile.h"
+#include "engine/timeline.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,9 +67,9 @@ static void pack_globals(uint8_t *g)
     wr16(g + G_PARTY_MAP_INDEX, g_party_map_index);
     wr16(g + G_LEADER_INDEX, g_leader_index);
     wr16(g + G_MAGIC_CASTER, g_magic_caster_champion_index);
-    wr16(g + G_TIMELINE_COUNT, g_timeline_count);
-    wr16(g + G_FIRST_UNUSED_EVENT, g_first_unused_event_index);
-    wr16(g + G_EVENT_MAX_COUNT, g_event_max_count);
+    wr16(g + G_TIMELINE_COUNT, g_timeline.count);
+    wr16(g + G_FIRST_UNUSED_EVENT, g_timeline.first_unused);
+    wr16(g + G_EVENT_MAX_COUNT, g_timeline.capacity);
     wr16(g + G_ACTIVE_GROUP_COUNT, g_active_group_count);
     wr32(g + G_LAST_CREATURE_ATTACK_TIME, (uint32_t)g_last_creature_attack_time);
     wr32(g + G_LAST_PARTY_MOVEMENT_TIME, (uint32_t)g_last_party_movement_time);
@@ -92,9 +93,9 @@ static void unpack_globals(const uint8_t *g)
     g_party_map_index = be16(g + G_PARTY_MAP_INDEX);
     g_leader_index = be16(g + G_LEADER_INDEX);
     g_magic_caster_champion_index = be16(g + G_MAGIC_CASTER);
-    g_timeline_count = be16(g + G_TIMELINE_COUNT);
-    g_first_unused_event_index = be16(g + G_FIRST_UNUSED_EVENT);
-    g_event_max_count = be16(g + G_EVENT_MAX_COUNT);
+    g_timeline.count = be16(g + G_TIMELINE_COUNT);
+    g_timeline.first_unused = be16(g + G_FIRST_UNUSED_EVENT);
+    g_timeline.capacity = be16(g + G_EVENT_MAX_COUNT);
     g_active_group_count = be16(g + G_ACTIVE_GROUP_COUNT);
     g_last_creature_attack_time = be32(g + G_LAST_CREATURE_ATTACK_TIME);
     g_last_party_movement_time = be32(g + G_LAST_PARTY_MOVEMENT_TIME);
@@ -229,8 +230,8 @@ static uint8_t *encode_game(uint32_t *size)
     uint8_t header[SAVE_HEADER_BYTES], globals[SAVE_GLOBALS_BYTES], champions[SAVE_CHAMPIONS_BYTES];
     uint8_t portraits[SAVE_PORTRAITS_BYTES];
     uint16_t group_bytes = g_max_active_group_count * SAVE_ACTIVE_GROUP_BYTES;
-    uint16_t event_bytes = g_event_max_count * SAVE_EVENT_BYTES;
-    uint16_t timeline_bytes = g_event_max_count * TIMELINE_ENTRY_BYTES;
+    uint16_t event_bytes = g_timeline.capacity * SAVE_EVENT_BYTES;
+    uint16_t timeline_bytes = g_timeline.capacity * TIMELINE_ENTRY_BYTES;
     uint8_t *groups = malloc(group_bytes);
     uint8_t *events = malloc(event_bytes);
     uint8_t *timeline = malloc(timeline_bytes);
@@ -245,9 +246,9 @@ static uint8_t *encode_game(uint32_t *size)
     for (uint16_t i = 0; i < g_max_active_group_count; i++)
         pack_active_group(&g_active_groups[i], groups + i * SAVE_ACTIVE_GROUP_BYTES);
     pack_champions(champions);
-    for (int16_t i = 0; i < g_event_max_count; i++) {
-        pack_event(&g_timeline_events[i], events + i * SAVE_EVENT_BYTES);
-        wr16(timeline + TIMELINE_ENTRY_BYTES * i, g_timeline[i]);
+    for (int16_t i = 0; i < g_timeline.capacity; i++) {
+        pack_event(&g_timeline.events[i], events + i * SAVE_EVENT_BYTES);
+        wr16(timeline + TIMELINE_ENTRY_BYTES * i, g_timeline.heap[i]);
     }
     memset(portraits, 0, sizeof portraits);
     for (uint16_t i = 0; i < g_party_champion_count; i++)
@@ -480,15 +481,11 @@ static bool allocate_tables(void)
     uint16_t groups = g_max_active_group_count;
     if (g_adventure == ADVENTURE_DM && groups < ACTIVE_GROUP_MAX_COUNT)
         groups = ACTIVE_GROUP_MAX_COUNT;
-    if (g_event_max_count <= 0)
+    if (!timeline_allocate(g_timeline.capacity))
         return false;
-    free(g_timeline_events);
-    free(g_timeline);
     free(g_active_groups);
-    g_timeline_events = calloc((size_t)g_event_max_count, sizeof *g_timeline_events);
-    g_timeline = calloc((size_t)g_event_max_count, sizeof *g_timeline);
     g_active_groups = malloc(groups * sizeof *g_active_groups);
-    if (!g_timeline_events || !g_timeline || !g_active_groups)
+    if (!g_active_groups)
         return false;
     for (uint16_t i = 0; i < groups; i++)
         g_active_groups[i].group_index = -1;
@@ -511,9 +508,9 @@ static bool restore_game(const SaveFile *s)
     for (int i = 0; i < CHAMPION_MAX_COUNT; i++)
         champion_unpack(s->block[SAVE_BLOCK_CHAMPIONS] + i * CHAMPION_RECORD_SIZE, &g_champions[i]);
     unpack_party(s->block[SAVE_BLOCK_CHAMPIONS] + CHAMPION_MAX_COUNT * CHAMPION_RECORD_SIZE);
-    for (int16_t i = 0; i < g_event_max_count; i++) {
-        unpack_event(s->block[SAVE_BLOCK_EVENTS] + i * SAVE_EVENT_BYTES, &g_timeline_events[i]);
-        g_timeline[i] = be16(s->block[SAVE_BLOCK_TIMELINE] + TIMELINE_ENTRY_BYTES * i);
+    for (int16_t i = 0; i < g_timeline.capacity; i++) {
+        unpack_event(s->block[SAVE_BLOCK_EVENTS] + i * SAVE_EVENT_BYTES, &g_timeline.events[i]);
+        g_timeline.heap[i] = be16(s->block[SAVE_BLOCK_TIMELINE] + TIMELINE_ENTRY_BYTES * i);
     }
     timeline_reset();
     for (uint16_t i = 0; i < g_party_champion_count && i < CHAMPION_MAX_COUNT; i++)

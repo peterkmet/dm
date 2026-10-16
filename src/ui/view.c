@@ -12,6 +12,7 @@
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/recruit.h"
+#include "engine/timeline.h"
 #include "ui/advanced.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
@@ -938,7 +939,7 @@ static int16_t get_projectile_pose(const uint8_t *aspect, uint16_t thing, int16_
         pose = POSE_FRONT;
     else {
         uint16_t flight =
-            g_timeline_events ? projectile_event_direction(&g_timeline_events[rec_projectile_event_index(thing)]) : dir;
+            g_timeline.events ? projectile_event_direction(&g_timeline.events[rec_projectile_event_index(thing)]) : dir;
         if ((dir & 1) == (flight & 1)) { /* flying away from or toward the party: front or back pose */
             pose = kind < PROJECTILE_NO_BACK && (kind != PROJECTILE_BACK || flight == dir) && !odd_square ? POSE_BACK
                                                                                                           : POSE_FRONT;
@@ -2377,7 +2378,7 @@ static int16_t get_map_projectile_tile(uint16_t projectile, int16_t dir)
     case -PROJECTILE_ASPECT_SLIME:
         return MAP_TILE_SLIME_FIRST;
     case -PROJECTILE_ASPECT_LIGHTNING: {
-        const TimelineEvent *event = &g_timeline_events[rec_projectile_event_index(projectile)];
+        const TimelineEvent *event = &g_timeline.events[rec_projectile_event_index(projectile)];
         return MAP_TILE_LIGHTNING_FIRST +
                ((projectile_event_direction(event) & 1) != (dir & 1) ? MAP_TILE_LIGHTNING_ACROSS : 0);
     }

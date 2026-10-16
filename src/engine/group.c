@@ -11,6 +11,7 @@
 #include "engine/random.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
+#include "engine/timeline.h"
 #include "engine/timeline_process.h"
 
 #define ASPECT_KEEP_FLAGS (ASPECT_ATTACKING | ASPECT_FLIPPED)
@@ -295,8 +296,8 @@ void group_start_wandering(int16_t x, int16_t y)
 
 void group_delete_events(int16_t x, int16_t y)
 {
-    for (uint16_t i = 0; i < g_event_high_water; i++) {
-        TimelineEvent *event = &g_timeline_events[i];
+    for (uint16_t i = 0; i < g_timeline.high_water; i++) {
+        TimelineEvent *event = &g_timeline.events[i];
         if (EVENT_MAP(event) == g_current_map_index && event->type >= EVENT_GROUP_REACTION_DANGER_ON_SQUARE &&
             event->type <= EVENT_UPDATE_BEHAVIOR_CREATURE_3 && event_square_x(event) == x && event_square_y(event) == y)
             timeline_delete_event(i);
@@ -547,8 +548,8 @@ void group_delete(int16_t x, int16_t y)
 /* Events of the creatures after a dead creature move down one index; the events of the dead creature go away. */
 static void shift_creature_events(int16_t x, int16_t y, uint16_t dead_creature)
 {
-    for (uint16_t i = 0; i < g_event_high_water; i++) {
-        TimelineEvent *event = &g_timeline_events[i];
+    for (uint16_t i = 0; i < g_timeline.high_water; i++) {
+        TimelineEvent *event = &g_timeline.events[i];
         if (EVENT_MAP(event) != g_current_map_index || event_square_x(event) != x || event_square_y(event) != y ||
             event->type < EVENT_UPDATE_ASPECT_CREATURE_0 || event->type > EVENT_UPDATE_BEHAVIOR_CREATURE_3)
             continue;

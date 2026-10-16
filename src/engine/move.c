@@ -11,6 +11,7 @@
 #include "engine/projectile.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
+#include "engine/timeline.h"
 #include "engine/timeline_process.h"
 
 #define SCENT_STRENGTH_MAXIMUM 80
@@ -232,7 +233,7 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
             start_direction = g_party_direction;
         }
         if (type == THING_PROJECTILE)
-            g_move_result_direction = projectile_event_direction(&g_timeline_events[rec_projectile_event_index(thing)]);
+            g_move_result_direction = projectile_event_direction(&g_timeline.events[rec_projectile_event_index(thing)]);
         thing = follow_square_chain(thing, src_x, &dst_x, &dst_y, &map, &start_direction);
         g_move_result_cell = THING_CELL(thing);
         same_square = map == src_map && dst_x == src_x && dst_y == src_y;

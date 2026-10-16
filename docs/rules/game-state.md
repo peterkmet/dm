@@ -94,7 +94,7 @@ The portrait pointer (`0x114`) is not in the struct. Champion recruiting adds it
 | `g_game_id` | `0x1040f2` | `uint32_t` |
 | `g_last_creature_attack_time` | `0x10314e` | `int32_t` |
 | `g_last_party_movement_time` | `0x103152` | `int32_t` |
-| `g_watchdog_time` | `0x103184` | `int32_t` |
+| `g_timeline.watchdog_time` | `0x103184` | `int32_t` |
 | `g_disabled_movement_ticks` | `0x1001f2` | `int16_t` |
 | `g_projectile_disabled_movement_ticks` | `0x1001f4` | `int16_t` |
 | `g_last_projectile_disabled_movement_direction` | `0x1001f6` | `int16_t` |
@@ -105,12 +105,12 @@ These globals are the values that the save file header stores.
 
 | C name | Original | Type |
 |---|---|---|
-| `g_timeline_events` | `0x103178` | `TimelineEvent *`, `g_event_max_count` slots |
+| `g_timeline.events` | `0x103178` | `TimelineEvent *`, `g_timeline.capacity` slots |
 | `g_timeline` | `0x10317c` | `uint16_t *`, binary min-heap of slot indices |
-| `g_timeline_count` | `0x103180` | `uint16_t`, heap size |
-| `g_first_unused_event_index` | `0x103182` | `int16_t`, head of the free list |
-| `g_event_high_water` | `0x103176` | `uint16_t`, highest used slot + 1 |
-| `g_event_max_count` | `0x103174` | `int16_t`, in `dungeon.h` |
+| `g_timeline.count` | `0x103180` | `uint16_t`, heap size |
+| `g_timeline.first_unused` | `0x103182` | `int16_t`, head of the free list |
+| `g_timeline.high_water` | `0x103176` | `uint16_t`, highest used slot + 1 |
+| `g_timeline.capacity` | `0x103174` | `int16_t` |
 
 `TimelineEvent` replaces the 10-byte original event:
 
@@ -148,7 +148,7 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 
 ### Merge rules
 
-`timeline_find_mergeable_event` scans the slots below `g_event_high_water`. "Same place" means the same `map_time` and the same `b`.
+`timeline_find_mergeable_event` scans the slots below `g_timeline.high_water`. "Same place" means the same `map_time` and the same `b`.
 
 - New type 5–10 (square event):
   - An existing type 5–10 event at the same place gets the new effect. For type 6, the cell must also be equal. The function returns its index.

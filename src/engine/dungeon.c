@@ -5,6 +5,7 @@
 #include "data/tables.h"
 #include "engine/game.h"
 #include "engine/map.h"
+#include "engine/timeline.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,7 +15,6 @@ int16_t *g_dungeon_map_first_column;
 int16_t g_dungeon_column_count;
 uint8_t ***g_dungeon_map_data;
 uint16_t g_dungeon_id = DM_DUNGEON_ID;
-int16_t g_event_max_count;
 int16_t g_party_map_x, g_party_map_y, g_party_direction, g_party_map_index;
 
 const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_RECORD_BYTES, 4, 4, 4, 4, 8, 4, 0,
@@ -206,7 +206,7 @@ static bool read_square_things_and_text(bool new_game, uint16_t *sum)
 static bool read_things(bool new_game, uint16_t *sum)
 {
     if (new_game)
-        g_event_max_count = NEW_GAME_EVENT_COUNT;
+        g_timeline.capacity = NEW_GAME_EVENT_COUNT;
     for (int16_t t = 0; t < THING_TYPE_COUNT; t++) {
         /* a count above 32767 is negative */
         int16_t count = (int16_t)thing_count(t);
@@ -224,7 +224,7 @@ static bool read_things(bool new_game, uint16_t *sum)
         if (!read_summed_block(g_thing_data[t], sum, count * size))
             return false;
         if (new_game && (t == THING_GROUP || t == THING_PROJECTILE || t == THING_EXPLOSION))
-            g_event_max_count += total;
+            g_timeline.capacity += total;
         for (int16_t i = count; i < total; i++)
             wr16(g_thing_data[t] + i * size, THING_NONE);
     }

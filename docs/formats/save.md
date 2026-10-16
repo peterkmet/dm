@@ -100,9 +100,9 @@ The checksum is weak. A change that sets a bit in the plain word and clears the 
 | 18 | 2 | `g_party_map_index` |
 | 20 | 2 | `g_leader_index` |
 | 22 | 2 | `g_magic_caster_champion_index` |
-| 24 | 2 | `g_timeline_count` |
-| 26 | 2 | `g_first_unused_event_index` |
-| 28 | 2 | `g_event_max_count` |
+| 24 | 2 | `g_timeline.count` |
+| 26 | 2 | `g_timeline.first_unused` |
+| 28 | 2 | `g_timeline.capacity` |
 | 30 | 2 | `g_active_group_count` |
 | 32 | 4 | `g_last_creature_attack_time` (`0x10314e`) |
 | 36 | 4 | `g_last_party_movement_time` |
@@ -123,11 +123,11 @@ Before the save, `save_game` removes the weight of the leader hand object from t
 
 ### Block 3: timeline events
 
-`g_timeline_events`: 10 bytes per event, `g_event_max_count` entries.
+`g_timeline.events`: 10 bytes per event, `g_timeline.capacity` entries.
 
 ### Block 4: timeline index
 
-`g_timeline`: one word per event, `g_event_max_count` entries.
+`g_timeline.heap`: one word per event, `g_timeline.capacity` entries.
 
 ### Portraits
 
@@ -216,7 +216,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 1. Read `DMGAME.DAT`. When it is missing, read `DMGAME.BAK`.
 2. `save_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
 3. Copy block 0 into the globals. `g_last_load_game_time` gets the game time.
-4. Allocate the timeline for `g_event_max_count` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB allocates exactly the saved count and keeps it. A new CSB game has 60 entries.
+4. Allocate the timeline for `g_timeline.capacity` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB allocates exactly the saved count and keeps it. A new CSB game has 60 entries.
 5. Find the portrait index of each party champion (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
 6. Clear `g_party_dead` and the sleep flag. Set `g_saved_game_exists`.
 7. When the file was the backup, rename it to `DMGAME.DAT`.
@@ -240,7 +240,7 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 ### Dungeon part (`dungeon.c`)
 
 - `uint8_t *dungeon_save(uint32_t *size)` writes the parts in the order of `save_game`: header, maps, column first-thing indices, square first things, text data, 16 thing arrays, raw map data. Then the 16-bit sum of all bytes. The header has the counts with the free records of the new game, so the load needs no extras.
-- `int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `dungeon_load` for a saved game: no compression, no party start from the header, no free records, and no new `g_event_max_count`. It checks the byte sum when the word is there.
+- `int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `dungeon_load` for a saved game: no compression, no party start from the header, no free records, and no new `g_timeline.capacity`. It checks the byte sum when the word is there.
 
 ## Tests
 

@@ -105,6 +105,13 @@ class TimelineEvent(ctypes.Structure):
     _fields_ = [("map_time", ctypes.c_uint32), ("type", u8), ("priority", u8), ("b", u16), ("c", u16)]
 
 
+class Timeline(ctypes.Structure):
+    _fields_ = [
+        ("events", ctypes.c_void_p), ("heap", ctypes.c_void_p), ("capacity", ctypes.c_int16),
+        ("count", u16), ("high_water", u16), ("first_unused", ctypes.c_int16), ("watchdog_time", ctypes.c_int32),
+    ]
+
+
 class RecruitData(ctypes.Structure):
     _fields_ = [
         ("name", ctypes.c_char * 8), ("title", ctypes.c_char * 20), ("male", ctypes.c_uint8),
@@ -371,12 +378,10 @@ def recruit_and_hold_object(game):
 GLOBALS = [
     ("g_game_time", u32), ("g_random_seed", u32), ("g_leader_hand_object", u16), ("g_party_champion_count", u16),
     ("g_party_map_x", c16), ("g_party_map_y", c16), ("g_party_direction", c16), ("g_party_map_index", c16),
-    ("g_leader_index", c16), ("g_magic_caster_champion_index", c16), ("g_timeline_count", u16),
-    ("g_first_unused_event_index", c16), ("g_event_max_count", c16), ("g_active_group_count", u16),
+    ("g_leader_index", c16), ("g_magic_caster_champion_index", c16), ("g_active_group_count", u16),
     ("g_last_creature_attack_time", ctypes.c_int32), ("g_last_party_movement_time", ctypes.c_int32),
     ("g_disabled_movement_ticks", c16), ("g_projectile_disabled_movement_ticks", c16),
     ("g_last_projectile_disabled_movement_direction", c16), ("g_max_active_group_count", u16), ("g_game_id", u32),
-    ("g_event_high_water", u16),
 ]
 
 
@@ -392,7 +397,10 @@ def state(game):
     """The saved part of the game state: globals, champions, party, timeline, active groups, dungeon."""
     lib = game.lib
     values = {name: kind.in_dll(lib, name).value for name, kind in GLOBALS}
-    events = values["g_event_max_count"]
+    timeline = Timeline.in_dll(lib, "g_timeline")
+    events = timeline.capacity
+    values.update(timeline_count=timeline.count, first_unused_event=timeline.first_unused, event_capacity=events,
+                  event_high_water=timeline.high_water)
     packed = ctypes.create_string_buffer(CHAMPION_BYTES)
     champions = []
     for i in range(4):
@@ -407,8 +415,8 @@ def state(game):
         "champions": champions,
         "portraits": bytes((ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits"))[: values["g_party_champion_count"] * 32 * 29],
         "party": raw(lib, "g_party", PARTY_BYTES),
-        "events": raw_array(lib, "g_timeline_events", events * EVENT_BYTES),
-        "timeline": raw_array(lib, "g_timeline", events * 2),
+        "events": ctypes.string_at(timeline.events, events * EVENT_BYTES),
+        "timeline": ctypes.string_at(timeline.heap, events * 2),
         "active_groups": raw_array(lib, "g_active_groups", values["g_max_active_group_count"] * ACTIVE_GROUP_BYTES),
         "dungeon": dungeon,
     }
@@ -492,9 +500,9 @@ def tick(lib, seen=None):
     """One game loop tick: the map change, the timeline, then the game time."""
     lib.move_process_new_party_map()
     if seen is not None:
-        timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
-        heap = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline"), ctypes.POINTER(u16))
-        if var(lib, u16, "g_timeline_count").value:
+        timeline = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
+        heap = ctypes.cast(Timeline.in_dll(lib, "g_timeline").heap, ctypes.POINTER(u16))
+        if Timeline.in_dll(lib, "g_timeline").count:
             seen.add(timeline[heap[0]].type)
     lib.event_process_expired()
     var(lib, ctypes.c_uint32, "g_game_time").value += 1
@@ -550,8 +558,8 @@ def skeleton_map_and_squares(lib):
 
 
 def events(lib, event_type):
-    timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
-    return [timeline[i] for i in range(u16.in_dll(lib, "g_event_high_water").value) if timeline[i].type == event_type]
+    timeline = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
+    return [timeline[i] for i in range(Timeline.in_dll(lib, "g_timeline").high_water) if timeline[i].type == event_type]
 
 
 def things(lib, m, x, y):

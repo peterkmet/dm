@@ -119,7 +119,7 @@ Unchanged indices that the port uses: 0, 6, 7–9, 12–25, 27–41, 46, 48–32
 | Maps | 2: map 0 is 20 × 16 (level 0), map 1 is 21 × 16 (level 1, offset 1, 3) |
 | Party start | Map 0, X 9, Y 0, direction 2 (south) |
 | Thing counts in the file | 4 doors, 26 texts, 30 sensors, 12 groups |
-| `g_event_max_count` after a new-game load | 297 |
+| `g_timeline.capacity` after a new-game load | 297 |
 
 The scratch script `dun.py` loads the file with `kaos_load("game/KAOS.FTL")` and `dungeon_load`. The call returns 1. The thing counts include the new-game extras (groups 87 = 12 + 75). The CSB engine uses the same thing record sizes (`0x10154a`) and the same new-game extra counts (`0x10155a`) as DM, so the DM KAOS tables give the correct result.
 

@@ -16,6 +16,7 @@
 #include "engine/savegame.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
+#include "engine/timeline.h"
 
 #define DOOR_CLOSE_DAMAGE       5
 #define COUNTER_MAXIMUM         511 /* the counter data has 9 bits */
@@ -292,7 +293,7 @@ void event_process_wall(TimelineEvent *event)
 /* A moved projectile keeps its step energy and gets its new square, direction, cell, and map. */
 static void update_projectile_event(uint16_t projectile)
 {
-    TimelineEvent *e = &g_timeline_events[rec_projectile_event_index(projectile)];
+    TimelineEvent *e = &g_timeline.events[rec_projectile_event_index(projectile)];
     e->c = projectile_event_c(g_move_result_map_x, g_move_result_map_y, g_move_result_direction,
                               projectile_event_step_energy(e));
     e->b = THING_WITH_CELL(projectile, g_move_result_cell);
@@ -302,8 +303,8 @@ static void update_projectile_event(uint16_t projectile)
 /* A moved explosion gets its new square, cell, and map in its explosion events. */
 static void update_explosion_events(uint16_t explosion)
 {
-    for (uint16_t i = 0; i < g_event_high_water; i++) {
-        TimelineEvent *e = &g_timeline_events[i];
+    for (uint16_t i = 0; i < g_timeline.high_water; i++) {
+        TimelineEvent *e = &g_timeline.events[i];
         if (e->type == EVENT_EXPLOSION && e->c == explosion) {
             e->b = event_square(g_move_result_map_x, g_move_result_map_y);
             e->c = THING_WITH_CELL(explosion, g_move_result_cell);
