@@ -992,3 +992,5 @@ notation ui/view.h open: epic 8
 packed ui/view.c open: epic 8
 dead-api data/file.h:file_write open: epic 5
 dead-api data/file.h:file_replace open: epic 5
+dead-api data/graphics.h:box_contains open: epic 8
+dead-api data/graphics.h:gfx_close open: epic 4

@@ -225,7 +225,7 @@ Reuse these existing functions. Do not add a font renderer.
 |---|---|---|
 | Load the font without KAOS | `gfx_open(path)` and `text_init()` | `graphics.c`, `text.c` |
 | Text on `fb` | `text_draw_screen(x, y, fg, bg, s)` | `text.c` |
-| Centered text width | `text_get_size(s, &w, &h)`, `TEXT_CHAR_WIDTH`, `TEXT_LINE_HEIGHT` | `text.c`, `text.h` |
+| Centered text width | `text_get_size(s, &w, &h)`, `FONT_CHAR_WIDTH`, `FONT_LINE_HEIGHT` | `text.c`, `text.h` |
 | Black background | `memset(fb, COLOR_BLACK, sizeof fb)` | `video.h` |
 | Own palette, no KAOS | `ui_set_screen_palette(colors)` with a 16-entry array | `ui.c` |
 | Color names | `COLOR_BLACK`, `COLOR_DARK_GRAY`, `COLOR_LIGHT_GRAY`, `COLOR_GOLD` | `ui.h` |

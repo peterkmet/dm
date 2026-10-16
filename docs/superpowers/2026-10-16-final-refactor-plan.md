@@ -4759,8 +4759,8 @@ files), -1 → `ADVENTURE_DISK_FAILED`).
 ### Task 40: graphics.h owns Box and the font metrics; gfx_close
 
 **Files:**
-- Modify: `src/data/graphics.h`, `src/data/graphics.c`, `src/ui/draw.h`, users of `TEXT_CHAR_WIDTH`,
-  `TEXT_CHAR_GAP`, `TEXT_LINE_HEIGHT`, `TEXT_BASELINE_GAP` (`engine/message.c`, `engine/message.h`,
+- Modify: `src/data/graphics.h`, `src/data/graphics.c`, `src/ui/draw.h`, users of `FONT_CHAR_WIDTH`,
+  `FONT_CHAR_GAP`, `FONT_LINE_HEIGHT`, `FONT_BASELINE_GAP` (`engine/message.c`, `engine/message.h`,
   `ui/advanced.c`, `ui/automap.c`, `ui/dialog.c`, `ui/startend.c`, `ui/text.c`, `ui/ui_champion.c`, `ui/ui.c`)
 
 **Interfaces:**
@@ -4806,7 +4806,7 @@ no `gfx_close`; `gfx_open` frees the previous state but keeps `graphics_data` wh
   The prefix line of `graphics.h` becomes `/* Prefixes: gfx_ box_ */`. Check `grep -rn "\bbox_" src` for another
   `box_` name first; a clash stops the task. `box_contains` has no caller until package G; add
   `dead-api data/graphics.h:box_contains open: epic 8`.
-- [ ] **Step 2: Rename the font metrics** to `FONT_*`: `grep -rl "TEXT_CHAR_WIDTH\|TEXT_CHAR_GAP\|TEXT_LINE_HEIGHT\|TEXT_BASELINE_GAP" src tests docs | xargs sed -i '' -E 's/TEXT_(CHAR_WIDTH|CHAR_GAP|LINE_HEIGHT|BASELINE_GAP)/FONT_\1/g'`.
+- [ ] **Step 2: Rename the font metrics** to `FONT_*`: `grep -rl "FONT_CHAR_WIDTH\|FONT_CHAR_GAP\|FONT_LINE_HEIGHT\|FONT_BASELINE_GAP" src tests docs | xargs sed -i '' -E 's/TEXT_(CHAR_WIDTH|CHAR_GAP|LINE_HEIGHT|BASELINE_GAP)/FONT_\1/g'`.
   The block comment stays `/* Text metrics of the built-in font. */`.
 - [ ] **Step 3: Name the Graphics.DAT header** in `graphics.c`: a decimal block `GFX_HEADER_BYTES 4` (format word
   and item count), `GFX_ITEM_ENTRY_BYTES 8` (the size words of one item), `GFX_HEADER_ITEM_COUNT 2` (offset of the

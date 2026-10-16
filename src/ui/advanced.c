@@ -46,21 +46,21 @@ static void draw_readout(Bitmap *viewport)
 {
     char line[READOUT_TEXT_SIZE];
     int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN;
-    int16_t y = AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP;
+    int16_t y = AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + FONT_LINE_HEIGHT - FONT_BASELINE_GAP;
     snprintf(line, sizeof line, "LEVEL %u X %d Y %d", map_level(g_party_map_index), g_party_map_x, g_party_map_y);
     text_draw(viewport, x, y, COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)],
              inventory_get_party_light());
-    text_draw(viewport, x, y + TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP, COLOR_WHITE, COLOR_BLACK, line);
+    text_draw(viewport, x, y + FONT_LINE_HEIGHT + FONT_BASELINE_GAP, COLOR_WHITE, COLOR_BLACK, line);
     if (g_game_mode != GAME_MODE_ADVANCED)
         return;
     snprintf(line, sizeof line, "L LIGHT %s I IMMORTAL %s", g_cheat_light ? "ON" : "OFF",
              g_cheat_immortal ? "ON" : "OFF");
-    text_draw(viewport, x, y + 2 * (TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
+    text_draw(viewport, x, y + 2 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "F FOOD AND WATER %s", g_cheat_food ? "ON" : "OFF");
-    text_draw(viewport, x, y + 3 * (TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
+    text_draw(viewport, x, y + 3 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "1 2 3 MUSIC %s", soundtrack_names[g_music_soundtrack]);
-    text_draw(viewport, x, y + 4 * (TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
+    text_draw(viewport, x, y + 4 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
 }
 
 void advanced_draw_automap(void)

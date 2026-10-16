@@ -2,9 +2,9 @@
 #ifndef DM_UI_UI_H
 #define DM_UI_UI_H
 /* Prefixes: ui_ panel_ menus_ */
+#include "data/graphics.h"
 #include "data/tables.h"
 #include "engine/champion.h"
-#include "ui/draw.h"
 #include <stdbool.h>
 #include <stdint.h>
 

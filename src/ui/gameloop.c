@@ -25,6 +25,7 @@
 #include "ui/automap.h"
 #include "ui/command.h"
 #include "ui/dialog.h"
+#include "ui/draw.h"
 #include "ui/layout.h"
 #include "ui/music.h"
 #include "ui/startend.h"

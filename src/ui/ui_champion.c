@@ -14,6 +14,7 @@
 #include "engine/message.h"
 #include "ui/advanced.h"
 #include "ui/command.h"
+#include "ui/draw.h"
 #include "ui/layout.h"
 #include "ui/text.h"
 #include "ui/ui.h"
@@ -471,7 +472,7 @@ void ui_draw_champion_skills_and_statistics(void)
                               : COLOR_LIGHT_GRAY,
                   COLOR_DARKEST_GRAY, format_number(a, cur, 1, VALUE_WIDTH));
         snprintf(line, sizeof line, "/%s", format_number(b, max, 1, VALUE_WIDTH));
-        text_draw(viewport, vx + TEXT_CHAR_WIDTH * VALUE_WIDTH, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, line);
+        text_draw(viewport, vx + FONT_CHAR_WIDTH * VALUE_WIDTH, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, line);
         y += MESSAGE_ROW_HEIGHT;
     }
 }
@@ -693,7 +694,7 @@ static void draw_scroll_line(int16_t x, int16_t y, char *text)
     for (int i = 0; g_advanced_features && text[i]; i++) {
         char glyph[2] = {text[i], 0};
         if ((uint8_t)text[i] >= RUNE_FIRST && (uint8_t)text[i] < RUNE_FIRST + UI_RUNE_COUNT)
-            text_draw(ui_get_viewport(), left + i * TEXT_CHAR_WIDTH, y, COLOR_RED, COLOR_WHITE, glyph);
+            text_draw(ui_get_viewport(), left + i * FONT_CHAR_WIDTH, y, COLOR_RED, COLOR_WHITE, glyph);
     }
 }
 
@@ -775,7 +776,7 @@ static void draw_panel_scroll(uint16_t scroll)
     }
     ui_blit_graphic(ui_get_viewport(), GFX_PANEL_SCROLL, ZONE_PANEL, COLOR_RED);
     get_zone_point(ZONE_PANEL_SCROLL_CENTER, &x, &y);
-    y -= ((MESSAGE_ROW_HEIGHT * count - TEXT_BASELINE_GAP - 1) >> 1) - TEXT_LINE_HEIGHT;
+    y -= ((MESSAGE_ROW_HEIGHT * count - FONT_BASELINE_GAP - 1) >> 1) - FONT_LINE_HEIGHT;
     draw_scroll_line(x, y, text);
     while (*rest) {
         char *nl = strchr(rest, '\n');
@@ -822,7 +823,7 @@ static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t va
 {
     Bitmap *viewport = ui_get_viewport();
     char text[8];
-    int16_t bar_x = x + METER_LABEL_CHARS * TEXT_CHAR_WIDTH;
+    int16_t bar_x = x + METER_LABEL_CHARS * FONT_CHAR_WIDTH;
     int16_t top = y - METER_BAR_ABOVE_BASELINE;
     int16_t filled = value >= maximum ? METER_BAR_WIDTH : value * METER_BAR_WIDTH / maximum;
     if (value && !filled)

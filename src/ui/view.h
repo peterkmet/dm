@@ -2,7 +2,7 @@
 #ifndef DM_UI_VIEW_H
 #define DM_UI_VIEW_H
 /* Prefixes: view_ */
-#include "ui/draw.h"
+#include "data/graphics.h"
 #include <stdbool.h>
 #include <stdint.h>
 

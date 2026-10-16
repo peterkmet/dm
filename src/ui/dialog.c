@@ -3,6 +3,7 @@
 #include "data/ids.h"
 #include "engine/message.h"
 #include "ui/command.h"
+#include "ui/draw.h"
 #include "ui/layout.h"
 #include "ui/startend.h"
 #include "ui/text.h"
@@ -85,11 +86,11 @@ static void draw_messages(Bitmap *viewport, const char *message[MESSAGE_COUNT], 
         if (!message[i] || !text_get_size(message[i], &width[i], &height))
             continue;
         lines[i] = box.w - (box.w >> WIDE_MESSAGE_SHIFT) < width[i] ? 2 : 1;
-        total += (height + pad * 2 - TEXT_BASELINE_GAP + 1) * lines[i];
+        total += (height + pad * 2 - FONT_BASELINE_GAP + 1) * lines[i];
     }
     if (!total)
         return;
-    int y = TEXT_LINE_HEIGHT + box.y + ((uint16_t)(box.h + pad * 2 - total) >> 1) -
+    int y = FONT_LINE_HEIGHT + box.y + ((uint16_t)(box.h + pad * 2 - total) >> 1) -
             1; /* unsigned half as in the original */
     for (int i = 0; i < MESSAGE_COUNT; i++) {
         if (!lines[i])

@@ -37,7 +37,7 @@ void text_draw(Bitmap *bm, int x, int y, uint8_t fg, uint8_t bg, const char *s)
 {
     if (!font)
         return;
-    for (; *s; s++, x += TEXT_CHAR_WIDTH) {
+    for (; *s; s++, x += FONT_CHAR_WIDTH) {
         unsigned c = (uint8_t)*s;
         for (int r = 0; r < FONT_ROWS; r++) {
             int py = y - GLYPH_TOP_ABOVE_BASELINE + r;
@@ -59,10 +59,10 @@ void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s)
 bool text_get_size(const char *s, int *w, int *h)
 {
     int n = s ? (int)strlen(s) : 0;
-    if (n * TEXT_CHAR_WIDTH - TEXT_CHAR_GAP < 1)
+    if (n * FONT_CHAR_WIDTH - FONT_CHAR_GAP < 1)
         return false;
-    *w = n * TEXT_CHAR_WIDTH - TEXT_CHAR_GAP;
-    *h = TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP;
+    *w = n * FONT_CHAR_WIDTH - FONT_CHAR_GAP;
+    *h = FONT_LINE_HEIGHT - FONT_BASELINE_GAP;
     return true;
 }
 
