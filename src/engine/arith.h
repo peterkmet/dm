@@ -7,8 +7,8 @@
 
 #include <stdint.h>
 
-/* The 68000 takes a shift count modulo 64. */
-#define SHIFT_COUNT_MASK 0x3f
+/* The 68000 takes a shift count modulo 64; the mask limits the shift count. */
+#define SHIFT_MASK 0x3f
 
 /* A larger shift of a 32-bit value leaves only the sign or 0. */
 #define LONG_SHIFT_MAXIMUM 31
@@ -42,7 +42,7 @@ inline int16_t bounded_value(int16_t min, int16_t value, int16_t max)
 inline int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
 {
     int32_t product = (int32_t)((uint32_t)a * b); /* unsigned multiply: no signed overflow */
-    shift &= SHIFT_COUNT_MASK;
+    shift &= SHIFT_MASK;
     return shift > LONG_SHIFT_MAXIMUM ? (product < 0 ? -1 : 0) : product >> shift;
 }
 
