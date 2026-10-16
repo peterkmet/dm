@@ -29,7 +29,7 @@ DOOR_BUTTON = 0, 1, 13, 2    # facing the first door with a button
 ATTACKED = 5, 0, 0, 0        # a map that allows skeletons, with a free corridor square east of the party
 ZONE_ACTION_ICON_FIRST = 89  # + champion index: the action hand icon of the action area
 ZONE_SPELL_SYMBOL_BOX_FIRST, ZONE_SPELL_DELETE_BOX = 245, 254
-CREATURE_SKELETON = 12
+CREATURE_WIZARD_EYE, CREATURE_SKELETON = 3, 12  # the wizard eye levitates
 SKILL_COUNT = 20
 # (weapon type, charges): weapon 4 has an action that needs charges, once without and once with them
 WEAPONS = (WEAPON_TORCH, 0), (8, 0), (9, 0), (10, 0), (4, 0), (4, 3)
@@ -296,7 +296,7 @@ def test_freeze_life_and_movement_ticks(game):
 CORRIDOR, FAKE_WALL, WALL = 1, 6, 0
 FAKE_WALL_IMAGINARY, FAKE_WALL_OPEN = 1, 4
 END, NONE = 0xFFFE, 0xFFFF
-THING_INDEX = 0x3FFF  # a thing without its cell: a grabbed object keeps the cell of its pile
+THING_STRIP_CELL = 0x3FFF  # a thing without its cell: a grabbed object keeps the cell of its pile
 VIEW_CELL_FRONT_FIRST, CLICK_BOX_ALCOVE, CLICK_BOX_WALL = 2, 4, 5
 ZONE_DROP_CELL_FIRST, ZONE_THROW_LEFT = 740, 745
 KEY_UP = 0x4C00
@@ -316,7 +316,7 @@ def is_free(lib, x, y):
     return square_type(lib, x, y) == CORRIDOR and lib.map_get_square_first_thing(x, y) == END
 
 
-def find_spot(game, maps, ahead_ok):
+def find_spot(game, maps, ahead_ok, directions=range(4)):
     """The first party place (map, x, y, direction) in scan order on a free corridor whose square ahead passes ahead_ok."""
     lib = game.lib
     for m in maps:
@@ -324,8 +324,8 @@ def find_spot(game, maps, ahead_ok):
         width, height = game.value("g_current_map_width"), game.value("g_current_map_height")
         for y in range(height):
             for x in range(width):
-                for d, (dx, dy) in enumerate(STEP):
-                    ax, ay = x + dx, y + dy
+                for d in directions:
+                    ax, ay = x + STEP[d][0], y + STEP[d][1]
                     if is_free(lib, x, y) and 0 <= ax < width and 0 <= ay < height and ahead_ok(ax, ay):
                         return m, x, y, d
     raise AssertionError("no spot")
@@ -349,7 +349,7 @@ def test_grab_and_drop(game):
         assert game.value("g_leader_hand_object", u16) == NONE
         got.append(snapshot(game))
         game.click_box(game.boxes[cell])
-        assert game.value("g_leader_hand_object", u16) & THING_INDEX == flask & THING_INDEX
+        assert game.value("g_leader_hand_object", u16) & THING_STRIP_CELL == flask & THING_STRIP_CELL
         got.append(snapshot(game))
     check("grab and drop", got)
 
@@ -360,13 +360,28 @@ def test_grab_under_a_creature(game):
     recruit(game)
     m, x, y, d = find_spot(game, [ATTACKED[0]], lambda x, y: is_free(lib, x, y))
     place_party(game, m, x, y, d)
-    hold(game, new_object(game, THING_POTION, POTION_EMPTY_FLASK, byte=2))
-    game.click_zone(ZONE_DROP_CELL_FIRST + VIEW_CELL_FRONT_FIRST)
-    lib.group_get_generated(CREATURE_SKELETON, 1, 0, 3, x + STEP[d][0], y + STEP[d][1])
+    fx, fy = x + STEP[d][0], y + STEP[d][1]
+    piles = {}
+    for cell in (VIEW_CELL_FRONT_FIRST, VIEW_CELL_FRONT_FIRST + 1):
+        piles[cell] = new_object(game, THING_POTION, POTION_EMPTY_FLASK, byte=2)
+        hold(game, piles[cell])
+        game.click_zone(ZONE_DROP_CELL_FIRST + cell)
+        assert game.value("g_leader_hand_object", u16) == NONE
+    lib.map_get_square_group.restype = u16
+    lib.group_get_generated(CREATURE_SKELETON, 1, 0, 3, fx, fy)
+    group = lib.map_get_square_group(fx, fy)
+    lib.group_set_cells(group, (VIEW_CELL_FRONT_FIRST + d) % 4, m)  # the skeleton stands in view cell 2 only
     got = []
-    for cell in (VIEW_CELL_FRONT_FIRST, VIEW_CELL_FRONT_FIRST + 1):  # a creature in the cell protects the pile
+    # the creature protects its own cell only; a levitating creature protects nothing
+    for cell, creature, grabbed in ((VIEW_CELL_FRONT_FIRST, CREATURE_SKELETON, False),
+                                    (VIEW_CELL_FRONT_FIRST + 1, CREATURE_SKELETON, True),
+                                    (VIEW_CELL_FRONT_FIRST, CREATURE_WIZARD_EYE, True)):
+        lib.dungeon_get_thing_data(group)[4] = creature
         game.click_box(game.boxes[cell])
-        got.append({"hand": game.value("g_leader_hand_object", u16), **snapshot(game)})
+        hand = game.value("g_leader_hand_object", u16)
+        assert (hand & THING_STRIP_CELL == piles[cell] & THING_STRIP_CELL) if grabbed else hand == NONE
+        got.append({"hand": hand, **snapshot(game)})
+        lib.inventory_get_object_removed_from_leader_hand()
     check("grab under a creature", got)
 
 
@@ -395,7 +410,7 @@ def test_alcove(game):
     assert game.value("g_leader_hand_object", u16) == NONE
     got = [snapshot(game)]
     game.click_box(game.boxes[CLICK_BOX_ALCOVE])
-    assert game.value("g_leader_hand_object", u16) & THING_INDEX == flask & THING_INDEX
+    assert game.value("g_leader_hand_object", u16) & THING_STRIP_CELL == flask & THING_STRIP_CELL
     got.append(snapshot(game))
     check("alcove", got)
 
@@ -423,19 +438,22 @@ def test_imaginary_wall(game):
 def test_movement_blocked(game):
     lib = game.lib
     recruit(game)
-    m, x, y, d = find_spot(game, [0], lambda x, y: is_free(lib, x, y))
-    place_party(game, m, x, y, d)
+    spot = find_spot(game, [0], lambda x, y: is_free(lib, x, y), directions=(1, 3))  # east or west: not direction 0
+    blockers = ("g_disabled_movement_ticks", "g_projectile_disabled_movement_ticks")
     got = []
-    for blocker in ("g_disabled_movement_ticks", "g_projectile_disabled_movement_ticks"):
-        start = game.position()
+    # (blocker, projectile direction relative to the party, blocked): a projectile blocks only its own direction
+    for blocker, turn, blocked in ((blockers[0], 0, True), (blockers[1], 0, True), (blockers[1], 2, False)):
+        place_party(game, *spot)
         c16.in_dll(lib, blocker).value = 3
-        c16.in_dll(lib, "g_last_projectile_disabled_movement_direction").value = start[2]
+        c16.in_dll(lib, "g_last_projectile_disabled_movement_direction").value = (spot[3] + turn) % 4
         game.key(KEY_UP)
         game.run(1)
+        assert (game.position()[:2] == list(spot[1:3])) == blocked
         got.append({"position": game.position(), **snapshot(game)})
-        assert game.until(lambda: game.position()[:2] != start[:2])
+        assert game.until(lambda: game.position()[:2] != list(spot[1:3]))
         got.append({"position": game.position(), **snapshot(game)})
-        game.face((start[2] + 2) % 4)
+        for name in blockers:
+            c16.in_dll(lib, name).value = 0
     check("movement blocked", got)
 
 
