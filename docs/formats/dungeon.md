@@ -181,6 +181,7 @@ The function reads all three tables from the KAOS image. The single characters f
 ## Deviations
 
 - A creature type beyond the creature table has no attributes (`map_get_creature_attributes`).
+- An icon below the first icon sheet draws empty (`ui_extract_icon`); the original reads the sheet table before its first entry.
 
 ## Not ported
 

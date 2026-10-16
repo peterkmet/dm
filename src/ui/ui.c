@@ -226,11 +226,14 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
     int sheet = 0;
     while (sheet < ICON_SHEET_COUNT && tables_get_icon_sheet_first(sheet) <= icon)
         sheet++;
-    int16_t i = icon - tables_get_icon_sheet_first(sheet - 1);
-    const Bitmap *bm = gfx_get_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     out->w = UI_ICON_SIZE;
     out->h = UI_ICON_SIZE;
     memset(out->px, 0, UI_ICON_SIZE * UI_ICON_SIZE);
+    /* an icon below the first sheet draws empty (the original reads before the table) */
+    if (sheet == 0)
+        return;
+    int16_t i = icon - tables_get_icon_sheet_first(sheet - 1);
+    const Bitmap *bm = gfx_get_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     if (bm)
         draw_blit(bm, i % ICONS_PER_ROW * UI_ICON_SIZE, i / ICONS_PER_ROW * UI_ICON_SIZE, out,
                   &(Box){0, 0, UI_ICON_SIZE, UI_ICON_SIZE}, COLOR_NONE, 0);
