@@ -156,14 +156,11 @@ enum { ADVENTURE_DM, ADVENTURE_CSB };
 extern int16_t g_adventure;                 /* ADVENTURE_DM by default; not reset by game_start_new */
 
 /* The adventure of a --adventure value, or -1. */
-int adventure_of(const char *name);
-/* The default disk A folder: "game" (DM) or "game-csb" (CSB). */
-const char *adventure_default_dir(int16_t adventure);
-/* The save and backup file names of the adventure: DMGAME.DAT/.BAK or CSBGAME.DAT/.BAK. */
-const char *adventure_save_name(void);
-const char *adventure_backup_name(void);
-/* 1 when the CSB files exist in dir: APPB.FTL, Graphics.DAT, Dungeon.DAT, and disk-b/MINI.DAT. */
-int adventure_csb_present(const char *dir);
+int16_t adventure_find(const char *name);
+/* The record of an adventure: dir ("game" or "game-csb"), save and backup (DMGAME.DAT/.BAK or CSBGAME.DAT/.BAK). */
+const Adventure *adventure_get(int16_t adventure);
+/* True when the CSB files exist in dir: APPB.FTL, Graphics.DAT, Dungeon.DAT, and disk-b/MINI.DAT. */
+bool adventure_is_csb_present(const char *dir);
 ```
 
 `g_adventure` is a global like `g_game_mode` (`advanced.c`). It is not in `game.c`, because `game_start_new` resets the game state and the adventure must live longer than one game.
@@ -173,14 +170,14 @@ Changes that use it:
 | File | Change |
 |---|---|
 | `savegame.h` | Remove `SAVE_FILE_NAME` and `SAVE_BACKUP_FILE_NAME`. |
-| `savegame.c` | `savegame_save` and `savegame_load` call `adventure_save_name()` and `adventure_backup_name()`. The comment in `savegame.h` names both files. |
+| `savegame.c` | `savegame_save` and `savegame_load` read `adventure_get(g_adventure)->save` and `->backup`. The comment in `savegame.h` names both files. |
 | `gameloop.c` | `gameloop_load_data` and `gameloop_start_new_game` stay as they are for DM. The CSB branch is part of the CSB engine work item (see [Dependencies](#dependencies-for-play)). |
 | `control.c` | `handle_new_game` error text becomes `"cannot start the new game"` (no file name). |
 
 The data folder is not stored in a second global. `gameloop_get_data_dir()` already returns the folder that `gameloop_load_data` read. `main` computes the folder once:
 
 ```c
-data = data_override ? data_override : adventure_default_dir(g_adventure);
+data = data_override ? data_override : adventure_get(g_adventure)->dir;
 ```
 
 `--data DIR` overrides the disk A folder of the chosen adventure. Disk B is always `<disk A folder>/disk-b`.
@@ -243,7 +240,7 @@ Layout (320 x 200): the title is not drawn as a graphic. Each screen shows a hea
 All in `main.c`, in the existing `argv` loop. Add:
 
 ```c
-if (!strcmp(argv[i], "--adventure") && (adventure = adventure_of(argv[i + 1])) < 0)
+if (!strcmp(argv[i], "--adventure") && (adventure = adventure_find(argv[i + 1])) < 0)
     return SDL_Log("--adventure must be dm or csb"), 1;
 ```
 
@@ -261,7 +258,7 @@ Rules for the flags (see [Open decisions](#open-decisions), point 1):
 | `--show`, `--view` | No screens. Always DM unless `--adventure csb`. |
 | `DM_AUTO_ENTER` set | No screens. The adventure is DM unless `--adventure` says otherwise. The mode is vanilla unless `--mode` says otherwise. The tests use this. |
 
-`csb_present` is `adventure_csb_present(adventure_default_dir(ADVENTURE_CSB))`. When `--data DIR` is given, the check uses `DIR` for the selected adventure only (see [Open decisions](#open-decisions), point 4).
+`csb_present` is `adventure_is_csb_present(adventure_get(ADVENTURE_CSB)->dir)`. When `--data DIR` is given, the check uses `DIR` for the selected adventure only (see [Open decisions](#open-decisions), point 4).
 
 ### The game loop and the screen switch
 
@@ -338,8 +335,8 @@ Argument and adventure helpers:
 
 | Test | Check |
 |---|---|
-| `test_adventure_of` | `adventure_of(b"dm") == 0`, `b"csb" == 1`, `b"DM"`, `b""`, and `b"x"` give -1. |
-| `test_default_dirs` | `adventure_default_dir(0) == b"game"`, `(1) == b"game-csb"`. |
+| `test_adventure_find` | `adventure_find(b"dm") == 0`, `b"csb" == 1`, `b"DM"`, `b""`, and `b"x"` give -1. |
+| `test_default_dirs` | `adventure_get(0)->dir == b"game"`, `adventure_get(1)->dir == b"game-csb"`. |
 | `test_save_names` | With `g_adventure` 0: `DMGAME.DAT` and `DMGAME.BAK`. With 1: `CSBGAME.DAT` and `CSBGAME.BAK`. |
 | `test_csb_present` | An empty folder gives 0. A folder with the four marker files gives 1. A folder with one file missing gives 0 (parametrized over the four files). |
 | `test_save_writes_csb_name` | With `g_adventure` 1 and a started game, `savegame_save(tmp)` creates `CSBGAME.DAT` and not `DMGAME.DAT`. A second save makes `CSBGAME.BAK`. Reuse the game setup of `tests/port/test_save.py`. |
