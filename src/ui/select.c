@@ -20,13 +20,13 @@ typedef struct {
     const char *heading;
     const char *items[ITEM_MAX_COUNT];
     int count;
-} Screen;
+} SelectScreen;
 
 /* Item order equals ADVENTURE_*, GAME_MODE_*, and CSB_*. */
-static const Screen screens[] = {
-    [SCREEN_ADVENTURE] = {"ADVENTURE",          {"DUNGEON MASTER", "CHAOS STRIKES BACK"}, 2},
-    [SCREEN_MODE] = {"MODE",               {"VANILLA", "ADVANCED", "LLM"},           3},
-    [SCREEN_CSB] = {"CHAOS STRIKES BACK", {"NEW ADVENTURE", "RESUME", "QUIT"},      3},
+static const SelectScreen screens[] = {
+    [SELECT_SCREEN_ADVENTURE] = {"ADVENTURE",          {"DUNGEON MASTER", "CHAOS STRIKES BACK"}, 2},
+    [SELECT_SCREEN_MODE] = {"MODE",               {"VANILLA", "ADVANCED", "LLM"},           3},
+    [SELECT_SCREEN_CSB] = {"CHAOS STRIKES BACK", {"NEW ADVENTURE", "RESUME", "QUIT"},      3},
 };
 
 /* The interface colors that the screens use: the KAOS palette is not loaded yet. */
@@ -36,7 +36,7 @@ static const uint16_t select_palette[PALETTE_COLORS] = {
     [COLOR_GOLD] = RGB_GOLD,
 };
 
-static int screen = SCREEN_DONE, cursor, csb_choice;
+static int screen = SELECT_SCREEN_DONE, cursor, csb_choice;
 static bool csb_enabled, adventure_given, mode_given;
 static bool llm_enabled;
 static const char *message;
@@ -47,13 +47,13 @@ static int16_t mode_flag = -1;
 /* Only CHAOS STRIKES BACK can be disabled: its files are missing. */
 static bool is_item_enabled(int item)
 {
-    return screen != SCREEN_ADVENTURE || item != ADVENTURE_CSB || csb_enabled;
+    return screen != SELECT_SCREEN_ADVENTURE || item != ADVENTURE_CSB || csb_enabled;
 }
 
 /* The items of screen s: the mode screen has no LLM item where the control socket is missing. */
 static int item_count(int s)
 {
-    return screens[s].count - (s == SCREEN_MODE && !llm_enabled);
+    return screens[s].count - (s == SELECT_SCREEN_MODE && !llm_enabled);
 }
 
 /* Shows screen s with the cursor on the first item, which is always enabled. */
@@ -67,7 +67,7 @@ static void show(int s)
 /* After the mode: the CSB entrance, or the end of the selection for DM. */
 static void show_after_mode(void)
 {
-    show(g_adventure == ADVENTURE_CSB ? SCREEN_CSB : SCREEN_DONE);
+    show(g_adventure == ADVENTURE_CSB ? SELECT_SCREEN_CSB : SELECT_SCREEN_DONE);
 }
 
 static void set_mode(int16_t mode)
@@ -88,9 +88,9 @@ void select_start(int16_t adventure, int16_t mode, bool csb_present, bool llm_mo
     if (mode_given)
         set_mode(mode);
     if (!adventure_given && !mode_given)
-        show(SCREEN_ADVENTURE);
+        show(SELECT_SCREEN_ADVENTURE);
     else if (!mode_given)
-        show(SCREEN_MODE);
+        show(SELECT_SCREEN_MODE);
     else
         show_after_mode();
 }
@@ -98,14 +98,14 @@ void select_start(int16_t adventure, int16_t mode, bool csb_present, bool llm_mo
 void select_start_csb(const char *text)
 {
     mode_given = true; /* the game mode is applied: Escape stays on the CSB screen */
-    show(SCREEN_CSB);
+    show(SELECT_SCREEN_CSB);
     message = text;
 }
 
 bool select_restart(void)
 {
     select_start(adventure_flag, mode_flag, csb_enabled, llm_enabled);
-    return screen != SCREEN_DONE;
+    return screen != SELECT_SCREEN_DONE;
 }
 
 int select_screen(void)
@@ -121,17 +121,17 @@ int select_csb_choice(void)
 static void activate(void)
 {
     switch (screen) {
-    case SCREEN_ADVENTURE:
+    case SELECT_SCREEN_ADVENTURE:
         g_adventure = cursor;
-        show(SCREEN_MODE);
+        show(SELECT_SCREEN_MODE);
         break;
-    case SCREEN_MODE:
+    case SELECT_SCREEN_MODE:
         set_mode(cursor);
         show_after_mode();
         break;
-    case SCREEN_CSB:
+    case SELECT_SCREEN_CSB:
         csb_choice = cursor; /* the program decides what QUIT does */
-        show(SCREEN_DONE);
+        show(SELECT_SCREEN_DONE);
         break;
     }
 }
@@ -148,7 +148,7 @@ static void move(int step)
 
 void select_key(int key)
 {
-    if (screen == SCREEN_DONE)
+    if (screen == SELECT_SCREEN_DONE)
         return;
     message = NULL;
     if (key == SELECT_KEY_UP)
@@ -157,16 +157,16 @@ void select_key(int key)
         move(1);
     else if (key == SELECT_KEY_ENTER)
         activate();
-    else if (key == SELECT_KEY_ESCAPE && screen == SCREEN_MODE && !adventure_given)
-        show(SCREEN_ADVENTURE);
-    else if (key == SELECT_KEY_ESCAPE && screen == SCREEN_CSB && !mode_given)
-        show(SCREEN_MODE);
+    else if (key == SELECT_KEY_ESCAPE && screen == SELECT_SCREEN_MODE && !adventure_given)
+        show(SELECT_SCREEN_ADVENTURE);
+    else if (key == SELECT_KEY_ESCAPE && screen == SELECT_SCREEN_CSB && !mode_given)
+        show(SELECT_SCREEN_MODE);
 }
 
 bool select_item_box(int item, Box *box)
 {
     int w, h;
-    if (screen == SCREEN_DONE || item < 0 || item >= item_count(screen))
+    if (screen == SELECT_SCREEN_DONE || item < 0 || item >= item_count(screen))
         return false;
     text_get_size(screens[screen].items[item], &w, &h);
     box->w = w + 2 * ITEM_MARGIN;
@@ -196,7 +196,7 @@ void select_draw(void)
     Box b;
     memset(fb, COLOR_BLACK, sizeof fb);
     ui_set_screen_palette(select_palette);
-    if (screen == SCREEN_DONE)
+    if (screen == SELECT_SCREEN_DONE)
         return;
     text_draw_box(&bm, 0, HEADING_TOP, SCREEN_W, LINE_HEIGHT, true, COLOR_LIGHT_GRAY, COLOR_BLACK,
                   screens[screen].heading);

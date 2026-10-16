@@ -15,15 +15,15 @@
 /* The channels of a video_convert_argb color. */
 static inline uint8_t video_argb_red(uint32_t argb)
 {
-    return argb >> ARGB_RED_SHIFT;
+    return (uint8_t)(argb >> ARGB_RED_SHIFT); /* the low byte is the channel */
 }
 static inline uint8_t video_argb_green(uint32_t argb)
 {
-    return argb >> ARGB_GREEN_SHIFT;
+    return (uint8_t)(argb >> ARGB_GREEN_SHIFT); /* the low byte is the channel */
 }
 static inline uint8_t video_argb_blue(uint32_t argb)
 {
-    return argb;
+    return (uint8_t)argb; /* the low byte is the channel */
 }
 
 extern uint8_t fb[SCREEN_H][SCREEN_W];
