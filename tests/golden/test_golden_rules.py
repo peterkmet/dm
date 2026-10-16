@@ -449,7 +449,7 @@ def test_visibility(game):
                         lib.explored_reset()
                         lib.automap_mark_seen(m, x, y, d)
                         buf, size = ctypes.c_void_p(), ctypes.c_size_t()
-                        assert lib.explored_save(ctypes.byref(buf), ctypes.byref(size)) == 0
+                        assert lib.explored_save(ctypes.byref(buf), ctypes.byref(size)) is True
                         digest.update(ctypes.string_at(buf, size.value))
                         lib.free(buf)
     check("visibility", [digest.hexdigest()])

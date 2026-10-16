@@ -288,7 +288,7 @@ static uint32_t append_automap(uint8_t **data, uint32_t size)
     size_t length = 0;
     if (g_game_mode == GAME_MODE_VANILLA)
         return size;
-    if (explored_save(&block, &length))
+    if (!explored_save(&block, &length))
         return 0;
     grown = realloc(*data, size + length + EXTENSION_LENGTH_BYTES);
     if (!grown) {
@@ -578,7 +578,7 @@ int16_t savegame_load_from(const char *dir, const char *name, const char *backup
             restore_snapshot(snapshot, snapshot_size);
     }
     savefile_free(&s);
-    if (ok && (!automap || explored_load(automap, automap_length)))
+    if (ok && (!automap || !explored_load(automap, automap_length)))
         explored_reset();
     free(snapshot);
     free(data);

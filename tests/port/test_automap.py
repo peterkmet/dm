@@ -119,7 +119,7 @@ def test_side_squares_behind_walls_stay_unseen(game):
 
 def save(lib):
     buf, size = ctypes.POINTER(ctypes.c_uint8)(), ctypes.c_size_t()
-    assert lib.explored_save(ctypes.byref(buf), ctypes.byref(size)) == 0
+    assert lib.explored_save(ctypes.byref(buf), ctypes.byref(size)) is True
     data = ctypes.string_at(buf, size.value)
     ctypes.CDLL(None).free(buf)
     return data
@@ -133,8 +133,8 @@ def test_save_load_round_trip(game):
     game.explored_reset()
     assert not seen_squares(game, m)
     for bad in (data[:-1], b"XMAP" + data[4:], data[:4] + b"\x02" + data[5:], data[:-1] + b"\x02"):
-        assert game.explored_load(bad, len(bad)) == -1
-    assert game.explored_load(data, len(data)) == 0
+        assert game.explored_load(bad, len(bad)) is False
+    assert game.explored_load(data, len(data)) is True
     assert seen_squares(game, m) == before
 
 
