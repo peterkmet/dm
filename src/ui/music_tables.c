@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/music.h"
+#include "ui/music_internal.h"
 
 /* FM-Towns CSB 3.1: the CD track of each square (CHTWE.EXP table), 0: no change.
    Index: map, y, x on the CSB maps 0-9; squares outside a map are 0. Source: reference/extracted/music_map.json. */
@@ -315,3 +315,33 @@ const uint8_t g_music_csb_square_tracks[MUSIC_CSB_MAP_COUNT][MUSIC_CSB_MAP_SIZE]
     },
 };
 // clang-format on
+
+/* FM-Towns DM 2.0: the CD track of each level (map 0-13). */
+const uint8_t g_music_fm_towns_dm_level_tracks[MUSIC_FM_TOWNS_DM_LEVELS] = {2,  8,  9,  14, 11, 6,  5,
+                                                                            12, 15, 16, 17, 10, 19, 3};
+
+/* Super NES DM: a track starts when the party steps on its square (map-relative Amiga squares). */
+const MusicTrigger g_music_super_nes_triggers[MUSIC_SUPER_NES_TRIGGERS] = {
+    {0,  8,  4,  1 },
+    {2,  9,  17, 2 },
+    {2,  20, 12, 3 },
+    {4,  3,  20, 3 },
+    {9,  9,  29, 4 },
+    {7,  25, 3,  5 },
+    {2,  7,  4,  6 },
+    {4,  21, 17, 6 },
+    {9,  3,  12, 7 },
+    {1,  15, 26, 8 },
+    {13, 24, 6,  8 },
+    {1,  7,  12, 9 },
+    {3,  12, 8,  9 },
+    {5,  8,  20, 10},
+    {8,  8,  31, 10},
+    {6,  14, 6,  11},
+    {5,  20, 13, 12},
+    {3,  28, 30, 13},
+    {12, 12, 11, 13},
+    {11, 16, 25, 14},
+    {10, 3,  0,  17},
+    {11, 1,  22, 17},
+};

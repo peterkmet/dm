@@ -2,6 +2,7 @@
 #ifndef DM_UI_MUSIC_H
 #define DM_UI_MUSIC_H
 /* Prefixes: music_ */
+#include <stdbool.h>
 #include <stdint.h>
 
 /* Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and
@@ -19,7 +20,6 @@ extern int16_t g_music_soundtrack;      /* MUSIC_ORIGINAL by default: no music *
 extern int16_t g_music_track;           /* the track that plays, 0: silence */
 extern int16_t g_music_last_track;      /* the track that started last, also when its file is missing */
 extern int16_t g_music_requested_track; /* FM-Towns CSB: the track of the zone, it starts after the current track */
-extern const uint8_t g_music_csb_square_tracks[MUSIC_CSB_MAP_COUNT][MUSIC_CSB_MAP_SIZE][MUSIC_CSB_MAP_SIZE];
 
 /* Selects a soundtrack (keys 1, 2, 3 on the automap) and starts the track of the party position.
    Super NES has no CSB soundtrack: the selection does nothing in CSB. */
@@ -28,10 +28,10 @@ void music_select(int16_t soundtrack);
    by zone, Super NES by trigger square. */
 void music_update(void);
 /* The track of the end of the game: game won or game over. */
-void music_play_end(int16_t won);
+void music_play_end(bool won);
 /* Stops the track; the soundtrack stays. */
 void music_stop(void);
-/* Adds the music to interleaved stereo int16 at SOUND_OUTPUT_RATE. */
+/* Adds the music to interleaved stereo int16 at AUDIO_OUTPUT_RATE. Runs on the game thread, after audio_mix. */
 void music_mix(int16_t *out, int frames);
 
 #endif

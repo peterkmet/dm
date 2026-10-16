@@ -35,9 +35,10 @@ def lib():
     lib.sound_get_volume.restype = ctypes.c_bool
     lib.sound_get_volume.argtypes = [ctypes.c_int16, ctypes.c_int16, u8p]
     lib.sound_request_play.argtypes = [ctypes.c_int16] * 3 + [ctypes.c_uint16]
-    lib.sound_play_sample.argtypes = [ctypes.c_int16, u8p]
+    lib.audio_play_sample.argtypes = [ctypes.c_int16, u8p]
     assert lib.tables_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
+    lib.audio_init()
     return lib
 
 
@@ -82,7 +83,7 @@ def expected_mix(voices, frames):
 
 def mix(lib, frames):
     buf = (ctypes.c_int16 * (2 * frames))()
-    lib.sound_mix(buf, frames)
+    lib.audio_mix(buf, frames)
     return list(buf)
 
 
@@ -91,8 +92,8 @@ def vols(left, right):
 
 
 def test_mix_single_voice(lib):
-    lib.sound_stop_all()
-    lib.sound_demo_play(0)
+    lib.audio_stop_all()
+    lib.audio_play_sample(0, vols(64, 64))
     data, period = sample(lib, 0)
     frames = len(data) * 9  # beyond the end: 44100 Hz / 5457 Hz is about 8 frames per sample
     assert mix(lib, frames) == expected_mix([(data, period, 64, 3), (data, period, 64, 2)], frames)
@@ -100,10 +101,10 @@ def test_mix_single_voice(lib):
 
 
 def test_mix_replaces_quieter_pair(lib):
-    lib.sound_stop_all()
-    lib.sound_play_sample(5, vols(40, 0))  # pair A: channels 3, 2
-    lib.sound_play_sample(7, vols(1, 1))  # pair B: channels 0, 1
-    lib.sound_play_sample(9, vols(0, 64))  # both busy: replaces B, the quieter pair
+    lib.audio_stop_all()
+    lib.audio_play_sample(5, vols(40, 0))  # pair A: channels 3, 2
+    lib.audio_play_sample(7, vols(1, 1))  # pair B: channels 0, 1
+    lib.audio_play_sample(9, vols(0, 64))  # both busy: replaces B, the quieter pair
     (a, pa), (c, pc) = sample(lib, 5), sample(lib, 9)
     frames = 2000
     assert mix(lib, frames) == expected_mix([(a, pa, 40, 3), (a, pa, 0, 2), (c, pc, 0, 0), (c, pc, 64, 1)], frames)

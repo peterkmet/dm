@@ -22,6 +22,7 @@
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
 #include "ui/advanced.h"
+#include "ui/audio.h"
 #include "ui/automap.h"
 #include "ui/command.h"
 #include "ui/dialog.h"
@@ -143,7 +144,7 @@ void entrance_press_button(int resume)
     if (bm &&
         layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
         draw_blit(bm, sx, sy + (resume ? BUTTON_HEIGHT : 0), &screen, &box, COLOR_NONE, 0);
-    sound_play_sample(SOUND_SWITCH, volumes);
+    audio_play_sample(SOUND_SWITCH, volumes);
     wait_frames(BUTTON_FRAMES);
 }
 
@@ -168,7 +169,7 @@ void entrance_open_doors(void)
     set_entrance_palette();
     for (int16_t opened = 0, frames = 0; draw_entrance_doors(&view, opened) && !g_quit_requested; opened += DOOR_STEP) {
         if (frames % SOUND_FRAMES == 0)
-            sound_play_sample(SOUND_ENTRANCE_DOOR, volumes);
+            audio_play_sample(SOUND_ENTRANCE_DOOR, volumes);
         for (int16_t f = 0; f < STEP_FRAMES && wait_frame(); f++, frames++)
             ;
     }

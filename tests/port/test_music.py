@@ -72,7 +72,7 @@ def restore(game):
 
 def mix(game, frames):
     out = (c16 * (2 * frames))()
-    game.lib.sound_mix(out, frames)
+    game.lib.audio_mix(out, frames)
     game.lib.music_mix(out, frames)
     return out
 
@@ -130,10 +130,10 @@ def test_track_plays_one_time(game):
 
 
 @pytest.mark.skipif(not TRACK_02.exists(), reason="FM-Towns MP3 files missing")
-def test_music_stop_after_sound_stop_all_stops_the_track_and_keeps_the_soundtrack(game):
+def test_music_stop_after_audio_stop_all_stops_the_track_and_keeps_the_soundtrack(game):
     update_at(game, 0, 1, 1)
     game.lib.music_select(FM_TOWNS)
-    game.lib.sound_stop_all()
+    game.lib.audio_stop_all()
     game.lib.music_stop()
     assert (var(game, "g_music_track").value, var(game, "g_music_soundtrack").value) == (0, FM_TOWNS)
 
@@ -208,5 +208,6 @@ def test_end_of_the_game_track(game, adventure, soundtrack, won, track):
     var(game, "g_adventure").value = adventure
     var(game, "g_music_soundtrack").value = soundtrack
     var(game, "g_music_last_track").value = 0
+    game.lib.music_play_end.argtypes = [ctypes.c_bool]
     game.lib.music_play_end(won)
     assert last(game) == track

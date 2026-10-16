@@ -653,9 +653,9 @@ address,name,signature,subsystem
 0x10449a,jt_mouse_hide_pointer,,jump_table
 0x1044a2,jt_sound_request_play,,jump_table
 0x1044aa,jt_sound_play_pending,,jump_table
-0x1044b2,jt_sound_play_sample,,jump_table
+0x1044b2,jt_play_sample,,jump_table
 0x1044ba,jt_sound_free_sample,,jump_table
-0x1044c2,jt_sound_stop_all,,jump_table
+0x1044c2,jt_audio_stop_all,,jump_table
 0x1044ca,jt_sound_disable_unloaded,,jump_table
 0x1044d2,jt_sound_init,,jump_table
 0x1044da,jt_text_init,,jump_table
@@ -1138,9 +1138,9 @@ address,name,signature,subsystem
 0x108710,mouse_show_pointer,void mouse_show_pointer(void),mouse
 0x10871a,sound_compare_loudness,"int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)",sound
 0x108788,sound_init,void sound_init(void),sound
-0x10878a,sound_stop_all,void sound_stop_all(void),sound
+0x10878a,audio_stop_all,void audio_stop_all(void),sound
 0x10881e,sound_free_sample,int16_t sound_free_sample(int16_t sound),sound
-0x108850,sound_play_sample,"void sound_play_sample(int16_t sound, uint16_t volumes)",sound
+0x108850,play_sample,"void play_sample(int16_t sound, const uint8_t *volumes)",sound
 0x1089be,audio_device_open,void audio_device_open(void),sound
 0x108c68,audio_device_close,void audio_device_close(void),sound
 0x108d86,sound_disable_unloaded,void sound_disable_unloaded(void),sound

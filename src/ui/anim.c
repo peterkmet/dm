@@ -5,6 +5,7 @@
 #include "data/graphics.h"
 #include "data/os.h"
 #include "engine/sound.h"
+#include "ui/audio.h"
 #include "ui/command.h"
 #include "ui/music.h"
 #include "ui/startend.h"
@@ -79,7 +80,7 @@ static size_t next_chunk(size_t at)
 
 void anim_close(void)
 {
-    sound_stop_all(); /* the voices point into the file and the loaded files */
+    audio_stop_all(); /* the samples and the music stop with the animation */
     music_stop();
     free(chunk_file);
     chunk_file = NULL;
@@ -154,21 +155,20 @@ static void play_music(uint16_t number)
         offsets[i] = items + at;
         at += BE16(song + 2 + 2 * (n + i));
     }
-    const int8_t *segments[SOUND_MUSIC_SEGMENTS];
-    uint16_t lengths[SOUND_MUSIC_SEGMENTS];
+    MusicSegment segments[AUDIO_MUSIC_SEGMENTS];
     int sequence_length = 0;
     int count = 0;
     while (offsets[0] + sequence_length < size && song[offsets[0] + sequence_length] != MUSIC_SEQUENCE_END)
         sequence_length++;
-    for (int i = 0; sequence_length && i < MUSIC_PASSES * sequence_length && count < SOUND_MUSIC_SEGMENTS; i++) {
+    for (int i = 0; sequence_length && i < MUSIC_PASSES * sequence_length && count < AUDIO_MUSIC_SEGMENTS; i++) {
         uint8_t item = song[offsets[0] + i % sequence_length];
         if (item >= n || offsets[item] + SOUND_SAMPLE_HEADER > size ||
             BE16(song + offsets[item]) > size - offsets[item] - SOUND_SAMPLE_HEADER)
             continue;
-        segments[count] = (const int8_t *)song + offsets[item] + SOUND_SAMPLE_HEADER;
-        lengths[count++] = BE16(song + offsets[item]);
+        segments[count++] =
+            (MusicSegment){(const int8_t *)song + offsets[item] + SOUND_SAMPLE_HEADER, BE16(song + offsets[item])};
     }
-    sound_music_play(segments, lengths, count, MUSIC_PERIOD, MUSIC_VOLUME);
+    audio_music_play(segments, count, MUSIC_PERIOD, MUSIC_VOLUME);
     music_started = true;
 }
 
@@ -220,7 +220,7 @@ static void play_sample(size_t at, uint16_t number)
         return;
     uint8_t volumes[SAMPLE_VOLUME_BYTES] = {(uint8_t)((chunk_file[at + CHUNK_HEADER] + 1) >> SAMPLE_VOLUME_SHIFT),
                                             (uint8_t)((chunk_file[at + CHUNK_HEADER + 1] + 1) >> SAMPLE_VOLUME_SHIFT)};
-    sound_play_data((const int8_t *)s + SOUND_SAMPLE_HEADER, length, ANIMATION_SAMPLE_PERIOD, volumes);
+    audio_play_data((const int8_t *)s + SOUND_SAMPLE_HEADER, length, ANIMATION_SAMPLE_PERIOD, volumes);
 }
 
 /* FO, NE, and BN: the start of a loop of parameter passes, the end of a pass, and the jump back to the loop body. */
@@ -329,7 +329,7 @@ int anim_play(const char *path)
     }
     /* the music fades out at the end and after a stop */
     for (int volume = MUSIC_VOLUME - 1; music_started && volume > 0 && !g_quit_requested; volume--) {
-        sound_music_set_volume((uint8_t)volume);
+        audio_music_set_volume((uint8_t)volume);
         wait_frames(MUSIC_FADE_FRAMES);
     }
     anim_close();

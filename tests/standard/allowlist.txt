@@ -5,8 +5,7 @@ decimal data/csbimage.c rule 3.12: the APPB address tables of the CSB image buil
 hex data/crc32.c rule 3.12: the CRC-32 table of PNG, a standard constant table
 hex data/csbimage.c rule 3.12: the APPB address tables of the CSB image build
 hex data/csbtext.c rule 3.12: the APPB address tables of the CSB image build
-decimal ui/musicmap.c rule 3.12: the FM-Towns CSB track of each square, not in the game files
-decimal ui/music.c rule 3.12: the FM-Towns level tracks and the Super NES trigger squares, not in the game files
+decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions, not in the game files
 hex engine/map.c open: epic 5
 hex engine/map.h open: epic 5
 long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
@@ -97,8 +96,6 @@ decimal engine/map.h open: epic 6
 decimal engine/projectile.c open: epic 6
 decimal engine/projectile.h open: epic 6
 decimal engine/sensor.c open: epic 6
-decimal engine/sound.c open: epic 9
-decimal engine/sound.h open: epic 9
 decimal platform/control.c open: epic 10
 decimal platform/scale.c open: epic 11
 decimal platform/state_json.c open: epic 10
@@ -527,7 +524,6 @@ comment engine/savefile.h open: epic 5
 comment engine/savegame.c open: epic 5
 comment engine/savegame.h open: epic 5
 comment engine/sensor.c open: epic 5
-comment engine/sound.h open: epic 9
 comment engine/timeline_process.c open: epic 5
 comment engine/timeline_process.h open: epic 5
 comment platform/control.c open: epic 10
@@ -579,7 +575,6 @@ header engine/recruit.h open: epic 5
 header engine/savefile.h open: epic 5
 header engine/savegame.h open: epic 5
 header engine/sensor.h open: epic 5
-header engine/sound.h open: epic 9
 header engine/timeline_process.h open: epic 5
 header platform/control.h open: epic 10
 header platform/platform.h open: epic 11
@@ -628,7 +623,7 @@ include ui/ui_champion.c:data/ftl.h open: epic 8
 include ui/ui_menus.c:engine/dungeon.h open: epic 8
 include ui/view.c:ui/advanced.h open: epic 8
 module platform/main.c open: epic 11
-module ui/musicmap.c open: epic 9
+module ui/music_tables.c open: epic 9
 order data/adf.c open: epic 4
 order data/adventure.c open: epic 4
 order data/tables.c open: epic 4
@@ -751,13 +746,7 @@ dead-api engine/sensor.h:g_sensor_rotation_effect_map_y open: epic 7
 dead-api engine/sensor.h:sensor_get_object_of_type_in_cell open: epic 7
 dead-api engine/sensor.h:sensor_is_object_in_party_possession open: epic 7
 dead-api engine/sensor.h:sensor_trigger_local_effect open: epic 7
-dead-api engine/sound.h:g_pending_sound_volumes open: epic 9
-dead-api engine/sound.h:g_pending_sounds open: epic 9
-dead-api engine/sound.h:sound_compare_loudness open: epic 9
-dead-api engine/sound.h:sound_demo_play open: epic 9
-dead-api engine/sound.h:sound_get_sample open: epic 9
 dead-api engine/sound.h:sound_get_volume open: epic 9
-dead-api engine/sound.h:sound_music_stop open: epic 9
 dead-api engine/timeline_process.h:event_enable_champion_action open: epic 7
 dead-api engine/timeline_process.h:event_enable_group_generator open: epic 7
 dead-api engine/timeline_process.h:event_hide_damage_received open: epic 7
@@ -906,17 +895,14 @@ type engine:data open: epic 6
 type engine:direction open: epic 6
 type engine:dst open: epic 6
 type engine:effect open: epic 6
-type engine:index open: epic 6
 type engine:info open: epic 6
 type engine:kinetic_energy open: epic 6
 type engine:len open: epic 6
-type engine:length open: epic 6
 type engine:map open: epic 6
 type engine:map_x open: epic 6
 type engine:map_y open: epic 6
 type engine:mode open: epic 6
 type engine:out open: epic 6
-type engine:period open: epic 6
 type engine:s open: epic 6
 type engine:size open: epic 6
 type engine:skill_index open: epic 6
@@ -995,3 +981,7 @@ dead-api data/file.h:file_write open: epic 5
 dead-api data/file.h:file_replace open: epic 5
 dead-api data/graphics.h:box_contains open: epic 8
 dead-api data/graphics.h:gfx_close open: epic 4
+static-prefix platform/platform.c:audio_open open: epic 11
+type ui:count open: epic 8
+type ui:length open: epic 8
+dead-api ui/audio.h:audio_music_stop open: epic 9
