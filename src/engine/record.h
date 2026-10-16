@@ -22,8 +22,8 @@ uint8_t *rec_write(uint16_t thing);
 uint16_t rec_thing_next(uint16_t thing);
 void rec_thing_set_next(uint16_t thing, uint16_t value);
 void rec_thing_set_free(uint16_t thing);
-/* A free record of the type. Junk keeps 3 records in reserve unless NO_JUNK_RESERVE is set.
-   ponytail: no get_discarded_thing yet; returns THING_NONE when no record is free. */
+/* A free record of the type. Junk keeps 3 records in reserve unless NO_JUNK_RESERVE is set. Returns THING_NONE
+   when no record is free. */
 uint16_t rec_find_unused_thing(uint16_t thing_type);
 
 /* Door record (thing type 0) */

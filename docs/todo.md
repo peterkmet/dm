@@ -8,6 +8,7 @@ User wishes for future versions. Not planned yet.
 - `ui/view.c` square table: the D2L2, D2R2 and D0 rows leave unread "none" fields at 0, a valid id; the D0C right stairs zone is a literal in its branch; the three shape `if` blocks can be one `switch`.
 - ui ignores the result of `inventory_fill_at_fountain`.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
+- `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing` (`docs/reference/symbols/range-4-6.md`). Port that rule.
 - `tests/golden/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
 
 ## Advanced mode: show the damage twice as long

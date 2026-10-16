@@ -64,7 +64,7 @@ static void start_new_row(void)
 static void print_string(int16_t color, const char *s)
 {
     int r = g_message.cursor_row;
-    /* ponytail: cells are FONT_CHAR_WIDTH apart; the clamped cursor x 314 maps to cell 52 (x 312) */
+    /* Cells are FONT_CHAR_WIDTH apart; the clamped cursor x 314 maps to cell 52 (x 312) */
     for (int c = g_message.cursor_x / FONT_CHAR_WIDTH; *s && c < MESSAGE_COLS; s++, c++) {
         g_message.text[r][c] = *s;
         g_message.color[r][c] = color;
