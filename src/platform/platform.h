@@ -1,5 +1,6 @@
-#ifndef PLATFORM_H
-#define PLATFORM_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_PLATFORM_PLATFORM_H
+#define DM_PLATFORM_PLATFORM_H
 /* Prefixes: plat_ */
 #include "ui/video.h"
 #include <stdbool.h>

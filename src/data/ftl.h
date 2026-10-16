@@ -1,5 +1,6 @@
-#ifndef FTL_H
-#define FTL_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_FTL_H
+#define DM_DATA_FTL_H
 /* Prefixes: ftl_ kaos_ */
 #include <stddef.h>
 #include <stdint.h>

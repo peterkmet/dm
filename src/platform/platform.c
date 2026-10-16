@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "platform/platform.h"
 #include "engine/sound.h"
 #include "ui/music.h"

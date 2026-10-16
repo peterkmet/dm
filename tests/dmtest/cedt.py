@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The original CEDT.FTL save reader of Chaos Strikes Back in dmtools.emu, with stubs for file read and allocation."""
 
 import struct

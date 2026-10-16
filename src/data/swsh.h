@@ -1,5 +1,6 @@
-#ifndef SWSH_H
-#define SWSH_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_SWSH_H
+#define DM_DATA_SWSH_H
 /* Prefixes: swsh_ */
 #include "data/ftl.h"
 #include <stdbool.h>

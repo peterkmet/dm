@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Golden snapshots of the game rules that run in ui: each scenario gives the same game state and screen."""
 
 import ctypes

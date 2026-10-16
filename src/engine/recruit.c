@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/recruit.h"
 #include "data/tables.h"
 #include "engine/dungeon.h"

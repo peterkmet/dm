@@ -1,5 +1,6 @@
-#ifndef RECRUIT_H
-#define RECRUIT_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_RECRUIT_H
+#define DM_ENGINE_RECRUIT_H
 /* Prefixes: recruit_ */
 #include "engine/champion.h"
 #include <stdbool.h>

@@ -1,5 +1,6 @@
-#ifndef ADVANCED_H
-#define ADVANCED_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_ADVANCED_H
+#define DM_UI_ADVANCED_H
 /* Prefixes: advanced_ */
 #include "engine/game.h"
 #include <stdbool.h>

@@ -1,5 +1,6 @@
-#ifndef RANDOM_H
-#define RANDOM_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_RANDOM_H
+#define DM_ENGINE_RANDOM_H
 /* Prefixes: random_ random16 */
 #include <stdint.h>
 

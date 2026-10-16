@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The ADF reader of the port against amitools, the game file check, and the disk install."""
 
 import ctypes

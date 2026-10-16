@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "data/csbtext.h"
 #include "data/bytes.h"
 #include "data/ids.h"

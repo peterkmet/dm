@@ -1,5 +1,6 @@
-#ifndef SAVEFILE_H
-#define SAVEFILE_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_SAVEFILE_H
+#define DM_ENGINE_SAVEFILE_H
 /* Prefixes: save_ */
 #include <stdbool.h>
 #include <stdint.h>

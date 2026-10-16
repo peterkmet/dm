@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/group.h"
 #include "data/ids.h"
 #include "data/tables.h"

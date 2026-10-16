@@ -1,5 +1,6 @@
-#ifndef SPELLS_H
-#define SPELLS_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_SPELLS_H
+#define DM_DATA_SPELLS_H
 /* Prefixes: spell_ */
 #include <stdbool.h>
 #include <stdint.h>

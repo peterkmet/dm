@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The game harness of the tests: the ctypes structures of the C port, the Game driver, and helpers that set up a game."""
 
 import ctypes

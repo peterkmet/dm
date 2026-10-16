@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/explored.h"
 #include "engine/dungeon.h"
 #include <stdlib.h>

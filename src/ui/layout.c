@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/layout.h"
 #include "data/bytes.h"
 #include "data/graphics.h"

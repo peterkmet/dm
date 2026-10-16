@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/dialog.h"
 #include "data/ids.h"
 #include "engine/message.h"

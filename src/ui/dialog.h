@@ -1,5 +1,6 @@
-#ifndef DIALOG_H
-#define DIALOG_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_DIALOG_H
+#define DM_UI_DIALOG_H
 /* Prefixes: dialog_ */
 #include <stdbool.h>
 #include <stdint.h>

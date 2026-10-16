@@ -1,5 +1,6 @@
-#ifndef ADVENTURE_H
-#define ADVENTURE_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_ADVENTURE_H
+#define DM_DATA_ADVENTURE_H
 /* Prefixes: adventure_ */
 #include <stdbool.h>
 #include <stdint.h>

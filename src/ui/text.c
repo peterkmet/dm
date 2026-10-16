@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/text.h"
 #include "ui/video.h"
 #include <string.h>

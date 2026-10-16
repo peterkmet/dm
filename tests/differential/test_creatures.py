@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Creature groups, projectiles, explosions, and spell effects (src/group.c, projectile.c, magic.c)."""
 
 import ctypes

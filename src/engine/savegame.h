@@ -1,5 +1,6 @@
-#ifndef SAVEGAME_H
-#define SAVEGAME_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_SAVEGAME_H
+#define DM_ENGINE_SAVEGAME_H
 /* Prefixes: savegame_ */
 #include <stdbool.h>
 #include <stdint.h>

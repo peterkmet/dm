@@ -1,5 +1,6 @@
-#ifndef TIMELINE_PROCESS_H
-#define TIMELINE_PROCESS_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_TIMELINE_PROCESS_H
+#define DM_ENGINE_TIMELINE_PROCESS_H
 /* Prefixes: event_ */
 #include "engine/game.h"
 #include <stdbool.h>

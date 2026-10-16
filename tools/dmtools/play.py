@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """dm-play: sends one request to the turn-based control socket and prints the response.
 
     uv run dm-play <cmd> [json-args]

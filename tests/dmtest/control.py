@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The control socket of the turn-based mode: the pumped main loop and a socket client."""
 
 import json

@@ -1,5 +1,6 @@
-#ifndef DUNGEON_H
-#define DUNGEON_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_DUNGEON_H
+#define DM_ENGINE_DUNGEON_H
 /* Prefixes: dungeon_ */
 #include <stdbool.h>
 #include <stdint.h>

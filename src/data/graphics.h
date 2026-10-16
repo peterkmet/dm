@@ -1,5 +1,6 @@
-#ifndef GRAPHICS_H
-#define GRAPHICS_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_GRAPHICS_H
+#define DM_DATA_GRAPHICS_H
 /* Prefixes: gfx_ */
 #include <stddef.h>
 #include <stdint.h>

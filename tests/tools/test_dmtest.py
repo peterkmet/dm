@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The library loader: two loads in one process have separate C globals."""
 
 import ctypes

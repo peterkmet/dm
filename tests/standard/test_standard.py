@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Checks src/ against docs/coding-standard.md. Accepted exceptions: tests/standard/allowlist.txt.
 
 DM_STANDARD_DUMP=<file> appends every violation line to the file; DM_STANDARD_IGNORE_ALLOWLIST=1 reports the

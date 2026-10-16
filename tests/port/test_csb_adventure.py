@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """CSB new adventure: the prison save merges the party into MINI.DAT (docs/csb-new-adventure.md), RESUME, the CSB save dialog."""
 
 import ctypes

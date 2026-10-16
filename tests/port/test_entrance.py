@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The DM entrance: the doors open after ENTER (KAOS entrance_open_doors 0x126c4a)."""
 
 import ctypes

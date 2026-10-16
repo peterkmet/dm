@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Socket helpers for the turn-based control socket, without the mcp package (fast to import)."""
 
 import json

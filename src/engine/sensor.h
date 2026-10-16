@@ -1,5 +1,6 @@
-#ifndef SENSOR_H
-#define SENSOR_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_SENSOR_H
+#define DM_ENGINE_SENSOR_H
 /* Prefixes: sensor_ */
 #include <stdbool.h>
 #include <stdint.h>

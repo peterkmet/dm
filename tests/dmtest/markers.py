@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Skip markers for tests that need game files or programs that a machine may not have."""
 
 import shutil

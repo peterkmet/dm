@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/music.h"
 
 /* FM-Towns CSB 3.1: the CD track of each square (CHTWE.EXP table), 0: no change.

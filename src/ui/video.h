@@ -1,5 +1,6 @@
-#ifndef VIDEO_H
-#define VIDEO_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_VIDEO_H
+#define DM_UI_VIDEO_H
 /* Prefixes: video_ */
 #include <stdint.h>
 

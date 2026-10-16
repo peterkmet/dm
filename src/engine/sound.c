@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/sound.h"
 #include "data/graphics.h"
 #include "data/tables.h"

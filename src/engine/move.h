@@ -1,5 +1,6 @@
-#ifndef MOVE_H
-#define MOVE_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_MOVE_H
+#define DM_ENGINE_MOVE_H
 /* Prefixes: move_ */
 #include <stdbool.h>
 #include <stdint.h>

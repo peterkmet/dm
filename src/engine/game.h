@@ -1,5 +1,6 @@
-#ifndef GAME_H
-#define GAME_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_GAME_H
+#define DM_ENGINE_GAME_H
 /* Prefixes: game_ min16 max16 bounded_ scale_ timeline_ position_ turn_ */
 #include "data/bytes.h"
 #include "data/tables.h"

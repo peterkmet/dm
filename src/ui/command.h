@@ -1,5 +1,6 @@
-#ifndef COMMAND_H
-#define COMMAND_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_COMMAND_H
+#define DM_UI_COMMAND_H
 /* Prefixes: command_ */
 #include "engine/move.h"
 #include <stdbool.h>

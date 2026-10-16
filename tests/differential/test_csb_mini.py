@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Differential test: dmtools.csb_mini against the original CEDT.FTL routines in dmtools.emu."""
 
 import functools

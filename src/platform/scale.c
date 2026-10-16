@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "platform/scale.h"
 #include <stdbool.h>
 

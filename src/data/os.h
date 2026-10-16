@@ -1,5 +1,6 @@
-#ifndef DM_OS_H
-#define DM_OS_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_OS_H
+#define DM_DATA_OS_H
 /* Prefixes: os_ */
 #include <stdbool.h>
 

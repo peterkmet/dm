@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The save file codec of the library: the SaveFile structure, encode and decode, and the original read path."""
 
 import ctypes

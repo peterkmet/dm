@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Run functions of a loaded FTL module image in a 68000 emulator (machine68k)."""
 
 import machine68k

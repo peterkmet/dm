@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import hashlib
 
 from amitools.fs.ADFSVolume import ADFSVolume

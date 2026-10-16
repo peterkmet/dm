@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The test library: a private copy of build/libdm.dylib per load, so each test module has its own C globals."""
 
 import ctypes

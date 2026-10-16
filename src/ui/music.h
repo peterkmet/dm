@@ -1,5 +1,6 @@
-#ifndef MUSIC_H
-#define MUSIC_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_MUSIC_H
+#define DM_UI_MUSIC_H
 /* Prefixes: music_ */
 #include <stdint.h>
 

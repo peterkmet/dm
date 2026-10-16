@@ -1,5 +1,6 @@
-#ifndef TABLES_H
-#define TABLES_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_TABLES_H
+#define DM_DATA_TABLES_H
 /* Prefixes: tables_ */
 #include <stdbool.h>
 #include <stdint.h>

@@ -1,5 +1,6 @@
-#ifndef UI_H
-#define UI_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_UI_H
+#define DM_UI_UI_H
 /* Prefixes: ui_ panel_ menus_ */
 #include "data/tables.h"
 #include "engine/champion.h"

@@ -1,5 +1,6 @@
-#ifndef CSBIMAGE_H
-#define CSBIMAGE_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_CSBIMAGE_H
+#define DM_DATA_CSBIMAGE_H
 /* Prefixes: csb_image_ */
 #include "data/ftl.h"
 

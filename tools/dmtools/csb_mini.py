@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Decode CSB save-format files (MINI.DAT, CSBGAME.DAT) and build a new adventure.
 
 Format and algorithm from CEDT.FTL (disk B), base 0x100000:

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/champion.h"
 #include "data/adventure.h"
 #include "data/graphics.h"

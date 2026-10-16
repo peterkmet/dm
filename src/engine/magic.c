@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/magic.h"
 #include "data/graphics.h"
 #include "data/ids.h"

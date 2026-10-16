@@ -1,5 +1,6 @@
-#ifndef DM_FILE_H
-#define DM_FILE_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_FILE_H
+#define DM_DATA_FILE_H
 /* Prefixes: file_ */
 #include <stdbool.h>
 #include <stddef.h>

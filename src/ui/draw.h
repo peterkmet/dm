@@ -1,5 +1,6 @@
-#ifndef DRAW_H
-#define DRAW_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_DRAW_H
+#define DM_UI_DRAW_H
 /* Prefixes: draw_ */
 #include "data/graphics.h"
 #include <stdint.h>

@@ -1,5 +1,6 @@
-#ifndef SELECT_H
-#define SELECT_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_SELECT_H
+#define DM_UI_SELECT_H
 /* Prefixes: select_ */
 #include "ui/draw.h"
 #include <stdbool.h>

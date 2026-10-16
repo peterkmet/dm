@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The CSB engine image: APPB.FTL tables at their KAOS addresses (docs/csb-engine-diff.md "Data tables")."""
 
 import ctypes

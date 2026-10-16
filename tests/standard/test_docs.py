@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Repository checks of the docs: every relative Markdown link outside docs/superpowers/ resolves."""
 
 import re

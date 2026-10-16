@@ -1,5 +1,6 @@
-#ifndef STARTEND_H
-#define STARTEND_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_STARTEND_H
+#define DM_UI_STARTEND_H
 /* Prefixes: startend_ wait_ */
 #include <stdbool.h>
 #include <stdint.h>

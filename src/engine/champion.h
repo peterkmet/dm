@@ -1,5 +1,6 @@
-#ifndef CHAMPION_H
-#define CHAMPION_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_CHAMPION_H
+#define DM_ENGINE_CHAMPION_H
 /* Prefixes: champion_ */
 #include "data/tables.h"
 #include "engine/game.h"

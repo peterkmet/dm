@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Windows has no control socket: the turn-based LLM mode cannot start there. control.c is the real module. */
 #include "platform/control.h"
 

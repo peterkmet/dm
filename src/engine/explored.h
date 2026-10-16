@@ -1,5 +1,6 @@
-#ifndef EXPLORED_H
-#define EXPLORED_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_EXPLORED_H
+#define DM_ENGINE_EXPLORED_H
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

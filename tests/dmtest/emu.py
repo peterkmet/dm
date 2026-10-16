@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The original program in the emulator: the KAOS.FTL image and the small helpers of the differential tests."""
 
 import pytest

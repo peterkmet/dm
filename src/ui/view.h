@@ -1,5 +1,6 @@
-#ifndef VIEW_H
-#define VIEW_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_VIEW_H
+#define DM_UI_VIEW_H
 /* Prefixes: view_ */
 #include "ui/draw.h"
 #include <stdbool.h>

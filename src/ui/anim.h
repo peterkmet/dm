@@ -1,5 +1,6 @@
-#ifndef ANIM_H
-#define ANIM_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_ANIM_H
+#define DM_UI_ANIM_H
 /* Prefixes: anim_ */
 #include <stdint.h>
 

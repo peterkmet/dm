@@ -1,5 +1,6 @@
-#ifndef DM_CRC32_H
-#define DM_CRC32_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_CRC32_H
+#define DM_DATA_CRC32_H
 /* Prefixes: crc32_ */
 #include <stddef.h>
 #include <stdint.h>

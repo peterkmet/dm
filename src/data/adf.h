@@ -1,5 +1,6 @@
-#ifndef DM_ADF_H
-#define DM_ADF_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_ADF_H
+#define DM_DATA_ADF_H
 /* Prefixes: adf_ */
 #include <stdbool.h>
 

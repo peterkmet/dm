@@ -1,5 +1,6 @@
-#ifndef MAGIC_H
-#define MAGIC_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_MAGIC_H
+#define DM_ENGINE_MAGIC_H
 /* Prefixes: magic_ */
 #include <stdbool.h>
 #include <stdint.h>

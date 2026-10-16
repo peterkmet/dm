@@ -1,5 +1,6 @@
-#ifndef PROJECTILE_H
-#define PROJECTILE_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_PROJECTILE_H
+#define DM_ENGINE_PROJECTILE_H
 /* Prefixes: projectile_ explosion_ */
 #include "engine/game.h"
 #include "engine/map.h"

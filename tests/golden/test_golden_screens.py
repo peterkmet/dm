@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Golden snapshot of the champion screens: status boxes, the inventory panel, the action and spell areas."""
 
 import ctypes

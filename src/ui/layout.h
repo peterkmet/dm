@@ -1,5 +1,6 @@
-#ifndef LAYOUT_H
-#define LAYOUT_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_LAYOUT_H
+#define DM_UI_LAYOUT_H
 /* Prefixes: layout_ */
 #include "ui/draw.h"
 #include <stdbool.h>

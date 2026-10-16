@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/move.h"
 #include "data/tables.h"
 #include "engine/champion.h"

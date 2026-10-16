@@ -1,5 +1,6 @@
-#ifndef MESSAGE_H
-#define MESSAGE_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_MESSAGE_H
+#define DM_ENGINE_MESSAGE_H
 /* Prefixes: message_ */
 #include "data/graphics.h"
 #include <stdint.h>

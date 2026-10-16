@@ -1,5 +1,6 @@
-#ifndef CSBTEXT_H
-#define CSBTEXT_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_CSBTEXT_H
+#define DM_DATA_CSBTEXT_H
 /* Prefixes: csb_text_ */
 #include "data/ftl.h"
 

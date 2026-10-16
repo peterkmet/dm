@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "data/crc32.h"
 #include "data/bytes.h"
 

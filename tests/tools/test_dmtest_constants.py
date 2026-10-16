@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The constant parser of tests/dmtest against small C headers."""
 
 from dmtest.constants import parse

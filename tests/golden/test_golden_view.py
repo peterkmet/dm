@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Golden snapshot of the dungeon view: every square of every map in all 4 directions draws the same pixels."""
 
 import ctypes

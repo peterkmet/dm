@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/startend.h"
 #include "data/adventure.h"
 #include "data/csbimage.h"

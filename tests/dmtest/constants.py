@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The constants of the C headers: #define lines and enum members of src/**/*.h, evaluated once at import.
 
 Tests write C.KEY_RETURN. A value is an integer expression over literals, other constants, casts, shifts and

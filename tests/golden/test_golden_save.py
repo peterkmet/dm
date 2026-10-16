@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Golden snapshot of a save file: the saved state of a fixed game stays the same through refactors."""
 
 import ctypes

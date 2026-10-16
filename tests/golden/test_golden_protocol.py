@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Golden snapshot of the control protocol: a fixed request sequence gives the same JSON replies."""
 
 import ctypes

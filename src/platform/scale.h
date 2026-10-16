@@ -1,5 +1,6 @@
-#ifndef SCALE_H
-#define SCALE_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_PLATFORM_SCALE_H
+#define DM_PLATFORM_SCALE_H
 /* Prefixes: scale2x scale3x */
 #include <stdint.h>
 

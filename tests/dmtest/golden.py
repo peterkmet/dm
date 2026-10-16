@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The setup of the golden rule and screen snapshots: a fixed new game and the recruit steps of the scenarios."""
 
 import ctypes

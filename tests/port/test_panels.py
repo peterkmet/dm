@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Inventory panel: object description text against the original, chest open/close/swap, PNG renders."""
 
 import ctypes

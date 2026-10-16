@@ -1,5 +1,6 @@
-#ifndef CONTROL_H
-#define CONTROL_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_PLATFORM_CONTROL_H
+#define DM_PLATFORM_CONTROL_H
 /* Prefixes: control_ */
 #include <stdbool.h>
 

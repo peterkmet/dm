@@ -1,5 +1,6 @@
-#ifndef INVENTORY_H
-#define INVENTORY_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_INVENTORY_H
+#define DM_ENGINE_INVENTORY_H
 /* Prefixes: inventory_ object_ */
 #include "data/tables.h"
 #include "engine/map.h"

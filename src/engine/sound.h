@@ -1,5 +1,6 @@
-#ifndef SOUND_H
-#define SOUND_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_SOUND_H
+#define DM_ENGINE_SOUND_H
 /* Prefixes: sound_ */
 #include <stdbool.h>
 #include <stdint.h>

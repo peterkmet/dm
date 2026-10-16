@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """LLM tools on CSB: the program starts the prison over the control socket and the Python tool layer reads it."""
 
 import os

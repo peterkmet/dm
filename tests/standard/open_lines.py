@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Adds one "open: epic N" allowlist line for each violation that tests/standard reports; --prune removes the
 open lines that no check reports any more. Run from the repository root: uv run python tests/standard/open_lines.py [-k EXPR] [--prune]"""
 

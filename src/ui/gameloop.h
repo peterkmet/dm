@@ -1,5 +1,6 @@
-#ifndef GAMELOOP_H
-#define GAMELOOP_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_UI_GAMELOOP_H
+#define DM_UI_GAMELOOP_H
 /* Prefixes: gameloop_ entrance_ */
 #include <stdbool.h>
 #include <stdint.h>

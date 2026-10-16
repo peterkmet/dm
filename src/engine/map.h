@@ -1,5 +1,6 @@
-#ifndef MAP_H
-#define MAP_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_ENGINE_MAP_H
+#define DM_ENGINE_MAP_H
 /* Prefixes: door_ square_ thing_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ */
 #include "data/bytes.h"
 #include "engine/dungeon.h"

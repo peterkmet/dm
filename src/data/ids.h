@@ -1,5 +1,6 @@
-#ifndef IDS_H
-#define IDS_H
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#ifndef DM_DATA_IDS_H
+#define DM_DATA_IDS_H
 
 /* Graphic numbers (Graphics.DAT items), layout zone numbers (graphic 696), object icons, and
    string numbers (graphic 700). Each module adds its own section. */

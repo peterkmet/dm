@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Match the functions of the CSB engine (game-csb/APPB.FTL) to DM KAOS.FTL.
 
 Usage: uv run dm-csb-match [--csv OUT] [--report OUT] [--diff KAOS_ADDR]

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/spells.h"
