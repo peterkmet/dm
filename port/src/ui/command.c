@@ -23,15 +23,13 @@
 #include "video.h"
 #include "view.h"
 
-#define QUEUE_SIZE               9
-#define QUEUE_CLICK_LIMIT        5 /* a click or a key waits only when fewer commands wait */
-#define QUEUE_RELEASE_LIMIT      7
-#define NO_TABLE                 (-1)
-#define INVENTORY_CLOSE          4 /* command_toggle_inventory argument: close the open inventory */
-#define INVENTORY_REDRAW         5 /* command_toggle_inventory argument: draw the open inventory again */
-#define WAIT_FOR_INPUT_FRAMES    12
-#define FOUNTAIN_WATER           2048
-#define FILLED_WATERSKIN_CHARGES 3
+#define QUEUE_SIZE            9
+#define QUEUE_CLICK_LIMIT     5 /* a click or a key waits only when fewer commands wait */
+#define QUEUE_RELEASE_LIMIT   7
+#define NO_TABLE              (-1)
+#define INVENTORY_CLOSE       4 /* command_toggle_inventory argument: close the open inventory */
+#define INVENTORY_REDRAW      5 /* command_toggle_inventory argument: draw the open inventory again */
+#define WAIT_FOR_INPUT_FRAMES 12
 enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 };  /* the mouth blinks when it eats an object up */
 #define VI_ALTAR_REBIRTH_EFFECT 2                        /* event 13 effect byte */
 #define HAND_SLOT_BOX_COUNT     (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
@@ -255,7 +253,7 @@ void command_unfreeze_game(void)
         menus_draw_movement_arrows();
     } else {
         int16_t open = g_inventory_champion_ordinal;
-        g_inventory_champion_ordinal = 0;
+        inventory_set_open_champion(0);
         command_toggle_inventory(open - 1);
     }
 }
@@ -340,7 +338,7 @@ void command_release_dead_champion(uint16_t champion_index, int16_t leader_index
 static void show_candidate(void)
 {
     int16_t index = g_candidate_champion_ordinal - 1;
-    g_inventory_champion_ordinal = 0;
+    inventory_set_open_champion(0);
     command_toggle_inventory(index);
     command_freeze_game();
 }
@@ -355,7 +353,7 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
         return;
     uint8_t cell = g_champions[index].cell;
     champion_click_in_resurrect_reincarnate_panel(command);
-    g_inventory_champion_ordinal = index + 1; /* the rule clears it; the panel closes here */
+    inventory_set_open_champion(index + 1); /* the rule clears it; the panel closes here */
     command_toggle_inventory(INVENTORY_CLOSE);
     if (command == PANEL_CANCEL) {
         ui_fill_zone(&screen, ZONE_STATUS_BOX_FIRST + index, COLOR_BLACK);
@@ -402,18 +400,12 @@ static void click_on_champion_icon(int16_t cell)
     int16_t moved = champion_get_index_in_cell(NORMALIZE(from + g_party_direction));
     if (moved == -1)
         return;
-    g_champions[moved].direction = g_party_direction;
-    g_champions[moved].attributes |= CHAMPION_ATTR_ICON;
+    int16_t other = champion_move_to_cell(moved, NORMALIZE(cell + g_party_direction));
     if (cell != from) {
-        int16_t other = champion_get_index_in_cell(NORMALIZE(cell + g_party_direction));
-        if (other < 0) {
+        if (other < 0)
             ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + from, COLOR_BLACK);
-        } else {
-            g_champions[other].cell = NORMALIZE(from + g_party_direction);
-            g_champions[other].attributes |= CHAMPION_ATTR_ICON;
+        else
             ui_draw_champion_state(other);
-        }
-        g_champions[moved].cell = NORMALIZE(cell + g_party_direction);
     }
     ui_draw_champion_state(moved);
 }
@@ -497,22 +489,6 @@ static void touch_front_square_empty_handed(int16_t imaginary_wall, int16_t x, i
     g_stop_waiting_for_input = true;
 }
 
-/* A flask or a waterskin in the hand fills at a fountain. */
-static void fill_at_fountain(void)
-{
-    uint16_t thing = g_leader_hand_object;
-    int16_t icon = object_get_icon_index(thing);
-    uint16_t weight = inventory_get_object_weight(thing);
-    if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
-        junk_set_charges(thing, FILLED_WATERSKIN_CHARGES);
-    else if (icon == ICON_EMPTY_FLASK)
-        potion_set_type(thing, POTION_WATER);
-    else
-        return;
-    g_champions[g_leader_index].load += inventory_get_object_weight(thing) - weight;
-    g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
-}
-
 /* A point in a clickable box of the view; x -1 marks an unused box. */
 static bool is_in_box(const Box *b, int16_t x, int16_t y)
 {
@@ -544,14 +520,9 @@ static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, int
             grab_object(i);
             return;
         }
-        if (g_facing_fountain && g_leader_index != -1) {
-            g_champions[g_leader_index].water = FOUNTAIN_WATER;
-            /* With the advanced features, every living champion drinks. */
-            for (uint16_t i = 0; g_advanced_features && i < g_party_champion_count; i++)
-                if (g_champions[i].current_health)
-                    g_champions[i].water = FOUNTAIN_WATER;
-            sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
-        }
+        /* With the advanced features, every living champion drinks. */
+        if (g_facing_fountain && g_leader_index != -1)
+            champion_drink_from_fountain(g_advanced_features);
         if (!g_facing_alcove)
             touch_front_wall();
         return;
@@ -603,7 +574,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
         return;
     }
     if (g_facing_fountain)
-        fill_at_fountain();
+        inventory_fill_leader_hand_at_fountain();
     touch_front_wall();
 }
 
@@ -743,7 +714,7 @@ static void go_to_sleep(void)
     if (g_inventory_champion_ordinal)
         command_toggle_inventory(INVENTORY_CLOSE);
     command_freeze_game();
-    g_party_is_sleeping = true;
+    champion_go_to_sleep();
     draw_viewport_message(TEXT_WAKE_UP);
     g_wait_for_input_max_frames = 0;
     set_input((InputTables){UI_INPUT_SLEEPING, NO_TABLE, TABLES_KEYS_SLEEPING, TABLES_KEYS_NONE});

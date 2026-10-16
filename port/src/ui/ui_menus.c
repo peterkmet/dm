@@ -195,16 +195,10 @@ void menus_refresh_action_area(void)
     if (!g_party_champion_count)
         return;
     if (!g_party_is_sleeping && !g_candidate_champion_ordinal) {
-        for (uint16_t i = 0; i < g_party_champion_count; i++) {
-            Champion *champion = &g_champions[i];
-            if (i != g_leader_index && i + 1 != g_acting_champion_ordinal && champion->maximum_damage_received &&
-                champion->direction != champion->direction_maximum_damage_received) {
-                champion->direction = champion->direction_maximum_damage_received;
-                champion->attributes |= CHAMPION_ATTR_ICON;
+        uint16_t turned = champion_turn_to_last_attackers();
+        for (uint16_t i = 0; i < g_party_champion_count; i++)
+            if (turned & 1 << i)
                 ui_draw_champion_state(i);
-            }
-            champion->maximum_damage_received = 0;
-        }
     } else {
         if (g_acting_champion_ordinal) {
             menus_clear_acting_champion();

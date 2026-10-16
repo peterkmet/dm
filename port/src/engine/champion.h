@@ -82,6 +82,10 @@ void champion_resurrect(uint16_t champion_index);
 int16_t champion_get_index_in_cell(int16_t cell);
 void champion_set_leader(int16_t champion_index);
 void champion_wake_up(void);
+void champion_go_to_sleep(void);
+void champion_drink_from_fountain(bool whole_party);
+uint16_t champion_turn_to_last_attackers(void);
+int16_t champion_move_to_cell(int16_t champion_index, int16_t cell);
 
 int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flags);
 void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint16_t experience);

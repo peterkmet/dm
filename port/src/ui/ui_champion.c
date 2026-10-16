@@ -499,7 +499,7 @@ void ui_draw_inventory_open(int16_t champion_index)
     const Bitmap *bg = gfx_get_bitmap(GFX_INVENTORY);
     if (!g_inventory_champion_ordinal)
         ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
-    g_inventory_champion_ordinal = champion_index + 1;
+    inventory_set_open_champion(champion_index + 1);
     if (bg)
         draw_blit(bg, 0, 0, viewport, &(Box){0, 0, viewport->w, viewport->h}, COLOR_NONE, 0);
     if (g_candidate_champion_ordinal) { /* a candidate cannot save, sleep, or close */
@@ -520,7 +520,7 @@ void ui_draw_inventory_open(int16_t champion_index)
    The caller redraws the dungeon view. */
 void ui_draw_inventory_close(int16_t champion_index)
 {
-    g_inventory_champion_ordinal = 0;
+    inventory_set_open_champion(0);
     inventory_close_chest();
     if (g_champions[champion_index].current_health && !g_candidate_champion_ordinal) {
         g_champions[champion_index].attributes |= CHAMPION_ATTR_STATUS_BOX;

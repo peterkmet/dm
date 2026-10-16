@@ -62,6 +62,8 @@ uint16_t inventory_get_object_removed_from_leader_hand(void);
 uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot);
 void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot);
 void inventory_click_on_slot_box(uint16_t slot_box);
+bool inventory_fill_leader_hand_at_fountain(void);
+void inventory_set_open_champion(int16_t ordinal);
 /* Results of inventory_process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
 enum { MOUTH_REFUSED, MOUTH_SWALLOWED, MOUTH_USED_UP };
 int16_t inventory_process_click_on_mouth(void);

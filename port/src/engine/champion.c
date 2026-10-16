@@ -32,6 +32,7 @@
 #define SCENT_STRENGTH_MINIMUM            0
 #define PIT_ATTACK                        20
 #define RESURRECTION_HEALTH_LOSS_SHIFT    6 /* the Vi altar takes 1/64 of the maximum health */
+#define FOUNTAIN_WATER                    2048
 /* Level gain: stamina gain = maximum stamina / divisor, or >> shift. */
 #define FIGHTER_STAMINA_GAIN_SHIFT        4
 #define NINJA_STAMINA_GAIN_DIVISOR        21
@@ -235,6 +236,58 @@ void champion_set_leader(int16_t champion_index)
 void champion_wake_up(void)
 {
     g_party_is_sleeping = false;
+}
+
+/* The party goes to sleep; the input and the sleep screen belong to the interface. */
+void champion_go_to_sleep(void)
+{
+    g_party_is_sleeping = true;
+}
+
+/* The leader drinks its fill at a fountain; with whole_party every living champion drinks. */
+void champion_drink_from_fountain(bool whole_party)
+{
+    g_champions[g_leader_index].water = FOUNTAIN_WATER;
+    for (uint16_t i = 0; whole_party && i < g_party_champion_count; i++)
+        if (g_champions[i].current_health)
+            g_champions[i].water = FOUNTAIN_WATER;
+    sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
+}
+
+/* Each tick, an idle champion (not the leader, not acting) turns to its last attacker. Returns one bit per
+   champion that turned. */
+uint16_t champion_turn_to_last_attackers(void)
+{
+    uint16_t turned = 0;
+    for (uint16_t i = 0; i < g_party_champion_count; i++) {
+        Champion *champion = &g_champions[i];
+        if (i != g_leader_index && i + 1 != g_acting_champion_ordinal && champion->maximum_damage_received &&
+            champion->direction != champion->direction_maximum_damage_received) {
+            champion->direction = champion->direction_maximum_damage_received;
+            champion->attributes |= CHAMPION_ATTR_ICON;
+            turned |= 1 << i;
+        }
+        champion->maximum_damage_received = 0;
+    }
+    return turned;
+}
+
+/* A champion faces the party direction and moves to a cell; a champion in that cell takes its old cell.
+   Returns that other champion, or -1. */
+int16_t champion_move_to_cell(int16_t champion_index, int16_t cell)
+{
+    Champion *moved = &g_champions[champion_index];
+    moved->direction = g_party_direction;
+    moved->attributes |= CHAMPION_ATTR_ICON;
+    if (cell == moved->cell)
+        return -1;
+    int16_t other = champion_get_index_in_cell(cell);
+    if (other >= 0) {
+        g_champions[other].cell = moved->cell;
+        g_champions[other].attributes |= CHAMPION_ATTR_ICON;
+    }
+    moved->cell = cell;
+    return other;
 }
 
 /* The slot that a candidate possession goes to: hands, body, pouches, neck, then the backpack. */

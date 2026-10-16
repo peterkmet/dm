@@ -11,6 +11,7 @@
 #include <stdbool.h>
 
 #define WATERSKIN_WATER            800
+#define FILLED_WATERSKIN_CHARGES   3
 #define POTION_WATER_WATER         1600
 #define FOOD_WATER_MAXIMUM         2048
 #define CHEST_WEIGHT               50
@@ -533,4 +534,28 @@ void inventory_reset(void)
     g_open_chest = THING_NONE;
     for (int i = 0; i < SLOT_CHEST_COUNT; i++)
         g_open_chest_slots[i] = THING_NONE;
+}
+
+/* A flask or a waterskin in the leader hand fills at a fountain; the leader load changes with its weight.
+   Returns true when the hand object changed. */
+bool inventory_fill_leader_hand_at_fountain(void)
+{
+    uint16_t thing = g_leader_hand_object;
+    int16_t icon = object_get_icon_index(thing);
+    uint16_t weight = inventory_get_object_weight(thing);
+    if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
+        junk_set_charges(thing, FILLED_WATERSKIN_CHARGES);
+    else if (icon == ICON_EMPTY_FLASK)
+        potion_set_type(thing, POTION_WATER);
+    else
+        return false;
+    g_champions[g_leader_index].load += inventory_get_object_weight(thing) - weight;
+    g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
+    return true;
+}
+
+/* Opens the inventory of champion ordinal - 1 for the rules; 0 closes it. */
+void inventory_set_open_champion(int16_t ordinal)
+{
+    g_inventory_champion_ordinal = ordinal;
 }

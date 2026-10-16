@@ -206,7 +206,7 @@ void ui_draw_interface(void)
     ui_fill_zone(&screen, ZONE_SCREEN_BOTTOM, COLOR_BLACK);
     if (g_inventory_champion_ordinal) {
         int16_t i = g_inventory_champion_ordinal - 1;
-        g_inventory_champion_ordinal = 0;
+        inventory_set_open_champion(0);
         ui_draw_inventory_open(i);
     } else {
         menus_draw_movement_arrows();
