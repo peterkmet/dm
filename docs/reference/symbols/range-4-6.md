@@ -1,6 +1,8 @@
 # KAOS ranges 4–6: symbols and subsystem notes
 
-This page covers the KAOS functions in partition ranges 4, 5, and 6 of the [module map](../kaos-map.md): `0x10a432`–`0x116a42`. The symbol list is [range-4-6.csv](../../symbols/range-4-6.csv). It has all 246 functions of the ranges and 143 globals that these functions own.
+This page uses the original KAOS names; the port names differ.
+
+This page covers the KAOS functions in partition ranges 4, 5, and 6 of the [module map](../kaos-map.md): `0x10a432`–`0x116a42`. The symbols are in [kaos-symbols.csv](../kaos-symbols.csv). It has all 246 functions of the ranges and 143 globals that these functions own.
 
 Names follow the ReDMCSB function order where the code matches. All offsets are in bytes. All words are big-endian. "Word" means 16 bits, "long" means 32 bits.
 

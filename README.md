@@ -13,7 +13,7 @@ This repository contains no game files. You supply your own ADF disk image.
 | 3. Game logic | Reimplement the game rules in C from the decompiled code | In progress: game state, random numbers, timeline, text, sound done |
 | 4. Platform layer | SDL video, sound, input, and upscaling | Done |
 
-The detailed plan is in [docs/superpowers/2026-10-04-dm-c-port-plan.md](docs/superpowers/2026-10-04-dm-c-port-plan.md).
+The detailed plan is in [docs/superpowers/archive/2026-10-04-dm-c-port-plan.md](docs/superpowers/archive/2026-10-04-dm-c-port-plan.md).
 
 ## Prerequisites
 

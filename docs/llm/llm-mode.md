@@ -2,7 +2,7 @@
 
 In turn-based mode, a program or an LLM plays the game through a Unix socket. The game time stands still between turns. The window shows the game, so a person can watch. The MCP server `dm-mcp` connects Claude Code to the socket.
 
-The plan is in [2026-10-04-modes-plan.md](../superpowers/2026-10-04-modes-plan.md).
+The plan is in [2026-10-04-modes-plan.md](../superpowers/archive/2026-10-04-modes-plan.md).
 
 ## Status
 
@@ -249,7 +249,7 @@ With champions, each champion has one line, for example `0 <name> (front_left): 
 
 | Function | Purpose |
 |---|---|
-| `int control_open(const char *path)` | Listens on the socket. Replaces an old socket file. Returns 1 on success. |
+| `bool control_open(const char *path)` | Listens on the socket. Replaces an old socket file. Returns false on an error. |
 | `void control_poll(void)` | Call one time per frame. Accepts a client, answers requests, runs and ends turns. |
 | `int control_is_turn_pending(void)` | 1 while a turn runs. |
 | `void control_close(void)` | Closes the sockets and removes the socket file. |

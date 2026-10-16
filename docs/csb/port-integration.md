@@ -2,7 +2,7 @@
 
 This page audits the C port for places that assume Dungeon Master (DM). It then proposes the minimum design for the adventure selection (DM or Chaos Strikes Back, CSB). It covers the adventure value, the selection screens, the argument parsing, the CSB entrance, the game loop, and the tests.
 
-Status: proposal. Nothing is implemented. The user approved the user-facing flow (see [Approved flow](#approved-flow)). The design below is not approved yet.
+Status: implemented. This page is the design record of the CSB integration; the code and `docs/csb/engine-diff.md` are the reference.
 
 ## Approved flow
 
@@ -123,7 +123,6 @@ These items are not selection work. The CSB engine work item must check them.
 | `tools/dmtools/play.py` | The prog description "Dungeon Master control socket". The log folder `playthroughs/current/coordinator`. The view and state text is generic. |
 | `docs/llm/llm-playbook.md` | Playthrough rules for DM (goal, mirrors, `playthroughs/current/player/progress.md`). The save names in the "Save, load" lines are not file names. |
 | `docs/llm/llm-mode.md` | The sections "Prerequisites" (`game/`), the socket table (`save`, `load`, `new_game` name `DMGAME.DAT`, `Dungeon.DAT`), and "Saved games" (save directory is `game/`). |
-| `docs/superpowers/status.md` | The resume steps copy `DMGAME.DAT` to `game/`. |
 
 The socket protocol needs no new command. The game starts one adventure for each run. The adventure is the one that the selection or `--adventure` chose.
 
@@ -321,7 +320,6 @@ Until items 1 and 2 exist, `start_adventure` for CSB returns to the CSB screen w
 | `docs/llm/llm-mode.md` | The socket table: `save`, `load`, and `new_game` use the files of the running adventure. Add `--adventure` to the start command. Describe that the selection screens are skipped by `--mode` and `--adventure`. |
 | `docs/llm/llm-playbook.md` | Mark the playbook as DM only. A CSB playbook is a later item. |
 | `README.md` | Add a section "Adventures": `--adventure`, the screens, the folders, the CSB save file. |
-| `docs/superpowers/status.md` | No change until CSB runs. |
 
 The control socket and `dm-play` keep one default path. Two instances need `--control` and `DM_CONTROL`, as today.
 
