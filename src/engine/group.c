@@ -238,10 +238,10 @@ uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t crea
     int16_t i = creature_index < 0 ? rec_group_last_creature_index(group) : creature_index;
     for (;;) {
         uint8_t aspect = active->aspect[i] & ASPECT_KEEP_FLAGS;
-        if (GRAPHIC_HORIZONTAL_OFFSET_RANGE(graphic))
-            aspect |= random_aspect_offset(GRAPHIC_HORIZONTAL_OFFSET_RANGE(graphic));
-        if (GRAPHIC_VERTICAL_OFFSET_RANGE(graphic))
-            aspect |= random_aspect_offset(GRAPHIC_VERTICAL_OFFSET_RANGE(graphic)) << ASPECT_VERTICAL_OFFSET_SHIFT;
+        if (tables_get_horizontal_range(graphic))
+            aspect |= random_aspect_offset(tables_get_horizontal_range(graphic));
+        if (tables_get_vertical_range(graphic))
+            aspect |= random_aspect_offset(tables_get_vertical_range(graphic)) << ASPECT_VERTICAL_OFFSET_SHIFT;
         if (!attacking) {
             if (!(graphic & GRAPHIC_FLIP_NON_ATTACK)) {
                 aspect &= ~ASPECT_FLIPPED;

@@ -67,7 +67,7 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_pointer_zone` | `0x1004f8` | 12-byte record × 16 | Zone |
 | `tables_get_pointer_hotspot_x`, `tables_get_pointer_hotspot_y` | `0x1005c8` | 8-byte record × 4 | Pointer shape |
 | `tables_get_pointer_shadow_dx`, `tables_get_pointer_shadow_dy` | `0x102952`, `0x102954` | int16 | — |
-| `tables_get_pointer_planes` | `0x1002b0` (arrow), `0x1003d4` (hand) | 4 bit planes (pointer), size words before | Hand |
+| `tables_get_pointer_bitmap` | `0x1002b0` (arrow), `0x1003d4` (hand) | 4 bit planes (pointer), size words before | Hand |
 | `tables_get_mouse_input`, `tables_set_mouse_input_box` | `0x10318c` … `0x10378c` (14 tables), dialog tables through the pointers at `0x103bd4` | 12-byte entry (command, x1, x2, y1, y2, buttons); command 0 ends a table | `TABLES_MOUSE_*` table, entry |
 | `tables_get_key_command` | `0x10393c`, `0x103948`, `0x103964`, `0x103980`, `0x10398c` | 4-byte entry (command, key); command 0 ends a table | `TABLES_KEYS_*`, key |
 

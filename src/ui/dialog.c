@@ -46,7 +46,7 @@ static void patch_dividers(Bitmap *viewport, int16_t count)
     if (!patch_zone[count - 1])
         return;
     Bitmap copy = {viewport->w, viewport->h, copy_px};
-    TablesRect source = tables_get_layout_bitmap(patch_layout[count - 1] - 1);
+    Box source = tables_get_layout_bitmap(patch_layout[count - 1] - 1);
     int16_t sx = source.x;
     int16_t sy = source.y;
     int16_t w = source.w;

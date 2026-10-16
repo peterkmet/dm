@@ -439,10 +439,10 @@ void gameloop_tick(void)
 /* Reads the 4 bit plane bitmap of the arrow or the hand pointer into one color per pixel. */
 static void decode_planar_pointer(bool hand, uint8_t *px, int *w, int *h)
 {
-    int16_t pw, ph;
-    const uint8_t *planes = tables_get_pointer_planes(hand, &pw, &ph);
-    *w = (uint16_t)pw; /* the size words are unsigned */
-    *h = (uint16_t)ph;
+    PointerBitmap bitmap = tables_get_pointer_bitmap(hand);
+    const uint8_t *planes = bitmap.planes;
+    *w = (uint16_t)bitmap.width; /* the size words are unsigned */
+    *h = (uint16_t)bitmap.height;
     int row_bytes = (*w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD * 2;
     int plane = row_bytes * *h;
     for (int y = 0; y < *h; y++)

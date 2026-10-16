@@ -585,11 +585,11 @@ int16_t tables_get_viewport_height(void)
     return kaos_s16(KAOS_VIEWPORT_HEIGHT);
 }
 
-TablesRect tables_get_layout_bitmap(int16_t slot)
+Box tables_get_layout_bitmap(int16_t slot)
 {
     uint32_t record = KAOS_LAYOUT_BITMAPS + LAYOUT_BITMAP_BYTES * slot;
-    return (TablesRect){kaos_s16(record + LAYOUT_AT_X), kaos_s16(record + LAYOUT_AT_Y), kaos_s16(record + LAYOUT_AT_W),
-                        kaos_s16(record + LAYOUT_AT_H)};
+    return (Box){kaos_s16(record + LAYOUT_AT_X), kaos_s16(record + LAYOUT_AT_Y), kaos_s16(record + LAYOUT_AT_W),
+                 kaos_s16(record + LAYOUT_AT_H)};
 }
 
 uint16_t tables_get_palette_color(int16_t palette, int16_t color)
@@ -696,10 +696,10 @@ int16_t tables_get_button_inner_border(int16_t axis)
 {
     return kaos_s16(KAOS_ENDGAME_BUTTON_INNER_BORDER + 2 * axis);
 }
-TablesRect tables_get_csb_restart_box(bool inner)
+Box tables_get_csb_restart_box(bool inner)
 {
     uint32_t at = CSB_RESTART_BOXES + (inner ? CSB_BOX_BYTES : 0);
-    return (TablesRect){kaos_s16(at), kaos_s16(at + 2), kaos_s16(at + 4), kaos_s16(at + 6)};
+    return (Box){kaos_s16(at), kaos_s16(at + 2), kaos_s16(at + 4), kaos_s16(at + 6)};
 }
 
 PointerZone tables_get_pointer_zone(int16_t i)
@@ -725,11 +725,11 @@ int16_t tables_get_pointer_shadow_dy(void)
     return kaos_s16(KAOS_POINTER_SHADOW_DY);
 }
 /* The bit planes of the arrow or the hand pointer and its size. */
-const uint8_t *tables_get_pointer_planes(bool hand, int16_t *w, int16_t *h)
+PointerBitmap tables_get_pointer_bitmap(bool hand)
 {
-    *w = kaos_s16(hand ? KAOS_HAND_POINTER_WIDTH : KAOS_ARROW_POINTER_WIDTH);
-    *h = kaos_s16(hand ? KAOS_HAND_POINTER_HEIGHT : KAOS_ARROW_POINTER_HEIGHT);
-    return kaos_ptr(hand ? KAOS_HAND_POINTER_BITMAP : KAOS_ARROW_POINTER_BITMAP);
+    return (PointerBitmap){kaos_ptr(hand ? KAOS_HAND_POINTER_BITMAP : KAOS_ARROW_POINTER_BITMAP),
+                           kaos_s16(hand ? KAOS_HAND_POINTER_WIDTH : KAOS_ARROW_POINTER_WIDTH),
+                           kaos_s16(hand ? KAOS_HAND_POINTER_HEIGHT : KAOS_ARROW_POINTER_HEIGHT)};
 }
 
 /* Image address of a mouse input table; the dialog tables come from a pointer table. */

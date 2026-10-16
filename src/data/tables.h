@@ -2,6 +2,7 @@
 #ifndef DM_DATA_TABLES_H
 #define DM_DATA_TABLES_H
 /* Prefixes: tables_ */
+#include "data/graphics.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -52,16 +53,28 @@
 #define OBJECT_PASSES_DOOR_GRATE    0x0100
 
 /* Creature graphic info bits (CreatureInfo.graphic_info). */
-#define GRAPHIC_FLIP_NON_ATTACK               0x0004
-#define GRAPHIC_HAS_SIDE                      0x0008
-#define GRAPHIC_HAS_BACK                      0x0010
-#define GRAPHIC_HAS_ATTACK                    0x0020
-#define GRAPHIC_SPECIAL_D2_FRONT              0x0080
-#define GRAPHIC_D2_FRONT_FLIPPED              0x0100
-#define GRAPHIC_FLIP_ATTACK                   0x0200
-#define GRAPHIC_FLIP_DURING_ATTACK            0x0400
-#define GRAPHIC_HORIZONTAL_OFFSET_RANGE(info) ((info) >> 12 & 3)
-#define GRAPHIC_VERTICAL_OFFSET_RANGE(info)   ((info) >> 14)
+#define GRAPHIC_FLIP_NON_ATTACK         0x0004
+#define GRAPHIC_HAS_SIDE                0x0008
+#define GRAPHIC_HAS_BACK                0x0010
+#define GRAPHIC_HAS_ATTACK              0x0020
+#define GRAPHIC_SPECIAL_D2_FRONT        0x0080
+#define GRAPHIC_D2_FRONT_FLIPPED        0x0100
+#define GRAPHIC_FLIP_ATTACK             0x0200
+#define GRAPHIC_FLIP_DURING_ATTACK      0x0400
+#define GRAPHIC_HORIZONTAL_OFFSET_SHIFT 12
+#define GRAPHIC_VERTICAL_OFFSET_SHIFT   14
+#define GRAPHIC_OFFSET_RANGE_MASK       0x3
+
+/* Range of the random horizontal aspect offset of a creature graphic. */
+static inline uint16_t tables_get_horizontal_range(uint16_t graphic_info)
+{
+    return graphic_info >> GRAPHIC_HORIZONTAL_OFFSET_SHIFT & GRAPHIC_OFFSET_RANGE_MASK;
+}
+/* Range of the random vertical aspect offset of a creature graphic. */
+static inline uint16_t tables_get_vertical_range(uint16_t graphic_info)
+{
+    return graphic_info >> GRAPHIC_VERTICAL_OFFSET_SHIFT;
+}
 
 typedef struct {
     uint8_t aspect_index;
@@ -284,12 +297,8 @@ int16_t tables_get_viewport_width(void);
 /* Height of the viewport. */
 int16_t tables_get_viewport_height(void);
 
-/* Source rectangle of a layout bitmap slot in its graphic (0: the bitmap size). */
-typedef struct {
-    int16_t x, y, w, h;
-} TablesRect;
 /* Source rectangle of layout bitmap slot in its graphic. */
-TablesRect tables_get_layout_bitmap(int16_t slot);
+Box tables_get_layout_bitmap(int16_t slot);
 
 /* Palettes; TABLES_PALETTE_DUNGEON + light level (0-5) gives the dungeon palette of that light. */
 #define TABLES_PALETTE_COLOR_COUNT 16
@@ -362,7 +371,7 @@ int16_t tables_get_button_border(int16_t axis);
 /* Inner border of an endgame button on one axis. */
 int16_t tables_get_button_inner_border(int16_t axis);
 /* CSB: the outer or the inner box of the RESTART THIS GAME button. */
-TablesRect tables_get_csb_restart_box(bool inner);
+Box tables_get_csb_restart_box(bool inner);
 
 /* Mouse pointer: the zones that select the pointer shape, the hotspots, the shadow, and the bitmaps. */
 typedef struct {
@@ -378,8 +387,12 @@ int16_t tables_get_pointer_hotspot_y(int16_t shape);
 int16_t tables_get_pointer_shadow_dx(void);
 /* Shadow offset y of the object pointer. */
 int16_t tables_get_pointer_shadow_dy(void);
-/* The 4 bit planes of the arrow or the hand pointer; *w and *h get its size. */
-const uint8_t *tables_get_pointer_planes(bool hand, int16_t *w, int16_t *h);
+/* The 4 bit planes and the size of the arrow or the hand pointer. */
+typedef struct {
+    const uint8_t *planes;
+    int16_t width, height;
+} PointerBitmap;
+PointerBitmap tables_get_pointer_bitmap(bool hand);
 
 /* Mouse input tables: which screen boxes give which command, in the order of their image addresses. */
 #define TABLES_MOUSE_INTERFACE    0  /* the champion bars, the action and spell areas */

@@ -443,7 +443,7 @@ static void draw_wall_bitmap(int16_t bitmap_id, int16_t zone, int mode)
     int16_t height = 0;
     if (bitmap_id < 0) { /* the slot gives the graphic and the source rectangle */
         int16_t slot = -1 - bitmap_id;
-        TablesRect slot_rect = tables_get_layout_bitmap(slot);
+        Box slot_rect = tables_get_layout_bitmap(slot);
         graphic = slot_graphics[slot];
         flip ^= slot_flip[slot];
         sx = slot_rect.x;

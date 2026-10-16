@@ -316,7 +316,7 @@ static void draw_champion_parade(void)
 /* The outer or the inner box of the CSB endgame button. */
 static Box get_csb_box(bool inner)
 {
-    TablesRect r = tables_get_csb_restart_box(inner);
+    Box r = tables_get_csb_restart_box(inner);
     return (Box){r.x, r.y, r.w, r.h};
 }
 
