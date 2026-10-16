@@ -517,13 +517,13 @@ void startend_run_fuse_sequence(void)
     game_start_fuse_sequence();
     ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX);
     fuse_update();
-    game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
+    map_step(g_party_direction, 1, 0, &x, &y);
     uint16_t lord = map_get_square_group(x, y);
     if (lord == THING_ENDOFLIST)
         return;
     group_set_health(lord, 0, FUSE_LORD_HEALTH);
     group_set_cells(lord, CELL_CENTERED, g_party_map_index);
-    group_set_directions(lord, (uint8_t)turn_back(g_party_direction), g_party_map_index); /* faces the party */
+    group_set_directions(lord, (uint8_t)direction_back(g_party_direction), g_party_map_index); /* faces the party */
     remove_fluxcages(g_party_map_x, g_party_map_y);
     remove_fluxcages(x, y);
     fuse_update();

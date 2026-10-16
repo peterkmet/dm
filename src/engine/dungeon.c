@@ -3,7 +3,6 @@
 #include "data/adventure.h"
 #include "data/file.h"
 #include "data/tables.h"
-#include "engine/game.h"
 #include "engine/map.h"
 #include "engine/party.h"
 #include "engine/timeline.h"

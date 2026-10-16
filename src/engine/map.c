@@ -101,9 +101,9 @@ int16_t map_get_stairs_exit_direction(int16_t x, int16_t y)
     int16_t direction = map_get_square(x, y) & STAIRS_NORTH_SOUTH ? DIRECTION_NORTH : DIRECTION_EAST;
     int16_t ahead_x = x;
     int16_t ahead_y = y;
-    game_update_map_coordinates_after_relative_movement(direction, 1, 0, &ahead_x, &ahead_y);
+    map_step(direction, 1, 0, &ahead_x, &ahead_y);
     int16_t type = map_get_square_type(ahead_x, ahead_y);
-    return type == SQUARE_WALL || type == SQUARE_STAIRS ? turn_back(direction) : direction;
+    return type == SQUARE_WALL || type == SQUARE_STAIRS ? direction_back(direction) : direction;
 }
 
 uint16_t map_get_next_thing(uint16_t thing)
@@ -405,4 +405,11 @@ void scroll_set_closed(uint16_t thing, bool closed)
 void rec_sensor_disable(uint16_t thing)
 {
     dungeon_get_thing_data(thing)[3] &= 0x80;
+}
+
+void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *x, int16_t *y)
+{
+    int16_t side = direction_right(direction);
+    *x = *x + forward * tables_get_step_east(direction) + right * tables_get_step_east(side);
+    *y = *y + forward * tables_get_step_north(direction) + right * tables_get_step_north(side);
 }

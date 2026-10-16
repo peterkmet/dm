@@ -1,28 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_ENGINE_GAME_H
 #define DM_ENGINE_GAME_H
-/* Prefixes: game_ turn_ */
+/* Prefixes: game_ */
 #include <stdbool.h>
 #include <stdint.h>
 
-#define NORMALIZE(direction) ((direction) & 3)
-#define CELL_COUNT           4   /* cells of a square, one for each direction */
-#define WATCHDOG_INTERVAL    300 /* game ticks between two watchdog events */
-#define SYSTEM_ERROR_MEMORY  70  /* allocation failed, or an event is missing from the timeline */
+/* The game session: the clock, the run flags, the modes and cheats, and the redraw flags that the rules raise. */
 
-/* The direction or cell a quarter turn right, a half turn, or a quarter turn left of this one. */
-static inline int16_t turn_right(int16_t direction)
-{
-    return NORMALIZE(direction + 1);
-}
-static inline int16_t turn_back(int16_t direction)
-{
-    return NORMALIZE(direction + 2);
-}
-static inline int16_t turn_left(int16_t direction)
-{
-    return NORMALIZE(direction + 3);
-}
+#define WATCHDOG_INTERVAL   300 /* game ticks between two watchdog events */
+#define SYSTEM_ERROR_MEMORY 70  /* allocation failed, or an event is missing from the timeline */
 
 extern bool g_party_is_sleeping, g_party_dead;
 extern bool g_game_won;
@@ -66,9 +52,5 @@ void game_increment_time(void);
 void game_advance_time(void);
 /* The rest of the tick: the champions get their time effects and the movement delays count down. */
 void game_apply_tick_effects(void);
-
-/* Moves map coordinates by steps forward and to the right of a direction. */
-void game_update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
-                                                         int16_t *map_x, int16_t *map_y);
 
 #endif

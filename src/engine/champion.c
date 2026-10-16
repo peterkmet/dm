@@ -213,13 +213,6 @@ static void print_champion_message(uint16_t champion_index, int16_t text)
     message_print(color, gfx_get_string(text + 1), g_game_time);
 }
 
-static void get_square_in_front(int16_t *x, int16_t *y)
-{
-    *x = g_party_map_x;
-    *y = g_party_map_y;
-    game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, x, y);
-}
-
 int16_t champion_get_index_in_cell(int16_t cell)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++)
@@ -336,7 +329,9 @@ static uint16_t get_candidate_slot(const Champion *c, uint16_t thing, uint16_t *
 static void add_candidate_possessions(uint16_t champion_index)
 {
     int16_t x, y;
-    get_square_in_front(&x, &y);
+    x = g_party_map_x;
+    y = g_party_map_y;
+    map_step(g_party_direction, 1, 0, &x, &y);
     uint16_t cell = (g_party_direction + 2) % CELL_COUNT;
     uint16_t backpack = SLOT_BACKPACK_FIRST;
     for (uint16_t t = map_get_square_first_thing(x, y); t != THING_END; t = map_get_next_thing(t)) {
@@ -456,7 +451,9 @@ void champion_click_in_resurrect_reincarnate_panel(int16_t command)
         return;
     }
     int16_t x, y;
-    get_square_in_front(&x, &y);
+    x = g_party_map_x;
+    y = g_party_map_y;
+    map_step(g_party_direction, 1, 0, &x, &y);
     for (uint16_t s = 0; s < SLOT_COUNT; s++)
         if (c->slots[s] != THING_NONE)
             map_unlink_thing_from_list(c->slots[s], 0, x, y);

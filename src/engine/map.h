@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_ENGINE_MAP_H
 #define DM_ENGINE_MAP_H
-/* Prefixes: door_ square_ thing_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ */
+/* Prefixes: door_ square_ thing_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ direction_ */
 #include "data/bytes.h"
 #include "engine/dungeon.h"
 #include <stdbool.h>
@@ -10,15 +10,34 @@
 /* Current map, square bytes, thing lists, and the record fields that the movement rules use.
    Coordinates are on the current map. All records keep the big-endian layout of Dungeon.DAT. */
 
-#define DIRECTION_NORTH 0
-#define DIRECTION_EAST  1
-#define DIRECTION_SOUTH 2
-#define DIRECTION_WEST  3
-#define DIRECTION_BITS  2
-#define LEVEL_UP        (-1)
-#define LEVEL_DOWN      1
-#define MAP_COORD_BITS  5 /* maps are at most 32 squares wide and high */
-#define MAP_COORD_MASK  0x1f
+#define NORMALIZE(direction) ((direction) & 3)
+#define CELL_COUNT           4 /* cells of a square, one for each direction */
+#define DIRECTION_NORTH      0
+#define DIRECTION_EAST       1
+#define DIRECTION_SOUTH      2
+#define DIRECTION_WEST       3
+#define DIRECTION_BITS       2
+#define LEVEL_UP             (-1)
+#define LEVEL_DOWN           1
+#define MAP_COORD_BITS       5 /* maps are at most 32 squares wide and high */
+#define MAP_COORD_MASK       0x1f
+
+/* The direction or cell a quarter turn right, a half turn, or a quarter turn left of this one. */
+static inline int16_t direction_right(int16_t direction)
+{
+    return NORMALIZE(direction + 1);
+}
+static inline int16_t direction_back(int16_t direction)
+{
+    return NORMALIZE(direction + 2);
+}
+static inline int16_t direction_left(int16_t direction)
+{
+    return NORMALIZE(direction + 3);
+}
+
+/* Moves x and y by steps forward and to the right of a direction. */
+void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *x, int16_t *y);
 
 /* Square byte: type in bits 5-7, a thing list in bit 4, type flags in bits 0-3. */
 #define SQUARE_WALL            0

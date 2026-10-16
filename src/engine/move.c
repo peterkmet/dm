@@ -148,8 +148,8 @@ static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_
                 map_set_current_map(*map);
             }
             int16_t exit = map_get_stairs_exit_direction(*dst_x, *dst_y);
-            game_update_map_coordinates_after_relative_movement(exit, 1, 0, dst_x, dst_y);
-            *start_direction = turn_back(exit);
+            map_step(exit, 1, 0, dst_x, dst_y);
+            *start_direction = direction_back(exit);
             /* The object takes the cell on the side it came from, next to the stairs. */
             uint16_t cell = *start_direction + ((((THING_CELL(thing) - *start_direction) + 1) & 2) >> 1);
             thing = THING_WITH_CELL(thing, cell);
@@ -303,7 +303,7 @@ static void bump_into_wall(int16_t x, int16_t y, int16_t arrow)
     int16_t cell = NORMALIZE(g_party_direction + arrow + 2);
     int16_t first = group_get_target_champion_index(x, y, cell);
     int16_t damaged = champion_add_pending_damage_and_wounds(first, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
-    int16_t second = group_get_target_champion_index(x, y, turn_right(cell));
+    int16_t second = group_get_target_champion_index(x, y, direction_right(cell));
     if (second != first)
         damaged |= champion_add_pending_damage_and_wounds(second, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
     if (damaged)
@@ -326,8 +326,7 @@ void move_party(int16_t command)
         move_take_stairs(square & STAIRS_UP);
         return;
     }
-    game_update_map_coordinates_after_relative_movement(g_party_direction, tables_get_arrow_steps_forward(arrow),
-                                                        tables_get_arrow_steps_right(arrow), &x, &y);
+    map_step(g_party_direction, tables_get_arrow_steps_forward(arrow), tables_get_arrow_steps_right(arrow), &x, &y);
     square = map_get_square(x, y);
     if (SQUARE_TYPE(square) == SQUARE_STAIRS) {
         move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);

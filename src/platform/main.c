@@ -102,16 +102,16 @@ static void view_key(int key)
     else if (key == SDLK_DOWN)
         forward = -1;
     else if (key == SDLK_LEFT)
-        direction = turn_left(direction);
+        direction = direction_left(direction);
     else if (key == SDLK_RIGHT)
-        direction = turn_right(direction);
+        direction = direction_right(direction);
     else if (key == SDLK_A)
         right = -1;
     else if (key == SDLK_D)
         right = 1;
     else
         return;
-    game_update_map_coordinates_after_relative_movement(direction, forward, right, &x, &y);
+    map_step(direction, forward, right, &x, &y);
     if (x < 0 || x >= dungeon_map_width(map) || y < 0 || y >= dungeon_map_height(map))
         return;
     uint8_t square = dungeon_get_square(map, x, y);

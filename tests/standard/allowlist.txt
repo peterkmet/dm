@@ -154,8 +154,6 @@ name engine/champion.h:champion_click_in_resurrect_reincarnate_panel open: epic 
 name engine/champion.h:champion_reset_data_to_start_game open: epic 6
 name engine/dungeon.c:get_column_first_thing_index open: epic 6
 name engine/dungeon.c:read_square_things_and_text open: epic 6
-name engine/game.c:game_update_map_coordinates_after_relative_movement open: epic 6
-name engine/game.h:game_update_map_coordinates_after_relative_movement open: epic 6
 name engine/group.c:group_drop_creature_fixed_possessions open: epic 6
 name engine/group.c:group_drop_moving_creature_fixed_possessions open: epic 6
 name engine/group.c:group_get_active_group_thing open: epic 6
@@ -301,7 +299,6 @@ static-prefix engine/group.c:move_in_direction open: epic 6
 static-prefix engine/group.c:move_toward open: epic 6
 static-prefix engine/group.c:random_aspect_offset open: epic 6
 static-prefix engine/group.c:random_move open: epic 6
-static-prefix engine/group.c:turn_and_finish open: epic 6
 static-prefix engine/group.c:wait_after_attack open: epic 6
 static-prefix engine/projectile.c:explosion_damage_square open: epic 6
 static-prefix engine/projectile.c:explosion_random_damage open: epic 6
@@ -313,11 +310,6 @@ static-prefix platform/control.c:move_forward open: epic 10
 static-prefix platform/control.c:move_left open: epic 10
 static-prefix platform/control.c:move_right open: epic 10
 static-prefix platform/control.c:spell_click open: epic 10
-static-prefix platform/control.c:turn_bumped open: epic 10
-static-prefix platform/control.c:turn_displaced open: epic 10
-static-prefix platform/control.c:turn_finished open: epic 10
-static-prefix platform/control.c:turn_party_left open: epic 10
-static-prefix platform/control.c:turn_party_right open: epic 10
 static-prefix platform/main.c:advanced_key open: epic 11
 static-prefix platform/main.c:entrance_frame open: epic 11
 static-prefix platform/main.c:select_input open: epic 11
@@ -418,7 +410,6 @@ static-prefix ui/view.c:draw_wall_part open: epic 8
 static-prefix ui/view.c:draw_wall_portrait open: epic 8
 static-prefix ui/view.c:draw_wall_text open: epic 8
 comment engine/action.h open: epic 5
-comment engine/champion.c open: epic 5
 comment engine/champion.h open: epic 5
 comment engine/dungeon.h open: epic 5
 comment engine/explored.c open: epic 5
@@ -742,8 +733,6 @@ type engine:info open: epic 6
 type engine:kinetic_energy open: epic 6
 type engine:len open: epic 6
 type engine:map open: epic 6
-type engine:map_x open: epic 6
-type engine:map_y open: epic 6
 type engine:mode open: epic 6
 type engine:out open: epic 6
 type engine:s open: epic 6

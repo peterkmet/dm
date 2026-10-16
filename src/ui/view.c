@@ -752,9 +752,9 @@ static int16_t get_creature_ordinal_in_cell(const Group *s, uint16_t cell)
     int16_t i = rec_group_last_creature_index(s->thing);
     if (s->size == CREATURE_SIZE_HALF) {
         if ((cell & 1) == (s->dirs & 1))
-            cell = turn_left(cell);
+            cell = direction_left(cell);
         for (; i >= 0; i--)
-            if (cell == get_creature_cell(s, i) || turn_right(cell) == get_creature_cell(s, i))
+            if (cell == get_creature_cell(s, i) || direction_right(cell) == get_creature_cell(s, i))
                 return i + 1;
     } else
         for (; i >= 0; i--)
@@ -850,7 +850,7 @@ static bool draw_creatures_in_cell(const Group *group, int16_t dir, int16_t view
                     index = 0;
                 second = rec_group_last_creature_index(group->thing);
                 uint16_t c = get_creature_cell(group, creature_index);
-                pos = c == dir || turn_left(dir) == c ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
+                pos = c == dir || direction_left(dir) == c ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
             } else {
                 if (index < 0)
                     return false;
@@ -954,7 +954,7 @@ static int16_t get_projectile_pose(const uint8_t *aspect, uint16_t thing, int16_
             pose = kind == PROJECTILE_NO_BACK ? POSE_BACK
                                               : POSE_SIDE; /* without a back graphic the side graphic is second */
             if (!rotates)
-                flip = turn_right(dir) == flight;
+                flip = direction_right(dir) == flight;
             else {
                 flip = cell == VIEW_CELL_BACK_LEFT || cell == VIEW_CELL_FRONT_LEFT;
                 if (!odd_square)
@@ -1145,7 +1145,7 @@ static void draw_explosions(uint16_t thing, int16_t dir, int16_t view_square, in
             zone = ZONE_REBIRTH_STEP2_FIRST + coord;
             scale = tables_get_rebirth_scale(TABLES_REBIRTH_STEP_2, coord);
         } else {
-            bool far_side = !(cell == dir || turn_left(dir) == cell);
+            bool far_side = !(cell == dir || direction_left(dir) == cell);
             zone = rec_explosion_is_centered(thing)
                        ? ZONE_EXPLOSION_CENTERED_FIRST + explosion_coord
                        : ZONE_EXPLOSION_FIRST + explosion_coord * ZONE_EXPLOSION_SIDES + far_side;
@@ -1230,7 +1230,7 @@ static void draw_square_things(uint16_t first, int16_t dir, int16_t x, int16_t y
             pile = 0;
         } else {
             cell = VIEW_CELL_CENTER;
-            mcell = turn_back(dir); /* the alcove side of the wall faces the party */
+            mcell = direction_back(dir); /* the alcove side of the wall faces the party */
             pile = PILE_ALCOVE_FIRST;
         }
         pile += (mcell & 1) * PILE_ODD_CELL; /* odd map cells start in the second half of the shifts */
@@ -2242,8 +2242,8 @@ void view_load_map(int16_t m)
 /* The square forward and right of (x, y) in direction dir. */
 static void get_relative_square(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_t *y)
 {
-    *x += forward * tables_get_step_east(dir) + right * tables_get_step_east(turn_right(dir));
-    *y += forward * tables_get_step_north(dir) + right * tables_get_step_north(turn_right(dir));
+    *x += forward * tables_get_step_east(dir) + right * tables_get_step_east(direction_right(dir));
+    *y += forward * tables_get_step_north(dir) + right * tables_get_step_north(direction_right(dir));
 }
 
 int16_t view_get_wall_ornament(int16_t x, int16_t y, int16_t face)
@@ -2517,7 +2517,7 @@ static void draw_map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16
     case ELEMENT_STAIRS_FRONT: {
         int16_t side = NORMALIZE(map_get_stairs_exit_direction(x, y) - dir);
         if (aspect.state)
-            side = turn_back(side);
+            side = direction_back(side);
         draw_map_tile(dst, MAP_TILE_STAIRS_FIRST + side, px, py);
         break;
     }

@@ -193,7 +193,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 | `min16`, `max16` | `0x107652`, `0x107668` | Minimum and maximum of two words. |
 | `bounded_value(min, value, max)` | `0x10767e` | Returns `min` when `value <= min`, else the lower of `value` and `max`. |
 | `scale_value(a, shift, b)` | `0x1076f8` | `(a * b) >> shift`: unsigned 16 × 16 multiply, arithmetic shift of the 32-bit result. Callers use the low word. |
-| `game_update_map_coordinates_after_relative_movement` | `0x10a85c` | Adds forward and right steps. Reads the step tables through `tables_get_step_east` and `tables_get_step_north` (KAOS `0x101038`: 0, 1, 0, −1 and `0x101040`: −1, 0, 1, 0). |
+| `map_step` | `0x10a85c` | Adds forward and right steps. Reads the step tables through `tables_get_step_east` and `tables_get_step_north` (KAOS `0x101038`: 0, 1, 0, −1 and `0x101040`: −1, 0, 1, 0). |
 | `NORMALIZE(direction)` | — | `direction & 3`. |
 | `champion_adjust_by_stamina` | `0x110f4c` | When current stamina is below half of the maximum: `value / 2 + value * stamina / (maximum / 2)`. |
 | `champion_get_adjusted_attack` | `0x110f88` | `d = 170 − current statistic`. Returns `attack >> 3` when `d < 16`, else `scale_value(attack, 7, d)`. |
@@ -208,7 +208,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 The original reads the three luck bytes as signed bytes in this function. A current luck of 128 or more counts as not above 0. The port keeps this behavior.
 
-KAOS tables must be loaded (`tables_load`) before `game_update_map_coordinates_after_relative_movement` runs.
+KAOS tables must be loaded (`tables_load`) before `map_step` runs.
 
 ## Tests
 
