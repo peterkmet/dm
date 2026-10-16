@@ -96,6 +96,7 @@ typedef struct {
     char match[PATH_SIZE]; /* the first name in the folder that equals wanted without case, or empty */
 } NameSearch;
 
+/* Keeps the first folder entry whose name equals the wanted name without case. */
 static void keep_first_match(const char *name, void *data)
 {
     NameSearch *search = data;

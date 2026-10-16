@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_UI_VIEW_H
 #define DM_UI_VIEW_H
+/* Prefixes: view_ */
+
 /* Draws the dungeon view and the CSB magic map from game state and changes no game state; its outputs are the click
    boxes, the piles and the facing flags of the last view. */
-/* Prefixes: view_ */
+
 #include "data/graphics.h"
 #include <stdbool.h>
 #include <stdint.h>

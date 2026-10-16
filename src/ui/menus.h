@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* MENU.C state. */
+/* State of the action area. */
 extern bool g_action_area_contains_icons;
 
 /* Draws the movement arrows. */

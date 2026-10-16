@@ -2,10 +2,12 @@
 #ifndef DM_UI_GAMELOOP_H
 #define DM_UI_GAMELOOP_H
 /* Prefixes: gameloop_ */
+
+/* Game start and the main loop: it loads the game data, starts a new or a loaded game, runs a tick, and draws what
+   changed. It must not hold a game rule; the rules are in engine/. */
+
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Game start and the main loop (KAOS initialize_game, start_game, game_loop, process_entrance). */
 
 #define POINTER_SIZE 32 /* largest pointer image, in pixels */
 
@@ -24,18 +26,19 @@ bool gameloop_load_data(const char *dir);
 const char *gameloop_get_data_dir(void);
 /* Loads Dungeon.DAT from dir and starts a new game on the start square. Returns true on success. */
 bool gameloop_start_new_game(const char *dir);
-/* start_game for a game that savegame_load restored: the party map, "GAME LOADED", the interface. */
+/* Starts a game that savegame_load restored: the party map, "GAME LOADED", the interface. */
 void gameloop_start_loaded_game(void);
 /* gameloop_start_loaded_game without the "GAME LOADED" dialog: the game goes on at once (quick load). */
 void gameloop_continue_loaded_game(void);
-/* The dungeon view of the party in the light of the party (draw_dungeon_view). */
+/* The dungeon view of the party in the light of the party. */
 void gameloop_draw_view(void);
 /* Runs the waiting commands of one 50 Hz frame. Returns true when the wait for input is over and a
    game tick is due (gameloop_tick). */
 bool gameloop_run_frame(void);
 /* Runs all waiting commands and draws what they changed, without the wait for a tick. */
 void gameloop_run_commands(void);
-/* One game tick: map change, timeline, view, sounds, damage, time, champion effects, interface. */
+/* One game tick: map change, timeline, view, sounds, damage, time, champion effects, interface. A dead party
+   ends in the endgame. */
 void gameloop_tick(void);
 /* The pointer image at screen position (x, y): px gets w x h colors (0 transparent) of the sprite
    palette. Returns false when the pointer is hidden. */

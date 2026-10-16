@@ -84,7 +84,6 @@ static void set_party_light(void)
     party_set_light_level(g_party_map_index, party_get_light());
 }
 
-/* The dungeon view of the party in the light of the party. */
 void gameloop_draw_view(void)
 {
     set_party_light();
@@ -190,7 +189,7 @@ static void reset_champions_of_loaded_game(void)
     menus_draw_spell_area();
 }
 
-/* start_game for a loaded game; the "GAME LOADED" dialog shows when confirm is true. */
+/* The start of a loaded game; the "GAME LOADED" dialog shows when confirm is true. */
 static void start_loaded_game(bool confirm)
 {
     start_game();
@@ -219,7 +218,7 @@ void gameloop_continue_loaded_game(void)
     start_loaded_game(false);
 }
 
-/* The fuse action and sensor 18 ask for a sequence that runs outside the commands and events. */
+/* The fuse action and the endgame sensor ask for a sequence that runs outside the commands and events. */
 static void run_requested_sequence(void)
 {
     if (projectile_take_fuse_request())
@@ -258,7 +257,6 @@ bool gameloop_run_frame(void)
     return tick;
 }
 
-/* Runs all waiting commands and draws what they changed, as gameloop_run_frame does (control socket). */
 void gameloop_run_commands(void)
 {
     bool ran = false;
@@ -296,7 +294,6 @@ static void draw_spell_area_before_last_death(const Champion *before)
         menus_refresh_spell_area(&before[caster]);
 }
 
-/* One tick of the game. A dead party ends in the endgame. */
 void gameloop_tick(void)
 {
     frames_waiting = 0;
@@ -359,7 +356,7 @@ static void decode_planar_pointer(bool hand, uint8_t *px, int *w, int *h)
         }
 }
 
-/* The object icon of the leader hand with a black shadow at the shadow offset (build_mouse_pointer_bitmap). */
+/* The object icon of the leader hand with a black shadow at the shadow offset. */
 static void make_object_pointer(uint8_t *px, int *width, int *height)
 {
     uint8_t icon_px[UI_ICON_SIZE * UI_ICON_SIZE];

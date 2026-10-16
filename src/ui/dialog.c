@@ -148,7 +148,7 @@ static void draw_pressed_button(int16_t table, int16_t choice)
     MouseInput entry;
     Box button;
     if (!tables_get_mouse_input(table, choice - 1, &entry) || !ui_zone_box(entry.x2, &button))
-        return; /* the zone word of an entry with a negative x1 */
+        return;
     int x = button.x;
     int y = button.y;
     int width = button.w;

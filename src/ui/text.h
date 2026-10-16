@@ -2,6 +2,9 @@
 #ifndef DM_UI_TEXT_H
 #define DM_UI_TEXT_H
 /* Prefixes: text_ */
+
+/* The DM font: it draws text and measures it. It owns the font data; it knows no zone and no game state. */
+
 #include "data/graphics.h"
 #include "data/ids.h"
 #include <stdbool.h>
@@ -18,7 +21,7 @@ void text_draw_screen(int16_t x, int16_t y, uint8_t fg, uint8_t bg, const char *
 /* Pixel size of s. Returns false for an empty text. */
 bool text_get_size(const char *s, int16_t *w, int16_t *h);
 /* Draws s in the box (x, y, w, h), left aligned or centered, vertically centered.
-   The original gets this position from the zone data (text_print_to_bitmap_zone). */
+   The zone data gives this position in the original. */
 void text_draw_box(Bitmap *bm, int16_t x, int16_t y, int16_t w, int16_t h, bool centered, uint8_t fg, uint8_t bg,
                    const char *s);
 

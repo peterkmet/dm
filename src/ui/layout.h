@@ -2,6 +2,10 @@
 #ifndef DM_UI_LAYOUT_H
 #define DM_UI_LAYOUT_H
 /* Prefixes: layout_ */
+
+/* The screen layout from the layout graphic of Graphics.DAT: it finds the box of a zone on the screen. It owns the
+   layout data only; it draws nothing. */
+
 #include "data/graphics.h"
 #include <stdbool.h>
 #include <stdint.h>

@@ -78,6 +78,7 @@ static InputTables get_current_input(void)
     return (InputTables){primary_mouse, secondary_mouse, primary_keys, secondary_keys};
 }
 
+/* Makes the tables t the active input tables. */
 static void set_input(InputTables t)
 {
     primary_mouse = t.primary_mouse;
@@ -100,6 +101,7 @@ void command_restore_input(void)
     set_input(dialog_input);
 }
 
+/* The input tables of the game screen. */
 static void set_game_input(void)
 {
     primary_mouse = TABLES_MOUSE_INTERFACE;

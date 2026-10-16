@@ -2,13 +2,14 @@
 #ifndef DM_UI_ADVANCED_H
 #define DM_UI_ADVANCED_H
 /* Prefixes: advanced_ */
-#include <stdbool.h>
-#include <stdint.h>
 
 /* Game modes and the advanced features (not in the original game): automap with a position read-out,
    quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat
    meters, Escape and Tab close the inventory, the whole party drinks at a fountain.
    The game rules are the same in every mode. Plan: docs/superpowers/archive/2026-10-04-modes-plan.md. */
+
+#include <stdbool.h>
+#include <stdint.h>
 
 extern bool g_advanced_features; /* set outside vanilla: the advanced features show */
 extern bool g_automap_open;      /* set: the automap covers the viewport and the game time stops */

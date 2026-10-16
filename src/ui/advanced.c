@@ -72,6 +72,7 @@ static void show_automap(void)
     ui_draw_viewport();
 }
 
+/* Closes the automap and draws the dungeon view again. */
 static void close_automap(void)
 {
     g_automap_open = false;
@@ -110,7 +111,6 @@ bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
     return true;
 }
 
-/* A white line in the message area. */
 void advanced_print_message(const char *text)
 {
     message_new_line();

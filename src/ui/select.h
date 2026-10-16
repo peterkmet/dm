@@ -2,12 +2,13 @@
 #ifndef DM_UI_SELECT_H
 #define DM_UI_SELECT_H
 /* Prefixes: select_ */
-#include "data/graphics.h"
-#include <stdbool.h>
-#include <stdint.h>
 
 /* The start screens in the DM font: adventure, mode, and the CSB entrance. Keys and clicks move a
    cursor over the items. The results go to g_adventure and g_session.mode. No SDL calls. */
+
+#include "data/graphics.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #define SELECT_SCREEN_ADVENTURE  0
 #define SELECT_SCREEN_MODE       1

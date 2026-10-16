@@ -184,6 +184,7 @@ The function reads all three tables from the KAOS image. The single characters f
 - An icon below the first icon sheet draws empty (`ui_extract_icon`); the original reads the sheet table before its first entry.
 - The entrance has no credits (`entrance_draw`).
 - The entrance doors open over the view of the start square; the original draws a made-up corridor (`entrance_open_doors`).
+- The panel with the eye pressed keeps the leader hand object name; the original clears it until the eye is released (`panel_draw_eye`).
 - The credits command (203) and the name entry do nothing (`process_other_command` in `ui/command.c`).
 
 ## Not ported

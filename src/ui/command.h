@@ -2,12 +2,13 @@
 #ifndef DM_UI_COMMAND_H
 #define DM_UI_COMMAND_H
 /* Prefixes: command_ */
-#include "engine/move.h"
-#include <stdbool.h>
-#include <stdint.h>
 
 /* Player input as the command table of the original: clicks and keys become
    queued commands; command_process_queue runs them. Movement commands (1-6) are in move.h. */
+
+#include "engine/move.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #define COMMAND_NONE                         0
 #define COMMAND_TOGGLE_INVENTORY_FIRST       7 /* + champion 0-3 */
@@ -90,13 +91,16 @@ static inline uint16_t command_champion_key(int16_t champion_index)
 extern bool g_input_received; /* a key or button press since the last discard */
 extern uint16_t g_last_key;   /* the last key word since the last discard, 0: none */
 
+/* The entrance input tables. */
 void command_set_entrance_input(void);
 /* A new or loaded game starts without a pressed eye, mouth or wall, a highlight, a sleeping input
    speed, or waiting commands; the game input tables are active. */
 void command_reset(void);
 /* Dialogs and the endgame: only one mouse table; the saved tables come back with restore. */
 void command_set_only_mouse_input(int16_t table);
+/* Keeps the active input tables for command_restore_input. */
 void command_save_input(void);
+/* Makes the saved input tables active again. */
 void command_restore_input(void);
 /* A mouse button event: a press becomes the command of the box under the pointer in the active
    tables, a left release becomes COMMAND_LEFT_RELEASE. */

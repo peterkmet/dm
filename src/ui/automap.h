@@ -2,12 +2,13 @@
 #ifndef DM_UI_AUTOMAP_H
 #define DM_UI_AUTOMAP_H
 /* Prefixes: automap_ */
-#include "data/graphics.h"
-#include <stdbool.h>
-#include <stdint.h>
 
 /* Automap (not in the original game): draws the squares the party has seen (engine/explored owns them) as a
    top-down map. */
+
+#include "data/graphics.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #define AUTOMAP_CELL_SIZE    7  /* pixels per square: 32 squares fill the 224 pixel viewport */
 #define AUTOMAP_RULER_WIDTH  12 /* the left ruler with the row numbers: two digits and a gap */

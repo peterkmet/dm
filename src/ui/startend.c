@@ -139,7 +139,7 @@ static int save_with_dialog(void)
     return saved;
 }
 
-/* CSB save_game: SAVE AND PLAY saves and goes on, SAVE AND QUIT saves and ends the game. The dialog
+/* CSB save dialog: SAVE AND PLAY saves and goes on, SAVE AND QUIT saves and ends the game. The dialog
    closes after a save; CSB has no quit without a save. */
 static void save_game_csb(void)
 {
@@ -160,7 +160,6 @@ static void save_game_csb(void)
     command_unfreeze_game();
 }
 
-/* save_game without disks: the dialog stays after a save until CANCEL or QUIT. */
 void startend_save_game(void)
 {
     const char *message = NULL;
@@ -379,7 +378,6 @@ static void show_credits(void)
     wait_for_input();
 }
 
-/* The port shows the entrance after the credits instead of quitting (deliberate deviation). */
 void startend_run_endgame(bool party_dead)
 {
     command_set_only_mouse_input(-1);

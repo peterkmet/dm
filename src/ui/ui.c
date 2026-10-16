@@ -42,7 +42,6 @@ const char *const g_rune_names[UI_RUNE_COUNT] = {
     "VEN", "EW", "KATH", "IR", "BRO", "GOR", "KU", "ROS", "DAIN", "NETA", "RA",  "SAR",
 };
 
-/* Loads the strings, action names, and object names, and sets up the viewport bitmap. */
 bool ui_init(void)
 {
     audio_init();
@@ -145,8 +144,6 @@ void ui_draw_viewport(void)
     ui_blit_zone(&screen, &viewport, ZONE_VIEWPORT, COLOR_NONE);
 }
 
-/* Sets the palette split: the viewport rows use top (when not NULL, it replaces palette[0..15]),
-   the other rows the interface palette. */
 void ui_set_screen_palette(const uint16_t *colors)
 {
     for (int i = 0; i < PALETTE_COLORS; i++)
@@ -215,7 +212,6 @@ void ui_draw_interface(void)
     ui_draw_message_area();
 }
 
-/* Copies object icon into out (16 x 16). Each icon sheet holds 16 icons per row. */
 void ui_extract_icon(int16_t icon, Bitmap *out)
 {
     int sheet = 0;
@@ -291,7 +287,6 @@ void ui_draw_leader_hand_object_name(uint16_t thing)
     ui_print_zone_padded(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_CYAN, COLOR_BLACK, name, LEADER_HAND_NAME_LENGTH);
 }
 
-/* Tells whether (x, y) is in the box of zone. */
 bool ui_is_point_in_zone(int16_t zone, int16_t x, int16_t y)
 {
     Box b;

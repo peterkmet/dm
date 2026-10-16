@@ -153,7 +153,7 @@ static void anchor(int16_t alignment, int16_t width, int16_t height, int16_t *x,
     }
 }
 
-/* Intersects the clip box with the rectangle (x, y, w, h), as get_zone does. */
+/* Intersects the clip box with the rectangle (x, y, w, h), as the zone placement does. */
 static void clip_to(Box *c, int16_t x, int16_t y, int16_t w, int16_t h)
 {
     if (c->x < x)
@@ -166,7 +166,7 @@ static void clip_to(Box *c, int16_t x, int16_t y, int16_t w, int16_t h)
         c->h = y + h - c->y;
 }
 
-/* The parent walk of get_zone: moves the point (*x, *y) and the clip box by the translations and the
+/* The parent walk of the zone placement: moves the point (*x, *y) and the clip box by the translations and the
    rectangles of the parents of the zone record. Returns false when nothing is visible. */
 static bool place_in_parents(const uint8_t *record, int16_t *x, int16_t *y, Box *clip)
 {

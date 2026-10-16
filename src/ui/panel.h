@@ -46,7 +46,7 @@ bool panel_get_object_meter(uint16_t thing, const char **label, uint16_t *value)
    the action hand, else food and water. */
 void panel_draw(void);
 /* The panel while the eye is pressed: the leader hand object, or the skills and statistics.
-   ponytail: the leader hand object name stays; the original clears it until the eye is released. */
+   Deviation: the leader hand object name stays; the original clears it until the eye is released. */
 void panel_draw_eye(void);
 /* CSB, each tick with the inventory open: a scroll with a creature name or the magic map draws again. */
 void panel_redraw_scroll(void);

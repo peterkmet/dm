@@ -2,6 +2,9 @@
 #ifndef DM_UI_VIDEO_H
 #define DM_UI_VIDEO_H
 /* Prefixes: video_ */
+
+/* The screen pixels and palettes (g_screen) and the Amiga color conversion. It must not draw and must not call SDL. */
+
 #include "data/graphics.h"
 #include <stdint.h>
 

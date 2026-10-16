@@ -2,10 +2,12 @@
 #ifndef DM_UI_DIALOG_H
 #define DM_UI_DIALOG_H
 /* Prefixes: dialog_ */
+
+/* The message box with one to four choices: it draws the dialog in the viewport and waits for a click on a choice.
+   It owns no game state. */
+
 #include <stdbool.h>
 #include <stdint.h>
-
-/* The message box with one to four choices (KAOS dialog_draw, dialog_get_choice; DIALOG.C). */
 
 #define DIALOG_NO_CHOICE 99
 
