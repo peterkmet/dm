@@ -81,7 +81,7 @@ playthroughs/
       instruction_changes.md    each change of the player instructions: what, why, and from which session
     game/                       the live save of the run: `build/dm --saves playthroughs/current/game`
     saves/<name>/               a checkpoint: a save DMGAME.DAT and a copy of player/ in files/
-  lego/                         the local play folder: `make play`, then `playthroughs/local/dm --data game --saves playthroughs/local`
+  local/                        the local play folder: `make play`, then `playthroughs/local/dm --data game --saves playthroughs/local`
 ```
 
 - Start a new run N: create `playthroughs/run<N>/` with the folders `player/`, `coordinator/`, `game/`, and `saves/`. Copy the `*.md` files of `playthroughs/template/` to `player/`. Copy `playthroughs/template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/`. Create `saves/start/` with the start save and a copy of `player/` in `files/`. Point the link to the run: `ln -sfn run<N> playthroughs/current`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
