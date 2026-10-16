@@ -383,6 +383,7 @@ static void delete_event(uint16_t projectile)
     timeline_delete_event(rec_projectile_event_index(projectile));
 }
 
+/* Tests whether a projectile hits the site; when it does, the object drops or explodes and the projectile ends. */
 static bool has_impact_occurred(ImpactSite site, uint16_t projectile, DamageOutcome *outcome)
 {
     int16_t impact_type = site.type;

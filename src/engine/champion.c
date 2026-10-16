@@ -891,7 +891,8 @@ void champion_poison(int16_t champion_index, int16_t attack)
     if (champion_index == -1 || champion_index == g_session.candidate_champion_index)
         return;
     Champion *c = &g_champions[champion_index];
-    champion_add_pending_damage_and_wounds(champion_index, max16(1, attack >> POISON_DAMAGE_SHIFT), 0, ATTACK_RAW);
+    champion_add_pending_damage_and_wounds(champion_index, max16(1, (uint16_t)attack >> POISON_DAMAGE_SHIFT), 0,
+                                           ATTACK_RAW);
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     if (--attack) {
         c->poison_event_count++;
@@ -915,7 +916,7 @@ int16_t champion_damage_all(int16_t attack, uint16_t allowed_wounds, int16_t att
 {
     if (!attack)
         return 0;
-    uint16_t spread = (attack >> DAMAGE_ALL_SPREAD_SHIFT) + 1;
+    uint16_t spread = ((uint16_t)attack >> DAMAGE_ALL_SPREAD_SHIFT) + 1;
     attack -= spread;
     spread *= 2;
     int16_t count = 0;

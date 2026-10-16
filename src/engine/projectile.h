@@ -29,7 +29,7 @@
 #define EXPLOSION_THING_BASE  0xff80
 #define EXPLOSION_THING(type) ((uint16_t)(EXPLOSION_THING_BASE + (type)))
 
-/* Impact type of projectile_has_impact_occurred: a square type (wall, stairs, door, fake wall) or these values. */
+/* Impact type of an impact test: a square type (wall, stairs, door, fake wall) or these values. */
 #define IMPACT_PARTY    (-2)
 #define IMPACT_CREATURE (-1)
 
@@ -114,8 +114,7 @@ void explosion_create(uint16_t explosion_thing, int16_t attack, Location at, Loc
 Impact projectile_get_impact_attack(uint16_t projectile, uint16_t thing); /* exported for the tests */
 /* The flight direction of a projectile (from its move event). */
 int16_t projectile_get_flight_direction(uint16_t projectile);
-/* A projectile hits the party (impact -2), a creature (-1), or a wall, stairs, door, or fake wall (square type).
-   The flying object drops or explodes and the projectile disappears. Returns false when nothing was hit. */
+/* The square and cell that an impact test looks at. */
 typedef struct {
     int16_t type;
     Location at;
