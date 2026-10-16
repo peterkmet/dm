@@ -1,6 +1,8 @@
 # KAOS ranges 1–3: notes for the C port
 
-This page covers the functions of `KAOS.FTL` from `0x104e6c` to `0x10a3a6` (ranges 1, 2, and 3 of the [function partition](../kaos-map.md#function-partition)). The symbols are in [range-1-3.csv](range-1-3.csv). The page describes what each group does, the data structures, and the facts that a C porter must know.
+This page uses the original KAOS names; the port names differ.
+
+This page covers the functions of `KAOS.FTL` from `0x104e6c` to `0x10a3a6` (ranges 1, 2, and 3 of the [function partition](../kaos-map.md#function-partition)). The symbols are in [kaos-symbols.csv](../kaos-symbols.csv). The page describes what each group does, the data structures, and the facts that a C porter must know.
 
 All addresses are for the image that `uv run dm-ftl game/KAOS.FTL <out.bin>` creates. `A5` holds `0x104160`.
 

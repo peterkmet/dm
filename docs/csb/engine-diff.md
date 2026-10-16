@@ -2,8 +2,8 @@
 
 This page lists the differences between the Chaos Strikes Back (CSB) engine and the Dungeon Master v3.60 (DM) engine that matter to the C port in `src/`. Read it before you add CSB support to the port.
 
-- DM engine: `game/KAOS.FTL`. Image `reference/decomp/dm/KAOS.bin`, base `0x100000`, data base (A5) `0x104160`. Names: [kaos-symbols.csv](kaos-symbols.csv).
-- CSB engine: `game-csb/APPB.FTL`. Image `reference/decomp/csb-a/APPB.bin`, base `0x100000`, data base (A5) `0x10511e`, code base `0x105ede`. Names: [csb-appb-symbols.csv](csb-appb-symbols.csv).
+- DM engine: `game/KAOS.FTL`. Image `reference/decomp/dm/KAOS.bin`, base `0x100000`, data base (A5) `0x104160`. Names: [kaos-symbols.csv](../reference/kaos-symbols.csv).
+- CSB engine: `game-csb/APPB.FTL`. Image `reference/decomp/csb-a/APPB.bin`, base `0x100000`, data base (A5) `0x10511e`, code base `0x105ede`. Names: [csb-appb-symbols.csv](../reference/csb-appb-symbols.csv).
 
 All addresses are image addresses. "K" marks a DM address, "C" marks a CSB address. "UNVERIFIED" marks a claim that the code reading did not prove.
 
@@ -16,7 +16,7 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 
 ## Function mapping
 
-`tools/csb_match.py` builds the mapping and writes `docs/csb-appb-symbols.csv`.
+`tools/csb_match.py` builds the mapping and writes `docs/reference/csb-appb-symbols.csv`.
 
 ```sh
 uv run python tools/csb_match.py --report /tmp/csb-report.txt
@@ -403,7 +403,7 @@ CSB (Step 8 checked each address in the APPB, APPA, and ANIM disassembly):
 
 1. Wall sensor type 18 (C`0x123970`) sets the game-won flag `-0x4f9c(A5)` (C`0x100182`) to 1 and calls `quit_game` (C`0x1285e8`) through slot `0xb42`. There is no delay, and the saved-game flag stays.
 2. `quit_game_to_ending` (C`0x1285ee`) waits until the pointer is hidden, closes `Graphics.DAT`, fills zones 401, 13, 11, 9 with color 0, and writes the module tag `ENDA` (`0x454e4441`) into the module arguments (C`0x12863a`). Then `system_shutdown` and `rt_longjmp` leave the engine.
-3. The launcher (`APPA.c` line 355) runs `ANIM.FTL` for the tags `ANIM`, `TITL`, and `ENDA`. `ANIM.FTL` (C`0x100e96` of ANIM) builds the file name `<tag>.DAT`, plays `ENDA.DAT`, and then loops forever on the last frame. The chunk format: `docs/csb-data.md` "ENDA.DAT and the endgame".
+3. The launcher (`APPA.c` line 355) runs `ANIM.FTL` for the tags `ANIM`, `TITL`, and `ENDA`. `ANIM.FTL` (C`0x100e96` of ANIM) builds the file name `<tag>.DAT`, plays `ENDA.DAT`, and then loops forever on the last frame. The chunk format: `docs/csb/data.md` "ENDA.DAT and the endgame".
 4. When the won flag is 0, `quit_game_to_ending` stops in an endless loop (C`0x128600`: `beq` to itself). This is the frozen screen after the credits of SAVE AND QUIT and after the credits of a death without a saved game.
 
 CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:

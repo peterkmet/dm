@@ -3,7 +3,7 @@
 /* Prefixes: anim_ */
 #include <stdint.h>
 
-/* The animation player of ANIM.FTL for the chunk files (CSB ENDA.DAT). Format: docs/csb-data.md
+/* The animation player of ANIM.FTL for the chunk files (CSB ENDA.DAT). Format: docs/csb/data.md
    "ENDA.DAT and the endgame". */
 
 #define ANIM_END (-1) /* anim_next_frame: no frame left */

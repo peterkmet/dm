@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Objects, slots, and the leader hand: docs/rules-champions.md. */
+/* Objects, slots, and the leader hand: docs/rules/champions.md. */
 
 /* Object types of the rules: the weapon, potion, and junk type of a record. */
 enum {

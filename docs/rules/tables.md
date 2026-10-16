@@ -2,7 +2,7 @@
 
 This page describes the static rule tables of `KAOS.FTL` and the C accessors in `src/data/tables.h`. The port does not copy table values into the source. `tables_init` reads the tables from the loaded KAOS image at run time.
 
-All addresses are original KAOS addresses (see [KAOS module map](kaos-map.md)). All multi-byte values are big-endian in the image. The C structs hold native values.
+All addresses are original KAOS addresses (see [KAOS module map](../reference/kaos-map.md)). All multi-byte values are big-endian in the image. The C structs hold native values.
 
 ## Usage
 

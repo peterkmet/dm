@@ -1,6 +1,6 @@
 # Creature, projectile, and magic rules
 
-This page describes the creature rules of the C port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `src/engine/group.c`, `src/engine/projectile.c`, and `src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md) for the record layouts and the original addresses. See [rules-movement.md](rules-movement.md) for the game loop and the timeline dispatch.
+This page describes the creature rules of the C port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `src/engine/group.c`, `src/engine/projectile.c`, and `src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts and the original addresses. See [rules-movement.md](movement.md) for the game loop and the timeline dispatch.
 
 ## Records
 
@@ -129,7 +129,7 @@ Event 5 (corridor) on a group generator sensor calls `group_generate_from_sensor
 
 `group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case. Use `map_get_square_group(x, y)` to find it.
 
-Event 65 enables a generator again after its delay (see [rules-movement.md](rules-movement.md)).
+Event 65 enables a generator again after its delay (see [rules-movement.md](movement.md)).
 
 ## Projectiles
 
@@ -216,6 +216,6 @@ Each fix has a short comment in the code.
 
 ## Not ported in this step
 
-- Champion actions and the events 11, 12, 13, and 75 are in [rules-champions.md](rules-champions.md#actions).
+- Champion actions and the events 11, 12, 13, and 75 are in [rules-champions.md](champions.md#actions).
 - The fuse sequence (endgame). `g_fuse_sequence_requested` marks the request.
 - The palette change after a light spell. The view step computes the palette from the light amount.

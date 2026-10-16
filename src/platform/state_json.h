@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 /* The game as JSON for the turn-based mode: what a player sees, plus the explored map
-   (docs/llm-mode.md). No SDL. */
+   (docs/llm/llm-mode.md). No SDL. */
 
 #define DECIMAL_BASE 10 /* request numbers, tenths, and the map grid digits are decimal */
 

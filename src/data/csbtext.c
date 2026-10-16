@@ -7,7 +7,7 @@
 #include <string.h>
 
 /* APPB addresses of the CSB texts and the DM text index of each. Sources and code references:
-   docs/csb-engine-diff.md "Text". */
+   docs/csb/engine-diff.md "Text". */
 #define CSB_TEXT_COUNT (TEXT_CREATURE_NAME_FIRST + CREATURE_TYPE_COUNT) /* CSB has no memory error texts 135-139 */
 #define CSB_APPB_ACTION_NAMES  0x1048b4                                 /* NUL-separated action names, index 0 = "N" */
 #define CSB_APPB_DISK_MESSAGES 0x104d08 /* pointers to the load, save, and disk messages */

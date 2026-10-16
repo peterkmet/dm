@@ -81,7 +81,7 @@ The loader sets `g_party_map_x`, `g_party_map_y`, and `g_party_direction` from o
 | 6 | byte | X offset of the map in the dungeon. |
 | 7 | byte | Y offset of the map. |
 | 8 | word | Bits 0–5: level. Bits 6–10: width − 1. Bits 11–15: height − 1. |
-| 10–15 | bytes | Ornament, creature, and door counts and sets. See [range-4-6.md](symbols/range-4-6.md#map-descriptor). |
+| 10–15 | bytes | Ornament, creature, and door counts and sets. See [range-4-6.md](../reference/symbols/range-4-6.md#map-descriptor). |
 
 ### Squares
 

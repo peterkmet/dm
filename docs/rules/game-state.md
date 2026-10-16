@@ -1,8 +1,8 @@
 # Game state
 
-This page describes the game state of the C port: the structs and globals in `src/engine/game.h` and `src/engine/random.h`. It gives the original KAOS address of each item. The names come from [kaos-symbols.csv](kaos-symbols.csv). The field meanings come from [range-4-6.md](symbols/range-4-6.md) and [range-7-9.md](symbols/range-7-9.md).
+This page describes the game state of the C port: the structs and globals in `src/engine/game.h` and `src/engine/random.h`. It gives the original KAOS address of each item. The names come from [kaos-symbols.csv](../reference/kaos-symbols.csv). The field meanings come from [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md).
 
-The port uses native C types for this state. It does not keep the big-endian byte layout. The dungeon data from `dungeon.c` keeps the big-endian layout, see [Dungeon.DAT format](dungeon-format.md). A save file reader or writer must convert between the two layouts.
+The port uses native C types for this state. It does not keep the big-endian byte layout. The dungeon data from `dungeon.c` keeps the big-endian layout, see [Dungeon.DAT format](../formats/dungeon.md). A save file reader or writer must convert between the two layouts.
 
 ## Rules for types
 
@@ -157,7 +157,7 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 - New type 2 (door destruction): every type 1 and type 10 event with the same `b` and the same map is deleted. The function returns −1.
 - Other new types do not merge.
 
-Note: [range-7-9.md](symbols/range-7-9.md) says that "any other new type" deletes a type 1 event. The code does this only for new types 5–10.
+Note: [range-7-9.md](../reference/symbols/range-7-9.md) says that "any other new type" deletes a type 1 event. The code does this only for new types 5–10.
 
 ## Active creature groups
 
@@ -193,7 +193,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 | `min16`, `max16` | `0x107652`, `0x107668` | Minimum and maximum of two words. |
 | `bounded_value(min, value, max)` | `0x10767e` | Returns `min` when `value <= min`, else the lower of `value` and `max`. |
 | `scale_value(a, shift, b)` | `0x1076f8` | `(a * b) >> shift`: unsigned 16 × 16 multiply, arithmetic shift of the 32-bit result. Callers use the low word. |
-| `game_update_map_coordinates_after_relative_movement` | `0x10a85c` | Adds forward and right steps. Reads the step tables from KAOS: `g_direction_to_step_east` (`0x101038`: 0, 1, 0, −1) and `g_direction_to_step_north` (`0x101040`: −1, 0, 1, 0). |
+| `game_update_map_coordinates_after_relative_movement` | `0x10a85c` | Adds forward and right steps. Reads the step tables through `tables_get_step_east` and `tables_get_step_north` (KAOS `0x101038`: 0, 1, 0, −1 and `0x101040`: −1, 0, 1, 0). |
 | `NORMALIZE(direction)` | — | `direction & 3`. |
 | `game_get_stamina_adjusted_value` | `0x110f4c` | When current stamina is below half of the maximum: `value / 2 + value * stamina / (maximum / 2)`. |
 | `game_get_statistic_adjusted_attack` | `0x110f88` | `d = 170 − current statistic`. Returns `attack >> 3` when `d < 16`, else `scale_value(attack, 7, d)`. |

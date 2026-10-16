@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Champion actions of the action area (KAOS range 8, MENU.C): docs/rules-champions.md#actions. */
+/* Champion actions of the action area (KAOS range 8, MENU.C): docs/rules/champions.md#actions. */
 
 /* Action indices (graphic 699 holds the names). Actions without an entry here only train the skill and add the
    action defense. */

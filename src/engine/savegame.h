@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 /* Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and load_game, LOADSAVE.C).
-   savefile.c owns the container; this module owns the block contents. Layout: docs/save-format.md. */
+   savefile.c owns the container; this module owns the block contents. Layout: docs/formats/save.md. */
 
 enum { SAVEGAME_DAMAGED = -1, SAVEGAME_MISSING = 0, SAVEGAME_LOADED = 1 };
 enum { ADVENTURE_FAILED, ADVENTURE_MADE, ADVENTURE_NO_CHAMPIONS, ADVENTURE_NAMES_NOT_UNIQUE };

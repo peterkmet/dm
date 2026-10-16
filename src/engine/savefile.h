@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* DM v3.60 save file container (DMGAME~.DAT); CSB (CSBGAME.DAT) with g_adventure. Layout: docs/save-format.md,
-   CSB header: docs/csb-data.md "Save file". */
+/* DM v3.60 save file container (DMGAME~.DAT); CSB (CSBGAME.DAT) with g_adventure. Layout: docs/formats/save.md,
+   CSB header: docs/csb/data.md "Save file". */
 
 #define SAVE_HEADER_BYTES 512
 #define SAVE_BLOCKS       5

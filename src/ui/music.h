@@ -5,7 +5,7 @@
 
 /* Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and
    Super NES versions from MP3 files in <disk A folder>/music/. A track plays one time and does not loop.
-   Decisions: docs/superpowers/2026-10-05-music-decisions.md. */
+   Decisions: docs/superpowers/archive/2026-10-05-music-decisions.md. */
 
 enum { MUSIC_ORIGINAL, MUSIC_SUPER_NES, MUSIC_FM_TOWNS };
 

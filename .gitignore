@@ -4,7 +4,7 @@ game/
 __pycache__/
 .pytest_cache/
 .DS_Store
-reference/
+/reference/
 build/
 game-csb/
 playthroughs/*
