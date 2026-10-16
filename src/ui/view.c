@@ -1615,33 +1615,36 @@ typedef struct {
 
 /* The position of a drawn square from the party and the graphics and zones of each element on it. */
 typedef struct {
-    int8_t forward, right;            /* position from the party */
-    uint8_t shape;                    /* SHAPE_* */
-    uint8_t mirror;                   /* BLIT_TRANSPARENT or BLIT_FLIPPED: pit, stairs, and ceiling pit */
-    int16_t view, view_square;        /* VIEW_D* of the floor ornament and the door; VIEW_SQUARE_D* of things */
-    WallPart wall;                    /* the wall; its zone is also the zone of a teleporter field */
-    uint8_t side_face;                /* SIDE_FACE_* */
-    int16_t side_ornament_view;       /* VIEW_WALL_* of the side face */
-    int16_t front_ornament_view;      /* VIEW_WALL_* of the front face, or -1 */
-    int16_t pit, invisible_pit;       /* pit graphics; invisible_pit -1: an invisible pit is not drawn */
-    int16_t pit_zone;                 /* zone of the pit */
-    uint16_t cells, side_cells;       /* cell orders; side_cells 0: a door or stairs side draws nothing */
-    int16_t stairs_side;              /* stairs side graphic (D1: the up graphic), or -1 */
-    int16_t stairs_side_zone;         /* zone of stairs_side */
-    int16_t stairs_side_down;         /* D1: the down stairs side graphic, or -1 */
-    int16_t stairs_side_down_zone;    /* zone of stairs_side_down */
-    int16_t stairs_front;             /* STAIRS_FRONT_*, or the up layout id with SQ_STAIRS_LAYOUT_IDS */
-    int16_t stairs_front_down;        /* the down layout id with SQ_STAIRS_LAYOUT_IDS */
-    int16_t stairs_front_zone;        /* zone of the up stairs front */
-    uint16_t door_back, door_front;   /* cell orders behind and in front of a door */
-    WallPart frames[DOOR_FRAMES_MAX]; /* door frames of a door front */
+    int8_t forward, right;             /* position from the party */
+    uint8_t shape;                     /* SHAPE_* */
+    uint8_t mirror;                    /* BLIT_TRANSPARENT or BLIT_FLIPPED: pit, stairs, and ceiling pit */
+    int16_t view, view_square;         /* VIEW_D* of the floor ornament and the door; VIEW_SQUARE_D* of things */
+    WallPart wall;                     /* the wall; its zone is also the zone of a teleporter field */
+    uint8_t side_face;                 /* SIDE_FACE_* */
+    int16_t side_ornament_view;        /* VIEW_WALL_* of the side face */
+    int16_t front_ornament_view;       /* VIEW_WALL_* of the front face, or -1 */
+    int16_t pit, invisible_pit;        /* pit graphics; invisible_pit -1: an invisible pit is not drawn */
+    int16_t pit_zone;                  /* zone of the pit */
+    uint16_t cells, side_cells;        /* cell orders; side_cells 0: a door or stairs side draws nothing */
+    int16_t stairs_side;               /* stairs side graphic (D1: the up graphic), or -1 */
+    int16_t stairs_side_zone;          /* zone of stairs_side */
+    int16_t stairs_side_down;          /* D1: the down stairs side graphic, or -1 */
+    int16_t stairs_side_down_zone;     /* zone of stairs_side_down */
+    int16_t stairs_front;              /* STAIRS_FRONT_*, or the up layout id with SQ_STAIRS_LAYOUT_IDS */
+    int16_t stairs_front_down;         /* the down layout id with SQ_STAIRS_LAYOUT_IDS */
+    int16_t stairs_front_zone;         /* zone of the up stairs front */
+    int16_t stairs_front_flipped_zone; /* D0C: zone of the mirrored up stairs front, else -1 */
+    uint16_t door_back, door_front;    /* cell orders behind and in front of a door */
+    WallPart frames[DOOR_FRAMES_MAX];  /* door frames of a door front */
     uint8_t frame_count;
     int16_t button;                /* BUTTON_* of a door button, or -1 */
     int16_t ceiling, ceiling_zone; /* GFX_CEILING_PIT_* and its zone, or -1 */
     uint8_t flags;                 /* SQ_* */
 } SquareView;
 
-/* The 16 squares that the view draws, back to front. Right squares mirror the graphics of the left squares. */
+/* The 16 squares that the view draws, back to front. A field that the draw functions do not read for a row is -1.
+   Id enums: WS_*: wall set layout ids; VIEW_SQUARE_*: view square table; VIEW_D*: floor ornament and door views;
+   VIEW_WALL_*: wall ornament views; BUTTON_*: door buttons. */
 static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
     {.forward = 3,
      .right = -2,
@@ -1659,14 +1662,18 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .cells = CELLS_BL_BR_FL_FR,
      .side_cells = CELLS_BL_BR_FR,
      .stairs_side = -1,
+     .stairs_side_zone = -1,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = LAYOUT_STAIRS_UP_FRONT_D3L2,
      .stairs_front_down = LAYOUT_STAIRS_DOWN_FRONT_D3L2,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3L2,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BL_BR,
      .door_front = DOOR_FRONT_FL_FR,
      .button = -1,
      .ceiling = -1,
+     .ceiling_zone = -1,
      .flags = SQ_STAIRS_LAYOUT_IDS},
     {.forward = 3,
      .right = 2,
@@ -1684,14 +1691,18 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .cells = CELLS_BR_BL_FR_FL,
      .side_cells = CELLS_BR_BL_FL,
      .stairs_side = -1,
+     .stairs_side_zone = -1,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = LAYOUT_STAIRS_UP_FRONT_D3R2,
      .stairs_front_down = LAYOUT_STAIRS_DOWN_FRONT_D3R2,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3R2,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BR_BL,
      .door_front = DOOR_FRONT_FR_FL,
      .button = -1,
      .ceiling = -1,
+     .ceiling_zone = -1,
      .flags = SQ_STAIRS_LAYOUT_IDS},
     {.forward = 3,
      .right = -1,
@@ -1709,16 +1720,21 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .cells = CELLS_BL_BR_FL_FR,
      .side_cells = CELLS_BL_BR_FR,
      .stairs_side = -1,
+     .stairs_side_zone = -1,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = STAIRS_FRONT_D3L,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3L,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BL_BR,
      .door_front = DOOR_FRONT_FL_FR,
      .frames = {{WS_DOOR_FRAME_LEFT_D3L, ZONE_DOOR_FRAME_LEFT_D3L, BLIT_TRANSPARENT},
                 {WS_DOOR_FRAME_RIGHT_D3L, ZONE_DOOR_FRAME_RIGHT_D3L, BLIT_FLIPPED}},
      .frame_count = 2,
      .button = -1,
-     .ceiling = -1},
+     .ceiling = -1,
+     .ceiling_zone = -1},
     {.forward = 3,
      .right = 1,
      .shape = SHAPE_FULL,
@@ -1735,16 +1751,21 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .cells = CELLS_BR_BL_FR_FL,
      .side_cells = CELLS_BR_BL_FL,
      .stairs_side = -1,
+     .stairs_side_zone = -1,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = STAIRS_FRONT_D3L,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3R,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BR_BL,
      .door_front = DOOR_FRONT_FR_FL,
      .frames = {{WS_DOOR_FRAME_LEFT_D3R, ZONE_DOOR_FRAME_LEFT_D3R, BLIT_TRANSPARENT},
                 {WS_DOOR_FRAME_LEFT_D3L, ZONE_DOOR_FRAME_RIGHT_D3R, BLIT_FLIPPED}},
      .frame_count = 2,
      .button = BUTTON_D3R,
-     .ceiling = -1},
+     .ceiling = -1,
+     .ceiling_zone = -1},
     {.forward = 3,
      .right = 0,
      .shape = SHAPE_FULL,
@@ -1753,6 +1774,7 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .view_square = VIEW_SQUARE_D3C,
      .wall = {WS_WALL_D3C, ZONE_WALL_D3C, BLIT_OPAQUE},
      .side_face = SIDE_FACE_NONE,
+     .side_ornament_view = -1,
      .front_ornament_view = VIEW_WALL_D3C_FRONT,
      .pit = GFX_PIT_D3C,
      .invisible_pit = -1,
@@ -1760,26 +1782,75 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .cells = CELLS_BL_BR_FL_FR,
      .side_cells = 0,
      .stairs_side = -1,
+     .stairs_side_zone = -1,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = STAIRS_FRONT_D3C,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3C,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BL_BR,
      .door_front = DOOR_FRONT_FL_FR,
      .frames = {{WS_DOOR_FRAME_D3C, ZONE_DOOR_FRAME_LEFT_D3C, BLIT_TRANSPARENT},
                 {WS_DOOR_FRAME_D3C, ZONE_DOOR_FRAME_RIGHT_D3C, BLIT_FLIPPED}},
      .frame_count = 2,
      .button = BUTTON_D3C,
-     .ceiling = -1},
+     .ceiling = -1,
+     .ceiling_zone = -1},
     {.forward = 2,
      .right = -2,
      .shape = SHAPE_WALL_OR_FIELD,
+     .mirror = -1,
+     .view = -1,
      .view_square = VIEW_SQUARE_D2L2,
-     .wall = {WS_WALL_D2L2, ZONE_WALL_D2L2, BLIT_TRANSPARENT}},
+     .wall = {WS_WALL_D2L2, ZONE_WALL_D2L2, BLIT_TRANSPARENT},
+     .side_ornament_view = -1,
+     .front_ornament_view = -1,
+     .pit = -1,
+     .invisible_pit = -1,
+     .pit_zone = -1,
+     .cells = -1,
+     .side_cells = -1,
+     .stairs_side = -1,
+     .stairs_side_zone = -1,
+     .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
+     .stairs_front = -1,
+     .stairs_front_down = -1,
+     .stairs_front_zone = -1,
+     .stairs_front_flipped_zone = -1,
+     .door_back = -1,
+     .door_front = -1,
+     .button = -1,
+     .ceiling = -1,
+     .ceiling_zone = -1},
     {.forward = 2,
      .right = 2,
      .shape = SHAPE_WALL_OR_FIELD,
+     .mirror = -1,
+     .view = -1,
      .view_square = VIEW_SQUARE_D2R2,
-     .wall = {WS_WALL_D2R2, ZONE_WALL_D2R2, BLIT_TRANSPARENT}},
+     .wall = {WS_WALL_D2R2, ZONE_WALL_D2R2, BLIT_TRANSPARENT},
+     .side_ornament_view = -1,
+     .front_ornament_view = -1,
+     .pit = -1,
+     .invisible_pit = -1,
+     .pit_zone = -1,
+     .cells = -1,
+     .side_cells = -1,
+     .stairs_side = -1,
+     .stairs_side_zone = -1,
+     .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
+     .stairs_front = -1,
+     .stairs_front_down = -1,
+     .stairs_front_zone = -1,
+     .stairs_front_flipped_zone = -1,
+     .door_back = -1,
+     .door_front = -1,
+     .button = -1,
+     .ceiling = -1,
+     .ceiling_zone = -1},
     {.forward = 2,
      .right = -1,
      .shape = SHAPE_FULL,
@@ -1798,8 +1869,11 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .stairs_side = STAIRS_SIDE_D2L,
      .stairs_side_zone = ZONE_STAIRS_SIDE_D2L,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = STAIRS_FRONT_D2L,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D2L,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BL_BR,
      .door_front = DOOR_FRONT_FL_FR,
      .frames = {{WS_DOOR_FRAME_TOP_D2L, ZONE_DOOR_FRAME_TOP_D2L, BLIT_TRANSPARENT}},
@@ -1826,8 +1900,11 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .stairs_side = STAIRS_SIDE_D2L,
      .stairs_side_zone = ZONE_STAIRS_SIDE_D2R,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = STAIRS_FRONT_D2L,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D2R,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BR_BL,
      .door_front = DOOR_FRONT_FR_FL,
      .frames = {{WS_DOOR_FRAME_TOP_D2R, ZONE_DOOR_FRAME_TOP_D2R, BLIT_TRANSPARENT}},
@@ -1843,6 +1920,7 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .view_square = VIEW_SQUARE_D2C,
      .wall = {WS_WALL_D2C, ZONE_WALL_D2C, BLIT_OPAQUE},
      .side_face = SIDE_FACE_NONE,
+     .side_ornament_view = -1,
      .front_ornament_view = VIEW_WALL_D2C_FRONT,
      .pit = GFX_PIT_D2C,
      .invisible_pit = GFX_INVISIBLE_PIT_D2C,
@@ -1850,9 +1928,13 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .cells = CELLS_BL_BR_FL_FR,
      .side_cells = 0,
      .stairs_side = -1,
+     .stairs_side_zone = -1,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = STAIRS_FRONT_D2C,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D2C,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BL_BR,
      .door_front = DOOR_FRONT_FL_FR,
      .frames = {{WS_DOOR_FRAME_TOP_D2C, ZONE_DOOR_FRAME_TOP_D2C, BLIT_TRANSPARENT},
@@ -1882,7 +1964,9 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .stairs_side_down = STAIRS_DOWN_SIDE_D1L,
      .stairs_side_down_zone = ZONE_STAIRS_DOWN_SIDE_D1L,
      .stairs_front = STAIRS_FRONT_D1L,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D1L,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BR,
      .door_front = DOOR_FRONT_FR,
      .frames = {{WS_DOOR_FRAME_TOP_D1L, ZONE_DOOR_FRAME_TOP_D1L, BLIT_TRANSPARENT}},
@@ -1910,7 +1994,9 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .stairs_side_down = STAIRS_DOWN_SIDE_D1L,
      .stairs_side_down_zone = ZONE_STAIRS_DOWN_SIDE_D1R,
      .stairs_front = STAIRS_FRONT_D1L,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D1R,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BL,
      .door_front = DOOR_FRONT_FL,
      .frames = {{WS_DOOR_FRAME_TOP_D1R, ZONE_DOOR_FRAME_TOP_D1R, BLIT_TRANSPARENT}},
@@ -1926,6 +2012,7 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .view_square = VIEW_SQUARE_D1C,
      .wall = {WS_WALL_D1C, ZONE_WALL_D1C, BLIT_OPAQUE},
      .side_face = SIDE_FACE_NONE,
+     .side_ornament_view = -1,
      .front_ornament_view = VIEW_WALL_D1C_FRONT,
      .pit = GFX_PIT_D1C,
      .invisible_pit = GFX_INVISIBLE_PIT_D1C,
@@ -1933,9 +2020,13 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .cells = CELLS_BL_BR_FL_FR,
      .side_cells = 0,
      .stairs_side = -1,
+     .stairs_side_zone = -1,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = STAIRS_FRONT_D1C,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D1C,
+     .stairs_front_flipped_zone = -1,
      .door_back = DOOR_BACK_BL_BR,
      .door_front = DOOR_FRONT_FL_FR,
      .frames = {{WS_DOOR_FRAME_TOP_D1C, ZONE_DOOR_FRAME_TOP_D1C, BLIT_TRANSPARENT},
@@ -1950,46 +2041,83 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
      .right = -1,
      .shape = SHAPE_D0_SIDE,
      .mirror = BLIT_TRANSPARENT,
+     .view = -1,
      .view_square = VIEW_SQUARE_D0L,
      .wall = {WS_WALL_D0L, ZONE_WALL_D0L, BLIT_TRANSPARENT},
+     .side_ornament_view = -1,
+     .front_ornament_view = -1,
      .pit = GFX_PIT_D0L,
      .invisible_pit = GFX_INVISIBLE_PIT_D0L,
      .pit_zone = ZONE_PIT_D0L,
      .cells = CELLS_BR,
+     .side_cells = -1,
      .stairs_side = STAIRS_SIDE_D0L,
      .stairs_side_zone = ZONE_STAIRS_SIDE_D0L,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
+     .stairs_front = -1,
+     .stairs_front_down = -1,
+     .stairs_front_zone = -1,
+     .stairs_front_flipped_zone = -1,
+     .door_back = -1,
+     .door_front = -1,
+     .button = -1,
      .ceiling = GFX_CEILING_PIT_D0L,
      .ceiling_zone = ZONE_CEILING_PIT_D0L},
     {.forward = 0,
      .right = 1,
      .shape = SHAPE_D0_SIDE,
      .mirror = BLIT_FLIPPED,
+     .view = -1,
      .view_square = VIEW_SQUARE_D0R,
      .wall = {WS_WALL_D0R, ZONE_WALL_D0R, BLIT_TRANSPARENT},
+     .side_ornament_view = -1,
+     .front_ornament_view = -1,
      .pit = GFX_PIT_D0L,
      .invisible_pit = GFX_INVISIBLE_PIT_D0L,
      .pit_zone = ZONE_PIT_D0R,
      .cells = CELLS_BL,
+     .side_cells = -1,
      .stairs_side = STAIRS_SIDE_D0L,
      .stairs_side_zone = ZONE_STAIRS_SIDE_D0R,
      .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
+     .stairs_front = -1,
+     .stairs_front_down = -1,
+     .stairs_front_zone = -1,
+     .stairs_front_flipped_zone = -1,
+     .door_back = -1,
+     .door_front = -1,
+     .button = -1,
      .ceiling = GFX_CEILING_PIT_D0L,
      .ceiling_zone = ZONE_CEILING_PIT_D0R},
     {.forward = 0,
      .right = 0,
      .shape = SHAPE_D0C,
      .mirror = BLIT_TRANSPARENT,
+     .view = -1,
      .view_square = VIEW_SQUARE_D0C,
      .wall = {.zone = ZONE_WALL_D0C},
+     .side_ornament_view = -1,
+     .front_ornament_view = -1,
      .pit = GFX_PIT_D0C,
      .invisible_pit = GFX_INVISIBLE_PIT_D0C,
      .pit_zone = ZONE_PIT_D0C,
      .cells = CELLS_BL_BR,
+     .side_cells = -1,
+     .stairs_side = -1,
+     .stairs_side_zone = -1,
+     .stairs_side_down = -1,
+     .stairs_side_down_zone = -1,
      .stairs_front = STAIRS_FRONT_D0C,
+     .stairs_front_down = -1,
      .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D0C_LEFT,
+     .stairs_front_flipped_zone = ZONE_STAIRS_UP_FRONT_D0C_RIGHT,
+     .door_back = -1,
+     .door_front = -1,
      .frames = {{WS_DOOR_FRAME_D0C, ZONE_DOOR_FRAME_D0C, BLIT_TRANSPARENT}},
      .frame_count = 1,
+     .button = -1,
      .ceiling = GFX_CEILING_PIT_D0C,
      .ceiling_zone = ZONE_CEILING_PIT_D0C},
 };
@@ -2101,7 +2229,7 @@ static void draw_d0c_square(const SquareView *s, const Aspect *a, int16_t dir, i
         draw_square_pit(s, a->state);
     else if (a->element == ELEMENT_STAIRS_FRONT) {
         draw_stairs_front(a->state, s->stairs_front, s->stairs_front_zone, BLIT_TRANSPARENT);
-        draw_stairs_front(a->state, s->stairs_front, ZONE_STAIRS_UP_FRONT_D0C_RIGHT, BLIT_FLIPPED);
+        draw_stairs_front(a->state, s->stairs_front, s->stairs_front_flipped_zone, BLIT_FLIPPED);
     }
     draw_square_ceiling_pit(s, x, y);
     draw_square_things(a->first_thing, dir, x, y, s->view_square, s->cells);
@@ -2115,18 +2243,17 @@ static void draw_square(const SquareView *s, int16_t dir, int16_t x, int16_t y)
 {
     Aspect a;
     get_square_aspect(&a, dir, x, y);
-    if (s->shape == SHAPE_WALL_OR_FIELD) {
+    switch (s->shape) {
+    case SHAPE_WALL_OR_FIELD:
         if (a.element == SQUARE_WALL)
             draw_wall_part(&s->wall);
         else if (a.element == SQUARE_TELEPORTER)
             draw_teleporter_field(s->view_square, s->wall.zone);
         return;
-    }
-    if (s->shape == SHAPE_D0_SIDE) {
+    case SHAPE_D0_SIDE:
         draw_d0_side_square(s, &a, dir, x, y);
         return;
-    }
-    if (s->shape == SHAPE_D0C) {
+    case SHAPE_D0C:
         draw_d0c_square(s, &a, dir, x, y);
         return;
     }

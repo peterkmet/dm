@@ -5,7 +5,6 @@ User wishes for future versions. Not planned yet.
 ## Small cleanups after the clean-code pass
 
 - `action_reset` (`src/engine/action.c`) also clears `g_redraw`, which is not action state.
-- `ui/view.c` square table: the D2L2, D2R2 and D0 rows leave unread "none" fields at 0, a valid id; the D0C right stairs zone is a literal in its branch; the three shape `if` blocks can be one `switch`.
 - ui ignores the result of `inventory_fill_at_fountain`.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
 - `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing` (`docs/reference/symbols/range-4-6.md`). Port that rule.
