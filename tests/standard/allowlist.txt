@@ -272,8 +272,8 @@ name ui/view.c:get_creature_ordinal_in_cell open: epic 8
 name ui/view.c:get_location_after_level_change open: epic 8
 name ui/view.c:view_get_wall_face_ornament_index open: epic 8
 name ui/view.h:view_get_wall_face_ornament_index open: epic 8
-ordinal CREATURE_AT_ATTACK_SOUND_ORDINAL open: epic 4
-ordinal attack_sound_ordinal open: epic 4
+ordinal CREATURE_AT_ATTACK_SOUND_ORDINAL rule 4.8: the KAOS creature info record stores the attack sound as an ordinal
+ordinal attack_sound_ordinal rule 4.8: the KAOS creature info record stores the attack sound as an ordinal
 ordinal door_ornament_ordinal open: epic 6
 ordinal dragged_icon_cell_plus_1 open: epic 8
 ordinal g_acting_champion_ordinal open: epic 6
