@@ -41,6 +41,9 @@ bool magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, boo
                                                     bool use_mana);
 void magic_create_light_event(int16_t light_power, int16_t ticks);
 void magic_disable_action(uint16_t champion_index, uint16_t ticks);
+bool magic_add_champion_symbol(int16_t symbol);
+bool magic_delete_champion_symbol(void);
+bool magic_set_caster(int16_t champion_index);
 /* CSB: true when a scroll text (or its first line) is the magic map text MAGICMAP. */
 bool magic_map_is_text(const char *text);
 

@@ -5,8 +5,6 @@ decimal ui/musicmap.c the FM-Towns CSB track of each square: table data of the C
 decimal ui/music.c the FM-Towns level tracks and the Super NES trigger squares: table data of the soundtracks, not in the game files
 engine-write ui/view.c open: module cleanup
 engine-write ui/gameloop.c open: module cleanup
-engine-write ui/command.c open: module cleanup
-engine-write ui/ui.c open: module cleanup
 engine-write ui/startend.c open: module cleanup
 engine-write ui/select.c open: module cleanup
 engine-write ui/ui_champion.c open: module cleanup

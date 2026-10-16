@@ -9,12 +9,15 @@
 enum { EFFECT_SET, EFFECT_CLEAR, EFFECT_TOGGLE, EFFECT_HOLD };
 enum { LOCAL_EFFECT_ROTATE_SENSORS_1 = 1, LOCAL_EFFECT_ROTATE_SENSORS = 2, LOCAL_EFFECT_EXPERIENCE = 10 };
 enum { SENSOR_TEXT_COLOR = 15 }; /* white */
-#define ANY_CELL (-1)
+#define ANY_CELL                (-1)
+#define VI_ALTAR_REBIRTH_EFFECT 2 /* event 13 effect byte */
 
 extern int16_t g_sensor_rotation_effect, g_sensor_rotation_effect_map_x, g_sensor_rotation_effect_map_y,
     g_sensor_rotation_effect_cell;
 
 void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, int16_t effect, uint32_t time);
+void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int16_t cell);
+void sensor_press_door_button(int16_t x, int16_t y);
 void sensor_trigger_local_effect(int16_t local_effect, int16_t x, int16_t y, int16_t cell);
 void sensor_process_rotation_effect(void);
 void sensor_reset(void);

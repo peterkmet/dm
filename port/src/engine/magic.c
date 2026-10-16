@@ -398,3 +398,44 @@ int16_t magic_get_click_on_spell_cast_result(void)
     g_redraw |= REDRAW_SPELL_SYMBOLS;
     return result;
 }
+
+/* The magic caster adds a rune and pays its mana. Returns false when the mana is short. */
+bool magic_add_champion_symbol(int16_t symbol)
+{
+    Champion *c = &g_champions[g_magic_caster_champion_index];
+    uint16_t step = c->symbol_step;
+    uint16_t cost = *tables_get_symbol_base_mana_cost(step, symbol);
+    if (step) /* 16-bit product as in the original */
+        cost =
+            (uint16_t)(cost * *tables_get_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >>
+            SPELL_MANA_MULTIPLIER_SHIFT;
+    if (cost > (uint16_t)c->current_mana)
+        return false; /* unsigned compare as in the original */
+    c->current_mana -= cost;
+    c->attributes |= CHAMPION_ATTR_STATISTICS;
+    c->symbols[step] = (char)(SPELL_SYMBOL_FIRST + step * SYMBOL_COUNT + symbol);
+    c->symbols[step + 1] = 0;
+    c->symbol_step = NORMALIZE(step + 1);
+    return true;
+}
+
+/* The magic caster removes the last rune; the mana stays spent. Returns false when it has no rune. */
+bool magic_delete_champion_symbol(void)
+{
+    Champion *c = &g_champions[g_magic_caster_champion_index];
+    if (!c->symbols[0])
+        return false;
+    c->symbol_step = NORMALIZE(c->symbol_step - 1);
+    c->symbols[c->symbol_step] = 0;
+    return true;
+}
+
+/* Selects a living champion as the spell caster; -1 clears it. Returns true when the caster changed. */
+bool magic_set_caster(int16_t champion_index)
+{
+    if (champion_index == g_magic_caster_champion_index ||
+        (champion_index != -1 && !g_champions[champion_index].current_health))
+        return false;
+    g_magic_caster_champion_index = champion_index;
+    return true;
+}

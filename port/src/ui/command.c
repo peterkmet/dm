@@ -30,9 +30,8 @@
 #define INVENTORY_CLOSE       4 /* command_toggle_inventory argument: close the open inventory */
 #define INVENTORY_REDRAW      5 /* command_toggle_inventory argument: draw the open inventory again */
 #define WAIT_FOR_INPUT_FRAMES 12
-enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 };  /* the mouth blinks when it eats an object up */
-#define VI_ALTAR_REBIRTH_EFFECT 2                        /* event 13 effect byte */
-#define HAND_SLOT_BOX_COUNT     (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
+enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 }; /* the mouth blinks when it eats an object up */
+#define HAND_SLOT_BOX_COUNT (2 * CHAMPION_MAX_COUNT)    /* slot boxes 0-7: the hands in the status boxes */
 
 enum { VIEW_CELL_FRONT_FIRST = 2 }; /* view cells 0-1 on the party square, 2-3 ahead */
 
@@ -243,9 +242,7 @@ void command_unfreeze_game(void)
         return;
     }
     g_game_frozen = false;
-    int16_t caster = g_magic_caster_champion_index;
-    g_magic_caster_champion_index = -1;
-    menus_set_magic_caster(caster);
+    menus_draw_spell_area();
     if (!g_acting_champion_ordinal)
         g_action_area_contains_icons = true;
     menus_draw_action_area();
@@ -361,9 +358,7 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
         if (!g_party_champion_count)
             menus_set_magic_caster(-1);
     } else {
-        int16_t caster = g_magic_caster_champion_index;
-        g_magic_caster_champion_index = -1;
-        menus_set_magic_caster(caster);
+        menus_draw_spell_area();
         ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_NAME_TITLE | CHAMPION_ATTR_STATISTICS |
                                     CHAMPION_ATTR_ICON | CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_WOUNDS);
     }
@@ -449,14 +444,8 @@ static void drop_object(int16_t pile)
     int16_t cell = NORMALIZE(pile + g_party_direction);
     uint16_t thing = inventory_get_object_removed_from_leader_hand();
     move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, x, y);
-    if (alcove && g_facing_vi_altar && object_get_icon_index(thing) == ICON_BONES) {
-        TimelineEvent rebirth = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + 1),
-                                 .type = EVENT_VI_ALTAR_REBIRTH,
-                                 .priority = junk_charges(thing),
-                                 .b = event_square(x, y),
-                                 .c = event_cell_effect(cell, VI_ALTAR_REBIRTH_EFFECT)};
-        timeline_add_event(&rebirth);
-    }
+    if (alcove && g_facing_vi_altar && object_get_icon_index(thing) == ICON_BONES)
+        sensor_add_vi_altar_rebirth_event(thing, x, y, cell);
     g_stop_waiting_for_input = true;
 }
 
@@ -546,8 +535,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
             return;
         if (g_leader_empty_handed && door_button_present(map_get_square_first_thing(fx, fy)) &&
             is_in_box(wall_box, x, y)) {
-            sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
-            sensor_add_event(EVENT_DOOR, fx, fy, 0, EFFECT_TOGGLE, (uint32_t)(g_game_time + 1));
+            sensor_press_door_button(fx, fy);
             g_stop_waiting_for_input = true;
             return;
         }
@@ -578,37 +566,22 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
     touch_front_wall();
 }
 
-/* The magic caster adds a rune when it has the mana. */
+/* The magic caster adds a rune when it has the mana; the runes and the caster state are drawn. */
 static void add_champion_symbol(int16_t symbol)
 {
-    Champion *c = &g_champions[g_magic_caster_champion_index];
-    uint16_t step = c->symbol_step;
-    uint16_t cost = *tables_get_symbol_base_mana_cost(step, symbol);
-    if (step) /* 16-bit product as in the original */
-        cost =
-            (uint16_t)(cost * *tables_get_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >>
-            SPELL_MANA_MULTIPLIER_SHIFT;
-    if (cost > (uint16_t)c->current_mana)
-        return; /* unsigned compare as in the original */
-    c->current_mana -= cost;
-    c->attributes |= CHAMPION_ATTR_STATISTICS;
-    c->symbols[step] = (char)(SPELL_SYMBOL_FIRST + step * SYMBOL_COUNT + symbol);
-    c->symbols[step + 1] = 0;
-    c->symbol_step = NORMALIZE(step + 1);
-    menus_draw_available_symbols(c->symbol_step);
+    if (!magic_add_champion_symbol(symbol))
+        return;
+    menus_draw_available_symbols(g_champions[g_magic_caster_champion_index].symbol_step);
     menus_draw_champion_symbols(g_magic_caster_champion_index);
     ui_draw_champion_state(g_magic_caster_champion_index);
 }
 
-/* The magic caster removes the last rune; the mana stays spent. */
+/* The magic caster removes the last rune; the runes are drawn. */
 static void delete_champion_symbol(void)
 {
-    Champion *c = &g_champions[g_magic_caster_champion_index];
-    if (!c->symbols[0])
+    if (!magic_delete_champion_symbol())
         return;
-    c->symbol_step = NORMALIZE(c->symbol_step - 1);
-    c->symbols[c->symbol_step] = 0;
-    menus_draw_available_symbols(c->symbol_step);
+    menus_draw_available_symbols(g_champions[g_magic_caster_champion_index].symbol_step);
     menus_draw_champion_symbols(g_magic_caster_champion_index);
 }
 

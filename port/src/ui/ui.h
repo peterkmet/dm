@@ -146,6 +146,7 @@ void menus_draw_action_area(void);
 void menus_draw_action_damage(int16_t damage);
 void menus_refresh_action_area(void);
 void menus_draw_spell_area_controls(uint16_t champion_index);
+void menus_draw_spell_area(void);
 void menus_draw_available_symbols(uint16_t symbol_step);
 void menus_draw_champion_symbols(uint16_t champion_index);
 void menus_set_magic_caster(int16_t champion_index);

@@ -10,6 +10,7 @@
 #include "graphics.h"
 #include "ids.h"
 #include "inventory.h"
+#include "magic.h"
 #include "spells.h"
 #include "tables.h"
 #include "ui.h"
@@ -277,14 +278,25 @@ static void draw_spell_area(void)
     menus_draw_champion_symbols(caster);
 }
 
+/* Draws the spell area of the caster again. A dead caster (the whole party died) is cleared and nothing is
+   drawn. */
+void menus_draw_spell_area(void)
+{
+    int16_t caster = g_magic_caster_champion_index;
+    if (caster == -1)
+        return;
+    if (!g_champions[caster].current_health) {
+        magic_set_caster(-1);
+        return;
+    }
+    draw_spell_area();
+}
+
 /* Selects the spell caster and draws the spell area; -1 clears it. */
 void menus_set_magic_caster(int16_t champion_index)
 {
-    if (champion_index == g_magic_caster_champion_index ||
-        (champion_index != -1 && !g_champions[champion_index].current_health))
-        return;
-    g_magic_caster_champion_index = champion_index;
-    draw_spell_area();
+    if (magic_set_caster(champion_index))
+        draw_spell_area();
 }
 
 /* Draws the parts of the spell area that the game rules changed: all of it, the caster tabs, or the runes. */

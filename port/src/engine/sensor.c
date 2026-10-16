@@ -448,3 +448,21 @@ void sensor_reset(void)
     g_sensor_rotation_effect_map_y = 0;
     g_sensor_rotation_effect_cell = 0;
 }
+
+/* Bones put into a vi altar: the rebirth of their champion starts next tick on the party map. */
+void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int16_t cell)
+{
+    TimelineEvent rebirth = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + 1),
+                             .type = EVENT_VI_ALTAR_REBIRTH,
+                             .priority = junk_charges(bones),
+                             .b = event_square(x, y),
+                             .c = event_cell_effect(cell, VI_ALTAR_REBIRTH_EFFECT)};
+    timeline_add_event(&rebirth);
+}
+
+/* A press on the button of the door at x, y: a switch sound and the door toggles next tick. */
+void sensor_press_door_button(int16_t x, int16_t y)
+{
+    sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
+    sensor_add_event(EVENT_DOOR, x, y, 0, EFFECT_TOGGLE, (uint32_t)(g_game_time + 1));
+}
