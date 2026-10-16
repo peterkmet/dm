@@ -146,7 +146,8 @@ dm/
 3. The Makefile evaluates `SDL_PREFIX ?= $(shell brew --prefix sdl3)` only in the targets that link SDL (not
    in `clean` or `test`), and a caller can override it.
 4. The tests do not compile the library with clang. They load `build/libdm.dylib`, which `conftest.py` builds
-   once with `make lib`. The Makefile builds the library and the game with the same flags.
+   once with `make lib` in the controller process before the workers start (`pytest_configure` without
+   `workerinput`, as today); no worker runs `make`. The Makefile builds the library and the game with the same flags.
 5. `clang-format` comes from the PyPI package `clang-format` (23.1.x) in the `dev` group; the standard check
    runs the one of the virtual environment and needs no Homebrew.
 
@@ -176,7 +177,8 @@ Rules that are new or change:
    check knows the marker. No ordinal (index + 1, 0 none) in a name or a variable; an index is -1 for none.
    Ordinals stay only where a game record stores them.
 4. Function names: `<prefix><verb>_<object>` with at most four words after the prefix and at most 32
-   characters. The plan gives the 35 names above 36 characters shorter names, for example
+   characters. The plan gives the 60 header names above 32 characters, and the static names above it, shorter
+   names, for example
    `game_update_map_coordinates_after_relative_movement` becomes `map_step`,
    `champion_apply_and_draw_pending_damage_and_wounds` becomes `champion_apply_pending_damage`,
    `inventory_get_object_removed_from_leader_hand` becomes `inventory_take_hand_object`.
@@ -209,7 +211,8 @@ Rules that are new or change:
     order of the header, and the header lists them by topic (setup and reset first, then queries, then
     commands); a one-line section comment names each topic in the header and in the `.c` file. A static
     helper stands directly above the first function that calls it; a helper that several sections share
-    stands at the top of the functions. No forward declaration of a static function.
+    stands at the top of the functions. A forward declaration of a static function is allowed only for mutual
+    recursion (`group.c:1477` today), with a comment that names the pair.
 12. Comments: the one-line comment of a public function is in the header above its prototype; the comment of
     a static function is above its definition; never both. No original symbol names, addresses or event
     numbers in comments: name the constant (`EVENT_ENABLE_CHAMPION_ACTION`). No TODO markers in code
@@ -295,7 +298,7 @@ the allowlist with only documented reasons.
      `direction_back`, `direction_left` (prefix `direction_`), so that `turn_` is free for `control/turn.h`.
 3. One copy of each helper: `map_is_party_on`, `map_step` (replaces
    `game_update_map_coordinates_after_relative_movement` and its three wrappers),
-   `map_get_square_first_thing_of_type`, `champion_face_party_direction`, the side-of-cell helper of
+   `map_find_thing(location, type)` (the first thing of a type on a square), `champion_face_party_direction`, the side-of-cell helper of
    `group.c:1021` in `map.h` under `direction_`, `game_fatal`, and `message_print_dungeon_text(text_thing)`
    in `message.c` for the two `print_text` copies. `map_at_level` and `dungeon_get_square_first_thing` in
    `dungeon.c` go; `dungeon_validate` uses the map functions.
@@ -331,11 +334,12 @@ the allowlist with only documented reasons.
    destination plus explicit `bool` flags instead of negative coordinates; `champion_get_skill_level` and
    `champion_get_wound_defense` take the flags as separate parameters; `x_combo`/`y_combo` go. Every function
    with more than five parameters takes a struct (`ProjectileLaunch`, `MeleeAttack`, ...).
-4. Output: `game_get_magic_map_position`, `map_get_location_after_level_change`,
+4. Output: `game_get_magic_map_position`, `map_get_level_change_location` (was
+   `map_get_location_after_level_change`, 36 characters),
    `get_creature_spell_explosion`, `get_object_modifier`, `get_flask_explosion`, `cast_magic_map`,
    `is_material_group_on` return a struct; `click_test` returns the next thing.
 5. Ordinals become indices: `g_inventory_champion_index`, `g_acting_champion_index`,
-   `g_candidate_champion_index`, `group_get_creature_index_in_cell` and the other `*_ordinal` functions; the
+   `g_candidate_champion_index`, `group_get_creature_in_cell` and the other `*_ordinal` functions; the
    39 `ordinal - 1` sites go. `ui/` and the tests follow.
 6. Names: `BEHAVIOR_USELESS_*` and `ACTION_STAB_1/2` get game names from the original tables (the plan sources
    them from `docs/reference/`); the `SLOT_*` block lists the slots in record order with a comment;
@@ -393,7 +397,7 @@ the allowlist with only documented reasons.
    `move_is_blocked(command)`, `game_prepare_fuse_lord(lord, location)`, `map_remove_fluxcages(location)`,
    `group_delete_all_except(location)`, `champion_get_load_level(index)`, `explored_mark_visible(position,
    direction)` (the visibility query of `automap.c:24-81`, also used by `control/`), and
-   `map_get_location_after_level_change_on(map, ...)` instead of the copy in `view.c:1421-1435`. The epic
+   `map_get_level_change_location(map, ...)` instead of the copy in `view.c:1421-1435`. The epic
    takes a golden rule snapshot of each moved rule before the move (`tests/golden/`).
 4. Constants to their owners: `DOOR_NORTH_SOUTH` to `map.h`; `SOUND_FUSE` and `SOUND_TELEPORT` go
    (`SOUND_BUZZ` is the one name of sound 14; the plan confirms it in `docs/reference/`);
@@ -488,9 +492,12 @@ the allowlist with only documented reasons.
 
 1. `tests/dmtest/`, one helper module each:
    - `lib.py`: loads a private copy of `build/libdm.dylib` per test module from a temp path, so each module
-     has its own C globals; the plan verifies once that a copy loads as a separate image.
-   - `constants.py`: parses `#define` lines and `enum` result types of `src/**/*.h` at import; tests write
-     `C.KEY_RETURN`. A test with a header fixture (a `#define` expression, an enum member) covers the parser.
+     has its own C globals; the plan verifies once that a copy loads as a separate image (the ad-hoc signature
+     is in the file and survives a copy) and measures the suite time before and after the change (13 s today).
+   - `constants.py`: parses `#define` lines and `enum` result types of `src/**/*.h` at import and evaluates
+     a value expression over integer literals, known constants, casts, shifts and arithmetic with a small
+     evaluator on the Python `ast` (no `eval`); tests write `C.KEY_RETURN`. A test with a header fixture
+     covers the parser: `(-1)`, `(MESSAGE_ROWS - 1)`, `((int16_t)0x8000)`, `(1 << 5)`, an enum member.
    - `game.py`: the `Game` harness and the `Box`, `Champion`, `Party`, `Session`, `Screen` structures.
    - `savefile.py`, `control.py` (`Client`, `pump`), `emu.py`.
    - `markers.py`: `needs_dm`, `needs_csb`, `needs_sdl`, `needs_ghidra`.
