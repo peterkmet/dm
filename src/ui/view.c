@@ -199,9 +199,9 @@
 #define WALL_TEXT_SIZE            80
 #define SCALE_D3_FAR_SIDE_W       30 /* the D3L2 and D3R2 wall sides are wider than high */
 
-/* Cell orders of the things on a square (objects, creatures, projectiles, explosions): a nibble per view cell + 1, low nibble first;
-   0 is the alcove. Bit 3 marks a door pass, bit 0 then selects the pass behind (0) or in front of the door (1),
-   and the next nibbles hold the cells. B back, F front, L left, R right. */
+/* Cell orders of the things on a square (objects, creatures, projectiles, explosions): a nibble per view cell + 1,
+   low nibble first; 0 is the alcove. Bit 3 marks a door pass, bit 0 then selects the pass behind (0) or in front of
+   the door (1), and the next nibbles hold the cells. B back, F front, L left, R right. */
 #define CELLS_ALCOVE      0
 #define CELLS_BL          0x1
 #define CELLS_BR          0x2
@@ -651,11 +651,9 @@ static ScaledBitmap get_scaled(int16_t graphic, int16_t scale_x, int16_t scale_y
     if (!s.bitmap || (scale_x == SCALE_NATIVE && scale_y == SCALE_NATIVE && !palette_changes))
         return s;
     /* 16-bit sizes as in the original */
-    if (draw_shrink(s.bitmap, (int16_t)((scale_x >> 1) + s.bitmap->w * scale_x) >> SCALE_SHIFT,
-                    (int16_t)((scale_y >> 1) + s.bitmap->h * scale_y) >> SCALE_SHIFT, palette_changes, &s.own))
-        s.bitmap = NULL;
-    else
-        s.bitmap = NULL;
+    draw_shrink(s.bitmap, (int16_t)((scale_x >> 1) + s.bitmap->w * scale_x) >> SCALE_SHIFT,
+                (int16_t)((scale_y >> 1) + s.bitmap->h * scale_y) >> SCALE_SHIFT, palette_changes, &s.own);
+    s.bitmap = NULL;
     return s;
 }
 
