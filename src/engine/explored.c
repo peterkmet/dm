@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/explored.h"
 #include "engine/dungeon.h"
+#include "engine/game.h"
+#include "engine/map.h"
+#include "engine/party.h"
+#include "engine/record.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -57,11 +61,87 @@ bool explored_is_seen(int16_t map, int16_t x, int16_t y)
     return square && *square;
 }
 
-void explored_mark(int16_t map, int16_t x, int16_t y)
+/* Marks square (x, y) of map as seen; a square outside the map is ignored. */
+static void mark_seen(int16_t map, int16_t x, int16_t y)
 {
     uint8_t *square = get_seen_square(map, x, y);
     if (square)
         *square = 1;
+}
+
+/* A square the view cannot look through: a wall, a fake wall that looks like a wall, a closed door. */
+static bool blocks_sight(int16_t map, int16_t x, int16_t y)
+{
+    if (!is_on_map(map, x, y))
+        return true;
+    uint8_t square = rec_square_byte(map, x, y);
+    switch (rec_square_type(square)) {
+    case SQUARE_WALL:
+        return true;
+    case SQUARE_FAKE_WALL:
+        return !(square & FAKE_WALL_OPEN);
+    case SQUARE_DOOR:
+        return rec_door_state(square) == DOOR_CLOSED;
+    default:
+        return false;
+    }
+}
+
+/* The darkest light level. */
+#define DARKEST_PALETTE 5 /* g_party_light_level of the darkest light level */
+
+/* Rows the party can make out in the current light: the darkest palettes hide the far rows. */
+static int16_t light_depths(void)
+{
+    /* the darkest two light levels hide the far rows */
+    if (g_session.cheat_light)
+        return EXPLORED_VIEW_DEPTHS;
+    if (g_party_light_level >= DARKEST_PALETTE)
+        return EXPLORED_VIEW_DEPTHS - 2;
+    if (g_party_light_level >= DARKEST_PALETTE - 1)
+        return EXPLORED_VIEW_DEPTHS - 1;
+    return EXPLORED_VIEW_DEPTHS;
+}
+
+int16_t explored_get_visible_depths(Position place, int16_t direction)
+{
+    int16_t limit = light_depths();
+    for (int16_t depth = 1; depth < limit; depth++) {
+        int16_t ahead_x = place.x;
+        int16_t ahead_y = place.y;
+        map_step(direction, depth, 0, &ahead_x, &ahead_y);
+        if (blocks_sight(place.map, ahead_x, ahead_y))
+            return depth + 1;
+    }
+    return limit;
+}
+
+/* A side square is seen when the square ahead at its depth or the side square one row nearer is open. */
+bool explored_is_side_visible(Position place, int16_t direction, int16_t depth, int16_t right)
+{
+    if (depth == 0 || right == 0)
+        return true;
+    int16_t ahead_x = place.x;
+    int16_t ahead_y = place.y;
+    int16_t near_x = place.x;
+    int16_t near_y = place.y;
+    map_step(direction, depth, 0, &ahead_x, &ahead_y);
+    map_step(direction, depth - 1, right, &near_x, &near_y);
+    return !blocks_sight(place.map, ahead_x, ahead_y) || !blocks_sight(place.map, near_x, near_y);
+}
+
+void explored_mark_visible(Position place, int16_t direction)
+{
+    int16_t depths = explored_get_visible_depths(place, direction);
+    for (int16_t depth = 0; depth < depths; depth++)
+        for (int16_t side = -1; side <= 1; side++) {
+            if (!explored_is_side_visible(place, direction, depth, side))
+                continue;
+            int16_t square_x = place.x;
+            int16_t square_y = place.y;
+            map_step(direction, depth, side, &square_x, &square_y);
+            mark_seen(place.map, square_x, square_y);
+        }
 }
 
 /* Block: "AMAP", version, map count, then per map its width, height and one byte per square. */

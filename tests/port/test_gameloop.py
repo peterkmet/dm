@@ -6,7 +6,7 @@ import subprocess
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import pending_damage, STEP_EAST, STEP_NORTH, Box, Party, start_game, session
+from dmtest.game import pending_damage, STEP_EAST, STEP_NORTH, Box, Party, Position, start_game, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
 
@@ -153,7 +153,8 @@ def test_freeze_covers_open_inventory(game):
 def test_party_light_sets_the_darkness_of_view_and_rules(game):
     lib = game.lib
     assert lib.gameloop_start_new_game(str(GAME).encode())
-    lib.automap_get_visible_depths.restype = c16
+    lib.explored_get_visible_depths.restype = c16
+    lib.explored_get_visible_depths.argtypes = [Position, c16]
     party = Party.in_dll(lib, "g_party")
     darkness = c16.in_dll(lib, "g_party_light_level")
     pal = (u16 * 16).in_dll(lib, "palette")
@@ -163,7 +164,7 @@ def test_party_light_sets_the_darkness_of_view_and_rules(game):
     def view(light):
         party.magical_light_amount = light
         lib.gameloop_draw_view()
-        return darkness.value, list(pal), lib.automap_get_visible_depths(1, 14, 4, 3)
+        return darkness.value, list(pal), lib.explored_get_visible_depths(Position(1, 14, 4), 3)
 
     try:
         for n, v in zip(place, (1, 14, 4, 3)):  # map 1 has darkness, a long corridor ahead

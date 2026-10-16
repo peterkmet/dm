@@ -194,7 +194,7 @@ void gameloop_draw_view(void)
 /* The automap remembers the squares of the current view. */
 static void mark_seen_squares(void)
 {
-    automap_mark_seen(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
+    explored_mark_visible((Position){g_party_map_index, g_party_map_x, g_party_map_y}, g_party_direction);
 }
 
 /* Redraws what commands and rules changed: flagged champion states, hand and inventory slots,

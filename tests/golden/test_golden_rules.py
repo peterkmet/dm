@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import ActionList, Location, Party, scrub_free_groups, state, session
+from dmtest.game import ActionList, Location, Party, Position, scrub_free_groups, state, session
 from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
 from dmtest.markers import needs_dm
 
@@ -434,6 +434,7 @@ def test_visibility(game):
         getattr(lib, name).restype = c16
     lib.rec_square_byte.restype = ctypes.c_uint8
     lib.explored_save.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_size_t)]
+    lib.explored_mark_visible.argtypes = [Position, c16]
     palette = c16.in_dll(lib, "g_party_light_level")
     digest = hashlib.sha256()
     for m in VISIBILITY_MAPS:
@@ -445,7 +446,7 @@ def test_visibility(game):
                     for light in LIGHTS:
                         palette.value = light
                         lib.explored_reset()
-                        lib.automap_mark_seen(m, x, y, d)
+                        lib.explored_mark_visible(Position(m, x, y), d)
                         buf, size = ctypes.c_void_p(), ctypes.c_size_t()
                         assert lib.explored_save(ctypes.byref(buf), ctypes.byref(size)) is True
                         digest.update(ctypes.string_at(buf, size.value))

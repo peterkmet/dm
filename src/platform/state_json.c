@@ -16,7 +16,6 @@
 #include "engine/party.h"
 #include "engine/projectile.h"
 #include "engine/record.h"
-#include "ui/automap.h"
 #include "ui/command.h"
 #include "ui/ui.h"
 #include "ui/view.h"
@@ -556,7 +555,7 @@ static uint8_t lookup_party_square(int16_t x, int16_t y)
 /* The rows of the view the party sees now: up to the first center square that blocks sight. */
 static int16_t visible_depths(void)
 {
-    return automap_get_visible_depths(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
+    return explored_get_visible_depths((Position){g_party_map_index, g_party_map_x, g_party_map_y}, g_party_direction);
 }
 
 /* The map square depth squares ahead of the party and side squares to the right. */
@@ -868,7 +867,8 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
 /* A square of the view that the screen draws: a side square behind a wall at its depth and one row nearer is hidden. */
 static bool side_seen(int16_t depth, int16_t side)
 {
-    return automap_side_is_visible(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction, depth, side);
+    return explored_is_side_visible((Position){g_party_map_index, g_party_map_x, g_party_map_y}, g_party_direction,
+                                    depth, side);
 }
 
 /* The piles that take_object reaches, each with its top object and all its objects, top first. */

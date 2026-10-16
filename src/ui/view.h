@@ -10,7 +10,6 @@
 #define DOOR_NORTH_SOUTH 8
 #define VIEWPORT_MAX_W   224 /* the largest viewport bitmap */
 #define VIEWPORT_MAX_H   136
-#define VIEW_DEPTH_COUNT 4 /* the view draws the party row and 3 rows ahead */
 
 /* Clickable boxes of the dungeon view, in viewport coordinates (x = -1: empty): the object piles of
    view cells 0-3 (D0 back cells, D1C front cells), the alcove pile, and the front wall ornament or

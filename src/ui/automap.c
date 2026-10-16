@@ -3,7 +3,6 @@
 #include "engine/arith.h"
 #include "engine/dungeon.h"
 #include "engine/explored.h"
-#include "engine/game.h"
 #include "engine/map.h"
 #include "engine/party.h"
 #include "engine/record.h"
@@ -18,86 +17,6 @@
 #define LABEL_BASELINE  4
 #define LABEL_TEXT_SIZE 7          /* the longest int16_t, "-32768", and the end byte */
 static int16_t scroll_x, scroll_y; /* squares between the party and the center of the drawn map */
-
-static bool is_on_map(int16_t map, int16_t x, int16_t y)
-{
-    return map >= 0 && map < dungeon_map_count() && x >= 0 && x < dungeon_map_width(map) && y >= 0 &&
-           y < dungeon_map_height(map);
-}
-
-/* A square the view cannot look through: a wall, a fake wall that looks like a wall, a closed door. */
-static bool blocks_sight(int16_t map, int16_t x, int16_t y)
-{
-    if (!is_on_map(map, x, y))
-        return true;
-    uint8_t square = rec_square_byte(map, x, y);
-    switch (rec_square_type(square)) {
-    case SQUARE_WALL:
-        return true;
-    case SQUARE_FAKE_WALL:
-        return !(square & FAKE_WALL_OPEN);
-    case SQUARE_DOOR:
-        return rec_door_state(square) == DOOR_CLOSED;
-    default:
-        return false;
-    }
-}
-
-#define DARKEST_PALETTE 5 /* g_party_light_level of the darkest light level */
-
-/* Rows the party can make out in the current light: the darkest palettes hide the far rows. */
-static int16_t light_depths(void)
-{
-    /* ponytail: fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it */
-    if (g_session.cheat_light)
-        return VIEW_DEPTH_COUNT;
-    if (g_party_light_level >= DARKEST_PALETTE)
-        return VIEW_DEPTH_COUNT - 2;
-    if (g_party_light_level >= DARKEST_PALETTE - 1)
-        return VIEW_DEPTH_COUNT - 1;
-    return VIEW_DEPTH_COUNT;
-}
-
-int16_t automap_get_visible_depths(int16_t map, int16_t x, int16_t y, int16_t dir)
-{
-    int16_t limit = light_depths();
-    for (int16_t depth = 1; depth < limit; depth++) {
-        int16_t ahead_x = x;
-        int16_t ahead_y = y;
-        map_step(dir, depth, 0, &ahead_x, &ahead_y);
-        if (blocks_sight(map, ahead_x, ahead_y))
-            return depth + 1;
-    }
-    return limit;
-}
-
-/* A side square is seen when the square ahead at its depth or the side square one row nearer is open. */
-bool automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int16_t depth, int16_t side)
-{
-    if (depth == 0 || side == 0)
-        return true;
-    int16_t ahead_x = x;
-    int16_t ahead_y = y;
-    int16_t near_x = x;
-    int16_t near_y = y;
-    map_step(dir, depth, 0, &ahead_x, &ahead_y);
-    map_step(dir, depth - 1, side, &near_x, &near_y);
-    return !blocks_sight(map, ahead_x, ahead_y) || !blocks_sight(map, near_x, near_y);
-}
-
-void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir)
-{
-    int16_t depths = automap_get_visible_depths(map, x, y, dir);
-    for (int16_t depth = 0; depth < depths; depth++)
-        for (int16_t side = -1; side <= 1; side++) {
-            if (!automap_side_is_visible(map, x, y, dir, depth, side))
-                continue;
-            int16_t square_x = x;
-            int16_t square_y = y;
-            map_step(dir, depth, side, &square_x, &square_y);
-            explored_mark(map, square_x, square_y);
-        }
-}
 
 /* Fills the part of the box (x, y, w, h) that lies inside area. */
 static void fill_clipped(Bitmap *target, Box area, int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color)
