@@ -15,7 +15,7 @@ def golden_game():
     """A new game with a fixed seed in a private copy of libdm."""
     # a private copy: an xdist worker shares one image per path, so earlier modules would leave their state
     lib = load_lib()
-    # the types that Game, state and recruit_and_hold_object need, as the fixture of tests/test_save.py
+    # the types that Game, state and recruit_and_hold_object need, as the fixture of tests/port/test_save.py
     lib.gameloop_load_data.restype = lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.ui_get_slot_box_zone.restype = ctypes.c_bool
     lib.ui_zone_box.restype = ctypes.c_bool

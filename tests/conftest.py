@@ -1,16 +1,13 @@
 import os
 import subprocess
 import tempfile
-from pathlib import Path
 
 import pytest
 
-from dmtest.markers import sdl3_installed
+from dmtest.markers import ROOT, sdl3_installed
 
 # dm-play logs each call; the tests must not write into the log of a run
 os.environ["DM_PLAY_LOG_DIR"] = tempfile.mkdtemp(prefix="dm-play-log")
-
-ROOT = Path(__file__).resolve().parent.parent
 
 
 def pytest_configure(config):
