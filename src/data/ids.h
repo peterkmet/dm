@@ -92,6 +92,12 @@
 #define GFX_OBJECT_FIRST              498 /* + object aspect graphic; + 1 the alcove graphic */
 #define GFX_CREATURE_FIRST            584 /* + creature aspect graphic: front, side, back, attack */
 
+/* Wall and floor ornament ids of the game data that the view tests. */
+#define GFX_ORNAMENT_FLOOR_PRESSURE_PAD       1
+#define GFX_ORNAMENT_WALL_VI_ALTAR            2
+#define GFX_ORNAMENT_FLOOR_ROUND_PRESSURE_PAD 4
+#define GFX_ORNAMENT_FLOOR_TINY_PRESSURE_PAD  7
+
 /* Counts and strides of the graphic ranges. */
 #define GFX_WALLSET_SIZE 40
 

@@ -6,8 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Door square bit that map.h does not name: the door passage runs north-south. */
-#define DOOR_NORTH_SOUTH 8
+/* Size of the largest viewport bitmap. */
 #define VIEWPORT_MAX_W   224 /* the largest viewport bitmap */
 #define VIEWPORT_MAX_H   136
 #define VIEW_DEPTH_COUNT 4 /* the view draws the party row and 3 rows ahead */

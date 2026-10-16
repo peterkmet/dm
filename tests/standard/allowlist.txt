@@ -54,7 +54,6 @@ enum platform/control.c open: epic 10
 enum platform/main.c open: epic 11
 enum platform/platform.c open: epic 11
 enum ui/gameloop.c open: epic 8
-enum ui/view.c open: epic 8
 notation data/kaos_addresses.h open: epic 13
 notation platform/control.c open: epic 10
 notation platform/main.c open: epic 11
@@ -88,7 +87,6 @@ name ui/ui.h:ui_draw_panel_food_water_poisoned open: epic 8
 name ui/ui.h:ui_get_icon_in_slot_box open: epic 8
 name ui/ui_champion.c:ui_draw_champion_skills_and_statistics open: epic 8
 name ui/ui_champion.c:ui_draw_panel_food_water_poisoned open: epic 8
-name ui/view.c:get_location_after_level_change open: epic 8
 name ui/view.c:view_get_wall_face_ornament_index open: epic 8
 name ui/view.h:view_get_wall_face_ornament_index open: epic 8
 static-prefix engine/sound.c:sound_exists open: epic 9

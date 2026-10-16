@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ORNAMENT_VI_ALTAR 2 /* the alcove ornament that is a vi altar */
 /* tables_get_pile_shift pair indices */
 #define PILE_FLOOR_SHIFTS 16
 #define PILE_ODD_CELL     8
@@ -1455,29 +1454,12 @@ static void draw_door(uint16_t door_thing, int16_t state, int16_t view)
     free(door_copy.px);
 }
 
-/* map_get_level_change_location for any map (map.c checks the party map first): the map and square one
-   level up or down, or -1. */
-static int16_t get_location_after_level_change(int16_t from, int16_t delta, int16_t *x, int16_t *y)
-{
-    int16_t dungeon_x = *x + rec_map_offset_x(from);
-    int16_t dungeon_y = *y + rec_map_offset_y(from);
-    for (int16_t m = 0; m < dungeon_map_count(); m++) {
-        if (delta + rec_map_level(from) == rec_map_level(m) && rec_map_offset_x(m) <= dungeon_x &&
-            dungeon_x <= rec_map_offset_x(m) + rec_map_last_x(m) && rec_map_offset_y(m) <= dungeon_y &&
-            dungeon_y <= rec_map_offset_y(m) + rec_map_last_y(m)) {
-            *x = dungeon_x - rec_map_offset_x(m);
-            *y = dungeon_y - rec_map_offset_y(m);
-            return m;
-        }
-    }
-    return -1;
-}
-
 /* The hole of an open pit on the map above. */
 static void draw_ceiling_pit(int16_t graphic, int16_t zone, int16_t x, int16_t y, int mode)
 {
-    int16_t m = get_location_after_level_change(view_map, LEVEL_UP, &x, &y);
-    if (m >= 0 && rec_square_type(rec_square_byte(m, x, y)) == SQUARE_PIT && rec_square_byte(m, x, y) & PIT_OPEN)
+    Position above = map_get_level_change_location((Position){view_map, x, y}, LEVEL_UP);
+    if (above.map >= 0 && rec_square_type(rec_square_byte(above.map, above.x, above.y)) == SQUARE_PIT &&
+        rec_square_byte(above.map, above.x, above.y) & PIT_OPEN)
         draw_wall_bitmap(graphic, zone, mode);
 }
 
@@ -2173,7 +2155,7 @@ static void load_ornaments(int16_t map, const uint8_t *ornaments)
         for (int k = 0; k < ALCOVE_ORNAMENT_COUNT; k++)
             if (tables_get_alcove_ornament(k) == ornament) {
                 alcoves[alcove_count++] = i;
-                if (ornament == ORNAMENT_VI_ALTAR)
+                if (ornament == GFX_ORNAMENT_WALL_VI_ALTAR)
                     vi_altar = i;
             }
         if (tables_get_fountain_ornament() == ornament)
@@ -2274,9 +2256,9 @@ int16_t view_get_wall_ornament_index(int16_t ornament)
 
 bool view_is_pressure_pad(int16_t x, int16_t y)
 {
-    enum { PRESSURE_PAD = 1, ROUND_PRESSURE_PAD = 4, TINY_PRESSURE_PAD = 7 }; /* floor ornament graphics */
     int16_t ornament = view_get_floor_ornament(x, y);
-    return ornament == PRESSURE_PAD || ornament == ROUND_PRESSURE_PAD || ornament == TINY_PRESSURE_PAD;
+    return ornament == GFX_ORNAMENT_FLOOR_PRESSURE_PAD || ornament == GFX_ORNAMENT_FLOOR_ROUND_PRESSURE_PAD ||
+           ornament == GFX_ORNAMENT_FLOOR_TINY_PRESSURE_PAD;
 }
 
 int16_t view_get_floor_ornament(int16_t x, int16_t y)
