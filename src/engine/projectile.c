@@ -2,6 +2,7 @@
 #include "engine/projectile.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/group.h"
 #include "engine/inventory.h"

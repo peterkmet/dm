@@ -101,6 +101,7 @@ enum ui/gameloop.c open: epic 8
 enum ui/view.c open: epic 8
 notation data/kaos_addresses.h open: epic 13
 notation engine/action.c open: epic 6
+notation engine/arith.h rule 3.12: a shift mask in hex, named by the shift count it limits
 notation engine/champion.c open: epic 6
 notation engine/champion.h open: epic 6
 notation engine/dungeon.c open: epic 6

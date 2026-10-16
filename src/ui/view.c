@@ -3,6 +3,7 @@
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/group.h"

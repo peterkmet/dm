@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/automap.h"
+#include "engine/arith.h"
 #include "engine/dungeon.h"
 #include "engine/explored.h"
 #include "engine/game.h"

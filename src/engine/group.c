@@ -2,6 +2,7 @@
 #include "engine/group.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/inventory.h"
@@ -116,10 +117,6 @@ static const ActiveGroup *set_direction_group;
 static uint16_t group_get_active_group_thing(const ActiveGroup *active)
 {
     return THING_MAKE(THING_GROUP, active->group_index);
-}
-static int16_t abs16(int16_t value)
-{
-    return value < 0 ? -value : value;
 }
 static bool is_party_on(int16_t x, int16_t y)
 {

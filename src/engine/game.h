@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_ENGINE_GAME_H
 #define DM_ENGINE_GAME_H
-/* Prefixes: game_ min16 max16 bounded_ scale_ timeline_ position_ turn_ */
+/* Prefixes: game_ timeline_ position_ turn_ */
 #include "data/bytes.h"
 #include "data/tables.h"
 #include <stdbool.h>
@@ -13,11 +13,9 @@
 #define STAT_LIMIT                 170 /* no statistic grows above this value */
 #define STAT_MINIMUM_VALUE         30  /* the minimum of each statistic of a new champion */
 #define PARTY_SCENT_COUNT          24
-#define ACTIVE_GROUP_MAX_COUNT     110  /* creature groups that can act at the same time */
-#define CSB_ACTIVE_GROUP_MAX_COUNT 60   /* active group slots of a new CSB game */
-#define WATCHDOG_INTERVAL          300  /* game ticks between two watchdog events */
-#define SHIFT_COUNT_MASK           0x3f /* the 68000 takes a shift count modulo 64 */
-#define LONG_SHIFT_MAXIMUM         31   /* a larger shift of a 32-bit value leaves only the sign or 0 */
+#define ACTIVE_GROUP_MAX_COUNT     110 /* creature groups that can act at the same time */
+#define CSB_ACTIVE_GROUP_MAX_COUNT 60  /* active group slots of a new CSB game */
+#define WATCHDOG_INTERVAL          300 /* game ticks between two watchdog events */
 
 /* The direction or cell a quarter turn right, a half turn, or a quarter turn left of this one. */
 static inline int16_t turn_right(int16_t direction)
@@ -221,12 +219,6 @@ void game_advance_time(void);
 /* The rest of the tick: the champions get their time effects and the movement delays count down. */
 void game_apply_tick_effects(void);
 
-int16_t min16(int16_t a, int16_t b);
-int16_t max16(int16_t a, int16_t b);
-int16_t bounded_value(int16_t min, int16_t value, int16_t max);
-/* a * b >> shift. Like the original asr.l of the 32-bit mulu product, the sign bit is the
-   product's bit 31 and the shift count is taken modulo 64. */
-int32_t scale_value(uint16_t a, int16_t shift, uint16_t b);
 /* Moves map coordinates by steps forward and to the right of a direction. */
 void game_update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
                                                          int16_t *map_x, int16_t *map_y);

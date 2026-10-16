@@ -2,6 +2,7 @@
 #include "engine/game.h"
 #include "data/adventure.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/inventory.h"
@@ -140,27 +141,6 @@ void game_apply_tick_effects(void)
         g_disabled_movement_ticks--;
     if (g_projectile_disabled_movement_ticks)
         g_projectile_disabled_movement_ticks--;
-}
-
-int16_t min16(int16_t a, int16_t b)
-{
-    return b <= a ? b : a;
-}
-int16_t max16(int16_t a, int16_t b)
-{
-    return a <= b ? b : a;
-}
-
-int16_t bounded_value(int16_t min, int16_t value, int16_t max)
-{
-    return value <= min ? min : value > max ? max : value;
-}
-
-int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
-{
-    int32_t product = (int32_t)((uint32_t)a * b); /* unsigned multiply: no signed overflow */
-    shift &= SHIFT_COUNT_MASK;
-    return shift > LONG_SHIFT_MAXIMUM ? (product < 0 ? -1 : 0) : product >> shift;
 }
 
 void game_update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,

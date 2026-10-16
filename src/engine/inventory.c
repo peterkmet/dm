@@ -2,6 +2,7 @@
 #include "engine/inventory.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
