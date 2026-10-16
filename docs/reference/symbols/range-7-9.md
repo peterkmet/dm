@@ -1,6 +1,6 @@
 # KAOS ranges 7–9: symbol notes
 
-This page describes the functions of `KAOS.FTL` in partition ranges 7, 8, and 9 of the [module map](../kaos-map.md): `0x116a4e`–`0x127e34`. The symbols are in [range-7-9.csv](range-7-9.csv). The CSV has one row for each of the 283 functions and rows for the globals that these functions own. For a global, the column `signature` holds the C type.
+This page describes the functions of `KAOS.FTL` in partition ranges 7, 8, and 9 of the [module map](../kaos-map.md): `0x116a4e`–`0x127e34`. The symbols are in [range-7-9.csv](../../symbols/range-7-9.csv). The CSV has one row for each of the 283 functions and rows for the globals that these functions own. For a global, the column `signature` holds the C type.
 
 Signatures use 16-bit types for word arguments, because the original `int` is 16 bits. Struct names (`TimelineEvent`, `Group`, `Champion`, `Projectile`, `Teleporter`, `FieldAspect`) refer to the records that this page describes.
 

@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-CSV = ROOT / "docs" / "kaos-symbols.csv"
+CSV = ROOT / "docs" / "reference" / "kaos-symbols.csv"
 DECOMP = ROOT / "reference" / "decomp" / "dm" / "KAOS.c"
 CODE_BASE = 0x104E68
 IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")

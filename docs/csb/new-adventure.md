@@ -15,7 +15,7 @@ The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and
 
 The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." (text strings 24 and 25 of disk A `Dungeon.DAT`, read with `dmcsb`).
 
-`MINI.DAT` is not encrypted with a special scheme and is not compressed. It uses the cipher of the DM save file ([save-format.md](save-format.md)) with a header that is moved by 2 bytes. CEDT does not change or randomize the dungeon.
+`MINI.DAT` is not encrypted with a special scheme and is not compressed. It uses the cipher of the DM save file ([save-format.md](../formats/save.md)) with a header that is moved by 2 bytes. CEDT does not change or randomize the dungeon.
 
 ## Modules
 
@@ -106,7 +106,7 @@ The header has the structure of the DM header: 32 groups of 4 noise words, then 
    ```
 
 4. Portraits: read 4 × 464 bytes without a change.
-5. Dungeon (`0x108efe`): read the parts in the order of `Dungeon.DAT` ([dungeon-format.md](dungeon-format.md)). The thing record sizes are the table at `0x100568`. Add every byte to a 16-bit sum. Then read 2 more bytes. When the read gives 2 bytes, they must equal the sum.
+5. Dungeon (`0x108efe`): read the parts in the order of `Dungeon.DAT` ([dungeon-format.md](../formats/dungeon.md)). The thing record sizes are the table at `0x100568`. Add every byte to a 16-bit sum. Then read 2 more bytes. When the read gives 2 bytes, they must equal the sum.
 
 `MINI.DAT` passes all checks. All five block checksums and the dungeon sum (`0x7cc6`) match.
 
@@ -141,7 +141,7 @@ The header has the structure of the DM header: 32 groups of 4 noise words, then 
 - Mini champion count (block 0, offset 10) = game champion count.
 - The load step `0x109c20` clears the name bytes after the first NUL (8 bytes) and the title bytes after the first NUL (20 bytes).
 
-Then for each champion (record offsets of [game-state.md](game-state.md)):
+Then for each champion (record offsets of [game-state.md](../rules/game-state.md)):
 
 | Field | New value |
 |---|---|

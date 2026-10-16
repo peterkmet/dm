@@ -25,7 +25,7 @@ All addresses in this page are image addresses after `dm-ftl` with base `0x10000
 
 ### Container
 
-Both files use format 1 (`0x8001`), the header of [kaos-map.md](kaos-map.md#graphicsdat), and equal compressed and decompressed sizes for every item.
+Both files use format 1 (`0x8001`), the header of [kaos-map.md](../reference/kaos-map.md#graphicsdat), and equal compressed and decompressed sizes for every item.
 
 | File | Items | Size in bytes | CRC32 |
 |---|---|---|---|
@@ -85,7 +85,7 @@ Object names (item 694). The CSB engine reads 199 names at `0x108280` (graphic i
 
 33 of the 199 CSB names differ from DM. Examples: 23–24 STORM (DM BOLT BLADE), 25–26 RA BLADE (FURY), 38 SIDE SPLITTER (DELTA), 41 DRAGON FANG (THE INQUISITOR), 62–64 STAFF OF IRRA, CROSS OF NETA, SERPENT STAFF, 174 SHANK (DRUMSTICK).
 
-Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start near `0x1048c0` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. `docs/csb-engine-diff.md` "Text" maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
+Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start near `0x1048c0` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. `docs/csb/engine-diff.md` "Text" maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
 
 Layout (item 696). The scratch script `txt.py` compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal. `startend.c` uses zone 437 (`ZONE_RESTART_BUTTON`) and zone 438 (`ZONE_QUIT_BUTTON`) for THE END screen.
 

@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Static rule tables of KAOS.FTL, decoded once from the loaded image. Field bits: docs/tables.md. */
+/* Static rule tables of KAOS.FTL, decoded once from the loaded image. Field bits: docs/rules/tables.md. */
 
 enum {
     CREATURE_TYPE_COUNT = 27,

@@ -1121,7 +1121,7 @@ static int next_element(char *out, size_t size)
     } else if (*cursor == '{') {
         for (int depth = 0; *cursor; cursor++) {
             if (*cursor == '"')
-                cursor = strchr(cursor + 1, '"'); /* strings hold no '"' (docs/llm-mode.md) */
+                cursor = strchr(cursor + 1, '"'); /* strings hold no '"' (docs/llm/llm-mode.md) */
             if (!cursor)
                 return -1;
             depth += (*cursor == '{') - (*cursor == '}');

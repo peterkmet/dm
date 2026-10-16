@@ -52,7 +52,7 @@ enum { KEY_AT_COMMAND, KEY_AT_KEY = 2 };
 enum { SKILL_LEVEL_TEXT_FIRST = 2 };                                         /* the level names start at level 2 */
 enum { LAYOUT_AT_X = 2, LAYOUT_AT_Y = 4, LAYOUT_AT_W = 6, LAYOUT_AT_H = 8 }; /* byte offsets in a layout bitmap */
 
-/* Byte offsets of the creature info fields (docs/tables.md); bytes 13 and 25 are pad bytes. */
+/* Byte offsets of the creature info fields (docs/rules/tables.md); bytes 13 and 25 are pad bytes. */
 enum {
     CREATURE_AT_ASPECT_INDEX,
     CREATURE_AT_ATTACK_SOUND_ORDINAL,

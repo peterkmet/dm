@@ -33,7 +33,7 @@ import machine68k
 
 from dmtools import ftl
 
-KAOS_FTL, KAOS_CSV = "game/KAOS.FTL", "docs/kaos-symbols.csv"
+KAOS_FTL, KAOS_CSV = "game/KAOS.FTL", "docs/reference/kaos-symbols.csv"
 CSB_FTL, CSB_C = "game-csb/APPB.FTL", "reference/decomp/csb-a/APPB.c"
 BASE = 0x100000
 
@@ -410,7 +410,7 @@ def global_rows(km, cm, gmap):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--csv", default="docs/csb-appb-symbols.csv")
+    ap.add_argument("--csv", default="docs/reference/csb-appb-symbols.csv")
     ap.add_argument("--report", help="write one line per function and the global map here")
     args = ap.parse_args()
     km, cm, names, kf, cf, pairs, gmap, cls = run()

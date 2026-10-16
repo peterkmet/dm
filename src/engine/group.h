@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules-creatures.md. */
+/* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules/creatures.md. */
 
 #define GROUP_MAX_CREATURES 4
 

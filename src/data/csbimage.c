@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* KAOS and APPB addresses of the tables that need a conversion. Sources: docs/csb-engine-diff.md "Data tables". */
+/* KAOS and APPB addresses of the tables that need a conversion. Sources: docs/csb/engine-diff.md "Data tables". */
 #define CSB_APPB_ACTION_SETS         0x1047ac /* 44 records of 6 bytes, no pad bytes */
 #define CSB_APPB_DIALOG_MOUSE_INPUTS 0x104650
 #define CSB_APPB_DIALOG_TABLES       0x104500
@@ -21,7 +21,7 @@ enum { KAOS_ACTION_SET_BYTES = 8, APPB_ACTION_SET_BYTES = 6, ACTION_SET_ACTIONS 
 enum { KAOS_ACTION_SET_LEVELS = 4, KAOS_ACTION_SET_FLAGS = 6, APPB_ACTION_SET_LEVELS = 3, APPB_ACTION_SET_FLAGS = 5 };
 
 /* Tables with the same layout: KAOS address, APPB address, size. The APPB addresses are verified in
-   docs/csb-engine-diff.md. Strided or split DM tables have one row per part. */
+   docs/csb/engine-diff.md. Strided or split DM tables have one row per part. */
 const CsbCopy csb_copies[] = {
     {KAOS_INITIAL_COLORMAP,                0x102f0a,               32                           }, /* interface palette */
     {KAOS_POINTER_PALETTE,                 0x102f2a,               32                           }, /* pointer colors */

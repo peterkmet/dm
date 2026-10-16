@@ -1,6 +1,6 @@
 # Champion rules
 
-This page describes the champion rules of the C port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `src/engine/champion.c` and `src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](kaos-symbols.csv). The champion record is in [game-state.md](game-state.md#champions).
+This page describes the champion rules of the C port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `src/engine/champion.c` and `src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](../reference/kaos-symbols.csv). The champion record is in [game-state.md](game-state.md#champions).
 
 The port reads all game tables from the KAOS image at run time ([tables.md](tables.md)). Object record fields go through the accessors in `src/engine/map.h`. Icon and text numbers are in `src/data/ids.h`.
 
@@ -24,7 +24,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 2. The cell is the first free cell, starting at the party direction and going clockwise.
 3. Food and water are `1500 + random16() & 255` each (two draws).
 4. All slots are empty.
-5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../src/engine/recruit.h)).
+5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../../src/engine/recruit.h)).
 6. The champion becomes the candidate (`g_candidate_champion_ordinal`). The first champion becomes leader and magic caster.
 7. The objects in the cell of the wall square that faces the party become the possessions:
    - Armour goes to the first body slot (head to feet) that accepts it, else to the neck.
@@ -233,7 +233,7 @@ Block, Hit, and the other actions only add the action defense, the disabled tick
 
 ### Melee
 
-`action_is_melee_action_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target_creature_ordinal`). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](rules-creatures.md)) gives the damage, which goes into `g_action_damage` for the action area.
+`action_is_melee_action_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target_creature_ordinal`). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](creatures.md)) gives the damage, which goes into `g_action_damage` for the action area.
 
 ### Fear
 

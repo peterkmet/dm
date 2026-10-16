@@ -121,8 +121,8 @@ These items are not selection work. The CSB engine work item must check them.
 | `mcp_server.py`: `save_game` docstring | Names `DMGAME.DAT` and `DMGAME.BAK`. |
 | `mcp_server.py`: `new_game`, `load_game` | Names the same files in the descriptions. The socket commands use the loaded adventure, so the code needs no change. |
 | `tools/dmtools/play.py` | The prog description "Dungeon Master control socket". The log folder `playthroughs/current/coordinator`. The view and state text is generic. |
-| `docs/llm-playbook.md` | Playthrough rules for DM (goal, mirrors, `playthroughs/current/player/progress.md`). The save names in the "Save, load" lines are not file names. |
-| `docs/llm-mode.md` | The sections "Prerequisites" (`game/`), the socket table (`save`, `load`, `new_game` name `DMGAME.DAT`, `Dungeon.DAT`), and "Saved games" (save directory is `game/`). |
+| `docs/llm/llm-playbook.md` | Playthrough rules for DM (goal, mirrors, `playthroughs/current/player/progress.md`). The save names in the "Save, load" lines are not file names. |
+| `docs/llm/llm-mode.md` | The sections "Prerequisites" (`game/`), the socket table (`save`, `load`, `new_game` name `DMGAME.DAT`, `Dungeon.DAT`), and "Saved games" (save directory is `game/`). |
 | `docs/superpowers/status.md` | The resume steps copy `DMGAME.DAT` to `game/`. |
 
 The socket protocol needs no new command. The game starts one adventure for each run. The adventure is the one that the selection or `--adventure` chose.
@@ -318,8 +318,8 @@ Until items 1 and 2 exist, `start_adventure` for CSB returns to the CSB screen w
 | `mcp_server.py` | `INSTRUCTIONS`: name the game as "Dungeon Master" or "Chaos Strikes Back", read from a new response field `adventure` of `get_state`. Use the Lord Chaos goal only for DM. Change the save file names in the docstrings of `save_game`, `load_game`, and `new_game` to "the save file of the adventure". |
 | `state_json.c` | Add `"adventure": "dm"|"csb"` to the state object. |
 | `play.py` | Change the description to "Sends one request to the game control socket." No code change. |
-| `docs/llm-mode.md` | The socket table: `save`, `load`, and `new_game` use the files of the running adventure. Add `--adventure` to the start command. Describe that the selection screens are skipped by `--mode` and `--adventure`. |
-| `docs/llm-playbook.md` | Mark the playbook as DM only. A CSB playbook is a later item. |
+| `docs/llm/llm-mode.md` | The socket table: `save`, `load`, and `new_game` use the files of the running adventure. Add `--adventure` to the start command. Describe that the selection screens are skipped by `--mode` and `--adventure`. |
+| `docs/llm/llm-playbook.md` | Mark the playbook as DM only. A CSB playbook is a later item. |
 | `README.md` | Add a section "Adventures": `--adventure`, the screens, the folders, the CSB save file. |
 | `docs/superpowers/status.md` | No change until CSB runs. |
 

@@ -406,7 +406,7 @@ uint16_t map_get_square_group(int16_t x, int16_t y);
 uint16_t map_get_creature_attributes(uint16_t group_thing);
 
 /* Record fields that the dungeon view reads (big-endian, see
-   docs/symbols/range-4-6.md and range-7-9.md). */
+   docs/reference/symbols/range-4-6.md and range-7-9.md). */
 
 /* Weapon record: word 2 bits 0-6 weapon type. */
 static inline uint16_t thing_weapon_type(uint16_t weapon)

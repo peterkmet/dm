@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C): docs/rules-creatures.md. */
+/* Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C): docs/rules/creatures.md. */
 
 #define SHIELD_STRONG 50 /* above this shield defense, a new shield or a Ya potion adds a quarter */
 

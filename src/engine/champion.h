@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Champion rules of KAOS (CHAMPION.C): docs/rules-champions.md. */
+/* Champion rules of KAOS (CHAMPION.C): docs/rules/champions.md. */
 
 #define CHAMPION_RECORD_SIZE   320
 #define ACTION_NONE            255

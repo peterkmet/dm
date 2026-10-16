@@ -2,7 +2,7 @@
 
 In turn-based mode, a program or an LLM plays the game through a Unix socket. The game time stands still between turns. The window shows the game, so a person can watch. The MCP server `dm-mcp` connects Claude Code to the socket.
 
-The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
+The plan is in [2026-10-04-modes-plan.md](../superpowers/2026-10-04-modes-plan.md).
 
 ## Status
 
@@ -18,7 +18,7 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
 ### Prerequisites
 
-- The game files are in `game/` (see the [README](../README.md)).
+- The game files are in `game/` (see the [README](../../README.md)).
 - `uv sync` is complete.
 - Claude Code is installed.
 
@@ -59,7 +59,7 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 Each run measures how much the LLM player gets better: from session to session in the run, and against the earlier runs. To finish the game is the long-term goal, not the measure of one run.
 
 - Measure each run with `coordinator/level_stats.md`: the game time, the calls, and the tokens at the arrival on each level. Compare the run with the earlier runs.
-- Between sessions and between runs, you may change the player instructions: `docs/llm-playbook.md` and the headers in `playthroughs/template/`. Change them in small steps. Write each change, its reason, and the session where it starts in `coordinator/instruction_changes.md`, so that you can compare its effect.
+- Between sessions and between runs, you may change the player instructions: `docs/llm/llm-playbook.md` and the headers in `playthroughs/template/`. Change them in small steps. Write each change, its reason, and the session where it starts in `coordinator/instruction_changes.md`, so that you can compare its effect.
 - Allowed changes: general rules about how to play and about the game, for example survival, fights, food and water, training, saves, the use of the commands, and how to keep the memory.
 - Not allowed: hints for this dungeon, for example a position, a map, the solution of a puzzle, where an item lies, which key opens which door, or the way to the next level. The player finds these itself.
 - The memory of an earlier run (maps, lessons) is the player's own knowledge, not a hint.
@@ -110,7 +110,7 @@ The two roles are agent definitions in the repository:
 
 ## Play Chaos Strikes Back
 
-The CSB files must be in `game-csb/` (see the [README](../README.md)). Start the game with `--adventure csb`:
+The CSB files must be in `game-csb/` (see the [README](../../README.md)). Start the game with `--adventure csb`:
 
 ```sh
 build/dm --adventure csb --mode turnbased --control ~/.dm/control.sock
