@@ -62,7 +62,7 @@ int8_t kaos_s8(uint32_t address)
 }
 uint16_t kaos_u16(uint32_t address)
 {
-    return BE16(get_bytes(address, sizeof(uint16_t)));
+    return be16(get_bytes(address, sizeof(uint16_t)));
 }
 int16_t kaos_s16(uint32_t address)
 {
@@ -70,12 +70,12 @@ int16_t kaos_s16(uint32_t address)
 }
 uint32_t kaos_u32(uint32_t address)
 {
-    return BE32(get_bytes(address, sizeof(uint32_t)));
+    return be32(get_bytes(address, sizeof(uint32_t)));
 }
 
 /* Commands */
 
 void kaos_write_u16(uint32_t address, uint16_t value)
 {
-    WR16(get_bytes(address, sizeof(uint16_t)), value);
+    wr16(get_bytes(address, sizeof(uint16_t)), value);
 }

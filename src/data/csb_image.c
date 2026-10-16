@@ -194,7 +194,7 @@ int csb_image_build(const FtlImage *appb, FtlImage *out)
             free(mem);
             return -1;
         }
-        WR32(q, BE32(p) - CSB_APPB_DIALOG_TABLES + KAOS_DIALOG_TABLES);
+        wr32(q, be32(p) - CSB_APPB_DIALOG_TABLES + KAOS_DIALOG_TABLES);
     }
     if (csb_text_build(appb, &built) != 0) {
         free(mem);

@@ -686,12 +686,12 @@ static const struct {
 static void png_chunk(FILE *f, const char *type, const uint8_t *data, uint32_t n)
 {
     uint8_t head[8];
-    WR32(head, n);
+    wr32(head, n);
     memcpy(head + 4, type, 4);
     uint32_t crc = crc32_update(crc32_update(0, head + 4, 4), data, n);
     fwrite(head, 1, 8, f);
     fwrite(data, 1, n, f);
-    WR32(head, crc);
+    wr32(head, crc);
     fwrite(head, 1, 4, f);
 }
 
@@ -730,11 +730,11 @@ static bool write_png(const char *path)
         out += n;
         done += n;
     }
-    WR32(out, sum_of_sums << ADLER32_HIGH_SHIFT | byte_sum);
+    wr32(out, sum_of_sums << ADLER32_HIGH_SHIFT | byte_sum);
     out += 4;
     uint8_t ihdr[PNG_IHDR_SIZE] = {0};
-    WR32(ihdr, SCREEN_W);
-    WR32(ihdr + 4, SCREEN_H);
+    wr32(ihdr, SCREEN_W);
+    wr32(ihdr + 4, SCREEN_H);
     ihdr[8] = 8; /* bits per channel */
     ihdr[9] = 2; /* RGB */
     FILE *file = fopen(path, "wb");

@@ -53,7 +53,7 @@ static inline bool projectile_is_launcher_sensor(uint16_t sensor)
 /* Projectile record, 8 bytes (thing type 14): next, slot (the flying thing), kinetic energy, attack, event index. */
 static inline void projectile_set_slot(uint16_t projectile, uint16_t thing)
 {
-    WR16(REC(projectile) + 2, thing);
+    wr16(REC(projectile) + 2, thing);
 }
 static inline uint8_t projectile_attack(uint16_t projectile)
 {
@@ -69,7 +69,7 @@ static inline void projectile_set_attack(uint16_t projectile, uint8_t value)
 }
 static inline void projectile_set_event_index(uint16_t projectile, uint16_t index)
 {
-    WR16(REC(projectile) + 6, index);
+    wr16(REC(projectile) + 6, index);
 }
 
 /* Explosion record, 4 bytes (thing type 15): next, attack, type in bits 0-6, centered in bit 7. */

@@ -133,7 +133,7 @@ static const char *get_appb_string(const FtlImage *appb, uint32_t addr)
 static const char *get_appb_pointed_string(const FtlImage *appb, uint32_t addr)
 {
     const uint8_t *p = ftl_at(appb, addr, sizeof(uint32_t));
-    return p ? get_appb_string(appb, BE32(p)) : NULL;
+    return p ? get_appb_string(appb, be32(p)) : NULL;
 }
 
 /* Joins the parts of each text into one block of NUL-terminated strings. */
@@ -201,7 +201,7 @@ int csb_text_build(const FtlImage *appb, FtlImage *out)
                 uint8_t *p = ftl_at(out, table_texts[i].kaos_indices + 2 * k, sizeof(uint16_t));
                 if (!p)
                     return -1;
-                WR16(p, text);
+                wr16(p, text);
             }
         }
     }

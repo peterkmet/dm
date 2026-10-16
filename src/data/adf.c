@@ -59,10 +59,10 @@ static uint8_t *load(const char *path)
 static int each_entry(const uint8_t *img, const uint8_t *folder, EntryVisit visit, void *ctx)
 {
     for (int i = 0; i < ADF_HASH_SIZE; i++) {
-        uint32_t n = BE32(folder + ADF_HASH_OFFSET + ADF_LONG_SIZE * i);
+        uint32_t n = be32(folder + ADF_HASH_OFFSET + ADF_LONG_SIZE * i);
         for (int guard = 0; n; guard++) {
             const uint8_t *entry = block(img, n);
-            if (!entry || guard >= ADF_BLOCKS || BE32(entry) != ADF_TYPE_HEADER)
+            if (!entry || guard >= ADF_BLOCKS || be32(entry) != ADF_TYPE_HEADER)
                 return -1;
             char name[ADF_NAME_MAX + 1];
             int len = entry[ADF_NAME_OFFSET] < ADF_NAME_MAX ? entry[ADF_NAME_OFFSET] : ADF_NAME_MAX;
@@ -71,7 +71,7 @@ static int each_entry(const uint8_t *img, const uint8_t *folder, EntryVisit visi
             int r = visit(img, entry, name, ctx);
             if (r)
                 return r;
-            n = BE32(entry + ADF_CHAIN_OFFSET);
+            n = be32(entry + ADF_CHAIN_OFFSET);
         }
     }
     return 0;
@@ -81,7 +81,7 @@ static int each_entry(const uint8_t *img, const uint8_t *folder, EntryVisit visi
 static int match_name(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
 {
     (void)img;
-    return (int32_t)BE32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER && !file_compare_names(name, ctx);
+    return (int32_t)be32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER && !file_compare_names(name, ctx);
 }
 
 bool adf_has_file(const char *adf_path, const char *name)
@@ -114,16 +114,16 @@ static int write_file(const uint8_t *img, const uint8_t *header, const char *pat
     FILE *f = fopen(path, "wb");
     if (!f)
         return -1;
-    uint32_t left = BE32(header + ADF_BYTE_SIZE_OFFSET);
-    uint32_t n = BE32(header + ADF_FIRST_DATA_OFFSET);
+    uint32_t left = be32(header + ADF_BYTE_SIZE_OFFSET);
+    uint32_t n = be32(header + ADF_FIRST_DATA_OFFSET);
     for (int guard = 0; left; guard++) {
         const uint8_t *data = block(img, n);
-        uint32_t size = data ? BE32(data + ADF_DATA_SIZE_OFFSET) : 0;
-        if (!data || guard >= ADF_BLOCKS || BE32(data) != ADF_TYPE_DATA || !size || size > ADF_DATA_MAX ||
+        uint32_t size = data ? be32(data + ADF_DATA_SIZE_OFFSET) : 0;
+        if (!data || guard >= ADF_BLOCKS || be32(data) != ADF_TYPE_DATA || !size || size > ADF_DATA_MAX ||
             size > left || fwrite(data + ADF_DATA_OFFSET, 1, size, f) != size)
             break;
         left -= size;
-        n = BE32(data + ADF_NEXT_DATA_OFFSET);
+        n = be32(data + ADF_NEXT_DATA_OFFSET);
     }
     return fclose(f) || left ? -1 : 0;
 }
@@ -151,7 +151,7 @@ static int extract_entry(const uint8_t *img, const uint8_t *entry, const char *n
     if (!adf_is_safe_name(name))
         return -1;
     snprintf(path, sizeof path, "%s/%s", at->dir, name);
-    if ((int32_t)BE32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER)
+    if ((int32_t)be32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER)
         return write_file(img, entry, path);
     ExtractTarget sub = {path, at->depth + 1};
     if (sub.depth > ADF_FOLDER_DEPTH || make_folders(path))

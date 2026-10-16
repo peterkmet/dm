@@ -146,16 +146,16 @@ void champion_pack(const Champion *c, uint8_t *out)
     out[REC_POISON_EVENTS] = c->poison_event_count;
     const int16_t *words[REC_WORD_COUNT] = {WORDS(c)};
     for (int i = 0; i < REC_WORD_COUNT; i++)
-        WR16(out + REC_WORDS + 2 * i, *words[i]);
+        wr16(out + REC_WORDS + 2 * i, *words[i]);
     memcpy(out + REC_STATISTICS, c->statistics, sizeof c->statistics);
     for (int i = 0; i < SKILL_COUNT; i++) {
-        WR16(out + REC_SKILLS + REC_SKILL_SIZE * i, c->skills[i].temporary_experience);
-        WR32(out + REC_SKILLS + REC_SKILL_SIZE * i + 2, (uint32_t)c->skills[i].experience);
+        wr16(out + REC_SKILLS + REC_SKILL_SIZE * i, c->skills[i].temporary_experience);
+        wr32(out + REC_SKILLS + REC_SKILL_SIZE * i + 2, (uint32_t)c->skills[i].experience);
     }
     for (int i = 0; i < SLOT_COUNT; i++)
-        WR16(out + REC_SLOTS + 2 * i, c->slots[i]);
-    WR16(out + REC_LOAD, c->load);
-    WR16(out + REC_SHIELD, c->shield_defense);
+        wr16(out + REC_SLOTS + 2 * i, c->slots[i]);
+    wr16(out + REC_LOAD, c->load);
+    wr16(out + REC_SHIELD, c->shield_defense);
     memcpy(out + REC_MAGIC_MAP, c->magic_map, sizeof c->magic_map);
 }
 
@@ -174,16 +174,16 @@ void champion_unpack(const uint8_t *in, Champion *c)
     c->poison_event_count = in[REC_POISON_EVENTS];
     int16_t *words[REC_WORD_COUNT] = {WORDS(c)};
     for (int i = 0; i < REC_WORD_COUNT; i++)
-        *words[i] = BE16(in + REC_WORDS + 2 * i);
+        *words[i] = be16(in + REC_WORDS + 2 * i);
     memcpy(c->statistics, in + REC_STATISTICS, sizeof c->statistics);
     for (int i = 0; i < SKILL_COUNT; i++) {
-        c->skills[i].temporary_experience = BE16(in + REC_SKILLS + REC_SKILL_SIZE * i);
-        c->skills[i].experience = BE32(in + REC_SKILLS + REC_SKILL_SIZE * i + 2);
+        c->skills[i].temporary_experience = be16(in + REC_SKILLS + REC_SKILL_SIZE * i);
+        c->skills[i].experience = be32(in + REC_SKILLS + REC_SKILL_SIZE * i + 2);
     }
     for (int i = 0; i < SLOT_COUNT; i++)
-        c->slots[i] = BE16(in + REC_SLOTS + 2 * i);
-    c->load = BE16(in + REC_LOAD);
-    c->shield_defense = BE16(in + REC_SHIELD);
+        c->slots[i] = be16(in + REC_SLOTS + 2 * i);
+    c->load = be16(in + REC_LOAD);
+    c->shield_defense = be16(in + REC_SHIELD);
     memcpy(c->magic_map, in + REC_MAGIC_MAP, sizeof c->magic_map);
 }
 

@@ -128,13 +128,13 @@ static inline int16_t position_y(uint16_t word)
 /* Stores the kept map position of NETA in the magic map bytes. */
 static inline void game_set_magic_map_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)
 {
-    WR16(spells + MAGIC_MAP_POSITION, position_pack(map, x, y));
+    wr16(spells + MAGIC_MAP_POSITION, position_pack(map, x, y));
 }
 
 /* Reads the kept map position of NETA from the magic map bytes. */
 static inline void game_get_magic_map_position(const uint8_t *spells, int16_t *map, int16_t *x, int16_t *y)
 {
-    uint16_t word = BE16(spells + MAGIC_MAP_POSITION);
+    uint16_t word = be16(spells + MAGIC_MAP_POSITION);
     *map = word & POSITION_MAP_MASK;
     *x = position_x(word);
     *y = position_y(word);

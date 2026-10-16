@@ -5,7 +5,7 @@
 #include "data/ids.h"
 
 #define LAYOUT_SIGNATURE 0xfc0d
-#define S16(p, i)        ((int16_t)BE16((p) + 2 * (i))) /* signed word i */
+#define S16(p, i)        ((int16_t)be16((p) + 2 * (i))) /* signed word i */
 
 /* Zone record types: 0-8 a point with an alignment, 9 a size, 10-18 a point inside the rectangle of
    another point, with the alignment type - 10. Type 1 with a size parent is a translation. */
@@ -52,7 +52,7 @@ static int16_t get_zone_y(const uint8_t *r)
 int layout_init(void)
 {
     layout_data = gfx_get_item(GFX_LAYOUT, &layout_size);
-    if (!layout_data || layout_size < LAYOUT_HEADER_BYTES || BE16(layout_data) != LAYOUT_SIGNATURE ||
+    if (!layout_data || layout_size < LAYOUT_HEADER_BYTES || be16(layout_data) != LAYOUT_SIGNATURE ||
         LAYOUT_HEADER_BYTES + RANGE_BYTES * S16(layout_data, 1) > layout_size) {
         layout_data = NULL;
         return -1;

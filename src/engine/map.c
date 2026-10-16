@@ -108,7 +108,7 @@ int16_t map_get_stairs_exit_direction(int16_t x, int16_t y)
 
 uint16_t map_get_next_thing(uint16_t thing)
 {
-    return BE16(dungeon_get_thing_data(thing));
+    return be16(dungeon_get_thing_data(thing));
 }
 
 int16_t map_get_square_first_thing_index(int16_t x, int16_t y)
@@ -116,7 +116,7 @@ int16_t map_get_square_first_thing_index(int16_t x, int16_t y)
     if (x < 0 || x >= g_current_map_width || y < 0 || y >= g_current_map_height ||
         !(g_current_map_data[x][y] & SQUARE_HAS_THINGS))
         return -1;
-    int16_t index = (int16_t)BE16(column_first_thing_index + x * 2); /* the word read as signed */
+    int16_t index = (int16_t)be16(column_first_thing_index + x * 2); /* the word read as signed */
     for (int16_t i = 0; i < y; i++)
         index += (g_current_map_data[x][i] & SQUARE_HAS_THINGS) != 0;
     return index;
@@ -125,7 +125,7 @@ int16_t map_get_square_first_thing_index(int16_t x, int16_t y)
 uint16_t map_get_square_first_thing(int16_t x, int16_t y)
 {
     int16_t index = map_get_square_first_thing_index(x, y);
-    return index == -1 ? THING_ENDOFLIST : BE16(g_square_first_things + (uint16_t)index * 2);
+    return index == -1 ? THING_ENDOFLIST : be16(g_square_first_things + (uint16_t)index * 2);
 }
 
 uint16_t map_get_square_first_object(int16_t x, int16_t y)
@@ -142,7 +142,7 @@ static void add_to_later_columns(int16_t x, int16_t delta)
     int16_t global_x = x + g_dungeon_map_first_column[g_current_map_index];
     for (int16_t c = global_x + 1; c < g_dungeon_column_count; c++) {
         uint8_t *p = g_dungeon_column_first_thing_index + c * 2;
-        WR16(p, BE16(p) + delta);
+        wr16(p, be16(p) + delta);
     }
 }
 
@@ -172,14 +172,14 @@ void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
         uint8_t *square = &g_current_map_data[x][y];
         if (!(*square & SQUARE_HAS_THINGS)) {
             uint16_t count = rec_dungeon_square_first_thing_count();
-            if (BE16(g_square_first_things + (count - 1) * 2) != THING_NONE)
+            if (be16(g_square_first_things + (count - 1) * 2) != THING_NONE)
                 stop_fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
             *square |= SQUARE_HAS_THINGS;
             add_to_later_columns(x, 1);
             uint16_t index = map_get_square_first_thing_index(x, y);
             uint8_t *p = g_square_first_things + index * 2;
             memmove(p + 2, p, (count - index - 1) * 2);
-            WR16(p, thing);
+            wr16(p, thing);
             return;
         }
         list = map_get_square_first_thing(x, y);
@@ -198,23 +198,23 @@ void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_
         uint16_t index = map_get_square_first_thing_index(x, y);
         uint8_t *first = g_square_first_things + index * 2;
         uint16_t after = map_get_next_thing(thing);
-        if (after == THING_NONE && thing == THING_STRIP_CELL(BE16(first)))
+        if (after == THING_NONE && thing == THING_STRIP_CELL(be16(first)))
             report_free_record("unlink of a free record", x, y); /* its next is gone: remove the whole entry */
-        if ((after == THING_ENDOFLIST || after == THING_NONE) && thing == THING_STRIP_CELL(BE16(first))) {
+        if ((after == THING_ENDOFLIST || after == THING_NONE) && thing == THING_STRIP_CELL(be16(first))) {
             uint16_t last = rec_dungeon_square_first_thing_count() - 1;
             g_current_map_data[x][y] &= ~SQUARE_HAS_THINGS;
             memmove(first, first + 2, (last - index) * 2);
-            WR16(g_square_first_things + last * 2, THING_NONE);
+            wr16(g_square_first_things + last * 2, THING_NONE);
             add_to_later_columns(x, -1);
             thing_set_next(thing, THING_ENDOFLIST);
             return;
         }
-        if (thing == THING_STRIP_CELL(BE16(first))) {
-            WR16(first, map_get_next_thing(thing));
+        if (thing == THING_STRIP_CELL(be16(first))) {
+            wr16(first, map_get_next_thing(thing));
             thing_set_next(thing, THING_ENDOFLIST);
             return;
         }
-        list = BE16(first);
+        list = be16(first);
     }
     uint16_t next = map_get_next_thing(list);
     while (thing != THING_STRIP_CELL(next)) {
@@ -251,14 +251,14 @@ uint16_t map_get_unused_thing(uint16_t thing_type)
 {
     uint16_t type = thing_type & ~NO_JUNK_RESERVE;
     uint16_t size = g_thing_data_byte_count[type];
-    int16_t count = BE16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2);
+    int16_t count = be16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2);
     if (thing_type == THING_JUNK)
         count -= JUNK_RESERVED_COUNT;
     for (int16_t i = 0; i < count; i++) {
         uint8_t *record = g_thing_data[type] + i * size;
-        if (BE16(record) == THING_NONE) {
+        if (be16(record) == THING_NONE) {
             memset(record, 0, size);
-            WR16(record, THING_END);
+            wr16(record, THING_END);
             return THING_MAKE(type, i);
         }
     }
@@ -267,7 +267,7 @@ uint16_t map_get_unused_thing(uint16_t thing_type)
 
 void thing_set_free(uint16_t thing)
 {
-    WR16(dungeon_get_thing_data(thing), THING_NONE);
+    wr16(dungeon_get_thing_data(thing), THING_NONE);
 }
 uint16_t weapon_type(uint16_t thing)
 {
@@ -295,7 +295,7 @@ uint16_t container_type(uint16_t thing)
 }
 uint16_t container_first_thing(uint16_t thing)
 {
-    return BE16(dungeon_get_thing_data(thing) + 2);
+    return be16(dungeon_get_thing_data(thing) + 2);
 }
 bool rec_object_is_cursed(uint16_t thing)
 {
@@ -343,11 +343,11 @@ bool armour_is_broken(uint16_t thing)
 }
 uint16_t scroll_text_index(uint16_t thing)
 {
-    return BE16(dungeon_get_thing_data(thing) + 2) & 0x3ff;
+    return be16(dungeon_get_thing_data(thing) + 2) & 0x3ff;
 }
 void container_set_first_thing(uint16_t thing, uint16_t first)
 {
-    WR16(dungeon_get_thing_data(thing) + 2, first);
+    wr16(dungeon_get_thing_data(thing) + 2, first);
 }
 
 void weapon_set_lit(uint16_t thing, bool lit)

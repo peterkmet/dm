@@ -764,7 +764,7 @@ static int16_t get_creature_ordinal_in_cell(const Group *s, uint16_t cell)
 static void draw_creature(const Group *group, uint8_t look, uint16_t facing, int16_t pos, int16_t coord, int16_t depth)
 {
     uint16_t info = group->info->graphic_info;
-    int16_t graphic = GFX_CREATURE_FIRST + BE16(group->aspect + CREATURE_ASPECT_GRAPHIC);
+    int16_t graphic = GFX_CREATURE_FIRST + be16(group->aspect + CREATURE_ASPECT_GRAPHIC);
     int16_t distance = 0;
     bool side = (info & GRAPHIC_HAS_SIDE) && (facing & 1);
     bool back = false;

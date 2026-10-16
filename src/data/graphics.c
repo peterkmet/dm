@@ -72,16 +72,16 @@ int gfx_open(const char *path)
     gfx_close();
     if (!(graphics.data = file_read(path, &graphics.size)) || graphics.size < GFX_HEADER_BYTES)
         goto fail;
-    if (BE16(graphics.data) != GRAPHICS_DAT_FORMAT_1)
+    if (be16(graphics.data) != GRAPHICS_DAT_FORMAT_1)
         goto fail;
-    uint16_t n = BE16(graphics.data + GFX_HEADER_ITEM_COUNT);
+    uint16_t n = be16(graphics.data + GFX_HEADER_ITEM_COUNT);
     uint32_t off = GFX_HEADER_BYTES + n * (uint32_t)GFX_ITEM_ENTRY_BYTES;
     const uint8_t *sizes = graphics.data + GFX_HEADER_BYTES;
     if (off > graphics.size || !(graphics.offsets = malloc((n + 1) * sizeof *graphics.offsets)))
         goto fail;
     for (int i = 0; i < n; i++) {
         graphics.offsets[i] = off;
-        off += BE16(sizes + 2 * i);
+        off += be16(sizes + 2 * i);
     }
     graphics.offsets[n] = off;
     if (off > graphics.size || !(graphics.decoded = calloc(n, sizeof *graphics.decoded)))
@@ -108,12 +108,12 @@ const uint8_t *gfx_get_item(int i, uint16_t *size)
 /* Skips the pad words and reads the size of a packed graphic. Returns the start of the commands or NULL. */
 static const uint8_t *get_graphic_size(const uint8_t *p, const uint8_t *end, uint16_t *w, uint16_t *h)
 {
-    while (end - p >= 2 && BE16(p) == GRAPHIC_PAD_WORD)
+    while (end - p >= 2 && be16(p) == GRAPHIC_PAD_WORD)
         p += 2;
     if (end - p < 4)
         return NULL;
-    *w = BE16(p);
-    *h = BE16(p + 2);
+    *w = be16(p);
+    *h = be16(p + 2);
     return p + 4;
 }
 

@@ -100,11 +100,11 @@
 #define GROUP_RECORD_LAST_CREATURE_SHIFT 5
 static inline uint16_t group_possessions(uint16_t group)
 {
-    return BE16(REC(group) + 2);
+    return be16(REC(group) + 2);
 }
 static inline void group_set_possessions(uint16_t group, uint16_t thing)
 {
-    WR16(REC(group) + 2, thing);
+    wr16(REC(group) + 2, thing);
 }
 static inline void group_set_creature_type(uint16_t group, uint16_t type)
 {
@@ -116,11 +116,11 @@ static inline void group_set_cells_byte(uint16_t group, uint8_t cells)
 }
 static inline uint16_t group_health(uint16_t group, int16_t creature)
 {
-    return BE16(REC(group) + 6 + 2 * creature);
+    return be16(REC(group) + 6 + 2 * creature);
 }
 static inline void group_set_health(uint16_t group, int16_t creature, uint16_t health)
 {
-    WR16(REC(group) + 6 + 2 * creature, health);
+    wr16(REC(group) + 6 + 2 * creature, health);
 }
 static inline uint16_t group_behavior(uint16_t group)
 {

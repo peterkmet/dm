@@ -89,7 +89,7 @@ static inline uint8_t square_with_door_state(uint8_t square, int16_t state)
 /* Every record starts with the next thing of its list. 0xffff marks a free record. */
 static inline void thing_set_next(uint16_t thing, uint16_t next)
 {
-    WR16(REC(thing), next);
+    wr16(REC(thing), next);
 }
 void thing_set_free(uint16_t thing);
 
@@ -160,19 +160,19 @@ void scroll_set_closed(uint16_t thing, bool closed);
 
 static inline uint16_t rec_sensor_type(uint16_t thing)
 {
-    return BE16(REC(thing) + 2) & SENSOR_TYPE_MASK;
+    return be16(REC(thing) + 2) & SENSOR_TYPE_MASK;
 }
 static inline uint16_t rec_sensor_data(uint16_t thing)
 {
-    return BE16(REC(thing) + 2) >> SENSOR_DATA_SHIFT;
+    return be16(REC(thing) + 2) >> SENSOR_DATA_SHIFT;
 }
 static inline void rec_sensor_set_type(uint16_t thing, uint16_t type)
 {
-    WR16(REC(thing) + 2, (BE16(REC(thing) + 2) & ~SENSOR_TYPE_MASK) | type);
+    wr16(REC(thing) + 2, (be16(REC(thing) + 2) & ~SENSOR_TYPE_MASK) | type);
 }
 static inline void rec_sensor_set_data(uint16_t thing, uint16_t data)
 {
-    WR16(REC(thing) + 2, data << SENSOR_DATA_SHIFT | rec_sensor_type(thing));
+    wr16(REC(thing) + 2, data << SENSOR_DATA_SHIFT | rec_sensor_type(thing));
 }
 /* Sensor type 0 does nothing. The sensor data stays. */
 void rec_sensor_disable(uint16_t thing);
@@ -182,7 +182,7 @@ static inline bool rec_sensor_is_local(uint16_t thing)
 }
 static inline uint16_t rec_sensor_delay(uint16_t thing)
 {
-    return BE16(REC(thing) + 4) >> 7 & 0x0f;
+    return be16(REC(thing) + 4) >> 7 & 0x0f;
 }
 static inline bool rec_sensor_is_once_only(uint16_t thing)
 {
@@ -202,7 +202,7 @@ static inline bool rec_sensor_is_audible(uint16_t thing)
 }
 static inline int16_t rec_sensor_target_x(uint16_t thing)
 {
-    return BE16(REC(thing) + 6) >> 6 & MAP_COORD_MASK;
+    return be16(REC(thing) + 6) >> 6 & MAP_COORD_MASK;
 }
 static inline int16_t rec_sensor_target_y(uint16_t thing)
 {
@@ -214,7 +214,7 @@ static inline int16_t rec_sensor_target_cell(uint16_t thing)
 }
 static inline int16_t rec_sensor_local_effect(uint16_t thing)
 {
-    return BE16(REC(thing) + 6) >> 4;
+    return be16(REC(thing) + 6) >> 4;
 }
 static inline uint16_t rec_sensor_generator_delay(uint16_t thing)
 {
@@ -232,16 +232,16 @@ static inline uint16_t rec_sensor_generator_creature_type(uint16_t thing)
 }
 static inline uint16_t rec_sensor_generator_count_field(uint16_t thing)
 {
-    return BE16(REC(thing) + 4) >> 7 & 0x0f;
+    return be16(REC(thing) + 4) >> 7 & 0x0f;
 }
 static inline uint16_t rec_sensor_generator_health_multiplier(uint16_t thing)
 {
-    return BE16(REC(thing) + 6) >> 4 & 0x0f;
+    return be16(REC(thing) + 6) >> 4 & 0x0f;
 }
 /* Launcher: kinetic energy in word 6 bits 4-11, step energy in bits 12-15. */
 static inline uint8_t rec_sensor_launcher_kinetic_energy(uint16_t thing)
 {
-    return BE16(REC(thing) + 6) >> 4;
+    return be16(REC(thing) + 6) >> 4;
 }
 static inline uint8_t rec_sensor_launcher_step_energy(uint16_t thing)
 {
@@ -258,7 +258,7 @@ static inline int16_t teleporter_target_x(uint16_t thing)
 }
 static inline int16_t teleporter_target_y(uint16_t thing)
 {
-    return BE16(REC(thing) + 2) >> 5 & MAP_COORD_MASK;
+    return be16(REC(thing) + 2) >> 5 & MAP_COORD_MASK;
 }
 static inline int16_t teleporter_target_map(uint16_t thing)
 {
@@ -337,7 +337,7 @@ static inline int16_t rec_creature_height(uint16_t attributes)
 /* Projectile record (thing type 14): the timeline event that moves it. */
 static inline uint16_t rec_projectile_event_index(uint16_t thing)
 {
-    return BE16(REC(thing) + 6);
+    return be16(REC(thing) + 6);
 }
 
 /* Map descriptor, 16 bytes. */
@@ -367,7 +367,7 @@ static inline uint16_t map_level(int16_t map)
 }
 static inline int16_t map_last_x(int16_t map)
 {
-    return BE16(MAP_DESCRIPTOR(map) + MAP_LAST_XY_BYTE) >> 6 & MAP_COORD_MASK;
+    return be16(MAP_DESCRIPTOR(map) + MAP_LAST_XY_BYTE) >> 6 & MAP_COORD_MASK;
 }
 static inline int16_t map_last_y(int16_t map)
 {
@@ -383,7 +383,7 @@ static inline int16_t map_door_set(int16_t map, int16_t door_type)
 #define DUNGEON_HEADER_THING_COUNTS  12
 static inline uint16_t rec_dungeon_square_first_thing_count(void)
 {
-    return BE16(g_dungeon_header + DUNGEON_HEADER_SQUARE_THINGS);
+    return be16(g_dungeon_header + DUNGEON_HEADER_SQUARE_THINGS);
 }
 
 extern int16_t g_current_map_index, g_current_map_width, g_current_map_height;
@@ -474,7 +474,7 @@ static inline uint8_t rec_group_direction(uint16_t group)
 /* Projectile record, 8 bytes. */
 static inline uint16_t rec_projectile_slot(uint16_t projectile)
 {
-    return BE16(REC(projectile) + 2);
+    return be16(REC(projectile) + 2);
 }
 static inline uint8_t rec_projectile_kinetic_energy(uint16_t projectile)
 {
@@ -536,7 +536,7 @@ static inline int16_t map_wall_set(int16_t map)
 /* Dungeon header word 0: the seed of the random wall and floor ornaments. */
 static inline uint16_t rec_dungeon_ornament_seed(void)
 {
-    return BE16(g_dungeon_header);
+    return be16(g_dungeon_header);
 }
 
 #endif

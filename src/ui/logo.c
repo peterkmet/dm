@@ -31,8 +31,8 @@ int logo_play(const char *path)
     /* the module waits for the end of the sample */
     int32_t frames = ((uint64_t)length * period * FRAMES_PER_SECOND + AUDIO_PAL_CLOCK - 1) / AUDIO_PAL_CLOCK;
     for (const uint8_t *e = logo.palette_script; e < logo.palette_script_end; e += SCRIPT_ENTRY_BYTES) {
-        int16_t index = BE16(e);
-        uint16_t value = BE16(e + 2);
+        int16_t index = be16(e);
+        uint16_t value = be16(e + 2);
         if (index != SCRIPT_SHOW) {
             if (index >= 0 && index < PALETTE_COLORS)
                 colors[index] = value;
