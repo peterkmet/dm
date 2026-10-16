@@ -168,7 +168,6 @@ type ui:w open: epic 8
 type ui:width open: epic 8
 todo engine/sound.c open: epic 9
 block platform/platform.h open: epic 11
-packed ui/view.c open: epic 8
 dead-api data/os.h:g_os_log_hook open: epic 11
 dead-api data/os.h:g_os_fatal_hook open: epic 11
 dead-api data/kaos.h:kaos_free open: epic 11
@@ -176,7 +175,6 @@ dead-api data/graphics.h:gfx_close open: epic 11
 static-prefix platform/platform.c:audio_open open: epic 11
 type ui:count open: epic 8
 type ui:length open: epic 8
-packed ui/view_things.c open: epic 8
 params ui/automap.c:show_square open: epic 8
 params ui/panel.c:show_stat_meter open: epic 8
 params ui/text.c:show_glyph_row open: epic 8

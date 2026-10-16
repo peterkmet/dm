@@ -432,13 +432,14 @@ PACKED = re.compile(r"(?:<<|>>)\s*(?:8|16|24)\b|\((?:u?int(?:8|16|32)_t|unsigned
 def test_no_packed_fields_at_call_sites():
     """Also a shift by a *_SHIFT constant of a header in a .c file of another module: the accessor belongs to the owner."""
     ok = allowed()
-    owner = {name: path.stem for path in sources() if path.suffix == ".h"
+    owner = {name: module_stem(path.name) for path in sources() if path.suffix == ".h"
              for name in DEFINE.findall(strip(path.read_text(errors="replace"))) if name.endswith("_SHIFT")}
     found = []
     for path in sources():
         if path.suffix == ".c" and ("packed", rel(path)) not in ok:
+            module = module_stem(owner_header(path).name) if owner_header(path) else path.stem
             found += [f"packed {rel(path)}  | {n}: {line.strip()}" for n, line in code_lines(path)
-                      if PACKED.search(line) or any(owner.get(name, path.stem) != path.stem for name in NAMED_SHIFT.findall(line))]
+                      if PACKED.search(line) or any(owner.get(name, module) != module for name in NAMED_SHIFT.findall(line))]
     report("packed", found)
 
 
