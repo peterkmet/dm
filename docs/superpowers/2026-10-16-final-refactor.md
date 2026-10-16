@@ -153,10 +153,12 @@ dm/
 
 ### R3. Coding standard v2
 
-The plan rewrites `docs/coding-standard.md` as a structured document with the sections: layers and modules,
-headers and includes, constants, naming, types and values, results and parameters, state, file order,
-comments, data and errors, tests. It keeps its form: short, one rule per line, every rule with a check in
-`tests/standard/test_standard.py`, or the mark "review only" when no check is possible, or a named exception.
+`docs/coding-standard.md` v2 exists since 2026-10-16, written before the plan, with the sections: layers and
+modules, headers and includes, constants, naming, types and values, results and parameters, state, file
+order, comments, data and errors, tests. It keeps its form: short, one rule per line, every rule with a check
+in `tests/standard/test_standard.py`, or the mark "review only" when no check is possible, or a named
+exception. The epic R3 implements the checks that the standard names and the allowlist; it does not write
+the rules.
 The allowlist keeps only exceptions that the standard documents: the soundtrack tables, the APPB address
 tables, and the two per-type switch functions. Open violations during the run go in with `open: epic N` and
 the last epic removes them.
@@ -640,6 +642,8 @@ Feature: Final refactor
   lists from 35 to about 10-15 (user, 2026-10-16).
 - Constants are `#define` with written values; the notation is per block; function names have a length
   limit; files follow the header order (user, 2026-10-16).
+- The coding standard v2 is written before the plan (user, 2026-10-16); the plan takes its Global Constraints
+  from it, and the standard describes the target state until the run ends.
 - Build: GNU make stays (no MSVC goal); `pkg-config` is not installed on the owner's machine, so the SDL
   prefix stays a lazily evaluated, overridable `brew --prefix` variable.
 - A fifth layer `control/` holds the protocol; the socket stays in `platform/` as `transport`, because the

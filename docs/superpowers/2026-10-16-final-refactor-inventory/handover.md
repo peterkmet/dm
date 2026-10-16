@@ -1,6 +1,6 @@
 # Final refactor: handover
 
-Date: 2026-10-16. State: PRD written, reviewed by `prd-reviewer`, every proposal applied, the owner answered Q1-Q4 and the license question (see Decisions in `docs/superpowers/2026-10-16-final-refactor.md`). Next: the owner may reject single lines of the change list; then the plan (agentic-workflow step 4) in `docs/superpowers/2026-10-16-final-refactor-plan.md`, then one `plan-reviewer` pass.
+Date: 2026-10-16. State: PRD written, reviewed by `prd-reviewer`, every proposal applied, the owner answered Q1-Q4 and the license question (see Decisions in `docs/superpowers/2026-10-16-final-refactor.md`). `docs/coding-standard.md` v2 is written (the target state; the checks are the epic R3 of the plan). Next: the plan (agentic-workflow step 4) in `docs/superpowers/2026-10-16-final-refactor-plan.md`, then one `plan-reviewer` pass.
 
 The request (user, 2026-10-16): review the sources of the port (a reverse-engineered Amiga binary after a few
 refactor rounds) and propose the final refactor: readability, maintainability, coding standard, a clear
