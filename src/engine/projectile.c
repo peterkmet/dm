@@ -702,29 +702,29 @@ void projectile_fuse_action(int16_t x, int16_t y)
         group_start_wandering(escape_x, escape_y);
 }
 
-/* Marks each cell of the party (thing THING_NONE) or of the creatures of a group with cell + 1. Returns false for
-   a group without health. */
-static bool mark_occupied_cells(uint16_t thing, uint8_t occupied[4])
+/* Marks each cell of the party (thing THING_NONE) or of the creatures of a group with its cell index; the other
+   cells keep -1. Returns false for a group without health. */
+static bool mark_occupied_cells(uint16_t thing, int16_t occupied[4])
 {
     if (thing == THING_NONE) {
-        for (uint16_t cell = 0; cell < 4; cell++)
+        for (int16_t cell = 0; cell < 4; cell++)
             if (champion_get_index_in_cell(cell) >= 0)
-                occupied[cell] = cell + 1;
+                occupied[cell] = cell;
         return true;
     }
     uint16_t health = 0;
-    for (uint16_t cell = 0; cell < 4; cell++) {
+    for (int16_t cell = 0; cell < 4; cell++) {
         health |= rec_group_health(thing, cell);
         if (group_get_creature_in_cell(thing, cell) >= 0)
-            occupied[cell] = cell + 1;
+            occupied[cell] = cell;
     }
     return health != 0;
 }
 
 bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)
 {
-    uint8_t occupied[4] = {0};
-    uint8_t crossed[4] = {0};
+    int16_t occupied[4] = {-1, -1, -1, -1};
+    int16_t crossed[4] = {-1, -1, -1, -1};
     int16_t impact_type = thing == THING_NONE ? IMPACT_PARTY : IMPACT_CREATURE;
     if (!mark_occupied_cells(thing, occupied))
         return false;
@@ -736,10 +736,10 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
         uint16_t next = direction_right(primary);
         crossed[direction_left(primary)] = occupied[primary];
         crossed[direction_right(next)] = occupied[next];
-        test_destination = occupied[primary] || occupied[next];
-        if (!occupied[primary])
+        test_destination = occupied[primary] >= 0 || occupied[next] >= 0;
+        if (occupied[primary] < 0)
             occupied[primary] = occupied[direction_left(primary)];
-        if (!occupied[next])
+        if (occupied[next] < 0)
             occupied[next] = occupied[direction_right(next)];
     }
     Location source = {src_x, src_y};
@@ -749,11 +749,11 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
         do {
             hit = 0;
             for (uint16_t t = map_get_square_first_thing(at.x, at.y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
-                uint8_t target = occupied[THING_CELL(t)];
+                int16_t target = occupied[THING_CELL(t)];
                 if (THING_TYPE(t) != THING_PROJECTILE ||
                     g_timeline.events[rec_projectile_event_index(t)].type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS ||
-                    !target ||
-                    !projectile_has_impact_occurred((ImpactSite){impact_type, at, source, target - 1}, t, &outcome))
+                    target < 0 ||
+                    !projectile_has_impact_occurred((ImpactSite){impact_type, at, source, target}, t, &outcome))
                     continue;
                 projectile_delete_event(t);
                 if (outcome == OUTCOME_ALL_CREATURES_KILLED)
