@@ -318,25 +318,25 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
 {
     if (table < 0 || table >= UI_INPUT_COUNT)
         return 0;
-    MouseInput in;
-    for (int16_t entry = 0; tables_get_mouse_input(table, entry, &in); entry++) {
-        bool buttons = (in.buttons & button_mask) != 0;
-        if (in.x1 >= 0) {
-            if (x >= in.x1 && x <= in.x2 && y >= in.y1 && y <= in.y2 && buttons)
-                return in.command;
+    MouseInput input;
+    for (int16_t entry = 0; tables_get_mouse_input(table, entry, &input); entry++) {
+        bool buttons = (input.buttons & button_mask) != 0;
+        if (input.x1 >= 0) {
+            if (x >= input.x1 && x <= input.x2 && y >= input.y1 && y <= input.y2 && buttons)
+                return input.command;
             continue;
         }
         int16_t px = x;
         int16_t py = y;
-        if (in.x1 == INPUT_ZONE_VIEWPORT) {
+        if (input.x1 == INPUT_ZONE_VIEWPORT) {
             px -= tables_get_viewport_x();
             py -= tables_get_viewport_y();
-        } else if (in.x1 == INPUT_ZONE_CENTERED_VIEWPORT) {
+        } else if (input.x1 == INPUT_ZONE_CENTERED_VIEWPORT) {
             px -= (SCREEN_W - viewport.w) / 2;
             py -= (SCREEN_H - viewport.h) / 2;
         }
-        if (buttons && ui_is_point_in_zone(in.x2, px, py))
-            return in.command;
+        if (buttons && ui_is_point_in_zone(input.x2, px, py))
+            return input.command;
     }
     return 0;
 }

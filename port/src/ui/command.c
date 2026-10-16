@@ -212,9 +212,9 @@ static void get_front_square(int16_t *x, int16_t *y)
 /* Shows a text in the empty viewport: the sleep and freeze screens. */
 static void draw_viewport_message(int16_t text)
 {
-    Bitmap *vp = ui_get_viewport();
-    memset(vp->px, COLOR_BLACK, (size_t)vp->w * vp->h);
-    ui_print_zone(vp, ZONE_VIEWPORT_MESSAGE, COLOR_CYAN, COLOR_BLACK, gfx_string(text));
+    Bitmap *viewport = ui_get_viewport();
+    memset(viewport->px, COLOR_BLACK, (size_t)viewport->w * viewport->h);
+    ui_print_zone(viewport, ZONE_VIEWPORT_MESSAGE, COLOR_CYAN, COLOR_BLACK, gfx_string(text));
     ui_draw_viewport();
 }
 

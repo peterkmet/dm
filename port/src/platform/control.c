@@ -172,31 +172,31 @@ static bool find_in_box(int16_t table, int16_t command, Box b, int16_t dx, int16
    in the viewport, or in the centered viewport. */
 static bool find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
 {
-    const Bitmap *vp = ui_get_viewport();
+    const Bitmap *viewport = ui_get_viewport();
     int16_t ox, oy;
     get_viewport_origin(&ox, &oy);
     const int16_t offsets[3][2] = {
-        {0,                      0                     },
-        {ox,                     oy                    },
-        {(SCREEN_W - vp->w) / 2, (SCREEN_H - vp->h) / 2}
+        {0,                            0                           },
+        {ox,                           oy                          },
+        {(SCREEN_W - viewport->w) / 2, (SCREEN_H - viewport->h) / 2}
     };
-    MouseInput in;
-    for (int16_t entry = 0; tables_get_mouse_input(table, entry, &in); entry++) {
-        if (in.command != command)
+    MouseInput mouse_input;
+    for (int16_t entry = 0; tables_get_mouse_input(table, entry, &mouse_input); entry++) {
+        if (mouse_input.command != command)
             continue;
-        int16_t x1 = in.x1;
-        int16_t x2 = in.x2;
-        Box b = {x1, in.y1, x2 - x1 + 1, 0};
+        int16_t x1 = mouse_input.x1;
+        int16_t x2 = mouse_input.x2;
+        Box box = {x1, mouse_input.y1, x2 - x1 + 1, 0};
         if (x1 >= 0) {
-            b.h = in.y2 - b.y + 1;
-            if (find_in_box(table, command, b, 0, 0, x, y))
+            box.h = mouse_input.y2 - box.y + 1;
+            if (find_in_box(table, command, box, 0, 0, x, y))
                 return true;
             continue;
         }
-        if (!ui_zone_box(x2, &b))
+        if (!ui_zone_box(x2, &box))
             continue;
         for (int k = 0; k < 3; k++)
-            if (find_in_box(table, command, b, offsets[k][0], offsets[k][1], x, y))
+            if (find_in_box(table, command, box, offsets[k][0], offsets[k][1], x, y))
                 return true;
     }
     return false;
@@ -323,40 +323,40 @@ static const char *turn_displaced(void)
     return NULL;
 }
 
-static const char *move_forward(const char *r)
+static const char *move_forward(const char *args)
 {
-    (void)r;
+    (void)args;
     return step(KEY_UP, 1, 0);
 }
-static const char *move_back(const char *r)
+static const char *move_back(const char *args)
 {
-    (void)r;
+    (void)args;
     return step(KEY_DOWN, -1, 0);
 }
-static const char *move_left(const char *r)
+static const char *move_left(const char *args)
 {
-    (void)r;
+    (void)args;
     return step(KEY_LEFT, 0, -1);
 }
-static const char *move_right(const char *r)
+static const char *move_right(const char *args)
 {
-    (void)r;
+    (void)args;
     return step(KEY_RIGHT, 0, 1);
 }
-static const char *turn_party_left(const char *r)
+static const char *turn_party_left(const char *args)
 {
-    (void)r;
+    (void)args;
     return rotate(KEY_DEL, -1);
 }
-static const char *turn_party_right(const char *r)
+static const char *turn_party_right(const char *args)
 {
-    (void)r;
+    (void)args;
     return rotate(KEY_HELP, 1);
 }
 
-static const char *click_wall_ahead(const char *r)
+static const char *click_wall_ahead(const char *args)
 {
-    (void)r;
+    (void)args;
     const Box *b = &g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL];
     if (g_inventory_champion_ordinal)
         return "close the inventory first (close_inventory)";
@@ -366,9 +366,9 @@ static const char *click_wall_ahead(const char *r)
     return NULL;
 }
 
-static const char *take_object(const char *r)
+static const char *take_object(const char *args)
 {
-    int64_t cell = get_int(r, "cell", -1);
+    int64_t cell = get_int(args, "cell", -1);
     if (g_inventory_champion_ordinal)
         return "close the inventory first (close_inventory)";
     if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE)
@@ -381,9 +381,9 @@ static const char *take_object(const char *r)
     return NULL;
 }
 
-static const char *drop_object(const char *r)
+static const char *drop_object(const char *args)
 {
-    int64_t cell = get_int(r, "cell", 0);
+    int64_t cell = get_int(args, "cell", 0);
     Box b;
     if (g_inventory_champion_ordinal)
         return "close the inventory first (close_inventory)";
@@ -401,19 +401,19 @@ static const char *drop_object(const char *r)
     return NULL;
 }
 
-static const char *open_inventory(const char *r)
+static const char *open_inventory(const char *args)
 {
-    int16_t c;
-    if (!parse_champion_arg(r, &c))
+    int16_t champion_index;
+    if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
-    if (g_inventory_champion_ordinal != c + 1)
-        press_key(command_champion_key(c));
+    if (g_inventory_champion_ordinal != champion_index + 1)
+        press_key(command_champion_key(champion_index));
     return NULL;
 }
 
-static const char *close_inventory(const char *r)
+static const char *close_inventory(const char *args)
 {
-    (void)r;
+    (void)args;
     if (g_inventory_champion_ordinal)
         press_key(command_champion_key(g_inventory_champion_ordinal - 1));
     return NULL;
@@ -421,15 +421,15 @@ static const char *close_inventory(const char *r)
 
 /* A slot box click swaps the leader hand object with the slot: put and take are the same click.
    The slots of the open chest are boxes of the chest panel. */
-static const char *click_slot(const char *r)
+static const char *click_slot(const char *args)
 {
-    int16_t c;
-    int64_t slot = get_int(r, "slot", -1);
-    if (!parse_champion_arg(r, &c))
+    int16_t champion_index;
+    int64_t slot = get_int(args, "slot", -1);
+    if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
     if (g_leader_index == -1)
         return "no leader";
-    if (g_inventory_champion_ordinal == c + 1) {
+    if (g_inventory_champion_ordinal == champion_index + 1) {
         if (slot < 0 || slot >= SLOT_CHEST_FIRST + (g_open_chest != THING_NONE ? SLOT_CHEST_COUNT : 0))
             return "slot out of range";
         int16_t table = slot >= SLOT_CHEST_FIRST ? UI_INPUT_CHEST : UI_INPUT_INVENTORY;
@@ -439,7 +439,7 @@ static const char *click_slot(const char *r)
     }
     if (slot != SLOT_HAND_READY && slot != SLOT_HAND_ACTION)
         return "open the inventory of this champion first (open_inventory)";
-    if (!click_command(UI_INPUT_STATUS_BOX, COMMAND_CLICK_SLOT_BOX_FIRST + 2 * c + slot))
+    if (!click_command(UI_INPUT_STATUS_BOX, COMMAND_CLICK_SLOT_BOX_FIRST + 2 * champion_index + slot))
         return "slot not found";
     return NULL;
 }
@@ -460,10 +460,10 @@ static void press_eye(int16_t x, int16_t y)
 }
 
 /* The eye on the leader hand object; with a slot, the hand takes the slot object first and puts it back after. */
-static const char *send_look(const char *r)
+static const char *send_look(const char *args)
 {
     int16_t x, y;
-    int64_t slot = get_int(r, "slot", -1);
+    int64_t slot = get_int(args, "slot", -1);
     char request[SLOT_REQUEST_SIZE];
     if (!g_inventory_champion_ordinal)
         return "open an inventory first (open_inventory): the eye is in the inventory";
@@ -478,7 +478,7 @@ static const char *send_look(const char *r)
     if (!g_leader_empty_handed)
         return "the leader hand must be empty to look at a slot";
     snprintf(request, sizeof request, "\"champion\":%" PRId64 ",\"slot\":%" PRId64,
-             get_int(r, "champion", g_inventory_champion_ordinal - 1), slot);
+             get_int(args, "champion", g_inventory_champion_ordinal - 1), slot);
     const char *error = click_slot(request);
     if (error)
         return error;
@@ -490,9 +490,9 @@ static const char *send_look(const char *r)
 }
 
 /* Clicks the icon of champion a, then the icon of champion b: the two champions swap cells. */
-static const char *swap_champions(const char *r)
+static const char *swap_champions(const char *args)
 {
-    int64_t pair[2] = {get_int(r, "a", -1), get_int(r, "b", -1)};
+    int64_t pair[2] = {get_int(args, "a", -1), get_int(args, "b", -1)};
     for (int k = 0; k < 2; k++)
         if (pair[k] < 0 || pair[k] >= g_party_champion_count || !g_champions[pair[k]].current_health)
             return "a and b must be living champions";
@@ -505,9 +505,9 @@ static const char *swap_champions(const char *r)
     return NULL;
 }
 
-static const char *use_mouth(const char *r)
+static const char *use_mouth(const char *args)
 {
-    (void)r;
+    (void)args;
     if (!g_inventory_champion_ordinal)
         return "open the inventory of the champion who eats or drinks first";
     if (g_leader_empty_handed)
@@ -516,17 +516,17 @@ static const char *use_mouth(const char *r)
     return NULL;
 }
 
-static const char *choose_action(const char *r)
+static const char *choose_action(const char *args)
 {
-    int16_t c;
-    int64_t index = get_int(r, "index", -1);
-    if (!parse_champion_arg(r, &c))
+    int16_t champion_index;
+    int64_t index = get_int(args, "index", -1);
+    if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
-    if (g_acting_champion_ordinal && g_acting_champion_ordinal != c + 1)
+    if (g_acting_champion_ordinal && g_acting_champion_ordinal != champion_index + 1)
         return "another champion's action menu is open: use pass first";
     if (!g_acting_champion_ordinal) {
-        click_command(UI_INPUT_ACTION_ICONS, COMMAND_SELECT_ACTING_CHAMPION_FIRST + c);
-        if (g_acting_champion_ordinal != c + 1)
+        click_command(UI_INPUT_ACTION_ICONS, COMMAND_SELECT_ACTING_CHAMPION_FIRST + champion_index);
+        if (g_acting_champion_ordinal != champion_index + 1)
             return "this champion cannot act now (action disabled, or no actions)";
     }
     if (index < 0 || index >= g_action_count)
@@ -540,23 +540,23 @@ static const char *choose_action(const char *r)
     return NULL;
 }
 
-static const char *pass(const char *r)
+static const char *pass(const char *args)
 {
-    (void)r;
+    (void)args;
     if (g_acting_champion_ordinal)
         click_command(UI_INPUT_ACTION_NAMES, COMMAND_PASS);
     return NULL;
 }
 
-static const char *set_caster(const char *r)
+static const char *set_caster(const char *args)
 {
-    int16_t c;
+    int16_t champion_index;
     Box b;
-    if (!parse_champion_arg(r, &c))
+    if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
     if (g_magic_caster_champion_index == -1)
         return "no spell area";
-    if (!ui_zone_box(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + c, &b))
+    if (!ui_zone_box(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + champion_index, &b))
         return "caster tab not found";
     click(b.x + b.w / 2, b.y + b.h / 2);
     return NULL;
@@ -570,9 +570,9 @@ static const char *spell_click(int16_t command)
     return NULL;
 }
 
-static const char *add_rune(const char *r)
+static const char *add_rune(const char *args)
 {
-    int64_t symbol = get_int(r, "symbol", -1);
+    int64_t symbol = get_int(args, "symbol", -1);
     if (symbol < 0 || symbol >= SYMBOL_COUNT)
         return "symbol must be 0-5";
     if (g_magic_caster_champion_index == -1)
@@ -585,18 +585,18 @@ static const char *add_rune(const char *r)
                : NULL;
 }
 
-static const char *delete_rune(const char *r)
+static const char *delete_rune(const char *args)
 {
-    (void)r;
+    (void)args;
     return spell_click(COMMAND_DELETE_SYMBOL);
 }
-static const char *cast(const char *r)
+static const char *cast(const char *args)
 {
-    (void)r;
+    (void)args;
     return spell_click(COMMAND_CAST_SPELL);
 }
 
-static const char *recruit(const char *r)
+static const char *recruit(const char *args)
 {
     static const char *const choices[3] = {"resurrect", "reincarnate", "cancel"};
     char choice[CHOICE_SIZE];
@@ -604,7 +604,7 @@ static const char *recruit(const char *r)
         return "no candidate: click a champion mirror first (click_wall_ahead)";
     if (!g_leader_empty_handed)
         return "the leader hand must be empty";
-    if (!get_string(r, "choice", choice, sizeof choice))
+    if (!get_string(args, "choice", choice, sizeof choice))
         return "choice must be resurrect, reincarnate, or cancel";
     for (int k = 0; k < 3; k++)
         if (!strcmp(choice, choices[k])) {
@@ -614,18 +614,18 @@ static const char *recruit(const char *r)
     return "choice must be resurrect, reincarnate, or cancel";
 }
 
-static const char *set_leader(const char *r)
+static const char *set_leader(const char *args)
 {
-    int16_t c;
-    if (!parse_champion_arg(r, &c))
+    int16_t champion_index;
+    if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
-    click_command(UI_INPUT_STATUS_BOX, COMMAND_SET_LEADER_FIRST + c);
+    click_command(UI_INPUT_STATUS_BOX, COMMAND_SET_LEADER_FIRST + champion_index);
     return NULL;
 }
 
-static const char *sleep_party(const char *r)
+static const char *sleep_party(const char *args)
 {
-    (void)r;
+    (void)args;
     if (g_leader_index == -1)
         return "no leader";
     if (!g_inventory_champion_ordinal)
@@ -634,9 +634,9 @@ static const char *sleep_party(const char *r)
     return NULL;
 }
 
-static const char *wake(const char *r)
+static const char *wake(const char *args)
 {
-    (void)r;
+    (void)args;
     if (g_party_is_sleeping)
         click_command(UI_INPUT_SLEEPING, COMMAND_WAKE_UP);
     return NULL;
@@ -699,52 +699,52 @@ static bool write_png(const char *path)
 {
     enum { ROW = 1 + 3 * SCREEN_W, RAW = ROW * SCREEN_H, BLOCK = 65535 };
     enum { BLOCKS = (RAW + BLOCK - 1) / BLOCK, ZLIB = 2 + RAW + 5 * BLOCKS + 4 };
-    static uint8_t raw[RAW], z[ZLIB];
+    static uint8_t raw[RAW], compressed[ZLIB];
     for (int y = 0; y < SCREEN_H; y++) {
-        uint8_t *p = raw + y * ROW;
-        *p++ = 0; /* filter: none */
+        uint8_t *pixel = raw + y * ROW;
+        *pixel++ = 0; /* filter: none */
         for (int x = 0; x < SCREEN_W; x++) {
             uint32_t argb = video_convert_argb(video_get_color(y, fb[y][x]));
-            *p++ = video_argb_red(argb);
-            *p++ = video_argb_green(argb);
-            *p++ = video_argb_blue(argb);
+            *pixel++ = video_argb_red(argb);
+            *pixel++ = video_argb_green(argb);
+            *pixel++ = video_argb_blue(argb);
         }
     }
-    uint8_t *q = z;
-    *q++ = ZLIB_METHOD;
-    *q++ = ZLIB_FLAGS;
-    uint32_t a = 1;
-    uint32_t b = 0;
+    uint8_t *out = compressed;
+    *out++ = ZLIB_METHOD;
+    *out++ = ZLIB_FLAGS;
+    uint32_t byte_sum = 1;
+    uint32_t sum_of_sums = 0;
     for (size_t done = 0; done < RAW;) {
         size_t n = RAW - done < BLOCK ? RAW - done : BLOCK;
-        *q++ = done + n == RAW;
-        *q++ = (uint8_t)n;
-        *q++ = (uint8_t)(n >> BYTE_BITS);
-        *q++ = (uint8_t)~n;
-        *q++ = (uint8_t)(~n >> BYTE_BITS);
-        memcpy(q, raw + done, n);
+        *out++ = done + n == RAW;
+        *out++ = (uint8_t)n;
+        *out++ = (uint8_t)(n >> BYTE_BITS);
+        *out++ = (uint8_t)~n;
+        *out++ = (uint8_t)(~n >> BYTE_BITS);
+        memcpy(out, raw + done, n);
         for (size_t i = 0; i < n; i++) {
-            a = (a + raw[done + i]) % ADLER32_MODULUS;
-            b = (b + a) % ADLER32_MODULUS;
+            byte_sum = (byte_sum + raw[done + i]) % ADLER32_MODULUS;
+            sum_of_sums = (sum_of_sums + byte_sum) % ADLER32_MODULUS;
         }
-        q += n;
+        out += n;
         done += n;
     }
-    WR32(q, b << ADLER32_HIGH_SHIFT | a);
-    q += 4;
+    WR32(out, sum_of_sums << ADLER32_HIGH_SHIFT | byte_sum);
+    out += 4;
     uint8_t ihdr[PNG_IHDR_SIZE] = {0};
     WR32(ihdr, SCREEN_W);
     WR32(ihdr + 4, SCREEN_H);
     ihdr[8] = 8; /* bits per channel */
     ihdr[9] = 2; /* RGB */
-    FILE *f = fopen(path, "wb");
-    if (!f)
+    FILE *file = fopen(path, "wb");
+    if (!file)
         return false;
-    fwrite("\x89PNG\r\n\x1a\n", 1, 8, f);
-    png_chunk(f, "IHDR", ihdr, sizeof ihdr);
-    png_chunk(f, "IDAT", z, (uint32_t)(q - z));
-    png_chunk(f, "IEND", NULL, 0);
-    return fclose(f) == 0;
+    fwrite("\x89PNG\r\n\x1a\n", 1, 8, file);
+    png_chunk(file, "IHDR", ihdr, sizeof ihdr);
+    png_chunk(file, "IDAT", compressed, (uint32_t)(out - compressed));
+    png_chunk(file, "IEND", NULL, 0);
+    return fclose(file) == 0;
 }
 
 /* What the party saw during a request. */
@@ -1108,37 +1108,37 @@ static void batch_finish(const char *stop, const char *error)
    Returns 1, 0 at the end of the list, or -1 for an item that is not an action. */
 static int next_element(char *out, size_t size)
 {
-    const char *p = batch.next;
-    while (*p == ' ' || *p == ',')
-        p++;
-    const char *start = p;
-    if (!*p || *p == ']')
+    const char *cursor = batch.next;
+    while (*cursor == ' ' || *cursor == ',')
+        cursor++;
+    const char *start = cursor;
+    if (!*cursor || *cursor == ']')
         return 0;
-    if (*p == '"') {
-        p = strchr(p + 1, '"');
-        if (!p)
+    if (*cursor == '"') {
+        cursor = strchr(cursor + 1, '"');
+        if (!cursor)
             return -1;
-        p++;
-    } else if (*p == '{') {
-        for (int depth = 0; *p; p++) {
-            if (*p == '"')
-                p = strchr(p + 1, '"'); /* strings hold no '"' (docs/llm-mode.md) */
-            if (!p)
+        cursor++;
+    } else if (*cursor == '{') {
+        for (int depth = 0; *cursor; cursor++) {
+            if (*cursor == '"')
+                cursor = strchr(cursor + 1, '"'); /* strings hold no '"' (docs/llm-mode.md) */
+            if (!cursor)
                 return -1;
-            depth += (*p == '{') - (*p == '}');
+            depth += (*cursor == '{') - (*cursor == '}');
             if (!depth)
                 break;
         }
-        if (!*p++)
+        if (!*cursor++)
             return -1;
     } else {
         return -1;
     }
-    if ((size_t)(p - start) >= size)
+    if ((size_t)(cursor - start) >= size)
         return -1;
-    memcpy(out, start, (size_t)(p - start));
-    out[p - start] = 0;
-    batch.next = p;
+    memcpy(out, start, (size_t)(cursor - start));
+    out[cursor - start] = 0;
+    batch.next = cursor;
     return 1;
 }
 

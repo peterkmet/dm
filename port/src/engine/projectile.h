@@ -124,7 +124,7 @@ static inline uint16_t projectile_event_c(int16_t x, int16_t y, uint16_t directi
 
 extern bool g_create_launcher_projectile;
 extern int16_t g_projectile_poison_attack, g_projectile_attack_type;
-extern bool g_fuse_sequence_requested; /* the endgame step runs fuse_sequence when it is set */
+extern bool g_fuse_sequence_requested; /* the endgame step runs startend_run_fuse_sequence when it is set */
 
 void projectile_create(uint16_t thing, int16_t x, int16_t y, int16_t cell, int16_t direction, uint8_t kinetic_energy,
                        uint8_t attack, uint8_t step_energy);

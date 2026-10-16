@@ -144,31 +144,31 @@ static void play_music(uint16_t number)
 {
     if (number < 1 || number > music_count || !music[number - 1])
         return;
-    const uint8_t *m = music[number - 1];
+    const uint8_t *song = music[number - 1];
     size_t size = music_sizes[number - 1];
-    if (size < 2 || m[0] & MUSIC_COUNT_SIGN_BIT)
+    if (size < 2 || song[0] & MUSIC_COUNT_SIGN_BIT)
         return;
-    uint16_t n = BE16(m);
+    uint16_t n = BE16(song);
     size_t items = 2 + 4 * (size_t)n, offsets[UINT8_MAX + 1];
-    if (!n || n > UINT8_MAX || items > size || BE16(m + 2) != BE16(m + 2 + 2 * n))
+    if (!n || n > UINT8_MAX || items > size || BE16(song + 2) != BE16(song + 2 + 2 * n))
         return;
     for (uint16_t i = 0, at = 0; i < n; i++) {
         offsets[i] = items + at;
-        at += BE16(m + 2 + 2 * (n + i));
+        at += BE16(song + 2 + 2 * (n + i));
     }
     const int8_t *segments[SOUND_MUSIC_SEGMENTS];
     uint16_t lengths[SOUND_MUSIC_SEGMENTS];
     int sequence_length = 0;
     int count = 0;
-    while (offsets[0] + sequence_length < size && m[offsets[0] + sequence_length] != MUSIC_SEQUENCE_END)
+    while (offsets[0] + sequence_length < size && song[offsets[0] + sequence_length] != MUSIC_SEQUENCE_END)
         sequence_length++;
     for (int i = 0; sequence_length && i < MUSIC_PASSES * sequence_length && count < SOUND_MUSIC_SEGMENTS; i++) {
-        uint8_t item = m[offsets[0] + i % sequence_length];
+        uint8_t item = song[offsets[0] + i % sequence_length];
         if (item >= n || offsets[item] + SOUND_SAMPLE_HEADER > size ||
-            BE16(m + offsets[item]) > size - offsets[item] - SOUND_SAMPLE_HEADER)
+            BE16(song + offsets[item]) > size - offsets[item] - SOUND_SAMPLE_HEADER)
             continue;
-        segments[count] = (const int8_t *)m + offsets[item] + SOUND_SAMPLE_HEADER;
-        lengths[count++] = BE16(m + offsets[item]);
+        segments[count] = (const int8_t *)song + offsets[item] + SOUND_SAMPLE_HEADER;
+        lengths[count++] = BE16(song + offsets[item]);
     }
     sound_music_play(segments, lengths, count, MUSIC_PERIOD, MUSIC_VOLUME);
     music_started = true;
@@ -264,8 +264,8 @@ int16_t anim_next_frame(void)
         const uint8_t *payload = chunk + CHUNK_HEADER;
         uint16_t length = BE16(chunk + CHUNK_LENGTH);
         uint16_t parameter = BE16(chunk + CHUNK_PARAMETER);
-        size_t at = chunk_offset;
-        chunk_offset = next_chunk(at);
+        size_t chunk_start = chunk_offset;
+        chunk_offset = next_chunk(chunk_start);
         switch (BE16(chunk)) {
         case TAG_PALETTE:
             set_colors(payload, length);
@@ -280,7 +280,7 @@ int16_t anim_next_frame(void)
             }
             break;
         case TAG_PLAY_SAMPLE:
-            play_sample(at, parameter);
+            play_sample(chunk_start, parameter);
             break;
         case TAG_SAMPLE_FILE:
             add_sample_file(payload, length);

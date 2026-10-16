@@ -77,37 +77,38 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
 {
     Bitmap screen = ui_get_screen();
     Box doors, work, door;
-    int16_t w = 0;
-    int16_t h = 0;
+    int16_t width = 0;
+    int16_t height = 0;
     int16_t shown = 0;
     ui_blit_graphic(&screen, GFX_ENTRANCE, ZONE_SCREEN, COLOR_NONE);
     if (!ui_zone_box(ZONE_ENTRANCE_DOORS, &doors))
         return 0;
-    if (!layout_get_zone(ZONE_ENTRANCE_WORK, doors.w, doors.h, &work, &w, &h))
+    if (!layout_get_zone(ZONE_ENTRANCE_WORK, doors.w, doors.h, &work, &width, &height))
         return 0;
-    w = 0;
-    h = 0;
-    if (view && layout_get_zone(ZONE_ENTRANCE_VIEWPORT, view->w, view->h, &door, &w, &h)) {
+    width = 0;
+    height = 0;
+    if (view && layout_get_zone(ZONE_ENTRANCE_VIEWPORT, view->w, view->h, &door, &width, &height)) {
         door.x += work.x;
         door.y += work.y;
-        draw_blit(view, w, h, &screen, &door, COLOR_NONE, 0);
+        draw_blit(view, width, height, &screen, &door, COLOR_NONE, 0);
     }
     for (int16_t side = 0; side < 2; side++) {
-        const Bitmap *bm = gfx_get_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
-        w = 0;
-        h = 0;
-        if (!bm || !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, bm->w, bm->h, &door, &w, &h))
+        const Bitmap *door_bitmap = gfx_get_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
+        width = 0;
+        height = 0;
+        if (!door_bitmap ||
+            !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, door_bitmap->w, door_bitmap->h, &door, &width, &height))
             continue;
         door.x += work.x;
         door.y += work.y;
         door.w = max16(0, door.w - opened);
         if (side == 0)
-            w += opened; /* the left door slides left, the right door slides right */
+            width += opened; /* the left door slides left, the right door slides right */
         else
             door.x += opened;
         if (door.w)
             shown = 1;
-        draw_blit(bm, w, h, &screen, &door, COLOR_NONE, 0);
+        draw_blit(door_bitmap, width, height, &screen, &door, COLOR_NONE, 0);
     }
     return shown;
 }
@@ -420,7 +421,7 @@ int gameloop_run_frame(void)
     return tick;
 }
 
-/* Runs all waiting commands and draws what they changed, as gameloop_frame does (control socket). */
+/* Runs all waiting commands and draws what they changed, as gameloop_run_frame does (control socket). */
 void gameloop_run_commands(void)
 {
     int ran = 0;
@@ -535,7 +536,7 @@ static void decode_planar_pointer(bool hand, uint8_t *px, int *w, int *h)
 }
 
 /* The object icon of the leader hand with a black shadow at the shadow offset (build_mouse_pointer_bitmap). */
-static void make_object_pointer(uint8_t *px, int *w, int *h)
+static void make_object_pointer(uint8_t *px, int *width, int *height)
 {
     uint8_t icon_px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap icon = {UI_ICON_SIZE, UI_ICON_SIZE, icon_px};
@@ -543,20 +544,20 @@ static void make_object_pointer(uint8_t *px, int *w, int *h)
     int16_t dy = tables_get_pointer_shadow_dy();
     const uint8_t *shadows = tables_get_palette_changes(TABLES_CHANGES_POINTER_SHADOW);
     ui_extract_icon(object_get_icon_index(g_leader_hand_object), &icon);
-    *w = UI_ICON_SIZE + dx;
-    *h = UI_ICON_SIZE + dy;
-    memset(px, POINTER_SHADOW_COLOR, (size_t)*w * *h);
+    *width = UI_ICON_SIZE + dx;
+    *height = UI_ICON_SIZE + dy;
+    memset(px, POINTER_SHADOW_COLOR, (size_t)*width * *height);
     for (int y = 0; y < UI_ICON_SIZE; y++)
         for (int x = 0; x < UI_ICON_SIZE; x++) {
             uint8_t shadow = shadows[icon_px[y * UI_ICON_SIZE + x]];
             if (shadow != POINTER_SHADOW_COLOR)
-                px[(y + dy) * *w + x + dx] = shadow;
+                px[(y + dy) * *width + x + dx] = shadow;
         }
     for (int y = 0; y < UI_ICON_SIZE; y++)
         for (int x = 0; x < UI_ICON_SIZE; x++)
             if (icon_px[y * UI_ICON_SIZE + x] != POINTER_SHADOW_COLOR)
-                px[y * *w + x] = icon_px[y * UI_ICON_SIZE + x];
-    for (int i = 0; i < *w * *h; i++) /* the transparent color becomes 0 and the shadow black */
+                px[y * *width + x] = icon_px[y * UI_ICON_SIZE + x];
+    for (int i = 0; i < *width * *height; i++) /* the transparent color becomes 0 and the shadow black */
         px[i] = px[i] == POINTER_SHADOW_COLOR ? 0 : px[i] == 0 ? POINTER_SHADOW_COLOR : px[i];
 }
 

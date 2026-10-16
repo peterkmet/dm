@@ -76,36 +76,36 @@ static const uint8_t *find(int16_t n)
     return NULL;
 }
 
-/* Top left corner of a w x h rectangle whose alignment point a is at (*x, *y). */
-static void align(int16_t a, int16_t w, int16_t h, int16_t *x, int16_t *y)
+/* Top left corner of a width x height rectangle whose alignment point is at (*x, *y). */
+static void align(int16_t alignment, int16_t width, int16_t height, int16_t *x, int16_t *y)
 {
-    int16_t cx = (w + 1) >> 1;
-    int16_t cy = (h + 1) >> 1;
-    switch (a) {
+    int16_t cx = (width + 1) >> 1;
+    int16_t cy = (height + 1) >> 1;
+    switch (alignment) {
     case ALIGN_CENTER:
         *x -= cx;
         *y -= cy;
         break;
     case ALIGN_TOP_RIGHT:
-        *x = *x + 1 - w;
+        *x = *x + 1 - width;
         break;
     case ALIGN_BOTTOM_RIGHT:
-        *x = *x + 1 - w;
-        *y = *y + 1 - h;
+        *x = *x + 1 - width;
+        *y = *y + 1 - height;
         break;
     case ALIGN_BOTTOM_LEFT:
-        *y = *y + 1 - h;
+        *y = *y + 1 - height;
         break;
     case ALIGN_TOP_CENTER:
         *x -= cx;
         break;
     case ALIGN_CENTER_RIGHT:
-        *x = *x + 1 - w;
+        *x = *x + 1 - width;
         *y -= cy;
         break;
     case ALIGN_BOTTOM_CENTER:
         *x -= cx;
-        *y = *y + 1 - h;
+        *y = *y + 1 - height;
         break;
     case ALIGN_CENTER_LEFT:
         *y -= cy;
@@ -113,36 +113,36 @@ static void align(int16_t a, int16_t w, int16_t h, int16_t *x, int16_t *y)
     }
 }
 
-/* Alignment point a of a w x h rectangle with its top left corner at (*x, *y). */
-static void anchor(int16_t a, int16_t w, int16_t h, int16_t *x, int16_t *y)
+/* The alignment point of a width x height rectangle with its top left corner at (*x, *y). */
+static void anchor(int16_t alignment, int16_t width, int16_t height, int16_t *x, int16_t *y)
 {
-    int16_t cx = (w + 1) >> 1;
-    int16_t cy = (h + 1) >> 1;
-    switch (a) {
+    int16_t cx = (width + 1) >> 1;
+    int16_t cy = (height + 1) >> 1;
+    switch (alignment) {
     case ALIGN_CENTER:
         *x += cx;
         *y += cy;
         break;
     case ALIGN_TOP_RIGHT:
-        *x += w - 1;
+        *x += width - 1;
         break;
     case ALIGN_BOTTOM_RIGHT:
-        *x += w - 1;
-        *y += h - 1;
+        *x += width - 1;
+        *y += height - 1;
         break;
     case ALIGN_BOTTOM_LEFT:
-        *y += h - 1;
+        *y += height - 1;
         break;
     case ALIGN_TOP_CENTER:
         *x += cx;
         break;
     case ALIGN_CENTER_RIGHT:
-        *x += w - 1;
+        *x += width - 1;
         *y += cy;
         break;
     case ALIGN_BOTTOM_CENTER:
         *x += cx;
-        *y += h - 1;
+        *y += height - 1;
         break;
     case ALIGN_CENTER_LEFT:
         *y += cy;
@@ -164,81 +164,81 @@ static void clip_to(Box *c, int16_t x, int16_t y, int16_t w, int16_t h)
 }
 
 /* The parent walk of get_zone: moves the point (*x, *y) and the clip box by the translations and the
-   rectangles of the parents of record r. Returns false when nothing is visible. */
-static bool place_in_parents(const uint8_t *r, int16_t *x, int16_t *y, Box *clip)
+   rectangles of the parents of the zone record. Returns false when nothing is visible. */
+static bool place_in_parents(const uint8_t *record, int16_t *x, int16_t *y, Box *clip)
 {
-    const uint8_t *p, *s;
+    const uint8_t *parent, *grandparent;
     int16_t pending = 0;
-    while (get_zone_parent(r)) {
-        int16_t t = get_zone_type(r);
-        if (t < RECORD_INNER_POINT || t > RECORD_INNER_POINT_LAST) {
-            if (!(p = find(get_zone_parent(r))))
+    while (get_zone_parent(record)) {
+        int16_t type = get_zone_type(record);
+        if (type < RECORD_INNER_POINT || type > RECORD_INNER_POINT_LAST) {
+            if (!(parent = find(get_zone_parent(record))))
                 break;
-            int16_t a = get_zone_x(p);
-            int16_t b = get_zone_y(p);
-            if (get_zone_type(p) == RECORD_TRANSLATION) {
-                *x += a;
-                *y += b;
-                clip->x += a;
-                clip->y += b;
-            } else if (get_zone_type(p) == RECORD_SIZE) { /* the rectangle of the point r */
-                if (t < RECORD_SIZE) {
-                    a = get_zone_x(r);
-                    b = get_zone_y(r);
-                    align(t, get_zone_x(p), get_zone_y(p), &a, &b);
+            int16_t point_x = get_zone_x(parent);
+            int16_t point_y = get_zone_y(parent);
+            if (get_zone_type(parent) == RECORD_TRANSLATION) {
+                *x += point_x;
+                *y += point_y;
+                clip->x += point_x;
+                clip->y += point_y;
+            } else if (get_zone_type(parent) == RECORD_SIZE) { /* the rectangle of the point record */
+                if (type < RECORD_SIZE) {
+                    point_x = get_zone_x(record);
+                    point_y = get_zone_y(record);
+                    align(type, get_zone_x(parent), get_zone_y(parent), &point_x, &point_y);
                 }
                 if (pending) {
                     pending = 0;
-                    *x += a;
-                    *y += b;
-                    clip->x += a;
-                    clip->y += b;
+                    *x += point_x;
+                    *y += point_y;
+                    clip->x += point_x;
+                    clip->y += point_y;
                 }
-                clip_to(clip, a, b, get_zone_x(p), get_zone_y(p));
-            } else if (get_zone_type(p) < RECORD_SIZE) {
+                clip_to(clip, point_x, point_y, get_zone_x(parent), get_zone_y(parent));
+            } else if (get_zone_type(parent) < RECORD_SIZE) {
                 pending = 1;
             }
-            r = p;
+            record = parent;
         } else { /* a point inside the rectangle of another point */
-            if (!(p = find(get_zone_parent(r))) || !(s = find(get_zone_parent(p))))
+            if (!(parent = find(get_zone_parent(record))) || !(grandparent = find(get_zone_parent(parent))))
                 break;
-            int16_t a = get_zone_x(p);
-            int16_t b = get_zone_y(p);
-            int16_t sw = get_zone_x(s);
-            int16_t sh = get_zone_y(s);
-            if (get_zone_type(p) >= RECORD_SIZE)
+            int16_t point_x = get_zone_x(parent);
+            int16_t point_y = get_zone_y(parent);
+            int16_t rect_width = get_zone_x(grandparent);
+            int16_t rect_height = get_zone_y(grandparent);
+            if (get_zone_type(parent) >= RECORD_SIZE)
                 return false;
-            align(get_zone_type(p), sw, sh, &a, &b);
-            clip->x += a;
-            clip->y += b;
-            clip_to(clip, a, b, sw, sh);
-            anchor(t - RECORD_INNER_POINT, sw, sh, &a, &b);
-            *x += a + get_zone_x(r);
-            *y += b + get_zone_y(r);
-            r = s;
+            align(get_zone_type(parent), rect_width, rect_height, &point_x, &point_y);
+            clip->x += point_x;
+            clip->y += point_y;
+            clip_to(clip, point_x, point_y, rect_width, rect_height);
+            anchor(type - RECORD_INNER_POINT, rect_width, rect_height, &point_x, &point_y);
+            *x += point_x + get_zone_x(record);
+            *y += point_y + get_zone_y(record);
+            record = grandparent;
         }
     }
     return true;
 }
 
-/* Places an item of *w x *h pixels (0 = bitmap size) in zone and clips it to the
-   parent rectangles. ZONE_SHIFTED adds *w, *h to the position and takes the bitmap size.
-   On return *w, *h hold the source offset of the clipped box. Returns false when nothing is visible. */
-bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, int16_t *w, int16_t *h)
+/* Places an item of *width x *height pixels (0 = bitmap size) in zone and clips it to the
+   parent rectangles. ZONE_SHIFTED adds *width, *height to the position and takes the bitmap size.
+   On return *width, *height hold the source offset of the clipped box. Returns false when nothing is visible. */
+bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, int16_t *width, int16_t *height)
 {
     if (zone == -1)
         return false;
     int shifted = zone & ZONE_SHIFTED;
-    const uint8_t *r = find(zone & (ZONE_SHIFTED - 1));
-    if (!r)
+    const uint8_t *record = find(zone & (ZONE_SHIFTED - 1));
+    if (!record)
         return false;
     Box clip = {0, 0, CLIP_NONE, CLIP_NONE};
-    int16_t type = get_zone_type(r);
+    int16_t type = get_zone_type(record);
     int16_t x = 0;
     int16_t y = 0;
     if (type < RECORD_SIZE) {
-        x = get_zone_x(r);
-        y = get_zone_y(r);
+        x = get_zone_x(record);
+        y = get_zone_y(record);
     } else {
         if (type == RECORD_SIZE)
             return false;
@@ -247,35 +247,35 @@ bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box,
     if (type < ALIGN_CENTER || type > ALIGN_CENTER_LEFT)
         return false;
     if (shifted) {
-        x += *w;
-        y += *h;
-        *w = 0;
-        *h = 0;
+        x += *width;
+        y += *height;
+        *width = 0;
+        *height = 0;
     }
-    if (!place_in_parents(r, &x, &y, &clip))
+    if (!place_in_parents(record, &x, &y, &clip))
         return false;
-    int16_t iw = *w ? *w : bitmap_w;
-    int16_t ih = *h ? *h : bitmap_h;
+    int16_t item_width = *width ? *width : bitmap_w;
+    int16_t item_height = *height ? *height : bitmap_h;
     box->x = x;
     box->y = y;
-    align(type, iw, ih, &box->x, &box->y);
+    align(type, item_width, item_height, &box->x, &box->y);
     int16_t dx = clip.x - box->x;
     int16_t dy = clip.y - box->y;
     if (dx < 1) {
-        *w = 0;
-        box->w = iw < dx + clip.w ? iw : dx + clip.w;
+        *width = 0;
+        box->w = item_width < dx + clip.w ? item_width : dx + clip.w;
     } else {
-        *w = dx;
+        *width = dx;
         box->x = clip.x;
-        box->w = iw - dx < clip.w ? iw - dx : clip.w;
+        box->w = item_width - dx < clip.w ? item_width - dx : clip.w;
     }
     if (dy < 1) {
-        *h = 0;
-        box->h = ih < dy + clip.h ? ih : dy + clip.h;
+        *height = 0;
+        box->h = item_height < dy + clip.h ? item_height : dy + clip.h;
     } else {
-        *h = dy;
+        *height = dy;
         box->y = clip.y;
-        box->h = ih - dy < clip.h ? ih - dy : clip.h;
+        box->h = item_height - dy < clip.h ? item_height - dy : clip.h;
     }
     return box->w > 0 && box->h > 0;
 }

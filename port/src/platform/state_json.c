@@ -119,18 +119,18 @@ void json_str(Json *j, const char *text)
     char buf[8];
     separate(j);
     put(j, "\"", 1);
-    for (const unsigned char *p = (const unsigned char *)text; *p; p++) {
-        if (*p == '"' || *p == '\\') {
+    for (const unsigned char *character = (const unsigned char *)text; *character; character++) {
+        if (*character == '"' || *character == '\\') {
             buf[0] = '\\';
-            buf[1] = (char)*p;
+            buf[1] = (char)*character;
             put(j, buf, 2);
-        } else if (*p == '\n') {
+        } else if (*character == '\n') {
             put(j, "\\n", 2);
-        } else if (*p < ' ' || *p > '~') {
-            snprintf(buf, sizeof buf, "\\u%04x", *p);
+        } else if (*character < ' ' || *character > '~') {
+            snprintf(buf, sizeof buf, "\\u%04x", *character);
             put(j, buf, 6);
         } else {
-            put(j, (const char *)p, 1);
+            put(j, (const char *)character, 1);
         }
     }
     put(j, "\"", 1);
@@ -661,50 +661,50 @@ static bool sensor_takes_object(uint16_t type)
 }
 
 /* The side of wall square (x, y) that faces direction face. Returns true when it shows something. */
-static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *f)
+static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *wall)
 {
-    memset(f, 0, sizeof *f);
-    f->text = THING_NONE;
-    f->lock_ornament = -1;
-    f->other_ornament = -1;
-    for (uint16_t t = dungeon_get_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
-         t = map_get_next_thing(t)) {
-        if (THING_CELL(t) != face)
+    memset(wall, 0, sizeof *wall);
+    wall->text = THING_NONE;
+    wall->lock_ornament = -1;
+    wall->other_ornament = -1;
+    for (uint16_t thing = dungeon_get_square_first_thing(g_party_map_index, x, y); thing != THING_ENDOFLIST;
+         thing = map_get_next_thing(thing)) {
+        if (THING_CELL(thing) != face)
             continue;
-        if (THING_TYPE(t) == THING_TEXT && rec_text_is_visible(t))
-            f->text = t;
-        if (THING_TYPE(t) != THING_SENSOR)
+        if (THING_TYPE(thing) == THING_TEXT && rec_text_is_visible(thing))
+            wall->text = thing;
+        if (THING_TYPE(thing) != THING_SENSOR)
             continue;
-        if (rec_sensor_type(t) == SENSOR_WALL_CHAMPION_PORTRAIT)
-            f->mirror = 1;
-        else if (rec_sensor_ornament_ordinal(t) && rec_sensor_type(t) == SENSOR_WALL_ORNAMENT_CLICK)
-            f->switch_ = 1;
-        else if (rec_sensor_ornament_ordinal(t) && sensor_takes_object(rec_sensor_type(t))) {
-            if (rec_sensor_data(t) >= ICON_TORCH_UNLIT && rec_sensor_data(t) <= ICON_TORCH_LAST)
-                f->torch_holder = 1; /* it wants a torch */
+        if (rec_sensor_type(thing) == SENSOR_WALL_CHAMPION_PORTRAIT)
+            wall->mirror = 1;
+        else if (rec_sensor_ornament_ordinal(thing) && rec_sensor_type(thing) == SENSOR_WALL_ORNAMENT_CLICK)
+            wall->switch_ = 1;
+        else if (rec_sensor_ornament_ordinal(thing) && sensor_takes_object(rec_sensor_type(thing))) {
+            if (rec_sensor_data(thing) >= ICON_TORCH_UNLIT && rec_sensor_data(thing) <= ICON_TORCH_LAST)
+                wall->torch_holder = 1; /* it wants a torch */
             else {
-                f->lock = 1;
-                f->lock_ornament = view_get_wall_ornament_index(rec_sensor_ornament_ordinal(t));
+                wall->lock = 1;
+                wall->lock_ornament = view_get_wall_ornament_index(rec_sensor_ornament_ordinal(thing));
             }
         }
     }
     switch (view_get_wall_ornament(x, y, face)) {
     case VIEW_ORNAMENT_ALCOVE:
-        f->alcove = 1;
+        wall->alcove = 1;
         break;
     case VIEW_ORNAMENT_FOUNTAIN:
-        f->fountain = 1;
+        wall->fountain = 1;
         break;
     case VIEW_ORNAMENT_VI_ALTAR:
-        f->vi_altar = 1;
+        wall->vi_altar = 1;
         break;
     case VIEW_ORNAMENT_OTHER:
-        f->ornament = !f->mirror && !f->switch_ && !f->lock && !f->torch_holder;
-        f->other_ornament = view_get_wall_face_ornament_index(x, y, face);
+        wall->ornament = !wall->mirror && !wall->switch_ && !wall->lock && !wall->torch_holder;
+        wall->other_ornament = view_get_wall_face_ornament_index(x, y, face);
         break;
     }
-    return f->text != THING_NONE || f->mirror || f->switch_ || f->lock || f->torch_holder || f->alcove || f->fountain ||
-           f->vi_altar || f->ornament;
+    return wall->text != THING_NONE || wall->mirror || wall->switch_ || wall->lock || wall->torch_holder ||
+           wall->alcove || wall->fountain || wall->vi_altar || wall->ornament;
 }
 
 /* A wall ornament under key: its picture name, else its index, else true. */
@@ -721,32 +721,32 @@ static void ornament_json(Json *j, const char *key, int16_t index)
 /* The wall face of (x, y) that faces direction face as {facing, features}, under key, when it shows something. */
 static void wall_face_json(Json *j, const char *key, int16_t x, int16_t y, int16_t face)
 {
-    WallFace f;
+    WallFace wall;
     char text[STATE_TEXT_SIZE];
-    if (!wall_face(x, y, face, &f))
+    if (!wall_face(x, y, face, &wall))
         return;
     json_key(j, key);
     json_open(j, '{');
     key_str(j, "facing", direction_names[face]);
     /* the message mode starts the text with a new line */
-    if (f.text != THING_NONE && dungeon_decode_text(text, sizeof text, f.text, TEXT_MODE_MESSAGE))
+    if (wall.text != THING_NONE && dungeon_decode_text(text, sizeof text, wall.text, TEXT_MODE_MESSAGE))
         key_str(j, "text", text + (text[0] == '\n'));
-    if (f.mirror)
+    if (wall.mirror)
         key_bool(j, "mirror", 1);
-    if (f.switch_)
+    if (wall.switch_)
         key_bool(j, "switch", 1);
-    if (f.lock)
-        ornament_json(j, "lock", f.lock_ornament);
-    if (f.torch_holder)
+    if (wall.lock)
+        ornament_json(j, "lock", wall.lock_ornament);
+    if (wall.torch_holder)
         key_bool(j, "torch_holder", 1);
-    if (f.alcove)
+    if (wall.alcove)
         key_bool(j, "alcove", 1);
-    if (f.fountain)
+    if (wall.fountain)
         key_bool(j, "fountain", 1);
-    if (f.vi_altar)
+    if (wall.vi_altar)
         key_bool(j, "vi_altar", 1);
-    if (f.ornament)
-        ornament_json(j, "ornament", f.other_ornament);
+    if (wall.ornament)
+        ornament_json(j, "ornament", wall.other_ornament);
     json_close(j, '}');
 }
 
@@ -828,23 +828,23 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
     Json flying = {0};
     json_open(&objects, '[');
     json_open(&flying, '[');
-    for (uint16_t t = dungeon_get_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
-         t = map_get_next_thing(t)) {
-        uint16_t type = THING_TYPE(t);
+    for (uint16_t thing = dungeon_get_square_first_thing(g_party_map_index, x, y); thing != THING_ENDOFLIST;
+         thing = map_get_next_thing(thing)) {
+        uint16_t type = THING_TYPE(thing);
         if (type == THING_GROUP) {
-            uint16_t creature = rec_group_creature_type(t);
+            uint16_t creature = rec_group_creature_type(thing);
             json_key(j, "creatures");
             json_open(j, '{');
             key_str(j, "type", state_json_creature_name(creature));
-            key_int(j, "count", rec_group_last_creature_index(t) + 1);
+            key_int(j, "count", rec_group_last_creature_index(thing) + 1);
             json_close(j, '}');
-        } else if (is_object(t)) {
+        } else if (is_object(thing)) {
             json_open(&objects, '{');
-            key_str(&objects, "cell", cell_names[NORMALIZE(THING_CELL(t) - g_party_direction)]);
-            key_str(&objects, "name", object_name(t));
+            key_str(&objects, "cell", cell_names[NORMALIZE(THING_CELL(thing) - g_party_direction)]);
+            key_str(&objects, "name", object_name(thing));
             json_close(&objects, '}');
         } else if (type == THING_PROJECTILE) {
-            uint16_t slot = rec_projectile_slot(t);
+            uint16_t slot = rec_projectile_slot(thing);
             json_open(&flying, '{');
             key_str(&flying, "kind", "projectile");
             key_str(&flying, "name", is_object(slot) ? object_name(slot) : "spell");
@@ -852,9 +852,9 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
         } else if (type == THING_EXPLOSION) {
             json_open(&flying, '{');
             key_str(&flying, "kind", "explosion");
-            key_int(&flying, "type", rec_explosion_type(t));
+            key_int(&flying, "type", rec_explosion_type(thing));
             json_key(&flying, "name");
-            state_json_explosion_name(&flying, rec_explosion_type(t));
+            state_json_explosion_name(&flying, rec_explosion_type(thing));
             json_close(&flying, '}');
         }
     }
@@ -1025,16 +1025,16 @@ static void map_row(int16_t y, int16_t w, char *out)
 
 void state_json_map(Json *j)
 {
-    int16_t w = dungeon_map_width(g_party_map_index);
-    int16_t h = dungeon_map_height(g_party_map_index);
+    int16_t width = dungeon_map_width(g_party_map_index);
+    int16_t height = dungeon_map_height(g_party_map_index);
     char line[MAP_GRID_PREFIX + MAP_MAX_SIZE + 1];
-    if (w > MAP_MAX_SIZE)
-        w = MAP_MAX_SIZE;
+    if (width > MAP_MAX_SIZE)
+        width = MAP_MAX_SIZE;
     json_open(j, '{');
     key_int(j, "map", g_party_map_index);
     key_int(j, "level", map_level(g_party_map_index));
-    key_int(j, "width", w);
-    key_int(j, "height", h);
+    key_int(j, "width", width);
+    key_int(j, "height", height);
     pair(j, "party", g_party_map_x, g_party_map_y);
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
     key_str(j, "legend",
@@ -1043,21 +1043,21 @@ void state_json_map(Json *j)
             "grid: the rows with x mod 10 above and y in front");
     json_key(j, "rows");
     json_open(j, '[');
-    for (int16_t y = 0; y < h; y++) {
-        map_row(y, w, line);
+    for (int16_t y = 0; y < height; y++) {
+        map_row(y, width, line);
         json_str(j, line);
     }
     json_close(j, ']');
     json_key(j, "grid");
     json_open(j, '[');
     memset(line, ' ', MAP_GRID_PREFIX);
-    for (int16_t x = 0; x < w; x++)
+    for (int16_t x = 0; x < width; x++)
         line[MAP_GRID_PREFIX + x] = (char)('0' + x % DECIMAL_BASE);
-    line[MAP_GRID_PREFIX + w] = 0;
+    line[MAP_GRID_PREFIX + width] = 0;
     json_str(j, line);
-    for (int16_t y = 0; y < h; y++) {
+    for (int16_t y = 0; y < height; y++) {
         snprintf(line, sizeof line, "%2d ", y);
-        map_row(y, w, line + MAP_GRID_PREFIX);
+        map_row(y, width, line + MAP_GRID_PREFIX);
         json_str(j, line);
     }
     json_close(j, ']');

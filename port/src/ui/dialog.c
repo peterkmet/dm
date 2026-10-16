@@ -35,7 +35,7 @@ static void draw_viewport(void)
 
 /* The dialog graphic has the dividers of three choices. For 1, 2, or 4 choices a part of the
    graphic is copied over them. */
-static void patch_dividers(Bitmap *vp, int16_t count)
+static void patch_dividers(Bitmap *viewport, int16_t count)
 {
     static const int16_t patch_zone[MAX_CHOICES] = {ZONE_PATCH_ONE_CHOICE, ZONE_PATCH_TWO_CHOICES, 0,
                                                     ZONE_PATCH_FOUR_CHOICES};
@@ -44,20 +44,20 @@ static void patch_dividers(Bitmap *vp, int16_t count)
     static uint8_t copy_px[VIEWPORT_MAX_W * VIEWPORT_MAX_H];
     if (!patch_zone[count - 1])
         return;
-    Bitmap copy = {vp->w, vp->h, copy_px};
+    Bitmap copy = {viewport->w, viewport->h, copy_px};
     TablesRect source = tables_get_layout_bitmap(patch_layout[count - 1] - 1);
     int16_t sx = source.x;
     int16_t sy = source.y;
     int16_t w = source.w;
     int16_t h = source.h;
     Box b;
-    memcpy(copy_px, vp->px, (size_t)vp->w * vp->h);
+    memcpy(copy_px, viewport->px, (size_t)viewport->w * viewport->h);
     if (layout_get_zone(patch_zone[count - 1], copy.w, copy.h, &b, &w, &h))
-        draw_blit(&copy, sx + w, sy + h, vp, &b, COLOR_NONE, 0);
+        draw_blit(&copy, sx + w, sy + h, viewport, &b, COLOR_NONE, 0);
 }
 
 /* The choice texts in the zones for their count. */
-static void draw_choices(Bitmap *vp, const char *choice[MAX_CHOICES], int16_t count)
+static void draw_choices(Bitmap *viewport, const char *choice[MAX_CHOICES], int16_t count)
 {
     static const int16_t zones[MAX_CHOICES][MAX_CHOICES] = {
         {ZONE_CHOICE_SINGLE},
@@ -65,13 +65,13 @@ static void draw_choices(Bitmap *vp, const char *choice[MAX_CHOICES], int16_t co
         {ZONE_CHOICE_TOP, ZONE_CHOICE_BOTTOM_LEFT, ZONE_CHOICE_BOTTOM_RIGHT},
         {ZONE_CHOICE_FOUR_FIRST, ZONE_CHOICE_FOUR_FIRST + 1, ZONE_CHOICE_FOUR_FIRST + 2, ZONE_CHOICE_FOUR_FIRST + 3},
     };
-    patch_dividers(vp, count);
+    patch_dividers(viewport, count);
     for (int16_t i = 0; i < count; i++)
-        ui_print_zone(vp, zones[count - 1][i], COLOR_GOLD, COLOR_LIGHT_BROWN, choice[i]);
+        ui_print_zone(viewport, zones[count - 1][i], COLOR_GOLD, COLOR_LIGHT_BROWN, choice[i]);
 }
 
 /* The two messages centered in the viewport, in the vertical middle of the message zone. */
-static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_t zone)
+static void draw_messages(Bitmap *viewport, const char *message[MESSAGE_COUNT], int16_t zone)
 {
     Box box;
     int width[MESSAGE_COUNT] = {0};
@@ -100,12 +100,12 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
             char line[MESSAGE_LINE_SIZE];
             int max = width[i] - (width[i] >> WIDE_MESSAGE_SHIFT);
             int line_width = message_next_word_line(message[i], line, &pos, max < box.w ? max : box.w);
-            text_draw(vp, (vp->w - line_width) >> 1, y, color, COLOR_LIGHT_BROWN, line);
+            text_draw(viewport, (viewport->w - line_width) >> 1, y, color, COLOR_LIGHT_BROWN, line);
             y += pad + MESSAGE_ROW_HEIGHT;
             if (!text_get_size(message[i] + pos, &width[i], &height))
                 continue;
         }
-        text_draw(vp, (vp->w - width[i]) >> 1, y, color, COLOR_LIGHT_BROWN, message[i] + pos);
+        text_draw(viewport, (viewport->w - width[i]) >> 1, y, color, COLOR_LIGHT_BROWN, message[i] + pos);
         y += pad + MESSAGE_ROW_HEIGHT;
     }
 }
@@ -113,58 +113,58 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
 void dialog_draw(const char *message1, const char *message2, const char *choice1, const char *choice2,
                  const char *choice3, const char *choice4)
 {
-    Bitmap *vp = ui_get_viewport();
+    Bitmap *viewport = ui_get_viewport();
     const Bitmap *graphic = gfx_get_bitmap(GFX_DIALOG);
     const char *choice[MAX_CHOICES] = {choice1, choice2, choice3, choice4};
     const char *message[MESSAGE_COUNT] = {message1, message2};
-    Box all = {0, 0, vp->w, vp->h};
+    Box all = {0, 0, viewport->w, viewport->h};
     if (graphic)
-        draw_blit(graphic, 0, 0, vp, &all, COLOR_NONE, 0);
-    ui_print_zone(vp, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, tables_get_text(TABLES_TEXT_VERSION));
+        draw_blit(graphic, 0, 0, viewport, &all, COLOR_NONE, 0);
+    ui_print_zone(viewport, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, tables_get_text(TABLES_TEXT_VERSION));
     int16_t count = 1;
     while (count < MAX_CHOICES && choice[count])
         count++;
     if (g_game_screen_inactive)
         memset(fb, COLOR_BLACK, sizeof fb);
     if (choice1)
-        draw_choices(vp, choice, count);
-    draw_messages(vp, message, count == 1 ? ZONE_MESSAGE_ONE_CHOICE : ZONE_MESSAGE);
+        draw_choices(viewport, choice, count);
+    draw_messages(viewport, message, count == 1 ? ZONE_MESSAGE_ONE_CHOICE : ZONE_MESSAGE);
     draw_viewport();
 }
 
 /* Fills a rectangle of the viewport with one color. */
-static void fill(Bitmap *vp, int x, int y, int w, int h, uint8_t color)
+static void fill(Bitmap *viewport, int x, int y, int w, int h, uint8_t color)
 {
     Box b = {x, y, w, h};
-    draw_fill(vp, &b, color);
+    draw_fill(viewport, &b, color);
 }
 
 /* The button of the choice: a raised frame, then after PRESS_FRAMES frames a pressed frame. */
 static void draw_pressed_button(int16_t table, int16_t choice)
 {
-    Bitmap *vp = ui_get_viewport();
+    Bitmap *viewport = ui_get_viewport();
     MouseInput entry;
-    Box b;
-    if (!tables_get_mouse_input(table, choice - 1, &entry) || !ui_zone_box(entry.x2, &b))
+    Box button;
+    if (!tables_get_mouse_input(table, choice - 1, &entry) || !ui_zone_box(entry.x2, &button))
         return; /* the zone word of an entry with a negative x1 */
-    int x = b.x;
-    int y = b.y;
-    int w = b.w;
-    int h = b.h;
-    fill(vp, x - 2, y - 2, w + 5, 1, COLOR_LIGHT_BROWN);
-    fill(vp, x + w + 2, y - 2, 1, h + 4, COLOR_BLACK);
-    fill(vp, x - 4, y + h + 1, w + 7, 2, COLOR_BLACK);
-    fill(vp, x - 3, y - 2, 1, h + 3, COLOR_LIGHT_BROWN);
-    fill(vp, x - 4, y + h + 4, w + 9, 1, COLOR_LIGHT_GRAY);
-    fill(vp, x + w + 5, y - 3, 1, h + 8, COLOR_LIGHT_GRAY);
+    int x = button.x;
+    int y = button.y;
+    int width = button.w;
+    int height = button.h;
+    fill(viewport, x - 2, y - 2, width + 5, 1, COLOR_LIGHT_BROWN);
+    fill(viewport, x + width + 2, y - 2, 1, height + 4, COLOR_BLACK);
+    fill(viewport, x - 4, y + height + 1, width + 7, 2, COLOR_BLACK);
+    fill(viewport, x - 3, y - 2, 1, height + 3, COLOR_LIGHT_BROWN);
+    fill(viewport, x - 4, y + height + 4, width + 9, 1, COLOR_LIGHT_GRAY);
+    fill(viewport, x + width + 5, y - 3, 1, height + 8, COLOR_LIGHT_GRAY);
     draw_viewport();
     wait_frames(PRESS_FRAMES);
-    fill(vp, x - 1, y - 1, w + 3, 1, COLOR_LIGHT_BROWN);
-    fill(vp, x - 2, y - 2, 1, h + 3, COLOR_LIGHT_BROWN);
-    fill(vp, x + w + 1, y - 2, 1, h + 3, COLOR_DARKEST_GRAY);
-    fill(vp, x - 3, y + h, w + 5, 1, COLOR_DARKEST_GRAY);
-    fill(vp, x - 3, y + h + 3, w + 7, 1, COLOR_DARK_GRAY);
-    fill(vp, x + w + 4, y - 2, 1, h + 6, COLOR_DARK_GRAY);
+    fill(viewport, x - 1, y - 1, width + 3, 1, COLOR_LIGHT_BROWN);
+    fill(viewport, x - 2, y - 2, 1, height + 3, COLOR_LIGHT_BROWN);
+    fill(viewport, x + width + 1, y - 2, 1, height + 3, COLOR_DARKEST_GRAY);
+    fill(viewport, x - 3, y + height, width + 5, 1, COLOR_DARKEST_GRAY);
+    fill(viewport, x - 3, y + height + 3, width + 7, 1, COLOR_DARK_GRAY);
+    fill(viewport, x + width + 4, y - 2, 1, height + 6, COLOR_DARK_GRAY);
     draw_viewport();
 }
 

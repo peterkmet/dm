@@ -211,26 +211,26 @@ void automap_draw(Bitmap *target, Box area, int16_t map)
     bool party_here = map == g_party_map_index;
     int16_t center_x;
     int16_t center_y;
-    int16_t w = dungeon_map_width(map);
-    int16_t h = dungeon_map_height(map);
+    int16_t map_width = dungeon_map_width(map);
+    int16_t map_height = dungeon_map_height(map);
     draw_center(map, &center_x, &center_y);
     int16_t origin_x = maps.x + (maps.w - AUTOMAP_CELL_SIZE) / 2 - center_x * AUTOMAP_CELL_SIZE;
     int16_t origin_y = maps.y + (maps.h - AUTOMAP_CELL_SIZE) / 2 - center_y * AUTOMAP_CELL_SIZE;
-    for (int16_t x = 0; x < w; x++)
-        for (int16_t y = 0; y < h; y++)
+    for (int16_t x = 0; x < map_width; x++)
+        for (int16_t y = 0; y < map_height; y++)
             if (explored_is_seen(map, x, y))
                 draw_square(target, maps, dungeon_get_square(map, x, y), party_here && view_is_pressure_pad(x, y),
                             origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
     /* The frame lies in the grid gap around the outer squares. */
-    int16_t right = origin_x + w * AUTOMAP_CELL_SIZE - 1;
-    int16_t bottom = origin_y + h * AUTOMAP_CELL_SIZE - 1;
+    int16_t right = origin_x + map_width * AUTOMAP_CELL_SIZE - 1;
+    int16_t bottom = origin_y + map_height * AUTOMAP_CELL_SIZE - 1;
     fill_clipped(target, maps, origin_x - 1, origin_y - 1, right - origin_x + 2, 1, COLOR_WHITE);
     fill_clipped(target, maps, origin_x - 1, bottom, right - origin_x + 2, 1, COLOR_WHITE);
     fill_clipped(target, maps, origin_x - 1, origin_y - 1, 1, bottom - origin_y + 2, COLOR_WHITE);
     fill_clipped(target, maps, right, origin_y - 1, 1, bottom - origin_y + 2, COLOR_WHITE);
-    for (int16_t x = 0; x < w; x += 2)
+    for (int16_t x = 0; x < map_width; x += 2)
         draw_label(target, top, origin_x + x * AUTOMAP_CELL_SIZE + (AUTOMAP_CELL_SIZE - LABEL_WIDTH) / 2, top.y, x);
-    for (int16_t y = 0; y < h; y++)
+    for (int16_t y = 0; y < map_height; y++)
         draw_label(target, left, left.x, origin_y + y * AUTOMAP_CELL_SIZE, y);
     if (party_here)
         draw_party_arrow(target, maps, origin_x + g_party_map_x * AUTOMAP_CELL_SIZE,

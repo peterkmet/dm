@@ -28,40 +28,40 @@ void scale2x(const uint8_t *src, int w, int h, uint8_t *dst)
         }
 }
 
-void scale3x(const uint8_t *src, int w, int h, uint8_t *dst)
+void scale3x(const uint8_t *src, int width, int height, uint8_t *dst)
 {
-    for (int y = 0; y < h; y++)
-        for (int x = 0; x < w; x++) {
-            uint8_t A = pixel(src, w, h, x - 1, y - 1);
-            uint8_t B = pixel(src, w, h, x, y - 1);
-            uint8_t C = pixel(src, w, h, x + 1, y - 1);
-            uint8_t D = pixel(src, w, h, x - 1, y);
-            uint8_t E = pixel(src, w, h, x, y);
-            uint8_t F = pixel(src, w, h, x + 1, y);
-            uint8_t G = pixel(src, w, h, x - 1, y + 1);
-            uint8_t H = pixel(src, w, h, x, y + 1);
-            uint8_t I = pixel(src, w, h, x + 1, y + 1);
-            uint8_t *o = dst + 3 * y * 3 * w + 3 * x;
-            uint8_t *o1 = o + 3 * w;
-            uint8_t *o2 = o1 + 3 * w;
-            o[0] = E;
-            o[1] = E;
-            o[2] = E;
-            o1[0] = E;
-            o1[1] = E;
-            o1[2] = E;
-            o2[0] = E;
-            o2[1] = E;
-            o2[2] = E;
+    for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++) {
+            uint8_t A = pixel(src, width, height, x - 1, y - 1);
+            uint8_t B = pixel(src, width, height, x, y - 1);
+            uint8_t C = pixel(src, width, height, x + 1, y - 1);
+            uint8_t D = pixel(src, width, height, x - 1, y);
+            uint8_t E = pixel(src, width, height, x, y);
+            uint8_t F = pixel(src, width, height, x + 1, y);
+            uint8_t G = pixel(src, width, height, x - 1, y + 1);
+            uint8_t H = pixel(src, width, height, x, y + 1);
+            uint8_t I = pixel(src, width, height, x + 1, y + 1);
+            uint8_t *out_top = dst + 3 * y * 3 * width + 3 * x;
+            uint8_t *out_middle = out_top + 3 * width;
+            uint8_t *out_bottom = out_middle + 3 * width;
+            out_top[0] = E;
+            out_top[1] = E;
+            out_top[2] = E;
+            out_middle[0] = E;
+            out_middle[1] = E;
+            out_middle[2] = E;
+            out_bottom[0] = E;
+            out_bottom[1] = E;
+            out_bottom[2] = E;
             if (B == H || D == F)
                 continue;
-            o[0] = D == B ? D : E;
-            o[1] = (D == B && E != C) || (B == F && E != A) ? B : E;
-            o[2] = B == F ? F : E;
-            o1[0] = (D == B && E != G) || (D == H && E != A) ? D : E;
-            o1[2] = (B == F && E != I) || (H == F && E != C) ? F : E;
-            o2[0] = D == H ? D : E;
-            o2[1] = (D == H && E != I) || (H == F && E != G) ? H : E;
-            o2[2] = H == F ? F : E;
+            out_top[0] = D == B ? D : E;
+            out_top[1] = (D == B && E != C) || (B == F && E != A) ? B : E;
+            out_top[2] = B == F ? F : E;
+            out_middle[0] = (D == B && E != G) || (D == H && E != A) ? D : E;
+            out_middle[2] = (B == F && E != I) || (H == F && E != C) ? F : E;
+            out_bottom[0] = D == H ? D : E;
+            out_bottom[1] = (D == H && E != I) || (H == F && E != G) ? H : E;
+            out_bottom[2] = H == F ? F : E;
         }
 }

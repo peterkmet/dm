@@ -23,7 +23,7 @@ void plat_quit(void);
 /* Shows fb with the split palette and the pointer, scaled into the window. */
 void plat_present(void);
 /* Returns true with the next key, mouse button, or quit event; mouse motion only moves the pointer. */
-bool plat_poll(PlatEvent *e);
+bool plat_poll(PlatEvent *event);
 void plat_wait_tick(void);
 void plat_audio_pump(void);
 /* The mouse pointer, drawn over the game image: w x h pixels, color 0 transparent, other colors

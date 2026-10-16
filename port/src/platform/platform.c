@@ -170,37 +170,39 @@ static void render_frame(void)
     SDL_RenderPresent(renderer);
 }
 
-bool plat_poll(PlatEvent *e)
+bool plat_poll(PlatEvent *event)
 {
-    SDL_Event ev;
-    int w, h;
-    while (SDL_PollEvent(&ev)) {
-        *e = (PlatEvent){0};
-        switch (ev.type) {
+    SDL_Event sdl_event;
+    int output_width, output_height;
+    while (SDL_PollEvent(&sdl_event)) {
+        *event = (PlatEvent){0};
+        switch (sdl_event.type) {
         case SDL_EVENT_QUIT:
-            e->type = PLAT_QUIT;
+            event->type = PLAT_QUIT;
             return true;
         case SDL_EVENT_KEY_DOWN:
-            if (ev.key.repeat)
+            if (sdl_event.key.repeat)
                 break;
-            e->type = PLAT_KEY;
-            e->key = ev.key.key;
-            e->modifiers = ev.key.mod;
+            event->type = PLAT_KEY;
+            event->key = sdl_event.key.key;
+            event->modifiers = sdl_event.key.mod;
             return true;
         case SDL_EVENT_MOUSE_MOTION:
-            SDL_ConvertEventToRenderCoordinates(renderer, &ev); /* window points -> output pixels */
-            SDL_GetCurrentRenderOutputSize(renderer, &w, &h);
-            video_map_mouse(w, h, (int)ev.motion.x, (int)ev.motion.y, &mouse_x, &mouse_y);
+            SDL_ConvertEventToRenderCoordinates(renderer, &sdl_event); /* window points -> output pixels */
+            SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
+            video_map_mouse(output_width, output_height, (int)sdl_event.motion.x, (int)sdl_event.motion.y, &mouse_x,
+                            &mouse_y);
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP:
-            SDL_ConvertEventToRenderCoordinates(renderer, &ev);
-            SDL_GetCurrentRenderOutputSize(renderer, &w, &h);
-            e->type = ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN ? PLAT_MOUSE : PLAT_MOUSE_UP;
-            e->button = ev.button.button;
-            video_map_mouse(w, h, (int)ev.button.x, (int)ev.button.y, &e->x, &e->y);
-            mouse_x = e->x;
-            mouse_y = e->y;
+            SDL_ConvertEventToRenderCoordinates(renderer, &sdl_event);
+            SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
+            event->type = sdl_event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ? PLAT_MOUSE : PLAT_MOUSE_UP;
+            event->button = sdl_event.button.button;
+            video_map_mouse(output_width, output_height, (int)sdl_event.button.x, (int)sdl_event.button.y, &event->x,
+                            &event->y);
+            mouse_x = event->x;
+            mouse_y = event->y;
             return true;
         }
     }

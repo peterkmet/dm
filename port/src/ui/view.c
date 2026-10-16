@@ -271,9 +271,9 @@ int16_t g_pile_object_counts[VIEW_CLICK_BOX_WALL];
 int16_t g_square_ahead_element;
 bool g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 
-static bool is_open_floor(uint8_t get_square)
+static bool is_open_floor(uint8_t square)
 {
-    return SQUARE_TYPE(get_square) == SQUARE_CORRIDOR || SQUARE_TYPE(get_square) == SQUARE_PIT;
+    return SQUARE_TYPE(square) == SQUARE_CORRIDOR || SQUARE_TYPE(square) == SQUARE_PIT;
 }
 
 /* Square byte of the current map. Outside the map: a wall, with a random ornament allowed on the side that
@@ -337,23 +337,23 @@ static void set_random_wall_ornaments(Aspect *a, uint8_t s, int16_t dir, int16_t
 
 /* The ornaments that the doors, teleporters, texts, and sensors of a square show: the floor ornament of a
    floor sensor, the wall ornaments, the inscription, and the champion portrait. Returns the first thing after them. */
-static uint16_t scan_ornament_things(Aspect *a, uint16_t thing, int16_t dir, int scan)
+static uint16_t scan_ornament_things(Aspect *aspect, uint16_t thing, int16_t dir, int scan)
 {
     for (; thing != THING_ENDOFLIST && THING_TYPE(thing) <= THING_SENSOR; thing = map_get_next_thing(thing)) {
         if (scan == SCAN_FLOOR && THING_TYPE(thing) == THING_SENSOR)
-            a->floor_ornament = rec_sensor_ornament_ordinal(thing);
+            aspect->floor_ornament = rec_sensor_ornament_ordinal(thing);
         if (scan != SCAN_WALL && scan != SCAN_FAKE_WALL)
             continue;
-        uint16_t *side = &a->side[NORMALIZE(THING_CELL(thing) - dir)];
+        uint16_t *side = &aspect->side[NORMALIZE(THING_CELL(thing) - dir)];
         if (THING_TYPE(thing) == THING_TEXT) {
             if (rec_text_is_visible(thing)) {
                 *side = inscription + 1;
-                a->text = thing;
+                aspect->text = thing;
             }
         } else {
             *side = rec_sensor_ornament_ordinal(thing);
             if (rec_sensor_type(thing) == SENSOR_WALL_CHAMPION_PORTRAIT)
-                a->portrait = rec_sensor_data(thing) + 1;
+                aspect->portrait = rec_sensor_data(thing) + 1;
         }
     }
     return thing;
@@ -361,84 +361,84 @@ static uint16_t scan_ornament_things(Aspect *a, uint16_t thing, int16_t dir, int
 
 /* set_square_aspect without the footprints bit: the element, the ornaments, and the first drawn thing of
    square (x, y) seen in direction dir. */
-static void get_square_aspect(Aspect *a, int16_t dir, int16_t x, int16_t y)
+static void get_square_aspect(Aspect *aspect, int16_t dir, int16_t x, int16_t y)
 {
-    memset(a, 0, sizeof *a);
+    memset(aspect, 0, sizeof *aspect);
     uint16_t thing = dungeon_get_square_first_thing(view_map, x, y);
-    uint8_t s = get_square(x, y);
+    uint8_t square = get_square(x, y);
     int scan = SCAN_NONE;
-    a->element = SQUARE_TYPE(s);
-    a->square = s;
-    switch (SQUARE_TYPE(s)) {
+    aspect->element = SQUARE_TYPE(square);
+    aspect->square = square;
+    switch (SQUARE_TYPE(square)) {
     case SQUARE_WALL:
-        set_random_wall_ornaments(a, s, dir, x, y);
+        set_random_wall_ornaments(aspect, square, dir, x, y);
         scan = SCAN_WALL;
         break;
     case SQUARE_FAKE_WALL:
-        if (!(s & FAKE_WALL_OPEN)) {
-            a->element = SQUARE_WALL;
+        if (!(square & FAKE_WALL_OPEN)) {
+            aspect->element = SQUARE_WALL;
             scan = SCAN_FAKE_WALL;
             break;
         }
-        a->element = SQUARE_CORRIDOR;
-        s &= SQUARE_RANDOM_ORNAMENT;
+        aspect->element = SQUARE_CORRIDOR;
+        square &= SQUARE_RANDOM_ORNAMENT;
         /* fall through */
     case SQUARE_CORRIDOR:
-        a->floor_ornament =
-            get_random_ornament_ordinal(s & SQUARE_RANDOM_ORNAMENT, map_random_floor_ornament_count(view_map), x, y);
+        aspect->floor_ornament = get_random_ornament_ordinal(square & SQUARE_RANDOM_ORNAMENT,
+                                                             map_random_floor_ornament_count(view_map), x, y);
         scan = SCAN_FLOOR;
         break;
     case SQUARE_PIT:
-        if (!(s & PIT_OPEN))
-            a->element = SQUARE_CORRIDOR;
+        if (!(square & PIT_OPEN))
+            aspect->element = SQUARE_CORRIDOR;
         else
-            a->state = s & PIT_INVISIBLE;
+            aspect->state = square & PIT_INVISIBLE;
         scan = SCAN_FLOOR;
         break;
     case SQUARE_STAIRS:
-        a->element = (dir & 1) == !!(s & STAIRS_NORTH_SOUTH) ? ELEMENT_STAIRS_SIDE : ELEMENT_STAIRS_FRONT;
-        a->state = s & STAIRS_UP;
+        aspect->element = (dir & 1) == !!(square & STAIRS_NORTH_SOUTH) ? ELEMENT_STAIRS_SIDE : ELEMENT_STAIRS_FRONT;
+        aspect->state = square & STAIRS_UP;
         break;
     case SQUARE_DOOR:
-        a->element = (dir & 1) == !!(s & DOOR_NORTH_SOUTH) ? ELEMENT_DOOR_SIDE : ELEMENT_DOOR_FRONT;
-        a->state = door_state(s);
-        a->door = THING_INDEX(thing);
+        aspect->element = (dir & 1) == !!(square & DOOR_NORTH_SOUTH) ? ELEMENT_DOOR_SIDE : ELEMENT_DOOR_FRONT;
+        aspect->state = door_state(square);
+        aspect->door = THING_INDEX(thing);
         break;
     case SQUARE_TELEPORTER:
-        if (!(s & TELEPORTER_OPEN) || !(s & TELEPORTER_VISIBLE))
-            a->element = SQUARE_CORRIDOR;
+        if (!(square & TELEPORTER_OPEN) || !(square & TELEPORTER_VISIBLE))
+            aspect->element = SQUARE_CORRIDOR;
         scan = SCAN_FLOOR;
         break;
     }
-    thing = scan_ornament_things(a, thing, dir, scan);
+    thing = scan_ornament_things(aspect, thing, dir, scan);
     /* a closed fake wall shows its things only when the party stands in its row or column */
-    a->first_thing = scan == SCAN_FAKE_WALL && g_party_map_x != x && g_party_map_y != y ? THING_ENDOFLIST : thing;
+    aspect->first_thing = scan == SCAN_FAKE_WALL && g_party_map_x != x && g_party_map_y != y ? THING_ENDOFLIST : thing;
 }
 
-/* draw_wall_set_bitmap and its _opaque and _flipped variants: a graphic (id >= 0) or a layout bitmap slot
-   (id < 0) at zone. */
-static void draw_wall_bitmap(int16_t id, int16_t zone, int mode)
+/* draw_wall_set_bitmap and its _opaque and _flipped variants: a graphic (bitmap_id >= 0) or a layout bitmap
+   slot (bitmap_id < 0) at zone. */
+static void draw_wall_bitmap(int16_t bitmap_id, int16_t zone, int mode)
 {
-    int16_t graphic = id;
+    int16_t graphic = bitmap_id;
     int16_t flip = mode == BLIT_FLIPPED;
     int16_t sx = 0;
     int16_t sy = 0;
-    int16_t w = 0;
-    int16_t h = 0;
-    if (id < 0) { /* the slot gives the graphic and the source rectangle */
-        int16_t slot = -1 - id;
-        TablesRect r = tables_get_layout_bitmap(slot);
+    int16_t width = 0;
+    int16_t height = 0;
+    if (bitmap_id < 0) { /* the slot gives the graphic and the source rectangle */
+        int16_t slot = -1 - bitmap_id;
+        TablesRect slot_rect = tables_get_layout_bitmap(slot);
         graphic = slot_graphics[slot];
         flip ^= slot_flip[slot];
-        sx = r.x;
-        sy = r.y;
-        w = r.w;
-        h = r.h;
+        sx = slot_rect.x;
+        sy = slot_rect.y;
+        width = slot_rect.w;
+        height = slot_rect.h;
     }
     const Bitmap *bm = gfx_get_bitmap(graphic);
     Box b;
-    if (bm && layout_get_zone(zone, bm->w, bm->h, &b, &w, &h))
-        draw_blit(bm, w + sx, h + sy, &viewport, &b, mode == BLIT_OPAQUE ? -1 : TRANSPARENT_COLOR, flip);
+    if (bm && layout_get_zone(zone, bm->w, bm->h, &b, &width, &height))
+        draw_blit(bm, width + sx, height + sy, &viewport, &b, mode == BLIT_OPAQUE ? -1 : TRANSPARENT_COLOR, flip);
 }
 
 /* ZONE_SHIFTED or ZONE_SIZED pass zone_relative_x/y to layout_get_zone: a shift, or
@@ -589,25 +589,25 @@ static int16_t get_projectile_aspect(uint16_t thing)
    CLICK_BOX_MIN_W x CLICK_BOX_MIN_H pixels around its center. The object becomes the pile top and joins the pile list. */
 static void add_clickable_object(int16_t index, uint16_t thing)
 {
-    Box *c = &g_dungeon_view_clickable_boxes[index];
-    if (c->x == -1) {
-        *c = drawn_box;
-        if (c->h < CLICK_BOX_CENTER_H) {
-            if (c->h < CLICK_BOX_MIN_H)
-                c->h = CLICK_BOX_MIN_H;
-            c->y += (drawn_box.h >> 1) - CLICK_BOX_CENTER_OFFSET;
+    Box *box = &g_dungeon_view_clickable_boxes[index];
+    if (box->x == -1) {
+        *box = drawn_box;
+        if (box->h < CLICK_BOX_CENTER_H) {
+            if (box->h < CLICK_BOX_MIN_H)
+                box->h = CLICK_BOX_MIN_H;
+            box->y += (drawn_box.h >> 1) - CLICK_BOX_CENTER_OFFSET;
         }
-        if (c->w < CLICK_BOX_MIN_W) {
-            c->w = CLICK_BOX_MIN_W;
-            c->x += (drawn_box.w >> 1) - CLICK_BOX_CENTER_OFFSET;
+        if (box->w < CLICK_BOX_MIN_W) {
+            box->w = CLICK_BOX_MIN_W;
+            box->x += (drawn_box.w >> 1) - CLICK_BOX_CENTER_OFFSET;
         }
     } else {
-        int16_t right = max16(c->x + c->w, drawn_box.x + drawn_box.w);
-        int16_t bottom = max16(c->y + c->h, drawn_box.y + drawn_box.h);
-        c->x = min16(c->x, drawn_box.x);
-        c->y = min16(c->y, drawn_box.y);
-        c->w = right - c->x;
-        c->h = bottom - c->y;
+        int16_t right = max16(box->x + box->w, drawn_box.x + drawn_box.w);
+        int16_t bottom = max16(box->y + box->h, drawn_box.y + drawn_box.h);
+        box->x = min16(box->x, drawn_box.x);
+        box->y = min16(box->y, drawn_box.y);
+        box->w = right - box->x;
+        box->h = bottom - box->y;
     }
     g_pile_top_objects[index] = thing;
     if (g_pile_object_counts[index] < VIEW_PILE_OBJECT_MAX)
@@ -621,19 +621,19 @@ static void draw_object(uint16_t thing, int16_t aspect_index, int16_t cell, int1
 {
     const uint8_t *aspect = tables_get_object_aspect(aspect_index);
     bool alcove_graphic = alcove_front && (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_HAS_ALCOVE_GRAPHIC);
-    int16_t g = GFX_OBJECT_FIRST + aspect[OBJECT_ASPECT_GRAPHIC] + alcove_graphic;
+    int16_t graphic = GFX_OBJECT_FIRST + aspect[OBJECT_ASPECT_GRAPHIC] + alcove_graphic;
     int16_t distance = 0;
     int flip = (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_FLIP_ON_RIGHT) && !alcove_graphic &&
                (lane >= 1 || (lane == 0 && (cell == VIEW_CELL_BACK_RIGHT || cell == VIEW_CELL_FRONT_RIGHT)));
     Bitmap own;
-    const Bitmap *bm;
+    const Bitmap *bitmap;
     if (depth == DEPTH_D0)
-        bm = get_shrunk_bitmap(g, SCALE_NATIVE, NULL, &own);
+        bitmap = get_shrunk_bitmap(graphic, SCALE_NATIVE, NULL, &own);
     else {
         int16_t row =
             depth * 2 - 1 - (cell == VIEW_CELL_CENTER ? 1 : cell >> 1); /* front cells count as one row nearer */
         distance = (row + 1) >> 1;
-        bm = get_shrunk_bitmap(g, tables_get_object_scale(row), get_object_palette_changes(distance), &own);
+        bitmap = get_shrunk_bitmap(graphic, tables_get_object_scale(row), get_object_palette_changes(distance), &own);
     }
     if (pile) {
         zone = ZONE_SHIFTED |
@@ -647,7 +647,7 @@ static void draw_object(uint16_t thing, int16_t aspect_index, int16_t cell, int1
         else if (*pile > PILE_ALCOVE_LAST)
             *pile = PILE_ALCOVE_FIRST;
     }
-    if (draw_bitmap_in_zone(bm, &viewport, zone, flip, TRANSPARENT_COLOR) && pile && distance == 0 && lane == 0)
+    if (draw_bitmap_in_zone(bitmap, &viewport, zone, flip, TRANSPARENT_COLOR) && pile && distance == 0 && lane == 0)
         add_clickable_object(alcove ? VIEW_CLICK_BOX_ALCOVE : cell, thing);
     free(own.px);
 }
@@ -685,13 +685,13 @@ static void load_group_aspect(uint16_t thing, Group *s)
     }
 }
 
-static uint16_t get_creature_cell(const Group *s, int16_t draw_creature)
+static uint16_t get_creature_cell(const Group *group, int16_t creature)
 {
-    return group_cell(s->cells, draw_creature);
+    return group_cell(group->cells, creature);
 }
-static uint16_t get_creature_direction(const Group *s, int16_t draw_creature)
+static uint16_t get_creature_direction(const Group *group, int16_t creature)
 {
-    return group_cell(s->dirs, draw_creature);
+    return group_cell(group->dirs, creature);
 }
 
 /* The creature number + 1 that stands in a map cell, or 0. A half-square creature fills two cells. */
@@ -715,45 +715,45 @@ static int16_t get_creature_ordinal_in_cell(const Group *s, uint16_t cell)
 
 /* One creature: front, side, back, or attack graphic for its facing, scaled and recolored by depth,
    at position pos (view cell, or 4 centered) of the creature coordinate set coord. */
-static void draw_creature(const Group *s, uint8_t look, uint16_t facing, int16_t pos, int16_t coord, int16_t depth)
+static void draw_creature(const Group *group, uint8_t look, uint16_t facing, int16_t pos, int16_t coord, int16_t depth)
 {
-    uint16_t info = s->info->graphic_info;
-    int16_t g = GFX_CREATURE_FIRST + BE16(s->aspect + CREATURE_ASPECT_GRAPHIC);
+    uint16_t info = group->info->graphic_info;
+    int16_t graphic = GFX_CREATURE_FIRST + BE16(group->aspect + CREATURE_ASPECT_GRAPHIC);
     int16_t distance = 0;
     bool side = (info & GRAPHIC_HAS_SIDE) && (facing & 1);
     bool back = false;
     bool attack = false;
     bool front_flip = false;
     if (side)
-        g++;
+        graphic++;
     else {
         back = (info & GRAPHIC_HAS_BACK) && facing == FACING_AWAY;
         attack = !back && (look & ASPECT_ATTACKING) && (info & GRAPHIC_HAS_ATTACK);
         if (attack)
-            g += 1 + !!(info & GRAPHIC_HAS_SIDE) + !!(info & GRAPHIC_HAS_BACK);
+            graphic += 1 + !!(info & GRAPHIC_HAS_SIDE) + !!(info & GRAPHIC_HAS_BACK);
         else if (back)
-            g += 1 + !!(info & GRAPHIC_HAS_SIDE);
+            graphic += 1 + !!(info & GRAPHIC_HAS_SIDE);
         else
             front_flip = (info & GRAPHIC_FLIP_NON_ATTACK) && (look & ASPECT_FLIPPED);
     }
     bool special_d2 = depth == DEPTH_D2 && (info & GRAPHIC_SPECIAL_D2_FRONT) && !side && !back && !attack;
     bool flip = (side && facing == FACING_LEFT) || (attack && (look & ASPECT_FLIPPED)) ||
                 (special_d2 && (info & GRAPHIC_D2_FRONT_FLIPPED)) || front_flip;
-    int16_t transparent = s->aspect[CREATURE_ASPECT_COORD] & CREATURE_ASPECT_TRANSPARENT;
+    int16_t transparent = group->aspect[CREATURE_ASPECT_COORD] & CREATURE_ASPECT_TRANSPARENT;
     Bitmap own;
-    const Bitmap *bm;
+    const Bitmap *bitmap;
     if (depth < DEPTH_D2)
-        bm = get_shrunk_bitmap(g, SCALE_NATIVE, NULL, &own);
+        bitmap = get_shrunk_bitmap(graphic, SCALE_NATIVE, NULL, &own);
     else {
         const uint8_t *pal = depth == DEPTH_D2 ? creature_palette_changes_d2 : creature_palette_changes_d3;
         distance = depth == DEPTH_D2 ? 1 : 2;
         transparent = pal[transparent];
-        bm = get_shrunk_bitmap(g, depth == DEPTH_D2 ? SCALE_D2 : SCALE_D3, pal, &own);
+        bitmap = get_shrunk_bitmap(graphic, depth == DEPTH_D2 ? SCALE_D2 : SCALE_D3, pal, &own);
     }
     zone_relative_x = tables_get_creature_shift(distance, look & ASPECT_OFFSET_MASK);
     zone_relative_y = tables_get_creature_shift(distance, look >> ASPECT_VERTICAL_OFFSET_SHIFT & ASPECT_OFFSET_MASK);
-    int16_t set = s->aspect[CREATURE_ASPECT_COORD] >> CREATURE_ASPECT_COORD_SHIFT;
-    draw_bitmap_in_zone(bm, &viewport,
+    int16_t set = group->aspect[CREATURE_ASPECT_COORD] >> CREATURE_ASPECT_COORD_SHIFT;
+    draw_bitmap_in_zone(bitmap, &viewport,
                         ZONE_SHIFTED |
                             (ZONE_CREATURE_FIRST + set * ZONE_CREATURE_SET + coord * ZONE_CREATURE_POSITIONS + pos),
                         flip, transparent);
@@ -762,10 +762,10 @@ static void draw_creature(const Group *s, uint8_t look, uint16_t facing, int16_t
 
 /* The creatures of the group in view cell cell (map cell mcell). rest holds the cells still to draw,
    front tells that the cell is a front cell of the pass. Returns true when the group is complete. */
-static bool draw_creatures_in_cell(const Group *s, int16_t dir, int16_t vs, int16_t depth, int16_t cell, uint16_t mcell,
-                                   uint16_t rest, int16_t pass, bool front)
+static bool draw_creatures_in_cell(const Group *group, int16_t dir, int16_t view_square, int16_t depth, int16_t cell,
+                                   uint16_t mcell, uint16_t rest, int16_t pass, bool front)
 {
-    int16_t coord = tables_get_view_square(vs).creature_coord;
+    int16_t coord = tables_get_view_square(view_square).creature_coord;
     int16_t ordinal;
     int16_t index;
     int16_t second = 0;
@@ -774,23 +774,23 @@ static bool draw_creatures_in_cell(const Group *s, int16_t dir, int16_t vs, int1
     if (coord < 0)
         return true;
     uint16_t creature_index = 0;
-    if (!(ordinal = get_creature_ordinal_in_cell(s, mcell))) {
-        if (s->size != CREATURE_SIZE_HALF)
+    if (!(ordinal = get_creature_ordinal_in_cell(group, mcell))) {
+        if (group->size != CREATURE_SIZE_HALF)
             return false;
         index = -1;
     } else {
         creature_index = ordinal - 1;
         index = creature_index;
     }
-    uint16_t relative = dir - get_creature_direction(s, creature_index);
+    uint16_t relative = dir - get_creature_direction(group, creature_index);
     uint16_t facing = NORMALIZE(relative);
     int sideways = relative & 1;
-    if (s->cells == CELL_CENTERED) { /* one creature in the middle, drawn after the last cell */
+    if (group->cells == CELL_CENTERED) { /* one creature in the middle, drawn after the last cell */
         if (rest || pass == DOOR_PASS_BACK)
             return false;
         done = true;
-        pos = s->size == CREATURE_SIZE_HALF && sideways ? VIEW_CELL_FRONT_LEFT : VIEW_CELL_CENTER;
-    } else if (s->size == CREATURE_SIZE_HALF && (front || !rest || index < 0)) {
+        pos = group->size == CREATURE_SIZE_HALF && sideways ? VIEW_CELL_FRONT_LEFT : VIEW_CELL_CENTER;
+    } else if (group->size == CREATURE_SIZE_HALF && (front || !rest || index < 0)) {
         if (!front || pass == DOOR_PASS_FRONT) {
             if (pass == DOOR_PASS_BACK || rest)
                 return false;
@@ -798,8 +798,8 @@ static bool draw_creatures_in_cell(const Group *s, int16_t dir, int16_t vs, int1
                 done = true;
                 if (index < 0)
                     index = 0;
-                second = rec_group_last_creature_index(s->thing);
-                uint16_t c = get_creature_cell(s, creature_index);
+                second = rec_group_last_creature_index(group->thing);
+                uint16_t c = get_creature_cell(group, creature_index);
                 pos = c == dir || turn_left(dir) == c ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
             } else {
                 if (index < 0)
@@ -810,14 +810,14 @@ static bool draw_creatures_in_cell(const Group *s, int16_t dir, int16_t vs, int1
             pos = VIEW_CELL_FRONT_RIGHT;
         else
             return false;
-    } else if (s->size != CREATURE_SIZE_QUARTER)
+    } else if (group->size != CREATURE_SIZE_QUARTER)
         return false;
-    if (s->size == CREATURE_SIZE_QUARTER && ((vs == VIEW_SQUARE_D0L && pos != VIEW_CELL_FRONT_RIGHT) ||
-                                             (vs == VIEW_SQUARE_D0R && pos != VIEW_CELL_FRONT_LEFT)))
+    if (group->size == CREATURE_SIZE_QUARTER && ((view_square == VIEW_SQUARE_D0L && pos != VIEW_CELL_FRONT_RIGHT) ||
+                                                 (view_square == VIEW_SQUARE_D0R && pos != VIEW_CELL_FRONT_LEFT)))
         return done;
-    draw_creature(s, s->look[index], facing, pos, coord, depth);
+    draw_creature(group, group->look[index], facing, pos, coord, depth);
     if (second) /* the other creature of a half-size pair, beside it */
-        draw_creature(s, s->look[index == 0], facing,
+        draw_creature(group, group->look[index == 0], facing,
                       pos == VIEW_CELL_BACK_RIGHT ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT, coord, depth);
     return done;
 }
@@ -872,17 +872,17 @@ bool view_has_moving_projectiles(void)
     return false;
 }
 
-void view_set_motion(int16_t get_relative_square, int16_t steps)
+void view_set_motion(int16_t step, int16_t steps)
 {
-    motion_step = get_relative_square;
+    motion_step = step;
     motion_steps = steps;
 }
 
 /* The pose of a projectile graphic by its direction of flight, and its mirror flags in flip_out. */
-static int16_t get_projectile_pose(const uint8_t *get_square_aspect, uint16_t thing, int16_t dir, int16_t x, int16_t y,
+static int16_t get_projectile_pose(const uint8_t *aspect, uint16_t thing, int16_t dir, int16_t x, int16_t y,
                                    int16_t cell, int16_t lane, int16_t *flip_out)
 {
-    int16_t kind = get_square_aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_KIND;
+    int16_t kind = aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_KIND;
     int16_t pose;
     int16_t flip = 0;
     bool rotates = kind == PROJECTILE_BACK_AND_ROTATION;
@@ -897,7 +897,7 @@ static int16_t get_projectile_pose(const uint8_t *get_square_aspect, uint16_t th
                                                                                                           : POSE_FRONT;
             if (rotates && cell < VIEW_CELL_FRONT_RIGHT)
                 flip = FLIP_V;
-            if ((get_square_aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_FLIP_ON_LEFT) && lane < 1 &&
+            if ((aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_FLIP_ON_LEFT) && lane < 1 &&
                 (lane != 0 || (cell != VIEW_CELL_BACK_RIGHT && cell != VIEW_CELL_FRONT_RIGHT)))
                 flip |= FLIP_H;
         } else { /* flying across: side pose */
@@ -957,46 +957,45 @@ static void draw_projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, i
 
 /* A teleporter field or fluxcage: the pattern graphic through the mask graphic at zone, with a random
    start in the pattern so that it sparkles. */
-static void draw_field(const uint8_t *get_square_aspect, int16_t zone)
+static void draw_field(const uint8_t *aspect, int16_t zone)
 {
-    int16_t w = get_square_aspect[FIELD_WIDTH];
-    int16_t h = get_square_aspect[FIELD_HEIGHT];
+    int16_t width = aspect[FIELD_WIDTH];
+    int16_t height = aspect[FIELD_HEIGHT];
     int16_t sx = 0;
     int16_t flip = 0;
-    Box b;
-    if (!layout_get_zone(zone, 0, 0, &b, &w, &h))
+    Box box;
+    if (!layout_get_zone(zone, 0, 0, &box, &width, &height))
         return;
     const Bitmap *mask = NULL;
-    const Bitmap *units = gfx_get_bitmap(GFX_FIELD_PATTERN_FIRST + get_square_aspect[FIELD_PATTERN]);
-    if (get_square_aspect[FIELD_MASK] != FIELD_NO_MASK) {
-        mask = gfx_get_bitmap(GFX_FIELD_MASK_FIRST + (get_square_aspect[FIELD_MASK] & ~FIELD_MASK_FLIPPED));
-        flip = !!(get_square_aspect[FIELD_MASK] & FIELD_MASK_FLIPPED);
+    const Bitmap *units = gfx_get_bitmap(GFX_FIELD_PATTERN_FIRST + aspect[FIELD_PATTERN]);
+    if (aspect[FIELD_MASK] != FIELD_NO_MASK) {
+        mask = gfx_get_bitmap(GFX_FIELD_MASK_FIRST + (aspect[FIELD_MASK] & ~FIELD_MASK_FLIPPED));
+        flip = !!(aspect[FIELD_MASK] & FIELD_MASK_FLIPPED);
         if (flip && mask && mask->w % PIXELS_PER_WORD)
             sx = PIXELS_PER_WORD - mask->w % PIXELS_PER_WORD;
     }
     int16_t first = random16() & FIELD_FIRST_UNIT_RANGE;
-    int16_t last = get_square_aspect[FIELD_LAST_UNIT] + random_bit();
+    int16_t last = aspect[FIELD_LAST_UNIT] + random_bit();
     if (units)
-        draw_masked_fill(units, mask, flip, &viewport, &b, last, first, get_square_aspect[FIELD_TRANSPARENT], sx, 0);
+        draw_masked_fill(units, mask, flip, &viewport, &box, last, first, aspect[FIELD_TRANSPARENT], sx, 0);
 }
 
 /* An explosion of aspect at scale, recolored for smoke. */
-static const Bitmap *get_explosion_bitmap(int16_t get_square_aspect, int16_t scale, Bitmap *own)
+static const Bitmap *get_explosion_bitmap(int16_t aspect, int16_t scale, Bitmap *own)
 {
     scale = bounded_value(SCALE_EXPLOSION_MIN, scale & ~1, SCALE_NATIVE);
-    return get_shrunk_bitmap(
-        GFX_EXPLOSION_FIRST + min16(get_square_aspect, EXPLOSION_ASPECT_POISON), scale,
-        get_square_aspect == EXPLOSION_ASPECT_SMOKE ? tables_get_palette_changes(TABLES_CHANGES_SMOKE) : NULL, own);
+    return get_shrunk_bitmap(GFX_EXPLOSION_FIRST + min16(aspect, EXPLOSION_ASPECT_POISON), scale,
+                             aspect == EXPLOSION_ASPECT_SMOKE ? tables_get_palette_changes(TABLES_CHANGES_SMOKE) : NULL,
+                             own);
 }
 
 /* An explosion on the party square fills the whole viewport with its pattern. */
-static void draw_explosion_on_party(uint16_t thing, int16_t get_square_aspect)
+static void draw_explosion_on_party(uint16_t thing, int16_t aspect)
 {
-    bool smoke = get_square_aspect == EXPLOSION_ASPECT_SMOKE;
+    bool smoke = aspect == EXPLOSION_ASPECT_SMOKE;
     int16_t strength = rec_explosion_attack(thing) >> EXPLOSION_STRENGTH_SHIFT;
-    const Bitmap *units =
-        gfx_get_bitmap(GFX_EXPLOSION_PATTERN_FIRST + (get_square_aspect - smoke) * EXPLOSION_PATTERN_STRENGTHS +
-                       (strength != 0) + (strength > 3));
+    const Bitmap *units = gfx_get_bitmap(GFX_EXPLOSION_PATTERN_FIRST + (aspect - smoke) * EXPLOSION_PATTERN_STRENGTHS +
+                                         (strength != 0) + (strength > 3));
     Bitmap own = {0};
     if (units && smoke && (own.px = malloc((size_t)units->w * units->h))) {
         const uint8_t *changes = tables_get_palette_changes(TABLES_CHANGES_SMOKE);
@@ -1008,11 +1007,11 @@ static void draw_explosion_on_party(uint16_t thing, int16_t get_square_aspect)
     }
     int16_t first = random16() & EXPLOSION_FILL_FIRST_UNIT_RANGE;
     int16_t last = random_2bits() + EXPLOSION_FILL_LAST_UNIT;
-    int16_t w = 0;
-    int16_t h = 0;
-    Box b;
-    if (units && layout_get_zone(ZONE_VIEWPORT_BOX, viewport.w, viewport.h, &b, &w, &h))
-        draw_masked_fill(units, NULL, 0, &viewport, &b, last, first, EXPLOSION_FILL_TRANSPARENT, 0, 0);
+    int16_t width = 0;
+    int16_t height = 0;
+    Box box;
+    if (units && layout_get_zone(ZONE_VIEWPORT_BOX, viewport.w, viewport.h, &box, &width, &height))
+        draw_masked_fill(units, NULL, 0, &viewport, &box, last, first, EXPLOSION_FILL_TRANSPARENT, 0, 0);
     free(own.px);
 }
 
@@ -1056,10 +1055,10 @@ static void draw_fluxcage(int16_t field_index)
 }
 
 /* The explosions of a square, each mirrored at random, then a fluxcage as a field. */
-static void draw_explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t depth, int16_t coord, uint16_t mcell,
-                            int16_t pass)
+static void draw_explosions(uint16_t thing, int16_t dir, int16_t view_square, int16_t depth, int16_t coord,
+                            uint16_t mcell, int16_t pass)
 {
-    ViewSquare square = tables_get_view_square(vs);
+    ViewSquare square = tables_get_view_square(view_square);
     int16_t explosion_coord = square.explosion_coord;
     int16_t field_index = square.field_aspect;
     int fluxcage = 0;
@@ -1088,7 +1087,7 @@ static void draw_explosions(uint16_t thing, int16_t dir, int16_t vs, int16_t dep
         Bitmap own = {0};
         if (explosion_coord < 0)
             continue;
-        if (vs == VIEW_SQUARE_D0C) {
+        if (view_square == VIEW_SQUARE_D0C) {
             draw_explosion_on_party(thing, aspect);
             continue;
         }
@@ -1147,7 +1146,7 @@ static void find_square_things(uint16_t first, uint16_t *group_thing, bool *has_
 /* The things of one view square: per cell in cell order (nibbles of cell + 1, low first; 0 = the
    alcove; bit 3 = door pass, bit 0 the front pass) the objects, creatures, and projectiles, then the
    explosions of the square. */
-static void draw_square_things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t vs, uint16_t order)
+static void draw_square_things(uint16_t first, int16_t dir, int16_t x, int16_t y, int16_t view_square, uint16_t order)
 {
     if (first == THING_END)
         return;
@@ -1164,12 +1163,12 @@ static void draw_square_things(uint16_t first, int16_t dir, int16_t x, int16_t y
     bool has_explosions = false;
     bool group_done = false;
     bool loaded = false;
-    ViewSquare square = tables_get_view_square(vs);
+    ViewSquare square = tables_get_view_square(view_square);
     int16_t lane = square.lane;
     int16_t depth = square.depth;
     int16_t coord = alcove ? square.alcove_coord : square.object_coord;
     int16_t count = 0;
-    Group s;
+    Group group;
     find_square_things(first, &group_thing, &has_projectiles, &has_explosions);
     do {
         int16_t cell, pile;
@@ -1192,10 +1191,10 @@ static void draw_square_things(uint16_t first, int16_t dir, int16_t x, int16_t y
                      (rest == 0 || (rest & CELL_ORDER_MASK) - 1 >= VIEW_CELL_FRONT_RIGHT);
         if (group_thing != THING_NONE && !group_done) {
             if (!loaded) {
-                load_group_aspect(group_thing, &s);
+                load_group_aspect(group_thing, &group);
                 loaded = true;
             }
-            group_done = draw_creatures_in_cell(&s, dir, vs, depth, cell, mcell, rest, pass, front);
+            group_done = draw_creatures_in_cell(&group, dir, view_square, depth, cell, mcell, rest, pass, front);
         }
         if (has_projectiles && square.object_coord >= 0 && is_cell_in_view(depth, cell))
             for (uint16_t t = first; t != THING_END; t = map_get_next_thing(t))
@@ -1203,7 +1202,7 @@ static void draw_square_things(uint16_t first, int16_t dir, int16_t x, int16_t y
                     draw_projectile(t, dir, x, y, cell, lane, depth, square.object_coord);
     } while (rest);
     if (has_explosions)
-        draw_explosions(first, dir, vs, depth, coord, mcell, pass);
+        draw_explosions(first, dir, view_square, depth, coord, mcell, pass);
 }
 
 /* The field of a teleporter square. */
@@ -1233,12 +1232,12 @@ static void draw_wall_text(const uint8_t *text)
         int16_t n = 0;
         while (text[n] < WALL_TEXT_NEW_LINE)
             n++;
-        Box b;
-        int16_t w = glyph_w * n;
-        int16_t h = glyph_h;
-        if (n && layout_get_zone(ZONE_WALL_TEXT_LINE_FIRST + line, 0, 0, &b, &w, &h))
-            for (b.w = glyph_w; n; n--, text++, b.x += glyph_w)
-                draw_blit(font, *text * glyph_w, 0, &viewport, &b, TRANSPARENT_COLOR, 0);
+        Box box;
+        int16_t width = glyph_w * n;
+        int16_t height = glyph_h;
+        if (n && layout_get_zone(ZONE_WALL_TEXT_LINE_FIRST + line, 0, 0, &box, &width, &height))
+            for (box.w = glyph_w; n; n--, text++, box.x += glyph_w)
+                draw_blit(font, *text * glyph_w, 0, &viewport, &box, TRANSPARENT_COLOR, 0);
         text += n;
         if (*text++ == WALL_TEXT_END)
             break;
@@ -1261,7 +1260,7 @@ static void draw_wall_portrait(int16_t champion)
 
 /* The ornament or inscription on a view wall, and on the D1C wall the champion
    portrait and the facing flags. Returns 1 for an alcove. */
-static int draw_wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
+static int draw_wall_ornament(uint16_t ordinal, int16_t view, const Aspect *aspect)
 {
     if (!ordinal)
         return 0;
@@ -1274,12 +1273,12 @@ static int draw_wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
     int side = mirrored || view == VIEW_WALL_D3L2_RIGHT || view == VIEW_WALL_D3L_RIGHT || view == VIEW_WALL_D2L_RIGHT ||
                view == VIEW_WALL_D1L_RIGHT;
     int16_t graphic = wall_ornaments[i].graphic + (side ? 0 : WALL_ORNAMENT_FRONT);
-    uint8_t s[WALL_TEXT_SIZE] = {WALL_TEXT_END};
+    uint8_t wall_text[WALL_TEXT_SIZE] = {WALL_TEXT_END};
     if (text)
-        dungeon_decode_text((char *)s, sizeof s, a->text, 0);
+        dungeon_decode_text((char *)wall_text, sizeof wall_text, aspect->text, 0);
     if (view == VIEW_WALL_D1C_FRONT) {
         if (text) {
-            draw_wall_text(s);
+            draw_wall_text(wall_text);
             return alcove;
         }
         g_facing_alcove = alcove;
@@ -1287,7 +1286,7 @@ static int draw_wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
         g_facing_fountain = i == fountain;
     }
     Bitmap own = {0};
-    const Bitmap *bm;
+    const Bitmap *bitmap;
     if (view < VIEW_WALL_D1L_RIGHT) { /* D3 and D2: scaled and recolored */
         if (view <= VIEW_WALL_D3R2_LEFT)
             get_scaled_bitmap(graphic, SCALE_D3_FAR_SIDE_W, SCALE_D3, tables_get_palette_changes(TABLES_CHANGES_D3),
@@ -1298,23 +1297,23 @@ static int draw_wall_ornament(uint16_t ordinal, int16_t view, const Aspect *a)
             get_scaled_bitmap(graphic, SCALE_D2, SCALE_D2, tables_get_palette_changes(TABLES_CHANGES_D2), &own);
         if (!own.px)
             return alcove;
-        bm = &own;
+        bitmap = &own;
     } else
-        bm = gfx_get_bitmap(graphic);
+        bitmap = gfx_get_bitmap(graphic);
     if (text) { /* the plaque shows only as many lines as the text has */
         int16_t lines = 1;
-        for (const uint8_t *p = s; *p != WALL_TEXT_END; p++)
+        for (const uint8_t *p = wall_text; *p != WALL_TEXT_END; p++)
             lines += *p == WALL_TEXT_NEW_LINE;
-        if (lines <= TABLES_PLAQUE_LINES && bm) {
+        if (lines <= TABLES_PLAQUE_LINES && bitmap) {
             zone |= ZONE_SIZED;
-            zone_relative_x = bm->w;
+            zone_relative_x = bitmap->w;
             zone_relative_y = tables_get_plaque_height(lines, tables_get_wall_ornament_depth(view));
         }
     }
-    if (draw_bitmap_in_zone(bm, &viewport, zone, mirrored, TRANSPARENT_COLOR) && view == VIEW_WALL_D1C_FRONT)
+    if (draw_bitmap_in_zone(bitmap, &viewport, zone, mirrored, TRANSPARENT_COLOR) && view == VIEW_WALL_D1C_FRONT)
         g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn_box;
-    if (view == VIEW_WALL_D1C_FRONT && a->portrait)
-        draw_wall_portrait(a->portrait - 1);
+    if (view == VIEW_WALL_D1C_FRONT && aspect->portrait)
+        draw_wall_portrait(aspect->portrait - 1);
     free(own.px);
     return alcove;
 }
@@ -1339,7 +1338,7 @@ static void draw_floor_ornament(uint16_t ordinal, int16_t view)
 }
 
 /* An ornament or mask on the door bitmap, scaled for D3 and D2. */
-static void draw_door_ornament(uint16_t ordinal, int16_t depth, Bitmap *draw_door)
+static void draw_door_ornament(uint16_t ordinal, int16_t depth, Bitmap *door)
 {
     if (!ordinal)
         return;
@@ -1347,7 +1346,7 @@ static void draw_door_ornament(uint16_t ordinal, int16_t depth, Bitmap *draw_doo
     int16_t zone = ZONE_DOOR_ORNAMENT_FIRST + ZONE_DOOR_ORNAMENT_DEPTHS * o->coord + depth;
     Bitmap own = {0};
     if (depth == DOOR_DEPTH_D1)
-        draw_bitmap_in_zone(gfx_get_bitmap(o->graphic), draw_door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
+        draw_bitmap_in_zone(gfx_get_bitmap(o->graphic), door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
     else {
         int16_t scale = depth == DOOR_DEPTH_D2 ? SCALE_D2 : SCALE_D3;
         get_scaled_bitmap(o->graphic, scale, scale,
@@ -1355,7 +1354,7 @@ static void draw_door_ornament(uint16_t ordinal, int16_t depth, Bitmap *draw_doo
                                                                             : TABLES_CHANGES_DOOR_ORNAMENT_D3),
                           &own);
         if (own.px)
-            draw_bitmap_in_zone(&own, draw_door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
+            draw_bitmap_in_zone(&own, door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
     }
     free(own.px);
 }
@@ -1388,33 +1387,33 @@ static void draw_door(uint16_t door_thing, int16_t state, int16_t view)
     int16_t depth = view < VIEW_D2L ? DOOR_DEPTH_D3 : view < VIEW_D1L ? DOOR_DEPTH_D2 : DOOR_DEPTH_D1;
     int16_t zone = ZONE_DOOR_FIRST + ZONE_DOOR_VIEW_ZONES * view;
     int type = door_type(door_thing);
-    const Bitmap *g = gfx_get_bitmap(door_graphics[depth][type]);
-    if (!g)
+    const Bitmap *graphic = gfx_get_bitmap(door_graphics[depth][type]);
+    if (!graphic)
         return;
-    Bitmap t = {g->w, g->h, malloc((size_t)g->w * g->h)};
-    if (!t.px)
+    Bitmap door_copy = {graphic->w, graphic->h, malloc((size_t)graphic->w * graphic->h)};
+    if (!door_copy.px)
         return;
-    memcpy(t.px, g->px, (size_t)g->w * g->h);
-    draw_door_ornament(door_ornament_ordinal(door_thing), depth, &t);
+    memcpy(door_copy.px, graphic->px, (size_t)graphic->w * graphic->h);
+    draw_door_ornament(door_ornament_ordinal(door_thing), depth, &door_copy);
     if (door_type_attributes[type] & DOOR_ANIMATED)
-        draw_flip(&t, random_2bits());
+        draw_flip(&door_copy, random_2bits());
     if (state == DOOR_DESTROYED)
-        draw_door_ornament(DOOR_ORNAMENT_DESTROYED, depth, &t);
+        draw_door_ornament(DOOR_ORNAMENT_DESTROYED, depth, &door_copy);
     else if (state != DOOR_CLOSED) { /* partly open: the zone moves with the state */
         zone += state;
         if (!door_is_vertical(door_thing)) {
-            zone_relative_x = t.w >> 1;
+            zone_relative_x = door_copy.w >> 1;
             zone_relative_y = 0;
             int16_t w = zone_relative_x;
             int16_t h = zone_relative_y;
             Box b;
-            if (layout_get_zone(zone + ZONE_DOOR_RIGHT_HALF, t.w, t.h, &b, &w, &h))
-                draw_blit(&t, zone_relative_x + w, h, &viewport, &b, TRANSPARENT_COLOR, 0);
+            if (layout_get_zone(zone + ZONE_DOOR_RIGHT_HALF, door_copy.w, door_copy.h, &b, &w, &h))
+                draw_blit(&door_copy, zone_relative_x + w, h, &viewport, &b, TRANSPARENT_COLOR, 0);
             zone = (zone + ZONE_DOOR_LEFT_HALF) | ZONE_SIZED;
         }
     }
-    draw_bitmap_in_zone(&t, &viewport, zone, 0, TRANSPARENT_COLOR);
-    free(t.px);
+    draw_bitmap_in_zone(&door_copy, &viewport, zone, 0, TRANSPARENT_COLOR);
+    free(door_copy.px);
 }
 
 /* map_get_location_after_level_change for any map (map.c checks the party map first): the map and square one
@@ -2097,13 +2096,13 @@ static void load_doors(int16_t m)
     }
 }
 
-/* The wall, floor, and door ornaments of map m from its ornament list, and the special ornaments: the
+/* The wall, floor, and door ornaments of map from its ornament list, and the special ornaments: the
    inscription plaque, the footprints, and the door masks. */
-static void load_ornaments(int16_t m, const uint8_t *ornaments)
+static void load_ornaments(int16_t map, const uint8_t *ornaments)
 {
-    int16_t walls = map_wall_ornament_count(m);
-    int16_t floors = map_floor_ornament_count(m);
-    int16_t doors = map_door_ornament_count(m);
+    int16_t walls = map_wall_ornament_count(map);
+    int16_t floors = map_floor_ornament_count(map);
+    int16_t doors = map_door_ornament_count(map);
     int16_t alcove_count = 0;
     alcoves[0] = -1;
     alcoves[1] = -1;
@@ -2112,27 +2111,28 @@ static void load_ornaments(int16_t m, const uint8_t *ornaments)
     fountain = -1;
     inscription = walls; /* after the map ornaments: the inscription plaque, ornament 0 */
     for (int16_t i = 0; i <= walls; i++) {
-        uint8_t o = i < walls ? ornaments[i] : 0;
-        wall_ornaments[i] =
-            (Ornament){GFX_WALL_ORNAMENT_FIRST + WALL_ORNAMENT_GRAPHICS * o, tables_get_wall_ornament_coord_set(o)};
+        uint8_t ornament = i < walls ? ornaments[i] : 0;
+        wall_ornaments[i] = (Ornament){GFX_WALL_ORNAMENT_FIRST + WALL_ORNAMENT_GRAPHICS * ornament,
+                                       tables_get_wall_ornament_coord_set(ornament)};
         for (int k = 0; k < ALCOVE_ORNAMENT_COUNT; k++)
-            if (tables_get_alcove_ornament(k) == o) {
+            if (tables_get_alcove_ornament(k) == ornament) {
                 alcoves[alcove_count++] = i;
-                if (o == ORNAMENT_VI_ALTAR)
+                if (ornament == ORNAMENT_VI_ALTAR)
                     vi_altar = i;
             }
-        if (tables_get_fountain_ornament() == o)
+        if (tables_get_fountain_ornament() == ornament)
             fountain = i;
     }
     for (int16_t i = 0; i < floors; i++) {
-        uint8_t o = ornaments[walls + i];
-        floor_ornaments[i] =
-            (Ornament){GFX_FLOOR_ORNAMENT_FIRST + FLOOR_ORNAMENT_GRAPHICS * o, tables_get_floor_ornament_coord_set(o)};
+        uint8_t ornament = ornaments[walls + i];
+        floor_ornaments[i] = (Ornament){GFX_FLOOR_ORNAMENT_FIRST + FLOOR_ORNAMENT_GRAPHICS * ornament,
+                                        tables_get_floor_ornament_coord_set(ornament)};
     }
     floor_ornaments[FLOOR_ORNAMENT_FOOTPRINTS] = (Ornament){GFX_FOOTPRINTS, 0};
     for (int16_t i = 0; i < doors; i++) {
-        uint8_t o = ornaments[walls + floors + i];
-        door_ornaments[i] = (Ornament){GFX_DOOR_ORNAMENT_FIRST + o, tables_get_door_ornament_coord_set(o)};
+        uint8_t ornament = ornaments[walls + floors + i];
+        door_ornaments[i] =
+            (Ornament){GFX_DOOR_ORNAMENT_FIRST + ornament, tables_get_door_ornament_coord_set(ornament)};
     }
     door_ornaments[DOOR_ORNAMENT_DESTROYED - 1] = (Ornament){GFX_DOOR_MASK_DESTROYED, DOOR_MASK_COORD_SET};
     door_ornaments[DOOR_ORNAMENT_THIEVES_EYE - 1] = (Ornament){GFX_DOOR_MASK_THIEVES_EYE, DOOR_MASK_COORD_SET};
@@ -2324,9 +2324,9 @@ static bool has_map_footprints(const Aspect *a, int16_t x, int16_t y)
 }
 
 /* The tile of a flying thing, or -1: spell projectiles and a flying zokathra. */
-static int16_t get_map_projectile_tile(uint16_t draw_projectile, int16_t dir)
+static int16_t get_map_projectile_tile(uint16_t projectile, int16_t dir)
 {
-    uint16_t slot = rec_projectile_slot(draw_projectile);
+    uint16_t slot = rec_projectile_slot(projectile);
     switch (get_projectile_aspect(slot)) {
     case -PROJECTILE_ASPECT_FIREBALL:
         return MAP_TILE_FIREBALL_FIRST;
@@ -2337,7 +2337,7 @@ static int16_t get_map_projectile_tile(uint16_t draw_projectile, int16_t dir)
     case -PROJECTILE_ASPECT_SLIME:
         return MAP_TILE_SLIME_FIRST;
     case -PROJECTILE_ASPECT_LIGHTNING: {
-        const TimelineEvent *event = &g_timeline_events[rec_projectile_event_index(draw_projectile)];
+        const TimelineEvent *event = &g_timeline_events[rec_projectile_event_index(projectile)];
         return MAP_TILE_LIGHTNING_FIRST +
                ((projectile_event_direction(event) & 1) != (dir & 1) ? MAP_TILE_LIGHTNING_ACROSS : 0);
     }
@@ -2364,37 +2364,37 @@ static int16_t get_map_explosion_tile(uint16_t explosion)
 
 /* The things of a square that the spells show at (px, py): with DAIN the zokathra objects, the projectiles,
    and the explosions, with KU the creatures. blink: the square is a fake wall that blinks. */
-static void draw_map_square_things(Bitmap *dst, const uint8_t *spells, const Aspect *a, int blink, int16_t dir,
+static void draw_map_square_things(Bitmap *dst, const uint8_t *spells, const Aspect *aspect, int blink, int16_t dir,
                                    int16_t px, int16_t py)
 {
     uint16_t explosion = THING_ENDOFLIST;
     uint16_t projectile = THING_ENDOFLIST;
     uint16_t group = THING_ENDOFLIST;
-    for (uint16_t t = a->first_thing; t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
-        int16_t type = THING_TYPE(t);
+    for (uint16_t thing = aspect->first_thing; thing != THING_ENDOFLIST; thing = map_get_next_thing(thing)) {
+        int16_t type = THING_TYPE(thing);
         if (type == THING_GROUP && spells[MAGIC_MAP_KU])
-            group = t;
+            group = thing;
         else if (!spells[MAGIC_MAP_DAIN])
             continue;
         else if (type == THING_PROJECTILE && projectile == THING_ENDOFLIST)
-            projectile = t;
+            projectile = thing;
         else if (type == THING_EXPLOSION && explosion == THING_ENDOFLIST)
-            explosion = t;
-        else if (type == THING_JUNK && object_get_type(t) == OBJECT_TYPE_ZOKATHRA)
+            explosion = thing;
+        else if (type == THING_JUNK && object_get_type(thing) == OBJECT_TYPE_ZOKATHRA)
             draw_map_tile(dst,
-                          MAP_TILE_ZOKATHRA_FIRST + NORMALIZE(THING_CELL(t) - dir) +
-                              (a->element == SQUARE_WALL && !blink ? MAP_TILE_IN_WALL : 0),
+                          MAP_TILE_ZOKATHRA_FIRST + NORMALIZE(THING_CELL(thing) - dir) +
+                              (aspect->element == SQUARE_WALL && !blink ? MAP_TILE_IN_WALL : 0),
                           px, py);
     }
     if (group != THING_ENDOFLIST && !(map_get_creature_attributes(group) & CREATURE_NOT_ON_MAP))
         draw_map_tile(dst, MAP_TILE_CREATURE_FIRST + (g_game_time & 1), px, py);
-    for (uint16_t t = projectile; t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
-        int16_t tile = THING_TYPE(t) == THING_PROJECTILE ? get_map_projectile_tile(t, dir) : -1;
+    for (uint16_t thing = projectile; thing != THING_ENDOFLIST; thing = map_get_next_thing(thing)) {
+        int16_t tile = THING_TYPE(thing) == THING_PROJECTILE ? get_map_projectile_tile(thing, dir) : -1;
         if (tile >= 0)
-            draw_map_tile(dst, tile + NORMALIZE(THING_CELL(t) - dir), px, py);
+            draw_map_tile(dst, tile + NORMALIZE(THING_CELL(thing) - dir), px, py);
     }
-    for (uint16_t t = explosion; t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
-        int16_t tile = THING_TYPE(t) == THING_EXPLOSION ? get_map_explosion_tile(t) : -1;
+    for (uint16_t thing = explosion; thing != THING_ENDOFLIST; thing = map_get_next_thing(thing)) {
+        int16_t tile = THING_TYPE(thing) == THING_EXPLOSION ? get_map_explosion_tile(thing) : -1;
         if (tile >= 0)
             draw_map_tile(dst, tile, px, py);
     }
@@ -2402,7 +2402,7 @@ static void draw_map_square_things(Bitmap *dst, const uint8_t *spells, const Asp
 
 /* A wall on the magic map: blinking when ROS shows a fake wall, else the wall with its vi altar, alcove, and
    fountain sides. */
-static void draw_map_wall(Bitmap *dst, const uint8_t *spells, const Aspect *a, bool blink, int16_t px, int16_t py)
+static void draw_map_wall(Bitmap *dst, const uint8_t *spells, const Aspect *aspect, bool blink, int16_t px, int16_t py)
 {
     if (spells[MAGIC_MAP_ROS] && blink && (g_game_time & MAP_TIME_BLINK_WALL)) {
         draw_map_tile(dst, MAP_TILE_FAKE_WALL_BLINK, px, py);
@@ -2410,24 +2410,24 @@ static void draw_map_wall(Bitmap *dst, const uint8_t *spells, const Aspect *a, b
     }
     draw_map_tile(dst, MAP_TILE_WALL, px, py);
     for (int16_t k = 0; k < WALL_SIDES; k++) {
-        int16_t i = a->side[k] - 1;
-        int16_t first = !a->side[k]     ? -1
-                        : i == vi_altar ? MAP_TILE_VI_ALTAR_FIRST
-                        : is_alcove(i)  ? MAP_TILE_ALCOVE_FIRST
-                        : i == fountain ? MAP_TILE_FOUNTAIN_FIRST
-                                        : -1;
+        int16_t i = aspect->side[k] - 1;
+        int16_t first = !aspect->side[k] ? -1
+                        : i == vi_altar  ? MAP_TILE_VI_ALTAR_FIRST
+                        : is_alcove(i)   ? MAP_TILE_ALCOVE_FIRST
+                        : i == fountain  ? MAP_TILE_FOUNTAIN_FIRST
+                                         : -1;
         if (first >= 0)
             draw_map_tile(dst, first + k, px, py);
     }
 }
 
 /* The magic map tile of a door: front or side, with or without a button, open or closed. */
-static int16_t get_map_door_tile(const Aspect *a)
+static int16_t get_map_door_tile(const Aspect *aspect)
 {
-    int16_t tile = a->element == ELEMENT_DOOR_SIDE ? MAP_TILE_DOOR_SIDE : MAP_TILE_DOOR_FRONT;
-    if (!door_button_present(THING_MAKE(THING_DOOR, a->door)))
+    int16_t tile = aspect->element == ELEMENT_DOOR_SIDE ? MAP_TILE_DOOR_SIDE : MAP_TILE_DOOR_FRONT;
+    if (!door_button_present(THING_MAKE(THING_DOOR, aspect->door)))
         tile += MAP_TILE_DOOR_NO_BUTTON;
-    if (a->state == DOOR_OPEN || a->state == DOOR_DESTROYED)
+    if (aspect->state == DOOR_OPEN || aspect->state == DOOR_DESTROYED)
         tile += MAP_TILE_DOOR_OPEN;
     return tile;
 }
@@ -2438,24 +2438,24 @@ static int16_t get_map_door_tile(const Aspect *a)
 static void draw_map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16_t y, int16_t dir, int16_t px,
                             int16_t py)
 {
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    bool blink = SQUARE_TYPE(a.square) == SQUARE_FAKE_WALL && (a.square & FAKE_WALL_IMAGINARY);
+    Aspect aspect;
+    get_square_aspect(&aspect, dir, x, y);
+    bool blink = SQUARE_TYPE(aspect.square) == SQUARE_FAKE_WALL && (aspect.square & FAKE_WALL_IMAGINARY);
     int16_t color = x == g_party_map_x && y == g_party_map_y ? MAP_COLOR_PARTY
-                    : spells[MAGIC_MAP_DAIN] && a.element != SQUARE_WALL && has_map_footprints(&a, x, y)
+                    : spells[MAGIC_MAP_DAIN] && aspect.element != SQUARE_WALL && has_map_footprints(&aspect, x, y)
                         ? MAP_COLOR_FOOTPRINTS
                         : -1;
     if (color >= 0) {
         Box b = {px - MAP_GAP_X, py - MAP_GAP_Y, MAP_TILE_W + 2 * MAP_GAP_X, MAP_TILE_H + 2 * MAP_GAP_Y};
         draw_fill(dst, &b, (uint8_t)color);
     }
-    switch (a.element) {
+    switch (aspect.element) {
     case SQUARE_WALL:
-        draw_map_wall(dst, spells, &a, blink, px, py);
+        draw_map_wall(dst, spells, &aspect, blink, px, py);
         break;
     case SQUARE_CORRIDOR: {
         draw_map_tile(dst, MAP_TILE_FLOOR, px, py);
-        int16_t i = (a.floor_ornament & ~FLOOR_ORNAMENT_WITH_FOOTPRINTS) - 1;
+        int16_t i = (aspect.floor_ornament & ~FLOOR_ORNAMENT_WITH_FOOTPRINTS) - 1;
         if (i >= 0)
             draw_map_tile(dst,
                           MAP_TILE_FLOOR_ORNAMENT_FIRST +
@@ -2468,33 +2468,33 @@ static void draw_map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16
         break;
     case ELEMENT_DOOR_FRONT:
     case ELEMENT_DOOR_SIDE:
-        draw_map_tile(dst, get_map_door_tile(&a), px, py);
+        draw_map_tile(dst, get_map_door_tile(&aspect), px, py);
         break;
     case ELEMENT_STAIRS_SIDE:
     case ELEMENT_STAIRS_FRONT: {
         int16_t side = NORMALIZE(map_get_stairs_exit_direction(x, y) - dir);
-        if (a.state)
+        if (aspect.state)
             side = turn_back(side);
         draw_map_tile(dst, MAP_TILE_STAIRS_FIRST + side, px, py);
         break;
     }
     case SQUARE_PIT:
         draw_map_tile(dst,
-                      !a.state                                                      ? MAP_TILE_PIT
+                      !aspect.state                                                 ? MAP_TILE_PIT
                       : spells[MAGIC_MAP_ROS] && (g_game_time & MAP_TIME_BLINK_PIT) ? MAP_TILE_PIT_BLINK
                                                                                     : MAP_TILE_PIT_INVISIBLE,
                       px, py);
         break;
     }
     if (spells[MAGIC_MAP_KU] || spells[MAGIC_MAP_DAIN])
-        draw_map_square_things(dst, spells, &a, blink, dir, px, py);
+        draw_map_square_things(dst, spells, &aspect, blink, dir, px, py);
 }
 
 /* The magic map of a champion at (px, py) of dst: 7 x 7 squares around the party, or around the square that
    NETA keeps. The party square is drawn last. The ornaments are those of the party map, as in the original. */
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py)
 {
-    int16_t m = g_party_map_index;
+    int16_t map = g_party_map_index;
     int16_t x = g_party_map_x;
     int16_t y = g_party_map_y;
     int16_t dir = g_party_direction;
@@ -2504,20 +2504,20 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
     if (view_map != g_party_map_index)
         view_load_map(g_party_map_index);
     if (spells[MAGIC_MAP_NETA]) {
-        game_get_magic_map_position(spells, &m, &x, &y);
+        game_get_magic_map_position(spells, &map, &x, &y);
         dir = spells[MAGIC_MAP_NETA] - 1;
     }
-    map_set_current_map(m);
-    view_map = m;
-    map_width = dungeon_map_width(m);
-    map_height = dungeon_map_height(m);
+    map_set_current_map(map);
+    view_map = map;
+    map_width = dungeon_map_width(map);
+    map_height = dungeon_map_height(map);
     get_relative_square(dir, MAP_HALF, -MAP_HALF, &x, &y);
     for (int16_t row = 0; row < MAP_SQUARES; row++, py += MAP_TILE_H + MAP_GAP_Y) {
         int16_t sx = x;
         int16_t sy = y;
         int16_t cx = px;
         for (int16_t col = 0; col < MAP_SQUARES; col++, cx += MAP_TILE_W + MAP_GAP_X) {
-            if (m == g_party_map_index && sx == g_party_map_x && sy == g_party_map_y) {
+            if (map == g_party_map_index && sx == g_party_map_x && sy == g_party_map_y) {
                 party_px = cx;
                 party_py = py;
             } else {
@@ -2579,11 +2579,11 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
         squares[i](dir, sx, sy);
     }
     Bitmap screen = {SCREEN_W, SCREEN_H, &fb[0][0]};
-    int16_t w = viewport.w;
-    int16_t h = viewport.h;
-    Box b;
-    if (layout_get_zone(ZONE_VIEWPORT, viewport.w, viewport.h, &b, &w, &h))
-        draw_blit(&viewport, w, h, &screen, &b, -1, 0);
+    int16_t width = viewport.w;
+    int16_t height = viewport.h;
+    Box box;
+    if (layout_get_zone(ZONE_VIEWPORT, viewport.w, viewport.h, &box, &width, &height))
+        draw_blit(&viewport, width, height, &screen, &box, -1, 0);
 }
 
 /* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that view_set_light set.
