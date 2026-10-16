@@ -57,17 +57,17 @@ void timeline_reset(void)
     }
 }
 
-bool timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b)
+bool timeline_is_event_a_before_b(const TimelineEvent *event_a, const TimelineEvent *event_b)
 {
-    uint32_t time_a = a->map_time & EVENT_TIME_MASK;
-    uint32_t time_b = b->map_time & EVENT_TIME_MASK;
-    uint16_t key_a = a->type << EVENT_KEY_TYPE_SHIFT | a->priority;
-    uint16_t key_b = b->type << EVENT_KEY_TYPE_SHIFT | b->priority;
+    uint32_t time_a = event_a->map_time & EVENT_TIME_MASK;
+    uint32_t time_b = event_b->map_time & EVENT_TIME_MASK;
+    uint16_t key_a = event_a->type << EVENT_KEY_TYPE_SHIFT | event_a->priority;
+    uint16_t key_b = event_b->type << EVENT_KEY_TYPE_SHIFT | event_b->priority;
     if (time_a != time_b)
         return time_a < time_b;
     if (key_a != key_b)
         return key_a > key_b;
-    return a <= b;
+    return event_a <= event_b;
 }
 
 uint16_t timeline_get_index(uint16_t event_index)

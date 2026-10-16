@@ -89,18 +89,18 @@ static uint16_t get_bits(BitReader *b, int16_t n)
     return b->acc >> b->avail & ((1u << n) - 1);
 }
 
-bool dungeon_decompress(const uint8_t *src, int32_t src_size, uint8_t *dst, int32_t byte_count)
+bool dungeon_decompress(const uint8_t *src, int32_t src_size, uint8_t *decoded, int32_t byte_count)
 {
     BitReader b = {src + COMPRESSED_DICTIONARY_BYTES, src + src_size, 0, 0, true};
     if (src_size < COMPRESSED_DICTIONARY_BYTES)
         return false;
     while (byte_count-- > 0 && b.ok) {
         if (!get_bits(&b, 1))
-            *dst++ = src[get_bits(&b, 2)];
+            *decoded++ = src[get_bits(&b, 2)];
         else if (!get_bits(&b, 1))
-            *dst++ = src[4 + get_bits(&b, 4)];
+            *decoded++ = src[4 + get_bits(&b, 4)];
         else
-            *dst++ = get_bits(&b, 8);
+            *decoded++ = get_bits(&b, 8);
     }
     return b.ok;
 }
@@ -364,7 +364,7 @@ bool dungeon_load_saved(const uint8_t *data, uint32_t size)
     return ok;
 }
 
-uint8_t *dungeon_save(uint32_t *size)
+uint8_t *dungeon_save(uint32_t *out_size)
 {
     if (!g_dungeon_header)
         return NULL;
@@ -401,7 +401,7 @@ uint8_t *dungeon_save(uint32_t *size)
         p += bytes[i];
     }
     wr16(p, sum);
-    *size = total;
+    *out_size = total;
     return out;
 }
 

@@ -179,7 +179,7 @@ static void burn_explosion_square(uint16_t explosion_thing, uint16_t attack, Loc
         explosion_damage_square(explosion_thing, attack, target.x, target.y, outcome);
 }
 
-void explosion_create(uint16_t explosion_thing, uint16_t attack, Location at, Location target, int16_t cell)
+void explosion_create(uint16_t explosion_thing, int16_t attack, Location at, Location target, int16_t cell)
 {
     DamageOutcome ignored = OUTCOME_NO_CREATURE_KILLED;
     if (place_explosion(explosion_thing, attack, at, cell))
@@ -772,7 +772,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
 }
 
 /* The first object (or group) in the launch cell or the cell beside it. */
-static uint16_t find_square_object_in_cells(int16_t x, int16_t y, uint16_t cell)
+static uint16_t find_square_object_in_cells(int16_t x, int16_t y, int16_t cell)
 {
     /* Bug fix: the original scans until 0xffff and reads past the end of the list. */
     for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t))
@@ -884,8 +884,8 @@ uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_ind
     return thing;
 }
 
-void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint8_t kinetic_energy, uint8_t attack,
-                                    uint8_t step_energy)
+void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, int16_t kinetic_energy, int16_t attack,
+                                    uint16_t step_energy)
 {
     const Champion *champion = &g_champions[champion_index];
     uint16_t direction = champion->direction;

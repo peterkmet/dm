@@ -18,11 +18,11 @@ const uint8_t *g_current_map;
 uint16_t g_current_map_door_info[2];
 static uint8_t *column_first_thing_index;
 
-void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *x, int16_t *y)
+void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *out_x, int16_t *out_y)
 {
     int16_t side = direction_right(direction);
-    *x = *x + forward * tables_get_step_east(direction) + right * tables_get_step_east(side);
-    *y = *y + forward * tables_get_step_north(direction) + right * tables_get_step_north(side);
+    *out_x = *out_x + forward * tables_get_step_east(direction) + right * tables_get_step_east(side);
+    *out_y = *out_y + forward * tables_get_step_north(direction) + right * tables_get_step_north(side);
 }
 
 void map_reset(void)

@@ -63,7 +63,7 @@ void explored_mark(int16_t map, int16_t x, int16_t y)
 }
 
 /* Block: "AMAP", version, map count, then per map its width, height and one byte per square. */
-bool explored_save(uint8_t **buf, size_t *len)
+bool explored_save(uint8_t **out_data, size_t *out_length)
 {
     if (!seen)
         explored_reset();
@@ -82,8 +82,8 @@ bool explored_save(uint8_t **buf, size_t *len)
         *p++ = dungeon_map_height(map);
     }
     memcpy(p, seen, seen_size);
-    *buf = out;
-    *len = size;
+    *out_data = out;
+    *out_length = size;
     return true;
 }
 

@@ -47,10 +47,10 @@ static uint16_t get_loudness_class(const uint8_t *v)
     return sum < LOUDNESS_MEDIUM_SUM ? 0 : sum < LOUDNESS_LOUD_SUM ? 1 : 2;
 }
 
-LoudnessResult sound_compare_loudness(const uint8_t *a, const uint8_t *b)
+LoudnessResult sound_compare_loudness(const uint8_t *volumes_a, const uint8_t *volumes_b)
 {
-    uint16_t ca = get_loudness_class(a);
-    uint16_t cb = get_loudness_class(b);
+    uint16_t ca = get_loudness_class(volumes_a);
+    uint16_t cb = get_loudness_class(volumes_b);
     return cb < ca ? LOUDNESS_HIGHER : cb == ca ? LOUDNESS_SAME : LOUDNESS_LOWER;
 }
 
@@ -86,7 +86,7 @@ bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
     return true;
 }
 
-static void set_pending(int slot, int16_t sound, const uint8_t *volumes)
+static void set_pending(int16_t slot, int16_t sound, const uint8_t *volumes)
 {
     g_pending_sounds[slot].sound = sound;
     memcpy(g_pending_sounds[slot].volumes, volumes, SOUND_SIDE_COUNT);

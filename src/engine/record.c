@@ -271,9 +271,9 @@ bool rec_text_is_visible(uint16_t thing)
 {
     return rec_read(thing)[TEXT_FLAGS] & TEXT_VISIBLE_BIT;
 }
-void rec_text_set_visible(uint16_t thing, bool value)
+void rec_text_set_visible(uint16_t thing, bool visible)
 {
-    REC(thing)[TEXT_FLAGS] = (REC(thing)[TEXT_FLAGS] & ~TEXT_VISIBLE_BIT) | (value != 0);
+    REC(thing)[TEXT_FLAGS] = (REC(thing)[TEXT_FLAGS] & ~TEXT_VISIBLE_BIT) | (visible != 0);
 }
 uint16_t rec_text_offset(uint16_t thing)
 {
@@ -389,7 +389,7 @@ uint8_t rec_group_cells(uint16_t thing)
 {
     return rec_read(thing)[GROUP_CELLS];
 }
-void rec_group_set_cells(uint16_t thing, uint8_t value)
+void rec_group_set_cells(uint16_t thing, uint16_t value)
 {
     REC(thing)[GROUP_CELLS] = value;
 }
@@ -413,7 +413,7 @@ uint8_t rec_group_last_creature(uint16_t thing)
 {
     return (rec_read(thing)[GROUP_BEHAVIOR] & GROUP_LAST_CREATURE_MASK) >> GROUP_LAST_CREATURE_SHIFT;
 }
-void rec_group_set_last_creature(uint16_t thing, uint8_t value)
+void rec_group_set_last_creature(uint16_t thing, uint16_t value)
 {
     REC(thing)
     [GROUP_BEHAVIOR] = (REC(thing)[GROUP_BEHAVIOR] & ~GROUP_LAST_CREATURE_MASK) |
@@ -423,14 +423,14 @@ uint8_t rec_group_direction(uint16_t thing)
 {
     return rec_read(thing)[GROUP_FLAGS] & GROUP_DIRECTION_MASK;
 }
-void rec_group_set_direction(uint16_t thing, uint8_t value)
+void rec_group_set_direction(uint16_t thing, uint16_t value)
 {
     REC(thing)[GROUP_FLAGS] = (REC(thing)[GROUP_FLAGS] & ~GROUP_DIRECTION_MASK) | (value & GROUP_DIRECTION_MASK);
 }
-void rec_group_set_no_discard(uint16_t thing, bool value)
+void rec_group_set_no_discard(uint16_t thing, bool no_discard)
 {
     uint8_t *d = REC(thing);
-    d[GROUP_FLAGS] = value ? d[GROUP_FLAGS] | GROUP_NO_DISCARD_BIT : d[GROUP_FLAGS] & ~GROUP_NO_DISCARD_BIT;
+    d[GROUP_FLAGS] = no_discard ? d[GROUP_FLAGS] | GROUP_NO_DISCARD_BIT : d[GROUP_FLAGS] & ~GROUP_NO_DISCARD_BIT;
 }
 
 /* Object records */
@@ -439,10 +439,10 @@ bool rec_object_is_cursed(uint16_t thing)
 {
     return rec_read(thing)[OBJECT_FLAGS] & OBJECT_CURSED_BIT;
 }
-void rec_object_set_cursed(uint16_t thing, bool value)
+void rec_object_set_cursed(uint16_t thing, bool cursed)
 {
     uint8_t *d = REC(thing);
-    d[OBJECT_FLAGS] = (d[OBJECT_FLAGS] & ~OBJECT_CURSED_BIT) | (value != 0);
+    d[OBJECT_FLAGS] = (d[OBJECT_FLAGS] & ~OBJECT_CURSED_BIT) | (cursed != 0);
 }
 void rec_object_set_important(uint16_t thing, bool important)
 {
@@ -465,10 +465,10 @@ bool rec_weapon_is_lit(uint16_t thing)
 {
     return (rec_read(thing)[OBJECT_FLAGS] & WEAPON_LIT_BIT) != 0;
 }
-void rec_weapon_set_lit(uint16_t thing, bool value)
+void rec_weapon_set_lit(uint16_t thing, bool lit)
 {
     uint8_t *d = REC(thing);
-    d[OBJECT_FLAGS] = value ? d[OBJECT_FLAGS] | WEAPON_LIT_BIT : d[OBJECT_FLAGS] & ~WEAPON_LIT_BIT;
+    d[OBJECT_FLAGS] = lit ? d[OBJECT_FLAGS] | WEAPON_LIT_BIT : d[OBJECT_FLAGS] & ~WEAPON_LIT_BIT;
 }
 uint16_t rec_weapon_charges(uint16_t thing)
 {
@@ -514,10 +514,10 @@ bool rec_scroll_is_closed(uint16_t thing)
 {
     return (rec_read(thing)[OBJECT_FLAGS] & SCROLL_CLOSED_MASK) != 0;
 }
-void rec_scroll_set_closed(uint16_t thing, bool value)
+void rec_scroll_set_closed(uint16_t thing, bool closed)
 {
     uint8_t *d = REC(thing);
-    d[OBJECT_FLAGS] = (d[OBJECT_FLAGS] & ~SCROLL_CLOSED_MASK) | (value ? SCROLL_CLOSED_BIT : 0);
+    d[OBJECT_FLAGS] = (d[OBJECT_FLAGS] & ~SCROLL_CLOSED_MASK) | (closed ? SCROLL_CLOSED_BIT : 0);
 }
 uint16_t rec_scroll_text_index(uint16_t thing)
 {
@@ -594,7 +594,7 @@ uint8_t rec_projectile_energy(uint16_t thing)
 {
     return rec_read(thing)[PROJECTILE_ENERGY];
 }
-void rec_projectile_set_energy(uint16_t thing, uint8_t value)
+void rec_projectile_set_energy(uint16_t thing, uint16_t value)
 {
     REC(thing)[PROJECTILE_ENERGY] = value;
 }
@@ -602,7 +602,7 @@ uint8_t rec_projectile_attack(uint16_t thing)
 {
     return rec_read(thing)[PROJECTILE_ATTACK];
 }
-void rec_projectile_set_attack(uint16_t thing, uint8_t value)
+void rec_projectile_set_attack(uint16_t thing, uint16_t value)
 {
     REC(thing)[PROJECTILE_ATTACK] = value;
 }
@@ -621,7 +621,7 @@ uint8_t rec_explosion_attack(uint16_t thing)
 {
     return rec_read(thing)[EXPLOSION_ATTACK];
 }
-void rec_explosion_set_attack(uint16_t thing, uint8_t value)
+void rec_explosion_set_attack(uint16_t thing, uint16_t value)
 {
     REC(thing)[EXPLOSION_ATTACK] = value;
 }
@@ -629,7 +629,7 @@ uint8_t rec_explosion_type(uint16_t thing)
 {
     return rec_read(thing)[EXPLOSION_FLAGS] & EXPLOSION_TYPE_MASK;
 }
-void rec_explosion_set_type(uint16_t thing, uint8_t value)
+void rec_explosion_set_type(uint16_t thing, uint16_t value)
 {
     REC(thing)
     [EXPLOSION_FLAGS] = (REC(thing)[EXPLOSION_FLAGS] & EXPLOSION_CENTERED_BIT) | (value & EXPLOSION_TYPE_MASK);
@@ -638,10 +638,10 @@ bool rec_explosion_is_centered(uint16_t thing)
 {
     return (rec_read(thing)[EXPLOSION_FLAGS] & EXPLOSION_CENTERED_BIT) != 0;
 }
-void rec_explosion_set_centered(uint16_t thing, bool value)
+void rec_explosion_set_centered(uint16_t thing, bool centered)
 {
     REC(thing)
-    [EXPLOSION_FLAGS] = (REC(thing)[EXPLOSION_FLAGS] & EXPLOSION_TYPE_MASK) | (value ? EXPLOSION_CENTERED_BIT : 0);
+    [EXPLOSION_FLAGS] = (REC(thing)[EXPLOSION_FLAGS] & EXPLOSION_TYPE_MASK) | (centered ? EXPLOSION_CENTERED_BIT : 0);
 }
 
 /* Squares */

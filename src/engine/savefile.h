@@ -63,10 +63,10 @@ typedef struct {
 /* XOR big-endian words in place; returns the sum of key, plain and cipher words */
 uint16_t savefile_xor_block(uint8_t *bytes, uint16_t key, uint16_t word_count);
 /* Decrypts a save file into s and checks the header chain and block checksums. Returns false on a bad file. */
-bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *s);
+bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *save);
 /* Encrypts s into a new save file buffer. Returns NULL when s is incomplete. */
-uint8_t *savefile_encode(const SaveFile *s, uint32_t *size);
-void savefile_free(SaveFile *s);
+uint8_t *savefile_encode(const SaveFile *save, uint32_t *out_size);
+void savefile_free(SaveFile *save);
 
 /* Plain header fields. savefile_init_header fills a new header with random16 words and keys. */
 void savefile_init_header(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const uint8_t *extra);

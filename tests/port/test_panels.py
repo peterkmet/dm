@@ -53,7 +53,7 @@ def setup(lib):
     lib.champion_pack.argtypes = [ctypes.POINTER(Champion), ctypes.c_char_p]
     lib.rec_find_unused_thing.restype = u16
     lib.rec_find_unused_thing.argtypes = [u16]
-    lib.inventory_get_object_removed_from_slot.argtypes = [u16, u16]
+    lib.inventory_get_object_removed_from_slot.argtypes = [c16, c16]
     lib.panel_click_in_chest.argtypes = [c16, c16]
     lib.ui_get_slot_box_zone.argtypes = [c16, ctypes.c_int, ctypes.POINTER(Box)]
     lib.ui_get_slot_box_zone.restype = ctypes.c_bool

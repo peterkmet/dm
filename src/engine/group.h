@@ -195,7 +195,7 @@ void group_set_directions(uint16_t group, uint8_t directions, int16_t map);
 bool group_is_creature_allowed_on_map(uint16_t group, int16_t map);
 
 /* The index of the creature in a cell, or -1. Half-square creatures fill two cells side by side. */
-int16_t group_get_creature_in_cell(uint16_t group, uint16_t cell);
+int16_t group_get_creature_in_cell(uint16_t group, int16_t cell);
 /* The index of the creature that a champion in a cell hits first, or -1. */
 int16_t group_get_melee_target(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y,
                                int16_t champion_cell);
@@ -206,7 +206,7 @@ static inline uint16_t group_cell(uint16_t packed, int16_t creature)
 {
     return packed >> (GROUP_CELL_BITS * creature) & GROUP_CELL_MASK;
 }
-uint16_t group_set_cell_value(uint16_t packed, uint16_t creature_index, uint16_t value);
+uint16_t group_set_cell_value(uint16_t packed, int16_t creature_index, uint16_t value);
 /* New graphic offsets and flip state of one creature (or all with creature_index -1). Returns the next aspect time. */
 uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t creature_index, bool attacking);
 /* A new group behavior event (37) after one tick. Faster creatures get a higher event priority. */
@@ -233,7 +233,7 @@ uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, 
 void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y);
 
 /* A dead creature leaves the fixed possessions of its type. Possessions with bit 15 drop half of the time. */
-void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, int16_t y, uint16_t cell,
+void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, int16_t y, int16_t cell,
                                            int16_t sound_mode);
 /* Cells of the creatures that died in a fall during a group move; their fixed possessions drop later. */
 typedef struct {
@@ -249,7 +249,7 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
 void group_delete(int16_t x, int16_t y);
 /* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group.
    Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
-DamageOutcome group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage);
+DamageOutcome group_get_damage_creature_outcome(uint16_t group, int16_t creature_index, Location at, int16_t damage);
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
 DamageOutcome group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack);
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack);
@@ -273,7 +273,7 @@ int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell);
 
 /* A creature hits a champion: dodge by dexterity and luck, damage from attack, map difficulty, and parry skill,
    then poison. Returns the damage. */
-int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index);
+int16_t group_get_champion_damage(uint16_t group, int16_t champion_index);
 /* A melee attack of a champion on a creature. */
 typedef struct {
     int16_t champion_index;
@@ -286,7 +286,7 @@ typedef struct {
 } MeleeAttack;
 /* A champion hits a creature with a melee action: hit chance by dexterity, damage by strength, the action damage
    factor, and the creature defense. Returns the damage (0 for a miss). */
-int16_t group_get_melee_action_damage(const MeleeAttack *attack);
+int16_t group_get_melee_action_damage(const MeleeAttack *melee);
 
 /* A rule tells the group on a square about a danger, a projectile hit or the adjacent party (REACTION_*). */
 void group_process_reaction_event(Location at, int16_t reaction);

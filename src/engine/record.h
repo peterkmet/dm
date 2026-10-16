@@ -49,7 +49,7 @@ bool rec_teleporter_is_audible(uint16_t thing);
 
 /* Text record (thing type 2) */
 bool rec_text_is_visible(uint16_t thing);
-void rec_text_set_visible(uint16_t thing, bool value);
+void rec_text_set_visible(uint16_t thing, bool visible);
 /* The word offset of the text in the text data. */
 uint16_t rec_text_offset(uint16_t thing);
 
@@ -89,20 +89,20 @@ uint16_t rec_group_creature_type(uint16_t thing);
 void rec_group_set_creature_type(uint16_t thing, uint16_t value);
 /* 2 bits per creature, 0xff for one centered creature; on the party map the active group index. */
 uint8_t rec_group_cells(uint16_t thing);
-void rec_group_set_cells(uint16_t thing, uint8_t value);
+void rec_group_set_cells(uint16_t thing, uint16_t value);
 uint16_t rec_group_health(uint16_t group, int16_t creature);
 void rec_group_set_health(uint16_t group, int16_t creature, uint16_t health);
 uint16_t rec_group_behavior(uint16_t thing);
 void rec_group_set_behavior(uint16_t thing, uint16_t value);
 uint8_t rec_group_last_creature(uint16_t thing);
-void rec_group_set_last_creature(uint16_t thing, uint8_t value);
+void rec_group_set_last_creature(uint16_t thing, uint16_t value);
 uint8_t rec_group_direction(uint16_t thing);
-void rec_group_set_direction(uint16_t thing, uint8_t value);
-void rec_group_set_no_discard(uint16_t thing, bool value);
+void rec_group_set_direction(uint16_t thing, uint16_t value);
+void rec_group_set_no_discard(uint16_t thing, bool no_discard);
 
 /* Object records (thing types 5-10) */
 bool rec_object_is_cursed(uint16_t thing);
-void rec_object_set_cursed(uint16_t thing, bool value);
+void rec_object_set_cursed(uint16_t thing, bool cursed);
 void rec_object_set_important(uint16_t thing, bool important);
 /* Weapon, armour, and junk: the type in word 2 bits 0-6; the important bit stays. */
 void rec_object_set_type(uint16_t thing, uint16_t value);
@@ -110,7 +110,7 @@ void rec_object_set_type(uint16_t thing, uint16_t value);
 /* Weapon record (thing type 5) */
 uint16_t rec_weapon_type(uint16_t thing);
 bool rec_weapon_is_lit(uint16_t thing);
-void rec_weapon_set_lit(uint16_t thing, bool value);
+void rec_weapon_set_lit(uint16_t thing, bool lit);
 uint16_t rec_weapon_charges(uint16_t thing);
 void rec_weapon_set_charges(uint16_t thing, uint16_t value);
 bool rec_weapon_is_poisoned(uint16_t thing);
@@ -125,7 +125,7 @@ bool rec_armour_is_broken(uint16_t thing);
 /* Scroll record (thing type 7) */
 bool rec_scroll_is_closed(uint16_t thing);
 /* The closed bits are 10-15; bits 8-9 stay. */
-void rec_scroll_set_closed(uint16_t thing, bool value);
+void rec_scroll_set_closed(uint16_t thing, bool closed);
 /* Text record index of the scroll text. */
 uint16_t rec_scroll_text_index(uint16_t thing);
 
@@ -150,20 +150,20 @@ void rec_junk_set_charges(uint16_t thing, uint16_t value);
 uint16_t rec_projectile_slot(uint16_t thing);
 void rec_projectile_set_slot(uint16_t thing, uint16_t value);
 uint8_t rec_projectile_energy(uint16_t thing);
-void rec_projectile_set_energy(uint16_t thing, uint8_t value);
+void rec_projectile_set_energy(uint16_t thing, uint16_t value);
 uint8_t rec_projectile_attack(uint16_t thing);
-void rec_projectile_set_attack(uint16_t thing, uint8_t value);
+void rec_projectile_set_attack(uint16_t thing, uint16_t value);
 /* The timeline event that moves the projectile. */
 uint16_t rec_projectile_event_index(uint16_t thing);
 void rec_projectile_set_event_index(uint16_t thing, uint16_t value);
 
 /* Explosion record, 4 bytes (thing type 15): next, attack, type in bits 0-6, centered in bit 7. */
 uint8_t rec_explosion_attack(uint16_t thing);
-void rec_explosion_set_attack(uint16_t thing, uint8_t value);
+void rec_explosion_set_attack(uint16_t thing, uint16_t value);
 uint8_t rec_explosion_type(uint16_t thing);
-void rec_explosion_set_type(uint16_t thing, uint8_t value);
+void rec_explosion_set_type(uint16_t thing, uint16_t value);
 bool rec_explosion_is_centered(uint16_t thing);
-void rec_explosion_set_centered(uint16_t thing, bool value);
+void rec_explosion_set_centered(uint16_t thing, bool centered);
 
 /* Squares: one byte per square, type in bits 5-7, a thing list in bit 4, type flags in bits 0-3 */
 /* The square byte of (x, y) on the map, without a bound check. */

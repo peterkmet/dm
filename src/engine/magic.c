@@ -64,7 +64,7 @@ static void set_attributes_of_all(uint16_t attributes)
         g_champions[i].attributes |= attributes;
 }
 
-void magic_create_light_event(int16_t light_power, int16_t ticks)
+void magic_create_light_event(int16_t light_power, uint16_t ticks)
 {
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks), .type = EVENT_LIGHT, .b = light_power};
@@ -72,7 +72,7 @@ void magic_create_light_event(int16_t light_power, int16_t ticks)
     /* The view step recomputes the dungeon palette from the light amount. */
 }
 
-void magic_disable_action(uint16_t champion_index, uint16_t ticks)
+void magic_disable_action(int16_t champion_index, uint16_t ticks)
 {
     Champion *c = &g_champions[champion_index];
     uint32_t time = g_game_time + ticks;
@@ -92,7 +92,7 @@ void magic_disable_action(uint16_t champion_index, uint16_t ticks)
     c->enable_action_event_index = timeline_add_event(&event);
 }
 
-void magic_print_spell_failure_message(uint16_t champion_index, int16_t failure_type, uint16_t skill_index)
+void magic_print_spell_failure_message(int16_t champion_index, int16_t failure_type, int16_t skill_index)
 {
     int16_t first;
     if (failure_type == SPELL_FAILURE_NEEDS_MORE_PRACTICE) {
@@ -114,7 +114,7 @@ void magic_print_spell_failure_message(uint16_t champion_index, int16_t failure_
     message_print(MESSAGE_COLOR_CYAN, gfx_get_string(first + 1));
 }
 
-bool magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy,
+bool magic_is_projectile_spell_cast(int16_t champion_index, uint16_t thing, int16_t kinetic_energy,
                                     uint16_t required_mana)
 {
     Champion *c = &g_champions[champion_index];
@@ -133,7 +133,7 @@ bool magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int
     return true;
 }
 
-bool magic_is_party_spell_or_fire_shield_successful(uint16_t champion_index, bool spell_shield, uint16_t ticks,
+bool magic_is_party_spell_or_fire_shield_successful(int16_t champion_index, bool spell_shield, uint16_t ticks,
                                                     bool use_mana)
 {
     Champion *c = &g_champions[champion_index];
@@ -169,7 +169,7 @@ static uint16_t find_empty_flask_in_hand(const Champion *c)
 }
 
 /* Fills an empty flask in a hand with the potion. Returns false without a flask. */
-static bool cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t power)
+static bool cast_potion(int16_t champion_index, uint16_t potion_type, int16_t power)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t flask = find_empty_flask_in_hand(c);
@@ -187,7 +187,7 @@ static bool cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t p
 }
 
 /* The champion turns to the party direction and shoots the explosion of the spell. */
-static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, int16_t power, uint16_t skill_level)
+static void cast_projectile(int16_t champion_index, uint16_t explosion_type, int16_t power, uint16_t skill_level)
 {
     Champion *c = &g_champions[champion_index];
     champion_face_party_direction(c);
@@ -200,14 +200,14 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
 }
 
 /* Light now, taken back by event 70 after the ticks. */
-static void cast_light(uint16_t light_power, int16_t ticks)
+static void cast_light(uint16_t light_power, uint16_t ticks)
 {
     g_party.magical_light_amount += tables_get_light_amount(light_power);
     magic_create_light_event(-light_power, ticks);
 }
 
 /* Zokathra: a new junk object in an empty hand, else on the party square. */
-static void cast_zokathra(uint16_t champion_index)
+static void cast_zokathra(int16_t champion_index)
 {
     uint16_t thing = rec_find_unused_thing(THING_JUNK);
     if (thing == THING_NONE)
@@ -226,7 +226,7 @@ static void cast_zokathra(uint16_t champion_index)
 }
 
 /* Spells of kind "other": light, darkness, thieves eye, invisibility, shields, magic torch, footprints, zokathra. */
-static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
+static void cast_other(int16_t champion_index, uint16_t type, int16_t power)
 {
     uint16_t ticks = (power + 1) * SPELL_DURATION_FACTOR;
     switch (type) {
@@ -304,7 +304,7 @@ typedef struct {
 /* CSB map spells need a magic map in the action hand. DAIN, ROS, and KU add a map layer for a time;
    NETA keeps the map of the party square and direction. cast is false without the map; disabled_ticks is set on the
    NETA path only. */
-static MagicMapCast cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power)
+static MagicMapCast cast_magic_map(int16_t champion_index, uint16_t type, int16_t power)
 {
     MagicMapCast result = {true, 0};
     Champion *c = &g_champions[champion_index];
@@ -339,9 +339,9 @@ static MagicMapCast cast_magic_map(uint16_t champion_index, uint16_t type, int16
     return result;
 }
 
-int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
+int16_t magic_get_champion_spell_cast_result(int16_t champion_index)
 {
-    if (champion_index >= g_party_champion_count)
+    if (champion_index < 0 || champion_index >= g_party_champion_count)
         return SPELL_CAST_FAILURE;
     Champion *c = &g_champions[champion_index];
     if (!c->current_health)

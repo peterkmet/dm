@@ -285,7 +285,7 @@ class World:
         for i in range(4):
             cs[i] = self.champion()
             emu.write(CHAMPIONS + 0x140 * i, pack(lib, cs[i]))
-        var(lib, u16, "g_party_champion_count").value = count
+        var(lib, c16, "g_party_champion_count").value = count
         emu.write(COUNT, struct.pack(">H", count))
         self.zero_pending()
 
@@ -422,7 +422,7 @@ def recruit_first_champion(game):
     game.run()
     game.click_box(game.boxes[5])
     game.click_zone(ZONE_RESURRECT)
-    assert game.value("g_party_champion_count", u16) == 1
+    assert game.value("g_party_champion_count", c16) == 1
 
 
 def recruit_and_hold_object(game):
@@ -432,7 +432,7 @@ def recruit_and_hold_object(game):
     game.run()
     game.click_box(game.boxes[5])
     game.click_zone(ZONE_RESURRECT)
-    assert game.value("g_party_champion_count", u16) == 1
+    assert game.value("g_party_champion_count", c16) == 1
     box = Box()
     assert game.lib.ui_get_slot_box_zone(C.SLOT_HAND_ACTION, 0, ctypes.byref(box))
     game.click_box(box, viewport=False)
@@ -442,7 +442,7 @@ def recruit_and_hold_object(game):
 
 # The saved globals of the game state, with their ctypes types.
 GLOBALS = [
-    ("g_game_time", u32), ("g_random_seed", u32), ("g_leader_hand_object", u16), ("g_party_champion_count", u16),
+    ("g_game_time", u32), ("g_random_seed", u32), ("g_leader_hand_object", u16), ("g_party_champion_count", c16),
     ("g_party_map_x", c16), ("g_party_map_y", c16), ("g_party_direction", c16), ("g_party_map_index", c16),
     ("g_leader_index", c16), ("g_magic_caster_champion_index", c16), ("g_active_group_count", u16),
     ("g_last_creature_attack_time", ctypes.c_int32), ("g_last_party_movement_time", ctypes.c_int32),
@@ -541,13 +541,13 @@ def setup_creatures(lib):
         ("timeline_is_first_event_expired", ctypes.c_bool, []), ("timeline_extract_first_event", None, [event_p]),
         ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
         ("map_set_current_map", None, [c16]), ("rec_write", ctypes.POINTER(u8), [u16]),
-        ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", DirectionPair, [Location, Location]),
+        ("group_get_champion_damage", c16, [u16, c16]), ("group_get_directions_to_destination", DirectionPair, [Location, Location]),
         ("group_is_destination_visible_from_source", ctypes.c_bool, [c16, c16, c16, c16, c16]),
         ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
         ("group_get_generated", u16, [u16, c16, u16, c16, Location]),
         ("group_get_damage_all_creatures_outcome", ctypes.c_int, [u16, c16, c16, c16]),
         ("dungeon_load", ctypes.c_bool, [ctypes.c_char_p]),
-        ("magic_get_champion_spell_cast_result", c16, [u16]), ("rec_find_unused_thing", u16, [u16]),
+        ("magic_get_champion_spell_cast_result", c16, [c16]), ("rec_find_unused_thing", u16, [u16]),
         ("object_get_icon_index", c16, [u16]), ("group_is_creature_allowed_on_map", ctypes.c_bool, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
     ]:
         f = getattr(lib, name)
@@ -596,7 +596,7 @@ def add_test_champion(lib):
     c.statistics[3][:] = [100, 100, 30]
     for s in range(30):
         c.slots[s] = 0xFFFF
-    var(lib, u16, "g_party_champion_count").value = 1
+    var(lib, c16, "g_party_champion_count").value = 1
     var(lib, c16, "g_leader_index").value = 0
     return c
 
@@ -749,7 +749,7 @@ def recruit_from_mirrors(lib, n):
         champions[i] = c
         lib.champion_set_portrait(i, portrait)
     c16.in_dll(lib, "g_leader_index").value = 0 if n else -1
-    u16.in_dll(lib, "g_party_champion_count").value = n
+    c16.in_dll(lib, "g_party_champion_count").value = n
     c16.in_dll(lib, "g_magic_caster_champion_index").value = -1
     return champions
 

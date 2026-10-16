@@ -127,10 +127,10 @@ void message_print(int16_t color, const char *s)
     }
 }
 
-void message_print_number(int16_t color, int32_t value)
+void message_print_number(int16_t color, int32_t integer)
 {
     char buf[NUMBER_TEXT_SIZE];
-    snprintf(buf, sizeof buf, "%d", (int)value);
+    snprintf(buf, sizeof buf, "%d", (int)integer);
     message_print(color, buf);
     message_print(color, " ");
 }

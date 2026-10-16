@@ -33,7 +33,7 @@ void timeline_init(void);
 /* Rebuilds the free list and the high water mark from the slot types (before a save, after a load). */
 void timeline_reset(void);
 /* Earlier time first, then higher type and priority, then the lower slot. */
-bool timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b);
+bool timeline_is_event_a_before_b(const TimelineEvent *event_a, const TimelineEvent *event_b);
 /* Position of an event slot in the timeline heap. */
 uint16_t timeline_get_index(uint16_t event_index);
 /* Moves a heap entry up or down until the timeline is in time order again. */

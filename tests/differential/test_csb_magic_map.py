@@ -64,7 +64,7 @@ def lib():
         ("rec_thing_next", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("rec_find_unused_thing", u16, [u16]),
         ("map_link_thing_to_list", None, [u16, u16, c16, c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("dungeon_decode_text", ctypes.c_bool, [ctypes.c_char_p, c16, u16, c16]), ("tables_get_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
-        ("magic_get_champion_spell_cast_result", c16, [u16]), ("map_get_creature_attributes", u16, [u16]),
+        ("magic_get_champion_spell_cast_result", c16, [c16]), ("map_get_creature_attributes", u16, [u16]),
         ("ui_get_viewport", ctypes.POINTER(Bitmap), []), ("gfx_get_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_bool, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
         ("savegame_load_from", ctypes.c_int, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
@@ -132,7 +132,7 @@ def take(lib, found):
 
 def setup_champion(lib, index=0):
     """Champion index alive in a party of index + 1: empty hands, every skill high, no map spells."""
-    value(lib, "g_party_champion_count", u16).value = index + 1
+    value(lib, "g_party_champion_count", c16).value = index + 1
     c = (Champion * 4).in_dll(lib, "g_champions")[index]
     c.name = b"TESTER"
     c.current_health = c.maximum_health = 100

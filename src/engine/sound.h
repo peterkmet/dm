@@ -67,7 +67,7 @@ typedef enum {
 /* Sample data of a sound, its length in bytes and its Paula period. */
 const int8_t *sound_get_sample(int16_t sound, uint16_t *length, uint16_t *period);
 /* LOUDNESS_HIGHER when a is louder than b, LOUDNESS_SAME when equal, LOUDNESS_LOWER when quieter. Exported for the tests. */
-LoudnessResult sound_compare_loudness(const uint8_t *a, const uint8_t *b);
+LoudnessResult sound_compare_loudness(const uint8_t *volumes_a, const uint8_t *volumes_b);
 /* Stereo volume of a sound on a square, relative to the party position and direction.
    Returns false when the square is out of hearing range. */
 bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes);

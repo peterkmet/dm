@@ -42,7 +42,7 @@ def lib():
 @pytest.fixture
 def alib(lib):
     for name, res, args in [
-        ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("champion_poison", None, [c16, u16]),
+        ("action_is_action_performed", ctypes.c_bool, [c16, c16]), ("champion_poison", None, [c16, c16]),
         ("group_get_melee_action_damage", c16, [ctypes.POINTER(MeleeAttack)]),
         ("timeline_delete_event", None, [u16]), ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]),
         ("map_link_thing_to_list", None, [u16, u16, c16, c16]), ("tables_get_action_info", ctypes.c_void_p, [ctypes.c_int]),
@@ -219,7 +219,7 @@ def test_back_row_champion_cannot_reach(fighter):
     other = (Champion * 4).in_dll(lib, "g_champions")[1]
     ctypes.memmove(ctypes.byref(other), ctypes.byref(c), ctypes.sizeof(Champion))
     other.cell = 3
-    var(lib, u16, "g_party_champion_count").value = 2
+    var(lib, c16, "g_party_champion_count").value = 2
     found = False
     for _ in range(10):
         lib.action_is_action_performed(0, C.ACTION_SWING)

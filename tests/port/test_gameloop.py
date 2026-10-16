@@ -41,7 +41,7 @@ def test_new_game_recruit_take_and_store(game):
 
     game.click_zone(ZONE_RESURRECT)
     assert game.session.candidate_champion_index == -1
-    assert game.value("g_party_champion_count", u16) == 1
+    assert game.value("g_party_champion_count", c16) == 1
     assert game.value("g_leader_index") == 0
     assert game.session.inventory_champion_index == -1
 
@@ -85,7 +85,7 @@ def test_champion_dies_with_inventory_open(game):
         game.click_zone(ZONE_RESURRECT)
         x, y = path[-1]
         mirrors.add((x + STEP_EAST[direction], y + STEP_NORTH[direction]))
-    assert game.value("g_party_champion_count", u16) == 2
+    assert game.value("g_party_champion_count", c16) == 2
     game.key(C.KEY_F1 + 0x100)
     game.run()
     assert game.session.inventory_champion_index == 1
@@ -266,7 +266,7 @@ def two_champions_with_runes(game):
         game.click_box(game.boxes[5])
         game.click_zone(ZONE_RESURRECT)
         mirrors.add((path[-1][0] + STEP_EAST[direction], path[-1][1] + STEP_NORTH[direction]))
-    assert game.value("g_party_champion_count", u16) == 2 and game.value("g_magic_caster_champion_index") == 0
+    assert game.value("g_party_champion_count", c16) == 2 and game.value("g_magic_caster_champion_index") == 0
     game.champions[1].symbol_step, game.champions[1].symbols = 1, bytes([C.SPELL_SYMBOL_FIRST])
 
 

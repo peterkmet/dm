@@ -36,7 +36,7 @@ void message_clear_expired_rows(void);
 /* Prints s with word wrap; '\n' starts a new row, a wrapped row continues indented. */
 void message_print(int16_t color, const char *s);
 /* Prints a number and a space. */
-void message_print_number(int16_t color, int32_t value);
+void message_print_number(int16_t color, int32_t integer);
 /* Starts a new row. */
 void message_new_line(void);
 /* Copies from s + *pos the words that fit in max_width pixels into line, moves *pos, and

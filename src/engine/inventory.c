@@ -139,11 +139,11 @@ uint16_t inventory_get_object_weight(uint16_t thing)
     return weight;
 }
 
-uint16_t inventory_get_armour_defense(const ArmourInfo *info, bool use_sharp_defense)
+uint16_t inventory_get_armour_defense(const ArmourInfo *armour, bool use_sharp_defense)
 {
-    uint16_t defense = info->defense;
+    uint16_t defense = armour->defense;
     return use_sharp_defense ? scale_value(defense, ARMOUR_SHARP_DEFENSE_SHIFT,
-                                           (info->attributes & ARMOUR_SHARP_RESISTANCE) + ARMOUR_SHARP_DEFENSE_BASE)
+                                           (armour->attributes & ARMOUR_SHARP_RESISTANCE) + ARMOUR_SHARP_DEFENSE_BASE)
                              : defense;
 }
 
@@ -199,7 +199,7 @@ static ObjectModifier stat_bonus(uint16_t statistic, int16_t bonus)
 }
 
 /* The statistic (or STAT_MANA) and the bonus of an object in a slot. The bonus is 0 for no bonus. */
-static ObjectModifier get_object_modifier(uint16_t slot, int16_t icon, uint16_t thing)
+static ObjectModifier get_object_modifier(int16_t slot, int16_t icon, uint16_t thing)
 {
     uint16_t type = THING_TYPE(thing);
     ObjectModifier none = {0, STAT_LUCK};
@@ -240,7 +240,7 @@ static ObjectModifier get_object_modifier(uint16_t slot, int16_t icon, uint16_t 
 }
 
 /* Statistic, luck, and mana changes of worn objects; sign is 1 to add, -1 to remove. */
-static void apply_object_modifiers(Champion *c, uint16_t slot, int16_t icon, int16_t sign, uint16_t thing)
+static void apply_object_modifiers(Champion *c, int16_t slot, int16_t icon, int16_t sign, uint16_t thing)
 {
     ObjectModifier modifier = get_object_modifier(slot, icon, thing);
     int16_t delta = modifier.bonus * sign;
@@ -255,7 +255,7 @@ static void apply_object_modifiers(Champion *c, uint16_t slot, int16_t icon, int
     c->attributes |= CHAMPION_ATTR_STATISTICS | CHAMPION_ATTR_PANEL;
 }
 
-static uint16_t *get_slot_pointer(Champion *c, uint16_t slot)
+static uint16_t *get_slot_pointer(Champion *c, int16_t slot)
 {
     return slot < SLOT_COUNT ? &c->slots[slot] : &g_open_chest_slots[slot - SLOT_CHEST_FIRST];
 }
@@ -277,7 +277,7 @@ static bool is_torch(int16_t icon)
     return icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST;
 }
 
-uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)
+uint16_t inventory_get_object_removed_from_slot(int16_t champion_index, int16_t slot)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t *p = get_slot_pointer(c, slot);
@@ -313,7 +313,7 @@ uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_
     return thing;
 }
 
-void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot)
+void inventory_add_object_in_slot(int16_t champion_index, uint16_t thing, int16_t slot)
 {
     if (thing == THING_NONE)
         return;
@@ -424,7 +424,7 @@ static void heal_wounds(Champion *c, uint16_t rolls)
 }
 
 /* The effect of a drunk potion. Stronger potions (power 0-255) have larger effects. */
-static void drink_potion(uint16_t champion_index, uint16_t potion)
+static void drink_potion(int16_t champion_index, uint16_t potion)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t power = rec_potion_power(potion);

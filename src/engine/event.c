@@ -390,7 +390,7 @@ bool event_is_door_destroyed_by_attack(Location at, int16_t attack, bool magic, 
 
 /* The action hand works again: the action defense ends. After a shot the next ammunition of the quiver goes to the
    ready hand (quiver line 1 first, then slots 7-9). */
-static void event_enable_champion_action(uint16_t champion_index)
+static void event_enable_champion_action(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     c->enable_action_event_index = -1;
@@ -416,7 +416,7 @@ static void event_enable_champion_action(uint16_t champion_index)
 }
 
 /* The damage number on the champion portrait disappears. */
-static void event_hide_damage_received(uint16_t champion_index)
+static void event_hide_damage_received(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     c->hide_damage_received_event_index = -1;

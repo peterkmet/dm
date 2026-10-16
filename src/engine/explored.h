@@ -18,7 +18,7 @@ void explored_mark(int16_t map, int16_t x, int16_t y);
 bool explored_is_seen(int16_t map, int16_t x, int16_t y);
 
 /* Save block: a malloc'd buffer the caller frees. Both return true on success. */
-bool explored_save(uint8_t **buf, size_t *len);
+bool explored_save(uint8_t **out_data, size_t *out_length);
 bool explored_load(const uint8_t *buf, size_t len);
 
 #endif

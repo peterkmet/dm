@@ -56,14 +56,14 @@ int16_t object_get_icon_index(uint16_t thing);
 /* Tenths of a kilogram. A chest weighs 5 kg plus its contents. */
 uint16_t inventory_get_object_weight(uint16_t thing);
 /* Sharp attacks use the sharp resistance (attributes bits 0-2) of the armour. */
-uint16_t inventory_get_armour_defense(const ArmourInfo *info, bool use_sharp_defense);
+uint16_t inventory_get_armour_defense(const ArmourInfo *armour, bool use_sharp_defense);
 
 void inventory_put_object_in_leader_hand(uint16_t thing);
 uint16_t inventory_get_object_removed_from_leader_hand(void);
 /* Takes an object from a slot: bonuses end, a torch goes out, a scroll closes. */
-uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot);
+uint16_t inventory_get_object_removed_from_slot(int16_t champion_index, int16_t slot);
 /* Puts an object in a slot: bonuses start, a torch in a hand burns, a scroll opens. */
-void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot);
+void inventory_add_object_in_slot(int16_t champion_index, uint16_t thing, int16_t slot);
 /* Slot boxes 0-7: the two hands of champions 0-3. 8 and up: slot (box - 8) of the open inventory.
    Swaps the leader hand object with the slot object when the slot accepts it. */
 void inventory_click_on_slot_box(uint16_t slot_box);

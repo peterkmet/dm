@@ -29,14 +29,14 @@ def lib():
     lib = load_lib()
     cp = ctypes.POINTER(Champion)
     sig = {
-        "champion_get_skill_level": (c16, [c16, c16, ctypes.c_bool, ctypes.c_bool]), "champion_add_skill_experience": (None, [u16, u16, u16]),
+        "champion_get_skill_level": (c16, [c16, c16, ctypes.c_bool, ctypes.c_bool]), "champion_add_skill_experience": (None, [c16, u16, u16]),
         "champion_get_maximum_load": (u16, [c16]), "champion_get_movement_ticks": (c16, [c16]),
         "champion_get_dexterity": (c16, [c16]), "champion_get_strength": (c16, [c16, c16]),
         "champion_get_wound_defense": (c16, [c16, c16, ctypes.c_bool]), "champion_add_pending_damage_and_wounds": (c16, [c16, c16, u16, c16]),
-        "champion_damage_all": (c16, [u16, u16, c16]), "champion_decrement_stamina": (None, [c16, c16]),
+        "champion_damage_all": (c16, [c16, u16, c16]), "champion_decrement_stamina": (None, [c16, c16]),
         "inventory_get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "rec_find_unused_thing": (u16, [u16]),
         "champion_add_candidate_to_party": (None, [c16]), "champion_click_in_resurrect_reincarnate_panel": (None, [c16]),
-        "inventory_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [u16]),
+        "inventory_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [c16]),
         "champion_pack": (None, [cp, ctypes.c_char_p]), "champion_unpack": (None, [ctypes.c_char_p, cp]),
         "recruit_text_thing": (u16, [c16, c16, c16]), "recruit_portrait_index": (c16, [u16]),
         "map_get_first_thing_at": (u16, [Position]), "rec_write": (ctypes.POINTER(u8), [u16]),
@@ -234,7 +234,7 @@ def test_recruit_first_mirror_champion(lib, party):
     r = RecruitData()
     assert lib.recruit_parse(party["text"], ctypes.byref(r)) == 1
     ch = champions(lib)[0]
-    assert var(lib, u16, "g_party_champion_count").value == 1
+    assert var(lib, c16, "g_party_champion_count").value == 1
     assert session(lib).candidate_champion_index == 0 and var(lib, c16, "g_leader_index").value == 0
     assert (ch.name, ch.title) == (r.name, r.title)
     assert (ch.current_health, ch.maximum_health, ch.maximum_stamina, ch.maximum_mana) == (r.current_health, r.maximum_health, r.maximum_stamina, r.maximum_mana)
@@ -304,7 +304,7 @@ def test_death_sets_redraw_flags(lib, party):
     cs = champions(lib)
     ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
     cs[1].cell = (cs[0].cell + 1) & 3
-    var(lib, u16, "g_party_champion_count").value = 2
+    var(lib, c16, "g_party_champion_count").value = 2
     var(lib, c16, "g_leader_index").value = 1
     var(lib, c16, "g_magic_caster_champion_index").value = 0
     redraw = var(lib, u16, "g_redraw")
@@ -320,7 +320,7 @@ def test_death_marks_the_champion_for_release(lib, party):
     cs = champions(lib)
     ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
     cs[1].cell = (cs[0].cell + 1) & 3
-    var(lib, u16, "g_party_champion_count").value = 2
+    var(lib, c16, "g_party_champion_count").value = 2
     dead = var(lib, u16, "g_dead_champions")
     dead.value = 0
     lib.champion_kill(1)

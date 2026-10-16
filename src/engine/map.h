@@ -37,7 +37,7 @@ static inline int16_t direction_left(int16_t direction)
 }
 
 /* Moves x and y by steps forward and to the right of a direction. */
-void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *x, int16_t *y);
+void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *out_x, int16_t *out_y);
 
 /* Square byte: type in bits 5-7, a thing list in bit 4, type flags in bits 0-3. */
 #define SQUARE_WALL            0

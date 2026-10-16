@@ -23,7 +23,7 @@ extern uint16_t g_dungeon_id;
 
 /* Each byte is a 2-bit index into the first 4 dictionary bytes, a 4-bit index into the next 16, or a
    literal byte. Returns false when the bit stream ends before byte_count bytes. */
-bool dungeon_decompress(const uint8_t *src, int32_t src_size, uint8_t *dst, int32_t byte_count);
+bool dungeon_decompress(const uint8_t *src, int32_t src_size, uint8_t *decoded, int32_t byte_count);
 /* Loads a new game dungeon file, compressed or not. Returns false with nothing loaded. */
 bool dungeon_load(const char *path);
 /* The dungeon part of a save file: the parts without compression and free records. */
@@ -33,7 +33,7 @@ bool dungeon_load_saved(const uint8_t *data, uint32_t size);
 bool dungeon_validate(void);
 /* The dungeon parts in the order of save_game, then the 16-bit sum of their bytes. Returns a
    malloc buffer, or NULL when no dungeon is loaded. */
-uint8_t *dungeon_save(uint32_t *size);
+uint8_t *dungeon_save(uint32_t *out_size);
 
 int16_t dungeon_map_count(void);
 int16_t dungeon_map_width(int16_t map);

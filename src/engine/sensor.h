@@ -39,7 +39,7 @@ uint16_t sensor_get_object_of_type_in_cell(int16_t x, int16_t y, int16_t cell, i
 bool sensor_is_object_in_party_possession(int16_t object_type);
 /* Click on the front wall cell with the leader hand. Returns true when a sensor triggered. The object
    generator gives no object until projectile_get_object_for_launcher_or_generator exists. */
-bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell);
+bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, int16_t cell);
 /* thing THING_NONE is the party. A floor square runs its floor sensors. A wall square runs the sensors of the thing cell. */
 void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, bool party_on_square, bool add);
 

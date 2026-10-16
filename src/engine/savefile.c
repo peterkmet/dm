@@ -95,14 +95,14 @@ static uint16_t compute_header_chain(uint8_t *h, bool set_last, uint16_t sum)
     return acc;
 }
 
-bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *s)
+bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *save)
 {
-    memset(s, 0, sizeof *s);
-    if (!file || size < SAVE_HEADER_BYTES || !(s->data = malloc(size)))
+    memset(save, 0, sizeof *save);
+    if (!file || size < SAVE_HEADER_BYTES || !(save->data = malloc(size)))
         return false;
-    s->owns_data = true;
-    s->header = s->data;
-    uint8_t *d = s->header;
+    save->owns_data = true;
+    save->header = save->data;
+    uint8_t *d = save->header;
     memcpy(d, file, size);
     savefile_xor_block(d + SAVE_HEADER_PAYLOAD, be16(d + payload_key()), SAVE_PAYLOAD_WORDS);
     if (compute_header_chain(d, false, 0) != payload_sum(d) ||
@@ -111,11 +111,11 @@ bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *s)
         goto fail;
     uint32_t pos = SAVE_HEADER_BYTES;
     for (int i = 0; i < SAVE_BLOCKS; i++) {
-        uint16_t n = block_size(i, s->block[0]);
+        uint16_t n = block_size(i, save->block[0]);
         if (size - pos < n)
             goto fail;
-        s->block[i] = d + pos;
-        s->block_size[i] = n;
+        save->block[i] = d + pos;
+        save->block_size[i] = n;
         uint16_t sum = savefile_xor_block(d + pos, be16(d + get_header_field_offset(SAVE_HEADER_KEYS) + 2 * i), n >> 1);
         /* DM load_game ignores the champions result; CSB checks it */
         if ((i != SAVE_BLOCK_CHAMPIONS || g_adventure == ADVENTURE_CSB) &&
@@ -125,33 +125,33 @@ bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *s)
     }
     if (size - pos < SAVE_PORTRAITS_BYTES)
         goto fail;
-    s->portraits = d + pos;
-    s->dungeon = d + pos + SAVE_PORTRAITS_BYTES;
-    s->dungeon_size = size - pos - SAVE_PORTRAITS_BYTES;
+    save->portraits = d + pos;
+    save->dungeon = d + pos + SAVE_PORTRAITS_BYTES;
+    save->dungeon_size = size - pos - SAVE_PORTRAITS_BYTES;
     return true;
 fail:
-    savefile_free(s);
+    savefile_free(save);
     return false;
 }
 
-uint8_t *savefile_encode(const SaveFile *s, uint32_t *size)
+uint8_t *savefile_encode(const SaveFile *save, uint32_t *out_size)
 {
-    if (!s->header || !s->portraits || (!s->dungeon && s->dungeon_size))
+    if (!save->header || !save->portraits || (!save->dungeon && save->dungeon_size))
         return NULL;
-    uint32_t total = SAVE_HEADER_BYTES + SAVE_PORTRAITS_BYTES + s->dungeon_size;
+    uint32_t total = SAVE_HEADER_BYTES + SAVE_PORTRAITS_BYTES + save->dungeon_size;
     for (int i = 0; i < SAVE_BLOCKS; i++) {
-        if (!s->block[i] || s->block_size[i] != block_size(i, s->block[0]))
+        if (!save->block[i] || save->block_size[i] != block_size(i, save->block[0]))
             return NULL;
-        total += s->block_size[i];
+        total += save->block_size[i];
     }
     uint8_t *out = malloc(total);
     if (!out)
         return NULL;
-    memcpy(out, s->header, SAVE_HEADER_BYTES);
+    memcpy(out, save->header, SAVE_HEADER_BYTES);
     uint32_t pos = SAVE_HEADER_BYTES;
     for (int i = 0; i < SAVE_BLOCKS; i++) {
-        uint16_t n = s->block_size[i];
-        memcpy(out + pos, s->block[i], n);
+        uint16_t n = save->block_size[i];
+        memcpy(out + pos, save->block[i], n);
         uint16_t sum =
             savefile_xor_block(out + pos, be16(out + get_header_field_offset(SAVE_HEADER_KEYS) + 2 * i), n >> 1);
         wr16(out + get_header_field_offset(SAVE_HEADER_CHECKSUMS) + 2 * i, sum);
@@ -159,18 +159,18 @@ uint8_t *savefile_encode(const SaveFile *s, uint32_t *size)
     }
     compute_header_chain(out, true, payload_sum(out));
     savefile_xor_block(out + SAVE_HEADER_PAYLOAD, be16(out + payload_key()), SAVE_PAYLOAD_WORDS);
-    memcpy(out + pos, s->portraits, SAVE_PORTRAITS_BYTES);
-    if (s->dungeon_size)
-        memcpy(out + pos + SAVE_PORTRAITS_BYTES, s->dungeon, s->dungeon_size);
-    *size = total;
+    memcpy(out + pos, save->portraits, SAVE_PORTRAITS_BYTES);
+    if (save->dungeon_size)
+        memcpy(out + pos + SAVE_PORTRAITS_BYTES, save->dungeon, save->dungeon_size);
+    *out_size = total;
     return out;
 }
 
-void savefile_free(SaveFile *s)
+void savefile_free(SaveFile *save)
 {
-    if (s->owns_data)
-        free(s->data);
-    memset(s, 0, sizeof *s);
+    if (save->owns_data)
+        free(save->data);
+    memset(save, 0, sizeof *save);
 }
 
 void savefile_randomize_header(uint8_t *h)

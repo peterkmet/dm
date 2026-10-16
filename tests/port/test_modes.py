@@ -143,7 +143,7 @@ def test_quick_save_and_quick_load(game, tmp_path):
         position = game.position()
         press(game, C.KEY_F9)
         assert "QUICK SAVE DAMAGED" in message_text(game)
-        assert game.value("g_party_champion_count", u16) == 1
+        assert game.value("g_party_champion_count", c16) == 1
         game.face((position[2] + 1) & 3)  # turns and moves read the squares of the running dungeon
         press(game, C.KEY_UP, 30)
         game.run(100)
@@ -503,7 +503,7 @@ def test_smooth_projectile_flight(game):
 def test_empty_hand_at_a_fountain(game, mode):
     lib, champions = game.lib, game.champions
     set_mode(game, mode)
-    count = u16.in_dll(lib, "g_party_champion_count")
+    count = c16.in_dll(lib, "g_party_champion_count")
     start = game.value("g_party_map_index"), game.position()
     ctypes.memmove(ctypes.byref(champions[1]), ctypes.byref(champions[0]), ctypes.sizeof(champions[0]))
     champions[1].cell = (champions[0].cell + 1) % 4
@@ -577,7 +577,7 @@ def test_cheat_light_draws_the_bright_palette(game):
 def test_cheat_immortal_keeps_1_health(game):
     lib, champion = game.lib, game.champions[0]
     health = champion.current_health
-    lib.champion_damage_all.argtypes = [u16, u16, c16]
+    lib.champion_damage_all.argtypes = [c16, u16, c16]
     session(lib).cheat_immortal = 1
     try:
         lib.champion_damage_all(5000, 0, 0)

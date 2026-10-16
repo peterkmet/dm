@@ -89,7 +89,7 @@ typedef struct {
 } Champion;
 
 extern Champion g_champions[CHAMPION_MAX_COUNT];
-extern uint16_t g_party_champion_count;
+extern int16_t g_party_champion_count;
 extern int16_t g_leader_index, g_magic_caster_champion_index;
 
 #define CHAMPION_RECORD_SIZE   320
@@ -144,7 +144,7 @@ extern uint16_t g_dead_champions;
 /* The champions that died in the tick (one bit each); the notice is then cleared. */
 uint16_t champion_take_dead_champions(void);
 /* Asks the user interface to draw these parts of a champion again (CHAMPION_ATTR_* redraw flags). */
-void champion_add_redraw_flags(uint16_t champion_index, uint16_t attributes);
+void champion_add_redraw_flags(int16_t champion_index, uint16_t attributes);
 /* The champion turns to the party direction. */
 void champion_face_party_direction(Champion *champion);
 /* The start of a game: no leader and an empty leader hand. Returns the hand object before, which a loaded
@@ -152,7 +152,7 @@ void champion_face_party_direction(Champion *champion);
 uint16_t champion_reset_data_to_start_game(void);
 
 /* Original 0x140-byte big-endian record (save files, emulator tests). */
-void champion_pack(const Champion *c, uint8_t *out);
+void champion_pack(const Champion *c, uint8_t *bytes);
 void champion_unpack(const uint8_t *in, Champion *c);
 
 /* The party stands in front of a mirror. The text on the party square holds the champion data. */
@@ -161,7 +161,7 @@ void champion_add_candidate_to_party(int16_t portrait_index);
    square and disable the mirror. The original also asks for a new name on reincarnation. */
 void champion_click_in_resurrect_reincarnate_panel(int16_t command);
 /* Vi altar: the champion comes back with no objects and with a lower maximum health. */
-void champion_resurrect(uint16_t champion_index);
+void champion_resurrect(int16_t champion_index);
 /* The living champion in a cell of the party square, or -1. */
 int16_t champion_get_index_in_cell(int16_t cell);
 /* The leader carries the hand object, so its weight moves to the new leader. */
@@ -185,7 +185,7 @@ int16_t champion_move_to_cell(int16_t champion_index, int16_t cell);
 int16_t champion_get_skill_level(int16_t champion_index, int16_t skill_index, bool ignore_modifiers,
                                  bool ignore_temporary);
 /* Experience counts more on difficult maps and in recent fights. A hidden skill also trains its base skill. */
-void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint16_t experience);
+void champion_add_skill_experience(int16_t champion_index, uint16_t skill, uint16_t experience);
 /* Tenths of a kilogram, rounded up to whole kilograms. */
 uint16_t champion_get_maximum_load(int16_t champion_index);
 /* Ticks between two party moves for this champion: more when the load is heavy. */
@@ -206,15 +206,15 @@ void champion_apply_and_draw_pending_damage_and_wounds(void);
 /* Closes the champion's inventory and action menu, drops all objects and the bones on the party
    square, and passes the leader and the spell casting to the first living champion. The party dies
    with its last champion. */
-void champion_kill(uint16_t champion_index);
+void champion_kill(int16_t champion_index);
 /* All objects fall to the floor in the champion's cell. */
-void champion_drop_all_objects(uint16_t champion_index);
+void champion_drop_all_objects(int16_t champion_index);
 /* Each poison step deals attack / 64 (at least 1) and schedules the next step with attack - 1. */
-void champion_poison(int16_t champion_index, uint16_t attack);
+void champion_poison(int16_t champion_index, int16_t attack);
 /* Removes all poison events of the champion. */
 void champion_unpoison(int16_t champion_index);
 /* Each champion takes attack +- attack / 8. Returns the number of champions that took damage. */
-int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t attack_type);
+int16_t champion_damage_all(int16_t attack, uint16_t allowed_wounds, int16_t attack_type);
 /* Stamina below 0 becomes damage (half the deficit). */
 void champion_decrement_stamina(int16_t champion_index, int16_t decrement);
 /* The party falls into a pit. With a rope it loses stamina instead. */
@@ -224,9 +224,9 @@ void champion_fall_damage(bool use_rope);
 void champion_apply_time_effects(void);
 
 /* Below half stamina, a value drops toward half of it; exported for the tests. */
-int16_t champion_adjust_by_stamina(int16_t champion_index, int16_t value);
+int16_t champion_adjust_by_stamina(int16_t champion_index, int16_t number);
 /* An attack value scaled down by how far the statistic is below the limit. */
-uint16_t champion_get_adjusted_attack(int16_t champion_index, uint16_t statistic, uint16_t attack);
+uint16_t champion_get_adjusted_attack(int16_t champion_index, uint16_t statistic, uint16_t amount);
 /* Changes a current statistic within its minimum and the limit; high values grow slower. */
 void champion_adjust_statistic(int16_t champion_index, uint16_t statistic, int16_t delta);
 /* Luck test against a percentage. A lucky test lowers luck, a failed one raises it.

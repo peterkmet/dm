@@ -31,6 +31,6 @@ uint16_t recruit_text_thing(int16_t map, int16_t x, int16_t y);
 /* A champion portrait sensor keeps the portrait index in its data. Else -1. */
 int16_t recruit_portrait_index(uint16_t sensor_thing);
 /* Top-left of the portrait in the champion portraits graphic. */
-void recruit_portrait_origin(int16_t portrait_index, int16_t *x, int16_t *y);
+void recruit_portrait_origin(int16_t portrait_index, int16_t *out_x, int16_t *out_y);
 
 #endif

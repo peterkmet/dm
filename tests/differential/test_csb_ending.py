@@ -417,8 +417,8 @@ def test_sensor_18_in_a_tick_starts_the_ending(lib, tmp_path, reset):
 def test_sensor_18_wins_over_a_party_death_in_the_same_tick(lib, tmp_path, reset):
     load_mini(lib, tmp_path)
     pending = pending_damage(lib)
-    assert value(lib, "g_party_champion_count", u16).value
-    for i in range(value(lib, "g_party_champion_count", u16).value):
+    assert value(lib, "g_party_champion_count", c16).value
+    for i in range(value(lib, "g_party_champion_count", c16).value):
         pending[i] = PARTY_KILLING_DAMAGE
     add_sensor_event(lib, value(lib, "g_game_time", u32).value)
     lib.gameloop_tick()

@@ -109,9 +109,9 @@ int16_t recruit_portrait_index(uint16_t sensor_thing)
     return rec_sensor_type(sensor_thing) == SENSOR_WALL_CHAMPION_PORTRAIT ? rec_sensor_data(sensor_thing) : -1;
 }
 
-void recruit_portrait_origin(int16_t portrait_index, int16_t *x, int16_t *y)
+void recruit_portrait_origin(int16_t portrait_index, int16_t *out_x, int16_t *out_y)
 {
-    *x = (portrait_index & (PORTRAITS_PER_ROW - 1)) * tables_get_portrait_width();
-    *y = (uint16_t)portrait_index / PORTRAITS_PER_ROW *
-         tables_get_portrait_height(); /* unsigned division as in the original */
+    *out_x = (portrait_index & (PORTRAITS_PER_ROW - 1)) * tables_get_portrait_width();
+    *out_y = (uint16_t)portrait_index / PORTRAITS_PER_ROW *
+             tables_get_portrait_height(); /* unsigned division as in the original */
 }

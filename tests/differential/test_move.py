@@ -72,7 +72,7 @@ def recruit(lib):
     champion.statistics[1][1] = 50
     for slot in range(30):
         champion.slots[slot] = 0xFFFF
-    ctypes.c_uint16.in_dll(lib, "g_party_champion_count").value = 1
+    ctypes.c_int16.in_dll(lib, "g_party_champion_count").value = 1
     var(lib, "g_leader_index").value = 0
     return champion
 

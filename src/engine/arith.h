@@ -26,22 +26,22 @@ inline int16_t max16(int16_t a, int16_t b)
 }
 
 /* The absolute value of a 16-bit value. */
-inline int16_t abs16(int16_t value)
+inline int16_t abs16(int16_t number)
 {
-    return value < 0 ? -value : value;
+    return number < 0 ? -number : number;
 }
 
-/* value limited to min..max; min wins when min > max. */
-inline int16_t bounded_value(int16_t min, int16_t value, int16_t max)
+/* number limited to min..max; min wins when min > max. */
+inline int16_t bounded_value(int16_t min, int16_t number, int16_t max)
 {
-    return value <= min ? min : value > max ? max : value;
+    return number <= min ? min : number > max ? max : number;
 }
 
-/* a * b >> shift. Like the original asr.l of the 32-bit mulu product, the sign bit is the
+/* amount * factor >> shift. Like the original asr.l of the 32-bit mulu product, the sign bit is the
    product's bit 31 and the shift count is taken modulo 64. */
-inline int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
+inline int32_t scale_value(uint16_t amount, int16_t shift, uint16_t factor)
 {
-    int32_t product = (int32_t)((uint32_t)a * b); /* unsigned multiply: no signed overflow */
+    int32_t product = (int32_t)((uint32_t)amount * factor); /* unsigned multiply: no signed overflow */
     shift &= LSR_MASK;
     return shift > LONG_SHIFT_MAXIMUM ? (product < 0 ? -1 : 0) : product >> shift;
 }

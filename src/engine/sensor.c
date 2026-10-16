@@ -254,7 +254,7 @@ static ClickTest click_test(uint16_t thing, uint16_t previous, Location at, int1
     return (ClickTest){CLICK_RESULT_IGNORED, thing};
 }
 
-bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
+bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, int16_t cell)
 {
     bool triggered = false;
     int16_t remaining[CELL_COUNT] = {0};

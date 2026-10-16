@@ -31,7 +31,7 @@
 #define ATTACK_LOW_FACTOR_SHIFT 3   /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
 
 Champion g_champions[CHAMPION_MAX_COUNT];
-uint16_t g_party_champion_count;
+int16_t g_party_champion_count;
 int16_t g_leader_index = -1;
 int16_t g_magic_caster_champion_index = -1;
 
@@ -144,32 +144,32 @@ uint16_t g_dead_champions;
         (int16_t *)&c->wounds, &c->current_health, &c->maximum_health, &c->current_stamina, &c->maximum_stamina,       \
         &c->current_mana, &c->maximum_mana, &c->action_defense, &c->food, &c->water
 
-void champion_pack(const Champion *c, uint8_t *out)
+void champion_pack(const Champion *c, uint8_t *bytes)
 {
-    memset(out, 0, CHAMPION_RECORD_SIZE);
-    memcpy(out + CHAMPION_RECORD_NAME, c->name, sizeof c->name);
-    memcpy(out + CHAMPION_RECORD_TITLE, c->title, sizeof c->title);
-    out[CHAMPION_RECORD_DIRECTION] = c->direction;
-    out[CHAMPION_RECORD_CELL] = c->cell;
-    out[CHAMPION_RECORD_ACTION] = c->action_index;
-    out[CHAMPION_RECORD_SYMBOL_STEP] = c->symbol_step;
-    memcpy(out + CHAMPION_RECORD_SYMBOLS, c->symbols, sizeof c->symbols);
-    out[CHAMPION_RECORD_DAMAGE_DIRECTION] = c->direction_maximum_damage_received;
-    out[CHAMPION_RECORD_MAXIMUM_DAMAGE] = c->maximum_damage_received;
-    out[CHAMPION_RECORD_POISON_EVENTS] = c->poison_event_count;
+    memset(bytes, 0, CHAMPION_RECORD_SIZE);
+    memcpy(bytes + CHAMPION_RECORD_NAME, c->name, sizeof c->name);
+    memcpy(bytes + CHAMPION_RECORD_TITLE, c->title, sizeof c->title);
+    bytes[CHAMPION_RECORD_DIRECTION] = c->direction;
+    bytes[CHAMPION_RECORD_CELL] = c->cell;
+    bytes[CHAMPION_RECORD_ACTION] = c->action_index;
+    bytes[CHAMPION_RECORD_SYMBOL_STEP] = c->symbol_step;
+    memcpy(bytes + CHAMPION_RECORD_SYMBOLS, c->symbols, sizeof c->symbols);
+    bytes[CHAMPION_RECORD_DAMAGE_DIRECTION] = c->direction_maximum_damage_received;
+    bytes[CHAMPION_RECORD_MAXIMUM_DAMAGE] = c->maximum_damage_received;
+    bytes[CHAMPION_RECORD_POISON_EVENTS] = c->poison_event_count;
     const int16_t *words[CHAMPION_RECORD_WORD_COUNT] = {WORDS(c)};
     for (int i = 0; i < CHAMPION_RECORD_WORD_COUNT; i++)
-        wr16(out + CHAMPION_RECORD_WORDS + 2 * i, *words[i]);
-    memcpy(out + CHAMPION_RECORD_STATISTICS, c->statistics, sizeof c->statistics);
+        wr16(bytes + CHAMPION_RECORD_WORDS + 2 * i, *words[i]);
+    memcpy(bytes + CHAMPION_RECORD_STATISTICS, c->statistics, sizeof c->statistics);
     for (int i = 0; i < SKILL_COUNT; i++) {
-        wr16(out + CHAMPION_RECORD_SKILLS + CHAMPION_RECORD_SKILL_SIZE * i, c->skills[i].temporary_experience);
-        wr32(out + CHAMPION_RECORD_SKILLS + CHAMPION_RECORD_SKILL_SIZE * i + 2, (uint32_t)c->skills[i].experience);
+        wr16(bytes + CHAMPION_RECORD_SKILLS + CHAMPION_RECORD_SKILL_SIZE * i, c->skills[i].temporary_experience);
+        wr32(bytes + CHAMPION_RECORD_SKILLS + CHAMPION_RECORD_SKILL_SIZE * i + 2, (uint32_t)c->skills[i].experience);
     }
     for (int i = 0; i < SLOT_COUNT; i++)
-        wr16(out + CHAMPION_RECORD_SLOTS + 2 * i, c->slots[i]);
-    wr16(out + CHAMPION_RECORD_LOAD, c->load);
-    wr16(out + CHAMPION_RECORD_SHIELD, c->shield_defense);
-    memcpy(out + CHAMPION_RECORD_MAGIC_MAP, c->magic_map, sizeof c->magic_map);
+        wr16(bytes + CHAMPION_RECORD_SLOTS + 2 * i, c->slots[i]);
+    wr16(bytes + CHAMPION_RECORD_LOAD, c->load);
+    wr16(bytes + CHAMPION_RECORD_SHIELD, c->shield_defense);
+    memcpy(bytes + CHAMPION_RECORD_MAGIC_MAP, c->magic_map, sizeof c->magic_map);
 }
 
 void champion_unpack(const uint8_t *in, Champion *c)
@@ -203,7 +203,7 @@ void champion_unpack(const uint8_t *in, Champion *c)
 }
 
 /* "<prefix><name><suffix>" in the champion color on a new message line. */
-static void print_champion_message(uint16_t champion_index, int16_t text)
+static void print_champion_message(int16_t champion_index, int16_t text)
 {
     int16_t color = tables_get_champion_color(champion_index);
     message_new_line();
@@ -325,7 +325,7 @@ static uint16_t get_candidate_slot(const Champion *c, uint16_t thing, uint16_t *
 
 /* The objects in the facing cell of the mirror wall become the candidate's possessions. They
    stay in the wall square list until the player accepts the candidate. */
-static void add_candidate_possessions(uint16_t champion_index)
+static void add_candidate_possessions(int16_t champion_index)
 {
     int16_t x, y;
     x = g_party_map_x;
@@ -465,7 +465,7 @@ void champion_click_in_resurrect_reincarnate_panel(int16_t command)
     print_champion_message(index, command == PANEL_RESURRECT ? TEXT_RESURRECTED : TEXT_REINCARNATED);
 }
 
-void champion_resurrect(uint16_t champion_index)
+void champion_resurrect(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     if (champion_get_index_in_cell(c->cell) != -1) {
@@ -537,7 +537,7 @@ int16_t champion_get_skill_level(int16_t champion_index, int16_t skill_index, bo
 }
 
 /* A new base skill level raises statistics, maximum health, stamina, and mana. */
-static void gain_level(uint16_t champion_index, uint16_t base, uint16_t level)
+static void gain_level(int16_t champion_index, uint16_t base, uint16_t level)
 {
     Champion *c = &g_champions[champion_index];
     uint8_t (*maximum)[STAT_VALUE_COUNT] = c->statistics;
@@ -592,7 +592,7 @@ static void gain_level(uint16_t champion_index, uint16_t base, uint16_t level)
     print_champion_message(champion_index, TEXT_LEVEL_GAINED + 2 * base);
 }
 
-void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint16_t experience)
+void champion_add_skill_experience(int16_t champion_index, uint16_t skill, uint16_t experience)
 {
     if (skill >= SKILL_SWING && skill <= SKILL_SHOOT &&
         g_game_time - OLD_ATTACK_TICKS > (uint32_t)g_last_creature_attack_time)
@@ -827,14 +827,14 @@ void champion_apply_and_draw_pending_damage_and_wounds(void)
 }
 
 /* The object appears on the party square, in the cell. */
-static void drop_on_party_square(uint16_t thing, uint16_t cell)
+static void drop_on_party_square(uint16_t thing, int16_t cell)
 {
     move_get_move_result(
         &(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = g_party_map_x, .to.y = g_party_map_y, .enters = true},
         NULL);
 }
 
-void champion_drop_all_objects(uint16_t champion_index)
+void champion_drop_all_objects(int16_t champion_index)
 {
     uint16_t cell = g_champions[champion_index].cell;
     for (uint16_t i = 0; i < SLOT_COUNT; i++) {
@@ -844,7 +844,7 @@ void champion_drop_all_objects(uint16_t champion_index)
     }
 }
 
-void champion_kill(uint16_t champion_index)
+void champion_kill(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     if (champion_index == g_session.acting_champion_index)
@@ -883,7 +883,7 @@ void champion_kill(uint16_t champion_index)
     }
 }
 
-void champion_poison(int16_t champion_index, uint16_t attack)
+void champion_poison(int16_t champion_index, int16_t attack)
 {
     if (champion_index == -1 || champion_index == g_session.candidate_champion_index)
         return;
@@ -908,7 +908,7 @@ void champion_unpoison(int16_t champion_index)
     g_champions[champion_index].poison_event_count = 0;
 }
 
-int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t attack_type)
+int16_t champion_damage_all(int16_t attack, uint16_t allowed_wounds, int16_t attack_type)
 {
     if (!attack)
         return 0;
@@ -1107,7 +1107,7 @@ uint16_t champion_take_dead_champions(void)
     return dead;
 }
 
-void champion_add_redraw_flags(uint16_t champion_index, uint16_t attributes)
+void champion_add_redraw_flags(int16_t champion_index, uint16_t attributes)
 {
     g_champions[champion_index].attributes |= attributes;
 }
@@ -1129,21 +1129,21 @@ uint16_t champion_reset_data_to_start_game(void)
     return hand;
 }
 
-int16_t champion_adjust_by_stamina(int16_t champion_index, int16_t value)
+int16_t champion_adjust_by_stamina(int16_t champion_index, int16_t number)
 {
     const Champion *champion = &g_champions[champion_index];
     int16_t half = champion->maximum_stamina >> 1;
     if (champion->current_stamina < half)
-        value = (value >> 1) + (int16_t)((int32_t)value * champion->current_stamina / half); /* 16-bit quotient */
-    return value;
+        number = (number >> 1) + (int16_t)((int32_t)number * champion->current_stamina / half); /* 16-bit quotient */
+    return number;
 }
 
-uint16_t champion_get_adjusted_attack(int16_t champion_index, uint16_t statistic, uint16_t attack)
+uint16_t champion_get_adjusted_attack(int16_t champion_index, uint16_t statistic, uint16_t amount)
 {
     const Champion *champion = &g_champions[champion_index];
     int16_t factor = STAT_LIMIT - champion->statistics[statistic][STAT_CURRENT];
-    return factor < ATTACK_FACTOR_MIN ? attack >> ATTACK_LOW_FACTOR_SHIFT
-                                      : scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
+    return factor < ATTACK_FACTOR_MIN ? amount >> ATTACK_LOW_FACTOR_SHIFT
+                                      : scale_value(amount, ATTACK_FACTOR_SHIFT, factor);
 }
 
 void champion_adjust_statistic(int16_t champion_index, uint16_t statistic, int16_t delta)

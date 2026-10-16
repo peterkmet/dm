@@ -52,7 +52,7 @@ def test_save_and_load_round_trip(game, tmp_path):
     hand = before["g_leader_hand_object"]
 
     assert lib.gameloop_start_new_game(str(GAME).encode())
-    assert game.value("g_party_champion_count", u16) == 0
+    assert game.value("g_party_champion_count", c16) == 0
     assert lib.savegame_load(str(tmp_path).encode()) == C.SAVEGAME_LOADED
     after = state(game)
 
@@ -84,7 +84,7 @@ def test_portraits_survive_save_and_load(game, tmp_path):
     keep.mkdir()
     saved.mkdir()
     assert lib.savegame_save(str(keep).encode()) is True
-    count = u16.in_dll(lib, "g_party_champion_count")
+    count = c16.in_dll(lib, "g_party_champion_count")
     count.value = 4
     cs = champions(lib)
     for k in range(4):
@@ -171,7 +171,7 @@ def dialog_waits(lib):
 
 
 def kill_party(game):
-    for i in range(game.value("g_party_champion_count", u16)):
+    for i in range(game.value("g_party_champion_count", c16)):
         game.champions[i].current_health = 0
         game.lib.champion_kill(i)
     assert game.session.party_dead == 1
@@ -242,7 +242,7 @@ def test_party_death_restart_loads_the_saved_game(game, tmp_path, quit_reset):
     frames.remove()
     assert restart and game.value("g_quit_requested") == 0 and game.value("g_return_to_entrance") == 0
     assert game.session.party_dead == 0
-    assert game.value("g_party_champion_count", u16) == 1
+    assert game.value("g_party_champion_count", c16) == 1
     assert game.champions[0].current_health > 0
     assert game.value("g_game_time", u32) == saved_time
     assert game.value("g_game_screen_inactive") == 0

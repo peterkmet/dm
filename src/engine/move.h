@@ -22,7 +22,7 @@ extern int g_party_teleport_count; /* port only: teleporters that moved the part
 /* Levitating groups, projectiles, and explosions do not fall into pits and do not trigger sensors when they leave a square. */
 bool move_is_levitating(uint16_t thing);
 /* A teleporter turns a projectile: its flight direction and its cell. */
-uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing, int16_t *direction);
+uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing, int16_t *out_direction);
 
 /* Results of move_get_move_result. */
 typedef enum {

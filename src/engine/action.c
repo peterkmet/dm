@@ -143,7 +143,7 @@ void action_set_action_list(int16_t action_set_index)
 
 /* A living champion that may act becomes the acting champion: the actions of the object in its action
    hand (or of the empty hand) form the action list, and its action hand is drawn again. */
-bool action_set_acting_champion(uint16_t champion_index)
+bool action_set_acting_champion(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     int16_t set = ACTION_SET_EMPTY_HAND;
@@ -186,7 +186,7 @@ void action_clear_acting_champion(void)
     g_redraw |= REDRAW_ACTION_AREA;
 }
 
-void action_print_action_message(uint16_t champion_index, const char *text)
+void action_print_action_message(int16_t champion_index, const char *text)
 {
     char out[MESSAGE_SIZE];
     size_t n = 0;
@@ -209,7 +209,7 @@ void action_print_action_message(uint16_t champion_index, const char *text)
         message_print(MESSAGE_COLOR_CYAN, out);
 }
 
-void action_decrement_charges(uint16_t champion_index)
+void action_decrement_charges(int16_t champion_index)
 {
     uint16_t thing = g_champions[champion_index].slots[SLOT_HAND_ACTION];
     switch (THING_TYPE(thing)) {
@@ -229,7 +229,7 @@ void action_decrement_charges(uint16_t champion_index)
     /* The interface redraws the changed object icons from the slots. */
 }
 
-bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y, uint16_t group)
+bool action_is_group_frightened_by_action(int16_t champion_index, int16_t action, int16_t x, int16_t y, uint16_t group)
 {
     if (group == THING_ENDOFLIST)
         return false;
@@ -272,7 +272,7 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
     return frightened;
 }
 
-bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, Location target_square,
+bool action_is_melee_action_performed(int16_t champion_index, int16_t action, Location target_square,
                                       int16_t skill_index, uint16_t target_group)
 {
     const Champion *c = &g_champions[champion_index];
@@ -309,7 +309,7 @@ bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, L
 }
 
 /* A spell action shoots the explosion. With less mana than the cost, the attack shrinks and all mana is used. */
-static bool is_spell_action_cast(uint16_t champion_index, uint16_t explosion_type, int16_t attack, int16_t mana_cost)
+static bool is_spell_action_cast(int16_t champion_index, uint16_t explosion_type, int16_t attack, int16_t mana_cost)
 {
     Champion *c = &g_champions[champion_index];
     champion_face_party_direction(c);
@@ -325,7 +325,7 @@ static bool is_spell_action_cast(uint16_t champion_index, uint16_t explosion_typ
 
 /* The bow or sling in the action hand shoots the ammunition of the ready hand. Returns false without matching
    ammunition. */
-static bool is_shot(uint16_t champion_index)
+static bool is_shot(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t ammunition = c->slots[SLOT_HAND_READY];
@@ -355,7 +355,7 @@ static bool is_shot(uint16_t champion_index)
 }
 
 /* Freeze Life stops the creatures. A magical box is used up; other objects use a charge. */
-static void cast_freeze_life(uint16_t champion_index)
+static void cast_freeze_life(int16_t champion_index)
 {
     uint16_t thing = g_champions[champion_index].slots[SLOT_HAND_ACTION];
     int16_t ticks;
@@ -373,7 +373,7 @@ static void cast_freeze_life(uint16_t champion_index)
 }
 
 /* Heal changes mana into health: up to min(10, heal level) health for each 2 mana. Returns the experience. */
-static uint16_t heal_champion(uint16_t champion_index, uint16_t experience)
+static uint16_t heal_champion(int16_t champion_index, uint16_t experience)
 {
     Champion *c = &g_champions[champion_index];
     int16_t missing = c->maximum_health - c->current_health;
@@ -399,7 +399,7 @@ static uint16_t heal_champion(uint16_t champion_index, uint16_t experience)
 }
 
 /* Window: thieves eye for a random time by the skill level. */
-static void open_window(uint16_t champion_index, uint16_t skill_index)
+static void open_window(int16_t champion_index, int16_t skill_index)
 {
     uint16_t random = random16();
     int16_t level = champion_get_skill_level(champion_index, skill_index, false, false);
@@ -431,7 +431,7 @@ static bool is_climbed_down(void)
 }
 
 /* Fireball, Dispell, Lightning, Spit, and Invoke shoot their explosion. Invoke takes a random attack and spell. */
-static bool is_explosion_action_cast(uint16_t champion_index, int16_t action, int16_t mana_cost)
+static bool is_explosion_action_cast(int16_t champion_index, int16_t action, int16_t mana_cost)
 {
     int16_t attack = 0;
     uint16_t type = EXPLOSION_FIREBALL;
@@ -465,7 +465,7 @@ static bool is_explosion_action_cast(uint16_t champion_index, int16_t action, in
 
 /* Chop, Kick, Swing, Hack, Berzerk, and Bash on a closed door: the champion bashes the door with the action hand
    strength. Returns false without a closed door in front. */
-static bool is_door_bashed(uint16_t champion_index, int16_t x, int16_t y, uint8_t square)
+static bool is_door_bashed(int16_t champion_index, int16_t x, int16_t y, uint8_t square)
 {
     if (rec_square_type(square) != SQUARE_DOOR || rec_door_state(square) != DOOR_CLOSED)
         return false;
@@ -478,11 +478,11 @@ static bool is_door_bashed(uint16_t champion_index, int16_t x, int16_t y, uint8_
 
 /* Throw: the champion throws the action hand object from its side of the party. Event 11 then moves the next
    weapon from the quiver to the action hand. */
-static bool is_action_hand_object_thrown(uint16_t champion_index)
+static bool is_action_hand_object_thrown(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     champion_face_party_direction(c);
-    int16_t side = direction_right(g_party_direction) == c->cell || direction_back(g_party_direction) == c->cell;
+    bool side = direction_right(g_party_direction) == c->cell || direction_back(g_party_direction) == c->cell;
     if (!action_is_object_thrown(champion_index, SLOT_HAND_ACTION, side))
         return false;
     event_set_quiver_slot(&g_timeline.events[c->enable_action_event_index], SLOT_HAND_ACTION);
@@ -496,9 +496,9 @@ static bool is_removed_in_csb(int16_t action)
            (action == ACTION_INVOKE || action == ACTION_FLUXCAGE || action == ACTION_FUSE);
 }
 
-bool action_is_action_performed(uint16_t champion_index, int16_t action)
+bool action_is_action_performed(int16_t champion_index, int16_t action)
 {
-    if (champion_index >= g_party_champion_count)
+    if (champion_index < 0 || champion_index >= g_party_champion_count)
         return false;
     Champion *c = &g_champions[champion_index];
     if (!c->current_health)
@@ -667,7 +667,7 @@ int16_t action_get_throwing_stamina_cost(uint16_t thing)
 
 /* The champion throws the object of the slot (or, with slot < 0, the leader hand object) from the left or right
    front cell. Kinetic energy comes from the strength, the weapon, and the throw level. */
-bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side)
+bool action_is_object_thrown(int16_t champion_index, int16_t slot, bool side)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t thing;
@@ -725,7 +725,7 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
     return true;
 }
 
-bool action_is_leader_hand_object_thrown(int16_t side)
+bool action_is_leader_hand_object_thrown(bool side)
 {
     if (g_leader_index == -1)
         return false;
@@ -733,8 +733,7 @@ bool action_is_leader_hand_object_thrown(int16_t side)
 }
 
 /* True when the weapon slot holds a bow and the ammunition slot an arrow, or a sling and a sling stone. */
-bool action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot,
-                                                 uint16_t ammunition_slot)
+bool action_is_ammunition_compatible_with_weapon(int16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)
 {
     const Champion *c = &g_champions[champion_index];
     uint16_t weapon = c->slots[weapon_slot];
@@ -753,7 +752,7 @@ bool action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16
 }
 
 /* Moves a weapon from the quiver to the slot. */
-static bool has_weapon_moved_to_slot(uint16_t champion_index, uint16_t quiver_slot, uint16_t slot)
+static bool has_weapon_moved_to_slot(int16_t champion_index, uint16_t quiver_slot, int16_t slot)
 {
     if (THING_TYPE(g_champions[champion_index].slots[quiver_slot]) != THING_WEAPON)
         return false;
@@ -762,7 +761,7 @@ static bool has_weapon_moved_to_slot(uint16_t champion_index, uint16_t quiver_sl
     return true;
 }
 
-void action_move_weapon_from_quiver_to_slot(uint16_t champion_index, uint16_t slot)
+void action_move_weapon_from_quiver_to_slot(int16_t champion_index, int16_t slot)
 {
     if (g_champions[champion_index].slots[slot] != THING_NONE ||
         has_weapon_moved_to_slot(champion_index, SLOT_QUIVER_LINE1_1, slot))

@@ -78,7 +78,7 @@ def new_prison_game(game, champions):
         game.run()
         game.click_box(game.boxes[5])
         game.click_zone(ZONE_RESURRECT)
-        assert value(game, "g_party_champion_count", u16) == count
+        assert value(game, "g_party_champion_count", c16) == count
         used.add((path[-1][0] + STEP_EAST[direction], path[-1][1] + STEP_NORTH[direction]))
     return [bytes(game.champions[i].name).rstrip(b"\0") for i in range(champions)]
 
@@ -91,7 +91,7 @@ def save_now(game):
 def assert_in_adventure(game, names):
     assert [value(game, n) for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")] == [4, 22, 18, 2]
     assert value(game, "g_dungeon_id", u16) == 13
-    assert value(game, "g_party_champion_count", u16) == len(names)
+    assert value(game, "g_party_champion_count", c16) == len(names)
     for i, name in enumerate(names):
         c = game.champions[i]
         assert bytes(c.name).rstrip(b"\0") == name

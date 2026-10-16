@@ -92,12 +92,12 @@ static inline uint8_t event_effect(const TimelineEvent *event)
 {
     return event->c;
 }
-static inline void event_set_effect(TimelineEvent *event, uint8_t effect)
+static inline void event_set_effect(TimelineEvent *event, int16_t effect)
 {
-    event->c = (event->c & EVENT_HIGH_BYTE_MASK) | effect;
+    event->c = (event->c & EVENT_HIGH_BYTE_MASK) | (effect & EVENT_BYTE_MASK);
 }
 /* The c word of a group event that carries the ticks of the next update. */
-static inline uint16_t event_group_c(uint8_t ticks)
+static inline uint16_t event_group_c(uint16_t ticks)
 {
     return ticks << EVENT_GROUP_TICKS_SHIFT;
 }

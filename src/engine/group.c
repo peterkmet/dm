@@ -254,7 +254,7 @@ bool group_is_creature_allowed_on_map(uint16_t group, int16_t map)
     return false;
 }
 
-int16_t group_get_creature_in_cell(uint16_t group, uint16_t cell)
+int16_t group_get_creature_in_cell(uint16_t group, int16_t cell)
 {
     uint8_t cells = group_get_cells(group, g_current_map_index);
     if (cells == CELL_CENTERED)
@@ -286,7 +286,7 @@ int16_t group_get_melee_target(int16_t group_x, int16_t group_y, int16_t party_x
     return -1;
 }
 
-uint16_t group_set_cell_value(uint16_t packed, uint16_t creature_index, uint16_t value)
+uint16_t group_set_cell_value(uint16_t packed, int16_t creature_index, uint16_t value)
 {
     uint16_t shift = GROUP_CELL_BITS * creature_index;
     return (packed & ~(GROUP_CELL_MASK << shift)) | (value & GROUP_CELL_MASK) << shift;
@@ -542,7 +542,7 @@ static int16_t fixed_possession_list_start(uint16_t creature_type)
     }
 }
 
-void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, int16_t y, uint16_t cell,
+void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, int16_t y, int16_t cell,
                                            int16_t sound_mode)
 {
     int16_t index = fixed_possession_list_start(creature_type);
@@ -656,7 +656,7 @@ static void shift_creature_events(int16_t x, int16_t y, uint16_t dead_creature)
 
 /* One creature of a group of more than one dies: it drops its fixed possessions (in a fall, its cell goes to drops),
    an attacking group may flee, and the creatures after it move down one place. */
-static void remove_dead_creature(uint16_t group, uint16_t creature_index, Location at, uint16_t cell,
+static void remove_dead_creature(uint16_t group, int16_t creature_index, Location at, int16_t cell,
                                  GroupFallDrops *drops)
 {
     uint16_t type = rec_group_creature_type(group);
@@ -698,7 +698,7 @@ static void remove_dead_creature(uint16_t group, uint16_t creature_index, Locati
 
 /* Damage to one creature. Without drops (not a fall) a dead creature drops its possessions now and the last one
    deletes the group. */
-static int16_t damage_creature(uint16_t group, uint16_t creature_index, Location at, int16_t damage,
+static int16_t damage_creature(uint16_t group, int16_t creature_index, Location at, int16_t damage,
                                GroupFallDrops *drops)
 {
     uint16_t type = rec_group_creature_type(group);
@@ -731,7 +731,7 @@ static int16_t damage_creature(uint16_t group, uint16_t creature_index, Location
     return outcome;
 }
 
-DamageOutcome group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage)
+DamageOutcome group_get_damage_creature_outcome(uint16_t group, int16_t creature_index, Location at, int16_t damage)
 {
     return damage_creature(group, creature_index, at, damage, NULL);
 }
@@ -777,7 +777,7 @@ void group_door_damages_creatures(int16_t x, int16_t y)
 }
 
 /* A Giggler steals objects from random slots while the champion fails the dexterity and luck checks, then flees. */
-static void group_steal_from_champion(uint16_t group, uint16_t champion_index)
+static void group_steal_from_champion(uint16_t group, int16_t champion_index)
 {
     Champion *champion = &g_champions[champion_index];
     bool stole = false;
@@ -1299,10 +1299,10 @@ static uint16_t creature_hit_wounds(const CreatureInfo *info)
     return tables_get_wound_mask(index);
 }
 
-int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
+int16_t group_get_champion_damage(uint16_t group, int16_t champion_index)
 {
     Champion *champion = &g_champions[champion_index];
-    if (champion_index >= g_party_champion_count || !champion->current_health)
+    if (champion_index < 0 || champion_index >= g_party_champion_count || !champion->current_health)
         return 0;
     if (g_session.party_sleeping)
         champion_wake_up();
@@ -1405,15 +1405,15 @@ static int16_t melee_hit_damage(int16_t champion_index, const CreatureInfo *info
     return damage;
 }
 
-int16_t group_get_melee_action_damage(const MeleeAttack *attack)
+int16_t group_get_melee_action_damage(const MeleeAttack *melee)
 {
-    int16_t champion_index = attack->champion_index;
-    uint16_t group = attack->group;
-    int16_t creature_index = attack->creature_index;
-    Location at = attack->at;
-    uint16_t hit_probability = attack->hit_probability;
-    uint16_t damage_factor = attack->damage_factor;
-    int16_t skill_index = attack->skill_index;
+    int16_t champion_index = melee->champion_index;
+    uint16_t group = melee->group;
+    int16_t creature_index = melee->creature_index;
+    Location at = melee->at;
+    uint16_t hit_probability = melee->hit_probability;
+    uint16_t damage_factor = melee->damage_factor;
+    int16_t skill_index = melee->skill_index;
     if (champion_index >= g_party_champion_count)
         return 0;
     Champion *champion = &g_champions[champion_index];

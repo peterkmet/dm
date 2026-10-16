@@ -34,14 +34,14 @@ bool move_is_levitating(uint16_t thing)
     return type == THING_PROJECTILE || type == THING_EXPLOSION;
 }
 
-uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing, int16_t *direction)
+uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing, int16_t *out_direction)
 {
     uint16_t rotation = rec_teleporter_rotation(teleporter);
     if (rec_teleporter_is_absolute(teleporter)) {
-        *direction = (int16_t)rotation;
+        *out_direction = (int16_t)rotation;
         return thing;
     }
-    *direction = (int16_t)NORMALIZE(rotation + *direction);
+    *out_direction = (int16_t)NORMALIZE(rotation + *out_direction);
     return THING_WITH_CELL(thing, rotation + THING_CELL(thing));
 }
 

@@ -237,7 +237,7 @@ def test_game_new(lib):
     lib.game_start_new()
     party = [c16.in_dll(lib, f"g_party_{n}").value for n in ("map_x", "map_y", "direction", "map_index")]
     assert party == [loc & 0x1F, loc >> 5 & 0x1F, loc >> 10 & 3, 0]
-    assert ctypes.c_uint16.in_dll(lib, "g_party_champion_count").value == 0
+    assert ctypes.c_int16.in_dll(lib, "g_party_champion_count").value == 0
     assert c16.in_dll(lib, "g_leader_index").value == -1
     assert ctypes.c_uint16.in_dll(lib, "g_leader_hand_object").value == 0xFFFF
     assert c32.in_dll(lib, "g_game_time").value == 0

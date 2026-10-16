@@ -74,7 +74,7 @@ static inline uint16_t projectile_event_step_energy(const TimelineEvent *event)
 {
     return event->c & PROJECTILE_EVENT_STEP_ENERGY_MASK;
 }
-static inline uint16_t projectile_event_c(int16_t x, int16_t y, uint16_t direction, uint16_t step_energy)
+static inline uint16_t projectile_event_c(int16_t x, int16_t y, int16_t direction, uint16_t step_energy)
 {
     return (x & PROJECTILE_EVENT_XY_MASK) << PROJECTILE_EVENT_X_SHIFT |
            (y & PROJECTILE_EVENT_XY_MASK) << PROJECTILE_EVENT_Y_SHIFT |
@@ -105,7 +105,7 @@ typedef struct {
 void projectile_create(const ProjectileLaunch *launch);
 /* An explosion appears at a square; fireball and lightning damage aim at the target square (the same square
    for a plain explosion). */
-void explosion_create(uint16_t explosion_thing, uint16_t attack, Location at, Location target, int16_t cell);
+void explosion_create(uint16_t explosion_thing, int16_t attack, Location at, Location target, int16_t cell);
 void projectile_delete_event(uint16_t projectile);
 /* The flying object drops to the square, or joins the possessions of the group that caught it. */
 void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x, int16_t y);
@@ -154,7 +154,7 @@ void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event);
    throwing stars, boulders. THING_NONE for other indices. */
 uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_index);
 /* A champion throws or shoots from the front cell of his side; the party cannot move into it for 4 ticks. */
-void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint8_t kinetic_energy, uint8_t attack,
-                                    uint8_t step_energy);
+void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, int16_t kinetic_energy, int16_t attack,
+                                    uint16_t step_energy);
 
 #endif

@@ -37,12 +37,12 @@ def lib():
     for name, res, args in [
         ("rec_write", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
         ("rec_thing_next", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
-        ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
+        ("action_is_action_performed", ctypes.c_bool, [c16, c16]), ("random_bit", u16, []), ("random16", u16, []),
         ("sensor_add_event", None, [c16, Location, c16, c16, u32]),
         ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, ctypes.c_bool, ctypes.c_bool]),
         ("champion_click_in_resurrect_reincarnate_panel", None, [c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("tables_get_action_info", ctypes.POINTER(ActionInfo), [ctypes.c_int]),
-        ("champion_add_skill_experience", None, [u16, u16, u16]),
+        ("champion_add_skill_experience", None, [c16, u16, u16]),
         ("map_link_thing_to_list", None, [u16, u16, c16, c16]),
     ]:
         f = getattr(lib, name)
@@ -110,7 +110,7 @@ def put_champion(lib):
         c.slots[s] = 0xFFFF
     for skill in c.skills:
         skill.experience = 1 << 20  # high experience: the action gives no level and draws no random number
-    value(lib, "g_party_champion_count", u16).value = 1
+    value(lib, "g_party_champion_count", c16).value = 1
     value(lib, "g_leader_index").value = 0
     return c
 
@@ -203,7 +203,7 @@ def test_version_checker_limit(world, data):
     adventure, game = world
     lib = game.lib
     x, y = version_checker(lib, data)
-    value(lib, "g_party_champion_count", u16).value = 1
+    value(lib, "g_party_champion_count", c16).value = 1
     count = Timeline.in_dll(lib, "g_timeline").count
     lib.sensor_process_thing_addition_or_removal(x, y, 0xFFFF, 0, 1)
     triggered = Timeline.in_dll(lib, "g_timeline").count - count
