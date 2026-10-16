@@ -36,7 +36,7 @@ bool gfx_open(const char *path);
 int gfx_count(void);
 /* Packed bytes of item i. */
 const uint8_t *gfx_get_item(int i, uint16_t *size);
-/* Port of expand_graphic: decodes a packed graphic into a chunky bitmap. */
+/* Port of expand_graphic: decodes a packed graphic into a chunky bitmap; exported for the tests. */
 bool gfx_expand(const uint8_t *packed, size_t len, Bitmap *bm);
 /* Decodes a packed graphic over a bitmap of the same size: skipped pixels keep their color. */
 bool gfx_expand_over(const uint8_t *packed, size_t len, Bitmap *bm);
