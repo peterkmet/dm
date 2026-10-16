@@ -36,5 +36,6 @@ research = [
 
 [tool.pytest.ini_options]
 timeout = 120
-addopts = "-n auto --dist loadfile"
+addopts = "--dist loadfile"
+pythonpath = ["tests"]
 testpaths = ["tests"]

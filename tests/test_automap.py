@@ -1,10 +1,11 @@
 import ctypes
 import struct
-import subprocess
 import zlib
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -33,8 +34,7 @@ VIEWPORT = Box(0, 33, 224, 136)
 def game():
     if not all((GAME / f).exists() for f in ("KAOS.FTL", "Dungeon.DAT")):
         pytest.skip("missing game files")
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib = load_lib()
     lib.dungeon_get_square.restype = ctypes.c_uint8
     lib.dungeon_load.restype = ctypes.c_bool
     for name in ("dungeon_map_width", "dungeon_map_height"):

@@ -1,10 +1,11 @@
 import ctypes
 import shutil
 import struct
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -26,8 +27,7 @@ c16, u8p = ctypes.c_int16, ctypes.POINTER(ctypes.c_uint8)
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib = load_lib()
     for name in ("map_get_square",):
         getattr(lib, name).restype = ctypes.c_uint8
     for name in ("map_get_square_first_thing", "dungeon_get_square_first_thing"):

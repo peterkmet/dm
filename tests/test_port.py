@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.lib import load_lib
+
 ROOT = Path(__file__).parent.parent
 BUILD = ROOT / "build"
 
@@ -22,8 +24,7 @@ pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not 
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    return ctypes.CDLL(str(BUILD / "libdm.dylib"))
+    return load_lib()
 
 
 def test_palette(lib):

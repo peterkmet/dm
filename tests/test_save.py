@@ -1,10 +1,11 @@
 import ctypes
 import shutil
 import struct
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -38,8 +39,7 @@ pytestmark = [
 
 @pytest.fixture(scope="module")
 def game():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.ui_get_slot_box_zone.restype = ctypes.c_bool

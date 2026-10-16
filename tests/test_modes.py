@@ -13,7 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from dmtest.lib import load_lib
+
 from test_control import Client, pump
 from test_gameloop import CORRIDOR, KEY_ESCAPE, KEY_F1, KEY_RETURN, KEY_UP, LEFT_PRESS, LEFT_RELEASE, STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 
@@ -38,12 +39,9 @@ pytestmark = [
 
 
 @pytest.fixture(scope="module")
-def game(tmp_path_factory):
-    """A new game with one recruited champion in a private build of libdm."""
-    out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = game_sources()
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
-    lib = ctypes.CDLL(str(out))
+def game():
+    """A new game with one recruited champion in a private copy of libdm."""
+    lib = load_lib()
     lib.control_open.restype = ctypes.c_bool
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
@@ -189,7 +187,6 @@ def test_quick_save_and_quick_load(game, tmp_path):
 
 
 def test_bad_mode_stops_the_program():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     result = subprocess.run([str(ROOT / "build/dm"), "--mode", "fast", "--frames", "1"], cwd=ROOT, env=env, capture_output=True, timeout=60)
     assert result.returncode == 1
@@ -416,7 +413,6 @@ def test_render_advanced_panels(game):
 
 
 def test_turnbased_program_answers_get_state_and_act(tmp_path):
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
     path = os.path.join(sock_dir, "control.sock")
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
@@ -461,7 +457,6 @@ def test_turnbased_program_answers_get_state_and_act(tmp_path):
 
 
 def test_turnbased_load_sent_at_once_runs_the_game(tmp_path):
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     data = tmp_path / "game"
     shutil.copytree(ROOT / "game", data, ignore=shutil.ignore_patterns("DMGAME.*", "QUICK.DAT"))
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
@@ -669,7 +664,6 @@ def test_party_death_during_a_turn_reports_game_over(game):
 
 
 def test_turnbased_save_goes_to_the_saves_folder(tmp_path):
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     data, saves = tmp_path / "game", tmp_path / "saves"
     shutil.copytree(ROOT / "game", data, ignore=shutil.ignore_patterns("DMGAME.*", "QUICK.DAT"))
     saves.mkdir()

@@ -5,10 +5,11 @@ import hashlib
 import json
 import os
 import shutil
-import subprocess
 import tempfile
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from test_control import Client
 from test_gameloop import STEP_EAST, STEP_NORTH, Game
@@ -25,10 +26,7 @@ needs_game = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL"
 @pytest.fixture
 def game(tmp_path):
     """The loaded game data in a private copy of libdm, with an open control socket and a temp save folder."""
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    copy = tmp_path / "libdm.dylib"
-    shutil.copy(ROOT / "build/libdm.dylib", copy)
-    lib = ctypes.CDLL(str(copy))
+    lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.control_open.restype = ctypes.c_bool
     lib.control_open.argtypes = [ctypes.c_char_p]

@@ -2,12 +2,12 @@
 
 import ctypes
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from dmtest.lib import load_lib
+
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -21,12 +21,9 @@ pytestmark = [
 
 
 @pytest.fixture(scope="module")
-def lib(tmp_path_factory):
-    """A private build of libdm with the DM data."""
-    out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = game_sources()
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
-    lib = ctypes.CDLL(str(out))
+def lib():
+    """A private copy of libdm with the DM data."""
+    lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     assert lib.gameloop_load_data(str(GAME).encode())
     return lib

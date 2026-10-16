@@ -2,10 +2,11 @@
 
 import ctypes
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 from amitools.fs.ADFSVolume import ADFSVolume
 from amitools.fs.blkdev.BlkDevFactory import BlkDevFactory
 from amitools.fs.FSString import FSString
@@ -29,8 +30,7 @@ needs_disks = pytest.mark.skipif(not all((MEDIA / d).exists() for d in DISKS), r
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build" / "libdm.dylib"))
+    lib = load_lib()
     lib.adf_has_file.restype = ctypes.c_bool
     lib.adventure_bad_file.restype = ctypes.c_char_p
     lib.adventure_bad_file.argtypes = [ctypes.c_int16, ctypes.c_char_p]

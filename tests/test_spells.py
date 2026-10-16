@@ -1,10 +1,11 @@
 import ctypes
 import itertools
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -24,8 +25,7 @@ class Spell(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib = load_lib()
     lib.spell_draw_fails.restype = ctypes.c_bool
     lib.tables_get_spell.restype = ctypes.POINTER(Spell)
     lib.tables_get_spell.argtypes = [ctypes.c_int]

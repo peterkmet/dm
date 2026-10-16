@@ -9,7 +9,9 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources, global_type
+from dmtest.lib import load_lib
+
+from conftest import global_type
 from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Game
 from test_save import KEY_RETURN, Frames
 
@@ -35,12 +37,9 @@ pytestmark = [
 
 
 @pytest.fixture(scope="module")
-def game(tmp_path_factory):
-    """A private build of libdm with the CSB data loaded."""
-    out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = game_sources()
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
-    lib = ctypes.CDLL(str(out))
+def game():
+    """A private copy of libdm with the CSB data loaded."""
+    lib = load_lib()
     lib.control_open.restype = ctypes.c_bool
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
@@ -276,7 +275,6 @@ def test_control_new_game_save_and_load(game, saves):
 
 
 def run_dm(*args):
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     env.pop("DM_AUTO_ENTER", None)
     return subprocess.run([str(ROOT / "build/dm"), *args, "--frames", "20"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)

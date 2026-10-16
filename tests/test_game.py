@@ -2,10 +2,11 @@ import ctypes
 import random
 import shutil
 import struct
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -60,8 +61,7 @@ class ActiveGroup(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib = load_lib()
     for name in ("random16", "random_bit", "random_2bits"):
         getattr(lib, name).restype = ctypes.c_uint16
     lib.scale_value.restype = ctypes.c_int32

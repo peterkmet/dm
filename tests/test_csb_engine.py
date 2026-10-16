@@ -9,7 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from dmtest.lib import load_lib
+
 from dmtools import ftl
 
 ROOT = Path(__file__).parent.parent
@@ -49,12 +50,9 @@ def image(path):
 
 
 @pytest.fixture(scope="module")
-def lib(tmp_path_factory):
-    """A private build of libdm."""
-    out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = game_sources()
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
-    lib = ctypes.CDLL(str(out))
+def lib():
+    """A private copy of libdm."""
+    lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.layout_get_zone.restype = ctypes.c_bool
@@ -187,7 +185,6 @@ def test_prison_new_game_runs_and_renders(lib):
 
 
 def run_dm(*args):
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     env.pop("DM_AUTO_ENTER", None)
     return subprocess.run([str(ROOT / "build/dm"), *args, "--frames", "5"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)

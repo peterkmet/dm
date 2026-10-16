@@ -17,7 +17,6 @@ pytestmark = pytest.mark.skipif(not (GAME_CSB / "disk-b" / "MINI.DAT").exists(),
 
 
 def test_csb_prison_state_through_the_tools(tmp_path, monkeypatch):
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     data = tmp_path / "game-csb"
     shutil.copytree(GAME_CSB, data)
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
@@ -57,7 +56,6 @@ def test_csb_prison_state_through_the_tools(tmp_path, monkeypatch):
 
 @pytest.mark.skipif(not (ROOT / "game" / "Dungeon.DAT").exists(), reason="game missing")
 def test_dm_state_through_the_tools(monkeypatch):
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")
     path = os.path.join(sock_dir, "control.sock")
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")

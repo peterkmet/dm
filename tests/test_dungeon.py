@@ -1,10 +1,11 @@
 import ctypes
 import shutil
 import struct
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 from dmcsb import THING_TYPES, open_dungeon
 from dmcsb.dungeon import _default_escape
 
@@ -24,8 +25,7 @@ u8p = ctypes.POINTER(ctypes.c_uint8)
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib = load_lib()
     lib.dungeon_decompress.argtypes = [ctypes.c_char_p, ctypes.c_int32, ctypes.c_char_p, ctypes.c_int32]
     lib.dungeon_decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
     lib.dungeon_decompress.restype = lib.dungeon_decode_text.restype = ctypes.c_bool

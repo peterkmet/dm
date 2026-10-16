@@ -1,12 +1,13 @@
 import ctypes
 import struct
-import subprocess
 
 import pytest
 
+from dmtest.lib import load_lib
+
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_port import BUILD, ROOT, sdl3_installed
+from test_port import ROOT, sdl3_installed
 
 GAME = ROOT / "game"
 GET_ZONE, SHRINK, LAYOUT_ZONES = 0x116296, 0x10E898, 0x102990
@@ -25,8 +26,7 @@ class Box(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
+    lib = load_lib()
     lib.layout_get_zone.restype = ctypes.c_bool
     lib.view_render.restype = ctypes.c_bool
     lib.draw_blit.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Bitmap), ctypes.POINTER(Box), ctypes.c_int16, ctypes.c_int]

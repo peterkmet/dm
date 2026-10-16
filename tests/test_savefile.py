@@ -2,10 +2,11 @@ import ctypes
 import random
 import shutil
 import struct
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -36,8 +37,7 @@ class SaveFile(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib = load_lib()
     lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
     lib.save_decode.restype = ctypes.c_bool
     lib.save_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(ctypes.c_uint32)]

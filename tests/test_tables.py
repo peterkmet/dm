@@ -2,12 +2,12 @@ import ctypes
 import re
 import shutil
 import struct
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, PORT_SRC
+from dmtest.lib import load_lib
+
 from dmtools.ftl import load_image, parse
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,13 +61,8 @@ TABLES = {
 
 
 @pytest.fixture(scope="module")
-def lib(tmp_path_factory):
-    out = tmp_path_factory.mktemp("tables") / "libtables.dylib"
-    src = [str(next(PORT_SRC.rglob(f))) for f in ("tables.c", "ftl.c", "file.c", "adventure.c", "adf.c", "os.c", "crc32.c", "csbimage.c", "csbtext.c")]
-    r = subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *src],
-                       capture_output=True, text=True)
-    assert r.returncode == 0, r.stderr
-    lib = ctypes.CDLL(str(out))
+def lib():
+    lib = load_lib()
     for name, (rec, *_rest) in TABLES.items():
         f = getattr(lib, "tables_get_" + name)
         f.argtypes, f.restype = [ctypes.c_int], ctypes.POINTER(rec)

@@ -12,7 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from dmtest.lib import load_lib
+
 from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 
 ROOT = Path(__file__).parent.parent
@@ -28,12 +29,9 @@ pytestmark = [
 
 
 @pytest.fixture(scope="module")
-def game(tmp_path_factory):
-    """A new game in a private build of libdm (other tests rebuild build/ in parallel)."""
-    out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = game_sources()
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
-    lib = ctypes.CDLL(str(out))
+def game():
+    """A new game in a private copy of libdm."""
+    lib = load_lib()
     lib.control_open.restype = ctypes.c_bool
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool

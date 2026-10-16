@@ -4,10 +4,10 @@ import ctypes
 import hashlib
 import json
 import os
-import shutil
-import subprocess
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from test_gameloop import Game
 from test_port import ROOT
@@ -41,11 +41,8 @@ def scrub_free_groups(lib):
 
 def saved_game(tmp_path):
     """A new game with a fixed seed: recruit, hold an object, save; returns the decoded parts."""
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     # a private copy: an xdist worker shares one image per path, so earlier modules would leave their state
-    copy = tmp_path / "libdm.dylib"
-    shutil.copy(ROOT / "build/libdm.dylib", copy)
-    lib = ctypes.CDLL(str(copy))
+    lib = load_lib()
     # the types that Game and recruit_and_hold_object need, as the fixture of tests/test_save.py
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = u16

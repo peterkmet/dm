@@ -4,10 +4,10 @@ import ctypes
 import hashlib
 import json
 import os
-import shutil
-import subprocess
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from test_champion import Party
 from test_gameloop import Box, Game
@@ -38,13 +38,10 @@ needs_game = pytest.mark.skipif(not (GAME / "KAOS.FTL").exists(), reason="game f
 
 
 @pytest.fixture
-def game(tmp_path):
+def game():
     """A new game with a fixed seed in a private copy of libdm."""
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     # a private copy: an xdist worker shares one image per path, so earlier modules would leave their state
-    copy = tmp_path / "libdm.dylib"
-    shutil.copy(ROOT / "build/libdm.dylib", copy)
-    lib = ctypes.CDLL(str(copy))
+    lib = load_lib()
     # the types that Game, state and recruit_and_hold_object need, as the fixture of tests/test_save.py
     lib.gameloop_load_data.restype = lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.ui_get_slot_box_zone.restype = ctypes.c_bool

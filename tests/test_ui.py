@@ -1,12 +1,13 @@
 import ctypes
 import struct
-import subprocess
 
 import pytest
 
+from dmtest.lib import load_lib
+
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_port import BUILD, ROOT, sdl3_installed
+from test_port import ROOT, sdl3_installed
 from test_recruit import RecruitData, mirrors
 from test_view import Bitmap, Box, zone_records
 
@@ -39,8 +40,7 @@ class Champion(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
+    lib = load_lib()
     lib.view_render.restype = ctypes.c_bool
     lib.layout_get_zone_box.argtypes = [c16, c16, c16, ctypes.POINTER(Box)]
     lib.ui_command_from_mouse.argtypes = [c16, c16, c16, u16]

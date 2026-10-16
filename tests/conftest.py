@@ -1,20 +1,14 @@
 import ctypes
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 
+import pytest
+
 # dm-play logs each call; the tests must not write into the log of a run
 os.environ["DM_PLAY_LOG_DIR"] = tempfile.mkdtemp(prefix="dm-play-log")
-
-PORT_SRC = Path(__file__).resolve().parent.parent / "src"
-PORT_INCLUDES = [f"-I{PORT_SRC}", "-isystem", str(PORT_SRC.parent / "third_party")]
-
-
-def game_sources():
-    """The .c files of libdm: all layers without the SDL entry point and window, and without the Windows stubs."""
-    return [str(p) for p in sorted(PORT_SRC.rglob("*.c")) if p.name not in ("main.c", "platform.c", "control_win.c")]
-
 
 # Globals of libdm that hold a truth value: C bool, one byte.
 BOOL_GLOBALS = frozenset({
@@ -80,7 +74,21 @@ def clear_folder_hooks(lib):
     ctypes.c_void_p.in_dll(lib, "g_os_list_folder_hook").value = None
 
 
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def sdl3_installed():
+    """SDL3 from Homebrew: the game binary needs it; the library does not."""
+    if not shutil.which("brew"):
+        return False
+    prefix = subprocess.run(["brew", "--prefix", "sdl3"], capture_output=True, text=True).stdout.strip()
+    return Path(prefix, "include/SDL3/SDL.h").exists()
+
+
 def pytest_configure(config):
-    """Builds the port once before the workers start, so their make calls find it up to date."""
-    if not hasattr(config, "workerinput"):
-        subprocess.run(["make"], cwd=PORT_SRC.parent, check=True, capture_output=True)
+    """Builds the library, and the game when SDL3 is there, once in the controller before the workers start."""
+    if hasattr(config, "workerinput"):
+        return
+    result = subprocess.run(["make", "all" if sdl3_installed() else "lib"], cwd=ROOT, capture_output=True, text=True)
+    if result.returncode:
+        raise pytest.UsageError("make failed:\n" + result.stderr[-4000:])

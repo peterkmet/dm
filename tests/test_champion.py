@@ -2,10 +2,11 @@ import ctypes
 import random
 import shutil
 import struct
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -63,8 +64,7 @@ class Party(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib = load_lib()
     cp = ctypes.POINTER(Champion)
     sig = {
         "champion_get_skill_level": (c16, [c16, u16]), "champion_add_skill_experience": (None, [u16, u16, u16]),

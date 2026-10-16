@@ -1,11 +1,12 @@
 import ctypes
-import subprocess
 
 import pytest
 
+from dmtest.lib import load_lib
+
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_port import BUILD, ROOT, sdl3_installed
+from test_port import ROOT, sdl3_installed
 
 GAME = ROOT / "game"
 BASE = 0x100000
@@ -36,8 +37,7 @@ class MessageArea(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
+    lib = load_lib()
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.text_init() == 0
     lib.text_draw.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int, ctypes.c_int, ctypes.c_uint8, ctypes.c_uint8, ctypes.c_char_p]

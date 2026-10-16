@@ -2,12 +2,12 @@
 
 import ctypes
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from dmtest.lib import load_lib
+
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -54,12 +54,9 @@ OBJECT_NAMES = {0: "COMPASS", 23: "STORM", 24: "STORM", 158: "ANTIVENIN", 174: "
 
 
 @pytest.fixture(scope="module")
-def lib(tmp_path_factory):
-    """A private build of libdm."""
-    out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = game_sources()
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
-    lib = ctypes.CDLL(str(out))
+def lib():
+    """A private copy of libdm."""
+    lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     for f in ("gfx_string", "gfx_action_name", "gfx_object_name", "ui_get_skill_rank_name"):

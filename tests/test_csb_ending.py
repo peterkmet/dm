@@ -4,12 +4,13 @@ the ENDA.DAT player, wall sensor 18, and the death screen with RESTART THIS GAME
 import ctypes
 import shutil
 import struct
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, clear_folder_hooks, game_sources, set_folder_hooks, global_type
+from dmtest.lib import load_lib
+
+from conftest import clear_folder_hooks, set_folder_hooks, global_type
 from test_creatures import TimelineEvent
 
 ROOT = Path(__file__).parent.parent
@@ -40,12 +41,9 @@ pytestmark = [
 
 
 @pytest.fixture(scope="module")
-def lib(tmp_path_factory):
-    """A private build of libdm."""
-    out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = game_sources()
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
-    lib = ctypes.CDLL(str(out))
+def lib():
+    """A private copy of libdm."""
+    lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     for name, res, args in [
         ("anim_open", ctypes.c_int, [ctypes.c_char_p]), ("anim_next_frame", c16, []), ("anim_close", None, []),

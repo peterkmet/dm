@@ -1,9 +1,10 @@
 import ctypes
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 from dmcsb import open_dungeon
 from dmcsb.dungeon import decode_champion
 
@@ -32,8 +33,7 @@ class RecruitData(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
+    lib = load_lib()
     lib.dungeon_decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
     lib.dungeon_decode_text.restype = lib.dungeon_load.restype = ctypes.c_bool
     lib.recruit_parse_text.restype = lib.recruit_parse.restype = ctypes.c_bool

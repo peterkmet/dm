@@ -2,12 +2,13 @@
 
 import ctypes
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources, global_type
+from dmtest.lib import load_lib
+
+from conftest import global_type
 from test_gameloop import Game
 from test_save import state
 from test_savefile import SaveFile, u8p
@@ -31,12 +32,9 @@ pytestmark = [
 
 
 @pytest.fixture(scope="module")
-def game(tmp_path_factory):
-    """A private build of libdm with the CSB data loaded."""
-    out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = game_sources()
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
-    lib = ctypes.CDLL(str(out))
+def game():
+    """A private copy of libdm with the CSB data loaded."""
+    lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.kaos_s16.restype = c16

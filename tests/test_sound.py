@@ -1,13 +1,14 @@
 import ctypes
 import random
 import struct
-import subprocess
 
 import pytest
 
+from dmtest.lib import load_lib
+
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_port import BUILD, ROOT, sdl3_installed
+from test_port import ROOT, sdl3_installed
 
 GAME = ROOT / "game"
 G_SOUNDS = 0x100D52
@@ -27,8 +28,7 @@ u8p = ctypes.POINTER(ctypes.c_uint8)
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
+    lib = load_lib()
     lib.sound_get_sample.restype = ctypes.POINTER(ctypes.c_int8)
     lib.sound_get_sample.argtypes = [ctypes.c_int16, ctypes.POINTER(ctypes.c_uint16), ctypes.POINTER(ctypes.c_uint16)]
     lib.gfx_get_item.restype = u8p

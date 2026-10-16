@@ -3,12 +3,13 @@ adventures. DM keeps its behaviour, CSB has the new one."""
 
 import ctypes
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources, global_type
+from dmtest.lib import load_lib
+
+from conftest import global_type
 from test_champion import Champion
 from test_creatures import THING_EXPLOSION, TimelineEvent
 from test_gameloop import Game
@@ -37,12 +38,9 @@ pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not ins
 
 
 @pytest.fixture(scope="module")
-def lib(tmp_path_factory):
-    """A private build of libdm."""
-    out = tmp_path_factory.mktemp("lib") / "libdm.dylib"
-    sources = game_sources()
-    subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
-    lib = ctypes.CDLL(str(out))
+def lib():
+    """A private copy of libdm."""
+    lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     for name, res, args in [

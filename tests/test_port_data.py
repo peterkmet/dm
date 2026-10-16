@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.lib import load_lib
+
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
 from test_port import BUILD, ROOT, sdl3_installed
@@ -29,8 +31,7 @@ class Bitmap(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-    lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
+    lib = load_lib()
     lib.ftl_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.c_uint32, ctypes.POINTER(FtlImage)]
     lib.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.gfx_expand.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(Bitmap)]

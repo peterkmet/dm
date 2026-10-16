@@ -1,14 +1,14 @@
 """Creature groups, projectiles, explosions, and spell effects (src/group.c, projectile.c, magic.c)."""
 
 import ctypes
-import os
 import random
 import shutil
 import struct
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -44,11 +44,7 @@ class TimelineEvent(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    path = os.environ.get("DM_LIB")
-    if not path:
-        subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
-        path = ROOT / "build/libdm.dylib"
-    lib = ctypes.CDLL(str(path))
+    lib = load_lib()
     event_p = ctypes.POINTER(TimelineEvent)
     for name, res, args in [
         ("projectile_get_impact_attack", u16, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
