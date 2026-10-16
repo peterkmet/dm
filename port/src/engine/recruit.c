@@ -113,7 +113,7 @@ int16_t recruit_portrait_index(uint16_t sensor_thing)
 /* Top-left of the portrait in the champion portraits graphic. */
 void recruit_portrait_origin(int16_t portrait_index, int16_t *x, int16_t *y)
 {
-    *x = (portrait_index & (PORTRAITS_PER_ROW - 1)) * tables_portrait_width();
+    *x = (portrait_index & (PORTRAITS_PER_ROW - 1)) * tables_get_portrait_width();
     *y = (uint16_t)portrait_index / PORTRAITS_PER_ROW *
-         tables_portrait_height(); /* unsigned division as in the original */
+         tables_get_portrait_height(); /* unsigned division as in the original */
 }

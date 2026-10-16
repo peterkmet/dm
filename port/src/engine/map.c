@@ -33,7 +33,7 @@ void map_set_current_map(int16_t map)
     g_current_map_width = dungeon_map_width(map);
     g_current_map_height = dungeon_map_height(map);
     for (int16_t door = 0; door < 2; door++)
-        g_current_map_door_info[door] = tables_door_attributes(map_door_set(map, door));
+        g_current_map_door_info[door] = tables_get_door_attributes(map_door_set(map, door));
     column_first_thing_index = g_dungeon_column_first_thing_index + g_dungeon_map_first_column[map] * 2;
 }
 

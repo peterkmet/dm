@@ -92,7 +92,7 @@ int16_t object_get_icon_index(uint16_t thing)
     case ICON_COMPASS_NORTH:
         return type + g_party_direction;
     case ICON_TORCH_UNLIT:
-        return weapon_is_lit(thing) ? type + tables_torch_icon_offset(weapon_charges(thing)) : type;
+        return weapon_is_lit(thing) ? type + tables_get_torch_icon_offset(weapon_charges(thing)) : type;
     case ICON_WATERSKIN_EMPTY:
     case ICON_JEWEL_SYMAL:
     case ICON_ILLUMULET:

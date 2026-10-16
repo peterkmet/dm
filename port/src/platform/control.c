@@ -144,8 +144,8 @@ static void press_key(uint16_t key)
 
 static void get_viewport_origin(int16_t *x, int16_t *y)
 {
-    *x = tables_viewport_x();
-    *y = tables_viewport_y();
+    *x = tables_get_viewport_x();
+    *y = tables_get_viewport_y();
 }
 
 /* A screen point inside box b (moved by dx, dy) where the table gives command, or 0. */
@@ -181,7 +181,7 @@ static bool find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
         {(SCREEN_W - vp->w) / 2, (SCREEN_H - vp->h) / 2}
     };
     MouseInput in;
-    for (int16_t entry = 0; tables_mouse_input(table, entry, &in); entry++) {
+    for (int16_t entry = 0; tables_get_mouse_input(table, entry, &in); entry++) {
         if (in.command != command)
             continue;
         int16_t x1 = in.x1;

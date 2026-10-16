@@ -45,7 +45,7 @@ static void patch_dividers(Bitmap *vp, int16_t count)
     if (!patch_zone[count - 1])
         return;
     Bitmap copy = {vp->w, vp->h, copy_px};
-    TablesRect source = tables_layout_bitmap(patch_layout[count - 1] - 1);
+    TablesRect source = tables_get_layout_bitmap(patch_layout[count - 1] - 1);
     int16_t sx = source.x;
     int16_t sy = source.y;
     int16_t w = source.w;
@@ -78,7 +78,7 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
     int lines[MESSAGE_COUNT] = {0};
     int total = 0;
     int height;
-    int pad = tables_message_line_pad();
+    int pad = tables_get_message_line_pad();
     if (!ui_zone_box(zone, &box))
         return;
     for (int i = 0; i < MESSAGE_COUNT; i++) {
@@ -94,7 +94,7 @@ static void draw_messages(Bitmap *vp, const char *message[MESSAGE_COUNT], int16_
     for (int i = 0; i < MESSAGE_COUNT; i++) {
         if (!lines[i])
             continue;
-        uint8_t color = tables_message_color(i);
+        uint8_t color = tables_get_message_color(i);
         int pos = 0;
         if (lines[i] == 2) {
             char line[MESSAGE_LINE_SIZE];
@@ -120,7 +120,7 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
     Box all = {0, 0, vp->w, vp->h};
     if (graphic)
         draw_blit(graphic, 0, 0, vp, &all, COLOR_NONE, 0);
-    ui_print_zone(vp, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, tables_text(TABLES_TEXT_VERSION));
+    ui_print_zone(vp, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, tables_get_text(TABLES_TEXT_VERSION));
     int16_t count = 1;
     while (count < MAX_CHOICES && choice[count])
         count++;
@@ -145,7 +145,7 @@ static void draw_pressed_button(int16_t table, int16_t choice)
     Bitmap *vp = ui_get_viewport();
     MouseInput entry;
     Box b;
-    if (!tables_mouse_input(table, choice - 1, &entry) || !ui_zone_box(entry.x2, &b))
+    if (!tables_get_mouse_input(table, choice - 1, &entry) || !ui_zone_box(entry.x2, &b))
         return; /* the zone word of an entry with a negative x1 */
     int x = b.x;
     int y = b.y;

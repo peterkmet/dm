@@ -180,74 +180,74 @@ int tables_load(const char *path);
 #define SOUND_HEARING_RANGE 12
 
 /* Each accessor below reads the loaded image at call time; it needs kaos_load, not tables_init. */
-int16_t tables_step_east(int16_t direction);
-int16_t tables_step_north(int16_t direction);
-int16_t tables_arrow_steps_forward(int16_t arrow);
-int16_t tables_arrow_steps_right(int16_t arrow);
-uint8_t tables_ordered_cell_to_attack(int16_t row, int16_t i);
-uint8_t tables_wound_probability_mask(int16_t index);
-uint8_t tables_slot_to_steal_from(int16_t index);
-uint8_t tables_torch_icon_offset(int16_t charges);
-uint16_t tables_slot_drop_order(int16_t i);
-uint8_t tables_champion_color(int16_t champion_index);
-uint8_t tables_square_type_event(int16_t square_type);
-int16_t tables_sound_graphic(int16_t sound);
-uint8_t tables_sound_rate(int16_t sound);
-uint8_t tables_sound_priority(int16_t sound);
-uint8_t tables_sound_volume(int16_t ahead, int16_t side);
-uint8_t tables_new_game_extra_things(int16_t thing_type);
-uint16_t tables_door_attributes(int16_t door_set);
-const char *tables_message_escape(int16_t code);
-const char *tables_inscription_escape(int16_t code);
-const char *tables_escape_replacement(int16_t code);
-int16_t tables_portrait_width(void);
-int16_t tables_portrait_height(void);
+int16_t tables_get_step_east(int16_t direction);
+int16_t tables_get_step_north(int16_t direction);
+int16_t tables_get_arrow_steps_forward(int16_t arrow);
+int16_t tables_get_arrow_steps_right(int16_t arrow);
+uint8_t tables_get_ordered_cell_to_attack(int16_t row, int16_t i);
+uint8_t tables_get_wound_probability_mask(int16_t index);
+uint8_t tables_get_slot_to_steal_from(int16_t index);
+uint8_t tables_get_torch_icon_offset(int16_t charges);
+uint16_t tables_get_slot_drop_order(int16_t i);
+uint8_t tables_get_champion_color(int16_t champion_index);
+uint8_t tables_get_square_type_event(int16_t square_type);
+int16_t tables_get_sound_graphic(int16_t sound);
+uint8_t tables_get_sound_rate(int16_t sound);
+uint8_t tables_get_sound_priority(int16_t sound);
+uint8_t tables_get_sound_volume(int16_t ahead, int16_t side);
+uint8_t tables_get_new_game_extra_things(int16_t thing_type);
+uint16_t tables_get_door_attributes(int16_t door_set);
+const char *tables_get_message_escape(int16_t code);
+const char *tables_get_inscription_escape(int16_t code);
+const char *tables_get_escape_replacement(int16_t code);
+int16_t tables_get_portrait_width(void);
+int16_t tables_get_portrait_height(void);
 
 /* Dungeon view tables; each accessor reads the loaded image at call time. */
-uint16_t tables_replacement_color(int16_t set, int16_t light);
-uint8_t tables_replacement_change(int16_t set, int16_t depth);
-const uint8_t *tables_creature_aspect(int16_t creature_type);
-const uint8_t *tables_object_aspect(int16_t index);
-const uint8_t *tables_projectile_aspect(int16_t index);
-const uint8_t *tables_field_aspect(int16_t index);
-int16_t tables_creature_shift(int16_t distance, int16_t index);
+uint16_t tables_get_replacement_color(int16_t set, int16_t light);
+uint8_t tables_get_replacement_change(int16_t set, int16_t depth);
+const uint8_t *tables_get_creature_aspect(int16_t creature_type);
+const uint8_t *tables_get_object_aspect(int16_t index);
+const uint8_t *tables_get_projectile_aspect(int16_t index);
+const uint8_t *tables_get_field_aspect(int16_t index);
+int16_t tables_get_creature_shift(int16_t distance, int16_t index);
 enum { TABLES_AXIS_X, TABLES_AXIS_Y };
-uint8_t tables_pile_shift(int16_t pair, int16_t axis);
-uint8_t tables_object_scale(int16_t row);
-uint8_t tables_projectile_scale(int16_t row);
-uint8_t tables_explosion_scale(int16_t depth);
+uint8_t tables_get_pile_shift(int16_t pair, int16_t axis);
+uint8_t tables_get_object_scale(int16_t row);
+uint8_t tables_get_projectile_scale(int16_t row);
+uint8_t tables_get_explosion_scale(int16_t depth);
 enum { TABLES_REBIRTH_STEP_1 = 1, TABLES_REBIRTH_STEP_2 }; /* the two steps of a rebirth explosion */
-uint8_t tables_rebirth_scale(int16_t step, int16_t coord);
-uint8_t tables_group_directions(int16_t index);
+uint8_t tables_get_rebirth_scale(int16_t step, int16_t coord);
+uint8_t tables_get_group_directions(int16_t index);
 
 /* What the view sees of one view square; a negative coordinate set: the view draws no such thing there. */
 typedef struct {
     int8_t lane, depth, object_coord, alcove_coord, creature_coord, explosion_coord, field_aspect;
 } ViewSquare;
-ViewSquare tables_view_square(int16_t view_square);
-int16_t tables_wall_set_layout_id(int16_t i);
-uint8_t tables_wall_ornament_depth(int16_t view);
+ViewSquare tables_get_view_square(int16_t view_square);
+int16_t tables_get_wall_set_layout_id(int16_t i);
+uint8_t tables_get_wall_ornament_depth(int16_t view);
 enum { TABLES_PLAQUE_LINES = 3 }; /* the most lines that an inscription plaque shows */
-uint8_t tables_plaque_height(int16_t lines, int16_t depth);
-uint8_t tables_floor_ornament_view_offset(int16_t view);
-uint8_t tables_alcove_ornament(int16_t k);
-uint8_t tables_fountain_ornament(void);
-uint8_t tables_wall_ornament_coord_set(int16_t ornament);
-uint8_t tables_floor_ornament_coord_set(int16_t ornament);
-uint8_t tables_door_ornament_coord_set(int16_t ornament);
-uint8_t tables_door_button_coord_set(void);
-int16_t tables_glyph_width(void);
-int16_t tables_glyph_height(void);
-int16_t tables_viewport_x(void);
-int16_t tables_viewport_y(void);
-int16_t tables_viewport_width(void);
-int16_t tables_viewport_height(void);
+uint8_t tables_get_plaque_height(int16_t lines, int16_t depth);
+uint8_t tables_get_floor_ornament_view_offset(int16_t view);
+uint8_t tables_get_alcove_ornament(int16_t k);
+uint8_t tables_get_fountain_ornament(void);
+uint8_t tables_get_wall_ornament_coord_set(int16_t ornament);
+uint8_t tables_get_floor_ornament_coord_set(int16_t ornament);
+uint8_t tables_get_door_ornament_coord_set(int16_t ornament);
+uint8_t tables_get_door_button_coord_set(void);
+int16_t tables_get_glyph_width(void);
+int16_t tables_get_glyph_height(void);
+int16_t tables_get_viewport_x(void);
+int16_t tables_get_viewport_y(void);
+int16_t tables_get_viewport_width(void);
+int16_t tables_get_viewport_height(void);
 
 /* Source rectangle of a layout bitmap slot in its graphic (0: the bitmap size). */
 typedef struct {
     int16_t x, y, w, h;
 } TablesRect;
-TablesRect tables_layout_bitmap(int16_t slot);
+TablesRect tables_get_layout_bitmap(int16_t slot);
 
 /* Palettes; TABLES_PALETTE_DUNGEON + light level (0-5) gives the dungeon palette of that light. */
 enum { TABLES_PALETTE_COLOR_COUNT = 16 };
@@ -258,8 +258,8 @@ enum {
     TABLES_PALETTE_ENTRANCE,
     TABLES_PALETTE_DUNGEON
 };
-void tables_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT]);
-uint16_t tables_palette_color(int16_t palette, int16_t color);
+void tables_get_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT]);
+uint16_t tables_get_palette_color(int16_t palette, int16_t color);
 
 /* Palette changes: a color map of TABLES_PALETTE_COLOR_COUNT bytes for draw_shrink. */
 enum {
@@ -277,21 +277,21 @@ enum {
     TABLES_CHANGES_POINTER_SHADOW,
     TABLES_CHANGES_COUNT
 };
-const uint8_t *tables_palette_changes(int16_t changes);
+const uint8_t *tables_get_palette_changes(int16_t changes);
 
 /* Interface and champion panel tables; each accessor reads the loaded image at call time. */
-int16_t tables_icon_sheet_first(int16_t sheet);
-int16_t tables_slot_box_zone(int16_t slot_box);
-int16_t tables_slot_box_border(void);
-int16_t tables_champion_icon_width(void);
-int16_t tables_champion_icon_height(void);
-int16_t tables_bar_shadow(void);
-int16_t tables_damage_splat_width(bool large);
-int16_t tables_damage_splat_height(bool large);
-int16_t tables_skill_level_text(int16_t level);
-int16_t tables_base_skill_text(int16_t skill);
-int16_t tables_statistic_text(int16_t statistic);
-int16_t tables_direction_text(int16_t direction);
+int16_t tables_get_icon_sheet_first(int16_t sheet);
+int16_t tables_get_slot_box_zone(int16_t slot_box);
+int16_t tables_get_slot_box_border(void);
+int16_t tables_get_champion_icon_width(void);
+int16_t tables_get_champion_icon_height(void);
+int16_t tables_get_bar_shadow(void);
+int16_t tables_get_damage_splat_width(bool large);
+int16_t tables_get_damage_splat_height(bool large);
+int16_t tables_get_skill_level_text(int16_t level);
+int16_t tables_get_base_skill_text(int16_t skill);
+int16_t tables_get_statistic_text(int16_t statistic);
+int16_t tables_get_direction_text(int16_t direction);
 /* Short texts of the image, as C strings. */
 enum {
     TABLES_TEXT_LIST_SEPARATOR,
@@ -301,24 +301,24 @@ enum {
     TABLES_TEXT_VERSION,
     TABLES_TEXT_COUNT
 };
-const char *tables_text(int16_t text);
-int16_t tables_message_line_pad(void);
-uint8_t tables_message_color(int16_t i);
-int16_t tables_button_border(int16_t axis);
-int16_t tables_button_inner_border(int16_t axis);
-TablesRect tables_csb_restart_box(bool inner);
+const char *tables_get_text(int16_t text);
+int16_t tables_get_message_line_pad(void);
+uint8_t tables_get_message_color(int16_t i);
+int16_t tables_get_button_border(int16_t axis);
+int16_t tables_get_button_inner_border(int16_t axis);
+TablesRect tables_get_csb_restart_box(bool inner);
 
 /* Mouse pointer: the zones that select the pointer shape, the hotspots, the shadow, and the bitmaps. */
 typedef struct {
     int16_t x, y, w, h, shape, champion;
 } PointerZone;
-PointerZone tables_pointer_zone(int16_t i);
-int16_t tables_pointer_hotspot_x(int16_t shape);
-int16_t tables_pointer_hotspot_y(int16_t shape);
-int16_t tables_pointer_shadow_dx(void);
-int16_t tables_pointer_shadow_dy(void);
+PointerZone tables_get_pointer_zone(int16_t i);
+int16_t tables_get_pointer_hotspot_x(int16_t shape);
+int16_t tables_get_pointer_hotspot_y(int16_t shape);
+int16_t tables_get_pointer_shadow_dx(void);
+int16_t tables_get_pointer_shadow_dy(void);
 /* The 4 bit planes of the arrow or the hand pointer; *w and *h get its size. */
-const uint8_t *tables_pointer_planes(bool hand, int16_t *w, int16_t *h);
+const uint8_t *tables_get_pointer_planes(bool hand, int16_t *w, int16_t *h);
 
 /* Mouse input tables of COMMAND.C, in the order of their KAOS addresses. */
 enum {
@@ -346,7 +346,7 @@ typedef struct {
     uint16_t buttons;
 } MouseInput;
 /* Entry of a mouse input table; false at the end of the table. */
-bool tables_mouse_input(int16_t table, int16_t entry, MouseInput *out);
+bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out);
 /* Writes the box of an entry into the mouse input table of the image. */
 void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_t x2, int16_t y1, int16_t y2);
 
@@ -361,6 +361,6 @@ enum {
     TABLES_KEYS_COUNT
 };
 /* The command of a key in a keyboard table, or 0. */
-int16_t tables_key_command(int16_t key_table, uint16_t key);
+int16_t tables_get_key_command(int16_t key_table, uint16_t key);
 
 #endif

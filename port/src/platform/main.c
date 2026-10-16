@@ -63,7 +63,7 @@ static int show(const char *dir, int n)
         SDL_Log("cannot decode graphic %d", n);
         return 0;
     }
-    tables_palette(TABLES_PALETTE_DUNGEON, palette);
+    tables_get_palette(TABLES_PALETTE_DUNGEON, palette);
     memset(fb, 0, sizeof fb);
     for (int y = 0; y < bm.h && y < SCREEN_H; y++)
         for (int x = 0; x < bm.w && x < SCREEN_W; x++)

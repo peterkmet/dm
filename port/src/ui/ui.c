@@ -33,7 +33,7 @@ static int16_t slot_box_icon[SLOT_BOX_COUNT];
 /* Loads the strings, action names, and object names, and sets up the viewport bitmap. */
 int ui_init(void)
 {
-    viewport = (Bitmap){tables_viewport_width(), tables_viewport_height(), viewport_px};
+    viewport = (Bitmap){tables_get_viewport_width(), tables_get_viewport_height(), viewport_px};
     if ((size_t)viewport.w * viewport.h > sizeof viewport_px)
         return -1;
     for (int i = 0; i < SLOT_BOX_COUNT; i++)
@@ -141,7 +141,7 @@ void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, con
 void ui_draw_viewport(void)
 {
     Bitmap screen = ui_get_screen();
-    tables_palette(TABLES_PALETTE_INTERFACE, palette);
+    tables_get_palette(TABLES_PALETTE_INTERFACE, palette);
     ui_blit_zone(&screen, &viewport, ZONE_VIEWPORT, COLOR_NONE);
 }
 
@@ -151,7 +151,7 @@ void ui_draw_viewport(void)
 void ui_set_screen_palette(const uint16_t *colors)
 {
     for (int i = 0; i < PALETTE_COLORS; i++)
-        palette[i] = colors ? colors[i] : tables_palette_color(TABLES_PALETTE_INTERFACE, i);
+        palette[i] = colors ? colors[i] : tables_get_palette_color(TABLES_PALETTE_INTERFACE, i);
     palette_split_top = 0;
     palette_split_bottom = SCREEN_H;
 }
@@ -162,7 +162,7 @@ void ui_set_palette(const uint16_t *top)
     for (int i = 0; i < PALETTE_COLORS; i++) {
         if (top)
             palette[i] = top[i];
-        palette[PALETTE_COLORS + i] = tables_palette_color(TABLES_PALETTE_INTERFACE, i);
+        palette[PALETTE_COLORS + i] = tables_get_palette_color(TABLES_PALETTE_INTERFACE, i);
     }
     if (ui_zone_box(ZONE_VIEWPORT, &b)) {
         palette_split_top = b.y;
@@ -224,9 +224,9 @@ void ui_draw_interface(void)
 void ui_extract_icon(int16_t icon, Bitmap *out)
 {
     int sheet = 0;
-    while (sheet < ICON_SHEET_COUNT && tables_icon_sheet_first(sheet) <= icon)
+    while (sheet < ICON_SHEET_COUNT && tables_get_icon_sheet_first(sheet) <= icon)
         sheet++;
-    int16_t i = icon - tables_icon_sheet_first(sheet - 1);
+    int16_t i = icon - tables_get_icon_sheet_first(sheet - 1);
     const Bitmap *bm = gfx_get_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     out->w = UI_ICON_SIZE;
     out->h = UI_ICON_SIZE;
@@ -243,7 +243,7 @@ int ui_get_icon_zone_box(int16_t zone, int border, Box *box)
     int16_t h = UI_ICON_SIZE;
     int ok = layout_get_zone(zone, 0, 0, box, &w, &h);
     if (border) {
-        int16_t d = tables_slot_box_border();
+        int16_t d = tables_get_slot_box_border();
         box->x -= d;
         box->y -= d;
         box->w += 2 * d;
@@ -256,7 +256,7 @@ int ui_get_icon_zone_box(int16_t zone, int border, Box *box)
 bool ui_get_slot_box_zone(int16_t slot_box, int border, Box *box)
 {
     return slot_box >= 0 && slot_box < SLOT_BOX_COUNT &&
-           ui_get_icon_zone_box(tables_slot_box_zone(slot_box), border, box);
+           ui_get_icon_zone_box(tables_get_slot_box_zone(slot_box), border, box);
 }
 
 /* Draws an icon in a slot box: the hands are on the screen, the other slots in the viewport. */
@@ -319,7 +319,7 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
     if (table < 0 || table >= UI_INPUT_COUNT)
         return 0;
     MouseInput in;
-    for (int16_t entry = 0; tables_mouse_input(table, entry, &in); entry++) {
+    for (int16_t entry = 0; tables_get_mouse_input(table, entry, &in); entry++) {
         bool buttons = (in.buttons & button_mask) != 0;
         if (in.x1 >= 0) {
             if (x >= in.x1 && x <= in.x2 && y >= in.y1 && y <= in.y2 && buttons)
@@ -329,8 +329,8 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
         int16_t px = x;
         int16_t py = y;
         if (in.x1 == INPUT_ZONE_VIEWPORT) {
-            px -= tables_viewport_x();
-            py -= tables_viewport_y();
+            px -= tables_get_viewport_x();
+            py -= tables_get_viewport_y();
         } else if (in.x1 == INPUT_ZONE_CENTERED_VIEWPORT) {
             px -= (SCREEN_W - viewport.w) / 2;
             py -= (SCREEN_H - viewport.h) / 2;

@@ -18,61 +18,61 @@ The image accessors read the loaded image at call time. They need `kaos_load`, n
 
 | Image accessor | Address | Element | Index |
 |---|---|---|---|
-| `tables_step_east`, `tables_step_north` | `0x101038`, `0x101040` | int16 × 4 | Direction |
-| `tables_arrow_steps_forward`, `tables_arrow_steps_right` | `0x103c56`, `0x103c5e` | int16 × 4 | Movement arrow |
-| `tables_ordered_cell_to_attack` | `0x100b66` | uint8 × 8 × 4 | Row (attacker side + 2 × direction), cell order |
-| `tables_wound_probability_mask` | `0x100b86` | uint8 × 4 | Wound probability index |
-| `tables_slot_to_steal_from` | `0x100b8a` | uint8 × 8 | Random index |
-| `tables_torch_icon_offset` | `0x100ba0` | uint8 × 16 | Torch charges |
-| `tables_slot_drop_order` | `0x100d0e` | uint16 × 30 | Drop order |
-| `tables_champion_color` | `0x100ce0` | uint8 × 4 | Champion |
-| `tables_square_type_event` | `0x100d4a` | uint8 × 8 | Square type |
-| `tables_sound_graphic`, `tables_sound_rate`, `tables_sound_priority` | `0x100d52` (+0, +3, +4) | 12-byte record × 35 | Sound |
-| `tables_sound_volume` | `0x100696` | uint8 × 25 × 25 | Squares ahead, squares to the side (−12 to 12) |
-| `tables_new_game_extra_things` | `0x101058` | uint8 × 16 | Thing type |
-| `tables_door_attributes` | `0x1016e2` | uint16 × 4 (attributes << 8, defense) | Door set |
-| `tables_message_escape`, `tables_inscription_escape` | `0x1016ea`, `0x10182a` | char[8] × 32 | Escape code |
-| `tables_escape_replacement` | `0x1017ea` | char[2] × 32 | Escape code |
-| `tables_portrait_width`, `tables_portrait_height` | `0x102958`, `0x10295a` | int16 | — |
-| `tables_replacement_color` | `0x102efa` | 14-byte record × 13: uint16 × 6 | Replacement set, light level |
-| `tables_replacement_change` | `0x102efa` (+12, +13) | uint8 | Replacement set, depth 2 or 3 |
-| `tables_creature_aspect` | `0x102e58` | 6-byte record × 27 (pointer) | Creature type |
-| `tables_object_aspect` | `0x102c68` | 4-byte record × 85 (pointer) | Object aspect |
-| `tables_projectile_aspect` | `0x102db8` | 4-byte record (pointer) | Projectile aspect 1-14 |
-| `tables_field_aspect` | `0x102b26` | 8-byte record × 12 (pointer) | Field aspect |
-| `tables_creature_shift` | `0x102fd0` | int8 × 3 × 8 | Distance, shift index |
-| `tables_pile_shift` | `0x102e38` | uint8 × 16 × 2 | Pile pair, axis (x, y) |
-| `tables_object_scale`, `tables_projectile_scale`, `tables_explosion_scale` | `0x102e24`, `0x102e2a`, `0x102e32` | uint8 × 5, × 7, × 5 | View row, view row, depth |
-| `tables_rebirth_scale` | `0x102fe8` (step 2), `0x102ff0` (step 1) | uint8 × 7 | Rebirth step, coordinate set |
-| `tables_group_directions` | `0x10192a` | uint8 × 4 | Direction |
-| `tables_view_square` | `0x102a7e` + 24·n (7 tables) | int8 × 23 each | View square |
-| `tables_wall_set_layout_id` | `0x102a22` | int16 × 46 | Wall set entry |
-| `tables_wall_ornament_depth` | `0x102ba6` | uint8 × 14 | Wall ornament view |
-| `tables_plaque_height` | `0x102c57` (one byte before the table) | uint8 × 3 × 5 | Line count 1-3, depth |
-| `tables_floor_ornament_view_offset` | `0x102bb4` | uint8 × 11 | Floor ornament view |
-| `tables_alcove_ornament`, `tables_fountain_ornament` | `0x102bc0`, `0x102bc3` | uint8 × 3, × 1 | Alcove index, — |
-| `tables_wall_ornament_coord_set`, `tables_floor_ornament_coord_set`, `tables_door_ornament_coord_set`, `tables_door_button_coord_set` | `0x102bc4`, `0x102c00`, `0x102c0a`, `0x102c16` | uint8 | Ornament graphic, — |
-| `tables_glyph_width`, `tables_glyph_height` | `0x10296e`, `0x102970` | int16 | — |
-| `tables_viewport_x`, `tables_viewport_y`, `tables_viewport_width`, `tables_viewport_height` | `0x10293a`, `0x10293c`, `0x102948`, `0x10294a` | int16 | — |
-| `tables_layout_bitmap` | `0x1025f2` | 14-byte record (x, y, w, h at +2 … +8) | Layout bitmap slot |
-| `tables_palette`, `tables_palette_color` | `0x100170`, `0x100190`, `0x100a46`, `0x100a66`, `0x100aa6` | uint16 × 16 | `TABLES_PALETTE_*` (dungeon + light level), color |
-| `tables_palette_changes` | `0x102c18` … `0x102fc0`, `0x10247a`, `0x103ffa`, `0x1005fe` | uint8 × 16 (pointer) | `TABLES_CHANGES_*` |
-| `tables_icon_sheet_first` | `0x100b92` | int16 × 7 | Icon sheet |
-| `tables_slot_box_zone` | `0x100bb0` | 4-byte record × 46 (zone word) | Slot box |
-| `tables_slot_box_border`, `tables_bar_shadow` | `0x102956`, `0x102980` | int16 | — |
-| `tables_champion_icon_width`, `tables_champion_icon_height` | `0x10295c`, `0x10295e` | int16 | — |
-| `tables_damage_splat_width`, `tables_damage_splat_height` | `0x10297c` (small), `0x102978` (large) | int16 × 2 | Large |
-| `tables_skill_level_text`, `tables_base_skill_text`, `tables_statistic_text`, `tables_direction_text` | `0x101e74`, `0x102472`, `0x101e9a`, `0x101e92` | int16 text index | Level 2-16, base skill, statistic, direction |
-| `tables_text` | `0x101ebe`, `0x101ec6`, `0x101eca`, `0x101ec8`, `0x10402c` | C string (pointer) | `TABLES_TEXT_*` |
-| `tables_message_line_pad`, `tables_message_color` | `0x102966`, `0x104026` | int16, int16 × 2 (low byte) | —, message |
-| `tables_button_border`, `tables_button_inner_border` | `0x102988`, `0x10298c` | int16 × 2 | `TABLES_AXIS_X`, `TABLES_AXIS_Y` |
-| `tables_csb_restart_box` | `0x104248` (CSB image) | 8-byte box × 2 | Inner |
-| `tables_pointer_zone` | `0x1004f8` | 12-byte record × 16 | Zone |
-| `tables_pointer_hotspot_x`, `tables_pointer_hotspot_y` | `0x1005c8` | 8-byte record × 4 | Pointer shape |
-| `tables_pointer_shadow_dx`, `tables_pointer_shadow_dy` | `0x102952`, `0x102954` | int16 | — |
-| `tables_pointer_planes` | `0x1002b0` (arrow), `0x1003d4` (hand) | 4 bit planes (pointer), size words before | Hand |
-| `tables_mouse_input`, `tables_set_mouse_input_box` | `0x10318c` … `0x10378c` (14 tables), dialog tables through the pointers at `0x103bd4` | 12-byte entry (command, x1, x2, y1, y2, buttons); command 0 ends a table | `UI_INPUT_*` table, entry |
-| `tables_key_command` | `0x10393c`, `0x103948`, `0x103964`, `0x103980`, `0x10398c` | 4-byte entry (command, key); command 0 ends a table | `TABLES_KEYS_*`, key |
+| `tables_get_step_east`, `tables_get_step_north` | `0x101038`, `0x101040` | int16 × 4 | Direction |
+| `tables_get_arrow_steps_forward`, `tables_get_arrow_steps_right` | `0x103c56`, `0x103c5e` | int16 × 4 | Movement arrow |
+| `tables_get_ordered_cell_to_attack` | `0x100b66` | uint8 × 8 × 4 | Row (attacker side + 2 × direction), cell order |
+| `tables_get_wound_probability_mask` | `0x100b86` | uint8 × 4 | Wound probability index |
+| `tables_get_slot_to_steal_from` | `0x100b8a` | uint8 × 8 | Random index |
+| `tables_get_torch_icon_offset` | `0x100ba0` | uint8 × 16 | Torch charges |
+| `tables_get_slot_drop_order` | `0x100d0e` | uint16 × 30 | Drop order |
+| `tables_get_champion_color` | `0x100ce0` | uint8 × 4 | Champion |
+| `tables_get_square_type_event` | `0x100d4a` | uint8 × 8 | Square type |
+| `tables_get_sound_graphic`, `tables_get_sound_rate`, `tables_get_sound_priority` | `0x100d52` (+0, +3, +4) | 12-byte record × 35 | Sound |
+| `tables_get_sound_volume` | `0x100696` | uint8 × 25 × 25 | Squares ahead, squares to the side (−12 to 12) |
+| `tables_get_new_game_extra_things` | `0x101058` | uint8 × 16 | Thing type |
+| `tables_get_door_attributes` | `0x1016e2` | uint16 × 4 (attributes << 8, defense) | Door set |
+| `tables_get_message_escape`, `tables_get_inscription_escape` | `0x1016ea`, `0x10182a` | char[8] × 32 | Escape code |
+| `tables_get_escape_replacement` | `0x1017ea` | char[2] × 32 | Escape code |
+| `tables_get_portrait_width`, `tables_get_portrait_height` | `0x102958`, `0x10295a` | int16 | — |
+| `tables_get_replacement_color` | `0x102efa` | 14-byte record × 13: uint16 × 6 | Replacement set, light level |
+| `tables_get_replacement_change` | `0x102efa` (+12, +13) | uint8 | Replacement set, depth 2 or 3 |
+| `tables_get_creature_aspect` | `0x102e58` | 6-byte record × 27 (pointer) | Creature type |
+| `tables_get_object_aspect` | `0x102c68` | 4-byte record × 85 (pointer) | Object aspect |
+| `tables_get_projectile_aspect` | `0x102db8` | 4-byte record (pointer) | Projectile aspect 1-14 |
+| `tables_get_field_aspect` | `0x102b26` | 8-byte record × 12 (pointer) | Field aspect |
+| `tables_get_creature_shift` | `0x102fd0` | int8 × 3 × 8 | Distance, shift index |
+| `tables_get_pile_shift` | `0x102e38` | uint8 × 16 × 2 | Pile pair, axis (x, y) |
+| `tables_get_object_scale`, `tables_get_projectile_scale`, `tables_get_explosion_scale` | `0x102e24`, `0x102e2a`, `0x102e32` | uint8 × 5, × 7, × 5 | View row, view row, depth |
+| `tables_get_rebirth_scale` | `0x102fe8` (step 2), `0x102ff0` (step 1) | uint8 × 7 | Rebirth step, coordinate set |
+| `tables_get_group_directions` | `0x10192a` | uint8 × 4 | Direction |
+| `tables_get_view_square` | `0x102a7e` + 24·n (7 tables) | int8 × 23 each | View square |
+| `tables_get_wall_set_layout_id` | `0x102a22` | int16 × 46 | Wall set entry |
+| `tables_get_wall_ornament_depth` | `0x102ba6` | uint8 × 14 | Wall ornament view |
+| `tables_get_plaque_height` | `0x102c57` (one byte before the table) | uint8 × 3 × 5 | Line count 1-3, depth |
+| `tables_get_floor_ornament_view_offset` | `0x102bb4` | uint8 × 11 | Floor ornament view |
+| `tables_get_alcove_ornament`, `tables_get_fountain_ornament` | `0x102bc0`, `0x102bc3` | uint8 × 3, × 1 | Alcove index, — |
+| `tables_get_wall_ornament_coord_set`, `tables_get_floor_ornament_coord_set`, `tables_get_door_ornament_coord_set`, `tables_get_door_button_coord_set` | `0x102bc4`, `0x102c00`, `0x102c0a`, `0x102c16` | uint8 | Ornament graphic, — |
+| `tables_get_glyph_width`, `tables_get_glyph_height` | `0x10296e`, `0x102970` | int16 | — |
+| `tables_get_viewport_x`, `tables_get_viewport_y`, `tables_get_viewport_width`, `tables_get_viewport_height` | `0x10293a`, `0x10293c`, `0x102948`, `0x10294a` | int16 | — |
+| `tables_get_layout_bitmap` | `0x1025f2` | 14-byte record (x, y, w, h at +2 … +8) | Layout bitmap slot |
+| `tables_get_palette`, `tables_get_palette_color` | `0x100170`, `0x100190`, `0x100a46`, `0x100a66`, `0x100aa6` | uint16 × 16 | `TABLES_PALETTE_*` (dungeon + light level), color |
+| `tables_get_palette_changes` | `0x102c18` … `0x102fc0`, `0x10247a`, `0x103ffa`, `0x1005fe` | uint8 × 16 (pointer) | `TABLES_CHANGES_*` |
+| `tables_get_icon_sheet_first` | `0x100b92` | int16 × 7 | Icon sheet |
+| `tables_get_slot_box_zone` | `0x100bb0` | 4-byte record × 46 (zone word) | Slot box |
+| `tables_get_slot_box_border`, `tables_get_bar_shadow` | `0x102956`, `0x102980` | int16 | — |
+| `tables_get_champion_icon_width`, `tables_get_champion_icon_height` | `0x10295c`, `0x10295e` | int16 | — |
+| `tables_get_damage_splat_width`, `tables_get_damage_splat_height` | `0x10297c` (small), `0x102978` (large) | int16 × 2 | Large |
+| `tables_get_skill_level_text`, `tables_get_base_skill_text`, `tables_get_statistic_text`, `tables_get_direction_text` | `0x101e74`, `0x102472`, `0x101e9a`, `0x101e92` | int16 text index | Level 2-16, base skill, statistic, direction |
+| `tables_get_text` | `0x101ebe`, `0x101ec6`, `0x101eca`, `0x101ec8`, `0x10402c` | C string (pointer) | `TABLES_TEXT_*` |
+| `tables_get_message_line_pad`, `tables_get_message_color` | `0x102966`, `0x104026` | int16, int16 × 2 (low byte) | —, message |
+| `tables_get_button_border`, `tables_get_button_inner_border` | `0x102988`, `0x10298c` | int16 × 2 | `TABLES_AXIS_X`, `TABLES_AXIS_Y` |
+| `tables_get_csb_restart_box` | `0x104248` (CSB image) | 8-byte box × 2 | Inner |
+| `tables_get_pointer_zone` | `0x1004f8` | 12-byte record × 16 | Zone |
+| `tables_get_pointer_hotspot_x`, `tables_get_pointer_hotspot_y` | `0x1005c8` | 8-byte record × 4 | Pointer shape |
+| `tables_get_pointer_shadow_dx`, `tables_get_pointer_shadow_dy` | `0x102952`, `0x102954` | int16 | — |
+| `tables_get_pointer_planes` | `0x1002b0` (arrow), `0x1003d4` (hand) | 4 bit planes (pointer), size words before | Hand |
+| `tables_get_mouse_input`, `tables_set_mouse_input_box` | `0x10318c` … `0x10378c` (14 tables), dialog tables through the pointers at `0x103bd4` | 12-byte entry (command, x1, x2, y1, y2, buttons); command 0 ends a table | `UI_INPUT_*` table, entry |
+| `tables_get_key_command` | `0x10393c`, `0x103948`, `0x103964`, `0x103980`, `0x10398c` | 4-byte entry (command, key); command 0 ends a table | `TABLES_KEYS_*`, key |
 
 ## Table list
 

@@ -187,7 +187,7 @@ void champion_unpack(const uint8_t *in, Champion *c)
 /* "<prefix><name><suffix>" in the champion color on a new message line. */
 static void print_champion_message(uint16_t champion_index, int16_t text)
 {
-    int16_t color = tables_champion_color(champion_index);
+    int16_t color = tables_get_champion_color(champion_index);
     message_new_line(g_game_time);
     message_print(color, gfx_string(text), g_game_time);
     message_print(color, g_champions[champion_index].name, g_game_time);
@@ -795,7 +795,7 @@ void champion_drop_all_objects(uint16_t champion_index)
 {
     uint16_t cell = g_champions[champion_index].cell;
     for (uint16_t i = 0; i < SLOT_COUNT; i++) {
-        uint16_t thing = inventory_get_object_removed_from_slot(champion_index, tables_slot_drop_order(i));
+        uint16_t thing = inventory_get_object_removed_from_slot(champion_index, tables_get_slot_drop_order(i));
         if (thing != THING_NONE)
             drop_on_party_square(thing, cell);
     }

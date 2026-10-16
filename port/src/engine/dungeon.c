@@ -216,7 +216,7 @@ static bool read_things(bool new_game, uint16_t *sum)
         if (count < 0 || count > cap)
             return false;
         if (new_game) {
-            int16_t extra = tables_new_game_extra_things(t);
+            int16_t extra = tables_get_new_game_extra_things(t);
             total = count + extra > cap ? cap : count + extra;
         }
         set_thing_count(t, total);
@@ -517,8 +517,8 @@ static void put_string(TextOut *o, const char *s)
 static const char *escape_string(uint16_t escape, uint16_t code, int16_t mode)
 {
     if (escape == CODE_ESCAPE_REPLACEMENT)
-        return tables_escape_replacement(code);
-    return mode == MODE_INSCRIPTION ? tables_inscription_escape(code) : tables_message_escape(code);
+        return tables_get_escape_replacement(code);
+    return mode == MODE_INSCRIPTION ? tables_get_inscription_escape(code) : tables_get_message_escape(code);
 }
 
 /* Decodes the 5-bit codes from word offset w, three per word, until the end code. */

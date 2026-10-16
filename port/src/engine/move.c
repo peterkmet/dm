@@ -359,8 +359,8 @@ void move_party(int16_t command)
         move_take_stairs(square & STAIRS_UP);
         return;
     }
-    game_update_map_coordinates_after_relative_movement(g_party_direction, tables_arrow_steps_forward(arrow),
-                                                        tables_arrow_steps_right(arrow), &x, &y);
+    game_update_map_coordinates_after_relative_movement(g_party_direction, tables_get_arrow_steps_forward(arrow),
+                                                        tables_get_arrow_steps_right(arrow), &x, &y);
     square = map_get_square(x, y);
     if (SQUARE_TYPE(square) == SQUARE_STAIRS) {
         move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);

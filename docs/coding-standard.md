@@ -30,6 +30,7 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
 6. Read game data at run time. Do not copy game tables into the source.
 7. Names follow one scheme.
    - Functions: `<prefix><verb>_<object>` in `snake_case`. Each header states its prefixes in one comment line, for example `/* Prefixes: gfx_ */` in `graphics.h`. A prefix belongs to one header only, and no prefix starts with the prefix of another header.
+   - A table accessor of `data/tables.h` is `tables_get_<table>`. Record field accessors of `map.h` stay nouns (rule 2).
    - Global variables: `g_` prefix. Module-private globals and functions are `static`.
    - Types: `PascalCase`. Constants and enum values: `UPPER_CASE`.
    - No event numbers or byte offsets in names of functions, struct fields and constants. No original addresses in names. Name the game task, for example `group_process_reaction_event`, not `group_process_events_29_to_41`.

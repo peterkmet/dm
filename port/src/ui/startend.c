@@ -250,12 +250,12 @@ static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_in
         return;
     int16_t w = tw;
     int16_t h = th;
-    int16_t inner_x = tables_button_inner_border(TABLES_AXIS_X);
-    int16_t inner_y = tables_button_inner_border(TABLES_AXIS_Y);
+    int16_t inner_x = tables_get_button_inner_border(TABLES_AXIS_X);
+    int16_t inner_y = tables_get_button_inner_border(TABLES_AXIS_Y);
     if (!layout_get_zone(zone, 0, 0, &b, &w, &h))
         return;
-    int16_t dx = inner_x + tables_button_border(TABLES_AXIS_X);
-    int16_t dy = inner_y + tables_button_border(TABLES_AXIS_Y);
+    int16_t dx = inner_x + tables_get_button_border(TABLES_AXIS_X);
+    int16_t dy = inner_y + tables_get_button_border(TABLES_AXIS_Y);
     Box outer = {b.x - dx, b.y - dy, b.w + 2 * dx, b.h + 2 * dy};
     Box inner = {outer.x + inner_x, outer.y + inner_y, outer.w - 2 * inner_x, outer.h - 2 * inner_y};
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
@@ -273,7 +273,8 @@ static void print_champion_skills(uint16_t champion_index, int y)
         if (level == 1)
             continue;
         char line[ENDGAME_TEXT_SIZE];
-        snprintf(line, sizeof line, "%s %s", ui_get_skill_rank_name(level), gfx_string(tables_base_skill_text(skill)));
+        snprintf(line, sizeof line, "%s %s", ui_get_skill_rank_name(level),
+                 gfx_string(tables_get_base_skill_text(skill)));
         y += ENDGAME_SKILL_LINE;
         endgame_print_text(ENDGAME_SKILL_X, y, COLOR_LIGHT_GRAY, line);
     }
@@ -283,8 +284,8 @@ static void print_champion_skills(uint16_t champion_index, int y)
 static void draw_champion_parade(void)
 {
     Bitmap screen = ui_get_screen();
-    int16_t pw = tables_portrait_width();
-    int16_t ph = tables_portrait_height();
+    int16_t pw = tables_get_portrait_width();
+    int16_t ph = tables_get_portrait_height();
     memset(fb, COLOR_DARKEST_GRAY, sizeof fb);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         const Champion *champion = &g_champions[i];
@@ -313,7 +314,7 @@ static void draw_champion_parade(void)
 /* The outer or the inner box of the CSB endgame button. */
 static Box get_csb_box(bool inner)
 {
-    TablesRect r = tables_csb_restart_box(inner);
+    TablesRect r = tables_get_csb_restart_box(inner);
     return (Box){r.x, r.y, r.w, r.h};
 }
 
@@ -385,7 +386,7 @@ static void show_credits(void)
     Bitmap screen = ui_get_screen();
     ui_blit_graphic(&screen, GFX_CREDITS, ZONE_SCREEN, COLOR_NONE);
     uint16_t credits_colors[PALETTE_COLORS];
-    tables_palette(TABLES_PALETTE_CREDITS, credits_colors);
+    tables_get_palette(TABLES_PALETTE_CREDITS, credits_colors);
     ui_set_screen_palette(credits_colors);
     wait_for_input();
 }

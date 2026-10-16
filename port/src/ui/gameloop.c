@@ -115,7 +115,7 @@ static int draw_entrance_doors(const Bitmap *view, int16_t opened)
 /* The entrance palette over the whole screen. */
 static void set_entrance_palette(void)
 {
-    tables_palette(TABLES_PALETTE_ENTRANCE, palette);
+    tables_get_palette(TABLES_PALETTE_ENTRANCE, palette);
     palette_split_top = 0;
     palette_split_bottom = SCREEN_H;
 }
@@ -518,7 +518,7 @@ void gameloop_tick(void)
 static void decode_planar_pointer(bool hand, uint8_t *px, int *w, int *h)
 {
     int16_t pw, ph;
-    const uint8_t *planes = tables_pointer_planes(hand, &pw, &ph);
+    const uint8_t *planes = tables_get_pointer_planes(hand, &pw, &ph);
     *w = (uint16_t)pw; /* the size words are unsigned */
     *h = (uint16_t)ph;
     int row_bytes = (*w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD * 2;
@@ -539,9 +539,9 @@ static void make_object_pointer(uint8_t *px, int *w, int *h)
 {
     uint8_t icon_px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap icon = {UI_ICON_SIZE, UI_ICON_SIZE, icon_px};
-    int16_t dx = tables_pointer_shadow_dx();
-    int16_t dy = tables_pointer_shadow_dy();
-    const uint8_t *shadows = tables_palette_changes(TABLES_CHANGES_POINTER_SHADOW);
+    int16_t dx = tables_get_pointer_shadow_dx();
+    int16_t dy = tables_get_pointer_shadow_dy();
+    const uint8_t *shadows = tables_get_palette_changes(TABLES_CHANGES_POINTER_SHADOW);
     ui_extract_icon(object_get_icon_index(g_leader_hand_object), &icon);
     *w = UI_ICON_SIZE + dx;
     *h = UI_ICON_SIZE + dy;
@@ -567,7 +567,7 @@ static int get_pointer_shape(int16_t x, int16_t y, bool in_game)
     if (!in_game || g_leader_index == -1)
         return POINTER_ARROW;
     for (int i = 0; i < POINTER_ZONE_COUNT; i++) {
-        PointerZone z = tables_pointer_zone(i);
+        PointerZone z = tables_get_pointer_zone(i);
         if (x < z.x || x >= z.x + z.w || y < z.y || y >= z.y + z.h)
             continue;
         int16_t champion = z.champion;
@@ -592,8 +592,8 @@ bool gameloop_get_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *
         make_object_pointer(px, w, h);
     else
         decode_planar_pointer(shape == POINTER_HAND, px, w, h);
-    *hot_x = tables_pointer_hotspot_x(shape);
-    *hot_y = tables_pointer_hotspot_y(shape);
+    *hot_x = tables_get_pointer_hotspot_x(shape);
+    *hot_y = tables_get_pointer_hotspot_y(shape);
     return true;
 }
 
@@ -601,6 +601,6 @@ bool gameloop_get_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *
 const uint16_t *gameloop_get_pointer_palette(void)
 {
     static uint16_t colors[PALETTE_COLORS];
-    tables_palette(TABLES_PALETTE_POINTER, colors);
+    tables_get_palette(TABLES_PALETTE_POINTER, colors);
     return colors;
 }

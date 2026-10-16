@@ -42,7 +42,7 @@ uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][SIDE_COUNT];
 
 static bool sound_exists(int16_t sound)
 {
-    return sound >= 0 && sound < SOUND_COUNT && tables_sound_graphic(sound) >= 0;
+    return sound >= 0 && sound < SOUND_COUNT && tables_get_sound_graphic(sound) >= 0;
 }
 
 /* Sample data of a sound, its length in bytes and its Paula period. */
@@ -51,8 +51,8 @@ const int8_t *sound_get_sample(int16_t sound, uint16_t *length, uint16_t *period
     uint16_t size;
     if (!sound_exists(sound))
         return NULL;
-    const uint8_t *p = gfx_get_item(tables_sound_graphic(sound), &size);
-    uint8_t rate = tables_sound_rate(sound);
+    const uint8_t *p = gfx_get_item(tables_get_sound_graphic(sound), &size);
+    uint8_t rate = tables_get_sound_rate(sound);
     if (!p || size < SOUND_SAMPLE_HEADER || !rate)
         return NULL;
     *length = size - SOUND_SAMPLE_HEADER;
@@ -104,8 +104,8 @@ bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
     if (side < -SOUND_HEARING_RANGE || side > SOUND_HEARING_RANGE || ahead < -SOUND_HEARING_RANGE ||
         ahead > SOUND_HEARING_RANGE)
         return false;
-    volumes[SIDE_RIGHT] = tables_sound_volume(ahead, side);
-    volumes[SIDE_LEFT] = tables_sound_volume(ahead, -side);
+    volumes[SIDE_RIGHT] = tables_get_sound_volume(ahead, side);
+    volumes[SIDE_LEFT] = tables_get_sound_volume(ahead, -side);
     return true;
 }
 
@@ -161,12 +161,12 @@ static void queue_pending(int16_t sound, const uint8_t *v)
         }
     if (sound_compare_loudness(v, g_pending_sound_volumes[0]) != 1 &&
         sound_compare_loudness(v, g_pending_sound_volumes[1]) != 1) {
-        uint8_t priority = tables_sound_priority(sound);
+        uint8_t priority = tables_get_sound_priority(sound);
         if (sound_compare_loudness(v, g_pending_sound_volumes[0]) == 0 &&
-            tables_sound_priority(g_pending_sounds[0]) < priority)
+            tables_get_sound_priority(g_pending_sounds[0]) < priority)
             set_pending(0, sound, v);
         else if (sound_compare_loudness(v, g_pending_sound_volumes[1]) == 0 &&
-                 tables_sound_priority(g_pending_sounds[1]) < priority)
+                 tables_get_sound_priority(g_pending_sounds[1]) < priority)
             set_pending(1, sound, v);
         return;
     }
@@ -182,7 +182,7 @@ void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mo
         return;
     if (mode > SOUND_MODE_AFTER_TICK) {
         TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + (mode - 1)), EVENT_PLAY_SOUND,
-                           tables_sound_priority(sound), event_square(map_x, map_y), sound};
+                           tables_get_sound_priority(sound), event_square(map_x, map_y), sound};
         timeline_add_event(&e);
         return;
     }

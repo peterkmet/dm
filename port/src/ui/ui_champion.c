@@ -75,7 +75,7 @@ static const char *format_number(char *buf, uint16_t value, int pad, int width)
 
 static uint8_t champion_color(int16_t champion_index)
 {
-    return tables_champion_color(champion_index);
+    return tables_get_champion_color(champion_index);
 }
 
 /* Draws the health, stamina, and mana bars of the status box: the empty top part dark gray, the
@@ -178,8 +178,8 @@ void ui_draw_champion_damage(int16_t champion_index, int16_t damage)
 static void draw_icon(uint16_t champion_index)
 {
     const Champion *champion = &g_champions[champion_index];
-    int16_t w = tables_champion_icon_width();
-    int16_t h = tables_champion_icon_height();
+    int16_t w = tables_get_champion_icon_width();
+    int16_t h = tables_get_champion_icon_height();
     uint8_t px[CHAMPION_ICON_MAX * CHAMPION_ICON_MAX];
     Bitmap bm = {w, h, px};
     Bitmap screen = ui_get_screen();
@@ -193,7 +193,7 @@ static void draw_icon(uint16_t champion_index)
         draw_blit(icons, NORMALIZE(champion->direction - g_party_direction) * w, 0, &bm, &(Box){0, 0, w, h},
                   COLOR_DARKEST_GRAY, 0);
     if (invisible) {
-        const uint8_t *changes = tables_palette_changes(TABLES_CHANGES_INVISIBILITY);
+        const uint8_t *changes = tables_get_palette_changes(TABLES_CHANGES_INVISIBILITY);
         for (int i = 0; i < w * h; i++)
             px[i] = changes[px[i] & COLOR_INDEX_MASK];
     }
@@ -215,8 +215,8 @@ void ui_draw_status_box_portrait(int16_t champion_index)
     Box b;
     if (!ui_zone_box(zone, &b))
         return;
-    b.w = tables_portrait_width();
-    b.h = tables_portrait_height();
+    b.w = tables_get_portrait_width();
+    b.h = tables_get_portrait_height();
     draw_blit(&portrait, 0, 0, &screen, &b, COLOR_NONE, 0);
     if (g_party.invisibility_count)
         ui_fill_zone_pattern(&screen, zone, COLOR_DARKEST_GRAY);
@@ -389,8 +389,8 @@ static void draw_food_water_bar(int16_t value, int16_t zone, uint8_t color)
                              ZONE_SCALE_FULL, &b))
         return;
     Box shadow = b;
-    shadow.x += tables_bar_shadow();
-    shadow.y += tables_bar_shadow();
+    shadow.x += tables_get_bar_shadow();
+    shadow.y += tables_get_bar_shadow();
     draw_fill(ui_get_viewport(), &shadow, COLOR_BLACK);
     draw_fill(ui_get_viewport(), &b, color);
 }
@@ -450,7 +450,7 @@ const char *ui_get_skill_rank_name(int16_t level)
         return NULL;
     if (level > SKILL_LEVEL_MAXIMUM)
         level = SKILL_LEVEL_MAXIMUM;
-    return gfx_string(tables_skill_level_text(level));
+    return gfx_string(tables_get_skill_level_text(level));
 }
 
 /* Draws the eye panel: base skill levels above 1 (green after a level up), then the six
@@ -469,7 +469,7 @@ void ui_draw_champion_skills_and_statistics(void)
         int16_t level = champion_get_skill_level(ci, k | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
         if (level == 1)
             continue;
-        snprintf(s, sizeof s, "%s %s", ui_get_skill_rank_name(level), gfx_string(tables_base_skill_text(k)));
+        snprintf(s, sizeof s, "%s %s", ui_get_skill_rank_name(level), gfx_string(tables_get_base_skill_text(k)));
         text_draw(vp, x, y, g_champion_skill_level_up[ci][k] ? COLOR_GREEN : COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
         y += MESSAGE_ROW_HEIGHT;
     }
@@ -477,7 +477,7 @@ void ui_draw_champion_skills_and_statistics(void)
     for (int k = STAT_STRENGTH; k <= STAT_ANTIFIRE; k++) {
         uint8_t cur = champion->statistics[k][STAT_CURRENT];
         uint8_t max = champion->statistics[k][STAT_MAXIMUM];
-        text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(tables_statistic_text(k)));
+        text_draw(vp, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_string(tables_get_statistic_text(k)));
         text_draw(vp, vx, y,
                   cur < max   ? COLOR_RED
                   : cur > max ? COLOR_GREEN
@@ -545,18 +545,18 @@ static void format_attributes_text(uint16_t potential, uint16_t actual, char *ds
     dst[0] = 0;
     if (!left)
         return;
-    append(dst, size, tables_text(TABLES_TEXT_ATTRIBUTES_PREFIX));
+    append(dst, size, tables_get_text(TABLES_TEXT_ATTRIBUTES_PREFIX));
     for (int16_t i = 0; i < ATTRIBUTE_COUNT; i++) {
         if (!(bits >> i & 1))
             continue;
         append(dst, size, gfx_string(TEXT_CONSUMABLE + i));
         left--;
         if (left > 1)
-            append(dst, size, tables_text(TABLES_TEXT_LIST_SEPARATOR));
+            append(dst, size, tables_get_text(TABLES_TEXT_LIST_SEPARATOR));
         else if (left == 1)
             append(dst, size, gfx_string(TEXT_AND));
     }
-    append(dst, size, tables_text(TABLES_TEXT_ATTRIBUTES_SUFFIX));
+    append(dst, size, tables_get_text(TABLES_TEXT_ATTRIBUTES_SUFFIX));
 }
 
 /* The object panel text: the name (bones with the champion name, a potion with its power rune
@@ -572,7 +572,7 @@ int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LI
     uint16_t weight = inventory_get_object_weight(thing);
     if (icon == ICON_BONES)
         snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[junk_charges(thing)].name,
-                 tables_text(TABLES_TEXT_BONES_SEPARATOR), gfx_object_name(icon));
+                 tables_get_text(TABLES_TEXT_BONES_SEPARATOR), gfx_object_name(icon));
     else if (type == THING_POTION && icon != ICON_WATER_FLASK && g_inventory_champion_ordinal &&
              champion_get_skill_level(g_inventory_champion_ordinal - 1, SKILL_PRIEST) > 1)
         snprintf(name, PANEL_LINE_SIZE, "%c %s",
@@ -600,7 +600,7 @@ int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LI
     case THING_JUNK:
         if (icon <= ICON_COMPASS_NORTH + DIRECTION_WEST)
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s", gfx_string(TEXT_PARTY_FACING),
-                     gfx_string(tables_direction_text(icon)));
+                     gfx_string(tables_get_direction_text(icon)));
         else if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_string(TEXT_WATERSKIN_EMPTY + junk_charges(thing)));
         else {

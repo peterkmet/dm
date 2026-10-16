@@ -109,8 +109,8 @@ void game_update_map_coordinates_after_relative_movement(int16_t direction, int1
                                                          int16_t *map_x, int16_t *map_y)
 {
     int16_t right = turn_right(direction);
-    *map_x = *map_x + steps_forward * tables_step_east(direction) + steps_right * tables_step_east(right);
-    *map_y = *map_y + steps_forward * tables_step_north(direction) + steps_right * tables_step_north(right);
+    *map_x = *map_x + steps_forward * tables_get_step_east(direction) + steps_right * tables_get_step_east(right);
+    *map_y = *map_y + steps_forward * tables_get_step_north(direction) + steps_right * tables_get_step_north(right);
 }
 
 /* New game only. A free slot keeps the next free index in map_time. */

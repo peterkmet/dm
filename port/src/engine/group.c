@@ -683,7 +683,7 @@ static void group_steal_from_champion(uint16_t group, uint16_t champion_index)
     int16_t chance = STEAL_CHANCE_START - champion_get_dexterity(champion);
     uint16_t slot_index = random16();
     while (chance > 0 && !game_is_lucky(champion, chance)) {
-        uint16_t slot = tables_slot_to_steal_from(slot_index & 7);
+        uint16_t slot = tables_get_slot_to_steal_from(slot_index & 7);
         if (champion->slots[slot] != THING_NONE) {
             stole = true;
             uint16_t thing = inventory_get_object_removed_from_slot(champion_index, slot);
@@ -1152,7 +1152,7 @@ void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x,
         group_cell++;
     int16_t row = ((group_cell >> 1) & 1) + direction * 2;
     for (int16_t i = 0; i < 4; i++)
-        ordered_cells[i] = tables_ordered_cell_to_attack(row, i);
+        ordered_cells[i] = tables_get_ordered_cell_to_attack(row, i);
 }
 
 /* The champion that a creature on an adjacent square attacks, or -1. */
@@ -1182,7 +1182,7 @@ static uint16_t creature_hit_wounds(const CreatureInfo *info)
         index++;
         probabilities >>= WOUND_PROBABILITY_BITS;
     }
-    return tables_wound_probability_mask(index);
+    return tables_get_wound_probability_mask(index);
 }
 
 /* A creature hits a champion: dodge by dexterity and luck, damage from attack, map difficulty, and parry skill,

@@ -152,9 +152,9 @@ void command_process_key(uint16_t key)
     g_last_key = key;
     if (queue_count >= QUEUE_CLICK_LIMIT)
         return;
-    int16_t command = tables_key_command(primary_keys, key);
+    int16_t command = tables_get_key_command(primary_keys, key);
     if (!command)
-        command = tables_key_command(secondary_keys, key);
+        command = tables_get_key_command(secondary_keys, key);
     if (g_advanced_features && ((key == KEY_ESCAPE && command == COMMAND_FREEZE_GAME) || key == KEY_TAB) &&
         g_inventory_champion_ordinal && !g_candidate_champion_ordinal)
         command = COMMAND_CLOSE_INVENTORY;
@@ -905,7 +905,7 @@ bool command_process_queue(void)
     } else if (command == COMMAND_CLICK_EYE) {
         click_on_eye();
     } else if (command == COMMAND_CLICK_DUNGEON_VIEW) {
-        click_in_dungeon_view(x - tables_viewport_x(), y - tables_viewport_y());
+        click_in_dungeon_view(x - tables_get_viewport_x(), y - tables_get_viewport_y());
     } else if (command == COMMAND_CLICK_PANEL) {
         if (g_candidate_champion_ordinal)
             click_in_candidate_panel(x, y);
