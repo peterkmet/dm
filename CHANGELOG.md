@@ -12,6 +12,9 @@
 
 - The picture scales smoothly with the window size and follows a live resize.
 - `tools/make-dist.sh` no longer puts game files into the zip; the player adds the disk images.
+- Clean-code pass of the C port, with no change of game behavior: `.clang-format` and a format check, named constants, `bool` truth values, typed accessors for the KAOS tables, verb-object names, game rules moved from `ui/` to `engine/`, and the dungeon view squares drawn from one table. `docs/coding-standard.md` lists every check of `tests/test_standard.py`.
+- Golden snapshot tests of the save file, the dungeon view, and the game rules.
+- Windows: the ADF extraction stops with an error on a file name that is not safe on Windows; the turn-based mode is hidden.
 
 ## 0.14.1 - 2026-10-07
 
