@@ -1,6 +1,6 @@
 # Clean C code: PRD
 
-Date: 2026-10-15. Branch: `feature/2026-10-15-clean-code`. Status: reviewed.
+Date: 2026-10-15. Branch: `feature/2026-10-15-clean-code`. Status: implemented, pending the final review and the manual checklist.
 
 ## Goal
 

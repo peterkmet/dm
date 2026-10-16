@@ -58,6 +58,9 @@ The C port is a readable reimplementation of the game. It is not a cleaned-up de
 - KAOS image addresses or `kaos_*` calls outside `data/`, and an image address with more than one name,
 - predicates that do not return `bool`, also in `.c` files,
 - platform code outside `platform/`,
+- functions longer than 60 lines without an allowlist reason,
+- headers without a prefix line, or with a prefix that another header owns or extends,
+- an include that breaks the layer order (`data/`, `engine/`, `ui/`, `platform/`),
 - writes of `ui/` to engine variables (redraw flags and hooks excepted),
 - source files that `clang-format --dry-run --Werror` (version 23) reports as not formatted.
 
