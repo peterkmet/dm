@@ -6,7 +6,6 @@
 #include "engine/champion.h"
 #include "engine/event.h"
 #include "engine/game.h"
-#include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/magic.h"
 #include "engine/map.h"
@@ -396,43 +395,28 @@ static void click_on_champion_icon(int16_t cell)
    front cell protects the objects under it. */
 static void grab_object(int16_t pile)
 {
-    int16_t x = g_party_map_x;
-    int16_t y = g_party_map_y;
+    Location at = {g_party_map_x, g_party_map_y};
     if (g_leader_index == -1)
         return;
-    if (pile >= VIEW_CELL_FRONT_FIRST) {
-        get_front_square(&x, &y);
-        uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
-        if (group != THING_ENDOFLIST && !move_is_levitating(group) &&
-            group_get_creature_in_cell(group, NORMALIZE(pile + g_party_direction)) >= 0)
-            return;
-    }
-    uint16_t thing = g_pile_top_objects[pile];
-    if (object_get_icon_index(thing) != -1) {
-        move_get_move_result(&(Move){.thing = thing, .from.x = x, .from.y = y, .leaves = true}, NULL);
-        inventory_put_hand_object(thing);
-    }
-    g_stop_waiting_for_input = true;
+    if (pile >= VIEW_CELL_FRONT_FIRST)
+        get_front_square(&at.x, &at.y);
+    if (inventory_grab_object(g_pile_top_objects[pile], NORMALIZE(pile + g_party_direction), at))
+        g_stop_waiting_for_input = true;
 }
 
 /* The leader puts the hand object on the floor of view cell 0-3 or into the alcove ahead. Bones
    on a vi altar start the rebirth of their champion. */
 static void drop_object(int16_t pile)
 {
-    int16_t x = g_party_map_x;
-    int16_t y = g_party_map_y;
+    Location at = {g_party_map_x, g_party_map_y};
     bool alcove = pile == VIEW_CLICK_BOX_ALCOVE;
     if (g_leader_index == -1)
         return;
     if (alcove)
         pile = VIEW_CELL_FRONT_FIRST;
     if (pile >= VIEW_CELL_FRONT_FIRST)
-        get_front_square(&x, &y);
-    int16_t cell = NORMALIZE(pile + g_party_direction);
-    uint16_t thing = inventory_take_hand_object();
-    move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = x, .to.y = y, .enters = true}, NULL);
-    if (alcove && g_facing_vi_altar && object_get_icon_index(thing) == ICON_BONES)
-        sensor_add_rebirth_event(thing, x, y, cell);
+        get_front_square(&at.x, &at.y);
+    inventory_drop_object(NORMALIZE(pile + g_party_direction), at, alcove && g_facing_vi_altar);
     g_stop_waiting_for_input = true;
 }
 

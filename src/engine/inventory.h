@@ -63,6 +63,13 @@ uint16_t inventory_get_armour_defense(const ArmourInfo *armour, bool use_sharp_d
 
 void inventory_put_hand_object(uint16_t thing);
 uint16_t inventory_take_hand_object(void);
+/* The leader takes object thing from cell of square at into the hand, unless a creature that does not levitate
+   stands in that cell. Returns false when the creature protects the object, true otherwise; the hand takes only
+   an object with an icon. */
+bool inventory_grab_object(uint16_t thing, int16_t cell, Location at);
+/* The leader puts the hand object into cell of square at; onto a vi altar, bones start the rebirth of
+   their champion. */
+void inventory_drop_object(int16_t cell, Location at, bool onto_vi_altar);
 /* Takes an object from a slot: bonuses end, a torch goes out, a scroll closes. */
 uint16_t inventory_take_slot_object(int16_t champion_index, int16_t slot);
 /* Puts an object in a slot: bonuses start, a torch in a hand burns, a scroll opens. */
