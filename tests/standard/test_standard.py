@@ -272,10 +272,100 @@ def test_no_event_numbers_or_offsets_in_names():
     report("numbered", [f"numbered {name}  | {sorted(paths)}" for name, paths in sorted(where.items())])
 
 
-def test_predicates_return_bool():
+TRUTH_LOCAL = re.compile(r"^\s+(?:const\s+)?(?:int|int8_t|int16_t|int32_t|uint8_t|uint16_t|uint32_t|unsigned|short|char)"
+                         r"\s+(\w+)\s*=\s*(?:true|false|[^;?]*(?:==|!=|<=|>=|&&|\|\|)[^;?]*|![\w(][^;?]*);")
+RETURNS_TRUTH = re.compile(r"\b[Rr]eturns? (?:1|0|true|false)\b(?!\s+(?:on|for)\b)")
+
+
+def test_truth_values_are_bool():
+    """Predicates, locals set from a comparison or true/false, and functions that return 1 or 0 are bool."""
     ok = allowed()
-    report("bool", [f"bool {rel(path)}  | {ret} {name}" for path in sources() if ("bool", rel(path)) not in ok
-                    for ret, name in declarations(path) if PREDICATE.search(name) and ret != "bool"])
+    found = []
+    for path in sources():
+        lines = path.read_text(errors="replace").splitlines()
+        for f in functions(path):
+            key = f"{rel(path)}:{f.name}"
+            if f.ret.replace("static", "").replace("inline", "").strip() == "bool" or ("bool", key) in ok:
+                continue
+            if PREDICATE.search(f.name):
+                found.append(f"bool {key}  | predicate returns {f.ret}")
+            elif RETURNS_TRUTH.search(comment_above(lines, f.line)):
+                found.append(f"bool {key}  | the comment says it returns 1 or 0")
+        if ("bool", rel(path)) not in ok:
+            found += [f"bool {rel(path)}  | {n}: {line.strip()}" for n, line in code_lines(path) if TRUTH_LOCAL.match(line)]
+    report("bool", sorted(set(found)))
+
+
+def all_prefixes():
+    """Every prefix that a header states, longest first."""
+    found = {p for h in headers() if (m := PREFIXES.search(h.read_text(errors="replace"))) for p in m.group(1).split()}
+    return sorted(found, key=len, reverse=True)
+
+
+MAX_NAME_CHARS, MAX_NAME_WORDS = 32, 4
+
+
+def test_function_names_are_short():
+    """<prefix><verb>_<object>: at most four words after the prefix and at most 32 characters."""
+    prefixes, ok, found, seen = all_prefixes(), allowed(), [], set()
+    for path in sources():
+        for f in functions(path):
+            key = f"{rel(path)}:{f.name}"
+            if (rel(path), f.name) in seen or ("name", key) in ok:
+                continue
+            seen.add((rel(path), f.name))
+            prefix = "" if f.static and path.suffix == ".c" else next((p for p in prefixes if f.name.startswith(p)), "")
+            words = f.name[len(prefix):].split("_")
+            if len(f.name) > MAX_NAME_CHARS or len(words) > MAX_NAME_WORDS:
+                found.append(f"name {key}  | {len(f.name)} characters, {len(words)} words after {prefix or 'no prefix'}")
+    report("name", found)
+
+
+def test_static_functions_have_no_module_prefix():
+    prefixes, ok = all_prefixes(), allowed()
+    report("static-prefix", sorted({f"static-prefix {rel(path)}:{f.name}  | {p}" for path in sources() for f in functions(path)
+                                    if f.static and path.suffix == ".c" and (p := next((p for p in prefixes if f.name.startswith(p)), None))
+                                    and ("static-prefix", f"{rel(path)}:{f.name}") not in ok}))
+
+
+EXTERN_VARIABLE = re.compile(r"^\s*extern\b([^;]*);", re.M)
+FILE_STATIC_G = re.compile(r"^static\b[^(;=]*?\b(g_\w+)\b", re.M)
+
+
+def extern_names(declaration):
+    """The variable names of one extern declaration, also a function pointer variable."""
+    if (pointer := re.search(r"\(\s*\*\s*(\w+)\s*\)", declaration)):
+        return [pointer.group(1)]
+    if "(" in declaration:
+        return []
+    return re.findall(r"(\w+)\s*(?:\[[^\]]*\])*\s*(?:,|$)", declaration.strip())
+
+
+def test_globals_have_the_g_prefix():
+    ok = allowed()
+    found = []
+    for path in sources():
+        if ("global", rel(path)) in ok:
+            continue
+        text = strip(path.read_text(errors="replace"))
+        found += [f"global {rel(path)}  | extern {name}" for decl in EXTERN_VARIABLE.findall(text)
+                  for name in extern_names(decl) if not name.startswith("g_")]
+        if path.suffix == ".c":
+            found += [f"global {rel(path)}  | static {name}" for name in FILE_STATIC_G.findall(text)]
+    report("global", found)
+
+
+ORDINAL = re.compile(r"(?:^|_)ordinal(?:_|$)|_plus_1(?:_|$)", re.I)
+
+
+def test_no_ordinals_in_names():
+    ok = allowed()
+    where = defaultdict(set)
+    for path in sources():
+        for name in IDENTIFIER.findall(strip(path.read_text(errors="replace"))):
+            if ORDINAL.search(name) and ("ordinal", name) not in ok:
+                where[name].add(rel(path))
+    report("ordinal", [f"ordinal {name}  | {sorted(paths)}" for name, paths in sorted(where.items())])
 
 
 def test_functions_are_short():
