@@ -24,16 +24,16 @@ bool swsh_load(const char *path, SwshLogo *out)
         ftl_free(&out->image);
         return false;
     }
-    const uint8_t *at = out->image.data - SWSH_BASE;
-    out->palette_script = at + SWSH_PALETTE_SCRIPT;
-    out->logo = at + SWSH_LOGO_GRAPHIC;
+    const FtlImage *image = &out->image;
+    out->palette_script = ftl_at(image, SWSH_PALETTE_SCRIPT, SWSH_LOGO_GRAPHIC - SWSH_PALETTE_SCRIPT);
+    out->logo = ftl_at(image, SWSH_LOGO_GRAPHIC, SWSH_SAMPLE_PERIOD - SWSH_LOGO_GRAPHIC);
     out->palette_script_end = out->logo;
     out->logo_bytes = SWSH_SAMPLE_PERIOD - SWSH_LOGO_GRAPHIC;
-    out->period = BE16(at + SWSH_SAMPLE_PERIOD);
-    out->sample_length = BE32(at + SWSH_SAMPLE_LENGTH);
+    out->period = BE16(ftl_at(image, SWSH_SAMPLE_PERIOD, sizeof(uint16_t)));
+    out->sample_length = BE32(ftl_at(image, SWSH_SAMPLE_LENGTH, sizeof(uint32_t)));
     if (out->sample_length > out->image.size - (SWSH_SAMPLE_DATA - SWSH_BASE))
         out->sample_length = 0;
-    out->sample = at + SWSH_SAMPLE_DATA;
+    out->sample = ftl_at(image, SWSH_SAMPLE_DATA, out->sample_length);
     return true;
 }
 

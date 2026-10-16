@@ -1,11 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "data/ftl.h"
-#include "data/adventure.h"
 #include "data/bytes.h"
-#include "data/csbimage.h"
-#include "data/file.h"
-#include "data/kaos_addresses.h"
-#include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -56,8 +52,6 @@
 #define RSHARP_LITERAL     15
 #define NIBBLE_BITS        4
 #define NIBBLE_MASK        0xf
-
-FtlImage kaos;
 
 typedef struct {
     const uint8_t *s;
@@ -257,48 +251,9 @@ void ftl_free(FtlImage *img)
     *img = (FtlImage){0};
 }
 
-int kaos_load(const char *path)
+uint8_t *ftl_at(const FtlImage *image, uint32_t address, uint32_t bytes)
 {
-    size_t len;
-    uint8_t *raw = file_read(path, &len);
-    FtlImage appb = {0};
-    bool csb = g_adventure == ADVENTURE_CSB;
-    ftl_free(&kaos);
-    int r = raw ? ftl_load(raw, len, KAOS_BASE, csb ? &appb : &kaos) : -1;
-    free(raw);
-    if (!r && csb)
-        r = csb_image_build(&appb, &kaos);
-    ftl_free(&appb);
-    return r;
-}
-
-/* Maps an original KAOS address into the loaded image; aborts outside the image. */
-static uint8_t *get_image_pointer(uint32_t addr, uint32_t n)
-{
-    if (!kaos.data || addr < kaos.base || (uint64_t)addr - kaos.base + n > kaos.size) {
-        fprintf(stderr, "kaos address %#x outside image\n", addr);
-        abort();
-    }
-    return kaos.data + (addr - kaos.base);
-}
-
-uint8_t *kaos_ptr(uint32_t addr)
-{
-    return get_image_pointer(addr, 1);
-}
-uint8_t kaos_u8(uint32_t addr)
-{
-    return *get_image_pointer(addr, 1);
-}
-uint16_t kaos_u16(uint32_t addr)
-{
-    return BE16(get_image_pointer(addr, 2));
-}
-int16_t kaos_s16(uint32_t addr)
-{
-    return kaos_u16(addr);
-}
-uint32_t kaos_u32(uint32_t addr)
-{
-    return BE32(get_image_pointer(addr, 4));
+    if (!image->data || address < image->base || (uint64_t)address - image->base + bytes > image->size)
+        return NULL;
+    return image->data + (address - image->base);
 }

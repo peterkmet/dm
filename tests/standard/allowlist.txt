@@ -10,7 +10,6 @@ hex engine/map.c open: epic 5
 hex engine/map.h open: epic 5
 long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
 long engine/timeline_process.c:event_process_expired rule 5.8: one short case for each timeline event type
-platform data/ftl.c open: epic 4
 platform engine/game.c open: epic 6
 platform engine/group.c open: epic 6
 platform engine/map.c open: epic 6
@@ -161,7 +160,7 @@ bool data/ftl.c:find_sections open: epic 4
 bool data/ftl.h:ftl_load open: epic 4
 bool data/ftl.c:relocate open: epic 4
 bool data/ftl.c:write_jump_table open: epic 4
-bool data/ftl.h:kaos_load open: epic 4
+bool data/kaos.h:kaos_load open: epic 4
 bool data/graphics.h:gfx_load_bitmap open: epic 4
 bool data/tables.h:tables_init open: epic 4
 bool data/tables.h:tables_load open: epic 4
@@ -182,7 +181,6 @@ bool ui/gameloop.h:gameloop_run_frame open: epic 8
 bool ui/layout.h:layout_get_zone_box open: epic 8
 bool ui/view.c open: epic 8
 global data/csbimage.h open: epic 4
-global data/ftl.h open: epic 4
 global ui/video.h open: epic 8
 name data/tables.c:tables_get_door_button_coord_set open: epic 4
 name data/tables.c:tables_get_door_ornament_coord_set open: epic 4
@@ -558,7 +556,6 @@ header data/crc32.h open: epic 4
 header data/csbimage.h open: epic 4
 header data/csbtext.h open: epic 4
 header data/file.h open: epic 4
-header data/ftl.h open: epic 4
 header data/graphics.h open: epic 4
 header data/ids.h open: epic 4
 header data/kaos_addresses.h open: epic 4
@@ -887,7 +884,7 @@ result data/ftl.c:find_sections open: epic 4
 result data/ftl.h:ftl_load open: epic 4
 result data/ftl.c:relocate open: epic 4
 result data/ftl.c:write_jump_table open: epic 4
-result data/ftl.h:kaos_load open: epic 4
+result data/kaos.h:kaos_load open: epic 4
 result data/graphics.h:gfx_load_bitmap open: epic 4
 result engine/explored.h:explored_save open: epic 6
 result ui/anim.h:anim_open open: epic 8
@@ -996,3 +993,7 @@ packed ui/view.c open: epic 8
 dead-api data/os.h:os_log open: epic 4
 dead-api data/os.h:g_os_log_hook open: epic 4
 dead-api data/os.h:g_os_fatal_hook open: epic 4
+include data/kaos.c:data/os.h open: epic 4
+dead-api data/kaos.h:kaos_free open: epic 4
+dead-api data/kaos.h:kaos_s8 open: epic 4
+kaos engine/dungeon.c open: epic 4

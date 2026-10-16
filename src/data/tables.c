@@ -3,7 +3,7 @@
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/csbimage.h"
-#include "data/ftl.h"
+#include "data/kaos.h"
 #include "data/kaos_addresses.h"
 #include "data/spells.h"
 
@@ -207,7 +207,7 @@ static void read_champion_tables(void)
 
 int tables_init(void)
 {
-    if (!kaos.data)
+    if (!kaos_is_loaded())
         return -1;
     read_creatures();
     read_objects();
@@ -703,11 +703,11 @@ bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out)
 /* Writes x1, x2, y1, y2 of an entry as big-endian words, as the endgame screen does. */
 void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_t x2, int16_t y1, int16_t y2)
 {
-    uint8_t *a = kaos_ptr(mouse_table(table) + MOUSE_INPUT_BYTES * entry);
-    WR16(a + MOUSE_AT_X1, x1);
-    WR16(a + MOUSE_AT_X2, x2);
-    WR16(a + MOUSE_AT_Y1, y1);
-    WR16(a + MOUSE_AT_Y2, y2);
+    uint32_t a = mouse_table(table) + MOUSE_INPUT_BYTES * entry;
+    kaos_write_u16(a + MOUSE_AT_X1, (uint16_t)x1);
+    kaos_write_u16(a + MOUSE_AT_X2, (uint16_t)x2);
+    kaos_write_u16(a + MOUSE_AT_Y1, (uint16_t)y1);
+    kaos_write_u16(a + MOUSE_AT_Y2, (uint16_t)y2);
 }
 /* The command of a key in a keyboard table, or 0. */
 int16_t tables_get_key_command(int16_t key_table, uint16_t key)

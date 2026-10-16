@@ -13,7 +13,7 @@ if (!dungeon_load("game/Dungeon.DAT"))
     return 1;
 ```
 
-`dungeon_load` loads the dungeon for a new game. It returns 1 on success and 0 on error. Call `kaos_load("game/KAOS.FTL")` (`ftl.h`) first: the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns 0. A new call frees the previous dungeon.
+`dungeon_load` loads the dungeon for a new game. It returns 1 on success and 0 on error. Call `kaos_load("game/KAOS.FTL")` (`kaos.h`) first: the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns 0. A new call frees the previous dungeon.
 
 ## Compressed file
 
