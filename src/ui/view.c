@@ -96,7 +96,7 @@
 #define STAIRS_DOWN_SIDE_D1L 16
 #define STAIRS_SIDE_D0L      17
 
-#define BLIT_TRANSPARENT          0 /* draw_wall_set_bitmap variants */
+#define BLIT_TRANSPARENT          0 /* wall set bitmap draw modes: with transparent color, opaque, mirrored */
 #define BLIT_OPAQUE               1
 #define BLIT_FLIPPED              2
 #define TRANSPARENT_COLOR         10
@@ -199,7 +199,7 @@
 #define WALL_TEXT_SIZE            80
 #define SCALE_D3_FAR_SIDE_W       30 /* the D3L2 and D3R2 wall sides are wider than high */
 
-/* Cell orders of draw_objects_creatures_projectiles_explosions: a nibble per view cell + 1, low nibble first;
+/* Cell orders of the things on a square (objects, creatures, projectiles, explosions): a nibble per view cell + 1, low nibble first;
    0 is the alcove. Bit 3 marks a door pass, bit 0 then selects the pass behind (0) or in front of the door (1),
    and the next nibbles hold the cells. B back, F front, L left, R right. */
 #define CELLS_ALCOVE      0
@@ -500,7 +500,7 @@ static WallBitmap get_wall_bitmap(int16_t id)
     return id < 0 ? (WallBitmap){-1, get_layout_slot(id)} : (WallBitmap){id, -1};
 }
 
-/* draw_wall_set_bitmap and its _opaque and _flipped variants: a graphic or a layout bitmap slot at zone. */
+/* Draws a wall set bitmap, opaque or mirrored as mode says: a graphic or a layout bitmap slot at zone. */
 static void draw_wall_bitmap(WallBitmap bitmap, int16_t zone, int mode)
 {
     int16_t graphic = bitmap.graphic;
@@ -579,8 +579,6 @@ static bool blit_in_zone(const Bitmap *bm, Bitmap *dst, const ZoneBlit *blit, Bo
 #define CLICK_BOX_MIN_H         11
 #define CLICK_BOX_CENTER_H      15
 #define CLICK_BOX_CENTER_OFFSET 7
-
-/* The aspect offsets of the active group (group.h) index the shift sets: x, then y. */
 
 /* Creature aspect record (6 bytes): graphic word, coordinate set and transparent color, replacement color sets. */
 #define CREATURE_ASPECT_GRAPHIC     0
@@ -682,6 +680,7 @@ static const uint8_t *get_object_palette_changes(int16_t distance)
                            : NULL;
 }
 
+/* The aspect of an object by its type. */
 static int16_t get_object_aspect(uint16_t thing)
 {
     return tables_get_object_info(inventory_get_object_info_index(thing))->aspect_index;
@@ -1024,7 +1023,6 @@ static void end_projectile(uint16_t thing, bool drawn, const Box *box)
     flight.tracks[flight.track_count++] = (ProjectileTrack){thing, last ? last->to : *box, *box};
 }
 
-/* True when a projectile of the last view moved between the last two ticks. */
 bool view_has_moving_projectiles(void)
 {
     for (int i = 0; i < flight.track_count; i++)
@@ -2154,7 +2152,7 @@ static void draw_square_ceiling_pit(const SquareView *s, int16_t x, int16_t y)
 /* A wall square: the wall, the ornaments of its visible faces, and the things in an alcove. */
 static void draw_square_wall(const SquareView *s, const Aspect *a, int16_t dir, int16_t x, int16_t y)
 {
-    if (s->flags & SQ_FRONT) { /* ponytail: no thieves eye hole yet, needs the party spell state (step 9) */
+    if (s->flags & SQ_FRONT) {
         g_facing_alcove = false;
         g_facing_vi_altar = false;
         g_facing_fountain = false;
@@ -2312,24 +2310,27 @@ static void set_creature_replacement_colors(int16_t color, int16_t n)
     view.creature_palette_changes_d3[color] = tables_get_replacement_change(n, DEPTH_D3);
 }
 
+/* Sets every wall set entry to the layout bitmap of the game tables. */
 static void reset_wall_set_ids(void)
 {
     for (int i = 0; i < WS_COUNT; i++)
         view.wall_set[i] = get_wall_bitmap(tables_get_wall_layout_id(i));
 }
 
+/* The layout slot of a wall set entry. */
 static int16_t get_wall_set_slot(int entry)
 {
     return view.wall_set[entry].slot;
 }
 
+/* Gives the layout slot of a wall set entry its graphic, mirrored or not. */
 static void set_slot(int entry, int16_t graphic, bool flip)
 {
     view.slot_graphics[get_wall_set_slot(entry)] = graphic;
     view.slot_flip[get_wall_set_slot(entry)] = flip;
 }
 
-/* load_floor_set and load_wall_set: the graphic of each layout bitmap slot, and the slots that hold a
+/* Loads the floor set and the wall set: the graphic of each layout bitmap slot, and the slots that hold a
    mirrored graphic. */
 static void load_wall_set(int16_t floor_set, int16_t wall_set)
 {
@@ -2765,8 +2766,6 @@ static void draw_map_square(const MapDraw *m, Location at)
         draw_map_square_things(&square, &aspect);
 }
 
-/* The magic map of a champion at (px, py) of dst: 7 x 7 squares around the party, or around the square that
-   NETA keeps. The party square is drawn last. The ornaments are those of the party map, as in the original. */
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py)
 {
     int16_t map = g_party_map_index;
