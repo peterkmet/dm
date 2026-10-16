@@ -200,7 +200,7 @@ def adjacent_group(lib, x, y):
 
 def mummy_in_corridor(lib, m):
     """A single mummy group on map m and a party square 3 squares away in a straight empty corridor."""
-    is_corridor = lambda x, y: lib.dungeon_get_square(m, x, y) >> 5 == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE
+    is_corridor = lambda x, y: lib.rec_square_type(lib.rec_square_byte(m, x, y)) == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE
     for x in range(lib.dungeon_map_width(m)):
         for y in range(lib.dungeon_map_height(m)):
             t = lib.dungeon_get_square_first_thing(m, x, y)
@@ -279,9 +279,9 @@ def test_fireball_flies_and_explodes_on_wall(lib):
     new_game(lib)
     lib.move_party_enter_dungeon()
     px, py = c16.in_dll(lib, "g_party_map_x").value, c16.in_dll(lib, "g_party_map_y").value
-    corridor = lambda x, y: lib.map_get_square(x, y) >> 5 == 1 and lib.map_get_square_first_thing(x, y) == 0xFFFE and (x, y) != (px, py)
+    corridor = lambda x, y: lib.rec_square_type(lib.map_get_square(x, y)) == 1 and lib.map_get_square_first_thing(x, y) == 0xFFFE and (x, y) != (px, py)
     start = next((x, y) for y in range(lib.dungeon_map_height(0)) for x in range(lib.dungeon_map_width(0))
-                 if corridor(x, y) and corridor(x + 1, y) and corridor(x + 2, y) and lib.map_get_square(x + 3, y) >> 5 == 0)
+                 if corridor(x, y) and corridor(x + 1, y) and corridor(x + 2, y) and lib.rec_square_type(lib.map_get_square(x + 3, y)) == 0)
     x, y = start
     lib.projectile_create(FIREBALL, x, y, 0, 1, 100, 100, 1)  # east, back cell
     path, seen = [], set()

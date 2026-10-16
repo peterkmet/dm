@@ -108,7 +108,7 @@ def test_control_session_moves_and_recruits(game):
     assert client.call(cmd="act", action="fly")["ok"] is False
 
     x, y, d = game.position()
-    free = next(k for k in range(4) if game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
+    free = next(k for k in range(4) if game.lib.rec_square_type(game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k])) == 1)
     while game.position()[2] != free:
         client.act("turn_right")
     response = client.act("move_forward")
@@ -170,7 +170,7 @@ def test_save_and_load_restore_the_position_and_the_time(game, tmp_path):
     saved = client.call(cmd="get_state")["state"]
 
     x, y, _ = game.position()
-    free = next(k for k in range(4) if game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
+    free = next(k for k in range(4) if game.lib.rec_square_type(game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k])) == 1)
     while game.position()[2] != free:
         client.act("turn_right")
     client.act("move_forward")
@@ -217,12 +217,12 @@ def placed(game, x, y, direction):
 
 
 def square_byte(game, x, y):
-    return game.lib.dungeon_get_square(game.value("g_party_map_index"), x, y)
+    return game.lib.rec_square_byte(game.value("g_party_map_index"), x, y)
 
 
 def map_size(game):
     lib, m = game.lib, game.value("g_party_map_index")
-    lib.dungeon_get_square.restype = ctypes.c_uint8
+    lib.rec_square_byte.restype = ctypes.c_uint8
     lib.dungeon_map_width.restype = lib.dungeon_map_height.restype = ctypes.c_int16
     return lib.dungeon_map_width(m), lib.dungeon_map_height(m)
 
@@ -270,7 +270,7 @@ def test_view_shows_a_mirror_on_a_side_wall(game):
 
 def free_direction(game):
     x, y, _ = game.position()
-    return next(k for k in range(4) if game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 1)
+    return next(k for k in range(4) if game.lib.rec_square_type(game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k])) == 1)
 
 
 def test_act_many_runs_in_order_and_stops_on_failure_and_damage(game):
@@ -374,7 +374,7 @@ def square_with_floor_left_and_behind(game):
     width, height = map_size(game)
 
     def floor(x, y):
-        return 0 <= x < width and 0 <= y < height and game.lib.map_get_square(x, y) >> 5 == 1
+        return 0 <= x < width and 0 <= y < height and game.lib.rec_square_type(game.lib.map_get_square(x, y)) == 1
 
     for x in range(width):
         for y in range(height):
@@ -423,7 +423,7 @@ def square_with_floor_two_ahead(game):
     width, height = map_size(game)
 
     def floor(x, y):
-        return 0 <= x < width and 0 <= y < height and game.lib.map_get_square(x, y) >> 5 == 1
+        return 0 <= x < width and 0 <= y < height and game.lib.rec_square_type(game.lib.map_get_square(x, y)) == 1
 
     for x in range(width):
         for y in range(height):
@@ -541,7 +541,7 @@ def test_goto_is_an_unknown_command(game):
 
 def wall_direction(game):
     x, y, _ = game.position()
-    return next(k for k in range(4) if game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k]) >> 5 == 0)
+    return next(k for k in range(4) if game.lib.rec_square_type(game.lib.map_get_square(x + STEP_EAST[k], y + STEP_NORTH[k])) == 0)
 
 
 def test_a_move_into_a_wall_bumps(game, monkeypatch, capsys):
@@ -876,7 +876,7 @@ HAS_THINGS = 16
 def test_a_free_record_never_enters_a_square_list(game, capfd):
     lib = game.lib
     x, y = next((x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
-                if lib.map_get_square(x, y) >> 5 == 1 and not lib.map_get_square(x, y) & HAS_THINGS)
+                if lib.rec_square_type(lib.map_get_square(x, y)) == 1 and not lib.map_get_square(x, y) & HAS_THINGS)
     lib.map_link_thing_to_list(C.THING_NONE, 0, x, y)
     assert not lib.map_get_square(x, y) & HAS_THINGS
     assert "square list guard: link of a free record" in capfd.readouterr().err
@@ -1037,11 +1037,11 @@ def test_view_and_map_show_the_pressure_pads_of_map_1(game, monkeypatch, capsys)
 
 def test_a_plate_without_an_ornament_stays_hidden(game):
     lib = game.lib
-    lib.dungeon_get_square.restype = ctypes.c_uint8
+    lib.rec_square_byte.restype = ctypes.c_uint8
     hidden = (14, 14)  # a floor sensor of map 1 without an ornament
     for d in range(4):
         x, y = hidden[0] - STEP_EAST[d], hidden[1] - STEP_NORTH[d]
-        if lib.dungeon_get_square(1, x, y) >> 5 == 1:
+        if lib.rec_square_type(lib.rec_square_byte(1, x, y)) == 1:
             with on_map(game, 1, x, y, d):
                 view, game_map = state_json(game, 1), state_json(game, 2)
             assert "floor_ornament" not in squares_by_place(view)[hidden]

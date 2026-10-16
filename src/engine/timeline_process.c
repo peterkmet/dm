@@ -65,8 +65,8 @@ void event_process_door_animation(TimelineEvent *event)
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
     int16_t effect = event_effect(event);
-    uint8_t *square = &g_current_map_data[x][y];
-    int16_t state = door_state(*square);
+    int16_t map = g_current_map_index;
+    int16_t state = rec_door_state(rec_square_byte(map, x, y));
     if (state == DOOR_DESTROYED)
         return;
     event->map_time++;
@@ -74,7 +74,7 @@ void event_process_door_animation(TimelineEvent *event)
         uint16_t attributes;
         if (is_party_on(x, y) && state != DOOR_OPEN) {
             if (g_party_champion_count) {
-                *square = square_with_door_state(*square, DOOR_OPEN);
+                rec_door_set_state(map, x, y, DOOR_OPEN);
                 if (champion_damage_all(DOOR_CLOSE_DAMAGE, WOUND_HEAD, ATTACK_SELF))
                     sound_request_play(SOUND_PARTY_DAMAGED, x, y, SOUND_MODE_AFTER_TICK);
             }
@@ -85,7 +85,7 @@ void event_process_door_animation(TimelineEvent *event)
             int16_t height = rec_door_is_vertical(map_get_square_first_thing(x, y)) ? creature_height(attributes) : 1;
             if (height <= state) {
                 group_door_damages_creatures(x, y);
-                *square = square_with_door_state(*square, state != DOOR_OPEN ? state - 1 : DOOR_OPEN);
+                rec_door_set_state(map, x, y, state != DOOR_OPEN ? state - 1 : DOOR_OPEN);
                 sound_request_play(SOUND_DOOR_HITS_CREATURE, x, y, SOUND_MODE_AFTER_TICK);
                 add_again_next_tick(event);
                 return;
@@ -94,7 +94,7 @@ void event_process_door_animation(TimelineEvent *event)
     }
     if ((effect != EFFECT_SET || state != DOOR_OPEN) && (effect != EFFECT_CLEAR || state != DOOR_CLOSED)) {
         state += effect == EFFECT_SET ? -1 : 1;
-        *square = square_with_door_state(*square, state);
+        rec_door_set_state(map, x, y, state);
         sound_request_play(SOUND_DOOR, x, y, SOUND_MODE_AFTER_TICK);
         if (effect == EFFECT_SET ? state == DOOR_OPEN : state == DOOR_CLOSED)
             return;
@@ -104,13 +104,12 @@ void event_process_door_animation(TimelineEvent *event)
 
 void event_process_door_destruction(TimelineEvent *event)
 {
-    uint8_t *square = &g_current_map_data[event_square_x(event)][event_square_y(event)];
-    *square = square_with_door_state(*square, DOOR_DESTROYED);
+    rec_door_set_state(g_current_map_index, event_square_x(event), event_square_y(event), DOOR_DESTROYED);
 }
 
 void event_process_door(TimelineEvent *event)
 {
-    int16_t state = door_state(g_current_map_data[event_square_x(event)][event_square_y(event)]);
+    int16_t state = rec_door_state(rec_square_byte(g_current_map_index, event_square_x(event), event_square_y(event)));
     if (state == DOOR_DESTROYED)
         return;
     if (event_effect(event) == EFFECT_TOGGLE)
@@ -126,19 +125,20 @@ void event_process_fake_wall(TimelineEvent *event)
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
     int16_t effect = event_effect(event);
-    uint8_t *square = &g_current_map_data[x][y];
+    int16_t map = g_current_map_index;
+    uint8_t square = rec_square_byte(map, x, y);
     uint16_t attributes;
     if (effect == EFFECT_TOGGLE)
-        effect = *square & FAKE_WALL_OPEN ? EFFECT_CLEAR : EFFECT_SET;
+        effect = square & FAKE_WALL_OPEN ? EFFECT_CLEAR : EFFECT_SET;
     if (effect != EFFECT_CLEAR) {
-        *square |= FAKE_WALL_OPEN;
+        rec_square_set_byte(map, x, y, square | FAKE_WALL_OPEN);
         return;
     }
     if (is_party_on(x, y) || is_material_group_on(x, y, &attributes)) {
         add_again_next_tick(event);
         return;
     }
-    *square &= ~FAKE_WALL_OPEN;
+    rec_square_set_byte(map, x, y, rec_square_byte(map, x, y) & ~FAKE_WALL_OPEN);
 }
 
 /* Opens or closes a teleporter or a pit. Opening moves the things on the square. */
@@ -146,14 +146,15 @@ static void open_or_close(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
-    uint8_t *square = &g_current_map_data[x][y];
+    int16_t map = g_current_map_index;
+    uint8_t square = rec_square_byte(map, x, y);
     if (event_effect(event) == EFFECT_TOGGLE)
-        event_set_effect(event, *square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
+        event_set_effect(event, square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
     if (event_effect(event) == EFFECT_SET) {
-        *square |= TELEPORTER_OPEN;
+        rec_square_set_byte(map, x, y, square | TELEPORTER_OPEN);
         event_move_teleporter_or_pit_square_things(x, y);
     } else {
-        *square &= ~TELEPORTER_OPEN;
+        rec_square_set_byte(map, x, y, square & ~TELEPORTER_OPEN);
     }
 }
 
@@ -367,11 +368,12 @@ bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int
     uint16_t door = map_get_square_first_thing(x, y);
     if (magic_attack ? !rec_door_is_magic_breakable(door) : !rec_door_is_force_breakable(door))
         return false;
-    uint8_t *square = &g_current_map_data[x][y];
-    if (attack < door_info_defense(g_current_map_door_info[rec_door_type(door)]) || door_state(*square) != DOOR_CLOSED)
+    uint8_t square = rec_square_byte(g_current_map_index, x, y);
+    if (attack < door_info_defense(g_current_map_door_info[rec_door_type(door)]) ||
+        rec_door_state(square) != DOOR_CLOSED)
         return false;
     if (!ticks) {
-        *square = square_with_door_state(*square, DOOR_DESTROYED);
+        rec_door_set_state(g_current_map_index, x, y, DOOR_DESTROYED);
     } else {
         TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + ticks),
                                .type = EVENT_DOOR_DESTRUCTION,

@@ -37,7 +37,7 @@ VIEWPORT = Box(0, 33, 224, 136)
 @pytest.fixture
 def game():
     lib = load_lib()
-    lib.dungeon_get_square.restype = ctypes.c_uint8
+    lib.rec_square_byte.restype = ctypes.c_uint8
     lib.dungeon_load.restype = ctypes.c_bool
     for name in ("dungeon_map_width", "dungeon_map_height"):
         getattr(lib, name).restype = c16
@@ -64,7 +64,7 @@ def on_map(lib, m, x, y):
 def blocks(lib, m, x, y):
     if not on_map(lib, m, x, y):
         return True
-    square = lib.dungeon_get_square(m, x, y)
+    square = lib.rec_square_byte(m, x, y)
     kind = square >> 5
     return kind == WALL or (kind == FAKE_WALL and not square & C.FAKE_WALL_OPEN) or (kind == DOOR and square & 7 == C.DOOR_CLOSED)
 
@@ -181,7 +181,7 @@ def test_floors_are_light_and_walls_dark(game):
     left, top = RULER_W + (VIEWPORT.w - RULER_W - CELL) // 2 - x * CELL, RULER_H + (VIEWPORT.h - RULER_H - CELL) // 2 - y * CELL
     colors = {}
     for sx, sy in seen_squares(game, m) - {(x, y)}:
-        kind = game.dungeon_get_square(m, sx, sy) >> 5
+        kind = game.rec_square_type(game.rec_square_byte(m, sx, sy))
         if kind in (WALL, 1):  # wall, floor
             colors.setdefault(kind, set()).add(px[(top + sy * CELL) * VIEWPORT.w + left + sx * CELL])
     assert colors == {WALL: {DARKEST_GRAY}, 1: {LIGHT_GRAY}}

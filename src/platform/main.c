@@ -11,6 +11,7 @@
 #include "engine/game.h"
 #include "engine/map.h"
 #include "engine/random.h"
+#include "engine/record.h"
 #include "ui/advanced.h"
 #include "ui/anim.h"
 #include "ui/command.h"
@@ -113,8 +114,9 @@ static void view_key(int key)
     game_update_map_coordinates_after_relative_movement(direction, forward, right, &x, &y);
     if (x < 0 || x >= dungeon_map_width(map) || y < 0 || y >= dungeon_map_height(map))
         return;
-    uint8_t square = dungeon_get_square(map, x, y);
-    if (SQUARE_TYPE(square) == SQUARE_WALL || (SQUARE_TYPE(square) == SQUARE_FAKE_WALL && !(square & FAKE_WALL_OPEN)))
+    uint8_t square = rec_square_byte(map, x, y);
+    if (rec_square_type(square) == SQUARE_WALL ||
+        (rec_square_type(square) == SQUARE_FAKE_WALL && !(square & FAKE_WALL_OPEN)))
         return;
     g_party_map_x = x;
     g_party_map_y = y;

@@ -5,6 +5,7 @@
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/map.h"
+#include "engine/record.h"
 #include "ui/advanced.h"
 #include "ui/draw.h"
 #include "ui/text.h"
@@ -28,14 +29,14 @@ static bool blocks_sight(int16_t map, int16_t x, int16_t y)
 {
     if (!is_on_map(map, x, y))
         return true;
-    uint8_t square = dungeon_get_square(map, x, y);
-    switch (SQUARE_TYPE(square)) {
+    uint8_t square = rec_square_byte(map, x, y);
+    switch (rec_square_type(square)) {
     case SQUARE_WALL:
         return true;
     case SQUARE_FAKE_WALL:
         return !(square & FAKE_WALL_OPEN);
     case SQUARE_DOOR:
-        return door_state(square) == DOOR_CLOSED;
+        return rec_door_state(square) == DOOR_CLOSED;
     default:
         return false;
     }
@@ -118,7 +119,7 @@ static void draw_square(Bitmap *target, Box area, uint8_t square, bool pad, int1
     const int16_t floor = AUTOMAP_CELL_SIZE - 1;
     const int16_t bar = AUTOMAP_CELL_SIZE / 3;
     const int16_t middle = (AUTOMAP_CELL_SIZE - AUTOMAP_CELL_SIZE / 3) / 2;
-    int type = SQUARE_TYPE(square);
+    int type = rec_square_type(square);
     if (type == SQUARE_WALL || (type == SQUARE_FAKE_WALL && !(square & FAKE_WALL_OPEN))) {
         fill_clipped(target, area, left, top, size, size, COLOR_DARKEST_GRAY);
         return;
@@ -135,7 +136,7 @@ static void draw_square(Bitmap *target, Box area, uint8_t square, bool pad, int1
         fill_clipped(target, area, left + bar, top + bar, floor - 2 * bar, floor - 2 * bar, COLOR_GRAY);
     if (type != SQUARE_DOOR)
         return;
-    int state = door_state(square);
+    int state = rec_door_state(square);
     uint8_t door_color = state == DOOR_OPEN || state == DOOR_DESTROYED ? COLOR_BROWN : COLOR_LIGHT_BROWN;
     if (square & DOOR_NORTH_SOUTH)
         fill_clipped(target, area, left, top + middle, floor, bar, door_color);
@@ -222,7 +223,7 @@ void automap_draw(Bitmap *target, Box area, int16_t map)
     for (int16_t x = 0; x < map_width; x++)
         for (int16_t y = 0; y < map_height; y++)
             if (explored_is_seen(map, x, y))
-                draw_square(target, maps, dungeon_get_square(map, x, y), party_here && view_is_pressure_pad(x, y),
+                draw_square(target, maps, rec_square_byte(map, x, y), party_here && view_is_pressure_pad(x, y),
                             origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
     /* The frame lies in the grid gap around the outer squares. */
     int16_t right = origin_x + map_width * AUTOMAP_CELL_SIZE - 1;

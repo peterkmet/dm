@@ -233,7 +233,7 @@ LIGHTS = (0, 4, 5)  # g_dungeon_view_palette_index: bright, one row less, two ro
 
 
 def square_type(lib, x, y):
-    return lib.map_get_square(x, y) >> 5
+    return lib.rec_square_type(lib.map_get_square(x, y))
 
 
 def is_free(lib, x, y):
@@ -433,14 +433,14 @@ def test_visibility(game):
     lib = game.lib
     for name in ("dungeon_map_width", "dungeon_map_height"):
         getattr(lib, name).restype = c16
-    lib.dungeon_get_square.restype = ctypes.c_uint8
+    lib.rec_square_byte.restype = ctypes.c_uint8
     lib.explored_save.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_size_t)]
     palette = c16.in_dll(lib, "g_dungeon_view_palette_index")
     digest = hashlib.sha256()
     for m in VISIBILITY_MAPS:
         for y in range(lib.dungeon_map_height(m)):
             for x in range(lib.dungeon_map_width(m)):
-                if lib.dungeon_get_square(m, x, y) >> 5 != CORRIDOR:
+                if lib.rec_square_type(lib.rec_square_byte(m, x, y)) != CORRIDOR:
                     continue
                 for d in range(4):
                     for light in LIGHTS:

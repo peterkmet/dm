@@ -590,7 +590,7 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
         experience >>= 1;
     if (!experience)
         return;
-    uint16_t difficulty = map_current_difficulty();
+    uint16_t difficulty = rec_current_map_difficulty();
     if (difficulty)
         experience *= difficulty;
     Champion *c = &g_champions[champion_index];

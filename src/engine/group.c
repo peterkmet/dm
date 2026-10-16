@@ -177,8 +177,8 @@ void group_set_directions(uint16_t group, uint8_t directions, int16_t map)
 
 bool group_is_creature_allowed_on_map(uint16_t group, int16_t map)
 {
-    const uint8_t *types = &g_dungeon_map_data[map][map_last_x(map)][map_last_y(map) + 1];
-    for (int16_t n = map_creature_type_count(map); n > 0; n--, types++)
+    const uint8_t *types = rec_map_type_lists(map);
+    for (int16_t n = rec_map_creature_types(map); n > 0; n--, types++)
         if (rec_group_creature_type(group) == *types)
             return true;
     return false;
@@ -368,7 +368,7 @@ void group_add_all_active_groups(void)
 {
     for (int16_t x = 0; x < g_current_map_width; x++) {
         for (int16_t y = 0; y < g_current_map_height; y++) {
-            if (!(g_current_map_data[x][y] & SQUARE_HAS_THINGS))
+            if (!(rec_square_byte(g_current_map_index, x, y) & SQUARE_HAS_THINGS))
                 continue;
             uint16_t group = map_get_square_group(x, y);
             if (group == THING_ENDOFLIST)
@@ -431,7 +431,7 @@ void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y)
         last_creature_index = (field & GENERATOR_COUNT_FIELD_MASK) - 1;
     int16_t multiplier = rec_sensor_health_multiplier(sensor);
     if (!multiplier)
-        multiplier = map_current_difficulty();
+        multiplier = rec_current_map_difficulty();
     int16_t direction = random_2bits();
     group_get_generated(rec_sensor_creature_type(sensor), multiplier, last_creature_index, direction, x, y);
 }
@@ -711,10 +711,10 @@ static void group_steal_from_champion(uint16_t group, uint16_t champion_index)
 /* A wall, a solid fake wall, or a closed door that is not see-through hides the party. */
 static bool group_is_view_party_blocked(int16_t x, int16_t y)
 {
-    uint8_t square = g_current_map_data[x][y];
-    switch (SQUARE_TYPE(square)) {
+    uint8_t square = rec_square_byte(g_current_map_index, x, y);
+    switch (rec_square_type(square)) {
     case SQUARE_DOOR: {
-        int16_t state = door_state(square);
+        int16_t state = rec_door_state(square);
         bool see_through = door_is_see_through(map_get_square_first_thing(x, y));
         return (state == 3 || state == DOOR_CLOSED) && !see_through;
     }
@@ -730,9 +730,9 @@ static bool group_is_view_party_blocked(int16_t x, int16_t y)
 /* Only walls and solid fake walls stop the smell of the party. */
 static bool group_is_smell_party_blocked(int16_t x, int16_t y)
 {
-    uint8_t square = g_current_map_data[x][y];
-    return SQUARE_TYPE(square) == SQUARE_WALL ||
-           (SQUARE_TYPE(square) == SQUARE_FAKE_WALL && !(square & (FAKE_WALL_OPEN | FAKE_WALL_IMAGINARY)));
+    uint8_t square = rec_square_byte(g_current_map_index, x, y);
+    return rec_square_type(square) == SQUARE_WALL ||
+           (rec_square_type(square) == SQUARE_FAKE_WALL && !(square & (FAKE_WALL_OPEN | FAKE_WALL_IMAGINARY)));
 }
 
 /* Slope of the line from the source in fixed point (* 64); 128 for a zero divisor. */
@@ -886,8 +886,8 @@ static bool group_is_movement_possible(const CreatureInfo *info, int16_t x, int1
     int16_t type = SQUARE_WALL;
     bool open = false;
     if (x >= 0 && x < g_current_map_width && y >= 0 && y < g_current_map_height) {
-        square = g_current_map_data[x][y];
-        type = SQUARE_TYPE(square);
+        square = rec_square_byte(g_current_map_index, x, y);
+        type = rec_square_type(square);
         bool imaginary_allowed = (square & PIT_IMAGINARY) && allow_imaginary;
         open = type != SQUARE_WALL && type != SQUARE_STAIRS &&
                (type != SQUARE_PIT || imaginary_allowed || !(square & PIT_OPEN) ||
@@ -921,7 +921,7 @@ static bool group_is_movement_possible(const CreatureInfo *info, int16_t x, int1
         return false;
     if (type == SQUARE_DOOR) {
         int16_t height = rec_door_is_vertical(map_get_square_first_thing(x, y)) ? creature_height(info->attributes) : 1;
-        int16_t state = door_state(square);
+        int16_t state = rec_door_state(square);
         if (height < state && state != DOOR_DESTROYED && !(info->attributes & CREATURE_NON_MATERIAL)) {
             movement_blocked_by_door = true;
             return false;
@@ -1195,7 +1195,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
         return 0;
     if (g_party_is_sleeping)
         champion_wake_up();
-    int16_t difficulty = map_current_difficulty() * 2;
+    int16_t difficulty = rec_current_map_difficulty() * 2;
     const CreatureInfo *info = group_info(group);
     champion_add_skill_experience(champion_index, SKILL_PARRY, creature_experience(info));
     int16_t dodge_bonus;
@@ -1302,7 +1302,7 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
     Champion *champion = &g_champions[champion_index];
     if (!champion->current_health)
         return 0;
-    int16_t difficulty = map_current_difficulty() * 2;
+    int16_t difficulty = rec_current_map_difficulty() * 2;
     int16_t damage = 0;
     int16_t outcome = OUTCOME_NO_CREATURE_KILLED;
     const CreatureInfo *info = group_info(group);
@@ -2096,8 +2096,8 @@ typedef struct {
 static bool follow_destination_squares(GroupMove *m)
 {
     for (int16_t n = SQUARE_CHAIN_MAXIMUM; n; n--) {
-        uint8_t square = g_current_map_data[m->x][m->y];
-        int16_t type = SQUARE_TYPE(square);
+        uint8_t square = rec_square_byte(g_current_map_index, m->x, m->y);
+        int16_t type = rec_square_type(square);
         if (type == SQUARE_TELEPORTER) {
             if (!(square & TELEPORTER_OPEN))
                 break;

@@ -36,7 +36,7 @@ def lib():
     lib.map_is_square_open.restype = ctypes.c_bool
     lib.dungeon_load.restype = ctypes.c_bool
     lib.map_get_location_after_level_change.argtypes = [c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
-    lib.dungeon_get_square.restype = ctypes.c_uint8
+    lib.rec_square_byte.restype = ctypes.c_uint8
     lib.rec_write.restype = u8p
     return lib
 
@@ -139,8 +139,8 @@ def test_stairs_change_map(game):
 def test_floor_sensor_opens_door(game):
     recruit(game)
     place(game, 0, 7, 9, 3)
-    door = lambda: game.dungeon_get_square(0, 5, 9) & 7
-    assert game.dungeon_get_square(0, 5, 9) >> 5 == 4 and door() == 4
+    door = lambda: game.rec_square_byte(0, 5, 9) & 7
+    assert game.rec_square_type(game.rec_square_byte(0, 5, 9)) == 4 and door() == 4
     game.move_party(FORWARD)
     assert party(game) == (0, 6, 9, 3)
     states = []
@@ -151,7 +151,7 @@ def test_floor_sensor_opens_door(game):
 
 
 def test_door_event_toggles_door(game):
-    door = lambda: game.dungeon_get_square(0, 5, 9) & 7
+    door = lambda: game.rec_square_byte(0, 5, 9) & 7
     game.sensor_add_event(10, 5, 9, 0, 2, 1)
     for _ in range(6):
         tick(game)
@@ -187,7 +187,7 @@ def test_turn_on_stairs_takes_stairs(game):
     place(game, 1, 3, 1, 0)
     game.move_turn_party(TURN_LEFT)
     game.move_process_new_party_map()
-    assert party(game)[0] == 0 and game.dungeon_get_square(0, *party(game)[1:3]) >> 5 == 3
+    assert party(game)[0] == 0 and game.rec_square_type(game.rec_square_byte(0, *party(game)[1:3])) == 3
 
 
 def emu_with_map(lib, m):
@@ -255,9 +255,9 @@ def test_link_and_unlink_keep_lists(game):
     saved = bytes(game.rec_write(junk)[:4])
     game.map_link_thing_to_list(junk | 2 << 14, 0, 1, 5)
     assert game.map_get_square_first_thing(1, 5) == junk | 2 << 14
-    assert game.dungeon_get_square(0, 1, 5) & 0x10
+    assert game.rec_square_byte(0, 1, 5) & 0x10
     game.map_unlink_thing_from_list(junk, 0, 1, 5)
-    assert game.map_get_square_first_thing(1, 5) == 0xFFFE and not game.dungeon_get_square(0, 1, 5) & 0x10
+    assert game.map_get_square_first_thing(1, 5) == 0xFFFE and not game.rec_square_byte(0, 1, 5) & 0x10
     assert bytes(u8p.in_dll(game, "g_square_first_things")[:2 * count]) == before
     assert bytes(u8p.in_dll(game, "g_dungeon_column_first_thing_index")[:2 * columns]) == index_before
     ctypes.memmove(game.rec_write(junk), saved, 4)

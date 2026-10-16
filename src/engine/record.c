@@ -127,6 +127,34 @@
 #define EXPLOSION_TYPE_MASK    0x7f
 #define EXPLOSION_CENTERED_BIT 0x80
 
+/* Bit shifts of the square byte. */
+#define SQUARE_TYPE_SHIFT 5
+
+/* Map descriptor bytes and bits. */
+#define MAP_RAW_OFFSET        0x00 /* word */
+#define MAP_OFFSET_X          0x06
+#define MAP_OFFSET_Y          0x07
+#define MAP_LAST_XY           0x08 /* word of the last x, byte of the last y */
+#define MAP_LEVEL             0x09
+#define MAP_FLOOR_ORNAMENTS   0x0a /* random count in the high nibble, count in the low nibble */
+#define MAP_WALL_ORNAMENTS    0x0b /* random count in the high nibble, count in the low nibble */
+#define MAP_DIFFICULTY        0x0c
+#define MAP_DOOR_ORNAMENTS    0x0d /* creature types in the high nibble, door ornaments in the low nibble */
+#define MAP_DOOR_SETS         0x0e /* set 1 in the high nibble, set 0 in the low nibble */
+#define MAP_GRAPHIC_SETS      0x0f /* wall set in the high nibble, floor set in the low nibble */
+#define MAP_LEVEL_MASK        0x3f
+#define MAP_LOW_NIBBLE_MASK   0x0f
+/* Bit shifts of the map descriptor. */
+#define MAP_LAST_X_SHIFT      6
+#define MAP_LAST_Y_SHIFT      3
+#define MAP_HIGH_NIBBLE_SHIFT 4
+#define MAP_DIFFICULTY_SHIFT  4
+
+/* Dungeon header words. */
+#define DUNGEON_ORNAMENT_SEED 0x00
+#define DUNGEON_SQUARE_THINGS 0x0a
+#define DUNGEON_THING_COUNTS  0x0c /* one word per thing type */
+
 /* The value of the bits mask << shift of word. */
 static uint16_t bits(uint16_t word, int16_t shift, uint16_t mask)
 {
@@ -165,7 +193,7 @@ uint16_t rec_find_unused_thing(uint16_t thing_type)
 {
     uint16_t type = thing_type & ~NO_JUNK_RESERVE;
     uint16_t size = g_thing_data_byte_count[type];
-    int16_t count = be16(g_dungeon_header + DUNGEON_HEADER_THING_COUNTS + type * 2);
+    int16_t count = rec_dungeon_thing_count(type);
     if (thing_type == THING_JUNK)
         count -= JUNK_RESERVED_COUNT;
     for (int16_t i = 0; i < count; i++) {
@@ -614,4 +642,131 @@ void rec_explosion_set_centered(uint16_t thing, bool value)
 {
     REC(thing)
     [EXPLOSION_FLAGS] = (REC(thing)[EXPLOSION_FLAGS] & EXPLOSION_TYPE_MASK) | (value ? EXPLOSION_CENTERED_BIT : 0);
+}
+
+/* Squares */
+
+uint8_t rec_square_byte(int16_t map, int16_t x, int16_t y)
+{
+    return g_dungeon_map_data[map][x][y];
+}
+void rec_square_set_byte(int16_t map, int16_t x, int16_t y, uint8_t square)
+{
+    g_dungeon_map_data[map][x][y] = square;
+}
+int16_t rec_square_type(uint8_t square)
+{
+    return square >> SQUARE_TYPE_SHIFT;
+}
+int16_t rec_door_state(uint8_t square)
+{
+    return square & DOOR_STATE_MASK;
+}
+void rec_door_set_state(int16_t map, int16_t x, int16_t y, int16_t state)
+{
+    uint8_t square = rec_square_byte(map, x, y);
+    rec_square_set_byte(map, x, y, (square & ~DOOR_STATE_MASK) | (state & DOOR_STATE_MASK));
+}
+
+/* Map descriptor */
+
+const uint8_t *rec_map_descriptor(int16_t map)
+{
+    return g_dungeon_maps + map * MAP_BYTES;
+}
+uint16_t rec_map_raw_offset(int16_t map)
+{
+    return be16(rec_map_descriptor(map) + MAP_RAW_OFFSET);
+}
+int16_t rec_map_offset_x(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_OFFSET_X];
+}
+int16_t rec_map_offset_y(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_OFFSET_Y];
+}
+uint16_t rec_map_level(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_LEVEL] & MAP_LEVEL_MASK;
+}
+int16_t rec_map_last_x(int16_t map)
+{
+    return bits(be16(rec_map_descriptor(map) + MAP_LAST_XY), MAP_LAST_X_SHIFT, MAP_COORD_MASK);
+}
+int16_t rec_map_last_y(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_LAST_XY] >> MAP_LAST_Y_SHIFT;
+}
+int16_t rec_map_door_set(int16_t map, int16_t door_type)
+{
+    uint8_t sets = rec_map_descriptor(map)[MAP_DOOR_SETS];
+    return door_type ? sets >> MAP_HIGH_NIBBLE_SHIFT : sets & MAP_LOW_NIBBLE_MASK;
+}
+int16_t rec_map_random_floor_ornaments(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_FLOOR_ORNAMENTS] >> MAP_HIGH_NIBBLE_SHIFT;
+}
+int16_t rec_map_floor_ornaments(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_FLOOR_ORNAMENTS] & MAP_LOW_NIBBLE_MASK;
+}
+int16_t rec_map_random_wall_ornaments(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_WALL_ORNAMENTS] >> MAP_HIGH_NIBBLE_SHIFT;
+}
+int16_t rec_map_wall_ornaments(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_WALL_ORNAMENTS] & MAP_LOW_NIBBLE_MASK;
+}
+int16_t rec_map_difficulty(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_DIFFICULTY] >> MAP_DIFFICULTY_SHIFT;
+}
+int16_t rec_map_door_ornaments(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_DOOR_ORNAMENTS] & MAP_LOW_NIBBLE_MASK;
+}
+int16_t rec_map_creature_types(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_DOOR_ORNAMENTS] >> MAP_HIGH_NIBBLE_SHIFT;
+}
+int16_t rec_map_floor_set(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_GRAPHIC_SETS] & MAP_LOW_NIBBLE_MASK;
+}
+int16_t rec_map_wall_set(int16_t map)
+{
+    return rec_map_descriptor(map)[MAP_GRAPHIC_SETS] >> MAP_HIGH_NIBBLE_SHIFT;
+}
+const uint8_t *rec_map_type_lists(int16_t map)
+{
+    return &g_dungeon_map_data[map][rec_map_last_x(map)][rec_map_last_y(map) + 1];
+}
+uint16_t rec_current_map_difficulty(void)
+{
+    return g_current_map ? g_current_map[MAP_DIFFICULTY] >> MAP_DIFFICULTY_SHIFT : 0;
+}
+
+/* Dungeon header */
+
+uint16_t rec_dungeon_ornament_seed(void)
+{
+    return be16(g_dungeon_header + DUNGEON_ORNAMENT_SEED);
+}
+uint16_t rec_dungeon_square_things(void)
+{
+    return be16(g_dungeon_header + DUNGEON_SQUARE_THINGS);
+}
+void rec_dungeon_set_square_things(uint16_t count)
+{
+    wr16(g_dungeon_header + DUNGEON_SQUARE_THINGS, count);
+}
+uint16_t rec_dungeon_thing_count(int16_t type)
+{
+    return be16(g_dungeon_header + DUNGEON_THING_COUNTS + type * 2);
+}
+void rec_dungeon_set_thing_count(int16_t type, uint16_t count)
+{
+    wr16(g_dungeon_header + DUNGEON_THING_COUNTS + type * 2, count);
 }

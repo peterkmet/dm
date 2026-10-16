@@ -455,7 +455,7 @@ void state_json_write_state(Json *j)
     json_key(j, "party");
     json_open(j, '{');
     key_int(j, "map", g_party_map_index);
-    key_int(j, "level", map_level(g_party_map_index));
+    key_int(j, "level", rec_map_level(g_party_map_index));
     key_int(j, "x", g_party_map_x);
     key_int(j, "y", g_party_map_y);
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
@@ -525,7 +525,7 @@ static const char *door_state_name(int16_t state)
    without a field look like floor. */
 static const char *square_name(uint8_t square)
 {
-    switch (SQUARE_TYPE(square)) {
+    switch (rec_square_type(square)) {
     case SQUARE_CORRIDOR:
         return "floor";
     case SQUARE_PIT:
@@ -549,7 +549,7 @@ static bool in_party_map(int16_t x, int16_t y)
 
 static uint8_t party_map_square(int16_t x, int16_t y)
 {
-    return in_party_map(x, y) ? dungeon_get_square(g_party_map_index, x, y) : 0;
+    return in_party_map(x, y) ? rec_square_byte(g_party_map_index, x, y) : 0;
 }
 
 /* The rows of the view the party sees now: up to the first center square that blocks sight. */
@@ -917,9 +917,9 @@ void state_json_write_view(Json *j)
             key_int(j, "y", y);
             key_str(j, "element", name);
             if (in_party_map(x, y)) {
-                if (SQUARE_TYPE(square) == SQUARE_DOOR) {
+                if (rec_square_type(square) == SQUARE_DOOR) {
                     uint16_t door = dungeon_get_square_first_thing(g_party_map_index, x, y);
-                    key_str(j, "door", door_state_name(door_state(square)));
+                    key_str(j, "door", door_state_name(rec_door_state(square)));
                     if (THING_TYPE(door) == THING_DOOR && door != THING_ENDOFLIST)
                         key_bool(j, "button", rec_door_has_button(door));
                 }
@@ -994,7 +994,7 @@ static bool is_seen(int16_t x, int16_t y)
 /* The character of square (x, y) of the party map in the text map. */
 static char map_char(int16_t x, int16_t y)
 {
-    uint8_t square = dungeon_get_square(g_party_map_index, x, y);
+    uint8_t square = rec_square_byte(g_party_map_index, x, y);
     const char *name = square_name(square);
     if (!strcmp(name, "wall"))
         return '#';
@@ -1007,7 +1007,7 @@ static char map_char(int16_t x, int16_t y)
     if (!strcmp(name, "teleporter"))
         return 'T';
     if (!strcmp(name, "door"))
-        return door_state(square) == DOOR_OPEN || door_state(square) == DOOR_DESTROYED ? 'd' : 'D';
+        return rec_door_state(square) == DOOR_OPEN || rec_door_state(square) == DOOR_DESTROYED ? 'd' : 'D';
     return view_is_pressure_pad(x, y) ? '_' : '.';
 }
 
@@ -1028,7 +1028,7 @@ void state_json_map(Json *j)
         width = MAP_MAX_SIZE;
     json_open(j, '{');
     key_int(j, "map", g_party_map_index);
-    key_int(j, "level", map_level(g_party_map_index));
+    key_int(j, "level", rec_map_level(g_party_map_index));
     key_int(j, "width", width);
     key_int(j, "height", height);
     pair(j, "party", g_party_map_x, g_party_map_y);

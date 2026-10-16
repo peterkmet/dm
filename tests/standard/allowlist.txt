@@ -224,7 +224,6 @@ name engine/map.c:map_set_current_map_and_party_map open: epic 6
 name engine/map.h:map_get_location_after_level_change open: epic 6
 name engine/map.h:map_get_square_first_thing_index open: epic 6
 name engine/map.h:map_set_current_map_and_party_map open: epic 6
-name engine/map.h:rec_dungeon_square_first_thing_count open: epic 6
 name engine/move.c:move_get_teleporter_rotated_projectile_thing open: epic 6
 name engine/move.h:move_get_teleporter_rotated_projectile_thing open: epic 6
 name engine/projectile.c:add_event_one_tick_later open: epic 6
@@ -284,7 +283,6 @@ static-prefix engine/action.c:action_hand_charge_count open: epic 6
 static-prefix engine/action.c:champion_face_party_direction open: epic 6
 static-prefix engine/dungeon.c:dungeon_free open: epic 6
 static-prefix engine/dungeon.c:map_at_level open: epic 6
-static-prefix engine/dungeon.c:map_raw_data_offset open: epic 6
 static-prefix engine/explored.c:map_first_square open: epic 6
 static-prefix engine/explored.c:map_square_count open: epic 6
 static-prefix engine/group.c:creature_hit_wounds open: epic 6
@@ -606,7 +604,6 @@ dead-api engine/group.h:group_set_cell_value open: epic 7
 dead-api engine/group.h:group_set_ordered_cells_to_attack open: epic 7
 dead-api engine/magic.h:magic_get_champion_spell_cast_result open: epic 7
 dead-api engine/magic.h:magic_print_spell_failure_message open: epic 7
-dead-api engine/map.h:g_current_map open: epic 7
 dead-api engine/map.h:map_get_square_first_thing_index open: epic 7
 dead-api engine/map.h:map_get_square_type open: epic 7
 dead-api engine/message.h:message_move_cursor open: epic 7
@@ -741,15 +738,6 @@ params ui/view.c:draw_object open: epic 8
 params ui/view.c:draw_projectile open: epic 8
 params ui/view.c:draw_square_things open: epic 8
 params ui/view.c:get_projectile_pose open: epic 8
-record engine/dungeon.c open: epic 5
-record engine/group.c open: epic 5
-record engine/map.c open: epic 5
-record engine/map.h open: epic 5
-record engine/move.c open: epic 5
-record engine/projectile.c open: epic 5
-record engine/sensor.c open: epic 5
-record engine/timeline_process.c open: epic 5
-record ui/view.c open: epic 8
 result engine/explored.h:explored_save open: epic 6
 result ui/anim.h:anim_open open: epic 8
 result ui/anim.h:anim_play open: epic 8
@@ -851,5 +839,4 @@ type ui:count open: epic 8
 type ui:length open: epic 8
 dead-api ui/audio.h:audio_music_stop open: epic 9
 dead-api engine/record.h:rec_read open: epic 7
-prefix engine/map.h open: epic 5
 todo engine/record.h open: epic 6

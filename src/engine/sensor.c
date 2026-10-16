@@ -105,7 +105,7 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
     }
     int16_t target_x = rec_sensor_target_x(sensor);
     int16_t target_y = rec_sensor_target_y(sensor);
-    int16_t target_type = SQUARE_TYPE(g_current_map_data[target_x][target_y]);
+    int16_t target_type = rec_square_type(rec_square_byte(g_current_map_index, target_x, target_y));
     int16_t target_cell = target_type == SQUARE_WALL ? rec_sensor_target_cell(sensor) : 0;
     sensor_add_event(tables_get_square_type_event(target_type), target_x, target_y, target_cell, effect,
                      g_game_time + rec_sensor_delay(sensor));
@@ -379,7 +379,7 @@ static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t
             trigger(sensor, add, x, y);
         break;
     case SENSOR_FLOOR_PARTY_ON_STAIRS:
-        if (s->party && SQUARE_TYPE(square) == SQUARE_STAIRS)
+        if (s->party && rec_square_type(square) == SQUARE_STAIRS)
             trigger(sensor, add, x, y);
         break;
     case SENSOR_FLOOR_GROUP:
@@ -411,8 +411,8 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
                       .cell = THING_CELL(thing)};
     if (!add && !party)
         map_unlink_thing_from_list(thing, 0, x, y);
-    uint8_t square = g_current_map_data[x][y];
-    bool wall = SQUARE_TYPE(square) == SQUARE_WALL;
+    uint8_t square = rec_square_byte(g_current_map_index, x, y);
+    bool wall = rec_square_type(square) == SQUARE_WALL;
     scan_square(&s, wall);
     if (add && !party)
         map_link_thing_to_list(thing, 0, x, y);

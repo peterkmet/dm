@@ -151,8 +151,8 @@ static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_
     int16_t type = party ? -1 : THING_TYPE(thing);
     bool levitating = party ? false : move_is_levitating(thing);
     for (int16_t n = SQUARE_CHAIN_MAXIMUM; n; n--) {
-        uint8_t square = g_current_map_data[*dst_x][*dst_y];
-        int16_t square_type = SQUARE_TYPE(square);
+        uint8_t square = rec_square_byte(g_current_map_index, *dst_x, *dst_y);
+        int16_t square_type = rec_square_type(square);
         if (square_type == SQUARE_TELEPORTER) {
             if (!is_teleported(&thing, square, src_x, dst_x, dst_y, map))
                 break;
@@ -296,7 +296,7 @@ void move_take_stairs(bool stairs_go_up)
 void move_turn_party(int16_t command)
 {
     uint8_t square = map_get_square(g_party_map_x, g_party_map_y);
-    if (SQUARE_TYPE(square) == SQUARE_STAIRS) {
+    if (rec_square_type(square) == SQUARE_STAIRS) {
         move_take_stairs(square & STAIRS_UP);
         return;
     }
@@ -308,8 +308,8 @@ void move_turn_party(int16_t command)
 /* A wall, a door that is not open enough, or a solid fake wall stops the party. */
 static bool is_square_blocking(uint8_t square)
 {
-    int16_t state = door_state(square);
-    switch (SQUARE_TYPE(square)) {
+    int16_t state = rec_door_state(square);
+    switch (rec_square_type(square)) {
     case SQUARE_WALL:
         return true;
     case SQUARE_DOOR:
@@ -345,7 +345,7 @@ void move_party(int16_t command)
     int16_t x = g_party_map_x;
     int16_t y = g_party_map_y;
     uint8_t square = map_get_square(x, y);
-    bool on_stairs = SQUARE_TYPE(square) == SQUARE_STAIRS;
+    bool on_stairs = rec_square_type(square) == SQUARE_STAIRS;
     if (on_stairs && command == COMMAND_MOVE_BACKWARD) {
         move_take_stairs(square & STAIRS_UP);
         return;
@@ -353,7 +353,7 @@ void move_party(int16_t command)
     game_update_map_coordinates_after_relative_movement(g_party_direction, tables_get_arrow_steps_forward(arrow),
                                                         tables_get_arrow_steps_right(arrow), &x, &y);
     square = map_get_square(x, y);
-    if (SQUARE_TYPE(square) == SQUARE_STAIRS) {
+    if (rec_square_type(square) == SQUARE_STAIRS) {
         move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);
         g_party_map_x = x;
         g_party_map_y = y;

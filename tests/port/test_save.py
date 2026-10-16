@@ -262,7 +262,7 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
         spot = next(
             ((x - STEP[d][0], y - STEP[d][1], d, (x, y)) for x, y in sorted(groups) for d in range(4)
              if 0 <= x - STEP[d][0] < width and 0 <= y - STEP[d][1] < height
-             and lib.map_get_square(x - STEP[d][0], y - STEP[d][1]) >> 5 == 1 and (x - STEP[d][0], y - STEP[d][1]) not in groups),
+             and lib.rec_square_type(lib.map_get_square(x - STEP[d][0], y - STEP[d][1])) == 1 and (x - STEP[d][0], y - STEP[d][1]) not in groups),
             None)
         if spot:
             break

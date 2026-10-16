@@ -318,7 +318,7 @@ class Game:
                         path.append(square)
                         square = previous[square]
                     return path[::-1], d
-                if self.lib.map_get_square(nx, ny) >> 5 == C.SQUARE_CORRIDOR and (nx, ny) not in previous:
+                if self.lib.rec_square_type(self.lib.map_get_square(nx, ny)) == C.SQUARE_CORRIDOR and (nx, ny) not in previous:
                     previous[nx, ny] = (x, y)
                     queue.append((nx, ny))
         raise AssertionError("no mirror reachable")
@@ -461,7 +461,8 @@ def setup_creatures(lib):
         ("projectile_get_impact_attack", u16, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
         ("projectile_create", None, [u16, c16, c16, c16, c16, u8, u8, u8]), ("map_get_square", u8, [c16, c16]),
         ("map_get_square_first_thing", u16, [c16, c16]), ("rec_thing_next", u16, [u16]), ("map_get_square_group", u16, [c16, c16]),
-        ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("dungeon_get_square", u8, [c16, c16, c16]),
+        ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("rec_square_byte", u8, [c16, c16, c16]),
+        ("rec_square_type", c16, [u8]),
         ("dungeon_get_square_first_thing", u16, [c16, c16, c16]),
         ("timeline_is_first_event_expired", ctypes.c_bool, []), ("timeline_extract_first_event", None, [event_p]),
         ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
@@ -541,7 +542,7 @@ def skeleton_map_and_squares(lib):
     data[0] = data[1] = 0xFF  # free the probe record again
     for m in maps:
         empty = lambda x, y: (0 <= x < lib.dungeon_map_width(m) and 0 <= y < lib.dungeon_map_height(m)
-                              and lib.dungeon_get_square(m, x, y) >> 5 == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE)
+                              and lib.rec_square_type(lib.rec_square_byte(m, x, y)) == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE)
         for x in range(lib.dungeon_map_width(m)):
             for y in range(lib.dungeon_map_height(m)):
                 if empty(x, y) and empty(x, y + 1) and empty(x, y + 2):

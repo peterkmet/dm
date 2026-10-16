@@ -29,7 +29,7 @@ def lib():
     lib.dungeon_decompress.restype = lib.dungeon_decode_text.restype = ctypes.c_bool
     lib.dungeon_load.restype = lib.dungeon_validate.restype = ctypes.c_bool
     lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
-    lib.dungeon_get_square.restype = ctypes.c_uint8
+    lib.rec_square_byte.restype = ctypes.c_uint8
     lib.rec_write.restype = u8p
     lib.kaos_ptr.restype = ctypes.c_void_p
     lib.kaos_ptr.argtypes = [ctypes.c_uint32]
@@ -78,7 +78,7 @@ def test_dungeon_matches_dmcsb(lib, name):
             located.setdefault((t["x"], t["y"]), t)
         for x in range(w):
             for y in range(h):
-                sq = lib.dungeon_get_square(m, x, y)
+                sq = lib.rec_square_byte(m, x, y)
                 assert sq == d.tile_data[offset + x * h + y]
                 first = lib.dungeon_get_square_first_thing(m, x, y)
                 assert (first != 0xFFFE) == bool(sq & 0x10)

@@ -529,7 +529,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
     }
     uint8_t square = map_get_square(fx, fy);
     int16_t imaginary_wall =
-        SQUARE_TYPE(square) == SQUARE_FAKE_WALL && (square & FAKE_WALL_IMAGINARY) && !(square & FAKE_WALL_OPEN);
+        rec_square_type(square) == SQUARE_FAKE_WALL && (square & FAKE_WALL_IMAGINARY) && !(square & FAKE_WALL_OPEN);
     if (g_leader_empty_handed) {
         click_empty_handed(x, y, fx, fy, imaginary_wall);
         return;

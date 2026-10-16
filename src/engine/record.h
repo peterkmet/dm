@@ -12,6 +12,8 @@
 #define GROUP_RECORD_BYTES 16
 /* Option of rec_find_unused_thing in the thing type: junk takes a reserve record too. */
 #define NO_JUNK_RESERVE    0x8000
+/* Size of a map descriptor. */
+#define MAP_BYTES          16
 
 /* Records of every thing type */
 /* The record bytes of the thing, read only. */
@@ -162,5 +164,47 @@ uint8_t rec_explosion_type(uint16_t thing);
 void rec_explosion_set_type(uint16_t thing, uint8_t value);
 bool rec_explosion_is_centered(uint16_t thing);
 void rec_explosion_set_centered(uint16_t thing, bool value);
+
+/* Squares: one byte per square, type in bits 5-7, a thing list in bit 4, type flags in bits 0-3 */
+/* The square byte of (x, y) on the map, without a bound check. */
+uint8_t rec_square_byte(int16_t map, int16_t x, int16_t y);
+void rec_square_set_byte(int16_t map, int16_t x, int16_t y, uint8_t square);
+int16_t rec_square_type(uint8_t square);
+int16_t rec_door_state(uint8_t square);
+/* The other bits of the door square stay. */
+void rec_door_set_state(int16_t map, int16_t x, int16_t y, int16_t state);
+
+/* Map descriptor, MAP_BYTES per map: raw data offset, dungeon position, size, level, ornament counts, difficulty,
+   creature types, door and graphic sets */
+const uint8_t *rec_map_descriptor(int16_t map);
+/* Offset of the squares of the map in the raw map data. */
+uint16_t rec_map_raw_offset(int16_t map);
+int16_t rec_map_offset_x(int16_t map);
+int16_t rec_map_offset_y(int16_t map);
+uint16_t rec_map_level(int16_t map);
+int16_t rec_map_last_x(int16_t map);
+int16_t rec_map_last_y(int16_t map);
+int16_t rec_map_door_set(int16_t map, int16_t door_type);
+int16_t rec_map_random_floor_ornaments(int16_t map);
+int16_t rec_map_floor_ornaments(int16_t map);
+int16_t rec_map_random_wall_ornaments(int16_t map);
+int16_t rec_map_wall_ornaments(int16_t map);
+int16_t rec_map_difficulty(int16_t map);
+int16_t rec_map_door_ornaments(int16_t map);
+int16_t rec_map_creature_types(int16_t map);
+int16_t rec_map_floor_set(int16_t map);
+int16_t rec_map_wall_set(int16_t map);
+/* The bytes after the squares of the map: the creature types, then the wall, floor, and door ornament indices. */
+const uint8_t *rec_map_type_lists(int16_t map);
+/* Difficulty of the current map, 0 when no map is loaded. */
+uint16_t rec_current_map_difficulty(void);
+
+/* Dungeon header: the ornament seed, the size of the square first thing table, the record count of each thing type */
+/* The seed of the random wall and floor ornaments. */
+uint16_t rec_dungeon_ornament_seed(void);
+uint16_t rec_dungeon_square_things(void);
+void rec_dungeon_set_square_things(uint16_t count);
+uint16_t rec_dungeon_thing_count(int16_t type);
+void rec_dungeon_set_thing_count(int16_t type, uint16_t count);
 
 #endif

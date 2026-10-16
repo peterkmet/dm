@@ -91,7 +91,7 @@ def face_empty_corridor(lib):
                 fx, fy = x + STEP_EAST[d], y + STEP_NORTH[d]
                 if not (0 <= fx < width and 0 <= fy < height):
                     continue
-                if all(lib.map_get_square(a, b) >> 5 == CORRIDOR and not list(things(lib, a, b)) for a, b in ((x, y), (fx, fy))):
+                if all(lib.rec_square_type(lib.map_get_square(a, b)) == CORRIDOR and not list(things(lib, a, b)) for a, b in ((x, y), (fx, fy))):
                     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (x, y, d)):
                         value(lib, name).value = v
                     return fx, fy

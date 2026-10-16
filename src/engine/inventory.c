@@ -566,7 +566,7 @@ int16_t inventory_get_party_light(void)
 void inventory_set_dungeon_view_palette(int16_t map_index, int16_t light)
 {
     g_dungeon_view_palette_index = 0;
-    if (!map_difficulty(map_index))
+    if (!rec_map_difficulty(map_index))
         return;
     if (light < 1) {
         g_dungeon_view_palette_index = LIGHT_DARKEST;

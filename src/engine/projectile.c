@@ -3,6 +3,7 @@
 #include "data/ids.h"
 #include "data/tables.h"
 #include "engine/champion.h"
+#include "engine/dungeon.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/move.h"
@@ -277,7 +278,7 @@ static int16_t hit_creature(uint16_t projectile, uint16_t thing, bool is_explosi
    the door. Returns false when the projectile does not hit. */
 static bool hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t y)
 {
-    int16_t state = door_state(g_current_map_data[x][y]);
+    int16_t state = rec_door_state(rec_square_byte(g_current_map_index, x, y));
     uint16_t door = map_get_square_first_thing(x, y);
     if (state != DOOR_DESTROYED && thing == EXPLOSION_THING(EXPLOSION_OPEN_DOOR)) {
         if (rec_door_has_button(door))
@@ -458,17 +459,17 @@ void projectile_process_move_event(TimelineEvent *event)
     if (leaves_square) {
         game_update_map_coordinates_after_relative_movement(direction, 1, 0, &dst_x, &dst_y);
         uint8_t square = map_get_square(dst_x, dst_y);
-        int16_t type = SQUARE_TYPE(square);
-        int16_t solid = type == SQUARE_WALL ||
-                        (type == SQUARE_FAKE_WALL && !(square & (FAKE_WALL_OPEN | FAKE_WALL_IMAGINARY))) ||
-                        (type == SQUARE_STAIRS && SQUARE_TYPE(g_current_map_data[x][y]) == SQUARE_STAIRS);
+        int16_t type = rec_square_type(square);
+        int16_t solid =
+            type == SQUARE_WALL || (type == SQUARE_FAKE_WALL && !(square & (FAKE_WALL_OPEN | FAKE_WALL_IMAGINARY))) ||
+            (type == SQUARE_STAIRS && rec_square_type(rec_square_byte(g_current_map_index, x, y)) == SQUARE_STAIRS);
         if (solid && projectile_has_impact_occurred(type, x, y, cell, projectile))
             return;
     }
     uint16_t new_cell = (cell & 1) == (direction & 1) ? turn_left(cell) : turn_right(cell);
     uint16_t moved = THING_WITH_CELL(projectile, new_cell);
     if (!leaves_square) {
-        if (SQUARE_TYPE(map_get_square(x, y)) == SQUARE_DOOR &&
+        if (rec_square_type(map_get_square(x, y)) == SQUARE_DOOR &&
             projectile_has_impact_occurred(SQUARE_DOOR, x, y, new_cell, projectile))
             return;
         map_unlink_thing_from_list(moved, 0, x, y);
@@ -507,7 +508,7 @@ void explosion_process_step_event(TimelineEvent *event)
     uint16_t explosion = event->c;
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
-    uint8_t square = g_current_map_data[x][y];
+    uint8_t square = rec_square_byte(g_current_map_index, x, y);
     uint16_t group = map_get_square_group(x, y);
     uint16_t type = rec_explosion_type(explosion);
     uint16_t attack = rec_explosion_attack(explosion);
@@ -556,7 +557,7 @@ void explosion_process_step_event(TimelineEvent *event)
             harm_non_material(group, x, y, damage);
         break;
     }
-    if (breaks_door && SQUARE_TYPE(square) == SQUARE_DOOR)
+    if (breaks_door && rec_square_type(square) == SQUARE_DOOR)
         event_is_door_destroyed_by_attack(x, y, damage, 1, 0);
     map_unlink_thing_from_list(explosion, 0, x, y);
     rec_thing_set_free(explosion);
@@ -564,7 +565,7 @@ void explosion_process_step_event(TimelineEvent *event)
 
 bool projectile_is_fluxcage_on_square(int16_t x, int16_t y)
 {
-    int16_t type = SQUARE_TYPE(map_get_square(x, y));
+    int16_t type = rec_square_type(map_get_square(x, y));
     if (type == SQUARE_WALL || type == SQUARE_STAIRS)
         return false;
     for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t))
@@ -583,7 +584,7 @@ uint16_t projectile_get_lord_chaos_on_square(int16_t x, int16_t y)
 
 void projectile_fluxcage_action(int16_t x, int16_t y)
 {
-    int16_t type = SQUARE_TYPE(map_get_square(x, y));
+    int16_t type = rec_square_type(map_get_square(x, y));
     if (type == SQUARE_WALL || type == SQUARE_STAIRS)
         return;
     uint16_t fluxcage = rec_find_unused_thing(THING_EXPLOSION);

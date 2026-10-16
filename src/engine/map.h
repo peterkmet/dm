@@ -2,8 +2,6 @@
 #ifndef DM_ENGINE_MAP_H
 #define DM_ENGINE_MAP_H
 /* Prefixes: door_ square_ map_ */
-#include "data/bytes.h"
-#include "engine/dungeon.h"
 #include "engine/record.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -49,16 +47,6 @@
 #define TELEPORTER_OPEN        8
 #define FAKE_WALL_IMAGINARY    1
 #define FAKE_WALL_OPEN         4
-#define SQUARE_TYPE(square)    ((square) >> 5)
-
-static inline int16_t door_state(uint8_t square)
-{
-    return square & DOOR_STATE_MASK;
-}
-static inline uint8_t square_with_door_state(uint8_t square, int16_t state)
-{
-    return (square & ~DOOR_STATE_MASK) | (state & DOOR_STATE_MASK);
-}
 
 /* Thing word: index in bits 0-9, type in bits 10-13, cell in bits 14-15. */
 #define THING_DOOR                   0
@@ -119,55 +107,8 @@ static inline int16_t door_info_defense(uint16_t door_info)
     return door_info & 0xff;
 }
 
-/* Map descriptor, 16 bytes. */
-#define MAP_BYTES                         16
-#define MAP_OFFSET_X_BYTE                 6
-#define MAP_OFFSET_Y_BYTE                 7
-#define MAP_LAST_XY_BYTE                  8
-#define MAP_LEVEL_BYTE                    9
-#define MAP_FLOOR_ORNAMENTS_BYTE          10
-#define MAP_WALL_ORNAMENTS_BYTE           11
-#define MAP_DIFFICULTY_BYTE               12
-#define MAP_DOOR_ORNAMENTS_CREATURES_BYTE 13
-#define MAP_DOOR_SETS_BYTE                14
-#define MAP_GRAPHIC_SETS_BYTE             15
-#define MAP_DESCRIPTOR(map)               (g_dungeon_maps + (map) * MAP_BYTES)
-static inline int16_t map_offset_x(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_OFFSET_X_BYTE];
-}
-static inline int16_t map_offset_y(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_OFFSET_Y_BYTE];
-}
-static inline uint16_t map_level(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_LEVEL_BYTE] & 0x3f;
-}
-static inline int16_t map_last_x(int16_t map)
-{
-    return be16(MAP_DESCRIPTOR(map) + MAP_LAST_XY_BYTE) >> 6 & MAP_COORD_MASK;
-}
-static inline int16_t map_last_y(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_LAST_XY_BYTE] >> 3;
-}
-static inline int16_t map_door_set(int16_t map, int16_t door_type)
-{
-    return door_type ? MAP_DESCRIPTOR(map)[MAP_DOOR_SETS_BYTE] >> 4 : MAP_DESCRIPTOR(map)[MAP_DOOR_SETS_BYTE] & 0x0f;
-}
-
-/* Dungeon header words: the size of the square first thing table, and the record count of each thing type. */
-#define DUNGEON_HEADER_SQUARE_THINGS 10
-#define DUNGEON_HEADER_THING_COUNTS  12
-static inline uint16_t rec_dungeon_square_first_thing_count(void)
-{
-    return be16(g_dungeon_header + DUNGEON_HEADER_SQUARE_THINGS);
-}
-
 extern int16_t g_current_map_index, g_current_map_width, g_current_map_height;
-extern uint8_t **g_current_map_data;
-extern uint8_t *g_current_map;              /* map descriptor, 16 bytes */
+extern const uint8_t *g_current_map;        /* map descriptor, 16 bytes */
 extern uint16_t g_current_map_door_info[2]; /* high byte attributes, low byte defense */
 
 /* Door attributes (high byte of the door info of the current map): the door is see-through, projectiles pass. */
@@ -181,14 +122,6 @@ static inline uint16_t door_attributes(uint16_t door)
 static inline bool door_is_see_through(uint16_t door)
 {
     return door_attributes(door) & DOOR_SEE_THROUGH;
-}
-
-/* Map descriptor byte 12: difficulty in bits 4-7. */
-#define MAP_DIFFICULTY_SHIFT 4
-/* Difficulty of the current map, 0 when no map is loaded. */
-static inline uint16_t map_current_difficulty(void)
-{
-    return g_current_map ? g_current_map[MAP_DIFFICULTY_BYTE] >> MAP_DIFFICULTY_SHIFT : 0;
 }
 
 /* Forget the current map, for example after dungeon_load replaced the buffers. */
@@ -221,49 +154,5 @@ void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_
 uint16_t map_get_square_group(int16_t x, int16_t y);
 
 uint16_t map_get_creature_attributes(uint16_t group_thing);
-
-/* Map descriptor bytes of the view: ornament counts, difficulty, creature types, graphic sets. */
-static inline int16_t map_random_floor_ornament_count(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_FLOOR_ORNAMENTS_BYTE] >> 4;
-}
-static inline int16_t map_floor_ornament_count(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_FLOOR_ORNAMENTS_BYTE] & 0x0f;
-}
-static inline int16_t map_random_wall_ornament_count(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_WALL_ORNAMENTS_BYTE] >> 4;
-}
-static inline int16_t map_wall_ornament_count(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_WALL_ORNAMENTS_BYTE] & 0x0f;
-}
-static inline int16_t map_difficulty(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_DIFFICULTY_BYTE] >> MAP_DIFFICULTY_SHIFT;
-}
-static inline int16_t map_door_ornament_count(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_DOOR_ORNAMENTS_CREATURES_BYTE] & 0x0f;
-}
-static inline int16_t map_creature_type_count(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_DOOR_ORNAMENTS_CREATURES_BYTE] >> 4;
-}
-static inline int16_t map_floor_set(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_GRAPHIC_SETS_BYTE] & 0x0f;
-}
-static inline int16_t map_wall_set(int16_t map)
-{
-    return MAP_DESCRIPTOR(map)[MAP_GRAPHIC_SETS_BYTE] >> 4;
-}
-
-/* Dungeon header word 0: the seed of the random wall and floor ornaments. */
-static inline uint16_t rec_dungeon_ornament_seed(void)
-{
-    return be16(g_dungeon_header);
-}
 
 #endif
