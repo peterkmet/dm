@@ -87,22 +87,33 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 
 ### `move_get_move_result`
 
-`move_get_move_result(move, destination)` moves the party (`thing` `0xffff`), a group, or an object. The `Move` request holds the thing, `from`, and `to`. The original codes these as coordinates: `enters` is `src_x < 0` (the thing only arrives), `leaves` is `dst_x < 0` (the thing is only removed), and `keeps_cell` is `src_x == -2` (no teleporter rotation of an object). `uses_rope` is the original `g_use_rope_to_climb_down_pit`. The function returns `MOVE_RESULT_DONE`, `MOVE_RESULT_STOPPED` (the mover died, was deleted, waits off the map, or became active or inactive), or `MOVE_RESULT_TURNED` (a teleporter turned an attacking group).
+`move_get_move_result(move, destination)` moves the party (`thing` `0xffff`), a group, an object, or a projectile. The `Move` request holds the thing, `from`, and `to`. The original codes these as coordinates: `enters` is `src_x < 0` (the thing only arrives), `leaves` is `dst_x < 0` (the thing is only removed), and `keeps_cell` is `src_x == -2` (no teleporter rotation of an object). `uses_rope` is the original `g_use_rope_to_climb_down_pit`. The function returns `MOVE_RESULT_DONE`, `MOVE_RESULT_STOPPED` (the mover died, was deleted, waits off the map, or became active or inactive), or `MOVE_RESULT_TURNED` (a teleporter turned an attacking group).
 
-The function repeats these rules on the destination square, at most 99 times:
+One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`, `MOVER_GROUP`, `MOVER_OBJECT`, `MOVER_PROJECTILE`). It repeats these rules on the destination square, at most 99 times (`SQUARE_CHAIN_MAXIMUM`). An open teleporter has bit 3 set; its scope is bits 5–6 of byte 2 of the teleporter record, the target is byte 3 bits 0–4 (X), word 2 bits 5–9 (Y), and byte 4 (map); bit 7 of byte 2 makes it audible, bits 2–3 hold the rotation, and bit 4 makes the rotation absolute. An open pit has bit 3 set and bit 0 clear.
 
-- Open teleporter (bit 3): the scope is bits 5–6 of byte 2 of the teleporter record. Scope 1 (creatures) stops the party and objects. The party needs scope bit 2. The function moves the thing to the target (byte 3 bits 0–4: X, word 2 bits 5–9: Y, byte 4: map). Bit 7 of byte 2 plays sound 14 for the party. Bits 2–3 of byte 2 hold the rotation. Bit 4 makes the rotation absolute. The party turns. An object rotates its cell. A projectile also rotates its flight direction. A teleporter that points to its own square ends the loop.
-- Open pit (bit 3 set, bit 0 clear) and a thing that does not levitate: the thing falls one level (`map_get_level_change_location(place, 1)`). The party gets `champion_fall_damage(uses_rope)`: `champion_damage_all(20, 0x30, 2)` and sound 7, or with the rope a stamina loss of `load * 25 / maximum_load + 1` for each living champion. Only the first pit of the chain uses the rope.
-- Stairs, for objects only (not the party, not projectiles): down stairs (bit 2 clear) move the object one level down. Up stairs do not change the level. Then the object steps out in the exit direction and gets a cell on the exit side.
-- Any other square ends the loop.
+| Square | Mover | Rule |
+|---|---|---|
+| Teleporter | party | Needs scope bit 2. Plays sound 14 (`SOUND_TELEPORT`) now when audible. The party turns. The port counts the teleport. |
+| Teleporter | group | Needs scope bit 1 (creatures). Plays sound 14 (`SOUND_BUZZ`) after the tick when audible. `group_turn_by_teleporter` turns the creature directions and cells. |
+| Teleporter | object | Any scope except 1 (creatures only). The object rotates its cell, unless `keeps_cell`. |
+| Teleporter | projectile | Any scope except 1 (creatures only). The projectile rotates its flight direction and its cell. |
+| Teleporter | all | A closed teleporter, another scope, or a teleporter that points to its own square ends the loop. |
+| Pit | all | An open pit takes a thing that does not levitate one level down (`map_get_level_change_location(place, 1)`). |
+| Pit | party | `champion_fall_damage(uses_rope)`: `champion_damage_all(20, 0x30, 2)` and sound 7, or with the rope a stamina loss of `load * 25 / maximum_load + 1` for each living champion. Only the first pit of the chain uses the rope. |
+| Pit | group | `group_is_killed_by_fall`: each creature takes `FALL_DAMAGE` (20) on the source map. Creatures that died drop their fixed possessions on the destination. When all creatures die, the loop ends. |
+| Stairs | object, group | Down stairs (bit 2 clear) go one level down; up stairs do not change the level. The thing steps out in the exit direction and takes the cell on the side it came from, next to the stairs. |
+| Stairs | party, projectile | The loop ends. |
+| Other | all | The loop ends. |
 
 After the loop:
 
 - The `MoveDestination` (when the caller gives one) holds the map, the square, the cell, and the projectile direction (the original `g_move_result_*` globals).
 - A party move to a new square adds a scent. The scent list keeps 24 entries. `party_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count − 1 − i`. The port keeps this.
-- A move to the same square does nothing when the party direction or the object cell did not change.
+- A group that died in a fall, or that reached a map that does not allow its creature type, drops its possessions and is deleted (`group_remove_after_move`).
+- A move to the same square does nothing when the party direction or the cell of an object or a group did not change.
 - The thing leaves the source square with `sensor_process_thing_addition_or_removal(..., 0)`. A levitating object (projectile, explosion) only unlinks.
 - The party on a new map sets `g_new_party_map_index`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
+- A group enters the square with `group_enter_square` (see [creatures.md](creatures.md)).
 
 ### Champion functions
 

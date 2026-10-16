@@ -236,8 +236,13 @@ void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y);
 /* A dead creature leaves the fixed possessions of its type. Possessions with bit 15 drop half of the time. */
 void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, int16_t y, uint16_t cell,
                                            int16_t sound_mode);
+/* Cells of the creatures that died in a fall during a group move; their fixed possessions drop later. */
+typedef struct {
+    int16_t count;
+    uint8_t cells[GROUP_MAX_CREATURES];
+} GroupFallDrops;
 /* Creatures that died during a move drop their fixed possessions on the destination square. */
-void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y);
+void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y, GroupFallDrops *drops);
 /* All creatures drop their fixed possessions (sound_mode >= 0), then the carried objects fall on random cells. */
 void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t sound_mode);
 /* The group record becomes free. Health is cleared first, so that no projectile impact runs on the removal. */
@@ -290,10 +295,32 @@ void group_process_reaction_event(Location at, int16_t reaction);
    group only wanders. Lord Chaos ignores Freeze Life. */
 void group_process_event(const TimelineEvent *event);
 
-/* move_get_move_result for a group. Teleporters, pits (20 damage), and stairs move it on. A group that dies or
-   reaches a map that does not allow its type is deleted (stopped). An occupied destination makes the group wait
-   for event 60/61 (stopped). Returns done, stopped, or turned (see the teleporter rotation). */
-MoveResult group_get_move_result(const Move *move, MoveDestination *destination);
+/* Group hooks of the square chain of move_get_move_result. Teleporters, pits (20 damage), and stairs move a group
+   on. A group that dies or reaches a map that does not allow its type is deleted (stopped). An occupied destination
+   makes the group wait for event 60/61 (stopped). */
+/* A teleporter turns the creatures (relative or absolute rotation). Quarter-size creatures keep their cells with an
+   absolute rotation. Returns the active entry of an attacking group on the party map, else -1. */
+int16_t group_turn_by_teleporter(uint16_t teleporter, uint16_t group, int16_t map);
+/* A fall hurts each creature with FALL_DAMAGE on the source square. The possessions of creatures that died drop on
+   the destination; drops keeps the cells when the whole group died. Returns true when the whole group died. */
+bool group_is_killed_by_fall(uint16_t group, Position source, Position landing, GroupFallDrops *drops);
+/* A group that died in a fall, or reached a map that does not allow its type, drops its possessions on the
+   destination and leaves the source square. */
+void group_remove_after_move(uint16_t group, Position source, Position landing, GroupFallDrops *drops);
+/* A group move after the square chain. */
+typedef struct {
+    uint16_t group;              /* with the cell after the chain */
+    Position source;             /* x < 0: the group enters the map */
+    Position landing;            /* the destination after teleporters, pits, and stairs */
+    MoveResult result;           /* of the last teleporter: done (none), stopped, or turned */
+    int16_t turned_active;       /* active index of the group that the last teleporter turned, else -1 */
+    bool audible;                /* the last teleporter plays a sound */
+    bool removed_from_party_map; /* the group left a square of the party map */
+} GroupArrival;
+/* The group enters the destination square, or waits off the map while the party or another group stands there
+   (stopped). Stopped when the group became active or inactive, turned after a teleporter rotation of an attacking
+   group, else done. */
+MoveResult group_enter_square(const GroupArrival *arrival);
 /* The group waits off the map and tries to enter the square 5 ticks later (event 61 plays the teleporter sound). */
 void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, bool audible);
 /* A waiting group enters its square when the square is free. Lord Chaos may take an adjacent open square. */

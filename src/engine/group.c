@@ -106,8 +106,6 @@ uint16_t g_active_group_count, g_max_active_group_count;
 int32_t g_last_creature_attack_time;
 int16_t g_creature_damage_outcome;
 
-static int16_t drop_moving_creature_possessions_cell_count;
-static uint8_t drop_moving_creature_possessions_cells[GROUP_MAX_CREATURES];
 /* The last pair turn of a half-size pair: two creatures turn together once per game tick. */
 static struct {
     uint32_t time;
@@ -543,14 +541,12 @@ void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, in
     sound_request_play(weapon_dropped ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, x, y, sound_mode);
 }
 
-void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y)
+void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y, GroupFallDrops *drops)
 {
     uint16_t type = rec_group_creature_type(group);
-    while (drop_moving_creature_possessions_cell_count) {
-        drop_moving_creature_possessions_cell_count--;
-        group_drop_creature_fixed_possessions(
-            type, x, y, drop_moving_creature_possessions_cells[drop_moving_creature_possessions_cell_count],
-            SOUND_MODE_ONE_TICK_LATER);
+    while (drops->count) {
+        drops->count--;
+        group_drop_creature_fixed_possessions(type, x, y, drops->cells[drops->count], SOUND_MODE_ONE_TICK_LATER);
     }
 }
 
@@ -617,9 +613,10 @@ static void shift_creature_events(int16_t x, int16_t y, uint16_t dead_creature)
     }
 }
 
-/* One creature of a group of more than one dies: it drops its fixed possessions, an attacking group may flee, and
-   the creatures after it move down one place. */
-static void remove_dead_creature(uint16_t group, uint16_t creature_index, Location at, uint16_t cell, bool notify)
+/* One creature of a group of more than one dies: it drops its fixed possessions (in a fall, its cell goes to drops),
+   an attacking group may flee, and the creatures after it move down one place. */
+static void remove_dead_creature(uint16_t group, uint16_t creature_index, Location at, uint16_t cell,
+                                 GroupFallDrops *drops)
 {
     uint16_t type = rec_group_creature_type(group);
     const CreatureInfo *info = tables_get_creature_info(type);
@@ -627,10 +624,10 @@ static void remove_dead_creature(uint16_t group, uint16_t creature_index, Locati
     uint16_t last = rec_group_last_creature(group);
     uint16_t directions = group_get_directions(group, g_current_map_index);
     if (info->attributes & CREATURE_DROPS_FIXED_POSSESSIONS) {
-        if (notify)
+        if (!drops)
             group_drop_creature_fixed_possessions(type, at.x, at.y, cell, SOUND_MODE_ONE_TICK_LATER);
         else
-            drop_moving_creature_possessions_cells[drop_moving_creature_possessions_cell_count++] = cell;
+            drops->cells[drops->count++] = (uint8_t)cell;
     }
     bool on_party_map = g_current_map_index == g_party_map_index;
     ActiveGroup *active = on_party_map ? group_active(group) : NULL;
@@ -658,8 +655,10 @@ static void remove_dead_creature(uint16_t group, uint16_t creature_index, Locati
     rec_group_set_last_creature(group, last - 1);
 }
 
-int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage,
-                                          bool notify)
+/* Damage to one creature. Without drops (not a fall) a dead creature drops its possessions now and the last one
+   deletes the group. */
+static int16_t damage_creature(uint16_t group, uint16_t creature_index, Location at, int16_t damage,
+                               GroupFallDrops *drops)
 {
     uint16_t type = rec_group_creature_type(group);
     const CreatureInfo *info = tables_get_creature_info(type);
@@ -676,13 +675,13 @@ int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_inde
     uint16_t last = rec_group_last_creature(group);
     int16_t outcome;
     if (last == 0) {
-        if (notify) {
+        if (!drops) {
             group_drop_group_possessions(at.x, at.y, map_find_thing(at, THING_GROUP), SOUND_MODE_ONE_TICK_LATER);
             group_delete(at.x, at.y);
         }
         outcome = OUTCOME_ALL_CREATURES_KILLED;
     } else {
-        remove_dead_creature(group, creature_index, at, cell, notify);
+        remove_dead_creature(group, creature_index, at, cell, drops);
         outcome = OUTCOME_SOME_CREATURES_KILLED;
     }
     static const uint16_t smoke_attack[] = {SMOKE_ATTACK_QUARTER, SMOKE_ATTACK_HALF, SMOKE_ATTACK_FULL,
@@ -691,9 +690,15 @@ int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_inde
     return outcome;
 }
 
-int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, bool notify)
+int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage,
+                                          bool notify)
 {
-    drop_moving_creature_possessions_cell_count = 0;
+    return damage_creature(group, creature_index, at, damage, notify ? NULL : &(GroupFallDrops){0});
+}
+
+/* The same attack, with a random spread of 1/8, on every creature of the group. */
+static int16_t damage_all_creatures(uint16_t group, Location at, int16_t attack, GroupFallDrops *drops)
+{
     if (attack < 1)
         return OUTCOME_NO_CREATURE_KILLED;
     int16_t spread = (attack >> 3) + 1;
@@ -701,13 +706,18 @@ int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_
     int16_t some_killed = 0;
     for (int16_t i = rec_group_last_creature(group); i >= 0; i--) {
         int16_t damage = attack - spread + random16() % (spread * 2);
-        int16_t outcome = group_get_damage_creature_outcome(group, i, (Location){x, y}, damage, notify);
+        int16_t outcome = damage_creature(group, i, at, damage, drops);
         all_killed = all_killed && outcome;
         some_killed = some_killed || outcome;
     }
     return all_killed    ? OUTCOME_ALL_CREATURES_KILLED
            : some_killed ? OUTCOME_SOME_CREATURES_KILLED
                          : OUTCOME_NO_CREATURE_KILLED;
+}
+
+int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, bool notify)
+{
+    return damage_all_creatures(group, (Location){x, y}, attack, notify ? NULL : &(GroupFallDrops){0});
 }
 
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack)
@@ -2110,9 +2120,7 @@ void group_process_event(const TimelineEvent *event)
     process_turn_at((Location){event_square_x(event), event_square_y(event)}, event->type, event_group_ticks(event));
 }
 
-/* A teleporter turns the creatures (relative or absolute rotation). Quarter-size creatures keep their cells with an
-   absolute rotation. Returns the active entry of an attacking group on the party map, else -1. */
-static int16_t move_get_teleporter_rotated_group_result(uint16_t teleporter, uint16_t group, int16_t map)
+int16_t group_turn_by_teleporter(uint16_t teleporter, uint16_t group, int16_t map)
 {
     uint16_t rotation = rec_teleporter_rotation(teleporter);
     int16_t absolute = rec_teleporter_is_absolute(teleporter);
@@ -2141,176 +2149,67 @@ static int16_t move_get_teleporter_rotated_group_result(uint16_t teleporter, uin
     return -1;
 }
 
-/* One group move: the group thing (stairs change its cell), the source, and the destination that teleporters,
-   pits, and stairs lead to. */
-typedef struct {
-    uint16_t group;
-    int16_t src_map, src_x, src_y;
-    int16_t map, x, y;
-    bool levitating, audible, removed_from_party_map;
-    MoveResult result;     /* of the last teleporter rotation */
-    int16_t turned_active; /* -1: none */
-} GroupMove;
-
-/* The destination goes one level down at the same dungeon place. */
-static void fall_one_level(GroupMove *m)
+bool group_is_killed_by_fall(uint16_t group, Position source, Position landing, GroupFallDrops *drops)
 {
-    Position below = map_get_level_change_location((Position){m->map, m->x, m->y}, LEVEL_DOWN);
-    m->map = below.map;
-    m->x = below.x;
-    m->y = below.y;
-}
-
-/* Follows teleporters, open pits (fall damage), and stairs from the destination square. Returns true when the fall
-   killed all creatures. */
-static bool follow_destination_squares(GroupMove *m)
-{
-    for (int16_t n = SQUARE_CHAIN_MAXIMUM; n; n--) {
-        uint8_t square = rec_square_byte(g_current_map_index, m->x, m->y);
-        int16_t type = rec_square_type(square);
-        if (type == SQUARE_TELEPORTER) {
-            if (!(square & TELEPORTER_OPEN))
-                break;
-            uint16_t teleporter = map_get_square_first_thing(m->x, m->y);
-            if (!(rec_teleporter_scope(teleporter) & TELEPORTER_SCOPE_CREATURES))
-                break;
-            int16_t points_to_itself = rec_teleporter_target_x(teleporter) == m->x &&
-                                       rec_teleporter_target_y(teleporter) == m->y &&
-                                       rec_teleporter_target_map(teleporter) == m->map;
-            m->x = rec_teleporter_target_x(teleporter);
-            m->y = rec_teleporter_target_y(teleporter);
-            m->audible = rec_teleporter_is_audible(teleporter);
-            m->map = rec_teleporter_target_map(teleporter);
-            map_set_current_map(m->map);
-            if (m->audible)
-                sound_request_play(SOUND_BUZZ, m->x, m->y, SOUND_MODE_AFTER_TICK);
-            m->turned_active = move_get_teleporter_rotated_group_result(teleporter, m->group, m->src_map);
-            m->result = m->turned_active >= 0 ? MOVE_RESULT_TURNED : MOVE_RESULT_STOPPED;
-            if (points_to_itself)
-                break;
-        } else if (type == SQUARE_PIT && !m->levitating && (square & PIT_OPEN) && !(square & PIT_IMAGINARY)) {
-            fall_one_level(m);
-            map_set_current_map(m->src_map);
-            int16_t outcome = group_get_damage_all_creatures_outcome(m->group, m->src_x, m->src_y, FALL_DAMAGE, false);
-            map_set_current_map(m->map);
-            if (outcome == OUTCOME_ALL_CREATURES_KILLED)
-                return true;
-            if (outcome == OUTCOME_SOME_CREATURES_KILLED)
-                group_drop_moving_creature_fixed_possessions(m->group, m->x, m->y);
-        } else if (type == SQUARE_STAIRS) {
-            if (!(square & STAIRS_UP)) {
-                fall_one_level(m);
-                map_set_current_map(m->map);
-            }
-            int16_t exit = map_get_stairs_exit_direction(m->x, m->y);
-            map_step(exit, 1, 0, &m->x, &m->y);
-            int16_t start_direction = direction_back(exit);
-            m->group = THING_WITH_CELL(m->group, direction_front_cell(start_direction, THING_CELL(m->group)));
-        } else {
-            break;
-        }
-    }
+    map_set_current_map(source.map);
+    drops->count = 0;
+    int16_t outcome = damage_all_creatures(group, (Location){source.x, source.y}, FALL_DAMAGE, drops);
+    map_set_current_map(landing.map);
+    if (outcome == OUTCOME_ALL_CREATURES_KILLED)
+        return true;
+    if (outcome == OUTCOME_SOME_CREATURES_KILLED)
+        group_drop_moving_creature_fixed_possessions(group, landing.x, landing.y, drops);
     return false;
 }
 
-/* The group enters the destination square, or waits off the map while the party or another group stands there
-   (stopped). Stopped when the group became active or inactive, turned after a teleporter rotation of an attacking
-   group, else done. */
-static MoveResult enter_destination(GroupMove *m)
+void group_remove_after_move(uint16_t group, Position source, Position landing, GroupFallDrops *drops)
 {
-    MoveResult result = m->result;
-    map_set_current_map(m->map);
-    uint8_t active_index = rec_group_cells(m->group);
-    if (map_is_party_on((Location){m->x, m->y}) ||
-        map_find_thing((Location){m->x, m->y}, THING_GROUP) != THING_ENDOFLIST) {
-        map_set_current_map(m->src_map);
-        if (m->src_x >= 0)
-            group_delete_events(m->src_x, m->src_y);
-        if (m->removed_from_party_map)
-            group_remove_active_group(active_index);
-        group_create_event_move_group(m->group, m->x, m->y, m->map, m->audible);
-        return MOVE_RESULT_STOPPED;
-    }
-    sound_request_play(get_creature_movement_sound(rec_group_creature_type(m->group)), m->x, m->y,
-                       SOUND_MODE_AFTER_TICK);
-    if (m->removed_from_party_map && m->map != g_party_map_index) {
-        group_remove_active_group(active_index);
-        result = MOVE_RESULT_STOPPED;
-    } else if (!m->removed_from_party_map && m->map == g_party_map_index) {
-        group_add_active_group(m->group, m->x, m->y);
-        result = MOVE_RESULT_STOPPED;
-    }
-    if (!m->levitating)
-        sensor_process_thing_addition_or_removal(m->x, m->y, m->group, false, true);
-    else
-        map_link_thing_to_list(m->group, 0, m->x, m->y);
-    if (result != MOVE_RESULT_DONE || m->src_x < 0)
-        group_start_wandering(m->x, m->y);
-    map_set_current_map(m->src_map);
-    if (m->src_x >= 0) {
-        if (result == MOVE_RESULT_TURNED)
-            group_stop_attacking(&g_active_groups[m->turned_active], m->src_x, m->src_y);
-        else if (result == MOVE_RESULT_STOPPED)
-            group_delete_events(m->src_x, m->src_y);
-    }
-    return result;
+    group_drop_moving_creature_fixed_possessions(group, landing.x, landing.y, drops);
+    group_drop_group_possessions(landing.x, landing.y, group, SOUND_MODE_ONE_TICK_LATER);
+    map_set_current_map(source.map);
+    if (source.x >= 0)
+        group_delete(source.x, source.y);
 }
 
-MoveResult group_get_move_result(const Move *move, MoveDestination *destination)
+MoveResult group_enter_square(const GroupArrival *arrival)
 {
-    uint16_t group = move->thing;
-    /* A group that enters comes from (-1, 0); a group that leaves goes to (-1, 0). */
-    int16_t src_x = move->enters ? -1 : move->from.x;
-    int16_t src_y = move->enters ? 0 : move->from.y;
-    int16_t dst_x = move->leaves ? -1 : move->to.x;
-    int16_t dst_y = move->leaves ? 0 : move->to.y;
-    GroupMove m = {
-        .group = group,
-        .src_map = g_current_map_index,
-        .src_x = src_x,
-        .src_y = src_y,
-        .map = g_current_map_index,
-        .x = dst_x,
-        .y = dst_y,
-        .levitating = (map_get_creature_attributes(group) & CREATURE_LEVITATES) != 0,
-        .result = MOVE_RESULT_DONE,
-        .turned_active = -1,
-    };
-    uint16_t src_cell = THING_CELL(group);
-    if (src_x >= 0 && g_current_map_index == g_party_map_index &&
-        projectile_is_killed_by_impact(src_x, src_y, dst_x, dst_y, group))
+    MoveResult result = arrival->result;
+    map_set_current_map(arrival->landing.map);
+    uint8_t active_index = rec_group_cells(arrival->group);
+    Location at = {arrival->landing.x, arrival->landing.y};
+    bool levitating = move_is_levitating(arrival->group);
+    if (map_is_party_on(at) || map_find_thing(at, THING_GROUP) != THING_ENDOFLIST) {
+        map_set_current_map(arrival->source.map);
+        if (arrival->source.x >= 0)
+            group_delete_events(arrival->source.x, arrival->source.y);
+        if (arrival->removed_from_party_map)
+            group_remove_active_group(active_index);
+        group_create_event_move_group(arrival->group, at.x, at.y, arrival->landing.map, arrival->audible);
         return MOVE_RESULT_STOPPED;
-    if (dst_x >= 0) {
-        m.removed_from_party_map = g_current_map_index == g_party_map_index && src_x >= 0;
-        if (follow_destination_squares(&m) || !group_is_creature_allowed_on_map(m.group, m.map)) {
-            group_drop_moving_creature_fixed_possessions(m.group, m.x, m.y);
-            group_drop_group_possessions(m.x, m.y, m.group, SOUND_MODE_ONE_TICK_LATER);
-            map_set_current_map(m.src_map);
-            if (src_x >= 0)
-                group_delete(src_x, src_y);
-            return MOVE_RESULT_STOPPED;
-        }
-        MoveDestination d = {.map = m.map, .x = m.x, .y = m.y, .cell = THING_CELL(m.group)};
-        bool same_square = m.map == m.src_map && m.x == src_x && m.y == src_y;
-        if (destination)
-            *destination = d;
-        if (!same_square) {
-            if (m.map != m.src_map)
-                map_set_current_map(m.src_map);
-        } else if (d.cell == src_cell) {
-            return MOVE_RESULT_DONE;
-        }
     }
-    if (src_x >= 0) {
-        if (!m.levitating)
-            sensor_process_thing_addition_or_removal(src_x, src_y, m.group, map_is_party_on((Location){src_x, src_y}),
-                                                     false);
-        else
-            map_unlink_thing_from_list(m.group, 0, src_x, src_y);
+    sound_request_play(get_creature_movement_sound(rec_group_creature_type(arrival->group)), at.x, at.y,
+                       SOUND_MODE_AFTER_TICK);
+    if (arrival->removed_from_party_map && arrival->landing.map != g_party_map_index) {
+        group_remove_active_group(active_index);
+        result = MOVE_RESULT_STOPPED;
+    } else if (!arrival->removed_from_party_map && arrival->landing.map == g_party_map_index) {
+        group_add_active_group(arrival->group, at.x, at.y);
+        result = MOVE_RESULT_STOPPED;
     }
-    if (m.x < 0)
-        return MOVE_RESULT_DONE;
-    return enter_destination(&m);
+    if (!levitating)
+        sensor_process_thing_addition_or_removal(at.x, at.y, arrival->group, false, true);
+    else
+        map_link_thing_to_list(arrival->group, 0, at.x, at.y);
+    if (result != MOVE_RESULT_DONE || arrival->source.x < 0)
+        group_start_wandering(at.x, at.y);
+    map_set_current_map(arrival->source.map);
+    if (arrival->source.x >= 0) {
+        if (result == MOVE_RESULT_TURNED)
+            group_stop_attacking(&g_active_groups[arrival->turned_active], arrival->source.x, arrival->source.y);
+        else if (result == MOVE_RESULT_STOPPED)
+            group_delete_events(arrival->source.x, arrival->source.y);
+    }
+    return result;
 }
 
 void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, bool audible)

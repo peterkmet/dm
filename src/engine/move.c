@@ -18,6 +18,12 @@
 #define SCENT_NEW_STRENGTH  24
 #define MOVE_STAMINA_FACTOR 3 /* stamina cost of a step: load * 3 / maximum load + 1 */
 
+/* Kinds of thing that move along a square chain: the chain rules differ per kind. */
+#define MOVER_PARTY      0
+#define MOVER_GROUP      1
+#define MOVER_OBJECT     2
+#define MOVER_PROJECTILE 3
+
 int16_t g_new_party_map_index = -1;
 int g_party_teleport_count;
 
@@ -71,30 +77,52 @@ static void add_party_scent(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t
                              (int16_t)(SCENT_KEEP_LARGER | SCENT_NEW_STRENGTH)); /* the flag is the sign bit */
 }
 
-/* A teleporter on the destination square moves the thing to its target and turns it. The party hears it and keeps
-   the count of teleports. Returns false when the chain stops: a closed teleporter, another scope, or a teleporter
-   that points to itself. */
-static bool is_teleported(uint16_t *thing, uint8_t square, bool keeps_cell, MoveDestination *d)
+/* One move along the square chain: the mover, its thing, the source, and the destination being built. */
+typedef struct {
+    int16_t mover;           /* MOVER_* */
+    uint16_t thing;          /* THING_NONE for the party; teleporters and stairs change its cell */
+    Position source;         /* x < 0: the thing enters the map */
+    MoveDestination d;       /* map, square, and projectile direction of the destination */
+    int16_t start_direction; /* party direction before the chain, or the direction out of the last stairs */
+    bool levitating, uses_rope, keeps_cell;
+    bool audible;                /* group: the last teleporter plays a sound */
+    bool removed_from_party_map; /* group: the group leaves a square of the party map */
+    int16_t turned_active;       /* group: active index of the group that the last teleporter turned, else -1 */
+    MoveResult result;           /* group: of the last teleporter */
+    GroupFallDrops drops;        /* group: cells of creatures that died in a fall */
+} Walk;
+
+/* The kind of mover of a thing. */
+static int16_t get_mover(uint16_t thing)
 {
-    bool party = *thing == THING_NONE;
-    int16_t type = party ? -1 : THING_TYPE(*thing);
-    uint16_t scope = party ? TELEPORTER_SCOPE_PARTY : TELEPORTER_SCOPE_ALL;
-    if (!(square & TELEPORTER_OPEN))
+    if (thing == THING_NONE)
+        return MOVER_PARTY;
+    if (THING_TYPE(thing) == THING_GROUP)
+        return MOVER_GROUP;
+    if (THING_TYPE(thing) == THING_PROJECTILE)
+        return MOVER_PROJECTILE;
+    return MOVER_OBJECT;
+}
+
+/* A teleporter takes the party with the party scope, a group with the creatures scope, and an object or a projectile
+   with any scope except creatures only. */
+static bool is_in_teleporter_scope(int16_t mover, uint16_t scope_bits)
+{
+    if (mover == MOVER_GROUP)
+        return scope_bits & TELEPORTER_SCOPE_CREATURES;
+    if (scope_bits == TELEPORTER_SCOPE_CREATURES)
         return false;
-    uint16_t teleporter = map_get_square_first_thing(d->x, d->y);
-    uint16_t teleporter_scope_bits = rec_teleporter_scope(teleporter);
-    if (teleporter_scope_bits == TELEPORTER_SCOPE_CREATURES ||
-        (scope != TELEPORTER_SCOPE_ALL && !(scope & teleporter_scope_bits)))
-        return false;
-    int16_t x = rec_teleporter_target_x(teleporter);
-    int16_t y = rec_teleporter_target_y(teleporter);
+    return mover != MOVER_PARTY || (scope_bits & TELEPORTER_SCOPE_PARTY);
+}
+
+/* After the jump of a teleporter, the party hears it, keeps the count of teleports and turns; a group hears it later
+   and turns; a projectile turns its direction and cell; an object turns its cell. */
+static void turn_by_teleporter(Walk *w, uint16_t teleporter, bool points_to_itself)
+{
+    MoveDestination *d = &w->d;
     int16_t rotation = rec_teleporter_rotation(teleporter);
-    bool points_to_itself = x == d->x && y == d->y && rec_teleporter_target_map(teleporter) == d->map;
-    d->x = x;
-    d->y = y;
-    d->map = rec_teleporter_target_map(teleporter);
-    map_set_current_map(d->map);
-    if (party) {
+    switch (w->mover) {
+    case MOVER_PARTY:
         g_party_map_x = d->x;
         g_party_map_y = d->y;
         g_party_teleport_count += !points_to_itself;
@@ -102,11 +130,42 @@ static bool is_teleported(uint16_t *thing, uint8_t square, bool keeps_cell, Move
             sound_request_play(SOUND_TELEPORT, d->x, d->y, SOUND_MODE_NOW);
         move_set_party_direction(rec_teleporter_is_absolute(teleporter) ? rotation
                                                                         : NORMALIZE(g_party_direction + rotation));
-    } else if (type == THING_PROJECTILE) {
-        *thing = move_get_teleporter_rotated_projectile_thing(teleporter, *thing, &d->direction);
-    } else if (!rec_teleporter_is_absolute(teleporter) && !keeps_cell) {
-        *thing = THING_WITH_CELL(*thing, rotation + THING_CELL(*thing));
+        break;
+    case MOVER_GROUP:
+        w->audible = rec_teleporter_is_audible(teleporter);
+        if (w->audible)
+            sound_request_play(SOUND_BUZZ, d->x, d->y, SOUND_MODE_AFTER_TICK);
+        w->turned_active = group_turn_by_teleporter(teleporter, w->thing, w->source.map);
+        w->result = w->turned_active >= 0 ? MOVE_RESULT_TURNED : MOVE_RESULT_STOPPED;
+        break;
+    case MOVER_PROJECTILE:
+        w->thing = move_get_teleporter_rotated_projectile_thing(teleporter, w->thing, &d->direction);
+        break;
+    default:
+        if (!rec_teleporter_is_absolute(teleporter) && !w->keeps_cell)
+            w->thing = THING_WITH_CELL(w->thing, rotation + THING_CELL(w->thing));
+        break;
     }
+}
+
+/* A teleporter on the destination square moves the thing to its target and turns it. Returns false when the chain
+   stops: a closed teleporter, another scope, or a teleporter that points to itself. */
+static bool is_teleported(Walk *w, uint8_t square)
+{
+    MoveDestination *d = &w->d;
+    if (!(square & TELEPORTER_OPEN))
+        return false;
+    uint16_t teleporter = map_get_square_first_thing(d->x, d->y);
+    if (!is_in_teleporter_scope(w->mover, rec_teleporter_scope(teleporter)))
+        return false;
+    int16_t x = rec_teleporter_target_x(teleporter);
+    int16_t y = rec_teleporter_target_y(teleporter);
+    bool points_to_itself = x == d->x && y == d->y && rec_teleporter_target_map(teleporter) == d->map;
+    d->x = x;
+    d->y = y;
+    d->map = rec_teleporter_target_map(teleporter);
+    map_set_current_map(d->map);
+    turn_by_teleporter(w, teleporter, points_to_itself);
     return !points_to_itself;
 }
 
@@ -120,44 +179,56 @@ static void fall_one_level(MoveDestination *d)
     map_set_current_map(d->map);
 }
 
-/* The destination follows teleporters, pits, and stairs. The party falls into a pit with its damage. An object on
-   stairs rolls out of them. Returns the thing with its new cell. */
-static uint16_t follow_square_chain(const Move *move, MoveDestination *d, int16_t *start_direction)
+/* The destination follows teleporters, pits, and stairs, at most SQUARE_CHAIN_MAXIMUM squares. The rules per square
+   type and mover:
+   - teleporter, party: scope party; SOUND_TELEPORT now when audible; turns the party direction; counts the teleport.
+   - teleporter, group: scope creatures; SOUND_BUZZ after the tick when audible; turns the creature directions and
+     cells.
+   - teleporter, object: any scope except creatures only; turns the cell unless keeps_cell.
+   - teleporter, projectile: any scope except creatures only; turns the direction and the cell.
+   - teleporter, all: a closed teleporter, another scope, or a teleporter that points to itself ends the chain.
+   - pit, all: an open, real pit takes the thing one level down; not a levitating thing.
+   - pit, party: fall damage, or the stamina cost of the rope for the first pit.
+   - pit, group: FALL_DAMAGE on the source map; creatures that died drop their possessions; all dead ends the chain.
+   - stairs, object and group: down stairs go one level down; the thing steps out of the stairs and takes the cell
+     on the side it came from, next to the stairs.
+   - stairs, party and projectile, and any other square: the chain ends.
+   Returns true when a fall killed the whole group. */
+static bool follow_square_chain(Walk *w)
 {
-    uint16_t thing = move->thing;
-    bool uses_rope = move->uses_rope;
-    bool party = thing == THING_NONE;
-    int16_t type = party ? -1 : THING_TYPE(thing);
-    bool levitating = party ? false : move_is_levitating(thing);
+    MoveDestination *d = &w->d;
     for (int16_t n = SQUARE_CHAIN_MAXIMUM; n; n--) {
         uint8_t square = rec_square_byte(g_current_map_index, d->x, d->y);
         int16_t square_type = rec_square_type(square);
         if (square_type == SQUARE_TELEPORTER) {
-            if (!is_teleported(&thing, square, move->keeps_cell, d))
+            if (!is_teleported(w, square))
                 break;
-        } else if (square_type == SQUARE_PIT && !levitating && (square & PIT_OPEN) && !(square & PIT_IMAGINARY)) {
+        } else if (square_type == SQUARE_PIT && !w->levitating && (square & PIT_OPEN) && !(square & PIT_IMAGINARY)) {
             fall_one_level(d);
-            if (party) {
+            if (w->mover == MOVER_PARTY) {
                 g_party_map_x = d->x;
                 g_party_map_y = d->y;
-                champion_fall_damage(uses_rope);
-                uses_rope = false;
+                champion_fall_damage(w->uses_rope);
+                w->uses_rope = false;
+            } else if (w->mover == MOVER_GROUP &&
+                       group_is_killed_by_fall(w->thing, w->source, (Position){d->map, d->x, d->y}, &w->drops)) {
+                return true;
             }
-        } else if (square_type == SQUARE_STAIRS && !party && type != THING_PROJECTILE) {
+        } else if (square_type == SQUARE_STAIRS && (w->mover == MOVER_OBJECT || w->mover == MOVER_GROUP)) {
             /* An object on down stairs falls one level. On up stairs it only rolls out. */
             if (!(square & STAIRS_UP))
                 fall_one_level(d);
             int16_t exit = map_get_stairs_exit_direction(d->x, d->y);
             map_step(exit, 1, 0, &d->x, &d->y);
-            *start_direction = direction_back(exit);
+            w->start_direction = direction_back(exit);
             /* The object takes the cell on the side it came from, next to the stairs. */
-            uint16_t cell = direction_front_cell(*start_direction, THING_CELL(thing));
-            thing = THING_WITH_CELL(thing, cell);
+            uint16_t cell = direction_front_cell(w->start_direction, THING_CELL(w->thing));
+            w->thing = THING_WITH_CELL(w->thing, cell);
         } else {
             break;
         }
     }
-    return thing;
+    return false;
 }
 
 /* The thing arrives on its destination square. The party kills a group there and enters the square sensors, or waits
@@ -187,61 +258,101 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
     map_set_current_map(src_map);
 }
 
+/* The thing leaves its source square: the party and a thing on the floor leave the square sensors, a levitating
+   thing only leaves the square list. */
+static void leave_source_square(const Walk *w, bool same_square)
+{
+    int16_t x = w->source.x;
+    int16_t y = w->source.y;
+    if (w->mover == MOVER_PARTY)
+        sensor_process_thing_addition_or_removal(x, y, THING_NONE, same_square, false);
+    else if (!w->levitating)
+        sensor_process_thing_addition_or_removal(x, y, w->thing, map_is_party_on((Location){x, y}), false);
+    else
+        map_unlink_thing_from_list(w->thing, 0, x, y);
+}
+
+/* The group arrives after the chain: the walk becomes the arrival of the group hook. */
+static MoveResult enter_group_square(const Walk *w)
+{
+    GroupArrival arrival = {
+        .group = w->thing,
+        .source = w->source,
+        .landing = {w->d.map, w->d.x, w->d.y},
+        .result = w->result,
+        .turned_active = w->turned_active,
+        .audible = w->audible,
+        .removed_from_party_map = w->removed_from_party_map,
+    };
+    return group_enter_square(&arrival);
+}
+
+/* The walk starts on the destination square: the party stands there, a projectile keeps its flight direction. */
+static void start_walk(Walk *w)
+{
+    w->removed_from_party_map = g_current_map_index == g_party_map_index && w->source.x >= 0;
+    if (w->mover == MOVER_PARTY) {
+        g_party_map_x = w->d.x;
+        g_party_map_y = w->d.y;
+        w->start_direction = g_party_direction;
+    }
+    if (w->mover == MOVER_PROJECTILE)
+        w->d.direction = projectile_event_direction(&g_timeline.events[rec_projectile_event_index(w->thing)]);
+}
+
 MoveResult move_get_move_result(const Move *move, MoveDestination *destination)
 {
-    uint16_t thing = move->thing;
-    bool party = thing == THING_NONE;
-    int16_t type = party ? -1 : THING_TYPE(thing);
-    uint16_t src_cell = party ? 0 : THING_CELL(thing);
-    bool levitating = party ? false : move_is_levitating(thing);
+    int16_t mover = get_mover(move->thing);
+    uint16_t src_cell = mover == MOVER_PARTY ? 0 : THING_CELL(move->thing);
     /* A thing that enters comes from (-1, 0); a thing that leaves goes to (-1, 0). */
     int16_t src_x = move->enters ? -1 : move->from.x;
     int16_t src_y = move->enters ? 0 : move->from.y;
     int16_t dst_x = move->leaves ? -1 : move->to.x;
     int16_t dst_y = move->leaves ? 0 : move->to.y;
     int16_t src_map = g_current_map_index;
-    int16_t start_direction = 0;
+    Walk w = {
+        .mover = mover,
+        .thing = move->thing,
+        .source = {.map = src_map, .x = src_x, .y = src_y},
+        .d = {.map = src_map, .x = dst_x, .y = dst_y},
+        .levitating = mover != MOVER_PARTY && move_is_levitating(move->thing),
+        .uses_rope = move->uses_rope,
+        .keeps_cell = move->keeps_cell,
+        .turned_active = -1,
+        .result = MOVE_RESULT_DONE,
+    };
     bool same_square = false;
-    if (type == THING_GROUP)
-        return group_get_move_result(move, destination);
-    if (party && !move->enters && projectile_is_killed_by_impact(src_x, src_y, dst_x, dst_y, THING_NONE))
+    if (src_x >= 0 && (mover == MOVER_PARTY || (mover == MOVER_GROUP && src_map == g_party_map_index)) &&
+        projectile_is_killed_by_impact(src_x, src_y, dst_x, dst_y, move->thing))
         return MOVE_RESULT_STOPPED;
-    MoveDestination d = {.map = src_map, .x = dst_x, .y = dst_y};
-    if (!move->leaves) {
-        if (party) {
-            g_party_map_x = dst_x;
-            g_party_map_y = dst_y;
-            start_direction = g_party_direction;
+    if (dst_x >= 0) {
+        start_walk(&w);
+        if (follow_square_chain(&w) || (mover == MOVER_GROUP && !group_is_creature_allowed_on_map(w.thing, w.d.map))) {
+            group_remove_after_move(w.thing, w.source, (Position){w.d.map, w.d.x, w.d.y}, &w.drops);
+            return MOVE_RESULT_STOPPED;
         }
-        if (type == THING_PROJECTILE)
-            d.direction = projectile_event_direction(&g_timeline.events[rec_projectile_event_index(thing)]);
-        thing = follow_square_chain(move, &d, &start_direction);
-        d.cell = THING_CELL(thing);
-        same_square = d.map == src_map && d.x == src_x && d.y == src_y;
+        w.d.cell = THING_CELL(w.thing);
+        same_square = w.d.map == src_map && w.d.x == src_x && w.d.y == src_y;
         if (destination)
-            *destination = d;
+            *destination = w.d;
         if (!same_square) {
-            if (party && g_party_champion_count)
-                add_party_scent(src_x, src_y, d.x, d.y, d.map);
+            if (mover == MOVER_PARTY && g_party_champion_count)
+                add_party_scent(src_x, src_y, w.d.x, w.d.y, w.d.map);
             map_set_current_map(src_map);
-        } else if (party) {
-            if (g_party_direction == start_direction)
+        } else if (mover == MOVER_PARTY) {
+            if (g_party_direction == w.start_direction)
                 return MOVE_RESULT_DONE;
-        } else if (d.cell == src_cell && type != THING_PROJECTILE) {
+        } else if (w.d.cell == src_cell && mover != MOVER_PROJECTILE) {
             return MOVE_RESULT_DONE;
         }
     }
-    if (!move->enters) {
-        if (party)
-            sensor_process_thing_addition_or_removal(src_x, src_y, THING_NONE, same_square, false);
-        else if (!levitating)
-            sensor_process_thing_addition_or_removal(src_x, src_y, thing, map_is_party_on((Location){src_x, src_y}),
-                                                     false);
-        else
-            map_unlink_thing_from_list(thing, 0, src_x, src_y);
-    }
-    if (!move->leaves)
-        arrive_on_square(thing, d.x, d.y, d.map, src_map, same_square);
+    if (src_x >= 0)
+        leave_source_square(&w, same_square);
+    if (dst_x < 0)
+        return MOVE_RESULT_DONE;
+    if (mover == MOVER_GROUP)
+        return enter_group_square(&w);
+    arrive_on_square(w.thing, w.d.x, w.d.y, w.d.map, src_map, same_square);
     return MOVE_RESULT_DONE;
 }
 

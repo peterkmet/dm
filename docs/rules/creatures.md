@@ -75,7 +75,7 @@ Smell uses the smell range of the creature. A creature smells the party directly
 - `test_movement` blocks walls, stairs, open pits (except for levitating creatures), closed fake walls, the party square, other groups, and closed doors that are too low for the creature. A wary creature avoids a teleporter to a map that does not allow its type. Lord Chaos does not enter a fluxcage.
 - A creature never turns around at once. It turns left or right first.
 - Lord Chaos sometimes jumps two squares over a free square.
-- `group_get_move_result` moves a group through teleporters, pits (20 damage to each creature), and stairs. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
+- `move_get_move_result` moves a group through the one square chain of every mover (the rule table in [movement.md](movement.md)): teleporters with the creatures scope, pits (20 damage to each creature), and stairs. The group hooks are `group_turn_by_teleporter`, `group_is_killed_by_fall`, `group_remove_after_move`, and `group_enter_square`. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
 
 ### Attack
 
