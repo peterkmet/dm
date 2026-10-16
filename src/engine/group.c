@@ -310,7 +310,7 @@ static uint8_t aspect_offset(uint16_t range)
 void group_start_wandering(int16_t x, int16_t y)
 {
     uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
-    if (rec_group_behavior(group) > BEHAVIOR_USELESS_3)
+    if (rec_group_behavior(group) > BEHAVIOR_WANDER_NO_SMELL)
         rec_group_set_behavior(group, BEHAVIOR_WANDER);
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + 1),
@@ -446,7 +446,7 @@ static void remove_active_group(uint16_t active_index)
     g_active_group_count--;
     rec_group_set_cells(group, active->cells);
     rec_group_set_direction(group, active->directions);
-    if (rec_group_behavior(group) > BEHAVIOR_USELESS_3)
+    if (rec_group_behavior(group) > BEHAVIOR_WANDER_NO_SMELL)
         rec_group_set_behavior(group, BEHAVIOR_WANDER);
     active->group_index = -1;
 }
@@ -1767,7 +1767,7 @@ static void process_reaction(GroupTurn *t, uint16_t behavior)
         t->event_type = REACTION_HIT_BY_PROJECTILE;
         if (behavior == BEHAVIOR_ATTACK || behavior == BEHAVIOR_FLEE)
             return;
-        bool useless = behavior == BEHAVIOR_USELESS_3 || behavior == BEHAVIOR_USELESS_2;
+        bool useless = behavior == BEHAVIOR_WANDER_NO_SMELL || behavior == BEHAVIOR_WANDER_NO_APPROACH;
         if (useless || random_2bits()) {
             if (!visible_party_distance(t, t->group, -1, t->x, t->y)) {
                 turn_and_finish(t, 0);
@@ -1807,7 +1807,7 @@ static void process_aspect_event(GroupTurn *t, uint16_t behavior)
             set_behavior_attack(t);
             return;
         }
-        if (!attacks_or_flees && (behavior == BEHAVIOR_WANDER || behavior == BEHAVIOR_USELESS_3)) {
+        if (!attacks_or_flees && (behavior == BEHAVIOR_WANDER || behavior == BEHAVIOR_WANDER_NO_SMELL)) {
             set_behavior_approach(t);
             return;
         }
@@ -1836,8 +1836,8 @@ static void process_group_behavior(GroupTurn *t, uint16_t behavior)
 {
     switch (behavior) {
     case BEHAVIOR_WANDER:
-    case BEHAVIOR_USELESS_2:
-    case BEHAVIOR_USELESS_3:
+    case BEHAVIOR_WANDER_NO_APPROACH:
+    case BEHAVIOR_WANDER_NO_SMELL:
         t->visible_distance = visible_party_distance(t, t->group, -1, t->x, t->y);
         if (!t->visible_distance) {
             if (behavior != BEHAVIOR_WANDER) {
@@ -1857,7 +1857,7 @@ static void process_group_behavior(GroupTurn *t, uint16_t behavior)
         }
         if (can_start_attack(t))
             set_behavior_attack(t);
-        else if (behavior != BEHAVIOR_USELESS_2)
+        else if (behavior != BEHAVIOR_WANDER_NO_APPROACH)
             set_behavior_approach(t);
         else
             add_wander_event(t);

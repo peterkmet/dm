@@ -14,7 +14,6 @@
 #include "engine/sound.h"
 #include "engine/timeline.h"
 
-#define SENSOR_EXPERIENCE_SKILL   8 /* steal */
 #define SENSOR_EXPERIENCE         300
 #define VERSION_CHECKER_LIMIT     37 /* the version checker passes for data below this value */
 #define CSB_VERSION_CHECKER_LIMIT 32
@@ -90,7 +89,7 @@ void sensor_process_rotation_effect(void)
 static void trigger_local_effect(int16_t local_effect, int16_t x, int16_t y, int16_t cell)
 {
     if (local_effect == LOCAL_EFFECT_EXPERIENCE) {
-        add_skill_experience(SENSOR_EXPERIENCE_SKILL, SENSOR_EXPERIENCE, cell != ANY_CELL);
+        add_skill_experience(SKILL_STEAL, SENSOR_EXPERIENCE, cell != ANY_CELL);
         return;
     }
     rotation.effect = local_effect;

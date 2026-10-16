@@ -52,7 +52,8 @@ Bits 0–3 of group word 14 hold the behavior.
 | Value | Behavior | Rule on event 37 |
 |---|---|---|
 | 0 | Wander | Sees the party: attacks when the party is in attack range and in line, else approaches. Does not see the party: moves toward the smell of the party, else moves randomly or stays. |
-| 2, 3 | Useless | Like wander, but does not follow the smell. Behavior 2 does not approach. |
+| 2 | Wander, no approach | Like wander, but does not follow the smell and does not approach. |
+| 3 | Wander, no smell | Like wander, but does not follow the smell. |
 | 5 | Flee | Moves away from the party. Without sight of the party, it sometimes moves home. The flee ends after the flee delay. |
 | 6 | Attack | Each creature gets its own events 38–41. |
 | 7 | Approach | Moves toward the party at double speed. Without sight of the party, it moves to the target square, then wanders. |

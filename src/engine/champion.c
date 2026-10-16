@@ -111,12 +111,6 @@ int16_t g_magic_caster_champion_index = -1;
 #define STATISTICS_RESTORE_MASK           0xff /* statistics move every 256 ticks */
 #define STATISTICS_RESTORE_SLEEPING_MASK  0x3f
 
-/* Weapon classes that use the swing, throw, and shoot skills. */
-#define CLASS_SWING_WEAPON     0
-#define CLASS_DAGGER_AND_AXES  2
-#define CLASS_FIRST_AMMUNITION 16
-#define CLASS_AMMUNITION_END   112
-
 uint16_t g_dead_champions;
 
 /* Offsets of the original record. */
@@ -689,11 +683,11 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
         const WeaponInfo *w = tables_get_weapon_info(rec_weapon_type(thing));
         int16_t skill = 0;
         strength += w->strength;
-        if (w->weapon_class == CLASS_SWING_WEAPON || w->weapon_class == CLASS_DAGGER_AND_AXES)
+        if (w->weapon_class == WEAPON_CLASS_SWING || w->weapon_class == WEAPON_CLASS_DAGGER_AND_AXES)
             skill = champion_get_skill_level(champion_index, SKILL_SWING, false, false);
-        if (w->weapon_class != CLASS_SWING_WEAPON && w->weapon_class < CLASS_FIRST_AMMUNITION)
+        if (w->weapon_class != WEAPON_CLASS_SWING && w->weapon_class < WEAPON_CLASS_FIRST_AMMUNITION)
             skill += champion_get_skill_level(champion_index, SKILL_THROW, false, false);
-        if (w->weapon_class >= CLASS_FIRST_AMMUNITION && w->weapon_class < CLASS_AMMUNITION_END)
+        if (w->weapon_class >= WEAPON_CLASS_FIRST_AMMUNITION && w->weapon_class < WEAPON_CLASS_AMMUNITION_END)
             skill += champion_get_skill_level(champion_index, SKILL_SHOOT, false, false);
         strength += skill * 2;
     }

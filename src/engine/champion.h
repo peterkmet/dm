@@ -24,7 +24,7 @@
 #define STAT_CURRENT        1
 #define STAT_MINIMUM        2
 #define STAT_VALUE_COUNT    3
-/* Champion slots (Champion.slots), then the slots of the open chest. */
+/* Slots of Champion.slots in record order, then the slots of the open chest. */
 #define SLOT_HAND_READY     0
 #define SLOT_HAND_ACTION    1
 #define SLOT_HEAD           2

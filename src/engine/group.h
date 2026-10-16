@@ -61,13 +61,13 @@
 #define CREATURE_LORD_ORDER      25
 #define CREATURE_GREY_LORD       26
 
-/* Group behavior (group record word 14 bits 0-3). */
-#define BEHAVIOR_WANDER    0
-#define BEHAVIOR_USELESS_2 2
-#define BEHAVIOR_USELESS_3 3
-#define BEHAVIOR_FLEE      5
-#define BEHAVIOR_ATTACK    6
-#define BEHAVIOR_APPROACH  7
+/* Group behavior (group record word 14 bits 0-3); values in record order, the rules compare them. */
+#define BEHAVIOR_WANDER             0
+#define BEHAVIOR_WANDER_NO_APPROACH 2
+#define BEHAVIOR_WANDER_NO_SMELL    3
+#define BEHAVIOR_FLEE               5
+#define BEHAVIOR_ATTACK             6
+#define BEHAVIOR_APPROACH           7
 
 /* A behavior event is an aspect event + 5. */
 #define EVENT_BEHAVIOR_TO_ASPECT 5

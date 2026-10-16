@@ -24,15 +24,6 @@
 
 #define MESSAGE_SIZE 100
 
-/* Weapon classes (WeaponInfo.weapon_class). */
-#define WEAPON_CLASS_BOW_AMMUNITION      10
-#define WEAPON_CLASS_SLING_AMMUNITION    11
-#define WEAPON_CLASS_KINETIC_THROW_LIMIT 13
-#define WEAPON_CLASS_FIRST_BOW           16
-#define WEAPON_CLASS_LAST_BOW            31
-#define WEAPON_CLASS_FIRST_SLING         32
-#define WEAPON_CLASS_LAST_SLING          47
-
 #define FREEZE_LIFE_TICKS_BLUE_BOX  30
 #define FREEZE_LIFE_TICKS_GREEN_BOX 125
 #define FREEZE_LIFE_TICKS_CHARGE    70
@@ -613,8 +604,8 @@ bool action_is_action_performed(int16_t champion_index, int16_t action)
         /* fall through */
         __attribute__((fallthrough));
     case ACTION_PUNCH:
-    case ACTION_STAB_1:
-    case ACTION_STAB_2:
+    case ACTION_STAB_DAGGER:
+    case ACTION_STAB_SKILL_5:
     case ACTION_THRUST:
     case ACTION_JAB:
     case ACTION_PARRY:

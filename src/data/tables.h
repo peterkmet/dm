@@ -35,6 +35,7 @@
 #define SKILL_BASE_COUNT       4
 #define SKILL_SWING            4
 #define SKILL_PARRY            7
+#define SKILL_STEAL            8
 #define SKILL_THROW            10
 #define SKILL_SHOOT            11
 #define SKILL_HEAL             13
@@ -121,6 +122,19 @@ typedef struct {
     uint8_t kinetic_energy;
     uint16_t attributes;
 } WeaponInfo;
+
+/* Values of WeaponInfo.weapon_class: classes below WEAPON_CLASS_FIRST_AMMUNITION are weapons, the rest ammunition. */
+#define WEAPON_CLASS_SWING               0
+#define WEAPON_CLASS_DAGGER_AND_AXES     2
+#define WEAPON_CLASS_BOW_AMMUNITION      10
+#define WEAPON_CLASS_SLING_AMMUNITION    11
+#define WEAPON_CLASS_KINETIC_THROW_LIMIT 13
+#define WEAPON_CLASS_FIRST_AMMUNITION    16
+#define WEAPON_CLASS_FIRST_BOW           16
+#define WEAPON_CLASS_LAST_BOW            31
+#define WEAPON_CLASS_FIRST_SLING         32
+#define WEAPON_CLASS_LAST_SLING          47
+#define WEAPON_CLASS_AMMUNITION_END      112
 
 typedef struct {
     uint8_t weight;
