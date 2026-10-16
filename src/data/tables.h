@@ -132,13 +132,18 @@ typedef struct {
     uint8_t disabled_ticks;
 } Spell;
 
+/* Action sets: up to three actions, and the minimum skill levels of actions 1 and 2. */
+#define ACTION_LIST_COUNT      3
+#define ACTION_SET_LEVEL_COUNT 2 /* actions 1 and 2 have a minimum skill level */
+#define ACTION_SET_EMPTY_HAND  2
+
+/* Bit of a minimum skill level. */
+#define ACTION_LEVEL_NEEDS_CHARGES 0x80
+
 typedef struct {
-    uint8_t action_indices[3];       /* 255 = none */
-    uint8_t minimum_skill_levels[2]; /* actions 1 and 2; bit 7 = needs charges */
+    uint8_t action_indices[ACTION_LIST_COUNT];            /* 255 = none */
+    uint8_t minimum_skill_levels[ACTION_SET_LEVEL_COUNT]; /* bit 7 = needs charges */
 } ActionSet;
-#define ACTION_LIST_COUNT          3
-#define ACTION_SET_EMPTY_HAND      2
-#define ACTION_LEVEL_NEEDS_CHARGES 0x80 /* bit of a minimum skill level */
 
 typedef struct {
     uint8_t disabled_ticks;

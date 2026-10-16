@@ -82,9 +82,6 @@ block ui/ui_menus.c open: epic 8
 block ui/video.c open: epic 8
 block ui/video.h open: epic 8
 block ui/view.c open: epic 8
-decimal data/csb_text.c open: epic 4
-decimal data/ftl.c open: epic 4
-decimal data/tables.h open: epic 4
 decimal engine/action.h open: epic 6
 decimal engine/game.h open: epic 6
 decimal engine/group.c open: epic 6

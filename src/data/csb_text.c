@@ -13,7 +13,12 @@
 #define CSB_APPB_ACTION_NAMES  0x1048b4                                 /* NUL-separated action names, index 0 = "N" */
 #define CSB_APPB_DISK_MESSAGES 0x104d08 /* pointers to the load, save, and disk messages */
 #define CSB_APPB_CLASS_NAMES   0x102d56 /* pointers to the class names, in base skill order */
-#define TEXT_PARTS             3
+
+/* Parts of a joined text: a class text is a prefix, the class name and a suffix; the other texts have one part. */
+#define PART_PREFIX 0
+#define PART_NAME   1
+#define PART_SUFFIX 2
+#define TEXT_PARTS  3
 
 /* Single strings: DM text index, APPB address. */
 static const struct {
@@ -210,10 +215,10 @@ bool csb_text_build(const FtlImage *appb, FtlImage *out)
             return false;
     for (int i = 0; i < ARRAY_COUNT(class_texts); i++) {
         const char **p = parts[class_texts[i].text];
-        p[0] = get_appb_string(appb, class_texts[i].prefix);
-        p[1] = get_appb_pointed_string(appb, CSB_APPB_CLASS_NAMES + 4 * class_texts[i].skill);
-        p[2] = get_appb_string(appb, class_texts[i].suffix);
-        if (!p[0] || !p[1] || !p[2])
+        p[PART_PREFIX] = get_appb_string(appb, class_texts[i].prefix);
+        p[PART_NAME] = get_appb_pointed_string(appb, CSB_APPB_CLASS_NAMES + 4 * class_texts[i].skill);
+        p[PART_SUFFIX] = get_appb_string(appb, class_texts[i].suffix);
+        if (!p[PART_PREFIX] || !p[PART_NAME] || !p[PART_SUFFIX])
             return false;
     }
     return join_texts(parts) && copy_action_names(appb);

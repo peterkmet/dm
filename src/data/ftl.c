@@ -23,7 +23,10 @@
 #define FTL_SECTION_DATA       17
 #define FTL_SECTION_CODE       18
 
-/* The number of section kinds: info, data, code. */
+/* The section kinds, by their index in the found sections: the tag minus FTL_SECTION_INFO. */
+#define SECTION_INFO      0
+#define SECTION_DATA      1
+#define SECTION_CODE      2
 #define FTL_SECTION_KINDS 3
 
 /* Fields of a section entry. */
@@ -218,9 +221,10 @@ bool ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
     uint8_t *mem = NULL;
     if (!find_sections(raw, len, sec, secsz))
         return false;
-    const uint8_t *info = sec[0];
-    const uint8_t *data = sec[1];
-    if (!info || !data || !sec[2] || secsz[0] < INFO_ENTRY_POINTS || secsz[1] < DATA_HEADER_BYTES)
+    const uint8_t *info = sec[SECTION_INFO];
+    const uint8_t *data = sec[SECTION_DATA];
+    if (!info || !data || !sec[SECTION_CODE] || secsz[SECTION_INFO] < INFO_ENTRY_POINTS ||
+        secsz[SECTION_DATA] < DATA_HEADER_BYTES)
         return false;
 
     uint32_t region = be32(info + INFO_REGION_SIZE);
@@ -229,14 +233,14 @@ bool ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
     uint32_t csize = be32(info + INFO_CODE_SIZE);
     uint16_t info_chk = be16(info + INFO_CHECKSUM);
     uint16_t ws = 0;
-    for (uint32_t i = 0; i + 1 < secsz[0]; i += 2)
+    for (uint32_t i = 0; i + 1 < secsz[SECTION_INFO]; i += 2)
         ws += be16(info + i);
-    if ((uint16_t)(ws - info_chk) != info_chk || sum8(data, secsz[1]) != be16(info + INFO_DATA_SUM))
+    if ((uint16_t)(ws - info_chk) != info_chk || sum8(data, secsz[SECTION_DATA]) != be16(info + INFO_DATA_SUM))
         return false; /* 16-bit wrap */
-    uint32_t code_len = secsz[2];
-    const uint8_t *codep = sec[2];
+    uint32_t code_len = secsz[SECTION_CODE];
+    const uint8_t *codep = sec[SECTION_CODE];
     if (be16(info + INFO_CODE_PACKED)) {
-        code = unpack(sec[2], secsz[2], &code_len);
+        code = unpack(sec[SECTION_CODE], secsz[SECTION_CODE], &code_len);
         if (!code)
             return false;
         codep = code;
@@ -249,14 +253,14 @@ bool ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
     uint64_t size = code_base - base + csize;
     uint32_t rle_len = be32(data + DATA_RLE_SIZE);
     uint32_t reloc_len = be32(data + DATA_RELOC_SIZE);
-    uint32_t tables_len = secsz[1] - DATA_HEADER_BYTES;
+    uint32_t tables_len = secsz[SECTION_DATA] - DATA_HEADER_BYTES;
     if (size > FTL_MAX_SIZE || base + size > UINT32_MAX || rle_len > tables_len || reloc_len > tables_len - rle_len ||
         !(mem = calloc(size + 1, 1)))
         goto fail;
     const uint8_t *rle = data + DATA_HEADER_BYTES;
     if (expand_data(rle, rle_len, mem, size) != dsize ||
         !relocate(rle + rle_len, reloc_len, mem, size, data_base - base, (uint32_t)data_base) ||
-        !write_jump_table(info, secsz[0], mem, size, data_base - base + jt_off, (uint32_t)code_base))
+        !write_jump_table(info, secsz[SECTION_INFO], mem, size, data_base - base + jt_off, (uint32_t)code_base))
         goto fail;
     memcpy(mem + code_base - base, codep, csize);
     free(code);
