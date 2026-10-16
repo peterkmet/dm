@@ -7,17 +7,21 @@
 #include <stdint.h>
 
 /* Door square bit that map.h does not name: the door passage runs north-south. */
-enum { DOOR_NORTH_SOUTH = 8 };
-enum { VIEWPORT_MAX_W = 224, VIEWPORT_MAX_H = 136 }; /* the largest viewport bitmap */
-enum { VIEW_DEPTH_COUNT = 4 };                       /* the view draws the party row and 3 rows ahead */
+#define DOOR_NORTH_SOUTH 8
+#define VIEWPORT_MAX_W   224 /* the largest viewport bitmap */
+#define VIEWPORT_MAX_H   136
+#define VIEW_DEPTH_COUNT 4 /* the view draws the party row and 3 rows ahead */
 
 /* Clickable boxes of the dungeon view, in viewport coordinates (x = -1: empty): the object piles of
    view cells 0-3 (D0 back cells, D1C front cells), the alcove pile, and the front wall ornament or
    door button. */
-enum { VIEW_CLICK_BOX_ALCOVE = 4, VIEW_CLICK_BOX_WALL = 5, VIEW_CLICK_BOX_COUNT = 6 };
-enum { VIEW_PILE_OBJECT_MAX = 32 }; /* a pile records at most this many objects; the view drops the rest */
+#define VIEW_CLICK_BOX_ALCOVE   4
+#define VIEW_CLICK_BOX_WALL     5
+#define VIEW_CLICK_BOX_COUNT    6
+#define VIEW_PILE_OBJECT_MAX    32 /* a pile records at most this many objects; the view drops the rest */
 /* View element of the square ahead (g_square_ahead_element): a wall, a door seen from the front. */
-enum { VIEW_ELEMENT_WALL = 0, VIEW_ELEMENT_DOOR_FRONT = 0x11 };
+#define VIEW_ELEMENT_WALL       0
+#define VIEW_ELEMENT_DOOR_FRONT 0x11
 
 extern bool g_do_not_draw_fluxcages;
 extern Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
@@ -30,14 +34,12 @@ extern bool g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 void view_load_map(int16_t map);
 /* The ornament that the view draws on the side of wall square (x, y) of the party map that faces
    direction face (NONE when the view has not loaded the party map). */
-enum {
-    VIEW_ORNAMENT_NONE,
-    VIEW_ORNAMENT_OTHER,
-    VIEW_ORNAMENT_TEXT,
-    VIEW_ORNAMENT_ALCOVE,
-    VIEW_ORNAMENT_FOUNTAIN,
-    VIEW_ORNAMENT_VI_ALTAR
-};
+#define VIEW_ORNAMENT_NONE     0
+#define VIEW_ORNAMENT_OTHER    1
+#define VIEW_ORNAMENT_TEXT     2
+#define VIEW_ORNAMENT_ALCOVE   3
+#define VIEW_ORNAMENT_FOUNTAIN 4
+#define VIEW_ORNAMENT_VI_ALTAR 5
 int16_t view_get_wall_ornament(int16_t x, int16_t y, int16_t face);
 /* The wall ornament of ordinal (1-based, from a sensor) of the party map: its index in the wall ornament
    graphics of the game, or -1 (no ornament, or the view has not loaded the party map). */

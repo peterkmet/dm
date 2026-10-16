@@ -16,33 +16,44 @@
 #define SQUARE_COMBO_TARGET_MASK 0xff
 #define SQUARE_COMBO_SHIFT       8
 
-enum { PROJECTILE_DOOR_PASS_RANDOM_MASK = 0x7f };
-enum { LAUNCHER_EXPLOSION_DATA_BASE = 128, LAUNCHER_ATTACK = 100 };
+#define PROJECTILE_DOOR_PASS_RANDOM_MASK 0x7f
+#define LAUNCHER_EXPLOSION_DATA_BASE     128
+#define LAUNCHER_ATTACK                  100
 /* Object info indices that a launcher or a wall generator creates. */
-enum {
-    LAUNCHER_INFO_TORCH_FIRST = 4,
-    LAUNCHER_INFO_TORCH_LAST = 7,
-    LAUNCHER_INFO_DAGGER = 32,
-    LAUNCHER_INFO_ARROW = 51,
-    LAUNCHER_INFO_SLAYER = 52,
-    LAUNCHER_INFO_NONE = 53,
-    LAUNCHER_INFO_ROCK = 54,
-    LAUNCHER_INFO_POISON_DART = 55,
-    LAUNCHER_INFO_THROWING_STAR = 56,
-    LAUNCHER_INFO_BOULDER = 128
-};
-enum { WOUND_HEAD_AND_TORSO = WOUND_HEAD | WOUND_TORSO, WOUND_ALL = 0x3f };
-enum { MAX_CREATURE_HEALTH = 1000 };
-enum { FLUXCAGE_LIFETIME = 100, REBIRTH_STEP_1_DELAY = 5 };
-enum { POISON_CLOUD_FADE = 3, POISON_CLOUD_MIN_ATTACK = 5, SMOKE_FADE = 40, SMOKE_MIN_ATTACK = 56 };
-enum { WEAK_EXPLOSION_MAX_ATTACK = 80, POISON_CLOUD_MAX_DAMAGE = 4, POISON_REACTION_MIN_DAMAGE = 2 };
-enum { PROJECTILE_STEP_TICKS_PARTY_MAP = 1, PROJECTILE_STEP_TICKS_OTHER_MAP = 3 };
+#define LAUNCHER_INFO_TORCH_FIRST        4
+#define LAUNCHER_INFO_TORCH_LAST         7
+#define LAUNCHER_INFO_DAGGER             32
+#define LAUNCHER_INFO_ARROW              51
+#define LAUNCHER_INFO_SLAYER             52
+#define LAUNCHER_INFO_NONE               53
+#define LAUNCHER_INFO_ROCK               54
+#define LAUNCHER_INFO_POISON_DART        55
+#define LAUNCHER_INFO_THROWING_STAR      56
+#define LAUNCHER_INFO_BOULDER            128
+#define WOUND_HEAD_AND_TORSO             (WOUND_HEAD | WOUND_TORSO)
+#define WOUND_ALL                        0x3f
+#define MAX_CREATURE_HEALTH              1000
+#define FLUXCAGE_LIFETIME                100
+#define REBIRTH_STEP_1_DELAY             5
+#define POISON_CLOUD_FADE                3
+#define POISON_CLOUD_MIN_ATTACK          5
+#define SMOKE_FADE                       40
+#define SMOKE_MIN_ATTACK                 56
+#define WEAK_EXPLOSION_MAX_ATTACK        80
+#define POISON_CLOUD_MAX_DAMAGE          4
+#define POISON_REACTION_MIN_DAMAGE       2
+#define PROJECTILE_STEP_TICKS_PARTY_MAP  1
+#define PROJECTILE_STEP_TICKS_OTHER_MAP  3
 /* Impact attack of a slime, fireball, or lightning explosion: a base plus random parts; lightning adds 16 times it. */
-enum { SLIME_POISON_RANDOM_MASK = 0xf, SLIME_POISON_BASE = 10, SLIME_ATTACK_RANDOM_MASK = 0x1f };
-enum { FIRE_ATTACK_RANDOM_MASK = 0xf, FIRE_ATTACK_BASE = 10, LIGHTNING_ATTACK_FACTOR = 16 };
+#define SLIME_POISON_RANDOM_MASK         0xf
+#define SLIME_POISON_BASE                10
+#define SLIME_ATTACK_RANDOM_MASK         0x1f
+#define FIRE_ATTACK_RANDOM_MASK          0xf
+#define FIRE_ATTACK_BASE                 10
+#define LIGHTNING_ATTACK_FACTOR          16
 /* The projectile attack lowers this reduction of the impact attack. */
-enum { IMPACT_ATTACK_REDUCTION = 32 };
-enum { FUSE_SIDES = 4 };
+#define IMPACT_ATTACK_REDUCTION          32
+#define FUSE_SIDES                       4
 
 bool g_create_launcher_projectile;
 int16_t g_projectile_poison_attack, g_projectile_attack_type;

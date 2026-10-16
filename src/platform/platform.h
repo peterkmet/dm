@@ -6,7 +6,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-enum { PLAT_NONE, PLAT_QUIT, PLAT_KEY, PLAT_MOUSE, PLAT_MOUSE_UP };
+#define PLAT_NONE     0
+#define PLAT_QUIT     1
+#define PLAT_KEY      2
+#define PLAT_MOUSE    3
+#define PLAT_MOUSE_UP 4
 
 typedef struct {
     int type;

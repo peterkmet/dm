@@ -17,49 +17,48 @@
 #define SPELL_TAB_STEP 5 /* caster tab zones per caster */
 
 /* Colors of the interface palette. */
-enum {
-    COLOR_BLACK,
-    COLOR_DARK_GRAY,
-    COLOR_GRAY,
-    COLOR_BROWN,
-    COLOR_CYAN,
-    COLOR_LIGHT_BROWN,
-    COLOR_DARK_GREEN,
-    COLOR_GREEN,
-    COLOR_RED,
-    COLOR_GOLD,
-    COLOR_FLESH,
-    COLOR_YELLOW,
-    COLOR_DARKEST_GRAY,
-    COLOR_LIGHT_GRAY,
-    COLOR_BLUE,
-    COLOR_WHITE,
-};
-#define COLOR_NONE       (-1) /* opaque blit: no transparent color */
+#define COLOR_BLACK        0
+#define COLOR_DARK_GRAY    1
+#define COLOR_GRAY         2
+#define COLOR_BROWN        3
+#define COLOR_CYAN         4
+#define COLOR_LIGHT_BROWN  5
+#define COLOR_DARK_GREEN   6
+#define COLOR_GREEN        7
+#define COLOR_RED          8
+#define COLOR_GOLD         9
+#define COLOR_FLESH        10
+#define COLOR_YELLOW       11
+#define COLOR_DARKEST_GRAY 12
+#define COLOR_LIGHT_GRAY   13
+#define COLOR_BLUE         14
+#define COLOR_WHITE        15
+#define COLOR_NONE         (-1) /* opaque blit: no transparent color */
 /* Amiga colors of the interface palette (g_initial_colormap), for the screens before the game files load. */
-#define RGB_BLACK        0x000
-#define RGB_DARK_GRAY    0x666
-#define RGB_GRAY         0x888
-#define RGB_BROWN        0x620
-#define RGB_CYAN         0x0cc
-#define RGB_LIGHT_BROWN  0x840
-#define RGB_DARK_GREEN   0x080
-#define RGB_GREEN        0x0c0
-#define RGB_RED          0xf00
-#define RGB_GOLD         0xfa0
-#define RGB_FLESH        0xc86
-#define RGB_YELLOW       0xff0
-#define RGB_DARKEST_GRAY 0x444
-#define RGB_LIGHT_GRAY   0xaaa
-#define RGB_BLUE         0x00f
-#define RGB_WHITE        0xfff
+#define RGB_BLACK          0x000
+#define RGB_DARK_GRAY      0x666
+#define RGB_GRAY           0x888
+#define RGB_BROWN          0x620
+#define RGB_CYAN           0x0cc
+#define RGB_LIGHT_BROWN    0x840
+#define RGB_DARK_GREEN     0x080
+#define RGB_GREEN          0x0c0
+#define RGB_RED            0xf00
+#define RGB_GOLD           0xfa0
+#define RGB_FLESH          0xc86
+#define RGB_YELLOW         0xff0
+#define RGB_DARKEST_GRAY   0x444
+#define RGB_LIGHT_GRAY     0xaaa
+#define RGB_BLUE           0x00f
+#define RGB_WHITE          0xfff
 
 #define UI_BODY_SLOT_COUNT 6 /* hands, head, torso, legs, feet */
 
 #define UI_SLOT_BOX_INVENTORY_FIRST 8 /* slot box of champion slot 0 in the inventory */
 
 /* Mouse button masks of the input tables (the click kinds of input_event_handler). */
-enum { UI_BUTTON_RIGHT = 1, UI_BUTTON_LEFT = 2 };
+#define UI_BUTTON_RIGHT 1
+#define UI_BUTTON_LEFT  2
 
 /* MENU.C state. */
 extern bool g_action_area_contains_icons;
@@ -122,10 +121,14 @@ void ui_draw_panel_food_water_poisoned(void);
 void ui_draw_champion_skills_and_statistics(void);
 
 /* Inventory panel content (g_panel_content). */
-enum { PANEL_CONTENT_FOOD_WATER = 1, PANEL_CONTENT_SCROLL = 5, PANEL_CONTENT_CHEST = 6, PANEL_CONTENT_RESURRECT = 7 };
-enum { PANEL_LINE_COUNT = 3, PANEL_LINE_SIZE = 40 };
-#define STAMINA_DISPLAY_UNIT 10 /* the inventory shows stamina in tenths of the stored value */
-#define WEIGHT_TENTHS        10 /* loads and object weights are in tenths of a kilogram */
+#define PANEL_CONTENT_FOOD_WATER 1
+#define PANEL_CONTENT_SCROLL     5
+#define PANEL_CONTENT_CHEST      6
+#define PANEL_CONTENT_RESURRECT  7
+#define PANEL_LINE_COUNT         3
+#define PANEL_LINE_SIZE          40
+#define STAMINA_DISPLAY_UNIT     10 /* the inventory shows stamina in tenths of the stored value */
+#define WEIGHT_TENTHS            10 /* loads and object weights are in tenths of a kilogram */
 extern int16_t g_panel_content;
 int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
 /* The ATTACK (weapon) or DEFENSE (armour) meter of the advanced object panel: 1 with its label and value, else 0. */

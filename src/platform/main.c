@@ -226,7 +226,11 @@ static void set_pointer(bool in_game)
         plat_set_pointer(NULL, 0, 0, 0, 0, NULL);
 }
 
-enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
+#define MODE_SHOW     0
+#define MODE_VIEW     1
+#define MODE_SELECT   2
+#define MODE_ENTRANCE 3
+#define MODE_GAME     4
 
 static int mode;
 static bool turnbased, auto_enter, title_pending; /* title_pending: the DM title plays before the entrance */
@@ -574,7 +578,9 @@ static bool start_adventure(void)
     return true;
 }
 
-enum { RUN_NEXT_FRAME, RUN_QUIT, RUN_FAILED };
+#define RUN_NEXT_FRAME 0
+#define RUN_QUIT       1
+#define RUN_FAILED     2
 
 /* One frame of the program: the input, the control socket, the start screens or the game, and the picture. */
 static int run_frame(void)

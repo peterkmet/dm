@@ -22,15 +22,13 @@
 #define MESSAGE_SIZE 100
 
 /* Weapon classes (WeaponInfo.weapon_class). */
-enum {
-    WEAPON_CLASS_BOW_AMMUNITION = 10,
-    WEAPON_CLASS_SLING_AMMUNITION = 11,
-    WEAPON_CLASS_KINETIC_THROW_LIMIT = 13,
-    WEAPON_CLASS_FIRST_BOW = 16,
-    WEAPON_CLASS_LAST_BOW = 31,
-    WEAPON_CLASS_FIRST_SLING = 32,
-    WEAPON_CLASS_LAST_SLING = 47
-};
+#define WEAPON_CLASS_BOW_AMMUNITION      10
+#define WEAPON_CLASS_SLING_AMMUNITION    11
+#define WEAPON_CLASS_KINETIC_THROW_LIMIT 13
+#define WEAPON_CLASS_FIRST_BOW           16
+#define WEAPON_CLASS_LAST_BOW            31
+#define WEAPON_CLASS_FIRST_SLING         32
+#define WEAPON_CLASS_LAST_SLING          47
 
 #define FREEZE_LIFE_TICKS_BLUE_BOX  30
 #define FREEZE_LIFE_TICKS_GREEN_BOX 125
@@ -84,10 +82,15 @@ enum {
 #define FLEE_DELAY_FACTOR         4
 
 /* Spells of Invoke: random % INVOKE_SPELL_COUNT; the other values give a fireball. */
-enum { INVOKE_POISON_BOLT, INVOKE_POISON_CLOUD, INVOKE_HARM_NON_MATERIAL };
+#define INVOKE_POISON_BOLT       0
+#define INVOKE_POISON_CLOUD      1
+#define INVOKE_HARM_NON_MATERIAL 2
 
 /* Cells relative to the champion direction. */
-enum { RELATIVE_CELL_FRONT_LEFT, RELATIVE_CELL_FRONT_RIGHT, RELATIVE_CELL_BACK_RIGHT, RELATIVE_CELL_BACK_LEFT };
+#define RELATIVE_CELL_FRONT_LEFT  0
+#define RELATIVE_CELL_FRONT_RIGHT 1
+#define RELATIVE_CELL_BACK_RIGHT  2
+#define RELATIVE_CELL_BACK_LEFT   3
 
 uint16_t g_action_target_group_thing;
 int16_t g_acting_champion_ordinal;

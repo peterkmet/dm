@@ -8,41 +8,43 @@
 /* DM v3.60 save file container (DMGAME~.DAT); CSB (CSBGAME.DAT) with g_adventure. Layout: docs/formats/save.md,
    CSB header: docs/csb/data.md "Save file". */
 
-#define SAVE_HEADER_BYTES 512
-#define SAVE_BLOCKS       5
-enum { SAVE_BLOCK_GLOBALS, SAVE_BLOCK_GROUPS, SAVE_BLOCK_CHAMPIONS, SAVE_BLOCK_EVENTS, SAVE_BLOCK_TIMELINE };
-#define SAVE_GLOBALS_BYTES 128
+#define SAVE_HEADER_BYTES                    512
+#define SAVE_BLOCKS                          5
+#define SAVE_BLOCK_GLOBALS                   0
+#define SAVE_BLOCK_GROUPS                    1
+#define SAVE_BLOCK_CHAMPIONS                 2
+#define SAVE_BLOCK_EVENTS                    3
+#define SAVE_BLOCK_TIMELINE                  4
+#define SAVE_GLOBALS_BYTES                   128
 /* Block 0: byte offsets of the globals. */
-enum {
-    G_GAME_TIME = 0,
-    G_RANDOM_SEED = 4,
-    G_LEADER_HAND_OBJECT = 8,
-    G_PARTY_CHAMPION_COUNT = 10,
-    G_PARTY_MAP_X = 12,
-    G_PARTY_MAP_Y = 14,
-    G_PARTY_DIRECTION = 16,
-    G_PARTY_MAP_INDEX = 18,
-    G_LEADER_INDEX = 20,
-    G_MAGIC_CASTER = 22,
-    G_TIMELINE_COUNT = 24,
-    G_FIRST_UNUSED_EVENT = 26,
-    G_EVENT_MAX_COUNT = 28,
-    G_ACTIVE_GROUP_COUNT = 30,
-    G_LAST_CREATURE_ATTACK_TIME = 32,
-    G_LAST_PARTY_MOVEMENT_TIME = 36,
-    G_DISABLED_MOVEMENT_TICKS = 40,
-    G_PROJECTILE_DISABLED_MOVEMENT_TICKS = 42,
-    G_LAST_PROJECTILE_DIRECTION = 44,
-    G_MAX_ACTIVE_GROUP_COUNT = 46,
-};
-#define SAVE_CHAMPIONS_BYTES    1408 /* 4 champion records and 128 bytes of the party */
-#define SAVE_PARTY_BYTES        128
-#define SAVE_ACTIVE_GROUP_BYTES 16
-#define SAVE_EVENT_BYTES        10
-#define SAVE_PAYLOAD_WORDS      128
-#define SAVE_PORTRAIT_BYTES     464 /* ((32 + 15) & ~15) / 2 * 29 */
-#define SAVE_PORTRAITS_BYTES    (4 * SAVE_PORTRAIT_BYTES)
-#define SAVE_HEADER_EXTRA_BYTES 134 /* extra header bytes, copied unchanged; CSB has 132 */
+#define G_GAME_TIME                          0
+#define G_RANDOM_SEED                        4
+#define G_LEADER_HAND_OBJECT                 8
+#define G_PARTY_CHAMPION_COUNT               10
+#define G_PARTY_MAP_X                        12
+#define G_PARTY_MAP_Y                        14
+#define G_PARTY_DIRECTION                    16
+#define G_PARTY_MAP_INDEX                    18
+#define G_LEADER_INDEX                       20
+#define G_MAGIC_CASTER                       22
+#define G_TIMELINE_COUNT                     24
+#define G_FIRST_UNUSED_EVENT                 26
+#define G_EVENT_MAX_COUNT                    28
+#define G_ACTIVE_GROUP_COUNT                 30
+#define G_LAST_CREATURE_ATTACK_TIME          32
+#define G_LAST_PARTY_MOVEMENT_TIME           36
+#define G_DISABLED_MOVEMENT_TICKS            40
+#define G_PROJECTILE_DISABLED_MOVEMENT_TICKS 42
+#define G_LAST_PROJECTILE_DIRECTION          44
+#define G_MAX_ACTIVE_GROUP_COUNT             46
+#define SAVE_CHAMPIONS_BYTES                 1408 /* 4 champion records and 128 bytes of the party */
+#define SAVE_PARTY_BYTES                     128
+#define SAVE_ACTIVE_GROUP_BYTES              16
+#define SAVE_EVENT_BYTES                     10
+#define SAVE_PAYLOAD_WORDS                   128
+#define SAVE_PORTRAIT_BYTES                  464 /* ((32 + 15) & ~15) / 2 * 29 */
+#define SAVE_PORTRAITS_BYTES                 (4 * SAVE_PORTRAIT_BYTES)
+#define SAVE_HEADER_EXTRA_BYTES              134 /* extra header bytes, copied unchanged; CSB has 132 */
 
 /* All buffers keep the big-endian byte layout of the original memory. */
 typedef struct {

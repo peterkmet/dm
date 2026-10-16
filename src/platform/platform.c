@@ -19,7 +19,7 @@ static SDL_AudioStream *stream;
 
 static int filter = 1; /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */
 static uint8_t scaled_screen[SCREEN_H * FILTER_MAX][SCREEN_W * FILTER_MAX];
-enum { POINTER_MAX = 32 };
+#define POINTER_MAX 32
 static uint8_t pointer_px[POINTER_MAX * POINTER_MAX];
 static uint32_t pointer_argb[PALETTE_COLORS];
 static int pointer_w, pointer_h, pointer_hot_x, pointer_hot_y, mouse_x, mouse_y;

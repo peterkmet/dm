@@ -33,46 +33,54 @@
 #define DIALOG_TABLE_POINTER_BYTES 4
 #define POINTER_HOTSPOT_BYTES      8
 
-enum { SOUND_ENTRY_RATE = 3, SOUND_ENTRY_PRIORITY = 4 };                        /* byte offsets in a sound entry */
-enum { ATTACK_CELL_COUNT = 4, SOUND_VOLUME_ROW = 2 * SOUND_HEARING_RANGE + 1 }; /* row lengths */
+#define SOUND_ENTRY_RATE     3 /* byte offsets in a sound entry */
+#define SOUND_ENTRY_PRIORITY 4
+#define ATTACK_CELL_COUNT    4 /* row lengths */
+#define SOUND_VOLUME_ROW     (2 * SOUND_HEARING_RANGE + 1)
 
 /* Byte offsets in a replacement color set: a color word per light level, then the D2 and the D3 change. */
-enum { REPLACEMENT_AT_CHANGE_D2 = 12, REPLACEMENT_FIRST_CHANGE_DEPTH = 2 };
+#define REPLACEMENT_AT_CHANGE_D2       12
+#define REPLACEMENT_FIRST_CHANGE_DEPTH 2
 /* Byte offsets of the words of a pointer zone and of a pointer hotspot. */
-enum {
-    POINTER_AT_X,
-    POINTER_AT_Y = 2,
-    POINTER_AT_W = 4,
-    POINTER_AT_H = 6,
-    POINTER_AT_SHAPE = 8,
-    POINTER_AT_CHAMPION = 10
-};
+#define POINTER_AT_X                   0
+#define POINTER_AT_Y                   2
+#define POINTER_AT_W                   4
+#define POINTER_AT_H                   6
+#define POINTER_AT_SHAPE               8
+#define POINTER_AT_CHAMPION            10
 /* Byte offsets of the words of a mouse input entry and of a key entry. */
-enum { MOUSE_AT_COMMAND, MOUSE_AT_X1 = 2, MOUSE_AT_X2 = 4, MOUSE_AT_Y1 = 6, MOUSE_AT_Y2 = 8, MOUSE_AT_BUTTONS = 10 };
-enum { KEY_AT_COMMAND, KEY_AT_KEY = 2 };
-enum { SKILL_LEVEL_TEXT_FIRST = 2 };                                         /* the level names start at level 2 */
-enum { LAYOUT_AT_X = 2, LAYOUT_AT_Y = 4, LAYOUT_AT_W = 6, LAYOUT_AT_H = 8 }; /* byte offsets in a layout bitmap */
+#define MOUSE_AT_COMMAND               0
+#define MOUSE_AT_X1                    2
+#define MOUSE_AT_X2                    4
+#define MOUSE_AT_Y1                    6
+#define MOUSE_AT_Y2                    8
+#define MOUSE_AT_BUTTONS               10
+#define KEY_AT_COMMAND                 0
+#define KEY_AT_KEY                     2
+#define SKILL_LEVEL_TEXT_FIRST         2 /* the level names start at level 2 */
+#define LAYOUT_AT_X                    2 /* byte offsets in a layout bitmap */
+#define LAYOUT_AT_Y                    4
+#define LAYOUT_AT_W                    6
+#define LAYOUT_AT_H                    8
 
 /* Byte offsets of the creature info fields (docs/rules/tables.md); bytes 13 and 25 are pad bytes. */
-enum {
-    CREATURE_AT_ASPECT_INDEX,
-    CREATURE_AT_ATTACK_SOUND_ORDINAL,
-    CREATURE_AT_ATTRIBUTES,
-    CREATURE_AT_GRAPHIC_INFO = 4,
-    CREATURE_AT_MOVEMENT_TICKS = 6,
-    CREATURE_AT_ATTACK_TICKS,
-    CREATURE_AT_DEFENSE,
-    CREATURE_AT_BASE_HEALTH,
-    CREATURE_AT_ATTACK,
-    CREATURE_AT_POISON_ATTACK,
-    CREATURE_AT_DEXTERITY,
-    CREATURE_AT_RANGES = 14,
-    CREATURE_AT_PROPERTIES = 16,
-    CREATURE_AT_RESISTANCES = 18,
-    CREATURE_AT_ANIMATION_TICKS = 20,
-    CREATURE_AT_WOUND_PROBABILITIES = 22,
-    CREATURE_AT_ATTACK_TYPE = 24,
-};
+#define CREATURE_AT_ASPECT_INDEX         0
+#define CREATURE_AT_ATTACK_SOUND_ORDINAL 1
+#define CREATURE_AT_ATTRIBUTES           2
+#define CREATURE_AT_GRAPHIC_INFO         4
+#define CREATURE_AT_MOVEMENT_TICKS       6
+#define CREATURE_AT_ATTACK_TICKS         7
+#define CREATURE_AT_DEFENSE              8
+#define CREATURE_AT_BASE_HEALTH          9
+#define CREATURE_AT_ATTACK               10
+#define CREATURE_AT_POISON_ATTACK        11
+#define CREATURE_AT_DEXTERITY            12
+#define CREATURE_AT_RANGES               14
+#define CREATURE_AT_PROPERTIES           16
+#define CREATURE_AT_RESISTANCES          18
+#define CREATURE_AT_ANIMATION_TICKS      20
+#define CREATURE_AT_WOUND_PROBABILITIES  22
+#define CREATURE_AT_ATTACK_TYPE          24
 
 static bool ready;
 static CreatureInfo creature_info[CREATURE_TYPE_COUNT];

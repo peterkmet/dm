@@ -8,54 +8,51 @@
 
 /* Timeline event types and the handlers of the square events. */
 
-enum {
-    EVENT_DOOR_ANIMATION = 1,
-    EVENT_DOOR_DESTRUCTION = 2,
-    EVENT_CORRIDOR = 5,
-    EVENT_WALL = 6,
-    EVENT_FAKE_WALL = 7,
-    EVENT_TELEPORTER = 8,
-    EVENT_PIT = 9,
-    EVENT_DOOR = 10,
-    EVENT_ENABLE_CHAMPION_ACTION = 11,
-    EVENT_HIDE_DAMAGE_RECEIVED = 12,
-    EVENT_VI_ALTAR_REBIRTH = 13,
-    EVENT_PLAY_SOUND = 20,
-    EVENT_REMOVE_FLUXCAGE = 24,
-    EVENT_EXPLOSION = 25,
-    EVENT_WATCHDOG = 53,
-    EVENT_ENABLE_GROUP_GENERATOR = 65,
-    EVENT_LIGHT = 70,
-    EVENT_INVISIBILITY_END = 71,
-    EVENT_CHAMPION_SHIELD_END = 72,
-    EVENT_THIEVES_EYE_END = 73,
-    EVENT_PARTY_SHIELD_END = 74,
-    EVENT_POISON = 75,
-    EVENT_SPELL_SHIELD_END = 77,
-    EVENT_FIRE_SHIELD_END = 78,
-    EVENT_FOOTPRINTS_END = 79,
-    EVENT_MAGIC_MAP_DAIN_END = 80,
-    EVENT_MAGIC_MAP_ROS_END = 81,
-    EVENT_MAGIC_MAP_KU_END = 82,
-    EVENT_MAGIC_MAP_NETA_END = 83 /* CSB */
-};
+#define EVENT_DOOR_ANIMATION         1
+#define EVENT_DOOR_DESTRUCTION       2
+#define EVENT_CORRIDOR               5
+#define EVENT_WALL                   6
+#define EVENT_FAKE_WALL              7
+#define EVENT_TELEPORTER             8
+#define EVENT_PIT                    9
+#define EVENT_DOOR                   10
+#define EVENT_ENABLE_CHAMPION_ACTION 11
+#define EVENT_HIDE_DAMAGE_RECEIVED   12
+#define EVENT_VI_ALTAR_REBIRTH       13
+#define EVENT_PLAY_SOUND             20
+#define EVENT_REMOVE_FLUXCAGE        24
+#define EVENT_EXPLOSION              25
+#define EVENT_WATCHDOG               53
+#define EVENT_ENABLE_GROUP_GENERATOR 65
+#define EVENT_LIGHT                  70
+#define EVENT_INVISIBILITY_END       71
+#define EVENT_CHAMPION_SHIELD_END    72
+#define EVENT_THIEVES_EYE_END        73
+#define EVENT_PARTY_SHIELD_END       74
+#define EVENT_POISON                 75
+#define EVENT_SPELL_SHIELD_END       77
+#define EVENT_FIRE_SHIELD_END        78
+#define EVENT_FOOTPRINTS_END         79
+#define EVENT_MAGIC_MAP_DAIN_END     80
+#define EVENT_MAGIC_MAP_ROS_END      81
+#define EVENT_MAGIC_MAP_KU_END       82
+#define EVENT_MAGIC_MAP_NETA_END     83 /* CSB */
 
 /* Group timeline events. A behavior event is an aspect event + 5. */
-enum {
-    EVENT_GROUP_REACTION_DANGER_ON_SQUARE = 29,
-    EVENT_GROUP_REACTION_HIT_BY_PROJECTILE = 30,
-    EVENT_GROUP_REACTION_PARTY_IS_ADJACENT = 31,
-    EVENT_UPDATE_ASPECT_GROUP = 32,
-    EVENT_UPDATE_ASPECT_CREATURE_0 = 33,
-    EVENT_UPDATE_BEHAVIOR_GROUP = 37,
-    EVENT_UPDATE_BEHAVIOR_CREATURE_0 = 38,
-    EVENT_UPDATE_BEHAVIOR_CREATURE_3 = 41,
-    EVENT_MOVE_GROUP_SILENT = 60,
-    EVENT_MOVE_GROUP_AUDIBLE = 61
-};
+#define EVENT_GROUP_REACTION_DANGER_ON_SQUARE  29
+#define EVENT_GROUP_REACTION_HIT_BY_PROJECTILE 30
+#define EVENT_GROUP_REACTION_PARTY_IS_ADJACENT 31
+#define EVENT_UPDATE_ASPECT_GROUP              32
+#define EVENT_UPDATE_ASPECT_CREATURE_0         33
+#define EVENT_UPDATE_BEHAVIOR_GROUP            37
+#define EVENT_UPDATE_BEHAVIOR_CREATURE_0       38
+#define EVENT_UPDATE_BEHAVIOR_CREATURE_3       41
+#define EVENT_MOVE_GROUP_SILENT                60
+#define EVENT_MOVE_GROUP_AUDIBLE               61
 
 /* A projectile moves one square per event 48 or 49. Event 48 ignores impacts on the square where it starts. */
-enum { EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS = 48, EVENT_MOVE_PROJECTILE = 49 };
+#define EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS 48
+#define EVENT_MOVE_PROJECTILE                49
 
 /* Event time: map index in bits 24-31, game time in bits 0-23. */
 #define EVENT_MAP_TIME(map, time) ((uint32_t)(map) << 24 | (uint32_t)(time))
@@ -64,14 +61,12 @@ enum { EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS = 48, EVENT_MOVE_PROJECTILE = 49 };
 
 /* Square events: b = x << 8 | y, c = cell << 8 | effect. Group events: c = ticks << 8. Event 11: b = quiver
    slot + 1 << 8, 0: none. */
-enum {
-    EVENT_X_SHIFT = 8,
-    EVENT_CELL_SHIFT = 8,
-    EVENT_GROUP_TICKS_SHIFT = 8,
-    EVENT_QUIVER_SLOT_SHIFT = 8,
-    EVENT_BYTE_MASK = 0xff,
-    EVENT_HIGH_BYTE_MASK = 0xff00
-};
+#define EVENT_X_SHIFT           8
+#define EVENT_CELL_SHIFT        8
+#define EVENT_GROUP_TICKS_SHIFT 8
+#define EVENT_QUIVER_SLOT_SHIFT 8
+#define EVENT_BYTE_MASK         0xff
+#define EVENT_HIGH_BYTE_MASK    0xff00
 static inline uint16_t event_square(int16_t x, int16_t y)
 {
     return (x & EVENT_BYTE_MASK) << EVENT_X_SHIFT | (y & EVENT_BYTE_MASK);

@@ -29,7 +29,8 @@ void wait_frames(int16_t count);
 /* Command 140: CANCEL, SAVE, QUIT. QUIT ends the game through the endgame. CSB: CANCEL, SAVE AND
    PLAY, SAVE AND QUIT. */
 void startend_save_game(void);
-enum { SAVED_GAME = 1, SAVED_NEW_ADVENTURE = 2 };
+#define SAVED_GAME          1
+#define SAVED_NEW_ADVENTURE 2
 /* Writes the save file of the adventure. In the CSB prison it makes the new adventure (CSBGAME.DAT)
    and loads it; the caller starts it (gameloop_start_loaded_game). Returns SAVED_GAME,
    SAVED_NEW_ADVENTURE, or 0. On 0, *reason is the reason why the prison party cannot make the

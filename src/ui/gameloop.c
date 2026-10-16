@@ -39,9 +39,12 @@
 #define POINTER_SHADOW_COLOR 12 /* black: the shadow, swapped with the transparent color 0 */
 
 /* PointerZone.champion: champion index + 1 in bits 0-2; 8 and more is the name zone of the champion */
-enum { ZONE_CHAMPION_INDEX_MASK = 7, ZONE_CHAMPION_NAME = 8 };
+#define ZONE_CHAMPION_INDEX_MASK 7
+#define ZONE_CHAMPION_NAME       8
 
-enum { POINTER_ARROW, POINTER_HAND, POINTER_OBJECT };
+#define POINTER_ARROW  0
+#define POINTER_HAND   1
+#define POINTER_OBJECT 2
 
 static int16_t frames_waiting;
 static uint16_t shown_hand_object = THING_NONE;

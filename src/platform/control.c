@@ -72,7 +72,7 @@ static struct {
 } turn;
 
 /* A batch: act_many runs a list of actions; each step is one turn. */
-enum { BATCH_DAMAGE_MAX = 64 };
+#define BATCH_DAMAGE_MAX 64
 static struct {
     bool active;
     int ran;

@@ -13,32 +13,29 @@
 #define SOUND_SAMPLE_HEADER 2  /* sample length word before the sample data */
 
 /* Sounds of the square rules. Mode: 0 plays now, 1 plays after the tick. */
-enum {
-    SOUND_SWITCH = 1,
-    SOUND_DOOR = 2,
-    SOUND_ENTRANCE_DOOR = 3,
-    SOUND_DOOR_HITS_CREATURE = 4,
-    SOUND_TELEPORT = 14,
-    SOUND_PARTY_DAMAGED = 15
-};
-enum { SOUND_MODE_NOW = 0, SOUND_MODE_AFTER_TICK = 1 };
+#define SOUND_SWITCH             1
+#define SOUND_DOOR               2
+#define SOUND_ENTRANCE_DOOR      3
+#define SOUND_DOOR_HITS_CREATURE 4
+#define SOUND_TELEPORT           14
+#define SOUND_PARTY_DAMAGED      15
+#define SOUND_MODE_NOW           0
+#define SOUND_MODE_AFTER_TICK    1
 
 /* Sounds of the creature rules. */
-enum {
-    SOUND_METALLIC_THUD = 0,
-    SOUND_WOODEN_THUD = 4,
-    SOUND_STRONG_EXPLOSION = 5,
-    SOUND_WEAK_EXPLOSION = 6,
-    SOUND_SCREAM = 7,
-    SOUND_CHAMPION_0_DAMAGED = 9,
-    SOUND_SWING = 13,
-    SOUND_BUZZ = 14,
-    SOUND_SPELL = 16,
-    SOUND_WAR_CRY = 17,
-    SOUND_BLOW_HORN = 18
-};
-enum { SOUND_MODE_ONE_TICK_LATER = 2 };
-enum { SOUND_SWALLOW = 8 };
+#define SOUND_METALLIC_THUD       0
+#define SOUND_WOODEN_THUD         4
+#define SOUND_STRONG_EXPLOSION    5
+#define SOUND_WEAK_EXPLOSION      6
+#define SOUND_SCREAM              7
+#define SOUND_CHAMPION_0_DAMAGED  9
+#define SOUND_SWING               13
+#define SOUND_BUZZ                14
+#define SOUND_SPELL               16
+#define SOUND_WAR_CRY             17
+#define SOUND_BLOW_HORN           18
+#define SOUND_MODE_ONE_TICK_LATER 2
+#define SOUND_SWALLOW             8
 
 extern int16_t g_pending_sounds[SOUND_PENDING_SLOTS];           /* -1: empty slot */
 extern uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][2]; /* left, right */

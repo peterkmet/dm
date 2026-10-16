@@ -24,7 +24,9 @@
 
 /* MouseInput.x1 values that make x2 a zone: on the screen, relative to the viewport origin,
    relative to the centered viewport. */
-enum { INPUT_ZONE_SCREEN = -1, INPUT_ZONE_VIEWPORT = -2, INPUT_ZONE_CENTERED_VIEWPORT = -3 };
+#define INPUT_ZONE_SCREEN            (-1)
+#define INPUT_ZONE_VIEWPORT          (-2)
+#define INPUT_ZONE_CENTERED_VIEWPORT (-3)
 
 static uint8_t viewport_px[VIEWPORT_MAX_W * VIEWPORT_MAX_H];
 static Bitmap viewport;

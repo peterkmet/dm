@@ -9,21 +9,24 @@
 
 /* Zone record types: 0-8 a point with an alignment, 9 a size, 10-18 a point inside the rectangle of
    another point, with the alignment type - 10. Type 1 with a size parent is a translation. */
-enum {
-    ALIGN_CENTER,
-    ALIGN_TOP_LEFT,
-    ALIGN_TOP_RIGHT,
-    ALIGN_BOTTOM_RIGHT,
-    ALIGN_BOTTOM_LEFT,
-    ALIGN_TOP_CENTER,
-    ALIGN_CENTER_RIGHT,
-    ALIGN_BOTTOM_CENTER,
-    ALIGN_CENTER_LEFT
-};
-enum { RECORD_TRANSLATION = 1, RECORD_SIZE = 9, RECORD_INNER_POINT = 10, RECORD_INNER_POINT_LAST = 18 };
-enum { CLIP_NONE = 20000 };
+#define ALIGN_CENTER            0
+#define ALIGN_TOP_LEFT          1
+#define ALIGN_TOP_RIGHT         2
+#define ALIGN_BOTTOM_RIGHT      3
+#define ALIGN_BOTTOM_LEFT       4
+#define ALIGN_TOP_CENTER        5
+#define ALIGN_CENTER_RIGHT      6
+#define ALIGN_BOTTOM_CENTER     7
+#define ALIGN_CENTER_LEFT       8
+#define RECORD_TRANSLATION      1
+#define RECORD_SIZE             9
+#define RECORD_INNER_POINT      10
+#define RECORD_INNER_POINT_LAST 18
+#define CLIP_NONE               20000
 /* The layout graphic: signature and range count words, ranges of 2 words, then zone records of 4 words. */
-enum { LAYOUT_HEADER_BYTES = 4, RANGE_BYTES = 4, ZONE_RECORD_BYTES = 8 };
+#define LAYOUT_HEADER_BYTES     4
+#define RANGE_BYTES             4
+#define ZONE_RECORD_BYTES       8
 
 static const uint8_t *layout_data; /* graphic 696: signature, range count, ranges, zone records */
 static uint16_t layout_size;

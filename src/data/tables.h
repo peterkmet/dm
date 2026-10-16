@@ -7,68 +7,60 @@
 
 /* Static rule tables of KAOS.FTL, decoded once from the loaded image. Field bits: docs/rules/tables.md. */
 
-enum {
-    CREATURE_TYPE_COUNT = 27,
-    CREATURE_SOUND_COUNT = 18,
-    OBJECT_INFO_COUNT = 180,
-    WEAPON_TYPE_COUNT = 46,
-    ARMOUR_TYPE_COUNT = 58,
-    JUNK_TYPE_COUNT = 53,
-    FOOD_TYPE_COUNT = 8,
-    DOOR_TYPE_COUNT = 4,
-    SYMBOL_STEP_COUNT = 4,
-    SYMBOL_COUNT = 6,
-    ACTION_SET_COUNT = 44,
-    ACTION_COUNT = 44,
-    LIGHT_POWER_COUNT = 16,
-    PALETTE_LIGHT_THRESHOLD_COUNT = 6,
-    SLOT_MASK_COUNT = 38,
-    WOUND_DEFENSE_FACTOR_COUNT = 6,
-    FIXED_POSSESSION_COUNT = 40,
-};
+#define CREATURE_TYPE_COUNT           27
+#define CREATURE_SOUND_COUNT          18
+#define OBJECT_INFO_COUNT             180
+#define WEAPON_TYPE_COUNT             46
+#define ARMOUR_TYPE_COUNT             58
+#define JUNK_TYPE_COUNT               53
+#define FOOD_TYPE_COUNT               8
+#define DOOR_TYPE_COUNT               4
+#define SYMBOL_STEP_COUNT             4
+#define SYMBOL_COUNT                  6
+#define ACTION_SET_COUNT              44
+#define ACTION_COUNT                  44
+#define LIGHT_POWER_COUNT             16
+#define PALETTE_LIGHT_THRESHOLD_COUNT 6
+#define SLOT_MASK_COUNT               38
+#define WOUND_DEFENSE_FACTOR_COUNT    6
+#define FIXED_POSSESSION_COUNT        40
 
 /* Skill indices of the champion records: the 4 base skills, then the hidden skills. */
-enum {
-    SKILL_FIGHTER,
-    SKILL_NINJA,
-    SKILL_PRIEST,
-    SKILL_WIZARD,
-    SKILL_BASE_COUNT,
-    SKILL_SWING = 4,
-    SKILL_PARRY = 7,
-    SKILL_THROW = 10,
-    SKILL_SHOOT,
-    SKILL_HEAL = 13,
-    SKILL_INFLUENCE,
-    SKILL_DEFEND,
-    SKILL_COUNT = 20
-};
+#define SKILL_FIGHTER          0
+#define SKILL_NINJA            1
+#define SKILL_PRIEST           2
+#define SKILL_WIZARD           3
+#define SKILL_BASE_COUNT       4
+#define SKILL_SWING            4
+#define SKILL_PARRY            7
+#define SKILL_THROW            10
+#define SKILL_SHOOT            11
+#define SKILL_HEAL             13
+#define SKILL_INFLUENCE        14
+#define SKILL_DEFEND           15
+#define SKILL_COUNT            20
 #define HIDDEN_SKILLS_PER_BASE 4
 #define SKILL_LEVEL_MAXIMUM    16 /* the level names stop at this level */
 
 /* Object info index of the first record of each object type. */
-enum {
-    OBJECT_INFO_FIRST_SCROLL = 0,
-    OBJECT_INFO_FIRST_CONTAINER = 1,
-    OBJECT_INFO_FIRST_POTION = 2,
-    OBJECT_INFO_FIRST_WEAPON = 23,
-    OBJECT_INFO_FIRST_ARMOUR = 69,
-    OBJECT_INFO_FIRST_JUNK = 127
-};
+#define OBJECT_INFO_FIRST_SCROLL    0
+#define OBJECT_INFO_FIRST_CONTAINER 1
+#define OBJECT_INFO_FIRST_POTION    2
+#define OBJECT_INFO_FIRST_WEAPON    23
+#define OBJECT_INFO_FIRST_ARMOUR    69
+#define OBJECT_INFO_FIRST_JUNK      127
 /* Object info allowed slots bit: the object passes through a door grate. */
-enum { OBJECT_PASSES_DOOR_GRATE = 0x0100 };
+#define OBJECT_PASSES_DOOR_GRATE    0x0100
 
 /* Creature graphic info bits (CreatureInfo.graphic_info). */
-enum {
-    GRAPHIC_FLIP_NON_ATTACK = 0x0004,
-    GRAPHIC_HAS_SIDE = 0x0008,
-    GRAPHIC_HAS_BACK = 0x0010,
-    GRAPHIC_HAS_ATTACK = 0x0020,
-    GRAPHIC_SPECIAL_D2_FRONT = 0x0080,
-    GRAPHIC_D2_FRONT_FLIPPED = 0x0100,
-    GRAPHIC_FLIP_ATTACK = 0x0200,
-    GRAPHIC_FLIP_DURING_ATTACK = 0x0400
-};
+#define GRAPHIC_FLIP_NON_ATTACK               0x0004
+#define GRAPHIC_HAS_SIDE                      0x0008
+#define GRAPHIC_HAS_BACK                      0x0010
+#define GRAPHIC_HAS_ATTACK                    0x0020
+#define GRAPHIC_SPECIAL_D2_FRONT              0x0080
+#define GRAPHIC_D2_FRONT_FLIPPED              0x0100
+#define GRAPHIC_FLIP_ATTACK                   0x0200
+#define GRAPHIC_FLIP_DURING_ATTACK            0x0400
 #define GRAPHIC_HORIZONTAL_OFFSET_RANGE(info) ((info) >> 12 & 3)
 #define GRAPHIC_VERTICAL_OFFSET_RANGE(info)   ((info) >> 14)
 
@@ -212,12 +204,14 @@ const uint8_t *tables_get_object_aspect(int16_t index);
 const uint8_t *tables_get_projectile_aspect(int16_t index);
 const uint8_t *tables_get_field_aspect(int16_t index);
 int16_t tables_get_creature_shift(int16_t distance, int16_t index);
-enum { TABLES_AXIS_X, TABLES_AXIS_Y };
+#define TABLES_AXIS_X 0
+#define TABLES_AXIS_Y 1
 uint8_t tables_get_pile_shift(int16_t pair, int16_t axis);
 uint8_t tables_get_object_scale(int16_t row);
 uint8_t tables_get_projectile_scale(int16_t row);
 uint8_t tables_get_explosion_scale(int16_t depth);
-enum { TABLES_REBIRTH_STEP_1 = 1, TABLES_REBIRTH_STEP_2 }; /* the two steps of a rebirth explosion */
+#define TABLES_REBIRTH_STEP_1 1 /* the two steps of a rebirth explosion */
+#define TABLES_REBIRTH_STEP_2 2
 uint8_t tables_get_rebirth_scale(int16_t step, int16_t coord);
 uint8_t tables_get_group_directions(int16_t index);
 
@@ -228,7 +222,7 @@ typedef struct {
 ViewSquare tables_get_view_square(int16_t view_square);
 int16_t tables_get_wall_set_layout_id(int16_t i);
 uint8_t tables_get_wall_ornament_depth(int16_t view);
-enum { TABLES_PLAQUE_LINES = 3 }; /* the most lines that an inscription plaque shows */
+#define TABLES_PLAQUE_LINES 3 /* the most lines that an inscription plaque shows */
 uint8_t tables_get_plaque_height(int16_t lines, int16_t depth);
 uint8_t tables_get_floor_ornament_view_offset(int16_t view);
 uint8_t tables_get_alcove_ornament(int16_t k);
@@ -251,33 +245,29 @@ typedef struct {
 TablesRect tables_get_layout_bitmap(int16_t slot);
 
 /* Palettes; TABLES_PALETTE_DUNGEON + light level (0-5) gives the dungeon palette of that light. */
-enum { TABLES_PALETTE_COLOR_COUNT = 16 };
-enum {
-    TABLES_PALETTE_INTERFACE,
-    TABLES_PALETTE_POINTER,
-    TABLES_PALETTE_CREDITS,
-    TABLES_PALETTE_ENTRANCE,
-    TABLES_PALETTE_DUNGEON
-};
+#define TABLES_PALETTE_COLOR_COUNT 16
+#define TABLES_PALETTE_INTERFACE   0
+#define TABLES_PALETTE_POINTER     1
+#define TABLES_PALETTE_CREDITS     2
+#define TABLES_PALETTE_ENTRANCE    3
+#define TABLES_PALETTE_DUNGEON     4
 void tables_get_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT]);
 uint16_t tables_get_palette_color(int16_t palette, int16_t color);
 
 /* Palette changes: a color map of TABLES_PALETTE_COLOR_COUNT bytes for draw_shrink. */
-enum {
-    TABLES_CHANGES_D3,
-    TABLES_CHANGES_D2,
-    TABLES_CHANGES_DOOR_ORNAMENT_D3,
-    TABLES_CHANGES_DOOR_ORNAMENT_D2,
-    TABLES_CHANGES_SMOKE,
-    TABLES_CHANGES_OBJECT_D3,
-    TABLES_CHANGES_OBJECT_D2,
-    TABLES_CHANGES_CREATURE_D3,
-    TABLES_CHANGES_CREATURE_D2,
-    TABLES_CHANGES_INVISIBILITY,
-    TABLES_CHANGES_ACTION_ICON,
-    TABLES_CHANGES_POINTER_SHADOW,
-    TABLES_CHANGES_COUNT
-};
+#define TABLES_CHANGES_D3               0
+#define TABLES_CHANGES_D2               1
+#define TABLES_CHANGES_DOOR_ORNAMENT_D3 2
+#define TABLES_CHANGES_DOOR_ORNAMENT_D2 3
+#define TABLES_CHANGES_SMOKE            4
+#define TABLES_CHANGES_OBJECT_D3        5
+#define TABLES_CHANGES_OBJECT_D2        6
+#define TABLES_CHANGES_CREATURE_D3      7
+#define TABLES_CHANGES_CREATURE_D2      8
+#define TABLES_CHANGES_INVISIBILITY     9
+#define TABLES_CHANGES_ACTION_ICON      10
+#define TABLES_CHANGES_POINTER_SHADOW   11
+#define TABLES_CHANGES_COUNT            12
 const uint8_t *tables_get_palette_changes(int16_t changes);
 
 /* Interface and champion panel tables; each accessor reads the loaded image at call time. */
@@ -294,14 +284,12 @@ int16_t tables_get_base_skill_text(int16_t skill);
 int16_t tables_get_statistic_text(int16_t statistic);
 int16_t tables_get_direction_text(int16_t direction);
 /* Short texts of the image, as C strings. */
-enum {
-    TABLES_TEXT_LIST_SEPARATOR,
-    TABLES_TEXT_BONES_SEPARATOR,
-    TABLES_TEXT_ATTRIBUTES_PREFIX,
-    TABLES_TEXT_ATTRIBUTES_SUFFIX,
-    TABLES_TEXT_VERSION,
-    TABLES_TEXT_COUNT
-};
+#define TABLES_TEXT_LIST_SEPARATOR    0
+#define TABLES_TEXT_BONES_SEPARATOR   1
+#define TABLES_TEXT_ATTRIBUTES_PREFIX 2
+#define TABLES_TEXT_ATTRIBUTES_SUFFIX 3
+#define TABLES_TEXT_VERSION           4
+#define TABLES_TEXT_COUNT             5
 const char *tables_get_text(int16_t text);
 int16_t tables_get_message_line_pad(void);
 uint8_t tables_get_message_color(int16_t i);
@@ -322,24 +310,22 @@ int16_t tables_get_pointer_shadow_dy(void);
 const uint8_t *tables_get_pointer_planes(bool hand, int16_t *w, int16_t *h);
 
 /* Mouse input tables of COMMAND.C, in the order of their KAOS addresses. */
-enum {
-    UI_INPUT_INTERFACE,    /* the champion bars, the action and spell areas */
-    UI_INPUT_MOVEMENT,     /* the movement arrows and the dungeon view */
-    UI_INPUT_INVENTORY,    /* the open inventory */
-    UI_INPUT_SLEEPING,     /* the sleeping party: a click wakes it */
-    UI_INPUT_FROZEN,       /* the frozen game: a click goes on */
-    UI_INPUT_ACTION_NAMES, /* the action names of the action menu */
-    UI_INPUT_ACTION_ICONS, /* the action icons of the champions */
-    UI_INPUT_SPELL_AREA,   /* the runes and the cast button */
-    UI_INPUT_STATUS_BOX,   /* the status boxes of the champions */
-    UI_INPUT_CHEST,        /* the slots of an open chest */
-    UI_INPUT_RESURRECT,    /* the resurrect and reincarnate buttons */
-    UI_INPUT_NAME_ENTRY,   /* the keyboard of the champion name entry */
-    UI_INPUT_ENTRANCE,     /* the entrance buttons */
-    UI_INPUT_ENDGAME,      /* RESTART THIS GAME and QUIT of the endgame screen */
-    UI_INPUT_DIALOG_FIRST, /* the dialog tables: + full screen * 4 + choice count - 1 */
-    UI_INPUT_COUNT = UI_INPUT_DIALOG_FIRST + 8
-};
+#define UI_INPUT_INTERFACE    0  /* the champion bars, the action and spell areas */
+#define UI_INPUT_MOVEMENT     1  /* the movement arrows and the dungeon view */
+#define UI_INPUT_INVENTORY    2  /* the open inventory */
+#define UI_INPUT_SLEEPING     3  /* the sleeping party: a click wakes it */
+#define UI_INPUT_FROZEN       4  /* the frozen game: a click goes on */
+#define UI_INPUT_ACTION_NAMES 5  /* the action names of the action menu */
+#define UI_INPUT_ACTION_ICONS 6  /* the action icons of the champions */
+#define UI_INPUT_SPELL_AREA   7  /* the runes and the cast button */
+#define UI_INPUT_STATUS_BOX   8  /* the status boxes of the champions */
+#define UI_INPUT_CHEST        9  /* the slots of an open chest */
+#define UI_INPUT_RESURRECT    10 /* the resurrect and reincarnate buttons */
+#define UI_INPUT_NAME_ENTRY   11 /* the keyboard of the champion name entry */
+#define UI_INPUT_ENTRANCE     12 /* the entrance buttons */
+#define UI_INPUT_ENDGAME      13 /* RESTART THIS GAME and QUIT of the endgame screen */
+#define UI_INPUT_DIALOG_FIRST 14 /* the dialog tables: + full screen * 4 + choice count - 1 */
+#define UI_INPUT_COUNT        (UI_INPUT_DIALOG_FIRST + 8)
 /* Mouse input entry: a command (0 ends a table), a box x1-x2, y1-y2, and the buttons. A negative x1 marks a
    zone entry; x2 is then the zone. */
 typedef struct {
@@ -352,15 +338,13 @@ bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out);
 void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_t x2, int16_t y1, int16_t y2);
 
 /* Keyboard input tables. */
-enum {
-    TABLES_KEYS_NONE = -1,
-    TABLES_KEYS_ENTRANCE,
-    TABLES_KEYS_INTERFACE,
-    TABLES_KEYS_MOVEMENT,
-    TABLES_KEYS_SLEEPING,
-    TABLES_KEYS_FROZEN,
-    TABLES_KEYS_COUNT
-};
+#define TABLES_KEYS_NONE      (-1)
+#define TABLES_KEYS_ENTRANCE  0
+#define TABLES_KEYS_INTERFACE 1
+#define TABLES_KEYS_MOVEMENT  2
+#define TABLES_KEYS_SLEEPING  3
+#define TABLES_KEYS_FROZEN    4
+#define TABLES_KEYS_COUNT     5
 /* The command of a key in a keyboard table, or 0. */
 int16_t tables_get_key_command(int16_t key_table, uint16_t key);
 

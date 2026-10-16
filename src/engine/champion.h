@@ -21,44 +21,41 @@
 #define HEAVY_LOAD_NUMERATOR   5
 #define HEAVY_LOAD_DENOMINATOR 8
 
-enum { SKILL_IGNORE_OBJECT_MODIFIERS = 0x4000, SKILL_IGNORE_TEMPORARY_EXPERIENCE = 0x8000 };
-enum {
-    WOUND_READY_HAND = 1,
-    WOUND_ACTION_HAND = 2,
-    WOUND_HEAD = 4,
-    WOUND_TORSO = 8,
-    WOUND_LEGS = 0x10,
-    WOUND_FEET = 0x20
-};
-enum { WOUND_DEFENSE_USE_SHARP = 0x8000 };
-enum {
-    ATTACK_RAW,
-    ATTACK_FIRE,
-    ATTACK_SELF,
-    ATTACK_BLUNT,
-    ATTACK_SHARP,
-    ATTACK_MAGIC,
-    ATTACK_PSYCHIC,
-    ATTACK_LIGHTNING
-};
-enum { PANEL_RESURRECT = 0xa0, PANEL_REINCARNATE = 0xa1, PANEL_CANCEL = 0xa2 };
-enum { CHAMPION_ATTR_MALE = 0x0010 };
+#define SKILL_IGNORE_OBJECT_MODIFIERS     0x4000
+#define SKILL_IGNORE_TEMPORARY_EXPERIENCE 0x8000
+#define WOUND_READY_HAND                  1
+#define WOUND_ACTION_HAND                 2
+#define WOUND_HEAD                        4
+#define WOUND_TORSO                       8
+#define WOUND_LEGS                        0x10
+#define WOUND_FEET                        0x20
+#define WOUND_DEFENSE_USE_SHARP           0x8000
+#define ATTACK_RAW                        0
+#define ATTACK_FIRE                       1
+#define ATTACK_SELF                       2
+#define ATTACK_BLUNT                      3
+#define ATTACK_SHARP                      4
+#define ATTACK_MAGIC                      5
+#define ATTACK_PSYCHIC                    6
+#define ATTACK_LIGHTNING                  7
+#define PANEL_RESURRECT                   0xa0
+#define PANEL_REINCARNATE                 0xa1
+#define PANEL_CANCEL                      0xa2
+#define CHAMPION_ATTR_MALE                0x0010
 /* Champion attribute redraw flags (Champion.attributes). */
-enum {
-    CHAMPION_ATTR_ACTION_DISABLED = 0x0008,
-    CHAMPION_ATTR_NAME_TITLE = 0x0080,
-    CHAMPION_ATTR_STATISTICS = 0x0100,
-    CHAMPION_ATTR_LOAD = 0x0200,
-    CHAMPION_ATTR_ICON = 0x0400,
-    CHAMPION_ATTR_PANEL = 0x0800,
-    CHAMPION_ATTR_STATUS_BOX = 0x1000,
-    CHAMPION_ATTR_WOUNDS = 0x2000,
-    CHAMPION_ATTR_VIEWPORT = 0x4000,
-    CHAMPION_ATTR_ACTION_HAND = 0x8000,
-    CHAMPION_ATTR_REDRAW_MASK = 0xff80,   /* all redraw flags */
-    CHAMPION_ATTR_KEEP_MASK = 0x007f,     /* flags that stay after a redraw */
-    CHAMPION_ATTR_INVENTORY_ALL = 0x5f80, /* everything the inventory shows */
-};
+#define CHAMPION_ATTR_ACTION_DISABLED     0x0008
+#define CHAMPION_ATTR_NAME_TITLE          0x0080
+#define CHAMPION_ATTR_STATISTICS          0x0100
+#define CHAMPION_ATTR_LOAD                0x0200
+#define CHAMPION_ATTR_ICON                0x0400
+#define CHAMPION_ATTR_PANEL               0x0800
+#define CHAMPION_ATTR_STATUS_BOX          0x1000
+#define CHAMPION_ATTR_WOUNDS              0x2000
+#define CHAMPION_ATTR_VIEWPORT            0x4000
+#define CHAMPION_ATTR_ACTION_HAND         0x8000
+#define CHAMPION_ATTR_REDRAW_MASK         0xff80 /* all redraw flags */
+#define CHAMPION_ATTR_KEEP_MASK           0x007f /* flags that stay after a redraw */
+#define CHAMPION_ATTR_INVENTORY_ALL       0x5f80 /* everything the inventory shows */
 
 #define CHAMPION_PORTRAIT_WIDTH  32 /* pixels of a champion portrait */
 #define CHAMPION_PORTRAIT_HEIGHT 29 /* rows of a champion portrait */

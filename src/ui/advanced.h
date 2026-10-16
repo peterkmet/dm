@@ -12,18 +12,16 @@
    The game rules are the same in every mode. Plan: docs/superpowers/archive/2026-10-04-modes-plan.md. */
 
 /* Key words of the advanced keys: Amiga raw key in the high byte. No original key table has them. */
-enum {
-    KEY_TAB = 0x4200,
-    KEY_M = 0x3700,
-    KEY_F5 = 0x5400,
-    KEY_F9 = 0x5800,
-    KEY_L = 0x2800,
-    KEY_I = 0x1700,
-    KEY_F = 0x2300,
-    KEY_1 = 0x0100,
-    KEY_2 = 0x0200,
-    KEY_3 = 0x0300
-};
+#define KEY_TAB 0x4200
+#define KEY_M   0x3700
+#define KEY_F5  0x5400
+#define KEY_F9  0x5800
+#define KEY_L   0x2800
+#define KEY_I   0x1700
+#define KEY_F   0x2300
+#define KEY_1   0x0100
+#define KEY_2   0x0200
+#define KEY_3   0x0300
 
 extern bool g_advanced_features; /* set outside vanilla: the advanced features show */
 extern bool g_automap_open;      /* set: the automap covers the viewport and the game time stops */

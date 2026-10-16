@@ -643,7 +643,7 @@ static const char *const wall_ornament_names[] = {
     "rock_face",
     "lord_order",
 };
-enum { WALL_ORNAMENT_NAME_COUNT = ARRAY_COUNT(wall_ornament_names) };
+#define WALL_ORNAMENT_NAME_COUNT (ARRAY_COUNT(wall_ornament_names))
 
 /* True for a wall sensor type that reacts to an object put on the wall. */
 static bool sensor_takes_object(uint16_t type)
@@ -765,7 +765,7 @@ static void wall_faces_json(Json *j, int16_t depth, int16_t side, int16_t x, int
 static const char *const floor_ornament_names[] = {"grate",       "pressure_pad",       "moss",
                                                    "round_grate", "round_pressure_pad", "flame_pit",
                                                    "crack",       "tiny_pressure_pad",  "puddle"};
-enum { FLOOR_ORNAMENT_COUNT = ARRAY_COUNT(floor_ornament_names) };
+#define FLOOR_ORNAMENT_COUNT (ARRAY_COUNT(floor_ornament_names))
 
 /* The floor ornament that the view draws on the square; an unknown ornament gets its index. */
 static void floor_ornament_json(Json *j, int16_t x, int16_t y)

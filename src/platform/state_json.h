@@ -48,7 +48,9 @@ void state_json_explosion_name(Json *j, uint16_t type);
 /* The name of a creature type, or "unknown". */
 const char *state_json_creature_name(uint16_t type);
 
-enum { STATE_JSON_STATE, STATE_JSON_VIEW, STATE_JSON_MAP };
+#define STATE_JSON_STATE 0
+#define STATE_JSON_VIEW  1
+#define STATE_JSON_MAP   2
 /* One part as a new string (tests); release it with free. */
 char *state_json_get_string(int part);
 

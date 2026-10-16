@@ -14,83 +14,90 @@
 #define GROUP_MAX_CREATURES 4
 
 /* Creature attributes (CreatureInfo.attributes). CREATURE_LEVITATES and CREATURE_NON_MATERIAL are in map.h. */
-enum {
-    CREATURE_SIZE_MASK = 0x0003,
-    CREATURE_SIDE_ATTACK = 0x0004,
-    CREATURE_PREFER_BACK_ROW = 0x0008,
-    CREATURE_ATTACK_ANY_CHAMPION = 0x0010,
-    CREATURE_DROPS_FIXED_POSSESSIONS = 0x0200,
-    CREATURE_KEEPS_THROWN_SHARP_WEAPONS = 0x0400,
-    CREATURE_SEES_INVISIBLE = 0x0800,
-    CREATURE_NIGHT_VISION = 0x1000,
-    CREATURE_ARCHENEMY = 0x2000,
-    CREATURE_NOT_ON_MAP = 0x4000 /* KU does not show the creature */
-};
-enum { CREATURE_SIZE_QUARTER, CREATURE_SIZE_HALF, CREATURE_SIZE_FULL };
-enum { CREATURE_IMMOBILE = 255, CREATURE_NO_ATTACK = 255, CREATURE_INVULNERABLE = 255, CREATURE_NEVER_HITS = 255 };
-enum { FEAR_RESISTANCE_NONE_FEARLESS = 15, POISON_IMMUNE = 15, FIRE_IMMUNE = 15 };
+#define CREATURE_SIZE_MASK                  0x0003
+#define CREATURE_SIDE_ATTACK                0x0004
+#define CREATURE_PREFER_BACK_ROW            0x0008
+#define CREATURE_ATTACK_ANY_CHAMPION        0x0010
+#define CREATURE_DROPS_FIXED_POSSESSIONS    0x0200
+#define CREATURE_KEEPS_THROWN_SHARP_WEAPONS 0x0400
+#define CREATURE_SEES_INVISIBLE             0x0800
+#define CREATURE_NIGHT_VISION               0x1000
+#define CREATURE_ARCHENEMY                  0x2000
+#define CREATURE_NOT_ON_MAP                 0x4000 /* KU does not show the creature */
+#define CREATURE_SIZE_QUARTER               0
+#define CREATURE_SIZE_HALF                  1
+#define CREATURE_SIZE_FULL                  2
+#define CREATURE_IMMOBILE                   255
+#define CREATURE_NO_ATTACK                  255
+#define CREATURE_INVULNERABLE               255
+#define CREATURE_NEVER_HITS                 255
+#define FEAR_RESISTANCE_NONE_FEARLESS       15
+#define POISON_IMMUNE                       15
+#define FIRE_IMMUNE                         15
 
 /* Creature types with special rules. */
-enum {
-    CREATURE_SWAMP_SLIME = 1,
-    CREATURE_GIGGLER = 2,
-    CREATURE_WIZARD_EYE = 3,
-    CREATURE_PAIN_RAT = 4,
-    CREATURE_SCREAMER = 6,
-    CREATURE_ROCK_PILE = 7,
-    CREATURE_STONE_GOLEM = 9,
-    CREATURE_BLACK_FLAME = 11,
-    CREATURE_SKELETON = 12,
-    CREATURE_COUATL = 13,
-    CREATURE_VEXIRK = 14,
-    CREATURE_MAGENTA_WORM = 15,
-    CREATURE_TROLIN = 16,
-    CREATURE_ANIMATED_ARMOUR = 18,
-    CREATURE_MATERIALIZER = 19,
-    CREATURE_DEMON = 22,
-    CREATURE_LORD_CHAOS = 23,
-    CREATURE_RED_DRAGON = 24,
-    CREATURE_LORD_ORDER = 25,
-    CREATURE_GREY_LORD = 26
-};
+#define CREATURE_SWAMP_SLIME     1
+#define CREATURE_GIGGLER         2
+#define CREATURE_WIZARD_EYE      3
+#define CREATURE_PAIN_RAT        4
+#define CREATURE_SCREAMER        6
+#define CREATURE_ROCK_PILE       7
+#define CREATURE_STONE_GOLEM     9
+#define CREATURE_BLACK_FLAME     11
+#define CREATURE_SKELETON        12
+#define CREATURE_COUATL          13
+#define CREATURE_VEXIRK          14
+#define CREATURE_MAGENTA_WORM    15
+#define CREATURE_TROLIN          16
+#define CREATURE_ANIMATED_ARMOUR 18
+#define CREATURE_MATERIALIZER    19
+#define CREATURE_DEMON           22
+#define CREATURE_LORD_CHAOS      23
+#define CREATURE_RED_DRAGON      24
+#define CREATURE_LORD_ORDER      25
+#define CREATURE_GREY_LORD       26
 
 /* Group behavior (group record word 14 bits 0-3). */
-enum {
-    BEHAVIOR_WANDER = 0,
-    BEHAVIOR_USELESS_2 = 2,
-    BEHAVIOR_USELESS_3 = 3,
-    BEHAVIOR_FLEE = 5,
-    BEHAVIOR_ATTACK = 6,
-    BEHAVIOR_APPROACH = 7
-};
+#define BEHAVIOR_WANDER    0
+#define BEHAVIOR_USELESS_2 2
+#define BEHAVIOR_USELESS_3 3
+#define BEHAVIOR_FLEE      5
+#define BEHAVIOR_ATTACK    6
+#define BEHAVIOR_APPROACH  7
 
 /* A behavior event is an aspect event + 5. */
-enum { EVENT_BEHAVIOR_TO_ASPECT = 5 };
+#define EVENT_BEHAVIOR_TO_ASPECT 5
 
 /* Reactions that other rules send to group_process_reaction_event. Reaction r becomes event 32 + r. */
-enum { REACTION_DANGER_ON_SQUARE = -3, REACTION_HIT_BY_PROJECTILE = -2, REACTION_PARTY_IS_ADJACENT = -1 };
+#define REACTION_DANGER_ON_SQUARE  (-3)
+#define REACTION_HIT_BY_PROJECTILE (-2)
+#define REACTION_PARTY_IS_ADJACENT (-1)
 
 /* Results of the damage functions (g_creature_damage_outcome). */
-enum { OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, OUTCOME_ALL_CREATURES_KILLED };
+#define OUTCOME_NO_CREATURE_KILLED    0
+#define OUTCOME_SOME_CREATURES_KILLED 1
+#define OUTCOME_ALL_CREATURES_KILLED  2
 
 /* Cells byte of one creature that stands in the center of the square; the cell of a centered explosion. */
-enum { CELL_CENTERED = 0xff };
+#define CELL_CENTERED 0xff
 
 /* Active group aspect byte: bit 7 attacking, bit 6 flipped, bits 3-5 vertical offset, bits 0-2 horizontal offset. */
-enum { ASPECT_ATTACKING = 0x80, ASPECT_FLIPPED = 0x40, ASPECT_OFFSET_MASK = 0x7, ASPECT_VERTICAL_OFFSET_SHIFT = 3 };
+#define ASPECT_ATTACKING             0x80
+#define ASPECT_FLIPPED               0x40
+#define ASPECT_OFFSET_MASK           0x7
+#define ASPECT_VERTICAL_OFFSET_SHIFT 3
 
 /* Hit probability argument of the melee damage: bit 15 hits non-material creatures too. */
-enum { HIT_PROBABILITY_ALWAYS_HITS = 0x8000, HIT_PROBABILITY_MASK = 0x7fff };
+#define HIT_PROBABILITY_ALWAYS_HITS 0x8000
+#define HIT_PROBABILITY_MASK        0x7fff
 
 /* Group record, 16 bytes (thing type 4): next, possessions, type, cells, 4 health words, word 14 flags.
    Byte 14: direction in bits 0-1, do not discard in bit 2. Byte 15: behavior in bits 0-3, last creature index in bits 5-6. */
-enum {
-    GROUP_RECORD_DIRECTION_MASK = 3,
-    GROUP_RECORD_DO_NOT_DISCARD = 0x04,
-    GROUP_RECORD_BEHAVIOR_MASK = 0x0f,
-    GROUP_RECORD_LAST_CREATURE_MASK = 0x60,
-    GROUP_RECORD_LAST_CREATURE_SHIFT = 5
-};
+#define GROUP_RECORD_DIRECTION_MASK      3
+#define GROUP_RECORD_DO_NOT_DISCARD      0x04
+#define GROUP_RECORD_BEHAVIOR_MASK       0x0f
+#define GROUP_RECORD_LAST_CREATURE_MASK  0x60
+#define GROUP_RECORD_LAST_CREATURE_SHIFT 5
 static inline uint16_t group_possessions(uint16_t group)
 {
     return BE16(REC(group) + 2);
@@ -152,7 +159,8 @@ static inline const CreatureInfo *group_info(uint16_t group)
 }
 
 /* Creature info fields that pack several values, 4 bits each. */
-enum { CREATURE_INFO_NIBBLE = 15, CREATURE_INFO_HIGH_NIBBLE_SHIFT = 12 };
+#define CREATURE_INFO_NIBBLE            15
+#define CREATURE_INFO_HIGH_NIBBLE_SHIFT 12
 static inline uint16_t creature_sight_range(const CreatureInfo *info)
 {
     return info->ranges & CREATURE_INFO_NIBBLE;
@@ -223,7 +231,8 @@ int16_t group_get_creature_ordinal_in_cell(uint16_t group, uint16_t cell);
 int16_t group_get_melee_target_creature_ordinal(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y,
                                                 int16_t champion_cell);
 /* The cells and directions of a group: two bits for each creature. */
-enum { GROUP_CELL_BITS = 2, GROUP_CELL_MASK = 3 };
+#define GROUP_CELL_BITS 2
+#define GROUP_CELL_MASK 3
 static inline uint16_t group_cell(uint16_t packed, int16_t creature)
 {
     return packed >> (GROUP_CELL_BITS * creature) & GROUP_CELL_MASK;

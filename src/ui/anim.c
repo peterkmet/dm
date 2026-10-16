@@ -39,20 +39,18 @@
 #define MUSIC_FADE_FRAMES       3    /* the volume goes down by 1 every 3 ticks */
 
 /* Chunk tags that the player runs. The other tags (AN, DO, P8, music, sample files) do nothing for ENDA.DAT and TITL.DAT. */
-enum {
-    TAG_BREAK = TAG('B', 'R'),
-    TAG_PALETTE = TAG('P', 'L'),
-    TAG_FULL_FRAME = TAG('E', 'N'),
-    TAG_DELTA_FRAME = TAG('D', 'L'),
-    TAG_SAMPLE = TAG('S', 'D'),
-    TAG_PLAY_SAMPLE = TAG('S', 'O'),
-    TAG_LOOP = TAG('F', 'O'),
-    TAG_LOOP_NEXT = TAG('N', 'E'),
-    TAG_LOOP_BACK = TAG('B', 'N'),
-    TAG_SAMPLE_FILE = TAG('S', 'F'),
-    TAG_MUSIC_FILE = TAG('M', 'F'),
-    TAG_MUSIC = TAG('M', 'I'),
-};
+#define TAG_BREAK       (TAG('B', 'R'))
+#define TAG_PALETTE     (TAG('P', 'L'))
+#define TAG_FULL_FRAME  (TAG('E', 'N'))
+#define TAG_DELTA_FRAME (TAG('D', 'L'))
+#define TAG_SAMPLE      (TAG('S', 'D'))
+#define TAG_PLAY_SAMPLE (TAG('S', 'O'))
+#define TAG_LOOP        (TAG('F', 'O'))
+#define TAG_LOOP_NEXT   (TAG('N', 'E'))
+#define TAG_LOOP_BACK   (TAG('B', 'N'))
+#define TAG_SAMPLE_FILE (TAG('S', 'F'))
+#define TAG_MUSIC_FILE  (TAG('M', 'F'))
+#define TAG_MUSIC       (TAG('M', 'I'))
 
 typedef struct {
     size_t start;  /* first chunk of the loop body */

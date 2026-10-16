@@ -30,10 +30,11 @@
 #define INVENTORY_CLOSE       4 /* command_toggle_inventory argument: close the open inventory */
 #define INVENTORY_REDRAW      5 /* command_toggle_inventory argument: draw the open inventory again */
 #define WAIT_FOR_INPUT_FRAMES 12
-enum { MOUTH_BLINK_COUNT = 4, MOUTH_BLINK_FRAMES = 8 }; /* the mouth blinks when it eats an object up */
-#define HAND_SLOT_BOX_COUNT (2 * CHAMPION_MAX_COUNT)    /* slot boxes 0-7: the hands in the status boxes */
+#define MOUTH_BLINK_COUNT     4 /* the mouth blinks when it eats an object up */
+#define MOUTH_BLINK_FRAMES    8
+#define HAND_SLOT_BOX_COUNT   (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
 
-enum { VIEW_CELL_FRONT_FIRST = 2 }; /* view cells 0-1 on the party square, 2-3 ahead */
+#define VIEW_CELL_FRONT_FIRST 2 /* view cells 0-1 on the party square, 2-3 ahead */
 
 typedef struct {
     int16_t x, y, command;

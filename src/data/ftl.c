@@ -20,7 +20,10 @@
 #define FTL_ENTRY_BYTES        12
 #define FTL_MAX_ENTRIES        100
 #define FTL_CHECKSUM_WEIGHTS   256 /* entry byte i counts i % 256 + 1 times */
-enum { SECTION_INFO = 16, SECTION_DATA, SECTION_CODE, SECTION_COUNT = 3 };
+#define SECTION_INFO           16
+#define SECTION_DATA           17
+#define SECTION_CODE           18
+#define SECTION_COUNT          3
 
 /* Info section fields. The entry point offsets follow the fixed fields. */
 #define INFO_REGION_SIZE  0

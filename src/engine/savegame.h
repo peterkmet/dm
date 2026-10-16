@@ -8,8 +8,13 @@
 /* Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and load_game, LOADSAVE.C).
    savefile.c owns the container; this module owns the block contents. Layout: docs/formats/save.md. */
 
-enum { SAVEGAME_DAMAGED = -1, SAVEGAME_MISSING = 0, SAVEGAME_LOADED = 1 };
-enum { ADVENTURE_FAILED, ADVENTURE_MADE, ADVENTURE_NO_CHAMPIONS, ADVENTURE_NAMES_NOT_UNIQUE };
+#define SAVEGAME_DAMAGED           (-1)
+#define SAVEGAME_MISSING           0
+#define SAVEGAME_LOADED            1
+#define ADVENTURE_FAILED           0
+#define ADVENTURE_MADE             1
+#define ADVENTURE_NO_CHAMPIONS     2
+#define ADVENTURE_NAMES_NOT_UNIQUE 3
 
 extern bool g_saved_game_exists; /* set after a save or a load: the endgame offers a restart */
 extern uint32_t g_last_save_game_time, g_last_load_game_time;

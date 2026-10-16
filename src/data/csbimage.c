@@ -18,8 +18,14 @@
 #define CSB_APPB_RESTART_BOXES       0x100dcc /* the endgame fills these two boxes */
 #define CSB_APPB_DATA_BASE           0x10511e /* the APPB data base: all APPB tables are below it */
 
-enum { KAOS_ACTION_SET_BYTES = 8, APPB_ACTION_SET_BYTES = 6, ACTION_SET_ACTIONS = 3, ACTION_SET_LEVELS = 2 };
-enum { KAOS_ACTION_SET_LEVELS = 4, KAOS_ACTION_SET_FLAGS = 6, APPB_ACTION_SET_LEVELS = 3, APPB_ACTION_SET_FLAGS = 5 };
+#define KAOS_ACTION_SET_BYTES  8
+#define APPB_ACTION_SET_BYTES  6
+#define ACTION_SET_ACTIONS     3
+#define ACTION_SET_LEVELS      2
+#define KAOS_ACTION_SET_LEVELS 4
+#define KAOS_ACTION_SET_FLAGS  6
+#define APPB_ACTION_SET_LEVELS 3
+#define APPB_ACTION_SET_FLAGS  5
 
 /* Tables with the same layout: KAOS address, APPB address, size. The APPB addresses are verified in
    docs/csb/engine-diff.md. Strided or split DM tables have one row per part. */

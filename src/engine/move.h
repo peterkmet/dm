@@ -9,14 +9,12 @@
 
 #define SQUARE_CHAIN_MAXIMUM 99 /* teleporters, pits, and stairs that one move follows */
 
-enum {
-    COMMAND_TURN_LEFT = 1,
-    COMMAND_TURN_RIGHT,
-    COMMAND_MOVE_FORWARD,
-    COMMAND_MOVE_RIGHT,
-    COMMAND_MOVE_BACKWARD,
-    COMMAND_MOVE_LEFT
-};
+#define COMMAND_TURN_LEFT     1
+#define COMMAND_TURN_RIGHT    2
+#define COMMAND_MOVE_FORWARD  3
+#define COMMAND_MOVE_RIGHT    4
+#define COMMAND_MOVE_BACKWARD 5
+#define COMMAND_MOVE_LEFT     6
 
 extern int16_t g_new_party_map_index; /* -1: no map change pending */
 extern int16_t g_move_result_map_x, g_move_result_map_y;

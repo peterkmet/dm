@@ -9,9 +9,17 @@
 /* The start screens in the DM font: adventure, mode, and the CSB entrance. Keys and clicks move a
    cursor over the items. The results go to g_adventure and g_game_mode. No SDL calls. */
 
-enum { SCREEN_ADVENTURE, SCREEN_MODE, SCREEN_CSB, SCREEN_DONE };
-enum { CSB_NEW_ADVENTURE, CSB_RESUME, CSB_QUIT };
-enum { SELECT_KEY_UP, SELECT_KEY_DOWN, SELECT_KEY_ENTER, SELECT_KEY_ESCAPE };
+#define SCREEN_ADVENTURE  0
+#define SCREEN_MODE       1
+#define SCREEN_CSB        2
+#define SCREEN_DONE       3
+#define CSB_NEW_ADVENTURE 0
+#define CSB_RESUME        1
+#define CSB_QUIT          2
+#define SELECT_KEY_UP     0
+#define SELECT_KEY_DOWN   1
+#define SELECT_KEY_ENTER  2
+#define SELECT_KEY_ESCAPE 3
 
 /* Starts at the first screen that --adventure and --mode do not skip; adventure and mode are -1
    when the flag is absent. --mode alone means DM. csb_present 0 disables CHAOS STRIKES BACK.

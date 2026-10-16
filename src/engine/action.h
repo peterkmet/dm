@@ -9,53 +9,52 @@
 
 /* Action indices (graphic 699 holds the names). Actions without an entry here only train the skill and add the
    action defense. */
-enum {
-    ACTION_N = 0,
-    ACTION_BLOCK = 1,
-    ACTION_CHOP = 2,
-    ACTION_BLOW_HORN = 4,
-    ACTION_FLIP = 5,
-    ACTION_PUNCH = 6,
-    ACTION_KICK = 7,
-    ACTION_WAR_CRY = 8,
-    ACTION_STAB_1 = 9,
-    ACTION_CLIMB_DOWN = 10,
-    ACTION_FREEZE_LIFE = 11,
-    ACTION_HIT = 12,
-    ACTION_SWING = 13,
-    ACTION_STAB_2 = 14,
-    ACTION_THRUST = 15,
-    ACTION_JAB = 16,
-    ACTION_PARRY = 17,
-    ACTION_HACK = 18,
-    ACTION_BERZERK = 19,
-    ACTION_FIREBALL = 20,
-    ACTION_DISPELL = 21,
-    ACTION_CONFUSE = 22,
-    ACTION_LIGHTNING = 23,
-    ACTION_DISRUPT = 24,
-    ACTION_MELEE = 25,
-    ACTION_INVOKE = 27,
-    ACTION_SLASH = 28,
-    ACTION_CLEAVE = 29,
-    ACTION_BASH = 30,
-    ACTION_STUN = 31,
-    ACTION_SHOOT = 32,
-    ACTION_SPELLSHIELD = 33,
-    ACTION_FIRESHIELD = 34,
-    ACTION_FLUXCAGE = 35,
-    ACTION_HEAL = 36,
-    ACTION_CALM = 37,
-    ACTION_LIGHT = 38,
-    ACTION_WINDOW = 39,
-    ACTION_SPIT = 40,
-    ACTION_BRANDISH = 41,
-    ACTION_THROW = 42,
-    ACTION_FUSE = 43
-};
+#define ACTION_N           0
+#define ACTION_BLOCK       1
+#define ACTION_CHOP        2
+#define ACTION_BLOW_HORN   4
+#define ACTION_FLIP        5
+#define ACTION_PUNCH       6
+#define ACTION_KICK        7
+#define ACTION_WAR_CRY     8
+#define ACTION_STAB_1      9
+#define ACTION_CLIMB_DOWN  10
+#define ACTION_FREEZE_LIFE 11
+#define ACTION_HIT         12
+#define ACTION_SWING       13
+#define ACTION_STAB_2      14
+#define ACTION_THRUST      15
+#define ACTION_JAB         16
+#define ACTION_PARRY       17
+#define ACTION_HACK        18
+#define ACTION_BERZERK     19
+#define ACTION_FIREBALL    20
+#define ACTION_DISPELL     21
+#define ACTION_CONFUSE     22
+#define ACTION_LIGHTNING   23
+#define ACTION_DISRUPT     24
+#define ACTION_MELEE       25
+#define ACTION_INVOKE      27
+#define ACTION_SLASH       28
+#define ACTION_CLEAVE      29
+#define ACTION_BASH        30
+#define ACTION_STUN        31
+#define ACTION_SHOOT       32
+#define ACTION_SPELLSHIELD 33
+#define ACTION_FIRESHIELD  34
+#define ACTION_FLUXCAGE    35
+#define ACTION_HEAL        36
+#define ACTION_CALM        37
+#define ACTION_LIGHT       38
+#define ACTION_WINDOW      39
+#define ACTION_SPIT        40
+#define ACTION_BRANDISH    41
+#define ACTION_THROW       42
+#define ACTION_FUSE        43
 
 /* Values of g_action_damage other than a damage. */
-enum { ACTION_DAMAGE_CANT_REACH = -1, ACTION_DAMAGE_NO_AMMUNITION = -2 };
+#define ACTION_DAMAGE_CANT_REACH    (-1)
+#define ACTION_DAMAGE_NO_AMMUNITION (-2)
 
 /* MENU.C state of the action menu. */
 extern int16_t g_acting_champion_ordinal; /* 0: none */

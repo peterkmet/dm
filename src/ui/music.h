@@ -8,7 +8,9 @@
    Super NES versions from MP3 files in <disk A folder>/music/. A track plays one time and does not loop.
    Decisions: docs/superpowers/archive/2026-10-05-music-decisions.md. */
 
-enum { MUSIC_ORIGINAL, MUSIC_SUPER_NES, MUSIC_FM_TOWNS };
+#define MUSIC_ORIGINAL  0
+#define MUSIC_SUPER_NES 1
+#define MUSIC_FM_TOWNS  2
 
 #define MUSIC_CSB_MAP_COUNT 10 /* map 10 of CSB (1 x 1) has no entry */
 #define MUSIC_CSB_MAP_SIZE  32

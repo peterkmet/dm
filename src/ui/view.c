@@ -21,195 +21,206 @@
 
 #define ORNAMENT_VI_ALTAR 2 /* the alcove ornament that is a vi altar */
 /* tables_get_pile_shift pair indices */
-enum { PILE_FLOOR_SHIFTS = 16, PILE_ODD_CELL = 8, PILE_ALCOVE_FIRST = 2, PILE_ALCOVE_LAST = 13 };
+#define PILE_FLOOR_SHIFTS 16
+#define PILE_ODD_CELL     8
+#define PILE_ALCOVE_FIRST 2
+#define PILE_ALCOVE_LAST  13
 
-enum { LAYOUT_SLOTS = 64 };
+#define LAYOUT_SLOTS 64
 
-enum { WALL_COUNT = 15 };
-enum { WALL_SIDES = 4 }; /* the sides of a wall square */
+#define WALL_COUNT 15
+#define WALL_SIDES 4 /* the sides of a wall square */
 
 /* Entries of g_wall_set_layout_ids: layout bitmap ids of the floor set, the walls, the door frames, and the
    mirrored walls. The right square of a pair draws the mirrored frame of the left square. */
-enum {
-    WS_FLOOR,
-    WS_CEILING,
-    WS_WALL_D0R,
-    WS_WALL_D0L,
-    WS_WALL_D1R,
-    WS_WALL_D1L,
-    WS_WALL_D1C,
-    WS_WALL_D2R2,
-    WS_WALL_D2L2,
-    WS_WALL_D2R,
-    WS_WALL_D2L,
-    WS_WALL_D2C,
-    WS_WALL_D3R2,
-    WS_WALL_D3L2,
-    WS_WALL_D3R,
-    WS_WALL_D3L,
-    WS_WALL_D3C,
-    WS_DOOR_FRAME_TOP_D1R,
-    WS_DOOR_FRAME_TOP_D1L,
-    WS_DOOR_FRAME_TOP_D1C,
-    WS_DOOR_FRAME_TOP_D2R,
-    WS_DOOR_FRAME_TOP_D2L,
-    WS_DOOR_FRAME_TOP_D2C,
-    WS_DOOR_FRAME_D0C,
-    WS_DOOR_FRAME_RIGHT_D1C,
-    WS_DOOR_FRAME_LEFT_D1C,
-    WS_DOOR_FRAME_D2C,
-    WS_DOOR_FRAME_D3C,
-    WS_DOOR_FRAME_LEFT_D3L,
-    WS_DOOR_FRAME_RIGHT_D3L,
-    WS_DOOR_FRAME_LEFT_D3R,
-    WS_MIRRORED_WALL_FIRST,
-    WS_COUNT = WS_MIRRORED_WALL_FIRST + WALL_COUNT,
-};
-enum { WS_WALL_FIRST = WS_WALL_D0R };
+#define WS_FLOOR                0
+#define WS_CEILING              1
+#define WS_WALL_D0R             2
+#define WS_WALL_D0L             3
+#define WS_WALL_D1R             4
+#define WS_WALL_D1L             5
+#define WS_WALL_D1C             6
+#define WS_WALL_D2R2            7
+#define WS_WALL_D2L2            8
+#define WS_WALL_D2R             9
+#define WS_WALL_D2L             10
+#define WS_WALL_D2C             11
+#define WS_WALL_D3R2            12
+#define WS_WALL_D3L2            13
+#define WS_WALL_D3R             14
+#define WS_WALL_D3L             15
+#define WS_WALL_D3C             16
+#define WS_DOOR_FRAME_TOP_D1R   17
+#define WS_DOOR_FRAME_TOP_D1L   18
+#define WS_DOOR_FRAME_TOP_D1C   19
+#define WS_DOOR_FRAME_TOP_D2R   20
+#define WS_DOOR_FRAME_TOP_D2L   21
+#define WS_DOOR_FRAME_TOP_D2C   22
+#define WS_DOOR_FRAME_D0C       23
+#define WS_DOOR_FRAME_RIGHT_D1C 24
+#define WS_DOOR_FRAME_LEFT_D1C  25
+#define WS_DOOR_FRAME_D2C       26
+#define WS_DOOR_FRAME_D3C       27
+#define WS_DOOR_FRAME_LEFT_D3L  28
+#define WS_DOOR_FRAME_RIGHT_D3L 29
+#define WS_DOOR_FRAME_LEFT_D3R  30
+#define WS_MIRRORED_WALL_FIRST  31
+#define WS_COUNT                (WS_MIRRORED_WALL_FIRST + WALL_COUNT)
+#define WS_WALL_FIRST           (WS_WALL_D0R)
 
 /* Graphics of a wall set, from GFX_WALLSET_FIRST + GFX_WALLSET_SIZE * wall set. */
-enum {
-    WALLSET_DOOR_FRAME_D0C,
-    WALLSET_DOOR_FRAME_D1C,
-    WALLSET_DOOR_FRAME_D2C,
-    WALLSET_DOOR_FRAME_D3C,
-    WALLSET_DOOR_FRAME_D3_SIDE,
-    WALLSET_DOOR_FRAME_TOP_D1,
-    WALLSET_DOOR_FRAME_TOP_D2,
-    WALLSET_WALL_FIRST,
-    WALLSET_STAIRS_FIRST = WALLSET_WALL_FIRST + WALL_COUNT,
-};
+#define WALLSET_DOOR_FRAME_D0C     0
+#define WALLSET_DOOR_FRAME_D1C     1
+#define WALLSET_DOOR_FRAME_D2C     2
+#define WALLSET_DOOR_FRAME_D3C     3
+#define WALLSET_DOOR_FRAME_D3_SIDE 4
+#define WALLSET_DOOR_FRAME_TOP_D1  5
+#define WALLSET_DOOR_FRAME_TOP_D2  6
+#define WALLSET_WALL_FIRST         7
+#define WALLSET_STAIRS_FIRST       (WALLSET_WALL_FIRST + WALL_COUNT)
 
 /* Stairs graphics, from WALLSET_STAIRS_FIRST. Right squares mirror the left graphic. */
-enum {
-    STAIRS_FRONT_D3L,
-    STAIRS_FRONT_D3C,
-    STAIRS_FRONT_D2L,
-    STAIRS_FRONT_D2C,
-    STAIRS_FRONT_D1L,
-    STAIRS_FRONT_D1C,
-    STAIRS_FRONT_D0C,
-    STAIRS_DOWN, /* down stairs front graphic = up stairs front graphic + STAIRS_DOWN */
-    STAIRS_SIDE_D2L = 14,
-    STAIRS_UP_SIDE_D1L,
-    STAIRS_DOWN_SIDE_D1L,
-    STAIRS_SIDE_D0L,
-};
+#define STAIRS_FRONT_D3L     0
+#define STAIRS_FRONT_D3C     1
+#define STAIRS_FRONT_D2L     2
+#define STAIRS_FRONT_D2C     3
+#define STAIRS_FRONT_D1L     4
+#define STAIRS_FRONT_D1C     5
+#define STAIRS_FRONT_D0C     6
+#define STAIRS_DOWN          7 /* down stairs front graphic = up stairs front graphic + STAIRS_DOWN */
+#define STAIRS_SIDE_D2L      14
+#define STAIRS_UP_SIDE_D1L   15
+#define STAIRS_DOWN_SIDE_D1L 16
+#define STAIRS_SIDE_D0L      17
 
-enum { BLIT_TRANSPARENT, BLIT_OPAQUE, BLIT_FLIPPED }; /* draw_wall_set_bitmap variants */
-enum { TRANSPARENT_COLOR = 10, DOOR_ORNAMENT_TRANSPARENT = 9, PORTRAIT_TRANSPARENT = 1 };
+#define BLIT_TRANSPARENT          0 /* draw_wall_set_bitmap variants */
+#define BLIT_OPAQUE               1
+#define BLIT_FLIPPED              2
+#define TRANSPARENT_COLOR         10
+#define DOOR_ORNAMENT_TRANSPARENT 9
+#define PORTRAIT_TRANSPARENT      1
 
 /* View elements: the square types, and doors and stairs seen from the side or from the front. */
-enum {
-    ELEMENT_DOOR_SIDE = 0x10,
-    ELEMENT_DOOR_FRONT = VIEW_ELEMENT_DOOR_FRONT,
-    ELEMENT_STAIRS_SIDE,
-    ELEMENT_STAIRS_FRONT
-};
+#define ELEMENT_DOOR_SIDE    0x10
+#define ELEMENT_DOOR_FRONT   (VIEW_ELEMENT_DOOR_FRONT)
+#define ELEMENT_STAIRS_SIDE  0x12
+#define ELEMENT_STAIRS_FRONT 0x13
 
 /* random ornament allowed on that side: the north face is the bit of the ornament below on the map */
 #define WALL_ORNAMENT_FACE(direction) (WALL_ORNAMENT_BELOW >> (direction))
-enum { ORNAMENT_RANDOM_MODULO = 30 };
+#define ORNAMENT_RANDOM_MODULO        30
 /* Seeds and multipliers of the pseudo-random ornament hash of get_random_ornament_ordinal. */
-#define ORNAMENT_SEED_ROW         32
-#define ORNAMENT_SEED_SQUARE_BASE 2000
-#define ORNAMENT_SEED_MAP_STEP    64
-#define ORNAMENT_SEED_MAP_BASE    3000
-#define ORNAMENT_HASH_SQUARE      31417u
-#define ORNAMENT_HASH_MAP         11u
-enum { ORNAMENT_HASH_SHIFT = 2 };
+#define ORNAMENT_SEED_ROW             32
+#define ORNAMENT_SEED_SQUARE_BASE     2000
+#define ORNAMENT_SEED_MAP_STEP        64
+#define ORNAMENT_SEED_MAP_BASE        3000
+#define ORNAMENT_HASH_SQUARE          31417u
+#define ORNAMENT_HASH_MAP             11u
+#define ORNAMENT_HASH_SHIFT           2
 
 /* View squares: index of the g_view_square_* tables. */
-enum {
-    VIEW_SQUARE_D0C,
-    VIEW_SQUARE_D0L,
-    VIEW_SQUARE_D0R,
-    VIEW_SQUARE_D1C,
-    VIEW_SQUARE_D1L,
-    VIEW_SQUARE_D1R,
-    VIEW_SQUARE_D2C,
-    VIEW_SQUARE_D2L,
-    VIEW_SQUARE_D2R,
-    VIEW_SQUARE_D2L2,
-    VIEW_SQUARE_D2R2,
-    VIEW_SQUARE_D3C,
-    VIEW_SQUARE_D3L,
-    VIEW_SQUARE_D3R,
-    VIEW_SQUARE_D3L2,
-    VIEW_SQUARE_D3R2,
-    VIEW_SQUARE_D4C,
-    VIEW_SQUARE_D4L,
-    VIEW_SQUARE_D4R,
-};
+#define VIEW_SQUARE_D0C  0
+#define VIEW_SQUARE_D0L  1
+#define VIEW_SQUARE_D0R  2
+#define VIEW_SQUARE_D1C  3
+#define VIEW_SQUARE_D1L  4
+#define VIEW_SQUARE_D1R  5
+#define VIEW_SQUARE_D2C  6
+#define VIEW_SQUARE_D2L  7
+#define VIEW_SQUARE_D2R  8
+#define VIEW_SQUARE_D2L2 9
+#define VIEW_SQUARE_D2R2 10
+#define VIEW_SQUARE_D3C  11
+#define VIEW_SQUARE_D3L  12
+#define VIEW_SQUARE_D3R  13
+#define VIEW_SQUARE_D3L2 14
+#define VIEW_SQUARE_D3R2 15
+#define VIEW_SQUARE_D4C  16
+#define VIEW_SQUARE_D4L  17
+#define VIEW_SQUARE_D4R  18
 
 /* Floor views of the floor ornaments, and door views of the door zones. */
-enum { VIEW_D3L2, VIEW_D3R2, VIEW_D3L, VIEW_D3C, VIEW_D3R, VIEW_D2L, VIEW_D2C, VIEW_D2R, VIEW_D1L, VIEW_D1C, VIEW_D1R };
+#define VIEW_D3L2 0
+#define VIEW_D3R2 1
+#define VIEW_D3L  2
+#define VIEW_D3C  3
+#define VIEW_D3R  4
+#define VIEW_D2L  5
+#define VIEW_D2C  6
+#define VIEW_D2R  7
+#define VIEW_D1L  8
+#define VIEW_D1C  9
+#define VIEW_D1R  10
 
 /* View walls of draw_wall_ornament: the visible side of each wall square. */
-enum {
-    VIEW_WALL_D3L2_RIGHT,
-    VIEW_WALL_D3R2_LEFT,
-    VIEW_WALL_D3L_RIGHT,
-    VIEW_WALL_D3R_LEFT,
-    VIEW_WALL_D3L_FRONT,
-    VIEW_WALL_D3C_FRONT,
-    VIEW_WALL_D3R_FRONT,
-    VIEW_WALL_D2L_RIGHT,
-    VIEW_WALL_D2R_LEFT,
-    VIEW_WALL_D2L_FRONT,
-    VIEW_WALL_D2C_FRONT,
-    VIEW_WALL_D2R_FRONT,
-    VIEW_WALL_D1L_RIGHT,
-    VIEW_WALL_D1R_LEFT,
-    VIEW_WALL_D1C_FRONT,
-};
+#define VIEW_WALL_D3L2_RIGHT 0
+#define VIEW_WALL_D3R2_LEFT  1
+#define VIEW_WALL_D3L_RIGHT  2
+#define VIEW_WALL_D3R_LEFT   3
+#define VIEW_WALL_D3L_FRONT  4
+#define VIEW_WALL_D3C_FRONT  5
+#define VIEW_WALL_D3R_FRONT  6
+#define VIEW_WALL_D2L_RIGHT  7
+#define VIEW_WALL_D2R_LEFT   8
+#define VIEW_WALL_D2L_FRONT  9
+#define VIEW_WALL_D2C_FRONT  10
+#define VIEW_WALL_D2R_FRONT  11
+#define VIEW_WALL_D1L_RIGHT  12
+#define VIEW_WALL_D1R_LEFT   13
+#define VIEW_WALL_D1C_FRONT  14
 
-enum { BUTTON_D3R, BUTTON_D3C, BUTTON_D2C, BUTTON_D1C }; /* door button views */
-enum { DOOR_DEPTH_D3, DOOR_DEPTH_D2, DOOR_DEPTH_D1, DOOR_DEPTHS };
-enum { DOOR_TYPES = 2 };
-enum { ALCOVE_ORNAMENT_COUNT = 3 }; /* wall ornaments that are alcoves */
-enum { DOOR_ANIMATED = 0x400 };     /* door info attribute: the door mirrors at random on each draw */
+#define BUTTON_D3R            0 /* door button views */
+#define BUTTON_D3C            1
+#define BUTTON_D2C            2
+#define BUTTON_D1C            3
+#define DOOR_DEPTH_D3         0
+#define DOOR_DEPTH_D2         1
+#define DOOR_DEPTH_D1         2
+#define DOOR_DEPTHS           3
+#define DOOR_TYPES            2
+#define ALCOVE_ORNAMENT_COUNT 3     /* wall ornaments that are alcoves */
+#define DOOR_ANIMATED         0x400 /* door info attribute: the door mirrors at random on each draw */
 
 /* Ornaments: ordinal = index + 1, 0 = none. */
-enum {
-    MAP_ORNAMENTS = 16,
-    FLOOR_ORNAMENT_FOOTPRINTS = 15,
-    DOOR_ORNAMENT_DESTROYED = 16,
-    DOOR_ORNAMENT_THIEVES_EYE = 17
-};
-enum { FLOOR_ORNAMENT_WITH_FOOTPRINTS = 0x8000 }; /* floor ornament ordinal flag */
-enum { WALL_ORNAMENT_GRAPHICS = 2, WALL_ORNAMENT_FRONT = 1, FLOOR_ORNAMENT_GRAPHICS = 6, DOOR_MASK_COORD_SET = 1 };
-enum { WALL_TEXT_NEW_LINE = 0x80, WALL_TEXT_END = 0x81 }; /* dungeon_decode_text mode 0 codes */
-enum { WALL_TEXT_SIZE = 80 };
-enum { SCALE_D3_FAR_SIDE_W = 30 }; /* the D3L2 and D3R2 wall sides are wider than high */
+#define MAP_ORNAMENTS                  16
+#define FLOOR_ORNAMENT_FOOTPRINTS      15
+#define DOOR_ORNAMENT_DESTROYED        16
+#define DOOR_ORNAMENT_THIEVES_EYE      17
+#define FLOOR_ORNAMENT_WITH_FOOTPRINTS 0x8000 /* floor ornament ordinal flag */
+#define WALL_ORNAMENT_GRAPHICS         2
+#define WALL_ORNAMENT_FRONT            1
+#define FLOOR_ORNAMENT_GRAPHICS        6
+#define DOOR_MASK_COORD_SET            1
+#define WALL_TEXT_NEW_LINE             0x80 /* dungeon_decode_text mode 0 codes */
+#define WALL_TEXT_END                  0x81
+#define WALL_TEXT_SIZE                 80
+#define SCALE_D3_FAR_SIDE_W            30 /* the D3L2 and D3R2 wall sides are wider than high */
 
 /* Cell orders of draw_objects_creatures_projectiles_explosions: a nibble per view cell + 1, low nibble first;
    0 is the alcove. Bit 3 marks a door pass, bit 0 then selects the pass behind (0) or in front of the door (1),
    and the next nibbles hold the cells. B back, F front, L left, R right. */
-enum {
-    CELLS_ALCOVE = 0,
-    CELLS_BL = 0x1,
-    CELLS_BR = 0x2,
-    CELLS_BL_BR = 0x21,
-    CELLS_BL_FL = 0x41,
-    CELLS_BR_FR = 0x32,
-    CELLS_BL_BR_FR = 0x321,
-    CELLS_BR_BL_FL = 0x412,
-    CELLS_BR_FL_FR = 0x342,
-    CELLS_BL_FR_FL = 0x431,
-    CELLS_BL_BR_FL_FR = 0x3421,
-    CELLS_BR_BL_FR_FL = 0x4312,
-    DOOR_BACK_BL = 0x18,
-    DOOR_BACK_BR = 0x28,
-    DOOR_BACK_BL_BR = 0x218,
-    DOOR_BACK_BR_BL = 0x128,
-    DOOR_FRONT_FL = 0x49,
-    DOOR_FRONT_FR = 0x39,
-    DOOR_FRONT_FL_FR = 0x349,
-    DOOR_FRONT_FR_FL = 0x439,
-};
+#define CELLS_ALCOVE      0
+#define CELLS_BL          0x1
+#define CELLS_BR          0x2
+#define CELLS_BL_BR       0x21
+#define CELLS_BL_FL       0x41
+#define CELLS_BR_FR       0x32
+#define CELLS_BL_BR_FR    0x321
+#define CELLS_BR_BL_FL    0x412
+#define CELLS_BR_FL_FR    0x342
+#define CELLS_BL_FR_FL    0x431
+#define CELLS_BL_BR_FL_FR 0x3421
+#define CELLS_BR_BL_FR_FL 0x4312
+#define DOOR_BACK_BL      0x18
+#define DOOR_BACK_BR      0x28
+#define DOOR_BACK_BL_BR   0x218
+#define DOOR_BACK_BR_BL   0x128
+#define DOOR_FRONT_FL     0x49
+#define DOOR_FRONT_FR     0x39
+#define DOOR_FRONT_FL_FR  0x349
+#define DOOR_FRONT_FR_FL  0x439
 
-enum { LIGHT_LEVELS = 6 };
+#define LIGHT_LEVELS 6
 
 /* What the view draws of a square. */
 typedef struct {
@@ -319,7 +330,10 @@ static uint16_t get_random_ornament_ordinal(int allowed, int16_t count, int16_t 
     return i < count ? i + 1 : 0;
 }
 
-enum { SCAN_NONE, SCAN_FLOOR, SCAN_WALL, SCAN_FAKE_WALL }; /* things that set_square_aspect reads */
+#define SCAN_NONE      0 /* things that set_square_aspect reads */
+#define SCAN_FLOOR     1
+#define SCAN_WALL      2
+#define SCAN_FAKE_WALL 3
 
 /* The random ornament of each side of wall square (x, y) seen in direction dir; no alcove on the walls
    around the map. */
@@ -466,70 +480,100 @@ static bool draw_bitmap_in_zone(const Bitmap *bm, Bitmap *dst, int16_t zone, int
     return true;
 }
 
-enum { VIEW_CELL_BACK_LEFT, VIEW_CELL_BACK_RIGHT, VIEW_CELL_FRONT_RIGHT, VIEW_CELL_FRONT_LEFT, VIEW_CELL_CENTER };
-enum { FACING_AWAY, FACING_LEFT, FACING_TOWARD, FACING_RIGHT }; /* creature direction relative to the party */
-enum { DEPTH_D0, DEPTH_D1, DEPTH_D2, DEPTH_D3, DEPTH_D4 };
+#define VIEW_CELL_BACK_LEFT     0
+#define VIEW_CELL_BACK_RIGHT    1
+#define VIEW_CELL_FRONT_RIGHT   2
+#define VIEW_CELL_FRONT_LEFT    3
+#define VIEW_CELL_CENTER        4
+#define FACING_AWAY             0 /* creature direction relative to the party */
+#define FACING_LEFT             1
+#define FACING_TOWARD           2
+#define FACING_RIGHT            3
+#define DEPTH_D0                0
+#define DEPTH_D1                1
+#define DEPTH_D2                2
+#define DEPTH_D3                3
+#define DEPTH_D4                4
 /* scales are in 1/32 */
-enum { SCALE_D3 = 14, SCALE_D2 = 21, SCALE_NATIVE = 32, SCALE_EXPLOSION_MIN = 4, SCALE_SHIFT = 5 };
-enum { DOOR_PASS_BACK = 1, DOOR_PASS_FRONT = 2 }; /* door squares draw things behind, then in front of the door */
-enum { CELL_ORDER_DOOR_PASS = 8, CELL_ORDER_BITS = 4, CELL_ORDER_MASK = 0xf };
-enum {
-    CLICK_BOX_MIN_W = 14,
-    CLICK_BOX_MIN_H = 11,
-    CLICK_BOX_CENTER_H = 15,
-    CLICK_BOX_CENTER_OFFSET = 7
-}; /* smallest clickable object box */
+#define SCALE_D3                14
+#define SCALE_D2                21
+#define SCALE_NATIVE            32
+#define SCALE_EXPLOSION_MIN     4
+#define SCALE_SHIFT             5
+#define DOOR_PASS_BACK          1 /* door squares draw things behind, then in front of the door */
+#define DOOR_PASS_FRONT         2
+#define CELL_ORDER_DOOR_PASS    8
+#define CELL_ORDER_BITS         4
+#define CELL_ORDER_MASK         0xf
+#define CLICK_BOX_MIN_W         14 /* smallest clickable object box */
+#define CLICK_BOX_MIN_H         11
+#define CLICK_BOX_CENTER_H      15
+#define CLICK_BOX_CENTER_OFFSET 7
 
 /* The aspect offsets of the active group (group.h) index the shift sets: x, then y. */
 
 /* Creature aspect record (6 bytes): graphic word, coordinate set and transparent color, replacement color sets. */
-enum {
-    CREATURE_ASPECT_GRAPHIC = 0,
-    CREATURE_ASPECT_COORD = 4,
-    CREATURE_ASPECT_REPLACEMENT = 5,
-};
-enum { CREATURE_ASPECT_TRANSPARENT = 0xf, CREATURE_ASPECT_COORD_SHIFT = 4 };
+#define CREATURE_ASPECT_GRAPHIC     0
+#define CREATURE_ASPECT_COORD       4
+#define CREATURE_ASPECT_REPLACEMENT 5
+#define CREATURE_ASPECT_TRANSPARENT 0xf
+#define CREATURE_ASPECT_COORD_SHIFT 4
 
 /* Object aspect record (4 bytes): graphic, flags, alcove coordinate set. */
-enum { OBJECT_ASPECT_GRAPHIC = 0, OBJECT_ASPECT_FLAGS = 2, OBJECT_ASPECT_ALCOVE_COORD = 3 };
-enum { OBJECT_FLIP_ON_RIGHT = 0x1, OBJECT_HAS_ALCOVE_GRAPHIC = 0x10 };
+#define OBJECT_ASPECT_GRAPHIC      0
+#define OBJECT_ASPECT_FLAGS        2
+#define OBJECT_ASPECT_ALCOVE_COORD 3
+#define OBJECT_FLIP_ON_RIGHT       0x1
+#define OBJECT_HAS_ALCOVE_GRAPHIC  0x10
 
 /* Projectile aspect record (4 bytes): graphic, scale flags, pose flags. */
-enum {
-    PROJECTILE_ASPECT_GRAPHIC = 0,
-    PROJECTILE_ASPECT_SCALE_FLAGS = 2,
-    PROJECTILE_ASPECT_POSE_FLAGS = 3,
-};
-enum { PROJECTILE_SCALE_WITH_ENERGY = 0x1, PROJECTILE_FLIP_ON_LEFT = 0x10, PROJECTILE_KIND = 0x3 };
-enum { PROJECTILE_BACK_AND_ROTATION, PROJECTILE_BACK, PROJECTILE_NO_BACK, PROJECTILE_NO_BACK_NO_ROTATION };
-enum { POSE_FRONT, POSE_BACK, POSE_SIDE }; /* graphic offset from the projectile aspect graphic */
-enum {
-    PROJECTILE_ASPECT_LIGHTNING = 4,
-    PROJECTILE_ASPECT_FIREBALL = 11,
-    PROJECTILE_ASPECT_SPELL = 12,
-    PROJECTILE_ASPECT_SLIME = 13,
-    PROJECTILE_ASPECT_POISON = 14
-};
-enum { WEAPON_PROJECTILE_ASPECT_SHIFT = 8, WEAPON_PROJECTILE_ASPECT_MASK = 0x1f }; /* 0: the object aspect */
-enum { PROJECTILE_ENERGY_MIN = 96, PROJECTILE_SCALE_MIN = 2, PROJECTILE_ENERGY_SCALE_SHIFT = 8 };
+#define PROJECTILE_ASPECT_GRAPHIC      0
+#define PROJECTILE_ASPECT_SCALE_FLAGS  2
+#define PROJECTILE_ASPECT_POSE_FLAGS   3
+#define PROJECTILE_SCALE_WITH_ENERGY   0x1
+#define PROJECTILE_FLIP_ON_LEFT        0x10
+#define PROJECTILE_KIND                0x3
+#define PROJECTILE_BACK_AND_ROTATION   0
+#define PROJECTILE_BACK                1
+#define PROJECTILE_NO_BACK             2
+#define PROJECTILE_NO_BACK_NO_ROTATION 3
+#define POSE_FRONT                     0 /* graphic offset from the projectile aspect graphic */
+#define POSE_BACK                      1
+#define POSE_SIDE                      2
+#define PROJECTILE_ASPECT_LIGHTNING    4
+#define PROJECTILE_ASPECT_FIREBALL     11
+#define PROJECTILE_ASPECT_SPELL        12
+#define PROJECTILE_ASPECT_SLIME        13
+#define PROJECTILE_ASPECT_POISON       14
+#define WEAPON_PROJECTILE_ASPECT_SHIFT 8 /* 0: the object aspect */
+#define WEAPON_PROJECTILE_ASPECT_MASK  0x1f
+#define PROJECTILE_ENERGY_MIN          96
+#define PROJECTILE_SCALE_MIN           2
+#define PROJECTILE_ENERGY_SCALE_SHIFT  8
 
 /* Explosion graphics. */
-enum { EXPLOSION_ASPECT_FIRE, EXPLOSION_ASPECT_SPELL, EXPLOSION_ASPECT_POISON, EXPLOSION_ASPECT_SMOKE };
-enum { EXPLOSION_ATTACK_MIN = 48, EXPLOSION_STRENGTH_SHIFT = 5, EXPLOSION_PATTERN_STRENGTHS = 3 };
+#define EXPLOSION_ASPECT_FIRE       0
+#define EXPLOSION_ASPECT_SPELL      1
+#define EXPLOSION_ASPECT_POISON     2
+#define EXPLOSION_ASPECT_SMOKE      3
+#define EXPLOSION_ATTACK_MIN        48
+#define EXPLOSION_STRENGTH_SHIFT    5
+#define EXPLOSION_PATTERN_STRENGTHS 3
 
 /* Field aspect bytes and the masked fill arguments. */
-enum {
-    FIELD_PATTERN,
-    FIELD_LAST_UNIT,
-    FIELD_TRANSPARENT,
-    FIELD_MASK,
-    FIELD_WIDTH,
-    FIELD_HEIGHT,
-    FIELD_ASPECT_SIZE = 8
-};
-enum { FIELD_NO_MASK = 0xff, FIELD_MASK_FLIPPED = 0x80, FIELD_FIRST_UNIT_RANGE = 0x1f };
-enum { EXPLOSION_FILL_LAST_UNIT = 0x57, EXPLOSION_FILL_FIRST_UNIT_RANGE = 0x3f };
-#define EXPLOSION_FILL_TRANSPARENT (FILL_NO_MASK | TRANSPARENT_COLOR)
+#define FIELD_PATTERN                   0
+#define FIELD_LAST_UNIT                 1
+#define FIELD_TRANSPARENT               2
+#define FIELD_MASK                      3
+#define FIELD_WIDTH                     4
+#define FIELD_HEIGHT                    5
+#define FIELD_ASPECT_SIZE               8
+#define FIELD_NO_MASK                   0xff
+#define FIELD_MASK_FLIPPED              0x80
+#define FIELD_FIRST_UNIT_RANGE          0x1f
+#define EXPLOSION_FILL_LAST_UNIT        0x57
+#define EXPLOSION_FILL_FIRST_UNIT_RANGE 0x3f
+#define EXPLOSION_FILL_TRANSPARENT      (FILL_NO_MASK | TRANSPARENT_COLOR)
 
 /* The bitmap of graphic g at scale/32 with palette changes; the native bitmap at full scale without
    changes. Mirroring happens at blit time. Free out->px after use. */
@@ -1450,24 +1494,25 @@ static void draw_stairs_front(bool up, int16_t graphic, int16_t up_zone, int mod
     draw_wall_bitmap(stairs + graphic + (up ? 0 : STAIRS_DOWN), up ? up_zone : up_zone + ZONE_STAIRS_DOWN_DELTA, mode);
 }
 
-enum {
-    DRAWN_SQUARE_COUNT = 16,
-    D4_SQUARE_COUNT = 3
-}; /* the squares that the view draws, and the D4 squares with objects */
+#define DRAWN_SQUARE_COUNT 16 /* the squares that the view draws, and the D4 squares with objects */
+#define D4_SQUARE_COUNT    3
 
 /* How draw_square draws a square: all elements, only a wall or a teleporter field, a D0 side square, or the
    square of the party. */
-enum { SHAPE_FULL, SHAPE_WALL_OR_FIELD, SHAPE_D0_SIDE, SHAPE_D0C };
-enum { SIDE_FACE_NONE, SIDE_FACE_RIGHT, SIDE_FACE_LEFT }; /* the wall side that a side square shows */
-enum { DOOR_FRAMES_MAX = 3 };                             /* door frame bitmaps of a door front */
+#define SHAPE_FULL          0
+#define SHAPE_WALL_OR_FIELD 1
+#define SHAPE_D0_SIDE       2
+#define SHAPE_D0C           3
+#define SIDE_FACE_NONE      0 /* the wall side that a side square shows */
+#define SIDE_FACE_RIGHT     1
+#define SIDE_FACE_LEFT      2
+#define DOOR_FRAMES_MAX     3 /* door frame bitmaps of a door front */
 
 /* Square view flags. */
-enum {
-    SQ_CEILING_IN_ALCOVE = 0x1,  /* an alcove draws the ceiling pit before its things */
-    SQ_CEILING_AFTER_DOOR = 0x2, /* a door front draws the ceiling pit after the door */
-    SQ_STAIRS_LAYOUT_IDS = 0x4,  /* the stairs front graphics are layout ids, not stairs graphics */
-    SQ_FRONT = 0x8,              /* the square ahead: sets g_square_ahead_element and the facing flags */
-};
+#define SQ_CEILING_IN_ALCOVE  0x1 /* an alcove draws the ceiling pit before its things */
+#define SQ_CEILING_AFTER_DOOR 0x2 /* a door front draws the ceiling pit after the door */
+#define SQ_STAIRS_LAYOUT_IDS  0x4 /* the stairs front graphics are layout ids, not stairs graphics */
+#define SQ_FRONT              0x8 /* the square ahead: sets g_square_ahead_element and the facing flags */
 
 /* One wall set bitmap: wall_set_ids index, zone, and BLIT_* mode. */
 typedef struct {
@@ -2030,11 +2075,12 @@ static void draw_square(const SquareView *s, int16_t dir, int16_t x, int16_t y)
 
 /* Color 9 or 10 of the 6 light palettes and of the creature
    palette changes from replacement set n. */
-enum { COLOR_CREATURE_1 = 9, COLOR_CREATURE_2 = 10, REPLACEMENT_DEFAULT_1 = 8, REPLACEMENT_DEFAULT_2 = 12 };
-enum {
-    REPLACEMENT_SET_MASK = 0xf,
-    REPLACEMENT_SET_SHIFT = 4
-}; /* creature aspect byte: set of color 9, then of color 10 */
+#define COLOR_CREATURE_1      9
+#define COLOR_CREATURE_2      10
+#define REPLACEMENT_DEFAULT_1 8
+#define REPLACEMENT_DEFAULT_2 12
+#define REPLACEMENT_SET_MASK  0xf /* creature aspect byte: set of color 9, then of color 10 */
+#define REPLACEMENT_SET_SHIFT 4
 
 /* Puts replacement color set n of a creature type into color of the dungeon palettes and the D2 and D3 changes. */
 static void set_creature_replacement_colors(int16_t color, int16_t n)
@@ -2260,49 +2306,47 @@ int16_t view_get_floor_ornament(int16_t x, int16_t y)
 }
 
 /* CSB magic map: a grid of 7 x 7 squares, each a 7 x 7 pixel tile with a 1 pixel border. */
-enum {
-    MAP_SQUARES = 7,
-    MAP_HALF = 3,
-    MAP_TILE_W = 7,
-    MAP_TILE_H = 7,
-    MAP_GAP_X = 1,
-    MAP_GAP_Y = 1,
-    MAP_TILES_PER_ROW = 16
-};
-enum { MAP_COLOR_PARTY = 8, MAP_COLOR_FOOTPRINTS = 4 };
+#define MAP_SQUARES                   7
+#define MAP_HALF                      3
+#define MAP_TILE_W                    7
+#define MAP_TILE_H                    7
+#define MAP_GAP_X                     1
+#define MAP_GAP_Y                     1
+#define MAP_TILES_PER_ROW             16
+#define MAP_COLOR_PARTY               8
+#define MAP_COLOR_FOOTPRINTS          4
 /* Tiles of GFX_MAGIC_MAP_TILES. A tile with "+ cell" or "+ side" has 4 tiles, one per side relative to the map. */
-enum {
-    MAP_TILE_WALL,
-    MAP_TILE_FAKE_WALL_BLINK,
-    MAP_TILE_FLOOR,
-    MAP_TILE_PIT,
-    MAP_TILE_PIT_INVISIBLE,
-    MAP_TILE_PIT_BLINK,
-    MAP_TILE_TELEPORTER_FIRST = 6,
-    MAP_TILE_DOOR_FRONT = 10,
-    MAP_TILE_DOOR_SIDE = 11,
-    MAP_TILE_DOOR_NO_BUTTON = 2,
-    MAP_TILE_DOOR_OPEN = 4,
-    MAP_TILE_STAIRS_FIRST = 18,
-    MAP_TILE_ALCOVE_FIRST = 22,
-    MAP_TILE_VI_ALTAR_FIRST = 26,
-    MAP_TILE_FOUNTAIN_FIRST = 30,
-    MAP_TILE_ZOKATHRA_FIRST = 34,
-    MAP_TILE_IN_WALL = 4,
-    MAP_TILE_LIGHTNING_FIRST = 42,
-    MAP_TILE_LIGHTNING_ACROSS = 4,
-    MAP_TILE_FIREBALL_FIRST = 50,
-    MAP_TILE_SPELL_FIRST = 54,
-    MAP_TILE_SLIME_FIRST = 58,
-    MAP_TILE_POISON_FIRST = 62,
-    MAP_TILE_EXPLOSION_FIRE = 66,
-    MAP_TILE_EXPLOSION_OTHER = 67,
-    MAP_TILE_POISON_CLOUD_FIRST = 68,
-    MAP_TILE_FLUXCAGE_FIRST = 72,
-    MAP_TILE_CREATURE_FIRST = 76,
-    MAP_TILE_FLOOR_ORNAMENT_FIRST = 78,
-};
-enum { MAP_TIME_BLINK_PIT = 1, MAP_TIME_BLINK_WALL = 2 }; /* game time bits of the blinking tiles */
+#define MAP_TILE_WALL                 0
+#define MAP_TILE_FAKE_WALL_BLINK      1
+#define MAP_TILE_FLOOR                2
+#define MAP_TILE_PIT                  3
+#define MAP_TILE_PIT_INVISIBLE        4
+#define MAP_TILE_PIT_BLINK            5
+#define MAP_TILE_TELEPORTER_FIRST     6
+#define MAP_TILE_DOOR_FRONT           10
+#define MAP_TILE_DOOR_SIDE            11
+#define MAP_TILE_DOOR_NO_BUTTON       2
+#define MAP_TILE_DOOR_OPEN            4
+#define MAP_TILE_STAIRS_FIRST         18
+#define MAP_TILE_ALCOVE_FIRST         22
+#define MAP_TILE_VI_ALTAR_FIRST       26
+#define MAP_TILE_FOUNTAIN_FIRST       30
+#define MAP_TILE_ZOKATHRA_FIRST       34
+#define MAP_TILE_IN_WALL              4
+#define MAP_TILE_LIGHTNING_FIRST      42
+#define MAP_TILE_LIGHTNING_ACROSS     4
+#define MAP_TILE_FIREBALL_FIRST       50
+#define MAP_TILE_SPELL_FIRST          54
+#define MAP_TILE_SLIME_FIRST          58
+#define MAP_TILE_POISON_FIRST         62
+#define MAP_TILE_EXPLOSION_FIRE       66
+#define MAP_TILE_EXPLOSION_OTHER      67
+#define MAP_TILE_POISON_CLOUD_FIRST   68
+#define MAP_TILE_FLUXCAGE_FIRST       72
+#define MAP_TILE_CREATURE_FIRST       76
+#define MAP_TILE_FLOOR_ORNAMENT_FIRST 78
+#define MAP_TIME_BLINK_PIT            1 /* game time bits of the blinking tiles */
+#define MAP_TIME_BLINK_WALL           2
 
 /* Draws one map tile at (px, py). */
 static void draw_map_tile(Bitmap *dst, int16_t tile, int16_t px, int16_t py)

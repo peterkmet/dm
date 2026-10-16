@@ -46,13 +46,11 @@
 #define SLOT_BOX_CHEST_FIRST      (UI_SLOT_BOX_INVENTORY_FIRST + SLOT_CHEST_FIRST)
 
 /* Object attribute bits of the description; the names are strings TEXT_CONSUMABLE + bit. */
-enum {
-    ATTRIBUTE_CONSUMABLE = 1,
-    ATTRIBUTE_POISONED = 2,
-    ATTRIBUTE_BROKEN = 4,
-    ATTRIBUTE_CURSED = 8,
-    ATTRIBUTE_COUNT = 4
-};
+#define ATTRIBUTE_CONSUMABLE 1
+#define ATTRIBUTE_POISONED   2
+#define ATTRIBUTE_BROKEN     4
+#define ATTRIBUTE_CURSED     8
+#define ATTRIBUTE_COUNT      4
 
 const char *const g_rune_names[UI_RUNE_COUNT] = {
     "LO",  "UM", "ON",   "EE", "PAL", "MON", "YA", "VI",  "OH",   "FUL",  "DES", "ZO",

@@ -23,7 +23,10 @@
 #define SPELL_EXPERIENCE_POWER_FACTOR 8
 #define SPELL_EXPERIENCE_LEVEL_FACTOR 16
 #define SPELL_EXPERIENCE_RANDOM_MASK  0x7
-enum { SPELL_KIND_POTION = 1, SPELL_KIND_PROJECTILE = 2, SPELL_KIND_OTHER = 3, SPELL_KIND_MAGIC_MAP = 4 };
+#define SPELL_KIND_POTION             1
+#define SPELL_KIND_PROJECTILE         2
+#define SPELL_KIND_OTHER              3
+#define SPELL_KIND_MAGIC_MAP          4
 
 /* The fields of the attributes word of a spell entry. */
 static inline uint16_t spell_attributes_kind(uint16_t attributes)

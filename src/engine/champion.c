@@ -94,7 +94,10 @@
 #define STATISTICS_RESTORE_SLEEPING_MASK  0x3f
 
 /* Weapon classes that use the swing, throw, and shoot skills. */
-enum { CLASS_SWING_WEAPON = 0, CLASS_DAGGER_AND_AXES = 2, CLASS_FIRST_AMMUNITION = 16, CLASS_AMMUNITION_END = 112 };
+#define CLASS_SWING_WEAPON     0
+#define CLASS_DAGGER_AND_AXES  2
+#define CLASS_FIRST_AMMUNITION 16
+#define CLASS_AMMUNITION_END   112
 
 uint8_t g_champion_portraits[CHAMPION_MAX_COUNT][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 int16_t g_candidate_champion_ordinal;
@@ -104,27 +107,25 @@ int16_t g_champion_skill_level_up[CHAMPION_MAX_COUNT][SKILL_BASE_COUNT];
 uint16_t g_dead_champions;
 
 /* Offsets of the original record. */
-enum {
-    REC_NAME = 0x00,
-    REC_TITLE = 0x08,
-    REC_DIRECTION = 0x1c,
-    REC_CELL = 0x1d,
-    REC_ACTION = 0x20,
-    REC_SYMBOL_STEP = 0x21,
-    REC_SYMBOLS = 0x22,
-    REC_DAMAGE_DIRECTION = 0x28,
-    REC_MAXIMUM_DAMAGE = 0x29,
-    REC_POISON_EVENTS = 0x2a,
-    REC_WORDS = 0x2c,
-    REC_STATISTICS = 0x46,
-    REC_SKILLS = 0x5c,
-    REC_SLOTS = 0xd4,
-    REC_LOAD = 0x110,
-    REC_SHIELD = 0x112,
-    REC_MAGIC_MAP = 0x118,
-};
-#define REC_WORD_COUNT 13
-#define REC_SKILL_SIZE 6
+#define REC_NAME             0x00
+#define REC_TITLE            0x08
+#define REC_DIRECTION        0x1c
+#define REC_CELL             0x1d
+#define REC_ACTION           0x20
+#define REC_SYMBOL_STEP      0x21
+#define REC_SYMBOLS          0x22
+#define REC_DAMAGE_DIRECTION 0x28
+#define REC_MAXIMUM_DAMAGE   0x29
+#define REC_POISON_EVENTS    0x2a
+#define REC_WORDS            0x2c
+#define REC_STATISTICS       0x46
+#define REC_SKILLS           0x5c
+#define REC_SLOTS            0xd4
+#define REC_LOAD             0x110
+#define REC_SHIELD           0x112
+#define REC_MAGIC_MAP        0x118
+#define REC_WORD_COUNT       13
+#define REC_SKILL_SIZE       6
 #define WORDS(c)                                                                                                       \
     &c->enable_action_event_index, &c->hide_damage_received_event_index, (int16_t *)&c->attributes,                    \
         (int16_t *)&c->wounds, &c->current_health, &c->maximum_health, &c->current_stamina, &c->maximum_stamina,       \

@@ -7,7 +7,8 @@
 
 /* The adventure of the run: Dungeon Master or Chaos Strikes Back. Its data folder and save file names. */
 
-enum { ADVENTURE_DM, ADVENTURE_CSB };
+#define ADVENTURE_DM  0
+#define ADVENTURE_CSB 1
 
 #define DM_DUNGEON_ID         10 /* the DM Dungeon.DAT */
 #define CSB_PRISON_DUNGEON_ID 12 /* the CSB Dungeon.DAT: champion selection; a save makes the adventure */

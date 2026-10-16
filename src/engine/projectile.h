@@ -11,24 +11,23 @@
 /* Projectiles, explosions, fluxcages, and launchers (KAOS range 7, PROJEXPL.C): docs/rules/creatures.md. */
 
 /* Explosion types. The explosion thing of a type is 0xff80 + type. */
-enum {
-    EXPLOSION_FIREBALL = 0,
-    EXPLOSION_SLIME = 1,
-    EXPLOSION_LIGHTNING_BOLT = 2,
-    EXPLOSION_HARM_NON_MATERIAL = 3,
-    EXPLOSION_OPEN_DOOR = 4,
-    EXPLOSION_POISON_BOLT = 6,
-    EXPLOSION_POISON_CLOUD = 7,
-    EXPLOSION_SMOKE = 40,
-    EXPLOSION_FLUXCAGE = 50,
-    EXPLOSION_REBIRTH_STEP_1 = 100,
-    EXPLOSION_REBIRTH_STEP_2 = 101
-};
-#define EXPLOSION_THING_BASE  0xff80
-#define EXPLOSION_THING(type) ((uint16_t)(EXPLOSION_THING_BASE + (type)))
+#define EXPLOSION_FIREBALL          0
+#define EXPLOSION_SLIME             1
+#define EXPLOSION_LIGHTNING_BOLT    2
+#define EXPLOSION_HARM_NON_MATERIAL 3
+#define EXPLOSION_OPEN_DOOR         4
+#define EXPLOSION_POISON_BOLT       6
+#define EXPLOSION_POISON_CLOUD      7
+#define EXPLOSION_SMOKE             40
+#define EXPLOSION_FLUXCAGE          50
+#define EXPLOSION_REBIRTH_STEP_1    100
+#define EXPLOSION_REBIRTH_STEP_2    101
+#define EXPLOSION_THING_BASE        0xff80
+#define EXPLOSION_THING(type)       ((uint16_t)(EXPLOSION_THING_BASE + (type)))
 
 /* Impact type of projectile_has_impact_occurred: a square type (wall, stairs, door, fake wall) or these values. */
-enum { IMPACT_PARTY = -2, IMPACT_CREATURE = -1 };
+#define IMPACT_PARTY    (-2)
+#define IMPACT_CREATURE (-1)
 
 /* Kinetic energy of a projectile: one byte. */
 #define KINETIC_ENERGY_MAXIMUM       255
@@ -38,14 +37,12 @@ enum { IMPACT_PARTY = -2, IMPACT_CREATURE = -1 };
 #define SHOT_DISABLED_MOVEMENT_TICKS 4
 
 /* Projectile launcher sensor types. */
-enum {
-    SENSOR_WALL_LAUNCHER_OBJECT = 7,
-    SENSOR_WALL_LAUNCHER_EXPLOSION = 8,
-    SENSOR_WALL_LAUNCHER_TWO_OBJECTS = 9,
-    SENSOR_WALL_LAUNCHER_TWO_EXPLOSIONS = 10,
-    SENSOR_WALL_LAUNCHER_SQUARE_OBJECT = 14,
-    SENSOR_WALL_LAUNCHER_TWO_SQUARE_OBJECTS = 15
-};
+#define SENSOR_WALL_LAUNCHER_OBJECT             7
+#define SENSOR_WALL_LAUNCHER_EXPLOSION          8
+#define SENSOR_WALL_LAUNCHER_TWO_OBJECTS        9
+#define SENSOR_WALL_LAUNCHER_TWO_EXPLOSIONS     10
+#define SENSOR_WALL_LAUNCHER_SQUARE_OBJECT      14
+#define SENSOR_WALL_LAUNCHER_TWO_SQUARE_OBJECTS 15
 static inline bool projectile_is_launcher_sensor(uint16_t sensor)
 {
     uint16_t type = rec_sensor_type(sensor);
@@ -76,7 +73,8 @@ static inline void projectile_set_event_index(uint16_t projectile, uint16_t inde
 }
 
 /* Explosion record, 4 bytes (thing type 15): next, attack, type in bits 0-6, centered in bit 7. */
-enum { EXPLOSION_RECORD_TYPE_MASK = 0x7f, EXPLOSION_RECORD_CENTERED = 0x80 };
+#define EXPLOSION_RECORD_TYPE_MASK 0x7f
+#define EXPLOSION_RECORD_CENTERED  0x80
 static inline void explosion_set_attack(uint16_t explosion, uint8_t attack)
 {
     REC(explosion)[2] = attack;
@@ -93,13 +91,11 @@ static inline void explosion_set_centered(uint16_t explosion, bool centered)
 }
 
 /* Projectile move event: b = projectile thing, c = x bits 11-15, y bits 6-10, direction bits 4-5, step energy bits 0-3. */
-enum {
-    PROJECTILE_EVENT_X_SHIFT = 11,
-    PROJECTILE_EVENT_Y_SHIFT = 6,
-    PROJECTILE_EVENT_DIRECTION_SHIFT = 4,
-    PROJECTILE_EVENT_XY_MASK = 0x1f,
-    PROJECTILE_EVENT_STEP_ENERGY_MASK = 0xf
-};
+#define PROJECTILE_EVENT_X_SHIFT          11
+#define PROJECTILE_EVENT_Y_SHIFT          6
+#define PROJECTILE_EVENT_DIRECTION_SHIFT  4
+#define PROJECTILE_EVENT_XY_MASK          0x1f
+#define PROJECTILE_EVENT_STEP_ENERGY_MASK 0xf
 static inline int16_t projectile_event_x(const TimelineEvent *event)
 {
     return event->c >> PROJECTILE_EVENT_X_SHIFT;

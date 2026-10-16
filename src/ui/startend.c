@@ -61,10 +61,12 @@
 #define CSB_ENDING_FILE          "ENDA.DAT" /* the CSB ending animation, in the disk A folder */
 
 /* Choices of the save dialog without the format choice. */
-enum { SAVE_CHOICE_CANCEL = 1, SAVE_CHOICE_SAVE = 2, SAVE_CHOICE_QUIT = 3 };
-enum { QUIT_CHOICE_CANCEL = 2 };
-enum { LOAD_CHOICE_CANCEL = 2 };
-enum { SOUND_FUSE = 14 };
+#define SAVE_CHOICE_CANCEL 1
+#define SAVE_CHOICE_SAVE   2
+#define SAVE_CHOICE_QUIT   3
+#define QUIT_CHOICE_CANCEL 2
+#define LOAD_CHOICE_CANCEL 2
+#define SOUND_FUSE         14
 
 void (*g_frame_hook)(void);
 bool g_quit_requested, g_restart_requested, g_return_to_entrance;

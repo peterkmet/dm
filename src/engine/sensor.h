@@ -7,11 +7,16 @@
 
 /* Floor and wall sensors. Coordinates are on the current map. */
 
-enum { EFFECT_SET, EFFECT_CLEAR, EFFECT_TOGGLE, EFFECT_HOLD };
-enum { LOCAL_EFFECT_ROTATE_SENSORS_1 = 1, LOCAL_EFFECT_ROTATE_SENSORS = 2, LOCAL_EFFECT_EXPERIENCE = 10 };
-enum { SENSOR_TEXT_COLOR = 15 }; /* white */
-#define ANY_CELL                (-1)
-#define VI_ALTAR_REBIRTH_EFFECT 2 /* event 13 effect byte */
+#define EFFECT_SET                    0
+#define EFFECT_CLEAR                  1
+#define EFFECT_TOGGLE                 2
+#define EFFECT_HOLD                   3
+#define LOCAL_EFFECT_ROTATE_SENSORS_1 1
+#define LOCAL_EFFECT_ROTATE_SENSORS   2
+#define LOCAL_EFFECT_EXPERIENCE       10
+#define SENSOR_TEXT_COLOR             15 /* white */
+#define ANY_CELL                      (-1)
+#define VI_ALTAR_REBIRTH_EFFECT       2 /* event 13 effect byte */
 
 extern int16_t g_sensor_rotation_effect, g_sensor_rotation_effect_map_x, g_sensor_rotation_effect_map_y,
     g_sensor_rotation_effect_cell;

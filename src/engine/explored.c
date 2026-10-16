@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum { SAVE_VERSION = 1, SAVE_HEADER_SIZE = 6 }; /* magic, version, map count */
+#define SAVE_VERSION     1 /* magic, version, map count */
+#define SAVE_HEADER_SIZE 6
 static const char SAVE_MAGIC[] = EXPLORED_SAVE_MAGIC;
-enum { SAVE_MAGIC_SIZE = sizeof SAVE_MAGIC - 1 }; /* without the NUL */
+#define SAVE_MAGIC_SIZE (sizeof SAVE_MAGIC - 1) /* without the NUL */
 
 /* One byte per square of every map, the maps one after another. */
 static uint8_t *seen;

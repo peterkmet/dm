@@ -11,9 +11,10 @@
 #include "ui/view.h"
 #include <stdio.h>
 
-enum { LABEL_WIDTH = 11, LABEL_BASELINE = 4 }; /* two digits; the font cell starts 4 rows above the baseline */
-enum { LABEL_TEXT_SIZE = 7 };                  /* the longest int16_t, "-32768", and the end byte */
-static int16_t scroll_x, scroll_y;             /* squares between the party and the center of the drawn map */
+#define LABEL_WIDTH     11 /* two digits; the font cell starts 4 rows above the baseline */
+#define LABEL_BASELINE  4
+#define LABEL_TEXT_SIZE 7          /* the longest int16_t, "-32768", and the end byte */
+static int16_t scroll_x, scroll_y; /* squares between the party and the center of the drawn map */
 
 static bool is_on_map(int16_t map, int16_t x, int16_t y)
 {

@@ -14,65 +14,87 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-enum { ASPECT_KEEP_FLAGS = ASPECT_ATTACKING | ASPECT_FLIPPED };
+#define ASPECT_KEEP_FLAGS (ASPECT_ATTACKING | ASPECT_FLIPPED)
 
-enum { FIXED_POSSESSION_RANDOM_DROP = 0x8000, FIXED_POSSESSION_INDEX_MASK = 0x7fff };
+#define FIXED_POSSESSION_RANDOM_DROP 0x8000
+#define FIXED_POSSESSION_INDEX_MASK  0x7fff
 
-enum { SYSTEM_ERROR_NO_FREE_ACTIVE_GROUP = 71, ACTIVE_GROUP_RESERVE = 5 };
-enum { MOVEMENT_TICKS_OF_IMMOBILE_CREATURE = 100, FREEZE_LIFE_RETRY_TICKS = 4, MOVE_GROUP_RETRY_TICKS = 5 };
-enum { WARINESS_AVOIDS_FORBIDDEN_TELEPORTER = 10, FALL_DAMAGE = 20, DOOR_DAMAGE = 5 };
-enum { INVISIBLE_PARTY_DODGE_BONUS = 16, LUCK_PERCENT_AGAINST_CREATURE = 60, LUCK_PERCENT_AGAINST_MISS = 75 };
-enum { STEAL_CHANCE_STEP = 20 };
-enum { CELLS_OF_THREE_CREATURES = 0x3f };
-enum { SMOKE_ATTACK_QUARTER = 110, SMOKE_ATTACK_HALF = 190, SMOKE_ATTACK_FULL = 255 };
+#define SYSTEM_ERROR_NO_FREE_ACTIVE_GROUP    71
+#define ACTIVE_GROUP_RESERVE                 5
+#define MOVEMENT_TICKS_OF_IMMOBILE_CREATURE  100
+#define FREEZE_LIFE_RETRY_TICKS              4
+#define MOVE_GROUP_RETRY_TICKS               5
+#define WARINESS_AVOIDS_FORBIDDEN_TELEPORTER 10
+#define FALL_DAMAGE                          20
+#define DOOR_DAMAGE                          5
+#define INVISIBLE_PARTY_DODGE_BONUS          16
+#define LUCK_PERCENT_AGAINST_CREATURE        60
+#define LUCK_PERCENT_AGAINST_MISS            75
+#define STEAL_CHANCE_STEP                    20
+#define CELLS_OF_THREE_CREATURES             0x3f
+#define SMOKE_ATTACK_QUARTER                 110
+#define SMOKE_ATTACK_HALF                    190
+#define SMOKE_ATTACK_FULL                    255
 /* Faster creatures get a higher event priority: this minus the movement ticks. */
-enum { GROUP_EVENT_PRIORITY_MAX = 255 };
+#define GROUP_EVENT_PRIORITY_MAX             255
 /* A new active group can move at once: its last move is this many ticks ago. Move times are kept in one byte. */
-enum { NEW_GROUP_LAST_MOVE_AGE = 127, MOVE_TIME_WRAP = 256 };
+#define NEW_GROUP_LAST_MOVE_AGE              127
+#define MOVE_TIME_WRAP                       256
 /* First word of the fixed possession list of each creature type in the possession table. */
-enum {
-    POSSESSIONS_SKELETON = 0,
-    POSSESSIONS_STONE_GOLEM = 3,
-    POSSESSIONS_TROLIN = 5,
-    POSSESSIONS_ANIMATED_ARMOUR = 7,
-    POSSESSIONS_ROCK_PILE = 14,
-    POSSESSIONS_PAIN_RAT = 19,
-    POSSESSIONS_SCREAMER = 22,
-    POSSESSIONS_MAGENTA_WORM = 25,
-    POSSESSIONS_RED_DRAGON = 29
-};
+#define POSSESSIONS_SKELETON                 0
+#define POSSESSIONS_STONE_GOLEM              3
+#define POSSESSIONS_TROLIN                   5
+#define POSSESSIONS_ANIMATED_ARMOUR          7
+#define POSSESSIONS_ROCK_PILE                14
+#define POSSESSIONS_PAIN_RAT                 19
+#define POSSESSIONS_SCREAMER                 22
+#define POSSESSIONS_MAGENTA_WORM             25
+#define POSSESSIONS_RED_DRAGON               29
 /* A frightened group flees for random(100 - 4 * fear) + 20 events; a thief for random(64) + 20. */
-enum {
-    FEAR_RANDOM_MASK = 0xf,
-    FLEE_DELAY_RANGE = 100,
-    FLEE_DELAY_FEAR_STEP = 4,
-    FLEE_DELAY_MINIMUM = 20,
-    THEFT_FLEE_RANDOM_MASK = 0x3f
-};
-enum { STEAL_CHANCE_START = 100 };
+#define FEAR_RANDOM_MASK                     0xf
+#define FLEE_DELAY_RANGE                     100
+#define FLEE_DELAY_FEAR_STEP                 4
+#define FLEE_DELAY_MINIMUM                   20
+#define THEFT_FLEE_RANDOM_MASK               0x3f
+#define STEAL_CHANCE_START                   100
 /* Line slopes in fixed point: 64 is one square across per square along. */
-enum { LINE_SLOPE_ONE = 64, LINE_SLOPE_STRAIGHT = 128 };
+#define LINE_SLOPE_ONE                       64
+#define LINE_SLOPE_STRAIGHT                  128
 /* Sight: an invisible party gives the range -10 (compared unsigned); next to the party a roll adds hearing and smell. */
-enum { INVISIBLE_PARTY_SIGHT_RANGE = -10, ADJACENT_SIGHT_BONUS = 5, SIGHT_ROLL_CENTER = 3 };
+#define INVISIBLE_PARTY_SIGHT_RANGE          (-10)
+#define ADJACENT_SIGHT_BONUS                 5
+#define SIGHT_ROLL_CENTER                    3
 /* A scent trail is followed when 30 - 2 * smell is below the scent strength plus a random part. */
-enum { SCENT_TRAIL_THRESHOLD = 30 };
+#define SCENT_TRAIL_THRESHOLD                30
 /* The spell projectile of a creature. */
-enum { CREATURE_SPELL_MIN_KINETIC_ENERGY = 20, CREATURE_SPELL_STEP_ENERGY = 8 };
-enum { POISON_ATTACK_FACTOR = 8 };
+#define CREATURE_SPELL_MIN_KINETIC_ENERGY    20
+#define CREATURE_SPELL_STEP_ENERGY           8
+#define POISON_ATTACK_FACTOR                 8
 /* Wound probabilities: four 4-bit thresholds, compared with a random nibble. */
-enum { WOUND_PROBABILITY_MASK = 0xf, WOUND_PROBABILITY_BITS = 4 };
+#define WOUND_PROBABILITY_MASK               0xf
+#define WOUND_PROBABILITY_BITS               4
 /* Hit rolls: random(32) - 16 around the aim of the attacker. */
-enum { AIM_RANDOM_MASK = 0x1f, AIM_RANDOM_CENTER = 16, CREATURE_DAMAGE_RANDOM_MASK = 0xf, WEAK_HIT_RANDOM_MASK = 0xf };
-enum { ARMOUR_RANDOM_MASK = 0x1f, STRENGTH_DAMAGE_RANDOM_MASK = 0x1f };
+#define AIM_RANDOM_MASK                      0x1f
+#define AIM_RANDOM_CENTER                    16
+#define CREATURE_DAMAGE_RANDOM_MASK          0xf
+#define WEAK_HIT_RANDOM_MASK                 0xf
+#define ARMOUR_RANDOM_MASK                   0x1f
+#define STRENGTH_DAMAGE_RANDOM_MASK          0x1f
 /* A skill level above a random(64) doubles the melee damage and adds 10. */
-enum { DOUBLE_DAMAGE_RANDOM_MASK = 0x3f, DOUBLE_DAMAGE_BONUS = 10, MELEE_EXPERIENCE_BONUS = 3, MELEE_HIT_STAMINA = 4 };
+#define DOUBLE_DAMAGE_RANDOM_MASK            0x3f
+#define DOUBLE_DAMAGE_BONUS                  10
+#define MELEE_EXPERIENCE_BONUS               3
+#define MELEE_HIT_STAMINA                    4
 /* Creatures farther than this on an axis update their aspect at a slow fixed pace. */
-enum { ASPECT_NEAR_DISTANCE = 3 };
+#define ASPECT_NEAR_DISTANCE                 3
 /* A creature with more attack ticks waits a random -2 to 5 ticks more. */
-enum { SLOW_ATTACK_TICKS = 15, ATTACK_RANGE_RANDOM_MASK = 0xf };
+#define SLOW_ATTACK_TICKS                    15
+#define ATTACK_RANGE_RANDOM_MASK             0xf
 /* Random bits that must all be 0: a hit without weighted wounds (1 in 8), a single small creature that
    shifts (1 in 4), and its move to a new cell (1 in 8). */
-enum { PLAIN_HIT_RANDOM_BITS = 0x70, SHIFT_CELL_RANDOM_BITS = 0xc0, NEW_CELL_RANDOM_BITS = 0x38 };
+#define PLAIN_HIT_RANDOM_BITS                0x70
+#define SHIFT_CELL_RANDOM_BITS               0xc0
+#define NEW_CELL_RANDOM_BITS                 0x38
 
 int16_t g_creature_damage_outcome;
 int16_t g_group_secondary_direction;
@@ -405,7 +427,9 @@ uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, 
     return group;
 }
 
-enum { GENERATOR_RANDOM_COUNT = 8, GENERATOR_COUNT_MASK = 7, GENERATOR_COUNT_FIELD_MASK = 0xf };
+#define GENERATOR_RANDOM_COUNT     8
+#define GENERATOR_COUNT_MASK       7
+#define GENERATOR_COUNT_FIELD_MASK 0xf
 
 /* The creature generator of a corridor event: count, health multiplier (0: map difficulty), random direction. */
 void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y)

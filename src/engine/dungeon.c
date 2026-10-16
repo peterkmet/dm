@@ -43,7 +43,9 @@ const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_REC
 #define MAX_BLOCKS           32 /* the buffers of one loaded dungeon */
 
 /* Save order: header, maps, column index, square things, text, the 16 thing types, raw map data. */
-enum { PART_THINGS_FIRST = 5, PART_RAW_MAPS = PART_THINGS_FIRST + THING_TYPE_COUNT, DUNGEON_PART_COUNT };
+#define PART_THINGS_FIRST  5
+#define PART_RAW_MAPS      (PART_THINGS_FIRST + THING_TYPE_COUNT)
+#define DUNGEON_PART_COUNT 22
 
 static void *blocks[MAX_BLOCKS];
 static int block_count;
@@ -487,12 +489,22 @@ uint8_t *dungeon_get_thing_data(uint16_t thing)
 }
 
 /* dungeon_decode_text modes; MODE_ANY_VISIBILITY also decodes an invisible text. */
-enum { MODE_INSCRIPTION, MODE_MESSAGE, MODE_SCROLL, MODE_MASK = 0x7fff };
+#define MODE_INSCRIPTION        0
+#define MODE_MESSAGE            0x0001
+#define MODE_SCROLL             0x0002
+#define MODE_MASK               0x7fff
 /* 5-bit text codes: 0-25 letters, then space, period, separator, two escapes, end. */
-enum { TEXT_CODE_BITS = 5, TEXT_CODE_MASK = 0x1f, TEXT_CODES_PER_WORD = 3 };
-enum { CODE_SPACE = 26, CODE_PERIOD, CODE_SEPARATOR, CODE_ESCAPE_REPLACEMENT, CODE_ESCAPE_STRING, CODE_END };
-#define INSCRIPTION_SEPARATOR ((char)0x80) /* the wall text font ends a line here */
-#define INSCRIPTION_END       ((char)0x81)
+#define TEXT_CODE_BITS          5
+#define TEXT_CODE_MASK          0x1f
+#define TEXT_CODES_PER_WORD     3
+#define CODE_SPACE              26
+#define CODE_PERIOD             27
+#define CODE_SEPARATOR          28
+#define CODE_ESCAPE_REPLACEMENT 29
+#define CODE_ESCAPE_STRING      30
+#define CODE_END                31
+#define INSCRIPTION_SEPARATOR   ((char)0x80) /* the wall text font ends a line here */
+#define INSCRIPTION_END         ((char)0x81)
 
 typedef struct {
     char *p, *end;

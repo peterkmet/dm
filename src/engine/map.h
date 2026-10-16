@@ -10,22 +10,45 @@
 /* Current map, square bytes, thing lists, and the record fields that the movement rules use.
    Coordinates are on the current map. All records keep the big-endian layout of Dungeon.DAT. */
 
-enum { DIRECTION_NORTH, DIRECTION_EAST, DIRECTION_SOUTH, DIRECTION_WEST };
-#define DIRECTION_BITS 2
-enum { LEVEL_UP = -1, LEVEL_DOWN = 1 };
-#define MAP_COORD_BITS 5 /* maps are at most 32 squares wide and high */
-#define MAP_COORD_MASK 0x1f
+#define DIRECTION_NORTH 0
+#define DIRECTION_EAST  1
+#define DIRECTION_SOUTH 2
+#define DIRECTION_WEST  3
+#define DIRECTION_BITS  2
+#define LEVEL_UP        (-1)
+#define LEVEL_DOWN      1
+#define MAP_COORD_BITS  5 /* maps are at most 32 squares wide and high */
+#define MAP_COORD_MASK  0x1f
 
 /* Square byte: type in bits 5-7, a thing list in bit 4, type flags in bits 0-3. */
-enum { SQUARE_WALL, SQUARE_CORRIDOR, SQUARE_PIT, SQUARE_STAIRS, SQUARE_DOOR, SQUARE_TELEPORTER, SQUARE_FAKE_WALL };
-enum { SQUARE_HAS_THINGS = 0x10, SQUARE_RANDOM_ORNAMENT = 8 }; /* random ornament: corridor and open fake wall */
-enum { WALL_ORNAMENT_RIGHT = 1, WALL_ORNAMENT_ABOVE = 2, WALL_ORNAMENT_LEFT = 4, WALL_ORNAMENT_BELOW = 8 };
-enum { PIT_IMAGINARY = 1, PIT_INVISIBLE = 4, PIT_OPEN = 8 };
-enum { STAIRS_UP = 4, STAIRS_NORTH_SOUTH = 8 };
-enum { DOOR_STATE_MASK = 7, DOOR_OPEN = 0, DOOR_ALMOST_OPEN = 1, DOOR_CLOSED = 4, DOOR_DESTROYED = 5 };
-enum { TELEPORTER_VISIBLE = 4, TELEPORTER_OPEN = 8 };
-enum { FAKE_WALL_IMAGINARY = 1, FAKE_WALL_OPEN = 4 };
-#define SQUARE_TYPE(square) ((square) >> 5)
+#define SQUARE_WALL            0
+#define SQUARE_CORRIDOR        1
+#define SQUARE_PIT             2
+#define SQUARE_STAIRS          3
+#define SQUARE_DOOR            4
+#define SQUARE_TELEPORTER      5
+#define SQUARE_FAKE_WALL       6
+#define SQUARE_HAS_THINGS      0x10 /* random ornament: corridor and open fake wall */
+#define SQUARE_RANDOM_ORNAMENT 8
+#define WALL_ORNAMENT_RIGHT    1
+#define WALL_ORNAMENT_ABOVE    2
+#define WALL_ORNAMENT_LEFT     4
+#define WALL_ORNAMENT_BELOW    8
+#define PIT_IMAGINARY          1
+#define PIT_INVISIBLE          4
+#define PIT_OPEN               8
+#define STAIRS_UP              4
+#define STAIRS_NORTH_SOUTH     8
+#define DOOR_STATE_MASK        7
+#define DOOR_OPEN              0
+#define DOOR_ALMOST_OPEN       1
+#define DOOR_CLOSED            4
+#define DOOR_DESTROYED         5
+#define TELEPORTER_VISIBLE     4
+#define TELEPORTER_OPEN        8
+#define FAKE_WALL_IMAGINARY    1
+#define FAKE_WALL_OPEN         4
+#define SQUARE_TYPE(square)    ((square) >> 5)
 
 static inline int16_t door_state(uint8_t square)
 {
@@ -37,21 +60,19 @@ static inline uint8_t square_with_door_state(uint8_t square, int16_t state)
 }
 
 /* Thing word: index in bits 0-9, type in bits 10-13, cell in bits 14-15. */
-enum {
-    THING_DOOR,
-    THING_TELEPORTER,
-    THING_TEXT,
-    THING_SENSOR,
-    THING_GROUP,
-    THING_WEAPON,
-    THING_ARMOUR,
-    THING_SCROLL,
-    THING_POTION,
-    THING_CONTAINER,
-    THING_JUNK,
-    THING_PROJECTILE = 14,
-    THING_EXPLOSION = 15
-};
+#define THING_DOOR                   0
+#define THING_TELEPORTER             1
+#define THING_TEXT                   2
+#define THING_SENSOR                 3
+#define THING_GROUP                  4
+#define THING_WEAPON                 5
+#define THING_ARMOUR                 6
+#define THING_SCROLL                 7
+#define THING_POTION                 8
+#define THING_CONTAINER              9
+#define THING_JUNK                   10
+#define THING_PROJECTILE             14
+#define THING_EXPLOSION              15
 #define THING_ENDOFLIST              0xfffe
 #define THING_END                    THING_ENDOFLIST
 #define THING_NONE                   0xffff
@@ -107,34 +128,31 @@ void rec_object_set_cursed(uint16_t thing, bool cursed);
 void scroll_set_closed(uint16_t thing, bool closed);
 
 /* Sensor record (thing type 3). */
-enum {
-    SENSOR_DISABLED = 0,
-    SENSOR_FLOOR_ANY = 1,
-    SENSOR_FLOOR_PARTY_OR_GROUP = 2,
-    SENSOR_FLOOR_PARTY = 3,
-    SENSOR_FLOOR_OBJECT = 4,
-    SENSOR_FLOOR_PARTY_ON_STAIRS = 5,
-    SENSOR_FLOOR_GROUP_GENERATOR = 6,
-    SENSOR_FLOOR_GROUP = 7,
-    SENSOR_FLOOR_PARTY_POSSESSION = 8,
-    SENSOR_FLOOR_VERSION_CHECKER = 9
-};
-enum {
-    SENSOR_WALL_ORNAMENT_CLICK = 1,
-    SENSOR_WALL_ANY_OBJECT = 2,
-    SENSOR_WALL_OBJECT = 3,
-    SENSOR_WALL_OBJECT_REMOVED = 4,
-    SENSOR_WALL_AND_OR_GATE = 5,
-    SENSOR_WALL_COUNTER = 6,
-    SENSOR_WALL_SINGLE_OBJECT_STORAGE = 11,
-    SENSOR_WALL_OBJECT_GENERATOR = 12,
-    SENSOR_WALL_SINGLE_OBJECT_EXCHANGER = 13,
-    SENSOR_WALL_OBJECT_EXCHANGER = 16,
-    SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED = 17,
-    SENSOR_WALL_ENDGAME = 18,
-    SENSOR_WALL_CHAMPION_PORTRAIT = 127
-};
-enum { SENSOR_TYPE_MASK = 0x7f, SENSOR_DATA_SHIFT = 7 };
+#define SENSOR_DISABLED                           0
+#define SENSOR_FLOOR_ANY                          1
+#define SENSOR_FLOOR_PARTY_OR_GROUP               2
+#define SENSOR_FLOOR_PARTY                        3
+#define SENSOR_FLOOR_OBJECT                       4
+#define SENSOR_FLOOR_PARTY_ON_STAIRS              5
+#define SENSOR_FLOOR_GROUP_GENERATOR              6
+#define SENSOR_FLOOR_GROUP                        7
+#define SENSOR_FLOOR_PARTY_POSSESSION             8
+#define SENSOR_FLOOR_VERSION_CHECKER              9
+#define SENSOR_WALL_ORNAMENT_CLICK                1
+#define SENSOR_WALL_ANY_OBJECT                    2
+#define SENSOR_WALL_OBJECT                        3
+#define SENSOR_WALL_OBJECT_REMOVED                4
+#define SENSOR_WALL_AND_OR_GATE                   5
+#define SENSOR_WALL_COUNTER                       6
+#define SENSOR_WALL_SINGLE_OBJECT_STORAGE         11
+#define SENSOR_WALL_OBJECT_GENERATOR              12
+#define SENSOR_WALL_SINGLE_OBJECT_EXCHANGER       13
+#define SENSOR_WALL_OBJECT_EXCHANGER              16
+#define SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED 17
+#define SENSOR_WALL_ENDGAME                       18
+#define SENSOR_WALL_CHAMPION_PORTRAIT             127
+#define SENSOR_TYPE_MASK                          0x7f
+#define SENSOR_DATA_SHIFT                         7
 
 static inline uint16_t rec_sensor_type(uint16_t thing)
 {
@@ -226,7 +244,9 @@ static inline uint8_t rec_sensor_launcher_step_energy(uint16_t thing)
 }
 
 /* Teleporter record (thing type 1). Scope: 1 creatures, 2 party, 3 everything. */
-enum { TELEPORTER_SCOPE_CREATURES = 1, TELEPORTER_SCOPE_PARTY = 2, TELEPORTER_SCOPE_ALL = 3 };
+#define TELEPORTER_SCOPE_CREATURES 1
+#define TELEPORTER_SCOPE_PARTY     2
+#define TELEPORTER_SCOPE_ALL       3
 static inline int16_t teleporter_target_x(uint16_t thing)
 {
     return REC(thing)[3] & MAP_COORD_MASK;
@@ -298,7 +318,8 @@ static inline void rec_text_set_visible(uint16_t thing, bool visible)
 }
 
 /* Group record (thing type 4) and creature attributes. */
-enum { CREATURE_LEVITATES = 0x20, CREATURE_NON_MATERIAL = 0x40 };
+#define CREATURE_LEVITATES    0x20
+#define CREATURE_NON_MATERIAL 0x40
 static inline uint16_t rec_group_creature_type(uint16_t thing)
 {
     return REC(thing)[4];
@@ -315,20 +336,18 @@ static inline uint16_t rec_projectile_event_index(uint16_t thing)
 }
 
 /* Map descriptor, 16 bytes. */
-#define MAP_BYTES 16
-enum {
-    MAP_OFFSET_X_BYTE = 6,
-    MAP_OFFSET_Y_BYTE,
-    MAP_LAST_XY_BYTE,
-    MAP_LEVEL_BYTE,
-    MAP_FLOOR_ORNAMENTS_BYTE,
-    MAP_WALL_ORNAMENTS_BYTE,
-    MAP_DIFFICULTY_BYTE,
-    MAP_DOOR_ORNAMENTS_CREATURES_BYTE,
-    MAP_DOOR_SETS_BYTE,
-    MAP_GRAPHIC_SETS_BYTE
-};
-#define MAP_DESCRIPTOR(map) (g_dungeon_maps + (map) * MAP_BYTES)
+#define MAP_BYTES                         16
+#define MAP_OFFSET_X_BYTE                 6
+#define MAP_OFFSET_Y_BYTE                 7
+#define MAP_LAST_XY_BYTE                  8
+#define MAP_LEVEL_BYTE                    9
+#define MAP_FLOOR_ORNAMENTS_BYTE          10
+#define MAP_WALL_ORNAMENTS_BYTE           11
+#define MAP_DIFFICULTY_BYTE               12
+#define MAP_DOOR_ORNAMENTS_CREATURES_BYTE 13
+#define MAP_DOOR_SETS_BYTE                14
+#define MAP_GRAPHIC_SETS_BYTE             15
+#define MAP_DESCRIPTOR(map)               (g_dungeon_maps + (map) * MAP_BYTES)
 static inline int16_t map_offset_x(int16_t map)
 {
     return MAP_DESCRIPTOR(map)[MAP_OFFSET_X_BYTE];
@@ -368,7 +387,9 @@ extern uint8_t *g_current_map;              /* map descriptor, 16 bytes */
 extern uint16_t g_current_map_door_info[2]; /* high byte attributes, low byte defense */
 
 /* Door attributes (high byte of the door info of the current map): the door is see-through, projectiles pass. */
-enum { DOOR_ATTRIBUTES_SHIFT = 8, DOOR_SEE_THROUGH = 1, DOOR_PROJECTILES_PASS = 2 };
+#define DOOR_ATTRIBUTES_SHIFT 8
+#define DOOR_SEE_THROUGH      1
+#define DOOR_PROJECTILES_PASS 2
 static inline uint16_t door_attributes(uint16_t door)
 {
     return g_current_map_door_info[door_type(door)] >> DOOR_ATTRIBUTES_SHIFT;
@@ -379,7 +400,7 @@ static inline bool door_is_see_through(uint16_t door)
 }
 
 /* Map descriptor byte 12: difficulty in bits 4-7. */
-enum { MAP_DIFFICULTY_SHIFT = 4 };
+#define MAP_DIFFICULTY_SHIFT 4
 /* Difficulty of the current map, 0 when no map is loaded. */
 static inline uint16_t map_current_difficulty(void)
 {
@@ -422,7 +443,8 @@ static inline uint8_t rec_group_cells_byte(uint16_t group)
 {
     return REC(group)[5];
 }
-enum { GROUP_DIRECTION_BYTE = 14, GROUP_BEHAVIOR_BYTE = 15 }; /* behavior and last creature index */
+#define GROUP_DIRECTION_BYTE 14 /* behavior and last creature index */
+#define GROUP_BEHAVIOR_BYTE  15
 static inline uint8_t rec_group_last_creature_index(uint16_t group)
 {
     return (REC(group)[GROUP_BEHAVIOR_BYTE] & 0x60) >> 5;

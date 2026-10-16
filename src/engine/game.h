@@ -33,38 +33,37 @@ static inline int16_t turn_left(int16_t direction)
     return NORMALIZE(direction + 3);
 }
 
-enum {
-    STAT_LUCK,
-    STAT_STRENGTH,
-    STAT_DEXTERITY,
-    STAT_WISDOM,
-    STAT_VITALITY,
-    STAT_ANTIMAGIC,
-    STAT_ANTIFIRE,
-    STAT_COUNT
-};
-#define STAT_MANA STAT_COUNT /* object modifiers: the change goes to the maximum mana */
-enum { STAT_MAXIMUM, STAT_CURRENT, STAT_MINIMUM, STAT_VALUE_COUNT };
+#define STAT_LUCK           0
+#define STAT_STRENGTH       1
+#define STAT_DEXTERITY      2
+#define STAT_WISDOM         3
+#define STAT_VITALITY       4
+#define STAT_ANTIMAGIC      5
+#define STAT_ANTIFIRE       6
+#define STAT_COUNT          7
+#define STAT_MANA           STAT_COUNT /* object modifiers: the change goes to the maximum mana */
+#define STAT_MAXIMUM        0
+#define STAT_CURRENT        1
+#define STAT_MINIMUM        2
+#define STAT_VALUE_COUNT    3
 /* Champion slots (Champion.slots), then the slots of the open chest. */
-enum {
-    SLOT_HAND_READY,
-    SLOT_HAND_ACTION,
-    SLOT_HEAD,
-    SLOT_TORSO,
-    SLOT_LEGS,
-    SLOT_FEET,
-    SLOT_POUCH_2,
-    SLOT_QUIVER_LINE2_1,
-    SLOT_QUIVER_LINE1_2,
-    SLOT_QUIVER_LINE2_2,
-    SLOT_NECK,
-    SLOT_POUCH_1,
-    SLOT_QUIVER_LINE1_1,
-    SLOT_BACKPACK_FIRST,
-    SLOT_COUNT = 30,
-    SLOT_CHEST_FIRST = 30,
-    SLOT_CHEST_COUNT = 8,
-};
+#define SLOT_HAND_READY     0
+#define SLOT_HAND_ACTION    1
+#define SLOT_HEAD           2
+#define SLOT_TORSO          3
+#define SLOT_LEGS           4
+#define SLOT_FEET           5
+#define SLOT_POUCH_2        6
+#define SLOT_QUIVER_LINE2_1 7
+#define SLOT_QUIVER_LINE1_2 8
+#define SLOT_QUIVER_LINE2_2 9
+#define SLOT_NECK           10
+#define SLOT_POUCH_1        11
+#define SLOT_QUIVER_LINE1_1 12
+#define SLOT_BACKPACK_FIRST 13
+#define SLOT_COUNT          30
+#define SLOT_CHEST_FIRST    30
+#define SLOT_CHEST_COUNT    8
 #define CHAMPION_NAME_SIZE  8
 #define CHAMPION_TITLE_SIZE 20
 
@@ -101,9 +100,16 @@ typedef struct {
 
 /* Champion.magic_map: the DAIN, ROS, and KU spell counts; NETA holds direction + 1 of the kept map; the
    kept position is a big-endian word with x in bits 11-15, y in bits 6-10, and the map in bits 0-5. */
-enum { MAGIC_MAP_DAIN, MAGIC_MAP_ROS, MAGIC_MAP_KU, MAGIC_MAP_NETA, MAGIC_MAP_POSITION };
+#define MAGIC_MAP_DAIN     0
+#define MAGIC_MAP_ROS      1
+#define MAGIC_MAP_KU       2
+#define MAGIC_MAP_NETA     3
+#define MAGIC_MAP_POSITION 4
 /* A position word (kept map position, party scents): x in bits 11-15, y in bits 6-10, the map in bits 0-5. */
-enum { POSITION_X_SHIFT = 11, POSITION_Y_SHIFT = 6, POSITION_XY_MASK = 0x1f, POSITION_MAP_MASK = 0x3f };
+#define POSITION_X_SHIFT   11
+#define POSITION_Y_SHIFT   6
+#define POSITION_XY_MASK   0x1f
+#define POSITION_MAP_MASK  0x3f
 
 /* A position word. x can be negative (unsigned shift). */
 static inline uint16_t position_pack(int16_t map, int16_t x, int16_t y)
@@ -181,16 +187,23 @@ extern uint16_t g_active_group_count, g_max_active_group_count;
 
 /* Interface parts that the game rules changed: the user interface draws them again (g_redraw bits). */
 extern uint16_t g_redraw;
-enum { REDRAW_ACTION_AREA = 1, REDRAW_SPELL_AREA = 2, REDRAW_SPELL_TABS = 4, REDRAW_SPELL_SYMBOLS = 8 };
+#define REDRAW_ACTION_AREA   1
+#define REDRAW_SPELL_AREA    2
+#define REDRAW_SPELL_TABS    4
+#define REDRAW_SPELL_SYMBOLS 8
 
 /* Game modes (not in the original game): the user interface differs, the game rules are the same. */
-enum { GAME_MODE_VANILLA, GAME_MODE_ADVANCED, GAME_MODE_TURNBASED };
+#define GAME_MODE_VANILLA   0
+#define GAME_MODE_ADVANCED  1
+#define GAME_MODE_TURNBASED 2
 extern int16_t g_game_mode; /* GAME_MODE_VANILLA by default */
 /* Cheats of the advanced mode, L, I, and F on the automap. Not saved; a new or loaded game turns them off. */
 extern bool g_cheat_light;    /* the view draws in full light; the creature rules keep the real light */
 extern bool g_cheat_immortal; /* the health of a champion stops at 1 */
 extern bool g_cheat_food;     /* food and water do not go down */
-enum { CHEAT_LIGHT, CHEAT_IMMORTAL, CHEAT_FOOD };
+#define CHEAT_LIGHT    0
+#define CHEAT_IMMORTAL 1
+#define CHEAT_FOOD     2
 
 void game_start_new(void);
 void game_reset_session(void);

@@ -14,9 +14,13 @@
 #define LOUDNESS_LOUD_SUM     26    /* left + right volume of a loud sound */
 #define NO_SOUND              (-1)  /* empty pending slot */
 
-enum { SIDE_LEFT, SIDE_RIGHT, SIDE_COUNT };
-enum { PAIR_A, PAIR_B, PAIR_COUNT };
-enum { AMIGA_CHANNELS = 4 };
+#define SIDE_LEFT      0
+#define SIDE_RIGHT     1
+#define SIDE_COUNT     2
+#define PAIR_A         0
+#define PAIR_B         1
+#define PAIR_COUNT     2
+#define AMIGA_CHANNELS 4
 
 typedef struct {
     const int8_t *data;

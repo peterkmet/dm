@@ -24,25 +24,28 @@
 #define QUICK_SAVE_FILE_NAME       "QUICK.DAT"
 
 /* Party record (g_party) offsets. */
-enum {
-    P_MAGICAL_LIGHT = 0,
-    P_THIEVES_EYE = 2,
-    P_FOOTPRINTS = 3,
-    P_SHIELD = 4,
-    P_FIRE_SHIELD = 6,
-    P_SPELL_SHIELD = 8,
-    P_SCENT_COUNT = 10,
-    P_FREEZE_LIFE = 11,
-    P_FIRST_SCENT = 12,
-    P_LAST_SCENT = 13,
-    P_SCENTS = 14,
-    P_SCENT_STRENGTHS = 62,
-    P_INVISIBILITY = 86,
-};
+#define P_MAGICAL_LIGHT   0
+#define P_THIEVES_EYE     2
+#define P_FOOTPRINTS      3
+#define P_SHIELD          4
+#define P_FIRE_SHIELD     6
+#define P_SPELL_SHIELD    8
+#define P_SCENT_COUNT     10
+#define P_FREEZE_LIFE     11
+#define P_FIRST_SCENT     12
+#define P_LAST_SCENT      13
+#define P_SCENTS          14
+#define P_SCENT_STRENGTHS 62
+#define P_INVISIBILITY    86
 /* Timeline event record offsets. */
-enum { E_MAP_TIME = 0, E_TYPE = 4, E_PRIORITY = 5, E_DATA_B = 6, E_DATA_C = 8 };
+#define E_MAP_TIME        0
+#define E_TYPE            4
+#define E_PRIORITY        5
+#define E_DATA_B          6
+#define E_DATA_C          8
 /* Active group record offsets: group index, then 14 bytes in the order of ActiveGroup. */
-enum { A_GROUP_INDEX = 0, A_BYTES = 2 };
+#define A_GROUP_INDEX     0
+#define A_BYTES           2
 
 bool g_saved_game_exists;
 uint32_t g_last_save_game_time, g_last_load_game_time;
