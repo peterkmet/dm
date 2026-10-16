@@ -95,10 +95,13 @@ def as_tuple(rec):
 
 
 @pytest.mark.parametrize("name", TABLES)
-def test_accessor_rejects_out_of_range(lib, name):
-    count = TABLES[name][1]
+def test_accessor_rejects_out_of_range(lib, image, name):
+    _, count, addr, stride, fmt = TABLES[name]
     scalar = not issubclass(TABLES[name][0], ctypes.Structure)
-    assert scalar or get(lib, name, count - 1) is not None
+    if scalar:
+        assert get(lib, name, count - 1) == struct.unpack_from(fmt, image, addr - BASE + (count - 1) * stride)[0]
+    else:
+        assert get(lib, name, count - 1) is not None
     for i in (-1, count, 0x7FFF):
         assert get(lib, name, i) == 0 if scalar else get(lib, name, i) is None
 
