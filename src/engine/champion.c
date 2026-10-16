@@ -634,7 +634,7 @@ uint16_t champion_get_maximum_load(int16_t champion_index)
     return load - load % LOAD_UNIT;
 }
 
-enum LoadLevel champion_get_load_level(int16_t champion_index)
+LoadLevel champion_get_load_level(int16_t champion_index)
 {
     uint16_t max = champion_get_maximum_load(champion_index);
     uint16_t load = g_champions[champion_index].load;
