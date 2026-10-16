@@ -263,15 +263,15 @@ Impact projectile_get_impact_attack(uint16_t projectile, uint16_t thing)
 static HitResult hit_creature(uint16_t projectile, uint16_t thing, Location target, int16_t cell, Hit *hit)
 {
     uint16_t group = map_find_thing(target, THING_GROUP);
-    int16_t ordinal = group_get_creature_ordinal_in_cell(group, cell);
-    if (!ordinal)
+    int16_t creature_index = group_get_creature_in_cell(group, cell);
+    if (creature_index < 0)
         return HIT_RESULT_NONE;
     uint16_t creature_type = rec_group_creature_type(group);
     const CreatureInfo *info = group_info(group);
     if (thing == EXPLOSION_THING(EXPLOSION_FIREBALL) && creature_type == CREATURE_BLACK_FLAME) {
-        uint16_t health = rec_group_health(group, ordinal - 1);
+        uint16_t health = rec_group_health(group, creature_index);
         uint16_t gain = projectile_get_impact_attack(projectile, EXPLOSION_THING(EXPLOSION_FIREBALL)).attack;
-        rec_group_set_health(group, ordinal - 1, min16(MAX_CREATURE_HEALTH, health + gain));
+        rec_group_set_health(group, creature_index, min16(MAX_CREATURE_HEALTH, health + gain));
         return HIT_RESULT_ABSORBED;
     }
     if ((info->attributes & CREATURE_NON_MATERIAL) && thing != EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL))
@@ -281,7 +281,7 @@ static HitResult hit_creature(uint16_t projectile, uint16_t thing, Location targ
     if (!attack)
         return HIT_RESULT_HIT;
     uint16_t poison = group_get_resistance_adjusted_poison_attack(creature_type, impact.poison);
-    DamageOutcome outcome = group_get_damage_creature_outcome(group, ordinal - 1, target, attack + poison);
+    DamageOutcome outcome = group_get_damage_creature_outcome(group, creature_index, target, attack + poison);
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
         group_process_reaction_event(target, REACTION_HIT_BY_PROJECTILE);
     *hit->outcome = outcome;
@@ -715,7 +715,7 @@ static bool mark_occupied_cells(uint16_t thing, uint8_t occupied[4])
     uint16_t health = 0;
     for (uint16_t cell = 0; cell < 4; cell++) {
         health |= rec_group_health(thing, cell);
-        if (group_get_creature_ordinal_in_cell(thing, cell))
+        if (group_get_creature_in_cell(thing, cell) >= 0)
             occupied[cell] = cell + 1;
     }
     return health != 0;

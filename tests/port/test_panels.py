@@ -157,9 +157,9 @@ def party(game):
     setup(game)
     reset(game)
     champions = recruit_from_mirrors(game, 4)
-    c16.in_dll(game, "g_inventory_champion_ordinal").value = 1
+    c16.in_dll(game, "g_inventory_champion_index").value = 0
     yield champions
-    c16.in_dll(game, "g_inventory_champion_ordinal").value = 0
+    c16.in_dll(game, "g_inventory_champion_index").value = -1
 
 
 @needs_dm

@@ -424,12 +424,12 @@ static const char *panel_name(void)
 /* The inventory panel: whose inventory is open, what the panel shows, the open chest. */
 static void inventory_json(Json *j)
 {
-    if (!g_inventory_champion_ordinal) {
+    if (g_inventory_champion_index < 0) {
         json_null(j);
         return;
     }
     json_open(j, '{');
-    key_int(j, "champion", g_inventory_champion_ordinal - 1);
+    key_int(j, "champion", g_inventory_champion_index);
     key_str(j, "panel", panel_name());
     if (g_open_chest != THING_NONE) {
         json_key(j, "chest");
@@ -468,7 +468,7 @@ void state_json_write_state(Json *j)
     /* A shown candidate is the last champion record, but not yet in the party. */
     int16_t members = g_party_champion_count;
     int16_t candidate = -1;
-    if (g_candidate_champion_ordinal && members)
+    if (g_candidate_champion_index >= 0 && members)
         candidate = --members;
     json_key(j, "leader");
     if (g_leader_index < 0 || g_leader_index == candidate)
@@ -488,9 +488,9 @@ void state_json_write_state(Json *j)
         champion_json(j, i);
     json_close(j, ']');
     json_key(j, "action_menu");
-    if (g_acting_champion_ordinal) {
+    if (g_acting_champion_index >= 0) {
         json_open(j, '{');
-        key_int(j, "champion", g_acting_champion_ordinal - 1);
+        key_int(j, "champion", g_acting_champion_index);
         json_key(j, "actions");
         json_open(j, '[');
         for (int k = 0; k < ACTION_LIST_COUNT && g_action_list.actions[k] != ACTION_NONE; k++)
@@ -674,9 +674,9 @@ static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *wall)
             continue;
         if (rec_sensor_type(thing) == SENSOR_WALL_CHAMPION_PORTRAIT)
             wall->mirror = 1;
-        else if (rec_sensor_ornament(thing) && rec_sensor_type(thing) == SENSOR_WALL_ORNAMENT_CLICK)
+        else if (rec_sensor_ornament(thing) >= 0 && rec_sensor_type(thing) == SENSOR_WALL_ORNAMENT_CLICK)
             wall->switch_ = 1;
-        else if (rec_sensor_ornament(thing) && sensor_takes_object(rec_sensor_type(thing))) {
+        else if (rec_sensor_ornament(thing) >= 0 && sensor_takes_object(rec_sensor_type(thing))) {
             if (rec_sensor_data(thing) >= ICON_TORCH_UNLIT && rec_sensor_data(thing) <= ICON_TORCH_LAST)
                 wall->torch_holder = 1; /* it wants a torch */
             else {

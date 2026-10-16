@@ -166,13 +166,19 @@ static void set_target_to_party(ActiveGroup *active)
     active->target_y = g_party_map_y;
 }
 
+/* The creature sound index of a creature type, or -1 for none. */
+static int16_t get_sound_index(const CreatureInfo *info)
+{
+    return info->attack_sound_byte - 1;
+}
+
 /* The movement sound of a creature type, or -1 while the party sleeps (move_get_creature_sound). */
 static int16_t get_creature_movement_sound(uint16_t creature_type)
 {
-    uint8_t ordinal = tables_get_creature_info(creature_type)->attack_sound_ordinal;
-    if (g_party_is_sleeping || !ordinal)
+    int16_t sound_index = get_sound_index(tables_get_creature_info(creature_type));
+    if (g_party_is_sleeping || sound_index < 0)
         return -1;
-    return tables_get_creature_sound(ordinal - 1)->movement;
+    return tables_get_creature_sound(sound_index)->movement;
 }
 
 /* The active group entry of a group on the party map. Deviation: the original reads beyond the table when the
@@ -248,36 +254,36 @@ bool group_is_creature_allowed_on_map(uint16_t group, int16_t map)
     return false;
 }
 
-int16_t group_get_creature_ordinal_in_cell(uint16_t group, uint16_t cell)
+int16_t group_get_creature_in_cell(uint16_t group, uint16_t cell)
 {
     uint8_t cells = group_get_cells(group, g_current_map_index);
     if (cells == CELL_CENTERED)
-        return 1;
+        return 0;
     bool half_square = creature_size(group_info(group)) == CREATURE_SIZE_HALF;
     if (half_square && (cell & 1) == (group_get_directions(group, g_current_map_index) & 1))
         cell = direction_left(cell);
     for (int16_t i = rec_group_last_creature(group); i >= 0; i--) {
         uint16_t creature_cell = group_cell(cells, i);
         if (cell == creature_cell || (half_square && direction_right(cell) == creature_cell))
-            return i + 1;
+            return i;
     }
-    return 0;
+    return -1;
 }
 
-int16_t group_get_melee_target_creature_ordinal(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y,
-                                                int16_t champion_cell)
+int16_t group_get_melee_target(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y,
+                               int16_t champion_cell)
 {
     uint16_t group = map_find_thing((Location){group_x, group_y}, THING_GROUP);
     if (group == THING_ENDOFLIST)
-        return 0;
+        return -1;
     uint8_t cells[4];
     group_set_ordered_cells_to_attack(cells, (Location){group_x, group_y}, (Location){party_x, party_y}, champion_cell);
     for (int16_t i = 0; i < 4; i++) {
-        int16_t ordinal = group_get_creature_ordinal_in_cell(group, cells[i]);
-        if (ordinal)
-            return ordinal;
+        int16_t creature_index = group_get_creature_in_cell(group, cells[i]);
+        if (creature_index >= 0)
+            return creature_index;
     }
-    return 0;
+    return -1;
 }
 
 uint16_t group_set_cell_value(uint16_t packed, uint16_t creature_index, uint16_t value)
@@ -929,37 +935,37 @@ static uint16_t group_get_distance_to_visible_party(const GroupTurn *t, uint16_t
                                                         group_is_view_party_blocked);
 }
 
-/* Ordinal of the latest party scent on a square (champion_get_scent_ordinal), or 0. */
-uint16_t group_get_party_scent_ordinal(int16_t x, int16_t y)
+/* The index of the latest party scent on a square, or -1. */
+int16_t group_get_party_scent(int16_t x, int16_t y)
 {
     uint16_t scent = party_pack_position(g_current_map_index, x, y);
-    for (uint16_t ordinal = g_party.scent_count; ordinal; ordinal--)
-        if (g_party.scents[ordinal - 1] == scent)
-            return ordinal;
-    return 0;
+    for (int16_t i = g_party.scent_count - 1; i >= 0; i--)
+        if (g_party.scents[i] == scent)
+            return i;
+    return -1;
 }
 
-/* Direction ordinal toward the party by smell: straight when close enough, else along the scent trail. 0: none. */
-static int16_t group_get_smelled_party_direction_ordinal(GroupTurn *t, const CreatureInfo *info, int16_t x, int16_t y)
+/* The direction toward the party by smell: straight when close enough, else along the scent trail. -1: none. */
+static int16_t get_smelled_party_direction(GroupTurn *t, const CreatureInfo *info, int16_t x, int16_t y)
 {
     uint16_t smell = creature_smell_range(info);
     if (!smell)
-        return 0;
+        return -1;
     if (t->distance_to_party <= (smell + 1) >> 1 &&
         group_get_distance_between_unblocked_squares(x, y, g_party_map_x, g_party_map_y,
                                                      group_is_smell_party_blocked)) {
         t->secondary_direction = t->directions_to_party.secondary;
-        return t->directions_to_party.primary + 1;
+        return t->directions_to_party.primary;
     }
-    uint16_t ordinal = group_get_party_scent_ordinal(x, y);
-    if (ordinal && SCENT_TRAIL_THRESHOLD - 2 * smell < random_2bits() + g_party.scent_strengths[ordinal - 1]) {
-        uint16_t next = g_party.scents[ordinal];
+    int16_t scent = group_get_party_scent(x, y);
+    if (scent >= 0 && SCENT_TRAIL_THRESHOLD - 2 * smell < random_2bits() + g_party.scent_strengths[scent]) {
+        uint16_t next = g_party.scents[scent + 1];
         DirectionPair directions = group_get_directions_to_destination(
             (Location){x, y}, (Location){party_position_x(next), party_position_y(next)});
         t->secondary_direction = directions.secondary;
-        return directions.primary + 1;
+        return directions.primary;
     }
-    return 0;
+    return -1;
 }
 
 /* Can the creature step one square in a direction? Lord Chaos stops at fluxcages. A wary creature avoids a
@@ -1020,13 +1026,13 @@ static MovementTest test_movement(GroupTurn *t, int16_t direction, bool allow_im
     return result;
 }
 
-/* Ordinal of the first untested direction where the creature can move, or 0. */
-static int16_t group_get_first_possible_movement_direction_ordinal(GroupTurn *t, bool allow_imaginary)
+/* The first untested direction where the creature can move, or -1. */
+static int16_t get_first_free_direction(GroupTurn *t, bool allow_imaginary)
 {
     for (int16_t direction = 0; direction < DIRECTION_COUNT; direction++)
         if (!t->tested_directions[direction] && test_movement(t, direction, allow_imaginary).possible)
-            return direction + 1;
-    return 0;
+            return direction;
+    return -1;
 }
 
 /* Lord Chaos jumps two squares: the first square must have no fluxcage, the second must be free. */
@@ -1172,7 +1178,8 @@ static bool group_is_creature_attacking(const GroupTurn *t, uint16_t group, int1
         spell_sound = cast.sound;
         launch_creature_spell(info, cast.explosion, (Location){x, y}, cell, primary);
     }
-    int16_t sound = info->attack_sound_ordinal ? tables_get_creature_sound(info->attack_sound_ordinal - 1)->attack : -1;
+    int16_t sound_index = get_sound_index(info);
+    int16_t sound = sound_index >= 0 ? tables_get_creature_sound(sound_index)->attack : -1;
     if (sound != -1)
         sound_request_play(sound, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     else if (spell && spell_sound)
@@ -1583,7 +1590,7 @@ static bool after_move(GroupTurn *t, int16_t direction)
 static bool jump_archenemy(GroupTurn *t)
 {
     for (;;) {
-        group_get_first_possible_movement_direction_ordinal(t, false);
+        get_first_free_direction(t, false);
         int16_t direction = t->direction;
         bool possible = group_is_archenemy_double_movement_possible(t, direction);
         if (!possible) {
@@ -1672,8 +1679,8 @@ static bool random_move(GroupTurn *t)
         }
         if (last_blocked_by_party) {
             if (t->event_type != REACTION_DANGER_ON_SQUARE && t->info->attack_ticks != CREATURE_NO_ATTACK &&
-                (rec_group_behavior(t->group) != BEHAVIOR_FLEE ||
-                 !group_get_first_possible_movement_direction_ordinal(t, false) || random_bit())) {
+                (rec_group_behavior(t->group) != BEHAVIOR_FLEE || get_first_free_direction(t, false) < 0 ||
+                 random_bit())) {
                 set_behavior_attack(t);
                 return false;
             }
@@ -1727,7 +1734,7 @@ static bool flee(GroupTurn *t)
             return false;
         }
         if (random_bit()) {
-            if (!group_get_first_possible_movement_direction_ordinal(t, false) &&
+            if (get_first_free_direction(t, false) < 0 &&
                 abs16(t->x - g_party_map_x) + abs16(t->y - g_party_map_y) < 2) {
                 t->moved = 0;
                 rec_group_set_behavior(t->group, BEHAVIOR_WANDER);
@@ -1846,9 +1853,9 @@ static void process_group_behavior(GroupTurn *t, uint16_t behavior)
                 add_wander_event(t);
                 return;
             }
-            int16_t ordinal = group_get_smelled_party_direction_ordinal(t, t->info, t->x, t->y);
-            if (ordinal) {
-                t->direction = ordinal - 1;
+            int16_t direction = get_smelled_party_direction(t, t->info, t->x, t->y);
+            if (direction >= 0) {
+                t->direction = direction;
                 move_toward(t, false);
             } else if (!random_bit()) {
                 after_move(t, 0);
@@ -1915,11 +1922,11 @@ static bool move_creature_to_front(GroupTurn *t, int16_t creature)
         return false;
     }
     cell = (position & 1) == (t->direction & 1) ? direction_left(cell) : direction_right(cell);
-    if (group_get_creature_ordinal_in_cell(t->group, cell)) {
+    if (group_get_creature_in_cell(t->group, cell) >= 0) {
         if (!random_bit())
             return false;
         cell = direction_back(cell);
-        if (group_get_creature_ordinal_in_cell(t->group, cell))
+        if (group_get_creature_in_cell(t->group, cell) >= 0)
             return false;
     }
     ImpactCount impact = projectile_get_impact_count(IMPACT_CREATURE, t->x, t->y, t->active->cells);

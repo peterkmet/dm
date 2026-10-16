@@ -36,14 +36,14 @@ def test_new_game_recruit_take_and_store(game):
     wall = game.boxes[5]
     assert wall.x != -1
     game.click_box(wall)
-    assert game.value("g_candidate_champion_ordinal") == 1
-    assert game.value("g_inventory_champion_ordinal") == 1
+    assert game.value("g_candidate_champion_index") == 0
+    assert game.value("g_inventory_champion_index") == 0
 
     game.click_zone(ZONE_RESURRECT)
-    assert game.value("g_candidate_champion_ordinal") == 0
+    assert game.value("g_candidate_champion_index") == -1
     assert game.value("g_party_champion_count", u16) == 1
     assert game.value("g_leader_index") == 0
-    assert game.value("g_inventory_champion_ordinal") == 0
+    assert game.value("g_inventory_champion_index") == -1
 
     weapon = game.champions[0].slots[C.SLOT_HAND_ACTION]
     assert weapon != 0xFFFF
@@ -66,7 +66,7 @@ def test_new_game_recruit_take_and_store(game):
 
     game.key(C.KEY_F1)
     game.run()
-    assert game.value("g_inventory_champion_ordinal") == 1
+    assert game.value("g_inventory_champion_index") == 0
     game.click_zone(ZONE_BACKPACK_FIRST_SLOT)
     assert game.value("g_leader_hand_object", u16) == 0xFFFF
     assert game.champions[0].slots[C.SLOT_BACKPACK_FIRST] & 0x3FFF == weapon & 0x3FFF
@@ -88,12 +88,12 @@ def test_champion_dies_with_inventory_open(game):
     assert game.value("g_party_champion_count", u16) == 2
     game.key(C.KEY_F1 + 0x100)
     game.run()
-    assert game.value("g_inventory_champion_ordinal") == 2
+    assert game.value("g_inventory_champion_index") == 1
 
     game.lib.champion_add_pending_damage_and_wounds(1, 10000, 0, C.ATTACK_RAW)
     game.run()
     assert game.champions[1].current_health == 0
-    assert game.value("g_inventory_champion_ordinal") == 0
+    assert game.value("g_inventory_champion_index") == -1
     game.click_zone(ZONE_BACKPACK_FIRST_SLOT)  # the dungeon view takes the click; no slot of champion -1
 
     box = Box()
@@ -132,7 +132,7 @@ def test_freeze_covers_open_inventory(game):
     game.click_zone(ZONE_RESURRECT)
     game.key(C.KEY_F1)
     game.run()
-    assert game.value("g_inventory_champion_ordinal") == 1
+    assert game.value("g_inventory_champion_index") == 0
     inventory = viewport_pixels(game)
 
     game.key(C.KEY_ESCAPE)

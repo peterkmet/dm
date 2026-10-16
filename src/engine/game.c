@@ -56,7 +56,7 @@ void game_start_new(void)
 
 void game_reset_session(void)
 {
-    g_candidate_champion_ordinal = 0;
+    g_candidate_champion_index = -1;
     g_party_is_sleeping = false;
     g_game_won = false;
     g_cheat_light = false;

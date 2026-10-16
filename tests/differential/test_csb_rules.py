@@ -220,7 +220,7 @@ def test_reincarnation(world):
     game.face(direction)
     game.run()
     game.click_box(game.boxes[5])
-    assert value(lib, "g_candidate_champion_ordinal").value == 1
+    assert value(lib, "g_candidate_champion_index").value == 0
     c = game.champions[0]
     stats = [list(c.statistics[s]) for s in range(C.STAT_COUNT)]
     bars = [c.current_health, c.maximum_health, c.current_stamina, c.maximum_stamina, c.current_mana, c.maximum_mana]

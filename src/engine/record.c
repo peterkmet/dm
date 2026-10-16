@@ -229,9 +229,9 @@ bool rec_door_is_vertical(uint16_t thing)
 {
     return (rec_read(thing)[DOOR_ATTRIBUTES] & DOOR_VERTICAL_BIT) != 0;
 }
-uint16_t rec_door_ornament(uint16_t thing)
+int16_t rec_door_ornament(uint16_t thing)
 {
-    return (rec_read(thing)[DOOR_ATTRIBUTES] & DOOR_ORNAMENT_MASK) >> DOOR_ORNAMENT_SHIFT;
+    return (int16_t)((rec_read(thing)[DOOR_ATTRIBUTES] & DOOR_ORNAMENT_MASK) >> DOOR_ORNAMENT_SHIFT) - 1;
 }
 
 /* Teleporter record */
@@ -342,9 +342,9 @@ uint16_t rec_sensor_generator_delay(uint16_t thing)
 {
     return rec_read(thing)[SENSOR_TARGET];
 }
-uint16_t rec_sensor_ornament(uint16_t thing)
+int16_t rec_sensor_ornament(uint16_t thing)
 {
-    return rec_read(thing)[SENSOR_FLAGS] >> SENSOR_ORNAMENT_SHIFT;
+    return (int16_t)(rec_read(thing)[SENSOR_FLAGS] >> SENSOR_ORNAMENT_SHIFT) - 1;
 }
 uint16_t rec_sensor_creature_type(uint16_t thing)
 {

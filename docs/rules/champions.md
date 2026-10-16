@@ -25,7 +25,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 3. Food and water are `1500 + random16() & 255` each (two draws).
 4. All slots are empty.
 5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../../src/engine/recruit.h)).
-6. The champion becomes the candidate (`g_candidate_champion_ordinal`). The first champion becomes leader and magic caster.
+6. The champion becomes the candidate (`g_candidate_champion_index`: index, −1 for none). The first champion becomes leader and magic caster.
 7. The objects in the cell of the wall square that faces the party become the possessions:
    - Armour goes to the first body slot (head to feet) that accepts it, else to the neck.
    - A weapon goes to the action hand.
@@ -233,7 +233,7 @@ Block, Hit, and the other actions only add the action defense, the disabled tick
 
 ### Melee
 
-`action_is_melee_action_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target_creature_ordinal`). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](creatures.md)) gives the damage, which goes into `g_action_damage` for the action area.
+`action_is_melee_action_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, −1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](creatures.md)) gives the damage, which goes into `g_action_damage` for the action area.
 
 ### Fear
 

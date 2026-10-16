@@ -194,11 +194,11 @@ void group_set_directions(uint16_t group, uint8_t directions, int16_t map);
 /* The creature type list of a map follows its last square. */
 bool group_is_creature_allowed_on_map(uint16_t group, int16_t map);
 
-/* Ordinal (index + 1) of the creature in a cell, or 0. Half-square creatures fill two cells side by side. */
-int16_t group_get_creature_ordinal_in_cell(uint16_t group, uint16_t cell);
-/* The creature that a champion in a cell hits first. */
-int16_t group_get_melee_target_creature_ordinal(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y,
-                                                int16_t champion_cell);
+/* The index of the creature in a cell, or -1. Half-square creatures fill two cells side by side. */
+int16_t group_get_creature_in_cell(uint16_t group, uint16_t cell);
+/* The index of the creature that a champion in a cell hits first, or -1. */
+int16_t group_get_melee_target(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y,
+                               int16_t champion_cell);
 /* The cells and directions of a group: two bits for each creature. */
 #define GROUP_CELL_BITS 2
 #define GROUP_CELL_MASK 3
@@ -223,8 +223,8 @@ void group_remove_all_active_groups(void);
 void group_add_all_active_groups(void);
 /* The fluxcage and direction memories of the last group step do not carry into a new game. */
 void group_reset(void);
-/* Ordinal of the latest party scent on a square of the current map, or 0. */
-uint16_t group_get_party_scent_ordinal(int16_t x, int16_t y);
+/* The index of the latest party scent on a square of the current map, or -1. */
+int16_t group_get_party_scent(int16_t x, int16_t y);
 
 /* A new group of creatures on a square. Health is base health * multiplier plus a random part. */
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index,

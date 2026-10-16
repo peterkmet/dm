@@ -207,7 +207,7 @@ static void refresh_interface(void)
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].current_health)
             continue;
-        bool inventory = i + 1 == g_inventory_champion_ordinal && !g_game_frozen; /* the frozen screen covers it */
+        bool inventory = i == g_inventory_champion_index && !g_game_frozen; /* the frozen screen covers it */
         for (uint16_t slot = 0; slot < (inventory ? SLOT_COUNT : SLOT_HAND_ACTION + 1); slot++)
             ui_draw_champion_slot(i, slot);
         if (inventory)
@@ -330,7 +330,7 @@ static void run_requested_sequence(void)
 static void draw_projectile_motion(void)
 {
     if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_party_is_sleeping ||
-        g_inventory_champion_ordinal || !view_has_moving_projectiles())
+        g_inventory_champion_index >= 0 || !view_has_moving_projectiles())
         return;
     uint32_t seed = random_get_seed();
     view_set_motion(frames_waiting, g_wait_for_input_max_frames + 1);
@@ -411,9 +411,9 @@ void gameloop_tick(void)
     music_update();
     if (!g_party_is_sleeping) {
         command_wake_up();
-        if (!g_candidate_champion_ordinal)
+        if (g_candidate_champion_index < 0)
             command_unfreeze_game();
-        if (!g_inventory_champion_ordinal)
+        if (g_inventory_champion_index < 0)
             gameloop_draw_view();
         else if (g_adventure == ADVENTURE_CSB)
             panel_redraw_scroll();
@@ -500,7 +500,7 @@ static int get_pointer_shape(int16_t x, int16_t y, bool in_game)
         /* a status box: the arrow over a living champion with its inventory open, or over its name */
         int16_t index = (champion & ZONE_CHAMPION_INDEX_MASK) - 1;
         if (champion && index < g_party_champion_count && g_champions[index].current_health &&
-            (index + 1 == g_inventory_champion_ordinal || champion >= ZONE_CHAMPION_NAME))
+            (index == g_inventory_champion_index || champion >= ZONE_CHAMPION_NAME))
             return POINTER_ARROW;
         return g_leader_empty_handed ? POINTER_HAND : POINTER_OBJECT;
     }

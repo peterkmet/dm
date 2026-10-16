@@ -35,8 +35,8 @@ bool rec_door_is_force_breakable(uint16_t thing);
 bool rec_door_has_button(uint16_t thing);
 /* A door that slides down; it hits a creature by its height. */
 bool rec_door_is_vertical(uint16_t thing);
-/* The stored value: 0 for none, else the door ornament index + 1. */
-uint16_t rec_door_ornament(uint16_t thing);
+/* The door ornament index, -1 for none (the record stores index + 1, 0 for none). */
+int16_t rec_door_ornament(uint16_t thing);
 
 /* Teleporter record (thing type 1). Scope: 1 creatures, 2 party, 3 everything. */
 int16_t rec_teleporter_target_x(uint16_t thing);
@@ -69,8 +69,8 @@ int16_t rec_sensor_target_y(uint16_t thing);
 int16_t rec_sensor_target_cell(uint16_t thing);
 int16_t rec_sensor_local_effect(uint16_t thing);
 uint16_t rec_sensor_generator_delay(uint16_t thing);
-/* The stored value: 0 for none, else the wall or floor ornament index + 1. */
-uint16_t rec_sensor_ornament(uint16_t thing);
+/* The wall or floor ornament index, -1 for none (the record stores index + 1, 0 for none). */
+int16_t rec_sensor_ornament(uint16_t thing);
 /* Group generator: creature type in the data low byte, count field in word 4 bits 7-10, health multiplier in
    word 6 bits 4-7. */
 uint16_t rec_sensor_creature_type(uint16_t thing);

@@ -37,8 +37,8 @@ static const char *const soundtrack_names[3] = {"ORIGINAL", "SUPER NES", "FM-TOW
 static bool in_dungeon_view(void)
 {
     return g_dungeon_maps && !g_game_screen_inactive && g_game_time_ticking && !g_game_frozen && !g_party_dead &&
-           !g_inventory_champion_ordinal && !g_party_is_sleeping && !g_candidate_champion_ordinal && !g_waiting_frame &&
-           !g_game_won;
+           g_inventory_champion_index < 0 && !g_party_is_sleeping && g_candidate_champion_index < 0 &&
+           !g_waiting_frame && !g_game_won;
 }
 
 /* Level, position, facing, and light in the top-left corner of the map, inside the rulers. */
@@ -164,7 +164,7 @@ bool advanced_process_key(uint16_t key)
     case KEY_M:
     case KEY_TAB:
         if (!in_dungeon_view())
-            return !(key == KEY_TAB && g_inventory_champion_ordinal);
+            return !(key == KEY_TAB && g_inventory_champion_index >= 0);
         g_automap_open = true;
         advanced_draw_automap();
         return true;

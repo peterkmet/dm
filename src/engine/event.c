@@ -422,7 +422,7 @@ static void event_hide_damage_received(uint16_t champion_index)
     c->hide_damage_received_event_index = -1;
     if (!c->current_health)
         return;
-    if (champion_index + 1 == g_inventory_champion_ordinal)
+    if (champion_index == g_inventory_champion_index)
         c->attributes |= CHAMPION_ATTR_STATUS_BOX;
     else
         c->attributes |= CHAMPION_ATTR_NAME_TITLE;

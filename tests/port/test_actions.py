@@ -265,10 +265,10 @@ def test_triggered_action_closes_menu_and_asks_for_action_area(party):
     lib.action_did_click_trigger_action.restype, lib.action_did_click_trigger_action.argtypes = ctypes.c_bool, [c16]
     redraw = ctypes.c_uint16.in_dll(lib, "g_redraw")
     redraw.value = 0
-    var(lib, c16, "g_acting_champion_ordinal").value = 1
+    var(lib, c16, "g_acting_champion_index").value = 0
     ActionList.in_dll(lib, "g_action_list").actions[0] = C.ACTION_BLOCK
     lib.action_did_click_trigger_action(0)
-    assert var(lib, c16, "g_acting_champion_ordinal").value == 0
+    assert var(lib, c16, "g_acting_champion_index").value == -1
     assert redraw.value & C.REDRAW_ACTION_AREA
     assert c.attributes & ATTR_ACTION_HAND
 

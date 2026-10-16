@@ -66,23 +66,23 @@
 #define LAYOUT_AT_H                    8
 
 /* Byte offsets of the creature info fields (docs/rules/tables.md); bytes 13 and 25 are pad bytes. */
-#define CREATURE_AT_ASPECT_INDEX         0
-#define CREATURE_AT_ATTACK_SOUND_ORDINAL 1
-#define CREATURE_AT_ATTRIBUTES           2
-#define CREATURE_AT_GRAPHIC_INFO         4
-#define CREATURE_AT_MOVEMENT_TICKS       6
-#define CREATURE_AT_ATTACK_TICKS         7
-#define CREATURE_AT_DEFENSE              8
-#define CREATURE_AT_BASE_HEALTH          9
-#define CREATURE_AT_ATTACK               10
-#define CREATURE_AT_POISON_ATTACK        11
-#define CREATURE_AT_DEXTERITY            12
-#define CREATURE_AT_RANGES               14
-#define CREATURE_AT_PROPERTIES           16
-#define CREATURE_AT_RESISTANCES          18
-#define CREATURE_AT_ANIMATION_TICKS      20
-#define CREATURE_AT_WOUND_PROBABILITIES  22
-#define CREATURE_AT_ATTACK_TYPE          24
+#define CREATURE_AT_ASPECT_INDEX        0
+#define CREATURE_AT_ATTACK_SOUND        1
+#define CREATURE_AT_ATTRIBUTES          2
+#define CREATURE_AT_GRAPHIC_INFO        4
+#define CREATURE_AT_MOVEMENT_TICKS      6
+#define CREATURE_AT_ATTACK_TICKS        7
+#define CREATURE_AT_DEFENSE             8
+#define CREATURE_AT_BASE_HEALTH         9
+#define CREATURE_AT_ATTACK              10
+#define CREATURE_AT_POISON_ATTACK       11
+#define CREATURE_AT_DEXTERITY           12
+#define CREATURE_AT_RANGES              14
+#define CREATURE_AT_PROPERTIES          16
+#define CREATURE_AT_RESISTANCES         18
+#define CREATURE_AT_ANIMATION_TICKS     20
+#define CREATURE_AT_WOUND_PROBABILITIES 22
+#define CREATURE_AT_ATTACK_TYPE         24
 
 /* Byte offsets of the fields of a spell entry, after the symbols. */
 #define SPELL_AT_LEVEL      4
@@ -159,7 +159,7 @@ static void read_creatures(void)
         uint32_t a = KAOS_CREATURE_INFO + i * CREATURE_INFO_BYTES;
         creature_info[i] = (CreatureInfo){
             .aspect_index = kaos_u8(a + CREATURE_AT_ASPECT_INDEX),
-            .attack_sound_ordinal = kaos_u8(a + CREATURE_AT_ATTACK_SOUND_ORDINAL),
+            .attack_sound_byte = kaos_u8(a + CREATURE_AT_ATTACK_SOUND),
             .attributes = kaos_u16(a + CREATURE_AT_ATTRIBUTES),
             .graphic_info = kaos_u16(a + CREATURE_AT_GRAPHIC_INFO),
             .movement_ticks = kaos_u8(a + CREATURE_AT_MOVEMENT_TICKS),

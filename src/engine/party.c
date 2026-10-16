@@ -68,7 +68,7 @@ void party_set_light_level(int16_t map_index, int16_t light)
 
 void party_burn_torches(void)
 {
-    uint16_t count = g_party_champion_count - (g_candidate_champion_ordinal ? 1 : 0);
+    uint16_t count = g_party_champion_count - (g_candidate_champion_index >= 0 ? 1 : 0);
     for (uint16_t i = 0; i < count; i++)
         for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--) {
             uint16_t thing = g_champions[i].slots[hand];

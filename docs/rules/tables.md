@@ -76,7 +76,7 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | Accessor | Address | Record size | Count | Index |
 |---|---|---|---|---|
 | `tables_get_creature_info` | `0x10192e` | 26 | 27 | Creature type |
-| `tables_get_creature_sound` | `0x101bec` | 2 | 18 | Sound ordinal − 1 |
+| `tables_get_creature_sound` | `0x101bec` | 2 | 18 | `attack_sound_byte` − 1 |
 | `tables_get_object_info` | `0x101068` | 6 | 180 | Object info index |
 | `tables_get_weapon_info` | `0x1014a0` | 6 | 46 | Weapon type |
 | `tables_get_armour_info` | `0x1015b4` | 4 | 58 | Armour type |
@@ -102,7 +102,7 @@ Each table ends where the next named table starts. The tests check this.
 | Offset | Field | Meaning |
 |---|---|---|
 | 0 | `aspect_index` | Index into `g_creature_aspects`. |
-| 1 | `attack_sound_ordinal` | 0 = no sound. Otherwise index + 1 into the creature sound table. |
+| 1 | `attack_sound_byte` | 0 = no sound. Otherwise index + 1 into the creature sound table, as stored; the reader uses the index, −1 for none. |
 | 2 | `attributes` | Bits 0–1 size, bit 2 side attack, bit 3 prefer back row, bit 4 attack any champion, bits 7–8 height, bit 9 drops fixed possessions, bit 11 sees invisible, bit 12 night vision, bit 13 archenemy. |
 | 4 | `graphic_info` | Bit 2 flip when not attacking, bit 9 flip when attacking, bit 10 flip during attack, bits 12–13 horizontal offset range, bits 14–15 vertical offset range. |
 | 6 | `movement_ticks` | Ticks between moves. |
@@ -125,7 +125,7 @@ Each table ends where the next named table starts. The tests check this.
 
 ## Creature sounds
 
-`CreatureSound`, 2 signed bytes per sound ordinal. Byte 0 `attack` is the attack sound index. Byte 1 `movement` is the movement sound index. −1 = no sound. The count (18) is the highest `attack_sound_ordinal` in the creature table.
+`CreatureSound`, 2 signed bytes per creature sound index (`attack_sound_byte` − 1). Byte 0 `attack` is the attack sound index. Byte 1 `movement` is the movement sound index. −1 = no sound. The count (18) is the highest `attack_sound_byte` in the creature table.
 
 ## Object info
 

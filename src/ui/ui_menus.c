@@ -33,10 +33,10 @@ void menus_draw_movement_arrows(void)
 
 void menus_clear_acting_champion(void)
 {
-    int16_t ordinal = g_acting_champion_ordinal;
+    int16_t champion_index = g_acting_champion_index;
     action_clear_acting_champion();
-    if (ordinal)
-        ui_draw_champion_state(ordinal - 1);
+    if (champion_index >= 0)
+        ui_draw_champion_state(champion_index);
 }
 
 void menus_set_acting_champion(uint16_t champion_index)
@@ -76,7 +76,7 @@ void menus_draw_action_icon(uint16_t champion_index)
     }
     ui_fill_zone(&screen, zone, COLOR_CYAN);
     ui_blit_zone(&screen, &icon, ZONE_ACTION_ICON_FIRST + champion_index, COLOR_NONE);
-    if (champion->attributes & CHAMPION_ATTR_ACTION_DISABLED || g_candidate_champion_ordinal || g_party_is_sleeping)
+    if (champion->attributes & CHAMPION_ATTR_ACTION_DISABLED || g_candidate_champion_index >= 0 || g_party_is_sleeping)
         ui_fill_zone_pattern(&screen, zone, COLOR_BLACK);
 }
 
@@ -87,7 +87,7 @@ void menus_draw_action_area(void)
     if (g_action_area_contains_icons) {
         for (uint16_t i = 0; i < g_party_champion_count; i++)
             menus_draw_action_icon(i);
-    } else if (g_acting_champion_ordinal) {
+    } else if (g_acting_champion_index >= 0) {
         int16_t zone = ZONE_ACTION_AREA;
         if (g_action_list.actions[2] == ACTION_NONE)
             zone = ZONE_ACTION_AREA_TWO_ACTIONS;
@@ -95,7 +95,7 @@ void menus_draw_action_area(void)
             zone = ZONE_ACTION_AREA_ONE_ACTION;
         ui_blit_graphic(&screen, GFX_ACTION_AREA_NAMES, zone, COLOR_NONE);
         ui_print_zone_padded(&screen, ZONE_ACTING_CHAMPION_NAME, COLOR_BLACK, COLOR_CYAN,
-                             g_champions[g_acting_champion_ordinal - 1].name, ACTING_NAME_LENGTH);
+                             g_champions[g_acting_champion_index].name, ACTING_NAME_LENGTH);
         for (int k = 0; k < ACTION_LIST_COUNT; k++) {
             uint8_t action = g_action_list.actions[k];
             ui_print_zone_padded(&screen, ZONE_ACTION_NAME_FIRST + k, COLOR_CYAN, COLOR_BLACK,
@@ -131,25 +131,25 @@ void menus_refresh_action_area(void)
 {
     if (!g_party_champion_count)
         return;
-    if (!g_party_is_sleeping && !g_candidate_champion_ordinal) {
+    if (!g_party_is_sleeping && g_candidate_champion_index < 0) {
         uint16_t turned = champion_turn_to_last_attackers();
         for (uint16_t i = 0; i < g_party_champion_count; i++)
             if (turned & 1 << i)
                 ui_draw_champion_state(i);
     } else {
-        if (g_acting_champion_ordinal) {
+        if (g_acting_champion_index >= 0) {
             menus_clear_acting_champion();
             return;
         }
-        if (!g_candidate_champion_ordinal)
+        if (g_candidate_champion_index < 0)
             return;
     }
     if (!(g_redraw & REDRAW_ACTION_AREA))
         return;
-    if (g_acting_champion_ordinal) {
+    if (g_acting_champion_index >= 0) {
         g_action_area_contains_icons = false;
-        g_champions[g_acting_champion_ordinal - 1].attributes |= CHAMPION_ATTR_ACTION_HAND;
-        ui_draw_champion_state(g_acting_champion_ordinal - 1);
+        g_champions[g_acting_champion_index].attributes |= CHAMPION_ATTR_ACTION_HAND;
+        ui_draw_champion_state(g_acting_champion_index);
         menus_draw_action_area();
     } else if (!g_action_damage) {
         g_action_area_contains_icons = true;

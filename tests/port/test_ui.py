@@ -152,7 +152,7 @@ def test_render_action_menu(game):
     recruit_from_mirrors(game, 4)
     render(game, "base")
     game.menus_set_acting_champion(0)
-    assert c16.in_dll(game, "g_acting_champion_ordinal").value == 1
+    assert c16.in_dll(game, "g_acting_champion_index").value == 0
     assert ActionList.in_dll(game, "g_action_list").actions[0] != 0xFF
 
 
@@ -163,9 +163,9 @@ def test_render_inventory(game):
     render(game, "base")
     game.ui_draw_inventory_open(0)
     fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(game, "fb"))
-    assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 1
+    assert c16.in_dll(game, "g_inventory_champion_index").value == 0
     assert len(set(fb[320 * 33:320 * 169])) > 6
     game.ui_draw_champion_skills_and_statistics()
     game.ui_draw_viewport()
     game.ui_draw_inventory_close(0)
-    assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 0
+    assert c16.in_dll(game, "g_inventory_champion_index").value == -1

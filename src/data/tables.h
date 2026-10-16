@@ -84,7 +84,7 @@ static inline uint16_t tables_get_vertical_range(uint16_t graphic_info)
 
 typedef struct {
     uint8_t aspect_index;
-    uint8_t attack_sound_ordinal; /* 0 = none, else index + 1 into creature sounds */
+    uint8_t attack_sound_byte; /* 0: none, else the sound index + 1, as stored */
     uint16_t attributes;
     uint16_t graphic_info;
     uint8_t movement_ticks;

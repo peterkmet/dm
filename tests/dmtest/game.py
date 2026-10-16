@@ -227,8 +227,8 @@ class World:
         ctypes.c_void_p.in_dll(lib, "g_current_map").value = ctypes.addressof(self.map)
         self.emu.write(CURRENT_MAP, struct.pack(">I", MAP_BUF))
         ctypes.memset(ctypes.addressof(var(lib, Party, "g_party")), 0, ctypes.sizeof(Party))
-        for name in ("g_candidate_champion_ordinal", "g_inventory_champion_ordinal"):
-            var(lib, c16, name).value = 0
+        for name in ("g_candidate_champion_index", "g_inventory_champion_index"):
+            var(lib, c16, name).value = -1
         self.globals(sleeping=0, time=1000, attack=0, move=0, difficulty=0)
 
     def globals(self, sleeping, time, attack, move, difficulty, direction=0):
@@ -758,7 +758,7 @@ def render(lib, name):
 
 
 def reset(lib):
-    c16.in_dll(lib, "g_inventory_champion_ordinal").value = 0
-    c16.in_dll(lib, "g_acting_champion_ordinal").value = 0
+    c16.in_dll(lib, "g_inventory_champion_index").value = -1
+    c16.in_dll(lib, "g_acting_champion_index").value = -1
     ctypes.c_bool.in_dll(lib, "g_action_area_contains_icons").value = 1
     lib.message_clear()

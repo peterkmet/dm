@@ -95,7 +95,7 @@
 #define RELATIVE_CELL_BACK_RIGHT  2
 #define RELATIVE_CELL_BACK_LEFT   3
 
-int16_t g_acting_champion_ordinal;
+int16_t g_acting_champion_index = -1;
 ActionList g_action_list = {
     {ACTION_NONE, ACTION_NONE, ACTION_NONE},
     {0},
@@ -106,7 +106,7 @@ int16_t g_action_damage;
 /* The charges of the object in the action hand of the acting champion (1 when it has none). */
 static uint16_t action_hand_charge_count(void)
 {
-    uint16_t thing = g_champions[g_acting_champion_ordinal - 1].slots[SLOT_HAND_ACTION];
+    uint16_t thing = g_champions[g_acting_champion_index].slots[SLOT_HAND_ACTION];
     switch (THING_TYPE(thing)) {
     case THING_WEAPON:
         return rec_weapon_charges(thing);
@@ -133,7 +133,7 @@ void action_set_action_list(int16_t action_set_index)
         if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charge_count()))
             continue;
         level &= ~ACTION_LEVEL_NEEDS_CHARGES;
-        if (level <= champion_get_skill_level(g_acting_champion_ordinal - 1, info->skill_index, false, false)) {
+        if (level <= champion_get_skill_level(g_acting_champion_index, info->skill_index, false, false)) {
             g_action_list.actions[n] = action;
             g_action_list.minimum_skill_levels[n++] = level;
         }
@@ -156,7 +156,7 @@ bool action_set_acting_champion(uint16_t champion_index)
         if (!info || !(set = info->action_set_index))
             return false;
     }
-    g_acting_champion_ordinal = champion_index + 1;
+    g_acting_champion_index = champion_index;
     action_set_action_list(set);
     c->attributes |= CHAMPION_ATTR_ACTION_HAND;
     return true;
@@ -171,7 +171,7 @@ int16_t action_take_damage(void)
 
 void action_reset(void)
 {
-    g_acting_champion_ordinal = 0;
+    g_acting_champion_index = -1;
     memset(g_action_list.actions, ACTION_NONE, sizeof g_action_list.actions);
     memset(g_action_list.minimum_skill_levels, 0, sizeof g_action_list.minimum_skill_levels);
     g_action_list.count = 0;
@@ -181,10 +181,10 @@ void action_reset(void)
 
 void action_clear_acting_champion(void)
 {
-    if (!g_acting_champion_ordinal)
+    if (g_acting_champion_index < 0)
         return;
-    g_champions[g_acting_champion_ordinal - 1].attributes |= CHAMPION_ATTR_ACTION_HAND;
-    g_acting_champion_ordinal = 0;
+    g_champions[g_acting_champion_index].attributes |= CHAMPION_ATTR_ACTION_HAND;
+    g_acting_champion_index = -1;
     g_redraw |= REDRAW_ACTION_AREA;
 }
 
@@ -281,9 +281,9 @@ bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, L
     sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
     if (target_group == THING_ENDOFLIST)
         return false;
-    int16_t ordinal = group_get_melee_target_creature_ordinal(target_square.x, target_square.y, g_party_map_x,
-                                                              g_party_map_y, c->cell);
-    if (!ordinal)
+    int16_t creature_index =
+        group_get_melee_target(target_square.x, target_square.y, g_party_map_x, g_party_map_y, c->cell);
+    if (creature_index < 0)
         return false;
     uint16_t relative_cell = NORMALIZE(c->cell - c->direction);
     if (relative_cell >= RELATIVE_CELL_BACK_RIGHT) {
@@ -301,7 +301,7 @@ bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, L
         hit_probability |= HIT_PROBABILITY_ALWAYS_HITS;
     MeleeAttack attack = {.champion_index = champion_index,
                           .group = target_group,
-                          .creature_index = ordinal - 1,
+                          .creature_index = creature_index,
                           .at = target_square,
                           .hit_probability = hit_probability,
                           .damage_factor = info->damage_factor,
@@ -645,9 +645,9 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
 /* Commands 113-115: the action defense applies while the action runs; the action menu closes. */
 bool action_did_click_trigger_action(int16_t action_list_index)
 {
-    if (!g_acting_champion_ordinal || g_action_list.actions[action_list_index] == ACTION_NONE)
+    if (g_acting_champion_index < 0 || g_action_list.actions[action_list_index] == ACTION_NONE)
         return false;
-    uint16_t champion_index = g_acting_champion_ordinal - 1;
+    uint16_t champion_index = g_acting_champion_index;
     Champion *c = &g_champions[champion_index];
     uint8_t action = g_action_list.actions[action_list_index];
     c->action_defense += tables_get_action_info(action)->defense;

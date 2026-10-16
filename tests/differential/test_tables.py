@@ -24,7 +24,7 @@ def S(*names):
     return type("S", (ctypes.Structure,), {"_fields_": list(names)})
 
 
-CreatureInfo = S(("aspect_index", u8), ("attack_sound_ordinal", u8), ("attributes", u16), ("graphic_info", u16),
+CreatureInfo = S(("aspect_index", u8), ("attack_sound_byte", u8), ("attributes", u16), ("graphic_info", u16),
                  ("movement_ticks", u8), ("attack_ticks", u8), ("defense", u8), ("base_health", u8), ("attack", u8),
                  ("poison_attack", u8), ("dexterity", u8), ("ranges", u16), ("properties", u16), ("resistances", u16),
                  ("animation_ticks", u16), ("wound_probabilities", u16), ("attack_type", u8))
@@ -156,7 +156,7 @@ def test_counts_follow_layout(lib):
     assert 0x1014A0 + 46 * 6 == 0x1015B4
     assert 0x1015B4 + 58 * 4 == 0x10169C
     assert 0x103D4C + 44 * 8 == 0x103EAC
-    assert max(get(lib, "creature_info", i).attack_sound_ordinal for i in range(27)) == 18
+    assert max(get(lib, "creature_info", i).attack_sound_byte for i in range(27)) == 18
     assert {get(lib, "spell", i).kind for i in range(25)} == {1, 2, 3}
     assert all(get(lib, "object_info", i).action_set_index < 44 for i in range(180))
     junk_icons = {get(lib, "object_info", i).type for i in range(127, 180)}

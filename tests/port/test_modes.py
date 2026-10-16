@@ -100,7 +100,7 @@ def test_vanilla_is_the_default_and_the_advanced_keys_do_nothing(game, tmp_path)
     for key in (C.KEY_F5, C.KEY_F9, C.KEY_M, C.KEY_TAB):
         press(game, key)
     assert game.value("g_automap_open") == 0 and not (tmp_path / QUICK).exists()
-    assert game.value("g_inventory_champion_ordinal") == 0 and game.position() == position
+    assert game.value("g_inventory_champion_index") == -1 and game.position() == position
     assert [game.lib.advanced_letter_key(ord(c)) for c in "wsadqe"] == [0] * 6
 
 
@@ -208,11 +208,11 @@ def test_a_drag_scrolls_the_automap(game):
 def test_automap_opens_only_in_the_dungeon_view(game):
     set_mode(game, ADVANCED)
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_ordinal") == 1
+    assert game.value("g_inventory_champion_index") == 0
     press(game, C.KEY_M)
     assert game.value("g_automap_open") == 0
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_ordinal") == 0
+    assert game.value("g_inventory_champion_index") == -1
     press(game, C.KEY_M)
     press(game, C.KEY_ESCAPE)
     assert game.value("g_automap_open") == 0 and game.value("g_game_frozen") == 0
@@ -260,14 +260,14 @@ def test_automap_shows_the_position_readout(game):
 def test_escape_rule(game, mode):
     set_mode(game, mode)
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_ordinal") == 1
+    assert game.value("g_inventory_champion_index") == 0
     press(game, C.KEY_ESCAPE)
     if mode == ADVANCED:
-        assert game.value("g_inventory_champion_ordinal") == 0 and game.value("g_game_frozen") == 0
+        assert game.value("g_inventory_champion_index") == -1 and game.value("g_game_frozen") == 0
         press(game, C.KEY_ESCAPE)
     assert game.value("g_game_frozen") == 1
     unfreeze(game)
-    if game.value("g_inventory_champion_ordinal"):
+    if game.value("g_inventory_champion_index") >= 0:
         press(game, C.KEY_F1)
     set_mode(game, VANILLA)
 
@@ -277,9 +277,9 @@ def test_tab_closes_the_inventory(game, mode):
     set_mode(game, mode)
     press(game, C.KEY_F1)
     press(game, C.KEY_TAB)
-    assert game.value("g_inventory_champion_ordinal") == (0 if mode == ADVANCED else 1)
+    assert game.value("g_inventory_champion_index") == (-1 if mode == ADVANCED else 0)
     assert game.value("g_automap_open") == 0
-    if game.value("g_inventory_champion_ordinal"):
+    if game.value("g_inventory_champion_index") >= 0:
         press(game, C.KEY_F1)
     set_mode(game, VANILLA)
 
@@ -338,7 +338,7 @@ def test_render_advanced_panels(game):
     screenshot(game, "adv_action_icons.png")
 
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_ordinal") == 1
+    assert game.value("g_inventory_champion_index") == 0
     champion.slots[C.SLOT_HAND_ACTION] = hand
     leader_hand = u16.in_dll(lib, "g_leader_hand_object")
     empty_handed = ctypes.c_bool.in_dll(lib, "g_leader_empty_handed")
@@ -374,7 +374,7 @@ def test_render_advanced_panels(game):
 
     champion.slots[C.SLOT_HAND_ACTION] = hand
     press(game, C.KEY_F1)
-    assert game.value("g_inventory_champion_ordinal") == 0
+    assert game.value("g_inventory_champion_index") == -1
     set_mode(game, VANILLA)
 
 

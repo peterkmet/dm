@@ -195,7 +195,7 @@ def test_action_list(game):
             lib.rec_weapon_set_charges(thing, charges)
             champion.slots[C.SLOT_HAND_ACTION] = thing
             game.click_box(zone_box(game, C.ZONE_ACTION_ICON_BOX_FIRST), viewport=False)  # + champion index: the action hand icon of the action area
-            assert game.value("g_acting_champion_ordinal") == 1
+            assert game.value("g_acting_champion_index") == 0
             names = [lib.gfx_get_action_name(action_list.actions[k]).decode() if action_list.actions[k] != 0xFF else "" for k in range(3)]
             got.append({"count": action_list.count, "levels": list(action_list.minimum_skill_levels), "names": names, **snapshot(game)})
             lib.menus_clear_acting_champion()

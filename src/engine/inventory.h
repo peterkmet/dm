@@ -42,7 +42,7 @@
 #define ARMOUR_SHIELD           0x80
 #define OBJECT_EDIBLE           1 /* ObjectInfo.allowed_slots: the mouth */
 
-extern int16_t g_inventory_champion_ordinal; /* 0: no inventory open */
+extern int16_t g_inventory_champion_index; /* -1: no inventory open */
 extern bool g_leader_empty_handed;
 extern uint16_t g_open_chest_slots[8]; /* slots SLOT_CHEST_FIRST and up */
 extern uint16_t g_open_chest;          /* THING_NONE: no chest is open */
@@ -70,8 +70,8 @@ void inventory_click_on_slot_box(uint16_t slot_box);
 /* A flask or a waterskin in the leader hand fills at a fountain; the leader load changes with its weight.
    Returns true when the hand object changed. */
 bool inventory_fill_leader_hand_at_fountain(void);
-/* Opens the inventory of champion ordinal - 1 for the rules; 0 closes it. */
-void inventory_set_open_champion(int16_t ordinal);
+/* Opens the inventory of a champion for the rules; -1 closes it. */
+void inventory_set_open_champion(int16_t champion_index);
 /* Results of inventory_process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
 #define MOUTH_REFUSED   0
 #define MOUTH_SWALLOWED 1

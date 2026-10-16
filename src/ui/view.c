@@ -114,7 +114,7 @@
 /* random ornament allowed on that side: the north face is the bit of the ornament below on the map */
 #define WALL_ORNAMENT_FACE(direction) (WALL_ORNAMENT_BELOW >> (direction))
 #define ORNAMENT_RANDOM_MODULO        30
-/* Seeds and multipliers of the pseudo-random ornament hash of get_random_ornament_ordinal. */
+/* Seeds and multipliers of the pseudo-random ornament hash of get_random_ornament. */
 #define ORNAMENT_SEED_ROW             32
 #define ORNAMENT_SEED_SQUARE_BASE     2000
 #define ORNAMENT_SEED_MAP_STEP        64
@@ -186,20 +186,20 @@
 #define ALCOVE_ORNAMENT_COUNT 3     /* wall ornaments that are alcoves */
 #define DOOR_ANIMATED         0x400 /* door info attribute: the door mirrors at random on each draw */
 
-/* Ornaments: ordinal = index + 1, 0 = none. */
-#define MAP_ORNAMENTS                  16
-#define FLOOR_ORNAMENT_FOOTPRINTS      15
-#define DOOR_ORNAMENT_DESTROYED        16
-#define DOOR_ORNAMENT_THIEVES_EYE      17
-#define FLOOR_ORNAMENT_WITH_FOOTPRINTS 0x8000 /* floor ornament ordinal flag */
-#define WALL_ORNAMENT_GRAPHICS         2
-#define WALL_ORNAMENT_FRONT            1
-#define FLOOR_ORNAMENT_GRAPHICS        6
-#define DOOR_MASK_COORD_SET            1
-#define WALL_TEXT_NEW_LINE             0x80 /* dungeon_decode_text mode 0 codes */
-#define WALL_TEXT_END                  0x81
-#define WALL_TEXT_SIZE                 80
-#define SCALE_D3_FAR_SIDE_W            30 /* the D3L2 and D3R2 wall sides are wider than high */
+/* Ornament indices; -1 for none. */
+#define MAP_ORNAMENTS             16
+#define FLOOR_ORNAMENT_FOOTPRINTS 15
+#define DOOR_ORNAMENT_DESTROYED   15
+#define DOOR_ORNAMENT_THIEVES_EYE 16
+#define DOOR_ORNAMENTS            17
+#define WALL_ORNAMENT_GRAPHICS    2
+#define WALL_ORNAMENT_FRONT       1
+#define FLOOR_ORNAMENT_GRAPHICS   6
+#define DOOR_MASK_COORD_SET       1
+#define WALL_TEXT_NEW_LINE        0x80 /* dungeon_decode_text mode 0 codes */
+#define WALL_TEXT_END             0x81
+#define WALL_TEXT_SIZE            80
+#define SCALE_D3_FAR_SIDE_W       30 /* the D3L2 and D3R2 wall sides are wider than high */
 
 /* Cell orders of draw_objects_creatures_projectiles_explosions: a nibble per view cell + 1, low nibble first;
    0 is the alcove. Bit 3 marks a door pass, bit 0 then selects the pass behind (0) or in front of the door (1),
@@ -233,16 +233,17 @@ typedef struct {
     uint16_t square;      /* square byte */
     uint16_t first_thing; /* first thing after the doors, teleporters, texts, and sensors */
     union {
-        uint16_t side[WALL_SIDES]; /* wall: ornament ordinal of each side, clockwise from the far side */
+        int16_t side[WALL_SIDES]; /* wall: ornament index of each side, clockwise from the far side; -1 none */
         struct {
-            uint16_t far_side, right, front, left;
+            int16_t far_side, right, front, left;
         };
         struct {
-            uint16_t state, door, floor_ornament;
+            uint16_t state, door;
+            int16_t floor_ornament;
         }; /* door state, pit invisible, stairs up; door thing */
     };
-    uint16_t text;     /* the text thing of an inscription on the wall */
-    uint16_t portrait; /* a champion portrait on the wall: portrait index + 1, or 0 */
+    uint16_t text;    /* the text thing of an inscription on the wall */
+    int16_t portrait; /* a champion portrait on the wall: portrait index, or -1 */
 } Aspect;
 
 typedef struct {
@@ -254,8 +255,7 @@ static int16_t view_map = -1, map_width, map_height; /* current map and its size
 static int16_t wall_set_ids[WS_COUNT];               /* layout ids of the wall set, swapped for mirrored views */
 static int16_t slot_graphics[LAYOUT_SLOTS];          /* graphic of each layout bitmap slot */
 static uint8_t slot_flip[LAYOUT_SLOTS];              /* slot holds the mirrored graphic */
-static Ornament wall_ornaments[MAP_ORNAMENTS], floor_ornaments[MAP_ORNAMENTS],
-    door_ornaments[DOOR_ORNAMENT_THIEVES_EYE];
+static Ornament wall_ornaments[MAP_ORNAMENTS], floor_ornaments[MAP_ORNAMENTS], door_ornaments[DOOR_ORNAMENTS];
 static int16_t alcoves[ALCOVE_ORNAMENT_COUNT], inscription, stairs, door_graphics[DOOR_DEPTHS][DOOR_TYPES];
 static uint16_t door_type_attributes[DOOR_TYPES];
 static int16_t use_flipped_walls;                /* the view draws the mirrored wall set */
@@ -320,19 +320,19 @@ static bool is_alcove(int16_t i)
     return i >= 0 && (i == alcoves[0] || i == alcoves[1] || i == alcoves[2]);
 }
 
-/* A pseudo-random ornament ordinal (0: none) from the square position. */
-static uint16_t get_random_ornament_ordinal(int allowed, int16_t count, int16_t x, int16_t y)
+/* A pseudo-random ornament index (-1: none) from the square position. */
+static int16_t get_random_ornament(int allowed, int16_t count, int16_t x, int16_t y)
 {
     if (!allowed)
-        return 0;
+        return -1;
     uint16_t square_seed = y + x * ORNAMENT_SEED_ROW + ORNAMENT_SEED_SQUARE_BASE;
     uint16_t map_seed = map_height + map_width + view_map * ORNAMENT_SEED_MAP_STEP + ORNAMENT_SEED_MAP_BASE;
     /* 16-bit products and sum as in the original */
     uint16_t hash = (uint16_t)(rec_dungeon_ornament_seed() + ((uint16_t)(square_seed * ORNAMENT_HASH_SQUARE) >> 1) +
                                (uint16_t)(map_seed * ORNAMENT_HASH_MAP)) >>
                     ORNAMENT_HASH_SHIFT;
-    uint16_t i = hash % ORNAMENT_RANDOM_MODULO;
-    return i < count ? i + 1 : 0;
+    int16_t i = hash % ORNAMENT_RANDOM_MODULO;
+    return i < count ? i : -1;
 }
 
 #define SCAN_NONE      0 /* things that set_square_aspect reads */
@@ -346,13 +346,13 @@ static void set_random_wall_ornaments(Aspect *a, uint8_t s, int16_t dir, int16_t
 {
     for (int k = 0; k < WALL_SIDES; k++) {
         int16_t face = NORMALIZE(dir + k);
-        a->side[k] = get_random_ornament_ordinal(s & WALL_ORNAMENT_FACE(face), rec_map_random_wall_ornaments(view_map),
-                                                 x, (face + 1) * (y + 1));
+        a->side[k] = get_random_ornament(s & WALL_ORNAMENT_FACE(face), rec_map_random_wall_ornaments(view_map), x,
+                                         (face + 1) * (y + 1));
     }
     if (x < 0 || x >= map_width || y < 0 || y >= map_height) /* no random alcove on the walls around the map */
         for (int k = 0; k < WALL_SIDES; k++)
-            if (is_alcove(a->side[k] - 1))
-                a->side[k] = 0;
+            if (is_alcove(a->side[k]))
+                a->side[k] = -1;
 }
 
 /* The ornaments that the doors, teleporters, texts, and sensors of a square show: the floor ornament of a
@@ -364,16 +364,16 @@ static uint16_t scan_ornament_things(Aspect *aspect, uint16_t thing, int16_t dir
             aspect->floor_ornament = rec_sensor_ornament(thing);
         if (scan != SCAN_WALL && scan != SCAN_FAKE_WALL)
             continue;
-        uint16_t *side = &aspect->side[NORMALIZE(THING_CELL(thing) - dir)];
+        int16_t *side = &aspect->side[NORMALIZE(THING_CELL(thing) - dir)];
         if (THING_TYPE(thing) == THING_TEXT) {
             if (rec_text_is_visible(thing)) {
-                *side = inscription + 1;
+                *side = inscription;
                 aspect->text = thing;
             }
         } else {
             *side = rec_sensor_ornament(thing);
             if (rec_sensor_type(thing) == SENSOR_WALL_CHAMPION_PORTRAIT)
-                aspect->portrait = rec_sensor_data(thing) + 1;
+                aspect->portrait = rec_sensor_data(thing);
         }
     }
     return thing;
@@ -384,6 +384,9 @@ static uint16_t scan_ornament_things(Aspect *aspect, uint16_t thing, int16_t dir
 static void get_square_aspect(Aspect *aspect, int16_t dir, int16_t x, int16_t y)
 {
     memset(aspect, 0, sizeof *aspect);
+    for (int k = 0; k < WALL_SIDES; k++) /* no ornaments; the door and stairs cases set their fields */
+        aspect->side[k] = -1;
+    aspect->portrait = -1;
     uint16_t thing = map_get_first_thing_at((Position){view_map, x, y});
     uint8_t square = get_square(x, y);
     int scan = SCAN_NONE;
@@ -405,8 +408,8 @@ static void get_square_aspect(Aspect *aspect, int16_t dir, int16_t x, int16_t y)
         /* fall through */
         __attribute__((fallthrough));
     case SQUARE_CORRIDOR:
-        aspect->floor_ornament = get_random_ornament_ordinal(square & SQUARE_RANDOM_ORNAMENT,
-                                                             rec_map_random_floor_ornaments(view_map), x, y);
+        aspect->floor_ornament =
+            get_random_ornament(square & SQUARE_RANDOM_ORNAMENT, rec_map_random_floor_ornaments(view_map), x, y);
         scan = SCAN_FLOOR;
         break;
     case SQUARE_PIT:
@@ -744,23 +747,23 @@ static uint16_t get_creature_direction(const Group *group, int16_t creature)
     return group_cell(group->dirs, creature);
 }
 
-/* The creature number + 1 that stands in a map cell, or 0. A half-square creature fills two cells. */
-static int16_t get_creature_ordinal_in_cell(const Group *s, uint16_t cell)
+/* The index of the creature that stands in a map cell, or -1. A half-square creature fills two cells. */
+static int16_t get_creature_in_cell(const Group *s, uint16_t cell)
 {
     if (s->cells == CELL_CENTERED)
-        return 1;
+        return 0;
     int16_t i = rec_group_last_creature(s->thing);
     if (s->size == CREATURE_SIZE_HALF) {
         if ((cell & 1) == (s->dirs & 1))
             cell = direction_left(cell);
         for (; i >= 0; i--)
             if (cell == get_creature_cell(s, i) || direction_right(cell) == get_creature_cell(s, i))
-                return i + 1;
+                return i;
     } else
         for (; i >= 0; i--)
             if (cell == get_creature_cell(s, i))
-                return i + 1;
-    return 0;
+                return i;
+    return -1;
 }
 
 /* One creature: front, side, back, or attack graphic for its facing, scaled and recolored by depth,
@@ -816,7 +819,6 @@ static bool draw_creatures_in_cell(const Group *group, int16_t dir, int16_t view
                                    uint16_t mcell, uint16_t rest, int16_t pass, bool front)
 {
     int16_t coord = tables_get_view_square(view_square).creature_coord;
-    int16_t ordinal;
     int16_t index;
     int16_t second = 0;
     int16_t pos = cell;
@@ -824,14 +826,12 @@ static bool draw_creatures_in_cell(const Group *group, int16_t dir, int16_t view
     if (coord < 0)
         return true;
     uint16_t creature_index = 0;
-    if (!(ordinal = get_creature_ordinal_in_cell(group, mcell))) {
+    index = get_creature_in_cell(group, mcell);
+    if (index < 0) {
         if (group->size != CREATURE_SIZE_HALF)
             return false;
-        index = -1;
-    } else {
-        creature_index = ordinal - 1;
-        index = creature_index;
-    }
+    } else
+        creature_index = index;
     uint16_t relative = dir - get_creature_direction(group, creature_index);
     uint16_t facing = NORMALIZE(relative);
     int sideways = relative & 1;
@@ -1310,11 +1310,10 @@ static void draw_wall_portrait(int16_t champion)
 
 /* The ornament or inscription on a view wall, and on the D1C wall the champion
    portrait and the facing flags. Returns 1 for an alcove. */
-static int draw_wall_ornament(uint16_t ordinal, int16_t view, const Aspect *aspect)
+static int draw_wall_ornament(int16_t i, int16_t view, const Aspect *aspect)
 {
-    if (!ordinal)
+    if (i < 0)
         return 0;
-    int16_t i = ordinal - 1;
     int16_t zone = ZONE_WALL_ORNAMENT_FIRST + ZONE_WALL_ORNAMENT_VIEWS * wall_ornaments[i].coord + view;
     bool alcove = is_alcove(i);
     bool text = i == inscription;
@@ -1362,37 +1361,31 @@ static int draw_wall_ornament(uint16_t ordinal, int16_t view, const Aspect *aspe
     }
     if (draw_bitmap_in_zone(bitmap, &viewport, zone, mirrored, TRANSPARENT_COLOR) && view == VIEW_WALL_D1C_FRONT)
         g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn_box;
-    if (view == VIEW_WALL_D1C_FRONT && aspect->portrait)
-        draw_wall_portrait(aspect->portrait - 1);
+    if (view == VIEW_WALL_D1C_FRONT && aspect->portrait >= 0)
+        draw_wall_portrait(aspect->portrait);
     free(own.px);
     return alcove;
 }
 
-/* The floor ornament on a floor view; FLOOR_ORNAMENT_WITH_FOOTPRINTS adds the footprints. */
-static void draw_floor_ornament(uint16_t ordinal, int16_t view)
+/* The floor ornament i on a floor view. */
+static void draw_floor_ornament(int16_t i, int16_t view)
 {
-    if (!ordinal)
+    if (i < 0)
         return;
-    int16_t i = (ordinal & ~FLOOR_ORNAMENT_WITH_FOOTPRINTS) - 1;
-    if (i >= 0) {
-        bool right = view == VIEW_D3R2 || view == VIEW_D3R || view == VIEW_D2R || view == VIEW_D1R;
-        bool center = view == VIEW_D3C || view == VIEW_D2C || view == VIEW_D1C;
-        bool flip = right || (i == FLOOR_ORNAMENT_FOOTPRINTS && use_flipped_walls && center);
-        draw_bitmap_in_zone(gfx_get_bitmap(floor_ornaments[i].graphic + tables_get_floor_ornament_offset(view)),
-                            &viewport,
-                            ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * floor_ornaments[i].coord + view,
-                            flip, TRANSPARENT_COLOR);
-    }
-    if (ordinal & FLOOR_ORNAMENT_WITH_FOOTPRINTS)
-        draw_floor_ornament(FLOOR_ORNAMENT_FOOTPRINTS + 1, view);
+    bool right = view == VIEW_D3R2 || view == VIEW_D3R || view == VIEW_D2R || view == VIEW_D1R;
+    bool center = view == VIEW_D3C || view == VIEW_D2C || view == VIEW_D1C;
+    bool flip = right || (i == FLOOR_ORNAMENT_FOOTPRINTS && use_flipped_walls && center);
+    draw_bitmap_in_zone(gfx_get_bitmap(floor_ornaments[i].graphic + tables_get_floor_ornament_offset(view)), &viewport,
+                        ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * floor_ornaments[i].coord + view, flip,
+                        TRANSPARENT_COLOR);
 }
 
 /* An ornament or mask on the door bitmap, scaled for D3 and D2. */
-static void draw_door_ornament(uint16_t ordinal, int16_t depth, Bitmap *door)
+static void draw_door_ornament(int16_t i, int16_t depth, Bitmap *door)
 {
-    if (!ordinal)
+    if (i < 0)
         return;
-    const Ornament *o = &door_ornaments[ordinal - 1];
+    const Ornament *o = &door_ornaments[i];
     int16_t zone = ZONE_DOOR_ORNAMENT_FIRST + ZONE_DOOR_ORNAMENT_DEPTHS * o->coord + depth;
     Bitmap own = {0};
     if (depth == DOOR_DEPTH_D1)
@@ -2200,8 +2193,8 @@ static void load_ornaments(int16_t map, const uint8_t *ornaments)
         uint8_t ornament = ornaments[walls + floors + i];
         door_ornaments[i] = (Ornament){GFX_DOOR_ORNAMENT_FIRST + ornament, tables_get_door_ornament_coords(ornament)};
     }
-    door_ornaments[DOOR_ORNAMENT_DESTROYED - 1] = (Ornament){GFX_DOOR_MASK_DESTROYED, DOOR_MASK_COORD_SET};
-    door_ornaments[DOOR_ORNAMENT_THIEVES_EYE - 1] = (Ornament){GFX_DOOR_MASK_THIEVES_EYE, DOOR_MASK_COORD_SET};
+    door_ornaments[DOOR_ORNAMENT_DESTROYED] = (Ornament){GFX_DOOR_MASK_DESTROYED, DOOR_MASK_COORD_SET};
+    door_ornaments[DOOR_ORNAMENT_THIEVES_EYE] = (Ornament){GFX_DOOR_MASK_THIEVES_EYE, DOOR_MASK_COORD_SET};
 }
 
 /* The light palettes and the creature palette changes with the replacement colors of the creature types of
@@ -2251,9 +2244,9 @@ int16_t view_get_wall_ornament(int16_t x, int16_t y, int16_t face)
     if (view_map != g_party_map_index)
         return VIEW_ORNAMENT_NONE;
     get_square_aspect(&a, face, x, y);
-    if (a.element != SQUARE_WALL || !a.far_side)
+    if (a.element != SQUARE_WALL || a.far_side < 0)
         return VIEW_ORNAMENT_NONE;
-    int16_t i = a.far_side - 1;
+    int16_t i = a.far_side;
     if (i == inscription)
         return VIEW_ORNAMENT_TEXT;
     if (i == vi_altar)
@@ -2271,16 +2264,16 @@ int16_t view_get_wall_face_ornament_index(int16_t x, int16_t y, int16_t face)
     if (view_map != g_party_map_index)
         return -1;
     get_square_aspect(&a, face, x, y);
-    if (a.element != SQUARE_WALL || !a.far_side)
+    if (a.element != SQUARE_WALL || a.far_side < 0)
         return -1;
     return view_get_wall_ornament_index(a.far_side);
 }
 
-int16_t view_get_wall_ornament_index(uint16_t ordinal)
+int16_t view_get_wall_ornament_index(int16_t ornament)
 {
-    if (view_map != g_party_map_index || ordinal < 1 || ordinal > rec_map_wall_ornaments(view_map))
+    if (view_map != g_party_map_index || ornament < 0 || ornament >= rec_map_wall_ornaments(view_map))
         return -1;
-    return (wall_ornaments[ordinal - 1].graphic - GFX_WALL_ORNAMENT_FIRST) / WALL_ORNAMENT_GRAPHICS;
+    return (wall_ornaments[ornament].graphic - GFX_WALL_ORNAMENT_FIRST) / WALL_ORNAMENT_GRAPHICS;
 }
 
 bool view_is_pressure_pad(int16_t x, int16_t y)
@@ -2298,7 +2291,7 @@ int16_t view_get_floor_ornament(int16_t x, int16_t y)
     get_square_aspect(&a, DIRECTION_NORTH, x, y);
     if (a.element != SQUARE_CORRIDOR && a.element != SQUARE_PIT && a.element != SQUARE_TELEPORTER)
         return -1;
-    int16_t i = (a.floor_ornament & ~FLOOR_ORNAMENT_WITH_FOOTPRINTS) - 1;
+    int16_t i = a.floor_ornament;
     return i < 0 ? -1 : (floor_ornaments[i].graphic - GFX_FLOOR_ORNAMENT_FIRST) / FLOOR_ORNAMENT_GRAPHICS;
 }
 
@@ -2361,8 +2354,8 @@ static bool has_map_footprints(const Aspect *a, int16_t x, int16_t y)
     int allowed = a->element == SQUARE_PIT ? a->square & PIT_IMAGINARY
                                            : a->element != SQUARE_WALL && a->element != ELEMENT_STAIRS_SIDE &&
                                                  a->element != ELEMENT_STAIRS_FRONT;
-    uint16_t ordinal = allowed ? group_get_party_scent_ordinal(x, y) : 0;
-    return ordinal && ordinal - 1 >= g_party.first_scent_index && ordinal - 1 < g_party.last_scent_index;
+    int16_t scent = allowed ? group_get_party_scent(x, y) : -1;
+    return scent >= 0 && scent >= g_party.first_scent_index && scent < g_party.last_scent_index;
 }
 
 /* The tile of a flying thing, or -1: spell projectiles and a flying zokathra. */
@@ -2452,12 +2445,12 @@ static void draw_map_wall(Bitmap *dst, const uint8_t *spells, const Aspect *aspe
     }
     draw_map_tile(dst, MAP_TILE_WALL, px, py);
     for (int16_t k = 0; k < WALL_SIDES; k++) {
-        int16_t i = aspect->side[k] - 1;
-        int16_t first = !aspect->side[k] ? -1
-                        : i == vi_altar  ? MAP_TILE_VI_ALTAR_FIRST
-                        : is_alcove(i)   ? MAP_TILE_ALCOVE_FIRST
-                        : i == fountain  ? MAP_TILE_FOUNTAIN_FIRST
-                                         : -1;
+        int16_t i = aspect->side[k];
+        int16_t first = i < 0           ? -1
+                        : i == vi_altar ? MAP_TILE_VI_ALTAR_FIRST
+                        : is_alcove(i)  ? MAP_TILE_ALCOVE_FIRST
+                        : i == fountain ? MAP_TILE_FOUNTAIN_FIRST
+                                        : -1;
         if (first >= 0)
             draw_map_tile(dst, first + k, px, py);
     }
@@ -2497,7 +2490,7 @@ static void draw_map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16
         break;
     case SQUARE_CORRIDOR: {
         draw_map_tile(dst, MAP_TILE_FLOOR, px, py);
-        int16_t i = (aspect.floor_ornament & ~FLOOR_ORNAMENT_WITH_FOOTPRINTS) - 1;
+        int16_t i = aspect.floor_ornament;
         if (i >= 0)
             draw_map_tile(dst,
                           MAP_TILE_FLOOR_ORNAMENT_FIRST +
