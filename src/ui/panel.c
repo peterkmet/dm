@@ -90,10 +90,8 @@ void panel_draw_load(int16_t champion_index)
 {
     const Champion *c = &g_champions[champion_index];
     uint16_t max = champion_get_maximum_load(champion_index);
-    uint8_t color = max < c->load ? COLOR_RED
-                    : (int32_t)max * HEAVY_LOAD_NUMERATOR < (int32_t)c->load * HEAVY_LOAD_DENOMINATOR
-                        ? COLOR_YELLOW
-                        : COLOR_LIGHT_GRAY;
+    enum LoadLevel level = champion_get_load_level(champion_index);
+    uint8_t color = level == LOAD_OVERLOADED ? COLOR_RED : level == LOAD_HEAVY ? COLOR_YELLOW : COLOR_LIGHT_GRAY;
     char text[PANEL_LINE_SIZE], a[8], b[8], d[8]; /* the load is in tenths of a kilogram */
     ui_print_zone(ui_get_viewport(), ZONE_LOAD_LABEL, color, COLOR_DARKEST_GRAY, gfx_get_string(TEXT_LOAD));
     snprintf(text, sizeof text, "%s%s%s/%s%s",

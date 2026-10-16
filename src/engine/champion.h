@@ -197,6 +197,10 @@ int16_t champion_get_skill_level(int16_t champion_index, int16_t skill_index, bo
 void champion_add_skill_experience(int16_t champion_index, uint16_t skill, uint16_t experience);
 /* Tenths of a kilogram, rounded up to whole kilograms. */
 uint16_t champion_get_maximum_load(int16_t champion_index);
+/* The load of a champion against its maximum load. */
+enum LoadLevel { LOAD_NORMAL, LOAD_HEAVY, LOAD_OVERLOADED };
+/* The load level: overloaded above the maximum load, heavy above 5/8 of it. */
+enum LoadLevel champion_get_load_level(int16_t champion_index);
 /* Ticks between two party moves for this champion: more when the load is heavy. */
 int16_t champion_get_movement_ticks(int16_t champion_index);
 /* Dexterity for hit and dodge rolls, lower with a heavy load, between 1 and 100. */

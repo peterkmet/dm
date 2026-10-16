@@ -634,6 +634,17 @@ uint16_t champion_get_maximum_load(int16_t champion_index)
     return load - load % LOAD_UNIT;
 }
 
+enum LoadLevel champion_get_load_level(int16_t champion_index)
+{
+    uint16_t max = champion_get_maximum_load(champion_index);
+    uint16_t load = g_champions[champion_index].load;
+    if (max < load)
+        return LOAD_OVERLOADED;
+    if ((int32_t)max * HEAVY_LOAD_NUMERATOR < (int32_t)load * HEAVY_LOAD_DENOMINATOR)
+        return LOAD_HEAVY;
+    return LOAD_NORMAL;
+}
+
 int16_t champion_get_movement_ticks(int16_t champion_index)
 {
     const Champion *c = &g_champions[champion_index];
