@@ -2200,7 +2200,7 @@ static void get_relative_square(int16_t dir, int16_t forward, int16_t right, int
     *y += forward * tables_get_step_north(dir) + right * tables_get_step_north(turn_right(dir));
 }
 
-/* Ceiling, floor, the objects of D4, then the 16 squares back to front, then draw_viewport. */
+/* The kind of ornament on the side of wall square (x, y) of the party map that faces direction face. */
 int16_t view_get_wall_ornament(int16_t x, int16_t y, int16_t face)
 {
     Aspect a;
