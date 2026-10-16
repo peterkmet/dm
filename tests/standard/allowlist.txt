@@ -114,7 +114,6 @@ enum platform/platform.c open: epic 11
 enum ui/gameloop.c open: epic 8
 enum ui/view.c open: epic 8
 notation data/adf.c open: epic 4
-notation data/adventure.c open: epic 4
 notation data/adventure.h open: epic 4
 notation data/bytes.h open: epic 4
 notation data/crc32.c open: epic 4
@@ -122,7 +121,6 @@ notation data/csbimage.c open: epic 4
 notation data/csbimage.h open: epic 4
 notation data/csbtext.c open: epic 4
 notation data/ftl.c open: epic 4
-notation data/ids.h open: epic 4
 notation data/kaos_addresses.h open: epic 4
 notation data/spells.h open: epic 4
 notation data/tables.h open: epic 4
@@ -176,7 +174,6 @@ bool ui/gameloop.c:draw_entrance_doors open: epic 8
 bool ui/gameloop.h:gameloop_run_frame open: epic 8
 bool ui/layout.h:layout_get_zone_box open: epic 8
 bool ui/view.c open: epic 8
-global data/csbimage.h open: epic 4
 global ui/video.h open: epic 8
 name data/tables.c:tables_get_door_button_coord_set open: epic 4
 name data/tables.c:tables_get_door_ornament_coord_set open: epic 4
@@ -503,7 +500,6 @@ static-prefix ui/view.c:draw_wall_text open: epic 8
 comment data/csbimage.h open: epic 4
 comment data/ftl.h open: epic 4
 comment data/graphics.h open: epic 4
-comment data/spells.h open: epic 4
 comment data/swsh.h open: epic 4
 comment data/tables.h open: epic 4
 comment engine/action.h open: epic 5
@@ -623,7 +619,6 @@ include ui/ui_champion.c:data/ftl.h open: epic 8
 include ui/ui_menus.c:engine/dungeon.h open: epic 8
 include ui/view.c:ui/advanced.h open: epic 8
 module platform/main.c open: epic 11
-module ui/music_tables.c open: epic 9
 order data/adf.c open: epic 4
 order data/adventure.c open: epic 4
 order data/tables.c open: epic 4
@@ -663,8 +658,6 @@ order ui/view.c open: epic 8
 dead-api data/adf.h:adf_is_safe_name open: epic 4
 dead-api data/graphics.h:gfx_count open: epic 4
 dead-api data/graphics.h:gfx_expand open: epic 4
-dead-api data/spells.h:spell_get_symbol open: epic 4
-dead-api data/spells.h:spell_get_symbol_mana_cost open: epic 4
 dead-api engine/action.h:action_decrement_charges open: epic 7
 dead-api engine/action.h:action_get_throwing_stamina_cost open: epic 7
 dead-api engine/action.h:action_is_action_performed open: epic 7
@@ -875,14 +868,10 @@ result ui/anim.h:anim_open open: epic 8
 result ui/anim.h:anim_play open: epic 8
 result ui/layout.h:layout_init open: epic 8
 result ui/logo.h:logo_play open: epic 8
-type data:action open: epic 4
-type data:creature_type open: epic 4
 type data:dir open: epic 4
 type data:i open: epic 4
-type data:index open: epic 4
 type data:len open: epic 4
 type data:out open: epic 4
-type data:slot open: epic 4
 type data:step open: epic 4
 type engine:a open: epic 6
 type engine:attack open: epic 6
