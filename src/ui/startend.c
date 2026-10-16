@@ -340,7 +340,7 @@ static void draw_the_end(bool with_buttons)
         colors[i] = THE_END_BACKGROUND;
     colors[COLOR_WHITE] = THE_END_WHITE;
     memset(fb, COLOR_BLACK, sizeof fb);
-    ui_blit_graphic(&screen, GFX_THE_END, ZONE_THE_END, COLOR_NONE);
+    ui_blit_graphic(&screen, GFX_THE_END, ZONE_DIALOG_ON_SCREEN, COLOR_NONE);
     if (with_buttons) {
         if (g_adventure == ADVENTURE_CSB) {
             csb_draw_restart_button();
