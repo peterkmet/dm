@@ -251,7 +251,7 @@ With champions, each champion has one line, for example `0 <name> (front_left): 
 |---|---|
 | `bool control_open(const char *path)` | Listens on the socket. Replaces an old socket file. Returns false on an error. |
 | `void control_poll(void)` | Call one time per frame. Accepts a client, answers requests, runs and ends turns. |
-| `int control_is_turn_pending(void)` | 1 while a turn runs. |
+| `bool control_is_turn_pending(void)` | True while a turn runs. |
 | `void control_close(void)` | Closes the sockets and removes the socket file. |
 
 The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gameloop_get_data_dir()`. `gameloop_load_data` sets both directories.
