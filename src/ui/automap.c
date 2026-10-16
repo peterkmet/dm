@@ -6,7 +6,6 @@
 #include "engine/map.h"
 #include "engine/party.h"
 #include "engine/record.h"
-#include "ui/advanced.h"
 #include "ui/draw.h"
 #include "ui/text.h"
 #include "ui/ui.h"

@@ -1,11 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/ui.h"
-#include "data/adventure.h"
-#include "data/csb_text.h"
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "engine/champion.h"
-#include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/message.h"

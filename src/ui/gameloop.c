@@ -2,7 +2,6 @@
 #include "ui/gameloop.h"
 #include "data/adventure.h"
 #include "data/file.h"
-#include "data/ftl.h"
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/tables.h"

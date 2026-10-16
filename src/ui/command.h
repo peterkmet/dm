@@ -6,7 +6,6 @@
 /* Player input as the command table of the original: clicks and keys become
    queued commands; command_process_queue runs them. Movement commands (1-6) are in move.h. */
 
-#include "engine/move.h"
 #include <stdbool.h>
 #include <stdint.h>
 

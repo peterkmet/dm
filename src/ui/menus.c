@@ -6,7 +6,6 @@
 #include "data/tables.h"
 #include "engine/action.h"
 #include "engine/champion.h"
-#include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/magic.h"

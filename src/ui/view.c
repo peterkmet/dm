@@ -13,7 +13,6 @@
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/record.h"
-#include "ui/advanced.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
 #include "ui/video.h"
