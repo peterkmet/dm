@@ -1,6 +1,6 @@
 # Final refactor: PRD
 
-Date: 2026-10-16. Branch: `feature/2026-10-16-final-refactor`. Status: draft after the PRD review.
+Date: 2026-10-16. Branch: `feature/2026-10-16-final-refactor`. Status: reviewed, waiting for the owner's approval of the change list.
 
 ## Goal
 
@@ -532,7 +532,8 @@ the allowlist with only documented reasons.
 
 ### R14. Repository files
 
-1. `LICENSE`: GPL-3.0; every source file of `src/`, `tests/` and `tools/dmtools` starts with an SPDX line;
+1. `LICENSE`: GPL-3.0; every source file of `src/`, `tests/` and `tools/dmtools` starts with
+   `SPDX-License-Identifier: GPL-3.0-or-later`;
    `README.md` says the code is GPL and the game data is not included.
 2. `.editorconfig`: 4-space C and Python, LF, final newline.
 3. `run.txt` goes; `/ghidra/` goes from `.gitignore`; the personal play folder is `playthroughs/local/`
@@ -625,8 +626,7 @@ Feature: Final refactor
 - Repository: `port/src/` becomes `src/`, the Makefile moves to the root (user, 2026-10-16).
 - Depth: level 3, all of R5 to R11 including the move chain, the `Session` and `Screen` structs and the view
   placement context (user, 2026-10-16).
-- License: GPL-3.0 (user, 2026-10-16). The SPDX identifier (`GPL-3.0-only` or `GPL-3.0-or-later`) is the
-  open point of the PRD review.
+- License: GPL-3.0, SPDX identifier `GPL-3.0-or-later` (user, 2026-10-16).
 - No CI (user, 2026-10-16); `make check` is the local gate.
 - Includes: explicit and sorted, no umbrella header per layer; the module splits bring the largest include
   lists from 35 to about 10-15 (user, 2026-10-16).
