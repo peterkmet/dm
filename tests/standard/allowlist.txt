@@ -456,11 +456,6 @@ static-prefix ui/view.c:draw_wall_ornament open: epic 8
 static-prefix ui/view.c:draw_wall_part open: epic 8
 static-prefix ui/view.c:draw_wall_portrait open: epic 8
 static-prefix ui/view.c:draw_wall_text open: epic 8
-comment data/csb_image.h open: epic 4
-comment data/ftl.h open: epic 4
-comment data/graphics.h open: epic 4
-comment data/swsh.h open: epic 4
-comment data/tables.h open: epic 4
 comment engine/action.h open: epic 5
 comment engine/champion.c open: epic 5
 comment engine/champion.h open: epic 5

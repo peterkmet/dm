@@ -12,7 +12,6 @@
 #define SWSH_SAMPLE_LENGTH  0x100a56
 #define SWSH_SAMPLE_DATA    0x100a5a
 
-/* Reads the module and points the logo fields into it. */
 bool swsh_load(const char *path, SwshLogo *out)
 {
     size_t len;
@@ -37,7 +36,6 @@ bool swsh_load(const char *path, SwshLogo *out)
     return true;
 }
 
-/* Frees the module and clears the logo. */
 void swsh_free(SwshLogo *logo)
 {
     ftl_free(&logo->image);

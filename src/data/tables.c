@@ -365,7 +365,6 @@ bool tables_is_loaded(void)
     return kaos_is_loaded();
 }
 
-/* Map x step of one square in a direction. */
 int16_t tables_get_step_east(int16_t direction)
 {
     return kaos_s16(KAOS_DIRECTION_TO_STEP_EAST + direction * 2);
@@ -456,7 +455,6 @@ int16_t tables_get_portrait_height(void)
     return kaos_s16(KAOS_PORTRAIT_HEIGHT);
 }
 
-/* Color word of a creature replacement color set at a light level (0-5). */
 uint16_t tables_get_replacement_color(int16_t set, int16_t light)
 {
     return kaos_u16(KAOS_CREATURE_REPLACEMENT_COLOR_SETS + REPLACEMENT_SET_BYTES * set + 2 * light);
@@ -625,7 +623,6 @@ const uint8_t *tables_get_palette_changes(int16_t changes)
     return kaos_ptr(at[changes]);
 }
 
-/* First icon of an icon sheet. */
 int16_t tables_get_icon_sheet_first(int16_t sheet)
 {
     return kaos_s16(KAOS_ICON_SHEET_FIRST_ICONS + 2 * sheet);
@@ -724,7 +721,6 @@ int16_t tables_get_pointer_shadow_dy(void)
 {
     return kaos_s16(KAOS_POINTER_SHADOW_DY);
 }
-/* The bit planes of the arrow or the hand pointer and its size. */
 PointerBitmap tables_get_pointer_bitmap(bool hand)
 {
     return (PointerBitmap){kaos_ptr(hand ? KAOS_HAND_POINTER_BITMAP : KAOS_ARROW_POINTER_BITMAP),
@@ -746,7 +742,6 @@ static uint32_t mouse_table(int16_t table)
         return kaos_u32(KAOS_DIALOG_MOUSE_INPUTS + DIALOG_TABLE_POINTER_BYTES * (table - TABLES_MOUSE_DIALOG_FIRST));
     return at[table];
 }
-/* Entry of a mouse input table; false at the terminator. */
 bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out)
 {
     uint32_t a = mouse_table(table) + MOUSE_INPUT_BYTES * entry;
@@ -761,7 +756,6 @@ bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out)
                         kaos_u16(a + MOUSE_AT_BUTTONS)};
     return true;
 }
-/* Writes x1, x2, y1, y2 of an entry as big-endian words, as the endgame screen does. */
 void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_t x2, int16_t y1, int16_t y2)
 {
     uint32_t a = mouse_table(table) + MOUSE_INPUT_BYTES * entry;
@@ -770,7 +764,6 @@ void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_
     kaos_write_u16(a + MOUSE_AT_Y1, (uint16_t)y1);
     kaos_write_u16(a + MOUSE_AT_Y2, (uint16_t)y2);
 }
-/* The command of a key in a keyboard table, or 0. */
 int16_t tables_get_key_command(int16_t key_table, uint16_t key)
 {
     static const uint32_t at[TABLES_KEYS_COUNT] = {KAOS_KEYS_ENTRANCE, KAOS_KEYS_INTERFACE, KAOS_KEYS_MOVEMENT,

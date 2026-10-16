@@ -95,7 +95,6 @@ fail:
     return false;
 }
 
-/* exported for the tests */
 int gfx_count(void)
 {
     return graphics.item_count;
@@ -277,7 +276,6 @@ static bool load_strings(int graphic, StringList *list)
     return true;
 }
 
-/* Loads the strings, action names, and object names. */
 bool gfx_load_strings(void)
 {
     return load_strings(GFX_STRINGS, &graphics.strings) && load_strings(GFX_ACTION_NAMES, &graphics.action_names) &&

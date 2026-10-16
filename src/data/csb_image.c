@@ -156,7 +156,6 @@ const CsbCopy g_csb_copies[] = {
 };
 const int g_csb_copy_count = ARRAY_COUNT(g_csb_copies);
 
-/* Copies the tables, converts the action sets, moves the dialog pointers to the KAOS tables, and builds the texts. */
 bool csb_image_build(const FtlImage *appb, FtlImage *out)
 {
     uint32_t size = CSB_IMAGE_END - KAOS_BASE;

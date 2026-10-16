@@ -159,30 +159,51 @@ bool tables_load(const char *path);
 bool tables_is_loaded(void);
 
 /* Each struct accessor returns NULL for an out-of-range index. Call after tables_load. */
+
+/* Attributes of a creature type. */
 const CreatureInfo *tables_get_creature_info(int16_t creature_type);
+/* Attack and movement sounds of a creature sound set. */
 const CreatureSound *tables_get_creature_sound(int16_t index);
+/* Type, aspect, action set and allowed slots of an object. */
 const ObjectInfo *tables_get_object_info(int16_t index);
+/* Weight, class, strength and kinetic energy of a weapon type. */
 const WeaponInfo *tables_get_weapon_info(int16_t weapon_type);
+/* Weight, defense and attributes of an armour type. */
 const ArmourInfo *tables_get_armour_info(int16_t armour_type);
+/* Symbols, skill, kind and type of a spell. */
 const Spell *tables_get_spell(int16_t index);
+/* The three actions and their minimum skill levels of an action set. */
 const ActionSet *tables_get_action_set(int16_t index);
+/* Ticks, damage, hit probability, stamina and experience of an action. */
 const ActionInfo *tables_get_action_info(int16_t action);
 
 /* The scalar tables return the value, or 0 for an out-of-range index. */
+
+/* Weight of a junk type. */
 uint8_t tables_get_junk_weight(int16_t junk_type);
+/* Food that a food type adds. */
 int16_t tables_get_food_value(int16_t index);
+/* Mana cost of a symbol at a step, before the power multiplier. */
 uint8_t tables_get_base_mana_cost(int16_t step, int16_t symbol);
+/* Mana cost multiplier of a power symbol, in eighths. */
 uint8_t tables_get_mana_multiplier(int16_t power);
+/* Light amount of a light power. */
 int16_t tables_get_light_amount(int16_t power);
+/* Light threshold of a palette of the dungeon view. */
 int16_t tables_get_light_threshold(int16_t index);
+/* Bit of a slot in the allowed slots of an object. */
 uint16_t tables_get_slot_mask(int16_t slot);
+/* Share of a slot in the armour defense of a champion. */
 uint8_t tables_get_wound_defense_factor(int16_t slot);
+/* Entry of the fixed possessions lists of the creatures; 0 ends a list. */
 uint16_t tables_get_fixed_possession(int16_t index);
 
 /* Squares ahead and to each side that a sound reaches; the volume table covers -range..range. */
 #define SOUND_HEARING_RANGE 12
 
 /* Each accessor below reads the loaded image at call time; it needs tables_load. */
+
+/* Map x step of one square in a direction. */
 int16_t tables_get_step_east(int16_t direction);
 /* Map y step of one square in a direction. */
 int16_t tables_get_step_north(int16_t direction);
@@ -228,6 +249,8 @@ int16_t tables_get_portrait_width(void);
 int16_t tables_get_portrait_height(void);
 
 /* Dungeon view tables; each accessor reads the loaded image at call time. */
+
+/* Color word of a creature replacement color set at a light level (0-5). */
 uint16_t tables_get_replacement_color(int16_t set, int16_t light);
 /* Palette change of a creature replacement color set at depth 2 or 3. */
 uint8_t tables_get_replacement_change(int16_t set, int16_t depth);
@@ -331,6 +354,8 @@ uint16_t tables_get_palette_color(int16_t palette, int16_t color);
 const uint8_t *tables_get_palette_changes(int16_t changes);
 
 /* Interface and champion panel tables; each accessor reads the loaded image at call time. */
+
+/* First icon of an icon sheet. */
 int16_t tables_get_icon_sheet_first(int16_t sheet);
 /* Layout zone of a slot box. */
 int16_t tables_get_slot_box_zone(int16_t slot_box);
@@ -393,6 +418,7 @@ typedef struct {
     const uint8_t *planes;
     int16_t width, height;
 } PointerBitmap;
+/* The bit planes of the arrow or the hand pointer and its size. */
 PointerBitmap tables_get_pointer_bitmap(bool hand);
 
 /* Mouse input tables: which screen boxes give which command, in the order of their image addresses. */
@@ -420,7 +446,7 @@ typedef struct {
 } MouseInput;
 /* Entry of a mouse input table; false at the end of the table. */
 bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out);
-/* Writes the box of an entry into the mouse input table of the image. */
+/* Writes the box of an entry into the mouse input table of the image, as the endgame screen does. */
 void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_t x2, int16_t y1, int16_t y2);
 
 /* Keyboard input tables. */

@@ -24,7 +24,8 @@ typedef struct {
 extern const CsbCopy g_csb_copies[]; /* exported for the tests */
 extern const int g_csb_copy_count;   /* exported for the tests */
 
-/* Builds the KAOS-layout image of the loaded APPB module. False when the module does not fit. */
+/* Builds the KAOS-layout image of the loaded APPB module: copies the tables, converts the action sets, moves the
+   dialog pointers to the KAOS tables, and builds the texts. False when the module does not fit. */
 bool csb_image_build(const FtlImage *appb, FtlImage *out);
 
 #endif
