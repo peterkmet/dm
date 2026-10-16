@@ -493,8 +493,8 @@ void state_json_write_state(Json *j)
         key_int(j, "champion", g_acting_champion_ordinal - 1);
         json_key(j, "actions");
         json_open(j, '[');
-        for (int k = 0; k < ACTION_LIST_COUNT && g_action_list_indices[k] != ACTION_NONE; k++)
-            json_str(j, gfx_get_action_name(g_action_list_indices[k]));
+        for (int k = 0; k < ACTION_LIST_COUNT && g_action_list.actions[k] != ACTION_NONE; k++)
+            json_str(j, gfx_get_action_name(g_action_list.actions[k]));
         json_close(j, ']');
         json_close(j, '}');
     } else {

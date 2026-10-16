@@ -206,7 +206,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 
 `action_is_action_performed(champion, action)` runs one action against the square in front of the champion:
 
-1. The target group is the group on that square (`g_action_target_group_thing`).
+1. The target group is the group on that square (`target_group` of `action_is_action_performed`).
 2. Stamina cost is `random_bit() + stamina`. For skills 16–19 and the wizard skill, the mana cost of a spell action is `7 − min(6, skill level)`.
 3. The action runs (table below).
 4. The action hand is disabled for the action ticks (event 11, `magic_disable_action`). Stamina decreases. The action skill gets the experience. A value of 0 skips each step.

@@ -100,6 +100,10 @@ class Champion(ctypes.Structure):
     ]
 
 
+class ActionList(ctypes.Structure):
+    _fields_ = [("actions", u8 * 3), ("minimum_skill_levels", u8 * 3), ("count", u16)]
+
+
 class Party(ctypes.Structure):
     _fields_ = [
         ("magical_light_amount", c16), ("thieves_eye", u8), ("footprints", u8),

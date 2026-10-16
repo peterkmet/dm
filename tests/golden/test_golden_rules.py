@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Location, Party, scrub_free_groups, state
+from dmtest.game import ActionList, Location, Party, scrub_free_groups, state
 from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
 from dmtest.markers import needs_dm
 
@@ -185,9 +185,7 @@ def test_action_list(game):
     lib = game.lib
     recruit(game)
     champion = game.champions[0]
-    count = u16.in_dll(lib, "g_action_count")
-    levels = (ctypes.c_uint8 * 3).in_dll(lib, "g_action_list_minimum_skill_levels")
-    indices = (ctypes.c_uint8 * 3).in_dll(lib, "g_action_list_indices")
+    action_list = ActionList.in_dll(lib, "g_action_list")
     got = []
     for experience in (0, 1 << 20):
         for s in range(C.SKILL_COUNT):
@@ -198,8 +196,8 @@ def test_action_list(game):
             champion.slots[C.SLOT_HAND_ACTION] = thing
             game.click_box(zone_box(game, C.ZONE_ACTION_ICON_BOX_FIRST), viewport=False)  # + champion index: the action hand icon of the action area
             assert game.value("g_acting_champion_ordinal") == 1
-            names = [lib.gfx_get_action_name(indices[k]).decode() if indices[k] != 0xFF else "" for k in range(3)]
-            got.append({"count": count.value, "levels": list(levels), "names": names, **snapshot(game)})
+            names = [lib.gfx_get_action_name(action_list.actions[k]).decode() if action_list.actions[k] != 0xFF else "" for k in range(3)]
+            got.append({"count": action_list.count, "levels": list(action_list.minimum_skill_levels), "names": names, **snapshot(game)})
             lib.menus_clear_acting_champion()
             game.run()
     check("action list", got)

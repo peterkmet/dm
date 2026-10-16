@@ -8,7 +8,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import s16, var
-from dmtest.game import (pending_damage, CHAMPIONS, Champion, Location, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
+from dmtest.game import (ActionList, pending_damage, CHAMPIONS, Champion, Location, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
                          setup_creatures, skeleton_map_and_squares, things_of_type, tick)
 from dmtest.lib import load_lib
 
@@ -264,7 +264,7 @@ def test_triggered_action_closes_menu_and_asks_for_action_area(party):
     redraw = ctypes.c_uint16.in_dll(lib, "g_redraw")
     redraw.value = 0
     var(lib, c16, "g_acting_champion_ordinal").value = 1
-    (u8 * 3).in_dll(lib, "g_action_list_indices")[0] = C.ACTION_BLOCK
+    ActionList.in_dll(lib, "g_action_list").actions[0] = C.ACTION_BLOCK
     lib.action_did_click_trigger_action(0)
     assert var(lib, c16, "g_acting_champion_ordinal").value == 0
     assert redraw.value & C.REDRAW_ACTION_AREA

@@ -529,8 +529,6 @@ dead-api engine/action.h:action_is_melee_action_performed open: epic 7
 dead-api engine/action.h:action_is_object_thrown open: epic 7
 dead-api engine/action.h:action_print_action_message open: epic 7
 dead-api engine/action.h:action_set_action_list open: epic 7
-dead-api engine/action.h:g_action_list_minimum_skill_levels open: epic 7
-dead-api engine/action.h:g_action_target_group_thing open: epic 7
 dead-api engine/champion.h:champion_drop_all_objects open: epic 7
 dead-api engine/champion.h:champion_get_wound_defense open: epic 7
 dead-api engine/champion.h:champion_kill open: epic 7

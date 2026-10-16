@@ -623,7 +623,7 @@ static void click_in_action_area(int16_t x, int16_t y)
     if (command == COMMAND_PASS) {
         highlight_zone(ZONE_ACTION_PASS_BOX);
         trigger_action(-1);
-    } else if (command > COMMAND_PASS && command - COMMAND_PASS <= g_action_count) {
+    } else if (command > COMMAND_PASS && command - COMMAND_PASS <= g_action_list.count) {
         highlight_zone(ZONE_ACTION_NAME_BOX_FIRST + command - COMMAND_ACTION_FIRST);
         g_stop_waiting_for_input = trigger_action(command - COMMAND_ACTION_FIRST);
     }
