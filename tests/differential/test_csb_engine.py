@@ -69,8 +69,32 @@ def load(lib, adventure, path):
 
 
 def copies(lib):
-    count = ctypes.c_int.in_dll(lib, "csb_copy_count").value
-    return list((CsbCopy * count).in_dll(lib, "csb_copies"))
+    count = ctypes.c_int.in_dll(lib, "g_csb_copy_count").value
+    return list((CsbCopy * count).in_dll(lib, "g_csb_copies"))
+
+
+class FtlImage(ctypes.Structure):
+    _fields_ = [("data", ctypes.POINTER(ctypes.c_uint8)), ("size", ctypes.c_uint32), ("base", ctypes.c_uint32), ("data_base", ctypes.c_uint32), ("code_base", ctypes.c_uint32)]
+
+
+# file-local constant of src/data/csbtext.c: the pointers to the load, save, and disk messages
+CSB_APPB_DISK_MESSAGES = 0x104D08
+
+
+def test_failed_text_build_publishes_no_image(lib):
+    """A CSB image whose text build fails is freed and not published (bug: the image stayed loaded)."""
+    lib.ftl_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.c_uint32, ctypes.POINTER(FtlImage)]
+    lib.csb_image_build.argtypes = [ctypes.POINTER(FtlImage), ctypes.POINTER(FtlImage)]
+    lib.ftl_free.argtypes = [ctypes.POINTER(FtlImage)]
+    raw = (GAME_CSB / "APPB.FTL").read_bytes()
+    appb = FtlImage()
+    assert lib.ftl_load(raw, len(raw), BASE, ctypes.byref(appb)) == 0
+    at = CSB_APPB_DISK_MESSAGES - appb.base
+    ctypes.memmove(ctypes.addressof(appb.data.contents) + at, b"\xff\xff\xff\xff", 4)  # a pointer outside the image
+    out = FtlImage()
+    assert lib.csb_image_build(ctypes.byref(appb), ctypes.byref(out)) == -1
+    assert not out.data
+    lib.ftl_free(ctypes.byref(appb))
 
 
 @pytest.fixture(scope="module")

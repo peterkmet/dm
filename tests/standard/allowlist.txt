@@ -670,8 +670,6 @@ order ui/ui_menus.c open: epic 8
 order ui/video.c open: epic 8
 order ui/view.c open: epic 8
 dead-api data/adf.h:adf_is_safe_name open: epic 4
-dead-api data/csbimage.h:csb_copies open: epic 4
-dead-api data/csbimage.h:csb_copy_count open: epic 4
 dead-api data/graphics.h:gfx_count open: epic 4
 dead-api data/graphics.h:gfx_expand open: epic 4
 dead-api data/spells.h:spell_count open: epic 4
