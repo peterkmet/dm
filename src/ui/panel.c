@@ -377,8 +377,8 @@ static void add_rune_symbols(const char *text, const char *gap, char *out, size_
 }
 
 /* Prints one scroll line centered on x in the scroll font: letters and '{' to '~' have their own codes.
-   Changes text: the letters and rune words become font codes (the rune symbols with the advanced features).
-   With the advanced features each rune name gets its symbol in red. */
+   Without the advanced features it converts text in place; with them it converts a copy that has the rune
+   symbol after each rune name (with no gap when the line is too long) and draws the symbols in red. */
 static void show_scroll_line(int16_t x, int16_t y, char *text)
 {
     char runes[SCROLL_TEXT_SIZE];
