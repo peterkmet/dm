@@ -1453,485 +1453,564 @@ enum {
     D4_SQUARE_COUNT = 3
 }; /* the squares that the view draws, and the D4 squares with objects */
 
-/* The 16 square functions of draw_dungeon_view, back to front. Each draws the wall, pit, stairs, or door of
-   its square, then the floor ornament, the things, and a teleporter field. */
+/* How draw_square draws a square: all elements, only a wall or a teleporter field, a D0 side square, or the
+   square of the party. */
+enum { SHAPE_FULL, SHAPE_WALL_OR_FIELD, SHAPE_D0_SIDE, SHAPE_D0C };
+enum { SIDE_FACE_NONE, SIDE_FACE_RIGHT, SIDE_FACE_LEFT }; /* the wall side that a side square shows */
+enum { DOOR_FRAMES_MAX = 3 };                             /* door frame bitmaps of a door front */
 
-static void d3l2(int16_t dir, int16_t x, int16_t y)
+/* Square view flags. */
+enum {
+    SQ_CEILING_IN_ALCOVE = 0x1,  /* an alcove draws the ceiling pit before its things */
+    SQ_CEILING_AFTER_DOOR = 0x2, /* a door front draws the ceiling pit after the door */
+    SQ_STAIRS_LAYOUT_IDS = 0x4,  /* the stairs front graphics are layout ids, not stairs graphics */
+    SQ_FRONT = 0x8,              /* the square ahead: sets g_square_ahead_element and the facing flags */
+};
+
+/* One wall set bitmap: wall_set_ids index, zone, and BLIT_* mode. */
+typedef struct {
+    int16_t ws, zone;
+    uint8_t mode;
+} WallPart;
+
+/* The position of a drawn square from the party and the graphics and zones of each element on it. */
+typedef struct {
+    int8_t forward, right;            /* position from the party */
+    uint8_t shape;                    /* SHAPE_* */
+    uint8_t mirror;                   /* BLIT_TRANSPARENT or BLIT_FLIPPED: pit, stairs, and ceiling pit */
+    int16_t view, view_square;        /* VIEW_D* of the floor ornament and the door; VIEW_SQUARE_D* of things */
+    WallPart wall;                    /* the wall; its zone is also the zone of a teleporter field */
+    uint8_t side_face;                /* SIDE_FACE_* */
+    int16_t side_ornament_view;       /* VIEW_WALL_* of the side face */
+    int16_t front_ornament_view;      /* VIEW_WALL_* of the front face, or -1 */
+    int16_t pit, invisible_pit;       /* pit graphics; invisible_pit -1: an invisible pit is not drawn */
+    int16_t pit_zone;                 /* zone of the pit */
+    uint16_t cells, side_cells;       /* cell orders; side_cells 0: a door or stairs side draws nothing */
+    int16_t stairs_side;              /* stairs side graphic (D1: the up graphic), or -1 */
+    int16_t stairs_side_zone;         /* zone of stairs_side */
+    int16_t stairs_side_down;         /* D1: the down stairs side graphic, or -1 */
+    int16_t stairs_side_down_zone;    /* zone of stairs_side_down */
+    int16_t stairs_front;             /* STAIRS_FRONT_*, or the up layout id with SQ_STAIRS_LAYOUT_IDS */
+    int16_t stairs_front_down;        /* the down layout id with SQ_STAIRS_LAYOUT_IDS */
+    int16_t stairs_front_zone;        /* zone of the up stairs front */
+    uint16_t door_back, door_front;   /* cell orders behind and in front of a door */
+    WallPart frames[DOOR_FRAMES_MAX]; /* door frames of a door front */
+    uint8_t frame_count;
+    int16_t button;                /* BUTTON_* of a door button, or -1 */
+    int16_t ceiling, ceiling_zone; /* GFX_CEILING_PIT_* and its zone, or -1 */
+    uint8_t flags;                 /* SQ_* */
+} SquareView;
+
+/* The 16 squares that the view draws, back to front. Right squares mirror the graphics of the left squares. */
+static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
+    {.forward = 3,
+     .right = -2,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_TRANSPARENT,
+     .view = VIEW_D3L2,
+     .view_square = VIEW_SQUARE_D3L2,
+     .wall = {WS_WALL_D3L2, ZONE_WALL_D3L2, BLIT_TRANSPARENT},
+     .side_face = SIDE_FACE_RIGHT,
+     .side_ornament_view = VIEW_WALL_D3L2_RIGHT,
+     .front_ornament_view = -1,
+     .pit = GFX_PIT_D3L2,
+     .invisible_pit = -1,
+     .pit_zone = ZONE_PIT_D3L2,
+     .cells = CELLS_BL_BR_FL_FR,
+     .side_cells = CELLS_BL_BR_FR,
+     .stairs_side = -1,
+     .stairs_side_down = -1,
+     .stairs_front = LAYOUT_STAIRS_UP_FRONT_D3L2,
+     .stairs_front_down = LAYOUT_STAIRS_DOWN_FRONT_D3L2,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3L2,
+     .door_back = DOOR_BACK_BL_BR,
+     .door_front = DOOR_FRONT_FL_FR,
+     .button = -1,
+     .ceiling = -1,
+     .flags = SQ_STAIRS_LAYOUT_IDS},
+    {.forward = 3,
+     .right = 2,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_FLIPPED,
+     .view = VIEW_D3R2,
+     .view_square = VIEW_SQUARE_D3R2,
+     .wall = {WS_WALL_D3R2, ZONE_WALL_D3R2, BLIT_TRANSPARENT},
+     .side_face = SIDE_FACE_LEFT,
+     .side_ornament_view = VIEW_WALL_D3R2_LEFT,
+     .front_ornament_view = -1,
+     .pit = GFX_PIT_D3L2,
+     .invisible_pit = -1,
+     .pit_zone = ZONE_PIT_D3R2,
+     .cells = CELLS_BR_BL_FR_FL,
+     .side_cells = CELLS_BR_BL_FL,
+     .stairs_side = -1,
+     .stairs_side_down = -1,
+     .stairs_front = LAYOUT_STAIRS_UP_FRONT_D3R2,
+     .stairs_front_down = LAYOUT_STAIRS_DOWN_FRONT_D3R2,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3R2,
+     .door_back = DOOR_BACK_BR_BL,
+     .door_front = DOOR_FRONT_FR_FL,
+     .button = -1,
+     .ceiling = -1,
+     .flags = SQ_STAIRS_LAYOUT_IDS},
+    {.forward = 3,
+     .right = -1,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_TRANSPARENT,
+     .view = VIEW_D3L,
+     .view_square = VIEW_SQUARE_D3L,
+     .wall = {WS_WALL_D3L, ZONE_WALL_D3L, BLIT_TRANSPARENT},
+     .side_face = SIDE_FACE_RIGHT,
+     .side_ornament_view = VIEW_WALL_D3L_RIGHT,
+     .front_ornament_view = VIEW_WALL_D3L_FRONT,
+     .pit = GFX_PIT_D3L,
+     .invisible_pit = -1,
+     .pit_zone = ZONE_PIT_D3L,
+     .cells = CELLS_BL_BR_FL_FR,
+     .side_cells = CELLS_BL_BR_FR,
+     .stairs_side = -1,
+     .stairs_side_down = -1,
+     .stairs_front = STAIRS_FRONT_D3L,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3L,
+     .door_back = DOOR_BACK_BL_BR,
+     .door_front = DOOR_FRONT_FL_FR,
+     .frames = {{WS_DOOR_FRAME_LEFT_D3L, ZONE_DOOR_FRAME_LEFT_D3L, BLIT_TRANSPARENT},
+                {WS_DOOR_FRAME_RIGHT_D3L, ZONE_DOOR_FRAME_RIGHT_D3L, BLIT_FLIPPED}},
+     .frame_count = 2,
+     .button = -1,
+     .ceiling = -1},
+    {.forward = 3,
+     .right = 1,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_FLIPPED,
+     .view = VIEW_D3R,
+     .view_square = VIEW_SQUARE_D3R,
+     .wall = {WS_WALL_D3R, ZONE_WALL_D3R, BLIT_TRANSPARENT},
+     .side_face = SIDE_FACE_LEFT,
+     .side_ornament_view = VIEW_WALL_D3R_LEFT,
+     .front_ornament_view = VIEW_WALL_D3R_FRONT,
+     .pit = GFX_PIT_D3L,
+     .invisible_pit = -1,
+     .pit_zone = ZONE_PIT_D3R,
+     .cells = CELLS_BR_BL_FR_FL,
+     .side_cells = CELLS_BR_BL_FL,
+     .stairs_side = -1,
+     .stairs_side_down = -1,
+     .stairs_front = STAIRS_FRONT_D3L,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3R,
+     .door_back = DOOR_BACK_BR_BL,
+     .door_front = DOOR_FRONT_FR_FL,
+     .frames = {{WS_DOOR_FRAME_LEFT_D3R, ZONE_DOOR_FRAME_LEFT_D3R, BLIT_TRANSPARENT},
+                {WS_DOOR_FRAME_LEFT_D3L, ZONE_DOOR_FRAME_RIGHT_D3R, BLIT_FLIPPED}},
+     .frame_count = 2,
+     .button = BUTTON_D3R,
+     .ceiling = -1},
+    {.forward = 3,
+     .right = 0,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_TRANSPARENT,
+     .view = VIEW_D3C,
+     .view_square = VIEW_SQUARE_D3C,
+     .wall = {WS_WALL_D3C, ZONE_WALL_D3C, BLIT_OPAQUE},
+     .side_face = SIDE_FACE_NONE,
+     .front_ornament_view = VIEW_WALL_D3C_FRONT,
+     .pit = GFX_PIT_D3C,
+     .invisible_pit = -1,
+     .pit_zone = ZONE_PIT_D3C,
+     .cells = CELLS_BL_BR_FL_FR,
+     .side_cells = 0,
+     .stairs_side = -1,
+     .stairs_side_down = -1,
+     .stairs_front = STAIRS_FRONT_D3C,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D3C,
+     .door_back = DOOR_BACK_BL_BR,
+     .door_front = DOOR_FRONT_FL_FR,
+     .frames = {{WS_DOOR_FRAME_D3C, ZONE_DOOR_FRAME_LEFT_D3C, BLIT_TRANSPARENT},
+                {WS_DOOR_FRAME_D3C, ZONE_DOOR_FRAME_RIGHT_D3C, BLIT_FLIPPED}},
+     .frame_count = 2,
+     .button = BUTTON_D3C,
+     .ceiling = -1},
+    {.forward = 2,
+     .right = -2,
+     .shape = SHAPE_WALL_OR_FIELD,
+     .view_square = VIEW_SQUARE_D2L2,
+     .wall = {WS_WALL_D2L2, ZONE_WALL_D2L2, BLIT_TRANSPARENT}},
+    {.forward = 2,
+     .right = 2,
+     .shape = SHAPE_WALL_OR_FIELD,
+     .view_square = VIEW_SQUARE_D2R2,
+     .wall = {WS_WALL_D2R2, ZONE_WALL_D2R2, BLIT_TRANSPARENT}},
+    {.forward = 2,
+     .right = -1,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_TRANSPARENT,
+     .view = VIEW_D2L,
+     .view_square = VIEW_SQUARE_D2L,
+     .wall = {WS_WALL_D2L, ZONE_WALL_D2L, BLIT_TRANSPARENT},
+     .side_face = SIDE_FACE_RIGHT,
+     .side_ornament_view = VIEW_WALL_D2L_RIGHT,
+     .front_ornament_view = VIEW_WALL_D2L_FRONT,
+     .pit = GFX_PIT_D2L,
+     .invisible_pit = GFX_INVISIBLE_PIT_D2L,
+     .pit_zone = ZONE_PIT_D2L,
+     .cells = CELLS_BL_BR_FL_FR,
+     .side_cells = CELLS_BR_FL_FR,
+     .stairs_side = STAIRS_SIDE_D2L,
+     .stairs_side_zone = ZONE_STAIRS_SIDE_D2L,
+     .stairs_side_down = -1,
+     .stairs_front = STAIRS_FRONT_D2L,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D2L,
+     .door_back = DOOR_BACK_BL_BR,
+     .door_front = DOOR_FRONT_FL_FR,
+     .frames = {{WS_DOOR_FRAME_TOP_D2L, ZONE_DOOR_FRAME_TOP_D2L, BLIT_TRANSPARENT}},
+     .frame_count = 1,
+     .button = -1,
+     .ceiling = GFX_CEILING_PIT_D2L,
+     .ceiling_zone = ZONE_CEILING_PIT_D2L,
+     .flags = SQ_CEILING_IN_ALCOVE | SQ_CEILING_AFTER_DOOR},
+    {.forward = 2,
+     .right = 1,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_FLIPPED,
+     .view = VIEW_D2R,
+     .view_square = VIEW_SQUARE_D2R,
+     .wall = {WS_WALL_D2R, ZONE_WALL_D2R, BLIT_TRANSPARENT},
+     .side_face = SIDE_FACE_LEFT,
+     .side_ornament_view = VIEW_WALL_D2R_LEFT,
+     .front_ornament_view = VIEW_WALL_D2R_FRONT,
+     .pit = GFX_PIT_D2L,
+     .invisible_pit = GFX_INVISIBLE_PIT_D2L,
+     .pit_zone = ZONE_PIT_D2R,
+     .cells = CELLS_BR_BL_FR_FL,
+     .side_cells = CELLS_BL_FR_FL,
+     .stairs_side = STAIRS_SIDE_D2L,
+     .stairs_side_zone = ZONE_STAIRS_SIDE_D2R,
+     .stairs_side_down = -1,
+     .stairs_front = STAIRS_FRONT_D2L,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D2R,
+     .door_back = DOOR_BACK_BR_BL,
+     .door_front = DOOR_FRONT_FR_FL,
+     .frames = {{WS_DOOR_FRAME_TOP_D2R, ZONE_DOOR_FRAME_TOP_D2R, BLIT_TRANSPARENT}},
+     .frame_count = 1,
+     .button = -1,
+     .ceiling = GFX_CEILING_PIT_D2L,
+     .ceiling_zone = ZONE_CEILING_PIT_D2R},
+    {.forward = 2,
+     .right = 0,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_TRANSPARENT,
+     .view = VIEW_D2C,
+     .view_square = VIEW_SQUARE_D2C,
+     .wall = {WS_WALL_D2C, ZONE_WALL_D2C, BLIT_OPAQUE},
+     .side_face = SIDE_FACE_NONE,
+     .front_ornament_view = VIEW_WALL_D2C_FRONT,
+     .pit = GFX_PIT_D2C,
+     .invisible_pit = GFX_INVISIBLE_PIT_D2C,
+     .pit_zone = ZONE_PIT_D2C,
+     .cells = CELLS_BL_BR_FL_FR,
+     .side_cells = 0,
+     .stairs_side = -1,
+     .stairs_side_down = -1,
+     .stairs_front = STAIRS_FRONT_D2C,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D2C,
+     .door_back = DOOR_BACK_BL_BR,
+     .door_front = DOOR_FRONT_FL_FR,
+     .frames = {{WS_DOOR_FRAME_TOP_D2C, ZONE_DOOR_FRAME_TOP_D2C, BLIT_TRANSPARENT},
+                {WS_DOOR_FRAME_D2C, ZONE_DOOR_FRAME_LEFT_D2C, BLIT_TRANSPARENT},
+                {WS_DOOR_FRAME_D2C, ZONE_DOOR_FRAME_RIGHT_D2C, BLIT_FLIPPED}},
+     .frame_count = 3,
+     .button = BUTTON_D2C,
+     .ceiling = GFX_CEILING_PIT_D2C,
+     .ceiling_zone = ZONE_CEILING_PIT_D2C},
+    {.forward = 1,
+     .right = -1,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_TRANSPARENT,
+     .view = VIEW_D1L,
+     .view_square = VIEW_SQUARE_D1L,
+     .wall = {WS_WALL_D1L, ZONE_WALL_D1L, BLIT_TRANSPARENT},
+     .side_face = SIDE_FACE_RIGHT,
+     .side_ornament_view = VIEW_WALL_D1L_RIGHT,
+     .front_ornament_view = -1,
+     .pit = GFX_PIT_D1L,
+     .invisible_pit = GFX_INVISIBLE_PIT_D1L,
+     .pit_zone = ZONE_PIT_D1L,
+     .cells = CELLS_BR_FR,
+     .side_cells = CELLS_BR_FR,
+     .stairs_side = STAIRS_UP_SIDE_D1L,
+     .stairs_side_zone = ZONE_STAIRS_UP_SIDE_D1L,
+     .stairs_side_down = STAIRS_DOWN_SIDE_D1L,
+     .stairs_side_down_zone = ZONE_STAIRS_DOWN_SIDE_D1L,
+     .stairs_front = STAIRS_FRONT_D1L,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D1L,
+     .door_back = DOOR_BACK_BR,
+     .door_front = DOOR_FRONT_FR,
+     .frames = {{WS_DOOR_FRAME_TOP_D1L, ZONE_DOOR_FRAME_TOP_D1L, BLIT_TRANSPARENT}},
+     .frame_count = 1,
+     .button = -1,
+     .ceiling = GFX_CEILING_PIT_D1L,
+     .ceiling_zone = ZONE_CEILING_PIT_D1L},
+    {.forward = 1,
+     .right = 1,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_FLIPPED,
+     .view = VIEW_D1R,
+     .view_square = VIEW_SQUARE_D1R,
+     .wall = {WS_WALL_D1R, ZONE_WALL_D1R, BLIT_TRANSPARENT},
+     .side_face = SIDE_FACE_LEFT,
+     .side_ornament_view = VIEW_WALL_D1R_LEFT,
+     .front_ornament_view = -1,
+     .pit = GFX_PIT_D1L,
+     .invisible_pit = GFX_INVISIBLE_PIT_D1L,
+     .pit_zone = ZONE_PIT_D1R,
+     .cells = CELLS_BL_FL,
+     .side_cells = CELLS_BL_FL,
+     .stairs_side = STAIRS_UP_SIDE_D1L,
+     .stairs_side_zone = ZONE_STAIRS_UP_SIDE_D1R,
+     .stairs_side_down = STAIRS_DOWN_SIDE_D1L,
+     .stairs_side_down_zone = ZONE_STAIRS_DOWN_SIDE_D1R,
+     .stairs_front = STAIRS_FRONT_D1L,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D1R,
+     .door_back = DOOR_BACK_BL,
+     .door_front = DOOR_FRONT_FL,
+     .frames = {{WS_DOOR_FRAME_TOP_D1R, ZONE_DOOR_FRAME_TOP_D1R, BLIT_TRANSPARENT}},
+     .frame_count = 1,
+     .button = -1,
+     .ceiling = GFX_CEILING_PIT_D1L,
+     .ceiling_zone = ZONE_CEILING_PIT_D1R},
+    {.forward = 1,
+     .right = 0,
+     .shape = SHAPE_FULL,
+     .mirror = BLIT_TRANSPARENT,
+     .view = VIEW_D1C,
+     .view_square = VIEW_SQUARE_D1C,
+     .wall = {WS_WALL_D1C, ZONE_WALL_D1C, BLIT_OPAQUE},
+     .side_face = SIDE_FACE_NONE,
+     .front_ornament_view = VIEW_WALL_D1C_FRONT,
+     .pit = GFX_PIT_D1C,
+     .invisible_pit = GFX_INVISIBLE_PIT_D1C,
+     .pit_zone = ZONE_PIT_D1C,
+     .cells = CELLS_BL_BR_FL_FR,
+     .side_cells = 0,
+     .stairs_side = -1,
+     .stairs_side_down = -1,
+     .stairs_front = STAIRS_FRONT_D1C,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D1C,
+     .door_back = DOOR_BACK_BL_BR,
+     .door_front = DOOR_FRONT_FL_FR,
+     .frames = {{WS_DOOR_FRAME_TOP_D1C, ZONE_DOOR_FRAME_TOP_D1C, BLIT_TRANSPARENT},
+                {WS_DOOR_FRAME_LEFT_D1C, ZONE_DOOR_FRAME_LEFT_D1C, BLIT_TRANSPARENT},
+                {WS_DOOR_FRAME_RIGHT_D1C, ZONE_DOOR_FRAME_RIGHT_D1C, BLIT_TRANSPARENT}},
+     .frame_count = 3,
+     .button = BUTTON_D1C,
+     .ceiling = GFX_CEILING_PIT_D1C,
+     .ceiling_zone = ZONE_CEILING_PIT_D1C,
+     .flags = SQ_FRONT},
+    {.forward = 0,
+     .right = -1,
+     .shape = SHAPE_D0_SIDE,
+     .mirror = BLIT_TRANSPARENT,
+     .view_square = VIEW_SQUARE_D0L,
+     .wall = {WS_WALL_D0L, ZONE_WALL_D0L, BLIT_TRANSPARENT},
+     .pit = GFX_PIT_D0L,
+     .invisible_pit = GFX_INVISIBLE_PIT_D0L,
+     .pit_zone = ZONE_PIT_D0L,
+     .cells = CELLS_BR,
+     .stairs_side = STAIRS_SIDE_D0L,
+     .stairs_side_zone = ZONE_STAIRS_SIDE_D0L,
+     .stairs_side_down = -1,
+     .ceiling = GFX_CEILING_PIT_D0L,
+     .ceiling_zone = ZONE_CEILING_PIT_D0L},
+    {.forward = 0,
+     .right = 1,
+     .shape = SHAPE_D0_SIDE,
+     .mirror = BLIT_FLIPPED,
+     .view_square = VIEW_SQUARE_D0R,
+     .wall = {WS_WALL_D0R, ZONE_WALL_D0R, BLIT_TRANSPARENT},
+     .pit = GFX_PIT_D0L,
+     .invisible_pit = GFX_INVISIBLE_PIT_D0L,
+     .pit_zone = ZONE_PIT_D0R,
+     .cells = CELLS_BL,
+     .stairs_side = STAIRS_SIDE_D0L,
+     .stairs_side_zone = ZONE_STAIRS_SIDE_D0R,
+     .stairs_side_down = -1,
+     .ceiling = GFX_CEILING_PIT_D0L,
+     .ceiling_zone = ZONE_CEILING_PIT_D0R},
+    {.forward = 0,
+     .right = 0,
+     .shape = SHAPE_D0C,
+     .mirror = BLIT_TRANSPARENT,
+     .view_square = VIEW_SQUARE_D0C,
+     .wall = {.zone = ZONE_WALL_D0C},
+     .pit = GFX_PIT_D0C,
+     .invisible_pit = GFX_INVISIBLE_PIT_D0C,
+     .pit_zone = ZONE_PIT_D0C,
+     .cells = CELLS_BL_BR,
+     .stairs_front = STAIRS_FRONT_D0C,
+     .stairs_front_zone = ZONE_STAIRS_UP_FRONT_D0C_LEFT,
+     .frames = {{WS_DOOR_FRAME_D0C, ZONE_DOOR_FRAME_D0C, BLIT_TRANSPARENT}},
+     .frame_count = 1,
+     .ceiling = GFX_CEILING_PIT_D0C,
+     .ceiling_zone = ZONE_CEILING_PIT_D0C},
+};
+
+/* A wall set bitmap of a square. */
+static void draw_wall_part(const WallPart *part)
 {
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    uint16_t cells = CELLS_BL_BR_FL_FR;
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D3L2], ZONE_WALL_D3L2, BLIT_TRANSPARENT);
-        draw_wall_ornament(a.right, VIEW_WALL_D3L2_RIGHT, &a);
-        return;
-    case SQUARE_PIT:
-        if (!a.state)
-            draw_wall_bitmap(GFX_PIT_D3L2, ZONE_PIT_D3L2, BLIT_TRANSPARENT);
-        break;
-    case ELEMENT_DOOR_SIDE:
-    case ELEMENT_STAIRS_SIDE:
-        cells = CELLS_BL_BR_FR;
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D3L2);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L2, DOOR_BACK_BL_BR);
-        draw_door(a.door, a.state, VIEW_D3L2);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L2, DOOR_FRONT_FL_FR);
-        return;
-    case ELEMENT_STAIRS_FRONT:
-        if (a.state)
-            draw_wall_bitmap(LAYOUT_STAIRS_UP_FRONT_D3L2, ZONE_STAIRS_UP_FRONT_D3L2, BLIT_TRANSPARENT);
-        else
-            draw_wall_bitmap(LAYOUT_STAIRS_DOWN_FRONT_D3L2, ZONE_STAIRS_UP_FRONT_D3L2 + ZONE_STAIRS_DOWN_DELTA,
-                             BLIT_TRANSPARENT);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D3L2);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L2, cells);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D3L2, ZONE_WALL_D3L2);
+    draw_wall_bitmap(wall_set_ids[part->ws], part->zone, part->mode);
 }
 
-static void d3r2(int16_t dir, int16_t x, int16_t y)
+/* The pit of a square, open or invisible. */
+static void draw_square_pit(const SquareView *s, bool invisible)
 {
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    uint16_t cells = CELLS_BR_BL_FR_FL;
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D3R2], ZONE_WALL_D3R2, BLIT_TRANSPARENT);
-        draw_wall_ornament(a.left, VIEW_WALL_D3R2_LEFT, &a);
-        return;
-    case SQUARE_PIT:
-        if (!a.state)
-            draw_wall_bitmap(GFX_PIT_D3L2, ZONE_PIT_D3R2, BLIT_FLIPPED);
-        break;
-    case ELEMENT_DOOR_SIDE:
-    case ELEMENT_STAIRS_SIDE:
-        cells = CELLS_BR_BL_FL;
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D3R2);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R2, DOOR_BACK_BR_BL);
-        draw_door(a.door, a.state, VIEW_D3R2);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R2, DOOR_FRONT_FR_FL);
-        return;
-    case ELEMENT_STAIRS_FRONT:
-        if (a.state)
-            draw_wall_bitmap(LAYOUT_STAIRS_UP_FRONT_D3R2, ZONE_STAIRS_UP_FRONT_D3R2, BLIT_FLIPPED);
-        else
-            draw_wall_bitmap(LAYOUT_STAIRS_DOWN_FRONT_D3R2, ZONE_STAIRS_UP_FRONT_D3R2 + ZONE_STAIRS_DOWN_DELTA,
-                             BLIT_FLIPPED);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D3R2);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R2, cells);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D3R2, ZONE_WALL_D3R2);
+    if (s->invisible_pit >= 0 || !invisible)
+        draw_wall_bitmap(invisible ? s->invisible_pit : s->pit, s->pit_zone, s->mirror);
 }
 
-static void d3l(int16_t dir, int16_t x, int16_t y)
+/* The side of a staircase beside the party's line: on D1 the up or the down graphic. */
+static void draw_square_stairs_side(const SquareView *s, bool up)
 {
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    uint16_t cells = CELLS_BL_BR_FL_FR;
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D3L], ZONE_WALL_D3L, BLIT_TRANSPARENT);
-        draw_wall_ornament(a.right, VIEW_WALL_D3L_RIGHT, &a);
-        if (draw_wall_ornament(a.front, VIEW_WALL_D3L_FRONT, &a))
-            draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L, CELLS_ALCOVE);
-        return;
-    case SQUARE_PIT:
-        if (!a.state)
-            draw_wall_bitmap(GFX_PIT_D3L, ZONE_PIT_D3L, BLIT_TRANSPARENT);
-        break;
-    case ELEMENT_DOOR_SIDE:
-    case ELEMENT_STAIRS_SIDE:
-        cells = CELLS_BL_BR_FR;
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D3L);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L, DOOR_BACK_BL_BR);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_LEFT_D3L], ZONE_DOOR_FRAME_LEFT_D3L, BLIT_TRANSPARENT);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_RIGHT_D3L], ZONE_DOOR_FRAME_RIGHT_D3L, BLIT_FLIPPED);
-        draw_door(a.door, a.state, VIEW_D3L);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L, DOOR_FRONT_FL_FR);
-        return;
-    case ELEMENT_STAIRS_FRONT:
-        draw_stairs_front(a.state, STAIRS_FRONT_D3L, ZONE_STAIRS_UP_FRONT_D3L, BLIT_TRANSPARENT);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D3L);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3L, cells);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D3L, ZONE_WALL_D3L);
+    if (s->stairs_side_down >= 0 && !up)
+        draw_wall_bitmap(stairs + s->stairs_side_down, s->stairs_side_down_zone, s->mirror);
+    else if (s->stairs_side >= 0)
+        draw_wall_bitmap(stairs + s->stairs_side, s->stairs_side_zone, s->mirror);
 }
 
-static void d3r(int16_t dir, int16_t x, int16_t y)
+/* The hole of an open pit above the square, if the square shows one. */
+static void draw_square_ceiling_pit(const SquareView *s, int16_t x, int16_t y)
 {
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    uint16_t cells = CELLS_BR_BL_FR_FL;
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D3R], ZONE_WALL_D3R, BLIT_TRANSPARENT);
-        draw_wall_ornament(a.left, VIEW_WALL_D3R_LEFT, &a);
-        if (draw_wall_ornament(a.front, VIEW_WALL_D3R_FRONT, &a))
-            draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R, CELLS_ALCOVE);
-        return;
-    case SQUARE_PIT:
-        if (!a.state)
-            draw_wall_bitmap(GFX_PIT_D3L, ZONE_PIT_D3R, BLIT_FLIPPED);
-        break;
-    case ELEMENT_DOOR_SIDE:
-    case ELEMENT_STAIRS_SIDE:
-        cells = CELLS_BR_BL_FL;
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D3R);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R, DOOR_BACK_BR_BL);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_LEFT_D3R], ZONE_DOOR_FRAME_LEFT_D3R, BLIT_TRANSPARENT);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_LEFT_D3L], ZONE_DOOR_FRAME_RIGHT_D3R, BLIT_FLIPPED);
-        if (door_button_present(a.door))
-            draw_door_button(BUTTON_D3R);
-        draw_door(a.door, a.state, VIEW_D3R);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R, DOOR_FRONT_FR_FL);
-        return;
-    case ELEMENT_STAIRS_FRONT:
-        draw_stairs_front(a.state, STAIRS_FRONT_D3L, ZONE_STAIRS_UP_FRONT_D3R, BLIT_FLIPPED);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D3R);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3R, cells);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D3R, ZONE_WALL_D3R);
+    if (s->ceiling >= 0)
+        draw_ceiling_pit(s->ceiling, s->ceiling_zone, x, y, s->mirror);
 }
 
-static void d3c(int16_t dir, int16_t x, int16_t y)
+/* A wall square: the wall, the ornaments of its visible faces, and the things in an alcove. */
+static void draw_square_wall(const SquareView *s, const Aspect *a, int16_t dir, int16_t x, int16_t y)
 {
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D3C], ZONE_WALL_D3C, BLIT_OPAQUE);
-        if (draw_wall_ornament(a.front, VIEW_WALL_D3C_FRONT, &a))
-            draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3C, CELLS_ALCOVE);
-        return;
-    case SQUARE_PIT:
-        if (!a.state)
-            draw_wall_bitmap(GFX_PIT_D3C, ZONE_PIT_D3C, BLIT_TRANSPARENT);
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D3C);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3C, DOOR_BACK_BL_BR);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_D3C], ZONE_DOOR_FRAME_LEFT_D3C, BLIT_TRANSPARENT);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_D3C], ZONE_DOOR_FRAME_RIGHT_D3C, BLIT_FLIPPED);
-        if (door_button_present(a.door))
-            draw_door_button(BUTTON_D3C);
-        draw_door(a.door, a.state, VIEW_D3C);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3C, DOOR_FRONT_FL_FR);
-        return;
-    case ELEMENT_STAIRS_FRONT:
-        draw_stairs_front(a.state, STAIRS_FRONT_D3C, ZONE_STAIRS_UP_FRONT_D3C, BLIT_TRANSPARENT);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D3C);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D3C, CELLS_BL_BR_FL_FR);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D3C, ZONE_WALL_D3C);
-}
-
-static void d2l2(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    if (a.element == SQUARE_WALL)
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D2L2], ZONE_WALL_D2L2, BLIT_TRANSPARENT);
-    else if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D2L2, ZONE_WALL_D2L2);
-}
-
-static void d2r2(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    if (a.element == SQUARE_WALL)
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D2R2], ZONE_WALL_D2R2, BLIT_TRANSPARENT);
-    else if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D2R2, ZONE_WALL_D2R2);
-}
-
-static void d2l(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    uint16_t cells = CELLS_BL_BR_FL_FR;
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D2L], ZONE_WALL_D2L, BLIT_TRANSPARENT);
-        draw_wall_ornament(a.right, VIEW_WALL_D2L_RIGHT, &a);
-        if (!draw_wall_ornament(a.front, VIEW_WALL_D2L_FRONT, &a))
-            return;
-        draw_ceiling_pit(GFX_CEILING_PIT_D2L, ZONE_CEILING_PIT_D2L, x, y, BLIT_TRANSPARENT);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2L, CELLS_ALCOVE);
-        return;
-    case SQUARE_PIT:
-        draw_wall_bitmap(a.state ? GFX_INVISIBLE_PIT_D2L : GFX_PIT_D2L, ZONE_PIT_D2L, BLIT_TRANSPARENT);
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D2L);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2L, DOOR_BACK_BL_BR);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_TOP_D2L], ZONE_DOOR_FRAME_TOP_D2L, BLIT_TRANSPARENT);
-        draw_door(a.door, a.state, VIEW_D2L);
-        draw_ceiling_pit(GFX_CEILING_PIT_D2L, ZONE_CEILING_PIT_D2L, x, y, BLIT_TRANSPARENT);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2L, DOOR_FRONT_FL_FR);
-        return;
-    case ELEMENT_STAIRS_SIDE:
-        draw_wall_bitmap(stairs + STAIRS_SIDE_D2L, ZONE_STAIRS_SIDE_D2L, BLIT_TRANSPARENT); /* fall through */
-    case ELEMENT_DOOR_SIDE:
-        cells = CELLS_BR_FL_FR;
-        break;
-    case ELEMENT_STAIRS_FRONT:
-        draw_stairs_front(a.state, STAIRS_FRONT_D2L, ZONE_STAIRS_UP_FRONT_D2L, BLIT_TRANSPARENT);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D2L);
-    draw_ceiling_pit(GFX_CEILING_PIT_D2L, ZONE_CEILING_PIT_D2L, x, y, BLIT_TRANSPARENT);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2L, cells);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D2L, ZONE_WALL_D2L);
-}
-
-static void d2r(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    uint16_t cells = CELLS_BR_BL_FR_FL;
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D2R], ZONE_WALL_D2R, BLIT_TRANSPARENT);
-        draw_wall_ornament(a.left, VIEW_WALL_D2R_LEFT, &a);
-        if (draw_wall_ornament(a.front, VIEW_WALL_D2R_FRONT, &a))
-            draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2R, CELLS_ALCOVE);
-        return;
-    case SQUARE_PIT:
-        draw_wall_bitmap(a.state ? GFX_INVISIBLE_PIT_D2L : GFX_PIT_D2L, ZONE_PIT_D2R, BLIT_FLIPPED);
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D2R);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2R, DOOR_BACK_BR_BL);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_TOP_D2R], ZONE_DOOR_FRAME_TOP_D2R, BLIT_TRANSPARENT);
-        draw_door(a.door, a.state, VIEW_D2R);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2R, DOOR_FRONT_FR_FL);
-        return;
-    case ELEMENT_STAIRS_SIDE:
-        draw_wall_bitmap(stairs + STAIRS_SIDE_D2L, ZONE_STAIRS_SIDE_D2R, BLIT_FLIPPED); /* fall through */
-    case ELEMENT_DOOR_SIDE:
-        cells = CELLS_BL_FR_FL;
-        break;
-    case ELEMENT_STAIRS_FRONT:
-        draw_stairs_front(a.state, STAIRS_FRONT_D2L, ZONE_STAIRS_UP_FRONT_D2R, BLIT_FLIPPED);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D2R);
-    draw_ceiling_pit(GFX_CEILING_PIT_D2L, ZONE_CEILING_PIT_D2R, x, y, BLIT_FLIPPED);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2R, cells);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D2R, ZONE_WALL_D2R);
-}
-
-static void d2c(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D2C], ZONE_WALL_D2C, BLIT_OPAQUE);
-        if (draw_wall_ornament(a.front, VIEW_WALL_D2C_FRONT, &a))
-            draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2C, CELLS_ALCOVE);
-        return;
-    case SQUARE_PIT:
-        draw_wall_bitmap(a.state ? GFX_INVISIBLE_PIT_D2C : GFX_PIT_D2C, ZONE_PIT_D2C, BLIT_TRANSPARENT);
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D2C);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2C, DOOR_BACK_BL_BR);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_TOP_D2C], ZONE_DOOR_FRAME_TOP_D2C, BLIT_TRANSPARENT);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_D2C], ZONE_DOOR_FRAME_LEFT_D2C, BLIT_TRANSPARENT);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_D2C], ZONE_DOOR_FRAME_RIGHT_D2C, BLIT_FLIPPED);
-        if (door_button_present(a.door))
-            draw_door_button(BUTTON_D2C);
-        draw_door(a.door, a.state, VIEW_D2C);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2C, DOOR_FRONT_FL_FR);
-        return;
-    case ELEMENT_STAIRS_FRONT:
-        draw_stairs_front(a.state, STAIRS_FRONT_D2C, ZONE_STAIRS_UP_FRONT_D2C, BLIT_TRANSPARENT);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D2C);
-    draw_ceiling_pit(GFX_CEILING_PIT_D2C, ZONE_CEILING_PIT_D2C, x, y, BLIT_TRANSPARENT);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D2C, CELLS_BL_BR_FL_FR);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D2C, ZONE_WALL_D2C);
-}
-
-static void d1l(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D1L], ZONE_WALL_D1L, BLIT_TRANSPARENT);
-        draw_wall_ornament(a.right, VIEW_WALL_D1L_RIGHT, &a);
-        return;
-    case SQUARE_PIT:
-        draw_wall_bitmap(a.state ? GFX_INVISIBLE_PIT_D1L : GFX_PIT_D1L, ZONE_PIT_D1L, BLIT_TRANSPARENT);
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D1L);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1L, DOOR_BACK_BR);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_TOP_D1L], ZONE_DOOR_FRAME_TOP_D1L, BLIT_TRANSPARENT);
-        draw_door(a.door, a.state, VIEW_D1L);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1L, DOOR_FRONT_FR);
-        return;
-    case ELEMENT_STAIRS_SIDE:
-        if (a.state)
-            draw_wall_bitmap(stairs + STAIRS_UP_SIDE_D1L, ZONE_STAIRS_UP_SIDE_D1L, BLIT_TRANSPARENT);
-        else
-            draw_wall_bitmap(stairs + STAIRS_DOWN_SIDE_D1L, ZONE_STAIRS_DOWN_SIDE_D1L, BLIT_TRANSPARENT);
-        break;
-    case ELEMENT_STAIRS_FRONT:
-        draw_stairs_front(a.state, STAIRS_FRONT_D1L, ZONE_STAIRS_UP_FRONT_D1L, BLIT_TRANSPARENT);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-    case ELEMENT_DOOR_SIDE:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D1L);
-    draw_ceiling_pit(GFX_CEILING_PIT_D1L, ZONE_CEILING_PIT_D1L, x, y, BLIT_TRANSPARENT);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1L, CELLS_BR_FR);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D1L, ZONE_WALL_D1L);
-}
-
-static void d1r(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D1R], ZONE_WALL_D1R, BLIT_TRANSPARENT);
-        draw_wall_ornament(a.left, VIEW_WALL_D1R_LEFT, &a);
-        return;
-    case SQUARE_PIT:
-        draw_wall_bitmap(a.state ? GFX_INVISIBLE_PIT_D1L : GFX_PIT_D1L, ZONE_PIT_D1R, BLIT_FLIPPED);
-        break;
-    case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D1R);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1R, DOOR_BACK_BL);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_TOP_D1R], ZONE_DOOR_FRAME_TOP_D1R, BLIT_TRANSPARENT);
-        draw_door(a.door, a.state, VIEW_D1R);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1R, DOOR_FRONT_FL);
-        return;
-    case ELEMENT_STAIRS_SIDE:
-        if (a.state)
-            draw_wall_bitmap(stairs + STAIRS_UP_SIDE_D1L, ZONE_STAIRS_UP_SIDE_D1R, BLIT_FLIPPED);
-        else
-            draw_wall_bitmap(stairs + STAIRS_DOWN_SIDE_D1L, ZONE_STAIRS_DOWN_SIDE_D1R, BLIT_FLIPPED);
-        break;
-    case ELEMENT_STAIRS_FRONT:
-        draw_stairs_front(a.state, STAIRS_FRONT_D1L, ZONE_STAIRS_UP_FRONT_D1R, BLIT_FLIPPED);
-        break;
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-    case ELEMENT_DOOR_SIDE:
-        break;
-    default:
-        return;
-    }
-    draw_floor_ornament(a.floor_ornament, VIEW_D1R);
-    draw_ceiling_pit(GFX_CEILING_PIT_D1L, ZONE_CEILING_PIT_D1R, x, y, BLIT_FLIPPED);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1R, CELLS_BL_FL);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D1R, ZONE_WALL_D1R);
-}
-
-static void d1c(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    g_square_ahead_element = a.element;
-    switch (a.element) {
-    case SQUARE_WALL: /* ponytail: no thieves eye hole yet, needs the party spell state (step 9) */
+    if (s->flags & SQ_FRONT) { /* ponytail: no thieves eye hole yet, needs the party spell state (step 9) */
         g_facing_alcove = false;
         g_facing_vi_altar = false;
         g_facing_fountain = false;
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D1C], ZONE_WALL_D1C, BLIT_OPAQUE);
-        if (draw_wall_ornament(a.front, VIEW_WALL_D1C_FRONT, &a))
-            draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, CELLS_ALCOVE);
+    }
+    draw_wall_part(&s->wall);
+    if (s->side_face != SIDE_FACE_NONE)
+        draw_wall_ornament(s->side_face == SIDE_FACE_RIGHT ? a->right : a->left, s->side_ornament_view, a);
+    if (s->front_ornament_view < 0 || !draw_wall_ornament(a->front, s->front_ornament_view, a))
+        return;
+    if (s->flags & SQ_CEILING_IN_ALCOVE)
+        draw_square_ceiling_pit(s, x, y);
+    draw_square_things(a->first_thing, dir, x, y, s->view_square, CELLS_ALCOVE);
+}
+
+/* A door seen from the front: the things behind the door, the frames and the button, the door, and the things
+   in front of it. */
+static void draw_square_door_front(const SquareView *s, const Aspect *a, int16_t dir, int16_t x, int16_t y)
+{
+    draw_floor_ornament(a->floor_ornament, s->view);
+    draw_square_things(a->first_thing, dir, x, y, s->view_square, s->door_back);
+    for (int i = 0; i < s->frame_count; i++)
+        draw_wall_part(&s->frames[i]);
+    if (s->button >= 0 && door_button_present(a->door))
+        draw_door_button(s->button);
+    draw_door(a->door, a->state, s->view);
+    if (s->flags & SQ_CEILING_AFTER_DOOR)
+        draw_square_ceiling_pit(s, x, y);
+    draw_square_things(a->first_thing, dir, x, y, s->view_square, s->door_front);
+}
+
+/* The front of a staircase, up or down. */
+static void draw_square_stairs_front(const SquareView *s, bool up)
+{
+    if (s->flags & SQ_STAIRS_LAYOUT_IDS)
+        draw_wall_bitmap(up ? s->stairs_front : s->stairs_front_down,
+                         up ? s->stairs_front_zone : s->stairs_front_zone + ZONE_STAIRS_DOWN_DELTA, s->mirror);
+    else
+        draw_stairs_front(up, s->stairs_front, s->stairs_front_zone, s->mirror);
+}
+
+/* A D0 side square: the wall or the stairs side, else the pit, the ceiling pit, and the things. */
+static void draw_d0_side_square(const SquareView *s, const Aspect *a, int16_t dir, int16_t x, int16_t y)
+{
+    switch (a->element) {
+    case SQUARE_WALL:
+        draw_wall_part(&s->wall);
+        return;
+    case ELEMENT_STAIRS_SIDE:
+        draw_square_stairs_side(s, a->state);
         return;
     case SQUARE_PIT:
-        draw_wall_bitmap(a.state ? GFX_INVISIBLE_PIT_D1C : GFX_PIT_D1C, ZONE_PIT_D1C, BLIT_TRANSPARENT);
+        draw_square_pit(s, a->state); /* fall through */
+    case SQUARE_CORRIDOR:
+    case SQUARE_TELEPORTER:
+    case ELEMENT_DOOR_SIDE:
+        draw_square_ceiling_pit(s, x, y);
+        draw_square_things(a->first_thing, dir, x, y, s->view_square, s->cells);
+    }
+    if (a->element == SQUARE_TELEPORTER)
+        draw_teleporter_field(s->view_square, s->wall.zone);
+}
+
+/* The square of the party: a door frame, the pit, or the stairs on both sides, then the ceiling pit and the
+   things. */
+static void draw_d0c_square(const SquareView *s, const Aspect *a, int16_t dir, int16_t x, int16_t y)
+{
+    if (a->element == ELEMENT_DOOR_SIDE)
+        draw_wall_part(&s->frames[0]);
+    else if (a->element == SQUARE_PIT)
+        draw_square_pit(s, a->state);
+    else if (a->element == ELEMENT_STAIRS_FRONT) {
+        draw_stairs_front(a->state, s->stairs_front, s->stairs_front_zone, BLIT_TRANSPARENT);
+        draw_stairs_front(a->state, s->stairs_front, ZONE_STAIRS_UP_FRONT_D0C_RIGHT, BLIT_FLIPPED);
+    }
+    draw_square_ceiling_pit(s, x, y);
+    draw_square_things(a->first_thing, dir, x, y, s->view_square, s->cells);
+    if (a->element == SQUARE_TELEPORTER)
+        draw_teleporter_field(s->view_square, s->wall.zone);
+}
+
+/* Draws one view square: its wall, pit, stairs, or door, then the floor ornament, the things, and a teleporter
+   field. */
+static void draw_square(const SquareView *s, int16_t dir, int16_t x, int16_t y)
+{
+    Aspect a;
+    get_square_aspect(&a, dir, x, y);
+    if (s->shape == SHAPE_WALL_OR_FIELD) {
+        if (a.element == SQUARE_WALL)
+            draw_wall_part(&s->wall);
+        else if (a.element == SQUARE_TELEPORTER)
+            draw_teleporter_field(s->view_square, s->wall.zone);
+        return;
+    }
+    if (s->shape == SHAPE_D0_SIDE) {
+        draw_d0_side_square(s, &a, dir, x, y);
+        return;
+    }
+    if (s->shape == SHAPE_D0C) {
+        draw_d0c_square(s, &a, dir, x, y);
+        return;
+    }
+    if (s->flags & SQ_FRONT)
+        g_square_ahead_element = a.element;
+    uint16_t cells = s->cells;
+    switch (a.element) {
+    case SQUARE_WALL:
+        draw_square_wall(s, &a, dir, x, y);
+        return;
+    case SQUARE_PIT:
+        draw_square_pit(s, a.state);
+        break;
+    case ELEMENT_DOOR_SIDE:
+    case ELEMENT_STAIRS_SIDE:
+        if (!s->side_cells)
+            return;
+        if (a.element == ELEMENT_STAIRS_SIDE)
+            draw_square_stairs_side(s, a.state);
+        cells = s->side_cells;
         break;
     case ELEMENT_DOOR_FRONT:
-        draw_floor_ornament(a.floor_ornament, VIEW_D1C);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, DOOR_BACK_BL_BR);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_TOP_D1C], ZONE_DOOR_FRAME_TOP_D1C, BLIT_TRANSPARENT);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_LEFT_D1C], ZONE_DOOR_FRAME_LEFT_D1C, BLIT_TRANSPARENT);
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_RIGHT_D1C], ZONE_DOOR_FRAME_RIGHT_D1C, BLIT_TRANSPARENT);
-        if (door_button_present(a.door))
-            draw_door_button(BUTTON_D1C);
-        draw_door(a.door, a.state, VIEW_D1C);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, DOOR_FRONT_FL_FR);
+        draw_square_door_front(s, &a, dir, x, y);
         return;
     case ELEMENT_STAIRS_FRONT:
-        draw_stairs_front(a.state, STAIRS_FRONT_D1C, ZONE_STAIRS_UP_FRONT_D1C, BLIT_TRANSPARENT);
+        draw_square_stairs_front(s, a.state);
         break;
     case SQUARE_CORRIDOR:
     case SQUARE_TELEPORTER:
@@ -1939,76 +2018,11 @@ static void d1c(int16_t dir, int16_t x, int16_t y)
     default:
         return;
     }
-    draw_floor_ornament(a.floor_ornament, VIEW_D1C);
-    draw_ceiling_pit(GFX_CEILING_PIT_D1C, ZONE_CEILING_PIT_D1C, x, y, BLIT_TRANSPARENT);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D1C, CELLS_BL_BR_FL_FR);
+    draw_floor_ornament(a.floor_ornament, s->view);
+    draw_square_ceiling_pit(s, x, y);
+    draw_square_things(a.first_thing, dir, x, y, s->view_square, cells);
     if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D1C, ZONE_WALL_D1C);
-}
-
-static void d0l(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D0L], ZONE_WALL_D0L, BLIT_TRANSPARENT);
-        return;
-    case ELEMENT_STAIRS_SIDE:
-        draw_wall_bitmap(stairs + STAIRS_SIDE_D0L, ZONE_STAIRS_SIDE_D0L, BLIT_TRANSPARENT);
-        return;
-    case SQUARE_PIT:
-        draw_wall_bitmap(a.state ? GFX_INVISIBLE_PIT_D0L : GFX_PIT_D0L, ZONE_PIT_D0L,
-                         BLIT_TRANSPARENT); /* fall through */
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-    case ELEMENT_DOOR_SIDE:
-        draw_ceiling_pit(GFX_CEILING_PIT_D0L, ZONE_CEILING_PIT_D0L, x, y, BLIT_TRANSPARENT);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D0L, CELLS_BR);
-    }
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D0L, ZONE_WALL_D0L);
-}
-
-static void d0r(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    switch (a.element) {
-    case SQUARE_WALL:
-        draw_wall_bitmap(wall_set_ids[WS_WALL_D0R], ZONE_WALL_D0R, BLIT_TRANSPARENT);
-        return;
-    case ELEMENT_STAIRS_SIDE:
-        draw_wall_bitmap(stairs + STAIRS_SIDE_D0L, ZONE_STAIRS_SIDE_D0R, BLIT_FLIPPED);
-        return;
-    case SQUARE_PIT:
-        draw_wall_bitmap(a.state ? GFX_INVISIBLE_PIT_D0L : GFX_PIT_D0L, ZONE_PIT_D0R, BLIT_FLIPPED); /* fall through */
-    case SQUARE_CORRIDOR:
-    case SQUARE_TELEPORTER:
-    case ELEMENT_DOOR_SIDE:
-        draw_ceiling_pit(GFX_CEILING_PIT_D0L, ZONE_CEILING_PIT_D0R, x, y, BLIT_FLIPPED);
-        draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D0R, CELLS_BL);
-    }
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D0R, ZONE_WALL_D0R);
-}
-
-static void d0c(int16_t dir, int16_t x, int16_t y)
-{
-    Aspect a;
-    get_square_aspect(&a, dir, x, y);
-    if (a.element == ELEMENT_DOOR_SIDE)
-        draw_wall_bitmap(wall_set_ids[WS_DOOR_FRAME_D0C], ZONE_DOOR_FRAME_D0C, BLIT_TRANSPARENT);
-    else if (a.element == SQUARE_PIT)
-        draw_wall_bitmap(a.state ? GFX_INVISIBLE_PIT_D0C : GFX_PIT_D0C, ZONE_PIT_D0C, BLIT_TRANSPARENT);
-    else if (a.element == ELEMENT_STAIRS_FRONT) {
-        draw_stairs_front(a.state, STAIRS_FRONT_D0C, ZONE_STAIRS_UP_FRONT_D0C_LEFT, BLIT_TRANSPARENT);
-        draw_stairs_front(a.state, STAIRS_FRONT_D0C, ZONE_STAIRS_UP_FRONT_D0C_RIGHT, BLIT_FLIPPED);
-    }
-    draw_ceiling_pit(GFX_CEILING_PIT_D0C, ZONE_CEILING_PIT_D0C, x, y, BLIT_TRANSPARENT);
-    draw_square_things(a.first_thing, dir, x, y, VIEW_SQUARE_D0C, CELLS_BL_BR);
-    if (a.element == SQUARE_TELEPORTER)
-        draw_teleporter_field(VIEW_SQUARE_D0C, ZONE_WALL_D0C);
+        draw_teleporter_field(s->view_square, s->wall.zone);
 }
 
 /* Color 9 or 10 of the 6 light palettes and of the creature
@@ -2523,10 +2537,6 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
 /* Draws the dungeon view of square (x, y) in direction dir: ceiling and floor, D4, then the squares back to front. */
 void view_draw(int16_t dir, int16_t x, int16_t y)
 {
-    static void (*const squares[DRAWN_SQUARE_COUNT])(int16_t, int16_t, int16_t) = {
-        d3l2, d3r2, d3l, d3r, d3c, d2l2, d2r2, d2l, d2r, d2c, d1l, d1r, d1c, d0l, d0r, d0c};
-    static const int8_t forward[DRAWN_SQUARE_COUNT] = {3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0};
-    static const int8_t right[DRAWN_SQUARE_COUNT] = {-2, 2, -1, 1, 0, -2, 2, -1, 1, 0, -1, 1, 0, -1, 1, 0};
     static const int8_t d4_right[D4_SQUARE_COUNT] = {-1, 1, 0};
     static const int16_t d4_squares[D4_SQUARE_COUNT] = {VIEW_SQUARE_D4L, VIEW_SQUARE_D4R, VIEW_SQUARE_D4C};
     static uint8_t px[VIEWPORT_MAX_H * VIEWPORT_MAX_W];
@@ -2559,8 +2569,8 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
     for (int i = 0; i < DRAWN_SQUARE_COUNT; i++) {
         int16_t sx = x;
         int16_t sy = y;
-        get_relative_square(dir, forward[i], right[i], &sx, &sy);
-        squares[i](dir, sx, sy);
+        get_relative_square(dir, square_views[i].forward, square_views[i].right, &sx, &sy);
+        draw_square(&square_views[i], dir, sx, sy);
     }
     Bitmap screen = {SCREEN_W, SCREEN_H, &fb[0][0]};
     int16_t width = viewport.w;
