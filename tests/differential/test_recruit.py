@@ -37,8 +37,7 @@ def lib():
 
 
 def need(lib):
-    assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.tables_init() == 0
+    assert lib.tables_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
 
 

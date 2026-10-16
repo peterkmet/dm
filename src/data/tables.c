@@ -82,7 +82,6 @@
 #define CREATURE_AT_WOUND_PROBABILITIES  22
 #define CREATURE_AT_ATTACK_TYPE          24
 
-static bool ready;
 static CreatureInfo creature_info[CREATURE_TYPE_COUNT];
 static CreatureSound creature_sounds[CREATURE_SOUND_COUNT];
 static ObjectInfo object_info[OBJECT_INFO_COUNT];
@@ -90,7 +89,6 @@ static WeaponInfo weapon_info[WEAPON_TYPE_COUNT];
 static ArmourInfo armour_info[ARMOUR_TYPE_COUNT];
 static uint8_t junk_weights[JUNK_TYPE_COUNT];
 static int16_t food_values[FOOD_TYPE_COUNT];
-static DoorInfo door_info[DOOR_TYPE_COUNT];
 static Spell spells[CSB_SPELL_COUNT];
 static int16_t loaded_spell_count;
 static uint8_t symbol_base_mana_cost[SYMBOL_STEP_COUNT][SYMBOL_COUNT];
@@ -144,8 +142,6 @@ static void read_objects(void)
         junk_weights[i] = kaos_u8(KAOS_JUNK_WEIGHTS + i);
     for (uint32_t i = 0; i < FOOD_TYPE_COUNT; i++)
         food_values[i] = kaos_s16(KAOS_FOOD_VALUES + i * 2);
-    for (uint32_t i = 0; i < DOOR_TYPE_COUNT; i++)
-        door_info[i] = (DoorInfo){kaos_u8(KAOS_DOOR_INFO + i * 2), kaos_u8(KAOS_DOOR_INFO + i * 2 + 1)};
 }
 
 /* Spells and the mana costs of the spell symbols. */
@@ -205,20 +201,7 @@ static void read_champion_tables(void)
         fixed_possessions[i] = kaos_u16(KAOS_FIXED_POSSESSIONS + i * 2);
 }
 
-int tables_init(void)
-{
-    if (!kaos.data)
-        return -1;
-    read_creatures();
-    read_objects();
-    read_magic();
-    read_actions();
-    read_champion_tables();
-    ready = true;
-    return 0;
-}
-
-#define GET(arr, i) (ready && (i) >= 0 && (i) < ARRAY_COUNT(arr) ? &(arr)[i] : NULL)
+#define GET(arr, i) ((i) >= 0 && (i) < ARRAY_COUNT(arr) ? &(arr)[i] : NULL)
 
 const CreatureInfo *tables_get_creature_info(int i)
 {
@@ -247,10 +230,6 @@ const uint8_t *tables_get_junk_weight(int i)
 const int16_t *tables_get_food_value(int i)
 {
     return GET(food_values, i);
-}
-const DoorInfo *tables_get_door_info(int i)
-{
-    return GET(door_info, i);
 }
 const Spell *tables_get_spell(int i)
 {
@@ -295,10 +274,22 @@ const uint8_t *tables_get_symbol_base_mana_cost(int step, int symbol)
     return row ? GET(*row, symbol) : NULL;
 }
 
+/* Fills the cached tables from the loaded image. */
+static void decode_tables(void)
+{
+    read_creatures();
+    read_objects();
+    read_magic();
+    read_actions();
+    read_champion_tables();
+}
+
 int tables_load(const char *path)
 {
     int r = kaos_load(path);
-    return r ? r : tables_init();
+    if (!r)
+        decode_tables();
+    return r;
 }
 
 /* Map x step of one square in a direction. */

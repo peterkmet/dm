@@ -14,7 +14,6 @@
 #define ARMOUR_TYPE_COUNT             58
 #define JUNK_TYPE_COUNT               53
 #define FOOD_TYPE_COUNT               8
-#define DOOR_TYPE_COUNT               4
 #define SYMBOL_STEP_COUNT             4
 #define SYMBOL_COUNT                  6
 #define ACTION_SET_COUNT              44
@@ -111,11 +110,6 @@ typedef struct {
 } ArmourInfo;
 
 typedef struct {
-    uint8_t attributes;
-    uint8_t defense;
-} DoorInfo;
-
-typedef struct {
     uint32_t symbols; /* bits 24-31 power symbol, 0 = none */
     uint8_t base_required_skill_level;
     uint8_t skill_index;
@@ -143,10 +137,12 @@ typedef struct {
     uint8_t experience_gain;
 } ActionInfo;
 
-/* Call after kaos_load. Returns 0, or -1 when no KAOS image is loaded. */
-int tables_init(void);
+/* Setup */
 
-/* Each accessor returns NULL for an out-of-range index or before tables_init. */
+/* Loads the engine module at path (kaos_load), then decodes the tables. Returns 0, or -1 as kaos_load. */
+int tables_load(const char *path);
+
+/* Each accessor returns NULL for an out-of-range index. Call after tables_load. */
 const CreatureInfo *tables_get_creature_info(int creature_type);
 const CreatureSound *tables_get_creature_sound(int index);
 const ObjectInfo *tables_get_object_info(int index);
@@ -154,7 +150,6 @@ const WeaponInfo *tables_get_weapon_info(int weapon_type);
 const ArmourInfo *tables_get_armour_info(int armour_type);
 const uint8_t *tables_get_junk_weight(int junk_type);
 const int16_t *tables_get_food_value(int index);
-const DoorInfo *tables_get_door_info(int door_type);
 const Spell *tables_get_spell(int index);
 const uint8_t *tables_get_symbol_base_mana_cost(int step, int symbol);
 const uint8_t *tables_get_symbol_mana_cost_multiplier(int power);
@@ -166,13 +161,10 @@ const uint16_t *tables_get_slot_mask(int slot);
 const uint8_t *tables_get_wound_defense_factor(int slot);
 const uint16_t *tables_get_fixed_possession(int index);
 
-/* Loads the engine module at path (kaos_load), then decodes the tables. Returns 0, or -1 as kaos_load. */
-int tables_load(const char *path);
-
 /* Squares ahead and to each side that a sound reaches; the volume table covers -range..range. */
 #define SOUND_HEARING_RANGE 12
 
-/* Each accessor below reads the loaded image at call time; it needs kaos_load, not tables_init. */
+/* Each accessor below reads the loaded image at call time; it needs tables_load. */
 int16_t tables_get_step_east(int16_t direction);
 /* Map y step of one square in a direction. */
 int16_t tables_get_step_north(int16_t direction);

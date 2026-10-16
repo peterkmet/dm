@@ -106,7 +106,7 @@ After the loop:
 
 ### Champion functions
 
-Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see `docs/rules/champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `champion_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand`, and `object_get_type`. `object_get_type` needs `tables_init()`.
+Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see `docs/rules/champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `champion_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand`, and `object_get_type`. `object_get_type` needs `tables_load()`.
 
 ## Sensors
 

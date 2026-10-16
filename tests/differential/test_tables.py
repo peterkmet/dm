@@ -32,7 +32,6 @@ CreatureSound = S(("attack", s8), ("movement", s8))
 ObjectInfo = S(("type", u16), ("aspect_index", u8), ("action_set_index", u8), ("allowed_slots", u16))
 WeaponInfo = S(("weight", u8), ("weapon_class", u8), ("strength", u8), ("kinetic_energy", u8), ("attributes", u16))
 ArmourInfo = S(("weight", u8), ("defense", u8), ("attributes", u8))
-DoorInfo = S(("attributes", u8), ("defense", u8))
 Spell = S(("symbols", u32), ("base_required_skill_level", u8), ("skill_index", u8), ("kind", u8), ("type", u8), ("disabled_ticks", u8))
 ActionSet = S(("action_indices", u8 * 3), ("minimum_skill_levels", u8 * 2), ("flags", u8))
 ActionInfo = S(("disabled_ticks", u8), ("damage_factor", u8), ("hit_probability", u8), ("stamina", u8), ("defense", s8),
@@ -47,7 +46,6 @@ TABLES = {
     "armour_info": (ArmourInfo, 58, 0x1015B4, 4, ">BBB"),
     "junk_weight": (u8, 53, 0x10169C, 1, ">B"),
     "food_value": (s16, 8, 0x1016D2, 2, ">h"),
-    "door_info": (DoorInfo, 4, 0x1016E2, 2, ">BB"),
     "spell": (Spell, 25, 0x103C84, 8, ">IBBH"),
     "symbol_mana_cost_multiplier": (u8, 6, 0x103C7E, 1, ">B"),
     "action_set": (ActionSet, 44, 0x103D4C, 8, ">BBBxBBB"),
@@ -68,10 +66,8 @@ def lib():
         f.argtypes, f.restype = [ctypes.c_int], ctypes.POINTER(rec)
     lib.tables_get_symbol_base_mana_cost.argtypes = [ctypes.c_int, ctypes.c_int]
     lib.tables_get_symbol_base_mana_cost.restype = ctypes.POINTER(u8)
-    assert not lib.tables_get_creature_info(0)
-    assert lib.tables_init() == -1
-    assert lib.kaos_load(str(KAOS).encode()) == 0
-    assert lib.tables_init() == 0
+    assert lib.tables_load(b"/nonexistent/KAOS.FTL") == -1
+    assert lib.tables_load(str(KAOS).encode()) == 0
     return lib
 
 

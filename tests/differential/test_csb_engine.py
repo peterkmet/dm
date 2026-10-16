@@ -63,8 +63,7 @@ def set_adventure(lib, adventure):
 
 def load(lib, adventure, path):
     set_adventure(lib, adventure)
-    assert lib.kaos_load(str(path).encode()) == 0
-    assert lib.tables_init() == 0
+    assert lib.tables_load(str(path).encode()) == 0
     return lambda addr, n: bytes(lib.kaos_ptr(addr)[:n])
 
 

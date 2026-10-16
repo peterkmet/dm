@@ -163,7 +163,6 @@ bool data/ftl.c:relocate open: epic 4
 bool data/ftl.c:write_jump_table open: epic 4
 bool data/ftl.h:kaos_load open: epic 4
 bool data/graphics.h:gfx_load_bitmap open: epic 4
-bool data/tables.h:tables_init open: epic 4
 bool data/tables.h:tables_load open: epic 4
 bool engine/action.c open: epic 6
 bool engine/champion.c open: epic 6
@@ -677,7 +676,6 @@ dead-api data/graphics.h:gfx_expand open: epic 4
 dead-api data/spells.h:spell_count open: epic 4
 dead-api data/spells.h:spell_get_symbol open: epic 4
 dead-api data/spells.h:spell_get_symbol_mana_cost open: epic 4
-dead-api data/tables.h:tables_get_door_info open: epic 4
 dead-api engine/action.h:action_decrement_charges open: epic 7
 dead-api engine/action.h:action_get_throwing_stamina_cost open: epic 7
 dead-api engine/action.h:action_is_action_performed open: epic 7

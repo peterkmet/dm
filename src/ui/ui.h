@@ -65,7 +65,7 @@ extern bool g_action_area_contains_icons;
 /* The portrait of a champion as a bitmap. */
 Bitmap ui_draw_champion_portrait(int16_t champion_index);
 
-/* Setup: call after kaos_load, gfx_open, layout_init, text_init, and tables_init. */
+/* Setup: call after tables_load, gfx_open, layout_init, and text_init. */
 int ui_init(void);
 
 /* Shared helpers (ui.c). */
