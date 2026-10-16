@@ -119,6 +119,9 @@ static struct {
     uint16_t thing;
     Location at;
 } last_turn;
+/* Kept quirk: the party-blocked result of the last step test. random_move reads it also when it skips the test, as
+   in the original; it survives between turns and group_reset does not clear it. */
+static bool last_blocked_by_party;
 
 /* The result of one step test of a group. */
 typedef struct {
@@ -126,7 +129,7 @@ typedef struct {
     bool blocked_by_party;
 } MovementTest;
 
-/* State of one run of group_process_reaction_event. */
+/* State of one group turn (a reaction or a group event). */
 typedef struct {
     int16_t x, y;
     int16_t event_type; /* reactions are REACTION_* here */
@@ -922,6 +925,7 @@ static MovementTest test_movement(GroupTurn *t, int16_t direction, bool allow_im
     int16_t y = t->y;
     MovementTest result = {false, false};
     t->tested_directions[direction] = 1;
+    last_blocked_by_party = false;
     if (info->movement_ticks == CREATURE_IMMOBILE)
         return result;
     map_step(direction, 1, 0, &x, &y);
@@ -957,6 +961,7 @@ static MovementTest test_movement(GroupTurn *t, int16_t direction, bool allow_im
             return result;
     }
     result.blocked_by_party = map_is_party_on((Location){x, y});
+    last_blocked_by_party = result.blocked_by_party;
     if (result.blocked_by_party)
         return result;
     if (type == SQUARE_DOOR) {
@@ -1594,18 +1599,17 @@ static bool random_move(GroupTurn *t)
 {
     int16_t first = random_2bits();
     int16_t direction = first;
-    MovementTest test = {false, false};
     do {
         int16_t x = t->x;
         int16_t y = t->y;
         map_step(direction, 1, 0, &x, &y);
         if ((x != t->active->prior_x || y != t->active->prior_y || !random_2bits()) &&
-            (test = test_movement(t, direction, false)).possible) {
+            test_movement(t, direction, false).possible) {
             if (try_move(t, x, y))
                 return true;
             return after_move(t, direction);
         }
-        if (test.blocked_by_party) {
+        if (last_blocked_by_party) {
             if (t->event_type != REACTION_DANGER_ON_SQUARE && t->info->attack_ticks != CREATURE_NO_ATTACK &&
                 (rec_group_behavior(t->group) != BEHAVIOR_FLEE ||
                  !group_get_first_possible_movement_direction_ordinal(t, false) || random_bit())) {
