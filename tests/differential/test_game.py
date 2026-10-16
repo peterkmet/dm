@@ -57,7 +57,7 @@ def lib():
     lib.champion_adjust_statistic.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, c16]
     lib.champion_is_lucky.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16]
     lib.champion_is_lucky.restype = lib.timeline_is_first_event_expired.restype = ctypes.c_bool
-    lib.game_update_map_coordinates_after_relative_movement.argtypes = [c16, c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
+    lib.map_step.argtypes = [c16, c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
     return lib
 
 
@@ -114,7 +114,7 @@ def test_relative_movement_matches_original(lib, emu):
         for fwd in (-2, 0, 1, 3):
             for right in (-1, 0, 2):
                 x, y = c16(10), c16(20)
-                lib.game_update_map_coordinates_after_relative_movement(d, fwd, right, ctypes.byref(x), ctypes.byref(y))
+                lib.map_step(d, fwd, right, ctypes.byref(x), ctypes.byref(y))
                 put(emu, BUF, ">hh", 10, 20)
                 emu.call(MOVE_RELATIVE, [(2, d), (2, fwd), (2, right), (4, BUF), (4, BUF + 2)])
                 assert (x.value, y.value) == struct.unpack(">hh", emu.read(BUF, 4))
