@@ -14,7 +14,6 @@
 #define ARMOUR_TYPE_COUNT             58
 #define JUNK_TYPE_COUNT               53
 #define FOOD_TYPE_COUNT               8
-#define DOOR_TYPE_COUNT               4
 #define SYMBOL_STEP_COUNT             4
 #define SYMBOL_COUNT                  6
 #define ACTION_SET_COUNT              44
@@ -111,11 +110,6 @@ typedef struct {
 } ArmourInfo;
 
 typedef struct {
-    uint8_t attributes;
-    uint8_t defense;
-} DoorInfo;
-
-typedef struct {
     uint32_t symbols; /* bits 24-31 power symbol, 0 = none */
     uint8_t base_required_skill_level;
     uint8_t skill_index;
@@ -127,7 +121,6 @@ typedef struct {
 typedef struct {
     uint8_t action_indices[3];       /* 255 = none */
     uint8_t minimum_skill_levels[2]; /* actions 1 and 2; bit 7 = needs charges */
-    uint8_t flags;                   /* copied with the set; no reader is known */
 } ActionSet;
 #define ACTION_LIST_COUNT          3
 #define ACTION_SET_EMPTY_HAND      2
@@ -143,36 +136,36 @@ typedef struct {
     uint8_t experience_gain;
 } ActionInfo;
 
-/* Call after kaos_load. Returns 0, or -1 when no KAOS image is loaded. */
-int tables_init(void);
-
-/* Each accessor returns NULL for an out-of-range index or before tables_init. */
-const CreatureInfo *tables_get_creature_info(int creature_type);
-const CreatureSound *tables_get_creature_sound(int index);
-const ObjectInfo *tables_get_object_info(int index);
-const WeaponInfo *tables_get_weapon_info(int weapon_type);
-const ArmourInfo *tables_get_armour_info(int armour_type);
-const uint8_t *tables_get_junk_weight(int junk_type);
-const int16_t *tables_get_food_value(int index);
-const DoorInfo *tables_get_door_info(int door_type);
-const Spell *tables_get_spell(int index);
-const uint8_t *tables_get_symbol_base_mana_cost(int step, int symbol);
-const uint8_t *tables_get_symbol_mana_cost_multiplier(int power);
-const ActionSet *tables_get_action_set(int index);
-const ActionInfo *tables_get_action_info(int action);
-const int16_t *tables_get_light_power_to_light_amount(int power);
-const int16_t *tables_get_palette_light_threshold(int index);
-const uint16_t *tables_get_slot_mask(int slot);
-const uint8_t *tables_get_wound_defense_factor(int slot);
-const uint16_t *tables_get_fixed_possession(int index);
+/* Setup */
 
 /* Loads the engine module at path (kaos_load), then decodes the tables. Returns 0, or -1 as kaos_load. */
 int tables_load(const char *path);
 
+/* Each struct accessor returns NULL for an out-of-range index. Call after tables_load. */
+const CreatureInfo *tables_get_creature_info(int16_t creature_type);
+const CreatureSound *tables_get_creature_sound(int16_t index);
+const ObjectInfo *tables_get_object_info(int16_t index);
+const WeaponInfo *tables_get_weapon_info(int16_t weapon_type);
+const ArmourInfo *tables_get_armour_info(int16_t armour_type);
+const Spell *tables_get_spell(int16_t index);
+const ActionSet *tables_get_action_set(int16_t index);
+const ActionInfo *tables_get_action_info(int16_t action);
+
+/* The scalar tables return the value, or 0 for an out-of-range index. */
+uint8_t tables_get_junk_weight(int16_t junk_type);
+int16_t tables_get_food_value(int16_t index);
+uint8_t tables_get_symbol_base_mana_cost(int16_t step, int16_t symbol);
+uint8_t tables_get_symbol_mana_cost_multiplier(int16_t power);
+int16_t tables_get_light_power_to_light_amount(int16_t power);
+int16_t tables_get_palette_light_threshold(int16_t index);
+uint16_t tables_get_slot_mask(int16_t slot);
+uint8_t tables_get_wound_defense_factor(int16_t slot);
+uint16_t tables_get_fixed_possession(int16_t index);
+
 /* Squares ahead and to each side that a sound reaches; the volume table covers -range..range. */
 #define SOUND_HEARING_RANGE 12
 
-/* Each accessor below reads the loaded image at call time; it needs kaos_load, not tables_init. */
+/* Each accessor below reads the loaded image at call time; it needs tables_load. */
 int16_t tables_get_step_east(int16_t direction);
 /* Map y step of one square in a direction. */
 int16_t tables_get_step_north(int16_t direction);
@@ -385,23 +378,23 @@ int16_t tables_get_pointer_shadow_dy(void);
 /* The 4 bit planes of the arrow or the hand pointer; *w and *h get its size. */
 const uint8_t *tables_get_pointer_planes(bool hand, int16_t *w, int16_t *h);
 
-/* Mouse input tables of COMMAND.C, in the order of their KAOS addresses. */
-#define UI_INPUT_INTERFACE    0  /* the champion bars, the action and spell areas */
-#define UI_INPUT_MOVEMENT     1  /* the movement arrows and the dungeon view */
-#define UI_INPUT_INVENTORY    2  /* the open inventory */
-#define UI_INPUT_SLEEPING     3  /* the sleeping party: a click wakes it */
-#define UI_INPUT_FROZEN       4  /* the frozen game: a click goes on */
-#define UI_INPUT_ACTION_NAMES 5  /* the action names of the action menu */
-#define UI_INPUT_ACTION_ICONS 6  /* the action icons of the champions */
-#define UI_INPUT_SPELL_AREA   7  /* the runes and the cast button */
-#define UI_INPUT_STATUS_BOX   8  /* the status boxes of the champions */
-#define UI_INPUT_CHEST        9  /* the slots of an open chest */
-#define UI_INPUT_RESURRECT    10 /* the resurrect and reincarnate buttons */
-#define UI_INPUT_NAME_ENTRY   11 /* the keyboard of the champion name entry */
-#define UI_INPUT_ENTRANCE     12 /* the entrance buttons */
-#define UI_INPUT_ENDGAME      13 /* RESTART THIS GAME and QUIT of the endgame screen */
-#define UI_INPUT_DIALOG_FIRST 14 /* the dialog tables: + full screen * 4 + choice count - 1 */
-#define UI_INPUT_COUNT        (UI_INPUT_DIALOG_FIRST + 8)
+/* Mouse input tables: which screen boxes give which command, in the order of their image addresses. */
+#define TABLES_MOUSE_INTERFACE    0  /* the champion bars, the action and spell areas */
+#define TABLES_MOUSE_MOVEMENT     1  /* the movement arrows and the dungeon view */
+#define TABLES_MOUSE_INVENTORY    2  /* the open inventory */
+#define TABLES_MOUSE_SLEEPING     3  /* the sleeping party: a click wakes it */
+#define TABLES_MOUSE_FROZEN       4  /* the frozen game: a click goes on */
+#define TABLES_MOUSE_ACTION_NAMES 5  /* the action names of the action menu */
+#define TABLES_MOUSE_ACTION_ICONS 6  /* the action icons of the champions */
+#define TABLES_MOUSE_SPELL_AREA   7  /* the runes and the cast button */
+#define TABLES_MOUSE_STATUS_BOX   8  /* the status boxes of the champions */
+#define TABLES_MOUSE_CHEST        9  /* the slots of an open chest */
+#define TABLES_MOUSE_RESURRECT    10 /* the resurrect and reincarnate buttons */
+#define TABLES_MOUSE_NAME_ENTRY   11 /* the keyboard of the champion name entry */
+#define TABLES_MOUSE_ENTRANCE     12 /* the entrance buttons */
+#define TABLES_MOUSE_ENDGAME      13 /* RESTART THIS GAME and QUIT of the endgame screen */
+#define TABLES_MOUSE_DIALOG_FIRST 14 /* the dialog tables: + full screen * 4 + choice count - 1 */
+#define TABLES_MOUSE_COUNT        (TABLES_MOUSE_DIALOG_FIRST + 8)
 /* Mouse input entry: a command (0 ends a table), a box x1-x2, y1-y2, and the buttons. A negative x1 marks a
    zone entry; x2 is then the zone. */
 typedef struct {

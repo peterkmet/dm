@@ -45,9 +45,8 @@ def game():
     lib.explored_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
     lib.explored_is_seen.restype = ctypes.c_bool
     lib.automap_draw.argtypes = [ctypes.POINTER(Bitmap), Box, c16]
-    assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
-    assert lib.tables_init() == 0
     lib.game_start_new()
     lib.move_party_enter_dungeon()
     lib.explored_reset()

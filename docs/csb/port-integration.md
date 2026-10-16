@@ -44,7 +44,7 @@ Code that depends on the KAOS image:
 |---|---|
 | `kaos.c`: `kaos_load`, `kaos_u8/u16/s16/u32/ptr`; `kaos_addresses.h`: `KAOS_BASE` | One global image. `kaos_*` call `os_fatal` when an address is outside the image. |
 | 25 files with `kaos_*` calls | 147 `#define ... 0x10xxxx` data addresses (for example `gameloop.c`, `command.c`, `startend.c`, `dialog.c`, `ui.c`, `view.c`: 46 calls, `tables.c`: 26 calls). |
-| `tables.c`, `tables.h` | Table sizes of DM: `CREATURE_TYPE_COUNT` 27, `OBJECT_INFO_COUNT` 180, `WEAPON_TYPE_COUNT` 46, `ARMOUR_TYPE_COUNT` 58, `JUNK_TYPE_COUNT` 53, `FOOD_TYPE_COUNT` 8, `DOOR_TYPE_COUNT` 4, `SPELL_COUNT` 25, `ACTION_COUNT` 44, `SLOT_MASK_COUNT` 38, `FIXED_POSSESSION_COUNT` 40. |
+| `tables.c`, `tables.h` | Table sizes of DM: `CREATURE_TYPE_COUNT` 27, `OBJECT_INFO_COUNT` 180, `WEAPON_TYPE_COUNT` 46, `ARMOUR_TYPE_COUNT` 58, `JUNK_TYPE_COUNT` 53, `FOOD_TYPE_COUNT` 8, `SPELL_COUNT` 25, `ACTION_COUNT` 44, `SLOT_MASK_COUNT` 38, `FIXED_POSSESSION_COUNT` 40. |
 | `sound.h`, `sound.c` | `SOUND_COUNT` 35. Volume table at `0x100696`. |
 | `ids.h` | 252 lines of `GFX_*`, `ZONE_*`, `TEXT_*` numbers for DM `Graphics.DAT`. |
 
@@ -76,7 +76,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | Place | Assumption |
 |---|---|
 | `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `KAOS_ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
-| `command.c`: `command_set_entrance_input`, `KAOS_KEYS_ENTRANCE` (`0x10393c`), `UI_INPUT_ENTRANCE` | Mouse table and key table come from the KAOS data. |
+| `command.c`: `command_set_entrance_input`, `KAOS_KEYS_ENTRANCE` (`0x10393c`), `TABLES_MOUSE_ENTRANCE` | Mouse table and key table come from the KAOS data. |
 | `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_new_game = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
 | `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_start_new_game(data)` or `startend_load_saved_game()`. |
 | `main.c`: `main` | `MODE_ENTRANCE` is the first mode after the start. `DM_AUTO_ENTER` (and `turnbased`) presses Return at the start. |

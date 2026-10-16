@@ -1,20 +1,17 @@
 # Static game tables
 
-This page describes the static rule tables of `KAOS.FTL` and the C accessors in `src/data/tables.h`. The port does not copy table values into the source. `tables_init` reads the tables from the loaded KAOS image at run time.
+This page describes the static rule tables of `KAOS.FTL` and the C accessors in `src/data/tables.h`. The port does not copy table values into the source. `tables_load` reads the tables from the loaded KAOS image at run time.
 
 All addresses are original KAOS addresses (see [KAOS module map](../reference/kaos-map.md)). All multi-byte values are big-endian in the image. The C structs hold native values.
 
 ## Usage
 
-1. Load the module with `kaos_load(path)`.
-2. Call `tables_init()`. It returns 0, or -1 when no KAOS image is loaded.
-3. Call an accessor, for example `tables_get_creature_info(type)`.
+1. Call `tables_load(path)`. It loads the image (`kaos_load`) and decodes the tables. It returns 0, or the error of `kaos_load`.
+2. Call an accessor, for example `tables_get_creature_info(type)`.
 
-`tables_load(path)` does steps 1 and 2. It returns 0 on success, or the error of `kaos_load`.
+Each accessor of the table list returns a pointer to a constant record. It returns `NULL` for an index out of range. Load the module again (CSB or DM) with `tables_load`.
 
-Each accessor of the table list returns a pointer to a constant record. It returns `NULL` for an index out of range and before `tables_init`. Load the module again (CSB or DM), then call `tables_init` again.
-
-The image accessors read the loaded image at call time. They need `kaos_load`, not `tables_init`. They do not check the index. All addresses are in `src/data/kaos_addresses.h`.
+The image accessors read the loaded image at call time. They need `tables_load`. They do not check the index. All addresses are in `src/data/kaos_addresses.h`.
 
 | Image accessor | Address | Element | Index |
 |---|---|---|---|
@@ -71,7 +68,7 @@ The image accessors read the loaded image at call time. They need `kaos_load`, n
 | `tables_get_pointer_hotspot_x`, `tables_get_pointer_hotspot_y` | `0x1005c8` | 8-byte record × 4 | Pointer shape |
 | `tables_get_pointer_shadow_dx`, `tables_get_pointer_shadow_dy` | `0x102952`, `0x102954` | int16 | — |
 | `tables_get_pointer_planes` | `0x1002b0` (arrow), `0x1003d4` (hand) | 4 bit planes (pointer), size words before | Hand |
-| `tables_get_mouse_input`, `tables_set_mouse_input_box` | `0x10318c` … `0x10378c` (14 tables), dialog tables through the pointers at `0x103bd4` | 12-byte entry (command, x1, x2, y1, y2, buttons); command 0 ends a table | `UI_INPUT_*` table, entry |
+| `tables_get_mouse_input`, `tables_set_mouse_input_box` | `0x10318c` … `0x10378c` (14 tables), dialog tables through the pointers at `0x103bd4` | 12-byte entry (command, x1, x2, y1, y2, buttons); command 0 ends a table | `TABLES_MOUSE_*` table, entry |
 | `tables_get_key_command` | `0x10393c`, `0x103948`, `0x103964`, `0x103980`, `0x10398c` | 4-byte entry (command, key); command 0 ends a table | `TABLES_KEYS_*`, key |
 
 ## Table list
@@ -85,7 +82,6 @@ The image accessors read the loaded image at call time. They need `kaos_load`, n
 | `tables_get_armour_info` | `0x1015b4` | 4 | 58 | Armour type |
 | `tables_get_junk_weight` | `0x10169c` | 1 | 53 | Junk type |
 | `tables_get_food_value` | `0x1016d2` | 2 | 8 | Icon − `0xa8` |
-| `tables_get_door_info` | `0x1016e2` | 2 | 4 | Door type |
 | `tables_get_spell` | `0x103c84` | 8 | 25 | Spell |
 | `tables_get_symbol_base_mana_cost` | `0x103c66` | 1 | 4 × 6 | Symbol step, symbol |
 | `tables_get_symbol_mana_cost_multiplier` | `0x103c7e` | 1 | 6 | Power symbol |
@@ -171,7 +167,7 @@ Each table ends where the next named table starts. The tests check this.
 
 ## Door info
 
-`DoorInfo`, 2 bytes per door type. Byte 0 `attributes`, byte 1 `defense`. `event_is_door_destroyed_by_attack` compares an attack with `defense`. Each map selects 2 door types (map record byte 14).
+Door info, 2 bytes per door type, read by `tables_get_door_attributes`. Byte 0 `attributes`, byte 1 `defense`. `event_is_door_destroyed_by_attack` compares an attack with `defense`. Each map selects 2 door types (map record byte 14).
 
 ## Spells and symbols
 

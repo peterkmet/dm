@@ -263,9 +263,9 @@ def test_eat_food(lib, party):
     ch = champions(lib)[0]
     var(lib, c16, "g_inventory_champion_ordinal").value = 1
     lib.tables_get_object_info.restype = ctypes.POINTER(u16 * 3)
-    lib.tables_get_food_value.restype = ctypes.POINTER(c16)
+    lib.tables_get_food_value.restype = c16
     junk = next(j for j in range(53) if 0xA8 <= lib.tables_get_object_info(0x7F + j).contents[0] < 0xB0)
-    food_value = lib.tables_get_food_value(lib.tables_get_object_info(0x7F + junk).contents[0] - 0xA8)[0]
+    food_value = lib.tables_get_food_value(lib.tables_get_object_info(0x7F + junk).contents[0] - 0xA8)
     thing = lib.map_get_unused_thing(10)
     lib.dungeon_get_thing_data(thing)[3] = junk
     ch.food, load = 100, ch.load

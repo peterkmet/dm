@@ -287,11 +287,11 @@ int16_t champion_move_to_cell(int16_t champion_index, int16_t cell)
 static uint16_t get_candidate_slot(const Champion *c, uint16_t thing, uint16_t *next_backpack_slot)
 {
     uint16_t allowed = tables_get_object_info(inventory_get_object_info_index(thing))->allowed_slots;
-    bool neck_free = allowed & *tables_get_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
+    bool neck_free = allowed & tables_get_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
     uint16_t slot = THING_NONE;
     switch (THING_TYPE(thing)) {
     case THING_ARMOUR:
-        for (slot = SLOT_HEAD; slot <= SLOT_FEET && !(allowed & *tables_get_slot_mask(slot)); slot++)
+        for (slot = SLOT_HEAD; slot <= SLOT_FEET && !(allowed & tables_get_slot_mask(slot)); slot++)
             ;
         if (slot > SLOT_FEET)
             slot = neck_free ? SLOT_NECK : THING_NONE;
@@ -309,7 +309,7 @@ static uint16_t get_candidate_slot(const Champion *c, uint16_t thing, uint16_t *
         break;
     }
     while (slot == THING_NONE || c->slots[slot] != THING_NONE) {
-        neck_free = allowed & *tables_get_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
+        neck_free = allowed & tables_get_slot_mask(SLOT_NECK) && c->slots[SLOT_NECK] == THING_NONE;
         slot = neck_free ? SLOT_NECK : (*next_backpack_slot)++;
     }
     return slot;
@@ -709,7 +709,7 @@ int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_fla
         uint16_t sum =
             champion_get_strength(champion_index, hand) + inventory_get_armour_defense(get_armour_info(thing), sharp);
         /* 16-bit truncation of the product as in the original */
-        shields += (uint16_t)(sum * *tables_get_wound_defense_factor(slot)) >>
+        shields += (uint16_t)(sum * tables_get_wound_defense_factor(slot)) >>
                    (hand == slot ? SHIELD_DEFENSE_OWN_SLOT_SHIFT : SHIELD_DEFENSE_SHIFT);
     }
     uint16_t luck = random16() % ((c->statistics[STAT_VITALITY][STAT_CURRENT] >> VITALITY_DEFENSE_SHIFT) + 1);

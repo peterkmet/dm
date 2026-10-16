@@ -31,7 +31,7 @@
 #define WALL_COUNT 15
 #define WALL_SIDES 4 /* the sides of a wall square */
 
-/* Entries of g_wall_set_layout_ids: layout bitmap ids of the floor set, the walls, the door frames, and the
+/* Entries of tables_get_wall_set_layout_id: layout bitmap ids of the floor set, the walls, the door frames, and the
    mirrored walls. The right square of a pair draws the mirrored frame of the left square. */
 #define WS_FLOOR                0
 #define WS_CEILING              1
@@ -2205,8 +2205,6 @@ static void load_ornaments(int16_t map, const uint8_t *ornaments)
    the map. */
 static void load_creature_colors(const uint8_t *creature_types, int16_t count)
 {
-    if (!tables_get_creature_info(0))
-        tables_init();
     for (int l = 0; l < LIGHT_LEVELS; l++)
         tables_get_palette(TABLES_PALETTE_DUNGEON + l, dungeon_palettes[l]);
     memcpy(creature_palette_changes_d3, tables_get_palette_changes(TABLES_CHANGES_CREATURE_D3),

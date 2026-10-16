@@ -296,7 +296,7 @@ bool ui_is_point_in_zone(int16_t zone, int16_t x, int16_t y)
 
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask)
 {
-    if (table < 0 || table >= UI_INPUT_COUNT)
+    if (table < 0 || table >= TABLES_MOUSE_COUNT)
         return 0;
     MouseInput input;
     for (int16_t entry = 0; tables_get_mouse_input(table, entry, &input); entry++) {

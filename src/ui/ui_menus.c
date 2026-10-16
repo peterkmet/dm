@@ -183,7 +183,7 @@ void menus_draw_available_symbols(uint16_t symbol_step)
     Bitmap screen = ui_get_screen();
     char s[2] = {0, 0};
     for (int k = 0; k < SYMBOL_COUNT; k++) {
-        s[0] = (char)(SPELL_SYMBOL_FIRST + symbol_step * SYMBOL_COUNT + k);
+        s[0] = (char)spell_get_symbol(symbol_step, k);
         ui_print_zone(&screen, ZONE_SPELL_SYMBOL_FIRST + k, COLOR_CYAN, COLOR_BLACK, s);
     }
 }

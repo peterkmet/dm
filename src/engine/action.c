@@ -614,7 +614,7 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
         experience = heal_champion(champion_index, experience);
         break;
     case ACTION_LIGHT:
-        g_party.magical_light_amount += *tables_get_light_power_to_light_amount(LIGHT_ACTION_POWER);
+        g_party.magical_light_amount += tables_get_light_power_to_light_amount(LIGHT_ACTION_POWER);
         magic_create_light_event(-LIGHT_ACTION_POWER, LIGHT_ACTION_TICKS);
         action_decrement_charges(champion_index);
         break;

@@ -32,9 +32,8 @@ CreatureSound = S(("attack", s8), ("movement", s8))
 ObjectInfo = S(("type", u16), ("aspect_index", u8), ("action_set_index", u8), ("allowed_slots", u16))
 WeaponInfo = S(("weight", u8), ("weapon_class", u8), ("strength", u8), ("kinetic_energy", u8), ("attributes", u16))
 ArmourInfo = S(("weight", u8), ("defense", u8), ("attributes", u8))
-DoorInfo = S(("attributes", u8), ("defense", u8))
 Spell = S(("symbols", u32), ("base_required_skill_level", u8), ("skill_index", u8), ("kind", u8), ("type", u8), ("disabled_ticks", u8))
-ActionSet = S(("action_indices", u8 * 3), ("minimum_skill_levels", u8 * 2), ("flags", u8))
+ActionSet = S(("action_indices", u8 * 3), ("minimum_skill_levels", u8 * 2))
 ActionInfo = S(("disabled_ticks", u8), ("damage_factor", u8), ("hit_probability", u8), ("stamina", u8), ("defense", s8),
                ("skill_index", u8), ("experience_gain", u8))
 
@@ -47,10 +46,9 @@ TABLES = {
     "armour_info": (ArmourInfo, 58, 0x1015B4, 4, ">BBB"),
     "junk_weight": (u8, 53, 0x10169C, 1, ">B"),
     "food_value": (s16, 8, 0x1016D2, 2, ">h"),
-    "door_info": (DoorInfo, 4, 0x1016E2, 2, ">BB"),
     "spell": (Spell, 25, 0x103C84, 8, ">IBBH"),
     "symbol_mana_cost_multiplier": (u8, 6, 0x103C7E, 1, ">B"),
-    "action_set": (ActionSet, 44, 0x103D4C, 8, ">BBBxBBB"),
+    "action_set": (ActionSet, 44, 0x103D4C, 8, ">BBBxBB"),
     "light_power_to_light_amount": (s16, 16, 0x100CB4, 2, ">h"),
     "palette_light_threshold": (s16, 6, 0x100CD4, 2, ">h"),
     "slot_mask": (u16, 38, 0x100C68, 2, ">H"),
@@ -65,13 +63,12 @@ def lib():
     lib = load_lib()
     for name, (rec, *_rest) in TABLES.items():
         f = getattr(lib, "tables_get_" + name)
-        f.argtypes, f.restype = [ctypes.c_int], ctypes.POINTER(rec)
-    lib.tables_get_symbol_base_mana_cost.argtypes = [ctypes.c_int, ctypes.c_int]
-    lib.tables_get_symbol_base_mana_cost.restype = ctypes.POINTER(u8)
-    assert not lib.tables_get_creature_info(0)
-    assert lib.tables_init() == -1
-    assert lib.kaos_load(str(KAOS).encode()) == 0
-    assert lib.tables_init() == 0
+        scalar = not issubclass(rec, ctypes.Structure)
+        f.argtypes, f.restype = [ctypes.c_int16], rec if scalar else ctypes.POINTER(rec)
+    lib.tables_get_symbol_base_mana_cost.argtypes = [ctypes.c_int16, ctypes.c_int16]
+    lib.tables_get_symbol_base_mana_cost.restype = u8
+    assert lib.tables_load(b"/nonexistent/KAOS.FTL") == -1
+    assert lib.tables_load(str(KAOS).encode()) == 0
     return lib
 
 
@@ -82,6 +79,8 @@ def image():
 
 def get(lib, name, i):
     p = getattr(lib, "tables_get_" + name)(i)
+    if not issubclass(TABLES[name][0], ctypes.Structure):
+        return p
     return p[0] if p else None
 
 
@@ -96,11 +95,15 @@ def as_tuple(rec):
 
 
 @pytest.mark.parametrize("name", TABLES)
-def test_accessor_rejects_out_of_range(lib, name):
-    count = TABLES[name][1]
-    assert get(lib, name, count - 1) is not None
-    for i in (-1, count, 0x7FFFFFFF):
-        assert get(lib, name, i) is None
+def test_accessor_rejects_out_of_range(lib, image, name):
+    _, count, addr, stride, fmt = TABLES[name]
+    scalar = not issubclass(TABLES[name][0], ctypes.Structure)
+    if scalar:
+        assert get(lib, name, count - 1) == struct.unpack_from(fmt, image, addr - BASE + (count - 1) * stride)[0]
+    else:
+        assert get(lib, name, count - 1) is not None
+    for i in (-1, count, 0x7FFF):
+        assert get(lib, name, i) == 0 if scalar else get(lib, name, i) is None
 
 
 def test_symbol_mana_cost_rejects_out_of_range(lib):
@@ -133,7 +136,7 @@ def test_action_info_matches_per_action_tables(lib, image):
 def test_symbol_base_mana_cost_matches_image(lib, image):
     for step in range(4):
         for sym in range(6):
-            assert lib.tables_get_symbol_base_mana_cost(step, sym)[0] == image[0x103C66 - BASE + step * 6 + sym]
+            assert lib.tables_get_symbol_base_mana_cost(step, sym) == image[0x103C66 - BASE + step * 6 + sym]
 
 
 def test_object_types_match_dmcsb_item_list(lib):

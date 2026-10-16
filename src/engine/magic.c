@@ -201,7 +201,7 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
 /* Light now, taken back by event 70 after the ticks. */
 static void cast_light(uint16_t light_power, int16_t ticks)
 {
-    g_party.magical_light_amount += *tables_get_light_power_to_light_amount(light_power);
+    g_party.magical_light_amount += tables_get_light_power_to_light_amount(light_power);
     magic_create_light_event(-light_power, ticks);
 }
 
@@ -233,7 +233,7 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
                    (power - 1) * SPELL_DURATION_FACTOR * LIGHT_SPELL_TICKS_FACTOR + LIGHT_SPELL_BASE_TICKS);
         break;
     case SPELL_OTHER_DARKNESS:
-        g_party.magical_light_amount -= *tables_get_light_power_to_light_amount(ticks >> 2);
+        g_party.magical_light_amount -= tables_get_light_power_to_light_amount(ticks >> 2);
         magic_create_light_event(ticks >> 2, LIGHT_MAXIMUM_TICKS_DARKNESS);
         break;
     case SPELL_OTHER_THIEVES_EYE:
@@ -397,16 +397,12 @@ bool magic_add_champion_symbol(int16_t symbol)
 {
     Champion *c = &g_champions[g_magic_caster_champion_index];
     uint16_t step = c->symbol_step;
-    uint16_t cost = *tables_get_symbol_base_mana_cost(step, symbol);
-    if (step) /* 16-bit product as in the original */
-        cost =
-            (uint16_t)(cost * *tables_get_symbol_mana_cost_multiplier((uint8_t)c->symbols[0] - SPELL_SYMBOL_FIRST)) >>
-            SPELL_MANA_MULTIPLIER_SHIFT;
+    uint16_t cost = spell_get_symbol_mana_cost(step, symbol, (uint8_t)c->symbols[0]);
     if (cost > (uint16_t)c->current_mana)
         return false; /* unsigned compare as in the original */
     c->current_mana -= cost;
     c->attributes |= CHAMPION_ATTR_STATISTICS;
-    c->symbols[step] = (char)(SPELL_SYMBOL_FIRST + step * SYMBOL_COUNT + symbol);
+    c->symbols[step] = (char)spell_get_symbol(step, symbol);
     c->symbols[step + 1] = 0;
     c->symbol_step = NORMALIZE(step + 1);
     return true;

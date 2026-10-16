@@ -171,7 +171,7 @@ static void draw_pressed_button(int16_t table, int16_t choice)
 int16_t dialog_get_choice(int16_t choice_count)
 {
     /* One mouse table per choice count, first for the game screen, then for the inactive screen. */
-    int16_t table = UI_INPUT_DIALOG_FIRST + g_game_screen_inactive * MAX_CHOICES + choice_count - 1;
+    int16_t table = TABLES_MOUSE_DIALOG_FIRST + g_game_screen_inactive * MAX_CHOICES + choice_count - 1;
     command_save_input();
     command_set_only_mouse_input(table);
     command_discard_all_input();

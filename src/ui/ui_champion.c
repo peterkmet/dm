@@ -812,7 +812,7 @@ static uint16_t get_largest_weight(void)
     for (int i = 0; i < ARMOUR_TYPE_COUNT; i++)
         most = tables_get_armour_info(i)->weight > most ? tables_get_armour_info(i)->weight : most;
     for (int i = 0; i < JUNK_TYPE_COUNT; i++)
-        most = *tables_get_junk_weight(i) > most ? *tables_get_junk_weight(i) : most;
+        most = tables_get_junk_weight(i) > most ? tables_get_junk_weight(i) : most;
     return most;
 }
 
@@ -938,7 +938,7 @@ void panel_click_in_chest(int16_t x, int16_t y)
 {
     if (g_panel_content != PANEL_CONTENT_CHEST || g_leader_index == -1)
         return;
-    int16_t command = ui_command_from_mouse(UI_INPUT_CHEST, x, y, UI_BUTTON_LEFT);
+    int16_t command = ui_command_from_mouse(TABLES_MOUSE_CHEST, x, y, UI_BUTTON_LEFT);
     if (!command)
         return;
     uint16_t slot_box = command - COMMAND_CLICK_SLOT_BOX_FIRST;
