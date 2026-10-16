@@ -33,7 +33,19 @@ all: $(B)/dm $(B)/libdm.dylib
 
 lib: $(B)/libdm.dylib
 
-$(OBJ)/%.o: src/%.c Makefile
+# The stamp of the compile flags of an object folder. When the flags change (SANITIZE, CFLAGS_EXTRA), the stamp
+# deletes the objects of its folder, so all recompile. Simply expanded: the SDL include path of two objects stays out.
+OBJ_FLAGS := $(strip $(CC) $(CPPFLAGS) $(CFLAGS))
+stamp = $(strip $(shell cat $(1) 2>/dev/null))
+write_flags = @mkdir -p $(@D); rm -f $(@D)/*/*.o; echo '$(1)' > $@
+
+ifneq ($(OBJ_FLAGS),$(call stamp,$(OBJ)/flags.txt))
+$(OBJ)/flags.txt: FORCE
+endif
+$(OBJ)/flags.txt:
+	$(call write_flags,$(OBJ_FLAGS))
+
+$(OBJ)/%.o: src/%.c Makefile $(OBJ)/flags.txt
 	@mkdir -p $(@D)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
@@ -52,9 +64,17 @@ WIN_OBJ           = $(B)/obj-win
 SDL_MINGW_VERSION = 3.4.18
 SDL_MINGW         = $(B)/sdl-mingw/SDL3-$(SDL_MINGW_VERSION)/x86_64-w64-mingw32
 
+WIN_OBJ_FLAGS := $(strip $(WIN_CC) $(CPPFLAGS) $(BASE_CFLAGS))
+
 windows: $(B)/dm.exe
 
-$(WIN_OBJ)/%.o: src/%.c Makefile | $(SDL_MINGW)
+ifneq ($(WIN_OBJ_FLAGS),$(call stamp,$(WIN_OBJ)/flags.txt))
+$(WIN_OBJ)/flags.txt: FORCE
+endif
+$(WIN_OBJ)/flags.txt:
+	$(call write_flags,$(WIN_OBJ_FLAGS))
+
+$(WIN_OBJ)/%.o: src/%.c Makefile $(WIN_OBJ)/flags.txt | $(SDL_MINGW)
 	@mkdir -p $(@D)
 	$(WIN_CC) $(CPPFLAGS) -I$(SDL_MINGW)/include $(BASE_CFLAGS) -c -o $@ $<
 
@@ -93,4 +113,6 @@ clean:
 
 -include $(wildcard $(OBJ)/*/*.d $(WIN_OBJ)/*/*.d)
 
-.PHONY: all lib windows test check format dist dist-win play clean
+FORCE:
+
+.PHONY: all lib windows test check format dist dist-win play clean FORCE
