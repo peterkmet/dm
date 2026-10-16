@@ -115,8 +115,8 @@ static bool confirm_quit(void)
     if (g_last_load_game_time + QUIT_CONFIRM_TICKS >= g_game_time ||
         g_last_save_game_time + QUIT_CONFIRM_TICKS >= g_game_time)
         return true;
-    dialog_draw(NULL, gfx_string(TEXT_NOT_SAVED_OK_TO_QUIT), gfx_string(TEXT_QUIT), gfx_string(TEXT_CANCEL), NULL,
-                NULL);
+    dialog_draw(NULL, gfx_get_string(TEXT_NOT_SAVED_OK_TO_QUIT), gfx_get_string(TEXT_QUIT), gfx_get_string(TEXT_CANCEL),
+                NULL, NULL);
     return dialog_get_choice(2) != QUIT_CHOICE_CANCEL;
 }
 
@@ -146,14 +146,15 @@ int startend_save_current_game(const char **reason)
 static void save_game_csb(void)
 {
     command_freeze_game();
-    dialog_draw(NULL, NULL, gfx_string(TEXT_CANCEL), gfx_string(TEXT_SAVE), gfx_string(TEXT_QUIT), NULL);
+    dialog_draw(NULL, NULL, gfx_get_string(TEXT_CANCEL), gfx_get_string(TEXT_SAVE), gfx_get_string(TEXT_QUIT), NULL);
     int16_t choice = dialog_get_choice(3);
     if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
-        dialog_draw(NULL, gfx_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
+        dialog_draw(NULL, gfx_get_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
         const char *reason;
         int saved = startend_save_current_game(&reason);
         if (!saved) {
-            dialog_draw(reason ? reason : gfx_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_string(TEXT_OK), NULL, NULL, NULL);
+            dialog_draw(reason ? reason : gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_get_string(TEXT_OK), NULL,
+                        NULL, NULL);
             dialog_get_choice(1);
         } else if (choice == SAVE_CHOICE_QUIT) {
             startend_run_endgame(0);
@@ -177,13 +178,14 @@ void startend_save_game(void)
     }
     command_freeze_game();
     for (;;) {
-        dialog_draw(message, NULL, gfx_string(TEXT_CANCEL), gfx_string(TEXT_SAVE), gfx_string(TEXT_QUIT), NULL);
+        dialog_draw(message, NULL, gfx_get_string(TEXT_CANCEL), gfx_get_string(TEXT_SAVE), gfx_get_string(TEXT_QUIT),
+                    NULL);
         message = NULL;
         int16_t choice = dialog_get_choice(3);
         if (choice == SAVE_CHOICE_SAVE) {
-            dialog_draw(NULL, gfx_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
+            dialog_draw(NULL, gfx_get_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
             if (!savegame_save(save_dir)) {
-                dialog_draw(gfx_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_string(TEXT_OK), NULL, NULL, NULL);
+                dialog_draw(gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_get_string(TEXT_OK), NULL, NULL, NULL);
                 dialog_get_choice(1);
             } else if (g_advanced_features) {
                 message = "GAME SAVED";
@@ -208,17 +210,17 @@ bool startend_load_saved_game(void)
     for (;;) {
         int16_t result = savegame_load(save_dir);
         if (result == SAVEGAME_LOADED) {
-            dialog_draw(NULL, gfx_string(TEXT_LOADING_GAME), NULL, NULL, NULL, NULL);
+            dialog_draw(NULL, gfx_get_string(TEXT_LOADING_GAME), NULL, NULL, NULL, NULL);
             return true;
         }
         if (result == SAVEGAME_DAMAGED) {
             /* The original quits here; the port goes back to the entrance. */
-            dialog_draw(gfx_string(TEXT_GAME_DAMAGED), NULL, gfx_string(TEXT_OK), NULL, NULL, NULL);
+            dialog_draw(gfx_get_string(TEXT_GAME_DAMAGED), NULL, gfx_get_string(TEXT_OK), NULL, NULL, NULL);
             dialog_get_choice(1);
             return false;
         }
-        dialog_draw(gfx_string(TEXT_CANT_FIND_SAVED_GAME), NULL, gfx_string(TEXT_LOAD_SAVED_GAME),
-                    gfx_string(TEXT_CANCEL), NULL, NULL);
+        dialog_draw(gfx_get_string(TEXT_CANT_FIND_SAVED_GAME), NULL, gfx_get_string(TEXT_LOAD_SAVED_GAME),
+                    gfx_get_string(TEXT_CANCEL), NULL, NULL);
         int16_t choice = dialog_get_choice(2);
         if (!choice || choice == LOAD_CHOICE_CANCEL)
             return false;
@@ -276,7 +278,7 @@ static void print_champion_skills(uint16_t champion_index, int y)
             continue;
         char line[ENDGAME_TEXT_SIZE];
         snprintf(line, sizeof line, "%s %s", ui_get_skill_rank_name(level),
-                 gfx_string(tables_get_base_skill_text(skill)));
+                 gfx_get_string(tables_get_base_skill_text(skill)));
         y += ENDGAME_SKILL_LINE;
         endgame_print_text(ENDGAME_SKILL_X, y, COLOR_LIGHT_GRAY, line);
     }
@@ -329,7 +331,7 @@ static void csb_draw_restart_button(void)
     draw_fill(&screen, &outer, COLOR_DARK_GRAY);
     draw_fill(&screen, &inner, COLOR_BLACK);
     text_draw_screen(CSB_RESTART_TEXT_X, CSB_RESTART_TEXT_Y, COLOR_CYAN, COLOR_BLACK,
-                     gfx_string(TEXT_RESTART_THIS_GAME));
+                     gfx_get_string(TEXT_RESTART_THIS_GAME));
 }
 
 /* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. CSB has no QUIT. */
@@ -346,8 +348,8 @@ static void draw_the_end(bool with_buttons)
         if (g_adventure == ADVENTURE_CSB) {
             csb_draw_restart_button();
         } else {
-            endgame_draw_button(ZONE_RESTART_BUTTON, gfx_string(TEXT_RESTART_THIS_GAME), 0);
-            endgame_draw_button(ZONE_QUIT_BUTTON, gfx_string(TEXT_QUIT), 1);
+            endgame_draw_button(ZONE_RESTART_BUTTON, gfx_get_string(TEXT_RESTART_THIS_GAME), 0);
+            endgame_draw_button(ZONE_QUIT_BUTTON, gfx_get_string(TEXT_QUIT), 1);
         }
         colors[COLOR_DARK_GRAY] = BUTTON_FRAME_COLOR;
         colors[COLOR_CYAN] = THE_END_WHITE;

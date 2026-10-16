@@ -46,8 +46,8 @@ def setup(lib):
     lib.dungeon_get_thing_data.argtypes = [u16]
     lib.map_get_next_thing.restype = u16
     lib.map_get_next_thing.argtypes = [u16]
-    lib.gfx_string.restype = lib.gfx_object_name.restype = ctypes.c_char_p
-    lib.gfx_string.argtypes = lib.gfx_object_name.argtypes = [c16]
+    lib.gfx_get_string.restype = lib.gfx_get_object_name.restype = ctypes.c_char_p
+    lib.gfx_get_string.argtypes = lib.gfx_get_object_name.argtypes = [c16]
     lib.object_get_icon_index.argtypes = [u16]
     lib.object_get_icon_index.restype = c16
     lib.champion_pack.argtypes = [ctypes.POINTER(Champion), ctypes.c_char_p]
@@ -102,7 +102,7 @@ class Original:
             addr += 0x2000
         at = TEXT_BUF
         emu.write(STRING_COUNT, struct.pack(">h", 128))
-        for table, get, n in ((STRINGS, lib.gfx_string, 128), (OBJECT_NAMES, lib.gfx_object_name, 256)):
+        for table, get, n in ((STRINGS, lib.gfx_get_string, 128), (OBJECT_NAMES, lib.gfx_get_object_name, 256)):
             emu.write(table, struct.pack(">I", at))
             ptrs, at = at, at + 4 * n
             for i in range(n):
@@ -253,7 +253,7 @@ def test_render_scroll_and_eye(game, party):
     game.ui_draw_inventory_open(0)
     put_in_action_hand(game, party, scrolls[0])
     assert c16.in_dll(game, "g_panel_content").value == 5
-    sword = next(t for t in things_of(game, 5)[0] if game.gfx_object_name(game.object_get_icon_index(t)) == b"SWORD")
+    sword = next(t for t in things_of(game, 5)[0] if game.gfx_get_object_name(game.object_get_icon_index(t)) == b"SWORD")
     game.inventory_put_object_in_leader_hand(sword)
     game.ui_draw_panel_eye()
     game.ui_draw_viewport()

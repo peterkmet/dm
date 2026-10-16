@@ -88,7 +88,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | `startend.c`: `startend_run_endgame`, `show_credits`, `draw_the_end`, `draw_champion_parade` | DM graphics `GFX_CREDITS` 5, `GFX_THE_END` 6, `GFX_CHAMPION_FRAME` 346. Palette `KAOS_CREDITS_PALETTE`. |
 | `startend.c`: `startend_run_fuse_sequence`, `startend_run_endgame_sensor`, `show_final_texts` | The fusion of Lord Chaos and Lord Order. Final texts on square (0, 0). CSB ends differently (`ENDA.DAT`). |
 | `startend.c`: `startend_run_endgame` sets `g_return_to_entrance` | `main.c` then shows the DM entrance. For CSB this must show the CSB entrance. |
-| `startend.c`: `startend_load_saved_game` | Uses `savegame_load(save_dir)`. The texts come from DM `gfx_string`. |
+| `startend.c`: `startend_load_saved_game` | Uses `savegame_load(save_dir)`. The texts come from DM `gfx_get_string`. |
 
 ### Mode handling
 

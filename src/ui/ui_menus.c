@@ -99,7 +99,7 @@ void menus_draw_action_area(void)
         for (int k = 0; k < ACTION_LIST_COUNT; k++) {
             uint8_t action = g_action_list_indices[k];
             ui_print_zone_padded(&screen, ZONE_ACTION_NAME_FIRST + k, COLOR_CYAN, COLOR_BLACK,
-                                 action == ACTION_NONE ? "" : gfx_action_name(action), ACTION_NAME_LENGTH);
+                                 action == ACTION_NONE ? "" : gfx_get_action_name(action), ACTION_NAME_LENGTH);
         }
     }
     g_redraw &= ~REDRAW_ACTION_AREA;
@@ -112,7 +112,7 @@ void menus_draw_action_damage(int16_t damage)
     ui_fill_zone(&screen, ZONE_ACTION_AREA, COLOR_BLACK);
     if (damage < 0) {
         ui_print_zone(&screen, ZONE_ACTION_DAMAGE, COLOR_CYAN, COLOR_BLACK,
-                      gfx_string(damage == -1 ? TEXT_CANT_REACH : TEXT_NEED_AMMO));
+                      gfx_get_string(damage == -1 ? TEXT_CANT_REACH : TEXT_NEED_AMMO));
         return;
     }
     const Bitmap *splat = gfx_get_bitmap(GFX_DAMAGE_ACTION);

@@ -241,7 +241,7 @@ Port implementation (Step 3):
 
 - `src/data/csb_text.c` `csb_text_build` (called by `csb_image_build`): builds DM texts 0–134 as one block of NUL-terminated strings (item 700 order) and the 44 action names (item 699). The spell failure and level gained texts join prefix, class name, and suffix. Each string index table entry k of the KAOS image gets text index first + k, so the class names (0–3) and directions (22–25) are in the CSB table order: text 2 is PRIEST, 3 is WIZARD, 23 is EAST, 24 is SOUTH. Only the index tables read these texts.
 - `src/ui/ui.c` `load_strings`: for CSB, takes items 699 and 700 from `csb_text_get_item`, and ends each object name (item 694) at the byte with bit 7 set.
-- `src/engine/champion.c` reads its messages with `gfx_string`. The other files that show text do not change.
+- `src/engine/champion.c` reads its messages with `gfx_get_string`. The other files that show text do not change.
 
 ### Actions
 

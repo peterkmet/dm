@@ -280,11 +280,11 @@ void ui_draw_leader_hand_object_name(uint16_t thing)
     char buf[BONES_NAME_SIZE];
     ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
     int16_t icon = object_get_icon_index(thing);
-    const char *name = gfx_object_name(icon);
+    const char *name = gfx_get_object_name(icon);
     if (icon == ICON_BONES) {
         strncpy(buf, g_champions[bones_champion(thing)].name, sizeof buf - 1);
         buf[sizeof buf - 1] = 0;
-        strncat(buf, gfx_object_name(ICON_BONES), sizeof buf - strlen(buf) - 1);
+        strncat(buf, gfx_get_object_name(ICON_BONES), sizeof buf - strlen(buf) - 1);
         name = buf;
     }
     ui_print_zone_padded(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_CYAN, COLOR_BLACK, name, LEADER_HAND_NAME_LENGTH);

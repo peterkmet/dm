@@ -105,9 +105,9 @@ void magic_print_spell_failure_message(uint16_t champion_index, int16_t failure_
         return;
     }
     message_new_line(g_game_time);
-    message_print(MESSAGE_COLOR_CYAN, gfx_string(first), g_game_time);
+    message_print(MESSAGE_COLOR_CYAN, gfx_get_string(first), g_game_time);
     message_print(MESSAGE_COLOR_CYAN, g_champions[champion_index].name, g_game_time);
-    message_print(MESSAGE_COLOR_CYAN, gfx_string(first + 1), g_game_time);
+    message_print(MESSAGE_COLOR_CYAN, gfx_get_string(first + 1), g_game_time);
 }
 
 bool magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy,

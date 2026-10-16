@@ -65,7 +65,7 @@ def lib():
         ("map_link_thing_to_list", None, [u16, u16, c16, c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("dungeon_decode_text", ctypes.c_bool, [ctypes.c_char_p, c16, u16, c16]), ("tables_get_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
         ("magic_get_champion_spell_cast_result", c16, [u16]), ("map_get_creature_attributes", u16, [u16]),
-        ("ui_get_viewport", ctypes.POINTER(Bitmap), []), ("gfx_string", ctypes.c_char_p, [c16]),
+        ("ui_get_viewport", ctypes.POINTER(Bitmap), []), ("gfx_get_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_bool, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
         ("ui_draw_inventory_open", None, [c16]), ("gfx_get_bitmap", ctypes.POINTER(Bitmap), [c16]),
@@ -423,7 +423,7 @@ def test_creaname_becomes_the_creature_name(lib, csb, group_ahead):
     x, y = value(lib, "g_party_map_x").value, value(lib, "g_party_map_y").value
     d = value(lib, "g_party_direction").value
     group = next((t for t in things(lib, x + STEP_EAST[d], y + STEP_NORTH[d]) if t >> 10 & 15 == C.THING_GROUP), None)
-    name = lib.gfx_string(107 if group is None else 108 + lib.dungeon_get_thing_data(group)[4]).decode()
+    name = lib.gfx_get_string(107 if group is None else 108 + lib.dungeon_get_thing_data(group)[4]).decode()
     replaced = panel(lib)
     set_scroll_text(lib, scroll, name)
     assert panel(lib) == replaced

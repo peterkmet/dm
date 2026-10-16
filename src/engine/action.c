@@ -571,7 +571,7 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
         performed = action_is_group_frightened_by_action(champion_index, action, x, y);
         break;
     case ACTION_FLIP:
-        action_print_action_message(champion_index, gfx_string(random_bit() ? TEXT_FLIP_HEADS : TEXT_FLIP_TAILS));
+        action_print_action_message(champion_index, gfx_get_string(random_bit() ? TEXT_FLIP_HEADS : TEXT_FLIP_TAILS));
         break;
     case ACTION_CLIMB_DOWN:
         if (!is_climbed_down())

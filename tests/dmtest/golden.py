@@ -32,7 +32,7 @@ def golden_game():
     lib.inventory_get_object_weight.restype = u16
     lib.group_get_generated.restype = u16
     lib.group_get_generated.argtypes = [u16, c16, u16, c16, c16, c16]
-    lib.gfx_action_name.restype = ctypes.c_char_p
+    lib.gfx_get_action_name.restype = ctypes.c_char_p
     assert lib.gameloop_load_data(str(GAME).encode())
     assert lib.gameloop_start_new_game(str(GAME).encode())
     u32.in_dll(lib, "g_random_seed").value = SEED

@@ -48,8 +48,11 @@ const Bitmap *gfx_get_bitmap(int i);
 
 /* Loads the string lists of the game data. Call after gfx_open and csb_text_build. */
 bool gfx_load_strings(void);
-const char *gfx_string(int16_t index);       /* a text of graphic 700 */
-const char *gfx_object_name(int16_t icon);   /* an object name of graphic 0x2b6 */
-const char *gfx_action_name(int16_t action); /* an action name of graphic 699 */
+/* A text of graphic GFX_STRINGS. */
+const char *gfx_get_string(int16_t index);
+/* An object name of graphic GFX_OBJECT_NAMES. */
+const char *gfx_get_object_name(int16_t icon);
+/* An action name of graphic GFX_ACTION_NAMES. */
+const char *gfx_get_action_name(int16_t action);
 
 #endif

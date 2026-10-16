@@ -205,7 +205,7 @@ static bool is_object(uint16_t thing)
 
 static const char *object_name(uint16_t thing)
 {
-    return gfx_object_name(object_get_icon_index(thing));
+    return gfx_get_object_name(object_get_icon_index(thing));
 }
 
 /* An object as {name, kind}; a held scroll also gives its text. */
@@ -257,7 +257,7 @@ static void action_list_json(Json *j, int16_t index)
     }
     const ActionSet *set = set_index ? tables_get_action_set(set_index) : NULL;
     if (set) {
-        json_str(j, gfx_action_name(set->action_indices[0]));
+        json_str(j, gfx_get_action_name(set->action_indices[0]));
         for (int k = 1; k < ACTION_LIST_COUNT; k++) {
             uint8_t action = set->action_indices[k];
             uint8_t level = set->minimum_skill_levels[k - 1];
@@ -266,7 +266,7 @@ static void action_list_json(Json *j, int16_t index)
                 ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charges(champion)))
                 continue;
             if ((level & ~ACTION_LEVEL_NEEDS_CHARGES) <= champion_get_skill_level(index, info->skill_index))
-                json_str(j, gfx_action_name(action));
+                json_str(j, gfx_get_action_name(action));
         }
     }
     json_close(j, ']');
@@ -492,7 +492,7 @@ void state_json_write_state(Json *j)
         json_key(j, "actions");
         json_open(j, '[');
         for (int k = 0; k < ACTION_LIST_COUNT && g_action_list_indices[k] != ACTION_NONE; k++)
-            json_str(j, gfx_action_name(g_action_list_indices[k]));
+            json_str(j, gfx_get_action_name(g_action_list_indices[k]));
         json_close(j, ']');
         json_close(j, '}');
     } else {

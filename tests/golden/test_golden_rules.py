@@ -198,7 +198,7 @@ def test_action_list(game):
             champion.slots[C.SLOT_HAND_ACTION] = thing
             game.click_box(zone_box(game, C.ZONE_ACTION_ICON_BOX_FIRST), viewport=False)  # + champion index: the action hand icon of the action area
             assert game.value("g_acting_champion_ordinal") == 1
-            names = [lib.gfx_action_name(indices[k]).decode() if indices[k] != 0xFF else "" for k in range(3)]
+            names = [lib.gfx_get_action_name(indices[k]).decode() if indices[k] != 0xFF else "" for k in range(3)]
             got.append({"count": count.value, "levels": list(levels), "names": names, **snapshot(game)})
             lib.menus_clear_acting_champion()
             game.run()

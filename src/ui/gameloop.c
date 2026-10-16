@@ -298,7 +298,7 @@ static void start_loaded_game(int confirm)
     if (confirm) {
         g_game_screen_inactive = true;
         memset(fb, 0, sizeof fb);
-        dialog_draw(NULL, gfx_string(TEXT_GAME_LOADED), gfx_string(TEXT_OK), NULL, NULL, NULL);
+        dialog_draw(NULL, gfx_get_string(TEXT_GAME_LOADED), gfx_get_string(TEXT_OK), NULL, NULL, NULL);
         dialog_get_choice(1);
     }
     show_game();

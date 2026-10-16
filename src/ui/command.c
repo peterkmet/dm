@@ -206,7 +206,7 @@ static void draw_viewport_message(int16_t text)
 {
     Bitmap *viewport = ui_get_viewport();
     memset(viewport->px, COLOR_BLACK, (size_t)viewport->w * viewport->h);
-    ui_print_zone(viewport, ZONE_VIEWPORT_MESSAGE, COLOR_CYAN, COLOR_BLACK, gfx_string(text));
+    ui_print_zone(viewport, ZONE_VIEWPORT_MESSAGE, COLOR_CYAN, COLOR_BLACK, gfx_get_string(text));
     ui_draw_viewport();
 }
 

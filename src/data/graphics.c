@@ -288,15 +288,15 @@ static const char *list_get(const StringList *l, int16_t i)
 {
     return i >= 0 && i < l->count ? l->s[i] : "";
 }
-const char *gfx_string(int16_t index)
+const char *gfx_get_string(int16_t index)
 {
     return list_get(&graphics.strings, index);
 }
-const char *gfx_object_name(int16_t icon)
+const char *gfx_get_object_name(int16_t icon)
 {
     return list_get(&graphics.object_names, icon);
 }
-const char *gfx_action_name(int16_t action)
+const char *gfx_get_action_name(int16_t action)
 {
     return list_get(&graphics.action_names, action);
 }

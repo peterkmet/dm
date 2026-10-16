@@ -51,7 +51,7 @@ def lib():
     lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
-    for f in ("gfx_string", "gfx_action_name", "gfx_object_name", "ui_get_skill_rank_name"):
+    for f in ("gfx_get_string", "gfx_get_action_name", "gfx_get_object_name", "ui_get_skill_rank_name"):
         getattr(lib, f).restype = ctypes.c_char_p
     lib.recruit_text_thing.restype = ctypes.c_uint16
     lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
@@ -67,20 +67,20 @@ def load(lib, adventure, folder):
 
 def texts(lib, adventure, folder):
     load(lib, adventure, folder)
-    return ([lib.gfx_string(i).decode() for i in range(TEXT_COUNT)], [lib.gfx_action_name(i).decode() for i in range(C.ACTION_COUNT)],
-            [lib.gfx_object_name(i).decode() for i in range(OBJECT_NAME_COUNT)])
+    return ([lib.gfx_get_string(i).decode() for i in range(TEXT_COUNT)], [lib.gfx_get_action_name(i).decode() for i in range(C.ACTION_COUNT)],
+            [lib.gfx_get_object_name(i).decode() for i in range(OBJECT_NAME_COUNT)])
 
 
 def test_strings(lib):
     load(lib, CSB, GAME_CSB)
-    assert {i: lib.gfx_string(i).decode() for i in EXPECTED} == EXPECTED
+    assert {i: lib.gfx_get_string(i).decode() for i in EXPECTED} == EXPECTED
 
 
 def test_string_index_tables(lib):
     load(lib, CSB, GAME_CSB)
 
     def table(addr, n):
-        return [lib.gfx_string(lib.kaos_s16(addr + 2 * k)).decode() for k in range(n)]
+        return [lib.gfx_get_string(lib.kaos_s16(addr + 2 * k)).decode() for k in range(n)]
 
     assert table(BASE_SKILL_STRINGS, 4) == ["FIGHTER", "NINJA", "PRIEST", "WIZARD"]
     assert table(DIRECTION_STRINGS, 4) == ["NORTH", "EAST", "SOUTH", "WEST"]
@@ -92,8 +92,8 @@ def test_string_index_tables(lib):
 
 def test_action_and_object_names(lib):
     load(lib, CSB, GAME_CSB)
-    assert [lib.gfx_action_name(i) for i in (0, 4, 27, 43, 44)] == [b"N", b"BLOW HORN", b"INVOKE", b"FUSE", b""]
-    assert {i: lib.gfx_object_name(i).decode() for i in OBJECT_NAMES} == OBJECT_NAMES
+    assert [lib.gfx_get_action_name(i) for i in (0, 4, 27, 43, 44)] == [b"N", b"BLOW HORN", b"INVOKE", b"FUSE", b""]
+    assert {i: lib.gfx_get_object_name(i).decode() for i in OBJECT_NAMES} == OBJECT_NAMES
 
 
 @needs_dm
