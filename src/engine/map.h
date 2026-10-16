@@ -85,7 +85,7 @@ static inline uint8_t square_with_door_state(uint8_t square, int16_t state)
 #define THING_WITH_CELL(thing, cell) ((uint16_t)(((cell) & 3) << 14 | THING_STRIP_CELL(thing)))
 
 /* Sensor record (thing type 3). */
-#define SENSOR_DISABLED                           0
+#define SENSOR_DISABLED                           0 /* sensor type 0 does nothing; the sensor data stays */
 #define SENSOR_FLOOR_ANY                          1
 #define SENSOR_FLOOR_PARTY_OR_GROUP               2
 #define SENSOR_FLOOR_PARTY                        3

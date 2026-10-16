@@ -6,7 +6,8 @@
 #include <string.h>
 
 /* Byte offsets of the fields of every record: the next thing of the list. */
-#define THING_NEXT          0x00
+#define THING_NEXT 0x00
+
 /* Junk records that a new junk keeps free. */
 #define JUNK_RESERVED_COUNT 3
 
