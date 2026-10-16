@@ -9,6 +9,15 @@
 
 #define POINTER_SIZE 32 /* largest pointer image, in pixels */
 
+#define WAIT_FOR_INPUT_FRAMES 12 /* frames of one tick without input */
+
+extern bool g_stop_waiting_for_input;       /* set by commands that end the wait for the next tick */
+extern bool g_game_time_ticking;            /* false while the game is frozen */
+extern int16_t g_wait_for_input_max_frames; /* frames of one tick without input: 12, 0 while sleeping */
+extern bool g_game_frozen;                  /* stays set while the party sleeps; command_unfreeze_game keeps it then */
+extern bool
+    g_game_screen_shown; /* set: the game screen shows; clear: dialogs use the whole screen (entrance, endgame) */
+
 /* Loads KAOS.FTL and Graphics.DAT from dir and sets up the interface. Returns true on success. */
 bool gameloop_load_data(const char *dir);
 /* The directory that gameloop_load_data read the game files from. */

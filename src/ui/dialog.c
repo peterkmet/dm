@@ -5,6 +5,7 @@
 #include "ui/command.h"
 #include "ui/draw.h"
 #include "ui/frame.h"
+#include "ui/gameloop.h"
 #include "ui/layout.h"
 #include "ui/text.h"
 #include "ui/ui.h"
@@ -20,12 +21,11 @@
 #define WIDE_MESSAGE_SHIFT 3 /* a message wider than 7/8 of the zone takes two lines */
 
 int16_t g_dialog_choice = DIALOG_NO_CHOICE;
-bool g_game_screen_inactive = true;
 
 /* The viewport in the game, or centered on the inactive screen. */
 static void draw_viewport(void)
 {
-    if (!g_game_screen_inactive) {
+    if (g_game_screen_shown) {
         ui_draw_viewport();
         return;
     }
@@ -125,7 +125,7 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
     int16_t count = 1;
     while (count < MAX_CHOICES && choice[count])
         count++;
-    if (g_game_screen_inactive)
+    if (!g_game_screen_shown)
         memset(fb, COLOR_BLACK, sizeof fb);
     if (choice1)
         draw_choices(viewport, choice, count);
@@ -172,7 +172,7 @@ static void draw_pressed_button(int16_t table, int16_t choice)
 int16_t dialog_get_choice(int16_t choice_count)
 {
     /* One mouse table per choice count, first for the game screen, then for the inactive screen. */
-    int16_t table = TABLES_MOUSE_DIALOG_FIRST + g_game_screen_inactive * MAX_CHOICES + choice_count - 1;
+    int16_t table = TABLES_MOUSE_DIALOG_FIRST + !g_game_screen_shown * MAX_CHOICES + choice_count - 1;
     command_save_input();
     command_set_only_mouse_input(table);
     command_discard_all_input();

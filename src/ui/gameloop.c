@@ -48,6 +48,12 @@
 #define POINTER_HAND   1
 #define POINTER_OBJECT 2
 
+bool g_stop_waiting_for_input;
+bool g_game_time_ticking;
+int16_t g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
+bool g_game_frozen;
+bool g_game_screen_shown;
+
 static int16_t frames_waiting;
 static uint16_t shown_hand_object = THING_NONE;
 static int16_t shown_hand_icon; /* a waterskin or a torch changes its icon and its name */
@@ -140,7 +146,7 @@ static void start_game(void)
 /* The interface appears and the game time runs. */
 static void show_game(void)
 {
-    g_game_screen_inactive = false;
+    g_game_screen_shown = true;
     memset(fb, 0, sizeof fb);
     ui_set_palette(NULL);
     ui_draw_interface();
@@ -190,7 +196,7 @@ static void start_loaded_game(bool confirm)
     map_set_party_map(g_party_map_index);
     group_add_all_active_groups();
     if (confirm) {
-        g_game_screen_inactive = true;
+        g_game_screen_shown = false;
         memset(fb, 0, sizeof fb);
         dialog_draw(NULL, gfx_get_string(TEXT_GAME_LOADED), gfx_get_string(TEXT_OK), NULL, NULL, NULL);
         dialog_get_choice(1);
@@ -221,7 +227,7 @@ static void run_requested_sequence(void)
    place. The view draws fields and explosions with the game random numbers: the seed stays. */
 static void draw_projectile_motion(void)
 {
-    if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_session.party_sleeping ||
+    if (!g_advanced_features || !g_game_screen_shown || g_game_frozen || g_session.party_sleeping ||
         g_session.inventory_champion_index >= 0 || !view_has_moving_projectiles())
         return;
     uint32_t seed = random_get_seed();

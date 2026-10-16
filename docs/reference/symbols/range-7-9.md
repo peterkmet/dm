@@ -644,7 +644,7 @@ The dialog system shows a message box with one to four choices. ReDMCSB calls it
 
 #### Globals
 
-- `g_game_screen_inactive` (`0x104024`) starts at 1. `game_loop` sets it to 0. `endgame` sets it to 1. `start_game` sets it to 0 for a new game. When it is 1, the dialog uses the full screen: `dialog_draw` fades the palette to black, clears the screen, and `dialog_draw_viewport` blits the viewport bitmap to screen zone 5. When it is 0, `dialog_draw_viewport` calls `draw_viewport(0)`. `game_freeze` and `game_unfreeze` do nothing when it is 1.
+- `g_game_screen_inactive` (`0x104024`) starts at 1. `game_loop` sets it to 0. `endgame` sets it to 1. `start_game` sets it to 0 for a new game. When it is 1, the dialog uses the full screen: `dialog_draw` fades the palette to black, clears the screen, and `dialog_draw_viewport` blits the viewport bitmap to screen zone 5. When it is 0, `dialog_draw_viewport` calls `draw_viewport(0)`. `game_freeze` and `game_unfreeze` do nothing when it is 1. The port keeps the inverse value as `g_game_screen_shown` (gameloop).
 - `g_dialog_choice` (`0x10402a`). The command handler writes the clicked choice number here. The value 99 means "no choice yet".
 - `g_dialog_message_colors` (`0x104026`): text colors of message 1 (11) and message 2 (9).
 - `g_dialog_version_text` (`0x10402c`): the string `V3.6`. The dialog prints it in zone `0x1c2`.

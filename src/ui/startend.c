@@ -190,7 +190,7 @@ void startend_save_game(void)
 
 bool startend_load_saved_game(void)
 {
-    g_game_screen_inactive = true;
+    g_game_screen_shown = false;
     for (;;) {
         SavegameResult result = savegame_load(save_dir);
         if (result == SAVEGAME_LOADED) {
@@ -388,7 +388,7 @@ void startend_run_endgame(int16_t party_dead)
         sound_request_play(SOUND_SCREAM, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
         frame_wait_count(DEATH_WAIT_FRAMES);
     }
-    g_game_screen_inactive = true;
+    g_game_screen_shown = false;
     if (party_dead && g_session.won) {
         draw_champion_parade();
         wait_for_input();
@@ -536,7 +536,7 @@ void startend_run_fuse_sequence(void)
 static void play_csb_ending(void)
 {
     char path[SAVE_DIR_SIZE];
-    g_game_screen_inactive = true;
+    g_game_screen_shown = false;
     snprintf(path, sizeof path, "%s/%s", gameloop_get_data_dir(), CSB_ENDING_FILE);
     if (!anim_play(path))
         wait_for_input();

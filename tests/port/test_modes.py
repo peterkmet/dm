@@ -133,7 +133,7 @@ def test_quick_save_and_quick_load(game, tmp_path):
     assert game.position() == position
     assert game.value("g_game_time", u32) < time_saved + 30
     assert "GAME LOADED" in message_text(game)
-    assert game.value("g_game_screen_inactive") == 0 and game.value("g_game_time_ticking") == 1
+    assert game.value("g_game_screen_shown") == 1 and game.value("g_game_time_ticking") == 1
     assert game.session.saved_game_exists == 0  # a quick save is not a saved game for RESTART
     good = (tmp_path / QUICK).read_bytes()
     for offset in (600, len(good) // 2):  # a checked block, then the dungeon part

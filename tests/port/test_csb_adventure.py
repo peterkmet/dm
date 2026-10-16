@@ -136,7 +136,7 @@ def test_prison_save_continues_in_the_adventure(game, saves):
     assert (saves / "CSBGAME.BAK").read_bytes() == b"old"
     assert_in_adventure(game, names)
     game.lib.gameloop_start_loaded_game()
-    assert value(game, "g_game_screen_inactive") == 0
+    assert value(game, "g_game_screen_shown") == 1
     assert game.lib.savegame_load_from(str(saves).encode(), NAME.encode(), None) == C.SAVEGAME_LOADED
     assert_in_adventure(game, names)
     assert save_now(game) == (C.SAVED_GAME, None)  # outside the prison: a plain save

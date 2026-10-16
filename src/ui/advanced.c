@@ -9,7 +9,6 @@
 #include "engine/savegame.h"
 #include "ui/automap.h"
 #include "ui/command.h"
-#include "ui/dialog.h"
 #include "ui/frame.h"
 #include "ui/gameloop.h"
 #include "ui/music.h"
@@ -35,8 +34,8 @@ static const char *const soundtrack_names[3] = {"ORIGINAL", "SUPER NES", "FM-TOW
 /* The party walks the dungeon: no inventory, dialog, freeze, sleep, candidate, death, sequence, or won game. */
 static bool in_dungeon_view(void)
 {
-    return g_dungeon_maps && !g_game_screen_inactive && g_game_time_ticking && !g_game_frozen &&
-           !g_session.party_dead && g_session.inventory_champion_index < 0 && !g_session.party_sleeping &&
+    return g_dungeon_maps && g_game_screen_shown && g_game_time_ticking && !g_game_frozen && !g_session.party_dead &&
+           g_session.inventory_champion_index < 0 && !g_session.party_sleeping &&
            g_session.candidate_champion_index < 0 && !g_frame_wait_depth && !g_session.won;
 }
 

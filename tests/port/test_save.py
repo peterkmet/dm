@@ -215,7 +215,7 @@ def test_party_death_returns_to_the_entrance_headless(game, quit_reset):
     kill_party(game)
     lib.gameloop_tick()
     assert game.value("g_return_to_entrance") == 1 and game.value("g_quit_requested") == 0
-    assert game.value("g_game_screen_inactive") == 1
+    assert game.value("g_game_screen_shown") == 0
 
 
 def test_party_death_restart_loads_the_saved_game(game, tmp_path, quit_reset):
@@ -245,7 +245,7 @@ def test_party_death_restart_loads_the_saved_game(game, tmp_path, quit_reset):
     assert game.value("g_party_champion_count", c16) == 1
     assert game.champions[0].current_health > 0
     assert game.value("g_game_time", u32) == saved_time
-    assert game.value("g_game_screen_inactive") == 0
+    assert game.value("g_game_screen_shown") == 1
 
 
 def test_fuse_sequence_ends_the_game(game, quit_reset):

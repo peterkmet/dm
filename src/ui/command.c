@@ -19,6 +19,7 @@
 #include "ui/dialog.h"
 #include "ui/entrance.h"
 #include "ui/frame.h"
+#include "ui/gameloop.h"
 #include "ui/startend.h"
 #include "ui/ui.h"
 #include "ui/video.h"
@@ -26,16 +27,15 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define QUEUE_SIZE            9
-#define QUEUE_CLICK_LIMIT     5 /* a click or a key waits only when fewer commands wait */
-#define QUEUE_RELEASE_LIMIT   7
-#define NO_TABLE              (-1)
-#define INVENTORY_CLOSE       4 /* command_toggle_inventory argument: close the open inventory */
-#define INVENTORY_REDRAW      5 /* command_toggle_inventory argument: draw the open inventory again */
-#define WAIT_FOR_INPUT_FRAMES 12
-#define MOUTH_BLINK_COUNT     4 /* the mouth blinks when it eats an object up */
-#define MOUTH_BLINK_FRAMES    8
-#define HAND_SLOT_BOX_COUNT   (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
+#define QUEUE_SIZE          9
+#define QUEUE_CLICK_LIMIT   5 /* a click or a key waits only when fewer commands wait */
+#define QUEUE_RELEASE_LIMIT 7
+#define NO_TABLE            (-1)
+#define INVENTORY_CLOSE     4 /* command_toggle_inventory argument: close the open inventory */
+#define INVENTORY_REDRAW    5 /* command_toggle_inventory argument: draw the open inventory again */
+#define MOUTH_BLINK_COUNT   4 /* the mouth blinks when it eats an object up */
+#define MOUTH_BLINK_FRAMES  8
+#define HAND_SLOT_BOX_COUNT (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
 
 #define VIEW_CELL_FRONT_FIRST 2 /* view cells 0-1 on the party square, 2-3 ahead */
 
@@ -43,10 +43,6 @@ typedef struct {
     int16_t x, y, command;
 } QueuedCommand;
 
-bool g_stop_waiting_for_input;
-bool g_game_time_ticking;
-int16_t g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
-bool g_game_frozen;
 bool g_mouse_pointer_hidden;
 bool g_input_received;
 uint16_t g_last_key;
