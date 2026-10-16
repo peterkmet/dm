@@ -399,8 +399,8 @@ def state(game):
     values = {name: kind.in_dll(lib, name).value for name, kind in GLOBALS}
     timeline = Timeline.in_dll(lib, "g_timeline")
     events = timeline.capacity
-    values.update(timeline_count=timeline.count, first_unused_event=timeline.first_unused, event_capacity=events,
-                  event_high_water=timeline.high_water)
+    values.update(g_timeline_count=timeline.count, g_first_unused_event_index=timeline.first_unused, g_event_max_count=events,
+                  g_event_high_water=timeline.high_water)
     packed = ctypes.create_string_buffer(CHAMPION_BYTES)
     champions = []
     for i in range(4):
