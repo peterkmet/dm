@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""CSB rule differences (docs/csb-engine-diff.md "Actions", "Sensors and timeline", "Champions"): each rule in both
+"""CSB rule differences (docs/csb/engine-diff.md "Actions", "Sensors and timeline", "Champions"): each rule in both
 adventures. DM keeps its behaviour, CSB has the new one."""
 
 import ctypes

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""The CSB save file: header moved by 2 bytes, block 2 checksum, active groups (docs/csb-data.md "Save file")."""
+"""The CSB save file: header moved by 2 bytes, block 2 checksum, active groups (docs/csb/data.md "Save file")."""
 
 import ctypes
 import shutil

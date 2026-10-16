@@ -212,7 +212,7 @@ KAOS tables must be loaded (`kaos_load`) before `game_update_map_coordinates_aft
 
 ## Tests
 
-`tests/test_game.py` runs these checks with `build/libdm.dylib`:
+`tests/differential/test_game.py` runs these checks with `build/libdm.dylib`:
 
 - The random functions, the math helpers, the relative movement, and the four champion helpers give the same results as the original functions in `dmtools.emu`.
 - A sequence of 1500 timeline additions and extractions gives the same heap, slots, free list, and return values as the original `timeline_add_event` and `timeline_extract_first_event` in the emulator.

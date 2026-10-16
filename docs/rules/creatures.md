@@ -209,7 +209,7 @@ Each fix has a short comment in the code.
 
 ## Tests
 
-`tests/test_creatures.py` runs these tests:
+`tests/differential/test_creatures.py` runs these tests:
 
 - Differential tests against the original code in `dmtools.emu`: directions to a destination, sight cone, poison resistance, champion damage by a creature, projectile impact attack, launcher objects.
 - Scenario tests on the loaded dungeon: a group activates and comes next to the party, a group attacks the party, a skeleton dies and drops its possessions and smoke, a fireball flies and explodes on a wall, and spell casts (light, potion, meaningless spell, party shield, fireball).

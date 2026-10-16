@@ -14,7 +14,7 @@ from dmtest.lib import load_lib
 
 c16, u16, u8 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint8
 
-# Original addresses (docs/kaos-symbols.csv).
+# Original addresses (docs/reference/kaos-symbols.csv).
 ACTION_PERFORMED, MELEE_DAMAGE, DISABLE_ACTION = 0x122892, 0x11D348, 0x111F82
 SOUND_REQUEST_PLAY, GET_SQUARE, GROUP_GET_THING, GROUP_EVENTS = 0x108DF4, 0x10A8AC, 0x10BB5C, 0x10D7E4
 ACTION_DAMAGE, PALETTE_INDEX, MAP_X = 0x103FF6, 0x1001E6, 0x1001EC

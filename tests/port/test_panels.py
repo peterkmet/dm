@@ -15,7 +15,7 @@ from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
 
 u16, c16 = ctypes.c_uint16, ctypes.c_int16
-# Original addresses (docs/kaos-symbols.csv).
+# Original addresses (docs/reference/kaos-symbols.csv).
 DRAW_PANEL_OBJECT, PANEL_PRINT_LINE, PRINT_ZONE = 0x10F28A, 0x10EC88, 0x109A04
 STUBS = (0x1072C6, 0x10EC40, 0x10EFAC)  # blit_graphic_to_viewport_zone, ui_draw_icon_to_viewport, draw_panel_arrow_or_eye
 THING_DATA, STRINGS, STRING_COUNT, OBJECT_NAMES = 0x101CEA, 0x101E58, 0x101E52, 0x100266

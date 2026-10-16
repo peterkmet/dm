@@ -130,12 +130,12 @@ The socket protocol needs no new command. The game starts one adventure for each
 
 | Test file | Assumption |
 |---|---|
-| `tests/test_gameloop.py`, `test_modes.py`, `test_port_data.py`, others | `GAME = ROOT / "game"`. They load the library and call `gameloop_load_data(GAME)` and `gameloop_start_new_game(GAME)`. They skip when `KAOS.FTL`, `Graphics.DAT`, or `Dungeon.DAT` is missing. |
-| `tests/test_modes.py`, `test_save.py`, `test_control.py` | `SAVE = "DMGAME.DAT"`, `BACKUP = "DMGAME.BAK"`. |
-| `tests/test_gameloop.py` (the `--frames 100` run) | Starts `build/dm` with `DM_AUTO_ENTER=1` and no `--mode`. |
-| `tests/test_modes.py` (the turn-based program test) | Starts `build/dm --mode turnbased --control PATH` with no `--adventure`. |
-| `tests/test_modes.py` | Starts `build/dm --mode fast`. It expects exit code 1. |
-| `tests/test_port.py` (`test_smoke_run`) | Starts `build/dm --frames 5` with no flags. |
+| `tests/port/test_gameloop.py`, `test_modes.py`, `test_port_data.py`, others | `GAME = ROOT / "game"`. They load the library and call `gameloop_load_data(GAME)` and `gameloop_start_new_game(GAME)`. They skip when `KAOS.FTL`, `Graphics.DAT`, or `Dungeon.DAT` is missing. |
+| `tests/port/test_modes.py`, `test_save.py`, `test_control.py` | `SAVE = "DMGAME.DAT"`, `BACKUP = "DMGAME.BAK"`. |
+| `tests/port/test_gameloop.py` (the `--frames 100` run) | Starts `build/dm` with `DM_AUTO_ENTER=1` and no `--mode`. |
+| `tests/port/test_modes.py` (the turn-based program test) | Starts `build/dm --mode turnbased --control PATH` with no `--adventure`. |
+| `tests/port/test_modes.py` | Starts `build/dm --mode fast`. It expects exit code 1. |
+| `tests/port/test_port.py` (`test_smoke_run`) | Starts `build/dm --frames 5` with no flags. |
 
 ## Design
 
@@ -328,11 +328,11 @@ The control socket and `dm-play` keep one default path. Two instances need `--co
 - C-level tests set the global, as `test_modes.py` does for the mode: `c16.in_dll(lib, "g_adventure").value = 1`. The default is DM, so the existing tests do not change.
 - Process-level tests pass `--adventure dm --mode vanilla` (or `DM_AUTO_ENTER=1`). The existing process tests work without edits (see the flag rules).
 - The `--adventure csb` tests use a temporary folder with empty marker files (`APPB.FTL`, `Graphics.DAT`, `Dungeon.DAT`, `disk-b/MINI.DAT`). They check only the presence logic. They do not start CSB play.
-- A test fixture `adventure_dir(tmp_path)` creates the folder. It lives in `tests/test_select.py`.
+- A test fixture `adventure_dir(tmp_path)` creates the folder. It lives in `tests/port/test_select.py`.
 
 ## Automated tests
 
-New file `tests/test_select.py`. It builds `build/libdm.dylib` with `make` (as `tests/test_port.py` does) and uses `ctypes`. It needs no game files, except the three tests marked "font". They skip when `game/Graphics.DAT` is missing.
+New file `tests/port/test_select.py`. It builds `build/libdm.dylib` with `make` (as `tests/port/test_port.py` does) and uses `ctypes`. It needs no game files, except the three tests marked "font". They skip when `game/Graphics.DAT` is missing.
 
 Argument and adventure helpers:
 
@@ -342,7 +342,7 @@ Argument and adventure helpers:
 | `test_default_dirs` | `adventure_default_dir(0) == b"game"`, `(1) == b"game-csb"`. |
 | `test_save_names` | With `g_adventure` 0: `DMGAME.DAT` and `DMGAME.BAK`. With 1: `CSBGAME.DAT` and `CSBGAME.BAK`. |
 | `test_csb_present` | An empty folder gives 0. A folder with the four marker files gives 1. A folder with one file missing gives 0 (parametrized over the four files). |
-| `test_save_writes_csb_name` | With `g_adventure` 1 and a started game, `savegame_save(tmp)` creates `CSBGAME.DAT` and not `DMGAME.DAT`. A second save makes `CSBGAME.BAK`. Reuse the game setup of `tests/test_save.py`. |
+| `test_save_writes_csb_name` | With `g_adventure` 1 and a started game, `savegame_save(tmp)` creates `CSBGAME.DAT` and not `DMGAME.DAT`. A second save makes `CSBGAME.BAK`. Reuse the game setup of `tests/port/test_save.py`. |
 
 Selection logic (no drawing):
 
@@ -401,7 +401,7 @@ These points need the user's answer before the implementation.
 
 Each step has at least one automated test and is green before the next one.
 
-1. `adventure.c/h`, the save name change in `savegame.c`, `tests/test_select.py` (helper tests only). Existing tests stay green.
+1. `adventure.c/h`, the save name change in `savegame.c`, `tests/port/test_select.py` (helper tests only). Existing tests stay green.
 2. `select.c/h` (logic, no drawing) and the logic tests.
 3. `select_draw`, the drawing tests, and a first look at the glyphs.
 4. `main.c`: `--adventure`, `MODE_SELECT`, `apply_mode`, `start_adventure`, `show_entrance` branch. The process tests.

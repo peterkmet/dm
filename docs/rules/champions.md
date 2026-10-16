@@ -276,12 +276,12 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 ## Tests
 
-`tests/test_champion.py` runs these checks with `build/libdm.dylib`. The emulator tests patch the drawing and message functions of the original to `rts`.
+`tests/differential/test_champion.py` runs these checks with `build/libdm.dylib`. The emulator tests patch the drawing and message functions of the original to `rts`.
 
 - `champion_pack` writes the original offsets and `champion_unpack` reverses it.
 - Object weight and icon, skill level, maximum load, movement ticks, dexterity, strength, wound defense, pending damage, damage to all, stamina decrease, experience gain with level-ups, and time effects give the same champion records, random seed, and globals as the original functions in `dmtools.emu`.
 - Scenario tests in `Dungeon.DAT`: recruit the first mirror champion and accept it, eat food, and take damage until the party dies (objects and bones on the party square).
 
-`tests/test_actions.py` compares `action_is_action_performed` (stamina, experience, disabled ticks, heal, action damage, random seed) for all actions without a target, and `group_get_melee_action_damage` (hit and damage), with the original functions in `dmtools.emu`. Scenario tests: a sword attack hurts a skeleton and trains the skill, a back-row champion cannot reach, a throw creates a projectile and event 11 refills the hand from the quiver, event 11 ends the action defense, poison steps, event 12, and the vi altar rebirth.
+`tests/port/test_actions.py` compares `action_is_action_performed` (stamina, experience, disabled ticks, heal, action damage, random seed) for all actions without a target, and `group_get_melee_action_damage` (hit and damage), with the original functions in `dmtools.emu`. Scenario tests: a sword attack hurts a skeleton and trains the skill, a back-row champion cannot reach, a throw creates a projectile and event 11 refills the hand from the quiver, event 11 ends the action defense, poison steps, event 12, and the vi altar rebirth.
 
 The tests skip when `game/KAOS.FTL` or `game/Dungeon.DAT` is missing.

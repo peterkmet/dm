@@ -279,7 +279,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 ## Tests
 
-`tests/test_control.py` builds a private `libdm`, starts a new game, and recruits one champion. It checks:
+`tests/port/test_control.py` builds a private `libdm`, starts a new game, and recruits one champion. It checks:
 
 - The JSON of `state_json_get_string` parses and has the expected fields.
 - A socket session: `get_state`, `act move_forward` changes the party position, walking to a mirror, `click_wall_ahead`, `recruit`, and `wait`.
@@ -309,10 +309,10 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 - A teleporter that sends the party back to its start square gives `stopped` `moved`, not `bumped`.
 - `act_many` gives `action_damage` as a list. `add_rune` without enough mana fails and adds no rune.
 - The tests log the `dm-play` calls to a temporary folder (`tests/conftest.py`), never into a run.
-- `tests/test_automap.py`: a pressure pad that the view draws is a gray square in the floor of the automap.
+- `tests/port/test_automap.py`: a pressure pad that the view draws is a gray square in the floor of the automap.
 
-`tests/test_modes.py` starts `build/dm --mode turnbased --control <socket>` with the SDL dummy drivers and checks `get_state` and `act move_forward`. It also checks that a party death during a turn gives `"game_over": true`.
+`tests/port/test_modes.py` starts `build/dm --mode turnbased --control <socket>` with the SDL dummy drivers and checks `get_state` and `act move_forward`. It also checks that a party death during a turn gives `"game_over": true`.
 
 ```sh
-uv run pytest -q tests/test_control.py
+uv run pytest -q tests/port/test_control.py
 ```

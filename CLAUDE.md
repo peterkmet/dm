@@ -19,7 +19,7 @@ Native C11/SDL3 macOS port of Dungeon Master v3.60 (Amiga), built from its own G
 - `tools/dmtools/`: Python tools: ADF extract, FTL loader, emulator harness, control client. `tools/ghidra/`,
   `tools/dist/`, `tools/research/` (not tested).
 - `tests/`: differential tests against the original; `tests/dmtest/` shared helpers (`load_lib()`);
-  `tests/test_standard.py` checks the coding standard.
+  `tests/standard/test_standard.py` checks the coding standard.
 - Git-ignored data: `game/`, `game-csb/` (original files), `reference/` (Ghidra output), `playthroughs/`. Link them into a new worktree.
 
 ## Conventions

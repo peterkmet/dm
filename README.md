@@ -251,7 +251,7 @@ Not available yet: the credits fade, the door animation of the entrance, and the
 
 Set `DM_FILTER` to select a pixel-art upscale filter. The values are `none` (default), `scale2x`, and `scale3x`. The filter makes the image 2 or 3 times larger before the window scaling. The filter gives the sharpest image when the window scale is a multiple of the filter factor. Example: `DM_FILTER=scale2x build/dm`.
 
-`build/libdm.dylib` contains the game code without SDL. `tests/test_port.py` loads it with `ctypes`.
+`build/libdm.dylib` contains the game code without SDL. `tests/port/test_port.py` loads it with `ctypes`.
 
 ## Known limitations
 
@@ -281,9 +281,9 @@ To hide the format commit in `git blame`:
 git config blame.ignoreRevsFile .git-blame-ignore-revs
 ```
 
-`tests/test_port.py` builds the C port and tests it through `ctypes`. Pytest skips it when `clang` or SDL3 is not installed.
+`tests/port/test_port.py` builds the C port and tests it through `ctypes`. Pytest skips it when `clang` or SDL3 is not installed.
 
-`tests/test_ghidra.py` runs `decompile.sh` on a small synthetic image. It takes about 4 seconds. Pytest skips it when Ghidra is not installed.
+`tests/tools/test_ghidra.py` runs `decompile.sh` on a small synthetic image. It takes about 4 seconds. Pytest skips it when Ghidra is not installed.
 
 ## Documentation
 

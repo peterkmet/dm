@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""CSB magic map (docs/csb-engine-diff.md "Magic map"): the map spells, their timeline events, the CREANAME scroll
+"""CSB magic map (docs/csb/engine-diff.md "Magic map"): the map spells, their timeline events, the CREANAME scroll
 text, and the map panel. DM keeps its scroll panel."""
 
 import ctypes

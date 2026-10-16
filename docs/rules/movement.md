@@ -252,7 +252,7 @@ These rules need later steps. The port has no code for them yet:
 
 ## Tests
 
-`tests/test_move.py` needs `game/KAOS.FTL` and `game/Dungeon.DAT` and skips without them.
+`tests/differential/test_move.py` needs `game/KAOS.FTL` and `game/Dungeon.DAT` and skips without them.
 
 - `map_get_square`, `map_is_square_open`, `map_get_square_first_thing`, `map_get_stairs_exit_direction`, and `map_get_location_after_level_change` give the same results as the original functions in `dmtools.emu` on maps 0–2, including the squares around the map.
 - Start position from the dungeon header. A move into a wall does not move the party. A corridor move follows the step tables of KAOS. Turns change the direction and the champion cells. A turn on stairs takes the stairs.

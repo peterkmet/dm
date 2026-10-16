@@ -165,11 +165,11 @@ The function reads all three tables from the KAOS image. The single characters f
 
 ## Differences from dmcsb
 
-`dmcsb` 0.2.1 agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table. `tests/test_dungeon.py` compares `dungeon_decode_text` with the original function in `dmtools.emu` for every text and every mode.
+`dmcsb` 0.2.1 agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table. `tests/differential/test_dungeon.py` compares `dungeon_decode_text` with the original function in `dmtools.emu` for every text and every mode.
 
 ## Tests
 
-`tests/test_dungeon.py` needs the files in `game/` and skips when they are missing.
+`tests/differential/test_dungeon.py` needs the files in `game/` and skips when they are missing.
 
 - Map count, map descriptors, all square bytes, first things, thing counts, and next-thing words against `dmcsb`.
 - Decoded texts against `dmcsb`, without the texts that use escape 30 with an index other than 2 or 3.

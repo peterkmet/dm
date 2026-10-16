@@ -244,7 +244,7 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 
 ## Tests
 
-`tests/test_save.py` tests the game state layer:
+`tests/port/test_save.py` tests the game state layer:
 
 - Round trip: a new game, a recruited champion with an object in the hand, then a save. A new game, then a load. The globals, the packed champions (the leader load less the hand object), the party, the timeline, the active groups, the portrait indices, and `dungeon_save` are equal.
 - The second save keeps the first file as `DMGAME.BAK`. A load without `DMGAME.DAT` uses the backup and renames it.
@@ -253,7 +253,7 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 - Ctrl+S runs the save dialog. A frame hook clicks SAVE, then CANCEL. The file exists and the game is not frozen.
 - Party death without a frame hook ends with `g_return_to_entrance`. With a frame hook, RESTART THIS GAME loads the saved game and the game continues. QUIT on THE END shows the credits and then sets `g_return_to_entrance`.
 
-`tests/test_savefile.py` tests the container through `build/libdm.dylib`:
+`tests/differential/test_savefile.py` tests the container through `build/libdm.dylib`:
 
 - A round trip from encode to decode gives the same blocks, portraits, and dungeon.
 - The original `save_block_xor` in `dmtools.emu` gives the same encrypted bytes and checksums as the C encoder.

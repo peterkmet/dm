@@ -4,7 +4,7 @@
 import ctypes
 
 SAVE = "DMGAME.DAT"  # the save file of Dungeon Master in the data folder
-# Original addresses (docs/kaos-symbols.csv).
+# Original addresses (docs/reference/kaos-symbols.csv).
 SAVE_BLOCK_XOR, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER = 0x125510, 0x125576, 0x125766
 G_LOAD_FROM_MEMORY, G_LOAD_MEMORY_POINTER, G_LOAD_MEMORY_REMAINING = 0x1040FC, 0x1040FE, 0x104102
 PORTRAITS = 4 * 464

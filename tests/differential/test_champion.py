@@ -11,7 +11,7 @@ from dmtest.game import (CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Ch
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
-# Original addresses (docs/kaos-symbols.csv).
+# Original addresses (docs/reference/kaos-symbols.csv).
 PARTY_SHIELD, SCENT_COUNT, SCENTS, SCENT_STRENGTHS = 0x101ED8, 0x101EDE, 0x101EE2, 0x101F12
 CANDIDATE = 0x1001DC
 MAP_X, MAP_Y, MAP_INDEX = 0x1001EC, 0x1001EE, 0x1001F0

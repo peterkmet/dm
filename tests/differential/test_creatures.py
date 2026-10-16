@@ -19,7 +19,7 @@ from dmtools.ftl import load_image, parse
 
 c16, u16, u8 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint8
 
-# Original addresses (docs/kaos-symbols.csv).
+# Original addresses (docs/reference/kaos-symbols.csv).
 SEED, THING_DATA, DUNGEON_HEADER = 0x100EF8, 0x101CEA, 0x101CD4
 ATTACK_TYPE, POISON_ATTACK, SECONDARY_DIRECTION = 0x10315E, 0x10315C, 0x103156
 PALETTE_INDEX, INVISIBILITY, CREATURE_INFO = 0x1001E6, 0x101F2A, 0x10192E

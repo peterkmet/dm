@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""The CSB end of the game (docs/csb-engine-diff.md "End of the game", docs/csb-data.md "ENDA.DAT and the endgame"):
+"""The CSB end of the game (docs/csb/engine-diff.md "End of the game", docs/csb/data.md "ENDA.DAT and the endgame"):
 the ENDA.DAT player, wall sensor 18, and the death screen with RESTART THIS GAME only."""
 
 import ctypes

@@ -7,7 +7,7 @@ User wishes for future versions. Not planned yet.
 - `game_init_active_groups` (`src/engine/game.c`) allocates `g_active_groups` with `malloc` and sets only `group_index = -1` in each entry. The other bytes of a free entry are not initialized.
 - `pack_active_group` (`src/engine/savegame.c`) copies every entry into save block 1, the free entries too. Two saves of the same game can have different bytes in block 1.
 - Change: clear the array after `malloc` (`calloc`, or `memset` to 0), then set `group_index = -1`. Game behavior stays; saves become deterministic.
-- Then remove `scrub_free_groups` from `tests/test_golden_save.py` and `tests/test_golden_rules.py`; the golden files stay the same.
+- Then remove `scrub_free_groups` from `tests/golden/test_golden_save.py` and `tests/golden/test_golden_rules.py`; the golden files stay the same.
 
 ## NULL read of creature attributes on a corrupt dungeon
 
@@ -25,7 +25,7 @@ User wishes for future versions. Not planned yet.
 - `ui/view.c` square table: the D2L2, D2R2 and D0 rows leave unread "none" fields at 0, a valid id; the D0C right stairs zone is a literal in its branch; the three shape `if` blocks can be one `switch`.
 - ui ignores the result of `inventory_fill_leader_hand_at_fountain`.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
-- `tests/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
+- `tests/golden/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
 
 ## Advanced mode: show the damage twice as long
 
@@ -42,5 +42,5 @@ User wishes for future versions. Not planned yet.
 ## Test audit against the test list of CLAUDE.md
 
 - Check every test against the list of CLAUDE.md §2 (what to test, what not to test: UI and layout, CLI arguments, constants and data tables, wiring).
-- Candidates: `tests/test_select.py`, the out-of-range and count tests of `tests/test_tables.py`, parts of `tests/test_modes.py`.
+- Candidates: `tests/port/test_select.py`, the out-of-range and count tests of `tests/differential/test_tables.py`, parts of `tests/port/test_modes.py`.
 - Result: a list with one reason per test to remove or keep; the user approves it before a test is removed.

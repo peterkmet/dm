@@ -16,10 +16,10 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 
 ## Function mapping
 
-`tools/csb_match.py` builds the mapping and writes `docs/reference/csb-appb-symbols.csv`.
+`tools/dmtools/csb_match.py` builds the mapping and writes `docs/reference/csb-appb-symbols.csv`.
 
 ```sh
-uv run python tools/csb_match.py --report /tmp/csb-report.txt
+uv run dm-csb-match --report /tmp/csb-report.txt
 ```
 
 The report file has one line per function: class, CSB address, DM address, name, instruction counts, and similarity.
@@ -139,7 +139,7 @@ CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have th
 - Item 700 (strings) and item 699 (action names) are empty in CSB. Items 737 and 747 (French and German strings) do not exist.
 - Item 694 (object names) ends each name with a byte that has bit 7 set. DM separates the names with NUL. 33 names differ, for example 23 BOLT BLADE → STORM, 158 BRO POTION → ANTIVENIN, 174 DRUMSTICK → SHANK.
 - Pictures and creature graphics differ in items 2–5, 10, 11, 26, 42–47, 329, 330, 371, 378, 504, 550, 588–669. Items 602 and 669 are 3 × 3 dummies in CSB. These need no code change.
-- Item 696 is 16 bytes shorter (9160 against 9176). Zones 437 and 438 (the endgame buttons) are missing. All other 554 zones that `layout_get_zone` resolves give the same boxes (`tests/test_csb_engine.py`).
+- Item 696 is 16 bytes shorter (9160 against 9176). Zones 437 and 438 (the endgame buttons) are missing. All other 554 zones that `layout_get_zone` resolves give the same boxes (`tests/differential/test_csb_engine.py`).
 - The header width of raw (non-bitmap) items 671–711 is 1–3 smaller in CSB. The port must use the decompressed size for raw items, not the header width. UNVERIFIED: whether the port reads that width.
 
 ## Differences that need port changes

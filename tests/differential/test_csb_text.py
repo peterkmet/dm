@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""CSB text from APPB.FTL and Graphics.DAT item 694 (docs/csb-engine-diff.md "Text")."""
+"""CSB text from APPB.FTL and Graphics.DAT item 694 (docs/csb/engine-diff.md "Text")."""
 
 import ctypes
 
