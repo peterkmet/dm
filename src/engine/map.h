@@ -16,6 +16,7 @@
 #define DIRECTION_SOUTH      2
 #define DIRECTION_WEST       3
 #define DIRECTION_BITS       2
+#define DIRECTION_COUNT      4
 #define LEVEL_UP             (-1)
 #define LEVEL_DOWN           1
 #define MAP_COORD_BITS       5 /* maps are at most 32 squares wide and high */
