@@ -7,7 +7,6 @@
 #include "startend.h"
 #include "champion.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "group.h"
 #include "ids.h"

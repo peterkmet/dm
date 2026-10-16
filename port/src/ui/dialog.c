@@ -1,7 +1,6 @@
 #include <string.h>
 #include "dialog.h"
 #include "command.h"
-#include "ftl.h"
 #include "ids.h"
 #include "layout.h"
 #include "message.h"

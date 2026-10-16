@@ -3,7 +3,6 @@
 #include "adventure.h"
 #include "csbtext.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "graphics.h"
 #include "ids.h"

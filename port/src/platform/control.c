@@ -17,7 +17,6 @@
 #include "command.h"
 #include "crc32.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "gameloop.h"
 #include "ids.h"

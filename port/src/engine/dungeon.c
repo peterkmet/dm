@@ -250,7 +250,7 @@ static bool build_map_columns(int16_t maps)
     return true;
 }
 
-/* dungeon_load: reads the parts from load_cursor. A new game takes the party start from the header
+/* Reads the dungeon parts from the load cursor. A new game takes the party start from the header
    and adds free records; a saved game has them already. */
 static bool parse_dungeon(bool new_game)
 {

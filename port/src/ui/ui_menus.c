@@ -5,7 +5,6 @@
 #include "advanced.h"
 #include "champion.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "game.h"
 #include "graphics.h"
 #include "ids.h"
