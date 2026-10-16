@@ -5,11 +5,11 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.game import Champion
 from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_game import Champion
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"

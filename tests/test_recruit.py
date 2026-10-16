@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.game import RecruitData, mirrors
 from dmtest.lib import load_lib
 from dmcsb import open_dungeon
 from dmcsb.dungeon import decode_champion
@@ -15,20 +16,9 @@ ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 DECODED_VALUE = 0x1130AC
 BUF = 0x200000
-STEP_EAST, STEP_NORTH = (0, 1, 0, -1), (-1, 0, 1, 0)
 
 pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
 u8p = ctypes.POINTER(ctypes.c_uint8)
-
-
-class RecruitData(ctypes.Structure):
-    _fields_ = [
-        ("name", ctypes.c_char * 8), ("title", ctypes.c_char * 20), ("male", ctypes.c_uint8),
-        ("current_health", ctypes.c_int16), ("maximum_health", ctypes.c_int16),
-        ("current_stamina", ctypes.c_int16), ("maximum_stamina", ctypes.c_int16),
-        ("current_mana", ctypes.c_int16), ("maximum_mana", ctypes.c_int16),
-        ("statistics", (ctypes.c_uint8 * 3) * 7), ("experience", ctypes.c_int32 * 20),
-    ]
 
 
 @pytest.fixture(scope="module")
@@ -55,25 +45,6 @@ def need(lib):
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.tables_init() == 0
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
-
-
-def things(lib, m, x, y):
-    t = lib.dungeon_get_square_first_thing(m, x, y)
-    while t != 0xFFFE:
-        yield t
-        d = lib.dungeon_get_thing_data(t)
-        t = d[0] << 8 | d[1]
-
-
-def mirrors(lib):
-    """(portrait index, text thing) for each wall sensor of type 127; the text is on the square in front."""
-    for m in range(lib.dungeon_map_count()):
-        for x in range(lib.dungeon_map_width(m)):
-            for y in range(lib.dungeon_map_height(m)):
-                for t in things(lib, m, x, y):
-                    if t >> 10 & 15 == 3 and (p := lib.recruit_portrait_index(t)) >= 0:
-                        c = t >> 14
-                        yield p, lib.recruit_text_thing(m, x + STEP_EAST[c], y + STEP_NORTH[c])
 
 
 def test_mirrors_match_dmcsb(lib):

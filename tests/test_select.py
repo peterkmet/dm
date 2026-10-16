@@ -6,10 +6,9 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.game import global_type
 from dmtest.lib import load_lib
 from dmtest.markers import needs_sdl
-
-from conftest import global_type
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"

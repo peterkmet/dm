@@ -5,31 +5,19 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.game import ACTIVE_GROUP_BYTES, Box, Frames, Game, recruit_and_hold_object, state
 from dmtest.lib import load_lib
+from dmtest.savefile import G_LOAD_FROM_MEMORY, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER, SaveFile, decode, encode
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_gameloop import Game, ZONE_RESURRECT
-from test_savefile import G_LOAD_FROM_MEMORY, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER, decode
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 KAOS = GAME / "KAOS.FTL"
 SAVE, BACKUP = "DMGAME.DAT", "DMGAME.BAK"
 LOADED, MISSING, DAMAGED = 1, 0, -1
-PARTY_BYTES, EVENT_BYTES, ACTIVE_GROUP_BYTES, CHAMPION_BYTES = 88, 12, 16, 0x140
-SLOT_HAND_ACTION = 1
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
-GLOBALS = [
-    ("g_game_time", u32), ("g_random_seed", u32), ("g_leader_hand_object", u16), ("g_party_champion_count", u16),
-    ("g_party_map_x", c16), ("g_party_map_y", c16), ("g_party_direction", c16), ("g_party_map_index", c16),
-    ("g_leader_index", c16), ("g_magic_caster_champion_index", c16), ("g_timeline_count", u16),
-    ("g_first_unused_event_index", c16), ("g_event_max_count", c16), ("g_active_group_count", u16),
-    ("g_last_creature_attack_time", ctypes.c_int32), ("g_last_party_movement_time", ctypes.c_int32),
-    ("g_disabled_movement_ticks", c16), ("g_projectile_disabled_movement_ticks", c16),
-    ("g_last_projectile_disabled_movement_direction", c16), ("g_max_active_group_count", u16), ("g_game_id", u32),
-    ("g_event_high_water", u16),
-]
 
 pytestmark = [
     pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
@@ -56,59 +44,6 @@ def game():
     assert lib.gameloop_load_data(str(GAME).encode())
     assert lib.gameloop_start_new_game(str(GAME).encode())
     return Game(lib)
-
-
-def raw(lib, name, size):
-    return ctypes.string_at(ctypes.addressof(ctypes.c_uint8.in_dll(lib, name)), size)
-
-
-def raw_array(lib, name, size):
-    return ctypes.string_at(ctypes.c_void_p.in_dll(lib, name).value, size)
-
-
-def state(game):
-    """The saved part of the game state: globals, champions, party, timeline, active groups, dungeon."""
-    lib = game.lib
-    values = {name: kind.in_dll(lib, name).value for name, kind in GLOBALS}
-    events = values["g_event_max_count"]
-    packed = ctypes.create_string_buffer(CHAMPION_BYTES)
-    champions = []
-    for i in range(4):
-        lib.champion_pack(ctypes.byref(game.champions[i]), packed)
-        champions.append(packed.raw)
-    size = u32()
-    p = lib.dungeon_save(ctypes.byref(size))
-    dungeon = ctypes.string_at(p, size.value)
-    lib.free(p)
-    return {
-        **values,
-        "champions": champions,
-        "portraits": bytes((ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits"))[: values["g_party_champion_count"] * 32 * 29],
-        "party": raw(lib, "g_party", PARTY_BYTES),
-        "events": raw_array(lib, "g_timeline_events", events * EVENT_BYTES),
-        "timeline": raw_array(lib, "g_timeline", events * 2),
-        "active_groups": raw_array(lib, "g_active_groups", values["g_max_active_group_count"] * ACTIVE_GROUP_BYTES),
-        "dungeon": dungeon,
-    }
-
-
-def recruit_and_hold_object(game):
-    path, direction = game.path_to_mirror()
-    game.walk(path)
-    game.face(direction)
-    game.run()
-    game.click_box(game.boxes[5])
-    game.click_zone(ZONE_RESURRECT)
-    assert game.value("g_party_champion_count", u16) == 1
-    box = Box()
-    assert game.lib.ui_get_slot_box_zone(SLOT_HAND_ACTION, 0, ctypes.byref(box))
-    game.click_box(box, viewport=False)
-    assert game.value("g_leader_hand_object", u16) != 0xFFFF
-    game.run(50)
-
-
-class Box(ctypes.Structure):
-    _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
 
 
 def test_save_and_load_round_trip(game, tmp_path):
@@ -180,8 +115,6 @@ def test_load_fails_gracefully(game, tmp_path):
 
 
 def test_dm_load_raises_the_active_group_count_to_110(game, tmp_path):
-    from test_savefile import SaveFile, encode
-
     lib = game.lib
     lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
     lib.save_decode.restype = ctypes.c_bool
@@ -229,25 +162,6 @@ NO_CHOICE = 99
 ZONE_DIALOG_CHOICE = {"cancel": 457, "save": 460}  # in-game dialog with 3 choices, relative to the viewport
 ENDGAME_TABLE = 0x1031D4
 VIEWPORT_ORIGIN = 0x10293A
-HOOK = ctypes.CFUNCTYPE(None)
-
-
-class Frames:
-    """A frame hook: counts the frames of the blocking sequences and runs an action in each."""
-
-    def __init__(self, lib, action):
-        self.lib, self.action, self.count = lib, action, 0
-        self.hook = HOOK(self.frame)
-        ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = ctypes.cast(self.hook, ctypes.c_void_p).value
-
-    def frame(self):
-        self.count += 1
-        self.action(self)
-        if self.count > 5000:  # a sequence that does not end
-            ctypes.c_bool.in_dll(self.lib, "g_quit_requested").value = 1
-
-    def remove(self):
-        ctypes.c_void_p.in_dll(self.lib, "g_frame_hook").value = None
 
 
 def click(lib, x, y):

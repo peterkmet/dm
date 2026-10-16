@@ -5,10 +5,10 @@ import struct
 import pytest
 
 from dmtest.lib import load_lib
+from dmtest.markers import ROOT, sdl3_installed
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_port import ROOT, sdl3_installed
 
 GAME = ROOT / "game"
 G_SOUNDS = 0x100D52

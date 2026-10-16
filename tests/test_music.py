@@ -1,10 +1,15 @@
 import ctypes
 import json
+import shutil
 
 import pytest
 
-from test_modes import ADVANCED, GAME, KEY_M, TURNBASED, VANILLA, c16, game, press, pytestmark, set_mode, u16  # noqa: F401
+from dmtest import constants as C
+from dmtest.game import ADVANCED, TURNBASED, VANILLA, press, recruit_first_champion, set_mode, start_game
+from dmtest.lib import load_lib
+from dmtest.markers import GAME, needs_dm
 
+c16, u16 = ctypes.c_int16, ctypes.c_uint16
 KEY_1, KEY_2, KEY_3 = 0x0100, 0x0200, 0x0300
 ORIGINAL, SUPER_NES, FM_TOWNS = 0, 1, 2
 DM, CSB = 0, 1
@@ -13,6 +18,18 @@ CSB_MAPS, CSB_MAP_SIZE = 10, 32
 MIX_FRAMES = 44100
 TRACK_02 = GAME / "music/FM-Towns,Track_02,Music.mp3"
 MUSIC_MAP = GAME.parent / "reference/extracted/music_map.json"
+
+pytestmark = [pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"), needs_dm]
+
+
+@pytest.fixture(scope="module")
+def game():
+    """A new game with one recruited champion in a private copy of libdm."""
+    game = start_game(load_lib())
+    recruit_first_champion(game)
+    game.run(30)
+    yield game
+    set_mode(game, VANILLA)
 
 
 def var(game, name, kind=c16):
@@ -76,14 +93,14 @@ def test_csb_square_table_matches_the_research(game):
 @pytest.mark.parametrize("mode", [VANILLA, ADVANCED, TURNBASED])
 def test_music_keys_work_only_on_the_advanced_automap(game, mode):
     set_mode(game, mode)
-    press(game, KEY_M)
+    press(game, C.KEY_M)
     press(game, KEY_3)
     assert var(game, "g_music_soundtrack").value == (FM_TOWNS if mode == ADVANCED else ORIGINAL)
     press(game, KEY_2)
     assert var(game, "g_music_soundtrack").value == (SUPER_NES if mode == ADVANCED else ORIGINAL)
     press(game, KEY_1)
     assert var(game, "g_music_soundtrack").value == ORIGINAL
-    press(game, KEY_M)
+    press(game, C.KEY_M)
     set_mode(game, VANILLA)
 
 

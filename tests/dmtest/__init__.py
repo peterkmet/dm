@@ -1,1 +1,2 @@
-"""Shared helpers of the tests: the library loader, and later the constants, the game harness and the markers."""
+"""Shared helpers of the tests: the library loader, the C constants, the skip markers, the game harness, the save codec,
+the control client and the emulator setup."""

@@ -3,11 +3,12 @@ import struct
 
 import pytest
 
+from dmtest.game import Bitmap, Box, setup_view, start_view, zone_records
 from dmtest.lib import load_lib
+from dmtest.markers import ROOT, sdl3_installed
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_port import ROOT, sdl3_installed
 
 GAME = ROOT / "game"
 GET_ZONE, SHRINK, LAYOUT_ZONES = 0x116296, 0x10E898, 0x102990
@@ -16,27 +17,9 @@ pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not 
 needs_game = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing")
 
 
-class Bitmap(ctypes.Structure):
-    _fields_ = [("w", ctypes.c_uint16), ("h", ctypes.c_uint16), ("px", ctypes.POINTER(ctypes.c_uint8))]
-
-
-class Box(ctypes.Structure):
-    _fields_ = [("x", ctypes.c_int16), ("y", ctypes.c_int16), ("w", ctypes.c_int16), ("h", ctypes.c_int16)]
-
-
 @pytest.fixture(scope="module")
 def lib():
-    lib = load_lib()
-    lib.layout_get_zone.restype = ctypes.c_bool
-    lib.view_render.restype = ctypes.c_bool
-    lib.draw_blit.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Bitmap), ctypes.POINTER(Box), ctypes.c_int16, ctypes.c_int]
-    lib.draw_shrink.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.c_char_p, ctypes.POINTER(Bitmap)]
-    lib.layout_get_zone.argtypes = [ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Box), ctypes.POINTER(ctypes.c_int16), ctypes.POINTER(ctypes.c_int16)]
-    lib.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.dungeon_load.restype = ctypes.c_bool
-    lib.gfx_get_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
-    lib.view_render.argtypes = [ctypes.c_int16] * 4
-    return lib
+    return setup_view(load_lib())
 
 
 def bitmap(rows):
@@ -100,17 +83,6 @@ def test_shrink_matches_original(lib, emu, w, h, s):
     assert pixels(out) == chunky(emu.read(0x500000, (dw + 15) // 16 * 2 * dh * 4), dw, dh)
 
 
-def zone_records(raw):
-    ranges = struct.unpack_from(">H", raw, 2)[0]
-    pairs = [struct.unpack_from(">hh", raw, 4 + 4 * i) for i in range(ranges)]
-    off, out = 4 + 4 * ranges, []
-    for first, last in pairs:
-        n = (last - first + 1) * 8
-        out.append((first, last, raw[off:off + n]))
-        off += n
-    return out
-
-
 @needs_game
 def test_zones_match_original(lib, emu):
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
@@ -146,15 +118,7 @@ def screen(lib):
 
 @pytest.fixture(scope="module")
 def game(lib):
-    if not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")):
-        pytest.skip("game files missing")
-    assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.tables_init() == 0
-    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
-    assert lib.layout_init() == 0
-    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
-    party = [ctypes.c_int16.in_dll(lib, n).value for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")]
-    return lib, party
+    return start_view(lib)
 
 
 VIEWS = {"start": None, "door": (0, 1, 13, 2), "ornament": (0, 4, 9, 3), "text": (0, 4, 17, 1), "stairs": (0, 4, 15, 3)}  # map, x, y, direction

@@ -1,23 +1,11 @@
 import ctypes
 import os
-import shutil
 import subprocess
-from pathlib import Path
 
 import pytest
 
 from dmtest.lib import load_lib
-
-ROOT = Path(__file__).parent.parent
-BUILD = ROOT / "build"
-
-
-def sdl3_installed():
-    if not (shutil.which("clang") and shutil.which("brew")):
-        return False
-    prefix = subprocess.run(["brew", "--prefix", "sdl3"], capture_output=True, text=True).stdout.strip()
-    return Path(prefix, "include/SDL3/SDL.h").exists()
-
+from dmtest.markers import BUILD, sdl3_installed
 
 pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not installed")
 

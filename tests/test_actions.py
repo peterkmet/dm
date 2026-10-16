@@ -5,9 +5,11 @@ import struct
 
 import pytest
 
-from test_champion import CHAMPIONS, COUNT, Champion, World, pack
-from test_creatures import (THING_EXPLOSION, THING_PROJECTILE, TimelineEvent, events, lib, new_game,  # noqa: F401 (lib: fixture)
-                            place_party, recruit, s16, skeleton_map_and_squares, things_of_type, tick, var)
+from dmtest import constants as C
+from dmtest.emu import s16, var
+from dmtest.game import (CHAMPIONS, Champion, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
+                         setup_creatures, skeleton_map_and_squares, things_of_type, tick)
+from dmtest.lib import load_lib
 
 c16, u16, u8 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint8
 
@@ -36,8 +38,13 @@ PURE_ACTIONS = [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 2
 MELEE_ACTIONS = [2, 6, 7, 9, 13, 14, 15, 16, 17, 18, 19, 24, 25, 28, 29, 30, 31]
 
 
+@pytest.fixture(scope="module")
+def lib():
+    return setup_creatures(load_lib())
+
+
 @pytest.fixture
-def alib(lib):  # noqa: F811
+def alib(lib):
     for name, res, args in [
         ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("champion_poison", None, [c16, u16]),
         ("group_get_melee_action_damage", c16, [c16, u16, c16, c16, c16, u16, u16, c16]),
@@ -169,7 +176,7 @@ def fighter(alib):
     """A champion with a sword who faces a skeleton on the next square."""
     lib = alib
     new_game(lib)
-    c = recruit(lib)
+    c = add_test_champion(lib)
     m, party_square, _ = skeleton_map_and_squares(lib)
     x, y = party_square
     place_party(lib, m, x, y, 2)  # south
@@ -185,7 +192,7 @@ def fighter(alib):
 def party(alib):
     """A champion on the start square, without creatures nearby."""
     new_game(alib)
-    c = recruit(alib)
+    c = add_test_champion(alib)
     alib.move_party_enter_dungeon()
     x, y = (var(alib, c16, name).value for name in ("g_party_map_x", "g_party_map_y"))
     return alib, c, (x, y)
@@ -229,7 +236,7 @@ def test_throw_creates_projectile_and_event_11_refills_hand(fighter):
     c.slots[SLOT_HAND_ACTION] = new_object(lib, THING_WEAPON, WEAPON_DAGGER)
     c.slots[SLOT_QUIVER_LINE1_1] = second = new_object(lib, THING_WEAPON, WEAPON_DAGGER)
     assert lib.action_is_action_performed(0, ACTION_THROW) == 1
-    assert things_of_type(lib, x, y, THING_PROJECTILE)
+    assert things_of_type(lib, x, y, C.THING_PROJECTILE)
     assert c.slots[SLOT_HAND_ACTION] == 0xFFFF
     timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
     event = timeline[c.enable_action_event_index]
@@ -303,7 +310,7 @@ def test_vi_altar_rebirth(party):
     lib.timeline_add_event(ctypes.byref(event))
     tick(lib)
     tick(lib)
-    assert things_of_type(lib, x, y, THING_EXPLOSION)  # the rebirth explosion
+    assert things_of_type(lib, x, y, C.THING_EXPLOSION)  # the rebirth explosion
     for _ in range(5):
         tick(lib)
     assert all(t & 0x3FFF != bones for t in things_of_type(lib, x, y, THING_JUNK))

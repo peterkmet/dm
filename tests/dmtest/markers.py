@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+BUILD = ROOT / "build"
 GAME, GAME_CSB = ROOT / "game", ROOT / "game-csb"
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 DM_FILES = ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")
@@ -19,6 +20,11 @@ def _brew_path(formula, relative):
     prefix = subprocess.run(["brew", "--prefix", formula], capture_output=True, text=True).stdout.strip()
     path = Path(prefix, relative)
     return path if prefix and path.exists() else None
+
+
+def sdl3_installed():
+    """clang and SDL3 from Homebrew: the game binary needs both; the library does not."""
+    return bool(shutil.which("clang")) and _brew_path("sdl3", "include/SDL3/SDL.h") is not None
 
 
 def needs_file(path, reason=None):

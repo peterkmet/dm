@@ -3,13 +3,12 @@ import struct
 
 import pytest
 
+from dmtest.game import Box, recruit_from_mirrors, render, reset, setup_ui, start_ui, zone_records
 from dmtest.lib import load_lib
+from dmtest.markers import ROOT, sdl3_installed
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_port import ROOT, sdl3_installed
-from test_recruit import RecruitData, mirrors
-from test_view import Bitmap, Box, zone_records
 
 GAME = ROOT / "game"
 GET_ZONE_BOX_CLIPPED, COMMAND_FROM_MOUSE, LAYOUT_ZONES = 0x11686A, 0x120CC6, 0x102990
@@ -21,55 +20,14 @@ needs_game = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL"
 u8, u16, c16 = ctypes.c_uint8, ctypes.c_uint16, ctypes.c_int16
 
 
-class Skill(ctypes.Structure):
-    _fields_ = [("temporary_experience", c16), ("experience", ctypes.c_int32)]
-
-
-class Champion(ctypes.Structure):
-    _fields_ = [
-        ("name", ctypes.c_char * 8), ("title", ctypes.c_char * 20),
-        ("direction", u8), ("cell", u8), ("action_index", u8), ("symbol_step", u8), ("symbols", ctypes.c_char * 5),
-        ("direction_maximum_damage_received", u8), ("maximum_damage_received", u8), ("poison_event_count", u8),
-        ("enable_action_event_index", c16), ("hide_damage_received_event_index", c16),
-        ("attributes", u16), ("wounds", u16),
-        ("current_health", c16), ("maximum_health", c16), ("current_stamina", c16), ("maximum_stamina", c16),
-        ("current_mana", c16), ("maximum_mana", c16), ("action_defense", c16), ("food", c16), ("water", c16),
-        ("statistics", (u8 * 3) * 7), ("skills", Skill * 20), ("slots", u16 * 30), ("load", u16), ("shield_defense", c16), ("magic_map", u8 * 6),
-    ]
-
-
 @pytest.fixture(scope="module")
 def lib():
-    lib = load_lib()
-    lib.view_render.restype = ctypes.c_bool
-    lib.layout_get_zone_box.argtypes = [c16, c16, c16, ctypes.POINTER(Box)]
-    lib.ui_command_from_mouse.argtypes = [c16, c16, c16, u16]
-    lib.ui_command_from_mouse.restype = c16
-    lib.view_render.argtypes = [c16] * 4
-    lib.gfx_get_bitmap.restype = ctypes.POINTER(Bitmap)
-    lib.ui_zone_box.argtypes = [c16, ctypes.POINTER(Box)]
-    lib.message_print.argtypes = [c16, ctypes.c_char_p, ctypes.c_uint32]
-    lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
-    lib.recruit_parse.restype = ctypes.c_bool
-    lib.dungeon_load.restype = ctypes.c_bool
-    lib.dungeon_get_square_first_thing.restype = u16
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(u8)
-    lib.recruit_portrait_index.argtypes = [u16]
-    lib.recruit_text_thing.restype = u16
-    return lib
+    return setup_ui(load_lib())
 
 
 @pytest.fixture(scope="module")
 def game(lib):
-    if not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")):
-        pytest.skip("game files missing")
-    assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
-    assert lib.layout_init() == 0 and lib.text_init() == 0 and lib.tables_init() == 0
-    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
-    lib.game_start_new()
-    assert lib.ui_init() == 0
-    return lib
+    return start_ui(lib)
 
 
 @pytest.fixture(scope="module")
@@ -153,64 +111,10 @@ def test_mouse_commands_match_original(game, emu, table):
     assert hits > 0
 
 
-def recruit(lib, n):
-    """Fills champions 0..n-1 from real mirror texts, with objects in hands and body slots."""
-    champions = (Champion * 4).in_dll(lib, "g_champions")
-    found = sorted(mirrors(lib))[:n]
-    weapons = list(range(8))
-    for i, (portrait, text) in enumerate(found):
-        r = RecruitData()
-        assert lib.recruit_parse(text, ctypes.byref(r)) == 1
-        c = Champion()
-        c.name, c.title = r.name, r.title
-        c.cell, c.direction = i, 0
-        for f in ("current_health", "maximum_health", "current_stamina", "maximum_stamina", "current_mana", "maximum_mana"):
-            setattr(c, f, getattr(r, f))
-        c.current_health = c.maximum_health * (4 - i) // 4
-        c.current_mana = c.maximum_mana // (i + 1)
-        c.statistics = r.statistics
-        for s in range(20):
-            c.skills[s].experience = r.experience[s]
-        c.slots[:] = [0xFFFF] * 30
-        c.slots[0] = 5 << 10 | weapons[2 * i]
-        if i != 2:
-            c.slots[1] = 5 << 10 | weapons[2 * i + 1]
-        c.slots[3] = 6 << 10 | i
-        c.slots[13] = 10 << 10 | i
-        c.food, c.water = 1500 - 900 * i, 1800 - 1000 * i
-        c.load = 123 + 100 * i
-        c.action_index = 0xFF
-        c.enable_action_event_index = c.hide_damage_received_event_index = -1
-        champions[i] = c
-        lib.champion_set_portrait(i, portrait)
-    c16.in_dll(lib, "g_leader_index").value = 0 if n else -1
-    u16.in_dll(lib, "g_party_champion_count").value = n
-    c16.in_dll(lib, "g_magic_caster_champion_index").value = -1
-    return champions
-
-
-def render(lib, name):
-    """The dungeon view at the party start and the whole interface; saves a PNG in the scratchpad."""
-    ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, 320 * 200)
-    party = [c16.in_dll(lib, n).value for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")]
-    assert lib.view_render(*party)
-    lib.ui_set_palette(None)
-    lib.ui_draw_interface()
-    fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb"))
-    return fb
-
-
-def reset(lib):
-    c16.in_dll(lib, "g_inventory_champion_ordinal").value = 0
-    c16.in_dll(lib, "g_acting_champion_ordinal").value = 0
-    ctypes.c_bool.in_dll(lib, "g_action_area_contains_icons").value = 1
-    lib.message_clear()
-
-
 @needs_game
 def test_render_empty_party(game):
     reset(game)
-    recruit(game, 0)
+    recruit_from_mirrors(game, 0)
     fb = render(game, "empty")
     arrows = game.gfx_get_bitmap(ARROWS_GFX).contents
     box = Box()
@@ -223,7 +127,7 @@ def test_render_empty_party(game):
 @pytest.mark.parametrize("n", [1, 2, 3, 4])
 def test_render_party(game, n):
     reset(game)
-    champions = recruit(game, n)
+    champions = recruit_from_mirrors(game, n)
     if n == 4:
         champions[3].current_health = 0
         champions[1].wounds = 0x3
@@ -245,7 +149,7 @@ def test_render_party(game, n):
 @needs_game
 def test_render_action_menu(game):
     reset(game)
-    recruit(game, 4)
+    recruit_from_mirrors(game, 4)
     render(game, "base")
     game.menus_set_acting_champion(0)
     assert c16.in_dll(game, "g_acting_champion_ordinal").value == 1
@@ -255,7 +159,7 @@ def test_render_action_menu(game):
 @needs_game
 def test_render_inventory(game):
     reset(game)
-    recruit(game, 2)
+    recruit_from_mirrors(game, 2)
     render(game, "base")
     game.ui_draw_inventory_open(0)
     fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(game, "fb"))

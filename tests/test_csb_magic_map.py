@@ -7,11 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.game import Champion, Party, TimelineEvent, global_type
 from dmtest.lib import load_lib
-
-from conftest import global_type
-from test_champion import Champion, Party
-from test_creatures import TimelineEvent
 
 ROOT = Path(__file__).parent.parent
 GAME, GAME_CSB = ROOT / "game", ROOT / "game-csb"

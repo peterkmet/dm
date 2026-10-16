@@ -6,12 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from dmtest.lib import load_lib
+from dmtest.lib import clear_folder_hooks, load_lib, set_folder_hooks
 from amitools.fs.ADFSVolume import ADFSVolume
 from amitools.fs.blkdev.BlkDevFactory import BlkDevFactory
 from amitools.fs.FSString import FSString
 
-from conftest import clear_folder_hooks, set_folder_hooks
 from dmtools.extract import extract
 
 ROOT = Path(__file__).parent.parent

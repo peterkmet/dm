@@ -7,32 +7,16 @@ from pathlib import Path
 import pytest
 
 from dmtest.lib import load_lib
+from dmtest.savefile import (EVENTS, G_LOAD_FROM_MEMORY, MAX_GROUPS, PORTRAITS, SAVE_BLOCK_XOR, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER,
+                             SIZES, SaveFile, decode, encode)
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
 
 ROOT = Path(__file__).parent.parent
 KAOS = ROOT / "game" / "KAOS.FTL"
-SAVE_BLOCK_XOR, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER = 0x125510, 0x125576, 0x125766
-G_LOAD_FROM_MEMORY, G_LOAD_MEMORY_POINTER, G_LOAD_MEMORY_REMAINING = 0x1040FC, 0x1040FE, 0x104102
-PORTRAITS = 4 * 464
-MAX_GROUPS, EVENTS = 7, 13
-SIZES = [0x80, MAX_GROUPS * 16, 0x580, EVENTS * 10, EVENTS * 2]
 
 pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
-u8p = ctypes.POINTER(ctypes.c_uint8)
-
-
-class SaveFile(ctypes.Structure):
-    _fields_ = [
-        ("data", u8p),
-        ("header", u8p),
-        ("block", u8p * 5),
-        ("block_size", ctypes.c_uint16 * 5),
-        ("portraits", u8p),
-        ("dungeon", u8p),
-        ("dungeon_size", ctypes.c_uint32),
-    ]
 
 
 @pytest.fixture(scope="module")
@@ -56,42 +40,6 @@ def plain_parts(seed=1, platform=5, fmt=3):
     struct.pack_into(">H", blocks[0], 28, EVENTS)
     struct.pack_into(">H", blocks[0], 46, MAX_GROUPS)
     return header, blocks, rnd.randbytes(PORTRAITS), rnd.randbytes(300)
-
-
-def buf(data):
-    return (ctypes.c_uint8 * len(data)).from_buffer_copy(bytes(data))
-
-
-def encode(lib, header, blocks, portraits, dungeon, sizes=SIZES):
-    keep = [buf(header), *map(buf, blocks), buf(portraits), buf(dungeon)]
-    s = SaveFile()
-    s.header = ctypes.cast(keep[0], u8p)
-    for i in range(5):
-        s.block[i] = ctypes.cast(keep[1 + i], u8p)
-        s.block_size[i] = sizes[i]
-    s.portraits, s.dungeon = ctypes.cast(keep[6], u8p), ctypes.cast(keep[7], u8p)
-    s.dungeon_size = len(dungeon)
-    size = ctypes.c_uint32()
-    p = lib.save_encode(ctypes.byref(s), ctypes.byref(size))
-    if not p:
-        return None
-    out = ctypes.string_at(p, size.value)
-    lib.free(p)
-    return out
-
-
-def decode(lib, data):
-    s = SaveFile()
-    if lib.save_decode(data, len(data), ctypes.byref(s)) != 1:
-        return None
-    r = {
-        "header": bytes(s.header[:512]),
-        "blocks": [bytes(s.block[i][: s.block_size[i]]) for i in range(5)],
-        "portraits": bytes(s.portraits[:PORTRAITS]),
-        "dungeon": bytes(s.dungeon[: s.dungeon_size]),
-    }
-    lib.save_free(ctypes.byref(s))
-    return r
 
 
 def test_round_trip(lib):

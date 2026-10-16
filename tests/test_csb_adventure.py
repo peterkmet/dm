@@ -9,12 +9,11 @@ from pathlib import Path
 
 import pytest
 
+from dmtest import constants as C
+from dmtest.control import Client
+from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Frames, Game, global_type
 from dmtest.lib import load_lib
 from dmtest.markers import needs_sdl
-
-from conftest import global_type
-from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Game
-from test_save import KEY_RETURN, Frames
 
 ROOT = Path(__file__).parent.parent
 GAME_CSB = ROOT / "game-csb"
@@ -192,7 +191,7 @@ def run_save_dialog(game, choices):
             c16.in_dll(lib, "g_dialog_choice").value = choices.pop(0)
         elif not choices:
             unplanned.append(waiting)
-            lib.command_process_key(KEY_RETURN)
+            lib.command_process_key(C.KEY_RETURN)
 
     frames = Frames(lib, action)
     lib.startend_save_game()
@@ -254,7 +253,6 @@ def test_advanced_save_keeps_the_automap_block(game, saves):
 
 
 def test_control_new_game_save_and_load(game, saves):
-    from test_control import Client
 
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")
     game.socket = os.path.join(sock_dir, "control.sock")

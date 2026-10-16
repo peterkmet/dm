@@ -7,12 +7,18 @@ import zlib
 
 import pytest
 
-from test_port import ROOT
-from test_view import game, lib, needs_game  # noqa: F401 (fixtures)
+from dmtest.game import setup_view, start_view
+from dmtest.lib import load_lib
+from dmtest.markers import ROOT, needs_dm
 
 GOLDEN = ROOT / "tests" / "golden" / "view.json"
 SEED = 0x1234ABCD
 MAP_COUNT = 14  # Dungeon.DAT of Dungeon Master
+
+
+@pytest.fixture(scope="module")
+def game():
+    return start_view(setup_view(load_lib()))
 
 
 def map_rows(lib, m):
@@ -31,7 +37,7 @@ def map_rows(lib, m):
     return rows
 
 
-@needs_game
+@needs_dm
 @pytest.mark.parametrize("m", range(MAP_COUNT))
 def test_view_matches_the_golden_snapshot(game, m):
     lib, _ = game

@@ -2,26 +2,19 @@ import ctypes
 import os
 import shutil
 import subprocess
-from collections import deque
 from pathlib import Path
 
 import pytest
 
+from dmtest.game import STEP_EAST, STEP_NORTH, Box, Party, start_game
 from dmtest.lib import load_lib
 from dmtest.markers import needs_sdl
 
-from test_champion import Champion
-from conftest import global_type
-
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
-STEP_EAST, STEP_NORTH = (0, 1, 0, -1), (-1, 0, 1, 0)
-KEY_UP, KEY_DEL, KEY_HELP, KEY_F1, KEY_RETURN, KEY_ESCAPE = 0x4C00, 0x4600, 0x5F00, 0x5000, 0x4400, 0x4500
-LEFT_PRESS, LEFT_RELEASE = 2, 4
-VIEWPORT_ORIGIN = 0x10293A
+KEY_DEL, KEY_HELP, KEY_F1, KEY_RETURN, KEY_ESCAPE = 0x4600, 0x5F00, 0x5000, 0x4400, 0x4500
 ZONE_RESURRECT, ZONE_DROP_PARTY_CELL, ZONE_BACKPACK_FIRST_SLOT = 570, 740, 520
 SLOT_HAND_ACTION, SLOT_BACKPACK_FIRST = 1, 13
-SENSOR, CORRIDOR, CHAMPION_PORTRAIT = 3, 1, 127
 ATTACK_RAW = 0
 ZONE_SPELL_AREA, SPELL_SYMBOL_FIRST = 13, 0x60
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
@@ -32,111 +25,9 @@ pytestmark = [
 ]
 
 
-class Box(ctypes.Structure):
-    _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
-
-
 @pytest.fixture(scope="module")
 def game():
-    lib = load_lib()
-    lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_start_new_game.restype = ctypes.c_bool
-    lib.gameloop_get_pointer.restype = ctypes.c_bool
-    lib.ui_get_slot_box_zone.restype = ctypes.c_bool
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.map_get_square_first_thing.restype = u16
-    lib.map_get_next_thing.restype = u16
-    lib.map_get_square.restype = ctypes.c_uint8
-    lib.kaos_s16.restype = c16
-    assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_start_new_game(str(GAME).encode())
-    return Game(lib)
-
-
-class Game:
-    def __init__(self, lib):
-        self.lib = lib
-        self.boxes = (Box * 6).in_dll(lib, "g_dungeon_view_clickable_boxes")
-        self.champions = (Champion * 4).in_dll(lib, "g_champions")
-        self.origin = lib.kaos_s16(VIEWPORT_ORIGIN), lib.kaos_s16(VIEWPORT_ORIGIN + 2)
-
-    def value(self, name, kind=c16):
-        return global_type(name, kind).in_dll(self.lib, name).value
-
-    def position(self):
-        return [self.value(n) for n in ("g_party_map_x", "g_party_map_y", "g_party_direction")]
-
-    def run(self, frames=13):
-        for _ in range(frames):
-            if self.lib.gameloop_run_frame():
-                self.lib.gameloop_tick()
-
-    def until(self, condition, limit=400):
-        for _ in range(limit):
-            if condition():
-                return True
-            self.run(1)
-        return condition()
-
-    def key(self, key):
-        self.lib.command_process_key(key)
-
-    def click(self, x, y):
-        self.lib.command_process_click(x, y, LEFT_PRESS)
-        self.lib.command_process_click(x, y, LEFT_RELEASE)
-        self.run()
-
-    def click_box(self, box, viewport=True):
-        x, y = box.x + box.w // 2, box.y + box.h // 2
-        if viewport:
-            x, y = x + self.origin[0], y + self.origin[1]
-        self.click(x, y)
-
-    def click_zone(self, zone):
-        box = Box()
-        assert self.lib.layout_get_zone_box(zone, 10000, 10000, ctypes.byref(box))
-        self.click_box(box)
-
-    def face(self, direction):
-        while self.position()[2] != direction:
-            current = self.position()[2]
-            self.key(KEY_HELP if (direction - current) & 3 == 1 else KEY_DEL)
-            assert self.until(lambda: self.position()[2] != current)
-
-    def walk(self, path):
-        for (x0, y0), (x1, y1) in zip(path, path[1:]):
-            self.face(next(d for d in range(4) if (x0 + STEP_EAST[d], y0 + STEP_NORTH[d]) == (x1, y1)))
-            assert self.until(lambda: self.position()[:2] == [x0, y0])
-            self.key(KEY_UP)
-            assert self.until(lambda: self.position()[:2] == [x1, y1])
-
-    def mirror_cell(self, x, y):
-        thing = self.lib.map_get_square_first_thing(x, y)
-        while thing not in (0xFFFE, 0xFFFF):
-            data = self.lib.dungeon_get_thing_data(thing)
-            if thing >> 10 & 15 == SENSOR and (data[2] << 8 | data[3]) & 0x7F == CHAMPION_PORTRAIT:
-                return thing >> 14
-            thing = self.lib.map_get_next_thing(thing)
-        return None
-
-    def path_to_mirror(self, skip=()):
-        """Shortest corridor path to a square whose wall ahead holds a mirror facing it, and that direction."""
-        start = tuple(self.position()[:2])
-        previous, queue = {start: None}, deque([start])
-        while queue:
-            x, y = queue.popleft()
-            for d in range(4):
-                nx, ny = x + STEP_EAST[d], y + STEP_NORTH[d]
-                if (nx, ny) not in skip and self.mirror_cell(nx, ny) == (d + 2) & 3:
-                    path, square = [], (x, y)
-                    while square:
-                        path.append(square)
-                        square = previous[square]
-                    return path[::-1], d
-                if self.lib.map_get_square(nx, ny) >> 5 == CORRIDOR and (nx, ny) not in previous:
-                    previous[nx, ny] = (x, y)
-                    queue.append((nx, ny))
-        raise AssertionError("no mirror reachable")
+    return start_game(load_lib())
 
 
 def test_new_game_recruit_take_and_store(game):
@@ -269,8 +160,6 @@ def test_freeze_covers_open_inventory(game):
 
 
 def test_party_light_sets_the_darkness_of_view_and_rules(game):
-    from test_champion import Party
-
     lib = game.lib
     assert lib.gameloop_start_new_game(str(GAME).encode())
     lib.automap_get_visible_depths.restype = c16

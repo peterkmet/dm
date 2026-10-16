@@ -9,11 +9,10 @@ import tempfile
 
 import pytest
 
+from dmtest.control import Client
+from dmtest.game import STEP_EAST, STEP_NORTH, Game
 from dmtest.lib import load_lib
-
-from test_control import Client
-from test_gameloop import STEP_EAST, STEP_NORTH, Game
-from test_port import ROOT
+from dmtest.markers import ROOT
 
 GOLDEN = ROOT / "tests" / "golden" / "protocol.json"
 GAME = ROOT / "game"

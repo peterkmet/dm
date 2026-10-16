@@ -2,7 +2,15 @@ import ctypes
 
 import pytest
 
-from test_port import lib, pytestmark  # noqa: F401
+from dmtest.lib import load_lib
+from dmtest.markers import sdl3_installed
+
+pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not installed")
+
+
+@pytest.fixture(scope="module")
+def lib():
+    return load_lib()
 
 
 def run(lib, n, rows):

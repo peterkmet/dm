@@ -8,10 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from dmtest.lib import load_lib
-
-from conftest import clear_folder_hooks, set_folder_hooks, global_type
-from test_creatures import TimelineEvent
+from dmtest.game import TimelineEvent, global_type
+from dmtest.lib import clear_folder_hooks, load_lib, set_folder_hooks
 
 ROOT = Path(__file__).parent.parent
 GAME_CSB = ROOT / "game-csb"

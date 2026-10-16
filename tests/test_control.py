@@ -2,19 +2,16 @@ import ctypes
 import json
 import os
 import shutil
-import socket
 import subprocess
 import sys
-import tempfile
-import threading
 from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
 
+from dmtest.control import Client, pump, pumped, socket_dir
+from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 from dmtest.lib import load_lib
-
-from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -55,7 +52,7 @@ def game():
     game.click_zone(ZONE_RESURRECT)
     assert game.value("g_party_champion_count", ctypes.c_uint16) == 1
     game.mirrors = {(path[-1][0] + STEP_EAST[direction], path[-1][1] + STEP_NORTH[direction])}
-    sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
+    sock_dir = socket_dir()
     game.socket = os.path.join(sock_dir, "control.sock")
     assert lib.control_open(game.socket.encode())
     yield game
@@ -68,59 +65,6 @@ def state_json(game, part):
     text = ctypes.string_at(pointer).decode()
     ctypes.CDLL(None).free(ctypes.c_void_p(pointer))
     return json.loads(text)
-
-
-def pump(lib):
-    """One frame of the turn-based main loop."""
-    lib.control_poll()
-    if lib.control_is_turn_pending() and lib.gameloop_run_frame():
-        lib.gameloop_tick()
-
-
-@contextmanager
-def pumped(game):
-    """The turn-based main loop in a thread, for clients that block while they wait."""
-    stop = threading.Event()
-
-    def loop():
-        while not stop.is_set():
-            pump(game.lib)
-
-    thread = threading.Thread(target=loop)
-    thread.start()
-    try:
-        yield
-    finally:
-        stop.set()
-        thread.join()
-
-
-class Client:
-    """A socket client that pumps the game in the same thread while it waits."""
-
-    def __init__(self, game):
-        self.game = game
-        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.sock.connect(game.socket)
-        self.sock.setblocking(False)
-
-    def call(self, **payload):
-        self.sock.sendall(json.dumps(payload).encode() + b"\n")
-        data = b""
-        for _ in range(20000):
-            pump(self.game.lib)
-            try:
-                data += self.sock.recv(1 << 20)
-            except BlockingIOError:
-                pass
-            if data.endswith(b"\n"):
-                return json.loads(data)
-        raise AssertionError("no response")
-
-    def act(self, action, **args):
-        response = self.call(cmd="act", action=action, args=args)
-        assert response["ok"], response
-        return response
 
 
 def ahead_square(view):

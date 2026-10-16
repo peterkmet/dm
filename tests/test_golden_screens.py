@@ -5,13 +5,20 @@ import hashlib
 import json
 import os
 
-from test_golden_rules import (ZONE_ACTION_ICON_FIRST, ZONE_SPELL_SYMBOL_BOX_FIRST, add_second_champion, game,  # noqa: F401
-                               needs_game, recruit, zone_box)
-from test_port import ROOT
+import pytest
+
+from dmtest import constants as C
+from dmtest.golden import add_second_champion, golden_game, recruit, zone_box
+from dmtest.markers import ROOT, needs_dm
 
 GOLDEN = ROOT / "tests" / "golden" / "screens.json"
 CHAMPION_ATTR_REDRAW_MASK = 0xFF80
 WOUND_READY_AND_ACTION_HAND = 0x03
+
+
+@pytest.fixture
+def game():
+    return golden_game()
 
 
 def screen(game):
@@ -28,7 +35,7 @@ def check(name, got):
     assert got == golden[name]
 
 
-@needs_game
+@needs_dm
 def test_status_boxes(game):
     recruit(game)
     add_second_champion(game)
@@ -42,7 +49,7 @@ def test_status_boxes(game):
     check("status", got)
 
 
-@needs_game
+@needs_dm
 def test_inventory_panel(game):
     recruit(game)
     game.lib.command_toggle_inventory(0)
@@ -50,22 +57,22 @@ def test_inventory_panel(game):
     check("inventory", [screen(game)])
 
 
-@needs_game
+@needs_dm
 def test_action_area(game):
     recruit(game)
-    game.click_box(zone_box(game, ZONE_ACTION_ICON_FIRST), viewport=False)
+    game.click_box(zone_box(game, C.ZONE_ACTION_ICON_BOX_FIRST), viewport=False)
     got = [screen(game)]
     game.lib.menus_draw_action_damage(25)
     got.append(screen(game))
     check("action", got)
 
 
-@needs_game
+@needs_dm
 def test_spell_area(game):
     recruit(game)
     game.champions[game.value("g_magic_caster_champion_index")].current_mana = 100
     got = []
     for symbol in (0, 1):
-        game.click_box(zone_box(game, ZONE_SPELL_SYMBOL_BOX_FIRST + symbol), viewport=False)
+        game.click_box(zone_box(game, C.ZONE_SPELL_SYMBOL_BOX_FIRST + symbol), viewport=False)
         got.append(screen(game))
     check("spell", got)

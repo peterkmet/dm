@@ -7,12 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from dmtest import constants as C
+from dmtest.game import Champion, Game, TimelineEvent, global_type
 from dmtest.lib import load_lib
-
-from conftest import global_type
-from test_champion import Champion
-from test_creatures import THING_EXPLOSION, TimelineEvent
-from test_gameloop import Game
 
 ROOT = Path(__file__).parent.parent
 DIRS = {"dm": ROOT / "game", "csb": ROOT / "game-csb"}
@@ -143,7 +140,7 @@ def test_removed_actions(world, action):
     value(lib, "g_random_seed", u32).value = SEED
     assert lib.action_is_action_performed(0, action) == 1
     seed = value(lib, "g_random_seed", u32).value
-    explosions = [t for t in things(lib, *front) if t >> 10 & 15 == THING_EXPLOSION]
+    explosions = [t for t in things(lib, *front) if t >> 10 & 15 == C.THING_EXPLOSION]
     new_fluxcages = sum(e.type == EVENT_REMOVE_FLUXCAGE for e in timeline(lib)) - fluxcages
     if adventure == "csb":
         assert seed == seed_after_random_bit(lib)

@@ -6,12 +6,9 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.game import Game, global_type, state
 from dmtest.lib import load_lib
-
-from conftest import global_type
-from test_gameloop import Game
-from test_save import state
-from test_savefile import SaveFile, u8p
+from dmtest.savefile import SaveFile
 
 ROOT = Path(__file__).parent.parent
 GAME_CSB = ROOT / "game-csb"

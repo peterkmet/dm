@@ -7,18 +7,15 @@ import os
 
 import pytest
 
+from dmtest.game import Game, recruit_and_hold_object, scrub_free_groups
 from dmtest.lib import load_lib
-
-from test_gameloop import Game
-from test_port import ROOT
-from test_save import GAME, SAVE, recruit_and_hold_object
-from test_savefile import decode
+from dmtest.markers import GAME, ROOT
+from dmtest.savefile import SAVE, decode
 
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
 
 GOLDEN = ROOT / "tests" / "golden" / "save.json"
 SEED = 0x1234ABCD
-GROUP_BYTES = 16  # sizeof(ActiveGroup)
 
 needs_game = pytest.mark.skipif(not (GAME / "KAOS.FTL").exists(), reason="game files missing")
 
@@ -28,15 +25,6 @@ def digests(parts):
             "blocks": [hashlib.sha256(b).hexdigest() for b in parts["blocks"]],
             "portraits": hashlib.sha256(parts["portraits"]).hexdigest(),
             "dungeon": hashlib.sha256(parts["dungeon"]).hexdigest()}
-
-
-def scrub_free_groups(lib):
-    """Zero the bytes of free active-group entries: the port leaves them uninitialized, and the save copies them."""
-    base = ctypes.c_void_p.in_dll(lib, "g_active_groups").value
-    for i in range(ctypes.c_uint16.in_dll(lib, "g_max_active_group_count").value):
-        entry = base + i * GROUP_BYTES
-        if c16.from_address(entry).value == -1:
-            ctypes.memset(entry + 2, 0, GROUP_BYTES - 2)
 
 
 def saved_game(tmp_path):

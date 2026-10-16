@@ -5,11 +5,15 @@ import struct
 
 import pytest
 
+from dmtest.game import Bitmap, Box, Champion, recruit_from_mirrors, render, reset, setup_ui, start_ui
+from dmtest.lib import load_lib
+from dmtest.markers import GAME, needs_dm
+
 import dmtools.emu as emu_module
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_ui import GAME, Bitmap, Box, Champion, c16, game, lib, needs_game, recruit, render, reset, u16  # noqa: F401
 
+u16, c16 = ctypes.c_uint16, ctypes.c_int16
 # Original addresses (docs/kaos-symbols.csv).
 DRAW_PANEL_OBJECT, PANEL_PRINT_LINE, PRINT_ZONE = 0x10F28A, 0x10EC88, 0x109A04
 STUBS = (0x1072C6, 0x10EC40, 0x10EFAC)  # blit_graphic_to_viewport_zone, ui_draw_icon_to_viewport, draw_panel_arrow_or_eye
@@ -22,6 +26,16 @@ RECORD_SIZE = {5: 4, 6: 4, 7: 4, 8: 4, 9: 8, 10: 4}
 SCROLL, CHEST, NONE, END = 7, 9, 0xFFFF, 0xFFFE
 SLOT_BOX_CHEST_FIRST, CHEST_SLOTS, VIEWPORT_Y = 38, 8, 33
 PRIEST = 2
+
+
+@pytest.fixture(scope="module")
+def lib():
+    return setup_ui(load_lib())
+
+
+@pytest.fixture(scope="module")
+def game(lib):
+    return start_ui(lib)
 
 
 def setup(lib):
@@ -141,13 +155,13 @@ class Original:
 def party(game):
     setup(game)
     reset(game)
-    champions = recruit(game, 4)
+    champions = recruit_from_mirrors(game, 4)
     c16.in_dll(game, "g_inventory_champion_ordinal").value = 1
     yield champions
     c16.in_dll(game, "g_inventory_champion_ordinal").value = 0
 
 
-@needs_game
+@needs_dm
 def test_object_text_matches_original(game, party):
     original = Original(game)
     try:
@@ -190,7 +204,7 @@ def put_in_action_hand(game, champions, thing):
     game.ui_draw_champion_state(0)
 
 
-@needs_game
+@needs_dm
 def test_chest_open_swap_close(game, party):
     chests = [c for c in things_of(game, CHEST)[0] if 2 <= len(chest_content(game, c)) < CHEST_SLOTS]
     assert chests
@@ -230,7 +244,7 @@ def test_chest_open_swap_close(game, party):
     game.ui_draw_inventory_close(0)
 
 
-@needs_game
+@needs_dm
 def test_render_scroll_and_eye(game, party):
     scrolls = things_of(game, SCROLL)[0]
     assert scrolls
@@ -249,7 +263,7 @@ def test_render_scroll_and_eye(game, party):
     game.ui_draw_inventory_close(0)
 
 
-@needs_game
+@needs_dm
 def test_eat_food_redraws_the_food_bar(game, party):
     game.tables_get_object_info.restype = ctypes.POINTER(u16 * 3)
     junk = next(j for j in range(53) if 0xA8 <= game.tables_get_object_info(0x7F + j).contents[0] < 0xB0)

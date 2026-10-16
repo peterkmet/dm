@@ -13,16 +13,16 @@ from pathlib import Path
 
 import pytest
 
+from dmtest import constants as C
+from dmtest.control import Client
+from dmtest.game import (ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Party, press, recruit_first_champion, set_mode,
+                         start_game)
 from dmtest.lib import load_lib
 from dmtest.markers import needs_sdl
-
-from test_control import Client, pump
-from test_gameloop import CORRIDOR, KEY_ESCAPE, KEY_F1, KEY_RETURN, KEY_UP, LEFT_PRESS, LEFT_RELEASE, STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
 SCRATCH = Path("/private/tmp/claude-501/-Users-lego-github-dm/a035dd1c-2cf2-40ec-9360-f301ae6b451f/scratchpad")
-VANILLA, ADVANCED, TURNBASED = 0, 1, 2
 KEY_TAB, KEY_M, KEY_F5, KEY_F9 = 0x4200, 0x3700, 0x5400, 0x5800
 KEY_DOWN, KEY_RIGHT, KEY_LEFT, KEY_DEL, KEY_HELP = 0x4D00, 0x4E00, 0x4F00, 0x4600, 0x5F00
 QUICK = "QUICK.DAT"
@@ -44,13 +44,6 @@ def game():
     """A new game with one recruited champion in a private copy of libdm."""
     lib = load_lib()
     lib.control_open.restype = ctypes.c_bool
-    lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.gameloop_start_new_game.restype = ctypes.c_bool
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.map_get_square_first_thing.restype = u16
-    lib.map_get_next_thing.restype = u16
-    lib.map_get_square.restype = ctypes.c_uint8
-    lib.kaos_s16.restype = c16
     lib.dungeon_map_width.restype = c16
     lib.dungeon_map_height.restype = c16
     lib.savegame_save.restype = c16
@@ -58,25 +51,11 @@ def game():
     lib.video_get_color.restype = u16
     lib.video_convert_argb.restype = u32
     lib.control_open.argtypes = [ctypes.c_char_p]
-    assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_start_new_game(str(GAME).encode())
-    game = Game(lib)
-    game.run(26)
-    path, direction = game.path_to_mirror()
-    game.walk(path)
-    game.face(direction)
-    game.run()
-    game.click_box(game.boxes[5])
-    game.click_zone(ZONE_RESURRECT)
-    assert game.value("g_party_champion_count", u16) == 1
+    game = start_game(lib)
+    recruit_first_champion(game)
     game.run(30)
     yield game
     set_mode(game, VANILLA)
-
-
-def set_mode(game, mode, features=None):
-    c16.in_dll(game.lib, "g_game_mode").value = mode
-    ctypes.c_bool.in_dll(game.lib, "g_advanced_features").value = int(mode != VANILLA) if features is None else features
 
 
 def zone_box(game, zone):
@@ -117,13 +96,8 @@ def thing_count(game, thing_type):
     return int.from_bytes(ctypes.string_at(header + 12 + 2 * thing_type, 2), "big")
 
 
-def press(game, key, frames=13):
-    game.key(key)
-    game.run(frames)
-
-
 def unfreeze(game):
-    for key in (KEY_ESCAPE, KEY_RETURN):
+    for key in (C.KEY_ESCAPE, C.KEY_RETURN):
         if game.value("g_game_frozen"):
             press(game, key)
     assert game.value("g_game_frozen") == 0
@@ -143,7 +117,7 @@ def test_vanilla_is_the_default_and_the_advanced_keys_do_nothing(game, tmp_path)
 def test_letter_keys_move_and_turn_outside_vanilla(game):
     set_mode(game, ADVANCED)
     keys = [game.lib.advanced_letter_key(ord(c)) for c in "wsadqex"]
-    assert keys == [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_DEL, KEY_HELP, 0]
+    assert keys == [C.KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_DEL, KEY_HELP, 0]
     set_mode(game, VANILLA)
 
 
@@ -181,7 +155,7 @@ def test_quick_save_and_quick_load(game, tmp_path):
         assert "QUICK SAVE DAMAGED" in message_text(game)
         assert game.value("g_party_champion_count", u16) == 1
         game.face((position[2] + 1) & 3)  # turns and moves read the squares of the running dungeon
-        press(game, KEY_UP, 30)
+        press(game, C.KEY_UP, 30)
         game.run(100)
     lib.startend_set_save_dir(b".")
     set_mode(game, VANILLA)
@@ -205,7 +179,7 @@ def test_automap_stops_the_game_time_and_draws_the_map(game):
     palette = list((u16 * 32).in_dll(game.lib, "palette"))
     assert palette[:16] == palette[16:]  # the viewport rows use the interface palette
     screenshot(game, "adv_automap.png")
-    press(game, KEY_UP, 50)
+    press(game, C.KEY_UP, 50)
     assert game.value("g_game_time", u32) == time_before
     assert game.position() == position
     press(game, KEY_TAB)
@@ -230,9 +204,9 @@ def test_a_drag_scrolls_the_automap(game):
     x, y = b.x + b.w // 2, b.y + b.h // 2
     game.click(x, y)
     assert arrow_x(game) == centered  # a click without a move does not scroll
-    game.lib.command_process_click(x, y, LEFT_PRESS)
+    game.lib.command_process_click(x, y, C.CLICK_LEFT_PRESS)
     game.lib.advanced_drag(x - 3 * 7 - 3, y)  # 3 squares and a part of one to the west
-    game.lib.command_process_click(x - 3 * 7 - 3, y, LEFT_RELEASE)
+    game.lib.command_process_click(x - 3 * 7 - 3, y, C.CLICK_LEFT_RELEASE)
     game.run()
     assert arrow_x(game) == centered - 3 * 7  # the map follows the mouse in whole squares
     press(game, KEY_M)
@@ -243,14 +217,14 @@ def test_a_drag_scrolls_the_automap(game):
 
 def test_automap_opens_only_in_the_dungeon_view(game):
     set_mode(game, ADVANCED)
-    press(game, KEY_F1)
+    press(game, C.KEY_F1)
     assert game.value("g_inventory_champion_ordinal") == 1
     press(game, KEY_M)
     assert game.value("g_automap_open") == 0
-    press(game, KEY_F1)
+    press(game, C.KEY_F1)
     assert game.value("g_inventory_champion_ordinal") == 0
     press(game, KEY_M)
-    press(game, KEY_ESCAPE)
+    press(game, C.KEY_ESCAPE)
     assert game.value("g_automap_open") == 0 and game.value("g_game_frozen") == 0
     set_mode(game, VANILLA)
 
@@ -259,10 +233,10 @@ def test_quick_keys_work_only_in_the_dungeon_view(game, tmp_path):
     lib = game.lib
     set_mode(game, ADVANCED)
     lib.startend_set_save_dir(str(tmp_path).encode())
-    press(game, KEY_F1)
+    press(game, C.KEY_F1)
     press(game, KEY_F5)
     assert not (tmp_path / QUICK).exists()
-    press(game, KEY_F1)
+    press(game, C.KEY_F1)
     waiting = c16.in_dll(lib, "g_waiting_frame")
     waiting.value = 1  # a sequence or an endgame wait runs the frame
     press(game, KEY_F5)
@@ -295,34 +269,34 @@ def test_automap_shows_the_position_readout(game):
 @pytest.mark.parametrize("mode", [VANILLA, ADVANCED])
 def test_escape_rule(game, mode):
     set_mode(game, mode)
-    press(game, KEY_F1)
+    press(game, C.KEY_F1)
     assert game.value("g_inventory_champion_ordinal") == 1
-    press(game, KEY_ESCAPE)
+    press(game, C.KEY_ESCAPE)
     if mode == ADVANCED:
         assert game.value("g_inventory_champion_ordinal") == 0 and game.value("g_game_frozen") == 0
-        press(game, KEY_ESCAPE)
+        press(game, C.KEY_ESCAPE)
     assert game.value("g_game_frozen") == 1
     unfreeze(game)
     if game.value("g_inventory_champion_ordinal"):
-        press(game, KEY_F1)
+        press(game, C.KEY_F1)
     set_mode(game, VANILLA)
 
 
 @pytest.mark.parametrize("mode", [VANILLA, ADVANCED])
 def test_tab_closes_the_inventory(game, mode):
     set_mode(game, mode)
-    press(game, KEY_F1)
+    press(game, C.KEY_F1)
     press(game, KEY_TAB)
     assert game.value("g_inventory_champion_ordinal") == (0 if mode == ADVANCED else 1)
     assert game.value("g_automap_open") == 0
     if game.value("g_inventory_champion_ordinal"):
-        press(game, KEY_F1)
+        press(game, C.KEY_F1)
     set_mode(game, VANILLA)
 
 def test_save_and_load_keep_the_automap(game, tmp_path):
     lib = game.lib
     set_mode(game, ADVANCED)
-    for key in (KEY_UP, 0x5F00, KEY_UP, KEY_UP):  # forward, turn right (Help), forward
+    for key in (C.KEY_UP, 0x5F00, C.KEY_UP, C.KEY_UP):  # forward, turn right (Help), forward
         press(game, key, 30)
     explored = seen(game)
     assert len(explored) > 6
@@ -373,7 +347,7 @@ def test_render_advanced_panels(game):
     assert set(black_icon) <= {COLOR_BLACK, COLOR_CYAN} and len(set(colored_icon)) > 2
     screenshot(game, "adv_action_icons.png")
 
-    press(game, KEY_F1)
+    press(game, C.KEY_F1)
     assert game.value("g_inventory_champion_ordinal") == 1
     champion.slots[SLOT_HAND_ACTION] = hand
     leader_hand = u16.in_dll(lib, "g_leader_hand_object")
@@ -409,7 +383,7 @@ def test_render_advanced_panels(game):
     assert runes
 
     champion.slots[SLOT_HAND_ACTION] = hand
-    press(game, KEY_F1)
+    press(game, C.KEY_F1)
     assert game.value("g_inventory_champion_ordinal") == 0
     set_mode(game, VANILLA)
 
@@ -509,7 +483,7 @@ def test_smooth_projectile_flight(game):
         game.run()
         x, y, _ = game.position()
         nx, ny = x + STEP_EAST[direction], y + STEP_NORTH[direction]
-        if lib.map_get_square(nx, ny) >> 5 == CORRIDOR:
+        if lib.map_get_square(nx, ny) >> 5 == C.SQUARE_CORRIDOR:
             break
     fireball = 0xFF80
     for mode in (VANILLA, ADVANCED):
@@ -586,7 +560,6 @@ def test_cheat_keys_work_only_on_the_advanced_automap(game, mode):
 
 
 def test_cheat_light_draws_the_bright_palette(game):
-    from test_champion import Party
     lib, party = game.lib, Party.in_dll(game.lib, "g_party")
     place = {n: c16.in_dll(lib, n) for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")}
     start = {n: v.value for n, v in place.items()}

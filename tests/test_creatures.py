@@ -8,11 +8,13 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.emu import need, s16, var
+from dmtest.game import (Party, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
+                         things_of_type, tick)
 from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_champion import Champion, Party, World
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -38,102 +40,9 @@ EVENT_LIGHT, EVENT_PARTY_SHIELD_END = 70, 74
 pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
 
 
-class TimelineEvent(ctypes.Structure):
-    _fields_ = [("map_time", ctypes.c_uint32), ("type", u8), ("priority", u8), ("b", u16), ("c", u16)]
-
-
 @pytest.fixture(scope="module")
 def lib():
-    lib = load_lib()
-    event_p = ctypes.POINTER(TimelineEvent)
-    for name, res, args in [
-        ("projectile_get_impact_attack", u16, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
-        ("projectile_create", None, [u16, c16, c16, c16, c16, u8, u8, u8]), ("map_get_square", u8, [c16, c16]),
-        ("map_get_square_first_thing", u16, [c16, c16]), ("map_get_next_thing", u16, [u16]), ("map_get_square_group", u16, [c16, c16]),
-        ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("dungeon_get_square", u8, [c16, c16, c16]),
-        ("dungeon_get_square_first_thing", u16, [c16, c16, c16]),
-        ("timeline_is_first_event_expired", ctypes.c_bool, []), ("timeline_extract_first_event", None, [event_p]),
-        ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
-        ("map_set_current_map", None, [c16]), ("dungeon_get_thing_data", ctypes.POINTER(u8), [u16]),
-        ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", c16, [c16, c16, c16, c16]),
-        ("group_is_destination_visible_from_source", ctypes.c_bool, [c16, c16, c16, c16, c16]),
-        ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
-        ("group_get_generated", u16, [u16, c16, u16, c16, c16, c16]),
-        ("group_get_damage_all_creatures_outcome", c16, [u16, c16, c16, c16, ctypes.c_bool]),
-        ("dungeon_load", ctypes.c_bool, [ctypes.c_char_p]),
-        ("magic_get_champion_spell_cast_result", c16, [u16]), ("map_get_unused_thing", u16, [u16]),
-        ("object_get_icon_index", c16, [u16]), ("group_is_creature_allowed_on_map", ctypes.c_bool, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
-    ]:
-        f = getattr(lib, name)
-        f.restype, f.argtypes = res, args
-    return lib
-
-
-def need(lib, *names):
-    missing = [n for n in ("KAOS.FTL", *names) if not (GAME / n).exists()]
-    if missing:
-        pytest.skip(f"missing game/{missing[0]}")
-    assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.tables_init() == 0
-
-
-def var(lib, ctype, name):
-    return ctype.in_dll(lib, name)
-
-
-def s16(v):
-    return (v & 0xFFFF) - ((v & 0x8000) << 1)
-
-
-def new_game(lib):
-    need(lib, "Dungeon.DAT")
-    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
-    lib.map_reset()
-    lib.game_start_new()
-    var(lib, c16, "g_dungeon_view_palette_index").value = 0  # the view sets it in the game; a bright view here
-
-
-def tick(lib, seen=None):
-    """One game loop tick: the map change, the timeline, then the game time."""
-    lib.move_process_new_party_map()
-    if seen is not None:
-        timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
-        heap = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline"), ctypes.POINTER(u16))
-        if var(lib, u16, "g_timeline_count").value:
-            seen.add(timeline[heap[0]].type)
-    lib.event_process_expired()
-    var(lib, ctypes.c_uint32, "g_game_time").value += 1
-
-
-def things_of_type(lib, x, y, t):
-    found, thing = [], lib.map_get_square_first_thing(x, y)
-    while thing != 0xFFFE:
-        if thing >> 10 & 15 == t:
-            found.append(thing)
-        thing = lib.map_get_next_thing(thing)
-    return found
-
-
-def recruit(lib):
-    c = (Champion * 4).in_dll(lib, "g_champions")[0]
-    c.name = b"TEST"
-    c.current_health = c.maximum_health = 100
-    c.current_stamina = c.maximum_stamina = 1000
-    c.current_mana = c.maximum_mana = 100
-    c.enable_action_event_index = c.hide_damage_received_event_index = -1
-    c.statistics[1][:] = [50, 50, 30]
-    c.statistics[3][:] = [100, 100, 30]
-    for s in range(30):
-        c.slots[s] = 0xFFFF
-    var(lib, u16, "g_party_champion_count").value = 1
-    var(lib, c16, "g_leader_index").value = 0
-    return c
-
-
-def place_party(lib, map_index, x, y, direction):
-    for name, value in zip(("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction"), (map_index, x, y, direction)):
-        var(lib, c16, name).value = value
-    lib.move_party_enter_dungeon()
+    return setup_creatures(load_lib())
 
 
 # Differential tests against the original code in dmtools.emu.
@@ -317,7 +226,7 @@ def test_group_activates_and_approaches_party(lib):
     found = mummy_in_corridor(lib, 1)
     assert found, "no mummy in a straight corridor on map 1"
     _, party_square, facing = found
-    recruit(lib)
+    add_test_champion(lib)
     place_party(lib, 1, *party_square, facing)
     assert var(lib, u16, "g_active_group_count").value > 0
     seen, group = set(), None
@@ -334,7 +243,7 @@ def test_group_activates_and_approaches_party(lib):
 def test_group_attacks_adjacent_party(lib):
     new_game(lib)
     _, party_square, facing = mummy_in_corridor(lib, 1)
-    champion = recruit(lib)
+    champion = add_test_champion(lib)
     place_party(lib, 1, *party_square, facing)
     pending = (c16 * 4).in_dll(lib, "g_champion_pending_damage")
     hit = False
@@ -346,26 +255,9 @@ def test_group_attacks_adjacent_party(lib):
     assert hit
 
 
-def skeleton_map_and_squares(lib):
-    """A map that allows skeletons, and two empty corridor squares on it, two squares apart in a straight line."""
-    probe = lib.map_get_unused_thing(THING_GROUP)
-    lib.dungeon_get_thing_data(probe)[4] = CREATURE_SKELETON
-    maps = [m for m in range(lib.dungeon_map_count()) if lib.group_is_creature_allowed_on_map(probe, m)]
-    data = lib.dungeon_get_thing_data(probe)
-    data[0] = data[1] = 0xFF  # free the probe record again
-    for m in maps:
-        empty = lambda x, y: (0 <= x < lib.dungeon_map_width(m) and 0 <= y < lib.dungeon_map_height(m)
-                              and lib.dungeon_get_square(m, x, y) >> 5 == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE)
-        for x in range(lib.dungeon_map_width(m)):
-            for y in range(lib.dungeon_map_height(m)):
-                if empty(x, y) and empty(x, y + 1) and empty(x, y + 2):
-                    return m, (x, y), (x, y + 2)
-    return None
-
-
 def test_creature_dies_and_drops_possessions(lib):
     new_game(lib)
-    recruit(lib)
+    add_test_champion(lib)
     found = skeleton_map_and_squares(lib)
     assert found, "no map allows skeletons"
     m, party_square, (x, y) = found
@@ -426,7 +318,7 @@ def caster(lib):
     new_game(lib)
     assert lib.ui_init() == 0
     lib.move_party_enter_dungeon()
-    c = recruit(lib)
+    c = add_test_champion(lib)
     for s in range(20):
         c.skills[s].experience = 1 << 22  # every skill high enough for every spell
     return lib, c
@@ -435,11 +327,6 @@ def caster(lib):
 def cast(lib, c, symbols):
     c.symbols = bytes(symbols)
     return lib.magic_get_champion_spell_cast_result(0)
-
-
-def events(lib, event_type):
-    timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
-    return [timeline[i] for i in range(u16.in_dll(lib, "g_event_high_water").value) if timeline[i].type == event_type]
 
 
 def test_light_spell_adds_light_event_and_experience(caster):

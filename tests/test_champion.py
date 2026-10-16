@@ -1,65 +1,27 @@
 import ctypes
-import random
 import shutil
 import struct
-from pathlib import Path
 
 import pytest
 
+from dmtest.emu import need, s16, var
+from dmtest.game import (CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Champion, Party, RecruitData, World, champions,
+                         global_type, pack)
 from dmtest.lib import load_lib
-
-from dmtools.emu import Emu
-from dmtools.ftl import load_image, parse
-from conftest import global_type
-
-ROOT = Path(__file__).parent.parent
-GAME = ROOT / "game"
-STEP_EAST, STEP_NORTH = (0, 1, 0, -1), (-1, 0, 1, 0)
+from dmtest.markers import GAME
 
 # Original addresses (docs/kaos-symbols.csv).
-CHAMPIONS, PARTY_SHIELD, SCENT_COUNT, SCENTS, SCENT_STRENGTHS = 0x101F54, 0x101ED8, 0x101EDE, 0x101EE2, 0x101F12
-SLEEPING, CANDIDATE, COUNT, GAME_TIME, SEED = 0x1001DE, 0x1001DC, 0x1001E8, 0x1001F8, 0x100EF8
-LAST_ATTACK, LAST_MOVE, DIRECTION, MAP_X, MAP_Y, MAP_INDEX = 0x10314E, 0x103152, 0x1001EA, 0x1001EC, 0x1001EE, 0x1001F0
-CURRENT_MAP, THING_DATA, PENDING_DAMAGE, PENDING_WOUNDS, LEVEL_UP = 0x101CBC, 0x101CEA, 0x102462, 0x10246A, 0x102490
+PARTY_SHIELD, SCENT_COUNT, SCENTS, SCENT_STRENGTHS = 0x101ED8, 0x101EDE, 0x101EE2, 0x101F12
+CANDIDATE = 0x1001DC
+MAP_X, MAP_Y, MAP_INDEX = 0x1001EC, 0x1001EE, 0x1001F0
+LEVEL_UP = 0x102490
 SKILL_LEVEL, ADD_EXPERIENCE, MAX_LOAD, MOVE_TICKS, DEXTERITY = 0x110B20, 0x110C2E, 0x111056, 0x1110C2, 0x11112E
 STRENGTH, WOUND_DEFENSE, PENDING, DAMAGE_ALL, TIME_EFFECTS = 0x1111B6, 0x1112EA, 0x111984, 0x111C3A, 0x11202C
 WEIGHT, ICON = 0x10A4AC, 0x1079DC
 ATTR_STATUS_BOX, REDRAW_SPELL_AREA = 0x1000, 2
-RTS = b"\x4e\x75"
-STUBS = {0x112880: RTS, 0x112D2C: RTS, 0x1098A6: RTS, 0x10999E: RTS,  # draw state, draw all, message print, new line
-         0x111440: b"\x42\x6d\xc0\x7e" + RTS}  # champion_wake_up: clr.w g_party_is_sleeping
-THING_BUF, MAP_BUF = 0x200000, 0x208000
-# (thing type, record count, record size)
-THINGS = [(5, 46, 4), (6, 58, 4), (7, 1, 4), (8, 21, 4), (9, 1, 8), (10, 53, 4)]
 
 pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
 c16, u16, u8 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint8
-
-
-class Skill(ctypes.Structure):
-    _fields_ = [("temporary_experience", c16), ("experience", ctypes.c_int32)]
-
-
-class Champion(ctypes.Structure):
-    _fields_ = [
-        ("name", ctypes.c_char * 8), ("title", ctypes.c_char * 20),
-        ("direction", u8), ("cell", u8), ("action_index", u8), ("symbol_step", u8), ("symbols", ctypes.c_char * 5),
-        ("direction_maximum_damage_received", u8), ("maximum_damage_received", u8), ("poison_event_count", u8),
-        ("enable_action_event_index", c16), ("hide_damage_received_event_index", c16),
-        ("attributes", u16), ("wounds", u16),
-        ("current_health", c16), ("maximum_health", c16), ("current_stamina", c16), ("maximum_stamina", c16),
-        ("current_mana", c16), ("maximum_mana", c16), ("action_defense", c16), ("food", c16), ("water", c16),
-        ("statistics", (u8 * 3) * 7), ("skills", Skill * 20), ("slots", u16 * 30), ("load", u16), ("shield_defense", c16), ("magic_map", u8 * 6),
-    ]
-
-
-class Party(ctypes.Structure):
-    _fields_ = [
-        ("magical_light_amount", c16), ("thieves_eye", u8), ("footprints", u8),
-        ("shield_defense", c16), ("fire_shield_defense", c16), ("spell_shield_defense", c16),
-        ("scent_count", u8), ("freeze_life_ticks", u8), ("first_scent_index", u8), ("last_scent_index", u8),
-        ("scents", u16 * 24), ("scent_strengths", u8 * 24), ("invisibility", u8),
-    ]
 
 
 @pytest.fixture(scope="module")
@@ -86,28 +48,6 @@ def lib():
     return lib
 
 
-def var(lib, ctype, name):
-    return ctype.in_dll(lib, name)
-
-
-def need(lib, *names):
-    missing = [n for n in ("KAOS.FTL", *names) if not (GAME / n).exists()]
-    if missing:
-        pytest.skip(f"missing game/{missing[0]}")
-    assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.tables_init() == 0
-
-
-def champions(lib):
-    return (Champion * 4).in_dll(lib, "g_champions")
-
-
-def pack(lib, ch):
-    buf = ctypes.create_string_buffer(0x140)
-    lib.champion_pack(ctypes.byref(ch), buf)
-    return buf.raw
-
-
 def test_pack_layout(lib):
     ch = Champion(name=b"HALK", title=b"THE BARBARIAN", direction=2, cell=3, current_health=-2, maximum_stamina=1234,
                   food=-1024, water=2048, wounds=0x21, load=567, shield_defense=-5)
@@ -124,123 +64,6 @@ def test_pack_layout(lib):
     back = Champion()
     lib.champion_unpack(raw, ctypes.byref(back))
     assert pack(lib, back) == raw
-
-
-class World:
-    """The same champions, things, and globals in the C library and in the emulator."""
-
-    def __init__(self, lib, seed):
-        need(lib)
-        self.lib, self.rng = lib, random.Random(seed)
-        self.emu = Emu(load_image(parse((GAME / "KAOS.FTL").read_bytes()), 0x100000))
-        for addr, code in STUBS.items():
-            self.emu.write(addr, code)
-        self.buffers, self.things = [], []
-        thing_data = (ctypes.c_void_p * 16).in_dll(lib, "g_thing_data")
-        addr = THING_BUF
-        for t, n, size in THINGS:
-            data = bytearray()
-            for i in range(n):
-                rec = bytearray(size)
-                struct.pack_into(">H", rec, 0, 0xFFFE)
-                r = self.rng.getrandbits(8)
-                if t == 8:
-                    rec[2], rec[3] = (r & 0x80) | i, self.rng.getrandbits(8)
-                elif t == 9:
-                    struct.pack_into(">H", rec, 2, 0x1400 | 40)
-                elif t != 7:
-                    rec[2], rec[3] = self.rng.getrandbits(8), (r & 0x80) | i
-                data += rec
-                self.things.append(t << 10 | i)
-            if t == 5:  # chest contents: weapons 40 -> 41
-                struct.pack_into(">H", data, 40 * 4, 0x1400 | 41)
-            buf = ctypes.create_string_buffer(bytes(data))
-            self.buffers.append(buf)
-            thing_data[t] = ctypes.addressof(buf)
-            self.emu.write(addr, data)
-            self.emu.write(THING_DATA + 4 * t, struct.pack(">I", addr))
-            addr += 0x400
-        self.map = ctypes.create_string_buffer(16)
-        ctypes.c_void_p.in_dll(lib, "g_current_map").value = ctypes.addressof(self.map)
-        self.emu.write(CURRENT_MAP, struct.pack(">I", MAP_BUF))
-        ctypes.memset(ctypes.addressof(var(lib, Party, "g_party")), 0, ctypes.sizeof(Party))
-        for name in ("g_candidate_champion_ordinal", "g_inventory_champion_ordinal"):
-            var(lib, c16, name).value = 0
-        self.globals(sleeping=0, time=1000, attack=0, move=0, difficulty=0)
-
-    def globals(self, sleeping, time, attack, move, difficulty, direction=0):
-        lib, emu = self.lib, self.emu
-        var(lib, ctypes.c_bool, "g_party_is_sleeping").value = sleeping
-        var(lib, ctypes.c_uint32, "g_game_time").value = time
-        var(lib, ctypes.c_int32, "g_last_creature_attack_time").value = attack
-        var(lib, ctypes.c_int32, "g_last_party_movement_time").value = move
-        var(lib, c16, "g_party_direction").value = direction
-        self.map[12] = difficulty << 4
-        emu.write(SLEEPING, struct.pack(">h", sleeping))
-        emu.write(GAME_TIME, struct.pack(">I", time))
-        emu.write(LAST_ATTACK, struct.pack(">II", attack & 0xFFFFFFFF, move & 0xFFFFFFFF))
-        emu.write(DIRECTION, struct.pack(">h", direction))
-        emu.write(MAP_BUF + 12, bytes([difficulty << 4]))
-
-    def thing(self, empty=0.3):
-        return 0xFFFF if self.rng.random() < empty else self.rng.choice(self.things)
-
-    def champion(self):
-        rng, ch = self.rng, Champion()
-        ch.name = b"TEST"
-        ch.direction, ch.cell = rng.randrange(4), rng.randrange(4)
-        ch.wounds = rng.choice([0, 0, rng.getrandbits(6)])
-        ch.maximum_health = rng.randint(1, 999)
-        ch.current_health = rng.choice([0, rng.randint(1, ch.maximum_health), ch.maximum_health])
-        ch.maximum_stamina = rng.randint(2, 9999)
-        ch.current_stamina = rng.randint(0, ch.maximum_stamina)
-        ch.maximum_mana = rng.randint(0, 900)
-        ch.current_mana = rng.randint(0, ch.maximum_mana + 20)
-        ch.action_defense, ch.shield_defense = rng.randint(-20, 40), rng.randint(0, 60)
-        ch.food, ch.water = rng.randint(-1100, 2100), rng.randint(-1100, 2100)
-        for s in range(7):
-            mx = rng.randint(1, 255)
-            ch.statistics[s][:] = [mx, rng.choice([mx, rng.randint(0, 255)]), rng.randint(0, mx)]
-        for s in range(20):
-            ch.skills[s].temporary_experience = rng.choice([0, rng.randint(-5, 33000)])
-            ch.skills[s].experience = rng.choice([0, rng.randint(0, 1 << rng.randint(8, 24))])
-        for s in range(30):
-            ch.slots[s] = self.thing()
-        ch.load = rng.randint(0, 900)
-        return ch
-
-    def put_champions(self, count):
-        lib, emu = self.lib, self.emu
-        cs = champions(lib)
-        for i in range(4):
-            cs[i] = self.champion()
-            emu.write(CHAMPIONS + 0x140 * i, pack(lib, cs[i]))
-        var(lib, u16, "g_party_champion_count").value = count
-        emu.write(COUNT, struct.pack(">H", count))
-        self.zero_pending()
-
-    def zero_pending(self):
-        (c16 * 4).in_dll(self.lib, "g_champion_pending_damage")[:] = [0] * 4
-        (u16 * 4).in_dll(self.lib, "g_champion_pending_wounds")[:] = [0] * 4
-        self.emu.write(PENDING_DAMAGE, bytes(16))
-
-    def seed(self, value):
-        var(self.lib, ctypes.c_uint32, "g_random_seed").value = value
-        self.emu.write(SEED, struct.pack(">I", value))
-
-    def check_state(self):
-        lib, emu = self.lib, self.emu
-        cs = champions(lib)
-        for i in range(4):
-            assert pack(lib, cs[i]) == bytes(emu.read(CHAMPIONS + 0x140 * i, 0x140)), f"champion {i}"
-        assert var(lib, ctypes.c_uint32, "g_random_seed").value == struct.unpack(">I", emu.read(SEED, 4))[0]
-        assert var(lib, ctypes.c_bool, "g_party_is_sleeping").value == struct.unpack(">h", emu.read(SLEEPING, 2))[0]
-        assert list((c16 * 4).in_dll(lib, "g_champion_pending_damage")) == list(struct.unpack(">4h", emu.read(PENDING_DAMAGE, 8)))
-        assert list((u16 * 4).in_dll(lib, "g_champion_pending_wounds")) == list(struct.unpack(">4H", emu.read(PENDING_WOUNDS, 8)))
-
-
-def s16(v):
-    return (v & 0xFFFF) - ((v & 0x8000) << 1)
 
 
 def test_object_weight_and_icon_match_original(lib):
@@ -401,7 +224,6 @@ def party(lib):
 
 
 def test_recruit_first_mirror_champion(lib, party):
-    from test_recruit import RecruitData
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
     lib.recruit_parse.restype = ctypes.c_bool
     r = RecruitData()
@@ -423,10 +245,6 @@ def test_recruit_first_mirror_champion(lib, party):
     wall = list(square_things(lib, party["m"], *party["wall"]))
     assert not set(t & 0x3FFF for t in party["possessions"]) & set(t & 0x3FFF for t in wall)
     assert all(lib.recruit_portrait_index(t) == -1 for t in wall if t >> 10 & 15 == 3)  # mirror disabled
-
-
-class Bitmap(ctypes.Structure):
-    _fields_ = [("w", u16), ("h", u16), ("px", ctypes.POINTER(ctypes.c_uint8))]
 
 
 def test_recruit_copies_the_mirror_portrait(lib, party):
