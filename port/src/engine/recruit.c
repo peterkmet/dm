@@ -75,8 +75,8 @@ bool recruit_parse_text(const char *text, RecruitData *out)
     out->current_mana = out->maximum_mana;
     for (int i = 0; i < STAT_COUNT; i++) {
         int16_t v = recruit_decoded_value(p + VALUES_STATISTICS + i * STATISTIC_CHARS, STATISTIC_CHARS);
-        out->statistics[i][STAT_MAXIMUM] = out->statistics[i][STAT_CURRENT] =
-            (uint8_t)(v > STAT_MINIMUM_VALUE ? v : STAT_MINIMUM_VALUE);
+        out->statistics[i][STAT_CURRENT] = (uint8_t)(v > STAT_MINIMUM_VALUE ? v : STAT_MINIMUM_VALUE);
+        out->statistics[i][STAT_MAXIMUM] = out->statistics[i][STAT_CURRENT];
         out->statistics[i][STAT_MINIMUM] = STAT_MINIMUM_VALUE;
     }
     for (int s = SKILL_BASE_COUNT; s < SKILL_COUNT; s++)

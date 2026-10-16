@@ -2079,10 +2079,10 @@ static void load_wall_set(int16_t floor_set, int16_t wall_set)
     for (int i = 0; i < WALL_COUNT; i++)
         set_slot(WS_MIRRORED_WALL_FIRST + i, slot_graphics[get_wall_set_slot(mirrored_walls[i])], 1);
     stairs = first + WALLSET_STAIRS_FIRST;
-    slot_graphics[-1 - LAYOUT_STAIRS_UP_FRONT_D3L2] = slot_graphics[-1 - LAYOUT_STAIRS_UP_FRONT_D3R2] =
-        stairs + STAIRS_FRONT_D3L;
-    slot_graphics[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3L2] = slot_graphics[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3R2] =
-        stairs + STAIRS_FRONT_D3L + STAIRS_DOWN;
+    slot_graphics[-1 - LAYOUT_STAIRS_UP_FRONT_D3R2] = stairs + STAIRS_FRONT_D3L;
+    slot_graphics[-1 - LAYOUT_STAIRS_UP_FRONT_D3L2] = slot_graphics[-1 - LAYOUT_STAIRS_UP_FRONT_D3R2];
+    slot_graphics[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3R2] = stairs + STAIRS_FRONT_D3L + STAIRS_DOWN;
+    slot_graphics[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3L2] = slot_graphics[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3R2];
 }
 
 /* The door graphics and door info of the two door types of map m. */
