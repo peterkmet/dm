@@ -274,8 +274,7 @@ static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_in
 static void print_champion_skills(uint16_t champion_index, int y)
 {
     for (int16_t skill = 0; skill < SKILL_BASE_COUNT; skill++) {
-        int16_t level = champion_get_skill_level(champion_index, skill | SKILL_IGNORE_OBJECT_MODIFIERS |
-                                                                     SKILL_IGNORE_TEMPORARY_EXPERIENCE);
+        int16_t level = champion_get_skill_level(champion_index, skill, true, true);
         if (level == 1)
             continue;
         char line[ENDGAME_TEXT_SIZE];

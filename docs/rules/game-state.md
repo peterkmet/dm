@@ -200,7 +200,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 | `champion_adjust_statistic` | `0x10f860` | Adds a delta to a current statistic. A negative delta stops at the minimum. Above 120 the delta is halved, above 150 quartered (plus 1). The result stops at 170. |
 | `champion_is_lucky` | `0x110fc8` | See below. |
 
-`champion_is_lucky(champion, percentage)`:
+`champion_is_lucky(champion_index, percentage)`:
 
 1. When `random_bit()` is 1 and `percentage < random16() % 100`, return 1. Luck does not change.
 2. Lucky is true when the current luck is above 0 and `percentage < random16() % (2 * luck)`.

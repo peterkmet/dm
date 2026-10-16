@@ -530,7 +530,7 @@ static const char *choose_action(const char *args)
         if (g_acting_champion_ordinal != champion_index + 1)
             return "this champion cannot act now (action disabled, or no actions)";
     }
-    if (index < 0 || index >= g_action_count)
+    if (index < 0 || index >= g_action_list.count)
         return "index out of range of the action menu (see state action_menu)";
     turn.has_damage = true;
     g_action_damage = 0;

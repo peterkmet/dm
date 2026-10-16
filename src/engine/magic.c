@@ -296,14 +296,21 @@ static bool is_magic_map(uint16_t thing)
     return magic_map_is_text(text);
 }
 
+typedef struct {
+    bool cast;
+    uint16_t disabled_ticks;
+} MagicMapCast;
+
 /* CSB map spells need a magic map in the action hand. DAIN, ROS, and KU add a map layer for a time;
-   NETA keeps the map of the party square and direction. Returns false without the map. */
-static bool cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power, uint16_t *disabled_ticks)
+   NETA keeps the map of the party square and direction. cast is false without the map; disabled_ticks is set on the
+   NETA path only. */
+static MagicMapCast cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power)
 {
+    MagicMapCast result = {true, 0};
     Champion *c = &g_champions[champion_index];
     if (!is_magic_map(c->slots[SLOT_HAND_ACTION])) {
         magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MAGIC_MAP, 0);
-        return false;
+        return (MagicMapCast){false, 0};
     }
     uint16_t d = (power + 1) * SPELL_DURATION_FACTOR, ticks;
     if (type == MAGIC_MAP_NETA) {
@@ -314,9 +321,9 @@ static bool cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power
                 break;
             }
         c->magic_map[MAGIC_MAP_NETA] = g_party_direction + 1;
-        magic_set_map_position(c->magic_map, g_party_map_index, g_party_map_x, g_party_map_y);
-        *disabled_ticks = d * d >> 1;
-        ticks = *disabled_ticks * MAGIC_MAP_NETA_TICKS_FACTOR;
+        magic_set_map_position(c->magic_map, (Position){g_party_map_index, g_party_map_x, g_party_map_y});
+        result.disabled_ticks = d * d >> 1;
+        ticks = result.disabled_ticks * MAGIC_MAP_NETA_TICKS_FACTOR;
     } else {
         if (type == MAGIC_MAP_ROS)
             d -= MAGIC_MAP_ROS_DURATION_LOSS;
@@ -329,7 +336,7 @@ static bool cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power
                            .type = EVENT_MAGIC_MAP_DAIN_END + type,
                            .priority = champion_index};
     timeline_add_event(&event);
-    return true;
+    return result;
 }
 
 int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
@@ -352,7 +359,7 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
     uint16_t experience = required_level * required_level +
                           (power - 1) * spell->base_required_skill_level * SPELL_EXPERIENCE_POWER_FACTOR +
                           required_level * SPELL_EXPERIENCE_LEVEL_FACTOR + (random16() & SPELL_EXPERIENCE_RANDOM_MASK);
-    uint16_t skill_level = champion_get_skill_level(champion_index, spell->skill_index);
+    uint16_t skill_level = champion_get_skill_level(champion_index, spell->skill_index, false, false);
     for (uint16_t missing = skill_level < required_level ? required_level - skill_level : 0; missing; missing--) {
         if (spell_draw_fails(c->statistics[STAT_WISDOM][STAT_CURRENT], random16())) {
             champion_add_skill_experience(champion_index, spell->skill_index,
@@ -373,10 +380,13 @@ int16_t magic_get_champion_spell_cast_result(uint16_t champion_index)
     case SPELL_KIND_OTHER:
         cast_other(champion_index, spell->type, power);
         break;
-    case SPELL_KIND_MAGIC_MAP:
-        if (!cast_magic_map(champion_index, spell->type, power, &disabled_ticks))
+    case SPELL_KIND_MAGIC_MAP: {
+        MagicMapCast map_cast = cast_magic_map(champion_index, spell->type, power);
+        if (!map_cast.cast)
             return SPELL_CAST_FAILURE_NEEDS_FLASK; /* the symbols stay, as without a flask */
-        break;
+        if (spell->type == MAGIC_MAP_NETA)
+            disabled_ticks = map_cast.disabled_ticks;
+    } break;
     }
     champion_add_skill_experience(champion_index, spell->skill_index, experience);
     magic_disable_action(champion_index, disabled_ticks);

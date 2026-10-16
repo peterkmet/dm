@@ -3,6 +3,7 @@
 #define DM_ENGINE_MAGIC_H
 /* Prefixes: magic_ */
 #include "data/bytes.h"
+#include "engine/map.h"
 #include "engine/party.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -17,18 +18,16 @@
 #define MAGIC_MAP_NETA     3
 #define MAGIC_MAP_POSITION 4
 /* Stores the kept map position of NETA in the magic map bytes. */
-static inline void magic_set_map_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)
+static inline void magic_set_map_position(uint8_t *spells, Position position)
 {
-    wr16(spells + MAGIC_MAP_POSITION, party_pack_position(map, x, y));
+    wr16(spells + MAGIC_MAP_POSITION, party_pack_position(position.map, position.x, position.y));
 }
 
 /* Reads the kept map position of NETA from the magic map bytes. */
-static inline void magic_get_map_position(const uint8_t *spells, int16_t *map, int16_t *x, int16_t *y)
+static inline Position magic_get_map_position(const uint8_t *spells)
 {
     uint16_t word = be16(spells + MAGIC_MAP_POSITION);
-    *map = word & PARTY_POSITION_MAP_MASK;
-    *x = party_position_x(word);
-    *y = party_position_y(word);
+    return (Position){word & PARTY_POSITION_MAP_MASK, party_position_x(word), party_position_y(word)};
 }
 
 #define SHIELD_STRONG 50 /* above this shield defense, a new shield or a Ya potion adds a quarter */

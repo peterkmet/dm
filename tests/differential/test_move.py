@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Champion, Position
+from dmtest.game import Champion, Position, champions
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -178,7 +178,7 @@ def test_pit_drops_party(game):
     game.move_party(FORWARD)
     assert var(game, "g_new_party_map_index").value == below.map
     assert party(game)[1:3] == (below.x, below.y)
-    assert 0 < (c16 * 4).in_dll(game, "g_champion_pending_damage")[0] < 100
+    assert 0 < champions(game)[0].runtime.pending_damage < 100
     game.move_process_new_party_map()
     assert party(game)[:3] == (2, below.x, below.y)
 

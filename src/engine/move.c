@@ -438,7 +438,7 @@ void move_party(int16_t command)
     for (int16_t i = 0; i < g_party_champion_count; i++)
         if (g_champions[i].current_health)
             champion_decrement_stamina(i, (uint16_t)(g_champions[i].load * MOVE_STAMINA_FACTOR) /
-                                                  champion_get_maximum_load(&g_champions[i]) +
+                                                  champion_get_maximum_load(i) +
                                               1); /* 16-bit wrap */
     int16_t arrow = command - COMMAND_MOVE_FORWARD;
     int16_t x = g_party_map_x;
@@ -479,7 +479,7 @@ void move_party(int16_t command)
     int16_t ticks = 1;
     for (int16_t i = 0; i < g_party_champion_count; i++)
         if (g_champions[i].current_health)
-            ticks = max16(ticks, champion_get_movement_ticks(&g_champions[i]));
+            ticks = max16(ticks, champion_get_movement_ticks(i));
     g_projectile_disabled_movement_ticks = 0;
     g_disabled_movement_ticks = ticks;
 }

@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Box, recruit_from_mirrors, render, reset, setup_ui, start_ui, zone_records
+from dmtest.game import ActionList, Box, recruit_from_mirrors, render, reset, setup_ui, start_ui, zone_records
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
 
@@ -153,7 +153,7 @@ def test_render_action_menu(game):
     render(game, "base")
     game.menus_set_acting_champion(0)
     assert c16.in_dll(game, "g_acting_champion_ordinal").value == 1
-    assert (ctypes.c_uint8 * 3).in_dll(game, "g_action_list_indices")[0] != 0xFF
+    assert ActionList.in_dll(game, "g_action_list").actions[0] != 0xFF
 
 
 @needs_dm

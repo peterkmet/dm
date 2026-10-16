@@ -95,12 +95,13 @@
 #define RELATIVE_CELL_BACK_RIGHT  2
 #define RELATIVE_CELL_BACK_LEFT   3
 
-uint16_t g_action_target_group_thing;
 int16_t g_acting_champion_ordinal;
-uint8_t g_action_list_indices[ACTION_LIST_COUNT] = {ACTION_NONE, ACTION_NONE, ACTION_NONE};
+ActionList g_action_list = {
+    {ACTION_NONE, ACTION_NONE, ACTION_NONE},
+    {0},
+    0
+};
 int16_t g_action_damage;
-uint8_t g_action_list_minimum_skill_levels[ACTION_LIST_COUNT];
-uint16_t g_action_count;
 
 /* The charges of the object in the action hand of the acting champion (1 when it has none). */
 static uint16_t action_hand_charge_count(void)
@@ -123,8 +124,8 @@ void action_set_action_list(int16_t action_set_index)
     uint16_t n = 1;
     if (!set)
         return;
-    g_action_list_indices[0] = set->action_indices[0];
-    g_action_list_minimum_skill_levels[0] = 1;
+    g_action_list.actions[0] = set->action_indices[0];
+    g_action_list.minimum_skill_levels[0] = 1;
     for (int k = 1; k < ACTION_LIST_COUNT; k++) {
         uint8_t action = set->action_indices[k];
         uint8_t level = set->minimum_skill_levels[k - 1];
@@ -132,14 +133,14 @@ void action_set_action_list(int16_t action_set_index)
         if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charge_count()))
             continue;
         level &= ~ACTION_LEVEL_NEEDS_CHARGES;
-        if (level <= champion_get_skill_level(g_acting_champion_ordinal - 1, info->skill_index)) {
-            g_action_list_indices[n] = action;
-            g_action_list_minimum_skill_levels[n++] = level;
+        if (level <= champion_get_skill_level(g_acting_champion_ordinal - 1, info->skill_index, false, false)) {
+            g_action_list.actions[n] = action;
+            g_action_list.minimum_skill_levels[n++] = level;
         }
     }
-    g_action_count = n;
+    g_action_list.count = n;
     for (; n < ACTION_LIST_COUNT; n++)
-        g_action_list_indices[n] = ACTION_NONE;
+        g_action_list.actions[n] = ACTION_NONE;
 }
 
 /* A living champion that may act becomes the acting champion: the actions of the object in its action
@@ -171,9 +172,9 @@ int16_t action_take_damage(void)
 void action_reset(void)
 {
     g_acting_champion_ordinal = 0;
-    memset(g_action_list_indices, ACTION_NONE, sizeof g_action_list_indices);
-    memset(g_action_list_minimum_skill_levels, 0, sizeof g_action_list_minimum_skill_levels);
-    g_action_count = 0;
+    memset(g_action_list.actions, ACTION_NONE, sizeof g_action_list.actions);
+    memset(g_action_list.minimum_skill_levels, 0, sizeof g_action_list.minimum_skill_levels);
+    g_action_list.count = 0;
     g_action_damage = 0;
     g_redraw = 0;
 }
@@ -230,9 +231,8 @@ void action_decrement_charges(uint16_t champion_index)
     /* The interface redraws the changed object icons from the slots. */
 }
 
-bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y)
+bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y, uint16_t group)
 {
-    uint16_t group = g_action_target_group_thing;
     if (group == THING_ENDOFLIST)
         return false;
     uint16_t bonus = 0;
@@ -259,7 +259,7 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
         experience = FEAR_EXPERIENCE_CALM;
         break;
     }
-    uint16_t level = champion_get_skill_level(champion_index, SKILL_INFLUENCE);
+    uint16_t level = champion_get_skill_level(champion_index, SKILL_INFLUENCE, false, false);
     const CreatureInfo *info = group_info(group);
     uint16_t roll = random16() % (level + bonus);
     uint16_t fear = creature_fear_resistance(info);
@@ -274,14 +274,15 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
     return frightened;
 }
 
-bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y,
-                                      int16_t skill_index)
+bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, Location target_square,
+                                      int16_t skill_index, uint16_t target_group)
 {
     const Champion *c = &g_champions[champion_index];
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
-    if (g_action_target_group_thing == THING_ENDOFLIST)
+    if (target_group == THING_ENDOFLIST)
         return false;
-    int16_t ordinal = group_get_melee_target_creature_ordinal(x, y, g_party_map_x, g_party_map_y, c->cell);
+    int16_t ordinal = group_get_melee_target_creature_ordinal(target_square.x, target_square.y, g_party_map_x,
+                                                              g_party_map_y, c->cell);
     if (!ordinal)
         return false;
     uint16_t relative_cell = NORMALIZE(c->cell - c->direction);
@@ -292,21 +293,19 @@ bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, i
             return false;
         }
     }
-    if (action == ACTION_DISRUPT && !(map_get_creature_attributes(g_action_target_group_thing) & CREATURE_NON_MATERIAL))
+    if (action == ACTION_DISRUPT && !(map_get_creature_attributes(target_group) & CREATURE_NON_MATERIAL))
         return false;
     const ActionInfo *info = tables_get_action_info(action);
     uint16_t hit_probability = info->hit_probability;
     if (object_get_icon_index(c->slots[SLOT_HAND_ACTION]) == ICON_VORPAL_BLADE || action == ACTION_DISRUPT)
         hit_probability |= HIT_PROBABILITY_ALWAYS_HITS;
-    MeleeAttack attack = {
-        .champion_index = champion_index,
-        .group = g_action_target_group_thing,
-        .creature_index = ordinal - 1,
-        .at = {x, y},
-        .hit_probability = hit_probability,
-        .damage_factor = info->damage_factor,
-        .skill_index = skill_index
-    };
+    MeleeAttack attack = {.champion_index = champion_index,
+                          .group = target_group,
+                          .creature_index = ordinal - 1,
+                          .at = target_square,
+                          .hit_probability = hit_probability,
+                          .damage_factor = info->damage_factor,
+                          .skill_index = skill_index};
     g_action_damage = group_get_melee_action_damage(&attack);
     return true;
 }
@@ -349,7 +348,7 @@ static bool is_shot(uint16_t champion_index)
     champion_face_party_direction(c);
     uint16_t thing = inventory_get_object_removed_from_slot(champion_index, SLOT_HAND_READY);
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
-    int16_t level = champion_get_skill_level(champion_index, SKILL_SHOOT);
+    int16_t level = champion_get_skill_level(champion_index, SKILL_SHOOT, false, false);
     /* The attack is a byte: the launcher shoot attack plus the level, doubled. */
     projectile_shoot_from_champion(champion_index, thing, (uint8_t)(missile->kinetic_energy + launcher->kinetic_energy),
                                    (uint8_t)((level + (launcher->attributes & WEAPON_SHOOT_ATTACK_MASK)) << 1),
@@ -382,7 +381,7 @@ static uint16_t heal_champion(uint16_t champion_index, uint16_t experience)
     int16_t missing = c->maximum_health - c->current_health;
     if (missing <= 0 || !c->current_mana)
         return experience;
-    int16_t step = min16(HEAL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, SKILL_HEAL));
+    int16_t step = min16(HEAL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, SKILL_HEAL, false, false));
     experience = HEAL_ACTION_EXPERIENCE_STEP;
     for (;;) {
         int16_t amount = min16(missing, step);
@@ -405,7 +404,7 @@ static uint16_t heal_champion(uint16_t champion_index, uint16_t experience)
 static void open_window(uint16_t champion_index, uint16_t skill_index)
 {
     uint16_t random = random16();
-    int16_t level = champion_get_skill_level(champion_index, skill_index);
+    int16_t level = champion_get_skill_level(champion_index, skill_index, false, false);
     uint16_t ticks = random % (level + WINDOW_ACTION_LEVEL_BONUS) + WINDOW_ACTION_BASE_TICKS;
     TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks),
                            .type = EVENT_THIEVES_EYE_END};
@@ -510,7 +509,7 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     x = g_party_map_x;
     y = g_party_map_y;
     map_step(c->direction, 1, 0, &x, &y);
-    g_action_target_group_thing = map_find_thing((Location){x, y}, THING_GROUP);
+    uint16_t target_group = map_find_thing((Location){x, y}, THING_GROUP);
     const ActionInfo *info = tables_get_action_info(action);
     uint16_t disabled_ticks = info->disabled_ticks;
     uint16_t skill_index = info->skill_index;
@@ -520,8 +519,9 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     bool performed = true;
     int16_t mana_cost = 0;
     if ((skill_index >= SKILL_COUNT - SKILL_BASE_COUNT && skill_index < SKILL_COUNT) || skill_index == SKILL_WIZARD)
-        mana_cost = SPELL_ACTION_MAXIMUM_LEVEL + 1 -
-                    min16(SPELL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, skill_index));
+        mana_cost =
+            SPELL_ACTION_MAXIMUM_LEVEL + 1 -
+            min16(SPELL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, skill_index, false, false));
     switch (is_removed_in_csb(action) ? ACTION_NONE : action) {
     case ACTION_CHOP:
     case ACTION_KICK:
@@ -547,7 +547,8 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     case ACTION_SLASH:
     case ACTION_CLEAVE:
     case ACTION_STUN:
-        performed = action_is_melee_action_performed(champion_index, action, x, y, skill_index);
+        performed =
+            action_is_melee_action_performed(champion_index, action, (Location){x, y}, skill_index, target_group);
         if (!performed) {
             experience = (int16_t)experience >> 1; /* signed shift as in the original */
             disabled_ticks >>= 1;
@@ -565,7 +566,7 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
             sound_request_play(SOUND_WAR_CRY, x, y, SOUND_MODE_NOW);
         if (action == ACTION_BLOW_HORN)
             sound_request_play(SOUND_BLOW_HORN, x, y, SOUND_MODE_NOW);
-        performed = action_is_group_frightened_by_action(champion_index, action, x, y);
+        performed = action_is_group_frightened_by_action(champion_index, action, x, y, target_group);
         break;
     case ACTION_FLIP:
         action_print_action_message(champion_index, gfx_get_string(random_bit() ? TEXT_FLIP_HEADS : TEXT_FLIP_TAILS));
@@ -644,11 +645,11 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
 /* Commands 113-115: the action defense applies while the action runs; the action menu closes. */
 bool action_did_click_trigger_action(int16_t action_list_index)
 {
-    if (!g_acting_champion_ordinal || g_action_list_indices[action_list_index] == ACTION_NONE)
+    if (!g_acting_champion_ordinal || g_action_list.actions[action_list_index] == ACTION_NONE)
         return false;
     uint16_t champion_index = g_acting_champion_ordinal - 1;
     Champion *c = &g_champions[champion_index];
-    uint8_t action = g_action_list_indices[action_list_index];
+    uint8_t action = g_action_list.actions[action_list_index];
     c->action_defense += tables_get_action_info(action)->defense;
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     bool performed = action_is_action_performed(champion_index, action);
@@ -703,7 +704,7 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
         }
     }
     champion_add_skill_experience(champion_index, SKILL_THROW, experience);
-    int16_t level = champion_get_skill_level(champion_index, SKILL_THROW);
+    int16_t level = champion_get_skill_level(champion_index, SKILL_THROW, false, false);
     uint16_t energy_random = random16() & THROW_ENERGY_RANDOM_MASK;
     uint16_t attack_random = random16() & THROW_ATTACK_RANDOM_MASK;
     int16_t energy = weapon_energy + strength;

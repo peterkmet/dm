@@ -266,7 +266,8 @@ static void action_list_json(Json *j, int16_t index)
             if (action == ACTION_NONE || !info ||
                 ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charges(champion)))
                 continue;
-            if ((level & ~ACTION_LEVEL_NEEDS_CHARGES) <= champion_get_skill_level(index, info->skill_index))
+            if ((level & ~ACTION_LEVEL_NEEDS_CHARGES) <=
+                champion_get_skill_level(index, info->skill_index, false, false))
                 json_str(j, gfx_get_action_name(action));
         }
     }
@@ -287,7 +288,7 @@ static void skills_json(Json *j, int16_t index)
 {
     json_open(j, '{');
     for (int s = 0; s < SKILL_BASE_COUNT; s++) {
-        int16_t level = champion_get_skill_level(index, s);
+        int16_t level = champion_get_skill_level(index, s, false, false);
         const char *rank = ui_get_skill_rank_name(level);
         json_key(j, skill_names[s]);
         json_open(j, '{');
@@ -320,7 +321,7 @@ static void champion_json(Json *j, int16_t index)
     json_key(j, "load_kg");
     json_open(j, '[');
     tenths(j, champion->load);
-    tenths(j, champion_get_maximum_load(champion));
+    tenths(j, champion_get_maximum_load(index));
     json_close(j, ']');
     key_str(j, "position", party_cell_names[NORMALIZE(champion->cell - g_party_direction)]);
     key_bool(j, "poisoned", champion->poison_event_count > 0);
@@ -492,8 +493,8 @@ void state_json_write_state(Json *j)
         key_int(j, "champion", g_acting_champion_ordinal - 1);
         json_key(j, "actions");
         json_open(j, '[');
-        for (int k = 0; k < ACTION_LIST_COUNT && g_action_list_indices[k] != ACTION_NONE; k++)
-            json_str(j, gfx_get_action_name(g_action_list_indices[k]));
+        for (int k = 0; k < ACTION_LIST_COUNT && g_action_list.actions[k] != ACTION_NONE; k++)
+            json_str(j, gfx_get_action_name(g_action_list.actions[k]));
         json_close(j, ']');
         json_close(j, '}');
     } else {

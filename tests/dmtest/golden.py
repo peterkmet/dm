@@ -4,7 +4,7 @@
 import ctypes
 
 from dmtest import constants as C
-from dmtest.game import Box, Game, Location, recruit_and_hold_object
+from dmtest.game import Box, ChampionRuntime, Game, Location, recruit_and_hold_object
 from dmtest.lib import load_lib
 from dmtest.markers import GAME
 
@@ -67,6 +67,7 @@ def add_second_champion(game):
     """A copy of champion 0 in the next cell, without objects, as the second champion."""
     champions = game.champions
     ctypes.memmove(ctypes.byref(champions[1]), ctypes.byref(champions[0]), ctypes.sizeof(champions[0]))
+    champions[1].runtime = ChampionRuntime()  # the copy has no portrait
     champions[1].name = b"SECOND"
     champions[1].cell = (champions[0].cell + 1) % 4
     for s in range(len(champions[1].slots)):

@@ -78,6 +78,13 @@ class Skill(ctypes.Structure):
     _fields_ = [("temporary_experience", c16), ("experience", ctypes.c_int32)]
 
 
+class ChampionRuntime(ctypes.Structure):
+    _fields_ = [
+        ("pending_damage", c16), ("pending_wounds", u16), ("skill_level_up", ctypes.c_bool * 4),
+        ("portrait", u8 * (32 * 29)),
+    ]
+
+
 class Champion(ctypes.Structure):
     _fields_ = [
         ("name", ctypes.c_char * 8), ("title", ctypes.c_char * 20),
@@ -88,7 +95,12 @@ class Champion(ctypes.Structure):
         ("current_health", c16), ("maximum_health", c16), ("current_stamina", c16), ("maximum_stamina", c16),
         ("current_mana", c16), ("maximum_mana", c16), ("action_defense", c16), ("food", c16), ("water", c16),
         ("statistics", (u8 * 3) * 7), ("skills", Skill * 20), ("slots", u16 * 30), ("load", u16), ("shield_defense", c16), ("magic_map", u8 * 6),
+        ("runtime", ChampionRuntime),
     ]
+
+
+class ActionList(ctypes.Structure):
+    _fields_ = [("actions", u8 * 3), ("minimum_skill_levels", u8 * 3), ("count", u16)]
 
 
 class Party(ctypes.Structure):
@@ -140,6 +152,23 @@ class RecruitData(ctypes.Structure):
 
 def champions(lib):
     return (Champion * 4).in_dll(lib, "g_champions")
+
+
+class PendingDamage:
+    """The pending damage of each champion, as the list of runtime fields."""
+
+    def __init__(self, lib):
+        self.cs = champions(lib)
+
+    def __getitem__(self, i):
+        return self.cs[i].runtime.pending_damage
+
+    def __setitem__(self, i, value):
+        self.cs[i].runtime.pending_damage = value
+
+
+def pending_damage(lib):
+    return PendingDamage(lib)
 
 
 def pack(lib, ch):
@@ -242,8 +271,9 @@ class World:
         self.zero_pending()
 
     def zero_pending(self):
-        (c16 * 4).in_dll(self.lib, "g_champion_pending_damage")[:] = [0] * 4
-        (u16 * 4).in_dll(self.lib, "g_champion_pending_wounds")[:] = [0] * 4
+        for c in champions(self.lib):
+            c.runtime.pending_damage = 0
+            c.runtime.pending_wounds = 0
         self.emu.write(PENDING_DAMAGE, bytes(16))
 
     def seed(self, value):
@@ -257,8 +287,8 @@ class World:
             assert pack(lib, cs[i]) == bytes(emu.read(CHAMPIONS + 0x140 * i, 0x140)), f"champion {i}"
         assert var(lib, ctypes.c_uint32, "g_random_seed").value == struct.unpack(">I", emu.read(SEED, 4))[0]
         assert var(lib, ctypes.c_bool, "g_party_is_sleeping").value == struct.unpack(">h", emu.read(SLEEPING, 2))[0]
-        assert list((c16 * 4).in_dll(lib, "g_champion_pending_damage")) == list(struct.unpack(">4h", emu.read(PENDING_DAMAGE, 8)))
-        assert list((u16 * 4).in_dll(lib, "g_champion_pending_wounds")) == list(struct.unpack(">4H", emu.read(PENDING_WOUNDS, 8)))
+        assert [c.runtime.pending_damage for c in cs] == list(struct.unpack(">4h", emu.read(PENDING_DAMAGE, 8)))
+        assert [c.runtime.pending_wounds for c in cs] == list(struct.unpack(">4H", emu.read(PENDING_WOUNDS, 8)))
 
 
 class Game:
@@ -429,7 +459,7 @@ def state(game):
     return {
         **values,
         "champions": champions,
-        "portraits": bytes((ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits"))[: values["g_party_champion_count"] * 32 * 29],
+        "portraits": b"".join(bytes(c.runtime.portrait) for c in game.champions)[: values["g_party_champion_count"] * 32 * 29],
         "party": raw(lib, "g_party", PARTY_BYTES),
         "events": ctypes.string_at(timeline.events, events * EVENT_BYTES),
         "timeline": ctypes.string_at(timeline.heap, events * 2),

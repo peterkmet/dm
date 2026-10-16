@@ -29,10 +29,10 @@ def lib():
     lib = load_lib()
     cp = ctypes.POINTER(Champion)
     sig = {
-        "champion_get_skill_level": (c16, [c16, u16]), "champion_add_skill_experience": (None, [u16, u16, u16]),
-        "champion_get_maximum_load": (u16, [cp]), "champion_get_movement_ticks": (c16, [cp]),
-        "champion_get_dexterity": (c16, [cp]), "champion_get_strength": (c16, [c16, c16]),
-        "champion_get_wound_defense": (c16, [c16, u16]), "champion_add_pending_damage_and_wounds": (c16, [c16, c16, u16, c16]),
+        "champion_get_skill_level": (c16, [c16, c16, ctypes.c_bool, ctypes.c_bool]), "champion_add_skill_experience": (None, [u16, u16, u16]),
+        "champion_get_maximum_load": (u16, [c16]), "champion_get_movement_ticks": (c16, [c16]),
+        "champion_get_dexterity": (c16, [c16]), "champion_get_strength": (c16, [c16, c16]),
+        "champion_get_wound_defense": (c16, [c16, c16, ctypes.c_bool]), "champion_add_pending_damage_and_wounds": (c16, [c16, c16, u16, c16]),
         "champion_damage_all": (c16, [u16, u16, c16]), "champion_decrement_stamina": (None, [c16, c16]),
         "inventory_get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "rec_find_unused_thing": (u16, [u16]),
         "champion_add_candidate_to_party": (None, [c16]), "champion_click_in_resurrect_reincarnate_panel": (None, [c16]),
@@ -78,7 +78,6 @@ def test_object_weight_and_icon_match_original(lib):
 @pytest.mark.parametrize("seed", range(6))
 def test_champion_values_match_original(lib, seed):
     w = World(lib, seed)
-    cs = champions(lib)
     for round_ in range(40):
         w.put_champions(4)
         w.globals(w.rng.choice([0, 0, 1]), w.rng.randint(0, 100000), w.rng.randint(0, 100000), 0, w.rng.randrange(4))
@@ -90,15 +89,16 @@ def test_champion_values_match_original(lib, seed):
             addr = CHAMPIONS + 0x140 * i
             for skill in range(20):
                 for flags in (0, 0x4000, 0x8000, 0xC000):
-                    assert lib.champion_get_skill_level(i, skill | flags) == s16(w.emu.call(SKILL_LEVEL, [(2, i), (2, skill | flags)]))
-            assert lib.champion_get_maximum_load(ctypes.byref(cs[i])) == w.emu.call(MAX_LOAD, [(4, addr)]) & 0xFFFF
-            assert lib.champion_get_movement_ticks(ctypes.byref(cs[i])) == s16(w.emu.call(MOVE_TICKS, [(4, addr)]))
+                    got = lib.champion_get_skill_level(i, skill, bool(flags & 0x4000), bool(flags & 0x8000))
+                    assert got == s16(w.emu.call(SKILL_LEVEL, [(2, i), (2, skill | flags)]))
+            assert lib.champion_get_maximum_load(i) == w.emu.call(MAX_LOAD, [(4, addr)]) & 0xFFFF
+            assert lib.champion_get_movement_ticks(i) == s16(w.emu.call(MOVE_TICKS, [(4, addr)]))
             w.seed(round_ * 77 + i)
-            assert lib.champion_get_dexterity(ctypes.byref(cs[i])) == s16(w.emu.call(DEXTERITY, [(4, addr)]))
+            assert lib.champion_get_dexterity(i) == s16(w.emu.call(DEXTERITY, [(4, addr)]))
             for slot in range(6):
                 assert lib.champion_get_strength(i, slot) == s16(w.emu.call(STRENGTH, [(2, i), (2, slot)]))
                 for sharp in (0, 0x8000):
-                    assert lib.champion_get_wound_defense(i, slot | sharp) == s16(w.emu.call(WOUND_DEFENSE, [(2, i), (2, slot | sharp)]))
+                    assert lib.champion_get_wound_defense(i, slot, bool(sharp)) == s16(w.emu.call(WOUND_DEFENSE, [(2, i), (2, slot | sharp)]))
             w.check_state()
 
 
@@ -130,13 +130,18 @@ def test_damage_matches_original(lib, seed):
 @pytest.mark.parametrize("seed", range(4))
 def test_experience_matches_original(lib, seed):
     w = World(lib, 20 + seed)
-    level_up = (c16 * 16).in_dll(lib, "g_champion_skill_level_up")
+    cs = champions(lib)
+
+    def level_up():
+        return [int(f) for c in cs for f in c.runtime.skill_level_up]
+
     gained = 0
     for round_ in range(200):
         if round_ % 25 == 0:
-            gained += sum(level_up)
+            gained += sum(level_up())
             w.put_champions(4)
-            level_up[:] = [0] * 16
+            for c in cs:
+                c.runtime.skill_level_up[:] = [False] * 4
             w.emu.write(LEVEL_UP_ADDR, bytes(32))
         time = w.rng.randint(0, 3000)
         w.globals(0, time, max(0, time - w.rng.choice([0, 10, 30, 100, 200])), 0, w.rng.choice([0, 0, 1, 3]))
@@ -145,7 +150,7 @@ def test_experience_matches_original(lib, seed):
         lib.champion_add_skill_experience(*args)
         w.emu.call(ADD_EXPERIENCE, [(2, a) for a in args])
         w.check_state()
-        assert list(level_up) == list(struct.unpack(">16h", w.emu.read(LEVEL_UP_ADDR, 32)))
+        assert level_up() == list(struct.unpack(">16h", w.emu.read(LEVEL_UP_ADDR, 32)))
     assert gained > 0
 
 
@@ -253,8 +258,7 @@ def test_recruit_copies_the_mirror_portrait(lib, party):
     x, y = c16(), c16()
     lib.recruit_portrait_origin(party["portrait"], ctypes.byref(x), ctypes.byref(y))
     expected = [sheet.px[(y.value + r) * sheet.w + x.value + c] for r in range(29) for c in range(32)]
-    portraits = (ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits")
-    assert party["portrait"] > 0 and list(portraits[: 32 * 29]) == expected
+    assert party["portrait"] > 0 and list(champions(lib)[0].runtime.portrait) == expected
 
 
 def test_eat_food(lib, party):

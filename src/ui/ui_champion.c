@@ -200,7 +200,7 @@ static void draw_icon(uint16_t champion_index)
 
 Bitmap ui_draw_champion_portrait(int16_t champion_index)
 {
-    return (Bitmap){CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champion_portraits[champion_index]};
+    return (Bitmap){CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champions[champion_index].runtime.portrait};
 }
 
 void ui_draw_status_box_portrait(int16_t champion_index)
@@ -247,7 +247,7 @@ static void draw_inventory_statistics(uint16_t champion_index)
 static void draw_load(uint16_t champion_index)
 {
     const Champion *c = &g_champions[champion_index];
-    uint16_t max = champion_get_maximum_load(c);
+    uint16_t max = champion_get_maximum_load(champion_index);
     uint8_t color = max < c->load ? COLOR_RED
                     : (int32_t)max * HEAVY_LOAD_NUMERATOR < (int32_t)c->load * HEAVY_LOAD_DENOMINATOR
                         ? COLOR_YELLOW
@@ -455,12 +455,13 @@ void ui_draw_champion_skills_and_statistics(void)
     ui_blit_graphic(viewport, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
     get_zone_point(ZONE_PANEL_SKILLS, &x, &y);
     for (uint16_t k = 0; k < SKILL_BASE_COUNT; k++) {
-        int16_t level = champion_get_skill_level(champion_index, k | SKILL_IGNORE_TEMPORARY_EXPERIENCE);
+        int16_t level = champion_get_skill_level(champion_index, k, false, true);
         if (level == 1)
             continue;
         snprintf(line, sizeof line, "%s %s", ui_get_skill_rank_name(level),
                  gfx_get_string(tables_get_base_skill_text(k)));
-        text_draw(viewport, x, y, g_champion_skill_level_up[champion_index][k] ? COLOR_GREEN : COLOR_LIGHT_GRAY,
+        text_draw(viewport, x, y,
+                  g_champions[champion_index].runtime.skill_level_up[k] ? COLOR_GREEN : COLOR_LIGHT_GRAY,
                   COLOR_DARKEST_GRAY, line);
         y += MESSAGE_ROW_HEIGHT;
     }
@@ -558,7 +559,7 @@ int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LI
         snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[rec_junk_charges(thing)].name,
                  tables_get_text(TABLES_TEXT_BONES_SEPARATOR), gfx_get_object_name(icon));
     else if (type == THING_POTION && icon != ICON_WATER_FLASK && g_inventory_champion_ordinal &&
-             champion_get_skill_level(g_inventory_champion_ordinal - 1, SKILL_PRIEST) > 1)
+             champion_get_skill_level(g_inventory_champion_ordinal - 1, SKILL_PRIEST, false, false) > 1)
         snprintf(name, PANEL_LINE_SIZE, "%c %s",
                  POTION_POWER_SYMBOL_FIRST + rec_potion_power(thing) / POTION_POWER_PER_LEVEL,
                  gfx_get_object_name(icon));

@@ -33,8 +33,6 @@ void game_start_new(void)
 {
     memset(&g_party, 0, sizeof g_party);
     memset(g_champions, 0, sizeof g_champions);
-    memset(g_champion_pending_damage, 0, sizeof g_champion_pending_damage);
-    memset(g_champion_pending_wounds, 0, sizeof g_champion_pending_wounds);
     g_party_champion_count = 0;
     g_leader_index = -1;
     g_magic_caster_champion_index = -1;
@@ -64,7 +62,8 @@ void game_reset_session(void)
     g_cheat_light = false;
     g_cheat_immortal = false;
     g_cheat_food = false;
-    memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
+    for (uint16_t i = 0; i < CHAMPION_MAX_COUNT; i++)
+        memset(g_champions[i].runtime.skill_level_up, 0, sizeof g_champions[i].runtime.skill_level_up);
 }
 
 void game_set_mode(int16_t mode)

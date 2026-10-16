@@ -2,6 +2,8 @@
 #ifndef DM_ENGINE_ACTION_H
 #define DM_ENGINE_ACTION_H
 /* Prefixes: action_ */
+#include "data/tables.h"
+#include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -58,10 +60,15 @@
 
 /* MENU.C state of the action menu. */
 extern int16_t g_acting_champion_ordinal; /* 0: none */
-extern uint8_t g_action_list_indices[3];  /* 0xff: none */
 extern int16_t g_action_damage;           /* 0: none, -1 can't reach, -2 need ammo */
-extern uint8_t g_action_list_minimum_skill_levels[3];
-extern uint16_t g_action_count;
+
+/* The actions of the acting champion's action hand: up to ACTION_LIST_COUNT, ACTION_NONE for an empty line. */
+typedef struct {
+    uint8_t actions[ACTION_LIST_COUNT];
+    uint8_t minimum_skill_levels[ACTION_LIST_COUNT];
+    uint16_t count;
+} ActionList;
+extern ActionList g_action_list;
 
 /* Builds the action menu of the acting champion: the first action always; the other two when the
    champion has the skill level and, when the action needs them, charges. */
@@ -76,9 +83,6 @@ void action_reset(void);
 /* Closes the action menu: the action hand and the action area are drawn again. */
 void action_clear_acting_champion(void);
 
-/* The group on the square in front of the acting champion, or THING_ENDOFLIST. */
-extern uint16_t g_action_target_group_thing;
-
 /* Commands 113-115: runs action list entry 0-2 of the acting champion. Returns true when the action was performed. */
 bool action_did_click_trigger_action(int16_t action_list_index);
 /* Runs one action of a champion against the square in front of the champion. After the action the action hand is
@@ -86,13 +90,14 @@ bool action_did_click_trigger_action(int16_t action_list_index);
    melee action halves the ticks and the experience. Returns false when the action fails. The function is long: one
    short case for each action of the action table. */
 bool action_is_action_performed(uint16_t champion_index, int16_t action);
-/* A melee hit on the group in front. A champion in a back cell reaches only past an empty front cell ("can't
+/* A melee hit on target_group, the group in front (THING_ENDOFLIST: none). A champion in a back cell reaches only past an empty front cell ("can't
    reach"). Disrupt hits only non-material creatures. Returns false when the champion hits nothing. */
-bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y,
-                                      int16_t skill_index);
+bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, Location target_square,
+                                      int16_t skill_index, uint16_t target_group);
 /* War cry, blow horn, confuse, calm, brandish: the group in front flees when the influence roll beats its fear
    resistance. The champion gains influence experience, half of it when the group stays. */
-bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y);
+bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y,
+                                          uint16_t target_group);
 /* The object in the action hand loses one charge: weapons, armour, and junk keep their charges in different bits. */
 void action_decrement_charges(uint16_t champion_index);
 /* Prints "<text>" in the action color; "@p" in the text becomes the champion name. */

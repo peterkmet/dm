@@ -11,7 +11,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.control import Client, pump, pumped, socket_dir
-from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
+from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game, pending_damage
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -287,7 +287,7 @@ def test_act_many_runs_in_order_and_stops_on_failure_and_damage(game):
         assert client.call(cmd="act_many", actions="turn_left")["ok"] is False
         assert client.call(cmd="act_many", actions=[5])["stopped"] == "failed"
 
-        ctypes.c_int16.in_dll(game.lib, "g_champion_pending_damage").value = min(10, game.champions[0].current_health - 1)
+        pending_damage(game.lib)[0] = min(10, game.champions[0].current_health - 1)
         response = client.call(cmd="act_many", actions=["turn_left", "turn_left", "turn_left"])
         assert response["ran"] == 1 and response["stopped"] == "damage"
     finally:
@@ -347,7 +347,7 @@ def test_wait_runs_all_ticks_or_stops_on_damage(game):
     try:
         response = client.call(cmd="wait", ticks=300)
         assert response["stopped"] == "done" and response["ticks"] == 300
-        ctypes.c_int16.in_dll(game.lib, "g_champion_pending_damage").value = min(10, game.champions[0].current_health - 1)
+        pending_damage(game.lib)[0] = min(10, game.champions[0].current_health - 1)
         response = client.call(cmd="wait", ticks=5000)
         assert response["stopped"] == "damage" and 1 <= response["ticks"] < 100
         assert client.call(cmd="wait", ticks=5001)["ok"] is False
@@ -805,7 +805,7 @@ def test_a_bump_reports_the_health_lost_of_the_step(game):
         assert "health_lost" not in client.act("turn_left")
         client.act("turn_right")
         game.champions[0].current_health = max(game.champions[0].current_health, 20)
-        ctypes.c_int16.in_dll(game.lib, "g_champion_pending_damage").value = 5
+        pending_damage(game.lib)[0] = 5
         response = client.call(cmd="act_many", actions=["move_forward", "turn_left"])
         assert response["stopped"] == "bumped" and response["health_lost"][0] == 6, response
     finally:
@@ -818,7 +818,7 @@ def test_dm_play_does_not_import_mcp():
 
 
 def kill_party(game, client):
-    pending = (ctypes.c_int16 * 4).in_dll(game.lib, "g_champion_pending_damage")
+    pending = pending_damage(game.lib)
     for index in range(game.value("g_party_champion_count", ctypes.c_uint16)):
         pending[index] = game.champions[index].current_health + 100  # applied in the first tick of the turn
     result = client.call(cmd="wait", ticks=50)

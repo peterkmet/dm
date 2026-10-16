@@ -188,60 +188,64 @@ static const int8_t staff_mana[] = {STAFF_MANA,     WAND_MANA,           TEOWAND
                                     YEW_STAFF_MANA, STAFF_OF_MANAR_MANA, SNAKE_STAFF_MANA,
                                     CONDUIT_MANA,   DRAGON_SPIT_MANA,    SCEPTRE_OF_LYF_MANA};
 
-/* Sets the statistic that an object raises and returns the bonus. */
-static int16_t stat_bonus(uint16_t *stat, uint16_t statistic, int16_t bonus)
+typedef struct {
+    int16_t bonus;
+    uint16_t statistic;
+} ObjectModifier;
+
+/* The statistic that an object raises and the bonus. */
+static ObjectModifier stat_bonus(uint16_t statistic, int16_t bonus)
 {
-    *stat = statistic;
-    return bonus;
+    return (ObjectModifier){bonus, statistic};
 }
 
-/* The statistic (or STAT_MANA) and the bonus of an object in a slot. Returns 0 for no bonus. */
-static int16_t get_object_modifier(uint16_t slot, int16_t icon, uint16_t thing, uint16_t *stat)
+/* The statistic (or STAT_MANA) and the bonus of an object in a slot. The bonus is 0 for no bonus. */
+static ObjectModifier get_object_modifier(uint16_t slot, int16_t icon, uint16_t thing)
 {
     uint16_t type = THING_TYPE(thing);
-    *stat = STAT_LUCK;
+    ObjectModifier none = {0, STAT_LUCK};
     if ((type == THING_WEAPON || type == THING_ARMOUR) && slot <= CURSED_SLOT_LAST && rec_object_is_cursed(thing))
-        return CURSED_LUCK;
+        return stat_bonus(STAT_LUCK, CURSED_LUCK);
     if (icon == ICON_RABBITS_FOOT && slot < SLOT_COUNT)
-        return RABBITS_FOOT_LUCK;
+        return stat_bonus(STAT_LUCK, RABBITS_FOOT_LUCK);
     switch (slot) {
     case SLOT_HAND_ACTION:
-        *stat = STAT_MANA;
         if (icon == ICON_MACE_OF_ORDER)
-            return stat_bonus(stat, STAT_STRENGTH, MACE_OF_ORDER_STRENGTH);
+            return stat_bonus(STAT_STRENGTH, MACE_OF_ORDER_STRENGTH);
         if (icon >= ICON_STAFF_OF_CLAWS && icon <= ICON_STAFF_OF_CLAWS_LAST)
-            return STAFF_OF_CLAWS_MANA;
+            return stat_bonus(STAT_MANA, STAFF_OF_CLAWS_MANA);
         if (icon >= ICON_STAFF && icon <= ICON_SCEPTRE_OF_LYF)
-            return staff_mana[icon - ICON_STAFF];
-        return icon == ICON_VORPAL_BLADE ? VORPAL_BLADE_MANA
-               : icon == ICON_DELTA      ? DELTA_MANA
-               : icon == ICON_INQUISITOR ? INQUISITOR_MANA
-                                         : 0;
+            return stat_bonus(STAT_MANA, staff_mana[icon - ICON_STAFF]);
+        return stat_bonus(STAT_MANA, icon == ICON_VORPAL_BLADE ? VORPAL_BLADE_MANA
+                                     : icon == ICON_DELTA      ? DELTA_MANA
+                                     : icon == ICON_INQUISITOR ? INQUISITOR_MANA
+                                                               : 0);
     case SLOT_LEGS:
-        return icon == ICON_POWERTOWERS ? stat_bonus(stat, STAT_STRENGTH, POWERTOWERS_STRENGTH) : 0;
+        return icon == ICON_POWERTOWERS ? stat_bonus(STAT_STRENGTH, POWERTOWERS_STRENGTH) : none;
     case SLOT_HEAD:
         if (icon == ICON_CROWN_OF_NERRA)
-            return stat_bonus(stat, STAT_WISDOM, CROWN_OF_NERRA_WISDOM);
-        return icon == ICON_DEXHELM ? stat_bonus(stat, STAT_DEXTERITY, DEXHELM_DEXTERITY) : 0;
+            return stat_bonus(STAT_WISDOM, CROWN_OF_NERRA_WISDOM);
+        return icon == ICON_DEXHELM ? stat_bonus(STAT_DEXTERITY, DEXHELM_DEXTERITY) : none;
     case SLOT_TORSO:
         if (icon == ICON_FLAMEBAIN)
-            return stat_bonus(stat, STAT_ANTIFIRE, FLAMEBAIN_ANTIFIRE);
-        return icon == ICON_CLOAK_OF_NIGHT ? stat_bonus(stat, STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY) : 0;
+            return stat_bonus(STAT_ANTIFIRE, FLAMEBAIN_ANTIFIRE);
+        return icon == ICON_CLOAK_OF_NIGHT ? stat_bonus(STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY) : none;
     case SLOT_NECK:
         if (icon == ICON_JEWEL_SYMAL || icon == ICON_JEWEL_SYMAL_WORN)
-            return stat_bonus(stat, STAT_ANTIMAGIC, JEWEL_SYMAL_ANTIMAGIC);
+            return stat_bonus(STAT_ANTIMAGIC, JEWEL_SYMAL_ANTIMAGIC);
         if (icon == ICON_CLOAK_OF_NIGHT)
-            return stat_bonus(stat, STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY);
-        return icon == ICON_MOONSTONE ? stat_bonus(stat, STAT_MANA, MOONSTONE_MANA) : 0;
+            return stat_bonus(STAT_DEXTERITY, CLOAK_OF_NIGHT_DEXTERITY);
+        return icon == ICON_MOONSTONE ? stat_bonus(STAT_MANA, MOONSTONE_MANA) : none;
     }
-    return 0;
+    return none;
 }
 
 /* Statistic, luck, and mana changes of worn objects; sign is 1 to add, -1 to remove. */
 static void apply_object_modifiers(Champion *c, uint16_t slot, int16_t icon, int16_t sign, uint16_t thing)
 {
-    uint16_t stat;
-    int16_t delta = get_object_modifier(slot, icon, thing, &stat) * sign;
+    ObjectModifier modifier = get_object_modifier(slot, icon, thing);
+    int16_t delta = modifier.bonus * sign;
+    uint16_t stat = modifier.statistic;
     if (!delta)
         return;
     if (stat == STAT_MANA)
@@ -430,16 +434,16 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
     uint16_t amount = power / POTION_AMOUNT_DIVISOR + POTION_AMOUNT_BASE;
     switch (rec_potion_type(potion)) {
     case POTION_ROS:
-        champion_adjust_statistic(c, STAT_DEXTERITY, amount);
+        champion_adjust_statistic(champion_index, STAT_DEXTERITY, amount);
         break;
     case POTION_KU:
-        champion_adjust_statistic(c, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE);
+        champion_adjust_statistic(champion_index, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE);
         break;
     case POTION_DANE:
-        champion_adjust_statistic(c, STAT_WISDOM, amount);
+        champion_adjust_statistic(champion_index, STAT_WISDOM, amount);
         break;
     case POTION_NETA:
-        champion_adjust_statistic(c, STAT_VITALITY, amount);
+        champion_adjust_statistic(champion_index, STAT_VITALITY, amount);
         break;
     case POTION_ANTIVENIN:
         champion_unpoison(champion_index);

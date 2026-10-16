@@ -9,7 +9,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import need, s16, var
-from dmtest.game import (Location, Party, Position, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
+from dmtest.game import (pending_damage, Location, Party, Position, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
                          things_of_type, tick)
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
@@ -240,7 +240,7 @@ def test_group_attacks_adjacent_party(lib):
     _, party_square, facing = mummy_in_corridor(lib, 1)
     champion = add_test_champion(lib)
     place_party(lib, 1, *party_square, facing)
-    pending = (c16 * 4).in_dll(lib, "g_champion_pending_damage")
+    pending = pending_damage(lib)
     hit = False
     for _ in range(600):
         tick(lib)
@@ -354,7 +354,7 @@ def test_meaningless_spell_fails(caster):
 def test_spell_level_and_experience_rule(caster):
     lib, c = caster
     lib.random16.restype = u16
-    lib.champion_get_skill_level.restype, lib.champion_get_skill_level.argtypes = c16, [c16, u16]
+    lib.champion_get_skill_level.restype, lib.champion_get_skill_level.argtypes = c16, [c16, c16, ctypes.c_bool, ctypes.c_bool]
     seed = var(lib, ctypes.c_uint32, "g_random_seed")
     var(lib, ctypes.c_uint32, "g_game_time").value = 100000
     var(lib, ctypes.c_int32, "g_last_creature_attack_time").value = 0  # no recent attack: no double experience
@@ -365,7 +365,7 @@ def test_spell_level_and_experience_rule(caster):
         experience = 0 if skill_level == 1 else 500 << (skill_level - 2)
         for s in (wizard, skill):
             c.skills[s].experience, c.skills[s].temporary_experience = experience, 0
-        assert lib.champion_get_skill_level(0, skill) == skill_level
+        assert lib.champion_get_skill_level(0, skill, False, False) == skill_level
         c.enable_action_event_index = -1
         seed.value = start
         result = cast(lib, c, [power, 0x66, 0x70, 0x73])

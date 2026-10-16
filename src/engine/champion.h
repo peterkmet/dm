@@ -50,6 +50,17 @@ typedef struct {
     int32_t experience;
 } Skill;
 
+#define CHAMPION_PORTRAIT_WIDTH  32 /* pixels of a champion portrait */
+#define CHAMPION_PORTRAIT_HEIGHT 29 /* rows of a champion portrait */
+
+/* State of a champion that the save file does not hold. */
+typedef struct {
+    int16_t pending_damage;                /* damage of the tick, applied after the tick */
+    uint16_t pending_wounds;               /* WOUND_* bits of the tick */
+    bool skill_level_up[SKILL_BASE_COUNT]; /* the panel shows the base skill in green */
+    uint8_t portrait[CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
+} ChampionRuntime;
+
 typedef struct {
     char name[CHAMPION_NAME_SIZE];
     char title[CHAMPION_TITLE_SIZE];
@@ -74,6 +85,7 @@ typedef struct {
     uint16_t load;
     int16_t shield_defense;
     uint8_t magic_map[6]; /* CSB record bytes 0x118-0x11d, kept as they are */
+    ChampionRuntime runtime;
 } Champion;
 
 extern Champion g_champions[CHAMPION_MAX_COUNT];
@@ -92,52 +104,42 @@ extern int16_t g_leader_index, g_magic_caster_champion_index;
 #define HEAVY_LOAD_NUMERATOR   5
 #define HEAVY_LOAD_DENOMINATOR 8
 
-#define SKILL_IGNORE_OBJECT_MODIFIERS     0x4000
-#define SKILL_IGNORE_TEMPORARY_EXPERIENCE 0x8000
-#define WOUND_READY_HAND                  1
-#define WOUND_ACTION_HAND                 2
-#define WOUND_HEAD                        4
-#define WOUND_TORSO                       8
-#define WOUND_LEGS                        0x10
-#define WOUND_FEET                        0x20
-#define WOUND_DEFENSE_USE_SHARP           0x8000
-#define ATTACK_RAW                        0
-#define ATTACK_FIRE                       1
-#define ATTACK_SELF                       2
-#define ATTACK_BLUNT                      3
-#define ATTACK_SHARP                      4
-#define ATTACK_MAGIC                      5
-#define ATTACK_PSYCHIC                    6
-#define ATTACK_LIGHTNING                  7
-#define PANEL_RESURRECT                   0xa0
-#define PANEL_REINCARNATE                 0xa1
-#define PANEL_CANCEL                      0xa2
-#define CHAMPION_ATTR_MALE                0x0010
+#define WOUND_READY_HAND              1
+#define WOUND_ACTION_HAND             2
+#define WOUND_HEAD                    4
+#define WOUND_TORSO                   8
+#define WOUND_LEGS                    0x10
+#define WOUND_FEET                    0x20
+#define ATTACK_RAW                    0
+#define ATTACK_FIRE                   1
+#define ATTACK_SELF                   2
+#define ATTACK_BLUNT                  3
+#define ATTACK_SHARP                  4
+#define ATTACK_MAGIC                  5
+#define ATTACK_PSYCHIC                6
+#define ATTACK_LIGHTNING              7
+#define PANEL_RESURRECT               0xa0
+#define PANEL_REINCARNATE             0xa1
+#define PANEL_CANCEL                  0xa2
+#define CHAMPION_ATTR_MALE            0x0010
 /* Champion attribute redraw flags (Champion.attributes). */
-#define CHAMPION_ATTR_ACTION_DISABLED     0x0008
-#define CHAMPION_ATTR_NAME_TITLE          0x0080
-#define CHAMPION_ATTR_STATISTICS          0x0100
-#define CHAMPION_ATTR_LOAD                0x0200
-#define CHAMPION_ATTR_ICON                0x0400
-#define CHAMPION_ATTR_PANEL               0x0800
-#define CHAMPION_ATTR_STATUS_BOX          0x1000
-#define CHAMPION_ATTR_WOUNDS              0x2000
-#define CHAMPION_ATTR_VIEWPORT            0x4000
-#define CHAMPION_ATTR_ACTION_HAND         0x8000
-#define CHAMPION_ATTR_REDRAW_MASK         0xff80 /* all redraw flags */
-#define CHAMPION_ATTR_KEEP_MASK           0x007f /* flags that stay after a redraw */
-#define CHAMPION_ATTR_INVENTORY_ALL       0x5f80 /* everything the inventory shows */
+#define CHAMPION_ATTR_ACTION_DISABLED 0x0008
+#define CHAMPION_ATTR_NAME_TITLE      0x0080
+#define CHAMPION_ATTR_STATISTICS      0x0100
+#define CHAMPION_ATTR_LOAD            0x0200
+#define CHAMPION_ATTR_ICON            0x0400
+#define CHAMPION_ATTR_PANEL           0x0800
+#define CHAMPION_ATTR_STATUS_BOX      0x1000
+#define CHAMPION_ATTR_WOUNDS          0x2000
+#define CHAMPION_ATTR_VIEWPORT        0x4000
+#define CHAMPION_ATTR_ACTION_HAND     0x8000
+#define CHAMPION_ATTR_REDRAW_MASK     0xff80 /* all redraw flags */
+#define CHAMPION_ATTR_KEEP_MASK       0x007f /* flags that stay after a redraw */
+#define CHAMPION_ATTR_INVENTORY_ALL   0x5f80 /* everything the inventory shows */
 
-#define CHAMPION_PORTRAIT_WIDTH  32 /* pixels of a champion portrait */
-#define CHAMPION_PORTRAIT_HEIGHT 29 /* rows of a champion portrait */
-/* The portrait bitmap of each champion (the portrait bitmap pointer at champion +0x114). */
-extern uint8_t g_champion_portraits[CHAMPION_MAX_COUNT][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 /* Copies portrait portrait_index of graphic 26 into the portrait of the champion. */
 void champion_set_portrait(int16_t champion_index, int16_t portrait_index);
 extern int16_t g_candidate_champion_ordinal; /* 0: no candidate */
-extern int16_t g_champion_pending_damage[CHAMPION_MAX_COUNT];
-extern uint16_t g_champion_pending_wounds[CHAMPION_MAX_COUNT];
-extern int16_t g_champion_skill_level_up[CHAMPION_MAX_COUNT][SKILL_BASE_COUNT];
 /* Champions that died in the tick, one bit per champion index: the user interface releases them after the tick. */
 extern uint16_t g_dead_champions;
 /* The champions that died in the tick (one bit each); the notice is then cleared. */
@@ -179,20 +181,23 @@ uint16_t champion_turn_to_last_attackers(void);
 int16_t champion_move_to_cell(int16_t champion_index, int16_t cell);
 
 /* Level 1 below 500 experience, one more level for each doubling. A hidden skill counts the
-   mean of its own and its base skill experience. Sleeping champions have level 1. */
-int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flags);
+   mean of its own and its base skill experience. Sleeping champions have level 1. The flags leave out
+   object modifiers or temporary experience. */
+int16_t champion_get_skill_level(int16_t champion_index, int16_t skill_index, bool ignore_modifiers,
+                                 bool ignore_temporary);
 /* Experience counts more on difficult maps and in recent fights. A hidden skill also trains its base skill. */
 void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint16_t experience);
 /* Tenths of a kilogram, rounded up to whole kilograms. */
-uint16_t champion_get_maximum_load(const Champion *champion);
+uint16_t champion_get_maximum_load(int16_t champion_index);
 /* Ticks between two party moves for this champion: more when the load is heavy. */
-int16_t champion_get_movement_ticks(const Champion *champion);
+int16_t champion_get_movement_ticks(int16_t champion_index);
 /* Dexterity for hit and dodge rolls, lower with a heavy load, between 1 and 100. */
-int16_t champion_get_dexterity(const Champion *champion);
+int16_t champion_get_dexterity(int16_t champion_index);
 /* Strength with the object in a hand: weight, weapon strength, and weapon skills. 0 to 100. */
 int16_t champion_get_strength(int16_t champion_index, int16_t slot);
-/* Defense of one body part (slot 0-5). Shields in the hands count for every part. */
-int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_flags);
+/* Defense of one body part (slot 0-5). Shields in the hands count for every part. sharp adds the sharp
+   defense of the armour. */
+int16_t champion_get_wound_defense(int16_t champion_index, int16_t slot, bool sharp);
 
 /* Damage arrives at the end of the tick. Attack type ATTACK_RAW skips defense and wounds. */
 int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
@@ -220,13 +225,13 @@ void champion_fall_damage(bool use_rope);
 void champion_apply_time_effects(void);
 
 /* Below half stamina, a value drops toward half of it; exported for the tests. */
-int16_t champion_adjust_by_stamina(const Champion *champion, int16_t value);
+int16_t champion_adjust_by_stamina(int16_t champion_index, int16_t value);
 /* An attack value scaled down by how far the statistic is below the limit. */
-uint16_t champion_get_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack);
+uint16_t champion_get_adjusted_attack(int16_t champion_index, uint16_t statistic, uint16_t attack);
 /* Changes a current statistic within its minimum and the limit; high values grow slower. */
-void champion_adjust_statistic(Champion *champion, uint16_t statistic, int16_t delta);
+void champion_adjust_statistic(int16_t champion_index, uint16_t statistic, int16_t delta);
 /* Luck test against a percentage. A lucky test lowers luck, a failed one raises it.
    The original reads the luck bytes as signed. A lucky first roll does not change luck. */
-bool champion_is_lucky(Champion *champion, uint16_t percentage);
+bool champion_is_lucky(int16_t champion_index, uint16_t percentage);
 
 #endif

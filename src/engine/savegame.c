@@ -257,7 +257,7 @@ static uint8_t *encode_game(uint32_t *size)
     }
     memset(portraits, 0, sizeof portraits);
     for (uint16_t i = 0; i < g_party_champion_count; i++)
-        portrait_to_interleaved(g_champion_portraits[i], portraits + i * SAVE_PORTRAIT_BYTES);
+        portrait_to_interleaved(g_champions[i].runtime.portrait, portraits + i * SAVE_PORTRAIT_BYTES);
 
     savefile_init_header(header, g_game_id, g_dungeon_id, header_extra);
     SaveFile s = {
@@ -446,7 +446,7 @@ static void merge_party(SaveFile *mini)
         champion_pack(&party[i], mini->block[SAVE_BLOCK_CHAMPIONS] + i * CHAMPION_RECORD_SIZE);
     memset(mini->portraits, 0, SAVE_PORTRAITS_BYTES);
     for (uint16_t i = 0; i < g_party_champion_count; i++)
-        portrait_to_interleaved(g_champion_portraits[i], mini->portraits + i * SAVE_PORTRAIT_BYTES);
+        portrait_to_interleaved(g_champions[i].runtime.portrait, mini->portraits + i * SAVE_PORTRAIT_BYTES);
     wr16(globals + SAVE_GLOBAL_PARTY_CHAMPION_COUNT, g_party_champion_count);
     savefile_make_adventure_header(mini->header, g_game_id);
 }
@@ -509,7 +509,7 @@ static bool restore_game(const SaveFile *s)
     }
     timeline_reset();
     for (uint16_t i = 0; i < g_party_champion_count && i < CHAMPION_MAX_COUNT; i++)
-        portrait_from_interleaved(s->portraits + i * SAVE_PORTRAIT_BYTES, g_champion_portraits[i]);
+        portrait_from_interleaved(s->portraits + i * SAVE_PORTRAIT_BYTES, g_champions[i].runtime.portrait);
     g_game_id = savefile_get_game_id(s->header);
     g_dungeon_id = savefile_get_dungeon_id(s->header);
     memcpy(header_extra, savefile_get_header_extra(s->header), savefile_get_extra_size());
