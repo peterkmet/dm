@@ -17,6 +17,7 @@ typedef struct {
     uint32_t kaos, appb;
     uint16_t size;
 } CsbCopy;
+
 extern const CsbCopy g_csb_copies[]; /* exported for the tests */
 extern const int g_csb_copy_count;   /* exported for the tests */
 
