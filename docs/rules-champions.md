@@ -1,8 +1,8 @@
 # Champion rules
 
-This page describes the champion rules of the C port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `port/src/engine/champion.c` and `port/src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](kaos-symbols.csv). The champion record is in [game-state.md](game-state.md#champions).
+This page describes the champion rules of the C port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `src/engine/champion.c` and `src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](kaos-symbols.csv). The champion record is in [game-state.md](game-state.md#champions).
 
-The port reads all game tables from the KAOS image at run time ([tables.md](tables.md)). Object record fields go through the accessors in `port/src/engine/map.h`. Icon and text numbers are in `port/src/data/ids.h`.
+The port reads all game tables from the KAOS image at run time ([tables.md](tables.md)). Object record fields go through the accessors in `src/engine/map.h`. Icon and text numbers are in `src/data/ids.h`.
 
 ## Constants
 
@@ -24,7 +24,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 2. The cell is the first free cell, starting at the party direction and going clockwise.
 3. Food and water are `1500 + random16() & 255` each (two draws).
 4. All slots are empty.
-5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../port/src/engine/recruit.h)).
+5. The text on the party square gives the name, title, sex, health, stamina, mana, statistics, and experience (`recruit_parse`, [recruit.h](../src/engine/recruit.h)).
 6. The champion becomes the candidate (`g_candidate_champion_ordinal`). The first champion becomes leader and magic caster.
 7. The objects in the cell of the wall square that faces the party become the possessions:
    - Armour goes to the first body slot (head to feet) that accepts it, else to the neck.
@@ -200,7 +200,7 @@ The main loop calls `champion_apply_time_effects()` every 64 ticks (16 while the
 
 ## Actions
 
-The code is in `port/src/engine/action.c`. The rules follow `action_is_action_performed` and its helpers in KAOS range 8 (MENU.C). The per-action values come from the action tables ([tables.md](tables.md#actions)).
+The code is in `src/engine/action.c`. The rules follow `action_is_action_performed` and its helpers in KAOS range 8 (MENU.C). The per-action values come from the action tables ([tables.md](tables.md#actions)).
 
 `action_did_click_trigger_action(list_index)` runs commands 113–115. It adds the action defense to the champion, runs the action, stores the action in `action_index`, and closes the action menu.
 

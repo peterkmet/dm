@@ -54,18 +54,18 @@ This is a separate work item ("CSB engine"). It needs a decision first: one addr
 
 | File | Place | Hard-coded value |
 |---|---|---|
-| `port/src/platform/main.c` | `main` | `data = "game"` (default). |
+| `src/platform/main.c` | `main` | `data = "game"` (default). |
 | | `load_kaos_and_graphics` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Used by `--show` and `--view`. |
 | | `view_start` | `"%s/Dungeon.DAT"`. |
 | | `show` (`--show`) | The palette comes from the KAOS address `KAOS_DUNGEON_PALETTES` (`0x100aa6`). |
-| `port/src/ui/gameloop.c` | `gameloop_load_data` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Sets the save directory to `dir`. |
+| `src/ui/gameloop.c` | `gameloop_load_data` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Sets the save directory to `dir`. |
 | | `gameloop_start_new_game` | `"%s/Dungeon.DAT"`. |
-| `port/src/platform/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_get_data_dir()`, so the folder is right. |
+| `src/platform/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_get_data_dir()`, so the folder is right. |
 | | `handle_load`, `handle_request` (`save`) | Use `startend_save_dir()` and `savegame_load/save`. The folder is right. |
-| `port/src/engine/savegame.h` | `SAVE_FILE_NAME`, `SAVE_BACKUP_FILE_NAME` | `"DMGAME.DAT"`, `"DMGAME.BAK"`. Used in `savegame.c`: `savegame_save` and `savegame_load` (4 places). |
-| `port/src/ui/startend.c` | `save_dir` | Default `"."`. `startend_set_save_dir` is called by `gameloop_load_data`. |
-| `port/src/engine/dungeon.c` | `g_dungeon_id` | Default `10` (the DM dungeon id). The save header stores it. |
-| `port/src/engine/savefile.h` | `SAVE_*_BYTES` | DM save layout, including `SAVE_HEADER_EXTRA_BYTES` 134. The CSB save format is not known. |
+| `src/engine/savegame.h` | `SAVE_FILE_NAME`, `SAVE_BACKUP_FILE_NAME` | `"DMGAME.DAT"`, `"DMGAME.BAK"`. Used in `savegame.c`: `savegame_save` and `savegame_load` (4 places). |
+| `src/ui/startend.c` | `save_dir` | Default `"."`. `startend_set_save_dir` is called by `gameloop_load_data`. |
+| `src/engine/dungeon.c` | `g_dungeon_id` | Default `10` (the DM dungeon id). The save header stores it. |
+| `src/engine/savefile.h` | `SAVE_*_BYTES` | DM save layout, including `SAVE_HEADER_EXTRA_BYTES` 134. The CSB save format is not known. |
 | `.gitignore` | | `game-csb/` and `reference/` are ignored (the file has an uncommitted change). |
 | `game/CSBGAME.DAT` | | An empty file (0 bytes) in the DM folder. The port ignores it. |
 
@@ -149,7 +149,7 @@ The socket protocol needs no new command. The game starts one adventure for each
 
 ### The adventure value
 
-New files `port/src/data/adventure.h` and `port/src/data/adventure.c`.
+New files `src/data/adventure.h` and `src/data/adventure.c`.
 
 ```c
 enum { ADVENTURE_DM, ADVENTURE_CSB };
@@ -188,7 +188,7 @@ data = data_override ? data_override : adventure_default_dir(g_adventure);
 
 ### The selection module
 
-New files `port/src/ui/select.h` and `port/src/ui/select.c`. The module has no SDL calls. It owns the three menu screens and their state.
+New files `src/ui/select.h` and `src/ui/select.c`. The module has no SDL calls. It owns the three menu screens and their state.
 
 ```c
 enum { SCREEN_ADVENTURE, SCREEN_MODE, SCREEN_CSB, SCREEN_DONE };
@@ -334,7 +334,7 @@ The control socket and `dm-play` keep one default path. Two instances need `--co
 
 ## Automated tests
 
-New file `tests/test_select.py`. It builds `build/libdm.dylib` with `make -C port` (as `tests/test_port.py` does) and uses `ctypes`. It needs no game files, except the three tests marked "font". They skip when `game/Graphics.DAT` is missing.
+New file `tests/test_select.py`. It builds `build/libdm.dylib` with `make` (as `tests/test_port.py` does) and uses `ctypes`. It needs no game files, except the three tests marked "font". They skip when `game/Graphics.DAT` is missing.
 
 Argument and adventure helpers:
 

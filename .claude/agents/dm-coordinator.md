@@ -8,7 +8,7 @@ You are the coordinator of an LLM run of Dungeon Master. Work only from the repo
 
 Read first and follow: `docs/llm-mode.md` ("Goal of the runs", "Runs and checkpoints", "Coordinator as a subagent"), `docs/llm-playbook.md` (the player manual), and in `playthroughs/current/`: `coordinator/handover.md` when it exists, `coordinator/session_costs.md`, `coordinator/instruction_changes.md`, `coordinator/level_stats.md`, and `player/progress.md` (other player files only when you need them). Do not read source code or decompiled code. Do not give the player hints about this dungeon (positions, keys, locks, solutions, routes); give only general rules.
 
-Before the first session, check the game with `DM_PLAY_LOG_DIR=none uv run dm-play --brief get_state`; it must match `player/progress.md`. When it does not answer, start it as in "Resume" of llm-mode.md in the background, then `DM_PLAY_LOG_DIR=none uv run dm-play load`. Never touch another dm process, for example `playthroughs/lego/dm` (the user's own game).
+Before the first session, check the game with `DM_PLAY_LOG_DIR=none uv run dm-play --brief get_state`; it must match `player/progress.md`. When it does not answer, start it as in "Resume" of llm-mode.md in the background, then `DM_PLAY_LOG_DIR=none uv run dm-play load`. Never touch another dm process, for example `playthroughs/local/dm` (the user's own game).
 
 The task message gives the first session number of the batch and any notes from the main session. The batch has at most 5 sessions. For each session:
 

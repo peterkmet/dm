@@ -217,7 +217,7 @@ uv run python -m dmtools.csb_mini game-csb/disk-b/MINI.DAT csb_dungeon.dat <save
 | A synthetic game from `encode_save`: the original reader accepts it | Pass |
 | `0x10a31c(slot, 3)` and `0x105c7e` on two loaded slots, with the same random seed: header, champion records, and block 0 equal `merge` | Pass. The portrait pointer at `0x114` is a memory address and is masked. |
 | The new `CSBGAME.DAT` from `encode_save`: the original reader accepts it | Pass |
-| `port/` `dungeon_load_saved` on the decoded dungeon, then `dungeon_save` | Pass: 11 maps, the output equals the input |
+| `src/` `dungeon_load_saved` on the decoded dungeon, then `dungeon_save` | Pass: 11 maps, the output equals the input |
 | `dmcsb` `DungeonFile._extract` on the decoded dungeon | Pass: the parts end exactly at the checksum word, which matches |
 
 The synthetic game has two champions in the same cell and a different party direction. Thus the test covers the turn and the cell fix.

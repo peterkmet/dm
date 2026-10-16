@@ -198,7 +198,7 @@ The next chunk follows the payload directly. `ANIM.FTL` `0x101356` walks the chu
 
 The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (18 entries: offset word, then tag word; each offset is relative to its own position; default offset at `0x100d7a`). The loop `0x100fca` runs the chunks from the first chunk to the file end. Step 8 checked each handler in the disassembly (`machine68k`, scratch script):
 
-| Tag | Handler | Meaning | Port (`port/src/ui/anim.c`) |
+| Tag | Handler | Meaning | Port (`src/ui/anim.c`) |
 |---|---|---|---|
 | `PL` | `0x100760` | Payload: count word, then count entries of 4 bytes: color index, red, green, blue (4 bits each). The colors go into a pending palette. The next frame applies it (`0x1016d8`). | Done |
 | `EN` | `0x100812` | Full frame: the `Graphics.DAT` packed graphic format (width, height, commands), decoded by the GRF1 function behind slot `0xea` into the back buffer. The parameter is the time in vertical blanks (50 Hz) that the frame stays. | Done |
@@ -229,14 +229,14 @@ The `SO` chunks play `SD` sample 2 (graphic item 683) three times.
 
 The endgame `0x128374` (party dead) goes to `0x1285e8` when there is no saved game. The won flag is 0 then, so the engine stops at C`0x128600` on the credits screen.
 
-Port: `startend_run_endgame_sensor` in `port/src/ui/startend.c` sets `g_game_won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
+Port: `startend_run_endgame_sensor` in `src/ui/startend.c` sets `g_game_won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
 
 ### TITL.DAT and ANIM.DAT on disk B
 
 - `TITL.DAT` (disk B): the title animation of the utility disk. 1 `AN`, 1 `PL`, 1 `EN`, 31 `DL`, 1 `DO`.
 - `ANIM.DAT` (disk B): the long intro animation. It loads 5 samples from `Sound/` by name and music from `MIDI/NAKED.AMG`. The 5 files in `Sound/` equal CSB graphic items 688, 675, 683, 684, and 685.
 
-The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `port/src/platform/main.c`). It does not read `TITL.DAT` of disk B.
+The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `src/platform/main.c`). It does not read `TITL.DAT` of disk B.
 
 `ANIM.FTL` of disk B is another build than disk A (all addresses below are disk B addresses). Dispatcher `0x100c76`, table at `0x100c8e`. Handlers:
 
@@ -296,13 +296,13 @@ The other tables of `tables.md`, the view tables, the input tables, and the esca
 
 | File | Function | Change | Reason |
 |---|---|---|---|
-| `port/src/ui/ui.c` | `load_strings`, `ui_init` | Read item 694 in TXT1 encoding for CSB. | CSB object names end with bit 7, not NUL. |
-| `port/src/ui/ui.c`, `port/src/engine/champion.c` | `ui_init`, the `GFX_STRINGS` reader | Read the texts and action names from `APPB.FTL` for CSB, with an index map to the DM text indices. | Items 699 and 700 are empty in CSB. |
-| `port/src/ui/startend.c` | THE END screen | Done (Step 8): CSB draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
-| `port/src/engine/savefile.c` | `save_decode`, `save_encode`, `save_header_init`, header accessors | Add a CSB header variant: key at `0x3a`, fields 2 bytes up, 132 extra bytes. Check the block 2 checksum. | A CSB save fails the DM header check. |
-| `port/src/engine/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Use `CSBGAME.DAT` and `CSBGAME.BAK`. Keep the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
-| `port/src/data/ftl.c` and every `kaos_*` user (`tables.c`, `sound.c`, `view.c`, `dungeon.c`, and others) | `kaos_load`, address constants | Load `APPB.FTL` and translate the addresses. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
-| New `port/src/ui/anim.c` | Animation player | Done (Step 8): plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
+| `src/ui/ui.c` | `load_strings`, `ui_init` | Read item 694 in TXT1 encoding for CSB. | CSB object names end with bit 7, not NUL. |
+| `src/ui/ui.c`, `src/engine/champion.c` | `ui_init`, the `GFX_STRINGS` reader | Read the texts and action names from `APPB.FTL` for CSB, with an index map to the DM text indices. | Items 699 and 700 are empty in CSB. |
+| `src/ui/startend.c` | THE END screen | Done (Step 8): CSB draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
+| `src/engine/savefile.c` | `save_decode`, `save_encode`, `save_header_init`, header accessors | Add a CSB header variant: key at `0x3a`, fields 2 bytes up, 132 extra bytes. Check the block 2 checksum. | A CSB save fails the DM header check. |
+| `src/engine/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Use `CSBGAME.DAT` and `CSBGAME.BAK`. Keep the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
+| `src/data/ftl.c` and every `kaos_*` user (`tables.c`, `sound.c`, `view.c`, `dungeon.c`, and others) | `kaos_load`, address constants | Load `APPB.FTL` and translate the addresses. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
+| New `src/ui/anim.c` | Animation player | Done (Step 8): plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
 
 No change is needed in `layout.c` or `dungeon.c` (`dungeon_load`). Step 8 added `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `sound_play_data` (`sound.c`, plays sample data that is not in `Graphics.DAT`).
 

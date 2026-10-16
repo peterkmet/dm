@@ -76,7 +76,7 @@ The `.gitignore` file excludes `*.adf`, `game/`, `game-csb/`, and `reference/` (
 
 ## C port
 
-The C port is in `port/`. It uses C11, `clang`, and SDL3. Install SDL3 first.
+The C port is in `src/`. It uses C11, `clang`, and SDL3. Install SDL3 first.
 
 ```sh
 brew install sdl3
@@ -85,7 +85,7 @@ brew install sdl3
 Build the game and the test library. The output goes to `build/`.
 
 ```sh
-make -C port
+make
 ```
 
 Run the game. Dungeon Master needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/`. `--data DIR` selects another folder for the selected adventure.
@@ -94,19 +94,19 @@ At start, the game extracts each `.adf` disk image in the current folder once: t
 
 `tools/dist/make-dist.sh` builds `build/DungeonMaster.zip`: the game and SDL3 without game files. The player copies the disk images into the folder of the game.
 
-Windows (x86-64): `make -C port windows` cross-builds `build/dm.exe` with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. `tools/dist/make-dist-win.sh` builds `build/DungeonMaster-win.zip` with `dm.exe` and `SDL3.dll`. The Windows build has no control socket, so the LLM mode cannot start there: the mode screen offers VANILLA and ADVANCED only, and `--mode turnbased` stops with an error. Test it with Wine.
+Windows (x86-64): `make windows` cross-builds `build/dm.exe` with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. `tools/dist/make-dist-win.sh` builds `build/DungeonMaster-win.zip` with `dm.exe` and `SDL3.dll`. The Windows build has no control socket, so the LLM mode cannot start there: the mode screen offers VANILLA and ADVANCED only, and `--mode turnbased` stops with an error. Test it with Wine.
 
 ```sh
 build/dm
 ```
 
-Run the personal game. The binary and the save files are in `playthroughs/lego/`.
+Run the personal game. The binary and the save files are in `playthroughs/local/`.
 
 ```sh
-playthroughs/lego/dm --data game --saves playthroughs/lego
+playthroughs/local/dm --data game --saves playthroughs/local
 ```
 
-`make -C port lego` copies a new build to `playthroughs/lego/dm`.
+`make play` copies a new build to `playthroughs/local/dm`.
 
 ### Start screens
 

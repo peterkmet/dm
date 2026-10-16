@@ -1,6 +1,5 @@
 *.adf
 game/
-/ghidra/
 .venv/
 __pycache__/
 .pytest_cache/

@@ -1,6 +1,6 @@
 # CSB engine compared with the DM engine
 
-This page lists the differences between the Chaos Strikes Back (CSB) engine and the Dungeon Master v3.60 (DM) engine that matter to the C port in `port/`. Read it before you add CSB support to the port.
+This page lists the differences between the Chaos Strikes Back (CSB) engine and the Dungeon Master v3.60 (DM) engine that matter to the C port in `src/`. Read it before you add CSB support to the port.
 
 - DM engine: `game/KAOS.FTL`. Image `reference/decomp/dm/KAOS.bin`, base `0x100000`, data base (A5) `0x104160`. Names: [kaos-symbols.csv](kaos-symbols.csv).
 - CSB engine: `game-csb/APPB.FTL`. Image `reference/decomp/csb-a/APPB.bin`, base `0x100000`, data base (A5) `0x10511e`, code base `0x105ede`. Names: [csb-appb-symbols.csv](csb-appb-symbols.csv).
@@ -67,7 +67,7 @@ The DM-only functions are the language support (`set_language_file_names`, `load
 
 ## Data tables
 
-The port reads 140 table addresses from the KAOS image (`port/src/*/*.c`, `#define ... 0x10xxxx`). For CSB, each address needs a CSB value. The CSB addresses come from a content search with the exact table size and from the code references of the paired functions.
+The port reads 140 table addresses from the KAOS image (`src/*/*.c`, `#define ... 0x10xxxx`). For CSB, each address needs a CSB value. The CSB addresses come from a content search with the exact table size and from the code references of the paired functions.
 
 ### Equal tables at new addresses
 
@@ -134,7 +134,7 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 
 ### Graphics.DAT
 
-CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have the same meaning, so the graphic ids in `port/src/data/ids.h` stay valid. These items differ:
+CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have the same meaning, so the graphic ids in `src/data/ids.h` stay valid. These items differ:
 
 - Item 700 (strings) and item 699 (action names) are empty in CSB. Items 737 and 747 (French and German strings) do not exist.
 - Item 694 (object names) ends each name with a byte that has bit 7 set. DM separates the names with NUL. 33 names differ, for example 23 BOLT BLADE → STORM, 158 BRO POTION → ANTIVENIN, 174 DRUMSTICK → SHANK.
@@ -148,8 +148,8 @@ CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have th
 
 Implemented in Step 2 of the CSB plan:
 
-- `kaos_load` (`port/src/data/ftl.c`) loads `APPB.FTL` when `g_adventure` is CSB. `csb_image_build` (`port/src/data/csbimage.c`) then makes a KAOS-layout image: each table that the port reads is at its DM address. The `KAOS_*` names of `port/src/data/kaos_addresses.h` do not change.
-- `csb_copies` in `port/src/data/csbimage.c` is the single address table: KAOS address (its `KAOS_*` name), APPB address, size. The APPB addresses of the converted tables have the prefix `CSB_APPB_`. Strided and split tables have one row per part.
+- `kaos_load` (`src/data/ftl.c`) loads `APPB.FTL` when `g_adventure` is CSB. `csb_image_build` (`src/data/csbimage.c`) then makes a KAOS-layout image: each table that the port reads is at its DM address. The `KAOS_*` names of `src/data/kaos_addresses.h` do not change.
+- `csb_copies` in `src/data/csbimage.c` is the single address table: KAOS address (its `KAOS_*` name), APPB address, size. The APPB addresses of the converted tables have the prefix `CSB_APPB_`. Strided and split tables have one row per part.
 - Conversions in code: the action sets (6-byte CSB records to the 8-byte DM layout), and the dialog pointers (moved to the DM tables).
 - The 29 CSB spells are at `0x104160`, after the KAOS data. `spells.c` and `tables.c` read 29 spells from there for CSB.
 - `adventure_engine_name` gives the module file name: `KAOS.FTL` or `APPB.FTL`.
@@ -239,9 +239,9 @@ The pointer table C`0x104d08` has 26 entries. Entry n gives DM text: 78, 94, 79,
 
 Port implementation (Step 3):
 
-- `port/src/data/csbtext.c` `csb_text_build` (called by `csb_image_build`): builds DM texts 0–134 as one block of NUL-terminated strings (item 700 order) and the 44 action names (item 699). The spell failure and level gained texts join prefix, class name, and suffix. Each string index table entry k of the KAOS image gets text index first + k, so the class names (0–3) and directions (22–25) are in the CSB table order: text 2 is PRIEST, 3 is WIZARD, 23 is EAST, 24 is SOUTH. Only the index tables read these texts.
-- `port/src/ui/ui.c` `load_strings`: for CSB, takes items 699 and 700 from `csb_text_get_item`, and ends each object name (item 694) at the byte with bit 7 set.
-- `port/src/engine/champion.c` reads its messages with `gfx_string`. The other files that show text do not change.
+- `src/data/csbtext.c` `csb_text_build` (called by `csb_image_build`): builds DM texts 0–134 as one block of NUL-terminated strings (item 700 order) and the 44 action names (item 699). The spell failure and level gained texts join prefix, class name, and suffix. Each string index table entry k of the KAOS image gets text index first + k, so the class names (0–3) and directions (22–25) are in the CSB table order: text 2 is PRIEST, 3 is WIZARD, 23 is EAST, 24 is SOUTH. Only the index tables read these texts.
+- `src/ui/ui.c` `load_strings`: for CSB, takes items 699 and 700 from `csb_text_get_item`, and ends each object name (item 694) at the byte with bit 7 set.
+- `src/engine/champion.c` reads its messages with `gfx_string`. The other files that show text do not change.
 
 ### Actions
 
@@ -252,7 +252,7 @@ Port implementation (Step 3):
 - All other actions are the same as DM, including FIREBALL, DISPELL, LIGHTNING, SPIT, door bash, coin flip, shields, HEAL, LIGHT, WINDOW, FREEZE LIFE, THROW, SHOOT, and CLIMB DOWN.
 - `menus_is_group_frightened_by_action`, `menus_decrement_charges`, and `menus_get_action_hand_charge_count` are the same as DM.
 
-Port change: `port/src/engine/action.c` `action_is_action_performed` (INVOKE, FLUXCAGE, FUSE do nothing in CSB), `port/src/data/tables.c` (experience gain table).
+Port change: `src/engine/action.c` `action_is_action_performed` (INVOKE, FLUXCAGE, FUSE do nothing in CSB), `src/data/tables.c` (experience gain table).
 
 ### Magic map
 
@@ -326,26 +326,26 @@ Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn pane
 
 Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_drawn` (C`0x1024cc`: 5, 9, or 10), not `g_panel_content` (C`0x1024ca`).
 
-Port changes: `port/src/engine/magic.c` (spell kind 4, failure message 11), `port/src/data/spells.c` (29 spells), `port/src/engine/timeline_process.c` (events 80–83), `port/src/engine/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `port/src/ui/ui_champion.c` (scroll panel, CREANAME, MAGICMAP), `port/src/ui/view.c` (square aspect for the map).
+Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/timeline_process.c` (events 80–83), `src/engine/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/ui_champion.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
 
 Port (Step 7): `magic.c` `cast_magic_map`, `timeline_process.c` events 80–83, `ui_champion.c` (`insert_creature_name`, `draw_panel_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
 
 ### Sensors and timeline
 
-- `sensor_add_event` (DM K`0x11e526`, CSB C`0x121ba8`): CSB writes priority 0 for each sensor event (C`0x121bc4`). DM sets the priority from the effect: set 1, clear 3, toggle 2, hold 0 (K`0x11e546`–`0x11e564`). The event comparison (C`0x122960`) still uses the priority. Thus sensor events of the same type on the same tick run in slot order in CSB. Port: `port/src/engine/sensor.c` `sensor_add_event`.
-- Floor sensor type 9 (version checker): CSB triggers when the data is ≤ 31 (C`0x122766`). DM uses ≤ 36 (K`0x11f052`). Port: `port/src/engine/sensor.c` `VERSION_CHECKER_LIMIT` 32.
+- `sensor_add_event` (DM K`0x11e526`, CSB C`0x121ba8`): CSB writes priority 0 for each sensor event (C`0x121bc4`). DM sets the priority from the effect: set 1, clear 3, toggle 2, hold 0 (K`0x11e546`–`0x11e564`). The event comparison (C`0x122960`) still uses the priority. Thus sensor events of the same type on the same tick run in slot order in CSB. Port: `src/engine/sensor.c` `sensor_add_event`.
+- Floor sensor type 9 (version checker): CSB triggers when the data is ≤ 31 (C`0x122766`). DM uses ≤ 36 (K`0x11f052`). Port: `src/engine/sensor.c` `VERSION_CHECKER_LIMIT` 32.
 - Wall sensor type 18 (end game): see [End of the game](#end-of-the-game).
 - No new sensor types, actuator types, or creature behavior. The other sensor, projectile, explosion, and creature functions differ only in code generation.
 - `timeline_process` handles the same events as DM, plus 22 (copy protection), 80–83 (magic map).
 
 ### Creatures
 
-- `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `port/src/engine/game.h`; `port/src/engine/savegame.c` applies it as the DM minimum.
+- `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `src/engine/game.h`; `src/engine/savegame.c` applies it as the DM minimum.
 - `group_steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. Step 7 check: the APPB code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
 
 ### Champions
 
-- `champion_click_in_resurrect_reincarnate_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value − value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `port/src/engine/champion.c` `reincarnate`. The CSB dungeon has no mirrors, so this code does not run in a normal CSB game (UNVERIFIED).
+- `champion_click_in_resurrect_reincarnate_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value − value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `src/engine/champion.c` `reincarnate`. The CSB dungeon has no mirrors, so this code does not run in a normal CSB game (UNVERIFIED).
 - All other champion functions differ only in code generation: object modifiers, skill level, skill experience, luck, time effects, candidate, food and potions, object icons.
 
 ### Save and load
@@ -379,10 +379,10 @@ Other load and save differences:
   - After a successful SAVE AND QUIT, `A5-0xe0` becomes 0 and `endgame(0)` (C`0x128374`) runs: the credits, then `quit_game`.
   - When the save fails, a message dialog with one button shows (C`0x1294f8`), then the game continues.
   - No code path quits without a save. Text 93 (quit without save) does not exist, and the save dialog has no plain QUIT.
-  - Port (`port/src/ui/startend.c` `save_game_csb`): the 3-choice dialog. The port writes dialog choice 1 for both saves. SAVE AND QUIT shows the credits and then the CSB screen.
+  - Port (`src/ui/startend.c` `save_game_csb`): the 3-choice dialog. The port writes dialog choice 1 for both saves. SAVE AND QUIT shows the credits and then the CSB screen.
 - `load_dungeon` (C`0x1295a0`) reads the same format. Its extra calls are copy protection.
 
-Port changes: `port/src/engine/savefile.c` (header offsets, file names), `port/src/engine/savegame.c` (active group count, champion bytes `0x118`–`0x11d`), `port/src/ui/startend.c` (save dialog). An open question decides the start of a game, see [Open questions](#open-questions).
+Port changes: `src/engine/savefile.c` (header offsets, file names), `src/engine/savegame.c` (active group count, champion bytes `0x118`–`0x11d`), `src/ui/startend.c` (save dialog). An open question decides the start of a game, see [Open questions](#open-questions).
 
 ### Entrance and start
 
@@ -393,7 +393,7 @@ CSB has an entrance screen with doors (`process_entrance`, C`0x12a44e`). It diff
 - The choice is in `g_new_game` (C`0x10017a`): two buttons (zones `0x1b3`, `0x1b4`). Value `0xcb` repeats the screen after the credits (C`0x12a6d8`).
 - `initialize_game` (C`0x12b7ee`) runs the title (`show_title`), the entrance, then `load_game` until it succeeds.
 
-Port: `port/src/ui/startend.c`, `port/src/ui/gameloop.c`. UNVERIFIED: the labels of the two buttons (they are in the pictures).
+Port: `src/ui/startend.c`, `src/ui/gameloop.c`. UNVERIFIED: the labels of the two buttons (they are in the pictures).
 
 ### End of the game
 
@@ -414,7 +414,7 @@ CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:
 - 900 frames, or RESTART: `load_game`, then `start_game`. When the load fails, the credits.
 - The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, THE END again (without the 300 frames); else `quit_game`.
 
-Port (`port/src/ui/startend.c`): `startend_run_endgame_sensor` plays `ENDA.DAT` with `port/src/ui/anim.c` for CSB, waits for a key or a click, and shows the CSB screen. `draw_the_end` draws the CSB button from the boxes, which the image copies to `0x104248` (`CSB_RESTART_BOXES`). After the credits, the port shows the CSB screen (deliberate deviation, as for DM); it does not go back to THE END.
+Port (`src/ui/startend.c`): `startend_run_endgame_sensor` plays `ENDA.DAT` with `src/ui/anim.c` for CSB, waits for a key or a click, and shows the CSB screen. `draw_the_end` draws the CSB button from the boxes, which the image copies to `0x104248` (`CSB_RESTART_BOXES`). After the credits, the port shows the CSB screen (deliberate deviation, as for DM); it does not go back to THE END.
 
 ### Copy protection
 
@@ -434,7 +434,7 @@ These differences need no port change, because the port does not reproduce the A
 
 ## Work estimate
 
-The estimate counts changed or new lines in `port/`, without tests.
+The estimate counts changed or new lines in `src/`, without tests.
 
 | Subsystem | Work | Size |
 |---|---|---|
@@ -454,7 +454,7 @@ Total without `ENDA.DAT` and without `CEDT.FTL`: about 1500–2200 lines.
 ## Open questions
 
 1. Game start: CSB needs `CSBGame.dat` from the utility disk (`CEDT.FTL`, disk B, with `MINI.DAT` and the portraits). Must the user supply a save made with the original utility disk, or must the port also port the "make new adventure" and champion import of `CEDT.FTL`?
-2. The `ENDA.DAT` ending: port the `ANIM.FTL` player, or show a replacement screen? Answered: Step 8 ports the player (`port/src/ui/anim.c`, see [End of the game](#end-of-the-game)).
+2. The `ENDA.DAT` ending: port the `ANIM.FTL` player, or show a replacement screen? Answered: Step 8 ports the player (`src/ui/anim.c`, see [End of the game](#end-of-the-game)).
 3. The magic map: is a "MAGICMAP" scroll in the CSB dungeon? Answered: yes, on map 4 at x 20, y 11 (see [Magic map](#magic-map)).
 4. SAVE AND QUIT. Answered: after a successful save, `save_game` calls `endgame(0)`: the credits, then `quit_game` (see [Save and load](#save-and-load)). `quit_game` then stops at C`0x128600`, because the won flag is 0 (Step 8, see [End of the game](#end-of-the-game)). The port shows the credits and then the CSB screen (turn-based: the entrance picture).
 5. The DM disk has an empty `CSBGAME.DAT`. Does DM 3.60 read it? Not traced.

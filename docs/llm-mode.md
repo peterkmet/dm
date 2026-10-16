@@ -8,11 +8,11 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 
 | Part | File | State |
 |---|---|---|
-| State, view, and map as JSON | `port/src/platform/state_json.c` | Done, tested |
-| Socket server and turns | `port/src/platform/control.c` | Done, tested in process |
+| State, view, and map as JSON | `src/platform/state_json.c` | Done, tested |
+| Socket server and turns | `src/platform/control.c` | Done, tested in process |
 | MCP server | `tools/dmtools/mcp_server.py` | Done, tested against the socket |
 | Command-line client `dm-play` | `tools/dmtools/play.py` | Done, tested against the socket |
-| `--mode turnbased --control PATH` | `port/src/platform/main.c` | Done, tested headless |
+| `--mode turnbased --control PATH` | `src/platform/main.c` | Done, tested headless |
 
 ## Play with Claude Code
 
@@ -27,7 +27,7 @@ The plan is in [2026-10-04-modes-plan.md](superpowers/2026-10-04-modes-plan.md).
 1. Build the game.
 
    ```sh
-   make -C port
+   make
    ```
 
 2. Start the game in turn-based mode. Replace `<socket>` with the socket path. Use `~/.dm/control.sock` to match the default of the MCP server.
@@ -81,7 +81,7 @@ playthroughs/
       instruction_changes.md    each change of the player instructions: what, why, and from which session
     game/                       the live save of the run: `build/dm --saves playthroughs/current/game`
     saves/<name>/               a checkpoint: a save DMGAME.DAT and a copy of player/ in files/
-  lego/                         the personal play folder: `make -C port lego`, then `playthroughs/lego/dm --data game --saves playthroughs/lego`
+  lego/                         the local play folder: `make play`, then `playthroughs/local/dm --data game --saves playthroughs/local`
 ```
 
 - Start a new run N: create `playthroughs/run<N>/` with the folders `player/`, `coordinator/`, `game/`, and `saves/`. Copy the `*.md` files of `playthroughs/template/` to `player/`. Copy `playthroughs/template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/`. Create `saves/start/` with the start save and a copy of `player/` in `files/`. Point the link to the run: `ln -sfn run<N> playthroughs/current`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
