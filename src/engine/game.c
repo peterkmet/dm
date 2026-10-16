@@ -9,7 +9,6 @@
 #include "engine/map.h"
 #include "engine/random.h"
 #include "engine/timeline.h"
-#include "engine/timeline_process.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,6 +32,7 @@ int16_t g_leader_index = -1;
 int16_t g_magic_caster_champion_index = -1;
 uint16_t g_leader_hand_object = THING_NONE;
 bool g_party_is_sleeping, g_party_dead;
+bool g_game_won;
 uint32_t g_game_time, g_game_id;
 int32_t g_last_creature_attack_time, g_last_party_movement_time;
 int16_t g_disabled_movement_ticks, g_projectile_disabled_movement_ticks;

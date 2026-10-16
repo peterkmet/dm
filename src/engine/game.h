@@ -163,6 +163,7 @@ extern uint16_t g_party_champion_count;
 extern int16_t g_leader_index, g_magic_caster_champion_index;
 extern uint16_t g_leader_hand_object;
 extern bool g_party_is_sleeping, g_party_dead;
+extern bool g_game_won;
 extern uint32_t g_game_time, g_game_id;
 extern int32_t g_last_creature_attack_time, g_last_party_movement_time;
 extern int16_t g_disabled_movement_ticks, g_projectile_disabled_movement_ticks;

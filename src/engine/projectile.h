@@ -2,9 +2,9 @@
 #ifndef DM_ENGINE_PROJECTILE_H
 #define DM_ENGINE_PROJECTILE_H
 /* Prefixes: projectile_ explosion_ */
+#include "engine/event.h"
 #include "engine/map.h"
 #include "engine/timeline.h"
-#include "engine/timeline_process.h"
 #include <stdbool.h>
 #include <stdint.h>
 

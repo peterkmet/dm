@@ -5,6 +5,8 @@
 #include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
+#include "engine/event.h"
+#include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/move.h"
 #include "engine/projectile.h"
@@ -12,7 +14,6 @@
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline.h"
-#include "engine/timeline_process.h"
 
 #define ASPECT_KEEP_FLAGS (ASPECT_ATTACKING | ASPECT_FLIPPED)
 

@@ -9,7 +9,7 @@ decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions
 hex engine/map.c open: epic 5
 hex engine/map.h open: epic 5
 long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
-long engine/timeline_process.c:event_process_expired rule 5.8: one short case for each timeline event type
+long engine/event.c:event_process_expired rule 5.8: one short case for each timeline event type
 block engine/action.c open: epic 6
 block engine/champion.c open: epic 6
 block engine/champion.h open: epic 6
@@ -36,8 +36,8 @@ block engine/savegame.c open: epic 6
 block engine/sensor.c open: epic 6
 block engine/sound.c open: epic 9
 block engine/sound.h open: epic 9
-block engine/timeline_process.c open: epic 6
-block engine/timeline_process.h open: epic 6
+block engine/event.c open: epic 6
+block engine/event.h open: epic 6
 block platform/control.c open: epic 10
 block platform/main.c open: epic 11
 block platform/platform.c open: epic 11
@@ -245,10 +245,9 @@ name engine/sensor.h:sensor_get_object_of_type_in_cell open: epic 6
 name engine/sensor.h:sensor_is_object_in_party_possession open: epic 6
 name engine/sensor.h:sensor_is_triggered_by_click_on_wall open: epic 6
 name engine/sensor.h:sensor_process_thing_addition_or_removal open: epic 6
-name engine/timeline_process.c:event_is_door_destroyed_by_attack open: epic 6
-name engine/timeline_process.c:event_move_teleporter_or_pit_square_things open: epic 6
-name engine/timeline_process.h:event_is_door_destroyed_by_attack open: epic 6
-name engine/timeline_process.h:event_move_teleporter_or_pit_square_things open: epic 6
+name engine/event.c:event_is_door_destroyed_by_attack open: epic 6
+name engine/event.c:event_move_teleporter_or_pit_square_things open: epic 6
+name engine/event.h:event_is_door_destroyed_by_attack open: epic 6
 name ui/command.c:is_leader_hand_object_thrown open: epic 8
 name ui/command.c:touch_front_square_empty_handed open: epic 8
 name ui/gameloop.c:draw_spell_area_before_last_death open: epic 8
@@ -446,8 +445,7 @@ comment engine/savefile.h open: epic 5
 comment engine/savegame.c open: epic 5
 comment engine/savegame.h open: epic 5
 comment engine/sensor.c open: epic 5
-comment engine/timeline_process.c open: epic 5
-comment engine/timeline_process.h open: epic 5
+comment engine/event.c open: epic 5
 comment platform/control.c open: epic 10
 comment platform/main.c open: epic 11
 comment platform/platform.h open: epic 11
@@ -483,7 +481,7 @@ header engine/recruit.h open: epic 5
 header engine/savefile.h open: epic 5
 header engine/savegame.h open: epic 5
 header engine/sensor.h open: epic 5
-header engine/timeline_process.h open: epic 5
+header engine/event.h open: epic 5
 header platform/control.h open: epic 10
 header platform/platform.h open: epic 11
 header platform/scale.h open: epic 11
@@ -503,12 +501,12 @@ header ui/text.h open: epic 8
 header ui/ui.h open: epic 8
 header ui/video.h open: epic 8
 header ui/view.h open: epic 8
-include engine/group.h:engine/timeline_process.h open: epic 5
+include engine/group.h:engine/event.h open: epic 5
 include engine/inventory.c:engine/sound.h open: epic 5
 include engine/inventory.h:engine/map.h open: epic 5
 include engine/move.c:engine/inventory.h open: epic 5
-include engine/move.c:engine/timeline_process.h open: epic 5
-include engine/projectile.h:engine/timeline_process.h open: epic 5
+include engine/move.c:engine/event.h open: epic 5
+include engine/projectile.h:engine/event.h open: epic 5
 include engine/recruit.h:engine/champion.h open: epic 5
 include engine/savegame.c:data/ids.h open: epic 5
 include platform/main.c:data/ftl.h open: epic 11
@@ -517,7 +515,7 @@ include platform/state_json.c:ui/command.h open: epic 10
 include ui/advanced.h:engine/game.h open: epic 8
 include ui/automap.c:ui/advanced.h open: epic 8
 include ui/command.c:data/spells.h open: epic 8
-include ui/command.c:engine/timeline_process.h open: epic 8
+include ui/command.c:engine/event.h open: epic 8
 include ui/command.h:engine/move.h open: epic 8
 include ui/gameloop.c:data/ftl.h open: epic 8
 include ui/startend.c:data/csb_image.h open: epic 8
@@ -546,7 +544,7 @@ order engine/random.c open: epic 5
 order engine/savefile.c open: epic 5
 order engine/savegame.c open: epic 5
 order engine/sensor.c open: epic 5
-order engine/timeline_process.c open: epic 5
+order engine/event.c open: epic 5
 order platform/control.c open: epic 10
 order platform/platform.c open: epic 11
 order platform/state_json.c open: epic 10
@@ -642,20 +640,6 @@ dead-api engine/sensor.h:sensor_get_object_of_type_in_cell open: epic 7
 dead-api engine/sensor.h:sensor_is_object_in_party_possession open: epic 7
 dead-api engine/sensor.h:sensor_trigger_local_effect open: epic 7
 dead-api engine/sound.h:sound_get_volume open: epic 9
-dead-api engine/timeline_process.h:event_enable_champion_action open: epic 7
-dead-api engine/timeline_process.h:event_enable_group_generator open: epic 7
-dead-api engine/timeline_process.h:event_hide_damage_received open: epic 7
-dead-api engine/timeline_process.h:event_move_teleporter_or_pit_square_things open: epic 7
-dead-api engine/timeline_process.h:event_process_corridor open: epic 7
-dead-api engine/timeline_process.h:event_process_door open: epic 7
-dead-api engine/timeline_process.h:event_process_door_animation open: epic 7
-dead-api engine/timeline_process.h:event_process_door_destruction open: epic 7
-dead-api engine/timeline_process.h:event_process_fake_wall open: epic 7
-dead-api engine/timeline_process.h:event_process_light open: epic 7
-dead-api engine/timeline_process.h:event_process_pit open: epic 7
-dead-api engine/timeline_process.h:event_process_teleporter open: epic 7
-dead-api engine/timeline_process.h:event_process_vi_altar_rebirth open: epic 7
-dead-api engine/timeline_process.h:event_process_wall open: epic 7
 dead-api platform/platform.h:plat_audio_pump open: epic 11
 dead-api platform/state_json.h:json_null open: epic 10
 dead-api platform/state_json.h:state_json_get_string open: epic 10
@@ -751,7 +735,7 @@ record engine/move.c open: epic 5
 record engine/projectile.c open: epic 5
 record engine/projectile.h open: epic 5
 record engine/sensor.c open: epic 5
-record engine/timeline_process.c open: epic 5
+record engine/event.c open: epic 5
 record ui/view.c open: epic 8
 result engine/explored.h:explored_save open: epic 6
 result ui/anim.h:anim_open open: epic 8
@@ -811,7 +795,7 @@ event-comment engine/magic.c open: epic 6
 event-comment engine/magic.h open: epic 6
 event-comment engine/projectile.h open: epic 6
 event-comment engine/sensor.h open: epic 6
-event-comment engine/timeline_process.h open: epic 6
+event-comment engine/event.h open: epic 6
 todo engine/map.h open: epic 6
 todo engine/message.c open: epic 6
 todo engine/sound.c open: epic 9
@@ -834,7 +818,7 @@ notation engine/group.c open: epic 6
 notation engine/group.h open: epic 6
 notation engine/inventory.h open: epic 6
 notation engine/projectile.h open: epic 6
-notation engine/timeline_process.h open: epic 6
+notation engine/event.h open: epic 6
 notation ui/command.h open: epic 8
 notation ui/draw.c open: epic 8
 notation ui/draw.h open: epic 8
@@ -854,10 +838,21 @@ static-prefix platform/platform.c:audio_open open: epic 11
 type ui:count open: epic 8
 type ui:length open: epic 8
 dead-api ui/audio.h:audio_music_stop open: epic 9
-dead-api engine/timeline.h:timeline_add_watchdog_event open: epic 7
-dead-api engine/timeline.h:timeline_extract_first_event open: epic 7
 dead-api engine/timeline.h:timeline_find_mergeable_event open: epic 7
 dead-api engine/timeline.h:timeline_is_event_a_before_b open: epic 7
-dead-api engine/timeline.h:timeline_is_first_event_expired open: epic 7
 name engine/timeline.c:timeline_is_event_a_before_b open: epic 6
 name engine/timeline.h:timeline_is_event_a_before_b open: epic 6
+name engine/event.c:event_process_vi_altar_rebirth open: epic 6
+static-prefix engine/event.c:event_enable_champion_action open: epic 6
+static-prefix engine/event.c:event_enable_group_generator open: epic 6
+static-prefix engine/event.c:event_hide_damage_received open: epic 6
+static-prefix engine/event.c:event_move_teleporter_or_pit_square_things open: epic 6
+static-prefix engine/event.c:event_process_corridor open: epic 6
+static-prefix engine/event.c:event_process_door open: epic 6
+static-prefix engine/event.c:event_process_door_animation open: epic 6
+static-prefix engine/event.c:event_process_door_destruction open: epic 6
+static-prefix engine/event.c:event_process_fake_wall open: epic 6
+static-prefix engine/event.c:event_process_light open: epic 6
+static-prefix engine/event.c:event_process_pit open: epic 6
+static-prefix engine/event.c:event_process_teleporter open: epic 6
+static-prefix engine/event.c:event_process_vi_altar_rebirth open: epic 6

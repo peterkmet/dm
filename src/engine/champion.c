@@ -7,6 +7,7 @@
 #include "engine/action.h"
 #include "engine/arith.h"
 #include "engine/dungeon.h"
+#include "engine/event.h"
 #include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
@@ -16,7 +17,6 @@
 #include "engine/recruit.h"
 #include "engine/sound.h"
 #include "engine/timeline.h"
-#include "engine/timeline_process.h"
 #include <string.h>
 
 #define MAXIMUM_HEALTH                    999

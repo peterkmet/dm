@@ -6,6 +6,7 @@
 #include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
+#include "engine/event.h"
 #include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
@@ -14,7 +15,6 @@
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/timeline.h"
-#include "engine/timeline_process.h"
 #include <string.h>
 
 #define POWER_SYMBOL_FIRST           0x60 /* symbol of power 1 is 0x60, power n is 0x5f + n */

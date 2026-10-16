@@ -8,7 +8,6 @@
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/savegame.h"
-#include "engine/timeline_process.h"
 #include "ui/automap.h"
 #include "ui/command.h"
 #include "ui/dialog.h"

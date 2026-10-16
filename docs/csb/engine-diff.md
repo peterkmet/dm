@@ -326,9 +326,9 @@ Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn pane
 
 Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_drawn` (C`0x1024cc`: 5, 9, or 10), not `g_panel_content` (C`0x1024ca`).
 
-Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/timeline_process.c` (events 80–83), `src/engine/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/ui_champion.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
+Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/event.c` (events 80–83), `src/engine/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/ui_champion.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
 
-Port (Step 7): `magic.c` `cast_magic_map`, `timeline_process.c` events 80–83, `ui_champion.c` (`insert_creature_name`, `draw_panel_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
+Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `ui_champion.c` (`insert_creature_name`, `draw_panel_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
 
 ### Sensors and timeline
 
@@ -441,7 +441,7 @@ The estimate counts changed or new lines in `src/`, without tests.
 | Engine selection, CSB address table for 140 addresses, strides | `ftl.c`, `tables.c`, new address table, all files with `#define 0x10xxxx` | 250–350 lines |
 | Text (inline strings, object names with bit 7, action names) | `ui.c`, `ids.h`, `champion.c`, `magic.c`, `action.c`, `ui_champion.c`, `ui_menus.c`, `command.c`, `gameloop.c`, `startend.c` | 200–300 lines |
 | Actions and experience table | `action.c`, `tables.c` | 20–40 lines |
-| Magic map (spells, events, champion bytes, scroll panel, map drawing) | `magic.c`, `spells.c`, `timeline_process.c`, `game.h`, `ui_champion.c`, `view.c` | 350–500 lines |
+| Magic map (spells, events, champion bytes, scroll panel, map drawing) | `magic.c`, `spells.c`, `event.c`, `game.h`, `ui_champion.c`, `view.c` | 350–500 lines |
 | Sensors, active groups, reincarnation | `sensor.c`, `game.h`, `game.c`, `savegame.c`, `champion.c` | 30–60 lines |
 | Save file header and names, save dialog | `savefile.c`, `savegame.c`, `startend.c`, `dialog.c` | 100–150 lines |
 | Entrance, title, death screen, credits | `startend.c`, `gameloop.c` | 150–250 lines |

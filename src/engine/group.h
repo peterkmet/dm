@@ -3,10 +3,10 @@
 #define DM_ENGINE_GROUP_H
 /* Prefixes: group_ creature_ */
 #include "data/tables.h"
+#include "engine/event.h"
 #include "engine/game.h"
 #include "engine/map.h"
 #include "engine/timeline.h"
-#include "engine/timeline_process.h"
 #include <stdbool.h>
 #include <stdint.h>
 

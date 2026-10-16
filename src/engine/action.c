@@ -7,6 +7,7 @@
 #include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
+#include "engine/event.h"
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
@@ -18,7 +19,6 @@
 #include "engine/random.h"
 #include "engine/sound.h"
 #include "engine/timeline.h"
-#include "engine/timeline_process.h"
 #include <string.h>
 
 #define MESSAGE_SIZE 100

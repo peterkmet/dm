@@ -4,6 +4,7 @@
 #include "data/tables.h"
 #include "engine/arith.h"
 #include "engine/champion.h"
+#include "engine/event.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/move.h"
@@ -11,7 +12,6 @@
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline.h"
-#include "engine/timeline_process.h"
 
 /* Combined square argument: a value from 0x100 holds (x + 1) << 8 | target x (and y << 8 | target y). */
 #define SQUARE_COMBO_MIN         256

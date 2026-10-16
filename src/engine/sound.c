@@ -3,10 +3,10 @@
 #include "data/graphics.h"
 #include "data/tables.h"
 #include "engine/dungeon.h"
+#include "engine/event.h"
 #include "engine/game.h"
 #include "engine/map.h"
 #include "engine/timeline.h"
-#include "engine/timeline_process.h"
 #include <stdbool.h>
 #include <string.h>
 
