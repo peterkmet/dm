@@ -21,6 +21,7 @@
 #include "ui/command.h"
 #include "ui/dialog.h"
 #include "ui/draw.h"
+#include "ui/frame.h"
 #include "ui/gameloop.h"
 #include "ui/layout.h"
 #include "ui/music.h"
@@ -72,9 +73,7 @@
 #define LOAD_CHOICE_CANCEL 2
 #define SOUND_FUSE         14
 
-void (*g_frame_hook)(void);
-bool g_quit_requested, g_restart_requested, g_return_to_entrance;
-int16_t g_waiting_frame;
+bool g_restart_requested, g_return_to_entrance;
 static char save_dir[SAVE_DIR_SIZE] = ".";
 
 void startend_set_save_dir(const char *dir)
@@ -86,28 +85,12 @@ const char *startend_save_dir(void)
     return save_dir;
 }
 
-bool wait_frame(void)
-{
-    if (!g_frame_hook || g_quit_requested)
-        return false;
-    g_waiting_frame++;
-    g_frame_hook();
-    g_waiting_frame--;
-    return !g_quit_requested;
-}
-
-void wait_frames(int16_t count)
-{
-    while (count-- > 0 && wait_frame())
-        ;
-}
-
 /* Waits until a key or a button is pressed. Returns false when there are no frames. */
 static bool wait_for_input(void)
 {
     command_discard_all_input();
     while (!g_input_received)
-        if (!wait_frame())
+        if (!frame_wait())
             return false;
     return true;
 }
@@ -209,7 +192,7 @@ void startend_save_game(void)
 
 bool startend_load_saved_game(void)
 {
-    g_game_screen_inactive = true;
+    g_game_screen_shown = false;
     for (;;) {
         SavegameResult result = savegame_load(save_dir);
         if (result == SAVEGAME_LOADED) {
@@ -371,7 +354,7 @@ static bool wait_for_restart(void)
             g_quit_requested = false;
             break;
         }
-        if (!g_restart_requested && !wait_frame())
+        if (!g_restart_requested && !frame_wait())
             break;
     }
     command_set_only_mouse_input(-1);
@@ -405,16 +388,16 @@ void startend_run_endgame(int16_t party_dead)
         music_play_end(g_session.won);
     if (party_dead && !g_session.won) {
         sound_request_play(SOUND_SCREAM, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
-        wait_frames(DEATH_WAIT_FRAMES);
+        frame_wait_count(DEATH_WAIT_FRAMES);
     }
-    g_game_screen_inactive = true;
+    g_game_screen_shown = false;
     if (party_dead && g_session.won) {
         draw_champion_parade();
         wait_for_input();
     }
     if (party_dead) {
         draw_the_end(false);
-        wait_frames(THE_END_WAIT_FRAMES);
+        frame_wait_count(THE_END_WAIT_FRAMES);
         if (g_session.saved_game_exists) {
             draw_the_end(true);
             if (wait_for_restart())
@@ -432,7 +415,7 @@ static void fuse_update(void)
     gameloop_draw_view();
     sound_play_pending();
     game_increment_time();
-    wait_frame();
+    frame_wait();
 }
 
 /* The fluxcage explosions on a square disappear. */
@@ -480,7 +463,7 @@ static void show_final_texts(void)
             text[1] = '\n';
             message_print(COLOR_WHITE, text + 1);
             fuse_update();
-            wait_frames(FUSE_TEXT_FRAMES);
+            frame_wait_count(FUSE_TEXT_FRAMES);
             letter++;
             break;
         }
@@ -546,7 +529,7 @@ void startend_run_fuse_sequence(void)
     fuse_update();
     show_final_texts();
     draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
-    wait_frames(FUSE_END_FRAMES);
+    frame_wait_count(FUSE_END_FRAMES);
     savegame_forget();
     startend_run_endgame(1);
 }
@@ -555,7 +538,7 @@ void startend_run_fuse_sequence(void)
 static void play_csb_ending(void)
 {
     char path[SAVE_DIR_SIZE];
-    g_game_screen_inactive = true;
+    g_game_screen_shown = false;
     snprintf(path, sizeof path, "%s/%s", gameloop_get_data_dir(), CSB_ENDING_FILE);
     if (!anim_play(path))
         wait_for_input();
@@ -568,6 +551,6 @@ void startend_run_endgame_sensor(uint16_t delay)
         play_csb_ending();
         return;
     }
-    wait_frames(delay * SENSOR_DELAY_FRAMES);
+    frame_wait_count(delay * SENSOR_DELAY_FRAMES);
     startend_run_endgame(1);
 }

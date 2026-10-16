@@ -160,10 +160,9 @@ void plat_present(void)
 static void render_frame(void)
 {
     int w, h;
-    float s, ox, oy;
     SDL_GetCurrentRenderOutputSize(renderer, &w, &h);
-    video_layout(w, h, &s, &ox, &oy);
-    SDL_FRect dst = {ox, oy, SCREEN_W * s, SCREEN_H * s};
+    OutputLayout layout = output_layout(w, h);
+    SDL_FRect dst = {layout.x, layout.y, SCREEN_W * layout.scale, SCREEN_H * layout.scale};
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
     SDL_RenderTexture(renderer, texture, NULL, &dst);
@@ -174,6 +173,7 @@ bool plat_poll(PlatEvent *event)
 {
     SDL_Event sdl_event;
     int output_width, output_height;
+    OutputLayout layout;
     while (SDL_PollEvent(&sdl_event)) {
         *event = (PlatEvent){0};
         switch (sdl_event.type) {
@@ -190,17 +190,17 @@ bool plat_poll(PlatEvent *event)
         case SDL_EVENT_MOUSE_MOTION:
             SDL_ConvertEventToRenderCoordinates(renderer, &sdl_event); /* window points -> output pixels */
             SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
-            video_map_mouse(output_width, output_height, (int)sdl_event.motion.x, (int)sdl_event.motion.y, &mouse_x,
-                            &mouse_y);
+            layout = output_layout(output_width, output_height);
+            output_map_mouse(&layout, (int)sdl_event.motion.x, (int)sdl_event.motion.y, &mouse_x, &mouse_y);
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP:
             SDL_ConvertEventToRenderCoordinates(renderer, &sdl_event);
             SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
+            layout = output_layout(output_width, output_height);
             event->type = sdl_event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ? PLAT_MOUSE : PLAT_MOUSE_UP;
             event->button = sdl_event.button.button;
-            video_map_mouse(output_width, output_height, (int)sdl_event.button.x, (int)sdl_event.button.y, &event->x,
-                            &event->y);
+            output_map_mouse(&layout, (int)sdl_event.button.x, (int)sdl_event.button.y, &event->x, &event->y);
             mouse_x = event->x;
             mouse_y = event->y;
             return true;

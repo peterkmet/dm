@@ -65,8 +65,6 @@ bool platform/main.c:load_game_files open: epic 11
 bool platform/main.c:load_kaos_and_graphics open: epic 11
 bool platform/platform.c:audio_open open: epic 11
 bool ui/anim.h:anim_open open: epic 8
-bool ui/gameloop.c:draw_entrance_doors open: epic 8
-bool ui/gameloop.h:gameloop_run_frame open: epic 8
 bool ui/layout.h:layout_get_zone_box open: epic 8
 global ui/video.h open: epic 8
 name ui/command.c:is_leader_hand_object_thrown open: epic 8
@@ -124,7 +122,6 @@ static-prefix ui/dialog.c:draw_choices open: epic 8
 static-prefix ui/dialog.c:draw_messages open: epic 8
 static-prefix ui/dialog.c:draw_pressed_button open: epic 8
 static-prefix ui/dialog.c:draw_viewport open: epic 8
-static-prefix ui/gameloop.c:draw_entrance_doors open: epic 8
 static-prefix ui/gameloop.c:draw_projectile_motion open: epic 8
 static-prefix ui/gameloop.c:draw_spell_area_before_last_death open: epic 8
 static-prefix ui/startend.c:draw_champion_parade open: epic 8
@@ -336,6 +333,18 @@ params ui/ui.c:ui_print_zone_padded open: epic 8
 params ui/ui.h:ui_print_zone_padded open: epic 8
 params ui/video.c:video_map_mouse open: epic 8
 params ui/video.h:video_map_mouse open: epic 8
+params ui/ui_champion.c:draw_stat_meter open: epic 8
+params ui/view.c:draw_cell_objects open: epic 8
+params ui/view.c:draw_creature open: epic 8
+params ui/view.c:draw_creatures_in_cell open: epic 8
+params ui/view.c:draw_explosions open: epic 8
+params ui/view.c:draw_map_square open: epic 8
+params ui/view.c:draw_map_square_things open: epic 8
+params ui/view.c:draw_map_wall open: epic 8
+params ui/view.c:draw_object open: epic 8
+params ui/view.c:draw_projectile open: epic 8
+params ui/view.c:draw_square_things open: epic 8
+params ui/view.c:get_projectile_pose open: epic 8
 result ui/anim.h:anim_open open: epic 8
 result ui/anim.h:anim_play open: epic 8
 result ui/layout.h:layout_init open: epic 8

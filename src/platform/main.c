@@ -16,6 +16,8 @@
 #include "ui/advanced.h"
 #include "ui/anim.h"
 #include "ui/command.h"
+#include "ui/entrance.h"
+#include "ui/frame.h"
 #include "ui/gameloop.h"
 #include "ui/layout.h"
 #include "ui/logo.h"
@@ -307,7 +309,7 @@ static void show_entrance(void)
     entrance_draw();
     command_set_entrance_input();
     command_discard_all_input();
-    g_new_game = ENTRANCE_WAITING;
+    g_entrance_choice = ENTRANCE_WAITING;
 }
 
 /* The FTL logo, the title animation, then the entrance. In MODE_ENTRANCE the input goes to the commands: a key or a click stops it. */
@@ -357,9 +359,9 @@ static int entrance_frame(const char *folder)
         quit_to_start();
         return 1;
     }
-    if (g_new_game == ENTRANCE_RESUME || g_new_game == ENTRANCE_NEW_GAME)
-        entrance_press_button(g_new_game == ENTRANCE_RESUME);
-    if (g_new_game == ENTRANCE_RESUME) {
+    if (g_entrance_choice == ENTRANCE_RESUME || g_entrance_choice == ENTRANCE_NEW_GAME)
+        entrance_press_button(g_entrance_choice == ENTRANCE_RESUME);
+    if (g_entrance_choice == ENTRANCE_RESUME) {
         if (startend_load_saved_game()) {
             gameloop_start_loaded_game();
             mode = MODE_GAME;
@@ -367,7 +369,7 @@ static int entrance_frame(const char *folder)
             show_entrance();
         }
     }
-    if (g_new_game == ENTRANCE_NEW_GAME) {
+    if (g_entrance_choice == ENTRANCE_NEW_GAME) {
         entrance_open_doors();
         if (!gameloop_start_new_game(folder)) {
             SDL_Log("cannot load %s/Dungeon.DAT", folder);
@@ -515,7 +517,7 @@ static SDL_EnumerationResult SDLCALL install_disk(void *userdata, const char *di
 static bool start_csb(void)
 {
     int choice = select_csb_choice();
-    if (choice == CSB_QUIT) {
+    if (choice == SELECT_CSB_QUIT) {
         quit_to_start();
         return true;
     }
@@ -531,9 +533,9 @@ static bool start_csb(void)
     if (!apply_mode())
         return false;
     mode = MODE_GAME; /* the dialogs of RESUME read the game input */
-    if (choice == CSB_NEW_ADVENTURE && !auto_enter)
+    if (choice == SELECT_CSB_NEW_ADVENTURE && !auto_enter)
         play_csb_intro();
-    if (choice == CSB_NEW_ADVENTURE) {
+    if (choice == SELECT_CSB_NEW_ADVENTURE) {
         if (!gameloop_start_new_game(data_dir)) {
             SDL_Log("cannot load %s/Dungeon.DAT", data_dir);
             return 0;
@@ -589,7 +591,7 @@ static int run_frame(void)
     control_poll();
     int tick = 0;
     if (mode == MODE_SELECT) {
-        if (select_screen() == SCREEN_DONE && !start_adventure())
+        if (select_screen() == SELECT_SCREEN_DONE && !start_adventure())
             return RUN_FAILED;
         if (mode == MODE_SELECT)
             select_draw();
@@ -711,9 +713,9 @@ int main(int argc, char **argv)
         return 1;
     if (mode == MODE_VIEW && !view_start(data_dir))
         return 1;
-    if (mode == MODE_SELECT && select_screen() != SCREEN_DONE && !load_font())
+    if (mode == MODE_SELECT && select_screen() != SELECT_SCREEN_DONE && !load_font())
         return 1;
-    if (mode == MODE_SELECT && select_screen() == SCREEN_DONE && !start_adventure())
+    if (mode == MODE_SELECT && select_screen() == SELECT_SCREEN_DONE && !start_adventure())
         return 1;
     if (mode < MODE_SELECT && !apply_mode())
         return 1;
@@ -723,7 +725,8 @@ int main(int argc, char **argv)
     if (options.filter && !plat_set_filter(plat_filter_factor(options.filter)))
         return 1;
     /* turn-based and DM_AUTO_ENTER choose NEW ADVENTURE, as ENTER at the DM entrance */
-    if (mode == MODE_SELECT && select_screen() == SCREEN_CSB && (auto_enter || g_session.mode == GAME_MODE_TURNBASED))
+    if (mode == MODE_SELECT && select_screen() == SELECT_SCREEN_CSB &&
+        (auto_enter || g_session.mode == GAME_MODE_TURNBASED))
         select_key(SELECT_KEY_ENTER);
 
     for (int64_t frame = 0; options.frames < 0 || frame < options.frames; frame++) {

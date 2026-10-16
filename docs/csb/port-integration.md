@@ -77,7 +77,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 |---|---|
 | `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `KAOS_ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
 | `command.c`: `command_set_entrance_input`, `KAOS_KEYS_ENTRANCE` (`0x10393c`), `TABLES_MOUSE_ENTRANCE` | Mouse table and key table come from the KAOS data. |
-| `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_new_game = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
+| `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_entrance_choice = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
 | `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_start_new_game(data)` or `startend_load_saved_game()`. |
 | `main.c`: `main` | `MODE_ENTRANCE` is the first mode after the start. `DM_AUTO_ENTER` (and `turnbased`) presses Return at the start. |
 
@@ -187,31 +187,31 @@ data = data_override ? data_override : adventure_get(g_adventure)->dir;
 New files `src/ui/select.h` and `src/ui/select.c`. The module has no SDL calls. It owns the three menu screens and their state.
 
 ```c
-enum { SCREEN_ADVENTURE, SCREEN_MODE, SCREEN_CSB, SCREEN_DONE };
-enum { CSB_NEW_ADVENTURE, CSB_RESUME, CSB_QUIT };
+enum { SELECT_SCREEN_ADVENTURE, SELECT_SCREEN_MODE, SELECT_SCREEN_CSB, SELECT_SCREEN_DONE };
+enum { SELECT_CSB_NEW_ADVENTURE, SELECT_CSB_RESUME, SELECT_CSB_QUIT };
 enum { SELECT_KEY_UP, SELECT_KEY_DOWN, SELECT_KEY_ENTER, SELECT_KEY_ESCAPE };
 
 /* Starts at the first screen that --adventure and --mode do not skip. adventure and mode are -1 when the flag is absent. */
 void select_start(int16_t adventure, int16_t mode, int csb_present, bool llm_mode_available);
 /* Starts the CSB screen alone: after a game of CSB ends, and after Escape on the DM side. */
 void select_start_csb(void);
-int select_screen(void);               /* the current screen, or SCREEN_DONE */
-int select_csb_choice(void);           /* CSB_NEW_ADVENTURE, CSB_RESUME, or CSB_QUIT after SCREEN_DONE */
+int select_screen(void);               /* the current screen, or SELECT_SCREEN_DONE */
+int select_csb_choice(void);           /* SELECT_CSB_NEW_ADVENTURE, SELECT_CSB_RESUME, or SELECT_CSB_QUIT after SELECT_SCREEN_DONE */
 void select_key(int key);              /* SELECT_KEY_* */
 void select_click(int x, int y);       /* a left click in screen pixels */
 void select_draw(void);                /* draws the current screen on fb */
 ```
 
-Results go to `g_adventure` and `g_session.mode`. `select_start` with both values given returns at once with `select_screen() == SCREEN_DONE`.
+Results go to `g_adventure` and `g_session.mode`. `select_start` with both values given returns at once with `select_screen() == SELECT_SCREEN_DONE`.
 
 State and rules (all in `select.c`):
 
 - A screen has a list of items, a cursor index, and a per-item "enabled" flag. Only the item CHAOS STRIKES BACK can be disabled (when `csb_present` is 0).
 - Up and Down move the cursor. A disabled item is skipped. Return activates the item at the cursor. A click on an item moves the cursor to it and activates it. A click on a disabled item or outside every item does nothing.
 - The cursor starts on the first enabled item.
-- `SCREEN_ADVENTURE`: activating sets `g_adventure`. The next screen is `SCREEN_MODE`, except when `--mode` was given (then `SCREEN_DONE`, or `SCREEN_CSB` for CSB).
-- `SCREEN_MODE`: activating sets `g_session.mode` (VANILLA 0, ADVANCED 1, LLM = `GAME_MODE_TURNBASED` 2) and sets `g_advanced_features = g_session.mode != GAME_MODE_VANILLA`. The next screen is `SCREEN_DONE` for DM and `SCREEN_CSB` for CSB. Escape goes back to `SCREEN_ADVENTURE` (when `--adventure` was given, Escape does nothing).
-- `SCREEN_CSB`: NEW ADVENTURE, RESUME, QUIT. Activating stores the choice and goes to `SCREEN_DONE`. QUIT sets `g_quit_requested`. Escape goes back to `SCREEN_MODE` (see [Open decisions](#open-decisions)).
+- `SELECT_SCREEN_ADVENTURE`: activating sets `g_adventure`. The next screen is `SELECT_SCREEN_MODE`, except when `--mode` was given (then `SELECT_SCREEN_DONE`, or `SELECT_SCREEN_CSB` for CSB).
+- `SELECT_SCREEN_MODE`: activating sets `g_session.mode` (VANILLA 0, ADVANCED 1, LLM = `GAME_MODE_TURNBASED` 2) and sets `g_advanced_features = g_session.mode != GAME_MODE_VANILLA`. The next screen is `SELECT_SCREEN_DONE` for DM and `SELECT_SCREEN_CSB` for CSB. Escape goes back to `SELECT_SCREEN_ADVENTURE` (when `--adventure` was given, Escape does nothing).
+- `SELECT_SCREEN_CSB`: NEW ADVENTURE, RESUME, QUIT. Activating stores the choice and goes to `SELECT_SCREEN_DONE`. QUIT sets `g_quit_requested`. Escape goes back to `SELECT_SCREEN_MODE` (see [Open decisions](#open-decisions)).
 - Cursor and click boxes use the same item rectangles, computed from `text_get_size` of the item. There are no mouse tables from the KAOS data.
 
 #### Drawing with the DM font
@@ -273,25 +273,25 @@ enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
 Changes in `main.c`:
 
 1. `turnbased` becomes `static int turnbased`. A new function `apply_mode(void)` sets `turnbased`, `g_advanced_features`, `auto_enter`, `g_frame_hook`, and opens the control socket (the code that is now in `main` between `plat_init` and the loop). It runs once, when the selection ends. The default control path code moves into it.
-2. Start: when no screen is needed, `main` runs `select_start` (it returns `SCREEN_DONE` at once) and `start_adventure()` directly. Otherwise `mode = MODE_SELECT` and `select_start_font()` loads the font. The window opens before the first frame, as today.
+2. Start: when no screen is needed, `main` runs `select_start` (it returns `SELECT_SCREEN_DONE` at once) and `start_adventure()` directly. Otherwise `mode = MODE_SELECT` and `select_start_font()` loads the font. The window opens before the first frame, as today.
 3. `read_input`, new first branch for `MODE_SELECT`: map the SDL key to `SELECT_KEY_*` (Up, Down, Return and keypad Enter, Escape), call `select_key`. For `PLAT_MOUSE` with the left button, call `select_click(e.x, e.y)`. Then `continue`. Ctrl+Q and window close still set `g_quit_requested`.
-4. The frame loop: for `mode == MODE_SELECT`, call `select_draw()` when the screen changed (or every frame: it is a 320 x 200 `memset` and a few strings), then check `select_screen() == SCREEN_DONE`. When done, call `start_adventure()`.
+4. The frame loop: for `mode == MODE_SELECT`, call `select_draw()` when the screen changed (or every frame: it is a 320 x 200 `memset` and a few strings), then check `select_screen() == SELECT_SCREEN_DONE`. When done, call `start_adventure()`.
 5. `start_adventure()`:
    - DM: `apply_mode()`, `gameloop_load_data(data)`, `entrance_draw()`, `command_set_entrance_input()`, `mode = MODE_ENTRANCE`. This is the code of today's `if (mode == MODE_ENTRANCE)` block in `main`. `auto_enter` presses Return afterward, as today.
-   - CSB, choice RESUME or NEW ADVENTURE: `apply_mode()`, then the CSB engine start (see [Dependencies](#dependencies-for-play)). Until that exists, the function logs `CSB play is not available yet` and returns to `SCREEN_CSB`.
+   - CSB, choice RESUME or NEW ADVENTURE: `apply_mode()`, then the CSB engine start (see [Dependencies](#dependencies-for-play)). Until that exists, the function logs `CSB play is not available yet` and returns to `SELECT_SCREEN_CSB`.
    - CSB, choice QUIT: `g_quit_requested = 1`.
 6. The pointer: `set_pointer(...)` runs only for `mode >= MODE_ENTRANCE`. In `MODE_SELECT` the pointer shows the arrow from the KAOS data, which is not loaded. Use `plat_set_pointer(NULL, ...)` (system pointer) in `MODE_SELECT`. The mouse position is mapped to game pixels by the platform layer, so clicks work without a pointer image.
 7. `show_entrance` and the `g_return_to_entrance` branch: when `g_adventure == ADVENTURE_CSB`, call `select_start_csb()` and set `mode = MODE_SELECT` instead of `entrance_draw`. For DM nothing changes.
-8. `entrance_frame` stays for DM. The CSB choice is handled by `start_adventure`, not by `g_new_game`.
+8. `entrance_frame` stays for DM. The CSB choice is handled by `start_adventure`, not by `g_entrance_choice`.
 
 `turnbased` and the selection: the `LLM` item sets `g_session.mode = GAME_MODE_TURNBASED`. `apply_mode` then sets `auto_enter = 1`, so the program enters the dungeon without the entrance, as today. The socket opens after the selection, not before. A script that starts `build/dm` and waits for the socket sees the socket only after the user chooses LLM. Scripts must pass `--adventure` and `--mode` (or only `--mode`) to skip the screens.
 
 ### CSB entrance screen
 
-`SCREEN_CSB` in `select.c` (three items). It replaces the DM entrance graphic for CSB. It has no doors and no graphic. It uses the same drawing code as the other two screens.
+`SELECT_SCREEN_CSB` in `select.c` (three items). It replaces the DM entrance graphic for CSB. It has no doors and no graphic. It uses the same drawing code as the other two screens.
 
-- NEW ADVENTURE: `select_csb_choice() == CSB_NEW_ADVENTURE`. `start_adventure` calls `csb_new_adventure(dir)`: build `CSBGAME.DAT` from `disk-b/MINI.DAT`, then open the champion selection.
-- RESUME: `CSB_RESUME`. `start_adventure` calls the CSB loader for `<dir>/CSBGAME.DAT`, or `CSBGAME.BAK` when the first file is missing (same rule as `savegame_load`).
+- NEW ADVENTURE: `select_csb_choice() == SELECT_CSB_NEW_ADVENTURE`. `start_adventure` calls `csb_new_adventure(dir)`: build `CSBGAME.DAT` from `disk-b/MINI.DAT`, then open the champion selection.
+- RESUME: `SELECT_CSB_RESUME`. `start_adventure` calls the CSB loader for `<dir>/CSBGAME.DAT`, or `CSBGAME.BAK` when the first file is missing (same rule as `savegame_load`).
 - QUIT: ends the program.
 - RESUME with no save file: show the existing dialog `TEXT_CANT_FIND_SAVED_GAME` (`startend_load_saved_game` does this for DM).
 
@@ -345,20 +345,20 @@ Selection logic (no drawing):
 
 | Test | Check |
 |---|---|
-| `test_start_no_flags` | `select_start(-1, -1, 1)`: `select_screen() == SCREEN_ADVENTURE`. |
-| `test_start_both_flags_done` | `select_start(1, 2, 1)`: `SCREEN_CSB`. `select_start(0, 2, 1)`: `SCREEN_DONE`, `g_adventure == 0`, `g_session.mode == 2`. |
-| `test_start_adventure_only` | `select_start(0, -1, 1)`: `SCREEN_MODE`. |
-| `test_start_mode_only` | The rule "`--mode` alone means DM": `select_start(-1, 2, 1)` gives `SCREEN_DONE` and `g_adventure == 0`. |
-| `test_return_selects_dm` | Return on the first screen: `g_adventure == 0`, next `SCREEN_MODE`. |
+| `test_start_no_flags` | `select_start(-1, -1, 1)`: `select_screen() == SELECT_SCREEN_ADVENTURE`. |
+| `test_start_both_flags_done` | `select_start(1, 2, 1)`: `SELECT_SCREEN_CSB`. `select_start(0, 2, 1)`: `SELECT_SCREEN_DONE`, `g_adventure == 0`, `g_session.mode == 2`. |
+| `test_start_adventure_only` | `select_start(0, -1, 1)`: `SELECT_SCREEN_MODE`. |
+| `test_start_mode_only` | The rule "`--mode` alone means DM": `select_start(-1, 2, 1)` gives `SELECT_SCREEN_DONE` and `g_adventure == 0`. |
+| `test_return_selects_dm` | Return on the first screen: `g_adventure == 0`, next `SELECT_SCREEN_MODE`. |
 | `test_arrows_select_csb` | Down, Return: `g_adventure == 1`. Up from the second item returns to the first. |
 | `test_cursor_wraps_or_stops` | Up on the first item and Down on the last item do not leave the list (the chosen rule, see open decisions). |
 | `test_mode_screen_values` | For each of VANILLA, ADVANCED, LLM: Return on the item gives `g_session.mode` 0, 1, 2 and `g_advanced_features` 0, 1, 1. |
-| `test_escape_back` | On the mode screen Escape gives `SCREEN_ADVENTURE`. Escape on the first screen stays on it. With `--adventure` given, Escape on the mode screen does nothing. |
+| `test_escape_back` | On the mode screen Escape gives `SELECT_SCREEN_ADVENTURE`. Escape on the first screen stays on it. With `--adventure` given, Escape on the mode screen does nothing. |
 | `test_csb_disabled` | `select_start(-1, -1, 0)`: Down does not move onto CSB. Return selects DM. A click on the CSB item changes nothing and `g_adventure` stays 0. |
 | `test_click_activates` | `select_click` on the center of item 2 selects it. A click outside all items does nothing. (Item boxes come from the module, see below.) |
-| `test_csb_screen_choices` | After CSB and a mode: `SCREEN_CSB`. Return on item 1: `CSB_NEW_ADVENTURE`. Item 2: `CSB_RESUME`. Item 3: `CSB_QUIT` and `g_quit_requested == 1`. |
-| `test_csb_screen_after_game` | `select_start_csb()` gives `SCREEN_CSB`. |
-| `test_done_ignores_keys` | Keys on `SCREEN_DONE` change nothing. |
+| `test_csb_screen_choices` | After CSB and a mode: `SELECT_SCREEN_CSB`. Return on item 1: `SELECT_CSB_NEW_ADVENTURE`. Item 2: `SELECT_CSB_RESUME`. Item 3: `SELECT_CSB_QUIT` and `g_quit_requested == 1`. |
+| `test_csb_screen_after_game` | `select_start_csb()` gives `SELECT_SCREEN_CSB`. |
+| `test_done_ignores_keys` | Keys on `SELECT_SCREEN_DONE` change nothing. |
 
 `select_click` needs the item boxes. Add one read function to `select.h`: `int select_item_box(int item, Box *box)`. The tests use it to click the center of an item. It is a test hook that `select_draw` also uses, so it adds no dead code.
 

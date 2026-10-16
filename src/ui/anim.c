@@ -7,8 +7,8 @@
 #include "engine/sound.h"
 #include "ui/audio.h"
 #include "ui/command.h"
+#include "ui/frame.h"
 #include "ui/music.h"
-#include "ui/startend.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include <stdio.h>
@@ -322,7 +322,7 @@ int anim_play(const char *path)
     g_input_received = false;
     /* a stop keeps the shown frame for its delay, as the original */
     for (int16_t delay; running && (delay = anim_next_frame()) != ANIM_END;) {
-        while (delay-- > 0 && (running = wait_frame()))
+        while (delay-- > 0 && (running = frame_wait()))
             ;
         if (input_stops && g_input_received)
             running = 0;
@@ -330,7 +330,7 @@ int anim_play(const char *path)
     /* the music fades out at the end and after a stop */
     for (int volume = MUSIC_VOLUME - 1; music_started && volume > 0 && !g_quit_requested; volume--) {
         audio_music_set_volume((uint8_t)volume);
-        wait_frames(MUSIC_FADE_FRAMES);
+        frame_wait_count(MUSIC_FADE_FRAMES);
     }
     anim_close();
     return 0;

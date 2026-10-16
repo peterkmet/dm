@@ -65,7 +65,7 @@ address,name,signature,subsystem
 0x1001d7,g_sound_group_1_available,uint8_t,sound
 0x1001d8,g_sound_group_2_available,uint8_t,sound
 0x1001d9,g_sound_group_3_available,uint8_t,sound
-0x1001da,g_new_game,,main
+0x1001da,g_entrance_choice,,main
 0x1001dc,g_candidate_champion_index,"int16_t g_candidate_champion_index; /* index, -1 for none; the original stores index + 1, 0 for none */",champion
 0x1001de,g_party_is_sleeping,,main
 0x1001e0,g_game_time_ticking,,main
@@ -520,7 +520,7 @@ address,name,signature,subsystem
 0x104018,g_layers_base,,system
 0x10401c,g_console_device,,system
 0x104020,g_sys_base,,system
-0x104024,g_game_screen_inactive,int16_t,dialog
+0x104024,g_game_screen_shown,bool,gameloop
 0x104026,g_dialog_message_colors,int16_t[2],dialog
 0x10402a,g_dialog_choice,int16_t,dialog
 0x10402c,g_dialog_version_text,char[6],dialog

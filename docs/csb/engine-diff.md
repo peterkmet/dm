@@ -390,7 +390,7 @@ CSB has an entrance screen with doors (`process_entrance`, C`0x12a44e`). It diff
 
 - Graphics 4 and 5 (CSB pictures), work bitmaps from graphics 2, 3, and 11.
 - Mouse input C`0x103c24`, keyboard input C`0x1043bc` (one key).
-- The choice is in `g_new_game` (C`0x10017a`): two buttons (zones `0x1b3`, `0x1b4`). Value `0xcb` repeats the screen after the credits (C`0x12a6d8`).
+- The choice is in `g_entrance_choice` (C`0x10017a`): two buttons (zones `0x1b3`, `0x1b4`). Value `0xcb` repeats the screen after the credits (C`0x12a6d8`).
 - `initialize_game` (C`0x12b7ee`) runs the title (`show_title`), the entrance, then `load_game` until it succeeds.
 
 Port: `src/ui/startend.c`, `src/ui/gameloop.c`. UNVERIFIED: the labels of the two buttons (they are in the pictures).

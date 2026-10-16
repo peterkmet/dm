@@ -9,8 +9,7 @@
 
 #define DIALOG_NO_CHOICE 99
 
-extern int16_t g_dialog_choice;     /* the clicked choice, 1-4, or DIALOG_NO_CHOICE */
-extern bool g_game_screen_inactive; /* set: the dialog uses the whole screen (entrance, endgame) */
+extern int16_t g_dialog_choice; /* the clicked choice, 1-4, or DIALOG_NO_CHOICE */
 
 /* Draws the dialog in the viewport: two messages (NULL: none) and the choices (NULL ends them). */
 void dialog_draw(const char *message1, const char *message2, const char *choice1, const char *choice2,

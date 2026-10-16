@@ -17,6 +17,9 @@
 #include "engine/sound.h"
 #include "ui/advanced.h"
 #include "ui/dialog.h"
+#include "ui/entrance.h"
+#include "ui/frame.h"
+#include "ui/gameloop.h"
 #include "ui/menus.h"
 #include "ui/panel.h"
 #include "ui/startend.h"
@@ -27,15 +30,14 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define QUEUE_SIZE            9
-#define QUEUE_CLICK_LIMIT     5 /* a click or a key waits only when fewer commands wait */
-#define QUEUE_RELEASE_LIMIT   7
-#define NO_TABLE              (-1)
-#define INVENTORY_CLOSE       4 /* command_toggle_inventory argument: close the open inventory */
-#define INVENTORY_REDRAW      5 /* command_toggle_inventory argument: draw the open inventory again */
-#define WAIT_FOR_INPUT_FRAMES 12
-#define MOUTH_BLINK_COUNT     4 /* the mouth blinks when it eats an object up */
-#define MOUTH_BLINK_FRAMES    8
+#define QUEUE_SIZE          9
+#define QUEUE_CLICK_LIMIT   5 /* a click or a key waits only when fewer commands wait */
+#define QUEUE_RELEASE_LIMIT 7
+#define NO_TABLE            (-1)
+#define INVENTORY_CLOSE     4 /* command_toggle_inventory argument: close the open inventory */
+#define INVENTORY_REDRAW    5 /* command_toggle_inventory argument: draw the open inventory again */
+#define MOUTH_BLINK_COUNT   4 /* the mouth blinks when it eats an object up */
+#define MOUTH_BLINK_FRAMES  8
 
 #define VIEW_CELL_FRONT_FIRST 2 /* view cells 0-1 on the party square, 2-3 ahead */
 
@@ -43,11 +45,6 @@ typedef struct {
     int16_t x, y, command;
 } QueuedCommand;
 
-bool g_stop_waiting_for_input;
-bool g_game_time_ticking;
-int16_t g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
-bool g_game_frozen;
-int16_t g_new_game = ENTRANCE_WAITING;
 bool g_mouse_pointer_hidden;
 bool g_input_received;
 uint16_t g_last_key;
@@ -293,7 +290,7 @@ void command_click_on_mouth(void)
         for (int16_t blink = MOUTH_BLINK_COUNT; blink > 0; blink--) {
             ui_draw_icon_to_viewport(ICON_MOUTH + !(blink & 1), ZONE_MOUTH);
             ui_draw_viewport();
-            wait_frames(MOUTH_BLINK_FRAMES);
+            frame_wait_count(MOUTH_BLINK_FRAMES);
         }
     sound_request_play(SOUND_SWALLOW, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
     if (g_panel_content == PANEL_CONTENT_FOOD_WATER)
@@ -755,10 +752,10 @@ static void process_other_command(int16_t command)
         break;
     case COMMAND_ENTRANCE_ENTER:
     case COMMAND_ENTRANCE_ENTER_DUNGEON_B:
-        g_new_game = ENTRANCE_NEW_GAME;
+        g_entrance_choice = ENTRANCE_NEW_GAME;
         break;
     case COMMAND_ENTRANCE_RESUME:
-        g_new_game = ENTRANCE_RESUME;
+        g_entrance_choice = ENTRANCE_RESUME;
         break;
     case COMMAND_SAVE_GAME:
         startend_save_game();

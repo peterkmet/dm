@@ -9,17 +9,17 @@
 /* The start screens in the DM font: adventure, mode, and the CSB entrance. Keys and clicks move a
    cursor over the items. The results go to g_adventure and g_session.mode. No SDL calls. */
 
-#define SCREEN_ADVENTURE  0
-#define SCREEN_MODE       1
-#define SCREEN_CSB        2
-#define SCREEN_DONE       3
-#define CSB_NEW_ADVENTURE 0
-#define CSB_RESUME        1
-#define CSB_QUIT          2
-#define SELECT_KEY_UP     0
-#define SELECT_KEY_DOWN   1
-#define SELECT_KEY_ENTER  2
-#define SELECT_KEY_ESCAPE 3
+#define SELECT_SCREEN_ADVENTURE  0
+#define SELECT_SCREEN_MODE       1
+#define SELECT_SCREEN_CSB        2
+#define SELECT_SCREEN_DONE       3
+#define SELECT_CSB_NEW_ADVENTURE 0
+#define SELECT_CSB_RESUME        1
+#define SELECT_CSB_QUIT          2
+#define SELECT_KEY_UP            0
+#define SELECT_KEY_DOWN          1
+#define SELECT_KEY_ENTER         2
+#define SELECT_KEY_ESCAPE        3
 
 /* Starts at the first screen that --adventure and --mode do not skip; adventure and mode are -1
    when the flag is absent. --mode alone means DM. csb_present 0 disables CHAOS STRIKES BACK.
@@ -31,9 +31,9 @@ void select_start_csb(const char *message);
 /* QUIT on the DM entrance or the CSB screen: the first screen that --adventure and --mode do not skip.
    Returns false when the flags skip every screen: then there is no screen to go back to. */
 bool select_restart(void);
-/* The current screen, or SCREEN_DONE. */
+/* The current screen, or SELECT_SCREEN_DONE. */
 int select_screen(void);
-/* CSB_NEW_ADVENTURE, CSB_RESUME, or CSB_QUIT: the CSB screen item that ended the selection. */
+/* SELECT_CSB_NEW_ADVENTURE, SELECT_CSB_RESUME, or SELECT_CSB_QUIT: the CSB screen item that ended the selection. */
 int select_csb_choice(void);
 /* A key: SELECT_KEY_*. */
 void select_key(int key);

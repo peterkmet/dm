@@ -2,7 +2,6 @@
 #ifndef DM_UI_ADVANCED_H
 #define DM_UI_ADVANCED_H
 /* Prefixes: advanced_ */
-#include "engine/game.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -10,18 +9,6 @@
    quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat
    meters, Escape and Tab close the inventory, the whole party drinks at a fountain.
    The game rules are the same in every mode. Plan: docs/superpowers/archive/2026-10-04-modes-plan.md. */
-
-/* Key words of the advanced keys: Amiga raw key in the high byte. No original key table has them. */
-#define KEY_TAB 0x4200
-#define KEY_M   0x3700
-#define KEY_F5  0x5400
-#define KEY_F9  0x5800
-#define KEY_L   0x2800
-#define KEY_I   0x1700
-#define KEY_F   0x2300
-#define KEY_1   0x0100
-#define KEY_2   0x0200
-#define KEY_3   0x0300
 
 extern bool g_advanced_features; /* set outside vanilla: the advanced features show */
 extern bool g_automap_open;      /* set: the automap covers the viewport and the game time stops */

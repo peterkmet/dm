@@ -6,7 +6,6 @@
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/tables.h"
-#include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/event.h"
@@ -24,11 +23,9 @@
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "ui/advanced.h"
-#include "ui/audio.h"
 #include "ui/automap.h"
 #include "ui/command.h"
 #include "ui/dialog.h"
-#include "ui/draw.h"
 #include "ui/layout.h"
 #include "ui/menus.h"
 #include "ui/music.h"
@@ -54,6 +51,12 @@
 #define POINTER_HAND   1
 #define POINTER_OBJECT 2
 
+bool g_stop_waiting_for_input;
+bool g_game_time_ticking;
+int16_t g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
+bool g_game_frozen;
+bool g_game_screen_shown;
+
 static int16_t frames_waiting;
 static uint16_t shown_hand_object = THING_NONE;
 static int16_t shown_hand_icon; /* a waterskin or a torch changes its icon and its name */
@@ -73,111 +76,6 @@ bool gameloop_load_data(const char *dir)
 const char *gameloop_get_data_dir(void)
 {
     return data_dir;
-}
-
-/* The entrance graphic, the view behind the doors (or nothing for NULL), and each door moved apart by
-   opened pixels. Returns 1 while a part of a door shows. */
-static int draw_entrance_doors(const Bitmap *view, int16_t opened)
-{
-    Bitmap screen = ui_get_screen();
-    Box doors, work, door;
-    int16_t width = 0;
-    int16_t height = 0;
-    int16_t shown = 0;
-    ui_blit_graphic(&screen, GFX_ENTRANCE, ZONE_SCREEN, COLOR_NONE);
-    if (!ui_zone_box(ZONE_ENTRANCE_DOORS, &doors))
-        return 0;
-    if (!layout_get_zone(ZONE_ENTRANCE_WORK, doors.w, doors.h, &work, &width, &height))
-        return 0;
-    width = 0;
-    height = 0;
-    if (view && layout_get_zone(ZONE_ENTRANCE_VIEWPORT, view->w, view->h, &door, &width, &height)) {
-        door.x += work.x;
-        door.y += work.y;
-        draw_blit(view, width, height, &screen, &door, COLOR_NONE, 0);
-    }
-    for (int16_t side = 0; side < 2; side++) {
-        const Bitmap *door_bitmap = gfx_get_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
-        width = 0;
-        height = 0;
-        if (!door_bitmap ||
-            !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, door_bitmap->w, door_bitmap->h, &door, &width, &height))
-            continue;
-        door.x += work.x;
-        door.y += work.y;
-        door.w = max16(0, door.w - opened);
-        if (side == 0)
-            width += opened; /* the left door slides left, the right door slides right */
-        else
-            door.x += opened;
-        if (door.w)
-            shown = 1;
-        draw_blit(door_bitmap, width, height, &screen, &door, COLOR_NONE, 0);
-    }
-    return shown;
-}
-
-/* The entrance palette over the whole screen. */
-static void set_entrance_palette(void)
-{
-    tables_get_palette(TABLES_PALETTE_ENTRANCE, palette);
-    palette_split_top = 0;
-    palette_split_bottom = SCREEN_H;
-}
-
-/* The entrance graphic with both doors closed, in the entrance palette on the whole screen.
-   ponytail: no credits. */
-void entrance_draw(void)
-{
-    memset(fb, 0, sizeof fb);
-    set_entrance_palette();
-    draw_entrance_doors(NULL, 0);
-}
-
-/* ENTER or RESUME shows its pressed button, plays the switch sound, and waits 20 frames. */
-void entrance_press_button(int resume)
-{
-    enum { BUTTON_HEIGHT = 13, BUTTON_FRAMES = 20 };
-    static const uint8_t volumes[2] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
-    const Bitmap *bm = gfx_get_bitmap(GFX_ENTRANCE_BUTTONS);
-    Bitmap screen = ui_get_screen();
-    Box box;
-    int16_t sx = 0;
-    int16_t sy = 0;
-    if (!g_frame_hook)
-        return;
-    if (bm &&
-        layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
-        draw_blit(bm, sx, sy + (resume ? BUTTON_HEIGHT : 0), &screen, &box, COLOR_NONE, 0);
-    audio_play_sample(SOUND_SWITCH, volumes);
-    wait_frames(BUTTON_FRAMES);
-}
-
-/* After ENTER the doors slide apart, 2 pixels each 2 frames, over the dungeon view
-   in the entrance palette. The door sound plays at the start and every 40 frames.
-   ponytail: the original draws a made-up corridor; this draws the view of the start square. */
-void entrance_open_doors(void)
-{
-    enum { DOOR_STEP = 2, STEP_FRAMES = 2, SOUND_FRAMES = 40 };
-    static const uint8_t volumes[2] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
-    static uint8_t view_px[SCREEN_W * SCREEN_H];
-    char path[PATH_SIZE];
-    Box box;
-    if (snprintf(path, sizeof path, "%s/Dungeon.DAT", data_dir) >= (int)sizeof path || !g_frame_hook ||
-        !dungeon_load(path) || !ui_zone_box(ZONE_VIEWPORT, &box))
-        return;
-    party_set_light_level(g_party_map_index, 0);
-    view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
-    Bitmap view = {box.w, box.h, view_px};
-    for (int16_t y = 0; y < box.h; y++)
-        memcpy(view_px + y * box.w, &fb[box.y + y][box.x], (size_t)box.w);
-    set_entrance_palette();
-    for (int16_t opened = 0, frames = 0; draw_entrance_doors(&view, opened) && !g_quit_requested; opened += DOOR_STEP) {
-        if (frames % SOUND_FRAMES == 0)
-            audio_play_sample(SOUND_ENTRANCE_DOOR, volumes);
-        for (int16_t f = 0; f < STEP_FRAMES && wait_frame(); f++, frames++)
-            ;
-    }
 }
 
 /* Sets the darkness of the dungeon view and the creature rules from the party light. */
@@ -251,7 +149,7 @@ static void start_game(void)
 /* The interface appears and the game time runs. */
 static void show_game(void)
 {
-    g_game_screen_inactive = false;
+    g_game_screen_shown = true;
     memset(fb, 0, sizeof fb);
     ui_set_palette(NULL);
     ui_draw_interface();
@@ -292,8 +190,8 @@ static void reset_champions_of_loaded_game(void)
     menus_draw_spell_area();
 }
 
-/* start_game for a loaded game; the "GAME LOADED" dialog shows when confirm is 1. */
-static void start_loaded_game(int confirm)
+/* start_game for a loaded game; the "GAME LOADED" dialog shows when confirm is true. */
+static void start_loaded_game(bool confirm)
 {
     start_game();
     map_reset();
@@ -301,7 +199,7 @@ static void start_loaded_game(int confirm)
     map_set_party_map(g_party_map_index);
     group_add_all_active_groups();
     if (confirm) {
-        g_game_screen_inactive = true;
+        g_game_screen_shown = false;
         memset(fb, 0, sizeof fb);
         dialog_draw(NULL, gfx_get_string(TEXT_GAME_LOADED), gfx_get_string(TEXT_OK), NULL, NULL, NULL);
         dialog_get_choice(1);
@@ -314,11 +212,11 @@ static void start_loaded_game(int confirm)
 
 void gameloop_start_loaded_game(void)
 {
-    start_loaded_game(1);
+    start_loaded_game(true);
 }
 void gameloop_continue_loaded_game(void)
 {
-    start_loaded_game(0);
+    start_loaded_game(false);
 }
 
 /* The fuse action and sensor 18 ask for a sequence that runs outside the commands and events. */
@@ -332,7 +230,7 @@ static void run_requested_sequence(void)
    place. The view draws fields and explosions with the game random numbers: the seed stays. */
 static void draw_projectile_motion(void)
 {
-    if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_session.party_sleeping ||
+    if (!g_advanced_features || !g_game_screen_shown || g_game_frozen || g_session.party_sleeping ||
         g_session.inventory_champion_index >= 0 || !view_has_moving_projectiles())
         return;
     uint32_t seed = random_get_seed();
@@ -342,13 +240,13 @@ static void draw_projectile_motion(void)
     random_set_seed(seed);
 }
 
-int gameloop_run_frame(void)
+bool gameloop_run_frame(void)
 {
-    int ran = 0;
+    bool ran = false;
     if (g_automap_open)
-        return 0; /* the game time stops while the automap is open */
+        return false; /* the game time stops while the automap is open */
     while ((!g_stop_waiting_for_input || !g_game_time_ticking) && command_process_queue())
-        ran = 1;
+        ran = true;
     if (ran)
         refresh_interface();
     run_requested_sequence();
@@ -363,9 +261,9 @@ int gameloop_run_frame(void)
 /* Runs all waiting commands and draws what they changed, as gameloop_run_frame does (control socket). */
 void gameloop_run_commands(void)
 {
-    int ran = 0;
+    bool ran = false;
     while (command_process_queue())
-        ran = 1;
+        ran = true;
     if (ran)
         refresh_interface();
 }

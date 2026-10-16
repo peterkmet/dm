@@ -15,15 +15,15 @@
 /* The channels of a video_convert_argb color. */
 static inline uint8_t video_argb_red(uint32_t argb)
 {
-    return argb >> ARGB_RED_SHIFT;
+    return (uint8_t)(argb >> ARGB_RED_SHIFT); /* the low byte is the channel */
 }
 static inline uint8_t video_argb_green(uint32_t argb)
 {
-    return argb >> ARGB_GREEN_SHIFT;
+    return (uint8_t)(argb >> ARGB_GREEN_SHIFT); /* the low byte is the channel */
 }
 static inline uint8_t video_argb_blue(uint32_t argb)
 {
-    return argb;
+    return (uint8_t)argb; /* the low byte is the channel */
 }
 
 extern uint8_t fb[SCREEN_H][SCREEN_W];
@@ -37,9 +37,5 @@ extern int16_t palette_split_top, palette_split_bottom;
 uint32_t video_convert_argb(uint16_t amiga);
 /* Amiga color of index c on screen row y. */
 uint16_t video_get_color(int y, uint8_t c);
-/* Largest scale that fits the output with the screen's aspect ratio, centered (letterbox). */
-void video_layout(int out_w, int out_h, float *scale, float *ox, float *oy);
-/* Maps output pixel coordinates to game coordinates, clamped to the screen. */
-void video_map_mouse(int out_w, int out_h, int x, int y, int *gx, int *gy);
 
 #endif

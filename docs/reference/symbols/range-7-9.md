@@ -466,9 +466,9 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 | 147 | Freeze game. |
 | 148 | Unfreeze game. |
 | 165–198 | Character key for name entry (stored in `0x102460`). |
-| 200 | Set `g_new_game`. |
-| 201 | Set `g_new_game` and `0x104158` (load the second dungeon file). |
-| 202 | Clear `g_new_game`. |
+| 200 | Set `g_entrance_choice`. |
+| 201 | Set `g_entrance_choice` and `0x104158` (load the second dungeon file). |
+| 202 | Clear `g_entrance_choice`. |
 | 203 | Calls `0x1270c8` (range 9). |
 | 210–213 | Dialog choice 1–4 (stored in `0x10402a`). |
 | 215 | Set `0x10415c` (range 9 flag). |
@@ -644,7 +644,7 @@ The dialog system shows a message box with one to four choices. ReDMCSB calls it
 
 #### Globals
 
-- `g_game_screen_inactive` (`0x104024`) starts at 1. `game_loop` sets it to 0. `endgame` sets it to 1. `start_game` sets it to 0 for a new game. When it is 1, the dialog uses the full screen: `dialog_draw` fades the palette to black, clears the screen, and `dialog_draw_viewport` blits the viewport bitmap to screen zone 5. When it is 0, `dialog_draw_viewport` calls `draw_viewport(0)`. `game_freeze` and `game_unfreeze` do nothing when it is 1.
+- `g_game_screen_inactive` (`0x104024`) starts at 1. `game_loop` sets it to 0. `endgame` sets it to 1. `start_game` sets it to 0 for a new game. When it is 1, the dialog uses the full screen: `dialog_draw` fades the palette to black, clears the screen, and `dialog_draw_viewport` blits the viewport bitmap to screen zone 5. When it is 0, `dialog_draw_viewport` calls `draw_viewport(0)`. `game_freeze` and `game_unfreeze` do nothing when it is 1. The port keeps the inverse value as `g_game_screen_shown` (gameloop).
 - `g_dialog_choice` (`0x10402a`). The command handler writes the clicked choice number here. The value 99 means "no choice yet".
 - `g_dialog_message_colors` (`0x104026`): text colors of message 1 (11) and message 2 (9).
 - `g_dialog_version_text` (`0x10402c`): the string `V3.6`. The dialog prints it in zone `0x1c2`.
@@ -720,7 +720,7 @@ A C port with enough memory can use the first set and skip this search.
 
 1. Load graphic 4 (entrance) and graphic 5 (credits) compressed into memory. Load sound samples 3 (door) and 1 (button) when they are not loaded.
 2. Allocate two bitmaps with the size of zone `0x1ad`: the background (`g_entrance_background_bitmap`) and the work bitmap (`g_entrance_work_bitmap`). Load the left and right door bitmaps (graphics 2 and 3) and the button graphic `0xb`.
-3. Install the entrance input tables (`0x10318c`, `0x10393c`). Loop: `entrance_draw`, show the pointer, set `g_new_game` to 99, process keys and commands until `g_new_game` changes. Repeat while it is `0xcb` (credits).
+3. Install the entrance input tables (`0x10318c`, `0x10393c`). Loop: `entrance_draw`, show the pointer, set `g_entrance_choice` to 99, process keys and commands until `g_entrance_choice` changes. Repeat while it is `0xcb` (credits).
 4. Commands from the mouse table: 200 = enter (new game), `0xc9` = enter and use `DungeonB~.dat` (`g_use_dungeon_b`), `0xca` = resume (load), `0xcb` = credits.
 5. Draw the pressed button (zone `0x1b3` for enter, `0x1b4` for resume), play sample 1, wait 20 frames. For a new game call `entrance_open_doors`.
 6. Free the bitmaps and the loaded graphics.
@@ -731,7 +731,7 @@ A C port with enough memory can use the first set and skip this search.
 
 `entrance_open_doors`: per step, the left door moves left and the right door moves right by the value at `0x102986` pixels. Each step: copy the background into the work bitmap, blit the viewport, blit both door bitmaps with their remaining width, wait until 2 frames passed, and blit the work bitmap to the screen (`entrance_blit_work_bitmap`). Play sample 3 every 40 frames. Stop when both doors are fully open.
 
-`entrance_show_credits`: expand graphic 5 to the screen with `g_credits_palette` (`0x100a46`). Wait 1800 frames (36 s) or until input. Set `g_new_game` to `0xcb`.
+`entrance_show_credits`: expand graphic 5 to the screen with `g_credits_palette` (`0x100a46`). Wait 1800 frames (36 s) or until input. Set `g_entrance_choice` to `0xcb`.
 
 #### Endgame
 
@@ -741,7 +741,7 @@ A C port with enough memory can use the first set and skip this search.
 2. When the party died and the game is not won: play sound 7 and wait 240 frames.
 3. `ensure_master_disk(0)`. Load "THE END" (graphic 6) when `party_dead`, the champion frame (graphic `0x15a`) when the game is won, and the credits (graphic 5). Set `g_game_screen_inactive`.
 4. Game won: on a color-12 screen, for each champion draw the frame (zone `0x19c + i`), the portrait (zone `0x1a0 + i`), the name at (87, 48i + 14), the title after the name (one extra space unless the title starts with `,`, `;`, or `-`), and for each of the 4 base skills with level > 1 the line "<level name> <skill name>" at x = 105. Wait for input.
-5. Loop: draw "THE END" in zone 5 with a palette whose color 15 is white. The first time wait 300 frames. When `g_saved_game_exists`, draw two buttons with `endgame_draw_button`: "RESTART THIS GAME" (zone `0x1b5`) and "QUIT" (zone `0x1b6`). Wait up to 900 frames for a click. Command `0xd7` sets `g_restart_requested`; command `0xd8` calls `quit_game`. On restart: free the graphics, set `g_new_game` to 0, call `load_game`. When it succeeds, call `start_game` and return to the main loop.
+5. Loop: draw "THE END" in zone 5 with a palette whose color 15 is white. The first time wait 300 frames. When `g_saved_game_exists`, draw two buttons with `endgame_draw_button`: "RESTART THIS GAME" (zone `0x1b5`) and "QUIT" (zone `0x1b6`). Wait up to 900 frames for a click. Command `0xd7` sets `g_restart_requested`; command `0xd8` calls `quit_game`. On restart: free the graphics, set `g_entrance_choice` to 0, call `load_game`. When it succeeds, call `start_game` and return to the main loop.
 6. Show the credits until input. Quit when no saved game exists or when `party_dead` is 0. Otherwise repeat step 5 without the 300-frame wait.
 
 `endgame_print_text` maps `A`–`Z` to codes 1–26 (the endgame font) and prints on color 12. `endgame_draw_button` draws a box of color 1 with a color-0 inner box, prints the text, and stores the box in the 12-byte mouse input entry.
