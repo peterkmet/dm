@@ -124,7 +124,7 @@ int startend_save_current_game(const char **reason)
 {
     char mini[SAVE_DIR_SIZE];
     *reason = NULL;
-    if (g_adventure != ADVENTURE_CSB || g_dungeon_id != CSB_PRISON_DUNGEON_ID)
+    if (g_adventure != ADVENTURE_CSB || g_dungeon_id != PRISON_DUNGEON_ID)
         return savegame_save(save_dir) ? SAVED_GAME : 0;
     snprintf(mini, sizeof mini, "%s/%s", gameloop_get_data_dir(), CSB_MINI_FILE);
     switch (savegame_make_adventure(save_dir, mini)) {

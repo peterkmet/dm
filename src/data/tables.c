@@ -8,15 +8,14 @@
 #include "data/spells.h"
 
 /* Record sizes in KAOS. */
-#define CREATURE_INFO_BYTES 26
-#define OBJECT_INFO_BYTES   6
-#define WEAPON_INFO_BYTES   6
-#define ARMOUR_INFO_BYTES   4
-#define ACTION_SET_BYTES    8
-#define SOUND_ENTRY_BYTES   12
-#define ESCAPE_STRING_BYTES 8
-#define REPLACEMENT_BYTES   2
-
+#define CREATURE_INFO_BYTES        26
+#define OBJECT_INFO_BYTES          6
+#define WEAPON_INFO_BYTES          6
+#define ARMOUR_INFO_BYTES          4
+#define ACTION_SET_BYTES           8
+#define SOUND_ENTRY_BYTES          12
+#define ESCAPE_STRING_BYTES        8
+#define REPLACEMENT_BYTES          2
 #define REPLACEMENT_SET_BYTES      14
 #define CREATURE_ASPECT_BYTES      6
 #define OBJECT_ASPECT_BYTES        4
@@ -33,10 +32,13 @@
 #define DIALOG_TABLE_POINTER_BYTES 4
 #define POINTER_HOTSPOT_BYTES      8
 
-#define SOUND_ENTRY_RATE     3 /* byte offsets in a sound entry */
+/* Byte offsets in a sound entry. */
+#define SOUND_ENTRY_RATE     3
 #define SOUND_ENTRY_PRIORITY 4
-#define ATTACK_CELL_COUNT    4 /* row lengths */
-#define SOUND_VOLUME_ROW     (2 * SOUND_HEARING_RANGE + 1)
+
+/* Row lengths of the attack cell order table and of the sound volume table. */
+#define ATTACK_CELL_COUNT 4
+#define SOUND_VOLUME_ROW  (2 * SOUND_HEARING_RANGE + 1)
 
 /* Byte offsets in a replacement color set: a color word per light level, then the D2 and the D3 change. */
 #define REPLACEMENT_AT_CHANGE_D2       12
@@ -82,14 +84,16 @@
 #define CREATURE_AT_WOUND_PROBABILITIES  22
 #define CREATURE_AT_ATTACK_TYPE          24
 
+/* Byte offsets of the fields of a spell entry, after the symbols. */
 #define SPELL_AT_LEVEL      4
 #define SPELL_AT_SKILL      5
 #define SPELL_AT_ATTRIBUTES 6
-#define SPELL_BYTES         8
 
+/* The kind and the type in the attributes word of a spell entry. */
 #define SPELL_KIND_MASK 0x0f
 #define SPELL_TYPE_MASK 0x3f
 
+/* Bit positions of the type and the disabled ticks in the attributes word. */
 #define SPELL_TYPE_SHIFT           4
 #define SPELL_DISABLED_TICKS_SHIFT 10
 
@@ -107,21 +111,25 @@ static uint16_t attributes_disabled_ticks(uint16_t attributes)
     return attributes >> SPELL_DISABLED_TICKS_SHIFT;
 }
 
+/* Byte offsets of the object info fields. */
 #define OBJECT_AT_TYPE             0
 #define OBJECT_AT_ASPECT_INDEX     2
 #define OBJECT_AT_ACTION_SET_INDEX 3
 #define OBJECT_AT_ALLOWED_SLOTS    4
 
+/* Byte offsets of the weapon info fields. */
 #define WEAPON_AT_WEIGHT         0
 #define WEAPON_AT_CLASS          1
 #define WEAPON_AT_STRENGTH       2
 #define WEAPON_AT_KINETIC_ENERGY 3
 #define WEAPON_AT_ATTRIBUTES     4
 
+/* Byte offsets of the armour info fields. */
 #define ARMOUR_AT_WEIGHT     0
 #define ARMOUR_AT_DEFENSE    1
 #define ARMOUR_AT_ATTRIBUTES 2
 
+/* Byte offsets of the action set fields. */
 #define ACTION_SET_AT_ACTIONS 0
 #define ACTION_SET_AT_LEVELS  4
 
@@ -132,7 +140,7 @@ static WeaponInfo weapon_info[WEAPON_TYPE_COUNT];
 static ArmourInfo armour_info[ARMOUR_TYPE_COUNT];
 static uint8_t junk_weights[JUNK_TYPE_COUNT];
 static int16_t food_values[FOOD_TYPE_COUNT];
-static Spell spells[CSB_SPELL_COUNT];
+static Spell spells[SPELL_COUNT_CSB];
 static int16_t loaded_spell_count;
 static uint8_t symbol_base_mana_cost[SYMBOL_STEP_COUNT][SYMBOL_COUNT];
 static uint8_t symbol_mana_cost_multiplier[SYMBOL_COUNT];
@@ -214,7 +222,7 @@ static void read_objects(void)
 static void read_magic(void)
 {
     bool csb = g_adventure == ADVENTURE_CSB;
-    loaded_spell_count = csb ? CSB_SPELL_COUNT : DM_SPELL_COUNT;
+    loaded_spell_count = csb ? SPELL_COUNT_CSB : SPELL_COUNT_DM;
     for (uint32_t i = 0; i < (uint32_t)loaded_spell_count; i++) {
         uint32_t a = (csb ? CSB_SPELLS : KAOS_SPELLS) + i * SPELL_BYTES;
         uint16_t w = kaos_u16(a + SPELL_AT_ATTRIBUTES);
@@ -694,7 +702,7 @@ int16_t tables_get_button_inner_border(int16_t axis)
 }
 Box tables_get_csb_restart_box(bool inner)
 {
-    uint32_t at = CSB_RESTART_BOXES + (inner ? CSB_BOX_BYTES : 0);
+    uint32_t at = CSB_RESTART_BOXES + (inner ? RESTART_BOX_BYTES : 0);
     return (Box){kaos_s16(at), kaos_s16(at + 2), kaos_s16(at + 4), kaos_s16(at + 6)};
 }
 

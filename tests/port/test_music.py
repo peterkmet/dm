@@ -195,7 +195,7 @@ def test_fm_towns_csb_zone_track_waits_for_the_current_track(game):
     var(game, "g_music_track").value = 7
     update_at(game, 1, *csb_square(game, 1, 7))
     assert (var(game, "g_music_track").value, last(game)) == (0, 7)  # a level change stops; the same track does not start again
-    var(game, "g_dungeon_id", u16).value = C.CSB_PRISON_DUNGEON_ID
+    var(game, "g_dungeon_id", u16).value = C.PRISON_DUNGEON_ID
     game.lib.music_update()
     assert last(game) == 6
 

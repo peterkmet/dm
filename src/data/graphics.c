@@ -8,25 +8,26 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Graphics.DAT header words. */
 #define GRAPHICS_DAT_FORMAT_1 0x8001
 #define GRAPHIC_PAD_WORD      0xff81 /* skipped before the width and height */
 
 /* Graphic command byte: bit 7 clear = short fill of (bits 4-6) + 1 pixels of color (bits 0-3).
    Bit 7 set = a long command: kind in bits 4-5, bit 6 a 16-bit count. */
-#define CMD_LONG            0x80
-#define CMD_WIDE_COUNT_FLAG 0x40
-#define CMD_KIND_MASK       0x30
-#define CMD_COLOR_MASK      0xf
-#define KIND_FILL           0x00
-#define KIND_RAW            0x10
-#define KIND_SKIP           0x20
-#define KIND_COPY_ABOVE     0x30
+#define CMD_LONG           0x80
+#define CMD_WIDE           0x40
+#define CMD_KIND_MASK      0x30
+#define CMD_COLOR_MASK     0x0f
+#define KIND_FILL          0x00
+#define KIND_RAW           0x10
+#define KIND_SKIP          0x20
+#define KIND_COPY_ABOVE    0x30
 /* Skip lengths 29-31 read the length from the next bytes. Bit 6 of a skip adds 16 to its length. */
-#define SKIP_BYTE           29
-#define SKIP_BYTE_PLUS_256  30
-#define SKIP_WORD           31
-#define SKIP_WIDE           16
-#define SKIP_BYTE_BASE      256
+#define SKIP_BYTE          29
+#define SKIP_BYTE_PLUS_256 30
+#define SKIP_WORD          31
+#define SKIP_WIDE          16
+#define SKIP_BYTE_BASE     256
 
 /* Graphics.DAT header: format word and item count, then the size words of the items. */
 #define GFX_HEADER_BYTES      4
@@ -158,21 +159,21 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
             continue;
         }
         if ((cmd & CMD_KIND_MASK) == KIND_SKIP) { /* leave pixels transparent */
-            unsigned k = c | (cmd & CMD_WIDE_COUNT_FLAG ? SKIP_WIDE : 0);
+            unsigned k = c | (cmd & CMD_WIDE ? SKIP_WIDE : 0);
             if (k == SKIP_BYTE)
                 k = next_byte(&in);
             else if (k == SKIP_BYTE_PLUS_256)
                 k = SKIP_BYTE_BASE + next_byte(&in);
             else if (k == SKIP_WORD) {
-                k = next_byte(&in) << BYTE_BITS;
+                k = next_byte(&in) << BITS_PER_BYTE;
                 k |= next_byte(&in);
             }
             out.pos += k + 1;
             continue;
         }
         cnt = next_byte(&in);
-        if (cmd & CMD_WIDE_COUNT_FLAG)
-            cnt = cnt << BYTE_BITS | next_byte(&in);
+        if (cmd & CMD_WIDE)
+            cnt = cnt << BITS_PER_BYTE | next_byte(&in);
         cnt++;
         switch (cmd & CMD_KIND_MASK) {
         case KIND_FILL:
@@ -243,7 +244,8 @@ const Bitmap *gfx_get_bitmap(int i)
     return &graphics.decoded[i];
 }
 
-#define NAME_END_BIT 0x80 /* CSB object names: set in the last character */
+/* CSB object names: the bit is set in the last character. */
+#define NAME_END_BIT 0x80
 
 /* Splits a graphic of NUL-terminated strings into a list. CSB takes the strings and action names from
    the engine, and ends each object name at a byte with bit 7 set. */

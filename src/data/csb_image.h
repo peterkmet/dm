@@ -8,12 +8,14 @@
 #include "data/ftl.h"
 #include <stdbool.h>
 
+/* Addresses of the CSB tables in the KAOS-layout image, after the DM tables. */
 #define CSB_SPELLS        0x104160 /* all CSB spells, at the KAOS data base: from here on only CSB tables follow */
-#define CSB_SPELL_COUNT   29
 #define CSB_RESTART_BOXES 0x104248 /* after the spells: outer and inner box of the CSB RESTART THIS GAME button */
-#define CSB_SPELL_BYTES   8        /* symbols, level, skill, attributes */
-#define CSB_BOX_BYTES     8        /* x, y, width, height words */
-#define CSB_IMAGE_END     (CSB_RESTART_BOXES + 2 * CSB_BOX_BYTES)
+#define CSB_IMAGE_END     (CSB_RESTART_BOXES + 2 * RESTART_BOX_BYTES)
+
+/* The CSB spell count and the size of a restart box. */
+#define SPELL_COUNT_CSB   29
+#define RESTART_BOX_BYTES 8 /* x, y, width, height words */
 
 /* One table copied from its APPB address to its KAOS address. */
 typedef struct {

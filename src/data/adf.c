@@ -15,7 +15,6 @@
 #define ADF_ROOT_BLOCK        880 /* the middle of the disk */
 #define ADF_DOS_TAG_SIZE      3   /* "DOS" in the boot block, then the flags byte */
 #define ADF_FLAGS_OFFSET      3
-#define ADF_FFS_FLAG          1  /* set: Fast File System, whose data blocks have no header */
 #define ADF_TYPE_HEADER       2  /* root, folder, or file header block */
 #define ADF_TYPE_DATA         8  /* OFS data block */
 #define ADF_SEC_FOLDER        2  /* secondary type of a folder header */
@@ -34,6 +33,9 @@
 #define ADF_DATA_MAX          (ADF_BLOCK_SIZE - ADF_DATA_OFFSET)
 #define ADF_FOLDER_DEPTH      8             /* deeper folders mean a broken image */
 #define ADF_UNSAFE_NAME_CHARS "/\\:*?\"<>|" /* characters that macOS or Windows do not accept in a file name */
+
+/* Bit of the flags byte of the boot block: set for the Fast File System, whose data blocks have no header. */
+#define ADF_FFS_FLAG 0x01
 
 typedef enum { ADF_VISIT_CONTINUE, ADF_VISIT_STOP, ADF_VISIT_BROKEN } AdfVisit;
 

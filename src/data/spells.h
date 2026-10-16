@@ -8,19 +8,29 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define DM_SPELL_COUNT                25   /* CSB has CSB_SPELL_COUNT */
-#define SPELL_SYMBOL_FIRST            0x60 /* font character of the first symbol: power 1 at step 0 */
-#define SPELL_SYMBOLS_PER_STEP        6
-#define SPELL_MANA_MULTIPLIER_SHIFT   3 /* the mana cost multiplier of the power symbol counts eighths */
-#define SPELL_POWER_SYMBOL_MASK       0xff000000u
+/* The spell count and the symbols of a step. */
+#define SPELL_COUNT_DM              25 /* CSB has SPELL_COUNT_CSB */
+#define SPELL_SYMBOLS_PER_STEP      6
+#define SPELL_MANA_MULTIPLIER_SHIFT 3 /* the mana cost multiplier of the power symbol counts eighths */
+
+/* Font character of the first symbol: power 1 at step 0. */
+#define SPELL_SYMBOL_FIRST 0x60
+
+/* The power symbol in the packed symbols. */
+#define SPELL_POWER_SYMBOL_MASK 0xff000000u
+
 /* Experience of a cast: level² + (power - 1) * base level * 8 + level * 16 + random(8). */
 #define SPELL_EXPERIENCE_POWER_FACTOR 8
 #define SPELL_EXPERIENCE_LEVEL_FACTOR 16
-#define SPELL_EXPERIENCE_RANDOM_MASK  0x7
-#define SPELL_KIND_POTION             1
-#define SPELL_KIND_PROJECTILE         2
-#define SPELL_KIND_OTHER              3
-#define SPELL_KIND_MAGIC_MAP          4
+
+/* The random part of the experience of a cast. */
+#define SPELL_EXPERIENCE_RANDOM_MASK 0x7
+
+/* Spell kinds of Spell.kind. */
+#define SPELL_KIND_POTION     1
+#define SPELL_KIND_PROJECTILE 2
+#define SPELL_KIND_OTHER      3
+#define SPELL_KIND_MAGIC_MAP  4
 
 /* Spell index for a NUL-terminated symbol string (power symbol first), or -1. One symbol is never a spell. */
 int16_t spell_find(const uint8_t *symbols);

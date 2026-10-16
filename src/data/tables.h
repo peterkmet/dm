@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Entry counts of the tables. */
 #define CREATURE_TYPE_COUNT           27
 #define CREATURE_SOUND_COUNT          18
 #define OBJECT_INFO_COUNT             180
@@ -54,17 +55,21 @@
 #define OBJECT_PASSES_DOOR_GRATE    0x0100
 
 /* Creature graphic info bits (CreatureInfo.graphic_info). */
-#define GRAPHIC_FLIP_NON_ATTACK         0x0004
-#define GRAPHIC_HAS_SIDE                0x0008
-#define GRAPHIC_HAS_BACK                0x0010
-#define GRAPHIC_HAS_ATTACK              0x0020
-#define GRAPHIC_SPECIAL_D2_FRONT        0x0080
-#define GRAPHIC_D2_FRONT_FLIPPED        0x0100
-#define GRAPHIC_FLIP_ATTACK             0x0200
-#define GRAPHIC_FLIP_DURING_ATTACK      0x0400
+#define GRAPHIC_FLIP_NON_ATTACK    0x0004
+#define GRAPHIC_HAS_SIDE           0x0008
+#define GRAPHIC_HAS_BACK           0x0010
+#define GRAPHIC_HAS_ATTACK         0x0020
+#define GRAPHIC_SPECIAL_D2_FRONT   0x0080
+#define GRAPHIC_D2_FRONT_FLIPPED   0x0100
+#define GRAPHIC_FLIP_ATTACK        0x0200
+#define GRAPHIC_FLIP_DURING_ATTACK 0x0400
+
+/* Bit positions of the random aspect offset ranges in the graphic info. */
 #define GRAPHIC_HORIZONTAL_OFFSET_SHIFT 12
 #define GRAPHIC_VERTICAL_OFFSET_SHIFT   14
-#define GRAPHIC_OFFSET_RANGE_MASK       0x3
+
+/* Mask of one aspect offset range. */
+#define GRAPHIC_OFFSET_RANGE_MASK 0x3
 
 /* Range of the random horizontal aspect offset of a creature graphic. */
 static inline uint16_t tables_get_horizontal_range(uint16_t graphic_info)
@@ -131,6 +136,8 @@ typedef struct {
     uint8_t type;
     uint8_t disabled_ticks;
 } Spell;
+/* Size of a spell entry in the image: symbols, level, skill, attributes. */
+#define SPELL_BYTES 8
 
 /* Action sets: up to three actions, and the minimum skill levels of actions 1 and 2. */
 #define ACTION_LIST_COUNT      3
@@ -269,6 +276,7 @@ const uint8_t *tables_get_projectile_aspect(int16_t index);
 const uint8_t *tables_get_field_aspect(int16_t index);
 /* Pixel shift index of a creature or a stacked object at a distance (0-2). */
 int16_t tables_get_creature_shift(int16_t distance, int16_t index);
+/* Axes of a pile shift pair. */
 #define TABLES_AXIS_X 0
 #define TABLES_AXIS_Y 1
 /* Shift index of a stacked object on one axis (0 x, 1 y). */
@@ -279,7 +287,8 @@ uint8_t tables_get_object_scale(int16_t row);
 uint8_t tables_get_projectile_scale(int16_t row);
 /* Scale of an explosion at a depth. */
 uint8_t tables_get_explosion_scale(int16_t depth);
-#define TABLES_REBIRTH_STEP_1 1 /* the two steps of a rebirth explosion */
+/* The two steps of a rebirth explosion. */
+#define TABLES_REBIRTH_STEP_1 1
 #define TABLES_REBIRTH_STEP_2 2
 /* Scale of rebirth step 1 or 2 at an object coordinate set. */
 uint8_t tables_get_rebirth_scale(int16_t step, int16_t coord);
@@ -296,7 +305,8 @@ ViewSquare tables_get_view_square(int16_t view_square);
 int16_t tables_get_wall_layout_id(int16_t i);
 /* Depth (0-4) of a wall ornament view. */
 uint8_t tables_get_wall_ornament_depth(int16_t view);
-#define TABLES_PLAQUE_LINES 3 /* the most lines that an inscription plaque shows */
+/* The most lines that an inscription plaque shows. */
+#define TABLES_PLAQUE_LINES 3
 /* Visible plaque height of an inscription of 1-3 lines at a depth. */
 uint8_t tables_get_plaque_height(int16_t lines, int16_t depth);
 /* Graphic offset of a floor ornament view. */

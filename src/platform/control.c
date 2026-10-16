@@ -719,9 +719,9 @@ static bool write_png(const char *path)
         size_t n = RAW - done < BLOCK ? RAW - done : BLOCK;
         *out++ = done + n == RAW;
         *out++ = (uint8_t)n;
-        *out++ = (uint8_t)(n >> BYTE_BITS);
+        *out++ = (uint8_t)(n >> BITS_PER_BYTE);
         *out++ = (uint8_t)~n;
-        *out++ = (uint8_t)(~n >> BYTE_BITS);
+        *out++ = (uint8_t)(~n >> BITS_PER_BYTE);
         memcpy(out, raw + done, n);
         for (size_t i = 0; i < n; i++) {
             byte_sum = (byte_sum + raw[done + i]) % ADLER32_MODULUS;

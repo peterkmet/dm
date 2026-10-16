@@ -82,9 +82,9 @@ static uint16_t get_bits(BitReader *b, int16_t n)
     if (b->avail < n) {
         if (b->end - b->p < 2)
             return b->ok = false;
-        b->acc = b->acc << WORD_BITS | be16(b->p);
+        b->acc = b->acc << BITS_PER_WORD | be16(b->p);
         b->p += 2;
-        b->avail += WORD_BITS;
+        b->avail += BITS_PER_WORD;
     }
     b->avail -= n;
     return b->acc >> b->avail & ((1u << n) - 1);

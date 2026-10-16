@@ -5,10 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* The largest module file. */
 #define FTL_MAX_SIZE (4u << 20)
 
+/* Magic word of an FTL module file. */
+#define FTL_MAGIC 0x6160
+
 /* FTL module file: header, then a table of section entries (tag, version, offset, size). */
-#define FTL_MAGIC              0x6160
 #define FTL_HEADER_CHECKSUM    2
 #define FTL_HEADER_VERSION     4
 #define FTL_HEADER_ENTRY_COUNT 18
@@ -53,20 +56,26 @@
 #define DATA_HEADER_BYTES 10
 
 /* Jump table entry: 2 bytes, then a 68000 "jmp absolute long" to the entry point. */
-#define JUMP_ENTRY_BYTES    8
-#define JUMP_ENTRY_JMP      2
+#define JUMP_ENTRY_BYTES   8
+#define JUMP_ENTRY_JMP     2
+#define JMP_ABS_LONG_BYTES 6 /* opcode word and address long */
+
+/* The 68000 opcode of "jmp absolute long". */
 #define JMP_ABS_LONG_OPCODE 0x4ef9
-#define JMP_ABS_LONG_BYTES  6 /* opcode word and address long */
 
 /* Packed code section: magic, word count, a dictionary of 1920 words, then the nibble stream. */
-#define RSHARP_MAGIC       0x5223
 #define RSHARP_WORD_COUNT  4
 #define RSHARP_DICTIONARY  8
 #define RSHARP_SHORT_CODES 128
 #define RSHARP_STREAM      (RSHARP_DICTIONARY + 2 * (RSHARP_SHORT_CODES + 7 * 256))
 #define RSHARP_LITERAL     15
-#define NIBBLE_BITS        4
-#define NIBBLE_MASK        0xf
+#define BITS_PER_NIBBLE    4
+
+/* Magic word of a packed code section. */
+#define RSHARP_MAGIC 0x5223
+
+/* Mask of one nibble. */
+#define NIBBLE_MASK 0xf
 
 typedef struct {
     const uint8_t *s;
@@ -80,8 +89,8 @@ static unsigned read_nibble(Nibbles *b, int count)
     for (; count; count--, b->pos++) {
         unsigned nibble = 0;
         if (b->pos < b->n)
-            nibble = b->s[b->pos / 2] >> (b->pos % 2 ? 0 : NIBBLE_BITS) & NIBBLE_MASK;
-        v = v << NIBBLE_BITS | nibble;
+            nibble = b->s[b->pos / 2] >> (b->pos % 2 ? 0 : BITS_PER_NIBBLE) & NIBBLE_MASK;
+        v = v << BITS_PER_NIBBLE | nibble;
     }
     return v;
 }
@@ -102,8 +111,8 @@ static uint8_t *unpack(const uint8_t *p, size_t len, uint32_t *out_len)
         if (v == RSHARP_LITERAL)
             w = read_nibble(&b, 4);
         else {
-            unsigned t = v < 8 ? v << NIBBLE_BITS | read_nibble(&b, 1)
-                               : RSHARP_SHORT_CODES + ((v - 8) << BYTE_BITS | read_nibble(&b, 2));
+            unsigned t = v < 8 ? v << BITS_PER_NIBBLE | read_nibble(&b, 1)
+                               : RSHARP_SHORT_CODES + ((v - 8) << BITS_PER_BYTE | read_nibble(&b, 2));
             w = be16(p + RSHARP_DICTIONARY + 2 * t);
         }
         wr16(out + 2 * i, w);

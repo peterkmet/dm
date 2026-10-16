@@ -8,16 +8,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* The adventures, the values of g_adventure. */
 #define ADVENTURE_DM  0
 #define ADVENTURE_CSB 1
 
-#define DM_DUNGEON_ID         10 /* the DM Dungeon.DAT */
-#define CSB_PRISON_DUNGEON_ID 12 /* the CSB Dungeon.DAT: champion selection; a save makes the adventure */
-#define CSB_MINI_FILE         "disk-b/MINI.DAT" /* the CSB adventure without champions, in the CSB folder */
-#define CSB_INTRO_FILE        "disk-b/ANIM.DAT" /* the CSB intro with music, in the CSB folder */
+/* Dungeon ids of the Dungeon.DAT files. */
+#define DM_DUNGEON_ID     10 /* the DM Dungeon.DAT */
+#define PRISON_DUNGEON_ID 12 /* the CSB Dungeon.DAT: champion selection; a save makes the adventure */
 
-#define ADVENTURE_GRAPHICS_FILE "Graphics.DAT" /* the graphics file of both adventures */
-#define ADVENTURE_GAME_FILES    4              /* the most files of one adventure */
+/* Game file names. */
+#define CSB_MINI_FILE           "disk-b/MINI.DAT" /* the CSB adventure without champions, in the CSB folder */
+#define CSB_INTRO_FILE          "disk-b/ANIM.DAT" /* the CSB intro with music, in the CSB folder */
+#define ADVENTURE_GRAPHICS_FILE "Graphics.DAT"    /* the graphics file of both adventures */
+
+/* The most files of one adventure. */
+#define ADVENTURE_GAME_FILES 4
 
 typedef struct {
     const char *name;

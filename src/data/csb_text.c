@@ -9,10 +9,12 @@
 
 /* APPB addresses of the CSB texts and the DM text index of each. Sources and code references:
    docs/csb/engine-diff.md "Text". */
-#define CSB_TEXT_COUNT (TEXT_CREATURE_NAME_FIRST + CREATURE_TYPE_COUNT) /* CSB has no memory error texts 135-139 */
-#define CSB_APPB_ACTION_NAMES  0x1048b4                                 /* NUL-separated action names, index 0 = "N" */
+#define CSB_APPB_ACTION_NAMES  0x1048b4 /* NUL-separated action names, index 0 = "N" */
 #define CSB_APPB_DISK_MESSAGES 0x104d08 /* pointers to the load, save, and disk messages */
 #define CSB_APPB_CLASS_NAMES   0x102d56 /* pointers to the class names, in base skill order */
+
+/* Texts of the CSB image. */
+#define TEXT_COUNT_CSB (TEXT_CREATURE_NAME_FIRST + CREATURE_TYPE_COUNT) /* CSB has no memory error texts 135-139 */
 
 /* Parts of a joined text: a class text is a prefix, the class name and a suffix; the other texts have one part. */
 #define PART_PREFIX 0
@@ -142,10 +144,10 @@ static const char *get_appb_pointed_string(const FtlImage *appb, uint32_t addr)
 }
 
 /* Joins the parts of each text into one block of NUL-terminated strings. */
-static bool join_texts(const char *parts[CSB_TEXT_COUNT][TEXT_PARTS])
+static bool join_texts(const char *parts[TEXT_COUNT_CSB][TEXT_PARTS])
 {
-    size_t size = CSB_TEXT_COUNT;
-    for (int t = 0; t < CSB_TEXT_COUNT; t++)
+    size_t size = TEXT_COUNT_CSB;
+    for (int t = 0; t < TEXT_COUNT_CSB; t++)
         for (int k = 0; k < TEXT_PARTS; k++)
             size += parts[t][k] ? strlen(parts[t][k]) : 0;
     free(strings);
@@ -153,7 +155,7 @@ static bool join_texts(const char *parts[CSB_TEXT_COUNT][TEXT_PARTS])
     if (!strings)
         return false;
     uint8_t *o = strings;
-    for (int t = 0; t < CSB_TEXT_COUNT; t++) {
+    for (int t = 0; t < TEXT_COUNT_CSB; t++) {
         for (int k = 0; k < TEXT_PARTS; k++) {
             size_t n = parts[t][k] ? strlen(parts[t][k]) : 0;
             memcpy(o, parts[t][k] ? parts[t][k] : "", n);
@@ -192,7 +194,7 @@ static bool copy_action_names(const FtlImage *appb)
 
 bool csb_text_build(const FtlImage *appb, FtlImage *out)
 {
-    const char *parts[CSB_TEXT_COUNT][TEXT_PARTS] = {{0}};
+    const char *parts[TEXT_COUNT_CSB][TEXT_PARTS] = {{0}};
     for (int i = 0; i < ARRAY_COUNT(single_texts); i++)
         if (!(parts[single_texts[i].text][0] = get_appb_string(appb, single_texts[i].appb)))
             return false;

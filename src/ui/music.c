@@ -77,7 +77,7 @@ void music_select(int16_t soundtrack)
    when the current track ends. A level change stops the music. */
 static void update_fm_towns_csb(bool new_map)
 {
-    if (g_dungeon_id == CSB_PRISON_DUNGEON_ID) {
+    if (g_dungeon_id == PRISON_DUNGEON_ID) {
         if (g_music_last_track != FM_TOWNS_CSB_PRISON_TRACK)
             play(FM_TOWNS_CSB_PRISON_TRACK);
         return;

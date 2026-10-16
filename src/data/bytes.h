@@ -9,27 +9,27 @@
 #include <stdint.h>
 
 /* Bit widths of the 68000 operands. */
-#define WORD_BITS 16 /* bits of a 68000 word */
-#define BYTE_BITS 8
+#define BITS_PER_WORD 16 /* bits of a 68000 word */
+#define BITS_PER_BYTE 8
 
 static_assert((-2 >> 1) == -1, "the port assumes an arithmetic right shift of a negative value");
 
 static inline uint16_t be16(const uint8_t *p)
 {
-    return (uint16_t)(p[0] << BYTE_BITS | p[1]);
+    return (uint16_t)(p[0] << BITS_PER_BYTE | p[1]);
 }
 static inline uint32_t be32(const uint8_t *p)
 {
-    return (uint32_t)be16(p) << WORD_BITS | be16(p + sizeof(uint16_t));
+    return (uint32_t)be16(p) << BITS_PER_WORD | be16(p + sizeof(uint16_t));
 }
 static inline void wr16(uint8_t *p, uint16_t word)
 {
-    p[0] = (uint8_t)(word >> BYTE_BITS);
+    p[0] = (uint8_t)(word >> BITS_PER_BYTE);
     p[1] = (uint8_t)word;
 }
 static inline void wr32(uint8_t *p, uint32_t dword)
 {
-    wr16(p, (uint16_t)(dword >> WORD_BITS));
+    wr16(p, (uint16_t)(dword >> BITS_PER_WORD));
     wr16(p + sizeof(uint16_t), (uint16_t)dword);
 }
 

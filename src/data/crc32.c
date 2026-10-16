@@ -2,8 +2,11 @@
 #include "data/crc32.h"
 #include "data/bytes.h"
 
+/* Entries of the CRC table: one per byte value. */
 #define CRC_TABLE_SIZE 256
-#define BYTE_MASK      0xff
+
+/* Mask of the low byte. */
+#define BYTE_MASK 0xff
 
 /* CRC-32 of PNG, reflected polynomial 0xedb88320, one entry per byte value. */
 // clang-format off: eight values on each line
@@ -47,6 +50,6 @@ uint32_t crc32_update(uint32_t crc, const uint8_t *p, size_t n)
 {
     crc = ~crc;
     while (n--)
-        crc = crc_table[(crc ^ *p++) & BYTE_MASK] ^ crc >> BYTE_BITS;
+        crc = crc_table[(crc ^ *p++) & BYTE_MASK] ^ crc >> BITS_PER_BYTE;
     return ~crc;
 }

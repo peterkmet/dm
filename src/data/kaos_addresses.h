@@ -5,6 +5,7 @@
 
 /* Addresses of the KAOS.FTL image (and of the KAOS-layout CSB image). Only data/ includes this header. */
 
+/* Load address of the image. */
 #define KAOS_BASE 0x100000
 
 /* Creature, object, and door tables. */

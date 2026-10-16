@@ -4,6 +4,7 @@
 #include "data/tables.h"
 #include <limits.h>
 
+/* The packed symbols and the failure draw. */
 #define SPELL_FIRST_SYMBOL_SHIFT 24  /* the first symbol is in bits 24-31 of the symbols */
 #define LSR_COUNT_MODULO         64  /* the 68000 LSR takes the shift count modulo 64 */
 #define SPELL_WISDOM_BONUS       15  /* added to wisdom for the failure draw */
@@ -53,5 +54,5 @@ bool spell_draw_fails(uint8_t current_wisdom, uint16_t random)
 uint16_t spell_get_failure_experience(uint16_t experience, uint16_t required_level, uint16_t skill_level)
 {
     uint16_t n = (uint8_t)(required_level - skill_level) % LSR_COUNT_MODULO;
-    return n < WORD_BITS ? experience >> n : 0;
+    return n < BITS_PER_WORD ? experience >> n : 0;
 }
