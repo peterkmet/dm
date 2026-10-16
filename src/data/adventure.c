@@ -44,17 +44,17 @@ static const struct {
     {"APPB.FTL", "game-csb"       }
 };
 
+const Adventure *adventure_get(int16_t adventure)
+{
+    return &adventures[adventure];
+}
+
 int16_t adventure_find(const char *name)
 {
     for (int16_t i = 0; i < ARRAY_COUNT(adventures); i++)
         if (!strcmp(name, adventures[i].name))
             return i;
     return -1;
-}
-
-const Adventure *adventure_get(int16_t adventure)
-{
-    return &adventures[adventure];
 }
 
 bool adventure_is_csb_present(const char *dir)

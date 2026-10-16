@@ -559,9 +559,6 @@ include ui/ui_champion.c:data/ftl.h open: epic 8
 include ui/ui_menus.c:engine/dungeon.h open: epic 8
 include ui/view.c:ui/advanced.h open: epic 8
 module platform/main.c open: epic 11
-order data/adf.c open: epic 4
-order data/adventure.c open: epic 4
-order data/tables.c open: epic 4
 order engine/action.c open: epic 5
 order engine/champion.c open: epic 5
 order engine/dungeon.c open: epic 5

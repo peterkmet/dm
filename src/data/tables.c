@@ -266,6 +266,29 @@ static void read_champion_tables(void)
         fixed_possessions[i] = kaos_u16(KAOS_FIXED_POSSESSIONS + i * 2);
 }
 
+/* Fills the cached tables from the loaded image. */
+static void decode_tables(void)
+{
+    read_creatures();
+    read_objects();
+    read_magic();
+    read_actions();
+    read_champion_tables();
+}
+
+bool tables_load(const char *path)
+{
+    bool r = kaos_load(path);
+    if (r)
+        decode_tables();
+    return r;
+}
+
+bool tables_is_loaded(void)
+{
+    return kaos_is_loaded();
+}
+
 #define GET(arr, i)       ((i) >= 0 && (i) < ARRAY_COUNT(arr) ? &(arr)[i] : NULL)
 /* The table entry at i, or 0 outside the table: a defined value for a corrupt index. */
 #define GET_VALUE(arr, i) ((i) >= 0 && (i) < ARRAY_COUNT(arr) ? (arr)[i] : 0)
@@ -290,21 +313,9 @@ const ArmourInfo *tables_get_armour_info(int16_t i)
 {
     return GET(armour_info, i);
 }
-uint8_t tables_get_junk_weight(int16_t i)
-{
-    return GET_VALUE(junk_weights, i);
-}
-int16_t tables_get_food_value(int16_t i)
-{
-    return GET_VALUE(food_values, i);
-}
 const Spell *tables_get_spell(int16_t i)
 {
     return i < loaded_spell_count ? GET(spells, i) : NULL;
-}
-uint8_t tables_get_mana_multiplier(int16_t i)
-{
-    return GET_VALUE(symbol_mana_cost_multiplier, i);
 }
 const ActionSet *tables_get_action_set(int16_t i)
 {
@@ -313,6 +324,24 @@ const ActionSet *tables_get_action_set(int16_t i)
 const ActionInfo *tables_get_action_info(int16_t i)
 {
     return GET(action_info, i);
+}
+uint8_t tables_get_junk_weight(int16_t i)
+{
+    return GET_VALUE(junk_weights, i);
+}
+int16_t tables_get_food_value(int16_t i)
+{
+    return GET_VALUE(food_values, i);
+}
+uint8_t tables_get_base_mana_cost(int16_t step, int16_t symbol)
+{
+    if (step < 0 || step >= SYMBOL_STEP_COUNT)
+        return 0;
+    return GET_VALUE(symbol_base_mana_cost[step], symbol);
+}
+uint8_t tables_get_mana_multiplier(int16_t i)
+{
+    return GET_VALUE(symbol_mana_cost_multiplier, i);
 }
 int16_t tables_get_light_amount(int16_t i)
 {
@@ -333,36 +362,6 @@ uint8_t tables_get_wound_defense_factor(int16_t i)
 uint16_t tables_get_fixed_possession(int16_t i)
 {
     return GET_VALUE(fixed_possessions, i);
-}
-
-uint8_t tables_get_base_mana_cost(int16_t step, int16_t symbol)
-{
-    if (step < 0 || step >= SYMBOL_STEP_COUNT)
-        return 0;
-    return GET_VALUE(symbol_base_mana_cost[step], symbol);
-}
-
-/* Fills the cached tables from the loaded image. */
-static void decode_tables(void)
-{
-    read_creatures();
-    read_objects();
-    read_magic();
-    read_actions();
-    read_champion_tables();
-}
-
-bool tables_load(const char *path)
-{
-    bool r = kaos_load(path);
-    if (r)
-        decode_tables();
-    return r;
-}
-
-bool tables_is_loaded(void)
-{
-    return kaos_is_loaded();
 }
 
 int16_t tables_get_step_east(int16_t direction)

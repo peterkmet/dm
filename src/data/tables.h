@@ -331,10 +331,10 @@ Box tables_get_layout_bitmap(int16_t slot);
 #define TABLES_PALETTE_CREDITS     2
 #define TABLES_PALETTE_ENTRANCE    3
 #define TABLES_PALETTE_DUNGEON     4
-/* The colors of a palette. */
-void tables_get_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT]);
 /* One color of a palette. */
 uint16_t tables_get_palette_color(int16_t palette, int16_t color);
+/* The colors of a palette. */
+void tables_get_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT]);
 
 /* Palette changes: a color map of TABLES_PALETTE_COLOR_COUNT bytes for draw_shrink. */
 #define TABLES_CHANGES_D3               0
