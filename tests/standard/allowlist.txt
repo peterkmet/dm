@@ -62,8 +62,6 @@ bool platform/main.c:entrance_frame open: epic 11
 bool platform/main.c:load_game_files open: epic 11
 bool platform/main.c:load_kaos_and_graphics open: epic 11
 bool platform/platform.c:audio_open open: epic 11
-bool ui/anim.h:anim_open open: epic 8
-bool ui/layout.h:layout_get_zone_box open: epic 8
 name ui/command.c:is_leader_hand_object_thrown open: epic 8
 name ui/command.c:touch_front_square_empty_handed open: epic 8
 name ui/gameloop.c:draw_spell_area_before_last_death open: epic 8
@@ -106,7 +104,6 @@ static-prefix ui/advanced.c:draw_readout open: epic 8
 static-prefix ui/automap.c:draw_label open: epic 8
 static-prefix ui/automap.c:draw_party_arrow open: epic 8
 static-prefix ui/automap.c:draw_square open: epic 8
-static-prefix ui/command.c:draw_viewport_icon open: epic 8
 static-prefix ui/command.c:draw_viewport_message open: epic 8
 static-prefix ui/command.c:move_or_turn open: epic 8
 static-prefix ui/dialog.c:draw_choices open: epic 8
@@ -276,10 +273,6 @@ params ui/text.h:text_draw open: epic 8
 params ui/text.h:text_draw_box open: epic 8
 params ui/ui.c:ui_print_zone_padded open: epic 8
 params ui/ui.h:ui_print_zone_padded open: epic 8
-result ui/anim.h:anim_open open: epic 8
-result ui/anim.h:anim_play open: epic 8
-result ui/layout.h:layout_init open: epic 8
-result ui/logo.h:logo_play open: epic 8
 type platform:value open: epic 11
 type platform:x open: epic 11
 type platform:y open: epic 11
@@ -292,8 +285,6 @@ type ui:out open: epic 8
 type ui:px open: epic 8
 type ui:w open: epic 8
 type ui:width open: epic 8
-type ui:x open: epic 8
-type ui:y open: epic 8
 todo engine/sound.c open: epic 9
 block platform/platform.h open: epic 11
 block ui/command.h open: epic 8

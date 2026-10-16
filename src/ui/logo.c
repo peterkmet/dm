@@ -14,12 +14,12 @@
 #define SCRIPT_SHOW        (-1)
 #define SCRIPT_ENTRY_BYTES 4
 
-int logo_play(const char *path)
+bool logo_play(const char *path)
 {
     static const uint8_t volumes[2] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
     SwshLogo logo;
     if (!swsh_load(path, &logo))
-        return -1;
+        return false;
     uint16_t period = logo.period;
     uint32_t length = logo.sample_length;
     uint16_t colors[PALETTE_COLORS] = {0};
@@ -46,5 +46,5 @@ int logo_play(const char *path)
         ;
     music_stop();
     swsh_free(&logo);
-    return 0;
+    return true;
 }

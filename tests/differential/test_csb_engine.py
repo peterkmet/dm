@@ -50,6 +50,7 @@ def lib():
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.layout_get_zone.restype = ctypes.c_bool
     lib.view_render.restype = ctypes.c_bool
+    lib.layout_init.restype = ctypes.c_bool
     lib.kaos_ptr.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.spell_find.restype = c16
     lib.tables_get_spell.restype = ctypes.c_void_p
@@ -175,7 +176,7 @@ def test_dm_spells(lib, appb):
 @needs_dm
 def test_layout_zones_equal_but_endgame_buttons(lib):
     def boxes(folder):
-        assert lib.gfx_open(str(folder / "Graphics.DAT").encode()) and lib.layout_init() == 0
+        assert lib.gfx_open(str(folder / "Graphics.DAT").encode()) and lib.layout_init()
         result = {}
         for zone in range(1, 2000):
             b, w, h = Box(), c16(), c16()

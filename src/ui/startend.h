@@ -31,7 +31,7 @@ bool startend_load_saved_game(void);
 /* The end of the game: game over (party_dead 1), won (g_session.won), or quit (party_dead 0). It
    returns after RESTART THIS GAME loaded the saved game, or after the credits with
    g_return_to_entrance set. */
-void startend_run_endgame(int16_t party_dead);
+void startend_run_endgame(bool party_dead);
 /* The party fused Lord Chaos: the final explosions, the texts of square (0, 0), then the endgame. */
 void startend_run_fuse_sequence(void);
 /* Sensor 18: waits delay seconds, then the won endgame. CSB: the ending animation (ENDA.DAT) at once. */

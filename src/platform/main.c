@@ -78,7 +78,7 @@ static int view_start(const char *dir)
     char path[PATH_SIZE];
     if (!load_kaos_and_graphics(dir))
         return 0;
-    if (layout_init()) {
+    if (!layout_init()) {
         SDL_Log("cannot load %s/Graphics.DAT", dir);
         return 0;
     }
@@ -426,7 +426,7 @@ static int load_font(void)
         if (!dirs[i])
             continue;
         snprintf(path, sizeof path, "%s/Graphics.DAT", dirs[i]);
-        if (gfx_open(path) && !text_init())
+        if (gfx_open(path) && text_init())
             return 1;
     }
     SDL_Log("cannot load the font from Graphics.DAT");

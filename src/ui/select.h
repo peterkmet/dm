@@ -32,15 +32,15 @@ void select_start_csb(const char *message);
    Returns false when the flags skip every screen: then there is no screen to go back to. */
 bool select_restart(void);
 /* The current screen, or SELECT_SCREEN_DONE. */
-int select_screen(void);
+int16_t select_screen(void);
 /* SELECT_CSB_NEW_ADVENTURE, SELECT_CSB_RESUME, or SELECT_CSB_QUIT: the CSB screen item that ended the selection. */
-int select_csb_choice(void);
+int16_t select_csb_choice(void);
 /* A key: SELECT_KEY_*. */
-void select_key(int key);
+void select_key(int16_t key);
 /* A left click at screen pixel (x, y): activates the enabled item under it. */
-void select_click(int x, int y);
+void select_click(int16_t x, int16_t y);
 /* The click box of item index item on the current screen. Returns false when there is no such item. */
-bool select_item_box(int item, Box *box); /* exported for the tests */
+bool select_item_box(int16_t item, Box *box); /* exported for the tests */
 /* Draws the current screen on g_screen with its own palette. The font must be loaded (text_init). */
 void select_draw(void);
 

@@ -683,6 +683,8 @@ def zone_records(raw):
 def setup_view(lib):
     """The types of the view and draw functions."""
     lib.layout_get_zone.restype = ctypes.c_bool
+    lib.layout_init.restype = ctypes.c_bool
+    lib.draw_shrink.restype = ctypes.c_bool
     lib.view_render.restype = ctypes.c_bool
     lib.draw_blit.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Bitmap), ctypes.POINTER(Box), ctypes.c_int16, ctypes.c_int]
     lib.draw_shrink.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.c_char_p, ctypes.POINTER(Bitmap)]
@@ -700,7 +702,7 @@ def start_view(lib):
         pytest.skip("game files missing")
     assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
-    assert lib.layout_init() == 0
+    assert lib.layout_init()
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
     party = [ctypes.c_int16.in_dll(lib, n).value for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")]
     return lib, party
@@ -709,6 +711,9 @@ def start_view(lib):
 def setup_ui(lib):
     """The types of the interface functions."""
     lib.view_render.restype = ctypes.c_bool
+    lib.layout_get_zone_box.restype = ctypes.c_bool
+    lib.layout_init.restype = ctypes.c_bool
+    lib.text_init.restype = ctypes.c_bool
     lib.layout_get_zone_box.argtypes = [c16, c16, c16, ctypes.POINTER(Box)]
     lib.ui_command_from_mouse.argtypes = [c16, c16, c16, u16]
     lib.ui_command_from_mouse.restype = c16
@@ -732,7 +737,7 @@ def start_ui(lib):
         pytest.skip("game files missing")
     assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
-    assert lib.layout_init() == 0 and lib.text_init() == 0
+    assert lib.layout_init() and lib.text_init()
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
     lib.game_start_new()
     assert lib.ui_init()

@@ -76,10 +76,10 @@ static void draw_choices(Bitmap *viewport, const char *choice[MAX_CHOICES], int1
 static void draw_messages(Bitmap *viewport, const char *message[MESSAGE_COUNT], int16_t zone)
 {
     Box box;
-    int width[MESSAGE_COUNT] = {0};
+    int16_t width[MESSAGE_COUNT] = {0};
     int lines[MESSAGE_COUNT] = {0};
     int total = 0;
-    int height;
+    int16_t height;
     int pad = tables_get_message_line_pad();
     if (!ui_zone_box(zone, &box))
         return;
@@ -135,7 +135,7 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
 }
 
 /* Fills a rectangle of the viewport with one color. */
-static void fill(Bitmap *viewport, int x, int y, int w, int h, uint8_t color)
+static void fill(Bitmap *viewport, int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color)
 {
     Box b = {x, y, w, h};
     draw_fill(viewport, &b, color);

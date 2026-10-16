@@ -38,6 +38,9 @@ def lib():
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.select_restart.restype = ctypes.c_bool
     lib.select_item_box.restype = ctypes.c_bool
+    lib.text_init.restype = ctypes.c_bool
+    lib.select_screen.restype = c16
+    lib.select_csb_choice.restype = c16
     lib.savegame_save.restype = ctypes.c_bool
     yield lib
     set_value(lib, "g_adventure", DM)
@@ -260,7 +263,7 @@ def test_done_ignores_keys(lib):
 
 def load_font(lib, folder):
     assert lib.gfx_open(str(folder / "Graphics.DAT").encode())
-    assert lib.text_init() == 0
+    assert lib.text_init()
 
 
 def colors_in(lib, box):

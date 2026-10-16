@@ -71,7 +71,7 @@ def lib():
         ("panel_open", None, [c16]), ("gfx_get_bitmap", ctypes.POINTER(Bitmap), [c16]),
         ("map_get_stairs_exit_direction", c16, [c16, c16]), ("view_get_wall_ornament", c16, [c16, c16, c16]),
         ("view_get_floor_ornament", c16, [c16, c16]), ("map_set_party_map", None, [c16]),
-        ("text_get_size", ctypes.c_bool, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
+        ("text_get_size", ctypes.c_bool, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int16), ctypes.POINTER(ctypes.c_int16)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
@@ -532,7 +532,7 @@ def rune_points(lib):
 
 def rune_colors(lib, view, i):
     """The colors in the box of rune zone i (the box of ui_print_zone)."""
-    tw, th = ctypes.c_int(), ctypes.c_int()
+    tw, th = c16(), c16()
     assert lib.text_get_size(bytes([0x72 + i]), ctypes.byref(tw), ctypes.byref(th))
     box, w, h = Box(), c16(tw.value), c16(th.value)
     assert lib.layout_get_zone(ZONE_RUNE_FIRST + i, 0, 0, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))

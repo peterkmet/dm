@@ -82,7 +82,7 @@ def port_text(lib, thing):
 
 
 class Original:
-    """panel_draw_object of KAOS with the dungeon things, strings, and champions of the port; the
+    """The object panel of KAOS (the original of panel_format_object_text) with the dungeon things, strings, and champions of the port; the
     name print and panel_print_line record their text, the graphics calls return at once."""
 
     def __init__(self, lib):

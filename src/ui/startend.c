@@ -149,7 +149,7 @@ static void save_game_csb(void)
     if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
         int saved = save_with_dialog();
         if (saved && choice == SAVE_CHOICE_QUIT) {
-            startend_run_endgame(0);
+            startend_run_endgame(false);
             return;
         }
         if (saved == SAVED_NEW_ADVENTURE)
@@ -183,7 +183,7 @@ void startend_save_game(void)
             if (!confirm_quit())
                 continue;
             savegame_forget();
-            startend_run_endgame(0);
+            startend_run_endgame(false);
             return;
         }
         break;
@@ -235,12 +235,10 @@ static void set_endgame_click_box(int16_t entry_index, const Box *b)
 static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_index)
 {
     Bitmap screen = video_get_screen();
-    int tw, th;
+    int16_t w, h;
     Box button;
-    if (!text_get_size(text, &tw, &th))
+    if (!text_get_size(text, &w, &h))
         return;
-    int16_t w = tw;
-    int16_t h = th;
     int16_t inner_x = tables_get_button_inner_border(TABLES_AXIS_X);
     int16_t inner_y = tables_get_button_inner_border(TABLES_AXIS_Y);
     if (!layout_get_zone(zone, 0, 0, &button, &w, &h))
@@ -362,7 +360,7 @@ static bool wait_for_restart(void)
     if (!g_restart_requested || g_quit_requested)
         return false;
     memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px);
-    int16_t loaded = startend_load_saved_game();
+    bool loaded = startend_load_saved_game();
     g_restart_requested = false;
     if (!loaded)
         return false;
@@ -382,7 +380,7 @@ static void show_credits(void)
 }
 
 /* The port shows the entrance after the credits instead of quitting (deliberate deviation). */
-void startend_run_endgame(int16_t party_dead)
+void startend_run_endgame(bool party_dead)
 {
     command_set_only_mouse_input(-1);
     if (party_dead)
@@ -504,7 +502,7 @@ void startend_run_fuse_sequence(void)
     draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     frame_wait_count(FUSE_END_FRAMES);
     savegame_forget();
-    startend_run_endgame(1);
+    startend_run_endgame(true);
 }
 
 /* CSB won game: the ending animation, then the CSB screen after a key or a click (the original stays on the last frame). */
@@ -513,7 +511,7 @@ static void play_csb_ending(void)
     char path[SAVE_DIR_SIZE];
     g_game_screen_shown = false;
     snprintf(path, sizeof path, "%s/%s", gameloop_get_data_dir(), CSB_ENDING_FILE);
-    if (!anim_play(path))
+    if (anim_play(path))
         wait_for_input();
     g_return_to_entrance = true;
 }
@@ -525,5 +523,5 @@ void startend_run_endgame_sensor(uint16_t delay)
         return;
     }
     frame_wait_count(delay * SENSOR_DELAY_FRAMES);
-    startend_run_endgame(1);
+    startend_run_endgame(true);
 }

@@ -78,8 +78,9 @@ def test_ftl_logo_lasts_as_its_sound(lib):
     hook = HOOK(lambda: shots.append((screen(lib), list(pal[:16]))))
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = ctypes.cast(hook, ctypes.c_void_p).value
     lib.logo_play.argtypes = [ctypes.c_char_p]
+    lib.logo_play.restype = ctypes.c_bool
     try:
-        assert lib.logo_play(str(SWSH).encode()) == 0
+        assert lib.logo_play(str(SWSH).encode()) is True
     finally:
         ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
     assert len(shots) == 43  # 9078 * 334 / 3546895 seconds at 50 Hz

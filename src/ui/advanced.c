@@ -67,7 +67,7 @@ static void show_automap(void)
 {
     Bitmap *viewport = ui_get_viewport();
     Box area = {0, 0, viewport->w, viewport->h};
-    automap_draw(viewport, area, g_party_map_index);
+    automap_draw(viewport, &area, g_party_map_index);
     draw_readout(viewport);
     ui_draw_viewport();
 }

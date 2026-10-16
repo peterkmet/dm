@@ -59,7 +59,7 @@ Bitmap *ui_get_viewport(void)
 
 bool ui_zone_box(int16_t zone, Box *box)
 {
-    return layout_get_zone_box(zone, ZONE_SCALE_FULL, ZONE_SCALE_FULL, box) != 0;
+    return layout_get_zone_box(zone, ZONE_SCALE_FULL, ZONE_SCALE_FULL, box);
 }
 
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color)
@@ -118,12 +118,10 @@ void ui_blit_zone(Bitmap *dst, const Bitmap *src, int16_t zone, int16_t transpar
 
 void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text)
 {
-    int tw, th;
+    int16_t w, h;
     Box b;
-    if (!text_get_size(text, &tw, &th))
+    if (!text_get_size(text, &w, &h))
         return;
-    int16_t w = tw;
-    int16_t h = th;
     if (layout_get_zone(zone, 0, 0, &b, &w, &h))
         text_draw(dst, b.x, b.y + b.h - 1, fg, bg, text);
 }

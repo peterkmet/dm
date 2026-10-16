@@ -40,12 +40,13 @@ def game():
     lib = load_lib()
     lib.rec_square_byte.restype = ctypes.c_uint8
     lib.dungeon_load.restype = ctypes.c_bool
+    lib.text_init.restype = ctypes.c_bool
     for name in ("dungeon_map_width", "dungeon_map_height"):
         getattr(lib, name).restype = c16
     lib.explored_save.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_size_t)]
     lib.explored_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
     lib.explored_is_seen.restype = ctypes.c_bool
-    lib.automap_draw.argtypes = [ctypes.POINTER(Bitmap), Box, c16]
+    lib.automap_draw.argtypes = [ctypes.POINTER(Bitmap), ctypes.POINTER(Box), c16]
     lib.explored_mark_visible.argtypes = [Position, c16]
     lib.explored_get_visible_depths.argtypes = [Position, c16]
     lib.explored_get_visible_depths.restype = c16
@@ -144,7 +145,7 @@ def test_save_load_round_trip(game):
 
 def draw(lib, w, h, area):
     px = (ctypes.c_uint8 * (w * h))(*([FILLER] * (w * h)))
-    lib.automap_draw(ctypes.byref(Bitmap(w, h, px)), area, party(lib)[0])
+    lib.automap_draw(ctypes.byref(Bitmap(w, h, px)), ctypes.byref(area), party(lib)[0])
     return px
 
 
@@ -163,7 +164,7 @@ def test_draw_stays_in_area_with_party_arrow_at_center(game):
 
 def test_rulers_number_the_squares_and_a_frame_ends_the_map(game):
     white = 15
-    assert game.gfx_open(str(GAME / "Graphics.DAT").encode()) and game.text_init() == 0  # the font of the numbers
+    assert game.gfx_open(str(GAME / "Graphics.DAT").encode()) and game.text_init() is True  # the font of the numbers
     mark_here(game)
     game.automap_scroll(party(game)[0], -64, -64)  # the top-left corner of the map at the center
     try:

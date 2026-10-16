@@ -34,14 +34,14 @@ def lib():
     lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
     for name, res, args in [
-        ("anim_open", ctypes.c_int, [ctypes.c_char_p]), ("anim_next_frame", c16, []), ("anim_close", None, []),
+        ("anim_open", ctypes.c_bool, [ctypes.c_char_p]), ("anim_next_frame", c16, []), ("anim_close", None, []),
         ("rec_write", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
         ("rec_thing_next", u16, [u16]), ("map_set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
         ("savegame_load_from", ctypes.c_int, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]), ("savegame_save", ctypes.c_bool, [ctypes.c_char_p]),
         ("event_process_wall", None, [ctypes.POINTER(TimelineEvent)]), ("kaos_s16", c16, [u32]),
-        ("startend_run_endgame", None, [c16]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
+        ("startend_run_endgame", None, [ctypes.c_bool]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
         ("command_process_click", None, [c16, c16, c16]), ("command_process_key", None, [u16]),
-        ("anim_play", ctypes.c_int, [ctypes.c_char_p]), ("startend_run_endgame_sensor", None, [u16]),
+        ("anim_play", ctypes.c_bool, [ctypes.c_char_p]), ("startend_run_endgame_sensor", None, [u16]),
         ("audio_mix", None, [ctypes.POINTER(c16), ctypes.c_int]), ("audio_stop_all", None, []),
         ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]), ("gameloop_tick", None, []),
     ]:
@@ -206,9 +206,9 @@ def test_chunk_walk_consumes_the_file(lib, tmp_path):
     assert tags[:2] == ["BR", "AN"] and tags[-1] == "DO"
     assert {t: tags.count(t) for t in ("SD", "PL", "EN", "DL", "SO", "FO", "NE", "BN")} == {
         "SD": 2, "PL": 3, "EN": 2, "DL": 285, "SO": 3, "FO": 1, "NE": 1, "BN": 1}
-    assert lib.anim_open(str(ENDA).encode()) == 0
+    assert lib.anim_open(str(ENDA).encode()) is True
     (tmp_path / "SHORT.DAT").write_bytes(data[:-2])
-    assert lib.anim_open(str(tmp_path / "SHORT.DAT").encode()) == -1
+    assert lib.anim_open(str(tmp_path / "SHORT.DAT").encode()) is False
     assert lib.anim_next_frame() == C.ANIM_END
 
 
@@ -218,7 +218,7 @@ def test_first_frame_decodes(lib):
     first_palette = next(at for at, tag, _, _ in items if tag == "PL")
     frame = next(at for at, tag, _, _ in items if tag == "EN")
     assert struct.unpack_from(">HH", data, frame + 6) == (C.SCREEN_W, C.SCREEN_H)
-    assert lib.anim_open(str(ENDA).encode()) == 0
+    assert lib.anim_open(str(ENDA).encode()) is True
     assert lib.anim_next_frame() == items[[at for at, *_ in items].index(frame)][3]
     pixels = screen(lib)
     assert len(pixels) == C.SCREEN_W * C.SCREEN_H and len(set(pixels)) > 4 and pixels.count(0) < len(pixels) // 2
@@ -229,7 +229,7 @@ def test_first_frame_decodes(lib):
 
 def test_frame_sequence_and_timing(lib, model):
     expected = [delay for delay, _, _ in model]
-    assert lib.anim_open(str(ENDA).encode()) == 0
+    assert lib.anim_open(str(ENDA).encode()) is True
     delays = []
     while (delay := lib.anim_next_frame()) != C.ANIM_END:
         delays.append(delay)
@@ -241,7 +241,7 @@ def test_frame_sequence_and_timing(lib, model):
 
 def test_every_frame_matches_an_independent_decode(lib, model):
     """Delta frames keep the pixels of the frame before; each palette applies with its frame."""
-    assert lib.anim_open(str(ENDA).encode()) == 0
+    assert lib.anim_open(str(ENDA).encode()) is True
     for k, (delay, pixels, colors) in enumerate(model):
         assert lib.anim_next_frame() == delay
         assert screen(lib) == pixels, k
@@ -257,7 +257,7 @@ def test_palette_changes_with_the_second_full_frame(lib, model):
     second_en = [i for i, (_, tag, _, _) in enumerate(items) if tag == "EN"][1]
     assert items[second_en - 1][0] == second_pl
     frames_before = sum(1 for _, tag, _, _ in items[:second_en] if tag in ("EN", "DL"))
-    assert lib.anim_open(str(ENDA).encode()) == 0
+    assert lib.anim_open(str(ENDA).encode()) is True
     for _ in range(frames_before):
         lib.anim_next_frame()
     assert all(palette(lib)[i] == c for i, c in palette_entries(data, first_pl).items())
@@ -269,7 +269,7 @@ def test_palette_changes_with_the_second_full_frame(lib, model):
 
 def test_anim_play_holds_each_frame_for_its_delay(lib, model, reset):
     frames = Frames(lib)
-    assert lib.anim_play(str(ENDA).encode()) == 0
+    assert lib.anim_play(str(ENDA).encode()) is True
     frames.remove()
     expected = [(pixels, colors) for delay, pixels, colors in model for _ in range(delay)]
     assert len(frames.shots) == len(expected) == sum(delay for delay, _, _ in model)
@@ -283,12 +283,12 @@ TITL = ROOT / "game" / "TITL.DAT"
 def test_dm_title_plays_and_stops_on_input(lib, reset):
     """TITL.DAT: 53 frames of one vertical blank; its BR chunk lets a key or a click stop it."""
     frames = Frames(lib)
-    assert lib.anim_play(str(TITL).encode()) == 0
+    assert lib.anim_play(str(TITL).encode()) is True
     assert len(frames.shots) == 53
     assert len(set(frames.shots[-1][0])) > 4  # the last frame stays on the screen
     press = lambda n: n == 5 and setattr(value(lib, "g_input_received"), "value", 1)
     frames = Frames(lib, press)
-    assert lib.anim_play(str(TITL).encode()) == 0
+    assert lib.anim_play(str(TITL).encode()) is True
     frames.remove()
     assert len(frames.shots) == 5
 
@@ -296,7 +296,7 @@ def test_dm_title_plays_and_stops_on_input(lib, reset):
 def test_enda_ignores_input(lib, model, reset):
     press = lambda n: n == 5 and setattr(value(lib, "g_input_received"), "value", 1)
     frames = Frames(lib, press)
-    assert lib.anim_play(str(ENDA).encode()) == 0
+    assert lib.anim_play(str(ENDA).encode()) is True
     frames.remove()
     assert len(frames.shots) == sum(delay for delay, _, _ in model)
 
@@ -313,7 +313,7 @@ def test_play_sample_volumes_and_period(lib):
     length = struct.unpack_from(">H", data, sd + 6)[0]
     sample = struct.unpack_from(f"{length}b", data, sd + 8)
     frames_before = sum(1 for _, tag, _, _ in items[:so] if tag in ("EN", "DL"))
-    assert lib.anim_open(str(ENDA).encode()) == 0
+    assert lib.anim_open(str(ENDA).encode()) is True
     for _ in range(frames_before + 1):
         lib.anim_next_frame()
     count = 3000
@@ -341,7 +341,7 @@ def test_nested_loops(lib, tmp_path):
     (tmp_path / "LOOP.DAT").write_bytes(data)
     expected = [1, 2, 3, 4, 3, 5, 6, 2, 3, 4, 3, 5, 7]
     assert [delay for delay, _, _ in play_model(data)] == expected
-    assert lib.anim_open(str(tmp_path / "LOOP.DAT").encode()) == 0
+    assert lib.anim_open(str(tmp_path / "LOOP.DAT").encode()) is True
     delays = []
     while len(delays) <= len(expected) and (delay := lib.anim_next_frame()) != C.ANIM_END:
         delays.append(delay)
@@ -353,7 +353,7 @@ def test_palette_waits_for_the_next_frame(lib, tmp_path):
     full = struct.pack(">HH", C.SCREEN_W, C.SCREEN_H) + bytes([0xC0, 0xF9, 0xFF])  # 64000 pixels of color 0
     white = struct.pack(">H", 1) + bytes([0, 15, 15, 15])
     (tmp_path / "PAL.DAT").write_bytes(chunk("PL", 0, white) + chunk("EN", 1, full + b"\0") + chunk("PL", 0, struct.pack(">H", 1) + bytes(4)))
-    assert lib.anim_open(str(tmp_path / "PAL.DAT").encode()) == 0
+    assert lib.anim_open(str(tmp_path / "PAL.DAT").encode()) is True
     assert lib.anim_next_frame() == 1 and palette(lib)[0] == 0xFFF
     assert lib.anim_next_frame() == C.ANIM_END and palette(lib)[0] == 0xFFF  # no frame shows the last palette
     lib.anim_close()
@@ -386,7 +386,7 @@ def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     load_mini(lib, tmp_path)
     m, x, y, sensor = endgame_sensor_square(lib)
     assert (m, x, y) == (0, 1, 2)
-    assert lib.anim_open(str(ENDA).encode()) == 0
+    assert lib.anim_open(str(ENDA).encode()) is True
     lib.anim_next_frame()
     first_frame, first_palette = screen(lib), palette(lib)
     lib.anim_close()
@@ -523,7 +523,7 @@ def mix(lib, frames):
 @needs_file(NAKED)
 def test_csb_intro_frames_and_music(lib):
     """Disk B ANIM.DAT: 851 frames; MI starts NAKED.AMG, the same music on both sides."""
-    assert lib.anim_open(str(INTRO).encode()) == 0
+    assert lib.anim_open(str(INTRO).encode()) is True
     assert lib.anim_next_frame() != C.ANIM_END
     left, right = mix(lib, 4410)
     assert any(left) and left == right
@@ -538,7 +538,7 @@ def test_csb_intro_frames_and_music(lib):
 @needs_file(INTRO)
 @needs_file(NAKED)
 def test_csb_intro_sample_files_play_beside_the_music(lib):
-    assert lib.anim_open(str(INTRO).encode()) == 0
+    assert lib.anim_open(str(INTRO).encode()) is True
     while lib.anim_next_frame() != C.ANIM_END:
         left, right = mix(lib, 64)
         if left != right:  # an SO sample with other volumes per side on pair A
@@ -553,7 +553,7 @@ def test_csb_intro_sample_files_play_beside_the_music(lib):
 def test_csb_intro_stops_on_input_and_fades_the_music(lib, reset):
     press = lambda n: n == 3 and setattr(value(lib, "g_input_received"), "value", 1)
     frames = Frames(lib, press)
-    assert lib.anim_play(str(INTRO).encode()) == 0
+    assert lib.anim_play(str(INTRO).encode()) is True
     frames.remove()
     items, _ = chunks(INTRO.read_bytes())
     first_delay = next(param for _, tag, _, param in items if tag in ("EN", "DL"))

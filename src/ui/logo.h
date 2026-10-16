@@ -5,7 +5,9 @@
 
 /* The FTL logo of SWSH.FTL (not KAOS): the original shows it before the DM title. */
 
-/* Shows the logo with its sound until the sound ends. Returns -1 when the file cannot be read. */
-int logo_play(const char *path);
+#include <stdbool.h>
+
+/* Shows the logo with its sound until the sound ends. Returns false when the file cannot be read. */
+bool logo_play(const char *path);
 
 #endif

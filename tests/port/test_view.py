@@ -78,14 +78,14 @@ def test_shrink_matches_original(lib, emu, w, h, s):
     emu.write(0x600000, pal)
     emu.call(SHRINK, [(4, 0x400000), (4, 0x500000), (2, w), (2, h), (2, dw), (2, dh), (4, 0x600000)])
     out = Bitmap()
-    assert lib.draw_shrink(bitmap(px), dw, dh, pal, out) == 0
+    assert lib.draw_shrink(bitmap(px), dw, dh, pal, out) is True
     assert pixels(out) == chunky(emu.read(0x500000, (dw + 15) // 16 * 2 * dh * 4), dw, dh)
 
 
 @needs_dm
 def test_zones_match_original(lib, emu):
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
-    assert lib.layout_init() == 0
+    assert lib.layout_init() is True
     size = ctypes.c_uint16()
     raw = ctypes.string_at(lib.gfx_get_item(696, ctypes.byref(size)), size.value)
     chunks, at = zone_records(raw), 0x700000

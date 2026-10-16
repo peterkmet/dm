@@ -70,7 +70,7 @@ bool gameloop_load_data(const char *dir)
         return false;
     startend_set_save_dir(dir);
     g_endgame_sensor_hook = startend_run_endgame_sensor;
-    return !layout_init() && !text_init() && ui_init();
+    return layout_init() && text_init() && ui_init();
 }
 
 const char *gameloop_get_data_dir(void)
@@ -330,7 +330,7 @@ void gameloop_tick(void)
     if (g_session.party_dead) {
         status_draw_all(0); /* the dead champions show during the death scream */
         draw_spell_area_before_last_death(before);
-        startend_run_endgame(1);
+        startend_run_endgame(true);
         return;
     }
     advance_game_time();

@@ -37,7 +37,7 @@ static const uint16_t select_palette[PALETTE_COLORS] = {
     [COLOR_GOLD] = RGB_GOLD,
 };
 
-static int screen = SELECT_SCREEN_DONE, cursor, csb_choice;
+static int16_t screen = SELECT_SCREEN_DONE, cursor, csb_choice;
 static bool csb_enabled, adventure_given, mode_given;
 static bool llm_enabled;
 static const char *message;
@@ -109,11 +109,11 @@ bool select_restart(void)
     return screen != SELECT_SCREEN_DONE;
 }
 
-int select_screen(void)
+int16_t select_screen(void)
 {
     return screen;
 }
-int select_csb_choice(void)
+int16_t select_csb_choice(void)
 {
     return csb_choice;
 }
@@ -147,7 +147,7 @@ static void move(int step)
         }
 }
 
-void select_key(int key)
+void select_key(int16_t key)
 {
     if (screen == SELECT_SCREEN_DONE)
         return;
@@ -164,12 +164,13 @@ void select_key(int key)
         show(SELECT_SCREEN_MODE);
 }
 
-bool select_item_box(int item, Box *box)
+bool select_item_box(int16_t item, Box *box)
 {
-    int w, h;
+    int16_t w, h;
     if (screen == SELECT_SCREEN_DONE || item < 0 || item >= item_count(screen))
         return false;
-    text_get_size(screens[screen].items[item], &w, &h);
+    if (!text_get_size(screens[screen].items[item], &w, &h))
+        return false;
     box->w = w + 2 * ITEM_MARGIN;
     box->h = LINE_HEIGHT;
     box->x = (SCREEN_W - box->w) / 2;
@@ -177,10 +178,10 @@ bool select_item_box(int item, Box *box)
     return true;
 }
 
-void select_click(int x, int y)
+void select_click(int16_t x, int16_t y)
 {
     Box b;
-    for (int i = 0; select_item_box(i, &b); i++) {
+    for (int16_t i = 0; select_item_box(i, &b); i++) {
         if (!box_contains(&b, x, y))
             continue;
         if (is_item_enabled(i)) {

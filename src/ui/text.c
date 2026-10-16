@@ -12,15 +12,15 @@
 static uint8_t font_data[FONT_SIZE];
 static const uint8_t *font;
 
-int text_init(void)
+bool text_init(void)
 {
     uint16_t size;
     const uint8_t *p = gfx_get_item(TEXT_FONT_ITEM, &size);
     if (!p || size != FONT_SIZE)
-        return -1;
+        return false;
     memcpy(font_data, p, FONT_SIZE);
     font = font_data;
-    return 0;
+    return true;
 }
 
 /* Draws one font row of a character: set pixels get fg, the others bg; outside pixels are clipped. */
@@ -33,7 +33,7 @@ static void draw_glyph_row(Bitmap *bm, int x, int py, uint8_t bits, uint8_t fg, 
     }
 }
 
-void text_draw(Bitmap *bm, int x, int y, uint8_t fg, uint8_t bg, const char *s)
+void text_draw(Bitmap *bm, int16_t x, int16_t y, uint8_t fg, uint8_t bg, const char *s)
 {
     if (!font)
         return;
@@ -50,29 +50,30 @@ void text_draw(Bitmap *bm, int x, int y, uint8_t fg, uint8_t bg, const char *s)
     }
 }
 
-void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s)
+void text_draw_screen(int16_t x, int16_t y, uint8_t fg, uint8_t bg, const char *s)
 {
     Bitmap screen = video_get_screen();
     text_draw(&screen, x, y, fg, bg, s);
 }
 
-bool text_get_size(const char *s, int *w, int *h)
+bool text_get_size(const char *s, int16_t *w, int16_t *h)
 {
     int n = s ? (int)strlen(s) : 0;
     if (n * FONT_CHAR_WIDTH - FONT_CHAR_GAP < 1)
         return false;
-    *w = n * FONT_CHAR_WIDTH - FONT_CHAR_GAP;
+    *w = (int16_t)(n * FONT_CHAR_WIDTH - FONT_CHAR_GAP);
     *h = FONT_LINE_HEIGHT - FONT_BASELINE_GAP;
     return true;
 }
 
-void text_draw_box(Bitmap *bm, int x, int y, int w, int h, bool centered, uint8_t fg, uint8_t bg, const char *s)
+void text_draw_box(Bitmap *bm, int16_t x, int16_t y, int16_t w, int16_t h, bool centered, uint8_t fg, uint8_t bg,
+                   const char *s)
 {
-    int tw, th;
+    int16_t tw, th;
     if (!text_get_size(s, &tw, &th))
         return;
     if (centered)
-        x += (w - tw) / 2;
-    y += (h - th) / 2;
-    text_draw(bm, x, y + th - 1, fg, bg, s);
+        x = (int16_t)(x + (w - tw) / 2);
+    y = (int16_t)(y + (h - th) / 2);
+    text_draw(bm, x, (int16_t)(y + th - 1), fg, bg, s);
 }

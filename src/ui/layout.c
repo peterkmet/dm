@@ -49,15 +49,15 @@ static int16_t get_zone_y(const uint8_t *r)
     return S16(r, 3);
 } /* or the height of a size record */
 
-int layout_init(void)
+bool layout_init(void)
 {
     layout_data = gfx_get_item(GFX_LAYOUT, &layout_size);
     if (!layout_data || layout_size < LAYOUT_HEADER_BYTES || be16(layout_data) != LAYOUT_SIGNATURE ||
         LAYOUT_HEADER_BYTES + RANGE_BYTES * S16(layout_data, 1) > layout_size) {
         layout_data = NULL;
-        return -1;
+        return false;
     }
-    return 0;
+    return true;
 }
 
 /* The 4-word record (type, parent, x, y) of zone n, or NULL. */
@@ -280,14 +280,14 @@ bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box,
     return box->w > 0 && box->h > 0;
 }
 
-int layout_get_zone_box(int16_t zone, int16_t wp, int16_t hp, Box *box)
+bool layout_get_zone_box(int16_t zone, int16_t wp, int16_t hp, Box *box)
 {
     const uint8_t *r = find(zone), *p;
     if (!r || !get_zone_parent(r) || !(p = find(get_zone_parent(r))) || get_zone_type(p) != RECORD_SIZE)
-        return 0;
+        return false;
     int16_t w = wp == ZONE_SCALE_FULL ? get_zone_x(p) : (int32_t)get_zone_x(p) * wp / ZONE_SCALE_FULL;
     int16_t h = hp == ZONE_SCALE_FULL ? get_zone_y(p) : (int32_t)get_zone_y(p) * hp / ZONE_SCALE_FULL;
     if (w <= 0 || h <= 0)
-        return 0;
+        return false;
     return layout_get_zone(zone, 0, 0, box, &w, &h);
 }

@@ -59,8 +59,9 @@ static uint8_t *chunk_file;
 static size_t chunk_file_size, chunk_offset; /* chunk_offset: offset of the next chunk */
 static const uint8_t *samples[MAX_SAMPLES];
 static uint16_t sample_sizes[MAX_SAMPLES];
-static int sample_count, loop_depth, palette_changed,
-    input_stops; /* input_stops: BR allows a stop by a key or a click */
+static int sample_count, loop_depth;
+static bool palette_changed;
+static bool input_stops; /* BR allows a stop by a key or a click */
 static Loop loops[MAX_LOOP_DEPTH];
 static uint16_t colors[PALETTE_COLORS];
 static char directory[PATH_SIZE]; /* the folder of the animation file: SF and MF names are relative to it */
@@ -170,26 +171,26 @@ static void play_music(uint16_t number)
     music_started = true;
 }
 
-int anim_open(const char *path)
+bool anim_open(const char *path)
 {
     anim_close();
     const char *slash = strrchr(path, '/');
     snprintf(directory, sizeof directory, "%.*s", slash ? (int)(slash - path) : 1, slash ? path : ".");
     if (!(chunk_file = file_read(path, &chunk_file_size)))
-        return -1;
+        return false;
     size_t at = 0;
     while (at + CHUNK_HEADER <= chunk_file_size)
         at = next_chunk(at);
     if (at != chunk_file_size) {
         anim_close();
-        return -1;
+        return false;
     }
     sample_count = 0;
     loop_depth = 0;
-    palette_changed = 0;
-    input_stops = 0;
+    palette_changed = false;
+    input_stops = false;
     memset(colors, 0, sizeof colors);
-    return 0;
+    return true;
 }
 
 /* PL: color entries for the next frame. */
@@ -201,7 +202,7 @@ static void set_colors(const uint8_t *payload, uint16_t length)
         if (e[0] < PALETTE_COLORS)
             colors[e[0]] = video_amiga_color(e[1] & COLOR_NIBBLE, e[2] & COLOR_NIBBLE, e[3] & COLOR_NIBBLE);
     }
-    palette_changed = 1;
+    palette_changed = true;
 }
 
 /* SO: plays SD sample number (1-based). The two bytes after the chunk header are the volumes, also
@@ -300,7 +301,7 @@ int16_t anim_next_frame(void)
             gfx_expand_over(payload, length, &screen);
             if (palette_changed)
                 ui_set_screen_palette(colors);
-            palette_changed = 0;
+            palette_changed = false;
             return parameter;
         }
         }
@@ -308,13 +309,13 @@ int16_t anim_next_frame(void)
     return ANIM_END;
 }
 
-int anim_play(const char *path)
+bool anim_play(const char *path)
 {
-    if (anim_open(path))
-        return -1;
+    if (!anim_open(path))
+        return false;
     memset(g_screen.px, 0, sizeof g_screen.px);
     ui_set_screen_palette(colors);
-    int running = 1;
+    bool running = true;
     command_discard_all_input();
     g_input_received = false;
     /* a stop keeps the shown frame for its delay, as the original */
@@ -322,7 +323,7 @@ int anim_play(const char *path)
         while (delay-- > 0 && (running = frame_wait()))
             ;
         if (input_stops && g_input_received)
-            running = 0;
+            running = false;
     }
     /* the music fades out at the end and after a stop */
     for (int volume = MUSIC_VOLUME - 1; music_started && volume > 0 && !g_quit_requested; volume--) {
@@ -330,5 +331,5 @@ int anim_play(const char *path)
         frame_wait_count(MUSIC_FADE_FRAMES);
     }
     anim_close();
-    return 0;
+    return true;
 }

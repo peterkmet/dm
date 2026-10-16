@@ -577,7 +577,7 @@ static void draw_field(const uint8_t *aspect, int16_t zone)
     int16_t width = aspect[FIELD_WIDTH];
     int16_t height = aspect[FIELD_HEIGHT];
     int16_t sx = 0;
-    int16_t flip = 0;
+    bool flip = false;
     Box box;
     if (!layout_get_zone(zone, 0, 0, &box, &width, &height))
         return;
@@ -625,7 +625,7 @@ static void draw_explosion_on_party(uint16_t thing, int16_t aspect)
     int16_t height = 0;
     Box box;
     if (units && layout_get_zone(ZONE_VIEWPORT_BOX, g_view.viewport.w, g_view.viewport.h, &box, &width, &height))
-        draw_masked_fill(units, NULL, 0, &g_view.viewport, &box, last, first, EXPLOSION_FILL_TRANSPARENT, 0, 0);
+        draw_masked_fill(units, NULL, false, &g_view.viewport, &box, last, first, EXPLOSION_FILL_TRANSPARENT, 0, 0);
     free(own.px);
 }
 

@@ -37,8 +37,9 @@ class MessageArea(ctypes.Structure):
 def lib():
     lib = load_lib()
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
-    assert lib.text_init() == 0
-    lib.text_draw.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int, ctypes.c_int, ctypes.c_uint8, ctypes.c_uint8, ctypes.c_char_p]
+    lib.text_init.restype = ctypes.c_bool
+    assert lib.text_init()
+    lib.text_draw.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.c_uint8, ctypes.c_uint8, ctypes.c_char_p]
     lib.message_print.argtypes = [ctypes.c_int16, ctypes.c_char_p]
     return lib
 

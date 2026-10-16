@@ -3,6 +3,7 @@
 #define DM_UI_DRAW_H
 /* Prefixes: draw_ */
 #include "data/graphics.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 #define FLIP_H       1
@@ -23,10 +24,10 @@ void draw_flip(Bitmap *bm, int flip);
    clear), the mask words are read in row order; a 0 bit gives the transparent color. mask_flip mirrors
    the mask by whole words, as flip_bitmap_horizontal does. The temp bitmap is then blitted from
    (sx, sy) with the color key. */
-void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bitmap *dst, const Box *box,
+void draw_masked_fill(const Bitmap *units, const Bitmap *mask, bool mask_flip, Bitmap *dst, const Box *box,
                       int16_t last_unit, int16_t first_unit, int16_t transparent, int16_t sx, int16_t sy);
 /* Samples the source at the pixel centers with the 16.16 step of
-   the original. Rows after the first sample one row higher, as the original does. */
-int draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t *palette_changes, Bitmap *out);
+   the original. Rows after the first sample one row higher, as the original does. Returns true on success. */
+bool draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t *palette_changes, Bitmap *out);
 
 #endif

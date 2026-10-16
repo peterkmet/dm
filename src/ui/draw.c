@@ -54,13 +54,13 @@ void draw_flip(Bitmap *bm, int flip)
 /* Scales the step to the 16 fraction bits of a sample at half-pixel positions. */
 #define SAMPLE_STEP_SCALE    (1 << (SAMPLE_FRACTION_BITS - STEP_FRACTION_BITS - 1))
 
-int draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t *palette_changes, Bitmap *out)
+bool draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t *palette_changes, Bitmap *out)
 {
     if (width < 1 || height < 1 || !src->w || !src->h)
-        return -1;
+        return false;
     uint8_t *px = malloc((size_t)width * height);
     if (!px)
-        return -1;
+        return false;
     uint32_t step_x = (uint16_t)(((uint32_t)src->w << STEP_FRACTION_BITS) / width);  /* the step keeps 16 bits */
     uint32_t step_y = (uint16_t)(((uint32_t)src->h << STEP_FRACTION_BITS) / height); /* the step keeps 16 bits */
     for (int y = 0; y < height; y++) {
@@ -76,10 +76,10 @@ int draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t 
         }
     }
     *out = (Bitmap){width, height, px};
-    return 0;
+    return true;
 }
 
-void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bitmap *dst, const Box *box,
+void draw_masked_fill(const Bitmap *units, const Bitmap *mask, bool mask_flip, Bitmap *dst, const Box *box,
                       int16_t last_unit, int16_t first_unit, int16_t transparent, int16_t sx, int16_t sy)
 {
     if (box->w < 1 || box->h < 1)
