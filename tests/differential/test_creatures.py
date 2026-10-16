@@ -307,6 +307,7 @@ def test_fireball_flies_and_explodes_on_wall(lib):
 def caster(lib):
     assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
+    lib.layout_init.restype = lib.text_init.restype = ctypes.c_bool
     assert lib.layout_init() and lib.text_init()
     new_game(lib)
     assert lib.ui_init()
