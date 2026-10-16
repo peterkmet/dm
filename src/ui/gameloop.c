@@ -29,6 +29,7 @@
 #include "ui/command.h"
 #include "ui/dialog.h"
 #include "ui/draw.h"
+#include "ui/frame.h"
 #include "ui/layout.h"
 #include "ui/music.h"
 #include "ui/startend.h"
@@ -147,7 +148,7 @@ void entrance_press_button(int resume)
         layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
         draw_blit(bm, sx, sy + (resume ? BUTTON_HEIGHT : 0), &screen, &box, COLOR_NONE, 0);
     audio_play_sample(SOUND_SWITCH, volumes);
-    wait_frames(BUTTON_FRAMES);
+    frame_wait_count(BUTTON_FRAMES);
 }
 
 /* After ENTER the doors slide apart, 2 pixels each 2 frames, over the dungeon view
@@ -172,7 +173,7 @@ void entrance_open_doors(void)
     for (int16_t opened = 0, frames = 0; draw_entrance_doors(&view, opened) && !g_quit_requested; opened += DOOR_STEP) {
         if (frames % SOUND_FRAMES == 0)
             audio_play_sample(SOUND_ENTRANCE_DOOR, volumes);
-        for (int16_t f = 0; f < STEP_FRAMES && wait_frame(); f++, frames++)
+        for (int16_t f = 0; f < STEP_FRAMES && frame_wait(); f++, frames++)
             ;
     }
 }

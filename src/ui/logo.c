@@ -5,8 +5,8 @@
 #include "data/swsh.h"
 #include "engine/sound.h"
 #include "ui/audio.h"
+#include "ui/frame.h"
 #include "ui/music.h"
-#include "ui/startend.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include <string.h>
@@ -39,10 +39,10 @@ int logo_play(const char *path)
             continue;
         }
         ui_set_screen_palette(colors);
-        for (uint16_t f = 0; f < value && wait_frame(); f++)
+        for (uint16_t f = 0; f < value && frame_wait(); f++)
             frames--;
     }
-    while (frames-- > 0 && wait_frame())
+    while (frames-- > 0 && frame_wait())
         ;
     music_stop();
     swsh_free(&logo);

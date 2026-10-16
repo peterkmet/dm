@@ -16,6 +16,7 @@
 #include "ui/advanced.h"
 #include "ui/anim.h"
 #include "ui/command.h"
+#include "ui/frame.h"
 #include "ui/gameloop.h"
 #include "ui/layout.h"
 #include "ui/logo.h"

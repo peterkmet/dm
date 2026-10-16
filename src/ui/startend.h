@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_UI_STARTEND_H
 #define DM_UI_STARTEND_H
-/* Prefixes: startend_ wait_ */
+/* Prefixes: startend_ */
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -9,22 +9,12 @@
    saved game, the endgame screens, and the fuse sequence with Lord Chaos. They wait frame by
    frame like the original; the program shows each frame through g_frame_hook. */
 
-/* Shows one 50 Hz frame and reads the input into the command queue. NULL (tests, headless):
-   waits end at once and waits for input end without input. */
-extern void (*g_frame_hook)(void);
-extern bool g_quit_requested;     /* the player quits: the program ends */
 extern bool g_restart_requested;  /* RESTART THIS GAME on the endgame screen */
 extern bool g_return_to_entrance; /* the endgame ended: the program shows the entrance */
 
 /* The directory of the save file of the adventure (DMGAME.DAT or CSBGAME.DAT). The default is the game data directory. */
 void startend_set_save_dir(const char *dir);
 const char *startend_save_dir(void);
-
-/* Returns true after one frame, false when there are no frames or the player quits. */
-bool wait_frame(void);
-/* Not 0 while wait_frame runs a frame: a dialog, a sequence, or an endgame wait. */
-extern int16_t g_waiting_frame;
-void wait_frames(int16_t count);
 
 /* Command 140: CANCEL, SAVE, QUIT. QUIT ends the game through the endgame. CSB: CANCEL, SAVE AND
    PLAY, SAVE AND QUIT. */

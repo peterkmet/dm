@@ -227,7 +227,7 @@ def test_quick_keys_work_only_in_the_dungeon_view(game, tmp_path):
     press(game, C.KEY_F5)
     assert not (tmp_path / QUICK).exists()
     press(game, C.KEY_F1)
-    waiting = c16.in_dll(lib, "g_waiting_frame")
+    waiting = c16.in_dll(lib, "g_frame_wait_depth")
     waiting.value = 1  # a sequence or an endgame wait runs the frame
     press(game, C.KEY_F5)
     waiting.value = 0

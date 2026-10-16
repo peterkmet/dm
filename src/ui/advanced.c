@@ -10,6 +10,7 @@
 #include "ui/automap.h"
 #include "ui/command.h"
 #include "ui/dialog.h"
+#include "ui/frame.h"
 #include "ui/gameloop.h"
 #include "ui/music.h"
 #include "ui/startend.h"
@@ -36,7 +37,7 @@ static bool in_dungeon_view(void)
 {
     return g_dungeon_maps && !g_game_screen_inactive && g_game_time_ticking && !g_game_frozen &&
            !g_session.party_dead && g_session.inventory_champion_index < 0 && !g_session.party_sleeping &&
-           g_session.candidate_champion_index < 0 && !g_waiting_frame && !g_session.won;
+           g_session.candidate_champion_index < 0 && !g_frame_wait_depth && !g_session.won;
 }
 
 /* Level, position, facing, and light in the top-left corner of the map, inside the rulers. */

@@ -4,8 +4,8 @@
 #include "engine/message.h"
 #include "ui/command.h"
 #include "ui/draw.h"
+#include "ui/frame.h"
 #include "ui/layout.h"
-#include "ui/startend.h"
 #include "ui/text.h"
 #include "ui/ui.h"
 #include "ui/video.h"
@@ -159,7 +159,7 @@ static void draw_pressed_button(int16_t table, int16_t choice)
     fill(viewport, x - 4, y + height + 4, width + 9, 1, COLOR_LIGHT_GRAY);
     fill(viewport, x + width + 5, y - 3, 1, height + 8, COLOR_LIGHT_GRAY);
     draw_viewport();
-    wait_frames(PRESS_FRAMES);
+    frame_wait_count(PRESS_FRAMES);
     fill(viewport, x - 1, y - 1, width + 3, 1, COLOR_LIGHT_BROWN);
     fill(viewport, x - 2, y - 2, 1, height + 3, COLOR_LIGHT_BROWN);
     fill(viewport, x + width + 1, y - 2, 1, height + 3, COLOR_DARKEST_GRAY);
@@ -181,7 +181,7 @@ int16_t dialog_get_choice(int16_t choice_count)
         command_process_queue();
         if (choice_count == 1 && g_last_key == KEY_RETURN)
             g_dialog_choice = 1;
-        if (g_dialog_choice == DIALOG_NO_CHOICE && !wait_frame())
+        if (g_dialog_choice == DIALOG_NO_CHOICE && !frame_wait())
             break;
     }
     int16_t choice = g_dialog_choice == DIALOG_NO_CHOICE ? 0 : g_dialog_choice;

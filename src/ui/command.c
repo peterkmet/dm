@@ -17,6 +17,7 @@
 #include "engine/sound.h"
 #include "ui/advanced.h"
 #include "ui/dialog.h"
+#include "ui/frame.h"
 #include "ui/startend.h"
 #include "ui/ui.h"
 #include "ui/video.h"
@@ -291,7 +292,7 @@ void command_click_on_mouth(void)
         for (int16_t blink = MOUTH_BLINK_COUNT; blink > 0; blink--) {
             ui_draw_icon_to_viewport(ICON_MOUTH + !(blink & 1), ZONE_MOUTH);
             ui_draw_viewport();
-            wait_frames(MOUTH_BLINK_FRAMES);
+            frame_wait_count(MOUTH_BLINK_FRAMES);
         }
     sound_request_play(SOUND_SWALLOW, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
     if (g_panel_content == PANEL_CONTENT_FOOD_WATER)
