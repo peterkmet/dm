@@ -18,6 +18,7 @@
 #include "engine/record.h"
 #include "ui/automap.h"
 #include "ui/command.h"
+#include "ui/panel.h"
 #include "ui/ui.h"
 #include "ui/view.h"
 #include <inttypes.h>
@@ -289,7 +290,7 @@ static void skills_json(Json *j, int16_t index)
     json_open(j, '{');
     for (int s = 0; s < SKILL_BASE_COUNT; s++) {
         int16_t level = champion_get_skill_level(index, s, false, false);
-        const char *rank = ui_get_skill_rank_name(level);
+        const char *rank = panel_get_rank_name(level);
         json_key(j, skill_names[s]);
         json_open(j, '{');
         key_int(j, "level", level);

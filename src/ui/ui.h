@@ -1,16 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_UI_UI_H
 #define DM_UI_UI_H
-/* Prefixes: ui_ panel_ menus_ */
+/* Prefixes: ui_ menus_ */
 #include "data/graphics.h"
-#include "data/tables.h"
 #include "engine/champion.h"
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-/* Interface drawing on fb: champion status boxes, action and spell areas, inventory panel,
-   object icons, message area (KAOS CHAMPION.C, MENU.C, panel parts of INVENTORY.C). Graphics,
-   zones, strings, and input tables come from Graphics.DAT and the KAOS image at run time. */
+/* Interface drawing on fb: zones, blits, palette, object icons, hit tests, message area, action and
+   spell areas (KAOS MENU.C, parts of CHAMPION.C and INVENTORY.C). Graphics, zones, strings, and input
+   tables come from Graphics.DAT and the KAOS image at run time. */
 
 #define UI_ICON_SIZE 16
 
@@ -62,17 +62,13 @@
 
 /* MENU.C state. */
 extern bool g_action_area_contains_icons;
-/* The portrait of a champion as a bitmap. */
-Bitmap ui_draw_champion_portrait(int16_t champion_index);
 
 /* Setup: call after tables_load, gfx_open, layout_init, and text_init. */
 int ui_init(void);
 
 /* Shared helpers (ui.c). */
 Bitmap ui_get_screen(void);
-Bitmap *ui_get_viewport(void); /* the dungeon view bitmap, 224 x 136 */
-/* The rank name that the eye panel shows for a skill level (NEOPHYTE ...), or NULL for level 1. */
-const char *ui_get_skill_rank_name(int16_t level);
+Bitmap *ui_get_viewport(void);           /* the dungeon view bitmap, 224 x 136 */
 int ui_zone_box(int16_t zone, Box *box); /* the box of a layout zone on the screen */
 /* Fills the box of zone with one color. */
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color);
@@ -125,64 +121,14 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
 #define UI_RUNE_COUNT 24
 extern const char *const g_rune_names[UI_RUNE_COUNT];
 
-/* Champions and the inventory panel (ui_champion.c). */
-void ui_draw_champion_bar_graphs(int16_t champion_index);
-/* Draws one slot: a hand in the status box, or any slot (and the chest slots) in the inventory of
-   the champion. Empty body slots show their empty icon; wounded body slots get a red border, the
-   action hand of the acting champion the acting border. */
-void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot);
-/* Shows the damage a champion took: a splat with the number on the status box, or on the
-   portrait while the inventory of the champion is open. */
-void ui_draw_champion_damage(int16_t champion_index, int16_t damage);
-/* Draws the parts of a champion that have a redraw flag in its attributes, then clears the flags. */
-void ui_draw_champion_state(uint16_t champion_index);
-/* Sets redraw flags on all champions and draws them. */
-void ui_draw_all_champion_states(uint16_t attributes);
-/* Draws the portrait in the status box while the inventory is open. */
-void ui_draw_status_box_portrait(int16_t champion_index);
-/* Opens the inventory of a champion on the screen: dims the movement arrows and draws the
-   inventory background, labels, all slots, and the champion state. Sets g_session.inventory_champion_index. */
-void ui_draw_inventory_open(int16_t champion_index);
-/* Closes the inventory on the screen: the status box returns and the movement arrows come back.
-   The caller redraws the dungeon view. */
-void ui_draw_inventory_close(int16_t champion_index);
-/* Draws the inventory panel: resurrect/reincarnate for a candidate, the open scroll or chest in
-   the action hand, else food and water. */
-void ui_draw_panel(void);
+/* Width of a padded number in the status boxes and the panel. */
+#define VALUE_WIDTH 3
+/* A number as text: right aligned in width characters, or not padded. */
+const char *ui_format_number(char *buf, size_t size, uint16_t number, bool pad, int16_t width);
+/* The portrait of a champion as a bitmap. */
+Bitmap ui_get_champion_portrait(int16_t champion_index);
 /* Draws an object icon in an icon zone of the viewport. */
 void ui_draw_icon_to_viewport(int16_t icon, int16_t zone);
-/* Draws the food and water panel of the inventory, with "POISONED" when poisoned. */
-void ui_draw_panel_food_water_poisoned(void);
-/* Draws the eye panel: base skill levels above 1 (green after a level up), then the six
-   statistics with current value (red below maximum, green above) and maximum value. */
-void ui_draw_champion_skills_and_statistics(void);
-
-/* Inventory panel content (g_panel_content). */
-#define PANEL_CONTENT_FOOD_WATER 1
-#define PANEL_CONTENT_SCROLL     5
-#define PANEL_CONTENT_CHEST      6
-#define PANEL_CONTENT_RESURRECT  7
-#define PANEL_LINE_COUNT         3
-#define PANEL_LINE_SIZE          40
-#define STAMINA_DISPLAY_UNIT     10 /* the inventory shows stamina in tenths of the stored value */
-#define WEIGHT_TENTHS            10 /* loads and object weights are in tenths of a kilogram */
-extern int16_t g_panel_content;
-/* The object panel text: the name (bones with the champion name, a potion with its power rune
-   for a priest above level 1) and the description lines (burnt out, compass direction, waterskin
-   level, attributes, weight). Returns the line count. */
-int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
-/* The ATTACK (weapon) or DEFENSE (armour) meter of the advanced object panel: 1 with its label and value, else 0. */
-bool panel_draw_object_meter(uint16_t thing, const char **label, uint16_t *value);
-/* Draws an object in the panel: the open scroll, the open chest, or the name, icon, and
-   description of any other object; then the arrow, or the eye while it is pressed. */
-void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye);
-/* The panel while the eye is pressed: the leader hand object, or the skills and statistics.
-   ponytail: the leader hand object name stays; the original clears it until the eye is released. */
-void ui_draw_panel_eye(void);
-/* CSB, each tick with the inventory open: a scroll with a creature name or the magic map draws again. */
-void panel_redraw_scroll(void);
-/* A click in the open chest panel swaps the leader hand object with the clicked chest slot. */
-void panel_click_in_chest(int16_t x, int16_t y);
 
 /* Action area, spell area, movement arrows (ui_menus.c). */
 void menus_draw_movement_arrows(void);

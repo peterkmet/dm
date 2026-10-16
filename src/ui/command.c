@@ -17,7 +17,9 @@
 #include "engine/sound.h"
 #include "ui/advanced.h"
 #include "ui/dialog.h"
+#include "ui/panel.h"
 #include "ui/startend.h"
+#include "ui/status.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include "ui/view.h"
@@ -261,7 +263,7 @@ void command_toggle_inventory(int16_t champion_index)
     if (open == champion_index)
         champion_index = INVENTORY_CLOSE;
     if (open >= 0 && champion_index != INVENTORY_REDRAW) {
-        ui_draw_inventory_close(open);
+        panel_close(open);
         if (g_session.party_sleeping)
             return;
         if (champion_index == INVENTORY_CLOSE) {
@@ -275,7 +277,7 @@ void command_toggle_inventory(int16_t champion_index)
         return;
     if (champion_index == INVENTORY_REDRAW)
         champion_index = g_session.inventory_champion_index;
-    ui_draw_inventory_open(champion_index);
+    panel_open(champion_index);
     secondary_mouse = TABLES_MOUSE_INVENTORY;
     secondary_keys = TABLES_KEYS_NONE;
     command_discard_all_input();
@@ -296,7 +298,7 @@ void command_click_on_mouth(void)
     sound_request_play(SOUND_SWALLOW, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
     if (g_panel_content == PANEL_CONTENT_FOOD_WATER)
         g_champions[champion_index].attributes |= CHAMPION_ATTR_PANEL;
-    ui_draw_champion_state(champion_index);
+    status_draw_champion(champion_index);
 }
 
 void command_release_dead_champion(uint16_t champion_index, int16_t leader_index)
@@ -346,8 +348,8 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
             menus_set_magic_caster(-1);
     } else {
         menus_draw_spell_area();
-        ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_NAME_TITLE | CHAMPION_ATTR_STATISTICS |
-                                    CHAMPION_ATTR_ICON | CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_WOUNDS);
+        status_draw_all(CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_NAME_TITLE | CHAMPION_ATTR_STATISTICS |
+                        CHAMPION_ATTR_ICON | CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_WOUNDS);
     }
     g_redraw |= REDRAW_ACTION_AREA;
 }
@@ -387,9 +389,9 @@ static void click_on_champion_icon(int16_t cell)
         if (other < 0)
             ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + from, COLOR_BLACK);
         else
-            ui_draw_champion_state(other);
+            status_draw_champion(other);
     }
-    ui_draw_champion_state(moved);
+    status_draw_champion(moved);
 }
 
 /* The leader takes the top object of a pile in view cell 0-3 or the alcove. A creature in a
@@ -560,7 +562,7 @@ static void add_champion_symbol(int16_t symbol)
         return;
     menus_draw_available_symbols(g_champions[g_magic_caster_champion_index].symbol_step);
     menus_draw_champion_symbols(g_magic_caster_champion_index);
-    ui_draw_champion_state(g_magic_caster_champion_index);
+    status_draw_champion(g_magic_caster_champion_index);
 }
 
 /* The magic caster removes the last rune; the runes are drawn. */
@@ -648,7 +650,7 @@ static void click_on_eye(void)
     g_mouse_pointer_hidden = true;
     command_discard_all_input();
     draw_viewport_icon(ICON_EYE_LOOKING, ZONE_EYE);
-    ui_draw_panel_eye();
+    panel_draw_eye();
     ui_draw_viewport();
 }
 
@@ -658,7 +660,7 @@ static void process_left_release(void)
     if (pressing_eye) {
         pressing_eye = false;
         draw_viewport_icon(ICON_EYE, ZONE_EYE);
-        ui_draw_panel();
+        panel_draw();
         ui_draw_viewport();
     }
     pressing_mouth = false;
@@ -722,7 +724,7 @@ static void move_or_turn(int16_t command)
     highlight_zone(ZONE_MOVEMENT_ARROW_BEFORE_FIRST + command);
     if (command <= COMMAND_TURN_RIGHT) {
         move_turn_party(command);
-        ui_draw_all_champion_states(CHAMPION_ATTR_ICON);
+        status_draw_all(CHAMPION_ATTR_ICON);
         return;
     }
     move_party(command);

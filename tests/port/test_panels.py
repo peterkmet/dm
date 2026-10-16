@@ -40,8 +40,8 @@ def game(lib):
 
 
 def setup(lib):
-    lib.panel_draw_object_text.argtypes = [u16, ctypes.c_char_p, ctypes.c_char_p]
-    lib.panel_draw_object_text.restype = c16
+    lib.panel_format_object_text.argtypes = [u16, ctypes.c_char_p, ctypes.c_char_p]
+    lib.panel_format_object_text.restype = c16
     lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.rec_write.argtypes = [u16]
     lib.rec_thing_next.restype = u16
@@ -77,12 +77,12 @@ def chest_content(lib, chest):
 
 def port_text(lib, thing):
     name, lines = ctypes.create_string_buffer(40), ctypes.create_string_buffer(3 * 40)
-    n = lib.panel_draw_object_text(thing, name, lines)
+    n = lib.panel_format_object_text(thing, name, lines)
     return name.value, tuple(lines.raw[40 * i:40 * (i + 1)].split(b"\0")[0] for i in range(n))
 
 
 class Original:
-    """ui_draw_panel_object of KAOS with the dungeon things, strings, and champions of the port; the
+    """panel_draw_object of KAOS with the dungeon things, strings, and champions of the port; the
     name print and panel_print_line record their text, the graphics calls return at once."""
 
     def __init__(self, lib):
@@ -202,7 +202,7 @@ def test_object_text_matches_original(game, party):
 def put_in_action_hand(game, champions, thing):
     champions[0].slots[1] = thing
     champions[0].attributes |= 0x0800  # panel
-    game.ui_draw_champion_state(0)
+    game.status_draw_champion(0)
 
 
 @needs_dm
@@ -214,7 +214,7 @@ def test_chest_open_swap_close(game, party):
     open_chest = u16.in_dll(game, "g_open_chest")
     slots = (u16 * CHEST_SLOTS).in_dll(game, "g_open_chest_slots")
     render(game, "base")
-    game.ui_draw_inventory_open(0)
+    game.panel_open(0)
     put_in_action_hand(game, party, chest)
     assert c16.in_dll(game, "g_panel_content").value == 6
     assert open_chest.value == chest
@@ -233,16 +233,16 @@ def test_chest_open_swap_close(game, party):
     assert slots[len(content)] == content[0]
     assert u16.in_dll(game, "g_leader_hand_object").value == NONE
 
-    game.ui_draw_inventory_close(0)
+    game.panel_close(0)
     assert open_chest.value == NONE and list(slots) == [NONE] * CHEST_SLOTS
     assert chest_content(game, chest) == [hand] + content[1:] + [content[0]]
 
-    game.ui_draw_inventory_open(0)
+    game.panel_open(0)
     assert open_chest.value == chest
     game.inventory_take_slot_object(0, 1)
     assert open_chest.value == NONE
     assert chest_content(game, chest) == [hand] + content[1:] + [content[0]]
-    game.ui_draw_inventory_close(0)
+    game.panel_close(0)
 
 
 @needs_dm
@@ -250,18 +250,18 @@ def test_render_scroll_and_eye(game, party):
     scrolls = things_of(game, SCROLL)[0]
     assert scrolls
     render(game, "base")
-    game.ui_draw_inventory_open(0)
+    game.panel_open(0)
     put_in_action_hand(game, party, scrolls[0])
     assert c16.in_dll(game, "g_panel_content").value == 5
     sword = next(t for t in things_of(game, 5)[0] if game.gfx_get_object_name(game.object_get_icon_index(t)) == b"SWORD")
     game.inventory_put_hand_object(sword)
-    game.ui_draw_panel_eye()
+    game.panel_draw_eye()
     game.ui_draw_viewport()
     name, lines = port_text(game, sword)
     assert name == b"SWORD" and lines[-1].startswith(b"WEIGHS ")
     game.inventory_take_hand_object()
     party[0].slots[1] = NONE
-    game.ui_draw_inventory_close(0)
+    game.panel_close(0)
 
 
 @needs_dm
@@ -271,9 +271,9 @@ def test_eat_food_redraws_the_food_bar(game, party):
     thing = game.rec_find_unused_thing(10)
     game.rec_junk_set_type(thing, junk)
     party[0].food = 100
-    game.ui_draw_inventory_open(0)
+    game.panel_open(0)
     c16.in_dll(game, "g_panel_content").value = 1  # food and water
-    game.ui_draw_panel()
+    game.panel_draw()
     game.inventory_put_hand_object(thing)
     game.ui_get_viewport.restype = ctypes.POINTER(Bitmap)
     viewport = game.ui_get_viewport().contents
@@ -281,4 +281,4 @@ def test_eat_food_redraws_the_food_bar(game, party):
     game.command_click_on_mouth()
     assert viewport.px[: viewport.w * viewport.h] != before
     assert not party[0].attributes & 0x0900  # statistics and panel drawn
-    game.ui_draw_inventory_close(0)
+    game.panel_close(0)

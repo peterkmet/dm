@@ -11,6 +11,7 @@
 #include "engine/magic.h"
 #include "ui/advanced.h"
 #include "ui/draw.h"
+#include "ui/status.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include <stdio.h>
@@ -36,7 +37,7 @@ void menus_clear_acting_champion(void)
     int16_t champion_index = g_session.acting_champion_index;
     action_clear_acting_champion();
     if (champion_index >= 0)
-        ui_draw_champion_state(champion_index);
+        status_draw_champion(champion_index);
 }
 
 void menus_set_acting_champion(uint16_t champion_index)
@@ -44,7 +45,7 @@ void menus_set_acting_champion(uint16_t champion_index)
     if (!action_set_acting_champion(champion_index))
         return;
     g_action_area_contains_icons = false;
-    ui_draw_champion_state(champion_index);
+    status_draw_champion(champion_index);
     menus_draw_action_area();
 }
 
@@ -136,7 +137,7 @@ void menus_refresh_action_area(void)
         uint16_t turned = champion_turn_to_last_attackers();
         for (uint16_t i = 0; i < g_party_champion_count; i++)
             if (turned & 1 << i)
-                ui_draw_champion_state(i);
+                status_draw_champion(i);
     } else {
         if (g_session.acting_champion_index >= 0) {
             menus_clear_acting_champion();
@@ -150,7 +151,7 @@ void menus_refresh_action_area(void)
     if (g_session.acting_champion_index >= 0) {
         g_action_area_contains_icons = false;
         g_champions[g_session.acting_champion_index].attributes |= CHAMPION_ATTR_ACTION_HAND;
-        ui_draw_champion_state(g_session.acting_champion_index);
+        status_draw_champion(g_session.acting_champion_index);
         menus_draw_action_area();
     } else if (!g_session.action_damage) {
         g_action_area_contains_icons = true;

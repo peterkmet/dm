@@ -17,6 +17,7 @@
 #include "ui/advanced.h"
 #include "ui/command.h"
 #include "ui/gameloop.h"
+#include "ui/panel.h"
 #include "ui/startend.h"
 #include "ui/ui.h"
 #include "ui/video.h"
@@ -453,8 +454,8 @@ static void press_eye(int16_t x, int16_t y)
     command_process_click(x, y, CLICK_LEFT_PRESS);
     gameloop_run_commands();
     look_text.shown = true;
-    look_text.count = panel_draw_object_text(g_leader_hand_object, look_text.name, look_text.lines);
-    if (g_advanced_features && panel_draw_object_meter(g_leader_hand_object, &label, &value))
+    look_text.count = panel_format_object_text(g_leader_hand_object, look_text.name, look_text.lines);
+    if (g_advanced_features && panel_get_object_meter(g_leader_hand_object, &label, &value))
         snprintf(look_text.lines[look_text.count++], PANEL_LINE_SIZE, "%s %u", label, value);
     command_process_click(x, y, CLICK_LEFT_RELEASE);
     gameloop_run_commands();

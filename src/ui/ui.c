@@ -13,9 +13,12 @@
 #include "ui/audio.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
+#include "ui/panel.h"
+#include "ui/status.h"
 #include "ui/text.h"
 #include "ui/video.h"
 #include "ui/view.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -35,6 +38,11 @@
 static uint8_t viewport_px[VIEWPORT_MAX_W * VIEWPORT_MAX_H];
 static Bitmap viewport;
 static int16_t slot_box_icon[SLOT_BOX_COUNT];
+
+const char *const g_rune_names[UI_RUNE_COUNT] = {
+    "LO",  "UM", "ON",   "EE", "PAL", "MON", "YA", "VI",  "OH",   "FUL",  "DES", "ZO",
+    "VEN", "EW", "KATH", "IR", "BRO", "GOR", "KU", "ROS", "DAIN", "NETA", "RA",  "SAR",
+};
 
 /* Loads the strings, action names, and object names, and sets up the viewport bitmap. */
 int ui_init(void)
@@ -202,11 +210,11 @@ void ui_draw_interface(void)
     if (g_session.inventory_champion_index >= 0) {
         int16_t i = g_session.inventory_champion_index;
         inventory_set_open_champion(-1);
-        ui_draw_inventory_open(i);
+        panel_open(i);
     } else {
         menus_draw_movement_arrows();
     }
-    ui_draw_all_champion_states(CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ICON);
+    status_draw_all(CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ICON);
     menus_draw_spell_area();
     g_redraw |= REDRAW_ACTION_AREA;
     menus_refresh_action_area();
@@ -324,4 +332,29 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
             return input.command;
     }
     return 0;
+}
+
+const char *ui_format_number(char *buf, size_t size, uint16_t number, bool pad, int16_t width)
+{
+    if (pad)
+        snprintf(buf, size, "%*u", width, number);
+    else
+        snprintf(buf, size, "%u", number);
+    return buf;
+}
+
+Bitmap ui_get_champion_portrait(int16_t champion_index)
+{
+    return (Bitmap){CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champions[champion_index].runtime.portrait};
+}
+
+void ui_draw_icon_to_viewport(int16_t icon, int16_t zone)
+{
+    uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
+    Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
+    Box b;
+    if (!ui_get_icon_zone_box(zone, 0, &b))
+        return;
+    ui_extract_icon(icon, &bm);
+    draw_blit(&bm, 0, 0, ui_get_viewport(), &b, COLOR_NONE, 0);
 }

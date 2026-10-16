@@ -242,7 +242,7 @@ Event types without effect in the port:
 | 75 | `champion_poison` | Champions |
 | 0, 3, 4, 14–19, 21–23, 26–28, 42–47, 50–52, 54–59, 62–64, 66–69, 76, 80 and higher | None in the original | — |
 
-The redraw calls of events 70–79 (`set_dungeon_view_palette`, `ui_draw_champion_state`) belong to the drawing step.
+The redraw calls of events 70–79 (`set_dungeon_view_palette`, `status_draw_champion`) belong to the drawing step.
 
 ## Gaps
 

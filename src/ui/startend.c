@@ -24,6 +24,8 @@
 #include "ui/gameloop.h"
 #include "ui/layout.h"
 #include "ui/music.h"
+#include "ui/panel.h"
+#include "ui/status.h"
 #include "ui/text.h"
 #include "ui/ui.h"
 #include "ui/video.h"
@@ -277,7 +279,7 @@ static void print_champion_skills(uint16_t champion_index, int y)
         if (level == 1)
             continue;
         char line[ENDGAME_TEXT_SIZE];
-        snprintf(line, sizeof line, "%s %s", ui_get_skill_rank_name(level),
+        snprintf(line, sizeof line, "%s %s", panel_get_rank_name(level),
                  gfx_get_string(tables_get_base_skill_text(skill)));
         y += ENDGAME_SKILL_LINE;
         endgame_print_text(ENDGAME_SKILL_X, y, COLOR_LIGHT_GRAY, line);
@@ -297,7 +299,7 @@ static void draw_champion_parade(void)
         int16_t w = portrait_width;
         int16_t h = portrait_height;
         Box b;
-        Bitmap portrait = ui_draw_champion_portrait(i);
+        Bitmap portrait = ui_get_champion_portrait(i);
         if (layout_get_zone(ZONE_CHAMPION_PORTRAIT_FIRST + i, portrait_width, portrait_height, &b, &w, &h))
             draw_blit(&portrait, w, h, &screen, &b, COLOR_DARK_GRAY, 0);
         char name[sizeof champion->name + 1] = {0};
@@ -514,7 +516,7 @@ void startend_run_fuse_sequence(void)
         command_toggle_inventory(CHAMPION_MAX_COUNT);
     command_highlight_disable();
     game_start_fuse_sequence();
-    ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX);
+    status_draw_all(CHAMPION_ATTR_STATUS_BOX);
     fuse_update();
     map_step(g_party_direction, 1, 0, &x, &y);
     uint16_t lord = map_find_thing((Location){x, y}, THING_GROUP);

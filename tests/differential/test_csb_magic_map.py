@@ -68,7 +68,7 @@ def lib():
         ("ui_get_viewport", ctypes.POINTER(Bitmap), []), ("gfx_get_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_bool, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
         ("savegame_load_from", ctypes.c_int, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
-        ("ui_draw_inventory_open", None, [c16]), ("gfx_get_bitmap", ctypes.POINTER(Bitmap), [c16]),
+        ("panel_open", None, [c16]), ("gfx_get_bitmap", ctypes.POINTER(Bitmap), [c16]),
         ("map_get_stairs_exit_direction", c16, [c16, c16]), ("view_get_wall_ornament", c16, [c16, c16, c16]),
         ("view_get_floor_ornament", c16, [c16, c16]), ("map_set_party_map", None, [c16]),
         ("text_get_size", ctypes.c_bool, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
@@ -179,7 +179,7 @@ def cast(lib, c, spell_index, power, index=0):
 def panel(lib):
     """The viewport after the inventory of champion 0 opens; the same random seed for the teleporter tiles."""
     value(lib, "g_random_seed", u32).value = SEED
-    lib.ui_draw_inventory_open(0)
+    lib.panel_open(0)
     vp = lib.ui_get_viewport().contents
     return bytes(vp.px[:vp.w * vp.h])
 
@@ -647,7 +647,7 @@ def test_eye_keeps_the_leader_map(lib, csb):
     panel(lib)
     value(lib, "g_leader_hand_object", u16).value = take(lib, scrolls[b"MAGICMAP"])
     value(lib, "g_leader_empty_handed").value = 0
-    lib.ui_draw_panel_eye()
+    lib.panel_draw_eye()
     expected = grid_pixels(lib)
     assert grid_after_tick(lib) == expected
 
