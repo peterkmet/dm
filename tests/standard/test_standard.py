@@ -22,7 +22,8 @@ EXCEPTION_RULES = {"3.12", "4.8", "5.8"}  # the rules of docs/coding-standard.md
 OPEN_REASON = re.compile(r"open: epic (?:[1-9]|1[0-3])")
 
 HEX = re.compile(r"\b0x[0-9a-fA-F]{2,}\b")
-DECIMAL = re.compile(r"(?<![\w.])[1-9][0-9]+(?![\w.])")
+DECIMAL = re.compile(r"(?<![\w.])[1-9][0-9]+(?![\w.])|\[\s*[2-9]\s*\]|<=?\s*[2-9]\s*;")
+STRTOL_BASE = re.compile(r"\bstrto\w*\s*\([^;]*?,\s*10\s*\)")
 DECOMPILER = re.compile(r"\b(?:[uisbcp]Var\d+|local_[0-9a-f]+|arg_[0-9a-f]+|param_\d+|in_[AD][0-7]\w*|CONCAT\d+|DAT_[0-9a-f]+|FUN_[0-9a-f]+)\b")
 RECORD = re.compile(r"g_current_map\s*\[|dungeon_get_thing_data\([^()]*\)\s*\[")
 CONST_DEF = re.compile(r"\s*(?:static\s+)?const\s+\w+\s+[A-Z][A-Z0-9_]*\s*=")
@@ -166,7 +167,51 @@ def test_no_hex_literals():
 
 
 def test_no_decimal_literals():
-    line_check("decimal", DECIMAL)
+    line_check("decimal", DECIMAL, ignore=STRTOL_BASE)
+
+
+ENUM_ANY = re.compile(r"\b(?:typedef\s+)?enum\b\s*(\w+)?\s*\{[^}]*\}\s*(\w+)?\s*;", re.S)
+RETURN_TYPE = re.compile(r"^(?:static\s+)?(?:enum\s+)?([A-Z]\w*)\s+\**\s*[a-z_]\w*\s*\(", re.M)
+
+
+def test_enum_names_a_result_type():
+    returned = {name for path in sources() for name in RETURN_TYPE.findall(strip(path.read_text(errors="replace")))}
+    ok = allowed()
+    found = []
+    for path in sources():
+        if ("enum", rel(path)) in ok:
+            continue
+        text = strip(path.read_text(errors="replace"))
+        for m in ENUM_ANY.finditer(text):
+            name = m.group(1) or m.group(2)
+            if not name or name not in returned:
+                found.append(f"enum {rel(path)}  | {text.count(chr(10), 0, m.start()) + 1}: enum {name or '{...}'}")
+    report("enum", found)
+
+
+DEFINE_LINE = re.compile(r"^\s*#\s*define\s+([A-Z][A-Z0-9_]*)(?!\()\s+(.*?)\s*(?:/\*.*\*/)?\s*$")
+
+
+def constant_blocks(path):
+    """(first line, comment line above, [(name, value)]) of each run of adjacent #define lines with a value."""
+    lines = path.read_text(errors="replace").splitlines()
+    i = 0
+    while i < len(lines):
+        m = DEFINE_LINE.match(lines[i])
+        if not m or not m.group(2):
+            i += 1
+            continue
+        start, items = i, []
+        while i < len(lines) and (m := DEFINE_LINE.match(lines[i])) and m.group(2):
+            items.append((m.group(1), m.group(2)))
+            i += 1
+        yield start + 1, start > 0 and lines[start - 1].rstrip().endswith("*/"), items
+
+
+def test_constant_blocks_have_a_comment():
+    ok = allowed()
+    report("block", [f"block {rel(path)}  | {line}: {items[0][0]}" for path in sources() if ("block", rel(path)) not in ok
+                     for line, commented, items in constant_blocks(path) if not commented])
 
 
 def test_no_decompiler_names():
@@ -247,35 +292,38 @@ def test_functions_are_short():
 
 
 CONST_VALUE = re.compile(r"^\s*#define\s+([A-Z][A-Z0-9_]*)\s+\(?(-?(?:0x[0-9a-fA-F]+|\d+))[uUlL]*\)?\s*$", re.M)
-ENUM_VALUE = re.compile(r"\b([A-Z][A-Z0-9_]*)\s*=\s*\(?(-?(?:0x[0-9a-fA-F]+|\d+))[uUlL]*\)?\s*(?=[,}])")
-STATIC_CONST_VALUE = re.compile(r"\bconst\s+\w+\s+([A-Z][A-Z0-9_]*)\s*=\s*(-?(?:0x[0-9a-fA-F]+|\d+))[uUlL]*\s*;")
-HEX_LAST_PARTS = {"MASK", "FLAG", "FLAGS", "BIT"}
-DECIMAL_PARTS = {"COUNT", "SIZE", "BYTES", "TICKS", "MIN", "MAX", "LIMIT", "THRESHOLD", "WIDTH", "HEIGHT"}
+LITERAL = re.compile(r"^\(?-?(0x[0-9a-fA-F]+|\d+)[uUlL]*\)?$")
+HEX_LAST_PARTS = {"MASK", "MASKS", "FLAG", "FLAGS", "BIT", "BITS"}
+ADDRESS_FIRST_PARTS = {"KAOS", "CSB", "SWSH"}
+DECIMAL_PARTS = {"COUNT", "SIZE", "BYTES", "TICKS", "MIN", "MAX", "LIMIT", "THRESHOLD", "WIDTH", "HEIGHT", "SHIFT"}
 
 
-def constant_values(path):
-    """(name, literal) of each constant with a plain number value."""
-    text = strip(path.read_text(errors="replace"))
-    for pattern in (CONST_VALUE, ENUM_VALUE, STATIC_CONST_VALUE):
-        yield from pattern.findall(text)
-
-
-def notation_error(name, literal):
-    """Why the literal has the wrong base for the kind of value that the name tells, or None."""
-    parts = name.split("_")
-    is_hex = literal.lstrip("-").lower().startswith("0x")
-    if parts[-1] in HEX_LAST_PARTS:
-        return None if is_hex or abs(int(literal, 0)) < 10 else "a mask or flag in decimal"
-    if DECIMAL_PARTS & set(parts) and is_hex and parts[0] not in ("KAOS", "CSB", "SWSH"):
-        return "a count, size or limit in hex"
+def block_notation_error(items):
+    """Why a constant block breaks the notation rule (hex or decimal in every line), or None."""
+    literals = [m.group(1) for _, value in items if (m := LITERAL.match(value.strip()))]
+    hexes = [v for v in literals if v.lower().startswith("0x")]
+    decimals = [v for v in literals if not v.lower().startswith("0x")]
+    names = [name.split("_") for name, _ in items]
+    hex_kind = any(parts[-1] in HEX_LAST_PARTS or parts[0] in ADDRESS_FIRST_PARTS for parts in names)
+    decimal_kind = any(DECIMAL_PARTS & set(parts) for parts in names)
+    if hexes and decimals:
+        return "mixes hex and decimal"
+    if hex_kind and decimal_kind:
+        return "mixes flags or addresses with counts or sizes"
+    if hex_kind and decimals:
+        return "a flag, mask or address block in decimal"
+    if decimal_kind and hexes:
+        return "a count, size or limit block in hex"
+    if len({len(v) for v in hexes}) > 1:
+        return "hex values with different digit widths"
     return None
 
 
 def test_number_notation():
     ok = allowed()
-    report("notation", [f"notation {name}  | {rel(path)}: {literal}: {error}" for path in sources()
-                        for name, literal in constant_values(path)
-                        if (error := notation_error(name, literal)) and ("notation", name) not in ok])
+    report("notation", [f"notation {rel(path)}  | {line}: {items[0][0]}: {error}" for path in sources()
+                        if ("notation", rel(path)) not in ok
+                        for line, _, items in constant_blocks(path) if (error := block_notation_error(items))])
 
 
 NAMED_SHIFT = re.compile(r"(?:<<|>>)\s*([A-Z][A-Z0-9_]*_SHIFT)\b")
