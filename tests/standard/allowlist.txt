@@ -67,7 +67,6 @@ block ui/ui_menus.c open: epic 8
 block ui/video.c open: epic 8
 block ui/video.h open: epic 8
 block ui/view.c open: epic 8
-decimal engine/action.h open: epic 6
 decimal engine/champion.h open: epic 6
 decimal engine/group.c open: epic 6
 decimal engine/group.h open: epic 6
@@ -114,7 +113,6 @@ notation ui/ui_champion.c open: epic 8
 notation ui/video.c open: epic 8
 notation ui/video.h open: epic 8
 bool engine/action.c open: epic 6
-bool engine/champion.c open: epic 6
 bool engine/projectile.c:hit_creature open: epic 6
 bool platform/control.c:next_element open: epic 10
 bool platform/main.c:entrance_frame open: epic 11
@@ -662,7 +660,6 @@ type engine:effect open: epic 6
 type engine:info open: epic 6
 type engine:kinetic_energy open: epic 6
 type engine:len open: epic 6
-type engine:map open: epic 6
 type engine:mode open: epic 6
 type engine:out open: epic 6
 type engine:s open: epic 6
@@ -710,7 +707,6 @@ todo ui/ui.h open: epic 8
 block engine/explored.c open: epic 6
 block engine/group.c open: epic 6
 block engine/projectile.c open: epic 6
-block engine/savegame.h open: epic 6
 block engine/sensor.h open: epic 6
 block platform/platform.h open: epic 11
 block ui/command.h open: epic 8
