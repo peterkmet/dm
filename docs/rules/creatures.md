@@ -99,14 +99,14 @@ This function matches the original exactly (differential test).
 
 ## Damage and death
 
-`group_get_damage_creature_outcome(group, creature, at, damage, notify)` hurts one creature. It returns `OUTCOME_NO_CREATURE_KILLED` (0), `OUTCOME_SOME_CREATURES_KILLED` (1), or `OUTCOME_ALL_CREATURES_KILLED` (2).
+`group_get_damage_creature_outcome(group, creature, at, damage)` hurts one creature. It returns `OUTCOME_NO_CREATURE_KILLED` (0), `OUTCOME_SOME_CREATURES_KILLED` (1), or `OUTCOME_ALL_CREATURES_KILLED` (2).
 
 - An invulnerable creature takes no damage.
 - A creature that dies leaves smoke (explosion type 40). The smoke attack depends on the creature size.
-- When the last creature dies and `notify` is set, the group drops its possessions and the record becomes free.
+- When the last creature dies, the group drops its possessions and the record becomes free.
 - When one creature of several dies, the other creatures move down one index. The creature can drop its fixed possessions. An attacking group can start to flee, by its fear resistance.
 
-`group_get_damage_all_creatures_outcome(group, x, y, attack, notify)` hurts each creature with `attack ± attack / 8`.
+`group_get_damage_all_creatures_outcome(group, x, y, attack)` hurts each creature with `attack ± attack / 8`.
 
 ### Possessions
 

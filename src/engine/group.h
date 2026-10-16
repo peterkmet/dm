@@ -246,12 +246,11 @@ void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int
 void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t sound_mode);
 /* The group record becomes free. Health is cleared first, so that no projectile impact runs on the removal. */
 void group_delete(int16_t x, int16_t y);
-/* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group (with notify).
+/* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group.
    Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
-int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage,
-                                          bool notify);
+int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage);
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
-int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, bool notify);
+int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack);
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack);
 /* A closing door hits the creatures on its square; the survivors react to the danger. */
 void group_door_damages_creatures(int16_t x, int16_t y);
@@ -304,7 +303,7 @@ int16_t group_turn_by_teleporter(uint16_t teleporter, uint16_t group, int16_t ma
    the destination; drops keeps the cells when the whole group died. Returns true when the whole group died. */
 bool group_is_killed_by_fall(uint16_t group, Position source, Position landing, GroupFallDrops *drops);
 /* A group that died in a fall, or reached a map that does not allow its type, drops its possessions on the
-   destination and leaves the source square. */
+   destination and is deleted from the source square. */
 void group_remove_after_move(uint16_t group, Position source, Position landing, GroupFallDrops *drops);
 /* A group move after the square chain. */
 typedef struct {

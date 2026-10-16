@@ -723,10 +723,9 @@ static int16_t damage_creature(uint16_t group, uint16_t creature_index, Location
     return outcome;
 }
 
-int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage,
-                                          bool notify)
+int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage)
 {
-    return damage_creature(group, creature_index, at, damage, notify ? NULL : &(GroupFallDrops){0});
+    return damage_creature(group, creature_index, at, damage, NULL);
 }
 
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
@@ -748,9 +747,9 @@ static int16_t damage_all_creatures(uint16_t group, Location at, int16_t attack,
                          : OUTCOME_NO_CREATURE_KILLED;
 }
 
-int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, bool notify)
+int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack)
 {
-    return damage_all_creatures(group, (Location){x, y}, attack, notify ? NULL : &(GroupFallDrops){0});
+    return damage_all_creatures(group, (Location){x, y}, attack, NULL);
 }
 
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack)
@@ -765,7 +764,7 @@ uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int
 void group_door_damages_creatures(int16_t x, int16_t y)
 {
     uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
-    if (group_get_damage_all_creatures_outcome(group, x, y, DOOR_DAMAGE, true) != OUTCOME_ALL_CREATURES_KILLED)
+    if (group_get_damage_all_creatures_outcome(group, x, y, DOOR_DAMAGE) != OUTCOME_ALL_CREATURES_KILLED)
         group_process_reaction_event((Location){x, y}, REACTION_DANGER_ON_SQUARE);
 }
 
@@ -1424,7 +1423,7 @@ int16_t group_get_melee_action_damage(const MeleeAttack *attack)
         uint16_t random = random16();
         if ((random & DOUBLE_DAMAGE_RANDOM_MASK) < champion_get_skill_level(champion_index, skill_index))
             damage = damage * 2 + DOUBLE_DAMAGE_BONUS;
-        outcome = group_get_damage_creature_outcome(group, creature_index, at, damage, true);
+        outcome = group_get_damage_creature_outcome(group, creature_index, at, damage);
         /* 16-bit product as in the original */
         champion_add_skill_experience(champion_index, skill_index,
                                       ((uint16_t)(creature_experience(info) * damage) >> 4) + MELEE_EXPERIENCE_BONUS);

@@ -127,7 +127,7 @@ static void explosion_damage_square(uint16_t explosion_thing, uint16_t attack, i
         damage >>= 2;
     int16_t resisted = damage - random16() % (resistance * 2 + 1);
     if (resisted)
-        g_creature_damage_outcome = group_get_damage_all_creatures_outcome(group, x, y, resisted, true);
+        g_creature_damage_outcome = group_get_damage_all_creatures_outcome(group, x, y, resisted);
 }
 
 void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_combo, uint16_t y_combo, int16_t cell)
@@ -265,7 +265,7 @@ static int16_t hit_creature(uint16_t projectile, uint16_t thing, bool is_explosi
     if (!attack)
         return 1;
     uint16_t poison = group_get_resistance_adjusted_poison_attack(creature_type, g_projectile_poison_attack);
-    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, (Location){x, y}, attack + poison, true);
+    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, (Location){x, y}, attack + poison);
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
         group_process_reaction_event((Location){x, y}, REACTION_HIT_BY_PROJECTILE);
     g_creature_damage_outcome = outcome;
@@ -495,7 +495,7 @@ void projectile_process_move_event(TimelineEvent *event)
 static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t damage)
 {
     if (rec_group_creature_type(group) != CREATURE_MATERIALIZER || g_current_map_index != g_party_map_index) {
-        group_get_damage_all_creatures_outcome(group, x, y, damage, true);
+        group_get_damage_all_creatures_outcome(group, x, y, damage);
         return;
     }
     for (int16_t i = rec_group_last_creature(group); i >= 0; i--) {
@@ -505,7 +505,7 @@ static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t dama
         uint16_t extra = random_2bits();
         int16_t eighth = damage >> 3;
         group_get_damage_creature_outcome(group, i, (Location){x, y},
-                                          extra + (damage - eighth) + spread % (eighth * 2 + 1), true);
+                                          extra + (damage - eighth) + spread % (eighth * 2 + 1));
     }
 }
 
@@ -528,8 +528,7 @@ void explosion_process_step_event(TimelineEvent *event)
             champion_damage_all(damage, 0, ATTACK_RAW);
         } else if (group != THING_ENDOFLIST) {
             damage = group_get_resistance_adjusted_poison_attack(rec_group_creature_type(group), damage);
-            if (damage &&
-                group_get_damage_all_creatures_outcome(group, x, y, damage, true) != OUTCOME_ALL_CREATURES_KILLED &&
+            if (damage && group_get_damage_all_creatures_outcome(group, x, y, damage) != OUTCOME_ALL_CREATURES_KILLED &&
                 damage > POISON_REACTION_MIN_DAMAGE)
                 group_process_reaction_event((Location){x, y}, REACTION_DANGER_ON_SQUARE);
         }

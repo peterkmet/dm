@@ -263,9 +263,9 @@ def test_creature_dies_and_drops_possessions(lib):
     group = lib.map_find_thing(Location(x, y), C.THING_GROUP)
     assert group != 0xFFFE and lib.rec_write(group)[4] == C.CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value
-    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10, 1) == 0  # 10 damage: the skeleton survives
+    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10) == 0  # 10 damage: the skeleton survives
     assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == group
-    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 2000, 1) == 2
+    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 2000) == 2
     assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == 0xFFFE
     assert var(lib, u16, "g_active_group_count").value == active - 1
     drops = things_of_type(lib, x, y, C.THING_WEAPON) + things_of_type(lib, x, y, C.THING_ARMOUR)
