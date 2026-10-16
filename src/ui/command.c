@@ -436,7 +436,7 @@ static void touch_front_wall(void)
 
 /* An empty hand on the square ahead: a thud, or the hand goes into an imaginary wall while the
    button is down. */
-static void touch_front_square_empty_handed(int16_t imaginary_wall, int16_t x, int16_t y)
+static void touch_front_square_empty_handed(bool imaginary_wall, int16_t x, int16_t y)
 {
     if (!g_party_champion_count)
         return;
@@ -471,7 +471,7 @@ static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
 
 /* An empty-handed click in the dungeon view: grab an object, drink at a fountain, touch the wall, or touch the
    square ahead. */
-static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, int16_t imaginary_wall)
+static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, bool imaginary_wall)
 {
     for (int16_t i = 0; i < VIEW_CLICK_BOX_COUNT; i++) {
         if (!is_in_box(&g_dungeon_view_clickable_boxes[i], x, y))
@@ -511,9 +511,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
             return;
         }
     }
-    uint8_t square = map_get_square(fx, fy);
-    int16_t imaginary_wall =
-        rec_square_type(square) == SQUARE_FAKE_WALL && (square & FAKE_WALL_IMAGINARY) && !(square & FAKE_WALL_OPEN);
+    bool imaginary_wall = map_is_imaginary_wall((Location){fx, fy});
     if (g_leader_empty_handed) {
         click_empty_handed(x, y, fx, fy, imaginary_wall);
         return;
@@ -761,17 +759,6 @@ static void process_other_command(int16_t command)
     }
 }
 
-/* A step waits while the party cannot move, or while a projectile blocks this direction. */
-static bool is_movement_blocked(int16_t command)
-{
-    if (command < COMMAND_MOVE_FORWARD || command > COMMAND_MOVE_LEFT)
-        return false;
-    if (g_disabled_movement_ticks)
-        return true;
-    return g_projectile_disabled_movement_ticks && NORMALIZE(command + g_party_direction - COMMAND_MOVE_FORWARD) ==
-                                                       g_last_projectile_disabled_movement_direction;
-}
-
 bool command_process_queue(void)
 {
     if (!queue_count)
@@ -780,7 +767,7 @@ bool command_process_queue(void)
     int16_t command = q.command;
     int16_t x = q.x;
     int16_t y = q.y;
-    if (is_movement_blocked(command))
+    if (move_is_blocked(command))
         return false;
     queue_first = (queue_first + 1) % QUEUE_SIZE;
     queue_count--;

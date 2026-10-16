@@ -61,5 +61,7 @@ void move_turn_party(int16_t command);
 /* One step of the party. With champions, a bump hurts two champions and a group in the way blocks the step and
    reacts to the party. */
 void move_party(int16_t command);
+/* True when a movement command must wait: the party cannot move, or a projectile blocks that direction. */
+bool move_is_blocked(int16_t command);
 
 #endif

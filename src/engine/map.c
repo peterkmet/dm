@@ -230,6 +230,12 @@ bool map_is_party_on(Location at)
     return g_current_map_index == g_party_map_index && at.x == g_party_map_x && at.y == g_party_map_y;
 }
 
+bool map_is_imaginary_wall(Location at)
+{
+    uint8_t square = map_get_square(at.x, at.y);
+    return rec_square_type(square) == SQUARE_FAKE_WALL && (square & FAKE_WALL_IMAGINARY) && !(square & FAKE_WALL_OPEN);
+}
+
 uint16_t map_find_thing(Location at, int16_t type_wanted)
 {
     uint16_t thing = map_get_square_first_thing(at.x, at.y);

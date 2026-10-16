@@ -190,6 +190,8 @@ Position map_get_level_change_location(Position place, int16_t level_delta);
 
 /* The party stands on the square of the current map. */
 bool map_is_party_on(Location at);
+/* True when square at of the current map is a closed fake wall that the party can walk into. */
+bool map_is_imaginary_wall(Location at);
 /* The first thing of a type on a square of the current map, or THING_ENDOFLIST. */
 uint16_t map_find_thing(Location at, int16_t type_wanted);
 /* The first thing on a square of any map, or THING_ENDOFLIST. */

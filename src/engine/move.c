@@ -487,6 +487,16 @@ void move_party(int16_t command)
     g_disabled_movement_ticks = ticks;
 }
 
+bool move_is_blocked(int16_t command)
+{
+    if (command < COMMAND_MOVE_FORWARD || command > COMMAND_MOVE_LEFT)
+        return false;
+    if (g_disabled_movement_ticks)
+        return true;
+    return g_projectile_disabled_movement_ticks && NORMALIZE(command + g_party_direction - COMMAND_MOVE_FORWARD) ==
+                                                       g_last_projectile_disabled_movement_direction;
+}
+
 void move_reset(void)
 {
     g_session.new_party_map = -1;
