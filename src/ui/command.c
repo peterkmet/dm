@@ -69,7 +69,7 @@ static bool highlight_enabled;
 
 void command_set_entrance_input(void)
 {
-    primary_mouse = UI_INPUT_ENTRANCE;
+    primary_mouse = TABLES_MOUSE_ENTRANCE;
     secondary_mouse = NO_TABLE;
     primary_keys = TABLES_KEYS_ENTRANCE;
     secondary_keys = TABLES_KEYS_NONE;
@@ -104,8 +104,8 @@ void command_restore_input(void)
 
 void command_set_game_input(void)
 {
-    primary_mouse = UI_INPUT_INTERFACE;
-    secondary_mouse = UI_INPUT_MOVEMENT;
+    primary_mouse = TABLES_MOUSE_INTERFACE;
+    secondary_mouse = TABLES_MOUSE_MOVEMENT;
     primary_keys = TABLES_KEYS_INTERFACE;
     secondary_keys = TABLES_KEYS_MOVEMENT;
 }
@@ -264,7 +264,7 @@ void command_toggle_inventory(int16_t champion_index)
         if (g_party_is_sleeping)
             return;
         if (champion_index == INVENTORY_CLOSE) {
-            secondary_mouse = UI_INPUT_MOVEMENT;
+            secondary_mouse = TABLES_MOUSE_MOVEMENT;
             secondary_keys = TABLES_KEYS_MOVEMENT;
             command_discard_all_input();
             return;
@@ -275,7 +275,7 @@ void command_toggle_inventory(int16_t champion_index)
     if (champion_index == INVENTORY_REDRAW)
         champion_index = g_inventory_champion_ordinal - 1;
     ui_draw_inventory_open(champion_index);
-    secondary_mouse = UI_INPUT_INVENTORY;
+    secondary_mouse = TABLES_MOUSE_INVENTORY;
     secondary_keys = TABLES_KEYS_NONE;
     command_discard_all_input();
 }
@@ -330,7 +330,7 @@ static void show_candidate(void)
 static void click_in_candidate_panel(int16_t x, int16_t y)
 {
     Bitmap screen = ui_get_screen();
-    int16_t command = ui_command_from_mouse(UI_INPUT_RESURRECT, x, y, CLICK_LEFT_PRESS);
+    int16_t command = ui_command_from_mouse(TABLES_MOUSE_RESURRECT, x, y, CLICK_LEFT_PRESS);
     int16_t index = g_party_champion_count - 1;
     if (!command || !g_leader_empty_handed)
         return;
@@ -358,7 +358,7 @@ static void click_in_status_box(int16_t champion_index, int16_t x, int16_t y)
         champion_set_leader(champion_index);
         return;
     }
-    int16_t command = ui_command_from_mouse(UI_INPUT_STATUS_BOX, x, y, CLICK_LEFT_PRESS);
+    int16_t command = ui_command_from_mouse(TABLES_MOUSE_STATUS_BOX, x, y, CLICK_LEFT_PRESS);
     if (command >= COMMAND_SET_LEADER_FIRST && command < COMMAND_SET_LEADER_FIRST + CHAMPION_MAX_COUNT)
         champion_set_leader(command - COMMAND_SET_LEADER_FIRST);
     else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST && command < COMMAND_CLICK_SLOT_BOX_FIRST + HAND_SLOT_BOX_COUNT)
@@ -574,7 +574,7 @@ static void delete_champion_symbol(void)
 /* Click in the spell area: a caster tab, a rune, delete, or cast. */
 static void click_in_spell_area(int16_t x, int16_t y)
 {
-    int16_t command = ui_command_from_mouse(UI_INPUT_SPELL_AREA, x, y, CLICK_LEFT_PRESS);
+    int16_t command = ui_command_from_mouse(TABLES_MOUSE_SPELL_AREA, x, y, CLICK_LEFT_PRESS);
     if (command == COMMAND_CHANGE_MAGIC_CASTER) {
         for (uint16_t i = 0; i < g_party_champion_count; i++)
             if (ui_is_point_in_zone(ZONE_SPELL_CASTER_TAB_FIRST + g_magic_caster_champion_index * SPELL_TAB_STEP + i, x,
@@ -612,13 +612,13 @@ static void click_in_action_area(int16_t x, int16_t y)
     if (!g_acting_champion_ordinal) {
         if (!g_action_area_contains_icons)
             return;
-        int16_t command = ui_command_from_mouse(UI_INPUT_ACTION_ICONS, x, y, CLICK_LEFT_PRESS);
+        int16_t command = ui_command_from_mouse(TABLES_MOUSE_ACTION_ICONS, x, y, CLICK_LEFT_PRESS);
         int16_t index = command - COMMAND_SELECT_ACTING_CHAMPION_FIRST;
         if (command && index >= 0 && index < g_party_champion_count)
             menus_set_acting_champion(index);
         return;
     }
-    int16_t command = ui_command_from_mouse(UI_INPUT_ACTION_NAMES, x, y, CLICK_LEFT_PRESS);
+    int16_t command = ui_command_from_mouse(TABLES_MOUSE_ACTION_NAMES, x, y, CLICK_LEFT_PRESS);
     if (command == COMMAND_PASS) {
         highlight_zone(ZONE_ACTION_PASS_BOX);
         trigger_action(-1);
@@ -676,13 +676,13 @@ static void go_to_sleep(void)
     champion_go_to_sleep();
     draw_viewport_message(TEXT_WAKE_UP);
     g_wait_for_input_max_frames = 0;
-    set_input((InputTables){UI_INPUT_SLEEPING, NO_TABLE, TABLES_KEYS_SLEEPING, TABLES_KEYS_NONE});
+    set_input((InputTables){TABLES_MOUSE_SLEEPING, NO_TABLE, TABLES_KEYS_SLEEPING, TABLES_KEYS_NONE});
     command_discard_all_input();
 }
 
 void command_wake_up(void)
 {
-    if (primary_mouse != UI_INPUT_SLEEPING)
+    if (primary_mouse != TABLES_MOUSE_SLEEPING)
         return;
     champion_wake_up();
     g_stop_waiting_for_input = true;
@@ -698,7 +698,7 @@ static void freeze_game(void)
     command_freeze_game();
     draw_viewport_message(TEXT_GAME_FROZEN);
     frozen_input = get_current_input();
-    set_input((InputTables){UI_INPUT_FROZEN, NO_TABLE, TABLES_KEYS_FROZEN, TABLES_KEYS_NONE});
+    set_input((InputTables){TABLES_MOUSE_FROZEN, NO_TABLE, TABLES_KEYS_FROZEN, TABLES_KEYS_NONE});
     command_discard_all_input();
 }
 

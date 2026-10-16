@@ -238,7 +238,7 @@ static void endgame_print_text(int x, int y, uint8_t color, const char *text)
 /* Writes a box into an entry of the endgame mouse table: x1, x2, y1, y2 as big-endian words. */
 static void set_endgame_click_box(int16_t entry_index, const Box *b)
 {
-    tables_set_mouse_input_box(UI_INPUT_ENDGAME, entry_index, b->x, b->x + b->w - 1, b->y, b->y + b->h - 1);
+    tables_set_mouse_input_box(TABLES_MOUSE_ENDGAME, entry_index, b->x, b->x + b->w - 1, b->y, b->y + b->h - 1);
 }
 
 /* A framed button with a text; its box becomes the click box of the endgame mouse table entry. */
@@ -357,7 +357,7 @@ static void draw_the_end(bool with_buttons)
 /* Waits up to 900 frames for RESTART THIS GAME or QUIT. Returns true when the saved game is loaded. */
 static bool wait_for_restart(void)
 {
-    command_set_only_mouse_input(UI_INPUT_ENDGAME);
+    command_set_only_mouse_input(TABLES_MOUSE_ENDGAME);
     command_discard_all_input();
     g_restart_requested = false;
     for (int16_t frames = RESTART_WAIT_FRAMES; --frames && !g_restart_requested;) {

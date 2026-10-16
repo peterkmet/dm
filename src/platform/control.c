@@ -432,14 +432,14 @@ static const char *click_slot(const char *args)
     if (g_inventory_champion_ordinal == champion_index + 1) {
         if (slot < 0 || slot >= SLOT_CHEST_FIRST + (g_open_chest != THING_NONE ? SLOT_CHEST_COUNT : 0))
             return "slot out of range";
-        int16_t table = slot >= SLOT_CHEST_FIRST ? UI_INPUT_CHEST : UI_INPUT_INVENTORY;
+        int16_t table = slot >= SLOT_CHEST_FIRST ? TABLES_MOUSE_CHEST : TABLES_MOUSE_INVENTORY;
         if (!click_command(table, COMMAND_CLICK_SLOT_BOX_FIRST + UI_SLOT_BOX_INVENTORY_FIRST + slot))
             return "slot not found";
         return NULL;
     }
     if (slot != SLOT_HAND_READY && slot != SLOT_HAND_ACTION)
         return "open the inventory of this champion first (open_inventory)";
-    if (!click_command(UI_INPUT_STATUS_BOX, COMMAND_CLICK_SLOT_BOX_FIRST + 2 * champion_index + slot))
+    if (!click_command(TABLES_MOUSE_STATUS_BOX, COMMAND_CLICK_SLOT_BOX_FIRST + 2 * champion_index + slot))
         return "slot not found";
     return NULL;
 }
@@ -467,7 +467,7 @@ static const char *send_look(const char *args)
     char request[SLOT_REQUEST_SIZE];
     if (!g_inventory_champion_ordinal)
         return "open an inventory first (open_inventory): the eye is in the inventory";
-    if (!find_click(UI_INPUT_INVENTORY, COMMAND_CLICK_EYE, &x, &y))
+    if (!find_click(TABLES_MOUSE_INVENTORY, COMMAND_CLICK_EYE, &x, &y))
         return "eye not found";
     if (slot < 0) {
         if (g_leader_empty_handed)
@@ -499,8 +499,8 @@ static const char *swap_champions(const char *args)
     if (pair[0] == pair[1])
         return "a and b must be different champions";
     for (int k = 0; k < 2; k++)
-        if (!click_command(UI_INPUT_INTERFACE, COMMAND_CLICK_CHAMPION_ICON_FIRST +
-                                                   NORMALIZE(g_champions[pair[k]].cell - g_party_direction)))
+        if (!click_command(TABLES_MOUSE_INTERFACE, COMMAND_CLICK_CHAMPION_ICON_FIRST +
+                                                       NORMALIZE(g_champions[pair[k]].cell - g_party_direction)))
             return "champion icon not found";
     return NULL;
 }
@@ -512,7 +512,7 @@ static const char *use_mouth(const char *args)
         return "open the inventory of the champion who eats or drinks first";
     if (g_leader_empty_handed)
         return "take the food or drink in the leader hand first";
-    click_command(UI_INPUT_INVENTORY, COMMAND_CLICK_MOUTH);
+    click_command(TABLES_MOUSE_INVENTORY, COMMAND_CLICK_MOUTH);
     return NULL;
 }
 
@@ -525,7 +525,7 @@ static const char *choose_action(const char *args)
     if (g_acting_champion_ordinal && g_acting_champion_ordinal != champion_index + 1)
         return "another champion's action menu is open: use pass first";
     if (!g_acting_champion_ordinal) {
-        click_command(UI_INPUT_ACTION_ICONS, COMMAND_SELECT_ACTING_CHAMPION_FIRST + champion_index);
+        click_command(TABLES_MOUSE_ACTION_ICONS, COMMAND_SELECT_ACTING_CHAMPION_FIRST + champion_index);
         if (g_acting_champion_ordinal != champion_index + 1)
             return "this champion cannot act now (action disabled, or no actions)";
     }
@@ -533,7 +533,7 @@ static const char *choose_action(const char *args)
         return "index out of range of the action menu (see state action_menu)";
     turn.has_damage = true;
     g_action_damage = 0;
-    click_command(UI_INPUT_ACTION_NAMES, COMMAND_ACTION_FIRST + index);
+    click_command(TABLES_MOUSE_ACTION_NAMES, COMMAND_ACTION_FIRST + index);
     turn.damage = g_action_damage;
     if (batch.active && batch.damage_count < BATCH_DAMAGE_MAX)
         batch.damages[batch.damage_count++] = g_action_damage;
@@ -544,7 +544,7 @@ static const char *pass(const char *args)
 {
     (void)args;
     if (g_acting_champion_ordinal)
-        click_command(UI_INPUT_ACTION_NAMES, COMMAND_PASS);
+        click_command(TABLES_MOUSE_ACTION_NAMES, COMMAND_PASS);
     return NULL;
 }
 
@@ -566,7 +566,7 @@ static const char *spell_click(int16_t command)
 {
     if (g_magic_caster_champion_index == -1)
         return "no spell area";
-    click_command(UI_INPUT_SPELL_AREA, command);
+    click_command(TABLES_MOUSE_SPELL_AREA, command);
     return NULL;
 }
 
@@ -608,7 +608,7 @@ static const char *recruit(const char *args)
         return "choice must be resurrect, reincarnate, or cancel";
     for (int k = 0; k < 3; k++)
         if (!strcmp(choice, choices[k])) {
-            click_command(UI_INPUT_RESURRECT, PANEL_RESURRECT + k);
+            click_command(TABLES_MOUSE_RESURRECT, PANEL_RESURRECT + k);
             return NULL;
         }
     return "choice must be resurrect, reincarnate, or cancel";
@@ -619,7 +619,7 @@ static const char *set_leader(const char *args)
     int16_t champion_index;
     if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
-    click_command(UI_INPUT_STATUS_BOX, COMMAND_SET_LEADER_FIRST + champion_index);
+    click_command(TABLES_MOUSE_STATUS_BOX, COMMAND_SET_LEADER_FIRST + champion_index);
     return NULL;
 }
 
@@ -630,7 +630,7 @@ static const char *sleep_party(const char *args)
         return "no leader";
     if (!g_inventory_champion_ordinal)
         press_key(command_champion_key(g_leader_index));
-    click_command(UI_INPUT_INVENTORY, COMMAND_SLEEP);
+    click_command(TABLES_MOUSE_INVENTORY, COMMAND_SLEEP);
     return NULL;
 }
 
@@ -638,7 +638,7 @@ static const char *wake(const char *args)
 {
     (void)args;
     if (g_party_is_sleeping)
-        click_command(UI_INPUT_SLEEPING, COMMAND_WAKE_UP);
+        click_command(TABLES_MOUSE_SLEEPING, COMMAND_WAKE_UP);
     return NULL;
 }
 

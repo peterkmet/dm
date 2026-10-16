@@ -378,23 +378,23 @@ int16_t tables_get_pointer_shadow_dy(void);
 /* The 4 bit planes of the arrow or the hand pointer; *w and *h get its size. */
 const uint8_t *tables_get_pointer_planes(bool hand, int16_t *w, int16_t *h);
 
-/* Mouse input tables of COMMAND.C, in the order of their KAOS addresses. */
-#define UI_INPUT_INTERFACE    0  /* the champion bars, the action and spell areas */
-#define UI_INPUT_MOVEMENT     1  /* the movement arrows and the dungeon view */
-#define UI_INPUT_INVENTORY    2  /* the open inventory */
-#define UI_INPUT_SLEEPING     3  /* the sleeping party: a click wakes it */
-#define UI_INPUT_FROZEN       4  /* the frozen game: a click goes on */
-#define UI_INPUT_ACTION_NAMES 5  /* the action names of the action menu */
-#define UI_INPUT_ACTION_ICONS 6  /* the action icons of the champions */
-#define UI_INPUT_SPELL_AREA   7  /* the runes and the cast button */
-#define UI_INPUT_STATUS_BOX   8  /* the status boxes of the champions */
-#define UI_INPUT_CHEST        9  /* the slots of an open chest */
-#define UI_INPUT_RESURRECT    10 /* the resurrect and reincarnate buttons */
-#define UI_INPUT_NAME_ENTRY   11 /* the keyboard of the champion name entry */
-#define UI_INPUT_ENTRANCE     12 /* the entrance buttons */
-#define UI_INPUT_ENDGAME      13 /* RESTART THIS GAME and QUIT of the endgame screen */
-#define UI_INPUT_DIALOG_FIRST 14 /* the dialog tables: + full screen * 4 + choice count - 1 */
-#define UI_INPUT_COUNT        (UI_INPUT_DIALOG_FIRST + 8)
+/* Mouse input tables: which screen boxes give which command, in the order of their image addresses. */
+#define TABLES_MOUSE_INTERFACE    0  /* the champion bars, the action and spell areas */
+#define TABLES_MOUSE_MOVEMENT     1  /* the movement arrows and the dungeon view */
+#define TABLES_MOUSE_INVENTORY    2  /* the open inventory */
+#define TABLES_MOUSE_SLEEPING     3  /* the sleeping party: a click wakes it */
+#define TABLES_MOUSE_FROZEN       4  /* the frozen game: a click goes on */
+#define TABLES_MOUSE_ACTION_NAMES 5  /* the action names of the action menu */
+#define TABLES_MOUSE_ACTION_ICONS 6  /* the action icons of the champions */
+#define TABLES_MOUSE_SPELL_AREA   7  /* the runes and the cast button */
+#define TABLES_MOUSE_STATUS_BOX   8  /* the status boxes of the champions */
+#define TABLES_MOUSE_CHEST        9  /* the slots of an open chest */
+#define TABLES_MOUSE_RESURRECT    10 /* the resurrect and reincarnate buttons */
+#define TABLES_MOUSE_NAME_ENTRY   11 /* the keyboard of the champion name entry */
+#define TABLES_MOUSE_ENTRANCE     12 /* the entrance buttons */
+#define TABLES_MOUSE_ENDGAME      13 /* RESTART THIS GAME and QUIT of the endgame screen */
+#define TABLES_MOUSE_DIALOG_FIRST 14 /* the dialog tables: + full screen * 4 + choice count - 1 */
+#define TABLES_MOUSE_COUNT        (TABLES_MOUSE_DIALOG_FIRST + 8)
 /* Mouse input entry: a command (0 ends a table), a box x1-x2, y1-y2, and the buttons. A negative x1 marks a
    zone entry; x2 is then the zone. */
 typedef struct {

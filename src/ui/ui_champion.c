@@ -938,7 +938,7 @@ void panel_click_in_chest(int16_t x, int16_t y)
 {
     if (g_panel_content != PANEL_CONTENT_CHEST || g_leader_index == -1)
         return;
-    int16_t command = ui_command_from_mouse(UI_INPUT_CHEST, x, y, UI_BUTTON_LEFT);
+    int16_t command = ui_command_from_mouse(TABLES_MOUSE_CHEST, x, y, UI_BUTTON_LEFT);
     if (!command)
         return;
     uint16_t slot_box = command - COMMAND_CLICK_SLOT_BOX_FIRST;

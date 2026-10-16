@@ -76,7 +76,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | Place | Assumption |
 |---|---|
 | `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `KAOS_ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
-| `command.c`: `command_set_entrance_input`, `KAOS_KEYS_ENTRANCE` (`0x10393c`), `UI_INPUT_ENTRANCE` | Mouse table and key table come from the KAOS data. |
+| `command.c`: `command_set_entrance_input`, `KAOS_KEYS_ENTRANCE` (`0x10393c`), `TABLES_MOUSE_ENTRANCE` | Mouse table and key table come from the KAOS data. |
 | `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_new_game = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
 | `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_start_new_game(data)` or `startend_load_saved_game()`. |
 | `main.c`: `main` | `MODE_ENTRANCE` is the first mode after the start. `DM_AUTO_ENTER` (and `turnbased`) presses Return at the start. |

@@ -733,15 +733,15 @@ const uint8_t *tables_get_pointer_planes(bool hand, int16_t *w, int16_t *h)
 /* Image address of a mouse input table; the dialog tables come from a pointer table. */
 static uint32_t mouse_table(int16_t table)
 {
-    static const uint32_t at[UI_INPUT_DIALOG_FIRST] = {
+    static const uint32_t at[TABLES_MOUSE_DIALOG_FIRST] = {
         KAOS_MOUSE_INPUT_INTERFACE,    KAOS_MOUSE_INPUT_MOVEMENT,   KAOS_MOUSE_INPUT_INVENTORY,
         KAOS_MOUSE_INPUT_SLEEPING,     KAOS_MOUSE_INPUT_FROZEN,     KAOS_MOUSE_INPUT_ACTION_NAMES,
         KAOS_MOUSE_INPUT_ACTION_ICONS, KAOS_MOUSE_INPUT_SPELL_AREA, KAOS_MOUSE_INPUT_STATUS_BOX,
         KAOS_MOUSE_INPUT_CHEST,        KAOS_MOUSE_INPUT_RESURRECT,  KAOS_MOUSE_INPUT_NAME_ENTRY,
         KAOS_MOUSE_INPUT_ENTRANCE,     KAOS_MOUSE_INPUT_ENDGAME,
     };
-    if (table >= UI_INPUT_DIALOG_FIRST)
-        return kaos_u32(KAOS_DIALOG_MOUSE_INPUTS + DIALOG_TABLE_POINTER_BYTES * (table - UI_INPUT_DIALOG_FIRST));
+    if (table >= TABLES_MOUSE_DIALOG_FIRST)
+        return kaos_u32(KAOS_DIALOG_MOUSE_INPUTS + DIALOG_TABLE_POINTER_BYTES * (table - TABLES_MOUSE_DIALOG_FIRST));
     return at[table];
 }
 /* Entry of a mouse input table; false at the terminator. */
