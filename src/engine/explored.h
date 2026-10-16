@@ -23,7 +23,7 @@ bool explored_is_seen(int16_t map, int16_t x, int16_t y);
    (a wall, a closed fake wall, a closed door), and fewer in the two darkest light levels. */
 int16_t explored_get_visible_depths(Position place, int16_t direction);
 /* True when the party at place facing direction sees the square depth rows ahead and right squares to the right
-   (-1 left, 1 right). */
+   (-1 left, 1 right); squares of the center lane and of the party row are always seen. */
 bool explored_is_side_visible(Position place, int16_t direction, int16_t depth, int16_t right);
 /* Marks the squares that the party sees from place facing direction as seen. */
 void explored_mark_visible(Position place, int16_t direction);

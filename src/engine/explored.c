@@ -88,14 +88,14 @@ static bool blocks_sight(int16_t map, int16_t x, int16_t y)
 }
 
 /* The darkest light level. */
-#define DARKEST_PALETTE 5 /* g_party_light_level of the darkest light level */
+#define DARKEST_PALETTE 5
 
 /* Rows the party can make out in the current light: the darkest palettes hide the far rows. */
 static int16_t light_depths(void)
 {
-    /* the darkest two light levels hide the far rows */
     if (g_session.cheat_light)
         return EXPLORED_VIEW_DEPTHS;
+    /* the darkest two light levels hide the far rows */
     if (g_party_light_level >= DARKEST_PALETTE)
         return EXPLORED_VIEW_DEPTHS - 2;
     if (g_party_light_level >= DARKEST_PALETTE - 1)
