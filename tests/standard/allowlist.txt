@@ -993,7 +993,6 @@ packed ui/view.c open: epic 8
 dead-api data/os.h:os_log open: epic 4
 dead-api data/os.h:g_os_log_hook open: epic 4
 dead-api data/os.h:g_os_fatal_hook open: epic 4
-include data/kaos.c:data/os.h open: epic 4
 dead-api data/kaos.h:kaos_free open: epic 4
 dead-api data/kaos.h:kaos_s8 open: epic 4
 kaos engine/dungeon.c open: epic 4
