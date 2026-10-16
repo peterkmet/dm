@@ -3,7 +3,6 @@
 decimal data/csbimage.c byte sizes in the table of APPB addresses
 decimal ui/musicmap.c the FM-Towns CSB track of each square: table data of the CHTWE.EXP soundtrack table, not in the game files
 decimal ui/music.c the FM-Towns level tracks and the Super NES trigger squares: table data of the soundtracks, not in the game files
-engine-write ui/view.c open: module cleanup
 engine-write ui/gameloop.c open: module cleanup
 engine-write ui/startend.c open: module cleanup
 engine-write ui/select.c open: module cleanup

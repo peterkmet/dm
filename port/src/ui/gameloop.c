@@ -34,14 +34,8 @@
 #include "video.h"
 #include "view.h"
 
-#define TORCH_BURN_INTERVAL_MASK   0x1ff /* torches lose one charge every 512 ticks */
-#define TIME_EFFECTS_MASK          0x3f  /* champion time effects every 64 ticks */
-#define TIME_EFFECTS_SLEEPING_MASK 0xf   /* every 16 ticks while the party sleeps */
-#define LIGHT_SOURCE_COUNT         (CHAMPION_MAX_COUNT * 2)
-#define LIGHT_SOURCES_USED         5 /* the brightest torches that add light */
-#define LIGHT_FIRST_SHIFT          6
-#define POINTER_ZONE_COUNT         16
-#define POINTER_SHADOW_COLOR       12 /* black: the shadow, swapped with the transparent color 0 */
+#define POINTER_ZONE_COUNT   16
+#define POINTER_SHADOW_COLOR 12 /* black: the shadow, swapped with the transparent color 0 */
 
 /* PointerZone.champion: champion index + 1 in bits 0-2; 8 and more is the name zone of the champion */
 enum { ZONE_CHAMPION_INDEX_MASK = 7, ZONE_CHAMPION_NAME = 8 };
@@ -162,7 +156,7 @@ void entrance_open_doors(void)
     if (snprintf(path, sizeof path, "%s/Dungeon.DAT", data_dir) >= (int)sizeof path || !g_frame_hook ||
         !dungeon_load(path) || !ui_zone_box(ZONE_VIEWPORT, &box))
         return;
-    view_set_light(g_party_map_index, 0);
+    inventory_set_dungeon_view_palette(g_party_map_index, 0);
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
     Bitmap view = {box.w, box.h, view_px};
     for (int16_t y = 0; y < box.h; y++)
@@ -176,65 +170,16 @@ void entrance_open_doors(void)
     }
 }
 
-/* The party light: magical light plus the burning torches in the hands, the brightest first
-   with a falling weight (set_dungeon_view_palette). */
-int16_t gameloop_party_light(void)
+/* Sets the darkness of the dungeon view and the creature rules from the party light. */
+static void set_party_light(void)
 {
-    int16_t power[LIGHT_SOURCE_COUNT] = {0};
-    int16_t n = 0;
-    int16_t total = 0;
-    int16_t shift = LIGHT_FIRST_SHIFT;
-    for (uint16_t i = 0; i < g_party_champion_count; i++)
-        for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--, n++) {
-            uint16_t thing = g_champions[i].slots[hand];
-            int16_t type = object_get_type(thing);
-            if (type >= ICON_TORCH_UNLIT && type <= ICON_TORCH_LAST)
-                power[n] = weapon_charges(thing);
-        }
-    /* the original sorts only the 4 brightest: the fifth light is any of the rest */
-    for (int i = 0; i < LIGHT_SOURCES_USED - 1; i++)
-        for (int k = i + 1; k < LIGHT_SOURCE_COUNT; k++)
-            if (power[i] < power[k]) {
-                int16_t t = power[i];
-                power[i] = power[k];
-                power[k] = t;
-            }
-    for (int i = 0; i < LIGHT_SOURCES_USED; i++)
-        if (power[i]) {
-            /* the 16-bit cast keeps the overflow of the original word arithmetic */
-            total += (int16_t)(*tables_get_light_power_to_light_amount(power[i]) << shift) >> LIGHT_FIRST_SHIFT;
-            shift = max16(0, shift - 1);
-        }
-    return g_party.magical_light_amount + total;
-}
-
-/* Burning torches in the hands lose one charge; a burnt out torch may be discarded later. */
-static void decrease_torches_light_power(void)
-{
-    uint16_t count = g_party_champion_count - (g_candidate_champion_ordinal ? 1 : 0);
-    for (uint16_t i = 0; i < count; i++)
-        for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--) {
-            uint16_t thing = g_champions[i].slots[hand];
-            int16_t icon = object_get_icon_index(thing);
-            if (icon < ICON_TORCH_UNLIT || icon > ICON_TORCH_LAST || !weapon_charges(thing))
-                continue;
-            weapon_set_charges(thing, weapon_charges(thing) - 1);
-            if (!weapon_charges(thing))
-                rec_object_clear_important(thing);
-        }
-}
-
-int16_t gameloop_set_light(void)
-{
-    int16_t light = gameloop_party_light();
-    view_set_light(g_party_map_index, light);
-    return light;
+    inventory_set_dungeon_view_palette(g_party_map_index, inventory_get_party_light());
 }
 
 /* The dungeon view of the party in the light of the party. */
 void gameloop_draw_view(void)
 {
-    gameloop_set_light();
+    set_party_light();
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
     ui_set_palette(NULL);
 }
@@ -432,18 +377,9 @@ void gameloop_run_commands(void)
    the champions get their time effects. */
 static void advance_game_time(void)
 {
-    g_game_time++;
-    if (!(g_game_time & TORCH_BURN_INTERVAL_MASK))
-        decrease_torches_light_power();
-    if (g_party.freeze_life_ticks)
-        g_party.freeze_life_ticks--;
+    game_advance_time();
     menus_refresh_action_area();
-    if (!(g_game_time & (g_party_is_sleeping ? TIME_EFFECTS_SLEEPING_MASK : TIME_EFFECTS_MASK)))
-        champion_apply_time_effects();
-    if (g_disabled_movement_ticks)
-        g_disabled_movement_ticks--;
-    if (g_projectile_disabled_movement_ticks)
-        g_projectile_disabled_movement_ticks--;
+    game_apply_tick_effects();
 }
 
 /* The champions that died in the tick let go of the inventory, the presses, and their icons.
@@ -479,7 +415,7 @@ void gameloop_tick(void)
             move_process_new_party_map();
             command_discard_all_input();
         }
-        gameloop_set_light(); /* the creature rules see the light also while the view is not drawn */
+        set_party_light(); /* the creature rules see the light also while the view is not drawn */
         event_process_expired();
     } while (g_new_party_map_index != -1);
     music_update();

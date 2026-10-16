@@ -191,6 +191,9 @@ extern bool g_cheat_immortal; /* the health of a champion stops at 1 */
 extern bool g_cheat_food;     /* food and water do not go down */
 
 void game_start_new(void);
+void game_increment_time(void);
+void game_advance_time(void);
+void game_apply_tick_effects(void);
 
 int16_t min16(int16_t a, int16_t b);
 int16_t max16(int16_t a, int16_t b);

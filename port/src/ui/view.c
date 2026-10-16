@@ -208,7 +208,7 @@ enum {
     DOOR_FRONT_FR_FL = 0x439,
 };
 
-enum { LIGHT_LEVELS = 6, LIGHT_DARKEST = LIGHT_LEVELS - 1 };
+enum { LIGHT_LEVELS = 6 };
 
 /* What the view draws of a square. */
 typedef struct {
@@ -2177,22 +2177,6 @@ void view_load_map(int16_t m)
     load_creature_colors(creature_types, creature_type_count);
 }
 
-/* The darkness of the party light amount on map m (a map of difficulty 0 is
-   always bright) for the view and the creature rules. */
-void view_set_light(int16_t m, int16_t amount)
-{
-    g_dungeon_view_palette_index = 0;
-    if (!map_difficulty(m))
-        return;
-    if (amount < 1) {
-        g_dungeon_view_palette_index = LIGHT_DARKEST;
-        return;
-    }
-    while (g_dungeon_view_palette_index < LIGHT_DARKEST &&
-           amount < *tables_get_palette_light_threshold(g_dungeon_view_palette_index))
-        g_dungeon_view_palette_index++;
-}
-
 /* The square forward and right of (x, y) in direction dir. */
 static void get_relative_square(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_t *y)
 {
@@ -2586,7 +2570,7 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
         draw_blit(&viewport, width, height, &screen, &box, -1, 0);
 }
 
-/* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that view_set_light set.
+/* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that inventory_set_dungeon_view_palette set.
    Returns true on success. */
 bool view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
 {

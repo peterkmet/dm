@@ -24,10 +24,6 @@ bool gameloop_start_new_game(const char *dir);
 void gameloop_start_loaded_game(void);
 /* gameloop_start_loaded_game without the "GAME LOADED" dialog: the game goes on at once (quick load). */
 void gameloop_continue_loaded_game(void);
-/* The light amount of the party: light sources in the hands and the light spells. */
-int16_t gameloop_party_light(void);
-/* Sets the darkness of the dungeon view from the party light. Returns the party light amount. */
-int16_t gameloop_set_light(void);
 /* The dungeon view of the party in the light of the party (draw_dungeon_view). */
 void gameloop_draw_view(void);
 /* Runs the waiting commands of one 50 Hz frame. Returns 1 when the wait for input is over and a

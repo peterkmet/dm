@@ -425,7 +425,7 @@ static void fuse_update(void)
     event_process_expired();
     gameloop_draw_view();
     sound_play_pending();
-    g_game_time++;
+    game_increment_time();
     wait_frame();
 }
 

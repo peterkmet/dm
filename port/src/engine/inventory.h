@@ -64,6 +64,11 @@ void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint1
 void inventory_click_on_slot_box(uint16_t slot_box);
 bool inventory_fill_leader_hand_at_fountain(void);
 void inventory_set_open_champion(int16_t ordinal);
+/* The light amount of the party: light sources in the hands and the light spells. */
+int16_t inventory_get_party_light(void);
+/* Sets g_dungeon_view_palette_index from the party light amount (magical light plus torches) on map map_index. */
+void inventory_set_dungeon_view_palette(int16_t map_index, int16_t light);
+void inventory_decrease_torches_light_power(void);
 /* Results of inventory_process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
 enum { MOUTH_REFUSED, MOUTH_SWALLOWED, MOUTH_USED_UP };
 int16_t inventory_process_click_on_mouth(void);

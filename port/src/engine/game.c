@@ -2,6 +2,7 @@
 #include "adventure.h"
 #include "champion.h"
 #include "dungeon.h"
+#include "inventory.h"
 #include "map.h"
 #include "random.h"
 #include "sensor.h"
@@ -18,10 +19,13 @@
 #define STAT_VERY_HIGH             150    /* statistic gains above this value are quartered */
 #define ATTACK_FACTOR_MIN          16     /* below this, the statistic factor divides the attack by 8 */
 #define ATTACK_FACTOR_SHIFT        7
-#define LUCK_STEP                  2   /* luck change after each luck test */
-#define PERCENT_RANGE              100 /* a luck test draws random16() % 100 */
-#define ATTACK_LOW_FACTOR_SHIFT    3   /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
-#define EVENT_KEY_TYPE_SHIFT       8   /* the sort key of an event: type in the high byte, priority in the low byte */
+#define LUCK_STEP                  2     /* luck change after each luck test */
+#define PERCENT_RANGE              100   /* a luck test draws random16() % 100 */
+#define ATTACK_LOW_FACTOR_SHIFT    3     /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
+#define EVENT_KEY_TYPE_SHIFT       8     /* the sort key of an event: type in the high byte, priority in the low byte */
+#define TORCH_BURN_INTERVAL_MASK   0x1ff /* torches lose one charge every 512 ticks */
+#define TIME_EFFECTS_MASK          0x3f  /* champion time effects every 64 ticks */
+#define TIME_EFFECTS_SLEEPING_MASK 0xf   /* every 16 ticks while the party sleeps */
 
 Party g_party;
 Champion g_champions[CHAMPION_MAX_COUNT];
@@ -79,6 +83,33 @@ void game_start_new(void)
     g_game_id = r * random16();
     timeline_init();
     game_init_active_groups();
+}
+
+/* One tick of the game clock alone (the fuse sequence). */
+void game_increment_time(void)
+{
+    g_game_time++;
+}
+
+/* The game time advances one tick: torches burn and freeze life counts down. */
+void game_advance_time(void)
+{
+    game_increment_time();
+    if (!(g_game_time & TORCH_BURN_INTERVAL_MASK))
+        inventory_decrease_torches_light_power();
+    if (g_party.freeze_life_ticks)
+        g_party.freeze_life_ticks--;
+}
+
+/* The rest of the tick: the champions get their time effects and the movement delays count down. */
+void game_apply_tick_effects(void)
+{
+    if (!(g_game_time & (g_party_is_sleeping ? TIME_EFFECTS_SLEEPING_MASK : TIME_EFFECTS_MASK)))
+        champion_apply_time_effects();
+    if (g_disabled_movement_ticks)
+        g_disabled_movement_ticks--;
+    if (g_projectile_disabled_movement_ticks)
+        g_projectile_disabled_movement_ticks--;
 }
 
 int16_t min16(int16_t a, int16_t b)

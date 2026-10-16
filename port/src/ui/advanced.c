@@ -48,7 +48,8 @@ static void draw_readout(Bitmap *viewport)
     int16_t y = AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + TEXT_LINE_HEIGHT - TEXT_BASELINE_GAP;
     snprintf(line, sizeof line, "LEVEL %u X %d Y %d", map_level(g_party_map_index), g_party_map_x, g_party_map_y);
     text_draw(viewport, x, y, COLOR_WHITE, COLOR_BLACK, line);
-    snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)], gameloop_party_light());
+    snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)],
+             inventory_get_party_light());
     text_draw(viewport, x, y + TEXT_LINE_HEIGHT + TEXT_BASELINE_GAP, COLOR_WHITE, COLOR_BLACK, line);
     if (g_game_mode != GAME_MODE_ADVANCED)
         return;
