@@ -4,7 +4,6 @@
 #include "data/tables.h"
 #include "engine/arith.h"
 #include "engine/champion.h"
-#include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include <string.h>

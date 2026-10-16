@@ -171,7 +171,7 @@ A statistic modifier changes the maximum, current, and minimum value.
 
 | Potion | Effect |
 |---|---|
-| Ros | Dexterity + amount (`game_adjust_statistic_current_value`) |
+| Ros | Dexterity + amount (`champion_adjust_statistic`) |
 | Ku | Strength + `p / 35 + 5` |
 | Dane | Wisdom + amount |
 | Neta | Vitality + amount |

@@ -10,6 +10,7 @@
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
+#include "engine/magic.h"
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/move.h"

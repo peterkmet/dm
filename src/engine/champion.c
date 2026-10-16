@@ -20,6 +20,19 @@
 #include "engine/timeline.h"
 #include <string.h>
 
+#define STAT_HIGH               120 /* statistic gains above this value are halved */
+#define STAT_VERY_HIGH          150 /* statistic gains above this value are quartered */
+#define ATTACK_FACTOR_MIN       16  /* below this, the statistic factor divides the attack by 8 */
+#define ATTACK_FACTOR_SHIFT     7
+#define LUCK_STEP               2   /* luck change after each luck test */
+#define PERCENT_RANGE           100 /* a luck test draws random16() % 100 */
+#define ATTACK_LOW_FACTOR_SHIFT 3   /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
+
+Champion g_champions[CHAMPION_MAX_COUNT];
+uint16_t g_party_champion_count;
+int16_t g_leader_index = -1;
+int16_t g_magic_caster_champion_index = -1;
+
 #define MAXIMUM_HEALTH                    999
 #define MAXIMUM_STAMINA                   9999
 #define LEVEL_EXPERIENCE                  500 /* experience for level 2; each level doubles it */
@@ -616,7 +629,7 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
 uint16_t champion_get_maximum_load(const Champion *c)
 {
     uint16_t load =
-        game_get_stamina_adjusted_value(c, c->statistics[STAT_STRENGTH][STAT_CURRENT] * LOAD_PER_STRENGTH + LOAD_BASE);
+        champion_adjust_by_stamina(c, c->statistics[STAT_STRENGTH][STAT_CURRENT] * LOAD_PER_STRENGTH + LOAD_BASE);
     if (c->wounds)
         load -= load >> (c->wounds & WOUND_LEGS ? WOUNDED_LEGS_LOAD_SHIFT : WOUNDED_LOAD_SHIFT);
     if (object_get_icon_index(c->slots[SLOT_FEET]) == ICON_ELVEN_BOOTS)
@@ -688,7 +701,7 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
             skill += champion_get_skill_level(champion_index, SKILL_SHOOT);
         strength += skill * 2;
     }
-    strength = game_get_stamina_adjusted_value(c, strength);
+    strength = champion_adjust_by_stamina(c, strength);
     if (c->wounds & (slot == SLOT_HAND_READY ? WOUND_READY_HAND : WOUND_ACTION_HAND))
         strength >>= 1;
     return bounded_value(0, strength >> 1, ROLL_MAXIMUM);
@@ -744,13 +757,13 @@ static int16_t resisted_attack(int16_t champion_index, int16_t attack, uint16_t 
         defense /= count;
     switch (attack_type) {
     case ATTACK_FIRE:
-        attack = game_get_statistic_adjusted_attack(c, STAT_ANTIFIRE, attack) - g_party.fire_shield_defense;
+        attack = champion_get_adjusted_attack(c, STAT_ANTIFIRE, attack) - g_party.fire_shield_defense;
         break;
     case ATTACK_SELF:
         defense = (defense >> 1) + champion_get_skill_level(champion_index, SKILL_NINJA);
         break;
     case ATTACK_MAGIC:
-        return game_get_statistic_adjusted_attack(c, STAT_ANTIMAGIC, attack) - g_party.spell_shield_defense;
+        return champion_get_adjusted_attack(c, STAT_ANTIMAGIC, attack) - g_party.spell_shield_defense;
     case ATTACK_PSYCHIC: {
         int16_t wisdom = PSYCHIC_WISDOM_LIMIT - c->statistics[STAT_WISDOM][STAT_CURRENT];
         return wisdom <= 0 ? 0 : scale_value(attack, DAMAGE_SCALE_SHIFT, wisdom);
@@ -771,7 +784,7 @@ int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t a
         attack = resisted_attack(champion_index, attack, allowed_wounds, attack_type);
         if (attack <= 0)
             return 0;
-        int16_t threshold = game_get_statistic_adjusted_attack(
+        int16_t threshold = champion_get_adjusted_attack(
             c, STAT_VITALITY, (random16() & WOUND_THRESHOLD_RANDOM_MASK) + WOUND_THRESHOLD_BASE);
         if (threshold < attack)
             do {
@@ -1109,4 +1122,44 @@ uint16_t champion_reset_data_to_start_game(void)
     g_leader_hand_object = THING_NONE;
     g_leader_index = -1;
     return hand;
+}
+
+int16_t champion_adjust_by_stamina(const Champion *champion, int16_t value)
+{
+    int16_t half = champion->maximum_stamina >> 1;
+    if (champion->current_stamina < half)
+        value = (value >> 1) + (int16_t)((int32_t)value * champion->current_stamina / half); /* 16-bit quotient */
+    return value;
+}
+
+uint16_t champion_get_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)
+{
+    int16_t factor = STAT_LIMIT - champion->statistics[statistic][STAT_CURRENT];
+    return factor < ATTACK_FACTOR_MIN ? attack >> ATTACK_LOW_FACTOR_SHIFT
+                                      : scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
+}
+
+void champion_adjust_statistic(Champion *champion, uint16_t statistic, int16_t delta)
+{
+    uint8_t *s = champion->statistics[statistic];
+    if (delta < 0) {
+        delta = max16(delta, s[STAT_MINIMUM] - s[STAT_CURRENT]);
+    } else {
+        if (s[STAT_CURRENT] > STAT_HIGH)
+            delta = (s[STAT_CURRENT] > STAT_VERY_HIGH ? delta >> 2 : delta >> 1) + 1;
+        delta = min16(delta, STAT_LIMIT - s[STAT_CURRENT]);
+    }
+    s[STAT_CURRENT] += delta;
+}
+
+bool champion_is_lucky(Champion *champion, uint16_t percentage)
+{
+    uint8_t *luck = champion->statistics[STAT_LUCK];
+    if (random_bit() && percentage < random16() % PERCENT_RANGE)
+        return true;
+    bool lucky = (int8_t)luck[STAT_CURRENT] > 0 && percentage < random16() % (luck[STAT_CURRENT] * 2);
+    int16_t change = lucky ? -LUCK_STEP : LUCK_STEP;
+    luck[STAT_CURRENT] =
+        bounded_value((int8_t)luck[STAT_MINIMUM], (int8_t)luck[STAT_CURRENT] + change, (int8_t)luck[STAT_MAXIMUM]);
+    return lucky;
 }

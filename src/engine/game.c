@@ -2,9 +2,9 @@
 #include "engine/game.h"
 #include "data/os.h"
 #include "data/tables.h"
-#include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/group.h"
+#include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/party.h"
 #include "engine/random.h"
@@ -12,24 +12,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define STAT_HIGH                  120 /* statistic gains above this value are halved */
-#define STAT_VERY_HIGH             150 /* statistic gains above this value are quartered */
-#define ATTACK_FACTOR_MIN          16  /* below this, the statistic factor divides the attack by 8 */
-#define ATTACK_FACTOR_SHIFT        7
-#define LUCK_STEP                  2     /* luck change after each luck test */
-#define PERCENT_RANGE              100   /* a luck test draws random16() % 100 */
-#define ATTACK_LOW_FACTOR_SHIFT    3     /* a statistic factor below ATTACK_FACTOR_MIN divides the attack by 8 */
 #define TORCH_BURN_INTERVAL_MASK   0x1ff /* torches lose one charge every 512 ticks */
 #define TIME_EFFECTS_MASK          0x3f  /* champion time effects every 64 ticks */
 #define TIME_EFFECTS_SLEEPING_MASK 0xf   /* every 16 ticks while the party sleeps */
 #define FUSE_MAGICAL_LIGHT         200
 #define FUSE_SHIELD                100
 
-Champion g_champions[CHAMPION_MAX_COUNT];
-uint16_t g_party_champion_count;
-int16_t g_leader_index = -1;
-int16_t g_magic_caster_champion_index = -1;
-uint16_t g_leader_hand_object = THING_NONE;
 bool g_party_is_sleeping, g_party_dead;
 bool g_game_won;
 uint32_t g_game_time, g_game_id;
@@ -130,44 +118,4 @@ void game_update_map_coordinates_after_relative_movement(int16_t direction, int1
     int16_t right = turn_right(direction);
     *map_x = *map_x + steps_forward * tables_get_step_east(direction) + steps_right * tables_get_step_east(right);
     *map_y = *map_y + steps_forward * tables_get_step_north(direction) + steps_right * tables_get_step_north(right);
-}
-
-int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)
-{
-    int16_t half = champion->maximum_stamina >> 1;
-    if (champion->current_stamina < half)
-        value = (value >> 1) + (int16_t)((int32_t)value * champion->current_stamina / half); /* 16-bit quotient */
-    return value;
-}
-
-uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)
-{
-    int16_t factor = STAT_LIMIT - champion->statistics[statistic][STAT_CURRENT];
-    return factor < ATTACK_FACTOR_MIN ? attack >> ATTACK_LOW_FACTOR_SHIFT
-                                      : scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
-}
-
-void game_adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta)
-{
-    uint8_t *s = champion->statistics[statistic];
-    if (delta < 0) {
-        delta = max16(delta, s[STAT_MINIMUM] - s[STAT_CURRENT]);
-    } else {
-        if (s[STAT_CURRENT] > STAT_HIGH)
-            delta = (s[STAT_CURRENT] > STAT_VERY_HIGH ? delta >> 2 : delta >> 1) + 1;
-        delta = min16(delta, STAT_LIMIT - s[STAT_CURRENT]);
-    }
-    s[STAT_CURRENT] += delta;
-}
-
-bool game_is_lucky(Champion *champion, uint16_t percentage)
-{
-    uint8_t *luck = champion->statistics[STAT_LUCK];
-    if (random_bit() && percentage < random16() % PERCENT_RANGE)
-        return true;
-    bool lucky = (int8_t)luck[STAT_CURRENT] > 0 && percentage < random16() % (luck[STAT_CURRENT] * 2);
-    int16_t change = lucky ? -LUCK_STEP : LUCK_STEP;
-    luck[STAT_CURRENT] =
-        bounded_value((int8_t)luck[STAT_MINIMUM], (int8_t)luck[STAT_CURRENT] + change, (int8_t)luck[STAT_MAXIMUM]);
-    return lucky;
 }

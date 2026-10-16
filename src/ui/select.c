@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/select.h"
 #include "data/adventure.h"
+#include "engine/game.h"
 #include "ui/advanced.h"
 #include "ui/text.h"
 #include "ui/ui.h"

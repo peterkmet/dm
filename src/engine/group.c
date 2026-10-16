@@ -704,7 +704,7 @@ static void group_steal_from_champion(uint16_t group, uint16_t champion_index)
     bool stole = false;
     int16_t chance = STEAL_CHANCE_START - champion_get_dexterity(champion);
     uint16_t slot_index = random16();
-    while (chance > 0 && !game_is_lucky(champion, chance)) {
+    while (chance > 0 && !champion_is_lucky(champion, chance)) {
         uint16_t slot = tables_get_steal_slot(slot_index & 7);
         if (champion->slots[slot] != THING_NONE) {
             stole = true;
@@ -1225,7 +1225,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
         uint16_t aim = (random16() & AIM_RANDOM_MASK) + info->dexterity + difficulty + dodge_bonus - AIM_RANDOM_CENTER;
         if (aim <= dexterity && random_2bits())
             return 0;
-        if (game_is_lucky(champion, LUCK_PERCENT_AGAINST_CREATURE))
+        if (champion_is_lucky(champion, LUCK_PERCENT_AGAINST_CREATURE))
             return 0;
     }
     uint16_t wounds = creature_hit_wounds(info);
@@ -1251,7 +1251,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
     sound_request_play(SOUND_CHAMPION_0_DAMAGED + champion_index, g_party_map_x, g_party_map_y,
                        SOUND_MODE_ONE_TICK_LATER);
     if (info->poison_attack && random_bit()) {
-        uint16_t poison = game_get_statistic_adjusted_attack(champion, STAT_VITALITY, info->poison_attack);
+        uint16_t poison = champion_get_adjusted_attack(champion, STAT_VITALITY, info->poison_attack);
         champion_poison(champion_index, poison);
     }
     return damage;
@@ -1331,7 +1331,7 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
             uint16_t defense = (random16() & AIM_RANDOM_MASK) + info->dexterity + difficulty + g_party_light_level * 2 -
                                AIM_RANDOM_CENTER;
             hit = defense < dexterity || !random_2bits() ||
-                  game_is_lucky(champion, LUCK_PERCENT_AGAINST_MISS - hit_probability);
+                  champion_is_lucky(champion, LUCK_PERCENT_AGAINST_MISS - hit_probability);
         }
         if (hit) {
             damage = melee_hit_damage(champion_index, info, icon, difficulty, damage_factor);

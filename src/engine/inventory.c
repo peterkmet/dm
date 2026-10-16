@@ -51,6 +51,8 @@
 #define KU_STRENGTH_BASE           5
 #define VI_WOUND_ROLL_DIVISOR      42 /* Vi: max(1, p / 42) wound rolls */
 
+uint16_t g_leader_hand_object = THING_NONE;
+
 int16_t g_inventory_champion_ordinal;
 bool g_leader_empty_handed = true;
 uint16_t g_open_chest_slots[SLOT_CHEST_COUNT] = {THING_NONE, THING_NONE, THING_NONE, THING_NONE,
@@ -427,16 +429,16 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
     uint16_t amount = power / POTION_AMOUNT_DIVISOR + POTION_AMOUNT_BASE;
     switch (potion_type(potion)) {
     case POTION_ROS:
-        game_adjust_statistic_current_value(c, STAT_DEXTERITY, amount);
+        champion_adjust_statistic(c, STAT_DEXTERITY, amount);
         break;
     case POTION_KU:
-        game_adjust_statistic_current_value(c, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE);
+        champion_adjust_statistic(c, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE);
         break;
     case POTION_DANE:
-        game_adjust_statistic_current_value(c, STAT_WISDOM, amount);
+        champion_adjust_statistic(c, STAT_WISDOM, amount);
         break;
     case POTION_NETA:
-        game_adjust_statistic_current_value(c, STAT_VITALITY, amount);
+        champion_adjust_statistic(c, STAT_VITALITY, amount);
         break;
     case POTION_ANTIVENIN:
         champion_unpoison(champion_index);

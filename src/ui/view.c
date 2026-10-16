@@ -8,6 +8,7 @@
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
+#include "engine/magic.h"
 #include "engine/map.h"
 #include "engine/party.h"
 #include "engine/projectile.h"
@@ -2546,7 +2547,7 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
     if (view_map != g_party_map_index)
         view_load_map(g_party_map_index);
     if (spells[MAGIC_MAP_NETA]) {
-        game_get_magic_map_position(spells, &map, &x, &y);
+        magic_get_map_position(spells, &map, &x, &y);
         dir = spells[MAGIC_MAP_NETA] - 1;
     }
     map_set_current_map(map);

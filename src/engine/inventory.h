@@ -86,4 +86,6 @@ void inventory_close_chest(void);
 /* No inventory and no chest are open at the start of a game. */
 void inventory_reset(void);
 
+extern uint16_t g_leader_hand_object;
+
 #endif

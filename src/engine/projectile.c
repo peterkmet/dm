@@ -5,6 +5,7 @@
 #include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/event.h"
+#include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/move.h"

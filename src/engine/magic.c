@@ -315,7 +315,7 @@ static bool cast_magic_map(uint16_t champion_index, uint16_t type, int16_t power
                 break;
             }
         c->magic_map[MAGIC_MAP_NETA] = g_party_direction + 1;
-        game_set_magic_map_position(c->magic_map, g_party_map_index, g_party_map_x, g_party_map_y);
+        magic_set_map_position(c->magic_map, g_party_map_index, g_party_map_x, g_party_map_y);
         *disabled_ticks = d * d >> 1;
         ticks = *disabled_ticks * MAGIC_MAP_NETA_TICKS_FACTOR;
     } else {

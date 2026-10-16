@@ -3,11 +3,82 @@
 #define DM_ENGINE_CHAMPION_H
 /* Prefixes: champion_ */
 #include "data/tables.h"
-#include "engine/game.h"
 #include <stdbool.h>
 #include <stdint.h>
 
 /* Champion rules of KAOS (CHAMPION.C): docs/rules/champions.md. */
+
+#define CHAMPION_MAX_COUNT  4
+#define STAT_LIMIT          170 /* no statistic grows above this value */
+#define STAT_MINIMUM_VALUE  30  /* the minimum of each statistic of a new champion */
+#define STAT_LUCK           0
+#define STAT_STRENGTH       1
+#define STAT_DEXTERITY      2
+#define STAT_WISDOM         3
+#define STAT_VITALITY       4
+#define STAT_ANTIMAGIC      5
+#define STAT_ANTIFIRE       6
+#define STAT_COUNT          7
+#define STAT_MANA           STAT_COUNT /* object modifiers: the change goes to the maximum mana */
+#define STAT_MAXIMUM        0
+#define STAT_CURRENT        1
+#define STAT_MINIMUM        2
+#define STAT_VALUE_COUNT    3
+/* Champion slots (Champion.slots), then the slots of the open chest. */
+#define SLOT_HAND_READY     0
+#define SLOT_HAND_ACTION    1
+#define SLOT_HEAD           2
+#define SLOT_TORSO          3
+#define SLOT_LEGS           4
+#define SLOT_FEET           5
+#define SLOT_POUCH_2        6
+#define SLOT_QUIVER_LINE2_1 7
+#define SLOT_QUIVER_LINE1_2 8
+#define SLOT_QUIVER_LINE2_2 9
+#define SLOT_NECK           10
+#define SLOT_POUCH_1        11
+#define SLOT_QUIVER_LINE1_1 12
+#define SLOT_BACKPACK_FIRST 13
+#define SLOT_COUNT          30
+#define SLOT_CHEST_FIRST    30
+#define SLOT_CHEST_COUNT    8
+#define CHAMPION_NAME_SIZE  8
+#define CHAMPION_TITLE_SIZE 20
+
+typedef struct {
+    int16_t temporary_experience;
+    int32_t experience;
+} Skill;
+
+typedef struct {
+    char name[CHAMPION_NAME_SIZE];
+    char title[CHAMPION_TITLE_SIZE];
+    uint8_t direction, cell;
+    uint8_t action_index; /* 255: none */
+    uint8_t symbol_step;
+    char symbols[5];
+    uint8_t direction_maximum_damage_received, maximum_damage_received;
+    uint8_t poison_event_count;
+    int16_t enable_action_event_index;        /* event 11, or -1 */
+    int16_t hide_damage_received_event_index; /* event 12, or -1 */
+    uint16_t attributes;
+    uint16_t wounds;
+    int16_t current_health, maximum_health;
+    int16_t current_stamina, maximum_stamina;
+    int16_t current_mana, maximum_mana;
+    int16_t action_defense;
+    int16_t food, water;
+    uint8_t statistics[STAT_COUNT][STAT_VALUE_COUNT];
+    Skill skills[SKILL_COUNT];
+    uint16_t slots[SLOT_COUNT];
+    uint16_t load;
+    int16_t shield_defense;
+    uint8_t magic_map[6]; /* CSB record bytes 0x118-0x11d, kept as they are */
+} Champion;
+
+extern Champion g_champions[CHAMPION_MAX_COUNT];
+extern uint16_t g_party_champion_count;
+extern int16_t g_leader_index, g_magic_caster_champion_index;
 
 #define CHAMPION_RECORD_SIZE   320
 #define ACTION_NONE            255
@@ -145,5 +216,15 @@ void champion_fall_damage(bool use_rope);
 
 /* The main loop calls this every 64 ticks (16 while the party sleeps). */
 void champion_apply_time_effects(void);
+
+/* Below half stamina, a value drops toward half of it; exported for the tests. */
+int16_t champion_adjust_by_stamina(const Champion *champion, int16_t value);
+/* An attack value scaled down by how far the statistic is below the limit. */
+uint16_t champion_get_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack);
+/* Changes a current statistic within its minimum and the limit; high values grow slower. */
+void champion_adjust_statistic(Champion *champion, uint16_t statistic, int16_t delta);
+/* Luck test against a percentage. A lucky test lowers luck, a failed one raises it.
+   The original reads the luck bytes as signed. A lucky first roll does not change luck. */
+bool champion_is_lucky(Champion *champion, uint16_t percentage);
 
 #endif

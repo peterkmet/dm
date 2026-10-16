@@ -70,7 +70,7 @@ block ui/video.c open: epic 8
 block ui/video.h open: epic 8
 block ui/view.c open: epic 8
 decimal engine/action.h open: epic 6
-decimal engine/game.h open: epic 6
+decimal engine/champion.h open: epic 6
 decimal engine/group.c open: epic 6
 decimal engine/group.h open: epic 6
 decimal engine/inventory.h open: epic 6
@@ -154,11 +154,7 @@ name engine/champion.h:champion_click_in_resurrect_reincarnate_panel open: epic 
 name engine/champion.h:champion_reset_data_to_start_game open: epic 6
 name engine/dungeon.c:get_column_first_thing_index open: epic 6
 name engine/dungeon.c:read_square_things_and_text open: epic 6
-name engine/game.c:game_adjust_statistic_current_value open: epic 6
-name engine/game.c:game_get_statistic_adjusted_attack open: epic 6
 name engine/game.c:game_update_map_coordinates_after_relative_movement open: epic 6
-name engine/game.h:game_adjust_statistic_current_value open: epic 6
-name engine/game.h:game_get_statistic_adjusted_attack open: epic 6
 name engine/game.h:game_update_map_coordinates_after_relative_movement open: epic 6
 name engine/group.c:group_drop_creature_fixed_possessions open: epic 6
 name engine/group.c:group_drop_moving_creature_fixed_possessions open: epic 6
@@ -500,7 +496,6 @@ include engine/inventory.h:engine/map.h open: epic 5
 include engine/move.c:engine/inventory.h open: epic 5
 include engine/move.c:engine/event.h open: epic 5
 include engine/projectile.h:engine/event.h open: epic 5
-include engine/recruit.h:engine/champion.h open: epic 5
 include engine/savegame.c:data/ids.h open: epic 5
 include platform/main.c:data/ftl.h open: epic 11
 include platform/platform.h:ui/video.h open: epic 11
@@ -517,7 +512,6 @@ include ui/ui.c:data/adventure.h open: epic 8
 include ui/ui.c:data/csb_text.h open: epic 8
 include ui/ui.c:engine/dungeon.h open: epic 8
 include ui/ui.h:data/tables.h open: epic 8
-include ui/ui.h:engine/champion.h open: epic 8
 include ui/ui_champion.c:data/ftl.h open: epic 8
 include ui/ui_menus.c:engine/dungeon.h open: epic 8
 include ui/view.c:ui/advanced.h open: epic 8
@@ -779,7 +773,7 @@ type ui:width open: epic 8
 type ui:x open: epic 8
 type ui:y open: epic 8
 event-comment engine/action.c open: epic 6
-event-comment engine/game.h open: epic 6
+event-comment engine/champion.h open: epic 6
 event-comment engine/group.c open: epic 6
 event-comment engine/group.h open: epic 6
 event-comment engine/magic.c open: epic 6
