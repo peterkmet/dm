@@ -168,7 +168,7 @@ void ui_set_palette(const uint16_t *top)
 
 /* Draws the 4 rows into the zone at (x, y) in their scrolled state: the zone is cleared
    to color 0, then each cell is drawn with its color on color 0. */
-static void draw_messages(Bitmap *bm, int x, int y)
+static void show_messages(Bitmap *bm, int x, int y)
 {
     for (int py = y; py < y + MESSAGE_ROWS * MESSAGE_ROW_HEIGHT; py++)
         for (int px = x; px < x + MESSAGE_ROW_WIDTH; px++)
@@ -189,7 +189,7 @@ void ui_draw_message_area(void)
     Bitmap screen = video_get_screen();
     Box b;
     if (ui_zone_box(ZONE_MESSAGE_AREA, &b))
-        draw_messages(&screen, b.x, b.y);
+        show_messages(&screen, b.x, b.y);
 }
 
 void ui_draw_interface(void)
@@ -251,7 +251,7 @@ bool ui_get_slot_box_zone(int16_t slot_box, bool border, Box *box)
            ui_get_icon_zone_box(tables_get_slot_box_zone(slot_box), border, box);
 }
 
-void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon)
+void ui_draw_slot_icon(int16_t slot_box, int16_t icon)
 {
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
@@ -271,7 +271,7 @@ static int bones_champion(uint16_t thing)
     return rec_junk_charges(thing);
 }
 
-void ui_draw_leader_hand_object_name(uint16_t thing)
+void ui_draw_hand_object_name(uint16_t thing)
 {
     Bitmap screen = video_get_screen();
     char buf[BONES_NAME_SIZE];

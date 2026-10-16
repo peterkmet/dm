@@ -268,7 +268,7 @@ static void print_champion_skills(uint16_t champion_index, int y)
 }
 
 /* The won game: each champion in a frame with the portrait, name, title, and base skill levels. */
-static void draw_champion_parade(void)
+static void show_champion_parade(void)
 {
     Bitmap screen = video_get_screen();
     int16_t portrait_width = tables_get_portrait_width();
@@ -318,7 +318,7 @@ static void csb_draw_restart_button(void)
 }
 
 /* THE END on a dark blue screen, with RESTART THIS GAME and QUIT when a saved game exists. CSB has no QUIT. */
-static void draw_the_end(bool with_buttons)
+static void show_the_end(bool with_buttons)
 {
     Bitmap screen = video_get_screen();
     uint16_t colors[PALETTE_COLORS];
@@ -389,14 +389,14 @@ void startend_run_endgame(bool party_dead)
     }
     g_game_screen_shown = false;
     if (party_dead && g_session.won) {
-        draw_champion_parade();
+        show_champion_parade();
         wait_for_input();
     }
     if (party_dead) {
-        draw_the_end(false);
+        show_the_end(false);
         frame_wait_count(THE_END_WAIT_FRAMES);
         if (g_session.saved_game_exists) {
-            draw_the_end(true);
+            show_the_end(true);
             if (wait_for_restart())
                 return;
         }
@@ -416,7 +416,7 @@ static void fuse_update(void)
 }
 
 /* Six explosions of rising power on the square of Lord Chaos. */
-static void draw_fuse_explosions(uint16_t type, int16_t x, int16_t y)
+static void show_fuse_explosions(uint16_t type, int16_t x, int16_t y)
 {
     for (uint16_t attack = FUSE_FIRST_ATTACK; attack <= FUSE_ACTION_ATTACK; attack += FUSE_ATTACK_STEP) {
         explosion_create(EXPLOSION_THING(type), attack, (Location){x, y}, (Location){x, y}, CELL_CENTERED);
@@ -480,11 +480,11 @@ void startend_run_fuse_sequence(void)
         return;
     game_prepare_fuse_lord(lord, (Location){x, y});
     fuse_update();
-    draw_fuse_explosions(EXPLOSION_FIREBALL, x, y);
+    show_fuse_explosions(EXPLOSION_FIREBALL, x, y);
     sound_request_play(SOUND_BUZZ, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     rec_group_set_creature_type(lord, CREATURE_LORD_ORDER);
     fuse_update();
-    draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
+    show_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     flash_lords(lord, x, y);
     Location at = {x, y};
     explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_ACTION_ATTACK, at, at, CELL_CENTERED);
@@ -497,7 +497,7 @@ void startend_run_fuse_sequence(void)
     group_delete_all_except((Location){x, y});
     fuse_update();
     show_final_texts();
-    draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
+    show_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     frame_wait_count(FUSE_END_FRAMES);
     savegame_forget();
     startend_run_endgame(true);

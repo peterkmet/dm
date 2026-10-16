@@ -163,7 +163,7 @@ void menus_refresh_action_area(void)
 
 /* Draws the caster tabs of the spell area: a cyan tab for each other living champion, the name of
    the caster on its tab. */
-static void draw_caster_tabs(int16_t champion_index, const Champion *caster)
+static void show_caster_tabs(int16_t champion_index, const Champion *caster)
 {
     Bitmap screen = video_get_screen();
     ui_fill_zone(&screen, ZONE_SPELL_AREA_TABS, COLOR_BLACK);
@@ -187,7 +187,7 @@ void menus_draw_available_symbols(int16_t symbol_step)
 }
 
 /* Draws the runes that a champion has chosen so far. */
-static void draw_chosen_symbols(const char *symbols)
+static void show_chosen_symbols(const char *symbols)
 {
     Bitmap screen = video_get_screen();
     size_t n = 0;
@@ -202,11 +202,11 @@ static void draw_chosen_symbols(const char *symbols)
 
 void menus_draw_champion_symbols(int16_t champion_index)
 {
-    draw_chosen_symbols(g_champions[champion_index].symbols);
+    show_chosen_symbols(g_champions[champion_index].symbols);
 }
 
 /* Draws the spell area of the magic caster from the caster record; without a caster it is black. */
-static void draw_spell_area_of(const Champion *caster)
+static void show_spell_area_of(const Champion *caster)
 {
     Bitmap screen = video_get_screen();
     int16_t caster_index = g_magic_caster_champion_index;
@@ -215,16 +215,16 @@ static void draw_spell_area_of(const Champion *caster)
         return;
     }
     ui_blit_graphic(&screen, GFX_SPELL_AREA, ZONE_SPELL_AREA, COLOR_NONE);
-    draw_caster_tabs(caster_index, caster);
+    show_caster_tabs(caster_index, caster);
     menus_draw_available_symbols(caster->symbol_step);
-    draw_chosen_symbols(caster->symbols);
+    show_chosen_symbols(caster->symbols);
 }
 
 /* Draws the spell area of the magic caster; without a caster it is black. */
-static void draw_spell_area(void)
+static void show_spell_area(void)
 {
     int16_t caster = g_magic_caster_champion_index;
-    draw_spell_area_of(caster == -1 ? NULL : &g_champions[caster]);
+    show_spell_area_of(caster == -1 ? NULL : &g_champions[caster]);
 }
 
 void menus_draw_spell_area(void)
@@ -236,13 +236,13 @@ void menus_draw_spell_area(void)
         magic_set_caster(-1);
         return;
     }
-    draw_spell_area();
+    show_spell_area();
 }
 
 void menus_set_magic_caster(int16_t champion_index)
 {
     if (magic_set_caster(champion_index))
-        draw_spell_area();
+        show_spell_area();
 }
 
 void menus_refresh_spell_area(const Champion *caster)
@@ -251,13 +251,13 @@ void menus_refresh_spell_area(const Champion *caster)
     if (!caster && caster_index != -1)
         caster = &g_champions[caster_index];
     if (g_redraw & REDRAW_SPELL_AREA) {
-        draw_spell_area_of(caster);
+        show_spell_area_of(caster);
     } else if (caster_index != -1) {
         if (g_redraw & REDRAW_SPELL_TABS)
-            draw_caster_tabs(caster_index, caster);
+            show_caster_tabs(caster_index, caster);
         if (g_redraw & REDRAW_SPELL_SYMBOLS) {
             menus_draw_available_symbols(caster->symbol_step);
-            draw_chosen_symbols(caster->symbols);
+            show_chosen_symbols(caster->symbols);
         }
     }
     g_redraw &= ~(REDRAW_SPELL_AREA | REDRAW_SPELL_TABS | REDRAW_SPELL_SYMBOLS);

@@ -105,14 +105,14 @@ void ui_draw_message_area(void);
 /* Copies object icon into out (16 x 16 bytes). Each icon sheet holds 16 icons per row. */
 void ui_extract_icon(int16_t icon, Bitmap *out);
 /* Draws an icon in a slot box: the hands are on the screen, the other slots in the viewport. */
-void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon);
+void ui_draw_slot_icon(int16_t slot_box, int16_t icon);
 /* The icon box of zone; with border, grown by the slot box border. */
 bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box); /* the box of a slot zone, with border the frame */
 /* The icon box of a slot box. */
 bool ui_get_slot_box_zone(int16_t slot_box, bool border, Box *box);
 /* Shows the name of the object in the leader hand above the action area. Bones show the name of
    their champion first (English order). */
-void ui_draw_leader_hand_object_name(uint16_t thing);
+void ui_draw_hand_object_name(uint16_t thing);
 
 /* Tells whether (x, y) is in the box of zone. */
 bool ui_is_point_in_zone(int16_t zone, int16_t x, int16_t y);

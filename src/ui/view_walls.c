@@ -21,7 +21,7 @@
 #define SCALE_D3_FAR_SIDE_W 30 /* the D3L2 and D3R2 wall sides are wider than high */
 
 /* The inscription of the D1C wall: the blank wall, then the glyphs of each text line. */
-static void draw_wall_text(const uint8_t *text)
+static void show_wall_text(const uint8_t *text)
 {
     const Bitmap *font = gfx_get_bitmap(GFX_WALL_TEXT_FONT);
     int16_t glyph_w = tables_get_glyph_width();
@@ -44,7 +44,7 @@ static void draw_wall_text(const uint8_t *text)
 }
 
 /* The champion portrait of a portrait sensor on the D1C wall. */
-static void draw_wall_portrait(int16_t champion)
+static void show_wall_portrait(int16_t champion)
 {
     const Bitmap *portraits = gfx_get_bitmap(GFX_CHAMPION_PORTRAITS);
     int16_t pw = tables_get_portrait_width();
@@ -59,7 +59,7 @@ static void draw_wall_portrait(int16_t champion)
 
 /* The ornament or inscription on a view wall, and on the D1C wall the champion
    portrait and the facing flags. Returns true for an alcove. */
-static bool draw_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspect)
+static bool show_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspect)
 {
     if (i < 0)
         return false;
@@ -76,7 +76,7 @@ static bool draw_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspec
         dungeon_decode_text((char *)wall_text, sizeof wall_text, aspect->text, 0);
     if (wall_view == VIEW_WALL_D1C_FRONT) {
         if (text) {
-            draw_wall_text(wall_text);
+            show_wall_text(wall_text);
             return alcove;
         }
         g_view.result.facing_alcove = alcove;
@@ -115,7 +115,7 @@ static bool draw_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspec
         wall_view == VIEW_WALL_D1C_FRONT)
         g_view.result.clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn;
     if (wall_view == VIEW_WALL_D1C_FRONT && aspect->portrait >= 0)
-        draw_wall_portrait(aspect->portrait);
+        show_wall_portrait(aspect->portrait);
     view_free_scaled(&scaled);
     return alcove;
 }
@@ -133,7 +133,7 @@ void view_draw_floor_ornament(int16_t i, int16_t floor_view)
 }
 
 /* An ornament or mask on the door bitmap, scaled for D3 and D2. */
-static void draw_door_ornament(int16_t i, int16_t depth, Bitmap *door)
+static void show_door_ornament(int16_t i, int16_t depth, Bitmap *door)
 {
     if (i < 0)
         return;
@@ -155,7 +155,7 @@ static void draw_door_ornament(int16_t i, int16_t depth, Bitmap *door)
 }
 
 /* The button beside a door. The D1C button is clickable. */
-static void draw_door_button(int16_t button)
+static void show_door_button(int16_t button)
 {
     ScaledBitmap scaled = {gfx_get_bitmap(GFX_DOOR_BUTTON), {0}};
     if (button != BUTTON_D1C) {
@@ -175,7 +175,7 @@ static void draw_door_button(int16_t button)
 
 /* A copy of the door graphic with its ornaments, placed by the door state. A door that does not
    move vertically opens as two halves that slide apart. */
-static void draw_door(uint16_t door_thing, int16_t state, int16_t door_view)
+static void show_door(uint16_t door_thing, int16_t state, int16_t door_view)
 {
     if (state == DOOR_OPEN)
         return;
@@ -189,12 +189,12 @@ static void draw_door(uint16_t door_thing, int16_t state, int16_t door_view)
     if (!door_copy.px)
         return;
     memcpy(door_copy.px, graphic->px, (size_t)graphic->w * graphic->h);
-    draw_door_ornament(rec_door_ornament(door_thing), depth, &door_copy);
+    show_door_ornament(rec_door_ornament(door_thing), depth, &door_copy);
     if (g_view.door_type_attributes[type] & DOOR_ANIMATED)
         draw_flip(&door_copy, random_2bits());
     Placement place = {0};
     if (state == DOOR_DESTROYED)
-        draw_door_ornament(DOOR_ORNAMENT_DESTROYED, depth, &door_copy);
+        show_door_ornament(DOOR_ORNAMENT_DESTROYED, depth, &door_copy);
     else if (state != DOOR_CLOSED) { /* partly open: the zone moves with the state */
         zone += state;
         if (!rec_door_is_vertical(door_thing)) {
@@ -212,7 +212,7 @@ static void draw_door(uint16_t door_thing, int16_t state, int16_t door_view)
 }
 
 /* The hole of an open pit on the map above. */
-static void draw_ceiling_pit(int16_t graphic, int16_t zone, int16_t x, int16_t y, int mode)
+static void show_ceiling_pit(int16_t graphic, int16_t zone, int16_t x, int16_t y, int mode)
 {
     Position above = map_get_level_change_location((Position){g_view.map, x, y}, LEVEL_UP);
     if (above.map >= 0 && rec_square_type(rec_square_byte(above.map, above.x, above.y)) == SQUARE_PIT &&
@@ -221,7 +221,7 @@ static void draw_ceiling_pit(int16_t graphic, int16_t zone, int16_t x, int16_t y
 }
 
 /* The front of a staircase: the up or down graphic at the up or down zone. */
-static void draw_stairs_front(bool up, int16_t graphic, int16_t up_zone, int mode)
+static void show_stairs_front(bool up, int16_t graphic, int16_t up_zone, int mode)
 {
     view_draw_wall_bitmap(view_get_wall_bitmap(g_view.stairs + graphic + (up ? 0 : STAIRS_DOWN)),
                           up ? up_zone : up_zone + ZONE_STAIRS_DOWN_DELTA, mode);
@@ -252,7 +252,7 @@ void view_draw_stairs_side(const SquareView *square, bool up)
 void view_draw_ceiling_pit(const SquareView *square, Location at)
 {
     if (square->ceiling >= 0)
-        draw_ceiling_pit(square->ceiling, square->ceiling_zone, at.x, at.y, square->mirror);
+        show_ceiling_pit(square->ceiling, square->ceiling_zone, at.x, at.y, square->mirror);
 }
 
 void view_draw_square_wall(const SquareView *square, const Aspect *a, int16_t dir, Location at)
@@ -264,9 +264,9 @@ void view_draw_square_wall(const SquareView *square, const Aspect *a, int16_t di
     }
     view_draw_wall_part(&square->wall);
     if (square->side_face != SIDE_FACE_NONE)
-        draw_wall_ornament(square->side_face == SIDE_FACE_RIGHT ? a->side[SIDE_RIGHT] : a->side[SIDE_LEFT],
+        show_wall_ornament(square->side_face == SIDE_FACE_RIGHT ? a->side[SIDE_RIGHT] : a->side[SIDE_LEFT],
                            square->side_ornament_view, a);
-    if (square->front_ornament_view < 0 || !draw_wall_ornament(a->side[SIDE_FRONT], square->front_ornament_view, a))
+    if (square->front_ornament_view < 0 || !show_wall_ornament(a->side[SIDE_FRONT], square->front_ornament_view, a))
         return;
     if (square->flags & SQ_CEILING_IN_ALCOVE)
         view_draw_ceiling_pit(square, at);
@@ -280,8 +280,8 @@ void view_draw_door_front(const SquareView *square, const Aspect *a, int16_t dir
     for (int i = 0; i < square->frame_count; i++)
         view_draw_wall_part(&square->frames[i]);
     if (square->button >= 0 && rec_door_has_button(a->door))
-        draw_door_button(square->button);
-    draw_door(a->door, a->state, square->view);
+        show_door_button(square->button);
+    show_door(a->door, a->state, square->view);
     if (square->flags & SQ_CEILING_AFTER_DOOR)
         view_draw_ceiling_pit(square, at);
     view_draw_square_things(a->first_thing, dir, at, square->view_square, square->door_front);
@@ -294,11 +294,11 @@ void view_draw_stairs_front(const SquareView *square, bool up)
                               up ? square->stairs_front_zone : square->stairs_front_zone + ZONE_STAIRS_DOWN_DELTA,
                               square->mirror);
     else
-        draw_stairs_front(up, square->stairs_front, square->stairs_front_zone, square->mirror);
+        show_stairs_front(up, square->stairs_front, square->stairs_front_zone, square->mirror);
 }
 
 void view_draw_d0c_stairs(const SquareView *square, bool up)
 {
-    draw_stairs_front(up, square->stairs_front, square->stairs_front_zone, BLIT_TRANSPARENT);
-    draw_stairs_front(up, square->stairs_front, square->stairs_front_flipped_zone, BLIT_FLIPPED);
+    show_stairs_front(up, square->stairs_front, square->stairs_front_zone, BLIT_TRANSPARENT);
+    show_stairs_front(up, square->stairs_front, square->stairs_front_flipped_zone, BLIT_FLIPPED);
 }

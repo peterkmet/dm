@@ -164,7 +164,7 @@ def test_render_inventory(game):
     fb = bytes(screen(game).px)
     assert session(game).inventory_champion_index == 0
     assert len(set(fb[320 * 33:320 * 169])) > 6
-    game.panel_draw_skills()
+    game.panel_draw_skills_statistics()
     game.ui_draw_viewport()
     game.panel_close(0)
     assert session(game).inventory_champion_index == -1

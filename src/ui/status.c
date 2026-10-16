@@ -21,14 +21,14 @@
 #define BAR_ZONE_STEP     4
 #define CHAMPION_ICON_MAX 64 /* the icon buffer holds up to 64 x 64 pixels */
 
-static uint8_t champion_color(int16_t champion_index)
+static uint8_t get_champion_color(int16_t champion_index)
 {
     return tables_get_champion_color(champion_index);
 }
 
 /* Draws the health, stamina, and mana bars of the status box: the empty top part dark gray, the
    rest in the champion color. */
-static void draw_bar_graphs(int16_t champion_index)
+static void show_bar_graphs(int16_t champion_index)
 {
     const Champion *champion = &g_champions[champion_index];
     const int16_t bar_values[BAR_COUNT][2] = {
@@ -54,7 +54,7 @@ static void draw_bar_graphs(int16_t champion_index)
             }
         }
         if (bar_values[k][0] && bar.h > 0)
-            draw_fill(&screen, &bar, champion_color(champion_index));
+            draw_fill(&screen, &bar, get_champion_color(champion_index));
     }
 }
 
@@ -94,7 +94,7 @@ void status_draw_slot(int16_t champion_index, int16_t slot)
         border = GFX_SLOT_BOX_ACTING_HAND;
     if (border != -1 && ui_get_slot_box_zone(slot_box, true, &border_box))
         ui_blit_graphic_box(inv ? ui_get_viewport() : &screen, border, &border_box, COLOR_DARKEST_GRAY);
-    ui_draw_icon_in_slot_box(slot_box, icon);
+    ui_draw_slot_icon(slot_box, icon);
 }
 
 void status_draw_damage(int16_t champion_index, int16_t damage)
@@ -110,7 +110,7 @@ void status_draw_damage(int16_t champion_index, int16_t damage)
 
 /* Draws the party icon of a champion (top right, at its cell, facing its direction relative to
    the party); light gray and recolored while the party is invisible. */
-static void draw_icon(int16_t champion_index)
+static void show_icon(int16_t champion_index)
 {
     const Champion *champion = &g_champions[champion_index];
     int16_t icon_width = tables_get_champion_icon_width();
@@ -123,7 +123,7 @@ static void draw_icon(int16_t champion_index)
     if (icon_width * icon_height > (int)sizeof px)
         return;
     int16_t cell = NORMALIZE(champion->cell - g_party_direction);
-    memset(px, invisible ? COLOR_DARK_GRAY : champion_color(champion_index), sizeof px);
+    memset(px, invisible ? COLOR_DARK_GRAY : get_champion_color(champion_index), sizeof px);
     if (icons)
         draw_blit(icons, NORMALIZE(champion->direction - g_party_direction) * icon_width, 0, &icon,
                   &(Box){0, 0, icon_width, icon_height}, COLOR_DARKEST_GRAY, 0);
@@ -137,7 +137,7 @@ static void draw_icon(int16_t champion_index)
 }
 
 /* Draws the portrait in the status box while the inventory is open. */
-static void draw_portrait(int16_t champion_index)
+static void show_portrait(int16_t champion_index)
 {
     Bitmap screen = video_get_screen();
     Bitmap portrait = ui_get_champion_portrait(champion_index);
@@ -153,7 +153,7 @@ static void draw_portrait(int16_t champion_index)
 }
 
 /* Draws the status box of a living champion: background, shields, and the parts that follow. */
-static uint16_t draw_status_box(int16_t champion_index, uint16_t attr, bool inv)
+static uint16_t show_status_box(int16_t champion_index, uint16_t attr, bool inv)
 {
     const Champion *champion = &g_champions[champion_index];
     Bitmap screen = video_get_screen();
@@ -170,7 +170,7 @@ static uint16_t draw_status_box(int16_t champion_index, uint16_t attr, bool inv)
     while (n--)
         ui_blit_graphic_box(&screen, shields[n], &box, COLOR_FLESH);
     if (inv) {
-        draw_portrait(champion_index);
+        show_portrait(champion_index);
         return attr | CHAMPION_ATTR_STATISTICS;
     }
     return attr | CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_WOUNDS | CHAMPION_ATTR_STATISTICS |
@@ -178,7 +178,7 @@ static uint16_t draw_status_box(int16_t champion_index, uint16_t attr, bool inv)
 }
 
 /* Draws the name in the status box (gold for the leader), or name and title in the inventory. */
-static uint16_t draw_name(int16_t champion_index, uint16_t attr, bool inv)
+static uint16_t show_name(int16_t champion_index, uint16_t attr, bool inv)
 {
     const Champion *c = &g_champions[champion_index];
     Bitmap screen = video_get_screen();
@@ -205,7 +205,7 @@ void status_draw_champion(int16_t champion_index)
         return;
     if (attr & CHAMPION_ATTR_STATUS_BOX) {
         if (champion->current_health) {
-            attr = draw_status_box(champion_index, attr, inv);
+            attr = show_status_box(champion_index, attr, inv);
         } else {
             Box box;
             if (ui_zone_box(ZONE_STATUS_BOX_FIRST + champion_index, &box))
@@ -217,9 +217,9 @@ void status_draw_champion(int16_t champion_index)
     }
     if (champion->current_health) {
         if (attr & CHAMPION_ATTR_NAME_TITLE)
-            attr = draw_name(champion_index, attr, inv);
+            attr = show_name(champion_index, attr, inv);
         if (attr & CHAMPION_ATTR_STATISTICS) {
-            draw_bar_graphs(champion_index);
+            show_bar_graphs(champion_index);
             if (inv) {
                 panel_draw_statistics(champion_index);
                 attr |= CHAMPION_ATTR_VIEWPORT;
@@ -236,7 +236,7 @@ void status_draw_champion(int16_t champion_index)
             attr |= CHAMPION_ATTR_VIEWPORT;
         }
         if (attr & CHAMPION_ATTR_ICON)
-            draw_icon(champion_index);
+            show_icon(champion_index);
         if (attr & CHAMPION_ATTR_PANEL && inv) {
             panel_draw();
             attr |= CHAMPION_ATTR_VIEWPORT;

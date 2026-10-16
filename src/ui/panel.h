@@ -29,7 +29,7 @@ void panel_draw_load(int16_t champion_index);
 const char *panel_get_rank_name(int16_t level);
 /* Draws the eye panel: base skill levels above 1 (green after a level up), then the six
    statistics with current value (red below maximum, green above) and maximum value. */
-void panel_draw_skills(void); /* exported for the tests */
+void panel_draw_skills_statistics(void); /* exported for the tests */
 /* Opens the inventory of a champion on the screen: dims the movement arrows and draws the
    inventory background, labels, all slots, and the champion state. Sets g_session.inventory_champion_index. */
 void panel_open(int16_t champion_index);

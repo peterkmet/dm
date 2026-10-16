@@ -328,7 +328,7 @@ Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_
 
 Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/event.c` (events 80–83), `src/engine/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/panel.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
 
-Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `panel.c` (`insert_creature_name`, `draw_panel_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
+Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `panel.c` (`insert_creature_name`, `show_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
 
 ### Sensors and timeline
 
@@ -414,7 +414,7 @@ CSB `endgame` (C`0x128374`) is only the death screen and the quit screen:
 - 900 frames, or RESTART: `load_game`, then `start_game`. When the load fails, the credits.
 - The credits: graphic 5, palette C`0x100f18`, wait for input. Then, with a saved game and a dead party, THE END again (without the 300 frames); else `quit_game`.
 
-Port (`src/ui/startend.c`): `startend_run_endgame_sensor` plays `ENDA.DAT` with `src/ui/anim.c` for CSB, waits for a key or a click, and shows the CSB screen. `draw_the_end` draws the CSB button from the boxes, which the image copies to `0x104248` (`CSB_RESTART_BOXES`). After the credits, the port shows the CSB screen (deliberate deviation, as for DM); it does not go back to THE END.
+Port (`src/ui/startend.c`): `startend_run_endgame_sensor` plays `ENDA.DAT` with `src/ui/anim.c` for CSB, waits for a key or a click, and shows the CSB screen. `show_the_end` draws the CSB button from the boxes, which the image copies to `0x104248` (`CSB_RESTART_BOXES`). After the credits, the port shows the CSB screen (deliberate deviation, as for DM); it does not go back to THE END.
 
 ### Copy protection
 

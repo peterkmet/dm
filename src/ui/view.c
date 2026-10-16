@@ -769,7 +769,7 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
 };
 
 /* A D0 side square: the wall or the stairs side, else the pit, the ceiling pit, and the things. */
-static void draw_d0_side_square(const SquareView *s, const Aspect *a, int16_t dir, Location at)
+static void show_d0_side_square(const SquareView *s, const Aspect *a, int16_t dir, Location at)
 {
     switch (a->element) {
     case SQUARE_WALL:
@@ -793,7 +793,7 @@ static void draw_d0_side_square(const SquareView *s, const Aspect *a, int16_t di
 
 /* The square of the party: a door frame, the pit, or the stairs on both sides, then the ceiling pit and the
    things. */
-static void draw_d0c_square(const SquareView *s, const Aspect *a, int16_t dir, Location at)
+static void show_d0c_square(const SquareView *s, const Aspect *a, int16_t dir, Location at)
 {
     if (a->element == ELEMENT_DOOR_SIDE)
         view_draw_wall_part(&s->frames[0]);
@@ -809,7 +809,7 @@ static void draw_d0c_square(const SquareView *s, const Aspect *a, int16_t dir, L
 
 /* Draws one view square: its wall, pit, stairs, or door, then the floor ornament, the things, and a teleporter
    field. */
-static void draw_square(const SquareView *s, int16_t dir, Location at)
+static void show_square(const SquareView *s, int16_t dir, Location at)
 {
     Aspect a;
     get_square_aspect(&a, dir, at.x, at.y);
@@ -821,10 +821,10 @@ static void draw_square(const SquareView *s, int16_t dir, Location at)
             view_draw_teleporter_field(s->view_square, s->wall.zone);
         return;
     case SHAPE_D0_SIDE:
-        draw_d0_side_square(s, &a, dir, at);
+        show_d0_side_square(s, &a, dir, at);
         return;
     case SHAPE_D0C:
-        draw_d0c_square(s, &a, dir, at);
+        show_d0c_square(s, &a, dir, at);
         return;
     }
     if (s->flags & SQ_FRONT)
@@ -1060,7 +1060,7 @@ int16_t view_get_wall_ornament_index(int16_t ornament)
     return (g_view.wall_ornaments[ornament].graphic - GFX_WALL_ORNAMENT_FIRST) / WALL_ORNAMENT_GRAPHICS;
 }
 
-int16_t view_get_wall_face_ornament_index(int16_t x, int16_t y, int16_t face)
+int16_t view_get_face_ornament_index(int16_t x, int16_t y, int16_t face)
 {
     Aspect a;
     if (g_view.map != g_party_map_index)
@@ -1125,7 +1125,7 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
         int16_t sx = x;
         int16_t sy = y;
         map_step(dir, square_views[i].forward, square_views[i].right, &sx, &sy);
-        draw_square(&square_views[i], dir, (Location){sx, sy});
+        show_square(&square_views[i], dir, (Location){sx, sy});
     }
     Bitmap screen = video_get_screen();
     int16_t width = g_view.viewport.w;
@@ -1179,7 +1179,7 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
 #define MAP_TIME_BLINK_WALL           2
 
 /* Draws one map tile at (px, py). */
-static void draw_map_tile(Bitmap *dst, int16_t tile, int16_t px, int16_t py)
+static void show_map_tile(Bitmap *dst, int16_t tile, int16_t px, int16_t py)
 {
     const Bitmap *tiles = gfx_get_bitmap(GFX_MAGIC_MAP_TILES);
     Box b = {px, py, MAP_TILE_W, MAP_TILE_H};
@@ -1247,7 +1247,7 @@ typedef struct {
 
 /* The things of a square that the spells show at (m->px, m->py): with DAIN the zokathra objects, the projectiles,
    and the explosions, with KU the creatures. m->blink: the square is a fake wall that blinks. */
-static void draw_map_square_things(const MapDraw *m, const Aspect *aspect)
+static void show_map_square_things(const MapDraw *m, const Aspect *aspect)
 {
     Bitmap *dst = m->dst;
     const uint8_t *spells = m->spells;
@@ -1268,37 +1268,37 @@ static void draw_map_square_things(const MapDraw *m, const Aspect *aspect)
         else if (type == THING_EXPLOSION && explosion == THING_ENDOFLIST)
             explosion = thing;
         else if (type == THING_JUNK && object_get_type(thing) == OBJECT_TYPE_ZOKATHRA)
-            draw_map_tile(dst,
+            show_map_tile(dst,
                           MAP_TILE_ZOKATHRA_FIRST + NORMALIZE(THING_CELL(thing) - dir) +
                               (aspect->element == SQUARE_WALL && !m->blink ? MAP_TILE_IN_WALL : 0),
                           px, py);
     }
     if (group != THING_ENDOFLIST && !(map_get_creature_attributes(group) & CREATURE_NOT_ON_MAP))
-        draw_map_tile(dst, MAP_TILE_CREATURE_FIRST + (g_game_time & 1), px, py);
+        show_map_tile(dst, MAP_TILE_CREATURE_FIRST + (g_game_time & 1), px, py);
     for (uint16_t thing = projectile; thing != THING_ENDOFLIST; thing = rec_thing_next(thing)) {
         int16_t tile = THING_TYPE(thing) == THING_PROJECTILE ? get_map_projectile_tile(thing, dir) : -1;
         if (tile >= 0)
-            draw_map_tile(dst, tile + NORMALIZE(THING_CELL(thing) - dir), px, py);
+            show_map_tile(dst, tile + NORMALIZE(THING_CELL(thing) - dir), px, py);
     }
     for (uint16_t thing = explosion; thing != THING_ENDOFLIST; thing = rec_thing_next(thing)) {
         int16_t tile = THING_TYPE(thing) == THING_EXPLOSION ? get_map_explosion_tile(thing) : -1;
         if (tile >= 0)
-            draw_map_tile(dst, tile, px, py);
+            show_map_tile(dst, tile, px, py);
     }
 }
 
 /* A wall on the magic map: blinking when ROS shows a fake wall, else the wall with its vi altar, alcove, and
    fountain sides. */
-static void draw_map_wall(const MapDraw *m, const Aspect *aspect)
+static void show_map_wall(const MapDraw *m, const Aspect *aspect)
 {
     Bitmap *dst = m->dst;
     int16_t px = m->px;
     int16_t py = m->py;
     if (m->spells[MAGIC_MAP_ROS] && m->blink && (g_game_time & MAP_TIME_BLINK_WALL)) {
-        draw_map_tile(dst, MAP_TILE_FAKE_WALL_BLINK, px, py);
+        show_map_tile(dst, MAP_TILE_FAKE_WALL_BLINK, px, py);
         return;
     }
-    draw_map_tile(dst, MAP_TILE_WALL, px, py);
+    show_map_tile(dst, MAP_TILE_WALL, px, py);
     for (int16_t k = 0; k < WALL_SIDES; k++) {
         int16_t i = aspect->side[k];
         int16_t first = i < 0                  ? -1
@@ -1307,7 +1307,7 @@ static void draw_map_wall(const MapDraw *m, const Aspect *aspect)
                         : i == g_view.fountain ? MAP_TILE_FOUNTAIN_FIRST
                                                : -1;
         if (first >= 0)
-            draw_map_tile(dst, first + k, px, py);
+            show_map_tile(dst, first + k, px, py);
     }
 }
 
@@ -1325,7 +1325,7 @@ static int16_t get_map_door_tile(const Aspect *aspect)
 /* The tiles of square at seen in direction m->dir at (m->px, m->py): the square, then with DAIN the footprints, the
    zokathra objects, the projectiles, and the explosions, with ROS the fake walls and invisible pits, with KU the
    creatures. */
-static void draw_map_square(const MapDraw *m, Location at)
+static void show_map_square(const MapDraw *m, Location at)
 {
     Bitmap *dst = m->dst;
     const uint8_t *spells = m->spells;
@@ -1346,35 +1346,35 @@ static void draw_map_square(const MapDraw *m, Location at)
     }
     switch (aspect.element) {
     case SQUARE_WALL:
-        draw_map_wall(&square, &aspect);
+        show_map_wall(&square, &aspect);
         break;
     case SQUARE_CORRIDOR: {
-        draw_map_tile(dst, MAP_TILE_FLOOR, px, py);
+        show_map_tile(dst, MAP_TILE_FLOOR, px, py);
         int16_t i = aspect.floor_ornament;
         if (i >= 0)
-            draw_map_tile(dst,
+            show_map_tile(dst,
                           MAP_TILE_FLOOR_ORNAMENT_FIRST +
                               (g_view.floor_ornaments[i].graphic - GFX_FLOOR_ORNAMENT_FIRST) / FLOOR_ORNAMENT_GRAPHICS,
                           px, py);
         break;
     }
     case SQUARE_TELEPORTER:
-        draw_map_tile(dst, MAP_TILE_TELEPORTER_FIRST + random_2bits(), px, py);
+        show_map_tile(dst, MAP_TILE_TELEPORTER_FIRST + random_2bits(), px, py);
         break;
     case ELEMENT_DOOR_FRONT:
     case ELEMENT_DOOR_SIDE:
-        draw_map_tile(dst, get_map_door_tile(&aspect), px, py);
+        show_map_tile(dst, get_map_door_tile(&aspect), px, py);
         break;
     case ELEMENT_STAIRS_SIDE:
     case ELEMENT_STAIRS_FRONT: {
         int16_t side = NORMALIZE(map_get_stairs_exit_direction(at.x, at.y) - dir);
         if (aspect.state)
             side = direction_back(side);
-        draw_map_tile(dst, MAP_TILE_STAIRS_FIRST + side, px, py);
+        show_map_tile(dst, MAP_TILE_STAIRS_FIRST + side, px, py);
         break;
     }
     case SQUARE_PIT:
-        draw_map_tile(dst,
+        show_map_tile(dst,
                       !aspect.state                                                 ? MAP_TILE_PIT
                       : spells[MAGIC_MAP_ROS] && (g_game_time & MAP_TIME_BLINK_PIT) ? MAP_TILE_PIT_BLINK
                                                                                     : MAP_TILE_PIT_INVISIBLE,
@@ -1382,7 +1382,7 @@ static void draw_map_square(const MapDraw *m, Location at)
         break;
     }
     if (spells[MAGIC_MAP_KU] || spells[MAGIC_MAP_DAIN])
-        draw_map_square_things(&square, &aspect);
+        show_map_square_things(&square, &aspect);
 }
 
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py)
@@ -1418,14 +1418,14 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
                 party_px = cx;
                 party_py = py;
             } else {
-                draw_map_square(&(MapDraw){dst, spells, false, dir, cx, py}, (Location){sx, sy});
+                show_map_square(&(MapDraw){dst, spells, false, dir, cx, py}, (Location){sx, sy});
             }
             map_step(dir, 0, 1, &sx, &sy);
         }
         map_step(dir, -1, 0, &x, &y);
     }
     if (party_px >= 0)
-        draw_map_square(&(MapDraw){dst, spells, false, dir, party_px, party_py},
+        show_map_square(&(MapDraw){dst, spells, false, dir, party_px, party_py},
                         (Location){g_party_map_x, g_party_map_y});
     g_view.map = saved[0];
     g_view.map_width = saved[1];

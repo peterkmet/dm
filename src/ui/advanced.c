@@ -41,7 +41,7 @@ static bool in_dungeon_view(void)
 }
 
 /* Level, position, facing, and light in the top-left corner of the map, inside the rulers. */
-static void draw_readout(Bitmap *viewport)
+static void show_readout(Bitmap *viewport)
 {
     char line[READOUT_TEXT_SIZE];
     int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN;
@@ -68,7 +68,7 @@ static void show_automap(void)
     Bitmap *viewport = ui_get_viewport();
     Box area = {0, 0, viewport->w, viewport->h};
     automap_draw(viewport, &area, g_party_map_index);
-    draw_readout(viewport);
+    show_readout(viewport);
     ui_draw_viewport();
 }
 

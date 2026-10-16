@@ -118,7 +118,7 @@
 #define VIEW_D1C  9
 #define VIEW_D1R  10
 
-/* View walls of draw_wall_ornament: the visible side of each wall square. */
+/* View walls of show_wall_ornament: the visible side of each wall square. */
 #define VIEW_WALL_D3L2_RIGHT 0
 #define VIEW_WALL_D3R2_LEFT  1
 #define VIEW_WALL_D3L_RIGHT  2
@@ -290,7 +290,7 @@ typedef struct {
 #define PROJECTILE_ASPECT_SLIME     13
 #define PROJECTILE_ASPECT_POISON    14
 
-/* How draw_square draws a square: all elements, only a wall or a teleporter field, a D0 side square, or the
+/* How show_square draws a square: all elements, only a wall or a teleporter field, a D0 side square, or the
    square of the party. */
 #define SHAPE_FULL          0
 #define SHAPE_WALL_OR_FIELD 1

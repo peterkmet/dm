@@ -33,7 +33,7 @@ static void fill_clipped(Bitmap *target, const Box *area, int16_t x, int16_t y, 
 
 /* One seen square at screen position (left, top): a light floor with a 1 pixel grid gap, or a full dark wall.
    pad: a pressure pad that the view draws, as a gray square in the middle of the floor. */
-static void draw_square(Bitmap *target, const Box *area, uint8_t square, bool pad, int16_t left, int16_t top)
+static void show_square(Bitmap *target, const Box *area, uint8_t square, bool pad, int16_t left, int16_t top)
 {
     const int16_t size = AUTOMAP_CELL_SIZE;
     const int16_t floor = AUTOMAP_CELL_SIZE - 1;
@@ -65,7 +65,7 @@ static void draw_square(Bitmap *target, const Box *area, uint8_t square, bool pa
 }
 
 /* The party as a triangle in its square, the tip toward its direction. */
-static void draw_party_arrow(Bitmap *target, const Box *area, int16_t left, int16_t top, int16_t dir)
+static void show_party_arrow(Bitmap *target, const Box *area, int16_t left, int16_t top, int16_t dir)
 {
     const int16_t center = AUTOMAP_CELL_SIZE / 2;
     for (int16_t step = 0; step <= center; step++) {
@@ -115,7 +115,7 @@ void automap_scroll_reset(void)
 }
 
 /* The number n at (x, y), only when the whole number is inside area. */
-static void draw_label(Bitmap *target, const Box *area, int16_t x, int16_t y, int16_t n)
+static void show_label(Bitmap *target, const Box *area, int16_t x, int16_t y, int16_t n)
 {
     char text[LABEL_TEXT_SIZE];
     if (x < area->x || x + LABEL_WIDTH > area->x + area->w || y < area->y || y + FONT_LINE_HEIGHT > area->y + area->h)
@@ -143,7 +143,7 @@ void automap_draw(Bitmap *target, const Box *area, int16_t map)
     for (int16_t x = 0; x < map_width; x++)
         for (int16_t y = 0; y < map_height; y++)
             if (explored_is_seen(map, x, y))
-                draw_square(target, &maps, rec_square_byte(map, x, y), party_here && view_is_pressure_pad(x, y),
+                show_square(target, &maps, rec_square_byte(map, x, y), party_here && view_is_pressure_pad(x, y),
                             origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE);
     /* The frame lies in the grid gap around the outer squares. */
     int16_t right = origin_x + map_width * AUTOMAP_CELL_SIZE - 1;
@@ -153,10 +153,10 @@ void automap_draw(Bitmap *target, const Box *area, int16_t map)
     fill_clipped(target, &maps, origin_x - 1, origin_y - 1, 1, bottom - origin_y + 2, COLOR_WHITE);
     fill_clipped(target, &maps, right, origin_y - 1, 1, bottom - origin_y + 2, COLOR_WHITE);
     for (int16_t x = 0; x < map_width; x += 2)
-        draw_label(target, &top, origin_x + x * AUTOMAP_CELL_SIZE + (AUTOMAP_CELL_SIZE - LABEL_WIDTH) / 2, top.y, x);
+        show_label(target, &top, origin_x + x * AUTOMAP_CELL_SIZE + (AUTOMAP_CELL_SIZE - LABEL_WIDTH) / 2, top.y, x);
     for (int16_t y = 0; y < map_height; y++)
-        draw_label(target, &left, left.x, origin_y + y * AUTOMAP_CELL_SIZE, y);
+        show_label(target, &left, left.x, origin_y + y * AUTOMAP_CELL_SIZE, y);
     if (party_here)
-        draw_party_arrow(target, &maps, origin_x + g_party_map_x * AUTOMAP_CELL_SIZE,
+        show_party_arrow(target, &maps, origin_x + g_party_map_x * AUTOMAP_CELL_SIZE,
                          origin_y + g_party_map_y * AUTOMAP_CELL_SIZE, g_party_direction);
 }

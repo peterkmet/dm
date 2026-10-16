@@ -120,7 +120,7 @@ static void refresh_interface(void)
         if (shown_hand_object == THING_NONE)
             ui_fill_zone(&screen, ZONE_LEADER_HAND_OBJECT_NAME, COLOR_BLACK);
         else
-            ui_draw_leader_hand_object_name(shown_hand_object);
+            ui_draw_hand_object_name(shown_hand_object);
     }
     ui_draw_message_area();
 }
@@ -177,7 +177,7 @@ bool gameloop_start_new_game(const char *dir)
 
 /* champion_reset_for_new_game for a loaded game: the hand object, the leader with its load,
    and the magic caster come back; all champion states are drawn. */
-static void reset_champions_of_loaded_game(void)
+static void reset_loaded_champions(void)
 {
     int16_t leader = g_leader_index;
     inventory_put_hand_object(champion_reset_for_new_game());
@@ -204,7 +204,7 @@ static void start_loaded_game(bool confirm)
         dialog_get_choice(1);
     }
     show_game();
-    reset_champions_of_loaded_game();
+    reset_loaded_champions();
     refresh_interface();
     mark_seen_squares();
 }
@@ -227,7 +227,7 @@ static void run_requested_sequence(void)
 
 /* Advanced feature: between two ticks the view shows the projectiles part of the way to their new
    place. The view draws fields and explosions with the game random numbers: the seed stays. */
-static void draw_projectile_motion(void)
+static void show_projectile_motion(void)
 {
     if (!g_advanced_features || !g_game_screen_shown || g_game_frozen || g_session.party_sleeping ||
         g_session.inventory_champion_index >= 0 || !view_has_moving_projectiles())
@@ -253,7 +253,7 @@ bool gameloop_run_frame(void)
         g_stop_waiting_for_input = true;
     bool tick = g_stop_waiting_for_input && g_game_time_ticking;
     if (!tick)
-        draw_projectile_motion();
+        show_projectile_motion();
     return tick;
 }
 
@@ -287,7 +287,7 @@ static void release_dead_champions(int16_t leader)
 
 /* A party that died in one tick: the spell area as the death before the last one drew it, while the
    last champion, now the caster, still lived with its runes (before holds the champions before the damage). */
-static void draw_spell_area_before_last_death(const Champion *before)
+static void show_death_spell_area(const Champion *before)
 {
     int16_t caster = g_magic_caster_champion_index;
     if (caster != -1)
@@ -326,7 +326,7 @@ void gameloop_tick(void)
     release_dead_champions(leader);
     if (g_session.party_dead) {
         status_draw_all(0); /* the dead champions show during the death scream */
-        draw_spell_area_before_last_death(before);
+        show_death_spell_area(before);
         startend_run_endgame(true);
         return;
     }

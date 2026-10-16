@@ -212,7 +212,7 @@ typedef struct {
 
 /* One object on the floor or in an alcove, in view cell sq->cell. spot->pile counts the objects of the cell for
    their shift; NULL draws an object in flight at spot->zone without pile shift. */
-static void draw_object(const SquareDraw *sq, uint16_t thing, int16_t aspect_index, const ObjectSpot *spot)
+static void show_object(const SquareDraw *sq, uint16_t thing, int16_t aspect_index, const ObjectSpot *spot)
 {
     int16_t cell = sq->cell;
     int16_t lane = sq->lane;
@@ -316,7 +316,7 @@ static int16_t get_creature_in_cell(const ViewGroup *s, uint16_t cell)
 
 /* One creature: front, side, back, or attack graphic for its facing, scaled and recolored by depth,
    at position pos (view cell, or 4 centered) of the creature coordinate set of the view square. */
-static void draw_creature(const SquareDraw *sq, const ViewGroup *group, uint8_t look, uint16_t facing, int16_t pos)
+static void show_creature(const SquareDraw *sq, const ViewGroup *group, uint8_t look, uint16_t facing, int16_t pos)
 {
     int16_t coord = tables_get_view_square(sq->view_square).creature_coord;
     int16_t depth = sq->depth;
@@ -368,7 +368,7 @@ static void draw_creature(const SquareDraw *sq, const ViewGroup *group, uint8_t 
 
 /* The creatures of the group in view cell sq->cell (map cell sq->map_cell). rest holds the cells still to draw,
    front tells that the cell is a front cell of the pass. Returns true when the group is complete. */
-static bool draw_creatures_in_cell(const SquareDraw *sq, const ViewGroup *group, uint16_t rest, bool front)
+static bool show_creatures_in_cell(const SquareDraw *sq, const ViewGroup *group, uint16_t rest, bool front)
 {
     int16_t dir = sq->dir;
     int16_t view_square = sq->view_square;
@@ -420,9 +420,9 @@ static bool draw_creatures_in_cell(const SquareDraw *sq, const ViewGroup *group,
     if (group->size == CREATURE_SIZE_QUARTER && ((view_square == VIEW_SQUARE_D0L && pos != VIEW_CELL_FRONT_RIGHT) ||
                                                  (view_square == VIEW_SQUARE_D0R && pos != VIEW_CELL_FRONT_LEFT)))
         return done;
-    draw_creature(sq, group, group->look[index], facing, pos);
+    show_creature(sq, group, group->look[index], facing, pos);
     if (second) /* the other creature of a half-size pair, beside it */
-        draw_creature(sq, group, group->look[index == 0], facing,
+        show_creature(sq, group, group->look[index == 0], facing,
                       pos == VIEW_CELL_BACK_RIGHT ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT);
     return done;
 }
@@ -534,7 +534,7 @@ static ProjectilePose get_projectile_pose(const SquareDraw *sq, const uint8_t *a
 
 /* A projectile in view cell sq->cell: an object in flight, or a projectile graphic posed and mirrored by
    its direction of flight and scaled by depth (and kinetic energy). */
-static void draw_projectile(const SquareDraw *sq, uint16_t thing)
+static void show_projectile(const SquareDraw *sq, uint16_t thing)
 {
     int16_t cell = sq->cell;
     int16_t depth = sq->depth;
@@ -542,7 +542,7 @@ static void draw_projectile(const SquareDraw *sq, uint16_t thing)
     ProjectileAspect flight_aspect = view_get_projectile_aspect(rec_projectile_slot(thing));
     if (!flight_aspect.projectile) {
         Box drawn = {0};
-        draw_object(sq, thing, flight_aspect.index,
+        show_object(sq, thing, flight_aspect.index,
                     &(ObjectSpot){.zone = zone, .place = begin_projectile(thing), .drawn = &drawn});
         end_projectile(thing, drawn.w > 0, &drawn);
         return;
@@ -572,7 +572,7 @@ static void draw_projectile(const SquareDraw *sq, uint16_t thing)
 
 /* A teleporter field or fluxcage: the pattern graphic through the mask graphic at zone, with a random
    start in the pattern so that it sparkles. */
-static void draw_field(const uint8_t *aspect, int16_t zone)
+static void show_field(const uint8_t *aspect, int16_t zone)
 {
     int16_t width = aspect[FIELD_WIDTH];
     int16_t height = aspect[FIELD_HEIGHT];
@@ -604,7 +604,7 @@ static ScaledBitmap get_explosion_bitmap(int16_t aspect, int16_t scale)
 }
 
 /* An explosion on the party square fills the whole viewport with its pattern. */
-static void draw_explosion_on_party(uint16_t thing, int16_t aspect)
+static void show_explosion_on_party(uint16_t thing, int16_t aspect)
 {
     bool smoke = aspect == EXPLOSION_ASPECT_SMOKE;
     int16_t strength = rec_explosion_attack(thing) >> EXPLOSION_STRENGTH_SHIFT;
@@ -648,7 +648,7 @@ static int16_t get_explosion_aspect(int16_t type)
 }
 
 /* The first step of a vi altar rebirth: the back pose of the lightning projectile. */
-static void draw_rebirth_step_1(int16_t coord, int16_t flip)
+static void show_rebirth_step_1(int16_t coord, int16_t flip)
 {
     int16_t scale = tables_get_rebirth_scale(TABLES_REBIRTH_STEP_1, coord);
     int16_t g = GFX_PROJECTILE_FIRST +
@@ -660,16 +660,16 @@ static void draw_rebirth_step_1(int16_t coord, int16_t flip)
 }
 
 /* A fluxcage: the field of the square with the pattern after the teleporter pattern. */
-static void draw_fluxcage(int16_t field_index)
+static void show_fluxcage(int16_t field_index)
 {
     uint8_t aspect[FIELD_ASPECT_SIZE];
     memcpy(aspect, tables_get_field_aspect(field_index), FIELD_ASPECT_SIZE);
     aspect[FIELD_PATTERN]++; /* the fluxcage pattern follows the teleporter pattern */
-    draw_field(aspect, ZONE_FIELD_FIRST + field_index);
+    show_field(aspect, ZONE_FIELD_FIRST + field_index);
 }
 
 /* The explosions of a square, each mirrored at random, then a fluxcage as a field. */
-static void draw_explosions(const SquareDraw *sq, uint16_t first)
+static void show_explosions(const SquareDraw *sq, uint16_t first)
 {
     int16_t dir = sq->dir;
     int16_t depth = sq->depth;
@@ -692,7 +692,7 @@ static void draw_explosions(const SquareDraw *sq, uint16_t first)
             continue;
         int16_t flip = random_2bits();
         if (type == EXPLOSION_REBIRTH_STEP_1) {
-            draw_rebirth_step_1(coord, flip);
+            show_rebirth_step_1(coord, flip);
             continue;
         }
         if (type == EXPLOSION_FLUXCAGE) {
@@ -703,7 +703,7 @@ static void draw_explosions(const SquareDraw *sq, uint16_t first)
         if (explosion_coord < 0)
             continue;
         if (sq->view_square == VIEW_SQUARE_D0C) {
-            draw_explosion_on_party(thing, aspect);
+            show_explosion_on_party(thing, aspect);
             continue;
         }
         if (rebirth) {
@@ -724,7 +724,7 @@ static void draw_explosions(const SquareDraw *sq, uint16_t first)
         view_free_scaled(&scaled);
     }
     if (fluxcage && field_index >= 0 && sq->pass != DOOR_PASS_BACK && !g_do_not_draw_fluxcages)
-        draw_fluxcage(field_index);
+        show_fluxcage(field_index);
 }
 
 /* D3 squares show only their front cells, D0 squares only their back cells. */
@@ -734,7 +734,7 @@ static bool is_cell_in_view(int16_t depth, int16_t cell)
 }
 
 /* The objects of map cell sq->map_cell, drawn in view cell sq->cell; pile counts the objects drawn on the pile. */
-static void draw_cell_objects(const SquareDraw *sq, uint16_t first, int16_t *pile, bool alcove)
+static void show_cell_objects(const SquareDraw *sq, uint16_t first, int16_t *pile, bool alcove)
 {
     if (sq->coord < 0 || !is_cell_in_view(sq->depth, sq->cell))
         return;
@@ -742,7 +742,7 @@ static void draw_cell_objects(const SquareDraw *sq, uint16_t first, int16_t *pil
     for (uint16_t t = first; t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         int16_t type = THING_TYPE(t);
         if (type >= THING_WEAPON && type <= THING_JUNK && THING_CELL(t) == sq->map_cell)
-            draw_object(sq, t, get_object_aspect(t), &spot);
+            show_object(sq, t, get_object_aspect(t), &spot);
     }
 }
 
@@ -796,7 +796,7 @@ void view_draw_square_things(uint16_t first, int16_t dir, Location at, int16_t v
             pile = PILE_ALCOVE_FIRST;
         }
         pile += (sq.map_cell & 1) * PILE_ODD_CELL; /* odd map cells start in the second half of the shifts */
-        draw_cell_objects(&sq, first, &pile, alcove);
+        show_cell_objects(&sq, first, &pile, alcove);
         if (alcove || sq.depth >= DEPTH_D4)
             break;
         bool front = (sq.cell < VIEW_CELL_FRONT_RIGHT || count == 1) &&
@@ -806,20 +806,20 @@ void view_draw_square_things(uint16_t first, int16_t dir, Location at, int16_t v
                 load_group_aspect(group_thing, &group);
                 loaded = true;
             }
-            group_done = draw_creatures_in_cell(&sq, &group, rest, front);
+            group_done = show_creatures_in_cell(&sq, &group, rest, front);
         }
         /* the alcove pass broke out above, so sq.coord is square.object_coord here */
         if (has_projectiles && square.object_coord >= 0 && is_cell_in_view(sq.depth, sq.cell))
             for (uint16_t t = first; t != THING_ENDOFLIST; t = rec_thing_next(t))
                 if (THING_TYPE(t) == THING_PROJECTILE && THING_CELL(t) == sq.map_cell)
-                    draw_projectile(&sq, t);
+                    show_projectile(&sq, t);
     } while (rest);
     /* the last drawn map cell decides the rebirth check, as in the original */
     if (has_explosions)
-        draw_explosions(&sq, first);
+        show_explosions(&sq, first);
 }
 
 void view_draw_teleporter_field(int16_t view_square, int16_t zone)
 {
-    draw_field(tables_get_field_aspect(tables_get_view_square(view_square).field_aspect), zone);
+    show_field(tables_get_field_aspect(tables_get_view_square(view_square).field_aspect), zone);
 }

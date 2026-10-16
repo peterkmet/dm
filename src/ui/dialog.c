@@ -24,7 +24,7 @@
 int16_t g_dialog_choice = DIALOG_NO_CHOICE;
 
 /* The viewport in the game, or centered on the inactive screen. */
-static void draw_viewport(void)
+static void show_viewport(void)
 {
     if (g_game_screen_shown) {
         ui_draw_viewport();
@@ -59,7 +59,7 @@ static void patch_dividers(Bitmap *viewport, int16_t count)
 }
 
 /* The choice texts in the zones for their count. */
-static void draw_choices(Bitmap *viewport, const char *choice[MAX_CHOICES], int16_t count)
+static void show_choices(Bitmap *viewport, const char *choice[MAX_CHOICES], int16_t count)
 {
     static const int16_t zones[MAX_CHOICES][MAX_CHOICES] = {
         {ZONE_CHOICE_SINGLE},
@@ -73,7 +73,7 @@ static void draw_choices(Bitmap *viewport, const char *choice[MAX_CHOICES], int1
 }
 
 /* The two messages centered in the viewport, in the vertical middle of the message zone. */
-static void draw_messages(Bitmap *viewport, const char *message[MESSAGE_COUNT], int16_t zone)
+static void show_messages(Bitmap *viewport, const char *message[MESSAGE_COUNT], int16_t zone)
 {
     Box box;
     int16_t width[MESSAGE_COUNT] = {0};
@@ -129,9 +129,9 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
     if (!g_game_screen_shown)
         memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px);
     if (choice1)
-        draw_choices(viewport, choice, count);
-    draw_messages(viewport, message, count == 1 ? ZONE_MESSAGE_ONE_CHOICE : ZONE_MESSAGE);
-    draw_viewport();
+        show_choices(viewport, choice, count);
+    show_messages(viewport, message, count == 1 ? ZONE_MESSAGE_ONE_CHOICE : ZONE_MESSAGE);
+    show_viewport();
 }
 
 /* Fills a rectangle of the viewport with one color. */
@@ -142,7 +142,7 @@ static void fill(Bitmap *viewport, int16_t x, int16_t y, int16_t w, int16_t h, u
 }
 
 /* The button of the choice: a raised frame, then after PRESS_FRAMES frames a pressed frame. */
-static void draw_pressed_button(int16_t table, int16_t choice)
+static void show_pressed_button(int16_t table, int16_t choice)
 {
     Bitmap *viewport = ui_get_viewport();
     MouseInput entry;
@@ -159,7 +159,7 @@ static void draw_pressed_button(int16_t table, int16_t choice)
     fill(viewport, x - 3, y - 2, 1, height + 3, COLOR_LIGHT_BROWN);
     fill(viewport, x - 4, y + height + 4, width + 9, 1, COLOR_LIGHT_GRAY);
     fill(viewport, x + width + 5, y - 3, 1, height + 8, COLOR_LIGHT_GRAY);
-    draw_viewport();
+    show_viewport();
     frame_wait_count(PRESS_FRAMES);
     fill(viewport, x - 1, y - 1, width + 3, 1, COLOR_LIGHT_BROWN);
     fill(viewport, x - 2, y - 2, 1, height + 3, COLOR_LIGHT_BROWN);
@@ -167,7 +167,7 @@ static void draw_pressed_button(int16_t table, int16_t choice)
     fill(viewport, x - 3, y + height, width + 5, 1, COLOR_DARKEST_GRAY);
     fill(viewport, x - 3, y + height + 3, width + 7, 1, COLOR_DARK_GRAY);
     fill(viewport, x + width + 4, y - 2, 1, height + 6, COLOR_DARK_GRAY);
-    draw_viewport();
+    show_viewport();
 }
 
 int16_t dialog_get_choice(int16_t choice_count)
@@ -187,7 +187,7 @@ int16_t dialog_get_choice(int16_t choice_count)
     }
     int16_t choice = g_dialog_choice == DIALOG_NO_CHOICE ? 0 : g_dialog_choice;
     if (choice)
-        draw_pressed_button(table, choice);
+        show_pressed_button(table, choice);
     command_restore_input();
     command_discard_all_input();
     return choice;

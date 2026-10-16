@@ -56,7 +56,7 @@ static int16_t
 static bool scroll_redraw_eye; /* the scroll is the leader hand object while the eye is pressed */
 
 /* Prints "current/maximum" in the inventory. */
-static void draw_value_pair(int16_t zone, int16_t value, int16_t maximum)
+static void show_value_pair(int16_t zone, int16_t value, int16_t maximum)
 {
     char a[8], b[8], s[VALUE_PAIR_SIZE];
     snprintf(s, sizeof s, "%s/%s", ui_format_number(a, sizeof a, value, true, VALUE_WIDTH),
@@ -69,10 +69,10 @@ void panel_draw_statistics(int16_t champion_index)
     const Champion *champion = &g_champions[champion_index];
     Bitmap *viewport = ui_get_viewport();
     Box icon_box;
-    draw_value_pair(ZONE_HEALTH_VALUE, champion->current_health, champion->maximum_health);
-    draw_value_pair(ZONE_HEALTH_VALUE + 1, champion->current_stamina / STAMINA_DISPLAY_UNIT,
+    show_value_pair(ZONE_HEALTH_VALUE, champion->current_health, champion->maximum_health);
+    show_value_pair(ZONE_HEALTH_VALUE + 1, champion->current_stamina / STAMINA_DISPLAY_UNIT,
                     champion->maximum_stamina / STAMINA_DISPLAY_UNIT); /* stamina shows in tenths */
-    draw_value_pair(ZONE_HEALTH_VALUE + 2, champion->current_mana, champion->maximum_mana);
+    show_value_pair(ZONE_HEALTH_VALUE + 2, champion->current_mana, champion->maximum_mana);
     int16_t mouth = champion->food < 0 || champion->water < 0 || champion->poison_event_count ? GFX_SLOT_BOX_WOUNDED
                                                                                               : GFX_SLOT_BOX_NORMAL;
     int16_t eye = GFX_SLOT_BOX_NORMAL;
@@ -105,7 +105,7 @@ void panel_draw_load(int16_t champion_index)
 
 /* Draws a food or water bar with a black shadow: length by value (-1024 to 2048), yellow below
    0, red below -512. */
-static void draw_food_water_bar(int16_t value, int16_t zone, uint8_t color)
+static void show_food_water_bar(int16_t value, int16_t zone, uint8_t color)
 {
     Box b;
     if (value < FOOD_WATER_STARVING)
@@ -123,7 +123,7 @@ static void draw_food_water_bar(int16_t value, int16_t zone, uint8_t color)
 }
 
 /* Draws the food and water panel of the inventory, with "POISONED" when poisoned. */
-static void draw_food_water_poisoned(void)
+static void show_food_water(void)
 {
     scroll_redraw = 0;
     const Champion *c = &g_champions[g_session.inventory_champion_index];
@@ -134,8 +134,8 @@ static void draw_food_water_poisoned(void)
     ui_blit_graphic(viewport, GFX_PANEL_WATER_LABEL, ZONE_PANEL_WATER_LABEL, COLOR_DARKEST_GRAY);
     if (c->poison_event_count)
         ui_blit_graphic(viewport, GFX_PANEL_POISONED_LABEL, ZONE_PANEL_POISONED_LABEL, COLOR_DARKEST_GRAY);
-    draw_food_water_bar(c->food, ZONE_PANEL_FOOD_BAR, COLOR_LIGHT_BROWN);
-    draw_food_water_bar(c->water, ZONE_PANEL_WATER_BAR, COLOR_BLUE);
+    show_food_water_bar(c->food, ZONE_PANEL_FOOD_BAR, COLOR_LIGHT_BROWN);
+    show_food_water_bar(c->water, ZONE_PANEL_WATER_BAR, COLOR_BLUE);
 }
 
 /* The position of zone (a 1 x 1 box). */
@@ -158,7 +158,7 @@ const char *panel_get_rank_name(int16_t level)
     return gfx_get_string(tables_get_skill_level_text(level));
 }
 
-void panel_draw_skills(void)
+void panel_draw_skills_statistics(void)
 {
     scroll_redraw = 0;
     int16_t champion_index = g_session.inventory_champion_index, x, y, vx;
@@ -379,7 +379,7 @@ static void add_rune_symbols(const char *text, const char *gap, char *out, size_
 /* Prints one scroll line centered on x in the scroll font: letters and '{' to '~' have their own codes.
    Changes text: the letters and rune words become font codes (the rune symbols with the advanced features).
    With the advanced features each rune name gets its symbol in red. */
-static void draw_scroll_line(int16_t x, int16_t y, char *text)
+static void show_scroll_line(int16_t x, int16_t y, char *text)
 {
     char runes[SCROLL_TEXT_SIZE];
     int16_t width, height;
@@ -433,7 +433,7 @@ static void insert_creature_name(char *text, size_t size)
 
 /* CSB: the magic map panel when the first scroll line is MAGICMAP: the runes of the active map spells lit,
    and the map grid. Returns false for another scroll. */
-static bool draw_panel_magic_map(const char *text)
+static bool show_magic_map(const char *text)
 {
     char line[SCROLL_TEXT_SIZE];
     snprintf(line, sizeof line, "%.*s", (int)strcspn(text, "\n"), text);
@@ -457,7 +457,7 @@ static bool draw_panel_magic_map(const char *text)
 }
 
 /* Draws the open scroll with its text, vertically centered. */
-static void draw_panel_scroll(uint16_t scroll)
+static void show_scroll(uint16_t scroll)
 {
     char text[SCROLL_TEXT_SIZE];
     int16_t x, y, count = 1;
@@ -465,7 +465,7 @@ static void draw_panel_scroll(uint16_t scroll)
                         TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
     if (g_adventure == ADVENTURE_CSB) {
         insert_creature_name(text, sizeof text);
-        if (draw_panel_magic_map(text))
+        if (show_magic_map(text))
             return;
     }
     char *rest = strchr(text, '\n');
@@ -485,13 +485,13 @@ static void draw_panel_scroll(uint16_t scroll)
     ui_blit_graphic(ui_get_viewport(), GFX_PANEL_SCROLL, ZONE_PANEL, COLOR_RED);
     get_zone_point(ZONE_PANEL_SCROLL_CENTER, &x, &y);
     y -= ((MESSAGE_ROW_HEIGHT * count - FONT_BASELINE_GAP - 1) >> 1) - FONT_LINE_HEIGHT;
-    draw_scroll_line(x, y, text);
+    show_scroll_line(x, y, text);
     while (*rest) {
         char *nl = strchr(rest, '\n');
         y += MESSAGE_ROW_HEIGHT;
         if (nl)
             *nl = 0;
-        draw_scroll_line(x, y, rest);
+        show_scroll_line(x, y, rest);
         rest = nl ? nl + 1 : rest + strlen(rest);
     }
 }
@@ -528,7 +528,7 @@ static uint16_t get_largest_weight(void)
 }
 
 /* One stat meter at baseline y: the label, a bar with a black shadow, and the value when show_value is set. */
-static void draw_stat_meter(int16_t x, int16_t y, const char *label, uint16_t value, uint16_t maximum, uint8_t color,
+static void show_stat_meter(int16_t x, int16_t y, const char *label, uint16_t value, uint16_t maximum, uint8_t color,
                             bool show_value)
 {
     Bitmap *viewport = ui_get_viewport();
@@ -567,17 +567,17 @@ bool panel_get_object_meter(uint16_t thing, const char **label, uint16_t *value)
 }
 
 /* Advanced feature: attack (weapons), defense (armour), and weight meters below the description. */
-static void draw_stat_meters(uint16_t thing, int16_t x, int16_t y)
+static void show_stat_meters(uint16_t thing, int16_t x, int16_t y)
 {
     const char *label;
     uint16_t value;
     if (panel_get_object_meter(thing, &label, &value)) {
         bool attack = THING_TYPE(thing) == THING_WEAPON;
-        draw_stat_meter(x, y, label, value, attack ? get_largest_attack() : get_largest_defense(),
+        show_stat_meter(x, y, label, value, attack ? get_largest_attack() : get_largest_defense(),
                         attack ? COLOR_GOLD : COLOR_BLUE, true);
         y += MESSAGE_ROW_HEIGHT;
     }
-    draw_stat_meter(x, y, "WEIGHT", inventory_get_object_weight(thing), get_largest_weight(), COLOR_LIGHT_BROWN, false);
+    show_stat_meter(x, y, "WEIGHT", inventory_get_object_weight(thing), get_largest_weight(), COLOR_LIGHT_BROWN, false);
 }
 
 /* Opens a chest in the panel and draws its slots. While the eye is pressed, the action hand keeps
@@ -589,11 +589,11 @@ static void open_and_draw_chest(uint16_t chest, bool pressing_eye)
     inventory_close_chest();
     inventory_open_chest(chest);
     if (!pressing_eye)
-        ui_draw_icon_in_slot_box(UI_SLOT_BOX_ACTION_HAND, ICON_CHEST_OPEN);
+        ui_draw_slot_icon(UI_SLOT_BOX_ACTION_HAND, ICON_CHEST_OPEN);
     ui_blit_graphic(ui_get_viewport(), GFX_PANEL_CHEST, ZONE_PANEL, COLOR_RED);
     for (int16_t i = 0; i < SLOT_CHEST_COUNT; i++) {
         uint16_t thing = g_open_chest_slots[i];
-        ui_draw_icon_in_slot_box(UI_SLOT_BOX_CHEST_FIRST + i, thing == THING_NONE ? -1 : object_get_icon_index(thing));
+        ui_draw_slot_icon(UI_SLOT_BOX_CHEST_FIRST + i, thing == THING_NONE ? -1 : object_get_icon_index(thing));
     }
 }
 
@@ -606,7 +606,7 @@ static void show_object(uint16_t thing, bool pressing_eye)
     scroll_redraw_eye = pressing_eye;
     inventory_close_chest();
     if (THING_TYPE(thing) == THING_SCROLL) {
-        draw_panel_scroll(thing);
+        show_scroll(thing);
     } else if (THING_TYPE(thing) == THING_CONTAINER) {
         open_and_draw_chest(thing, pressing_eye);
     } else {
@@ -621,7 +621,7 @@ static void show_object(uint16_t thing, bool pressing_eye)
         for (int16_t i = 0; i < count; i++)
             print_panel_line(x, &y, lines[i]);
         if (g_advanced_features)
-            draw_stat_meters(thing, x, y);
+            show_stat_meters(thing, x, y);
     }
     ui_blit_graphic(viewport, pressing_eye ? GFX_PANEL_EYE : GFX_PANEL_ARROW, ZONE_PANEL_ARROW_OR_EYE, COLOR_RED);
 }
@@ -641,7 +641,7 @@ void panel_draw(void)
                       : THING_TYPE(thing) == THING_CONTAINER ? PANEL_CONTENT_CHEST
                                                              : PANEL_CONTENT_FOOD_WATER;
     if (g_panel_content == PANEL_CONTENT_FOOD_WATER)
-        draw_food_water_poisoned();
+        show_food_water();
     else
         show_object(thing, false);
 }
@@ -651,7 +651,7 @@ void panel_draw_eye(void)
     if (!g_leader_empty_handed)
         show_object(g_leader_hand_object, true);
     else
-        panel_draw_skills();
+        panel_draw_skills_statistics();
 }
 
 void panel_redraw_scroll(void)

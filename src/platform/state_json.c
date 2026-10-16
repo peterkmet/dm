@@ -697,7 +697,7 @@ static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *wall)
         break;
     case VIEW_ORNAMENT_OTHER:
         wall->ornament = !wall->mirror && !wall->switch_ && !wall->lock && !wall->torch_holder;
-        wall->other_ornament = view_get_wall_face_ornament_index(x, y, face);
+        wall->other_ornament = view_get_face_ornament_index(x, y, face);
         break;
     }
     return wall->text != THING_NONE || wall->mirror || wall->switch_ || wall->lock || wall->torch_holder ||

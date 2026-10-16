@@ -199,7 +199,7 @@ static void get_front_square(int16_t *x, int16_t *y)
 }
 
 /* Shows a text in the empty viewport: the sleep and freeze screens. */
-static void draw_viewport_message(int16_t text)
+static void show_viewport_message(int16_t text)
 {
     Bitmap *viewport = ui_get_viewport();
     memset(viewport->px, COLOR_BLACK, (size_t)viewport->w * viewport->h);
@@ -227,7 +227,7 @@ void command_unfreeze_game(void)
     if (!g_game_frozen)
         return;
     if (g_session.party_sleeping) {
-        draw_viewport_message(TEXT_WAKE_UP);
+        show_viewport_message(TEXT_WAKE_UP);
         return;
     }
     g_game_frozen = false;
@@ -443,7 +443,7 @@ static void touch_front_wall(void)
 
 /* An empty hand on the square ahead: a thud, or the hand goes into an imaginary wall while the
    button is down. */
-static void touch_front_square_empty_handed(bool imaginary_wall, int16_t x, int16_t y)
+static void touch_front_square(bool imaginary_wall, int16_t x, int16_t y)
 {
     if (!g_party_champion_count)
         return;
@@ -463,7 +463,7 @@ static bool is_in_box(const Box *b, int16_t x, int16_t y)
 }
 
 /* The leader throws the hand object when the click is in the left or right throw zone. */
-static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
+static bool is_hand_object_thrown(int16_t x, int16_t y)
 {
     int16_t zone =
         view_get_result()->square_ahead_element == VIEW_ELEMENT_DOOR_FRONT ? ZONE_THROW_DOOR_LEFT : ZONE_THROW_LEFT;
@@ -499,7 +499,7 @@ static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, boo
     if (view->square_ahead_element != VIEW_ELEMENT_WALL)
         return;
     if (ui_is_point_in_zone(ZONE_THROW_LEFT, x, y) || ui_is_point_in_zone(ZONE_THROW_LEFT + 1, x, y))
-        touch_front_square_empty_handed(imaginary_wall, fx, fy);
+        touch_front_square(imaginary_wall, fx, fy);
 }
 
 /* Click in the dungeon view (x, y in viewport coordinates): door buttons, objects, the front wall. */
@@ -512,7 +512,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
     if (view->square_ahead_element == VIEW_ELEMENT_DOOR_FRONT) {
         if (g_leader_index == -1)
             return;
-        if (!g_leader_empty_handed && is_leader_hand_object_thrown(x, y))
+        if (!g_leader_empty_handed && is_hand_object_thrown(x, y))
             return;
         if (g_leader_empty_handed && rec_door_has_button(map_get_square_first_thing(fx, fy)) &&
             is_in_box(wall_box, x, y)) {
@@ -526,7 +526,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
         click_empty_handed(x, y, fx, fy, imaginary_wall);
         return;
     }
-    if ((view->square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall) && is_leader_hand_object_thrown(x, y))
+    if ((view->square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall) && is_hand_object_thrown(x, y))
         return;
     int16_t cells =
         view->square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall ? CELL_COUNT : VIEW_CELL_FRONT_FIRST;
@@ -659,7 +659,7 @@ static void go_to_sleep(void)
         command_close_inventory();
     command_freeze_game();
     champion_go_to_sleep();
-    draw_viewport_message(TEXT_WAKE_UP);
+    show_viewport_message(TEXT_WAKE_UP);
     g_wait_for_input_max_frames = 0;
     set_input((InputTables){TABLES_MOUSE_SLEEPING, NO_TABLE, TABLES_KEYS_SLEEPING, TABLES_KEYS_NONE});
     command_discard_all_input();
@@ -681,7 +681,7 @@ static void freeze_game(void)
 {
     g_game_time_ticking = false;
     command_freeze_game();
-    draw_viewport_message(TEXT_GAME_FROZEN);
+    show_viewport_message(TEXT_GAME_FROZEN);
     frozen_input = get_current_input();
     set_input((InputTables){TABLES_MOUSE_FROZEN, NO_TABLE, TABLES_KEYS_FROZEN, TABLES_KEYS_NONE});
     command_discard_all_input();
@@ -697,7 +697,7 @@ static void unfreeze_game(void)
 }
 
 /* A movement command: the arrow lights up; a step that does not move the party ends the input wait. */
-static void move_or_turn(int16_t command)
+static void step_or_turn(int16_t command)
 {
     int16_t x = g_party_map_x;
     int16_t y = g_party_map_y;
@@ -776,7 +776,7 @@ bool command_process_queue(void)
     if (command == COMMAND_LEFT_RELEASE)
         process_left_release();
     else if (command >= COMMAND_TURN_LEFT && command <= COMMAND_MOVE_LEFT)
-        move_or_turn(command);
+        step_or_turn(command);
     else if (command >= COMMAND_CLICK_STATUS_BOX_FIRST &&
              command < COMMAND_CLICK_STATUS_BOX_FIRST + CHAMPION_MAX_COUNT) {
         if (command - COMMAND_CLICK_STATUS_BOX_FIRST < g_party_champion_count && g_session.candidate_champion_index < 0)
