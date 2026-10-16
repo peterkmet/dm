@@ -70,7 +70,7 @@ The `.gitignore` file excludes `*.adf`, `game/`, `game-csb/`, and `reference/` (
 | `uv run dm-extract <adf> [out_dir]` | Extract all files from an AmigaDOS ADF. The default `out_dir` is `game`. |
 | `uv run dm-ftl <module.FTL> <out.bin> [--base ADDR]` | Load an FTL module into a flat memory image, as `BJELoad_R` does. Prints the addresses and the arguments for `decompile.sh`. The default base is `0x100000`. |
 | `[SYMBOLS=<csv>] tools/ghidra/decompile.sh <image.bin> <base> <out.c> [REG=VALUE] [ENTRY ...]` | Decompile a flat 68000 image with Ghidra headless. |
-| `tools/ghidra/decompile-all.sh` | Run `dm-ftl` and `decompile.sh` for every module in `game/`. It uses `docs/<module>-symbols.csv` as `SYMBOLS` (for example `docs/reference/kaos-symbols.csv`). |
+| `tools/ghidra/decompile-all.sh` | Run `dm-ftl` and `decompile.sh` for every module in `game/`. It uses `docs/reference/<module>-symbols.csv` as `SYMBOLS` (for example `docs/reference/kaos-symbols.csv`). |
 | `tools/research/platforms/` | Research scripts for the other versions (DOS, Atari ST, Apple IIGS, FM-Towns, Super NES, DM2): extract and compare sounds and music, build `reference/extracted/music_map.json`. They read `reference/extracted/` and need extra packages (`capstone`, `numpy`) for some scripts. |
 | `dmtools.emu` (Python) | Run a function of a module image in a 68000 emulator. `Emu(image).call(addr, [(size, value), ...])` pushes the arguments right to left and returns `D0`. Access to custom chips, CIA, or ExecBase stops the call with `EmuError`. Use `allow_hw=True` to permit this access. |
 
@@ -290,4 +290,4 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 - [FTL module format](docs/formats/ftl.md)
 - [Dungeon.DAT format](docs/formats/dungeon.md)
 - [LLM playbook](docs/llm/llm-playbook.md)
-- [KAOS map](docs/reference/kaos-map.md) and subsystem notes in [docs/symbols/](docs/symbols)
+- [KAOS map](docs/reference/kaos-map.md) and subsystem notes in [docs/reference/symbols/](docs/reference/symbols)
