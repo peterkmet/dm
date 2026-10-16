@@ -201,9 +201,9 @@ def test_hand_object_name_follows_the_icon(game):
     game.click_zone(ZONE_RESURRECT)
     lib.tables_get_object_info.restype = ctypes.POINTER(u16 * 3)
     junk = next(j for j in range(53) if lib.tables_get_object_info(0x7F + j).contents[0] == 8)  # waterskin
-    lib.map_get_unused_thing.restype = u16
-    skin = lib.map_get_unused_thing(10)
-    data = lib.dungeon_get_thing_data(skin)
+    lib.rec_find_unused_thing.restype = u16
+    skin = lib.rec_find_unused_thing(10)
+    data = lib.rec_write(skin)
     data[3], data[2] = junk, 1 << 6  # one charge
     lib.inventory_put_object_in_leader_hand(skin)
     game.key(C.KEY_F1)
@@ -214,7 +214,7 @@ def test_hand_object_name_follows_the_icon(game):
     name = lambda: [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
     before = name()
     game.click_zone(545)  # the mouth
-    assert lib.dungeon_get_thing_data(skin)[2] >> 6 == 0
+    assert lib.rec_write(skin)[2] >> 6 == 0
     assert name() != before
     game.key(C.KEY_F1)
     game.run()

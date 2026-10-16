@@ -93,7 +93,7 @@ The loader builds `g_dungeon_map_data`. `g_dungeon_map_data[map][x]` points to c
 
 Each word of the column table is the index of the first square-first-thing entry of that column. To find the first thing of square (x, y), start at the column entry and add 1 for each square above `y` that has bit 4 set. `dungeon_get_square_first_thing(map, x, y)` does this. It returns `0xfffe` when the square has no things.
 
-A thing is a word: bits 0–9 index, bits 10–13 type, bits 14–15 cell. Each record starts with the word of the next thing. `0xfffe` ends a list. `dungeon_get_thing_data(thing)` returns the record.
+A thing is a word: bits 0–9 index, bits 10–13 type, bits 14–15 cell. Each record starts with the word of the next thing. `0xfffe` ends a list. `rec_read(thing)` and `rec_write(thing)` return the record.
 
 Record sizes (`g_thing_data_byte_count`):
 

@@ -43,7 +43,6 @@ int16_t dungeon_map_height(int16_t map);
 uint8_t dungeon_get_square(int16_t map, int16_t x, int16_t y);
 /* map_get_square_first_thing for any map, not only the current one. */
 uint16_t dungeon_get_square_first_thing(int16_t map, int16_t x, int16_t y);
-uint8_t *dungeon_get_thing_data(uint16_t thing);
 /* dungeon_decode_text modes and buffer sizes. */
 #define TEXT_MODE_MESSAGE        1
 #define TEXT_MODE_SCROLL         2

@@ -37,7 +37,7 @@ def lib():
     lib.dungeon_load.restype = ctypes.c_bool
     lib.map_get_location_after_level_change.argtypes = [c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
     lib.dungeon_get_square.restype = ctypes.c_uint8
-    lib.dungeon_get_thing_data.restype = u8p
+    lib.rec_write.restype = u8p
     return lib
 
 
@@ -252,7 +252,7 @@ def test_link_and_unlink_keep_lists(game):
     index_before = bytes(u8p.in_dll(game, "g_dungeon_column_first_thing_index")[:2 * columns])
     assert game.map_get_square_first_thing(1, 5) == 0xFFFE
     junk = 10 << 10 | 0  # junk record 0
-    saved = bytes(game.dungeon_get_thing_data(junk)[:4])
+    saved = bytes(game.rec_write(junk)[:4])
     game.map_link_thing_to_list(junk | 2 << 14, 0, 1, 5)
     assert game.map_get_square_first_thing(1, 5) == junk | 2 << 14
     assert game.dungeon_get_square(0, 1, 5) & 0x10
@@ -260,4 +260,4 @@ def test_link_and_unlink_keep_lists(game):
     assert game.map_get_square_first_thing(1, 5) == 0xFFFE and not game.dungeon_get_square(0, 1, 5) & 0x10
     assert bytes(u8p.in_dll(game, "g_square_first_things")[:2 * count]) == before
     assert bytes(u8p.in_dll(game, "g_dungeon_column_first_thing_index")[:2 * columns]) == index_before
-    ctypes.memmove(game.dungeon_get_thing_data(junk), saved, 4)
+    ctypes.memmove(game.rec_write(junk), saved, 4)

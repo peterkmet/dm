@@ -11,6 +11,7 @@
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
+#include "engine/record.h"
 #include "engine/savegame.h"
 #include "engine/timeline_process.h"
 #include "ui/advanced.h"
@@ -772,7 +773,7 @@ static void record_witnessed(void)
             k++;
         if (k == WITNESSED_GROUPS_MAX)
             continue;
-        int16_t creatures = rec_group_last_creature_index(things[i].thing) + 1;
+        int16_t creatures = rec_group_last_creature(things[i].thing) + 1;
         if (k == witnessed.group_count) { /* a group seen first: count it once, not on each tick */
             witnessed.groups[k] =
                 (WitnessedGroup){.creature = rec_group_creature_type(things[i].thing), .before = creatures};
@@ -784,7 +785,7 @@ static void record_witnessed(void)
     }
     for (int k = 0; k < witnessed.group_count; k++) /* a killed group frees its record */
         witnessed.groups[k].killed |=
-            !witnessed.groups[k].in_view && map_get_next_thing(witnessed.groups[k].at.thing) == THING_NONE;
+            !witnessed.groups[k].in_view && rec_thing_next(witnessed.groups[k].at.thing) == THING_NONE;
 }
 
 /* Starts the record of what the party sees during a request. */

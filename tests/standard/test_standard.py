@@ -27,7 +27,7 @@ DECIMAL = re.compile(r"(?<![\w.])[1-9][0-9]+(?![\w.])|\[\s*[2-9]\s*\]|<=?\s*[2-9
 STRTOL_BASE = re.compile(r"\bstrto\w*\s*\([^;]*?,\s*10\s*\)")
 DECOMPILER = re.compile(r"\b(?:[uisbcp]Var\d+|local_[0-9a-f]+|arg_[0-9a-f]+|param_\d+|in_[AD][0-7]\w*|CONCAT\d+|DAT_[0-9a-f]+|FUN_[0-9a-f]+)\b")
 RECORD = re.compile(r"\bREC\s*\(|\bg_current_map_data\s*\[|\bg_dungeon_map_data\s*\[|\bg_current_map\s*\[|"
-                    r"dungeon_get_thing_data\([^()]*\)\s*\[")
+                    r"\brec_(?:read|write)\([^()]*\)\s*\[")
 CONST_DEF = re.compile(r"\s*(?:static\s+)?const\s+\w+\s+[A-Z][A-Z0-9_]*\s*=")
 ENUM = re.compile(r"\benum\b[^{};]*\{([^}]*)\}")
 DEFINE = re.compile(r"^\s*#define\s+([A-Z][A-Z0-9_]*)\b", re.M)

@@ -11,6 +11,7 @@
 #include "engine/magic.h"
 #include "engine/map.h"
 #include "engine/move.h"
+#include "engine/record.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
@@ -519,7 +520,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
             return;
         if (!g_leader_empty_handed && is_leader_hand_object_thrown(x, y))
             return;
-        if (g_leader_empty_handed && door_button_present(map_get_square_first_thing(fx, fy)) &&
+        if (g_leader_empty_handed && rec_door_has_button(map_get_square_first_thing(fx, fy)) &&
             is_in_box(wall_box, x, y)) {
             sensor_press_door_button(fx, fy);
             g_stop_waiting_for_input = true;

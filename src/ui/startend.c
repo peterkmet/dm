@@ -12,6 +12,7 @@
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/projectile.h"
+#include "engine/record.h"
 #include "engine/savegame.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
@@ -440,11 +441,11 @@ static void remove_fluxcages(int16_t x, int16_t y)
     while (t != THING_ENDOFLIST) {
         if (THING_TYPE(t) == THING_EXPLOSION && rec_explosion_type(t) == EXPLOSION_FLUXCAGE) {
             map_unlink_thing_from_list(t, 0, x, y);
-            thing_set_free(t);
+            rec_thing_set_free(t);
             t = map_get_square_first_object(x, y);
             continue;
         }
-        t = map_get_next_thing(t);
+        t = rec_thing_next(t);
     }
 }
 
@@ -464,7 +465,7 @@ static void show_final_texts(void)
     uint16_t texts[FUSE_TEXT_COUNT];
     int16_t count = 0;
     for (uint16_t t = map_get_square_first_thing(0, 0); t != THING_ENDOFLIST && count < FUSE_TEXT_COUNT;
-         t = map_get_next_thing(t))
+         t = rec_thing_next(t))
         if (THING_TYPE(t) == THING_TEXT)
             texts[count++] = t;
     char letter = 'A';
@@ -491,7 +492,7 @@ static void flash_lords(uint16_t lord, int16_t x, int16_t y)
     for (int16_t ticks = FUSE_FLASH_ROUNDS; ticks > 0; ticks--)
         for (int16_t flash = FUSE_FLASHES_PER_ROUND; flash > 0; flash--) {
             sound_request_play(SOUND_FUSE, x, y, SOUND_MODE_AFTER_TICK);
-            group_set_creature_type(lord, flash & 1 ? CREATURE_LORD_ORDER : CREATURE_LORD_CHAOS);
+            rec_group_set_creature_type(lord, flash & 1 ? CREATURE_LORD_ORDER : CREATURE_LORD_CHAOS);
             for (int16_t i = 0; i < ticks; i++)
                 fuse_update();
         }
@@ -520,7 +521,7 @@ void startend_run_fuse_sequence(void)
     uint16_t lord = map_get_square_group(x, y);
     if (lord == THING_ENDOFLIST)
         return;
-    group_set_health(lord, 0, FUSE_LORD_HEALTH);
+    rec_group_set_health(lord, 0, FUSE_LORD_HEALTH);
     group_set_cells(lord, CELL_CENTERED, g_party_map_index);
     group_set_directions(lord, (uint8_t)turn_back(g_party_direction), g_party_map_index); /* faces the party */
     remove_fluxcages(g_party_map_x, g_party_map_y);
@@ -528,14 +529,14 @@ void startend_run_fuse_sequence(void)
     fuse_update();
     draw_fuse_explosions(EXPLOSION_FIREBALL, x, y);
     sound_request_play(SOUND_FUSE, x, y, SOUND_MODE_AFTER_TICK);
-    group_set_creature_type(lord, CREATURE_LORD_ORDER);
+    rec_group_set_creature_type(lord, CREATURE_LORD_ORDER);
     fuse_update();
     draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     flash_lords(lord, x, y);
     explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_ACTION_ATTACK, x, y, CELL_CENTERED);
     explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_ACTION_ATTACK, x, y, CELL_CENTERED);
     fuse_update();
-    group_set_creature_type(lord, CREATURE_GREY_LORD);
+    rec_group_set_creature_type(lord, CREATURE_GREY_LORD);
     fuse_update();
     g_do_not_draw_fluxcages = true;
     fuse_update();

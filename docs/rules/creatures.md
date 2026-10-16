@@ -6,9 +6,9 @@ This page describes the creature rules of the C port: creature groups and their 
 
 | Thing type | Size | Accessors | Content |
 |---|---|---|---|
-| 4 group | 16 bytes | `group.h`, `map.h` | Next thing, possessions, creature type, cells byte, 4 health words, flags in word 14 (direction, last creature index, behavior). |
-| 14 projectile | 8 bytes | `projectile.h`, `map.h` | Next thing, flying thing (slot), kinetic energy, attack, timeline event index. |
-| 15 explosion | 4 bytes | `projectile.h`, `map.h` | Next thing, attack, type in bits 0–6, centered flag in bit 7. |
+| 4 group | 16 bytes | `record.h` | Next thing, possessions, creature type, cells byte, 4 health words, flags in word 14 (direction, last creature index, behavior). |
+| 14 projectile | 8 bytes | `record.h` | Next thing, flying thing (slot), kinetic energy, attack, timeline event index. |
+| 15 explosion | 4 bytes | `record.h` | Next thing, attack, type in bits 0–6, centered flag in bit 7. |
 
 The flying thing of a spell projectile is an explosion thing `0xff80 + type` (`EXPLOSION_THING(type)`), not a record.
 

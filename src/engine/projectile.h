@@ -3,7 +3,7 @@
 #define DM_ENGINE_PROJECTILE_H
 /* Prefixes: projectile_ explosion_ */
 #include "engine/game.h"
-#include "engine/map.h"
+#include "engine/record.h"
 #include "engine/timeline_process.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -48,46 +48,6 @@ static inline bool projectile_is_launcher_sensor(uint16_t sensor)
     uint16_t type = rec_sensor_type(sensor);
     return (type >= SENSOR_WALL_LAUNCHER_OBJECT && type <= SENSOR_WALL_LAUNCHER_TWO_EXPLOSIONS) ||
            type == SENSOR_WALL_LAUNCHER_SQUARE_OBJECT || type == SENSOR_WALL_LAUNCHER_TWO_SQUARE_OBJECTS;
-}
-
-/* Projectile record, 8 bytes (thing type 14): next, slot (the flying thing), kinetic energy, attack, event index. */
-static inline void projectile_set_slot(uint16_t projectile, uint16_t thing)
-{
-    wr16(REC(projectile) + 2, thing);
-}
-static inline uint8_t projectile_attack(uint16_t projectile)
-{
-    return REC(projectile)[5];
-}
-static inline void projectile_set_kinetic_energy(uint16_t projectile, uint8_t value)
-{
-    REC(projectile)[4] = value;
-}
-static inline void projectile_set_attack(uint16_t projectile, uint8_t value)
-{
-    REC(projectile)[5] = value;
-}
-static inline void projectile_set_event_index(uint16_t projectile, uint16_t index)
-{
-    wr16(REC(projectile) + 6, index);
-}
-
-/* Explosion record, 4 bytes (thing type 15): next, attack, type in bits 0-6, centered in bit 7. */
-#define EXPLOSION_RECORD_TYPE_MASK 0x7f
-#define EXPLOSION_RECORD_CENTERED  0x80
-static inline void explosion_set_attack(uint16_t explosion, uint8_t attack)
-{
-    REC(explosion)[2] = attack;
-}
-static inline void explosion_set_type(uint16_t explosion, uint16_t type)
-{
-    REC(explosion)
-    [3] = (REC(explosion)[3] & EXPLOSION_RECORD_CENTERED) | (type & EXPLOSION_RECORD_TYPE_MASK);
-}
-static inline void explosion_set_centered(uint16_t explosion, bool centered)
-{
-    REC(explosion)
-    [3] = (REC(explosion)[3] & EXPLOSION_RECORD_TYPE_MASK) | (centered ? EXPLOSION_RECORD_CENTERED : 0);
 }
 
 /* Projectile move event: b = projectile thing, c = x bits 11-15, y bits 6-10, direction bits 4-5, step energy bits 0-3. */

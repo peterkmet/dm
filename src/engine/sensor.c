@@ -9,6 +9,7 @@
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
+#include "engine/record.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
 
@@ -76,19 +77,19 @@ void sensor_process_rotation_effect(void)
         int16_t y = g_sensor_rotation_effect_map_y;
         uint16_t first = map_get_square_first_thing(x, y);
         while (first != THING_ENDOFLIST && !is_rotation_sensor(first))
-            first = map_get_next_thing(first);
-        uint16_t second = first == THING_ENDOFLIST ? THING_ENDOFLIST : map_get_next_thing(first);
+            first = rec_thing_next(first);
+        uint16_t second = first == THING_ENDOFLIST ? THING_ENDOFLIST : rec_thing_next(first);
         while (second != THING_ENDOFLIST && !is_rotation_sensor(second))
-            second = map_get_next_thing(second);
+            second = rec_thing_next(second);
         if (second != THING_ENDOFLIST) {
             map_unlink_thing_from_list(first, 0, x, y);
             uint16_t last = second;
-            for (uint16_t t = map_get_next_thing(second); t != THING_ENDOFLIST && THING_TYPE(t) == THING_SENSOR;
-                 t = map_get_next_thing(t))
+            for (uint16_t t = rec_thing_next(second); t != THING_ENDOFLIST && THING_TYPE(t) == THING_SENSOR;
+                 t = rec_thing_next(t))
                 if (is_rotation_sensor(t))
                     last = t;
-            thing_set_next(first, map_get_next_thing(last));
-            thing_set_next(last, first);
+            rec_thing_set_next(first, rec_thing_next(last));
+            rec_thing_set_next(last, first);
         }
     }
     g_sensor_rotation_effect = -1;
@@ -97,7 +98,7 @@ void sensor_process_rotation_effect(void)
 void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
 {
     if (rec_sensor_is_once_only(sensor))
-        rec_sensor_disable(sensor);
+        rec_sensor_set_type(sensor, SENSOR_DISABLED);
     if (rec_sensor_is_local(sensor)) {
         sensor_trigger_local_effect(rec_sensor_local_effect(sensor), x, y, cell);
         return;
@@ -112,8 +113,7 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
 
 uint16_t sensor_get_object_of_type_in_cell(int16_t x, int16_t y, int16_t cell, int16_t object_type)
 {
-    for (uint16_t thing = map_get_square_first_object(x, y); thing != THING_ENDOFLIST;
-         thing = map_get_next_thing(thing))
+    for (uint16_t thing = map_get_square_first_object(x, y); thing != THING_ENDOFLIST; thing = rec_thing_next(thing))
         if (object_get_type(thing) == object_type && (cell == ANY_CELL || THING_CELL(thing) == cell))
             return thing;
     return THING_NONE;
@@ -125,7 +125,7 @@ static bool is_object_or_in_chest(uint16_t thing, int16_t object_type)
     if (type == object_type)
         return true;
     if (type == ICON_CHEST_CLOSED)
-        for (uint16_t t = container_first_thing(thing); t != THING_ENDOFLIST; t = map_get_next_thing(t))
+        for (uint16_t t = rec_container_first_thing(thing); t != THING_ENDOFLIST; t = rec_thing_next(t))
             if (object_get_type(t) == object_type)
                 return true;
     return false;
@@ -186,7 +186,7 @@ static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, 
     case SENSOR_WALL_ORNAMENT_CLICK:
         return effect == EFFECT_HOLD ? CLICK_IGNORED : 0;
     case SENSOR_WALL_ANY_OBJECT:
-        return rec_sensor_revert(sensor) != g_leader_empty_handed;
+        return rec_sensor_is_reverted(sensor) != g_leader_empty_handed;
     case SENSOR_WALL_SINGLE_OBJECT_STORAGE:
     case SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED:
         if (remaining)
@@ -195,10 +195,10 @@ static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, 
         __attribute__((fallthrough));
     case SENSOR_WALL_OBJECT:
     case SENSOR_WALL_OBJECT_REMOVED:
-        skip = rec_sensor_revert(sensor) == holds_object_type(data);
+        skip = rec_sensor_is_reverted(sensor) == holds_object_type(data);
         if (!skip && type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED && sensor != previous) {
-            thing_set_next(previous, map_get_next_thing(sensor));
-            thing_set_free(sensor);
+            rec_thing_set_next(previous, rec_thing_next(sensor));
+            rec_thing_set_free(sensor);
             *t = previous;
         }
         if (!skip && type == SENSOR_WALL_SINGLE_OBJECT_STORAGE)
@@ -238,14 +238,14 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
     bool triggered = false;
     int16_t remaining[CELL_COUNT] = {0};
     uint16_t first = map_get_square_first_thing(x, y);
-    for (uint16_t t = first; t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
+    for (uint16_t t = first; t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         if (THING_TYPE(t) == THING_SENSOR)
             remaining[THING_CELL(t)]++;
         else if (THING_TYPE(t) > THING_SENSOR)
             break;
     }
     uint16_t previous = first;
-    for (uint16_t t = first; t != THING_ENDOFLIST; previous = t, t = map_get_next_thing(t)) {
+    for (uint16_t t = first; t != THING_ENDOFLIST; previous = t, t = rec_thing_next(t)) {
         if (THING_TYPE(t) != THING_SENSOR) {
             if (THING_TYPE(t) > THING_SENSOR)
                 break;
@@ -274,7 +274,7 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
         if (!g_leader_empty_handed &&
             (type == SENSOR_WALL_OBJECT_REMOVED || type == SENSOR_WALL_SINGLE_OBJECT_STORAGE ||
              type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED)) {
-            thing_set_free(g_leader_hand_object);
+            rec_thing_set_free(g_leader_hand_object);
             inventory_get_object_removed_from_leader_hand();
         }
         sensor_trigger_effect(sensor, effect, x, y, sensor_cell);
@@ -287,7 +287,7 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
 static void trigger(uint16_t sensor, bool value, int16_t x, int16_t y)
 {
     int16_t effect = rec_sensor_effect(sensor);
-    value ^= rec_sensor_revert(sensor);
+    value ^= rec_sensor_is_reverted(sensor);
     if (effect == EFFECT_HOLD)
         effect = value ? EFFECT_SET : EFFECT_CLEAR;
     else if (!value)
@@ -317,7 +317,7 @@ typedef struct {
    that enters a floor square reads its texts. */
 static void scan_square(SquareChange *s, bool wall)
 {
-    for (uint16_t t = map_get_square_first_thing(s->x, s->y); t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
+    for (uint16_t t = map_get_square_first_thing(s->x, s->y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         int16_t type = THING_TYPE(t);
         bool is_object;
         if (wall) {
@@ -416,7 +416,7 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
     scan_square(&s, wall);
     if (add && !party)
         map_link_thing_to_list(thing, 0, x, y);
-    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
+    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         if (THING_TYPE(t) != THING_SENSOR) {
             if (THING_TYPE(t) > THING_SENSOR)
                 break;
@@ -444,7 +444,7 @@ void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int
 {
     TimelineEvent rebirth = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + 1),
                              .type = EVENT_VI_ALTAR_REBIRTH,
-                             .priority = junk_charges(bones),
+                             .priority = rec_junk_charges(bones),
                              .b = event_square(x, y),
                              .c = event_cell_effect(cell, VI_ALTAR_REBIRTH_EFFECT)};
     timeline_add_event(&rebirth);

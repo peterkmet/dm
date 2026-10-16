@@ -12,6 +12,7 @@
 #include "engine/message.h"
 #include "engine/move.h"
 #include "engine/random.h"
+#include "engine/record.h"
 #include "engine/recruit.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
@@ -323,7 +324,7 @@ static void add_candidate_possessions(uint16_t champion_index)
     get_square_in_front(&x, &y);
     uint16_t cell = (g_party_direction + 2) % CELL_COUNT;
     uint16_t backpack = SLOT_BACKPACK_FIRST;
-    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_END; t = map_get_next_thing(t)) {
+    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         uint16_t type = THING_TYPE(t);
         /* Fix: the original reuses a stale slot for things that are not objects; none lie on mirror walls. */
         if (type < THING_WEAPON || type > THING_JUNK || THING_CELL(t) != cell)
@@ -446,8 +447,8 @@ void champion_click_in_resurrect_reincarnate_panel(int16_t command)
             map_unlink_thing_from_list(c->slots[s], 0, x, y);
     uint16_t mirror = map_get_square_first_thing(x, y);
     while (THING_TYPE(mirror) != THING_SENSOR)
-        mirror = map_get_next_thing(mirror);
-    rec_sensor_disable(mirror);
+        mirror = rec_thing_next(mirror);
+    rec_sensor_set_type(mirror, SENSOR_DISABLED);
     if (command == PANEL_REINCARNATE)
         reincarnate(c);
     if (g_party_champion_count == 1)
@@ -674,7 +675,7 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
             strength -= (weight - heavy) * 2;
     }
     if (THING_TYPE(thing) == THING_WEAPON) {
-        const WeaponInfo *w = tables_get_weapon_info(weapon_type(thing));
+        const WeaponInfo *w = tables_get_weapon_info(rec_weapon_type(thing));
         int16_t skill = 0;
         strength += w->strength;
         if (w->weapon_class == CLASS_SWING_WEAPON || w->weapon_class == CLASS_DAGGER_AND_AXES)
@@ -693,7 +694,7 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot)
 
 static const ArmourInfo *get_armour_info(uint16_t thing)
 {
-    return tables_get_armour_info(armour_type(thing));
+    return tables_get_armour_info(rec_armour_type(thing));
 }
 
 int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_flags)
@@ -841,11 +842,11 @@ void champion_kill(uint16_t champion_index)
     c->attributes |= CHAMPION_ATTR_STATUS_BOX;
     g_dead_champions |= 1 << champion_index;
     champion_drop_all_objects(champion_index);
-    uint16_t bones = map_get_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
+    uint16_t bones = rec_find_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
     if (bones != THING_NONE) {
-        junk_set_type(bones, JUNK_BONES);
-        rec_object_set_important(bones);
-        junk_set_charges(bones, champion_index);
+        rec_junk_set_type(bones, JUNK_BONES);
+        rec_object_set_important(bones, true);
+        rec_junk_set_charges(bones, champion_index);
         drop_on_party_square(bones, c->cell);
     }
     c->symbol_step = 0;

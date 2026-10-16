@@ -5,6 +5,7 @@
 #include "data/tables.h"
 #include "engine/game.h"
 #include "engine/map.h"
+#include "engine/record.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -280,12 +281,6 @@ static bool valid_link(uint16_t thing)
     return thing == THING_ENDOFLIST || is_valid_thing(thing);
 }
 
-/* Groups and containers: word 1 starts the list of the things they carry. */
-static uint16_t get_carried_first_thing(uint16_t thing)
-{
-    return be16(REC(thing) + 2);
-}
-
 /* The map one level up or down that covers the dungeon position of (x, y) on map, or -1. */
 static int16_t map_at_level(int16_t map, int16_t level_delta, int16_t x, int16_t y)
 {
@@ -304,9 +299,9 @@ static int16_t map_at_level(int16_t map, int16_t level_delta, int16_t x, int16_t
 /* A teleporter record points to a square inside a map. */
 static bool is_valid_teleporter(uint16_t thing)
 {
-    int16_t map = teleporter_target_map(thing);
-    return map < dungeon_map_count() && teleporter_target_x(thing) < dungeon_map_width(map) &&
-           teleporter_target_y(thing) < dungeon_map_height(map);
+    int16_t map = rec_teleporter_target_map(thing);
+    return map < dungeon_map_count() && rec_teleporter_target_x(thing) < dungeon_map_width(map) &&
+           rec_teleporter_target_y(thing) < dungeon_map_height(map);
 }
 
 /* Checks the thing lists of all used records and the teleporter targets. */
@@ -315,12 +310,13 @@ static bool validate_records(void)
     for (int16_t type = 0; type < THING_TYPE_COUNT; type++) {
         for (uint16_t i = 0; g_thing_data_byte_count[type] && i < thing_count(type); i++) {
             uint16_t thing = THING_MAKE(type, i);
-            uint16_t next = map_get_next_thing(thing);
+            uint16_t next = rec_thing_next(thing);
             if (next == THING_NONE)
                 continue;
             if (!valid_link(next))
                 return false;
-            if ((type == THING_GROUP || type == THING_CONTAINER) && !valid_link(get_carried_first_thing(thing)))
+            if ((type == THING_GROUP || type == THING_CONTAINER) &&
+                !valid_link(type == THING_GROUP ? rec_group_possessions(thing) : rec_container_first_thing(thing)))
                 return false;
             if (type == THING_TELEPORTER && !is_valid_teleporter(thing))
                 return false;
@@ -472,12 +468,6 @@ uint16_t dungeon_get_square_first_thing(int16_t map, int16_t x, int16_t y)
     return be16(g_square_first_things + index * 2);
 }
 
-uint8_t *dungeon_get_thing_data(uint16_t thing)
-{
-    uint16_t type = THING_TYPE(thing);
-    return g_thing_data[type] + g_thing_data_byte_count[type] * THING_INDEX(thing);
-}
-
 /* dungeon_decode_text modes; MODE_ANY_VISIBILITY also decodes an invisible text. */
 #define MODE_INSCRIPTION        0
 #define MODE_MESSAGE            0x0001
@@ -562,7 +552,7 @@ bool dungeon_decode_text(char *dst, int16_t dst_size, uint16_t text_thing, int16
     if (dst_size < 1)
         return false;
     TextOut o = {dst, dst + dst_size - 1, true};
-    uint16_t offset = be16(REC(text_thing) + 2) >> 3; /* text word offset in bits 3-15 */
+    uint16_t offset = rec_text_offset(text_thing);
     if (rec_text_is_visible(text_thing) || mode < 0) {
         mode &= MODE_MASK;
         decode_codes(&o, offset, mode);

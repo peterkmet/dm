@@ -59,8 +59,8 @@ def place_party(game, m, x, y, d):
 
 
 def new_object(game, thing_type, object_type, byte=3):
-    thing = game.lib.map_get_unused_thing(thing_type)
-    data = game.lib.dungeon_get_thing_data(thing)
+    thing = game.lib.rec_find_unused_thing(thing_type)
+    data = game.lib.rec_write(thing)
     data[byte] = (data[byte] & 0x80) | object_type
     return thing
 
@@ -84,8 +84,8 @@ def test_fill_at_a_fountain(game):
         game.click_box(game.boxes[5])
         got.append(snapshot(game))
         lib.inventory_get_object_removed_from_leader_hand()
-    assert lib.dungeon_get_thing_data(flask)[2] & 0x7F != C.POTION_EMPTY_FLASK
-    assert lib.dungeon_get_thing_data(skin)[2] >> 6 == 3
+    assert lib.rec_write(flask)[2] & 0x7F != C.POTION_EMPTY_FLASK
+    assert lib.rec_write(skin)[2] >> 6 == 3
     check("fill", got)
 
 
@@ -111,7 +111,7 @@ def test_bones_on_the_vi_altar(game):
     place_party(game, *VI_ALTAR)
     assert game.value("g_facing_vi_altar") and game.value("g_facing_alcove")
     bones = new_object(game, C.THING_JUNK, C.JUNK_BONES)
-    lib.dungeon_get_thing_data(bones)[2] = 1 << 6  # charges: champion 1
+    lib.rec_write(bones)[2] = 1 << 6  # charges: champion 1
     lib.inventory_put_object_in_leader_hand(bones)
     game.click_box(game.boxes[5])
     got = [snapshot(game)]
@@ -153,14 +153,14 @@ def test_torch_burns(game):
     lib = game.lib
     recruit(game)
     torch = new_object(game, C.THING_WEAPON, C.WEAPON_TORCH)
-    lib.weapon_set_lit(torch, True)
-    lib.weapon_set_charges(torch, 3)
+    lib.rec_weapon_set_lit(torch, True)
+    lib.rec_weapon_set_charges(torch, 3)
     game.champions[0].slots[C.SLOT_HAND_READY] = torch
     got = []
     for _ in range(4):
         ticks(game, 500)
         got.append(snapshot(game))
-    assert lib.dungeon_get_thing_data(torch)[2] >> 2 & 15 == 0
+    assert lib.rec_write(torch)[2] >> 2 & 15 == 0
     check("torch", got)
 
 
@@ -194,7 +194,7 @@ def test_action_list(game):
             champion.skills[s].experience = experience
         for weapon, charges in WEAPONS:
             thing = new_object(game, C.THING_WEAPON, weapon)
-            lib.weapon_set_charges(thing, charges)
+            lib.rec_weapon_set_charges(thing, charges)
             champion.slots[C.SLOT_HAND_ACTION] = thing
             game.click_box(zone_box(game, C.ZONE_ACTION_ICON_BOX_FIRST), viewport=False)  # + champion index: the action hand icon of the action area
             assert game.value("g_acting_champion_ordinal") == 1
@@ -301,7 +301,7 @@ def test_grab_under_a_creature(game):
     for cell, creature, grabbed in ((VIEW_CELL_FRONT_FIRST, C.CREATURE_SKELETON, False),
                                     (VIEW_CELL_FRONT_FIRST + 1, C.CREATURE_SKELETON, True),
                                     (VIEW_CELL_FRONT_FIRST, C.CREATURE_WIZARD_EYE, True)):  # the wizard eye levitates
-        lib.dungeon_get_thing_data(group)[4] = creature
+        lib.rec_group_set_creature_type(group, creature)
         game.click_box(game.boxes[cell])
         hand = game.value("g_leader_hand_object", u16)
         assert (hand & THING_STRIP_CELL == piles[cell] & THING_STRIP_CELL) if grabbed else hand == NONE

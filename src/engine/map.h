@@ -1,13 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_ENGINE_MAP_H
 #define DM_ENGINE_MAP_H
-/* Prefixes: door_ square_ thing_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ */
+/* Prefixes: door_ square_ map_ */
 #include "data/bytes.h"
 #include "engine/dungeon.h"
+#include "engine/record.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Current map, square bytes, thing lists, and the record fields that the movement rules use.
+/* Current map, square bytes, and thing lists.
    Coordinates are on the current map. All records keep the big-endian layout of Dungeon.DAT. */
 
 #define DIRECTION_NORTH 0
@@ -74,7 +75,6 @@ static inline uint8_t square_with_door_state(uint8_t square, int16_t state)
 #define THING_PROJECTILE             14
 #define THING_EXPLOSION              15
 #define THING_ENDOFLIST              0xfffe
-#define THING_END                    THING_ENDOFLIST
 #define THING_NONE                   0xffff
 #define THING_TYPE_SHIFT             10
 #define THING_TYPE(thing)            ((thing) >> THING_TYPE_SHIFT & 0x0f)
@@ -83,53 +83,6 @@ static inline uint8_t square_with_door_state(uint8_t square, int16_t state)
 #define THING_INDEX(thing)           ((thing) & 0x3ff) /* record index without type and cell */
 #define THING_STRIP_CELL(thing)      ((thing) & 0x3fff)
 #define THING_WITH_CELL(thing, cell) ((uint16_t)(((cell) & 3) << 14 | THING_STRIP_CELL(thing)))
-
-#define REC(thing) dungeon_get_thing_data(thing)
-
-/* Every record starts with the next thing of its list. 0xffff marks a free record. */
-static inline void thing_set_next(uint16_t thing, uint16_t next)
-{
-    wr16(REC(thing), next);
-}
-void thing_set_free(uint16_t thing);
-
-/* Object records (types 5-10) and free records. */
-#define NO_JUNK_RESERVE 0x8000
-/* A free record of the type. Junk keeps 3 records in reserve unless NO_JUNK_RESERVE is set.
-   ponytail: no get_discarded_thing yet; returns THING_NONE when no record is free. */
-uint16_t map_get_unused_thing(uint16_t thing_type);
-uint16_t weapon_type(uint16_t thing);
-uint16_t armour_type(uint16_t thing);
-uint16_t junk_type(uint16_t thing);
-uint16_t potion_type(uint16_t thing);
-uint16_t potion_power(uint16_t thing);
-uint16_t container_type(uint16_t thing);
-uint16_t container_first_thing(uint16_t thing);
-bool rec_object_is_cursed(uint16_t thing);
-void rec_object_set_important(uint16_t thing);
-void rec_object_clear_important(uint16_t thing);
-bool weapon_is_lit(uint16_t thing);
-uint16_t weapon_charges(uint16_t thing);
-uint16_t junk_charges(uint16_t thing);
-uint16_t armour_charges(uint16_t thing);
-bool scroll_is_closed(uint16_t thing);
-bool weapon_is_poisoned(uint16_t thing);
-bool weapon_is_broken(uint16_t thing);
-bool armour_is_broken(uint16_t thing);
-uint16_t scroll_text_index(uint16_t thing); /* text record index of the scroll text */
-void container_set_first_thing(uint16_t thing, uint16_t first);
-void weapon_set_lit(uint16_t thing, bool lit);
-void weapon_set_charges(uint16_t thing, uint16_t charges);
-void junk_set_charges(uint16_t thing, uint16_t charges);
-void armour_set_charges(uint16_t thing, uint16_t charges);
-void junk_set_type(uint16_t thing, uint16_t type);
-void potion_set_type(uint16_t thing, uint16_t type);
-void potion_set_power(uint16_t thing, uint16_t power);
-/* Weapon, armour, and junk: the type in word 2 bits 0-6; the important bit stays. */
-void rec_object_set_type(uint16_t thing, uint16_t type);
-void rec_object_set_cursed(uint16_t thing, bool cursed);
-/* The closed bits are 10-15; bits 8-9 stay. */
-void scroll_set_closed(uint16_t thing, bool closed);
 
 /* Sensor record (thing type 3). */
 #define SENSOR_DISABLED                           0
@@ -155,189 +108,15 @@ void scroll_set_closed(uint16_t thing, bool closed);
 #define SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED 17
 #define SENSOR_WALL_ENDGAME                       18
 #define SENSOR_WALL_CHAMPION_PORTRAIT             127
-#define SENSOR_TYPE_MASK                          0x7f
-#define SENSOR_DATA_SHIFT                         7
-
-static inline uint16_t rec_sensor_type(uint16_t thing)
-{
-    return be16(REC(thing) + 2) & SENSOR_TYPE_MASK;
-}
-static inline uint16_t rec_sensor_data(uint16_t thing)
-{
-    return be16(REC(thing) + 2) >> SENSOR_DATA_SHIFT;
-}
-static inline void rec_sensor_set_type(uint16_t thing, uint16_t type)
-{
-    wr16(REC(thing) + 2, (be16(REC(thing) + 2) & ~SENSOR_TYPE_MASK) | type);
-}
-static inline void rec_sensor_set_data(uint16_t thing, uint16_t data)
-{
-    wr16(REC(thing) + 2, data << SENSOR_DATA_SHIFT | rec_sensor_type(thing));
-}
-/* Sensor type 0 does nothing. The sensor data stays. */
-void rec_sensor_disable(uint16_t thing);
-static inline bool rec_sensor_is_local(uint16_t thing)
-{
-    return (REC(thing)[4] & 0x08) != 0;
-}
-static inline uint16_t rec_sensor_delay(uint16_t thing)
-{
-    return be16(REC(thing) + 4) >> 7 & 0x0f;
-}
-static inline bool rec_sensor_is_once_only(uint16_t thing)
-{
-    return (REC(thing)[5] & 0x04) != 0;
-}
-static inline uint16_t rec_sensor_effect(uint16_t thing)
-{
-    return (REC(thing)[5] & 0x18) >> 3;
-}
-static inline uint16_t rec_sensor_revert(uint16_t thing)
-{
-    return (REC(thing)[5] & 0x20) >> 5;
-}
-static inline bool rec_sensor_is_audible(uint16_t thing)
-{
-    return (REC(thing)[5] & 0x40) != 0;
-}
-static inline int16_t rec_sensor_target_x(uint16_t thing)
-{
-    return be16(REC(thing) + 6) >> 6 & MAP_COORD_MASK;
-}
-static inline int16_t rec_sensor_target_y(uint16_t thing)
-{
-    return REC(thing)[6] >> 3;
-}
-static inline int16_t rec_sensor_target_cell(uint16_t thing)
-{
-    return (REC(thing)[7] & 0x30) >> 4;
-}
-static inline int16_t rec_sensor_local_effect(uint16_t thing)
-{
-    return be16(REC(thing) + 6) >> 4;
-}
-static inline uint16_t rec_sensor_generator_delay(uint16_t thing)
-{
-    return REC(thing)[6];
-}
-static inline uint16_t rec_sensor_ornament_ordinal(uint16_t thing)
-{
-    return REC(thing)[4] >> 4;
-}
-/* Group generator: creature type in the data low byte, count field in word 4 bits 7-10, health multiplier in
-   word 6 bits 4-7. */
-static inline uint16_t rec_sensor_generator_creature_type(uint16_t thing)
-{
-    return rec_sensor_data(thing) & 0xff;
-}
-static inline uint16_t rec_sensor_generator_count_field(uint16_t thing)
-{
-    return be16(REC(thing) + 4) >> 7 & 0x0f;
-}
-static inline uint16_t rec_sensor_generator_health_multiplier(uint16_t thing)
-{
-    return be16(REC(thing) + 6) >> 4 & 0x0f;
-}
-/* Launcher: kinetic energy in word 6 bits 4-11, step energy in bits 12-15. */
-static inline uint8_t rec_sensor_launcher_kinetic_energy(uint16_t thing)
-{
-    return be16(REC(thing) + 6) >> 4;
-}
-static inline uint8_t rec_sensor_launcher_step_energy(uint16_t thing)
-{
-    return REC(thing)[6] >> 4;
-}
 
 /* Teleporter record (thing type 1). Scope: 1 creatures, 2 party, 3 everything. */
 #define TELEPORTER_SCOPE_CREATURES 1
 #define TELEPORTER_SCOPE_PARTY     2
 #define TELEPORTER_SCOPE_ALL       3
-static inline int16_t teleporter_target_x(uint16_t thing)
-{
-    return REC(thing)[3] & MAP_COORD_MASK;
-}
-static inline int16_t teleporter_target_y(uint16_t thing)
-{
-    return be16(REC(thing) + 2) >> 5 & MAP_COORD_MASK;
-}
-static inline int16_t teleporter_target_map(uint16_t thing)
-{
-    return REC(thing)[4];
-}
-static inline uint16_t teleporter_scope(uint16_t thing)
-{
-    return (REC(thing)[2] & 0x60) >> 5;
-}
-static inline uint16_t teleporter_rotation(uint16_t thing)
-{
-    return (REC(thing)[2] & 0x0c) >> 2;
-}
-static inline bool teleporter_is_rotation_absolute(uint16_t thing)
-{
-    return (REC(thing)[2] & 0x10) != 0;
-}
-static inline bool teleporter_is_audible(uint16_t thing)
-{
-    return (REC(thing)[2] & 0x80) != 0;
-}
 
-/* Door record (thing type 0). */
-static inline int16_t door_type(uint16_t thing)
-{
-    return REC(thing)[3] & 1;
-}
-static inline int16_t door_breaks_by_magic(uint16_t thing)
-{
-    return (REC(thing)[3] & 0x80) != 0;
-}
-static inline int16_t door_breaks_by_force(uint16_t thing)
-{
-    return REC(thing)[2] & 1;
-}
-static inline int16_t door_button_present(uint16_t thing)
-{
-    return (REC(thing)[3] & 0x40) != 0;
-}
-/* A door that slides down; it hits a creature by its height. */
-static inline bool door_is_vertical(uint16_t thing)
-{
-    return (REC(thing)[3] & 0x20) != 0;
-}
-static inline uint16_t door_ornament_ordinal(uint16_t thing)
-{
-    return (REC(thing)[3] & 0x1e) >> 1;
-}
 static inline int16_t door_info_defense(uint16_t door_info)
 {
     return door_info & 0xff;
-}
-
-/* Text record (thing type 2). */
-static inline bool rec_text_is_visible(uint16_t thing)
-{
-    return REC(thing)[3] & 1;
-}
-static inline void rec_text_set_visible(uint16_t thing, bool visible)
-{
-    REC(thing)[3] = (REC(thing)[3] & ~1) | (visible != 0);
-}
-
-/* Group record (thing type 4) and creature attributes. */
-#define CREATURE_LEVITATES    0x20
-#define CREATURE_NON_MATERIAL 0x40
-static inline uint16_t rec_group_creature_type(uint16_t thing)
-{
-    return REC(thing)[4];
-}
-static inline int16_t rec_creature_height(uint16_t attributes)
-{
-    return attributes >> 7 & 3;
-}
-
-/* Projectile record (thing type 14): the timeline event that moves it. */
-static inline uint16_t rec_projectile_event_index(uint16_t thing)
-{
-    return be16(REC(thing) + 6);
 }
 
 /* Map descriptor, 16 bytes. */
@@ -397,7 +176,7 @@ extern uint16_t g_current_map_door_info[2]; /* high byte attributes, low byte de
 #define DOOR_PROJECTILES_PASS 2
 static inline uint16_t door_attributes(uint16_t door)
 {
-    return g_current_map_door_info[door_type(door)] >> DOOR_ATTRIBUTES_SHIFT;
+    return g_current_map_door_info[rec_door_type(door)] >> DOOR_ATTRIBUTES_SHIFT;
 }
 static inline bool door_is_see_through(uint16_t door)
 {
@@ -429,7 +208,6 @@ int16_t map_get_location_after_level_change(int16_t map, int16_t level_delta, in
 /* The stairs axis is north-south or east-west. The exit side is the one that is not a wall or stairs. */
 int16_t map_get_stairs_exit_direction(int16_t x, int16_t y);
 
-uint16_t map_get_next_thing(uint16_t thing);
 /* Index of the first thing of the square in the square first thing table, or -1. */
 int16_t map_get_square_first_thing_index(int16_t x, int16_t y);
 uint16_t map_get_square_first_thing(int16_t x, int16_t y);
@@ -443,57 +221,6 @@ void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_
 uint16_t map_get_square_group(int16_t x, int16_t y);
 
 uint16_t map_get_creature_attributes(uint16_t group_thing);
-
-/* Record fields that the dungeon view reads (big-endian, see
-   docs/reference/symbols/range-4-6.md and range-7-9.md). */
-
-/* Weapon record: word 2 bits 0-6 weapon type. */
-static inline uint16_t thing_weapon_type(uint16_t weapon)
-{
-    return REC(weapon)[3] & 0x7f;
-}
-
-/* Group record, 16 bytes. */
-#define GROUP_RECORD_BYTES 16
-/* 2 bits per creature, 0xff for one centered creature; on the party map the active group index. */
-static inline uint8_t rec_group_cells_byte(uint16_t group)
-{
-    return REC(group)[5];
-}
-#define GROUP_DIRECTION_BYTE 14 /* behavior and last creature index */
-#define GROUP_BEHAVIOR_BYTE  15
-static inline uint8_t rec_group_last_creature_index(uint16_t group)
-{
-    return (REC(group)[GROUP_BEHAVIOR_BYTE] & 0x60) >> 5;
-}
-static inline uint8_t rec_group_direction(uint16_t group)
-{
-    return REC(group)[GROUP_DIRECTION_BYTE] & 3;
-}
-
-/* Projectile record, 8 bytes. */
-static inline uint16_t rec_projectile_slot(uint16_t projectile)
-{
-    return be16(REC(projectile) + 2);
-}
-static inline uint8_t rec_projectile_kinetic_energy(uint16_t projectile)
-{
-    return REC(projectile)[4];
-}
-
-/* Explosion record, 4 bytes. */
-static inline uint8_t rec_explosion_attack(uint16_t explosion)
-{
-    return REC(explosion)[2];
-}
-static inline uint8_t rec_explosion_type(uint16_t explosion)
-{
-    return REC(explosion)[3] & 0x7f;
-}
-static inline bool rec_explosion_is_centered(uint16_t explosion)
-{
-    return REC(explosion)[3] >> 7;
-}
 
 /* Map descriptor bytes of the view: ornament counts, difficulty, creature types, graphic sets. */
 static inline int16_t map_random_floor_ornament_count(int16_t map)

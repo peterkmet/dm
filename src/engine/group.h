@@ -4,7 +4,7 @@
 /* Prefixes: group_ creature_ */
 #include "data/tables.h"
 #include "engine/game.h"
-#include "engine/map.h"
+#include "engine/record.h"
 #include "engine/timeline_process.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -13,11 +13,13 @@
 
 #define GROUP_MAX_CREATURES 4
 
-/* Creature attributes (CreatureInfo.attributes). CREATURE_LEVITATES and CREATURE_NON_MATERIAL are in map.h. */
+/* Creature attributes (CreatureInfo.attributes). */
 #define CREATURE_SIZE_MASK                  0x0003
 #define CREATURE_SIDE_ATTACK                0x0004
 #define CREATURE_PREFER_BACK_ROW            0x0008
 #define CREATURE_ATTACK_ANY_CHAMPION        0x0010
+#define CREATURE_LEVITATES                  0x0020
+#define CREATURE_NON_MATERIAL               0x0040
 #define CREATURE_DROPS_FIXED_POSSESSIONS    0x0200
 #define CREATURE_KEEPS_THROWN_SHARP_WEAPONS 0x0400
 #define CREATURE_SEES_INVISIBLE             0x0800
@@ -91,67 +93,10 @@
 #define HIT_PROBABILITY_ALWAYS_HITS 0x8000
 #define HIT_PROBABILITY_MASK        0x7fff
 
-/* Group record, 16 bytes (thing type 4): next, possessions, type, cells, 4 health words, word 14 flags.
-   Byte 14: direction in bits 0-1, do not discard in bit 2. Byte 15: behavior in bits 0-3, last creature index in bits 5-6. */
-#define GROUP_RECORD_DIRECTION_MASK      3
-#define GROUP_RECORD_DO_NOT_DISCARD      0x04
-#define GROUP_RECORD_BEHAVIOR_MASK       0x0f
-#define GROUP_RECORD_LAST_CREATURE_MASK  0x60
-#define GROUP_RECORD_LAST_CREATURE_SHIFT 5
-static inline uint16_t group_possessions(uint16_t group)
-{
-    return be16(REC(group) + 2);
-}
-static inline void group_set_possessions(uint16_t group, uint16_t thing)
-{
-    wr16(REC(group) + 2, thing);
-}
-static inline void group_set_creature_type(uint16_t group, uint16_t type)
-{
-    REC(group)[4] = type;
-}
-static inline void group_set_cells_byte(uint16_t group, uint8_t cells)
-{
-    REC(group)[5] = cells;
-}
-static inline uint16_t group_health(uint16_t group, int16_t creature)
-{
-    return be16(REC(group) + 6 + 2 * creature);
-}
-static inline void group_set_health(uint16_t group, int16_t creature, uint16_t health)
-{
-    wr16(REC(group) + 6 + 2 * creature, health);
-}
-static inline uint16_t group_behavior(uint16_t group)
-{
-    return REC(group)[GROUP_BEHAVIOR_BYTE] & GROUP_RECORD_BEHAVIOR_MASK;
-}
-static inline void group_set_behavior(uint16_t group, uint16_t behavior)
-{
-    REC(group)
-    [GROUP_BEHAVIOR_BYTE] = (REC(group)[GROUP_BEHAVIOR_BYTE] & ~GROUP_RECORD_BEHAVIOR_MASK) | behavior;
-}
-static inline void group_set_last_creature_index(uint16_t group, uint16_t index)
-{
-    REC(group)
-    [GROUP_BEHAVIOR_BYTE] = (REC(group)[GROUP_BEHAVIOR_BYTE] & ~GROUP_RECORD_LAST_CREATURE_MASK) |
-                            (index & 3) << GROUP_RECORD_LAST_CREATURE_SHIFT;
-}
-static inline void group_set_direction_field(uint16_t group, uint16_t direction)
-{
-    REC(group)
-    [GROUP_DIRECTION_BYTE] =
-        (REC(group)[GROUP_DIRECTION_BYTE] & ~GROUP_RECORD_DIRECTION_MASK) | (direction & GROUP_RECORD_DIRECTION_MASK);
-}
-static inline void group_clear_do_not_discard(uint16_t group)
-{
-    REC(group)[GROUP_DIRECTION_BYTE] &= ~GROUP_RECORD_DO_NOT_DISCARD;
-}
-
 /* On the party map the cells byte of the record holds the index of the active group. */
 static inline ActiveGroup *group_active(uint16_t group)
 {
-    return &g_active_groups[rec_group_cells_byte(group)];
+    return &g_active_groups[rec_group_cells(group)];
 }
 static inline const CreatureInfo *group_info(uint16_t group)
 {
@@ -161,6 +106,11 @@ static inline const CreatureInfo *group_info(uint16_t group)
 /* Creature info fields that pack several values, 4 bits each. */
 #define CREATURE_INFO_NIBBLE            15
 #define CREATURE_INFO_HIGH_NIBBLE_SHIFT 12
+/* Height of the creature, attribute bits 7-8. */
+static inline int16_t creature_height(uint16_t attributes)
+{
+    return attributes >> 7 & 3;
+}
 static inline uint16_t creature_sight_range(const CreatureInfo *info)
 {
     return info->ranges & CREATURE_INFO_NIBBLE;

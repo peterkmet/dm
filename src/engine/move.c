@@ -8,6 +8,7 @@
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/projectile.h"
+#include "engine/record.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
@@ -34,8 +35,8 @@ bool move_is_levitating(uint16_t thing)
 
 uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing)
 {
-    uint16_t rotation = teleporter_rotation(teleporter);
-    if (teleporter_is_rotation_absolute(teleporter)) {
+    uint16_t rotation = rec_teleporter_rotation(teleporter);
+    if (rec_teleporter_is_absolute(teleporter)) {
         g_move_result_direction = rotation;
         return thing;
     }
@@ -113,29 +114,29 @@ static bool is_teleported(uint16_t *thing, uint8_t square, int16_t src_x, int16_
     if (!(square & TELEPORTER_OPEN))
         return false;
     uint16_t teleporter = map_get_square_first_thing(*dst_x, *dst_y);
-    uint16_t teleporter_scope_bits = teleporter_scope(teleporter);
+    uint16_t teleporter_scope_bits = rec_teleporter_scope(teleporter);
     if (teleporter_scope_bits == TELEPORTER_SCOPE_CREATURES ||
         (scope != TELEPORTER_SCOPE_ALL && !(scope & teleporter_scope_bits)))
         return false;
-    int16_t x = teleporter_target_x(teleporter);
-    int16_t y = teleporter_target_y(teleporter);
-    int16_t rotation = teleporter_rotation(teleporter);
-    bool points_to_itself = x == *dst_x && y == *dst_y && teleporter_target_map(teleporter) == *map;
+    int16_t x = rec_teleporter_target_x(teleporter);
+    int16_t y = rec_teleporter_target_y(teleporter);
+    int16_t rotation = rec_teleporter_rotation(teleporter);
+    bool points_to_itself = x == *dst_x && y == *dst_y && rec_teleporter_target_map(teleporter) == *map;
     *dst_x = x;
     *dst_y = y;
-    *map = teleporter_target_map(teleporter);
+    *map = rec_teleporter_target_map(teleporter);
     map_set_current_map(*map);
     if (party) {
         g_party_map_x = *dst_x;
         g_party_map_y = *dst_y;
         g_party_teleport_count += !points_to_itself;
-        if (teleporter_is_audible(teleporter))
+        if (rec_teleporter_is_audible(teleporter))
             sound_request_play(SOUND_TELEPORT, *dst_x, *dst_y, SOUND_MODE_NOW);
-        move_set_party_direction(teleporter_is_rotation_absolute(teleporter) ? rotation
-                                                                             : NORMALIZE(g_party_direction + rotation));
+        move_set_party_direction(rec_teleporter_is_absolute(teleporter) ? rotation
+                                                                        : NORMALIZE(g_party_direction + rotation));
     } else if (type == THING_PROJECTILE) {
         *thing = move_get_teleporter_rotated_projectile_thing(teleporter, *thing);
-    } else if (!teleporter_is_rotation_absolute(teleporter) && src_x != NO_TELEPORTER_ROTATION) {
+    } else if (!rec_teleporter_is_absolute(teleporter) && src_x != NO_TELEPORTER_ROTATION) {
         *thing = THING_WITH_CELL(*thing, rotation + THING_CELL(*thing));
     }
     return !points_to_itself;

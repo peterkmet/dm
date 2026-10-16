@@ -3,6 +3,7 @@
 #include "data/tables.h"
 #include "engine/dungeon.h"
 #include "engine/map.h"
+#include "engine/record.h"
 #include <string.h>
 
 /* Offsets in the values line of a champion text, counted from its leading '\n'. */
@@ -97,7 +98,7 @@ uint16_t recruit_text_thing(int16_t map, int16_t x, int16_t y)
 {
     uint16_t t = dungeon_get_square_first_thing(map, x, y);
     while (t != THING_ENDOFLIST && THING_TYPE(t) != THING_TEXT)
-        t = map_get_next_thing(t);
+        t = rec_thing_next(t);
     return t == THING_ENDOFLIST ? THING_NONE : t;
 }
 

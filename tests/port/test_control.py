@@ -28,9 +28,9 @@ def game():
     lib.control_open.restype = ctypes.c_bool
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = ctypes.c_uint16
-    lib.map_get_next_thing.restype = ctypes.c_uint16
+    lib.rec_thing_next.restype = ctypes.c_uint16
     lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = ctypes.c_int16
     lib.state_json_get_string.restype = ctypes.c_void_p
@@ -360,8 +360,8 @@ SCREAMER = 6
 
 def add_screamer(lib, x, y):
     """A screamer on square (x, y) of the party map, active but without behavior events (map 0 allows no creatures)."""
-    group = lib.map_get_unused_thing(C.THING_GROUP)
-    data = lib.dungeon_get_thing_data(group)
+    group = lib.rec_find_unused_thing(C.THING_GROUP)
+    data = lib.rec_write(group)
     data[2], data[3] = 0xFF, 0xFE  # no possessions
     data[4], data[5] = SCREAMER, 0xFF  # centered on the square
     data[7] = 50  # health
@@ -387,8 +387,8 @@ def square_with_floor_left_and_behind(game):
 
 def test_act_many_stops_only_on_a_new_creature_group(game):
     lib = game.lib
-    lib.map_get_unused_thing.restype = ctypes.c_uint16
-    lib.map_get_unused_thing.argtypes = [ctypes.c_uint16]
+    lib.rec_find_unused_thing.restype = ctypes.c_uint16
+    lib.rec_find_unused_thing.argtypes = [ctypes.c_uint16]
     lib.group_add_active_group.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
     lib.map_link_thing_to_list.argtypes = [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
     lib.group_delete.argtypes = [ctypes.c_int16, ctypes.c_int16]
@@ -437,8 +437,8 @@ def test_turn_reports_a_fireball_and_a_killed_creature_seen_during_the_turn(game
     from dmtools import play
 
     lib = game.lib
-    lib.map_get_unused_thing.restype = ctypes.c_uint16
-    lib.map_get_unused_thing.argtypes = [ctypes.c_uint16]
+    lib.rec_find_unused_thing.restype = ctypes.c_uint16
+    lib.rec_find_unused_thing.argtypes = [ctypes.c_uint16]
     lib.group_add_active_group.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
     lib.map_link_thing_to_list.argtypes = [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
     lib.projectile_create.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.c_int16,
@@ -649,13 +649,13 @@ def chest_with_content(game):
     lib = game.lib
     header = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_header"), ctypes.POINTER(ctypes.c_uint8))
     for chest in (9 << 10 | i for i in range(header[12 + 2 * 9] << 8 | header[13 + 2 * 9])):
-        data, content = lib.dungeon_get_thing_data(chest), []
+        data, content = lib.rec_write(chest), []
         if bytes(data[:2]) == b"\xff\xff":
             continue
         thing = data[2] << 8 | data[3]
         while thing != 0xFFFE:
             content.append(thing)
-            thing = lib.map_get_next_thing(thing)
+            thing = lib.rec_thing_next(thing)
         if 1 <= len(content) <= 6:
             return chest, content
     pytest.skip("no chest with 1-6 objects")
@@ -698,7 +698,7 @@ def test_take_put_and_look_in_an_open_chest(game):
         client.sock.close()
         removed = lib.inventory_get_object_removed_from_leader_hand()
     assert removed == chest
-    data = lib.dungeon_get_thing_data(chest)
+    data = lib.rec_write(chest)
     assert data[2] << 8 | data[3] == content[0]
 
 
@@ -885,14 +885,14 @@ def test_a_free_record_never_enters_a_square_list(game, capfd):
 def test_unlinking_a_freed_last_thing_empties_the_square(game, capfd):
     lib = game.lib
     x, y = next((x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
-                if lib.map_get_square(x, y) & HAS_THINGS and lib.map_get_next_thing(lib.map_get_square_first_thing(x, y)) == C.THING_END)
+                if lib.map_get_square(x, y) & HAS_THINGS and lib.rec_thing_next(lib.map_get_square_first_thing(x, y)) == C.THING_ENDOFLIST)
     thing = lib.map_get_square_first_thing(x, y)
-    lib.thing_set_free(thing)  # its next becomes THING_NONE
+    lib.rec_thing_set_free(thing)  # its next becomes THING_NONE
     lib.map_unlink_thing_from_list(thing, 0, x, y)
     assert not lib.map_get_square(x, y) & HAS_THINGS
     assert "square list guard: unlink of a free record" in capfd.readouterr().err
-    record = lib.dungeon_get_thing_data(thing)
-    record[0], record[1] = C.THING_END >> 8, C.THING_END & 0xFF  # next: end of list
+    record = lib.rec_write(thing)
+    record[0], record[1] = C.THING_ENDOFLIST >> 8, C.THING_ENDOFLIST & 0xFF  # next: end of list
     lib.map_link_thing_to_list(thing, 0, x, y)  # the fixture game again as before
     assert lib.map_get_square_first_thing(x, y) == thing
 
@@ -905,10 +905,10 @@ def test_torch_holder_is_not_a_lock(game):
         for x in range(lib.dungeon_map_width(0)):
             t = lib.map_get_square_first_thing(x, y)
             while t not in (0xFFFE, 0xFFFF):
-                data = lib.dungeon_get_thing_data(t)
+                data = lib.rec_write(t)
                 if t >> 10 & 15 == 3 and 4 <= (data[2] << 8 | data[3]) >> 7 <= 7:  # a sensor that wants a torch
                     holder = (x, y, t >> 14)
-                t = lib.map_get_next_thing(t)
+                t = lib.rec_thing_next(t)
     assert holder
     x, y, face = holder
     for name, value in (("g_party_map_x", x + STEP_EAST[face]), ("g_party_map_y", y + STEP_NORTH[face]), ("g_party_direction", (face + 2) & 3)):
@@ -947,7 +947,7 @@ def test_a_lock_names_its_picture(game):
     with on_map(game, 1, 0, 0, 0):
         t = lib.map_get_square_first_thing(10, 1)  # the iron keyhole before the stairs of map 1
         while t >> 10 & 15 != 3:
-            t = lib.map_get_next_thing(t)
+            t = lib.rec_thing_next(t)
     face = t >> 14
     with on_map(game, 1, 10 + STEP_EAST[face], 1 + STEP_NORTH[face], (face + 2) & 3):
         wall = ahead_square(state_json(game, 1))  # depth 1, center: the wall ahead
