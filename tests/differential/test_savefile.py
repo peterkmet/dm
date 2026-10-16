@@ -21,11 +21,11 @@ pytestmark = [needs_dm]
 @pytest.fixture(scope="module")
 def lib():
     lib = load_lib()
-    lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
-    lib.save_decode.restype = ctypes.c_bool
-    lib.save_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(ctypes.c_uint32)]
-    lib.save_encode.restype = ctypes.c_void_p
-    lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]
+    lib.savefile_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.savefile_decode.restype = ctypes.c_bool
+    lib.savefile_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(ctypes.c_uint32)]
+    lib.savefile_encode.restype = ctypes.c_void_p
+    lib.savefile_free.argtypes = [ctypes.POINTER(SaveFile)]
     lib.free.argtypes = [ctypes.c_void_p]
     return lib
 
@@ -62,7 +62,7 @@ def test_encode_matches_original(lib):
     emu = Emu(load_image(parse(KAOS.read_bytes()), 0x100000))
     scratch, filebuf = 0x300000, 0x400000
 
-    # save_block_xor on the plain bytes gives the file bytes and the stored checksum
+    # savefile_xor_block on the plain bytes gives the file bytes and the stored checksum
     pos = 512
     for i, b in enumerate(blocks):
         key, checksum = struct.unpack_from(">H", plain, 0x136 + 2 * i)[0], struct.unpack_from(">H", plain, 0x156 + 2 * i)[0]

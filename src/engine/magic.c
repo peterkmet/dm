@@ -108,10 +108,10 @@ void magic_print_spell_failure_message(uint16_t champion_index, int16_t failure_
     } else {
         return;
     }
-    message_new_line(g_game_time);
-    message_print(MESSAGE_COLOR_CYAN, gfx_get_string(first), g_game_time);
-    message_print(MESSAGE_COLOR_CYAN, g_champions[champion_index].name, g_game_time);
-    message_print(MESSAGE_COLOR_CYAN, gfx_get_string(first + 1), g_game_time);
+    message_new_line();
+    message_print(MESSAGE_COLOR_CYAN, gfx_get_string(first));
+    message_print(MESSAGE_COLOR_CYAN, g_champions[champion_index].name);
+    message_print(MESSAGE_COLOR_CYAN, gfx_get_string(first + 1));
 }
 
 bool magic_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy,
@@ -190,10 +190,7 @@ static bool cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t p
 static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, int16_t power, uint16_t skill_level)
 {
     Champion *c = &g_champions[champion_index];
-    if (c->direction != g_party_direction) {
-        c->direction = g_party_direction;
-        c->attributes |= CHAMPION_ATTR_ICON;
-    }
+    champion_face_party_direction(c);
     if (explosion_type == EXPLOSION_OPEN_DOOR)
         skill_level *= 2;
     int16_t kinetic_energy = bounded_value(

@@ -90,19 +90,12 @@ int16_t map_get_location_after_level_change(int16_t map, int16_t level_delta, in
 {
     if (g_party_map_index == NO_DUNGEON_MAP)
         return -1;
-    int16_t dungeon_x = *x + rec_map_offset_x(map);
-    int16_t dungeon_y = *y + rec_map_offset_y(map);
-    uint16_t level = (uint16_t)(rec_map_level(map) + level_delta); /* level 0 up wraps to no level */
-    for (int16_t m = 0; m < dungeon_map_count(); m++) {
-        if (level == rec_map_level(m) && rec_map_offset_x(m) <= dungeon_x &&
-            dungeon_x <= rec_map_offset_x(m) + rec_map_last_x(m) && rec_map_offset_y(m) <= dungeon_y &&
-            dungeon_y <= rec_map_offset_y(m) + rec_map_last_y(m)) {
-            *y = dungeon_y - rec_map_offset_y(m);
-            *x = dungeon_x - rec_map_offset_x(m);
-            return m;
-        }
+    int16_t found = map_find_level_map(map, level_delta, *x, *y);
+    if (found >= 0) {
+        *x += rec_map_offset_x(map) - rec_map_offset_x(found);
+        *y += rec_map_offset_y(map) - rec_map_offset_y(found);
     }
-    return -1;
+    return found;
 }
 
 int16_t map_get_stairs_exit_direction(int16_t x, int16_t y)
@@ -128,8 +121,7 @@ int16_t map_get_square_first_thing_index(int16_t x, int16_t y)
 
 uint16_t map_get_square_first_thing(int16_t x, int16_t y)
 {
-    int16_t index = map_get_square_first_thing_index(x, y);
-    return index == -1 ? THING_ENDOFLIST : be16(g_square_first_things + (uint16_t)index * 2);
+    return map_get_first_thing_at((Position){g_current_map_index, x, y});
 }
 
 uint16_t map_get_square_first_object(int16_t x, int16_t y)
@@ -228,12 +220,46 @@ void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_
     rec_thing_set_next(thing, THING_ENDOFLIST);
 }
 
-uint16_t map_get_square_group(int16_t x, int16_t y)
+bool map_is_party_on(Location at)
 {
-    uint16_t thing = map_get_square_first_thing(x, y);
-    while (thing != THING_ENDOFLIST && THING_TYPE(thing) != THING_GROUP)
+    return g_current_map_index == g_party_map_index && at.x == g_party_map_x && at.y == g_party_map_y;
+}
+
+uint16_t map_find_thing(Location at, int16_t type_wanted)
+{
+    uint16_t thing = map_get_square_first_thing(at.x, at.y);
+    while (thing != THING_ENDOFLIST && THING_TYPE(thing) != type_wanted)
         thing = rec_thing_next(thing);
     return thing;
+}
+
+uint16_t map_get_first_thing_at(Position place)
+{
+    if (place.x < 0 || place.x >= dungeon_map_width(place.map) || place.y < 0 ||
+        place.y >= dungeon_map_height(place.map))
+        return THING_ENDOFLIST;
+    if (!(rec_square_byte(place.map, place.x, place.y) & SQUARE_HAS_THINGS))
+        return THING_ENDOFLIST;
+    uint16_t index = be16(g_dungeon_column_first_thing_index + (g_dungeon_map_first_column[place.map] + place.x) * 2);
+    for (int16_t i = 0; i < place.y; i++)
+        index += (rec_square_byte(place.map, place.x, i) & SQUARE_HAS_THINGS) != 0;
+    if (index >= rec_dungeon_square_things())
+        return THING_ENDOFLIST;
+    return be16(g_square_first_things + index * 2);
+}
+
+int16_t map_find_level_map(int16_t map, int16_t level_delta, int16_t x, int16_t y)
+{
+    int16_t dungeon_x = x + rec_map_offset_x(map);
+    int16_t dungeon_y = y + rec_map_offset_y(map);
+    uint16_t level = (uint16_t)(rec_map_level(map) + level_delta); /* level 0 up wraps to no level */
+    for (int16_t m = 0; m < dungeon_map_count(); m++) {
+        if (level == rec_map_level(m) && rec_map_offset_x(m) <= dungeon_x &&
+            dungeon_x <= rec_map_offset_x(m) + rec_map_last_x(m) && rec_map_offset_y(m) <= dungeon_y &&
+            dungeon_y <= rec_map_offset_y(m) + rec_map_last_y(m))
+            return m;
+    }
+    return -1;
 }
 
 uint16_t map_get_creature_attributes(uint16_t group_thing)

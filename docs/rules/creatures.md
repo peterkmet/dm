@@ -127,7 +127,7 @@ Event 5 (corridor) on a group generator sensor calls `group_generate_from_sensor
 - Each creature gets `base health × multiplier + random(base health / 4 + 1)` health.
 - The group enters the square with a random direction and plays a buzz sound.
 
-`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case. Use `map_get_square_group(x, y)` to find it.
+`group_get_generated` returns `THING_NONE` when the group becomes active on the party map, like the original. The group is on the square in that case. Use `map_find_thing((Location){x, y}, THING_GROUP)` to find it.
 
 Event 65 enables a generator again after its delay (see [rules-movement.md](movement.md)).
 

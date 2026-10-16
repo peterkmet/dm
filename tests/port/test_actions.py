@@ -8,6 +8,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import s16, var
+from dmtest.game import Location
 from dmtest.game import (CHAMPIONS, Champion, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
                          setup_creatures, skeleton_map_and_squares, things_of_type, tick)
 from dmtest.lib import load_lib
@@ -196,14 +197,14 @@ def party(alib):
 
 def test_sword_attack_hurts_group_and_gains_experience(fighter):
     lib, c, (x, y) = fighter
-    group = lib.map_get_square_group(x, y + 1)
+    group = lib.map_find_thing(Location(x, y + 1), C.THING_GROUP)
     health = struct.unpack(">H", bytes(lib.rec_write(group)[6:8]))[0]
     experience = c.skills[C.SKILL_SWING].experience
     damage = []
     for _ in range(20):
         lib.action_is_action_performed(0, C.ACTION_SWING)
         damage.append(var(lib, c16, "g_action_damage").value)
-        group = lib.map_get_square_group(x, y + 1)
+        group = lib.map_find_thing(Location(x, y + 1), C.THING_GROUP)
         if group == 0xFFFE or struct.unpack(">H", bytes(lib.rec_write(group)[6:8]))[0] < health:
             break
     assert any(d > 0 for d in damage)

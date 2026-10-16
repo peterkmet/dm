@@ -112,6 +112,14 @@ class Timeline(ctypes.Structure):
     ]
 
 
+class Location(ctypes.Structure):
+    _fields_ = [("x", c16), ("y", c16)]
+
+
+class Position(ctypes.Structure):
+    _fields_ = [("map", c16), ("x", c16), ("y", c16)]
+
+
 class RecruitData(ctypes.Structure):
     _fields_ = [
         ("name", ctypes.c_char * 8), ("title", ctypes.c_char * 20), ("male", ctypes.c_uint8),
@@ -468,10 +476,10 @@ def setup_creatures(lib):
     for name, res, args in [
         ("projectile_get_impact_attack", u16, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
         ("projectile_create", None, [u16, c16, c16, c16, c16, u8, u8, u8]), ("map_get_square", u8, [c16, c16]),
-        ("map_get_square_first_thing", u16, [c16, c16]), ("rec_thing_next", u16, [u16]), ("map_get_square_group", u16, [c16, c16]),
+        ("map_get_square_first_thing", u16, [c16, c16]), ("rec_thing_next", u16, [u16]), ("map_find_thing", u16, [Location, c16]),
         ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("rec_square_byte", u8, [c16, c16, c16]),
         ("rec_square_type", c16, [u8]),
-        ("dungeon_get_square_first_thing", u16, [c16, c16, c16]),
+        ("map_get_first_thing_at", u16, [Position]),
         ("timeline_is_first_event_expired", ctypes.c_bool, []), ("timeline_extract_first_event", None, [event_p]),
         ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
         ("map_set_current_map", None, [c16]), ("rec_write", ctypes.POINTER(u8), [u16]),
@@ -550,7 +558,7 @@ def skeleton_map_and_squares(lib):
     data[0] = data[1] = 0xFF  # free the probe record again
     for m in maps:
         empty = lambda x, y: (0 <= x < lib.dungeon_map_width(m) and 0 <= y < lib.dungeon_map_height(m)
-                              and lib.rec_square_type(lib.rec_square_byte(m, x, y)) == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE)
+                              and lib.rec_square_type(lib.rec_square_byte(m, x, y)) == 1 and lib.map_get_first_thing_at(Position(m, x, y)) == 0xFFFE)
         for x in range(lib.dungeon_map_width(m)):
             for y in range(lib.dungeon_map_height(m)):
                 if empty(x, y) and empty(x, y + 1) and empty(x, y + 2):
@@ -564,7 +572,7 @@ def events(lib, event_type):
 
 
 def things(lib, m, x, y):
-    t = lib.dungeon_get_square_first_thing(m, x, y)
+    t = lib.map_get_first_thing_at(Position(m, x, y))
     while t != 0xFFFE:
         yield t
         d = lib.rec_write(t)
@@ -628,11 +636,11 @@ def setup_ui(lib):
     lib.view_render.argtypes = [c16] * 4
     lib.gfx_get_bitmap.restype = ctypes.POINTER(Bitmap)
     lib.ui_zone_box.argtypes = [c16, ctypes.POINTER(Box)]
-    lib.message_print.argtypes = [c16, ctypes.c_char_p, ctypes.c_uint32]
+    lib.message_print.argtypes = [c16, ctypes.c_char_p]
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
     lib.recruit_parse.restype = ctypes.c_bool
     lib.dungeon_load.restype = ctypes.c_bool
-    lib.dungeon_get_square_first_thing.restype = u16
+    lib.map_get_first_thing_at.restype = u16
     lib.rec_write.restype = ctypes.POINTER(u8)
     lib.recruit_portrait_index.argtypes = [u16]
     lib.recruit_text_thing.restype = u16

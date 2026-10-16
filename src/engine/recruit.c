@@ -98,7 +98,7 @@ bool recruit_parse(uint16_t text_thing, RecruitData *out)
 
 uint16_t recruit_text_thing(int16_t map, int16_t x, int16_t y)
 {
-    uint16_t t = dungeon_get_square_first_thing(map, x, y);
+    uint16_t t = map_get_first_thing_at((Position){map, x, y});
     while (t != THING_ENDOFLIST && THING_TYPE(t) != THING_TEXT)
         t = rec_thing_next(t);
     return t == THING_ENDOFLIST ? THING_NONE : t;

@@ -39,8 +39,7 @@ def lib():
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
     assert lib.text_init() == 0
     lib.text_draw.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int, ctypes.c_int, ctypes.c_uint8, ctypes.c_uint8, ctypes.c_char_p]
-    lib.message_print.argtypes = [ctypes.c_int16, ctypes.c_char_p, ctypes.c_uint32]
-    lib.message_clear_expired_rows.argtypes = [ctypes.c_uint32]
+    lib.message_print.argtypes = [ctypes.c_int16, ctypes.c_char_p]
     return lib
 
 
@@ -101,14 +100,19 @@ def test_message_scroll_and_expiry(lib):
     lib.message_clear()
     m = message(lib)
     assert (m.cursor_row, m.cursor_x, list(m.expiry)) == (3, 0, [NO_EXPIRY] * 4)
-    lib.message_print(13, b"\nONE", 100)
-    lib.message_print(14, b"\nTWO", 110)
+    game_time = ctypes.c_uint32.in_dll(lib, "g_game_time")
+    game_time.value = 100
+    lib.message_print(13, b"\nONE")
+    game_time.value = 110
+    lib.message_print(14, b"\nTWO")
     assert [row(m, r) for r in range(4)] == [b"", b"", b"ONE", b"TWO"]
     assert list(m.expiry) == [NO_EXPIRY, NO_EXPIRY, 170, 180]
     assert (m.color[2][0], m.color[3][0], m.cursor_x) == (13, 14, 18)
-    lib.message_clear_expired_rows(169)
+    game_time.value = 169
+    lib.message_clear_expired_rows()
     assert row(m, 2) == b"ONE"
-    lib.message_clear_expired_rows(170)
+    game_time.value = 170
+    lib.message_clear_expired_rows()
     assert [row(m, 2), row(m, 3), m.expiry[2]] == [b"", b"TWO", NO_EXPIRY]
 
 
@@ -116,7 +120,7 @@ def test_message_word_wrap(lib):
     lib.message_clear()
     m = message(lib)
     words = b" ".join([b"WORD%02d" % i for i in range(9)])  # 9 * 7 - 1 = 62 chars
-    lib.message_print(15, b"\n" + words, 0)
+    lib.message_print(15, b"\n" + words)
     assert row(m, 2) == b"WORD00 WORD01 WORD02 WORD03 WORD04 WORD05 WORD06"
     assert row(m, 3) == b"\0\0WORD07 WORD08"  # continuation row starts at x 12
     assert m.cursor_x == 12 + 13 * 6
@@ -127,6 +131,6 @@ def test_message_cursor_clamps_large_column(lib):
     m = message(lib)
     lib.message_move_cursor(5462, 0)  # column * 6 overflows int16 without the clamp
     assert m.cursor_x == 312
-    lib.message_print(1, b"HELLO WORLD", 0)
+    lib.message_print(1, b"HELLO WORLD")
     assert row(m, 0) == b"\0" * 52 + b"H"  # last cell, then the line wraps
     assert row(m, 1) == b"\0\0ELLO WORLD"

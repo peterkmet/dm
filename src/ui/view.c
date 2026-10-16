@@ -384,7 +384,7 @@ static uint16_t scan_ornament_things(Aspect *aspect, uint16_t thing, int16_t dir
 static void get_square_aspect(Aspect *aspect, int16_t dir, int16_t x, int16_t y)
 {
     memset(aspect, 0, sizeof *aspect);
-    uint16_t thing = dungeon_get_square_first_thing(view_map, x, y);
+    uint16_t thing = map_get_first_thing_at((Position){view_map, x, y});
     uint8_t square = get_square(x, y);
     int scan = SCAN_NONE;
     aspect->element = rec_square_type(square);
@@ -2607,7 +2607,7 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
         int16_t sx = x;
         int16_t sy = y;
         get_relative_square(dir, DEPTH_D4, d4_right[i], &sx, &sy);
-        draw_square_things(dungeon_get_square_first_thing(view_map, sx, sy), dir, sx, sy, d4_squares[i], CELLS_BL);
+        draw_square_things(map_get_first_thing_at((Position){view_map, sx, sy}), dir, sx, sy, d4_squares[i], CELLS_BL);
     }
     for (int i = 0; i < DRAWN_SQUARE_COUNT; i++) {
         int16_t sx = x;

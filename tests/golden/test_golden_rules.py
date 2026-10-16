@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
+from dmtest.game import Location
 from dmtest.game import Party, scrub_free_groups, state
 from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
 from dmtest.markers import needs_dm
@@ -292,9 +293,9 @@ def test_grab_under_a_creature(game):
         hold(game, piles[cell])
         game.click_zone(C.ZONE_DROP_CELL_FIRST + cell)
         assert game.value("g_leader_hand_object", u16) == NONE
-    lib.map_get_square_group.restype = u16
+    lib.map_find_thing.restype = u16
     lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 3, fx, fy)
-    group = lib.map_get_square_group(fx, fy)
+    group = lib.map_find_thing(Location(fx, fy), C.THING_GROUP)
     lib.group_set_cells(group, (VIEW_CELL_FRONT_FIRST + d) % 4, m)  # the skeleton stands in view cell 2 only
     got = []
     # the creature protects its own cell only; a levitating creature protects nothing
@@ -386,14 +387,14 @@ def test_movement_blocked(game):
 def test_fuse_sequence(game):
     lib = game.lib
     recruit(game)
-    lib.map_get_square_group.restype = u16
+    lib.map_find_thing.restype = u16
     spot = None
     for level in range(1, MAP_COUNT):
         lib.group_remove_all_active_groups()
         lib.map_set_current_map_and_party_map(level)
         lib.group_add_all_active_groups()
         width, height = game.value("g_current_map_width"), game.value("g_current_map_height")
-        groups = {(x, y) for x in range(width) for y in range(height) if lib.map_get_square_group(x, y) != END}
+        groups = {(x, y) for x in range(width) for y in range(height) if lib.map_find_thing(Location(x, y), C.THING_GROUP) != END}
         spot = next(((x - STEP[d][0], y - STEP[d][1], d, (x, y)) for x, y in sorted(groups) for d in range(4)
                      if 0 <= x - STEP[d][0] < width and 0 <= y - STEP[d][1] < height
                      and square_type(lib, x - STEP[d][0], y - STEP[d][1]) == CORRIDOR
@@ -448,7 +449,7 @@ def test_visibility(game):
                         lib.explored_reset()
                         lib.automap_mark_seen(m, x, y, d)
                         buf, size = ctypes.c_void_p(), ctypes.c_size_t()
-                        assert lib.explored_save(ctypes.byref(buf), ctypes.byref(size)) == 0
+                        assert lib.explored_save(ctypes.byref(buf), ctypes.byref(size)) is True
                         digest.update(ctypes.string_at(buf, size.value))
                         lib.free(buf)
     check("visibility", [digest.hexdigest()])

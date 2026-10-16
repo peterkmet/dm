@@ -106,7 +106,6 @@ notation engine/map.h open: epic 6
 notation engine/projectile.c open: epic 6
 notation engine/random.c open: epic 6
 notation engine/recruit.c open: epic 6
-notation engine/savefile.c open: epic 6
 notation engine/sensor.c open: epic 6
 notation platform/control.c open: epic 10
 notation platform/main.c open: epic 11
@@ -263,11 +262,7 @@ ordinal group_get_party_scent_ordinal open: epic 6
 ordinal group_get_smelled_party_direction_ordinal open: epic 6
 ordinal ordinal open: epic 6
 static-prefix engine/action.c:action_hand_charge_count open: epic 6
-static-prefix engine/action.c:champion_face_party_direction open: epic 6
 static-prefix engine/dungeon.c:dungeon_free open: epic 6
-static-prefix engine/dungeon.c:map_at_level open: epic 6
-static-prefix engine/explored.c:map_first_square open: epic 6
-static-prefix engine/explored.c:map_square_count open: epic 6
 static-prefix engine/group.c:creature_hit_wounds open: epic 6
 static-prefix engine/group.c:group_add_event open: epic 6
 static-prefix engine/group.c:group_get_active_group_thing open: epic 6
@@ -340,7 +335,6 @@ static-prefix ui/gameloop.c:draw_spell_area_before_last_death open: epic 8
 static-prefix ui/startend.c:draw_champion_parade open: epic 8
 static-prefix ui/startend.c:draw_fuse_explosions open: epic 8
 static-prefix ui/startend.c:draw_the_end open: epic 8
-static-prefix ui/startend.c:save_game_csb open: epic 8
 static-prefix ui/startend.c:wait_for_input open: epic 8
 static-prefix ui/startend.c:wait_for_restart open: epic 8
 static-prefix ui/text.c:draw_glyph_row open: epic 8
@@ -415,7 +409,6 @@ comment engine/savefile.h open: epic 5
 comment engine/savegame.c open: epic 5
 comment engine/savegame.h open: epic 5
 comment engine/sensor.c open: epic 5
-comment engine/event.c open: epic 5
 comment platform/control.c open: epic 10
 comment platform/main.c open: epic 11
 comment platform/platform.h open: epic 11
@@ -592,8 +585,8 @@ dead-api engine/projectile.h:projectile_is_fluxcage_on_square open: epic 7
 dead-api engine/recruit.h:recruit_decoded_value open: epic 7
 dead-api engine/recruit.h:recruit_parse_text open: epic 7
 dead-api engine/recruit.h:recruit_portrait_index open: epic 7
-dead-api engine/savefile.h:save_block_xor open: epic 7
-dead-api engine/savefile.h:save_header_randomize open: epic 7
+dead-api engine/savefile.h:savefile_xor_block open: epic 7
+dead-api engine/savefile.h:savefile_randomize_header open: epic 7
 dead-api engine/savegame.h:savegame_load_from open: epic 7
 dead-api engine/savegame.h:savegame_save_as open: epic 7
 dead-api engine/sensor.h:g_sensor_rotation_effect open: epic 7
@@ -690,18 +683,6 @@ params ui/view.c:draw_object open: epic 8
 params ui/view.c:draw_projectile open: epic 8
 params ui/view.c:draw_square_things open: epic 8
 params ui/view.c:get_projectile_pose open: epic 8
-record engine/dungeon.c open: epic 5
-record engine/group.c open: epic 5
-record engine/group.h open: epic 5
-record engine/map.c open: epic 5
-record engine/map.h open: epic 5
-record engine/move.c open: epic 5
-record engine/projectile.c open: epic 5
-record engine/projectile.h open: epic 5
-record engine/sensor.c open: epic 5
-record engine/event.c open: epic 5
-record ui/view.c open: epic 8
-result engine/explored.h:explored_save open: epic 6
 result ui/anim.h:anim_open open: epic 8
 result ui/anim.h:anim_play open: epic 8
 result ui/layout.h:layout_init open: epic 8
@@ -756,9 +737,7 @@ event-comment engine/magic.c open: epic 6
 event-comment engine/magic.h open: epic 6
 event-comment engine/projectile.h open: epic 6
 event-comment engine/sensor.h open: epic 6
-event-comment engine/timeline_process.h open: epic 6
 event-comment engine/event.h open: epic 6
-todo engine/map.h open: epic 6
 todo engine/message.c open: epic 6
 todo engine/sound.c open: epic 9
 todo ui/automap.c open: epic 8
@@ -792,8 +771,6 @@ packed ui/view.c open: epic 8
 dead-api data/os.h:g_os_log_hook open: epic 11
 dead-api data/os.h:g_os_fatal_hook open: epic 11
 dead-api data/kaos.h:kaos_free open: epic 11
-dead-api data/file.h:file_write open: epic 5
-dead-api data/file.h:file_replace open: epic 5
 dead-api data/graphics.h:box_contains open: epic 8
 dead-api data/graphics.h:gfx_close open: epic 11
 static-prefix platform/platform.c:audio_open open: epic 11

@@ -712,7 +712,7 @@ static void insert_creature_name(char *text, size_t size)
             int16_t x = g_party_map_x;
             int16_t y = g_party_map_y;
             map_step(g_party_direction, 1, 0, &x, &y);
-            uint16_t group = map_get_square_group(x, y);
+            uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
             name = gfx_get_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE
                                                            : TEXT_CREATURE_NAME_FIRST + rec_group_creature_type(group));
             scroll_redraw = 1;

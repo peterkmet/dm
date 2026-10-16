@@ -187,15 +187,6 @@ void action_clear_acting_champion(void)
     g_redraw |= REDRAW_ACTION_AREA;
 }
 
-/* The champion turns to the party direction. */
-static void champion_face_party_direction(Champion *c)
-{
-    if (c->direction != g_party_direction) {
-        c->direction = g_party_direction;
-        c->attributes |= CHAMPION_ATTR_ICON;
-    }
-}
-
 void action_print_action_message(uint16_t champion_index, const char *text)
 {
     char out[MESSAGE_SIZE];
@@ -216,7 +207,7 @@ void action_print_action_message(uint16_t champion_index, const char *text)
     }
     out[n] = 0;
     if (out[1])
-        message_print(MESSAGE_COLOR_CYAN, out, g_game_time);
+        message_print(MESSAGE_COLOR_CYAN, out);
 }
 
 void action_decrement_charges(uint16_t champion_index)
@@ -427,7 +418,8 @@ static bool is_climbed_down(void)
     x = g_party_map_x;
     y = g_party_map_y;
     map_step(g_party_direction, 1, 0, &x, &y);
-    if (rec_square_type(map_get_square(x, y)) != SQUARE_PIT || map_get_square_group(x, y) != THING_ENDOFLIST)
+    if (rec_square_type(map_get_square(x, y)) != SQUARE_PIT ||
+        map_find_thing((Location){x, y}, THING_GROUP) != THING_ENDOFLIST)
         return false;
     g_use_rope_to_climb_down_pit = true;
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, x, y);
@@ -512,7 +504,7 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     x = g_party_map_x;
     y = g_party_map_y;
     map_step(c->direction, 1, 0, &x, &y);
-    g_action_target_group_thing = map_get_square_group(x, y);
+    g_action_target_group_thing = map_find_thing((Location){x, y}, THING_GROUP);
     const ActionInfo *info = tables_get_action_info(action);
     uint16_t disabled_ticks = info->disabled_ticks;
     uint16_t skill_index = info->skill_index;

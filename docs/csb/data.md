@@ -16,7 +16,7 @@ All addresses in this page are image addresses after `dm-ftl` with base `0x10000
 |---|---|---|
 | `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses another string encoding. | `gfx_open` and `gfx_expand` read and decode all items. The text and layout users need changes. |
 | `Dungeon.DAT` | A 2-level start dungeon with 24 champion mirrors, dungeon ID 12. Same format. | `dungeon_load` loads it. |
-| Save file | `CSBGame.dat`. Header fields move 2 bytes up. The payload key is at another offset. Blocks, cipher, and dungeon part are the same. | `save_decode` rejects a CSB save. |
+| Save file | `CSBGame.dat`. Header fields move 2 bytes up. The payload key is at another offset. Blocks, cipher, and dungeon part are the same. | `savefile_decode` rejects a CSB save. |
 | Endgame | `ENDA.DAT`, an animation file that `ANIM.FTL` plays. No credits screen. | Not supported. |
 | Sounds | Same 35 sounds, same graphic items, same sound table. | `sound.c` works with the CSB items. |
 | Engine tables | No `KAOS.FTL`. `APPB.FTL` holds the tables at other addresses. | All `kaos_*` reads use DM addresses. |
@@ -299,7 +299,7 @@ The other tables of `tables.md`, the view tables, the input tables, and the esca
 | `src/ui/ui.c` | `load_strings`, `ui_init` | Read item 694 in TXT1 encoding for CSB. | CSB object names end with bit 7, not NUL. |
 | `src/ui/ui.c`, `src/engine/champion.c` | `ui_init`, the `GFX_STRINGS` reader | Read the texts and action names from `APPB.FTL` for CSB, with an index map to the DM text indices. | Items 699 and 700 are empty in CSB. |
 | `src/ui/startend.c` | THE END screen | Done (Step 8): CSB draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
-| `src/engine/savefile.c` | `save_decode`, `save_encode`, `save_header_init`, header accessors | Add a CSB header variant: key at `0x3a`, fields 2 bytes up, 132 extra bytes. Check the block 2 checksum. | A CSB save fails the DM header check. |
+| `src/engine/savefile.c` | `savefile_decode`, `savefile_encode`, `savefile_init_header`, header accessors | Add a CSB header variant: key at `0x3a`, fields 2 bytes up, 132 extra bytes. Check the block 2 checksum. | A CSB save fails the DM header check. |
 | `src/engine/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Use `CSBGAME.DAT` and `CSBGAME.BAK`. Keep the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
 | `src/data/kaos.c` and every `kaos_*` user (`tables.c`, `sound.c`, `view.c`, `dungeon.c`, and others) | `kaos_load`, address constants | Load `APPB.FTL` and translate the addresses. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
 | New `src/ui/anim.c` | Animation player | Done (Step 8): plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |

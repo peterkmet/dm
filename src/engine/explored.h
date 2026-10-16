@@ -17,8 +17,8 @@ void explored_reset(void);
 void explored_mark(int16_t map, int16_t x, int16_t y);
 bool explored_is_seen(int16_t map, int16_t x, int16_t y);
 
-/* Save block: a malloc'd buffer the caller frees. Both return 0 on success, -1 on failure. */
-int explored_save(uint8_t **buf, size_t *len);
-int explored_load(const uint8_t *buf, size_t len);
+/* Save block: a malloc'd buffer the caller frees. Both return true on success. */
+bool explored_save(uint8_t **buf, size_t *len);
+bool explored_load(const uint8_t *buf, size_t len);
 
 #endif

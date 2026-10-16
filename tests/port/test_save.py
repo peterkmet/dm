@@ -5,6 +5,7 @@ import struct
 import pytest
 
 from dmtest import constants as C
+from dmtest.game import Location
 from dmtest.game import ACTIVE_GROUP_BYTES, Box, Frames, Game, recruit_and_hold_object, state
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
@@ -112,11 +113,11 @@ def test_load_fails_gracefully(game, tmp_path):
 
 def test_dm_load_raises_the_active_group_count_to_110(game, tmp_path):
     lib = game.lib
-    lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
-    lib.save_decode.restype = ctypes.c_bool
-    lib.save_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(u32)]
-    lib.save_encode.restype = ctypes.c_void_p
-    lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]
+    lib.savefile_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.savefile_decode.restype = ctypes.c_bool
+    lib.savefile_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(u32)]
+    lib.savefile_encode.restype = ctypes.c_void_p
+    lib.savefile_free.argtypes = [ctypes.POINTER(SaveFile)]
     assert lib.savegame_save(str(tmp_path).encode()) == 1
     good = (tmp_path / SAVE).read_bytes()
     plain = decode(lib, good)
@@ -251,14 +252,14 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
     lib = game.lib
     assert lib.gameloop_start_new_game(str(GAME).encode())
     recruit_and_hold_object(game)
-    lib.map_get_square_group.restype = u16
+    lib.map_find_thing.restype = u16
     spot = None
     for level in range(1, 14):
         lib.group_remove_all_active_groups()
         lib.map_set_current_map_and_party_map(level)
         lib.group_add_all_active_groups()
         width, height = game.value("g_current_map_width"), game.value("g_current_map_height")
-        groups = {(x, y) for x in range(width) for y in range(height) if lib.map_get_square_group(x, y) != 0xFFFE}
+        groups = {(x, y) for x in range(width) for y in range(height) if lib.map_find_thing(Location(x, y), C.THING_GROUP) != 0xFFFE}
         spot = next(
             ((x - STEP[d][0], y - STEP[d][1], d, (x, y)) for x, y in sorted(groups) for d in range(4)
              if 0 <= x - STEP[d][0] < width and 0 <= y - STEP[d][1] < height
@@ -270,12 +271,12 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
     px, py, direction, lord_square = spot
     for name, v in (("g_party_map_x", px), ("g_party_map_y", py), ("g_party_direction", direction)):
         ctypes.c_int16.in_dll(lib, name).value = v
-    lord = lib.map_get_square_group(*lord_square)
+    lord = lib.map_find_thing(Location(*lord_square), C.THING_GROUP)
     lib.startend_run_fuse_sequence()
     assert game.value("g_game_won") == 1 and game.value("g_return_to_entrance") == 1 and game.value("g_quit_requested") == 0
     assert lib.rec_write(lord)[4] == 26  # Grey Lord
     # the other groups are gone; the test group is not caged and can walk away and go too
-    assert {(x, y) for x in range(width) for y in range(height) if lib.map_get_square_group(x, y) != 0xFFFE} <= {lord_square}
+    assert {(x, y) for x in range(width) for y in range(height) if lib.map_find_thing(Location(x, y), C.THING_GROUP) != 0xFFFE} <= {lord_square}
     assert lib.gameloop_start_new_game(str(GAME).encode())  # a new game draws fluxcages again for the other tests
     assert game.value("g_do_not_draw_fluxcages") == 0 and game.value("g_game_won") == 0
 

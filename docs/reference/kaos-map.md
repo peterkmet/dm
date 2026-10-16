@@ -171,7 +171,7 @@ For a new game, the loader adds 300 free square-first-thing entries and free thi
 
 ### Saved games
 
-`save_game` (`0x125a44`) and `load_game` (`0x1265d4`) write and read blocks with `save_write_checked_block` and `save_read_checked_block`. Each block is obscured with `save_block_xor` (key added to each word) and protected with `save_block_checksum`. The blocks hold the party, the champions, the active groups, the timeline, and the dungeon. The trackdisk functions (`trackdisk_*`) detect drives and can format a save disk.
+`save_game` (`0x125a44`) and `load_game` (`0x1265d4`) write and read blocks with `save_write_checked_block` and `save_read_checked_block`. Each block is obscured with `savefile_xor_block` (key added to each word) and protected with `save_block_checksum`. The blocks hold the party, the champions, the active groups, the timeline, and the dungeon. The trackdisk functions (`trackdisk_*`) detect drives and can format a save disk.
 
 ## Runtime library
 

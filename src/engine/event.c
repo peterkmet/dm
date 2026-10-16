@@ -6,7 +6,6 @@
 #include "data/tables.h"
 #include "engine/action.h"
 #include "engine/champion.h"
-#include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
@@ -35,15 +34,10 @@ void (*g_endgame_sensor_hook)(uint16_t delay);
 #define GATE_INPUTS(data)   ((data) & 15)
 #define GATE_EXPECTED(data) ((data) >> 4 & 15)
 
-static bool is_party_on(int16_t x, int16_t y)
-{
-    return g_current_map_index == g_party_map_index && x == g_party_map_x && y == g_party_map_y;
-}
-
 /* A group that a door or a fake wall can hit: it is not non-material. */
 static bool is_material_group_on(int16_t x, int16_t y, uint16_t *attributes)
 {
-    uint16_t group = map_get_square_group(x, y);
+    uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
     if (group == THING_ENDOFLIST)
         return false;
     *attributes = map_get_creature_attributes(group);
@@ -54,13 +48,6 @@ static void add_again_next_tick(TimelineEvent *event)
 {
     event->map_time++;
     timeline_add_event(event);
-}
-
-static void print_text(uint16_t text)
-{
-    char buffer[TEXT_SIZE];
-    dungeon_decode_text(buffer, sizeof buffer, text, 1);
-    message_print(SENSOR_TEXT_COLOR, buffer, g_game_time);
 }
 
 /* One door step per tick: set opens (state down to open), clear closes (state up to closed). A closing door
@@ -77,7 +64,7 @@ static void event_process_door_animation(TimelineEvent *event)
     event->map_time++;
     if (effect == EFFECT_CLEAR) {
         uint16_t attributes;
-        if (is_party_on(x, y) && state != DOOR_OPEN) {
+        if (map_is_party_on((Location){x, y}) && state != DOOR_OPEN) {
             if (g_party_champion_count) {
                 rec_door_set_state(map, x, y, DOOR_OPEN);
                 if (champion_damage_all(DOOR_CLOSE_DAMAGE, WOUND_HEAD, ATTACK_SELF))
@@ -141,7 +128,7 @@ static void event_process_fake_wall(TimelineEvent *event)
         rec_square_set_byte(map, x, y, square | FAKE_WALL_OPEN);
         return;
     }
-    if (is_party_on(x, y) || is_material_group_on(x, y, &attributes)) {
+    if (map_is_party_on((Location){x, y}) || is_material_group_on(x, y, &attributes)) {
         add_again_next_tick(event);
         return;
     }
@@ -174,9 +161,9 @@ static void update_explosion_events(uint16_t explosion)
 /* The party, the group, and each object on the square move again, for example into an opened pit. */
 static void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
 {
-    if (is_party_on(x, y))
+    if (map_is_party_on((Location){x, y}))
         move_get_move_result(THING_NONE, x, y, x, y);
-    uint16_t group = map_get_square_group(x, y);
+    uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
     if (group != THING_ENDOFLIST)
         move_get_move_result(group, x, y, x, y);
     uint16_t thing = map_get_square_first_object(x, y);
@@ -259,8 +246,8 @@ static void event_process_corridor(TimelineEvent *event)
     int16_t y = event_square_y(event);
     for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         if (THING_TYPE(t) == THING_TEXT) {
-            if (change_text_visibility(t, event_effect(event)) && is_party_on(x, y))
-                print_text(t);
+            if (change_text_visibility(t, event_effect(event)) && map_is_party_on((Location){x, y}))
+                message_print_dungeon_text(t);
         } else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_FLOOR_GROUP_GENERATOR) {
             trigger_group_generator(t, event, x, y);
         }
