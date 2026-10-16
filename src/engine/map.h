@@ -121,9 +121,11 @@ void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *x, int
 #define TELEPORTER_SCOPE_PARTY     2
 #define TELEPORTER_SCOPE_ALL       3
 
+/* Door defense: the low byte of the door info. */
+#define DOOR_DEFENSE_MASK 0xff
 static inline int16_t door_info_defense(uint16_t door_info)
 {
-    return door_info & 0xff;
+    return door_info & DOOR_DEFENSE_MASK;
 }
 
 extern int16_t g_current_map_index, g_current_map_width, g_current_map_height;

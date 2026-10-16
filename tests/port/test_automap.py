@@ -65,7 +65,7 @@ def blocks(lib, m, x, y):
     if not on_map(lib, m, x, y):
         return True
     square = lib.rec_square_byte(m, x, y)
-    kind = square >> 5
+    kind = lib.rec_square_type(square)
     return kind == WALL or (kind == FAKE_WALL and not square & C.FAKE_WALL_OPEN) or (kind == DOOR and square & 7 == C.DOOR_CLOSED)
 
 

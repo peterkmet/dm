@@ -229,7 +229,7 @@ def test_square_queries_match_original(game, m):
             assert game.map_is_square_open(x, y) == emu.call(IS_SQUARE_OPEN, args) & 0xFFFF
             if 0 <= x < w and 0 <= y < h:
                 assert game.map_get_square_first_thing(x, y) == emu.call(FIRST_THING, args) & 0xFFFF
-            if square >> 5 == 3:
+            if game.rec_square_type(square) == 3:
                 assert game.map_get_stairs_exit_direction(x, y) == emu.call(STAIRS_EXIT, args) & 0xFFFF
     for x in range(w):
         for y in range(h):

@@ -6,6 +6,7 @@
 #include "engine/champion.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
+#include "engine/record.h"
 #include <string.h>
 
 /* Party light and scent limits. */

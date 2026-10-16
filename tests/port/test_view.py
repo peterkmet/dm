@@ -4,8 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Position
-from dmtest.game import Bitmap, Box, setup_view, start_view, zone_records
+from dmtest.game import Bitmap, Box, Position, setup_view, start_view, zone_records
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
 

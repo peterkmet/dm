@@ -8,8 +8,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import s16, var
-from dmtest.game import Location
-from dmtest.game import (CHAMPIONS, Champion, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
+from dmtest.game import (CHAMPIONS, Champion, Location, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
                          setup_creatures, skeleton_map_and_squares, things_of_type, tick)
 from dmtest.lib import load_lib
 

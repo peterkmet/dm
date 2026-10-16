@@ -235,12 +235,12 @@ def test_view_stops_at_a_closed_door(game):
     for x in range(width):
         for y in range(height):
             door = square_byte(game, x, y)
-            if door >> 5 != 4 or door & 7 != 4:  # a closed door
+            if game.lib.rec_square_type(door) != 4 or door & 7 != 4:  # a closed door
                 continue
             for d in range(4):
                 fx, fy = x - STEP_EAST[d], y - STEP_NORTH[d]
                 bx, by = x + STEP_EAST[d], y + STEP_NORTH[d]
-                if 0 <= fx < width and 0 <= fy < height and 0 <= bx < width and 0 <= by < height and square_byte(game, fx, fy) >> 5 == 1:
+                if 0 <= fx < width and 0 <= fy < height and 0 <= bx < width and 0 <= by < height and game.lib.rec_square_type(square_byte(game, fx, fy)) == 1:
                     with placed(game, fx, fy, d):
                         view, game_map = state_json(game, 1), state_json(game, 2)
                     assert max(s["depth"] for s in view["squares"]) == 1
@@ -257,7 +257,7 @@ def test_view_shows_a_mirror_on_a_side_wall(game):
         face = game.mirror_cell(mx, my)
         d = (face - 1) % 4  # the left wall at depth 1 faces the party lane: direction d + 1
         x, y = mx - STEP_EAST[d] - STEP_EAST[(d + 3) % 4], my - STEP_NORTH[d] - STEP_NORTH[(d + 3) % 4]
-        if square_byte(game, x, y) >> 5 != 1:
+        if game.lib.rec_square_type(square_byte(game, x, y)) != 1:
             continue
         with placed(game, x, y, d):
             view = state_json(game, 1)

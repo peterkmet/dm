@@ -37,7 +37,7 @@ The header has 512 bytes. Offsets are bytes from the start of the file.
 | `0x000` | 256 | 32 groups of 4 random words `w0`, `w1`, `w2`, `w3`. Not encrypted. |
 | `0x014` | 2 | Payload key. This is word `w2` of group 2. |
 | `0x100` | 256 | Payload: 128 words, encrypted with the payload key. |
-| `0x12a` | 1 | Header byte (`H_HEADER_BYTE`). The original writes 1. |
+| `0x12a` | 1 | Header byte (`SAVE_HEADER_HEADER_BYTE`). The original writes 1. |
 | `0x12b` | 1 | Platform. The original writes 5. A load fails when the value is 1. |
 | `0x130` | 2 | Dialog choice. The original writes 1. A load does not read it. |
 | `0x132` | 4 | Game ID (`g_game_id`). |
@@ -265,6 +265,6 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 - No real save file was available. The tests use synthetic data, the port's own saves, and the original routines as the oracle. The original `load_dungeon` reads a file handle, so the tests do not run it on the dungeon part.
 - Deliberate deviation: the original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!". The port sets `g_return_to_entrance`, and `main.c` shows the entrance.
 - A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
-- The header byte at `0x12a` (`H_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.
+- The header byte at `0x12a` (`SAVE_HEADER_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.
 - `savefile_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.
 - The meaning of the header byte at `0x12a`, of `g_save_header_extra`, and of the long at block 0 offset 32 is not traced.

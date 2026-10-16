@@ -9,8 +9,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import need, s16, var
-from dmtest.game import Location, Position
-from dmtest.game import (Party, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
+from dmtest.game import (Location, Party, Position, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
                          things_of_type, tick)
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm

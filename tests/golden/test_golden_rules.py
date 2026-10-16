@@ -10,8 +10,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Location
-from dmtest.game import Party, scrub_free_groups, state
+from dmtest.game import Location, Party, scrub_free_groups, state
 from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
 from dmtest.markers import needs_dm
 
@@ -348,7 +347,7 @@ def test_imaginary_wall(game):
 
     def imaginary(x, y):
         square = lib.map_get_square(x, y)
-        return square >> 5 == FAKE_WALL and square & C.FAKE_WALL_IMAGINARY and not square & C.FAKE_WALL_OPEN
+        return lib.rec_square_type(square) == FAKE_WALL and square & C.FAKE_WALL_IMAGINARY and not square & C.FAKE_WALL_OPEN
 
     place_party(game, *find_spot(game, range(MAP_COUNT), imaginary))
     game.click_zone(C.ZONE_THROW_LEFT)  # an empty hand goes into the imaginary wall

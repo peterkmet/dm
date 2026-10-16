@@ -101,7 +101,7 @@ refactor; until the run ends, the allowlist carries the difference.
 10. The byte order helpers `be16`, `wr16`, `be32`, `wr32` are `static inline` functions in `data/bytes.h`
     only. [byteorder]
 11. The record layout belongs to `engine/record.h` and `engine/record.c`: no other file indexes a record
-    (`REC(`), `g_current_map_data[` or `g_dungeon_map_data[`. [record]
+    (`REC(`) or `g_dungeon_map_data[`. [record]
 12. Read game data at run time; do not copy a game table into the source. Exception: a table that is not in
     the game files (the soundtrack tables of the other versions) stays in the source, named in the allowlist
     with this reason; the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`) stay
@@ -288,7 +288,7 @@ dependency group (version 23). [format]
 | `numbered` | an event number, a byte offset or an address in a name |
 | `packed` | a shift by 8, 16, 24 or a foreign `*_SHIFT` at a call site, a double integer cast |
 | `byteorder` | a byte order helper outside `data/bytes.h` |
-| `record` | `REC(`, `g_current_map_data[` or `g_dungeon_map_data[` outside `engine/record.c` and `engine/record.h` |
+| `record` | `REC(` or `g_dungeon_map_data[` outside `engine/record.c` and `engine/record.h` |
 | `name` | a function name above four words after the prefix or above 32 characters |
 | `static-prefix` | a static function with a module prefix |
 | `bool` | a predicate, a truth local or a "Returns 0/1" function that is not `bool` |

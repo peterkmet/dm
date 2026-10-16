@@ -5,8 +5,7 @@ import struct
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Location
-from dmtest.game import ACTIVE_GROUP_BYTES, Box, Frames, Game, recruit_and_hold_object, state
+from dmtest.game import ACTIVE_GROUP_BYTES, Box, Frames, Game, Location, recruit_and_hold_object, state
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 from dmtest.savefile import G_LOAD_FROM_MEMORY, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER, SaveFile, decode, encode
