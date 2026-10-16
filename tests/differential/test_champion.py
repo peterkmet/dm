@@ -6,7 +6,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import need, s16, var
-from dmtest.game import CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Champion, Party, Position, RecruitData, World, champions, global_type, pack
+from dmtest.game import CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Champion, Party, Position, RecruitData, World, champions, pack
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 

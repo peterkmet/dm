@@ -630,7 +630,6 @@ type engine:effect open: epic 6
 type engine:info open: epic 6
 type engine:kinetic_energy open: epic 6
 type engine:len open: epic 6
-type engine:mode open: epic 6
 type engine:out open: epic 6
 type engine:s open: epic 6
 type engine:size open: epic 6
