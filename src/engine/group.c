@@ -12,8 +12,6 @@
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 #define ASPECT_KEEP_FLAGS (ASPECT_ATTACKING | ASPECT_FLIPPED)
 
@@ -316,10 +314,8 @@ void group_add_active_group(uint16_t group, int16_t x, int16_t y)
 {
     uint16_t index = 0;
     while (g_active_groups[index].group_index >= 0) {
-        if (++index >= g_max_active_group_count) {
-            fprintf(stderr, "System Error %d\n", SYSTEM_ERROR_NO_FREE_ACTIVE_GROUP);
-            exit(1);
-        }
+        if (++index >= g_max_active_group_count)
+            game_fatal(SYSTEM_ERROR_NO_FREE_ACTIVE_GROUP);
     }
     ActiveGroup *active = &g_active_groups[index];
     g_active_group_count++;

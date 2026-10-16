@@ -10,9 +10,6 @@ hex engine/map.c open: epic 5
 hex engine/map.h open: epic 5
 long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
 long engine/timeline_process.c:event_process_expired rule 5.8: one short case for each timeline event type
-platform engine/game.c open: epic 6
-platform engine/group.c open: epic 6
-platform engine/map.c open: epic 6
 block engine/action.c open: epic 6
 block engine/champion.c open: epic 6
 block engine/champion.h open: epic 6
@@ -852,7 +849,6 @@ notation ui/select.h open: epic 8
 notation ui/view.c open: epic 8
 notation ui/view.h open: epic 8
 packed ui/view.c open: epic 8
-dead-api data/os.h:os_log open: epic 8
 dead-api data/os.h:g_os_log_hook open: epic 11
 dead-api data/os.h:g_os_fatal_hook open: epic 11
 dead-api data/kaos.h:kaos_free open: epic 11

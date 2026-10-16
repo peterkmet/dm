@@ -203,6 +203,9 @@ extern bool g_cheat_food;     /* food and water do not go down */
 #define CHEAT_IMMORTAL 1
 #define CHEAT_FOOD     2
 
+/* Stops the game with the "System Error" message of the original. */
+_Noreturn void game_fatal(int16_t code);
+
 /* load_game (new game) and the end of load_dungeon. dungeon_load must run first. */
 void game_start_new(void);
 /* The start of a game, new or loaded: no candidate, no sleep, no won game, no cheats, no skill level-ups. */

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/game.h"
 #include "data/adventure.h"
+#include "data/os.h"
 #include "data/tables.h"
 #include "engine/arith.h"
 #include "engine/champion.h"
@@ -10,7 +11,6 @@
 #include "engine/random.h"
 #include "engine/sensor.h"
 #include "engine/timeline_process.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,11 +54,9 @@ int16_t g_first_unused_event_index;
 ActiveGroup *g_active_groups;
 uint16_t g_active_group_count, g_max_active_group_count;
 
-/* Stops the game with the "System Error" message of the original. */
-static void fatal_error(int16_t code)
+void game_fatal(int16_t code)
 {
-    fprintf(stderr, "System Error %d\n", code);
-    exit(1);
+    os_fatal("System Error %d", code);
 }
 
 void game_start_new(void)
@@ -158,7 +156,7 @@ void timeline_init(void)
     g_timeline_events = calloc(g_event_max_count, sizeof *g_timeline_events);
     g_timeline = calloc(g_event_max_count, sizeof *g_timeline);
     if (g_event_max_count <= 0 || !g_timeline_events || !g_timeline)
-        fatal_error(SYSTEM_ERROR_MEMORY);
+        game_fatal(SYSTEM_ERROR_MEMORY);
     for (uint16_t i = 0; i < g_event_max_count; i++)
         g_timeline_events[i].map_time = i + 1;
     g_timeline_events[g_event_max_count - 1].map_time = FREE_LIST_END;
@@ -207,7 +205,7 @@ uint16_t timeline_get_index(uint16_t event_index)
         if (g_timeline[i] == event_index)
             return i;
     } while (++i < g_event_high_water);
-    fatal_error(SYSTEM_ERROR_MEMORY);
+    game_fatal(SYSTEM_ERROR_MEMORY);
     return 0;
 }
 
@@ -305,7 +303,7 @@ int16_t timeline_add_event(TimelineEvent *event)
     if (!event->type)
         return -1;
     if (g_timeline_count == (uint16_t)g_event_max_count) /* unsigned compare as in the original */
-        fatal_error(SYSTEM_ERROR_TIMELINE_FULL);
+        game_fatal(SYSTEM_ERROR_TIMELINE_FULL);
     int16_t index = timeline_find_mergeable_event(event);
     if (index >= 0)
         return index;
@@ -344,7 +342,7 @@ void game_init_active_groups(void)
     free(g_active_groups);
     g_active_groups = malloc(g_max_active_group_count * sizeof *g_active_groups);
     if (!g_active_groups)
-        fatal_error(SYSTEM_ERROR_MEMORY);
+        game_fatal(SYSTEM_ERROR_MEMORY);
     for (uint16_t i = 0; i < g_max_active_group_count; i++)
         g_active_groups[i].group_index = -1;
 }

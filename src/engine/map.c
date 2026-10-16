@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/map.h"
+#include "data/os.h"
 #include "data/tables.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
 #include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define FATAL_SQUARE_FIRST_THINGS_FULL 72
@@ -146,17 +145,10 @@ static void add_to_later_columns(int16_t x, int16_t delta)
     }
 }
 
-static void stop_fatal(int16_t code)
-{
-    fprintf(stderr, "System Error %d\n", code);
-    exit(1);
-}
-
 /* A free record (THING_NONE) must never enter a square list: a save with it is damaged. Logs where it comes from. */
 static void report_free_record(const char *action, int16_t x, int16_t y)
 {
-    fprintf(stderr, "square list guard: %s, map %d (%d,%d), game time %" PRIu32 "\n", action, g_current_map_index, x, y,
-            g_game_time);
+    os_log("square list guard: %s, map %d (%d,%d), game time %" PRIu32, action, g_current_map_index, x, y, g_game_time);
 }
 
 void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
@@ -173,7 +165,7 @@ void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
         if (!(*square & SQUARE_HAS_THINGS)) {
             uint16_t count = rec_dungeon_square_first_thing_count();
             if (be16(g_square_first_things + (count - 1) * 2) != THING_NONE)
-                stop_fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
+                game_fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
             *square |= SQUARE_HAS_THINGS;
             add_to_later_columns(x, 1);
             uint16_t index = map_get_square_first_thing_index(x, y);
