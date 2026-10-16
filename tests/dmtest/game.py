@@ -116,6 +116,11 @@ class Location(ctypes.Structure):
     _fields_ = [("x", c16), ("y", c16)]
 
 
+class MeleeAttack(ctypes.Structure):
+    _fields_ = [("champion_index", c16), ("group", u16), ("creature_index", c16), ("at", Location),
+                ("hit_probability", u16), ("damage_factor", u16), ("skill_index", c16)]
+
+
 class DirectionPair(ctypes.Structure):
     _fields_ = [("primary", c16), ("secondary", c16)]
 
@@ -490,7 +495,7 @@ def setup_creatures(lib):
         ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", DirectionPair, [Location, Location]),
         ("group_is_destination_visible_from_source", ctypes.c_bool, [c16, c16, c16, c16, c16]),
         ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
-        ("group_get_generated", u16, [u16, c16, u16, c16, c16, c16]),
+        ("group_get_generated", u16, [u16, c16, u16, c16, Location]),
         ("group_get_damage_all_creatures_outcome", c16, [u16, c16, c16, c16, ctypes.c_bool]),
         ("dungeon_load", ctypes.c_bool, [ctypes.c_char_p]),
         ("magic_get_champion_spell_cast_result", c16, [u16]), ("rec_find_unused_thing", u16, [u16]),

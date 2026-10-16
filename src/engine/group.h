@@ -228,7 +228,7 @@ uint16_t group_get_party_scent_ordinal(int16_t x, int16_t y);
 
 /* A new group of creatures on a square. Health is base health * multiplier plus a random part. */
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index,
-                             int16_t direction, int16_t x, int16_t y);
+                             int16_t direction, Location at);
 /* The creature generator of a corridor event: count, health multiplier (0: map difficulty), random direction. */
 void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y);
 
@@ -243,7 +243,7 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
 void group_delete(int16_t x, int16_t y);
 /* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group (with notify).
    Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
-int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, int16_t x, int16_t y, int16_t damage,
+int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage,
                                           bool notify);
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
 int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, bool notify);
@@ -262,22 +262,32 @@ typedef struct {
 /* The directions from a source square to a destination. */
 DirectionPair group_get_directions_to_destination(Location from, Location to);
 /* The 4 cells of the target square in the order the attacker reaches them. */
-void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x,
-                                       int16_t group_y, int16_t group_cell);
+void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, Location target, Location group_at, int16_t group_cell);
 /* The champion that a creature on an adjacent square attacks, or -1. */
 int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell);
 
 /* A creature hits a champion: dodge by dexterity and luck, damage from attack, map difficulty, and parry skill,
    then poison. Returns the damage. */
 int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index);
+/* A melee attack of a champion on a creature. */
+typedef struct {
+    int16_t champion_index;
+    uint16_t group;
+    int16_t creature_index;
+    Location at;
+    uint16_t hit_probability;
+    uint16_t damage_factor;
+    int16_t skill_index;
+} MeleeAttack;
 /* A champion hits a creature with a melee action: hit chance by dexterity, damage by strength, the action damage
    factor, and the creature defense. Returns the damage (0 for a miss). */
-int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, int16_t creature_index, int16_t x,
-                                      int16_t y, uint16_t hit_probability, uint16_t damage_factor, int16_t skill_index);
+int16_t group_get_melee_action_damage(const MeleeAttack *attack);
 
-/* Events 32-41 and the reactions -1..-3 (events 29-31 later) of the group on a square. Off the party map a group
-   only wanders. Lord Chaos ignores Freeze Life. */
-void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint16_t ticks);
+/* A rule tells the group on a square about a danger, a projectile hit or the adjacent party (REACTION_*). */
+void group_process_reaction_event(Location at, int16_t reaction);
+/* The group event of the timeline (EVENT_GROUP_REACTION_* to EVENT_UPDATE_BEHAVIOR_CREATURE_3). Off the party map a
+   group only wanders. Lord Chaos ignores Freeze Life. */
+void group_process_event(const TimelineEvent *event);
 
 /* move_get_move_result for a group. Teleporters, pits (20 damage), and stairs move it on. A group that dies or
    reaches a map that does not allow its type is deleted (returns 1). An occupied destination makes the group wait

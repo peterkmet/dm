@@ -567,8 +567,7 @@ void event_process_expired(void)
             break;
         default:
             if (event.type >= EVENT_GROUP_REACTION_DANGER_ON_SQUARE && event.type <= EVENT_UPDATE_BEHAVIOR_CREATURE_3)
-                group_process_reaction_event(event_square_x(&event), event_square_y(&event), event.type,
-                                             event_group_ticks(&event));
+                group_process_event(&event);
             else
                 process_effect_event(&event);
             break;

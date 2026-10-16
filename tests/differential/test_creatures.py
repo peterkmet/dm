@@ -259,7 +259,7 @@ def test_creature_dies_and_drops_possessions(lib):
     place_party(lib, m, *party_square, 2)
     assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == 0xFFFE
     # Like the original, the result is THING_NONE when the new group becomes active on the party map.
-    assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 0, x, y) == 0xFFFF
+    assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 0, Location(x, y)) == 0xFFFF
     group = lib.map_find_thing(Location(x, y), C.THING_GROUP)
     assert group != 0xFFFE and lib.rec_write(group)[4] == C.CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value

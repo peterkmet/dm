@@ -339,7 +339,7 @@ void move_party(int16_t command)
         } else {
             blocked = map_find_thing((Location){x, y}, THING_GROUP) != THING_ENDOFLIST;
             if (blocked)
-                group_process_reaction_event(x, y, REACTION_PARTY_IS_ADJACENT, 0);
+                group_process_reaction_event((Location){x, y}, REACTION_PARTY_IS_ADJACENT);
         }
     }
     if (blocked)

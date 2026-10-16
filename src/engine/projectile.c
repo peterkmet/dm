@@ -259,9 +259,9 @@ static int16_t hit_creature(uint16_t projectile, uint16_t thing, bool is_explosi
     if (!attack)
         return 1;
     uint16_t poison = group_get_resistance_adjusted_poison_attack(creature_type, g_projectile_poison_attack);
-    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, x, y, attack + poison, true);
+    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, (Location){x, y}, attack + poison, true);
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
-        group_process_reaction_event(x, y, REACTION_HIT_BY_PROJECTILE, 0);
+        group_process_reaction_event((Location){x, y}, REACTION_HIT_BY_PROJECTILE);
     g_creature_damage_outcome = outcome;
     if (!is_explosion && outcome == OUTCOME_NO_CREATURE_KILLED && THING_TYPE(thing) == THING_WEAPON &&
         (info->attributes & CREATURE_KEEPS_THROWN_SHARP_WEAPONS)) {
@@ -498,7 +498,8 @@ static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t dama
         uint16_t spread = random16();
         uint16_t extra = random_2bits();
         int16_t eighth = damage >> 3;
-        group_get_damage_creature_outcome(group, i, x, y, extra + (damage - eighth) + spread % (eighth * 2 + 1), true);
+        group_get_damage_creature_outcome(group, i, (Location){x, y},
+                                          extra + (damage - eighth) + spread % (eighth * 2 + 1), true);
     }
 }
 
@@ -524,7 +525,7 @@ void explosion_process_step_event(TimelineEvent *event)
             if (damage &&
                 group_get_damage_all_creatures_outcome(group, x, y, damage, true) != OUTCOME_ALL_CREATURES_KILLED &&
                 damage > POISON_REACTION_MIN_DAMAGE)
-                group_process_reaction_event(x, y, REACTION_DANGER_ON_SQUARE, false);
+                group_process_reaction_event((Location){x, y}, REACTION_DANGER_ON_SQUARE);
         }
         if (attack > POISON_CLOUD_MIN_ATTACK) {
             rec_explosion_set_attack(explosion, attack - POISON_CLOUD_FADE);
@@ -619,7 +620,7 @@ void projectile_fluxcage_action(int16_t x, int16_t y)
                 projectile_is_fluxcage_on_square(x + 1, lord_y);
     }
     if (cages == 2)
-        group_process_reaction_event(lord_x, lord_y, REACTION_DANGER_ON_SQUARE, 0);
+        group_process_reaction_event((Location){lord_x, lord_y}, REACTION_DANGER_ON_SQUARE);
 }
 
 void projectile_fuse_action(int16_t x, int16_t y)

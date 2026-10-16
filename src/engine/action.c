@@ -304,8 +304,16 @@ bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, i
     uint16_t hit_probability = info->hit_probability;
     if (object_get_icon_index(c->slots[SLOT_HAND_ACTION]) == ICON_VORPAL_BLADE || action == ACTION_DISRUPT)
         hit_probability |= HIT_PROBABILITY_ALWAYS_HITS;
-    g_action_damage = group_get_melee_action_damage(champion_index, g_action_target_group_thing, ordinal - 1, x, y,
-                                                    hit_probability, info->damage_factor, skill_index);
+    MeleeAttack attack = {
+        .champion_index = champion_index,
+        .group = g_action_target_group_thing,
+        .creature_index = ordinal - 1,
+        .at = {x, y},
+        .hit_probability = hit_probability,
+        .damage_factor = info->damage_factor,
+        .skill_index = skill_index
+    };
+    g_action_damage = group_get_melee_action_damage(&attack);
     return true;
 }
 
