@@ -43,10 +43,15 @@ static inline uint16_t spell_attributes_disabled_ticks(uint16_t attributes)
 }
 
 int16_t spell_count(void);
+/* Spell index for a NUL-terminated symbol string (power symbol first), or -1. One symbol is never a spell. */
 int16_t spell_find(const uint8_t *symbols);
+/* Symbol character for button symbol_index (0-5) at a step (0-3). */
 uint8_t spell_get_symbol(uint16_t step, int16_t symbol_index);
+/* Mana cost of a symbol; after the power symbol, the cost is scaled by the power. */
 uint16_t spell_get_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t power_symbol);
+/* One draw per missing skill level; the cast fails on the first draw that returns true. */
 bool spell_draw_fails(uint8_t current_wisdom, uint16_t random);
+/* Experience on failure: shifted right once per missing level (68000 LSR.W, count modulo 64). */
 uint16_t spell_get_failure_experience(uint16_t experience, uint16_t required_level, uint16_t skill_level);
 
 #endif

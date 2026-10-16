@@ -114,8 +114,6 @@ static uint16_t action_hand_charge_count(void)
     return 1;
 }
 
-/* Builds the action menu of the acting champion: the first action always; the other two when the
-   champion has the skill level and, when the action needs them, charges. */
 void action_set_action_list(int16_t action_set_index)
 {
     const ActionSet *set = tables_get_action_set(action_set_index);
@@ -167,7 +165,6 @@ int16_t action_take_damage(void)
     return damage;
 }
 
-/* No acting champion, no action list, no action damage, and no redraw request at the start of a game. */
 void action_reset(void)
 {
     g_acting_champion_ordinal = 0;
@@ -204,7 +201,6 @@ static void champion_face_party_direction(Champion *c)
     }
 }
 
-/* Prints "<text>" in the action color; "@p" in the text becomes the champion name. */
 void action_print_action_message(uint16_t champion_index, const char *text)
 {
     char out[MESSAGE_SIZE];
@@ -228,7 +224,6 @@ void action_print_action_message(uint16_t champion_index, const char *text)
         message_print(MESSAGE_COLOR_CYAN, out, g_game_time);
 }
 
-/* The object in the action hand loses one charge: weapons, armour, and junk keep their charges in different bits. */
 void action_decrement_charges(uint16_t champion_index)
 {
     uint16_t thing = g_champions[champion_index].slots[SLOT_HAND_ACTION];
@@ -249,8 +244,6 @@ void action_decrement_charges(uint16_t champion_index)
     /* The interface redraws the changed object icons from the slots. */
 }
 
-/* War cry, blow horn, confuse, calm, brandish: the group in front flees when the influence roll beats its fear
-   resistance. The champion gains influence experience, half of it when the group stays. */
 bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t action, int16_t x, int16_t y)
 {
     uint16_t group = g_action_target_group_thing;
@@ -301,8 +294,6 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
     return frightened;
 }
 
-/* A melee hit on the group in front. A champion in a back cell reaches only past an empty front cell ("can't
-   reach"). Disrupt hits only non-material creatures. Returns false when the champion hits nothing. */
 bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, int16_t x, int16_t y,
                                       int16_t skill_index)
 {
@@ -513,10 +504,6 @@ static bool is_removed_in_csb(int16_t action)
            (action == ACTION_INVOKE || action == ACTION_FLUXCAGE || action == ACTION_FUSE);
 }
 
-/* Runs one action of a champion against the square in front of the champion. After the action the action hand is
-   disabled for the action ticks, the champion loses stamina, and the action skill gains experience. A failed
-   melee action halves the ticks and the experience. Returns false when the action fails. The function is long: one
-   short case for each action of the action table. */
 bool action_is_action_performed(uint16_t champion_index, int16_t action)
 {
     if (champion_index >= g_party_champion_count)
@@ -671,7 +658,6 @@ bool action_did_click_trigger_action(int16_t action_list_index)
     return performed;
 }
 
-/* Stamina cost of a throw: half the weight, 1 to 10, plus half of each 10 above. */
 int16_t action_get_throwing_stamina_cost(uint16_t thing)
 {
     uint16_t weight = inventory_get_object_weight(thing) >> 1;
@@ -734,7 +720,6 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
     return true;
 }
 
-/* The leader throws the object in the leader hand (a click in the upper dungeon view). */
 bool action_is_leader_hand_object_thrown(int16_t side)
 {
     if (g_leader_index == -1)
@@ -772,7 +757,6 @@ static bool has_weapon_moved_to_slot(uint16_t champion_index, uint16_t quiver_sl
     return true;
 }
 
-/* After a throw: the next weapon of the quiver goes to the empty slot (quiver line 1 first, then line 2). */
 void action_move_weapon_from_quiver_to_slot(uint16_t champion_index, uint16_t slot)
 {
     if (g_champions[champion_index].slots[slot] != THING_NONE ||

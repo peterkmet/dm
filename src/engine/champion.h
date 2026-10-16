@@ -73,43 +73,79 @@ extern uint16_t g_dead_champions;
 uint16_t champion_take_dead_champions(void);
 /* Asks the user interface to draw these parts of a champion again (CHAMPION_ATTR_* redraw flags). */
 void champion_add_redraw_flags(uint16_t champion_index, uint16_t attributes);
+/* The start of a game: no leader and an empty leader hand. Returns the hand object before, which a loaded
+   game puts back. */
 uint16_t champion_reset_data_to_start_game(void);
 
 /* Original 0x140-byte big-endian record (save files, emulator tests). */
 void champion_pack(const Champion *c, uint8_t *out);
 void champion_unpack(const uint8_t *in, Champion *c);
 
+/* The party stands in front of a mirror. The text on the party square holds the champion data. */
 void champion_add_candidate_to_party(int16_t portrait_index);
+/* Cancel removes the candidate. Resurrect and reincarnate take the possessions from the wall
+   square and disable the mirror. The original also asks for a new name on reincarnation. */
 void champion_click_in_resurrect_reincarnate_panel(int16_t command);
+/* Vi altar: the champion comes back with no objects and with a lower maximum health. */
 void champion_resurrect(uint16_t champion_index);
+/* The living champion in a cell of the party square, or -1. */
 int16_t champion_get_index_in_cell(int16_t cell);
+/* The leader carries the hand object, so its weight moves to the new leader. */
 void champion_set_leader(int16_t champion_index);
+/* Input and screen changes of waking up belong to the interface. */
 void champion_wake_up(void);
+/* The party goes to sleep; the input and the sleep screen belong to the interface. */
 void champion_go_to_sleep(void);
+/* The leader drinks its fill at a fountain; with whole_party every living champion drinks. */
 void champion_drink_from_fountain(bool whole_party);
+/* Each tick, an idle champion (not the leader, not acting) turns to its last attacker. Returns one bit per
+   champion that turned. */
 uint16_t champion_turn_to_last_attackers(void);
+/* A champion faces the party direction and moves to a cell; a champion in that cell takes its old cell.
+   Returns that other champion, or -1. */
 int16_t champion_move_to_cell(int16_t champion_index, int16_t cell);
 
+/* Level 1 below 500 experience, one more level for each doubling. A hidden skill counts the
+   mean of its own and its base skill experience. Sleeping champions have level 1. */
 int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flags);
+/* Experience counts more on difficult maps and in recent fights. A hidden skill also trains its base skill. */
 void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint16_t experience);
+/* Tenths of a kilogram, rounded up to whole kilograms. */
 uint16_t champion_get_maximum_load(const Champion *champion);
+/* Ticks between two party moves for this champion: more when the load is heavy. */
 int16_t champion_get_movement_ticks(const Champion *champion);
+/* Dexterity for hit and dodge rolls, lower with a heavy load, between 1 and 100. */
 int16_t champion_get_dexterity(const Champion *champion);
+/* Strength with the object in a hand: weight, weapon strength, and weapon skills. 0 to 100. */
 int16_t champion_get_strength(int16_t champion_index, int16_t slot);
+/* Defense of one body part (slot 0-5). Shields in the hands count for every part. */
 int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_flags);
 
+/* Damage arrives at the end of the tick. Attack type ATTACK_RAW skips defense and wounds. */
 int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
                                                int16_t attack_type);
+/* The main loop calls this every tick. A champion at 0 health dies. */
 void champion_apply_and_draw_pending_damage_and_wounds(void);
+/* Closes the champion's inventory and action menu, drops all objects and the bones on the party
+   square, and passes the leader and the spell casting to the first living champion. The party dies
+   with its last champion. */
 void champion_kill(uint16_t champion_index);
+/* All objects fall to the floor in the champion's cell. */
 void champion_drop_all_objects(uint16_t champion_index);
+/* Each poison step deals attack / 64 (at least 1) and schedules the next step with attack - 1. */
 void champion_poison(int16_t champion_index, uint16_t attack);
+/* Removes all poison events of the champion. */
 void champion_unpoison(int16_t champion_index);
+/* Each champion takes attack +- attack / 8. Returns the number of champions that took damage. */
 int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t attack_type);
+/* Stamina below 0 becomes damage (half the deficit). */
 void champion_decrement_stamina(int16_t champion_index, int16_t decrement);
+/* The party falls into a pit. With a rope it loses stamina instead. */
 void champion_fall_damage(bool use_rope);
 
+/* Removes the oldest scents first; the footprint range moves with the list. */
 void champion_delete_scent(uint16_t scent_index);
+/* The main loop calls this every 64 ticks (16 while the party sleeps). */
 void champion_apply_time_effects(void);
 
 #endif

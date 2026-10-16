@@ -30,7 +30,6 @@ void menus_draw_movement_arrows(void)
     ui_blit_graphic(&screen, GFX_MOVEMENT_ARROWS, ZONE_MOVEMENT_ARROWS, COLOR_NONE);
 }
 
-/* Closes the action menu and redraws the action hand of the champion. */
 void menus_clear_acting_champion(void)
 {
     int16_t ordinal = g_acting_champion_ordinal;
@@ -39,7 +38,6 @@ void menus_clear_acting_champion(void)
         ui_draw_champion_state(ordinal - 1);
 }
 
-/* Opens the action menu of a champion: the actions of the object in the action hand. */
 void menus_set_acting_champion(uint16_t champion_index)
 {
     if (!action_set_acting_champion(champion_index))
@@ -49,9 +47,6 @@ void menus_set_acting_champion(uint16_t champion_index)
     menus_draw_action_area();
 }
 
-/* Draws the action hand object of a champion as a black icon on a cyan box (with the advanced
-   features, in its own colors on the cyan box); dimmed while the action is disabled, a candidate is
-   shown, or the party sleeps. */
 void menus_draw_action_icon(uint16_t champion_index)
 {
     const Champion *champion = &g_champions[champion_index];
@@ -84,8 +79,6 @@ void menus_draw_action_icon(uint16_t champion_index)
         ui_fill_zone_pattern(&screen, zone, COLOR_BLACK);
 }
 
-/* Draws the action area: the action icons of all champions, or the action menu of the acting
-   champion (its name and up to three action names). */
 void menus_draw_action_area(void)
 {
     Bitmap screen = ui_get_screen();
@@ -111,8 +104,6 @@ void menus_draw_action_area(void)
     g_redraw &= ~REDRAW_ACTION_AREA;
 }
 
-/* Shows the result of an action: "CAN'T REACH", "NEED AMMO", or the damage in a splat (smaller
-   for small damage). */
 void menus_draw_action_damage(int16_t damage)
 {
     Bitmap screen = ui_get_screen();
@@ -135,8 +126,6 @@ void menus_draw_action_damage(int16_t damage)
     ui_print_zone(&screen, ZONE_ACTION_DAMAGE, COLOR_CYAN, COLOR_BLACK, buf);
 }
 
-/* Runs each tick: turns idle champions toward their last attacker, then redraws the action area
-   when requested (menu, damage, or icons). */
 void menus_refresh_action_area(void)
 {
     if (!g_party_champion_count)
@@ -184,13 +173,11 @@ static void draw_caster_tabs(uint16_t champion_index, const Champion *caster)
                   caster->name);
 }
 
-/* Draws the caster tabs of the spell area for a champion as the caster. */
 void menus_draw_spell_area_controls(uint16_t champion_index)
 {
     draw_caster_tabs(champion_index, &g_champions[champion_index]);
 }
 
-/* Draws the six runes that the caster can choose at its symbol step. */
 void menus_draw_available_symbols(uint16_t symbol_step)
 {
     Bitmap screen = ui_get_screen();
@@ -215,7 +202,6 @@ static void draw_chosen_symbols(const char *symbols)
     }
 }
 
-/* Draws the runes that the champion has chosen so far. */
 void menus_draw_champion_symbols(uint16_t champion_index)
 {
     draw_chosen_symbols(g_champions[champion_index].symbols);
@@ -243,8 +229,6 @@ static void draw_spell_area(void)
     draw_spell_area_of(caster == -1 ? NULL : &g_champions[caster]);
 }
 
-/* Draws the spell area of the caster again. A dead caster (the whole party died) is cleared and nothing is
-   drawn. */
 void menus_draw_spell_area(void)
 {
     int16_t caster = g_magic_caster_champion_index;
@@ -257,7 +241,6 @@ void menus_draw_spell_area(void)
     draw_spell_area();
 }
 
-/* Selects the spell caster and draws the spell area; -1 clears it. */
 void menus_set_magic_caster(int16_t champion_index)
 {
     if (magic_set_caster(champion_index))
@@ -283,7 +266,6 @@ void menus_refresh_spell_area(const Champion *caster)
     g_redraw &= ~(REDRAW_SPELL_AREA | REDRAW_SPELL_TABS | REDRAW_SPELL_SYMBOLS);
 }
 
-/* No acting champion, no action list, no action damage, and the action icons at the start of a game. */
 void menus_reset(void)
 {
     action_reset();

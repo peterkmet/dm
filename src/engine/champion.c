@@ -204,7 +204,6 @@ static void get_square_in_front(int16_t *x, int16_t *y)
     game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, x, y);
 }
 
-/* The living champion in a cell of the party square, or -1. */
 int16_t champion_get_index_in_cell(int16_t cell)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++)
@@ -213,7 +212,6 @@ int16_t champion_get_index_in_cell(int16_t cell)
     return -1;
 }
 
-/* The leader carries the hand object, so its weight moves to the new leader. */
 void champion_set_leader(int16_t champion_index)
 {
     if (champion_index == g_leader_index || (champion_index != -1 && !g_champions[champion_index].current_health))
@@ -234,19 +232,16 @@ void champion_set_leader(int16_t champion_index)
     }
 }
 
-/* Input and screen changes of waking up belong to the interface. */
 void champion_wake_up(void)
 {
     g_party_is_sleeping = false;
 }
 
-/* The party goes to sleep; the input and the sleep screen belong to the interface. */
 void champion_go_to_sleep(void)
 {
     g_party_is_sleeping = true;
 }
 
-/* The leader drinks its fill at a fountain; with whole_party every living champion drinks. */
 void champion_drink_from_fountain(bool whole_party)
 {
     g_champions[g_leader_index].water = FOUNTAIN_WATER;
@@ -256,8 +251,6 @@ void champion_drink_from_fountain(bool whole_party)
     sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
 }
 
-/* Each tick, an idle champion (not the leader, not acting) turns to its last attacker. Returns one bit per
-   champion that turned. */
 uint16_t champion_turn_to_last_attackers(void)
 {
     uint16_t turned = 0;
@@ -274,8 +267,6 @@ uint16_t champion_turn_to_last_attackers(void)
     return turned;
 }
 
-/* A champion faces the party direction and moves to a cell; a champion in that cell takes its old cell.
-   Returns that other champion, or -1. */
 int16_t champion_move_to_cell(int16_t champion_index, int16_t cell)
 {
     Champion *moved = &g_champions[champion_index];
@@ -360,7 +351,6 @@ void champion_set_portrait(int16_t champion_index, int16_t portrait_index)
         }
 }
 
-/* The party stands in front of a mirror. The text on the party square holds the champion data. */
 void champion_add_candidate_to_party(int16_t portrait_index)
 {
     if (!g_leader_empty_handed || g_party_champion_count >= CHAMPION_MAX_COUNT)
@@ -435,8 +425,6 @@ static void reincarnate(Champion *c)
     }
 }
 
-/* Cancel removes the candidate. Resurrect and reincarnate take the possessions from the wall
-   square and disable the mirror. The original also asks for a new name on reincarnation. */
 void champion_click_in_resurrect_reincarnate_panel(int16_t command)
 {
     uint16_t index = g_party_champion_count - 1;
@@ -467,7 +455,6 @@ void champion_click_in_resurrect_reincarnate_panel(int16_t command)
     print_champion_message(index, command == PANEL_RESURRECT ? TEXT_RESURRECTED : TEXT_REINCARNATED);
 }
 
-/* Vi altar: the champion comes back with no objects and with a lower maximum health. */
 void champion_resurrect(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
@@ -513,8 +500,6 @@ static int16_t get_object_skill_bonus(const Champion *c, uint16_t skill)
     return bonus;
 }
 
-/* Level 1 below 500 experience, one more level for each doubling. A hidden skill counts the
-   mean of its own and its base skill experience. Sleeping champions have level 1. */
 int16_t champion_get_skill_level(int16_t champion_index, uint16_t skill_and_flags)
 {
     if (g_party_is_sleeping)
@@ -597,7 +582,6 @@ static void gain_level(uint16_t champion_index, uint16_t base, uint16_t level)
     print_champion_message(champion_index, TEXT_LEVEL_GAINED + 2 * base);
 }
 
-/* Experience counts more on difficult maps and in recent fights. A hidden skill also trains its base skill. */
 void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint16_t experience)
 {
     if (skill >= SKILL_SWING && skill <= SKILL_SHOOT &&
@@ -626,7 +610,6 @@ void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint
         gain_level(champion_index, base, level);
 }
 
-/* Tenths of a kilogram, rounded up to whole kilograms. */
 uint16_t champion_get_maximum_load(const Champion *c)
 {
     uint16_t load =
@@ -639,7 +622,6 @@ uint16_t champion_get_maximum_load(const Champion *c)
     return load - load % LOAD_UNIT;
 }
 
-/* Ticks between two party moves for this champion: more when the load is heavy. */
 int16_t champion_get_movement_ticks(const Champion *c)
 {
     uint16_t maximum = champion_get_maximum_load(c);
@@ -661,7 +643,6 @@ int16_t champion_get_movement_ticks(const Champion *c)
     return ticks;
 }
 
-/* Dexterity for hit and dodge rolls, lower with a heavy load, between 1 and 100. */
 int16_t champion_get_dexterity(const Champion *c)
 {
     int16_t dexterity = c->statistics[STAT_DEXTERITY][STAT_CURRENT] + (random16() & DEXTERITY_RANDOM_MASK);
@@ -675,7 +656,6 @@ int16_t champion_get_dexterity(const Champion *c)
     return bounded_value(low, dexterity >> 1, high);
 }
 
-/* Strength with the object in a hand: weight, weapon strength, and weapon skills. 0 to 100. */
 int16_t champion_get_strength(int16_t champion_index, int16_t slot)
 {
     const Champion *c = &g_champions[champion_index];
@@ -716,7 +696,6 @@ static const ArmourInfo *get_armour_info(uint16_t thing)
     return tables_get_armour_info(armour_type(thing));
 }
 
-/* Defense of one body part (slot 0-5). Shields in the hands count for every part. */
 int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_flags)
 {
     const Champion *c = &g_champions[champion_index];
@@ -777,7 +756,6 @@ static int16_t resisted_attack(int16_t champion_index, int16_t attack, uint16_t 
     return attack <= 0 ? 0 : scale_value(attack, DAMAGE_SCALE_SHIFT, ARMOUR_DEFENSE_LIMIT - defense);
 }
 
-/* Damage arrives at the end of the tick. Attack type ATTACK_RAW skips defense and wounds. */
 int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
                                                int16_t attack_type)
 {
@@ -805,7 +783,6 @@ int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t a
     return attack;
 }
 
-/* The main loop calls this every tick. A champion at 0 health dies. */
 void champion_apply_and_draw_pending_damage_and_wounds(void)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
@@ -845,7 +822,6 @@ static void drop_on_party_square(uint16_t thing, uint16_t cell)
     move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, g_party_map_x, g_party_map_y);
 }
 
-/* All objects fall to the floor in the champion's cell. */
 void champion_drop_all_objects(uint16_t champion_index)
 {
     uint16_t cell = g_champions[champion_index].cell;
@@ -856,9 +832,6 @@ void champion_drop_all_objects(uint16_t champion_index)
     }
 }
 
-/* Closes the champion's inventory and action menu, drops all objects and the bones on the party
-   square, and passes the leader and the spell casting to the first living champion. The party dies
-   with its last champion. */
 void champion_kill(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
@@ -898,7 +871,6 @@ void champion_kill(uint16_t champion_index)
     }
 }
 
-/* Each poison step deals attack / 64 (at least 1) and schedules the next step with attack - 1. */
 void champion_poison(int16_t champion_index, uint16_t attack)
 {
     if (champion_index == -1 || champion_index + 1 == g_candidate_champion_ordinal)
@@ -914,7 +886,6 @@ void champion_poison(int16_t champion_index, uint16_t attack)
     }
 }
 
-/* Removes all poison events of the champion. */
 void champion_unpoison(int16_t champion_index)
 {
     if (champion_index == -1)
@@ -925,7 +896,6 @@ void champion_unpoison(int16_t champion_index)
     g_champions[champion_index].poison_event_count = 0;
 }
 
-/* Each champion takes attack +- attack / 8. Returns the number of champions that took damage. */
 int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t attack_type)
 {
     if (!attack)
@@ -941,7 +911,6 @@ int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t at
     return count;
 }
 
-/* Stamina below 0 becomes damage (half the deficit). */
 void champion_decrement_stamina(int16_t champion_index, int16_t decrement)
 {
     if (champion_index == -1)
@@ -959,7 +928,6 @@ void champion_decrement_stamina(int16_t champion_index, int16_t decrement)
     c->attributes |= CHAMPION_ATTR_STATISTICS | CHAMPION_ATTR_LOAD;
 }
 
-/* The party falls into a pit. With a rope it loses stamina instead. */
 void champion_fall_damage(bool use_rope)
 {
     if (!g_party_champion_count)
@@ -977,7 +945,6 @@ void champion_fall_damage(bool use_rope)
     }
 }
 
-/* Removes the oldest scents first; the footprint range moves with the list. */
 void champion_delete_scent(uint16_t scent_index)
 {
     uint16_t n = --g_party.scent_count - scent_index;
@@ -1102,7 +1069,6 @@ static void restore_statistics(Champion *c)
     }
 }
 
-/* The main loop calls this every 64 ticks (16 while the party sleeps). */
 void champion_apply_time_effects(void)
 {
     if (!g_party_champion_count)
@@ -1146,8 +1112,6 @@ void champion_add_redraw_flags(uint16_t champion_index, uint16_t attributes)
     g_champions[champion_index].attributes |= attributes;
 }
 
-/* The start of a game: no leader and an empty leader hand. Returns the hand object before, which a loaded
-   game puts back. */
 uint16_t champion_reset_data_to_start_game(void)
 {
     uint16_t hand = g_leader_hand_object;

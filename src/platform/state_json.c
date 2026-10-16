@@ -114,7 +114,6 @@ void json_int(Json *j, int64_t value)
     json_raw(j, buf);
 }
 
-/* A JSON string with the quote, backslash, and control characters escaped. */
 void json_str(Json *j, const char *text)
 {
     char buf[8];

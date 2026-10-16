@@ -24,7 +24,6 @@ uint16_t g_move_result_map_index, g_move_result_cell, g_move_result_direction;
 bool g_use_rope_to_climb_down_pit;
 int g_party_teleport_count;
 
-/* Levitating groups, projectiles, and explosions do not fall into pits and do not trigger sensors when they leave a square. */
 bool move_is_levitating(uint16_t thing)
 {
     int16_t type = THING_TYPE(thing);
@@ -33,7 +32,6 @@ bool move_is_levitating(uint16_t thing)
     return type == THING_PROJECTILE || type == THING_EXPLOSION;
 }
 
-/* A teleporter turns a projectile: its flight direction and its cell. */
 uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing)
 {
     uint16_t rotation = teleporter_rotation(teleporter);
@@ -45,7 +43,6 @@ uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint1
     return THING_WITH_CELL(thing, rotation + THING_CELL(thing));
 }
 
-/* Turns the party. Each champion keeps its place relative to the party. The loop also runs one time without champions. */
 void move_set_party_direction(int16_t direction)
 {
     int16_t delta = direction - g_party_direction;
@@ -213,8 +210,6 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
     map_set_current_map(src_map);
 }
 
-/* thing THING_NONE is the party. src_x < 0: add only. dst_x < 0: remove only. The destination follows teleporters,
-   pits, and stairs. Returns 0. A group moves with group_get_move_result (group.c). */
 int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)
 {
     bool party = thing == THING_NONE;
@@ -267,7 +262,6 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
     return 0;
 }
 
-/* The map change of the game loop: the new map becomes the party map, then the party arrives with its sensors. */
 void move_process_new_party_map(void)
 {
     if (g_new_party_map_index == -1)
@@ -279,7 +273,6 @@ void move_process_new_party_map(void)
     g_new_party_map_index = -1;
 }
 
-/* New game: the party map becomes current and the party enters the start square. */
 void move_party_enter_dungeon(void)
 {
     map_reset();
@@ -289,7 +282,6 @@ void move_party_enter_dungeon(void)
     move_get_move_result(THING_NONE, -1, 0, g_party_map_x, g_party_map_y);
 }
 
-/* The party leaves the stairs square and arrives on the other level facing out of the stairs. */
 void move_take_stairs(bool stairs_go_up)
 {
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);
@@ -300,7 +292,6 @@ void move_take_stairs(bool stairs_go_up)
     map_set_current_map(g_party_map_index);
 }
 
-/* On stairs, a turn takes the stairs. The party leaves the square sensors before the turn and enters them after it. */
 void move_turn_party(int16_t command)
 {
     uint8_t square = map_get_square(g_party_map_x, g_party_map_y);
@@ -342,8 +333,6 @@ static void bump_into_wall(int16_t x, int16_t y, int16_t arrow)
         sound_request_play(SOUND_PARTY_DAMAGED, x, y, SOUND_MODE_NOW);
 }
 
-/* One step of the party. With champions, a bump hurts two champions and a group in the way blocks the step and
-   reacts to the party. */
 void move_party(int16_t command)
 {
     for (int16_t i = 0; i < g_party_champion_count; i++)
@@ -394,7 +383,6 @@ void move_party(int16_t command)
     g_disabled_movement_ticks = ticks;
 }
 
-/* No map change and no rope climb wait at the start of a game. */
 void move_reset(void)
 {
     g_new_party_map_index = -1;

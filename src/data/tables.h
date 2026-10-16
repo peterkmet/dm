@@ -174,74 +174,125 @@ int tables_load(const char *path);
 
 /* Each accessor below reads the loaded image at call time; it needs kaos_load, not tables_init. */
 int16_t tables_get_step_east(int16_t direction);
+/* Map y step of one square in a direction. */
 int16_t tables_get_step_north(int16_t direction);
+/* Squares forward of a movement arrow. */
 int16_t tables_get_arrow_steps_forward(int16_t arrow);
+/* Squares to the right of a movement arrow. */
 int16_t tables_get_arrow_steps_right(int16_t arrow);
+/* Cell i in the order that an attacker from row (side and direction) reaches the cells of the target square. */
 uint8_t tables_get_ordered_cell_to_attack(int16_t row, int16_t i);
+/* Wound mask of a wound probability index. */
 uint8_t tables_get_wound_probability_mask(int16_t index);
+/* Inventory slot that a thief tries for a random index. */
 uint8_t tables_get_slot_to_steal_from(int16_t index);
+/* Icon offset of a lit torch by its charges. */
 uint8_t tables_get_torch_icon_offset(int16_t charges);
+/* Slot i in the order that a dead champion drops the objects. */
 uint16_t tables_get_slot_drop_order(int16_t i);
+/* Message color of a champion. */
 uint8_t tables_get_champion_color(int16_t champion_index);
+/* Event type that a sensor sends to a square of this type. */
 uint8_t tables_get_square_type_event(int16_t square_type);
+/* Graphic of a sound; negative when the sound has no sample. */
 int16_t tables_get_sound_graphic(int16_t sound);
+/* Sample rate of a sound. */
 uint8_t tables_get_sound_rate(int16_t sound);
+/* Priority of a sound: a higher value replaces a pending sound of the same loudness. */
 uint8_t tables_get_sound_priority(int16_t sound);
+/* Volume of one channel for a sound at squares ahead and squares toward the side of that channel. */
 uint8_t tables_get_sound_volume(int16_t ahead, int16_t side);
+/* Free records of a thing type that a new game adds to the dungeon. */
 uint8_t tables_get_new_game_extra_things(int16_t thing_type);
+/* Door info word of a door set: attributes in the high byte, defense in the low byte. */
 uint16_t tables_get_door_attributes(int16_t door_set);
+/* String of a message escape code. */
 const char *tables_get_message_escape(int16_t code);
+/* String of a wall inscription escape code. */
 const char *tables_get_inscription_escape(int16_t code);
+/* Replacement string of an escape code. */
 const char *tables_get_escape_replacement(int16_t code);
+/* Width of a champion portrait. */
 int16_t tables_get_portrait_width(void);
+/* Height of a champion portrait. */
 int16_t tables_get_portrait_height(void);
 
 /* Dungeon view tables; each accessor reads the loaded image at call time. */
 uint16_t tables_get_replacement_color(int16_t set, int16_t light);
+/* Palette change of a creature replacement color set at depth 2 or 3. */
 uint8_t tables_get_replacement_change(int16_t set, int16_t depth);
+/* Aspect record of a creature: graphic, coordinate set, replacement color sets. */
 const uint8_t *tables_get_creature_aspect(int16_t creature_type);
+/* Aspect record of an object: graphic, flags, alcove coordinate set. */
 const uint8_t *tables_get_object_aspect(int16_t index);
+/* Aspect record of a projectile (index 1-14): graphic, pose and scale flags. */
 const uint8_t *tables_get_projectile_aspect(int16_t index);
+/* Aspect record of a field: the teleporter or fluxcage pattern of a view square. */
 const uint8_t *tables_get_field_aspect(int16_t index);
+/* Pixel shift index of a creature or a stacked object at a distance (0-2). */
 int16_t tables_get_creature_shift(int16_t distance, int16_t index);
 #define TABLES_AXIS_X 0
 #define TABLES_AXIS_Y 1
+/* Shift index of a stacked object on one axis (0 x, 1 y). */
 uint8_t tables_get_pile_shift(int16_t pair, int16_t axis);
+/* Scale of an object at a view row. */
 uint8_t tables_get_object_scale(int16_t row);
+/* Scale of a projectile at a view row. */
 uint8_t tables_get_projectile_scale(int16_t row);
+/* Scale of an explosion at a depth. */
 uint8_t tables_get_explosion_scale(int16_t depth);
 #define TABLES_REBIRTH_STEP_1 1 /* the two steps of a rebirth explosion */
 #define TABLES_REBIRTH_STEP_2 2
+/* Scale of rebirth step 1 or 2 at an object coordinate set. */
 uint8_t tables_get_rebirth_scale(int16_t step, int16_t coord);
+/* The 4 creature directions of a group that faces one direction, 2 bits per creature. */
 uint8_t tables_get_group_directions(int16_t index);
 
 /* What the view sees of one view square; a negative coordinate set: the view draws no such thing there. */
 typedef struct {
     int8_t lane, depth, object_coord, alcove_coord, creature_coord, explosion_coord, field_aspect;
 } ViewSquare;
+/* Lane, depth, and coordinate sets of a view square. */
 ViewSquare tables_get_view_square(int16_t view_square);
+/* Layout bitmap id of wall set entry i. */
 int16_t tables_get_wall_set_layout_id(int16_t i);
+/* Depth (0-4) of a wall ornament view. */
 uint8_t tables_get_wall_ornament_depth(int16_t view);
 #define TABLES_PLAQUE_LINES 3 /* the most lines that an inscription plaque shows */
+/* Visible plaque height of an inscription of 1-3 lines at a depth. */
 uint8_t tables_get_plaque_height(int16_t lines, int16_t depth);
+/* Graphic offset of a floor ornament view. */
 uint8_t tables_get_floor_ornament_view_offset(int16_t view);
+/* Wall ornament k of the alcove ornaments. */
 uint8_t tables_get_alcove_ornament(int16_t k);
+/* The wall ornament that is a fountain. */
 uint8_t tables_get_fountain_ornament(void);
+/* Coordinate set of a wall ornament graphic. */
 uint8_t tables_get_wall_ornament_coord_set(int16_t ornament);
+/* Coordinate set of a floor ornament graphic. */
 uint8_t tables_get_floor_ornament_coord_set(int16_t ornament);
+/* Coordinate set of a door ornament graphic. */
 uint8_t tables_get_door_ornament_coord_set(int16_t ornament);
+/* Coordinate set of the door button. */
 uint8_t tables_get_door_button_coord_set(void);
+/* Width of a wall text glyph. */
 int16_t tables_get_glyph_width(void);
+/* Height of a wall text glyph. */
 int16_t tables_get_glyph_height(void);
+/* Screen x of the viewport. */
 int16_t tables_get_viewport_x(void);
+/* Screen y of the viewport. */
 int16_t tables_get_viewport_y(void);
+/* Width of the viewport. */
 int16_t tables_get_viewport_width(void);
+/* Height of the viewport. */
 int16_t tables_get_viewport_height(void);
 
 /* Source rectangle of a layout bitmap slot in its graphic (0: the bitmap size). */
 typedef struct {
     int16_t x, y, w, h;
 } TablesRect;
+/* Source rectangle of layout bitmap slot in its graphic. */
 TablesRect tables_get_layout_bitmap(int16_t slot);
 
 /* Palettes; TABLES_PALETTE_DUNGEON + light level (0-5) gives the dungeon palette of that light. */
@@ -251,7 +302,9 @@ TablesRect tables_get_layout_bitmap(int16_t slot);
 #define TABLES_PALETTE_CREDITS     2
 #define TABLES_PALETTE_ENTRANCE    3
 #define TABLES_PALETTE_DUNGEON     4
+/* The colors of a palette. */
 void tables_get_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT]);
+/* One color of a palette. */
 uint16_t tables_get_palette_color(int16_t palette, int16_t color);
 
 /* Palette changes: a color map of TABLES_PALETTE_COLOR_COUNT bytes for draw_shrink. */
@@ -268,20 +321,32 @@ uint16_t tables_get_palette_color(int16_t palette, int16_t color);
 #define TABLES_CHANGES_ACTION_ICON      10
 #define TABLES_CHANGES_POINTER_SHADOW   11
 #define TABLES_CHANGES_COUNT            12
+/* The color map of a palette change. */
 const uint8_t *tables_get_palette_changes(int16_t changes);
 
 /* Interface and champion panel tables; each accessor reads the loaded image at call time. */
 int16_t tables_get_icon_sheet_first(int16_t sheet);
+/* Layout zone of a slot box. */
 int16_t tables_get_slot_box_zone(int16_t slot_box);
+/* Pixels that a bordered slot box grows on each side. */
 int16_t tables_get_slot_box_border(void);
+/* Width of a champion party icon. */
 int16_t tables_get_champion_icon_width(void);
+/* Height of a champion party icon. */
 int16_t tables_get_champion_icon_height(void);
+/* Offset of the shadow of a panel bar. */
 int16_t tables_get_bar_shadow(void);
+/* Width of the small or the large damage splat. */
 int16_t tables_get_damage_splat_width(bool large);
+/* Height of the small or the large damage splat. */
 int16_t tables_get_damage_splat_height(bool large);
+/* Text of a skill level name (level 2-16). */
 int16_t tables_get_skill_level_text(int16_t level);
+/* Text of a base skill name. */
 int16_t tables_get_base_skill_text(int16_t skill);
+/* Text of a statistic name. */
 int16_t tables_get_statistic_text(int16_t statistic);
+/* Text of a direction name. */
 int16_t tables_get_direction_text(int16_t direction);
 /* Short texts of the image, as C strings. */
 #define TABLES_TEXT_LIST_SEPARATOR    0
@@ -290,21 +355,32 @@ int16_t tables_get_direction_text(int16_t direction);
 #define TABLES_TEXT_ATTRIBUTES_SUFFIX 3
 #define TABLES_TEXT_VERSION           4
 #define TABLES_TEXT_COUNT             5
+/* A short text of the image. */
 const char *tables_get_text(int16_t text);
+/* Pixels above and below a dialog message line. */
 int16_t tables_get_message_line_pad(void);
+/* Color of dialog message i. */
 uint8_t tables_get_message_color(int16_t i);
+/* Outer border of an endgame button on one axis. */
 int16_t tables_get_button_border(int16_t axis);
+/* Inner border of an endgame button on one axis. */
 int16_t tables_get_button_inner_border(int16_t axis);
+/* CSB: the outer or the inner box of the RESTART THIS GAME button. */
 TablesRect tables_get_csb_restart_box(bool inner);
 
 /* Mouse pointer: the zones that select the pointer shape, the hotspots, the shadow, and the bitmaps. */
 typedef struct {
     int16_t x, y, w, h, shape, champion;
 } PointerZone;
+/* Pointer zone i: a screen box, the pointer shape, and the champion + 1 of a status box. */
 PointerZone tables_get_pointer_zone(int16_t i);
+/* Hotspot x of a pointer shape. */
 int16_t tables_get_pointer_hotspot_x(int16_t shape);
+/* Hotspot y of a pointer shape. */
 int16_t tables_get_pointer_hotspot_y(int16_t shape);
+/* Shadow offset x of the object pointer. */
 int16_t tables_get_pointer_shadow_dx(void);
+/* Shadow offset y of the object pointer. */
 int16_t tables_get_pointer_shadow_dy(void);
 /* The 4 bit planes of the arrow or the hand pointer; *w and *h get its size. */
 const uint8_t *tables_get_pointer_planes(bool hand, int16_t *w, int16_t *h);

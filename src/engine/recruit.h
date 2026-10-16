@@ -20,11 +20,17 @@ typedef struct {
     int32_t experience[SKILL_COUNT]; /* base skills: sum of their hidden skills */
 } RecruitData;
 
+/* Decodes char_count letters, 4 bits each. Each character adds c - 'A' to the low byte only. */
 uint16_t recruit_decoded_value(const char *text, int16_t char_count);
+/* Reads name, title, gender, bar values, statistics and skills from a champion text.   Returns false when the text is too short. */
 bool recruit_parse_text(const char *text, RecruitData *out);
+/* Decodes a champion text thing and reads the candidate data from it. */
 bool recruit_parse(uint16_t text_thing, RecruitData *out);
+/* The first text thing on the square, or THING_NONE. */
 uint16_t recruit_text_thing(int16_t map, int16_t x, int16_t y);
+/* A champion portrait sensor keeps the portrait index in its data. Else -1. */
 int16_t recruit_portrait_index(uint16_t sensor_thing);
+/* Top-left of the portrait in the champion portraits graphic. */
 void recruit_portrait_origin(int16_t portrait_index, int16_t *x, int16_t *y);
 
 #endif

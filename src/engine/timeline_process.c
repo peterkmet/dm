@@ -59,8 +59,6 @@ static void print_text(uint16_t text)
     message_print(SENSOR_TEXT_COLOR, buffer, g_game_time);
 }
 
-/* One door step per tick: set opens (state down to open), clear closes (state up to closed). A closing door
-   that hits the party or a group goes back one step; the group takes damage. */
 void event_process_door_animation(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
@@ -109,7 +107,6 @@ void event_process_door_destruction(TimelineEvent *event)
     *square = square_with_door_state(*square, DOOR_DESTROYED);
 }
 
-/* A door event becomes a door animation event at the same time. Toggle closes an open door and opens any other. */
 void event_process_door(TimelineEvent *event)
 {
     int16_t state = door_state(g_current_map_data[event_square_x(event)][event_square_y(event)]);
@@ -123,7 +120,6 @@ void event_process_door(TimelineEvent *event)
     timeline_add_event(event);
 }
 
-/* Opens or closes a fake wall. Closing waits while the party or a material group is on the square. */
 void event_process_fake_wall(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
@@ -198,7 +194,6 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
     timeline_add_event(&enable);
 }
 
-/* Texts on the corridor change visibility, and group generators run. */
 void event_process_corridor(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
@@ -213,7 +208,6 @@ void event_process_corridor(TimelineEvent *event)
     }
 }
 
-/* The first disabled sensor of the square becomes a group generator again. */
 void event_enable_group_generator(TimelineEvent *event)
 {
     for (uint16_t t = map_get_square_first_thing(event_square_x(event), event_square_y(event));
@@ -267,8 +261,6 @@ static void set_gate_input(uint16_t sensor, int16_t effect, int16_t x, int16_t y
     trigger_on_condition(sensor, GATE_EXPECTED(data) == GATE_INPUTS(data), x, y, cell);
 }
 
-/* Texts of the event cell change visibility. Counters, AND/OR gates, and projectile launchers of the cell run.
-   An endgame sensor ends the game. */
 void event_process_wall(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
@@ -320,7 +312,6 @@ static void update_explosion_events(uint16_t explosion)
     }
 }
 
-/* The party, the group, and each object on the square move again, for example into an opened pit. */
 void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
 {
     if (is_party_on(x, y))
@@ -346,7 +337,6 @@ void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
     }
 }
 
-/* The event holds the signed light power. Each step applies one step of the light table and adds the rest later. */
 void event_process_light(TimelineEvent *event)
 {
     int16_t power = event->b;
@@ -370,8 +360,6 @@ void event_process_light(TimelineEvent *event)
     }
 }
 
-/* A closed door breaks when the attack reaches its defense and the door accepts the attack kind (force or magic).
-   ticks 0 breaks it at once, else a door destruction event breaks it later. Returns true when the door breaks. */
 bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, uint16_t ticks)
 {
     uint16_t door = map_get_square_first_thing(x, y);
@@ -391,8 +379,6 @@ bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int
     return true;
 }
 
-/* The action hand works again: the action defense ends. After a shot the next ammunition of the quiver goes to the
-   ready hand (quiver line 1 first, then slots 7-9). */
 void event_enable_champion_action(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
@@ -418,7 +404,6 @@ void event_enable_champion_action(uint16_t champion_index)
     c->action_index = ACTION_NONE;
 }
 
-/* The damage number on the champion portrait disappears. */
 void event_hide_damage_received(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
@@ -431,8 +416,6 @@ void event_hide_damage_received(uint16_t champion_index)
         c->attributes |= CHAMPION_ATTR_NAME_TITLE;
 }
 
-/* Vi altar rebirth in three steps (event cell byte: the step): 2 the rebirth explosion, 1 the bones of the champion
-   disappear, 0 the champion lives again. The bones hold the champion index in their charges. */
 void event_process_vi_altar_rebirth(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
@@ -503,7 +486,6 @@ static void process_effect_event(const TimelineEvent *event)
     }
 }
 
-/* Runs every expired event on its map. Event types without a handler here belong to later steps. */
 void event_process_expired(void)
 {
     while (timeline_is_first_event_expired()) {

@@ -12,7 +12,6 @@
 static uint8_t font_data[FONT_SIZE];
 static const uint8_t *font;
 
-/* Loads the font graphic. The graphics file must be open. */
 int text_init(void)
 {
     uint16_t size;
@@ -34,7 +33,6 @@ static void draw_glyph_row(Bitmap *bm, int x, int py, uint8_t bits, uint8_t fg, 
     }
 }
 
-/* Draws s with its baseline at y. The sixth column of each cell is not touched. */
 void text_draw(Bitmap *bm, int x, int y, uint8_t fg, uint8_t bg, const char *s)
 {
     if (!font)
@@ -52,14 +50,12 @@ void text_draw(Bitmap *bm, int x, int y, uint8_t fg, uint8_t bg, const char *s)
     }
 }
 
-/* Draws s on the screen with its baseline at y. */
 void text_draw_screen(int x, int y, uint8_t fg, uint8_t bg, const char *s)
 {
     Bitmap screen = {SCREEN_W, SCREEN_H, &fb[0][0]};
     text_draw(&screen, x, y, fg, bg, s);
 }
 
-/* Pixel size of s. Returns false for an empty text. */
 bool text_get_size(const char *s, int *w, int *h)
 {
     int n = s ? (int)strlen(s) : 0;
@@ -70,8 +66,6 @@ bool text_get_size(const char *s, int *w, int *h)
     return true;
 }
 
-/* Draws s in the box (x, y, w, h), left aligned or centered, vertically centered.
-   The original gets this position from the zone data (text_print_to_bitmap_zone). */
 void text_draw_box(Bitmap *bm, int x, int y, int w, int h, bool centered, uint8_t fg, uint8_t bg, const char *s)
 {
     int tw, th;

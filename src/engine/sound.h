@@ -40,12 +40,20 @@
 extern int16_t g_pending_sounds[SOUND_PENDING_SLOTS];           /* -1: empty slot */
 extern uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][2]; /* left, right */
 
+/* Sample data of a sound, its length in bytes and its Paula period. */
 const int8_t *sound_get_sample(int16_t sound, uint16_t *length, uint16_t *period);
+/* 1 when a is louder than b, 0 when equal, -1 when quieter. */
 int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b);
+/* Stereo volume of a sound on a square, relative to the party position and direction.
+   Returns false when the square is out of hearing range. */
 bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes);
+/* Starts a sound on a free stereo pair, or on the quieter pair when both play. */
 void sound_play_sample(int16_t sound, const uint8_t *volumes);
+/* Starts sample data on a free stereo pair, or on the quieter pair when both play. */
 void sound_play_data(const int8_t *data, uint16_t length, uint16_t period, const uint8_t *volumes);
+/* Mode 0 plays now, mode 1 queues for sound_play_pending, mode >= 2 adds a play sound event at game time + mode - 1. */
 void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mode);
+/* Plays the queued sounds and empties the queue. */
 void sound_play_pending(void);
 /* Stops every voice, the music, and the MP3 music. */
 void sound_stop_all(void);
@@ -55,7 +63,9 @@ void sound_stop_all(void);
 void sound_music_play(const int8_t *const *data, const uint16_t *lengths, int count, uint16_t period, uint8_t volume);
 void sound_music_set_volume(uint8_t volume);
 void sound_music_stop(void);
+/* Renders interleaved stereo int16 at SOUND_OUTPUT_RATE. Paula has no interpolation: each sample holds for one period. */
 void sound_mix(int16_t *out, int frames);
+/* Plays a sound at full volume on both sides. */
 void sound_demo_play(int index);
 
 #endif

@@ -20,7 +20,6 @@
 #define RECRUIT_TEXT_SIZE     128 /* a champion text fits */
 #define VALUE_HIGH_BYTE_MASK  0xff00
 
-/* Decodes char_count letters, 4 bits each. Each character adds c - 'A' to the low byte only. */
 uint16_t recruit_decoded_value(const char *text, int16_t char_count)
 {
     uint16_t v = 0;
@@ -54,7 +53,6 @@ static int32_t get_hidden_skill_experience(uint16_t level)
     return count <= LONG_SHIFT_MAXIMUM ? (int32_t)((uint32_t)SKILL_BASE_EXPERIENCE << count) : 0;
 }
 
-/* Reads name, title, gender, bar values, statistics and skills from a champion text.   Returns false when the text is too short. */
 bool recruit_parse_text(const char *text, RecruitData *out)
 {
     memset(out, 0, sizeof *out);
@@ -88,7 +86,6 @@ bool recruit_parse_text(const char *text, RecruitData *out)
     return true;
 }
 
-/* Decodes a champion text thing and reads the candidate data from it. */
 bool recruit_parse(uint16_t text_thing, RecruitData *out)
 {
     char text[RECRUIT_TEXT_SIZE];
@@ -96,7 +93,6 @@ bool recruit_parse(uint16_t text_thing, RecruitData *out)
            recruit_parse_text(text, out);
 }
 
-/* The first text thing on the square, or THING_NONE. */
 uint16_t recruit_text_thing(int16_t map, int16_t x, int16_t y)
 {
     uint16_t t = dungeon_get_square_first_thing(map, x, y);
@@ -105,13 +101,11 @@ uint16_t recruit_text_thing(int16_t map, int16_t x, int16_t y)
     return t == THING_ENDOFLIST ? THING_NONE : t;
 }
 
-/* A champion portrait sensor keeps the portrait index in its data. Else -1. */
 int16_t recruit_portrait_index(uint16_t sensor_thing)
 {
     return rec_sensor_type(sensor_thing) == SENSOR_WALL_CHAMPION_PORTRAIT ? rec_sensor_data(sensor_thing) : -1;
 }
 
-/* Top-left of the portrait in the champion portraits graphic. */
 void recruit_portrait_origin(int16_t portrait_index, int16_t *x, int16_t *y)
 {
     *x = (portrait_index & (PORTRAITS_PER_ROW - 1)) * tables_get_portrait_width();

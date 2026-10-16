@@ -91,8 +91,6 @@ static uint16_t get_bits(BitReader *b, int16_t n)
     return b->acc >> b->avail & ((1u << n) - 1);
 }
 
-/* Each byte is a 2-bit index into the first 4 dictionary bytes, a 4-bit index into the next 16, or a
-   literal byte. Returns false when the bit stream ends before byte_count bytes. */
 bool dungeon_decompress(const uint8_t *src, int32_t src_size, uint8_t *dst, int32_t byte_count)
 {
     BitReader b = {src + COMPRESSED_DICTIONARY_BYTES, src + src_size, 0, 0, true};
@@ -358,14 +356,11 @@ static bool validate_squares(void)
     return true;
 }
 
-/* Checks the links of the loaded dungeon: thing lists, square thing lists, teleporter targets, and the map below
-   stairs and open pits. A corrupt file or save game fails here instead of crashing the game later. */
 bool dungeon_validate(void)
 {
     return validate_records() && validate_squares();
 }
 
-/* Loads a new game dungeon file, compressed or not. Returns false with nothing loaded. */
 bool dungeon_load(const char *path)
 {
     size_t size;
@@ -391,7 +386,6 @@ bool dungeon_load(const char *path)
     return ok;
 }
 
-/* The dungeon part of a save file: the parts without compression and free records. */
 bool dungeon_load_saved(const uint8_t *data, uint32_t size)
 {
     dungeon_free();
@@ -403,8 +397,6 @@ bool dungeon_load_saved(const uint8_t *data, uint32_t size)
     return ok;
 }
 
-/* The dungeon parts in the order of save_game, then the 16-bit sum of their bytes. Returns a
-   malloc buffer, or NULL when no dungeon is loaded. */
 uint8_t *dungeon_save(uint32_t *size)
 {
     if (!g_dungeon_header)
@@ -466,7 +458,6 @@ uint8_t dungeon_get_square(int16_t map, int16_t x, int16_t y)
     return g_dungeon_map_data[map][x][y];
 }
 
-/* map_get_square_first_thing for any map, not only the current one. */
 uint16_t dungeon_get_square_first_thing(int16_t map, int16_t x, int16_t y)
 {
     if (x < 0 || x >= dungeon_map_width(map) || y < 0 || y >= dungeon_map_height(map))
@@ -567,8 +558,6 @@ static void decode_codes(TextOut *o, uint16_t w, int16_t mode)
     }
 }
 
-/* Mode 0 inscription, 1 message, 2 scroll; bit 15 decodes an invisible text.
-   Returns false when the text offset is bad or the text does not fit in dst_size bytes. */
 bool dungeon_decode_text(char *dst, int16_t dst_size, uint16_t text_thing, int16_t mode)
 {
     if (dst_size < 1)

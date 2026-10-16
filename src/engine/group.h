@@ -223,11 +223,15 @@ extern int16_t g_dungeon_view_palette_index; /* 0 (bright) to 5; the view step s
 
 uint8_t group_get_cells(uint16_t group, int16_t map);
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
+/* Off the party map all creatures of a group share the direction of the record. */
 uint8_t group_get_directions(uint16_t group, int16_t map);
 void group_set_directions(uint16_t group, uint8_t directions, int16_t map);
+/* The creature type list of a map follows its last square. */
 bool group_is_creature_allowed_on_map(uint16_t group, int16_t map);
 
+/* Ordinal (index + 1) of the creature in a cell, or 0. Half-square creatures fill two cells side by side. */
 int16_t group_get_creature_ordinal_in_cell(uint16_t group, uint16_t cell);
+/* The creature that a champion in a cell hits first. */
 int16_t group_get_melee_target_creature_ordinal(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y,
                                                 int16_t champion_cell);
 /* The cells and directions of a group: two bits for each creature. */
@@ -238,49 +242,80 @@ static inline uint16_t group_cell(uint16_t packed, int16_t creature)
     return packed >> (GROUP_CELL_BITS * creature) & GROUP_CELL_MASK;
 }
 uint16_t group_set_cell_value(uint16_t packed, uint16_t creature_index, uint16_t value);
+/* New graphic offsets and flip state of one creature (or all with creature_index -1). Returns the next aspect time. */
 uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t creature_index, bool attacking);
+/* A new group behavior event (37) after one tick. Faster creatures get a higher event priority. */
 void group_start_wandering(int16_t x, int16_t y);
 void group_delete_events(int16_t x, int16_t y);
 void group_stop_attacking(ActiveGroup *active, int16_t x, int16_t y);
+/* A group on the party map gets an active group entry. The record keeps the entry index in its cells byte. */
 void group_add_active_group(uint16_t group, int16_t x, int16_t y);
+/* The record gets back its cells and one direction. A fleeing or attacking group wanders again. */
 void group_remove_active_group(uint16_t active_index);
 void group_remove_all_active_groups(void);
+/* Each group of the new party map becomes active and wanders. */
 void group_add_all_active_groups(void);
+/* The fluxcage and direction memories of the last group step do not carry into a new game. */
 void group_reset(void);
 /* Ordinal of the latest party scent on a square of the current map, or 0. */
 uint16_t group_get_party_scent_ordinal(int16_t x, int16_t y);
 
+/* A new group of creatures on a square. Health is base health * multiplier plus a random part. */
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index,
                              int16_t direction, int16_t x, int16_t y);
+/* The creature generator of a corridor event: count, health multiplier (0: map difficulty), random direction. */
 void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y);
 
+/* A dead creature leaves the fixed possessions of its type. Possessions with bit 15 drop half of the time. */
 void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, int16_t y, uint16_t cell,
                                            int16_t sound_mode);
+/* Creatures that died during a move drop their fixed possessions on the destination square. */
 void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y);
+/* All creatures drop their fixed possessions (sound_mode >= 0), then the carried objects fall on random cells. */
 void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t sound_mode);
+/* The group record becomes free. Health is cleared first, so that no projectile impact runs on the removal. */
 void group_delete(int16_t x, int16_t y);
+/* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group (with notify).
+   Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
 int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, int16_t x, int16_t y, int16_t damage,
                                           bool notify);
+/* The same attack, with a random spread of 1/8, on every creature of the group. */
 int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, bool notify);
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack);
+/* A closing door hits the creatures on its square; the survivors react to the danger. */
 void group_door_damages_creatures(int16_t x, int16_t y);
 
 int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+/* True when the destination is in the 90 degree cone in front of the source. */
 bool group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x,
                                               int16_t dst_y);
+/* Main direction from a source square to a destination. The second direction goes to g_group_secondary_direction. */
 int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
+/* The 4 cells of the target square in the order the attacker reaches them. */
 void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x,
                                        int16_t group_y, int16_t group_cell);
+/* The champion that a creature on an adjacent square attacks, or -1. */
 int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell);
 
+/* A creature hits a champion: dodge by dexterity and luck, damage from attack, map difficulty, and parry skill,
+   then poison. Returns the damage. */
 int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index);
+/* A champion hits a creature with a melee action: hit chance by dexterity, damage by strength, the action damage
+   factor, and the creature defense. Returns the damage (0 for a miss). */
 int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, int16_t creature_index, int16_t x,
                                       int16_t y, uint16_t hit_probability, uint16_t damage_factor, int16_t skill_index);
 
+/* Events 32-41 and the reactions -1..-3 (events 29-31 later) of the group on a square. Off the party map a group
+   only wanders. Lord Chaos ignores Freeze Life. */
 void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint16_t ticks);
 
+/* move_get_move_result for a group. Teleporters, pits (20 damage), and stairs move it on. A group that dies or
+   reaches a map that does not allow its type is deleted (returns 1). An occupied destination makes the group wait
+   for event 60/61 (returns 1). Returns 0, 1, or the active entry + 2 (see the teleporter rotation). */
 int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
+/* The group waits off the map and tries to enter the square 5 ticks later (event 61 plays the teleporter sound). */
 void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, bool audible);
+/* A waiting group enters its square when the square is free. Lord Chaos may take an adjacent open square. */
 void group_process_move_event(TimelineEvent *event);
 
 #endif

@@ -37,6 +37,7 @@ void gameloop_tick(void);
 /* The pointer image at screen position (x, y): px gets w x h colors (0 transparent) of the sprite
    palette. Returns false when the pointer is hidden. */
 bool gameloop_get_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *w, int *h, int *hot_x, int *hot_y);
+/* The palette of the mouse pointer. */
 const uint16_t *gameloop_get_pointer_palette(void);
 
 #endif

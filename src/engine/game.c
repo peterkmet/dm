@@ -60,7 +60,6 @@ static void fatal_error(int16_t code)
     exit(1);
 }
 
-/* load_game (new game) and the end of load_dungeon. dungeon_load must run first. */
 void game_start_new(void)
 {
     memset(&g_party, 0, sizeof g_party);
@@ -88,7 +87,6 @@ void game_start_new(void)
     game_init_active_groups();
 }
 
-/* The start of a game, new or loaded: no candidate, no sleep, no won game, no cheats, no skill level-ups. */
 void game_reset_session(void)
 {
     g_candidate_champion_ordinal = 0;
@@ -105,14 +103,12 @@ void game_set_mode(int16_t mode)
     g_game_mode = mode;
 }
 
-/* Turns a cheat of the advanced mode on or off. */
 void game_toggle_cheat(int16_t cheat)
 {
     bool *flag = cheat == CHEAT_LIGHT ? &g_cheat_light : cheat == CHEAT_IMMORTAL ? &g_cheat_immortal : &g_cheat_food;
     *flag = !*flag;
 }
 
-/* The fuse wins the game: bright magical light and strong shields for the end sequence. */
 void game_start_fuse_sequence(void)
 {
     g_game_won = true;
@@ -122,13 +118,11 @@ void game_start_fuse_sequence(void)
     g_party.fire_shield_defense = FUSE_SHIELD;
 }
 
-/* One tick of the game clock alone (the fuse sequence). */
 void game_increment_time(void)
 {
     g_game_time++;
 }
 
-/* The game time advances one tick: torches burn and freeze life counts down. */
 void game_advance_time(void)
 {
     game_increment_time();
@@ -138,7 +132,6 @@ void game_advance_time(void)
         g_party.freeze_life_ticks--;
 }
 
-/* The rest of the tick: the champions get their time effects and the movement delays count down. */
 void game_apply_tick_effects(void)
 {
     if (!(g_game_time & (g_party_is_sleeping ? TIME_EFFECTS_SLEEPING_MASK : TIME_EFFECTS_MASK)))
@@ -163,8 +156,6 @@ int16_t bounded_value(int16_t min, int16_t value, int16_t max)
     return value <= min ? min : value > max ? max : value;
 }
 
-/* a * b >> shift. Like the original asr.l of the 32-bit mulu product, the sign bit is the
-   product's bit 31 and the shift count is taken modulo 64. */
 int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
 {
     int32_t product = (int32_t)((uint32_t)a * b); /* unsigned multiply: no signed overflow */
@@ -172,7 +163,6 @@ int32_t scale_value(uint16_t a, int16_t shift, uint16_t b)
     return shift > LONG_SHIFT_MAXIMUM ? (product < 0 ? -1 : 0) : product >> shift;
 }
 
-/* Moves map coordinates by steps forward and to the right of a direction. */
 void game_update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
                                                          int16_t *map_x, int16_t *map_y)
 {
@@ -181,7 +171,6 @@ void game_update_map_coordinates_after_relative_movement(int16_t direction, int1
     *map_y = *map_y + steps_forward * tables_get_step_north(direction) + steps_right * tables_get_step_north(right);
 }
 
-/* New game only. A free slot keeps the next free index in map_time. */
 void timeline_init(void)
 {
     free(g_timeline_events);
@@ -199,7 +188,6 @@ void timeline_init(void)
     timeline_add_watchdog_event();
 }
 
-/* Rebuilds the free list and the high water mark from the slot types (before a save, after a load). */
 void timeline_reset(void)
 {
     int16_t last_free = -1;
@@ -219,7 +207,6 @@ void timeline_reset(void)
     }
 }
 
-/* Earlier time first, then higher type and priority, then the lower slot. */
 bool timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b)
 {
     uint32_t time_a = a->map_time & EVENT_TIME_MASK;
@@ -233,7 +220,6 @@ bool timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b
     return a <= b;
 }
 
-/* Position of an event slot in the timeline heap. */
 uint16_t timeline_get_index(uint16_t event_index)
 {
     uint16_t i = 0;
@@ -247,7 +233,6 @@ uint16_t timeline_get_index(uint16_t event_index)
 
 #define BEFORE(i, j) timeline_is_event_a_before_b(&g_timeline_events[i], &g_timeline_events[j])
 
-/* Moves a heap entry up or down until the timeline is in time order again. */
 void timeline_fix_chronology(uint16_t timeline_index)
 {
     uint16_t count = g_timeline_count;
@@ -277,7 +262,6 @@ void timeline_fix_chronology(uint16_t timeline_index)
     g_timeline[i] = slot;
 }
 
-/* Frees an event slot and removes it from the timeline. */
 void timeline_delete_event(uint16_t event_index)
 {
     g_timeline_events[event_index].type = 0;
@@ -297,7 +281,6 @@ void timeline_delete_event(uint16_t event_index)
 /* Set becomes clear and clear becomes set. */
 #define OPPOSITE_EFFECT(effect) (EFFECT_CLEAR - (effect))
 
-/* Returns the index of the event that absorbs the new one, or -1. Can change or delete events. */
 int16_t timeline_find_mergeable_event(TimelineEvent *event)
 {
     TimelineEvent *e = g_timeline_events;
@@ -337,7 +320,6 @@ int16_t timeline_find_mergeable_event(TimelineEvent *event)
     return -1;
 }
 
-/* Adds an event to the timeline, or merges it into an existing event. Returns the slot index. */
 int16_t timeline_add_event(TimelineEvent *event)
 {
     if (!event->type)
@@ -357,7 +339,6 @@ int16_t timeline_add_event(TimelineEvent *event)
     return index;
 }
 
-/* Removes the earliest event from the timeline and copies it to event. */
 void timeline_extract_first_event(TimelineEvent *event)
 {
     uint16_t index = g_timeline[0];
@@ -370,7 +351,6 @@ bool timeline_is_first_event_expired(void)
     return g_timeline_count && (g_timeline_events[g_timeline[0]].map_time & EVENT_TIME_MASK) <= g_game_time;
 }
 
-/* The original leaves priority, b, and c as stack garbage. */
 void timeline_add_watchdog_event(void)
 {
     g_watchdog_time = g_game_time + WATCHDOG_INTERVAL;
@@ -378,7 +358,6 @@ void timeline_add_watchdog_event(void)
     timeline_add_event(&event);
 }
 
-/* New game only: all active group entries are free. */
 void game_init_active_groups(void)
 {
     g_max_active_group_count = g_adventure == ADVENTURE_CSB ? CSB_ACTIVE_GROUP_MAX_COUNT : ACTIVE_GROUP_MAX_COUNT;
@@ -390,7 +369,6 @@ void game_init_active_groups(void)
         g_active_groups[i].group_index = -1;
 }
 
-/* Below half stamina, a value drops toward half of it. */
 int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)
 {
     int16_t half = champion->maximum_stamina >> 1;
@@ -399,7 +377,6 @@ int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)
     return value;
 }
 
-/* An attack value scaled down by how far the statistic is below the limit. */
 uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack)
 {
     int16_t factor = STAT_LIMIT - champion->statistics[statistic][STAT_CURRENT];
@@ -407,7 +384,6 @@ uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t s
                                       : scale_value(attack, ATTACK_FACTOR_SHIFT, factor);
 }
 
-/* Changes a current statistic within its minimum and the limit; high values grow slower. */
 void game_adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta)
 {
     uint8_t *s = champion->statistics[statistic];
@@ -421,8 +397,6 @@ void game_adjust_statistic_current_value(Champion *champion, uint16_t statistic,
     s[STAT_CURRENT] += delta;
 }
 
-/* Luck test against a percentage. A lucky test lowers luck, a failed one raises it.
-   The original reads the luck bytes as signed. A lucky first roll does not change luck. */
 bool game_is_lucky(Champion *champion, uint16_t percentage)
 {
     uint8_t *luck = champion->statistics[STAT_LUCK];

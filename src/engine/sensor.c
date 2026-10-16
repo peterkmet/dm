@@ -20,8 +20,6 @@
 int16_t g_sensor_rotation_effect = -1, g_sensor_rotation_effect_map_x, g_sensor_rotation_effect_map_y,
         g_sensor_rotation_effect_cell;
 
-/* Adds a square event on the current map. Clear events come first at equal time, then toggle, then set.
-   CSB gives each sensor event priority 0. */
 void sensor_add_event(int16_t event_type, int16_t x, int16_t y, int16_t cell, int16_t effect, uint32_t time)
 {
     static const uint8_t priority[3] = {[EFFECT_SET] = 1, [EFFECT_CLEAR] = 3, [EFFECT_TOGGLE] = 2};
@@ -50,7 +48,6 @@ static void sensor_add_skill_experience(uint16_t skill, uint16_t experience, boo
             champion_add_skill_experience(i, skill, experience / g_party_champion_count);
 }
 
-/* Experience for the party, or a rotation of the cell sensors after the sensor pass. */
 void sensor_trigger_local_effect(int16_t local_effect, int16_t x, int16_t y, int16_t cell)
 {
     if (local_effect == LOCAL_EFFECT_EXPERIENCE) {
@@ -69,7 +66,6 @@ static bool is_rotation_sensor(uint16_t thing)
            (g_sensor_rotation_effect_cell == ANY_CELL || THING_CELL(thing) == g_sensor_rotation_effect_cell);
 }
 
-/* Moves the first sensor of the cell behind the last sensor of the cell. */
 void sensor_process_rotation_effect(void)
 {
     if (g_sensor_rotation_effect == -1)
@@ -98,7 +94,6 @@ void sensor_process_rotation_effect(void)
     g_sensor_rotation_effect = -1;
 }
 
-/* A remote effect becomes a square event on the target after the sensor delay. Only a wall target keeps the target cell. */
 void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
 {
     if (rec_sensor_is_once_only(sensor))
@@ -115,7 +110,6 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
                      g_game_time + rec_sensor_delay(sensor));
 }
 
-/* The first object of the type in the cell (or in any cell), or THING_NONE. */
 uint16_t sensor_get_object_of_type_in_cell(int16_t x, int16_t y, int16_t cell, int16_t object_type)
 {
     for (uint16_t thing = map_get_square_first_object(x, y); thing != THING_ENDOFLIST;
@@ -137,7 +131,6 @@ static bool is_object_or_in_chest(uint16_t thing, int16_t object_type)
     return false;
 }
 
-/* The slots of the living champions, then the leader hand. Chests count with their contents. */
 bool sensor_is_object_in_party_possession(int16_t object_type)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++)
@@ -240,8 +233,6 @@ static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, 
     return CLICK_IGNORED;
 }
 
-/* Click on the front wall cell with the leader hand. Returns true when a sensor triggered. The object
-   generator gives no object until projectile_get_object_for_launcher_or_generator exists. */
 bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
 {
     bool triggered = false;
@@ -407,7 +398,6 @@ static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t
     }
 }
 
-/* thing THING_NONE is the party. A floor square runs its floor sensors. A wall square runs the sensors of the thing cell. */
 void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, bool party_on_square, bool add)
 {
     bool party = thing == THING_NONE;
@@ -442,7 +432,6 @@ void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thi
     sensor_process_rotation_effect();
 }
 
-/* No rotation effect waits at the start of a game. */
 void sensor_reset(void)
 {
     g_sensor_rotation_effect = -1;
@@ -451,7 +440,6 @@ void sensor_reset(void)
     g_sensor_rotation_effect_cell = 0;
 }
 
-/* Bones put into a vi altar: the rebirth of their champion starts next tick on the party map. */
 void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int16_t cell)
 {
     TimelineEvent rebirth = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + 1),
@@ -462,7 +450,6 @@ void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int
     timeline_add_event(&rebirth);
 }
 
-/* A press on the button of the door at x, y: a switch sound and the door toggles next tick. */
 void sensor_press_door_button(int16_t x, int16_t y)
 {
     sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);

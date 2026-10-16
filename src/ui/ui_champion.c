@@ -117,9 +117,6 @@ static void draw_value_pair(int16_t zone, int16_t value, int16_t maximum)
     ui_print_zone(ui_get_viewport(), zone, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
 }
 
-/* Draws one slot: a hand in the status box, or any slot (and the chest slots) in the inventory of
-   the champion. Empty body slots show their empty icon; wounded body slots get a red border, the
-   action hand of the acting champion the acting border. */
 void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
 {
     const Champion *champion = &g_champions[champion_index];
@@ -159,8 +156,6 @@ void ui_draw_champion_slot(uint16_t champion_index, uint16_t slot)
     ui_draw_icon_in_slot_box(slot_box, icon);
 }
 
-/* Shows the damage a champion took: a splat with the number on the status box, or on the
-   portrait while the inventory of the champion is open. */
 void ui_draw_champion_damage(int16_t champion_index, int16_t damage)
 {
     Bitmap screen = ui_get_screen();
@@ -205,7 +200,6 @@ Bitmap ui_draw_champion_portrait(int16_t champion_index)
     return (Bitmap){CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champion_portraits[champion_index]};
 }
 
-/* Draws the portrait in the status box while the inventory is open. */
 void ui_draw_status_box_portrait(int16_t champion_index)
 {
     Bitmap screen = ui_get_screen();
@@ -307,7 +301,6 @@ static uint16_t draw_name(uint16_t champion_index, uint16_t attr, int inv)
     return attr | CHAMPION_ATTR_VIEWPORT;
 }
 
-/* Draws the parts of a champion that have a redraw flag in its attributes, then clears the flags. */
 void ui_draw_champion_state(uint16_t champion_index)
 {
     Champion *champion = &g_champions[champion_index];
@@ -366,7 +359,6 @@ void ui_draw_champion_state(uint16_t champion_index)
     champion->attributes &= CHAMPION_ATTR_KEEP_MASK;
 }
 
-/* Sets redraw flags on all champions and draws them. */
 void ui_draw_all_champion_states(uint16_t attributes)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
@@ -394,7 +386,6 @@ static void draw_food_water_bar(int16_t value, int16_t zone, uint8_t color)
     draw_fill(ui_get_viewport(), &b, color);
 }
 
-/* Draws the food and water panel of the inventory, with "POISONED" when poisoned. */
 void ui_draw_panel_food_water_poisoned(void)
 {
     scroll_redraw = 0;
@@ -410,8 +401,6 @@ void ui_draw_panel_food_water_poisoned(void)
     draw_food_water_bar(c->water, ZONE_PANEL_WATER_BAR, COLOR_BLUE);
 }
 
-/* Draws the inventory panel: resurrect/reincarnate for a candidate, the open scroll or chest in
-   the action hand, else food and water. */
 void ui_draw_panel(void)
 {
     scroll_redraw = 0;
@@ -452,8 +441,6 @@ const char *ui_get_skill_rank_name(int16_t level)
     return gfx_string(tables_get_skill_level_text(level));
 }
 
-/* Draws the eye panel: base skill levels above 1 (green after a level up), then the six
-   statistics with current value (red below maximum, green above) and maximum value. */
 void ui_draw_champion_skills_and_statistics(void)
 {
     scroll_redraw = 0;
@@ -489,8 +476,6 @@ void ui_draw_champion_skills_and_statistics(void)
     }
 }
 
-/* Opens the inventory of a champion on the screen: dims the movement arrows and draws the
-   inventory background, labels, all slots, and the champion state. Sets g_inventory_champion_ordinal. */
 void ui_draw_inventory_open(int16_t champion_index)
 {
     Bitmap screen = ui_get_screen();
@@ -515,8 +500,6 @@ void ui_draw_inventory_open(int16_t champion_index)
     ui_draw_champion_state(champion_index);
 }
 
-/* Closes the inventory on the screen: the status box returns and the movement arrows come back.
-   The caller redraws the dungeon view. */
 void ui_draw_inventory_close(int16_t champion_index)
 {
     inventory_set_open_champion(0);
@@ -559,9 +542,6 @@ static void format_attributes_text(uint16_t potential, uint16_t actual, char *ds
     append(dst, size, tables_get_text(TABLES_TEXT_ATTRIBUTES_SUFFIX));
 }
 
-/* The object panel text: the name (bones with the champion name, a potion with its power rune
-   for a priest above level 1) and the description lines (burnt out, compass direction, waterskin
-   level, attributes, weight). Returns the line count. */
 int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE])
 {
     int16_t icon = object_get_icon_index(thing);
@@ -906,8 +886,6 @@ static void open_and_draw_chest(uint16_t chest, int16_t pressing_eye)
     }
 }
 
-/* Draws an object in the panel: the open scroll, the open chest, or the name, icon, and
-   description of any other object; then the arrow, or the eye while it is pressed. */
 void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye)
 {
     Bitmap *viewport = ui_get_viewport();
@@ -935,8 +913,6 @@ void ui_draw_panel_object(uint16_t thing, int16_t pressing_eye)
     ui_blit_graphic(viewport, pressing_eye ? GFX_PANEL_EYE : GFX_PANEL_ARROW, ZONE_PANEL_ARROW_OR_EYE, COLOR_RED);
 }
 
-/* The panel while the eye is pressed: the leader hand object, or the skills and statistics.
-   ponytail: the leader hand object name stays; the original clears it until the eye is released. */
 void ui_draw_panel_eye(void)
 {
     if (!g_leader_empty_handed)
@@ -945,7 +921,6 @@ void ui_draw_panel_eye(void)
         ui_draw_champion_skills_and_statistics();
 }
 
-/* CSB, each tick with the inventory open: a scroll with a creature name or the magic map draws again. */
 void panel_redraw_scroll(void)
 {
     if (!scroll_redraw)
@@ -959,7 +934,6 @@ void panel_redraw_scroll(void)
     ui_draw_champion_state(g_inventory_champion_ordinal - 1);
 }
 
-/* A click in the open chest panel swaps the leader hand object with the clicked chest slot. */
 void panel_click_in_chest(int16_t x, int16_t y)
 {
     if (g_panel_content != PANEL_CONTENT_CHEST || g_leader_index == -1)

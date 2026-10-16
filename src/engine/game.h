@@ -205,39 +205,65 @@ extern bool g_cheat_food;     /* food and water do not go down */
 #define CHEAT_IMMORTAL 1
 #define CHEAT_FOOD     2
 
+/* load_game (new game) and the end of load_dungeon. dungeon_load must run first. */
 void game_start_new(void);
+/* The start of a game, new or loaded: no candidate, no sleep, no won game, no cheats, no skill level-ups. */
 void game_reset_session(void);
 void game_set_mode(int16_t mode);
+/* Turns a cheat of the advanced mode on or off. */
 void game_toggle_cheat(int16_t cheat);
+/* The fuse wins the game: bright magical light and strong shields for the end sequence. */
 void game_start_fuse_sequence(void);
+/* One tick of the game clock alone (the fuse sequence). */
 void game_increment_time(void);
+/* The game time advances one tick: torches burn and freeze life counts down. */
 void game_advance_time(void);
+/* The rest of the tick: the champions get their time effects and the movement delays count down. */
 void game_apply_tick_effects(void);
 
 int16_t min16(int16_t a, int16_t b);
 int16_t max16(int16_t a, int16_t b);
 int16_t bounded_value(int16_t min, int16_t value, int16_t max);
+/* a * b >> shift. Like the original asr.l of the 32-bit mulu product, the sign bit is the
+   product's bit 31 and the shift count is taken modulo 64. */
 int32_t scale_value(uint16_t a, int16_t shift, uint16_t b);
+/* Moves map coordinates by steps forward and to the right of a direction. */
 void game_update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
                                                          int16_t *map_x, int16_t *map_y);
 
+/* New game only. A free slot keeps the next free index in map_time. */
 void timeline_init(void);
+/* Rebuilds the free list and the high water mark from the slot types (before a save, after a load). */
 void timeline_reset(void);
+/* Earlier time first, then higher type and priority, then the lower slot. */
 bool timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b);
+/* Position of an event slot in the timeline heap. */
 uint16_t timeline_get_index(uint16_t event_index);
+/* Moves a heap entry up or down until the timeline is in time order again. */
 void timeline_fix_chronology(uint16_t timeline_index);
+/* Frees an event slot and removes it from the timeline. */
 void timeline_delete_event(uint16_t event_index);
+/* Returns the index of the event that absorbs the new one, or -1. Can change or delete events. */
 int16_t timeline_find_mergeable_event(TimelineEvent *event);
+/* Adds an event to the timeline, or merges it into an existing event. Returns the slot index. */
 int16_t timeline_add_event(TimelineEvent *event);
+/* Removes the earliest event from the timeline and copies it to event. */
 void timeline_extract_first_event(TimelineEvent *event);
 bool timeline_is_first_event_expired(void);
+/* The original leaves priority, b, and c as stack garbage. */
 void timeline_add_watchdog_event(void);
 
+/* New game only: all active group entries are free. */
 void game_init_active_groups(void);
 
+/* Below half stamina, a value drops toward half of it. */
 int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value);
+/* An attack value scaled down by how far the statistic is below the limit. */
 uint16_t game_get_statistic_adjusted_attack(const Champion *champion, uint16_t statistic, uint16_t attack);
+/* Changes a current statistic within its minimum and the limit; high values grow slower. */
 void game_adjust_statistic_current_value(Champion *champion, uint16_t statistic, int16_t delta);
+/* Luck test against a percentage. A lucky test lowers luck, a failed one raises it.
+   The original reads the luck bytes as signed. A lucky first roll does not change luck. */
 bool game_is_lucky(Champion *champion, uint16_t percentage);
 
 #endif

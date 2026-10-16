@@ -34,7 +34,6 @@ static uint16_t count;
 static uint32_t *offsets; /* count + 1 file offsets */
 static Bitmap *decoded;   /* count bitmaps, decoded on first use */
 
-/* Reads a format 1 Graphics.DAT like graphics_dat_read_header. Returns the item count or -1. */
 int gfx_open(const char *path)
 {
     for (int i = 0; decoded && i < count; i++)
@@ -69,7 +68,6 @@ int gfx_count(void)
     return count;
 }
 
-/* Packed bytes of item i. */
 const uint8_t *gfx_get_item(int i, uint16_t *size)
 {
     if (i < 0 || i >= count)
@@ -166,7 +164,6 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
     }
 }
 
-/* Port of expand_graphic: decodes a packed graphic into a chunky bitmap. */
 int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
 {
     const uint8_t *end = p + len;
@@ -182,7 +179,6 @@ int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
     return 0;
 }
 
-/* Decodes a packed graphic over a bitmap of the same size: skipped pixels keep their color. */
 int gfx_expand_over(const uint8_t *p, size_t len, Bitmap *bm)
 {
     const uint8_t *end = p + len;
@@ -193,7 +189,6 @@ int gfx_expand_over(const uint8_t *p, size_t len, Bitmap *bm)
     return 0;
 }
 
-/* Decodes graphic i into a new bitmap. Returns 0 or -1. */
 int gfx_load_bitmap(int i, Bitmap *bm)
 {
     uint16_t size;
@@ -207,7 +202,6 @@ void gfx_free_bitmap(Bitmap *bm)
     bm->px = NULL;
 }
 
-/* Decoded graphic i, kept until the next gfx_open. NULL when it does not decode. */
 const Bitmap *gfx_get_bitmap(int i)
 {
     if (i < 0 || i >= count)

@@ -518,7 +518,6 @@ bool gameloop_get_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *
     return true;
 }
 
-/* The palette of the mouse pointer. */
 const uint16_t *gameloop_get_pointer_palette(void)
 {
     static uint16_t colors[PALETTE_COLORS];

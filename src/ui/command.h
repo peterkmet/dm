@@ -91,24 +91,44 @@ extern uint16_t g_last_key;   /* the last key word since the last discard, 0: no
 
 void command_set_entrance_input(void);
 void command_set_game_input(void);
+/* A new or loaded game starts without a pressed eye, mouth or wall, a highlight, a sleeping input
+   speed, or waiting commands; the game input tables are active. */
 void command_reset(void);
 /* Dialogs and the endgame: only one mouse table; the saved tables come back with restore. */
 void command_set_only_mouse_input(int16_t table);
 void command_save_input(void);
 void command_restore_input(void);
+/* A mouse button event: a press becomes the command of the box under the pointer in the active
+   tables, a left release becomes COMMAND_LEFT_RELEASE. */
 void command_process_click(int16_t x, int16_t y, int16_t kind);
+/* A key press becomes the command of the key in the active tables. With the advanced features,
+   Escape closes an open inventory instead of freezing the game, and Tab closes it too. */
 void command_process_key(uint16_t key);
+/* Takes the first waiting command and runs it. A movement command waits while the party cannot
+   move. Returns true when it ran a command. */
 bool command_process_queue(void);
+/* Drops all waiting commands except the button releases. */
 void command_discard_all_input(void);
+/* Inverts the highlighted zone back. */
 void command_highlight_disable(void);
+/* The party wakes up by a command or by damage: game speed and input return. */
 void command_wake_up(void);
 
 extern bool g_mouse_pointer_hidden; /* the eye, or an imaginary wall, is pressed */
 
+/* Dims the movement arrows (or the closed inventory panel), the spell area, and the action area. */
 void command_freeze_game(void);
+/* Draws the spell area, action area, and the view or the inventory again. A sleeping party stays
+   frozen on the sleep screen. */
 void command_unfreeze_game(void);
+/* Opens the inventory of a champion, closes it (INVENTORY_CLOSE or the open champion again), or
+   draws it again (INVENTORY_REDRAW). The inventory has its own mouse table. */
 void command_toggle_inventory(int16_t champion_index);
+/* The inventory champion eats or drinks the leader hand object. The mouth blinks when the object is
+   used up, then the champion swallows and its state is drawn. */
 void command_click_on_mouth(void);
+/* A champion dies: its open inventory closes, also during a press on the eye or the mouth; a dead
+   leader ends a press on an imaginary wall; its icon is cleared and is no longer dragged. */
 void command_release_dead_champion(uint16_t champion_index, int16_t leader_index);
 
 #endif

@@ -47,31 +47,49 @@ extern bool g_leader_empty_handed;
 extern uint16_t g_open_chest_slots[8]; /* slots SLOT_CHEST_FIRST and up */
 extern uint16_t g_open_chest;          /* THING_NONE: no chest is open */
 
+/* The object info record of an object thing, or -1. */
 int16_t inventory_get_object_info_index(uint16_t thing);
+/* The object type (base icon), or -1 for no thing or a thing that is not an object. */
 int16_t object_get_type(uint16_t thing);
+/* The icon shows the state: compass direction, lit torch, charges, worn jewels, closed scroll. */
 int16_t object_get_icon_index(uint16_t thing);
+/* Tenths of a kilogram. A chest weighs 5 kg plus its contents. */
 uint16_t inventory_get_object_weight(uint16_t thing);
+/* Sharp attacks use the sharp resistance (attributes bits 0-2) of the armour. */
 uint16_t inventory_get_armour_defense(const ArmourInfo *info, bool use_sharp_defense);
 
 void inventory_put_object_in_leader_hand(uint16_t thing);
 uint16_t inventory_get_object_removed_from_leader_hand(void);
+/* Takes an object from a slot: bonuses end, a torch goes out, a scroll closes. */
 uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot);
+/* Puts an object in a slot: bonuses start, a torch in a hand burns, a scroll opens. */
 void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot);
+/* Slot boxes 0-7: the two hands of champions 0-3. 8 and up: slot (box - 8) of the open inventory.
+   Swaps the leader hand object with the slot object when the slot accepts it. */
 void inventory_click_on_slot_box(uint16_t slot_box);
+/* A flask or a waterskin in the leader hand fills at a fountain; the leader load changes with its weight.
+   Returns true when the hand object changed. */
 bool inventory_fill_leader_hand_at_fountain(void);
+/* Opens the inventory of champion ordinal - 1 for the rules; 0 closes it. */
 void inventory_set_open_champion(int16_t ordinal);
 /* The light amount of the party: light sources in the hands and the light spells. */
 int16_t inventory_get_party_light(void);
 /* Sets g_dungeon_view_palette_index from the party light amount (magical light plus torches) on map map_index. */
 void inventory_set_dungeon_view_palette(int16_t map_index, int16_t light);
+/* Burning torches in the hands lose one charge; a burnt out torch may be discarded later. */
 void inventory_decrease_torches_light_power(void);
 /* Results of inventory_process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
 #define MOUTH_REFUSED   0
 #define MOUTH_SWALLOWED 1
 #define MOUTH_USED_UP   2
+/* The inventory champion eats or drinks the leader hand object. Food is used up, a potion
+   leaves an empty flask, and a waterskin loses one charge. */
 int16_t inventory_process_click_on_mouth(void);
+/* Opens a chest in the panel: its first 8 objects go to the chest slots, the other slots are empty. */
 void inventory_open_chest(uint16_t chest);
+/* Closes the open chest: the objects in the chest slots become its content, in slot order. */
 void inventory_close_chest(void);
+/* No inventory and no chest are open at the start of a game. */
 void inventory_reset(void);
 
 #endif

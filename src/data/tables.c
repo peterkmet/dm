@@ -306,108 +306,87 @@ int16_t tables_get_step_east(int16_t direction)
 {
     return kaos_s16(KAOS_DIRECTION_TO_STEP_EAST + direction * 2);
 }
-/* Map y step of one square in a direction. */
 int16_t tables_get_step_north(int16_t direction)
 {
     return kaos_s16(KAOS_DIRECTION_TO_STEP_NORTH + direction * 2);
 }
-/* Squares forward of a movement arrow. */
 int16_t tables_get_arrow_steps_forward(int16_t arrow)
 {
     return kaos_s16(KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD + arrow * 2);
 }
-/* Squares to the right of a movement arrow. */
 int16_t tables_get_arrow_steps_right(int16_t arrow)
 {
     return kaos_s16(KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT + arrow * 2);
 }
-/* Cell i in the order that an attacker from row (side and direction) reaches the cells of the target square. */
 uint8_t tables_get_ordered_cell_to_attack(int16_t row, int16_t i)
 {
     return kaos_u8(KAOS_ORDERED_CELLS_TO_ATTACK + (uint32_t)(row * ATTACK_CELL_COUNT) + i);
 }
-/* Wound mask of a wound probability index. */
 uint8_t tables_get_wound_probability_mask(int16_t index)
 {
     return kaos_u8(KAOS_WOUND_PROBABILITY_INDEX_TO_MASK + index);
 }
-/* Inventory slot that a thief tries for a random index. */
 uint8_t tables_get_slot_to_steal_from(int16_t index)
 {
     return kaos_u8(KAOS_SLOTS_TO_STEAL_FROM + index);
 }
-/* Icon offset of a lit torch by its charges. */
 uint8_t tables_get_torch_icon_offset(int16_t charges)
 {
     return kaos_u8(KAOS_TORCH_CHARGE_TO_ICON_OFFSET + charges);
 }
-/* Slot i in the order that a dead champion drops the objects. */
 uint16_t tables_get_slot_drop_order(int16_t i)
 {
     return kaos_u16(KAOS_SLOT_DROP_ORDER + i * 2);
 }
-/* Message color of a champion. */
 uint8_t tables_get_champion_color(int16_t champion_index)
 {
     return kaos_u8(KAOS_CHAMPION_COLORS + champion_index);
 }
-/* Event type that a sensor sends to a square of this type. */
 uint8_t tables_get_square_type_event(int16_t square_type)
 {
     return kaos_u8(KAOS_SQUARE_TYPE_TO_EVENT_TYPE + square_type);
 }
-/* Graphic of a sound; negative when the sound has no sample. */
 int16_t tables_get_sound_graphic(int16_t sound)
 {
     return kaos_s16(KAOS_SOUNDS + SOUND_ENTRY_BYTES * sound);
 }
-/* Sample rate of a sound. */
 uint8_t tables_get_sound_rate(int16_t sound)
 {
     return kaos_u8(KAOS_SOUNDS + SOUND_ENTRY_BYTES * sound + SOUND_ENTRY_RATE);
 }
-/* Priority of a sound: a higher value replaces a pending sound of the same loudness. */
 uint8_t tables_get_sound_priority(int16_t sound)
 {
     return kaos_u8(KAOS_SOUNDS + SOUND_ENTRY_BYTES * sound + SOUND_ENTRY_PRIORITY);
 }
-/* Volume of one channel for a sound at squares ahead and squares toward the side of that channel. */
 uint8_t tables_get_sound_volume(int16_t ahead, int16_t side)
 {
     uint32_t row = KAOS_SOUND_VOLUMES + (ahead + SOUND_HEARING_RANGE) * SOUND_VOLUME_ROW;
     return kaos_u8(row + SOUND_HEARING_RANGE + side);
 }
-/* Free records of a thing type that a new game adds to the dungeon. */
 uint8_t tables_get_new_game_extra_things(int16_t thing_type)
 {
     return kaos_u8(KAOS_NEW_GAME_EXTRA_THINGS + thing_type);
 }
-/* Door info word of a door set: attributes in the high byte, defense in the low byte. */
 uint16_t tables_get_door_attributes(int16_t door_set)
 {
     return kaos_u16(KAOS_DOOR_INFO + door_set * 2);
 }
-/* String of a message escape code. */
 const char *tables_get_message_escape(int16_t code)
 {
     return (const char *)kaos_ptr(KAOS_MESSAGE_ESCAPE_STRINGS + code * ESCAPE_STRING_BYTES);
 }
-/* String of a wall inscription escape code. */
 const char *tables_get_inscription_escape(int16_t code)
 {
     return (const char *)kaos_ptr(KAOS_INSCRIPTION_ESCAPE_STRINGS + code * ESCAPE_STRING_BYTES);
 }
-/* Replacement string of an escape code. */
 const char *tables_get_escape_replacement(int16_t code)
 {
     return (const char *)kaos_ptr(KAOS_ESCAPE_REPLACEMENT_CHARS + code * REPLACEMENT_BYTES);
 }
-/* Width of a champion portrait. */
 int16_t tables_get_portrait_width(void)
 {
     return kaos_s16(KAOS_PORTRAIT_WIDTH);
 }
-/* Height of a champion portrait. */
 int16_t tables_get_portrait_height(void)
 {
     return kaos_s16(KAOS_PORTRAIT_HEIGHT);
@@ -418,69 +397,56 @@ uint16_t tables_get_replacement_color(int16_t set, int16_t light)
 {
     return kaos_u16(KAOS_CREATURE_REPLACEMENT_COLOR_SETS + REPLACEMENT_SET_BYTES * set + 2 * light);
 }
-/* Palette change of a creature replacement color set at depth 2 or 3. */
 uint8_t tables_get_replacement_change(int16_t set, int16_t depth)
 {
     return kaos_u8(KAOS_CREATURE_REPLACEMENT_COLOR_SETS + REPLACEMENT_SET_BYTES * set + REPLACEMENT_AT_CHANGE_D2 +
                    depth - REPLACEMENT_FIRST_CHANGE_DEPTH);
 }
-/* Aspect record of a creature: graphic, coordinate set, replacement color sets. */
 const uint8_t *tables_get_creature_aspect(int16_t creature_type)
 {
     return kaos_ptr(KAOS_CREATURE_ASPECTS + CREATURE_ASPECT_BYTES * creature_type);
 }
-/* Aspect record of an object: graphic, flags, alcove coordinate set. */
 const uint8_t *tables_get_object_aspect(int16_t index)
 {
     return kaos_ptr(KAOS_OBJECT_ASPECTS + OBJECT_ASPECT_BYTES * index);
 }
-/* Aspect record of a projectile (index 1-14): graphic, pose and scale flags. */
 const uint8_t *tables_get_projectile_aspect(int16_t index)
 {
     return kaos_ptr(KAOS_PROJECTILE_ASPECTS + PROJECTILE_ASPECT_BYTES * index);
 }
-/* Aspect record of a field: the teleporter or fluxcage pattern of a view square. */
 const uint8_t *tables_get_field_aspect(int16_t index)
 {
     return kaos_ptr(KAOS_FIELD_ASPECTS + FIELD_ASPECT_BYTES * index);
 }
-/* Pixel shift index of a creature or a stacked object at a distance (0-2). */
 int16_t tables_get_creature_shift(int16_t distance, int16_t index)
 {
     return (int8_t)kaos_u8(KAOS_CREATURE_SHIFT_SETS + CREATURE_SHIFT_SET_BYTES * distance + index); /* a signed byte */
 }
-/* Shift index of a stacked object on one axis (0 x, 1 y). */
 uint8_t tables_get_pile_shift(int16_t pair, int16_t axis)
 {
     return kaos_u8(KAOS_PILE_SHIFTS + PILE_SHIFT_BYTES * pair + axis);
 }
-/* Scale of an object at a view row. */
 uint8_t tables_get_object_scale(int16_t row)
 {
     return kaos_u8(KAOS_OBJECT_SCALES + row);
 }
-/* Scale of a projectile at a view row. */
 uint8_t tables_get_projectile_scale(int16_t row)
 {
     return kaos_u8(KAOS_PROJECTILE_SCALES + row);
 }
-/* Scale of an explosion at a depth. */
 uint8_t tables_get_explosion_scale(int16_t depth)
 {
     return kaos_u8(KAOS_EXPLOSION_SCALES + depth);
 }
-/* Scale of rebirth step 1 or 2 at an object coordinate set. */
 uint8_t tables_get_rebirth_scale(int16_t step, int16_t coord)
 {
     return kaos_u8((step == TABLES_REBIRTH_STEP_1 ? KAOS_REBIRTH_STEP_1_SCALES : KAOS_REBIRTH_SCALES) + coord);
 }
-/* The 4 creature directions of a group that faces one direction, 2 bits per creature. */
 uint8_t tables_get_group_directions(int16_t index)
 {
     return kaos_u8(KAOS_GROUP_DIRECTIONS_PACKED + index);
 }
 
-/* Lane, depth, and coordinate sets of a view square. */
 ViewSquare tables_get_view_square(int16_t view_square)
 {
     return (ViewSquare){
@@ -493,88 +459,71 @@ ViewSquare tables_get_view_square(int16_t view_square)
         (int8_t)kaos_u8(KAOS_VIEW_SQUARE_FIELD_ASPECT + view_square),
     };
 }
-/* Layout bitmap id of wall set entry i. */
 int16_t tables_get_wall_set_layout_id(int16_t i)
 {
     return kaos_s16(KAOS_WALL_SET_LAYOUT_IDS + 2 * i);
 }
-/* Depth (0-4) of a wall ornament view. */
 uint8_t tables_get_wall_ornament_depth(int16_t view)
 {
     return kaos_u8(KAOS_WALL_ORNAMENT_DEPTHS + view);
 }
-/* Visible plaque height of an inscription of 1-3 lines at a depth. */
 uint8_t tables_get_plaque_height(int16_t lines, int16_t depth)
 {
     return kaos_u8(KAOS_PLAQUE_HEIGHTS + lines + TABLES_PLAQUE_LINES * depth);
 }
-/* Graphic offset of a floor ornament view. */
 uint8_t tables_get_floor_ornament_view_offset(int16_t view)
 {
     return kaos_u8(KAOS_FLOOR_ORNAMENT_VIEW_OFFSETS + view);
 }
-/* Wall ornament k of the alcove ornaments. */
 uint8_t tables_get_alcove_ornament(int16_t k)
 {
     return kaos_u8(KAOS_ALCOVE_ORNAMENT_INDICES + k);
 }
-/* The wall ornament that is a fountain. */
 uint8_t tables_get_fountain_ornament(void)
 {
     return kaos_u8(KAOS_FOUNTAIN_ORNAMENT_INDICES);
 }
-/* Coordinate set of a wall ornament graphic. */
 uint8_t tables_get_wall_ornament_coord_set(int16_t ornament)
 {
     return kaos_u8(KAOS_WALL_ORNAMENT_COORD_SETS + ornament);
 }
-/* Coordinate set of a floor ornament graphic. */
 uint8_t tables_get_floor_ornament_coord_set(int16_t ornament)
 {
     return kaos_u8(KAOS_FLOOR_ORNAMENT_COORD_SETS + ornament);
 }
-/* Coordinate set of a door ornament graphic. */
 uint8_t tables_get_door_ornament_coord_set(int16_t ornament)
 {
     return kaos_u8(KAOS_DOOR_ORNAMENT_COORD_SETS + ornament);
 }
-/* Coordinate set of the door button. */
 uint8_t tables_get_door_button_coord_set(void)
 {
     return kaos_u8(KAOS_DOOR_BUTTON_COORD_SETS);
 }
-/* Width of a wall text glyph. */
 int16_t tables_get_glyph_width(void)
 {
     return kaos_s16(KAOS_WALL_TEXT_GLYPH_WIDTH);
 }
-/* Height of a wall text glyph. */
 int16_t tables_get_glyph_height(void)
 {
     return kaos_s16(KAOS_WALL_TEXT_GLYPH_HEIGHT);
 }
-/* Screen x of the viewport. */
 int16_t tables_get_viewport_x(void)
 {
     return kaos_s16(KAOS_VIEWPORT_X);
 }
-/* Screen y of the viewport. */
 int16_t tables_get_viewport_y(void)
 {
     return kaos_s16(KAOS_VIEWPORT_Y);
 }
-/* Width of the viewport. */
 int16_t tables_get_viewport_width(void)
 {
     return kaos_s16(KAOS_VIEWPORT_WIDTH);
 }
-/* Height of the viewport. */
 int16_t tables_get_viewport_height(void)
 {
     return kaos_s16(KAOS_VIEWPORT_HEIGHT);
 }
 
-/* Source rectangle of layout bitmap slot in its graphic. */
 TablesRect tables_get_layout_bitmap(int16_t slot)
 {
     uint32_t record = KAOS_LAYOUT_BITMAPS + LAYOUT_BITMAP_BYTES * slot;
@@ -582,7 +531,6 @@ TablesRect tables_get_layout_bitmap(int16_t slot)
                         kaos_s16(record + LAYOUT_AT_H)};
 }
 
-/* One color of a palette. */
 uint16_t tables_get_palette_color(int16_t palette, int16_t color)
 {
     static const uint32_t first[TABLES_PALETTE_DUNGEON] = {KAOS_INITIAL_COLORMAP, KAOS_POINTER_PALETTE,
@@ -591,14 +539,12 @@ uint16_t tables_get_palette_color(int16_t palette, int16_t color)
         return kaos_u16(first[palette] + 2 * color);
     return kaos_u16(KAOS_DUNGEON_PALETTES + PALETTE_BYTES * (palette - TABLES_PALETTE_DUNGEON) + 2 * color);
 }
-/* The colors of a palette. */
 void tables_get_palette(int16_t palette, uint16_t colors[TABLES_PALETTE_COLOR_COUNT])
 {
     for (int16_t i = 0; i < TABLES_PALETTE_COLOR_COUNT; i++)
         colors[i] = tables_get_palette_color(palette, i);
 }
 
-/* The color map of a palette change. */
 const uint8_t *tables_get_palette_changes(int16_t changes)
 {
     static const uint32_t at[TABLES_CHANGES_COUNT] = {
@@ -623,118 +569,96 @@ int16_t tables_get_icon_sheet_first(int16_t sheet)
 {
     return kaos_s16(KAOS_ICON_GRAPHIC_FIRST_INDEX + 2 * sheet);
 }
-/* Layout zone of a slot box. */
 int16_t tables_get_slot_box_zone(int16_t slot_box)
 {
     return kaos_s16(KAOS_SLOT_BOXES + SLOT_BOX_BYTES * slot_box);
 }
-/* Pixels that a bordered slot box grows on each side. */
 int16_t tables_get_slot_box_border(void)
 {
     return kaos_s16(KAOS_SLOT_BOX_BORDER);
 }
-/* Width of a champion party icon. */
 int16_t tables_get_champion_icon_width(void)
 {
     return kaos_s16(KAOS_CHAMPION_ICON_WIDTH);
 }
-/* Height of a champion party icon. */
 int16_t tables_get_champion_icon_height(void)
 {
     return kaos_s16(KAOS_CHAMPION_ICON_HEIGHT);
 }
-/* Offset of the shadow of a panel bar. */
 int16_t tables_get_bar_shadow(void)
 {
     return kaos_s16(KAOS_BAR_SHADOW_OFFSET);
 }
-/* Width of the small or the large damage splat. */
 int16_t tables_get_damage_splat_width(bool large)
 {
     return kaos_s16(large ? KAOS_DAMAGE_SPLAT_LARGE_WIDTH : KAOS_DAMAGE_SPLAT_SMALL_WIDTH);
 }
-/* Height of the small or the large damage splat. */
 int16_t tables_get_damage_splat_height(bool large)
 {
     return kaos_s16(large ? KAOS_DAMAGE_SPLAT_LARGE_HEIGHT : KAOS_DAMAGE_SPLAT_SMALL_HEIGHT);
 }
-/* Text of a skill level name (level 2-16). */
 int16_t tables_get_skill_level_text(int16_t level)
 {
     return kaos_s16(KAOS_SKILL_LEVEL_STRING_INDICES + 2 * (level - SKILL_LEVEL_TEXT_FIRST));
 }
-/* Text of a base skill name. */
 int16_t tables_get_base_skill_text(int16_t skill)
 {
     return kaos_s16(KAOS_BASE_SKILL_STRING_INDICES + 2 * skill);
 }
-/* Text of a statistic name. */
 int16_t tables_get_statistic_text(int16_t statistic)
 {
     return kaos_s16(KAOS_STATISTIC_STRING_INDICES + 2 * statistic);
 }
-/* Text of a direction name. */
 int16_t tables_get_direction_text(int16_t direction)
 {
     return kaos_s16(KAOS_DIRECTION_STRING_INDICES + 2 * direction);
 }
-/* A short text of the image. */
 const char *tables_get_text(int16_t text)
 {
     static const uint32_t at[TABLES_TEXT_COUNT] = {KAOS_LIST_SEPARATOR, KAOS_BONES_SEPARATOR, KAOS_ATTRIBUTES_PREFIX,
                                                    KAOS_ATTRIBUTES_SUFFIX, KAOS_DIALOG_VERSION_TEXT};
     return (const char *)kaos_ptr(at[text]);
 }
-/* Pixels above and below a dialog message line. */
 int16_t tables_get_message_line_pad(void)
 {
     return kaos_s16(KAOS_DIALOG_MESSAGE_LINE_PAD);
 }
-/* Color of dialog message i. */
 uint8_t tables_get_message_color(int16_t i)
 {
     return kaos_s16(KAOS_DIALOG_MESSAGE_COLORS + 2 * i);
 }
-/* Outer border of an endgame button on one axis. */
 int16_t tables_get_button_border(int16_t axis)
 {
     return kaos_s16(KAOS_ENDGAME_BUTTON_BORDER + 2 * axis);
 }
-/* Inner border of an endgame button on one axis. */
 int16_t tables_get_button_inner_border(int16_t axis)
 {
     return kaos_s16(KAOS_ENDGAME_BUTTON_INNER_BORDER + 2 * axis);
 }
-/* CSB: the outer or the inner box of the RESTART THIS GAME button. */
 TablesRect tables_get_csb_restart_box(bool inner)
 {
     uint32_t at = CSB_RESTART_BOXES + (inner ? CSB_BOX_BYTES : 0);
     return (TablesRect){kaos_s16(at), kaos_s16(at + 2), kaos_s16(at + 4), kaos_s16(at + 6)};
 }
 
-/* Pointer zone i: a screen box, the pointer shape, and the champion + 1 of a status box. */
 PointerZone tables_get_pointer_zone(int16_t i)
 {
     uint32_t z = KAOS_MOUSE_POINTER_ZONES + POINTER_ZONE_BYTES * i;
     return (PointerZone){kaos_s16(z + POINTER_AT_X), kaos_s16(z + POINTER_AT_Y),     kaos_s16(z + POINTER_AT_W),
                          kaos_s16(z + POINTER_AT_H), kaos_s16(z + POINTER_AT_SHAPE), kaos_s16(z + POINTER_AT_CHAMPION)};
 }
-/* Hotspot x of a pointer shape. */
 int16_t tables_get_pointer_hotspot_x(int16_t shape)
 {
     return kaos_s16(KAOS_MOUSE_POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + POINTER_AT_X);
 }
-/* Hotspot y of a pointer shape. */
 int16_t tables_get_pointer_hotspot_y(int16_t shape)
 {
     return kaos_s16(KAOS_MOUSE_POINTER_HOTSPOTS + POINTER_HOTSPOT_BYTES * shape + POINTER_AT_Y);
 }
-/* Shadow offset x of the object pointer. */
 int16_t tables_get_pointer_shadow_dx(void)
 {
     return kaos_s16(KAOS_POINTER_SHADOW_DX);
 }
-/* Shadow offset y of the object pointer. */
 int16_t tables_get_pointer_shadow_dy(void)
 {
     return kaos_s16(KAOS_POINTER_SHADOW_DY);

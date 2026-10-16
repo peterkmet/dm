@@ -31,6 +31,8 @@ extern int16_t g_pile_object_counts[VIEW_CLICK_BOX_WALL];
 extern int16_t g_square_ahead_element;
 extern bool g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 
+/* set_current_map_and_party_map and load_current_map_graphics: the wall set, floor set, stairs, doors,
+   ornaments, and creature colors of the map. Graphics decode on first use. */
 void view_load_map(int16_t map);
 /* The ornament that the view draws on the side of wall square (x, y) of the party map that faces
    direction face (NONE when the view has not loaded the party map). */
@@ -40,6 +42,7 @@ void view_load_map(int16_t map);
 #define VIEW_ORNAMENT_ALCOVE   3
 #define VIEW_ORNAMENT_FOUNTAIN 4
 #define VIEW_ORNAMENT_VI_ALTAR 5
+/* The kind of ornament on the side of wall square (x, y) of the party map that faces direction face. */
 int16_t view_get_wall_ornament(int16_t x, int16_t y, int16_t face);
 /* The wall ornament of ordinal (1-based, from a sensor) of the party map: its index in the wall ornament
    graphics of the game, or -1 (no ornament, or the view has not loaded the party map). */
@@ -52,9 +55,12 @@ int16_t view_get_wall_face_ornament_index(int16_t x, int16_t y, int16_t face);
 int16_t view_get_floor_ornament(int16_t x, int16_t y);
 /* True when the view draws a pressure pad on square (x, y) of the party map. */
 bool view_is_pressure_pad(int16_t x, int16_t y);
+/* Draws the dungeon view of square (x, y) in direction dir: ceiling and floor, D4, then the squares back to front. */
 void view_draw(int16_t dir, int16_t x, int16_t y);
 /* CSB: draws the magic map grid of a champion (Champion.magic_map) with its top left square at (px, py). */
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py);
+/* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that inventory_set_dungeon_view_palette set.
+   Returns true on success. */
 bool view_render(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* Smooth projectile flight: view_set_motion(step, steps) makes the next views show each projectile
    step/steps of the way from its place at the tick before to its place at the last tick; (0, 0) is a

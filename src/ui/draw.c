@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* blit_bitmap on chunky pixels: copies box from src at (sx, sy). transparent -1 is opaque,
-   otherwise bits 0-3 are a color key. flip reads the mirrored source. Clips to both bitmaps. */
 void draw_blit(const Bitmap *src, int16_t sx, int16_t sy, Bitmap *dst, const Box *box, int16_t transparent, int flip)
 {
     for (int y = 0; y < box->h; y++) {
@@ -29,7 +27,6 @@ void draw_blit(const Bitmap *src, int16_t sx, int16_t sy, Bitmap *dst, const Box
     }
 }
 
-/* Fills box of dst with one color, clipped to dst. */
 void draw_fill(Bitmap *dst, const Box *box, uint8_t color)
 {
     for (int y = box->y; y < box->y + box->h; y++)
@@ -38,7 +35,6 @@ void draw_fill(Bitmap *dst, const Box *box, uint8_t color)
                 dst->px[y * dst->w + x] = color;
 }
 
-/* Mirrors bm in place. */
 void draw_flip(Bitmap *bm, int flip)
 {
     size_t n = (size_t)bm->w * bm->h;
@@ -58,8 +54,6 @@ void draw_flip(Bitmap *bm, int flip)
 /* Scales the step to the 16 fraction bits of a sample at half-pixel positions. */
 #define SAMPLE_STEP_SCALE    (1 << (SAMPLE_FRACTION_BITS - STEP_FRACTION_BITS - 1))
 
-/* Samples the source at the pixel centers with the 16.16 step of
-   the original. Rows after the first sample one row higher, as the original does. */
 int draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t *palette_changes, Bitmap *out)
 {
     if (width < 1 || height < 1 || !src->w || !src->h)
@@ -85,12 +79,6 @@ int draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t 
     return 0;
 }
 
-/* blit_box_filled_with_masked_bitmap on chunky pixels. units holds one 16-pixel unit per word of its
-   plane 0, in row order. The temp bitmap is box->w rounded up to words; each word takes the next unit,
-   from first_unit, restarting at 0 when the index reaches last_unit. With a mask (bit 7 of transparent
-   clear), the mask words are read in row order; a 0 bit gives the transparent color. mask_flip mirrors
-   the mask by whole words, as flip_bitmap_horizontal does. The temp bitmap is then blitted from
-   (sx, sy) with the color key. */
 void draw_masked_fill(const Bitmap *units, const Bitmap *mask, int mask_flip, Bitmap *dst, const Box *box,
                       int16_t last_unit, int16_t first_unit, int16_t transparent, int16_t sx, int16_t sy)
 {

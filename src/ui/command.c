@@ -116,8 +116,6 @@ static void queue_put(int16_t command, int16_t x, int16_t y)
     queue_count++;
 }
 
-/* A mouse button event: a press becomes the command of the box under the pointer in the active
-   tables, a left release becomes COMMAND_LEFT_RELEASE. */
 void command_process_click(int16_t x, int16_t y, int16_t kind)
 {
     if (kind == CLICK_LEFT_PRESS || kind == CLICK_RIGHT_PRESS)
@@ -140,8 +138,6 @@ void command_process_click(int16_t x, int16_t y, int16_t kind)
         queue_put(command, x, y);
 }
 
-/* A key press becomes the command of the key in the active tables. With the advanced features,
-   Escape closes an open inventory instead of freezing the game, and Tab closes it too. */
 void command_process_key(uint16_t key)
 {
     if (advanced_process_key(key))
@@ -160,7 +156,6 @@ void command_process_key(uint16_t key)
         queue_put(command, 0, 0);
 }
 
-/* Drops all waiting commands except the button releases. */
 void command_discard_all_input(void)
 {
     QueuedCommand kept[QUEUE_SIZE];
@@ -187,7 +182,6 @@ static void highlight_zone(int16_t zone)
     highlight_enabled = true;
 }
 
-/* Inverts the highlighted zone back. */
 void command_highlight_disable(void)
 {
     if (!highlight_enabled)
@@ -216,7 +210,6 @@ static void draw_viewport_message(int16_t text)
     ui_draw_viewport();
 }
 
-/* Dims the movement arrows (or the closed inventory panel), the spell area, and the action area. */
 void command_freeze_game(void)
 {
     Bitmap screen = ui_get_screen();
@@ -232,8 +225,6 @@ void command_freeze_game(void)
     ui_fill_zone_pattern(&screen, ZONE_ACTION_AREA, COLOR_BLACK);
 }
 
-/* Draws the spell area, action area, and the view or the inventory again. A sleeping party stays
-   frozen on the sleep screen. */
 void command_unfreeze_game(void)
 {
     if (!g_game_frozen)
@@ -256,8 +247,6 @@ void command_unfreeze_game(void)
     }
 }
 
-/* Opens the inventory of a champion, closes it (INVENTORY_CLOSE or the open champion again), or
-   draws it again (INVENTORY_REDRAW). The inventory has its own mouse table. */
 void command_toggle_inventory(int16_t champion_index)
 {
     int16_t open = g_inventory_champion_ordinal;
@@ -291,8 +280,6 @@ void command_toggle_inventory(int16_t champion_index)
     command_discard_all_input();
 }
 
-/* The inventory champion eats or drinks the leader hand object. The mouth blinks when the object is
-   used up, then the champion swallows and its state is drawn. */
 void command_click_on_mouth(void)
 {
     int16_t result = inventory_process_click_on_mouth();
@@ -311,8 +298,6 @@ void command_click_on_mouth(void)
     ui_draw_champion_state(champion_index);
 }
 
-/* A champion dies: its open inventory closes, also during a press on the eye or the mouth; a dead
-   leader ends a press on an imaginary wall; its icon is cleared and is no longer dragged. */
 void command_release_dead_champion(uint16_t champion_index, int16_t leader_index)
 {
     Bitmap screen = ui_get_screen();
@@ -695,7 +680,6 @@ static void go_to_sleep(void)
     command_discard_all_input();
 }
 
-/* The party wakes up by a command or by damage: game speed and input return. */
 void command_wake_up(void)
 {
     if (primary_mouse != UI_INPUT_SLEEPING)
@@ -803,8 +787,6 @@ static bool is_movement_blocked(int16_t command)
                                                        g_last_projectile_disabled_movement_direction;
 }
 
-/* Takes the first waiting command and runs it. A movement command waits while the party cannot
-   move. Returns true when it ran a command. */
 bool command_process_queue(void)
 {
     if (!queue_count)
@@ -862,8 +844,6 @@ bool command_process_queue(void)
     return true;
 }
 
-/* A new or loaded game starts without a pressed eye, mouth or wall, a highlight, a sleeping input
-   speed, or waiting commands; the game input tables are active. */
 void command_reset(void)
 {
     left_button_down = false;

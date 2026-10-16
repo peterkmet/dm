@@ -26,12 +26,21 @@ typedef struct {
 
 extern MessageArea g_message;
 
+/* Empties all rows and puts the cursor at the start of the last row. */
 void message_clear(void);
+/* Moves the cursor to a character column and a row, clamped to the area. */
 void message_move_cursor(int16_t column, int16_t row);
+/* Empties the rows whose display time has run out. */
 void message_clear_expired_rows(uint32_t game_time);
+/* Prints s with word wrap; '\n' starts a new row, a wrapped row continues indented. */
 void message_print(int16_t color, const char *s, uint32_t game_time);
+/* Prints a number and a space. */
 void message_print_number(int16_t color, int32_t value, uint32_t game_time);
+/* Starts a new row. */
 void message_new_line(uint32_t game_time);
+/* Copies from s + *pos the words that fit in max_width pixels into line, moves *pos, and
+   returns the line width. A line ends at '\n' or '\0' (*pos stays on it) or after the last
+   space that fits (*pos skips the space). */
 int message_next_word_line(const char *s, char *line, int *pos, int max_width);
 
 #endif

@@ -22,6 +22,7 @@ void json_key(Json *j, const char *key);
 void json_int(Json *j, int64_t value);
 void json_bool(Json *j, int value);
 void json_null(Json *j);
+/* A JSON string with the quote, backslash, and control characters escaped. */
 void json_str(Json *j, const char *text);
 void json_open(Json *j, char bracket);  /* '{' or '[' */
 void json_close(Json *j, char bracket); /* '}' or ']' */

@@ -57,7 +57,6 @@ int ui_zone_box(int16_t zone, Box *box)
     return layout_get_zone_box(zone, ZONE_SCALE_FULL, ZONE_SCALE_FULL, box);
 }
 
-/* Fills the box of zone with one color. */
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color)
 {
     Box b;
@@ -65,7 +64,6 @@ void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color)
         draw_fill(dst, &b, color);
 }
 
-/* Dims the box of zone with a checkerboard of color (every second pixel, aligned to the screen). */
 void ui_fill_zone_pattern(Bitmap *dst, int16_t zone, uint8_t color)
 {
     Box b;
@@ -77,7 +75,6 @@ void ui_fill_zone_pattern(Bitmap *dst, int16_t zone, uint8_t color)
                 dst->px[y * dst->w + x] = color;
 }
 
-/* Inverts bit plane 2 in the box of zone: black becomes cyan. */
 void ui_xor_screen_zone(int16_t zone)
 {
     Box b;
@@ -89,13 +86,11 @@ void ui_xor_screen_zone(int16_t zone)
                 fb[y][x] ^= COLOR_CYAN;
 }
 
-/* Draws a graphic placed in zone. */
 void ui_blit_graphic(Bitmap *dst, int16_t graphic, int16_t zone, int16_t transparent)
 {
     ui_blit_zone(dst, gfx_get_bitmap(graphic), zone, transparent);
 }
 
-/* Draws a graphic from its top left corner into box. */
 void ui_blit_graphic_box(Bitmap *dst, int16_t graphic, const Box *box, int16_t transparent)
 {
     const Bitmap *bm = gfx_get_bitmap(graphic);
@@ -103,7 +98,6 @@ void ui_blit_graphic_box(Bitmap *dst, int16_t graphic, const Box *box, int16_t t
         draw_blit(bm, 0, 0, dst, box, transparent, 0);
 }
 
-/* Draws a bitmap placed in zone. */
 void ui_blit_zone(Bitmap *dst, const Bitmap *src, int16_t zone, int16_t transparent)
 {
     int16_t w = 0;
@@ -113,7 +107,6 @@ void ui_blit_zone(Bitmap *dst, const Bitmap *src, int16_t zone, int16_t transpar
         draw_blit(src, w, h, dst, &b, transparent, 0);
 }
 
-/* Prints text placed in zone; the baseline is the bottom of the text box. */
 void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text)
 {
     int tw, th;
@@ -126,7 +119,6 @@ void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char
         text_draw(dst, b.x, b.y + b.h - 1, fg, bg, text);
 }
 
-/* Prints text padded with spaces to length characters, so it covers older text. */
 void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t length)
 {
     char buf[PADDED_TEXT_SIZE];
@@ -139,7 +131,6 @@ void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, con
     ui_print_zone(dst, zone, fg, bg, buf);
 }
 
-/* Shows the viewport bitmap (inventory) on the screen with the interface palette. */
 void ui_draw_viewport(void)
 {
     Bitmap screen = ui_get_screen();
@@ -149,7 +140,6 @@ void ui_draw_viewport(void)
 
 /* Sets the palette split: the viewport rows use top (when not NULL, it replaces palette[0..15]),
    the other rows the interface palette. */
-/* One palette for all rows: the 16 colors, or the interface palette for NULL (dialogs, endgame). */
 void ui_set_screen_palette(const uint16_t *colors)
 {
     for (int i = 0; i < PALETTE_COLORS; i++)
@@ -190,7 +180,6 @@ static void draw_messages(Bitmap *bm, int x, int y)
             }
 }
 
-/* Draws the message area at the bottom of the screen. */
 void ui_draw_message_area(void)
 {
     Bitmap screen = ui_get_screen();
@@ -199,7 +188,6 @@ void ui_draw_message_area(void)
         draw_messages(&screen, b.x, b.y);
 }
 
-/* Draws the whole screen outside the viewport, as at the start of a game. */
 void ui_draw_interface(void)
 {
     Bitmap screen = ui_get_screen();
@@ -236,7 +224,6 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
                   &(Box){0, 0, UI_ICON_SIZE, UI_ICON_SIZE}, COLOR_NONE, 0);
 }
 
-/* The icon box of zone; with border, grown by the slot box border. */
 int ui_get_icon_zone_box(int16_t zone, int border, Box *box)
 {
     int16_t w = UI_ICON_SIZE;
@@ -252,14 +239,12 @@ int ui_get_icon_zone_box(int16_t zone, int border, Box *box)
     return ok;
 }
 
-/* The icon box of a slot box. */
 bool ui_get_slot_box_zone(int16_t slot_box, int border, Box *box)
 {
     return slot_box >= 0 && slot_box < SLOT_BOX_COUNT &&
            ui_get_icon_zone_box(tables_get_slot_box_zone(slot_box), border, box);
 }
 
-/* Draws an icon in a slot box: the hands are on the screen, the other slots in the viewport. */
 void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon)
 {
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
@@ -275,7 +260,6 @@ void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon)
     draw_blit(&bm, 0, 0, slot_box < SLOT_BOX_SCREEN_COUNT ? &screen : &viewport, &b, COLOR_NONE, 0);
 }
 
-/* The icon last drawn in a slot box, or -1. */
 int16_t ui_get_icon_in_slot_box(int16_t slot_box)
 {
     return slot_box >= 0 && slot_box < SLOT_BOX_COUNT ? slot_box_icon[slot_box] : -1;
@@ -287,8 +271,6 @@ static int bones_champion(uint16_t thing)
     return junk_charges(thing);
 }
 
-/* Shows the name of the object in the leader hand above the action area. Bones show the name of
-   their champion first (English order). */
 void ui_draw_leader_hand_object_name(uint16_t thing)
 {
     Bitmap screen = ui_get_screen();
@@ -312,8 +294,6 @@ bool ui_is_point_in_zone(int16_t zone, int16_t x, int16_t y)
     return ui_zone_box(zone, &b) && x >= b.x && x <= b.x + b.w - 1 && y >= b.y && y <= b.y + b.h - 1;
 }
 
-/* The command of a click at (x, y) with button_mask in an original mouse input table, or 0.
-   An entry is a fixed box, or a zone on the screen or relative to the viewport. */
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask)
 {
     if (table < 0 || table >= UI_INPUT_COUNT)

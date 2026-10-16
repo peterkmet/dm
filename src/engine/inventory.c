@@ -60,7 +60,6 @@ uint16_t g_open_chest_slots[SLOT_CHEST_COUNT] = {THING_NONE, THING_NONE, THING_N
                                                  THING_NONE, THING_NONE, THING_NONE, THING_NONE};
 uint16_t g_open_chest = THING_NONE;
 
-/* The object info record of an object thing, or -1. */
 int16_t inventory_get_object_info_index(uint16_t thing)
 {
     switch (THING_TYPE(thing)) {
@@ -80,7 +79,6 @@ int16_t inventory_get_object_info_index(uint16_t thing)
     return -1;
 }
 
-/* The object type (base icon), or -1 for no thing or a thing that is not an object. */
 int16_t object_get_type(uint16_t thing)
 {
     if (thing == THING_NONE)
@@ -89,7 +87,6 @@ int16_t object_get_type(uint16_t thing)
     return i == -1 ? -1 : tables_get_object_info(i)->type;
 }
 
-/* The icon shows the state: compass direction, lit torch, charges, worn jewels, closed scroll. */
 int16_t object_get_icon_index(uint16_t thing)
 {
     int16_t type = object_get_type(thing);
@@ -117,7 +114,6 @@ int16_t object_get_icon_index(uint16_t thing)
     return type;
 }
 
-/* Tenths of a kilogram. A chest weighs 5 kg plus its contents. */
 uint16_t inventory_get_object_weight(uint16_t thing)
 {
     if (thing == THING_NONE)
@@ -144,7 +140,6 @@ uint16_t inventory_get_object_weight(uint16_t thing)
     return weight;
 }
 
-/* Sharp attacks use the sharp resistance (attributes bits 0-2) of the armour. */
 uint16_t inventory_get_armour_defense(const ArmourInfo *info, bool use_sharp_defense)
 {
     uint16_t defense = info->defense;
@@ -279,7 +274,6 @@ static bool is_torch(int16_t icon)
     return icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST;
 }
 
-/* Takes an object from a slot: bonuses end, a torch goes out, a scroll closes. */
 uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)
 {
     Champion *c = &g_champions[champion_index];
@@ -316,7 +310,6 @@ uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_
     return thing;
 }
 
-/* Puts an object in a slot: bonuses start, a torch in a hand burns, a scroll opens. */
 void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot)
 {
     if (thing == THING_NONE)
@@ -347,8 +340,6 @@ void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint1
         c->attributes |= CHAMPION_ATTR_VIEWPORT;
 }
 
-/* Slot boxes 0-7: the two hands of champions 0-3. 8 and up: slot (box - 8) of the open inventory.
-   Swaps the leader hand object with the slot object when the slot accepts it. */
 void inventory_click_on_slot_box(uint16_t slot_box)
 {
     enum { HAND_BOX_COUNT = 8 };
@@ -381,7 +372,6 @@ void inventory_click_on_slot_box(uint16_t slot_box)
         inventory_add_object_in_slot(champion_index, hand, slot);
 }
 
-/* Opens a chest in the panel: its first 8 objects go to the chest slots, the other slots are empty. */
 void inventory_open_chest(uint16_t chest)
 {
     uint16_t thing = container_first_thing(chest);
@@ -393,7 +383,6 @@ void inventory_open_chest(uint16_t chest)
     }
 }
 
-/* Closes the open chest: the objects in the chest slots become its content, in slot order. */
 void inventory_close_chest(void)
 {
     if (g_open_chest == THING_NONE)
@@ -491,8 +480,6 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
     potion_set_type(potion, POTION_EMPTY_FLASK);
 }
 
-/* The inventory champion eats or drinks the leader hand object. Food is used up, a potion
-   leaves an empty flask, and a waterskin loses one charge. */
 int16_t inventory_process_click_on_mouth(void)
 {
     uint16_t thing = g_leader_hand_object;
@@ -533,7 +520,6 @@ int16_t inventory_process_click_on_mouth(void)
     return consumed ? MOUTH_USED_UP : MOUTH_SWALLOWED;
 }
 
-/* No inventory and no chest are open at the start of a game. */
 void inventory_reset(void)
 {
     g_inventory_champion_ordinal = 0;
@@ -590,7 +576,6 @@ void inventory_set_dungeon_view_palette(int16_t map_index, int16_t light)
         g_dungeon_view_palette_index++;
 }
 
-/* Burning torches in the hands lose one charge; a burnt out torch may be discarded later. */
 void inventory_decrease_torches_light_power(void)
 {
     uint16_t count = g_party_champion_count - (g_candidate_champion_ordinal ? 1 : 0);
@@ -606,8 +591,6 @@ void inventory_decrease_torches_light_power(void)
         }
 }
 
-/* A flask or a waterskin in the leader hand fills at a fountain; the leader load changes with its weight.
-   Returns true when the hand object changed. */
 bool inventory_fill_leader_hand_at_fountain(void)
 {
     uint16_t thing = g_leader_hand_object;
@@ -624,7 +607,6 @@ bool inventory_fill_leader_hand_at_fountain(void)
     return true;
 }
 
-/* Opens the inventory of champion ordinal - 1 for the rules; 0 closes it. */
 void inventory_set_open_champion(int16_t ordinal)
 {
     g_inventory_champion_ordinal = ordinal;

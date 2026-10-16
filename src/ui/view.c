@@ -2224,8 +2224,6 @@ static void load_creature_colors(const uint8_t *creature_types, int16_t count)
     }
 }
 
-/* set_current_map_and_party_map and load_current_map_graphics: the wall set, floor set, stairs, doors,
-   ornaments, and creature colors of the map. Graphics decode on first use. */
 void view_load_map(int16_t m)
 {
     view_map = m;
@@ -2247,7 +2245,6 @@ static void get_relative_square(int16_t dir, int16_t forward, int16_t right, int
     *y += forward * tables_get_step_north(dir) + right * tables_get_step_north(turn_right(dir));
 }
 
-/* The kind of ornament on the side of wall square (x, y) of the party map that faces direction face. */
 int16_t view_get_wall_ornament(int16_t x, int16_t y, int16_t face)
 {
     Aspect a;
@@ -2581,7 +2578,6 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
         map_set_current_map(saved_map);
 }
 
-/* Draws the dungeon view of square (x, y) in direction dir: ceiling and floor, D4, then the squares back to front. */
 void view_draw(int16_t dir, int16_t x, int16_t y)
 {
     static const int8_t d4_right[D4_SQUARE_COUNT] = {-1, 1, 0};
@@ -2627,8 +2623,6 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
         draw_blit(&viewport, width, height, &screen, &box, -1, 0);
 }
 
-/* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that inventory_set_dungeon_view_palette set.
-   Returns true on success. */
 bool view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
 {
     if (!g_dungeon_maps || m < 0 || m >= dungeon_map_count())

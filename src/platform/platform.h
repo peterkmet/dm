@@ -23,13 +23,16 @@ typedef struct {
 bool plat_init(int scale);
 /* The upscale factor of a filter name: "scale2x" 2, "scale3x" 3, else 1 (none). */
 int plat_filter_factor(const char *name);
+/* Selects the upscale filter (1 none, 2 Scale2x, 3 Scale3x) and recreates the texture. */
 bool plat_set_filter(int factor);
 void plat_quit(void);
 /* Shows fb with the split palette and the pointer, scaled into the window. */
 void plat_present(void);
 /* Returns true with the next key, mouse button, or quit event; mouse motion only moves the pointer. */
 bool plat_poll(PlatEvent *event);
+/* Sleeps until the next 50 Hz tick. */
 void plat_wait_tick(void);
+/* Keeps about three ticks of mixer output queued; runs on the game thread, so the mixer needs no lock. */
 void plat_audio_pump(void);
 /* The mouse pointer, drawn over the game image: w x h pixels, color 0 transparent, other colors
    from the 16 Amiga colors. NULL px shows no pointer. */

@@ -193,7 +193,6 @@ static int write_jump_table(const uint8_t *info, uint32_t info_size, uint8_t *me
     return 0;
 }
 
-/* Lays out an FTL module in memory at base like BJELoad_R: data, region, code. Returns 0 or -1. */
 int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
 {
     const uint8_t *sec[SECTION_COUNT] = {0};

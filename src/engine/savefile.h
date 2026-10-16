@@ -57,8 +57,11 @@ typedef struct {
     uint32_t dungeon_size;
 } SaveFile;
 
+/* XOR big-endian words in place; returns the sum of key, plain and cipher words */
 uint16_t save_block_xor(uint8_t *bytes, uint16_t key, uint16_t word_count);
+/* Decrypts a save file into s and checks the header chain and block checksums. Returns false on a bad file. */
 bool save_decode(const uint8_t *file, uint32_t size, SaveFile *s);
+/* Encrypts s into a new save file buffer. Returns NULL when s is incomplete. */
 uint8_t *save_encode(const SaveFile *s, uint32_t *size);
 void save_free(SaveFile *s);
 

@@ -50,7 +50,6 @@ static bool sound_exists(int16_t sound)
     return sound >= 0 && sound < SOUND_COUNT && tables_get_sound_graphic(sound) >= 0;
 }
 
-/* Sample data of a sound, its length in bytes and its Paula period. */
 const int8_t *sound_get_sample(int16_t sound, uint16_t *length, uint16_t *period)
 {
     uint16_t size;
@@ -72,7 +71,6 @@ static uint16_t get_loudness_class(const uint8_t *v)
     return sum < LOUDNESS_MEDIUM_SUM ? 0 : sum < LOUDNESS_LOUD_SUM ? 1 : 2;
 }
 
-/* 1 when a is louder than b, 0 when equal, -1 when quieter. */
 int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)
 {
     uint16_t ca = get_loudness_class(a);
@@ -80,8 +78,6 @@ int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)
     return cb < ca ? 1 : cb == ca ? 0 : -1;
 }
 
-/* Stereo volume of a sound on a square, relative to the party position and direction.
-   Returns false when the square is out of hearing range. */
 bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
 {
     int16_t dx = map_x - g_party_map_x;
@@ -125,7 +121,6 @@ static bool is_voice_busy(const Voice *v)
     return v->data && get_voice_position(v) < v->length;
 }
 
-/* Starts a sound on a free stereo pair, or on the quieter pair when both play. */
 void sound_play_sample(int16_t sound, const uint8_t *volumes)
 {
     uint16_t length, period;
@@ -133,7 +128,6 @@ void sound_play_sample(int16_t sound, const uint8_t *volumes)
     sound_play_data(data, length, period, volumes);
 }
 
-/* Starts sample data on a free stereo pair, or on the quieter pair when both play. */
 void sound_play_data(const int8_t *data, uint16_t length, uint16_t period, const uint8_t *volumes)
 {
     if (!data || !length)
@@ -178,7 +172,6 @@ static void queue_pending(int16_t sound, const uint8_t *v)
     set_pending(sound_compare_loudness(g_pending_sound_volumes[0], g_pending_sound_volumes[1]) == 1 ? 1 : 0, sound, v);
 }
 
-/* Mode 0 plays now, mode 1 queues for sound_play_pending, mode >= 2 adds a play sound event at game time + mode - 1. */
 void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mode)
 {
     uint8_t v[SIDE_COUNT];
@@ -199,7 +192,6 @@ void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mo
         queue_pending(sound, v);
 }
 
-/* Plays the queued sounds and empties the queue. */
 void sound_play_pending(void)
 {
     for (int i = 0; i < SOUND_PENDING_SLOTS; i++)
@@ -261,7 +253,6 @@ static void continue_music(void)
     music.next++;
 }
 
-/* Renders interleaved stereo int16 at SOUND_OUTPUT_RATE. Paula has no interpolation: each sample holds for one period. */
 void sound_mix(int16_t *out, int frames)
 {
     for (int f = 0; f < frames; f++) {
@@ -284,7 +275,6 @@ void sound_mix(int16_t *out, int frames)
     }
 }
 
-/* Plays a sound at full volume on both sides. */
 void sound_demo_play(int index)
 {
     sound_play_sample(index, (const uint8_t[]){SOUND_MAX_VOLUME, SOUND_MAX_VOLUME});

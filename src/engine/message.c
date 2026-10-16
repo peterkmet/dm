@@ -19,7 +19,6 @@ static void clear_row(int r)
     g_message.expiry[r] = MESSAGE_NO_EXPIRY;
 }
 
-/* Moves the cursor to a character column and a row, clamped to the area. */
 void message_move_cursor(int16_t column, int16_t row)
 {
     if (column < 0)
@@ -32,7 +31,6 @@ void message_move_cursor(int16_t column, int16_t row)
     g_message.cursor_row = row < 0 ? 0 : row > MESSAGE_LAST_ROW ? MESSAGE_LAST_ROW : row;
 }
 
-/* Empties all rows and puts the cursor at the start of the last row. */
 void message_clear(void)
 {
     message_move_cursor(0, MESSAGE_LAST_ROW);
@@ -40,7 +38,6 @@ void message_clear(void)
         clear_row(r);
 }
 
-/* Empties the rows whose display time has run out. */
 void message_clear_expired_rows(uint32_t game_time)
 {
     for (int r = 0; r < MESSAGE_ROWS; r++)
@@ -73,9 +70,6 @@ static void print_string(int16_t color, const char *s, uint32_t game_time)
     g_message.expiry[r] = game_time + MESSAGE_LIFETIME;
 }
 
-/* Copies from s + *pos the words that fit in max_width pixels into line, moves *pos, and
-   returns the line width. A line ends at '\n' or '\0' (*pos stays on it) or after the last
-   space that fits (*pos skips the space). */
 int message_next_word_line(const char *s, char *line, int *pos, int max_width)
 {
     int w = 0;
@@ -109,7 +103,6 @@ int message_next_word_line(const char *s, char *line, int *pos, int max_width)
     return space_w;
 }
 
-/* Prints s with word wrap; '\n' starts a new row, a wrapped row continues indented. */
 void message_print(int16_t color, const char *s, uint32_t game_time)
 {
     char line[MESSAGE_WRAP_LINE_SIZE];
@@ -132,7 +125,6 @@ void message_print(int16_t color, const char *s, uint32_t game_time)
     }
 }
 
-/* Prints a number and a space. */
 void message_print_number(int16_t color, int32_t value, uint32_t game_time)
 {
     char buf[NUMBER_TEXT_SIZE];
@@ -141,7 +133,6 @@ void message_print_number(int16_t color, int32_t value, uint32_t game_time)
     message_print(color, " ", game_time);
 }
 
-/* Starts a new row. */
 void message_new_line(uint32_t game_time)
 {
     message_print(0, "\n", game_time);

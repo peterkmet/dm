@@ -42,7 +42,6 @@ static int payload_key(void)
     return g_adventure == ADVENTURE_CSB ? H_CSB_PAYLOAD_KEY : H_PAYLOAD_KEY;
 }
 
-/* XOR big-endian words in place; returns the sum of key, plain and cipher words */
 uint16_t save_block_xor(uint8_t *bytes, uint16_t key, uint16_t word_count)
 {
     uint16_t sum = key;
@@ -95,7 +94,6 @@ static uint16_t compute_header_chain(uint8_t *h, bool set_last, uint16_t sum)
     return acc;
 }
 
-/* Decrypts a save file into s and checks the header chain and block checksums. Returns false on a bad file. */
 bool save_decode(const uint8_t *file, uint32_t size, SaveFile *s)
 {
     memset(s, 0, sizeof *s);
@@ -134,7 +132,6 @@ fail:
     return false;
 }
 
-/* Encrypts s into a new save file buffer. Returns NULL when s is incomplete. */
 uint8_t *save_encode(const SaveFile *s, uint32_t *size)
 {
     if (!s->header || !s->portraits || (!s->dungeon && s->dungeon_size))

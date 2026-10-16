@@ -59,7 +59,6 @@ int plat_filter_factor(const char *name)
     return 1;
 }
 
-/* Selects the upscale filter (1 none, 2 Scale2x, 3 Scale3x) and recreates the texture. */
 bool plat_set_filter(int factor)
 {
     filter = factor == 2 || factor == 3 ? factor : 1;
@@ -210,7 +209,6 @@ bool plat_poll(PlatEvent *event)
     return false;
 }
 
-/* Sleeps until the next 50 Hz tick. */
 void plat_wait_tick(void)
 {
     plat_audio_pump();
@@ -238,7 +236,6 @@ static int audio_open(void)
     return SDL_ResumeAudioStreamDevice(stream);
 }
 
-/* Keeps about three ticks of mixer output queued; runs on the game thread, so the mixer needs no lock. */
 void plat_audio_pump(void)
 {
     enum { FRAMES = SOUND_OUTPUT_RATE / FRAMES_PER_SECOND };

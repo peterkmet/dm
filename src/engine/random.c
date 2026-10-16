@@ -10,7 +10,6 @@
 
 uint32_t g_random_seed;
 
-/* Seeds with the microseconds of the current time, like system_init with IntuitionBase->Micros. */
 void random_init(void)
 {
     struct timespec ts;
@@ -38,7 +37,6 @@ uint16_t random_2bits(void)
     return next() & RANDOM_2BITS_MASK;
 }
 
-/* The state of the game random numbers, to put back after drawing that used them. */
 uint32_t random_get_seed(void)
 {
     return g_random_seed;

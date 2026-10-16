@@ -29,7 +29,6 @@ static int16_t get_power_index(uint8_t power_symbol)
     return (int8_t)power_symbol - SPELL_SYMBOL_FIRST;
 }
 
-/* Spell index for a NUL-terminated symbol string (power symbol first), or -1. One symbol is never a spell. */
 int16_t spell_find(const uint8_t *symbols)
 {
     if (symbols[1] == 0)
@@ -49,13 +48,11 @@ int16_t spell_find(const uint8_t *symbols)
     return -1;
 }
 
-/* Symbol character for button symbol_index (0-5) at a step (0-3). */
 uint8_t spell_get_symbol(uint16_t step, int16_t symbol_index)
 {
     return SPELL_SYMBOL_FIRST + step * SPELL_SYMBOLS_PER_STEP + symbol_index;
 }
 
-/* Mana cost of a symbol; after the power symbol, the cost is scaled by the power. */
 uint16_t spell_get_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t power_symbol)
 {
     uint16_t cost = kaos_u8(KAOS_SYMBOL_BASE_MANA_COST + step * SPELL_SYMBOLS_PER_STEP + symbol_index);
@@ -65,7 +62,6 @@ uint16_t spell_get_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t
     return cost;
 }
 
-/* One draw per missing skill level; the cast fails on the first draw that returns true. */
 bool spell_draw_fails(uint8_t current_wisdom, uint16_t random)
 {
     uint16_t limit = current_wisdom + SPELL_WISDOM_BONUS < SPELL_WISDOM_LIMIT ? current_wisdom + SPELL_WISDOM_BONUS
@@ -73,7 +69,6 @@ bool spell_draw_fails(uint8_t current_wisdom, uint16_t random)
     return limit < random % SPELL_DRAW_RANGE;
 }
 
-/* Experience on failure: shifted right once per missing level (68000 LSR.W, count modulo 64). */
 uint16_t spell_get_failure_experience(uint16_t experience, uint16_t required_level, uint16_t skill_level)
 {
     uint16_t n = (uint8_t)(required_level - skill_level) % LSR_COUNT_MODULO;

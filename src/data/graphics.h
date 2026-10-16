@@ -20,13 +20,19 @@ typedef struct {
     uint8_t *px; /* w * h bytes, palette index 0-15 */
 } Bitmap;
 
+/* Reads a format 1 Graphics.DAT like graphics_dat_read_header. Returns the item count or -1. */
 int gfx_open(const char *path);
 int gfx_count(void);
+/* Packed bytes of item i. */
 const uint8_t *gfx_get_item(int i, uint16_t *size);
+/* Port of expand_graphic: decodes a packed graphic into a chunky bitmap. */
 int gfx_expand(const uint8_t *packed, size_t len, Bitmap *bm);
+/* Decodes a packed graphic over a bitmap of the same size: skipped pixels keep their color. */
 int gfx_expand_over(const uint8_t *packed, size_t len, Bitmap *bm);
+/* Decodes graphic i into a new bitmap. Returns 0 or -1. */
 int gfx_load_bitmap(int i, Bitmap *bm);
 void gfx_free_bitmap(Bitmap *bm);
+/* Decoded graphic i, kept until the next gfx_open. NULL when it does not decode. */
 const Bitmap *gfx_get_bitmap(int i);
 
 /* Loads the string lists of the game data. Call after gfx_open and csb_text_build. */

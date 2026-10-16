@@ -95,6 +95,8 @@ void thing_set_free(uint16_t thing);
 
 /* Object records (types 5-10) and free records. */
 #define NO_JUNK_RESERVE 0x8000
+/* A free record of the type. Junk keeps 3 records in reserve unless NO_JUNK_RESERVE is set.
+   ponytail: no get_discarded_thing yet; returns THING_NONE when no record is free. */
 uint16_t map_get_unused_thing(uint16_t thing_type);
 uint16_t weapon_type(uint16_t thing);
 uint16_t armour_type(uint16_t thing);
@@ -123,8 +125,10 @@ void armour_set_charges(uint16_t thing, uint16_t charges);
 void junk_set_type(uint16_t thing, uint16_t type);
 void potion_set_type(uint16_t thing, uint16_t type);
 void potion_set_power(uint16_t thing, uint16_t power);
+/* Weapon, armour, and junk: the type in word 2 bits 0-6; the important bit stays. */
 void rec_object_set_type(uint16_t thing, uint16_t type);
 void rec_object_set_cursed(uint16_t thing, bool cursed);
+/* The closed bits are 10-15; bits 8-9 stay. */
 void scroll_set_closed(uint16_t thing, bool closed);
 
 /* Sensor record (thing type 3). */
@@ -170,6 +174,7 @@ static inline void rec_sensor_set_data(uint16_t thing, uint16_t data)
 {
     WR16(REC(thing) + 2, data << SENSOR_DATA_SHIFT | rec_sensor_type(thing));
 }
+/* Sensor type 0 does nothing. The sensor data stays. */
 void rec_sensor_disable(uint16_t thing);
 static inline bool rec_sensor_is_local(uint16_t thing)
 {
@@ -407,22 +412,34 @@ static inline uint16_t map_current_difficulty(void)
     return g_current_map ? g_current_map[MAP_DIFFICULTY_BYTE] >> MAP_DIFFICULTY_SHIFT : 0;
 }
 
+/* Forget the current map, for example after dungeon_load replaced the buffers. */
 void map_reset(void);
+/* Selects the map that the square and thing functions work on. */
 void map_set_current_map(int16_t map);
+/* The party map becomes the current map. The ornament lists are view data (view_load_map). */
 void map_set_current_map_and_party_map(int16_t map);
 
+/* Outside the map: a wall, with the "ornament allowed" bit when the adjacent square is a corridor or a pit. */
 uint8_t map_get_square(int16_t x, int16_t y);
 int16_t map_get_square_type(int16_t x, int16_t y);
+/* Corridor, pit, door, or teleporter. */
 bool map_is_square_open(int16_t x, int16_t y);
+/* The map one level below (LEVEL_DOWN) or above (LEVEL_UP) that covers the dungeon position of (x, y). -1 when none. */
 int16_t map_get_location_after_level_change(int16_t map, int16_t level_delta, int16_t *x, int16_t *y);
+/* The stairs axis is north-south or east-west. The exit side is the one that is not a wall or stairs. */
 int16_t map_get_stairs_exit_direction(int16_t x, int16_t y);
 
 uint16_t map_get_next_thing(uint16_t thing);
+/* Index of the first thing of the square in the square first thing table, or -1. */
 int16_t map_get_square_first_thing_index(int16_t x, int16_t y);
 uint16_t map_get_square_first_thing(int16_t x, int16_t y);
+/* The first group, object, projectile, or explosion of the square. */
 uint16_t map_get_square_first_object(int16_t x, int16_t y);
+/* x >= 0: append the thing to the list of square (x, y). x < 0: append it to the list that starts at list. */
 void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
+/* Removes the thing from the square list (x >= 0) or from the list after list. Things compare without the cell. */
 void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
+/* The first group on square (x, y), or THING_ENDOFLIST. */
 uint16_t map_get_square_group(int16_t x, int16_t y);
 
 uint16_t map_get_creature_attributes(uint16_t group_thing);
