@@ -69,7 +69,6 @@ bool platform/main.c:load_game_files open: epic 11
 bool platform/main.c:load_kaos_and_graphics open: epic 11
 bool platform/platform.c:audio_open open: epic 11
 bool ui/anim.h:anim_open open: epic 8
-bool ui/gameloop.h:gameloop_run_frame open: epic 8
 bool ui/layout.h:layout_get_zone_box open: epic 8
 bool ui/view.c open: epic 8
 global ui/video.h open: epic 8
