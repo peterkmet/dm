@@ -547,6 +547,7 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
         }
         /* no closed door: a melee attack */
         /* fall through */
+        __attribute__((fallthrough));
     case ACTION_PUNCH:
     case ACTION_STAB_1:
     case ACTION_STAB_2:
@@ -567,6 +568,7 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     case ACTION_CONFUSE:
         action_decrement_charges(champion_index);
         /* fall through */
+        __attribute__((fallthrough));
     case ACTION_BLOW_HORN:
     case ACTION_WAR_CRY:
     case ACTION_CALM:

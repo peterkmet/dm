@@ -383,6 +383,7 @@ static void get_square_aspect(Aspect *aspect, int16_t dir, int16_t x, int16_t y)
         aspect->element = SQUARE_CORRIDOR;
         square &= SQUARE_RANDOM_ORNAMENT;
         /* fall through */
+        __attribute__((fallthrough));
     case SQUARE_CORRIDOR:
         aspect->floor_ornament = get_random_ornament_ordinal(square & SQUARE_RANDOM_ORNAMENT,
                                                              map_random_floor_ornament_count(view_map), x, y);
@@ -1939,6 +1940,7 @@ static void draw_d0_side_square(const SquareView *s, const Aspect *a, int16_t di
         return;
     case SQUARE_PIT:
         draw_square_pit(s, a->state); /* fall through */
+        __attribute__((fallthrough));
     case SQUARE_CORRIDOR:
     case SQUARE_TELEPORTER:
     case ELEMENT_DOOR_SIDE:

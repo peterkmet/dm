@@ -198,6 +198,7 @@ static int16_t click_test(uint16_t *t, uint16_t previous, int16_t x, int16_t y, 
         if (remaining)
             return CLICK_IGNORED;
         /* fall through */
+        __attribute__((fallthrough));
     case SENSOR_WALL_OBJECT:
     case SENSOR_WALL_OBJECT_REMOVED:
         skip = rec_sensor_revert(sensor) == holds_object_type(data);
