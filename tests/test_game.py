@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.game import Champion, Skill
 from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
@@ -25,26 +26,6 @@ BUF = 0x200000  # free emulator RAM above the KAOS image
 
 pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
 c16, c32 = ctypes.c_int16, ctypes.c_uint32
-
-
-class Skill(ctypes.Structure):
-    _fields_ = [("temporary_experience", ctypes.c_int16), ("experience", ctypes.c_int32)]
-
-
-class Champion(ctypes.Structure):
-    _fields_ = [
-        ("name", ctypes.c_char * 8), ("title", ctypes.c_char * 20),
-        ("direction", ctypes.c_uint8), ("cell", ctypes.c_uint8),
-        ("action_index", ctypes.c_uint8), ("symbol_step", ctypes.c_uint8), ("symbols", ctypes.c_char * 5),
-        ("direction_maximum_damage_received", ctypes.c_uint8), ("maximum_damage_received", ctypes.c_uint8),
-        ("poison_event_count", ctypes.c_uint8),
-        ("enable_action_event_index", c16), ("hide_damage_received_event_index", c16),
-        ("attributes", ctypes.c_uint16), ("wounds", ctypes.c_uint16),
-        ("current_health", c16), ("maximum_health", c16), ("current_stamina", c16), ("maximum_stamina", c16),
-        ("current_mana", c16), ("maximum_mana", c16), ("action_defense", c16), ("food", c16), ("water", c16),
-        ("statistics", (ctypes.c_uint8 * 3) * 7), ("skills", Skill * 20), ("slots", ctypes.c_uint16 * 30),
-        ("load", ctypes.c_uint16), ("shield_defense", c16), ("magic_map", ctypes.c_uint8 * 6),
-    ]
 
 
 class Event(ctypes.Structure):
