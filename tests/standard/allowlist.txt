@@ -34,7 +34,7 @@ block ui/text.c open: epic 8
 block ui/text.h open: epic 8
 block ui/ui.c open: epic 8
 block ui/ui.h open: epic 8
-block ui/ui_menus.c open: epic 8
+block ui/menus.c open: epic 8
 block ui/video.c open: epic 8
 block ui/video.h open: epic 8
 block ui/view.c open: epic 8
@@ -46,7 +46,7 @@ decimal ui/anim.c open: epic 8
 decimal ui/gameloop.c open: epic 8
 decimal ui/logo.c open: epic 8
 decimal ui/ui.c open: epic 8
-decimal ui/ui_menus.c open: epic 8
+decimal ui/menus.c open: epic 8
 decimal ui/view.c open: epic 8
 enum platform/control.c open: epic 10
 enum platform/main.c open: epic 11
@@ -134,10 +134,10 @@ static-prefix ui/startend.c:wait_for_input open: epic 8
 static-prefix ui/startend.c:wait_for_restart open: epic 8
 static-prefix ui/text.c:draw_glyph_row open: epic 8
 static-prefix ui/ui.c:draw_messages open: epic 8
-static-prefix ui/ui_menus.c:draw_caster_tabs open: epic 8
-static-prefix ui/ui_menus.c:draw_chosen_symbols open: epic 8
-static-prefix ui/ui_menus.c:draw_spell_area open: epic 8
-static-prefix ui/ui_menus.c:draw_spell_area_of open: epic 8
+static-prefix ui/menus.c:draw_caster_tabs open: epic 8
+static-prefix ui/menus.c:draw_chosen_symbols open: epic 8
+static-prefix ui/menus.c:draw_spell_area open: epic 8
+static-prefix ui/menus.c:draw_spell_area_of open: epic 8
 static-prefix ui/view.c:draw_bitmap_in_zone open: epic 8
 static-prefix ui/view.c:draw_ceiling_pit open: epic 8
 static-prefix ui/view.c:draw_cell_objects open: epic 8
@@ -266,7 +266,7 @@ include ui/startend.c:data/ftl.h open: epic 8
 include ui/ui.c:data/adventure.h open: epic 8
 include ui/ui.c:data/csb_text.h open: epic 8
 include ui/ui.c:engine/dungeon.h open: epic 8
-include ui/ui_menus.c:engine/dungeon.h open: epic 8
+include ui/menus.c:engine/dungeon.h open: epic 8
 include ui/view.c:ui/advanced.h open: epic 8
 module platform/main.c open: epic 11
 order engine/action.c open: epic 5
@@ -296,7 +296,7 @@ order ui/music.c open: epic 9
 order ui/select.c open: epic 8
 order ui/startend.c open: epic 8
 order ui/ui.c open: epic 8
-order ui/ui_menus.c open: epic 8
+order ui/menus.c open: epic 8
 order ui/video.c open: epic 8
 order ui/view.c open: epic 8
 dead-api engine/sound.h:sound_get_volume open: epic 9
@@ -313,8 +313,7 @@ dead-api ui/music.h:g_music_last_track open: epic 9
 dead-api ui/music.h:g_music_requested_track open: epic 9
 dead-api ui/music.h:g_music_track open: epic 9
 dead-api ui/select.h:select_item_box open: epic 8
-dead-api ui/ui.h:menus_draw_action_damage open: epic 8
-dead-api ui/ui.h:menus_draw_spell_area_controls open: epic 8
+dead-api ui/menus.h:menus_draw_action_damage open: epic 8
 dead-api ui/ui.h:ui_get_icon_in_slot_box open: epic 8
 dead-api ui/ui.h:ui_print_zone_padded open: epic 8
 dead-api ui/view.h:view_draw open: epic 8

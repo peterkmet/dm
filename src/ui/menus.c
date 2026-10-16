@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "ui/menus.h"
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/spells.h"
@@ -25,7 +26,6 @@
 
 bool g_action_area_contains_icons = true;
 
-/* Draws the movement arrows. */
 void menus_draw_movement_arrows(void)
 {
     Bitmap screen = ui_get_screen();
@@ -40,7 +40,7 @@ void menus_clear_acting_champion(void)
         status_draw_champion(champion_index);
 }
 
-void menus_set_acting_champion(uint16_t champion_index)
+void menus_set_acting_champion(int16_t champion_index)
 {
     if (!action_set_acting_champion(champion_index))
         return;
@@ -49,7 +49,7 @@ void menus_set_acting_champion(uint16_t champion_index)
     menus_draw_action_area();
 }
 
-void menus_draw_action_icon(uint16_t champion_index)
+void menus_draw_action_icon(int16_t champion_index)
 {
     const Champion *champion = &g_champions[champion_index];
     Bitmap screen = ui_get_screen();
@@ -176,12 +176,7 @@ static void draw_caster_tabs(uint16_t champion_index, const Champion *caster)
                   caster->name);
 }
 
-void menus_draw_spell_area_controls(uint16_t champion_index)
-{
-    draw_caster_tabs(champion_index, &g_champions[champion_index]);
-}
-
-void menus_draw_available_symbols(uint16_t symbol_step)
+void menus_draw_available_symbols(int16_t symbol_step)
 {
     Bitmap screen = ui_get_screen();
     char s[2] = {0, 0};
@@ -205,7 +200,7 @@ static void draw_chosen_symbols(const char *symbols)
     }
 }
 
-void menus_draw_champion_symbols(uint16_t champion_index)
+void menus_draw_champion_symbols(int16_t champion_index)
 {
     draw_chosen_symbols(g_champions[champion_index].symbols);
 }
@@ -250,7 +245,6 @@ void menus_set_magic_caster(int16_t champion_index)
         draw_spell_area();
 }
 
-/* Draws the parts of the spell area that the game rules changed: all of it, the caster tabs, or the runes. */
 void menus_refresh_spell_area(const Champion *caster)
 {
     int16_t caster_index = g_magic_caster_champion_index;

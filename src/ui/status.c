@@ -9,6 +9,7 @@
 #include "engine/map.h"
 #include "engine/party.h"
 #include "ui/draw.h"
+#include "ui/menus.h"
 #include "ui/panel.h"
 #include "ui/ui.h"
 #include "ui/video.h"

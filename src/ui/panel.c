@@ -17,6 +17,7 @@
 #include "ui/command.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
+#include "ui/menus.h"
 #include "ui/status.h"
 #include "ui/text.h"
 #include "ui/ui.h"

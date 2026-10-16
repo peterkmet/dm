@@ -30,6 +30,7 @@
 #include "ui/dialog.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
+#include "ui/menus.h"
 #include "ui/music.h"
 #include "ui/panel.h"
 #include "ui/startend.h"

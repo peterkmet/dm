@@ -17,6 +17,7 @@
 #include "engine/sound.h"
 #include "ui/advanced.h"
 #include "ui/dialog.h"
+#include "ui/menus.h"
 #include "ui/panel.h"
 #include "ui/startend.h"
 #include "ui/status.h"

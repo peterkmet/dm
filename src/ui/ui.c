@@ -13,6 +13,7 @@
 #include "ui/audio.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
+#include "ui/menus.h"
 #include "ui/panel.h"
 #include "ui/status.h"
 #include "ui/text.h"
