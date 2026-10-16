@@ -77,10 +77,12 @@
 #define REACTION_HIT_BY_PROJECTILE (-2)
 #define REACTION_PARTY_IS_ADJACENT (-1)
 
-/* Results of the damage functions (g_creature_damage_outcome). */
-#define OUTCOME_NO_CREATURE_KILLED    0
-#define OUTCOME_SOME_CREATURES_KILLED 1
-#define OUTCOME_ALL_CREATURES_KILLED  2
+/* Results of a damage to the creatures of a group. */
+typedef enum {
+    OUTCOME_NO_CREATURE_KILLED,
+    OUTCOME_SOME_CREATURES_KILLED,
+    OUTCOME_ALL_CREATURES_KILLED,
+} DamageOutcome;
 
 /* Cells byte of one creature that stands in the center of the square; the cell of a centered explosion. */
 #define CELL_CENTERED 0xff
@@ -184,8 +186,6 @@ static inline uint16_t creature_size(const CreatureInfo *info)
     return info->attributes & CREATURE_SIZE_MASK;
 }
 
-extern int16_t g_creature_damage_outcome;
-
 uint8_t group_get_cells(uint16_t group, int16_t map);
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
 /* Off the party map all creatures of a group share the direction of the record. */
@@ -248,9 +248,9 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
 void group_delete(int16_t x, int16_t y);
 /* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group.
    Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
-int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage);
+DamageOutcome group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage);
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
-int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack);
+DamageOutcome group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack);
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack);
 /* A closing door hits the creatures on its square; the survivors react to the danger. */
 void group_door_damages_creatures(int16_t x, int16_t y);

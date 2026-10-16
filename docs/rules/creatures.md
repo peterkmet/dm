@@ -143,7 +143,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 4. In a door square, a closed door stops it with an impact.
 5. The next event comes after 1 tick on the party map, 3 ticks on other maps.
 
-`projectile_has_impact_occurred(impact, at, target, cell, projectile)` runs one impact. The projectile stops at the square `at`; the creature or door hit is on the square `target` (the same square, except when the party or a group moves onto the square of a projectile: `target` is then the square it leaves):
+`projectile_has_impact_occurred(site, projectile, outcome)` runs one impact; the site holds the impact type, `at`, `target` and the cell, and `outcome` receives the damage outcome. The projectile stops at the square `at`; the creature or door hit is on the square `target` (the same square, except when the party or a group moves onto the square of a projectile: `target` is then the square it leaves):
 
 - Party: the champion in the cell takes `projectile_get_impact_attack` damage on the head or torso. Poison can follow.
 - Creature: damage `impact attack × 64 / creature defense` plus poison. A non-material creature takes damage only from Harm Non-Material. A Black Flame gains health from a fireball. Some creatures catch a thrown dagger, arrow, slayer, poison dart, or throwing star.

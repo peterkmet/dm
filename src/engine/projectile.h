@@ -3,6 +3,7 @@
 #define DM_ENGINE_PROJECTILE_H
 /* Prefixes: projectile_ explosion_ */
 #include "engine/event.h"
+#include "engine/group.h"
 #include "engine/map.h"
 #include "engine/record.h"
 #include "engine/timeline.h"
@@ -112,10 +113,19 @@ void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x
 Impact projectile_get_impact_attack(uint16_t projectile, uint16_t thing);
 /* A projectile hits the party (impact -2), a creature (-1), or a wall, stairs, door, or fake wall (square type).
    The flying object drops or explodes and the projectile disappears. Returns false when nothing was hit. */
-bool projectile_has_impact_occurred(int16_t impact_type, Location at, Location target, int16_t cell,
-                                    uint16_t projectile);
-/* Every projectile in the cell hits. A creature impact stops when the whole group died. Returns the hit count. */
-int16_t projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t y, int16_t cell);
+typedef struct {
+    int16_t type;
+    Location at;
+    Location target;
+    int16_t cell;
+} ImpactSite;
+bool projectile_has_impact_occurred(ImpactSite site, uint16_t projectile, DamageOutcome *outcome);
+/* The hits of every projectile in a cell; a creature impact stops when the whole group died. */
+typedef struct {
+    int16_t count;
+    DamageOutcome outcome;
+} ImpactCount;
+ImpactCount projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t y, int16_t cell);
 /* Moves a projectile one cell forward: within the square, or into the next square. Each step outside the first one
    tests the party and the creatures on the square and costs kinetic energy and attack. */
 void projectile_process_move_event(TimelineEvent *event);

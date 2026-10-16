@@ -104,7 +104,6 @@
 ActiveGroup *g_active_groups;
 uint16_t g_active_group_count, g_max_active_group_count;
 int32_t g_last_creature_attack_time;
-int16_t g_creature_damage_outcome;
 
 /* The last pair turn of a half-size pair: two creatures turn together once per game tick. */
 static struct {
@@ -723,7 +722,7 @@ static int16_t damage_creature(uint16_t group, uint16_t creature_index, Location
     return outcome;
 }
 
-int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage)
+DamageOutcome group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage)
 {
     return damage_creature(group, creature_index, at, damage, NULL);
 }
@@ -747,7 +746,7 @@ static int16_t damage_all_creatures(uint16_t group, Location at, int16_t attack,
                          : OUTCOME_NO_CREATURE_KILLED;
 }
 
-int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack)
+DamageOutcome group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack)
 {
     return damage_all_creatures(group, (Location){x, y}, attack, NULL);
 }
@@ -1896,8 +1895,8 @@ static bool shift_single_creature(GroupTurn *t)
     }
     if ((cell & NEW_CELL_RANDOM_BITS) || t->visible_distance == 1 || t->size != CREATURE_SIZE_QUARTER)
         return false;
-    if (projectile_get_impact_count(IMPACT_CREATURE, t->x, t->y, t->active->cells) &&
-        g_creature_damage_outcome == OUTCOME_ALL_CREATURES_KILLED)
+    ImpactCount impact = projectile_get_impact_count(IMPACT_CREATURE, t->x, t->y, t->active->cells);
+    if (impact.count && impact.outcome == OUTCOME_ALL_CREATURES_KILLED)
         return true;
     t->active->cells = NORMALIZE(cell);
     return false;
@@ -1920,10 +1919,10 @@ static bool move_creature_to_front(GroupTurn *t, int16_t creature)
         if (group_get_creature_ordinal_in_cell(t->group, cell))
             return false;
     }
-    if (projectile_get_impact_count(IMPACT_CREATURE, t->x, t->y, t->active->cells) &&
-        g_creature_damage_outcome == OUTCOME_ALL_CREATURES_KILLED)
+    ImpactCount impact = projectile_get_impact_count(IMPACT_CREATURE, t->x, t->y, t->active->cells);
+    if (impact.count && impact.outcome == OUTCOME_ALL_CREATURES_KILLED)
         return true;
-    if (g_creature_damage_outcome != OUTCOME_SOME_CREATURES_KILLED)
+    if (impact.outcome != OUTCOME_SOME_CREATURES_KILLED)
         t->active->cells = group_set_cell_value(t->active->cells, creature, cell);
     return false;
 }

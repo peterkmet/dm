@@ -537,7 +537,7 @@ def setup_creatures(lib):
         ("group_is_destination_visible_from_source", ctypes.c_bool, [c16, c16, c16, c16, c16]),
         ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
         ("group_get_generated", u16, [u16, c16, u16, c16, Location]),
-        ("group_get_damage_all_creatures_outcome", c16, [u16, c16, c16, c16]),
+        ("group_get_damage_all_creatures_outcome", ctypes.c_int, [u16, c16, c16, c16]),
         ("dungeon_load", ctypes.c_bool, [ctypes.c_char_p]),
         ("magic_get_champion_spell_cast_result", c16, [u16]), ("rec_find_unused_thing", u16, [u16]),
         ("object_get_icon_index", c16, [u16]), ("group_is_creature_allowed_on_map", ctypes.c_bool, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
