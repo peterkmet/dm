@@ -1,6 +1,6 @@
 """Match the functions of the CSB engine (game-csb/APPB.FTL) to DM KAOS.FTL.
 
-Usage: uv run python tools/csb_match.py [--csv OUT] [--report OUT] [--diff KAOS_ADDR]
+Usage: uv run dm-csb-match [--csv OUT] [--report OUT] [--diff KAOS_ADDR]
 
 The two modules come from different compilers: CSB keeps locals on the stack,
 DM keeps them in registers. A byte or instruction compare does not work, so each
@@ -33,8 +33,6 @@ import machine68k
 
 from dmtools import ftl
 
-KAOS_FTL, KAOS_CSV = "game/KAOS.FTL", "docs/reference/kaos-symbols.csv"
-CSB_FTL, CSB_C = "game-csb/APPB.FTL", "reference/decomp/csb-a/APPB.c"
 BASE = 0x100000
 
 A5_RE = re.compile(r"\((-?)\$([0-9a-f]+),A5\)")
@@ -72,13 +70,13 @@ class Module:
         return out
 
 
-def kaos_names(m):
-    return {int(r["address"], 16): r for r in csv.DictReader(open(KAOS_CSV)) if int(r["address"], 16) >= m.cb and r["signature"]}
+def kaos_names(m, kaos_csv):
+    return {int(r["address"], 16): r for r in csv.DictReader(open(kaos_csv)) if int(r["address"], 16) >= m.cb and r["signature"]}
 
 
-def csb_starts(m):
+def csb_starts(m, appb_c):
     """Ghidra function starts, exports, LINK after RTS, and direct call targets."""
-    starts = {int(x, 16) for x in re.findall(r"^/\* ([0-9a-f]{8}) \*/$", open(CSB_C).read(), re.M)}
+    starts = {int(x, 16) for x in re.findall(r"^/\* ([0-9a-f]{8}) \*/$", open(appb_c).read(), re.M)}
     starts = {a for a in starts if m.cb <= a < m.end} | set(m.entries)
     for p in range(m.cb - BASE, len(m.mem) - 4, 2):
         if m.mem[p : p + 2] in (b"\x4e\x56", b"\x4e\x55") and m.mem[p - 2 : p] in (b"\x4e\x75", b"\x4e\x73"):
@@ -374,10 +372,10 @@ def apply_fixed_pairs(km, cm, names, kf, cf, pairs):
         pairs[k] = c
 
 
-def run():
-    km, cm = Module(KAOS_FTL), Module(CSB_FTL)
-    names = kaos_names(km)
-    kf, cf = build(km, names), build(cm, csb_starts(cm))
+def run(kaos, kaos_csv, appb, appb_c):
+    km, cm = Module(kaos), Module(appb)
+    names = kaos_names(km, kaos_csv)
+    kf, cf = build(km, names), build(cm, csb_starts(cm, appb_c))
     pairs = match(kf, cf)
     apply_fixed_pairs(km, cm, names, kf, cf, pairs)
     gmap = global_map(kf, cf, pairs)
@@ -386,10 +384,10 @@ def run():
     return km, cm, names, kf, cf, pairs, gmap, cls
 
 
-def global_rows(km, cm, gmap):
+def global_rows(km, cm, gmap, kaos_csv):
     """KAOS globals with a CSB address: equal data bytes first, then code references."""
     blocks = data_map(km, cm)
-    rows = [r for r in csv.DictReader(open(KAOS_CSV)) if int(r["address"], 16) < km.cb]
+    rows = [r for r in csv.DictReader(open(kaos_csv)) if int(r["address"], 16) < km.cb]
     starts = sorted(int(r["address"], 16) for r in rows)
     out = {}
     for r in rows:
@@ -410,11 +408,15 @@ def global_rows(km, cm, gmap):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--kaos", default="game/KAOS.FTL", help="the DM engine module")
+    ap.add_argument("--kaos-csv", default="docs/reference/kaos-symbols.csv", help="the DM symbol table")
+    ap.add_argument("--appb", default="game-csb/APPB.FTL", help="the CSB engine module")
+    ap.add_argument("--appb-c", default="reference/decomp/csb-a/APPB.c", help="the Ghidra output of APPB.FTL")
     ap.add_argument("--csv", default="docs/reference/csb-appb-symbols.csv")
     ap.add_argument("--report", help="write one line per function and the global map here")
     args = ap.parse_args()
-    km, cm, names, kf, cf, pairs, gmap, cls = run()
-    globs = global_rows(km, cm, gmap)
+    km, cm, names, kf, cf, pairs, gmap, cls = run(args.kaos, args.kaos_csv, args.appb, args.appb_c)
+    globs = global_rows(km, cm, gmap, args.kaos_csv)
     rev = {c: k for k, c in pairs.items()}
     counts = Counter(cls.values())
     counts["csb_only"] = sum(c not in rev for c in cf)

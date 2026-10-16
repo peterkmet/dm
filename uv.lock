@@ -238,6 +238,10 @@ source = { editable = "." }
 dependencies = [
     { name = "amitools" },
     { name = "machine68k" },
+]
+
+[package.optional-dependencies]
+mcp = [
     { name = "mcp" },
 ]
 
@@ -245,6 +249,7 @@ dependencies = [
 dev = [
     { name = "clang-format" },
     { name = "dmcsb" },
+    { name = "mcp" },
     { name = "pytest" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
@@ -258,13 +263,15 @@ research = [
 requires-dist = [
     { name = "amitools", specifier = ">=0.8" },
     { name = "machine68k", specifier = ">=0.4.1" },
-    { name = "mcp", specifier = ">=2.3.0" },
+    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.3.0" },
 ]
+provides-extras = ["mcp"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "clang-format", specifier = ">=23.1,<24" },
     { name = "dmcsb", specifier = ">=0.2.1" },
+    { name = "mcp", specifier = ">=2.3.0" },
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
