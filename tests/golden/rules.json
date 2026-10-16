@@ -181,6 +181,16 @@
    "state": "9b4cdfb45837718af0620a304c860b193e23f185135ead22a860dac20566d554"
   }
  ],
+ "alcove": [
+  {
+   "screen": "cf49bf1a0282a5d146df70a2157a61eb7afe5d413fa13927102bc30833310d27",
+   "state": "48aa9b7ec9abedd60b217a7b32608aee7b205331f739cdd111c1685262b8420f"
+  },
+  {
+   "screen": "8086aab7ccc62fd76041207e1509a420c4202ac4ae84205f6110ba2ece1f9b7d",
+   "state": "c3affeb90fea3ebc2408dbf74d22902d3e1a1c4b3365f2196e6192fc28d3186f"
+  }
+ ],
  "door button": [
   {
    "screen": "18434019432f97808a46ef76074e1731c56d7dea9c85b53b21aec0578f32692e",
@@ -211,6 +221,104 @@
   {
    "screen": "91cab0b962e6142d0a30b5bb6230c4aa4985b871efc5187fdd6b15b18a110463",
    "state": "e478e2644350892996707299cc0abb778092b5db92700695b048e02898068007"
+  }
+ ],
+ "fuse": [
+  {
+   "screen": "0faea51de378f29da6818bdf946dc2e9304a9799809ade5ec4bec187d0264ac4",
+   "state": "0d05147bb4914e6c6a399236b2c06adc746a14603187d68a1e446fa92ce3eed2"
+  }
+ ],
+ "grab and drop": [
+  {
+   "screen": "2ea18f1acfbf3823ca88acff561daa4872207fca7ec878dd352c9eb46cb72e4f",
+   "state": "131ae13e1aa0bc97be2d58b4d9e5b6df711724efd5c326ff97bdf48e1695581e"
+  },
+  {
+   "screen": "5862fbce5ff2c3d65742ec10d55979ea1ea9b458a66c0c05dbaf0ef8c2d2c986",
+   "state": "dd5bd43d62de7921328a68e0c4f34789212e39d7d64ebb3d318d6ec4e7d5a769"
+  },
+  {
+   "screen": "570daa5c49c423a9251e4df581fcfa343d6ca886524443e06f64b6556922eae0",
+   "state": "d2ee37ea8a8d80d232da75c000c3749ee33030851312883a95aebe6358d74b8e"
+  },
+  {
+   "screen": "5862fbce5ff2c3d65742ec10d55979ea1ea9b458a66c0c05dbaf0ef8c2d2c986",
+   "state": "603437b054197cd5789760a94fca2c6f3253ac19f94a325b08d46768300fce35"
+  }
+ ],
+ "grab under a creature": [
+  {
+   "hand": 65535,
+   "screen": "7c9036e217b24a0523b08640ab229151ba9e96d76719843d3dd5f7eb3141754a",
+   "state": "e225fb67b296247a47dfdc12c4b24bbc390c82ff334379a27b93e10eb8c5eb89"
+  },
+  {
+   "hand": 65535,
+   "screen": "7c9036e217b24a0523b08640ab229151ba9e96d76719843d3dd5f7eb3141754a",
+   "state": "6d1efd7670f9e60c6991618d2a4363e5bb7eae67772414a7bb89a4ee7c0edff2"
+  }
+ ],
+ "imaginary wall": [
+  {
+   "screen": "c5246bdc8c12474b5bf44d3fb65eb02a0c2f45cf99b656be8f6016d921670097",
+   "state": "d39ae00ffec1aa06d348ed45f1d32f850ff2dacdf3d7588c780d694dd5e6cc6d"
+  },
+  {
+   "screen": "c5246bdc8c12474b5bf44d3fb65eb02a0c2f45cf99b656be8f6016d921670097",
+   "state": "fa49e6e7a7993e456e70c9e788b11a8c9ca74be7a3ec5f9fd0dc6940c3d53abf"
+  }
+ ],
+ "load": [
+  {
+   "screen": "ff23926b1d0587165270a8a1d6bb5606126cfb78ccd07713d10a1b87e9b0ed35",
+   "state": "67aa843eb82c1879fd6ea943873941e0813382c2ec26c6ecdd4307b99a63d147"
+  },
+  {
+   "screen": "aa638573cc47e76f808beaba7234da161e65896c41ee8a18945c64cd0c3529d5",
+   "state": "ac022c2d0e84cf3c41809621ee0c60cce5c2ec67c43c80f9cd8d59bdf75ba22a"
+  },
+  {
+   "screen": "7ab42b98f2646acf6b8d64d2fbb25068b0228dca8a3bf4aef1c0c86d9bb9d85d",
+   "state": "bad1ea949d7de9704f99ae7a1b29ad447290cf0bf11b1a30040630bded69eee7"
+  }
+ ],
+ "movement blocked": [
+  {
+   "position": [
+    6,
+    1,
+    2
+   ],
+   "screen": "e0e8d2360fec44bb29d4d6d6ed1aca70d10406fe32537b27eb1ef05ca4efd835",
+   "state": "1c4f0e0180fbb8a25f44593bd8eb6cf8f32a15921baec99e20235a5f58a67c2c"
+  },
+  {
+   "position": [
+    6,
+    2,
+    2
+   ],
+   "screen": "194602fb41312b9bfba12cc43e7823fad02668e3fa99336b9d5d7e6ccb0b7f3c",
+   "state": "0abcdbca07994c4c608fda4c6093236db0d5e6ff623b9d36760f4ac2607ab4e1"
+  },
+  {
+   "position": [
+    6,
+    2,
+    0
+   ],
+   "screen": "b72c1c5143608c1d0c808f8159c9561046c5f8534019e6d9159c2b52cc69ca7e",
+   "state": "b5a408ef708ca9d781ea8d3c109bef8902a9b5a0dc0d70ac2e66807a6620a8a5"
+  },
+  {
+   "position": [
+    6,
+    1,
+    0
+   ],
+   "screen": "8dbe418c9f587f90288e29ace43d5fe6064ebc61ee2c02bc4a51fc4c46ebddb8",
+   "state": "d3421c62335219f56348977d2153ab0edb803a881eb8b90b5ce710c4bd763de7"
   }
  ],
  "runes 100": [
@@ -304,5 +412,8 @@
    "screen": "5cab1dff371c6202ac33736b8027ca2e27e1f165286488e670b4bae962c95638",
    "state": "29587786477bbff93acd8d52c67759dda4d22bb85c0e5e6f0a4f2a7436b7d308"
   }
+ ],
+ "visibility": [
+  "313f37805363b20cdd4fd809a23d8e15ec85eb462842f0de331ab7d2a266a824"
  ]
 }
