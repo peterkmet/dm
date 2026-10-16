@@ -4,17 +4,17 @@
 #include "data/spells.h"
 #include "engine/action.h"
 #include "engine/champion.h"
-#include "engine/dungeon.h"
+#include "engine/event.h"
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/magic.h"
 #include "engine/map.h"
 #include "engine/move.h"
+#include "engine/party.h"
 #include "engine/record.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
-#include "engine/timeline_process.h"
 #include "ui/advanced.h"
 #include "ui/dialog.h"
 #include "ui/startend.h"
@@ -199,7 +199,7 @@ static void get_front_square(int16_t *x, int16_t *y)
 {
     *x = g_party_map_x;
     *y = g_party_map_y;
-    game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, x, y);
+    map_step(g_party_direction, 1, 0, x, y);
 }
 
 /* Shows a text in the empty viewport: the sleep and freeze screens. */
@@ -445,7 +445,7 @@ static void touch_front_wall(void)
         return;
     int16_t candidate = g_candidate_champion_ordinal;
     /* the wall side that faces the party */
-    g_stop_waiting_for_input = sensor_is_triggered_by_click_on_wall(x, y, turn_back(g_party_direction));
+    g_stop_waiting_for_input = sensor_is_triggered_by_click_on_wall(x, y, direction_back(g_party_direction));
     if (!candidate && g_candidate_champion_ordinal)
         show_candidate();
 }

@@ -565,7 +565,7 @@ def test_cheat_light_draws_the_bright_palette(game):
         ctypes.c_bool.in_dll(lib, "g_cheat_light").value = 1
         lib.gameloop_draw_view()
         assert list(palette) == bright
-        assert game.value("g_dungeon_view_palette_index") == 5  # the creatures still see the darkness
+        assert game.value("g_party_light_level") == 5  # the creatures still see the darkness
     finally:
         ctypes.c_bool.in_dll(lib, "g_cheat_light").value = 0
         party.magical_light_amount = 0

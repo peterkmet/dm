@@ -3,15 +3,19 @@
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
+#include "engine/magic.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/record.h"
 #include "engine/recruit.h"
+#include "engine/timeline.h"
 #include "ui/advanced.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
@@ -748,9 +752,9 @@ static int16_t get_creature_ordinal_in_cell(const Group *s, uint16_t cell)
     int16_t i = rec_group_last_creature(s->thing);
     if (s->size == CREATURE_SIZE_HALF) {
         if ((cell & 1) == (s->dirs & 1))
-            cell = turn_left(cell);
+            cell = direction_left(cell);
         for (; i >= 0; i--)
-            if (cell == get_creature_cell(s, i) || turn_right(cell) == get_creature_cell(s, i))
+            if (cell == get_creature_cell(s, i) || direction_right(cell) == get_creature_cell(s, i))
                 return i + 1;
     } else
         for (; i >= 0; i--)
@@ -846,7 +850,7 @@ static bool draw_creatures_in_cell(const Group *group, int16_t dir, int16_t view
                     index = 0;
                 second = rec_group_last_creature(group->thing);
                 uint16_t c = get_creature_cell(group, creature_index);
-                pos = c == dir || turn_left(dir) == c ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
+                pos = c == dir || direction_left(dir) == c ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT;
             } else {
                 if (index < 0)
                     return false;
@@ -937,7 +941,7 @@ static int16_t get_projectile_pose(const uint8_t *aspect, uint16_t thing, int16_
         pose = POSE_FRONT;
     else {
         uint16_t flight =
-            g_timeline_events ? projectile_event_direction(&g_timeline_events[rec_projectile_event_index(thing)]) : dir;
+            g_timeline.events ? projectile_event_direction(&g_timeline.events[rec_projectile_event_index(thing)]) : dir;
         if ((dir & 1) == (flight & 1)) { /* flying away from or toward the party: front or back pose */
             pose = kind < PROJECTILE_NO_BACK && (kind != PROJECTILE_BACK || flight == dir) && !odd_square ? POSE_BACK
                                                                                                           : POSE_FRONT;
@@ -950,7 +954,7 @@ static int16_t get_projectile_pose(const uint8_t *aspect, uint16_t thing, int16_
             pose = kind == PROJECTILE_NO_BACK ? POSE_BACK
                                               : POSE_SIDE; /* without a back graphic the side graphic is second */
             if (!rotates)
-                flip = turn_right(dir) == flight;
+                flip = direction_right(dir) == flight;
             else {
                 flip = cell == VIEW_CELL_BACK_LEFT || cell == VIEW_CELL_FRONT_LEFT;
                 if (!odd_square)
@@ -1141,7 +1145,7 @@ static void draw_explosions(uint16_t thing, int16_t dir, int16_t view_square, in
             zone = ZONE_REBIRTH_STEP2_FIRST + coord;
             scale = tables_get_rebirth_scale(TABLES_REBIRTH_STEP_2, coord);
         } else {
-            bool far_side = !(cell == dir || turn_left(dir) == cell);
+            bool far_side = !(cell == dir || direction_left(dir) == cell);
             zone = rec_explosion_is_centered(thing)
                        ? ZONE_EXPLOSION_CENTERED_FIRST + explosion_coord
                        : ZONE_EXPLOSION_FIRST + explosion_coord * ZONE_EXPLOSION_SIDES + far_side;
@@ -1226,7 +1230,7 @@ static void draw_square_things(uint16_t first, int16_t dir, int16_t x, int16_t y
             pile = 0;
         } else {
             cell = VIEW_CELL_CENTER;
-            mcell = turn_back(dir); /* the alcove side of the wall faces the party */
+            mcell = direction_back(dir); /* the alcove side of the wall faces the party */
             pile = PILE_ALCOVE_FIRST;
         }
         pile += (mcell & 1) * PILE_ODD_CELL; /* odd map cells start in the second half of the shifts */
@@ -2237,8 +2241,8 @@ void view_load_map(int16_t m)
 /* The square forward and right of (x, y) in direction dir. */
 static void get_relative_square(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_t *y)
 {
-    *x += forward * tables_get_step_east(dir) + right * tables_get_step_east(turn_right(dir));
-    *y += forward * tables_get_step_north(dir) + right * tables_get_step_north(turn_right(dir));
+    *x += forward * tables_get_step_east(dir) + right * tables_get_step_east(direction_right(dir));
+    *y += forward * tables_get_step_north(dir) + right * tables_get_step_north(direction_right(dir));
 }
 
 int16_t view_get_wall_ornament(int16_t x, int16_t y, int16_t face)
@@ -2375,7 +2379,7 @@ static int16_t get_map_projectile_tile(uint16_t projectile, int16_t dir)
     case -PROJECTILE_ASPECT_SLIME:
         return MAP_TILE_SLIME_FIRST;
     case -PROJECTILE_ASPECT_LIGHTNING: {
-        const TimelineEvent *event = &g_timeline_events[rec_projectile_event_index(projectile)];
+        const TimelineEvent *event = &g_timeline.events[rec_projectile_event_index(projectile)];
         return MAP_TILE_LIGHTNING_FIRST +
                ((projectile_event_direction(event) & 1) != (dir & 1) ? MAP_TILE_LIGHTNING_ACROSS : 0);
     }
@@ -2512,7 +2516,7 @@ static void draw_map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16
     case ELEMENT_STAIRS_FRONT: {
         int16_t side = NORMALIZE(map_get_stairs_exit_direction(x, y) - dir);
         if (aspect.state)
-            side = turn_back(side);
+            side = direction_back(side);
         draw_map_tile(dst, MAP_TILE_STAIRS_FIRST + side, px, py);
         break;
     }
@@ -2542,7 +2546,7 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
     if (view_map != g_party_map_index)
         view_load_map(g_party_map_index);
     if (spells[MAGIC_MAP_NETA]) {
-        game_get_magic_map_position(spells, &map, &x, &y);
+        magic_get_map_position(spells, &map, &x, &y);
         dir = spells[MAGIC_MAP_NETA] - 1;
     }
     map_set_current_map(map);
@@ -2625,7 +2629,7 @@ bool view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
         return false;
     if (m != view_map)
         view_load_map(m);
-    int16_t light = g_cheat_light ? 0 : g_dungeon_view_palette_index;
+    int16_t light = g_cheat_light ? 0 : g_party_light_level;
     memcpy(palette, dungeon_palettes[light], sizeof dungeon_palettes[light]);
     view_draw(NORMALIZE(dir), x, y);
     return true;

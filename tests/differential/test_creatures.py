@@ -88,7 +88,7 @@ def test_champion_damage_matches_original(lib, seed):
         sleeping = w.rng.choice([0, 0, 0, 1])
         w.globals(sleeping, 5000, 0, 0, w.rng.randrange(6))
         palette, invisible = w.rng.randrange(6), w.rng.choice([0, 0, 1])
-        var(lib, c16, "g_dungeon_view_palette_index").value = palette
+        var(lib, c16, "g_party_light_level").value = palette
         var(lib, Party, "g_party").invisibility = invisible
         w.emu.write(PALETTE_INDEX, struct.pack(">h", palette))
         w.emu.write(INVISIBILITY, bytes([invisible]))

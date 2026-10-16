@@ -2,10 +2,11 @@
 #include "engine/sound.h"
 #include "data/graphics.h"
 #include "data/tables.h"
-#include "engine/dungeon.h"
+#include "engine/event.h"
 #include "engine/game.h"
 #include "engine/map.h"
-#include "engine/timeline_process.h"
+#include "engine/party.h"
+#include "engine/timeline.h"
 #include <stdbool.h>
 #include <string.h>
 

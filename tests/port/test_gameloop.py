@@ -155,7 +155,7 @@ def test_party_light_sets_the_darkness_of_view_and_rules(game):
     assert lib.gameloop_start_new_game(str(GAME).encode())
     lib.automap_get_visible_depths.restype = c16
     party = Party.in_dll(lib, "g_party")
-    darkness = c16.in_dll(lib, "g_dungeon_view_palette_index")
+    darkness = c16.in_dll(lib, "g_party_light_level")
     pal = (u16 * 16).in_dll(lib, "palette")
     place = {n: c16.in_dll(lib, n) for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")}
     start = {n: v.value for n, v in place.items()}

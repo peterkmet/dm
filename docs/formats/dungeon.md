@@ -120,7 +120,7 @@ For a new game the loader changes the header in memory:
 
 - It adds 300 to the square first thing count. The new entries are `0xffff`.
 - It adds extra records to each thing count. The byte table at KAOS `0x101058` (`g_new_game_extra_thing_count`) gives the extra record count of each type. The loader reads it from the KAOS image. The count is limited to 1024 (768 for explosions). The first word of each new record is `0xffff` (free record).
-- It sets `g_event_max_count` to 100 plus the counts of types 4, 14, and 15.
+- It sets `g_timeline.capacity` to 100 plus the counts of types 4, 14, and 15.
 
 The original writes all extra records, also past a limited count. The port stops at the limit. The DM dungeons never reach the limit.
 
@@ -181,5 +181,5 @@ The function reads all three tables from the KAOS image. The single characters f
 ## Not ported
 
 - Loading a dungeon from a saved game (no new-game extras) and the restart path that reuses buffers.
-- `timeline_init` and `game_init_active_groups` at the end of `load_dungeon`.
+- `timeline_init` and `group_init_active_groups` at the end of `load_dungeon`.
 - The current-map functions (`get_square`, `get_square_first_thing` on `g_current_map_data`). The port uses functions with a map argument for now.

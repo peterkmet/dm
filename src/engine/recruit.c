@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/recruit.h"
 #include "data/tables.h"
+#include "engine/arith.h"
+#include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/map.h"
 #include "engine/record.h"
@@ -50,7 +52,7 @@ static int32_t get_hidden_skill_experience(uint16_t level)
 {
     if (level == 0)
         return 0;
-    uint16_t count = level & SHIFT_COUNT_MASK;
+    uint16_t count = level & LSR_MASK;
     return count <= LONG_SHIFT_MAXIMUM ? (int32_t)((uint32_t)SKILL_BASE_EXPERIENCE << count) : 0;
 }
 

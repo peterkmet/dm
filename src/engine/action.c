@@ -4,8 +4,9 @@
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/champion.h"
-#include "engine/dungeon.h"
+#include "engine/event.h"
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
@@ -13,11 +14,12 @@
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/move.h"
+#include "engine/party.h"
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/record.h"
 #include "engine/sound.h"
-#include "engine/timeline_process.h"
+#include "engine/timeline.h"
 #include <string.h>
 
 #define MESSAGE_SIZE 100
@@ -183,14 +185,6 @@ void action_clear_acting_champion(void)
     g_champions[g_acting_champion_ordinal - 1].attributes |= CHAMPION_ATTR_ACTION_HAND;
     g_acting_champion_ordinal = 0;
     g_redraw |= REDRAW_ACTION_AREA;
-}
-
-/* The square in front of (x, y) in the direction. */
-static void step_forward(int16_t direction, int16_t *x, int16_t *y)
-{
-    *x = g_party_map_x;
-    *y = g_party_map_y;
-    game_update_map_coordinates_after_relative_movement(direction, 1, 0, x, y);
 }
 
 /* The champion turns to the party direction. */
@@ -430,7 +424,9 @@ static void open_window(uint16_t champion_index, uint16_t skill_index)
 static bool is_climbed_down(void)
 {
     int16_t x, y;
-    step_forward(g_party_direction, &x, &y);
+    x = g_party_map_x;
+    y = g_party_map_y;
+    map_step(g_party_direction, 1, 0, &x, &y);
     if (rec_square_type(map_get_square(x, y)) != SQUARE_PIT || map_get_square_group(x, y) != THING_ENDOFLIST)
         return false;
     g_use_rope_to_climb_down_pit = true;
@@ -491,10 +487,10 @@ static bool is_action_hand_object_thrown(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     champion_face_party_direction(c);
-    int16_t side = turn_right(g_party_direction) == c->cell || turn_back(g_party_direction) == c->cell;
+    int16_t side = direction_right(g_party_direction) == c->cell || direction_back(g_party_direction) == c->cell;
     if (!action_is_object_thrown(champion_index, SLOT_HAND_ACTION, side))
         return false;
-    event_set_quiver_slot(&g_timeline_events[c->enable_action_event_index], SLOT_HAND_ACTION);
+    event_set_quiver_slot(&g_timeline.events[c->enable_action_event_index], SLOT_HAND_ACTION);
     return true;
 }
 
@@ -513,7 +509,9 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     if (!c->current_health)
         return false;
     int16_t x, y;
-    step_forward(c->direction, &x, &y);
+    x = g_party_map_x;
+    y = g_party_map_y;
+    map_step(c->direction, 1, 0, &x, &y);
     g_action_target_group_thing = map_get_square_group(x, y);
     const ActionInfo *info = tables_get_action_info(action);
     uint16_t disabled_ticks = info->disabled_ticks;
@@ -629,7 +627,9 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     case ACTION_FUSE: {
         champion_face_party_direction(c);
         int16_t fuse_x, fuse_y;
-        step_forward(g_party_direction, &fuse_x, &fuse_y);
+        fuse_x = g_party_map_x;
+        fuse_y = g_party_map_y;
+        map_step(g_party_direction, 1, 0, &fuse_x, &fuse_y);
         projectile_fuse_action(fuse_x, fuse_y);
         break;
     }

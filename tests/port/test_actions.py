@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Champion actions and the champion timeline events (src/action.c, timeline_process.c)."""
+"""Champion actions and the champion timeline events (src/action.c, event.c)."""
 
 import ctypes
 import struct
@@ -8,7 +8,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import s16, var
-from dmtest.game import (CHAMPIONS, Champion, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
+from dmtest.game import (CHAMPIONS, Champion, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
                          setup_creatures, skeleton_map_and_squares, things_of_type, tick)
 from dmtest.lib import load_lib
 
@@ -92,7 +92,7 @@ def disabled_ticks(lib, i):
     c = (Champion * 4).in_dll(lib, "g_champions")[i]
     if c.enable_action_event_index < 0:
         return 0
-    timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
+    timeline = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
     ticks = (timeline[c.enable_action_event_index].map_time & 0xFFFFFF) - var(lib, ctypes.c_uint32, "g_game_time").value
     lib.timeline_delete_event(c.enable_action_event_index)
     c.enable_action_event_index = -1
@@ -135,7 +135,7 @@ def test_melee_damage_matches_original(alib, seed):
             put_living_champions(w)
         w.globals(w.rng.choice([0, 0, 0, 1]), 5000, 0, 0, w.rng.randrange(6))
         palette = w.rng.randrange(6)
-        var(lib, c16, "g_dungeon_view_palette_index").value = palette
+        var(lib, c16, "g_party_light_level").value = palette
         w.emu.write(PALETTE_INDEX, struct.pack(">h", palette))
         group[4], group[15] = w.rng.randrange(27), 3 << 5
         for creature in range(4):
@@ -234,7 +234,7 @@ def test_throw_creates_projectile_and_event_11_refills_hand(fighter):
     assert lib.action_is_action_performed(0, C.ACTION_THROW) == 1
     assert things_of_type(lib, x, y, C.THING_PROJECTILE)
     assert c.slots[C.SLOT_HAND_ACTION] == 0xFFFF
-    timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
+    timeline = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
     event = timeline[c.enable_action_event_index]
     assert event.type == EVENT_ENABLE_ACTION and event.b >> 8 == C.SLOT_HAND_ACTION + 1
     for _ in range(5):

@@ -11,9 +11,9 @@
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
+#include "engine/party.h"
 #include "engine/record.h"
 #include "engine/savegame.h"
-#include "engine/timeline_process.h"
 #include "ui/advanced.h"
 #include "ui/command.h"
 #include "ui/gameloop.h"
@@ -313,7 +313,7 @@ static const char *turn_displaced(void)
     int16_t x = turn.x;
     int16_t y = turn.y;
     if (turn.moving)
-        game_update_map_coordinates_after_relative_movement(turn.direction, turn.step_forward, turn.step_right, &x, &y);
+        map_step(turn.direction, turn.step_forward, turn.step_right, &x, &y);
     bool stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
     if (g_party_map_index != turn.map || (!stayed && (g_party_map_x != x || g_party_map_y != y)))
         return "moved";

@@ -279,7 +279,7 @@ Step 7 checks of the cast (APPB disassembly):
 
 - The switch on the spell type is `rt_switch_range` 0–3 after C`0x127094`: type 0 C`0x1270a6`, 1 C`0x1270bc`, 2 C`0x1270ca`, 3 C`0x1270de`.
 - D6 is a 16-bit word. Types 0–2: duration = 2·D6² (`muls`, `add`). The action disabled ticks of types 0–2 come from the spell record, as for the other spells.
-- Type 3 looks for the first event 83 only when byte `0x11b` is not 0. The search runs over the slots 0 to `g_event_high_water` − 1 (C`0x103bd2`) and compares the type byte and the priority byte (champion index). Disabled ticks = (D6² as an unsigned word) >> 1.
+- Type 3 looks for the first event 83 only when byte `0x11b` is not 0. The search runs over the slots 0 to `g_timeline.high_water` − 1 (C`0x103bd2`) and compares the type byte and the priority byte (champion index). Disabled ticks = (D6² as an unsigned word) >> 1.
 - The failure (C`0x12706a`) prints message 11 and returns 3 before the experience and the action disable. C`0x127a1a` prints the champion name, then the text of the message. The CSB prefix text 59 is empty, so the port order (prefix, name, suffix) gives the same line.
 
 Timeline (`timeline_process`, C`0x12411e`): events 80, 81, 82 decrement champion bytes `0x118`, `0x119`, `0x11a` (C`0x124486`, `0x12449c`, `0x1244b2`). Event 83 clears byte `0x11b` (C`0x1244c8`).
@@ -326,9 +326,9 @@ Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn pane
 
 Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_drawn` (C`0x1024cc`: 5, 9, or 10), not `g_panel_content` (C`0x1024ca`).
 
-Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/timeline_process.c` (events 80–83), `src/engine/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/ui_champion.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
+Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/event.c` (events 80–83), `src/engine/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/ui_champion.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
 
-Port (Step 7): `magic.c` `cast_magic_map`, `timeline_process.c` events 80–83, `ui_champion.c` (`insert_creature_name`, `draw_panel_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
+Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `ui_champion.c` (`insert_creature_name`, `draw_panel_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
 
 ### Sensors and timeline
 
@@ -441,7 +441,7 @@ The estimate counts changed or new lines in `src/`, without tests.
 | Engine selection, CSB address table for 140 addresses, strides | `ftl.c`, `tables.c`, new address table, all files with `#define 0x10xxxx` | 250–350 lines |
 | Text (inline strings, object names with bit 7, action names) | `ui.c`, `ids.h`, `champion.c`, `magic.c`, `action.c`, `ui_champion.c`, `ui_menus.c`, `command.c`, `gameloop.c`, `startend.c` | 200–300 lines |
 | Actions and experience table | `action.c`, `tables.c` | 20–40 lines |
-| Magic map (spells, events, champion bytes, scroll panel, map drawing) | `magic.c`, `spells.c`, `timeline_process.c`, `game.h`, `ui_champion.c`, `view.c` | 350–500 lines |
+| Magic map (spells, events, champion bytes, scroll panel, map drawing) | `magic.c`, `spells.c`, `event.c`, `game.h`, `ui_champion.c`, `view.c` | 350–500 lines |
 | Sensors, active groups, reincarnation | `sensor.c`, `game.h`, `game.c`, `savegame.c`, `champion.c` | 30–60 lines |
 | Save file header and names, save dialog | `savefile.c`, `savegame.c`, `startend.c`, `dialog.c` | 100–150 lines |
 | Entrance, title, death screen, credits | `startend.c`, `gameloop.c` | 150–250 lines |

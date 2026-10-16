@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/timeline_process.h"
+#include "engine/event.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/ids.h"
@@ -7,16 +7,20 @@
 #include "engine/action.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
+#include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
+#include "engine/magic.h"
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/move.h"
+#include "engine/party.h"
 #include "engine/projectile.h"
 #include "engine/record.h"
 #include "engine/savegame.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
+#include "engine/timeline.h"
 
 #define DOOR_CLOSE_DAMAGE       5
 #define COUNTER_MAXIMUM         511 /* the counter data has 9 bits */
@@ -25,7 +29,6 @@
 #define LIGHT_STEP_TICKS        4
 #define REBIRTH_EXPLOSION_TICKS 5
 
-bool g_game_won;
 void (*g_endgame_sensor_hook)(uint16_t delay);
 
 /* AND/OR gate data: bits 0-3 are the inputs (one per cell), bits 4-7 are the expected inputs. */
@@ -60,7 +63,9 @@ static void print_text(uint16_t text)
     message_print(SENSOR_TEXT_COLOR, buffer, g_game_time);
 }
 
-void event_process_door_animation(TimelineEvent *event)
+/* One door step per tick: set opens (state down to open), clear closes (state up to closed). A closing door
+   that hits the party or a group goes back one step; the group takes damage. */
+static void event_process_door_animation(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
@@ -102,12 +107,13 @@ void event_process_door_animation(TimelineEvent *event)
     }
 }
 
-void event_process_door_destruction(TimelineEvent *event)
+static void event_process_door_destruction(TimelineEvent *event)
 {
     rec_door_set_state(g_current_map_index, event_square_x(event), event_square_y(event), DOOR_DESTROYED);
 }
 
-void event_process_door(TimelineEvent *event)
+/* A door event becomes a door animation event at the same time. Toggle closes an open door and opens any other. */
+static void event_process_door(TimelineEvent *event)
 {
     int16_t state = rec_door_state(rec_square_byte(g_current_map_index, event_square_x(event), event_square_y(event)));
     if (state == DOOR_DESTROYED)
@@ -120,7 +126,8 @@ void event_process_door(TimelineEvent *event)
     timeline_add_event(event);
 }
 
-void event_process_fake_wall(TimelineEvent *event)
+/* Opens or closes a fake wall. Closing waits while the party or a material group is on the square. */
+static void event_process_fake_wall(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
@@ -141,6 +148,55 @@ void event_process_fake_wall(TimelineEvent *event)
     rec_square_set_byte(map, x, y, rec_square_byte(map, x, y) & ~FAKE_WALL_OPEN);
 }
 
+/* A moved projectile keeps its step energy and gets its new square, direction, cell, and map. */
+static void update_projectile_event(uint16_t projectile)
+{
+    TimelineEvent *e = &g_timeline.events[rec_projectile_event_index(projectile)];
+    e->c = projectile_event_c(g_move_result_map_x, g_move_result_map_y, g_move_result_direction,
+                              projectile_event_step_energy(e));
+    e->b = THING_WITH_CELL(projectile, g_move_result_cell);
+    e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
+}
+
+/* A moved explosion gets its new square, cell, and map in its explosion events. */
+static void update_explosion_events(uint16_t explosion)
+{
+    for (uint16_t i = 0; i < g_timeline.high_water; i++) {
+        TimelineEvent *e = &g_timeline.events[i];
+        if (e->type == EVENT_EXPLOSION && e->c == explosion) {
+            e->b = event_square(g_move_result_map_x, g_move_result_map_y);
+            e->c = THING_WITH_CELL(explosion, g_move_result_cell);
+            e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
+        }
+    }
+}
+
+/* The party, the group, and each object on the square move again, for example into an opened pit. */
+static void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
+{
+    if (is_party_on(x, y))
+        move_get_move_result(THING_NONE, x, y, x, y);
+    uint16_t group = map_get_square_group(x, y);
+    if (group != THING_ENDOFLIST)
+        move_get_move_result(group, x, y, x, y);
+    uint16_t thing = map_get_square_first_object(x, y);
+    int16_t objects = 0;
+    for (uint16_t t = thing; t != THING_ENDOFLIST; t = rec_thing_next(t))
+        objects += THING_TYPE(t) > THING_GROUP;
+    while (thing != THING_ENDOFLIST && objects) {
+        objects--;
+        uint16_t next = rec_thing_next(thing);
+        uint16_t type = THING_TYPE(thing);
+        if (type > THING_GROUP)
+            move_get_move_result(thing, x, y, x, y);
+        if (type == THING_PROJECTILE)
+            update_projectile_event(thing);
+        else if (type == THING_EXPLOSION)
+            update_explosion_events(thing);
+        thing = next;
+    }
+}
+
 /* Opens or closes a teleporter or a pit. Opening moves the things on the square. */
 static void open_or_close(TimelineEvent *event)
 {
@@ -158,11 +214,11 @@ static void open_or_close(TimelineEvent *event)
     }
 }
 
-void event_process_teleporter(TimelineEvent *event)
+static void event_process_teleporter(TimelineEvent *event)
 {
     open_or_close(event);
 }
-void event_process_pit(TimelineEvent *event)
+static void event_process_pit(TimelineEvent *event)
 {
     open_or_close(event);
 }
@@ -196,7 +252,8 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
     timeline_add_event(&enable);
 }
 
-void event_process_corridor(TimelineEvent *event)
+/* Texts on the corridor change visibility, and group generators run. */
+static void event_process_corridor(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
@@ -210,7 +267,8 @@ void event_process_corridor(TimelineEvent *event)
     }
 }
 
-void event_enable_group_generator(TimelineEvent *event)
+/* The first disabled sensor of the square becomes a group generator again. */
+static void event_enable_group_generator(TimelineEvent *event)
 {
     for (uint16_t t = map_get_square_first_thing(event_square_x(event), event_square_y(event));
          t != THING_NONE && t != THING_ENDOFLIST; t = rec_thing_next(t)) {
@@ -292,55 +350,8 @@ void event_process_wall(TimelineEvent *event)
     sensor_process_rotation_effect();
 }
 
-/* A moved projectile keeps its step energy and gets its new square, direction, cell, and map. */
-static void update_projectile_event(uint16_t projectile)
-{
-    TimelineEvent *e = &g_timeline_events[rec_projectile_event_index(projectile)];
-    e->c = projectile_event_c(g_move_result_map_x, g_move_result_map_y, g_move_result_direction,
-                              projectile_event_step_energy(e));
-    e->b = THING_WITH_CELL(projectile, g_move_result_cell);
-    e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
-}
-
-/* A moved explosion gets its new square, cell, and map in its explosion events. */
-static void update_explosion_events(uint16_t explosion)
-{
-    for (uint16_t i = 0; i < g_event_high_water; i++) {
-        TimelineEvent *e = &g_timeline_events[i];
-        if (e->type == EVENT_EXPLOSION && e->c == explosion) {
-            e->b = event_square(g_move_result_map_x, g_move_result_map_y);
-            e->c = THING_WITH_CELL(explosion, g_move_result_cell);
-            e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
-        }
-    }
-}
-
-void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
-{
-    if (is_party_on(x, y))
-        move_get_move_result(THING_NONE, x, y, x, y);
-    uint16_t group = map_get_square_group(x, y);
-    if (group != THING_ENDOFLIST)
-        move_get_move_result(group, x, y, x, y);
-    uint16_t thing = map_get_square_first_object(x, y);
-    int16_t objects = 0;
-    for (uint16_t t = thing; t != THING_ENDOFLIST; t = rec_thing_next(t))
-        objects += THING_TYPE(t) > THING_GROUP;
-    while (thing != THING_ENDOFLIST && objects) {
-        objects--;
-        uint16_t next = rec_thing_next(thing);
-        uint16_t type = THING_TYPE(thing);
-        if (type > THING_GROUP)
-            move_get_move_result(thing, x, y, x, y);
-        if (type == THING_PROJECTILE)
-            update_projectile_event(thing);
-        else if (type == THING_EXPLOSION)
-            update_explosion_events(thing);
-        thing = next;
-    }
-}
-
-void event_process_light(TimelineEvent *event)
+/* The event holds the signed light power. Each step applies one step of the light table and adds the rest later. */
+static void event_process_light(TimelineEvent *event)
 {
     int16_t power = event->b;
     if (!power)
@@ -383,7 +394,9 @@ bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int
     return true;
 }
 
-void event_enable_champion_action(uint16_t champion_index)
+/* The action hand works again: the action defense ends. After a shot the next ammunition of the quiver goes to the
+   ready hand (quiver line 1 first, then slots 7-9). */
+static void event_enable_champion_action(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     c->enable_action_event_index = -1;
@@ -408,7 +421,8 @@ void event_enable_champion_action(uint16_t champion_index)
     c->action_index = ACTION_NONE;
 }
 
-void event_hide_damage_received(uint16_t champion_index)
+/* The damage number on the champion portrait disappears. */
+static void event_hide_damage_received(uint16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     c->hide_damage_received_event_index = -1;
@@ -420,7 +434,9 @@ void event_hide_damage_received(uint16_t champion_index)
         c->attributes |= CHAMPION_ATTR_NAME_TITLE;
 }
 
-void event_process_vi_altar_rebirth(TimelineEvent *event)
+/* Vi altar rebirth in three steps (event cell byte: the step): 2 the rebirth explosion, 1 the bones of the champion
+   disappear, 0 the champion lives again. The bones hold the champion index in their charges. */
+static void event_process_vi_altar_rebirth(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);

@@ -2,10 +2,34 @@
 #ifndef DM_ENGINE_MAGIC_H
 #define DM_ENGINE_MAGIC_H
 /* Prefixes: magic_ */
+#include "data/bytes.h"
+#include "engine/party.h"
 #include <stdbool.h>
 #include <stdint.h>
 
 /* Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C): docs/rules/creatures.md. */
+
+/* Champion.magic_map: the DAIN, ROS, and KU spell counts; NETA holds direction + 1 of the kept map; the
+   kept position is a big-endian word with x in bits 11-15, y in bits 6-10, and the map in bits 0-5. */
+#define MAGIC_MAP_DAIN     0
+#define MAGIC_MAP_ROS      1
+#define MAGIC_MAP_KU       2
+#define MAGIC_MAP_NETA     3
+#define MAGIC_MAP_POSITION 4
+/* Stores the kept map position of NETA in the magic map bytes. */
+static inline void magic_set_map_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)
+{
+    wr16(spells + MAGIC_MAP_POSITION, party_pack_position(map, x, y));
+}
+
+/* Reads the kept map position of NETA from the magic map bytes. */
+static inline void magic_get_map_position(const uint8_t *spells, int16_t *map, int16_t *x, int16_t *y)
+{
+    uint16_t word = be16(spells + MAGIC_MAP_POSITION);
+    *map = word & PARTY_POSITION_MAP_MASK;
+    *x = party_position_x(word);
+    *y = party_position_y(word);
+}
 
 #define SHIELD_STRONG 50 /* above this shield defense, a new shield or a Ya potion adds a quarter */
 

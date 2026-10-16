@@ -20,8 +20,6 @@ extern uint8_t *g_dungeon_raw_map_data;
 extern uint8_t ***g_dungeon_map_data; /* [map][x] -> column of squares */
 extern const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT];
 extern uint16_t g_dungeon_id;
-extern int16_t g_event_max_count;
-extern int16_t g_party_map_x, g_party_map_y, g_party_direction, g_party_map_index;
 
 /* Each byte is a 2-bit index into the first 4 dictionary bytes, a 4-bit index into the next 16, or a
    literal byte. Returns false when the bit stream ends before byte_count bytes. */

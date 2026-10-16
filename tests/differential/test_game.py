@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Champion
+from dmtest.game import Champion, Timeline
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -47,17 +47,17 @@ def lib():
     lib.dungeon_load.restype = ctypes.c_bool
     lib.scale_value.argtypes = [ctypes.c_uint16, c16, ctypes.c_uint16]
     for name in ("min16", "max16", "bounded_value", "timeline_add_event",
-                 "game_get_stamina_adjusted_value"):
+                 "champion_adjust_by_stamina"):
         getattr(lib, name).restype = c16
     lib.min16.argtypes = lib.max16.argtypes = [c16, c16]
     lib.bounded_value.argtypes = [c16, c16, c16]
-    lib.game_get_stamina_adjusted_value.argtypes = [ctypes.POINTER(Champion), c16]
-    lib.game_get_statistic_adjusted_attack.restype = ctypes.c_uint16
-    lib.game_get_statistic_adjusted_attack.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, ctypes.c_uint16]
-    lib.game_adjust_statistic_current_value.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, c16]
-    lib.game_is_lucky.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16]
-    lib.game_is_lucky.restype = lib.timeline_is_first_event_expired.restype = ctypes.c_bool
-    lib.game_update_map_coordinates_after_relative_movement.argtypes = [c16, c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
+    lib.champion_adjust_by_stamina.argtypes = [ctypes.POINTER(Champion), c16]
+    lib.champion_get_adjusted_attack.restype = ctypes.c_uint16
+    lib.champion_get_adjusted_attack.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, ctypes.c_uint16]
+    lib.champion_adjust_statistic.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, c16]
+    lib.champion_is_lucky.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16]
+    lib.champion_is_lucky.restype = lib.timeline_is_first_event_expired.restype = ctypes.c_bool
+    lib.map_step.argtypes = [c16, c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
     return lib
 
 
@@ -114,7 +114,7 @@ def test_relative_movement_matches_original(lib, emu):
         for fwd in (-2, 0, 1, 3):
             for right in (-1, 0, 2):
                 x, y = c16(10), c16(20)
-                lib.game_update_map_coordinates_after_relative_movement(d, fwd, right, ctypes.byref(x), ctypes.byref(y))
+                lib.map_step(d, fwd, right, ctypes.byref(x), ctypes.byref(y))
                 put(emu, BUF, ">hh", 10, 20)
                 emu.call(MOVE_RELATIVE, [(2, d), (2, fwd), (2, right), (4, BUF), (4, BUF + 2)])
                 assert (x.value, y.value) == struct.unpack(">hh", emu.read(BUF, 4))
@@ -139,33 +139,33 @@ def test_champion_helpers_match_original(lib, emu):
             ch.statistics[s][:] = [rng.choice([0, 1, 30, 120, 127, 128, 150, 170, 255, rng.randint(0, 255)]) for _ in range(3)]
         stat, value = rng.randrange(7), rng.randint(-200, 200)
         emu.write(BUF, champion_bytes(ch))
-        assert lib.game_get_stamina_adjusted_value(ch, value) == s16(emu.call(STAMINA_ADJUSTED, [(4, BUF), (2, value)]))
+        assert lib.champion_adjust_by_stamina(ch, value) == s16(emu.call(STAMINA_ADJUSTED, [(4, BUF), (2, value)]))
         attack = rng.randint(0, 0xFFFF)
-        assert lib.game_get_statistic_adjusted_attack(ch, stat, attack) == emu.call(ADJUSTED_ATTACK, [(4, BUF), (2, stat), (2, attack)]) & 0xFFFF
-        lib.game_adjust_statistic_current_value(ch, stat, value)
+        assert lib.champion_get_adjusted_attack(ch, stat, attack) == emu.call(ADJUSTED_ATTACK, [(4, BUF), (2, stat), (2, attack)]) & 0xFFFF
+        lib.champion_adjust_statistic(ch, stat, value)
         emu.call(ADJUST_STATISTIC, [(4, BUF), (2, stat), (2, value)])
         assert ch.statistics[stat][1] == emu.read(BUF + 0x47 + 3 * stat, 1)[0]
         seed_c.value = i * 7919
         put(emu, SEED, ">I", i * 7919)
         emu.write(BUF, champion_bytes(ch))
         percentage = rng.choice([0, 10, 50, 99, 100, 300])
-        assert lib.game_is_lucky(ch, percentage) == s16(emu.call(IS_LUCKY, [(4, BUF), (2, percentage)]))
+        assert lib.champion_is_lucky(ch, percentage) == s16(emu.call(IS_LUCKY, [(4, BUF), (2, percentage)]))
         assert ch.statistics[0][1] == emu.read(BUF + 0x47, 1)[0]
         assert seed_c.value == struct.unpack(">I", emu.read(SEED, 4))[0]
 
 
 def timeline_state(lib):
-    n = c16.in_dll(lib, "g_event_max_count").value
-    events = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(Event))
-    heap = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline"), ctypes.POINTER(ctypes.c_uint16))
-    count = ctypes.c_uint16.in_dll(lib, "g_timeline_count").value
-    first = c16.in_dll(lib, "g_first_unused_event_index").value
+    n = Timeline.in_dll(lib, "g_timeline").capacity
+    events = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(Event))
+    heap = ctypes.cast(Timeline.in_dll(lib, "g_timeline").heap, ctypes.POINTER(ctypes.c_uint16))
+    count = Timeline.in_dll(lib, "g_timeline").count
+    first = Timeline.in_dll(lib, "g_timeline").first_unused
     free, i = [], first
     while i != -1 and len(free) <= n:
         free.append(i)
         i = s16(events[i].map_time)
     live = {i: events[i].be() for i in range(n) if events[i].type}
-    return count, first, ctypes.c_uint16.in_dll(lib, "g_event_high_water").value, heap[:count], live, free
+    return count, first, Timeline.in_dll(lib, "g_timeline").high_water, heap[:count], live, free
 
 
 def emu_timeline_state(emu, n):
@@ -182,7 +182,7 @@ def emu_timeline_state(emu, n):
 
 def test_timeline_matches_original(lib, emu):
     n, arg = 40, BUF + 0x2000
-    c16.in_dll(lib, "g_event_max_count").value = n
+    Timeline.in_dll(lib, "g_timeline").capacity = n
     c32.in_dll(lib, "g_game_time").value = 0
     lib.timeline_init()
     put(emu, EVENT_MAX_COUNT, ">hHIIHhI", n, 0, BUF, BUF + 0x1000, 0, 0, 0)
@@ -213,7 +213,7 @@ def test_timeline_matches_original(lib, emu):
 
 
 def test_timeline_order(lib):
-    c16.in_dll(lib, "g_event_max_count").value = 10
+    Timeline.in_dll(lib, "g_timeline").capacity = 10
     c32.in_dll(lib, "g_game_time").value = 0
     lib.timeline_init()  # watchdog: time 300, type 53
     for t, typ, prio in [(5, 20, 0), (5, 25, 0), (2, 11, 3), (5, 20, 1), (2, 11, 1)]:
@@ -242,7 +242,7 @@ def test_game_new(lib):
     assert c32.in_dll(lib, "g_game_time").value == 0
     count, first, high_water, heap, live, free = timeline_state(lib)
     assert (count, first, high_water, heap, live) == (1, 1, 1, [0], {0: Event(300, 53).be()})
-    assert len(free) == c16.in_dll(lib, "g_event_max_count").value - 1
+    assert len(free) == Timeline.in_dll(lib, "g_timeline").capacity - 1
     groups = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_active_groups"), ctypes.POINTER(ActiveGroup))
     assert ctypes.c_uint16.in_dll(lib, "g_max_active_group_count").value == 110
     assert all(groups[i].group_index == -1 for i in range(110))

@@ -2,16 +2,20 @@
 #include "engine/projectile.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/champion.h"
-#include "engine/dungeon.h"
+#include "engine/event.h"
+#include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
+#include "engine/map.h"
 #include "engine/move.h"
+#include "engine/party.h"
 #include "engine/random.h"
 #include "engine/record.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
-#include "engine/timeline_process.h"
+#include "engine/timeline.h"
 
 /* Combined square argument: a value from 0x100 holds (x + 1) << 8 | target x (and y << 8 | target y). */
 #define SQUARE_COMBO_MIN         256
@@ -453,11 +457,11 @@ void projectile_process_move_event(TimelineEvent *event)
                                                   : rec_projectile_attack(projectile) - step_energy);
     }
     uint16_t direction = projectile_event_direction(&next);
-    bool leaves_square = cell == direction || cell == turn_right(direction);
+    bool leaves_square = cell == direction || cell == direction_right(direction);
     int16_t dst_x = x;
     int16_t dst_y = y;
     if (leaves_square) {
-        game_update_map_coordinates_after_relative_movement(direction, 1, 0, &dst_x, &dst_y);
+        map_step(direction, 1, 0, &dst_x, &dst_y);
         uint8_t square = map_get_square(dst_x, dst_y);
         int16_t type = rec_square_type(square);
         int16_t solid =
@@ -466,7 +470,7 @@ void projectile_process_move_event(TimelineEvent *event)
         if (solid && projectile_has_impact_occurred(type, x, y, cell, projectile))
             return;
     }
-    uint16_t new_cell = (cell & 1) == (direction & 1) ? turn_left(cell) : turn_right(cell);
+    uint16_t new_cell = (cell & 1) == (direction & 1) ? direction_left(cell) : direction_right(cell);
     uint16_t moved = THING_WITH_CELL(projectile, new_cell);
     if (!leaves_square) {
         if (rec_square_type(map_get_square(x, y)) == SQUARE_DOOR &&
@@ -650,7 +654,7 @@ void projectile_fuse_action(int16_t x, int16_t y)
         uint16_t side = random_2bits();
         escape_x = x;
         escape_y = y;
-        for (int16_t tries = FUSE_SIDES; tries; tries--, side = turn_right(side)) {
+        for (int16_t tries = FUSE_SIDES; tries; tries--, side = direction_right(side)) {
             if (cages[side])
                 continue;
             cages[side] = 1;
@@ -698,14 +702,14 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
     bool test_destination = false;
     if (dst_x >= 0 && group_get_square_distance(src_x, src_y, dst_x, dst_y) == 1) {
         uint16_t primary = group_get_directions_to_destination(src_x, src_y, dst_x, dst_y);
-        uint16_t next = turn_right(primary);
-        crossed[turn_left(primary)] = occupied[primary];
-        crossed[turn_right(next)] = occupied[next];
+        uint16_t next = direction_right(primary);
+        crossed[direction_left(primary)] = occupied[primary];
+        crossed[direction_right(next)] = occupied[next];
         test_destination = occupied[primary] || occupied[next];
         if (!occupied[primary])
-            occupied[primary] = occupied[turn_left(primary)];
+            occupied[primary] = occupied[direction_left(primary)];
         if (!occupied[next])
-            occupied[next] = occupied[turn_right(next)];
+            occupied[next] = occupied[direction_right(next)];
     }
     int16_t x = src_x;
     int16_t y = src_y;
@@ -718,7 +722,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
             for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
                 uint8_t target = occupied[THING_CELL(t)];
                 if (THING_TYPE(t) != THING_PROJECTILE ||
-                    g_timeline_events[rec_projectile_event_index(t)].type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS ||
+                    g_timeline.events[rec_projectile_event_index(t)].type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS ||
                     !target || !projectile_has_impact_occurred(impact_type, x_combo, y_combo, target - 1, t))
                     continue;
                 projectile_delete_event(t);
@@ -745,7 +749,7 @@ static uint16_t find_square_object_in_cells(int16_t x, int16_t y, uint16_t cell)
 {
     /* Bug fix: the original scans until 0xffff and reads past the end of the list. */
     for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t))
-        if (THING_TYPE(t) >= THING_GROUP && (THING_CELL(t) == cell || THING_CELL(t) == turn_right(cell)))
+        if (THING_TYPE(t) >= THING_GROUP && (THING_CELL(t) == cell || THING_CELL(t) == direction_right(cell)))
             return t;
     return THING_ENDOFLIST;
 }
@@ -755,7 +759,7 @@ void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event)
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
     uint16_t direction = event_cell(event);
-    uint16_t cell = turn_back(direction);
+    uint16_t cell = direction_back(direction);
     uint16_t type = rec_sensor_type(sensor);
     uint16_t data = rec_sensor_data(sensor);
     int16_t single = type == SENSOR_WALL_LAUNCHER_OBJECT || type == SENSOR_WALL_LAUNCHER_EXPLOSION ||
@@ -790,13 +794,13 @@ void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event)
         cell = NORMALIZE(cell + random_bit());
     int16_t target_x = x;
     int16_t target_y = y;
-    game_update_map_coordinates_after_relative_movement(direction, 1, 0, &target_x, &target_y);
+    map_step(direction, 1, 0, &target_x, &target_y);
     uint8_t kinetic_energy = rec_sensor_kinetic_energy(sensor);
     uint8_t step_energy = rec_sensor_step_energy(sensor);
     g_create_launcher_projectile = true;
     projectile_create(first, target_x, target_y, cell, direction, kinetic_energy, LAUNCHER_ATTACK, step_energy);
     if (!single)
-        projectile_create(second, target_x, target_y, turn_right(cell), direction, kinetic_energy, LAUNCHER_ATTACK,
+        projectile_create(second, target_x, target_y, direction_right(cell), direction, kinetic_energy, LAUNCHER_ATTACK,
                           step_energy);
     g_create_launcher_projectile = false;
 }

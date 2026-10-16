@@ -215,7 +215,7 @@ random_2bits = (seed >> 8) & 3;
 | `g_current_map_data` | pointer per column | Square bytes of the current map. Bits 5–7: square type (0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 teleporter, 6 fake wall). Bit 4: the square has things. |
 | `g_thing_data[16]` | pointers | Thing records per type. A thing is a word: bits 10–13 type, bits 0–9 index, bits 14–15 cell. `0xfffe` is the end of a list. |
 | `g_active_groups` | 16 bytes per entry | Active creature groups. |
-| `g_timeline_events` | 10 bytes per event | Offset 0: map index (bits 24–31) and time (bits 0–23). Offset 4: event type. |
+| `g_timeline.events` | 10 bytes per event | Offset 0: map index (bits 24–31) and time (bits 0–23). Offset 4: event type. |
 | `g_creature_info` | `0x1a` bytes per creature type | Static creature attributes. |
 | `g_object_info` | 6 bytes per object | Static object information. |
 | `g_chip_block` | `0x2d4` bytes | Offset `0x108`: key queue. `0x188`–`0x208`: palettes. `0x248`: rastport. `0x2ac`: bitmap structure. |

@@ -2,15 +2,16 @@
 #include "engine/inventory.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/champion.h"
-#include "engine/dungeon.h"
+#include "engine/event.h"
 #include "engine/game.h"
-#include "engine/group.h"
 #include "engine/magic.h"
+#include "engine/party.h"
 #include "engine/random.h"
 #include "engine/record.h"
 #include "engine/sound.h"
-#include "engine/timeline_process.h"
+#include "engine/timeline.h"
 #include <stdbool.h>
 
 #define WATERSKIN_WATER            800
@@ -50,10 +51,8 @@
 #define KU_STRENGTH_DIVISOR        35 /* Ku: strength + p / 35 + 5 */
 #define KU_STRENGTH_BASE           5
 #define VI_WOUND_ROLL_DIVISOR      42 /* Vi: max(1, p / 42) wound rolls */
-#define LIGHT_SOURCE_COUNT         (CHAMPION_MAX_COUNT * 2)
-#define LIGHT_SOURCES_USED         5 /* the brightest torches that add light */
-#define LIGHT_FIRST_SHIFT          6
-#define LIGHT_DARKEST              (PALETTE_LIGHT_THRESHOLD_COUNT - 1) /* palette index of the darkest light */
+
+uint16_t g_leader_hand_object = THING_NONE;
 
 int16_t g_inventory_champion_ordinal;
 bool g_leader_empty_handed = true;
@@ -431,16 +430,16 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
     uint16_t amount = power / POTION_AMOUNT_DIVISOR + POTION_AMOUNT_BASE;
     switch (rec_potion_type(potion)) {
     case POTION_ROS:
-        game_adjust_statistic_current_value(c, STAT_DEXTERITY, amount);
+        champion_adjust_statistic(c, STAT_DEXTERITY, amount);
         break;
     case POTION_KU:
-        game_adjust_statistic_current_value(c, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE);
+        champion_adjust_statistic(c, STAT_STRENGTH, power / KU_STRENGTH_DIVISOR + KU_STRENGTH_BASE);
         break;
     case POTION_DANE:
-        game_adjust_statistic_current_value(c, STAT_WISDOM, amount);
+        champion_adjust_statistic(c, STAT_WISDOM, amount);
         break;
     case POTION_NETA:
-        game_adjust_statistic_current_value(c, STAT_VITALITY, amount);
+        champion_adjust_statistic(c, STAT_VITALITY, amount);
         break;
     case POTION_ANTIVENIN:
         champion_unpoison(champion_index);
@@ -527,69 +526,6 @@ void inventory_reset(void)
     g_open_chest = THING_NONE;
     for (int i = 0; i < SLOT_CHEST_COUNT; i++)
         g_open_chest_slots[i] = THING_NONE;
-}
-
-/* The party light: magical light plus the burning torches in the hands, the brightest first
-   with a falling weight (set_dungeon_view_palette). */
-int16_t inventory_get_party_light(void)
-{
-    int16_t power[LIGHT_SOURCE_COUNT] = {0};
-    int16_t n = 0;
-    int16_t total = 0;
-    int16_t shift = LIGHT_FIRST_SHIFT;
-    for (uint16_t i = 0; i < g_party_champion_count; i++)
-        for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--, n++) {
-            uint16_t thing = g_champions[i].slots[hand];
-            int16_t type = object_get_type(thing);
-            if (type >= ICON_TORCH_UNLIT && type <= ICON_TORCH_LAST)
-                power[n] = rec_weapon_charges(thing);
-        }
-    /* the original sorts only the 4 brightest: the fifth light is any of the rest */
-    for (int i = 0; i < LIGHT_SOURCES_USED - 1; i++)
-        for (int k = i + 1; k < LIGHT_SOURCE_COUNT; k++)
-            if (power[i] < power[k]) {
-                int16_t t = power[i];
-                power[i] = power[k];
-                power[k] = t;
-            }
-    for (int i = 0; i < LIGHT_SOURCES_USED; i++)
-        if (power[i]) {
-            /* the 16-bit cast keeps the overflow of the original word arithmetic */
-            total += (int16_t)(tables_get_light_amount(power[i]) << shift) >> LIGHT_FIRST_SHIFT;
-            shift = max16(0, shift - 1);
-        }
-    return g_party.magical_light_amount + total;
-}
-
-/* The darkness of the party light amount on map map_index (a map of difficulty 0 is
-   always bright) for the view and the creature rules. */
-void inventory_set_dungeon_view_palette(int16_t map_index, int16_t light)
-{
-    g_dungeon_view_palette_index = 0;
-    if (!rec_map_difficulty(map_index))
-        return;
-    if (light < 1) {
-        g_dungeon_view_palette_index = LIGHT_DARKEST;
-        return;
-    }
-    while (g_dungeon_view_palette_index < LIGHT_DARKEST &&
-           light < tables_get_light_threshold(g_dungeon_view_palette_index))
-        g_dungeon_view_palette_index++;
-}
-
-void inventory_decrease_torches_light_power(void)
-{
-    uint16_t count = g_party_champion_count - (g_candidate_champion_ordinal ? 1 : 0);
-    for (uint16_t i = 0; i < count; i++)
-        for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--) {
-            uint16_t thing = g_champions[i].slots[hand];
-            int16_t icon = object_get_icon_index(thing);
-            if (icon < ICON_TORCH_UNLIT || icon > ICON_TORCH_LAST || !rec_weapon_charges(thing))
-                continue;
-            rec_weapon_set_charges(thing, rec_weapon_charges(thing) - 1);
-            if (!rec_weapon_charges(thing))
-                rec_object_set_important(thing, false);
-        }
 }
 
 bool inventory_fill_leader_hand_at_fountain(void)

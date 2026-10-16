@@ -929,7 +929,7 @@ def test_brief_names_a_torch_holder():
 def on_map(game, m, x, y, direction):
     """The party on map m for the state JSON only, in full light; no frame runs meanwhile."""
     lib, saved_map = game.lib, game.value("g_party_map_index")
-    palette = ctypes.c_int16.in_dll(lib, "g_dungeon_view_palette_index")
+    palette = ctypes.c_int16.in_dll(lib, "g_party_light_level")
     saved_palette, palette.value = palette.value, 0
     lib.map_set_current_map_and_party_map(m)
     lib.view_load_map(m)

@@ -59,7 +59,7 @@ bool view_is_pressure_pad(int16_t x, int16_t y);
 void view_draw(int16_t dir, int16_t x, int16_t y);
 /* CSB: draws the magic map grid of a champion (Champion.magic_map) with its top left square at (px, py). */
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py);
-/* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that inventory_set_dungeon_view_palette set.
+/* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that party_set_light_level set.
    Returns true on success. */
 bool view_render(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* Smooth projectile flight: view_set_motion(step, steps) makes the next views show each projectile

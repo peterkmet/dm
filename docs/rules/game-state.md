@@ -94,7 +94,7 @@ The portrait pointer (`0x114`) is not in the struct. Champion recruiting adds it
 | `g_game_id` | `0x1040f2` | `uint32_t` |
 | `g_last_creature_attack_time` | `0x10314e` | `int32_t` |
 | `g_last_party_movement_time` | `0x103152` | `int32_t` |
-| `g_watchdog_time` | `0x103184` | `int32_t` |
+| `g_timeline.watchdog_time` | `0x103184` | `int32_t` |
 | `g_disabled_movement_ticks` | `0x1001f2` | `int16_t` |
 | `g_projectile_disabled_movement_ticks` | `0x1001f4` | `int16_t` |
 | `g_last_projectile_disabled_movement_direction` | `0x1001f6` | `int16_t` |
@@ -105,12 +105,12 @@ These globals are the values that the save file header stores.
 
 | C name | Original | Type |
 |---|---|---|
-| `g_timeline_events` | `0x103178` | `TimelineEvent *`, `g_event_max_count` slots |
-| `g_timeline` | `0x10317c` | `uint16_t *`, binary min-heap of slot indices |
-| `g_timeline_count` | `0x103180` | `uint16_t`, heap size |
-| `g_first_unused_event_index` | `0x103182` | `int16_t`, head of the free list |
-| `g_event_high_water` | `0x103176` | `uint16_t`, highest used slot + 1 |
-| `g_event_max_count` | `0x103174` | `int16_t`, in `dungeon.h` |
+| `g_timeline.events` | `0x103178` | `TimelineEvent *`, `g_timeline.capacity` slots |
+| `g_timeline.heap` | `0x10317c` | `uint16_t *`, binary min-heap of slot indices |
+| `g_timeline.count` | `0x103180` | `uint16_t`, heap size |
+| `g_timeline.first_unused` | `0x103182` | `int16_t`, head of the free list |
+| `g_timeline.high_water` | `0x103176` | `uint16_t`, highest used slot + 1 |
+| `g_timeline.capacity` | `0x103174` | `int16_t` |
 
 `TimelineEvent` replaces the 10-byte original event:
 
@@ -148,7 +148,7 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 
 ### Merge rules
 
-`timeline_find_mergeable_event` scans the slots below `g_event_high_water`. "Same place" means the same `map_time` and the same `b`.
+`timeline_find_mergeable_event` scans the slots below `g_timeline.high_water`. "Same place" means the same `map_time` and the same `b`.
 
 - New type 5–10 (square event):
   - An existing type 5–10 event at the same place gets the new effect. For type 6, the cell must also be equal. The function returns its index.
@@ -169,7 +169,7 @@ Note: [range-7-9.md](../reference/symbols/range-7-9.md) says that "any other new
 
 `ActiveGroup` has the 16-byte layout of the original: `group_index` (`int16_t`, −1 is a free entry), `directions`, `cells`, `last_move_time`, `delay_fleeing`, `target_x`, `target_y`, `prior_x`, `prior_y`, `home_x`, `home_y`, and `aspect[4]`. All fields after `group_index` are `uint8_t`.
 
-`game_init_active_groups` (`0x10cb76`) allocates 110 entries and sets `group_index` to −1 in each entry. The port has only the new-game path.
+`group_init_active_groups` (`0x10cb76`) allocates 110 entries and sets `group_index` to −1 in each entry. The port has only the new-game path.
 
 ## Projectiles and explosions
 
@@ -182,7 +182,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 1. Clear `g_party` and `g_champions`. Set the champion count to 0, the leader and the magic caster to −1, and the leader hand object to `0xffff`.
 2. Set `g_game_time`, the sleep and death flags, the movement counters, and `g_active_group_count` to 0.
 3. Set `g_game_id` to the product of two `random16()` values.
-4. Call `timeline_init` and `game_init_active_groups`.
+4. Call `timeline_init` and `group_init_active_groups`.
 
 `dungeon_load` sets the party position and direction from the dungeon header, and `g_party_map_index` to 0.
 
@@ -193,14 +193,14 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 | `min16`, `max16` | `0x107652`, `0x107668` | Minimum and maximum of two words. |
 | `bounded_value(min, value, max)` | `0x10767e` | Returns `min` when `value <= min`, else the lower of `value` and `max`. |
 | `scale_value(a, shift, b)` | `0x1076f8` | `(a * b) >> shift`: unsigned 16 × 16 multiply, arithmetic shift of the 32-bit result. Callers use the low word. |
-| `game_update_map_coordinates_after_relative_movement` | `0x10a85c` | Adds forward and right steps. Reads the step tables through `tables_get_step_east` and `tables_get_step_north` (KAOS `0x101038`: 0, 1, 0, −1 and `0x101040`: −1, 0, 1, 0). |
+| `map_step` | `0x10a85c` | Adds forward and right steps. Reads the step tables through `tables_get_step_east` and `tables_get_step_north` (KAOS `0x101038`: 0, 1, 0, −1 and `0x101040`: −1, 0, 1, 0). |
 | `NORMALIZE(direction)` | — | `direction & 3`. |
-| `game_get_stamina_adjusted_value` | `0x110f4c` | When current stamina is below half of the maximum: `value / 2 + value * stamina / (maximum / 2)`. |
-| `game_get_statistic_adjusted_attack` | `0x110f88` | `d = 170 − current statistic`. Returns `attack >> 3` when `d < 16`, else `scale_value(attack, 7, d)`. |
-| `game_adjust_statistic_current_value` | `0x10f860` | Adds a delta to a current statistic. A negative delta stops at the minimum. Above 120 the delta is halved, above 150 quartered (plus 1). The result stops at 170. |
-| `game_is_lucky` | `0x110fc8` | See below. |
+| `champion_adjust_by_stamina` | `0x110f4c` | When current stamina is below half of the maximum: `value / 2 + value * stamina / (maximum / 2)`. |
+| `champion_get_adjusted_attack` | `0x110f88` | `d = 170 − current statistic`. Returns `attack >> 3` when `d < 16`, else `scale_value(attack, 7, d)`. |
+| `champion_adjust_statistic` | `0x10f860` | Adds a delta to a current statistic. A negative delta stops at the minimum. Above 120 the delta is halved, above 150 quartered (plus 1). The result stops at 170. |
+| `champion_is_lucky` | `0x110fc8` | See below. |
 
-`game_is_lucky(champion, percentage)`:
+`champion_is_lucky(champion, percentage)`:
 
 1. When `random_bit()` is 1 and `percentage < random16() % 100`, return 1. Luck does not change.
 2. Lucky is true when the current luck is above 0 and `percentage < random16() % (2 * luck)`.
@@ -208,7 +208,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 The original reads the three luck bytes as signed bytes in this function. A current luck of 128 or more counts as not above 0. The port keeps this behavior.
 
-KAOS tables must be loaded (`tables_load`) before `game_update_map_coordinates_after_relative_movement` runs.
+KAOS tables must be loaded (`tables_load`) before `map_step` runs.
 
 ## Tests
 

@@ -1,10 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/automap.h"
+#include "engine/arith.h"
 #include "engine/dungeon.h"
 #include "engine/explored.h"
 #include "engine/game.h"
-#include "engine/group.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "engine/record.h"
 #include "ui/advanced.h"
 #include "ui/draw.h"
@@ -42,7 +43,7 @@ static bool blocks_sight(int16_t map, int16_t x, int16_t y)
     }
 }
 
-#define DARKEST_PALETTE 5 /* g_dungeon_view_palette_index of the darkest light level */
+#define DARKEST_PALETTE 5 /* g_party_light_level of the darkest light level */
 
 /* Rows the party can make out in the current light: the darkest palettes hide the far rows. */
 static int16_t light_depths(void)
@@ -50,9 +51,9 @@ static int16_t light_depths(void)
     /* ponytail: fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it */
     if (g_cheat_light)
         return VIEW_DEPTH_COUNT;
-    if (g_dungeon_view_palette_index >= DARKEST_PALETTE)
+    if (g_party_light_level >= DARKEST_PALETTE)
         return VIEW_DEPTH_COUNT - 2;
-    if (g_dungeon_view_palette_index >= DARKEST_PALETTE - 1)
+    if (g_party_light_level >= DARKEST_PALETTE - 1)
         return VIEW_DEPTH_COUNT - 1;
     return VIEW_DEPTH_COUNT;
 }
@@ -63,7 +64,7 @@ int16_t automap_get_visible_depths(int16_t map, int16_t x, int16_t y, int16_t di
     for (int16_t depth = 1; depth < limit; depth++) {
         int16_t ahead_x = x;
         int16_t ahead_y = y;
-        game_update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
+        map_step(dir, depth, 0, &ahead_x, &ahead_y);
         if (blocks_sight(map, ahead_x, ahead_y))
             return depth + 1;
     }
@@ -79,8 +80,8 @@ bool automap_side_is_visible(int16_t map, int16_t x, int16_t y, int16_t dir, int
     int16_t ahead_y = y;
     int16_t near_x = x;
     int16_t near_y = y;
-    game_update_map_coordinates_after_relative_movement(dir, depth, 0, &ahead_x, &ahead_y);
-    game_update_map_coordinates_after_relative_movement(dir, depth - 1, side, &near_x, &near_y);
+    map_step(dir, depth, 0, &ahead_x, &ahead_y);
+    map_step(dir, depth - 1, side, &near_x, &near_y);
     return !blocks_sight(map, ahead_x, ahead_y) || !blocks_sight(map, near_x, near_y);
 }
 
@@ -93,7 +94,7 @@ void automap_mark_seen(int16_t map, int16_t x, int16_t y, int16_t dir)
                 continue;
             int16_t square_x = x;
             int16_t square_y = y;
-            game_update_map_coordinates_after_relative_movement(dir, depth, side, &square_x, &square_y);
+            map_step(dir, depth, side, &square_x, &square_y);
             explored_mark(map, square_x, square_y);
         }
 }

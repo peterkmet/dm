@@ -229,7 +229,7 @@ def test_png_after_walking(game):
 def test_darkness_shortens_the_visible_depth(game):
     lib = game
     lib.automap_get_visible_depths.restype = c16
-    palette = c16.in_dll(lib, "g_dungeon_view_palette_index")
+    palette = c16.in_dll(lib, "g_party_light_level")
     best = None
     for y in range(lib.dungeon_map_height(0)):  # a position with a long free view ahead
         for x in range(lib.dungeon_map_width(0)):

@@ -6,8 +6,10 @@
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "engine/arith.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
+#include "engine/event.h"
 #include "engine/explored.h"
 #include "engine/game.h"
 #include "engine/group.h"
@@ -15,12 +17,12 @@
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/move.h"
+#include "engine/party.h"
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/savegame.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
-#include "engine/timeline_process.h"
 #include "ui/advanced.h"
 #include "ui/audio.h"
 #include "ui/automap.h"
@@ -161,7 +163,7 @@ void entrance_open_doors(void)
     if (snprintf(path, sizeof path, "%s/Dungeon.DAT", data_dir) >= (int)sizeof path || !g_frame_hook ||
         !dungeon_load(path) || !ui_zone_box(ZONE_VIEWPORT, &box))
         return;
-    inventory_set_dungeon_view_palette(g_party_map_index, 0);
+    party_set_light_level(g_party_map_index, 0);
     view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
     Bitmap view = {box.w, box.h, view_px};
     for (int16_t y = 0; y < box.h; y++)
@@ -178,7 +180,7 @@ void entrance_open_doors(void)
 /* Sets the darkness of the dungeon view and the creature rules from the party light. */
 static void set_party_light(void)
 {
-    inventory_set_dungeon_view_palette(g_party_map_index, inventory_get_party_light());
+    party_set_light_level(g_party_map_index, party_get_light());
 }
 
 /* The dungeon view of the party in the light of the party. */

@@ -1,12 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/map.h"
+#include "data/bytes.h"
+#include "data/os.h"
 #include "data/tables.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
+#include "engine/party.h"
 #include "engine/record.h"
 #include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define FATAL_SQUARE_FIRST_THINGS_FULL 72
@@ -16,6 +17,13 @@ int16_t g_current_map_index = -1, g_current_map_width, g_current_map_height;
 const uint8_t *g_current_map;
 uint16_t g_current_map_door_info[2];
 static uint8_t *column_first_thing_index;
+
+void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *x, int16_t *y)
+{
+    int16_t side = direction_right(direction);
+    *x = *x + forward * tables_get_step_east(direction) + right * tables_get_step_east(side);
+    *y = *y + forward * tables_get_step_north(direction) + right * tables_get_step_north(side);
+}
 
 void map_reset(void)
 {
@@ -102,9 +110,9 @@ int16_t map_get_stairs_exit_direction(int16_t x, int16_t y)
     int16_t direction = map_get_square(x, y) & STAIRS_NORTH_SOUTH ? DIRECTION_NORTH : DIRECTION_EAST;
     int16_t ahead_x = x;
     int16_t ahead_y = y;
-    game_update_map_coordinates_after_relative_movement(direction, 1, 0, &ahead_x, &ahead_y);
+    map_step(direction, 1, 0, &ahead_x, &ahead_y);
     int16_t type = map_get_square_type(ahead_x, ahead_y);
-    return type == SQUARE_WALL || type == SQUARE_STAIRS ? turn_back(direction) : direction;
+    return type == SQUARE_WALL || type == SQUARE_STAIRS ? direction_back(direction) : direction;
 }
 
 int16_t map_get_square_first_thing_index(int16_t x, int16_t y)
@@ -142,17 +150,10 @@ static void add_to_later_columns(int16_t x, int16_t delta)
     }
 }
 
-static void stop_fatal(int16_t code)
-{
-    fprintf(stderr, "System Error %d\n", code);
-    exit(1);
-}
-
 /* A free record (THING_NONE) must never enter a square list: a save with it is damaged. Logs where it comes from. */
 static void report_free_record(const char *action, int16_t x, int16_t y)
 {
-    fprintf(stderr, "square list guard: %s, map %d (%d,%d), game time %" PRIu32 "\n", action, g_current_map_index, x, y,
-            g_game_time);
+    os_log("square list guard: %s, map %d (%d,%d), game time %" PRIu32, action, g_current_map_index, x, y, g_game_time);
 }
 
 void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
@@ -169,7 +170,7 @@ void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
         if (!(square & SQUARE_HAS_THINGS)) {
             uint16_t count = rec_dungeon_square_things();
             if (be16(g_square_first_things + (count - 1) * 2) != THING_NONE)
-                stop_fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
+                game_fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
             rec_square_set_byte(g_current_map_index, x, y, square | SQUARE_HAS_THINGS);
             add_to_later_columns(x, 1);
             uint16_t index = map_get_square_first_thing_index(x, y);

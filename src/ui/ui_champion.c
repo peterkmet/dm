@@ -12,6 +12,7 @@
 #include "engine/magic.h"
 #include "engine/map.h"
 #include "engine/message.h"
+#include "engine/party.h"
 #include "engine/record.h"
 #include "ui/advanced.h"
 #include "ui/command.h"
@@ -710,7 +711,7 @@ static void insert_creature_name(char *text, size_t size)
         if (!name) {
             int16_t x = g_party_map_x;
             int16_t y = g_party_map_y;
-            game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
+            map_step(g_party_direction, 1, 0, &x, &y);
             uint16_t group = map_get_square_group(x, y);
             name = gfx_get_string(group == THING_ENDOFLIST ? TEXT_NO_CREATURE
                                                            : TEXT_CREATURE_NAME_FIRST + rec_group_creature_type(group));

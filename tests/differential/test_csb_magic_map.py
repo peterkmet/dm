@@ -8,7 +8,7 @@ import shutil
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Champion, Party, TimelineEvent, global_type
+from dmtest.game import Champion, Party, Timeline, TimelineEvent, global_type
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, needs_csb, needs_csb_mini, needs_dm
 
@@ -160,9 +160,9 @@ def csb(lib, tmp_path):
 
 
 def timeline(lib):
-    events = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
-    heap = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline"), ctypes.POINTER(u16))
-    return [events[heap[i]] for i in range(value(lib, "g_timeline_count", u16).value)]
+    events = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
+    heap = ctypes.cast(Timeline.in_dll(lib, "g_timeline").heap, ctypes.POINTER(u16))
+    return [events[heap[i]] for i in range(Timeline.in_dll(lib, "g_timeline").count)]
 
 
 def message_rows(lib):
