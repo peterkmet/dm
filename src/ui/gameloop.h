@@ -24,14 +24,14 @@ extern bool
 bool gameloop_load_data(const char *dir);
 /* The directory that gameloop_load_data read the game files from. */
 const char *gameloop_get_data_dir(void);
+/* The dungeon view of the party in the light of the party. */
+void gameloop_draw_view(void);
 /* Loads Dungeon.DAT from dir and starts a new game on the start square. Returns true on success. */
 bool gameloop_start_new_game(const char *dir);
 /* Starts a game that savegame_load restored: the party map, "GAME LOADED", the interface. */
 void gameloop_start_loaded_game(void);
 /* gameloop_start_loaded_game without the "GAME LOADED" dialog: the game goes on at once (quick load). */
 void gameloop_continue_loaded_game(void);
-/* The dungeon view of the party in the light of the party. */
-void gameloop_draw_view(void);
 /* Runs the waiting commands of one 50 Hz frame. Returns true when the wait for input is over and a
    game tick is due (gameloop_tick). */
 bool gameloop_run_frame(void);

@@ -21,6 +21,9 @@ void draw_blit(const Bitmap *src, int16_t sx, int16_t sy, Bitmap *dst, const Box
 void draw_fill(Bitmap *dst, const Box *box, uint8_t color);
 /* Mirrors bm in place. */
 void draw_flip(Bitmap *bm, int flip);
+/* Samples the source at the pixel centers with the 16.16 step of
+   the original. Rows after the first sample one row higher, as the original does. Returns true on success. */
+bool draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t *palette_changes, Bitmap *out);
 /* Fills box of dst from a masked pattern. units holds one 16-pixel unit per word of its
    plane 0, in row order. The temp bitmap is box->w rounded up to words; each word takes the next unit,
    from first_unit, restarting at 0 when the index reaches last_unit. With a mask (bit 7 of transparent
@@ -29,8 +32,5 @@ void draw_flip(Bitmap *bm, int flip);
    (sx, sy) with the color key. */
 void draw_masked_fill(const Bitmap *units, const Bitmap *mask, bool mask_flip, Bitmap *dst, const Box *box,
                       int16_t last_unit, int16_t first_unit, int16_t transparent, int16_t sx, int16_t sy);
-/* Samples the source at the pixel centers with the 16.16 step of
-   the original. Rows after the first sample one row higher, as the original does. Returns true on success. */
-bool draw_shrink(const Bitmap *src, int16_t width, int16_t height, const uint8_t *palette_changes, Bitmap *out);
 
 #endif

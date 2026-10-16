@@ -18,16 +18,16 @@ void startend_set_save_dir(const char *dir);
 /* The directory of the save file now in use. */
 const char *startend_save_dir(void);
 
-/* The save command: CANCEL, SAVE, QUIT. QUIT ends the game through the endgame. CSB: CANCEL, SAVE AND
-   PLAY, SAVE AND QUIT. Without disks the dialog stays after a save until CANCEL or QUIT. */
-void startend_save_game(void);
-#define SAVED_GAME          1
-#define SAVED_NEW_ADVENTURE 2
 /* Writes the save file of the adventure. In the CSB prison it makes the new adventure (CSBGAME.DAT)
    and loads it; the caller starts it (gameloop_start_loaded_game). Returns SAVED_GAME,
    SAVED_NEW_ADVENTURE, or 0. On 0, *reason is the reason why the prison party cannot make the
    adventure, or NULL when the file cannot be written. */
 int startend_save_current_game(const char **reason);
+#define SAVED_GAME          1
+#define SAVED_NEW_ADVENTURE 2
+/* The save command: CANCEL, SAVE, QUIT. QUIT ends the game through the endgame. CSB: CANCEL, SAVE AND
+   PLAY, SAVE AND QUIT. Without disks the dialog stays after a save until CANCEL or QUIT. */
+void startend_save_game(void);
 /* RESUME: loads the saved game with its dialogs. Returns true when the game is loaded. */
 bool startend_load_saved_game(void);
 /* The end of the game: game over (party_dead true), won (g_session.won), or quit (party_dead false). It

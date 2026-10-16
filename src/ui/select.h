@@ -38,10 +38,10 @@ int16_t select_screen(void);
 int16_t select_csb_choice(void);
 /* A key: SELECT_KEY_*. */
 void select_key(int16_t key);
-/* A left click at screen pixel (x, y): activates the enabled item under it. */
-void select_click(int16_t x, int16_t y);
 /* The click box of item index item on the current screen. Returns false when there is no such item. */
 bool select_item_box(int16_t item, Box *box); /* exported for the tests */
+/* A left click at screen pixel (x, y): activates the enabled item under it. */
+void select_click(int16_t x, int16_t y);
 /* Draws the current screen on g_screen with its own palette. The font must be loaded (text_init). */
 void select_draw(void);
 

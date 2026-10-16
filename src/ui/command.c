@@ -71,6 +71,34 @@ void command_set_entrance_input(void)
     secondary_keys = TABLES_KEYS_NONE;
 }
 
+/* The input tables of the game screen. */
+static void set_game_input(void)
+{
+    primary_mouse = TABLES_MOUSE_INTERFACE;
+    secondary_mouse = TABLES_MOUSE_MOVEMENT;
+    primary_keys = TABLES_KEYS_INTERFACE;
+    secondary_keys = TABLES_KEYS_MOVEMENT;
+}
+
+void command_reset(void)
+{
+    left_button_down = false;
+    pressing_eye = false;
+    pressing_mouth = false;
+    pressing_fake_wall = false;
+    dragged_icon_cell = -1;
+    highlight_enabled = false;
+    g_mouse_pointer_hidden = false;
+    g_stop_waiting_for_input = false;
+    g_game_frozen = false;
+    g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
+    queue_first = 0;
+    queue_count = 0;
+    g_input_received = false;
+    g_last_key = 0;
+    set_game_input();
+}
+
 static InputTables get_current_input(void)
 {
     return (InputTables){primary_mouse, secondary_mouse, primary_keys, secondary_keys};
@@ -97,15 +125,6 @@ void command_save_input(void)
 void command_restore_input(void)
 {
     set_input(dialog_input);
-}
-
-/* The input tables of the game screen. */
-static void set_game_input(void)
-{
-    primary_mouse = TABLES_MOUSE_INTERFACE;
-    secondary_mouse = TABLES_MOUSE_MOVEMENT;
-    primary_keys = TABLES_KEYS_INTERFACE;
-    secondary_keys = TABLES_KEYS_MOVEMENT;
 }
 
 static void queue_put(int16_t command, int16_t x, int16_t y)
@@ -818,23 +837,4 @@ bool command_process_queue(void)
         process_other_command(command);
     }
     return true;
-}
-
-void command_reset(void)
-{
-    left_button_down = false;
-    pressing_eye = false;
-    pressing_mouth = false;
-    pressing_fake_wall = false;
-    dragged_icon_cell = -1;
-    highlight_enabled = false;
-    g_mouse_pointer_hidden = false;
-    g_stop_waiting_for_input = false;
-    g_game_frozen = false;
-    g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
-    queue_first = 0;
-    queue_count = 0;
-    g_input_received = false;
-    g_last_key = 0;
-    set_game_input();
 }

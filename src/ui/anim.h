@@ -11,13 +11,13 @@
 
 #define ANIM_END (-1) /* anim_next_frame: no frame left */
 
+/* Stops the sound and frees the animation file and the files it loaded. */
+void anim_close(void); /* exported for the tests */
 /* Reads an animation file. Its chunks must end exactly at the file end. Returns true on success. */
 bool anim_open(const char *path); /* exported for the tests */
 /* Runs the chunks up to the next frame and draws the frame into g_screen with its palette. Returns the
    frames (50 Hz) that the frame stays, or ANIM_END. */
 int16_t anim_next_frame(void); /* exported for the tests */
-/* Stops the sound and frees the animation file and the files it loaded. */
-void anim_close(void); /* exported for the tests */
 /* Plays an animation file on the screen to its end. Returns false when the file cannot be read. */
 bool anim_play(const char *path);
 

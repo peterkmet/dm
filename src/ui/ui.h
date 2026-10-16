@@ -76,10 +76,10 @@ bool ui_zone_box(int16_t zone, Box *box);
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color);
 /* Dims the box of zone with a checkerboard of color (every second pixel, aligned to the screen). */
 void ui_fill_zone_pattern(Bitmap *dst, int16_t zone, uint8_t color);
-/* Inverts bit plane 2 in the box of zone: black becomes cyan. */
-void ui_xor_screen_zone(int16_t zone);
 /* XORs the box on the screen with the highlight color. */
 void ui_xor_screen_box(const Box *box);
+/* Inverts bit plane 2 in the box of zone: black becomes cyan. */
+void ui_xor_screen_zone(int16_t zone);
 /* Draws a graphic placed in zone. */
 void ui_blit_graphic(Bitmap *dst, int16_t graphic, int16_t zone, int16_t transparent);
 /* Draws a graphic from its top left corner into box. */
@@ -92,24 +92,24 @@ void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char
 void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t length);
 /* Shows the viewport bitmap (inventory) on the screen with the interface palette. */
 void ui_draw_viewport(void); /* draws the dungeon view bitmap into its zone */
+/* One palette for all rows: the 16 colors, or the interface palette for NULL (dialogs, endgame). */
+void ui_set_screen_palette(const uint16_t *colors);
 /* Sets the palette split: the viewport rows use top (when not NULL, it replaces palette[0..15]),
    the other rows the interface palette. */
 void ui_set_palette(const uint16_t *top);
-/* One palette for all rows: the 16 colors, or the interface palette for NULL (dialogs, endgame). */
-void ui_set_screen_palette(const uint16_t *colors);
-/* Draws the whole screen outside the viewport, as at the start of a game. */
-void ui_draw_interface(void);
 /* Draws the message area at the bottom of the screen. */
 void ui_draw_message_area(void);
+/* Draws the whole screen outside the viewport, as at the start of a game. */
+void ui_draw_interface(void);
 
 /* Copies object icon into out (16 x 16 bytes). Each icon sheet holds 16 icons per row. */
 void ui_extract_icon(int16_t icon, Bitmap *out);
-/* Draws an icon in a slot box: the hands are on the screen, the other slots in the viewport. */
-void ui_draw_slot_icon(int16_t slot_box, int16_t icon);
 /* The icon box of zone; with border, grown by the slot box border. */
 bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box); /* the box of a slot zone, with border the frame */
 /* The icon box of a slot box. */
 bool ui_get_slot_box_zone(int16_t slot_box, bool border, Box *box);
+/* Draws an icon in a slot box: the hands are on the screen, the other slots in the viewport. */
+void ui_draw_slot_icon(int16_t slot_box, int16_t icon);
 /* Shows the name of the object in the leader hand above the action area. Bones show the name of
    their champion first (English order). */
 void ui_draw_hand_object_name(uint16_t thing);

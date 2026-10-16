@@ -53,9 +53,9 @@ static inline uint16_t video_amiga_color(uint16_t red, uint16_t green, uint16_t 
     return (uint16_t)(red << AMIGA_RED_SHIFT | green << AMIGA_GREEN_SHIFT | blue);
 }
 
-/* Converts an Amiga 12-bit color (4 bits each of red, green, blue) to ARGB8888. */
-uint32_t video_convert_argb(uint16_t amiga);
 /* Amiga color of index color on screen row y. */
 uint16_t video_get_color(int16_t y, uint8_t color);
+/* Converts an Amiga 12-bit color (4 bits each of red, green, blue) to ARGB8888. */
+uint32_t video_convert_argb(uint16_t amiga);
 
 #endif
