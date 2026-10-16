@@ -128,7 +128,7 @@ static void turn_by_teleporter(Walk *w, uint16_t teleporter, bool points_to_itse
         g_party_map_y = d->y;
         g_party_teleport_count += !points_to_itself;
         if (rec_teleporter_is_audible(teleporter))
-            sound_request_play(SOUND_TELEPORT, (Location){d->x, d->y}, SOUND_MODE_NOW, 0);
+            sound_request_play(SOUND_BUZZ, (Location){d->x, d->y}, SOUND_MODE_NOW, 0);
         turn_party(rec_teleporter_is_absolute(teleporter) ? rotation : NORMALIZE(g_party_direction + rotation));
         break;
     case MOVER_GROUP:
@@ -181,7 +181,7 @@ static void fall_one_level(MoveDestination *d)
 
 /* The destination follows teleporters, pits, and stairs, at most SQUARE_CHAIN_MAXIMUM squares. The rules per square
    type and mover:
-   - teleporter, party: scope party; SOUND_TELEPORT now when audible; turns the party direction; counts the teleport.
+   - teleporter, party: scope party; SOUND_BUZZ now when audible; turns the party direction; counts the teleport.
    - teleporter, group: scope creatures; SOUND_BUZZ after the tick when audible; turns the creature directions and
      cells.
    - teleporter, object: any scope except creatures only; turns the cell unless keeps_cell.
@@ -485,6 +485,16 @@ void move_party(int16_t command)
             ticks = max16(ticks, champion_get_movement_ticks(i));
     g_projectile_disabled_movement_ticks = 0;
     g_disabled_movement_ticks = ticks;
+}
+
+bool move_is_blocked(int16_t command)
+{
+    if (command < COMMAND_MOVE_FORWARD || command > COMMAND_MOVE_LEFT)
+        return false;
+    if (g_disabled_movement_ticks)
+        return true;
+    return g_projectile_disabled_movement_ticks && NORMALIZE(command + g_party_direction - COMMAND_MOVE_FORWARD) ==
+                                                       g_last_projectile_disabled_movement_direction;
 }
 
 void move_reset(void)

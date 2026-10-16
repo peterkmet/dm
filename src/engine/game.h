@@ -2,6 +2,7 @@
 #ifndef DM_ENGINE_GAME_H
 #define DM_ENGINE_GAME_H
 /* Prefixes: game_ */
+#include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -61,6 +62,9 @@ void game_set_mode(int16_t mode);
 void game_toggle_cheat(int16_t cheat);
 /* The fuse wins the game: bright magical light and strong shields for the end sequence. */
 void game_start_fuse_sequence(void);
+/* Lord Chaos on square at before the fuse: full fuse health, centered, facing the party; the fluxcages on
+   the party square and on at disappear. */
+void game_prepare_fuse_lord(uint16_t lord, Location at);
 /* One tick of the game clock alone (the fuse sequence). */
 void game_increment_time(void);
 /* The game time advances one tick: torches burn and freeze life counts down. */

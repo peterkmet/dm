@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
+from dmtest.game import Position
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -45,6 +46,9 @@ def game():
     lib.explored_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
     lib.explored_is_seen.restype = ctypes.c_bool
     lib.automap_draw.argtypes = [ctypes.POINTER(Bitmap), Box, c16]
+    lib.explored_mark_visible.argtypes = [Position, c16]
+    lib.explored_get_visible_depths.argtypes = [Position, c16]
+    lib.explored_get_visible_depths.restype = c16
     assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     lib.game_start_new()
@@ -76,7 +80,7 @@ def ahead(x, y, d, depth, side=0):
 
 def mark_here(lib):
     m, x, y, d = party(lib)
-    lib.automap_mark_seen(m, x, y, d)
+    lib.explored_mark_visible(Position(m, x, y), d)
 
 
 def seen_squares(lib, m):
@@ -99,7 +103,7 @@ def test_walls_stop_visibility(game):
     stopped = 0
     for d in range(4):
         game.explored_reset()
-        game.automap_mark_seen(m, x, y, d)
+        game.explored_mark_visible(Position(m, x, y), d)
         expected = set()
         for depth in range(4):
             expected |= {ahead(x, y, d, depth, side) for side in (-1, 0, 1) if on_map(game, m, *ahead(x, y, d, depth, side))
@@ -113,7 +117,7 @@ def test_walls_stop_visibility(game):
 
 
 def test_side_squares_behind_walls_stay_unseen(game):
-    game.automap_mark_seen(1, 11, 10, WEST)
+    game.explored_mark_visible(Position(1, 11, 10), WEST)
     assert not game.explored_is_seen(1, 10, 9)
 
 
@@ -228,17 +232,16 @@ def test_png_after_walking(game):
 
 def test_darkness_shortens_the_visible_depth(game):
     lib = game
-    lib.automap_get_visible_depths.restype = c16
     palette = c16.in_dll(lib, "g_party_light_level")
     best = None
     for y in range(lib.dungeon_map_height(0)):  # a position with a long free view ahead
         for x in range(lib.dungeon_map_width(0)):
             for d in range(4):
                 palette.value = 0
-                if lib.automap_get_visible_depths(0, x, y, d) == 4:
+                if lib.explored_get_visible_depths(Position(0, x, y), d) == 4:
                     best = (x, y, d)
     assert best
     for darkness, depths in ((0, 4), (3, 4), (4, 3), (5, 2)):
         palette.value = darkness
-        assert lib.automap_get_visible_depths(0, *best) == depths
+        assert lib.explored_get_visible_depths(Position(0, *best[:2]), best[2]) == depths
     palette.value = 0

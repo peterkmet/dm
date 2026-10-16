@@ -6,7 +6,6 @@
 #include "engine/champion.h"
 #include "engine/event.h"
 #include "engine/game.h"
-#include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/magic.h"
 #include "engine/map.h"
@@ -396,43 +395,28 @@ static void click_on_champion_icon(int16_t cell)
    front cell protects the objects under it. */
 static void grab_object(int16_t pile)
 {
-    int16_t x = g_party_map_x;
-    int16_t y = g_party_map_y;
+    Location at = {g_party_map_x, g_party_map_y};
     if (g_leader_index == -1)
         return;
-    if (pile >= VIEW_CELL_FRONT_FIRST) {
-        get_front_square(&x, &y);
-        uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
-        if (group != THING_ENDOFLIST && !move_is_levitating(group) &&
-            group_get_creature_in_cell(group, NORMALIZE(pile + g_party_direction)) >= 0)
-            return;
-    }
-    uint16_t thing = g_pile_top_objects[pile];
-    if (object_get_icon_index(thing) != -1) {
-        move_get_move_result(&(Move){.thing = thing, .from.x = x, .from.y = y, .leaves = true}, NULL);
-        inventory_put_hand_object(thing);
-    }
-    g_stop_waiting_for_input = true;
+    if (pile >= VIEW_CELL_FRONT_FIRST)
+        get_front_square(&at.x, &at.y);
+    if (inventory_grab_object(g_pile_top_objects[pile], NORMALIZE(pile + g_party_direction), at))
+        g_stop_waiting_for_input = true;
 }
 
 /* The leader puts the hand object on the floor of view cell 0-3 or into the alcove ahead. Bones
    on a vi altar start the rebirth of their champion. */
 static void drop_object(int16_t pile)
 {
-    int16_t x = g_party_map_x;
-    int16_t y = g_party_map_y;
+    Location at = {g_party_map_x, g_party_map_y};
     bool alcove = pile == VIEW_CLICK_BOX_ALCOVE;
     if (g_leader_index == -1)
         return;
     if (alcove)
         pile = VIEW_CELL_FRONT_FIRST;
     if (pile >= VIEW_CELL_FRONT_FIRST)
-        get_front_square(&x, &y);
-    int16_t cell = NORMALIZE(pile + g_party_direction);
-    uint16_t thing = inventory_take_hand_object();
-    move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = x, .to.y = y, .enters = true}, NULL);
-    if (alcove && g_facing_vi_altar && object_get_icon_index(thing) == ICON_BONES)
-        sensor_add_rebirth_event(thing, x, y, cell);
+        get_front_square(&at.x, &at.y);
+    inventory_drop_object(NORMALIZE(pile + g_party_direction), at, alcove && g_facing_vi_altar);
     g_stop_waiting_for_input = true;
 }
 
@@ -452,7 +436,7 @@ static void touch_front_wall(void)
 
 /* An empty hand on the square ahead: a thud, or the hand goes into an imaginary wall while the
    button is down. */
-static void touch_front_square_empty_handed(int16_t imaginary_wall, int16_t x, int16_t y)
+static void touch_front_square_empty_handed(bool imaginary_wall, int16_t x, int16_t y)
 {
     if (!g_party_champion_count)
         return;
@@ -487,7 +471,7 @@ static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
 
 /* An empty-handed click in the dungeon view: grab an object, drink at a fountain, touch the wall, or touch the
    square ahead. */
-static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, int16_t imaginary_wall)
+static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, bool imaginary_wall)
 {
     for (int16_t i = 0; i < VIEW_CLICK_BOX_COUNT; i++) {
         if (!is_in_box(&g_dungeon_view_clickable_boxes[i], x, y))
@@ -527,9 +511,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
             return;
         }
     }
-    uint8_t square = map_get_square(fx, fy);
-    int16_t imaginary_wall =
-        rec_square_type(square) == SQUARE_FAKE_WALL && (square & FAKE_WALL_IMAGINARY) && !(square & FAKE_WALL_OPEN);
+    bool imaginary_wall = map_is_imaginary_wall((Location){fx, fy});
     if (g_leader_empty_handed) {
         click_empty_handed(x, y, fx, fy, imaginary_wall);
         return;
@@ -777,17 +759,6 @@ static void process_other_command(int16_t command)
     }
 }
 
-/* A step waits while the party cannot move, or while a projectile blocks this direction. */
-static bool is_movement_blocked(int16_t command)
-{
-    if (command < COMMAND_MOVE_FORWARD || command > COMMAND_MOVE_LEFT)
-        return false;
-    if (g_disabled_movement_ticks)
-        return true;
-    return g_projectile_disabled_movement_ticks && NORMALIZE(command + g_party_direction - COMMAND_MOVE_FORWARD) ==
-                                                       g_last_projectile_disabled_movement_direction;
-}
-
 bool command_process_queue(void)
 {
     if (!queue_count)
@@ -796,7 +767,7 @@ bool command_process_queue(void)
     int16_t command = q.command;
     int16_t x = q.x;
     int16_t y = q.y;
-    if (is_movement_blocked(command))
+    if (move_is_blocked(command))
         return false;
     queue_first = (queue_first + 1) % QUEUE_SIZE;
     queue_count--;

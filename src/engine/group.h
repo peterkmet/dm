@@ -240,6 +240,8 @@ typedef struct {
 void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t sound_mode);
 /* The group record becomes free. Health is cleared first, so that no projectile impact runs on the removal. */
 void group_delete(int16_t x, int16_t y);
+/* All creature groups of the current map except the one on square at disappear. */
+void group_delete_all_except(Location at);
 /* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group.
    Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
 DamageOutcome group_damage_creature(uint16_t group, int16_t creature_index, Location at, int16_t damage);

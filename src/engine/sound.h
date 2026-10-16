@@ -21,7 +21,6 @@
 #define SOUND_DOOR               2
 #define SOUND_ENTRANCE_DOOR      3
 #define SOUND_DOOR_HITS_CREATURE 4
-#define SOUND_TELEPORT           14
 #define SOUND_PARTY_DAMAGED      15
 
 /* Sounds of the creature rules. */

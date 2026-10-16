@@ -190,7 +190,6 @@ comment ui/advanced.c open: epic 8
 comment ui/advanced.h open: epic 8
 comment ui/anim.c open: epic 8
 comment ui/anim.h open: epic 8
-comment ui/automap.h open: epic 8
 comment ui/command.c open: epic 8
 comment ui/command.h open: epic 8
 comment ui/gameloop.h open: epic 8
@@ -237,7 +236,6 @@ header ui/video.h open: epic 8
 header ui/view.h open: epic 8
 include engine/group.h:engine/event.h open: epic 5
 include engine/inventory.c:engine/sound.h open: epic 5
-include engine/inventory.h:engine/map.h open: epic 5
 include engine/move.c:engine/inventory.h open: epic 5
 include engine/move.c:engine/event.h open: epic 5
 include engine/projectile.h:engine/event.h open: epic 5
@@ -309,10 +307,8 @@ dead-api ui/view.h:view_draw open: epic 8
 params platform/control.c:find_in_box open: epic 10
 params platform/platform.c:plat_set_pointer open: epic 11
 params platform/platform.h:plat_set_pointer open: epic 11
-params ui/automap.c:automap_side_is_visible open: epic 8
 params ui/automap.c:draw_square open: epic 8
 params ui/automap.c:fill_clipped open: epic 8
-params ui/automap.h:automap_side_is_visible open: epic 8
 params ui/dialog.c:dialog_draw open: epic 8
 params ui/dialog.c:fill open: epic 8
 params ui/dialog.h:dialog_draw open: epic 8
@@ -364,7 +360,6 @@ type ui:width open: epic 8
 type ui:x open: epic 8
 type ui:y open: epic 8
 todo engine/sound.c open: epic 9
-todo ui/automap.c open: epic 8
 todo ui/command.c open: epic 8
 todo ui/gameloop.c open: epic 8
 todo ui/ui.h open: epic 8

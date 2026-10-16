@@ -93,7 +93,7 @@ One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`,
 
 | Square | Mover | Rule |
 |---|---|---|
-| Teleporter | party | Needs scope bit 2. Plays sound 14 (`SOUND_TELEPORT`) now when audible. The party turns. The port counts the teleport. |
+| Teleporter | party | Needs scope bit 2. Plays sound 14 (`SOUND_BUZZ`) now when audible. The party turns. The port counts the teleport. |
 | Teleporter | group | Needs scope bit 1 (creatures). Plays sound 14 (`SOUND_BUZZ`) after the tick when audible. `group_turn_by_teleporter` turns the creature directions and cells. |
 | Teleporter | object | Any scope except 1 (creatures only). The object rotates its cell, unless `keeps_cell`. |
 | Teleporter | projectile | Any scope except 1 (creatures only). The projectile rotates its flight direction and its cell. |

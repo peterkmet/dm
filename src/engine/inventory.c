@@ -6,10 +6,13 @@
 #include "engine/champion.h"
 #include "engine/event.h"
 #include "engine/game.h"
+#include "engine/group.h"
 #include "engine/magic.h"
+#include "engine/move.h"
 #include "engine/party.h"
 #include "engine/random.h"
 #include "engine/record.h"
+#include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
@@ -172,6 +175,26 @@ uint16_t inventory_take_hand_object(void)
         }
     }
     return thing;
+}
+
+bool inventory_grab_object(uint16_t thing, int16_t cell, Location at)
+{
+    uint16_t group = map_find_thing(at, THING_GROUP);
+    if (group != THING_ENDOFLIST && !move_is_levitating(group) && group_get_creature_in_cell(group, cell) >= 0)
+        return false;
+    if (object_get_icon_index(thing) != -1) {
+        move_get_move_result(&(Move){.thing = thing, .from = at, .leaves = true}, NULL);
+        inventory_put_hand_object(thing);
+    }
+    return true;
+}
+
+void inventory_drop_object(int16_t cell, Location at, bool onto_vi_altar)
+{
+    uint16_t thing = inventory_take_hand_object();
+    move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, cell), .to = at, .enters = true}, NULL);
+    if (onto_vi_altar && object_get_icon_index(thing) == ICON_BONES)
+        sensor_add_rebirth_event(thing, at.x, at.y, cell);
 }
 
 /* Mana bonus of staffs and wands in the action hand, from the Staff to the Sceptre of Lyf (icons 58-66). */

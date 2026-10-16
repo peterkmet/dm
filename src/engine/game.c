@@ -19,6 +19,7 @@
 /* Light and shield amounts of the Fuse action. */
 #define FUSE_MAGICAL_LIGHT 200
 #define FUSE_SHIELD        100
+#define FUSE_LORD_HEALTH   10000
 
 uint32_t g_game_time, g_game_id;
 uint16_t g_redraw;
@@ -90,6 +91,15 @@ void game_start_fuse_sequence(void)
     g_party.shield_defense = FUSE_SHIELD;
     g_party.spell_shield_defense = FUSE_SHIELD;
     g_party.fire_shield_defense = FUSE_SHIELD;
+}
+
+void game_prepare_fuse_lord(uint16_t lord, Location at)
+{
+    rec_group_set_health(lord, 0, FUSE_LORD_HEALTH);
+    group_set_cells(lord, CELL_CENTERED, g_party_map_index);
+    group_set_directions(lord, (uint8_t)direction_back(g_party_direction), g_party_map_index); /* faces the party */
+    map_remove_fluxcages((Location){g_party_map_x, g_party_map_y});
+    map_remove_fluxcages(at);
 }
 
 void game_increment_time(void)
