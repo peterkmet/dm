@@ -19,14 +19,16 @@
 #include "engine/timeline.h"
 #include <string.h>
 
-#define POWER_SYMBOL_FIRST           0x60 /* symbol of power 1 is 0x60, power n is 0x5f + n */
+/* Symbol code of power 1. */
+#define POWER_SYMBOL_FIRST 0x60 /* symbol of power 1 is 0x60, power n is 0x5f + n */
+
+/* Attack, mana and tick values of the spells. */
 #define SPELL_PROJECTILE_ATTACK      90
 #define SHIELD_MANA_COST             4
 #define LIGHT_MAXIMUM_TICKS_DARKNESS 98
 #define LIGHT_SPELL_BASE_TICKS       10000
 #define MAGIC_TORCH_BASE_TICKS       2000
 #define FIRE_SHIELD_BASE_TICKS       100
-#define LIGHT_POWER_MAXIMUM          15
 #define MAGIC_MAP_TEXT               "MAGICMAP" /* the text of a magic map scroll */
 /* Projectile spells: mana bonus min(8, maximum mana / 8); step energy 10 - bonus. A weak cast (kinetic energy
    below 4 * step energy) gets 3 more kinetic energy and step energy 9 - bonus. */
@@ -41,15 +43,17 @@
 #define SPELL_KINETIC_SKILL_BASE     4
 #define SPELL_KINETIC_ENERGY_MINIMUM 21
 #define SHIELD_DEFENSE_TICKS_SHIFT   5 /* a shield spell adds ticks / 32 defense */
-#define POTION_POWER_RANDOM_MASK     0xf
+
+/* Bit mask of the random term of a potion power. */
+#define POTION_POWER_RANDOM_MASK    0xf
 /* Other spells: the duration base is (power + 1) * 4. */
-#define SPELL_DURATION_FACTOR        4
-#define LIGHT_SPELL_TICKS_FACTOR     512 /* Light: (power - 1) * 4 * 512 + 10000 ticks */
-#define MAGIC_TORCH_TICKS_FACTOR     128 /* Magic Torch: (power * 4 + 1) * 128 + 2000 ticks */
-#define INVISIBILITY_TICKS_FACTOR    8
-#define FOOTPRINTS_STRONG_POWER      3 /* from this power, footprints show all scents */
-#define MAGIC_MAP_NETA_TICKS_FACTOR  4
-#define MAGIC_MAP_ROS_DURATION_LOSS  2
+#define SPELL_DURATION_FACTOR       4
+#define LIGHT_SPELL_TICKS_FACTOR    512 /* Light: (power - 1) * 4 * 512 + 10000 ticks */
+#define MAGIC_TORCH_TICKS_FACTOR    128 /* Magic Torch: (power * 4 + 1) * 128 + 2000 ticks */
+#define INVISIBILITY_TICKS_FACTOR   8
+#define FOOTPRINTS_STRONG_POWER     3 /* from this power, footprints show all scents */
+#define MAGIC_MAP_NETA_TICKS_FACTOR 4
+#define MAGIC_MAP_ROS_DURATION_LOSS 2
 
 static void add_party_event(uint8_t type, uint16_t ticks, uint16_t b)
 {

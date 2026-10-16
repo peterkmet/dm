@@ -14,9 +14,11 @@
 #include "engine/sound.h"
 #include "engine/timeline.h"
 
+/* Experience of a steal sensor and the limits of the version checker. */
 #define SENSOR_EXPERIENCE         300
+#define SENSOR_PRIORITY_COUNT     3
 #define VERSION_CHECKER_LIMIT     37 /* the version checker passes for data below this value */
-#define CSB_VERSION_CHECKER_LIMIT 32
+#define VERSION_CHECKER_LIMIT_CSB 32
 
 /* The rotation effect that a sensor asked for in this pass. */
 static struct {
@@ -27,7 +29,7 @@ static struct {
 
 void sensor_add_event(int16_t event_type, Location at, int16_t cell, int16_t effect, uint32_t time)
 {
-    static const uint8_t priority[3] = {[EFFECT_SET] = 1, [EFFECT_CLEAR] = 3, [EFFECT_TOGGLE] = 2};
+    static const uint8_t priority[SENSOR_PRIORITY_COUNT] = {[EFFECT_SET] = 1, [EFFECT_CLEAR] = 3, [EFFECT_TOGGLE] = 2};
     TimelineEvent event = {
         .map_time = EVENT_MAP_TIME(g_current_map_index, time),
         .type = event_type,
@@ -407,7 +409,7 @@ static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t
         break;
     case SENSOR_FLOOR_VERSION_CHECKER:
         if (s->party && add && !s->party_on_square)
-            trigger(sensor, data < (g_adventure == ADVENTURE_CSB ? CSB_VERSION_CHECKER_LIMIT : VERSION_CHECKER_LIMIT),
+            trigger(sensor, data < (g_adventure == ADVENTURE_CSB ? VERSION_CHECKER_LIMIT_CSB : VERSION_CHECKER_LIMIT),
                     x, y);
         break;
     }

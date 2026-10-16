@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Number of thing types. */
 #define THING_TYPE_COUNT 16
 
 /* All buffers keep the big-endian byte layout of the original memory. */

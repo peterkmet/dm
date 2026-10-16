@@ -5,6 +5,7 @@
 #include "data/graphics.h"
 #include <stdint.h>
 
+/* Rows, sizes, lifetime and colors of the message lines. */
 #define MESSAGE_ROWS               4
 #define MESSAGE_LAST_ROW           (MESSAGE_ROWS - 1)
 #define MESSAGE_ROW_HEIGHT         7   /* pixel rows of one message line */

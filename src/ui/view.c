@@ -872,7 +872,7 @@ static bool draw_creatures_in_cell(const Group *group, int16_t dir, int16_t view
 /* A tick view starts new tracks; the old tracks stay when the party still looks from the same place. */
 static void start_tracks(int16_t dir, int16_t x, int16_t y)
 {
-    int32_t view = ((((int32_t)view_map << MAP_COORD_BITS | x) << MAP_COORD_BITS | y) << DIRECTION_BITS) | dir;
+    int32_t view = ((((int32_t)view_map << MAP_COORD_SHIFT | x) << MAP_COORD_SHIFT | y) << DIRECTION_SHIFT) | dir;
     last_track_count = view == track_view ? track_count : 0;
     memcpy(last_tracks, tracks, sizeof tracks[0] * (size_t)last_track_count);
     track_count = 0;

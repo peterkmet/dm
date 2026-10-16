@@ -9,6 +9,7 @@
 
 /* Explored squares (not in the original game): the squares the party has seen, for the automap. */
 
+/* Magic of the explored block. */
 #define EXPLORED_SAVE_MAGIC "AMAP" /* the first 4 bytes of the save block */
 
 /* Forgets every seen square and sizes the storage from the loaded dungeon. */

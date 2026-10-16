@@ -14,6 +14,7 @@
 #include "engine/timeline.h"
 #include <stdbool.h>
 
+/* Water amounts, weights and limits of the objects and slots. */
 #define WATERSKIN_WATER            800
 #define FILLED_WATERSKIN_CHARGES   3
 #define POTION_WATER_WATER         1600
@@ -343,9 +344,11 @@ void inventory_add_object_in_slot(int16_t champion_index, uint16_t thing, int16_
         c->attributes |= CHAMPION_ATTR_VIEWPORT;
 }
 
+/* Slot boxes of the hands in the champion hand area. */
+#define HAND_BOX_COUNT 8
+
 void inventory_click_on_slot_box(uint16_t slot_box)
 {
-    enum { HAND_BOX_COUNT = 8 };
     uint16_t champion_index, slot, hand = g_leader_hand_object;
     if (slot_box < HAND_BOX_COUNT) {
         champion_index = slot_box >> 1;

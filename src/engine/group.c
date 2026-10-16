@@ -19,11 +19,14 @@
 #include "engine/timeline.h"
 #include <stdlib.h>
 
+/* Aspect flags that a group keeps when its aspect changes. */
 #define ASPECT_KEEP_FLAGS (ASPECT_ATTACKING | ASPECT_FLIPPED)
 
+/* Flag and mask of a fixed possession entry. */
 #define FIXED_POSSESSION_RANDOM_DROP 0x8000
 #define FIXED_POSSESSION_INDEX_MASK  0x7fff
 
+/* System error, tick counts, chances and damages of the group rules. */
 #define SYSTEM_ERROR_NO_FREE_ACTIVE_GROUP    71
 #define ACTIVE_GROUP_RESERVE                 5
 #define MOVEMENT_TICKS_OF_IMMOBILE_CREATURE  100
@@ -36,70 +39,83 @@
 #define LUCK_PERCENT_AGAINST_CREATURE        60
 #define LUCK_PERCENT_AGAINST_MISS            75
 #define STEAL_CHANCE_STEP                    20
-#define CELLS_OF_THREE_CREATURES             0x3f
 #define SMOKE_ATTACK_QUARTER                 110
 #define SMOKE_ATTACK_HALF                    190
 #define SMOKE_ATTACK_FULL                    255
+
+/* Bit mask of the cells of three creatures. */
+#define CELLS_OF_THREE_CREATURES    0x3f
+#define DIRECTION_ALL_CELLS_FACTOR  0x55 /* repeats a 2-bit direction in the four cell fields */
 /* Faster creatures get a higher event priority: this minus the movement ticks. */
-#define GROUP_EVENT_PRIORITY_MAX             255
+#define GROUP_EVENT_PRIORITY_MAX    255
 /* A new active group can move at once: its last move is this many ticks ago. Move times are kept in one byte. */
-#define NEW_GROUP_LAST_MOVE_AGE              127
-#define MOVE_TIME_WRAP                       256
+#define NEW_GROUP_LAST_MOVE_AGE     127
+#define MOVE_TIME_WRAP              256
 /* First word of the fixed possession list of each creature type in the possession table. */
-#define POSSESSIONS_SKELETON                 0
-#define POSSESSIONS_STONE_GOLEM              3
-#define POSSESSIONS_TROLIN                   5
-#define POSSESSIONS_ANIMATED_ARMOUR          7
-#define POSSESSIONS_ROCK_PILE                14
-#define POSSESSIONS_PAIN_RAT                 19
-#define POSSESSIONS_SCREAMER                 22
-#define POSSESSIONS_MAGENTA_WORM             25
-#define POSSESSIONS_RED_DRAGON               29
+#define POSSESSIONS_SKELETON        0
+#define POSSESSIONS_STONE_GOLEM     3
+#define POSSESSIONS_TROLIN          5
+#define POSSESSIONS_ANIMATED_ARMOUR 7
+#define POSSESSIONS_ROCK_PILE       14
+#define POSSESSIONS_PAIN_RAT        19
+#define POSSESSIONS_SCREAMER        22
+#define POSSESSIONS_MAGENTA_WORM    25
+#define POSSESSIONS_RED_DRAGON      29
 /* A frightened group flees for random(100 - 4 * fear) + 20 events; a thief for random(64) + 20. */
-#define FEAR_RANDOM_MASK                     0xf
-#define FLEE_DELAY_RANGE                     100
-#define FLEE_DELAY_FEAR_STEP                 4
-#define FLEE_DELAY_MINIMUM                   20
-#define THEFT_FLEE_RANDOM_MASK               0x3f
-#define STEAL_CHANCE_START                   100
+#define FEAR_RANDOM_MASK            0x0f
+#define THEFT_FLEE_RANDOM_MASK      0x3f
+
+/* Flee delay and steal chance values. */
+#define FLEE_DELAY_RANGE                  100
+#define FLEE_DELAY_FEAR_STEP              4
+#define FLEE_DELAY_MINIMUM                20
+#define STEAL_CHANCE_START                100
 /* Line slopes in fixed point: 64 is one square across per square along. */
-#define LINE_SLOPE_ONE                       64
-#define LINE_SLOPE_STRAIGHT                  128
+#define LINE_SLOPE_ONE                    64
+#define LINE_SLOPE_STRAIGHT               128
 /* Sight: an invisible party gives the range -10 (compared unsigned); next to the party a roll adds hearing and smell. */
-#define INVISIBLE_PARTY_SIGHT_RANGE          (-10)
-#define ADJACENT_SIGHT_BONUS                 5
-#define SIGHT_ROLL_CENTER                    3
+#define INVISIBLE_PARTY_SIGHT_RANGE       (-10)
+#define ADJACENT_SIGHT_BONUS              5
+#define SIGHT_ROLL_CENTER                 3
 /* A scent trail is followed when 30 - 2 * smell is below the scent strength plus a random part. */
-#define SCENT_TRAIL_THRESHOLD                30
+#define SCENT_TRAIL_THRESHOLD             30
 /* The spell projectile of a creature. */
-#define CREATURE_SPELL_MIN_KINETIC_ENERGY    20
-#define CREATURE_SPELL_STEP_ENERGY           8
-#define POISON_ATTACK_FACTOR                 8
+#define CREATURE_SPELL_MIN_KINETIC_ENERGY 20
+#define CREATURE_SPELL_STEP_ENERGY        8
+#define POISON_ATTACK_FACTOR              8
 /* Wound probabilities: four 4-bit thresholds, compared with a random nibble. */
-#define WOUND_PROBABILITY_MASK               0xf
-#define WOUND_PROBABILITY_BITS               4
+#define WOUND_PROBABILITY_MASK            0xf
+
+/* Bits of one wound probability in the creature wound word. */
+#define WOUND_PROBABILITY_SHIFT     4
 /* Hit rolls: random(32) - 16 around the aim of the attacker. */
-#define AIM_RANDOM_MASK                      0x1f
-#define AIM_RANDOM_CENTER                    16
-#define CREATURE_DAMAGE_RANDOM_MASK          0xf
-#define WEAK_HIT_RANDOM_MASK                 0xf
-#define ARMOUR_RANDOM_MASK                   0x1f
-#define STRENGTH_DAMAGE_RANDOM_MASK          0x1f
+#define AIM_RANDOM_MASK             0x1f
+#define CREATURE_DAMAGE_RANDOM_MASK 0x0f
+#define WEAK_HIT_RANDOM_MASK        0x0f
+#define ARMOUR_RANDOM_MASK          0x1f
+#define STRENGTH_DAMAGE_RANDOM_MASK 0x1f
+
+/* Center of the random aim value. */
+#define AIM_RANDOM_CENTER         16
 /* A skill level above a random(64) doubles the melee damage and adds 10. */
-#define DOUBLE_DAMAGE_RANDOM_MASK            0x3f
-#define DOUBLE_DAMAGE_BONUS                  10
-#define MELEE_EXPERIENCE_BONUS               3
-#define MELEE_HIT_STAMINA                    4
+#define DOUBLE_DAMAGE_RANDOM_MASK 0x3f
+
+/* Damage and experience bonuses and the stamina cost of a melee hit. */
+#define DOUBLE_DAMAGE_BONUS    10
+#define MELEE_EXPERIENCE_BONUS 3
+#define MELEE_HIT_STAMINA      4
 /* Creatures farther than this on an axis update their aspect at a slow fixed pace. */
-#define ASPECT_NEAR_DISTANCE                 3
+#define ASPECT_NEAR_DISTANCE   3
 /* A creature with more attack ticks waits a random -2 to 5 ticks more. */
-#define SLOW_ATTACK_TICKS                    15
-#define ATTACK_RANGE_RANDOM_MASK             0xf
+#define SLOW_ATTACK_TICKS      15
+
+/* Bit mask of the random term of the attack range. */
+#define ATTACK_RANGE_RANDOM_MASK 0xf
 /* Random bits that must all be 0: a hit without weighted wounds (1 in 8), a single small creature that
    shifts (1 in 4), and its move to a new cell (1 in 8). */
-#define PLAIN_HIT_RANDOM_BITS                0x70
-#define SHIFT_CELL_RANDOM_BITS               0xc0
-#define NEW_CELL_RANDOM_BITS                 0x38
+#define PLAIN_HIT_RANDOM_BITS    0x70
+#define MOVE_CELL_RANDOM_BITS    0xc0
+#define NEW_CELL_RANDOM_BITS     0x38
 
 ActiveGroup *g_active_groups;
 uint16_t g_active_group_count, g_max_active_group_count;
@@ -212,7 +228,7 @@ void group_allocate_active(uint16_t count)
 
 void group_init_active_groups(void)
 {
-    g_max_active_group_count = g_adventure == ADVENTURE_CSB ? CSB_ACTIVE_GROUP_MAX_COUNT : ACTIVE_GROUP_MAX_COUNT;
+    g_max_active_group_count = g_adventure == ADVENTURE_CSB ? ACTIVE_GROUP_MAX_COUNT_CSB : ACTIVE_GROUP_MAX_COUNT;
     group_allocate_active(g_max_active_group_count);
 }
 
@@ -252,7 +268,7 @@ static uint8_t get_directions(uint16_t group, int16_t map)
     if (map == g_party_map_index)
         return active_of(group)->directions;
     uint16_t direction = rec_group_direction(group);
-    return direction | direction << 2 | direction << 4 | direction << 6;
+    return direction * DIRECTION_ALL_CELLS_FACTOR;
 }
 
 int16_t group_get_creature_in_cell(uint16_t group, int16_t cell)
@@ -278,7 +294,7 @@ static void order_attack_cells(uint8_t *ordered_cells, Location target, Location
     if (!(direction & 1))
         group_cell++;
     int16_t row = ((group_cell >> 1) & 1) + direction * 2;
-    for (int16_t i = 0; i < 4; i++)
+    for (int16_t i = 0; i < CELL_COUNT; i++)
         ordered_cells[i] = tables_get_attack_cell_order(row, i);
 }
 
@@ -288,9 +304,9 @@ int16_t group_get_melee_target(int16_t group_x, int16_t group_y, int16_t party_x
     uint16_t group = map_find_thing((Location){group_x, group_y}, THING_GROUP);
     if (group == THING_ENDOFLIST)
         return -1;
-    uint8_t cells[4];
+    uint8_t cells[CELL_COUNT];
     order_attack_cells(cells, (Location){group_x, group_y}, (Location){party_x, party_y}, champion_cell);
-    for (int16_t i = 0; i < 4; i++) {
+    for (int16_t i = 0; i < CELL_COUNT; i++) {
         int16_t creature_index = group_get_creature_in_cell(group, cells[i]);
         if (creature_index >= 0)
             return creature_index;
@@ -353,7 +369,7 @@ void group_frighten(uint16_t group, int16_t x, int16_t y, uint8_t delay_fleeing)
 
 static uint16_t set_cell_value(uint16_t packed, int16_t creature_index, uint16_t value)
 {
-    uint16_t shift = GROUP_CELL_BITS * creature_index;
+    uint16_t shift = GROUP_CELL_SHIFT * creature_index;
     return (packed & ~(GROUP_CELL_MASK << shift)) | (value & GROUP_CELL_MASK) << shift;
 }
 
@@ -512,17 +528,18 @@ uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, 
     return group;
 }
 
-#define GENERATOR_RANDOM_COUNT     8
-#define GENERATOR_COUNT_MASK       7
-#define GENERATOR_COUNT_FIELD_MASK 0xf
+/* Flag and masks of the creature count field of a group generator. */
+#define GENERATOR_RANDOM_FLAG 0x8
+#define GENERATOR_RANDOM_MASK 0x7
+#define GENERATOR_FIELD_MASK  0xf
 
 void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y)
 {
     uint16_t field = rec_sensor_generator_count(sensor), last_creature_index;
-    if (field & GENERATOR_RANDOM_COUNT)
-        last_creature_index = random16() % (field & GENERATOR_COUNT_MASK);
+    if (field & GENERATOR_RANDOM_FLAG)
+        last_creature_index = random16() % (field & GENERATOR_RANDOM_MASK);
     else
-        last_creature_index = (field & GENERATOR_COUNT_FIELD_MASK) - 1;
+        last_creature_index = (field & GENERATOR_FIELD_MASK) - 1;
     int16_t multiplier = rec_sensor_health_multiplier(sensor);
     if (!multiplier)
         multiplier = rec_current_map_difficulty();
@@ -1265,9 +1282,9 @@ int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell)
 {
     if (!g_party_champion_count || abs16(x - g_party_map_x) + abs16(y - g_party_map_y) > 1)
         return -1;
-    uint8_t cells[4];
+    uint8_t cells[CELL_COUNT];
     order_attack_cells(cells, (Location){g_party_map_x, g_party_map_y}, (Location){x, y}, cell);
-    for (int16_t i = 0; i < 4; i++) {
+    for (int16_t i = 0; i < CELL_COUNT; i++) {
         int16_t champion_index = champion_get_index_in_cell(cells[i]);
         if (champion_index >= 0)
             return champion_index;
@@ -1285,7 +1302,7 @@ static uint16_t hit_wounds(const CreatureInfo *info)
     uint16_t index = 0;
     while ((probabilities & WOUND_PROBABILITY_MASK) < (random & WOUND_PROBABILITY_MASK)) {
         index++;
-        probabilities >>= WOUND_PROBABILITY_BITS;
+        probabilities >>= WOUND_PROBABILITY_SHIFT;
     }
     return tables_get_wound_mask(index);
 }
@@ -1885,7 +1902,7 @@ static void process_group_behavior(GroupTurn *t, uint16_t behavior)
 static bool shift_single_creature(GroupTurn *t)
 {
     uint16_t random = random16();
-    if (t->last_creature_index || t->size == CREATURE_SIZE_FULL || (random & SHIFT_CELL_RANDOM_BITS))
+    if (t->last_creature_index || t->size == CREATURE_SIZE_FULL || (random & MOVE_CELL_RANDOM_BITS))
         return false;
     uint16_t cell = random;
     if (t->active->cells != CELL_CENTERED) {
@@ -1906,7 +1923,7 @@ static bool shift_single_creature(GroupTurn *t)
 /* A creature steps to another cell of the square, toward the front. Returns true when all creatures died. */
 static bool bring_to_front(GroupTurn *t, int16_t creature)
 {
-    uint16_t position = t->active->cells >> (GROUP_CELL_BITS * creature);
+    uint16_t position = t->active->cells >> (GROUP_CELL_SHIFT * creature);
     uint16_t cell = NORMALIZE(position);
     if (!t->last_creature_index && random_bit()) {
         t->active->cells = CELL_CENTERED;
@@ -2181,8 +2198,8 @@ int16_t group_turn_by_teleporter(uint16_t teleporter, uint16_t group, int16_t ma
                 cell_turn = absolute ? 0 : rotation;
             if (cell_turn)
                 cells = set_cell_value(cells, i, NORMALIZE(cell_turn + old_cells));
-            old_directions >>= GROUP_CELL_BITS;
-            old_cells >>= GROUP_CELL_BITS;
+            old_directions >>= GROUP_CELL_SHIFT;
+            old_cells >>= GROUP_CELL_SHIFT;
         }
     }
     group_set_directions(group, directions, map);

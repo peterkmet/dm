@@ -22,13 +22,16 @@
 #include "engine/timeline.h"
 #include <string.h>
 
+/* Size of the buffer of a message text. */
 #define MESSAGE_SIZE 100
 
+/* Freeze Life ticks of the magical boxes and the charges. */
 #define FREEZE_LIFE_TICKS_BLUE_BOX  30
 #define FREEZE_LIFE_TICKS_GREEN_BOX 125
 #define FREEZE_LIFE_TICKS_CHARGE    70
 #define FREEZE_LIFE_TICKS_MAXIMUM   200
 
+/* Attack, tick, experience and mana values of the spell, door and throw actions. */
 #define SPELL_ACTION_MAXIMUM_LEVEL    6 /* the mana cost of a spell action is 7 - min(6, skill level) */
 #define FIREBALL_ACTION_ATTACK        150
 #define DISPELL_ACTION_ATTACK         150
@@ -53,13 +56,15 @@
 #define THROW_STEP_ENERGY_BASE        11
 #define THROW_STEP_ENERGY_MINIMUM     5
 #define WEAPON_CLASS_SKILL_LEVEL_STEP 8
-#define WEAPON_SHOOT_ATTACK_MASK      0xff /* weapon info attributes bits 0-7: the attack of a launcher */
-#define SPELL_ACTION_ATTACK_MINIMUM   2    /* with too little mana: max(2, mana * attack / cost) */
-#define INVOKE_ACTION_RANDOM_MASK     0x7f /* Invoke attack: 100 + random(128) */
-#define HEAL_ACTION_EXPERIENCE_STEP   2    /* Heal experience: 2, plus 2 for each step */
-#define WINDOW_ACTION_LEVEL_BONUS     8    /* Window ticks: random % (level + 8) + 5 */
-#define THROW_ENERGY_RANDOM_MASK      0xf
-#define THROW_ATTACK_RANDOM_MASK      0x1f
+#define SPELL_ACTION_ATTACK_MINIMUM   2 /* with too little mana: max(2, mana * attack / cost) */
+#define HEAL_ACTION_EXPERIENCE_STEP   2 /* Heal experience: 2, plus 2 for each step */
+#define WINDOW_ACTION_LEVEL_BONUS     8 /* Window ticks: random % (level + 8) + 5 */
+
+/* Bit masks of the shoot attack of a launcher and of the random terms of the invoke and throw actions. */
+#define WEAPON_SHOOT_ATTACK_MASK  0xff /* weapon info attributes bits 0-7: the attack of a launcher */
+#define INVOKE_ACTION_RANDOM_MASK 0x7f /* Invoke attack: 100 + random(128) */
+#define THROW_ENERGY_RANDOM_MASK  0x0f
+#define THROW_ATTACK_RANDOM_MASK  0x1f
 
 /* Fear actions: the bonus to the influence roll and the experience. */
 #define FEAR_BONUS_CONFUSE        12
@@ -81,10 +86,8 @@
 #define INVOKE_HARM_NON_MATERIAL 2
 
 /* Cells relative to the champion direction. */
-#define RELATIVE_CELL_FRONT_LEFT  0
-#define RELATIVE_CELL_FRONT_RIGHT 1
-#define RELATIVE_CELL_BACK_RIGHT  2
-#define RELATIVE_CELL_BACK_LEFT   3
+#define RELATIVE_CELL_BACK_RIGHT 2
+#define RELATIVE_CELL_BACK_LEFT  3
 
 ActionList g_action_list = {
     {ACTION_NONE, ACTION_NONE, ACTION_NONE},

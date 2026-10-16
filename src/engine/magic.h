@@ -30,6 +30,7 @@ static inline Position magic_get_map_position(const uint8_t *spells)
     return (Position){word & PARTY_POSITION_MAP_MASK, party_position_x(word), party_position_y(word)};
 }
 
+/* Shield defense above which a new shield adds only a quarter. */
 #define SHIELD_STRONG 50 /* above this shield defense, a new shield or a Ya potion adds a quarter */
 
 /* Results of magic_get_champion_spell_cast_result. */

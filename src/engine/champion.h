@@ -8,48 +8,52 @@
 
 /* Champion rules of KAOS (CHAMPION.C): docs/rules/champions.md. */
 
-#define CHAMPION_MAX_COUNT  4
-#define STAT_LIMIT          170 /* no statistic grows above this value */
-#define STAT_MINIMUM_VALUE  30  /* the minimum of each statistic of a new champion */
-#define STAT_LUCK           0
-#define STAT_STRENGTH       1
-#define STAT_DEXTERITY      2
-#define STAT_WISDOM         3
-#define STAT_VITALITY       4
-#define STAT_ANTIMAGIC      5
-#define STAT_ANTIFIRE       6
-#define STAT_COUNT          7
-#define STAT_MANA           STAT_COUNT /* object modifiers: the change goes to the maximum mana */
-#define STAT_MAXIMUM        0
-#define STAT_CURRENT        1
-#define STAT_MINIMUM        2
-#define STAT_VALUE_COUNT    3
+/* Champion count, statistic limits and statistic indices. */
+#define CHAMPION_MAX_COUNT       4
+#define CHAMPION_SYMBOL_COUNT    4
+#define CHAMPION_MAGIC_MAP_BYTES 6
+#define STAT_LIMIT               170 /* no statistic grows above this value */
+#define STAT_MINIMUM_VALUE       30  /* the minimum of each statistic of a new champion */
+#define STAT_LUCK                0
+#define STAT_STRENGTH            1
+#define STAT_DEXTERITY           2
+#define STAT_WISDOM              3
+#define STAT_VITALITY            4
+#define STAT_ANTIMAGIC           5
+#define STAT_ANTIFIRE            6
+#define STAT_COUNT               7
+#define STAT_MANA                STAT_COUNT /* object modifiers: the change goes to the maximum mana */
+#define STAT_MAXIMUM             0
+#define STAT_CURRENT             1
+#define STAT_MINIMUM             2
+#define STAT_VALUE_COUNT         3
 /* Slots of Champion.slots in record order, then the slots of the open chest. */
-#define SLOT_HAND_READY     0
-#define SLOT_HAND_ACTION    1
-#define SLOT_HEAD           2
-#define SLOT_TORSO          3
-#define SLOT_LEGS           4
-#define SLOT_FEET           5
-#define SLOT_POUCH_2        6
-#define SLOT_QUIVER_LINE2_1 7
-#define SLOT_QUIVER_LINE1_2 8
-#define SLOT_QUIVER_LINE2_2 9
-#define SLOT_NECK           10
-#define SLOT_POUCH_1        11
-#define SLOT_QUIVER_LINE1_1 12
-#define SLOT_BACKPACK_FIRST 13
-#define SLOT_COUNT          30
-#define SLOT_CHEST_FIRST    30
-#define SLOT_CHEST_COUNT    8
-#define CHAMPION_NAME_SIZE  8
-#define CHAMPION_TITLE_SIZE 20
+#define SLOT_HAND_READY          0
+#define SLOT_HAND_ACTION         1
+#define SLOT_HEAD                2
+#define SLOT_TORSO               3
+#define SLOT_LEGS                4
+#define SLOT_FEET                5
+#define SLOT_POUCH_2             6
+#define SLOT_QUIVER_LINE2_1      7
+#define SLOT_QUIVER_LINE1_2      8
+#define SLOT_QUIVER_LINE2_2      9
+#define SLOT_NECK                10
+#define SLOT_POUCH_1             11
+#define SLOT_QUIVER_LINE1_1      12
+#define SLOT_BACKPACK_FIRST      13
+#define SLOT_COUNT               30
+#define SLOT_CHEST_FIRST         30
+#define SLOT_CHEST_COUNT         8
+#define CHAMPION_NAME_SIZE       8
+#define CHAMPION_TITLE_SIZE      20
 
 typedef struct {
     int16_t temporary_experience;
     int32_t experience;
 } Skill;
 
+/* Size of a champion portrait in pixels. */
 #define CHAMPION_PORTRAIT_WIDTH  32 /* pixels of a champion portrait */
 #define CHAMPION_PORTRAIT_HEIGHT 29 /* rows of a champion portrait */
 
@@ -67,7 +71,7 @@ typedef struct {
     uint8_t direction, cell;
     uint8_t action_index; /* 255: none */
     uint8_t symbol_step;
-    char symbols[5];
+    char symbols[CHAMPION_SYMBOL_COUNT + 1];
     uint8_t direction_maximum_damage_received, maximum_damage_received;
     uint8_t poison_event_count;
     int16_t enable_action_event_index;        /* event 11, or -1 */
@@ -84,7 +88,7 @@ typedef struct {
     uint16_t slots[SLOT_COUNT];
     uint16_t load;
     int16_t shield_defense;
-    uint8_t magic_map[6]; /* CSB record bytes 0x118-0x11d, kept as they are */
+    uint8_t magic_map[CHAMPION_MAGIC_MAP_BYTES]; /* CSB record bytes 0x118-0x11d, kept as they are */
     ChampionRuntime runtime;
 } Champion;
 
@@ -92,24 +96,33 @@ extern Champion g_champions[CHAMPION_MAX_COUNT];
 extern int16_t g_party_champion_count;
 extern int16_t g_leader_index, g_magic_caster_champion_index;
 
-#define CHAMPION_RECORD_SIZE   320
-#define ACTION_NONE            255
-#define CHAMPION_SYMBOL_COUNT  4
-#define FOOD_WATER_MINIMUM     (-1024)
-#define INITIAL_FOOD_WATER     1500 /* food and water of a new champion: this + a random byte */
+/* Record size, action id, symbol count and food and water amounts. */
+#define CHAMPION_RECORD_SIZE 320
+#define ACTION_NONE          255
+#define FOOD_WATER_MINIMUM   (-1024)
+#define INITIAL_FOOD_WATER   1500   /* food and water of a new champion: this + a random byte */
+#define FOOD_WATER_STARVING  (-512) /* below this the champion starves */
+#define MAXIMUM_MANA         900
+
+/* Bit mask of the random byte of the initial food and water. */
 #define FOOD_WATER_RANDOM_MASK 0xff
-#define FOOD_WATER_STARVING    (-512) /* below this the champion starves */
-#define MAXIMUM_MANA           900
 /* A load above 5/8 of the maximum load is heavy. */
 #define HEAVY_LOAD_NUMERATOR   5
 #define HEAVY_LOAD_DENOMINATOR 8
 
-#define WOUND_READY_HAND              1
-#define WOUND_ACTION_HAND             2
-#define WOUND_HEAD                    4
-#define WOUND_TORSO                   8
-#define WOUND_LEGS                    0x10
-#define WOUND_FEET                    0x20
+/* Wound bits of the body parts, attack types, panel commands and champion flags. */
+#define WOUND_READY_HAND   0x0001
+#define WOUND_ACTION_HAND  0x0002
+#define WOUND_HEAD         0x0004
+#define WOUND_TORSO        0x0008
+#define WOUND_LEGS         0x0010
+#define WOUND_FEET         0x0020
+#define PANEL_RESURRECT    0x00a0
+#define PANEL_REINCARNATE  0x00a1
+#define PANEL_CANCEL       0x00a2
+#define CHAMPION_ATTR_MALE 0x0010
+
+/* Attack type values. */
 #define ATTACK_RAW                    0
 #define ATTACK_FIRE                   1
 #define ATTACK_SELF                   2
@@ -118,10 +131,6 @@ extern int16_t g_leader_index, g_magic_caster_champion_index;
 #define ATTACK_MAGIC                  5
 #define ATTACK_PSYCHIC                6
 #define ATTACK_LIGHTNING              7
-#define PANEL_RESURRECT               0xa0
-#define PANEL_REINCARNATE             0xa1
-#define PANEL_CANCEL                  0xa2
-#define CHAMPION_ATTR_MALE            0x0010
 /* Champion attribute redraw flags (Champion.attributes). */
 #define CHAMPION_ATTR_ACTION_DISABLED 0x0008
 #define CHAMPION_ATTR_NAME_TITLE      0x0080

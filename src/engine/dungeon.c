@@ -20,10 +20,13 @@ uint16_t g_dungeon_id = DM_DUNGEON_ID;
 
 const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_RECORD_BYTES, 4, 4, 4, 4, 8, 4, 0,
                                                            0, 0, 8, 4};
+/* Size of the dungeon buffer and of the compressed header and dictionary. */
 #define MAX_DUNGEON_SIZE            (1024 * 1024)
-#define DUNGEON_COMPRESSED_MAGIC    0x8104
 #define COMPRESSED_HEADER_BYTES     8  /* magic, unpacked size, dungeon id */
 #define COMPRESSED_DICTIONARY_BYTES 20 /* 4 two-bit codes, then 16 four-bit codes */
+
+/* Magic word of a compressed dungeon. */
+#define DUNGEON_COMPRESSED_MAGIC 0x8104
 
 /* Dungeon header fields. */
 #define HEADER_BYTES                44
@@ -34,6 +37,7 @@ const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_REC
 #define PARTY_START_Y_SHIFT         5
 #define PARTY_START_DIRECTION_SHIFT 10
 
+/* Table sizes of a new game and of one loaded dungeon. */
 #define FREE_SQUARE_THINGS   300 /* free square-first-thing entries of a new game */
 #define NEW_GAME_EVENT_COUNT 100
 #define MAX_THINGS           1024
@@ -421,22 +425,22 @@ int16_t dungeon_map_height(int16_t map)
 }
 
 /* dungeon_decode_text modes; MODE_ANY_VISIBILITY also decodes an invisible text. */
-#define MODE_INSCRIPTION        0
+#define MODE_INSCRIPTION        0x0000
 #define MODE_MESSAGE            0x0001
-#define MODE_SCROLL             0x0002
 #define MODE_MASK               0x7fff
 /* 5-bit text codes: 0-25 letters, then space, period, separator, two escapes, end. */
-#define TEXT_CODE_BITS          5
-#define TEXT_CODE_MASK          0x1f
+#define TEXT_CODE_SHIFT         5
 #define TEXT_CODES_PER_WORD     3
 #define CODE_SPACE              26
 #define CODE_PERIOD             27
 #define CODE_SEPARATOR          28
 #define CODE_ESCAPE_REPLACEMENT 29
-#define CODE_ESCAPE_STRING      30
 #define CODE_END                31
 #define INSCRIPTION_SEPARATOR   ((char)0x80) /* the wall text font ends a line here */
 #define INSCRIPTION_END         ((char)0x81)
+
+/* Bit mask of one text code. */
+#define TEXT_CODE_MASK 0x1f
 
 typedef struct {
     char *p, *end;
@@ -483,7 +487,7 @@ static void decode_codes(TextOut *o, uint16_t w, int16_t mode)
             word = be16(g_dungeon_text_data + w * 2);
             w++;
         }
-        uint16_t code = word >> (TEXT_CODES_PER_WORD - 1 - k) * TEXT_CODE_BITS & TEXT_CODE_MASK;
+        uint16_t code = word >> (TEXT_CODES_PER_WORD - 1 - k) * TEXT_CODE_SHIFT & TEXT_CODE_MASK;
         if (escape) {
             put_string(o, escape_string(escape, code, mode));
             escape = 0;

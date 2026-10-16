@@ -14,6 +14,7 @@
 #include "engine/sensor.h"
 #include "engine/sound.h"
 
+/* Strength of a new scent and the stamina factor of a step. */
 #define SCENT_NEW_STRENGTH  24
 #define MOVE_STAMINA_FACTOR 3 /* stamina cost of a step: load * 3 / maximum load + 1 */
 

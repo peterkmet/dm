@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+/* Sound period, loudness sums and the empty slot. */
 #define SOUND_PERIOD_PER_RATE 72800 /* Paula period = this / sound rate */
 #define LOUDNESS_MEDIUM_SUM   15    /* left + right volume of a medium sound */
 #define LOUDNESS_LOUD_SUM     26    /* left + right volume of a loud sound */

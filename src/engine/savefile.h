@@ -8,6 +8,7 @@
 /* DM v3.60 save file container (DMGAME~.DAT); CSB (CSBGAME.DAT) with g_adventure. Layout: docs/formats/save.md,
    CSB header: docs/csb/data.md "Save file". */
 
+/* Header size and block layout of the save file. */
 #define SAVE_HEADER_BYTES    512
 #define SAVE_BLOCKS          5
 #define SAVE_BLOCK_GLOBALS   0
@@ -39,6 +40,7 @@
 #define SAVE_GLOBAL_LAST_PROJECTILE_DIRECTION          44
 #define SAVE_GLOBAL_MAX_ACTIVE_GROUP_COUNT             46
 
+/* Sizes of the records in the save file. */
 #define SAVE_CHAMPIONS_BYTES    1408 /* 4 champion records and 128 bytes of the party */
 #define SAVE_PARTY_BYTES        128
 #define SAVE_ACTIVE_GROUP_BYTES 16

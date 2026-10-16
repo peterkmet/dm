@@ -8,6 +8,7 @@
 
 /* Floor and wall sensors. Coordinates are on the current map. */
 
+/* Sensor effects and local effects. */
 #define EFFECT_SET                    0
 #define EFFECT_CLEAR                  1
 #define EFFECT_TOGGLE                 2

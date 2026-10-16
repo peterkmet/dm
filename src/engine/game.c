@@ -11,11 +11,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Bit masks of the tick intervals of the torches and the time effects. */
 #define TORCH_BURN_INTERVAL_MASK   0x1ff /* torches lose one charge every 512 ticks */
-#define TIME_EFFECTS_MASK          0x3f  /* champion time effects every 64 ticks */
-#define TIME_EFFECTS_SLEEPING_MASK 0xf   /* every 16 ticks while the party sleeps */
-#define FUSE_MAGICAL_LIGHT         200
-#define FUSE_SHIELD                100
+#define TIME_EFFECTS_MASK          0x03f /* champion time effects every 64 ticks */
+#define TIME_EFFECTS_SLEEPING_MASK 0x00f /* every 16 ticks while the party sleeps */
+
+/* Light and shield amounts of the Fuse action. */
+#define FUSE_MAGICAL_LIGHT 200
+#define FUSE_SHIELD        100
 
 uint32_t g_game_time, g_game_id;
 uint16_t g_redraw;

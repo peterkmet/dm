@@ -10,12 +10,15 @@
 #include <inttypes.h>
 #include <string.h>
 
+/* Count of square-first-thing entries at which the dungeon is full. */
 #define FATAL_SQUARE_FIRST_THINGS_FULL 72
-#define NO_DUNGEON_MAP                 0xff
+
+/* Map value for no map. */
+#define NO_DUNGEON_MAP 0xff
 
 int16_t g_current_map_index = -1, g_current_map_width, g_current_map_height;
 const uint8_t *g_current_map;
-uint16_t g_current_map_door_info[2];
+uint16_t g_current_map_door_info[DOOR_TYPE_COUNT];
 static uint8_t *column_first_thing_index;
 
 void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *out_x, int16_t *out_y)
@@ -38,7 +41,7 @@ void map_set_current_map(int16_t map)
     g_current_map = rec_map_descriptor(map);
     g_current_map_width = dungeon_map_width(map);
     g_current_map_height = dungeon_map_height(map);
-    for (int16_t door = 0; door < 2; door++)
+    for (int16_t door = 0; door < DOOR_TYPE_COUNT; door++)
         g_current_map_door_info[door] = tables_get_door_attributes(rec_map_door_set(map, door));
     column_first_thing_index = g_dungeon_column_first_thing_index + g_dungeon_map_first_column[map] * 2;
 }

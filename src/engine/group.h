@@ -13,10 +13,11 @@
 
 /* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules/creatures.md. */
 
+/* Most creatures in one group. */
 #define GROUP_MAX_CREATURES 4
 
 /* Creature attributes (CreatureInfo.attributes). */
-#define CREATURE_SIZE_MASK                  0x0003
+#define CREATURE_EXTENT_MASK                0x0003
 #define CREATURE_SIDE_ATTACK                0x0004
 #define CREATURE_PREFER_BACK_ROW            0x0008
 #define CREATURE_ATTACK_ANY_CHAMPION        0x0010
@@ -28,16 +29,18 @@
 #define CREATURE_NIGHT_VISION               0x1000
 #define CREATURE_ARCHENEMY                  0x2000
 #define CREATURE_NOT_ON_MAP                 0x4000 /* KU does not show the creature */
-#define CREATURE_SIZE_QUARTER               0
-#define CREATURE_SIZE_HALF                  1
-#define CREATURE_SIZE_FULL                  2
-#define CREATURE_IMMOBILE                   255
-#define CREATURE_NO_ATTACK                  255
-#define CREATURE_INVULNERABLE               255
-#define CREATURE_NEVER_HITS                 255
-#define FEAR_RESISTANCE_NONE_FEARLESS       15
-#define POISON_IMMUNE                       15
-#define FIRE_IMMUNE                         15
+
+/* Creature sizes and the values that mean none or immune. */
+#define CREATURE_SIZE_QUARTER         0
+#define CREATURE_SIZE_HALF            1
+#define CREATURE_SIZE_FULL            2
+#define CREATURE_IMMOBILE             255
+#define CREATURE_NO_ATTACK            255
+#define CREATURE_INVULNERABLE         255
+#define CREATURE_NEVER_HITS           255
+#define FEAR_RESISTANCE_NONE_FEARLESS 15
+#define POISON_IMMUNE                 15
+#define FIRE_IMMUNE                   15
 
 /* Creature types with special rules. */
 #define CREATURE_SWAMP_SLIME     1
@@ -55,7 +58,6 @@
 #define CREATURE_TROLIN          16
 #define CREATURE_ANIMATED_ARMOUR 18
 #define CREATURE_MATERIALIZER    19
-#define CREATURE_DEMON           22
 #define CREATURE_LORD_CHAOS      23
 #define CREATURE_RED_DRAGON      24
 #define CREATURE_LORD_ORDER      25
@@ -88,9 +90,11 @@ typedef enum {
 #define CELL_CENTERED 0xff
 
 /* Active group aspect byte: bit 7 attacking, bit 6 flipped, bits 3-5 vertical offset, bits 0-2 horizontal offset. */
-#define ASPECT_ATTACKING             0x80
-#define ASPECT_FLIPPED               0x40
-#define ASPECT_OFFSET_MASK           0x7
+#define ASPECT_ATTACKING   0x80
+#define ASPECT_FLIPPED     0x40
+#define ASPECT_OFFSET_MASK 0x07
+
+/* Shift of the vertical offset in an aspect byte. */
 #define ASPECT_VERTICAL_OFFSET_SHIFT 3
 
 /* Hit probability argument of the melee damage: bit 15 hits non-material creatures too. */
@@ -102,11 +106,12 @@ typedef struct {
     uint8_t directions, cells;
     uint8_t last_move_time, delay_fleeing;
     uint8_t target_x, target_y, prior_x, prior_y, home_x, home_y;
-    uint8_t aspect[4];
+    uint8_t aspect[GROUP_MAX_CREATURES];
 } ActiveGroup;
 
+/* Creature groups that can act at the same time. */
 #define ACTIVE_GROUP_MAX_COUNT     110 /* creature groups that can act at the same time */
-#define CSB_ACTIVE_GROUP_MAX_COUNT 60  /* active group slots of a new CSB game */
+#define ACTIVE_GROUP_MAX_COUNT_CSB 60  /* active group slots of a new CSB game */
 
 extern ActiveGroup *g_active_groups;                            /* exported for the tests */
 extern uint16_t g_active_group_count, g_max_active_group_count; /* exported for the tests */
@@ -183,7 +188,7 @@ static inline uint16_t creature_ticks_attack_aspect(const CreatureInfo *info)
 }
 static inline uint16_t creature_size(const CreatureInfo *info)
 {
-    return info->attributes & CREATURE_SIZE_MASK;
+    return info->attributes & CREATURE_EXTENT_MASK;
 }
 
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
@@ -197,11 +202,13 @@ int16_t group_get_creature_in_cell(uint16_t group, int16_t cell);
 int16_t group_get_melee_target(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y,
                                int16_t champion_cell);
 /* The cells and directions of a group: two bits for each creature. */
-#define GROUP_CELL_BITS 2
-#define GROUP_CELL_MASK 3
+#define GROUP_CELL_SHIFT 2
+
+/* Bit mask of one creature cell in the cell word. */
+#define GROUP_CELL_MASK 0x3
 static inline uint16_t group_cell(uint16_t packed, int16_t creature)
 {
-    return packed >> (GROUP_CELL_BITS * creature) & GROUP_CELL_MASK;
+    return packed >> (GROUP_CELL_SHIFT * creature) & GROUP_CELL_MASK;
 }
 /* A new group behavior event (37) after one tick. Faster creatures get a higher event priority. */
 void group_start_wandering(int16_t x, int16_t y);

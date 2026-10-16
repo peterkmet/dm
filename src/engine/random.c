@@ -2,11 +2,14 @@
 #include "engine/random.h"
 #include <time.h>
 
-#define RANDOM_MULTIPLIER           0xBB40E62Du
+/* Multiplier of the random generator and mask of 2 random bits. */
+#define RANDOM_MULTIPLIER 0xbb40e62du
+#define RANDOM_2BITS_MASK 0x00000003
+
+/* Increment of the random generator, time unit and the shift of the value. */
 #define RANDOM_INCREMENT            11
 #define NANOSECONDS_PER_MICROSECOND 1000
 #define RANDOM_VALUE_SHIFT          8 /* a value is bits 8-23 of the seed */
-#define RANDOM_2BITS_MASK           3
 
 uint32_t g_random_seed;
 

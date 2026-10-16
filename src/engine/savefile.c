@@ -26,6 +26,7 @@
 #define SAVE_HEADER_CSB_SHIFT        2  /* CSB moves the fields from 0x12a on by 2 bytes */
 #define SAVE_HEADER_SAVED_GAME_BYTES 40 /* payload bytes that the CEDT merge copies from the saved game */
 
+/* Save format, platform and header byte values and the dialog choice. */
 #define SAVE_FORMAT               3
 #define PLATFORM_AMIGA            5 /* save_game writes 5; a load refuses 1 */
 #define PLATFORM_REFUSED          1

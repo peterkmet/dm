@@ -22,6 +22,7 @@
 #include "engine/timeline.h"
 #include <string.h>
 
+/* Statistic gain limits, factors and luck steps. */
 #define STAT_HIGH               120 /* statistic gains above this value are halved */
 #define STAT_VERY_HIGH          150 /* statistic gains above this value are quartered */
 #define ATTACK_FACTOR_MIN       16  /* below this, the statistic factor divides the attack by 8 */
@@ -35,6 +36,7 @@ int16_t g_party_champion_count;
 int16_t g_leader_index = -1;
 int16_t g_magic_caster_champion_index = -1;
 
+/* Limits, tick counts and amounts of the champion bars, experience and reincarnation. */
 #define MAXIMUM_HEALTH                    999
 #define MAXIMUM_STAMINA                   9999
 #define LEVEL_EXPERIENCE                  500 /* experience for level 2; each level doubles it */
@@ -45,8 +47,8 @@ int16_t g_magic_caster_champion_index = -1;
 #define HIDE_DAMAGE_TICKS                 5
 #define POISON_STEP_TICKS                 36
 #define REINCARNATION_POINTS              12
-#define CSB_REINCARNATION_STAT_LOSS_SHIFT 3 /* CSB: each statistic but luck loses 1/8 */
-#define CSB_REINCARNATION_BAR_SHIFT       2 /* CSB: health, stamina, and mana drop to 1/4 */
+#define REINCARNATION_STAT_LOSS_SHIFT_CSB 3 /* CSB: each statistic but luck loses 1/8 */
+#define REINCARNATION_BAR_SHIFT_CSB       2 /* CSB: health, stamina, and mana drop to 1/4 */
 #define RESURRECTION_MINIMUM_HEALTH       25
 #define SCENT_STRENGTH_MINIMUM            0
 #define PIT_ATTACK                        20
@@ -73,43 +75,47 @@ int16_t g_magic_caster_champion_index = -1;
 #define OVERLOAD_TICKS_FACTOR             4
 #define OVERLOAD_TICKS_BASE               4
 #define ROLL_MAXIMUM                      100 /* dexterity, strength, and wound defense are at most 100 */
-#define DEXTERITY_RANDOM_MASK             7
 #define DEXTERITY_MINIMUM                 2
-#define STRENGTH_RANDOM_MASK              0xf
 #define LIGHT_LOAD_SHIFT                  4  /* an object up to 1/16 of the maximum load is light */
 #define STRENGTH_WEIGHT_OFFSET            12 /* strength changes by weight - 12 for a light object */
+
+/* Bit masks of the random terms of dexterity and strength. */
+#define DEXTERITY_RANDOM_MASK         0x7
+#define STRENGTH_RANDOM_MASK          0xf
 /* Wound defense: a shield adds (strength + defense) * factor >> 4 in its own slot, >> 5 in the other slots. */
-#define SHIELD_DEFENSE_OWN_SLOT_SHIFT     4
-#define SHIELD_DEFENSE_SHIFT              5
-#define VITALITY_DEFENSE_SHIFT            3 /* the random defense is up to vitality / 8 */
-#define WOUND_DEFENSE_PENALTY             8 /* a wounded slot loses random_2bits() + 8 */
+#define SHIELD_DEFENSE_OWN_SLOT_SHIFT 4
+#define SHIELD_DEFENSE_SHIFT          5
+#define VITALITY_DEFENSE_SHIFT        3 /* the random defense is up to vitality / 8 */
+#define WOUND_DEFENSE_PENALTY         8 /* a wounded slot loses random_2bits() + 8 */
 /* Damage: attack * (limit - defense) / 64. */
-#define DAMAGE_SCALE_SHIFT                6
-#define ARMOUR_DEFENSE_LIMIT              130
-#define PSYCHIC_WISDOM_LIMIT              115
-#define WOUND_THRESHOLD_RANDOM_MASK       0x7f /* wound threshold: (random16() & 127) + 10 */
-#define WOUND_THRESHOLD_BASE              10
-#define WOUND_SLOT_RANDOM_MASK            7  /* a wound hits a random bit of the allowed wounds */
-#define ROPE_STAMINA_FACTOR               25 /* rope climb stamina cost: load * 25 / maximum load + 1 */
+#define DAMAGE_SCALE_SHIFT            6
+#define ARMOUR_DEFENSE_LIMIT          130
+#define PSYCHIC_WISDOM_LIMIT          115
+#define WOUND_THRESHOLD_BASE          10
+#define ROPE_STAMINA_FACTOR           25 /* rope climb stamina cost: load * 25 / maximum load + 1 */
+
+/* Bit masks of the random terms of a wound. */
+#define WOUND_RANDOM_MASK                0x7f /* wound threshold: (random16() & 127) + 10 */
+#define WOUND_SLOT_RANDOM_MASK           0x07 /* a wound hits a random bit of the allowed wounds */
 /* Time effects. */
-#define MANA_GAIN_DIVISOR                 40
-#define MANA_STAMINA_COST_MINIMUM         7 /* stamina for one mana: max(7, 16 - wizard and priest levels) */
-#define MANA_STAMINA_COST_BASE            16
-#define FOOD_WATER_LAST_STEPS             4
-#define STAMINA_RATE_SHIFT                8 /* stamina loss rate: maximum stamina / 256 - 1, from 1 to 6 */
-#define STAMINA_RATE_MAXIMUM              6
-#define IDLE_TICKS_HUNGRY                 80 /* a party that does not move gets hungry faster */
-#define IDLE_TICKS_VERY_HUNGRY            250
-#define HEALTH_GAIN_VITALITY_BONUS        12
-#define HEALTH_GAIN_SHIFT                 7 /* health gain: maximum health / 128 + 1 */
-#define POISON_DAMAGE_SHIFT               6 /* a poison step deals attack / 64 */
-#define DAMAGE_ALL_SPREAD_SHIFT           3 /* damage to all champions spreads by attack / 8 */
+#define MANA_GAIN_DIVISOR                40
+#define MANA_STAMINA_COST_MINIMUM        7 /* stamina for one mana: max(7, 16 - wizard and priest levels) */
+#define MANA_STAMINA_COST_BASE           16
+#define FOOD_WATER_LAST_STEPS            4
+#define STAMINA_RATE_SHIFT               8 /* stamina loss rate: maximum stamina / 256 - 1, from 1 to 6 */
+#define STAMINA_RATE_MAXIMUM             6
+#define IDLE_TICKS_HUNGRY                80 /* a party that does not move gets hungry faster */
+#define IDLE_TICKS_VERY_HUNGRY           250
+#define HEALTH_GAIN_VITALITY_BONUS       12
+#define HEALTH_GAIN_SHIFT                7 /* health gain: maximum health / 128 + 1 */
+#define POISON_DAMAGE_SHIFT              6 /* a poison step deals attack / 64 */
+#define DAMAGE_ALL_SPREAD_SHIFT          3 /* damage to all champions spreads by attack / 8 */
 /* The regeneration chance (0-112) takes the game time bits 6, 7, and 8 as its bits for 64, 32, and 16. */
-#define TIME_CHANCE_HIGH_BIT              0x40
-#define TIME_CHANCE_MIDDLE_BIT            0x80
-#define TIME_CHANCE_LOW_BIT               0x100
-#define STATISTICS_RESTORE_MASK           0xff /* statistics move every 256 ticks */
-#define STATISTICS_RESTORE_SLEEPING_MASK  0x3f
+#define TIME_CHANCE_HIGH_BIT             0x040
+#define TIME_CHANCE_MIDDLE_BIT           0x080
+#define TIME_CHANCE_LOW_BIT              0x100
+#define STATISTICS_RESTORE_MASK          0x0ff /* statistics move every 256 ticks */
+#define STATISTICS_RESTORE_SLEEPING_MASK 0x03f
 
 uint16_t g_dead_champions;
 
@@ -131,8 +137,10 @@ uint16_t g_dead_champions;
 #define CHAMPION_RECORD_LOAD             0x110
 #define CHAMPION_RECORD_SHIELD           0x112
 #define CHAMPION_RECORD_MAGIC_MAP        0x118
-#define CHAMPION_RECORD_WORD_COUNT       13
-#define CHAMPION_RECORD_SKILL_SIZE       6
+
+/* Counts and sizes of the champion record parts. */
+#define CHAMPION_RECORD_WORD_COUNT 13
+#define CHAMPION_RECORD_SKILL_SIZE 6
 #define WORDS(c)                                                                                                       \
     &c->enable_action_event_index, &c->hide_damage_received_event_index, (int16_t *)&c->attributes,                    \
         (int16_t *)&c->wounds, &c->current_health, &c->maximum_health, &c->current_stamina, &c->maximum_stamina,       \
@@ -411,16 +419,16 @@ static void reincarnate(Champion *c)
     if (g_adventure == ADVENTURE_CSB) {
         for (int s = STAT_STRENGTH; s < STAT_COUNT; s++) {
             int16_t value = c->statistics[s][STAT_CURRENT];
-            value = max16(c->statistics[s][STAT_MINIMUM], value - (value >> CSB_REINCARNATION_STAT_LOSS_SHIFT));
+            value = max16(c->statistics[s][STAT_MINIMUM], value - (value >> REINCARNATION_STAT_LOSS_SHIFT_CSB));
             c->statistics[s][STAT_MAXIMUM] = value;
             c->statistics[s][STAT_CURRENT] = c->statistics[s][STAT_MAXIMUM];
         }
-        c->current_health >>= CSB_REINCARNATION_BAR_SHIFT;
-        c->maximum_health >>= CSB_REINCARNATION_BAR_SHIFT;
-        c->current_stamina >>= CSB_REINCARNATION_BAR_SHIFT;
-        c->maximum_stamina >>= CSB_REINCARNATION_BAR_SHIFT;
-        c->current_mana >>= CSB_REINCARNATION_BAR_SHIFT;
-        c->maximum_mana >>= CSB_REINCARNATION_BAR_SHIFT;
+        c->current_health >>= REINCARNATION_BAR_SHIFT_CSB;
+        c->maximum_health >>= REINCARNATION_BAR_SHIFT_CSB;
+        c->current_stamina >>= REINCARNATION_BAR_SHIFT_CSB;
+        c->maximum_stamina >>= REINCARNATION_BAR_SHIFT_CSB;
+        c->current_mana >>= REINCARNATION_BAR_SHIFT_CSB;
+        c->maximum_mana >>= REINCARNATION_BAR_SHIFT_CSB;
     }
     for (int i = 0; i < REINCARNATION_POINTS; i++) {
         uint16_t s = random16() % STAT_COUNT;
@@ -771,8 +779,8 @@ int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t a
         attack = resisted_attack(champion_index, attack, allowed_wounds, attack_type);
         if (attack <= 0)
             return 0;
-        int16_t threshold = champion_get_adjusted_attack(
-            champion_index, STAT_VITALITY, (random16() & WOUND_THRESHOLD_RANDOM_MASK) + WOUND_THRESHOLD_BASE);
+        int16_t threshold = champion_get_adjusted_attack(champion_index, STAT_VITALITY,
+                                                         (random16() & WOUND_RANDOM_MASK) + WOUND_THRESHOLD_BASE);
         if (threshold < attack)
             do {
                 g_champions[champion_index].runtime.pending_wounds |=

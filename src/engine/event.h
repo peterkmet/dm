@@ -9,6 +9,7 @@
 
 /* Timeline event types and the handlers of the square events. */
 
+/* Event types of the timeline. */
 #define EVENT_DOOR_ANIMATION         1
 #define EVENT_DOOR_DESTRUCTION       2
 #define EVENT_CORRIDOR               5
@@ -57,6 +58,7 @@
 
 /* Event time: map index in bits 24-31, game time in bits 0-23. */
 #define EVENT_MAP_TIME(map, time) ((uint32_t)(map) << 24 | (uint32_t)(time))
+/* Bit mask of the time of an event. */
 #define EVENT_TIME_MASK           0xffffff
 #define EVENT_MAP(event)          ((int16_t)((event)->map_time >> 24))
 
@@ -66,8 +68,10 @@
 #define EVENT_CELL_SHIFT        8
 #define EVENT_GROUP_TICKS_SHIFT 8
 #define EVENT_QUIVER_SLOT_SHIFT 8
-#define EVENT_BYTE_MASK         0xff
-#define EVENT_HIGH_BYTE_MASK    0xff00
+
+/* Bit masks of the bytes of an event word. */
+#define EVENT_BYTE_MASK      0x00ff
+#define EVENT_HIGH_BYTE_MASK 0xff00
 static inline uint16_t event_square(int16_t x, int16_t y)
 {
     return (x & EVENT_BYTE_MASK) << EVENT_X_SHIFT | (y & EVENT_BYTE_MASK);

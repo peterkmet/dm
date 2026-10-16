@@ -21,6 +21,7 @@
 #include "engine/sound.h"
 #include "engine/timeline.h"
 
+/* Damage, limits and tick counts of the door, counter, generator, light and rebirth events. */
 #define DOOR_CLOSE_DAMAGE       5
 #define COUNTER_MAXIMUM         511 /* the counter data has 9 bits */
 #define GENERATOR_DELAY_LONG    127 /* a delay above this value counts in units of 64 ticks above 126 */

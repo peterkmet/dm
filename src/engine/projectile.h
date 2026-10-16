@@ -24,8 +24,10 @@
 #define EXPLOSION_FLUXCAGE          50
 #define EXPLOSION_REBIRTH_STEP_1    100
 #define EXPLOSION_REBIRTH_STEP_2    101
-#define EXPLOSION_THING_BASE        0xff80
-#define EXPLOSION_THING(type)       ((uint16_t)(EXPLOSION_THING_BASE + (type)))
+
+/* First thing value of an explosion. */
+#define EXPLOSION_THING_BASE  0xff80
+#define EXPLOSION_THING(type) ((uint16_t)(EXPLOSION_THING_BASE + (type)))
 
 /* Impact type of projectile_has_impact_occurred: a square type (wall, stairs, door, fake wall) or these values. */
 #define IMPACT_PARTY    (-2)
@@ -41,7 +43,6 @@
 /* Projectile launcher sensor types. */
 #define SENSOR_WALL_LAUNCHER_OBJECT             7
 #define SENSOR_WALL_LAUNCHER_EXPLOSION          8
-#define SENSOR_WALL_LAUNCHER_TWO_OBJECTS        9
 #define SENSOR_WALL_LAUNCHER_TWO_EXPLOSIONS     10
 #define SENSOR_WALL_LAUNCHER_SQUARE_OBJECT      14
 #define SENSOR_WALL_LAUNCHER_TWO_SQUARE_OBJECTS 15
@@ -53,11 +54,13 @@ static inline bool projectile_is_launcher_sensor(uint16_t sensor)
 }
 
 /* Projectile move event: b = projectile thing, c = x bits 11-15, y bits 6-10, direction bits 4-5, step energy bits 0-3. */
-#define PROJECTILE_EVENT_X_SHIFT          11
-#define PROJECTILE_EVENT_Y_SHIFT          6
-#define PROJECTILE_EVENT_DIRECTION_SHIFT  4
+#define PROJECTILE_EVENT_X_SHIFT         11
+#define PROJECTILE_EVENT_Y_SHIFT         6
+#define PROJECTILE_EVENT_DIRECTION_SHIFT 4
+
+/* Bit masks of the fields of a projectile event word. */
 #define PROJECTILE_EVENT_XY_MASK          0x1f
-#define PROJECTILE_EVENT_STEP_ENERGY_MASK 0xf
+#define PROJECTILE_EVENT_STEP_ENERGY_MASK 0x0f
 static inline int16_t projectile_event_x(const TimelineEvent *event)
 {
     return event->c >> PROJECTILE_EVENT_X_SHIFT;

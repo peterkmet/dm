@@ -10,17 +10,21 @@
    Coordinates are on the current map. All records keep the big-endian layout of Dungeon.DAT. */
 
 #define NORMALIZE(direction) ((direction) & 3)
+/* Cell and direction counts, direction values and level steps. */
+#define DOOR_TYPE_COUNT      2
 #define CELL_COUNT           4 /* cells of a square, one for each direction */
 #define DIRECTION_NORTH      0
 #define DIRECTION_EAST       1
 #define DIRECTION_SOUTH      2
 #define DIRECTION_WEST       3
-#define DIRECTION_BITS       2
+#define DIRECTION_SHIFT      2
 #define DIRECTION_COUNT      4
 #define LEVEL_UP             (-1)
 #define LEVEL_DOWN           1
-#define MAP_COORD_BITS       5 /* maps are at most 32 squares wide and high */
-#define MAP_COORD_MASK       0x1f
+#define MAP_COORD_SHIFT      5 /* maps are at most 32 squares wide and high */
+
+/* Bit mask of one map coordinate. */
+#define MAP_COORD_MASK 0x1f
 
 /* The direction or cell a quarter turn right, a half turn, or a quarter turn left of this one. */
 static inline int16_t direction_right(int16_t direction)
@@ -40,51 +44,55 @@ static inline int16_t direction_left(int16_t direction)
 void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *out_x, int16_t *out_y);
 
 /* Square byte: type in bits 5-7, a thing list in bit 4, type flags in bits 0-3. */
-#define SQUARE_WALL            0
-#define SQUARE_CORRIDOR        1
-#define SQUARE_PIT             2
-#define SQUARE_STAIRS          3
-#define SQUARE_DOOR            4
-#define SQUARE_TELEPORTER      5
-#define SQUARE_FAKE_WALL       6
+#define SQUARE_WALL       0
+#define SQUARE_CORRIDOR   1
+#define SQUARE_PIT        2
+#define SQUARE_STAIRS     3
+#define SQUARE_DOOR       4
+#define SQUARE_TELEPORTER 5
+#define SQUARE_FAKE_WALL  6
+
+/* Bit flags and fields of the square data. */
 #define SQUARE_HAS_THINGS      0x10 /* random ornament: corridor and open fake wall */
-#define SQUARE_RANDOM_ORNAMENT 8
-#define WALL_ORNAMENT_RIGHT    1
-#define WALL_ORNAMENT_ABOVE    2
-#define WALL_ORNAMENT_LEFT     4
-#define WALL_ORNAMENT_BELOW    8
-#define PIT_IMAGINARY          1
-#define PIT_INVISIBLE          4
-#define PIT_OPEN               8
-#define STAIRS_UP              4
-#define STAIRS_NORTH_SOUTH     8
-#define DOOR_STATE_MASK        7
-#define DOOR_OPEN              0
-#define DOOR_ALMOST_OPEN       1
-#define DOOR_CLOSED            4
-#define DOOR_DESTROYED         5
-#define TELEPORTER_VISIBLE     4
-#define TELEPORTER_OPEN        8
-#define FAKE_WALL_IMAGINARY    1
-#define FAKE_WALL_OPEN         4
+#define SQUARE_RANDOM_ORNAMENT 0x08
+#define WALL_ORNAMENT_RIGHT    0x01
+#define WALL_ORNAMENT_ABOVE    0x02
+#define WALL_ORNAMENT_LEFT     0x04
+#define WALL_ORNAMENT_BELOW    0x08
+#define PIT_IMAGINARY          0x01
+#define PIT_INVISIBLE          0x04
+#define PIT_OPEN               0x08
+#define STAIRS_UP              0x04
+#define STAIRS_NORTH_SOUTH     0x08
+#define DOOR_STATE_MASK        0x07
+#define DOOR_OPEN              0x00
+#define DOOR_ALMOST_OPEN       0x01
+#define DOOR_CLOSED            0x04
+#define DOOR_DESTROYED         0x05
+#define TELEPORTER_VISIBLE     0x04
+#define TELEPORTER_OPEN        0x08
+#define FAKE_WALL_IMAGINARY    0x01
+#define FAKE_WALL_OPEN         0x04
 
 /* Thing word: index in bits 0-9, type in bits 10-13, cell in bits 14-15. */
-#define THING_DOOR                   0
-#define THING_TELEPORTER             1
-#define THING_TEXT                   2
-#define THING_SENSOR                 3
-#define THING_GROUP                  4
-#define THING_WEAPON                 5
-#define THING_ARMOUR                 6
-#define THING_SCROLL                 7
-#define THING_POTION                 8
-#define THING_CONTAINER              9
-#define THING_JUNK                   10
-#define THING_PROJECTILE             14
-#define THING_EXPLOSION              15
+#define THING_DOOR       0
+#define THING_TELEPORTER 1
+#define THING_TEXT       2
+#define THING_SENSOR     3
+#define THING_GROUP      4
+#define THING_WEAPON     5
+#define THING_ARMOUR     6
+#define THING_SCROLL     7
+#define THING_POTION     8
+#define THING_CONTAINER  9
+#define THING_JUNK       10
+#define THING_PROJECTILE 14
+#define THING_EXPLOSION  15
+#define THING_TYPE_SHIFT 10
+
+/* Thing values for the end of a list and for none. */
 #define THING_ENDOFLIST              0xfffe
 #define THING_NONE                   0xffff
-#define THING_TYPE_SHIFT             10
 #define THING_TYPE(thing)            ((thing) >> THING_TYPE_SHIFT & 0x0f)
 #define THING_MAKE(type, index)      ((uint16_t)((type) << THING_TYPE_SHIFT | (index)))
 #define THING_CELL(thing)            ((uint16_t)(thing) >> 14)
@@ -120,7 +128,6 @@ void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *out_x,
 /* Teleporter record (thing type 1). Scope: 1 creatures, 2 party, 3 everything. */
 #define TELEPORTER_SCOPE_CREATURES 1
 #define TELEPORTER_SCOPE_PARTY     2
-#define TELEPORTER_SCOPE_ALL       3
 
 /* Door defense: the low byte of the door info. */
 #define DOOR_DEFENSE_MASK 0xff
@@ -130,8 +137,8 @@ static inline int16_t door_info_defense(uint16_t door_info)
 }
 
 extern int16_t g_current_map_index, g_current_map_width, g_current_map_height;
-extern const uint8_t *g_current_map;        /* map descriptor, 16 bytes */
-extern uint16_t g_current_map_door_info[2]; /* high byte attributes, low byte defense */
+extern const uint8_t *g_current_map;                      /* map descriptor, 16 bytes */
+extern uint16_t g_current_map_door_info[DOOR_TYPE_COUNT]; /* high byte attributes, low byte defense */
 
 /* Door attributes (high byte of the door info of the current map): the door is see-through, projectiles pass. */
 #define DOOR_ATTRIBUTES_SHIFT 8

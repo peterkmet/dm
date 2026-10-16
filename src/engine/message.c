@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Size of the wrapped line buffer. */
 #define MESSAGE_WRAP_LINE_SIZE 100 /* one wrapped line: at most MESSAGE_COLS characters */
-#define NUMBER_TEXT_SIZE       14  /* a 32-bit number with its sign */
 
 MessageArea g_message = {
     .cursor_row = MESSAGE_LAST_ROW,

@@ -7,6 +7,7 @@
 
 /* The game session: the clock, the run flags, the modes and cheats, and the redraw flags that the rules raise. */
 
+/* Watchdog interval and the system error code of a failed allocation. */
 #define WATCHDOG_INTERVAL   300 /* game ticks between two watchdog events */
 #define SYSTEM_ERROR_MEMORY 70  /* allocation failed, or an event is missing from the timeline */
 
@@ -14,6 +15,7 @@ extern uint32_t g_game_time, g_game_id;
 
 /* Interface parts that the game rules changed: the user interface draws them again (g_redraw bits). */
 extern uint16_t g_redraw;
+/* Redraw flags of the action area and the spell area. */
 #define REDRAW_ACTION_AREA   1
 #define REDRAW_SPELL_AREA    2
 #define REDRAW_SPELL_TABS    4

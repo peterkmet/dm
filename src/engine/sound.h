@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Sound count, pending slots and sample sizes. */
 #define SOUND_COUNT         35
 #define SOUND_PENDING_SLOTS 2
 #define SOUND_MAX_VOLUME    64 /* full volume of one side */

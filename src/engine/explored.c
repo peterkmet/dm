@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Version and header size of the explored block. */
 #define EXPLORED_VERSION     1 /* magic, version, map count */
 #define EXPLORED_HEADER_SIZE 6
 static const char SAVE_MAGIC[] = EXPLORED_SAVE_MAGIC;
+/* Size of the magic of the explored block. */
 #define EXPLORED_MAGIC_SIZE (sizeof SAVE_MAGIC - 1) /* without the NUL */
 
 /* One byte per square of every map, the maps one after another. */

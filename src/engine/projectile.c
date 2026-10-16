@@ -17,44 +17,50 @@
 #include "engine/sound.h"
 #include "engine/timeline.h"
 
+/* Bit mask of the random chance of a projectile to pass a door. */
 #define PROJECTILE_DOOR_PASS_RANDOM_MASK 0x7f
-#define LAUNCHER_EXPLOSION_DATA_BASE     128
-#define LAUNCHER_ATTACK                  100
+
+/* Explosion data base and attack of a launched object. */
+#define LAUNCHER_EXPLOSION_DATA_BASE    128
+#define LAUNCHER_ATTACK                 100
 /* Object info indices that a launcher or a wall generator creates. */
-#define LAUNCHER_INFO_TORCH_FIRST        4
-#define LAUNCHER_INFO_TORCH_LAST         7
-#define LAUNCHER_INFO_DAGGER             32
-#define LAUNCHER_INFO_ARROW              51
-#define LAUNCHER_INFO_SLAYER             52
-#define LAUNCHER_INFO_NONE               53
-#define LAUNCHER_INFO_ROCK               54
-#define LAUNCHER_INFO_POISON_DART        55
-#define LAUNCHER_INFO_THROWING_STAR      56
-#define LAUNCHER_INFO_BOULDER            128
-#define WOUND_HEAD_AND_TORSO             (WOUND_HEAD | WOUND_TORSO)
-#define WOUND_ALL                        0x3f
-#define MAX_CREATURE_HEALTH              1000
-#define FLUXCAGE_LIFETIME                100
-#define REBIRTH_STEP_1_DELAY             5
-#define POISON_CLOUD_FADE                3
-#define POISON_CLOUD_MIN_ATTACK          5
-#define SMOKE_FADE                       40
-#define SMOKE_MIN_ATTACK                 56
-#define WEAK_EXPLOSION_MAX_ATTACK        80
-#define POISON_CLOUD_MAX_DAMAGE          4
-#define POISON_REACTION_MIN_DAMAGE       2
-#define PROJECTILE_STEP_TICKS_PARTY_MAP  1
-#define PROJECTILE_STEP_TICKS_OTHER_MAP  3
+#define LAUNCHER_INFO_TORCH_FIRST       4
+#define LAUNCHER_INFO_TORCH_LAST        7
+#define LAUNCHER_INFO_DAGGER            32
+#define LAUNCHER_INFO_ARROW             51
+#define LAUNCHER_INFO_SLAYER            52
+#define LAUNCHER_INFO_ROCK              54
+#define LAUNCHER_INFO_POISON_DART       55
+#define LAUNCHER_INFO_THROWING_STAR     56
+#define LAUNCHER_INFO_BOULDER           128
+#define WOUND_HEAD_AND_TORSO            (WOUND_HEAD | WOUND_TORSO)
+#define MAX_CREATURE_HEALTH             1000
+#define FLUXCAGE_LIFETIME               100
+#define REBIRTH_STEP_1_DELAY            5
+#define POISON_CLOUD_FADE               3
+#define POISON_CLOUD_MIN_ATTACK         5
+#define SMOKE_FADE                      40
+#define SMOKE_MIN_ATTACK                56
+#define WEAK_EXPLOSION_MAX_ATTACK       80
+#define POISON_CLOUD_MAX_DAMAGE         4
+#define POISON_REACTION_MIN_DAMAGE      2
+#define PROJECTILE_STEP_TICKS_PARTY_MAP 1
+#define PROJECTILE_STEP_TICKS_OTHER_MAP 3
+
+/* Wound bits of all body parts. */
+#define WOUND_ALL                0x3f
 /* Impact attack of a slime, fireball, or lightning explosion: a base plus random parts; lightning adds 16 times it. */
-#define SLIME_POISON_RANDOM_MASK         0xf
-#define SLIME_POISON_BASE                10
-#define SLIME_ATTACK_RANDOM_MASK         0x1f
-#define FIRE_ATTACK_RANDOM_MASK          0xf
-#define FIRE_ATTACK_BASE                 10
-#define LIGHTNING_ATTACK_FACTOR          16
+#define SLIME_POISON_RANDOM_MASK 0x0f
+#define SLIME_ATTACK_RANDOM_MASK 0x1f
+#define FIRE_ATTACK_RANDOM_MASK  0x0f
+
+/* Base values of the slime, fire and lightning attacks. */
+#define SLIME_POISON_BASE       10
+#define FIRE_ATTACK_BASE        10
+#define LIGHTNING_ATTACK_FACTOR 16
 /* The projectile attack lowers this reduction of the impact attack. */
-#define IMPACT_ATTACK_REDUCTION          32
-#define FUSE_SIDES                       4
+#define IMPACT_ATTACK_REDUCTION 32
+#define FUSE_SIDES              4
 
 /* Results of a projectile hit on a creature cell. */
 typedef enum {
@@ -678,7 +684,9 @@ void projectile_fuse_action(int16_t x, int16_t y)
         is_fluxcage_on_square(x, y - 1),
         is_fluxcage_on_square(x, y + 1),
     };
-    uint16_t count = cages[0] + cages[1] + cages[2] + cages[3];
+    uint16_t count = 0;
+    for (int16_t side = 0; side < FUSE_SIDES; side++)
+        count += cages[side];
     int16_t escape_x, escape_y;
     do {
         if (count >= FUSE_SIDES) {
@@ -711,16 +719,16 @@ void projectile_fuse_action(int16_t x, int16_t y)
 
 /* Marks each cell of the party (thing THING_NONE) or of the creatures of a group with its cell index; the other
    cells keep -1. Returns false for a group without health. */
-static bool mark_occupied_cells(uint16_t thing, int16_t occupied[4])
+static bool mark_occupied_cells(uint16_t thing, int16_t occupied[CELL_COUNT])
 {
     if (thing == THING_NONE) {
-        for (int16_t cell = 0; cell < 4; cell++)
+        for (int16_t cell = 0; cell < CELL_COUNT; cell++)
             if (champion_get_index_in_cell(cell) >= 0)
                 occupied[cell] = cell;
         return true;
     }
     uint16_t health = 0;
-    for (int16_t cell = 0; cell < 4; cell++) {
+    for (int16_t cell = 0; cell < CELL_COUNT; cell++) {
         health |= rec_group_health(thing, cell);
         if (group_get_creature_in_cell(thing, cell) >= 0)
             occupied[cell] = cell;
@@ -730,8 +738,8 @@ static bool mark_occupied_cells(uint16_t thing, int16_t occupied[4])
 
 bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)
 {
-    int16_t occupied[4] = {-1, -1, -1, -1};
-    int16_t crossed[4] = {-1, -1, -1, -1};
+    int16_t occupied[CELL_COUNT] = {-1, -1, -1, -1};
+    int16_t crossed[CELL_COUNT] = {-1, -1, -1, -1};
     int16_t impact_type = thing == THING_NONE ? IMPACT_PARTY : IMPACT_CREATURE;
     if (!mark_occupied_cells(thing, occupied))
         return false;
@@ -771,7 +779,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
         if (!test_destination)
             return false;
         at = (Location){dst_x, dst_y};
-        for (int16_t i = 0; i < 4; i++)
+        for (int16_t i = 0; i < CELL_COUNT; i++)
             occupied[i] = crossed[i];
         test_destination = false;
     }

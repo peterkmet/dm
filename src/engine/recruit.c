@@ -21,7 +21,9 @@
 #define SKILL_BASE_EXPERIENCE 125 /* experience of skill level 1, doubled per level */
 #define VALUE_BITS_PER_CHAR   4   /* a value character holds 4 bits */
 #define RECRUIT_TEXT_SIZE     128 /* a champion text fits */
-#define VALUE_HIGH_BYTE_MASK  0xff00
+
+/* Bit mask of the high byte of a value. */
+#define VALUE_HIGH_BYTE_MASK 0xff00
 
 uint16_t recruit_decoded_value(const char *text, int16_t char_count)
 {

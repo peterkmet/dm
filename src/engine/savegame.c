@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Sizes, limits and names of the save game code. */
 #define TIMELINE_ENTRY_BYTES       2 /* one event index per timeline entry */
 #define EXTENSION_LENGTH_BYTES     4 /* the length of the automap block, after the block */
 #define NEW_ADVENTURE_LUCK_MINIMUM 10
@@ -179,6 +180,7 @@ static void unpack_active_group(const uint8_t *p, ActiveGroup *a)
     memcpy(&a->directions, p + SAVE_GROUP_BYTES, SAVE_ACTIVE_GROUP_BYTES - SAVE_GROUP_BYTES);
 }
 
+/* Words in one row of a champion portrait. */
 #define PORTRAIT_COLUMNS ((CHAMPION_PORTRAIT_WIDTH + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD)
 
 /* A portrait in the save: per row and per 16-pixel column, one word for each bit plane. */

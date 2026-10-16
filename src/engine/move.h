@@ -8,12 +8,13 @@
 
 /* Party and object movement (KAOS range 8, MOVESENS.C and COMMAND.C). */
 
+/* Most squares that one move follows. */
 #define SQUARE_CHAIN_MAXIMUM 99 /* teleporters, pits, and stairs that one move follows */
 
+/* Movement commands of the party. */
 #define COMMAND_TURN_LEFT     1
 #define COMMAND_TURN_RIGHT    2
 #define COMMAND_MOVE_FORWARD  3
-#define COMMAND_MOVE_RIGHT    4
 #define COMMAND_MOVE_BACKWARD 5
 #define COMMAND_MOVE_LEFT     6
 
