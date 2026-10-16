@@ -304,7 +304,7 @@ The other tables of `tables.md`, the view tables, the input tables, and the esca
 | `src/data/ftl.c` and every `kaos_*` user (`tables.c`, `sound.c`, `view.c`, `dungeon.c`, and others) | `kaos_load`, address constants | Load `APPB.FTL` and translate the addresses. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
 | New `src/ui/anim.c` | Animation player | Done (Step 8): plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
 
-No change is needed in `layout.c` or `dungeon.c` (`dungeon_load`). Step 8 added `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `sound_play_data` (`sound.c`, plays sample data that is not in `Graphics.DAT`).
+No change is needed in `layout.c` or `dungeon.c` (`dungeon_load`). Step 8 added `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `audio_play_data` (`audio.c`, plays sample data that is not in `Graphics.DAT`).
 
 ## Scratch scripts
 
