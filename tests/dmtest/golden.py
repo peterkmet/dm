@@ -19,7 +19,6 @@ def golden_game():
     # the types that Game, state and recruit_and_hold_object need, as the fixture of tests/port/test_save.py
     lib.gameloop_load_data.restype = lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.ui_get_slot_box_zone.restype = ctypes.c_bool
-    lib.ui_zone_box.restype = ctypes.c_bool
     lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = u16
     lib.rec_thing_next.restype = u16

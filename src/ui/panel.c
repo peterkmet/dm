@@ -138,26 +138,6 @@ static void draw_food_water_poisoned(void)
     draw_food_water_bar(c->water, ZONE_PANEL_WATER_BAR, COLOR_BLUE);
 }
 
-void panel_draw(void)
-{
-    scroll_redraw = 0;
-    inventory_close_chest();
-    if (g_session.candidate_champion_index >= 0) {
-        g_panel_content = PANEL_CONTENT_RESURRECT;
-        ui_blit_graphic(ui_get_viewport(), GFX_PANEL_RESURRECT_REINCARNATE, ZONE_PANEL, COLOR_DARK_GREEN);
-        return;
-    }
-    uint16_t thing = g_champions[g_session.inventory_champion_index].slots[SLOT_HAND_ACTION];
-    g_panel_content = thing == THING_NONE                    ? PANEL_CONTENT_FOOD_WATER
-                      : THING_TYPE(thing) == THING_SCROLL    ? PANEL_CONTENT_SCROLL
-                      : THING_TYPE(thing) == THING_CONTAINER ? PANEL_CONTENT_CHEST
-                                                             : PANEL_CONTENT_FOOD_WATER;
-    if (g_panel_content == PANEL_CONTENT_FOOD_WATER)
-        draw_food_water_poisoned();
-    else
-        panel_draw_object(thing, false);
-}
-
 /* The position of zone (a 1 x 1 box). */
 static void get_zone_point(int16_t zone, int16_t *x, int16_t *y)
 {
@@ -616,7 +596,9 @@ static void open_and_draw_chest(uint16_t chest, bool pressing_eye)
     }
 }
 
-void panel_draw_object(uint16_t thing, bool pressing_eye)
+/* Draws an object in the panel: the open scroll, the open chest, or the name, icon, and description of any other
+   object; then the arrow, or the eye while it is pressed. */
+static void show_object(uint16_t thing, bool pressing_eye)
 {
     Bitmap *viewport = ui_get_viewport();
     scroll_redraw = 0;
@@ -643,10 +625,30 @@ void panel_draw_object(uint16_t thing, bool pressing_eye)
     ui_blit_graphic(viewport, pressing_eye ? GFX_PANEL_EYE : GFX_PANEL_ARROW, ZONE_PANEL_ARROW_OR_EYE, COLOR_RED);
 }
 
+void panel_draw(void)
+{
+    scroll_redraw = 0;
+    inventory_close_chest();
+    if (g_session.candidate_champion_index >= 0) {
+        g_panel_content = PANEL_CONTENT_RESURRECT;
+        ui_blit_graphic(ui_get_viewport(), GFX_PANEL_RESURRECT_REINCARNATE, ZONE_PANEL, COLOR_DARK_GREEN);
+        return;
+    }
+    uint16_t thing = g_champions[g_session.inventory_champion_index].slots[SLOT_HAND_ACTION];
+    g_panel_content = thing == THING_NONE                    ? PANEL_CONTENT_FOOD_WATER
+                      : THING_TYPE(thing) == THING_SCROLL    ? PANEL_CONTENT_SCROLL
+                      : THING_TYPE(thing) == THING_CONTAINER ? PANEL_CONTENT_CHEST
+                                                             : PANEL_CONTENT_FOOD_WATER;
+    if (g_panel_content == PANEL_CONTENT_FOOD_WATER)
+        draw_food_water_poisoned();
+    else
+        show_object(thing, false);
+}
+
 void panel_draw_eye(void)
 {
     if (!g_leader_empty_handed)
-        panel_draw_object(g_leader_hand_object, true);
+        show_object(g_leader_hand_object, true);
     else
         panel_draw_skills();
 }

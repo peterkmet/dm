@@ -37,8 +37,6 @@ void audio_stop_all(void);
 void audio_music_play(const MusicSegment *segments, int count, uint16_t period, uint8_t volume);
 /* Sets the volume of the intro music on both sides of pair B. */
 void audio_music_set_volume(uint8_t volume);
-/* Stops the intro music and the voices of pair B. */
-void audio_music_stop(void);
 /* Renders interleaved stereo int16 at AUDIO_OUTPUT_RATE. Paula has no interpolation: each sample holds for one
    period. Runs on the game thread. */
 void audio_mix(int16_t *out, int frames);

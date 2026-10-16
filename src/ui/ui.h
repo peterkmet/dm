@@ -76,6 +76,8 @@ void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color);
 void ui_fill_zone_pattern(Bitmap *dst, int16_t zone, uint8_t color);
 /* Inverts bit plane 2 in the box of zone: black becomes cyan. */
 void ui_xor_screen_zone(int16_t zone);
+/* XORs the box on the screen with the highlight color. */
+void ui_xor_screen_box(const Box *box);
 /* Draws a graphic placed in zone. */
 void ui_blit_graphic(Bitmap *dst, int16_t graphic, int16_t zone, int16_t transparent);
 /* Draws a graphic from its top left corner into box. */
@@ -100,8 +102,6 @@ void ui_draw_message_area(void);
 void ui_extract_icon(int16_t icon, Bitmap *out); /* out->px holds 16 x 16 bytes */
 /* Draws an icon in a slot box: the hands are on the screen, the other slots in the viewport. */
 void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon);
-/* The icon last drawn in a slot box, or -1. */
-int16_t ui_get_icon_in_slot_box(int16_t slot_box);
 /* The icon box of zone; with border, grown by the slot box border. */
 bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box); /* the box of a slot zone, with border the frame */
 /* The icon box of a slot box. */

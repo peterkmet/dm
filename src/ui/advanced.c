@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/advanced.h"
+#include "data/graphics.h"
 #include "data/ids.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
@@ -60,7 +61,9 @@ static void draw_readout(Bitmap *viewport)
     text_draw(viewport, x, y + 4 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP), COLOR_WHITE, COLOR_BLACK, line);
 }
 
-void advanced_draw_automap(void)
+/* Draws the automap and the position read-out (level, position, facing, light) in place of the viewport with the
+   interface palette. */
+static void show_automap(void)
 {
     Bitmap *viewport = ui_get_viewport();
     Box area = {0, 0, viewport->w, viewport->h};
@@ -88,7 +91,7 @@ void advanced_drag(int16_t x, int16_t y)
     drag.x += dx * AUTOMAP_CELL_SIZE;
     drag.y += dy * AUTOMAP_CELL_SIZE;
     automap_scroll(g_party_map_index, -dx, -dy);
-    advanced_draw_automap();
+    show_automap();
 }
 
 bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
@@ -99,8 +102,7 @@ bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
     if (kind == CLICK_LEFT_RELEASE) {
         advanced_drag(x, y);
         drag.active = false;
-    } else if (kind == CLICK_LEFT_PRESS && ui_zone_box(ZONE_VIEWPORT, &b) && x >= b.x && x < b.x + b.w && y >= b.y &&
-               y < b.y + b.h) {
+    } else if (kind == CLICK_LEFT_PRESS && ui_zone_box(ZONE_VIEWPORT, &b) && box_contains(&b, x, y)) {
         drag.active = true;
         drag.x = x;
         drag.y = y;
@@ -141,11 +143,11 @@ bool advanced_process_key(uint16_t key)
             close_automap();
         if (g_session.mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I || key == KEY_F)) {
             game_toggle_cheat(key == KEY_L ? CHEAT_LIGHT : key == KEY_I ? CHEAT_IMMORTAL : CHEAT_FOOD);
-            advanced_draw_automap();
+            show_automap();
         }
         if (g_session.mode == GAME_MODE_ADVANCED && (key == KEY_1 || key == KEY_2 || key == KEY_3)) {
             music_select(key == KEY_1 ? MUSIC_ORIGINAL : key == KEY_2 ? MUSIC_SUPER_NES : MUSIC_FM_TOWNS);
-            advanced_draw_automap();
+            show_automap();
         }
         return true;
     }
@@ -164,7 +166,7 @@ bool advanced_process_key(uint16_t key)
         if (!in_dungeon_view())
             return !(key == KEY_TAB && g_session.inventory_champion_index >= 0);
         g_automap_open = true;
-        advanced_draw_automap();
+        show_automap();
         return true;
     }
     return false;

@@ -393,7 +393,7 @@ static int get_pointer_shape(int16_t x, int16_t y, bool in_game)
         return POINTER_ARROW;
     for (int i = 0; i < POINTER_ZONE_COUNT; i++) {
         PointerZone z = tables_get_pointer_zone(i);
-        if (x < z.x || x >= z.x + z.w || y < z.y || y >= z.y + z.h)
+        if (!box_contains(&(Box){z.x, z.y, z.w, z.h}, x, y))
             continue;
         int16_t champion = z.champion;
         if (!champion && !z.shape)

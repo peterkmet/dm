@@ -25,14 +25,11 @@ extern int16_t g_panel_content;
 void panel_draw_statistics(int16_t champion_index);
 /* Draws the load line "LOAD nn.n/ mm KG": red above the maximum load, yellow above 5/8 of it. */
 void panel_draw_load(int16_t champion_index);
-/* Draws the inventory panel: resurrect/reincarnate for a candidate, the open scroll or chest in
-   the action hand, else food and water. */
-void panel_draw(void);
 /* The rank name that the eye panel shows for a skill level (NEOPHYTE ...), or NULL for level 1. */
 const char *panel_get_rank_name(int16_t level);
 /* Draws the eye panel: base skill levels above 1 (green after a level up), then the six
    statistics with current value (red below maximum, green above) and maximum value. */
-void panel_draw_skills(void);
+void panel_draw_skills(void); /* exported for the tests */
 /* Opens the inventory of a champion on the screen: dims the movement arrows and draws the
    inventory background, labels, all slots, and the champion state. Sets g_session.inventory_champion_index. */
 void panel_open(int16_t champion_index);
@@ -45,9 +42,9 @@ void panel_close(int16_t champion_index);
 int16_t panel_format_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
 /* The ATTACK (weapon) or DEFENSE (armour) meter of the advanced object panel: true with its label and value, else false. */
 bool panel_get_object_meter(uint16_t thing, const char **label, uint16_t *value);
-/* Draws an object in the panel: the open scroll, the open chest, or the name, icon, and
-   description of any other object; then the arrow, or the eye while it is pressed. */
-void panel_draw_object(uint16_t thing, bool pressing_eye);
+/* Draws the inventory panel: resurrect/reincarnate for a candidate, the open scroll or chest in
+   the action hand, else food and water. */
+void panel_draw(void);
 /* The panel while the eye is pressed: the leader hand object, or the skills and statistics.
    ponytail: the leader hand object name stays; the original clears it until the eye is released. */
 void panel_draw_eye(void);

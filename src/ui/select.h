@@ -40,7 +40,7 @@ void select_key(int key);
 /* A left click at screen pixel (x, y): activates the enabled item under it. */
 void select_click(int x, int y);
 /* The click box of item index item on the current screen. Returns false when there is no such item. */
-bool select_item_box(int item, Box *box);
+bool select_item_box(int item, Box *box); /* exported for the tests */
 /* Draws the current screen on g_screen with its own palette. The font must be loaded (text_init). */
 void select_draw(void);
 

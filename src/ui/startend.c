@@ -124,6 +124,21 @@ int startend_save_current_game(const char **reason)
     }
 }
 
+/* Shows the saving dialog and saves the current game; an unable-to-save dialog names the reason. Returns the SAVED_*
+   result, 0 on failure. */
+static int save_with_dialog(void)
+{
+    const char *reason;
+    dialog_draw(NULL, gfx_get_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
+    int saved = startend_save_current_game(&reason);
+    if (!saved) {
+        dialog_draw(reason ? reason : gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_get_string(TEXT_OK), NULL, NULL,
+                    NULL);
+        dialog_get_choice(1);
+    }
+    return saved;
+}
+
 /* CSB save_game: SAVE AND PLAY saves and goes on, SAVE AND QUIT saves and ends the game. The dialog
    closes after a save; CSB has no quit without a save. */
 static void save_game_csb(void)
@@ -132,19 +147,13 @@ static void save_game_csb(void)
     dialog_draw(NULL, NULL, gfx_get_string(TEXT_CANCEL), gfx_get_string(TEXT_SAVE), gfx_get_string(TEXT_QUIT), NULL);
     int16_t choice = dialog_get_choice(3);
     if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
-        dialog_draw(NULL, gfx_get_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
-        const char *reason;
-        int saved = startend_save_current_game(&reason);
-        if (!saved) {
-            dialog_draw(reason ? reason : gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_get_string(TEXT_OK), NULL,
-                        NULL, NULL);
-            dialog_get_choice(1);
-        } else if (choice == SAVE_CHOICE_QUIT) {
+        int saved = save_with_dialog();
+        if (saved && choice == SAVE_CHOICE_QUIT) {
             startend_run_endgame(0);
             return;
-        } else if (saved == SAVED_NEW_ADVENTURE) {
-            gameloop_start_loaded_game();
         }
+        if (saved == SAVED_NEW_ADVENTURE)
+            gameloop_start_loaded_game();
         if (saved && g_advanced_features)
             advanced_print_message("GAME SAVED");
     }
@@ -166,13 +175,8 @@ void startend_save_game(void)
         message = NULL;
         int16_t choice = dialog_get_choice(3);
         if (choice == SAVE_CHOICE_SAVE) {
-            dialog_draw(NULL, gfx_get_string(TEXT_SAVING_GAME), NULL, NULL, NULL, NULL);
-            if (!savegame_save(save_dir)) {
-                dialog_draw(gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL, gfx_get_string(TEXT_OK), NULL, NULL, NULL);
-                dialog_get_choice(1);
-            } else if (g_advanced_features) {
+            if (save_with_dialog() && g_advanced_features)
                 message = "GAME SAVED";
-            }
             continue;
         }
         if (choice == SAVE_CHOICE_QUIT) {

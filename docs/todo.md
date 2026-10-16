@@ -16,7 +16,7 @@ User wishes for future versions. Not planned yet.
 ## Advanced mode: show the damage twice as long
 
 - Owner's wish (2026-10-16): in the advanced mode the damage that a champion deals stays in the action area twice as long; the vanilla mode keeps the original time.
-- Today: `menus_draw_action_damage` (`src/ui/ui_menus.c:115`) shows the damage in the action area until the area draws again. The time of that redraw also controls when the champion can act again, so the longer display needs its own timer, not a change of the action times.
+- Today: `menus_draw_action_damage` (`src/ui/menus.c`) shows the damage in the action area until the area draws again. The time of that redraw also controls when the champion can act again, so the longer display needs its own timer, not a change of the action times.
 - Not in scope: the damage received on the champion box (`HIDE_DAMAGE_TICKS`, `src/engine/champion.c:26`) keeps its time.
 
 ## Advanced mode: action icons keep their colors on every level

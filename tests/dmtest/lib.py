@@ -14,7 +14,7 @@ LIBRARY = ROOT / "build" / "libdm.dylib"
 BOOL_RESULTS = (
     "ftl_load", "kaos_load", "tables_load", "gfx_open", "gfx_expand", "gfx_expand_over", "gfx_load_bitmap",
     "gfx_load_strings", "adf_extract", "csb_image_build", "csb_text_build", "explored_save", "explored_load",
-    "ui_init", "gameloop_run_frame",
+    "ui_init", "gameloop_run_frame", "ui_zone_box",
 )
 
 

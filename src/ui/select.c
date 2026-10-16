@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/select.h"
 #include "data/adventure.h"
+#include "data/graphics.h"
 #include "engine/game.h"
 #include "ui/advanced.h"
 #include "ui/text.h"
@@ -180,7 +181,7 @@ void select_click(int x, int y)
 {
     Box b;
     for (int i = 0; select_item_box(i, &b); i++) {
-        if (x < b.x || x >= b.x + b.w || y < b.y || y >= b.y + b.h)
+        if (!box_contains(&b, x, y))
             continue;
         if (is_item_enabled(i)) {
             cursor = i;

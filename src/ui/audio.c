@@ -105,15 +105,6 @@ void audio_music_set_volume(uint8_t volume)
         audio.voices[pair_channels[PAIR_B][side]].volume = volume;
 }
 
-void audio_music_stop(void)
-{
-    if (!audio.music.count)
-        return;
-    audio.music.count = 0;
-    for (int side = 0; side < SOUND_SIDE_COUNT; side++)
-        audio.voices[pair_channels[PAIR_B][side]].data = NULL;
-}
-
 /* The next music segment starts on pair B when the one before ends; after the last one the music ends. */
 static void continue_music(void)
 {

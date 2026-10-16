@@ -36,7 +36,6 @@
 
 static uint8_t viewport_px[VIEWPORT_MAX_W * VIEWPORT_MAX_H];
 static Bitmap viewport;
-static int16_t slot_box_icon[UI_SLOT_BOX_COUNT];
 
 const char *const g_rune_names[UI_RUNE_COUNT] = {
     "LO",  "UM", "ON",   "EE", "PAL", "MON", "YA", "VI",  "OH",   "FUL",  "DES", "ZO",
@@ -50,8 +49,6 @@ bool ui_init(void)
     viewport = (Bitmap){tables_get_viewport_width(), tables_get_viewport_height(), viewport_px};
     if ((size_t)viewport.w * viewport.h > sizeof viewport_px)
         return false;
-    for (int i = 0; i < UI_SLOT_BOX_COUNT; i++)
-        slot_box_icon[i] = -1;
     return gfx_load_strings();
 }
 
@@ -83,15 +80,19 @@ void ui_fill_zone_pattern(Bitmap *dst, int16_t zone, uint8_t color)
                 dst->px[y * dst->w + x] = color;
 }
 
+void ui_xor_screen_box(const Box *box)
+{
+    for (int y = box->y; y < box->y + box->h; y++)
+        for (int x = box->x; x < box->x + box->w; x++)
+            if (x >= 0 && x < SCREEN_W && y >= 0 && y < SCREEN_H)
+                g_screen.px[y][x] ^= COLOR_CYAN;
+}
+
 void ui_xor_screen_zone(int16_t zone)
 {
     Box b;
-    if (!ui_zone_box(zone, &b))
-        return;
-    for (int y = b.y; y < b.y + b.h; y++)
-        for (int x = b.x; x < b.x + b.w; x++)
-            if (x >= 0 && x < SCREEN_W && y >= 0 && y < SCREEN_H)
-                g_screen.px[y][x] ^= COLOR_CYAN;
+    if (ui_zone_box(zone, &b))
+        ui_xor_screen_box(&b);
 }
 
 void ui_blit_graphic(Bitmap *dst, int16_t graphic, int16_t zone, int16_t transparent)
@@ -264,16 +265,10 @@ void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon)
     Box b;
     if (slot_box < 0 || slot_box >= UI_SLOT_BOX_COUNT)
         return;
-    slot_box_icon[slot_box] = icon;
     if (icon == -1 || !ui_get_slot_box_zone(slot_box, false, &b))
         return;
     ui_extract_icon(icon, &bm);
     draw_blit(&bm, 0, 0, slot_box < UI_SLOT_BOX_INVENTORY_FIRST ? &screen : &viewport, &b, COLOR_NONE, 0);
-}
-
-int16_t ui_get_icon_in_slot_box(int16_t slot_box)
-{
-    return slot_box >= 0 && slot_box < UI_SLOT_BOX_COUNT ? slot_box_icon[slot_box] : -1;
 }
 
 /* The champion of a bones object: the charge bits of the junk record. */
@@ -302,7 +297,7 @@ void ui_draw_leader_hand_object_name(uint16_t thing)
 bool ui_is_point_in_zone(int16_t zone, int16_t x, int16_t y)
 {
     Box b;
-    return ui_zone_box(zone, &b) && x >= b.x && x <= b.x + b.w - 1 && y >= b.y && y <= b.y + b.h - 1;
+    return ui_zone_box(zone, &b) && box_contains(&b, x, y);
 }
 
 int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t button_mask)
@@ -351,7 +346,7 @@ void ui_draw_icon_to_viewport(int16_t icon, int16_t zone)
     uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
     Box b;
-    if (!ui_get_icon_zone_box(zone, 0, &b))
+    if (!ui_get_icon_zone_box(zone, false, &b))
         return;
     ui_extract_icon(icon, &bm);
     draw_blit(&bm, 0, 0, ui_get_viewport(), &b, COLOR_NONE, 0);

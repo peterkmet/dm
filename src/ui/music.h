@@ -16,10 +16,13 @@
 #define MUSIC_CSB_MAP_COUNT 10 /* map 10 of CSB (1 x 1) has no entry */
 #define MUSIC_CSB_MAP_SIZE  32
 
-extern int16_t g_music_soundtrack;      /* MUSIC_ORIGINAL by default: no music */
-extern int16_t g_music_track;           /* the track that plays, 0: silence */
-extern int16_t g_music_last_track;      /* the track that started last, also when its file is missing */
-extern int16_t g_music_requested_track; /* FM-Towns CSB: the track of the zone, it starts after the current track */
+extern int16_t g_music_soundtrack; /* MUSIC_ORIGINAL by default: no music */
+/* The track that plays, 0: silence; exported for the tests. */
+extern int16_t g_music_track;
+/* The track that started last, also when its file is missing; exported for the tests. */
+extern int16_t g_music_last_track;
+/* FM-Towns CSB: the track of the zone, it starts after the current track; exported for the tests. */
+extern int16_t g_music_requested_track;
 
 /* Selects a soundtrack (keys 1, 2, 3 on the automap) and starts the track of the party position.
    Super NES has no CSB soundtrack: the selection does nothing in CSB. */

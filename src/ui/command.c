@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/command.h"
+#include "data/graphics.h"
 #include "data/ids.h"
 #include "data/spells.h"
 #include "engine/action.h"
@@ -99,7 +100,7 @@ void command_restore_input(void)
     set_input(dialog_input);
 }
 
-void command_set_game_input(void)
+static void set_game_input(void)
 {
     primary_mouse = TABLES_MOUSE_INTERFACE;
     secondary_mouse = TABLES_MOUSE_MOVEMENT;
@@ -183,10 +184,7 @@ void command_highlight_disable(void)
 {
     if (!highlight_enabled)
         return;
-    for (int y = highlight.y; y < highlight.y + highlight.h; y++)
-        for (int x = highlight.x; x < highlight.x + highlight.w; x++)
-            if (x >= 0 && x < SCREEN_W && y >= 0 && y < SCREEN_H)
-                g_screen.px[y][x] ^= COLOR_CYAN;
+    ui_xor_screen_box(&highlight);
     highlight_enabled = false;
 }
 
@@ -459,7 +457,7 @@ static void touch_front_square_empty_handed(bool imaginary_wall, int16_t x, int1
 /* A point in a clickable box of the view; x -1 marks an unused box. */
 static bool is_in_box(const Box *b, int16_t x, int16_t y)
 {
-    return b->x != -1 && x >= b->x && x < b->x + b->w && y >= b->y && y < b->y + b->h;
+    return b->x != -1 && box_contains(b, x, y);
 }
 
 /* The leader throws the hand object when the click is in the left or right throw zone. */
@@ -622,15 +620,6 @@ static void click_in_action_area(int16_t x, int16_t y)
     }
 }
 
-/* Draws an object icon in a zone of the viewport. */
-static void draw_viewport_icon(int16_t icon, int16_t zone)
-{
-    uint8_t px[UI_ICON_SIZE * UI_ICON_SIZE];
-    Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
-    ui_extract_icon(icon, &bm);
-    ui_blit_zone(ui_get_viewport(), &bm, zone, COLOR_NONE);
-}
-
 /* While the left button stays down on the eye, the panel shows the skills and statistics, or the
    description of the object in the hand. */
 static void click_on_eye(void)
@@ -640,7 +629,7 @@ static void click_on_eye(void)
     pressing_eye = true;
     g_mouse_pointer_hidden = true;
     command_discard_all_input();
-    draw_viewport_icon(ICON_EYE_LOOKING, ZONE_EYE);
+    ui_draw_icon_to_viewport(ICON_EYE_LOOKING, ZONE_EYE);
     panel_draw_eye();
     ui_draw_viewport();
 }
@@ -650,7 +639,7 @@ static void process_left_release(void)
 {
     if (pressing_eye) {
         pressing_eye = false;
-        draw_viewport_icon(ICON_EYE, ZONE_EYE);
+        ui_draw_icon_to_viewport(ICON_EYE, ZONE_EYE);
         panel_draw();
         ui_draw_viewport();
     }
@@ -681,7 +670,7 @@ void command_wake_up(void)
     champion_wake_up();
     g_stop_waiting_for_input = true;
     g_wait_for_input_max_frames = WAIT_FOR_INPUT_FRAMES;
-    command_set_game_input();
+    set_game_input();
     command_discard_all_input();
 }
 
@@ -847,5 +836,5 @@ void command_reset(void)
     queue_count = 0;
     g_input_received = false;
     g_last_key = 0;
-    command_set_game_input();
+    set_game_input();
 }

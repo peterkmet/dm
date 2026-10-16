@@ -6,8 +6,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Automap (not in the original game): remembers the squares the party has seen and draws them
-   as a top-down map. */
+/* Automap (not in the original game): draws the squares the party has seen (engine/explored owns them) as a
+   top-down map. */
 
 #define AUTOMAP_CELL_SIZE    7  /* pixels per square: 32 squares fill the 224 pixel viewport */
 #define AUTOMAP_RULER_WIDTH  12 /* the left ruler with the row numbers: two digits and a gap */

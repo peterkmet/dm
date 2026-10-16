@@ -439,7 +439,7 @@ The estimate counts changed or new lines in `src/`, without tests.
 | Subsystem | Work | Size |
 |---|---|---|
 | Engine selection, CSB address table for 140 addresses, strides | `ftl.c`, `tables.c`, new address table, all files with `#define 0x10xxxx` | 250–350 lines |
-| Text (inline strings, object names with bit 7, action names) | `ui.c`, `ids.h`, `champion.c`, `magic.c`, `action.c`, `status.c`, `panel.c`, `ui_menus.c`, `command.c`, `gameloop.c`, `startend.c` | 200–300 lines |
+| Text (inline strings, object names with bit 7, action names) | `ui.c`, `ids.h`, `champion.c`, `magic.c`, `action.c`, `status.c`, `panel.c`, `menus.c`, `command.c`, `gameloop.c`, `startend.c` | 200–300 lines |
 | Actions and experience table | `action.c`, `tables.c` | 20–40 lines |
 | Magic map (spells, events, champion bytes, scroll panel, map drawing) | `magic.c`, `spells.c`, `event.c`, `game.h`, `panel.c`, `view.c` | 350–500 lines |
 | Sensors, active groups, reincarnation | `sensor.c`, `game.h`, `game.c`, `savegame.c`, `champion.c` | 30–60 lines |

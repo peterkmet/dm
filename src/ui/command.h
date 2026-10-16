@@ -91,7 +91,6 @@ extern bool g_input_received; /* a key or button press since the last discard */
 extern uint16_t g_last_key;   /* the last key word since the last discard, 0: none */
 
 void command_set_entrance_input(void);
-void command_set_game_input(void);
 /* A new or loaded game starts without a pressed eye, mouth or wall, a highlight, a sleeping input
    speed, or waiting commands; the game input tables are active. */
 void command_reset(void);
@@ -129,7 +128,7 @@ void command_toggle_inventory(int16_t champion_index);
 void command_close_inventory(void);
 /* The inventory champion eats or drinks the leader hand object. The mouth blinks when the object is
    used up, then the champion swallows and its state is drawn. */
-void command_click_on_mouth(void);
+void command_click_on_mouth(void); /* exported for the tests */
 /* A champion dies: its open inventory closes, also during a press on the eye or the mouth; a dead
    leader ends a press on an imaginary wall; its icon is cleared and is no longer dragged. */
 void command_release_dead_champion(uint16_t champion_index, int16_t leader_index);

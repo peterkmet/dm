@@ -62,7 +62,7 @@ int16_t view_get_floor_ornament(int16_t x, int16_t y);
 /* True when the view draws a pressure pad on square (x, y) of the party map. */
 bool view_is_pressure_pad(int16_t x, int16_t y);
 /* Draws the dungeon view of square (x, y) in direction dir: ceiling and floor, D4, then the squares back to front. */
-void view_draw(int16_t dir, int16_t x, int16_t y);
+void view_draw(int16_t dir, int16_t x, int16_t y); /* exported for the tests */
 /* CSB: draws the magic map of a champion at (px, py) of dst: 7 x 7 squares around the party, or around the square
    that NETA keeps. The party square is drawn last. The ornaments are those of the party map, as in the original. */
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py);

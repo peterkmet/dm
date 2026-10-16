@@ -27,7 +27,7 @@ void menus_draw_action_icon(int16_t champion_index);
 void menus_draw_action_area(void);
 /* Shows the result of an action: "CAN'T REACH", "NEED AMMO", or the damage in a splat (smaller
    for small damage). */
-void menus_draw_action_damage(int16_t damage);
+void menus_draw_action_damage(int16_t damage); /* exported for the tests */
 /* Runs each tick: turns idle champions toward their last attacker, then redraws the action area
    when requested (menu, damage, or icons). */
 void menus_refresh_action_area(void);
