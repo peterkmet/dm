@@ -302,7 +302,7 @@ const Spell *tables_get_spell(int16_t i)
 {
     return i < loaded_spell_count ? GET(spells, i) : NULL;
 }
-uint8_t tables_get_symbol_mana_cost_multiplier(int16_t i)
+uint8_t tables_get_mana_multiplier(int16_t i)
 {
     return GET_VALUE(symbol_mana_cost_multiplier, i);
 }
@@ -314,11 +314,11 @@ const ActionInfo *tables_get_action_info(int16_t i)
 {
     return GET(action_info, i);
 }
-int16_t tables_get_light_power_to_light_amount(int16_t i)
+int16_t tables_get_light_amount(int16_t i)
 {
     return GET_VALUE(light_power_to_light_amount, i);
 }
-int16_t tables_get_palette_light_threshold(int16_t i)
+int16_t tables_get_light_threshold(int16_t i)
 {
     return GET_VALUE(palette_light_thresholds, i);
 }
@@ -335,7 +335,7 @@ uint16_t tables_get_fixed_possession(int16_t i)
     return GET_VALUE(fixed_possessions, i);
 }
 
-uint8_t tables_get_symbol_base_mana_cost(int16_t step, int16_t symbol)
+uint8_t tables_get_base_mana_cost(int16_t step, int16_t symbol)
 {
     if (step < 0 || step >= SYMBOL_STEP_COUNT)
         return 0;
@@ -382,15 +382,15 @@ int16_t tables_get_arrow_steps_right(int16_t arrow)
 {
     return kaos_s16(KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT + arrow * 2);
 }
-uint8_t tables_get_ordered_cell_to_attack(int16_t row, int16_t i)
+uint8_t tables_get_attack_cell_order(int16_t row, int16_t i)
 {
     return kaos_u8(KAOS_ORDERED_CELLS_TO_ATTACK + (uint32_t)(row * ATTACK_CELL_COUNT) + i);
 }
-uint8_t tables_get_wound_probability_mask(int16_t index)
+uint8_t tables_get_wound_mask(int16_t index)
 {
     return kaos_u8(KAOS_WOUND_PROBABILITY_INDEX_TO_MASK + index);
 }
-uint8_t tables_get_slot_to_steal_from(int16_t index)
+uint8_t tables_get_steal_slot(int16_t index)
 {
     return kaos_u8(KAOS_SLOTS_TO_STEAL_FROM + index);
 }
@@ -427,7 +427,7 @@ uint8_t tables_get_sound_volume(int16_t ahead, int16_t side)
     uint32_t row = KAOS_SOUND_VOLUMES + (ahead + SOUND_HEARING_RANGE) * SOUND_VOLUME_ROW;
     return kaos_u8(row + SOUND_HEARING_RANGE + side);
 }
-uint8_t tables_get_new_game_extra_things(int16_t thing_type)
+uint8_t tables_get_extra_things(int16_t thing_type)
 {
     return kaos_u8(KAOS_NEW_GAME_EXTRA_THINGS + thing_type);
 }
@@ -520,7 +520,7 @@ ViewSquare tables_get_view_square(int16_t view_square)
         kaos_s8(KAOS_VIEW_SQUARE_FIELD_ASPECT + view_square),
     };
 }
-int16_t tables_get_wall_set_layout_id(int16_t i)
+int16_t tables_get_wall_layout_id(int16_t i)
 {
     return kaos_s16(KAOS_WALL_SET_LAYOUT_IDS + 2 * i);
 }
@@ -532,7 +532,7 @@ uint8_t tables_get_plaque_height(int16_t lines, int16_t depth)
 {
     return kaos_u8(KAOS_PLAQUE_HEIGHTS + (lines - 1) + TABLES_PLAQUE_LINES * depth);
 }
-uint8_t tables_get_floor_ornament_view_offset(int16_t view)
+uint8_t tables_get_floor_ornament_offset(int16_t view)
 {
     return kaos_u8(KAOS_FLOOR_ORNAMENT_VIEW_OFFSETS + view);
 }
@@ -544,19 +544,19 @@ uint8_t tables_get_fountain_ornament(void)
 {
     return kaos_u8(KAOS_FOUNTAIN_ORNAMENT);
 }
-uint8_t tables_get_wall_ornament_coord_set(int16_t ornament)
+uint8_t tables_get_wall_ornament_coords(int16_t ornament)
 {
     return kaos_u8(KAOS_WALL_ORNAMENT_COORD_SETS + ornament);
 }
-uint8_t tables_get_floor_ornament_coord_set(int16_t ornament)
+uint8_t tables_get_floor_ornament_coords(int16_t ornament)
 {
     return kaos_u8(KAOS_FLOOR_ORNAMENT_COORD_SETS + ornament);
 }
-uint8_t tables_get_door_ornament_coord_set(int16_t ornament)
+uint8_t tables_get_door_ornament_coords(int16_t ornament)
 {
     return kaos_u8(KAOS_DOOR_ORNAMENT_COORD_SETS + ornament);
 }
-uint8_t tables_get_door_button_coord_set(void)
+uint8_t tables_get_door_button_coords(void)
 {
     return kaos_u8(KAOS_DOOR_BUTTON_COORD_SETS);
 }

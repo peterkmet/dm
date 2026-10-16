@@ -31,7 +31,7 @@
 #define WALL_COUNT 15
 #define WALL_SIDES 4 /* the sides of a wall square */
 
-/* Entries of tables_get_wall_set_layout_id: layout bitmap ids of the floor set, the walls, the door frames, and the
+/* Entries of tables_get_wall_layout_id: layout bitmap ids of the floor set, the walls, the door frames, and the
    mirrored walls. The right square of a pair draws the mirrored frame of the left square. */
 #define WS_FLOOR                0
 #define WS_CEILING              1
@@ -1374,7 +1374,7 @@ static void draw_floor_ornament(uint16_t ordinal, int16_t view)
         bool right = view == VIEW_D3R2 || view == VIEW_D3R || view == VIEW_D2R || view == VIEW_D1R;
         bool center = view == VIEW_D3C || view == VIEW_D2C || view == VIEW_D1C;
         bool flip = right || (i == FLOOR_ORNAMENT_FOOTPRINTS && use_flipped_walls && center);
-        draw_bitmap_in_zone(gfx_get_bitmap(floor_ornaments[i].graphic + tables_get_floor_ornament_view_offset(view)),
+        draw_bitmap_in_zone(gfx_get_bitmap(floor_ornaments[i].graphic + tables_get_floor_ornament_offset(view)),
                             &viewport,
                             ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * floor_ornaments[i].coord + view,
                             flip, TRANSPARENT_COLOR);
@@ -1417,7 +1417,7 @@ static void draw_door_button(int16_t view)
         bm = &own;
     }
     if (bm && bm->px &&
-        draw_bitmap_in_zone(bm, &viewport, ZONE_DOOR_BUTTON_FIRST + tables_get_door_button_coord_set() + view, 0,
+        draw_bitmap_in_zone(bm, &viewport, ZONE_DOOR_BUTTON_FIRST + tables_get_door_button_coords() + view, 0,
                             TRANSPARENT_COLOR) &&
         view == BUTTON_D1C)
         g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn_box;
@@ -2094,7 +2094,7 @@ static void set_creature_replacement_colors(int16_t color, int16_t n)
 static void reset_wall_set_ids(void)
 {
     for (int i = 0; i < WS_COUNT; i++)
-        wall_set_ids[i] = tables_get_wall_set_layout_id(i);
+        wall_set_ids[i] = tables_get_wall_layout_id(i);
 }
 
 static int16_t get_wall_set_slot(int entry)
@@ -2176,7 +2176,7 @@ static void load_ornaments(int16_t map, const uint8_t *ornaments)
     for (int16_t i = 0; i <= walls; i++) {
         uint8_t ornament = i < walls ? ornaments[i] : 0;
         wall_ornaments[i] = (Ornament){GFX_WALL_ORNAMENT_FIRST + WALL_ORNAMENT_GRAPHICS * ornament,
-                                       tables_get_wall_ornament_coord_set(ornament)};
+                                       tables_get_wall_ornament_coords(ornament)};
         for (int k = 0; k < ALCOVE_ORNAMENT_COUNT; k++)
             if (tables_get_alcove_ornament(k) == ornament) {
                 alcoves[alcove_count++] = i;
@@ -2189,13 +2189,12 @@ static void load_ornaments(int16_t map, const uint8_t *ornaments)
     for (int16_t i = 0; i < floors; i++) {
         uint8_t ornament = ornaments[walls + i];
         floor_ornaments[i] = (Ornament){GFX_FLOOR_ORNAMENT_FIRST + FLOOR_ORNAMENT_GRAPHICS * ornament,
-                                        tables_get_floor_ornament_coord_set(ornament)};
+                                        tables_get_floor_ornament_coords(ornament)};
     }
     floor_ornaments[FLOOR_ORNAMENT_FOOTPRINTS] = (Ornament){GFX_FOOTPRINTS, 0};
     for (int16_t i = 0; i < doors; i++) {
         uint8_t ornament = ornaments[walls + floors + i];
-        door_ornaments[i] =
-            (Ornament){GFX_DOOR_ORNAMENT_FIRST + ornament, tables_get_door_ornament_coord_set(ornament)};
+        door_ornaments[i] = (Ornament){GFX_DOOR_ORNAMENT_FIRST + ornament, tables_get_door_ornament_coords(ornament)};
     }
     door_ornaments[DOOR_ORNAMENT_DESTROYED - 1] = (Ornament){GFX_DOOR_MASK_DESTROYED, DOOR_MASK_COORD_SET};
     door_ornaments[DOOR_ORNAMENT_THIEVES_EYE - 1] = (Ornament){GFX_DOOR_MASK_THIEVES_EYE, DOOR_MASK_COORD_SET};

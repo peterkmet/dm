@@ -216,7 +216,7 @@ static bool read_things(bool new_game, uint16_t *sum)
         if (count < 0 || count > cap)
             return false;
         if (new_game) {
-            int16_t extra = tables_get_new_game_extra_things(t);
+            int16_t extra = tables_get_extra_things(t);
             total = count + extra > cap ? cap : count + extra;
         }
         set_thing_count(t, total);

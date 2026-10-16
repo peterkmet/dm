@@ -47,10 +47,10 @@ TABLES = {
     "junk_weight": (u8, 53, 0x10169C, 1, ">B"),
     "food_value": (s16, 8, 0x1016D2, 2, ">h"),
     "spell": (Spell, 25, 0x103C84, 8, ">IBBH"),
-    "symbol_mana_cost_multiplier": (u8, 6, 0x103C7E, 1, ">B"),
+    "mana_multiplier": (u8, 6, 0x103C7E, 1, ">B"),
     "action_set": (ActionSet, 44, 0x103D4C, 8, ">BBBxBB"),
-    "light_power_to_light_amount": (s16, 16, 0x100CB4, 2, ">h"),
-    "palette_light_threshold": (s16, 6, 0x100CD4, 2, ">h"),
+    "light_amount": (s16, 16, 0x100CB4, 2, ">h"),
+    "light_threshold": (s16, 6, 0x100CD4, 2, ">h"),
     "slot_mask": (u16, 38, 0x100C68, 2, ">H"),
     "wound_defense_factor": (u8, 6, 0x100CE4, 1, ">B"),
     "fixed_possession": (u16, 40, 0x101C10, 2, ">H"),
@@ -65,8 +65,8 @@ def lib():
         f = getattr(lib, "tables_get_" + name)
         scalar = not issubclass(rec, ctypes.Structure)
         f.argtypes, f.restype = [ctypes.c_int16], rec if scalar else ctypes.POINTER(rec)
-    lib.tables_get_symbol_base_mana_cost.argtypes = [ctypes.c_int16, ctypes.c_int16]
-    lib.tables_get_symbol_base_mana_cost.restype = u8
+    lib.tables_get_base_mana_cost.argtypes = [ctypes.c_int16, ctypes.c_int16]
+    lib.tables_get_base_mana_cost.restype = u8
     assert not lib.tables_load(b"/nonexistent/KAOS.FTL")
     assert lib.tables_load(str(KAOS).encode())
     return lib
@@ -107,7 +107,7 @@ def test_accessor_rejects_out_of_range(lib, image, name):
 
 
 def test_symbol_mana_cost_rejects_out_of_range(lib):
-    f = lib.tables_get_symbol_base_mana_cost
+    f = lib.tables_get_base_mana_cost
     assert f(3, 5)
     for step, sym in ((-1, 0), (4, 0), (0, -1), (0, 6)):
         assert not f(step, sym)
@@ -136,7 +136,7 @@ def test_action_info_matches_per_action_tables(lib, image):
 def test_symbol_base_mana_cost_matches_image(lib, image):
     for step in range(4):
         for sym in range(6):
-            assert lib.tables_get_symbol_base_mana_cost(step, sym) == image[0x103C66 - BASE + step * 6 + sym]
+            assert lib.tables_get_base_mana_cost(step, sym) == image[0x103C66 - BASE + step * 6 + sym]
 
 
 def test_object_types_match_dmcsb_item_list(lib):

@@ -201,7 +201,7 @@ static void cast_projectile(uint16_t champion_index, uint16_t explosion_type, in
 /* Light now, taken back by event 70 after the ticks. */
 static void cast_light(uint16_t light_power, int16_t ticks)
 {
-    g_party.magical_light_amount += tables_get_light_power_to_light_amount(light_power);
+    g_party.magical_light_amount += tables_get_light_amount(light_power);
     magic_create_light_event(-light_power, ticks);
 }
 
@@ -233,7 +233,7 @@ static void cast_other(uint16_t champion_index, uint16_t type, int16_t power)
                    (power - 1) * SPELL_DURATION_FACTOR * LIGHT_SPELL_TICKS_FACTOR + LIGHT_SPELL_BASE_TICKS);
         break;
     case SPELL_OTHER_DARKNESS:
-        g_party.magical_light_amount -= tables_get_light_power_to_light_amount(ticks >> 2);
+        g_party.magical_light_amount -= tables_get_light_amount(ticks >> 2);
         magic_create_light_event(ticks >> 2, LIGHT_MAXIMUM_TICKS_DARKNESS);
         break;
     case SPELL_OTHER_THIEVES_EYE:

@@ -302,7 +302,7 @@
 #define ZONE_SHIFTED 0x8000 /* zone flag: the position moves by the creature or pile shift */
 #define ZONE_SIZED   0x4000 /* zone flag: the item size comes from the zone relative x, y */
 
-/* Layout bitmap ids outside tables_get_wall_set_layout_id: parts of the D3L stairs and of the D1C wall. */
+/* Layout bitmap ids outside tables_get_wall_layout_id: parts of the D3L stairs and of the D1C wall. */
 #define LAYOUT_INSCRIPTION_WALL       -51
 #define LAYOUT_STAIRS_DOWN_FRONT_D3R2 -36
 #define LAYOUT_STAIRS_DOWN_FRONT_D3L2 -35

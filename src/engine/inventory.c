@@ -288,7 +288,7 @@ uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_
     if (slot == SLOT_NECK && is_neck_jewel(icon)) {
         junk_set_charges(thing, 0);
         if (is_illumulet(icon))
-            g_party.magical_light_amount -= tables_get_light_power_to_light_amount(LIGHT_POWER_ILLUMULET);
+            g_party.magical_light_amount -= tables_get_light_amount(LIGHT_POWER_ILLUMULET);
     }
     if (inventory_open)
         c->attributes |= CHAMPION_ATTR_VIEWPORT;
@@ -334,7 +334,7 @@ void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint1
     } else if (slot == SLOT_NECK && is_neck_jewel(icon)) {
         junk_set_charges(thing, 1);
         if (is_illumulet(icon))
-            g_party.magical_light_amount += tables_get_light_power_to_light_amount(LIGHT_POWER_ILLUMULET);
+            g_party.magical_light_amount += tables_get_light_amount(LIGHT_POWER_ILLUMULET);
     }
     if (inventory_open)
         c->attributes |= CHAMPION_ATTR_VIEWPORT;
@@ -554,7 +554,7 @@ int16_t inventory_get_party_light(void)
     for (int i = 0; i < LIGHT_SOURCES_USED; i++)
         if (power[i]) {
             /* the 16-bit cast keeps the overflow of the original word arithmetic */
-            total += (int16_t)(tables_get_light_power_to_light_amount(power[i]) << shift) >> LIGHT_FIRST_SHIFT;
+            total += (int16_t)(tables_get_light_amount(power[i]) << shift) >> LIGHT_FIRST_SHIFT;
             shift = max16(0, shift - 1);
         }
     return g_party.magical_light_amount + total;
@@ -572,7 +572,7 @@ void inventory_set_dungeon_view_palette(int16_t map_index, int16_t light)
         return;
     }
     while (g_dungeon_view_palette_index < LIGHT_DARKEST &&
-           light < tables_get_palette_light_threshold(g_dungeon_view_palette_index))
+           light < tables_get_light_threshold(g_dungeon_view_palette_index))
         g_dungeon_view_palette_index++;
 }
 

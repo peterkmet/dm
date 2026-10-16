@@ -17,16 +17,16 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 |---|---|---|---|
 | `tables_get_step_east`, `tables_get_step_north` | `0x101038`, `0x101040` | int16 × 4 | Direction |
 | `tables_get_arrow_steps_forward`, `tables_get_arrow_steps_right` | `0x103c56`, `0x103c5e` | int16 × 4 | Movement arrow |
-| `tables_get_ordered_cell_to_attack` | `0x100b66` | uint8 × 8 × 4 | Row (attacker side + 2 × direction), cell order |
-| `tables_get_wound_probability_mask` | `0x100b86` | uint8 × 4 | Wound probability index |
-| `tables_get_slot_to_steal_from` | `0x100b8a` | uint8 × 8 | Random index |
+| `tables_get_attack_cell_order` | `0x100b66` | uint8 × 8 × 4 | Row (attacker side + 2 × direction), cell order |
+| `tables_get_wound_mask` | `0x100b86` | uint8 × 4 | Wound probability index |
+| `tables_get_steal_slot` | `0x100b8a` | uint8 × 8 | Random index |
 | `tables_get_torch_icon_offset` | `0x100ba0` | uint8 × 16 | Torch charges |
 | `tables_get_slot_drop_order` | `0x100d0e` | uint16 × 30 | Drop order |
 | `tables_get_champion_color` | `0x100ce0` | uint8 × 4 | Champion |
 | `tables_get_square_type_event` | `0x100d4a` | uint8 × 8 | Square type |
 | `tables_get_sound_graphic`, `tables_get_sound_rate`, `tables_get_sound_priority` | `0x100d52` (+0, +3, +4) | 12-byte record × 35 | Sound |
 | `tables_get_sound_volume` | `0x100696` | uint8 × 25 × 25 | Squares ahead, squares to the side (−12 to 12) |
-| `tables_get_new_game_extra_things` | `0x101058` | uint8 × 16 | Thing type |
+| `tables_get_extra_things` | `0x101058` | uint8 × 16 | Thing type |
 | `tables_get_door_attributes` | `0x1016e2` | uint16 × 4 (attributes << 8, defense) | Door set |
 | `tables_get_message_escape`, `tables_get_inscription_escape` | `0x1016ea`, `0x10182a` | char[8] × 32 | Escape code |
 | `tables_get_escape_replacement` | `0x1017ea` | char[2] × 32 | Escape code |
@@ -43,12 +43,12 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_rebirth_scale` | `0x102fe8` (step 2), `0x102ff0` (step 1) | uint8 × 7 | Rebirth step, coordinate set |
 | `tables_get_group_directions` | `0x10192a` | uint8 × 4 | Direction |
 | `tables_get_view_square` | `0x102a7e` + 24·n (7 tables) | int8 × 23 each | View square |
-| `tables_get_wall_set_layout_id` | `0x102a22` | int16 × 46 | Wall set entry |
+| `tables_get_wall_layout_id` | `0x102a22` | int16 × 46 | Wall set entry |
 | `tables_get_wall_ornament_depth` | `0x102ba6` | uint8 × 14 | Wall ornament view |
 | `tables_get_plaque_height` | `0x102c57` (one byte before the table) | uint8 × 3 × 5 | Line count 1-3, depth |
-| `tables_get_floor_ornament_view_offset` | `0x102bb4` | uint8 × 11 | Floor ornament view |
+| `tables_get_floor_ornament_offset` | `0x102bb4` | uint8 × 11 | Floor ornament view |
 | `tables_get_alcove_ornament`, `tables_get_fountain_ornament` | `0x102bc0`, `0x102bc3` | uint8 × 3, × 1 | Alcove index, — |
-| `tables_get_wall_ornament_coord_set`, `tables_get_floor_ornament_coord_set`, `tables_get_door_ornament_coord_set`, `tables_get_door_button_coord_set` | `0x102bc4`, `0x102c00`, `0x102c0a`, `0x102c16` | uint8 | Ornament graphic, — |
+| `tables_get_wall_ornament_coords`, `tables_get_floor_ornament_coords`, `tables_get_door_ornament_coords`, `tables_get_door_button_coords` | `0x102bc4`, `0x102c00`, `0x102c0a`, `0x102c16` | uint8 | Ornament graphic, — |
 | `tables_get_glyph_width`, `tables_get_glyph_height` | `0x10296e`, `0x102970` | int16 | — |
 | `tables_get_viewport_x`, `tables_get_viewport_y`, `tables_get_viewport_width`, `tables_get_viewport_height` | `0x10293a`, `0x10293c`, `0x102948`, `0x10294a` | int16 | — |
 | `tables_get_layout_bitmap` | `0x1025f2` | 14-byte record (x, y, w, h at +2 … +8) | Layout bitmap slot |
@@ -83,12 +83,12 @@ The image accessors read the loaded image at call time. They need `tables_load`.
 | `tables_get_junk_weight` | `0x10169c` | 1 | 53 | Junk type |
 | `tables_get_food_value` | `0x1016d2` | 2 | 8 | Icon − `0xa8` |
 | `tables_get_spell` | `0x103c84` | 8 | 25 | Spell |
-| `tables_get_symbol_base_mana_cost` | `0x103c66` | 1 | 4 × 6 | Symbol step, symbol |
-| `tables_get_symbol_mana_cost_multiplier` | `0x103c7e` | 1 | 6 | Power symbol |
+| `tables_get_base_mana_cost` | `0x103c66` | 1 | 4 × 6 | Symbol step, symbol |
+| `tables_get_mana_multiplier` | `0x103c7e` | 1 | 6 | Power symbol |
 | `tables_get_action_set` | `0x103d4c` | 8 | 44 | Object info action set index |
 | `tables_get_action_info` | `0x103eac`–`0x103fb4` | 7 × 1 | 44 | Action |
-| `tables_get_light_power_to_light_amount` | `0x100cb4` | 2 | 16 | Light power |
-| `tables_get_palette_light_threshold` | `0x100cd4` | 2 | 6 | Palette index |
+| `tables_get_light_amount` | `0x100cb4` | 2 | 16 | Light power |
+| `tables_get_light_threshold` | `0x100cd4` | 2 | 6 | Palette index |
 | `tables_get_slot_mask` | `0x100c68` | 2 | 38 | Champion slot (30), then chest slot (8) |
 | `tables_get_wound_defense_factor` | `0x100ce4` | 1 | 6 | Body slot |
 | `tables_get_fixed_possession` | `0x101c10` | 2 | 40 | Word in the list block |
@@ -182,7 +182,7 @@ Door info, 2 bytes per door type, read by `tables_get_door_attributes`. Byte 0 `
 | 6 | `type` | Bits 4–9: potion type, explosion type + 128, or other spell number. |
 | 6 | `disabled_ticks` | Bits 10–15: action disabled ticks after the cast. |
 
-`tables_get_symbol_base_mana_cost(step, n)` is the mana cost of symbol `n` at symbol step `step`. For steps after the first, the cost is `base × multiplier[power] >> 3`, where `multiplier` is `tables_get_symbol_mana_cost_multiplier`.
+`tables_get_base_mana_cost(step, n)` is the mana cost of symbol `n` at symbol step `step`. For steps after the first, the cost is `base × multiplier[power] >> 3`, where `multiplier` is `tables_get_mana_multiplier`.
 
 ## Actions
 

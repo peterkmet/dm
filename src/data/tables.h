@@ -170,10 +170,10 @@ const ActionInfo *tables_get_action_info(int16_t action);
 /* The scalar tables return the value, or 0 for an out-of-range index. */
 uint8_t tables_get_junk_weight(int16_t junk_type);
 int16_t tables_get_food_value(int16_t index);
-uint8_t tables_get_symbol_base_mana_cost(int16_t step, int16_t symbol);
-uint8_t tables_get_symbol_mana_cost_multiplier(int16_t power);
-int16_t tables_get_light_power_to_light_amount(int16_t power);
-int16_t tables_get_palette_light_threshold(int16_t index);
+uint8_t tables_get_base_mana_cost(int16_t step, int16_t symbol);
+uint8_t tables_get_mana_multiplier(int16_t power);
+int16_t tables_get_light_amount(int16_t power);
+int16_t tables_get_light_threshold(int16_t index);
 uint16_t tables_get_slot_mask(int16_t slot);
 uint8_t tables_get_wound_defense_factor(int16_t slot);
 uint16_t tables_get_fixed_possession(int16_t index);
@@ -190,11 +190,11 @@ int16_t tables_get_arrow_steps_forward(int16_t arrow);
 /* Squares to the right of a movement arrow. */
 int16_t tables_get_arrow_steps_right(int16_t arrow);
 /* Cell i in the order that an attacker from row (side and direction) reaches the cells of the target square. */
-uint8_t tables_get_ordered_cell_to_attack(int16_t row, int16_t i);
+uint8_t tables_get_attack_cell_order(int16_t row, int16_t i);
 /* Wound mask of a wound probability index. */
-uint8_t tables_get_wound_probability_mask(int16_t index);
+uint8_t tables_get_wound_mask(int16_t index);
 /* Inventory slot that a thief tries for a random index. */
-uint8_t tables_get_slot_to_steal_from(int16_t index);
+uint8_t tables_get_steal_slot(int16_t index);
 /* Icon offset of a lit torch by its charges. */
 uint8_t tables_get_torch_icon_offset(int16_t charges);
 /* Slot i in the order that a dead champion drops the objects. */
@@ -212,7 +212,7 @@ uint8_t tables_get_sound_priority(int16_t sound);
 /* Volume of one channel for a sound at squares ahead and squares toward the side of that channel. */
 uint8_t tables_get_sound_volume(int16_t ahead, int16_t side);
 /* Free records of a thing type that a new game adds to the dungeon. */
-uint8_t tables_get_new_game_extra_things(int16_t thing_type);
+uint8_t tables_get_extra_things(int16_t thing_type);
 /* Door info word of a door set: attributes in the high byte, defense in the low byte. */
 uint16_t tables_get_door_attributes(int16_t door_set);
 /* String of a message escape code. */
@@ -264,26 +264,26 @@ typedef struct {
 /* Lane, depth, and coordinate sets of a view square. */
 ViewSquare tables_get_view_square(int16_t view_square);
 /* Layout bitmap id of wall set entry i. */
-int16_t tables_get_wall_set_layout_id(int16_t i);
+int16_t tables_get_wall_layout_id(int16_t i);
 /* Depth (0-4) of a wall ornament view. */
 uint8_t tables_get_wall_ornament_depth(int16_t view);
 #define TABLES_PLAQUE_LINES 3 /* the most lines that an inscription plaque shows */
 /* Visible plaque height of an inscription of 1-3 lines at a depth. */
 uint8_t tables_get_plaque_height(int16_t lines, int16_t depth);
 /* Graphic offset of a floor ornament view. */
-uint8_t tables_get_floor_ornament_view_offset(int16_t view);
+uint8_t tables_get_floor_ornament_offset(int16_t view);
 /* Wall ornament k of the alcove ornaments. */
 uint8_t tables_get_alcove_ornament(int16_t k);
 /* The wall ornament that is a fountain. */
 uint8_t tables_get_fountain_ornament(void);
 /* Coordinate set of a wall ornament graphic. */
-uint8_t tables_get_wall_ornament_coord_set(int16_t ornament);
+uint8_t tables_get_wall_ornament_coords(int16_t ornament);
 /* Coordinate set of a floor ornament graphic. */
-uint8_t tables_get_floor_ornament_coord_set(int16_t ornament);
+uint8_t tables_get_floor_ornament_coords(int16_t ornament);
 /* Coordinate set of a door ornament graphic. */
-uint8_t tables_get_door_ornament_coord_set(int16_t ornament);
+uint8_t tables_get_door_ornament_coords(int16_t ornament);
 /* Coordinate set of the door button. */
-uint8_t tables_get_door_button_coord_set(void);
+uint8_t tables_get_door_button_coords(void);
 /* Width of a wall text glyph. */
 int16_t tables_get_glyph_width(void);
 /* Height of a wall text glyph. */

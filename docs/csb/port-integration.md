@@ -109,7 +109,7 @@ These items are not selection work. The CSB engine work item must check them.
 | `state_json.c`: `creature_names[CREATURE_TYPE_COUNT]`, `statistic_names`, `skill_names`, `slot_names`, `floor_ornament_names`, `wound_names` | DM names and counts. |
 | `recruit.c`, `recruit.h` | The champion selection is the mirror text of the Hall of Champions in the dungeon. CSB has `Portrait/*.CMP` files on disk B and the editor `CEDT.FTL`. |
 | `savegame.c`, `savefile.c` | DM save layout (5 blocks, 4 portraits of 464 bytes, automap extension block). |
-| `dungeon.c` | `tables_get_new_game_extra_things` (`KAOS_NEW_GAME_EXTRA_THINGS`, `0x101058`), `FREE_SQUARE_THINGS` 300, `NEW_GAME_EVENT_COUNT` 100, `MAX_THINGS` 1024. |
+| `dungeon.c` | `tables_get_extra_things` (`KAOS_NEW_GAME_EXTRA_THINGS`, `0x101058`), `FREE_SQUARE_THINGS` 300, `NEW_GAME_EVENT_COUNT` 100, `MAX_THINGS` 1024. |
 | `game.h` | `CHAMPION_MAX_COUNT` 4, `ACTIVE_GROUP_MAX_COUNT` 110. |
 
 ### LLM tools

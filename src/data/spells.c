@@ -36,9 +36,9 @@ uint8_t spell_get_symbol(uint16_t step, int16_t symbol_index)
 
 uint16_t spell_get_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t power_symbol)
 {
-    uint16_t cost = tables_get_symbol_base_mana_cost(step, symbol_index);
+    uint16_t cost = tables_get_base_mana_cost(step, symbol_index);
     if (step) /* 16-bit product as in the original */
-        cost = (uint16_t)(cost * tables_get_symbol_mana_cost_multiplier(power_symbol - SPELL_SYMBOL_FIRST)) >>
+        cost = (uint16_t)(cost * tables_get_mana_multiplier(power_symbol - SPELL_SYMBOL_FIRST)) >>
                SPELL_MANA_MULTIPLIER_SHIFT;
     return cost;
 }
