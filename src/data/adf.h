@@ -2,9 +2,10 @@
 #ifndef DM_DATA_ADF_H
 #define DM_DATA_ADF_H
 /* Prefixes: adf_ */
-#include <stdbool.h>
 
 /* Reads an Amiga floppy disk image (.adf, 880 KB, OFS file system), the form of the original game disks. */
+
+#include <stdbool.h>
 
 /* true when the root folder of the disk image has a file of this name (the case does not matter). */
 bool adf_has_file(const char *adf_path, const char *name);

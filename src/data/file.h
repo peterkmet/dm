@@ -2,11 +2,14 @@
 #ifndef DM_DATA_FILE_H
 #define DM_DATA_FILE_H
 /* Prefixes: file_ */
+
+/* Whole-file reads and writes and file names: the C standard library only, no folder services. */
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-/* Whole-file reads and writes and file names: the C standard library only, no folder services. */
+/* Size of a file path buffer. */
 #define PATH_SIZE 1024 /* longest file path */
 
 /* The malloc'd contents of the file at path and its length in *len; NULL when it is missing or unreadable. */

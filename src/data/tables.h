@@ -2,11 +2,12 @@
 #ifndef DM_DATA_TABLES_H
 #define DM_DATA_TABLES_H
 /* Prefixes: tables_ */
+
+/* Static rule tables of KAOS.FTL, decoded once from the loaded image. Field bits: docs/rules/tables.md. */
+
 #include "data/graphics.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Static rule tables of KAOS.FTL, decoded once from the loaded image. Field bits: docs/rules/tables.md. */
 
 #define CREATURE_TYPE_COUNT           27
 #define CREATURE_SOUND_COUNT          18

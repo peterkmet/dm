@@ -2,6 +2,9 @@
 #ifndef DM_DATA_GRAPHICS_H
 #define DM_DATA_GRAPHICS_H
 /* Prefixes: gfx_ box_ */
+
+/* Graphics.DAT: its packed items, their decoding into chunky bitmaps, and its text items. */
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

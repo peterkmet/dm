@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_DATA_IDS_H
 #define DM_DATA_IDS_H
+/* Prefixes: GFX_ ZONE_ LAYOUT_ ICON_ TEXT_ */
 
 /* Graphic numbers (Graphics.DAT items), layout zone numbers (graphic 696), layout bitmap ids,
    object icons, and string numbers (graphic 700), one block per kind, sorted by value. */

@@ -2,6 +2,9 @@
 #ifndef DM_DATA_CRC32_H
 #define DM_DATA_CRC32_H
 /* Prefixes: crc32_ */
+
+/* The CRC-32 checksum of PNG and zip: checks the game files and writes the screenshot chunks. */
+
 #include <stddef.h>
 #include <stdint.h>
 

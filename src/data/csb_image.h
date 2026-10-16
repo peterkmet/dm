@@ -2,10 +2,11 @@
 #ifndef DM_DATA_CSB_IMAGE_H
 #define DM_DATA_CSB_IMAGE_H
 /* Prefixes: csb_image_ */
-#include "data/ftl.h"
-#include <stdbool.h>
 
 /* The CSB engine (APPB.FTL) as a KAOS-layout image: each table that the port reads sits at its DM address. */
+
+#include "data/ftl.h"
+#include <stdbool.h>
 
 #define CSB_SPELLS        0x104160 /* all CSB spells, at the KAOS data base: from here on only CSB tables follow */
 #define CSB_SPELL_COUNT   29

@@ -2,11 +2,13 @@
 #ifndef DM_DATA_SWSH_H
 #define DM_DATA_SWSH_H
 /* Prefixes: swsh_ */
+
+/* The FTL logo module SWSH.FTL: a palette script, the logo graphic, and its sound. */
+
 #include "data/ftl.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-/* The FTL logo module SWSH.FTL: a palette script, the logo graphic, and its sound. */
 typedef struct {
     const uint8_t *palette_script, *palette_script_end; /* pairs of words: color index and color; index -1: show */
     const uint8_t *logo;                                /* 320 x 200, Graphics.DAT packed format */

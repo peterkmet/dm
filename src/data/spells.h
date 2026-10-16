@@ -2,6 +2,9 @@
 #ifndef DM_DATA_SPELLS_H
 #define DM_DATA_SPELLS_H
 /* Prefixes: spell_ */
+
+/* The spell rules of the spell table: the symbol strings, the mana cost and the skill draws. */
+
 #include <stdbool.h>
 #include <stdint.h>
 

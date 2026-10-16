@@ -2,9 +2,11 @@
 #ifndef DM_DATA_OS_H
 #define DM_DATA_OS_H
 /* Prefixes: os_ */
-#include <stdbool.h>
 
 /* The operating system services that data/ and engine/ need: folders, the log, and fatal errors. platform/ sets the hooks; tests set their own. */
+
+#include <stdbool.h>
+
 typedef bool (*OsMakeFolder)(const char *path);
 typedef void (*OsListFolder)(const char *path, void (*found)(const char *name, void *data), void *data);
 extern OsMakeFolder g_os_make_folder_hook; /* platform/ sets it: SDL_CreateDirectory */

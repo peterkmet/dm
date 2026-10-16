@@ -1,12 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_DATA_BYTES_H
 #define DM_DATA_BYTES_H
+/* Prefixes: be16 be32 wr16 wr32 */
+
+/* Big-endian access to the Amiga data: game files, save files, module images. */
 
 #include <assert.h>
 #include <stdint.h>
 
-/* Prefixes: be16 be32 wr16 wr32 */
-/* Big-endian access to the Amiga data: game files, save files, module images. */
+/* Bit widths of the 68000 operands. */
 #define WORD_BITS 16 /* bits of a 68000 word */
 #define BYTE_BITS 8
 

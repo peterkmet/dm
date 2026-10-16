@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_DATA_KAOS_ADDRESSES_H
 #define DM_DATA_KAOS_ADDRESSES_H
+/* Prefixes: KAOS_ */
 
 /* Addresses of the KAOS.FTL image (and of the KAOS-layout CSB image). Only data/ includes this header. */
 

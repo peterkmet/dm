@@ -2,10 +2,11 @@
 #ifndef DM_DATA_ADVENTURE_H
 #define DM_DATA_ADVENTURE_H
 /* Prefixes: adventure_ */
-#include <stdbool.h>
-#include <stdint.h>
 
 /* The adventure of the run: Dungeon Master or Chaos Strikes Back. Its data folder and save file names. */
+
+#include <stdbool.h>
+#include <stdint.h>
 
 #define ADVENTURE_DM  0
 #define ADVENTURE_CSB 1
