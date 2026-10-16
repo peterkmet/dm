@@ -6,7 +6,7 @@ import struct
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import PendingSound
+from dmtest.game import Location, PendingSound
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
 
@@ -36,7 +36,7 @@ def lib():
     lib.sound_compare_loudness.restype = ctypes.c_int
     lib.sound_get_volume.restype = ctypes.c_bool
     lib.sound_get_volume.argtypes = [ctypes.c_int16, ctypes.c_int16, u8p]
-    lib.sound_request_play.argtypes = [ctypes.c_int16] * 3 + [ctypes.c_uint16]
+    lib.sound_request_play.argtypes = [ctypes.c_int16, Location, ctypes.c_int16, ctypes.c_uint16]
     lib.audio_play_sample.argtypes = [ctypes.c_int16, u8p]
     assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
@@ -153,6 +153,6 @@ def test_request_queue_matches_original(lib, emu):
         for _ in range(6):
             s, x, y = rnd.randrange(35), rnd.randrange(-3, 24), rnd.randrange(-3, 24)
             emu.call(SOUND_REQUEST_PLAY, [(2, s), (2, x), (2, y), (2, 1)])
-            lib.sound_request_play(s, x, y, 1)
+            lib.sound_request_play(s, Location(x, y), 1, 0)
             want = struct.unpack(">2h", bytes(emu.read(G_PENDING_SOUNDS, 4))), bytes(emu.read(G_PENDING_VOLUMES, 4))
             assert (tuple(slot.sound for slot in pending), bytes(b for slot in pending for b in slot.volumes)) == want

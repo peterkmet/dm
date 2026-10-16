@@ -313,8 +313,8 @@ uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t crea
             } else if (type == CREATURE_COUATL) {
                 if (random_bit()) {
                     aspect ^= ASPECT_FLIPPED;
-                    sound_request_play(get_creature_movement_sound(CREATURE_COUATL), last_turn.at.x, last_turn.at.y,
-                                       SOUND_MODE_AFTER_TICK);
+                    sound_request_play(get_creature_movement_sound(CREATURE_COUATL), last_turn.at,
+                                       SOUND_MODE_AFTER_TICK, 0);
                 }
             } else if (random_bit()) {
                 aspect |= ASPECT_FLIPPED;
@@ -328,7 +328,7 @@ uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t crea
             } else if ((aspect & ASPECT_ATTACKING) && type == CREATURE_ANIMATED_ARMOUR) {
                 if (random_bit()) {
                     aspect ^= ASPECT_FLIPPED;
-                    sound_request_play(SOUND_SWING, last_turn.at.x, last_turn.at.y, SOUND_MODE_AFTER_TICK);
+                    sound_request_play(SOUND_SWING, last_turn.at, SOUND_MODE_AFTER_TICK, 0);
                 }
             } else if (!(aspect & ASPECT_ATTACKING) || !(graphic & GRAPHIC_FLIP_DURING_ATTACK)) {
                 if (random_bit())
@@ -487,7 +487,7 @@ uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, 
     rec_group_set_cells(group, cells);
     if (move_get_move_result(&(Move){.thing = group, .to = at, .enters = true}, NULL) != MOVE_RESULT_DONE)
         return THING_NONE;
-    sound_request_play(SOUND_BUZZ, at.x, at.y, SOUND_MODE_AFTER_TICK);
+    sound_request_play(SOUND_BUZZ, at, SOUND_MODE_AFTER_TICK, 0);
     return group;
 }
 
@@ -570,7 +570,8 @@ void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, in
         move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, drop_cell), .to.x = x, .to.y = y, .enters = true},
                              NULL);
     }
-    sound_request_play(weapon_dropped ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, x, y, sound_mode);
+    sound_request_play(weapon_dropped ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, (Location){x, y}, sound_mode,
+                       sound_mode == SOUND_MODE_EVENT ? 1 : 0);
 }
 
 void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y, GroupFallDrops *drops)
@@ -578,14 +579,15 @@ void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int
     uint16_t type = rec_group_creature_type(group);
     while (drops->count) {
         drops->count--;
-        group_drop_creature_fixed_possessions(type, x, y, drops->cells[drops->count], SOUND_MODE_ONE_TICK_LATER);
+        group_drop_creature_fixed_possessions(type, x, y, drops->cells[drops->count], SOUND_MODE_EVENT);
     }
 }
 
 void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t sound_mode)
 {
     uint16_t type = rec_group_creature_type(group);
-    if (sound_mode >= 0 && (tables_get_creature_info(type)->attributes & CREATURE_DROPS_FIXED_POSSESSIONS)) {
+    if (sound_mode != SOUND_MODE_NONE &&
+        (tables_get_creature_info(type)->attributes & CREATURE_DROPS_FIXED_POSSESSIONS)) {
         uint8_t cells = group_get_cells(group, g_current_map_index);
         for (int16_t i = rec_group_last_creature(group); i >= 0; i--)
             group_drop_creature_fixed_possessions(
@@ -605,8 +607,9 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
                              NULL);
         thing = next;
     } while (next != THING_ENDOFLIST);
-    if (sound_mode >= 0)
-        sound_request_play(weapon_dropped ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, x, y, sound_mode);
+    if (sound_mode != SOUND_MODE_NONE)
+        sound_request_play(weapon_dropped ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, (Location){x, y}, sound_mode,
+                           sound_mode == SOUND_MODE_EVENT ? 1 : 0);
 }
 
 void group_delete(int16_t x, int16_t y)
@@ -657,7 +660,7 @@ static void remove_dead_creature(uint16_t group, uint16_t creature_index, Locati
     uint16_t directions = group_get_directions(group, g_current_map_index);
     if (info->attributes & CREATURE_DROPS_FIXED_POSSESSIONS) {
         if (!drops)
-            group_drop_creature_fixed_possessions(type, at.x, at.y, cell, SOUND_MODE_ONE_TICK_LATER);
+            group_drop_creature_fixed_possessions(type, at.x, at.y, cell, SOUND_MODE_EVENT);
         else
             drops->cells[drops->count++] = (uint8_t)cell;
     }
@@ -708,7 +711,7 @@ static int16_t damage_creature(uint16_t group, uint16_t creature_index, Location
     int16_t outcome;
     if (last == 0) {
         if (!drops) {
-            group_drop_group_possessions(at.x, at.y, map_find_thing(at, THING_GROUP), SOUND_MODE_ONE_TICK_LATER);
+            group_drop_group_possessions(at.x, at.y, map_find_thing(at, THING_GROUP), SOUND_MODE_EVENT);
             group_delete(at.x, at.y);
         }
         outcome = OUTCOME_ALL_CREATURES_KILLED;
@@ -1171,9 +1174,9 @@ static bool group_is_creature_attacking(const GroupTurn *t, uint16_t group, int1
     }
     int16_t sound = info->attack_sound_ordinal ? tables_get_creature_sound(info->attack_sound_ordinal - 1)->attack : -1;
     if (sound != -1)
-        sound_request_play(sound, x, y, SOUND_MODE_AFTER_TICK);
+        sound_request_play(sound, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     else if (spell && spell_sound)
-        sound_request_play(SOUND_SPELL, x, y, SOUND_MODE_AFTER_TICK);
+        sound_request_play(SOUND_SPELL, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     return true;
 }
 
@@ -1334,8 +1337,8 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
     damage = champion_add_pending_damage_and_wounds(champion_index, damage, wounds, info->attack_type);
     if (!damage)
         return 0;
-    sound_request_play(SOUND_CHAMPION_0_DAMAGED + champion_index, g_party_map_x, g_party_map_y,
-                       SOUND_MODE_ONE_TICK_LATER);
+    sound_request_play(SOUND_CHAMPION_0_DAMAGED + champion_index, (Location){g_party_map_x, g_party_map_y},
+                       SOUND_MODE_EVENT, 1);
     if (info->poison_attack && random_bit()) {
         uint16_t poison = champion_get_adjusted_attack(champion_index, STAT_VITALITY, info->poison_attack);
         champion_poison(champion_index, poison);
@@ -1603,7 +1606,7 @@ static bool jump_archenemy(GroupTurn *t)
         int16_t x = t->x;
         int16_t y = t->y;
         map_step(direction, 2, 0, &x, &y);
-        sound_request_play(SOUND_BUZZ, x, y, SOUND_MODE_AFTER_TICK);
+        sound_request_play(SOUND_BUZZ, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
         if (try_move(t, x, y))
             return true;
         if (t->moved || t->ticks_since_last_move == -1 ||
@@ -2208,7 +2211,7 @@ bool group_is_killed_by_fall(uint16_t group, Position source, Position landing, 
 void group_remove_after_move(uint16_t group, Position source, Position landing, GroupFallDrops *drops)
 {
     group_drop_moving_creature_fixed_possessions(group, landing.x, landing.y, drops);
-    group_drop_group_possessions(landing.x, landing.y, group, SOUND_MODE_ONE_TICK_LATER);
+    group_drop_group_possessions(landing.x, landing.y, group, SOUND_MODE_EVENT);
     map_set_current_map(source.map);
     if (source.x >= 0)
         group_delete(source.x, source.y);
@@ -2230,8 +2233,8 @@ MoveResult group_enter_square(const GroupArrival *arrival)
         group_create_event_move_group(arrival->group, at.x, at.y, arrival->landing.map, arrival->audible);
         return MOVE_RESULT_STOPPED;
     }
-    sound_request_play(get_creature_movement_sound(rec_group_creature_type(arrival->group)), at.x, at.y,
-                       SOUND_MODE_AFTER_TICK);
+    sound_request_play(get_creature_movement_sound(rec_group_creature_type(arrival->group)), at, SOUND_MODE_AFTER_TICK,
+                       0);
     if (arrival->removed_from_party_map && arrival->landing.map != g_party_map_index) {
         group_remove_active_group(active_index);
         result = MOVE_RESULT_STOPPED;
@@ -2274,7 +2277,7 @@ void group_process_move_event(TimelineEvent *event)
     for (;;) {
         if (!map_is_party_on((Location){x, y}) && map_find_thing((Location){x, y}, THING_GROUP) == THING_ENDOFLIST) {
             if (event->type == EVENT_MOVE_GROUP_AUDIBLE)
-                sound_request_play(SOUND_BUZZ, x, y, SOUND_MODE_AFTER_TICK);
+                sound_request_play(SOUND_BUZZ, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
             move_get_move_result(&(Move){.thing = event->c, .to.x = x, .to.y = y, .enters = true}, NULL);
             return;
         }

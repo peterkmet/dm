@@ -215,7 +215,7 @@ Implemented event types:
 | 8 | `event_process_teleporter` |
 | 9 | `event_process_pit` |
 | 10 | `event_process_door` |
-| 20 | `sound_request_play(c, x, y, 1)` |
+| 20 | `sound_request_play(c, at, SOUND_MODE_AFTER_TICK, 0)` |
 | 24 | Unlinks and frees the fluxcage thing in `c`, unless `g_game_won` is set. |
 | 53 | `timeline_add_watchdog_event` |
 | 65 | `event_enable_group_generator` |

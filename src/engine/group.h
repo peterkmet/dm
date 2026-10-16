@@ -242,7 +242,7 @@ typedef struct {
 } GroupFallDrops;
 /* Creatures that died during a move drop their fixed possessions on the destination square. */
 void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y, GroupFallDrops *drops);
-/* All creatures drop their fixed possessions (sound_mode >= 0), then the carried objects fall on random cells. */
+/* All creatures drop their fixed possessions (sound_mode is not SOUND_MODE_NONE), then the carried objects fall on random cells. */
 void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t sound_mode);
 /* The group record becomes free. Health is cleared first, so that no projectile impact runs on the removal. */
 void group_delete(int16_t x, int16_t y);

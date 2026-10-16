@@ -127,14 +127,14 @@ static void turn_by_teleporter(Walk *w, uint16_t teleporter, bool points_to_itse
         g_party_map_y = d->y;
         g_party_teleport_count += !points_to_itself;
         if (rec_teleporter_is_audible(teleporter))
-            sound_request_play(SOUND_TELEPORT, d->x, d->y, SOUND_MODE_NOW);
+            sound_request_play(SOUND_TELEPORT, (Location){d->x, d->y}, SOUND_MODE_NOW, 0);
         move_set_party_direction(rec_teleporter_is_absolute(teleporter) ? rotation
                                                                         : NORMALIZE(g_party_direction + rotation));
         break;
     case MOVER_GROUP:
         w->audible = rec_teleporter_is_audible(teleporter);
         if (w->audible)
-            sound_request_play(SOUND_BUZZ, d->x, d->y, SOUND_MODE_AFTER_TICK);
+            sound_request_play(SOUND_BUZZ, (Location){d->x, d->y}, SOUND_MODE_AFTER_TICK, 0);
         w->turned_active = group_turn_by_teleporter(teleporter, w->thing, w->source.map);
         w->result = w->turned_active >= 0 ? MOVE_RESULT_TURNED : MOVE_RESULT_STOPPED;
         break;
@@ -430,7 +430,7 @@ static void bump_into_wall(int16_t x, int16_t y, int16_t arrow)
     if (second != first)
         damaged |= champion_add_pending_damage_and_wounds(second, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
     if (damaged)
-        sound_request_play(SOUND_PARTY_DAMAGED, x, y, SOUND_MODE_NOW);
+        sound_request_play(SOUND_PARTY_DAMAGED, (Location){x, y}, SOUND_MODE_NOW, 0);
 }
 
 void move_party(int16_t command)

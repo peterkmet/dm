@@ -257,7 +257,7 @@ void champion_drink_from_fountain(bool whole_party)
     for (uint16_t i = 0; whole_party && i < g_party_champion_count; i++)
         if (g_champions[i].current_health)
             g_champions[i].water = FOUNTAIN_WATER;
-    sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
+    sound_request_play(SOUND_SWALLOW, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
 }
 
 uint16_t champion_turn_to_last_attackers(void)
@@ -947,7 +947,7 @@ void champion_fall_damage(bool use_rope)
         return;
     if (!use_rope) {
         if (champion_damage_all(PIT_ATTACK, WOUND_LEGS | WOUND_FEET, ATTACK_SELF))
-            sound_request_play(SOUND_SCREAM, g_party_map_x, g_party_map_y, 0);
+            sound_request_play(SOUND_SCREAM, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
         return;
     }
     for (uint16_t i = 0; i < g_party_champion_count; i++) {

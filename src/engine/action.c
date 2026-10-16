@@ -278,7 +278,7 @@ bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, L
                                       int16_t skill_index, uint16_t target_group)
 {
     const Champion *c = &g_champions[champion_index];
-    sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
+    sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
     if (target_group == THING_ENDOFLIST)
         return false;
     int16_t ordinal = group_get_melee_target_creature_ordinal(target_square.x, target_square.y, g_party_map_x,
@@ -347,7 +347,7 @@ static bool is_shot(uint16_t champion_index)
     }
     champion_face_party_direction(c);
     uint16_t thing = inventory_get_object_removed_from_slot(champion_index, SLOT_HAND_READY);
-    sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
+    sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
     int16_t level = champion_get_skill_level(champion_index, SKILL_SHOOT, false, false);
     /* The attack is a byte: the launcher shoot attack plus the level, doubled. */
     projectile_shoot_from_champion(champion_index, thing, (uint8_t)(missile->kinetic_energy + launcher->kinetic_energy),
@@ -471,10 +471,10 @@ static bool is_door_bashed(uint16_t champion_index, int16_t x, int16_t y, uint8_
 {
     if (rec_square_type(square) != SQUARE_DOOR || rec_door_state(square) != DOOR_CLOSED)
         return false;
-    sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
+    sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
     event_is_door_destroyed_by_attack((Location){x, y}, champion_get_strength(champion_index, SLOT_HAND_ACTION), false,
                                       DOOR_BASH_DESTRUCTION_TICKS);
-    sound_request_play(SOUND_WOODEN_THUD, g_party_map_x, g_party_map_y, SOUND_MODE_ONE_TICK_LATER);
+    sound_request_play(SOUND_WOODEN_THUD, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_EVENT, 1);
     return true;
 }
 
@@ -563,9 +563,9 @@ bool action_is_action_performed(uint16_t champion_index, int16_t action)
     case ACTION_CALM:
     case ACTION_BRANDISH:
         if (action == ACTION_WAR_CRY)
-            sound_request_play(SOUND_WAR_CRY, x, y, SOUND_MODE_NOW);
+            sound_request_play(SOUND_WAR_CRY, (Location){x, y}, SOUND_MODE_NOW, 0);
         if (action == ACTION_BLOW_HORN)
-            sound_request_play(SOUND_BLOW_HORN, x, y, SOUND_MODE_NOW);
+            sound_request_play(SOUND_BLOW_HORN, (Location){x, y}, SOUND_MODE_NOW, 0);
         performed = action_is_group_frightened_by_action(champion_index, action, x, y, target_group);
         break;
     case ACTION_FLIP:
@@ -690,7 +690,7 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
         if (thing == THING_NONE)
             return false;
     }
-    sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
+    sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
     champion_decrement_stamina(champion_index, action_get_throwing_stamina_cost(thing));
     magic_disable_action(champion_index, THROW_DISABLED_TICKS);
     int16_t experience = THROW_EXPERIENCE;

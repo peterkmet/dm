@@ -154,10 +154,10 @@ static void place_explosion(uint16_t explosion_thing, uint16_t attack, Location 
     rec_explosion_set_type(explosion, explosion_thing - EXPLOSION_THING_BASE);
     rec_explosion_set_attack(explosion, attack);
     if (explosion_thing < EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL))
-        sound_request_play(attack > WEAK_EXPLOSION_MAX_ATTACK ? SOUND_STRONG_EXPLOSION : SOUND_WEAK_EXPLOSION, x, y,
-                           SOUND_MODE_AFTER_TICK);
+        sound_request_play(attack > WEAK_EXPLOSION_MAX_ATTACK ? SOUND_STRONG_EXPLOSION : SOUND_WEAK_EXPLOSION,
+                           (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     else if (explosion_thing != EXPLOSION_THING(EXPLOSION_SMOKE))
-        sound_request_play(SOUND_SPELL, x, y, SOUND_MODE_AFTER_TICK);
+        sound_request_play(SOUND_SPELL, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     map_link_thing_to_list(explosion, 0, x, y);
     uint16_t delay = explosion_thing == EXPLOSION_THING(EXPLOSION_REBIRTH_STEP_1) ? REBIRTH_STEP_1_DELAY : 1;
     TimelineEvent event = {
@@ -410,8 +410,8 @@ bool projectile_has_impact_occurred(ImpactSite site, uint16_t projectile, Damage
             champion_impact.poison && random_bit())
             champion_poison(cell, champion_impact.poison);
         if (!hit.is_explosion && !flask_explodes && thing != EXPLOSION_THING(EXPLOSION_POISON_BOLT)) {
-            sound_request_play(thing_type == THING_WEAPON ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, at.x, at.y,
-                               SOUND_MODE_AFTER_TICK);
+            sound_request_play(thing_type == THING_WEAPON ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, at,
+                               SOUND_MODE_AFTER_TICK, 0);
         } else {
             create_impact_explosion(thing, projectile, flask, at, target, cell, outcome);
         }
@@ -563,7 +563,7 @@ void explosion_process_step_event(TimelineEvent *event)
         break;
     case EXPLOSION_REBIRTH_STEP_1:
         rec_explosion_set_type(explosion, EXPLOSION_REBIRTH_STEP_2);
-        sound_request_play(SOUND_STRONG_EXPLOSION, x, y, SOUND_MODE_AFTER_TICK);
+        sound_request_play(SOUND_STRONG_EXPLOSION, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
         add_event_one_tick_later(event);
         return;
     case EXPLOSION_SMOKE:

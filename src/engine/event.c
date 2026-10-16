@@ -72,7 +72,7 @@ static void event_process_door_animation(TimelineEvent *event)
             if (g_party_champion_count) {
                 rec_door_set_state(map, x, y, DOOR_OPEN);
                 if (champion_damage_all(DOOR_CLOSE_DAMAGE, WOUND_HEAD, ATTACK_SELF))
-                    sound_request_play(SOUND_PARTY_DAMAGED, x, y, SOUND_MODE_AFTER_TICK);
+                    sound_request_play(SOUND_PARTY_DAMAGED, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
             }
             add_again_next_tick(event);
             return;
@@ -84,7 +84,7 @@ static void event_process_door_animation(TimelineEvent *event)
             if (height <= state) {
                 group_door_damages_creatures(x, y);
                 rec_door_set_state(map, x, y, state != DOOR_OPEN ? state - 1 : DOOR_OPEN);
-                sound_request_play(SOUND_DOOR_HITS_CREATURE, x, y, SOUND_MODE_AFTER_TICK);
+                sound_request_play(SOUND_DOOR_HITS_CREATURE, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
                 add_again_next_tick(event);
                 return;
             }
@@ -93,7 +93,7 @@ static void event_process_door_animation(TimelineEvent *event)
     if ((effect != EFFECT_SET || state != DOOR_OPEN) && (effect != EFFECT_CLEAR || state != DOOR_CLOSED)) {
         state += effect == EFFECT_SET ? -1 : 1;
         rec_door_set_state(map, x, y, state);
-        sound_request_play(SOUND_DOOR, x, y, SOUND_MODE_AFTER_TICK);
+        sound_request_play(SOUND_DOOR, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
         if (effect == EFFECT_SET ? state == DOOR_OPEN : state == DOOR_CLOSED)
             return;
         timeline_add_event(event);
@@ -230,7 +230,7 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
 {
     group_generate_from_sensor(sensor, x, y);
     if (rec_sensor_is_audible(sensor))
-        sound_request_play(SOUND_TELEPORT, x, y, SOUND_MODE_AFTER_TICK);
+        sound_request_play(SOUND_TELEPORT, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     uint16_t delay = rec_sensor_generator_delay(sensor);
     if (!rec_sensor_is_once_only(sensor) && !delay)
         return;
@@ -543,7 +543,8 @@ void event_process_expired(void)
             event_process_vi_altar_rebirth(&event);
             break;
         case EVENT_PLAY_SOUND:
-            sound_request_play(event.c, event_square_x(&event), event_square_y(&event), SOUND_MODE_AFTER_TICK);
+            sound_request_play(event.c, (Location){event_square_x(&event), event_square_y(&event)},
+                               SOUND_MODE_AFTER_TICK, 0);
             break;
         case EVENT_REMOVE_FLUXCAGE:
             if (!g_game_won) {

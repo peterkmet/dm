@@ -290,7 +290,7 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, uint16_t cell)
             continue;
         triggered = true;
         if (rec_sensor_is_audible(sensor))
-            sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
+            sound_request_play(SOUND_SWITCH, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
         if (!g_leader_empty_handed &&
             (type == SENSOR_WALL_OBJECT_REMOVED || type == SENSOR_WALL_SINGLE_OBJECT_STORAGE ||
              type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED)) {
@@ -313,7 +313,7 @@ static void trigger(uint16_t sensor, bool value, int16_t x, int16_t y)
     else if (!value)
         return;
     if (rec_sensor_is_audible(sensor))
-        sound_request_play(SOUND_SWITCH, x, y, SOUND_MODE_AFTER_TICK);
+        sound_request_play(SOUND_SWITCH, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     sensor_trigger_effect(sensor, effect, x, y, ANY_CELL);
 }
 
@@ -464,6 +464,6 @@ void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int
 
 void sensor_press_door_button(int16_t x, int16_t y)
 {
-    sound_request_play(SOUND_SWITCH, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
+    sound_request_play(SOUND_SWITCH, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
     sensor_add_event(EVENT_DOOR, (Location){x, y}, 0, EFFECT_TOGGLE, (uint32_t)(g_game_time + 1));
 }

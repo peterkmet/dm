@@ -126,19 +126,19 @@ static void play_sample(int16_t sound, const uint8_t *volumes)
         g_sound_play_hook(data, length, period, volumes);
 }
 
-void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mode)
+void sound_request_play(int16_t sound, Location at, int16_t mode, uint16_t delay)
 {
     uint8_t v[SOUND_SIDE_COUNT];
     /* ponytail: no "current map == party map" check for mode >= 1 until the port has g_current_map_index */
     if (!sound_exists(sound))
         return;
-    if (mode > SOUND_MODE_AFTER_TICK) {
-        TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + (mode - 1)), EVENT_PLAY_SOUND,
-                           tables_get_sound_priority(sound), event_square(map_x, map_y), sound};
+    if (mode == SOUND_MODE_EVENT) {
+        TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + delay), EVENT_PLAY_SOUND,
+                           tables_get_sound_priority(sound), event_square(at.x, at.y), sound};
         timeline_add_event(&e);
         return;
     }
-    if (!sound_get_volume(map_x, map_y, v))
+    if (!sound_get_volume(at.x, at.y, v))
         return;
     if (mode == SOUND_MODE_NOW)
         play_sample(sound, v);

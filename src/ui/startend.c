@@ -403,7 +403,7 @@ void startend_run_endgame(int16_t party_dead)
     if (party_dead)
         music_play_end(g_game_won);
     if (party_dead && !g_game_won) {
-        sound_request_play(SOUND_SCREAM, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
+        sound_request_play(SOUND_SCREAM, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
         wait_frames(DEATH_WAIT_FRAMES);
     }
     g_game_screen_inactive = true;
@@ -491,7 +491,7 @@ static void flash_lords(uint16_t lord, int16_t x, int16_t y)
 {
     for (int16_t ticks = FUSE_FLASH_ROUNDS; ticks > 0; ticks--)
         for (int16_t flash = FUSE_FLASHES_PER_ROUND; flash > 0; flash--) {
-            sound_request_play(SOUND_FUSE, x, y, SOUND_MODE_AFTER_TICK);
+            sound_request_play(SOUND_FUSE, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
             rec_group_set_creature_type(lord, flash & 1 ? CREATURE_LORD_ORDER : CREATURE_LORD_CHAOS);
             for (int16_t i = 0; i < ticks; i++)
                 fuse_update();
@@ -528,7 +528,7 @@ void startend_run_fuse_sequence(void)
     remove_fluxcages(x, y);
     fuse_update();
     draw_fuse_explosions(EXPLOSION_FIREBALL, x, y);
-    sound_request_play(SOUND_FUSE, x, y, SOUND_MODE_AFTER_TICK);
+    sound_request_play(SOUND_FUSE, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     rec_group_set_creature_type(lord, CREATURE_LORD_ORDER);
     fuse_update();
     draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);

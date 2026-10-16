@@ -293,7 +293,7 @@ void command_click_on_mouth(void)
             ui_draw_viewport();
             wait_frames(MOUTH_BLINK_FRAMES);
         }
-    sound_request_play(SOUND_SWALLOW, g_party_map_x, g_party_map_y, SOUND_MODE_NOW);
+    sound_request_play(SOUND_SWALLOW, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_NOW, 0);
     if (g_panel_content == PANEL_CONTENT_FOOD_WATER)
         g_champions[champion_index].attributes |= CHAMPION_ATTR_PANEL;
     ui_draw_champion_state(champion_index);
@@ -457,7 +457,7 @@ static void touch_front_square_empty_handed(int16_t imaginary_wall, int16_t x, i
     if (!g_party_champion_count)
         return;
     if (!imaginary_wall)
-        sound_request_play(SOUND_WOODEN_THUD, x, y, SOUND_MODE_NOW);
+        sound_request_play(SOUND_WOODEN_THUD, (Location){x, y}, SOUND_MODE_NOW, 0);
     else if (left_button_down) {
         pressing_fake_wall = true;
         g_mouse_pointer_hidden = true;

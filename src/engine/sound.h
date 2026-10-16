@@ -6,6 +6,7 @@
 /* The sound rules: the sound table, the volume by distance, the pending queue, and the play requests of the
    rules. The audio output plays through g_sound_play_hook. */
 
+#include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -14,30 +15,33 @@
 #define SOUND_MAX_VOLUME    64 /* full volume of one side */
 #define SOUND_SAMPLE_HEADER 2  /* sample length word before the sample data */
 
-/* Sounds of the square rules. Mode: 0 plays now, 1 plays after the tick. */
+/* Sounds of the square rules. */
 #define SOUND_SWITCH             1
 #define SOUND_DOOR               2
 #define SOUND_ENTRANCE_DOOR      3
 #define SOUND_DOOR_HITS_CREATURE 4
 #define SOUND_TELEPORT           14
 #define SOUND_PARTY_DAMAGED      15
-#define SOUND_MODE_NOW           0
-#define SOUND_MODE_AFTER_TICK    1
 
 /* Sounds of the creature rules. */
-#define SOUND_METALLIC_THUD       0
-#define SOUND_WOODEN_THUD         4
-#define SOUND_STRONG_EXPLOSION    5
-#define SOUND_WEAK_EXPLOSION      6
-#define SOUND_SCREAM              7
-#define SOUND_CHAMPION_0_DAMAGED  9
-#define SOUND_SWING               13
-#define SOUND_BUZZ                14
-#define SOUND_SPELL               16
-#define SOUND_WAR_CRY             17
-#define SOUND_BLOW_HORN           18
-#define SOUND_MODE_ONE_TICK_LATER 2
-#define SOUND_SWALLOW             8
+#define SOUND_METALLIC_THUD      0
+#define SOUND_WOODEN_THUD        4
+#define SOUND_STRONG_EXPLOSION   5
+#define SOUND_WEAK_EXPLOSION     6
+#define SOUND_SCREAM             7
+#define SOUND_CHAMPION_0_DAMAGED 9
+#define SOUND_SWING              13
+#define SOUND_BUZZ               14
+#define SOUND_SPELL              16
+#define SOUND_WAR_CRY            17
+#define SOUND_BLOW_HORN          18
+#define SOUND_SWALLOW            8
+
+/* When a requested sound plays. */
+#define SOUND_MODE_NONE       (-1) /* no sound (possession drops of a moving group) */
+#define SOUND_MODE_NOW        0
+#define SOUND_MODE_AFTER_TICK 1
+#define SOUND_MODE_EVENT      2 /* a play sound event after the delay */
 
 /* Sides of a stereo volume pair. */
 #define SOUND_SIDE_LEFT  0
@@ -67,8 +71,9 @@ LoudnessResult sound_compare_loudness(const uint8_t *a, const uint8_t *b);
 /* Stereo volume of a sound on a square, relative to the party position and direction.
    Returns false when the square is out of hearing range. */
 bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes);
-/* Mode 0 plays now, mode 1 queues for sound_play_pending, mode >= 2 adds a play sound event at game time + mode - 1. */
-void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mode);
+/* Plays a sound of a square now, after the tick, or as a timeline event after delay ticks (SOUND_MODE_EVENT only;
+   0 for the other modes). */
+void sound_request_play(int16_t sound, Location at, int16_t mode, uint16_t delay);
 /* Plays the queued sounds and empties the queue. */
 void sound_play_pending(void);
 
