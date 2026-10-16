@@ -657,6 +657,14 @@ void group_delete(int16_t x, int16_t y)
     delete_events(x, y);
 }
 
+void group_delete_all_except(Location at)
+{
+    for (int16_t gx = 0; gx < g_current_map_width; gx++)
+        for (int16_t gy = 0; gy < g_current_map_height; gy++)
+            if (map_find_thing((Location){gx, gy}, THING_GROUP) != THING_ENDOFLIST && (gx != at.x || gy != at.y))
+                group_delete(gx, gy);
+}
+
 /* Events of the creatures after a dead creature move down one index; the events of the dead creature go away. */
 static void shift_creature_events(int16_t x, int16_t y, uint16_t dead_creature)
 {

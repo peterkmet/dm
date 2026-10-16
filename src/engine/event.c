@@ -231,7 +231,7 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
 {
     group_generate_from_sensor(sensor, x, y);
     if (rec_sensor_is_audible(sensor))
-        sound_request_play(SOUND_TELEPORT, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
+        sound_request_play(SOUND_BUZZ, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     uint16_t delay = rec_sensor_generator_delay(sensor);
     if (!rec_sensor_is_once_only(sensor) && !delay)
         return;

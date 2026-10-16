@@ -31,36 +31,34 @@
 #include <stdio.h>
 #include <string.h>
 
-#define QUIT_CONFIRM_TICKS       100 /* QUIT asks for confirmation when no save or load is this recent */
-#define DEATH_WAIT_FRAMES        240
-#define THE_END_WAIT_FRAMES      300
-#define RESTART_WAIT_FRAMES      900
-#define FUSE_TEXT_FRAMES         780
-#define FUSE_END_FRAMES          600
-#define SENSOR_DELAY_FRAMES      60 /* frames per unit of the endgame sensor delay */
-#define FUSE_LORD_HEALTH         10000
-#define FUSE_FIRST_ATTACK        55
-#define FUSE_ATTACK_STEP         40
-#define FUSE_TEXT_COUNT          8
-#define FUSE_TEXT_SIZE           200
-#define DECODE_MESSAGE_INVISIBLE ((int16_t)0x8001) /* dungeon_decode_text: message mode, also invisible texts */
-#define ENDGAME_FONT_A           1                 /* the endgame font has A-Z at codes 1-26 */
-#define ENDGAME_TEXT_BACKGROUND  COLOR_DARKEST_GRAY
-#define ENDGAME_NAME_X           87
-#define ENDGAME_SKILL_X          105
-#define ENDGAME_ROW_HEIGHT       48
-#define ENDGAME_NAME_Y           14
-#define ENDGAME_SKILL_LINE       8
-#define THE_END_BACKGROUND       0x004 /* dark blue of the THE END palette */
-#define THE_END_WHITE            0xfff
-#define BUTTON_FRAME_COLOR       0x86f
-#define ENDGAME_TEXT_SIZE        64
-#define FUSE_FLASH_ROUNDS        3 /* the lord flashes 4 times per round; round n lasts n ticks per flash */
-#define FUSE_FLASHES_PER_ROUND   4
-#define SAVE_DIR_SIZE            1024
-#define CSB_RESTART_TEXT_X       110 /* RESTART THIS GAME text position of the CSB endgame */
-#define CSB_RESTART_TEXT_Y       154
-#define CSB_ENDING_FILE          "ENDA.DAT" /* the CSB ending animation, in the disk A folder */
+#define QUIT_CONFIRM_TICKS      100 /* QUIT asks for confirmation when no save or load is this recent */
+#define DEATH_WAIT_FRAMES       240
+#define THE_END_WAIT_FRAMES     300
+#define RESTART_WAIT_FRAMES     900
+#define FUSE_TEXT_FRAMES        780
+#define FUSE_END_FRAMES         600
+#define SENSOR_DELAY_FRAMES     60 /* frames per unit of the endgame sensor delay */
+#define FUSE_FIRST_ATTACK       55
+#define FUSE_ATTACK_STEP        40
+#define FUSE_TEXT_COUNT         8
+#define FUSE_TEXT_SIZE          200
+#define ENDGAME_FONT_A          1 /* the endgame font has A-Z at codes 1-26 */
+#define ENDGAME_TEXT_BACKGROUND COLOR_DARKEST_GRAY
+#define ENDGAME_NAME_X          87
+#define ENDGAME_SKILL_X         105
+#define ENDGAME_ROW_HEIGHT      48
+#define ENDGAME_NAME_Y          14
+#define ENDGAME_SKILL_LINE      8
+#define THE_END_BACKGROUND      0x004 /* dark blue of the THE END palette */
+#define THE_END_WHITE           0xfff
+#define BUTTON_FRAME_COLOR      0x86f
+#define ENDGAME_TEXT_SIZE       64
+#define FUSE_FLASH_ROUNDS       3 /* the lord flashes 4 times per round; round n lasts n ticks per flash */
+#define FUSE_FLASHES_PER_ROUND  4
+#define SAVE_DIR_SIZE           1024
+#define CSB_RESTART_TEXT_X      110 /* RESTART THIS GAME text position of the CSB endgame */
+#define CSB_RESTART_TEXT_Y      154
+#define CSB_ENDING_FILE         "ENDA.DAT" /* the CSB ending animation, in the disk A folder */
 
 /* Choices of the save dialog without the format choice. */
 #define SAVE_CHOICE_CANCEL 1
@@ -68,7 +66,6 @@
 #define SAVE_CHOICE_QUIT   3
 #define QUIT_CHOICE_CANCEL 2
 #define LOAD_CHOICE_CANCEL 2
-#define SOUND_FUSE         14
 
 void (*g_frame_hook)(void);
 bool g_quit_requested, g_restart_requested, g_return_to_entrance;
@@ -433,21 +430,6 @@ static void fuse_update(void)
     wait_frame();
 }
 
-/* The fluxcage explosions on a square disappear. */
-static void remove_fluxcages(int16_t x, int16_t y)
-{
-    uint16_t t = map_get_square_first_object(x, y);
-    while (t != THING_ENDOFLIST) {
-        if (THING_TYPE(t) == THING_EXPLOSION && rec_explosion_type(t) == EXPLOSION_FLUXCAGE) {
-            map_unlink_thing_from_list(t, 0, x, y);
-            rec_thing_set_free(t);
-            t = map_get_square_first_object(x, y);
-            continue;
-        }
-        t = rec_thing_next(t);
-    }
-}
-
 /* Six explosions of rising power on the square of Lord Chaos. */
 static void draw_fuse_explosions(uint16_t type, int16_t x, int16_t y)
 {
@@ -471,7 +453,7 @@ static void show_final_texts(void)
     for (int16_t shown = 0; shown < count; shown++) {
         for (int16_t i = 0; i < count; i++) {
             char text[FUSE_TEXT_SIZE];
-            dungeon_decode_text(text, sizeof text, texts[i], DECODE_MESSAGE_INVISIBLE);
+            dungeon_decode_text(text, sizeof text, texts[i], TEXT_MODE_MESSAGE | TEXT_MODE_ANY_VISIBILITY);
             if (text[1] != letter)
                 continue;
             message_clear();
@@ -490,20 +472,11 @@ static void flash_lords(uint16_t lord, int16_t x, int16_t y)
 {
     for (int16_t ticks = FUSE_FLASH_ROUNDS; ticks > 0; ticks--)
         for (int16_t flash = FUSE_FLASHES_PER_ROUND; flash > 0; flash--) {
-            sound_request_play(SOUND_FUSE, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
+            sound_request_play(SOUND_BUZZ, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
             rec_group_set_creature_type(lord, flash & 1 ? CREATURE_LORD_ORDER : CREATURE_LORD_CHAOS);
             for (int16_t i = 0; i < ticks; i++)
                 fuse_update();
         }
-}
-
-/* All creature groups of the map except the one on (x, y) disappear. */
-static void delete_other_groups(int16_t x, int16_t y)
-{
-    for (int16_t gx = 0; gx < g_current_map_width; gx++)
-        for (int16_t gy = 0; gy < g_current_map_height; gy++)
-            if (map_find_thing((Location){gx, gy}, THING_GROUP) != THING_ENDOFLIST && (gx != x || gy != y))
-                group_delete(gx, gy);
 }
 
 void startend_run_fuse_sequence(void)
@@ -520,14 +493,10 @@ void startend_run_fuse_sequence(void)
     uint16_t lord = map_find_thing((Location){x, y}, THING_GROUP);
     if (lord == THING_ENDOFLIST)
         return;
-    rec_group_set_health(lord, 0, FUSE_LORD_HEALTH);
-    group_set_cells(lord, CELL_CENTERED, g_party_map_index);
-    group_set_directions(lord, (uint8_t)direction_back(g_party_direction), g_party_map_index); /* faces the party */
-    remove_fluxcages(g_party_map_x, g_party_map_y);
-    remove_fluxcages(x, y);
+    game_prepare_fuse_lord(lord, (Location){x, y});
     fuse_update();
     draw_fuse_explosions(EXPLOSION_FIREBALL, x, y);
-    sound_request_play(SOUND_FUSE, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
+    sound_request_play(SOUND_BUZZ, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
     rec_group_set_creature_type(lord, CREATURE_LORD_ORDER);
     fuse_update();
     draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
@@ -540,7 +509,7 @@ void startend_run_fuse_sequence(void)
     fuse_update();
     g_do_not_draw_fluxcages = true;
     fuse_update();
-    delete_other_groups(x, y);
+    group_delete_all_except((Location){x, y});
     fuse_update();
     show_final_texts();
     draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);

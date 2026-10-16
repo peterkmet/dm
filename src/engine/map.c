@@ -6,6 +6,7 @@
 #include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/party.h"
+#include "engine/projectile.h"
 #include "engine/record.h"
 #include <inttypes.h>
 #include <string.h>
@@ -234,6 +235,20 @@ bool map_is_imaginary_wall(Location at)
 {
     uint8_t square = map_get_square(at.x, at.y);
     return rec_square_type(square) == SQUARE_FAKE_WALL && (square & FAKE_WALL_IMAGINARY) && !(square & FAKE_WALL_OPEN);
+}
+
+void map_remove_fluxcages(Location at)
+{
+    uint16_t t = map_get_square_first_object(at.x, at.y);
+    while (t != THING_ENDOFLIST) {
+        if (THING_TYPE(t) == THING_EXPLOSION && rec_explosion_type(t) == EXPLOSION_FLUXCAGE) {
+            map_unlink_thing_from_list(t, 0, at.x, at.y);
+            rec_thing_set_free(t);
+            t = map_get_square_first_object(at.x, at.y);
+            continue;
+        }
+        t = rec_thing_next(t);
+    }
 }
 
 uint16_t map_find_thing(Location at, int16_t type_wanted)
