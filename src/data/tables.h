@@ -121,7 +121,6 @@ typedef struct {
 typedef struct {
     uint8_t action_indices[3];       /* 255 = none */
     uint8_t minimum_skill_levels[2]; /* actions 1 and 2; bit 7 = needs charges */
-    uint8_t flags;                   /* copied with the set; no reader is known */
 } ActionSet;
 #define ACTION_LIST_COUNT          3
 #define ACTION_SET_EMPTY_HAND      2

@@ -33,7 +33,7 @@ ObjectInfo = S(("type", u16), ("aspect_index", u8), ("action_set_index", u8), ("
 WeaponInfo = S(("weight", u8), ("weapon_class", u8), ("strength", u8), ("kinetic_energy", u8), ("attributes", u16))
 ArmourInfo = S(("weight", u8), ("defense", u8), ("attributes", u8))
 Spell = S(("symbols", u32), ("base_required_skill_level", u8), ("skill_index", u8), ("kind", u8), ("type", u8), ("disabled_ticks", u8))
-ActionSet = S(("action_indices", u8 * 3), ("minimum_skill_levels", u8 * 2), ("flags", u8))
+ActionSet = S(("action_indices", u8 * 3), ("minimum_skill_levels", u8 * 2))
 ActionInfo = S(("disabled_ticks", u8), ("damage_factor", u8), ("hit_probability", u8), ("stamina", u8), ("defense", s8),
                ("skill_index", u8), ("experience_gain", u8))
 
@@ -48,7 +48,7 @@ TABLES = {
     "food_value": (s16, 8, 0x1016D2, 2, ">h"),
     "spell": (Spell, 25, 0x103C84, 8, ">IBBH"),
     "symbol_mana_cost_multiplier": (u8, 6, 0x103C7E, 1, ">B"),
-    "action_set": (ActionSet, 44, 0x103D4C, 8, ">BBBxBBB"),
+    "action_set": (ActionSet, 44, 0x103D4C, 8, ">BBBxBB"),
     "light_power_to_light_amount": (s16, 16, 0x100CB4, 2, ">h"),
     "palette_light_threshold": (s16, 6, 0x100CD4, 2, ">h"),
     "slot_mask": (u16, 38, 0x100C68, 2, ">H"),

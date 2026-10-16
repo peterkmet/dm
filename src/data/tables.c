@@ -82,6 +82,24 @@
 #define CREATURE_AT_WOUND_PROBABILITIES  22
 #define CREATURE_AT_ATTACK_TYPE          24
 
+#define OBJECT_AT_TYPE             0
+#define OBJECT_AT_ASPECT_INDEX     2
+#define OBJECT_AT_ACTION_SET_INDEX 3
+#define OBJECT_AT_ALLOWED_SLOTS    4
+
+#define WEAPON_AT_WEIGHT         0
+#define WEAPON_AT_CLASS          1
+#define WEAPON_AT_STRENGTH       2
+#define WEAPON_AT_KINETIC_ENERGY 3
+#define WEAPON_AT_ATTRIBUTES     4
+
+#define ARMOUR_AT_WEIGHT     0
+#define ARMOUR_AT_DEFENSE    1
+#define ARMOUR_AT_ATTRIBUTES 2
+
+#define ACTION_SET_AT_ACTIONS 0
+#define ACTION_SET_AT_LEVELS  4
+
 static CreatureInfo creature_info[CREATURE_TYPE_COUNT];
 static CreatureSound creature_sounds[CREATURE_SOUND_COUNT];
 static ObjectInfo object_info[OBJECT_INFO_COUNT];
@@ -107,15 +125,23 @@ static void read_creatures(void)
     for (uint32_t i = 0; i < CREATURE_TYPE_COUNT; i++) {
         uint32_t a = KAOS_CREATURE_INFO + i * CREATURE_INFO_BYTES;
         creature_info[i] = (CreatureInfo){
-            kaos_u8(a + CREATURE_AT_ASPECT_INDEX),     kaos_u8(a + CREATURE_AT_ATTACK_SOUND_ORDINAL),
-            kaos_u16(a + CREATURE_AT_ATTRIBUTES),      kaos_u16(a + CREATURE_AT_GRAPHIC_INFO),
-            kaos_u8(a + CREATURE_AT_MOVEMENT_TICKS),   kaos_u8(a + CREATURE_AT_ATTACK_TICKS),
-            kaos_u8(a + CREATURE_AT_DEFENSE),          kaos_u8(a + CREATURE_AT_BASE_HEALTH),
-            kaos_u8(a + CREATURE_AT_ATTACK),           kaos_u8(a + CREATURE_AT_POISON_ATTACK),
-            kaos_u8(a + CREATURE_AT_DEXTERITY),        kaos_u16(a + CREATURE_AT_RANGES),
-            kaos_u16(a + CREATURE_AT_PROPERTIES),      kaos_u16(a + CREATURE_AT_RESISTANCES),
-            kaos_u16(a + CREATURE_AT_ANIMATION_TICKS), kaos_u16(a + CREATURE_AT_WOUND_PROBABILITIES),
-            kaos_u8(a + CREATURE_AT_ATTACK_TYPE),
+            .aspect_index = kaos_u8(a + CREATURE_AT_ASPECT_INDEX),
+            .attack_sound_ordinal = kaos_u8(a + CREATURE_AT_ATTACK_SOUND_ORDINAL),
+            .attributes = kaos_u16(a + CREATURE_AT_ATTRIBUTES),
+            .graphic_info = kaos_u16(a + CREATURE_AT_GRAPHIC_INFO),
+            .movement_ticks = kaos_u8(a + CREATURE_AT_MOVEMENT_TICKS),
+            .attack_ticks = kaos_u8(a + CREATURE_AT_ATTACK_TICKS),
+            .defense = kaos_u8(a + CREATURE_AT_DEFENSE),
+            .base_health = kaos_u8(a + CREATURE_AT_BASE_HEALTH),
+            .attack = kaos_u8(a + CREATURE_AT_ATTACK),
+            .poison_attack = kaos_u8(a + CREATURE_AT_POISON_ATTACK),
+            .dexterity = kaos_u8(a + CREATURE_AT_DEXTERITY),
+            .ranges = kaos_u16(a + CREATURE_AT_RANGES),
+            .properties = kaos_u16(a + CREATURE_AT_PROPERTIES),
+            .resistances = kaos_u16(a + CREATURE_AT_RESISTANCES),
+            .animation_ticks = kaos_u16(a + CREATURE_AT_ANIMATION_TICKS),
+            .wound_probabilities = kaos_u16(a + CREATURE_AT_WOUND_PROBABILITIES),
+            .attack_type = kaos_u8(a + CREATURE_AT_ATTACK_TYPE),
         };
     }
     for (uint32_t i = 0; i < CREATURE_SOUND_COUNT; i++)
@@ -128,15 +154,30 @@ static void read_objects(void)
 {
     for (uint32_t i = 0; i < OBJECT_INFO_COUNT; i++) {
         uint32_t a = KAOS_OBJECT_INFO + i * OBJECT_INFO_BYTES;
-        object_info[i] = (ObjectInfo){kaos_u16(a), kaos_u8(a + 2), kaos_u8(a + 3), kaos_u16(a + 4)};
+        object_info[i] = (ObjectInfo){
+            .type = kaos_u16(a + OBJECT_AT_TYPE),
+            .aspect_index = kaos_u8(a + OBJECT_AT_ASPECT_INDEX),
+            .action_set_index = kaos_u8(a + OBJECT_AT_ACTION_SET_INDEX),
+            .allowed_slots = kaos_u16(a + OBJECT_AT_ALLOWED_SLOTS),
+        };
     }
     for (uint32_t i = 0; i < WEAPON_TYPE_COUNT; i++) {
         uint32_t a = KAOS_WEAPON_INFO + i * WEAPON_INFO_BYTES;
-        weapon_info[i] = (WeaponInfo){kaos_u8(a), kaos_u8(a + 1), kaos_u8(a + 2), kaos_u8(a + 3), kaos_u16(a + 4)};
+        weapon_info[i] = (WeaponInfo){
+            .weight = kaos_u8(a + WEAPON_AT_WEIGHT),
+            .weapon_class = kaos_u8(a + WEAPON_AT_CLASS),
+            .strength = kaos_u8(a + WEAPON_AT_STRENGTH),
+            .kinetic_energy = kaos_u8(a + WEAPON_AT_KINETIC_ENERGY),
+            .attributes = kaos_u16(a + WEAPON_AT_ATTRIBUTES),
+        };
     }
     for (uint32_t i = 0; i < ARMOUR_TYPE_COUNT; i++) {
         uint32_t a = KAOS_ARMOUR_INFO + i * ARMOUR_INFO_BYTES;
-        armour_info[i] = (ArmourInfo){kaos_u8(a), kaos_u8(a + 1), kaos_u8(a + 2)};
+        armour_info[i] = (ArmourInfo){
+            .weight = kaos_u8(a + ARMOUR_AT_WEIGHT),
+            .defense = kaos_u8(a + ARMOUR_AT_DEFENSE),
+            .attributes = kaos_u8(a + ARMOUR_AT_ATTRIBUTES),
+        };
     }
     for (uint32_t i = 0; i < JUNK_TYPE_COUNT; i++)
         junk_weights[i] = kaos_u8(KAOS_JUNK_WEIGHTS + i);
@@ -172,17 +213,20 @@ static void read_actions(void)
     for (uint32_t i = 0; i < ACTION_SET_COUNT; i++) {
         uint32_t a = KAOS_ACTION_SETS + i * ACTION_SET_BYTES;
         action_sets[i] = (ActionSet){
-            {kaos_u8(a), kaos_u8(a + 1), kaos_u8(a + 2)},
-            {kaos_u8(a + 4), kaos_u8(a + 5)},
-            kaos_u8(a + 6)
+            .action_indices = {kaos_u8(a + ACTION_SET_AT_ACTIONS), kaos_u8(a + ACTION_SET_AT_ACTIONS + 1),
+                               kaos_u8(a + ACTION_SET_AT_ACTIONS + 2)},
+            .minimum_skill_levels = {kaos_u8(a + ACTION_SET_AT_LEVELS), kaos_u8(a + ACTION_SET_AT_LEVELS + 1)},
         };
     }
     for (uint32_t i = 0; i < ACTION_COUNT; i++)
         action_info[i] = (ActionInfo){
-            kaos_u8(KAOS_ACTIONS_DISABLED + i),       kaos_u8(KAOS_ACTION_DAMAGE_FACTOR + i),
-            kaos_u8(KAOS_ACTION_HIT_PROBABILITY + i), kaos_u8(KAOS_ACTION_STAMINA + i),
-            (int8_t)kaos_u8(KAOS_ACTION_DEFENSE + i), kaos_u8(KAOS_ACTION_SKILL_INDEX + i),
-            kaos_u8(KAOS_ACTION_EXPERIENCE_GAIN + i),
+            .disabled_ticks = kaos_u8(KAOS_ACTIONS_DISABLED + i),
+            .damage_factor = kaos_u8(KAOS_ACTION_DAMAGE_FACTOR + i),
+            .hit_probability = kaos_u8(KAOS_ACTION_HIT_PROBABILITY + i),
+            .stamina = kaos_u8(KAOS_ACTION_STAMINA + i),
+            .defense = (int8_t)kaos_u8(KAOS_ACTION_DEFENSE + i),
+            .skill_index = kaos_u8(KAOS_ACTION_SKILL_INDEX + i),
+            .experience_gain = kaos_u8(KAOS_ACTION_EXPERIENCE_GAIN + i),
         };
 }
 
