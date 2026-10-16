@@ -453,7 +453,7 @@ static void remove_fluxcages(int16_t x, int16_t y)
 static void draw_fuse_explosions(uint16_t type, int16_t x, int16_t y)
 {
     for (uint16_t attack = FUSE_FIRST_ATTACK; attack <= FUSE_ACTION_ATTACK; attack += FUSE_ATTACK_STEP) {
-        explosion_create(EXPLOSION_THING(type), attack, x, y, CELL_CENTERED);
+        explosion_create(EXPLOSION_THING(type), attack, (Location){x, y}, (Location){x, y}, CELL_CENTERED);
         fuse_update();
     }
 }
@@ -533,8 +533,9 @@ void startend_run_fuse_sequence(void)
     fuse_update();
     draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     flash_lords(lord, x, y);
-    explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_ACTION_ATTACK, x, y, CELL_CENTERED);
-    explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_ACTION_ATTACK, x, y, CELL_CENTERED);
+    Location at = {x, y};
+    explosion_create(EXPLOSION_THING(EXPLOSION_FIREBALL), FUSE_ACTION_ATTACK, at, at, CELL_CENTERED);
+    explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_ACTION_ATTACK, at, at, CELL_CENTERED);
     fuse_update();
     rec_group_set_creature_type(lord, CREATURE_GREY_LORD);
     fuse_update();

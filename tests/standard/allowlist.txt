@@ -113,7 +113,6 @@ notation ui/ui_champion.c open: epic 8
 notation ui/video.c open: epic 8
 notation ui/video.h open: epic 8
 bool engine/action.c open: epic 6
-bool engine/projectile.c:hit_creature open: epic 6
 bool platform/control.c:next_element open: epic 10
 bool platform/main.c:entrance_frame open: epic 11
 bool platform/main.c:load_game_files open: epic 11
@@ -598,7 +597,6 @@ dead-api ui/ui.h:ui_print_zone_padded open: epic 8
 dead-api ui/view.h:view_draw open: epic 8
 params engine/move.c:arrive_on_square open: epic 6
 params engine/projectile.c:create_impact_explosion open: epic 6
-params engine/projectile.c:hit_creature open: epic 6
 params platform/control.c:find_in_box open: epic 10
 params platform/platform.c:plat_set_pointer open: epic 11
 params platform/platform.h:plat_set_pointer open: epic 11
@@ -665,9 +663,7 @@ type engine:step_energy open: epic 6
 type engine:ticks open: epic 6
 type engine:value open: epic 6
 type engine:x open: epic 6
-type engine:x_combo open: epic 6
 type engine:y open: epic 6
-type engine:y_combo open: epic 6
 type platform:value open: epic 11
 type platform:x open: epic 11
 type platform:y open: epic 11
@@ -689,7 +685,6 @@ event-comment engine/group.c open: epic 6
 event-comment engine/group.h open: epic 6
 event-comment engine/magic.c open: epic 6
 event-comment engine/magic.h open: epic 6
-event-comment engine/projectile.h open: epic 6
 event-comment engine/sensor.h open: epic 6
 event-comment engine/event.h open: epic 6
 todo engine/message.c open: epic 6

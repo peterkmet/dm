@@ -17,11 +17,6 @@
 #include "engine/sound.h"
 #include "engine/timeline.h"
 
-/* Combined square argument: a value from 0x100 holds (x + 1) << 8 | target x (and y << 8 | target y). */
-#define SQUARE_COMBO_MIN         256
-#define SQUARE_COMBO_TARGET_MASK 0xff
-#define SQUARE_COMBO_SHIFT       8
-
 #define PROJECTILE_DOOR_PASS_RANDOM_MASK 0x7f
 #define LAUNCHER_EXPLOSION_DATA_BASE     128
 #define LAUNCHER_ATTACK                  100
@@ -60,6 +55,23 @@
 /* The projectile attack lowers this reduction of the impact attack. */
 #define IMPACT_ATTACK_REDUCTION          32
 #define FUSE_SIDES                       4
+
+/* Results of a projectile hit on a creature cell. */
+typedef enum {
+    HIT_RESULT_NONE,     /* no creature in the cell, or a non-material creature */
+    HIT_RESULT_HIT,      /* the projectile hit */
+    HIT_RESULT_ABSORBED, /* the black flame ate the fireball */
+} HitResult;
+/* A creature hit: whether the projectile is an explosion, and the group that caught the flying object. */
+typedef struct {
+    bool is_explosion;
+    uint16_t possessing_group;
+} Hit;
+/* The explosion of a bomb flask and its attack; explosion 0 for no flask. */
+typedef struct {
+    uint16_t explosion;
+    uint16_t attack;
+} FlaskExplosion;
 
 bool g_fuse_sequence_requested;
 
@@ -127,21 +139,13 @@ static void explosion_damage_square(uint16_t explosion_thing, uint16_t attack, i
         g_creature_damage_outcome = group_get_damage_all_creatures_outcome(group, x, y, resisted);
 }
 
-void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_combo, uint16_t y_combo, int16_t cell)
+void explosion_create(uint16_t explosion_thing, uint16_t attack, Location at, Location target, int16_t cell)
 {
     uint16_t explosion = rec_find_unused_thing(THING_EXPLOSION);
     if (explosion == THING_NONE)
         return;
-    int16_t x = x_combo;
-    int16_t y = y_combo;
-    int16_t target_x = x;
-    int16_t target_y = y;
-    if (x_combo >= SQUARE_COMBO_MIN) {
-        target_x = x_combo & SQUARE_COMBO_TARGET_MASK;
-        target_y = y_combo & SQUARE_COMBO_TARGET_MASK;
-        x = (x_combo >> SQUARE_COMBO_SHIFT) - 1;
-        y = y_combo >> SQUARE_COMBO_SHIFT;
-    }
+    int16_t x = at.x;
+    int16_t y = at.y;
     rec_explosion_set_centered(explosion, cell == CELL_CENTERED);
     if (cell != CELL_CENTERED)
         explosion = THING_WITH_CELL(explosion, cell);
@@ -163,7 +167,7 @@ void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_comb
     timeline_add_event(&event);
     if (explosion_thing == EXPLOSION_THING(EXPLOSION_LIGHTNING_BOLT) ||
         explosion_thing == EXPLOSION_THING(EXPLOSION_FIREBALL))
-        explosion_damage_square(explosion_thing, attack, target_x, target_y);
+        explosion_damage_square(explosion_thing, attack, target.x, target.y);
 }
 
 void projectile_delete_event(uint16_t projectile)
@@ -238,42 +242,41 @@ Impact projectile_get_impact_attack(uint16_t projectile, uint16_t thing)
 }
 
 /* A creature hit: damage scaled by the creature defense, plus poison. A black flame eats fireballs. A creature that
-   keeps sharp weapons catches the dagger, arrow, star, or dart. Returns 0 when no creature stands in the cell, 1 when
-   the projectile hit, 2 when the black flame ate the fireball. */
-static int16_t hit_creature(uint16_t projectile, uint16_t thing, bool is_explosion, int16_t x, int16_t y, int16_t cell,
-                            uint16_t *possessing_group)
+   keeps sharp weapons catches the dagger, arrow, star, or dart. Returns HIT_RESULT_NONE when no creature stands in
+   the cell, HIT_RESULT_HIT when the projectile hit, HIT_RESULT_ABSORBED when the black flame ate the fireball. */
+static HitResult hit_creature(uint16_t projectile, uint16_t thing, Location target, int16_t cell, Hit *hit)
 {
-    uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
+    uint16_t group = map_find_thing(target, THING_GROUP);
     int16_t ordinal = group_get_creature_ordinal_in_cell(group, cell);
     if (!ordinal)
-        return 0;
+        return HIT_RESULT_NONE;
     uint16_t creature_type = rec_group_creature_type(group);
     const CreatureInfo *info = group_info(group);
     if (thing == EXPLOSION_THING(EXPLOSION_FIREBALL) && creature_type == CREATURE_BLACK_FLAME) {
         uint16_t health = rec_group_health(group, ordinal - 1);
         uint16_t gain = projectile_get_impact_attack(projectile, EXPLOSION_THING(EXPLOSION_FIREBALL)).attack;
         rec_group_set_health(group, ordinal - 1, min16(MAX_CREATURE_HEALTH, health + gain));
-        return 2;
+        return HIT_RESULT_ABSORBED;
     }
     if ((info->attributes & CREATURE_NON_MATERIAL) && thing != EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL))
-        return 0;
+        return HIT_RESULT_NONE;
     Impact impact = projectile_get_impact_attack(projectile, thing);
     uint16_t attack = (uint16_t)(impact.attack << 6) / info->defense; /* 16-bit product as in the original */
     if (!attack)
-        return 1;
+        return HIT_RESULT_HIT;
     uint16_t poison = group_get_resistance_adjusted_poison_attack(creature_type, impact.poison);
-    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, (Location){x, y}, attack + poison);
+    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, target, attack + poison);
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
-        group_process_reaction_event((Location){x, y}, REACTION_HIT_BY_PROJECTILE);
+        group_process_reaction_event(target, REACTION_HIT_BY_PROJECTILE);
     g_creature_damage_outcome = outcome;
-    if (!is_explosion && outcome == OUTCOME_NO_CREATURE_KILLED && THING_TYPE(thing) == THING_WEAPON &&
+    if (!hit->is_explosion && outcome == OUTCOME_NO_CREATURE_KILLED && THING_TYPE(thing) == THING_WEAPON &&
         (info->attributes & CREATURE_KEEPS_THROWN_SHARP_WEAPONS)) {
         uint16_t type = rec_weapon_type(thing);
         if (type == WEAPON_DAGGER || type == WEAPON_ARROW || type == WEAPON_SLAYER || type == WEAPON_POISON_DART ||
             type == WEAPON_THROWING_STAR)
-            *possessing_group = group;
+            hit->possessing_group = group;
     }
-    return 1;
+    return HIT_RESULT_HIT;
 }
 
 /* A door hit: an open-door spell opens a door with a button. Other projectiles may pass a grate, else they bash
@@ -312,15 +315,16 @@ static bool hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t y)
 }
 
 /* A Ful bomb or Ven bomb flask explodes into a fireball or a poison cloud with the potion power. Else 0. */
-static uint16_t get_flask_explosion(uint16_t thing, uint16_t *attack)
+static FlaskExplosion get_flask_explosion(uint16_t thing)
 {
+    FlaskExplosion none = {0, 0};
     if (THING_TYPE(thing) != THING_POTION)
-        return 0;
+        return none;
     uint16_t type = rec_potion_type(thing);
     if (type != POTION_FUL_BOMB && type != POTION_VEN_BOMB)
-        return 0;
-    *attack = rec_potion_power(thing);
-    return EXPLOSION_THING(type == POTION_FUL_BOMB ? EXPLOSION_FIREBALL : EXPLOSION_POISON_CLOUD);
+        return none;
+    return (FlaskExplosion){EXPLOSION_THING(type == POTION_FUL_BOMB ? EXPLOSION_FIREBALL : EXPLOSION_POISON_CLOUD),
+                            rec_potion_power(thing)};
 }
 
 /* A spell projectile explodes with its kinetic energy: a poison bolt with a quarter, a lightning bolt with half. */
@@ -335,45 +339,35 @@ static uint16_t spell_explosion_attack(uint16_t thing, uint16_t projectile)
 }
 
 /* The explosion of a spell projectile or of a flask at the impact; a spent poison or lightning bolt makes none. */
-static void create_impact_explosion(uint16_t thing, uint16_t projectile, uint16_t flask_explosion,
-                                    uint16_t explosion_attack, int16_t x_combo, int16_t y_combo, int16_t cell)
+static void create_impact_explosion(uint16_t thing, uint16_t projectile, FlaskExplosion flask, Location at,
+                                    Location target, int16_t cell)
 {
-    bool flask_explodes = flask_explosion != 0;
-    uint16_t explosion = flask_explodes ? flask_explosion : thing;
-    if (!flask_explodes)
-        explosion_attack = spell_explosion_attack(thing, projectile);
+    bool flask_explodes = flask.explosion != 0;
+    uint16_t explosion = flask_explodes ? flask.explosion : thing;
+    uint16_t explosion_attack = flask_explodes ? flask.attack : spell_explosion_attack(thing, projectile);
     int16_t weakened_to_nothing =
         !flask_explodes && !explosion_attack &&
         (thing == EXPLOSION_THING(EXPLOSION_POISON_BOLT) || thing == EXPLOSION_THING(EXPLOSION_LIGHTNING_BOLT));
     /* After a party hit, cell holds the champion index, as in the original. */
     if (!weakened_to_nothing)
-        explosion_create(explosion, explosion_attack, x_combo, y_combo,
+        explosion_create(explosion, explosion_attack, at, target,
                          explosion == EXPLOSION_THING(EXPLOSION_POISON_CLOUD) ? CELL_CENTERED : cell);
 }
 
-bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_t y_combo, int16_t cell,
+bool projectile_has_impact_occurred(int16_t impact_type, Location at, Location target, int16_t cell,
                                     uint16_t projectile)
 {
     uint16_t thing = rec_projectile_slot(projectile);
     int16_t thing_type = THING_TYPE(thing);
-    uint16_t explosion_attack = 0;
     g_creature_damage_outcome = OUTCOME_NO_CREATURE_KILLED;
-    uint16_t flask_explosion = get_flask_explosion(thing, &explosion_attack);
-    bool flask_explodes = flask_explosion != 0;
-    bool is_explosion = thing_type == THING_EXPLOSION && thing != EXPLOSION_THING(EXPLOSION_SLIME) &&
-                        thing != EXPLOSION_THING(EXPLOSION_POISON_BOLT);
-    uint16_t possessing_group = THING_NONE;
+    FlaskExplosion flask = get_flask_explosion(thing);
+    bool flask_explodes = flask.explosion != 0;
+    Hit hit = {
+        .is_explosion = thing_type == THING_EXPLOSION && thing != EXPLOSION_THING(EXPLOSION_SLIME) &&
+                        thing != EXPLOSION_THING(EXPLOSION_POISON_BOLT),
+        .possessing_group = THING_NONE,
+    };
     Impact champion_impact = {0};
-    int16_t x = x_combo;
-    int16_t y = y_combo;
-    int16_t target_x = x_combo;
-    int16_t target_y = y_combo;
-    if (x_combo >= SQUARE_COMBO_MIN) {
-        x = (x_combo >> SQUARE_COMBO_SHIFT) - 1;
-        y = y_combo >> SQUARE_COMBO_SHIFT;
-        target_x = x_combo & SQUARE_COMBO_TARGET_MASK;
-        target_y = y_combo & SQUARE_COMBO_TARGET_MASK;
-    }
     bool effect_happens = true;
     if (impact_type == IMPACT_PARTY) {
         cell = champion_get_index_in_cell(cell);
@@ -381,12 +375,12 @@ bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_
             return false;
         champion_impact = projectile_get_impact_attack(projectile, thing);
     } else if (impact_type == IMPACT_CREATURE) {
-        int16_t hit = hit_creature(projectile, thing, is_explosion, target_x, target_y, cell, &possessing_group);
-        if (!hit)
+        HitResult result = hit_creature(projectile, thing, target, cell, &hit);
+        if (result == HIT_RESULT_NONE)
             return false;
-        effect_happens = hit == 1;
+        effect_happens = result == HIT_RESULT_HIT;
     } else if (impact_type == SQUARE_DOOR) {
-        if (!hit_door(projectile, thing, target_x, target_y))
+        if (!hit_door(projectile, thing, target.x, target.y))
             return false;
     }
     if (effect_happens) {
@@ -395,19 +389,19 @@ bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_
                                                    champion_impact.type) &&
             champion_impact.poison && random_bit())
             champion_poison(cell, champion_impact.poison);
-        if (!is_explosion && !flask_explodes && thing != EXPLOSION_THING(EXPLOSION_POISON_BOLT)) {
-            sound_request_play(thing_type == THING_WEAPON ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, x, y,
+        if (!hit.is_explosion && !flask_explodes && thing != EXPLOSION_THING(EXPLOSION_POISON_BOLT)) {
+            sound_request_play(thing_type == THING_WEAPON ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, at.x, at.y,
                                SOUND_MODE_AFTER_TICK);
         } else {
-            create_impact_explosion(thing, projectile, flask_explosion, explosion_attack, x_combo, y_combo, cell);
+            create_impact_explosion(thing, projectile, flask, at, target, cell);
         }
     }
     if (flask_explodes) {
         rec_thing_set_free(thing);
-        rec_projectile_set_slot(projectile, flask_explosion);
+        rec_projectile_set_slot(projectile, flask.explosion);
     }
-    map_unlink_thing_from_list(projectile, 0, x, y);
-    projectile_delete(projectile, possessing_group, x, y);
+    map_unlink_thing_from_list(projectile, 0, at.x, at.y);
+    projectile_delete(projectile, hit.possessing_group, at.x, at.y);
     return true;
 }
 
@@ -417,8 +411,9 @@ int16_t projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t y, i
     g_creature_damage_outcome = OUTCOME_NO_CREATURE_KILLED;
     do {
         uint16_t t = map_get_square_first_thing(x, y);
-        while (t != THING_ENDOFLIST && !(THING_TYPE(t) == THING_PROJECTILE && THING_CELL(t) == cell &&
-                                         projectile_has_impact_occurred(impact_type, x, y, cell, t)))
+        while (t != THING_ENDOFLIST &&
+               !(THING_TYPE(t) == THING_PROJECTILE && THING_CELL(t) == cell &&
+                 projectile_has_impact_occurred(impact_type, (Location){x, y}, (Location){x, y}, cell, t)))
             t = rec_thing_next(t);
         if (t == THING_ENDOFLIST)
             return count;
@@ -436,13 +431,14 @@ void projectile_process_move_event(TimelineEvent *event)
     int16_t y = projectile_event_y(&next);
     uint16_t step_energy = projectile_event_step_energy(&next);
     uint16_t cell = THING_CELL(projectile);
+    Location at = {x, y};
     if (next.type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS) {
         next.type = EVENT_MOVE_PROJECTILE;
     } else {
-        if (map_is_party_on((Location){x, y}) && projectile_has_impact_occurred(IMPACT_PARTY, x, y, cell, projectile))
+        if (map_is_party_on(at) && projectile_has_impact_occurred(IMPACT_PARTY, at, at, cell, projectile))
             return;
-        if (map_find_thing((Location){x, y}, THING_GROUP) != THING_ENDOFLIST &&
-            projectile_has_impact_occurred(IMPACT_CREATURE, x, y, cell, projectile))
+        if (map_find_thing(at, THING_GROUP) != THING_ENDOFLIST &&
+            projectile_has_impact_occurred(IMPACT_CREATURE, at, at, cell, projectile))
             return;
         if (rec_projectile_energy(projectile) <= step_energy) {
             map_unlink_thing_from_list(projectile, 0, x, y);
@@ -464,14 +460,14 @@ void projectile_process_move_event(TimelineEvent *event)
         int16_t solid =
             type == SQUARE_WALL || (type == SQUARE_FAKE_WALL && !(square & (FAKE_WALL_OPEN | FAKE_WALL_IMAGINARY))) ||
             (type == SQUARE_STAIRS && rec_square_type(rec_square_byte(g_current_map_index, x, y)) == SQUARE_STAIRS);
-        if (solid && projectile_has_impact_occurred(type, x, y, cell, projectile))
+        if (solid && projectile_has_impact_occurred(type, at, at, cell, projectile))
             return;
     }
     uint16_t new_cell = (cell & 1) == (direction & 1) ? direction_left(cell) : direction_right(cell);
     uint16_t moved = THING_WITH_CELL(projectile, new_cell);
     if (!leaves_square) {
         if (rec_square_type(map_get_square(x, y)) == SQUARE_DOOR &&
-            projectile_has_impact_occurred(SQUARE_DOOR, x, y, new_cell, projectile))
+            projectile_has_impact_occurred(SQUARE_DOOR, at, at, new_cell, projectile))
             return;
         map_unlink_thing_from_list(moved, 0, x, y);
         map_link_thing_to_list(moved, 0, x, y);
@@ -630,7 +626,8 @@ void projectile_fuse_action(int16_t x, int16_t y)
     /* unsigned: a negative x or y is outside the map too */
     if ((uint16_t)x >= (uint16_t)g_current_map_width || (uint16_t)y >= (uint16_t)g_current_map_height)
         return;
-    explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_ACTION_ATTACK, x, y, CELL_CENTERED);
+    explosion_create(EXPLOSION_THING(EXPLOSION_HARM_NON_MATERIAL), FUSE_ACTION_ATTACK, (Location){x, y},
+                     (Location){x, y}, CELL_CENTERED);
     uint16_t lord_chaos = projectile_get_lord_chaos_on_square(x, y);
     if (!lord_chaos)
         return;
@@ -711,19 +708,17 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
         if (!occupied[next])
             occupied[next] = occupied[direction_right(next)];
     }
-    int16_t x = src_x;
-    int16_t y = src_y;
-    int16_t x_combo = src_x;
-    int16_t y_combo = src_y;
+    Location source = {src_x, src_y};
+    Location at = source;
     for (;;) {
         int16_t hit;
         do {
             hit = 0;
-            for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
+            for (uint16_t t = map_get_square_first_thing(at.x, at.y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
                 uint8_t target = occupied[THING_CELL(t)];
                 if (THING_TYPE(t) != THING_PROJECTILE ||
                     g_timeline.events[rec_projectile_event_index(t)].type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS ||
-                    !target || !projectile_has_impact_occurred(impact_type, x_combo, y_combo, target - 1, t))
+                    !target || !projectile_has_impact_occurred(impact_type, at, source, target - 1, t))
                     continue;
                 projectile_delete_event(t);
                 if (g_creature_damage_outcome == OUTCOME_ALL_CREATURES_KILLED)
@@ -734,10 +729,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
         } while (hit);
         if (!test_destination)
             return false;
-        x = dst_x;
-        y = dst_y;
-        x_combo = (dst_x + 1) << SQUARE_COMBO_SHIFT | src_x;
-        y_combo = dst_y << SQUARE_COMBO_SHIFT | src_y;
+        at = (Location){dst_x, dst_y};
         for (int16_t i = 0; i < 4; i++)
             occupied[i] = crossed[i];
         test_destination = false;

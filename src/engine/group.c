@@ -719,7 +719,7 @@ static int16_t damage_creature(uint16_t group, uint16_t creature_index, Location
     }
     static const uint16_t smoke_attack[] = {SMOKE_ATTACK_QUARTER, SMOKE_ATTACK_HALF, SMOKE_ATTACK_FULL,
                                             SMOKE_ATTACK_FULL};
-    explosion_create(EXPLOSION_THING(EXPLOSION_SMOKE), smoke_attack[creature_size(info)], at.x, at.y, cell);
+    explosion_create(EXPLOSION_THING(EXPLOSION_SMOKE), smoke_attack[creature_size(info)], at, at, cell);
     return outcome;
 }
 

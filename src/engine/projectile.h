@@ -102,9 +102,9 @@ typedef struct {
 
 /* A flying thing enters a square. Without a free projectile record, the object drops to the square. */
 void projectile_create(const ProjectileLaunch *launch);
-/* An explosion appears on a square for one event 25. A combined square puts the explosion on one square and
-   aims the fireball or lightning damage at the target square. */
-void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_combo, uint16_t y_combo, int16_t cell);
+/* An explosion appears at a square; fireball and lightning damage aim at the target square (the same square
+   for a plain explosion). */
+void explosion_create(uint16_t explosion_thing, uint16_t attack, Location at, Location target, int16_t cell);
 void projectile_delete_event(uint16_t projectile);
 /* The flying object drops to the square, or joins the possessions of the group that caught it. */
 void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x, int16_t y);
@@ -112,7 +112,7 @@ void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x
 Impact projectile_get_impact_attack(uint16_t projectile, uint16_t thing);
 /* A projectile hits the party (impact -2), a creature (-1), or a wall, stairs, door, or fake wall (square type).
    The flying object drops or explodes and the projectile disappears. Returns false when nothing was hit. */
-bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_t y_combo, int16_t cell,
+bool projectile_has_impact_occurred(int16_t impact_type, Location at, Location target, int16_t cell,
                                     uint16_t projectile);
 /* Every projectile in the cell hits. A creature impact stops when the whole group died. Returns the hit count. */
 int16_t projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t y, int16_t cell);

@@ -442,7 +442,7 @@ static void event_process_vi_altar_rebirth(TimelineEvent *event)
         return;
     }
     if (step == 2) {
-        explosion_create(EXPLOSION_THING(EXPLOSION_REBIRTH_STEP_1), 0, x, y, cell);
+        explosion_create(EXPLOSION_THING(EXPLOSION_REBIRTH_STEP_1), 0, (Location){x, y}, (Location){x, y}, cell);
         event->map_time += REBIRTH_EXPLOSION_TICKS;
     } else {
         uint16_t thing = map_get_square_first_thing(x, y);
