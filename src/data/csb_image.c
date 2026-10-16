@@ -29,7 +29,7 @@
 /* Tables with the same layout: KAOS address, APPB address, size. The APPB addresses are verified in
    docs/csb/engine-diff.md. Strided or split DM tables have one row per part. */
 const CsbCopy g_csb_copies[] = {
-    {KAOS_INITIAL_COLORMAP,                0x102f0a,               32                               }, /* interface palette */
+    {KAOS_INTERFACE_PALETTE,               0x102f0a,               32                               }, /* interface palette */
     {KAOS_POINTER_PALETTE,                 0x102f2a,               32                               }, /* pointer colors */
     {KAOS_ARROW_POINTER_WIDTH,             0x1005ec,               292                              }, /* the arrow pointer bitmap with its size words */
     {KAOS_HAND_POINTER_WIDTH,              0x100710,               292                              }, /* the hand pointer bitmap with its size words */
@@ -43,7 +43,7 @@ const CsbCopy g_csb_copies[] = {
     {KAOS_ORDERED_CELLS_TO_ATTACK,         0x10103a,               32                               },
     {KAOS_WOUND_PROBABILITY_INDEX_TO_MASK, 0x10105a,               4                                },
     {KAOS_SLOTS_TO_STEAL_FROM,             0x10105e,               8                                },
-    {KAOS_ICON_GRAPHIC_FIRST_INDEX,        0x101066,               14                               },
+    {KAOS_ICON_SHEET_FIRST_ICONS,          0x101066,               14                               },
     {KAOS_TORCH_CHARGE_TO_ICON_OFFSET,     0x101074,               16                               },
     {KAOS_SLOT_BOXES,                      0x101084,               184                              },
     {KAOS_SLOT_MASKS,                      0x10113e,               76                               },
@@ -74,7 +74,7 @@ const CsbCopy g_csb_copies[] = {
     {KAOS_BONES_SEPARATOR,                 0x10267a,               2                                }, /* " " between champion name and BONES */
     {KAOS_ATTRIBUTES_SUFFIX,               0x1026ec,               2                                }, /* ")" */
     {KAOS_ATTRIBUTES_PREFIX,               0x1026ea,               2                                }, /* "(" */
-    {KAOS_INVISIBILITY_PALETTE_CHANGES,    0x102d8a,               16                               },
+    {KAOS_PALETTE_CHANGES_INVISIBILITY,    0x102d8a,               16                               },
     {KAOS_LAYOUT_BITMAPS,                  0x102f50,               840                              },
     {KAOS_VIEWPORT_X,                      0x103298,               4                                }, /* viewport origin */
     {KAOS_VIEWPORT_WIDTH,                  0x1032a6,               4                                }, /* width and height */
@@ -100,13 +100,13 @@ const CsbCopy g_csb_copies[] = {
     {KAOS_WALL_ORNAMENT_DEPTHS,            0x10373a,               14                               }, /* wall ornament depth by view */
     {KAOS_FLOOR_ORNAMENT_VIEW_OFFSETS,     0x103748,               11                               }, /* floor ornament graphic offset by view */
     {KAOS_ALCOVE_ORNAMENT_INDICES,         0x103753,               3                                },
-    {KAOS_FOUNTAIN_ORNAMENT_INDICES,       0x103757,               1                                },
+    {KAOS_FOUNTAIN_ORNAMENT,               0x103757,               1                                },
     {KAOS_WALL_ORNAMENT_COORD_SETS,        0x103758,               60                               },
     {KAOS_FLOOR_ORNAMENT_COORD_SETS,       0x103794,               9                                },
     {KAOS_DOOR_ORNAMENT_COORD_SETS,        0x10379d,               12                               },
     {KAOS_DOOR_BUTTON_COORD_SETS,          0x1037a9,               1                                },
     {KAOS_PALETTE_CHANGES_D3,              0x1037aa,               64                               }, /* the D3 and D2 palette changes, then those of the door ornaments */
-    {KAOS_PLAQUE_HEIGHTS + 1,              0x1037ea,               16                               }, /* visible text plaque heights */
+    {KAOS_PLAQUE_HEIGHTS,                  0x1037ea,               16                               }, /* visible text plaque heights */
     {KAOS_OBJECT_ASPECTS,                  0x1037fa,               340                              }, /* its last 4 bytes are the first projectile aspect */
     {KAOS_PROJECTILE_ASPECTS,              0x10394a,               60                               },
     {KAOS_PALETTE_CHANGES_SMOKE,           0x103986,
@@ -119,7 +119,7 @@ const CsbCopy g_csb_copies[] = {
     {KAOS_CREATURE_REPLACEMENT_COLOR_SETS, 0x103a8a,               182                              },
     {KAOS_PALETTE_CHANGES_CREATURE_D3,     0x103b40,
      56                                                                                             }, /* the D3 and D2 creature palette changes and the creature shift sets */
-    {KAOS_REBIRTH_SCALES,                  0x103b78,               7                                }, /* rebirth step 2 scales */
+    {KAOS_REBIRTH_STEP_2_SCALES,           0x103b78,               7                                }, /* rebirth step 2 scales */
     {KAOS_REBIRTH_STEP_1_SCALES,           0x103b7f,               7                                }, /* rebirth step 1 scales */
     {KAOS_MOUSE_INPUT_ENTRANCE,            0x103c24,               60                               }, /* entrance mouse input: CSB buttons */
     {KAOS_MOUSE_INPUT_ENDGAME,             0x103c60,               24                               }, /* endgame mouse input: CSB has RESTART only */
@@ -145,7 +145,7 @@ const CsbCopy g_csb_copies[] = {
     {KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT,    0x10469c,               8                                },
     {KAOS_SYMBOL_BASE_MANA_COST,           0x1046a4,               24                               },
     {KAOS_SYMBOL_MANA_COST_MULTIPLIER,     0x1046bc,               6                                },
-    {KAOS_ACTIONS_DISABLED,                0x1049e0,
+    {KAOS_ACTION_DISABLED_TICKS,           0x1049e0,
      264                                                                                            }, /* the action tables from the disabled ticks to the skill index, 44 bytes each */
     {KAOS_ACTION_EXPERIENCE_GAIN,          0x104ae8,               44                               }, /* CSB values */
     {KAOS_PALETTE_CHANGES_ACTION_ICON,     0x104b52,               16                               },

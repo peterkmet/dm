@@ -241,7 +241,7 @@ static void read_actions(void)
     }
     for (uint32_t i = 0; i < ACTION_COUNT; i++)
         action_info[i] = (ActionInfo){
-            .disabled_ticks = kaos_u8(KAOS_ACTIONS_DISABLED + i),
+            .disabled_ticks = kaos_u8(KAOS_ACTION_DISABLED_TICKS + i),
             .damage_factor = kaos_u8(KAOS_ACTION_DAMAGE_FACTOR + i),
             .hit_probability = kaos_u8(KAOS_ACTION_HIT_PROBABILITY + i),
             .stamina = kaos_u8(KAOS_ACTION_STAMINA + i),
@@ -504,7 +504,7 @@ uint8_t tables_get_explosion_scale(int16_t depth)
 }
 uint8_t tables_get_rebirth_scale(int16_t step, int16_t coord)
 {
-    return kaos_u8((step == TABLES_REBIRTH_STEP_1 ? KAOS_REBIRTH_STEP_1_SCALES : KAOS_REBIRTH_SCALES) + coord);
+    return kaos_u8((step == TABLES_REBIRTH_STEP_1 ? KAOS_REBIRTH_STEP_1_SCALES : KAOS_REBIRTH_STEP_2_SCALES) + coord);
 }
 uint8_t tables_get_group_directions(int16_t index)
 {
@@ -530,7 +530,7 @@ uint8_t tables_get_wall_ornament_depth(int16_t view)
 }
 uint8_t tables_get_plaque_height(int16_t lines, int16_t depth)
 {
-    return kaos_u8(KAOS_PLAQUE_HEIGHTS + lines + TABLES_PLAQUE_LINES * depth);
+    return kaos_u8(KAOS_PLAQUE_HEIGHTS + (lines - 1) + TABLES_PLAQUE_LINES * depth);
 }
 uint8_t tables_get_floor_ornament_view_offset(int16_t view)
 {
@@ -542,7 +542,7 @@ uint8_t tables_get_alcove_ornament(int16_t k)
 }
 uint8_t tables_get_fountain_ornament(void)
 {
-    return kaos_u8(KAOS_FOUNTAIN_ORNAMENT_INDICES);
+    return kaos_u8(KAOS_FOUNTAIN_ORNAMENT);
 }
 uint8_t tables_get_wall_ornament_coord_set(int16_t ornament)
 {
@@ -594,7 +594,7 @@ TablesRect tables_get_layout_bitmap(int16_t slot)
 
 uint16_t tables_get_palette_color(int16_t palette, int16_t color)
 {
-    static const uint32_t first[TABLES_PALETTE_DUNGEON] = {KAOS_INITIAL_COLORMAP, KAOS_POINTER_PALETTE,
+    static const uint32_t first[TABLES_PALETTE_DUNGEON] = {KAOS_INTERFACE_PALETTE, KAOS_POINTER_PALETTE,
                                                            KAOS_CREDITS_PALETTE, KAOS_ENTRANCE_PALETTE};
     if (palette < TABLES_PALETTE_DUNGEON)
         return kaos_u16(first[palette] + 2 * color);
@@ -618,7 +618,7 @@ const uint8_t *tables_get_palette_changes(int16_t changes)
         KAOS_PALETTE_CHANGES_OBJECT_D2,
         KAOS_PALETTE_CHANGES_CREATURE_D3,
         KAOS_PALETTE_CHANGES_CREATURE_D2,
-        KAOS_INVISIBILITY_PALETTE_CHANGES,
+        KAOS_PALETTE_CHANGES_INVISIBILITY,
         KAOS_PALETTE_CHANGES_ACTION_ICON,
         KAOS_POINTER_SHADOW_COLORS,
     };
@@ -628,7 +628,7 @@ const uint8_t *tables_get_palette_changes(int16_t changes)
 /* First icon of an icon sheet. */
 int16_t tables_get_icon_sheet_first(int16_t sheet)
 {
-    return kaos_s16(KAOS_ICON_GRAPHIC_FIRST_INDEX + 2 * sheet);
+    return kaos_s16(KAOS_ICON_SHEET_FIRST_ICONS + 2 * sheet);
 }
 int16_t tables_get_slot_box_zone(int16_t slot_box)
 {

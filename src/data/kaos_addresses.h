@@ -21,7 +21,7 @@
 #define KAOS_SYMBOL_MANA_COST_MULTIPLIER 0x103c7e /* uint8_t[6], by power symbol */
 #define KAOS_SPELLS                      0x103c84 /* 25 spells, 8 bytes each */
 #define KAOS_ACTION_SETS            0x103d4c /* 44 records of 8 bytes: 3 actions, pad, 2 minimum levels, flags, pad */
-#define KAOS_ACTIONS_DISABLED       0x103eac /* ticks that each action disables the champion */
+#define KAOS_ACTION_DISABLED_TICKS  0x103eac /* ticks that each action disables the champion */
 #define KAOS_ACTION_DAMAGE_FACTOR   0x103ed8
 #define KAOS_ACTION_HIT_PROBABILITY 0x103f04
 #define KAOS_ACTION_STAMINA         0x103f30
@@ -76,7 +76,7 @@
 #define KAOS_OBJECT_SCALES                   0x102e24 /* object scale by row */
 #define KAOS_PROJECTILE_SCALES               0x102e2a /* projectile scale by row */
 #define KAOS_EXPLOSION_SCALES                0x102e32 /* explosion scale by depth */
-#define KAOS_REBIRTH_SCALES                  0x102fe8 /* rebirth step 2 scale by object coordinate set */
+#define KAOS_REBIRTH_STEP_2_SCALES           0x102fe8 /* rebirth step 2 scale by object coordinate set */
 #define KAOS_REBIRTH_STEP_1_SCALES           0x102ff0
 #define KAOS_GROUP_DIRECTIONS_PACKED         0x10192a /* the 4 directions of a group, 2 bits per creature */
 
@@ -91,10 +91,10 @@
 #define KAOS_WALL_SET_LAYOUT_IDS         0x102a22 /* int16_t[46] */
 #define KAOS_MIRRORED_WALL_LAYOUT_IDS    0x102a60 /* entries 31-45 of the wall set layout ids */
 #define KAOS_WALL_ORNAMENT_DEPTHS        0x102ba6 /* depth of each wall ornament view (0-4) */
-#define KAOS_PLAQUE_HEIGHTS              0x102c57 /* one byte before the table: a line count starts at 1 */
+#define KAOS_PLAQUE_HEIGHTS              0x102c58 /* uint8_t: the height of a plaque by line count - 1 and depth */
 #define KAOS_FLOOR_ORNAMENT_VIEW_OFFSETS 0x102bb4 /* graphic offset of each floor ornament view */
 #define KAOS_ALCOVE_ORNAMENT_INDICES     0x102bc0 /* uint8_t[3] */
-#define KAOS_FOUNTAIN_ORNAMENT_INDICES   0x102bc3 /* uint8_t[1] */
+#define KAOS_FOUNTAIN_ORNAMENT           0x102bc3 /* uint8_t[1] */
 #define KAOS_WALL_ORNAMENT_COORD_SETS    0x102bc4
 #define KAOS_FLOOR_ORNAMENT_COORD_SETS   0x102c00
 #define KAOS_DOOR_ORNAMENT_COORD_SETS    0x102c0a
@@ -108,7 +108,7 @@
 #define KAOS_LAYOUT_BITMAPS              0x1025f2 /* 14 bytes each, layout bitmap -1 - n */
 
 /* Palettes (16 colors) and palette changes (16-byte color maps). */
-#define KAOS_INITIAL_COLORMAP                 0x100170 /* interface palette */
+#define KAOS_INTERFACE_PALETTE                0x100170 /* interface palette */
 #define KAOS_POINTER_PALETTE                  0x100190
 #define KAOS_CREDITS_PALETTE                  0x100a46
 #define KAOS_ENTRANCE_PALETTE                 0x100a66
@@ -122,12 +122,12 @@
 #define KAOS_PALETTE_CHANGES_OBJECT_D2        0x102e14
 #define KAOS_PALETTE_CHANGES_CREATURE_D3      0x102fb0
 #define KAOS_PALETTE_CHANGES_CREATURE_D2      0x102fc0
-#define KAOS_INVISIBILITY_PALETTE_CHANGES     0x10247a
+#define KAOS_PALETTE_CHANGES_INVISIBILITY     0x10247a
 #define KAOS_PALETTE_CHANGES_ACTION_ICON      0x103ffa
 #define KAOS_POINTER_SHADOW_COLORS            0x1005fe
 
 /* Interface and champion panel. */
-#define KAOS_ICON_GRAPHIC_FIRST_INDEX    0x100b92 /* int16_t[7]: first icon of each icon sheet */
+#define KAOS_ICON_SHEET_FIRST_ICONS      0x100b92 /* int16_t[7]: first icon of each icon sheet */
 #define KAOS_SLOT_BOXES                  0x100bb0 /* 46 records of 4 bytes: zone, current icon */
 #define KAOS_SLOT_BOX_BORDER             0x102956
 #define KAOS_CHAMPION_ICON_WIDTH         0x10295c
