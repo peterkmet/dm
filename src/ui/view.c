@@ -249,11 +249,34 @@ typedef struct {
     int16_t graphic, coord; /* first graphic, coordinate set */
 } Ornament;
 
+/* A wall set bitmap: a graphic, or a layout slot of the wall set. */
+typedef struct {
+    int16_t graphic; /* graphic id, -1 when slot is set */
+    int16_t slot;    /* LAYOUT_* slot, -1 when graphic is set */
+} WallBitmap;
+
+/* The aspect of a thing in flight: an object aspect, or a projectile aspect. */
+typedef struct {
+    bool projectile;
+    int16_t index;
+} ProjectileAspect;
+
+/* A bitmap at a scale: a cached graphic, or an owned copy. */
+typedef struct {
+    const Bitmap *bitmap; /* the cached graphic, NULL when it is missing or own holds the scaled copy */
+    Bitmap own;           /* own.px owns the scaled pixels, NULL when bitmap is the cached graphic */
+} ScaledBitmap;
+
+/* The map, square and direction of the projectile tracks. */
+typedef struct {
+    int16_t map, x, y, dir;
+} ViewPosition;
+
 /* The state of the dungeon view: the loaded map, its graphics, and the palettes. */
 typedef struct {
     Bitmap viewport;                     /* the dungeon view bitmap */
     int16_t map, map_width, map_height;  /* the loaded map, -1 none, and its size */
-    int16_t wall_set_ids[WS_COUNT];      /* layout ids of the wall set, swapped for mirrored views */
+    WallBitmap wall_set[WS_COUNT];       /* bitmaps of the wall set, swapped for mirrored views */
     int16_t slot_graphics[LAYOUT_SLOTS]; /* graphic of each layout bitmap slot */
     bool slot_flip[LAYOUT_SLOTS];        /* the slot holds the mirrored graphic */
     Ornament wall_ornaments[MAP_ORNAMENTS];
@@ -299,9 +322,11 @@ typedef struct {
 static struct {
     ProjectileTrack tracks[PROJECTILE_TRACK_COUNT], last_tracks[PROJECTILE_TRACK_COUNT];
     int track_count, last_track_count;
-    int32_t track_view;                /* map, position, and direction of the tracks */
+    ViewPosition track_view;           /* map, position, and direction of the tracks */
     int16_t motion_step, motion_steps; /* the frame between two ticks; 0 steps: a tick view */
-} flight = {.track_view = -1};
+} flight = {
+    .track_view = {-1, -1, -1, -1}
+};
 bool g_do_not_draw_fluxcages;
 Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
 uint16_t g_pile_top_objects[VIEW_CLICK_BOX_WALL];
@@ -463,18 +488,29 @@ static void get_square_aspect(Aspect *aspect, int16_t dir, int16_t x, int16_t y)
     aspect->first_thing = scan == SCAN_FAKE_WALL && g_party_map_x != x && g_party_map_y != y ? THING_ENDOFLIST : thing;
 }
 
-/* draw_wall_set_bitmap and its _opaque and _flipped variants: a graphic (bitmap_id >= 0) or a layout bitmap
-   slot (bitmap_id < 0) at zone. */
-static void draw_wall_bitmap(int16_t bitmap_id, int16_t zone, int mode)
+/* The layout slot of a LAYOUT_* id (the ids count down from -1). */
+static int16_t get_layout_slot(int16_t layout_id)
 {
-    int16_t graphic = bitmap_id;
+    return -1 - layout_id;
+}
+
+/* The wall set bitmap of a graphic (id >= 0) or of a LAYOUT_* id (id < 0). */
+static WallBitmap get_wall_bitmap(int16_t id)
+{
+    return id < 0 ? (WallBitmap){-1, get_layout_slot(id)} : (WallBitmap){id, -1};
+}
+
+/* draw_wall_set_bitmap and its _opaque and _flipped variants: a graphic or a layout bitmap slot at zone. */
+static void draw_wall_bitmap(WallBitmap bitmap, int16_t zone, int mode)
+{
+    int16_t graphic = bitmap.graphic;
     int16_t flip = mode == BLIT_FLIPPED ? FLIP_H : 0;
     int16_t sx = 0;
     int16_t sy = 0;
     int16_t width = 0;
     int16_t height = 0;
-    if (bitmap_id < 0) { /* the slot gives the graphic and the source rectangle */
-        int16_t slot = -1 - bitmap_id;
+    if (bitmap.slot >= 0) { /* the slot gives the graphic and the source rectangle */
+        int16_t slot = bitmap.slot;
         Box slot_rect = tables_get_layout_bitmap(slot);
         graphic = view.slot_graphics[slot];
         flip ^= view.slot_flip[slot] ? FLIP_H : 0;
@@ -609,19 +645,33 @@ static bool blit_in_zone(const Bitmap *bm, Bitmap *dst, const ZoneBlit *blit, Bo
 #define EXPLOSION_FILL_FIRST_UNIT_RANGE 0x3f
 #define EXPLOSION_FILL_TRANSPARENT      (FILL_NO_MASK | TRANSPARENT_COLOR)
 
-/* The bitmap of graphic g at scale/32 with palette changes; the native bitmap at full scale without
-   changes. Mirroring happens at blit time. Free out->px after use. */
-static const Bitmap *get_shrunk_bitmap(int16_t g, int16_t scale, const uint8_t *pal, Bitmap *out)
+/* The bitmap of graphic g at scale_x/32 by scale_y/32 with palette changes; the native bitmap at full scale
+   without changes. Mirroring happens at blit time. */
+static ScaledBitmap get_scaled(int16_t graphic, int16_t scale_x, int16_t scale_y, const uint8_t *palette_changes)
 {
-    const Bitmap *bm = gfx_get_bitmap(g);
-    *out = (Bitmap){0};
-    if (!bm || (scale == SCALE_NATIVE && !pal))
-        return bm;
+    ScaledBitmap s = {gfx_get_bitmap(graphic), {0}};
+    if (!s.bitmap || (scale_x == SCALE_NATIVE && scale_y == SCALE_NATIVE && !palette_changes))
+        return s;
     /* 16-bit sizes as in the original */
-    if (draw_shrink(bm, (int16_t)((scale >> 1) + bm->w * scale) >> SCALE_SHIFT,
-                    (int16_t)((scale >> 1) + bm->h * scale) >> SCALE_SHIFT, pal, out))
-        return NULL;
-    return out;
+    if (draw_shrink(s.bitmap, (int16_t)((scale_x >> 1) + s.bitmap->w * scale_x) >> SCALE_SHIFT,
+                    (int16_t)((scale_y >> 1) + s.bitmap->h * scale_y) >> SCALE_SHIFT, palette_changes, &s.own))
+        s.bitmap = NULL;
+    else
+        s.bitmap = NULL;
+    return s;
+}
+
+/* The bitmap to draw: the scaled copy, else the cached graphic; NULL when the graphic is missing. */
+static const Bitmap *scaled_bitmap_get(const ScaledBitmap *s)
+{
+    return s->own.px ? &s->own : s->bitmap;
+}
+
+/* Frees the scaled copy of s, if it owns one. */
+static void scaled_bitmap_free(ScaledBitmap *s)
+{
+    free(s->own.px);
+    s->own.px = NULL;
 }
 
 /* Palette changes of objects and projectiles: none near, then the D2 and D3 tables. */
@@ -637,31 +687,31 @@ static int16_t get_object_aspect(uint16_t thing)
     return tables_get_object_info(inventory_get_object_info_index(thing))->aspect_index;
 }
 
-/* The object aspect of a flying thing, or minus its projectile aspect. */
-static int16_t get_projectile_aspect(uint16_t thing)
+/* The object aspect of a flying thing, or its projectile aspect. */
+static ProjectileAspect get_projectile_aspect(uint16_t thing)
 {
     if (THING_TYPE(thing) == THING_EXPLOSION) {
         switch (thing - EXPLOSION_THING_BASE) {
         case EXPLOSION_FIREBALL:
-            return -PROJECTILE_ASPECT_FIREBALL;
+            return (ProjectileAspect){true, PROJECTILE_ASPECT_FIREBALL};
         case EXPLOSION_SLIME:
-            return -PROJECTILE_ASPECT_SLIME;
+            return (ProjectileAspect){true, PROJECTILE_ASPECT_SLIME};
         case EXPLOSION_LIGHTNING_BOLT:
-            return -PROJECTILE_ASPECT_LIGHTNING;
+            return (ProjectileAspect){true, PROJECTILE_ASPECT_LIGHTNING};
         case EXPLOSION_POISON_BOLT:
         case EXPLOSION_POISON_CLOUD:
-            return -PROJECTILE_ASPECT_POISON;
+            return (ProjectileAspect){true, PROJECTILE_ASPECT_POISON};
         default:
-            return -PROJECTILE_ASPECT_SPELL;
+            return (ProjectileAspect){true, PROJECTILE_ASPECT_SPELL};
         }
     }
     if (THING_TYPE(thing) == THING_WEAPON) {
         int16_t aspect = tables_get_weapon_info(rec_weapon_type(thing))->attributes >> WEAPON_PROJECTILE_ASPECT_SHIFT &
                          WEAPON_PROJECTILE_ASPECT_MASK;
         if (aspect)
-            return -aspect;
+            return (ProjectileAspect){true, aspect};
     }
-    return get_object_aspect(thing);
+    return (ProjectileAspect){false, get_object_aspect(thing)};
 }
 
 /* The pile box of a near object grows by the drawn box; a single object gets at least
@@ -729,15 +779,15 @@ static void draw_object(const SquareDraw *sq, uint16_t thing, int16_t aspect_ind
     int flip = (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_FLIP_ON_RIGHT) && !alcove_graphic &&
                (lane >= 1 || (lane == 0 && (cell == VIEW_CELL_BACK_RIGHT || cell == VIEW_CELL_FRONT_RIGHT)));
     ZoneBlit blit = {spot->zone, flip ? FLIP_H : 0, TRANSPARENT_COLOR, spot->place};
-    Bitmap own;
-    const Bitmap *bitmap;
+    ScaledBitmap scaled;
     if (sq->depth == DEPTH_D0)
-        bitmap = get_shrunk_bitmap(graphic, SCALE_NATIVE, NULL, &own);
+        scaled = get_scaled(graphic, SCALE_NATIVE, SCALE_NATIVE, NULL);
     else {
         int16_t row =
             sq->depth * 2 - 1 - (cell == VIEW_CELL_CENTER ? 1 : cell >> 1); /* front cells count as one row nearer */
         distance = (row + 1) >> 1;
-        bitmap = get_shrunk_bitmap(graphic, tables_get_object_scale(row), get_object_palette_changes(distance), &own);
+        int16_t scale = tables_get_object_scale(row);
+        scaled = get_scaled(graphic, scale, scale, get_object_palette_changes(distance));
     }
     if (pile) {
         blit.zone = ZONE_SHIFTED | (spot->alcove ? ZONE_ALCOVE_OBJECT_FIRST + sq->coord +
@@ -752,12 +802,12 @@ static void draw_object(const SquareDraw *sq, uint16_t thing, int16_t aspect_ind
             *pile = PILE_ALCOVE_FIRST;
     }
     Box box;
-    bool drew = blit_in_zone(bitmap, &view.viewport, &blit, &box);
+    bool drew = blit_in_zone(scaled_bitmap_get(&scaled), &view.viewport, &blit, &box);
     if (drew && spot->drawn)
         *spot->drawn = box;
     if (drew && pile && distance == 0 && lane == 0)
         add_clickable_object(spot->alcove ? VIEW_CLICK_BOX_ALCOVE : cell, thing, &box);
-    free(own.px);
+    scaled_bitmap_free(&scaled);
 }
 
 /* A creature group as the view sees it: on the party map the active group, otherwise the group record
@@ -848,15 +898,15 @@ static void draw_creature(const SquareDraw *sq, const ViewGroup *group, uint8_t 
     bool flip = (side && facing == FACING_LEFT) || (attack && (look & ASPECT_FLIPPED)) ||
                 (special_d2 && (info & GRAPHIC_D2_FRONT_FLIPPED)) || front_flip;
     int16_t transparent = group->aspect[CREATURE_ASPECT_COORD] & CREATURE_ASPECT_TRANSPARENT;
-    Bitmap own;
-    const Bitmap *bitmap;
+    ScaledBitmap scaled;
     if (depth < DEPTH_D2)
-        bitmap = get_shrunk_bitmap(graphic, SCALE_NATIVE, NULL, &own);
+        scaled = get_scaled(graphic, SCALE_NATIVE, SCALE_NATIVE, NULL);
     else {
         const uint8_t *pal = depth == DEPTH_D2 ? view.creature_palette_changes_d2 : view.creature_palette_changes_d3;
         distance = depth == DEPTH_D2 ? 1 : 2;
         transparent = pal[transparent];
-        bitmap = get_shrunk_bitmap(graphic, depth == DEPTH_D2 ? SCALE_D2 : SCALE_D3, pal, &own);
+        int16_t scale = depth == DEPTH_D2 ? SCALE_D2 : SCALE_D3;
+        scaled = get_scaled(graphic, scale, scale, pal);
     }
     Placement place = {
         .zone_dx = tables_get_creature_shift(distance, look & ASPECT_OFFSET_MASK),
@@ -865,8 +915,9 @@ static void draw_creature(const SquareDraw *sq, const ViewGroup *group, uint8_t 
     int16_t set = group->aspect[CREATURE_ASPECT_COORD] >> CREATURE_ASPECT_COORD_SHIFT;
     int16_t zone =
         ZONE_SHIFTED | (ZONE_CREATURE_FIRST + set * ZONE_CREATURE_SET + coord * ZONE_CREATURE_POSITIONS + pos);
-    blit_in_zone(bitmap, &view.viewport, &(ZoneBlit){zone, flip, transparent, place}, NULL);
-    free(own.px);
+    blit_in_zone(scaled_bitmap_get(&scaled), &view.viewport, &(ZoneBlit){zone, flip ? FLIP_H : 0, transparent, place},
+                 NULL);
+    scaled_bitmap_free(&scaled);
 }
 
 /* The creatures of the group in view cell sq->cell (map cell sq->map_cell). rest holds the cells still to draw,
@@ -933,8 +984,10 @@ static bool draw_creatures_in_cell(const SquareDraw *sq, const ViewGroup *group,
 /* A tick view starts new tracks; the old tracks stay when the party still looks from the same place. */
 static void start_tracks(int16_t dir, int16_t x, int16_t y)
 {
-    int32_t place = ((((int32_t)view.map << MAP_COORD_SHIFT | x) << MAP_COORD_SHIFT | y) << DIRECTION_SHIFT) | dir;
-    flight.last_track_count = place == flight.track_view ? flight.track_count : 0;
+    ViewPosition place = {view.map, x, y, dir};
+    bool same = place.map == flight.track_view.map && place.x == flight.track_view.x &&
+                place.y == flight.track_view.y && place.dir == flight.track_view.dir;
+    flight.last_track_count = same ? flight.track_count : 0;
     memcpy(flight.last_tracks, flight.tracks, sizeof flight.tracks[0] * (size_t)flight.last_track_count);
     flight.track_count = 0;
     flight.track_view = place;
@@ -1040,15 +1093,15 @@ static void draw_projectile(const SquareDraw *sq, uint16_t thing)
     int16_t cell = sq->cell;
     int16_t depth = sq->depth;
     int16_t zone = ZONE_PROJECTILE_FIRST + sq->coord * ZONE_OBJECT_CELLS + cell;
-    int16_t aspect_index = get_projectile_aspect(rec_projectile_slot(thing));
-    if (aspect_index >= 0) {
+    ProjectileAspect flight_aspect = get_projectile_aspect(rec_projectile_slot(thing));
+    if (!flight_aspect.projectile) {
         Box drawn = {0};
-        draw_object(sq, thing, aspect_index,
+        draw_object(sq, thing, flight_aspect.index,
                     &(ObjectSpot){.zone = zone, .place = begin_projectile(thing), .drawn = &drawn});
         end_projectile(thing, drawn.w > 0, &drawn);
         return;
     }
-    const uint8_t *aspect = tables_get_projectile_aspect(-aspect_index);
+    const uint8_t *aspect = tables_get_projectile_aspect(flight_aspect.index);
     int16_t by_energy = aspect[PROJECTILE_ASPECT_SCALE_FLAGS] & PROJECTILE_SCALE_WITH_ENERGY;
     int16_t scale = SCALE_NATIVE;
     int16_t row = 0;
@@ -1062,14 +1115,13 @@ static void draw_projectile(const SquareDraw *sq, uint16_t thing)
     }
     ProjectilePose pose = get_projectile_pose(sq, aspect, thing);
     int16_t distance = row >> 1 == 2 ? 1 : row >> 1 == 3 ? 2 : 0; /* D2 or D3 palette changes */
-    Bitmap own;
-    const Bitmap *bm = get_shrunk_bitmap(GFX_PROJECTILE_FIRST + aspect[PROJECTILE_ASPECT_GRAPHIC] + pose.pose, scale,
-                                         scale == SCALE_NATIVE ? NULL : get_object_palette_changes(distance), &own);
+    ScaledBitmap scaled = get_scaled(GFX_PROJECTILE_FIRST + aspect[PROJECTILE_ASPECT_GRAPHIC] + pose.pose, scale, scale,
+                                     scale == SCALE_NATIVE ? NULL : get_object_palette_changes(distance));
     Box drawn;
-    bool drew = blit_in_zone(bm, &view.viewport,
+    bool drew = blit_in_zone(scaled_bitmap_get(&scaled), &view.viewport,
                              &(ZoneBlit){zone, pose.flip, TRANSPARENT_COLOR, begin_projectile(thing)}, &drawn);
     end_projectile(thing, drew, &drawn);
-    free(own.px);
+    scaled_bitmap_free(&scaled);
 }
 
 /* A teleporter field or fluxcage: the pattern graphic through the mask graphic at zone, with a random
@@ -1098,12 +1150,11 @@ static void draw_field(const uint8_t *aspect, int16_t zone)
 }
 
 /* An explosion of aspect at scale, recolored for smoke. */
-static const Bitmap *get_explosion_bitmap(int16_t aspect, int16_t scale, Bitmap *own)
+static ScaledBitmap get_explosion_bitmap(int16_t aspect, int16_t scale)
 {
     scale = bounded_value(SCALE_EXPLOSION_MIN, scale & ~1, SCALE_NATIVE);
-    return get_shrunk_bitmap(GFX_EXPLOSION_FIRST + min16(aspect, EXPLOSION_ASPECT_POISON), scale,
-                             aspect == EXPLOSION_ASPECT_SMOKE ? tables_get_palette_changes(TABLES_CHANGES_SMOKE) : NULL,
-                             own);
+    return get_scaled(GFX_EXPLOSION_FIRST + min16(aspect, EXPLOSION_ASPECT_POISON), scale, scale,
+                      aspect == EXPLOSION_ASPECT_SMOKE ? tables_get_palette_changes(TABLES_CHANGES_SMOKE) : NULL);
 }
 
 /* An explosion on the party square fills the whole viewport with its pattern. */
@@ -1153,13 +1204,13 @@ static int16_t get_explosion_aspect(int16_t type)
 /* The first step of a vi altar rebirth: the back pose of the lightning projectile. */
 static void draw_rebirth_step_1(int16_t coord, int16_t flip)
 {
-    Bitmap own = {0};
     int16_t scale = tables_get_rebirth_scale(TABLES_REBIRTH_STEP_1, coord);
     int16_t g = GFX_PROJECTILE_FIRST +
                 tables_get_projectile_aspect(PROJECTILE_ASPECT_LIGHTNING)[PROJECTILE_ASPECT_GRAPHIC] + POSE_BACK;
-    blit_in_zone(get_shrunk_bitmap(g, scale, NULL, &own), &view.viewport,
+    ScaledBitmap scaled = get_scaled(g, scale, scale, NULL);
+    blit_in_zone(scaled_bitmap_get(&scaled), &view.viewport,
                  &(ZoneBlit){ZONE_REBIRTH_STEP1_FIRST + coord, flip, TRANSPARENT_COLOR, {0}}, NULL);
-    free(own.px);
+    scaled_bitmap_free(&scaled);
 }
 
 /* A fluxcage: the field of the square with the pattern after the teleporter pattern. */
@@ -1203,7 +1254,6 @@ static void draw_explosions(const SquareDraw *sq, uint16_t first)
             continue;
         }
         int16_t aspect = get_explosion_aspect(type);
-        Bitmap own = {0};
         if (explosion_coord < 0)
             continue;
         if (sq->view_square == VIEW_SQUARE_D0C) {
@@ -1222,9 +1272,9 @@ static void draw_explosions(const SquareDraw *sq, uint16_t first)
                               tables_get_explosion_scale(depth)) >>
                     8; /* 16-bit product as in the original */
         }
-        blit_in_zone(get_explosion_bitmap(aspect, scale, &own), &view.viewport,
-                     &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, {0}}, NULL);
-        free(own.px);
+        ScaledBitmap scaled = get_explosion_bitmap(aspect, scale);
+        blit_in_zone(scaled_bitmap_get(&scaled), &view.viewport, &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, {0}}, NULL);
+        scaled_bitmap_free(&scaled);
     }
     if (fluxcage && field_index >= 0 && sq->pass != DOOR_PASS_BACK && !g_do_not_draw_fluxcages)
         draw_fluxcage(field_index);
@@ -1331,23 +1381,13 @@ static void draw_teleporter_field(int16_t view_square, int16_t zone)
     draw_field(tables_get_field_aspect(tables_get_view_square(view_square).field_aspect), zone);
 }
 
-/* The shrink of get_scaled_flipped_bitmap: scale/32 per axis. out->px is NULL on failure. */
-static void get_scaled_bitmap(int16_t g, int16_t scale_x, int16_t scale_y, const uint8_t *palette_changes, Bitmap *out)
-{
-    const Bitmap *bm = gfx_get_bitmap(g);
-    *out = (Bitmap){0};
-    if (bm) /* 16-bit sizes as in the original */
-        draw_shrink(bm, (int16_t)((scale_x >> 1) + bm->w * scale_x) >> SCALE_SHIFT,
-                    (int16_t)((scale_y >> 1) + bm->h * scale_y) >> SCALE_SHIFT, palette_changes, out);
-}
-
 /* The inscription of the D1C wall: the blank wall, then the glyphs of each text line. */
 static void draw_wall_text(const uint8_t *text)
 {
     const Bitmap *font = gfx_get_bitmap(GFX_WALL_TEXT_FONT);
     int16_t glyph_w = tables_get_glyph_width();
     int16_t glyph_h = tables_get_glyph_height();
-    draw_wall_bitmap(LAYOUT_INSCRIPTION_WALL, ZONE_INSCRIPTION_WALL_D1C, BLIT_TRANSPARENT);
+    draw_wall_bitmap(get_wall_bitmap(LAYOUT_INSCRIPTION_WALL), ZONE_INSCRIPTION_WALL_D1C, BLIT_TRANSPARENT);
     for (int16_t line = 0; font; line++) {
         int16_t n = 0;
         while (text[n] < WALL_TEXT_NEW_LINE)
@@ -1404,19 +1444,18 @@ static bool draw_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspec
         g_facing_vi_altar = i == view.vi_altar;
         g_facing_fountain = i == view.fountain;
     }
-    Bitmap own = {0};
+    ScaledBitmap scaled = {0};
     const Bitmap *bitmap;
     if (wall_view < VIEW_WALL_D1L_RIGHT) { /* D3 and D2: scaled and recolored */
         if (wall_view <= VIEW_WALL_D3R2_LEFT)
-            get_scaled_bitmap(graphic, SCALE_D3_FAR_SIDE_W, SCALE_D3, tables_get_palette_changes(TABLES_CHANGES_D3),
-                              &own);
+            scaled = get_scaled(graphic, SCALE_D3_FAR_SIDE_W, SCALE_D3, tables_get_palette_changes(TABLES_CHANGES_D3));
         else if (wall_view <= VIEW_WALL_D3R_FRONT)
-            get_scaled_bitmap(graphic, SCALE_D3, SCALE_D3, tables_get_palette_changes(TABLES_CHANGES_D3), &own);
+            scaled = get_scaled(graphic, SCALE_D3, SCALE_D3, tables_get_palette_changes(TABLES_CHANGES_D3));
         else
-            get_scaled_bitmap(graphic, SCALE_D2, SCALE_D2, tables_get_palette_changes(TABLES_CHANGES_D2), &own);
-        if (!own.px)
+            scaled = get_scaled(graphic, SCALE_D2, SCALE_D2, tables_get_palette_changes(TABLES_CHANGES_D2));
+        if (!scaled.own.px)
             return alcove;
-        bitmap = &own;
+        bitmap = scaled_bitmap_get(&scaled);
     } else
         bitmap = gfx_get_bitmap(graphic);
     Placement place = {0};
@@ -1437,7 +1476,7 @@ static bool draw_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspec
         g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn;
     if (wall_view == VIEW_WALL_D1C_FRONT && aspect->portrait >= 0)
         draw_wall_portrait(aspect->portrait);
-    free(own.px);
+    scaled_bitmap_free(&scaled);
     return alcove;
 }
 
@@ -1451,7 +1490,7 @@ static void draw_floor_ornament(int16_t i, int16_t floor_view)
     bool flip = right || (i == FLOOR_ORNAMENT_FOOTPRINTS && view.use_flipped_walls && center);
     int16_t zone = ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * view.floor_ornaments[i].coord + floor_view;
     blit_in_zone(gfx_get_bitmap(view.floor_ornaments[i].graphic + tables_get_floor_ornament_offset(floor_view)),
-                 &view.viewport, &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, {0}}, NULL);
+                 &view.viewport, &(ZoneBlit){zone, flip ? FLIP_H : 0, TRANSPARENT_COLOR, {0}}, NULL);
 }
 
 /* An ornament or mask on the door bitmap, scaled for D3 and D2. */
@@ -1462,39 +1501,36 @@ static void draw_door_ornament(int16_t i, int16_t depth, Bitmap *door)
     const Ornament *o = &view.door_ornaments[i];
     int16_t zone = ZONE_DOOR_ORNAMENT_FIRST + ZONE_DOOR_ORNAMENT_DEPTHS * o->coord + depth;
     const ZoneBlit blit = {zone, 0, DOOR_ORNAMENT_TRANSPARENT, {0}};
-    Bitmap own = {0};
     if (depth == DOOR_DEPTH_D1)
         blit_in_zone(gfx_get_bitmap(o->graphic), door, &blit, NULL);
     else {
         int16_t scale = depth == DOOR_DEPTH_D2 ? SCALE_D2 : SCALE_D3;
-        get_scaled_bitmap(o->graphic, scale, scale,
-                          tables_get_palette_changes(depth == DOOR_DEPTH_D2 ? TABLES_CHANGES_DOOR_ORNAMENT_D2
-                                                                            : TABLES_CHANGES_DOOR_ORNAMENT_D3),
-                          &own);
-        if (own.px)
-            blit_in_zone(&own, door, &blit, NULL);
+        ScaledBitmap scaled =
+            get_scaled(o->graphic, scale, scale,
+                       tables_get_palette_changes(depth == DOOR_DEPTH_D2 ? TABLES_CHANGES_DOOR_ORNAMENT_D2
+                                                                         : TABLES_CHANGES_DOOR_ORNAMENT_D3));
+        if (scaled.own.px)
+            blit_in_zone(&scaled.own, door, &blit, NULL);
+        scaled_bitmap_free(&scaled);
     }
-    free(own.px);
 }
 
 /* The button beside a door. The D1C button is clickable. */
 static void draw_door_button(int16_t button)
 {
-    Bitmap own = {0};
-    const Bitmap *bm = gfx_get_bitmap(GFX_DOOR_BUTTON);
+    ScaledBitmap scaled = {gfx_get_bitmap(GFX_DOOR_BUTTON), {0}};
     if (button != BUTTON_D1C) {
         int16_t scale = button == BUTTON_D2C ? SCALE_D2 : SCALE_D3;
-        get_scaled_bitmap(GFX_DOOR_BUTTON, scale, scale,
-                          tables_get_palette_changes(button == BUTTON_D2C ? TABLES_CHANGES_D2 : TABLES_CHANGES_D3),
-                          &own);
-        bm = &own;
+        scaled = get_scaled(GFX_DOOR_BUTTON, scale, scale,
+                            tables_get_palette_changes(button == BUTTON_D2C ? TABLES_CHANGES_D2 : TABLES_CHANGES_D3));
     }
+    const Bitmap *bm = scaled_bitmap_get(&scaled);
     int16_t zone = ZONE_DOOR_BUTTON_FIRST + tables_get_door_button_coords() + button;
     Box drawn;
     if (bm && bm->px && blit_in_zone(bm, &view.viewport, &(ZoneBlit){zone, 0, TRANSPARENT_COLOR, {0}}, &drawn) &&
         button == BUTTON_D1C)
         g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn;
-    free(own.px);
+    scaled_bitmap_free(&scaled);
 }
 
 /* A copy of the door graphic with its ornaments, placed by the door state. A door that does not
@@ -1541,14 +1577,14 @@ static void draw_ceiling_pit(int16_t graphic, int16_t zone, int16_t x, int16_t y
     Position above = map_get_level_change_location((Position){view.map, x, y}, LEVEL_UP);
     if (above.map >= 0 && rec_square_type(rec_square_byte(above.map, above.x, above.y)) == SQUARE_PIT &&
         rec_square_byte(above.map, above.x, above.y) & PIT_OPEN)
-        draw_wall_bitmap(graphic, zone, mode);
+        draw_wall_bitmap(get_wall_bitmap(graphic), zone, mode);
 }
 
 /* The front of a staircase: the up or down graphic at the up or down zone. */
 static void draw_stairs_front(bool up, int16_t graphic, int16_t up_zone, int mode)
 {
-    draw_wall_bitmap(view.stairs + graphic + (up ? 0 : STAIRS_DOWN), up ? up_zone : up_zone + ZONE_STAIRS_DOWN_DELTA,
-                     mode);
+    draw_wall_bitmap(get_wall_bitmap(view.stairs + graphic + (up ? 0 : STAIRS_DOWN)),
+                     up ? up_zone : up_zone + ZONE_STAIRS_DOWN_DELTA, mode);
 }
 
 #define DRAWN_SQUARE_COUNT 16 /* the squares that the view draws, and the D4 squares with objects */
@@ -1571,7 +1607,7 @@ static void draw_stairs_front(bool up, int16_t graphic, int16_t up_zone, int mod
 #define SQ_STAIRS_LAYOUT_IDS  0x4 /* the stairs front graphics are layout ids, not stairs graphics */
 #define SQ_FRONT              0x8 /* the square ahead: sets g_square_ahead_element and the facing flags */
 
-/* One wall set bitmap: wall_set_ids index, zone, and BLIT_* mode. */
+/* One wall set bitmap: wall_set index, zone, and BLIT_* mode. */
 typedef struct {
     int16_t ws, zone;
     uint8_t mode;
@@ -1961,23 +1997,23 @@ static const SquareView square_views[DRAWN_SQUARE_COUNT] = {
 /* A wall set bitmap of a square. */
 static void draw_wall_part(const WallPart *part)
 {
-    draw_wall_bitmap(view.wall_set_ids[part->ws], part->zone, part->mode);
+    draw_wall_bitmap(view.wall_set[part->ws], part->zone, part->mode);
 }
 
 /* The pit of a square, open or invisible. */
 static void draw_square_pit(const SquareView *s, bool invisible)
 {
     if (s->invisible_pit >= 0 || !invisible)
-        draw_wall_bitmap(invisible ? s->invisible_pit : s->pit, s->pit_zone, s->mirror);
+        draw_wall_bitmap(get_wall_bitmap(invisible ? s->invisible_pit : s->pit), s->pit_zone, s->mirror);
 }
 
 /* The side of a staircase beside the party's line: on D1 the up or the down graphic. */
 static void draw_square_stairs_side(const SquareView *s, bool up)
 {
     if (s->stairs_side_down >= 0 && !up)
-        draw_wall_bitmap(view.stairs + s->stairs_side_down, s->stairs_side_down_zone, s->mirror);
+        draw_wall_bitmap(get_wall_bitmap(view.stairs + s->stairs_side_down), s->stairs_side_down_zone, s->mirror);
     else if (s->stairs_side >= 0)
-        draw_wall_bitmap(view.stairs + s->stairs_side, s->stairs_side_zone, s->mirror);
+        draw_wall_bitmap(get_wall_bitmap(view.stairs + s->stairs_side), s->stairs_side_zone, s->mirror);
 }
 
 /* The hole of an open pit above the square, if the square shows one. */
@@ -2026,7 +2062,7 @@ static void draw_square_door_front(const SquareView *s, const Aspect *a, int16_t
 static void draw_square_stairs_front(const SquareView *s, bool up)
 {
     if (s->flags & SQ_STAIRS_LAYOUT_IDS)
-        draw_wall_bitmap(up ? s->stairs_front : s->stairs_front_down,
+        draw_wall_bitmap(get_wall_bitmap(up ? s->stairs_front : s->stairs_front_down),
                          up ? s->stairs_front_zone : s->stairs_front_zone + ZONE_STAIRS_DOWN_DELTA, s->mirror);
     else
         draw_stairs_front(up, s->stairs_front, s->stairs_front_zone, s->mirror);
@@ -2152,12 +2188,12 @@ static void set_creature_replacement_colors(int16_t color, int16_t n)
 static void reset_wall_set_ids(void)
 {
     for (int i = 0; i < WS_COUNT; i++)
-        view.wall_set_ids[i] = tables_get_wall_layout_id(i);
+        view.wall_set[i] = get_wall_bitmap(tables_get_wall_layout_id(i));
 }
 
 static int16_t get_wall_set_slot(int entry)
 {
-    return -1 - view.wall_set_ids[entry];
+    return view.wall_set[entry].slot;
 }
 
 static void set_slot(int entry, int16_t graphic, bool flip)
@@ -2196,14 +2232,16 @@ static void load_wall_set(int16_t floor_set, int16_t wall_set)
     set_slot(WS_DOOR_FRAME_TOP_D1L, first + WALLSET_DOOR_FRAME_TOP_D1, false);
     set_slot(WS_DOOR_FRAME_RIGHT_D3L, first + WALLSET_DOOR_FRAME_D3_SIDE, false);
     set_slot(WS_DOOR_FRAME_LEFT_D3R, first + WALLSET_DOOR_FRAME_D3_SIDE, false);
-    view.slot_graphics[-1 - LAYOUT_INSCRIPTION_WALL] = view.slot_graphics[get_wall_set_slot(WS_WALL_D1C)];
+    view.slot_graphics[get_layout_slot(LAYOUT_INSCRIPTION_WALL)] = view.slot_graphics[get_wall_set_slot(WS_WALL_D1C)];
     for (int i = 0; i < WALL_COUNT; i++)
         set_slot(WS_MIRRORED_WALL_FIRST + i, view.slot_graphics[get_wall_set_slot(mirrored_walls[i])], true);
     view.stairs = first + WALLSET_STAIRS_FIRST;
-    view.slot_graphics[-1 - LAYOUT_STAIRS_UP_FRONT_D3R2] = view.stairs + STAIRS_FRONT_D3L;
-    view.slot_graphics[-1 - LAYOUT_STAIRS_UP_FRONT_D3L2] = view.slot_graphics[-1 - LAYOUT_STAIRS_UP_FRONT_D3R2];
-    view.slot_graphics[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3R2] = view.stairs + STAIRS_FRONT_D3L + STAIRS_DOWN;
-    view.slot_graphics[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3L2] = view.slot_graphics[-1 - LAYOUT_STAIRS_DOWN_FRONT_D3R2];
+    view.slot_graphics[get_layout_slot(LAYOUT_STAIRS_UP_FRONT_D3R2)] = view.stairs + STAIRS_FRONT_D3L;
+    view.slot_graphics[get_layout_slot(LAYOUT_STAIRS_UP_FRONT_D3L2)] =
+        view.slot_graphics[get_layout_slot(LAYOUT_STAIRS_UP_FRONT_D3R2)];
+    view.slot_graphics[get_layout_slot(LAYOUT_STAIRS_DOWN_FRONT_D3R2)] = view.stairs + STAIRS_FRONT_D3L + STAIRS_DOWN;
+    view.slot_graphics[get_layout_slot(LAYOUT_STAIRS_DOWN_FRONT_D3L2)] =
+        view.slot_graphics[get_layout_slot(LAYOUT_STAIRS_DOWN_FRONT_D3R2)];
 }
 
 /* The door graphics and door info of the two door types of map m. */
@@ -2417,22 +2455,22 @@ static bool has_map_footprints(const Aspect *a, int16_t x, int16_t y)
 static int16_t get_map_projectile_tile(uint16_t projectile, int16_t dir)
 {
     uint16_t slot = rec_projectile_slot(projectile);
-    switch (get_projectile_aspect(slot)) {
-    case -PROJECTILE_ASPECT_FIREBALL:
+    ProjectileAspect flying = get_projectile_aspect(slot);
+    switch (flying.projectile ? flying.index : -1) {
+    case PROJECTILE_ASPECT_FIREBALL:
         return MAP_TILE_FIREBALL_FIRST;
-    case -PROJECTILE_ASPECT_SPELL:
+    case PROJECTILE_ASPECT_SPELL:
         return MAP_TILE_SPELL_FIRST;
-    case -PROJECTILE_ASPECT_POISON:
+    case PROJECTILE_ASPECT_POISON:
         return MAP_TILE_POISON_FIRST;
-    case -PROJECTILE_ASPECT_SLIME:
+    case PROJECTILE_ASPECT_SLIME:
         return MAP_TILE_SLIME_FIRST;
-    case -PROJECTILE_ASPECT_LIGHTNING: {
+    case PROJECTILE_ASPECT_LIGHTNING: {
         return MAP_TILE_LIGHTNING_FIRST +
                ((projectile_get_flight_direction(projectile) & 1) != (dir & 1) ? MAP_TILE_LIGHTNING_ACROSS : 0);
     }
     }
-    return get_projectile_aspect(slot) >= 0 && object_get_type(slot) == OBJECT_TYPE_ZOKATHRA ? MAP_TILE_ZOKATHRA_FIRST
-                                                                                             : -1;
+    return !flying.projectile && object_get_type(slot) == OBJECT_TYPE_ZOKATHRA ? MAP_TILE_ZOKATHRA_FIRST : -1;
 }
 
 /* The tile of an explosion, or -1: smoke and rebirth do not show. */
@@ -2668,13 +2706,13 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
     reset_wall_set_ids();
     view.use_flipped_walls = (dir + x + y) & 1;
     if (view.use_flipped_walls) { /* the mirrored-walls memory option is on, as on a 1 MB Amiga */
-        memcpy(&view.wall_set_ids[WS_WALL_FIRST], &view.wall_set_ids[WS_MIRRORED_WALL_FIRST],
-               WALL_COUNT * sizeof view.wall_set_ids[0]);
-        draw_wall_bitmap(view.wall_set_ids[WS_CEILING], ZONE_CEILING, BLIT_OPAQUE);
-        draw_wall_bitmap(view.wall_set_ids[WS_FLOOR], ZONE_FLOOR, BLIT_FLIPPED);
+        memcpy(&view.wall_set[WS_WALL_FIRST], &view.wall_set[WS_MIRRORED_WALL_FIRST],
+               WALL_COUNT * sizeof view.wall_set[0]);
+        draw_wall_bitmap(view.wall_set[WS_CEILING], ZONE_CEILING, BLIT_OPAQUE);
+        draw_wall_bitmap(view.wall_set[WS_FLOOR], ZONE_FLOOR, BLIT_FLIPPED);
     } else {
-        draw_wall_bitmap(view.wall_set_ids[WS_CEILING], ZONE_CEILING, BLIT_FLIPPED);
-        draw_wall_bitmap(view.wall_set_ids[WS_FLOOR], ZONE_FLOOR, BLIT_OPAQUE);
+        draw_wall_bitmap(view.wall_set[WS_CEILING], ZONE_CEILING, BLIT_FLIPPED);
+        draw_wall_bitmap(view.wall_set[WS_FLOOR], ZONE_FLOOR, BLIT_OPAQUE);
     }
     for (int i = 0; i < D4_SQUARE_COUNT; i++) { /* objects only on D4L, D4R, D4C */
         int16_t sx = x;
