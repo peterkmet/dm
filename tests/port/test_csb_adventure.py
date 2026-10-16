@@ -106,7 +106,7 @@ def test_merge_equals_the_python_merge(game, saves):
 
     names = new_prison_game(game, 3)
     game.champions[1].cell = game.champions[0].cell  # the cell fix of the merge
-    assert game.lib.savegame_save_as(str(saves).encode(), b"PRISON.DAT", None) == 1
+    assert game.lib.savegame_save_as(str(saves).encode(), b"PRISON.DAT", None) is True
     assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.SAVEGAME_ADVENTURE_MADE
     raw = (saves / NAME).read_bytes()
     port = cm.decode_save(raw)

@@ -54,7 +54,7 @@ def load_mini(game, tmp_path):
 
 def save(game, folder):
     folder.mkdir(exist_ok=True)
-    assert game.lib.savegame_save_as(str(folder).encode(), NAME, None) == 1
+    assert game.lib.savegame_save_as(str(folder).encode(), NAME, None) is True
     return (folder / NAME.decode()).read_bytes()
 
 
