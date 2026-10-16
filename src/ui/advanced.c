@@ -5,8 +5,8 @@
 #include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/inventory.h"
-#include "engine/map.h"
 #include "engine/message.h"
+#include "engine/record.h"
 #include "engine/savegame.h"
 #include "engine/timeline_process.h"
 #include "ui/automap.h"
@@ -47,7 +47,7 @@ static void draw_readout(Bitmap *viewport)
     char line[READOUT_TEXT_SIZE];
     int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN;
     int16_t y = AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + FONT_LINE_HEIGHT - FONT_BASELINE_GAP;
-    snprintf(line, sizeof line, "LEVEL %u X %d Y %d", map_level(g_party_map_index), g_party_map_x, g_party_map_y);
+    snprintf(line, sizeof line, "LEVEL %u X %d Y %d", rec_map_level(g_party_map_index), g_party_map_x, g_party_map_y);
     text_draw(viewport, x, y, COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)],
              inventory_get_party_light());

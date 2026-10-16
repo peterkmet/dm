@@ -2,7 +2,7 @@
 
 This page describes the champion rules of the C port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `src/engine/champion.c` and `src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](../reference/kaos-symbols.csv). The champion record is in [game-state.md](game-state.md#champions).
 
-The port reads all game tables from the KAOS image at run time ([tables.md](tables.md)). Object record fields go through the accessors in `src/engine/map.h`. Icon and text numbers are in `src/data/ids.h`.
+The port reads all game tables from the KAOS image at run time ([tables.md](tables.md)). Object record fields go through the accessors in `src/engine/record.h`. Icon and text numbers are in `src/data/ids.h`.
 
 ## Constants
 
@@ -40,7 +40,7 @@ The possessions stay in the wall square list until the player accepts the candid
 | Command | Effect |
 |---|---|
 | `PANEL_CANCEL` | Removes the candidate. When it was the only champion, the party has no leader and no caster. |
-| `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`rec_sensor_disable`). Prints "<name> RESURRECTED." |
+| `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`rec_sensor_set_type` to `SENSOR_DISABLED`). Prints "<name> RESURRECTED." |
 | `PANEL_REINCARNATE` | As resurrect. Also clears all experience and adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The original also asks for a new name. The port keeps the name. |
 
 With the first champion, the time of the last party move becomes the game time.
@@ -271,7 +271,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 - Drawing: status boxes, damage numbers, the inventory panel, and portraits (`ui_champion.c`).
 - Spells and creature attacks on champions (`magic.c`, `group.c`).
 - Scent creation on party moves (`move.c`).
-- `map_get_unused_thing` does not free discarded things yet (`map.c`).
+- `rec_find_unused_thing` does not free discarded things yet (`record.c`).
 - Chest closing when the open chest leaves the action hand, and the light palette update after a torch or Illumulet change.
 
 ## Tests

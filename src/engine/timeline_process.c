@@ -13,6 +13,7 @@
 #include "engine/message.h"
 #include "engine/move.h"
 #include "engine/projectile.h"
+#include "engine/record.h"
 #include "engine/savegame.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
@@ -64,8 +65,8 @@ void event_process_door_animation(TimelineEvent *event)
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
     int16_t effect = event_effect(event);
-    uint8_t *square = &g_current_map_data[x][y];
-    int16_t state = door_state(*square);
+    int16_t map = g_current_map_index;
+    int16_t state = rec_door_state(rec_square_byte(map, x, y));
     if (state == DOOR_DESTROYED)
         return;
     event->map_time++;
@@ -73,7 +74,7 @@ void event_process_door_animation(TimelineEvent *event)
         uint16_t attributes;
         if (is_party_on(x, y) && state != DOOR_OPEN) {
             if (g_party_champion_count) {
-                *square = square_with_door_state(*square, DOOR_OPEN);
+                rec_door_set_state(map, x, y, DOOR_OPEN);
                 if (champion_damage_all(DOOR_CLOSE_DAMAGE, WOUND_HEAD, ATTACK_SELF))
                     sound_request_play(SOUND_PARTY_DAMAGED, x, y, SOUND_MODE_AFTER_TICK);
             }
@@ -81,10 +82,10 @@ void event_process_door_animation(TimelineEvent *event)
             return;
         }
         if (is_material_group_on(x, y, &attributes)) {
-            int16_t height = door_is_vertical(map_get_square_first_thing(x, y)) ? rec_creature_height(attributes) : 1;
+            int16_t height = rec_door_is_vertical(map_get_square_first_thing(x, y)) ? creature_height(attributes) : 1;
             if (height <= state) {
                 group_door_damages_creatures(x, y);
-                *square = square_with_door_state(*square, state != DOOR_OPEN ? state - 1 : DOOR_OPEN);
+                rec_door_set_state(map, x, y, state != DOOR_OPEN ? state - 1 : DOOR_OPEN);
                 sound_request_play(SOUND_DOOR_HITS_CREATURE, x, y, SOUND_MODE_AFTER_TICK);
                 add_again_next_tick(event);
                 return;
@@ -93,7 +94,7 @@ void event_process_door_animation(TimelineEvent *event)
     }
     if ((effect != EFFECT_SET || state != DOOR_OPEN) && (effect != EFFECT_CLEAR || state != DOOR_CLOSED)) {
         state += effect == EFFECT_SET ? -1 : 1;
-        *square = square_with_door_state(*square, state);
+        rec_door_set_state(map, x, y, state);
         sound_request_play(SOUND_DOOR, x, y, SOUND_MODE_AFTER_TICK);
         if (effect == EFFECT_SET ? state == DOOR_OPEN : state == DOOR_CLOSED)
             return;
@@ -103,13 +104,12 @@ void event_process_door_animation(TimelineEvent *event)
 
 void event_process_door_destruction(TimelineEvent *event)
 {
-    uint8_t *square = &g_current_map_data[event_square_x(event)][event_square_y(event)];
-    *square = square_with_door_state(*square, DOOR_DESTROYED);
+    rec_door_set_state(g_current_map_index, event_square_x(event), event_square_y(event), DOOR_DESTROYED);
 }
 
 void event_process_door(TimelineEvent *event)
 {
-    int16_t state = door_state(g_current_map_data[event_square_x(event)][event_square_y(event)]);
+    int16_t state = rec_door_state(rec_square_byte(g_current_map_index, event_square_x(event), event_square_y(event)));
     if (state == DOOR_DESTROYED)
         return;
     if (event_effect(event) == EFFECT_TOGGLE)
@@ -125,19 +125,20 @@ void event_process_fake_wall(TimelineEvent *event)
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
     int16_t effect = event_effect(event);
-    uint8_t *square = &g_current_map_data[x][y];
+    int16_t map = g_current_map_index;
+    uint8_t square = rec_square_byte(map, x, y);
     uint16_t attributes;
     if (effect == EFFECT_TOGGLE)
-        effect = *square & FAKE_WALL_OPEN ? EFFECT_CLEAR : EFFECT_SET;
+        effect = square & FAKE_WALL_OPEN ? EFFECT_CLEAR : EFFECT_SET;
     if (effect != EFFECT_CLEAR) {
-        *square |= FAKE_WALL_OPEN;
+        rec_square_set_byte(map, x, y, square | FAKE_WALL_OPEN);
         return;
     }
     if (is_party_on(x, y) || is_material_group_on(x, y, &attributes)) {
         add_again_next_tick(event);
         return;
     }
-    *square &= ~FAKE_WALL_OPEN;
+    rec_square_set_byte(map, x, y, rec_square_byte(map, x, y) & ~FAKE_WALL_OPEN);
 }
 
 /* Opens or closes a teleporter or a pit. Opening moves the things on the square. */
@@ -145,14 +146,15 @@ static void open_or_close(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
-    uint8_t *square = &g_current_map_data[x][y];
+    int16_t map = g_current_map_index;
+    uint8_t square = rec_square_byte(map, x, y);
     if (event_effect(event) == EFFECT_TOGGLE)
-        event_set_effect(event, *square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
+        event_set_effect(event, square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
     if (event_effect(event) == EFFECT_SET) {
-        *square |= TELEPORTER_OPEN;
+        rec_square_set_byte(map, x, y, square | TELEPORTER_OPEN);
         event_move_teleporter_or_pit_square_things(x, y);
     } else {
-        *square &= ~TELEPORTER_OPEN;
+        rec_square_set_byte(map, x, y, square & ~TELEPORTER_OPEN);
     }
 }
 
@@ -183,7 +185,7 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
     uint16_t delay = rec_sensor_generator_delay(sensor);
     if (!rec_sensor_is_once_only(sensor) && !delay)
         return;
-    rec_sensor_disable(sensor);
+    rec_sensor_set_type(sensor, SENSOR_DISABLED);
     if (rec_sensor_is_once_only(sensor))
         return;
     if (delay > GENERATOR_DELAY_LONG)
@@ -198,7 +200,7 @@ void event_process_corridor(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
-    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
+    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         if (THING_TYPE(t) == THING_TEXT) {
             if (change_text_visibility(t, event_effect(event)) && is_party_on(x, y))
                 print_text(t);
@@ -211,7 +213,7 @@ void event_process_corridor(TimelineEvent *event)
 void event_enable_group_generator(TimelineEvent *event)
 {
     for (uint16_t t = map_get_square_first_thing(event_square_x(event), event_square_y(event));
-         t != THING_NONE && t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
+         t != THING_NONE && t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_DISABLED) {
             rec_sensor_set_type(t, SENSOR_FLOOR_GROUP_GENERATOR);
             return;
@@ -222,7 +224,7 @@ void event_enable_group_generator(TimelineEvent *event)
 /* A hold sensor sets or clears with the condition (inverted by the revert bit). Other sensors trigger when it is true. */
 static void trigger_on_condition(uint16_t sensor, int16_t condition, int16_t x, int16_t y, int16_t cell)
 {
-    bool clear = rec_sensor_revert(sensor) == condition;
+    bool clear = rec_sensor_is_reverted(sensor) == condition;
     if (rec_sensor_effect(sensor) == EFFECT_HOLD)
         sensor_trigger_effect(sensor, clear ? EFFECT_CLEAR : EFFECT_SET, x, y, cell);
     else if (!clear)
@@ -243,7 +245,8 @@ static void count(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t
     }
     rec_sensor_set_data(sensor, data);
     if (rec_sensor_effect(sensor) == EFFECT_HOLD)
-        sensor_trigger_effect(sensor, rec_sensor_revert(sensor) == (data == 0) ? EFFECT_CLEAR : EFFECT_SET, x, y, cell);
+        sensor_trigger_effect(sensor, rec_sensor_is_reverted(sensor) == (data == 0) ? EFFECT_CLEAR : EFFECT_SET, x, y,
+                              cell);
     else if (!data)
         sensor_trigger_effect(sensor, rec_sensor_effect(sensor), x, y, cell); /* the revert bit does not apply here */
 }
@@ -267,7 +270,7 @@ void event_process_wall(TimelineEvent *event)
     int16_t y = event_square_y(event);
     int16_t cell = event_cell(event);
     int16_t effect = event_effect(event);
-    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
+    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         if (THING_TYPE(t) == THING_TEXT && THING_CELL(t) == cell)
             change_text_visibility(t, effect);
         else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_COUNTER)
@@ -321,11 +324,11 @@ void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
         move_get_move_result(group, x, y, x, y);
     uint16_t thing = map_get_square_first_object(x, y);
     int16_t objects = 0;
-    for (uint16_t t = thing; t != THING_ENDOFLIST; t = map_get_next_thing(t))
+    for (uint16_t t = thing; t != THING_ENDOFLIST; t = rec_thing_next(t))
         objects += THING_TYPE(t) > THING_GROUP;
     while (thing != THING_ENDOFLIST && objects) {
         objects--;
-        uint16_t next = map_get_next_thing(thing);
+        uint16_t next = rec_thing_next(thing);
         uint16_t type = THING_TYPE(thing);
         if (type > THING_GROUP)
             move_get_move_result(thing, x, y, x, y);
@@ -363,13 +366,14 @@ void event_process_light(TimelineEvent *event)
 bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, uint16_t ticks)
 {
     uint16_t door = map_get_square_first_thing(x, y);
-    if (magic_attack ? !door_breaks_by_magic(door) : !door_breaks_by_force(door))
+    if (magic_attack ? !rec_door_is_magic_breakable(door) : !rec_door_is_force_breakable(door))
         return false;
-    uint8_t *square = &g_current_map_data[x][y];
-    if (attack < door_info_defense(g_current_map_door_info[door_type(door)]) || door_state(*square) != DOOR_CLOSED)
+    uint8_t square = rec_square_byte(g_current_map_index, x, y);
+    if (attack < door_info_defense(g_current_map_door_info[rec_door_type(door)]) ||
+        rec_door_state(square) != DOOR_CLOSED)
         return false;
     if (!ticks) {
-        *square = square_with_door_state(*square, DOOR_DESTROYED);
+        rec_door_set_state(g_current_map_index, x, y, DOOR_DESTROYED);
     } else {
         TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + ticks),
                                .type = EVENT_DOOR_DESTRUCTION,
@@ -434,12 +438,12 @@ void event_process_vi_altar_rebirth(TimelineEvent *event)
         uint16_t thing = map_get_square_first_thing(x, y);
         while (thing != THING_ENDOFLIST &&
                !(THING_CELL(thing) == cell && THING_TYPE(thing) == THING_JUNK &&
-                 object_get_icon_index(thing) == ICON_BONES && junk_charges(thing) == champion_index))
-            thing = map_get_next_thing(thing);
+                 object_get_icon_index(thing) == ICON_BONES && rec_junk_charges(thing) == champion_index))
+            thing = rec_thing_next(thing);
         if (thing == THING_ENDOFLIST)
             return;
         map_unlink_thing_from_list(thing, 0, x, y);
-        thing_set_free(thing);
+        rec_thing_set_free(thing);
         event->map_time++;
     }
     event_set_effect(event, step - 1);
@@ -534,7 +538,7 @@ void event_process_expired(void)
         case EVENT_REMOVE_FLUXCAGE:
             if (!g_game_won) {
                 map_unlink_thing_from_list(event.c, 0, event_square_x(&event), event_square_y(&event));
-                thing_set_free(event.c);
+                rec_thing_set_free(event.c);
             }
             break;
         case EVENT_EXPLOSION:

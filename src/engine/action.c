@@ -15,6 +15,7 @@
 #include "engine/move.h"
 #include "engine/projectile.h"
 #include "engine/random.h"
+#include "engine/record.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
 #include <string.h>
@@ -105,11 +106,11 @@ static uint16_t action_hand_charge_count(void)
     uint16_t thing = g_champions[g_acting_champion_ordinal - 1].slots[SLOT_HAND_ACTION];
     switch (THING_TYPE(thing)) {
     case THING_WEAPON:
-        return weapon_charges(thing);
+        return rec_weapon_charges(thing);
     case THING_ARMOUR:
-        return armour_charges(thing);
+        return rec_armour_charges(thing);
     case THING_JUNK:
-        return junk_charges(thing);
+        return rec_junk_charges(thing);
     }
     return 1;
 }
@@ -229,16 +230,16 @@ void action_decrement_charges(uint16_t champion_index)
     uint16_t thing = g_champions[champion_index].slots[SLOT_HAND_ACTION];
     switch (THING_TYPE(thing)) {
     case THING_WEAPON:
-        if (weapon_charges(thing))
-            weapon_set_charges(thing, weapon_charges(thing) - 1);
+        if (rec_weapon_charges(thing))
+            rec_weapon_set_charges(thing, rec_weapon_charges(thing) - 1);
         break;
     case THING_ARMOUR:
-        if (armour_charges(thing))
-            armour_set_charges(thing, armour_charges(thing) - 1);
+        if (rec_armour_charges(thing))
+            rec_armour_set_charges(thing, rec_armour_charges(thing) - 1);
         break;
     case THING_JUNK:
-        if (junk_charges(thing))
-            junk_set_charges(thing, junk_charges(thing) - 1);
+        if (rec_junk_charges(thing))
+            rec_junk_set_charges(thing, rec_junk_charges(thing) - 1);
         break;
     }
     /* The interface redraws the changed object icons from the slots. */
@@ -282,11 +283,11 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
         experience >>= 1;
     } else {
         ActiveGroup *active = group_active(group);
-        if (group_behavior(group) == BEHAVIOR_ATTACK) {
+        if (rec_group_behavior(group) == BEHAVIOR_ATTACK) {
             group_stop_attacking(active, x, y);
             group_start_wandering(x, y);
         }
-        group_set_behavior(group, BEHAVIOR_FLEE);
+        rec_group_set_behavior(group, BEHAVIOR_FLEE);
         active->delay_fleeing = (FLEE_DELAY_FEAR_LIMIT - fear) * FLEE_DELAY_FACTOR / info->movement_ticks;
         frightened = true;
     }
@@ -346,8 +347,8 @@ static bool is_shot(uint16_t champion_index)
     uint16_t ammunition = c->slots[SLOT_HAND_READY];
     if (THING_TYPE(ammunition) != THING_WEAPON)
         return false;
-    const WeaponInfo *launcher = tables_get_weapon_info(weapon_type(c->slots[SLOT_HAND_ACTION]));
-    const WeaponInfo *missile = tables_get_weapon_info(weapon_type(ammunition));
+    const WeaponInfo *launcher = tables_get_weapon_info(rec_weapon_type(c->slots[SLOT_HAND_ACTION]));
+    const WeaponInfo *missile = tables_get_weapon_info(rec_weapon_type(ammunition));
     int16_t step_energy = launcher->weapon_class;
     if (step_energy >= WEAPON_CLASS_FIRST_BOW && step_energy <= WEAPON_CLASS_LAST_BOW) {
         if (missile->weapon_class != WEAPON_CLASS_BOW_AMMUNITION)
@@ -375,11 +376,11 @@ static void cast_freeze_life(uint16_t champion_index)
     uint16_t thing = g_champions[champion_index].slots[SLOT_HAND_ACTION];
     int16_t ticks;
     /* Weapons, armour, and junk keep their type in the same bits. */
-    uint16_t type = junk_type(thing);
+    uint16_t type = rec_junk_type(thing);
     if (type == JUNK_MAGICAL_BOX_BLUE || type == JUNK_MAGICAL_BOX_GREEN) {
         ticks = type == JUNK_MAGICAL_BOX_BLUE ? FREEZE_LIFE_TICKS_BLUE_BOX : FREEZE_LIFE_TICKS_GREEN_BOX;
         inventory_get_object_removed_from_slot(champion_index, SLOT_HAND_ACTION);
-        thing_set_free(thing);
+        rec_thing_set_free(thing);
     } else {
         ticks = FREEZE_LIFE_TICKS_CHARGE;
         action_decrement_charges(champion_index);
@@ -430,7 +431,7 @@ static bool is_climbed_down(void)
 {
     int16_t x, y;
     step_forward(g_party_direction, &x, &y);
-    if (SQUARE_TYPE(map_get_square(x, y)) != SQUARE_PIT || map_get_square_group(x, y) != THING_ENDOFLIST)
+    if (rec_square_type(map_get_square(x, y)) != SQUARE_PIT || map_get_square_group(x, y) != THING_ENDOFLIST)
         return false;
     g_use_rope_to_climb_down_pit = true;
     move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, x, y);
@@ -475,7 +476,7 @@ static bool is_explosion_action_cast(uint16_t champion_index, int16_t action, in
    strength. Returns false without a closed door in front. */
 static bool is_door_bashed(uint16_t champion_index, int16_t x, int16_t y, uint8_t square)
 {
-    if (SQUARE_TYPE(square) != SQUARE_DOOR || door_state(square) != DOOR_CLOSED)
+    if (rec_square_type(square) != SQUARE_DOOR || rec_door_state(square) != DOOR_CLOSED)
         return false;
     sound_request_play(SOUND_SWING, g_party_map_x, g_party_map_y, SOUND_MODE_AFTER_TICK);
     event_is_door_destroyed_by_attack(x, y, champion_get_strength(champion_index, SLOT_HAND_ACTION), 0,
@@ -697,7 +698,7 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
     int16_t weapon_energy = 1;
     if (THING_TYPE(thing) == THING_WEAPON) {
         experience = THROW_WEAPON_EXPERIENCE;
-        const WeaponInfo *info = tables_get_weapon_info(weapon_type(thing));
+        const WeaponInfo *info = tables_get_weapon_info(rec_weapon_type(thing));
         if (info->weapon_class < WEAPON_CLASS_KINETIC_THROW_LIMIT) {
             weapon_energy = info->kinetic_energy;
             experience += weapon_energy >> 2;
@@ -736,7 +737,7 @@ bool action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16
     uint16_t ammunition = c->slots[ammunition_slot];
     if (THING_TYPE(weapon) != THING_WEAPON)
         return false;
-    uint8_t weapon_class = tables_get_weapon_info(weapon_type(weapon))->weapon_class, needed;
+    uint8_t weapon_class = tables_get_weapon_info(rec_weapon_type(weapon))->weapon_class, needed;
     if (weapon_class >= WEAPON_CLASS_FIRST_BOW && weapon_class <= WEAPON_CLASS_LAST_BOW)
         needed = WEAPON_CLASS_BOW_AMMUNITION;
     else if (weapon_class >= WEAPON_CLASS_FIRST_SLING && weapon_class <= WEAPON_CLASS_LAST_SLING)
@@ -744,7 +745,7 @@ bool action_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16
     else
         return false;
     return THING_TYPE(ammunition) == THING_WEAPON &&
-           tables_get_weapon_info(weapon_type(ammunition))->weapon_class == needed;
+           tables_get_weapon_info(rec_weapon_type(ammunition))->weapon_class == needed;
 }
 
 /* Moves a weapon from the quiver to the slot. */

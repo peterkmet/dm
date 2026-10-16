@@ -199,12 +199,12 @@ def thing_records(lib, thing_type):
 def add_explosion(lib, m, x, y, cell, attack, explosion_type):
     """Links a new explosion behind the first thing of a square with things. Returns an undo function."""
     lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
     data, count = thing_records(lib, 15)
     index = next(i for i in range(count) if data[4 * i] == 0xFF and data[4 * i + 1] == 0xFF)
     first = lib.dungeon_get_square_first_thing(m, x, y)
     assert first != 0xFFFE
-    head = lib.dungeon_get_thing_data(first)
+    head = lib.rec_write(first)
     thing = cell << 14 | 15 << 10 | index
     data[4 * index], data[4 * index + 1], data[4 * index + 2], data[4 * index + 3] = head[0], head[1], attack, explosion_type
     old = head[0], head[1]

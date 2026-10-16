@@ -20,12 +20,12 @@ def golden_game():
     lib.gameloop_load_data.restype = lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.ui_get_slot_box_zone.restype = ctypes.c_bool
     lib.ui_zone_box.restype = ctypes.c_bool
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = u16
-    lib.map_get_next_thing.restype = u16
+    lib.rec_thing_next.restype = u16
     lib.map_get_square.restype = ctypes.c_uint8
-    lib.map_get_unused_thing.restype = u16
-    lib.map_get_unused_thing.argtypes = [u16]
+    lib.rec_find_unused_thing.restype = u16
+    lib.rec_find_unused_thing.argtypes = [u16]
     lib.kaos_s16.restype = c16
     lib.dungeon_save.restype = ctypes.c_void_p
     lib.free.argtypes = [ctypes.c_void_p]

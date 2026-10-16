@@ -8,6 +8,7 @@
 #include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/message.h"
+#include "engine/record.h"
 #include "ui/audio.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
@@ -271,7 +272,7 @@ int16_t ui_get_icon_in_slot_box(int16_t slot_box)
 /* The champion of a bones object: the charge bits of the junk record. */
 static int bones_champion(uint16_t thing)
 {
-    return junk_charges(thing);
+    return rec_junk_charges(thing);
 }
 
 void ui_draw_leader_hand_object_name(uint16_t thing)

@@ -35,12 +35,12 @@ def lib():
         "champion_get_dexterity": (c16, [cp]), "champion_get_strength": (c16, [c16, c16]),
         "champion_get_wound_defense": (c16, [c16, u16]), "champion_add_pending_damage_and_wounds": (c16, [c16, c16, u16, c16]),
         "champion_damage_all": (c16, [u16, u16, c16]), "champion_decrement_stamina": (None, [c16, c16]),
-        "inventory_get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "map_get_unused_thing": (u16, [u16]),
+        "inventory_get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "rec_find_unused_thing": (u16, [u16]),
         "champion_add_candidate_to_party": (None, [c16]), "champion_click_in_resurrect_reincarnate_panel": (None, [c16]),
         "inventory_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [u16]),
         "champion_pack": (None, [cp, ctypes.c_char_p]), "champion_unpack": (None, [ctypes.c_char_p, cp]),
         "recruit_text_thing": (u16, [c16, c16, c16]), "recruit_portrait_index": (c16, [u16]),
-        "dungeon_get_square_first_thing": (u16, [c16, c16, c16]), "dungeon_get_thing_data": (ctypes.POINTER(u8), [u16]),
+        "dungeon_get_square_first_thing": (u16, [c16, c16, c16]), "rec_write": (ctypes.POINTER(u8), [u16]),
         "map_set_current_map_and_party_map": (None, [c16]), "dungeon_load": (ctypes.c_bool, [ctypes.c_char_p]),
     }
     for name, (res, args) in sig.items():
@@ -187,7 +187,7 @@ def square_things(lib, m, x, y):
     t = lib.dungeon_get_square_first_thing(m, x, y)
     while t != 0xFFFE:
         yield t
-        d = lib.dungeon_get_thing_data(t)
+        d = lib.rec_write(t)
         t = d[0] << 8 | d[1]
 
 
@@ -266,15 +266,15 @@ def test_eat_food(lib, party):
     lib.tables_get_food_value.restype = c16
     junk = next(j for j in range(53) if 0xA8 <= lib.tables_get_object_info(0x7F + j).contents[0] < 0xB0)
     food_value = lib.tables_get_food_value(lib.tables_get_object_info(0x7F + junk).contents[0] - 0xA8)
-    thing = lib.map_get_unused_thing(10)
-    lib.dungeon_get_thing_data(thing)[3] = junk
+    thing = lib.rec_find_unused_thing(10)
+    lib.rec_junk_set_type(thing, junk)
     ch.food, load = 100, ch.load
     lib.inventory_put_object_in_leader_hand(thing)
     assert ch.load == load + lib.inventory_get_object_weight(thing)
     lib.inventory_process_click_on_mouth()
     assert ch.food == min(100 + food_value, 2048) and ch.load == load
     assert var(lib, u16, "g_leader_hand_object").value == 0xFFFF and var(lib, ctypes.c_bool, "g_leader_empty_handed").value == 1
-    d = lib.dungeon_get_thing_data(thing)
+    d = lib.rec_write(thing)
     assert d[0] << 8 | d[1] == 0xFFFF  # record freed
 
 
@@ -292,8 +292,8 @@ def test_damage_until_death(lib, party):
     assert all(s == 0xFFFF for s in ch.slots) and ch.load == 0
     dropped = list(square_things(lib, party["m"], *party["square"]))
     assert {t & 0x3FFF for t in slots} <= {t & 0x3FFF for t in dropped}
-    bones = [t for t in dropped if t >> 10 & 15 == 10 and lib.dungeon_get_thing_data(t)[3] & 0x7F == 5]
-    assert len(bones) == 1 and lib.dungeon_get_thing_data(bones[0])[2] >> 6 == 0 and bones[0] >> 14 == ch.cell
+    bones = [t for t in dropped if t >> 10 & 15 == 10 and lib.rec_write(t)[3] & 0x7F == 5]
+    assert len(bones) == 1 and lib.rec_write(bones[0])[2] >> 6 == 0 and bones[0] >> 14 == ch.cell
 
 
 def test_death_sets_redraw_flags(lib, party):

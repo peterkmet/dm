@@ -39,7 +39,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 | `map_get_stairs_exit_direction(x, y)` | `0x10aad2` | Bit 3 of the stairs square selects the axis (set: north–south). The exit side is the side that is not a wall or stairs. |
 | `map_get_square_first_thing(x, y)` | `0x10ac4e` | First thing, or `0xfffe`. |
 | `map_get_square_first_object(x, y)` | `0x10ac7c` | First thing with type 4 or higher. |
-| `map_get_next_thing(thing)` | `0x10abb4` | Next-thing word of the record. |
+| `rec_thing_next(thing)` | `0x10abb4` | Next-thing word of the record. |
 | `map_link_thing_to_list(thing, list, x, y)` | `0x10acba` | See [Thing lists](#thing-lists). |
 | `map_unlink_thing_from_list(thing, list, x, y)` | `0x10adf4` | See [Thing lists](#thing-lists). |
 | `map_get_square_group(x, y)` | `0x10bb5c` | First group thing, or `0xfffe`. |

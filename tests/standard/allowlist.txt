@@ -6,7 +6,6 @@ hex data/crc32.c rule 3.12: the CRC-32 table of PNG, a standard constant table
 hex data/csb_image.c rule 3.12: the APPB address tables of the CSB image build
 hex data/csb_text.c rule 3.12: the APPB address tables of the CSB image build
 decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions, not in the game files
-hex engine/map.c open: epic 5
 hex engine/map.h open: epic 5
 long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
 long engine/timeline_process.c:event_process_expired rule 5.8: one short case for each timeline event type
@@ -75,12 +74,10 @@ block ui/view.c open: epic 8
 decimal engine/action.h open: epic 6
 decimal engine/game.h open: epic 6
 decimal engine/group.c open: epic 6
-decimal engine/group.h open: epic 6
 decimal engine/inventory.h open: epic 6
 decimal engine/map.c open: epic 6
 decimal engine/map.h open: epic 6
 decimal engine/projectile.c open: epic 6
-decimal engine/projectile.h open: epic 6
 decimal engine/sensor.c open: epic 6
 decimal platform/control.c open: epic 10
 decimal platform/scale.c open: epic 11
@@ -227,10 +224,6 @@ name engine/map.c:map_set_current_map_and_party_map open: epic 6
 name engine/map.h:map_get_location_after_level_change open: epic 6
 name engine/map.h:map_get_square_first_thing_index open: epic 6
 name engine/map.h:map_set_current_map_and_party_map open: epic 6
-name engine/map.h:rec_dungeon_square_first_thing_count open: epic 6
-name engine/map.h:rec_sensor_generator_creature_type open: epic 6
-name engine/map.h:rec_sensor_generator_health_multiplier open: epic 6
-name engine/map.h:rec_sensor_launcher_kinetic_energy open: epic 6
 name engine/move.c:move_get_teleporter_rotated_projectile_thing open: epic 6
 name engine/move.h:move_get_teleporter_rotated_projectile_thing open: epic 6
 name engine/projectile.c:add_event_one_tick_later open: epic 6
@@ -274,7 +267,6 @@ name ui/view.c:view_get_wall_face_ornament_index open: epic 8
 name ui/view.h:view_get_wall_face_ornament_index open: epic 8
 ordinal CREATURE_AT_ATTACK_SOUND_ORDINAL rule 4.8: the KAOS creature info record stores the attack sound as an ordinal
 ordinal attack_sound_ordinal rule 4.8: the KAOS creature info record stores the attack sound as an ordinal
-ordinal door_ornament_ordinal open: epic 6
 ordinal dragged_icon_cell_plus_1 open: epic 8
 ordinal g_acting_champion_ordinal open: epic 6
 ordinal g_candidate_champion_ordinal open: epic 6
@@ -287,13 +279,10 @@ ordinal group_get_melee_target_creature_ordinal open: epic 6
 ordinal group_get_party_scent_ordinal open: epic 6
 ordinal group_get_smelled_party_direction_ordinal open: epic 6
 ordinal ordinal open: epic 6
-ordinal rec_sensor_ornament_ordinal open: epic 6
 static-prefix engine/action.c:action_hand_charge_count open: epic 6
 static-prefix engine/action.c:champion_face_party_direction open: epic 6
 static-prefix engine/dungeon.c:dungeon_free open: epic 6
 static-prefix engine/dungeon.c:map_at_level open: epic 6
-static-prefix engine/dungeon.c:map_raw_data_offset open: epic 6
-static-prefix engine/dungeon.c:thing_count open: epic 6
 static-prefix engine/explored.c:map_first_square open: epic 6
 static-prefix engine/explored.c:map_square_count open: epic 6
 static-prefix engine/group.c:creature_hit_wounds open: epic 6
@@ -543,7 +532,6 @@ order engine/explored.c open: epic 5
 order engine/group.c open: epic 5
 order engine/inventory.c open: epic 5
 order engine/magic.c open: epic 5
-order engine/map.c open: epic 5
 order engine/message.c open: epic 5
 order engine/move.c open: epic 5
 order engine/projectile.c open: epic 5
@@ -616,7 +604,6 @@ dead-api engine/group.h:group_set_cell_value open: epic 7
 dead-api engine/group.h:group_set_ordered_cells_to_attack open: epic 7
 dead-api engine/magic.h:magic_get_champion_spell_cast_result open: epic 7
 dead-api engine/magic.h:magic_print_spell_failure_message open: epic 7
-dead-api engine/map.h:g_current_map open: epic 7
 dead-api engine/map.h:map_get_square_first_thing_index open: epic 7
 dead-api engine/map.h:map_get_square_type open: epic 7
 dead-api engine/message.h:message_move_cursor open: epic 7
@@ -751,17 +738,6 @@ params ui/view.c:draw_object open: epic 8
 params ui/view.c:draw_projectile open: epic 8
 params ui/view.c:draw_square_things open: epic 8
 params ui/view.c:get_projectile_pose open: epic 8
-record engine/dungeon.c open: epic 5
-record engine/group.c open: epic 5
-record engine/group.h open: epic 5
-record engine/map.c open: epic 5
-record engine/map.h open: epic 5
-record engine/move.c open: epic 5
-record engine/projectile.c open: epic 5
-record engine/projectile.h open: epic 5
-record engine/sensor.c open: epic 5
-record engine/timeline_process.c open: epic 5
-record ui/view.c open: epic 8
 result engine/explored.h:explored_save open: epic 6
 result ui/anim.h:anim_open open: epic 8
 result ui/anim.h:anim_play open: epic 8
@@ -774,7 +750,6 @@ type engine:buf open: epic 6
 type engine:cell open: epic 6
 type engine:champion_index open: epic 6
 type engine:creature_index open: epic 6
-type engine:data open: epic 6
 type engine:direction open: epic 6
 type engine:dst open: epic 6
 type engine:effect open: epic 6
@@ -821,7 +796,6 @@ event-comment engine/magic.h open: epic 6
 event-comment engine/projectile.h open: epic 6
 event-comment engine/sensor.h open: epic 6
 event-comment engine/timeline_process.h open: epic 6
-todo engine/map.h open: epic 6
 todo engine/message.c open: epic 6
 todo engine/sound.c open: epic 9
 todo ui/automap.c open: epic 8
@@ -864,3 +838,5 @@ static-prefix platform/platform.c:audio_open open: epic 11
 type ui:count open: epic 8
 type ui:length open: epic 8
 dead-api ui/audio.h:audio_music_stop open: epic 9
+dead-api engine/record.h:rec_read open: epic 7
+todo engine/record.h open: epic 6

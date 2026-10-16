@@ -473,7 +473,7 @@ def test_smooth_projectile_flight(game):
         game.run()
         x, y, _ = game.position()
         nx, ny = x + STEP_EAST[direction], y + STEP_NORTH[direction]
-        if lib.map_get_square(nx, ny) >> 5 == C.SQUARE_CORRIDOR:
+        if lib.rec_square_type(lib.map_get_square(nx, ny)) == C.SQUARE_CORRIDOR:
             break
     fireball = 0xFF80
     for mode in (VANILLA, ADVANCED):

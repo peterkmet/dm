@@ -29,8 +29,8 @@ def lib():
     lib.dungeon_decompress.restype = lib.dungeon_decode_text.restype = ctypes.c_bool
     lib.dungeon_load.restype = lib.dungeon_validate.restype = ctypes.c_bool
     lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
-    lib.dungeon_get_square.restype = ctypes.c_uint8
-    lib.dungeon_get_thing_data.restype = u8p
+    lib.rec_square_byte.restype = ctypes.c_uint8
+    lib.rec_write.restype = u8p
     lib.kaos_ptr.restype = ctypes.c_void_p
     lib.kaos_ptr.argtypes = [ctypes.c_uint32]
     return lib
@@ -78,13 +78,13 @@ def test_dungeon_matches_dmcsb(lib, name):
             located.setdefault((t["x"], t["y"]), t)
         for x in range(w):
             for y in range(h):
-                sq = lib.dungeon_get_square(m, x, y)
+                sq = lib.rec_square_byte(m, x, y)
                 assert sq == d.tile_data[offset + x * h + y]
                 first = lib.dungeon_get_square_first_thing(m, x, y)
                 assert (first != 0xFFFE) == bool(sq & 0x10)
                 if (x, y) in located:
                     assert first >> 14 == located[(x, y)]["cell"]
-                    assert struct.unpack(">H", bytes(lib.dungeon_get_thing_data(first)[:2]))[0] == located[(x, y)]["thing"]["Next"]
+                    assert struct.unpack(">H", bytes(lib.rec_write(first)[:2]))[0] == located[(x, y)]["thing"]["Next"]
     for t, (tname, size, _) in enumerate(THING_TYPES):
         n = d.hdr["ThingCount"][t]
         total = min(0x300 if t == 15 else 0x400, n + extra[t])
@@ -264,7 +264,7 @@ def test_bad_text_offset_and_small_buffer(lib):
     assert lib.dungeon_decode_text(buf, 8, 2 << 10, 2 | -0x8000) == 0  # text 0 is longer than 7 bytes
     assert len(buf.value) == 7
     words = struct.unpack(">H", mem(lib, "g_dungeon_header", 8)[6:8])[0]
-    rec = lib.dungeon_get_thing_data(2 << 10)
+    rec = lib.rec_write(2 << 10)
     rec[2], rec[3] = (words << 3 | 1) >> 8 & 0xFF, (words << 3 | 1) & 0xFF
     assert lib.dungeon_decode_text(buf, 8, 2 << 10, 2) == 0
 
@@ -274,4 +274,4 @@ def test_door_vertical_bit(lib):
     doors = load(lib, GAME / "Dungeon.DAT").things["Door"]
     assert {d["Vertical"] for d in doors} == {0, 1}
     for i, door in enumerate(doors):
-        assert (lib.dungeon_get_thing_data(i)[3] & 0x20 != 0) == door["Vertical"]  # door_is_vertical
+        assert (lib.rec_write(i)[3] & 0x20 != 0) == door["Vertical"]  # rec_door_is_vertical

@@ -8,6 +8,7 @@
 #include "engine/group.h"
 #include "engine/magic.h"
 #include "engine/random.h"
+#include "engine/record.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
 #include <stdbool.h>
@@ -64,17 +65,17 @@ int16_t inventory_get_object_info_index(uint16_t thing)
 {
     switch (THING_TYPE(thing)) {
     case THING_WEAPON:
-        return OBJECT_INFO_FIRST_WEAPON + weapon_type(thing);
+        return OBJECT_INFO_FIRST_WEAPON + rec_weapon_type(thing);
     case THING_ARMOUR:
-        return OBJECT_INFO_FIRST_ARMOUR + armour_type(thing);
+        return OBJECT_INFO_FIRST_ARMOUR + rec_armour_type(thing);
     case THING_SCROLL:
         return OBJECT_INFO_FIRST_SCROLL;
     case THING_POTION:
-        return OBJECT_INFO_FIRST_POTION + potion_type(thing);
+        return OBJECT_INFO_FIRST_POTION + rec_potion_type(thing);
     case THING_CONTAINER:
-        return OBJECT_INFO_FIRST_CONTAINER + container_type(thing);
+        return OBJECT_INFO_FIRST_CONTAINER + rec_container_type(thing);
     case THING_JUNK:
-        return OBJECT_INFO_FIRST_JUNK + junk_type(thing);
+        return OBJECT_INFO_FIRST_JUNK + rec_junk_type(thing);
     }
     return -1;
 }
@@ -96,20 +97,20 @@ int16_t object_get_icon_index(uint16_t thing)
     case ICON_COMPASS_NORTH:
         return type + g_party_direction;
     case ICON_TORCH_UNLIT:
-        return weapon_is_lit(thing) ? type + tables_get_torch_icon_offset(weapon_charges(thing)) : type;
+        return rec_weapon_is_lit(thing) ? type + tables_get_torch_icon_offset(rec_weapon_charges(thing)) : type;
     case ICON_WATERSKIN_EMPTY:
     case ICON_JEWEL_SYMAL:
     case ICON_ILLUMULET:
-        return type + (junk_charges(thing) != 0);
+        return type + (rec_junk_charges(thing) != 0);
     case ICON_FLAMITT:
     case ICON_EYE_OF_TIME:
     case ICON_STORMRING:
     case ICON_STAFF_OF_CLAWS:
     case ICON_BOLT_BLADE:
     case ICON_FURY:
-        return type + (weapon_charges(thing) != 0);
+        return type + (rec_weapon_charges(thing) != 0);
     case ICON_SCROLL_OPEN:
-        return type + scroll_is_closed(thing);
+        return type + rec_scroll_is_closed(thing);
     }
     return type;
 }
@@ -121,21 +122,21 @@ uint16_t inventory_get_object_weight(uint16_t thing)
     uint16_t weight = 0;
     switch (THING_TYPE(thing)) {
     case THING_WEAPON:
-        return tables_get_weapon_info(weapon_type(thing))->weight;
+        return tables_get_weapon_info(rec_weapon_type(thing))->weight;
     case THING_ARMOUR:
-        return tables_get_armour_info(armour_type(thing))->weight;
+        return tables_get_armour_info(rec_armour_type(thing))->weight;
     case THING_SCROLL:
         return SCROLL_WEIGHT;
     case THING_POTION:
-        return potion_type(thing) == POTION_EMPTY_FLASK ? EMPTY_FLASK_WEIGHT : POTION_WEIGHT;
+        return rec_potion_type(thing) == POTION_EMPTY_FLASK ? EMPTY_FLASK_WEIGHT : POTION_WEIGHT;
     case THING_CONTAINER:
         weight = CHEST_WEIGHT;
-        for (uint16_t t = container_first_thing(thing); t != THING_END; t = map_get_next_thing(t))
+        for (uint16_t t = rec_container_first_thing(thing); t != THING_ENDOFLIST; t = rec_thing_next(t))
             weight += inventory_get_object_weight(t);
         return weight;
     case THING_JUNK:
-        weight = tables_get_junk_weight(junk_type(thing));
-        return junk_type(thing) == JUNK_WATERSKIN ? weight + junk_charges(thing) * 2 : weight;
+        weight = tables_get_junk_weight(rec_junk_type(thing));
+        return rec_junk_type(thing) == JUNK_WATERSKIN ? weight + rec_junk_charges(thing) * 2 : weight;
     }
     return weight;
 }
@@ -286,7 +287,7 @@ uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_
     int16_t icon = object_get_icon_index(thing);
     apply_object_modifiers(c, slot, icon, -1, thing);
     if (slot == SLOT_NECK && is_neck_jewel(icon)) {
-        junk_set_charges(thing, 0);
+        rec_junk_set_charges(thing, 0);
         if (is_illumulet(icon))
             g_party.magical_light_amount -= tables_get_light_amount(LIGHT_POWER_ILLUMULET);
     }
@@ -296,10 +297,10 @@ uint16_t inventory_get_object_removed_from_slot(uint16_t champion_index, uint16_
         if (slot == SLOT_HAND_ACTION) {
             c->attributes |= CHAMPION_ATTR_ACTION_HAND;
             if (is_scroll(icon))
-                scroll_set_closed(thing, true);
+                rec_scroll_set_closed(thing, true);
         }
         if (is_torch(icon))
-            weapon_set_lit(thing, false);
+            rec_weapon_set_lit(thing, false);
         if (inventory_open && slot == SLOT_HAND_ACTION && icon == ICON_CHEST_CLOSED && thing == g_open_chest)
             inventory_close_chest();
         if (inventory_open && slot == SLOT_HAND_ACTION && (icon == ICON_CHEST_CLOSED || is_scroll(icon)))
@@ -325,14 +326,14 @@ void inventory_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint1
         if (slot == SLOT_HAND_ACTION) {
             c->attributes |= CHAMPION_ATTR_ACTION_HAND;
             if (is_scroll(icon))
-                scroll_set_closed(thing, false);
+                rec_scroll_set_closed(thing, false);
         }
         if (icon == ICON_TORCH_UNLIT)
-            weapon_set_lit(thing, true);
+            rec_weapon_set_lit(thing, true);
         else if (inventory_open && slot == SLOT_HAND_ACTION && (icon == ICON_CHEST_CLOSED || is_scroll(icon)))
             c->attributes |= CHAMPION_ATTR_PANEL;
     } else if (slot == SLOT_NECK && is_neck_jewel(icon)) {
-        junk_set_charges(thing, 1);
+        rec_junk_set_charges(thing, 1);
         if (is_illumulet(icon))
             g_party.magical_light_amount += tables_get_light_amount(LIGHT_POWER_ILLUMULET);
     }
@@ -374,12 +375,12 @@ void inventory_click_on_slot_box(uint16_t slot_box)
 
 void inventory_open_chest(uint16_t chest)
 {
-    uint16_t thing = container_first_thing(chest);
+    uint16_t thing = rec_container_first_thing(chest);
     g_open_chest = chest;
     for (int i = 0; i < SLOT_CHEST_COUNT; i++) {
-        g_open_chest_slots[i] = thing == THING_END ? THING_NONE : thing;
-        if (thing != THING_END)
-            thing = map_get_next_thing(thing);
+        g_open_chest_slots[i] = thing == THING_ENDOFLIST ? THING_NONE : thing;
+        if (thing != THING_ENDOFLIST)
+            thing = rec_thing_next(thing);
     }
 }
 
@@ -390,15 +391,15 @@ void inventory_close_chest(void)
     uint16_t chest = g_open_chest;
     uint16_t last = THING_NONE;
     g_open_chest = THING_NONE;
-    container_set_first_thing(chest, THING_END);
+    rec_container_set_first_thing(chest, THING_ENDOFLIST);
     for (int i = 0; i < SLOT_CHEST_COUNT; i++) {
         uint16_t thing = g_open_chest_slots[i];
         if (thing == THING_NONE)
             continue;
         g_open_chest_slots[i] = THING_NONE;
         if (last == THING_NONE) {
-            thing_set_next(thing, THING_END);
-            container_set_first_thing(chest, thing);
+            rec_thing_set_next(thing, THING_ENDOFLIST);
+            rec_container_set_first_thing(chest, thing);
         } else {
             map_link_thing_to_list(thing, last, -1, 0);
         }
@@ -424,11 +425,11 @@ static void heal_wounds(Champion *c, uint16_t rolls)
 static void drink_potion(uint16_t champion_index, uint16_t potion)
 {
     Champion *c = &g_champions[champion_index];
-    uint16_t power = potion_power(potion);
+    uint16_t power = rec_potion_power(potion);
     uint16_t divisor =
         (POTION_DIVISOR_BASE - power) / (((power + 1) >> POTION_DIVISOR_POWER_SHIFT) + POTION_DIVISOR_OFFSET) >> 1;
     uint16_t amount = power / POTION_AMOUNT_DIVISOR + POTION_AMOUNT_BASE;
-    switch (potion_type(potion)) {
+    switch (rec_potion_type(potion)) {
     case POTION_ROS:
         game_adjust_statistic_current_value(c, STAT_DEXTERITY, amount);
         break;
@@ -477,7 +478,7 @@ static void drink_potion(uint16_t champion_index, uint16_t potion)
         c->water = min16(c->water + POTION_WATER_WATER, FOOD_WATER_MAXIMUM);
         break;
     }
-    potion_set_type(potion, POTION_EMPTY_FLASK);
+    rec_potion_set_type(potion, POTION_EMPTY_FLASK);
 }
 
 int16_t inventory_process_click_on_mouth(void)
@@ -493,12 +494,12 @@ int16_t inventory_process_click_on_mouth(void)
     Champion *c = &g_champions[champion_index];
     bool consumed = false;
     if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL) {
-        if (!junk_charges(thing))
+        if (!rec_junk_charges(thing))
             return MOUTH_REFUSED;
         c->water = min16(c->water + WATERSKIN_WATER, FOOD_WATER_MAXIMUM);
-        junk_set_charges(thing, junk_charges(thing) - 1);
+        rec_junk_set_charges(thing, rec_junk_charges(thing) - 1);
     } else if (type != THING_POTION) {
-        thing_set_free(thing);
+        rec_thing_set_free(thing);
         consumed = true;
     }
     if (consumed)
@@ -541,7 +542,7 @@ int16_t inventory_get_party_light(void)
             uint16_t thing = g_champions[i].slots[hand];
             int16_t type = object_get_type(thing);
             if (type >= ICON_TORCH_UNLIT && type <= ICON_TORCH_LAST)
-                power[n] = weapon_charges(thing);
+                power[n] = rec_weapon_charges(thing);
         }
     /* the original sorts only the 4 brightest: the fifth light is any of the rest */
     for (int i = 0; i < LIGHT_SOURCES_USED - 1; i++)
@@ -565,7 +566,7 @@ int16_t inventory_get_party_light(void)
 void inventory_set_dungeon_view_palette(int16_t map_index, int16_t light)
 {
     g_dungeon_view_palette_index = 0;
-    if (!map_difficulty(map_index))
+    if (!rec_map_difficulty(map_index))
         return;
     if (light < 1) {
         g_dungeon_view_palette_index = LIGHT_DARKEST;
@@ -583,11 +584,11 @@ void inventory_decrease_torches_light_power(void)
         for (int hand = SLOT_HAND_ACTION; hand >= SLOT_HAND_READY; hand--) {
             uint16_t thing = g_champions[i].slots[hand];
             int16_t icon = object_get_icon_index(thing);
-            if (icon < ICON_TORCH_UNLIT || icon > ICON_TORCH_LAST || !weapon_charges(thing))
+            if (icon < ICON_TORCH_UNLIT || icon > ICON_TORCH_LAST || !rec_weapon_charges(thing))
                 continue;
-            weapon_set_charges(thing, weapon_charges(thing) - 1);
-            if (!weapon_charges(thing))
-                rec_object_clear_important(thing);
+            rec_weapon_set_charges(thing, rec_weapon_charges(thing) - 1);
+            if (!rec_weapon_charges(thing))
+                rec_object_set_important(thing, false);
         }
 }
 
@@ -597,9 +598,9 @@ bool inventory_fill_leader_hand_at_fountain(void)
     int16_t icon = object_get_icon_index(thing);
     uint16_t weight = inventory_get_object_weight(thing);
     if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
-        junk_set_charges(thing, FILLED_WATERSKIN_CHARGES);
+        rec_junk_set_charges(thing, FILLED_WATERSKIN_CHARGES);
     else if (icon == ICON_EMPTY_FLASK)
-        potion_set_type(thing, POTION_WATER);
+        rec_potion_set_type(thing, POTION_WATER);
     else
         return false;
     g_champions[g_leader_index].load += inventory_get_object_weight(thing) - weight;

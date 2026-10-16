@@ -298,10 +298,10 @@ class Game:
     def mirror_cell(self, x, y):
         thing = self.lib.map_get_square_first_thing(x, y)
         while thing not in (0xFFFE, 0xFFFF):
-            data = self.lib.dungeon_get_thing_data(thing)
+            data = self.lib.rec_write(thing)
             if thing >> 10 & 15 == C.THING_SENSOR and (data[2] << 8 | data[3]) & 0x7F == C.SENSOR_WALL_CHAMPION_PORTRAIT:
                 return thing >> 14
-            thing = self.lib.map_get_next_thing(thing)
+            thing = self.lib.rec_thing_next(thing)
         return None
 
     def path_to_mirror(self, skip=()):
@@ -318,7 +318,7 @@ class Game:
                         path.append(square)
                         square = previous[square]
                     return path[::-1], d
-                if self.lib.map_get_square(nx, ny) >> 5 == C.SQUARE_CORRIDOR and (nx, ny) not in previous:
+                if self.lib.rec_square_type(self.lib.map_get_square(nx, ny)) == C.SQUARE_CORRIDOR and (nx, ny) not in previous:
                     previous[nx, ny] = (x, y)
                     queue.append((nx, ny))
         raise AssertionError("no mirror reachable")
@@ -330,9 +330,9 @@ def start_game(lib):
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.gameloop_get_pointer.restype = ctypes.c_bool
     lib.ui_get_slot_box_zone.restype = ctypes.c_bool
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = u16
-    lib.map_get_next_thing.restype = u16
+    lib.rec_thing_next.restype = u16
     lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     assert lib.gameloop_load_data(str(GAME).encode())
@@ -460,19 +460,20 @@ def setup_creatures(lib):
     for name, res, args in [
         ("projectile_get_impact_attack", u16, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
         ("projectile_create", None, [u16, c16, c16, c16, c16, u8, u8, u8]), ("map_get_square", u8, [c16, c16]),
-        ("map_get_square_first_thing", u16, [c16, c16]), ("map_get_next_thing", u16, [u16]), ("map_get_square_group", u16, [c16, c16]),
-        ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("dungeon_get_square", u8, [c16, c16, c16]),
+        ("map_get_square_first_thing", u16, [c16, c16]), ("rec_thing_next", u16, [u16]), ("map_get_square_group", u16, [c16, c16]),
+        ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("rec_square_byte", u8, [c16, c16, c16]),
+        ("rec_square_type", c16, [u8]),
         ("dungeon_get_square_first_thing", u16, [c16, c16, c16]),
         ("timeline_is_first_event_expired", ctypes.c_bool, []), ("timeline_extract_first_event", None, [event_p]),
         ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
-        ("map_set_current_map", None, [c16]), ("dungeon_get_thing_data", ctypes.POINTER(u8), [u16]),
+        ("map_set_current_map", None, [c16]), ("rec_write", ctypes.POINTER(u8), [u16]),
         ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", c16, [c16, c16, c16, c16]),
         ("group_is_destination_visible_from_source", ctypes.c_bool, [c16, c16, c16, c16, c16]),
         ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
         ("group_get_generated", u16, [u16, c16, u16, c16, c16, c16]),
         ("group_get_damage_all_creatures_outcome", c16, [u16, c16, c16, c16, ctypes.c_bool]),
         ("dungeon_load", ctypes.c_bool, [ctypes.c_char_p]),
-        ("magic_get_champion_spell_cast_result", c16, [u16]), ("map_get_unused_thing", u16, [u16]),
+        ("magic_get_champion_spell_cast_result", c16, [u16]), ("rec_find_unused_thing", u16, [u16]),
         ("object_get_icon_index", c16, [u16]), ("group_is_creature_allowed_on_map", ctypes.c_bool, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
     ]:
         f = getattr(lib, name)
@@ -505,7 +506,7 @@ def things_of_type(lib, x, y, t):
     while thing != 0xFFFE:
         if thing >> 10 & 15 == t:
             found.append(thing)
-        thing = lib.map_get_next_thing(thing)
+        thing = lib.rec_thing_next(thing)
     return found
 
 
@@ -534,14 +535,14 @@ def place_party(lib, map_index, x, y, direction):
 
 def skeleton_map_and_squares(lib):
     """A map that allows skeletons, and two empty corridor squares on it, two squares apart in a straight line."""
-    probe = lib.map_get_unused_thing(C.THING_GROUP)
-    lib.dungeon_get_thing_data(probe)[4] = C.CREATURE_SKELETON
+    probe = lib.rec_find_unused_thing(C.THING_GROUP)
+    lib.rec_group_set_creature_type(probe, C.CREATURE_SKELETON)
     maps = [m for m in range(lib.dungeon_map_count()) if lib.group_is_creature_allowed_on_map(probe, m)]
-    data = lib.dungeon_get_thing_data(probe)
+    data = lib.rec_write(probe)
     data[0] = data[1] = 0xFF  # free the probe record again
     for m in maps:
         empty = lambda x, y: (0 <= x < lib.dungeon_map_width(m) and 0 <= y < lib.dungeon_map_height(m)
-                              and lib.dungeon_get_square(m, x, y) >> 5 == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE)
+                              and lib.rec_square_type(lib.rec_square_byte(m, x, y)) == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE)
         for x in range(lib.dungeon_map_width(m)):
             for y in range(lib.dungeon_map_height(m)):
                 if empty(x, y) and empty(x, y + 1) and empty(x, y + 2):
@@ -558,7 +559,7 @@ def things(lib, m, x, y):
     t = lib.dungeon_get_square_first_thing(m, x, y)
     while t != 0xFFFE:
         yield t
-        d = lib.dungeon_get_thing_data(t)
+        d = lib.rec_write(t)
         t = d[0] << 8 | d[1]
 
 
@@ -624,7 +625,7 @@ def setup_ui(lib):
     lib.recruit_parse.restype = ctypes.c_bool
     lib.dungeon_load.restype = ctypes.c_bool
     lib.dungeon_get_square_first_thing.restype = u16
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(u8)
+    lib.rec_write.restype = ctypes.POINTER(u8)
     lib.recruit_portrait_index.argtypes = [u16]
     lib.recruit_text_thing.restype = u16
     return lib

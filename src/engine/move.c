@@ -8,6 +8,7 @@
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/projectile.h"
+#include "engine/record.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline_process.h"
@@ -34,8 +35,8 @@ bool move_is_levitating(uint16_t thing)
 
 uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing)
 {
-    uint16_t rotation = teleporter_rotation(teleporter);
-    if (teleporter_is_rotation_absolute(teleporter)) {
+    uint16_t rotation = rec_teleporter_rotation(teleporter);
+    if (rec_teleporter_is_absolute(teleporter)) {
         g_move_result_direction = rotation;
         return thing;
     }
@@ -113,29 +114,29 @@ static bool is_teleported(uint16_t *thing, uint8_t square, int16_t src_x, int16_
     if (!(square & TELEPORTER_OPEN))
         return false;
     uint16_t teleporter = map_get_square_first_thing(*dst_x, *dst_y);
-    uint16_t teleporter_scope_bits = teleporter_scope(teleporter);
+    uint16_t teleporter_scope_bits = rec_teleporter_scope(teleporter);
     if (teleporter_scope_bits == TELEPORTER_SCOPE_CREATURES ||
         (scope != TELEPORTER_SCOPE_ALL && !(scope & teleporter_scope_bits)))
         return false;
-    int16_t x = teleporter_target_x(teleporter);
-    int16_t y = teleporter_target_y(teleporter);
-    int16_t rotation = teleporter_rotation(teleporter);
-    bool points_to_itself = x == *dst_x && y == *dst_y && teleporter_target_map(teleporter) == *map;
+    int16_t x = rec_teleporter_target_x(teleporter);
+    int16_t y = rec_teleporter_target_y(teleporter);
+    int16_t rotation = rec_teleporter_rotation(teleporter);
+    bool points_to_itself = x == *dst_x && y == *dst_y && rec_teleporter_target_map(teleporter) == *map;
     *dst_x = x;
     *dst_y = y;
-    *map = teleporter_target_map(teleporter);
+    *map = rec_teleporter_target_map(teleporter);
     map_set_current_map(*map);
     if (party) {
         g_party_map_x = *dst_x;
         g_party_map_y = *dst_y;
         g_party_teleport_count += !points_to_itself;
-        if (teleporter_is_audible(teleporter))
+        if (rec_teleporter_is_audible(teleporter))
             sound_request_play(SOUND_TELEPORT, *dst_x, *dst_y, SOUND_MODE_NOW);
-        move_set_party_direction(teleporter_is_rotation_absolute(teleporter) ? rotation
-                                                                             : NORMALIZE(g_party_direction + rotation));
+        move_set_party_direction(rec_teleporter_is_absolute(teleporter) ? rotation
+                                                                        : NORMALIZE(g_party_direction + rotation));
     } else if (type == THING_PROJECTILE) {
         *thing = move_get_teleporter_rotated_projectile_thing(teleporter, *thing);
-    } else if (!teleporter_is_rotation_absolute(teleporter) && src_x != NO_TELEPORTER_ROTATION) {
+    } else if (!rec_teleporter_is_absolute(teleporter) && src_x != NO_TELEPORTER_ROTATION) {
         *thing = THING_WITH_CELL(*thing, rotation + THING_CELL(*thing));
     }
     return !points_to_itself;
@@ -150,8 +151,8 @@ static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_
     int16_t type = party ? -1 : THING_TYPE(thing);
     bool levitating = party ? false : move_is_levitating(thing);
     for (int16_t n = SQUARE_CHAIN_MAXIMUM; n; n--) {
-        uint8_t square = g_current_map_data[*dst_x][*dst_y];
-        int16_t square_type = SQUARE_TYPE(square);
+        uint8_t square = rec_square_byte(g_current_map_index, *dst_x, *dst_y);
+        int16_t square_type = rec_square_type(square);
         if (square_type == SQUARE_TELEPORTER) {
             if (!is_teleported(&thing, square, src_x, dst_x, dst_y, map))
                 break;
@@ -295,7 +296,7 @@ void move_take_stairs(bool stairs_go_up)
 void move_turn_party(int16_t command)
 {
     uint8_t square = map_get_square(g_party_map_x, g_party_map_y);
-    if (SQUARE_TYPE(square) == SQUARE_STAIRS) {
+    if (rec_square_type(square) == SQUARE_STAIRS) {
         move_take_stairs(square & STAIRS_UP);
         return;
     }
@@ -307,8 +308,8 @@ void move_turn_party(int16_t command)
 /* A wall, a door that is not open enough, or a solid fake wall stops the party. */
 static bool is_square_blocking(uint8_t square)
 {
-    int16_t state = door_state(square);
-    switch (SQUARE_TYPE(square)) {
+    int16_t state = rec_door_state(square);
+    switch (rec_square_type(square)) {
     case SQUARE_WALL:
         return true;
     case SQUARE_DOOR:
@@ -344,7 +345,7 @@ void move_party(int16_t command)
     int16_t x = g_party_map_x;
     int16_t y = g_party_map_y;
     uint8_t square = map_get_square(x, y);
-    bool on_stairs = SQUARE_TYPE(square) == SQUARE_STAIRS;
+    bool on_stairs = rec_square_type(square) == SQUARE_STAIRS;
     if (on_stairs && command == COMMAND_MOVE_BACKWARD) {
         move_take_stairs(square & STAIRS_UP);
         return;
@@ -352,7 +353,7 @@ void move_party(int16_t command)
     game_update_map_coordinates_after_relative_movement(g_party_direction, tables_get_arrow_steps_forward(arrow),
                                                         tables_get_arrow_steps_right(arrow), &x, &y);
     square = map_get_square(x, y);
-    if (SQUARE_TYPE(square) == SQUARE_STAIRS) {
+    if (rec_square_type(square) == SQUARE_STAIRS) {
         move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, -1, 0);
         g_party_map_x = x;
         g_party_map_y = y;

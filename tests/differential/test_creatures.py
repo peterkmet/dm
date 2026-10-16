@@ -200,13 +200,13 @@ def adjacent_group(lib, x, y):
 
 def mummy_in_corridor(lib, m):
     """A single mummy group on map m and a party square 3 squares away in a straight empty corridor."""
-    is_corridor = lambda x, y: lib.dungeon_get_square(m, x, y) >> 5 == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE
+    is_corridor = lambda x, y: lib.rec_square_type(lib.rec_square_byte(m, x, y)) == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE
     for x in range(lib.dungeon_map_width(m)):
         for y in range(lib.dungeon_map_height(m)):
             t = lib.dungeon_get_square_first_thing(m, x, y)
             while t != 0xFFFE and t >> 10 & 15 != C.THING_GROUP:
-                t = lib.map_get_next_thing(t)
-            if t == 0xFFFE or lib.dungeon_get_thing_data(t)[4] != CREATURE_MUMMY:
+                t = lib.rec_thing_next(t)
+            if t == 0xFFFE or lib.rec_write(t)[4] != CREATURE_MUMMY:
                 continue
             for direction, (sx, sy) in enumerate(((0, -1), (1, 0), (0, 1), (-1, 0))):
                 squares = [(x + sx * k, y + sy * k) for k in (1, 2, 3)]
@@ -231,7 +231,7 @@ def test_group_activates_and_approaches_party(lib):
             break
     assert group is not None, "no group came next to the party"
     assert seen & {32, 37}  # group aspect and behavior events ran
-    assert lib.dungeon_get_thing_data(group)[15] & 15 in (C.BEHAVIOR_APPROACH, C.BEHAVIOR_ATTACK)
+    assert lib.rec_write(group)[15] & 15 in (C.BEHAVIOR_APPROACH, C.BEHAVIOR_ATTACK)
 
 
 def test_group_attacks_adjacent_party(lib):
@@ -260,7 +260,7 @@ def test_creature_dies_and_drops_possessions(lib):
     # Like the original, the result is THING_NONE when the new group becomes active on the party map.
     assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 0, x, y) == 0xFFFF
     group = lib.map_get_square_group(x, y)
-    assert group != 0xFFFE and lib.dungeon_get_thing_data(group)[4] == C.CREATURE_SKELETON
+    assert group != 0xFFFE and lib.rec_write(group)[4] == C.CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10, 1) == 0  # 10 damage: the skeleton survives
     assert lib.map_get_square_group(x, y) == group
@@ -279,9 +279,9 @@ def test_fireball_flies_and_explodes_on_wall(lib):
     new_game(lib)
     lib.move_party_enter_dungeon()
     px, py = c16.in_dll(lib, "g_party_map_x").value, c16.in_dll(lib, "g_party_map_y").value
-    corridor = lambda x, y: lib.map_get_square(x, y) >> 5 == 1 and lib.map_get_square_first_thing(x, y) == 0xFFFE and (x, y) != (px, py)
+    corridor = lambda x, y: lib.rec_square_type(lib.map_get_square(x, y)) == 1 and lib.map_get_square_first_thing(x, y) == 0xFFFE and (x, y) != (px, py)
     start = next((x, y) for y in range(lib.dungeon_map_height(0)) for x in range(lib.dungeon_map_width(0))
-                 if corridor(x, y) and corridor(x + 1, y) and corridor(x + 2, y) and lib.map_get_square(x + 3, y) >> 5 == 0)
+                 if corridor(x, y) and corridor(x + 1, y) and corridor(x + 2, y) and lib.rec_square_type(lib.map_get_square(x + 3, y)) == 0)
     x, y = start
     lib.projectile_create(FIREBALL, x, y, 0, 1, 100, 100, 1)  # east, back cell
     path, seen = [], set()
@@ -335,12 +335,12 @@ def test_light_spell_adds_light_event_and_experience(caster):
 def test_potion_spell_fills_empty_flask(caster):
     lib, c = caster
     assert cast(lib, c, [0x62, 0x66]) == 3  # power 3, no flask in hand
-    flask = lib.map_get_unused_thing(C.THING_POTION)
-    lib.dungeon_get_thing_data(flask)[2] = C.POTION_EMPTY_FLASK
+    flask = lib.rec_find_unused_thing(C.THING_POTION)
+    lib.rec_potion_set_type(flask, C.POTION_EMPTY_FLASK)
     assert lib.object_get_icon_index(flask) == C.ICON_EMPTY_FLASK
     c.slots[C.SLOT_HAND_ACTION] = flask
     assert cast(lib, c, [0x62, 0x66]) == 1
-    data = lib.dungeon_get_thing_data(flask)
+    data = lib.rec_write(flask)
     assert data[2] & 0x7F == 11 and 3 * 40 <= data[3] < 3 * 40 + 16
 
 
@@ -400,5 +400,5 @@ def test_fireball_spell_shoots_projectile(caster):
     assert cast(lib, c, [0x63, 0x69, 0x6F]) == 1  # power 4, FUL IR: fireball
     x, y = c16.in_dll(lib, "g_party_map_x").value, c16.in_dll(lib, "g_party_map_y").value
     projectiles = things_of_type(lib, x, y, C.THING_PROJECTILE)
-    assert len(projectiles) == 1 and struct.unpack(">H", bytes(lib.dungeon_get_thing_data(projectiles[0])[2:4]))[0] == FIREBALL
+    assert len(projectiles) == 1 and struct.unpack(">H", bytes(lib.rec_write(projectiles[0])[2:4]))[0] == FIREBALL
     assert c.current_mana == mana

@@ -31,8 +31,8 @@ def game(tmp_path):
     lib.control_is_turn_pending.restype = ctypes.c_bool
     lib.map_get_square.restype = ctypes.c_uint8
     lib.map_get_square_first_thing.restype = ctypes.c_uint16
-    lib.map_get_next_thing.restype = ctypes.c_uint16
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.rec_thing_next.restype = ctypes.c_uint16
+    lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.kaos_s16.restype = ctypes.c_int16
     assert lib.gameloop_load_data(str(GAME).encode())
     game = Game(lib)

@@ -12,6 +12,7 @@
 #include "engine/magic.h"
 #include "engine/map.h"
 #include "engine/message.h"
+#include "engine/record.h"
 #include "ui/advanced.h"
 #include "ui/command.h"
 #include "ui/draw.h"
@@ -553,27 +554,28 @@ int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LI
     uint16_t actual = 0;
     uint16_t weight = inventory_get_object_weight(thing);
     if (icon == ICON_BONES)
-        snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[junk_charges(thing)].name,
+        snprintf(name, PANEL_LINE_SIZE, "%.8s%s%s", g_champions[rec_junk_charges(thing)].name,
                  tables_get_text(TABLES_TEXT_BONES_SEPARATOR), gfx_get_object_name(icon));
     else if (type == THING_POTION && icon != ICON_WATER_FLASK && g_inventory_champion_ordinal &&
              champion_get_skill_level(g_inventory_champion_ordinal - 1, SKILL_PRIEST) > 1)
         snprintf(name, PANEL_LINE_SIZE, "%c %s",
-                 POTION_POWER_SYMBOL_FIRST + potion_power(thing) / POTION_POWER_PER_LEVEL, gfx_get_object_name(icon));
+                 POTION_POWER_SYMBOL_FIRST + rec_potion_power(thing) / POTION_POWER_PER_LEVEL,
+                 gfx_get_object_name(icon));
     else
         snprintf(name, PANEL_LINE_SIZE, "%s", gfx_get_object_name(icon));
     switch (type) {
     case THING_WEAPON:
         potential = ATTRIBUTE_POISONED | ATTRIBUTE_BROKEN | ATTRIBUTE_CURSED;
-        actual = (weapon_is_poisoned(thing) ? ATTRIBUTE_POISONED : 0) |
-                 (weapon_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) |
+        actual = (rec_weapon_is_poisoned(thing) ? ATTRIBUTE_POISONED : 0) |
+                 (rec_weapon_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) |
                  (rec_object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
-        if (icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST && !weapon_charges(thing))
+        if (icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST && !rec_weapon_charges(thing))
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_get_string(TEXT_BURNT_OUT));
         break;
     case THING_ARMOUR:
         potential = ATTRIBUTE_BROKEN | ATTRIBUTE_CURSED;
         actual =
-            (armour_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) | (rec_object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
+            (rec_armour_is_broken(thing) ? ATTRIBUTE_BROKEN : 0) | (rec_object_is_cursed(thing) ? ATTRIBUTE_CURSED : 0);
         break;
     case THING_POTION:
         potential = ATTRIBUTE_CONSUMABLE;
@@ -584,7 +586,7 @@ int16_t panel_draw_object_text(uint16_t thing, char *name, char lines[][PANEL_LI
             snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s", gfx_get_string(TEXT_PARTY_FACING),
                      gfx_get_string(tables_get_direction_text(icon)));
         else if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
-            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_get_string(TEXT_WATERSKIN_EMPTY + junk_charges(thing)));
+            snprintf(lines[n++], PANEL_LINE_SIZE, "%s", gfx_get_string(TEXT_WATERSKIN_EMPTY + rec_junk_charges(thing)));
         else {
             potential = ATTRIBUTE_CONSUMABLE;
             actual = tables_get_object_info(inventory_get_object_info_index(thing))->allowed_slots;
@@ -754,7 +756,7 @@ static void draw_panel_scroll(uint16_t scroll)
 {
     char text[SCROLL_TEXT_SIZE];
     int16_t x, y, count = 1;
-    dungeon_decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(scroll)),
+    dungeon_decode_text(text, sizeof text, THING_MAKE(THING_TEXT, rec_scroll_text_index(scroll)),
                         TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
     if (g_adventure == ADVENTURE_CSB) {
         insert_creature_name(text, sizeof text);
@@ -846,12 +848,12 @@ bool panel_draw_object_meter(uint16_t thing, const char **label, uint16_t *value
 {
     if (THING_TYPE(thing) == THING_WEAPON) {
         *label = "ATTACK";
-        *value = tables_get_weapon_info(weapon_type(thing))->strength;
+        *value = tables_get_weapon_info(rec_weapon_type(thing))->strength;
         return true;
     }
     if (THING_TYPE(thing) == THING_ARMOUR) {
         *label = "DEFENSE";
-        *value = tables_get_armour_info(armour_type(thing))->defense;
+        *value = tables_get_armour_info(rec_armour_type(thing))->defense;
         return true;
     }
     return false;

@@ -34,8 +34,8 @@ def lib():
     lib.gameloop_load_data.restype = ctypes.c_bool
     for name, res, args in [
         ("anim_open", ctypes.c_int, [ctypes.c_char_p]), ("anim_next_frame", c16, []), ("anim_close", None, []),
-        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
-        ("map_get_next_thing", u16, [u16]), ("map_set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
+        ("rec_write", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
+        ("rec_thing_next", u16, [u16]), ("map_set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]), ("savegame_save", c16, [ctypes.c_char_p]),
         ("event_process_wall", None, [ctypes.POINTER(TimelineEvent)]), ("kaos_s16", c16, [u32]),
         ("startend_run_endgame", None, [c16]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
@@ -373,10 +373,10 @@ def endgame_sensor_square(lib):
             for y in range(value(lib, "g_current_map_height").value):
                 t = lib.map_get_square_first_thing(x, y)
                 while t != C.THING_ENDOFLIST:
-                    rec = lib.dungeon_get_thing_data(t)
+                    rec = lib.rec_write(t)
                     if t >> 10 & 15 == C.THING_SENSOR and (rec[2] << 8 | rec[3]) & 0x7F == C.SENSOR_WALL_ENDGAME:
                         return m, x, y, t
-                    t = lib.map_get_next_thing(t)
+                    t = lib.rec_thing_next(t)
     raise AssertionError("no endgame sensor")
 
 

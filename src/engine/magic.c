@@ -12,6 +12,7 @@
 #include "engine/move.h"
 #include "engine/projectile.h"
 #include "engine/random.h"
+#include "engine/record.h"
 #include "engine/timeline_process.h"
 #include <string.h>
 
@@ -174,8 +175,8 @@ static bool cast_potion(uint16_t champion_index, uint16_t potion_type, int16_t p
         return false;
     }
     uint16_t empty_weight = inventory_get_object_weight(flask);
-    potion_set_type(flask, potion_type);
-    potion_set_power(flask, power * POTION_POWER_PER_LEVEL + (random16() & POTION_POWER_RANDOM_MASK));
+    rec_potion_set_type(flask, potion_type);
+    rec_potion_set_power(flask, power * POTION_POWER_PER_LEVEL + (random16() & POTION_POWER_RANDOM_MASK));
     c->load += inventory_get_object_weight(flask) - empty_weight;
     if (champion_index + 1 == g_inventory_champion_ordinal)
         c->attributes |= CHAMPION_ATTR_LOAD;
@@ -208,10 +209,10 @@ static void cast_light(uint16_t light_power, int16_t ticks)
 /* Zokathra: a new junk object in an empty hand, else on the party square. */
 static void cast_zokathra(uint16_t champion_index)
 {
-    uint16_t thing = map_get_unused_thing(THING_JUNK);
+    uint16_t thing = rec_find_unused_thing(THING_JUNK);
     if (thing == THING_NONE)
         return;
-    junk_set_type(thing, JUNK_ZOKATHRA);
+    rec_junk_set_type(thing, JUNK_ZOKATHRA);
     const Champion *c = &g_champions[champion_index];
     int16_t slot = c->slots[SLOT_HAND_READY] == THING_NONE    ? SLOT_HAND_READY
                    : c->slots[SLOT_HAND_ACTION] == THING_NONE ? SLOT_HAND_ACTION
@@ -289,7 +290,7 @@ static bool is_magic_map(uint16_t thing)
     char text[SCROLL_TEXT_SIZE];
     if (THING_TYPE(thing) != THING_SCROLL)
         return false;
-    dungeon_decode_text(text, sizeof text, THING_MAKE(THING_TEXT, scroll_text_index(thing)),
+    dungeon_decode_text(text, sizeof text, THING_MAKE(THING_TEXT, rec_scroll_text_index(thing)),
                         TEXT_MODE_SCROLL | TEXT_MODE_ANY_VISIBILITY);
     return magic_map_is_text(text);
 }

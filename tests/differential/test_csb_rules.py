@@ -35,8 +35,8 @@ def lib():
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     for name, res, args in [
-        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
-        ("map_get_next_thing", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
+        ("rec_write", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
+        ("rec_thing_next", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
         ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
         ("sensor_add_event", None, [c16, c16, c16, c16, c16, u32]),
         ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, ctypes.c_bool, ctypes.c_bool]),
@@ -73,7 +73,7 @@ def things(lib, x, y):
     thing = lib.map_get_square_first_thing(x, y)
     while thing != C.THING_ENDOFLIST:
         yield thing
-        thing = lib.map_get_next_thing(thing)
+        thing = lib.rec_thing_next(thing)
 
 
 def timeline(lib):
@@ -91,7 +91,7 @@ def face_empty_corridor(lib):
                 fx, fy = x + STEP_EAST[d], y + STEP_NORTH[d]
                 if not (0 <= fx < width and 0 <= fy < height):
                     continue
-                if all(lib.map_get_square(a, b) >> 5 == CORRIDOR and not list(things(lib, a, b)) for a, b in ((x, y), (fx, fy))):
+                if all(lib.rec_square_type(lib.map_get_square(a, b)) == CORRIDOR and not list(things(lib, a, b)) for a, b in ((x, y), (fx, fy))):
                     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (x, y, d)):
                         value(lib, name).value = v
                     return fx, fy
@@ -189,7 +189,7 @@ def version_checker(lib, data):
                           for t in things(lib, sx, sy) if t >> 10 & 15 == C.THING_SENSOR)
     lib.map_unlink_thing_from_list(sensor, 0, sx, sy)
     x, y = face_empty_corridor(lib)
-    record = lib.dungeon_get_thing_data(sensor)
+    record = lib.rec_write(sensor)
     word = data << 7 | C.SENSOR_FLOOR_VERSION_CHECKER
     target = y << 11 | x << 6
     record[2], record[3], record[4], record[5], record[6], record[7] = word >> 8, word & 0xFF, 0, 0, target >> 8, target & 0xFF

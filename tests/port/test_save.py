@@ -27,9 +27,9 @@ def game():
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.ui_get_slot_box_zone.restype = ctypes.c_bool
-    lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.map_get_square_first_thing.restype = u16
-    lib.map_get_next_thing.restype = u16
+    lib.rec_thing_next.restype = u16
     lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     lib.dungeon_save.restype = ctypes.c_void_p
@@ -262,7 +262,7 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
         spot = next(
             ((x - STEP[d][0], y - STEP[d][1], d, (x, y)) for x, y in sorted(groups) for d in range(4)
              if 0 <= x - STEP[d][0] < width and 0 <= y - STEP[d][1] < height
-             and lib.map_get_square(x - STEP[d][0], y - STEP[d][1]) >> 5 == 1 and (x - STEP[d][0], y - STEP[d][1]) not in groups),
+             and lib.rec_square_type(lib.map_get_square(x - STEP[d][0], y - STEP[d][1])) == 1 and (x - STEP[d][0], y - STEP[d][1]) not in groups),
             None)
         if spot:
             break
@@ -273,7 +273,7 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
     lord = lib.map_get_square_group(*lord_square)
     lib.startend_run_fuse_sequence()
     assert game.value("g_game_won") == 1 and game.value("g_return_to_entrance") == 1 and game.value("g_quit_requested") == 0
-    assert lib.dungeon_get_thing_data(lord)[4] == 26  # Grey Lord
+    assert lib.rec_write(lord)[4] == 26  # Grey Lord
     # the other groups are gone; the test group is not caged and can walk away and go too
     assert {(x, y) for x in range(width) for y in range(height) if lib.map_get_square_group(x, y) != 0xFFFE} <= {lord_square}
     assert lib.gameloop_start_new_game(str(GAME).encode())  # a new game draws fluxcages again for the other tests
