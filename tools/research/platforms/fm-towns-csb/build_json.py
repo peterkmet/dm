@@ -3,7 +3,7 @@ import json, os, struct
 from collections import Counter
 from grid import T, A, track
 from snes_check import TRIG, D, sq
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '')  # the repository root
 
 CSB = 'music/Game_Chaos_Strikes_Back_JP/FM-Towns,Track_{:02d},Music.mp3'
 DMJ = 'music/Game_Dungeon_Master_JP/FM-Towns,Track_{:02d},Music.mp3'

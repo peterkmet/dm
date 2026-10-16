@@ -1,6 +1,6 @@
 # Reads the DM2 (Skullkeep, DOS) GRAPHICS.DAT: key table and items (docs: dm2/docs/skull-formats.md).
 import os, struct
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
 PATH = ROOT + '../dm2/game/DATA/GRAPHICS.DAT'  # the DM2 repository next to this one
 
 def load(path=PATH):

@@ -1,6 +1,6 @@
 import re,capstone as c
 import os
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '')  # the repository root
 r=open(os.path.join(ROOT, 'reference', 'extracted', 'snes', 'us.sfc'),'rb').read()
 md=c.Cs(c.CS_ARCH_MOS65XX,c.CS_MODE_MOS65XX_65816_LONG_MX)
 for m in re.finditer(re.escape(bytes.fromhex('22d1d900')),r):

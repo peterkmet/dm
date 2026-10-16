@@ -2,7 +2,7 @@
 import os, re, json, wave, hashlib, struct
 import dm2gdat
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
 OUT = ROOT + 'reference/extracted/dm2/'
 RATE = 11025
 CREATURE = {0x00: ('creature move', 'move (AI actions 1, 2, 9)'), 0x01: ('creature move', 'turn or step (AI actions 3, 4, 6, 7)'),

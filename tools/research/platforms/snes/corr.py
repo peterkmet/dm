@@ -1,6 +1,6 @@
 import numpy as np, sys, brr
 import os
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '')  # the repository root
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'platforms')); import gdat
 am=gdat.parse(ROOT + 'game/Graphics.DAT')['items']
 SND=[g for g in list(range(671,694))+list(range(701,713)) if g not in(676,686)]

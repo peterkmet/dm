@@ -1,7 +1,7 @@
 import os, sys, struct
 from dmtools import csb_mini as be
 import dung
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '')  # the repository root
 d = open(ROOT + 'reference/extracted/fm-towns-csb/files/' + 'CHTWE.EXP', 'rb').read()[0x200:]
 T = d[0x42128:0x42128 + 10 * 1024]
 A = dung.parse(be.decode_save(open(ROOT + 'game-csb/disk-b/MINI.DAT', 'rb').read())['dungeon'], '>')

@@ -1,6 +1,6 @@
 import os, csb_mini_le as le, fmt_mini, dung, sys
 from dmtools import csb_mini as be
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '')  # the repository root
 raw, pos, _ = fmt_mini.decode(ROOT + 'reference/extracted/fm-towns-csb/files/CDATA/MINI.DAT')
 F = dung.parse(raw[0x276c:], '<')
 A = dung.parse(be.decode_save(open(ROOT + 'game-csb/disk-b/MINI.DAT', 'rb').read())['dungeon'], '>')

@@ -1,6 +1,6 @@
 import struct,wave,res
 import os
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '')  # the repository root
 d=open(os.path.join(ROOT, 'reference', 'extracted', 'snes', 'driver.bin'),'rb').read()
 T=[struct.unpack_from('<H',d,0x1b46-0x800+2*k)[0] for k in range(0x34)]
 def brr(b):

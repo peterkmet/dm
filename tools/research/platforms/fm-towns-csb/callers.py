@@ -1,5 +1,5 @@
 import os, sys, struct
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '')  # the repository root
 d = open(ROOT + 'reference/extracted/fm-towns-csb/files/' + sys.argv[1], 'rb').read()[0x200:]
 for t in sys.argv[2:]:
     t = int(t, 16)

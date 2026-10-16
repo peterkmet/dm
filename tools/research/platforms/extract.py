@@ -1,5 +1,5 @@
 import struct,wave,os,gdat,dec
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
 R=ROOT; E=R+'reference/extracted/'
 PAL=3546895
 NAMES={671:'metallic_thud',672:'switch',673:'door',674:'wooden_thud_wall_trolin_golem_attack',675:'explosion',

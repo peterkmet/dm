@@ -1,6 +1,6 @@
 import struct
 import os
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '')  # the repository root
 D=os.path.join(ROOT, 'reference', 'extracted', 'snes'); r=open(D+'/us.sfc','rb').read()
 def off(bank,addr): return bank*0x8000+(addr-0x8000)
 SZ=0x83d2; TY=0x8940; N=(TY-SZ)//2

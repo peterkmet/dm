@@ -4,7 +4,7 @@ import gdat, dec
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'snes'))
 import res as snes_res, brr as snes_brr
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
 R = ROOT; E = R + 'reference/extracted/'; OUT = E + 'compare/'
 PAL = 3546895
 SOUNDS = ['metallic_thud', 'switch', 'door', 'entrance_door', 'wooden_thud', 'strong_explosion', 'weak_explosion', 'scream',

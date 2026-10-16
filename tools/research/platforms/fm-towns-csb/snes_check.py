@@ -1,6 +1,6 @@
 """Check Super NES DM music trigger squares against the Amiga DM dungeon."""
 import os, struct, dmcsb, dung
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '')  # the repository root
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '')  # the repository root
 raw = open(ROOT + 'game/Dungeon.DAT', 'rb').read()
 n = struct.unpack_from('>I', raw, 2)[0]
 D = dung.parse(dmcsb.decompress_dungeon(raw[8:], n), '>')
