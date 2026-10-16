@@ -2546,7 +2546,10 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
     if (view_map != g_party_map_index)
         view_load_map(g_party_map_index);
     if (spells[MAGIC_MAP_NETA]) {
-        magic_get_map_position(spells, &map, &x, &y);
+        Position kept = magic_get_map_position(spells);
+        map = kept.map;
+        x = kept.x;
+        y = kept.y;
         dir = spells[MAGIC_MAP_NETA] - 1;
     }
     map_set_current_map(map);
