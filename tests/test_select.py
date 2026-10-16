@@ -306,7 +306,7 @@ def test_font_from_csb_graphics(lib):
 
 
 def run_dm(*args, auto_enter=False):
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     env.pop("DM_AUTO_ENTER", None)
     if auto_enter:

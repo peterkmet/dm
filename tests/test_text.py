@@ -36,7 +36,7 @@ class MessageArea(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.text_init() == 0

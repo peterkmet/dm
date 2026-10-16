@@ -24,7 +24,7 @@ u8p = ctypes.POINTER(ctypes.c_uint8)
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.dungeon_decompress.argtypes = [ctypes.c_char_p, ctypes.c_int32, ctypes.c_char_p, ctypes.c_int32]
     lib.dungeon_decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]

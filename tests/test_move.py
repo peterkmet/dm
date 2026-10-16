@@ -26,7 +26,7 @@ c16, u8p = ctypes.c_int16, ctypes.POINTER(ctypes.c_uint8)
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     for name in ("map_get_square",):
         getattr(lib, name).restype = ctypes.c_uint8

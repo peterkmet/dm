@@ -41,7 +41,7 @@ def scrub_free_groups(lib):
 
 def saved_game(tmp_path):
     """A new game with a fixed seed: recruit, hold an object, save; returns the decoded parts."""
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     # a private copy: an xdist worker shares one image per path, so earlier modules would leave their state
     copy = tmp_path / "libdm.dylib"
     shutil.copy(ROOT / "build/libdm.dylib", copy)

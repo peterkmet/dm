@@ -63,7 +63,7 @@ class Party(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     cp = ctypes.POINTER(Champion)
     sig = {

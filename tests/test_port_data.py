@@ -29,7 +29,7 @@ class Bitmap(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
     lib.ftl_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.c_uint32, ctypes.POINTER(FtlImage)]
     lib.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)

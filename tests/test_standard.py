@@ -1,4 +1,4 @@
-"""Checks port/src against docs/coding-standard.md. Open exceptions: tests/standard_allowlist.txt."""
+"""Checks src/ against docs/coding-standard.md. Open exceptions: tests/standard_allowlist.txt."""
 
 import re
 import shutil
@@ -7,9 +7,8 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "port" / "src"
+SRC = ROOT / "src"
 ALLOWLIST = Path(__file__).with_name("standard_allowlist.txt")
-VENDORED = {"dr_mp3.h"}
 MAX_FUNCTION_LINES = 60
 
 HEX = re.compile(r"\b0x[0-9a-fA-F]{2,}\b")
@@ -26,7 +25,7 @@ FUNC_START = re.compile(r"^(?:static\s+)?[A-Za-z_][\w *]*?\b([a-z_]\w*)\s*\([^;]
 
 
 def sources():
-    return sorted(p for p in SRC.rglob("*.[ch]") if p.name not in VENDORED)
+    return sorted(p for p in SRC.rglob("*.[ch]"))
 
 
 def rel(path):
@@ -295,16 +294,17 @@ INCLUDE = re.compile(r'^\s*#include\s+"([\w./]+)"', re.M)
 
 def test_layers():
     ok = allowed()
-    home = {p.name: p.parent.name for p in SRC.rglob("*.h")}
     found = []
     for path in sources():
         layer = path.parent.name
         assert layer in LAYERS, f"{rel(path)} is not in a layer folder"
         text = path.read_text(errors="replace")
         for header in INCLUDE.findall(text):
-            target = home.get(header)
             key = f"{rel(path)}:{header}"
-            if target and LAYERS.index(target) > LAYERS.index(layer) and ("layer", key) not in ok:
+            target = header.split("/", 1)[0] if "/" in header else None
+            if target not in LAYERS:
+                found.append(f"layer {key}  | the include does not name a layer")
+            elif LAYERS.index(target) > LAYERS.index(layer) and ("layer", key) not in ok:
                 found.append(f"layer {key}  | {layer} includes {target}")
         if layer != "platform" and re.search(r"#include\s+<SDL", text):
             found.append(f"layer {rel(path)}:SDL  | SDL outside platform/")

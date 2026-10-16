@@ -1,4 +1,4 @@
-"""Champion actions and the champion timeline events (port/src/action.c, timeline_process.c)."""
+"""Champion actions and the champion timeline events (src/action.c, timeline_process.c)."""
 
 import ctypes
 import struct

@@ -1,4 +1,4 @@
-"""Creature groups, projectiles, explosions, and spell effects (port/src/group.c, projectile.c, magic.c)."""
+"""Creature groups, projectiles, explosions, and spell effects (src/group.c, projectile.c, magic.c)."""
 
 import ctypes
 import os
@@ -46,7 +46,7 @@ class TimelineEvent(ctypes.Structure):
 def lib():
     path = os.environ.get("DM_LIB")
     if not path:
-        subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
+        subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
         path = ROOT / "build/libdm.dylib"
     lib = ctypes.CDLL(str(path))
     event_p = ctypes.POINTER(TimelineEvent)

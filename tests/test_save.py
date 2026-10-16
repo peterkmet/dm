@@ -38,7 +38,7 @@ pytestmark = [
 
 @pytest.fixture(scope="module")
 def game():
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool

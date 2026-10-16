@@ -27,7 +27,7 @@ u8p = ctypes.POINTER(ctypes.c_uint8)
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
     lib.sound_get_sample.restype = ctypes.POINTER(ctypes.c_int8)
     lib.sound_get_sample.argtypes = [ctypes.c_int16, ctypes.POINTER(ctypes.c_uint16), ctypes.POINTER(ctypes.c_uint16)]

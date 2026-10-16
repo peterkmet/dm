@@ -60,7 +60,7 @@ class ActiveGroup(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     for name in ("random16", "random_bit", "random_2bits"):
         getattr(lib, name).restype = ctypes.c_uint16

@@ -25,7 +25,7 @@ class Box(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
     lib.layout_get_zone.restype = ctypes.c_bool
     lib.view_render.restype = ctypes.c_bool

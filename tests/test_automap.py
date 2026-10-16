@@ -33,7 +33,7 @@ VIEWPORT = Box(0, 33, 224, 136)
 def game():
     if not all((GAME / f).exists() for f in ("KAOS.FTL", "Dungeon.DAT")):
         pytest.skip("missing game files")
-    subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.dungeon_get_square.restype = ctypes.c_uint8
     lib.dungeon_load.restype = ctypes.c_bool

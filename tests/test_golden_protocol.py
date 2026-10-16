@@ -25,7 +25,7 @@ needs_game = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL"
 @pytest.fixture
 def game(tmp_path):
     """The loaded game data in a private copy of libdm, with an open control socket and a temp save folder."""
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     copy = tmp_path / "libdm.dylib"
     shutil.copy(ROOT / "build/libdm.dylib", copy)
     lib = ctypes.CDLL(str(copy))

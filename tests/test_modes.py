@@ -189,7 +189,7 @@ def test_quick_save_and_quick_load(game, tmp_path):
 
 
 def test_bad_mode_stops_the_program():
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     result = subprocess.run([str(ROOT / "build/dm"), "--mode", "fast", "--frames", "1"], cwd=ROOT, env=env, capture_output=True, timeout=60)
     assert result.returncode == 1
@@ -416,7 +416,7 @@ def test_render_advanced_panels(game):
 
 
 def test_turnbased_program_answers_get_state_and_act(tmp_path):
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
     path = os.path.join(sock_dir, "control.sock")
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
@@ -461,7 +461,7 @@ def test_turnbased_program_answers_get_state_and_act(tmp_path):
 
 
 def test_turnbased_load_sent_at_once_runs_the_game(tmp_path):
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     data = tmp_path / "game"
     shutil.copytree(ROOT / "game", data, ignore=shutil.ignore_patterns("DMGAME.*", "QUICK.DAT"))
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
@@ -669,7 +669,7 @@ def test_party_death_during_a_turn_reports_game_over(game):
 
 
 def test_turnbased_save_goes_to_the_saves_folder(tmp_path):
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     data, saves = tmp_path / "game", tmp_path / "saves"
     shutil.copytree(ROOT / "game", data, ignore=shutil.ignore_patterns("DMGAME.*", "QUICK.DAT"))
     saves.mkdir()

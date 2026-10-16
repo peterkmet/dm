@@ -35,7 +35,7 @@ class Box(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def game():
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
@@ -225,7 +225,7 @@ def test_champion_dies_with_inventory_open(game):
 
 
 def test_game_runs_headless_with_auto_enter():
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy", DM_AUTO_ENTER="1")
     result = subprocess.run([str(ROOT / "build/dm"), "--frames", "100"], cwd=ROOT, env=env, capture_output=True, timeout=60)
     assert result.returncode == 0, result.stderr

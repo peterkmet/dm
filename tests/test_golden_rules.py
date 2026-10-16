@@ -40,7 +40,7 @@ needs_game = pytest.mark.skipif(not (GAME / "KAOS.FTL").exists(), reason="game f
 @pytest.fixture
 def game(tmp_path):
     """A new game with a fixed seed in a private copy of libdm."""
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     # a private copy: an xdist worker shares one image per path, so earlier modules would leave their state
     copy = tmp_path / "libdm.dylib"
     shutil.copy(ROOT / "build/libdm.dylib", copy)

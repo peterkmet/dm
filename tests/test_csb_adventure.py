@@ -276,7 +276,7 @@ def test_control_new_game_save_and_load(game, saves):
 
 
 def run_dm(*args):
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     env.pop("DM_AUTO_ENTER", None)
     return subprocess.run([str(ROOT / "build/dm"), *args, "--frames", "20"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)

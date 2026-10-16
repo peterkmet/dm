@@ -39,7 +39,7 @@ class Champion(ctypes.Structure):
 
 @pytest.fixture(scope="module")
 def lib():
-    subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["make"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
     lib.view_render.restype = ctypes.c_bool
     lib.layout_get_zone_box.argtypes = [c16, c16, c16, ctypes.POINTER(Box)]
