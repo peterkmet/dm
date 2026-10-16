@@ -90,12 +90,12 @@ bool adventure_load_files(const char *dir, const char **failed)
     char path[PATH_SIZE];
     const Adventure *a = adventure_get(g_adventure);
     snprintf(path, sizeof path, "%s/%s", dir, a->engine);
-    if (tables_load(path)) {
+    if (!tables_load(path)) {
         *failed = a->engine;
         return false;
     }
     snprintf(path, sizeof path, "%s/%s", dir, ADVENTURE_GRAPHICS_FILE);
-    if (gfx_open(path) < 0) {
+    if (!gfx_open(path)) {
         *failed = ADVENTURE_GRAPHICS_FILE;
         return false;
     }
@@ -112,7 +112,7 @@ AdventureDisk adventure_install_disk(const char *adf_path, const char **dir)
         snprintf(path, sizeof path, "%s/%s", *dir, game_disks[i].file);
         if (file_exists(path))
             return ADVENTURE_DISK_SKIPPED;
-        return adf_extract(adf_path, *dir) ? ADVENTURE_DISK_FAILED : ADVENTURE_DISK_INSTALLED;
+        return adf_extract(adf_path, *dir) ? ADVENTURE_DISK_INSTALLED : ADVENTURE_DISK_FAILED;
     }
     return ADVENTURE_DISK_SKIPPED;
 }

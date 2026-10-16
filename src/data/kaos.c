@@ -14,19 +14,19 @@ static FtlImage image; /* the engine image; image.data is owned */
 
 /* Setup */
 
-int kaos_load(const char *path)
+bool kaos_load(const char *path)
 {
     size_t len;
     uint8_t *raw = file_read(path, &len);
     FtlImage appb = {0};
     bool csb = g_adventure == ADVENTURE_CSB;
     kaos_free();
-    int r = raw ? ftl_load(raw, len, KAOS_BASE, csb ? &appb : &image) : -1;
+    bool ok = raw && ftl_load(raw, len, KAOS_BASE, csb ? &appb : &image);
     free(raw);
-    if (!r && csb)
-        r = csb_image_build(&appb, &image);
+    if (ok && csb)
+        ok = csb_image_build(&appb, &image);
     ftl_free(&appb);
-    return r;
+    return ok;
 }
 void kaos_free(void)
 {

@@ -10,8 +10,8 @@
 #include <stdint.h>
 
 /* Setup */
-/* Loads the engine module at path: KAOS.FTL, or for CSB APPB.FTL as a KAOS-layout image. Returns 0 or -1. */
-int kaos_load(const char *path);
+/* Loads the engine module at path: KAOS.FTL, or for CSB APPB.FTL as a KAOS-layout image. False when the file is missing or damaged. */
+bool kaos_load(const char *path);
 /* Frees the image. */
 void kaos_free(void);
 

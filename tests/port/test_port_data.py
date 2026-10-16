@@ -44,7 +44,7 @@ def lib():
 
 def c_image(lib, raw):
     img = FtlImage()
-    if lib.ftl_load(raw, len(raw), BASE, ctypes.byref(img)):
+    if not lib.ftl_load(raw, len(raw), BASE, ctypes.byref(img)):
         return None
     out = ctypes.string_at(img.data, img.size), img.data_base, img.code_base
     lib.ftl_free(ctypes.byref(img))
@@ -92,14 +92,14 @@ def test_graphics_dat_rejects_bad_files(lib, tmp_path):
     dat = (GAME / "Graphics.DAT").read_bytes()
     for name, data in [("truncated", dat[:1000]), ("short", dat[:3]), ("format0", b"\x00\x01" + dat[4:])]:
         (tmp_path / name).write_bytes(data)
-        assert lib.gfx_open(str(tmp_path / name).encode()) == -1
+        assert not lib.gfx_open(str(tmp_path / name).encode())
         assert lib.gfx_count() == 0
 
 
 @needs_dm
 def test_kaos_accessors(lib):
     data = load_image(parse((GAME / "KAOS.FTL").read_bytes()), BASE).data
-    assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.kaos_load(str(GAME / "KAOS.FTL").encode())
     for addr in (0x100AA6, 0x100170, 0x102566, BASE + len(data) - 4):
         p = addr - BASE
         assert lib.kaos_u8(addr) == data[p]
@@ -137,7 +137,8 @@ def bitmap_items(dat):
 @needs_dm
 def test_graphics_dat_items(lib):
     dat = (GAME / "Graphics.DAT").read_bytes()
-    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) == struct.unpack_from(">H", dat, 2)[0] == lib.gfx_count()
+    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
+    assert struct.unpack_from(">H", dat, 2)[0] == lib.gfx_count()
     size = ctypes.c_uint16()
     for i, item, _, _ in bitmap_items(dat):
         assert ctypes.string_at(lib.gfx_get_item(i, ctypes.byref(size)), size.value) == item
@@ -155,7 +156,7 @@ def test_expand_graphic_matches_original(lib):
         emu.call(EXPAND_GRAPHIC, [(4, PACKED), (4, BITMAP)])
         expected = planar_to_chunky(emu.read(BITMAP, size), w, h)
         bm = Bitmap()
-        assert lib.gfx_expand(item, len(item), ctypes.byref(bm)) == 0
+        assert lib.gfx_expand(item, len(item), ctypes.byref(bm))
         assert (bm.w, bm.h) == (w, h)
         assert ctypes.string_at(bm.px, w * h) == expected, f"graphic {i}"
         lib.gfx_free_bitmap(ctypes.byref(bm))

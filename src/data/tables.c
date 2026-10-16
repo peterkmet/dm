@@ -352,10 +352,10 @@ static void decode_tables(void)
     read_champion_tables();
 }
 
-int tables_load(const char *path)
+bool tables_load(const char *path)
 {
-    int r = kaos_load(path);
-    if (!r)
+    bool r = kaos_load(path);
+    if (r)
         decode_tables();
     return r;
 }

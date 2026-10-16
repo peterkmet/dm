@@ -67,7 +67,7 @@ void gfx_close(void)
     graphics.item_count = 0;
 }
 
-int gfx_open(const char *path)
+bool gfx_open(const char *path)
 {
     gfx_close();
     if (!(graphics.data = file_read(path, &graphics.size)) || graphics.size < GFX_HEADER_BYTES)
@@ -86,12 +86,14 @@ int gfx_open(const char *path)
     graphics.offsets[n] = off;
     if (off > graphics.size || !(graphics.decoded = calloc(n, sizeof *graphics.decoded)))
         goto fail;
-    return graphics.item_count = n;
+    graphics.item_count = n;
+    return true;
 fail:
     gfx_close();
-    return -1;
+    return false;
 }
 
+/* exported for the tests */
 int gfx_count(void)
 {
     return graphics.item_count;
@@ -193,36 +195,36 @@ static void expand_commands(const uint8_t *p, const uint8_t *end, uint8_t *px, u
     }
 }
 
-int gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
+bool gfx_expand(const uint8_t *p, size_t len, Bitmap *bm)
 {
     const uint8_t *end = p + len;
     uint16_t w, h;
     if (!(p = get_graphic_size(p, end, &w, &h)))
-        return -1;
+        return false;
     size_t n = (size_t)w * h;
     uint8_t *px = calloc(n ? n : 1, 1);
     if (!px)
-        return -1;
+        return false;
     expand_commands(p, end, px, w, n);
     *bm = (Bitmap){w, h, px};
-    return 0;
+    return true;
 }
 
-int gfx_expand_over(const uint8_t *p, size_t len, Bitmap *bm)
+bool gfx_expand_over(const uint8_t *p, size_t len, Bitmap *bm)
 {
     const uint8_t *end = p + len;
     uint16_t w, h;
     if (!(p = get_graphic_size(p, end, &w, &h)) || w != bm->w || h != bm->h)
-        return -1;
+        return false;
     expand_commands(p, end, bm->px, w, (size_t)w * h);
-    return 0;
+    return true;
 }
 
-int gfx_load_bitmap(int i, Bitmap *bm)
+bool gfx_load_bitmap(int16_t i, Bitmap *bm)
 {
     uint16_t size;
     const uint8_t *p = gfx_get_item(i, &size);
-    return p ? gfx_expand(p, size, bm) : -1;
+    return p && gfx_expand(p, size, bm);
 }
 
 void gfx_free_bitmap(Bitmap *bm)
@@ -235,7 +237,7 @@ const Bitmap *gfx_get_bitmap(int i)
 {
     if (i < 0 || i >= graphics.item_count)
         return NULL;
-    if (!graphics.decoded[i].px && gfx_load_bitmap(i, &graphics.decoded[i]))
+    if (!graphics.decoded[i].px && !gfx_load_bitmap(i, &graphics.decoded[i]))
         return NULL;
     return &graphics.decoded[i];
 }
@@ -244,7 +246,7 @@ const Bitmap *gfx_get_bitmap(int i)
 
 /* Splits a graphic of NUL-terminated strings into a list. CSB takes the strings and action names from
    the engine, and ends each object name at a byte with bit 7 set. */
-static int load_strings(int graphic, StringList *list)
+static bool load_strings(int graphic, StringList *list)
 {
     uint16_t size;
     bool csb = g_adventure == ADVENTURE_CSB;
@@ -253,13 +255,13 @@ static int load_strings(int graphic, StringList *list)
     if (!p)
         p = gfx_get_item(graphic, &size);
     if (!p)
-        return -1;
+        return false;
     free(list->data);
     free(list->s);
     list->data = malloc(2 * (size_t)size + 1);
     list->s = malloc(((size_t)size + 1) * sizeof *list->s);
     if (!list->data || !list->s)
-        return -1;
+        return false;
     size_t n = 0;
     for (uint16_t i = 0; i < size; i++) {
         list->data[n++] = (char)(bit7_ends ? p[i] & ~NAME_END_BIT : p[i]);
@@ -270,16 +272,14 @@ static int load_strings(int graphic, StringList *list)
     list->count = 0;
     for (char *c = list->data; c < list->data + n; c += strlen(c) + 1)
         list->s[list->count++] = c;
-    return 0;
+    return true;
 }
 
 /* Loads the strings, action names, and object names. */
-int gfx_load_strings(void)
+bool gfx_load_strings(void)
 {
-    if (load_strings(GFX_STRINGS, &graphics.strings) || load_strings(GFX_ACTION_NAMES, &graphics.action_names) ||
-        load_strings(GFX_OBJECT_NAMES, &graphics.object_names))
-        return -1;
-    return 0;
+    return load_strings(GFX_STRINGS, &graphics.strings) && load_strings(GFX_ACTION_NAMES, &graphics.action_names) &&
+           load_strings(GFX_OBJECT_NAMES, &graphics.object_names);
 }
 
 static const char *list_get(const StringList *l, int16_t i)

@@ -55,7 +55,7 @@ static int show(const char *dir, int n)
     Bitmap bm;
     if (!load_kaos_and_graphics(dir))
         return 0;
-    if (gfx_load_bitmap(n, &bm)) {
+    if (!gfx_load_bitmap(n, &bm)) {
         SDL_Log("cannot decode graphic %d", n);
         return 0;
     }
@@ -421,7 +421,7 @@ static int load_font(void)
         if (!dirs[i])
             continue;
         snprintf(path, sizeof path, "%s/Graphics.DAT", dirs[i]);
-        if (gfx_open(path) >= 0 && !text_init())
+        if (gfx_open(path) && !text_init())
             return 1;
     }
     SDL_Log("cannot load the font from Graphics.DAT");

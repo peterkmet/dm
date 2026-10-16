@@ -11,12 +11,20 @@ ROOT = Path(__file__).resolve().parents[2]
 LIBRARY = ROOT / "build" / "libdm.dylib"
 
 
+BOOL_RESULTS = (
+    "ftl_load", "kaos_load", "tables_load", "gfx_open", "gfx_expand", "gfx_expand_over", "gfx_load_bitmap",
+    "gfx_load_strings", "adf_extract", "csb_image_build", "csb_text_build",
+)
+
+
 def load_lib():
     """Loads a new private copy of the library; conftest.py builds the library before the tests start."""
     folder = Path(tempfile.mkdtemp(prefix="libdm-"))
     copy = folder / LIBRARY.name
     shutil.copy2(LIBRARY, copy)
     lib = ctypes.CDLL(str(copy))
+    for name in BOOL_RESULTS:
+        getattr(lib, name).restype = ctypes.c_bool
     shutil.rmtree(folder)  # the loaded image stays mapped after the file is gone
     return lib
 

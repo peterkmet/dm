@@ -18,7 +18,7 @@ bool swsh_load(const char *path, SwshLogo *out)
     size_t len;
     uint8_t *raw = file_read(path, &len);
     *out = (SwshLogo){0};
-    bool loaded = raw && !ftl_load(raw, len, SWSH_BASE, &out->image) && out->image.size > SWSH_SAMPLE_DATA - SWSH_BASE;
+    bool loaded = raw && ftl_load(raw, len, SWSH_BASE, &out->image) && out->image.size > SWSH_SAMPLE_DATA - SWSH_BASE;
     free(raw);
     if (!loaded) {
         ftl_free(&out->image);

@@ -45,7 +45,7 @@ def game():
     lib.explored_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t]
     lib.explored_is_seen.restype = ctypes.c_bool
     lib.automap_draw.argtypes = [ctypes.POINTER(Bitmap), Box, c16]
-    assert lib.tables_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     lib.game_start_new()
     lib.move_party_enter_dungeon()
@@ -159,7 +159,7 @@ def test_draw_stays_in_area_with_party_arrow_at_center(game):
 
 def test_rulers_number_the_squares_and_a_frame_ends_the_map(game):
     white = 15
-    assert game.gfx_open(str(GAME / "Graphics.DAT").encode()) >= 0 and game.text_init() == 0  # the font of the numbers
+    assert game.gfx_open(str(GAME / "Graphics.DAT").encode()) and game.text_init() == 0  # the font of the numbers
     mark_here(game)
     game.automap_scroll(party(game)[0], -64, -64)  # the top-left corner of the map at the center
     try:

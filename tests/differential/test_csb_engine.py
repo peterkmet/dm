@@ -63,7 +63,7 @@ def set_adventure(lib, adventure):
 
 def load(lib, adventure, path):
     set_adventure(lib, adventure)
-    assert lib.tables_load(str(path).encode()) == 0
+    assert lib.tables_load(str(path).encode())
     return lambda addr, n: bytes(lib.kaos_ptr(addr)[:n])
 
 
@@ -87,11 +87,11 @@ def test_failed_text_build_publishes_no_image(lib):
     lib.ftl_free.argtypes = [ctypes.POINTER(FtlImage)]
     raw = (GAME_CSB / "APPB.FTL").read_bytes()
     appb = FtlImage()
-    assert lib.ftl_load(raw, len(raw), BASE, ctypes.byref(appb)) == 0
+    assert lib.ftl_load(raw, len(raw), BASE, ctypes.byref(appb))
     at = CSB_APPB_DISK_MESSAGES - appb.base
     ctypes.memmove(ctypes.addressof(appb.data.contents) + at, b"\xff\xff\xff\xff", 4)  # a pointer outside the image
     out = FtlImage()
-    assert lib.csb_image_build(ctypes.byref(appb), ctypes.byref(out)) == -1
+    assert not lib.csb_image_build(ctypes.byref(appb), ctypes.byref(out))
     assert not out.data
     lib.ftl_free(ctypes.byref(appb))
 
@@ -175,7 +175,7 @@ def test_dm_spells(lib, appb):
 @needs_dm
 def test_layout_zones_equal_but_endgame_buttons(lib):
     def boxes(folder):
-        assert lib.gfx_open(str(folder / "Graphics.DAT").encode()) >= 0 and lib.layout_init() == 0
+        assert lib.gfx_open(str(folder / "Graphics.DAT").encode()) and lib.layout_init() == 0
         result = {}
         for zone in range(1, 2000):
             b, w, h = Box(), c16(), c16()

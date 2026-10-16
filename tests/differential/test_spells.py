@@ -34,7 +34,7 @@ def lib():
     lib.spell_draw_fails.argtypes = [ctypes.c_uint8, ctypes.c_uint16]
     lib.spell_get_failure_experience.argtypes = [ctypes.c_uint16] * 3
     lib.spell_get_failure_experience.restype = ctypes.c_uint16
-    assert lib.tables_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
     return lib
 
 

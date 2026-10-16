@@ -157,13 +157,13 @@ const CsbCopy g_csb_copies[] = {
 const int g_csb_copy_count = ARRAY_COUNT(g_csb_copies);
 
 /* Copies the tables, converts the action sets, moves the dialog pointers to the KAOS tables, and builds the texts. */
-int csb_image_build(const FtlImage *appb, FtlImage *out)
+bool csb_image_build(const FtlImage *appb, FtlImage *out)
 {
     uint32_t size = CSB_IMAGE_END - KAOS_BASE;
     uint8_t *mem = calloc(size, 1);
     if (!mem || appb->base != KAOS_BASE || appb->data_base != CSB_APPB_DATA_BASE) {
         free(mem);
-        return -1;
+        return false;
     }
     FtlImage built = {.data = mem, .size = size, .base = KAOS_BASE};
     for (int i = 0; i < g_csb_copy_count; i++) {
@@ -171,7 +171,7 @@ int csb_image_build(const FtlImage *appb, FtlImage *out)
         const uint8_t *src = ftl_at(appb, g_csb_copies[i].appb, g_csb_copies[i].size);
         if (!dst || !src) {
             free(mem);
-            return -1;
+            return false;
         }
         memcpy(dst, src, g_csb_copies[i].size);
     }
@@ -180,7 +180,7 @@ int csb_image_build(const FtlImage *appb, FtlImage *out)
         uint8_t *k = ftl_at(&built, KAOS_ACTION_SETS + i * KAOS_ACTION_SET_BYTES, KAOS_ACTION_SET_BYTES);
         if (!a || !k) {
             free(mem);
-            return -1;
+            return false;
         }
         memcpy(k, a, ACTION_SET_ACTIONS);
         memcpy(k + KAOS_ACTION_SET_LEVELS, a + APPB_ACTION_SET_LEVELS, ACTION_SET_LEVELS);
@@ -192,14 +192,14 @@ int csb_image_build(const FtlImage *appb, FtlImage *out)
         uint8_t *q = ftl_at(&built, KAOS_DIALOG_MOUSE_INPUTS + 4 * i, sizeof(uint32_t));
         if (!p || !q) {
             free(mem);
-            return -1;
+            return false;
         }
         wr32(q, be32(p) - CSB_APPB_DIALOG_TABLES + KAOS_DIALOG_TABLES);
     }
-    if (csb_text_build(appb, &built) != 0) {
+    if (!csb_text_build(appb, &built)) {
         free(mem);
-        return -1;
+        return false;
     }
     *out = built;
-    return 0;
+    return true;
 }

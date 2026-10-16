@@ -602,8 +602,8 @@ def start_view(lib):
     """The dungeon of game/ loaded for the view, and the party start (map, x, y, direction)."""
     if not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")):
         pytest.skip("game files missing")
-    assert lib.tables_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
+    assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
+    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
     assert lib.layout_init() == 0
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
     party = [ctypes.c_int16.in_dll(lib, n).value for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")]
@@ -634,8 +634,8 @@ def start_ui(lib):
     """A new game of game/ with the interface ready to draw."""
     if not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")):
         pytest.skip("game files missing")
-    assert lib.tables_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
+    assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
+    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
     assert lib.layout_init() == 0 and lib.text_init() == 0
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
     lib.game_start_new()

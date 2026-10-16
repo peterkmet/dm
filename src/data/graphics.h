@@ -30,23 +30,24 @@ bool box_contains(const Box *box, int16_t x, int16_t y);
 
 /* Frees Graphics.DAT and the decoded bitmaps. */
 void gfx_close(void);
-/* Reads a format 1 Graphics.DAT like graphics_dat_read_header. Returns the item count or -1. */
-int gfx_open(const char *path);
+/* Reads a format 1 Graphics.DAT like graphics_dat_read_header. False when the file is missing or damaged. */
+bool gfx_open(const char *path);
+/* The item count of the open Graphics.DAT; exported for the tests. */
 int gfx_count(void);
 /* Packed bytes of item i. */
 const uint8_t *gfx_get_item(int i, uint16_t *size);
 /* Port of expand_graphic: decodes a packed graphic into a chunky bitmap. */
-int gfx_expand(const uint8_t *packed, size_t len, Bitmap *bm);
+bool gfx_expand(const uint8_t *packed, size_t len, Bitmap *bm);
 /* Decodes a packed graphic over a bitmap of the same size: skipped pixels keep their color. */
-int gfx_expand_over(const uint8_t *packed, size_t len, Bitmap *bm);
-/* Decodes graphic i into a new bitmap. Returns 0 or -1. */
-int gfx_load_bitmap(int i, Bitmap *bm);
+bool gfx_expand_over(const uint8_t *packed, size_t len, Bitmap *bm);
+/* Decodes graphic i into a new bitmap. False when it does not decode. */
+bool gfx_load_bitmap(int16_t i, Bitmap *bm);
 void gfx_free_bitmap(Bitmap *bm);
 /* Decoded graphic i, kept until the next gfx_open. NULL when it does not decode. */
 const Bitmap *gfx_get_bitmap(int i);
 
 /* Loads the string lists of the game data. Call after gfx_open and csb_text_build. */
-int gfx_load_strings(void);
+bool gfx_load_strings(void);
 const char *gfx_string(int16_t index);       /* a text of graphic 700 */
 const char *gfx_object_name(int16_t icon);   /* an object name of graphic 0x2b6 */
 const char *gfx_action_name(int16_t action); /* an action name of graphic 699 */

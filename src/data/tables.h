@@ -151,8 +151,8 @@ typedef struct {
 
 /* Setup */
 
-/* Loads the engine module at path (kaos_load), then decodes the tables. Returns 0, or -1 as kaos_load. */
-int tables_load(const char *path);
+/* Loads the engine module at path (kaos_load), then decodes the tables. False as kaos_load. */
+bool tables_load(const char *path);
 
 /* True after a successful tables_load. */
 bool tables_is_loaded(void);

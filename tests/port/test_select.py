@@ -259,7 +259,7 @@ def test_done_ignores_keys(lib):
 
 
 def load_font(lib, folder):
-    assert lib.gfx_open(str(folder / "Graphics.DAT").encode()) > 0
+    assert lib.gfx_open(str(folder / "Graphics.DAT").encode())
     assert lib.text_init() == 0
 
 

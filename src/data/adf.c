@@ -35,7 +35,9 @@
 #define ADF_FOLDER_DEPTH      8             /* deeper folders mean a broken image */
 #define ADF_UNSAFE_NAME_CHARS "/\\:*?\"<>|" /* characters that macOS or Windows do not accept in a file name */
 
-typedef int (*EntryVisit)(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx);
+typedef enum { ADF_VISIT_CONTINUE, ADF_VISIT_STOP, ADF_VISIT_BROKEN } AdfVisit;
+
+typedef AdfVisit (*EntryVisit)(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx);
 
 /* Block n of the image, or NULL outside the disk. Block 0 is the boot block and never a link. */
 static const uint8_t *block(const uint8_t *img, uint32_t n)
@@ -55,45 +57,47 @@ static uint8_t *load(const char *path)
     return img;
 }
 
-/* Calls visit for each entry of a folder header block; stops at the first nonzero result. -1 for a broken chain. */
-static int each_entry(const uint8_t *img, const uint8_t *folder, EntryVisit visit, void *ctx)
+/* Calls visit for each entry of a folder header block; stops at the first entry that does not continue. BROKEN for a broken chain. */
+static AdfVisit each_entry(const uint8_t *img, const uint8_t *folder, EntryVisit visit, void *ctx)
 {
     for (int i = 0; i < ADF_HASH_SIZE; i++) {
         uint32_t n = be32(folder + ADF_HASH_OFFSET + ADF_LONG_SIZE * i);
         for (int guard = 0; n; guard++) {
             const uint8_t *entry = block(img, n);
             if (!entry || guard >= ADF_BLOCKS || be32(entry) != ADF_TYPE_HEADER)
-                return -1;
+                return ADF_VISIT_BROKEN;
             char name[ADF_NAME_MAX + 1];
             int len = entry[ADF_NAME_OFFSET] < ADF_NAME_MAX ? entry[ADF_NAME_OFFSET] : ADF_NAME_MAX;
             memcpy(name, entry + ADF_NAME_OFFSET + 1, len);
             name[len] = '\0';
-            int r = visit(img, entry, name, ctx);
-            if (r)
+            AdfVisit r = visit(img, entry, name, ctx);
+            if (r != ADF_VISIT_CONTINUE)
                 return r;
             n = be32(entry + ADF_CHAIN_OFFSET);
         }
     }
-    return 0;
+    return ADF_VISIT_CONTINUE;
 }
 
-/* True for a file (not a folder) of the disk with the name in ctx, without case. */
-static int match_name(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
+/* Stops at a file (not a folder) of the disk with the name in ctx, without case. */
+static AdfVisit match_name(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
 {
     (void)img;
-    return (int32_t)be32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER && !file_compare_names(name, ctx);
+    bool match = (int32_t)be32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER && !file_compare_names(name, ctx);
+    return match ? ADF_VISIT_STOP : ADF_VISIT_CONTINUE;
 }
 
 bool adf_has_file(const char *adf_path, const char *name)
 {
     uint8_t *img = load(adf_path);
-    bool found = img && each_entry(img, img + ADF_ROOT_BLOCK * ADF_BLOCK_SIZE, match_name, (void *)name) == 1;
+    bool found =
+        img && each_entry(img, img + ADF_ROOT_BLOCK * ADF_BLOCK_SIZE, match_name, (void *)name) == ADF_VISIT_STOP;
     free(img);
     return found;
 }
 
-/* Makes the folder and its parents. Returns 0, or -1. */
-static int make_folders(const char *path)
+/* Makes the folder and its parents. */
+static bool make_folders(const char *path)
 {
     char p[PATH_SIZE];
     snprintf(p, sizeof p, "%s", path);
@@ -102,18 +106,18 @@ static int make_folders(const char *path)
             continue;
         *s = '\0';
         if (!os_make_folder(p))
-            return -1;
+            return false;
         *s = '/';
     }
-    return os_make_folder(p) ? 0 : -1;
+    return os_make_folder(p);
 }
 
-/* Writes the file of a file header block: its data blocks in their chain. Returns 0, or -1. */
-static int write_file(const uint8_t *img, const uint8_t *header, const char *path)
+/* Writes the file of a file header block: its data blocks in their chain. False when it cannot be written. */
+static bool write_file(const uint8_t *img, const uint8_t *header, const char *path)
 {
     FILE *f = fopen(path, "wb");
     if (!f)
-        return -1;
+        return false;
     uint32_t left = be32(header + ADF_BYTE_SIZE_OFFSET);
     uint32_t n = be32(header + ADF_FIRST_DATA_OFFSET);
     for (int guard = 0; left; guard++) {
@@ -125,7 +129,7 @@ static int write_file(const uint8_t *img, const uint8_t *header, const char *pat
         left -= size;
         n = be32(data + ADF_NEXT_DATA_OFFSET);
     }
-    return fclose(f) || left ? -1 : 0;
+    return !fclose(f) && !left;
 }
 
 typedef struct {
@@ -144,27 +148,27 @@ bool adf_is_safe_name(const char *name)
 }
 
 /* Writes one file of the disk into the target folder, or makes a folder and extracts its entries. */
-static int extract_entry(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
+static AdfVisit extract_entry(const uint8_t *img, const uint8_t *entry, const char *name, void *ctx)
 {
     const ExtractTarget *at = ctx;
     char path[PATH_SIZE];
     if (!adf_is_safe_name(name))
-        return -1;
+        return ADF_VISIT_BROKEN;
     snprintf(path, sizeof path, "%s/%s", at->dir, name);
     if ((int32_t)be32(entry + ADF_SEC_TYPE_OFFSET) != ADF_SEC_FOLDER)
-        return write_file(img, entry, path);
+        return write_file(img, entry, path) ? ADF_VISIT_CONTINUE : ADF_VISIT_BROKEN;
     ExtractTarget sub = {path, at->depth + 1};
-    if (sub.depth > ADF_FOLDER_DEPTH || make_folders(path))
-        return -1;
+    if (sub.depth > ADF_FOLDER_DEPTH || !make_folders(path))
+        return ADF_VISIT_BROKEN;
     return each_entry(img, entry, extract_entry, &sub);
 }
 
-int adf_extract(const char *adf_path, const char *out_dir)
+bool adf_extract(const char *adf_path, const char *out_dir)
 {
     uint8_t *img = load(adf_path);
     ExtractTarget root = {out_dir, 0};
-    int r = img && !make_folders(out_dir) ? each_entry(img, img + ADF_ROOT_BLOCK * ADF_BLOCK_SIZE, extract_entry, &root)
-                                          : -1;
+    bool ok = img && make_folders(out_dir) &&
+              each_entry(img, img + ADF_ROOT_BLOCK * ADF_BLOCK_SIZE, extract_entry, &root) == ADF_VISIT_CONTINUE;
     free(img);
-    return r ? -1 : 0;
+    return ok;
 }

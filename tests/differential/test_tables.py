@@ -67,8 +67,8 @@ def lib():
         f.argtypes, f.restype = [ctypes.c_int16], rec if scalar else ctypes.POINTER(rec)
     lib.tables_get_symbol_base_mana_cost.argtypes = [ctypes.c_int16, ctypes.c_int16]
     lib.tables_get_symbol_base_mana_cost.restype = u8
-    assert lib.tables_load(b"/nonexistent/KAOS.FTL") == -1
-    assert lib.tables_load(str(KAOS).encode()) == 0
+    assert not lib.tables_load(b"/nonexistent/KAOS.FTL")
+    assert lib.tables_load(str(KAOS).encode())
     return lib
 
 

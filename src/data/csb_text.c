@@ -137,7 +137,7 @@ static const char *get_appb_pointed_string(const FtlImage *appb, uint32_t addr)
 }
 
 /* Joins the parts of each text into one block of NUL-terminated strings. */
-static int join_texts(const char *parts[CSB_TEXT_COUNT][TEXT_PARTS])
+static bool join_texts(const char *parts[CSB_TEXT_COUNT][TEXT_PARTS])
 {
     size_t size = CSB_TEXT_COUNT;
     for (int t = 0; t < CSB_TEXT_COUNT; t++)
@@ -146,7 +146,7 @@ static int join_texts(const char *parts[CSB_TEXT_COUNT][TEXT_PARTS])
     free(strings);
     strings = malloc(size);
     if (!strings)
-        return -1;
+        return false;
     uint8_t *o = strings;
     for (int t = 0; t < CSB_TEXT_COUNT; t++) {
         for (int k = 0; k < TEXT_PARTS; k++) {
@@ -157,66 +157,66 @@ static int join_texts(const char *parts[CSB_TEXT_COUNT][TEXT_PARTS])
         *o++ = 0;
     }
     strings_size = size;
-    return 0;
+    return true;
 }
 
 /* Copies the action names list. */
-static int copy_action_names(const FtlImage *appb)
+static bool copy_action_names(const FtlImage *appb)
 {
     uint32_t end = CSB_APPB_ACTION_NAMES;
     for (int i = 0; i < ACTION_COUNT; i++) {
         const char *s = get_appb_string(appb, end);
         if (!s)
-            return -1;
+            return false;
         end += (uint32_t)strlen(s) + 1;
     }
     free(action_names);
     action_names_size = end - CSB_APPB_ACTION_NAMES;
     action_names = malloc(action_names_size);
     if (!action_names)
-        return -1;
+        return false;
     const uint8_t *names = ftl_at(appb, CSB_APPB_ACTION_NAMES, action_names_size);
     if (!names) {
         free(action_names);
         action_names = NULL;
-        return -1;
+        return false;
     }
     memcpy(action_names, names, action_names_size);
-    return 0;
+    return true;
 }
 
-int csb_text_build(const FtlImage *appb, FtlImage *out)
+bool csb_text_build(const FtlImage *appb, FtlImage *out)
 {
     const char *parts[CSB_TEXT_COUNT][TEXT_PARTS] = {{0}};
     for (int i = 0; i < ARRAY_COUNT(single_texts); i++)
         if (!(parts[single_texts[i].text][0] = get_appb_string(appb, single_texts[i].appb)))
-            return -1;
+            return false;
     for (int i = 0; i < ARRAY_COUNT(table_texts); i++) {
         for (int k = 0; k < table_texts[i].count; k++) {
             int16_t text = table_texts[i].text + k;
             if (!(parts[text][0] = get_appb_pointed_string(appb, table_texts[i].appb + 4 * k)))
-                return -1;
+                return false;
             /* the string index table gives the text in the CSB order */
             if (table_texts[i].kaos_indices) {
                 uint8_t *p = ftl_at(out, table_texts[i].kaos_indices + 2 * k, sizeof(uint16_t));
                 if (!p)
-                    return -1;
+                    return false;
                 wr16(p, text);
             }
         }
     }
     for (int i = 0; i < ARRAY_COUNT(disk_message_texts); i++)
         if (!(parts[disk_message_texts[i]][0] = get_appb_pointed_string(appb, CSB_APPB_DISK_MESSAGES + 4 * i)))
-            return -1;
+            return false;
     for (int i = 0; i < ARRAY_COUNT(class_texts); i++) {
         const char **p = parts[class_texts[i].text];
         p[0] = get_appb_string(appb, class_texts[i].prefix);
         p[1] = get_appb_pointed_string(appb, CSB_APPB_CLASS_NAMES + 4 * class_texts[i].skill);
         p[2] = get_appb_string(appb, class_texts[i].suffix);
         if (!p[0] || !p[1] || !p[2])
-            return -1;
+            return false;
     }
-    return join_texts(parts) || copy_action_names(appb) ? -1 : 0;
+    return join_texts(parts) && copy_action_names(appb);
 }
 
 const uint8_t *csb_text_get_item(int graphic, uint16_t *size)

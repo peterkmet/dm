@@ -43,7 +43,7 @@ int ui_init(void)
         return -1;
     for (int i = 0; i < SLOT_BOX_COUNT; i++)
         slot_box_icon[i] = -1;
-    return gfx_load_strings();
+    return gfx_load_strings() ? 0 : -1;
 }
 
 Bitmap ui_get_screen(void)

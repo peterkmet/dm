@@ -61,7 +61,7 @@ def test_extract_matches_amitools(lib, tmp_path):
     adf = tmp_path / "test.adf"
     make_adf(adf)
 
-    assert lib.adf_extract(str(adf).encode(), str(tmp_path / "port" / "deep").encode()) == 0
+    assert lib.adf_extract(str(adf).encode(), str(tmp_path / "port" / "deep").encode())
 
     extract(adf, tmp_path / "ref")
     assert tree(tmp_path / "port" / "deep") == tree(tmp_path / "ref")
@@ -83,7 +83,7 @@ def test_extract_rejects_other_files(lib, tmp_path):
     bad = tmp_path / "bad.adf"
     bad.write_bytes(b"DOS\x00" + bytes(1000))
 
-    assert lib.adf_extract(str(bad).encode(), str(tmp_path / "out").encode()) == -1
+    assert not lib.adf_extract(str(bad).encode(), str(tmp_path / "out").encode())
 
 
 @pytest.mark.parametrize("name, safe", [("Dungeon.DAT", True), ("a\\b", False), ("a:b", False), ("a*b", False), ("a?b", False),
@@ -98,7 +98,7 @@ def test_unsafe_amiga_names_are_rejected(lib, name, safe):
 @needs_disks
 @pytest.mark.parametrize("disk", DISKS)
 def test_game_disk_matches_amitools(lib, tmp_path, disk):
-    assert lib.adf_extract(str(MEDIA / disk).encode(), str(tmp_path / "port").encode()) == 0
+    assert lib.adf_extract(str(MEDIA / disk).encode(), str(tmp_path / "port").encode())
 
     extract(MEDIA / disk, tmp_path / "ref")
     assert tree(tmp_path / "port") == tree(tmp_path / "ref")

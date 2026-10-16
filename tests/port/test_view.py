@@ -83,7 +83,7 @@ def test_shrink_matches_original(lib, emu, w, h, s):
 
 @needs_dm
 def test_zones_match_original(lib, emu):
-    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
+    assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
     assert lib.layout_init() == 0
     size = ctypes.c_uint16()
     raw = ctypes.string_at(lib.gfx_get_item(696, ctypes.byref(size)), size.value)

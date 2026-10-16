@@ -24,7 +24,7 @@ def need(lib, *names):
     missing = [n for n in ("KAOS.FTL", *names) if not (GAME / n).exists()]
     if missing:
         pytest.skip(f"missing game/{missing[0]}")
-    assert lib.tables_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
 
 
 def s16(v):

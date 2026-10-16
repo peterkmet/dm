@@ -122,23 +122,23 @@ static uint16_t sum8(const uint8_t *p, size_t n)
     return s;
 }
 
-/* Checks the file header and finds the info, data, and code sections. Returns 0 or -1. */
-static int find_sections(const uint8_t *raw, size_t len, const uint8_t *sec[FTL_SECTION_KINDS],
-                         uint32_t secsz[FTL_SECTION_KINDS])
+/* Checks the file header and finds the info, data, and code sections. False when the header or an entry is wrong. */
+static bool find_sections(const uint8_t *raw, size_t len, const uint8_t *sec[FTL_SECTION_KINDS],
+                          uint32_t secsz[FTL_SECTION_KINDS])
 {
     uint32_t count, s = 0;
     if (len < FTL_HEADER_BYTES || be16(raw) != FTL_MAGIC || be16(raw + FTL_HEADER_VERSION) != FTL_FORMAT_VERSION ||
         raw[FTL_HEADER_VERSION + 2] != FTL_FORMAT_REVISION || raw[FTL_HEADER_VERSION + 3] != FTL_FORMAT_LEVEL)
-        return -1;
+        return false;
     count = be16(raw + FTL_HEADER_ENTRY_COUNT);
     if (count > FTL_MAX_ENTRIES || len < FTL_HEADER_BYTES + count * FTL_ENTRY_BYTES)
-        return -1;
+        return false;
     for (int i = FTL_HEADER_VERSION; i < FTL_HEADER_BYTES; i++)
         s += raw[i] * i;
     for (uint32_t i = 0; i < count * FTL_ENTRY_BYTES; i++)
         s += raw[FTL_HEADER_BYTES + i] * (i % FTL_CHECKSUM_WEIGHTS + 1);
     if ((uint16_t)s != be16(raw + FTL_HEADER_CHECKSUM))
-        return -1; /* the checksum is the low word of the sum */
+        return false; /* the checksum is the low word of the sum */
     for (uint32_t i = 0; i < count; i++) {
         const uint8_t *e = raw + FTL_HEADER_BYTES + i * FTL_ENTRY_BYTES;
         uint16_t tag = be16(e + FTL_ENTRY_TAG);
@@ -148,11 +148,11 @@ static int find_sections(const uint8_t *raw, size_t len, const uint8_t *sec[FTL_
             continue;
         if (be16(e + FTL_ENTRY_VERSION) != FTL_ENTRY_FORMAT || sec[tag - FTL_SECTION_INFO] || off > len ||
             size > len - off)
-            return -1;
+            return false;
         sec[tag - FTL_SECTION_INFO] = raw + off;
         secsz[tag - FTL_SECTION_INFO] = size;
     }
-    return 0;
+    return true;
 }
 
 /* Expands the run-length data into mem: words are copied, and a zero word is followed by a count of
@@ -175,33 +175,33 @@ static int64_t expand_data(const uint8_t *r, uint32_t rle_len, uint8_t *mem, uin
     return n;
 }
 
-/* Adds data_base to each long word that the relocation table names. Returns 0 or -1. */
-static int relocate(const uint8_t *table, uint32_t reloc_len, uint8_t *mem, uint64_t size, uint64_t data_offset,
-                    uint32_t data_base)
+/* Adds data_base to each long word that the relocation table names. False when an offset is outside the image. */
+static bool relocate(const uint8_t *table, uint32_t reloc_len, uint8_t *mem, uint64_t size, uint64_t data_offset,
+                     uint32_t data_base)
 {
     for (const uint8_t *p = table; p + 1 < table + reloc_len; p += 2) {
         int64_t at = (int64_t)data_offset + (int16_t)be16(p); /* signed offset */
         if (at < 0 || (uint64_t)at + 4 > size)
-            return -1;
+            return false;
         uint32_t v = be32(mem + at) + data_base;
         wr32(mem + at, v);
     }
-    return 0;
+    return true;
 }
 
-/* Writes a jmp to each entry point into the jump table. Returns 0 or -1. */
-static int write_jump_table(const uint8_t *info, uint32_t info_size, uint8_t *mem, uint64_t size, uint64_t table_offset,
-                            uint32_t code_base)
+/* Writes a jmp to each entry point into the jump table. False when an offset is outside the image. */
+static bool write_jump_table(const uint8_t *info, uint32_t info_size, uint8_t *mem, uint64_t size,
+                             uint64_t table_offset, uint32_t code_base)
 {
     for (uint32_t i = 0; INFO_ENTRY_POINTS + i * 4 + 4 <= info_size; i++) {
         uint64_t at = table_offset + i * JUMP_ENTRY_BYTES + JUMP_ENTRY_JMP;
         uint32_t v = code_base + be32(info + INFO_ENTRY_POINTS + i * 4);
         if (at + JMP_ABS_LONG_BYTES > size)
-            return -1;
+            return false;
         wr16(mem + at, JMP_ABS_LONG_OPCODE);
         wr32(mem + at + 2, v);
     }
-    return 0;
+    return true;
 }
 
 /* The address rounded up to the next word: the loader aligns each part of the image to a word. */
@@ -210,18 +210,18 @@ static uint64_t align_to_word(uint64_t address)
     return (address + 1) & ~(uint64_t)1;
 }
 
-int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
+bool ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
 {
     const uint8_t *sec[FTL_SECTION_KINDS] = {0};
     uint32_t secsz[FTL_SECTION_KINDS] = {0};
     uint8_t *code = NULL;
     uint8_t *mem = NULL;
-    if (find_sections(raw, len, sec, secsz))
-        return -1;
+    if (!find_sections(raw, len, sec, secsz))
+        return false;
     const uint8_t *info = sec[0];
     const uint8_t *data = sec[1];
     if (!info || !data || !sec[2] || secsz[0] < INFO_ENTRY_POINTS || secsz[1] < DATA_HEADER_BYTES)
-        return -1;
+        return false;
 
     uint32_t region = be32(info + INFO_REGION_SIZE);
     uint32_t dsize = be32(info + INFO_DATA_SIZE);
@@ -232,13 +232,13 @@ int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
     for (uint32_t i = 0; i + 1 < secsz[0]; i += 2)
         ws += be16(info + i);
     if ((uint16_t)(ws - info_chk) != info_chk || sum8(data, secsz[1]) != be16(info + INFO_DATA_SUM))
-        return -1; /* 16-bit wrap */
+        return false; /* 16-bit wrap */
     uint32_t code_len = secsz[2];
     const uint8_t *codep = sec[2];
     if (be16(info + INFO_CODE_PACKED)) {
         code = unpack(sec[2], secsz[2], &code_len);
         if (!code)
-            return -1;
+            return false;
         codep = code;
     }
     if (code_len < csize || sum8(codep, csize) != be16(info + INFO_CODE_SUM))
@@ -255,17 +255,17 @@ int ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
         goto fail;
     const uint8_t *rle = data + DATA_HEADER_BYTES;
     if (expand_data(rle, rle_len, mem, size) != dsize ||
-        relocate(rle + rle_len, reloc_len, mem, size, data_base - base, (uint32_t)data_base) ||
-        write_jump_table(info, secsz[0], mem, size, data_base - base + jt_off, (uint32_t)code_base))
+        !relocate(rle + rle_len, reloc_len, mem, size, data_base - base, (uint32_t)data_base) ||
+        !write_jump_table(info, secsz[0], mem, size, data_base - base + jt_off, (uint32_t)code_base))
         goto fail;
     memcpy(mem + code_base - base, codep, csize);
     free(code);
     *img = (FtlImage){mem, (uint32_t)size, base, (uint32_t)data_base, (uint32_t)code_base};
-    return 0;
+    return true;
 fail:
     free(code);
     free(mem);
-    return -1;
+    return false;
 }
 
 void ftl_free(FtlImage *img)

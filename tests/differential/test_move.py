@@ -43,7 +43,7 @@ def lib():
 
 @pytest.fixture
 def game(lib):
-    assert lib.tables_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_load(str(GAME / "KAOS.FTL").encode())
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     lib.game_start_new()
     lib.move_party_enter_dungeon()

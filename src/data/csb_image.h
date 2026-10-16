@@ -3,6 +3,7 @@
 #define DM_DATA_CSB_IMAGE_H
 /* Prefixes: csb_image_ */
 #include "data/ftl.h"
+#include <stdbool.h>
 
 /* The CSB engine (APPB.FTL) as a KAOS-layout image: each table that the port reads sits at its DM address. */
 
@@ -22,7 +23,7 @@ typedef struct {
 extern const CsbCopy g_csb_copies[]; /* exported for the tests */
 extern const int g_csb_copy_count;   /* exported for the tests */
 
-/* Builds the KAOS-layout image of the loaded APPB module. Returns 0 or -1. */
-int csb_image_build(const FtlImage *appb, FtlImage *out);
+/* Builds the KAOS-layout image of the loaded APPB module. False when the module does not fit. */
+bool csb_image_build(const FtlImage *appb, FtlImage *out);
 
 #endif
