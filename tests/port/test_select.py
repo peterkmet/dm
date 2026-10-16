@@ -19,6 +19,10 @@ c16 = ctypes.c_int16
 
 
 
+class Adventure(ctypes.Structure):
+    _fields_ = [(n, ctypes.c_char_p) for n in ("name", "dir", "title", "engine", "save", "backup")]
+
+
 class Box(ctypes.Structure):
     _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
 
@@ -27,14 +31,13 @@ class Box(ctypes.Structure):
 def lib():
     """A private copy of libdm."""
     lib = load_lib()
-    lib.adventure_csb_present.restype = ctypes.c_bool
+    lib.adventure_is_csb_present.restype = ctypes.c_bool
+    lib.adventure_get.restype = ctypes.POINTER(Adventure)
+    lib.adventure_find.restype = c16
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.select_restart.restype = ctypes.c_bool
     lib.select_item_box.restype = ctypes.c_bool
-    lib.adventure_default_dir.restype = ctypes.c_char_p
-    lib.adventure_save_name.restype = ctypes.c_char_p
-    lib.adventure_backup_name.restype = ctypes.c_char_p
     lib.savegame_save.restype = c16
     yield lib
     set_value(lib, "g_adventure", DM)
@@ -77,39 +80,39 @@ def csb_folder(root, missing=None):
     return root
 
 
-def test_adventure_of(lib):
-    assert lib.adventure_of(b"dm") == DM
-    assert lib.adventure_of(b"csb") == CSB
+def test_adventure_find(lib):
+    assert lib.adventure_find(b"dm") == DM
+    assert lib.adventure_find(b"csb") == CSB
     for name in (b"DM", b"", b"x"):
-        assert lib.adventure_of(name) == -1
+        assert lib.adventure_find(name) == -1
 
 
 def test_default_dirs(lib):
-    assert lib.adventure_default_dir(DM) == b"game"
-    assert lib.adventure_default_dir(CSB) == b"game-csb"
+    assert lib.adventure_get(DM).contents.dir == b"game"
+    assert lib.adventure_get(CSB).contents.dir == b"game-csb"
 
 
 def test_save_names(lib):
     set_value(lib, "g_adventure", DM)
-    assert (lib.adventure_save_name(), lib.adventure_backup_name()) == (b"DMGAME.DAT", b"DMGAME.BAK")
-    set_value(lib, "g_adventure", CSB)
-    assert (lib.adventure_save_name(), lib.adventure_backup_name()) == (b"CSBGAME.DAT", b"CSBGAME.BAK")
-    set_value(lib, "g_adventure", DM)
+    dm = lib.adventure_get(DM).contents
+    csb = lib.adventure_get(CSB).contents
+    assert (dm.save, dm.backup) == (b"DMGAME.DAT", b"DMGAME.BAK")
+    assert (csb.save, csb.backup) == (b"CSBGAME.DAT", b"CSBGAME.BAK")
 
 
 def test_csb_present(lib, tmp_path):
-    assert lib.adventure_csb_present(str(tmp_path).encode()) == 0
-    assert lib.adventure_csb_present(str(csb_folder(tmp_path / "all")).encode()) == 1
+    assert lib.adventure_is_csb_present(str(tmp_path).encode()) == 0
+    assert lib.adventure_is_csb_present(str(csb_folder(tmp_path / "all")).encode()) == 1
 
 
 @pytest.mark.parametrize("missing", CSB_FILES)
 def test_csb_present_needs_every_file(lib, tmp_path, missing):
-    assert lib.adventure_csb_present(str(csb_folder(tmp_path, missing)).encode()) == 0
+    assert lib.adventure_is_csb_present(str(csb_folder(tmp_path, missing)).encode()) == 0
 
 
 @needs_csb
 def test_csb_present_in_game_csb(lib):
-    assert lib.adventure_csb_present(str(GAME_CSB).encode()) == 1
+    assert lib.adventure_is_csb_present(str(GAME_CSB).encode()) == 1
 
 
 @needs_dm

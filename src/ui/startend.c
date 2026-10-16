@@ -19,6 +19,7 @@
 #include "ui/anim.h"
 #include "ui/command.h"
 #include "ui/dialog.h"
+#include "ui/draw.h"
 #include "ui/gameloop.h"
 #include "ui/layout.h"
 #include "ui/music.h"
@@ -302,9 +303,9 @@ static void draw_champion_parade(void)
         memcpy(name, champion->name, sizeof champion->name);
         memcpy(title, champion->title, sizeof champion->title);
         int name_y = i * ENDGAME_ROW_HEIGHT + ENDGAME_NAME_Y;
-        int title_x = ENDGAME_NAME_X + (int)strlen(name) * TEXT_CHAR_WIDTH;
+        int title_x = ENDGAME_NAME_X + (int)strlen(name) * FONT_CHAR_WIDTH;
         if (title[0] != ',' && title[0] != ';' && title[0] != '-')
-            title_x += TEXT_CHAR_WIDTH; /* a space unless punctuation follows */
+            title_x += FONT_CHAR_WIDTH; /* a space unless punctuation follows */
         endgame_print_text(ENDGAME_NAME_X, name_y, COLOR_GOLD, name);
         endgame_print_text(title_x, name_y, COLOR_GOLD, title);
         print_champion_skills(i, name_y + 1);

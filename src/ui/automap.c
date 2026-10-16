@@ -6,6 +6,7 @@
 #include "engine/group.h"
 #include "engine/map.h"
 #include "ui/advanced.h"
+#include "ui/draw.h"
 #include "ui/text.h"
 #include "ui/ui.h"
 #include "ui/view.h"
@@ -196,7 +197,7 @@ void automap_scroll_reset(void)
 static void draw_label(Bitmap *target, Box area, int16_t x, int16_t y, int16_t n)
 {
     char text[LABEL_TEXT_SIZE];
-    if (x < area.x || x + LABEL_WIDTH > area.x + area.w || y < area.y || y + TEXT_LINE_HEIGHT > area.y + area.h)
+    if (x < area.x || x + LABEL_WIDTH > area.x + area.w || y < area.y || y + FONT_LINE_HEIGHT > area.y + area.h)
         return;
     snprintf(text, sizeof text, "%02d", n);
     text_draw(target, x, y + LABEL_BASELINE, COLOR_LIGHT_GRAY, COLOR_BLACK, text);

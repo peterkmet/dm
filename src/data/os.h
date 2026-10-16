@@ -24,7 +24,5 @@ _Noreturn void os_fatal(const char *format, ...) __attribute__((format(printf, 1
 bool os_make_folder(const char *path);
 /* Calls found for each name in the folder. Calls nothing when no hook is set. */
 void os_list_folder(const char *path, void (*found)(const char *name, void *data), void *data);
-/* Compares two names as ASCII without case, as strcasecmp. */
-int os_compare_names(const char *a, const char *b);
 
 #endif

@@ -2,7 +2,7 @@
 #ifndef DM_UI_LAYOUT_H
 #define DM_UI_LAYOUT_H
 /* Prefixes: layout_ */
-#include "ui/draw.h"
+#include "data/graphics.h"
 #include <stdbool.h>
 #include <stdint.h>
 

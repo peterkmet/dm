@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "platform/control.h"
-#include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/crc32.h"
+#include "data/file.h"
 #include "data/ids.h"
 #include "engine/action.h"
 #include "engine/champion.h"

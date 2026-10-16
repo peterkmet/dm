@@ -149,10 +149,10 @@ CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have th
 Implemented in Step 2 of the CSB plan:
 
 - `kaos_load` (`src/data/kaos.c`) loads `APPB.FTL` when `g_adventure` is CSB. `csb_image_build` (`src/data/csbimage.c`) then makes a KAOS-layout image: each table that the port reads is at its DM address. The `KAOS_*` names of `src/data/kaos_addresses.h` do not change.
-- `csb_copies` in `src/data/csbimage.c` is the single address table: KAOS address (its `KAOS_*` name), APPB address, size. The APPB addresses of the converted tables have the prefix `CSB_APPB_`. Strided and split tables have one row per part.
+- `g_csb_copies` in `src/data/csbimage.c` is the single address table: KAOS address (its `KAOS_*` name), APPB address, size. The APPB addresses of the converted tables have the prefix `CSB_APPB_`. Strided and split tables have one row per part.
 - Conversions in code: the action sets (6-byte CSB records to the 8-byte DM layout), and the dialog pointers (moved to the DM tables).
 - The 29 CSB spells are at `0x104160`, after the KAOS data. `spells.c` and `tables.c` read 29 spells from there for CSB.
-- `adventure_engine_name` gives the module file name: `KAOS.FTL` or `APPB.FTL`.
+- `adventure_get(g_adventure)->engine` gives the module file name: `KAOS.FTL` or `APPB.FTL`.
 
 Addresses that the tables above do not list. Each is verified by a code reference (the CSB function that reads it) or by the CSV:
 

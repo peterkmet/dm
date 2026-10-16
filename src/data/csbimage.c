@@ -28,7 +28,7 @@
 
 /* Tables with the same layout: KAOS address, APPB address, size. The APPB addresses are verified in
    docs/csb/engine-diff.md. Strided or split DM tables have one row per part. */
-const CsbCopy csb_copies[] = {
+const CsbCopy g_csb_copies[] = {
     {KAOS_INITIAL_COLORMAP,                0x102f0a,               32                               }, /* interface palette */
     {KAOS_POINTER_PALETTE,                 0x102f2a,               32                               }, /* pointer colors */
     {KAOS_ARROW_POINTER_WIDTH,             0x1005ec,               292                              }, /* the arrow pointer bitmap with its size words */
@@ -154,7 +154,7 @@ const CsbCopy csb_copies[] = {
     {CSB_SPELLS,                           CSB_APPB_SPELLS,        CSB_SPELL_COUNT * CSB_SPELL_BYTES},
     {CSB_RESTART_BOXES,                    CSB_APPB_RESTART_BOXES, 2 * CSB_BOX_BYTES                },
 };
-const int csb_copy_count = ARRAY_COUNT(csb_copies);
+const int g_csb_copy_count = ARRAY_COUNT(g_csb_copies);
 
 /* The byte of an image at a memory address of the original. */
 static uint8_t *appb_at(const FtlImage *img, uint32_t addr)
@@ -171,9 +171,9 @@ int csb_image_build(const FtlImage *appb, FtlImage *out)
         free(mem);
         return -1;
     }
-    FtlImage built = {mem, size, KAOS_BASE, CSB_SPELLS, 0};
-    for (int i = 0; i < csb_copy_count; i++)
-        memcpy(appb_at(&built, csb_copies[i].kaos), appb_at(appb, csb_copies[i].appb), csb_copies[i].size);
+    FtlImage built = {.data = mem, .size = size, .base = KAOS_BASE};
+    for (int i = 0; i < g_csb_copy_count; i++)
+        memcpy(appb_at(&built, g_csb_copies[i].kaos), appb_at(appb, g_csb_copies[i].appb), g_csb_copies[i].size);
     for (int i = 0; i < ACTION_SET_COUNT; i++) {
         const uint8_t *a = appb_at(appb, CSB_APPB_ACTION_SETS + i * APPB_ACTION_SET_BYTES);
         uint8_t *k = appb_at(&built, KAOS_ACTION_SETS + i * KAOS_ACTION_SET_BYTES);
@@ -187,6 +187,10 @@ int csb_image_build(const FtlImage *appb, FtlImage *out)
         uint32_t table = BE32(p);
         WR32(appb_at(&built, KAOS_DIALOG_MOUSE_INPUTS + 4 * i), table - CSB_APPB_DIALOG_TABLES + KAOS_DIALOG_TABLES);
     }
+    if (csb_text_build(appb, &built) != 0) {
+        free(mem);
+        return -1;
+    }
     *out = built;
-    return csb_text_build(appb, out);
+    return 0;
 }

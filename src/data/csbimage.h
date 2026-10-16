@@ -19,8 +19,8 @@ typedef struct {
     uint16_t size;
 } CsbCopy;
 
-extern const CsbCopy csb_copies[];
-extern const int csb_copy_count;
+extern const CsbCopy g_csb_copies[]; /* exported for the tests */
+extern const int g_csb_copy_count;   /* exported for the tests */
 
 /* Builds the KAOS-layout image of the loaded APPB module. Returns 0 or -1. */
 int csb_image_build(const FtlImage *appb, FtlImage *out);

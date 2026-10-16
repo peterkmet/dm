@@ -2,6 +2,7 @@
 #include "ui/music.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
+#include "data/file.h"
 #include "engine/dungeon.h"
 #include "engine/sound.h"
 #include "ui/gameloop.h"

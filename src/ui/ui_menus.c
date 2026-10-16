@@ -10,6 +10,7 @@
 #include "engine/inventory.h"
 #include "engine/magic.h"
 #include "ui/advanced.h"
+#include "ui/draw.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include <stdio.h>

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "ui/gameloop.h"
 #include "data/adventure.h"
+#include "data/file.h"
 #include "data/ftl.h"
 #include "data/graphics.h"
 #include "data/ids.h"
@@ -24,6 +25,7 @@
 #include "ui/automap.h"
 #include "ui/command.h"
 #include "ui/dialog.h"
+#include "ui/draw.h"
 #include "ui/layout.h"
 #include "ui/music.h"
 #include "ui/startend.h"
@@ -53,15 +55,13 @@ static char data_dir[PATH_SIZE];
 
 bool gameloop_load_data(const char *dir)
 {
-    char path[PATH_SIZE];
+    const char *failed;
     snprintf(data_dir, sizeof data_dir, "%s", dir);
-    snprintf(path, sizeof path, "%s/%s", dir, adventure_engine_name());
-    if (tables_load(path))
+    if (!adventure_load_files(dir, &failed))
         return false;
-    snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
     startend_set_save_dir(dir);
     g_endgame_sensor_hook = startend_run_endgame_sensor;
-    return gfx_open(path) >= 0 && !layout_init() && !text_init() && !ui_init();
+    return !layout_init() && !text_init() && !ui_init();
 }
 
 const char *gameloop_get_data_dir(void)

@@ -337,7 +337,7 @@ def test_static_functions_have_no_module_prefix():
                                     and ("static-prefix", f"{rel(path)}:{f.name}") not in ok}))
 
 
-EXTERN_VARIABLE = re.compile(r"^\s*extern\b([^;]*);", re.M)
+EXTERN_VARIABLE = re.compile(r"^[ \t]*extern\b([^;]*);", re.M)
 FILE_STATIC_G = re.compile(r"^static\b[^(;=]*?\b(g_\w+)\b", re.M)
 
 

@@ -5,10 +5,6 @@
 #include "data/graphics.h"
 #include <stdint.h>
 
-typedef struct {
-    int16_t x, y, w, h;
-} Box;
-
 #define FLIP_H       1
 #define FLIP_V       2
 #define FILL_NO_MASK 0x80 /* draw_masked_fill transparent flags */

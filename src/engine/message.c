@@ -25,8 +25,8 @@ void message_move_cursor(int16_t column, int16_t row)
         column = 0;
     if (column > MESSAGE_COLS - 1)
         column = MESSAGE_COLS - 1;
-    int16_t x = column * TEXT_CHAR_WIDTH;
-    int16_t max = MESSAGE_ROW_WIDTH - TEXT_CHAR_WIDTH;
+    int16_t x = column * FONT_CHAR_WIDTH;
+    int16_t max = MESSAGE_ROW_WIDTH - FONT_CHAR_WIDTH;
     g_message.cursor_x = x < max ? x : max;
     g_message.cursor_row = row < 0 ? 0 : row > MESSAGE_LAST_ROW ? MESSAGE_LAST_ROW : row;
 }
@@ -62,8 +62,8 @@ static void start_new_row(void)
 static void print_string(int16_t color, const char *s, uint32_t game_time)
 {
     int r = g_message.cursor_row;
-    /* ponytail: cells are TEXT_CHAR_WIDTH apart; the clamped cursor x 314 maps to cell 52 (x 312) */
-    for (int c = g_message.cursor_x / TEXT_CHAR_WIDTH; *s && c < MESSAGE_COLS; s++, c++) {
+    /* ponytail: cells are FONT_CHAR_WIDTH apart; the clamped cursor x 314 maps to cell 52 (x 312) */
+    for (int c = g_message.cursor_x / FONT_CHAR_WIDTH; *s && c < MESSAGE_COLS; s++, c++) {
         g_message.text[r][c] = *s;
         g_message.color[r][c] = color;
     }
@@ -89,9 +89,9 @@ int message_next_word_line(const char *s, char *line, int *pos, int max_width)
             space_w = w;
             space_n = n;
         }
-        if (max_width <= w + TEXT_CHAR_WIDTH)
+        if (max_width <= w + FONT_CHAR_WIDTH)
             break;
-        w += TEXT_CHAR_WIDTH;
+        w += FONT_CHAR_WIDTH;
         line[n] = s[p];
     }
     if (space == -1) {

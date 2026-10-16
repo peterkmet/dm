@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_DATA_GRAPHICS_H
 #define DM_DATA_GRAPHICS_H
-/* Prefixes: gfx_ */
+/* Prefixes: gfx_ box_ */
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -10,16 +11,25 @@
 #define PIXELS_PER_WORD 16
 
 /* Text metrics of the built-in font. */
-#define TEXT_CHAR_WIDTH   6 /* advance per character */
-#define TEXT_CHAR_GAP     1 /* blank columns after each character */
-#define TEXT_LINE_HEIGHT  6 /* rows of a character */
-#define TEXT_BASELINE_GAP 1 /* blank rows below a line of text */
+#define FONT_CHAR_WIDTH   6 /* advance per character */
+#define FONT_CHAR_GAP     1 /* blank columns after each character */
+#define FONT_LINE_HEIGHT  6 /* rows of a character */
+#define FONT_BASELINE_GAP 1 /* blank rows below a line of text */
 
 typedef struct {
     uint16_t w, h;
     uint8_t *px; /* w * h bytes, palette index 0-15 */
 } Bitmap;
 
+/* A rectangle of the screen or of a bitmap, in pixels. */
+typedef struct {
+    int16_t x, y, w, h;
+} Box;
+/* True when the pixel x, y is inside the box. */
+bool box_contains(const Box *box, int16_t x, int16_t y);
+
+/* Frees Graphics.DAT and the decoded bitmaps. */
+void gfx_close(void);
 /* Reads a format 1 Graphics.DAT like graphics_dat_read_header. Returns the item count or -1. */
 int gfx_open(const char *path);
 int gfx_count(void);

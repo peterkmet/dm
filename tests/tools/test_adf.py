@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.lib import clear_folder_hooks, load_lib, set_folder_hooks
 from dmtest.markers import ROOT
 from amitools.fs.ADFSVolume import ADFSVolume
@@ -30,8 +31,8 @@ needs_disks = pytest.mark.skipif(not all((MEDIA / d).exists() for d in DISKS), r
 def lib():
     lib = load_lib()
     lib.adf_has_file.restype = ctypes.c_bool
-    lib.adventure_bad_file.restype = ctypes.c_char_p
-    lib.adventure_bad_file.argtypes = [ctypes.c_int16, ctypes.c_char_p]
+    lib.adventure_find_bad_file.restype = ctypes.c_char_p
+    lib.adventure_find_bad_file.argtypes = [ctypes.c_int16, ctypes.c_char_p]
     hooks = set_folder_hooks(lib)
     yield lib
     clear_folder_hooks(lib)
@@ -108,12 +109,12 @@ def test_install_disks_then_files_pass_the_check(lib, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     folder = ctypes.c_char_p()
     for disk, target in DISKS.items():
-        assert lib.adventure_install_disk(str(MEDIA / disk).encode(), ctypes.byref(folder)) == 1
+        assert lib.adventure_install_disk(str(MEDIA / disk).encode(), ctypes.byref(folder)) == C.ADVENTURE_DISK_INSTALLED
         assert folder.value.decode() == target
-    assert lib.adventure_install_disk(str(MEDIA / "Dungeon Master v3.60.adf").encode(), ctypes.byref(folder)) == 0
+    assert lib.adventure_install_disk(str(MEDIA / "Dungeon Master v3.60.adf").encode(), ctypes.byref(folder)) == C.ADVENTURE_DISK_SKIPPED
 
-    assert lib.adventure_bad_file(DM, b"game") is None
-    assert lib.adventure_bad_file(CSB, b"game-csb") is None
+    assert lib.adventure_find_bad_file(DM, b"game") is None
+    assert lib.adventure_find_bad_file(CSB, b"game-csb") is None
 
 
 @needs_disks
@@ -122,6 +123,6 @@ def test_bad_file_names_a_changed_or_missing_file(lib, tmp_path):
     dungeon = tmp_path / "Dungeon.DAT"
     dungeon.write_bytes(dungeon.read_bytes() + b"\x00")
 
-    assert lib.adventure_bad_file(DM, str(tmp_path).encode()) == b"Dungeon.DAT"
-    assert lib.adventure_bad_file(CSB, str(tmp_path).encode()) == b"APPB.FTL"  # the DM APPB.FTL is not the CSB file
-    assert lib.adventure_bad_file(DM, str(tmp_path / "none").encode()) == b"KAOS.FTL"
+    assert lib.adventure_find_bad_file(DM, str(tmp_path).encode()) == b"Dungeon.DAT"
+    assert lib.adventure_find_bad_file(CSB, str(tmp_path).encode()) == b"APPB.FTL"  # the DM APPB.FTL is not the CSB file
+    assert lib.adventure_find_bad_file(DM, str(tmp_path / "none").encode()) == b"KAOS.FTL"

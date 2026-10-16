@@ -28,52 +28,81 @@
 #define SKIP_WIDE           16
 #define SKIP_BYTE_BASE      256
 
-static uint8_t *graphics_data;
-static size_t graphics_data_size;
-static uint16_t count;
-static uint32_t *offsets; /* count + 1 file offsets */
-static Bitmap *decoded;   /* count bitmaps, decoded on first use */
+/* Graphics.DAT header: format word and item count, then the size words of the items. */
+#define GFX_HEADER_BYTES      4
+#define GFX_ITEM_ENTRY_BYTES  8
+#define GFX_HEADER_ITEM_COUNT 2
+
+typedef struct {
+    char *data;
+    const char **s;
+    int16_t count;
+} StringList;
+
+static struct {
+    uint8_t *data;
+    size_t size;
+    uint16_t item_count;
+    uint32_t *offsets; /* item_count + 1 file offsets */
+    Bitmap *decoded;   /* item_count bitmaps, decoded on first use */
+    StringList strings, action_names, object_names;
+} graphics;
+
+bool box_contains(const Box *box, int16_t x, int16_t y)
+{
+    return x >= box->x && x < box->x + box->w && y >= box->y && y < box->y + box->h;
+}
+
+void gfx_close(void)
+{
+    for (int i = 0; graphics.decoded && i < graphics.item_count; i++)
+        free(graphics.decoded[i].px);
+    free(graphics.decoded);
+    free(graphics.data);
+    free(graphics.offsets);
+    graphics.decoded = NULL;
+    graphics.data = NULL;
+    graphics.offsets = NULL;
+    graphics.size = 0;
+    graphics.item_count = 0;
+}
 
 int gfx_open(const char *path)
 {
-    for (int i = 0; decoded && i < count; i++)
-        free(decoded[i].px);
-    free(decoded);
-    free(graphics_data);
-    free(offsets);
-    offsets = NULL;
-    decoded = NULL;
-    count = 0;
-    if (!(graphics_data = file_read(path, &graphics_data_size)) || graphics_data_size < 4)
-        return -1;
-    if (BE16(graphics_data) != GRAPHICS_DAT_FORMAT_1)
-        return -1;
-    uint16_t n = BE16(graphics_data + 2);
-    uint32_t off = 4 + n * 8u;
-    const uint8_t *sizes = graphics_data + 4;
-    if (off > graphics_data_size || !(offsets = malloc((n + 1) * sizeof *offsets)))
-        return -1;
+    gfx_close();
+    if (!(graphics.data = file_read(path, &graphics.size)) || graphics.size < GFX_HEADER_BYTES)
+        goto fail;
+    if (BE16(graphics.data) != GRAPHICS_DAT_FORMAT_1)
+        goto fail;
+    uint16_t n = BE16(graphics.data + GFX_HEADER_ITEM_COUNT);
+    uint32_t off = GFX_HEADER_BYTES + n * (uint32_t)GFX_ITEM_ENTRY_BYTES;
+    const uint8_t *sizes = graphics.data + GFX_HEADER_BYTES;
+    if (off > graphics.size || !(graphics.offsets = malloc((n + 1) * sizeof *graphics.offsets)))
+        goto fail;
     for (int i = 0; i < n; i++) {
-        offsets[i] = off;
+        graphics.offsets[i] = off;
         off += BE16(sizes + 2 * i);
     }
-    offsets[n] = off;
-    if (off > graphics_data_size || !(decoded = calloc(n, sizeof *decoded)))
-        return -1;
-    return count = n;
+    graphics.offsets[n] = off;
+    if (off > graphics.size || !(graphics.decoded = calloc(n, sizeof *graphics.decoded)))
+        goto fail;
+    return graphics.item_count = n;
+fail:
+    gfx_close();
+    return -1;
 }
 
 int gfx_count(void)
 {
-    return count;
+    return graphics.item_count;
 }
 
 const uint8_t *gfx_get_item(int i, uint16_t *size)
 {
-    if (i < 0 || i >= count)
+    if (i < 0 || i >= graphics.item_count)
         return NULL;
-    *size = offsets[i + 1] - offsets[i];
-    return graphics_data + offsets[i];
+    *size = graphics.offsets[i + 1] - graphics.offsets[i];
+    return graphics.data + graphics.offsets[i];
 }
 
 /* Skips the pad words and reads the size of a packed graphic. Returns the start of the commands or NULL. */
@@ -204,22 +233,14 @@ void gfx_free_bitmap(Bitmap *bm)
 
 const Bitmap *gfx_get_bitmap(int i)
 {
-    if (i < 0 || i >= count)
+    if (i < 0 || i >= graphics.item_count)
         return NULL;
-    if (!decoded[i].px && gfx_load_bitmap(i, &decoded[i]))
+    if (!graphics.decoded[i].px && gfx_load_bitmap(i, &graphics.decoded[i]))
         return NULL;
-    return &decoded[i];
+    return &graphics.decoded[i];
 }
 
 #define NAME_END_BIT 0x80 /* CSB object names: set in the last character */
-
-typedef struct {
-    char *data;
-    const char **s;
-    int16_t count;
-} StringList;
-
-static StringList strings, action_names, object_names;
 
 /* Splits a graphic of NUL-terminated strings into a list. CSB takes the strings and action names from
    the engine, and ends each object name at a byte with bit 7 set. */
@@ -255,8 +276,8 @@ static int load_strings(int graphic, StringList *list)
 /* Loads the strings, action names, and object names. */
 int gfx_load_strings(void)
 {
-    if (load_strings(GFX_STRINGS, &strings) || load_strings(GFX_ACTION_NAMES, &action_names) ||
-        load_strings(GFX_OBJECT_NAMES, &object_names))
+    if (load_strings(GFX_STRINGS, &graphics.strings) || load_strings(GFX_ACTION_NAMES, &graphics.action_names) ||
+        load_strings(GFX_OBJECT_NAMES, &graphics.object_names))
         return -1;
     return 0;
 }
@@ -267,13 +288,13 @@ static const char *list_get(const StringList *l, int16_t i)
 }
 const char *gfx_string(int16_t index)
 {
-    return list_get(&strings, index);
+    return list_get(&graphics.strings, index);
 }
 const char *gfx_object_name(int16_t icon)
 {
-    return list_get(&object_names, icon);
+    return list_get(&graphics.object_names, icon);
 }
 const char *gfx_action_name(int16_t action)
 {
-    return list_get(&action_names, action);
+    return list_get(&graphics.action_names, action);
 }
