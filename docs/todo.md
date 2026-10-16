@@ -27,6 +27,13 @@ User wishes for future versions. Not planned yet.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
 - `tests/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
 
+## Advanced mode: show the damage twice as long
+
+- Owner's wish (2026-10-16): in the advanced mode the damage stays on the screen twice as long; the vanilla mode keeps the original times.
+- Damage received: `HIDE_DAMAGE_TICKS` 5 (`src/engine/champion.c:26`) sets when the event `EVENT_HIDE_DAMAGE_RECEIVED` hides the damage on the champion box. In the advanced mode: 10.
+- Damage dealt: `menus_draw_action_damage` (`src/ui/ui_menus.c:115`) shows it in the action area until the area draws again. The time of that redraw also controls when the champion can act again, so a longer display needs its own timer, not a change of the action times.
+- Open question for the owner: one of the two displays or both.
+
 ## Test audit against the test list of CLAUDE.md
 
 - Check every test against the list of CLAUDE.md §2 (what to test, what not to test: UI and layout, CLI arguments, constants and data tables, wiring).
