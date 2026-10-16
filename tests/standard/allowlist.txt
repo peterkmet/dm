@@ -155,7 +155,6 @@ static-prefix ui/ui_menus.c:draw_caster_tabs open: epic 8
 static-prefix ui/ui_menus.c:draw_chosen_symbols open: epic 8
 static-prefix ui/ui_menus.c:draw_spell_area open: epic 8
 static-prefix ui/ui_menus.c:draw_spell_area_of open: epic 8
-static-prefix ui/view.c:draw_bitmap_in_zone open: epic 8
 static-prefix ui/view.c:draw_ceiling_pit open: epic 8
 static-prefix ui/view.c:draw_cell_objects open: epic 8
 static-prefix ui/view.c:draw_creature open: epic 8

@@ -170,7 +170,7 @@ View squares: 0 D0C, 1 D0L, 2 D0R, 3 D1C, 4 D1L, 5 D1R, 6 D2C, 7 D2L, 8 D2R, 9 D
 
 - `draw_wall_set_bitmap`, `_opaque`, `_flipped`: draw a layout bitmap into the viewport at a zone. Transparent color 10, none, or 10 with a horizontal mirror.
 - `get_flipped_bitmap` and `get_scaled_flipped_bitmap` return a native bitmap, or a derived bitmap that is scaled (scale/32 per axis, 32 = native), recolored with a palette-change table, and mirrored (flip bit 0 horizontal, bit 1 vertical). They use the derived bitmap cache. Index −1 uses `g_temp_bitmap`.
-- `draw_bitmap_in_zone` draws a bitmap at a zone. A mirrored bitmap moves right by `16 - (width & 15)`, because the mirror works on whole words.
+- `blit_in_zone` draws a bitmap at a zone. A mirrored bitmap moves right by `16 - (width & 15)`, because the mirror works on whole words.
 - `draw_wall_ornament` returns nonzero for an alcove. For the D1C front wall it also sets `g_facing_alcove`, `g_facing_vi_altar`, `g_facing_fountain`, draws text inscriptions (graphic 0x102 font, text from the inscription thing), and draws the champion portrait (graphic 0x1a, `g_champion_portrait_ordinal`).
 - `draw_door` copies the door graphic to `g_temp_bitmap`, adds the door ornament, mirrors at random for doors with attribute bit 2, and draws the door at a vertical offset that depends on the door state (1–4).
 - `copy_layout_bitmap_pixels` (`0x1183de`) has no callers.

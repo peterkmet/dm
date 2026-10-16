@@ -272,8 +272,21 @@ typedef struct {
 } View;
 
 static View view = {.map = -1};
-static int16_t zone_relative_x, zone_relative_y; /* the relative position that a zone passes to layout_get_zone */
-static Box drawn_box;                            /* the box of the last draw_bitmap_in_zone */
+
+/* Where blit_in_zone puts a bitmap: the relative position that a ZONE_SHIFTED or ZONE_SIZED zone passes to
+   layout_get_zone, and the shift of a projectile between two ticks. */
+typedef struct {
+    int16_t zone_dx, zone_dy;
+    int16_t shift_x, shift_y;
+} Placement;
+
+/* One bitmap draw into a zone of the viewport. */
+typedef struct {
+    int16_t zone;
+    int16_t flip;        /* FLIP_H, FLIP_V, both, or 0 */
+    int16_t transparent; /* transparent color, or COLOR_NONE */
+    Placement place;
+} ZoneBlit;
 
 /* Smooth projectile flight (advanced feature, no rule change): the box of each projectile at the
    last tick and at the tick before. Between ticks the view is drawn with each projectile part of the
@@ -289,7 +302,6 @@ static struct {
     int32_t track_view;                /* map, position, and direction of the tracks */
     int16_t motion_step, motion_steps; /* the frame between two ticks; 0 steps: a tick view */
 } flight = {.track_view = -1};
-static int16_t shift_x, shift_y; /* draw_bitmap_in_zone moves the drawing by this offset */
 bool g_do_not_draw_fluxcages;
 Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
 uint16_t g_pile_top_objects[VIEW_CLICK_BOX_WALL];
@@ -465,7 +477,7 @@ static void draw_wall_bitmap(int16_t bitmap_id, int16_t zone, int mode)
         int16_t slot = -1 - bitmap_id;
         Box slot_rect = tables_get_layout_bitmap(slot);
         graphic = view.slot_graphics[slot];
-        flip ^= view.slot_flip[slot];
+        flip ^= view.slot_flip[slot] ? FLIP_H : 0;
         sx = slot_rect.x;
         sy = slot_rect.y;
         width = slot_rect.w;
@@ -477,26 +489,28 @@ static void draw_wall_bitmap(int16_t bitmap_id, int16_t zone, int mode)
         draw_blit(bm, width + sx, height + sy, &view.viewport, &b, mode == BLIT_OPAQUE ? -1 : TRANSPARENT_COLOR, flip);
 }
 
-/* ZONE_SHIFTED or ZONE_SIZED pass zone_relative_x/y to layout_get_zone: a shift, or
-   the item size. Returns true and sets drawn_box (g_drawn_box) when it drew. */
-static bool draw_bitmap_in_zone(const Bitmap *bm, Bitmap *dst, int16_t zone, int flip, int16_t transparent)
+/* Draws bm into zone of dst. Returns true when it drew; drawn (NULL: not wanted) gets the drawn box.
+   ZONE_SHIFTED or ZONE_SIZED pass the zone relative position to layout_get_zone: a shift, or the item size. */
+static bool blit_in_zone(const Bitmap *bm, Bitmap *dst, const ZoneBlit *blit, Box *drawn)
 {
+    int16_t zone = blit->zone;
     int16_t w = 0;
     int16_t h = 0;
     Box b;
     if (!bm || zone == -1)
         return false;
     if (zone & (ZONE_SHIFTED | ZONE_SIZED)) {
-        w = zone_relative_x;
-        h = zone_relative_y;
+        w = blit->place.zone_dx;
+        h = blit->place.zone_dy;
         zone &= ~ZONE_SIZED;
     }
     if (!layout_get_zone(zone, bm->w, bm->h, &b, &w, &h))
         return false;
-    drawn_box = b;
-    b.x += shift_x;
-    b.y += shift_y;
-    draw_blit(bm, w, h, dst, &b, transparent, flip);
+    if (drawn)
+        *drawn = b;
+    b.x += blit->place.shift_x;
+    b.y += blit->place.shift_y;
+    draw_blit(bm, w, h, dst, &b, blit->transparent, blit->flip);
     return true;
 }
 
@@ -652,25 +666,25 @@ static int16_t get_projectile_aspect(uint16_t thing)
 
 /* The pile box of a near object grows by the drawn box; a single object gets at least
    CLICK_BOX_MIN_W x CLICK_BOX_MIN_H pixels around its center. The object becomes the pile top and joins the pile list. */
-static void add_clickable_object(int16_t index, uint16_t thing)
+static void add_clickable_object(int16_t index, uint16_t thing, const Box *drawn)
 {
     Box *box = &g_dungeon_view_clickable_boxes[index];
     if (box->x == -1) {
-        *box = drawn_box;
+        *box = *drawn;
         if (box->h < CLICK_BOX_CENTER_H) {
             if (box->h < CLICK_BOX_MIN_H)
                 box->h = CLICK_BOX_MIN_H;
-            box->y += (drawn_box.h >> 1) - CLICK_BOX_CENTER_OFFSET;
+            box->y += (drawn->h >> 1) - CLICK_BOX_CENTER_OFFSET;
         }
         if (box->w < CLICK_BOX_MIN_W) {
             box->w = CLICK_BOX_MIN_W;
-            box->x += (drawn_box.w >> 1) - CLICK_BOX_CENTER_OFFSET;
+            box->x += (drawn->w >> 1) - CLICK_BOX_CENTER_OFFSET;
         }
     } else {
-        int16_t right = max16(box->x + box->w, drawn_box.x + drawn_box.w);
-        int16_t bottom = max16(box->y + box->h, drawn_box.y + drawn_box.h);
-        box->x = min16(box->x, drawn_box.x);
-        box->y = min16(box->y, drawn_box.y);
+        int16_t right = max16(box->x + box->w, drawn->x + drawn->w);
+        int16_t bottom = max16(box->y + box->h, drawn->y + drawn->h);
+        box->x = min16(box->x, drawn->x);
+        box->y = min16(box->y, drawn->y);
         box->w = right - box->x;
         box->h = bottom - box->y;
     }
@@ -680,9 +694,10 @@ static void add_clickable_object(int16_t index, uint16_t thing)
 }
 
 /* One object on the floor or in an alcove. pile counts the objects of the cell for their shift;
-   NULL draws an object in flight at zone without shift. */
+   NULL draws an object in flight at zone without pile shift, moved by place, and drawn gets its box. */
 static void draw_object(uint16_t thing, int16_t aspect_index, int16_t cell, int16_t lane, int16_t depth,
-                        bool alcove_front, int16_t zone, int16_t *pile, int16_t coord, bool alcove)
+                        bool alcove_front, int16_t zone, int16_t *pile, int16_t coord, bool alcove, Placement place,
+                        Box *drawn)
 {
     const uint8_t *aspect = tables_get_object_aspect(aspect_index);
     bool alcove_graphic = alcove_front && (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_HAS_ALCOVE_GRAPHIC);
@@ -704,17 +719,20 @@ static void draw_object(uint16_t thing, int16_t aspect_index, int16_t cell, int1
         zone = ZONE_SHIFTED |
                (alcove ? ZONE_ALCOVE_OBJECT_FIRST + coord + aspect[OBJECT_ASPECT_ALCOVE_COORD] * ZONE_ALCOVE_VIEW_SETS
                        : ZONE_OBJECT_FIRST + cell + coord * ZONE_OBJECT_CELLS);
-        zone_relative_x = tables_get_creature_shift(distance, tables_get_pile_shift(*pile, TABLES_AXIS_X));
-        zone_relative_y = tables_get_creature_shift(distance, tables_get_pile_shift(*pile, TABLES_AXIS_Y));
+        place.zone_dx = tables_get_creature_shift(distance, tables_get_pile_shift(*pile, TABLES_AXIS_X));
+        place.zone_dy = tables_get_creature_shift(distance, tables_get_pile_shift(*pile, TABLES_AXIS_Y));
         ++*pile;
         if (!alcove)
             *pile &= PILE_FLOOR_SHIFTS - 1;
         else if (*pile > PILE_ALCOVE_LAST)
             *pile = PILE_ALCOVE_FIRST;
     }
-    if (draw_bitmap_in_zone(bitmap, &view.viewport, zone, flip, TRANSPARENT_COLOR) && pile && distance == 0 &&
-        lane == 0)
-        add_clickable_object(alcove ? VIEW_CLICK_BOX_ALCOVE : cell, thing);
+    Box box;
+    bool drew = blit_in_zone(bitmap, &view.viewport, &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, place}, &box);
+    if (drew && drawn)
+        *drawn = box;
+    if (drew && pile && distance == 0 && lane == 0)
+        add_clickable_object(alcove ? VIEW_CLICK_BOX_ALCOVE : cell, thing, &box);
     free(own.px);
 }
 
@@ -815,13 +833,14 @@ static void draw_creature(const ViewGroup *group, uint8_t look, uint16_t facing,
         transparent = pal[transparent];
         bitmap = get_shrunk_bitmap(graphic, depth == DEPTH_D2 ? SCALE_D2 : SCALE_D3, pal, &own);
     }
-    zone_relative_x = tables_get_creature_shift(distance, look & ASPECT_OFFSET_MASK);
-    zone_relative_y = tables_get_creature_shift(distance, look >> ASPECT_VERTICAL_OFFSET_SHIFT & ASPECT_OFFSET_MASK);
+    Placement place = {
+        .zone_dx = tables_get_creature_shift(distance, look & ASPECT_OFFSET_MASK),
+        .zone_dy = tables_get_creature_shift(distance, look >> ASPECT_VERTICAL_OFFSET_SHIFT & ASPECT_OFFSET_MASK),
+    };
     int16_t set = group->aspect[CREATURE_ASPECT_COORD] >> CREATURE_ASPECT_COORD_SHIFT;
-    draw_bitmap_in_zone(bitmap, &view.viewport,
-                        ZONE_SHIFTED |
-                            (ZONE_CREATURE_FIRST + set * ZONE_CREATURE_SET + coord * ZONE_CREATURE_POSITIONS + pos),
-                        flip, transparent);
+    int16_t zone =
+        ZONE_SHIFTED | (ZONE_CREATURE_FIRST + set * ZONE_CREATURE_SET + coord * ZONE_CREATURE_POSITIONS + pos);
+    blit_in_zone(bitmap, &view.viewport, &(ZoneBlit){zone, flip, transparent, place}, NULL);
     free(own.px);
 }
 
@@ -904,25 +923,25 @@ static const ProjectileTrack *find_track(const ProjectileTrack *list, int count,
 }
 
 /* Between ticks: the offset from the new box of the projectile toward its old box. */
-static void begin_projectile(uint16_t thing)
+static Placement begin_projectile(uint16_t thing)
 {
+    Placement place = {0};
     const ProjectileTrack *t = flight.motion_steps ? find_track(flight.tracks, flight.track_count, thing) : NULL;
     if (!t)
-        return;
+        return place;
     int16_t rest = flight.motion_steps - flight.motion_step;
-    shift_x = (t->from.x - t->to.x) * rest / flight.motion_steps;
-    shift_y = (t->from.y - t->to.y) * rest / flight.motion_steps;
+    place.shift_x = (t->from.x - t->to.x) * rest / flight.motion_steps;
+    place.shift_y = (t->from.y - t->to.y) * rest / flight.motion_steps;
+    return place;
 }
 
-/* At a tick: remembers where the projectile was drawn, and where it was at the tick before. */
-static void end_projectile(uint16_t thing, bool drawn)
+/* At a tick: remembers where the projectile was drawn (box), and where it was at the tick before. */
+static void end_projectile(uint16_t thing, bool drawn, const Box *box)
 {
-    shift_x = 0;
-    shift_y = 0;
     if (flight.motion_steps || !drawn || flight.track_count == PROJECTILE_TRACK_COUNT)
         return;
     const ProjectileTrack *last = find_track(flight.last_tracks, flight.last_track_count, thing);
-    flight.tracks[flight.track_count++] = (ProjectileTrack){thing, last ? last->to : drawn_box, drawn_box};
+    flight.tracks[flight.track_count++] = (ProjectileTrack){thing, last ? last->to : *box, *box};
 }
 
 /* True when a projectile of the last view moved between the last two ticks. */
@@ -988,10 +1007,10 @@ static void draw_projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, i
     int16_t zone = ZONE_PROJECTILE_FIRST + coord * ZONE_OBJECT_CELLS + cell;
     int16_t aspect_index = get_projectile_aspect(rec_projectile_slot(thing));
     if (aspect_index >= 0) {
-        drawn_box.w = 0;
-        begin_projectile(thing);
-        draw_object(thing, aspect_index, cell, lane, depth, false, zone, NULL, 0, false);
-        end_projectile(thing, drawn_box.w > 0);
+        Box drawn = {0};
+        draw_object(thing, aspect_index, cell, lane, depth, false, zone, NULL, 0, false, begin_projectile(thing),
+                    &drawn);
+        end_projectile(thing, drawn.w > 0, &drawn);
         return;
     }
     const uint8_t *aspect = tables_get_projectile_aspect(-aspect_index);
@@ -1012,8 +1031,10 @@ static void draw_projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, i
     Bitmap own;
     const Bitmap *bm = get_shrunk_bitmap(GFX_PROJECTILE_FIRST + aspect[PROJECTILE_ASPECT_GRAPHIC] + pose, scale,
                                          scale == SCALE_NATIVE ? NULL : get_object_palette_changes(distance), &own);
-    begin_projectile(thing);
-    end_projectile(thing, draw_bitmap_in_zone(bm, &view.viewport, zone, flip, TRANSPARENT_COLOR));
+    Box drawn;
+    bool drew =
+        blit_in_zone(bm, &view.viewport, &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, begin_projectile(thing)}, &drawn);
+    end_projectile(thing, drew, &drawn);
     free(own.px);
 }
 
@@ -1102,8 +1123,8 @@ static void draw_rebirth_step_1(int16_t coord, int16_t flip)
     int16_t scale = tables_get_rebirth_scale(TABLES_REBIRTH_STEP_1, coord);
     int16_t g = GFX_PROJECTILE_FIRST +
                 tables_get_projectile_aspect(PROJECTILE_ASPECT_LIGHTNING)[PROJECTILE_ASPECT_GRAPHIC] + POSE_BACK;
-    draw_bitmap_in_zone(get_shrunk_bitmap(g, scale, NULL, &own), &view.viewport, ZONE_REBIRTH_STEP1_FIRST + coord, flip,
-                        TRANSPARENT_COLOR);
+    blit_in_zone(get_shrunk_bitmap(g, scale, NULL, &own), &view.viewport,
+                 &(ZoneBlit){ZONE_REBIRTH_STEP1_FIRST + coord, flip, TRANSPARENT_COLOR, {0}}, NULL);
     free(own.px);
 }
 
@@ -1165,7 +1186,8 @@ static void draw_explosions(uint16_t thing, int16_t dir, int16_t view_square, in
                               tables_get_explosion_scale(depth)) >>
                     8; /* 16-bit product as in the original */
         }
-        draw_bitmap_in_zone(get_explosion_bitmap(aspect, scale, &own), &view.viewport, zone, flip, TRANSPARENT_COLOR);
+        blit_in_zone(get_explosion_bitmap(aspect, scale, &own), &view.viewport,
+                     &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, {0}}, NULL);
         free(own.px);
     }
     if (fluxcage && field_index >= 0 && pass != DOOR_PASS_BACK && !g_do_not_draw_fluxcages)
@@ -1187,7 +1209,8 @@ static void draw_cell_objects(uint16_t first, int16_t cell, uint16_t mcell, int1
     for (uint16_t t = first; t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         int16_t type = THING_TYPE(t);
         if (type >= THING_WEAPON && type <= THING_JUNK && THING_CELL(t) == mcell)
-            draw_object(t, get_object_aspect(t), cell, lane, depth, alcove && lane == 0, 0, pile, coord, alcove);
+            draw_object(t, get_object_aspect(t), cell, lane, depth, alcove && lane == 0, 0, pile, coord, alcove,
+                        (Placement){0}, NULL);
     }
 }
 
@@ -1361,19 +1384,22 @@ static bool draw_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspec
         bitmap = &own;
     } else
         bitmap = gfx_get_bitmap(graphic);
+    Placement place = {0};
     if (text) { /* the plaque shows only as many lines as the text has */
         int16_t lines = 1;
         for (const uint8_t *p = wall_text; *p != WALL_TEXT_END; p++)
             lines += *p == WALL_TEXT_NEW_LINE;
         if (lines <= TABLES_PLAQUE_LINES && bitmap) {
             zone |= ZONE_SIZED;
-            zone_relative_x = bitmap->w;
-            zone_relative_y = tables_get_plaque_height(lines, tables_get_wall_ornament_depth(wall_view));
+            place.zone_dx = bitmap->w;
+            place.zone_dy = tables_get_plaque_height(lines, tables_get_wall_ornament_depth(wall_view));
         }
     }
-    if (draw_bitmap_in_zone(bitmap, &view.viewport, zone, mirrored, TRANSPARENT_COLOR) &&
+    Box drawn;
+    if (blit_in_zone(bitmap, &view.viewport, &(ZoneBlit){zone, mirrored ? FLIP_H : 0, TRANSPARENT_COLOR, place},
+                     &drawn) &&
         wall_view == VIEW_WALL_D1C_FRONT)
-        g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn_box;
+        g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn;
     if (wall_view == VIEW_WALL_D1C_FRONT && aspect->portrait >= 0)
         draw_wall_portrait(aspect->portrait);
     free(own.px);
@@ -1388,10 +1414,9 @@ static void draw_floor_ornament(int16_t i, int16_t floor_view)
     bool right = floor_view == VIEW_D3R2 || floor_view == VIEW_D3R || floor_view == VIEW_D2R || floor_view == VIEW_D1R;
     bool center = floor_view == VIEW_D3C || floor_view == VIEW_D2C || floor_view == VIEW_D1C;
     bool flip = right || (i == FLOOR_ORNAMENT_FOOTPRINTS && view.use_flipped_walls && center);
-    draw_bitmap_in_zone(
-        gfx_get_bitmap(view.floor_ornaments[i].graphic + tables_get_floor_ornament_offset(floor_view)), &view.viewport,
-        ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * view.floor_ornaments[i].coord + floor_view, flip,
-        TRANSPARENT_COLOR);
+    int16_t zone = ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * view.floor_ornaments[i].coord + floor_view;
+    blit_in_zone(gfx_get_bitmap(view.floor_ornaments[i].graphic + tables_get_floor_ornament_offset(floor_view)),
+                 &view.viewport, &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, {0}}, NULL);
 }
 
 /* An ornament or mask on the door bitmap, scaled for D3 and D2. */
@@ -1401,9 +1426,10 @@ static void draw_door_ornament(int16_t i, int16_t depth, Bitmap *door)
         return;
     const Ornament *o = &view.door_ornaments[i];
     int16_t zone = ZONE_DOOR_ORNAMENT_FIRST + ZONE_DOOR_ORNAMENT_DEPTHS * o->coord + depth;
+    const ZoneBlit blit = {zone, 0, DOOR_ORNAMENT_TRANSPARENT, {0}};
     Bitmap own = {0};
     if (depth == DOOR_DEPTH_D1)
-        draw_bitmap_in_zone(gfx_get_bitmap(o->graphic), door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
+        blit_in_zone(gfx_get_bitmap(o->graphic), door, &blit, NULL);
     else {
         int16_t scale = depth == DOOR_DEPTH_D2 ? SCALE_D2 : SCALE_D3;
         get_scaled_bitmap(o->graphic, scale, scale,
@@ -1411,7 +1437,7 @@ static void draw_door_ornament(int16_t i, int16_t depth, Bitmap *door)
                                                                             : TABLES_CHANGES_DOOR_ORNAMENT_D3),
                           &own);
         if (own.px)
-            draw_bitmap_in_zone(&own, door, zone, 0, DOOR_ORNAMENT_TRANSPARENT);
+            blit_in_zone(&own, door, &blit, NULL);
     }
     free(own.px);
 }
@@ -1428,11 +1454,11 @@ static void draw_door_button(int16_t button)
                           &own);
         bm = &own;
     }
-    if (bm && bm->px &&
-        draw_bitmap_in_zone(bm, &view.viewport, ZONE_DOOR_BUTTON_FIRST + tables_get_door_button_coords() + button, 0,
-                            TRANSPARENT_COLOR) &&
+    int16_t zone = ZONE_DOOR_BUTTON_FIRST + tables_get_door_button_coords() + button;
+    Box drawn;
+    if (bm && bm->px && blit_in_zone(bm, &view.viewport, &(ZoneBlit){zone, 0, TRANSPARENT_COLOR, {0}}, &drawn) &&
         button == BUTTON_D1C)
-        g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn_box;
+        g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn;
     free(own.px);
 }
 
@@ -1455,22 +1481,22 @@ static void draw_door(uint16_t door_thing, int16_t state, int16_t door_view)
     draw_door_ornament(rec_door_ornament(door_thing), depth, &door_copy);
     if (view.door_type_attributes[type] & DOOR_ANIMATED)
         draw_flip(&door_copy, random_2bits());
+    Placement place = {0};
     if (state == DOOR_DESTROYED)
         draw_door_ornament(DOOR_ORNAMENT_DESTROYED, depth, &door_copy);
     else if (state != DOOR_CLOSED) { /* partly open: the zone moves with the state */
         zone += state;
         if (!rec_door_is_vertical(door_thing)) {
-            zone_relative_x = door_copy.w >> 1;
-            zone_relative_y = 0;
-            int16_t w = zone_relative_x;
-            int16_t h = zone_relative_y;
+            place.zone_dx = door_copy.w >> 1;
+            int16_t w = place.zone_dx;
+            int16_t h = place.zone_dy;
             Box b;
             if (layout_get_zone(zone + ZONE_DOOR_RIGHT_HALF, door_copy.w, door_copy.h, &b, &w, &h))
-                draw_blit(&door_copy, zone_relative_x + w, h, &view.viewport, &b, TRANSPARENT_COLOR, 0);
+                draw_blit(&door_copy, place.zone_dx + w, h, &view.viewport, &b, TRANSPARENT_COLOR, 0);
             zone = (zone + ZONE_DOOR_LEFT_HALF) | ZONE_SIZED;
         }
     }
-    draw_bitmap_in_zone(&door_copy, &view.viewport, zone, 0, TRANSPARENT_COLOR);
+    blit_in_zone(&door_copy, &view.viewport, &(ZoneBlit){zone, 0, TRANSPARENT_COLOR, place}, NULL);
     free(door_copy.px);
 }
 

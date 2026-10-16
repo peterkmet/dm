@@ -1451,7 +1451,7 @@ address,name,signature,subsystem
 0x118518,draw_wall_set_bitmap_flipped,"int16_t draw_wall_set_bitmap_flipped(int16_t layout_id, int16_t zone)",dungeon_view
 0x1185b8,get_flipped_bitmap,"uint8_t *get_flipped_bitmap(int16_t graphic, int16_t derived_index, int16_t flip_flags)",dungeon_view
 0x118650,get_scaled_flipped_bitmap,"uint8_t *get_scaled_flipped_bitmap(int16_t graphic, int16_t flipped_derived_index, int16_t flip_flags, int16_t scaled_derived_index, int16_t scale_x, int16_t scale_y, const uint8_t *palette_changes)",dungeon_view
-0x1187a0,draw_bitmap_in_zone,"void draw_bitmap_in_zone(const uint8_t *src, uint8_t *dst, uint16_t zone, int16_t flipped, int16_t transparent_color)",dungeon_view
+0x1187a0,blit_in_zone,"void blit_in_zone(const uint8_t *src, uint8_t *dst, uint16_t zone, int16_t flipped, int16_t transparent_color)",dungeon_view
 0x11884a,draw_wall_ornament,"int16_t draw_wall_ornament(int16_t ornament_index, int16_t view_wall_index)",dungeon_view
 0x118b34,draw_floor_ornament,"void draw_floor_ornament(int16_t ornament_index, int16_t view_floor_index)",dungeon_view
 0x118c06,draw_door_ornament,"void draw_door_ornament(int16_t ornament_index, int16_t view_door_ornament_index)",dungeon_view
