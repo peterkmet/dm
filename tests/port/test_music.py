@@ -10,10 +10,9 @@ from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
-KEY_1, KEY_2, KEY_3 = 0x0100, 0x0200, 0x0300
 ORIGINAL, SUPER_NES, FM_TOWNS = 0, 1, 2
 DM, CSB = 0, 1
-CSB_PRISON_DUNGEON_ID, CSB_DUNGEON_ID = 12, 13
+CSB_DUNGEON_ID = 13
 CSB_MAPS, CSB_MAP_SIZE = 10, 32
 MIX_FRAMES = 44100
 TRACK_02 = GAME / "music/FM-Towns,Track_02,Music.mp3"
@@ -94,11 +93,11 @@ def test_csb_square_table_matches_the_research(game):
 def test_music_keys_work_only_on_the_advanced_automap(game, mode):
     set_mode(game, mode)
     press(game, C.KEY_M)
-    press(game, KEY_3)
+    press(game, C.KEY_3)
     assert var(game, "g_music_soundtrack").value == (FM_TOWNS if mode == ADVANCED else ORIGINAL)
-    press(game, KEY_2)
+    press(game, C.KEY_2)
     assert var(game, "g_music_soundtrack").value == (SUPER_NES if mode == ADVANCED else ORIGINAL)
-    press(game, KEY_1)
+    press(game, C.KEY_1)
     assert var(game, "g_music_soundtrack").value == ORIGINAL
     press(game, C.KEY_M)
     set_mode(game, VANILLA)
@@ -196,7 +195,7 @@ def test_fm_towns_csb_zone_track_waits_for_the_current_track(game):
     var(game, "g_music_track").value = 7
     update_at(game, 1, *csb_square(game, 1, 7))
     assert (var(game, "g_music_track").value, last(game)) == (0, 7)  # a level change stops; the same track does not start again
-    var(game, "g_dungeon_id", u16).value = CSB_PRISON_DUNGEON_ID
+    var(game, "g_dungeon_id", u16).value = C.CSB_PRISON_DUNGEON_ID
     game.lib.music_update()
     assert last(game) == 6
 

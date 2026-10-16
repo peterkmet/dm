@@ -6,6 +6,7 @@ import shutil
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.game import Champion, Party, TimelineEvent, global_type
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB
@@ -13,27 +14,20 @@ from dmtest.markers import GAME, GAME_CSB
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 DM, CSB = 0, 1
 STEP_EAST, STEP_NORTH = (0, 1, 0, -1), (-1, 0, 1, 0)
-THING_GROUP, THING_SCROLL, THING_EXPLOSION, THING_NONE, THING_ENDOFLIST = 4, 7, 15, 0xFFFF, 0xFFFE
-SLOT_HAND_ACTION, SLOT_COUNT = 1, 30
-SQUARE_CORRIDOR, SQUARE_PIT, PIT_OPEN, PIT_INVISIBLE = 1, 2, 8, 4
 DAIN, ROS, KU, NETA, POSITION = range(5)
 EVENT_ENABLE_ACTION, EVENT_MAGIC_MAP_FIRST = 11, 80
-SPELL_MAGIC_MAP_FIRST, SPELL_KIND_MAGIC_MAP = 25, 4
+SPELL_MAGIC_MAP_FIRST = 25
 CAST_SUCCESS, CAST_KEEP_SYMBOLS = 1, 3
 POWER_SYMBOL_BEFORE_FIRST = 0x5F
-CREATURE_NOT_ON_MAP = 0x4000
-ZONE_MAGIC_MAP, MAP_CELL = 614, 8  # tile 7 + gap 1
+MAP_CELL = 8  # tile 7 + gap 1
 TEXT_MODE_SCROLL_ANY = -0x7FFE  # 0x8002
 CODE_SPACE, CODE_SEPARATOR, CODE_END = 26, 28, 31
-SQUARE_TELEPORTER, SQUARE_FAKE_WALL, FAKE_WALL_IMAGINARY = 5, 6, 1
-GFX_TILES, GFX_PANEL_SCROLL, GFX_PANEL_MAGIC_MAP, ZONE_PANEL, ZONE_RUNE_FIRST = 12, 23, 24, 101, 615
+GFX_TILES, ZONE_RUNE_FIRST = 12, 615
 TILE_W, TILES_PER_ROW, TILE_TRANSPARENT = 7, 16, 10
 TILE_FAKE_WALL_BLINK, TILE_PIT_INVISIBLE, TILE_PIT_BLINK, TILE_EXPLOSION_FIRE, TILE_CREATURE_FIRST = 1, 4, 5, 66, 76
-COLOR_BLACK, COLOR_CYAN, COLOR_RED, COLOR_WHITE = 0, 4, 8, 15
 RUNE_ORDER = (KU, ROS, DAIN, NETA)  # rune zones 615-618
-SQUARE_WALL, SQUARE_STAIRS, SQUARE_DOOR, STAIRS_UP, DOOR_NORTH_SOUTH, DOOR_STATE_MASK = 0, 3, 4, 4, 8, 7
-DOOR_OPEN, DOOR_CLOSED, DOOR_DESTROYED, DOOR_BUTTON = 0, 4, 5, 0x40
-THING_PROJECTILE, THING_JUNK, EXPLOSION_FIREBALL_THING, JUNK_ZOKATHRA = 14, 10, 0xFF80, 51
+DOOR_BUTTON = 64
+EXPLOSION_FIREBALL_THING = 65408
 TILE_DOOR_FRONT, TILE_DOOR_SIDE, TILE_DOOR_NO_BUTTON, TILE_DOOR_OPEN, TILE_STAIRS_FIRST = 10, 11, 2, 4, 18
 TILE_ZOKATHRA_FIRST, TILE_IN_WALL, TILE_FIREBALL_FIRST, TILE_FLOOR_ORNAMENT_FIRST = 34, 4, 50, 78
 ORNAMENT_ALCOVE, ORNAMENT_FOUNTAIN, ORNAMENT_VI_ALTAR = 3, 4, 5  # view_get_wall_ornament
@@ -41,7 +35,6 @@ TILE_WALL_ORNAMENT_FIRST = {ORNAMENT_ALCOVE: 22, ORNAMENT_VI_ALTAR: 26, ORNAMENT
 WALL_ORNAMENT_MAP = 5  # has alcoves, a fountain, and vi altars
 TIME_MASK = 0xFFFFFF
 SEED = 0x12345
-MESSAGE_ROWS, MESSAGE_COLS = 4, 53
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
 pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
@@ -95,7 +88,7 @@ def value(lib, name, kind=c16):
 
 def things(lib, x, y):
     thing = lib.map_get_square_first_thing(x, y)
-    while thing != THING_ENDOFLIST:
+    while thing != C.THING_ENDOFLIST:
         yield thing
         thing = lib.map_get_next_thing(thing)
 
@@ -129,7 +122,7 @@ def map_scrolls(lib):
     for x in range(value(lib, "g_current_map_width").value):
         for y in range(value(lib, "g_current_map_height").value):
             for t in things(lib, x, y):
-                if t >> 10 & 15 == THING_SCROLL:
+                if t >> 10 & 15 == C.THING_SCROLL:
                     found[scroll_text(lib, t)] = (t, x, y)
     return found
 
@@ -149,8 +142,8 @@ def setup_champion(lib, index=0):
     c.current_stamina = c.maximum_stamina = 1000
     c.current_mana = c.maximum_mana = 900
     c.enable_action_event_index = c.hide_damage_received_event_index = -1
-    for s in range(SLOT_COUNT):
-        c.slots[s] = THING_NONE
+    for s in range(C.SLOT_COUNT):
+        c.slots[s] = C.THING_NONE
     for skill in c.skills:
         skill.experience = 1 << 20
     for i in range(6):
@@ -176,7 +169,7 @@ def timeline(lib):
 
 
 def message_rows(lib):
-    text = ((ctypes.c_char * MESSAGE_COLS) * MESSAGE_ROWS).in_dll(lib, "g_message")
+    text = ((ctypes.c_char * C.MESSAGE_COLS) * C.MESSAGE_ROWS).in_dll(lib, "g_message")
     return [bytes(row).replace(b"\0", b" ").decode().strip() for row in text]
 
 
@@ -196,7 +189,7 @@ def panel(lib):
 
 def map_origin(lib):
     box, w, h = Box(), c16(1), c16(1)
-    assert lib.layout_get_zone(ZONE_MAGIC_MAP, 0, 0, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
+    assert lib.layout_get_zone(C.ZONE_MAGIC_MAP, 0, 0, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
     return box.x, box.y
 
 
@@ -214,8 +207,8 @@ def changed_cells(lib, before, after):
 
 def calm(lib, x, y):
     """No teleporter and no explosion in the 7 x 7 squares around (x, y): the map draws no random tile."""
-    return all(lib.map_get_square(x + dx, y + dy) >> 5 != SQUARE_TELEPORTER
-               and not any(t >> 10 & 15 == THING_EXPLOSION for t in things(lib, x + dx, y + dy))
+    return all(lib.map_get_square(x + dx, y + dy) >> 5 != C.SQUARE_TELEPORTER
+               and not any(t >> 10 & 15 == C.THING_EXPLOSION for t in things(lib, x + dx, y + dy))
                for dx in range(-3, 4) for dy in range(-3, 4))
 
 
@@ -226,7 +219,7 @@ def face_free_square(lib, accept):
         for y in range(height):
             for d in range(4):
                 fx, fy = x + STEP_EAST[d], y + STEP_NORTH[d]
-                if 0 <= fx < width and 0 <= fy < height and lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR \
+                if 0 <= fx < width and 0 <= fy < height and lib.map_get_square(x, y) >> 5 == C.SQUARE_CORRIDOR \
                         and not list(things(lib, x, y)) and accept(fx, fy) and calm(lib, x, y):
                     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (x, y, d)):
                         value(lib, name).value = v
@@ -239,7 +232,7 @@ def test_magic_map_scrolls_in_the_dungeon(lib, csb):
     _, scrolls = csb
     assert value(lib, "g_party_map_index").value == 4
     assert scrolls[b"MAGICMAP"][1:] == (20, 11) and scrolls[b"CREANAME"][1:] == (12, 13)
-    assert all(lib.tables_get_spell(i).contents.kind == SPELL_KIND_MAGIC_MAP for i in range(SPELL_MAGIC_MAP_FIRST, SPELL_MAGIC_MAP_FIRST + 4))
+    assert all(lib.tables_get_spell(i).contents.kind == C.SPELL_KIND_MAGIC_MAP for i in range(SPELL_MAGIC_MAP_FIRST, SPELL_MAGIC_MAP_FIRST + 4))
 
 
 @needs_csb
@@ -247,7 +240,7 @@ def test_magic_map_scrolls_in_the_dungeon(lib, csb):
 def test_spell_needs_magic_map_in_action_hand(lib, csb, hand):
     c, scrolls = csb
     if hand != "empty":
-        c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[hand.encode()])
+        c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[hand.encode()])
     lib.message_clear()
     count = len(timeline(lib))
     assert cast(lib, c, SPELL_MAGIC_MAP_FIRST, 3) == CAST_KEEP_SYMBOLS
@@ -260,7 +253,7 @@ def test_spell_needs_magic_map_in_action_hand(lib, csb, hand):
 @pytest.mark.parametrize("power", [1, 6])
 def test_spells_with_magic_map(lib, csb, power):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     d = (power + 1) * 4
     durations = (2 * d * d, 2 * (d - 2) ** 2, 2 * (d - ((d >> 2) - 1)) ** 2)
     for spell_type in (DAIN, ROS, KU, NETA):
@@ -292,7 +285,7 @@ def test_spells_with_magic_map(lib, csb, power):
 @needs_csb
 def test_events_end_the_map_spells(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     for spell_type in (DAIN, DAIN, ROS, KU, NETA):
         c.enable_action_event_index = -1
         assert cast(lib, c, SPELL_MAGIC_MAP_FIRST + spell_type, 1) == CAST_SUCCESS
@@ -314,9 +307,9 @@ def test_panel_draws_the_map_grid(lib, csb):
     c, scrolls = csb
     plain_scroll = take(lib, scrolls[b"CREANAME"])
     set_scroll_text(lib, plain_scroll, "PRESS WESTWARD")
-    c.slots[SLOT_HAND_ACTION] = plain_scroll
+    c.slots[C.SLOT_HAND_ACTION] = plain_scroll
     plain = panel(lib)
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     drawn = panel(lib)
     assert {(col, row) for col in range(7) for row in range(7)} <= changed_cells(lib, plain, drawn)
     assert panel(lib) == drawn
@@ -325,8 +318,8 @@ def test_panel_draws_the_map_grid(lib, csb):
 @needs_csb
 def test_ku_shows_the_creature_ahead(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    face_free_square(lib, lambda x, y: any(t >> 10 & 15 == THING_GROUP and not lib.map_get_creature_attributes(t) & CREATURE_NOT_ON_MAP
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    face_free_square(lib, lambda x, y: any(t >> 10 & 15 == C.THING_GROUP and not lib.map_get_creature_attributes(t) & C.CREATURE_NOT_ON_MAP
                                            for t in things(lib, x, y)))
     before = panel(lib)
     c.magic_map[KU] = 1
@@ -336,9 +329,9 @@ def test_ku_shows_the_creature_ahead(lib, csb):
 @needs_csb
 def test_dain_shows_an_explosion(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y)))
-    explosion = lib.map_get_unused_thing(THING_EXPLOSION)
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == C.SQUARE_CORRIDOR and not list(things(lib, x, y)))
+    explosion = lib.map_get_unused_thing(C.THING_EXPLOSION)
     rec = lib.dungeon_get_thing_data(explosion)
     rec[2], rec[3] = 100, 0  # attack, fireball
     lib.map_link_thing_to_list(explosion, 0, fx, fy)
@@ -350,10 +343,10 @@ def test_dain_shows_an_explosion(lib, csb):
 @needs_csb
 def test_ros_shows_an_invisible_pit(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y)))
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == C.SQUARE_CORRIDOR and not list(things(lib, x, y)))
     data = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_map_data"), ctypes.POINTER(ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8))))
-    data[4][fx][fy] = SQUARE_PIT << 5 | PIT_OPEN | PIT_INVISIBLE
+    data[4][fx][fy] = C.SQUARE_PIT << 5 | C.PIT_OPEN | C.PIT_INVISIBLE
     value(lib, "g_game_time", u32).value |= 1  # the blinking time
     before = panel(lib)
     c.magic_map[ROS] = 1
@@ -363,7 +356,7 @@ def test_ros_shows_an_invisible_pit(lib, csb):
 @needs_csb
 def test_runes_light_with_the_spells(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     before = panel(lib)
     c.enable_action_event_index = -1
     assert cast(lib, c, SPELL_MAGIC_MAP_FIRST + NETA, 1) == CAST_SUCCESS  # keeps the map that the party sees now
@@ -373,7 +366,7 @@ def test_runes_light_with_the_spells(lib, csb):
 @needs_csb
 def test_neta_keeps_the_map(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     assert cast(lib, c, SPELL_MAGIC_MAP_FIRST + NETA, 1) == CAST_SUCCESS
     kept = panel(lib)
     c.magic_map[NETA] = 0
@@ -398,18 +391,18 @@ def test_panel_draws_again_each_tick(lib, csb, text):
     c, scrolls = csb
     scroll = take(lib, scrolls[b"CREANAME"])
     set_scroll_text(lib, scroll, text)
-    c.slots[SLOT_HAND_ACTION] = scroll
+    c.slots[C.SLOT_HAND_ACTION] = scroll
     panel(lib)
     assert any(grid_after_tick(lib)) == (text != "PRESS WESTWARD")
 
 
 def face_with_creaname_scroll(lib, c, scrolls, group_ahead):
     scroll = take(lib, scrolls[b"CREANAME"])
-    c.slots[SLOT_HAND_ACTION] = scroll
+    c.slots[C.SLOT_HAND_ACTION] = scroll
     if group_ahead:
-        face_free_square(lib, lambda x, y: any(t >> 10 & 15 == THING_GROUP for t in things(lib, x, y)))
+        face_free_square(lib, lambda x, y: any(t >> 10 & 15 == C.THING_GROUP for t in things(lib, x, y)))
     else:
-        face_free_square(lib, lambda x, y: not any(t >> 10 & 15 == THING_GROUP for t in things(lib, x, y)))
+        face_free_square(lib, lambda x, y: not any(t >> 10 & 15 == C.THING_GROUP for t in things(lib, x, y)))
     return scroll
 
 
@@ -420,7 +413,7 @@ def test_creaname_becomes_the_creature_name(lib, csb, group_ahead):
     scroll = face_with_creaname_scroll(lib, c, scrolls, group_ahead)
     x, y = value(lib, "g_party_map_x").value, value(lib, "g_party_map_y").value
     d = value(lib, "g_party_direction").value
-    group = next((t for t in things(lib, x + STEP_EAST[d], y + STEP_NORTH[d]) if t >> 10 & 15 == THING_GROUP), None)
+    group = next((t for t in things(lib, x + STEP_EAST[d], y + STEP_NORTH[d]) if t >> 10 & 15 == C.THING_GROUP), None)
     name = lib.gfx_string(107 if group is None else 108 + lib.dungeon_get_thing_data(group)[4]).decode()
     replaced = panel(lib)
     set_scroll_text(lib, scroll, name)
@@ -435,10 +428,10 @@ def test_dm_scroll_panel_unchanged(lib, text):
     assert lib.gameloop_start_new_game(str(GAME).encode())
     c = setup_champion(lib)
     scroll = next(t for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
-                  for t in things(lib, x, y) if t >> 10 & 15 == THING_SCROLL)
-    c.slots[SLOT_HAND_ACTION] = scroll & 0x3FFF
+                  for t in things(lib, x, y) if t >> 10 & 15 == C.THING_SCROLL)
+    c.slots[C.SLOT_HAND_ACTION] = scroll & 0x3FFF
     set_scroll_text(lib, scroll, text)
-    face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR)
+    face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == C.SQUARE_CORRIDOR)
     plain = panel(lib)
     for i in range(4):
         c.magic_map[i] = 1
@@ -476,14 +469,14 @@ def border(lib, view, col, row):
 
 
 def empty_corridor(lib, x, y):
-    return lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and not list(things(lib, x, y))
+    return lib.map_get_square(x, y) >> 5 == C.SQUARE_CORRIDOR and not list(things(lib, x, y))
 
 
 @needs_csb
 def test_map_spells_of_another_champion(lib, csb):
     c0, scrolls = csb
     c1 = setup_champion(lib, 1)
-    c1.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c1.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     for spell_type in (DAIN, ROS, KU, NETA):
         c1.enable_action_event_index = -1
         assert cast(lib, c1, SPELL_MAGIC_MAP_FIRST + spell_type, 1, index=1) == CAST_SUCCESS
@@ -498,11 +491,11 @@ def test_map_spells_of_another_champion(lib, csb):
 @needs_csb
 def test_panel_shows_the_magic_map_graphic(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     view = panel(lib)
-    graphic, scroll = bitmap(lib, GFX_PANEL_MAGIC_MAP), bitmap(lib, GFX_PANEL_SCROLL)
+    graphic, scroll = bitmap(lib, C.GFX_PANEL_MAGIC_MAP), bitmap(lib, C.GFX_PANEL_SCROLL)
     box, w, h = Box(), c16(0), c16(0)
-    assert lib.layout_get_zone(ZONE_PANEL, graphic.w, graphic.h, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
+    assert lib.layout_get_zone(C.ZONE_PANEL, graphic.w, graphic.h, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
     ox, oy = map_origin(lib)
     width = lib.ui_get_viewport().contents.w
     checked = 0
@@ -510,7 +503,7 @@ def test_panel_shows_the_magic_map_graphic(lib, csb):
         for x in range(box.w):
             vx, vy, color = box.x + x, box.y + y, graphic.px[(h.value + y) * graphic.w + w.value + x]
             in_grid = ox - 2 <= vx < ox + 7 * MAP_CELL + 1 and oy - 2 <= vy < oy + 7 * MAP_CELL + 1
-            if color != COLOR_RED and not in_grid and (y >= scroll.h or x >= scroll.w or color != scroll.px[y * scroll.w + x]):
+            if color != C.COLOR_RED and not in_grid and (y >= scroll.h or x >= scroll.w or color != scroll.px[y * scroll.w + x]):
                 if all(abs(vx - rx) > 10 or abs(vy - ry) > 10 for rx, ry in rune_points(lib)):
                     assert view[vy * width + vx] == color, (x, y)
                     checked += 1
@@ -540,20 +533,20 @@ def rune_colors(lib, view, i):
 @pytest.mark.parametrize("spell", [DAIN, ROS, KU, NETA])
 def test_rune_of_each_spell(lib, csb, spell):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     c.magic_map[spell] = 1
     view = panel(lib)
     for i, rune_spell in enumerate(RUNE_ORDER):
         colors = rune_colors(lib, view, i)
         lit = rune_spell == spell
-        assert (COLOR_RED in colors, COLOR_BLACK in colors) == (lit, not lit), (i, colors)
+        assert (C.COLOR_RED in colors, C.COLOR_BLACK in colors) == (lit, not lit), (i, colors)
 
 
 @needs_csb
 def test_ku_creature_tile(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    face_free_square(lib, lambda x, y: any(t >> 10 & 15 == THING_GROUP and not lib.map_get_creature_attributes(t) & CREATURE_NOT_ON_MAP
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    face_free_square(lib, lambda x, y: any(t >> 10 & 15 == C.THING_GROUP and not lib.map_get_creature_attributes(t) & C.CREATURE_NOT_ON_MAP
                                        for t in things(lib, x, y)))
     c.magic_map[KU] = 1
     for time in (0, 1):
@@ -564,9 +557,9 @@ def test_ku_creature_tile(lib, csb):
 @needs_csb
 def test_dain_explosion_tile(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: empty_corridor(lib, x, y))
-    explosion = lib.map_get_unused_thing(THING_EXPLOSION)
+    explosion = lib.map_get_unused_thing(C.THING_EXPLOSION)
     rec = lib.dungeon_get_thing_data(explosion)
     rec[2], rec[3] = 100, 0  # attack, fireball
     lib.map_link_thing_to_list(explosion, 0, fx, fy)
@@ -582,16 +575,16 @@ def set_square(lib, x, y, square):
 @needs_csb
 def test_ros_pit_and_fake_wall_tiles(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: empty_corridor(lib, x, y))
-    set_square(lib, fx, fy, SQUARE_PIT << 5 | PIT_OPEN | PIT_INVISIBLE)
+    set_square(lib, fx, fy, C.SQUARE_PIT << 5 | C.PIT_OPEN | C.PIT_INVISIBLE)
     value(lib, "g_game_time", u32).value = 1  # bit 0: the pit blinks
     assert_tile(lib, panel(lib), 3, 2, TILE_PIT_INVISIBLE)
     c.magic_map[ROS] = 1
     assert_tile(lib, panel(lib), 3, 2, TILE_PIT_BLINK)
     value(lib, "g_game_time", u32).value = 2
     assert_tile(lib, panel(lib), 3, 2, TILE_PIT_INVISIBLE)
-    set_square(lib, fx, fy, SQUARE_FAKE_WALL << 5 | FAKE_WALL_IMAGINARY)  # bit 1 of the time: the fake wall blinks
+    set_square(lib, fx, fy, C.SQUARE_FAKE_WALL << 5 | C.FAKE_WALL_IMAGINARY)  # bit 1 of the time: the fake wall blinks
     assert_tile(lib, panel(lib), 3, 2, TILE_FAKE_WALL_BLINK)
     c.magic_map[ROS] = 0
     with pytest.raises(AssertionError):
@@ -608,7 +601,7 @@ def add_scent(lib, x, y):
 @needs_csb
 def test_party_and_footprint_borders(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     width, height = value(lib, "g_current_map_width").value, value(lib, "g_current_map_height").value
     x, y, d = next((x, y, d) for x in range(width) for y in range(height) for d in range(4)
                    if empty_corridor(lib, x, y) and empty_corridor(lib, x + STEP_EAST[(d + 1) % 4], y + STEP_NORTH[(d + 1) % 4]) and calm(lib, x, y))
@@ -617,14 +610,14 @@ def test_party_and_footprint_borders(lib, csb):
     right = (d + 1) % 4
     add_scent(lib, x + STEP_EAST[right], y + STEP_NORTH[right])
     view = panel(lib)
-    assert border(lib, view, 3, 3) == {COLOR_RED}
-    assert COLOR_CYAN not in border(lib, view, 4, 3)
+    assert border(lib, view, 3, 3) == {C.COLOR_RED}
+    assert C.COLOR_CYAN not in border(lib, view, 4, 3)
     c.magic_map[DAIN] = 1
     view = panel(lib)
-    assert border(lib, view, 3, 3) == {COLOR_RED}  # the party square comes last and keeps its border
+    assert border(lib, view, 3, 3) == {C.COLOR_RED}  # the party square comes last and keeps its border
     px, py = cell_origin(lib, 4, 3)
     width = lib.ui_get_viewport().contents.w
-    assert {view[yy * width + px + TILE_W] for yy in range(py - 1, py + TILE_W + 1)} == {COLOR_CYAN}  # the right side
+    assert {view[yy * width + px + TILE_W] for yy in range(py - 1, py + TILE_W + 1)} == {C.COLOR_CYAN}  # the right side
 
 
 @needs_csb
@@ -632,7 +625,7 @@ def test_eye_keeps_the_leader_map(lib, csb):
     c, scrolls = csb
     plain = take(lib, scrolls[b"CREANAME"])
     set_scroll_text(lib, plain, "PRESS WESTWARD")
-    c.slots[SLOT_HAND_ACTION] = plain
+    c.slots[C.SLOT_HAND_ACTION] = plain
     face_free_square(lib, lambda x, y: True)
     panel(lib)
     value(lib, "g_leader_hand_object", u16).value = take(lib, scrolls[b"MAGICMAP"])
@@ -656,13 +649,13 @@ def test_only_the_exact_text_is_a_magic_map(lib, csb, text, cast_ok, map_shown):
     scroll = take(lib, scrolls[b"CREANAME"])
     set_scroll_text(lib, scroll, text)
     assert scroll_text(lib, scroll) == text.encode()
-    c.slots[SLOT_HAND_ACTION] = scroll
+    c.slots[C.SLOT_HAND_ACTION] = scroll
     plain = take(lib, scrolls[b"MAGICMAP"])
     set_scroll_text(lib, plain, "PRESS WESTWARD")
     assert cast(lib, c, SPELL_MAGIC_MAP_FIRST, 1) == (CAST_SUCCESS if cast_ok else CAST_KEEP_SYMBOLS)
     c.magic_map[DAIN] = 0
     shown = panel(lib)
-    c.slots[SLOT_HAND_ACTION] = plain
+    c.slots[C.SLOT_HAND_ACTION] = plain
     assert (changed_cells(lib, panel(lib), shown) >= {(col, row) for col in range(7) for row in range(7)}) == map_shown
 
 
@@ -673,27 +666,27 @@ def party_dir(lib):
 @needs_csb
 def test_door_tiles(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_DOOR)
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == C.SQUARE_DOOR)
     door = lib.dungeon_get_thing_data(lib.map_get_square_first_thing(fx, fy))
-    square = lib.map_get_square(fx, fy) & ~DOOR_STATE_MASK
-    side = (party_dir(lib) & 1) == bool(square & DOOR_NORTH_SOUTH)
-    for state in (DOOR_CLOSED, DOOR_OPEN, DOOR_DESTROYED):
+    square = lib.map_get_square(fx, fy) & ~C.DOOR_STATE_MASK
+    side = (party_dir(lib) & 1) == bool(square & C.DOOR_NORTH_SOUTH)
+    for state in (C.DOOR_CLOSED, C.DOOR_OPEN, C.DOOR_DESTROYED):
         for button in (True, False):
             set_square(lib, fx, fy, square | state)
             door[3] = door[3] | DOOR_BUTTON if button else door[3] & ~DOOR_BUTTON
-            tile = (TILE_DOOR_SIDE if side else TILE_DOOR_FRONT) + (0 if button else TILE_DOOR_NO_BUTTON) + (0 if state == DOOR_CLOSED else TILE_DOOR_OPEN)
+            tile = (TILE_DOOR_SIDE if side else TILE_DOOR_FRONT) + (0 if button else TILE_DOOR_NO_BUTTON) + (0 if state == C.DOOR_CLOSED else TILE_DOOR_OPEN)
             assert_tile(lib, panel(lib), 3, 2, tile)
 
 
 @needs_csb
 def test_stairs_tiles(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_STAIRS)
-    square = lib.map_get_square(fx, fy) & ~STAIRS_UP
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == C.SQUARE_STAIRS)
+    square = lib.map_get_square(fx, fy) & ~C.STAIRS_UP
     for up in (0, 2):
-        set_square(lib, fx, fy, square | (STAIRS_UP if up else 0))
+        set_square(lib, fx, fy, square | (C.STAIRS_UP if up else 0))
         side = (lib.map_get_stairs_exit_direction(fx, fy) - party_dir(lib) + up) % 4
         assert_tile(lib, panel(lib), 3, 2, TILE_STAIRS_FIRST + side)
 
@@ -707,29 +700,29 @@ def link_new(lib, thing_type, fx, fy, cell, fill):
 @needs_csb
 def test_fireball_projectile_tile(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     fx, fy = face_free_square(lib, lambda x, y: empty_corridor(lib, x, y))
     cell = (party_dir(lib) + 1) % 4  # one side to the right of the map direction
 
     def fill(rec):
         rec[2], rec[3], rec[4], rec[5], rec[6], rec[7] = EXPLOSION_FIREBALL_THING >> 8, EXPLOSION_FIREBALL_THING & 0xFF, 100, 100, 0, 0
-    link_new(lib, THING_PROJECTILE, fx, fy, cell, fill)
+    link_new(lib, C.THING_PROJECTILE, fx, fy, cell, fill)
     c.magic_map[DAIN] = 1
     assert_tile(lib, panel(lib), 3, 2, TILE_FIREBALL_FIRST + 1)
 
 
 def zokathra(rec):
-    rec[2], rec[3] = 0, JUNK_ZOKATHRA
+    rec[2], rec[3] = 0, C.JUNK_ZOKATHRA
 
 
 @needs_csb
 @pytest.mark.parametrize("in_wall", [False, True])
 def test_zokathra_tile(lib, csb, in_wall):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    kind = SQUARE_WALL if in_wall else SQUARE_CORRIDOR
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    kind = C.SQUARE_WALL if in_wall else C.SQUARE_CORRIDOR
     fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == kind and not list(things(lib, x, y)))
-    link_new(lib, THING_JUNK, fx, fy, (party_dir(lib) + 2) % 4, zokathra)
+    link_new(lib, C.THING_JUNK, fx, fy, (party_dir(lib) + 2) % 4, zokathra)
     c.magic_map[DAIN] = 1
     assert_tile(lib, panel(lib), 3, 2, TILE_ZOKATHRA_FIRST + 2 + (TILE_IN_WALL if in_wall else 0))
 
@@ -737,9 +730,9 @@ def test_zokathra_tile(lib, csb, in_wall):
 @needs_csb
 def test_floor_ornament_tile(lib, csb):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     panel(lib)  # the view has the party map
-    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == SQUARE_CORRIDOR and lib.view_get_floor_ornament(x, y) >= 0)
+    fx, fy = face_free_square(lib, lambda x, y: lib.map_get_square(x, y) >> 5 == C.SQUARE_CORRIDOR and lib.view_get_floor_ornament(x, y) >= 0)
     assert_tile(lib, panel(lib), 3, 2, TILE_FLOOR_ORNAMENT_FIRST + lib.view_get_floor_ornament(fx, fy))
 
 
@@ -747,7 +740,7 @@ def test_floor_ornament_tile(lib, csb):
 @pytest.mark.parametrize("ornament", [ORNAMENT_ALCOVE, ORNAMENT_VI_ALTAR, ORNAMENT_FOUNTAIN])
 def test_wall_ornament_tiles(lib, csb, ornament):
     c, scrolls = csb
-    c.slots[SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
+    c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     lib.map_set_current_map_and_party_map(WALL_ORNAMENT_MAP)
     panel(lib)  # the view loads the party map
     fx, fy = face_free_square(lib, lambda x, y: any(lib.view_get_wall_ornament(x, y, f) == ornament for f in range(4)))

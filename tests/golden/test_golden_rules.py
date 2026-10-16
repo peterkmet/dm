@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.game import Party, scrub_free_groups, state
 from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
 from dmtest.markers import GAME
@@ -17,19 +18,12 @@ c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 GOLDEN = Path(__file__).with_name("rules.json")
 SEED = 0x1234ABCD
 VANILLA, ADVANCED = 0, 1
-THING_WEAPON, THING_POTION, THING_JUNK = 5, 8, 10
-WEAPON_TORCH, POTION_EMPTY_FLASK, JUNK_WATERSKIN, JUNK_BONES = 2, 20, 1, 5
-SLOT_HAND_READY, SLOT_HAND_ACTION = 0, 1
 FOUNTAIN = 1, 0, 21, 2       # map, x, y, direction: facing a fountain on level 2
 VI_ALTAR = 0, 4, 17, 2       # facing the vi altar of level 1
 DOOR_BUTTON = 0, 1, 13, 2    # facing the first door with a button
 ATTACKED = 5, 0, 0, 0        # a map that allows skeletons, with a free corridor square east of the party
-ZONE_ACTION_ICON_FIRST = 89  # + champion index: the action hand icon of the action area
-ZONE_SPELL_SYMBOL_BOX_FIRST, ZONE_SPELL_DELETE_BOX = 245, 254
-CREATURE_WIZARD_EYE, CREATURE_SKELETON = 3, 12  # the wizard eye levitates
-SKILL_COUNT = 20
 # (weapon type, charges): weapon 4 has an action that needs charges, once without and once with them
-WEAPONS = (WEAPON_TORCH, 0), (8, 0), (9, 0), (10, 0), (4, 0), (4, 3)
+WEAPONS = (C.WEAPON_TORCH, 0), (8, 0), (9, 0), (10, 0), (4, 0), (4, 3)
 
 needs_game = pytest.mark.skipif(not (GAME / "KAOS.FTL").exists(), reason="game files missing")
 
@@ -83,14 +77,14 @@ def test_fill_at_a_fountain(game):
     place_party(game, *FOUNTAIN)
     assert game.value("g_facing_fountain")
     got = []
-    flask = new_object(game, THING_POTION, POTION_EMPTY_FLASK, byte=2)
-    skin = new_object(game, THING_JUNK, JUNK_WATERSKIN)
+    flask = new_object(game, C.THING_POTION, C.POTION_EMPTY_FLASK, byte=2)
+    skin = new_object(game, C.THING_JUNK, C.JUNK_WATERSKIN)
     for thing in (flask, skin):
         lib.inventory_put_object_in_leader_hand(thing)
         game.click_box(game.boxes[5])
         got.append(snapshot(game))
         lib.inventory_get_object_removed_from_leader_hand()
-    assert lib.dungeon_get_thing_data(flask)[2] & 0x7F != POTION_EMPTY_FLASK
+    assert lib.dungeon_get_thing_data(flask)[2] & 0x7F != C.POTION_EMPTY_FLASK
     assert lib.dungeon_get_thing_data(skin)[2] >> 6 == 3
     check("fill", got)
 
@@ -116,7 +110,7 @@ def test_bones_on_the_vi_altar(game):
     game.champions[1].current_health = 0
     place_party(game, *VI_ALTAR)
     assert game.value("g_facing_vi_altar") and game.value("g_facing_alcove")
-    bones = new_object(game, THING_JUNK, JUNK_BONES)
+    bones = new_object(game, C.THING_JUNK, C.JUNK_BONES)
     lib.dungeon_get_thing_data(bones)[2] = 1 << 6  # charges: champion 1
     lib.inventory_put_object_in_leader_hand(bones)
     game.click_box(game.boxes[5])
@@ -148,7 +142,7 @@ def test_runes(game, mana):
     caster.current_mana = mana
     got = []
     for zone in (0, 1, 2, None, 3):
-        box = zone_box(game, ZONE_SPELL_DELETE_BOX if zone is None else ZONE_SPELL_SYMBOL_BOX_FIRST + zone)
+        box = zone_box(game, C.ZONE_SPELL_DELETE_BOX if zone is None else C.ZONE_SPELL_SYMBOL_BOX_FIRST + zone)
         game.click_box(box, viewport=False)
         got.append(snapshot(game))
     check(f"runes {mana}", got)
@@ -158,10 +152,10 @@ def test_runes(game, mana):
 def test_torch_burns(game):
     lib = game.lib
     recruit(game)
-    torch = new_object(game, THING_WEAPON, WEAPON_TORCH)
+    torch = new_object(game, C.THING_WEAPON, C.WEAPON_TORCH)
     lib.weapon_set_lit(torch, True)
     lib.weapon_set_charges(torch, 3)
-    game.champions[0].slots[SLOT_HAND_READY] = torch
+    game.champions[0].slots[C.SLOT_HAND_READY] = torch
     got = []
     for _ in range(4):
         ticks(game, 500)
@@ -177,7 +171,7 @@ def test_turn_to_attacker(game):
     add_second_champion(game)  # cell 1: the east side of the party that faces north
     m, x, y, d = ATTACKED
     place_party(game, m, x, y, d)
-    assert lib.group_get_generated(CREATURE_SKELETON, 1, 0, 3, x + 1, y) == 0xFFFF  # a skeleton east of the party
+    assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 3, x + 1, y) == 0xFFFF  # a skeleton east of the party
     second = game.champions[1]
     assert game.until(lambda: second.direction != d)
     got = [snapshot(game)]
@@ -196,13 +190,13 @@ def test_action_list(game):
     indices = (ctypes.c_uint8 * 3).in_dll(lib, "g_action_list_indices")
     got = []
     for experience in (0, 1 << 20):
-        for s in range(SKILL_COUNT):
+        for s in range(C.SKILL_COUNT):
             champion.skills[s].experience = experience
         for weapon, charges in WEAPONS:
-            thing = new_object(game, THING_WEAPON, weapon)
+            thing = new_object(game, C.THING_WEAPON, weapon)
             lib.weapon_set_charges(thing, charges)
-            champion.slots[SLOT_HAND_ACTION] = thing
-            game.click_box(zone_box(game, ZONE_ACTION_ICON_FIRST), viewport=False)
+            champion.slots[C.SLOT_HAND_ACTION] = thing
+            game.click_box(zone_box(game, C.ZONE_ACTION_ICON_BOX_FIRST), viewport=False)
             assert game.value("g_acting_champion_ordinal") == 1
             names = [lib.gfx_action_name(indices[k]).decode() if indices[k] != 0xFF else "" for k in range(3)]
             got.append({"count": count.value, "levels": list(levels), "names": names, **snapshot(game)})
@@ -229,13 +223,9 @@ def test_freeze_life_and_movement_ticks(game):
 
 # Scenarios of the rules that leave ui (PRD R8.3): each one pins a rule before it moves into the engine.
 CORRIDOR, FAKE_WALL, WALL = 1, 6, 0
-FAKE_WALL_IMAGINARY, FAKE_WALL_OPEN = 1, 4
 END, NONE = 0xFFFE, 0xFFFF
 THING_STRIP_CELL = 0x3FFF  # a thing without its cell: a grabbed object keeps the cell of its pile
 VIEW_CELL_FRONT_FIRST, CLICK_BOX_ALCOVE, CLICK_BOX_WALL = 2, 4, 5
-ZONE_DROP_CELL_FIRST, ZONE_THROW_LEFT = 740, 745
-KEY_UP = 0x4C00
-CHAMPION_ATTR_LOAD = 0x0200
 STEP = ((0, -1), (1, 0), (0, 1), (-1, 0))  # (dx, dy) of each direction: north, east, south, west
 MAP_COUNT = 14
 VISIBILITY_MAPS = (0, 1, 2, 3)
@@ -276,11 +266,11 @@ def test_grab_and_drop(game):
     lib = game.lib
     recruit(game)
     place_party(game, *find_spot(game, [0], lambda x, y: is_free(lib, x, y)))
-    flask = new_object(game, THING_POTION, POTION_EMPTY_FLASK, byte=2)
+    flask = new_object(game, C.THING_POTION, C.POTION_EMPTY_FLASK, byte=2)
     hold(game, flask)
     got = []
     for cell in (0, VIEW_CELL_FRONT_FIRST):  # a cell of the party square, then a cell of the square ahead
-        game.click_zone(ZONE_DROP_CELL_FIRST + cell)
+        game.click_zone(C.ZONE_DROP_CELL_FIRST + cell)
         assert game.value("g_leader_hand_object", u16) == NONE
         got.append(snapshot(game))
         game.click_box(game.boxes[cell])
@@ -298,19 +288,19 @@ def test_grab_under_a_creature(game):
     fx, fy = x + STEP[d][0], y + STEP[d][1]
     piles = {}
     for cell in (VIEW_CELL_FRONT_FIRST, VIEW_CELL_FRONT_FIRST + 1):
-        piles[cell] = new_object(game, THING_POTION, POTION_EMPTY_FLASK, byte=2)
+        piles[cell] = new_object(game, C.THING_POTION, C.POTION_EMPTY_FLASK, byte=2)
         hold(game, piles[cell])
-        game.click_zone(ZONE_DROP_CELL_FIRST + cell)
+        game.click_zone(C.ZONE_DROP_CELL_FIRST + cell)
         assert game.value("g_leader_hand_object", u16) == NONE
     lib.map_get_square_group.restype = u16
-    lib.group_get_generated(CREATURE_SKELETON, 1, 0, 3, fx, fy)
+    lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 3, fx, fy)
     group = lib.map_get_square_group(fx, fy)
     lib.group_set_cells(group, (VIEW_CELL_FRONT_FIRST + d) % 4, m)  # the skeleton stands in view cell 2 only
     got = []
     # the creature protects its own cell only; a levitating creature protects nothing
-    for cell, creature, grabbed in ((VIEW_CELL_FRONT_FIRST, CREATURE_SKELETON, False),
-                                    (VIEW_CELL_FRONT_FIRST + 1, CREATURE_SKELETON, True),
-                                    (VIEW_CELL_FRONT_FIRST, CREATURE_WIZARD_EYE, True)):
+    for cell, creature, grabbed in ((VIEW_CELL_FRONT_FIRST, C.CREATURE_SKELETON, False),
+                                    (VIEW_CELL_FRONT_FIRST + 1, C.CREATURE_SKELETON, True),
+                                    (VIEW_CELL_FRONT_FIRST, C.CREATURE_WIZARD_EYE, True)):
         lib.dungeon_get_thing_data(group)[4] = creature
         game.click_box(game.boxes[cell])
         hand = game.value("g_leader_hand_object", u16)
@@ -339,7 +329,7 @@ def test_alcove(game):
         if spot:
             break
     assert spot, "no alcove"
-    flask = new_object(game, THING_POTION, POTION_EMPTY_FLASK, byte=2)
+    flask = new_object(game, C.THING_POTION, C.POTION_EMPTY_FLASK, byte=2)
     hold(game, flask)
     game.click_box(game.boxes[CLICK_BOX_WALL])
     assert game.value("g_leader_hand_object", u16) == NONE
@@ -357,13 +347,13 @@ def test_imaginary_wall(game):
 
     def imaginary(x, y):
         square = lib.map_get_square(x, y)
-        return square >> 5 == FAKE_WALL and square & FAKE_WALL_IMAGINARY and not square & FAKE_WALL_OPEN
+        return square >> 5 == FAKE_WALL and square & C.FAKE_WALL_IMAGINARY and not square & C.FAKE_WALL_OPEN
 
     place_party(game, *find_spot(game, range(MAP_COUNT), imaginary))
-    game.click_zone(ZONE_THROW_LEFT)  # an empty hand goes into the imaginary wall
+    game.click_zone(C.ZONE_THROW_LEFT)  # an empty hand goes into the imaginary wall
     got = [snapshot(game)]
-    hold(game, new_object(game, THING_POTION, POTION_EMPTY_FLASK, byte=2))
-    game.click_zone(ZONE_DROP_CELL_FIRST + VIEW_CELL_FRONT_FIRST)  # an object falls through the imaginary wall
+    hold(game, new_object(game, C.THING_POTION, C.POTION_EMPTY_FLASK, byte=2))
+    game.click_zone(C.ZONE_DROP_CELL_FIRST + VIEW_CELL_FRONT_FIRST)  # an object falls through the imaginary wall
     assert game.value("g_leader_hand_object", u16) == NONE
     got.append(snapshot(game))
     check("imaginary wall", got)
@@ -381,7 +371,7 @@ def test_movement_blocked(game):
         place_party(game, *spot)
         c16.in_dll(lib, blocker).value = 3
         c16.in_dll(lib, "g_last_projectile_disabled_movement_direction").value = (spot[3] + turn) % 4
-        game.key(KEY_UP)
+        game.key(C.KEY_UP)
         game.run(1)
         assert (game.position()[:2] == list(spot[1:3])) == blocked
         got.append({"position": game.position(), **snapshot(game)})
@@ -432,7 +422,7 @@ def test_load_colors(game):
     got = []
     for load in (maximum // 2, maximum * 7 // 8, maximum + 1):  # light gray, yellow, red
         champion.load = load
-        champion.attributes |= CHAMPION_ATTR_LOAD
+        champion.attributes |= C.CHAMPION_ATTR_LOAD
         lib.ui_draw_champion_state(0)
         got.append(snapshot(game))
     check("load", got)

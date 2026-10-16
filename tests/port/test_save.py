@@ -4,6 +4,7 @@ import struct
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.game import ACTIVE_GROUP_BYTES, Box, Frames, Game, recruit_and_hold_object, state
 from dmtest.lib import load_lib
 from dmtest.markers import GAME
@@ -154,7 +155,7 @@ def test_original_load_routines_accept_the_file(game, tmp_path):
     assert struct.unpack(">H", dungeon[-2:])[0] == sum(dungeon[:-2]) & 0xFFFF
 
 
-KEY_RETURN, KEY_CTRL_S = 0x4400, 0x2193
+KEY_CTRL_S = 8595
 LEFT_PRESS, LEFT_RELEASE = 2, 4
 NO_CHOICE = 99
 ZONE_DIALOG_CHOICE = {"cancel": 457, "save": 460}  # in-game dialog with 3 choices, relative to the viewport
@@ -236,7 +237,7 @@ def test_party_death_restart_loads_the_saved_game(game, tmp_path, quit_reset):
             click(lib, (x1 + x2) // 2, (y1 + y2) // 2)
             restart.append(frames.count)
         elif restart and dialog_waits(lib):
-            lib.command_process_key(KEY_RETURN)
+            lib.command_process_key(C.KEY_RETURN)
 
     frames = Frames(lib, action)
     lib.gameloop_tick()
@@ -316,7 +317,7 @@ def test_endgame_quit_button_shows_the_credits_then_the_entrance(game, tmp_path,
             click(lib, (x1 + x2) // 2, (y1 + y2) // 2)
             clicked.append(frames.count)
         elif clicked and frames.count > clicked[0] + 10:
-            lib.command_process_key(KEY_RETURN)  # any key ends the credits
+            lib.command_process_key(C.KEY_RETURN)  # any key ends the credits
 
     frames = Frames(lib, action)
     lib.gameloop_tick()

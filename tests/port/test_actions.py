@@ -23,14 +23,9 @@ TICKS_AT, GROUP_BUF = 0x2F0000, 0x230000
 # move.w 6(a7),TICKS_AT.l; rts: keeps the ticks argument of magic_disable_action.
 CAPTURE_TICKS = b"\x33\xef\x00\x06" + struct.pack(">I", TICKS_AT) + RTS
 
-THING_GROUP, THING_WEAPON, THING_JUNK = 4, 5, 10
-WEAPON_DAGGER, WEAPON_SWORD, JUNK_BONES = 8, 10, 5
-SLOT_HAND_READY, SLOT_HAND_ACTION, SLOT_QUIVER_LINE1_1 = 0, 1, 12
-ACTION_BLOCK, ACTION_SWING, ACTION_SHOOT, ACTION_THROW = 1, 13, 32, 42
-SKILL_SWING = 4
+WEAPON_SWORD = 10
 ATTR_ACTION_DISABLED, ATTR_ACTION_HAND = 0x0008, 0x8000
-REDRAW_ACTION_AREA = 1
-EVENT_ENABLE_ACTION, EVENT_HIDE_DAMAGE, EVENT_REBIRTH, EVENT_POISON = 11, 12, 13, 75
+EVENT_ENABLE_ACTION, EVENT_HIDE_DAMAGE, EVENT_REBIRTH = 11, 12, 13
 FAR = 60  # a square outside every map: a wall without things
 
 # Actions whose result depends only on the champion and the action tables when the square in front is an empty wall.
@@ -75,7 +70,7 @@ def put_living_champions(w):
     for i in range(4):
         cs[i].current_health = max(1, cs[i].current_health)
         cs[i].enable_action_event_index = -1
-        cs[i].slots[SLOT_HAND_READY] = 0xFFFF
+        cs[i].slots[C.SLOT_HAND_READY] = 0xFFFF
         w.emu.write(CHAMPIONS + 0x140 * i, pack(w.lib, cs[i]))
     return cs
 
@@ -132,7 +127,7 @@ def test_melee_damage_matches_original(alib, seed):
     lib = alib
     w = action_world(lib, 70 + seed)
     group = ctypes.create_string_buffer(16)
-    (ctypes.c_void_p * 16).in_dll(lib, "g_thing_data")[THING_GROUP] = ctypes.addressof(group)
+    (ctypes.c_void_p * 16).in_dll(lib, "g_thing_data")[C.THING_GROUP] = ctypes.addressof(group)
     hits = 0
     for round_ in range(160):
         if round_ % 20 == 0:
@@ -151,7 +146,7 @@ def test_melee_damage_matches_original(alib, seed):
         skill = w.emu.read(ACTION_INFO + 5 * 44 + action, 1)[0]
         i, creature = w.rng.randrange(4), w.rng.randrange(4)
         w.seed(seed * 7907 + round_)
-        got = lib.group_get_melee_action_damage(i, THING_GROUP << 10, creature, FAR, FAR, hit, factor, skill)
+        got = lib.group_get_melee_action_damage(i, C.THING_GROUP << 10, creature, FAR, FAR, hit, factor, skill)
         want = s16(w.emu.call(MELEE_DAMAGE, [(4, CHAMPIONS + 0x140 * i), (2, i), (4, GROUP_BUF), (2, creature), (2, FAR), (2, FAR),
                                              (2, hit), (2, factor), (2, skill)]))
         assert got == want, (round_, group[4], action)
@@ -182,7 +177,7 @@ def fighter(alib):
     place_party(lib, m, x, y, 2)  # south
     assert lib.group_get_generated(12, 1, 0, 0, x, y + 1) == 0xFFFF  # a skeleton, active on the party map
     c.direction, c.cell = 2, 2  # front row when the party faces south
-    c.slots[SLOT_HAND_ACTION] = new_object(lib, THING_WEAPON, WEAPON_SWORD)
+    c.slots[C.SLOT_HAND_ACTION] = new_object(lib, C.THING_WEAPON, WEAPON_SWORD)
     for s in range(20):
         c.skills[s].experience = 1 << 12
     return lib, c, (x, y)
@@ -202,16 +197,16 @@ def test_sword_attack_hurts_group_and_gains_experience(fighter):
     lib, c, (x, y) = fighter
     group = lib.map_get_square_group(x, y + 1)
     health = struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0]
-    experience = c.skills[SKILL_SWING].experience
+    experience = c.skills[C.SKILL_SWING].experience
     damage = []
     for _ in range(20):
-        lib.action_is_action_performed(0, ACTION_SWING)
+        lib.action_is_action_performed(0, C.ACTION_SWING)
         damage.append(var(lib, c16, "g_action_damage").value)
         group = lib.map_get_square_group(x, y + 1)
         if group == 0xFFFE or struct.unpack(">H", bytes(lib.dungeon_get_thing_data(group)[6:8]))[0] < health:
             break
     assert any(d > 0 for d in damage)
-    assert c.skills[SKILL_SWING].experience > experience
+    assert c.skills[C.SKILL_SWING].experience > experience
     assert c.enable_action_event_index >= 0 and c.attributes & ATTR_ACTION_DISABLED
 
 
@@ -224,7 +219,7 @@ def test_back_row_champion_cannot_reach(fighter):
     var(lib, u16, "g_party_champion_count").value = 2
     found = False
     for _ in range(10):
-        lib.action_is_action_performed(0, ACTION_SWING)
+        lib.action_is_action_performed(0, C.ACTION_SWING)
         if var(lib, c16, "g_action_damage").value == -1:
             found = True
             break
@@ -233,26 +228,26 @@ def test_back_row_champion_cannot_reach(fighter):
 
 def test_throw_creates_projectile_and_event_11_refills_hand(fighter):
     lib, c, (x, y) = fighter
-    c.slots[SLOT_HAND_ACTION] = new_object(lib, THING_WEAPON, WEAPON_DAGGER)
-    c.slots[SLOT_QUIVER_LINE1_1] = second = new_object(lib, THING_WEAPON, WEAPON_DAGGER)
-    assert lib.action_is_action_performed(0, ACTION_THROW) == 1
+    c.slots[C.SLOT_HAND_ACTION] = new_object(lib, C.THING_WEAPON, C.WEAPON_DAGGER)
+    c.slots[C.SLOT_QUIVER_LINE1_1] = second = new_object(lib, C.THING_WEAPON, C.WEAPON_DAGGER)
+    assert lib.action_is_action_performed(0, C.ACTION_THROW) == 1
     assert things_of_type(lib, x, y, C.THING_PROJECTILE)
-    assert c.slots[SLOT_HAND_ACTION] == 0xFFFF
+    assert c.slots[C.SLOT_HAND_ACTION] == 0xFFFF
     timeline = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
     event = timeline[c.enable_action_event_index]
-    assert event.type == EVENT_ENABLE_ACTION and event.b >> 8 == SLOT_HAND_ACTION + 1
+    assert event.type == EVENT_ENABLE_ACTION and event.b >> 8 == C.SLOT_HAND_ACTION + 1
     for _ in range(5):
         tick(lib)
     assert c.enable_action_event_index == -1 and not c.attributes & ATTR_ACTION_DISABLED
-    assert c.slots[SLOT_HAND_ACTION] == second and c.slots[SLOT_QUIVER_LINE1_1] == 0xFFFF
+    assert c.slots[C.SLOT_HAND_ACTION] == second and c.slots[C.SLOT_QUIVER_LINE1_1] == 0xFFFF
 
 
 def test_event_11_ends_action_defense(party):
     lib, c, _ = party
-    info = ctypes.cast(lib.tables_get_action_info(ACTION_BLOCK), ctypes.POINTER(u8 * 7)).contents
+    info = ctypes.cast(lib.tables_get_action_info(C.ACTION_BLOCK), ctypes.POINTER(u8 * 7)).contents
     defense = ctypes.c_int8(info[4]).value
-    c.action_defense, c.action_index = defense, ACTION_BLOCK
-    lib.action_is_action_performed(0, ACTION_BLOCK)
+    c.action_defense, c.action_index = defense, C.ACTION_BLOCK
+    lib.action_is_action_performed(0, C.ACTION_BLOCK)
     ticks = info[0]
     assert c.attributes & ATTR_ACTION_DISABLED
     for _ in range(ticks):
@@ -268,10 +263,10 @@ def test_triggered_action_closes_menu_and_asks_for_action_area(party):
     redraw = ctypes.c_uint16.in_dll(lib, "g_redraw")
     redraw.value = 0
     var(lib, c16, "g_acting_champion_ordinal").value = 1
-    (u8 * 3).in_dll(lib, "g_action_list_indices")[0] = ACTION_BLOCK
+    (u8 * 3).in_dll(lib, "g_action_list_indices")[0] = C.ACTION_BLOCK
     lib.action_did_click_trigger_action(0)
     assert var(lib, c16, "g_acting_champion_ordinal").value == 0
-    assert redraw.value & REDRAW_ACTION_AREA
+    assert redraw.value & C.REDRAW_ACTION_AREA
     assert c.attributes & ATTR_ACTION_HAND
 
 
@@ -284,7 +279,7 @@ def test_poison_event_deals_damage_each_step(party):
     for _ in range(37):
         tick(lib)
     assert pending[0] == 199 >> 6 and c.poison_event_count == 1
-    poison = events(lib, EVENT_POISON)
+    poison = events(lib, C.EVENT_POISON)
     assert len(poison) == 1 and poison[0].b == 198
 
 
@@ -300,7 +295,7 @@ def test_event_12_hides_damage(party):
 
 def test_vi_altar_rebirth(party):
     lib, c, (x, y) = party
-    bones = new_object(lib, THING_JUNK, JUNK_BONES)
+    bones = new_object(lib, C.THING_JUNK, C.JUNK_BONES)
     lib.dungeon_get_thing_data(bones)[2] = 0  # charges: champion 0
     lib.map_link_thing_to_list(bones | 1 << 14, 0, x, y)
     c.current_health = 0
@@ -313,7 +308,7 @@ def test_vi_altar_rebirth(party):
     assert things_of_type(lib, x, y, C.THING_EXPLOSION)  # the rebirth explosion
     for _ in range(5):
         tick(lib)
-    assert all(t & 0x3FFF != bones for t in things_of_type(lib, x, y, THING_JUNK))
+    assert all(t & 0x3FFF != bones for t in things_of_type(lib, x, y, C.THING_JUNK))
     for _ in range(2):
         tick(lib)
     assert c.current_health > 0

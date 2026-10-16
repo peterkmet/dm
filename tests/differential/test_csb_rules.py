@@ -14,13 +14,9 @@ from dmtest.markers import ROOT
 DIRS = {"dm": ROOT / "game", "csb": ROOT / "game-csb"}
 ADVENTURE = {"dm": 0, "csb": 1}
 STEP_EAST, STEP_NORTH = (0, 1, 0, -1), (-1, 0, 1, 0)
-CORRIDOR, THING_SENSOR, THING_ENDOFLIST = 1, 3, 0xFFFE
-ACTION_NONE_IN_BOTH, ACTION_INVOKE, ACTION_FLUXCAGE, ACTION_FUSE = 3, 27, 35, 43
-EVENT_ENABLE_ACTION, EVENT_REMOVE_FLUXCAGE = 11, 24
-EFFECT_SET, EFFECT_CLEAR, EFFECT_TOGGLE = 0, 1, 2
-SENSOR_FLOOR_VERSION_CHECKER = 9
-PANEL_REINCARNATE = 0xA1
-STAT_STRENGTH, STAT_COUNT, STAT_MAXIMUM, STAT_CURRENT, STAT_MINIMUM = 1, 7, 0, 1, 2
+CORRIDOR = 1
+ACTION_NONE_IN_BOTH = 3
+EVENT_ENABLE_ACTION = 11
 SEED = 0x12345
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
@@ -76,7 +72,7 @@ def value(lib, name, kind=c16):
 
 def things(lib, x, y):
     thing = lib.map_get_square_first_thing(x, y)
-    while thing != THING_ENDOFLIST:
+    while thing != C.THING_ENDOFLIST:
         yield thing
         thing = lib.map_get_next_thing(thing)
 
@@ -126,7 +122,7 @@ def seed_after_random_bit(lib):
     return value(lib, "g_random_seed", u32).value
 
 
-@pytest.mark.parametrize("action", [ACTION_INVOKE, ACTION_FLUXCAGE, ACTION_FUSE])
+@pytest.mark.parametrize("action", [C.ACTION_INVOKE, C.ACTION_FLUXCAGE, C.ACTION_FUSE])
 def test_removed_actions(world, action):
     """CSB: invoke, fluxcage, and fuse only disable the hand, take stamina, give experience; no explosion, no fluxcage
     event, and only the stamina random bit. DM: invoke draws more random numbers; fluxcage and fuse make explosions."""
@@ -135,12 +131,12 @@ def test_removed_actions(world, action):
     front = face_empty_corridor(lib)
     c = put_champion(lib)
     skills = [(s.temporary_experience, s.experience) for s in c.skills]
-    fluxcages = sum(e.type == EVENT_REMOVE_FLUXCAGE for e in timeline(lib))
+    fluxcages = sum(e.type == C.EVENT_REMOVE_FLUXCAGE for e in timeline(lib))
     value(lib, "g_random_seed", u32).value = SEED
     assert lib.action_is_action_performed(0, action) == 1
     seed = value(lib, "g_random_seed", u32).value
     explosions = [t for t in things(lib, *front) if t >> 10 & 15 == C.THING_EXPLOSION]
-    new_fluxcages = sum(e.type == EVENT_REMOVE_FLUXCAGE for e in timeline(lib)) - fluxcages
+    new_fluxcages = sum(e.type == C.EVENT_REMOVE_FLUXCAGE for e in timeline(lib)) - fluxcages
     if adventure == "csb":
         assert seed == seed_after_random_bit(lib)
         assert not explosions and not new_fluxcages
@@ -156,11 +152,11 @@ def test_removed_actions(world, action):
             skill.temporary_experience, skill.experience = temporary, total
         lib.champion_add_skill_experience(0, info.skill_index, info.experience_gain)  # the full experience
         assert gained == [(s.temporary_experience, s.experience) for s in c.skills]
-    elif action == ACTION_INVOKE:
+    elif action == C.ACTION_INVOKE:
         assert seed != seed_after_random_bit(lib)
     else:
         assert explosions
-        assert new_fluxcages == (action == ACTION_FLUXCAGE)
+        assert new_fluxcages == (action == C.ACTION_FLUXCAGE)
 
 
 def test_action_without_branch_draws_only_the_stamina_bit(world):
@@ -179,11 +175,11 @@ def test_sensor_event_priority(world):
     adventure, game = world
     lib = game.lib
     priorities = {}
-    for effect, time in ((EFFECT_SET, 900001), (EFFECT_CLEAR, 900002), (EFFECT_TOGGLE, 900003)):
+    for effect, time in ((C.EFFECT_SET, 900001), (C.EFFECT_CLEAR, 900002), (C.EFFECT_TOGGLE, 900003)):
         lib.sensor_add_event(1, 1, 1, 0, effect, time)
         priorities[effect] = next(e.priority for e in timeline(lib) if e.map_time & 0xFFFFFF == time)
-    assert priorities == ({EFFECT_SET: 0, EFFECT_CLEAR: 0, EFFECT_TOGGLE: 0} if adventure == "csb"
-                          else {EFFECT_SET: 1, EFFECT_CLEAR: 3, EFFECT_TOGGLE: 2})
+    assert priorities == ({C.EFFECT_SET: 0, C.EFFECT_CLEAR: 0, C.EFFECT_TOGGLE: 0} if adventure == "csb"
+                          else {C.EFFECT_SET: 1, C.EFFECT_CLEAR: 3, C.EFFECT_TOGGLE: 2})
 
 
 def version_checker(lib, data):
@@ -191,11 +187,11 @@ def version_checker(lib, data):
     silent, an event to its own square. The dungeon has no free sensor record."""
     sensor, sx, sy = next((t, sx, sy) for sx in range(value(lib, "g_current_map_width").value)
                           for sy in range(value(lib, "g_current_map_height").value)
-                          for t in things(lib, sx, sy) if t >> 10 & 15 == THING_SENSOR)
+                          for t in things(lib, sx, sy) if t >> 10 & 15 == C.THING_SENSOR)
     lib.map_unlink_thing_from_list(sensor, 0, sx, sy)
     x, y = face_empty_corridor(lib)
     record = lib.dungeon_get_thing_data(sensor)
-    word = data << 7 | SENSOR_FLOOR_VERSION_CHECKER
+    word = data << 7 | C.SENSOR_FLOOR_VERSION_CHECKER
     target = y << 11 | x << 6
     record[2], record[3], record[4], record[5], record[6], record[7] = word >> 8, word & 0xFF, 0, 0, target >> 8, target & 0xFF
     lib.map_link_thing_to_list(sensor, 0, x, y)
@@ -227,22 +223,22 @@ def test_reincarnation(world):
     game.click_box(game.boxes[5])
     assert value(lib, "g_candidate_champion_ordinal").value == 1
     c = game.champions[0]
-    stats = [list(c.statistics[s]) for s in range(STAT_COUNT)]
+    stats = [list(c.statistics[s]) for s in range(C.STAT_COUNT)]
     bars = [c.current_health, c.maximum_health, c.current_stamina, c.maximum_stamina, c.current_mana, c.maximum_mana]
     if adventure == "csb":
-        for s in range(STAT_STRENGTH, STAT_COUNT):
-            v = stats[s][STAT_CURRENT]
-            stats[s][STAT_CURRENT] = stats[s][STAT_MAXIMUM] = max(stats[s][STAT_MINIMUM], v - v // 8)
+        for s in range(C.STAT_STRENGTH, C.STAT_COUNT):
+            v = stats[s][C.STAT_CURRENT]
+            stats[s][C.STAT_CURRENT] = stats[s][C.STAT_MAXIMUM] = max(stats[s][C.STAT_MINIMUM], v - v // 8)
         bars = [b >> 2 for b in bars]
     value(lib, "g_random_seed", u32).value = SEED
-    lib.champion_click_in_resurrect_reincarnate_panel(PANEL_REINCARNATE)
+    lib.champion_click_in_resurrect_reincarnate_panel(C.PANEL_REINCARNATE)
     seed = value(lib, "g_random_seed", u32).value
     value(lib, "g_random_seed", u32).value = SEED
     for _ in range(12):
-        s = lib.random16() % STAT_COUNT
-        stats[s][STAT_CURRENT] += 1
-        stats[s][STAT_MAXIMUM] += 1
+        s = lib.random16() % C.STAT_COUNT
+        stats[s][C.STAT_CURRENT] += 1
+        stats[s][C.STAT_MAXIMUM] += 1
     assert value(lib, "g_random_seed", u32).value == seed
-    assert [list(c.statistics[s]) for s in range(STAT_COUNT)] == stats
+    assert [list(c.statistics[s]) for s in range(C.STAT_COUNT)] == stats
     assert [c.current_health, c.maximum_health, c.current_stamina, c.maximum_stamina, c.current_mana, c.maximum_mana] == bars
     assert all(s.experience == 0 for s in c.skills)

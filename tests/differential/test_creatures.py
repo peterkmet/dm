@@ -7,6 +7,7 @@ import struct
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.emu import need, s16, var
 from dmtest.game import (Party, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
                          things_of_type, tick)
@@ -28,12 +29,7 @@ SOUND_REQUEST_PLAY, CHAMPION_POISON = 0x108DF4, 0x111B32
 RTS = b"\x4e\x75"
 THING_BUF, HEADER_BUF, GROUP_BUF = 0x200000, 0x220000, 0x230000
 FIREBALL = 0xFF80
-THING_GROUP, THING_WEAPON, THING_ARMOUR, THING_PROJECTILE, THING_EXPLOSION = 4, 5, 6, 14, 15
-CREATURE_SKELETON, CREATURE_MUMMY = 12, 10
-BEHAVIOR_APPROACH, BEHAVIOR_ATTACK = 7, 6
-THING_POTION, POTION_EMPTY_FLASK, ICON_EMPTY_FLASK = 8, 20, 195
-SLOT_HAND_ACTION = 1
-EVENT_LIGHT, EVENT_PARTY_SHIELD_END = 70, 74
+CREATURE_MUMMY = 10
 
 pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
 
@@ -84,7 +80,7 @@ def test_champion_damage_matches_original(lib, seed):
         w.emu.write(addr, RTS)
     group = ctypes.create_string_buffer(16)
     thing_data = (ctypes.c_void_p * 16).in_dll(lib, "g_thing_data")
-    thing_data[THING_GROUP] = ctypes.addressof(group)
+    thing_data[C.THING_GROUP] = ctypes.addressof(group)
     creatures = [t for t in range(27) if w.emu.read(CREATURE_INFO + 26 * t + 11, 1)[0] == 0]  # no poison: champion_poison is stubbed
     for round_ in range(120):
         if round_ % 20 == 0:
@@ -100,7 +96,7 @@ def test_champion_damage_matches_original(lib, seed):
         w.emu.write(GROUP_BUF, group.raw)
         champion = w.rng.randrange(4)
         w.seed(seed * 997 + round_)
-        got = lib.group_get_champion_damage(THING_GROUP << 10, champion)
+        got = lib.group_get_champion_damage(C.THING_GROUP << 10, champion)
         want = s16(w.emu.call(CHAMPION_DAMAGE, [(4, GROUP_BUF), (2, champion)]))
         assert got == want, (round_, group[4], champion)
         w.check_state()
@@ -208,7 +204,7 @@ def mummy_in_corridor(lib, m):
     for x in range(lib.dungeon_map_width(m)):
         for y in range(lib.dungeon_map_height(m)):
             t = lib.dungeon_get_square_first_thing(m, x, y)
-            while t != 0xFFFE and t >> 10 & 15 != THING_GROUP:
+            while t != 0xFFFE and t >> 10 & 15 != C.THING_GROUP:
                 t = lib.map_get_next_thing(t)
             if t == 0xFFFE or lib.dungeon_get_thing_data(t)[4] != CREATURE_MUMMY:
                 continue
@@ -235,7 +231,7 @@ def test_group_activates_and_approaches_party(lib):
             break
     assert group is not None, "no group came next to the party"
     assert seen & {32, 37}  # group aspect and behavior events ran
-    assert lib.dungeon_get_thing_data(group)[15] & 15 in (BEHAVIOR_APPROACH, BEHAVIOR_ATTACK)
+    assert lib.dungeon_get_thing_data(group)[15] & 15 in (C.BEHAVIOR_APPROACH, C.BEHAVIOR_ATTACK)
 
 
 def test_group_attacks_adjacent_party(lib):
@@ -262,21 +258,21 @@ def test_creature_dies_and_drops_possessions(lib):
     place_party(lib, m, *party_square, 2)
     assert lib.map_get_square_group(x, y) == 0xFFFE
     # Like the original, the result is THING_NONE when the new group becomes active on the party map.
-    assert lib.group_get_generated(CREATURE_SKELETON, 1, 0, 0, x, y) == 0xFFFF
+    assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 0, x, y) == 0xFFFF
     group = lib.map_get_square_group(x, y)
-    assert group != 0xFFFE and lib.dungeon_get_thing_data(group)[4] == CREATURE_SKELETON
+    assert group != 0xFFFE and lib.dungeon_get_thing_data(group)[4] == C.CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10, 1) == 0  # 10 damage: the skeleton survives
     assert lib.map_get_square_group(x, y) == group
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 2000, 1) == 2
     assert lib.map_get_square_group(x, y) == 0xFFFE
     assert var(lib, u16, "g_active_group_count").value == active - 1
-    drops = things_of_type(lib, x, y, THING_WEAPON) + things_of_type(lib, x, y, THING_ARMOUR)
+    drops = things_of_type(lib, x, y, C.THING_WEAPON) + things_of_type(lib, x, y, C.THING_ARMOUR)
     assert drops  # the skeleton drops its falchion and helmet
-    assert things_of_type(lib, x, y, THING_EXPLOSION)  # the smoke of the dead creature
+    assert things_of_type(lib, x, y, C.THING_EXPLOSION)  # the smoke of the dead creature
     for _ in range(10):
         tick(lib)
-    assert not things_of_type(lib, x, y, THING_EXPLOSION)
+    assert not things_of_type(lib, x, y, C.THING_EXPLOSION)
 
 
 def test_fireball_flies_and_explodes_on_wall(lib):
@@ -290,8 +286,8 @@ def test_fireball_flies_and_explodes_on_wall(lib):
     lib.projectile_create(FIREBALL, x, y, 0, 1, 100, 100, 1)  # east, back cell
     path, seen = [], set()
     for _ in range(12):
-        where = [(sx, y) for sx in range(x, x + 3) if things_of_type(lib, sx, y, THING_PROJECTILE)]
-        explosions = [(sx, y) for sx in range(x, x + 3) if things_of_type(lib, sx, y, THING_EXPLOSION)]
+        where = [(sx, y) for sx in range(x, x + 3) if things_of_type(lib, sx, y, C.THING_PROJECTILE)]
+        explosions = [(sx, y) for sx in range(x, x + 3) if things_of_type(lib, sx, y, C.THING_EXPLOSION)]
         path.append((tuple(where), tuple(explosions)))
         tick(lib, seen)
     flight = [p[0][0] for p in path if p[0]]
@@ -333,7 +329,7 @@ def test_light_spell_adds_light_event_and_experience(caster):
     light, mana, exp = party.magical_light_amount, c.current_mana, c.skills[17].experience
     assert cast(lib, c, [0x63, 0x68, 0x6F, 0x76]) == 1  # power 4, LIGHT
     assert party.magical_light_amount > light
-    assert len(events(lib, EVENT_LIGHT)) == 1 and c16(events(lib, EVENT_LIGHT)[0].b).value < 0
+    assert len(events(lib, C.EVENT_LIGHT)) == 1 and c16(events(lib, C.EVENT_LIGHT)[0].b).value < 0
     assert c.current_mana == mana and c.skills[17].experience > exp
     assert c.enable_action_event_index >= 0
 
@@ -341,10 +337,10 @@ def test_light_spell_adds_light_event_and_experience(caster):
 def test_potion_spell_fills_empty_flask(caster):
     lib, c = caster
     assert cast(lib, c, [0x62, 0x66]) == 3  # power 3, no flask in hand
-    flask = lib.map_get_unused_thing(THING_POTION)
-    lib.dungeon_get_thing_data(flask)[2] = POTION_EMPTY_FLASK
-    assert lib.object_get_icon_index(flask) == ICON_EMPTY_FLASK
-    c.slots[SLOT_HAND_ACTION] = flask
+    flask = lib.map_get_unused_thing(C.THING_POTION)
+    lib.dungeon_get_thing_data(flask)[2] = C.POTION_EMPTY_FLASK
+    assert lib.object_get_icon_index(flask) == C.ICON_EMPTY_FLASK
+    c.slots[C.SLOT_HAND_ACTION] = flask
     assert cast(lib, c, [0x62, 0x66]) == 1
     data = lib.dungeon_get_thing_data(flask)
     assert data[2] & 0x7F == 11 and 3 * 40 <= data[3] < 3 * 40 + 16
@@ -395,7 +391,7 @@ def test_party_shield_adds_defense_and_event(caster):
     party = Party.in_dll(lib, "g_party")
     assert cast(lib, c, [0x61, 0x66, 0x6F]) == 1  # power 2, YA IR
     assert party.shield_defense == 2 * 4 + 4
-    shield = events(lib, EVENT_PARTY_SHIELD_END)
+    shield = events(lib, C.EVENT_PARTY_SHIELD_END)
     assert len(shield) == 1 and shield[0].b == 12
     assert shield[0].map_time & 0xFFFFFF == ctypes.c_uint32.in_dll(lib, "g_game_time").value + 12 * 12
 
@@ -405,6 +401,6 @@ def test_fireball_spell_shoots_projectile(caster):
     mana = c.current_mana
     assert cast(lib, c, [0x63, 0x69, 0x6F]) == 1  # power 4, FUL IR: fireball
     x, y = c16.in_dll(lib, "g_party_map_x").value, c16.in_dll(lib, "g_party_map_y").value
-    projectiles = things_of_type(lib, x, y, THING_PROJECTILE)
+    projectiles = things_of_type(lib, x, y, C.THING_PROJECTILE)
     assert len(projectiles) == 1 and struct.unpack(">H", bytes(lib.dungeon_get_thing_data(projectiles[0])[2:4]))[0] == FIREBALL
     assert c.current_mana == mana

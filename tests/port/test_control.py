@@ -8,13 +8,13 @@ from contextlib import contextmanager
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.control import Client, pump, pumped, socket_dir
 from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
 from dmtest.lib import load_lib
 from dmtest.markers import GAME
 
 DIRECTIONS = ["north", "east", "south", "west"]
-ZONE_SPELL_CAST_BOX, COLOR_CYAN = 252, 4
 RUNE_CELL_PIXELS = 4 * 5 * 6  # the four rune cells of the cast box, 5 x 6 pixels each
 
 pytestmark = [
@@ -336,9 +336,9 @@ def test_a_cast_leaves_the_cleared_runes_inverted_as_with_the_mouse(game):
         client.act("add_rune", symbol=0)
         assert client.call(cmd="act", action="cast", args={})["ok"]
         box = Box()
-        assert lib.ui_zone_box(ZONE_SPELL_CAST_BOX, ctypes.byref(box))
+        assert lib.ui_zone_box(C.ZONE_SPELL_CAST_BOX, ctypes.byref(box))
         cast_box = [fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)]
-        assert cast_box.count(COLOR_CYAN) == RUNE_CELL_PIXELS
+        assert cast_box.count(C.COLOR_CYAN) == RUNE_CELL_PIXELS
     finally:
         champion.current_mana = mana
         client.sock.close()
@@ -357,12 +357,12 @@ def test_wait_runs_all_ticks_or_stops_on_damage(game):
         client.sock.close()
 
 
-THING_GROUP, SCREAMER = 4, 6
+SCREAMER = 6
 
 
 def add_screamer(lib, x, y):
     """A screamer on square (x, y) of the party map, active but without behavior events (map 0 allows no creatures)."""
-    group = lib.map_get_unused_thing(THING_GROUP)
+    group = lib.map_get_unused_thing(C.THING_GROUP)
     data = lib.dungeon_get_thing_data(group)
     data[2], data[3] = 0xFF, 0xFE  # no possessions
     data[4], data[5] = SCREAMER, 0xFF  # centered on the square
@@ -872,14 +872,14 @@ def test_dm_play_reports_an_unreachable_game(tmp_path, monkeypatch, capsys):
     assert "get_state\tfail" in (tmp_path / "calls.log").read_text()
 
 
-HAS_THINGS, THING_NONE, THING_END = 0x10, 0xFFFF, 0xFFFE
+HAS_THINGS = 16
 
 
 def test_a_free_record_never_enters_a_square_list(game, capfd):
     lib = game.lib
     x, y = next((x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
                 if lib.map_get_square(x, y) >> 5 == 1 and not lib.map_get_square(x, y) & HAS_THINGS)
-    lib.map_link_thing_to_list(THING_NONE, 0, x, y)
+    lib.map_link_thing_to_list(C.THING_NONE, 0, x, y)
     assert not lib.map_get_square(x, y) & HAS_THINGS
     assert "square list guard: link of a free record" in capfd.readouterr().err
 
@@ -887,14 +887,14 @@ def test_a_free_record_never_enters_a_square_list(game, capfd):
 def test_unlinking_a_freed_last_thing_empties_the_square(game, capfd):
     lib = game.lib
     x, y = next((x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
-                if lib.map_get_square(x, y) & HAS_THINGS and lib.map_get_next_thing(lib.map_get_square_first_thing(x, y)) == THING_END)
+                if lib.map_get_square(x, y) & HAS_THINGS and lib.map_get_next_thing(lib.map_get_square_first_thing(x, y)) == C.THING_END)
     thing = lib.map_get_square_first_thing(x, y)
     lib.thing_set_free(thing)  # its next becomes THING_NONE
     lib.map_unlink_thing_from_list(thing, 0, x, y)
     assert not lib.map_get_square(x, y) & HAS_THINGS
     assert "square list guard: unlink of a free record" in capfd.readouterr().err
     record = lib.dungeon_get_thing_data(thing)
-    record[0], record[1] = THING_END >> 8, THING_END & 0xFF  # next: end of list
+    record[0], record[1] = C.THING_END >> 8, C.THING_END & 0xFF  # next: end of list
     lib.map_link_thing_to_list(thing, 0, x, y)  # the fixture game again as before
     assert lib.map_get_square_first_thing(x, y) == thing
 

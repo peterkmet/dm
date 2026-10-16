@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.lib import load_lib
 from dmtest.markers import GAME
 
@@ -15,7 +16,7 @@ STEP = {NORTH: (0, -1), EAST: (1, 0), SOUTH: (0, 1), WEST: (-1, 0)}
 FORWARD, TURN_LEFT = 3, 1
 CELL, BLACK, YELLOW, FILLER, DARKEST_GRAY, LIGHT_GRAY = 7, 0, 11, 0xEE, 12, 13
 RULER_W, RULER_H = 12, 7
-WALL, DOOR, FAKE_WALL, FAKE_WALL_OPEN, DOOR_CLOSED = 0, 4, 6, 4, 4
+WALL, DOOR, FAKE_WALL = 0, 4, 6
 
 
 class Box(ctypes.Structure):
@@ -64,7 +65,7 @@ def blocks(lib, m, x, y):
         return True
     square = lib.dungeon_get_square(m, x, y)
     kind = square >> 5
-    return kind == WALL or (kind == FAKE_WALL and not square & FAKE_WALL_OPEN) or (kind == DOOR and square & 7 == DOOR_CLOSED)
+    return kind == WALL or (kind == FAKE_WALL and not square & C.FAKE_WALL_OPEN) or (kind == DOOR and square & 7 == C.DOOR_CLOSED)
 
 
 def ahead(x, y, d, depth, side=0):

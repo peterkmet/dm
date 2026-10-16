@@ -4,6 +4,7 @@ import struct
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, sdl3_installed
 
@@ -13,7 +14,7 @@ from dmtools.ftl import load_image, parse
 GAME = ROOT / "game"
 G_SOUNDS = 0x100D52
 G_PARTY = {"g_party_direction": 0x1001EA, "g_party_map_x": 0x1001EC, "g_party_map_y": 0x1001EE}
-G_PARTY_MAP_INDEX, G_CURRENT_MAP_INDEX = 0x1001F0, 0x101C60
+G_PARTY_MAP_INDEX_ADDR, G_CURRENT_MAP_INDEX = 0x1001F0, 0x101C60
 G_PENDING_VOLUMES, G_PENDING_SOUNDS = 0x10093E, 0x100942
 SOUND_COMPARE_LOUDNESS, SOUND_REQUEST_PLAY, SOUND_GET_VOLUME = 0x10871A, 0x108DF4, 0x109054
 CLOCK, RATE = 3546895, 44100
@@ -139,7 +140,7 @@ def test_get_volume_matches_original(lib, emu):
 
 def test_request_queue_matches_original(lib, emu):
     rnd = random.Random(12)
-    emu.write(G_PARTY_MAP_INDEX, b"\0\0")
+    emu.write(G_PARTY_MAP_INDEX_ADDR, b"\0\0")
     emu.write(G_CURRENT_MAP_INDEX, b"\0\0")
     pending = (ctypes.c_int16 * 2).in_dll(lib, "g_pending_sounds")
     volumes = (ctypes.c_uint8 * 4).in_dll(lib, "g_pending_sound_volumes")

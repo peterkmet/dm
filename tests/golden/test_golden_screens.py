@@ -13,7 +13,6 @@ from dmtest.golden import add_second_champion, golden_game, recruit, zone_box
 from dmtest.markers import needs_dm
 
 GOLDEN = Path(__file__).with_name("screens.json")
-CHAMPION_ATTR_REDRAW_MASK = 0xFF80
 WOUND_READY_AND_ACTION_HAND = 0x03
 
 
@@ -43,7 +42,7 @@ def test_status_boxes(game):
     second = game.champions[1]
     second.wounds = WOUND_READY_AND_ACTION_HAND
     second.current_health //= 2
-    game.lib.ui_draw_all_champion_states(CHAMPION_ATTR_REDRAW_MASK)
+    game.lib.ui_draw_all_champion_states(C.CHAMPION_ATTR_REDRAW_MASK)
     got = [screen(game)]
     game.lib.ui_draw_champion_damage(1, 37)
     got.append(screen(game))

@@ -7,6 +7,7 @@ import struct
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.game import TimelineEvent, global_type
 from dmtest.lib import clear_folder_hooks, load_lib, set_folder_hooks
 from dmtest.markers import GAME_CSB, ROOT
@@ -14,16 +15,9 @@ from dmtest.markers import GAME_CSB, ROOT
 ENDA = GAME_CSB / "ENDA.DAT"
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 DM, CSB = 0, 1
-SCREEN_W, SCREEN_H = 320, 200
-ANIM_END = -1
-THING_SENSOR, THING_WEAPON, THING_ENDOFLIST, SENSOR_WALL_ENDGAME = 3, 5, 0xFFFE, 18
-EVENT_WALL, EVENT_REMOVE_FLUXCAGE = 6, 24
 PARTY_KILLING_DAMAGE = 10000
-COLOR_BLACK, COLOR_DARK_GRAY, COLOR_CYAN = 0, 1, 4
-CSB_RESTART_BOXES = 0x104248  # outer and inner box: x, y, width, height
 ENDGAME_TABLE = 0x1031D4
 LEFT_PRESS, LEFT_RELEASE = 2, 4
-KEY_RETURN = 0x4400
 NO_CHOICE = 99
 DEATH_FRAMES, THE_END_FRAMES = 240, 300
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
@@ -68,7 +62,7 @@ def value(lib, name, kind=c16):
 
 
 def screen(lib):
-    return bytes((ctypes.c_uint8 * (SCREEN_W * SCREEN_H)).in_dll(lib, "fb"))
+    return bytes((ctypes.c_uint8 * (C.SCREEN_W * C.SCREEN_H)).in_dll(lib, "fb"))
 
 
 def palette(lib):
@@ -91,7 +85,7 @@ def expand_over(packed, pixels):
     while packed[i : i + 2] == b"\xff\x81":
         i += 2
     w, h = struct.unpack_from(">HH", packed, i)
-    assert (w, h) == (SCREEN_W, SCREEN_H)
+    assert (w, h) == (C.SCREEN_W, C.SCREEN_H)
     i, n, pos = i + 4, w * h, 0
 
     def fill(count, color):
@@ -144,7 +138,7 @@ def play_model(data):
     NE ends a pass, BN goes back; the last NE skips the two chunks after it. A PL applies with the next frame."""
     items, _ = chunks(data)
     frames, loops, i = [], [], 0
-    pixels, colors = bytearray(SCREEN_W * SCREEN_H), [0] * 16
+    pixels, colors = bytearray(C.SCREEN_W * C.SCREEN_H), [0] * 16
     while i < len(items):
         at, tag, length, parameter = items[i]
         i += 1
@@ -216,7 +210,7 @@ def test_chunk_walk_consumes_the_file(lib, tmp_path):
     assert lib.anim_open(str(ENDA).encode()) == 0
     (tmp_path / "SHORT.DAT").write_bytes(data[:-2])
     assert lib.anim_open(str(tmp_path / "SHORT.DAT").encode()) == -1
-    assert lib.anim_next_frame() == ANIM_END
+    assert lib.anim_next_frame() == C.ANIM_END
 
 
 def test_first_frame_decodes(lib):
@@ -224,11 +218,11 @@ def test_first_frame_decodes(lib):
     items, _ = chunks(data)
     first_palette = next(at for at, tag, _, _ in items if tag == "PL")
     frame = next(at for at, tag, _, _ in items if tag == "EN")
-    assert struct.unpack_from(">HH", data, frame + 6) == (SCREEN_W, SCREEN_H)
+    assert struct.unpack_from(">HH", data, frame + 6) == (C.SCREEN_W, C.SCREEN_H)
     assert lib.anim_open(str(ENDA).encode()) == 0
     assert lib.anim_next_frame() == items[[at for at, *_ in items].index(frame)][3]
     pixels = screen(lib)
-    assert len(pixels) == SCREEN_W * SCREEN_H and len(set(pixels)) > 4 and pixels.count(0) < len(pixels) // 2
+    assert len(pixels) == C.SCREEN_W * C.SCREEN_H and len(set(pixels)) > 4 and pixels.count(0) < len(pixels) // 2
     colors = palette(lib)
     assert all(colors[i] == c for i, c in palette_entries(data, first_palette).items())
     lib.anim_close()
@@ -238,7 +232,7 @@ def test_frame_sequence_and_timing(lib, model):
     expected = [delay for delay, _, _ in model]
     assert lib.anim_open(str(ENDA).encode()) == 0
     delays = []
-    while (delay := lib.anim_next_frame()) != ANIM_END:
+    while (delay := lib.anim_next_frame()) != C.ANIM_END:
         delays.append(delay)
     assert delays == expected
     assert delays[:3] == [80, 8, 8]
@@ -253,7 +247,7 @@ def test_every_frame_matches_an_independent_decode(lib, model):
         assert lib.anim_next_frame() == delay
         assert screen(lib) == pixels, k
         assert palette(lib) == colors, k
-    assert lib.anim_next_frame() == ANIM_END
+    assert lib.anim_next_frame() == C.ANIM_END
     lib.anim_close()
 
 
@@ -337,7 +331,7 @@ def chunk(tag, parameter, payload=b""):
     return tag.encode() + struct.pack(">HH", len(payload), parameter) + payload
 
 
-EMPTY_DELTA = struct.pack(">HH", SCREEN_W, SCREEN_H) + bytes([0xEF, 0xF9, 0xFF, 0])  # skips all 64000 pixels
+EMPTY_DELTA = struct.pack(">HH", C.SCREEN_W, C.SCREEN_H) + bytes([0xEF, 0xF9, 0xFF, 0])  # skips all 64000 pixels
 
 
 def test_nested_loops(lib, tmp_path):
@@ -350,19 +344,19 @@ def test_nested_loops(lib, tmp_path):
     assert [delay for delay, _, _ in play_model(data)] == expected
     assert lib.anim_open(str(tmp_path / "LOOP.DAT").encode()) == 0
     delays = []
-    while len(delays) <= len(expected) and (delay := lib.anim_next_frame()) != ANIM_END:
+    while len(delays) <= len(expected) and (delay := lib.anim_next_frame()) != C.ANIM_END:
         delays.append(delay)
     lib.anim_close()
     assert delays == expected
 
 
 def test_palette_waits_for_the_next_frame(lib, tmp_path):
-    full = struct.pack(">HH", SCREEN_W, SCREEN_H) + bytes([0xC0, 0xF9, 0xFF])  # 64000 pixels of color 0
+    full = struct.pack(">HH", C.SCREEN_W, C.SCREEN_H) + bytes([0xC0, 0xF9, 0xFF])  # 64000 pixels of color 0
     white = struct.pack(">H", 1) + bytes([0, 15, 15, 15])
     (tmp_path / "PAL.DAT").write_bytes(chunk("PL", 0, white) + chunk("EN", 1, full + b"\0") + chunk("PL", 0, struct.pack(">H", 1) + bytes(4)))
     assert lib.anim_open(str(tmp_path / "PAL.DAT").encode()) == 0
     assert lib.anim_next_frame() == 1 and palette(lib)[0] == 0xFFF
-    assert lib.anim_next_frame() == ANIM_END and palette(lib)[0] == 0xFFF  # no frame shows the last palette
+    assert lib.anim_next_frame() == C.ANIM_END and palette(lib)[0] == 0xFFF  # no frame shows the last palette
     lib.anim_close()
 
 
@@ -381,9 +375,9 @@ def endgame_sensor_square(lib):
         for x in range(value(lib, "g_current_map_width").value):
             for y in range(value(lib, "g_current_map_height").value):
                 t = lib.map_get_square_first_thing(x, y)
-                while t != THING_ENDOFLIST:
+                while t != C.THING_ENDOFLIST:
                     rec = lib.dungeon_get_thing_data(t)
-                    if t >> 10 & 15 == THING_SENSOR and (rec[2] << 8 | rec[3]) & 0x7F == SENSOR_WALL_ENDGAME:
+                    if t >> 10 & 15 == C.THING_SENSOR and (rec[2] << 8 | rec[3]) & 0x7F == C.SENSOR_WALL_ENDGAME:
                         return m, x, y, t
                     t = lib.map_get_next_thing(t)
     raise AssertionError("no endgame sensor")
@@ -397,7 +391,7 @@ def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     lib.anim_next_frame()
     first_frame, first_palette = screen(lib), palette(lib)
     lib.anim_close()
-    ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, SCREEN_W * SCREEN_H)
+    ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, C.SCREEN_W * C.SCREEN_H)
     lib.map_set_current_map(m)
     event = TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)
     lib.event_process_wall(ctypes.byref(event))
@@ -412,7 +406,7 @@ def add_event(lib, event_type, m, time, b, c=0):
 
 def add_sensor_event(lib, time):
     m, x, y, sensor = endgame_sensor_square(lib)
-    add_event(lib, EVENT_WALL, m, time, x << 8 | y, (sensor >> 14) << 8)
+    add_event(lib, C.EVENT_WALL, m, time, x << 8 | y, (sensor >> 14) << 8)
 
 
 def test_sensor_18_in_a_tick_starts_the_ending(lib, tmp_path, reset):
@@ -445,9 +439,9 @@ def test_an_event_after_sensor_18_in_the_same_tick_sees_the_won_game(lib, tmp_pa
     lib.map_set_current_map(m)
     thing, x, y = next((t, x, y) for x in range(value(lib, "g_current_map_width").value)
                        for y in range(value(lib, "g_current_map_height").value)
-                       for t in [lib.map_get_square_first_thing(x, y)] if t != THING_ENDOFLIST and t >> 10 & 15 >= THING_WEAPON)
+                       for t in [lib.map_get_square_first_thing(x, y)] if t != C.THING_ENDOFLIST and t >> 10 & 15 >= C.THING_WEAPON)
     add_sensor_event(lib, time - 1)
-    add_event(lib, EVENT_REMOVE_FLUXCAGE, m, time, x << 8 | y, thing)
+    add_event(lib, C.EVENT_REMOVE_FLUXCAGE, m, time, x << 8 | y, thing)
     lib.gameloop_tick()
     lib.map_set_current_map(m)
     assert value(lib, "g_game_won").value == 1 and lib.map_get_square_first_thing(x, y) == thing
@@ -497,7 +491,7 @@ def test_death_shows_restart_only_and_restart_loads_the_save(lib, tmp_path, rese
             x1, x2, y1, y2 = (lib.kaos_s16(ENDGAME_TABLE + 2 + 2 * i) for i in range(4))
             click(lib, (x1 + x2) // 2, (y1 + y2) // 2)
         elif frames[0] > DEATH_FRAMES + THE_END_FRAMES + 1 and value(lib, "g_dialog_choice").value == NO_CHOICE:
-            lib.command_process_key(KEY_RETURN)
+            lib.command_process_key(C.KEY_RETURN)
         if frames[0] > 5000:
             value(lib, "g_quit_requested").value = 1
 
@@ -506,12 +500,12 @@ def test_death_shows_restart_only_and_restart_loads_the_save(lib, tmp_path, rese
     lib.startend_run_endgame(1)
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
     before, after = shots[DEATH_FRAMES + THE_END_FRAMES], shots[DEATH_FRAMES + THE_END_FRAMES + 1]
-    bx, by, bw, bh = (lib.kaos_s16(CSB_RESTART_BOXES + 2 * i) for i in range(4))
-    ix, iy, iw, ih = (lib.kaos_s16(CSB_RESTART_BOXES + 8 + 2 * i) for i in range(4))
-    changed = {(i % SCREEN_W, i // SCREEN_W) for i in range(len(after)) if after[i] != before[i]}
+    bx, by, bw, bh = (lib.kaos_s16(C.CSB_RESTART_BOXES + 2 * i) for i in range(4))
+    ix, iy, iw, ih = (lib.kaos_s16(C.CSB_RESTART_BOXES + 8 + 2 * i) for i in range(4))
+    changed = {(i % C.SCREEN_W, i // C.SCREEN_W) for i in range(len(after)) if after[i] != before[i]}
     assert changed and all(bx <= px < bx + bw and by <= py < by + bh for px, py in changed)  # one button, no QUIT
-    assert after[by * SCREEN_W + bx] == COLOR_DARK_GRAY and after[iy * SCREEN_W + ix] == COLOR_BLACK
-    assert COLOR_CYAN in {after[py * SCREEN_W + px] for px in range(ix, ix + iw) for py in range(iy, iy + ih)}
+    assert after[by * C.SCREEN_W + bx] == C.COLOR_DARK_GRAY and after[iy * C.SCREEN_W + ix] == C.COLOR_BLACK
+    assert C.COLOR_CYAN in {after[py * C.SCREEN_W + px] for px in range(ix, ix + iw) for py in range(iy, iy + ih)}
     assert value(lib, "g_quit_requested").value == 0 and value(lib, "g_return_to_entrance").value == 0
     assert value(lib, "g_game_time", u32).value == saved_time
 
@@ -530,11 +524,11 @@ def mix(lib, frames):
 def test_csb_intro_frames_and_music(lib):
     """Disk B ANIM.DAT: 851 frames; MI starts NAKED.AMG, the same music on both sides."""
     assert lib.anim_open(str(INTRO).encode()) == 0
-    assert lib.anim_next_frame() != ANIM_END
+    assert lib.anim_next_frame() != C.ANIM_END
     left, right = mix(lib, 4410)
     assert any(left) and left == right
     frames = 1
-    while lib.anim_next_frame() != ANIM_END:
+    while lib.anim_next_frame() != C.ANIM_END:
         frames += 1
     assert frames == 851
     lib.anim_close()
@@ -544,7 +538,7 @@ def test_csb_intro_frames_and_music(lib):
 @needs_intro
 def test_csb_intro_sample_files_play_beside_the_music(lib):
     assert lib.anim_open(str(INTRO).encode()) == 0
-    while lib.anim_next_frame() != ANIM_END:
+    while lib.anim_next_frame() != C.ANIM_END:
         left, right = mix(lib, 64)
         if left != right:  # an SO sample with other volumes per side on pair A
             break

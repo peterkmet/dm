@@ -5,6 +5,7 @@ import shutil
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.game import Game, global_type, state
 from dmtest.lib import load_lib
 from dmtest.markers import GAME_CSB
@@ -16,7 +17,6 @@ DM, CSB = 0, 1
 LOADED, DAMAGED = 1, -1
 NAME = b"CSBGAME.DAT"
 CHAMPION_BYTES, MAGIC_MAP = 0x140, 0x118
-G_MAX_ACTIVE_GROUP_COUNT = 46
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
 pytestmark = [
@@ -87,7 +87,7 @@ def test_mini_loads_the_csb_start(game, tmp_path):
     lib = game.lib
     assert [value(lib, n) for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")] == [4, 22, 18, 2]
     assert lib.dungeon_map_count() == 11
-    saved = cm.w(cm.decode_save(MINI.read_bytes())["blocks"][0], G_MAX_ACTIVE_GROUP_COUNT)
+    saved = cm.w(cm.decode_save(MINI.read_bytes())["blocks"][0], C.G_MAX_ACTIVE_GROUP_COUNT)
     assert value(lib, "g_max_active_group_count", u16) == saved < 110
 
 
@@ -116,7 +116,7 @@ def test_new_prison_game_saves_and_loads_back(game, tmp_path):
     raw = save(game, tmp_path)
     assert game.lib.savegame_load_from(str(tmp_path).encode(), NAME, None) == LOADED
     assert state(game) == before
-    assert cm.w(cm.decode_save(raw)["blocks"][0], G_MAX_ACTIVE_GROUP_COUNT) == 60
+    assert cm.w(cm.decode_save(raw)["blocks"][0], C.G_MAX_ACTIVE_GROUP_COUNT) == 60
 
 
 @pytest.mark.skipif(not CEDT.exists(), reason="CEDT.FTL missing")

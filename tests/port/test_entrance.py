@@ -5,11 +5,11 @@ import shutil
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.lib import load_lib
 from dmtest.markers import GAME
 
 
-SCREEN_W, SCREEN_H = 320, 200
 HOOK = ctypes.CFUNCTYPE(None)
 
 pytestmark = [
@@ -28,7 +28,7 @@ def lib():
 
 
 def screen(lib):
-    return bytes((ctypes.c_uint8 * (SCREEN_W * SCREEN_H)).in_dll(lib, "fb"))
+    return bytes((ctypes.c_uint8 * (C.SCREEN_W * C.SCREEN_H)).in_dll(lib, "fb"))
 
 
 def test_doors_open_in_64_steps_of_2_frames(lib):
@@ -64,8 +64,8 @@ def test_pressed_button_shows_for_20_frames(lib, resume):
     finally:
         ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
     assert len(shots) == 20 and len(set(shots)) == 1
-    changed = [i for i in range(SCREEN_W * SCREEN_H) if shots[0][i] != closed[i]]
-    assert changed and all(240 <= i % SCREEN_W < 260 for i in changed)  # only the button column changes
+    changed = [i for i in range(C.SCREEN_W * C.SCREEN_H) if shots[0][i] != closed[i]]
+    assert changed and all(240 <= i % C.SCREEN_W < 260 for i in changed)  # only the button column changes
 
 
 SWSH = GAME / "SWSH.FTL"

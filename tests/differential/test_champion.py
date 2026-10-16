@@ -4,6 +4,7 @@ import struct
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.emu import need, s16, var
 from dmtest.game import (CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Champion, Party, RecruitData, World, champions,
                          global_type, pack)
@@ -14,11 +15,11 @@ from dmtest.markers import GAME
 PARTY_SHIELD, SCENT_COUNT, SCENTS, SCENT_STRENGTHS = 0x101ED8, 0x101EDE, 0x101EE2, 0x101F12
 CANDIDATE = 0x1001DC
 MAP_X, MAP_Y, MAP_INDEX = 0x1001EC, 0x1001EE, 0x1001F0
-LEVEL_UP = 0x102490
+LEVEL_UP_ADDR = 0x102490
 SKILL_LEVEL, ADD_EXPERIENCE, MAX_LOAD, MOVE_TICKS, DEXTERITY = 0x110B20, 0x110C2E, 0x111056, 0x1110C2, 0x11112E
 STRENGTH, WOUND_DEFENSE, PENDING, DAMAGE_ALL, TIME_EFFECTS = 0x1111B6, 0x1112EA, 0x111984, 0x111C3A, 0x11202C
 WEIGHT, ICON = 0x10A4AC, 0x1079DC
-ATTR_STATUS_BOX, REDRAW_SPELL_AREA = 0x1000, 2
+ATTR_STATUS_BOX = 4096
 
 pytestmark = pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed")
 c16, u16, u8 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint8
@@ -137,7 +138,7 @@ def test_experience_matches_original(lib, seed):
             gained += sum(level_up)
             w.put_champions(4)
             level_up[:] = [0] * 16
-            w.emu.write(LEVEL_UP, bytes(32))
+            w.emu.write(LEVEL_UP_ADDR, bytes(32))
         time = w.rng.randint(0, 3000)
         w.globals(0, time, max(0, time - w.rng.choice([0, 10, 30, 100, 200])), 0, w.rng.choice([0, 0, 1, 3]))
         w.seed(seed * 7919 + round_)
@@ -145,7 +146,7 @@ def test_experience_matches_original(lib, seed):
         lib.champion_add_skill_experience(*args)
         w.emu.call(ADD_EXPERIENCE, [(2, a) for a in args])
         w.check_state()
-        assert list(level_up) == list(struct.unpack(">16h", w.emu.read(LEVEL_UP, 32)))
+        assert list(level_up) == list(struct.unpack(">16h", w.emu.read(LEVEL_UP_ADDR, 32)))
     assert gained > 0
 
 
@@ -307,7 +308,7 @@ def test_death_sets_redraw_flags(lib, party):
     redraw.value = 0
     lib.champion_kill(0)
     assert cs[0].attributes & ATTR_STATUS_BOX  # the user interface draws the dead champion after the tick
-    assert var(lib, c16, "g_magic_caster_champion_index").value == 1 and redraw.value == REDRAW_SPELL_AREA
+    assert var(lib, c16, "g_magic_caster_champion_index").value == 1 and redraw.value == C.REDRAW_SPELL_AREA
 
 
 

@@ -8,6 +8,7 @@ import subprocess
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, ROOT, needs_sdl
 
@@ -23,9 +24,8 @@ ENTRANCE_MOUSE, ENDGAME_MOUSE, ENTRANCE_KEYS = 0x10318C, 0x1031D4, 0x10393C
 DIALOG_MOUSE_INPUTS, DIALOG_TABLES = 0x103BD4, 0x103A84
 ACTION_SETS, APPB_ACTION_SETS = 0x103D4C, 0x1047AC
 EXPERIENCE_GAIN, VERSION_TEXT = 0x103FB4, 0x10402C
-DM_SPELLS, CSB_SPELLS, CSB_RESTART_BOXES = 0x103C84, 0x104160, 0x104248
-DIFFERENT = {CREDITS_PALETTE, ENTRANCE_PALETTE, ENTRANCE_MOUSE, ENDGAME_MOUSE, ENTRANCE_KEYS, EXPERIENCE_GAIN, VERSION_TEXT, CSB_SPELLS, CSB_RESTART_BOXES}
-ZONE_RESTART_BUTTON, ZONE_QUIT_BUTTON = 437, 438
+DM_SPELLS = 1064068
+DIFFERENT = {CREDITS_PALETTE, ENTRANCE_PALETTE, ENTRANCE_MOUSE, ENDGAME_MOUSE, ENTRANCE_KEYS, EXPERIENCE_GAIN, VERSION_TEXT, C.CSB_SPELLS, C.CSB_RESTART_BOXES}
 
 pytestmark = [
     pytest.mark.skipif(not shutil.which("clang"), reason="clang not installed"),
@@ -103,7 +103,7 @@ def test_equal_tables_match_dm(lib, kaos):
     for c in copies(lib):
         if c.kaos not in DIFFERENT:
             assert csb(c.kaos, c.size) == kaos(c.kaos, c.size), hex(c.kaos)
-    assert csb(CSB_SPELLS, 25 * 8) == kaos(DM_SPELLS, 25 * 8)
+    assert csb(C.CSB_SPELLS, 25 * 8) == kaos(DM_SPELLS, 25 * 8)
 
 
 @needs_dm
@@ -165,7 +165,7 @@ def test_layout_zones_equal_but_endgame_buttons(lib):
         return result
 
     dm, csb = boxes(GAME), boxes(GAME_CSB)
-    assert set(dm) - set(csb) == {ZONE_RESTART_BUTTON, ZONE_QUIT_BUTTON}
+    assert set(dm) - set(csb) == {C.ZONE_RESTART_BUTTON, C.ZONE_QUIT_BUTTON}
     assert all(csb[z] == dm[z] for z in csb)
 
 

@@ -5,16 +5,15 @@ import shutil
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB
 
 
 DM, CSB = 0, 1
-TEXT_COUNT, ACTION_COUNT, OBJECT_NAME_COUNT = 135, 44, 199
+TEXT_COUNT, OBJECT_NAME_COUNT = 135, 199
 SKILL_LEVEL_STRINGS, BASE_SKILL_STRINGS, STATISTIC_STRINGS, DIRECTION_STRINGS = 0x101E74, 0x102472, 0x101E9A, 0x101E92
-PANEL_RESURRECT, SPELL_FAILURE_NEEDS_MORE_PRACTICE, SKILL_WIZARD = 0xA0, 0, 3
 STEP_EAST, STEP_NORTH = (0, 1, 0, -1), (-1, 0, 1, 0)
-MESSAGE_ROWS, MESSAGE_COLS = 4, 53
 c16 = ctypes.c_int16
 
 pytestmark = [
@@ -72,7 +71,7 @@ def load(lib, adventure, folder):
 
 def texts(lib, adventure, folder):
     load(lib, adventure, folder)
-    return ([lib.gfx_string(i).decode() for i in range(TEXT_COUNT)], [lib.gfx_action_name(i).decode() for i in range(ACTION_COUNT)],
+    return ([lib.gfx_string(i).decode() for i in range(TEXT_COUNT)], [lib.gfx_action_name(i).decode() for i in range(C.ACTION_COUNT)],
             [lib.gfx_object_name(i).decode() for i in range(OBJECT_NAME_COUNT)])
 
 
@@ -122,7 +121,7 @@ def things(lib, x, y):
 
 
 def message_rows(lib):
-    text = ((ctypes.c_char * MESSAGE_COLS) * MESSAGE_ROWS).in_dll(lib, "g_message")
+    text = ((ctypes.c_char * C.MESSAGE_COLS) * C.MESSAGE_ROWS).in_dll(lib, "g_message")
     return [bytes(row).replace(b"\0", b" ").decode().strip() for row in text]
 
 
@@ -140,8 +139,8 @@ def test_prison_recruit_shows_csb_text(lib):
     assert c16.in_dll(lib, "g_party_champion_count").value == 1
     lib.ui_draw_inventory_open(0)
     lib.ui_draw_champion_skills_and_statistics()
-    lib.champion_click_in_resurrect_reincarnate_panel(PANEL_RESURRECT)
-    lib.magic_print_spell_failure_message(0, SPELL_FAILURE_NEEDS_MORE_PRACTICE, SKILL_WIZARD)
+    lib.champion_click_in_resurrect_reincarnate_panel(C.PANEL_RESURRECT)
+    lib.magic_print_spell_failure_message(0, C.SPELL_FAILURE_NEEDS_MORE_PRACTICE, C.SKILL_WIZARD)
     rows = message_rows(lib)
     assert any(r.endswith(" RESURRECTED.") and len(r) > len(" RESURRECTED.") for r in rows), rows
     assert any(r.endswith(" NEEDS MORE PRACTICE WITH THIS WIZARD SPELL.") for r in rows), rows

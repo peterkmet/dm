@@ -6,16 +6,14 @@ from pathlib import Path
 
 import pytest
 
+from dmtest import constants as C
 from dmtest.game import global_type
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, ROOT, needs_sdl
 
 DM, CSB = 0, 1
 VANILLA, ADVANCED, TURNBASED = 0, 1, 2
-SCREEN_ADVENTURE, SCREEN_MODE, SCREEN_CSB, SCREEN_DONE = 0, 1, 2, 3
-CSB_NEW_ADVENTURE, CSB_RESUME, CSB_QUIT = 0, 1, 2
 UP, DOWN, ENTER, ESCAPE = 0, 1, 2, 3
-COLOR_BLACK, COLOR_DARK_GRAY, COLOR_GOLD, COLOR_LIGHT_GRAY = 0, 1, 9, 13
 CSB_FILES = ["APPB.FTL", "Graphics.DAT", "Dungeon.DAT", "disk-b/MINI.DAT"]
 c16 = ctypes.c_int16
 needs_dm = pytest.mark.skipif(not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")), reason="game files missing")
@@ -133,26 +131,26 @@ def test_save_writes_csb_name(lib, tmp_path):
 
 def test_start_no_flags(lib):
     start(lib)
-    assert lib.select_screen() == SCREEN_ADVENTURE
+    assert lib.select_screen() == C.SCREEN_ADVENTURE
 
 
 def test_start_both_flags(lib):
     start(lib, CSB, TURNBASED)
-    assert lib.select_screen() == SCREEN_CSB
+    assert lib.select_screen() == C.SCREEN_CSB
     start(lib, DM, TURNBASED)
-    assert lib.select_screen() == SCREEN_DONE
+    assert lib.select_screen() == C.SCREEN_DONE
     assert (value(lib, "g_adventure"), value(lib, "g_game_mode"), value(lib, "g_advanced_features")) == (DM, TURNBASED, 1)
 
 
 def test_start_adventure_only(lib):
     start(lib, DM)
-    assert lib.select_screen() == SCREEN_MODE
+    assert lib.select_screen() == C.SCREEN_MODE
 
 
 def test_start_mode_only_means_dm(lib):
     set_value(lib, "g_adventure", CSB)
     start(lib, -1, ADVANCED)
-    assert lib.select_screen() == SCREEN_DONE
+    assert lib.select_screen() == C.SCREEN_DONE
     assert value(lib, "g_adventure") == DM
 
 
@@ -160,7 +158,7 @@ def test_return_selects_dm(lib):
     start(lib)
     keys(lib, ENTER)
     assert value(lib, "g_adventure") == DM
-    assert lib.select_screen() == SCREEN_MODE
+    assert lib.select_screen() == C.SCREEN_MODE
 
 
 def test_arrows_select_csb(lib):
@@ -186,34 +184,34 @@ def test_mode_screen_values(lib, item, features):
     start(lib, DM)
     keys(lib, *[DOWN] * item, ENTER)
     assert (value(lib, "g_game_mode"), value(lib, "g_advanced_features")) == (item, features)
-    assert lib.select_screen() == SCREEN_DONE
+    assert lib.select_screen() == C.SCREEN_DONE
 
 
 def test_escape_back(lib):
     start(lib)
     keys(lib, ESCAPE)
-    assert lib.select_screen() == SCREEN_ADVENTURE
+    assert lib.select_screen() == C.SCREEN_ADVENTURE
     keys(lib, ENTER, ESCAPE)
-    assert lib.select_screen() == SCREEN_ADVENTURE
+    assert lib.select_screen() == C.SCREEN_ADVENTURE
     start(lib, DM)
     keys(lib, ESCAPE)
-    assert lib.select_screen() == SCREEN_MODE
+    assert lib.select_screen() == C.SCREEN_MODE
 
 
 def test_escape_on_the_csb_screen(lib):
     start(lib, CSB)
     keys(lib, ENTER, ESCAPE)
-    assert lib.select_screen() == SCREEN_MODE
+    assert lib.select_screen() == C.SCREEN_MODE
     start(lib, CSB, VANILLA)
     keys(lib, ESCAPE)
-    assert lib.select_screen() == SCREEN_CSB
+    assert lib.select_screen() == C.SCREEN_CSB
 
 
 def test_csb_disabled(lib):
     start(lib, csb_present=0)
     keys(lib, DOWN)
     click(lib, CSB)
-    assert lib.select_screen() == SCREEN_ADVENTURE
+    assert lib.select_screen() == C.SCREEN_ADVENTURE
     keys(lib, ENTER)
     assert value(lib, "g_adventure") == DM
 
@@ -221,19 +219,19 @@ def test_csb_disabled(lib):
 def test_click_activates(lib):
     start(lib)
     lib.select_click(0, 0)
-    assert lib.select_screen() == SCREEN_ADVENTURE
+    assert lib.select_screen() == C.SCREEN_ADVENTURE
     click(lib, CSB)
     assert value(lib, "g_adventure") == CSB
-    assert lib.select_screen() == SCREEN_MODE
+    assert lib.select_screen() == C.SCREEN_MODE
 
 
-@pytest.mark.parametrize("item", [CSB_NEW_ADVENTURE, CSB_RESUME, CSB_QUIT])
+@pytest.mark.parametrize("item", [C.CSB_NEW_ADVENTURE, C.CSB_RESUME, C.CSB_QUIT])
 def test_csb_screen_choices(lib, item):
     start(lib)
     keys(lib, DOWN, ENTER, ENTER)
-    assert lib.select_screen() == SCREEN_CSB
+    assert lib.select_screen() == C.SCREEN_CSB
     keys(lib, *[DOWN] * item, ENTER)
-    assert lib.select_screen() == SCREEN_DONE
+    assert lib.select_screen() == C.SCREEN_DONE
     assert lib.select_csb_choice() == item
     assert value(lib, "g_quit_requested") == 0  # QUIT goes back to the first screen (main.c)
 
@@ -245,18 +243,18 @@ def test_csb_screen_again_with_a_message(lib):
     start(lib, CSB, VANILLA)
     keys(lib, ENTER)
     lib.select_start_csb(b"NOT AVAILABLE YET")
-    assert lib.select_screen() == SCREEN_CSB
+    assert lib.select_screen() == C.SCREEN_CSB
     lib.select_draw()
-    assert colors_in(lib, message_line) == {COLOR_BLACK, COLOR_LIGHT_GRAY}
+    assert colors_in(lib, message_line) == {C.COLOR_BLACK, C.COLOR_LIGHT_GRAY}
     keys(lib, DOWN)
     lib.select_draw()
-    assert colors_in(lib, message_line) == {COLOR_BLACK}
+    assert colors_in(lib, message_line) == {C.COLOR_BLACK}
 
 
 def test_done_ignores_keys(lib):
     start(lib, DM, VANILLA)
     keys(lib, ESCAPE, DOWN, ENTER)
-    assert lib.select_screen() == SCREEN_DONE
+    assert lib.select_screen() == C.SCREEN_DONE
     assert (value(lib, "g_adventure"), value(lib, "g_game_mode")) == (DM, VANILLA)
 
 
@@ -276,13 +274,13 @@ def test_draw_items(lib):
     start(lib)
     lib.select_draw()
     fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
-    assert fb[0] == fb[319] == fb[199 * 320] == fb[199 * 320 + 319] == COLOR_BLACK
-    assert colors_in(lib, item_box(lib, DM)) == {COLOR_BLACK, COLOR_GOLD}
-    assert colors_in(lib, item_box(lib, CSB)) == {COLOR_BLACK, COLOR_LIGHT_GRAY}
+    assert fb[0] == fb[319] == fb[199 * 320] == fb[199 * 320 + 319] == C.COLOR_BLACK
+    assert colors_in(lib, item_box(lib, DM)) == {C.COLOR_BLACK, C.COLOR_GOLD}
+    assert colors_in(lib, item_box(lib, CSB)) == {C.COLOR_BLACK, C.COLOR_LIGHT_GRAY}
     keys(lib, DOWN)
     lib.select_draw()
-    assert colors_in(lib, item_box(lib, DM)) == {COLOR_BLACK, COLOR_LIGHT_GRAY}
-    assert colors_in(lib, item_box(lib, CSB)) == {COLOR_BLACK, COLOR_GOLD}
+    assert colors_in(lib, item_box(lib, DM)) == {C.COLOR_BLACK, C.COLOR_LIGHT_GRAY}
+    assert colors_in(lib, item_box(lib, CSB)) == {C.COLOR_BLACK, C.COLOR_GOLD}
 
 
 @needs_dm
@@ -290,7 +288,7 @@ def test_draw_disabled_color(lib):
     load_font(lib, GAME)
     start(lib, csb_present=0)
     lib.select_draw()
-    assert colors_in(lib, item_box(lib, CSB)) == {COLOR_BLACK, COLOR_DARK_GRAY}
+    assert colors_in(lib, item_box(lib, CSB)) == {C.COLOR_BLACK, C.COLOR_DARK_GRAY}
 
 
 @needs_csb
@@ -298,7 +296,7 @@ def test_font_from_csb_graphics(lib):
     load_font(lib, GAME_CSB)
     start(lib)
     lib.select_draw()
-    assert COLOR_GOLD in colors_in(lib, item_box(lib, DM))
+    assert C.COLOR_GOLD in colors_in(lib, item_box(lib, DM))
 
 
 def run_dm(*args, auto_enter=False):
@@ -364,7 +362,7 @@ def test_csb_screen_runs():
     assert "adventure dm, mode" not in result.stderr
 
 
-@pytest.mark.parametrize("adventure, mode, first", [(-1, -1, SCREEN_ADVENTURE), (DM, -1, SCREEN_MODE), (CSB, 0, SCREEN_CSB)])
+@pytest.mark.parametrize("adventure, mode, first", [(-1, -1, C.SCREEN_ADVENTURE), (DM, -1, C.SCREEN_MODE), (CSB, 0, C.SCREEN_CSB)])
 def test_restart_goes_back_to_the_first_screen(lib, adventure, mode, first):
     """QUIT on the DM entrance or the CSB screen: the first screen that the flags do not skip."""
     start(lib, adventure, mode)
