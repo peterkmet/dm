@@ -1,13 +1,13 @@
 # Final refactor: PRD
 
-Date: 2026-10-16. Branch: `feature/2026-10-16-final-refactor`. Status: draft.
+Date: 2026-10-16. Branch: `feature/2026-10-16-final-refactor`. Status: draft after the PRD review.
 
 ## Goal
 
 The repository reads as the work of a careful senior C programmer: a clear directory tree, one way to do each
 thing, modules with one job and one header, no state that travels through globals, tests with shared helpers,
-and documentation that matches the code. The coding standard is rewritten as a structured document, and every
-rule has a mechanical check. Game behavior and the drawn pixels do not change.
+and documentation that matches the code. The plan rewrites the coding standard as a structured document, and
+every rule has a mechanical check. Game behavior and the drawn pixels do not change.
 
 The survey behind this PRD: `docs/superpowers/2026-10-16-final-refactor-inventory/` (a handover and four
 review reports with `file:line` evidence; line numbers are of commit `0771406`). Every claim below without a
@@ -28,6 +28,17 @@ Measured on 2026-10-16:
   xdist worker share the C globals. 24 `from test_x import ...` lines in 20 files import helpers from other
   test modules; C constants are mirrored by hand in each file (`SLOT_HAND_ACTION = 1` in 7 files).
   `tests/test_automap.py:11` and `tests/test_modes.py:22` hold a scratchpad path of an old session.
+- Constants: 1,578 `#define` lines and 829 anonymous `enum` members, 133 of them in headers without a
+  written value. One block mixes decimal and hex (`WOUND_READY_HAND = 1 ... WOUND_LEGS = 0x10`,
+  `engine/champion.h:25-31`; `SQUARE_HAS_THINGS = 0x10, SQUARE_RANDOM_ORNAMENT = 8`, `engine/map.h:20`),
+  because the notation rule decides per value and not per block.
+- Includes: `ui/gameloop.c` has 35 `#include` lines, `platform/control.c` 32, `ui/startend.c` and
+  `platform/main.c` 29, `platform/state_json.c` 25; the include path is flat, so an include does not name
+  its layer, and `.clang-format` does not sort includes.
+- Names: 35 function names are longer than 36 characters (`game_update_map_coordinates_after_relative_movement`,
+  `champion_apply_and_draw_pending_damage_and_wounds`, `inventory_get_object_removed_from_leader_hand`).
+  The order of the functions in a file follows the history of the port, not the header; only two static
+  functions have a forward declaration.
 - Globals: 101 `g_` names in engine headers, 36 of them without a reader in `ui/` or `platform/`; result
   values travel through globals (`g_move_result_*`, `g_current_group_*`, `g_creature_damage_outcome`,
   `g_sensor_rotation_effect_*`). Globals without `g_`: `kaos` (`data/ftl.h:15`), `fb`, `palette`,
@@ -94,7 +105,7 @@ dm/
 │   ├── port/                     port behavior through the library
 │   ├── golden/                   the snapshot tests and their *.json
 │   ├── tools/                    tests of tools/dmtools
-│   └── standard/                 test_standard.py and allowlist.txt
+│   └── standard/                 test_standard.py, the docs checks, allowlist.txt
 ├── docs/
 │   ├── architecture.md           layers, modules, the frame loop, the control socket, global state, hooks, test seams
 │   ├── manual.md                 the player manual (from README.md)
@@ -113,10 +124,11 @@ dm/
 ```
 
 1. The include path is `-Isrc` and `-Ithird_party`; every include names its layer:
-   `#include "engine/game.h"`. File names inside a layer carry no layer prefix (`ui/ui_champion.c` goes).
+   `#include "engine/game.h"`. File names inside a layer carry no layer prefix (`ui/ui_champion.c` goes),
+   except the module that carries the name of its layer (`control/control.h`, `platform/platform.h`).
 2. The five layers in dependency order: `data`, `engine`, `ui`, `control`, `platform`. A file includes only
    headers of its own layer and of the layers before it. The layer check reads the layer from the include path.
-3. `third_party/` is excluded from the standard checks and from the format check by folder, not by file name.
+3. `third_party/` is outside the standard checks and the format check by folder, not by file name.
 4. The research scripts get a README that says they are not maintained and not tested, and a `research`
    dependency group for `capstone` and `numpy`.
 
@@ -131,68 +143,93 @@ dm/
    -Wimplicit-fallthrough -O2 -g`. The five fall-through cases get a `/* fall through */` comment. The
    Windows build uses the same flags. `SANITIZE=1` adds `-fsanitize=address,undefined` to the library and the
    game; `docs/development.md` names it.
-3. `SDL_PREFIX ?= $(shell brew --prefix sdl3)` is evaluated only by the targets that link SDL (not by `clean`
-   or `test`), and a caller can override it.
+3. The Makefile evaluates `SDL_PREFIX ?= $(shell brew --prefix sdl3)` only in the targets that link SDL (not
+   in `clean` or `test`), and a caller can override it.
 4. The tests do not compile the library with clang. They load `build/libdm.dylib`, which `conftest.py` builds
-   once with `make lib`. The library and the game are built with the same flags.
+   once with `make lib`. The Makefile builds the library and the game with the same flags.
 5. `clang-format` comes from the PyPI package `clang-format` (23.1.x) in the `dev` group; the standard check
    runs the one of the virtual environment and needs no Homebrew.
 
 ### R3. Coding standard v2
 
-`docs/coding-standard.md` is rewritten as a structured document with the sections: layers and modules,
-headers, naming, types and values, results and parameters, state, comments, data and errors, tests. It keeps
-its form: short, one rule per line, every rule with a check in `tests/standard/test_standard.py` or a named
-exception. The allowlist keeps only exceptions that the standard documents: the soundtrack tables, the APPB
-address tables, and the two per-type switch functions. Open violations during the run go in with
-`open: epic N` and the last epic removes them.
+The plan rewrites `docs/coding-standard.md` as a structured document with the sections: layers and modules,
+headers and includes, constants, naming, types and values, results and parameters, state, file order,
+comments, data and errors, tests. It keeps its form: short, one rule per line, every rule with a check in
+`tests/standard/test_standard.py`, or the mark "review only" when no check is possible, or a named exception.
+The allowlist keeps only exceptions that the standard documents: the soundtrack tables, the APPB address
+tables, and the two per-type switch functions. Open violations during the run go in with `open: epic N` and
+the last epic removes them.
 
 Rules that are new or change:
 
-1. Layers: five layers (R1.2); the include path names the layer; include order: the own header, then project
-   headers by layer order and alphabetical inside a layer, then third-party, then system headers.
-   `.clang-format` sorts them (`IncludeCategories`), so the check is the format check.
+1. Layers: five layers (R1.2); the include path names the layer. A `.c` file includes exactly the headers it
+   uses, in this order: the own header, then project headers by layer order and alphabetical inside a layer,
+   then third-party, then system headers. `.clang-format` sorts them (`IncludeCategories`), so the check is
+   the format check. No umbrella header per layer (user, 2026-10-16).
 2. Modules: one public header per module. A module with several `.c` files has one public header and one
    `<module>_internal.h` for the shared private declarations; both carry the prefix of the module. A header
    starts with the SPDX line, the guard `DM_<LAYER>_<FILE>_H`, the prefix line, one purpose paragraph, then the
-   includes. A header includes only what its declarations need; a `.c` file includes what it uses.
+   includes. A header includes only what its declarations need.
 3. Naming: static functions carry no module prefix. Record accessors are `rec_<type>_<field>` and
    `rec_<type>_set_<field>`; `rec_` belongs to `engine/record.h`. Every global has `g_`. A symbol that exists
    only for the tests carries the comment `/* exported for the tests */` on its declaration; the dead-API
    check knows the marker. No ordinal (index + 1, 0 none) in a name or a variable; an index is -1 for none.
    Ordinals stay only where a game record stores them.
-4. Types: one table in the standard gives the type of each game value kind: `champion_index`, `cell`,
+4. Function names: `<prefix><verb>_<object>` with at most four words after the prefix and at most 32
+   characters. The plan gives the 35 names above 36 characters shorter names, for example
+   `game_update_map_coordinates_after_relative_movement` becomes `map_step`,
+   `champion_apply_and_draw_pending_damage_and_wounds` becomes `champion_apply_pending_damage`,
+   `inventory_get_object_removed_from_leader_hand` becomes `inventory_take_hand_object`.
+5. Constants: every constant is `#define NAME value` with the value written out; no `enum` for constants.
+   The plan turns the 829 anonymous enum members into `#define` lines and writes the 133 implicit values.
+   Related constants stand in one block without blank lines, aligned by `clang-format`, with one comment line
+   above the block that names the set.
+6. Notation per block, not per value: a block of bit flags, masks, packed layouts, addresses or file format
+   bytes is hex in every line with the same digit width (`0x01`, `0x02`, `0x04`, `0x08`, `0x10`, `0x20`); a
+   block of counts, ids, sizes, ticks, coordinates and thresholds is decimal in every line; a block never
+   mixes the two. The check reads the kind from the name parts of the block and verifies every line of the
+   block; the "10 or more" threshold goes.
+7. Types: one table in the standard gives the type of each game value kind: `champion_index`, `cell`,
    `direction`, `map`, `slot`, `x`, `y`, pixel coordinates and sizes: `int16_t` (-1 none); `thing`,
    `ticks`: `uint16_t`; game time: `uint32_t`; `int` only for C sizes, C array counts and indices, and SDL
-   values; every truth value is `bool`. The check verifies that a parameter name has one type across the
-   headers of a layer, and that no `int` function has a comment that starts with "Returns 0" or "Returns 1".
-   The port assumes arithmetic right shifts of negative values: one `static_assert` in `data/bytes.h` and one
-   sentence in the standard.
-5. Results: two outcomes are a `bool`; more outcomes are an `enum` with named values; a lookup returns `NULL`;
-   a count returns the count. No `0/-1`, no `1/0/-1`, no value encoded in a return (`index + 2`).
-6. Parameters: at most five; a square is a `Location {int16_t x, y;}`, a square with its map a
-   `Position {int16_t map, x, y;}`; no flags packed into a parameter (`skill | flags`), no mode numbers that
-   mean two things (`sound mode 2 and up`); a small struct replaces two or more output parameters.
-7. State: a global holds state that lives across calls; a result travels through a return value or a struct
-   out-parameter; module-private state is `static`; a file with four or more file-scope variables keeps them
-   in one `static struct` named after the module.
-8. Comments: the one-line comment of a public function is in the header above its prototype; the comment of a
-   static function is above its definition; never both. No original symbol names, addresses or event numbers
-   in comments: name the constant (`EVENT_ENABLE_CHAMPION_ACTION`). No TODO markers in code (`ponytail:`);
-   open work goes to `docs/todo.md`.
-9. Data and errors: `data/` and `engine/` never write to stderr and never exit; they log and fail through the
-   hooks `g_os_log_hook` and `g_os_fatal_hook` of `data/os.h`, which `platform/` sets (default: stderr and
-   `exit`) and the tests set. A loader returns `false` on a bad file; an address outside the image is a port
-   bug and calls `os_fatal`. Rule 6 (no game tables in the source) gets its exception: a table that is not in
-   the game files (the soundtrack tables) stays in the source, named in the allowlist.
-10. Tests (a short section that points to `docs/development.md`): a test module imports helpers from
+   values; every truth value is `bool`. The port assumes arithmetic right shifts of negative values: one
+   `static_assert` in `data/bytes.h` and one sentence in the standard.
+8. Results: two outcomes are a `bool`; more outcomes are an `enum` type with named values (the one use of
+   `enum`: a result type, not a constant block); a lookup returns `NULL`; a count returns the count. No
+   `0/-1`, no `1/0/-1`, no value encoded in a return (`index + 2`).
+9. Parameters: at most five; a square is a `Location {int16_t x, y;}`, a square with its map a
+   `Position {int16_t map, x, y;}` (review only); no flags packed into a parameter (`skill | flags`), no mode
+   numbers that mean two things (`sound mode 2 and up`); a small struct replaces two or more output
+   parameters.
+10. State: a global holds state that lives across calls; a result travels through a return value or a struct
+    out-parameter; module-private state is `static`; a file with four or more file-scope variables keeps them
+    in one `static struct` named after the module (review only).
+11. File order: includes; constants; types; file-static state; functions. The public functions stand in the
+    order of the header, and the header lists them by topic (setup and reset first, then queries, then
+    commands); a one-line section comment names each topic in the header and in the `.c` file. A static
+    helper stands directly above the first function that calls it; a helper that several sections share
+    stands at the top of the functions. No forward declaration of a static function.
+12. Comments: the one-line comment of a public function is in the header above its prototype; the comment of
+    a static function is above its definition; never both. No original symbol names, addresses or event
+    numbers in comments: name the constant (`EVENT_ENABLE_CHAMPION_ACTION`). No TODO markers in code
+    (`ponytail:`); open work goes to `docs/todo.md`.
+13. Data and errors: `data/` and `engine/` never write to stderr and never exit; they log and fail through the
+    hooks `g_os_log_hook` and `g_os_fatal_hook` of `data/os.h`. `data/os.c` holds the default (stderr and
+    `exit`); `platform/` and the tests replace it; `os_fatal` never returns. A loader returns `false` on a bad
+    file; an address outside the image is a port bug and calls `os_fatal`. The rule "read game data at run
+    time" of the section data and errors gets its exception: a table that is not in the game files (the
+    soundtrack tables) stays in the source, named in the allowlist.
+14. Tests (a short section that points to `docs/development.md`): a test module imports helpers from
     `tests/dmtest/` only, never from another test module; C constants come from the headers through
     `dmtest.constants`; a test calls accessors, it does not decode records; no machine paths.
 
 New checks (the plan sizes each): the RECORD check also matches `REC(`, `g_current_map_data[` and
 `g_dungeon_map_data[` outside `engine/record.c`; the DECIMAL check also matches single digits in `[N]` and
-`< N;`; one type per parameter name; `bool` for truth values (locals assigned from a comparison or from
-`true`/`false`, `int` functions with "Returns 0/1" comments); static functions without a module prefix;
+`< N;`; `enum` in `src/` outside a result type; notation per block; function names above the limits; the
+order of the public definitions against the header; one type per parameter name across the headers of a
+layer; `bool` for truth values (locals assigned from a comparison or from `true`/`false`, `int` functions
+with "Returns 0/1" comments); prototypes with more than five parameters; names with `_ordinal` or `_plus_1`;
+a comment line above both the prototype and the definition; static functions without a module prefix;
 exported names with no use outside the owner and no test marker; the header head order and the guard scheme;
 dead includes (a header whose declarations the file does not use); TODO markers; event numbers in comments;
 the allowlist with only documented reasons.
@@ -216,18 +253,21 @@ the allowlist with only documented reasons.
    `tables.c` beside `CREATURE_AT_*`.
 5. `data/ids.h` is grouped by kind (`GFX_`, `ZONE_`, `LAYOUT_`, `ICON_`, `TEXT_`), sorted by value, one name
    per value (`ZONE_THE_END` goes, `ZONE_DIALOG_ON_SCREEN` stays); the comments name `tables_get_*`, not
-   dead globals. The font metrics become `FONT_*` in `ui/text.h`.
-6. `Box` moves to `data/graphics.h` beside `Bitmap`; `TablesRect` goes; `tables_get_pointer_planes` returns
-   a struct. `PATH_SIZE` and `os_compare_names` (as `file_compare_names`) move to `data/file.h`; `file_write`
-   and `file_replace` join them for `engine/savegame.c`.
+   dead globals. The font metrics become `FONT_*` and stay in `data/graphics.h` (`engine/message.c` uses
+   them).
+6. `Box` moves to `data/graphics.h` beside `Bitmap`, with `box_contains(const Box *, x, y)`; `TablesRect`
+   goes; `tables_get_pointer_planes` returns a struct. `PATH_SIZE` and `os_compare_names` (as
+   `file_compare_names`) move to `data/file.h`; `file_write` and `file_replace` join them for
+   `engine/savegame.c`.
 7. `adventure.c`: one `Adventure` struct per adventure with its file list; both loops stop at the NULL name;
    `adventure_load_files(dir)` owns the "engine module plus Graphics.DAT" sequence that `main.c:40-50` and
-   `gameloop.c:50-60` repeat. One API: `adventure_get(adventure)` plus `adventure_of(name)`.
+   `gameloop.c:50-60` repeat. One API: `adventure_get(adventure)` and `adventure_find(name)`; the field
+   accessors go (a caller writes `adventure_get(g_adventure)->dir`).
 8. Names: `KAOS_PLAQUE_HEIGHTS` names the real table start and the accessor writes `lines - 1`; the address
    names follow their accessor nouns (`KAOS_INTERFACE_PALETTE`, `KAOS_PALETTE_CHANGES_INVISIBILITY`,
    `KAOS_REBIRTH_STEP_2_SCALES`, `KAOS_ACTION_DISABLED_TICKS`, `KAOS_ICON_SHEET_FIRST_ICONS`,
-   `KAOS_FOUNTAIN_ORNAMENT`); noun-only public functions get verbs (`gfx_get_string`, `adventure_get_dir`).
-   The FTL and Graphics.DAT format values get names (`FTL_FORMAT_VERSION`, `FTL_ENTRY_*`, `GFX_HEADER_BYTES`);
+   `KAOS_FOUNTAIN_ORNAMENT`); noun-only public functions get verbs (`gfx_get_string`). The FTL and
+   Graphics.DAT format values get names (`FTL_FORMAT_VERSION`, `FTL_ENTRY_*`, `GFX_HEADER_BYTES`);
    `read_objects` and `read_actions` use named offsets and designated initializers.
 9. `BE16`, `WR16`, `BE32`, `WR32` become `static inline` functions (no double evaluation, no comma operator);
    `GRAPHIC_*_OFFSET_RANGE` macros become `static inline` functions; `crc32` uses a `static const` table.
@@ -241,26 +281,28 @@ the allowlist with only documented reasons.
    shift, mask)` helper; the `REC` macro is private to it; `const uint8_t *rec_read(thing)` and `uint8_t
    *rec_write(thing)` replace the one writable record pointer. The two allowlist lines for the record layout
    go. `thing_weapon_type` goes (`rec_weapon_type` stays); `THING_END` goes (`THING_ENDOFLIST` stays).
-2. `engine/game.h` splits: `timeline.h/.c` (the `TimelineEvent`, a `Timeline` struct with the events, the
-   heap, the counts and the allocation that `game.c:184-199` and `savegame.c:472-490` repeat); `event.h/.c`
-   (was `timeline_process`: the dispatcher; the 13 handlers become static); `party.h/.c` (the `Party` struct,
-   the party position from `dungeon.h`, the scents, the light rules from `inventory.c:546-606` and
-   `g_dungeon_view_palette_index` as `g_party_light_level`); `champion.h` gets the `Champion` struct and the
-   statistic helpers of `game.c:392-435`; `arith.h` gets `min16`, `max16`, `bounded_value`, `scale_value`,
-   `abs16` as `static inline`. `game.h` keeps the session (R7.1), the time, the modes, the cheats, the redraw
-   flags and `game_fatal`. The direction helpers `turn_right`, `turn_back`, `turn_left` become
-   `direction_right`, `direction_back`, `direction_left` in `map.h` (prefix `direction_`), so that `turn_`
-   is free for `control/turn.h` (R10.1).
+2. `engine/game.h` splits into these modules:
+   - `timeline.h/.c`: the `TimelineEvent`, a `Timeline` struct with the events, the heap, the counts, and
+     the allocation that `game.c:184-199` and `savegame.c:472-490` repeat.
+   - `event.h/.c` (was `timeline_process`): the dispatcher; the 13 handlers become static.
+   - `party.h/.c`: the `Party` struct, the party position from `dungeon.h`, the scents, the light rules from
+     `inventory.c:546-606`, and `g_dungeon_view_palette_index` as `g_party_light_level`.
+   - `champion.h`: the `Champion` struct and the statistic helpers of `game.c:392-435`.
+   - `arith.h`: `min16`, `max16`, `bounded_value`, `scale_value`, `abs16` as `static inline`.
+   - `game.h`: the session (R7.1), the time, the modes, the cheats, the redraw flags and `game_fatal`.
+   - `map.h`: the direction helpers `turn_right`, `turn_back`, `turn_left` become `direction_right`,
+     `direction_back`, `direction_left` (prefix `direction_`), so that `turn_` is free for `control/turn.h`.
 3. One copy of each helper: `map_is_party_on`, `map_step` (replaces
    `game_update_map_coordinates_after_relative_movement` and its three wrappers),
-   `map_get_square_first_thing_of_type`, `champion_face_party_direction`, `cell_beside_direction`,
-   `game_fatal`, one `print_text`. `map_at_level` and `dungeon_get_square_first_thing` in `dungeon.c` go;
-   `dungeon_validate` uses the map functions.
+   `map_get_square_first_thing_of_type`, `champion_face_party_direction`, the side-of-cell helper of
+   `group.c:1021` in `map.h` under `direction_`, `game_fatal`, and `message_print_dungeon_text(text_thing)`
+   in `message.c` for the two `print_text` copies. `map_at_level` and `dungeon_get_square_first_thing` in
+   `dungeon.c` go; `dungeon_validate` uses the map functions.
 4. One move chain: `follow_square_chain` (`move.c:148-186`) and `follow_destination_squares`
    (`group.c:2099-2147`) become one walker with a mover kind (party, group, object, projectile), and
    `group_get_move_result` (`group.c:2194`) and `move_get_move_result` (`move.c:217`) become one
-   `move_get_move_result` with group-specific hooks. The group differential tests and the golden rules run
-   before and after; a difference stops the epic.
+   `move_get_move_result` with group-specific hooks. The epic runs the group differential tests and the golden
+   rules before and after; a difference stops the epic.
 5. `savefile.h` uses the prefix `savefile_`; `SaveFile` says who owns `data` (a `bool owns_data` or a view
    type); `savegame.c` writes files through `data/file.h`. The offset enums get full names (`SAVE_GLOBAL_*`,
    `SAVE_HEADER_*`, `SAVE_PARTY_*`, `SAVE_EVENT_*`, `SAVE_GROUP_*`, `CHAMPION_RECORD_*`).
@@ -268,18 +310,21 @@ the allowlist with only documented reasons.
    siblings read `g_game_time` instead of a parameter; columns are `int16_t`.
 7. Sound: `engine/sound.c` keeps the rules (the sound table, the volume by distance, the pending queue,
    `sound_request_play`) and plays through `g_sound_play_hook(sample, length, period, volumes)`, which
-   `ui/audio.c` sets (R9). `g_pending_sounds` and `g_pending_sound_volumes` become static.
-8. Corrupt data: `group_active` reads a bounded index with a defined value, a comment and a deviation entry
-   in the formats doc; `map_get_creature_attributes` the same (from `docs/todo.md`). `game_init_active_groups`
-   clears the array (`docs/todo.md`: deterministic saves), and the golden tests drop `scrub_free_groups`.
+   `ui/audio.c` sets (R9); with a NULL hook the engine skips the play, as `timeline_process.c:292` does for
+   `g_endgame_sensor_hook`. `g_pending_sounds` and `g_pending_sound_volumes` stay exported with the test
+   marker (`tests/test_sound.py` reads them).
+8. Corrupt data: `group_get_active(thing)` in `group.c` (R7.5) reads a bounded index with a defined value, a
+   comment and a deviation entry in the formats doc; `map_get_creature_attributes` the same (from
+   `docs/todo.md`). `game_init_active_groups` clears the array (`docs/todo.md`: deterministic saves), and the
+   golden tests go without `scrub_free_groups`.
 
 ### R6. engine: API shape
 
-1. The type table of R3.4 applies to every engine header: `champion_index`, `cell`, `direction`, `slot`,
+1. The type table of R3.7 applies to every engine header: `champion_index`, `cell`, `direction`, `slot`,
    `map` are `int16_t` with -1 for none; `ticks` and `thing` are `uint16_t`. `champion_*` functions take an
    index, not a `const Champion *`.
 2. Results: `enum MoveResult`, `enum ClickResult`, `enum HitResult`; `savegame_save`, `savegame_quick_save`
-   and `savegame_save_as` return `bool`; `savegame_quick_load` keeps its `SAVEGAME_*` enum.
+   and `savegame_save_as` return `bool`; `savegame_quick_load` keeps its `SAVEGAME_*` result type.
 3. Parameters: `group_process_reaction_event` takes a `REACTION_*` value only; `sound_request_play` takes a
    `SOUND_MODE_*` value and a separate tick count; `move_get_move_result` takes a `Location` source and
    destination plus explicit `bool` flags instead of negative coordinates; `champion_get_skill_level` and
@@ -289,14 +334,14 @@ the allowlist with only documented reasons.
    `get_creature_spell_explosion`, `get_object_modifier`, `get_flask_explosion`, `cast_magic_map`,
    `is_material_group_on` return a struct; `click_test` returns the next thing.
 5. Ordinals become indices: `g_inventory_champion_index`, `g_acting_champion_index`,
-   `g_candidate_champion_index`, `group_get_creature_index_in_cell` and the other
-   `*_ordinal` functions; the 39 `ordinal - 1` sites go. `ui/` and the tests follow.
+   `g_candidate_champion_index`, `group_get_creature_index_in_cell` and the other `*_ordinal` functions; the
+   39 `ordinal - 1` sites go. `ui/` and the tests follow.
 6. Names: `BEHAVIOR_USELESS_*` and `ACTION_STAB_1/2` get game names from the original tables (the plan sources
-   them from `docs/reference/`); the `SLOT_*` enum lists the slots in record order with a comment; `event->b`
-   and `event->c` are read only through accessors outside `timeline.c` and `savegame.c`;
-   `WEAPON_CLASS_*` has one definition in `data/tables.h`; `SKILL_STEAL = 8` completes the skill enum.
-7. The `ACTION_N`, `ACTION_BLOCK`, `ACTION_HIT` constants and other unused enum members are kept only when a
-   table documents them; the plan runs a script over every enum.
+   them from `docs/reference/`); the `SLOT_*` block lists the slots in record order with a comment;
+   `event->b` and `event->c` are read only through accessors outside `timeline.c` and `savegame.c`;
+   `WEAPON_CLASS_*` has one definition in `data/tables.h`; `SKILL_STEAL = 8` completes the skill block.
+7. The plan runs a script over every constant block; `ACTION_N`, `ACTION_BLOCK`, `ACTION_HIT` and other
+   unused members stay only when a table documents them.
 
 ### R7. engine: state
 
@@ -308,45 +353,54 @@ the allowlist with only documented reasons.
 2. Result-passing globals go: `g_current_group_*` and `g_group_secondary_direction` become fields of
    `GroupTurn` or return values; `g_create_launcher_projectile`, `g_projectile_poison_attack`,
    `g_projectile_attack_type` become parameters or an `Impact` return struct; `g_creature_damage_outcome`
-   is a return value; `g_move_result_*` becomes a `MoveResult *out`; `g_sensor_rotation_effect*`,
-   `g_action_target_group_thing`, `g_use_rope_to_climb_down_pit` become static or parameters.
+   is a return value; `g_move_result_*` becomes a `MoveDestination {int16_t map, x, y, cell, direction;}`
+   out-parameter of `move_get_move_result`; `g_sensor_rotation_effect*`, `g_action_target_group_thing`,
+   `g_use_rope_to_climb_down_pit` become static or parameters.
 3. Per-entity parallel arrays become struct fields: the pending damage, wounds, level-ups and portraits of a
-   champion live in `Champion` as runtime fields that `champion_pack` does not save; `ActionList`,
-   `PendingSound`, `MusicSegment` structs replace the paired arrays.
+   champion live in `Champion` as runtime fields after the saved fields, which `champion_pack` does not save;
+   `ActionList`, `PendingSound`, `MusicSegment` structs replace the paired arrays.
 4. File-static "out" variables of `group.c` (`movement_blocked_by_*`, `movement_tested_directions`,
    `flux_cages`, `drop_moving_creature_possessions_*`, `set_direction_*`) become a `MovementTest` return
    struct and fields of `GroupTurn`.
 5. About 70 exported engine functions with no caller outside their file become static; the test-only exports
    get the marker of R3.3. `ui/view.c` reaches active groups and projectile events through
-   `group_get_active(thing)` and `projectile_get_flight_direction(thing)`, so `g_active_groups` and the
-   timeline events leave the public headers.
+   `group_get_active(thing)` (one function in `group.c`; the inline of `group.h:144` goes) and
+   `projectile_get_flight_direction(thing)`, so `g_active_groups` and the timeline events leave the public
+   headers.
 
 ### R8. ui
 
-1. Headers: `ui.h` (`ui_`: zones, blits, icons, palette, hit tests), `status.h` (`status_`: the champion
-   status boxes, icons, bars, damage), `panel.h` (`panel_`: the inventory panel, slots, eye, scroll, chest,
-   food and water), `menus.h` (`menus_`: the action area, the spell area, the arrows). `ui_champion.c` splits
-   into `status.c` and `panel.c`; `ui_menus.c` becomes `menus.c`. `entrance.h/.c` (`entrance_`) takes the
-   entrance from `gameloop.c:68-171` and `g_new_game` as `g_entrance_choice`. `frame.h/.c` (`frame_`) takes
-   `g_frame_hook`, `frame_wait`, `frame_wait_count`, `g_frame_wait_depth`, `g_quit_requested` from
-   `startend.h`, with the hook contract written at the declaration ("shows a frame and reads input; runs no
-   game logic"). All `KEY_*` words live in `command.h`. The tick state of `command.h:82-85` moves to
-   `gameloop.h`; `g_game_screen_inactive` becomes `g_game_screen_shown` in `gameloop.h`.
+1. Headers, one module each:
+   - `ui.h` (`ui_`): zones, blits, icons, palette, hit tests.
+   - `status.h/.c` (`status_`): the champion status boxes, icons, bars, damage (from `ui_champion.c`).
+   - `panel.h/.c` (`panel_`): the inventory panel, slots, eye, scroll, chest, food and water (from
+     `ui_champion.c`).
+   - `menus.h/.c` (`menus_`, was `ui_menus.c`): the action area, the spell area, the arrows.
+   - `entrance.h/.c` (`entrance_`): the entrance from `gameloop.c:68-171` and `g_new_game` as
+     `g_entrance_choice`.
+   - `frame.h/.c` (`frame_`): `g_frame_hook`, `frame_wait`, `frame_wait_count`, `g_frame_wait_depth`,
+     `g_quit_requested` from `startend.h`, with the hook contract at the declaration ("shows a frame and
+     reads input; runs no game logic").
+   - `command.h`: all `KEY_*` words. The tick state of `command.h:82-85` moves to `gameloop.h`;
+     `g_game_screen_inactive` becomes `g_game_screen_shown` in `gameloop.h`.
 2. `video.h`: one `Screen g_screen` (`px[SCREEN_H][SCREEN_W]`, `palette[2 * PALETTE_COLORS]`, `split_top`,
    `split_bottom`) with `video_get_screen()` returning the `Bitmap` view; the three hand-made screen bitmaps
-   and `ui_get_screen` go. `video_layout` and `video_map_mouse` move to `platform/`.
+   and `ui_get_screen` go. `video_layout` and `video_map_mouse` move to `platform/platform.c` as
+   `plat_layout` and `plat_map_mouse`.
 3. Rules out of ui (the rest of R8 of the clean-code pass): `inventory_grab_object(cell, location)`,
    `inventory_drop_object(cell, location, into_alcove)`, `map_is_imaginary_wall(location)`,
    `move_is_blocked(command)`, `game_prepare_fuse_lord(lord, location)`, `map_remove_fluxcages(location)`,
    `group_delete_all_except(location)`, `champion_get_load_level(index)`, `explored_mark_visible(position,
    direction)` (the visibility query of `automap.c:24-81`, also used by `control/`), and
-   `map_get_location_after_level_change_on(map, ...)` instead of the copy in `view.c:1421-1435`. Each moved
-   rule has a golden rule snapshot before the move (`tests/golden/`).
-4. Constants to their owners: `DOOR_NORTH_SOUTH` to `map.h`; `SOUND_FUSE` goes (one name for sound 14 in
-   `sound.h`); `DECODE_MESSAGE_INVISIBLE` becomes the composition of `TEXT_MODE_*`; `ORNAMENT_VI_ALTAR` and
-   the pressure pad graphic ids to `data/ids.h`; `SCROLL_FONT_SHIFT`/`RUNE_FIRST` use `SPELL_SYMBOL_FIRST`;
-   one slot-box numbering block in `ui.h`; `video_amiga_color(r, g, b)` replaces the two packings;
-   `SELECT_SCREEN_*` and `SELECT_CSB_*` in `select.h`.
+   `map_get_location_after_level_change_on(map, ...)` instead of the copy in `view.c:1421-1435`. The epic
+   takes a golden rule snapshot of each moved rule before the move (`tests/golden/`).
+4. Constants to their owners: `DOOR_NORTH_SOUTH` to `map.h`; `SOUND_FUSE` and `SOUND_TELEPORT` go
+   (`SOUND_BUZZ` is the one name of sound 14; the plan confirms it in `docs/reference/`);
+   `DECODE_MESSAGE_INVISIBLE` becomes the composition of `TEXT_MODE_*`; `ORNAMENT_VI_ALTAR` and the
+   pressure pad graphic ids to `data/ids.h`; `SCROLL_FONT_SHIFT`/`RUNE_FIRST` use `SPELL_SYMBOL_FIRST`; one
+   slot-box numbering block in `ui.h`; `video_amiga_color(r, g, b)` replaces the two packings;
+   `SELECT_SCREEN_*` and `SELECT_CSB_*` in `select.h`, and the `Screen` type of `select.c:21` becomes
+   `SelectScreen`.
 5. `view.c`: a `View` static struct for the module state; a `Placement` argument and a `Box *drawn`
    out-parameter replace `zone_relative_x/y`, `shift_x/y` and `drawn_box`; a `SquareDraw` context replaces
    the 7-10 parameter lists; `ViewResult view_get_result()` replaces the ten output globals of `view.h`;
@@ -361,7 +415,7 @@ the allowlist with only documented reasons.
    `video.h`); `bool` for the `0/-1` inits (`ui_init`, `text_init`, `layout_init`, `anim_open`, `anim_play`,
    `logo_play`, `draw_shrink`); `Box` by pointer in `automap.h`; a cast with a comment in the `video_argb_*`
    accessors.
-7. Copied code: `box_contains(const Box *, x, y)` in `data/graphics.h`; `ui_xor_screen_box`;
+7. Copied code: `box_contains` (R4.6) replaces the five point-in-box loops; `ui_xor_screen_box`;
    `draw_viewport_icon` goes; `save_with_dialog()` for the DM and CSB save dialogs. The twelve exported ui
    functions without an external caller become static; the test-only exports get the marker.
 8. Names and comments: `ui_get_champion_portrait`, `panel_format_object_text`, `panel_get_object_meter`,
@@ -370,44 +424,51 @@ the allowlist with only documented reasons.
    original symbol are rewritten in game terms; the `ponytail:` markers move to `docs/todo.md` or become
    deviation comments; every header gets its purpose paragraph.
 9. Bugs: `draw_panel_scroll` guards the read before the text (`ui_champion.c:792-793`); `select_item_box`
-   checks `text_get_size`; `ui_extract_icon` rejects an icon below the first sheet; `sound_play_data` copies
-   the sample, so `anim_close` and `logo_play` need no `sound_stop_all` before they free.
+   checks `text_get_size`; `ui_extract_icon` rejects an icon below the first sheet; `audio_play_data` (R9.1)
+   copies the sample, so `anim_close` and `logo_play` need no `audio_stop_all` before they free.
 
 ### R9. Audio
 
 1. `ui/audio.h/.c` (`audio_`): the Paula voices, `audio_play_sample`, `audio_play_data`, the intro music
    segments (`audio_music_play`, `audio_music_stop`), `audio_mix`, `audio_stop_all`. It sets
    `g_sound_play_hook` at `ui_init`. `platform/platform.c` calls `audio_mix` and `music_mix`.
-2. `ui/music.c` keeps the soundtrack selection; `musicmap.c` becomes `music_tables.c` (a second file of the
-   music module); the tables stay in the source as the named exception of R3.9. `music_play_end` takes a
-   `bool`. `music.h` states that `music_mix` runs on the game thread.
+2. `ui/music.c` keeps the soundtrack selection; `musicmap.c` becomes `music_tables.c`, a second file of the
+   music module with `music_internal.h`; the tables stay in the source as the named exception of R3.13.
+   `music_play_end` takes a `bool`. `music.h` states that `music_mix` runs on the game thread.
 3. `third_party/dr_mp3/dr_mp3.h` with `README.md` (version, license); `music.c` includes it as
    `<dr_mp3/dr_mp3.h>` under the existing `-Weverything` pragma.
 
 ### R10. control/
 
-1. The protocol leaves `platform/`: `control/json.h/.c` (`json_`: the writer and the `key_*` helpers),
-   `control/request.h/.c` (`request_`: the flat key search, the string and number getters and the list
-   scanner, with the contract comment: keys are unique per request, no `"` in strings, no nesting beyond
-   `args`; `next_element` reuses the key search), `control/state_json.h/.c` (`state_`: the state, view and
-   map writers with verbs: `state_write_map`, `state_get_visible_groups`, `state_get_visible_things`),
-   `control/actions.c` (the action handlers and their table), `control/turn.h/.c` (`turn_`: the turn and
-   batch machine, what the party saw, the news), `control/png.h/.c` (`png_`: the screenshot writer),
-   `control/control.h/.c` (`control_`: `control_handle_line(line, Json *reply)`, `control_is_turn_pending`,
-   `control_end_turn`, the dispatch).
+1. The protocol leaves `platform/`, one module each:
+   - `json.h/.c` (`json_`): the writer and `json_key_int`, `json_key_str`, `json_key_bool`.
+   - `request.h/.c` (`request_`): the flat key search, the string and number getters and the list scanner,
+     with the contract comment: keys are unique per request, no `"` in strings, no nesting beyond `args`;
+     the list scanner reuses the key search.
+   - `state_json.h/.c` (`state_`): the state, view and map writers with verbs: `state_write_map`,
+     `state_get_visible_groups`, `state_get_visible_things`.
+   - `turn.h/.c` (`turn_`): the turn and batch machine, what the party saw, the news.
+   - `png.h/.c` (`png_`): the screenshot writer; `png_write` checks `fwrite`.
+   - `control.h/.c` (`control_`) with `actions.c` and `control_internal.h`: `control_handle_line(line, Json
+     *reply)`, `control_is_turn_pending`, `control_end_turn`, the dispatch, and the action handlers with
+     their table in `actions.c`.
 2. The socket is platform code: `platform/transport.h/.c` (`transport_`: listen, accept, read lines, send;
    POSIX) and `platform/transport_none.c` (Windows: `transport_is_available` returns false). The Makefile
-   picks the file by `ifeq ($(OS),Windows_NT)` or the `windows` target.
+   picks the file by `ifeq ($(OS),Windows_NT)` or the `windows` target. Per frame: `app_run_frame` calls
+   `transport_poll` once; `transport_poll` accepts a client, reads one line, calls `control_handle_line`
+   and sends the reply; `app_run_frame` then calls `control_is_turn_pending` and `control_end_turn` as
+   `control_poll` does today.
 3. `bool` for every truth value (`json_bool(Json *, bool)`, the `WallFace` flags, the turn fields); the dead
    `held` parameter goes; `enum SquareLook` replaces the `strcmp` chains of `state_json.c:930-1016`;
    `DECIMAL_BASE` goes (the standard allows the base argument of `strtol`); `int teleports` becomes
    `int16_t` with `g_party_teleport_count`.
 4. `docs/llm/llm-mode.md` gets a "Protocol vocabulary" section with every name of the C tables (wall
-   ornaments, creatures, slots, floor ornaments, cells), and a test checks that every table name appears
-   there.
+   ornaments, creatures, slots, floor ornaments, cells); a docs check in `tests/standard/` verifies that every
+   table name appears there.
 5. A golden protocol snapshot (`tests/golden/protocol.json`): the JSON replies of a fixed request sequence
-   (new game, a few moves, a look, a wait, a save) taken before the split prove that the replies do not
-   change.
+   (new game, a few moves, a look, a wait, a save) with `g_random_seed` fixed and the save written into a temp
+   folder whose path the replies do not contain. The epic takes the snapshot before the split, and the replies
+   do not change.
 
 ### R11. platform/ and the application
 
@@ -420,28 +481,34 @@ the allowlist with only documented reasons.
 2. One way to choose the filter: `--filter`; `DM_FILTER` goes from the code and the docs.
 3. `platform.c`: `bool` for `audio_open` and `tried`; one declaration per line. `scale.h`: the same parameter
    names in both functions. Dead includes go (`main.c:12 ftl.h`, `state_json.c:11 command.h`).
-4. "Allocation failure aborts" is stated once in the standard; `write_png` checks `fwrite`.
+4. The standard states once that an allocation failure aborts.
 
 ### R12. Tests
 
-1. `tests/dmtest/`: `lib.py` (loads a private copy of `build/libdm.dylib` per test module from a temp path,
-   so each module has its own C globals; the plan verifies once that a copy loads as a separate image),
-   `constants.py` (parses `#define` and `enum` members of `src/**/*.h` at import; tests write
-   `C.KEY_RETURN`), `game.py` (`Game`, `Box`, `Champion`, `Party`, `Session`, `Screen` structures), `savefile.py`,
-   `control.py` (`Client`, `pump`), `emu.py`, `markers.py` (`needs_dm`, `needs_csb`, `needs_clang`,
-   `needs_sdl`, `needs_ghidra`). No test module imports another test module; no hand-mirrored constants; no
-   record decoding by bit shifts in a test.
+1. `tests/dmtest/`, one helper module each:
+   - `lib.py`: loads a private copy of `build/libdm.dylib` per test module from a temp path, so each module
+     has its own C globals; the plan verifies once that a copy loads as a separate image.
+   - `constants.py`: parses `#define` lines and `enum` result types of `src/**/*.h` at import; tests write
+     `C.KEY_RETURN`. A test with a header fixture (a `#define` expression, an enum member) covers the parser.
+   - `game.py`: the `Game` harness and the `Box`, `Champion`, `Party`, `Session`, `Screen` structures.
+   - `savefile.py`, `control.py` (`Client`, `pump`), `emu.py`.
+   - `markers.py`: `needs_dm`, `needs_csb`, `needs_sdl`, `needs_ghidra`.
+   No test module imports another test module; no hand-mirrored constants; no record decoding by bit shifts
+   in a test.
 2. The folders of R1; `pyproject.toml`: `pythonpath = ["tests"]`, `addopts = "--dist loadfile
    --import-mode=importlib"`, no `-n auto` in `addopts`; the suite command is `uv run pytest -q -n auto`
    (`make test`); `tests/csb_diff.py` becomes `tests/differential/test_csb_mini.py`.
 3. No machine paths: the PNG dumps of `test_automap.py` and `test_modes.py` use `DM_TEST_PNG_DIR` or go; the
-   `csb_diff` docstring loses `/Users/lego`.
+   `/Users/lego` path goes from the `csb_diff` docstring.
 4. The skip conditions come from `dmtest.markers`; the function-scoped `make` of `test_automap.py:32-36` and
    the 22 redundant `make` calls go (`conftest.py` builds once).
 5. `ruff` in the `dev` group with `[tool.ruff]` (line length 160); `make check` runs it over `tests/` and
    `tools/dmtools/`.
 6. The `ctypes` structures of the tests mirror the C structs through `dmtest.game`; the field names follow
    every rename in the same commit.
+7. A golden screen snapshot (`tests/golden/screens.json`): the status boxes, the open inventory panel, the
+   action and spell areas, one scenario each, hashed as `rules.json` hashes the screen. The epic takes it
+   before R8.
 
 ### R13. Docs
 
@@ -454,10 +521,10 @@ the allowlist with only documented reasons.
    `docs/development.md` takes the build, the tests, the layout, the standard, the release steps;
    `docs/decompiling.md` takes the Ghidra tooling.
 3. The folders of R1 with every cross-link fixed; `docs/superpowers/status.md` goes; the finished plans and
-   the inventories move to `docs/superpowers/archive/`; the five stale spots of the survey are fixed
-   (`llm-mode.md:250-253`, `game-state.md:196`, the README status and limitations,
-   `csb-port-integration.md` status line, `symbols/range-4-6.md` link); each reference page says in its first
-   line that it uses the original KAOS names.
+   the inventories move to `docs/superpowers/archive/` without a rewrite (their line numbers are their
+   evidence); the five stale spots of the survey are fixed (`llm-mode.md:250-253`, `game-state.md:196`, the
+   README status and limitations, the `csb-port-integration.md` status line, the `symbols/range-4-6.md`
+   link); each reference page says in its first line that it uses the original KAOS names.
 4. `CLAUDE.md` of the project: the commands (`make`, `make test`, `uv run pytest -q tests/<folder>/test_x.py`),
    the layout, the layers; `.claude/agents/*.md` doc paths follow.
 5. `docs/todo.md`: the items that this refactor closes go; the `ponytail:` markers that stay open come in.
@@ -465,11 +532,10 @@ the allowlist with only documented reasons.
 
 ### R14. Repository files
 
-1. `LICENSE`: GPL-3.0; every source file of `src/`, `tests/` and `tools/dmtools` starts with
-   `SPDX-License-Identifier: GPL-3.0-or-later`; `README.md` says the code is GPL and the game data is not
-   included.
+1. `LICENSE`: GPL-3.0; every source file of `src/`, `tests/` and `tools/dmtools` starts with an SPDX line;
+   `README.md` says the code is GPL and the game data is not included.
 2. `.editorconfig`: 4-space C and Python, LF, final newline.
-3. `run.txt` is deleted; `.gitignore` loses `/ghidra/`; the personal play folder is `playthroughs/local/`
+3. `run.txt` goes; `/ghidra/` goes from `.gitignore`; the personal play folder is `playthroughs/local/`
    (`make play`); `README.md` names no person.
 4. `mcp` becomes an optional dependency (`uv sync --extra mcp`); `tools/csb_match.py` joins the package as
    `dm-csb-match` with its paths as arguments.
@@ -477,15 +543,17 @@ the allowlist with only documented reasons.
 ## Invariants
 
 - Game behavior: the full suite passes; the differential tests and the golden snapshots prove it.
-- Saves: the golden save snapshot (`tests/golden/save.json`) stays equal; after R5.8 the test drops
+- Saves: the golden save snapshot (`tests/golden/save.json`) stays equal; after R5.8 the test goes without
   `scrub_free_groups` and the snapshot stays equal.
 - Dungeon view: the golden view snapshot (`tests/golden/view.json`) stays equal.
+- Screens: the golden screen snapshot (R12.7) stays equal.
 - ui rules: the golden rules snapshot (`tests/golden/rules.json`) stays equal; every rule that moves in R8.3
   gets its scenario before the move.
 - Protocol: the golden protocol snapshot (R10.5) stays equal; the names of the state JSON and the requests do
   not change.
-- Struct layouts: `Champion`, `Party`, `TimelineEvent`, `ActiveGroup` keep their `sizeof` and field offsets;
-  the save file layout does not change.
+- Struct layouts: `Party`, `TimelineEvent`, `ActiveGroup` keep their `sizeof` and field offsets; `Champion`
+  keeps the offsets of its saved fields and appends the runtime fields after them; the golden save proves the
+  packed form. The save file layout does not change.
 - Builds: macOS and Windows build with 0 warnings under the flags of R2.2.
 
 ## Acceptance (gherkin)
@@ -497,7 +565,7 @@ Feature: Final refactor
     Given the branch after the last epic
     Then src/, third_party/, tools/dmtools, tools/research, tests/dmtest, docs/architecture.md and LICENSE exist
     And port/ does not exist
-    And "grep -r port/src docs README.md CLAUDE.md .claude" finds nothing
+    And "grep -r port/src docs README.md CLAUDE.md .claude" finds nothing outside docs/superpowers/
 
   Scenario: Build
     When I run "make" twice, then touch src/engine/random.c and run "make" again
@@ -515,12 +583,17 @@ Feature: Final refactor
   Scenario: Same behavior
     When I run "make test"
     Then all tests pass
-    And the golden save, view, rules and protocol snapshots are unchanged
+    And the golden save, view, screens, rules and protocol snapshots are unchanged
+
+  Scenario: Constants
+    When I search src/ for "enum {" and for "enum" outside a result type
+    Then nothing is found
+    And every constant block is hex in every line or decimal in every line
 
   Scenario: Globals
     When I search src/ for "^extern" declarations whose name does not start with "g_"
     Then nothing is found
-    When I search src/ for "g_move_result_", "g_current_group_", "g_creature_damage_outcome", "g_sensor_rotation_effect"
+    When I search src/ for "g_move_result_", "g_current_group_", "g_creature_damage_outcome", "g_sensor_rotation_effect", "_ordinal"
     Then nothing is found
 
   Scenario: Records
@@ -552,31 +625,50 @@ Feature: Final refactor
 - Repository: `port/src/` becomes `src/`, the Makefile moves to the root (user, 2026-10-16).
 - Depth: level 3, all of R5 to R11 including the move chain, the `Session` and `Screen` structs and the view
   placement context (user, 2026-10-16).
-- License: GPL-3.0 (user, 2026-10-16). The SPDX identifier `GPL-3.0-or-later` is the assumption of this PRD.
+- License: GPL-3.0 (user, 2026-10-16). The SPDX identifier (`GPL-3.0-only` or `GPL-3.0-or-later`) is the
+  open point of the PRD review.
 - No CI (user, 2026-10-16); `make check` is the local gate.
+- Includes: explicit and sorted, no umbrella header per layer; the module splits bring the largest include
+  lists from 35 to about 10-15 (user, 2026-10-16).
+- Constants are `#define` with written values; the notation is per block; function names have a length
+  limit; files follow the header order (user, 2026-10-16).
 - Build: GNU make stays (no MSVC goal); `pkg-config` is not installed on the owner's machine, so the SDL
   prefix stays a lazily evaluated, overridable `brew --prefix` variable.
 - A fifth layer `control/` holds the protocol; the socket stays in `platform/` as `transport`, because the
   standard keeps POSIX headers out of every other layer.
+- The application stays in `platform/` (`app.c`, `options.c`, `main.c`): no sixth layer for three files.
+- The `--show` and `--view` developer modes stay, behind one function in `platform/debug_view.c`.
 - The audio mixer is `ui/audio.c`: audio output is presentation, like `ui/video.c`; the engine plays through
   one hook, as it draws through redraw flags and ends the game through the endgame hook.
 - Record accessors keep the `rec_` prefix: one prefix for one header, as the prefix rule asks; `door_state`
   becomes `rec_door_state`.
+- `party_` is an engine prefix (`party.h`: the Party struct, position, scents, light); the ui module of the
+  champion display splits into `status.c` and `panel.c`.
 - Public function comments live in the header; static function comments above the definition.
 - The soundtrack tables stay in the source as a documented exception: they are not in the game files, and a
   run-time table file would need a parser for one feature.
 - Names: `Location {x, y}` for a square of the current map and `Position {map, x, y}` for a square with its
-  map, because `square` is the name of the square byte everywhere.
+  map, because `square` is the name of the square byte everywhere. `MoveResult` is the result enum;
+  `MoveDestination` is the struct that replaces `g_move_result_*`.
+- Sound 14 keeps the name `SOUND_BUZZ` (the original name); `SOUND_TELEPORT` and `SOUND_FUSE` go.
+- The shared text print of `sensor.c` and `timeline_process.c` is `message_print_dungeon_text` in
+  `message.c`; the side-of-cell helper belongs to `map.h` under `direction_`.
+- The protocol vocabulary check and the standard checks are docs checks in `tests/standard/`; they are repo
+  checks, not game tests.
 - `tests/` folders by what a test proves (differential, port, golden, tools, standard), because that is the
-  test list of CLAUDE.md and the shape of a future CI matrix.
-- `ui_champion.c` splits into `status.c` and `panel.c`: two prefixes that no other module owns.
+  test list of CLAUDE.md and the shape of a future CI matrix. `ruff` checks the Python of the tests and the
+  tools.
 - The `-n auto` flag leaves `addopts` as the python-uv skill asks; `make test` and CLAUDE.md carry it.
+- Epic order: the golden protocol, screen and rule snapshots first, on unchanged code; then R1, R2 and R12.1
+  (the private copy loader before the tests stop compiling); R3; R4; R5 to R7 (R5.2 before R10); R8 and R9;
+  R10 and R11; the rest of R12; R13 and R14 last.
 - Git tags for the past releases: out of scope; the CHANGELOG carries the history.
 
 ## Known consequences
 
 - Every path in `docs/`, `CLAUDE.md`, `.claude/agents/*.md`, the tools and the tests changes; `git blame`
-  survives moves (`git mv`), and the format commit stays in `.git-blame-ignore-revs`.
+  survives moves (`git mv`); the include-sort commit and the SPDX commit join `.git-blame-ignore-revs` beside
+  the format commit, and open worktrees rebase over them.
 - The ctypes tests change with every rename and every struct (`Session`, `Screen`, `Timeline`); the shared
   helpers of R12 make each change one edit.
 - The run touches rule paths in R5.4 (the move chain) and R8.3 (rules out of ui); the differential and golden
