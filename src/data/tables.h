@@ -462,7 +462,7 @@ typedef struct {
 /* Entry of a mouse input table; false at the end of the table. */
 bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out);
 /* Writes the box of an entry into the mouse input table of the image, as the endgame screen does. */
-void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_t x2, int16_t y1, int16_t y2);
+void tables_set_mouse_input_box(int16_t table, int16_t entry, const Box *box);
 
 /* Keyboard input tables. */
 #define TABLES_KEYS_NONE      (-1)

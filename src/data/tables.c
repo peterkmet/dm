@@ -763,13 +763,13 @@ bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out)
                         kaos_u16(a + MOUSE_AT_BUTTONS)};
     return true;
 }
-void tables_set_mouse_input_box(int16_t table, int16_t entry, int16_t x1, int16_t x2, int16_t y1, int16_t y2)
+void tables_set_mouse_input_box(int16_t table, int16_t entry, const Box *box)
 {
     uint32_t a = mouse_table(table) + MOUSE_INPUT_BYTES * entry;
-    kaos_write_u16(a + MOUSE_AT_X1, (uint16_t)x1);
-    kaos_write_u16(a + MOUSE_AT_X2, (uint16_t)x2);
-    kaos_write_u16(a + MOUSE_AT_Y1, (uint16_t)y1);
-    kaos_write_u16(a + MOUSE_AT_Y2, (uint16_t)y2);
+    kaos_write_u16(a + MOUSE_AT_X1, (uint16_t)box->x);
+    kaos_write_u16(a + MOUSE_AT_X2, (uint16_t)(box->x + box->w - 1));
+    kaos_write_u16(a + MOUSE_AT_Y1, (uint16_t)box->y);
+    kaos_write_u16(a + MOUSE_AT_Y2, (uint16_t)(box->y + box->h - 1));
 }
 int16_t tables_get_key_command(int16_t key_table, uint16_t key)
 {

@@ -694,10 +694,6 @@ dead-api ui/ui.h:ui_get_icon_zone_box open: epic 8
 dead-api ui/ui.h:ui_get_slot_box_zone open: epic 8
 dead-api ui/ui.h:ui_print_zone_padded open: epic 8
 dead-api ui/view.h:view_draw open: epic 8
-params data/ftl.c:relocate open: epic 4
-params data/ftl.c:write_jump_table open: epic 4
-params data/tables.c:tables_set_mouse_input_box open: epic 4
-params data/tables.h:tables_set_mouse_input_box open: epic 4
 params engine/group.c:group_get_damage_creature_outcome open: epic 6
 params engine/group.c:group_get_generated open: epic 6
 params engine/group.c:group_get_melee_action_damage open: epic 6

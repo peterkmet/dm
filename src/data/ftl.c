@@ -82,6 +82,12 @@ typedef struct {
     size_t n, pos;
 } Nibbles;
 
+/* The module laid out in memory, while the loader builds it. */
+typedef struct {
+    uint8_t *bytes;
+    uint64_t size;
+} ImageBytes;
+
 /* Reads count nibbles, high nibble first; past the end it reads zeros. */
 static unsigned read_nibble(Nibbles *b, int count)
 {
@@ -188,30 +194,30 @@ static int64_t expand_data(const uint8_t *r, uint32_t rle_len, uint8_t *mem, uin
 }
 
 /* Adds data_base to each long word that the relocation table names. False when an offset is outside the image. */
-static bool relocate(const uint8_t *table, uint32_t reloc_len, uint8_t *mem, uint64_t size, uint64_t data_offset,
+static bool relocate(const uint8_t *table, uint32_t reloc_len, const ImageBytes *image, uint64_t data_offset,
                      uint32_t data_base)
 {
     for (const uint8_t *p = table; p + 1 < table + reloc_len; p += 2) {
         int64_t at = (int64_t)data_offset + (int16_t)be16(p); /* signed offset */
-        if (at < 0 || (uint64_t)at + 4 > size)
+        if (at < 0 || (uint64_t)at + 4 > image->size)
             return false;
-        uint32_t v = be32(mem + at) + data_base;
-        wr32(mem + at, v);
+        uint32_t v = be32(image->bytes + at) + data_base;
+        wr32(image->bytes + at, v);
     }
     return true;
 }
 
 /* Writes a jmp to each entry point into the jump table. False when an offset is outside the image. */
-static bool write_jump_table(const uint8_t *info, uint32_t info_size, uint8_t *mem, uint64_t size,
-                             uint64_t table_offset, uint32_t code_base)
+static bool write_jump_table(const uint8_t *info, uint32_t info_size, const ImageBytes *image, uint64_t table_offset,
+                             uint32_t code_base)
 {
     for (uint32_t i = 0; INFO_ENTRY_POINTS + i * 4 + 4 <= info_size; i++) {
         uint64_t at = table_offset + i * JUMP_ENTRY_BYTES + JUMP_ENTRY_JMP;
         uint32_t v = code_base + be32(info + INFO_ENTRY_POINTS + i * 4);
-        if (at + JMP_ABS_LONG_BYTES > size)
+        if (at + JMP_ABS_LONG_BYTES > image->size)
             return false;
-        wr16(mem + at, JMP_ABS_LONG_OPCODE);
-        wr32(mem + at + 2, v);
+        wr16(image->bytes + at, JMP_ABS_LONG_OPCODE);
+        wr32(image->bytes + at + 2, v);
     }
     return true;
 }
@@ -267,9 +273,10 @@ bool ftl_load(const uint8_t *raw, size_t len, uint32_t base, FtlImage *img)
         !(mem = calloc(size + 1, 1)))
         goto fail;
     const uint8_t *rle = data + DATA_HEADER_BYTES;
+    ImageBytes image = {mem, size};
     if (expand_data(rle, rle_len, mem, size) != dsize ||
-        !relocate(rle + rle_len, reloc_len, mem, size, data_base - base, (uint32_t)data_base) ||
-        !write_jump_table(info, secsz[SECTION_INFO], mem, size, data_base - base + jt_off, (uint32_t)code_base))
+        !relocate(rle + rle_len, reloc_len, &image, data_base - base, (uint32_t)data_base) ||
+        !write_jump_table(info, secsz[SECTION_INFO], &image, data_base - base + jt_off, (uint32_t)code_base))
         goto fail;
     memcpy(mem + code_base - base, codep, csize);
     free(code);

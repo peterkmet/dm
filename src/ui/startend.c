@@ -241,7 +241,7 @@ static void endgame_print_text(int x, int y, uint8_t color, const char *text)
 /* Writes a box into an entry of the endgame mouse table: x1, x2, y1, y2 as big-endian words. */
 static void set_endgame_click_box(int16_t entry_index, const Box *b)
 {
-    tables_set_mouse_input_box(TABLES_MOUSE_ENDGAME, entry_index, b->x, b->x + b->w - 1, b->y, b->y + b->h - 1);
+    tables_set_mouse_input_box(TABLES_MOUSE_ENDGAME, entry_index, b);
 }
 
 /* A framed button with a text; its box becomes the click box of the endgame mouse table entry. */
