@@ -11,7 +11,7 @@
 #define H_PAYLOAD_KEY      0x14
 #define H_GROUP_BYTES      8
 #define H_GROUP_COUNT      32
-#define H_SAVE_KIND        0x12a /* 1: a saved game, 2: a new CSB adventure made by CEDT */
+#define H_HEADER_BYTE      0x12a /* the original writes back the value of the last load; meaning not traced */
 #define H_PLATFORM         0x12b
 #define H_DIALOG_CHOICE    0x130
 #define H_GAME_ID          0x132
@@ -25,12 +25,12 @@
 #define H_CSB_SHIFT        2  /* CSB moves the fields from 0x12a on by 2 bytes */
 #define H_SAVED_GAME_BYTES 40 /* payload bytes that the CEDT merge copies from the saved game */
 
-#define SAVE_FORMAT             3
-#define PLATFORM_AMIGA          5 /* save_game writes 5; a load refuses 1 */
-#define PLATFORM_REFUSED        1
-#define SAVE_KIND_GAME          1 /* the header byte of a saved game */
-#define SAVE_KIND_NEW_ADVENTURE 2 /* CEDT writes 2 into a new CSB adventure */
-#define DIALOG_CHOICE_SAVE      1
+#define SAVE_FORMAT               3
+#define PLATFORM_AMIGA            5 /* save_game writes 5; a load refuses 1 */
+#define PLATFORM_REFUSED          1
+#define HEADER_BYTE_DEFAULT       1 /* the header byte when no load set it */
+#define HEADER_BYTE_NEW_ADVENTURE 2 /* CEDT writes 2 into a new CSB adventure */
+#define DIALOG_CHOICE_SAVE        1
 
 /* The offset of a payload field in the header of g_adventure; the DM offset is the argument. */
 static int get_header_field_offset(int dm_offset)
@@ -191,7 +191,7 @@ void save_header_init(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const u
 {
     memset(h, 0, SAVE_HEADER_BYTES);
     save_header_randomize(h);
-    h[get_header_field_offset(H_SAVE_KIND)] = SAVE_KIND_GAME;
+    h[get_header_field_offset(H_HEADER_BYTE)] = HEADER_BYTE_DEFAULT;
     h[get_header_field_offset(H_PLATFORM)] = PLATFORM_AMIGA;
     WR16(h + get_header_field_offset(H_DIALOG_CHOICE), DIALOG_CHOICE_SAVE);
     WR32(h + get_header_field_offset(H_GAME_ID), game_id);
@@ -202,13 +202,13 @@ void save_header_init(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const u
 }
 
 /* CEDT merge: the first payload bytes come from the saved game (0 in a port save), the game ID is
-   the ID of the saved game + 1, the save kind is a new adventure. New keys and chain words follow. */
+   the ID of the saved game + 1, the header byte is 2. New keys and chain words follow. */
 void save_header_new_adventure(uint8_t *h, uint32_t game_id)
 {
     memset(h + H_PAYLOAD, 0, H_SAVED_GAME_BYTES);
     WR32(h + get_header_field_offset(H_GAME_ID), game_id + 1);
     WR16(h + get_header_field_offset(H_FORMAT), SAVE_FORMAT);
-    h[get_header_field_offset(H_SAVE_KIND)] = SAVE_KIND_NEW_ADVENTURE;
+    h[get_header_field_offset(H_HEADER_BYTE)] = HEADER_BYTE_NEW_ADVENTURE;
     save_header_randomize(h);
 }
 

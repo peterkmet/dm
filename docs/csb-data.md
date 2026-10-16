@@ -160,7 +160,7 @@ The CSB `save_game` is at `0x128cc0` (jump table slot `0xb6a(A5)`). The CSB `loa
 | Field | DM offset | CSB offset | CSB value |
 |---|---|---|---|
 | Payload key | `0x014` (group 2, `w2`) | `0x03a` (group 7, `w1`) | Random |
-| Header byte | `0x12a` | `0x12c` | Byte of the last load, default 1 |
+| Header byte (`H_HEADER_BYTE`) | `0x12a` | `0x12c` | Byte of the last load, default 1 |
 | Platform | `0x12b` | `0x12d` | 5. A load fails when the value is 1. |
 | Dialog choice | `0x130` | `0x132` | Not read by the load |
 | Game ID | `0x132` | `0x134` | `g_game_id` |
