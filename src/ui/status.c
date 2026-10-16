@@ -92,7 +92,7 @@ void status_draw_slot(int16_t champion_index, int16_t slot)
     }
     if (slot == SLOT_HAND_ACTION && champion_index == g_session.acting_champion_index)
         border = GFX_SLOT_BOX_ACTING_HAND;
-    if (border != -1 && ui_get_slot_box_zone(slot_box, 1, &border_box))
+    if (border != -1 && ui_get_slot_box_zone(slot_box, true, &border_box))
         ui_blit_graphic_box(inv ? ui_get_viewport() : &screen, border, &border_box, COLOR_DARKEST_GRAY);
     ui_draw_icon_in_slot_box(slot_box, icon);
 }
@@ -110,7 +110,7 @@ void status_draw_damage(int16_t champion_index, int16_t damage)
 
 /* Draws the party icon of a champion (top right, at its cell, facing its direction relative to
    the party); light gray and recolored while the party is invisible. */
-static void draw_icon(uint16_t champion_index)
+static void draw_icon(int16_t champion_index)
 {
     const Champion *champion = &g_champions[champion_index];
     int16_t icon_width = tables_get_champion_icon_width();
@@ -153,7 +153,7 @@ static void draw_portrait(int16_t champion_index)
 }
 
 /* Draws the status box of a living champion: background, shields, and the parts that follow. */
-static uint16_t draw_status_box(uint16_t champion_index, uint16_t attr, int inv)
+static uint16_t draw_status_box(int16_t champion_index, uint16_t attr, bool inv)
 {
     const Champion *champion = &g_champions[champion_index];
     Bitmap screen = ui_get_screen();
@@ -178,7 +178,7 @@ static uint16_t draw_status_box(uint16_t champion_index, uint16_t attr, int inv)
 }
 
 /* Draws the name in the status box (gold for the leader), or name and title in the inventory. */
-static uint16_t draw_name(uint16_t champion_index, uint16_t attr, int inv)
+static uint16_t draw_name(int16_t champion_index, uint16_t attr, bool inv)
 {
     const Champion *c = &g_champions[champion_index];
     Bitmap screen = ui_get_screen();

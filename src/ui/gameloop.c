@@ -67,7 +67,7 @@ bool gameloop_load_data(const char *dir)
         return false;
     startend_set_save_dir(dir);
     g_endgame_sensor_hook = startend_run_endgame_sensor;
-    return !layout_init() && !text_init() && !ui_init();
+    return !layout_init() && !text_init() && ui_init();
 }
 
 const char *gameloop_get_data_dir(void)

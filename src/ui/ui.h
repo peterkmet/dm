@@ -53,19 +53,24 @@
 
 #define UI_BODY_SLOT_COUNT 6 /* hands, head, torso, legs, feet */
 
-#define UI_SLOT_BOX_INVENTORY_FIRST 8 /* slot box of champion slot 0 in the inventory */
+/* Slot boxes: the two hands of each status box, then the inventory slots, then the chest slots. */
+#define UI_SLOT_BOX_STATUS_FIRST    0
+#define UI_SLOT_BOX_INVENTORY_FIRST 8
+#define UI_SLOT_BOX_ACTION_HAND     (UI_SLOT_BOX_INVENTORY_FIRST + SLOT_HAND_ACTION)
+#define UI_SLOT_BOX_CHEST_FIRST     (UI_SLOT_BOX_INVENTORY_FIRST + SLOT_CHEST_FIRST)
+#define UI_SLOT_BOX_COUNT           46 /* 8 hands on the screen, 30 inventory and 8 chest slots */
 
 /* Mouse button masks of the input tables (the click kinds of input_event_handler). */
 #define UI_BUTTON_RIGHT 1
 #define UI_BUTTON_LEFT  2
 
-/* Setup: call after tables_load, gfx_open, layout_init, and text_init. */
-int ui_init(void);
+/* Setup: returns true on success; call after tables_load, gfx_open, layout_init, and text_init. */
+bool ui_init(void);
 
 /* Shared helpers (ui.c). */
 Bitmap ui_get_screen(void);
-Bitmap *ui_get_viewport(void);           /* the dungeon view bitmap, 224 x 136 */
-int ui_zone_box(int16_t zone, Box *box); /* the box of a layout zone on the screen */
+Bitmap *ui_get_viewport(void);            /* the dungeon view bitmap, 224 x 136 */
+bool ui_zone_box(int16_t zone, Box *box); /* the box of a layout zone on the screen */
 /* Fills the box of zone with one color. */
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color);
 /* Dims the box of zone with a checkerboard of color (every second pixel, aligned to the screen). */
@@ -99,9 +104,9 @@ void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon);
 /* The icon last drawn in a slot box, or -1. */
 int16_t ui_get_icon_in_slot_box(int16_t slot_box);
 /* The icon box of zone; with border, grown by the slot box border. */
-int ui_get_icon_zone_box(int16_t zone, int border, Box *box); /* the box of a slot zone, with border the frame */
+bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box); /* the box of a slot zone, with border the frame */
 /* The icon box of a slot box. */
-bool ui_get_slot_box_zone(int16_t slot_box, int border, Box *box);
+bool ui_get_slot_box_zone(int16_t slot_box, bool border, Box *box);
 /* Shows the name of the object in the leader hand above the action area. Bones show the name of
    their champion first (English order). */
 void ui_draw_leader_hand_object_name(uint16_t thing);

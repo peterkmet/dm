@@ -23,8 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SLOT_BOX_COUNT          46 /* 8 hands on the screen, 30 inventory and 8 chest slots */
-#define SLOT_BOX_SCREEN_COUNT   8
 #define ICONS_PER_ROW           16
 #define LEADER_HAND_NAME_LENGTH 14
 #define PADDED_TEXT_SIZE        80
@@ -38,7 +36,7 @@
 
 static uint8_t viewport_px[VIEWPORT_MAX_W * VIEWPORT_MAX_H];
 static Bitmap viewport;
-static int16_t slot_box_icon[SLOT_BOX_COUNT];
+static int16_t slot_box_icon[UI_SLOT_BOX_COUNT];
 
 const char *const g_rune_names[UI_RUNE_COUNT] = {
     "LO",  "UM", "ON",   "EE", "PAL", "MON", "YA", "VI",  "OH",   "FUL",  "DES", "ZO",
@@ -46,15 +44,15 @@ const char *const g_rune_names[UI_RUNE_COUNT] = {
 };
 
 /* Loads the strings, action names, and object names, and sets up the viewport bitmap. */
-int ui_init(void)
+bool ui_init(void)
 {
     audio_init();
     viewport = (Bitmap){tables_get_viewport_width(), tables_get_viewport_height(), viewport_px};
     if ((size_t)viewport.w * viewport.h > sizeof viewport_px)
-        return -1;
-    for (int i = 0; i < SLOT_BOX_COUNT; i++)
+        return false;
+    for (int i = 0; i < UI_SLOT_BOX_COUNT; i++)
         slot_box_icon[i] = -1;
-    return gfx_load_strings() ? 0 : -1;
+    return gfx_load_strings();
 }
 
 Bitmap ui_get_screen(void)
@@ -66,9 +64,9 @@ Bitmap *ui_get_viewport(void)
     return &viewport;
 }
 
-int ui_zone_box(int16_t zone, Box *box)
+bool ui_zone_box(int16_t zone, Box *box)
 {
-    return layout_get_zone_box(zone, ZONE_SCALE_FULL, ZONE_SCALE_FULL, box);
+    return layout_get_zone_box(zone, ZONE_SCALE_FULL, ZONE_SCALE_FULL, box) != 0;
 }
 
 void ui_fill_zone(Bitmap *dst, int16_t zone, uint8_t color)
@@ -238,11 +236,11 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
                   &(Box){0, 0, UI_ICON_SIZE, UI_ICON_SIZE}, COLOR_NONE, 0);
 }
 
-int ui_get_icon_zone_box(int16_t zone, int border, Box *box)
+bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box)
 {
     int16_t w = UI_ICON_SIZE;
     int16_t h = UI_ICON_SIZE;
-    int ok = layout_get_zone(zone, 0, 0, box, &w, &h);
+    bool ok = layout_get_zone(zone, 0, 0, box, &w, &h);
     if (border) {
         int16_t d = tables_get_slot_box_border();
         box->x -= d;
@@ -253,9 +251,9 @@ int ui_get_icon_zone_box(int16_t zone, int border, Box *box)
     return ok;
 }
 
-bool ui_get_slot_box_zone(int16_t slot_box, int border, Box *box)
+bool ui_get_slot_box_zone(int16_t slot_box, bool border, Box *box)
 {
-    return slot_box >= 0 && slot_box < SLOT_BOX_COUNT &&
+    return slot_box >= 0 && slot_box < UI_SLOT_BOX_COUNT &&
            ui_get_icon_zone_box(tables_get_slot_box_zone(slot_box), border, box);
 }
 
@@ -265,18 +263,18 @@ void ui_draw_icon_in_slot_box(int16_t slot_box, int16_t icon)
     Bitmap bm = {UI_ICON_SIZE, UI_ICON_SIZE, px};
     Bitmap screen = ui_get_screen();
     Box b;
-    if (slot_box < 0 || slot_box >= SLOT_BOX_COUNT)
+    if (slot_box < 0 || slot_box >= UI_SLOT_BOX_COUNT)
         return;
     slot_box_icon[slot_box] = icon;
-    if (icon == -1 || !ui_get_slot_box_zone(slot_box, 0, &b))
+    if (icon == -1 || !ui_get_slot_box_zone(slot_box, false, &b))
         return;
     ui_extract_icon(icon, &bm);
-    draw_blit(&bm, 0, 0, slot_box < SLOT_BOX_SCREEN_COUNT ? &screen : &viewport, &b, COLOR_NONE, 0);
+    draw_blit(&bm, 0, 0, slot_box < UI_SLOT_BOX_INVENTORY_FIRST ? &screen : &viewport, &b, COLOR_NONE, 0);
 }
 
 int16_t ui_get_icon_in_slot_box(int16_t slot_box)
 {
-    return slot_box >= 0 && slot_box < SLOT_BOX_COUNT ? slot_box_icon[slot_box] : -1;
+    return slot_box >= 0 && slot_box < UI_SLOT_BOX_COUNT ? slot_box_icon[slot_box] : -1;
 }
 
 /* The champion of a bones object: the charge bits of the junk record. */

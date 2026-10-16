@@ -163,7 +163,7 @@ void menus_refresh_action_area(void)
 
 /* Draws the caster tabs of the spell area: a cyan tab for each other living champion, the name of
    the caster on its tab. */
-static void draw_caster_tabs(uint16_t champion_index, const Champion *caster)
+static void draw_caster_tabs(int16_t champion_index, const Champion *caster)
 {
     Bitmap screen = ui_get_screen();
     ui_fill_zone(&screen, ZONE_SPELL_AREA_TABS, COLOR_BLACK);

@@ -43,7 +43,7 @@ void panel_close(int16_t champion_index);
    for a priest above level 1) and the description lines (burnt out, compass direction, waterskin
    level, attributes, weight). Returns the line count. */
 int16_t panel_format_object_text(uint16_t thing, char *name, char lines[][PANEL_LINE_SIZE]);
-/* The ATTACK (weapon) or DEFENSE (armour) meter of the advanced object panel: 1 with its label and value, else 0. */
+/* The ATTACK (weapon) or DEFENSE (armour) meter of the advanced object panel: true with its label and value, else false. */
 bool panel_get_object_meter(uint16_t thing, const char **label, uint16_t *value);
 /* Draws an object in the panel: the open scroll, the open chest, or the name, icon, and
    description of any other object; then the arrow, or the eye while it is pressed. */

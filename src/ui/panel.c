@@ -3,6 +3,7 @@
 #include "data/adventure.h"
 #include "data/graphics.h"
 #include "data/ids.h"
+#include "data/spells.h"
 #include "data/tables.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
@@ -30,10 +31,8 @@
 #define VALUE_PAIR_SIZE           16         /* "current/maximum" */
 #define PANEL_OBJECT_TEXT_Y       87         /* baseline of the first description line */
 #define PANEL_LINE_WRAP           18         /* longer lines break at a space */
-#define SCROLL_FONT_SHIFT         0x60       /* '{' to '~' print as scroll font codes 27-30 */
 #define POTION_POWER_SYMBOL_FIRST '_'        /* + power / 40: the power rune before the name */
 #define SCROLL_LINE_CHARS         18         /* characters that fit on the parchment */
-#define RUNE_FIRST                0x60       /* font character of the first rune */
 #define CREATURE_NAME_TEXT        "CREANAME" /* CSB: scroll text replaced by the creature name ahead */
 #define MAGIC_MAP_RUNE_FIRST      0x72       /* font character of the KU rune; ROS, DAIN, NETA follow */
 #define MAGIC_MAP_RUNE_COUNT      4
@@ -42,8 +41,6 @@
 #define METER_BAR_HEIGHT          5
 #define METER_VALUE_GAP           4 /* pixels between the bar and the value */
 #define METER_BAR_ABOVE_BASELINE  4 /* the bar top is level with the top of the letters */
-#define SLOT_BOX_ACTION_HAND      (UI_SLOT_BOX_INVENTORY_FIRST + SLOT_HAND_ACTION)
-#define SLOT_BOX_CHEST_FIRST      (UI_SLOT_BOX_INVENTORY_FIRST + SLOT_CHEST_FIRST)
 
 /* Object attribute bits of the description; the names are strings TEXT_CONSUMABLE + bit. */
 #define ATTRIBUTE_CONSUMABLE 1
@@ -78,14 +75,14 @@ void panel_draw_statistics(int16_t champion_index)
     int16_t mouth = champion->food < 0 || champion->water < 0 || champion->poison_event_count ? GFX_SLOT_BOX_WOUNDED
                                                                                               : GFX_SLOT_BOX_NORMAL;
     int16_t eye = GFX_SLOT_BOX_NORMAL;
-    if (ui_get_icon_zone_box(ZONE_MOUTH, 1, &icon_box))
+    if (ui_get_icon_zone_box(ZONE_MOUTH, true, &icon_box))
         ui_blit_graphic_box(viewport, mouth, &icon_box, COLOR_DARKEST_GRAY);
     for (int s = STAT_STRENGTH; s <= STAT_ANTIFIRE; s++)
         if (champion->statistics[s][STAT_CURRENT] < champion->statistics[s][STAT_MAXIMUM]) {
             eye = GFX_SLOT_BOX_WOUNDED;
             break;
         }
-    if (ui_get_icon_zone_box(ZONE_EYE, 1, &icon_box))
+    if (ui_get_icon_zone_box(ZONE_EYE, true, &icon_box))
         ui_blit_graphic_box(viewport, eye, &icon_box, COLOR_DARKEST_GRAY);
 }
 
@@ -254,6 +251,7 @@ void panel_close(int16_t champion_index)
         menus_draw_movement_arrows();
 }
 
+/* Appends s to dst, cut to size. */
 static void append(char *dst, size_t size, const char *s)
 {
     size_t n = strlen(dst);
@@ -387,8 +385,8 @@ static void add_rune_symbols(const char *text, const char *gap, char *out, size_
         if (rune < 0)
             n += (size_t)snprintf(out + n, size - n, "%.*s", (int)length, word);
         else
-            n +=
-                (size_t)snprintf(out + n, size - n, "%.*s%s%c%s", (int)core, word, gap, RUNE_FIRST + rune, word + core);
+            n += (size_t)snprintf(out + n, size - n, "%.*s%s%c%s", (int)core, word, gap, SPELL_SYMBOL_FIRST + rune,
+                                  word + core);
         if (n >= size)
             return;
         word += length;
@@ -415,7 +413,7 @@ static void draw_scroll_line(int16_t x, int16_t y, char *text)
         if (*c >= 'A' && *c <= 'Z')
             *c = (char)(*c - 'A' + 1);
         else if (*c >= '{')
-            *c = (char)(*c - SCROLL_FONT_SHIFT);
+            *c = (char)(*c - SPELL_SYMBOL_FIRST);
     }
     if (!text_get_size(text, &width, &height))
         return;
@@ -423,7 +421,7 @@ static void draw_scroll_line(int16_t x, int16_t y, char *text)
     text_draw(ui_get_viewport(), left, y, COLOR_BLACK, COLOR_WHITE, text);
     for (int i = 0; g_advanced_features && text[i]; i++) {
         char glyph[2] = {text[i], 0};
-        if ((uint8_t)text[i] >= RUNE_FIRST && (uint8_t)text[i] < RUNE_FIRST + UI_RUNE_COUNT)
+        if ((uint8_t)text[i] >= SPELL_SYMBOL_FIRST && (uint8_t)text[i] < SPELL_SYMBOL_FIRST + UI_RUNE_COUNT)
             text_draw(ui_get_viewport(), left + i * FONT_CHAR_WIDTH, y, COLOR_RED, COLOR_WHITE, glyph);
     }
 }
@@ -518,8 +516,8 @@ static void draw_panel_scroll(uint16_t scroll)
     }
 }
 
-/* The largest value of a field over the entries of a rule table, at least 1. */
-static uint16_t largest_attack(void)
+/* The largest strength of a weapon type, at least 1. */
+static uint16_t get_largest_attack(void)
 {
     uint16_t most = 1;
     for (int i = 0; i < WEAPON_TYPE_COUNT; i++)
@@ -527,6 +525,7 @@ static uint16_t largest_attack(void)
     return most;
 }
 
+/* The largest defense of an armour type, at least 1. */
 static uint16_t get_largest_defense(void)
 {
     uint16_t most = 1;
@@ -535,6 +534,7 @@ static uint16_t get_largest_defense(void)
     return most;
 }
 
+/* The largest weight of a weapon, armour or junk type, at least 1. */
 static uint16_t get_largest_weight(void)
 {
     uint16_t most = 1;
@@ -593,7 +593,7 @@ static void draw_stat_meters(uint16_t thing, int16_t x, int16_t y)
     uint16_t value;
     if (panel_get_object_meter(thing, &label, &value)) {
         bool attack = THING_TYPE(thing) == THING_WEAPON;
-        draw_stat_meter(x, y, label, value, attack ? largest_attack() : get_largest_defense(),
+        draw_stat_meter(x, y, label, value, attack ? get_largest_attack() : get_largest_defense(),
                         attack ? COLOR_GOLD : COLOR_BLUE, true);
         y += MESSAGE_ROW_HEIGHT;
     }
@@ -602,18 +602,18 @@ static void draw_stat_meters(uint16_t thing, int16_t x, int16_t y)
 
 /* Opens a chest in the panel and draws its slots. While the eye is pressed, the action hand keeps
    its icon. */
-static void open_and_draw_chest(uint16_t chest, int16_t pressing_eye)
+static void open_and_draw_chest(uint16_t chest, bool pressing_eye)
 {
     if (g_open_chest == chest)
         return;
     inventory_close_chest();
     inventory_open_chest(chest);
     if (!pressing_eye)
-        ui_draw_icon_in_slot_box(SLOT_BOX_ACTION_HAND, ICON_CHEST_OPEN);
+        ui_draw_icon_in_slot_box(UI_SLOT_BOX_ACTION_HAND, ICON_CHEST_OPEN);
     ui_blit_graphic(ui_get_viewport(), GFX_PANEL_CHEST, ZONE_PANEL, COLOR_RED);
     for (int16_t i = 0; i < SLOT_CHEST_COUNT; i++) {
         uint16_t thing = g_open_chest_slots[i];
-        ui_draw_icon_in_slot_box(SLOT_BOX_CHEST_FIRST + i, thing == THING_NONE ? -1 : object_get_icon_index(thing));
+        ui_draw_icon_in_slot_box(UI_SLOT_BOX_CHEST_FIRST + i, thing == THING_NONE ? -1 : object_get_icon_index(thing));
     }
 }
 

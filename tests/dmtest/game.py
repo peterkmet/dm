@@ -714,7 +714,7 @@ def start_ui(lib):
     assert lib.layout_init() == 0 and lib.text_init() == 0
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
     lib.game_start_new()
-    assert lib.ui_init() == 0
+    assert lib.ui_init()
     return lib
 
 

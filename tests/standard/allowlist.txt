@@ -113,7 +113,7 @@ static-prefix platform/state_json.c:square_name open: epic 10
 static-prefix platform/state_json.c:square_things_json open: epic 10
 static-prefix platform/state_json.c:view_square open: epic 10
 static-prefix ui/advanced.c:draw_readout open: epic 8
-static-prefix ui/automap.c:draw_center open: epic 8
+static-prefix ui/automap.c:get_map_center open: epic 8
 static-prefix ui/automap.c:draw_label open: epic 8
 static-prefix ui/automap.c:draw_party_arrow open: epic 8
 static-prefix ui/automap.c:draw_square open: epic 8

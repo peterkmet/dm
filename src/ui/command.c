@@ -36,7 +36,6 @@
 #define WAIT_FOR_INPUT_FRAMES 12
 #define MOUTH_BLINK_COUNT     4 /* the mouth blinks when it eats an object up */
 #define MOUTH_BLINK_FRAMES    8
-#define HAND_SLOT_BOX_COUNT   (2 * CHAMPION_MAX_COUNT) /* slot boxes 0-7: the hands in the status boxes */
 
 #define VIEW_CELL_FRONT_FIRST 2 /* view cells 0-1 on the party square, 2-3 ahead */
 
@@ -365,7 +364,8 @@ static void click_in_status_box(int16_t champion_index, int16_t x, int16_t y)
     int16_t command = ui_command_from_mouse(TABLES_MOUSE_STATUS_BOX, x, y, CLICK_LEFT_PRESS);
     if (command >= COMMAND_SET_LEADER_FIRST && command < COMMAND_SET_LEADER_FIRST + CHAMPION_MAX_COUNT)
         champion_set_leader(command - COMMAND_SET_LEADER_FIRST);
-    else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST && command < COMMAND_CLICK_SLOT_BOX_FIRST + HAND_SLOT_BOX_COUNT)
+    else if (command >= COMMAND_CLICK_SLOT_BOX_FIRST &&
+             command < COMMAND_CLICK_SLOT_BOX_FIRST + UI_SLOT_BOX_INVENTORY_FIRST)
         inventory_click_on_slot_box(command - COMMAND_CLICK_SLOT_BOX_FIRST);
 }
 
