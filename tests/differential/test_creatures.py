@@ -9,7 +9,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import need, s16, var
-from dmtest.game import (pending_damage, Location, Party, Position, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
+from dmtest.game import (pending_damage, Location, Party, Position, ProjectileLaunch, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
                          things_of_type, tick)
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
@@ -114,9 +114,9 @@ def test_projectile_impact_attack_matches_original(lib, seed):
         w.seed(seed * 1000 + round_)
         got = lib.projectile_get_impact_attack(14 << 10, thing)
         want = w.emu.call(IMPACT_ATTACK, [(4, w.records[14][1]), (2, thing)]) & 0xFFFF
-        assert got == want, (hex(thing), kinetic, attack)
-        assert c16.in_dll(lib, "g_projectile_attack_type").value == s16(struct.unpack(">H", w.emu.read(ATTACK_TYPE, 2))[0])
-        assert c16.in_dll(lib, "g_projectile_poison_attack").value == s16(struct.unpack(">H", w.emu.read(POISON_ATTACK, 2))[0])
+        assert got.attack == want, (hex(thing), kinetic, attack)
+        assert got.type == s16(struct.unpack(">H", w.emu.read(ATTACK_TYPE, 2))[0])
+        assert got.poison == s16(struct.unpack(">H", w.emu.read(POISON_ATTACK, 2))[0])
         assert ctypes.c_uint32.in_dll(lib, "g_random_seed").value == struct.unpack(">I", w.emu.read(SEED, 4))[0]
 
 
@@ -284,7 +284,7 @@ def test_fireball_flies_and_explodes_on_wall(lib):
     start = next((x, y) for y in range(lib.dungeon_map_height(0)) for x in range(lib.dungeon_map_width(0))
                  if corridor(x, y) and corridor(x + 1, y) and corridor(x + 2, y) and lib.rec_square_type(lib.map_get_square(x + 3, y)) == 0)
     x, y = start
-    lib.projectile_create(FIREBALL, x, y, 0, 1, 100, 100, 1)  # east, back cell
+    lib.projectile_create(ctypes.byref(ProjectileLaunch(FIREBALL, Location(x, y), 0, 1, 100, 100, 1)))  # east, back cell
     path, seen = [], set()
     for _ in range(12):
         where = [(sx, y) for sx in range(x, x + 3) if things_of_type(lib, sx, y, C.THING_PROJECTILE)]

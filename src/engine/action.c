@@ -713,8 +713,15 @@ bool action_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side
     uint8_t attack = bounded_value(THROW_ATTACK_MINIMUM, attack_random + level * WEAPON_CLASS_SKILL_LEVEL_STEP,
                                    THROW_ATTACK_MAXIMUM);
     uint8_t step_energy = max16(THROW_STEP_ENERGY_MINIMUM, THROW_STEP_ENERGY_BASE - level);
-    projectile_create(thing, g_party_map_x, g_party_map_y, NORMALIZE(side + g_party_direction), g_party_direction,
-                      kinetic_energy, attack, step_energy);
+    projectile_create(&(ProjectileLaunch){
+        .thing = thing,
+        .at = {g_party_map_x, g_party_map_y},
+        .cell = NORMALIZE(side + g_party_direction),
+        .direction = g_party_direction,
+        .kinetic_energy = kinetic_energy,
+        .attack = attack,
+        .step_energy = step_energy
+    });
     g_projectile_disabled_movement_ticks = SHOT_DISABLED_MOVEMENT_TICKS;
     g_last_projectile_disabled_movement_direction = g_party_direction;
     return true;

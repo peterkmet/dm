@@ -16,7 +16,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.control import Client
-from dmtest.game import (pending_damage, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Party, press, recruit_first_champion, set_mode,
+from dmtest.game import (pending_damage, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
                          start_game)
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
@@ -479,7 +479,7 @@ def test_smooth_projectile_flight(game):
     for mode in (VANILLA, ADVANCED):
         set_mode(game, mode)
         game.run(13)
-        lib.projectile_create(fireball, x, y, direction, direction, 255, 100, 10)
+        lib.projectile_create(ctypes.byref(ProjectileLaunch(fireball, Location(x, y), direction, direction, 255, 100, 10)))
         frames = []
         for _ in range(3 * 13):
             seed = game.value("g_random_seed", u32)

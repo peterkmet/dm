@@ -1106,6 +1106,24 @@ static CreatureSpell get_creature_spell_explosion(uint16_t creature_type)
     }
 }
 
+/* A creature casts its spell: an explosion projectile with a random kinetic energy from its attack. */
+static void launch_creature_spell(const CreatureInfo *info, uint16_t explosion, Location at, int16_t cell,
+                                  int16_t direction)
+{
+    uint16_t kinetic_energy = (info->attack >> 2) + 1;
+    kinetic_energy += random16() % kinetic_energy;
+    kinetic_energy += random16() % kinetic_energy;
+    projectile_create(&(ProjectileLaunch){
+        .thing = EXPLOSION_THING(explosion),
+        .at = at,
+        .cell = cell,
+        .direction = direction,
+        .kinetic_energy = bounded_value(CREATURE_SPELL_MIN_KINETIC_ENERGY, kinetic_energy, KINETIC_ENERGY_MAXIMUM),
+        .attack = info->dexterity,
+        .step_energy = CREATURE_SPELL_STEP_ENERGY,
+    });
+}
+
 /* One creature attacks: a melee hit (or theft) on a champion in front, or a spell projectile toward the party.
    Returns true when the creature attacked. */
 static bool group_is_creature_attacking(const GroupTurn *t, uint16_t group, int16_t x, int16_t y,
@@ -1149,14 +1167,8 @@ static bool group_is_creature_attacking(const GroupTurn *t, uint16_t group, int1
     } else {
         spell = 1;
         CreatureSpell cast = get_creature_spell_explosion(type);
-        uint16_t explosion = cast.explosion;
         spell_sound = cast.sound;
-        uint16_t kinetic_energy = (info->attack >> 2) + 1;
-        kinetic_energy += random16() % kinetic_energy;
-        kinetic_energy += random16() % kinetic_energy;
-        projectile_create(EXPLOSION_THING(explosion), x, y, cell, primary,
-                          bounded_value(CREATURE_SPELL_MIN_KINETIC_ENERGY, kinetic_energy, KINETIC_ENERGY_MAXIMUM),
-                          info->dexterity, CREATURE_SPELL_STEP_ENERGY);
+        launch_creature_spell(info, cast.explosion, (Location){x, y}, cell, primary);
     }
     int16_t sound = info->attack_sound_ordinal ? tables_get_creature_sound(info->attack_sound_ordinal - 1)->attack : -1;
     if (sound != -1)

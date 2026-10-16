@@ -548,10 +548,7 @@ dead-api engine/message.h:message_print_number open: epic 7
 dead-api engine/move.h:move_get_teleporter_rotated_projectile_thing open: epic 7
 dead-api engine/move.h:move_set_party_direction open: epic 7
 dead-api engine/move.h:move_take_stairs open: epic 7
-dead-api engine/projectile.h:g_create_launcher_projectile open: epic 7
 dead-api engine/projectile.h:g_fuse_sequence_requested open: epic 7
-dead-api engine/projectile.h:g_projectile_attack_type open: epic 7
-dead-api engine/projectile.h:g_projectile_poison_attack open: epic 7
 dead-api engine/projectile.h:projectile_delete open: epic 7
 dead-api engine/projectile.h:projectile_delete_event open: epic 7
 dead-api engine/projectile.h:projectile_get_impact_attack open: epic 7
@@ -602,8 +599,6 @@ dead-api ui/view.h:view_draw open: epic 8
 params engine/move.c:arrive_on_square open: epic 6
 params engine/projectile.c:create_impact_explosion open: epic 6
 params engine/projectile.c:hit_creature open: epic 6
-params engine/projectile.c:projectile_create open: epic 6
-params engine/projectile.h:projectile_create open: epic 6
 params platform/control.c:find_in_box open: epic 10
 params platform/platform.c:plat_set_pointer open: epic 11
 params platform/platform.h:plat_set_pointer open: epic 11

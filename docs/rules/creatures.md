@@ -133,7 +133,7 @@ Event 65 enables a generator again after its delay (see [rules-movement.md](move
 
 ## Projectiles
 
-`projectile_create(thing, x, y, cell, direction, kinetic_energy, attack, step_energy)` puts a projectile in a cell of a square. It adds event 48 after 1 tick, or event 49 for a launcher projectile. Event 48 ignores impacts on the first step. Without a free projectile record, an object drops to the square.
+`projectile_create(launch)` puts a projectile in a cell of a square. The `ProjectileLaunch` struct holds the thing, the square, the cell, the direction, the kinetic energy, the attack, the step energy, and the launcher flag. It adds event 48 after 1 tick, or event 49 for a launcher projectile. Event 48 ignores impacts on the first step. Without a free projectile record, an object drops to the square.
 
 Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell forward:
 
@@ -151,7 +151,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 - A Ful bomb or Ven bomb flask explodes into a fireball or a poison cloud.
 - A spell projectile becomes an explosion of its type. A lightning bolt keeps half its kinetic energy as attack, a poison bolt a quarter.
 
-`projectile_get_impact_attack` and `projectile_get_object_for_launcher_or_generator` match the original exactly (differential tests).
+`projectile_get_impact_attack` returns an `Impact`: the attack, the attack type, and the poison attack of the hit. It and `projectile_get_object_for_launcher_or_generator` match the original exactly (differential tests).
 
 ### Launchers
 

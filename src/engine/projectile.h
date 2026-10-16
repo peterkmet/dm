@@ -3,6 +3,7 @@
 #define DM_ENGINE_PROJECTILE_H
 /* Prefixes: projectile_ explosion_ */
 #include "engine/event.h"
+#include "engine/map.h"
 #include "engine/record.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
@@ -79,23 +80,36 @@ static inline uint16_t projectile_event_c(int16_t x, int16_t y, uint16_t directi
            (direction & 3) << PROJECTILE_EVENT_DIRECTION_SHIFT | (step_energy & PROJECTILE_EVENT_STEP_ENERGY_MASK);
 }
 
-extern bool g_create_launcher_projectile;
-extern int16_t g_projectile_poison_attack, g_projectile_attack_type;
 extern bool g_fuse_sequence_requested; /* the endgame step runs startend_run_fuse_sequence when it is set */
 /* True once when the fuse action or sensor asked for the fuse sequence; the request is then cleared. */
 bool projectile_take_fuse_request(void);
 
+/* A new projectile: the flying thing, its square, cell and direction, its energies, and whether a launcher
+   made it (the first move then ignores impacts). */
+typedef struct {
+    uint16_t thing;
+    Location at;
+    int16_t cell, direction;
+    uint8_t kinetic_energy, attack, step_energy;
+    bool from_launcher;
+} ProjectileLaunch;
+/* The attack of a projectile hit: damage, attack type and poison. */
+typedef struct {
+    uint16_t attack;
+    int16_t type; /* ATTACK_* */
+    int16_t poison;
+} Impact;
+
 /* A flying thing enters a square. Without a free projectile record, the object drops to the square. */
-void projectile_create(uint16_t thing, int16_t x, int16_t y, int16_t cell, int16_t direction, uint8_t kinetic_energy,
-                       uint8_t attack, uint8_t step_energy);
+void projectile_create(const ProjectileLaunch *launch);
 /* An explosion appears on a square for one event 25. A combined square puts the explosion on one square and
    aims the fireball or lightning damage at the target square. */
 void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_combo, uint16_t y_combo, int16_t cell);
 void projectile_delete_event(uint16_t projectile);
 /* The flying object drops to the square, or joins the possessions of the group that caught it. */
 void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x, int16_t y);
-/* Attack of a projectile hit. Sets the attack type and the poison attack of the hit. */
-uint16_t projectile_get_impact_attack(uint16_t projectile, uint16_t thing);
+/* The attack of a flying thing when it hits. */
+Impact projectile_get_impact_attack(uint16_t projectile, uint16_t thing);
 /* A projectile hits the party (impact -2), a creature (-1), or a wall, stairs, door, or fake wall (square type).
    The flying object drops or explodes and the projectile disappears. Returns false when nothing was hit. */
 bool projectile_has_impact_occurred(int16_t impact_type, int16_t x_combo, int16_t y_combo, int16_t cell,
@@ -118,7 +132,7 @@ void projectile_fluxcage_action(int16_t x, int16_t y);
 /* Fuse: a harm non-material explosion. Lord Chaos in 4 fluxcages starts the fuse sequence; otherwise he escapes
    through a free side to an open square. */
 void projectile_fuse_action(int16_t x, int16_t y);
-/* No launcher, poison attack, or fuse request carries into a new game. */
+/* No fuse request carries into a new game. */
 void projectile_reset(void);
 
 /* Projectiles in the cells of the party (thing 0xffff) or of a group hit before it moves. A move to an adjacent

@@ -11,7 +11,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.control import Client, pump, pumped, socket_dir
-from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game, pending_damage
+from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game, Location, ProjectileLaunch, pending_damage
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -441,8 +441,7 @@ def test_turn_reports_a_fireball_and_a_killed_creature_seen_during_the_turn(game
     lib.rec_find_unused_thing.argtypes = [ctypes.c_uint16]
     lib.group_add_active_group.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
     lib.map_link_thing_to_list.argtypes = [ctypes.c_uint16, ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16]
-    lib.projectile_create.argtypes = [ctypes.c_uint16, ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.c_int16,
-                                      ctypes.c_uint8, ctypes.c_uint8, ctypes.c_uint8]
+    lib.projectile_create.argtypes = [ctypes.POINTER(ProjectileLaunch)]
     x, y, f = square_with_floor_two_ahead(game)
     target = (x + 2 * STEP_EAST[f], y + 2 * STEP_NORTH[f])
     names = ("g_party_map_x", "g_party_map_y", "g_party_direction")
@@ -452,7 +451,7 @@ def test_turn_reports_a_fireball_and_a_killed_creature_seen_during_the_turn(game
     client = Client(game)
     try:
         add_screamer(lib, *target)
-        lib.projectile_create(FIREBALL, x, y, f, f, 255, 255, 1)  # a fireball from the front cell, toward the screamer
+        lib.projectile_create(ctypes.byref(ProjectileLaunch(FIREBALL, Location(x, y), f, f, 255, 255, 1)))  # a fireball from the front cell, toward the screamer
         response = client.call(cmd="wait", ticks=40)
         assert response["ok"], response
         flying = [e for s in response["view"]["squares"] for e in s.get("flying", [])]
@@ -483,7 +482,7 @@ def test_a_group_in_view_for_many_ticks_is_recorded_once(game):
         client.sock.sendall(b'{"cmd": "wait", "ticks": 80}\n')
         for _ in range(40):  # the group stays in view for more ticks than the record holds groups
             pump(lib)
-        lib.projectile_create(FIREBALL, x, y, f, f, 255, 255, 1)
+        lib.projectile_create(ctypes.byref(ProjectileLaunch(FIREBALL, Location(x, y), f, f, 255, 255, 1)))
         data = b""
         while not data.endswith(b"\n"):
             pump(lib)

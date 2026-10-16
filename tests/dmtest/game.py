@@ -38,7 +38,6 @@ BOOL_GLOBALS = frozenset({
     "g_cheat_immortal",
     "g_cheat_food",
     "g_leader_empty_handed",
-    "g_create_launcher_projectile",
     "g_fuse_sequence_requested",
     "g_saved_game_exists",
     "g_game_won",
@@ -129,6 +128,15 @@ class PendingSound(ctypes.Structure):
 
 class Location(ctypes.Structure):
     _fields_ = [("x", c16), ("y", c16)]
+
+
+class Impact(ctypes.Structure):
+    _fields_ = [("attack", ctypes.c_uint16), ("type", ctypes.c_int16), ("poison", ctypes.c_int16)]
+
+
+class ProjectileLaunch(ctypes.Structure):
+    _fields_ = [("thing", u16), ("at", Location), ("cell", c16), ("direction", c16), ("kinetic_energy", ctypes.c_uint8),
+                ("attack", ctypes.c_uint8), ("step_energy", ctypes.c_uint8), ("from_launcher", ctypes.c_bool)]
 
 
 class MeleeAttack(ctypes.Structure):
@@ -516,8 +524,8 @@ def setup_creatures(lib):
     """The types of the creature, projectile and spell functions."""
     event_p = ctypes.POINTER(TimelineEvent)
     for name, res, args in [
-        ("projectile_get_impact_attack", u16, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
-        ("projectile_create", None, [u16, c16, c16, c16, c16, u8, u8, u8]), ("map_get_square", u8, [c16, c16]),
+        ("projectile_get_impact_attack", Impact, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
+        ("projectile_create", None, [ctypes.POINTER(ProjectileLaunch)]), ("map_get_square", u8, [c16, c16]),
         ("map_get_square_first_thing", u16, [c16, c16]), ("rec_thing_next", u16, [u16]), ("map_find_thing", u16, [Location, c16]),
         ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("rec_square_byte", u8, [c16, c16, c16]),
         ("rec_square_type", c16, [u8]),
