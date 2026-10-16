@@ -4,19 +4,17 @@
 /* Prefixes: game_ position_ turn_ */
 #include "data/bytes.h"
 #include "data/tables.h"
+#include "engine/party.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-#define NORMALIZE(direction)       ((direction) & 3)
-#define CELL_COUNT                 4 /* cells of a square, one for each direction */
-#define CHAMPION_MAX_COUNT         4
-#define STAT_LIMIT                 170 /* no statistic grows above this value */
-#define STAT_MINIMUM_VALUE         30  /* the minimum of each statistic of a new champion */
-#define PARTY_SCENT_COUNT          24
-#define ACTIVE_GROUP_MAX_COUNT     110 /* creature groups that can act at the same time */
-#define CSB_ACTIVE_GROUP_MAX_COUNT 60  /* active group slots of a new CSB game */
-#define WATCHDOG_INTERVAL          300 /* game ticks between two watchdog events */
-#define SYSTEM_ERROR_MEMORY        70  /* allocation failed, or an event is missing from the timeline */
+#define NORMALIZE(direction) ((direction) & 3)
+#define CELL_COUNT           4 /* cells of a square, one for each direction */
+#define CHAMPION_MAX_COUNT   4
+#define STAT_LIMIT           170 /* no statistic grows above this value */
+#define STAT_MINIMUM_VALUE   30  /* the minimum of each statistic of a new champion */
+#define WATCHDOG_INTERVAL    300 /* game ticks between two watchdog events */
+#define SYSTEM_ERROR_MEMORY  70  /* allocation failed, or an event is missing from the timeline */
 
 /* The direction or cell a quarter turn right, a half turn, or a quarter turn left of this one. */
 static inline int16_t turn_right(int16_t direction)
@@ -104,60 +102,21 @@ typedef struct {
 #define MAGIC_MAP_KU       2
 #define MAGIC_MAP_NETA     3
 #define MAGIC_MAP_POSITION 4
-/* A position word (kept map position, party scents): x in bits 11-15, y in bits 6-10, the map in bits 0-5. */
-#define POSITION_X_SHIFT   11
-#define POSITION_Y_SHIFT   6
-#define POSITION_XY_MASK   0x1f
-#define POSITION_MAP_MASK  0x3f
-
-/* A position word. x can be negative (unsigned shift). */
-static inline uint16_t position_pack(int16_t map, int16_t x, int16_t y)
-{
-    return (uint16_t)x << POSITION_X_SHIFT | (y & POSITION_XY_MASK) << POSITION_Y_SHIFT | (map & POSITION_MAP_MASK);
-}
-static inline int16_t position_x(uint16_t word)
-{
-    return word >> POSITION_X_SHIFT;
-}
-static inline int16_t position_y(uint16_t word)
-{
-    return word >> POSITION_Y_SHIFT & POSITION_XY_MASK;
-}
-
 /* Stores the kept map position of NETA in the magic map bytes. */
 static inline void game_set_magic_map_position(uint8_t *spells, int16_t map, int16_t x, int16_t y)
 {
-    wr16(spells + MAGIC_MAP_POSITION, position_pack(map, x, y));
+    wr16(spells + MAGIC_MAP_POSITION, party_pack_position(map, x, y));
 }
 
 /* Reads the kept map position of NETA from the magic map bytes. */
 static inline void game_get_magic_map_position(const uint8_t *spells, int16_t *map, int16_t *x, int16_t *y)
 {
     uint16_t word = be16(spells + MAGIC_MAP_POSITION);
-    *map = word & POSITION_MAP_MASK;
-    *x = position_x(word);
-    *y = position_y(word);
+    *map = word & PARTY_POSITION_MAP_MASK;
+    *x = party_position_x(word);
+    *y = party_position_y(word);
 }
 
-typedef struct {
-    int16_t magical_light_amount;
-    uint8_t thieves_eye_count, footprints_count;
-    int16_t shield_defense, fire_shield_defense, spell_shield_defense;
-    uint8_t scent_count, freeze_life_ticks, first_scent_index, last_scent_index;
-    uint16_t scents[PARTY_SCENT_COUNT]; /* x bits 11-15, y bits 6-10, map bits 0-5 */
-    uint8_t scent_strengths[PARTY_SCENT_COUNT];
-    uint8_t invisibility_count;
-} Party;
-
-typedef struct {
-    int16_t group_index; /* -1: free entry */
-    uint8_t directions, cells;
-    uint8_t last_move_time, delay_fleeing;
-    uint8_t target_x, target_y, prior_x, prior_y, home_x, home_y;
-    uint8_t aspect[4];
-} ActiveGroup;
-
-extern Party g_party;
 extern Champion g_champions[CHAMPION_MAX_COUNT];
 extern uint16_t g_party_champion_count;
 extern int16_t g_leader_index, g_magic_caster_champion_index;
@@ -165,12 +124,6 @@ extern uint16_t g_leader_hand_object;
 extern bool g_party_is_sleeping, g_party_dead;
 extern bool g_game_won;
 extern uint32_t g_game_time, g_game_id;
-extern int32_t g_last_creature_attack_time, g_last_party_movement_time;
-extern int16_t g_disabled_movement_ticks, g_projectile_disabled_movement_ticks;
-extern int16_t g_last_projectile_disabled_movement_direction;
-
-extern ActiveGroup *g_active_groups;
-extern uint16_t g_active_group_count, g_max_active_group_count;
 
 /* Interface parts that the game rules changed: the user interface draws them again (g_redraw bits). */
 extern uint16_t g_redraw;
@@ -214,9 +167,6 @@ void game_apply_tick_effects(void);
 /* Moves map coordinates by steps forward and to the right of a direction. */
 void game_update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right,
                                                          int16_t *map_x, int16_t *map_y);
-
-/* New game only: all active group entries are free. */
-void game_init_active_groups(void);
 
 /* Below half stamina, a value drops toward half of it. */
 int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value);

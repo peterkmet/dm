@@ -72,12 +72,6 @@ void inventory_click_on_slot_box(uint16_t slot_box);
 bool inventory_fill_leader_hand_at_fountain(void);
 /* Opens the inventory of champion ordinal - 1 for the rules; 0 closes it. */
 void inventory_set_open_champion(int16_t ordinal);
-/* The light amount of the party: light sources in the hands and the light spells. */
-int16_t inventory_get_party_light(void);
-/* Sets g_dungeon_view_palette_index from the party light amount (magical light plus torches) on map map_index. */
-void inventory_set_dungeon_view_palette(int16_t map_index, int16_t light);
-/* Burning torches in the hands lose one charge; a burnt out torch may be discarded later. */
-void inventory_decrease_torches_light_power(void);
 /* Results of inventory_process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
 #define MOUTH_REFUSED   0
 #define MOUTH_SWALLOWED 1

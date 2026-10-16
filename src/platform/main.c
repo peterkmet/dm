@@ -10,6 +10,7 @@
 #include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "engine/random.h"
 #include "ui/advanced.h"
 #include "ui/anim.h"

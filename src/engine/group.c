@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/group.h"
+#include "data/adventure.h"
 #include "data/ids.h"
 #include "data/tables.h"
 #include "engine/arith.h"
@@ -9,11 +10,13 @@
 #include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/move.h"
+#include "engine/party.h"
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline.h"
+#include <stdlib.h>
 
 #define ASPECT_KEEP_FLAGS (ASPECT_ATTACKING | ASPECT_FLIPPED)
 
@@ -97,12 +100,14 @@
 #define SHIFT_CELL_RANDOM_BITS               0xc0
 #define NEW_CELL_RANDOM_BITS                 0x38
 
+ActiveGroup *g_active_groups;
+uint16_t g_active_group_count, g_max_active_group_count;
+int32_t g_last_creature_attack_time;
 int16_t g_creature_damage_outcome;
 int16_t g_group_secondary_direction;
 int16_t g_current_group_map_x, g_current_group_map_y;
 uint16_t g_current_group_thing, g_current_group_distance_to_party;
 int16_t g_current_group_primary_direction_to_party, g_current_group_secondary_direction_to_party;
-int16_t g_dungeon_view_palette_index;
 
 static uint8_t movement_tested_directions[4];
 static uint8_t flux_cages[4];
@@ -140,6 +145,22 @@ static int16_t get_creature_movement_sound(uint16_t creature_type)
     if (g_party_is_sleeping || !ordinal)
         return -1;
     return tables_get_creature_sound(ordinal - 1)->movement;
+}
+
+void group_allocate_active(uint16_t count)
+{
+    free(g_active_groups);
+    g_active_groups = malloc(count * sizeof *g_active_groups);
+    if (!g_active_groups)
+        game_fatal(SYSTEM_ERROR_MEMORY);
+    for (uint16_t i = 0; i < count; i++)
+        g_active_groups[i].group_index = -1;
+}
+
+void group_init_active_groups(void)
+{
+    g_max_active_group_count = g_adventure == ADVENTURE_CSB ? CSB_ACTIVE_GROUP_MAX_COUNT : ACTIVE_GROUP_MAX_COUNT;
+    group_allocate_active(g_max_active_group_count);
 }
 
 uint8_t group_get_cells(uint16_t group, int16_t map)
@@ -817,7 +838,7 @@ static uint16_t group_get_distance_to_visible_party(uint16_t group, int16_t crea
     if (g_party.invisibility_count && !(info->attributes & CREATURE_SEES_INVISIBLE))
         range = INVISIBLE_PARTY_SIGHT_RANGE;
     else if (!(info->attributes & CREATURE_NIGHT_VISION))
-        range -= g_dungeon_view_palette_index >> 1;
+        range -= g_party_light_level >> 1;
     if (range < g_current_group_distance_to_party) {
         if (g_current_group_distance_to_party == 1) {
             uint16_t random1 = random16();
@@ -837,7 +858,7 @@ static uint16_t group_get_distance_to_visible_party(uint16_t group, int16_t crea
 /* Ordinal of the latest party scent on a square (champion_get_scent_ordinal), or 0. */
 uint16_t group_get_party_scent_ordinal(int16_t x, int16_t y)
 {
-    uint16_t scent = position_pack(g_current_map_index, x, y);
+    uint16_t scent = party_pack_position(g_current_map_index, x, y);
     for (uint16_t ordinal = g_party.scent_count; ordinal; ordinal--)
         if (g_party.scents[ordinal - 1] == scent)
             return ordinal;
@@ -859,7 +880,7 @@ static int16_t group_get_smelled_party_direction_ordinal(const CreatureInfo *inf
     uint16_t ordinal = group_get_party_scent_ordinal(x, y);
     if (ordinal && SCENT_TRAIL_THRESHOLD - 2 * smell < random_2bits() + g_party.scent_strengths[ordinal - 1]) {
         uint16_t next = g_party.scents[ordinal];
-        return group_get_directions_to_destination(x, y, position_x(next), position_y(next)) + 1;
+        return group_get_directions_to_destination(x, y, party_position_x(next), party_position_y(next)) + 1;
     }
     return 0;
 }
@@ -1198,7 +1219,7 @@ int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index)
     else if (info->attributes & CREATURE_NIGHT_VISION)
         dodge_bonus = 0;
     else
-        dodge_bonus = g_dungeon_view_palette_index * 2;
+        dodge_bonus = g_party_light_level * 2;
     if (!g_party_is_sleeping && info->dexterity != CREATURE_NEVER_HITS) {
         uint16_t dexterity = champion_get_dexterity(champion);
         uint16_t aim = (random16() & AIM_RANDOM_MASK) + info->dexterity + difficulty + dodge_bonus - AIM_RANDOM_CENTER;
@@ -1307,8 +1328,8 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
         hit_probability &= HIT_PROBABILITY_MASK;
         if (!(info->attributes & CREATURE_NON_MATERIAL) || always_hits) {
             uint16_t dexterity = champion_get_dexterity(champion);
-            uint16_t defense = (random16() & AIM_RANDOM_MASK) + info->dexterity + difficulty +
-                               g_dungeon_view_palette_index * 2 - AIM_RANDOM_CENTER;
+            uint16_t defense = (random16() & AIM_RANDOM_MASK) + info->dexterity + difficulty + g_party_light_level * 2 -
+                               AIM_RANDOM_CENTER;
             hit = defense < dexterity || !random_2bits() ||
                   game_is_lucky(champion, LUCK_PERCENT_AGAINST_MISS - hit_probability);
         }

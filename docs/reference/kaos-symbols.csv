@@ -71,7 +71,7 @@ address,name,signature,subsystem
 0x1001e0,g_game_time_ticking,,main
 0x1001e2,g_fade_display_on_exit,int16_t,video
 0x1001e4,g_party_dead,,main
-0x1001e6,g_dungeon_view_palette_index,int16_t,dungeon_view
+0x1001e6,g_party_light_level,int16_t,dungeon_view
 0x1001e8,g_party_champion_count,,champion
 0x1001ea,g_party_direction,,main
 0x1001ec,g_party_map_x,,main
@@ -1315,7 +1315,7 @@ address,name,signature,subsystem
 0x1112ea,champion_get_wound_defense,"int16_t champion_get_wound_defense(int16_t champion_index, uint16_t slot_and_flags)",champion
 0x111440,champion_wake_up,void champion_wake_up(void),champion
 0x11147a,champion_get_scent_ordinal,"uint16_t champion_get_scent_ordinal(int16_t map_x, int16_t map_y)",champion
-0x1114f0,champion_delete_scent,void champion_delete_scent(uint16_t scent_index),champion
+0x1114f0,party_delete_scent,void party_delete_scent(uint16_t scent_index),champion
 0x111584,champion_add_scent_strength,"void champion_add_scent_strength(int16_t map_x, int16_t map_y, int16_t strength_and_flags)",champion
 0x111642,champion_drop_all_objects,void champion_drop_all_objects(uint16_t champion_index),champion
 0x1116b4,champion_kill,void champion_kill(uint16_t champion_index),champion

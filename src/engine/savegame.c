@@ -9,8 +9,10 @@
 #include "engine/dungeon.h"
 #include "engine/explored.h"
 #include "engine/game.h"
+#include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "engine/random.h"
 #include "engine/savefile.h"
 #include "engine/timeline.h"
@@ -475,7 +477,7 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
 }
 
 /* Allocates the timeline and the active groups for the saved counts, as timeline_init and
-   game_init_active_groups do for a loaded game. CSB allocates exactly the saved count. */
+   group_init_active_groups do for a loaded game. CSB allocates exactly the saved count. */
 static bool allocate_tables(void)
 {
     uint16_t groups = g_max_active_group_count;
@@ -483,12 +485,7 @@ static bool allocate_tables(void)
         groups = ACTIVE_GROUP_MAX_COUNT;
     if (!timeline_allocate(g_timeline.capacity))
         return false;
-    free(g_active_groups);
-    g_active_groups = malloc(groups * sizeof *g_active_groups);
-    if (!g_active_groups)
-        return false;
-    for (uint16_t i = 0; i < groups; i++)
-        g_active_groups[i].group_index = -1;
+    group_allocate_active(groups);
     return true;
 }
 

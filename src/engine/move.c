@@ -3,19 +3,17 @@
 #include "data/tables.h"
 #include "engine/arith.h"
 #include "engine/champion.h"
-#include "engine/dungeon.h"
 #include "engine/event.h"
 #include "engine/game.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "engine/projectile.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
 #include "engine/timeline.h"
 
-#define SCENT_STRENGTH_MAXIMUM 80
-#define SCENT_KEEP_LARGER      0x8000 /* flag: keep the larger strength instead of adding */
 #define SCENT_NEW_STRENGTH     24
 #define MOVE_STAMINA_FACTOR    3    /* stamina cost of a step: load * 3 / maximum load + 1 */
 #define NO_TELEPORTER_ROTATION (-2) /* src_x value: a teleporter does not rotate the object */
@@ -58,45 +56,22 @@ void move_set_party_direction(int16_t direction)
     }
 }
 
-/* Adds strength to the party scent on a square, or keeps the larger strength. The original compares scent i
-   with strength count - 1 - i; the port keeps this. */
-void move_add_scent_strength(int16_t x, int16_t y, int16_t strength_and_flags)
-{
-    if (!g_party.scent_count)
-        return;
-    int16_t keep_larger = strength_and_flags & SCENT_KEEP_LARGER;
-    int16_t found = 0;
-    int16_t value = keep_larger ? strength_and_flags & ~SCENT_KEEP_LARGER : strength_and_flags;
-    uint16_t scent = position_pack(g_current_map_index, x, y);
-    for (uint16_t i = 0; i < g_party.scent_count; i++) {
-        uint16_t s = g_party.scent_count - 1 - i;
-        if (g_party.scents[i] != scent)
-            continue;
-        if (!found) {
-            found = 1;
-            value = keep_larger ? max16(g_party.scent_strengths[s], value)
-                                : min16(SCENT_STRENGTH_MAXIMUM, value + g_party.scent_strengths[s]);
-        }
-        g_party.scent_strengths[s] = value;
-    }
-}
-
 /* The party leaves a scent on its new square. The old square gets strength for the time the party stood there. */
 static void add_party_scent(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, int16_t map)
 {
     uint16_t n = g_party.scent_count;
     for (; n >= PARTY_SCENT_COUNT; n--)
-        champion_delete_scent(0);
+        party_delete_scent(0);
     if (n)
-        move_add_scent_strength(src_x, src_y, g_game_time - g_last_party_movement_time); /* 16-bit difference */
+        party_add_scent_strength(src_x, src_y, g_game_time - g_last_party_movement_time); /* 16-bit difference */
     g_last_party_movement_time = g_game_time;
     g_party.scent_count++;
     if (g_party.footprints_count)
         g_party.last_scent_index = g_party.scent_count;
-    g_party.scents[n] = position_pack(map, dst_x, dst_y);
+    g_party.scents[n] = party_pack_position(map, dst_x, dst_y);
     g_party.scent_strengths[n] = 0;
-    move_add_scent_strength(dst_x, dst_y,
-                            (int16_t)(SCENT_KEEP_LARGER | SCENT_NEW_STRENGTH)); /* the flag is the sign bit */
+    party_add_scent_strength(dst_x, dst_y,
+                             (int16_t)(SCENT_KEEP_LARGER | SCENT_NEW_STRENGTH)); /* the flag is the sign bit */
 }
 
 static bool is_party_on(int16_t x, int16_t y)

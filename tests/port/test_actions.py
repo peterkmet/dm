@@ -135,7 +135,7 @@ def test_melee_damage_matches_original(alib, seed):
             put_living_champions(w)
         w.globals(w.rng.choice([0, 0, 0, 1]), 5000, 0, 0, w.rng.randrange(6))
         palette = w.rng.randrange(6)
-        var(lib, c16, "g_dungeon_view_palette_index").value = palette
+        var(lib, c16, "g_party_light_level").value = palette
         w.emu.write(PALETTE_INDEX, struct.pack(">h", palette))
         group[4], group[15] = w.rng.randrange(27), 3 << 5
         for creature in range(4):

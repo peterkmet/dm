@@ -8,6 +8,7 @@
 #include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/move.h"
+#include "engine/party.h"
 #include "engine/random.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"

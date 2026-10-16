@@ -99,14 +99,14 @@ The function repeats these rules on the destination square, at most 99 times:
 After the loop:
 
 - `g_move_result_map_x`, `g_move_result_map_y`, `g_move_result_map_index`, and `g_move_result_cell` hold the result.
-- A party move to a new square adds a scent. The scent list keeps 24 entries. `move_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count − 1 − i`. The port keeps this.
+- A party move to a new square adds a scent. The scent list keeps 24 entries. `party_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count − 1 − i`. The port keeps this.
 - A move to the same square does nothing when the party direction or the object cell did not change.
 - The thing leaves the source square with `sensor_process_thing_addition_or_removal(..., 0)`. A levitating object (projectile, explosion) only unlinks.
 - The party on a new map sets `g_new_party_map_index`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
 
 ### Champion functions
 
-Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see `docs/rules/champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `champion_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand`, and `object_get_type`. `object_get_type` needs `tables_load()`.
+Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see `docs/rules/champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `party_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand`, and `object_get_type`. `object_get_type` needs `tables_load()`.
 
 ## Sensors
 

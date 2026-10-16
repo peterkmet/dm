@@ -10,6 +10,7 @@
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
+#include "engine/party.h"
 #include "engine/sound.h"
 #include "engine/timeline.h"
 

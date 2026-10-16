@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "engine/game.h"
-#include "data/adventure.h"
 #include "data/os.h"
 #include "data/tables.h"
 #include "engine/arith.h"
 #include "engine/champion.h"
-#include "engine/inventory.h"
+#include "engine/group.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "engine/random.h"
 #include "engine/timeline.h"
 #include <stdlib.h>
@@ -25,7 +25,6 @@
 #define FUSE_MAGICAL_LIGHT         200
 #define FUSE_SHIELD                100
 
-Party g_party;
 Champion g_champions[CHAMPION_MAX_COUNT];
 uint16_t g_party_champion_count;
 int16_t g_leader_index = -1;
@@ -34,15 +33,9 @@ uint16_t g_leader_hand_object = THING_NONE;
 bool g_party_is_sleeping, g_party_dead;
 bool g_game_won;
 uint32_t g_game_time, g_game_id;
-int32_t g_last_creature_attack_time, g_last_party_movement_time;
-int16_t g_disabled_movement_ticks, g_projectile_disabled_movement_ticks;
-int16_t g_last_projectile_disabled_movement_direction;
 uint16_t g_redraw;
 int16_t g_game_mode = GAME_MODE_VANILLA;
 bool g_cheat_light, g_cheat_immortal, g_cheat_food;
-
-ActiveGroup *g_active_groups;
-uint16_t g_active_group_count, g_max_active_group_count;
 
 void game_fatal(int16_t code)
 {
@@ -73,7 +66,7 @@ void game_start_new(void)
     uint32_t r = random16();
     g_game_id = r * random16();
     timeline_init();
-    game_init_active_groups();
+    group_init_active_groups();
 }
 
 void game_reset_session(void)
@@ -116,7 +109,7 @@ void game_advance_time(void)
 {
     game_increment_time();
     if (!(g_game_time & TORCH_BURN_INTERVAL_MASK))
-        inventory_decrease_torches_light_power();
+        party_burn_torches();
     if (g_party.freeze_life_ticks)
         g_party.freeze_life_ticks--;
 }
@@ -137,17 +130,6 @@ void game_update_map_coordinates_after_relative_movement(int16_t direction, int1
     int16_t right = turn_right(direction);
     *map_x = *map_x + steps_forward * tables_get_step_east(direction) + steps_right * tables_get_step_east(right);
     *map_y = *map_y + steps_forward * tables_get_step_north(direction) + steps_right * tables_get_step_north(right);
-}
-
-void game_init_active_groups(void)
-{
-    g_max_active_group_count = g_adventure == ADVENTURE_CSB ? CSB_ACTIVE_GROUP_MAX_COUNT : ACTIVE_GROUP_MAX_COUNT;
-    free(g_active_groups);
-    g_active_groups = malloc(g_max_active_group_count * sizeof *g_active_groups);
-    if (!g_active_groups)
-        game_fatal(SYSTEM_ERROR_MEMORY);
-    for (uint16_t i = 0; i < g_max_active_group_count; i++)
-        g_active_groups[i].group_index = -1;
 }
 
 int16_t game_get_stamina_adjusted_value(const Champion *champion, int16_t value)

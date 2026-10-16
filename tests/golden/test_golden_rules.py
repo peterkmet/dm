@@ -229,7 +229,7 @@ VIEW_CELL_FRONT_FIRST, CLICK_BOX_ALCOVE, CLICK_BOX_WALL = 2, 4, 5
 STEP = ((0, -1), (1, 0), (0, 1), (-1, 0))  # (dx, dy) of each direction: north, east, south, west
 MAP_COUNT = 14
 VISIBILITY_MAPS = (0, 1, 2, 3)
-LIGHTS = (0, 4, 5)  # g_dungeon_view_palette_index: bright, one row less, two rows less
+LIGHTS = (0, 4, 5)  # g_party_light_level: bright, one row less, two rows less
 
 
 def square_type(lib, x, y):
@@ -435,7 +435,7 @@ def test_visibility(game):
         getattr(lib, name).restype = c16
     lib.dungeon_get_square.restype = ctypes.c_uint8
     lib.explored_save.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_size_t)]
-    palette = c16.in_dll(lib, "g_dungeon_view_palette_index")
+    palette = c16.in_dll(lib, "g_party_light_level")
     digest = hashlib.sha256()
     for m in VISIBILITY_MAPS:
         for y in range(lib.dungeon_map_height(m)):

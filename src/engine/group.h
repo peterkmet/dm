@@ -4,7 +4,6 @@
 /* Prefixes: group_ creature_ */
 #include "data/tables.h"
 #include "engine/event.h"
-#include "engine/game.h"
 #include "engine/map.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
@@ -149,6 +148,26 @@ static inline void group_clear_do_not_discard(uint16_t group)
     REC(group)[GROUP_DIRECTION_BYTE] &= ~GROUP_RECORD_DO_NOT_DISCARD;
 }
 
+typedef struct {
+    int16_t group_index; /* -1: free entry */
+    uint8_t directions, cells;
+    uint8_t last_move_time, delay_fleeing;
+    uint8_t target_x, target_y, prior_x, prior_y, home_x, home_y;
+    uint8_t aspect[4];
+} ActiveGroup;
+
+#define ACTIVE_GROUP_MAX_COUNT     110 /* creature groups that can act at the same time */
+#define CSB_ACTIVE_GROUP_MAX_COUNT 60  /* active group slots of a new CSB game */
+
+extern ActiveGroup *g_active_groups;
+extern uint16_t g_active_group_count, g_max_active_group_count;
+extern int32_t g_last_creature_attack_time;
+
+/* New game only: all active group entries are free. */
+void group_init_active_groups(void);
+/* Allocates count active group entries, all free. A failed allocation is a fatal error. */
+void group_allocate_active(uint16_t count);
+
 /* On the party map the cells byte of the record holds the index of the active group. */
 static inline ActiveGroup *group_active(uint16_t group)
 {
@@ -220,7 +239,6 @@ extern int16_t g_group_secondary_direction;
 extern int16_t g_current_group_map_x, g_current_group_map_y;
 extern uint16_t g_current_group_thing, g_current_group_distance_to_party;
 extern int16_t g_current_group_primary_direction_to_party, g_current_group_secondary_direction_to_party;
-extern int16_t g_dungeon_view_palette_index; /* 0 (bright) to 5; the view step sets it */
 
 uint8_t group_get_cells(uint16_t group, int16_t map);
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);

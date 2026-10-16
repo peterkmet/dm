@@ -11,6 +11,7 @@
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
+#include "engine/party.h"
 #include "engine/savegame.h"
 #include "ui/advanced.h"
 #include "ui/command.h"

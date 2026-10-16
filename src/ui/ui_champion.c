@@ -12,6 +12,7 @@
 #include "engine/magic.h"
 #include "engine/map.h"
 #include "engine/message.h"
+#include "engine/party.h"
 #include "ui/advanced.h"
 #include "ui/command.h"
 #include "ui/draw.h"

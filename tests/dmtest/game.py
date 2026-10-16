@@ -493,7 +493,7 @@ def new_game(lib):
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     lib.map_reset()
     lib.game_start_new()
-    var(lib, c16, "g_dungeon_view_palette_index").value = 0  # the view sets it in the game; a bright view here
+    var(lib, c16, "g_party_light_level").value = 0  # the view sets it in the game; a bright view here
 
 
 def tick(lib, seen=None):

@@ -181,5 +181,5 @@ The function reads all three tables from the KAOS image. The single characters f
 ## Not ported
 
 - Loading a dungeon from a saved game (no new-game extras) and the restart path that reuses buffers.
-- `timeline_init` and `game_init_active_groups` at the end of `load_dungeon`.
+- `timeline_init` and `group_init_active_groups` at the end of `load_dungeon`.
 - The current-map functions (`get_square`, `get_square_first_thing` on `g_current_map_data`). The port uses functions with a map argument for now.

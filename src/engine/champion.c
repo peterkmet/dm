@@ -6,13 +6,14 @@
 #include "data/tables.h"
 #include "engine/action.h"
 #include "engine/arith.h"
-#include "engine/dungeon.h"
 #include "engine/event.h"
 #include "engine/game.h"
+#include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/move.h"
+#include "engine/party.h"
 #include "engine/random.h"
 #include "engine/recruit.h"
 #include "engine/sound.h"
@@ -947,28 +948,15 @@ void champion_fall_damage(bool use_rope)
     }
 }
 
-void champion_delete_scent(uint16_t scent_index)
-{
-    uint16_t n = --g_party.scent_count - scent_index;
-    if (n) {
-        memmove(&g_party.scents[scent_index], &g_party.scents[scent_index + 1], n * sizeof *g_party.scents);
-        memmove(&g_party.scent_strengths[scent_index], &g_party.scent_strengths[scent_index + 1], n);
-    }
-    if (scent_index < g_party.first_scent_index)
-        g_party.first_scent_index--;
-    if (scent_index < g_party.last_scent_index)
-        g_party.last_scent_index--;
-}
-
 /* Scents away from the party fade; a faded first scent is removed. */
 static void fade_scents(void)
 {
-    uint16_t here = position_pack(g_party_map_index, g_party_map_x, g_party_map_y);
+    uint16_t here = party_pack_position(g_party_map_index, g_party_map_x, g_party_map_y);
     for (int16_t i = 0; i < g_party.scent_count - 1;) {
         if (g_party.scents[i] != here) {
             g_party.scent_strengths[i] = max16(SCENT_STRENGTH_MINIMUM, g_party.scent_strengths[i] - 1);
             if (!g_party.scent_strengths[i] && !i) {
-                champion_delete_scent(0);
+                party_delete_scent(0);
                 continue;
             }
         }

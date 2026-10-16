@@ -9,6 +9,7 @@
 #include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "engine/projectile.h"
 #include "engine/random.h"
 #include "engine/recruit.h"
@@ -2628,7 +2629,7 @@ bool view_render(int16_t m, int16_t x, int16_t y, int16_t dir)
         return false;
     if (m != view_map)
         view_load_map(m);
-    int16_t light = g_cheat_light ? 0 : g_dungeon_view_palette_index;
+    int16_t light = g_cheat_light ? 0 : g_party_light_level;
     memcpy(palette, dungeon_palettes[light], sizeof dungeon_palettes[light]);
     view_draw(NORMALIZE(dir), x, y);
     return true;

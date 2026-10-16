@@ -10,10 +10,10 @@
 #include "engine/dungeon.h"
 #include "engine/explored.h"
 #include "engine/game.h"
-#include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/message.h"
+#include "engine/party.h"
 #include "engine/projectile.h"
 #include "ui/automap.h"
 #include "ui/command.h"
@@ -458,7 +458,7 @@ void state_json_write_state(Json *j)
     key_int(j, "x", g_party_map_x);
     key_int(j, "y", g_party_map_y);
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
-    key_int(j, "darkness", g_dungeon_view_palette_index);
+    key_int(j, "darkness", g_party_light_level);
     key_bool(j, "can_move", !g_disabled_movement_ticks);
     key_bool(j, "sleeping", g_party_is_sleeping);
     key_bool(j, "dead", g_party_dead);
@@ -546,7 +546,7 @@ static bool in_party_map(int16_t x, int16_t y)
     return x >= 0 && y >= 0 && x < dungeon_map_width(g_party_map_index) && y < dungeon_map_height(g_party_map_index);
 }
 
-static uint8_t party_map_square(int16_t x, int16_t y)
+static uint8_t lookup_party_square(int16_t x, int16_t y)
 {
     return in_party_map(x, y) ? dungeon_get_square(g_party_map_index, x, y) : 0;
 }
@@ -898,7 +898,7 @@ void state_json_write_view(Json *j)
 {
     json_open(j, '{');
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
-    key_int(j, "darkness", g_dungeon_view_palette_index);
+    key_int(j, "darkness", g_party_light_level);
     json_key(j, "squares");
     json_open(j, '[');
     for (int16_t depth = 0; depth < visible_depths(); depth++)
@@ -907,7 +907,7 @@ void state_json_write_view(Json *j)
             if (!side_seen(depth, side))
                 continue;
             view_square(depth, side, &x, &y);
-            uint8_t square = party_map_square(x, y);
+            uint8_t square = lookup_party_square(x, y);
             const char *name = square_name(square);
             json_open(j, '{');
             key_int(j, "depth", depth);
@@ -954,7 +954,7 @@ int state_json_write_visible_things(uint16_t type, StateJsonSeenThing *out, int 
             if (!side_seen(depth, side))
                 continue;
             view_square(depth, side, &x, &y);
-            if (!in_party_map(x, y) || !strcmp(square_name(party_map_square(x, y)), "wall"))
+            if (!in_party_map(x, y) || !strcmp(square_name(lookup_party_square(x, y)), "wall"))
                 continue;
             for (uint16_t t = dungeon_get_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
                  t = map_get_next_thing(t))

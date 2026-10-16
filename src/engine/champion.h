@@ -143,8 +143,6 @@ void champion_decrement_stamina(int16_t champion_index, int16_t decrement);
 /* The party falls into a pit. With a rope it loses stamina instead. */
 void champion_fall_damage(bool use_rope);
 
-/* Removes the oldest scents first; the footprint range moves with the list. */
-void champion_delete_scent(uint16_t scent_index);
 /* The main loop calls this every 64 ticks (16 while the party sleeps). */
 void champion_apply_time_effects(void);
 

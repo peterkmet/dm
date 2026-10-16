@@ -4,8 +4,8 @@
 #include "engine/dungeon.h"
 #include "engine/explored.h"
 #include "engine/game.h"
-#include "engine/group.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "ui/advanced.h"
 #include "ui/draw.h"
 #include "ui/text.h"
@@ -42,7 +42,7 @@ static bool blocks_sight(int16_t map, int16_t x, int16_t y)
     }
 }
 
-#define DARKEST_PALETTE 5 /* g_dungeon_view_palette_index of the darkest light level */
+#define DARKEST_PALETTE 5 /* g_party_light_level of the darkest light level */
 
 /* Rows the party can make out in the current light: the darkest palettes hide the far rows. */
 static int16_t light_depths(void)
@@ -50,9 +50,9 @@ static int16_t light_depths(void)
     /* ponytail: fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it */
     if (g_cheat_light)
         return VIEW_DEPTH_COUNT;
-    if (g_dungeon_view_palette_index >= DARKEST_PALETTE)
+    if (g_party_light_level >= DARKEST_PALETTE)
         return VIEW_DEPTH_COUNT - 2;
-    if (g_dungeon_view_palette_index >= DARKEST_PALETTE - 1)
+    if (g_party_light_level >= DARKEST_PALETTE - 1)
         return VIEW_DEPTH_COUNT - 1;
     return VIEW_DEPTH_COUNT;
 }

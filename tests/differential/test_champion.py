@@ -333,7 +333,7 @@ def test_party_light_matches_original(lib, seed):
     need(lib, "Dungeon.DAT")
     assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     w = World(lib, 300 + seed)
-    lib.inventory_get_party_light.restype = c16
+    lib.party_get_light.restype = c16
     w.put_champions(4)
     w.globals(0, 1000, 0, 0, 1)  # a map with darkness
     var(lib, c16, "g_party_map_index").value = 1
@@ -364,9 +364,9 @@ def test_party_light_matches_original(lib, seed):
             lo, hi = (lo, mid) if emu_index(mid) == 0 else (mid + 1, hi)
         want = BRIGHT_THRESHOLD - lo
         var(lib, Party, "g_party").magical_light_amount = 0
-        got = lib.inventory_get_party_light()
+        got = lib.party_get_light()
         assert got == want, (round_, [list(cs[c].slots[:2]) for c in range(4)])
         for magic in (lo - 1, lo, -want, -want + 1, 40 - want):
             var(lib, Party, "g_party").magical_light_amount = magic
-            lib.inventory_set_dungeon_view_palette(1, lib.inventory_get_party_light())
-            assert var(lib, c16, "g_dungeon_view_palette_index").value == emu_index(magic), (round_, magic)
+            lib.party_set_light_level(1, lib.party_get_light())
+            assert var(lib, c16, "g_party_light_level").value == emu_index(magic), (round_, magic)

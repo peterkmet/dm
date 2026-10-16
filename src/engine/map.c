@@ -4,6 +4,7 @@
 #include "data/tables.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
+#include "engine/party.h"
 #include <inttypes.h>
 #include <string.h>
 

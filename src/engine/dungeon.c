@@ -5,6 +5,7 @@
 #include "data/tables.h"
 #include "engine/game.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "engine/timeline.h"
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +16,6 @@ int16_t *g_dungeon_map_first_column;
 int16_t g_dungeon_column_count;
 uint8_t ***g_dungeon_map_data;
 uint16_t g_dungeon_id = DM_DUNGEON_ID;
-int16_t g_party_map_x, g_party_map_y, g_party_direction, g_party_map_index;
 
 const uint8_t g_thing_data_byte_count[THING_TYPE_COUNT] = {4, 6, 4, 8, GROUP_RECORD_BYTES, 4, 4, 4, 4, 8, 4, 0,
                                                            0, 0, 8, 4};

@@ -3,6 +3,7 @@
 #include "data/adventure.h"
 #include "data/file.h"
 #include "engine/dungeon.h"
+#include "engine/party.h"
 #include "ui/audio.h"
 #include "ui/gameloop.h"
 #include "ui/music_internal.h"

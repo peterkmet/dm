@@ -75,7 +75,7 @@ Port: for each destination pixel in the box, take the pattern pixel, skip it whe
 
 - `g_viewport_bitmap` is an off-screen 224 × 136 bitmap. `g_viewport_buffer` is its pixel data.
 - `clear_viewport` fills the 4 planes with 0 and clears `g_viewport_needs_clear`.
-- `draw_viewport(palette_mode)` (ReDMCSB `F0097`) copies the viewport to screen zone 7. Mode 0 uses `g_palette_top_and_bottom`. Mode 1 uses `g_dungeon_view_palettes[g_dungeon_view_palette_index]` (6 light levels). Mode 2 keeps the palette. A palette change waits for the vertical blank.
+- `draw_viewport(palette_mode)` (ReDMCSB `F0097`) copies the viewport to screen zone 7. Mode 0 uses `g_palette_top_and_bottom`. Mode 1 uses `g_dungeon_view_palettes[g_party_light_level]` (6 light levels). Mode 2 keeps the palette. A palette change waits for the vertical blank.
 - Zones: a zone number indexes the layout table of `Graphics.DAT` (range 6, `get_zone`). Zone bit 14 (`0x4000`) adds `g_zone_relative_x/y` to the position. Bit 15 is handled by `get_zone`. `get_zone` writes the result box into `g_drawn_box`.
 
 ### Dungeon view drawing
@@ -280,7 +280,7 @@ Algorithm:
    - Any other square ends the loop.
 4. A group that died, or that is not allowed on the target map (`is_creature_allowed_on_map`), drops its possessions and is deleted.
 5. Store the result in `g_move_result_map_x/y`, `g_move_result_map_index`, `g_move_result_cell`, and `g_move_result_direction`.
-6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `champion_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `champion_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
+6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `party_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `champion_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
 7. Remove the thing from the source with `sensor_process_thing_addition_or_removal(..., add=0)`. A levitating thing skips sensors and only unlinks.
 8. Add the thing at the destination:
    - Party on a new map: set `g_new_party_map_index`. The game loop changes the map.

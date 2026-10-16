@@ -13,6 +13,7 @@
 #include "engine/map.h"
 #include "engine/message.h"
 #include "engine/move.h"
+#include "engine/party.h"
 #include "engine/projectile.h"
 #include "engine/savegame.h"
 #include "engine/sensor.h"
