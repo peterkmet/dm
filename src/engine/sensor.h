@@ -25,18 +25,12 @@ void sensor_add_event(int16_t event_type, Location at, int16_t cell, int16_t eff
 void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int16_t cell);
 /* A press on the button of the door at x, y: a switch sound and the door toggles next tick. */
 void sensor_press_door_button(int16_t x, int16_t y);
-/* Experience for the party, or a rotation of the cell sensors after the sensor pass. */
-void sensor_trigger_local_effect(int16_t local_effect, int16_t x, int16_t y, int16_t cell);
 /* Moves the first sensor of the cell behind the last sensor of the cell. */
 void sensor_process_rotation_effect(void);
 /* No rotation effect waits at the start of a game. */
 void sensor_reset(void);
 /* A remote effect becomes a square event on the target after the sensor delay. Only a wall target keeps the target cell. */
 void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell);
-/* The first object of the type in the cell (or in any cell), or THING_NONE. */
-uint16_t sensor_get_object_of_type_in_cell(int16_t x, int16_t y, int16_t cell, int16_t object_type);
-/* The slots of the living champions, then the leader hand. Chests count with their contents. */
-bool sensor_is_object_in_party_possession(int16_t object_type);
 /* Click on the front wall cell with the leader hand. Returns true when a sensor triggered. The object
    generator gives no object until projectile_get_object_for_launcher_or_generator exists. */
 bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, int16_t cell);

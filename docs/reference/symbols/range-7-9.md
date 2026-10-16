@@ -188,7 +188,7 @@ Explosion things are `0xff80 + type`: 0 fireball, 1 slime, 2 lightning bolt, 3 h
 - `projectile_create(thing, x, y, cell, direction, kinetic_energy, attack, step_energy)` gets a free type-14 thing, links it to the square, and adds an event at `game_time + 1`. The event type is 49 when `g_create_launcher_projectile` is set, otherwise 48 (ignore impacts on the first step). Event word at +8: bits 11–15 x, 6–10 y, 4–5 direction, 0–3 step energy. Event word at +6: the projectile thing. When no thing is free, the object drops to the square.
 - `explosion_create(thing, attack, x_combo, y_combo, cell)`: a combo value ≥ 0x100 holds `(x + 1) << 8 | target`. It adds event 25 after 1 tick (5 for rebirth step 1). Fireball and lightning damage the party or the creatures on the square at once: `damage = random((attack >> 1) + 1) + (attack >> 1) + 2`, halved for lightning.
 - `projectile_process_events_48_to_49` moves a projectile one square per event. Each step subtracts the step energy from kinetic energy and attack. Zero kinetic energy drops the object.
-- `projectile_has_impact_occurred(impact_type, x, y, cell, thing)`: impact type −2 = party, −1 = creature, ≥ 0 = wall or door. A flask projectile (potion 0x13 or 0x03) becomes a fireball or poison cloud explosion.
+- `has_impact_occurred(impact_type, x, y, cell, thing)`: impact type −2 = party, −1 = creature, ≥ 0 = wall or door. A flask projectile (potion 0x13 or 0x03) becomes a fireball or poison cloud explosion.
 - `projectile_get_impact_attack` returns the attack value. It sets `g_projectile_attack_type` (1 fire, 3 sharp, 5 magic, 7 lightning) and `g_projectile_poison_attack`.
 - `projectile_get_impact_count` deletes all projectiles in a cell that hit, and returns the count.
 - `explosion_process_event_25` applies the explosion effect, then removes it. Poison cloud and smoke repeat with less attack (−3 or −40) until they fade. Rebirth step 1 becomes step 2. Harm non-material damages non-material creatures. Lord Chaos (type 19) gets damage per creature. A fireball destroys a door with `group_is_door_destroyed_by_attack`.
@@ -204,11 +204,11 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 - `get_square_distance`: Manhattan distance.
 - `group_is_destination_visible_from_source(direction, sx, sy, dx, dy)`: true when the destination is in the 90° cone in that direction.
 - `group_get_directions_to_destination(sx, sy, dx, dy)` returns the main direction and writes the second direction to `g_group_secondary_direction`. The port returns both in a `DirectionPair`.
-- `group_set_ordered_cells_to_attack` copies 4 cells from `g_ordered_cells_to_attack[direction * 2 + side]`.
+- `order_attack_cells` copies 4 cells from `g_ordered_cells_to_attack[direction * 2 + side]`.
 - `group_get_champion_damage(group, champion)`: creature attack on a champion. It uses dexterity, luck, the map difficulty (`map[0x0c] >> 4`), invisibility, and the creature wound probabilities. It adds poison.
 - `group_get_melee_action_damage(...)`: champion melee attack on a creature.
 - `group_is_door_destroyed_by_attack(x, y, attack, magic, ticks)`: compares the attack with the door defense (`door_info[type].defense`). It sets the square door state to 5 (destroyed) at once, or adds event 2 (door destruction) after `ticks`.
-- `move_get_teleporter_rotated_group_result` and `move_get_teleporter_rotated_projectile_thing` rotate a group or projectile by the teleporter rotation (teleporter `+2` bits 2–3 rotation, bit 4 absolute). The projectile direction goes to `0x10316a` (range 8, move result direction).
+- `move_get_teleporter_rotated_group_result` and `rotate_projectile` rotate a group or projectile by the teleporter rotation (teleporter `+2` bits 2–3 rotation, bit 4 absolute). The projectile direction goes to `0x10316a` (range 8, move result direction).
 
 ### Notes on globals of other ranges
 
@@ -289,7 +289,7 @@ Algorithm:
 
 `move_is_levitating(thing)` returns true for a group with the levitation attribute (creature attributes bit 5), and for projectiles (type 14) and explosions (type 15).
 
-`move_is_killed_by_projectile_impact` builds a 4-byte table of occupied cells (party champions or group creatures). For a move to an adjacent square, it also checks the two cells that the mover crosses. It calls `projectile_has_impact_occurred` for every projectile on the squares whose event type is not 48 (ignore impacts). The projectile event index is in projectile data offset 6. The function returns true when the group died (`g_creature_damage_outcome == 2`, global `0x103158`, owned by range 7).
+`move_is_killed_by_projectile_impact` builds a 4-byte table of occupied cells (party champions or group creatures). For a move to an adjacent square, it also checks the two cells that the mover crosses. It calls `has_impact_occurred` for every projectile on the squares whose event type is not 48 (ignore impacts). The projectile event index is in projectile data offset 6. The function returns true when the group died (`g_creature_damage_outcome == 2`, global `0x103158`, owned by range 7).
 
 `move_get_creature_sound(type)` returns -1 when the party sleeps or the creature has no sound. Otherwise it reads the sound ordinal from creature record byte 1 and maps it through the word table at `0x101bea` (low byte).
 
@@ -303,7 +303,7 @@ Note for range 4: `g_creature_info` (`0x101930`) points to offset 2 of each 26-b
 
 - Once only (byte 5 bit 2): clear the sensor type.
 - Remote effect: look up the event type from the target square type with `g_square_type_to_event_type` (`0x100d4a`: wall 6, corridor 5, pit 9, stairs 0, door 10, teleporter 8, fake wall 7). Only wall targets keep the target cell. The event time is `g_game_time + delay`.
-- Local effect: call `sensor_trigger_local_effect(word6 >> 4, x, y, cell)`.
+- Local effect: call `trigger_local_effect(word6 >> 4, x, y, cell)`.
 
 Local effects: 10 adds 300 experience in skill 8 (to the leader, or to all champions when `cell == -1`). Effects 1 and 2 store a rotation request in `g_sensor_rotation_effect*`. `sensor_process_rotation_effect` runs after each sensor pass. It moves the first sensor of the matching cell to the end of the sensor list of that cell.
 
@@ -317,7 +317,7 @@ Local effects: 10 adds 300 experience in skill 8 (to the leader, or to all champ
 | 4 | Object | Object of type `data` (no other of that type). |
 | 5 | Party on stairs | Party on a stairs square. |
 | 7 | Creature | A group. |
-| 8 | Party possession | `sensor_is_object_in_party_possession(data)`. |
+| 8 | Party possession | `is_object_possessed(data)`. |
 | 9 | Version checker | True when `data < 37`. |
 
 On a wall square the same function handles objects in a cell: wall sensor types 1, 2 (any object), and 3 (specific object).
@@ -354,13 +354,13 @@ The timeline keeps future events in two arrays:
 - `g_timeline.first_unused` (`0x103182`) heads the free list.
 - `g_timeline.high_water` (`0x103176`, CSV name `g_event_count`) holds the highest used slot + 1. Linear scans use it as a bound. `timeline_reset` rebuilds it, the free list, and the heap size after a load. The save file stores the heap, the heap size, and the free list head.
 
-Heap order (`timeline_is_event_a_before_b`): earlier time (bits 0–23) first. On equal time, the larger word at offset 4 (type × 256 + priority) first. On a full tie, the lower slot address first. `timeline_fix_chronology(i)` sifts the entry at heap position `i` up, and down when it did not move up. `timeline_get_index` finds a slot in the heap with a linear search. It calls `fatal_error(0x46)` when the slot is missing.
+Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the larger word at offset 4 (type × 256 + priority) first. On a full tie, the lower slot address first. `timeline_fix_chronology(i)` sifts the entry at heap position `i` up, and down when it did not move up. `timeline_get_index` finds a slot in the heap with a linear search. It calls `fatal_error(0x46)` when the slot is missing.
 
 `timeline_add_event(event)`:
 
 1. Type 0: return -1.
 2. A full timeline calls `fatal_error(0x2d)`.
-3. `timeline_find_mergeable_event` can merge the event:
+3. `find_mergeable` can merge the event:
    - Square events 5–10: an event with the same time, map, and X/Y (and the same cell for type 6) gets the new effect byte. Return its index.
    - New type 1 (door animation): an existing type 10 event at the same time and place with toggle effect gets effect `1 − new`. An existing type 1 event gets the new effect.
    - New type 2 (door destruction): delete all type 1 and type 10 events of that square and map.

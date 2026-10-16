@@ -21,8 +21,6 @@ extern int g_party_teleport_count; /* port only: teleporters that moved the part
 
 /* Levitating groups, projectiles, and explosions do not fall into pits and do not trigger sensors when they leave a square. */
 bool move_is_levitating(uint16_t thing);
-/* A teleporter turns a projectile: its flight direction and its cell. */
-uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing, int16_t *out_direction);
 
 /* Results of move_get_move_result. */
 typedef enum {
@@ -57,11 +55,6 @@ void move_party_enter_dungeon(void);
 /* No map change waits at the start of a game. */
 void move_reset(void);
 
-/* Turns the party. Each champion keeps its place relative to the party. The loop also runs one time without champions. */
-void move_set_party_direction(int16_t direction);
-
-/* The party leaves the stairs square and arrives on the other level facing out of the stairs. */
-void move_take_stairs(bool stairs_go_up);
 /* On stairs, a turn takes the stairs. The party leaves the square sensors before the turn and enters them after it. */
 void move_turn_party(int16_t command);
 /* One step of the party. With champions, a bump hurts two champions and a group in the way blocks the step and

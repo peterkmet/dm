@@ -75,14 +75,14 @@ uint8_t map_get_square(int16_t x, int16_t y)
     return SQUARE_WALL;
 }
 
-int16_t map_get_square_type(int16_t x, int16_t y)
+static int16_t get_square_type(int16_t x, int16_t y)
 {
     return rec_square_type(map_get_square(x, y));
 }
 
 bool map_is_square_open(int16_t x, int16_t y)
 {
-    int16_t type = map_get_square_type(x, y);
+    int16_t type = get_square_type(x, y);
     return type == SQUARE_CORRIDOR || type == SQUARE_TELEPORTER || type == SQUARE_PIT || type == SQUARE_DOOR;
 }
 
@@ -92,19 +92,8 @@ int16_t map_get_stairs_exit_direction(int16_t x, int16_t y)
     int16_t ahead_x = x;
     int16_t ahead_y = y;
     map_step(direction, 1, 0, &ahead_x, &ahead_y);
-    int16_t type = map_get_square_type(ahead_x, ahead_y);
+    int16_t type = get_square_type(ahead_x, ahead_y);
     return type == SQUARE_WALL || type == SQUARE_STAIRS ? direction_back(direction) : direction;
-}
-
-int16_t map_get_square_first_thing_index(int16_t x, int16_t y)
-{
-    if (x < 0 || x >= g_current_map_width || y < 0 || y >= g_current_map_height ||
-        !(rec_square_byte(g_current_map_index, x, y) & SQUARE_HAS_THINGS))
-        return -1;
-    int16_t index = (int16_t)be16(column_first_thing_index + x * 2); /* the word read as signed */
-    for (int16_t i = 0; i < y; i++)
-        index += (rec_square_byte(g_current_map_index, x, i) & SQUARE_HAS_THINGS) != 0;
-    return index;
 }
 
 uint16_t map_get_square_first_thing(int16_t x, int16_t y)
@@ -136,6 +125,18 @@ static void report_free_record(const char *action, int16_t x, int16_t y)
     os_log("square list guard: %s, map %d (%d,%d), game time %" PRIu32, action, g_current_map_index, x, y, g_game_time);
 }
 
+/* Index of the first thing of the square in the square first thing table, or -1. */
+static int16_t get_first_thing_index(int16_t x, int16_t y)
+{
+    if (x < 0 || x >= g_current_map_width || y < 0 || y >= g_current_map_height ||
+        !(rec_square_byte(g_current_map_index, x, y) & SQUARE_HAS_THINGS))
+        return -1;
+    int16_t index = (int16_t)be16(column_first_thing_index + x * 2); /* the word read as signed */
+    for (int16_t i = 0; i < y; i++)
+        index += (rec_square_byte(g_current_map_index, x, i) & SQUARE_HAS_THINGS) != 0;
+    return index;
+}
+
 void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
 {
     if (thing == THING_ENDOFLIST)
@@ -153,7 +154,7 @@ void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y)
                 game_fatal(FATAL_SQUARE_FIRST_THINGS_FULL);
             rec_square_set_byte(g_current_map_index, x, y, square | SQUARE_HAS_THINGS);
             add_to_later_columns(x, 1);
-            uint16_t index = map_get_square_first_thing_index(x, y);
+            uint16_t index = get_first_thing_index(x, y);
             uint8_t *p = g_square_first_things + index * 2;
             memmove(p + 2, p, (count - index - 1) * 2);
             wr16(p, thing);
@@ -172,7 +173,7 @@ void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_
         return;
     thing = THING_STRIP_CELL(thing);
     if (x >= 0) {
-        uint16_t index = map_get_square_first_thing_index(x, y);
+        uint16_t index = get_first_thing_index(x, y);
         uint8_t *first = g_square_first_things + index * 2;
         uint16_t after = rec_thing_next(thing);
         if (after == THING_NONE && thing == THING_STRIP_CELL(be16(first)))

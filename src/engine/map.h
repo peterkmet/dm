@@ -155,14 +155,11 @@ void map_set_current_map_and_party_map(int16_t map);
 
 /* Outside the map: a wall, with the "ornament allowed" bit when the adjacent square is a corridor or a pit. */
 uint8_t map_get_square(int16_t x, int16_t y);
-int16_t map_get_square_type(int16_t x, int16_t y);
 /* Corridor, pit, door, or teleporter. */
 bool map_is_square_open(int16_t x, int16_t y);
 /* The stairs axis is north-south or east-west. The exit side is the one that is not a wall or stairs. */
 int16_t map_get_stairs_exit_direction(int16_t x, int16_t y);
 
-/* Index of the first thing of the square in the square first thing table, or -1. */
-int16_t map_get_square_first_thing_index(int16_t x, int16_t y);
 uint16_t map_get_square_first_thing(int16_t x, int16_t y);
 /* The first group, object, projectile, or explosion of the square. */
 uint16_t map_get_square_first_object(int16_t x, int16_t y);

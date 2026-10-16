@@ -13,7 +13,6 @@
 #include "engine/record.h"
 #include "engine/sensor.h"
 #include "engine/sound.h"
-#include "engine/timeline.h"
 
 #define SCENT_NEW_STRENGTH  24
 #define MOVE_STAMINA_FACTOR 3 /* stamina cost of a step: load * 3 / maximum load + 1 */
@@ -32,30 +31,6 @@ bool move_is_levitating(uint16_t thing)
     if (type == THING_GROUP)
         return map_get_creature_attributes(thing) & CREATURE_LEVITATES;
     return type == THING_PROJECTILE || type == THING_EXPLOSION;
-}
-
-uint16_t move_get_teleporter_rotated_projectile_thing(uint16_t teleporter, uint16_t thing, int16_t *out_direction)
-{
-    uint16_t rotation = rec_teleporter_rotation(teleporter);
-    if (rec_teleporter_is_absolute(teleporter)) {
-        *out_direction = (int16_t)rotation;
-        return thing;
-    }
-    *out_direction = (int16_t)NORMALIZE(rotation + *out_direction);
-    return THING_WITH_CELL(thing, rotation + THING_CELL(thing));
-}
-
-void move_set_party_direction(int16_t direction)
-{
-    int16_t delta = direction - g_party_direction;
-    g_party_direction = direction;
-    if (!delta)
-        return;
-    int16_t n = g_party_champion_count ? g_party_champion_count : 1;
-    for (int16_t i = 0; i < n; i++) {
-        g_champions[i].cell = NORMALIZE(g_champions[i].cell + delta);
-        g_champions[i].direction = NORMALIZE(g_champions[i].direction + delta);
-    }
 }
 
 /* The party leaves a scent on its new square. The old square gets strength for the time the party stood there. */
@@ -114,6 +89,32 @@ static bool is_in_teleporter_scope(int16_t mover, uint16_t scope_bits)
     return mover != MOVER_PARTY || (scope_bits & TELEPORTER_SCOPE_PARTY);
 }
 
+/* A teleporter turns a projectile: its flight direction and its cell. */
+static uint16_t rotate_projectile(uint16_t teleporter, uint16_t thing, int16_t *out_direction)
+{
+    uint16_t rotation = rec_teleporter_rotation(teleporter);
+    if (rec_teleporter_is_absolute(teleporter)) {
+        *out_direction = (int16_t)rotation;
+        return thing;
+    }
+    *out_direction = (int16_t)NORMALIZE(rotation + *out_direction);
+    return THING_WITH_CELL(thing, rotation + THING_CELL(thing));
+}
+
+/* Turns the party. Each champion keeps its place relative to the party. The loop also runs one time without champions. */
+static void turn_party(int16_t direction)
+{
+    int16_t delta = direction - g_party_direction;
+    g_party_direction = direction;
+    if (!delta)
+        return;
+    int16_t n = g_party_champion_count ? g_party_champion_count : 1;
+    for (int16_t i = 0; i < n; i++) {
+        g_champions[i].cell = NORMALIZE(g_champions[i].cell + delta);
+        g_champions[i].direction = NORMALIZE(g_champions[i].direction + delta);
+    }
+}
+
 /* After the jump of a teleporter, the party hears it, keeps the count of teleports and turns; a group hears it later
    and turns; a projectile turns its direction and cell; an object turns its cell. */
 static void turn_by_teleporter(Walk *w, uint16_t teleporter, bool points_to_itself)
@@ -127,8 +128,7 @@ static void turn_by_teleporter(Walk *w, uint16_t teleporter, bool points_to_itse
         g_party_teleport_count += !points_to_itself;
         if (rec_teleporter_is_audible(teleporter))
             sound_request_play(SOUND_TELEPORT, (Location){d->x, d->y}, SOUND_MODE_NOW, 0);
-        move_set_party_direction(rec_teleporter_is_absolute(teleporter) ? rotation
-                                                                        : NORMALIZE(g_party_direction + rotation));
+        turn_party(rec_teleporter_is_absolute(teleporter) ? rotation : NORMALIZE(g_party_direction + rotation));
         break;
     case MOVER_GROUP:
         w->audible = rec_teleporter_is_audible(teleporter);
@@ -138,7 +138,7 @@ static void turn_by_teleporter(Walk *w, uint16_t teleporter, bool points_to_itse
         w->result = w->turned_active >= 0 ? MOVE_RESULT_TURNED : MOVE_RESULT_STOPPED;
         break;
     case MOVER_PROJECTILE:
-        w->thing = move_get_teleporter_rotated_projectile_thing(teleporter, w->thing, &d->direction);
+        w->thing = rotate_projectile(teleporter, w->thing, &d->direction);
         break;
     default:
         if (!rec_teleporter_is_absolute(teleporter) && !w->keeps_cell)
@@ -296,7 +296,7 @@ static void start_walk(Walk *w)
         w->start_direction = g_party_direction;
     }
     if (w->mover == MOVER_PROJECTILE)
-        w->d.direction = projectile_event_direction(&g_timeline.events[rec_projectile_event_index(w->thing)]);
+        w->d.direction = projectile_get_flight_direction(w->thing);
 }
 
 MoveResult move_get_move_result(const Move *move, MoveDestination *destination)
@@ -377,7 +377,8 @@ void move_party_enter_dungeon(void)
                          NULL);
 }
 
-void move_take_stairs(bool stairs_go_up)
+/* The party leaves the stairs square and arrives on the other level facing out of the stairs. */
+static void take_stairs(bool stairs_go_up)
 {
     move_get_move_result(&(Move){.thing = THING_NONE, .from.x = g_party_map_x, .from.y = g_party_map_y, .leaves = true},
                          NULL);
@@ -387,7 +388,7 @@ void move_take_stairs(bool stairs_go_up)
     g_party_map_x = to.x;
     g_party_map_y = to.y;
     map_set_current_map(g_session.new_party_map);
-    move_set_party_direction(map_get_stairs_exit_direction(g_party_map_x, g_party_map_y));
+    turn_party(map_get_stairs_exit_direction(g_party_map_x, g_party_map_y));
     map_set_current_map(g_party_map_index);
 }
 
@@ -395,11 +396,11 @@ void move_turn_party(int16_t command)
 {
     uint8_t square = map_get_square(g_party_map_x, g_party_map_y);
     if (rec_square_type(square) == SQUARE_STAIRS) {
-        move_take_stairs(square & STAIRS_UP);
+        take_stairs(square & STAIRS_UP);
         return;
     }
     sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, true, false);
-    move_set_party_direction(NORMALIZE(g_party_direction + (command == COMMAND_TURN_RIGHT ? 1 : -1)));
+    turn_party(NORMALIZE(g_party_direction + (command == COMMAND_TURN_RIGHT ? 1 : -1)));
     sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, true, true);
 }
 
@@ -445,7 +446,7 @@ void move_party(int16_t command)
     uint8_t square = map_get_square(x, y);
     bool on_stairs = rec_square_type(square) == SQUARE_STAIRS;
     if (on_stairs && command == COMMAND_MOVE_BACKWARD) {
-        move_take_stairs(square & STAIRS_UP);
+        take_stairs(square & STAIRS_UP);
         return;
     }
     map_step(g_party_direction, tables_get_arrow_steps_forward(arrow), tables_get_arrow_steps_right(arrow), &x, &y);
@@ -455,7 +456,7 @@ void move_party(int16_t command)
             &(Move){.thing = THING_NONE, .from.x = g_party_map_x, .from.y = g_party_map_y, .leaves = true}, NULL);
         g_party_map_x = x;
         g_party_map_y = y;
-        move_take_stairs(square & STAIRS_UP);
+        take_stairs(square & STAIRS_UP);
         return;
     }
     bool blocked = is_square_blocking(square);

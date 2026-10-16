@@ -214,8 +214,8 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Action | Effect |
 |---|---|
 | Chop, Kick, Swing, Hack, Berzerk, Bash on a closed door | Bashes the door with the action-hand strength (`event_is_door_destroyed_by_attack`, destruction after 2 ticks). Disabled ticks become 6. |
-| Melee actions (the above without a door, Punch, Stab, Thrust, Jab, Parry, Disrupt, Melee, Slash, Cleave, Stun) | `action_is_melee_action_performed`. A miss of the target (no group, no creature in reach) halves the experience and the disabled ticks. |
-| War Cry, Blow Horn, Calm, Brandish, Confuse | `action_is_group_frightened_by_action`. Confuse uses a charge. War Cry plays sound 17, Blow Horn sound 18. |
+| Melee actions (the above without a door, Punch, Stab, Thrust, Jab, Parry, Disrupt, Melee, Slash, Cleave, Stun) | `is_melee_performed`. A miss of the target (no group, no creature in reach) halves the experience and the disabled ticks. |
+| War Cry, Blow Horn, Calm, Brandish, Confuse | `is_group_frightened`. Confuse uses a charge. War Cry plays sound 17, Blow Horn sound 18. |
 | Flip | Prints heads or tails (text 0x45 or 0x46) by a random bit. |
 | Climb Down | With the rope, the party goes into the pit in front (no group there) without fall damage. Else no disabled ticks. |
 | Freeze Life | A blue magical box adds 30 freeze ticks, a green box 125; the box is used up. Other objects add 70 and use a charge. The maximum is 200. |
@@ -226,14 +226,14 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Heal | While mana remains: health + `min(10, heal level)`, mana − 2, experience + 2 (start 2). |
 | Light | Light power 2 now, event 70 takes it back after 2500 ticks. Uses a charge. |
 | Window | Thieves eye (event 73) for `random % (level + 8) + 5` ticks. Uses a charge. |
-| Throw | `action_is_object_thrown` from the action hand. The event 11 gets byte 6 = 2: when it runs, the next weapon of the quiver goes to the action hand. |
+| Throw | `is_object_thrown` from the action hand. The event 11 gets byte 6 = 2: when it runs, the next weapon of the quiver goes to the action hand. |
 | Fuse | `projectile_fuse_action` on the square in front of the party. |
 
 Block, Hit, and the other actions only add the action defense, the disabled ticks, the stamina cost, and the experience. The champion turns to the party direction for the spell, shoot, throw, fluxcage, and fuse actions.
 
 ### Melee
 
-`action_is_melee_action_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, −1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_session.action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
+`is_melee_performed` plays sound 13 and needs a group with a creature in reach of the champion cell (`group_get_melee_target`: the creature index, −1 for none). A champion in a back cell cannot reach when a living champion stands in the front cell before it: `g_session.action_damage = −1` ("can't reach"). Disrupt hits only non-material creatures. Disrupt and the weapon with icon 40 add bit 15 to the hit probability, so the hit can reach non-material creatures. `group_get_melee_action_damage` ([rules-creatures.md](creatures.md)) gives the damage, which goes into `g_session.action_damage` for the action area.
 
 ### Fear
 
@@ -241,9 +241,9 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 ### Throwing
 
-`action_is_object_thrown(champion, slot, side)` throws the object of the slot. With slot < 0 it throws the leader hand object (`action_is_leader_hand_object_thrown`, a click in the throw zones of the dungeon view); the strength then counts the object as if it were in the action hand.
+`is_object_thrown(champion, slot, side)` throws the object of the slot. With slot < 0 it throws the leader hand object (`action_is_leader_hand_object_thrown`, a click in the throw zones of the dungeon view); the strength then counts the object as if it were in the action hand.
 
-1. Stamina cost: half the weight, bounded 1–10, plus half of each 10 above (`action_get_throwing_stamina_cost`). The action hand is disabled for 4 ticks.
+1. Stamina cost: half the weight, bounded 1–10, plus half of each 10 above (`throwing_stamina_cost`). The action hand is disabled for 4 ticks.
 2. Experience to the throw skill: 8 for objects, 12 for weapons, plus kinetic energy / 4 for weapons of class 0–12.
 3. Kinetic energy (a byte): `level + e / 2 + random(16) + e` with `e` = strength + the weapon kinetic energy (class 0–12) or 1.
 4. Attack: `bounded(40, random(32) + 8 × level, 200)`. Step energy: `max(5, 11 − level)`.
@@ -251,15 +251,15 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 ### Charges
 
-`action_decrement_charges` removes one charge from the action-hand object: weapon bits 10–13, armour bits 9–12, junk bits 14–15 of word 1.
+`decrement_charges` removes one charge from the action-hand object: weapon bits 10–13, armour bits 9–12, junk bits 14–15 of word 1.
 
 ## Champion events
 
 | Event | Handler | Effect |
 |---|---|---|
-| 11 | `event_enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 − 1` (`action_move_weapon_from_quiver_to_slot`). |
-| 12 | `event_hide_damage_received` | Hides the damage number of the champion. |
-| 13 | `event_process_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
+| 11 | `enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 − 1` (`action_move_weapon_from_quiver_to_slot`). |
+| 12 | `hide_damage_received` | Hides the damage number of the champion. |
+| 13 | `process_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
 | 75 | `champion_poison` | One poison step: the poison event count decreases, then `champion_poison(champion, word 6)`. |
 
 ## Save files

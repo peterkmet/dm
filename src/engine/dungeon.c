@@ -106,7 +106,7 @@ bool dungeon_decompress(const uint8_t *src, int32_t src_size, uint8_t *decoded, 
 }
 
 /* Frees the loaded dungeon and clears its pointers. */
-static void dungeon_free(void)
+static void unload(void)
 {
     while (block_count)
         free(blocks[--block_count]);
@@ -334,7 +334,7 @@ bool dungeon_load(const char *path)
     uint8_t *file = file_read(path, &size);
     uint8_t *unpacked = NULL;
     bool ok = tables_is_loaded() && file && size >= COMPRESSED_HEADER_BYTES;
-    dungeon_free();
+    unload();
     load_cursor = file;
     load_remaining = size;
     if (ok && be16(file) == DUNGEON_COMPRESSED_MAGIC) {
@@ -347,7 +347,7 @@ bool dungeon_load(const char *path)
     }
     ok = ok && size <= MAX_DUNGEON_SIZE && parse_dungeon(true);
     if (!ok)
-        dungeon_free();
+        unload();
     free(file);
     free(unpacked);
     return ok;
@@ -355,12 +355,12 @@ bool dungeon_load(const char *path)
 
 bool dungeon_load_saved(const uint8_t *data, uint32_t size)
 {
-    dungeon_free();
+    unload();
     load_cursor = data;
     load_remaining = size;
     bool ok = data && size <= MAX_DUNGEON_SIZE && parse_dungeon(false);
     if (!ok)
-        dungeon_free();
+        unload();
     return ok;
 }
 

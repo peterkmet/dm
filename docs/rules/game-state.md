@@ -148,7 +148,7 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 
 ### Order
 
-`timeline_is_event_a_before_b(a, b)` (`0x11f23c`) returns 1 when:
+`is_before(a, b)` (`0x11f23c`) returns 1 when:
 
 1. The time of `a` (bits 0–23) is lower, or
 2. The times are equal and `type << 8 | priority` of `a` is higher, or
@@ -162,7 +162,7 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 | `timeline_get_index` | `0x11f26c` | Finds a slot in the heap. A missing slot is fatal error `0x46`. |
 | `timeline_fix_chronology` | `0x11f296` | Moves a heap entry up. When it does not move up, moves it down. |
 | `timeline_delete_event` | `0x11f3d0` | Frees a slot and removes it from the heap. |
-| `timeline_find_mergeable_event` | `0x11f43c` | See [Merge rules](#merge-rules). |
+| `find_mergeable` | `0x11f43c` | See [Merge rules](#merge-rules). |
 | `timeline_add_event` | `0x11f59c` | Type 0 returns −1. A full timeline is fatal error `0x2d`. Merges or takes a free slot. Returns the slot index. |
 | `timeline_extract_first_event` | `0x11f634` | Copies the heap root and deletes it. |
 | `timeline_is_first_event_expired` | `0x11f662` | 1 when the root time is not greater than `g_game_time`. |
@@ -170,7 +170,7 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 
 ### Merge rules
 
-`timeline_find_mergeable_event` scans the slots below `g_timeline.high_water`. "Same place" means the same `map_time` and the same `b`.
+`find_mergeable` scans the slots below `g_timeline.high_water`. "Same place" means the same `map_time` and the same `b`.
 
 - New type 5–10 (square event):
   - An existing type 5–10 event at the same place gets the new effect. For type 6, the cell must also be equal. The function returns its index.

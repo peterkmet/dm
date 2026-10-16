@@ -57,7 +57,8 @@ void timeline_reset(void)
     }
 }
 
-bool timeline_is_event_a_before_b(const TimelineEvent *event_a, const TimelineEvent *event_b)
+/* Earlier time first, then higher type and priority, then the lower slot. */
+static bool is_before(const TimelineEvent *event_a, const TimelineEvent *event_b)
 {
     uint32_t time_a = event_a->map_time & EVENT_TIME_MASK;
     uint32_t time_b = event_b->map_time & EVENT_TIME_MASK;
@@ -81,7 +82,7 @@ uint16_t timeline_get_index(uint16_t event_index)
     return 0;
 }
 
-#define BEFORE(i, j) timeline_is_event_a_before_b(&g_timeline.events[i], &g_timeline.events[j])
+#define BEFORE(i, j) is_before(&g_timeline.events[i], &g_timeline.events[j])
 
 void timeline_fix_chronology(uint16_t timeline_index)
 {
@@ -131,7 +132,8 @@ void timeline_delete_event(uint16_t event_index)
 /* Set becomes clear and clear becomes set. */
 #define OPPOSITE_EFFECT(effect) (EFFECT_CLEAR - (effect))
 
-int16_t timeline_find_mergeable_event(TimelineEvent *event)
+/* Returns the index of the event that absorbs the new one, or -1. Can change or delete events. */
+static int16_t find_mergeable(TimelineEvent *event)
 {
     TimelineEvent *e = g_timeline.events;
     for (int16_t i = 0; i < g_timeline.high_water; i++, e++) {
@@ -176,7 +178,7 @@ int16_t timeline_add_event(TimelineEvent *event)
         return -1;
     if (g_timeline.count == (uint16_t)g_timeline.capacity) /* unsigned compare as in the original */
         game_fatal(SYSTEM_ERROR_TIMELINE_FULL);
-    int16_t index = timeline_find_mergeable_event(event);
+    int16_t index = find_mergeable(event);
     if (index >= 0)
         return index;
     index = g_timeline.first_unused;

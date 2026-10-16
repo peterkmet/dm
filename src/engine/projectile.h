@@ -81,7 +81,8 @@ static inline uint16_t projectile_event_c(int16_t x, int16_t y, int16_t directio
            (direction & 3) << PROJECTILE_EVENT_DIRECTION_SHIFT | (step_energy & PROJECTILE_EVENT_STEP_ENERGY_MASK);
 }
 
-extern bool g_fuse_sequence_requested; /* the endgame step runs startend_run_fuse_sequence when it is set */
+/* The endgame step runs startend_run_fuse_sequence when it is set (exported for the tests). */
+extern bool g_fuse_sequence_requested;
 /* True once when the fuse action or sensor asked for the fuse sequence; the request is then cleared. */
 bool projectile_take_fuse_request(void);
 
@@ -106,11 +107,10 @@ void projectile_create(const ProjectileLaunch *launch);
 /* An explosion appears at a square; fireball and lightning damage aim at the target square (the same square
    for a plain explosion). */
 void explosion_create(uint16_t explosion_thing, int16_t attack, Location at, Location target, int16_t cell);
-void projectile_delete_event(uint16_t projectile);
-/* The flying object drops to the square, or joins the possessions of the group that caught it. */
-void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x, int16_t y);
 /* The attack of a flying thing when it hits. */
-Impact projectile_get_impact_attack(uint16_t projectile, uint16_t thing);
+Impact projectile_get_impact_attack(uint16_t projectile, uint16_t thing); /* exported for the tests */
+/* The flight direction of a projectile (from its move event). */
+int16_t projectile_get_flight_direction(uint16_t projectile);
 /* A projectile hits the party (impact -2), a creature (-1), or a wall, stairs, door, or fake wall (square type).
    The flying object drops or explodes and the projectile disappears. Returns false when nothing was hit. */
 typedef struct {
@@ -119,7 +119,6 @@ typedef struct {
     Location target;
     int16_t cell;
 } ImpactSite;
-bool projectile_has_impact_occurred(ImpactSite site, uint16_t projectile, DamageOutcome *outcome);
 /* The hits of every projectile in a cell; a creature impact stops when the whole group died. */
 typedef struct {
     int16_t count;
@@ -133,10 +132,6 @@ void projectile_process_move_event(TimelineEvent *event);
    step, harm non-material hurts non-material creatures, fireball and lightning break doors. Then it disappears. */
 void explosion_process_step_event(TimelineEvent *event);
 
-/* A fluxcage explosion stands on the square (never on a wall or stairs). */
-bool projectile_is_fluxcage_on_square(int16_t x, int16_t y);
-/* The group thing of Lord Chaos on the square, or 0. */
-uint16_t projectile_get_lord_chaos_on_square(int16_t x, int16_t y);
 /* A fluxcage for 100 ticks. When it closes the third side around an adjacent Lord Chaos, he senses danger. */
 void projectile_fluxcage_action(int16_t x, int16_t y);
 /* Fuse: a harm non-material explosion. Lord Chaos in 4 fluxcages starts the fuse sequence; otherwise he escapes
@@ -152,7 +147,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
 void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event);
 /* A new weapon or junk object for an object info index: torches, daggers, arrows, slayers, rocks, poison darts,
    throwing stars, boulders. THING_NONE for other indices. */
-uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_index);
+uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_index); /* exported for the tests */
 /* A champion throws or shoots from the front cell of his side; the party cannot move into it for 4 ticks. */
 void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, int16_t kinetic_energy, int16_t attack,
                                     uint16_t step_energy);

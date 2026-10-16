@@ -222,8 +222,8 @@ ordinal = allowed && index < count ? index + 1 : 0;
 
 - Off the party map, a group only handles event types 32, 33, 37, and 38. It moves in a random direction and adds a new event 37 later by `max(16 * |map − party map|, 2 * movement ticks)`.
 - The function stores the current group in `g_current_group_map_x`, `g_current_group_map_y`, `g_current_group_thing`, `g_current_group_distance_to_party`, and the two directions to the party. The port keeps the square and thing in `last_turn` and the distance and directions in `GroupTurn`. The movement test results go to `g_group_movement_blocked_by_*`, `g_flux_cages`, and `g_flux_cage_count`.
-- `group_get_distance_between_unblocked_squares` walks a line from the group to the party with fixed point slope (`* 64`). It calls `group_is_view_party_blocked` or `group_is_smell_party_blocked` for each square.
-- `group_is_creature_attacking` has a jump table at `0x10d75a` for creature types below 25 that cast spells. Ghidra cannot recover it. Read the disassembly when you port that switch.
+- `unblocked_distance` walks a line from the group to the party with fixed point slope (`* 64`). It calls `is_view_party_blocked` or `is_smell_party_blocked` for each square.
+- `is_creature_attacking` has a jump table at `0x10d75a` for creature types below 25 that cast spells. Ghidra cannot recover it. Read the disassembly when you port that switch.
 
 Several callees are in range 7 and have no names yet: `0x11cefe` (distance), `0x11cf42` (creature sees party in a direction), `0x11cfba` (primary direction to a square), `0x11d10a` (creature attack damage), `0x11c4e8` (fluxcage/move test).
 
@@ -535,7 +535,7 @@ These globals appear in ranges 4–6 but belong to other source files. They are 
 | `0x100266` | `g_object_names` | Pointer to the name pointer array. |
 | `0x100640` | `g_ignore_mouse_movements` | Set while pressing eye or mouth. |
 | `0x100646` | `g_champion_icon_ordinal_as_pointer` | Champion icon dragged by the mouse. |
-| `0x10314e` | `g_last_creature_attack_time` | Set in `group_is_creature_attacking`. |
+| `0x10314e` | `g_last_creature_attack_time` | Set in `is_creature_attacking`. |
 | `0x103152` | `g_last_party_movement_time` | Read in `champion_apply_time_effects`. |
 | `0x103156` | `g_secondary_direction_to_or_from_party` | Group movement. |
 | `0x103162`, `0x103164` | `g_move_result_map_x`, `g_move_result_map_y` | Read after `move_get_move_result`. The port returns them in a `MoveDestination`. |
@@ -549,4 +549,4 @@ These globals appear in ranges 4–6 but belong to other source files. They are 
 - Behavior codes of the group record are from ReDMCSB and only partly checked.
 - `g_panel_content` (`0x101e6e`) and `g_panel_content_drawn` (`0x101e70`): two globals where ReDMCSB has one. The split is not fully traced.
 - `0x102962`, `0x102964`, `0x102968`, `0x102980` are text or layout metrics. Their meaning is not clear.
-- The jump table in `group_is_creature_attacking` (`0x10d75a`) and the one in `blit_shrink_with_palette_changes` (`0x10e9b4`) need disassembly work.
+- The jump table in `is_creature_attacking` (`0x10d75a`) and the one in `blit_shrink_with_palette_changes` (`0x10e9b4`) need disassembly work.

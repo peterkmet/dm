@@ -15,7 +15,6 @@
 #include "engine/random.h"
 #include "engine/record.h"
 #include "engine/recruit.h"
-#include "engine/timeline.h"
 #include "ui/advanced.h"
 #include "ui/draw.h"
 #include "ui/layout.h"
@@ -724,9 +723,7 @@ static void load_group_aspect(uint16_t thing, Group *s)
     s->info = group_info(thing);
     s->aspect = tables_get_creature_aspect(s->info->aspect_index);
     s->size = creature_size(s->info);
-    const ActiveGroup *a = g_active_groups && view_map == g_party_map_index && index < g_max_active_group_count
-                               ? &g_active_groups[index]
-                               : NULL;
+    const ActiveGroup *a = view_map == g_party_map_index ? group_get_active(thing) : NULL;
     if (a && a->group_index == THING_INDEX(thing)) {
         s->cells = a->cells;
         s->dirs = a->directions;
@@ -940,8 +937,7 @@ static int16_t get_projectile_pose(const uint8_t *aspect, uint16_t thing, int16_
     if (kind == PROJECTILE_NO_BACK_NO_ROTATION)
         pose = POSE_FRONT;
     else {
-        uint16_t flight =
-            g_timeline.events ? projectile_event_direction(&g_timeline.events[rec_projectile_event_index(thing)]) : dir;
+        int16_t flight = projectile_get_flight_direction(thing);
         if ((dir & 1) == (flight & 1)) { /* flying away from or toward the party: front or back pose */
             pose = kind < PROJECTILE_NO_BACK && (kind != PROJECTILE_BACK || flight == dir) && !odd_square ? POSE_BACK
                                                                                                           : POSE_FRONT;
@@ -2372,9 +2368,8 @@ static int16_t get_map_projectile_tile(uint16_t projectile, int16_t dir)
     case -PROJECTILE_ASPECT_SLIME:
         return MAP_TILE_SLIME_FIRST;
     case -PROJECTILE_ASPECT_LIGHTNING: {
-        const TimelineEvent *event = &g_timeline.events[rec_projectile_event_index(projectile)];
         return MAP_TILE_LIGHTNING_FIRST +
-               ((projectile_event_direction(event) & 1) != (dir & 1) ? MAP_TILE_LIGHTNING_ACROSS : 0);
+               ((projectile_get_flight_direction(projectile) & 1) != (dir & 1) ? MAP_TILE_LIGHTNING_ACROSS : 0);
     }
     }
     return get_projectile_aspect(slot) >= 0 && object_get_type(slot) == OBJECT_TYPE_ZOKATHRA ? MAP_TILE_ZOKATHRA_FIRST

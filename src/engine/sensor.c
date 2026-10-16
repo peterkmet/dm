@@ -42,7 +42,7 @@ void sensor_add_event(int16_t event_type, Location at, int16_t cell, int16_t eff
 }
 
 /* All living champions share the experience, or the leader gets all of it. */
-static void sensor_add_skill_experience(uint16_t skill, uint16_t experience, bool leader_only)
+static void add_skill_experience(uint16_t skill, uint16_t experience, bool leader_only)
 {
     if (leader_only) {
         if (g_leader_index != -1)
@@ -52,17 +52,6 @@ static void sensor_add_skill_experience(uint16_t skill, uint16_t experience, boo
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         if (g_champions[i].current_health)
             champion_add_skill_experience(i, skill, experience / g_party_champion_count);
-}
-
-void sensor_trigger_local_effect(int16_t local_effect, int16_t x, int16_t y, int16_t cell)
-{
-    if (local_effect == LOCAL_EFFECT_EXPERIENCE) {
-        sensor_add_skill_experience(SENSOR_EXPERIENCE_SKILL, SENSOR_EXPERIENCE, cell != ANY_CELL);
-        return;
-    }
-    rotation.effect = local_effect;
-    rotation.at = (Location){x, y};
-    rotation.cell = cell;
 }
 
 static bool is_rotation_sensor(uint16_t thing)
@@ -97,12 +86,24 @@ void sensor_process_rotation_effect(void)
     rotation.effect = -1;
 }
 
+/* Experience for the party, or a rotation of the cell sensors after the sensor pass. */
+static void trigger_local_effect(int16_t local_effect, int16_t x, int16_t y, int16_t cell)
+{
+    if (local_effect == LOCAL_EFFECT_EXPERIENCE) {
+        add_skill_experience(SENSOR_EXPERIENCE_SKILL, SENSOR_EXPERIENCE, cell != ANY_CELL);
+        return;
+    }
+    rotation.effect = local_effect;
+    rotation.at = (Location){x, y};
+    rotation.cell = cell;
+}
+
 void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
 {
     if (rec_sensor_is_once_only(sensor))
         rec_sensor_set_type(sensor, SENSOR_DISABLED);
     if (rec_sensor_is_local(sensor)) {
-        sensor_trigger_local_effect(rec_sensor_local_effect(sensor), x, y, cell);
+        trigger_local_effect(rec_sensor_local_effect(sensor), x, y, cell);
         return;
     }
     int16_t target_x = rec_sensor_target_x(sensor);
@@ -111,14 +112,6 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
     int16_t target_cell = target_type == SQUARE_WALL ? rec_sensor_target_cell(sensor) : 0;
     sensor_add_event(tables_get_square_type_event(target_type), (Location){target_x, target_y}, target_cell, effect,
                      g_game_time + rec_sensor_delay(sensor));
-}
-
-uint16_t sensor_get_object_of_type_in_cell(int16_t x, int16_t y, int16_t cell, int16_t object_type)
-{
-    for (uint16_t thing = map_get_square_first_object(x, y); thing != THING_ENDOFLIST; thing = rec_thing_next(thing))
-        if (object_get_type(thing) == object_type && (cell == ANY_CELL || THING_CELL(thing) == cell))
-            return thing;
-    return THING_NONE;
 }
 
 static bool is_object_or_in_chest(uint16_t thing, int16_t object_type)
@@ -131,16 +124,6 @@ static bool is_object_or_in_chest(uint16_t thing, int16_t object_type)
             if (object_get_type(t) == object_type)
                 return true;
     return false;
-}
-
-bool sensor_is_object_in_party_possession(int16_t object_type)
-{
-    for (uint16_t i = 0; i < g_party_champion_count; i++)
-        if (g_champions[i].current_health)
-            for (int16_t slot = 0; slot < SLOT_COUNT; slot++)
-                if (is_object_or_in_chest(g_champions[i].slots[slot], object_type))
-                    return true;
-    return is_object_or_in_chest(g_leader_hand_object, object_type);
 }
 
 static bool holds_object_type(int16_t object_type)
@@ -160,6 +143,15 @@ typedef struct {
     uint16_t thing; /* the thing where the sensor loop goes on */
 } ClickTest;
 
+/* The first object of the type in the cell (or in any cell), or THING_NONE. */
+static uint16_t get_object_in_cell(int16_t x, int16_t y, int16_t cell, int16_t object_type)
+{
+    for (uint16_t thing = map_get_square_first_object(x, y); thing != THING_ENDOFLIST; thing = rec_thing_next(thing))
+        if (object_get_type(thing) == object_type && (cell == ANY_CELL || THING_CELL(thing) == cell))
+            return thing;
+    return THING_NONE;
+}
+
 /* Single object exchanger: an empty hand takes the object of the sensor type from the cell, a hand with that type puts
    it there. Returns the click_test result. */
 static ClickResult exchange_single_object(uint16_t sensor, int16_t x, int16_t y)
@@ -167,19 +159,19 @@ static ClickResult exchange_single_object(uint16_t sensor, int16_t x, int16_t y)
     uint16_t sensor_cell = THING_CELL(sensor);
     int16_t data = rec_sensor_data(sensor);
     if (g_leader_empty_handed) {
-        uint16_t object = sensor_get_object_of_type_in_cell(x, y, sensor_cell, data);
+        uint16_t object = get_object_in_cell(x, y, sensor_cell, data);
         if (object == THING_NONE)
             return CLICK_RESULT_IGNORED;
         map_unlink_thing_from_list(object, 0, x, y);
         inventory_put_object_in_leader_hand(object);
     } else {
-        if (!holds_object_type(data) || sensor_get_object_of_type_in_cell(x, y, sensor_cell, data) != THING_NONE)
+        if (!holds_object_type(data) || get_object_in_cell(x, y, sensor_cell, data) != THING_NONE)
             return CLICK_RESULT_IGNORED;
         uint16_t object = g_leader_hand_object;
         inventory_get_object_removed_from_leader_hand();
         map_link_thing_to_list(THING_WITH_CELL(object, sensor_cell), 0, x, y);
     }
-    sensor_trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
+    trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
     return rec_sensor_effect(sensor) == EFFECT_HOLD && !g_leader_empty_handed ? CLICK_RESULT_NO_MATCH
                                                                               : CLICK_RESULT_MATCH;
 }
@@ -234,14 +226,14 @@ static ClickTest click_test(uint16_t thing, uint16_t previous, Location at, int1
             thing = previous;
         }
         if (!skip && type == SENSOR_WALL_SINGLE_OBJECT_STORAGE)
-            sensor_trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
+            trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
         return (ClickTest){skip ? CLICK_RESULT_NO_MATCH : CLICK_RESULT_MATCH, thing};
     case SENSOR_WALL_OBJECT_GENERATOR:
         if (remaining)
             return (ClickTest){CLICK_RESULT_IGNORED, thing};
         skip = !g_leader_empty_handed;
         if (!skip)
-            sensor_trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
+            trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
         return (ClickTest){skip ? CLICK_RESULT_NO_MATCH : CLICK_RESULT_MATCH, thing};
     case SENSOR_WALL_SINGLE_OBJECT_EXCHANGER:
         return (ClickTest){exchange_single_object(sensor, x, y), thing};
@@ -361,6 +353,17 @@ static void process_wall_sensor(uint16_t sensor, const SquareChange *s)
         trigger(sensor, s->add, s->x, s->y);
 }
 
+/* The slots of the living champions, then the leader hand. Chests count with their contents. */
+static bool is_object_possessed(int16_t object_type)
+{
+    for (uint16_t i = 0; i < g_party_champion_count; i++)
+        if (g_champions[i].current_health)
+            for (int16_t slot = 0; slot < SLOT_COUNT; slot++)
+                if (is_object_or_in_chest(g_champions[i].slots[slot], object_type))
+                    return true;
+    return is_object_or_in_chest(g_leader_hand_object, object_type);
+}
+
 /* A floor sensor: each type tests the thing and what else lies on the square. */
 static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t square)
 {
@@ -401,7 +404,7 @@ static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t
         break;
     case SENSOR_FLOOR_PARTY_POSSESSION:
         if (s->party)
-            trigger(sensor, sensor_is_object_in_party_possession(data), x, y);
+            trigger(sensor, is_object_possessed(data), x, y);
         break;
     case SENSOR_FLOOR_VERSION_CHECKER:
         if (s->party && add && !s->party_on_square)

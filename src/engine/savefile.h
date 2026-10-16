@@ -61,7 +61,7 @@ typedef struct {
 } SaveFile;
 
 /* XOR big-endian words in place; returns the sum of key, plain and cipher words */
-uint16_t savefile_xor_block(uint8_t *bytes, uint16_t key, uint16_t word_count);
+uint16_t savefile_xor_block(uint8_t *bytes, uint16_t key, uint16_t word_count); /* exported for the tests */
 /* Decrypts a save file into s and checks the header chain and block checksums. Returns false on a bad file. */
 bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *save);
 /* Encrypts s into a new save file buffer. Returns NULL when s is incomplete. */
@@ -70,8 +70,6 @@ void savefile_free(SaveFile *save);
 
 /* Plain header fields. savefile_init_header fills a new header with random16 words and keys. */
 void savefile_init_header(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const uint8_t *extra);
-/* New random block keys and chain words; the payload fields stay. */
-void savefile_randomize_header(uint8_t *h);
 /* The header of a new adventure made from a saved game with ID game_id (CEDT merge), new keys included. */
 void savefile_make_adventure_header(uint8_t *h, uint32_t game_id);
 uint32_t savefile_get_game_id(const uint8_t *h);

@@ -834,7 +834,8 @@ static void drop_on_party_square(uint16_t thing, int16_t cell)
         NULL);
 }
 
-void champion_drop_all_objects(int16_t champion_index)
+/* All objects fall to the floor in the champion's cell. */
+static void drop_all_objects(int16_t champion_index)
 {
     uint16_t cell = g_champions[champion_index].cell;
     for (uint16_t i = 0; i < SLOT_COUNT; i++) {
@@ -852,7 +853,7 @@ void champion_kill(int16_t champion_index)
     c->current_health = 0;
     c->attributes |= CHAMPION_ATTR_STATUS_BOX;
     g_dead_champions |= 1 << champion_index;
-    champion_drop_all_objects(champion_index);
+    drop_all_objects(champion_index);
     uint16_t bones = rec_find_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
     if (bones != THING_NONE) {
         rec_junk_set_type(bones, JUNK_BONES);

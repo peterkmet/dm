@@ -45,7 +45,7 @@ The tool works in these steps:
 
 DM has 752 functions, CSB has 756. The classes are a heuristic:
 
-- A spot check of "identical" pairs (for example `group_get_distance_to_visible_party`, K`0x10ceee`, C`0x10ed9a`) found the same logic.
+- A spot check of "identical" pairs (for example `visible_party_distance`, K`0x10ceee`, C`0x10ed9a`) found the same logic.
 - Most "constants" pairs differ only in code generation: bit-field masks (DM `lsr #6; and #31`, CSB `and #$7c0; lsr #6`), sign extension (`-1` against `0xffff`), and two word pushes that DM merges into one long push.
 - Many "logic" pairs differ only because DM calls `get_string` and CSB uses inline text, or because DM calls `mouse_begin_change` (an empty stub in DM, K`0x108702`) where CSB hides the pointer (C`0x109128`).
 
@@ -161,7 +161,7 @@ Addresses that the tables above do not list. Each is verified by a code referenc
 | `KAOS_INTERFACE_PALETTE`, `KAOS_POINTER_PALETTE` (interface, then pointer palette) | `0x100170`, `0x100190` | `0x102f0a`, `0x102f2a` | `g_initial_colormap` and + 32 (`display_load_view`, `input_event_handler`) |
 | `KAOS_ARROW_POINTER_WIDTH`, `KAOS_HAND_POINTER_WIDTH` (the 4 size bytes, then the bitmap) | `0x1002ac`, `0x1003d0` | `0x1005ec`, `0x100710` | `init_mouse_pointer` C`0x10898c`, `0x10899a` |
 | `KAOS_CREDITS_PALETTE`, `KAOS_ENTRANCE_PALETTE` (CSB values) | `0x100a46`, `0x100a66` | `0x100f18`, `0x100f38` | `entrance_show_credits`, `entrance_draw` |
-| `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b8a` | `0x10105e` | `group_steal_from_champion` C`0x10e7f6` |
+| `KAOS_SLOTS_TO_STEAL_FROM` | `0x100b8a` | `0x10105e` | `steal_from_champion` C`0x10e7f6` |
 | `KAOS_LIST_SEPARATOR` ", " | `0x101ebe` | `0x10264a` | `build_object_attributes_string` C`0x110dcc` |
 | `KAOS_BONES_SEPARATOR` " ", `KAOS_ATTRIBUTES_SUFFIX` ")", `KAOS_ATTRIBUTES_PREFIX` "(" | `0x101ec6`, `0x101ec8`, `0x101eca` | `0x10267a`, `0x1026ec`, `0x1026ea` | `draw_panel_object` C`0x111cba`, `0x111f12`, `0x111f16` |
 | `KAOS_VIEWPORT_X` | `0x10293a` | `0x103298` | `command_init_mouse_input_table` |
@@ -341,7 +341,7 @@ Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `ui_champio
 ### Creatures
 
 - `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `src/engine/game.h`; `src/engine/savegame.c` applies it as the DM minimum.
-- `group_steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. Step 7 check: the APPB code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
+- `steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. Step 7 check: the APPB code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
 
 ### Champions
 

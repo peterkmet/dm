@@ -57,7 +57,7 @@ static void add_again_next_tick(TimelineEvent *event)
 
 /* One door step per tick: set opens (state down to open), clear closes (state up to closed). A closing door
    that hits the party or a group goes back one step; the group takes damage. */
-static void event_process_door_animation(TimelineEvent *event)
+static void process_door_animation(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
@@ -100,13 +100,13 @@ static void event_process_door_animation(TimelineEvent *event)
     }
 }
 
-static void event_process_door_destruction(TimelineEvent *event)
+static void process_door_destruction(TimelineEvent *event)
 {
     rec_door_set_state(g_current_map_index, event_square_x(event), event_square_y(event), DOOR_DESTROYED);
 }
 
 /* A door event becomes a door animation event at the same time. Toggle closes an open door and opens any other. */
-static void event_process_door(TimelineEvent *event)
+static void process_door(TimelineEvent *event)
 {
     int16_t state = rec_door_state(rec_square_byte(g_current_map_index, event_square_x(event), event_square_y(event)));
     if (state == DOOR_DESTROYED)
@@ -120,7 +120,7 @@ static void event_process_door(TimelineEvent *event)
 }
 
 /* Opens or closes a fake wall. Closing waits while the party or a material group is on the square. */
-static void event_process_fake_wall(TimelineEvent *event)
+static void process_fake_wall(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
@@ -163,7 +163,7 @@ static void update_explosion_events(uint16_t explosion, const MoveDestination *d
 }
 
 /* The party, the group, and each object on the square move again, for example into an opened pit. */
-static void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
+static void reenter_square_things(int16_t x, int16_t y)
 {
     Location at = {x, y};
     if (map_is_party_on(at))
@@ -201,17 +201,17 @@ static void open_or_close(TimelineEvent *event)
         event_set_effect(event, square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
     if (event_effect(event) == EFFECT_SET) {
         rec_square_set_byte(map, x, y, square | TELEPORTER_OPEN);
-        event_move_teleporter_or_pit_square_things(x, y);
+        reenter_square_things(x, y);
     } else {
         rec_square_set_byte(map, x, y, square & ~TELEPORTER_OPEN);
     }
 }
 
-static void event_process_teleporter(TimelineEvent *event)
+static void process_teleporter(TimelineEvent *event)
 {
     open_or_close(event);
 }
-static void event_process_pit(TimelineEvent *event)
+static void process_pit(TimelineEvent *event)
 {
     open_or_close(event);
 }
@@ -246,7 +246,7 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
 }
 
 /* Texts on the corridor change visibility, and group generators run. */
-static void event_process_corridor(TimelineEvent *event)
+static void process_corridor(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
@@ -261,7 +261,7 @@ static void event_process_corridor(TimelineEvent *event)
 }
 
 /* The first disabled sensor of the square becomes a group generator again. */
-static void event_enable_group_generator(TimelineEvent *event)
+static void enable_group_generator(TimelineEvent *event)
 {
     for (uint16_t t = map_get_square_first_thing(event_square_x(event), event_square_y(event));
          t != THING_NONE && t != THING_ENDOFLIST; t = rec_thing_next(t)) {
@@ -344,7 +344,7 @@ void event_process_wall(TimelineEvent *event)
 }
 
 /* The event holds the signed light power. Each step applies one step of the light table and adds the rest later. */
-static void event_process_light(TimelineEvent *event)
+static void process_light(TimelineEvent *event)
 {
     int16_t power = event->b;
     if (!power)
@@ -390,7 +390,7 @@ bool event_is_door_destroyed_by_attack(Location at, int16_t attack, bool magic, 
 
 /* The action hand works again: the action defense ends. After a shot the next ammunition of the quiver goes to the
    ready hand (quiver line 1 first, then slots 7-9). */
-static void event_enable_champion_action(int16_t champion_index)
+static void enable_champion_action(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     c->enable_action_event_index = -1;
@@ -416,7 +416,7 @@ static void event_enable_champion_action(int16_t champion_index)
 }
 
 /* The damage number on the champion portrait disappears. */
-static void event_hide_damage_received(int16_t champion_index)
+static void hide_damage_received(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     c->hide_damage_received_event_index = -1;
@@ -430,7 +430,7 @@ static void event_hide_damage_received(int16_t champion_index)
 
 /* Vi altar rebirth in three steps (event cell byte: the step): 2 the rebirth explosion, 1 the bones of the champion
    disappear, 0 the champion lives again. The bones hold the champion index in their charges. */
-static void event_process_vi_altar_rebirth(TimelineEvent *event)
+static void process_vi_altar_rebirth(TimelineEvent *event)
 {
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
@@ -508,39 +508,39 @@ void event_process_expired(void)
         map_set_current_map(EVENT_MAP(&event));
         switch (event.type) {
         case EVENT_DOOR_ANIMATION:
-            event_process_door_animation(&event);
+            process_door_animation(&event);
             break;
         case EVENT_DOOR_DESTRUCTION:
-            event_process_door_destruction(&event);
+            process_door_destruction(&event);
             break;
         case EVENT_CORRIDOR:
-            event_process_corridor(&event);
+            process_corridor(&event);
             break;
         case EVENT_WALL:
             event_process_wall(&event);
             break;
         case EVENT_FAKE_WALL:
-            event_process_fake_wall(&event);
+            process_fake_wall(&event);
             break;
         case EVENT_TELEPORTER:
-            event_process_teleporter(&event);
+            process_teleporter(&event);
             break;
         case EVENT_PIT:
-            event_process_pit(&event);
+            process_pit(&event);
             break;
         case EVENT_DOOR:
-            event_process_door(&event);
+            process_door(&event);
             break;
         case EVENT_ENABLE_CHAMPION_ACTION:
-            event_enable_champion_action(event.priority);
+            enable_champion_action(event.priority);
             if (event_quiver_slot(&event) != -1) /* after a throw: the slot that gets the next weapon of the quiver */
                 action_move_weapon_from_quiver_to_slot(event.priority, event_quiver_slot(&event));
             break;
         case EVENT_HIDE_DAMAGE_RECEIVED:
-            event_hide_damage_received(event.priority);
+            hide_damage_received(event.priority);
             break;
         case EVENT_VI_ALTAR_REBIRTH:
-            event_process_vi_altar_rebirth(&event);
+            process_vi_altar_rebirth(&event);
             break;
         case EVENT_PLAY_SOUND:
             sound_request_play(event.c, (Location){event_square_x(&event), event_square_y(&event)},
@@ -567,11 +567,11 @@ void event_process_expired(void)
             group_process_move_event(&event);
             break;
         case EVENT_ENABLE_GROUP_GENERATOR:
-            event_enable_group_generator(&event);
+            enable_group_generator(&event);
             break;
         case EVENT_LIGHT:
             map_set_current_map(g_party_map_index);
-            event_process_light(&event);
+            process_light(&event);
             break;
         default:
             if (event.type >= EVENT_GROUP_REACTION_DANGER_ON_SQUARE && event.type <= EVENT_UPDATE_BEHAVIOR_CREATURE_3)

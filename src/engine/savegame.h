@@ -23,9 +23,9 @@ typedef enum {
 } SavegameAdventureResult;
 
 /* Writes the game to dir/name. With a backup name, the old file becomes dir/backup first. Returns true on success. */
-bool savegame_save_as(const char *dir, const char *name, const char *backup);
+bool savegame_save_as(const char *dir, const char *name, const char *backup); /* exported for the tests */
 /* Reads dir/name, else dir/backup when backup is not NULL. Results as savegame_load. */
-SavegameResult savegame_load_from(const char *dir, const char *name, const char *backup);
+SavegameResult savegame_load_from(const char *dir, const char *name, const char *backup); /* exported for the tests */
 /* Writes the game to dir/DMGAME.DAT (CSB: CSBGAME.DAT). The old file becomes dir/DMGAME.BAK (CSBGAME.BAK)
    first. Returns true on success. */
 bool savegame_save(const char *dir);

@@ -32,7 +32,6 @@ def lib():
         getattr(lib, name).restype = ctypes.c_uint16
     for name in ("map_get_stairs_exit_direction", "dungeon_map_width", "dungeon_map_height", "dungeon_map_count"):
         getattr(lib, name).restype = c16
-    lib.move_get_move_result.restype = ctypes.c_int
     lib.map_is_square_open.restype = ctypes.c_bool
     lib.dungeon_load.restype = ctypes.c_bool
     lib.map_get_level_change_location.restype = Position

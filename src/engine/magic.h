@@ -55,10 +55,10 @@ static inline Position magic_get_map_position(const uint8_t *spells)
 #define SPELL_OTHER_FIRE_SHIELD  8
 
 /* Casts the spell of the champion symbols. Each missing skill level is a chance to fail against wisdom. */
-int16_t magic_get_champion_spell_cast_result(int16_t champion_index);
+int16_t magic_get_champion_spell_cast_result(int16_t champion_index); /* exported for the tests */
 /* Cast button: casts for the magic caster; the symbols clear unless a flask is missing. */
 int16_t magic_get_click_on_spell_cast_result(void);
-/* Prints "<text> <champion name> <text>" for a failed cast. */
+/* Prints "<text> <champion name> <text>" for a failed cast. (exported for the tests) */
 void magic_print_spell_failure_message(int16_t champion_index, int16_t failure_type, int16_t skill_index);
 /* Spends the mana and shoots the spell; a weak cast with little maximum mana gets a slower step energy. */
 bool magic_is_projectile_spell_cast(int16_t champion_index, uint16_t thing, int16_t kinetic_energy,

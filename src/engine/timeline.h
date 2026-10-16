@@ -24,7 +24,7 @@ typedef struct {
     int32_t watchdog_time; /* game time of the next watchdog event */
 } Timeline;
 
-extern Timeline g_timeline;
+extern Timeline g_timeline; /* exported for the tests */
 
 /* Allocates capacity free event slots and an empty heap; false when the allocation fails. */
 bool timeline_allocate(int16_t capacity);
@@ -32,16 +32,12 @@ bool timeline_allocate(int16_t capacity);
 void timeline_init(void);
 /* Rebuilds the free list and the high water mark from the slot types (before a save, after a load). */
 void timeline_reset(void);
-/* Earlier time first, then higher type and priority, then the lower slot. */
-bool timeline_is_event_a_before_b(const TimelineEvent *event_a, const TimelineEvent *event_b);
 /* Position of an event slot in the timeline heap. */
 uint16_t timeline_get_index(uint16_t event_index);
 /* Moves a heap entry up or down until the timeline is in time order again. */
 void timeline_fix_chronology(uint16_t timeline_index);
 /* Frees an event slot and removes it from the timeline. */
 void timeline_delete_event(uint16_t event_index);
-/* Returns the index of the event that absorbs the new one, or -1. Can change or delete events. */
-int16_t timeline_find_mergeable_event(TimelineEvent *event);
 /* Adds an event to the timeline, or merges it into an existing event. Returns the slot index. */
 int16_t timeline_add_event(TimelineEvent *event);
 /* Removes the earliest event from the timeline and copies it to event. */

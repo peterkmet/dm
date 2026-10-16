@@ -165,20 +165,21 @@ static uint16_t bits(uint16_t word, int16_t shift, uint16_t mask)
 
 /* Records of every thing type */
 
-const uint8_t *rec_read(uint16_t thing)
-{
-    return rec_write(thing);
-}
-
 uint8_t *rec_write(uint16_t thing)
 {
     uint16_t type = THING_TYPE(thing);
     return g_thing_data[type] + g_thing_data_byte_count[type] * THING_INDEX(thing);
 }
 
+/* The record bytes of the thing, read only. */
+static const uint8_t *record_bytes(uint16_t thing)
+{
+    return rec_write(thing);
+}
+
 uint16_t rec_thing_next(uint16_t thing)
 {
-    return be16(rec_read(thing) + THING_NEXT);
+    return be16(record_bytes(thing) + THING_NEXT);
 }
 void rec_thing_set_next(uint16_t thing, uint16_t value)
 {
@@ -211,65 +212,65 @@ uint16_t rec_find_unused_thing(uint16_t thing_type)
 
 uint16_t rec_door_type(uint16_t thing)
 {
-    return rec_read(thing)[DOOR_ATTRIBUTES] & DOOR_TYPE_BIT;
+    return record_bytes(thing)[DOOR_ATTRIBUTES] & DOOR_TYPE_BIT;
 }
 bool rec_door_is_magic_breakable(uint16_t thing)
 {
-    return (rec_read(thing)[DOOR_ATTRIBUTES] & DOOR_MAGIC_BIT) != 0;
+    return (record_bytes(thing)[DOOR_ATTRIBUTES] & DOOR_MAGIC_BIT) != 0;
 }
 bool rec_door_is_force_breakable(uint16_t thing)
 {
-    return rec_read(thing)[DOOR_FLAGS] & DOOR_FORCE_BIT;
+    return record_bytes(thing)[DOOR_FLAGS] & DOOR_FORCE_BIT;
 }
 bool rec_door_has_button(uint16_t thing)
 {
-    return (rec_read(thing)[DOOR_ATTRIBUTES] & DOOR_BUTTON_BIT) != 0;
+    return (record_bytes(thing)[DOOR_ATTRIBUTES] & DOOR_BUTTON_BIT) != 0;
 }
 bool rec_door_is_vertical(uint16_t thing)
 {
-    return (rec_read(thing)[DOOR_ATTRIBUTES] & DOOR_VERTICAL_BIT) != 0;
+    return (record_bytes(thing)[DOOR_ATTRIBUTES] & DOOR_VERTICAL_BIT) != 0;
 }
 int16_t rec_door_ornament(uint16_t thing)
 {
-    return (int16_t)((rec_read(thing)[DOOR_ATTRIBUTES] & DOOR_ORNAMENT_MASK) >> DOOR_ORNAMENT_SHIFT) - 1;
+    return (int16_t)((record_bytes(thing)[DOOR_ATTRIBUTES] & DOOR_ORNAMENT_MASK) >> DOOR_ORNAMENT_SHIFT) - 1;
 }
 
 /* Teleporter record */
 
 int16_t rec_teleporter_target_x(uint16_t thing)
 {
-    return rec_read(thing)[TELEPORTER_TARGET_X] & MAP_COORD_MASK;
+    return record_bytes(thing)[TELEPORTER_TARGET_X] & MAP_COORD_MASK;
 }
 int16_t rec_teleporter_target_y(uint16_t thing)
 {
-    return bits(be16(rec_read(thing) + TELEPORTER_TARGET_Y), TELEPORTER_TARGET_Y_SHIFT, MAP_COORD_MASK);
+    return bits(be16(record_bytes(thing) + TELEPORTER_TARGET_Y), TELEPORTER_TARGET_Y_SHIFT, MAP_COORD_MASK);
 }
 int16_t rec_teleporter_target_map(uint16_t thing)
 {
-    return rec_read(thing)[TELEPORTER_TARGET_MAP];
+    return record_bytes(thing)[TELEPORTER_TARGET_MAP];
 }
 uint16_t rec_teleporter_scope(uint16_t thing)
 {
-    return (rec_read(thing)[TELEPORTER_FLAGS] & TELEPORTER_SCOPE_MASK) >> TELEPORTER_SCOPE_SHIFT;
+    return (record_bytes(thing)[TELEPORTER_FLAGS] & TELEPORTER_SCOPE_MASK) >> TELEPORTER_SCOPE_SHIFT;
 }
 uint16_t rec_teleporter_rotation(uint16_t thing)
 {
-    return (rec_read(thing)[TELEPORTER_FLAGS] & TELEPORTER_ROTATION_MASK) >> TELEPORTER_ROTATION_SHIFT;
+    return (record_bytes(thing)[TELEPORTER_FLAGS] & TELEPORTER_ROTATION_MASK) >> TELEPORTER_ROTATION_SHIFT;
 }
 bool rec_teleporter_is_absolute(uint16_t thing)
 {
-    return (rec_read(thing)[TELEPORTER_FLAGS] & TELEPORTER_ABSOLUTE_BIT) != 0;
+    return (record_bytes(thing)[TELEPORTER_FLAGS] & TELEPORTER_ABSOLUTE_BIT) != 0;
 }
 bool rec_teleporter_is_audible(uint16_t thing)
 {
-    return (rec_read(thing)[TELEPORTER_FLAGS] & TELEPORTER_AUDIBLE_BIT) != 0;
+    return (record_bytes(thing)[TELEPORTER_FLAGS] & TELEPORTER_AUDIBLE_BIT) != 0;
 }
 
 /* Text record */
 
 bool rec_text_is_visible(uint16_t thing)
 {
-    return rec_read(thing)[TEXT_FLAGS] & TEXT_VISIBLE_BIT;
+    return record_bytes(thing)[TEXT_FLAGS] & TEXT_VISIBLE_BIT;
 }
 void rec_text_set_visible(uint16_t thing, bool visible)
 {
@@ -277,18 +278,18 @@ void rec_text_set_visible(uint16_t thing, bool visible)
 }
 uint16_t rec_text_offset(uint16_t thing)
 {
-    return be16(rec_read(thing) + TEXT_OFFSET) >> TEXT_OFFSET_SHIFT;
+    return be16(record_bytes(thing) + TEXT_OFFSET) >> TEXT_OFFSET_SHIFT;
 }
 
 /* Sensor record */
 
 uint16_t rec_sensor_type(uint16_t thing)
 {
-    return be16(rec_read(thing) + SENSOR_TYPE_AND_DATA) & SENSOR_TYPE_MASK;
+    return be16(record_bytes(thing) + SENSOR_TYPE_AND_DATA) & SENSOR_TYPE_MASK;
 }
 uint16_t rec_sensor_data(uint16_t thing)
 {
-    return be16(rec_read(thing) + SENSOR_TYPE_AND_DATA) >> SENSOR_DATA_SHIFT;
+    return be16(record_bytes(thing) + SENSOR_TYPE_AND_DATA) >> SENSOR_DATA_SHIFT;
 }
 void rec_sensor_set_type(uint16_t thing, uint16_t value)
 {
@@ -300,51 +301,51 @@ void rec_sensor_set_data(uint16_t thing, uint16_t value)
 }
 bool rec_sensor_is_local(uint16_t thing)
 {
-    return (rec_read(thing)[SENSOR_FLAGS] & SENSOR_LOCAL_BIT) != 0;
+    return (record_bytes(thing)[SENSOR_FLAGS] & SENSOR_LOCAL_BIT) != 0;
 }
 uint16_t rec_sensor_delay(uint16_t thing)
 {
-    return bits(be16(rec_read(thing) + SENSOR_FLAGS), SENSOR_DELAY_SHIFT, SENSOR_DELAY_MASK);
+    return bits(be16(record_bytes(thing) + SENSOR_FLAGS), SENSOR_DELAY_SHIFT, SENSOR_DELAY_MASK);
 }
 bool rec_sensor_is_once_only(uint16_t thing)
 {
-    return (rec_read(thing)[SENSOR_ACTION] & SENSOR_ONCE_ONLY_BIT) != 0;
+    return (record_bytes(thing)[SENSOR_ACTION] & SENSOR_ONCE_ONLY_BIT) != 0;
 }
 uint16_t rec_sensor_effect(uint16_t thing)
 {
-    return (rec_read(thing)[SENSOR_ACTION] & SENSOR_EFFECT_MASK) >> SENSOR_EFFECT_SHIFT;
+    return (record_bytes(thing)[SENSOR_ACTION] & SENSOR_EFFECT_MASK) >> SENSOR_EFFECT_SHIFT;
 }
 bool rec_sensor_is_reverted(uint16_t thing)
 {
-    return (rec_read(thing)[SENSOR_ACTION] & SENSOR_REVERT_BIT) >> SENSOR_REVERT_SHIFT;
+    return (record_bytes(thing)[SENSOR_ACTION] & SENSOR_REVERT_BIT) >> SENSOR_REVERT_SHIFT;
 }
 bool rec_sensor_is_audible(uint16_t thing)
 {
-    return (rec_read(thing)[SENSOR_ACTION] & SENSOR_AUDIBLE_BIT) != 0;
+    return (record_bytes(thing)[SENSOR_ACTION] & SENSOR_AUDIBLE_BIT) != 0;
 }
 int16_t rec_sensor_target_x(uint16_t thing)
 {
-    return bits(be16(rec_read(thing) + SENSOR_TARGET), SENSOR_TARGET_X_SHIFT, MAP_COORD_MASK);
+    return bits(be16(record_bytes(thing) + SENSOR_TARGET), SENSOR_TARGET_X_SHIFT, MAP_COORD_MASK);
 }
 int16_t rec_sensor_target_y(uint16_t thing)
 {
-    return rec_read(thing)[SENSOR_TARGET] >> SENSOR_TARGET_Y_SHIFT;
+    return record_bytes(thing)[SENSOR_TARGET] >> SENSOR_TARGET_Y_SHIFT;
 }
 int16_t rec_sensor_target_cell(uint16_t thing)
 {
-    return (rec_read(thing)[SENSOR_TARGET_CELL] & SENSOR_CELL_MASK) >> SENSOR_CELL_SHIFT;
+    return (record_bytes(thing)[SENSOR_TARGET_CELL] & SENSOR_CELL_MASK) >> SENSOR_CELL_SHIFT;
 }
 int16_t rec_sensor_local_effect(uint16_t thing)
 {
-    return be16(rec_read(thing) + SENSOR_TARGET) >> SENSOR_LOCAL_EFFECT_SHIFT;
+    return be16(record_bytes(thing) + SENSOR_TARGET) >> SENSOR_LOCAL_EFFECT_SHIFT;
 }
 uint16_t rec_sensor_generator_delay(uint16_t thing)
 {
-    return rec_read(thing)[SENSOR_TARGET];
+    return record_bytes(thing)[SENSOR_TARGET];
 }
 int16_t rec_sensor_ornament(uint16_t thing)
 {
-    return (int16_t)(rec_read(thing)[SENSOR_FLAGS] >> SENSOR_ORNAMENT_SHIFT) - 1;
+    return (int16_t)(record_bytes(thing)[SENSOR_FLAGS] >> SENSOR_ORNAMENT_SHIFT) - 1;
 }
 uint16_t rec_sensor_creature_type(uint16_t thing)
 {
@@ -352,26 +353,26 @@ uint16_t rec_sensor_creature_type(uint16_t thing)
 }
 uint16_t rec_sensor_generator_count(uint16_t thing)
 {
-    return bits(be16(rec_read(thing) + SENSOR_FLAGS), SENSOR_DELAY_SHIFT, SENSOR_DELAY_MASK);
+    return bits(be16(record_bytes(thing) + SENSOR_FLAGS), SENSOR_DELAY_SHIFT, SENSOR_DELAY_MASK);
 }
 uint16_t rec_sensor_health_multiplier(uint16_t thing)
 {
-    return bits(be16(rec_read(thing) + SENSOR_TARGET), SENSOR_MULTIPLIER_SHIFT, SENSOR_MULTIPLIER_MASK);
+    return bits(be16(record_bytes(thing) + SENSOR_TARGET), SENSOR_MULTIPLIER_SHIFT, SENSOR_MULTIPLIER_MASK);
 }
 uint8_t rec_sensor_kinetic_energy(uint16_t thing)
 {
-    return be16(rec_read(thing) + SENSOR_TARGET) >> SENSOR_ENERGY_SHIFT;
+    return be16(record_bytes(thing) + SENSOR_TARGET) >> SENSOR_ENERGY_SHIFT;
 }
 uint8_t rec_sensor_step_energy(uint16_t thing)
 {
-    return rec_read(thing)[SENSOR_TARGET] >> SENSOR_ENERGY_SHIFT;
+    return record_bytes(thing)[SENSOR_TARGET] >> SENSOR_ENERGY_SHIFT;
 }
 
 /* Group record */
 
 uint16_t rec_group_possessions(uint16_t thing)
 {
-    return be16(rec_read(thing) + GROUP_POSSESSIONS);
+    return be16(record_bytes(thing) + GROUP_POSSESSIONS);
 }
 void rec_group_set_possessions(uint16_t thing, uint16_t value)
 {
@@ -379,7 +380,7 @@ void rec_group_set_possessions(uint16_t thing, uint16_t value)
 }
 uint16_t rec_group_creature_type(uint16_t thing)
 {
-    return rec_read(thing)[GROUP_CREATURE_TYPE];
+    return record_bytes(thing)[GROUP_CREATURE_TYPE];
 }
 void rec_group_set_creature_type(uint16_t thing, uint16_t value)
 {
@@ -387,7 +388,7 @@ void rec_group_set_creature_type(uint16_t thing, uint16_t value)
 }
 uint8_t rec_group_cells(uint16_t thing)
 {
-    return rec_read(thing)[GROUP_CELLS];
+    return record_bytes(thing)[GROUP_CELLS];
 }
 void rec_group_set_cells(uint16_t thing, uint16_t value)
 {
@@ -395,7 +396,7 @@ void rec_group_set_cells(uint16_t thing, uint16_t value)
 }
 uint16_t rec_group_health(uint16_t group, int16_t creature)
 {
-    return be16(rec_read(group) + GROUP_HEALTH + 2 * creature);
+    return be16(record_bytes(group) + GROUP_HEALTH + 2 * creature);
 }
 void rec_group_set_health(uint16_t group, int16_t creature, uint16_t health)
 {
@@ -403,7 +404,7 @@ void rec_group_set_health(uint16_t group, int16_t creature, uint16_t health)
 }
 uint16_t rec_group_behavior(uint16_t thing)
 {
-    return rec_read(thing)[GROUP_BEHAVIOR] & GROUP_BEHAVIOR_MASK;
+    return record_bytes(thing)[GROUP_BEHAVIOR] & GROUP_BEHAVIOR_MASK;
 }
 void rec_group_set_behavior(uint16_t thing, uint16_t value)
 {
@@ -411,7 +412,7 @@ void rec_group_set_behavior(uint16_t thing, uint16_t value)
 }
 uint8_t rec_group_last_creature(uint16_t thing)
 {
-    return (rec_read(thing)[GROUP_BEHAVIOR] & GROUP_LAST_CREATURE_MASK) >> GROUP_LAST_CREATURE_SHIFT;
+    return (record_bytes(thing)[GROUP_BEHAVIOR] & GROUP_LAST_CREATURE_MASK) >> GROUP_LAST_CREATURE_SHIFT;
 }
 void rec_group_set_last_creature(uint16_t thing, uint16_t value)
 {
@@ -421,7 +422,7 @@ void rec_group_set_last_creature(uint16_t thing, uint16_t value)
 }
 uint8_t rec_group_direction(uint16_t thing)
 {
-    return rec_read(thing)[GROUP_FLAGS] & GROUP_DIRECTION_MASK;
+    return record_bytes(thing)[GROUP_FLAGS] & GROUP_DIRECTION_MASK;
 }
 void rec_group_set_direction(uint16_t thing, uint16_t value)
 {
@@ -437,7 +438,7 @@ void rec_group_set_no_discard(uint16_t thing, bool no_discard)
 
 bool rec_object_is_cursed(uint16_t thing)
 {
-    return rec_read(thing)[OBJECT_FLAGS] & OBJECT_CURSED_BIT;
+    return record_bytes(thing)[OBJECT_FLAGS] & OBJECT_CURSED_BIT;
 }
 void rec_object_set_cursed(uint16_t thing, bool cursed)
 {
@@ -459,11 +460,11 @@ void rec_object_set_type(uint16_t thing, uint16_t value)
 
 uint16_t rec_weapon_type(uint16_t thing)
 {
-    return rec_read(thing)[OBJECT_TYPE] & OBJECT_TYPE_MASK;
+    return record_bytes(thing)[OBJECT_TYPE] & OBJECT_TYPE_MASK;
 }
 bool rec_weapon_is_lit(uint16_t thing)
 {
-    return (rec_read(thing)[OBJECT_FLAGS] & WEAPON_LIT_BIT) != 0;
+    return (record_bytes(thing)[OBJECT_FLAGS] & WEAPON_LIT_BIT) != 0;
 }
 void rec_weapon_set_lit(uint16_t thing, bool lit)
 {
@@ -472,7 +473,7 @@ void rec_weapon_set_lit(uint16_t thing, bool lit)
 }
 uint16_t rec_weapon_charges(uint16_t thing)
 {
-    return (rec_read(thing)[OBJECT_FLAGS] & WEAPON_CHARGES_MASK) >> WEAPON_CHARGES_SHIFT;
+    return (record_bytes(thing)[OBJECT_FLAGS] & WEAPON_CHARGES_MASK) >> WEAPON_CHARGES_SHIFT;
 }
 void rec_weapon_set_charges(uint16_t thing, uint16_t value)
 {
@@ -481,22 +482,22 @@ void rec_weapon_set_charges(uint16_t thing, uint16_t value)
 }
 bool rec_weapon_is_poisoned(uint16_t thing)
 {
-    return (rec_read(thing)[OBJECT_FLAGS] & WEAPON_POISONED_BIT) != 0;
+    return (record_bytes(thing)[OBJECT_FLAGS] & WEAPON_POISONED_BIT) != 0;
 }
 bool rec_weapon_is_broken(uint16_t thing)
 {
-    return (rec_read(thing)[OBJECT_FLAGS] & WEAPON_BROKEN_BIT) != 0;
+    return (record_bytes(thing)[OBJECT_FLAGS] & WEAPON_BROKEN_BIT) != 0;
 }
 
 /* Armour record */
 
 uint16_t rec_armour_type(uint16_t thing)
 {
-    return rec_read(thing)[OBJECT_TYPE] & OBJECT_TYPE_MASK;
+    return record_bytes(thing)[OBJECT_TYPE] & OBJECT_TYPE_MASK;
 }
 uint16_t rec_armour_charges(uint16_t thing)
 {
-    return (rec_read(thing)[OBJECT_FLAGS] & ARMOUR_CHARGES_MASK) >> ARMOUR_CHARGES_SHIFT;
+    return (record_bytes(thing)[OBJECT_FLAGS] & ARMOUR_CHARGES_MASK) >> ARMOUR_CHARGES_SHIFT;
 }
 void rec_armour_set_charges(uint16_t thing, uint16_t value)
 {
@@ -505,14 +506,14 @@ void rec_armour_set_charges(uint16_t thing, uint16_t value)
 }
 bool rec_armour_is_broken(uint16_t thing)
 {
-    return (rec_read(thing)[OBJECT_FLAGS] & ARMOUR_BROKEN_BIT) != 0;
+    return (record_bytes(thing)[OBJECT_FLAGS] & ARMOUR_BROKEN_BIT) != 0;
 }
 
 /* Scroll record */
 
 bool rec_scroll_is_closed(uint16_t thing)
 {
-    return (rec_read(thing)[OBJECT_FLAGS] & SCROLL_CLOSED_MASK) != 0;
+    return (record_bytes(thing)[OBJECT_FLAGS] & SCROLL_CLOSED_MASK) != 0;
 }
 void rec_scroll_set_closed(uint16_t thing, bool closed)
 {
@@ -521,14 +522,14 @@ void rec_scroll_set_closed(uint16_t thing, bool closed)
 }
 uint16_t rec_scroll_text_index(uint16_t thing)
 {
-    return be16(rec_read(thing) + OBJECT_FIRST_THING) & SCROLL_TEXT_MASK;
+    return be16(record_bytes(thing) + OBJECT_FIRST_THING) & SCROLL_TEXT_MASK;
 }
 
 /* Potion record */
 
 uint16_t rec_potion_type(uint16_t thing)
 {
-    return rec_read(thing)[POTION_TYPE] & OBJECT_TYPE_MASK;
+    return record_bytes(thing)[POTION_TYPE] & OBJECT_TYPE_MASK;
 }
 void rec_potion_set_type(uint16_t thing, uint16_t value)
 {
@@ -537,7 +538,7 @@ void rec_potion_set_type(uint16_t thing, uint16_t value)
 }
 uint16_t rec_potion_power(uint16_t thing)
 {
-    return rec_read(thing)[POTION_POWER];
+    return record_bytes(thing)[POTION_POWER];
 }
 void rec_potion_set_power(uint16_t thing, uint16_t value)
 {
@@ -548,11 +549,11 @@ void rec_potion_set_power(uint16_t thing, uint16_t value)
 
 uint16_t rec_container_type(uint16_t thing)
 {
-    return (rec_read(thing)[CONTAINER_FLAGS] & CONTAINER_TYPE_MASK) >> CONTAINER_TYPE_SHIFT;
+    return (record_bytes(thing)[CONTAINER_FLAGS] & CONTAINER_TYPE_MASK) >> CONTAINER_TYPE_SHIFT;
 }
 uint16_t rec_container_first_thing(uint16_t thing)
 {
-    return be16(rec_read(thing) + OBJECT_FIRST_THING);
+    return be16(record_bytes(thing) + OBJECT_FIRST_THING);
 }
 void rec_container_set_first_thing(uint16_t thing, uint16_t value)
 {
@@ -563,7 +564,7 @@ void rec_container_set_first_thing(uint16_t thing, uint16_t value)
 
 uint16_t rec_junk_type(uint16_t thing)
 {
-    return rec_read(thing)[OBJECT_TYPE] & OBJECT_TYPE_MASK;
+    return record_bytes(thing)[OBJECT_TYPE] & OBJECT_TYPE_MASK;
 }
 void rec_junk_set_type(uint16_t thing, uint16_t value)
 {
@@ -572,7 +573,7 @@ void rec_junk_set_type(uint16_t thing, uint16_t value)
 }
 uint16_t rec_junk_charges(uint16_t thing)
 {
-    return rec_read(thing)[OBJECT_FLAGS] >> JUNK_CHARGES_SHIFT;
+    return record_bytes(thing)[OBJECT_FLAGS] >> JUNK_CHARGES_SHIFT;
 }
 void rec_junk_set_charges(uint16_t thing, uint16_t value)
 {
@@ -584,7 +585,7 @@ void rec_junk_set_charges(uint16_t thing, uint16_t value)
 
 uint16_t rec_projectile_slot(uint16_t thing)
 {
-    return be16(rec_read(thing) + PROJECTILE_SLOT);
+    return be16(record_bytes(thing) + PROJECTILE_SLOT);
 }
 void rec_projectile_set_slot(uint16_t thing, uint16_t value)
 {
@@ -592,7 +593,7 @@ void rec_projectile_set_slot(uint16_t thing, uint16_t value)
 }
 uint8_t rec_projectile_energy(uint16_t thing)
 {
-    return rec_read(thing)[PROJECTILE_ENERGY];
+    return record_bytes(thing)[PROJECTILE_ENERGY];
 }
 void rec_projectile_set_energy(uint16_t thing, uint16_t value)
 {
@@ -600,7 +601,7 @@ void rec_projectile_set_energy(uint16_t thing, uint16_t value)
 }
 uint8_t rec_projectile_attack(uint16_t thing)
 {
-    return rec_read(thing)[PROJECTILE_ATTACK];
+    return record_bytes(thing)[PROJECTILE_ATTACK];
 }
 void rec_projectile_set_attack(uint16_t thing, uint16_t value)
 {
@@ -608,7 +609,7 @@ void rec_projectile_set_attack(uint16_t thing, uint16_t value)
 }
 uint16_t rec_projectile_event_index(uint16_t thing)
 {
-    return be16(rec_read(thing) + PROJECTILE_EVENT);
+    return be16(record_bytes(thing) + PROJECTILE_EVENT);
 }
 void rec_projectile_set_event_index(uint16_t thing, uint16_t value)
 {
@@ -619,7 +620,7 @@ void rec_projectile_set_event_index(uint16_t thing, uint16_t value)
 
 uint8_t rec_explosion_attack(uint16_t thing)
 {
-    return rec_read(thing)[EXPLOSION_ATTACK];
+    return record_bytes(thing)[EXPLOSION_ATTACK];
 }
 void rec_explosion_set_attack(uint16_t thing, uint16_t value)
 {
@@ -627,7 +628,7 @@ void rec_explosion_set_attack(uint16_t thing, uint16_t value)
 }
 uint8_t rec_explosion_type(uint16_t thing)
 {
-    return rec_read(thing)[EXPLOSION_FLAGS] & EXPLOSION_TYPE_MASK;
+    return record_bytes(thing)[EXPLOSION_FLAGS] & EXPLOSION_TYPE_MASK;
 }
 void rec_explosion_set_type(uint16_t thing, uint16_t value)
 {
@@ -636,7 +637,7 @@ void rec_explosion_set_type(uint16_t thing, uint16_t value)
 }
 bool rec_explosion_is_centered(uint16_t thing)
 {
-    return (rec_read(thing)[EXPLOSION_FLAGS] & EXPLOSION_CENTERED_BIT) != 0;
+    return (record_bytes(thing)[EXPLOSION_FLAGS] & EXPLOSION_CENTERED_BIT) != 0;
 }
 void rec_explosion_set_centered(uint16_t thing, bool centered)
 {

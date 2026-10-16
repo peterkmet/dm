@@ -173,7 +173,8 @@ void savefile_free(SaveFile *save)
     memset(save, 0, sizeof *save);
 }
 
-void savefile_randomize_header(uint8_t *h)
+/* New random block keys and chain words; the payload fields stay. */
+static void randomize_header(uint8_t *h)
 {
     for (int i = 0; i < SAVE_HEADER_KEY_COUNT; i++) {
         uint16_t key = random16();
@@ -190,7 +191,7 @@ void savefile_randomize_header(uint8_t *h)
 void savefile_init_header(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const uint8_t *extra)
 {
     memset(h, 0, SAVE_HEADER_BYTES);
-    savefile_randomize_header(h);
+    randomize_header(h);
     h[get_header_field_offset(SAVE_HEADER_HEADER_BYTE)] = HEADER_BYTE_DEFAULT;
     h[get_header_field_offset(SAVE_HEADER_PLATFORM)] = PLATFORM_AMIGA;
     wr16(h + get_header_field_offset(SAVE_HEADER_DIALOG_CHOICE), DIALOG_CHOICE_SAVE);
@@ -209,7 +210,7 @@ void savefile_make_adventure_header(uint8_t *h, uint32_t game_id)
     wr32(h + get_header_field_offset(SAVE_HEADER_GAME_ID), game_id + 1);
     wr16(h + get_header_field_offset(SAVE_HEADER_FORMAT), SAVE_FORMAT);
     h[get_header_field_offset(SAVE_HEADER_HEADER_BYTE)] = HEADER_BYTE_NEW_ADVENTURE;
-    savefile_randomize_header(h);
+    randomize_header(h);
 }
 
 uint32_t savefile_get_game_id(const uint8_t *h)

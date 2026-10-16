@@ -33,7 +33,7 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 | Function | Original | Work |
 |---|---|---|
 | `map_get_square(x, y)` | `0x10a8ac` | Square byte. Outside the map: a wall byte. The wall gets bit 1, 3, 2, or 0 when the adjacent square above, below, left, or right is a corridor or a pit. |
-| `map_get_square_type(x, y)` | — | `map_get_square(x, y) >> 5`. |
+| `get_square_type(x, y)` | — | `map_get_square(x, y) >> 5`. |
 | `map_is_square_open(x, y)` | `0x10bce6` | 1 for a corridor, pit, door, or teleporter. |
 | `map_get_level_change_location(place, delta)` | `0x10aa0c` | Finds the map on level `level + delta` that covers the same dungeon position. Returns the `Position` on that map, or map −1 and the unchanged square when no map matches. |
 | `map_get_stairs_exit_direction(x, y)` | `0x10aad2` | Bit 3 of the stairs square selects the axis (set: north–south). The exit side is the side that is not a wall or stairs. |
@@ -73,17 +73,17 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 `move_party(command)`:
 
 1. Each living champion loses `load * 3 / maximum_load + 1` stamina (`champion_decrement_stamina`).
-2. On stairs, a backward move takes the stairs (`move_take_stairs`).
+2. On stairs, a backward move takes the stairs (`take_stairs`).
 3. The target square is the party square plus the step counts of the arrow (`0x103c56`: forward 1, 0, −1, 0; `0x103c5e`: right 0, 1, 0, −1), relative to the party direction.
 4. A stairs target: the party leaves its square, moves onto the stairs square, and takes the stairs.
 5. These targets block the move: a wall, a door with state 2, 3, or 4, and a fake wall with bit 2 (open) and bit 0 (imaginary) clear. With champions, a group on the target also blocks the move.
 6. Else the party moves with `move_get_move_result`. On stairs, the party only enters the new square. `g_disabled_movement_ticks` becomes the maximum of 1 and `champion_get_movement_ticks` of each living champion. `g_projectile_disabled_movement_ticks` becomes 0.
 
-`move_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`move_set_party_direction`), and enters the floor sensors again.
+`move_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`turn_party`), and enters the floor sensors again.
 
-`move_take_stairs(up)` removes the party from its square, sets `g_session.new_party_map` and the party square with `map_get_level_change_location` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
+`take_stairs(up)` removes the party from its square, sets `g_session.new_party_map` and the party square with `map_get_level_change_location` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
-`move_set_party_direction(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
+`turn_party(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
 
 ### `move_get_move_result`
 
@@ -171,7 +171,7 @@ The trigger rule: XOR the value with the revert bit (byte 5 bit 5). Effect 3 (ho
 `sensor_trigger_effect(sensor, effect, x, y, cell)`:
 
 1. A once-only sensor (byte 5 bit 2) sets its type to 0.
-2. A local sensor (byte 4 bit 3) calls `sensor_trigger_local_effect(word 6 >> 4, ...)`. Local effect 10 gives 300 experience in skill 8: to the leader for a wall sensor, else shared by the living champions. Local effects 1 and 2 rotate the sensors of the cell (`sensor_process_rotation_effect`): the first sensor moves behind the last sensor of the cell.
+2. A local sensor (byte 4 bit 3) calls `trigger_local_effect(word 6 >> 4, ...)`. Local effect 10 gives 300 experience in skill 8: to the leader for a wall sensor, else shared by the living champions. Local effects 1 and 2 rotate the sensors of the cell (`sensor_process_rotation_effect`): the first sensor moves behind the last sensor of the cell.
 3. A remote sensor adds a square event at the target (word 6 bits 6–10: X, bits 11–15: Y) after the delay (word 4 bits 7–10). The target square type selects the event type (`0x100d4a`): wall 6, corridor 5, pit 9, stairs 0, door 10, teleporter 8, fake wall 7. Only a wall target keeps the target cell (word 6 bits 4–5).
 
 `sensor_add_event(type, at, cell, effect, time)` adds the event on the current map. The priority is 1 for effect 0, 3 for effect 1, 2 for effect 2, and 0 for other effects. Example: a door button click adds `sensor_add_event(10, at, 0, 2, g_game_time + 1)`.
@@ -189,8 +189,8 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 
 ## Pits, teleporters, and fake walls
 
-- Event 8 (teleporter) and event 9 (pit): toggle becomes 1 for an open square (bit 3), else 0. Effect 0 sets bit 3 and calls `event_move_teleporter_or_pit_square_things`. Other effects clear bit 3.
-- `event_move_teleporter_or_pit_square_things(x, y)` moves the party, the group, and each object of the square again with a move from the square to the same square. It updates the events of moved projectiles and explosions from the `MoveDestination`.
+- Event 8 (teleporter) and event 9 (pit): toggle becomes 1 for an open square (bit 3), else 0. Effect 0 sets bit 3 and calls `reenter_square_things`. Other effects clear bit 3.
+- `reenter_square_things(x, y)` moves the party, the group, and each object of the square again with a move from the square to the same square. It updates the events of moved projectiles and explosions from the `MoveDestination`.
 - Event 7 (fake wall): bit 2 is open. Toggle becomes 1 for an open wall, else 0. Effect 1 closes the wall. It waits (time + 1) while the party or a material group is on the square. Other effects open it.
 
 ## Square events on corridors and walls
@@ -207,19 +207,19 @@ Implemented event types:
 
 | Type | Action |
 |---|---|
-| 1 | `event_process_door_animation` |
-| 2 | `event_process_door_destruction` |
-| 5 | `event_process_corridor` |
+| 1 | `process_door_animation` |
+| 2 | `process_door_destruction` |
+| 5 | `process_corridor` |
 | 6 | `event_process_wall` |
-| 7 | `event_process_fake_wall` |
-| 8 | `event_process_teleporter` |
-| 9 | `event_process_pit` |
-| 10 | `event_process_door` |
+| 7 | `process_fake_wall` |
+| 8 | `process_teleporter` |
+| 9 | `process_pit` |
+| 10 | `process_door` |
 | 20 | `sound_request_play(c, at, SOUND_MODE_AFTER_TICK, 0)` |
 | 24 | Unlinks and frees the fluxcage thing in `c`, unless `g_session.won` is set. |
 | 53 | `timeline_add_watchdog_event` |
-| 65 | `event_enable_group_generator` |
-| 70 | `event_process_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |
+| 65 | `enable_group_generator` |
+| 70 | `process_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |
 | 71 | Decrements the invisibility count. |
 | 72 | Subtracts `b` from the shield defense of champion `priority`. |
 | 73 | Decrements the thieves eye count. |
@@ -232,9 +232,9 @@ Event types without effect in the port:
 
 | Type | Original handler | Step |
 |---|---|---|
-| 11 | `event_enable_champion_action` | Champions |
-| 12 | `event_hide_damage_received` | Champions |
-| 13 | `event_process_vi_altar_rebirth` | Champions |
+| 11 | `enable_champion_action` | Champions |
+| 12 | `hide_damage_received` | Champions |
+| 13 | `process_vi_altar_rebirth` | Champions |
 | 25 | `explosion_process_step_event` | Projectiles |
 | 29–41 | `group_process_reaction_event` | Creatures |
 | 48, 49 | `projectile_process_move_event` | Projectiles |
@@ -250,7 +250,7 @@ These rules need later steps. The port has no code for them yet:
 
 - Groups: `move_get_move_result` returns 0 for a group and does not move it. The party that arrives on a group square does not delete the group. A blocked move into a group does not send event −1 to the group. The closing door does not damage a group. The group generator does not create a group.
 - Projectiles: wall launchers (sensor types 7–10, 14, 15) do not launch. `projectile_is_killed_by_impact` does not run.
-- Champions: a blocked move does not damage the two front champions and plays no sound. This needs `group_get_target_champion_index` and `group_set_ordered_cells_to_attack`.
+- Champions: a blocked move does not damage the two front champions and plays no sound. This needs `group_get_target_champion_index` and `order_attack_cells`.
 - Objects: wall sensor type 12 does not create an object (`projectile_get_object_for_launcher_or_generator`).
 - Endgame: wall sensor type 18 does nothing.
 - Drawing: the pit fall animation and the redraw calls are not part of the rules.

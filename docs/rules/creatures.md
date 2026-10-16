@@ -59,7 +59,7 @@ Bits 0–3 of group word 14 hold the behavior.
 
 ### Sight
 
-`group_get_distance_to_visible_party` returns the square distance to the party, or 0.
+`visible_party_distance` returns the square distance to the party, or 0.
 
 1. A creature without side attack sees only into the 90 degree cone in front of it (`group_is_destination_visible_from_source`).
 2. The sight range comes from the creature info. Darkness reduces it by `palette index / 2`, unless the creature has night vision. An invisible party is hidden from a creature that does not see invisible.
@@ -81,7 +81,7 @@ Smell uses the smell range of the creature. A creature smells the party directly
 
 An attacking creature (events 38–41) turns to the party, moves to the front cells of its square, then attacks. After an attack it waits its attack ticks plus a random part.
 
-`group_is_creature_attacking` makes one attack:
+`is_creature_attacking` makes one attack:
 
 - Attack range 1, or a party next to the group (half of the time): a melee hit on the champion in the cells that the creature reaches first. A creature with "attack any champion" picks a random living champion.
 - A Giggler steals objects from random slots of the champion while the champion fails a dexterity and luck check. Then the Giggler often flees.
@@ -143,7 +143,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 4. In a door square, a closed door stops it with an impact.
 5. The next event comes after 1 tick on the party map, 3 ticks on other maps.
 
-`projectile_has_impact_occurred(site, projectile, outcome)` runs one impact; the site holds the impact type, `at`, `target` and the cell, and `outcome` receives the damage outcome. The projectile stops at the square `at`; the creature or door hit is on the square `target` (the same square, except when the party or a group moves onto the square of a projectile: `target` is then the square it leaves):
+`has_impact_occurred(site, projectile, outcome)` runs one impact; the site holds the impact type, `at`, `target` and the cell, and `outcome` receives the damage outcome. The projectile stops at the square `at`; the creature or door hit is on the square `target` (the same square, except when the party or a group moves onto the square of a projectile: `target` is then the square it leaves):
 
 - Party: the champion in the cell takes `projectile_get_impact_attack` damage on the head or torso. Poison can follow.
 - Creature: damage `impact attack × 64 / creature defense` plus poison. A non-material creature takes damage only from Harm Non-Material. A Black Flame gains health from a fireball. Some creatures catch a thrown dagger, arrow, slayer, poison dart, or throwing star.
@@ -199,7 +199,7 @@ Then the explosion disappears.
 
 ## Kept original quirks
 
-- `random_move` reads the party-blocked result of the last step test, also when it skips the test. The value survives between turns; `group_reset` does not clear it.
+- `wander_step` reads the party-blocked result of the last step test, also when it skips the test. The value survives between turns; `group_reset` does not clear it.
 - A group turn remembers its square and group thing (`last_turn` in `group.c`) until the next group turn. A group that becomes active plays its flip sound at this square, and a group off the party map tests teleporters with this thing.
 
 ## Fixed original bugs

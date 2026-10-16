@@ -489,7 +489,7 @@ def state(game):
 
 
 def scrub_free_groups(lib):
-    """Zero the bytes of free active-group entries: the port leaves them uninitialized, and the save copies them."""
+    """Zero the bytes of free active-group entries: the port keeps the fields of a removed group there, and the save copies them."""
     base = ctypes.c_void_p.in_dll(lib, "g_active_groups").value
     for i in range(ctypes.c_uint16.in_dll(lib, "g_max_active_group_count").value):
         entry = base + i * ACTIVE_GROUP_BYTES

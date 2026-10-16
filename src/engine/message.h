@@ -30,13 +30,11 @@ extern MessageArea g_message;
 /* Empties all rows and puts the cursor at the start of the last row. */
 void message_clear(void);
 /* Moves the cursor to a character column and a row, clamped to the area. */
-void message_move_cursor(int16_t column, int16_t row);
+void message_move_cursor(int16_t column, int16_t row); /* exported for the tests */
 /* Empties the rows whose display time has run out. */
 void message_clear_expired_rows(void);
 /* Prints s with word wrap; '\n' starts a new row, a wrapped row continues indented. */
 void message_print(int16_t color, const char *s);
-/* Prints a number and a space. */
-void message_print_number(int16_t color, int32_t integer);
 /* Starts a new row. */
 void message_new_line(void);
 /* Copies from s + *pos the words that fit in max_width pixels into line, moves *pos, and

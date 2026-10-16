@@ -138,7 +138,7 @@ extern int16_t g_leader_index, g_magic_caster_champion_index;
 #define CHAMPION_ATTR_INVENTORY_ALL   0x5f80 /* everything the inventory shows */
 
 /* Copies portrait portrait_index of graphic 26 into the portrait of the champion. */
-void champion_set_portrait(int16_t champion_index, int16_t portrait_index);
+void champion_set_portrait(int16_t champion_index, int16_t portrait_index); /* exported for the tests */
 /* Champions that died in the tick, one bit per champion index: the user interface releases them after the tick. */
 extern uint16_t g_dead_champions;
 /* The champions that died in the tick (one bit each); the notice is then cleared. */
@@ -196,7 +196,7 @@ int16_t champion_get_dexterity(int16_t champion_index);
 int16_t champion_get_strength(int16_t champion_index, int16_t slot);
 /* Defense of one body part (slot 0-5). Shields in the hands count for every part. sharp adds the sharp
    defense of the armour. */
-int16_t champion_get_wound_defense(int16_t champion_index, int16_t slot, bool sharp);
+int16_t champion_get_wound_defense(int16_t champion_index, int16_t slot, bool sharp); /* exported for the tests */
 
 /* Damage arrives at the end of the tick. Attack type ATTACK_RAW skips defense and wounds. */
 int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
@@ -206,9 +206,7 @@ void champion_apply_and_draw_pending_damage_and_wounds(void);
 /* Closes the champion's inventory and action menu, drops all objects and the bones on the party
    square, and passes the leader and the spell casting to the first living champion. The party dies
    with its last champion. */
-void champion_kill(int16_t champion_index);
-/* All objects fall to the floor in the champion's cell. */
-void champion_drop_all_objects(int16_t champion_index);
+void champion_kill(int16_t champion_index); /* exported for the tests */
 /* Each poison step deals attack / 64 (at least 1) and schedules the next step with attack - 1. */
 void champion_poison(int16_t champion_index, int16_t attack);
 /* Removes all poison events of the champion. */

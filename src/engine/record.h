@@ -16,8 +16,6 @@
 #define MAP_BYTES          16
 
 /* Records of every thing type */
-/* The record bytes of the thing, read only. */
-const uint8_t *rec_read(uint16_t thing);
 /* The record bytes of the thing, exported for the tests. */
 uint8_t *rec_write(uint16_t thing);
 /* Every record starts with the next thing of its list. 0xffff marks a free record. */

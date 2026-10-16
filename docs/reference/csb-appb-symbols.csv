@@ -268,37 +268,37 @@ address,name,signature,subsystem
 0x10d830,group_get_creature_in_cell,"int16_t group_get_creature_in_cell(const Group *group, uint16_t cell)",group
 0x10d912,group_get_melee_target,"int16_t group_get_melee_target(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y, int16_t champion_cell)",group
 0x10d998,is_square_open,"int16_t is_square_open(int16_t map_x, int16_t map_y)",dungeon
-0x10d9d8,group_set_cell_value,"uint16_t group_set_cell_value(uint16_t packed, uint16_t creature_index, uint16_t value)",group
-0x10da04,group_get_creature_aspect_update_time,"int32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t creature_index, int16_t is_attacking)",group
+0x10d9d8,set_cell_value,"uint16_t set_cell_value(uint16_t packed, uint16_t creature_index, uint16_t value)",group
+0x10da04,next_aspect_time,"int32_t next_aspect_time(ActiveGroup *active, int16_t creature_index, int16_t is_attacking)",group
 0x10dbfa,group_start_wandering,"void group_start_wandering(int16_t map_x, int16_t map_y)",group
-0x10dc86,group_delete_events,"void group_delete_events(int16_t map_x, int16_t map_y)",group
+0x10dc86,delete_events,"void delete_events(int16_t map_x, int16_t map_y)",group
 0x10dcee,stop_attacking,"void stop_attacking(ActiveGroup *active, int16_t map_x, int16_t map_y)",group
 0x10dd24,group_add_active_group,"void group_add_active_group(uint16_t group_thing, uint8_t map_x, uint8_t map_y)",group
-0x10dde6,group_remove_active_group,void group_remove_active_group(uint16_t active_index),group
+0x10dde6,remove_active_group,void remove_active_group(uint16_t active_index),group
 0x10de6a,group_get_generated,"uint16_t group_get_generated(uint8_t creature_type, int16_t health_multiplier, uint16_t creature_count_minus_1, int16_t direction, int16_t map_x, int16_t map_y)",group
-0x10dfc6,group_drop_creature_fixed_possessions,"void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t map_x, int16_t map_y, uint16_t cell, int16_t sound_mode)",group
-0x10e148,group_drop_moving_creature_fixed_possessions,"void group_drop_moving_creature_fixed_possessions(uint16_t group_thing, int16_t map_x, int16_t map_y)",group
+0x10dfc6,drop_fixed_possessions,"void drop_fixed_possessions(uint16_t creature_type, int16_t map_x, int16_t map_y, uint16_t cell, int16_t sound_mode)",group
+0x10e148,drop_moving_possessions,"void drop_moving_possessions(uint16_t group_thing, int16_t map_x, int16_t map_y)",group
 0x10e1a8,group_drop_group_possessions,"void group_drop_group_possessions(int16_t map_x, int16_t map_y, uint16_t group_thing, int16_t sound_mode)",group
 0x10e2c2,group_delete,"void group_delete(int16_t map_x, int16_t map_y)",group
 0x10e352,group_get_damage_creature_outcome,"int16_t group_get_damage_creature_outcome(Group *group, uint16_t creature_index, int16_t map_x, int16_t map_y, int16_t damage, int16_t notify)",group
 0x10e6b4,group_get_damage_all_creatures_outcome,"int16_t group_get_damage_all_creatures_outcome(Group *group, int16_t map_x, int16_t map_y, int16_t attack, int16_t notify)",group
 0x10e75e,group_get_resistance_adjusted_poison_attack,"uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack)",group
-0x10e7a8,group_steal_from_champion,"uint8_t group_steal_from_champion(Group *group, uint16_t champion_index)",group
+0x10e7a8,steal_from_champion,"uint8_t steal_from_champion(Group *group, uint16_t champion_index)",group
 0x10e8cc,group_remove_all_active_groups,void group_remove_all_active_groups(void),group
 0x10e8fa,group_add_all_active_groups,void group_add_all_active_groups(void),group
 0x10e990,group_init_active_groups,void group_init_active_groups(void),group
-0x10e9de,group_is_view_party_blocked,"int16_t group_is_view_party_blocked(uint16_t map_x, uint16_t map_y)",group
-0x10ea78,group_is_smell_party_blocked,"int16_t group_is_smell_party_blocked(uint16_t map_x, uint16_t map_y)",group
-0x10eac6,group_get_distance_between_unblocked_squares,"int16_t group_get_distance_between_unblocked_squares(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, int16_t (*is_blocked)(uint16_t map_x, uint16_t map_y))",group
-0x10ed9a,group_get_distance_to_visible_party,"int16_t group_get_distance_to_visible_party(const Group *group, int16_t creature_index, int16_t map_x, int16_t map_y)",group
+0x10e9de,is_view_party_blocked,"int16_t is_view_party_blocked(uint16_t map_x, uint16_t map_y)",group
+0x10ea78,is_smell_party_blocked,"int16_t is_smell_party_blocked(uint16_t map_x, uint16_t map_y)",group
+0x10eac6,unblocked_distance,"int16_t unblocked_distance(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, int16_t (*is_blocked)(uint16_t map_x, uint16_t map_y))",group
+0x10ed9a,visible_party_distance,"int16_t visible_party_distance(const Group *group, int16_t creature_index, int16_t map_x, int16_t map_y)",group
 0x10ef50,get_smelled_party_direction,"int16_t get_smelled_party_direction(const CreatureInfo *info, int16_t map_x, int16_t map_y)",group
 0x10f030,group_is_movement_possible,"int16_t group_is_movement_possible(const CreatureInfo *info, int16_t map_x, int16_t map_y, uint16_t direction, int16_t allow_fake_pit_and_wall)",group
 0x10f2a0,get_first_free_direction,"int16_t get_first_free_direction(const CreatureInfo *info, int16_t map_x, int16_t map_y, int16_t allow_fake_pit_and_wall)",group
-0x10f2e8,group_is_archenemy_double_movement_possible,"int16_t group_is_archenemy_double_movement_possible(const CreatureInfo *info, int16_t map_x, int16_t map_y, uint16_t direction)",group
-0x10f34e,group_set_direction,"void group_set_direction(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t two_half_square_creatures_same_direction)",group
-0x10f3f6,group_set_direction_group,"void group_set_direction_group(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t creature_size)",group
-0x10f44c,group_is_creature_attacking,"int16_t group_is_creature_attacking(const Group *group, int16_t map_x, int16_t map_y, int16_t creature_index)",group
-0x10f704,group_add_event,"void group_add_event(TimelineEvent *event, uint32_t aspect_update_time)",group
+0x10f2e8,can_archenemy_double_move,"int16_t can_archenemy_double_move(const CreatureInfo *info, int16_t map_x, int16_t map_y, uint16_t direction)",group
+0x10f34e,turn_creature,"void turn_creature(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t two_half_square_creatures_same_direction)",group
+0x10f3f6,turn_group,"void turn_group(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t creature_size)",group
+0x10f44c,is_creature_attacking,"int16_t is_creature_attacking(const Group *group, int16_t map_x, int16_t map_y, int16_t creature_index)",group
+0x10f704,add_event,"void add_event(TimelineEvent *event, uint32_t aspect_update_time)",group
 0x10f760,group_process_events_29_to_41,"void group_process_events_29_to_41(int16_t map_x, int16_t map_y, int16_t event_type, int16_t ticks)",group
 0x1107ae,fill_bitmap,"void fill_bitmap(uint8_t *bitmap, int16_t color, int16_t width, int16_t height)",video
 0x1107fc,fill_viewport_box,"void fill_viewport_box(const int16_t *box, int16_t color)",video
@@ -360,7 +360,7 @@ address,name,signature,subsystem
 0x113fae,champion_get_scent_ordinal,"uint16_t champion_get_scent_ordinal(int16_t map_x, int16_t map_y)",champion
 0x114030,party_delete_scent,void party_delete_scent(uint16_t scent_index),champion
 0x1140d4,champion_add_scent_strength,"void champion_add_scent_strength(int16_t map_x, int16_t map_y, int16_t strength_and_flags)",champion
-0x1141a2,champion_drop_all_objects,void champion_drop_all_objects(uint16_t champion_index),champion
+0x1141a2,drop_all_objects,void drop_all_objects(uint16_t champion_index),champion
 0x11421e,champion_kill,void champion_kill(uint16_t champion_index),champion
 0x1143fa,champion_apply_and_draw_pending_damage_and_wounds,void champion_apply_and_draw_pending_damage_and_wounds(void),champion
 0x11451a,champion_add_pending_damage_and_wounds,"int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds, int16_t attack_type)",champion
@@ -516,44 +516,44 @@ address,name,signature,subsystem
 0x11f042,blit_bitmap,"void blit_bitmap(const uint8_t *src, uint8_t *dst, const int16_t *box, int16_t src_x, int16_t src_y, int16_t src_width, int16_t dst_width, int16_t transparent_color, int16_t src_height, int16_t dst_height)",blitter
 0x11f1cc,projectile_create,"void projectile_create(uint16_t thing, int16_t map_x, int16_t map_y, int16_t cell, int16_t direction, int16_t kinetic_energy, int16_t attack, int16_t step_energy)",projectile
 0x11f30c,explosion_create,"void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t map_x_combo, uint16_t map_y_combo, int16_t cell)",projectile
-0x11f540,projectile_delete_event,void projectile_delete_event(uint16_t projectile_thing),projectile
-0x11f564,projectile_delete,"void projectile_delete(uint16_t projectile_thing, uint16_t *group_slot, int16_t map_x, int16_t map_y)",projectile
+0x11f540,delete_event,void delete_event(uint16_t projectile_thing),projectile
+0x11f564,delete_projectile,"void delete_projectile(uint16_t projectile_thing, uint16_t *group_slot, int16_t map_x, int16_t map_y)",projectile
 0x11f5f8,projectile_get_impact_attack,"uint16_t projectile_get_impact_attack(Projectile *projectile, uint16_t thing)",projectile
-0x11f73c,projectile_has_impact_occurred,"int16_t projectile_has_impact_occurred(int16_t impact_type, int16_t map_x, int16_t map_y, int16_t cell, uint16_t projectile_thing)",projectile
+0x11f73c,has_impact_occurred,"int16_t has_impact_occurred(int16_t impact_type, int16_t map_x, int16_t map_y, int16_t cell, uint16_t projectile_thing)",projectile
 0x11fc40,projectile_get_impact_count,"int16_t projectile_get_impact_count(int16_t impact_type, int16_t map_x, int16_t map_y, int16_t cell)",projectile
 0x11fcd2,projectile_process_events_48_to_49,void projectile_process_events_48_to_49(TimelineEvent *event),projectile
 0x11ffe2,explosion_process_event_25,void explosion_process_event_25(TimelineEvent *event),projectile
 0x12030a,get_square_distance,"int16_t get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2)",group
 0x12035a,group_is_destination_visible_from_source,"int16_t group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
 0x1203da,group_get_directions_to_destination,"int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
-0x1204d4,group_set_ordered_cells_to_attack,"void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x, int16_t group_y, int16_t group_cell)",group
+0x1204d4,order_attack_cells,"void order_attack_cells(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x, int16_t group_y, int16_t group_cell)",group
 0x120532,group_get_champion_damage,"int16_t group_get_champion_damage(Group *group, uint16_t champion_index)",group
 0x12078c,group_get_melee_action_damage,"int16_t group_get_melee_action_damage(Champion *champion, int16_t champion_index, Group *group, int16_t creature_index, int16_t map_x, int16_t map_y, uint16_t hit_probability, uint16_t damage_factor, int16_t skill_index)",group
 0x120a4a,group_is_door_destroyed_by_attack,"int16_t group_is_door_destroyed_by_attack(int16_t map_x, int16_t map_y, int16_t attack, int16_t magic_attack, int16_t ticks)",group
 0x120b4e,protect_checksum_120b4e,,protect
 0x120b6e,move_get_teleporter_rotated_group_result,"int16_t move_get_teleporter_rotated_group_result(Teleporter *teleporter, uint16_t group_thing, int16_t map_index)",move
-0x120cc6,move_get_teleporter_rotated_projectile_thing,"uint16_t move_get_teleporter_rotated_projectile_thing(Teleporter *teleporter, uint16_t thing)",move
+0x120cc6,rotate_projectile,"uint16_t rotate_projectile(Teleporter *teleporter, uint16_t thing)",move
 0x120d26,move_is_levitating,int16_t move_is_levitating(uint16_t thing),move
 0x120d6c,move_create_event_move_group,"void move_create_event_move_group(uint16_t group_thing, int16_t map_x, int16_t map_y, int16_t map_index, int16_t audible)",move
 0x120dba,move_is_killed_by_projectile_impact,"int16_t move_is_killed_by_projectile_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)",move
 0x12107e,move_get_move_result,"int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",move
 0x121b60,move_get_creature_sound,int16_t move_get_creature_sound(uint16_t creature_type),move
 0x121ba8,sensor_add_event,"void sensor_add_event(int16_t event_type, int16_t map_x, int16_t map_y, int16_t cell, int16_t effect, int32_t time)",sensor
-0x121bee,sensor_add_skill_experience,"void sensor_add_skill_experience(int16_t skill_index, uint16_t experience, int16_t leader_only)",sensor
-0x121c56,sensor_trigger_local_effect,"void sensor_trigger_local_effect(int16_t local_effect, int16_t map_x, int16_t map_y, int16_t cell)",sensor
+0x121bee,add_skill_experience,"void add_skill_experience(int16_t skill_index, uint16_t experience, int16_t leader_only)",sensor
+0x121c56,trigger_local_effect,"void trigger_local_effect(int16_t local_effect, int16_t map_x, int16_t map_y, int16_t cell)",sensor
 0x121c9c,sensor_process_rotation_effect,void sensor_process_rotation_effect(void),sensor
 0x121dd0,sensor_trigger_effect,"void sensor_trigger_effect(Sensor *sensor, int16_t effect, int16_t map_x, int16_t map_y, int16_t cell)",sensor
-0x121e98,sensor_get_object_of_type_in_cell,"uint16_t sensor_get_object_of_type_in_cell(int16_t map_x, int16_t map_y, int16_t cell, int16_t object_type)",sensor
-0x121ef6,sensor_is_object_in_party_possession,int16_t sensor_is_object_in_party_possession(int16_t object_type),sensor
+0x121e98,get_object_in_cell,"uint16_t get_object_in_cell(int16_t map_x, int16_t map_y, int16_t cell, int16_t object_type)",sensor
+0x121ef6,is_object_possessed,int16_t is_object_possessed(int16_t object_type),sensor
 0x121fa6,sensor_is_triggered_by_click_on_wall,"int16_t sensor_is_triggered_by_click_on_wall(int16_t map_x, int16_t map_y, uint16_t cell)",sensor
 0x122410,sensor_process_thing_addition_or_removal,"void sensor_process_thing_addition_or_removal(uint16_t map_x, uint16_t map_y, uint16_t thing, int16_t party_on_square, int16_t add_thing)",sensor
 0x12287e,timeline_init,void timeline_init(void),timeline
 0x1228f0,timeline_reset,void timeline_reset(void),timeline
-0x122960,timeline_is_event_a_before_b,"int16_t timeline_is_event_a_before_b(const TimelineEvent *a, const TimelineEvent *b)",timeline
+0x122960,is_before,"int16_t is_before(const TimelineEvent *a, const TimelineEvent *b)",timeline
 0x122990,timeline_get_index,uint16_t timeline_get_index(int16_t event_index),timeline
 0x1229ba,timeline_fix_chronology,void timeline_fix_chronology(uint16_t timeline_index),timeline
 0x122b24,timeline_delete_event,void timeline_delete_event(uint16_t event_index),timeline
-0x122ba0,timeline_find_mergeable_event,int16_t timeline_find_mergeable_event(TimelineEvent *event),timeline
+0x122ba0,find_mergeable,int16_t find_mergeable(TimelineEvent *event),timeline
 0x122d46,timeline_add_event,int16_t timeline_add_event(TimelineEvent *event),timeline
 0x122e00,timeline_extract_first_event,void timeline_extract_first_event(TimelineEvent *event),timeline
 0x122e30,timeline_is_first_event_expired,int16_t timeline_is_first_event_expired(void),timeline
