@@ -135,7 +135,7 @@ def spell_runes(appb, index):
 
 def test_csb_spells(lib, appb):
     load(lib, CSB, GAME_CSB / "APPB.FTL")
-    assert lib.spell_count() == 29
+    assert lib.tables_get_spell(28) and not lib.tables_get_spell(29)
     assert [lib.spell_find(spell_runes(appb, i)) for i in range(25, 29)] == [25, 26, 27, 28]
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
     assert lib.tables_get_spell(28) and not lib.tables_get_spell(29)
@@ -144,7 +144,7 @@ def test_csb_spells(lib, appb):
 @needs_dm
 def test_dm_spells(lib, appb):
     load(lib, DM, GAME / "KAOS.FTL")
-    assert lib.spell_count() == 25
+    assert lib.tables_get_spell(24) and not lib.tables_get_spell(25)
     assert lib.spell_find(spell_runes(appb, 25)) == -1
 
 

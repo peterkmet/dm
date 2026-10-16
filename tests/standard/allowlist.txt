@@ -673,7 +673,6 @@ dead-api data/csbimage.h:csb_copies open: epic 4
 dead-api data/csbimage.h:csb_copy_count open: epic 4
 dead-api data/graphics.h:gfx_count open: epic 4
 dead-api data/graphics.h:gfx_expand open: epic 4
-dead-api data/spells.h:spell_count open: epic 4
 dead-api data/spells.h:spell_get_symbol open: epic 4
 dead-api data/spells.h:spell_get_symbol_mana_cost open: epic 4
 dead-api engine/action.h:action_decrement_charges open: epic 7

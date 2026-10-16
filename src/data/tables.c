@@ -82,6 +82,31 @@
 #define CREATURE_AT_WOUND_PROBABILITIES  22
 #define CREATURE_AT_ATTACK_TYPE          24
 
+#define SPELL_AT_LEVEL      4
+#define SPELL_AT_SKILL      5
+#define SPELL_AT_ATTRIBUTES 6
+#define SPELL_BYTES         8
+
+#define SPELL_KIND_MASK 0x0f
+#define SPELL_TYPE_MASK 0x3f
+
+#define SPELL_TYPE_SHIFT           4
+#define SPELL_DISABLED_TICKS_SHIFT 10
+
+/* The fields of the attributes word of a spell entry. */
+static uint16_t attributes_kind(uint16_t attributes)
+{
+    return attributes & SPELL_KIND_MASK;
+}
+static uint16_t attributes_type(uint16_t attributes)
+{
+    return attributes >> SPELL_TYPE_SHIFT & SPELL_TYPE_MASK;
+}
+static uint16_t attributes_disabled_ticks(uint16_t attributes)
+{
+    return attributes >> SPELL_DISABLED_TICKS_SHIFT;
+}
+
 #define OBJECT_AT_TYPE             0
 #define OBJECT_AT_ASPECT_INDEX     2
 #define OBJECT_AT_ACTION_SET_INDEX 3
@@ -192,13 +217,9 @@ static void read_magic(void)
     loaded_spell_count = csb ? CSB_SPELL_COUNT : DM_SPELL_COUNT;
     for (uint32_t i = 0; i < (uint32_t)loaded_spell_count; i++) {
         uint32_t a = (csb ? CSB_SPELLS : KAOS_SPELLS) + i * SPELL_BYTES;
-        uint16_t w = kaos_u16(a + SPELL_ENTRY_ATTRIBUTES);
-        spells[i] = (Spell){kaos_u32(a),
-                            kaos_u8(a + SPELL_ENTRY_LEVEL),
-                            kaos_u8(a + SPELL_ENTRY_SKILL),
-                            spell_attributes_kind(w),
-                            spell_attributes_type(w),
-                            spell_attributes_disabled_ticks(w)};
+        uint16_t w = kaos_u16(a + SPELL_AT_ATTRIBUTES);
+        spells[i] = (Spell){kaos_u32(a),        kaos_u8(a + SPELL_AT_LEVEL), kaos_u8(a + SPELL_AT_SKILL),
+                            attributes_kind(w), attributes_type(w),          attributes_disabled_ticks(w)};
     }
     for (uint32_t s = 0; s < SYMBOL_STEP_COUNT; s++)
         for (uint32_t n = 0; n < SYMBOL_COUNT; n++)
