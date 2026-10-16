@@ -25,7 +25,8 @@ HEX = re.compile(r"\b0x[0-9a-fA-F]{2,}\b")
 DECIMAL = re.compile(r"(?<![\w.])[1-9][0-9]+(?![\w.])|\[\s*[2-9]\s*\]|<=?\s*[2-9]\s*;")
 STRTOL_BASE = re.compile(r"\bstrto\w*\s*\([^;]*?,\s*10\s*\)")
 DECOMPILER = re.compile(r"\b(?:[uisbcp]Var\d+|local_[0-9a-f]+|arg_[0-9a-f]+|param_\d+|in_[AD][0-7]\w*|CONCAT\d+|DAT_[0-9a-f]+|FUN_[0-9a-f]+)\b")
-RECORD = re.compile(r"g_current_map\s*\[|dungeon_get_thing_data\([^()]*\)\s*\[")
+RECORD = re.compile(r"\bREC\s*\(|\bg_current_map_data\s*\[|\bg_dungeon_map_data\s*\[|\bg_current_map\s*\[|"
+                    r"dungeon_get_thing_data\([^()]*\)\s*\[")
 CONST_DEF = re.compile(r"\s*(?:static\s+)?const\s+\w+\s+[A-Z][A-Z0-9_]*\s*=")
 ENUM = re.compile(r"\benum\b[^{};]*\{([^}]*)\}")
 DEFINE = re.compile(r"^\s*#define\s+([A-Z][A-Z0-9_]*)\b", re.M)
@@ -219,7 +220,7 @@ def test_no_decompiler_names():
 
 
 def test_raw_record_access_only_in_accessors():
-    line_check("record", RECORD, owners={"map.c", "map.h"})
+    line_check("record", RECORD, owners={"record.c", "record.h"})
 
 
 def test_each_constant_has_one_definition():
@@ -733,3 +734,87 @@ def test_file_order():
             if "recursion" not in comment_above(lines, line).lower():
                 found.append(f"order {rel(path)}  | {line}: forward declaration of {m.group(1)} without a recursion comment")
     report("order", found)
+
+
+TYPE_TABLE = {"champion_index": "int16_t", "cell": "int16_t", "direction": "int16_t", "map": "int16_t",
+              "slot": "int16_t", "x": "int16_t", "y": "int16_t", "thing": "uint16_t", "ticks": "uint16_t"}
+
+
+def parameter(text):
+    """(type, name) of one parameter; const does not change the type."""
+    if (pointer := re.search(r"\(\s*\*\s*(\w+)\s*\)", text)):
+        return "function pointer", pointer.group(1)
+    m = re.match(r"(.*?)(\w+)\s*((?:\[[^\]]*\])*)$", text)
+    if not m:
+        return text, ""
+    kind = " ".join(m.group(1).replace("const", " ").split()) + ("[]" if m.group(3) else "")
+    return kind.replace(" *", "*"), m.group(2)
+
+
+def test_one_type_per_parameter_name():
+    """A parameter name has one type in the headers of a layer, and the type of the table for a game value kind."""
+    ok = allowed()
+    found = []
+    for layer in LAYERS:
+        types = defaultdict(set)
+        for header in (SRC / layer).glob("*.h"):
+            for f in functions(header):
+                for text in f.params:
+                    kind, name = parameter(text)
+                    if name:
+                        types[name].add(kind)
+        for name, kinds in sorted(types.items()):
+            key, expected = f"{layer}:{name}", TYPE_TABLE.get(name)
+            if ("type", key) in ok:
+                continue
+            if expected and kinds != {expected}:
+                found.append(f"type {key}  | {sorted(kinds)}; the table says {expected}")
+            elif not expected and len(kinds) > 1:
+                found.append(f"type {key}  | {sorted(kinds)}")
+    report("type", found)
+
+
+RESULT_COMMENT = re.compile(r"\b0 on success\b|-1 (?:on|for) (?:an? )?(?:error|failure)|\b[Rr]eturns? -1\b|\b1/0/-1\b|\b[Rr]eturns? 0 or -1\b")
+MAX_PARAMETERS = 5
+
+
+def test_results():
+    ok = allowed()
+    found = []
+    for path in sources():
+        lines = path.read_text(errors="replace").splitlines()
+        found += [f"result {rel(path)}:{f.name}  | the comment gives 0 or -1 as a result" for f in functions(path)
+                  if ("result", f"{rel(path)}:{f.name}") not in ok and RESULT_COMMENT.search(comment_above(lines, f.line))]
+    report("result", sorted(set(found)))
+
+
+def test_at_most_five_parameters():
+    ok = allowed()
+    report("params", sorted({f"params {rel(path)}:{f.name}  | {len(f.params)} parameters" for path in sources()
+                             for f in functions(path) if len(f.params) > MAX_PARAMETERS
+                             and ("params", f"{rel(path)}:{f.name}") not in ok}))
+
+
+TEST_MARKER = "exported for the tests"
+
+
+def test_exports_have_users():
+    """An exported function or global has a use outside its module, or the test marker on its declaration."""
+    used_in = {path: set(IDENTIFIER.findall(strip(path.read_text(errors="replace")))) for path in sources()}
+    ok = allowed()
+    found = []
+    for header in headers():
+        if header.stem.endswith("_internal"):
+            continue
+        own = module_files(header)
+        lines = header.read_text(errors="replace").splitlines()
+        text = strip("\n".join(lines))
+        names = [(f.name, f.line) for f in functions(header) if not f.static]
+        names += [(n, text.count("\n", 0, m.start()) + 1) for m in EXTERN_VARIABLE.finditer(text) for n in extern_names(m.group(1))]
+        for name, line in names:
+            key = f"{rel(header)}:{name}"
+            if ("dead-api", key) in ok or any(name in ids for p, ids in used_in.items() if p not in own):
+                continue
+            if TEST_MARKER not in lines[line - 1] + comment_above(lines, line):
+                found.append(f"dead-api {key}  | no use outside {header.stem} and no test marker")
+    report("dead-api", found)
