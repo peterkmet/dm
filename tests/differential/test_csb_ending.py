@@ -41,7 +41,7 @@ def lib():
         ("startend_run_endgame", None, [c16]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
         ("command_process_click", None, [c16, c16, c16]), ("command_process_key", None, [u16]),
         ("anim_play", ctypes.c_int, [ctypes.c_char_p]), ("startend_run_endgame_sensor", None, [u16]),
-        ("sound_mix", None, [ctypes.POINTER(c16), ctypes.c_int]), ("sound_stop_all", None, []),
+        ("audio_mix", None, [ctypes.POINTER(c16), ctypes.c_int]), ("audio_stop_all", None, []),
         ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]), ("gameloop_tick", None, []),
     ]:
         f = getattr(lib, name)
@@ -316,7 +316,7 @@ def test_play_sample_volumes_and_period(lib):
         lib.anim_next_frame()
     count = 3000
     out = (c16 * (2 * count))()
-    lib.sound_mix(out, count)
+    lib.audio_mix(out, count)
     lib.anim_close()
     period = 650
     position = [f * 3546895 // (period * 44100) for f in range(count)]
@@ -513,7 +513,7 @@ NAKED = GAME_CSB / "disk-b" / "MIDI" / "NAKED.AMG"
 
 def mix(lib, frames):
     out = (c16 * (2 * frames))()
-    lib.sound_mix(out, frames)
+    lib.audio_mix(out, frames)
     return list(out[0::2]), list(out[1::2])
 
 

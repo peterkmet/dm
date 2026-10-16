@@ -4,6 +4,7 @@
 #include "data/graphics.h"
 #include "data/swsh.h"
 #include "engine/sound.h"
+#include "ui/audio.h"
 #include "ui/music.h"
 #include "ui/startend.h"
 #include "ui/ui.h"
@@ -26,9 +27,9 @@ int logo_play(const char *path)
     memset(fb, 0, sizeof fb);
     ui_set_screen_palette(colors);
     gfx_expand_over(logo.logo, logo.logo_bytes, &screen);
-    sound_play_data((const int8_t *)logo.sample, (uint16_t)length, period, volumes); /* the voice takes a word length */
+    audio_play_data((const int8_t *)logo.sample, (uint16_t)length, period, volumes); /* the voice takes a word length */
     /* the module waits for the end of the sample */
-    int32_t frames = ((uint64_t)length * period * FRAMES_PER_SECOND + SOUND_PAL_CLOCK - 1) / SOUND_PAL_CLOCK;
+    int32_t frames = ((uint64_t)length * period * FRAMES_PER_SECOND + AUDIO_PAL_CLOCK - 1) / AUDIO_PAL_CLOCK;
     for (const uint8_t *e = logo.palette_script; e < logo.palette_script_end; e += SCRIPT_ENTRY_BYTES) {
         int16_t index = BE16(e);
         uint16_t value = BE16(e + 2);
@@ -43,7 +44,6 @@ int logo_play(const char *path)
     }
     while (frames-- > 0 && wait_frame())
         ;
-    sound_stop_all(); /* the voice points into the image */
     music_stop();
     swsh_free(&logo);
     return 0;

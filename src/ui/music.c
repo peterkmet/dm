@@ -3,7 +3,7 @@
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "engine/dungeon.h"
-#include "engine/sound.h"
+#include "ui/audio.h"
 #include "ui/gameloop.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -83,7 +83,7 @@ static void play(int16_t track)
              g_music_soundtrack == MUSIC_SUPER_NES ? "Super_NES" : "FM-Towns", track);
     if (!drmp3_init_file(&decoder, path, NULL))
         return;
-    if (decoder.channels != MUSIC_CHANNELS || decoder.sampleRate != SOUND_OUTPUT_RATE) {
+    if (decoder.channels != MUSIC_CHANNELS || decoder.sampleRate != AUDIO_OUTPUT_RATE) {
         drmp3_uninit(&decoder);
         return;
     }

@@ -8,6 +8,7 @@
 #include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/message.h"
+#include "ui/audio.h"
 #include "ui/layout.h"
 #include "ui/text.h"
 #include "ui/video.h"
@@ -35,6 +36,7 @@ static int16_t slot_box_icon[SLOT_BOX_COUNT];
 /* Loads the strings, action names, and object names, and sets up the viewport bitmap. */
 int ui_init(void)
 {
+    audio_init();
     viewport = (Bitmap){tables_get_viewport_width(), tables_get_viewport_height(), viewport_px};
     if ((size_t)viewport.w * viewport.h > sizeof viewport_px)
         return -1;

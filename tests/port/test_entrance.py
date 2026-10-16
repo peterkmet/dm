@@ -85,4 +85,4 @@ def test_ftl_logo_lasts_as_its_sound(lib):
     assert shots[0][1][1] == WHITE and shots[0][1][2] == 0  # the first script step: color 1 is white
     assert shots[-1][1] == [0, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, 0, WHITE, GRAY, WHITE, GRAY, DARK, YELLOW, YELLOW]
     assert len(set(shots[-1][0])) > 4
-    lib.sound_stop_all()
+    lib.audio_stop_all()

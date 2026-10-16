@@ -31,7 +31,7 @@ void music_update(void);
 void music_play_end(int16_t won);
 /* Stops the track; the soundtrack stays. */
 void music_stop(void);
-/* Adds the music to interleaved stereo int16 at SOUND_OUTPUT_RATE. */
+/* Adds the music to interleaved stereo int16 at AUDIO_OUTPUT_RATE. */
 void music_mix(int16_t *out, int frames);
 
 #endif

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "platform/platform.h"
-#include "engine/sound.h"
+#include "ui/audio.h"
 #include "ui/music.h"
 #include "platform/scale.h"
 #include <SDL3/SDL.h>
@@ -227,7 +227,7 @@ static int audio_open(void)
     if (stream || tried)
         return stream != NULL;
     tried = 1;
-    SDL_AudioSpec spec = {SDL_AUDIO_S16, AUDIO_CHANNELS, SOUND_OUTPUT_RATE};
+    SDL_AudioSpec spec = {SDL_AUDIO_S16, AUDIO_CHANNELS, AUDIO_OUTPUT_RATE};
     if (!SDL_InitSubSystem(SDL_INIT_AUDIO) ||
         !(stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL))) {
         SDL_Log("SDL audio: %s", SDL_GetError());
@@ -238,12 +238,12 @@ static int audio_open(void)
 
 void plat_audio_pump(void)
 {
-    enum { FRAMES = SOUND_OUTPUT_RATE / FRAMES_PER_SECOND };
+    enum { FRAMES = AUDIO_OUTPUT_RATE / FRAMES_PER_SECOND };
     int16_t buf[FRAMES * AUDIO_CHANNELS];
     if (!audio_open())
         return;
     while (SDL_GetAudioStreamQueued(stream) < (int)sizeof buf * AUDIO_QUEUED_TICKS) {
-        sound_mix(buf, FRAMES);
+        audio_mix(buf, FRAMES);
         music_mix(buf, FRAMES);
         if (!SDL_PutAudioStreamData(stream, buf, sizeof buf))
             return;
