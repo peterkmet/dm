@@ -64,6 +64,7 @@ void map_step(int16_t direction, int16_t forward, int16_t right, int16_t *out_x,
 #define PIT_OPEN               0x08
 #define STAIRS_UP              0x04
 #define STAIRS_NORTH_SOUTH     0x08
+#define DOOR_NORTH_SOUTH       0x08 /* door square: the passage runs north-south */
 #define DOOR_STATE_MASK        0x07
 #define DOOR_OPEN              0x00
 #define DOOR_ALMOST_OPEN       0x01

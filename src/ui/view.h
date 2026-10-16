@@ -1,13 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_UI_VIEW_H
 #define DM_UI_VIEW_H
+/* Draws the dungeon view and the CSB magic map from game state and changes no game state; its outputs are the click
+   boxes, the piles and the facing flags of the last view. */
 /* Prefixes: view_ */
 #include "data/graphics.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Door square bit that map.h does not name: the door passage runs north-south. */
-#define DOOR_NORTH_SOUTH 8
+/* Size of the largest viewport bitmap. */
 #define VIEWPORT_MAX_W   224 /* the largest viewport bitmap */
 #define VIEWPORT_MAX_H   136
 #define VIEW_DEPTH_COUNT 4 /* the view draws the party row and 3 rows ahead */
@@ -31,8 +32,8 @@ extern int16_t g_pile_object_counts[VIEW_CLICK_BOX_WALL];
 extern int16_t g_square_ahead_element;
 extern bool g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
 
-/* set_current_map_and_party_map and load_current_map_graphics: the wall set, floor set, stairs, doors,
-   ornaments, and creature colors of the map. Graphics decode on first use. */
+/* Loads the wall set, floor set, stairs, doors, ornaments, and creature colors of the map. Graphics decode on
+   first use. */
 void view_load_map(int16_t map);
 /* The ornament that the view draws on the side of wall square (x, y) of the party map that faces
    direction face (NONE when the view has not loaded the party map). */
@@ -57,10 +58,11 @@ int16_t view_get_floor_ornament(int16_t x, int16_t y);
 bool view_is_pressure_pad(int16_t x, int16_t y);
 /* Draws the dungeon view of square (x, y) in direction dir: ceiling and floor, D4, then the squares back to front. */
 void view_draw(int16_t dir, int16_t x, int16_t y);
-/* CSB: draws the magic map grid of a champion (Champion.magic_map) with its top left square at (px, py). */
+/* CSB: draws the magic map of a champion at (px, py) of dst: 7 x 7 squares around the party, or around the square
+   that NETA keeps. The party square is drawn last. The ornaments are those of the party map, as in the original. */
 void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t py);
-/* Draws the view of (map, x, y, dir) into fb with the palette of the darkness that party_set_light_level set.
-   Returns true on success. */
+/* Draws the view of (map, x, y, dir) into the screen with the palette of the party light level. Returns true on
+   success. */
 bool view_render(int16_t map, int16_t x, int16_t y, int16_t dir);
 /* Smooth projectile flight: view_set_motion(step, steps) makes the next views show each projectile
    step/steps of the way from its place at the tick before to its place at the last tick; (0, 0) is a

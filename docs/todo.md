@@ -5,7 +5,7 @@ User wishes for future versions. Not planned yet.
 ## Small cleanups after the clean-code pass
 
 - `action_reset` (`src/engine/action.c`) also clears `g_redraw`, which is not action state.
-- `ui/view.c` square table: the D2L2, D2R2 and D0 rows leave unread "none" fields at 0, a valid id; the D0C right stairs zone is a literal in its branch; the three shape `if` blocks can be one `switch`.
+- `ui/view_walls.c`: the thieves eye hole is not drawn; it needs the party spell state.
 - ui ignores the result of `inventory_fill_at_fountain`.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
 - `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing` (`docs/reference/symbols/range-4-6.md`). Port that rule.
@@ -20,7 +20,7 @@ User wishes for future versions. Not planned yet.
 ## Advanced mode: action icons keep their colors on every level
 
 - Owner's wish (2026-10-16): in the advanced mode the icons of the action area (the empty hand) have the same colors on every level; the vanilla mode keeps the original behavior.
-- Today: the action area is on the screen lines of the viewport, so it draws with the dungeon palette. Each map puts the replacement colors of its creatures into colors 9 and 10 of that palette (`set_creature_replacement_colors`, `src/ui/view.c:2038`). The empty hand icon uses one of these colors: orange on level 11, dark red on level 12. The original game does the same.
+- Today: the action area is on the screen lines of the viewport, so it draws with the dungeon palette. Each map puts the replacement colors of its creatures into colors 9 and 10 of that palette (`set_creature_replacement_colors`, `src/ui/view.c:878`). The empty hand icon uses one of these colors: orange on level 11, dark red on level 12. The original game does the same.
 - Change: in the advanced mode, draw the action area icons with fixed colors (e.g. the default colors 9 and 10 of the interface palette), without changing the creature colors of the viewport.
 
 ## Test audit against the test list of CLAUDE.md
