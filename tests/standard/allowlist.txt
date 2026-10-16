@@ -18,12 +18,6 @@ block ui/music.h open: epic 9
 decimal platform/control.c open: epic 10
 decimal platform/scale.c open: epic 11
 decimal platform/state_json.c open: epic 10
-decimal ui/advanced.c open: epic 8
-decimal ui/anim.c open: epic 8
-decimal ui/logo.c open: epic 8
-decimal ui/ui.c open: epic 8
-decimal ui/menus.c open: epic 8
-decimal ui/view.c open: epic 8
 enum platform/control.c open: epic 10
 enum platform/main.c open: epic 11
 enum platform/platform.c open: epic 11
@@ -183,8 +177,6 @@ static-prefix platform/platform.c:audio_open open: epic 11
 type ui:count open: epic 8
 type ui:length open: epic 8
 packed ui/view_things.c open: epic 8
-decimal ui/panel.c open: epic 8
-decimal ui/status.c open: epic 8
 params ui/automap.c:show_square open: epic 8
 params ui/panel.c:show_stat_meter open: epic 8
 params ui/text.c:show_glyph_row open: epic 8

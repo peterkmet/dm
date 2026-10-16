@@ -128,6 +128,10 @@ int16_t ui_command_from_mouse(int16_t table, int16_t x, int16_t y, uint16_t butt
 #define UI_RUNE_COUNT 24
 extern const char *const g_rune_names[UI_RUNE_COUNT];
 
+/* Text buffers with the end byte: a number of ui_format_number, one character. */
+#define NUMBER_TEXT_SIZE 8
+#define CHAR_TEXT_SIZE   2
+
 /* Width of a padded number in the status boxes and the panel. */
 #define VALUE_WIDTH 3
 /* A number as text: right aligned in width characters, or not padded. */

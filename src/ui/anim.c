@@ -34,6 +34,12 @@
 #define MUSIC_PASSES            6 /* the sequence plays 6 times, then the music ends */
 #define MUSIC_FADE_FRAMES       3 /* the volume goes down by 1 every 3 ticks */
 
+/* Bytes of a PL color entry. */
+#define ENTRY_INDEX 0
+#define ENTRY_RED   1
+#define ENTRY_GREEN 2
+#define ENTRY_BLUE  3
+
 /* Animation bytes: a 4-bit color component, the end of the music sequence, the sign of an item count. */
 #define COLOR_NIBBLE       0x0f
 #define MUSIC_SEQUENCE_END 0xff
@@ -203,8 +209,9 @@ static void set_colors(const uint8_t *payload, uint16_t length)
     uint16_t count = length >= PALETTE_COUNT_BYTES ? be16(payload) : 0;
     for (uint16_t i = 0; i < count && PALETTE_COUNT_BYTES + (i + 1) * PALETTE_ENTRY_BYTES <= length; i++) {
         const uint8_t *e = payload + PALETTE_COUNT_BYTES + i * PALETTE_ENTRY_BYTES;
-        if (e[0] < PALETTE_COLORS)
-            colors[e[0]] = video_amiga_color(e[1] & COLOR_NIBBLE, e[2] & COLOR_NIBBLE, e[3] & COLOR_NIBBLE);
+        if (e[ENTRY_INDEX] < PALETTE_COLORS)
+            colors[e[ENTRY_INDEX]] = video_amiga_color(e[ENTRY_RED] & COLOR_NIBBLE, e[ENTRY_GREEN] & COLOR_NIBBLE,
+                                                       e[ENTRY_BLUE] & COLOR_NIBBLE);
     }
     palette_changed = true;
 }

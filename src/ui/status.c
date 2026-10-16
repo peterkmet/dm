@@ -17,6 +17,8 @@
 #include <string.h>
 
 /* Bars and party icons of the status boxes. */
+#define BAR_VALUE_COUNT   2 /* current and maximum */
+#define SHIELD_KINDS      3 /* fire, spell, party */
 #define BAR_COUNT         3 /* health, stamina, mana */
 #define BAR_ZONE_STEP     4
 #define CHAMPION_ICON_MAX 64 /* the icon buffer holds up to 64 x 64 pixels */
@@ -31,7 +33,7 @@ static uint8_t get_champion_color(int16_t champion_index)
 static void show_bar_graphs(int16_t champion_index)
 {
     const Champion *champion = &g_champions[champion_index];
-    const int16_t bar_values[BAR_COUNT][2] = {
+    const int16_t bar_values[BAR_COUNT][BAR_VALUE_COUNT] = {
         {champion->current_health,  champion->maximum_health },
         {champion->current_stamina, champion->maximum_stamina},
         {champion->current_mana,    champion->maximum_mana   }
@@ -100,7 +102,7 @@ void status_draw_slot(int16_t champion_index, int16_t slot)
 void status_draw_damage(int16_t champion_index, int16_t damage)
 {
     Bitmap screen = video_get_screen();
-    char buf[8];
+    char buf[NUMBER_TEXT_SIZE];
     bool inv = champion_index == g_session.inventory_champion_index;
     int16_t zone = champion_index + (inv ? ZONE_PORTRAIT_DAMAGE_FIRST : ZONE_STATUS_BOX_DAMAGE_FIRST);
     ui_blit_graphic(&screen, inv ? GFX_DAMAGE_PORTRAIT : GFX_DAMAGE_STATUS_BOX, zone, COLOR_FLESH);
@@ -157,7 +159,7 @@ static uint16_t show_status_box(int16_t champion_index, uint16_t attr, bool inv)
 {
     const Champion *champion = &g_champions[champion_index];
     Bitmap screen = video_get_screen();
-    int16_t shields[3], n = 0;
+    int16_t shields[SHIELD_KINDS], n = 0;
     Box box;
     ui_zone_box(ZONE_STATUS_BOX_FIRST + champion_index, &box);
     draw_fill(&screen, &box, COLOR_DARKEST_GRAY);

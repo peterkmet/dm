@@ -79,7 +79,10 @@ static uint8_t get_square(int16_t x, int16_t y)
 
 bool view_is_alcove(int16_t i)
 {
-    return i >= 0 && (i == g_view.alcoves[0] || i == g_view.alcoves[1] || i == g_view.alcoves[2]);
+    for (int k = 0; i >= 0 && k < ALCOVE_ORNAMENT_COUNT; k++)
+        if (i == g_view.alcoves[k])
+            return true;
+    return false;
 }
 
 /* A pseudo-random ornament index (-1: none) from the square position. */
@@ -970,9 +973,8 @@ static void load_ornaments(int16_t map, const uint8_t *ornaments)
     int16_t floors = rec_map_floor_ornaments(map);
     int16_t doors = rec_map_door_ornaments(map);
     int16_t alcove_count = 0;
-    g_view.alcoves[0] = -1;
-    g_view.alcoves[1] = -1;
-    g_view.alcoves[2] = -1;
+    for (int k = 0; k < ALCOVE_ORNAMENT_COUNT; k++)
+        g_view.alcoves[k] = -1;
     g_view.vi_altar = -1;
     g_view.fountain = -1;
     g_view.inscription = walls; /* after the map ornaments: the inscription plaque, ornament 0 */
@@ -1401,7 +1403,9 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
     int16_t party_py = 0;
     if (g_view.map != g_party_map_index)
         view_load_map(g_party_map_index);
-    int16_t saved[3] = {g_view.map, g_view.map_width, g_view.map_height};
+    int16_t saved_view_map = g_view.map;
+    int16_t saved_width = g_view.map_width;
+    int16_t saved_height = g_view.map_height;
     if (spells[MAGIC_MAP_NETA]) {
         Position kept = magic_get_map_position(spells);
         map = kept.map;
@@ -1432,9 +1436,9 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
     if (party_px >= 0)
         show_map_square(&(MapDraw){dst, spells, false, dir, party_px, party_py},
                         (Location){g_party_map_x, g_party_map_y});
-    g_view.map = saved[0];
-    g_view.map_width = saved[1];
-    g_view.map_height = saved[2];
+    g_view.map = saved_view_map;
+    g_view.map_width = saved_width;
+    g_view.map_height = saved_height;
     if (saved_map >= 0)
         map_set_current_map(saved_map);
 }

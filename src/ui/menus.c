@@ -91,7 +91,7 @@ void menus_draw_action_area(void)
             menus_draw_action_icon(i);
     } else if (g_session.acting_champion_index >= 0) {
         int16_t zone = ZONE_ACTION_AREA;
-        if (g_action_list.actions[2] == ACTION_NONE)
+        if (g_action_list.actions[ACTION_LIST_COUNT - 1] == ACTION_NONE)
             zone = ZONE_ACTION_AREA_TWO_ACTIONS;
         if (g_action_list.actions[1] == ACTION_NONE)
             zone = ZONE_ACTION_AREA_ONE_ACTION;
@@ -110,7 +110,7 @@ void menus_draw_action_area(void)
 void menus_draw_action_damage(int16_t damage)
 {
     Bitmap screen = video_get_screen();
-    char buf[8];
+    char buf[NUMBER_TEXT_SIZE];
     ui_fill_zone(&screen, ZONE_ACTION_AREA, COLOR_BLACK);
     if (damage < 0) {
         ui_print_zone(&screen, ZONE_ACTION_DAMAGE, COLOR_CYAN, COLOR_BLACK,
@@ -167,7 +167,7 @@ static void show_caster_tabs(int16_t champion_index, const Champion *caster)
 {
     Bitmap screen = video_get_screen();
     ui_fill_zone(&screen, ZONE_SPELL_AREA_TABS, COLOR_BLACK);
-    for (uint16_t i = 0; i < 4; i++) {
+    for (uint16_t i = 0; i < CHAMPION_MAX_COUNT; i++) {
         const Champion *champion = i == champion_index ? caster : &g_champions[i];
         if (i < g_party_champion_count && champion->current_health)
             ui_xor_screen_zone(ZONE_SPELL_CASTER_TAB_FIRST + champion_index * SPELL_TAB_STEP + i);
@@ -179,7 +179,7 @@ static void show_caster_tabs(int16_t champion_index, const Champion *caster)
 void menus_draw_available_symbols(int16_t symbol_step)
 {
     Bitmap screen = video_get_screen();
-    char s[2] = {0, 0};
+    char s[CHAR_TEXT_SIZE] = {0, 0};
     for (int k = 0; k < SYMBOL_COUNT; k++) {
         s[0] = (char)spell_get_symbol(symbol_step, k);
         ui_print_zone(&screen, ZONE_SPELL_SYMBOL_FIRST + k, COLOR_CYAN, COLOR_BLACK, s);
@@ -191,7 +191,7 @@ static void show_chosen_symbols(const char *symbols)
 {
     Bitmap screen = video_get_screen();
     size_t n = 0;
-    char s[2] = {0, 0};
+    char s[CHAR_TEXT_SIZE] = {0, 0};
     while (n < CHAMPION_SYMBOL_COUNT && symbols[n])
         n++;
     for (size_t k = 0; k < CHAMPION_SYMBOL_COUNT; k++) {

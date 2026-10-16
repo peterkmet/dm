@@ -4,6 +4,7 @@
 #include "data/ids.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
+#include "engine/map.h"
 #include "engine/message.h"
 #include "engine/party.h"
 #include "engine/record.h"
@@ -30,8 +31,8 @@ static struct {
     int16_t x, y; /* the mouse position that matches the current scroll */
 } drag;
 
-static const char *const direction_names[4] = {"NORTH", "EAST", "SOUTH", "WEST"};
-static const char *const soundtrack_names[3] = {"ORIGINAL", "SUPER NES", "FM-TOWNS"};
+static const char *const direction_names[DIRECTION_COUNT] = {"NORTH", "EAST", "SOUTH", "WEST"};
+static const char *const soundtrack_names[] = {"ORIGINAL", "SUPER NES", "FM-TOWNS"};
 
 /* The party walks the dungeon: no inventory, dialog, freeze, sleep, candidate, death, sequence, or won game. */
 static bool in_dungeon_view(void)

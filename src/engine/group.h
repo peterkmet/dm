@@ -97,6 +97,15 @@ typedef enum {
 /* Shift of the vertical offset in an aspect byte. */
 #define ASPECT_VERTICAL_OFFSET_SHIFT 3
 
+static inline int16_t group_aspect_x_offset(uint8_t aspect)
+{
+    return aspect & ASPECT_OFFSET_MASK;
+}
+static inline int16_t group_aspect_y_offset(uint8_t aspect)
+{
+    return aspect >> ASPECT_VERTICAL_OFFSET_SHIFT & ASPECT_OFFSET_MASK;
+}
+
 /* Hit probability argument of the melee damage: bit 15 hits non-material creatures too. */
 #define HIT_PROBABILITY_ALWAYS_HITS 0x8000
 #define HIT_PROBABILITY_MASK        0x7fff

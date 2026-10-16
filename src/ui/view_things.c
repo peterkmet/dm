@@ -375,8 +375,8 @@ static void show_creature(const SquareDraw *sq, const ViewGroup *group, uint8_t 
         scaled = view_get_scaled(graphic, scale, scale, pal);
     }
     Placement place = {
-        .zone_dx = tables_get_creature_shift(distance, look & ASPECT_OFFSET_MASK),
-        .zone_dy = tables_get_creature_shift(distance, look >> ASPECT_VERTICAL_OFFSET_SHIFT & ASPECT_OFFSET_MASK),
+        .zone_dx = tables_get_creature_shift(distance, group_aspect_x_offset(look)),
+        .zone_dy = tables_get_creature_shift(distance, group_aspect_y_offset(look)),
     };
     int16_t set = group->aspect[CREATURE_ASPECT_COORD] >> CREATURE_ASPECT_COORD_SHIFT;
     int16_t zone =

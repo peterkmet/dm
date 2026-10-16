@@ -17,7 +17,7 @@
 
 bool logo_play(const char *path)
 {
-    static const uint8_t volumes[2] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
+    static const uint8_t volumes[] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
     SwshLogo logo;
     if (!swsh_load(path, &logo))
         return false;

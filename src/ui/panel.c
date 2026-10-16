@@ -58,7 +58,7 @@ static bool scroll_redraw_eye; /* the scroll is the leader hand object while the
 /* Prints "current/maximum" in the inventory. */
 static void show_value_pair(int16_t zone, int16_t value, int16_t maximum)
 {
-    char a[8], b[8], s[VALUE_PAIR_SIZE];
+    char a[NUMBER_TEXT_SIZE], b[NUMBER_TEXT_SIZE], s[VALUE_PAIR_SIZE];
     snprintf(s, sizeof s, "%s/%s", ui_format_number(a, sizeof a, value, true, VALUE_WIDTH),
              ui_format_number(b, sizeof b, maximum, true, VALUE_WIDTH));
     ui_print_zone(ui_get_viewport(), zone, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
@@ -93,7 +93,8 @@ void panel_draw_load(int16_t champion_index)
     uint16_t max = champion_get_maximum_load(champion_index);
     LoadLevel level = champion_get_load_level(champion_index);
     uint8_t color = level == LOAD_OVERLOADED ? COLOR_RED : level == LOAD_HEAVY ? COLOR_YELLOW : COLOR_LIGHT_GRAY;
-    char text[PANEL_LINE_SIZE], a[8], b[8], d[8]; /* the load is in tenths of a kilogram */
+    char text[PANEL_LINE_SIZE], a[NUMBER_TEXT_SIZE], b[NUMBER_TEXT_SIZE],
+        d[NUMBER_TEXT_SIZE]; /* the load is in tenths of a kilogram */
     ui_print_zone(ui_get_viewport(), ZONE_LOAD_LABEL, color, COLOR_DARKEST_GRAY, gfx_get_string(TEXT_LOAD));
     snprintf(text, sizeof text, "%s%s%s/%s%s",
              ui_format_number(a, sizeof a, c->load / WEIGHT_TENTHS, true, VALUE_WIDTH),
@@ -164,7 +165,7 @@ void panel_draw_skills_statistics(void)
     int16_t champion_index = g_session.inventory_champion_index, x, y, vx;
     const Champion *champion = &g_champions[champion_index];
     Bitmap *viewport = ui_get_viewport();
-    char line[PANEL_LINE_SIZE], a[8], b[8];
+    char line[PANEL_LINE_SIZE], a[NUMBER_TEXT_SIZE], b[NUMBER_TEXT_SIZE];
     inventory_close_chest();
     ui_blit_graphic(viewport, GFX_PANEL_EMPTY, ZONE_PANEL, COLOR_RED);
     get_zone_point(ZONE_PANEL_SKILLS, &x, &y);
@@ -312,7 +313,7 @@ int16_t panel_format_object_text(uint16_t thing, char *name, char lines[][PANEL_
     format_attributes_text(potential, actual, lines[n], PANEL_LINE_SIZE);
     if (lines[n][0])
         n++;
-    char a[8], b[8];
+    char a[NUMBER_TEXT_SIZE], b[NUMBER_TEXT_SIZE];
     snprintf(lines[n++], PANEL_LINE_SIZE, "%s%s%s%s%s", gfx_get_string(TEXT_WEIGHS),
              ui_format_number(a, sizeof a, weight / WEIGHT_TENTHS, false, 0), gfx_get_string(TEXT_DECIMAL_POINT),
              ui_format_number(b, sizeof b, weight % WEIGHT_TENTHS, false, 0),
@@ -400,7 +401,7 @@ static void show_scroll_line(int16_t x, int16_t y, char *text)
     int16_t left = x - (width >> 1);
     text_draw(ui_get_viewport(), left, y, COLOR_BLACK, COLOR_WHITE, text);
     for (int i = 0; g_advanced_features && text[i]; i++) {
-        char glyph[2] = {text[i], 0};
+        char glyph[CHAR_TEXT_SIZE] = {text[i], 0};
         if ((uint8_t)text[i] >= SPELL_SYMBOL_FIRST && (uint8_t)text[i] < SPELL_SYMBOL_FIRST + UI_RUNE_COUNT)
             text_draw(ui_get_viewport(), left + i * FONT_CHAR_WIDTH, y, COLOR_RED, COLOR_WHITE, glyph);
     }
@@ -447,7 +448,7 @@ static bool show_magic_map(const char *text)
     scroll_redraw = 1;
     ui_blit_graphic(viewport, GFX_PANEL_MAGIC_MAP, ZONE_PANEL, COLOR_RED);
     for (int16_t i = 0; i < MAGIC_MAP_RUNE_COUNT; i++) {
-        char rune[2] = {(char)(MAGIC_MAP_RUNE_FIRST + i), 0};
+        char rune[CHAR_TEXT_SIZE] = {(char)(MAGIC_MAP_RUNE_FIRST + i), 0};
         ui_print_zone(viewport, ZONE_MAGIC_MAP_RUNE_FIRST + i, spells[rune_spell[i]] ? COLOR_RED : COLOR_BLACK,
                       COLOR_WHITE, rune);
     }
@@ -532,7 +533,7 @@ static void show_stat_meter(int16_t x, int16_t y, const char *label, uint16_t va
                             bool show_value)
 {
     Bitmap *viewport = ui_get_viewport();
-    char text[8];
+    char text[NUMBER_TEXT_SIZE];
     int16_t bar_x = x + METER_LABEL_CHARS * FONT_CHAR_WIDTH;
     int16_t top = y - METER_BAR_ABOVE_BASELINE;
     int16_t filled = value >= maximum ? METER_BAR_WIDTH : value * METER_BAR_WIDTH / maximum;
