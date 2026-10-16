@@ -186,6 +186,17 @@ Feature: Clean C code
 - Rules without a test (`ui.md` section 2) get golden snapshots before the move, not differential tests: a snapshot of the current behavior is a reference check and needs no emulator setup per rule.
 - Inventory ordinal, magic caster, action list: engine setters (`inventory_set_open_champion`, `magic_set_caster`, `action_set_action_list`), so R1.7 needs no exception.
 - New tests only where the test list of CLAUDE.md allows them: the checks of `test_standard.py`, the golden snapshots of saves, the dungeon view and the ui rules (reference checks), the ADF name rule (a parser rule), and a differential test for a rule that moves to `engine/` when no existing test covers it.
+- Rulings of the run (2026-10-15/16):
+  - R6.3 binds over the task briefs: every file-scope and global truth flag that is not in a save or a game record is `bool`; tests bind them with `c_bool`.
+  - Table accessors of `data/tables.h` are named `tables_get_<table>` (verb-object, R7.1); a rule in the standard.
+  - Function names follow the header prefix rule where it differs from `names.md` (`event_process_*`, `startend_run_*`, `panel_draw_object_*`).
+  - Two function-length exceptions stay: `action_is_action_performed` and `event_process_expired` have one short case for each action or event type.
+  - `menus_draw_spell_area` clears a dead caster through `magic_set_caster(-1)` and draws nothing, as the old ui code did.
+  - The engine sets the won game and clears the saved game before it calls the endgame hook; the hook only draws.
+  - The golden save test clears the unused bytes of free active groups before it compares; the port bug stays in `docs/todo.md`.
+  - `adf_is_safe_name` rejects only the characters of R4.4, not Windows reserved names (CON, NUL) or a trailing dot or space.
+  - `SDL_CreateDirectory` makes folders with the mode of SDL (0770 per the author, not verified), not 0755.
+  - No mutation-style detection checks after Task 31 (user).
 
 ## Known consequences
 
