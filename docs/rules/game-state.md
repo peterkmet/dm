@@ -208,7 +208,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 The original reads the three luck bytes as signed bytes in this function. A current luck of 128 or more counts as not above 0. The port keeps this behavior.
 
-KAOS tables must be loaded (`kaos_load`) before `game_update_map_coordinates_after_relative_movement` runs.
+KAOS tables must be loaded (`tables_load`) before `game_update_map_coordinates_after_relative_movement` runs.
 
 ## Tests
 

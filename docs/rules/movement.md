@@ -7,7 +7,7 @@ This page describes the movement rules of the C port: the current map, square th
 Load KAOS and the dungeon. Then start a new game and put the party on the start square.
 
 ```c
-kaos_load("game/KAOS.FTL");
+tables_load("game/KAOS.FTL");
 dungeon_load("game/Dungeon.DAT");
 game_start_new();
 move_party_enter_dungeon();

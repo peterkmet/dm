@@ -6,7 +6,7 @@ All addresses are original KAOS addresses (see [KAOS module map](../reference/ka
 
 ## Usage
 
-1. Call `tables_load(path)`. It loads the image (`kaos_load`) and decodes the tables. It returns 0, or the error of `kaos_load`.
+1. Call `tables_load(path)`. It loads the image (`kaos_load`) and decodes the tables. It returns false when `kaos_load` fails.
 2. Call an accessor, for example `tables_get_creature_info(type)`.
 
 Each accessor of the table list returns a pointer to a constant record. It returns `NULL` for an index out of range. Load the module again (CSB or DM) with `tables_load`.
