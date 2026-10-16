@@ -236,6 +236,11 @@ def test_each_constant_has_one_definition():
                          if len(paths) > 1 and ("duplicate", name) not in ok])
 
 
+def module_stem(name):
+    """The path of a module's public header without .h; <m>_internal.h gives <m>."""
+    return name.removesuffix(".h").removesuffix("_internal")
+
+
 def test_headers_state_unique_prefixes():
     ok = allowed()
     owner, found = {}, []
@@ -251,6 +256,8 @@ def test_headers_state_unique_prefixes():
         prefixes = match.group(1).split()
         for prefix in prefixes:
             for other, other_path in owner.items():
+                if module_stem(other_path) == module_stem(rel(path)):
+                    continue  # rule 1.7: an internal header shares the prefixes of its public header
                 if prefix.startswith(other) or other.startswith(prefix):
                     found.append(f"prefix {rel(path)}  | {prefix} collides with {other} of {other_path}")
             owner[prefix] = rel(path)
@@ -573,3 +580,156 @@ def test_allowlist_names_documented_reasons():
         if not OPEN_REASON.fullmatch(reason) and not (rule and rule.group(1) in EXCEPTION_RULES):
             found.append(f"allowlist {check}:{target}  | {number}: {reason}")
     report("allowlist", found)
+
+
+def module_files(header):
+    """The header, its _internal.h and the .c files of its module (same stem or <stem>_*)."""
+    base = header.stem.removesuffix("_internal")
+    return {p for p in header.parent.iterdir() if p.suffix in (".c", ".h") and (p.stem == base or p.stem.startswith(base + "_"))}
+
+
+def base_header(path):
+    """The public header <m>.h of a file named <m>_<x>, or None."""
+    return next((h for h in sorted(path.parent.glob("*.h")) if h != path and not h.stem.endswith("_internal")
+                 and path.stem.startswith(h.stem + "_")), None)
+
+
+def test_one_public_header_per_module():
+    ok = allowed()
+    found = []
+    for path in sources():
+        if ("module", rel(path)) in ok:
+            continue
+        if path.suffix == ".c" and not path.with_suffix(".h").exists() and not base_header(path):
+            found.append(f"module {rel(path)}  | no header")
+        elif path.suffix == ".h" and path.stem.endswith("_internal"):
+            if not path.with_name(path.stem.removesuffix("_internal") + ".h").exists():
+                found.append(f"module {rel(path)}  | an internal header without its public header")
+        elif path.suffix == ".h" and (base := base_header(path)) and not path.with_suffix(".c").exists() \
+                and any(not f.static for f in functions(path)):
+            found.append(f"module {rel(path)}  | a second public header of {base.name}")
+    report("module", found)
+
+
+SPDX_C = "/* SPDX-License-Identifier: GPL-3.0-or-later */"
+
+
+def header_error(path):
+    """Why the head of a header is out of order (SPDX, guard, prefix line, purpose paragraph), or None."""
+    lines = path.read_text(errors="replace").splitlines()
+    guard = f"DM_{path.parent.name.upper()}_{path.stem.upper()}_H"
+    if lines[:1] != [SPDX_C]:
+        return "line 1 is not the SPDX line"
+    if lines[1:3] != [f"#ifndef {guard}", f"#define {guard}"]:
+        return f"the guard is not {guard}"
+    if len(lines) < 4 or not PREFIXES.match(lines[3]):
+        return "line 4 is not the prefix line"
+    first = next((line for line in lines[4:] if line.strip()), "")
+    if not first.startswith("/*"):
+        return "no purpose paragraph after the prefix line"
+    return None
+
+
+def test_header_heads():
+    ok = allowed()
+    report("header", [f"header {rel(path)}  | {error}" for path in headers()
+                      if ("header", rel(path)) not in ok and (error := header_error(path))])
+
+
+def defined_names(header, cache={}):
+    """The names that a header makes known: macros, types, tags, functions, variables, enum members."""
+    if header not in cache:
+        text = strip(header.read_text(errors="replace"))
+        names = set(re.findall(r"^\s*#\s*define\s+(\w+)", text, re.M))
+        names |= set(re.findall(r"\}\s*(\w+)\s*;", text)) | set(re.findall(r"\btypedef\b[^;{]*?(\w+)\s*;", text))
+        names |= set(re.findall(r"\b(?:struct|enum|union)\s+(\w+)", text))
+        names |= {f.name for f in functions(header)}
+        names |= {n for decl in EXTERN_VARIABLE.findall(text) for n in extern_names(decl)}
+        for body in ENUM.findall(text):
+            names |= set(re.findall(r"(?:^|,)\s*([A-Z][A-Z0-9_]*)", body))
+        cache[header] = names
+    return cache[header]
+
+
+def test_includes_are_used():
+    """A file uses at least one name of each project header it includes; its own header is always allowed."""
+    by_path = {rel(h): h for h in headers()}
+    ok = allowed()
+    found = []
+    for path in sources():
+        raw = path.read_text(errors="replace")
+        used = set(IDENTIFIER.findall(INCLUDE.sub("", strip(raw))))
+        own = f"{path.parent.name}/{path.stem}.h"
+        for header in INCLUDE.findall(raw):
+            key = f"{rel(path)}:{header}"
+            if header == own or header not in by_path or ("include", key) in ok:
+                continue
+            if not defined_names(by_path[header]) & used:
+                found.append(f"include {key}  | no name of {header} is used")
+    report("include", found)
+
+
+TRIVIAL_BODY_LINES = 3
+
+
+def test_function_comments():
+    """A public function has its comment above the prototype, a non-trivial static function above its definition; never both."""
+    ok = allowed()
+    found = []
+    for header in headers():
+        hlines = header.read_text(errors="replace").splitlines()
+        bodies = {}
+        for c in sorted(module_files(header)):
+            if c.suffix == ".c":
+                clines = c.read_text(errors="replace").splitlines()
+                bodies.update({name: (c, clines, start) for name, start, _, static in definitions(c) if not static})
+        for f in functions(header):
+            if f.static or ("comment", rel(header)) in ok:
+                continue
+            in_header = comment_above(hlines, f.line)
+            body = bodies.get(f.name)
+            in_source = body and comment_above(body[1], body[2])
+            if in_header and in_source:
+                found.append(f"comment {rel(header)}  | {f.name}: a comment above the prototype and the definition in {rel(body[0])}")
+            elif not in_header and not f.name.startswith("rec_"):
+                found.append(f"comment {rel(header)}  | {f.name}: no comment above the prototype")
+    for path in sources():
+        if path.suffix != ".c" or ("comment", rel(path)) in ok:
+            continue
+        lines = path.read_text(errors="replace").splitlines()
+        found += [f"comment {rel(path)}  | {name}: no comment above the static definition"
+                  for name, start, end, static in definitions(path)
+                  if static and end - start - 1 > TRIVIAL_BODY_LINES and not comment_above(lines, start)]
+    report("comment", found)
+
+
+FORWARD_STATIC = re.compile(r"^static\b[^=;{]*?\b(\w+)\s*\([^;{]*\)\s*;", re.M)
+
+
+def owner_header(path):
+    own = path.with_suffix(".h")
+    return own if own.exists() else base_header(path)
+
+
+def test_file_order():
+    """Public definitions follow the header order; a static forward declaration names its recursion."""
+    ok = allowed()
+    found = []
+    for path in sources():
+        if path.suffix != ".c" or ("order", rel(path)) in ok:
+            continue
+        header = owner_header(path)
+        if header:
+            order = [f.name for f in functions(header) if not f.static]
+            defined = [name for name, _, _, static in definitions(path) if not static and name in order]
+            expected = sorted(defined, key=order.index)
+            if defined != expected:
+                first = next(a for a, b in zip(defined, expected) if a != b)
+                found.append(f"order {rel(path)}  | {first} stands before its place in {header.name}")
+        lines = path.read_text(errors="replace").splitlines()
+        text = strip("\n".join(lines))
+        for m in FORWARD_STATIC.finditer(text):
+            line = text.count("\n", 0, m.start()) + 1
+            if "recursion" not in comment_above(lines, line).lower():
+                found.append(f"order {rel(path)}  | {line}: forward declaration of {m.group(1)} without a recursion comment")
+    report("order", found)
