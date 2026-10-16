@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from dmtest.game import Champion, Skill
+from dmtest.game import Champion
 from dmtest.lib import load_lib
 
 from dmtools.emu import Emu
