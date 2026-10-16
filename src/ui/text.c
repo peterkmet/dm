@@ -24,16 +24,6 @@ bool text_init(void)
     return true;
 }
 
-/* Draws one font row of a character: set pixels get fg, the others bg; outside pixels are clipped. */
-static void show_glyph_row(Bitmap *bm, int x, int py, uint8_t bits, uint8_t fg, uint8_t bg)
-{
-    for (int k = 0; k < GLYPH_WIDTH; k++) {
-        int px = x + k;
-        if (px >= 0 && px < bm->w)
-            bm->px[py * bm->w + px] = bits >> (GLYPH_WIDTH - 1 - k) & 1 ? fg : bg;
-    }
-}
-
 void text_draw(Bitmap *bm, int16_t x, int16_t y, uint8_t fg, uint8_t bg, const char *s)
 {
     if (!font)
@@ -46,7 +36,13 @@ void text_draw(Bitmap *bm, int16_t x, int16_t y, uint8_t fg, uint8_t bg, const c
                 continue;
             /* codes >= 128 read into the next font rows, as in the original */
             unsigned i = c + r * FONT_STRIDE;
-            show_glyph_row(bm, x, py, i < FONT_SIZE ? font[i] : 0, fg, bg);
+            uint8_t bits = i < FONT_SIZE ? font[i] : 0;
+            /* one font row of the character: set pixels get fg, the others bg; outside pixels are clipped */
+            for (int k = 0; k < GLYPH_WIDTH; k++) {
+                int px = x + k;
+                if (px >= 0 && px < bm->w)
+                    bm->px[py * bm->w + px] = bits >> (GLYPH_WIDTH - 1 - k) & 1 ? fg : bg;
+            }
         }
     }
 }

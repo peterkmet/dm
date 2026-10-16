@@ -34,11 +34,11 @@ void audio_play_data(const int8_t *data, uint16_t length, uint16_t period, const
 void audio_stop_all(void);
 /* Intro music: the segments play one after another, the same data on both sides of pair B. Samples go to pair
    A while it plays. The data stays owned by the caller until the music ends or stops. */
-void audio_music_play(const MusicSegment *segments, int count, uint16_t period, uint8_t volume);
+void audio_music_play(const MusicSegment *segments, int segment_count, uint16_t period, uint8_t volume);
 /* Sets the volume of the intro music on both sides of pair B. */
 void audio_music_set_volume(uint8_t volume);
 /* Renders interleaved stereo int16 at AUDIO_OUTPUT_RATE. Paula has no interpolation: each sample holds for one
    period. Runs on the game thread. */
-void audio_mix(int16_t *out, int frames);
+void audio_mix(int16_t *samples, int frames);
 
 #endif

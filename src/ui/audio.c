@@ -85,12 +85,12 @@ void audio_stop_all(void)
     audio.music.count = 0;
 }
 
-void audio_music_play(const MusicSegment *segments, int count, uint16_t period, uint8_t volume)
+void audio_music_play(const MusicSegment *segments, int segment_count, uint16_t period, uint8_t volume)
 {
     audio.music.count = 0;
-    for (int i = 0; i < count && i < AUDIO_MUSIC_SEGMENTS; i++)
+    for (int i = 0; i < segment_count && i < AUDIO_MUSIC_SEGMENTS; i++)
         audio.music.segments[i] = segments[i];
-    audio.music.count = count < AUDIO_MUSIC_SEGMENTS ? count : AUDIO_MUSIC_SEGMENTS;
+    audio.music.count = segment_count < AUDIO_MUSIC_SEGMENTS ? segment_count : AUDIO_MUSIC_SEGMENTS;
     audio.music.next = 0;
     audio.music.period = period;
     audio.music.volume = volume;
@@ -121,7 +121,7 @@ static void continue_music(void)
     m->next++;
 }
 
-void audio_mix(int16_t *out, int frames)
+void audio_mix(int16_t *samples, int frames)
 {
     for (int f = 0; f < frames; f++) {
         int mix[AMIGA_CHANNELS] = {0};
@@ -138,7 +138,8 @@ void audio_mix(int16_t *out, int frames)
             mix[c] = v->data[i] * v->volume * 2;
             v->frame++;
         }
-        out[2 * f] = mix[pair_channels[PAIR_A][SOUND_SIDE_LEFT]] + mix[pair_channels[PAIR_B][SOUND_SIDE_LEFT]];
-        out[2 * f + 1] = mix[pair_channels[PAIR_A][SOUND_SIDE_RIGHT]] + mix[pair_channels[PAIR_B][SOUND_SIDE_RIGHT]];
+        samples[2 * f] = mix[pair_channels[PAIR_A][SOUND_SIDE_LEFT]] + mix[pair_channels[PAIR_B][SOUND_SIDE_LEFT]];
+        samples[2 * f + 1] =
+            mix[pair_channels[PAIR_A][SOUND_SIDE_RIGHT]] + mix[pair_channels[PAIR_B][SOUND_SIDE_RIGHT]];
     }
 }

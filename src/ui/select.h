@@ -42,7 +42,7 @@ int16_t select_screen(void);
 /* SELECT_CSB_NEW_ADVENTURE, SELECT_CSB_RESUME, or SELECT_CSB_QUIT: the CSB screen item that ended the selection. */
 int16_t select_csb_choice(void);
 /* A key: SELECT_KEY_*. */
-void select_key(int16_t key);
+void select_key(int16_t action);
 /* The click box of item index item on the current screen. Returns false when there is no such item. */
 bool select_item_box(int16_t item, Box *box); /* exported for the tests */
 /* A left click at screen pixel (x, y): activates the enabled item under it. */

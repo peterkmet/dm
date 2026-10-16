@@ -220,12 +220,16 @@ def test_hand_object_name_follows_the_icon(game):
     game.run()
 
 
+class PointerImage(ctypes.Structure):
+    _fields_ = [("px", ctypes.c_uint8 * (C.POINTER_SIZE * C.POINTER_SIZE)), ("w", ctypes.c_int), ("h", ctypes.c_int),
+                ("hot_x", ctypes.c_int), ("hot_y", ctypes.c_int)]
+
+
 def pointer(lib, x, y):
     """The pointer at (x, y) in the game: width, height, and hot spot (they differ by shape)."""
-    px = (ctypes.c_uint8 * (32 * 32))()
-    out = [ctypes.c_int() for _ in range(4)]
-    assert lib.gameloop_get_pointer(x, y, 1, px, *[ctypes.byref(v) for v in out])
-    return tuple(v.value for v in out)
+    image = PointerImage()
+    assert lib.gameloop_get_pointer(x, y, 1, ctypes.byref(image))
+    return image.w, image.h, image.hot_x, image.hot_y
 
 
 def test_pointer_over_the_status_box_hands(game):

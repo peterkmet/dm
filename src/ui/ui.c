@@ -123,13 +123,13 @@ void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char
         text_draw(dst, b.x, b.y + b.h - 1, fg, bg, text);
 }
 
-void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t length)
+void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t pad_length)
 {
     char buf[PADDED_TEXT_SIZE];
     int n = 0;
     for (; text[n] && n < (int)sizeof buf - 1; n++)
         buf[n] = text[n];
-    for (; n < length && n < (int)sizeof buf - 1; n++)
+    for (; n < pad_length && n < (int)sizeof buf - 1; n++)
         buf[n] = ' ';
     buf[n] = 0;
     ui_print_zone(dst, zone, fg, bg, buf);

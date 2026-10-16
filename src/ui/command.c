@@ -323,7 +323,7 @@ void command_click_on_mouth(void)
     status_draw_champion(champion_index);
 }
 
-void command_release_dead_champion(uint16_t champion_index, int16_t leader_index)
+void command_release_dead_champion(int16_t champion_index, int16_t leader_index)
 {
     Bitmap screen = video_get_screen();
     int16_t icon_cell = NORMALIZE(g_champions[champion_index].cell - g_party_direction);

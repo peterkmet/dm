@@ -91,8 +91,8 @@ void ui_blit_graphic_box(Bitmap *dst, int16_t graphic, const Box *box, int16_t t
 void ui_blit_zone(Bitmap *dst, const Bitmap *src, int16_t zone, int16_t transparent);
 /* Prints text placed in zone; the baseline is the bottom of the text box. */
 void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text);
-/* Prints text padded with spaces to length characters, so it covers older text. */
-void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t length);
+/* Prints text padded with spaces to pad_length characters, so it covers older text. */
+void ui_print_zone_padded(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t pad_length);
 /* Shows the viewport bitmap (inventory) on the screen with the interface palette. */
 void ui_draw_viewport(void); /* draws the dungeon view bitmap into its zone */
 /* One palette for all rows: the 16 colors, or the interface palette for NULL (dialogs, endgame). */

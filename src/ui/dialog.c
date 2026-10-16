@@ -136,13 +136,6 @@ void dialog_draw(const char *message1, const char *message2, const char *choice1
     show_viewport();
 }
 
-/* Fills a rectangle of the viewport with one color. */
-static void fill(Bitmap *viewport, int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color)
-{
-    Box b = {x, y, w, h};
-    draw_fill(viewport, &b, color);
-}
-
 /* The button of the choice: a raised frame, then after PRESS_FRAMES frames a pressed frame. */
 static void show_pressed_button(int16_t table, int16_t choice)
 {
@@ -155,20 +148,20 @@ static void show_pressed_button(int16_t table, int16_t choice)
     int y = button.y;
     int width = button.w;
     int height = button.h;
-    fill(viewport, x - 2, y - 2, width + 5, 1, COLOR_LIGHT_BROWN);
-    fill(viewport, x + width + 2, y - 2, 1, height + 4, COLOR_BLACK);
-    fill(viewport, x - 4, y + height + 1, width + 7, 2, COLOR_BLACK);
-    fill(viewport, x - 3, y - 2, 1, height + 3, COLOR_LIGHT_BROWN);
-    fill(viewport, x - 4, y + height + 4, width + 9, 1, COLOR_LIGHT_GRAY);
-    fill(viewport, x + width + 5, y - 3, 1, height + 8, COLOR_LIGHT_GRAY);
+    draw_fill(viewport, &(Box){x - 2, y - 2, width + 5, 1}, COLOR_LIGHT_BROWN);
+    draw_fill(viewport, &(Box){x + width + 2, y - 2, 1, height + 4}, COLOR_BLACK);
+    draw_fill(viewport, &(Box){x - 4, y + height + 1, width + 7, 2}, COLOR_BLACK);
+    draw_fill(viewport, &(Box){x - 3, y - 2, 1, height + 3}, COLOR_LIGHT_BROWN);
+    draw_fill(viewport, &(Box){x - 4, y + height + 4, width + 9, 1}, COLOR_LIGHT_GRAY);
+    draw_fill(viewport, &(Box){x + width + 5, y - 3, 1, height + 8}, COLOR_LIGHT_GRAY);
     show_viewport();
     frame_wait_count(PRESS_FRAMES);
-    fill(viewport, x - 1, y - 1, width + 3, 1, COLOR_LIGHT_BROWN);
-    fill(viewport, x - 2, y - 2, 1, height + 3, COLOR_LIGHT_BROWN);
-    fill(viewport, x + width + 1, y - 2, 1, height + 3, COLOR_DARKEST_GRAY);
-    fill(viewport, x - 3, y + height, width + 5, 1, COLOR_DARKEST_GRAY);
-    fill(viewport, x - 3, y + height + 3, width + 7, 1, COLOR_DARK_GRAY);
-    fill(viewport, x + width + 4, y - 2, 1, height + 6, COLOR_DARK_GRAY);
+    draw_fill(viewport, &(Box){x - 1, y - 1, width + 3, 1}, COLOR_LIGHT_BROWN);
+    draw_fill(viewport, &(Box){x - 2, y - 2, 1, height + 3}, COLOR_LIGHT_BROWN);
+    draw_fill(viewport, &(Box){x + width + 1, y - 2, 1, height + 3}, COLOR_DARKEST_GRAY);
+    draw_fill(viewport, &(Box){x - 3, y + height, width + 5, 1}, COLOR_DARKEST_GRAY);
+    draw_fill(viewport, &(Box){x - 3, y + height + 3, width + 7, 1}, COLOR_DARK_GRAY);
+    draw_fill(viewport, &(Box){x + width + 4, y - 2, 1, height + 6}, COLOR_DARK_GRAY);
     show_viewport();
 }
 

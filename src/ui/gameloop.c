@@ -63,13 +63,13 @@ static uint16_t shown_hand_object = THING_NONE;
 static int16_t shown_hand_icon; /* a waterskin or a torch changes its icon and its name */
 static char data_dir[PATH_SIZE];
 
-bool gameloop_load_data(const char *dir)
+bool gameloop_load_data(const char *directory)
 {
     const char *failed;
-    snprintf(data_dir, sizeof data_dir, "%s", dir);
-    if (!adventure_load_files(dir, &failed))
+    snprintf(data_dir, sizeof data_dir, "%s", directory);
+    if (!adventure_load_files(directory, &failed))
         return false;
-    startend_set_save_dir(dir);
+    startend_set_save_dir(directory);
     g_endgame_sensor_hook = startend_run_endgame_sensor;
     return layout_init() && text_init() && ui_init();
 }
@@ -159,10 +159,10 @@ static void show_game(void)
     command_discard_all_input();
 }
 
-bool gameloop_start_new_game(const char *dir)
+bool gameloop_start_new_game(const char *directory)
 {
     char path[PATH_SIZE];
-    snprintf(path, sizeof path, "%s/Dungeon.DAT", dir);
+    snprintf(path, sizeof path, "%s/Dungeon.DAT", directory);
     if (!dungeon_load(path))
         return false;
     game_start_new();
@@ -281,7 +281,7 @@ static void advance_game_time(void)
 static void release_dead_champions(int16_t leader)
 {
     uint16_t dead = champion_take_dead_champions();
-    for (uint16_t i = 0; i < CHAMPION_MAX_COUNT; i++)
+    for (int16_t i = 0; i < CHAMPION_MAX_COUNT; i++)
         if (dead & 1 << i)
             command_release_dead_champion(i, leader);
 }
@@ -338,48 +338,49 @@ void gameloop_tick(void)
 }
 
 /* Reads the 4 bit plane bitmap of the arrow or the hand pointer into one color per pixel. */
-static void decode_planar_pointer(bool hand, uint8_t *px, int *w, int *h)
+static void decode_planar_pointer(bool hand, PointerImage *image)
 {
     PointerBitmap bitmap = tables_get_pointer_bitmap(hand);
     const uint8_t *planes = bitmap.planes;
-    *w = (uint16_t)bitmap.width; /* the size words are unsigned */
-    *h = (uint16_t)bitmap.height;
-    int row_bytes = (*w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD * 2;
-    int plane = row_bytes * *h;
-    for (int y = 0; y < *h; y++)
-        for (int x = 0; x < *w; x++) {
+    image->w = (uint16_t)bitmap.width; /* the size words are unsigned */
+    image->h = (uint16_t)bitmap.height;
+    int row_bytes = (image->w + PIXELS_PER_WORD - 1) / PIXELS_PER_WORD * 2;
+    int plane = row_bytes * image->h;
+    for (int y = 0; y < image->h; y++)
+        for (int x = 0; x < image->w; x++) {
             uint8_t c = 0;
             for (int p = 0; p < BITPLANE_COUNT; p++) {
                 uint8_t byte = planes[p * plane + y * row_bytes + x / CHAR_BIT];
                 c |= (uint8_t)((byte >> (CHAR_BIT - 1 - x % CHAR_BIT) & 1) << p);
             }
-            px[y * *w + x] = c;
+            image->px[y * image->w + x] = c;
         }
 }
 
 /* The object icon of the leader hand with a black shadow at the shadow offset. */
-static void make_object_pointer(uint8_t *px, int *width, int *height)
+static void make_object_pointer(PointerImage *image)
 {
+    uint8_t *px = image->px;
     uint8_t icon_px[UI_ICON_SIZE * UI_ICON_SIZE];
     Bitmap icon = {UI_ICON_SIZE, UI_ICON_SIZE, icon_px};
     int16_t dx = tables_get_pointer_shadow_dx();
     int16_t dy = tables_get_pointer_shadow_dy();
     const uint8_t *shadows = tables_get_palette_changes(TABLES_CHANGES_POINTER_SHADOW);
     ui_extract_icon(object_get_icon_index(g_leader_hand_object), &icon);
-    *width = UI_ICON_SIZE + dx;
-    *height = UI_ICON_SIZE + dy;
-    memset(px, POINTER_SHADOW_COLOR, (size_t)*width * *height);
+    image->w = UI_ICON_SIZE + dx;
+    image->h = UI_ICON_SIZE + dy;
+    memset(px, POINTER_SHADOW_COLOR, (size_t)image->w * image->h);
     for (int y = 0; y < UI_ICON_SIZE; y++)
         for (int x = 0; x < UI_ICON_SIZE; x++) {
             uint8_t shadow = shadows[icon_px[y * UI_ICON_SIZE + x]];
             if (shadow != POINTER_SHADOW_COLOR)
-                px[(y + dy) * *width + x + dx] = shadow;
+                px[(y + dy) * image->w + x + dx] = shadow;
         }
     for (int y = 0; y < UI_ICON_SIZE; y++)
         for (int x = 0; x < UI_ICON_SIZE; x++)
             if (icon_px[y * UI_ICON_SIZE + x] != POINTER_SHADOW_COLOR)
-                px[y * *width + x] = icon_px[y * UI_ICON_SIZE + x];
-    for (int i = 0; i < *width * *height; i++) /* the transparent color becomes 0 and the shadow black */
+                px[y * image->w + x] = icon_px[y * UI_ICON_SIZE + x];
+    for (int i = 0; i < image->w * image->h; i++) /* the transparent color becomes 0 and the shadow black */
         px[i] = px[i] == POINTER_SHADOW_COLOR ? 0 : px[i] == 0 ? POINTER_SHADOW_COLOR : px[i];
 }
 
@@ -406,17 +407,17 @@ static int get_pointer_shape(int16_t x, int16_t y, bool in_game)
     return POINTER_ARROW;
 }
 
-bool gameloop_get_pointer(int16_t x, int16_t y, bool in_game, uint8_t *px, int *w, int *h, int *hot_x, int *hot_y)
+bool gameloop_get_pointer(int16_t x, int16_t y, bool in_game, PointerImage *image)
 {
     if (in_game && g_mouse_pointer_hidden)
         return false;
     int shape = get_pointer_shape(x, y, in_game);
     if (shape == POINTER_OBJECT)
-        make_object_pointer(px, w, h);
+        make_object_pointer(image);
     else
-        decode_planar_pointer(shape == POINTER_HAND, px, w, h);
-    *hot_x = tables_get_pointer_hotspot_x(shape);
-    *hot_y = tables_get_pointer_hotspot_y(shape);
+        decode_planar_pointer(shape == POINTER_HAND, image);
+    image->hot_x = tables_get_pointer_hotspot_x(shape);
+    image->hot_y = tables_get_pointer_hotspot_y(shape);
     return true;
 }
 

@@ -217,11 +217,11 @@ static int16_t click_kind(const PlatEvent *e)
 /* The pointer image of the mouse position: in the game it depends on the zone and the hand. */
 static void set_pointer(bool in_game)
 {
-    uint8_t px[POINTER_SIZE * POINTER_SIZE];
-    int x, y, w, h, hot_x, hot_y;
+    PointerImage image;
+    int x, y;
     plat_mouse_position(&x, &y);
-    if (gameloop_get_pointer(x, y, in_game, px, &w, &h, &hot_x, &hot_y))
-        plat_set_pointer(px, w, h, hot_x, hot_y, gameloop_get_pointer_palette());
+    if (gameloop_get_pointer(x, y, in_game, &image))
+        plat_set_pointer(image.px, image.w, image.h, image.hot_x, image.hot_y, gameloop_get_pointer_palette());
     else
         plat_set_pointer(NULL, 0, 0, 0, 0, NULL);
 }

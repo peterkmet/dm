@@ -74,9 +74,9 @@
 bool g_restart_requested, g_return_to_entrance;
 static char save_dir[SAVE_DIR_SIZE] = ".";
 
-void startend_set_save_dir(const char *dir)
+void startend_set_save_dir(const char *directory)
 {
-    snprintf(save_dir, sizeof save_dir, "%s", dir);
+    snprintf(save_dir, sizeof save_dir, "%s", directory);
 }
 const char *startend_save_dir(void)
 {

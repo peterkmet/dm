@@ -35,6 +35,6 @@ void music_play_end(bool won);
 /* Stops the track; the soundtrack stays. */
 void music_stop(void);
 /* Adds the music to interleaved stereo int16 at AUDIO_OUTPUT_RATE. Runs on the game thread, after audio_mix. */
-void music_mix(int16_t *out, int frames);
+void music_mix(int16_t *samples, int frames);
 
 #endif

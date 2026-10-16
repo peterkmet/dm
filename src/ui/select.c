@@ -148,20 +148,20 @@ static void move(int step)
         }
 }
 
-void select_key(int16_t key)
+void select_key(int16_t action)
 {
     if (screen == SELECT_SCREEN_DONE)
         return;
     message = NULL;
-    if (key == SELECT_KEY_UP)
+    if (action == SELECT_KEY_UP)
         move(-1);
-    else if (key == SELECT_KEY_DOWN)
+    else if (action == SELECT_KEY_DOWN)
         move(1);
-    else if (key == SELECT_KEY_ENTER)
+    else if (action == SELECT_KEY_ENTER)
         activate();
-    else if (key == SELECT_KEY_ESCAPE && screen == SELECT_SCREEN_MODE && !adventure_given)
+    else if (action == SELECT_KEY_ESCAPE && screen == SELECT_SCREEN_MODE && !adventure_given)
         show(SELECT_SCREEN_ADVENTURE);
-    else if (key == SELECT_KEY_ESCAPE && screen == SELECT_SCREEN_CSB && !mode_given)
+    else if (action == SELECT_KEY_ESCAPE && screen == SELECT_SCREEN_CSB && !mode_given)
         show(SELECT_SCREEN_MODE);
 }
 

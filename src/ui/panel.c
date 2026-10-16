@@ -50,6 +50,14 @@
 #define ATTRIBUTE_CURSED     8
 #define ATTRIBUTE_COUNT      4
 
+/* A stat meter of the object panel: the bar fills value / maximum; the value shows when show_value is set. */
+typedef struct {
+    const char *label;
+    uint16_t value, maximum;
+    uint8_t color;
+    bool show_value;
+} StatMeter;
+
 int16_t g_panel_content;
 static int16_t
     scroll_redraw; /* CSB: the panel scroll shows a creature name or the magic map, so it draws again each tick */
@@ -529,9 +537,10 @@ static uint16_t get_largest_weight(void)
 }
 
 /* One stat meter at baseline y: the label, a bar with a black shadow, and the value when show_value is set. */
-static void show_stat_meter(int16_t x, int16_t y, const char *label, uint16_t value, uint16_t maximum, uint8_t color,
-                            bool show_value)
+static void show_stat_meter(int16_t x, int16_t y, const StatMeter *meter)
 {
+    uint16_t value = meter->value;
+    uint16_t maximum = meter->maximum;
     Bitmap *viewport = ui_get_viewport();
     char text[NUMBER_TEXT_SIZE];
     int16_t bar_x = x + METER_LABEL_CHARS * FONT_CHAR_WIDTH;
@@ -539,14 +548,14 @@ static void show_stat_meter(int16_t x, int16_t y, const char *label, uint16_t va
     int16_t filled = value >= maximum ? METER_BAR_WIDTH : value * METER_BAR_WIDTH / maximum;
     if (value && !filled)
         filled = 1; /* a small value still shows */
-    text_draw(viewport, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, label);
+    text_draw(viewport, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, meter->label);
     Box shadow = {bar_x + 1, top + 1, filled, METER_BAR_HEIGHT};
     Box bar = {bar_x, top, filled, METER_BAR_HEIGHT};
     if (filled) {
         draw_fill(viewport, &shadow, COLOR_BLACK);
-        draw_fill(viewport, &bar, color);
+        draw_fill(viewport, &bar, meter->color);
     }
-    if (!show_value)
+    if (!meter->show_value)
         return;
     snprintf(text, sizeof text, "%3u", value);
     text_draw(viewport, bar_x + METER_BAR_WIDTH + METER_VALUE_GAP, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, text);
@@ -574,11 +583,14 @@ static void show_stat_meters(uint16_t thing, int16_t x, int16_t y)
     uint16_t value;
     if (panel_get_object_meter(thing, &label, &value)) {
         bool attack = THING_TYPE(thing) == THING_WEAPON;
-        show_stat_meter(x, y, label, value, attack ? get_largest_attack() : get_largest_defense(),
-                        attack ? COLOR_GOLD : COLOR_BLUE, true);
+        show_stat_meter(x, y,
+                        &(StatMeter){label, value, attack ? get_largest_attack() : get_largest_defense(),
+                                     attack ? COLOR_GOLD : COLOR_BLUE, true});
         y += MESSAGE_ROW_HEIGHT;
     }
-    show_stat_meter(x, y, "WEIGHT", inventory_get_object_weight(thing), get_largest_weight(), COLOR_LIGHT_BROWN, false);
+    show_stat_meter(
+        x, y,
+        &(StatMeter){"WEIGHT", inventory_get_object_weight(thing), get_largest_weight(), COLOR_LIGHT_BROWN, false});
 }
 
 /* Opens a chest in the panel and draws its slots. While the eye is pressed, the action hand keeps

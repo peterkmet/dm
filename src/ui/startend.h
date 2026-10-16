@@ -14,7 +14,7 @@ extern bool g_restart_requested;  /* RESTART THIS GAME on the endgame screen */
 extern bool g_return_to_entrance; /* the endgame ended: the program shows the entrance */
 
 /* The directory of the save file of the adventure (DMGAME.DAT or CSBGAME.DAT). The default is the game data directory. */
-void startend_set_save_dir(const char *dir);
+void startend_set_save_dir(const char *directory);
 /* The directory of the save file now in use. */
 const char *startend_save_dir(void);
 

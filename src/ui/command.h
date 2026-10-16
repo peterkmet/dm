@@ -132,7 +132,7 @@ void command_toggle_inventory(int16_t champion_index);
 void command_click_on_mouth(void); /* exported for the tests */
 /* A champion dies: its open inventory closes, also during a press on the eye or the mouth; a dead
    leader ends a press on an imaginary wall; its icon is cleared and is no longer dragged. */
-void command_release_dead_champion(uint16_t champion_index, int16_t leader_index);
+void command_release_dead_champion(int16_t champion_index, int16_t leader_index);
 /* The party wakes up by a command or by damage: game speed and input return. */
 void command_wake_up(void);
 /* Takes the first waiting command and runs it. A movement command waits while the party cannot
