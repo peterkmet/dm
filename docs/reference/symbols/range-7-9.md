@@ -203,7 +203,7 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 - `group_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
 - `get_square_distance`: Manhattan distance.
 - `group_is_destination_visible_from_source(direction, sx, sy, dx, dy)`: true when the destination is in the 90° cone in that direction.
-- `group_get_directions_to_destination(sx, sy, dx, dy)` returns the main direction and writes the second direction to `g_group_secondary_direction`.
+- `group_get_directions_to_destination(sx, sy, dx, dy)` returns the main direction and writes the second direction to `g_group_secondary_direction`. The port returns both in a `DirectionPair`.
 - `group_set_ordered_cells_to_attack` copies 4 cells from `g_ordered_cells_to_attack[direction * 2 + side]`.
 - `group_get_champion_damage(group, champion)`: creature attack on a champion. It uses dexterity, luck, the map difficulty (`map[0x0c] >> 4`), invisibility, and the creature wound probabilities. It adds poison.
 - `group_get_melee_action_damage(...)`: champion melee attack on a creature.

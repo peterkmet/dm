@@ -116,6 +116,10 @@ class Location(ctypes.Structure):
     _fields_ = [("x", c16), ("y", c16)]
 
 
+class DirectionPair(ctypes.Structure):
+    _fields_ = [("primary", c16), ("secondary", c16)]
+
+
 class Position(ctypes.Structure):
     _fields_ = [("map", c16), ("x", c16), ("y", c16)]
 
@@ -483,7 +487,7 @@ def setup_creatures(lib):
         ("timeline_is_first_event_expired", ctypes.c_bool, []), ("timeline_extract_first_event", None, [event_p]),
         ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
         ("map_set_current_map", None, [c16]), ("rec_write", ctypes.POINTER(u8), [u16]),
-        ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", c16, [c16, c16, c16, c16]),
+        ("group_get_champion_damage", c16, [u16, u16]), ("group_get_directions_to_destination", DirectionPair, [Location, Location]),
         ("group_is_destination_visible_from_source", ctypes.c_bool, [c16, c16, c16, c16, c16]),
         ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
         ("group_get_generated", u16, [u16, c16, u16, c16, c16, c16]),

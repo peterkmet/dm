@@ -696,7 +696,8 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
         return false;
     bool test_destination = false;
     if (dst_x >= 0 && group_get_square_distance(src_x, src_y, dst_x, dst_y) == 1) {
-        uint16_t primary = group_get_directions_to_destination(src_x, src_y, dst_x, dst_y);
+        uint16_t primary =
+            group_get_directions_to_destination((Location){src_x, src_y}, (Location){dst_x, dst_y}).primary;
         uint16_t next = direction_right(primary);
         crossed[direction_left(primary)] = occupied[primary];
         crossed[direction_right(next)] = occupied[next];

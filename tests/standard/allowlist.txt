@@ -539,13 +539,6 @@ dead-api engine/dungeon.h:dungeon_decompress open: epic 7
 dead-api engine/dungeon.h:dungeon_validate open: epic 7
 dead-api engine/dungeon.h:g_dungeon_raw_map_data open: epic 7
 dead-api engine/dungeon.h:g_dungeon_text_data open: epic 7
-dead-api engine/group.h:g_current_group_distance_to_party open: epic 7
-dead-api engine/group.h:g_current_group_map_x open: epic 7
-dead-api engine/group.h:g_current_group_map_y open: epic 7
-dead-api engine/group.h:g_current_group_primary_direction_to_party open: epic 7
-dead-api engine/group.h:g_current_group_secondary_direction_to_party open: epic 7
-dead-api engine/group.h:g_current_group_thing open: epic 7
-dead-api engine/group.h:g_group_secondary_direction open: epic 7
 dead-api engine/group.h:group_add_active_group open: epic 7
 dead-api engine/group.h:group_create_event_move_group open: epic 7
 dead-api engine/group.h:group_delete_events open: epic 7

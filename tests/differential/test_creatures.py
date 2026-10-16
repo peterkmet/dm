@@ -53,8 +53,9 @@ def test_directions_to_destination_match_original(lib, seed):
         var(lib, ctypes.c_uint32, "g_random_seed").value = value
         emu.write(SEED, struct.pack(">I", value))
         want = s16(emu.call(DIRECTIONS, [(2, sx & 0xFFFF), (2, sy & 0xFFFF), (2, dx & 0xFFFF), (2, dy & 0xFFFF)]))
-        assert lib.group_get_directions_to_destination(sx, sy, dx, dy) == want, (sx, sy, dx, dy)
-        assert var(lib, c16, "g_group_secondary_direction").value == s16(struct.unpack(">H", emu.read(SECONDARY_DIRECTION, 2))[0])
+        got = lib.group_get_directions_to_destination(Location(sx, sy), Location(dx, dy))
+        assert got.primary == want, (sx, sy, dx, dy)
+        assert got.secondary == s16(struct.unpack(">H", emu.read(SECONDARY_DIRECTION, 2))[0])
         assert var(lib, ctypes.c_uint32, "g_random_seed").value == struct.unpack(">I", emu.read(SEED, 4))[0]
         for direction in range(4):
             args = (direction, sx, sy, dx, dy)

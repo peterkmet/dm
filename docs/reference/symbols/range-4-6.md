@@ -221,7 +221,7 @@ ordinal = allowed && index < count ? index + 1 : 0;
 `group_process_events_29_to_41` follows ReDMCSB F0209. A port should use the ReDMCSB structure and these KAOS details:
 
 - Off the party map, a group only handles event types 32, 33, 37, and 38. It moves in a random direction and adds a new event 37 later by `max(16 * |map − party map|, 2 * movement ticks)`.
-- The function stores the current group in `g_current_group_map_x`, `g_current_group_map_y`, `g_current_group_thing`, `g_current_group_distance_to_party`, and the two directions to the party. The movement test results go to `g_group_movement_blocked_by_*`, `g_flux_cages`, and `g_flux_cage_count`.
+- The function stores the current group in `g_current_group_map_x`, `g_current_group_map_y`, `g_current_group_thing`, `g_current_group_distance_to_party`, and the two directions to the party. The port keeps the square and thing in `last_turn` and the distance and directions in `GroupTurn`. The movement test results go to `g_group_movement_blocked_by_*`, `g_flux_cages`, and `g_flux_cage_count`.
 - `group_get_distance_between_unblocked_squares` walks a line from the group to the party with fixed point slope (`* 64`). It calls `group_is_view_party_blocked` or `group_is_smell_party_blocked` for each square.
 - `group_is_creature_attacking` has a jump table at `0x10d75a` for creature types below 25 that cast spells. Ghidra cannot recover it. Read the disassembly when you port that switch.
 

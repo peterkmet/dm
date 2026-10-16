@@ -4,6 +4,7 @@
 /* Prefixes: group_ creature_ */
 #include "data/tables.h"
 #include "engine/event.h"
+#include "engine/map.h"
 #include "engine/record.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
@@ -185,10 +186,6 @@ static inline uint16_t creature_size(const CreatureInfo *info)
 }
 
 extern int16_t g_creature_damage_outcome;
-extern int16_t g_group_secondary_direction;
-extern int16_t g_current_group_map_x, g_current_group_map_y;
-extern uint16_t g_current_group_thing, g_current_group_distance_to_party;
-extern int16_t g_current_group_primary_direction_to_party, g_current_group_secondary_direction_to_party;
 
 uint8_t group_get_cells(uint16_t group, int16_t map);
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
@@ -258,8 +255,12 @@ int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2
 /* True when the destination is in the 90 degree cone in front of the source. */
 bool group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x,
                                               int16_t dst_y);
-/* Main direction from a source square to a destination. The second direction goes to g_group_secondary_direction. */
-int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
+/* The two directions from a square toward a destination: the main one and the second best. */
+typedef struct {
+    int16_t primary, secondary;
+} DirectionPair;
+/* The directions from a source square to a destination. */
+DirectionPair group_get_directions_to_destination(Location from, Location to);
 /* The 4 cells of the target square in the order the attacker reaches them. */
 void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x,
                                        int16_t group_y, int16_t group_cell);

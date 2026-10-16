@@ -71,7 +71,7 @@ Smell uses the smell range of the creature. A creature smells the party directly
 ### Movement
 
 - The creature moves when half its movement ticks have passed since the last move. Else the group waits.
-- `group_get_directions_to_destination` gives a primary direction and a second direction (`g_group_secondary_direction`). Random numbers select between equal choices. This function matches the original exactly (differential test).
+- `group_get_directions_to_destination` returns a `DirectionPair`: a primary direction and a second direction. Random numbers select between equal choices. This function matches the original exactly (differential test).
 - `group_is_movement_possible` blocks walls, stairs, open pits (except for levitating creatures), closed fake walls, the party square, other groups, and closed doors that are too low for the creature. A wary creature avoids a teleporter to a map that does not allow its type. Lord Chaos does not enter a fluxcage.
 - A creature never turns around at once. It turns left or right first.
 - Lord Chaos sometimes jumps two squares over a free square.
@@ -196,6 +196,10 @@ Then the explosion disappears.
 4. The champion gets the experience and an action delay (event 11).
 
 `magic_get_click_on_spell_cast_result` casts for the magic caster and clears the symbols, except when a flask is missing.
+
+## Kept original quirks
+
+- A group turn remembers its square and group thing (`last_turn` in `group.c`) until the next group turn. A group that becomes active plays its flip sound at this square, and a group off the party map tests teleporters with this thing.
 
 ## Fixed original bugs
 
