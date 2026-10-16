@@ -40,7 +40,7 @@ Test list (CLAUDE.md §2; the review focus adds a test only for code on this lis
 - Tests pass in any order and in parallel: each test file owns its state (no global state shared between test files, unique temp paths and sockets).
 - Each test module loads its own copy of the library; tests reset the global state they read. Stub only the technical layer of the original; never game rules.
 
-Weakened assertions (approval: pending):
+Weakened assertions (approved by the owner, 2026-10-16):
 
 Each item removes or loosens an existing assertion; the owner approves the list once before the run.
 
