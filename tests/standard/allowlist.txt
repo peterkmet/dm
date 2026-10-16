@@ -353,8 +353,6 @@ dead-api ui/ui.h:ui_get_icon_zone_box open: epic 8
 dead-api ui/ui.h:ui_get_slot_box_zone open: epic 8
 dead-api ui/ui.h:ui_print_zone_padded open: epic 8
 dead-api ui/view.h:view_draw open: epic 8
-params engine/move.c:arrive_on_square open: epic 6
-params engine/projectile.c:create_impact_explosion open: epic 6
 params platform/control.c:find_in_box open: epic 10
 params platform/platform.c:plat_set_pointer open: epic 11
 params platform/platform.h:plat_set_pointer open: epic 11

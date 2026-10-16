@@ -339,9 +339,12 @@ static uint16_t flying_spell_attack(uint16_t thing, uint16_t projectile)
 }
 
 /* The explosion of a spell projectile or of a flask at the impact; a spent poison or lightning bolt makes none. */
-static void create_impact_explosion(uint16_t thing, uint16_t projectile, FlaskExplosion flask, Location at,
-                                    Location target, int16_t cell, DamageOutcome *outcome)
+static void create_impact_explosion(uint16_t thing, uint16_t projectile, FlaskExplosion flask, ImpactSite site,
+                                    DamageOutcome *outcome)
 {
+    Location at = site.at;
+    Location target = site.target;
+    int16_t cell = site.cell;
     bool flask_explodes = flask.explosion != 0;
     uint16_t explosion = flask_explodes ? flask.explosion : thing;
     uint16_t explosion_attack = flask_explodes ? flask.attack : flying_spell_attack(thing, projectile);
@@ -426,7 +429,8 @@ static bool has_impact_occurred(ImpactSite site, uint16_t projectile, DamageOutc
             sound_request_play(thing_type == THING_WEAPON ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, at,
                                SOUND_MODE_AFTER_TICK, 0);
         } else {
-            create_impact_explosion(thing, projectile, flask, at, target, cell, outcome);
+            site.cell = cell;
+            create_impact_explosion(thing, projectile, flask, site, outcome);
         }
     }
     if (flask_explodes) {

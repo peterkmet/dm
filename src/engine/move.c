@@ -233,9 +233,11 @@ static bool follow_square_chain(Walk *w)
 
 /* The thing arrives on its destination square. The party kills a group there and enters the square sensors, or waits
    for the map change on another map. A projectile only joins the square list. */
-static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16_t map, int16_t src_map,
-                             bool same_square)
+static void arrive_on_square(uint16_t thing, Position dst, int16_t src_map, bool same_square)
 {
+    int16_t map = dst.map;
+    int16_t dst_x = dst.x;
+    int16_t dst_y = dst.y;
     map_set_current_map(map);
     if (thing == THING_NONE) {
         uint16_t group = map_find_thing((Location){g_party_map_x, g_party_map_y}, THING_GROUP);
@@ -352,7 +354,7 @@ MoveResult move_get_move_result(const Move *move, MoveDestination *destination)
         return MOVE_RESULT_DONE;
     if (mover == MOVER_GROUP)
         return enter_group_square(&w);
-    arrive_on_square(w.thing, w.d.x, w.d.y, w.d.map, src_map, same_square);
+    arrive_on_square(w.thing, (Position){w.d.map, w.d.x, w.d.y}, src_map, same_square);
     return MOVE_RESULT_DONE;
 }
 
