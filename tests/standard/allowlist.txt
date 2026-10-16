@@ -291,7 +291,6 @@ ordinal rec_sensor_ornament_ordinal open: epic 6
 static-prefix engine/action.c:action_hand_charge_count open: epic 6
 static-prefix engine/action.c:champion_face_party_direction open: epic 6
 static-prefix engine/dungeon.c:dungeon_free open: epic 6
-static-prefix engine/dungeon.c:map_at_level open: epic 6
 static-prefix engine/dungeon.c:map_raw_data_offset open: epic 6
 static-prefix engine/dungeon.c:thing_count open: epic 6
 static-prefix engine/explored.c:map_first_square open: epic 6

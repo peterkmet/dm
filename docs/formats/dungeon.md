@@ -91,7 +91,7 @@ The loader builds `g_dungeon_map_data`. `g_dungeon_map_data[map][x]` points to c
 
 ### Thing lists
 
-Each word of the column table is the index of the first square-first-thing entry of that column. To find the first thing of square (x, y), start at the column entry and add 1 for each square above `y` that has bit 4 set. `dungeon_get_square_first_thing(map, x, y)` does this. It returns `0xfffe` when the square has no things.
+Each word of the column table is the index of the first square-first-thing entry of that column. To find the first thing of square (x, y), start at the column entry and add 1 for each square above `y` that has bit 4 set. `map_get_first_thing_at((Position){map, x, y})` does this. It returns `0xfffe` when the square has no things.
 
 A thing is a word: bits 0–9 index, bits 10–13 type, bits 14–15 cell. Each record starts with the word of the next thing. `0xfffe` ends a list. `dungeon_get_thing_data(thing)` returns the record.
 
@@ -139,7 +139,7 @@ The original writes all extra records, also past a limited count. The port stops
 - The checksum is present and wrong.
 - A memory allocation fails.
 
-`dungeon_get_square_first_thing` returns `0xfffe` when the index from the column table is outside the square first things.
+`map_get_first_thing_at` returns `0xfffe` when the index from the column table is outside the square first things.
 
 ## Text decoding
 

@@ -286,21 +286,6 @@ static uint16_t get_carried_first_thing(uint16_t thing)
     return be16(REC(thing) + 2);
 }
 
-/* The map one level up or down that covers the dungeon position of (x, y) on map, or -1. */
-static int16_t map_at_level(int16_t map, int16_t level_delta, int16_t x, int16_t y)
-{
-    int16_t dungeon_x = x + map_offset_x(map);
-    int16_t dungeon_y = y + map_offset_y(map);
-    int16_t level = map_level(map) + level_delta;
-    for (int16_t m = 0; m < dungeon_map_count(); m++) {
-        if (map_level(m) == level && map_offset_x(m) <= dungeon_x &&
-            dungeon_x < map_offset_x(m) + dungeon_map_width(m) && map_offset_y(m) <= dungeon_y &&
-            dungeon_y < map_offset_y(m) + dungeon_map_height(m))
-            return m;
-    }
-    return -1;
-}
-
 /* A teleporter record points to a square inside a map. */
 static bool is_valid_teleporter(uint16_t thing)
 {
@@ -345,9 +330,10 @@ static bool validate_squares(void)
                     index++;
                 }
                 bool down = type == SQUARE_PIT && (square & PIT_OPEN) && !(square & PIT_IMAGINARY);
-                if (type == SQUARE_STAIRS && map_at_level(m, square & STAIRS_UP ? LEVEL_UP : LEVEL_DOWN, x, y) < 0)
+                if (type == SQUARE_STAIRS &&
+                    map_find_level_map(m, square & STAIRS_UP ? LEVEL_UP : LEVEL_DOWN, x, y) < 0)
                     return false;
-                if (down && map_at_level(m, LEVEL_DOWN, x, y) < 0)
+                if (down && map_find_level_map(m, LEVEL_DOWN, x, y) < 0)
                     return false;
             }
         }
@@ -455,21 +441,6 @@ int16_t dungeon_map_height(int16_t map)
 uint8_t dungeon_get_square(int16_t map, int16_t x, int16_t y)
 {
     return g_dungeon_map_data[map][x][y];
-}
-
-uint16_t dungeon_get_square_first_thing(int16_t map, int16_t x, int16_t y)
-{
-    if (x < 0 || x >= dungeon_map_width(map) || y < 0 || y >= dungeon_map_height(map))
-        return THING_ENDOFLIST;
-    const uint8_t *col = g_dungeon_map_data[map][x];
-    if (!(col[y] & SQUARE_HAS_THINGS))
-        return THING_ENDOFLIST;
-    uint16_t index = get_column_first_thing_index(map, x);
-    for (int16_t i = 0; i < y; i++)
-        index += (col[i] & SQUARE_HAS_THINGS) != 0;
-    if (index >= rec_dungeon_square_first_thing_count())
-        return THING_ENDOFLIST;
-    return be16(g_square_first_things + index * 2);
 }
 
 uint8_t *dungeon_get_thing_data(uint16_t thing)

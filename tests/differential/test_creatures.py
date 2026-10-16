@@ -9,6 +9,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import need, s16, var
+from dmtest.game import Location, Position
 from dmtest.game import (Party, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
                          things_of_type, tick)
 from dmtest.lib import load_lib
@@ -192,7 +193,7 @@ class Things:
 def adjacent_group(lib, x, y):
     """A group on a square next to (x, y) on the current map, or None."""
     for nx, ny in ((x, y - 1), (x + 1, y), (x, y + 1), (x - 1, y)):
-        group = lib.map_get_square_group(nx, ny)
+        group = lib.map_find_thing(Location(nx, ny), C.THING_GROUP)
         if group != 0xFFFE:
             return group
     return None
@@ -200,10 +201,10 @@ def adjacent_group(lib, x, y):
 
 def mummy_in_corridor(lib, m):
     """A single mummy group on map m and a party square 3 squares away in a straight empty corridor."""
-    is_corridor = lambda x, y: lib.dungeon_get_square(m, x, y) >> 5 == 1 and lib.dungeon_get_square_first_thing(m, x, y) == 0xFFFE
+    is_corridor = lambda x, y: lib.dungeon_get_square(m, x, y) >> 5 == 1 and lib.map_get_first_thing_at(Position(m, x, y)) == 0xFFFE
     for x in range(lib.dungeon_map_width(m)):
         for y in range(lib.dungeon_map_height(m)):
-            t = lib.dungeon_get_square_first_thing(m, x, y)
+            t = lib.map_get_first_thing_at(Position(m, x, y))
             while t != 0xFFFE and t >> 10 & 15 != C.THING_GROUP:
                 t = lib.map_get_next_thing(t)
             if t == 0xFFFE or lib.dungeon_get_thing_data(t)[4] != CREATURE_MUMMY:
@@ -256,16 +257,16 @@ def test_creature_dies_and_drops_possessions(lib):
     assert found, "no map allows skeletons"
     m, party_square, (x, y) = found
     place_party(lib, m, *party_square, 2)
-    assert lib.map_get_square_group(x, y) == 0xFFFE
+    assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == 0xFFFE
     # Like the original, the result is THING_NONE when the new group becomes active on the party map.
     assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 0, x, y) == 0xFFFF
-    group = lib.map_get_square_group(x, y)
+    group = lib.map_find_thing(Location(x, y), C.THING_GROUP)
     assert group != 0xFFFE and lib.dungeon_get_thing_data(group)[4] == C.CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10, 1) == 0  # 10 damage: the skeleton survives
-    assert lib.map_get_square_group(x, y) == group
+    assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == group
     assert lib.group_get_damage_all_creatures_outcome(group, x, y, 2000, 1) == 2
-    assert lib.map_get_square_group(x, y) == 0xFFFE
+    assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == 0xFFFE
     assert var(lib, u16, "g_active_group_count").value == active - 1
     drops = things_of_type(lib, x, y, C.THING_WEAPON) + things_of_type(lib, x, y, C.THING_ARMOUR)
     assert drops  # the skeleton drops its falchion and helmet

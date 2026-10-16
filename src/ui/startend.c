@@ -502,7 +502,7 @@ static void delete_other_groups(int16_t x, int16_t y)
 {
     for (int16_t gx = 0; gx < g_current_map_width; gx++)
         for (int16_t gy = 0; gy < g_current_map_height; gy++)
-            if (map_get_square_group(gx, gy) != THING_ENDOFLIST && (gx != x || gy != y))
+            if (map_find_thing((Location){gx, gy}, THING_GROUP) != THING_ENDOFLIST && (gx != x || gy != y))
                 group_delete(gx, gy);
 }
 
@@ -517,7 +517,7 @@ void startend_run_fuse_sequence(void)
     ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX);
     fuse_update();
     game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
-    uint16_t lord = map_get_square_group(x, y);
+    uint16_t lord = map_find_thing((Location){x, y}, THING_GROUP);
     if (lord == THING_ENDOFLIST)
         return;
     group_set_health(lord, 0, FUSE_LORD_HEALTH);

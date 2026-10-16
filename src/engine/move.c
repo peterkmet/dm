@@ -97,11 +97,6 @@ static void add_party_scent(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t
                             (int16_t)(SCENT_KEEP_LARGER | SCENT_NEW_STRENGTH)); /* the flag is the sign bit */
 }
 
-static bool is_party_on(int16_t x, int16_t y)
-{
-    return g_current_map_index == g_party_map_index && x == g_party_map_x && y == g_party_map_y;
-}
-
 /* A teleporter on the destination square moves the thing to its target and turns it. The party hears it and keeps
    the count of teleports. Returns false when the chain stops: a closed teleporter, another scope, or a teleporter
    that points to itself. */
@@ -174,7 +169,7 @@ static uint16_t follow_square_chain(uint16_t thing, int16_t src_x, int16_t *dst_
             game_update_map_coordinates_after_relative_movement(exit, 1, 0, dst_x, dst_y);
             *start_direction = turn_back(exit);
             /* The object takes the cell on the side it came from, next to the stairs. */
-            uint16_t cell = *start_direction + ((((THING_CELL(thing) - *start_direction) + 1) & 2) >> 1);
+            uint16_t cell = direction_front_cell(*start_direction, THING_CELL(thing));
             thing = THING_WITH_CELL(thing, cell);
         } else {
             break;
@@ -190,7 +185,7 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
 {
     map_set_current_map(map);
     if (thing == THING_NONE) {
-        uint16_t group = map_get_square_group(g_party_map_x, g_party_map_y);
+        uint16_t group = map_find_thing((Location){g_party_map_x, g_party_map_y}, THING_GROUP);
         if (group != THING_ENDOFLIST) {
             group_drop_group_possessions(g_party_map_x, g_party_map_y, group, SOUND_MODE_AFTER_TICK);
             group_delete(g_party_map_x, g_party_map_y);
@@ -206,7 +201,7 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
     if (THING_TYPE(thing) == THING_PROJECTILE)
         map_link_thing_to_list(thing, 0, dst_x, dst_y);
     else
-        sensor_process_thing_addition_or_removal(dst_x, dst_y, thing, is_party_on(dst_x, dst_y), true);
+        sensor_process_thing_addition_or_removal(dst_x, dst_y, thing, map_is_party_on((Location){dst_x, dst_y}), true);
     map_set_current_map(src_map);
 }
 
@@ -253,7 +248,8 @@ int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16
         if (party)
             sensor_process_thing_addition_or_removal(src_x, src_y, THING_NONE, same_square, false);
         else if (!levitating)
-            sensor_process_thing_addition_or_removal(src_x, src_y, thing, is_party_on(src_x, src_y), false);
+            sensor_process_thing_addition_or_removal(src_x, src_y, thing, map_is_party_on((Location){src_x, src_y}),
+                                                     false);
         else
             map_unlink_thing_from_list(thing, 0, src_x, src_y);
     }
@@ -364,7 +360,7 @@ void move_party(int16_t command)
         if (blocked) {
             bump_into_wall(x, y, arrow);
         } else {
-            blocked = map_get_square_group(x, y) != THING_ENDOFLIST;
+            blocked = map_find_thing((Location){x, y}, THING_GROUP) != THING_ENDOFLIST;
             if (blocked)
                 group_process_reaction_event(x, y, REACTION_PARTY_IS_ADJACENT, 0);
         }

@@ -444,9 +444,7 @@ void champion_click_in_resurrect_reincarnate_panel(int16_t command)
     for (uint16_t s = 0; s < SLOT_COUNT; s++)
         if (c->slots[s] != THING_NONE)
             map_unlink_thing_from_list(c->slots[s], 0, x, y);
-    uint16_t mirror = map_get_square_first_thing(x, y);
-    while (THING_TYPE(mirror) != THING_SENSOR)
-        mirror = map_get_next_thing(mirror);
+    uint16_t mirror = map_find_thing((Location){x, y}, THING_SENSOR);
     rec_sensor_disable(mirror);
     if (command == PANEL_REINCARNATE)
         reincarnate(c);

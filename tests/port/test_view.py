@@ -4,6 +4,7 @@ import struct
 
 import pytest
 
+from dmtest.game import Position
 from dmtest.game import Bitmap, Box, setup_view, start_view, zone_records
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
@@ -198,11 +199,11 @@ def thing_records(lib, thing_type):
 
 def add_explosion(lib, m, x, y, cell, attack, explosion_type):
     """Links a new explosion behind the first thing of a square with things. Returns an undo function."""
-    lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
+    lib.map_get_first_thing_at.restype = ctypes.c_uint16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     data, count = thing_records(lib, 15)
     index = next(i for i in range(count) if data[4 * i] == 0xFF and data[4 * i + 1] == 0xFF)
-    first = lib.dungeon_get_square_first_thing(m, x, y)
+    first = lib.map_get_first_thing_at(Position(m, x, y))
     assert first != 0xFFFE
     head = lib.dungeon_get_thing_data(first)
     thing = cell << 14 | 15 << 10 | index

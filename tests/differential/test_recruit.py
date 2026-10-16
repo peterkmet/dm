@@ -25,7 +25,7 @@ def lib():
     lib.dungeon_decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
     lib.dungeon_decode_text.restype = lib.dungeon_load.restype = ctypes.c_bool
     lib.recruit_parse_text.restype = lib.recruit_parse.restype = ctypes.c_bool
-    lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
+    lib.map_get_first_thing_at.restype = ctypes.c_uint16
     lib.dungeon_get_thing_data.restype = u8p
     lib.recruit_decoded_value.argtypes = [ctypes.c_char_p, ctypes.c_int16]
     lib.recruit_decoded_value.restype = ctypes.c_uint16

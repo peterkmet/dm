@@ -662,7 +662,7 @@ static bool wall_face(int16_t x, int16_t y, int16_t face, WallFace *wall)
     wall->text = THING_NONE;
     wall->lock_ornament = -1;
     wall->other_ornament = -1;
-    for (uint16_t thing = dungeon_get_square_first_thing(g_party_map_index, x, y); thing != THING_ENDOFLIST;
+    for (uint16_t thing = map_get_first_thing_at((Position){g_party_map_index, x, y}); thing != THING_ENDOFLIST;
          thing = map_get_next_thing(thing)) {
         if (THING_CELL(thing) != face)
             continue;
@@ -823,7 +823,7 @@ static void square_things_json(Json *j, int16_t x, int16_t y)
     Json flying = {0};
     json_open(&objects, '[');
     json_open(&flying, '[');
-    for (uint16_t thing = dungeon_get_square_first_thing(g_party_map_index, x, y); thing != THING_ENDOFLIST;
+    for (uint16_t thing = map_get_first_thing_at((Position){g_party_map_index, x, y}); thing != THING_ENDOFLIST;
          thing = map_get_next_thing(thing)) {
         uint16_t type = THING_TYPE(thing);
         if (type == THING_GROUP) {
@@ -917,7 +917,7 @@ void state_json_write_view(Json *j)
             key_str(j, "element", name);
             if (in_party_map(x, y)) {
                 if (SQUARE_TYPE(square) == SQUARE_DOOR) {
-                    uint16_t door = dungeon_get_square_first_thing(g_party_map_index, x, y);
+                    uint16_t door = map_get_first_thing_at((Position){g_party_map_index, x, y});
                     key_str(j, "door", door_state_name(door_state(square)));
                     if (THING_TYPE(door) == THING_DOOR && door != THING_ENDOFLIST)
                         key_bool(j, "button", door_button_present(door));
@@ -956,7 +956,7 @@ int state_json_write_visible_things(uint16_t type, StateJsonSeenThing *out, int 
             view_square(depth, side, &x, &y);
             if (!in_party_map(x, y) || !strcmp(square_name(party_map_square(x, y)), "wall"))
                 continue;
-            for (uint16_t t = dungeon_get_square_first_thing(g_party_map_index, x, y); t != THING_ENDOFLIST;
+            for (uint16_t t = map_get_first_thing_at((Position){g_party_map_index, x, y}); t != THING_ENDOFLIST;
                  t = map_get_next_thing(t))
                 if (THING_TYPE(t) == type && count < max)
                     out[count++] = (StateJsonSeenThing){depth, x, y, side_names[side + 1], THING_STRIP_CELL(t)};

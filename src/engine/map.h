@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_ENGINE_MAP_H
 #define DM_ENGINE_MAP_H
-/* Prefixes: door_ square_ thing_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ */
+/* Prefixes: door_ square_ thing_ weapon_ armour_ junk_ potion_ container_ rec_ scroll_ teleporter_ map_ direction_ */
 #include "data/bytes.h"
 #include "engine/dungeon.h"
+#include "engine/game.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -439,8 +440,30 @@ uint16_t map_get_square_first_object(int16_t x, int16_t y);
 void map_link_thing_to_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
 /* Removes the thing from the square list (x >= 0) or from the list after list. Things compare without the cell. */
 void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_t y);
-/* The first group on square (x, y), or THING_ENDOFLIST. */
-uint16_t map_get_square_group(int16_t x, int16_t y);
+
+/* A square of the current map. */
+typedef struct {
+    int16_t x, y;
+} Location;
+
+/* A square with its map. */
+typedef struct {
+    int16_t map, x, y;
+} Position;
+
+/* The party stands on the square of the current map. */
+bool map_is_party_on(Location at);
+/* The first thing of a type on a square of the current map, or THING_ENDOFLIST. */
+uint16_t map_find_thing(Location at, int16_t type_wanted);
+/* The first thing on a square of any map, or THING_ENDOFLIST. */
+uint16_t map_get_first_thing_at(Position place);
+/* The map one level up or down that covers the dungeon position of (x, y) on map, or -1. */
+int16_t map_find_level_map(int16_t map, int16_t level_delta, int16_t x, int16_t y);
+/* Of the two cells on the side of a direction, the one beside cell. */
+static inline int16_t direction_front_cell(int16_t direction, int16_t cell)
+{
+    return NORMALIZE(direction + (((cell - direction + 1) & 2) >> 1));
+}
 
 uint16_t map_get_creature_attributes(uint16_t group_thing);
 

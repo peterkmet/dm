@@ -6,6 +6,7 @@ import ctypes
 import pytest
 
 from dmtest import constants as C
+from dmtest.game import Position
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, needs_csb, needs_dm
 
@@ -54,7 +55,7 @@ def lib():
     for f in ("gfx_get_string", "gfx_get_action_name", "gfx_get_object_name", "ui_get_skill_rank_name"):
         getattr(lib, f).restype = ctypes.c_char_p
     lib.recruit_text_thing.restype = ctypes.c_uint16
-    lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
+    lib.map_get_first_thing_at.restype = ctypes.c_uint16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     yield lib
     c16.in_dll(lib, "g_adventure").value = DM
@@ -109,7 +110,7 @@ def test_texts_against_dm(lib):
 
 
 def things(lib, x, y):
-    t = lib.dungeon_get_square_first_thing(0, x, y)
+    t = lib.map_get_first_thing_at(Position(0, x, y))
     while t != 0xFFFE:
         yield t
         d = lib.dungeon_get_thing_data(t)

@@ -6,6 +6,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import need, s16, var
+from dmtest.game import Position
 from dmtest.game import (CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Champion, Party, RecruitData, World, champions,
                          global_type, pack)
 from dmtest.lib import load_lib
@@ -40,7 +41,7 @@ def lib():
         "inventory_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [u16]),
         "champion_pack": (None, [cp, ctypes.c_char_p]), "champion_unpack": (None, [ctypes.c_char_p, cp]),
         "recruit_text_thing": (u16, [c16, c16, c16]), "recruit_portrait_index": (c16, [u16]),
-        "dungeon_get_square_first_thing": (u16, [c16, c16, c16]), "dungeon_get_thing_data": (ctypes.POINTER(u8), [u16]),
+        "map_get_first_thing_at": (u16, [Position]), "dungeon_get_thing_data": (ctypes.POINTER(u8), [u16]),
         "map_set_current_map_and_party_map": (None, [c16]), "dungeon_load": (ctypes.c_bool, [ctypes.c_char_p]),
     }
     for name, (res, args) in sig.items():
@@ -184,7 +185,7 @@ def test_time_effects_match_original(lib, seed):
 
 
 def square_things(lib, m, x, y):
-    t = lib.dungeon_get_square_first_thing(m, x, y)
+    t = lib.map_get_first_thing_at(Position(m, x, y))
     while t != 0xFFFE:
         yield t
         d = lib.dungeon_get_thing_data(t)

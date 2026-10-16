@@ -59,11 +59,6 @@ bool g_create_launcher_projectile;
 int16_t g_projectile_poison_attack, g_projectile_attack_type;
 bool g_fuse_sequence_requested;
 
-static bool is_party_on(int16_t x, int16_t y)
-{
-    return g_current_map_index == g_party_map_index && x == g_party_map_x && y == g_party_map_y;
-}
-
 static void add_event_one_tick_later(const TimelineEvent *event)
 {
     TimelineEvent next = *event;
@@ -110,11 +105,11 @@ static void explosion_damage_square(uint16_t explosion_thing, uint16_t attack, i
         if (!damage)
             return;
     }
-    if (is_party_on(x, y)) {
+    if (map_is_party_on((Location){x, y})) {
         champion_damage_all(damage, WOUND_ALL, ATTACK_FIRE);
         return;
     }
-    uint16_t group = map_get_square_group(x, y);
+    uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
     if (group == THING_END)
         return;
     const CreatureInfo *info = group_info(group);
@@ -239,7 +234,7 @@ uint16_t projectile_get_impact_attack(uint16_t projectile, uint16_t thing)
 static int16_t hit_creature(uint16_t projectile, uint16_t thing, bool is_explosion, int16_t x, int16_t y, int16_t cell,
                             uint16_t *possessing_group)
 {
-    uint16_t group = map_get_square_group(x, y);
+    uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
     int16_t ordinal = group_get_creature_ordinal_in_cell(group, cell);
     if (!ordinal)
         return 0;
@@ -435,9 +430,9 @@ void projectile_process_move_event(TimelineEvent *event)
     if (next.type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS) {
         next.type = EVENT_MOVE_PROJECTILE;
     } else {
-        if (is_party_on(x, y) && projectile_has_impact_occurred(IMPACT_PARTY, x, y, cell, projectile))
+        if (map_is_party_on((Location){x, y}) && projectile_has_impact_occurred(IMPACT_PARTY, x, y, cell, projectile))
             return;
-        if (map_get_square_group(x, y) != THING_END &&
+        if (map_find_thing((Location){x, y}, THING_GROUP) != THING_END &&
             projectile_has_impact_occurred(IMPACT_CREATURE, x, y, cell, projectile))
             return;
         if (rec_projectile_kinetic_energy(projectile) <= step_energy) {
@@ -506,7 +501,7 @@ void explosion_process_step_event(TimelineEvent *event)
     int16_t x = event_square_x(event);
     int16_t y = event_square_y(event);
     uint8_t square = g_current_map_data[x][y];
-    uint16_t group = map_get_square_group(x, y);
+    uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
     uint16_t type = rec_explosion_type(explosion);
     uint16_t attack = rec_explosion_attack(explosion);
     int16_t damage = type == EXPLOSION_POISON_CLOUD
@@ -515,7 +510,7 @@ void explosion_process_step_event(TimelineEvent *event)
     bool breaks_door = false;
     switch (type) {
     case EXPLOSION_POISON_CLOUD:
-        if (is_party_on(x, y)) {
+        if (map_is_party_on((Location){x, y})) {
             champion_damage_all(damage, 0, ATTACK_RAW);
         } else if (group != THING_END) {
             damage = group_get_resistance_adjusted_poison_attack(rec_group_creature_type(group), damage);
@@ -573,7 +568,7 @@ bool projectile_is_fluxcage_on_square(int16_t x, int16_t y)
 
 uint16_t projectile_get_lord_chaos_on_square(int16_t x, int16_t y)
 {
-    uint16_t group = map_get_square_group(x, y);
+    uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
     if (group == THING_END || rec_group_creature_type(group) != CREATURE_LORD_CHAOS)
         return 0;
     return group;
@@ -845,7 +840,7 @@ void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint
 {
     const Champion *champion = &g_champions[champion_index];
     uint16_t direction = champion->direction;
-    uint16_t cell = NORMALIZE(direction + (((champion->cell - direction + 1) & 2) >> 1));
+    uint16_t cell = direction_front_cell(direction, champion->cell);
     projectile_create(thing, g_party_map_x, g_party_map_y, cell, direction, kinetic_energy, attack, step_energy);
     g_projectile_disabled_movement_ticks = SHOT_DISABLED_MOVEMENT_TICKS;
     g_last_projectile_disabled_movement_direction = direction;

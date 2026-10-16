@@ -4,6 +4,7 @@ import struct
 
 import pytest
 
+from dmtest.game import Position
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 from dmcsb import THING_TYPES, open_dungeon
@@ -28,7 +29,7 @@ def lib():
     lib.dungeon_decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
     lib.dungeon_decompress.restype = lib.dungeon_decode_text.restype = ctypes.c_bool
     lib.dungeon_load.restype = lib.dungeon_validate.restype = ctypes.c_bool
-    lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
+    lib.map_get_first_thing_at.restype = ctypes.c_uint16
     lib.dungeon_get_square.restype = ctypes.c_uint8
     lib.dungeon_get_thing_data.restype = u8p
     lib.kaos_ptr.restype = ctypes.c_void_p
@@ -80,7 +81,7 @@ def test_dungeon_matches_dmcsb(lib, name):
             for y in range(h):
                 sq = lib.dungeon_get_square(m, x, y)
                 assert sq == d.tile_data[offset + x * h + y]
-                first = lib.dungeon_get_square_first_thing(m, x, y)
+                first = lib.map_get_first_thing_at(Position(m, x, y))
                 assert (first != 0xFFFE) == bool(sq & 0x10)
                 if (x, y) in located:
                     assert first >> 14 == located[(x, y)]["cell"]

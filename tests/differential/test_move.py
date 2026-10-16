@@ -28,7 +28,7 @@ def lib():
     lib = load_lib()
     for name in ("map_get_square",):
         getattr(lib, name).restype = ctypes.c_uint8
-    for name in ("map_get_square_first_thing", "dungeon_get_square_first_thing"):
+    for name in ("map_get_square_first_thing", "map_get_first_thing_at"):
         getattr(lib, name).restype = ctypes.c_uint16
     for name in ("map_get_location_after_level_change", "map_get_stairs_exit_direction",
                  "dungeon_map_width", "dungeon_map_height", "dungeon_map_count", "move_get_move_result"):

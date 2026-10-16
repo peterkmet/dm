@@ -401,7 +401,7 @@ static void grab_object(int16_t pile)
         return;
     if (pile >= VIEW_CELL_FRONT_FIRST) {
         get_front_square(&x, &y);
-        uint16_t group = map_get_square_group(x, y);
+        uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
         if (group != THING_ENDOFLIST && !move_is_levitating(group) &&
             group_get_creature_ordinal_in_cell(group, NORMALIZE(pile + g_party_direction)))
             return;
