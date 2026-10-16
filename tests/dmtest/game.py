@@ -112,6 +112,10 @@ class Timeline(ctypes.Structure):
     ]
 
 
+class PendingSound(ctypes.Structure):
+    _fields_ = [("sound", c16), ("volumes", ctypes.c_uint8 * 2)]
+
+
 class Location(ctypes.Structure):
     _fields_ = [("x", c16), ("y", c16)]
 

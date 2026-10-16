@@ -16,8 +16,10 @@
 #define NO_SOUND              (-1)  /* empty pending slot */
 
 SoundPlayHook g_sound_play_hook;
-int16_t g_pending_sounds[SOUND_PENDING_SLOTS] = {NO_SOUND, NO_SOUND};
-uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][SOUND_SIDE_COUNT];
+PendingSound g_pending_sounds[SOUND_PENDING_SLOTS] = {
+    {NO_SOUND, {0, 0}},
+    {NO_SOUND, {0, 0}}
+};
 
 static bool sound_exists(int16_t sound)
 {
@@ -45,11 +47,11 @@ static uint16_t get_loudness_class(const uint8_t *v)
     return sum < LOUDNESS_MEDIUM_SUM ? 0 : sum < LOUDNESS_LOUD_SUM ? 1 : 2;
 }
 
-int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)
+LoudnessResult sound_compare_loudness(const uint8_t *a, const uint8_t *b)
 {
     uint16_t ca = get_loudness_class(a);
     uint16_t cb = get_loudness_class(b);
-    return cb < ca ? 1 : cb == ca ? 0 : -1;
+    return cb < ca ? LOUDNESS_HIGHER : cb == ca ? LOUDNESS_SAME : LOUDNESS_LOWER;
 }
 
 bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
@@ -86,8 +88,8 @@ bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)
 
 static void set_pending(int slot, int16_t sound, const uint8_t *volumes)
 {
-    g_pending_sounds[slot] = sound;
-    memcpy(g_pending_sound_volumes[slot], volumes, SOUND_SIDE_COUNT);
+    g_pending_sounds[slot].sound = sound;
+    memcpy(g_pending_sounds[slot].volumes, volumes, SOUND_SIDE_COUNT);
 }
 
 /* Queues a sound for the next sound_play_pending. Two slots: a louder sound, or one of
@@ -95,22 +97,24 @@ static void set_pending(int slot, int16_t sound, const uint8_t *volumes)
 static void queue_pending(int16_t sound, const uint8_t *v)
 {
     for (int slot = 0; slot < SOUND_PENDING_SLOTS; slot++)
-        if (g_pending_sounds[slot] == NO_SOUND) {
+        if (g_pending_sounds[slot].sound == NO_SOUND) {
             set_pending(slot, sound, v);
             return;
         }
-    if (sound_compare_loudness(v, g_pending_sound_volumes[0]) != 1 &&
-        sound_compare_loudness(v, g_pending_sound_volumes[1]) != 1) {
+    if (sound_compare_loudness(v, g_pending_sounds[0].volumes) != LOUDNESS_HIGHER &&
+        sound_compare_loudness(v, g_pending_sounds[1].volumes) != LOUDNESS_HIGHER) {
         uint8_t priority = tables_get_sound_priority(sound);
-        if (sound_compare_loudness(v, g_pending_sound_volumes[0]) == 0 &&
-            tables_get_sound_priority(g_pending_sounds[0]) < priority)
+        if (sound_compare_loudness(v, g_pending_sounds[0].volumes) == LOUDNESS_SAME &&
+            tables_get_sound_priority(g_pending_sounds[0].sound) < priority)
             set_pending(0, sound, v);
-        else if (sound_compare_loudness(v, g_pending_sound_volumes[1]) == 0 &&
-                 tables_get_sound_priority(g_pending_sounds[1]) < priority)
+        else if (sound_compare_loudness(v, g_pending_sounds[1].volumes) == LOUDNESS_SAME &&
+                 tables_get_sound_priority(g_pending_sounds[1].sound) < priority)
             set_pending(1, sound, v);
         return;
     }
-    set_pending(sound_compare_loudness(g_pending_sound_volumes[0], g_pending_sound_volumes[1]) == 1 ? 1 : 0, sound, v);
+    set_pending(sound_compare_loudness(g_pending_sounds[0].volumes, g_pending_sounds[1].volumes) == LOUDNESS_HIGHER ? 1
+                                                                                                                    : 0,
+                sound, v);
 }
 
 /* Plays a sound of the table at the volumes through the hook of the audio output. */
@@ -145,8 +149,8 @@ void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mo
 void sound_play_pending(void)
 {
     for (int i = 0; i < SOUND_PENDING_SLOTS; i++)
-        if (g_pending_sounds[i] != NO_SOUND) {
-            play_sample(g_pending_sounds[i], g_pending_sound_volumes[i]);
-            g_pending_sounds[i] = NO_SOUND;
+        if (g_pending_sounds[i].sound != NO_SOUND) {
+            play_sample(g_pending_sounds[i].sound, g_pending_sounds[i].volumes);
+            g_pending_sounds[i].sound = NO_SOUND;
         }
 }

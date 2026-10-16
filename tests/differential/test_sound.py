@@ -5,6 +5,8 @@ import struct
 
 import pytest
 
+from dmtest import constants as C
+from dmtest.game import PendingSound
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
 
@@ -31,7 +33,7 @@ def lib():
     lib.sound_get_sample.argtypes = [ctypes.c_int16, ctypes.POINTER(ctypes.c_uint16), ctypes.POINTER(ctypes.c_uint16)]
     lib.gfx_get_item.restype = u8p
     lib.gfx_get_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
-    lib.sound_compare_loudness.restype = ctypes.c_int16
+    lib.sound_compare_loudness.restype = ctypes.c_int
     lib.sound_get_volume.restype = ctypes.c_bool
     lib.sound_get_volume.argtypes = [ctypes.c_int16, ctypes.c_int16, u8p]
     lib.sound_request_play.argtypes = [ctypes.c_int16] * 3 + [ctypes.c_uint16]
@@ -115,7 +117,8 @@ def test_compare_loudness_matches_original(lib, emu):
         for b in [(0, 14), (0, 15), (25, 0), (26, 0), (64, 64)]:
             emu.write(SCRATCH, bytes(a + b))
             want = ctypes.c_int16(emu.call(SOUND_COMPARE_LOUDNESS, [(4, SCRATCH), (4, SCRATCH + 2)])).value
-            assert lib.sound_compare_loudness(vols(*a), vols(*b)) == want, (a, b)
+            expected = {1: C.LOUDNESS_HIGHER, 0: C.LOUDNESS_SAME, -1: C.LOUDNESS_LOWER}[want]
+            assert lib.sound_compare_loudness(vols(*a), vols(*b)) == expected, (a, b)
 
 
 def set_party(lib, emu, x, y, direction):
@@ -139,12 +142,12 @@ def test_request_queue_matches_original(lib, emu):
     rnd = random.Random(12)
     emu.write(G_PARTY_MAP_INDEX_ADDR, b"\0\0")
     emu.write(G_CURRENT_MAP_INDEX, b"\0\0")
-    pending = (ctypes.c_int16 * 2).in_dll(lib, "g_pending_sounds")
-    volumes = (ctypes.c_uint8 * 4).in_dll(lib, "g_pending_sound_volumes")
+    pending = (PendingSound * 2).in_dll(lib, "g_pending_sounds")
     for _ in range(40):
         set_party(lib, emu, 10, 10, rnd.randrange(4))
-        pending[0] = pending[1] = -1
-        volumes[:] = [0] * 4  # earlier tests can leave volumes behind
+        for slot in pending:  # earlier tests can leave volumes behind
+            slot.sound = -1
+            slot.volumes[:] = [0, 0]
         emu.write(G_PENDING_SOUNDS, b"\xff\xff\xff\xff")
         emu.write(G_PENDING_VOLUMES, bytes(4))
         for _ in range(6):
@@ -152,4 +155,4 @@ def test_request_queue_matches_original(lib, emu):
             emu.call(SOUND_REQUEST_PLAY, [(2, s), (2, x), (2, y), (2, 1)])
             lib.sound_request_play(s, x, y, 1)
             want = struct.unpack(">2h", bytes(emu.read(G_PENDING_SOUNDS, 4))), bytes(emu.read(G_PENDING_VOLUMES, 4))
-            assert (tuple(pending), bytes(volumes)) == want
+            assert (tuple(slot.sound for slot in pending), bytes(b for slot in pending for b in slot.volumes)) == want

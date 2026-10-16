@@ -47,15 +47,23 @@
 /* Plays sample data at a Paula period and the left and right volumes. */
 typedef void (*SoundPlayHook)(const int8_t *sample, uint16_t length, uint16_t period, const uint8_t *volumes);
 extern SoundPlayHook g_sound_play_hook; /* ui/audio.c sets it; NULL: no sound plays */
-/* -1: empty slot; exported for the tests */
-extern int16_t g_pending_sounds[SOUND_PENDING_SLOTS];
-/* left, right; exported for the tests */
-extern uint8_t g_pending_sound_volumes[SOUND_PENDING_SLOTS][SOUND_SIDE_COUNT];
+/* A sound that plays after the tick, with its volume per side. */
+typedef struct {
+    int16_t sound; /* -1: empty slot */
+    uint8_t volumes[SOUND_SIDE_COUNT];
+} PendingSound;
+extern PendingSound g_pending_sounds[SOUND_PENDING_SLOTS]; /* exported for the tests */
+/* Results of a loudness comparison. */
+typedef enum {
+    LOUDNESS_LOWER = -1,
+    LOUDNESS_SAME = 0,
+    LOUDNESS_HIGHER = 1,
+} LoudnessResult;
 
 /* Sample data of a sound, its length in bytes and its Paula period. */
 const int8_t *sound_get_sample(int16_t sound, uint16_t *length, uint16_t *period);
-/* 1 when a is louder than b, 0 when equal, -1 when quieter. */
-int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b);
+/* LOUDNESS_HIGHER when a is louder than b, LOUDNESS_SAME when equal, LOUDNESS_LOWER when quieter. Exported for the tests. */
+LoudnessResult sound_compare_loudness(const uint8_t *a, const uint8_t *b);
 /* Stereo volume of a sound on a square, relative to the party position and direction.
    Returns false when the square is out of hearing range. */
 bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes);
