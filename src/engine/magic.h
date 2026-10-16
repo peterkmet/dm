@@ -64,11 +64,12 @@ void magic_print_spell_failure(int16_t champion_index, int16_t failure_type, int
 /* Spends the mana and shoots the spell; a weak cast with little maximum mana gets a slower step energy. */
 bool magic_is_projectile_spell_cast(int16_t champion_index, uint16_t thing, int16_t kinetic_energy,
                                     uint16_t required_mana);
-/* Spell shield (event 77) or fire shield (event 78) for the ticks. With mana, it costs 4 and half the ticks when short. */
+/* Spell shield (EVENT_SPELL_SHIELD_END) or fire shield (EVENT_FIRE_SHIELD_END) for the ticks. With mana, it costs 4
+   and half the ticks when short. */
 bool magic_cast_party_spell(int16_t champion_index, bool spell_shield, uint16_t ticks, bool use_mana);
-/* Light comes now; event 70 takes it back step by step after the ticks. */
+/* Light comes now; EVENT_LIGHT takes it back step by step after the ticks. */
 void magic_create_light_event(int16_t light_power, uint16_t ticks);
-/* The action hand is disabled for the ticks; an earlier disable is merged into one event 11. */
+/* The action hand is disabled for the ticks; an earlier disable is merged into one EVENT_ENABLE_CHAMPION_ACTION. */
 void magic_disable_action(int16_t champion_index, uint16_t ticks);
 /* The magic caster adds a rune and pays its mana. Returns false when the mana is short. */
 bool magic_add_champion_symbol(int16_t symbol);

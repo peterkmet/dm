@@ -74,8 +74,8 @@ typedef struct {
     char symbols[CHAMPION_SYMBOL_COUNT + 1];
     uint8_t direction_maximum_damage_received, maximum_damage_received;
     uint8_t poison_event_count;
-    int16_t enable_action_event_index;        /* event 11, or -1 */
-    int16_t hide_damage_received_event_index; /* event 12, or -1 */
+    int16_t enable_action_event_index;        /* EVENT_ENABLE_CHAMPION_ACTION, or -1 */
+    int16_t hide_damage_received_event_index; /* EVENT_HIDE_DAMAGE_RECEIVED, or -1 */
     uint16_t attributes;
     uint16_t wounds;
     int16_t current_health, maximum_health;

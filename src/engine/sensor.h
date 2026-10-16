@@ -17,7 +17,7 @@
 #define LOCAL_EFFECT_ROTATE_SENSORS   2
 #define LOCAL_EFFECT_EXPERIENCE       10
 #define ANY_CELL                      (-1)
-#define VI_ALTAR_REBIRTH_EFFECT       2 /* event 13 effect byte */
+#define VI_ALTAR_REBIRTH_EFFECT       2 /* EVENT_VI_ALTAR_REBIRTH effect byte */
 
 /* Adds a square event on the current map. Clear events come first at equal time, then toggle, then set.
    CSB gives each sensor event priority 0. */

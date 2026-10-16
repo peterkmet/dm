@@ -413,14 +413,6 @@ type ui:w open: epic 8
 type ui:width open: epic 8
 type ui:x open: epic 8
 type ui:y open: epic 8
-event-comment engine/action.c open: epic 6
-event-comment engine/champion.h open: epic 6
-event-comment engine/group.c open: epic 6
-event-comment engine/group.h open: epic 6
-event-comment engine/magic.c open: epic 6
-event-comment engine/magic.h open: epic 6
-event-comment engine/sensor.h open: epic 6
-event-comment engine/event.h open: epic 6
 todo engine/message.c open: epic 6
 todo engine/sound.c open: epic 9
 todo ui/automap.c open: epic 8

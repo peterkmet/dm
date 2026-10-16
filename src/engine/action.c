@@ -441,8 +441,8 @@ static bool is_object_thrown(int16_t champion_index, int16_t slot, bool side)
     return true;
 }
 
-/* Throw: the champion throws the action hand object from its side of the party. Event 11 then moves the next
-   weapon from the quiver to the action hand. */
+/* Throw: the champion throws the action hand object from its side of the party. EVENT_ENABLE_CHAMPION_ACTION then
+   moves the next weapon from the quiver to the action hand. */
 static bool is_action_object_thrown(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];

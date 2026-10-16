@@ -1774,7 +1774,7 @@ static bool can_start_attack(const GroupTurn *t)
            (!t->distance_x || !t->distance_y);
 }
 
-/* Events 29-31: reactions to danger, a projectile hit, or the party next to the group. */
+/* EVENT_GROUP_REACTION_*: reactions to danger, a projectile hit, or the party next to the group. */
 static void process_reaction(GroupTurn *t, uint16_t behavior)
 {
     switch (t->event_type) {
@@ -1811,7 +1811,7 @@ static void process_reaction(GroupTurn *t, uint16_t behavior)
     }
 }
 
-/* Events 32-36: the aspect of the group (32) or of one creature changes; a group that sees the party may react. */
+/* EVENT_UPDATE_ASPECT_*: the aspect of the group or of one creature changes; a group that sees the party may react. */
 static void process_aspect_event(GroupTurn *t, uint16_t behavior)
 {
     t->next.type = t->event_type + EVENT_BEHAVIOR_TO_ASPECT;
@@ -1829,7 +1829,8 @@ static void process_aspect_event(GroupTurn *t, uint16_t behavior)
         set_target_to_party(t->active);
     }
     if (behavior == BEHAVIOR_ATTACK) {
-        /* For event 32 (all creatures) the original reads the byte before aspect[0] (home y, always below 128). */
+        /* For EVENT_UPDATE_ASPECT_GROUP (all creatures) the original reads the byte before aspect[0] (home y, always
+           below 128). */
         int16_t creature = t->event_type - EVENT_UPDATE_ASPECT_CREATURE_0;
         t->aspect_update_time =
             next_aspect_time(t->active, creature, creature >= 0 && (t->active->aspect[creature] & ASPECT_ATTACKING));
@@ -1846,7 +1847,7 @@ static void process_aspect_event(GroupTurn *t, uint16_t behavior)
     add_event_with_aspect(t);
 }
 
-/* Event 37: the behavior of the whole group. */
+/* EVENT_UPDATE_BEHAVIOR_GROUP: the behavior of the whole group. */
 static void process_group_behavior(GroupTurn *t, uint16_t behavior)
 {
     switch (behavior) {
@@ -1968,7 +1969,8 @@ static bool can_attack_from_cell(const GroupTurn *t, int16_t creature, uint16_t 
     return cell == t->direction || cell == direction_right(t->direction);
 }
 
-/* Events 38-41: the behavior of one creature of an attacking group: turn, step to the front, or attack. */
+/* EVENT_UPDATE_BEHAVIOR_CREATURE_0-3: the behavior of one creature of an attacking group: turn, step to the front,
+   or attack. */
 static void process_creature_behavior(GroupTurn *t)
 {
     int16_t creature = t->event_type - EVENT_UPDATE_BEHAVIOR_CREATURE_0;
@@ -2060,7 +2062,8 @@ static void postpone_for_freeze_life(GroupTurn *t)
     timeline_add_event(&t->next);
 }
 
-/* A reaction becomes event 29-31: next tick when the party is adjacent, else when the group can move again. */
+/* A reaction becomes an EVENT_GROUP_REACTION_* event: next tick when the party is adjacent, else when the group can
+   move again. */
 static void add_reaction_event(GroupTurn *t)
 {
     /* Bug fix: the original leaves byte 8 (the ticks) of this event uninitialized; the port sets 0. */
@@ -2086,8 +2089,8 @@ static void set_current_group(GroupTurn *t)
     t->secondary_direction = t->directions_to_party.secondary;
 }
 
-/* Events 37-41: the behavior of the group or of one creature. A fleeing group flees as a whole. Event ticks make
-   the aspect update now. */
+/* EVENT_UPDATE_BEHAVIOR_*: the behavior of the group or of one creature. A fleeing group flees as a whole. Event
+   ticks make the aspect update now. */
 static void process_behavior_event(GroupTurn *t, uint16_t behavior)
 {
     t->ticks_delay_next_event = 0;
@@ -2238,7 +2241,8 @@ void group_remove_after_move(uint16_t group, Position source, Position landing, 
         group_delete(source.x, source.y);
 }
 
-/* The group waits off the map and tries to enter the square 5 ticks later (event 61 plays the teleporter sound). */
+/* The group waits off the map and tries to enter the square 5 ticks later (EVENT_MOVE_GROUP_AUDIBLE plays the
+   teleporter sound). */
 static void postpone_entry(uint16_t group, int16_t x, int16_t y, int16_t map, bool audible)
 {
     TimelineEvent event = {

@@ -202,7 +202,7 @@ static void cast_projectile(int16_t champion_index, uint16_t explosion_type, int
     magic_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), kinetic_energy, 0);
 }
 
-/* Light now, taken back by event 70 after the ticks. */
+/* Light now, taken back by EVENT_LIGHT after the ticks. */
 static void cast_light(uint16_t light_power, uint16_t ticks)
 {
     g_party.magical_light_amount += tables_get_light_amount(light_power);

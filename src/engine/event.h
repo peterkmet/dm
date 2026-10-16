@@ -52,7 +52,8 @@
 #define EVENT_MOVE_GROUP_SILENT                60
 #define EVENT_MOVE_GROUP_AUDIBLE               61
 
-/* A projectile moves one square per event 48 or 49. Event 48 ignores impacts on the square where it starts. */
+/* A projectile moves one square per EVENT_MOVE_PROJECTILE or EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS. The latter
+   ignores impacts on the square where it starts. */
 #define EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS 48
 #define EVENT_MOVE_PROJECTILE                49
 
@@ -62,8 +63,8 @@
 #define EVENT_TIME_MASK           0xffffff
 #define EVENT_MAP(event)          ((int16_t)((event)->map_time >> 24))
 
-/* Square events: b = x << 8 | y, c = cell << 8 | effect. Group events: c = ticks << 8. Event 11: b = quiver
-   slot + 1 << 8, 0: none. */
+/* Square events: b = x << 8 | y, c = cell << 8 | effect. Group events: c = ticks << 8.
+   EVENT_ENABLE_CHAMPION_ACTION: b = quiver slot + 1 << 8, 0: none. */
 #define EVENT_X_SHIFT           8
 #define EVENT_CELL_SHIFT        8
 #define EVENT_GROUP_TICKS_SHIFT 8
@@ -109,7 +110,7 @@ static inline uint16_t event_group_ticks(const TimelineEvent *event)
 {
     return event->c >> EVENT_GROUP_TICKS_SHIFT;
 }
-/* Event 11 after a throw: the slot that gets the next weapon of the quiver, -1: none. */
+/* EVENT_ENABLE_CHAMPION_ACTION after a throw: the slot that gets the next weapon of the quiver, -1: none. */
 static inline int16_t event_quiver_slot(const TimelineEvent *event)
 {
     return (int8_t)(event->b >> EVENT_QUIVER_SLOT_SHIFT) - 1;

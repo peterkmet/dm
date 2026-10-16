@@ -74,7 +74,7 @@
 /* A behavior event is an aspect event + 5. */
 #define EVENT_BEHAVIOR_TO_ASPECT 5
 
-/* Reactions that other rules send to group_process_reaction_event. Reaction r becomes event 32 + r. */
+/* Reactions that other rules send to group_process_reaction_event. Reaction r becomes EVENT_UPDATE_ASPECT_GROUP + r. */
 #define REACTION_DANGER_ON_SQUARE  (-3)
 #define REACTION_HIT_BY_PROJECTILE (-2)
 #define REACTION_PARTY_IS_ADJACENT (-1)
@@ -286,7 +286,7 @@ void group_process_event(const TimelineEvent *event);
 
 /* Group hooks of the square chain of move_get_move_result. Teleporters, pits (20 damage), and stairs move a group
    on. A group that dies or reaches a map that does not allow its type is deleted (stopped). An occupied destination
-   makes the group wait for event 60/61 (stopped). */
+   makes the group wait for EVENT_MOVE_GROUP_SILENT or EVENT_MOVE_GROUP_AUDIBLE (stopped). */
 /* A teleporter turns the creatures (relative or absolute rotation). Quarter-size creatures keep their cells with an
    absolute rotation. Returns the active entry of an attacking group on the party map, else -1. */
 int16_t group_turn_by_teleporter(uint16_t teleporter, uint16_t group, int16_t map);
