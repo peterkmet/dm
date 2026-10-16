@@ -500,7 +500,7 @@ def test_death_shows_restart_only_and_restart_loads_the_save(lib, tmp_path, rese
     lib.startend_run_endgame(1)
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
     before, after = shots[DEATH_FRAMES + THE_END_FRAMES], shots[DEATH_FRAMES + THE_END_FRAMES + 1]
-    bx, by, bw, bh = (lib.kaos_s16(C.CSB_RESTART_BOXES + 2 * i) for i in range(4))
+    bx, by, bw, bh = (lib.kaos_s16(C.CSB_RESTART_BOXES + 2 * i) for i in range(4))  # outer and inner box: x, y, width, height
     ix, iy, iw, ih = (lib.kaos_s16(C.CSB_RESTART_BOXES + 8 + 2 * i) for i in range(4))
     changed = {(i % C.SCREEN_W, i // C.SCREEN_W) for i in range(len(after)) if after[i] != before[i]}
     assert changed and all(bx <= px < bx + bw and by <= py < by + bh for px, py in changed)  # one button, no QUIT

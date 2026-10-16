@@ -196,7 +196,7 @@ def test_action_list(game):
             thing = new_object(game, C.THING_WEAPON, weapon)
             lib.weapon_set_charges(thing, charges)
             champion.slots[C.SLOT_HAND_ACTION] = thing
-            game.click_box(zone_box(game, C.ZONE_ACTION_ICON_BOX_FIRST), viewport=False)
+            game.click_box(zone_box(game, C.ZONE_ACTION_ICON_BOX_FIRST), viewport=False)  # + champion index: the action hand icon of the action area
             assert game.value("g_acting_champion_ordinal") == 1
             names = [lib.gfx_action_name(indices[k]).decode() if indices[k] != 0xFF else "" for k in range(3)]
             got.append({"count": count.value, "levels": list(levels), "names": names, **snapshot(game)})
@@ -300,7 +300,7 @@ def test_grab_under_a_creature(game):
     # the creature protects its own cell only; a levitating creature protects nothing
     for cell, creature, grabbed in ((VIEW_CELL_FRONT_FIRST, C.CREATURE_SKELETON, False),
                                     (VIEW_CELL_FRONT_FIRST + 1, C.CREATURE_SKELETON, True),
-                                    (VIEW_CELL_FRONT_FIRST, C.CREATURE_WIZARD_EYE, True)):
+                                    (VIEW_CELL_FRONT_FIRST, C.CREATURE_WIZARD_EYE, True)):  # the wizard eye levitates
         lib.dungeon_get_thing_data(group)[4] = creature
         game.click_box(game.boxes[cell])
         hand = game.value("g_leader_hand_object", u16)
