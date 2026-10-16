@@ -1466,7 +1466,7 @@ static void draw_door(uint16_t door_thing, int16_t state, int16_t view)
     free(door_copy.px);
 }
 
-/* map_get_location_after_level_change for any map (map.c checks the party map first): the map and square one
+/* map_get_level_change_location for any map (map.c checks the party map first): the map and square one
    level up or down, or -1. */
 static int16_t get_location_after_level_change(int16_t from, int16_t delta, int16_t *x, int16_t *y)
 {

@@ -429,9 +429,13 @@ static bool is_climbed_down(void)
     if (rec_square_type(map_get_square(x, y)) != SQUARE_PIT ||
         map_find_thing((Location){x, y}, THING_GROUP) != THING_ENDOFLIST)
         return false;
-    g_use_rope_to_climb_down_pit = true;
-    move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, x, y);
-    g_use_rope_to_climb_down_pit = false;
+    move_get_move_result(&(Move){.thing = THING_NONE,
+                                 .from.x = g_party_map_x,
+                                 .from.y = g_party_map_y,
+                                 .to.x = x,
+                                 .to.y = y,
+                                 .uses_rope = true},
+                         NULL);
     return true;
 }
 

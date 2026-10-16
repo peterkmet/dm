@@ -38,7 +38,6 @@ BOOL_GLOBALS = frozenset({
     "g_cheat_immortal",
     "g_cheat_food",
     "g_leader_empty_handed",
-    "g_use_rope_to_climb_down_pit",
     "g_create_launcher_projectile",
     "g_fuse_sequence_requested",
     "g_saved_game_exists",

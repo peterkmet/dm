@@ -538,7 +538,7 @@ These globals appear in ranges 4–6 but belong to other source files. They are 
 | `0x10314e` | `g_last_creature_attack_time` | Set in `group_is_creature_attacking`. |
 | `0x103152` | `g_last_party_movement_time` | Read in `champion_apply_time_effects`. |
 | `0x103156` | `g_secondary_direction_to_or_from_party` | Group movement. |
-| `0x103162`, `0x103164` | `g_move_result_map_x`, `g_move_result_map_y` | Read after `move_get_move_result`. |
+| `0x103162`, `0x103164` | `g_move_result_map_x`, `g_move_result_map_y` | Read after `move_get_move_result`. The port returns them in a `MoveDestination`. |
 | `0x103c04`–`0x103c10` | Primary/secondary mouse and keyboard input tables | Swapped by inventory, sleep, and rename. |
 
 ## Uncertain items

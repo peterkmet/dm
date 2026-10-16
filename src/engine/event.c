@@ -136,24 +136,23 @@ static void event_process_fake_wall(TimelineEvent *event)
 }
 
 /* A moved projectile keeps its step energy and gets its new square, direction, cell, and map. */
-static void update_projectile_event(uint16_t projectile)
+static void update_projectile_event(uint16_t projectile, const MoveDestination *destination)
 {
     TimelineEvent *e = &g_timeline.events[rec_projectile_event_index(projectile)];
-    e->c = projectile_event_c(g_move_result_map_x, g_move_result_map_y, g_move_result_direction,
-                              projectile_event_step_energy(e));
-    e->b = THING_WITH_CELL(projectile, g_move_result_cell);
-    e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
+    e->c = projectile_event_c(destination->x, destination->y, destination->direction, projectile_event_step_energy(e));
+    e->b = THING_WITH_CELL(projectile, destination->cell);
+    e->map_time = EVENT_MAP_TIME(destination->map, e->map_time & EVENT_TIME_MASK);
 }
 
 /* A moved explosion gets its new square, cell, and map in its explosion events. */
-static void update_explosion_events(uint16_t explosion)
+static void update_explosion_events(uint16_t explosion, const MoveDestination *destination)
 {
     for (uint16_t i = 0; i < g_timeline.high_water; i++) {
         TimelineEvent *e = &g_timeline.events[i];
         if (e->type == EVENT_EXPLOSION && e->c == explosion) {
-            e->b = event_square(g_move_result_map_x, g_move_result_map_y);
-            e->c = THING_WITH_CELL(explosion, g_move_result_cell);
-            e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
+            e->b = event_square(destination->x, destination->y);
+            e->c = THING_WITH_CELL(explosion, destination->cell);
+            e->map_time = EVENT_MAP_TIME(destination->map, e->map_time & EVENT_TIME_MASK);
         }
     }
 }
@@ -161,11 +160,12 @@ static void update_explosion_events(uint16_t explosion)
 /* The party, the group, and each object on the square move again, for example into an opened pit. */
 static void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
 {
-    if (map_is_party_on((Location){x, y}))
-        move_get_move_result(THING_NONE, x, y, x, y);
-    uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
+    Location at = {x, y};
+    if (map_is_party_on(at))
+        move_get_move_result(&(Move){.thing = THING_NONE, .from = at, .to = at}, NULL);
+    uint16_t group = map_find_thing(at, THING_GROUP);
     if (group != THING_ENDOFLIST)
-        move_get_move_result(group, x, y, x, y);
+        move_get_move_result(&(Move){.thing = group, .from = at, .to = at}, NULL);
     uint16_t thing = map_get_square_first_object(x, y);
     int16_t objects = 0;
     for (uint16_t t = thing; t != THING_ENDOFLIST; t = rec_thing_next(t))
@@ -174,12 +174,13 @@ static void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
         objects--;
         uint16_t next = rec_thing_next(thing);
         uint16_t type = THING_TYPE(thing);
+        MoveDestination destination;
         if (type > THING_GROUP)
-            move_get_move_result(thing, x, y, x, y);
+            move_get_move_result(&(Move){.thing = thing, .from = at, .to = at}, &destination);
         if (type == THING_PROJECTILE)
-            update_projectile_event(thing);
+            update_projectile_event(thing, &destination);
         else if (type == THING_EXPLOSION)
-            update_explosion_events(thing);
+            update_explosion_events(thing, &destination);
         thing = next;
     }
 }

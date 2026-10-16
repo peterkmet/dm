@@ -455,7 +455,7 @@ uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, 
         }
     }
     rec_group_set_cells(group, cells);
-    if (move_get_move_result(group, -1, 0, at.x, at.y))
+    if (move_get_move_result(&(Move){.thing = group, .to = at, .enters = true}, NULL) != MOVE_RESULT_DONE)
         return THING_NONE;
     sound_request_play(SOUND_BUZZ, at.x, at.y, SOUND_MODE_AFTER_TICK);
     return group;
@@ -537,7 +537,8 @@ void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, in
         uint16_t drop_cell = cell;
         if (cell == CELL_CENTERED || random_2bits() == 0)
             drop_cell = random_2bits();
-        move_get_move_result(THING_WITH_CELL(thing, drop_cell), -1, 0, x, y);
+        move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, drop_cell), .to.x = x, .to.y = y, .enters = true},
+                             NULL);
     }
     sound_request_play(weapon_dropped ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, x, y, sound_mode);
 }
@@ -572,7 +573,8 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
         uint16_t cell = random_2bits();
         if (THING_TYPE(thing) == THING_WEAPON)
             weapon_dropped = true;
-        move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, x, y);
+        move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = x, .to.y = y, .enters = true},
+                             NULL);
         thing = next;
     } while (next != THING_ENDOFLIST);
     if (sound_mode >= 0)
@@ -586,7 +588,7 @@ void group_delete(int16_t x, int16_t y)
         return;
     for (int16_t i = 0; i < GROUP_MAX_CREATURES; i++)
         rec_group_set_health(group, i, 0);
-    move_get_move_result(group, x, y, -1, 0);
+    move_get_move_result(&(Move){.thing = group, .from.x = x, .from.y = y, .leaves = true}, NULL);
     rec_thing_set_free(group);
     if (g_current_map_index == g_party_map_index) {
         g_active_groups[rec_group_cells(group)].group_index = -1;
@@ -1463,9 +1465,12 @@ static bool try_move(GroupTurn *t, int16_t target_x, int16_t target_y)
         t->movement_ticks = remaining;
         return false;
     }
-    if (move_get_move_result(t->group, t->x, t->y, target_x, target_y))
+    MoveDestination destination;
+    if (move_get_move_result(
+            &(Move){.thing = t->group, .from.x = t->x, .from.y = t->y, .to.x = target_x, .to.y = target_y},
+            &destination) != MOVE_RESULT_DONE)
         return true;
-    t->next.b = event_square(g_move_result_map_x, g_move_result_map_y);
+    t->next.b = event_square(destination.x, destination.y);
     t->active->prior_x = t->x;
     t->active->prior_y = t->y;
     t->active->last_move_time = g_game_time;
@@ -1963,9 +1968,12 @@ static void wander_off_party_map(GroupTurn *t)
         int16_t target_x = t->x;
         int16_t target_y = t->y;
         map_step(direction, 1, 0, &target_x, &target_y);
-        if (move_get_move_result(t->group, t->x, t->y, target_x, target_y))
+        MoveDestination destination;
+        if (move_get_move_result(
+                &(Move){.thing = t->group, .from.x = t->x, .from.y = t->y, .to.x = target_x, .to.y = target_y},
+                &destination) != MOVE_RESULT_DONE)
             return;
-        t->next.b = event_square(g_move_result_map_x, g_move_result_map_y);
+        t->next.b = event_square(destination.x, destination.y);
     }
     t->next.type = EVENT_UPDATE_BEHAVIOR_GROUP;
     t->next.map_time += max16(abs16(g_current_map_index - g_party_map_index) << 4, t->info->movement_ticks * 2);
@@ -2103,7 +2111,7 @@ void group_process_event(const TimelineEvent *event)
 }
 
 /* A teleporter turns the creatures (relative or absolute rotation). Quarter-size creatures keep their cells with an
-   absolute rotation. Returns the active entry + 2 for an attacking group on the party map, else 1. */
+   absolute rotation. Returns the active entry of an attacking group on the party map, else -1. */
 static int16_t move_get_teleporter_rotated_group_result(uint16_t teleporter, uint16_t group, int16_t map)
 {
     uint16_t rotation = rec_teleporter_rotation(teleporter);
@@ -2129,8 +2137,8 @@ static int16_t move_get_teleporter_rotated_group_result(uint16_t teleporter, uin
     group_set_directions(group, directions, map);
     group_set_cells(group, cells, map);
     if (map == g_party_map_index && rec_group_behavior(group) == BEHAVIOR_ATTACK)
-        return rec_group_cells(group) + 2;
-    return 1;
+        return rec_group_cells(group);
+    return -1;
 }
 
 /* One group move: the group thing (stairs change its cell), the source, and the destination that teleporters,
@@ -2140,8 +2148,18 @@ typedef struct {
     int16_t src_map, src_x, src_y;
     int16_t map, x, y;
     bool levitating, audible, removed_from_party_map;
-    int16_t result; /* of the last teleporter rotation */
+    MoveResult result;     /* of the last teleporter rotation */
+    int16_t turned_active; /* -1: none */
 } GroupMove;
+
+/* The destination goes one level down at the same dungeon place. */
+static void fall_one_level(GroupMove *m)
+{
+    Position below = map_get_level_change_location((Position){m->map, m->x, m->y}, LEVEL_DOWN);
+    m->map = below.map;
+    m->x = below.x;
+    m->y = below.y;
+}
 
 /* Follows teleporters, open pits (fall damage), and stairs from the destination square. Returns true when the fall
    killed all creatures. */
@@ -2166,11 +2184,12 @@ static bool follow_destination_squares(GroupMove *m)
             map_set_current_map(m->map);
             if (m->audible)
                 sound_request_play(SOUND_BUZZ, m->x, m->y, SOUND_MODE_AFTER_TICK);
-            m->result = move_get_teleporter_rotated_group_result(teleporter, m->group, m->src_map);
+            m->turned_active = move_get_teleporter_rotated_group_result(teleporter, m->group, m->src_map);
+            m->result = m->turned_active >= 0 ? MOVE_RESULT_TURNED : MOVE_RESULT_STOPPED;
             if (points_to_itself)
                 break;
         } else if (type == SQUARE_PIT && !m->levitating && (square & PIT_OPEN) && !(square & PIT_IMAGINARY)) {
-            m->map = map_get_location_after_level_change(m->map, LEVEL_DOWN, &m->x, &m->y);
+            fall_one_level(m);
             map_set_current_map(m->src_map);
             int16_t outcome = group_get_damage_all_creatures_outcome(m->group, m->src_x, m->src_y, FALL_DAMAGE, false);
             map_set_current_map(m->map);
@@ -2180,7 +2199,7 @@ static bool follow_destination_squares(GroupMove *m)
                 group_drop_moving_creature_fixed_possessions(m->group, m->x, m->y);
         } else if (type == SQUARE_STAIRS) {
             if (!(square & STAIRS_UP)) {
-                m->map = map_get_location_after_level_change(m->map, LEVEL_DOWN, &m->x, &m->y);
+                fall_one_level(m);
                 map_set_current_map(m->map);
             }
             int16_t exit = map_get_stairs_exit_direction(m->x, m->y);
@@ -2195,11 +2214,11 @@ static bool follow_destination_squares(GroupMove *m)
 }
 
 /* The group enters the destination square, or waits off the map while the party or another group stands there
-   (returns 1). Returns 1 when the group became active or inactive, the active entry + 2 after a teleporter rotation
-   of an attacking group, else 0. */
-static int16_t enter_destination(GroupMove *m)
+   (stopped). Stopped when the group became active or inactive, turned after a teleporter rotation of an attacking
+   group, else done. */
+static MoveResult enter_destination(GroupMove *m)
 {
-    int16_t result = m->result;
+    MoveResult result = m->result;
     map_set_current_map(m->map);
     uint8_t active_index = rec_group_cells(m->group);
     if (map_is_party_on((Location){m->x, m->y}) ||
@@ -2210,35 +2229,41 @@ static int16_t enter_destination(GroupMove *m)
         if (m->removed_from_party_map)
             group_remove_active_group(active_index);
         group_create_event_move_group(m->group, m->x, m->y, m->map, m->audible);
-        return 1;
+        return MOVE_RESULT_STOPPED;
     }
     sound_request_play(get_creature_movement_sound(rec_group_creature_type(m->group)), m->x, m->y,
                        SOUND_MODE_AFTER_TICK);
     if (m->removed_from_party_map && m->map != g_party_map_index) {
         group_remove_active_group(active_index);
-        result = 1;
+        result = MOVE_RESULT_STOPPED;
     } else if (!m->removed_from_party_map && m->map == g_party_map_index) {
         group_add_active_group(m->group, m->x, m->y);
-        result = 1;
+        result = MOVE_RESULT_STOPPED;
     }
     if (!m->levitating)
         sensor_process_thing_addition_or_removal(m->x, m->y, m->group, false, true);
     else
         map_link_thing_to_list(m->group, 0, m->x, m->y);
-    if (result || m->src_x < 0)
+    if (result != MOVE_RESULT_DONE || m->src_x < 0)
         group_start_wandering(m->x, m->y);
     map_set_current_map(m->src_map);
     if (m->src_x >= 0) {
-        if (result >= 2)
-            group_stop_attacking(&g_active_groups[result - 2], m->src_x, m->src_y);
-        else if (result == 1)
+        if (result == MOVE_RESULT_TURNED)
+            group_stop_attacking(&g_active_groups[m->turned_active], m->src_x, m->src_y);
+        else if (result == MOVE_RESULT_STOPPED)
             group_delete_events(m->src_x, m->src_y);
     }
     return result;
 }
 
-int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)
+MoveResult group_get_move_result(const Move *move, MoveDestination *destination)
 {
+    uint16_t group = move->thing;
+    /* A group that enters comes from (-1, 0); a group that leaves goes to (-1, 0). */
+    int16_t src_x = move->enters ? -1 : move->from.x;
+    int16_t src_y = move->enters ? 0 : move->from.y;
+    int16_t dst_x = move->leaves ? -1 : move->to.x;
+    int16_t dst_y = move->leaves ? 0 : move->to.y;
     GroupMove m = {
         .group = group,
         .src_map = g_current_map_index,
@@ -2248,11 +2273,13 @@ int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int1
         .x = dst_x,
         .y = dst_y,
         .levitating = (map_get_creature_attributes(group) & CREATURE_LEVITATES) != 0,
+        .result = MOVE_RESULT_DONE,
+        .turned_active = -1,
     };
     uint16_t src_cell = THING_CELL(group);
     if (src_x >= 0 && g_current_map_index == g_party_map_index &&
         projectile_is_killed_by_impact(src_x, src_y, dst_x, dst_y, group))
-        return 1;
+        return MOVE_RESULT_STOPPED;
     if (dst_x >= 0) {
         m.removed_from_party_map = g_current_map_index == g_party_map_index && src_x >= 0;
         if (follow_destination_squares(&m) || !group_is_creature_allowed_on_map(m.group, m.map)) {
@@ -2261,18 +2288,17 @@ int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int1
             map_set_current_map(m.src_map);
             if (src_x >= 0)
                 group_delete(src_x, src_y);
-            return 1;
+            return MOVE_RESULT_STOPPED;
         }
-        g_move_result_cell = THING_CELL(m.group);
+        MoveDestination d = {.map = m.map, .x = m.x, .y = m.y, .cell = THING_CELL(m.group)};
         bool same_square = m.map == m.src_map && m.x == src_x && m.y == src_y;
-        g_move_result_map_x = m.x;
-        g_move_result_map_y = m.y;
-        g_move_result_map_index = m.map;
+        if (destination)
+            *destination = d;
         if (!same_square) {
             if (m.map != m.src_map)
                 map_set_current_map(m.src_map);
-        } else if (g_move_result_cell == src_cell) {
-            return 0;
+        } else if (d.cell == src_cell) {
+            return MOVE_RESULT_DONE;
         }
     }
     if (src_x >= 0) {
@@ -2283,7 +2309,7 @@ int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int1
             map_unlink_thing_from_list(m.group, 0, src_x, src_y);
     }
     if (m.x < 0)
-        return 0;
+        return MOVE_RESULT_DONE;
     return enter_destination(&m);
 }
 
@@ -2307,7 +2333,7 @@ void group_process_move_event(TimelineEvent *event)
         if (!map_is_party_on((Location){x, y}) && map_find_thing((Location){x, y}, THING_GROUP) == THING_ENDOFLIST) {
             if (event->type == EVENT_MOVE_GROUP_AUDIBLE)
                 sound_request_play(SOUND_BUZZ, x, y, SOUND_MODE_AFTER_TICK);
-            move_get_move_result(event->c, -1, 0, x, y);
+            move_get_move_result(&(Move){.thing = event->c, .to.x = x, .to.y = y, .enters = true}, NULL);
             return;
         }
         if (retried)

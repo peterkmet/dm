@@ -830,9 +830,12 @@ void champion_apply_and_draw_pending_damage_and_wounds(void)
     }
 }
 
+/* The object appears on the party square, in the cell. */
 static void drop_on_party_square(uint16_t thing, uint16_t cell)
 {
-    move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, g_party_map_x, g_party_map_y);
+    move_get_move_result(
+        &(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = g_party_map_x, .to.y = g_party_map_y, .enters = true},
+        NULL);
 }
 
 void champion_drop_all_objects(uint16_t champion_index)

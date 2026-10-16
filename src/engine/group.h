@@ -5,6 +5,7 @@
 #include "data/tables.h"
 #include "engine/event.h"
 #include "engine/map.h"
+#include "engine/move.h"
 #include "engine/record.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
@@ -290,9 +291,9 @@ void group_process_reaction_event(Location at, int16_t reaction);
 void group_process_event(const TimelineEvent *event);
 
 /* move_get_move_result for a group. Teleporters, pits (20 damage), and stairs move it on. A group that dies or
-   reaches a map that does not allow its type is deleted (returns 1). An occupied destination makes the group wait
-   for event 60/61 (returns 1). Returns 0, 1, or the active entry + 2 (see the teleporter rotation). */
-int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
+   reaches a map that does not allow its type is deleted (stopped). An occupied destination makes the group wait
+   for event 60/61 (stopped). Returns done, stopped, or turned (see the teleporter rotation). */
+MoveResult group_get_move_result(const Move *move, MoveDestination *destination);
 /* The group waits off the map and tries to enter the square 5 ticks later (event 61 plays the teleporter sound). */
 void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, bool audible);
 /* A waiting group enters its square when the square is free. Lord Chaos may take an adjacent open square. */

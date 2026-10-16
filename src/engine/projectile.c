@@ -78,7 +78,8 @@ void projectile_create(uint16_t thing, int16_t x, int16_t y, int16_t cell, int16
     uint16_t projectile = rec_find_unused_thing(THING_PROJECTILE);
     if (projectile == THING_NONE) {
         if (THING_TYPE(thing) != THING_EXPLOSION)
-            move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, x, y);
+            move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = x, .to.y = y, .enters = true},
+                                 NULL);
         return;
     }
     projectile = THING_WITH_CELL(projectile, cell);
@@ -178,7 +179,12 @@ void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x
     uint16_t thing = rec_projectile_slot(projectile);
     if (THING_TYPE(thing) != THING_EXPLOSION) {
         if (possessing_group == THING_NONE) {
-            move_get_move_result(THING_WITH_CELL(thing, THING_CELL(projectile)), -2, 0, x, y);
+            move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, THING_CELL(projectile)),
+                                         .to.x = x,
+                                         .to.y = y,
+                                         .enters = true,
+                                         .keeps_cell = true},
+                                 NULL);
         } else if (rec_group_possessions(possessing_group) == THING_ENDOFLIST) {
             rec_thing_set_next(thing, THING_ENDOFLIST);
             rec_group_set_possessions(possessing_group, thing);
@@ -453,11 +459,10 @@ void projectile_process_move_event(TimelineEvent *event)
     }
     uint16_t direction = projectile_event_direction(&next);
     bool leaves_square = cell == direction || cell == direction_right(direction);
-    int16_t dst_x = x;
-    int16_t dst_y = y;
+    Location to = {x, y};
     if (leaves_square) {
-        map_step(direction, 1, 0, &dst_x, &dst_y);
-        uint8_t square = map_get_square(dst_x, dst_y);
+        map_step(direction, 1, 0, &to.x, &to.y);
+        uint8_t square = map_get_square(to.x, to.y);
         int16_t type = rec_square_type(square);
         int16_t solid =
             type == SQUARE_WALL || (type == SQUARE_FAKE_WALL && !(square & (FAKE_WALL_OPEN | FAKE_WALL_IMAGINARY))) ||
@@ -474,10 +479,11 @@ void projectile_process_move_event(TimelineEvent *event)
         map_unlink_thing_from_list(moved, 0, x, y);
         map_link_thing_to_list(moved, 0, x, y);
     } else {
-        move_get_move_result(moved, x, y, dst_x, dst_y);
-        next.c = projectile_event_c(g_move_result_map_x, g_move_result_map_y, g_move_result_direction, step_energy);
-        moved = THING_WITH_CELL(projectile, g_move_result_cell);
-        next.map_time = EVENT_MAP_TIME(g_move_result_map_index, next.map_time & EVENT_TIME_MASK);
+        MoveDestination destination;
+        move_get_move_result(&(Move){.thing = moved, .from.x = x, .from.y = y, .to = to}, &destination);
+        next.c = projectile_event_c(destination.x, destination.y, destination.direction, step_energy);
+        moved = THING_WITH_CELL(projectile, destination.cell);
+        next.map_time = EVENT_MAP_TIME(destination.map, next.map_time & EVENT_TIME_MASK);
     }
     next.map_time +=
         g_current_map_index == g_party_map_index ? PROJECTILE_STEP_TICKS_PARTY_MAP : PROJECTILE_STEP_TICKS_OTHER_MAP;
@@ -665,7 +671,8 @@ void projectile_fuse_action(int16_t x, int16_t y)
             break;
         }
     } while (!map_is_square_open(escape_x, escape_y));
-    if (!move_get_move_result(lord_chaos, x, y, escape_x, escape_y))
+    if (move_get_move_result(&(Move){.thing = lord_chaos, .from.x = x, .from.y = y, .to.x = escape_x, .to.y = escape_y},
+                             NULL) == MOVE_RESULT_DONE)
         group_start_wandering(escape_x, escape_y);
 }
 

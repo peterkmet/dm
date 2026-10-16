@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Champion
+from dmtest.game import Champion, Position
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -30,12 +30,13 @@ def lib():
         getattr(lib, name).restype = ctypes.c_uint8
     for name in ("map_get_square_first_thing", "map_get_first_thing_at"):
         getattr(lib, name).restype = ctypes.c_uint16
-    for name in ("map_get_location_after_level_change", "map_get_stairs_exit_direction",
-                 "dungeon_map_width", "dungeon_map_height", "dungeon_map_count", "move_get_move_result"):
+    for name in ("map_get_stairs_exit_direction", "dungeon_map_width", "dungeon_map_height", "dungeon_map_count"):
         getattr(lib, name).restype = c16
+    lib.move_get_move_result.restype = ctypes.c_int
     lib.map_is_square_open.restype = ctypes.c_bool
     lib.dungeon_load.restype = ctypes.c_bool
-    lib.map_get_location_after_level_change.argtypes = [c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
+    lib.map_get_level_change_location.restype = Position
+    lib.map_get_level_change_location.argtypes = [Position, c16]
     lib.rec_square_byte.restype = ctypes.c_uint8
     lib.rec_write.restype = u8p
     return lib
@@ -172,15 +173,14 @@ def test_teleporter_moves_party(game):
 def test_pit_drops_party(game):
     recruit(game)
     place(game, 1, 7, 9, 0)
-    x, y = c16(7), c16(8)
-    below = game.map_get_location_after_level_change(1, 1, ctypes.byref(x), ctypes.byref(y))
-    assert below == 2
+    below = game.map_get_level_change_location(Position(1, 7, 8), 1)
+    assert below.map == 2
     game.move_party(FORWARD)
-    assert var(game, "g_new_party_map_index").value == below
-    assert party(game)[1:3] == (x.value, y.value)
+    assert var(game, "g_new_party_map_index").value == below.map
+    assert party(game)[1:3] == (below.x, below.y)
     assert 0 < (c16 * 4).in_dll(game, "g_champion_pending_damage")[0] < 100
     game.move_process_new_party_map()
-    assert party(game)[:3] == (2, x.value, y.value)
+    assert party(game)[:3] == (2, below.x, below.y)
 
 
 def test_turn_on_stairs_takes_stairs(game):
@@ -234,13 +234,12 @@ def test_square_queries_match_original(game, m):
     for x in range(w):
         for y in range(h):
             for delta in (-1, 1):
-                cx, cy = c16(x), c16(y)
-                result = game.map_get_location_after_level_change(m, delta, ctypes.byref(cx), ctypes.byref(cy))
+                result = game.map_get_level_change_location(Position(m, x, y), delta)
                 emu.write(BUF + 0x40000, struct.pack(">hh", x, y))
                 expected = c16(emu.call(LEVEL_CHANGE, [(2, m), (2, delta & 0xFFFF), (4, BUF + 0x40000), (4, BUF + 0x40002)]) & 0xFFFF).value
-                assert result == expected
+                assert result.map == expected
                 if expected >= 0:
-                    assert (cx.value, cy.value) == struct.unpack(">hh", emu.read(BUF + 0x40000, 4))
+                    assert (result.x, result.y) == struct.unpack(">hh", emu.read(BUF + 0x40000, 4))
 
 
 def test_link_and_unlink_keep_lists(game):
