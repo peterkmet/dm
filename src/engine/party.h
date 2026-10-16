@@ -51,10 +51,10 @@ static inline int16_t party_position_y(uint16_t word)
     return word >> PARTY_POSITION_Y_SHIFT & PARTY_POSITION_XY_MASK;
 }
 
-/* The light amount of the party: light sources in the hands and the light spells. */
+/* The light amount of the party: magical light plus the burning torches in the hands, the brightest first with a
+   falling weight. */
 int16_t party_get_light(void);
-/* The darkness of the party light amount on map map_index (a map of difficulty 0 is always bright) for the view
-   and the creature rules. Sets g_party_light_level from the party light amount (magical light plus torches) on map map_index. */
+/* Sets g_party_light_level, the darkness of the party light on map map_index (difficulty 0 is always bright). */
 void party_set_light_level(int16_t map_index, int16_t light);
 /* Burning torches in the hands lose one charge; a burnt out torch may be discarded later. */
 void party_burn_torches(void);

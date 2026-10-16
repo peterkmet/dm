@@ -1,6 +1,6 @@
 # Movement, sensors, and timeline rules
 
-This page describes the movement rules of the C port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `event_process_expired`. The code is in `src/engine/map.c`, `src/engine/move.c`, `src/engine/sensor.c`, and `src/engine/timeline_process.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts.
+This page describes the movement rules of the C port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `event_process_expired`. The code is in `src/engine/map.c`, `src/engine/move.c`, `src/engine/sensor.c`, and `src/engine/event.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts.
 
 ## Start a game
 
