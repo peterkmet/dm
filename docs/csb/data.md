@@ -301,7 +301,7 @@ The other tables of `tables.md`, the view tables, the input tables, and the esca
 | `src/ui/startend.c` | THE END screen | Done (Step 8): CSB draws RESTART THIS GAME in the two boxes of APPB `0x100dcc` (image address `0x104248`) and keeps the click box of the CSB endgame mouse table. | The CSB layout has no zones 437 and 438. |
 | `src/engine/savefile.c` | `save_decode`, `save_encode`, `save_header_init`, header accessors | Add a CSB header variant: key at `0x3a`, fields 2 bytes up, 132 extra bytes. Check the block 2 checksum. | A CSB save fails the DM header check. |
 | `src/engine/savegame.c` | `savegame_save`, `savegame_load`, portrait functions | Use `CSBGAME.DAT` and `CSBGAME.BAK`. Keep the saved portrait bitmaps. | CSB parties come from DM saves or the champion editor. Their portraits are not in graphic 26. |
-| `src/data/ftl.c` and every `kaos_*` user (`tables.c`, `sound.c`, `view.c`, `dungeon.c`, and others) | `kaos_load`, address constants | Load `APPB.FTL` and translate the addresses. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
+| `src/data/kaos.c` and every `kaos_*` user (`tables.c`, `sound.c`, `view.c`, `dungeon.c`, and others) | `kaos_load`, address constants | Load `APPB.FTL` and translate the addresses. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
 | New `src/ui/anim.c` | Animation player | Done (Step 8): plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
 
 No change is needed in `layout.c` or `dungeon.c` (`dungeon_load`). Step 8 added `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `sound_play_data` (`sound.c`, plays sample data that is not in `Graphics.DAT`).
