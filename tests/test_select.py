@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from dmtest.lib import load_lib
+from dmtest.markers import needs_sdl
 
 from conftest import global_type
 
@@ -312,12 +313,14 @@ def run_dm(*args, auto_enter=False):
     return subprocess.run([str(ROOT / "build/dm"), *args, "--frames", "5"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
 
 
+@needs_sdl
 def test_invalid_adventure_exits():
     result = run_dm("--adventure", "x")
     assert result.returncode == 1
     assert "--adventure must be dm or csb" in result.stderr
 
 
+@needs_sdl
 @needs_dm
 def test_load_failure_leaves_no_control_socket(tmp_path):
     sock = Path("/tmp") / f"dm-select-{os.getpid()}.sock"
@@ -328,12 +331,14 @@ def test_load_failure_leaves_no_control_socket(tmp_path):
     assert not sock.exists()
 
 
+@needs_sdl
 def test_csb_missing_exits(tmp_path):
     result = run_dm("--adventure", "csb", "--data", str(tmp_path))
     assert result.returncode == 1
     assert f"CSB data is missing in {tmp_path}" in result.stderr
 
 
+@needs_sdl
 @needs_dm
 @pytest.mark.parametrize("args, auto_enter", [
     (["--adventure", "dm", "--mode", "vanilla"], False),
@@ -346,6 +351,7 @@ def test_flags_skip_screens(args, auto_enter):
     assert "adventure dm, mode" in result.stderr
 
 
+@needs_sdl
 @needs_dm
 @pytest.mark.parametrize("args", [[], ["--adventure", "dm"]])
 def test_selection_screen_runs(args):
@@ -354,6 +360,7 @@ def test_selection_screen_runs(args):
     assert "adventure dm, mode" not in result.stderr
 
 
+@needs_sdl
 @needs_csb
 def test_csb_screen_runs():
     result = run_dm("--adventure", "csb", "--mode", "vanilla")

@@ -10,12 +10,15 @@ from pathlib import Path
 
 import pytest
 
+from dmtest.markers import needs_sdl
+
 ROOT = Path(__file__).parent.parent
 GAME_CSB = ROOT / "game-csb"
 
 pytestmark = pytest.mark.skipif(not (GAME_CSB / "disk-b" / "MINI.DAT").exists(), reason="game-csb missing")
 
 
+@needs_sdl
 def test_csb_prison_state_through_the_tools(tmp_path, monkeypatch):
     data = tmp_path / "game-csb"
     shutil.copytree(GAME_CSB, data)
@@ -54,6 +57,7 @@ def test_csb_prison_state_through_the_tools(tmp_path, monkeypatch):
         shutil.rmtree(sock_dir, ignore_errors=True)
 
 
+@needs_sdl
 @pytest.mark.skipif(not (ROOT / "game" / "Dungeon.DAT").exists(), reason="game missing")
 def test_dm_state_through_the_tools(monkeypatch):
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")

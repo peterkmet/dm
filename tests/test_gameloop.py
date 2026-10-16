@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from dmtest.lib import load_lib
+from dmtest.markers import needs_sdl
 
 from test_champion import Champion
 from conftest import global_type
@@ -225,6 +226,7 @@ def test_champion_dies_with_inventory_open(game):
     assert game.until(lambda: game.position()[2] == (direction + 3) & 3)
 
 
+@needs_sdl
 def test_game_runs_headless_with_auto_enter():
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy", DM_AUTO_ENTER="1")
     result = subprocess.run([str(ROOT / "build/dm"), "--frames", "100"], cwd=ROOT, env=env, capture_output=True, timeout=60)

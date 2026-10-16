@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from dmtest.lib import load_lib
+from dmtest.markers import needs_sdl
 
 from test_control import Client, pump
 from test_gameloop import CORRIDOR, KEY_ESCAPE, KEY_F1, KEY_RETURN, KEY_UP, LEFT_PRESS, LEFT_RELEASE, STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Box, Game
@@ -186,6 +187,7 @@ def test_quick_save_and_quick_load(game, tmp_path):
     set_mode(game, VANILLA)
 
 
+@needs_sdl
 def test_bad_mode_stops_the_program():
     env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
     result = subprocess.run([str(ROOT / "build/dm"), "--mode", "fast", "--frames", "1"], cwd=ROOT, env=env, capture_output=True, timeout=60)
@@ -412,6 +414,7 @@ def test_render_advanced_panels(game):
     set_mode(game, VANILLA)
 
 
+@needs_sdl
 def test_turnbased_program_answers_get_state_and_act(tmp_path):
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
     path = os.path.join(sock_dir, "control.sock")
@@ -456,6 +459,7 @@ def test_turnbased_program_answers_get_state_and_act(tmp_path):
     assert not os.path.exists(path)
 
 
+@needs_sdl
 def test_turnbased_load_sent_at_once_runs_the_game(tmp_path):
     data = tmp_path / "game"
     shutil.copytree(ROOT / "game", data, ignore=shutil.ignore_patterns("DMGAME.*", "QUICK.DAT"))
@@ -663,6 +667,7 @@ def test_party_death_during_a_turn_reports_game_over(game):
         assert lib.gameloop_start_new_game(str(GAME).encode())
 
 
+@needs_sdl
 def test_turnbased_save_goes_to_the_saves_folder(tmp_path):
     data, saves = tmp_path / "game", tmp_path / "saves"
     shutil.copytree(ROOT / "game", data, ignore=shutil.ignore_patterns("DMGAME.*", "QUICK.DAT"))

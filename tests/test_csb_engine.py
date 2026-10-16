@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from dmtest.lib import load_lib
+from dmtest.markers import needs_sdl
 
 from dmtools import ftl
 
@@ -190,11 +191,13 @@ def run_dm(*args):
     return subprocess.run([str(ROOT / "build/dm"), *args, "--frames", "5"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
 
 
+@needs_sdl
 def test_view_shows_prison():
     result = run_dm("--adventure", "csb", "--view")
     assert result.returncode == 0, result.stderr
 
 
+@needs_sdl
 def test_view_loads_csb_from_data_folder(tmp_path):
     for name in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT", "disk-b"):
         (tmp_path / name).symlink_to(GAME_CSB / name)

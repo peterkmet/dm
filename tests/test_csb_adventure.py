@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from dmtest.lib import load_lib
+from dmtest.markers import needs_sdl
 
 from conftest import global_type
 from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Game
@@ -280,6 +281,7 @@ def run_dm(*args):
     return subprocess.run([str(ROOT / "build/dm"), *args, "--frames", "20"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
 
 
+@needs_sdl
 def test_turnbased_csb_starts_the_prison(tmp_path):
     folder = tmp_path / "csb"
     shutil.copytree(GAME_CSB, folder, ignore=shutil.ignore_patterns("CSBGAME.*", "QUICK.DAT"))
