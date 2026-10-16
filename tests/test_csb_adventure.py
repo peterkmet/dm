@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, game_sources, global_type
 from test_gameloop import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Game
 from test_save import KEY_RETURN, Frames
 
@@ -41,15 +41,18 @@ def game(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.control_open.restype = ctypes.c_bool
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.get_square_first_thing.restype = u16
-    lib.get_next_thing.restype = u16
-    lib.get_square.restype = ctypes.c_uint8
+    lib.map_get_square_first_thing.restype = u16
+    lib.map_get_next_thing.restype = u16
+    lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     lib.savegame_make_adventure.restype = c16
-    lib.savegame_save_as.restype = c16
+    lib.savegame_save_as.restype = ctypes.c_bool
     lib.savegame_load_from.restype = c16
-    lib.startend_load_saved_game.restype = c16
+    lib.startend_load_saved_game.restype = ctypes.c_bool
     lib.control_open.argtypes = [ctypes.c_char_p]
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
@@ -63,17 +66,17 @@ def saves(game, tmp_path):
     game.lib.startend_set_save_dir(str(tmp_path).encode())
     yield tmp_path
     for name in ("g_quit_requested", "g_return_to_entrance"):
-        c16.in_dll(game.lib, name).value = 0
+        ctypes.c_bool.in_dll(game.lib, name).value = 0
     ctypes.c_void_p.in_dll(game.lib, "g_frame_hook").value = None
 
 
 def value(game, name, kind=c16):
-    return kind.in_dll(game.lib, name).value
+    return global_type(name, kind).in_dll(game.lib, name).value
 
 
 def new_prison_game(game, champions):
     """NEW ADVENTURE, then the champions of the nearest mirrors (resurrected)."""
-    assert game.lib.gameloop_new_game(str(GAME_CSB).encode())
+    assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
     assert value(game, "g_dungeon_id", u16) == 12
     game.run(26)
     used = set()
@@ -150,7 +153,7 @@ def test_prison_save_continues_in_the_adventure(game, saves):
 
 
 def test_merge_refuses_an_empty_party(game, saves):
-    assert game.lib.gameloop_new_game(str(GAME_CSB).encode())
+    assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
     assert save_now(game) == (0, b"CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS.")
     assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == ADVENTURE_NO_CHAMPIONS
     assert not (saves / NAME).exists()
@@ -169,7 +172,7 @@ def test_merge_refuses_equal_first_names(game, saves):
 def test_resume_loads_csbgame(game, saves):
     names = new_prison_game(game, 2)
     assert save_now(game) == (SAVED_NEW_ADVENTURE, None)
-    assert game.lib.gameloop_new_game(str(GAME_CSB).encode())
+    assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
     assert game.lib.startend_load_saved_game() == 1
     game.lib.gameloop_start_loaded_game()
     assert_in_adventure(game, names)
@@ -227,7 +230,7 @@ def test_save_and_quit_saves_and_ends_the_game(game, saves):
 
 
 def test_cancel_and_refused_merge_go_back_to_the_game(game, saves):
-    assert game.lib.gameloop_new_game(str(GAME_CSB).encode())
+    assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
     run_save_dialog(game, [CHOICE_CANCEL])
     run_save_dialog(game, [CHOICE_SAVE_AND_QUIT, 1])  # the reason dialog: OK
     assert not (saves / NAME).exists()

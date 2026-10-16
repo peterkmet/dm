@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, game_sources, global_type
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -36,6 +36,11 @@ def lib(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.adventure_csb_present.restype = ctypes.c_bool
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
+    lib.select_restart.restype = ctypes.c_bool
+    lib.select_item_box.restype = ctypes.c_bool
     lib.adventure_default_dir.restype = ctypes.c_char_p
     lib.adventure_save_name.restype = ctypes.c_char_p
     lib.adventure_backup_name.restype = ctypes.c_char_p
@@ -45,16 +50,16 @@ def lib(tmp_path_factory):
 
 
 def value(lib, name):
-    return c16.in_dll(lib, name).value
+    return global_type(name, c16).in_dll(lib, name).value
 
 
 def set_value(lib, name, v):
-    c16.in_dll(lib, name).value = v
+    global_type(name, c16).in_dll(lib, name).value = v
 
 
 def start(lib, adventure=-1, mode=-1, csb_present=1):
     set_value(lib, "g_quit_requested", 0)
-    lib.select_start(adventure, mode, csb_present)
+    lib.select_start(adventure, mode, csb_present, True)
 
 
 def keys(lib, *ks):
@@ -119,7 +124,7 @@ def test_csb_present_in_game_csb(lib):
 @needs_dm
 def test_save_writes_csb_name(lib, tmp_path):
     assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     set_value(lib, "g_adventure", CSB)
     try:
         assert lib.savegame_save(str(tmp_path).encode()) == 1

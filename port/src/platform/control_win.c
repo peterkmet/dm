@@ -1,14 +1,24 @@
 /* Windows has no control socket: the turn-based LLM mode cannot start there. control.c is the real module. */
-#ifdef _WIN32
 #include "control.h"
 
-int control_open(const char *path)
+bool control_is_available(void)
 {
-    (void)path;
-    return 0;
+    return false;
 }
 
-void control_poll(void) {}
-bool control_is_turn_pending(void) { return false; }
-void control_close(void) {}
-#endif
+bool control_open(const char *path)
+{
+    (void)path;
+    return false;
+}
+
+void control_poll(void)
+{
+}
+bool control_is_turn_pending(void)
+{
+    return false;
+}
+void control_close(void)
+{
+}

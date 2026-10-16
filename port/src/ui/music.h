@@ -9,8 +9,8 @@
 
 enum { MUSIC_ORIGINAL, MUSIC_SUPER_NES, MUSIC_FM_TOWNS };
 
-#define MUSIC_CSB_MAP_COUNT 10   /* map 10 of CSB (1 x 1) has no entry */
-#define MUSIC_CSB_MAP_SIZE 32
+#define MUSIC_CSB_MAP_COUNT 10 /* map 10 of CSB (1 x 1) has no entry */
+#define MUSIC_CSB_MAP_SIZE  32
 
 extern int16_t g_music_soundtrack;      /* MUSIC_ORIGINAL by default: no music */
 extern int16_t g_music_track;           /* the track that plays, 0: silence */

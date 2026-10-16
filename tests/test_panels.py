@@ -8,8 +8,7 @@ import pytest
 import dmtools.emu as emu_module
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
-from test_ui import GAME, Bitmap, Box, Champion, c16, game, lib, needs_game, recruit, render, reset, rgb_rows, u16  # noqa: F401
-from test_view import SCRATCH, png
+from test_ui import GAME, Bitmap, Box, Champion, c16, game, lib, needs_game, recruit, render, reset, u16  # noqa: F401
 
 # Original addresses (docs/kaos-symbols.csv).
 DRAW_PANEL_OBJECT, PANEL_PRINT_LINE, PRINT_ZONE = 0x10F28A, 0x10EC88, 0x109A04
@@ -26,22 +25,23 @@ PRIEST = 2
 
 
 def setup(lib):
-    lib.panel_object_text.argtypes = [u16, ctypes.c_char_p, ctypes.c_char_p]
-    lib.panel_object_text.restype = c16
+    lib.panel_draw_object_text.argtypes = [u16, ctypes.c_char_p, ctypes.c_char_p]
+    lib.panel_draw_object_text.restype = c16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.dungeon_get_thing_data.argtypes = [u16]
-    lib.get_next_thing.restype = u16
-    lib.get_next_thing.argtypes = [u16]
+    lib.map_get_next_thing.restype = u16
+    lib.map_get_next_thing.argtypes = [u16]
     lib.gfx_string.restype = lib.gfx_object_name.restype = ctypes.c_char_p
     lib.gfx_string.argtypes = lib.gfx_object_name.argtypes = [c16]
     lib.object_get_icon_index.argtypes = [u16]
     lib.object_get_icon_index.restype = c16
     lib.champion_pack.argtypes = [ctypes.POINTER(Champion), ctypes.c_char_p]
-    lib.get_unused_thing.restype = u16
-    lib.get_unused_thing.argtypes = [u16]
+    lib.map_get_unused_thing.restype = u16
+    lib.map_get_unused_thing.argtypes = [u16]
     lib.inventory_get_object_removed_from_slot.argtypes = [u16, u16]
     lib.panel_click_in_chest.argtypes = [c16, c16]
-    lib.ui_slot_box_zone.argtypes = [c16, ctypes.c_int, ctypes.POINTER(Box)]
+    lib.ui_get_slot_box_zone.argtypes = [c16, ctypes.c_int, ctypes.POINTER(Box)]
+    lib.ui_get_slot_box_zone.restype = ctypes.c_bool
 
 
 def things_of(lib, t):
@@ -56,13 +56,13 @@ def chest_content(lib, chest):
     out, t = [], rec[2] << 8 | rec[3]
     while t != END:
         out.append(t)
-        t = lib.get_next_thing(t)
+        t = lib.map_get_next_thing(t)
     return out
 
 
 def port_text(lib, thing):
     name, lines = ctypes.create_string_buffer(40), ctypes.create_string_buffer(3 * 40)
-    n = lib.panel_object_text(thing, name, lines)
+    n = lib.panel_draw_object_text(thing, name, lines)
     return name.value, tuple(lines.raw[40 * i:40 * (i + 1)].split(b"\0")[0] for i in range(n))
 
 
@@ -190,12 +190,6 @@ def put_in_action_hand(game, champions, thing):
     game.ui_draw_champion_state(0)
 
 
-def save_png(game, name):
-    _, rows = rgb_rows(game)
-    if SCRATCH.exists():
-        png(SCRATCH / f"panel_{name}.png", rows)
-
-
 @needs_game
 def test_chest_open_swap_close(game, party):
     chests = [c for c in things_of(game, CHEST)[0] if 2 <= len(chest_content(game, c)) < CHEST_SLOTS]
@@ -210,17 +204,16 @@ def test_chest_open_swap_close(game, party):
     assert c16.in_dll(game, "g_panel_content").value == 6
     assert open_chest.value == chest
     assert list(slots) == content + [NONE] * (CHEST_SLOTS - len(content))
-    save_png(game, "chest")
 
-    hand = game.get_unused_thing(5)
+    hand = game.map_get_unused_thing(5)
     game.inventory_put_object_in_leader_hand(hand)
     box = Box()
-    assert game.ui_slot_box_zone(SLOT_BOX_CHEST_FIRST, 0, ctypes.byref(box))
+    assert game.ui_get_slot_box_zone(SLOT_BOX_CHEST_FIRST, 0, ctypes.byref(box))
     game.panel_click_in_chest(box.x + box.w // 2, box.y + box.h // 2 + VIEWPORT_Y)
     assert u16.in_dll(game, "g_leader_hand_object").value == content[0]
     assert slots[0] == hand
     assert slots[len(content)] == NONE
-    assert game.ui_slot_box_zone(SLOT_BOX_CHEST_FIRST + len(content), 0, ctypes.byref(box))
+    assert game.ui_get_slot_box_zone(SLOT_BOX_CHEST_FIRST + len(content), 0, ctypes.byref(box))
     game.panel_click_in_chest(box.x + box.w // 2, box.y + box.h // 2 + VIEWPORT_Y)  # the hand object goes to an empty slot
     assert slots[len(content)] == content[0]
     assert u16.in_dll(game, "g_leader_hand_object").value == NONE
@@ -245,12 +238,10 @@ def test_render_scroll_and_eye(game, party):
     game.ui_draw_inventory_open(0)
     put_in_action_hand(game, party, scrolls[0])
     assert c16.in_dll(game, "g_panel_content").value == 5
-    save_png(game, "scroll")
     sword = next(t for t in things_of(game, 5)[0] if game.gfx_object_name(game.object_get_icon_index(t)) == b"SWORD")
     game.inventory_put_object_in_leader_hand(sword)
     game.ui_draw_panel_eye()
     game.ui_draw_viewport()
-    save_png(game, "eye_sword")
     name, lines = port_text(game, sword)
     assert name == b"SWORD" and lines[-1].startswith(b"WEIGHS ")
     game.inventory_get_object_removed_from_leader_hand()
@@ -260,17 +251,17 @@ def test_render_scroll_and_eye(game, party):
 
 @needs_game
 def test_eat_food_redraws_the_food_bar(game, party):
-    game.tables_object_info.restype = ctypes.POINTER(u16 * 3)
-    junk = next(j for j in range(53) if 0xA8 <= game.tables_object_info(0x7F + j).contents[0] < 0xB0)
-    thing = game.get_unused_thing(10)
+    game.tables_get_object_info.restype = ctypes.POINTER(u16 * 3)
+    junk = next(j for j in range(53) if 0xA8 <= game.tables_get_object_info(0x7F + j).contents[0] < 0xB0)
+    thing = game.map_get_unused_thing(10)
     game.dungeon_get_thing_data(thing)[3] = junk
     party[0].food = 100
     game.ui_draw_inventory_open(0)
     c16.in_dll(game, "g_panel_content").value = 1  # food and water
     game.ui_draw_panel()
     game.inventory_put_object_in_leader_hand(thing)
-    game.ui_viewport.restype = ctypes.POINTER(Bitmap)
-    viewport = game.ui_viewport().contents
+    game.ui_get_viewport.restype = ctypes.POINTER(Bitmap)
+    viewport = game.ui_get_viewport().contents
     before = viewport.px[: viewport.w * viewport.h]
     game.command_click_on_mouth()
     assert viewport.px[: viewport.w * viewport.h] != before

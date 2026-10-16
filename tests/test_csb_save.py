@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, game_sources, global_type
 from test_gameloop import Game
 from test_save import state
 from test_savefile import SaveFile, u8p
@@ -37,13 +37,16 @@ def game(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.kaos_s16.restype = c16
     lib.dungeon_save.restype = ctypes.c_void_p
     lib.free.argtypes = [ctypes.c_void_p]
-    lib.savegame_save_as.restype = c16
+    lib.savegame_save_as.restype = ctypes.c_bool
     lib.savegame_load_from.restype = c16
     lib.dungeon_map_count.restype = c16
     lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.save_decode.restype = ctypes.c_bool
     lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
@@ -52,7 +55,7 @@ def game(tmp_path_factory):
 
 
 def value(lib, name, kind=c16):
-    return kind.in_dll(lib, name).value
+    return global_type(name, kind).in_dll(lib, name).value
 
 
 def load_mini(game, tmp_path):
@@ -114,7 +117,7 @@ def test_loaded_game_saves_and_loads_back(game, tmp_path):
 def test_new_prison_game_saves_and_loads_back(game, tmp_path):
     from dmtools import csb_mini as cm
 
-    assert game.lib.gameloop_new_game(str(GAME_CSB).encode())
+    assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
     assert value(game.lib, "g_max_active_group_count", u16) == 60
     before = state(game)
     raw = save(game, tmp_path)

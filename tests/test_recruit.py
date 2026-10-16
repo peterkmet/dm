@@ -34,8 +34,10 @@ class RecruitData(ctypes.Structure):
 def lib():
     subprocess.run(["make", "-C", "port", "../build/libdm.dylib"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(ROOT / "build/libdm.dylib"))
-    lib.decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
-    lib.dungeon_square_first_thing.restype = ctypes.c_uint16
+    lib.dungeon_decode_text.argtypes = [ctypes.c_char_p, ctypes.c_int16, ctypes.c_uint16, ctypes.c_int16]
+    lib.dungeon_decode_text.restype = lib.dungeon_load.restype = ctypes.c_bool
+    lib.recruit_parse_text.restype = lib.recruit_parse.restype = ctypes.c_bool
+    lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
     lib.dungeon_get_thing_data.restype = u8p
     lib.recruit_decoded_value.argtypes = [ctypes.c_char_p, ctypes.c_int16]
     lib.recruit_decoded_value.restype = ctypes.c_uint16
@@ -51,11 +53,12 @@ def need(lib):
         if not (GAME / n).exists():
             pytest.skip(f"missing game/{n}")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
+    assert lib.tables_init() == 0
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
 
 
 def things(lib, m, x, y):
-    t = lib.dungeon_square_first_thing(m, x, y)
+    t = lib.dungeon_get_square_first_thing(m, x, y)
     while t != 0xFFFE:
         yield t
         d = lib.dungeon_get_thing_data(t)
@@ -101,7 +104,7 @@ def test_decoded_value_matches_original(lib):
     texts = []
     for _, thing in mirrors(lib):
         buf = ctypes.create_string_buffer(128)
-        assert lib.decode_text(buf, 128, thing, -0x7FFE) == 1
+        assert lib.dungeon_decode_text(buf, 128, thing, -0x7FFE) == 1
         texts.append(buf.value)
     texts.append(bytes(range(0x20, 0x80)))  # characters outside A-P carry into the high byte
     for text in texts:

@@ -15,7 +15,7 @@ All addresses in this page are image addresses after `dm-ftl` with base `0x10000
 | Area | Difference | Port status |
 |---|---|---|
 | `Graphics.DAT` | 728 items, not 749. Same container format. Text items 699 and 700 are empty. Item 694 uses another string encoding. | `gfx_open` and `gfx_expand` read and decode all items. The text and layout users need changes. |
-| `Dungeon.DAT` | A 2-level start dungeon with 24 champion mirrors, dungeon ID 12. Same format. | `load_dungeon` loads it. |
+| `Dungeon.DAT` | A 2-level start dungeon with 24 champion mirrors, dungeon ID 12. Same format. | `dungeon_load` loads it. |
 | Save file | `CSBGame.dat`. Header fields move 2 bytes up. The payload key is at another offset. Blocks, cipher, and dungeon part are the same. | `save_decode` rejects a CSB save. |
 | Endgame | `ENDA.DAT`, an animation file that `ANIM.FTL` plays. No credits screen. | Not supported. |
 | Sounds | Same 35 sounds, same graphic items, same sound table. | `sound.c` works with the CSB items. |
@@ -101,7 +101,7 @@ Layout (item 696). The scratch script `txt.py` compares the zone records with `d
 | `GFX_OBJECT_NAMES` | 694 | `ids.h`, `ui.c` | TXT1 encoding. |
 | `GFX_ACTION_NAMES` | 699 | `ids.h`, `ui.c` | Empty. |
 | `GFX_STRINGS` | 700 | `ids.h`, `ui.c`, `champion.c` | Empty. |
-| `LAYOUT_GRAPHIC` zones 437, 438 | 696 | `startend.c` | Zones are not present. |
+| `GFX_LAYOUT` zones 437, 438 | 696 | `startend.c` | Zones are not present. |
 | `GFX_CREATURE_FIRST` + aspect | 584–670 | `ids.h`, `view.c` | Other bitmaps and sizes. `view.c` reads the size from the bitmap. |
 | Wall ornaments 56–59 | 371–378 | `view.c` | Placeholders. CSB maps must not use them. |
 
@@ -121,7 +121,7 @@ Unchanged indices that the port uses: 0, 6, 7–9, 12–25, 27–41, 46, 48–32
 | Thing counts in the file | 4 doors, 26 texts, 30 sensors, 12 groups |
 | `g_event_max_count` after a new-game load | 297 |
 
-The scratch script `dun.py` loads the file with `kaos_load("game/KAOS.FTL")` and `load_dungeon`. The call returns 1. The thing counts include the new-game extras (groups 87 = 12 + 75). The CSB engine uses the same thing record sizes (`0x10154a`) and the same new-game extra counts (`0x10155a`) as DM, so the DM KAOS tables give the correct result.
+The scratch script `dun.py` loads the file with `kaos_load("game/KAOS.FTL")` and `dungeon_load`. The call returns 1. The thing counts include the new-game extras (groups 87 = 12 + 75). The CSB engine uses the same thing record sizes (`0x10154a`) and the same new-game extra counts (`0x10155a`) as DM, so the DM KAOS tables give the correct result.
 
 `dmcsb` identifies the file by CRC32 as `atarist_csb` (Atari ST CSB 2.x dungeon). The Amiga file is byte-identical to it.
 
@@ -160,7 +160,7 @@ The CSB `save_game` is at `0x128cc0` (jump table slot `0xb6a(A5)`). The CSB `loa
 | Field | DM offset | CSB offset | CSB value |
 |---|---|---|---|
 | Payload key | `0x014` (group 2, `w2`) | `0x03a` (group 7, `w1`) | Random |
-| Header byte | `0x12a` | `0x12c` | Byte of the last load, default 1 |
+| Header byte (`H_HEADER_BYTE`) | `0x12a` | `0x12c` | Byte of the last load, default 1 |
 | Platform | `0x12b` | `0x12d` | 5. A load fails when the value is 1. |
 | Dialog choice | `0x130` | `0x132` | Not read by the load |
 | Game ID | `0x132` | `0x134` | `g_game_id` |
@@ -229,7 +229,7 @@ The `SO` chunks play `SD` sample 2 (graphic item 683) three times.
 
 The endgame `0x128374` (party dead) goes to `0x1285e8` when there is no saved game. The won flag is 0 then, so the engine stops at C`0x128600` on the credits screen.
 
-Port: `endgame_sensor` in `port/src/ui/startend.c` sets `g_game_won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
+Port: `startend_run_endgame_sensor` in `port/src/ui/startend.c` sets `g_game_won`, plays `ENDA.DAT` from the disk A folder with `anim_play`, waits for a key or a click, and shows the CSB screen.
 
 ### TITL.DAT and ANIM.DAT on disk B
 
@@ -290,7 +290,7 @@ The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `K
 | New-game extras | `0x101058` | `0x10155a` | Identical |
 | Action sets | `0x103d4c` | Not found as one block | Not analysed |
 
-The other tables of `tables.md`, the view tables, the input tables, and the escape tables of `decode_text` are not checked.
+The other tables of `tables.md`, the view tables, the input tables, and the escape tables of `dungeon_decode_text` are not checked.
 
 ## Loader changes
 
@@ -304,7 +304,7 @@ The other tables of `tables.md`, the view tables, the input tables, and the esca
 | `port/src/data/ftl.c` and every `kaos_*` user (`tables.c`, `sound.c`, `view.c`, `dungeon.c`, and others) | `kaos_load`, address constants | Load `APPB.FTL` and translate the addresses. | CSB has no `KAOS.FTL`. Most tables are identical at other addresses. |
 | New `port/src/ui/anim.c` | Animation player | Done (Step 8): plays the chunks of `ENDA.DAT`. | The CSB endgame plays `ENDA.DAT`. |
 
-No change is needed in `layout.c` or `dungeon.c` (`load_dungeon`). Step 8 added `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `sound_play_data` (`sound.c`, plays sample data that is not in `Graphics.DAT`).
+No change is needed in `layout.c` or `dungeon.c` (`dungeon_load`). Step 8 added `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `sound_play_data` (`sound.c`, plays sample data that is not in `Graphics.DAT`).
 
 ## Scratch scripts
 

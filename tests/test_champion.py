@@ -9,6 +9,7 @@ import pytest
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
+from conftest import global_type
 
 ROOT = Path(__file__).parent.parent
 GAME = ROOT / "game"
@@ -71,13 +72,13 @@ def lib():
         "champion_get_dexterity": (c16, [cp]), "champion_get_strength": (c16, [c16, c16]),
         "champion_get_wound_defense": (c16, [c16, u16]), "champion_add_pending_damage_and_wounds": (c16, [c16, c16, u16, c16]),
         "champion_damage_all": (c16, [u16, u16, c16]), "champion_decrement_stamina": (None, [c16, c16]),
-        "inventory_get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "get_unused_thing": (u16, [u16]),
+        "inventory_get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "map_get_unused_thing": (u16, [u16]),
         "champion_add_candidate_to_party": (None, [c16]), "champion_click_in_resurrect_reincarnate_panel": (None, [c16]),
         "inventory_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [u16]),
         "champion_pack": (None, [cp, ctypes.c_char_p]), "champion_unpack": (None, [ctypes.c_char_p, cp]),
         "recruit_text_thing": (u16, [c16, c16, c16]), "recruit_portrait_index": (c16, [u16]),
-        "dungeon_square_first_thing": (u16, [c16, c16, c16]), "dungeon_get_thing_data": (ctypes.POINTER(u8), [u16]),
-        "set_current_map_and_party_map": (None, [c16]),
+        "dungeon_get_square_first_thing": (u16, [c16, c16, c16]), "dungeon_get_thing_data": (ctypes.POINTER(u8), [u16]),
+        "map_set_current_map_and_party_map": (None, [c16]), "dungeon_load": (ctypes.c_bool, [ctypes.c_char_p]),
     }
     for name, (res, args) in sig.items():
         f = getattr(lib, name)
@@ -169,7 +170,7 @@ class World:
 
     def globals(self, sleeping, time, attack, move, difficulty, direction=0):
         lib, emu = self.lib, self.emu
-        var(lib, c16, "g_party_is_sleeping").value = sleeping
+        var(lib, ctypes.c_bool, "g_party_is_sleeping").value = sleeping
         var(lib, ctypes.c_uint32, "g_game_time").value = time
         var(lib, ctypes.c_int32, "g_last_creature_attack_time").value = attack
         var(lib, ctypes.c_int32, "g_last_party_movement_time").value = move
@@ -233,7 +234,7 @@ class World:
         for i in range(4):
             assert pack(lib, cs[i]) == bytes(emu.read(CHAMPIONS + 0x140 * i, 0x140)), f"champion {i}"
         assert var(lib, ctypes.c_uint32, "g_random_seed").value == struct.unpack(">I", emu.read(SEED, 4))[0]
-        assert var(lib, c16, "g_party_is_sleeping").value == struct.unpack(">h", emu.read(SLEEPING, 2))[0]
+        assert var(lib, ctypes.c_bool, "g_party_is_sleeping").value == struct.unpack(">h", emu.read(SLEEPING, 2))[0]
         assert list((c16 * 4).in_dll(lib, "g_champion_pending_damage")) == list(struct.unpack(">4h", emu.read(PENDING_DAMAGE, 8)))
         assert list((u16 * 4).in_dll(lib, "g_champion_pending_wounds")) == list(struct.unpack(">4H", emu.read(PENDING_WOUNDS, 8)))
 
@@ -359,7 +360,7 @@ def test_time_effects_match_original(lib, seed):
 
 
 def square_things(lib, m, x, y):
-    t = lib.dungeon_square_first_thing(m, x, y)
+    t = lib.dungeon_get_square_first_thing(m, x, y)
     while t != 0xFFFE:
         yield t
         d = lib.dungeon_get_thing_data(t)
@@ -380,15 +381,15 @@ def first_mirror(lib):
 def party(lib):
     """A new game with the party in front of the first mirror and the candidate recruited."""
     need(lib, "Dungeon.DAT")
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
-    lib.map_reset()  # load_dungeon replaced the map buffers
-    lib.game_new()
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
+    lib.map_reset()  # dungeon_load replaced the map buffers
+    lib.game_start_new()
     for name in ("g_candidate_champion_ordinal", "g_inventory_champion_ordinal", "g_party_is_sleeping"):
-        var(lib, c16, name).value = 0
-    var(lib, c16, "g_leader_empty_handed").value = 1
+        var(lib, global_type(name, c16), name).value = 0
+    var(lib, ctypes.c_bool, "g_leader_empty_handed").value = 1
     var(lib, ctypes.c_uint32, "g_random_seed").value = 12345
     portrait, m, x, y, c = first_mirror(lib)
-    lib.set_current_map_and_party_map(m)
+    lib.map_set_current_map_and_party_map(m)
     var(lib, c16, "g_party_map_x").value = px = x + STEP_EAST[c]
     var(lib, c16, "g_party_map_y").value = py = y + STEP_NORTH[c]
     var(lib, c16, "g_party_direction").value = d = (c + 2) & 3
@@ -402,6 +403,7 @@ def party(lib):
 def test_recruit_first_mirror_champion(lib, party):
     from test_recruit import RecruitData
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
+    lib.recruit_parse.restype = ctypes.c_bool
     r = RecruitData()
     assert lib.recruit_parse(party["text"], ctypes.byref(r)) == 1
     ch = champions(lib)[0]
@@ -428,8 +430,8 @@ class Bitmap(ctypes.Structure):
 
 
 def test_recruit_copies_the_mirror_portrait(lib, party):
-    lib.gfx_bitmap.restype = ctypes.POINTER(Bitmap)
-    sheet = lib.gfx_bitmap(26).contents
+    lib.gfx_get_bitmap.restype = ctypes.POINTER(Bitmap)
+    sheet = lib.gfx_get_bitmap(26).contents
     x, y = c16(), c16()
     lib.recruit_portrait_origin(party["portrait"], ctypes.byref(x), ctypes.byref(y))
     expected = [sheet.px[(y.value + r) * sheet.w + x.value + c] for r in range(29) for c in range(32)]
@@ -441,18 +443,18 @@ def test_eat_food(lib, party):
     lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
     ch = champions(lib)[0]
     var(lib, c16, "g_inventory_champion_ordinal").value = 1
-    lib.tables_object_info.restype = ctypes.POINTER(u16 * 3)
-    lib.tables_food_value.restype = ctypes.POINTER(c16)
-    junk = next(j for j in range(53) if 0xA8 <= lib.tables_object_info(0x7F + j).contents[0] < 0xB0)
-    food_value = lib.tables_food_value(lib.tables_object_info(0x7F + junk).contents[0] - 0xA8)[0]
-    thing = lib.get_unused_thing(10)
+    lib.tables_get_object_info.restype = ctypes.POINTER(u16 * 3)
+    lib.tables_get_food_value.restype = ctypes.POINTER(c16)
+    junk = next(j for j in range(53) if 0xA8 <= lib.tables_get_object_info(0x7F + j).contents[0] < 0xB0)
+    food_value = lib.tables_get_food_value(lib.tables_get_object_info(0x7F + junk).contents[0] - 0xA8)[0]
+    thing = lib.map_get_unused_thing(10)
     lib.dungeon_get_thing_data(thing)[3] = junk
     ch.food, load = 100, ch.load
     lib.inventory_put_object_in_leader_hand(thing)
     assert ch.load == load + lib.inventory_get_object_weight(thing)
-    lib.process_click_on_mouth()
+    lib.inventory_process_click_on_mouth()
     assert ch.food == min(100 + food_value, 2048) and ch.load == load
-    assert var(lib, u16, "g_leader_hand_object").value == 0xFFFF and var(lib, c16, "g_leader_empty_handed").value == 1
+    assert var(lib, u16, "g_leader_hand_object").value == 0xFFFF and var(lib, ctypes.c_bool, "g_leader_empty_handed").value == 1
     d = lib.dungeon_get_thing_data(thing)
     assert d[0] << 8 | d[1] == 0xFFFF  # record freed
 
@@ -467,7 +469,7 @@ def test_damage_until_death(lib, party):
         lib.champion_apply_and_draw_pending_damage_and_wounds()
         hits += 1
         assert hits < 200
-    assert var(lib, c16, "g_party_dead").value == 1
+    assert var(lib, ctypes.c_bool, "g_party_dead").value == 1
     assert all(s == 0xFFFF for s in ch.slots) and ch.load == 0
     dropped = list(square_things(lib, party["m"], *party["square"]))
     assert {t & 0x3FFF for t in slots} <= {t & 0x3FFF for t in dropped}
@@ -510,9 +512,9 @@ BRIGHT_THRESHOLD = 99  # g_palette_light_thresholds[0]
 @pytest.mark.parametrize("seed", range(3))
 def test_party_light_matches_original(lib, seed):
     need(lib, "Dungeon.DAT")
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     w = World(lib, 300 + seed)
-    lib.gameloop_set_light.restype = c16
+    lib.inventory_get_party_light.restype = c16
     w.put_champions(4)
     w.globals(0, 1000, 0, 0, 1)  # a map with darkness
     var(lib, c16, "g_party_map_index").value = 1
@@ -543,9 +545,9 @@ def test_party_light_matches_original(lib, seed):
             lo, hi = (lo, mid) if emu_index(mid) == 0 else (mid + 1, hi)
         want = BRIGHT_THRESHOLD - lo
         var(lib, Party, "g_party").magical_light_amount = 0
-        got = lib.gameloop_set_light()
+        got = lib.inventory_get_party_light()
         assert got == want, (round_, [list(cs[c].slots[:2]) for c in range(4)])
         for magic in (lo - 1, lo, -want, -want + 1, 40 - want):
             var(lib, Party, "g_party").magical_light_amount = magic
-            lib.gameloop_set_light()
+            lib.inventory_set_dungeon_view_palette(1, lib.inventory_get_party_light())
             assert var(lib, c16, "g_dungeon_view_palette_index").value == emu_index(magic), (round_, magic)

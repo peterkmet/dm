@@ -34,7 +34,7 @@ WeaponInfo = S(("weight", u8), ("weapon_class", u8), ("strength", u8), ("kinetic
 ArmourInfo = S(("weight", u8), ("defense", u8), ("attributes", u8))
 DoorInfo = S(("attributes", u8), ("defense", u8))
 Spell = S(("symbols", u32), ("base_required_skill_level", u8), ("skill_index", u8), ("kind", u8), ("type", u8), ("disabled_ticks", u8))
-ActionSet = S(("action_indices", u8 * 3), ("minimum_skill_levels", u8 * 2), ("byte_6", u8))
+ActionSet = S(("action_indices", u8 * 3), ("minimum_skill_levels", u8 * 2), ("flags", u8))
 ActionInfo = S(("disabled_ticks", u8), ("damage_factor", u8), ("hit_probability", u8), ("stamina", u8), ("defense", s8),
                ("skill_index", u8), ("experience_gain", u8))
 
@@ -63,17 +63,17 @@ TABLES = {
 @pytest.fixture(scope="module")
 def lib(tmp_path_factory):
     out = tmp_path_factory.mktemp("tables") / "libtables.dylib"
-    src = [str(next(PORT_SRC.rglob(f))) for f in ("tables.c", "ftl.c", "adventure.c", "adf.c", "crc32.c", "csbimage.c", "csbtext.c")]
+    src = [str(next(PORT_SRC.rglob(f))) for f in ("tables.c", "ftl.c", "file.c", "adventure.c", "adf.c", "os.c", "crc32.c", "csbimage.c", "csbtext.c")]
     r = subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *src],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     lib = ctypes.CDLL(str(out))
     for name, (rec, *_rest) in TABLES.items():
-        f = getattr(lib, "tables_" + name)
+        f = getattr(lib, "tables_get_" + name)
         f.argtypes, f.restype = [ctypes.c_int], ctypes.POINTER(rec)
-    lib.tables_symbol_base_mana_cost.argtypes = [ctypes.c_int, ctypes.c_int]
-    lib.tables_symbol_base_mana_cost.restype = ctypes.POINTER(u8)
-    assert not lib.tables_creature_info(0)
+    lib.tables_get_symbol_base_mana_cost.argtypes = [ctypes.c_int, ctypes.c_int]
+    lib.tables_get_symbol_base_mana_cost.restype = ctypes.POINTER(u8)
+    assert not lib.tables_get_creature_info(0)
     assert lib.tables_init() == -1
     assert lib.kaos_load(str(KAOS).encode()) == 0
     assert lib.tables_init() == 0
@@ -86,7 +86,7 @@ def image():
 
 
 def get(lib, name, i):
-    p = getattr(lib, "tables_" + name)(i)
+    p = getattr(lib, "tables_get_" + name)(i)
     return p[0] if p else None
 
 
@@ -109,7 +109,7 @@ def test_accessor_rejects_out_of_range(lib, name):
 
 
 def test_symbol_mana_cost_rejects_out_of_range(lib):
-    f = lib.tables_symbol_base_mana_cost
+    f = lib.tables_get_symbol_base_mana_cost
     assert f(3, 5)
     for step, sym in ((-1, 0), (4, 0), (0, -1), (0, 6)):
         assert not f(step, sym)
@@ -138,7 +138,7 @@ def test_action_info_matches_per_action_tables(lib, image):
 def test_symbol_base_mana_cost_matches_image(lib, image):
     for step in range(4):
         for sym in range(6):
-            assert lib.tables_symbol_base_mana_cost(step, sym)[0] == image[0x103C66 - BASE + step * 6 + sym]
+            assert lib.tables_get_symbol_base_mana_cost(step, sym)[0] == image[0x103C66 - BASE + step * 6 + sym]
 
 
 def test_object_types_match_dmcsb_item_list(lib):

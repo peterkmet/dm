@@ -1,6 +1,7 @@
 #ifndef RECRUIT_H
 #define RECRUIT_H
 /* Prefixes: recruit_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "champion.h"
 
@@ -15,12 +16,12 @@ typedef struct {
     int16_t current_stamina, maximum_stamina;
     int16_t current_mana, maximum_mana;
     uint8_t statistics[STAT_COUNT][STAT_VALUE_COUNT];
-    int32_t experience[SKILL_COUNT];  /* base skills: sum of their hidden skills */
+    int32_t experience[SKILL_COUNT]; /* base skills: sum of their hidden skills */
 } RecruitData;
 
 uint16_t recruit_decoded_value(const char *text, int16_t char_count);
-int16_t recruit_parse_text(const char *text, RecruitData *out);
-int16_t recruit_parse(uint16_t text_thing, RecruitData *out);
+bool recruit_parse_text(const char *text, RecruitData *out);
+bool recruit_parse(uint16_t text_thing, RecruitData *out);
 uint16_t recruit_text_thing(int16_t map, int16_t x, int16_t y);
 int16_t recruit_portrait_index(uint16_t sensor_thing);
 void recruit_portrait_origin(int16_t portrait_index, int16_t *x, int16_t *y);

@@ -8,7 +8,7 @@ from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
 from test_port import BUILD, ROOT, sdl3_installed
 from test_recruit import RecruitData, mirrors
-from test_view import SCRATCH, Bitmap, Box, png, zone_records
+from test_view import Bitmap, Box, zone_records
 
 GAME = ROOT / "game"
 GET_ZONE_BOX_CLIPPED, COMMAND_FROM_MOUSE, LAYOUT_ZONES = 0x11686A, 0x120CC6, 0x102990
@@ -41,15 +41,18 @@ class Champion(ctypes.Structure):
 def lib():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
+    lib.view_render.restype = ctypes.c_bool
     lib.layout_get_zone_box.argtypes = [c16, c16, c16, ctypes.POINTER(Box)]
     lib.ui_command_from_mouse.argtypes = [c16, c16, c16, u16]
     lib.ui_command_from_mouse.restype = c16
     lib.view_render.argtypes = [c16] * 4
-    lib.gfx_bitmap.restype = ctypes.POINTER(Bitmap)
+    lib.gfx_get_bitmap.restype = ctypes.POINTER(Bitmap)
     lib.ui_zone_box.argtypes = [c16, ctypes.POINTER(Box)]
     lib.message_print.argtypes = [c16, ctypes.c_char_p, ctypes.c_uint32]
     lib.recruit_parse.argtypes = [u16, ctypes.POINTER(RecruitData)]
-    lib.dungeon_square_first_thing.restype = u16
+    lib.recruit_parse.restype = ctypes.c_bool
+    lib.dungeon_load.restype = ctypes.c_bool
+    lib.dungeon_get_square_first_thing.restype = u16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(u8)
     lib.recruit_portrait_index.argtypes = [u16]
     lib.recruit_text_thing.restype = u16
@@ -63,8 +66,8 @@ def game(lib):
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.layout_init() == 0 and lib.text_init() == 0 and lib.tables_init() == 0
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode())
-    lib.game_new()
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
+    lib.game_start_new()
     assert lib.ui_init() == 0
     return lib
 
@@ -74,8 +77,8 @@ def emu(game):
     """The original code with the layout zones of Graphics.DAT in memory."""
     emu = Emu(load_image(parse((GAME / "KAOS.FTL").read_bytes()), 0x100000), max_cycles=50_000_000)
     size = ctypes.c_uint16()
-    game.gfx_item.restype = ctypes.POINTER(ctypes.c_uint8)
-    raw = ctypes.string_at(game.gfx_item(696, ctypes.byref(size)), size.value)
+    game.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)
+    raw = ctypes.string_at(game.gfx_get_item(696, ctypes.byref(size)), size.value)
     chunks, at = zone_records(raw), 0x700000
     emu.write(LAYOUT_ZONES, struct.pack(">I", at))
     for i, (first, last, recs) in enumerate(chunks):
@@ -91,8 +94,8 @@ def test_palette_split(lib):
     top, bottom = c16.in_dll(lib, "palette_split_top"), c16.in_dll(lib, "palette_split_bottom")
     saved = list(pal), top.value, bottom.value
     pal[3], pal[19], top.value, bottom.value = 0x123, 0x456, 33, 169
-    lib.video_color.restype = u16
-    assert [lib.video_color(y, 3) for y in (0, 32, 33, 168, 169, 199)] == [0x456, 0x456, 0x123, 0x123, 0x456, 0x456]
+    lib.video_get_color.restype = u16
+    assert [lib.video_get_color(y, 3) for y in (0, 32, 33, 168, 169, 199)] == [0x456, 0x456, 0x123, 0x123, 0x456, 0x456]
     pal[:], top.value, bottom.value = saved
 
 
@@ -150,18 +153,6 @@ def test_mouse_commands_match_original(game, emu, table):
     assert hits > 0
 
 
-def rgb_rows(lib):
-    """The screen as RGB rows, with the palette split of the copper list."""
-    fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
-    pal = (ctypes.c_uint16 * 32).in_dll(lib, "palette")
-    top, bottom = c16.in_dll(lib, "palette_split_top").value, c16.in_dll(lib, "palette_split_bottom").value
-    rows = []
-    for y in range(200):
-        base = 0 if top <= y < bottom else 16
-        rows.append([(pal[base + fb[y * 320 + x]] >> s & 15) * 17 for x in range(320) for s in (8, 4, 0)])
-    return bytes(fb), rows
-
-
 def recruit(lib, n):
     """Fills champions 0..n-1 from real mirror texts, with objects in hands and body slots."""
     champions = (Champion * 4).in_dll(lib, "g_champions")
@@ -205,16 +196,14 @@ def render(lib, name):
     assert lib.view_render(*party)
     lib.ui_set_palette(None)
     lib.ui_draw_interface()
-    fb, rows = rgb_rows(lib)
-    if SCRATCH.exists():
-        png(SCRATCH / f"ui_{name}.png", rows)
+    fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb"))
     return fb
 
 
 def reset(lib):
     c16.in_dll(lib, "g_inventory_champion_ordinal").value = 0
     c16.in_dll(lib, "g_acting_champion_ordinal").value = 0
-    c16.in_dll(lib, "g_action_area_contains_icons").value = 1
+    ctypes.c_bool.in_dll(lib, "g_action_area_contains_icons").value = 1
     lib.message_clear()
 
 
@@ -223,7 +212,7 @@ def test_render_empty_party(game):
     reset(game)
     recruit(game, 0)
     fb = render(game, "empty")
-    arrows = game.gfx_bitmap(ARROWS_GFX).contents
+    arrows = game.gfx_get_bitmap(ARROWS_GFX).contents
     box = Box()
     assert game.ui_zone_box(ARROWS_ZONE, ctypes.byref(box))
     assert all(fb[(box.y + y) * 320 + box.x + x] == arrows.px[y * arrows.w + x] for y in range(arrows.h) for x in range(arrows.w))
@@ -251,9 +240,6 @@ def test_render_party(game, n):
     if n == 4:
         game.ui_draw_champion_damage(1, 37)
         game.menus_draw_action_damage(25)
-        _, rows = rgb_rows(game)
-        if SCRATCH.exists():
-            png(SCRATCH / "ui_damage.png", rows)
 
 
 @needs_game
@@ -264,9 +250,6 @@ def test_render_action_menu(game):
     game.menus_set_acting_champion(0)
     assert c16.in_dll(game, "g_acting_champion_ordinal").value == 1
     assert (ctypes.c_uint8 * 3).in_dll(game, "g_action_list_indices")[0] != 0xFF
-    _, rows = rgb_rows(game)
-    if SCRATCH.exists():
-        png(SCRATCH / "ui_action_menu.png", rows)
 
 
 @needs_game
@@ -275,15 +258,10 @@ def test_render_inventory(game):
     recruit(game, 2)
     render(game, "base")
     game.ui_draw_inventory_open(0)
-    fb, rows = rgb_rows(game)
-    if SCRATCH.exists():
-        png(SCRATCH / "ui_inventory.png", rows)
+    fb = bytes((ctypes.c_uint8 * (320 * 200)).in_dll(game, "fb"))
     assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 1
     assert len(set(fb[320 * 33:320 * 169])) > 6
     game.ui_draw_champion_skills_and_statistics()
     game.ui_draw_viewport()
-    _, rows = rgb_rows(game)
-    if SCRATCH.exists():
-        png(SCRATCH / "ui_inventory_eye.png", rows)
     game.ui_draw_inventory_close(0)
     assert c16.in_dll(game, "g_inventory_champion_ordinal").value == 0

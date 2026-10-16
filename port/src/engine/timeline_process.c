@@ -1,8 +1,9 @@
 #include "timeline_process.h"
 #include "action.h"
+#include "adventure.h"
+#include "bytes.h"
 #include "champion.h"
 #include "dungeon.h"
-#include "ftl.h"
 #include "group.h"
 #include "ids.h"
 #include "inventory.h"
@@ -10,25 +11,23 @@
 #include "message.h"
 #include "move.h"
 #include "projectile.h"
+#include "savegame.h"
 #include "sensor.h"
 #include "sound.h"
 #include "tables.h"
 
-/* KAOS table: the light amount of each light power. */
-#define KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT 0x100cb4
-
-#define DOOR_CLOSE_DAMAGE 5
-#define COUNTER_MAXIMUM 511            /* the counter data has 9 bits */
-#define GENERATOR_DELAY_LONG 127       /* a delay above this value counts in units of 64 ticks above 126 */
-#define GENERATOR_DELAY_UNIT 64
-#define LIGHT_STEP_TICKS 4
+#define DOOR_CLOSE_DAMAGE       5
+#define COUNTER_MAXIMUM         511 /* the counter data has 9 bits */
+#define GENERATOR_DELAY_LONG    127 /* a delay above this value counts in units of 64 ticks above 126 */
+#define GENERATOR_DELAY_UNIT    64
+#define LIGHT_STEP_TICKS        4
 #define REBIRTH_EXPLOSION_TICKS 5
 
-int16_t g_game_won;
+bool g_game_won;
 void (*g_endgame_sensor_hook)(uint16_t delay);
 
 /* AND/OR gate data: bits 0-3 are the inputs (one per cell), bits 4-7 are the expected inputs. */
-#define GATE_INPUTS(data) ((data) & 15)
+#define GATE_INPUTS(data)   ((data) & 15)
 #define GATE_EXPECTED(data) ((data) >> 4 & 15)
 
 static bool is_party_on(int16_t x, int16_t y)
@@ -39,10 +38,10 @@ static bool is_party_on(int16_t x, int16_t y)
 /* A group that a door or a fake wall can hit: it is not non-material. */
 static bool is_material_group_on(int16_t x, int16_t y, uint16_t *attributes)
 {
-    uint16_t group = get_square_group(x, y);
+    uint16_t group = map_get_square_group(x, y);
     if (group == THING_ENDOFLIST)
         return false;
-    *attributes = get_creature_attributes(group);
+    *attributes = map_get_creature_attributes(group);
     return !(*attributes & CREATURE_NON_MATERIAL);
 }
 
@@ -55,15 +54,17 @@ static void add_again_next_tick(TimelineEvent *event)
 static void print_text(uint16_t text)
 {
     char buffer[TEXT_SIZE];
-    decode_text(buffer, sizeof buffer, text, 1);
+    dungeon_decode_text(buffer, sizeof buffer, text, 1);
     message_print(SENSOR_TEXT_COLOR, buffer, g_game_time);
 }
 
 /* One door step per tick: set opens (state down to open), clear closes (state up to closed). A closing door
    that hits the party or a group goes back one step; the group takes damage. */
-void event_door_animation(TimelineEvent *event)
+void event_process_door_animation(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event), effect = EVENT_EFFECT(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
+    int16_t effect = event_effect(event);
     uint8_t *square = &g_current_map_data[x][y];
     int16_t state = door_state(*square);
     if (state == DOOR_DESTROYED)
@@ -81,7 +82,7 @@ void event_door_animation(TimelineEvent *event)
             return;
         }
         if (is_material_group_on(x, y, &attributes)) {
-            int16_t height = door_is_vertical(get_square_first_thing(x, y)) ? rec_creature_height(attributes) : 1;
+            int16_t height = door_is_vertical(map_get_square_first_thing(x, y)) ? rec_creature_height(attributes) : 1;
             if (height <= state) {
                 group_door_damages_creatures(x, y);
                 *square = square_with_door_state(*square, state != DOOR_OPEN ? state - 1 : DOOR_OPEN);
@@ -101,30 +102,32 @@ void event_door_animation(TimelineEvent *event)
     }
 }
 
-void event_door_destruction(TimelineEvent *event)
+void event_process_door_destruction(TimelineEvent *event)
 {
-    uint8_t *square = &g_current_map_data[EVENT_X(event)][EVENT_Y(event)];
+    uint8_t *square = &g_current_map_data[event_square_x(event)][event_square_y(event)];
     *square = square_with_door_state(*square, DOOR_DESTROYED);
 }
 
 /* A door event becomes a door animation event at the same time. Toggle closes an open door and opens any other. */
-void event_door(TimelineEvent *event)
+void event_process_door(TimelineEvent *event)
 {
-    int16_t state = door_state(g_current_map_data[EVENT_X(event)][EVENT_Y(event)]);
+    int16_t state = door_state(g_current_map_data[event_square_x(event)][event_square_y(event)]);
     if (state == DOOR_DESTROYED)
         return;
-    if (EVENT_EFFECT(event) == EFFECT_TOGGLE)
-        EVENT_SET_EFFECT(event, state == DOOR_OPEN ? EFFECT_CLEAR : EFFECT_SET);
-    else if (EVENT_EFFECT(event) == EFFECT_SET ? state == DOOR_OPEN : state == DOOR_CLOSED)
+    if (event_effect(event) == EFFECT_TOGGLE)
+        event_set_effect(event, state == DOOR_OPEN ? EFFECT_CLEAR : EFFECT_SET);
+    else if (event_effect(event) == EFFECT_SET ? state == DOOR_OPEN : state == DOOR_CLOSED)
         return;
     event->type = EVENT_DOOR_ANIMATION;
     timeline_add_event(event);
 }
 
 /* Opens or closes a fake wall. Closing waits while the party or a material group is on the square. */
-void event_fake_wall(TimelineEvent *event)
+void event_process_fake_wall(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event), effect = EVENT_EFFECT(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
+    int16_t effect = event_effect(event);
     uint8_t *square = &g_current_map_data[x][y];
     uint16_t attributes;
     if (effect == EFFECT_TOGGLE)
@@ -143,11 +146,12 @@ void event_fake_wall(TimelineEvent *event)
 /* Opens or closes a teleporter or a pit. Opening moves the things on the square. */
 static void open_or_close(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
     uint8_t *square = &g_current_map_data[x][y];
-    if (EVENT_EFFECT(event) == EFFECT_TOGGLE)
-        EVENT_SET_EFFECT(event, *square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
-    if (EVENT_EFFECT(event) == EFFECT_SET) {
+    if (event_effect(event) == EFFECT_TOGGLE)
+        event_set_effect(event, *square & TELEPORTER_OPEN ? EFFECT_CLEAR : EFFECT_SET);
+    if (event_effect(event) == EFFECT_SET) {
         *square |= TELEPORTER_OPEN;
         event_move_teleporter_or_pit_square_things(x, y);
     } else {
@@ -155,13 +159,19 @@ static void open_or_close(TimelineEvent *event)
     }
 }
 
-void event_teleporter(TimelineEvent *event) { open_or_close(event); }
-void event_pit(TimelineEvent *event) { open_or_close(event); }
-
-/* Shows, hides, or toggles a text. Returns 1 when the text becomes visible. */
-static int16_t change_text_visibility(uint16_t text, int16_t effect)
+void event_process_teleporter(TimelineEvent *event)
 {
-    int16_t was_visible = rec_text_is_visible(text);
+    open_or_close(event);
+}
+void event_process_pit(TimelineEvent *event)
+{
+    open_or_close(event);
+}
+
+/* Shows, hides, or toggles a text. Returns true when the text becomes visible. */
+static bool change_text_visibility(uint16_t text, int16_t effect)
+{
+    bool was_visible = rec_text_is_visible(text);
     rec_text_set_visible(text, effect == EFFECT_TOGGLE ? !was_visible : effect == EFFECT_SET);
     return !was_visible && rec_text_is_visible(text);
 }
@@ -181,17 +191,20 @@ static void trigger_group_generator(uint16_t sensor, const TimelineEvent *event,
         return;
     if (delay > GENERATOR_DELAY_LONG)
         delay = (delay - (GENERATOR_DELAY_LONG - 1)) * GENERATOR_DELAY_UNIT;
-    TimelineEvent enable = {.map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + delay), .type = EVENT_ENABLE_GROUP_GENERATOR, .b = event->b};
+    TimelineEvent enable = {.map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + delay),
+                            .type = EVENT_ENABLE_GROUP_GENERATOR,
+                            .b = event->b};
     timeline_add_event(&enable);
 }
 
 /* Texts on the corridor change visibility, and group generators run. */
-void event_corridor(TimelineEvent *event)
+void event_process_corridor(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event);
-    for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
+    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
         if (THING_TYPE(t) == THING_TEXT) {
-            if (change_text_visibility(t, EVENT_EFFECT(event)) && is_party_on(x, y))
+            if (change_text_visibility(t, event_effect(event)) && is_party_on(x, y))
                 print_text(t);
         } else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_FLOOR_GROUP_GENERATOR) {
             trigger_group_generator(t, event, x, y);
@@ -202,7 +215,8 @@ void event_corridor(TimelineEvent *event)
 /* The first disabled sensor of the square becomes a group generator again. */
 void event_enable_group_generator(TimelineEvent *event)
 {
-    for (uint16_t t = get_square_first_thing(EVENT_X(event), EVENT_Y(event)); t != THING_NONE && t != THING_ENDOFLIST; t = get_next_thing(t)) {
+    for (uint16_t t = map_get_square_first_thing(event_square_x(event), event_square_y(event));
+         t != THING_NONE && t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
         if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_DISABLED) {
             rec_sensor_set_type(t, SENSOR_FLOOR_GROUP_GENERATOR);
             return;
@@ -213,7 +227,7 @@ void event_enable_group_generator(TimelineEvent *event)
 /* A hold sensor sets or clears with the condition (inverted by the revert bit). Other sensors trigger when it is true. */
 static void trigger_on_condition(uint16_t sensor, int16_t condition, int16_t x, int16_t y, int16_t cell)
 {
-    int16_t clear = rec_sensor_revert(sensor) == condition;
+    bool clear = rec_sensor_revert(sensor) == condition;
     if (rec_sensor_effect(sensor) == EFFECT_HOLD)
         sensor_trigger_effect(sensor, clear ? EFFECT_CLEAR : EFFECT_SET, x, y, cell);
     else if (!clear)
@@ -236,13 +250,14 @@ static void count(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t
     if (rec_sensor_effect(sensor) == EFFECT_HOLD)
         sensor_trigger_effect(sensor, rec_sensor_revert(sensor) == (data == 0) ? EFFECT_CLEAR : EFFECT_SET, x, y, cell);
     else if (!data)
-        sensor_trigger_effect(sensor, rec_sensor_effect(sensor), x, y, cell);   /* the revert bit does not apply here */
+        sensor_trigger_effect(sensor, rec_sensor_effect(sensor), x, y, cell); /* the revert bit does not apply here */
 }
 
 /* An AND/OR gate sets, clears, or toggles the input of the cell, and triggers when the inputs match. */
-static void gate(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
+static void set_gate_input(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t cell)
 {
-    uint16_t data = rec_sensor_data(sensor), input = 1 << cell;
+    uint16_t data = rec_sensor_data(sensor);
+    uint16_t input = 1 << cell;
     if (effect == EFFECT_TOGGLE ? (data & input) != 0 : effect != EFFECT_SET)
         data &= ~input;
     else
@@ -253,22 +268,29 @@ static void gate(uint16_t sensor, int16_t effect, int16_t x, int16_t y, int16_t 
 
 /* Texts of the event cell change visibility. Counters, AND/OR gates, and projectile launchers of the cell run.
    An endgame sensor ends the game. */
-void event_wall(TimelineEvent *event)
+void event_process_wall(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event), cell = EVENT_CELL(event), effect = EVENT_EFFECT(event);
-    for (uint16_t t = get_square_first_thing(x, y); t != THING_ENDOFLIST; t = get_next_thing(t)) {
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
+    int16_t cell = event_cell(event);
+    int16_t effect = event_effect(event);
+    for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = map_get_next_thing(t)) {
         if (THING_TYPE(t) == THING_TEXT && THING_CELL(t) == cell)
             change_text_visibility(t, effect);
         else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_COUNTER)
             count(t, effect, x, y, cell);
         else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_AND_OR_GATE)
-            gate(t, effect, x, y, cell);
+            set_gate_input(t, effect, x, y, cell);
         else if (THING_TYPE(t) == THING_SENSOR && projectile_is_launcher_sensor(t) && THING_CELL(t) == cell) {
             projectile_trigger_launcher(t, event);
             if (rec_sensor_is_once_only(t))
                 rec_sensor_set_type(t, SENSOR_DISABLED);
         } else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_ENDGAME) {
-            if (g_endgame_sensor_hook) g_endgame_sensor_hook(rec_sensor_delay(t));
+            g_game_won = true;
+            if (g_adventure != ADVENTURE_CSB) /* DM: the saved game no longer counts; CSB keeps it */
+                savegame_forget();
+            if (g_endgame_sensor_hook)
+                g_endgame_sensor_hook(rec_sensor_delay(t));
         }
     }
     sensor_process_rotation_effect();
@@ -278,7 +300,8 @@ void event_wall(TimelineEvent *event)
 static void update_projectile_event(uint16_t projectile)
 {
     TimelineEvent *e = &g_timeline_events[rec_projectile_event_index(projectile)];
-    e->c = projectile_event_c(g_move_result_map_x, g_move_result_map_y, g_move_result_direction, projectile_event_step_energy(e));
+    e->c = projectile_event_c(g_move_result_map_x, g_move_result_map_y, g_move_result_direction,
+                              projectile_event_step_energy(e));
     e->b = THING_WITH_CELL(projectile, g_move_result_cell);
     e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
 }
@@ -289,7 +312,7 @@ static void update_explosion_events(uint16_t explosion)
     for (uint16_t i = 0; i < g_event_high_water; i++) {
         TimelineEvent *e = &g_timeline_events[i];
         if (e->type == EVENT_EXPLOSION && e->c == explosion) {
-            e->b = EVENT_SQUARE(g_move_result_map_x, g_move_result_map_y);
+            e->b = event_square(g_move_result_map_x, g_move_result_map_y);
             e->c = THING_WITH_CELL(explosion, g_move_result_cell);
             e->map_time = EVENT_MAP_TIME(g_move_result_map_index, e->map_time & EVENT_TIME_MASK);
         }
@@ -301,16 +324,17 @@ void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
 {
     if (is_party_on(x, y))
         move_get_move_result(THING_NONE, x, y, x, y);
-    uint16_t group = get_square_group(x, y);
+    uint16_t group = map_get_square_group(x, y);
     if (group != THING_ENDOFLIST)
         move_get_move_result(group, x, y, x, y);
-    uint16_t thing = get_square_first_object(x, y);
+    uint16_t thing = map_get_square_first_object(x, y);
     int16_t objects = 0;
-    for (uint16_t t = thing; t != THING_ENDOFLIST; t = get_next_thing(t))
+    for (uint16_t t = thing; t != THING_ENDOFLIST; t = map_get_next_thing(t))
         objects += THING_TYPE(t) > THING_GROUP;
     while (thing != THING_ENDOFLIST && objects) {
         objects--;
-        uint16_t next = get_next_thing(thing), type = THING_TYPE(thing);
+        uint16_t next = map_get_next_thing(thing);
+        uint16_t type = THING_TYPE(thing);
         if (type > THING_GROUP)
             move_get_move_result(thing, x, y, x, y);
         if (type == THING_PROJECTILE)
@@ -322,23 +346,25 @@ void event_move_teleporter_or_pit_square_things(int16_t x, int16_t y)
 }
 
 /* The event holds the signed light power. Each step applies one step of the light table and adds the rest later. */
-void event_light(TimelineEvent *event)
+void event_process_light(TimelineEvent *event)
 {
     int16_t power = event->b;
     if (!power)
         return;
-    int16_t negative = power < 0;
+    bool negative = power < 0;
     if (negative)
         power = -power;
     int16_t rest = power - 1;
-    int16_t delta = kaos_s16(KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT + power * 2) - kaos_s16(KAOS_LIGHT_POWER_TO_LIGHT_AMOUNT + rest * 2);
+    int16_t delta = *tables_get_light_power_to_light_amount(power) - *tables_get_light_power_to_light_amount(rest);
     if (negative) {
         delta = -delta;
         rest = -rest;
     }
     g_party.magical_light_amount += delta;
     if (rest) {
-        TimelineEvent next = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + LIGHT_STEP_TICKS), .type = EVENT_LIGHT, .b = rest};
+        TimelineEvent next = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + LIGHT_STEP_TICKS),
+                              .type = EVENT_LIGHT,
+                              .b = rest};
         timeline_add_event(&next);
     }
 }
@@ -347,7 +373,7 @@ void event_light(TimelineEvent *event)
    ticks 0 breaks it at once, else a door destruction event breaks it later. Returns true when the door breaks. */
 bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int16_t magic_attack, uint16_t ticks)
 {
-    uint16_t door = get_square_first_thing(x, y);
+    uint16_t door = map_get_square_first_thing(x, y);
     if (magic_attack ? !door_breaks_by_magic(door) : !door_breaks_by_force(door))
         return false;
     uint8_t *square = &g_current_map_data[x][y];
@@ -356,7 +382,9 @@ bool event_is_door_destroyed_by_attack(int16_t x, int16_t y, int16_t attack, int
     if (!ticks) {
         *square = square_with_door_state(*square, DOOR_DESTROYED);
     } else {
-        TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + ticks), .type = EVENT_DOOR_DESTRUCTION, .b = EVENT_SQUARE(x, y)};
+        TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time + ticks),
+                               .type = EVENT_DOOR_DESTRUCTION,
+                               .b = event_square(x, y)};
         timeline_add_event(&event);
     }
     return true;
@@ -370,13 +398,16 @@ void event_enable_champion_action(uint16_t champion_index)
     c->enable_action_event_index = -1;
     c->attributes &= ~CHAMPION_ATTR_ACTION_DISABLED;
     if (c->action_index != ACTION_NONE)
-        c->action_defense -= tables_action_info(c->action_index)->defense;
+        c->action_defense -= tables_get_action_info(c->action_index)->defense;
     if (c->current_health) {
         if (c->action_index == ACTION_SHOOT && c->slots[SLOT_HAND_READY] == THING_NONE) {
-            static const uint16_t quiver_order[] = {SLOT_QUIVER_LINE1_1, SLOT_QUIVER_LINE2_1, SLOT_QUIVER_LINE1_2, SLOT_QUIVER_LINE2_2};
-            for (size_t i = 0; i < sizeof quiver_order / sizeof quiver_order[0]; i++) {
+            static const uint16_t quiver_order[] = {SLOT_QUIVER_LINE1_1, SLOT_QUIVER_LINE2_1, SLOT_QUIVER_LINE1_2,
+                                                    SLOT_QUIVER_LINE2_2};
+            for (int i = 0; i < ARRAY_COUNT(quiver_order); i++) {
                 if (action_is_ammunition_compatible_with_weapon(champion_index, SLOT_HAND_ACTION, quiver_order[i])) {
-                    inventory_add_object_in_slot(champion_index, inventory_get_object_removed_from_slot(champion_index, quiver_order[i]), SLOT_HAND_READY);
+                    inventory_add_object_in_slot(
+                        champion_index, inventory_get_object_removed_from_slot(champion_index, quiver_order[i]),
+                        SLOT_HAND_READY);
                     break;
                 }
             }
@@ -401,9 +432,12 @@ void event_hide_damage_received(uint16_t champion_index)
 
 /* Vi altar rebirth in three steps (event cell byte: the step): 2 the rebirth explosion, 1 the bones of the champion
    disappear, 0 the champion lives again. The bones hold the champion index in their charges. */
-void event_vi_altar_rebirth(TimelineEvent *event)
+void event_process_vi_altar_rebirth(TimelineEvent *event)
 {
-    int16_t x = EVENT_X(event), y = EVENT_Y(event), cell = EVENT_CELL(event), step = EVENT_EFFECT(event);
+    int16_t x = event_square_x(event);
+    int16_t y = event_square_y(event);
+    int16_t cell = event_cell(event);
+    int16_t step = event_effect(event);
     uint16_t champion_index = event->priority;
     if (step == 0) {
         champion_resurrect(champion_index);
@@ -413,17 +447,18 @@ void event_vi_altar_rebirth(TimelineEvent *event)
         explosion_create(EXPLOSION_THING(EXPLOSION_REBIRTH_STEP_1), 0, x, y, cell);
         event->map_time += REBIRTH_EXPLOSION_TICKS;
     } else {
-        uint16_t thing = get_square_first_thing(x, y);
-        while (thing != THING_ENDOFLIST && !(THING_CELL(thing) == cell && THING_TYPE(thing) == THING_JUNK &&
-                                             object_get_icon_index(thing) == ICON_BONES && junk_charges(thing) == champion_index))
-            thing = get_next_thing(thing);
+        uint16_t thing = map_get_square_first_thing(x, y);
+        while (thing != THING_ENDOFLIST &&
+               !(THING_CELL(thing) == cell && THING_TYPE(thing) == THING_JUNK &&
+                 object_get_icon_index(thing) == ICON_BONES && junk_charges(thing) == champion_index))
+            thing = map_get_next_thing(thing);
         if (thing == THING_ENDOFLIST)
             return;
-        unlink_thing_from_list(thing, 0, x, y);
+        map_unlink_thing_from_list(thing, 0, x, y);
         thing_set_free(thing);
         event->map_time++;
     }
-    EVENT_SET_EFFECT(event, step - 1);
+    event_set_effect(event, step - 1);
     timeline_add_event(event);
 }
 
@@ -431,21 +466,39 @@ void event_vi_altar_rebirth(TimelineEvent *event)
 static void process_effect_event(const TimelineEvent *event)
 {
     switch (event->type) {
-    case EVENT_INVISIBILITY_END: g_party.event71_count_invisibility--; break;
-    case EVENT_CHAMPION_SHIELD_END: g_champions[event->priority].shield_defense -= event->b; break;
-    case EVENT_THIEVES_EYE_END: g_party.event73_count_thieves_eye--; break;
-    case EVENT_PARTY_SHIELD_END: g_party.shield_defense -= event->b; break;
+    case EVENT_INVISIBILITY_END:
+        g_party.invisibility_count--;
+        break;
+    case EVENT_CHAMPION_SHIELD_END:
+        g_champions[event->priority].shield_defense -= event->b;
+        break;
+    case EVENT_THIEVES_EYE_END:
+        g_party.thieves_eye_count--;
+        break;
+    case EVENT_PARTY_SHIELD_END:
+        g_party.shield_defense -= event->b;
+        break;
     case EVENT_POISON:
         g_champions[event->priority].poison_event_count--;
         champion_poison(event->priority, event->b);
         break;
-    case EVENT_SPELL_SHIELD_END: g_party.spell_shield_defense -= event->b; break;
-    case EVENT_FIRE_SHIELD_END: g_party.fire_shield_defense -= event->b; break;
-    case EVENT_FOOTPRINTS_END: g_party.event79_count_footprints--; break;
+    case EVENT_SPELL_SHIELD_END:
+        g_party.spell_shield_defense -= event->b;
+        break;
+    case EVENT_FIRE_SHIELD_END:
+        g_party.fire_shield_defense -= event->b;
+        break;
+    case EVENT_FOOTPRINTS_END:
+        g_party.footprints_count--;
+        break;
     case EVENT_MAGIC_MAP_DAIN_END:
     case EVENT_MAGIC_MAP_ROS_END:
-    case EVENT_MAGIC_MAP_KU_END: g_champions[event->priority].magic_map[event->type - EVENT_MAGIC_MAP_DAIN_END]--; break;
-    case EVENT_MAGIC_MAP_NETA_END: g_champions[event->priority].magic_map[MAGIC_MAP_NETA] = 0; break;
+    case EVENT_MAGIC_MAP_KU_END:
+        g_champions[event->priority].magic_map[event->type - EVENT_MAGIC_MAP_DAIN_END]--;
+        break;
+    case EVENT_MAGIC_MAP_NETA_END:
+        g_champions[event->priority].magic_map[MAGIC_MAP_NETA] = 0;
+        break;
     }
 }
 
@@ -455,48 +508,81 @@ void event_process_expired(void)
     while (timeline_is_first_event_expired()) {
         TimelineEvent event;
         timeline_extract_first_event(&event);
-        set_current_map(EVENT_MAP(&event));
+        map_set_current_map(EVENT_MAP(&event));
         switch (event.type) {
-        case EVENT_DOOR_ANIMATION: event_door_animation(&event); break;
-        case EVENT_DOOR_DESTRUCTION: event_door_destruction(&event); break;
-        case EVENT_CORRIDOR: event_corridor(&event); break;
-        case EVENT_WALL: event_wall(&event); break;
-        case EVENT_FAKE_WALL: event_fake_wall(&event); break;
-        case EVENT_TELEPORTER: event_teleporter(&event); break;
-        case EVENT_PIT: event_pit(&event); break;
-        case EVENT_DOOR: event_door(&event); break;
+        case EVENT_DOOR_ANIMATION:
+            event_process_door_animation(&event);
+            break;
+        case EVENT_DOOR_DESTRUCTION:
+            event_process_door_destruction(&event);
+            break;
+        case EVENT_CORRIDOR:
+            event_process_corridor(&event);
+            break;
+        case EVENT_WALL:
+            event_process_wall(&event);
+            break;
+        case EVENT_FAKE_WALL:
+            event_process_fake_wall(&event);
+            break;
+        case EVENT_TELEPORTER:
+            event_process_teleporter(&event);
+            break;
+        case EVENT_PIT:
+            event_process_pit(&event);
+            break;
+        case EVENT_DOOR:
+            event_process_door(&event);
+            break;
         case EVENT_ENABLE_CHAMPION_ACTION:
             event_enable_champion_action(event.priority);
-            if (event.b >> 8)   /* after a throw: the slot + 1 that gets the next weapon of the quiver */
-                action_move_weapon_from_quiver_to_slot(event.priority, (int8_t)(event.b >> 8) - 1);
+            if (event_quiver_slot(&event) != -1) /* after a throw: the slot that gets the next weapon of the quiver */
+                action_move_weapon_from_quiver_to_slot(event.priority, event_quiver_slot(&event));
             break;
-        case EVENT_HIDE_DAMAGE_RECEIVED: event_hide_damage_received(event.priority); break;
-        case EVENT_VI_ALTAR_REBIRTH: event_vi_altar_rebirth(&event); break;
-        case EVENT_PLAY_SOUND: sound_request_play(event.c, EVENT_X(&event), EVENT_Y(&event), SOUND_MODE_AFTER_TICK); break;
+        case EVENT_HIDE_DAMAGE_RECEIVED:
+            event_hide_damage_received(event.priority);
+            break;
+        case EVENT_VI_ALTAR_REBIRTH:
+            event_process_vi_altar_rebirth(&event);
+            break;
+        case EVENT_PLAY_SOUND:
+            sound_request_play(event.c, event_square_x(&event), event_square_y(&event), SOUND_MODE_AFTER_TICK);
+            break;
         case EVENT_REMOVE_FLUXCAGE:
             if (!g_game_won) {
-                unlink_thing_from_list(event.c, 0, EVENT_X(&event), EVENT_Y(&event));
+                map_unlink_thing_from_list(event.c, 0, event_square_x(&event), event_square_y(&event));
                 thing_set_free(event.c);
             }
             break;
-        case EVENT_EXPLOSION: explosion_process_step_event(&event); break;
+        case EVENT_EXPLOSION:
+            explosion_process_step_event(&event);
+            break;
         case EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS:
-        case EVENT_MOVE_PROJECTILE: projectile_process_move_event(&event); break;
-        case EVENT_WATCHDOG: timeline_add_watchdog_event(); break;
+        case EVENT_MOVE_PROJECTILE:
+            projectile_process_move_event(&event);
+            break;
+        case EVENT_WATCHDOG:
+            timeline_add_watchdog_event();
+            break;
         case EVENT_MOVE_GROUP_SILENT:
-        case EVENT_MOVE_GROUP_AUDIBLE: group_process_move_event(&event); break;
-        case EVENT_ENABLE_GROUP_GENERATOR: event_enable_group_generator(&event); break;
+        case EVENT_MOVE_GROUP_AUDIBLE:
+            group_process_move_event(&event);
+            break;
+        case EVENT_ENABLE_GROUP_GENERATOR:
+            event_enable_group_generator(&event);
+            break;
         case EVENT_LIGHT:
-            set_current_map(g_party_map_index);
-            event_light(&event);
+            map_set_current_map(g_party_map_index);
+            event_process_light(&event);
             break;
         default:
             if (event.type >= EVENT_GROUP_REACTION_DANGER_ON_SQUARE && event.type <= EVENT_UPDATE_BEHAVIOR_CREATURE_3)
-                group_process_reaction_event(EVENT_X(&event), EVENT_Y(&event), event.type, EVENT_CELL(&event));
+                group_process_reaction_event(event_square_x(&event), event_square_y(&event), event.type,
+                                             event_group_ticks(&event));
             else
                 process_effect_event(&event);
             break;
         }
-        set_current_map(g_party_map_index);
+        map_set_current_map(g_party_map_index);
     }
 }

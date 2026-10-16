@@ -9,11 +9,11 @@ All words and longs are big-endian. "Word" means 16 bits.
 ```c
 #include "dungeon.h"
 
-if (!load_dungeon("game/Dungeon.DAT"))
+if (!dungeon_load("game/Dungeon.DAT"))
     return 1;
 ```
 
-`load_dungeon` loads the dungeon for a new game. It returns 1 on success and 0 on error. Call `kaos_load("game/KAOS.FTL")` (`ftl.h`) first: the loader and `decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `load_dungeon` returns 0. A new call frees the previous dungeon.
+`dungeon_load` loads the dungeon for a new game. It returns 1 on success and 0 on error. Call `kaos_load("game/KAOS.FTL")` (`ftl.h`) first: the loader and `dungeon_decode_text` read the new-game extras table (`0x101058`) and the escape tables (`0x1016ea`, `0x1017ea`, `0x10182a`) from the KAOS image. Without KAOS, `dungeon_load` returns 0. A new call frees the previous dungeon.
 
 ## Compressed file
 
@@ -27,7 +27,7 @@ A compressed file starts with an 8-byte header:
 
 When the first word is not `0x8104`, the file is not compressed. The loader then reads the file from offset 0.
 
-`decompress_dungeon(src, src_size, dst, byte_count)` ports `0x12712c`. `src` is the data after the 8-byte header:
+`dungeon_decompress(src, src_size, dst, byte_count)` ports `0x12712c`. `src` is the data after the 8-byte header:
 
 - Bytes 0–3 are table `t4`. Bytes 4–19 are table `t16`.
 - The bit stream starts at byte 20. The decoder reads it in big-endian words, most significant bit first.
@@ -91,7 +91,7 @@ The loader builds `g_dungeon_map_data`. `g_dungeon_map_data[map][x]` points to c
 
 ### Thing lists
 
-Each word of the column table is the index of the first square-first-thing entry of that column. To find the first thing of square (x, y), start at the column entry and add 1 for each square above `y` that has bit 4 set. `dungeon_square_first_thing(map, x, y)` does this. It returns `0xfffe` when the square has no things.
+Each word of the column table is the index of the first square-first-thing entry of that column. To find the first thing of square (x, y), start at the column entry and add 1 for each square above `y` that has bit 4 set. `dungeon_get_square_first_thing(map, x, y)` does this. It returns `0xfffe` when the square has no things.
 
 A thing is a word: bits 0–9 index, bits 10–13 type, bits 14–15 cell. Each record starts with the word of the next thing. `0xfffe` ends a list. `dungeon_get_thing_data(thing)` returns the record.
 
@@ -126,7 +126,7 @@ The original writes all extra records, also past a limited count. The port stops
 
 ## Validation
 
-`load_dungeon` returns 0 and leaves no dungeon in memory (all globals `NULL`, `dungeon_map_count()` returns 0) in these cases:
+`dungeon_load` returns 0 and leaves no dungeon in memory (all globals `NULL`, `dungeon_map_count()` returns 0) in these cases:
 
 - KAOS is not loaded, or the file cannot be read.
 - The file is shorter than 8 bytes, or the decompressed size is 0 or larger than 1 MB.
@@ -139,11 +139,11 @@ The original writes all extra records, also past a limited count. The port stops
 - The checksum is present and wrong.
 - A memory allocation fails.
 
-`dungeon_square_first_thing` returns `0xfffe` when the index from the column table is outside the square first things.
+`dungeon_get_square_first_thing` returns `0xfffe` when the index from the column table is outside the square first things.
 
 ## Text decoding
 
-`decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns 1 on success. It returns 0 when the text offset is not in the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. It then cuts the text and still writes the end byte. The text string record has a word at offset 2: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
+`dungeon_decode_text(dst, dst_size, text_thing, mode)` ports `0x10b312`. The port adds `dst_size`. It returns 1 on success. It returns 0 when the text offset is not in the text data, when the text has no end code, or when the text does not fit in `dst_size` bytes. It then cuts the text and still writes the end byte. The text string record has a word at offset 2: bit 0 is the visible flag, bits 3–15 are the word offset into the text data.
 
 The function decodes only a visible text, or any text when bit 15 of `mode` is set. Modes:
 
@@ -165,7 +165,7 @@ The function reads all three tables from the KAOS image. The single characters f
 
 ## Differences from dmcsb
 
-`dmcsb` 0.2.1 agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table. `tests/test_dungeon.py` compares `decode_text` with the original function in `dmtools.emu` for every text and every mode.
+`dmcsb` 0.2.1 agrees on the map count, map sizes and offsets, all square bytes, thing counts, and thing lists. It differs on escape code 30: it maps the single-glyph entries to display characters (`?`, `'`) or to an empty string. The original code emits the glyph codes from the KAOS table. `tests/test_dungeon.py` compares `dungeon_decode_text` with the original function in `dmtools.emu` for every text and every mode.
 
 ## Tests
 
@@ -173,10 +173,10 @@ The function reads all three tables from the KAOS image. The single characters f
 
 - Map count, map descriptors, all square bytes, first things, thing counts, and next-thing words against `dmcsb`.
 - Decoded texts against `dmcsb`, without the texts that use escape 30 with an index other than 2 or 3.
-- `decode_text` against the original `0x10b312` in the emulator.
-- `decompress_dungeon` against the original `0x12712c` in the emulator, on all of `Dungeon.DAT`.
+- `dungeon_decode_text` against the original `0x10b312` in the emulator.
+- `dungeon_decompress` against the original `0x12712c` in the emulator, on all of `Dungeon.DAT`.
 - An uncompressed copy of `Dungeon.DAT` loads, and a wrong checksum fails.
-- Truncated files, a thing count above the limit, a bad map offset, a bad raw map data size, and a map count of 0 fail. A bad text offset and a small output buffer make `decode_text` return 0.
+- Truncated files, a thing count above the limit, a bad map offset, a bad raw map data size, and a map count of 0 fail. A bad text offset and a small output buffer make `dungeon_decode_text` return 0.
 
 ## Not ported
 

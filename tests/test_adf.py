@@ -10,6 +10,7 @@ from amitools.fs.ADFSVolume import ADFSVolume
 from amitools.fs.blkdev.BlkDevFactory import BlkDevFactory
 from amitools.fs.FSString import FSString
 
+from conftest import clear_folder_hooks, set_folder_hooks
 from dmtools.extract import extract
 
 ROOT = Path(__file__).parent.parent
@@ -33,7 +34,10 @@ def lib():
     lib.adf_has_file.restype = ctypes.c_bool
     lib.adventure_bad_file.restype = ctypes.c_char_p
     lib.adventure_bad_file.argtypes = [ctypes.c_int16, ctypes.c_char_p]
-    return lib
+    hooks = set_folder_hooks(lib)
+    yield lib
+    clear_folder_hooks(lib)
+    del hooks
 
 
 def make_adf(path):
@@ -81,6 +85,15 @@ def test_extract_rejects_other_files(lib, tmp_path):
     bad.write_bytes(b"DOS\x00" + bytes(1000))
 
     assert lib.adf_extract(str(bad).encode(), str(tmp_path / "out").encode()) == -1
+
+
+@pytest.mark.parametrize("name, safe", [("Dungeon.DAT", True), ("a\\b", False), ("a:b", False), ("a*b", False), ("a?b", False),
+                                        ('a"b', False), ("a<b", False), ("a>b", False), ("a|b", False), ("a\x01b", False),
+                                        ("a/b", False), ("", False), (".", False), ("..", False)])
+def test_unsafe_amiga_names_are_rejected(lib, name, safe):
+    lib.adf_is_safe_name.restype = ctypes.c_bool
+    lib.adf_is_safe_name.argtypes = [ctypes.c_char_p]
+    assert lib.adf_is_safe_name(name.encode("latin-1")) == safe
 
 
 @needs_disks

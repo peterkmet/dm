@@ -37,7 +37,7 @@ The header has 512 bytes. Offsets are bytes from the start of the file.
 | `0x000` | 256 | 32 groups of 4 random words `w0`, `w1`, `w2`, `w3`. Not encrypted. |
 | `0x014` | 2 | Payload key. This is word `w2` of group 2. |
 | `0x100` | 256 | Payload: 128 words, encrypted with the payload key. |
-| `0x12a` | 1 | Header byte. The original writes 1. |
+| `0x12a` | 1 | Header byte (`H_HEADER_BYTE`). The original writes 1. |
 | `0x12b` | 1 | Platform. The original writes 5. A load fails when the value is 1. |
 | `0x130` | 2 | Dialog choice. The original writes 1. A load does not read it. |
 | `0x132` | 4 | Game ID (`g_game_id`). |
@@ -135,7 +135,7 @@ Four champion portrait bitmaps, not encrypted. Each bitmap has `((32 + 15) & ~15
 
 ### Dungeon
 
-The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `load_dungeon` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [dungeon-format.md](dungeon-format.md).
+The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps, column first-thing indices, square first things, text data, 16 thing arrays, and raw map data. Then one word: the 16-bit sum of all bytes of the dungeon parts. `dungeon_load` accepts the dungeon when the word is missing or equal to the sum. The dungeon header gives the part sizes. See [dungeon-format.md](dungeon-format.md).
 
 ## C API
 
@@ -223,7 +223,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 
 After a damaged file, the dungeon is not loaded and the globals can be partly changed. The entrance starts a new game from `Dungeon.DAT`, which sets all state again.
 
-`gameloop_start_loaded_game` then does the rest of `start_game`: it makes the party map current (`group_remove_all_active_groups`, `set_current_map_and_party_map`, `group_add_all_active_groups`), shows "GAME LOADED, READY TO PLAY.", draws the interface, and runs `champion_reset_data_to_start_game`: the hand object goes back into the hand, `champion_set_leader` adds its weight to the leader load again, and the magic caster comes back.
+`gameloop_start_loaded_game` then does the rest of `start_game`: it makes the party map current (`group_remove_all_active_groups`, `map_set_current_map_and_party_map`, `group_add_all_active_groups`), shows "GAME LOADED, READY TO PLAY.", draws the interface, and runs `champion_reset_data_to_start_game`: the hand object goes back into the hand, `champion_set_leader` adds its weight to the leader load again, and the magic caster comes back.
 
 ### Block contents
 
@@ -240,7 +240,7 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 ### Dungeon part (`dungeon.c`)
 
 - `uint8_t *dungeon_save(uint32_t *size)` writes the parts in the order of `save_game`: header, maps, column first-thing indices, square first things, text data, 16 thing arrays, raw map data. Then the 16-bit sum of all bytes. The header has the counts with the free records of the new game, so the load needs no extras.
-- `int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `load_dungeon` for a saved game: no compression, no party start from the header, no free records, and no new `g_event_max_count`. It checks the byte sum when the word is there.
+- `int16_t dungeon_load_saved(const uint8_t *data, uint32_t size)` reads these parts like `dungeon_load` for a saved game: no compression, no party start from the header, no free records, and no new `g_event_max_count`. It checks the byte sum when the word is there.
 
 ## Tests
 
@@ -265,6 +265,6 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 - No real save file was available. The tests use synthetic data, the port's own saves, and the original routines as the oracle. The original `load_dungeon` reads a file handle, so the tests do not run it on the dungeon part.
 - Deliberate deviation: the original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!". The port sets `g_return_to_entrance`, and `main.c` shows the entrance.
 - A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
-- The header byte at `0x12a` is always written as 1. The original writes back the value of the last load.
+- The header byte at `0x12a` (`H_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.
 - `save_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.
 - The meaning of the header byte at `0x12a`, of `g_save_header_extra`, and of the long at block 0 offset 32 is not traced.

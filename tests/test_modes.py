@@ -44,20 +44,23 @@ def game(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.control_open.restype = ctypes.c_bool
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.get_square_first_thing.restype = u16
-    lib.get_next_thing.restype = u16
-    lib.get_square.restype = ctypes.c_uint8
+    lib.map_get_square_first_thing.restype = u16
+    lib.map_get_next_thing.restype = u16
+    lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = c16
     lib.dungeon_map_width.restype = c16
     lib.dungeon_map_height.restype = c16
     lib.savegame_save.restype = c16
     lib.savegame_load.restype = c16
-    lib.video_color.restype = u16
-    lib.video_argb.restype = u32
+    lib.video_get_color.restype = u16
+    lib.video_convert_argb.restype = u32
     lib.control_open.argtypes = [ctypes.c_char_p]
     assert lib.gameloop_load_data(str(GAME).encode())
-    assert lib.gameloop_new_game(str(GAME).encode())
+    assert lib.gameloop_start_new_game(str(GAME).encode())
     game = Game(lib)
     game.run(26)
     path, direction = game.path_to_mirror()
@@ -74,7 +77,7 @@ def game(tmp_path_factory):
 
 def set_mode(game, mode, features=None):
     c16.in_dll(game.lib, "g_game_mode").value = mode
-    c16.in_dll(game.lib, "g_advanced_features").value = int(mode != VANILLA) if features is None else features
+    ctypes.c_bool.in_dll(game.lib, "g_advanced_features").value = int(mode != VANILLA) if features is None else features
 
 
 def zone_box(game, zone):
@@ -97,7 +100,7 @@ def screenshot(game, name):
     fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
     rows = []
     for y in range(200):
-        row = b"".join(lib.video_argb(lib.video_color(y, fb[y * 320 + x])).to_bytes(4, "big")[1:] * scale for x in range(320))
+        row = b"".join(lib.video_convert_argb(lib.video_get_color(y, fb[y * 320 + x])).to_bytes(4, "big")[1:] * scale for x in range(320))
         rows += [b"\0" + row] * scale
     chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))
     header = struct.pack(">IIBBBBB", 320 * scale, 200 * scale, 8, 2, 0, 0, 0)
@@ -375,7 +378,7 @@ def test_render_advanced_panels(game):
     assert game.value("g_inventory_champion_ordinal") == 1
     champion.slots[SLOT_HAND_ACTION] = hand
     leader_hand = u16.in_dll(lib, "g_leader_hand_object")
-    empty_handed = c16.in_dll(lib, "g_leader_empty_handed")
+    empty_handed = ctypes.c_bool.in_dll(lib, "g_leader_empty_handed")
     held, was_empty = leader_hand.value, empty_handed.value
     for thing, name in ((hand, "adv_stat_meters.png"), (armour, "adv_stat_meters_armour.png")):
         leader_hand.value, empty_handed.value = thing, 0  # the eye shows the description of the leader hand object
@@ -507,7 +510,7 @@ def test_smooth_projectile_flight(game):
         game.run()
         x, y, _ = game.position()
         nx, ny = x + STEP_EAST[direction], y + STEP_NORTH[direction]
-        if lib.get_square(nx, ny) >> 5 == CORRIDOR:
+        if lib.map_get_square(nx, ny) >> 5 == CORRIDOR:
             break
     fireball = 0xFF80
     for mode in (VANILLA, ADVANCED):
@@ -517,7 +520,7 @@ def test_smooth_projectile_flight(game):
         frames = []
         for _ in range(3 * 13):
             seed = game.value("g_random_seed", u32)
-            ticked = lib.gameloop_frame()
+            ticked = lib.gameloop_run_frame()
             if ticked:
                 lib.gameloop_tick()
             else:
@@ -542,7 +545,7 @@ def test_empty_hand_at_a_fountain(game, mode):
     ctypes.memmove(ctypes.byref(champions[1]), ctypes.byref(champions[0]), ctypes.sizeof(champions[0]))
     champions[1].cell = (champions[0].cell + 1) % 4
     count.value = 2
-    lib.set_current_map_and_party_map(1)
+    lib.map_set_current_map_and_party_map(1)
     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (0, 21, 2)):  # facing a fountain on level 2
         c16.in_dll(lib, name).value = v
     lib.gameloop_draw_view()
@@ -552,7 +555,7 @@ def test_empty_hand_at_a_fountain(game, mode):
     assert (champions[0].water, champions[1].water) == (2048, 2048 if mode == ADVANCED else 100)
     count.value = 1
     ctypes.memset(ctypes.byref(champions[1]), 0, ctypes.sizeof(champions[1]))
-    lib.set_current_map_and_party_map(start[0])
+    lib.map_set_current_map_and_party_map(start[0])
     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), start[1]):
         c16.in_dll(lib, name).value = v
     lib.gameloop_draw_view()
@@ -598,12 +601,12 @@ def test_cheat_light_draws_the_bright_palette(game):
         party.magical_light_amount = -1000
         lib.gameloop_draw_view()
         assert list(palette) != bright
-        c16.in_dll(lib, "g_cheat_light").value = 1
+        ctypes.c_bool.in_dll(lib, "g_cheat_light").value = 1
         lib.gameloop_draw_view()
         assert list(palette) == bright
         assert game.value("g_dungeon_view_palette_index") == 5  # the creatures still see the darkness
     finally:
-        c16.in_dll(lib, "g_cheat_light").value = 0
+        ctypes.c_bool.in_dll(lib, "g_cheat_light").value = 0
         party.magical_light_amount = 0
         for name, v in start.items():
             place[name].value = v
@@ -614,29 +617,29 @@ def test_cheat_immortal_keeps_1_health(game):
     lib, champion = game.lib, game.champions[0]
     health = champion.current_health
     lib.champion_damage_all.argtypes = [u16, u16, c16]
-    c16.in_dll(lib, "g_cheat_immortal").value = 1
+    ctypes.c_bool.in_dll(lib, "g_cheat_immortal").value = 1
     try:
         lib.champion_damage_all(5000, 0, 0)
         lib.champion_apply_and_draw_pending_damage_and_wounds()
         assert champion.current_health == 1
     finally:
-        c16.in_dll(lib, "g_cheat_immortal").value = 0
+        ctypes.c_bool.in_dll(lib, "g_cheat_immortal").value = 0
         champion.current_health = health
 
 def test_cheat_food_keeps_food_and_water(game):
     lib, champion = game.lib, game.champions[0]
     food, water = champion.food, champion.water
-    c16.in_dll(lib, "g_cheat_food").value = 1
+    ctypes.c_bool.in_dll(lib, "g_cheat_food").value = 1
     try:
         for _ in range(1000):
             lib.champion_apply_time_effects()
         assert (champion.food, champion.water) == (food, water)
-        c16.in_dll(lib, "g_cheat_food").value = 0
+        ctypes.c_bool.in_dll(lib, "g_cheat_food").value = 0
         for _ in range(1000):
             lib.champion_apply_time_effects()
         assert champion.food < food and champion.water < water
     finally:
-        c16.in_dll(lib, "g_cheat_food").value = 0
+        ctypes.c_bool.in_dll(lib, "g_cheat_food").value = 0
         champion.food, champion.water = food, water
 
 
@@ -660,9 +663,9 @@ def test_party_death_during_a_turn_reports_game_over(game):
     finally:
         lib.control_close()
         shutil.rmtree(sock_dir, ignore_errors=True)
-        c16.in_dll(lib, "g_return_to_entrance").value = 0
+        ctypes.c_bool.in_dll(lib, "g_return_to_entrance").value = 0
         set_mode(game, VANILLA)
-        assert lib.gameloop_new_game(str(GAME).encode())
+        assert lib.gameloop_start_new_game(str(GAME).encode())
 
 
 def test_turnbased_save_goes_to_the_saves_folder(tmp_path):

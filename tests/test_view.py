@@ -1,8 +1,6 @@
 import ctypes
 import struct
 import subprocess
-import zlib
-from pathlib import Path
 
 import pytest
 
@@ -11,7 +9,6 @@ from dmtools.ftl import load_image, parse
 from test_port import BUILD, ROOT, sdl3_installed
 
 GAME = ROOT / "game"
-SCRATCH = Path("/private/tmp/claude-501/-Users-lego-github-dm/a035dd1c-2cf2-40ec-9360-f301ae6b451f/scratchpad")
 GET_ZONE, SHRINK, LAYOUT_ZONES = 0x116296, 0x10E898, 0x102990
 
 pytestmark = pytest.mark.skipif(not sdl3_installed(), reason="clang or SDL3 not installed")
@@ -30,11 +27,14 @@ class Box(ctypes.Structure):
 def lib():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
+    lib.layout_get_zone.restype = ctypes.c_bool
+    lib.view_render.restype = ctypes.c_bool
     lib.draw_blit.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Bitmap), ctypes.POINTER(Box), ctypes.c_int16, ctypes.c_int]
     lib.draw_shrink.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.c_char_p, ctypes.POINTER(Bitmap)]
     lib.layout_get_zone.argtypes = [ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Box), ctypes.POINTER(ctypes.c_int16), ctypes.POINTER(ctypes.c_int16)]
-    lib.gfx_item.restype = ctypes.POINTER(ctypes.c_uint8)
-    lib.gfx_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
+    lib.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.dungeon_load.restype = ctypes.c_bool
+    lib.gfx_get_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
     lib.view_render.argtypes = [ctypes.c_int16] * 4
     return lib
 
@@ -116,7 +116,7 @@ def test_zones_match_original(lib, emu):
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.layout_init() == 0
     size = ctypes.c_uint16()
-    raw = ctypes.string_at(lib.gfx_item(696, ctypes.byref(size)), size.value)
+    raw = ctypes.string_at(lib.gfx_get_item(696, ctypes.byref(size)), size.value)
     chunks, at = zone_records(raw), 0x700000
     emu.write(LAYOUT_ZONES, struct.pack(">I", at))
     for i, (first, last, recs) in enumerate(chunks):
@@ -139,18 +139,9 @@ def test_zones_match_original(lib, emu):
     assert checked > 500
 
 
-def png(path, rgb_rows):
-    h, w = len(rgb_rows), len(rgb_rows[0]) // 3
-    raw = b"".join(b"\0" + bytes(row) for row in rgb_rows)
-    chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))
-    Path(path).write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
-
-
 def screen(lib):
     fb = (ctypes.c_uint8 * (320 * 200)).in_dll(lib, "fb")
-    pal = (ctypes.c_uint16 * 16).in_dll(lib, "palette")
-    rgb = [[(pal[c] >> s & 15) * 17 for c in (fb[y * 320 + x] for x in range(320)) for s in (8, 4, 0)] for y in range(200)]
-    return bytes(fb), rgb
+    return bytes(fb)
 
 
 @pytest.fixture(scope="module")
@@ -158,9 +149,10 @@ def game(lib):
     if not all((GAME / f).exists() for f in ("KAOS.FTL", "Graphics.DAT", "Dungeon.DAT")):
         pytest.skip("game files missing")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_init() == 0
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) > 0
     assert lib.layout_init() == 0
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode())
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode())
     party = [ctypes.c_int16.in_dll(lib, n).value for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")]
     return lib, party
 
@@ -170,18 +162,15 @@ VIEWS = {"start": None, "door": (0, 1, 13, 2), "ornament": (0, 4, 9, 3), "text":
 
 @needs_game
 @pytest.mark.parametrize("name", list(VIEWS))
-def test_render_view(game, tmp_path, name):
+def test_render_view(game, name):
     lib, party = game
     m, x, y, d = VIEWS[name] or party
     ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, 320 * 200)
     assert lib.view_render(m, x, y, d)
-    first, rgb = screen(lib)
+    first = screen(lib)
     assert lib.view_render(m, x, y, d)
-    assert screen(lib)[0] == first
+    assert screen(lib) == first
     assert len(set(first)) > 4
-    for out in (tmp_path, SCRATCH):
-        if out.exists():
-            png(out / f"view_{name}.png", rgb)
 
 
 MASKED_FILL, BLIT_BITMAP = 0x116A4E, 0x11739C
@@ -247,11 +236,11 @@ def thing_records(lib, thing_type):
 
 def add_explosion(lib, m, x, y, cell, attack, explosion_type):
     """Links a new explosion behind the first thing of a square with things. Returns an undo function."""
-    lib.dungeon_square_first_thing.restype = ctypes.c_uint16
+    lib.dungeon_get_square_first_thing.restype = ctypes.c_uint16
     lib.dungeon_get_thing_data.restype = ctypes.POINTER(ctypes.c_uint8)
     data, count = thing_records(lib, 15)
     index = next(i for i in range(count) if data[4 * i] == 0xFF and data[4 * i + 1] == 0xFF)
-    first = lib.dungeon_square_first_thing(m, x, y)
+    first = lib.dungeon_get_square_first_thing(m, x, y)
     assert first != 0xFFFE
     head = lib.dungeon_get_thing_data(first)
     thing = cell << 14 | 15 << 10 | index
@@ -283,20 +272,18 @@ THINGS = {  # name: (map, x, y, direction, explosion (map x y cell attack type) 
 def test_render_things(game, name):
     lib, _ = game
     (m, x, y, d), explosion, light = THINGS[name]
-    lib.view_set_light.argtypes = [ctypes.c_int16] * 2
-    lib.view_set_light(m, light)
+    lib.inventory_set_dungeon_view_palette.argtypes = [ctypes.c_int16] * 2
+    lib.inventory_set_dungeon_view_palette(m, light)
     assert lib.view_render(m, x, y, d)
-    plain = screen(lib)[0]
+    plain = screen(lib)
     undo = add_explosion(lib, *explosion) if explosion else None
     try:
         assert lib.view_render(m, x, y, d)
-        first, rgb = screen(lib)
+        first = screen(lib)
     finally:
         if undo:
             undo()
-        lib.view_set_light(m, 99)
+        lib.inventory_set_dungeon_view_palette(m, 99)
     assert len(set(first)) > 4
     if explosion:
         assert first != plain
-    if SCRATCH.exists():
-        png(SCRATCH / f"view7b_{name}.png", rgb)

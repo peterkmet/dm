@@ -1,6 +1,7 @@
 #ifndef ADVANCED_H
 #define ADVANCED_H
 /* Prefixes: advanced_ */
+#include <stdbool.h>
 #include <stdint.h>
 #include "game.h"
 
@@ -10,21 +11,29 @@
    The game rules are the same in every mode. Plan: docs/superpowers/2026-10-04-modes-plan.md. */
 
 /* Key words of the advanced keys: Amiga raw key in the high byte. No original key table has them. */
-enum { KEY_TAB = 0x4200, KEY_M = 0x3700, KEY_F5 = 0x5400, KEY_F9 = 0x5800, KEY_L = 0x2800, KEY_I = 0x1700, KEY_F = 0x2300,
-       KEY_1 = 0x0100, KEY_2 = 0x0200, KEY_3 = 0x0300 };
+enum {
+    KEY_TAB = 0x4200,
+    KEY_M = 0x3700,
+    KEY_F5 = 0x5400,
+    KEY_F9 = 0x5800,
+    KEY_L = 0x2800,
+    KEY_I = 0x1700,
+    KEY_F = 0x2300,
+    KEY_1 = 0x0100,
+    KEY_2 = 0x0200,
+    KEY_3 = 0x0300
+};
 
-#define QUICK_SAVE_FILE_NAME "QUICK.DAT"
-
-extern int16_t g_advanced_features;    /* 1 outside vanilla: the advanced features show */
-extern int16_t g_automap_open;         /* 1: the automap covers the viewport and the game time stops */
+extern bool g_advanced_features; /* set outside vanilla: the advanced features show */
+extern bool g_automap_open;      /* set: the automap covers the viewport and the game time stops */
 
 /* Handles M, Tab, F5 (quick save), F9 (quick load), and the keys while the automap is open (L, I, and F
    switch the cheats, 1, 2, and 3 select the music in the advanced mode).
-   Returns 1 when the key is used up. */
-int advanced_process_key(uint16_t key);
+   Returns true when the key is used up. */
+bool advanced_process_key(uint16_t key);
 /* A mouse button while the automap is open: a left press on the map starts a drag, the left release
-   ends it. Returns 1 when the automap is open. */
-int advanced_process_click(int16_t x, int16_t y, int16_t kind);
+   ends it. Returns true when the automap is open. */
+bool advanced_process_click(int16_t x, int16_t y, int16_t kind);
 /* The mouse is at (x, y): during a drag the map follows it in whole squares. */
 void advanced_drag(int16_t x, int16_t y);
 /* The movement key word of a letter key outside vanilla: W, S, A, D move, Q and E turn. Else 0. */

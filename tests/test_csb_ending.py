@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, clear_folder_hooks, game_sources, set_folder_hooks, global_type
 from test_creatures import TimelineEvent
 
 ROOT = Path(__file__).parent.parent
@@ -46,27 +46,31 @@ def lib(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.gameloop_load_data.restype = ctypes.c_bool
     for name, res, args in [
         ("anim_open", ctypes.c_int, [ctypes.c_char_p]), ("anim_next_frame", c16, []), ("anim_close", None, []),
-        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
-        ("get_next_thing", u16, [u16]), ("set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
+        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
+        ("map_get_next_thing", u16, [u16]), ("map_set_current_map", None, [c16]), ("dungeon_map_count", c16, []),
         ("savegame_load_from", c16, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]), ("savegame_save", c16, [ctypes.c_char_p]),
-        ("event_wall", None, [ctypes.POINTER(TimelineEvent)]), ("kaos_s16", c16, [u32]),
-        ("endgame", None, [c16]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
+        ("event_process_wall", None, [ctypes.POINTER(TimelineEvent)]), ("kaos_s16", c16, [u32]),
+        ("startend_run_endgame", None, [c16]), ("startend_set_save_dir", None, [ctypes.c_char_p]),
         ("command_process_click", None, [c16, c16, c16]), ("command_process_key", None, [u16]),
-        ("anim_play", ctypes.c_int, [ctypes.c_char_p]), ("endgame_sensor", None, [u16]),
+        ("anim_play", ctypes.c_int, [ctypes.c_char_p]), ("startend_run_endgame_sensor", None, [u16]),
         ("sound_mix", None, [ctypes.POINTER(c16), ctypes.c_int]), ("sound_stop_all", None, []),
         ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]), ("gameloop_tick", None, []),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
+    hooks = set_folder_hooks(lib)
     yield lib
     lib.anim_close()
+    clear_folder_hooks(lib)
+    del hooks
     c16.in_dll(lib, "g_adventure").value = DM
 
 
 def value(lib, name, kind=c16):
-    return kind.in_dll(lib, name)
+    return global_type(name, kind).in_dll(lib, name)
 
 
 def screen(lib):
@@ -379,15 +383,15 @@ def load_mini(lib, tmp_path):
 def endgame_sensor_square(lib):
     """Map, x, y, and sensor of the wall sensor 18 of the CSB dungeon."""
     for m in range(lib.dungeon_map_count()):
-        lib.set_current_map(m)
+        lib.map_set_current_map(m)
         for x in range(value(lib, "g_current_map_width").value):
             for y in range(value(lib, "g_current_map_height").value):
-                t = lib.get_square_first_thing(x, y)
+                t = lib.map_get_square_first_thing(x, y)
                 while t != THING_ENDOFLIST:
                     rec = lib.dungeon_get_thing_data(t)
                     if t >> 10 & 15 == THING_SENSOR and (rec[2] << 8 | rec[3]) & 0x7F == SENSOR_WALL_ENDGAME:
                         return m, x, y, t
-                    t = lib.get_next_thing(t)
+                    t = lib.map_get_next_thing(t)
     raise AssertionError("no endgame sensor")
 
 
@@ -400,9 +404,9 @@ def test_sensor_18_starts_the_ending(lib, tmp_path, reset):
     first_frame, first_palette = screen(lib), palette(lib)
     lib.anim_close()
     ctypes.memset(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "fb")), 0, SCREEN_W * SCREEN_H)
-    lib.set_current_map(m)
+    lib.map_set_current_map(m)
     event = TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)
-    lib.event_wall(ctypes.byref(event))
+    lib.event_process_wall(ctypes.byref(event))
     assert value(lib, "g_game_won").value == 1 and value(lib, "g_return_to_entrance").value == 1
     assert screen(lib) == first_frame and palette(lib) == first_palette
 
@@ -444,15 +448,15 @@ def test_an_event_after_sensor_18_in_the_same_tick_sees_the_won_game(lib, tmp_pa
     load_mini(lib, tmp_path)
     time = value(lib, "g_game_time", u32).value
     m = endgame_sensor_square(lib)[0]
-    lib.set_current_map(m)
+    lib.map_set_current_map(m)
     thing, x, y = next((t, x, y) for x in range(value(lib, "g_current_map_width").value)
                        for y in range(value(lib, "g_current_map_height").value)
-                       for t in [lib.get_square_first_thing(x, y)] if t != THING_ENDOFLIST and t >> 10 & 15 >= THING_WEAPON)
+                       for t in [lib.map_get_square_first_thing(x, y)] if t != THING_ENDOFLIST and t >> 10 & 15 >= THING_WEAPON)
     add_sensor_event(lib, time - 1)
     add_event(lib, EVENT_REMOVE_FLUXCAGE, m, time, x << 8 | y, thing)
     lib.gameloop_tick()
-    lib.set_current_map(m)
-    assert value(lib, "g_game_won").value == 1 and lib.get_square_first_thing(x, y) == thing
+    lib.map_set_current_map(m)
+    assert value(lib, "g_game_won").value == 1 and lib.map_get_square_first_thing(x, y) == thing
 
 
 def test_sensor_18_with_frames_plays_at_once_and_waits_for_input(lib, model, tmp_path, reset):
@@ -467,7 +471,9 @@ def test_sensor_18_with_frames_plays_at_once_and_waits_for_input(lib, model, tmp
             click(lib, 10, 10)
 
     frames = Frames(lib, action)
-    lib.endgame_sensor(5)
+    m, x, y, sensor = endgame_sensor_square(lib)  # the rule sets the won game, then runs the ending
+    lib.map_set_current_map(m)
+    lib.event_process_wall(ctypes.byref(TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)))
     frames.remove()
     assert frames.shots[0] == (model[0][1], model[0][2])  # no delay before the first frame
     assert len(frames.shots) == total + 10 and not any(entrance)
@@ -503,7 +509,7 @@ def test_death_shows_restart_only_and_restart_loads_the_save(lib, tmp_path, rese
 
     hook = HOOK(frame)
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = ctypes.cast(hook, ctypes.c_void_p).value
-    lib.endgame(1)
+    lib.startend_run_endgame(1)
     ctypes.c_void_p.in_dll(lib, "g_frame_hook").value = None
     before, after = shots[DEATH_FRAMES + THE_END_FRAMES], shots[DEATH_FRAMES + THE_END_FRAMES + 1]
     bx, by, bw, bh = (lib.kaos_s16(CSB_RESTART_BOXES + 2 * i) for i in range(4))

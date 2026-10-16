@@ -133,7 +133,7 @@ The header has the structure of the DM header: 32 groups of 4 noise words, then 
 - Copy game header bytes `0x100`–`0x11f` and `0x120`–`0x127` to mini.
 - Mini game ID = game game ID + 1.
 - Mini format = game format.
-- Mini header byte = 2. The disk A engine keeps this byte and writes it back on save.
+- Mini header byte = 2 (`HEADER_BYTE_NEW_ADVENTURE`). The disk A engine keeps this byte and writes it back on save.
 
 ### Champions
 

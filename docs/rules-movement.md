@@ -8,8 +8,8 @@ Load KAOS and the dungeon. Then start a new game and put the party on the start 
 
 ```c
 kaos_load("game/KAOS.FTL");
-load_dungeon("game/Dungeon.DAT");
-game_new();
+dungeon_load("game/Dungeon.DAT");
+game_start_new();
 move_party_enter_dungeon();
 ```
 
@@ -26,36 +26,36 @@ The game loop calls these functions in this order on each tick:
 
 ## Current map
 
-All square and thing functions work on the current map (`g_current_map_index`). `set_current_map(map)` selects a map. `set_current_map_and_party_map(map)` also sets `g_party_map_index`. The ornament lists of the original `set_current_map_and_party_map` are view data. `view_load_map` handles them.
+All square and thing functions work on the current map (`g_current_map_index`). `map_set_current_map(map)` selects a map. `map_set_current_map_and_party_map(map)` also sets `g_party_map_index`. The ornament lists of the original `set_current_map_and_party_map` are view data. `view_load_map` handles them.
 
-Call `map_reset()` after `load_dungeon`. The current map pointers then point to the new buffers at the next `set_current_map`.
+Call `map_reset()` after `dungeon_load`. The current map pointers then point to the new buffers at the next `map_set_current_map`.
 
 | Function | Original | Work |
 |---|---|---|
-| `get_square(x, y)` | `0x10a8ac` | Square byte. Outside the map: a wall byte. The wall gets bit 1, 3, 2, or 0 when the adjacent square above, below, left, or right is a corridor or a pit. |
-| `get_square_type(x, y)` | — | `get_square(x, y) >> 5`. |
-| `is_square_open(x, y)` | `0x10bce6` | 1 for a corridor, pit, door, or teleporter. |
-| `get_location_after_level_change(map, delta, &x, &y)` | `0x10aa0c` | Finds the map on level `level + delta` that covers the same dungeon position. Changes `x` and `y`. Returns −1 when no map matches. |
-| `get_stairs_exit_direction(x, y)` | `0x10aad2` | Bit 3 of the stairs square selects the axis (set: north–south). The exit side is the side that is not a wall or stairs. |
-| `get_square_first_thing(x, y)` | `0x10ac4e` | First thing, or `0xfffe`. |
-| `get_square_first_object(x, y)` | `0x10ac7c` | First thing with type 4 or higher. |
-| `get_next_thing(thing)` | `0x10abb4` | Next-thing word of the record. |
-| `link_thing_to_list(thing, list, x, y)` | `0x10acba` | See [Thing lists](#thing-lists). |
-| `unlink_thing_from_list(thing, list, x, y)` | `0x10adf4` | See [Thing lists](#thing-lists). |
-| `get_square_group(x, y)` | `0x10bb5c` | First group thing, or `0xfffe`. |
+| `map_get_square(x, y)` | `0x10a8ac` | Square byte. Outside the map: a wall byte. The wall gets bit 1, 3, 2, or 0 when the adjacent square above, below, left, or right is a corridor or a pit. |
+| `map_get_square_type(x, y)` | — | `map_get_square(x, y) >> 5`. |
+| `map_is_square_open(x, y)` | `0x10bce6` | 1 for a corridor, pit, door, or teleporter. |
+| `map_get_location_after_level_change(map, delta, &x, &y)` | `0x10aa0c` | Finds the map on level `level + delta` that covers the same dungeon position. Changes `x` and `y`. Returns −1 when no map matches. |
+| `map_get_stairs_exit_direction(x, y)` | `0x10aad2` | Bit 3 of the stairs square selects the axis (set: north–south). The exit side is the side that is not a wall or stairs. |
+| `map_get_square_first_thing(x, y)` | `0x10ac4e` | First thing, or `0xfffe`. |
+| `map_get_square_first_object(x, y)` | `0x10ac7c` | First thing with type 4 or higher. |
+| `map_get_next_thing(thing)` | `0x10abb4` | Next-thing word of the record. |
+| `map_link_thing_to_list(thing, list, x, y)` | `0x10acba` | See [Thing lists](#thing-lists). |
+| `map_unlink_thing_from_list(thing, list, x, y)` | `0x10adf4` | See [Thing lists](#thing-lists). |
+| `map_get_square_group(x, y)` | `0x10bb5c` | First group thing, or `0xfffe`. |
 | `object_get_type(thing)` | `0x1079a4` | Object type from the object info table (`0x101068`). −1 for `0xffff` and for a thing that is not an object. |
-| `get_creature_attributes(group)` | `0x10a6e4` | Attribute word of the creature type (`0x10192e + type * 0x1a + 2`). |
+| `map_get_creature_attributes(group)` | `0x10a6e4` | Attribute word of the creature type (`0x10192e + type * 0x1a + 2`). |
 
 ### Thing lists
 
-`link_thing_to_list(thing, list, x, y)`:
+`map_link_thing_to_list(thing, list, x, y)`:
 
 1. Set the next word of `thing` to `0xfffe`.
 2. When `x < 0`, append `thing` to the list that starts at `list`.
 3. When the square has no list, set bit 4 of the square. Add 1 to the first-thing index of every later column of the dungeon. Insert `thing` into `g_square_first_things`. The last entry must be `0xffff`, else the function stops with system error 72 (`0x48`).
 4. Else append `thing` to the end of the square list.
 
-`unlink_thing_from_list` is the inverse. It compares things without the cell bits. When the list becomes empty, it clears bit 4, removes the entry, writes `0xffff` to the last entry, and subtracts 1 from the later column indices.
+`map_unlink_thing_from_list` is the inverse. It compares things without the cell bits. When the list becomes empty, it clears bit 4, removes the entry, writes `0xffff` to the last entry, and subtracts 1 from the later column indices.
 
 ## Party movement
 
@@ -81,7 +81,7 @@ Call `map_reset()` after `load_dungeon`. The current map pointers then point to 
 
 `move_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`move_set_party_direction`), and enters the floor sensors again.
 
-`move_take_stairs(up)` removes the party from its square, sets `g_new_party_map_index` with `get_location_after_level_change` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
+`move_take_stairs(up)` removes the party from its square, sets `g_new_party_map_index` with `map_get_location_after_level_change` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
 `move_set_party_direction(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
 
@@ -92,7 +92,7 @@ Call `map_reset()` after `load_dungeon`. The current map pointers then point to 
 The function repeats these rules on the destination square, at most 99 times:
 
 - Open teleporter (bit 3): the scope is bits 5–6 of byte 2 of the teleporter record. Scope 1 (creatures) stops the party and objects. The party needs scope bit 2. The function moves the thing to the target (byte 3 bits 0–4: X, word 2 bits 5–9: Y, byte 4: map). Bit 7 of byte 2 plays sound 14 for the party. Bits 2–3 of byte 2 hold the rotation. Bit 4 makes the rotation absolute. The party turns. An object rotates its cell. A projectile also rotates `g_move_result_direction`. A teleporter that points to its own square ends the loop.
-- Open pit (bit 3 set, bit 0 clear) and a thing that does not levitate: the thing falls one level (`get_location_after_level_change(map, 1)`). The party gets `champion_fall_damage(g_use_rope_to_climb_down_pit)`: `champion_damage_all(20, 0x30, 2)` and sound 7, or with the rope a stamina loss of `load * 25 / maximum_load + 1` for each living champion. The flag then becomes 0.
+- Open pit (bit 3 set, bit 0 clear) and a thing that does not levitate: the thing falls one level (`map_get_location_after_level_change(map, 1)`). The party gets `champion_fall_damage(g_use_rope_to_climb_down_pit)`: `champion_damage_all(20, 0x30, 2)` and sound 7, or with the rope a stamina loss of `load * 25 / maximum_load + 1` for each living champion. The flag then becomes 0.
 - Stairs, for objects only (not the party, not projectiles): down stairs (bit 2 clear) move the object one level down. Up stairs do not change the level. Then the object steps out in the exit direction and gets a cell on the exit side.
 - Any other square ends the loop.
 
@@ -115,7 +115,7 @@ Movement calls these functions of `port/src/engine/champion.c` and `port/src/eng
 `sensor_process_thing_addition_or_removal(x, y, thing, party_on_square, add)` runs when a thing enters (`add` 1) or leaves (`add` 0) a square. `thing` `0xffff` is the party.
 
 1. The function scans the square: a group present, objects present, objects of the same type, objects of another type. On a wall square it only scans the cell of the thing.
-2. On a floor square, the party entering a square prints the visible texts on the square (`decode_text` mode 1, color 15). Not when the party only turns.
+2. On a floor square, the party entering a square prints the visible texts on the square (`dungeon_decode_text` mode 1, color 15). Not when the party only turns.
 3. The function runs each sensor with a type other than 0. A floor sensor triggers on these conditions:
 
 | Type | Condition | Value |
@@ -196,19 +196,19 @@ Implemented event types:
 
 | Type | Action |
 |---|---|
-| 1 | `event_door_animation` |
-| 2 | `event_door_destruction` |
-| 5 | `event_corridor` |
-| 6 | `event_wall` |
-| 7 | `event_fake_wall` |
-| 8 | `event_teleporter` |
-| 9 | `event_pit` |
-| 10 | `event_door` |
+| 1 | `event_process_door_animation` |
+| 2 | `event_process_door_destruction` |
+| 5 | `event_process_corridor` |
+| 6 | `event_process_wall` |
+| 7 | `event_process_fake_wall` |
+| 8 | `event_process_teleporter` |
+| 9 | `event_process_pit` |
+| 10 | `event_process_door` |
 | 20 | `sound_request_play(c, x, y, 1)` |
 | 24 | Unlinks and frees the fluxcage thing in `c`, unless `g_game_won` is set. |
 | 53 | `timeline_add_watchdog_event` |
 | 65 | `event_enable_group_generator` |
-| 70 | `event_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |
+| 70 | `event_process_light`: one step of the light table (`0x100cb4`), the rest after 4 ticks. |
 | 71 | Decrements the invisibility count. |
 | 72 | Subtracts `b` from the shield defense of champion `priority`. |
 | 73 | Decrements the thieves eye count. |
@@ -223,7 +223,7 @@ Event types without effect in the port:
 |---|---|---|
 | 11 | `event_enable_champion_action` | Champions |
 | 12 | `event_hide_damage_received` | Champions |
-| 13 | `event_vi_altar_rebirth` | Champions |
+| 13 | `event_process_vi_altar_rebirth` | Champions |
 | 25 | `explosion_process_step_event` | Projectiles |
 | 29–41 | `group_process_reaction_event` | Creatures |
 | 48, 49 | `projectile_process_move_event` | Projectiles |
@@ -254,11 +254,11 @@ These rules need later steps. The port has no code for them yet:
 
 `tests/test_move.py` needs `game/KAOS.FTL` and `game/Dungeon.DAT` and skips without them.
 
-- `get_square`, `is_square_open`, `get_square_first_thing`, `get_stairs_exit_direction`, and `get_location_after_level_change` give the same results as the original functions in `dmtools.emu` on maps 0–2, including the squares around the map.
+- `map_get_square`, `map_is_square_open`, `map_get_square_first_thing`, `map_get_stairs_exit_direction`, and `map_get_location_after_level_change` give the same results as the original functions in `dmtools.emu` on maps 0–2, including the squares around the map.
 - Start position from the dungeon header. A move into a wall does not move the party. A corridor move follows the step tables of KAOS. Turns change the direction and the champion cells. A turn on stairs takes the stairs.
 - Stairs on map 0 at (3, 15) lead to map 1 at (3, 1), direction 0.
 - The floor sensor at map 0 (6, 9) opens the door at (5, 9): the door state is 4, 3, 2, 1, 0 on the ticks after the move.
 - A door event (type 10, toggle) opens and closes a door.
 - The teleporter at map 1 (30, 3) moves the party to (30, 1) with direction 0.
 - The pit at map 1 (7, 8) drops the party to map 2 and adds pending damage to the champion.
-- `link_thing_to_list` and `unlink_thing_from_list` restore the square first things and the column indices.
+- `map_link_thing_to_list` and `map_unlink_thing_from_list` restore the square first things and the column indices.

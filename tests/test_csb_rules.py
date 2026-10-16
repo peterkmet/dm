@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import PORT_INCLUDES, game_sources
+from conftest import PORT_INCLUDES, game_sources, global_type
 from test_champion import Champion
 from test_creatures import THING_EXPLOSION, TimelineEvent
 from test_gameloop import Game
@@ -43,16 +43,18 @@ def lib(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.gameloop_load_data.restype = ctypes.c_bool
+    lib.gameloop_start_new_game.restype = ctypes.c_bool
     for name, res, args in [
-        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("get_square_first_thing", u16, [c16, c16]),
-        ("get_next_thing", u16, [u16]), ("get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
+        ("dungeon_get_thing_data", ctypes.POINTER(ctypes.c_uint8), [u16]), ("map_get_square_first_thing", u16, [c16, c16]),
+        ("map_get_next_thing", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
         ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("random_bit", u16, []), ("random16", u16, []),
         ("sensor_add_event", None, [c16, c16, c16, c16, c16, u32]),
-        ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, c16, c16]),
-        ("champion_click_in_resurrect_reincarnate_panel", None, [c16]), ("unlink_thing_from_list", None, [u16, u16, c16, c16]),
-        ("tables_action_info", ctypes.POINTER(ActionInfo), [ctypes.c_int]),
+        ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, ctypes.c_bool, ctypes.c_bool]),
+        ("champion_click_in_resurrect_reincarnate_panel", None, [c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
+        ("tables_get_action_info", ctypes.POINTER(ActionInfo), [ctypes.c_int]),
         ("champion_add_skill_experience", None, [u16, u16, u16]),
-        ("link_thing_to_list", None, [u16, u16, c16, c16]),
+        ("map_link_thing_to_list", None, [u16, u16, c16, c16]),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
@@ -68,21 +70,21 @@ def world(request, lib):
         pytest.skip(f"{folder.name} files missing")
     c16.in_dll(lib, "g_adventure").value = ADVENTURE[request.param]
     assert lib.gameloop_load_data(str(folder).encode())
-    assert lib.gameloop_new_game(str(folder).encode())
+    assert lib.gameloop_start_new_game(str(folder).encode())
     game = Game(lib)
     game.run(26)
     return request.param, game
 
 
 def value(lib, name, kind=c16):
-    return kind.in_dll(lib, name)
+    return global_type(name, kind).in_dll(lib, name)
 
 
 def things(lib, x, y):
-    thing = lib.get_square_first_thing(x, y)
+    thing = lib.map_get_square_first_thing(x, y)
     while thing != THING_ENDOFLIST:
         yield thing
-        thing = lib.get_next_thing(thing)
+        thing = lib.map_get_next_thing(thing)
 
 
 def timeline(lib):
@@ -100,7 +102,7 @@ def face_empty_corridor(lib):
                 fx, fy = x + STEP_EAST[d], y + STEP_NORTH[d]
                 if not (0 <= fx < width and 0 <= fy < height):
                     continue
-                if all(lib.get_square(a, b) >> 5 == CORRIDOR and not list(things(lib, a, b)) for a, b in ((x, y), (fx, fy))):
+                if all(lib.map_get_square(a, b) >> 5 == CORRIDOR and not list(things(lib, a, b)) for a, b in ((x, y), (fx, fy))):
                     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (x, y, d)):
                         value(lib, name).value = v
                     return fx, fy
@@ -148,7 +150,7 @@ def test_removed_actions(world, action):
     if adventure == "csb":
         assert seed == seed_after_random_bit(lib)
         assert not explosions and not new_fluxcages
-        info = lib.tables_action_info(action).contents
+        info = lib.tables_get_action_info(action).contents
         value(lib, "g_random_seed", u32).value = SEED
         assert c.current_stamina == 1000 - (info.stamina + lib.random_bit())
         events = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_timeline_events"), ctypes.POINTER(TimelineEvent))
@@ -196,13 +198,13 @@ def version_checker(lib, data):
     sensor, sx, sy = next((t, sx, sy) for sx in range(value(lib, "g_current_map_width").value)
                           for sy in range(value(lib, "g_current_map_height").value)
                           for t in things(lib, sx, sy) if t >> 10 & 15 == THING_SENSOR)
-    lib.unlink_thing_from_list(sensor, 0, sx, sy)
+    lib.map_unlink_thing_from_list(sensor, 0, sx, sy)
     x, y = face_empty_corridor(lib)
     record = lib.dungeon_get_thing_data(sensor)
     word = data << 7 | SENSOR_FLOOR_VERSION_CHECKER
     target = y << 11 | x << 6
     record[2], record[3], record[4], record[5], record[6], record[7] = word >> 8, word & 0xFF, 0, 0, target >> 8, target & 0xFF
-    lib.link_thing_to_list(sensor, 0, x, y)
+    lib.map_link_thing_to_list(sensor, 0, x, y)
     return x, y
 
 

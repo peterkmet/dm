@@ -32,7 +32,7 @@ def lib():
     subprocess.run(["make", "-C", "port"], cwd=ROOT, check=True, capture_output=True)
     lib = ctypes.CDLL(str(BUILD / "libdm.dylib"))
     lib.ftl_load.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.c_uint32, ctypes.POINTER(FtlImage)]
-    lib.gfx_item.restype = ctypes.POINTER(ctypes.c_uint8)
+    lib.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.gfx_expand.argtypes = [ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(Bitmap)]
     for f in ("kaos_u8", "kaos_u16", "kaos_s16", "kaos_u32"):
         getattr(lib, f).argtypes = [ctypes.c_uint32]
@@ -140,7 +140,7 @@ def test_graphics_dat_items(lib):
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode()) == struct.unpack_from(">H", dat, 2)[0] == lib.gfx_count()
     size = ctypes.c_uint16()
     for i, item, _, _ in bitmap_items(dat):
-        assert ctypes.string_at(lib.gfx_item(i, ctypes.byref(size)), size.value) == item
+        assert ctypes.string_at(lib.gfx_get_item(i, ctypes.byref(size)), size.value) == item
 
 
 @needs_game

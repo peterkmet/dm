@@ -22,7 +22,7 @@ The port uses native C types for this state. It does not keep the big-endian byt
 
 KAOS has no other random function. Callers compute `random16() % n` inline.
 
-`game_new` does not call `random_init`. The program calls `random_init` one time at start, as `system_init` does.
+`game_start_new` does not call `random_init`. The program calls `random_init` one time at start, as `system_init` does.
 
 ## Party
 
@@ -31,8 +31,8 @@ KAOS has no other random function. Callers compute `random16() % n` inline.
 | Offset | C field | Type |
 |---|---|---|
 | `0x00` | `magical_light_amount` | `int16_t` |
-| `0x02` | `event73_count_thieves_eye` | `uint8_t` |
-| `0x03` | `event79_count_footprints` | `uint8_t` |
+| `0x02` | `thieves_eye_count` | `uint8_t` |
+| `0x03` | `footprints_count` | `uint8_t` |
 | `0x04` | `shield_defense` | `int16_t` |
 | `0x06` | `fire_shield_defense` | `int16_t` |
 | `0x08` | `spell_shield_defense` | `int16_t` |
@@ -42,7 +42,7 @@ KAOS has no other random function. Callers compute `random16() % n` inline.
 | `0x0d` | `last_scent_index` | `uint8_t` |
 | `0x0e` | `scents[24]` | `uint16_t`: X bits 11–15, Y bits 6–10, map bits 0–5 |
 | `0x3e` | `scent_strengths[24]` | `uint8_t` |
-| `0x56` | `event71_count_invisibility` | `uint8_t` |
+| `0x56` | `invisibility_count` | `uint8_t` |
 
 The party position is in `dungeon.h`: `g_party_map_x` (`0x1001ec`), `g_party_map_y` (`0x1001ee`), `g_party_direction` (`0x1001ea`), `g_party_map_index` (`0x1001f0`).
 
@@ -177,14 +177,14 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 ## New game
 
-`game_new()` sets the state of a new game. Call it after `load_dungeon`. It follows `load_game` (new-game path) and the end of `load_dungeon`:
+`game_start_new()` sets the state of a new game. Call it after `dungeon_load`. It follows `load_game` (new-game path) and the end of `load_dungeon`:
 
 1. Clear `g_party` and `g_champions`. Set the champion count to 0, the leader and the magic caster to −1, and the leader hand object to `0xffff`.
 2. Set `g_game_time`, the sleep and death flags, the movement counters, and `g_active_group_count` to 0.
 3. Set `g_game_id` to the product of two `random16()` values.
 4. Call `timeline_init` and `game_init_active_groups`.
 
-`load_dungeon` sets the party position and direction from the dungeon header, and `g_party_map_index` to 0.
+`dungeon_load` sets the party position and direction from the dungeon header, and `g_party_map_index` to 0.
 
 ## Helpers
 
@@ -193,11 +193,11 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 | `min16`, `max16` | `0x107652`, `0x107668` | Minimum and maximum of two words. |
 | `bounded_value(min, value, max)` | `0x10767e` | Returns `min` when `value <= min`, else the lower of `value` and `max`. |
 | `scale_value(a, shift, b)` | `0x1076f8` | `(a * b) >> shift`: unsigned 16 × 16 multiply, arithmetic shift of the 32-bit result. Callers use the low word. |
-| `update_map_coordinates_after_relative_movement` | `0x10a85c` | Adds forward and right steps. Reads the step tables from KAOS: `g_direction_to_step_east` (`0x101038`: 0, 1, 0, −1) and `g_direction_to_step_north` (`0x101040`: −1, 0, 1, 0). |
+| `game_update_map_coordinates_after_relative_movement` | `0x10a85c` | Adds forward and right steps. Reads the step tables from KAOS: `g_direction_to_step_east` (`0x101038`: 0, 1, 0, −1) and `g_direction_to_step_north` (`0x101040`: −1, 0, 1, 0). |
 | `NORMALIZE(direction)` | — | `direction & 3`. |
 | `game_get_stamina_adjusted_value` | `0x110f4c` | When current stamina is below half of the maximum: `value / 2 + value * stamina / (maximum / 2)`. |
 | `game_get_statistic_adjusted_attack` | `0x110f88` | `d = 170 − current statistic`. Returns `attack >> 3` when `d < 16`, else `scale_value(attack, 7, d)`. |
-| `adjust_statistic_current_value` | `0x10f860` | Adds a delta to a current statistic. A negative delta stops at the minimum. Above 120 the delta is halved, above 150 quartered (plus 1). The result stops at 170. |
+| `game_adjust_statistic_current_value` | `0x10f860` | Adds a delta to a current statistic. A negative delta stops at the minimum. Above 120 the delta is halved, above 150 quartered (plus 1). The result stops at 170. |
 | `game_is_lucky` | `0x110fc8` | See below. |
 
 `game_is_lucky(champion, percentage)`:
@@ -208,7 +208,7 @@ Projectiles (thing type 14) and explosions (thing type 15) are dungeon things. T
 
 The original reads the three luck bytes as signed bytes in this function. A current luck of 128 or more counts as not above 0. The port keeps this behavior.
 
-KAOS tables must be loaded (`kaos_load`) before `update_map_coordinates_after_relative_movement` runs.
+KAOS tables must be loaded (`kaos_load`) before `game_update_map_coordinates_after_relative_movement` runs.
 
 ## Tests
 
@@ -216,6 +216,6 @@ KAOS tables must be loaded (`kaos_load`) before `update_map_coordinates_after_re
 
 - The random functions, the math helpers, the relative movement, and the four champion helpers give the same results as the original functions in `dmtools.emu`.
 - A sequence of 1500 timeline additions and extractions gives the same heap, slots, free list, and return values as the original `timeline_add_event` and `timeline_extract_first_event` in the emulator.
-- `game_new` after `load_dungeon` gives the party position from the `dmcsb` header, one watchdog event, and 110 free active groups.
+- `game_start_new` after `dungeon_load` gives the party position from the `dmcsb` header, one watchdog event, and 110 free active groups.
 
 The emulator tests skip when `game/KAOS.FTL` is missing.

@@ -149,7 +149,8 @@ address,name,signature,subsystem
 0x100a66,g_entrance_palette,uint16_t[16],startend
 0x100aa6,g_dungeon_palettes,uint16_t[][16],palette
 0x100b66,g_ordered_cells_to_attack,uint8_t[8][4],group
-0x100b86,g_wound_probability_index_to_mask,uint8_t[5],group
+0x100b86,g_wound_probability_index_to_mask,uint8_t[4],group
+0x100b8a,g_slots_to_steal_from,uint8_t[8],group
 0x100b92,g_icon_graphic_first_index,uint16_t[7],object
 0x100ba0,g_torch_charge_to_icon_offset,uint8_t[16],object
 0x100bb0,g_slot_boxes,int16_t[][2],object

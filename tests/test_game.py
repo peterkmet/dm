@@ -65,6 +65,7 @@ def lib():
     for name in ("random16", "random_bit", "random_2bits"):
         getattr(lib, name).restype = ctypes.c_uint16
     lib.scale_value.restype = ctypes.c_int32
+    lib.dungeon_load.restype = ctypes.c_bool
     lib.scale_value.argtypes = [ctypes.c_uint16, c16, ctypes.c_uint16]
     for name in ("min16", "max16", "bounded_value", "timeline_add_event",
                  "game_get_stamina_adjusted_value"):
@@ -74,10 +75,10 @@ def lib():
     lib.game_get_stamina_adjusted_value.argtypes = [ctypes.POINTER(Champion), c16]
     lib.game_get_statistic_adjusted_attack.restype = ctypes.c_uint16
     lib.game_get_statistic_adjusted_attack.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, ctypes.c_uint16]
-    lib.adjust_statistic_current_value.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, c16]
+    lib.game_adjust_statistic_current_value.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16, c16]
     lib.game_is_lucky.argtypes = [ctypes.POINTER(Champion), ctypes.c_uint16]
     lib.game_is_lucky.restype = lib.timeline_is_first_event_expired.restype = ctypes.c_bool
-    lib.update_map_coordinates_after_relative_movement.argtypes = [c16, c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
+    lib.game_update_map_coordinates_after_relative_movement.argtypes = [c16, c16, c16, ctypes.POINTER(c16), ctypes.POINTER(c16)]
     return lib
 
 
@@ -86,6 +87,7 @@ def need(lib, *names):
     if missing:
         pytest.skip(f"missing game/{missing[0]}")
     assert lib.kaos_load(str(GAME / "KAOS.FTL").encode()) == 0
+    assert lib.tables_init() == 0
 
 
 @pytest.fixture
@@ -137,7 +139,7 @@ def test_relative_movement_matches_original(lib, emu):
         for fwd in (-2, 0, 1, 3):
             for right in (-1, 0, 2):
                 x, y = c16(10), c16(20)
-                lib.update_map_coordinates_after_relative_movement(d, fwd, right, ctypes.byref(x), ctypes.byref(y))
+                lib.game_update_map_coordinates_after_relative_movement(d, fwd, right, ctypes.byref(x), ctypes.byref(y))
                 put(emu, BUF, ">hh", 10, 20)
                 emu.call(MOVE_RELATIVE, [(2, d), (2, fwd), (2, right), (4, BUF), (4, BUF + 2)])
                 assert (x.value, y.value) == struct.unpack(">hh", emu.read(BUF, 4))
@@ -165,7 +167,7 @@ def test_champion_helpers_match_original(lib, emu):
         assert lib.game_get_stamina_adjusted_value(ch, value) == s16(emu.call(STAMINA_ADJUSTED, [(4, BUF), (2, value)]))
         attack = rng.randint(0, 0xFFFF)
         assert lib.game_get_statistic_adjusted_attack(ch, stat, attack) == emu.call(ADJUSTED_ATTACK, [(4, BUF), (2, stat), (2, attack)]) & 0xFFFF
-        lib.adjust_statistic_current_value(ch, stat, value)
+        lib.game_adjust_statistic_current_value(ch, stat, value)
         emu.call(ADJUST_STATISTIC, [(4, BUF), (2, stat), (2, value)])
         assert ch.statistics[stat][1] == emu.read(BUF + 0x47 + 3 * stat, 1)[0]
         seed_c.value = i * 7919
@@ -253,10 +255,10 @@ def test_game_new(lib):
     need(lib, "Dungeon.DAT")
     from dmcsb import open_dungeon
 
-    assert lib.load_dungeon(str(GAME / "Dungeon.DAT").encode()) == 1
+    assert lib.dungeon_load(str(GAME / "Dungeon.DAT").encode()) == 1
     loc = open_dungeon(str(GAME / "Dungeon.DAT")).hdr["InitialPartyLocation"]
     c32.in_dll(lib, "g_random_seed").value = 1234
-    lib.game_new()
+    lib.game_start_new()
     party = [c16.in_dll(lib, f"g_party_{n}").value for n in ("map_x", "map_y", "direction", "map_index")]
     assert party == [loc & 0x1F, loc >> 5 & 0x1F, loc >> 10 & 3, 0]
     assert ctypes.c_uint16.in_dll(lib, "g_party_champion_count").value == 0

@@ -27,6 +27,7 @@ def lib(tmp_path_factory):
     sources = game_sources()
     subprocess.run(["clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O1", "-dynamiclib", *PORT_INCLUDES, "-o", str(out), *sources], check=True)
     lib = ctypes.CDLL(str(out))
+    lib.gameloop_load_data.restype = ctypes.c_bool
     assert lib.gameloop_load_data(str(GAME).encode())
     return lib
 

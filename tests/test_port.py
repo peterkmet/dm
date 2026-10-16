@@ -27,10 +27,10 @@ def lib():
 
 
 def test_palette(lib):
-    lib.video_argb.restype = ctypes.c_uint32
-    assert lib.video_argb(0x0F80) == 0xFFFF8800
-    assert lib.video_argb(0x0000) == 0xFF000000
-    assert lib.video_argb(0x0FFF) == 0xFFFFFFFF
+    lib.video_convert_argb.restype = ctypes.c_uint32
+    assert lib.video_convert_argb(0x0F80) == 0xFFFF8800
+    assert lib.video_convert_argb(0x0000) == 0xFF000000
+    assert lib.video_convert_argb(0x0FFF) == 0xFFFFFFFF
 
 
 @pytest.mark.parametrize(
