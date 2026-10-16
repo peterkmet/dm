@@ -16,7 +16,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.control import Client
-from dmtest.game import (ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Party, press, recruit_first_champion, set_mode,
+from dmtest.game import (pending_damage, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Party, press, recruit_first_champion, set_mode,
                          start_game)
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
@@ -613,7 +613,7 @@ def test_party_death_during_a_turn_reports_game_over(game):
         set_mode(game, TURNBASED)
         client = Client(game)
         assert client.call(cmd="get_state")["state"]["party"]["dead"] is False
-        pending = (c16 * 4).in_dll(lib, "g_champion_pending_damage")
+        pending = pending_damage(lib)
         pending[0] = game.champions[0].current_health + 100  # applied in the first tick of the turn
         result = client.call(cmd="wait", ticks=50)
         assert result["ok"] and result["game_over"] is True and result["state"]["party"]["dead"] is True

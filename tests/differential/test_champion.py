@@ -130,13 +130,18 @@ def test_damage_matches_original(lib, seed):
 @pytest.mark.parametrize("seed", range(4))
 def test_experience_matches_original(lib, seed):
     w = World(lib, 20 + seed)
-    level_up = (c16 * 16).in_dll(lib, "g_champion_skill_level_up")
+    cs = champions(lib)
+
+    def level_up():
+        return [int(f) for c in cs for f in c.runtime.skill_level_up]
+
     gained = 0
     for round_ in range(200):
         if round_ % 25 == 0:
-            gained += sum(level_up)
+            gained += sum(level_up())
             w.put_champions(4)
-            level_up[:] = [0] * 16
+            for c in cs:
+                c.runtime.skill_level_up[:] = [False] * 4
             w.emu.write(LEVEL_UP_ADDR, bytes(32))
         time = w.rng.randint(0, 3000)
         w.globals(0, time, max(0, time - w.rng.choice([0, 10, 30, 100, 200])), 0, w.rng.choice([0, 0, 1, 3]))
@@ -145,7 +150,7 @@ def test_experience_matches_original(lib, seed):
         lib.champion_add_skill_experience(*args)
         w.emu.call(ADD_EXPERIENCE, [(2, a) for a in args])
         w.check_state()
-        assert list(level_up) == list(struct.unpack(">16h", w.emu.read(LEVEL_UP_ADDR, 32)))
+        assert level_up() == list(struct.unpack(">16h", w.emu.read(LEVEL_UP_ADDR, 32)))
     assert gained > 0
 
 
@@ -253,8 +258,7 @@ def test_recruit_copies_the_mirror_portrait(lib, party):
     x, y = c16(), c16()
     lib.recruit_portrait_origin(party["portrait"], ctypes.byref(x), ctypes.byref(y))
     expected = [sheet.px[(y.value + r) * sheet.w + x.value + c] for r in range(29) for c in range(32)]
-    portraits = (ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits")
-    assert party["portrait"] > 0 and list(portraits[: 32 * 29]) == expected
+    assert party["portrait"] > 0 and list(champions(lib)[0].runtime.portrait) == expected
 
 
 def test_eat_food(lib, party):

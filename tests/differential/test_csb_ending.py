@@ -9,7 +9,7 @@ import struct
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import TimelineEvent, global_type
+from dmtest.game import TimelineEvent, global_type, pending_damage
 from dmtest.lib import clear_folder_hooks, load_lib, set_folder_hooks
 from dmtest.markers import GAME_CSB, ROOT, needs_csb, needs_csb_mini, needs_file
 
@@ -415,7 +415,7 @@ def test_sensor_18_in_a_tick_starts_the_ending(lib, tmp_path, reset):
 
 def test_sensor_18_wins_over_a_party_death_in_the_same_tick(lib, tmp_path, reset):
     load_mini(lib, tmp_path)
-    pending = (c16 * 4).in_dll(lib, "g_champion_pending_damage")
+    pending = pending_damage(lib)
     assert value(lib, "g_party_champion_count", u16).value
     for i in range(value(lib, "g_party_champion_count", u16).value):
         pending[i] = PARTY_KILLING_DAMAGE

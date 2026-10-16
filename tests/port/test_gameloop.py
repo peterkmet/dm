@@ -6,7 +6,7 @@ import subprocess
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import STEP_EAST, STEP_NORTH, Box, Party, start_game
+from dmtest.game import pending_damage, STEP_EAST, STEP_NORTH, Box, Party, start_game
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
 
@@ -281,7 +281,7 @@ def spell_area(game):
 def test_a_party_that_dies_in_one_tick_shows_the_spell_area_of_the_last_caster(game):
     """The caster dies first: the spell area goes to the last champion as it was before its own death in the same tick."""
     lib = game.lib
-    pending = (c16 * 4).in_dll(lib, "g_champion_pending_damage")
+    pending = pending_damage(lib)
     two_champions_with_runes(game)
     pending[0] = game.champions[0].current_health
     lib.gameloop_tick()

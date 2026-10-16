@@ -50,6 +50,17 @@ typedef struct {
     int32_t experience;
 } Skill;
 
+#define CHAMPION_PORTRAIT_WIDTH  32 /* pixels of a champion portrait */
+#define CHAMPION_PORTRAIT_HEIGHT 29 /* rows of a champion portrait */
+
+/* State of a champion that the save file does not hold. */
+typedef struct {
+    int16_t pending_damage;                /* damage of the tick, applied after the tick */
+    uint16_t pending_wounds;               /* WOUND_* bits of the tick */
+    bool skill_level_up[SKILL_BASE_COUNT]; /* the panel shows the base skill in green */
+    uint8_t portrait[CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
+} ChampionRuntime;
+
 typedef struct {
     char name[CHAMPION_NAME_SIZE];
     char title[CHAMPION_TITLE_SIZE];
@@ -74,6 +85,7 @@ typedef struct {
     uint16_t load;
     int16_t shield_defense;
     uint8_t magic_map[6]; /* CSB record bytes 0x118-0x11d, kept as they are */
+    ChampionRuntime runtime;
 } Champion;
 
 extern Champion g_champions[CHAMPION_MAX_COUNT];
@@ -125,16 +137,9 @@ extern int16_t g_leader_index, g_magic_caster_champion_index;
 #define CHAMPION_ATTR_KEEP_MASK       0x007f /* flags that stay after a redraw */
 #define CHAMPION_ATTR_INVENTORY_ALL   0x5f80 /* everything the inventory shows */
 
-#define CHAMPION_PORTRAIT_WIDTH  32 /* pixels of a champion portrait */
-#define CHAMPION_PORTRAIT_HEIGHT 29 /* rows of a champion portrait */
-/* The portrait bitmap of each champion (the portrait bitmap pointer at champion +0x114). */
-extern uint8_t g_champion_portraits[CHAMPION_MAX_COUNT][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 /* Copies portrait portrait_index of graphic 26 into the portrait of the champion. */
 void champion_set_portrait(int16_t champion_index, int16_t portrait_index);
 extern int16_t g_candidate_champion_ordinal; /* 0: no candidate */
-extern int16_t g_champion_pending_damage[CHAMPION_MAX_COUNT];
-extern uint16_t g_champion_pending_wounds[CHAMPION_MAX_COUNT];
-extern int16_t g_champion_skill_level_up[CHAMPION_MAX_COUNT][SKILL_BASE_COUNT];
 /* Champions that died in the tick, one bit per champion index: the user interface releases them after the tick. */
 extern uint16_t g_dead_champions;
 /* The champions that died in the tick (one bit each); the notice is then cleared. */

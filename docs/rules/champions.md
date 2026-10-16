@@ -76,7 +76,7 @@ With the first champion, the time of the last party move becomes the game time.
 - `r1 = random_bit()`, `r2 = random_bit() + 1`, then a third bit for vitality: vitality maximum increases by that bit (and by `bit & level` except for the priest). Anti-fire maximum increases by `~level & random_bit()`.
 - Priest and wizard: extra mana is `min(random_2bits(), level − 1)`. Maximum mana stops at 900. Anti-magic maximum increases by `random_2bits()`.
 - Maximum health increases by `h + random16() % (h / 2 + 1)`, up to 999. Maximum stamina increases by `s + random16() % (s / 2 + 1)`, up to 9999.
-- `g_champion_skill_level_up[champion][base]` becomes 1. The message area shows "<name> JUST GAINED A <SKILL> LEVEL!" in the champion color.
+- `runtime.skill_level_up[base]` of the champion becomes true. The message area shows "<name> JUST GAINED A <SKILL> LEVEL!" in the champion color.
 
 ## Load, movement, dexterity, strength
 

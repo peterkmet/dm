@@ -200,7 +200,7 @@ static void draw_icon(uint16_t champion_index)
 
 Bitmap ui_draw_champion_portrait(int16_t champion_index)
 {
-    return (Bitmap){CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champion_portraits[champion_index]};
+    return (Bitmap){CHAMPION_PORTRAIT_WIDTH, CHAMPION_PORTRAIT_HEIGHT, g_champions[champion_index].runtime.portrait};
 }
 
 void ui_draw_status_box_portrait(int16_t champion_index)
@@ -460,7 +460,8 @@ void ui_draw_champion_skills_and_statistics(void)
             continue;
         snprintf(line, sizeof line, "%s %s", ui_get_skill_rank_name(level),
                  gfx_get_string(tables_get_base_skill_text(k)));
-        text_draw(viewport, x, y, g_champion_skill_level_up[champion_index][k] ? COLOR_GREEN : COLOR_LIGHT_GRAY,
+        text_draw(viewport, x, y,
+                  g_champions[champion_index].runtime.skill_level_up[k] ? COLOR_GREEN : COLOR_LIGHT_GRAY,
                   COLOR_DARKEST_GRAY, line);
         y += MESSAGE_ROW_HEIGHT;
     }

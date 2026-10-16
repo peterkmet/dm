@@ -5,7 +5,7 @@ import struct
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import ACTIVE_GROUP_BYTES, Box, Frames, Game, Location, recruit_and_hold_object, state
+from dmtest.game import ACTIVE_GROUP_BYTES, champions, Box, Frames, Game, Location, recruit_and_hold_object, state
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 from dmtest.savefile import G_LOAD_FROM_MEMORY, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER, SaveFile, decode, encode
@@ -87,14 +87,16 @@ def test_portraits_survive_save_and_load(game, tmp_path):
     assert lib.savegame_save(str(keep).encode()) == 1
     count = u16.in_dll(lib, "g_party_champion_count")
     count.value = 4
-    portraits = (ctypes.c_uint8 * (4 * 32 * 29)).in_dll(lib, "g_champion_portraits")
-    for i in range(len(portraits)):
-        portraits[i] = (i * 7 + i // 32) & 15
-    before = bytes(portraits)
+    cs = champions(lib)
+    for k in range(4):
+        for i in range(32 * 29):
+            cs[k].runtime.portrait[i] = ((k * 32 * 29 + i) * 7 + (k * 32 * 29 + i) // 32) & 15
+    before = b"".join(bytes(c.runtime.portrait) for c in cs)
     assert lib.savegame_save(str(saved).encode()) == 1
-    ctypes.memset(portraits, 0, len(before))
+    for c in cs:
+        ctypes.memset(c.runtime.portrait, 0, 32 * 29)
     assert lib.savegame_load(str(saved).encode()) == LOADED
-    assert count.value == 4 and bytes(portraits) == before
+    assert count.value == 4 and b"".join(bytes(c.runtime.portrait) for c in cs) == before
     assert lib.savegame_load(str(keep).encode()) == LOADED
 
 

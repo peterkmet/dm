@@ -117,11 +117,7 @@ int16_t g_magic_caster_champion_index = -1;
 #define CLASS_FIRST_AMMUNITION 16
 #define CLASS_AMMUNITION_END   112
 
-uint8_t g_champion_portraits[CHAMPION_MAX_COUNT][CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 int16_t g_candidate_champion_ordinal;
-int16_t g_champion_pending_damage[CHAMPION_MAX_COUNT];
-uint16_t g_champion_pending_wounds[CHAMPION_MAX_COUNT];
-int16_t g_champion_skill_level_up[CHAMPION_MAX_COUNT][SKILL_BASE_COUNT];
 uint16_t g_dead_champions;
 
 /* Offsets of the original record. */
@@ -179,7 +175,9 @@ void champion_pack(const Champion *c, uint8_t *out)
 
 void champion_unpack(const uint8_t *in, Champion *c)
 {
+    ChampionRuntime runtime = c->runtime; /* the save file does not hold it */
     memset(c, 0, sizeof *c);
+    c->runtime = runtime;
     memcpy(c->name, in + CHAMPION_RECORD_NAME, sizeof c->name);
     memcpy(c->title, in + CHAMPION_RECORD_TITLE, sizeof c->title);
     c->direction = in[CHAMPION_RECORD_DIRECTION];
@@ -349,7 +347,7 @@ static void add_candidate_possessions(uint16_t champion_index)
 void champion_set_portrait(int16_t champion_index, int16_t portrait_index)
 {
     const Bitmap *portraits = gfx_get_bitmap(GFX_CHAMPION_PORTRAITS);
-    uint8_t *px = g_champion_portraits[champion_index];
+    uint8_t *px = g_champions[champion_index].runtime.portrait;
     int16_t x, y;
     memset(px, 0, CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT);
     recruit_portrait_origin(portrait_index, &x, &y);
@@ -369,9 +367,9 @@ void champion_add_candidate_to_party(int16_t portrait_index)
     if (!g_leader_empty_handed || g_party_champion_count >= CHAMPION_MAX_COUNT)
         return;
     uint16_t index = g_party_champion_count;
-    champion_set_portrait(index, portrait_index);
     Champion *c = &g_champions[index];
     memset(c, 0, sizeof *c);
+    champion_set_portrait(index, portrait_index);
     c->action_index = ACTION_NONE;
     c->enable_action_event_index = -1;
     c->hide_damage_received_event_index = -1;
@@ -591,7 +589,7 @@ static void gain_level(uint16_t champion_index, uint16_t base, uint16_t level)
     if (c->maximum_stamina > MAXIMUM_STAMINA)
         c->maximum_stamina = MAXIMUM_STAMINA;
     c->attributes |= CHAMPION_ATTR_STATISTICS;
-    g_champion_skill_level_up[champion_index][base] = 1;
+    g_champions[champion_index].runtime.skill_level_up[base] = true;
     print_champion_message(champion_index, TEXT_LEVEL_GAINED + 2 * base);
 }
 
@@ -784,14 +782,14 @@ int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t a
             champion_index, STAT_VITALITY, (random16() & WOUND_THRESHOLD_RANDOM_MASK) + WOUND_THRESHOLD_BASE);
         if (threshold < attack)
             do {
-                g_champion_pending_wounds[champion_index] |=
+                g_champions[champion_index].runtime.pending_wounds |=
                     allowed_wounds & 1 << (random16() & WOUND_SLOT_RANDOM_MASK);
                 threshold *= 2;
             } while (threshold < attack && threshold);
         if (g_party_is_sleeping)
             champion_wake_up();
     }
-    g_champion_pending_damage[champion_index] += attack;
+    g_champions[champion_index].runtime.pending_damage += attack;
     return attack;
 }
 
@@ -799,13 +797,13 @@ void champion_apply_and_draw_pending_damage_and_wounds(void)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         Champion *c = &g_champions[i];
-        uint16_t wounds = g_champion_pending_wounds[i];
+        uint16_t wounds = c->runtime.pending_wounds;
         c->wounds |= wounds;
-        g_champion_pending_wounds[i] = 0;
-        int16_t damage = g_champion_pending_damage[i];
+        c->runtime.pending_wounds = 0;
+        int16_t damage = c->runtime.pending_damage;
         if (!damage)
             continue;
-        g_champion_pending_damage[i] = 0;
+        c->runtime.pending_damage = 0;
         if (!c->current_health)
             continue;
         int16_t health = c->current_health - damage;

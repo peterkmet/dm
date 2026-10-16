@@ -9,7 +9,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import need, s16, var
-from dmtest.game import (Location, Party, Position, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
+from dmtest.game import (pending_damage, Location, Party, Position, World, add_test_champion, events, new_game, place_party, setup_creatures, skeleton_map_and_squares,
                          things_of_type, tick)
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
@@ -239,7 +239,7 @@ def test_group_attacks_adjacent_party(lib):
     _, party_square, facing = mummy_in_corridor(lib, 1)
     champion = add_test_champion(lib)
     place_party(lib, 1, *party_square, facing)
-    pending = (c16 * 4).in_dll(lib, "g_champion_pending_damage")
+    pending = pending_damage(lib)
     hit = False
     for _ in range(600):
         tick(lib)
