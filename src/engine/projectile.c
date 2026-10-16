@@ -78,7 +78,8 @@ void projectile_create(uint16_t thing, int16_t x, int16_t y, int16_t cell, int16
     uint16_t projectile = rec_find_unused_thing(THING_PROJECTILE);
     if (projectile == THING_NONE) {
         if (THING_TYPE(thing) != THING_EXPLOSION)
-            move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, x, y);
+            move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = x, .to.y = y, .enters = true},
+                                 NULL);
         return;
     }
     projectile = THING_WITH_CELL(projectile, cell);
@@ -126,7 +127,7 @@ static void explosion_damage_square(uint16_t explosion_thing, uint16_t attack, i
         damage >>= 2;
     int16_t resisted = damage - random16() % (resistance * 2 + 1);
     if (resisted)
-        g_creature_damage_outcome = group_get_damage_all_creatures_outcome(group, x, y, resisted, true);
+        g_creature_damage_outcome = group_get_damage_all_creatures_outcome(group, x, y, resisted);
 }
 
 void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t x_combo, uint16_t y_combo, int16_t cell)
@@ -178,7 +179,12 @@ void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x
     uint16_t thing = rec_projectile_slot(projectile);
     if (THING_TYPE(thing) != THING_EXPLOSION) {
         if (possessing_group == THING_NONE) {
-            move_get_move_result(THING_WITH_CELL(thing, THING_CELL(projectile)), -2, 0, x, y);
+            move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, THING_CELL(projectile)),
+                                         .to.x = x,
+                                         .to.y = y,
+                                         .enters = true,
+                                         .keeps_cell = true},
+                                 NULL);
         } else if (rec_group_possessions(possessing_group) == THING_ENDOFLIST) {
             rec_thing_set_next(thing, THING_ENDOFLIST);
             rec_group_set_possessions(possessing_group, thing);
@@ -259,9 +265,9 @@ static int16_t hit_creature(uint16_t projectile, uint16_t thing, bool is_explosi
     if (!attack)
         return 1;
     uint16_t poison = group_get_resistance_adjusted_poison_attack(creature_type, g_projectile_poison_attack);
-    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, x, y, attack + poison, true);
+    int16_t outcome = group_get_damage_creature_outcome(group, ordinal - 1, (Location){x, y}, attack + poison);
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
-        group_process_reaction_event(x, y, REACTION_HIT_BY_PROJECTILE, 0);
+        group_process_reaction_event((Location){x, y}, REACTION_HIT_BY_PROJECTILE);
     g_creature_damage_outcome = outcome;
     if (!is_explosion && outcome == OUTCOME_NO_CREATURE_KILLED && THING_TYPE(thing) == THING_WEAPON &&
         (info->attributes & CREATURE_KEEPS_THROWN_SHARP_WEAPONS)) {
@@ -453,11 +459,10 @@ void projectile_process_move_event(TimelineEvent *event)
     }
     uint16_t direction = projectile_event_direction(&next);
     bool leaves_square = cell == direction || cell == direction_right(direction);
-    int16_t dst_x = x;
-    int16_t dst_y = y;
+    Location to = {x, y};
     if (leaves_square) {
-        map_step(direction, 1, 0, &dst_x, &dst_y);
-        uint8_t square = map_get_square(dst_x, dst_y);
+        map_step(direction, 1, 0, &to.x, &to.y);
+        uint8_t square = map_get_square(to.x, to.y);
         int16_t type = rec_square_type(square);
         int16_t solid =
             type == SQUARE_WALL || (type == SQUARE_FAKE_WALL && !(square & (FAKE_WALL_OPEN | FAKE_WALL_IMAGINARY))) ||
@@ -474,10 +479,11 @@ void projectile_process_move_event(TimelineEvent *event)
         map_unlink_thing_from_list(moved, 0, x, y);
         map_link_thing_to_list(moved, 0, x, y);
     } else {
-        move_get_move_result(moved, x, y, dst_x, dst_y);
-        next.c = projectile_event_c(g_move_result_map_x, g_move_result_map_y, g_move_result_direction, step_energy);
-        moved = THING_WITH_CELL(projectile, g_move_result_cell);
-        next.map_time = EVENT_MAP_TIME(g_move_result_map_index, next.map_time & EVENT_TIME_MASK);
+        MoveDestination destination;
+        move_get_move_result(&(Move){.thing = moved, .from.x = x, .from.y = y, .to = to}, &destination);
+        next.c = projectile_event_c(destination.x, destination.y, destination.direction, step_energy);
+        moved = THING_WITH_CELL(projectile, destination.cell);
+        next.map_time = EVENT_MAP_TIME(destination.map, next.map_time & EVENT_TIME_MASK);
     }
     next.map_time +=
         g_current_map_index == g_party_map_index ? PROJECTILE_STEP_TICKS_PARTY_MAP : PROJECTILE_STEP_TICKS_OTHER_MAP;
@@ -489,16 +495,17 @@ void projectile_process_move_event(TimelineEvent *event)
 static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t damage)
 {
     if (rec_group_creature_type(group) != CREATURE_MATERIALIZER || g_current_map_index != g_party_map_index) {
-        group_get_damage_all_creatures_outcome(group, x, y, damage, true);
+        group_get_damage_all_creatures_outcome(group, x, y, damage);
         return;
     }
     for (int16_t i = rec_group_last_creature(group); i >= 0; i--) {
-        if (!(group_active(group)->aspect[i] & ASPECT_ATTACKING))
+        if (!(group_get_active(group)->aspect[i] & ASPECT_ATTACKING))
             continue;
         uint16_t spread = random16();
         uint16_t extra = random_2bits();
         int16_t eighth = damage >> 3;
-        group_get_damage_creature_outcome(group, i, x, y, extra + (damage - eighth) + spread % (eighth * 2 + 1), true);
+        group_get_damage_creature_outcome(group, i, (Location){x, y},
+                                          extra + (damage - eighth) + spread % (eighth * 2 + 1));
     }
 }
 
@@ -521,10 +528,9 @@ void explosion_process_step_event(TimelineEvent *event)
             champion_damage_all(damage, 0, ATTACK_RAW);
         } else if (group != THING_ENDOFLIST) {
             damage = group_get_resistance_adjusted_poison_attack(rec_group_creature_type(group), damage);
-            if (damage &&
-                group_get_damage_all_creatures_outcome(group, x, y, damage, true) != OUTCOME_ALL_CREATURES_KILLED &&
+            if (damage && group_get_damage_all_creatures_outcome(group, x, y, damage) != OUTCOME_ALL_CREATURES_KILLED &&
                 damage > POISON_REACTION_MIN_DAMAGE)
-                group_process_reaction_event(x, y, REACTION_DANGER_ON_SQUARE, false);
+                group_process_reaction_event((Location){x, y}, REACTION_DANGER_ON_SQUARE);
         }
         if (attack > POISON_CLOUD_MIN_ATTACK) {
             rec_explosion_set_attack(explosion, attack - POISON_CLOUD_FADE);
@@ -619,7 +625,7 @@ void projectile_fluxcage_action(int16_t x, int16_t y)
                 projectile_is_fluxcage_on_square(x + 1, lord_y);
     }
     if (cages == 2)
-        group_process_reaction_event(lord_x, lord_y, REACTION_DANGER_ON_SQUARE, 0);
+        group_process_reaction_event((Location){lord_x, lord_y}, REACTION_DANGER_ON_SQUARE);
 }
 
 void projectile_fuse_action(int16_t x, int16_t y)
@@ -664,7 +670,8 @@ void projectile_fuse_action(int16_t x, int16_t y)
             break;
         }
     } while (!map_is_square_open(escape_x, escape_y));
-    if (!move_get_move_result(lord_chaos, x, y, escape_x, escape_y))
+    if (move_get_move_result(&(Move){.thing = lord_chaos, .from.x = x, .from.y = y, .to.x = escape_x, .to.y = escape_y},
+                             NULL) == MOVE_RESULT_DONE)
         group_start_wandering(escape_x, escape_y);
 }
 
@@ -696,7 +703,8 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
         return false;
     bool test_destination = false;
     if (dst_x >= 0 && group_get_square_distance(src_x, src_y, dst_x, dst_y) == 1) {
-        uint16_t primary = group_get_directions_to_destination(src_x, src_y, dst_x, dst_y);
+        uint16_t primary =
+            group_get_directions_to_destination((Location){src_x, src_y}, (Location){dst_x, dst_y}).primary;
         uint16_t next = direction_right(primary);
         crossed[direction_left(primary)] = occupied[primary];
         crossed[direction_right(next)] = occupied[next];

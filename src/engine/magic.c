@@ -220,7 +220,8 @@ static void cast_zokathra(uint16_t champion_index)
     if (slot >= 0) {
         inventory_add_object_in_slot(champion_index, thing, slot);
     } else {
-        move_get_move_result(thing, -1, 0, g_party_map_x, g_party_map_y);
+        move_get_move_result(&(Move){.thing = thing, .to.x = g_party_map_x, .to.y = g_party_map_y, .enters = true},
+                             NULL);
     }
 }
 

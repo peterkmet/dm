@@ -203,7 +203,7 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 - `group_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
 - `get_square_distance`: Manhattan distance.
 - `group_is_destination_visible_from_source(direction, sx, sy, dx, dy)`: true when the destination is in the 90° cone in that direction.
-- `group_get_directions_to_destination(sx, sy, dx, dy)` returns the main direction and writes the second direction to `g_group_secondary_direction`.
+- `group_get_directions_to_destination(sx, sy, dx, dy)` returns the main direction and writes the second direction to `g_group_secondary_direction`. The port returns both in a `DirectionPair`.
 - `group_set_ordered_cells_to_attack` copies 4 cells from `g_ordered_cells_to_attack[direction * 2 + side]`.
 - `group_get_champion_damage(group, champion)`: creature attack on a champion. It uses dexterity, luck, the map difficulty (`map[0x0c] >> 4`), invisibility, and the creature wound probabilities. It adds poison.
 - `group_get_melee_action_damage(...)`: champion melee attack on a creature.
@@ -279,7 +279,7 @@ Algorithm:
    - Stairs (type 3) for things other than the party and projectiles: go one level up or down (bit 2 clear: down), then step out in the stairs exit direction. The new cell faces away from the stairs.
    - Any other square ends the loop.
 4. A group that died, or that is not allowed on the target map (`is_creature_allowed_on_map`), drops its possessions and is deleted.
-5. Store the result in `g_move_result_map_x/y`, `g_move_result_map_index`, `g_move_result_cell`, and `g_move_result_direction`.
+5. Store the result in `g_move_result_map_x/y`, `g_move_result_map_index`, `g_move_result_cell`, and `g_move_result_direction`. The port returns them in a `MoveDestination`, and takes the move as a `Move` request.
 6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `party_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `champion_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
 7. Remove the thing from the source with `sensor_process_thing_addition_or_removal(..., add=0)`. A levitating thing skips sensors and only unlinks.
 8. Add the thing at the destination:
@@ -409,7 +409,7 @@ Square event effects: 0 = set (open, activate), 1 = clear (close, deactivate), 2
 - Door animation (1): the door state moves one step per event: effect 0 decreases (opens), effect 1 increases (closes). Each step plays sound 2 and re-adds the event at time + 1, until state 0 or 4. When the door closes on the party, the party takes `champion_damage_all(5, 4, 2)` and the door goes back one step. A closing door hits a group that is not non-material when the creature height is at least the door state (a vertical door uses creature attributes bits 7–8, else height 1): 5 damage, `group_process_events_29_to_41(x, y, -3, 0)`, sound 4.
 - Fake wall (7): effect 0 sets bit 2. Effect 1 clears it. Closing waits (re-adds at time + 1) while the party or a material group is on the square.
 - Teleporter (8), pit (9): effect 0 sets bit 3 and calls `timeline_move_teleporter_or_pit_square_things`. Effect 1 clears bit 3. The two handlers have identical code.
-- `timeline_move_teleporter_or_pit_square_things(x, y)` re-runs `move_get_move_result(thing, x, y, x, y)` for the party, the group, and each object. Projectiles and explosions get their event data updated from the `g_move_result_*` globals.
+- `timeline_move_teleporter_or_pit_square_things(x, y)` re-runs `move_get_move_result(thing, x, y, x, y)` for the party, the group, and each object. Projectiles and explosions get their event data updated from the `g_move_result_*` globals (in the port: from the `MoveDestination`).
 - Corridor (5): text things toggle visibility (byte 3 bit 0). The party sees new text as a message. Group generator sensors (type 6) create a group with `group_get_generated`, play sound 14 when audible, and disable themselves. A non-once-only generator re-enables through event 65 after its regeneration delay.
 - Wall (6): text things in the event cell toggle. Counter sensors (6) count up (effect 0, max 511) or down, and trigger at 0. AND/OR gates (5) set or clear bit `cell` of the data, and compare bits 4–7 with bits 0–3. Launchers in the event cell call `timeline_trigger_projectile_launcher`. Sensor 18 waits `delay × 60` frames, sets `g_game_won`, and calls `endgame(1)`.
 - `timeline_trigger_projectile_launcher(sensor, event)`: types 7, 8, 14 launch one projectile, types 9, 10, 15 launch two. Types 8 and 10 launch explosions (`data − 128`). Types 14 and 15 launch objects from the launcher square (cells in front). Types 7 and 9 create objects with `get_object_for_launcher_or_generator`. Kinetic energy is word 6 bits 4–11. Step energy is word 6 bits 12–15. The attack is 100. A single projectile picks a random side cell. The projectile starts on the adjacent square in direction `cell` with `g_create_launcher_projectile` set.

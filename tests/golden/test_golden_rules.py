@@ -171,7 +171,7 @@ def test_turn_to_attacker(game):
     add_second_champion(game)  # cell 1: the east side of the party that faces north
     m, x, y, d = ATTACKED
     place_party(game, m, x, y, d)
-    assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 3, x + 1, y) == 0xFFFF  # a skeleton east of the party
+    assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 3, Location(x + 1, y)) == 0xFFFF  # a skeleton east of the party
     second = game.champions[1]
     assert game.until(lambda: second.direction != d)
     got = [snapshot(game)]
@@ -293,7 +293,7 @@ def test_grab_under_a_creature(game):
         game.click_zone(C.ZONE_DROP_CELL_FIRST + cell)
         assert game.value("g_leader_hand_object", u16) == NONE
     lib.map_find_thing.restype = u16
-    lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 3, fx, fy)
+    lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 3, Location(fx, fy))
     group = lib.map_find_thing(Location(fx, fy), C.THING_GROUP)
     lib.group_set_cells(group, (VIEW_CELL_FRONT_FIRST + d) % 4, m)  # the skeleton stands in view cell 2 only
     got = []

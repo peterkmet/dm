@@ -267,13 +267,7 @@ bool action_is_group_frightened_by_action(uint16_t champion_index, int16_t actio
     if (roll < fear || fear == FEAR_RESISTANCE_NONE_FEARLESS) {
         experience >>= 1;
     } else {
-        ActiveGroup *active = group_active(group);
-        if (rec_group_behavior(group) == BEHAVIOR_ATTACK) {
-            group_stop_attacking(active, x, y);
-            group_start_wandering(x, y);
-        }
-        rec_group_set_behavior(group, BEHAVIOR_FLEE);
-        active->delay_fleeing = (FLEE_DELAY_FEAR_LIMIT - fear) * FLEE_DELAY_FACTOR / info->movement_ticks;
+        group_frighten(group, x, y, (FLEE_DELAY_FEAR_LIMIT - fear) * FLEE_DELAY_FACTOR / info->movement_ticks);
         frightened = true;
     }
     champion_add_skill_experience(champion_index, SKILL_INFLUENCE, experience);
@@ -304,8 +298,16 @@ bool action_is_melee_action_performed(uint16_t champion_index, int16_t action, i
     uint16_t hit_probability = info->hit_probability;
     if (object_get_icon_index(c->slots[SLOT_HAND_ACTION]) == ICON_VORPAL_BLADE || action == ACTION_DISRUPT)
         hit_probability |= HIT_PROBABILITY_ALWAYS_HITS;
-    g_action_damage = group_get_melee_action_damage(champion_index, g_action_target_group_thing, ordinal - 1, x, y,
-                                                    hit_probability, info->damage_factor, skill_index);
+    MeleeAttack attack = {
+        .champion_index = champion_index,
+        .group = g_action_target_group_thing,
+        .creature_index = ordinal - 1,
+        .at = {x, y},
+        .hit_probability = hit_probability,
+        .damage_factor = info->damage_factor,
+        .skill_index = skill_index
+    };
+    g_action_damage = group_get_melee_action_damage(&attack);
     return true;
 }
 
@@ -421,9 +423,13 @@ static bool is_climbed_down(void)
     if (rec_square_type(map_get_square(x, y)) != SQUARE_PIT ||
         map_find_thing((Location){x, y}, THING_GROUP) != THING_ENDOFLIST)
         return false;
-    g_use_rope_to_climb_down_pit = true;
-    move_get_move_result(THING_NONE, g_party_map_x, g_party_map_y, x, y);
-    g_use_rope_to_climb_down_pit = false;
+    move_get_move_result(&(Move){.thing = THING_NONE,
+                                 .from.x = g_party_map_x,
+                                 .from.y = g_party_map_y,
+                                 .to.x = x,
+                                 .to.y = y,
+                                 .uses_rope = true},
+                         NULL);
     return true;
 }
 

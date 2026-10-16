@@ -4,7 +4,7 @@
 import ctypes
 
 from dmtest import constants as C
-from dmtest.game import Box, Game, recruit_and_hold_object
+from dmtest.game import Box, Game, Location, recruit_and_hold_object
 from dmtest.lib import load_lib
 from dmtest.markers import GAME
 
@@ -31,7 +31,7 @@ def golden_game():
     lib.free.argtypes = [ctypes.c_void_p]
     lib.inventory_get_object_weight.restype = u16
     lib.group_get_generated.restype = u16
-    lib.group_get_generated.argtypes = [u16, c16, u16, c16, c16, c16]
+    lib.group_get_generated.argtypes = [u16, c16, u16, c16, Location]
     lib.gfx_get_action_name.restype = ctypes.c_char_p
     assert lib.gameloop_load_data(str(GAME).encode())
     assert lib.gameloop_start_new_game(str(GAME).encode())

@@ -2,18 +2,6 @@
 
 User wishes for future versions. Not planned yet.
 
-## Uninitialized bytes of free active groups in a save
-
-- `group_init_active_groups` (`src/engine/group.c`) allocates `g_active_groups` with `malloc` and sets only `group_index = -1` in each entry. The other bytes of a free entry are not initialized.
-- `pack_active_group` (`src/engine/savegame.c`) copies every entry into save block 1, the free entries too. Two saves of the same game can have different bytes in block 1.
-- Change: clear the array after `malloc` (`calloc`, or `memset` to 0), then set `group_index = -1`. Game behavior stays; saves become deterministic.
-- Then remove `scrub_free_groups` from `tests/golden/test_golden_save.py` and `tests/golden/test_golden_rules.py`; the golden files stay the same.
-
-## NULL read of creature attributes on a corrupt dungeon
-
-- `map_get_creature_attributes` (`src/engine/map.c`) reads the creature table through the cached accessor of `data/tables`. A creature type above the table (a corrupt dungeon) reads a NULL pointer.
-- Change: a range check with a defined value, a short comment, and a deviation entry in the formats doc.
-
 ## Truth values that are still int16_t
 
 - `savegame_quick_save` (`src/engine/savegame.h`) returns 1 or 0: make it `bool` (coding standard rule 3). `savegame_quick_load` keeps its `SAVEGAME_*` codes.

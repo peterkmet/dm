@@ -105,20 +105,57 @@ ActiveGroup *g_active_groups;
 uint16_t g_active_group_count, g_max_active_group_count;
 int32_t g_last_creature_attack_time;
 int16_t g_creature_damage_outcome;
-int16_t g_group_secondary_direction;
-int16_t g_current_group_map_x, g_current_group_map_y;
-uint16_t g_current_group_thing, g_current_group_distance_to_party;
-int16_t g_current_group_primary_direction_to_party, g_current_group_secondary_direction_to_party;
 
-static uint8_t movement_tested_directions[4];
-static uint8_t flux_cages[4];
-static int16_t flux_cage_count;
-static bool movement_blocked_by_wall, movement_blocked_by_door, movement_blocked_by_party;
-static uint16_t movement_blocked_by_group;
-static int16_t drop_moving_creature_possessions_cell_count;
-static uint8_t drop_moving_creature_possessions_cells[GROUP_MAX_CREATURES];
-static uint32_t set_direction_time;
-static const ActiveGroup *set_direction_group;
+/* The last pair turn of a half-size pair: two creatures turn together once per game tick. */
+static struct {
+    uint32_t time;
+    const ActiveGroup *group;
+} set_direction;
+/* The group of the last group turn. Kept quirk: a group that becomes active plays its flip sound at this
+   square, and a group off the party map tests teleporters with this thing, as in the original. */
+static struct {
+    uint16_t thing;
+    Location at;
+} last_turn;
+/* Kept quirk: the party-blocked result of the last step test. random_move reads it also when it skips the test, as
+   in the original; it survives between turns and group_reset does not clear it. */
+static bool last_blocked_by_party;
+/* The entry for a cells byte beyond the table (a corrupt save): reads give a free entry, writes are lost. */
+static ActiveGroup corrupt_entry;
+
+/* The result of one step test of a group. */
+typedef struct {
+    bool possible;
+    bool blocked_by_party;
+} MovementTest;
+
+/* State of one group turn (a reaction or a group event). */
+typedef struct {
+    int16_t x, y;
+    int16_t event_type; /* reactions are REACTION_* here */
+    uint16_t ticks;
+    uint16_t group;
+    const CreatureInfo *info;
+    ActiveGroup *active;
+    TimelineEvent next;             /* the next event of the group */
+    uint32_t aspect_update_time;    /* 0: the aspect of the whole group is updated */
+    int16_t ticks_delay_next_event; /* 0: ticks delay the aspect update instead (behavior events) */
+    int16_t ticks_since_last_move;  /* -1: the group waits to move */
+    int16_t movement_ticks;
+    int16_t archenemy;
+    uint16_t last_creature_index, size;
+    int16_t distance_x, distance_y;
+    int16_t moved;
+    int16_t was_attacking;
+    uint16_t visible_distance;
+    int16_t direction;           /* the direction the group wants to move in */
+    int16_t secondary_direction; /* the second best direction toward the same square */
+    uint16_t distance_to_party;
+    DirectionPair directions_to_party;
+    uint8_t tested_directions[DIRECTION_COUNT];
+    uint8_t flux_cages[DIRECTION_COUNT];
+    int16_t flux_cage_count;
+} GroupTurn;
 
 static uint16_t group_get_active_group_thing(const ActiveGroup *active)
 {
@@ -139,10 +176,29 @@ static int16_t get_creature_movement_sound(uint16_t creature_type)
     return tables_get_creature_sound(ordinal - 1)->movement;
 }
 
+/* The active group entry of a group on the party map. Deviation: the original reads beyond the table when the
+   cells byte of the record is too large. */
+static ActiveGroup *active_of(uint16_t group)
+{
+    uint16_t index = rec_group_cells(group);
+    if (index >= g_max_active_group_count) {
+        corrupt_entry = (ActiveGroup){.group_index = -1};
+        return &corrupt_entry;
+    }
+    return &g_active_groups[index];
+}
+
+const ActiveGroup *group_get_active(uint16_t group)
+{
+    if (!g_active_groups)
+        return NULL;
+    return active_of(group);
+}
+
 void group_allocate_active(uint16_t count)
 {
     free(g_active_groups);
-    g_active_groups = malloc(count * sizeof *g_active_groups);
+    g_active_groups = calloc(count, sizeof *g_active_groups);
     if (!g_active_groups)
         game_fatal(SYSTEM_ERROR_MEMORY);
     for (uint16_t i = 0; i < count; i++)
@@ -157,13 +213,13 @@ void group_init_active_groups(void)
 
 uint8_t group_get_cells(uint16_t group, int16_t map)
 {
-    return map == g_party_map_index ? group_active(group)->cells : rec_group_cells(group);
+    return map == g_party_map_index ? active_of(group)->cells : rec_group_cells(group);
 }
 
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map)
 {
     if (map == g_party_map_index)
-        group_active(group)->cells = cells;
+        active_of(group)->cells = cells;
     else
         rec_group_set_cells(group, cells);
 }
@@ -171,7 +227,7 @@ void group_set_cells(uint16_t group, uint8_t cells, int16_t map)
 uint8_t group_get_directions(uint16_t group, int16_t map)
 {
     if (map == g_party_map_index)
-        return group_active(group)->directions;
+        return active_of(group)->directions;
     uint16_t direction = rec_group_direction(group);
     return direction | direction << 2 | direction << 4 | direction << 6;
 }
@@ -179,7 +235,7 @@ uint8_t group_get_directions(uint16_t group, int16_t map)
 void group_set_directions(uint16_t group, uint8_t directions, int16_t map)
 {
     if (map == g_party_map_index)
-        group_active(group)->directions = directions;
+        active_of(group)->directions = directions;
     else
         rec_group_set_direction(group, directions);
 }
@@ -216,7 +272,7 @@ int16_t group_get_melee_target_creature_ordinal(int16_t group_x, int16_t group_y
     if (group == THING_ENDOFLIST)
         return 0;
     uint8_t cells[4];
-    group_set_ordered_cells_to_attack(cells, group_x, group_y, party_x, party_y, champion_cell);
+    group_set_ordered_cells_to_attack(cells, (Location){group_x, group_y}, (Location){party_x, party_y}, champion_cell);
     for (int16_t i = 0; i < 4; i++) {
         int16_t ordinal = group_get_creature_ordinal_in_cell(group, cells[i]);
         if (ordinal)
@@ -258,8 +314,8 @@ uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t crea
             } else if (type == CREATURE_COUATL) {
                 if (random_bit()) {
                     aspect ^= ASPECT_FLIPPED;
-                    sound_request_play(get_creature_movement_sound(CREATURE_COUATL), g_current_group_map_x,
-                                       g_current_group_map_y, SOUND_MODE_AFTER_TICK);
+                    sound_request_play(get_creature_movement_sound(CREATURE_COUATL), last_turn.at.x, last_turn.at.y,
+                                       SOUND_MODE_AFTER_TICK);
                 }
             } else if (random_bit()) {
                 aspect |= ASPECT_FLIPPED;
@@ -273,8 +329,7 @@ uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t crea
             } else if ((aspect & ASPECT_ATTACKING) && type == CREATURE_ANIMATED_ARMOUR) {
                 if (random_bit()) {
                     aspect ^= ASPECT_FLIPPED;
-                    sound_request_play(SOUND_SWING, g_current_group_map_x, g_current_group_map_y,
-                                       SOUND_MODE_AFTER_TICK);
+                    sound_request_play(SOUND_SWING, last_turn.at.x, last_turn.at.y, SOUND_MODE_AFTER_TICK);
                 }
             } else if (!(aspect & ASPECT_ATTACKING) || !(graphic & GRAPHIC_FLIP_DURING_ATTACK)) {
                 if (random_bit())
@@ -318,11 +373,23 @@ void group_delete_events(int16_t x, int16_t y)
     }
 }
 
-void group_stop_attacking(ActiveGroup *active, int16_t x, int16_t y)
+/* The creatures of the group stop their attack, and its pending group events go. */
+static void stop_attacking(ActiveGroup *active, int16_t x, int16_t y)
 {
     for (int16_t i = 0; i < GROUP_MAX_CREATURES; i++)
         active->aspect[i] &= ~ASPECT_ATTACKING;
     group_delete_events(x, y);
+}
+
+void group_frighten(uint16_t group, int16_t x, int16_t y, uint8_t delay_fleeing)
+{
+    ActiveGroup *active = active_of(group);
+    if (rec_group_behavior(group) == BEHAVIOR_ATTACK) {
+        stop_attacking(active, x, y);
+        group_start_wandering(x, y);
+    }
+    rec_group_set_behavior(group, BEHAVIOR_FLEE);
+    active->delay_fleeing = delay_fleeing;
 }
 
 void group_add_active_group(uint16_t group, int16_t x, int16_t y)
@@ -388,7 +455,7 @@ void group_add_all_active_groups(void)
 }
 
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index,
-                             int16_t direction, int16_t x, int16_t y)
+                             int16_t direction, Location at)
 {
     /* 16-bit wrap as in the original */
     if ((uint16_t)(g_max_active_group_count - ACTIVE_GROUP_RESERVE) <= g_active_group_count &&
@@ -419,9 +486,9 @@ uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, 
         }
     }
     rec_group_set_cells(group, cells);
-    if (move_get_move_result(group, -1, 0, x, y))
+    if (move_get_move_result(&(Move){.thing = group, .to = at, .enters = true}, NULL) != MOVE_RESULT_DONE)
         return THING_NONE;
-    sound_request_play(SOUND_BUZZ, x, y, SOUND_MODE_AFTER_TICK);
+    sound_request_play(SOUND_BUZZ, at.x, at.y, SOUND_MODE_AFTER_TICK);
     return group;
 }
 
@@ -440,7 +507,7 @@ void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y)
     if (!multiplier)
         multiplier = rec_current_map_difficulty();
     int16_t direction = random_2bits();
-    group_get_generated(rec_sensor_creature_type(sensor), multiplier, last_creature_index, direction, x, y);
+    group_get_generated(rec_sensor_creature_type(sensor), multiplier, last_creature_index, direction, (Location){x, y});
 }
 
 /* First word of the fixed possession list of each creature type, or -1 (the switch of the original). */
@@ -501,19 +568,18 @@ void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, in
         uint16_t drop_cell = cell;
         if (cell == CELL_CENTERED || random_2bits() == 0)
             drop_cell = random_2bits();
-        move_get_move_result(THING_WITH_CELL(thing, drop_cell), -1, 0, x, y);
+        move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, drop_cell), .to.x = x, .to.y = y, .enters = true},
+                             NULL);
     }
     sound_request_play(weapon_dropped ? SOUND_METALLIC_THUD : SOUND_WOODEN_THUD, x, y, sound_mode);
 }
 
-void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y)
+void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y, GroupFallDrops *drops)
 {
     uint16_t type = rec_group_creature_type(group);
-    while (drop_moving_creature_possessions_cell_count) {
-        drop_moving_creature_possessions_cell_count--;
-        group_drop_creature_fixed_possessions(
-            type, x, y, drop_moving_creature_possessions_cells[drop_moving_creature_possessions_cell_count],
-            SOUND_MODE_ONE_TICK_LATER);
+    while (drops->count) {
+        drops->count--;
+        group_drop_creature_fixed_possessions(type, x, y, drops->cells[drops->count], SOUND_MODE_ONE_TICK_LATER);
     }
 }
 
@@ -536,7 +602,8 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
         uint16_t cell = random_2bits();
         if (THING_TYPE(thing) == THING_WEAPON)
             weapon_dropped = true;
-        move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, x, y);
+        move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = x, .to.y = y, .enters = true},
+                             NULL);
         thing = next;
     } while (next != THING_ENDOFLIST);
     if (sound_mode >= 0)
@@ -550,7 +617,7 @@ void group_delete(int16_t x, int16_t y)
         return;
     for (int16_t i = 0; i < GROUP_MAX_CREATURES; i++)
         rec_group_set_health(group, i, 0);
-    move_get_move_result(group, x, y, -1, 0);
+    move_get_move_result(&(Move){.thing = group, .from.x = x, .from.y = y, .leaves = true}, NULL);
     rec_thing_set_free(group);
     if (g_current_map_index == g_party_map_index) {
         g_active_groups[rec_group_cells(group)].group_index = -1;
@@ -579,10 +646,10 @@ static void shift_creature_events(int16_t x, int16_t y, uint16_t dead_creature)
     }
 }
 
-/* One creature of a group of more than one dies: it drops its fixed possessions, an attacking group may flee, and
-   the creatures after it move down one place. */
-static void remove_dead_creature(uint16_t group, uint16_t creature_index, int16_t x, int16_t y, uint16_t cell,
-                                 bool notify)
+/* One creature of a group of more than one dies: it drops its fixed possessions (in a fall, its cell goes to drops),
+   an attacking group may flee, and the creatures after it move down one place. */
+static void remove_dead_creature(uint16_t group, uint16_t creature_index, Location at, uint16_t cell,
+                                 GroupFallDrops *drops)
 {
     uint16_t type = rec_group_creature_type(group);
     const CreatureInfo *info = tables_get_creature_info(type);
@@ -590,15 +657,15 @@ static void remove_dead_creature(uint16_t group, uint16_t creature_index, int16_
     uint16_t last = rec_group_last_creature(group);
     uint16_t directions = group_get_directions(group, g_current_map_index);
     if (info->attributes & CREATURE_DROPS_FIXED_POSSESSIONS) {
-        if (notify)
-            group_drop_creature_fixed_possessions(type, x, y, cell, SOUND_MODE_ONE_TICK_LATER);
+        if (!drops)
+            group_drop_creature_fixed_possessions(type, at.x, at.y, cell, SOUND_MODE_ONE_TICK_LATER);
         else
-            drop_moving_creature_possessions_cells[drop_moving_creature_possessions_cell_count++] = cell;
+            drops->cells[drops->count++] = (uint8_t)cell;
     }
     bool on_party_map = g_current_map_index == g_party_map_index;
-    ActiveGroup *active = on_party_map ? group_active(group) : NULL;
+    ActiveGroup *active = on_party_map ? active_of(group) : NULL;
     if (rec_group_behavior(group) == BEHAVIOR_ATTACK) {
-        shift_creature_events(x, y, creature_index);
+        shift_creature_events(at.x, at.y, creature_index);
         uint16_t fear = creature_fear_resistance(info);
         if (on_party_map && fear != FEAR_RESISTANCE_NONE_FEARLESS) {
             fear += last - 1;
@@ -621,8 +688,10 @@ static void remove_dead_creature(uint16_t group, uint16_t creature_index, int16_
     rec_group_set_last_creature(group, last - 1);
 }
 
-int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, int16_t x, int16_t y, int16_t damage,
-                                          bool notify)
+/* Damage to one creature. Without drops (not a fall) a dead creature drops its possessions now and the last one
+   deletes the group. */
+static int16_t damage_creature(uint16_t group, uint16_t creature_index, Location at, int16_t damage,
+                               GroupFallDrops *drops)
 {
     uint16_t type = rec_group_creature_type(group);
     const CreatureInfo *info = tables_get_creature_info(type);
@@ -639,25 +708,29 @@ int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_inde
     uint16_t last = rec_group_last_creature(group);
     int16_t outcome;
     if (last == 0) {
-        if (notify) {
-            group_drop_group_possessions(x, y, map_find_thing((Location){x, y}, THING_GROUP),
-                                         SOUND_MODE_ONE_TICK_LATER);
-            group_delete(x, y);
+        if (!drops) {
+            group_drop_group_possessions(at.x, at.y, map_find_thing(at, THING_GROUP), SOUND_MODE_ONE_TICK_LATER);
+            group_delete(at.x, at.y);
         }
         outcome = OUTCOME_ALL_CREATURES_KILLED;
     } else {
-        remove_dead_creature(group, creature_index, x, y, cell, notify);
+        remove_dead_creature(group, creature_index, at, cell, drops);
         outcome = OUTCOME_SOME_CREATURES_KILLED;
     }
     static const uint16_t smoke_attack[] = {SMOKE_ATTACK_QUARTER, SMOKE_ATTACK_HALF, SMOKE_ATTACK_FULL,
                                             SMOKE_ATTACK_FULL};
-    explosion_create(EXPLOSION_THING(EXPLOSION_SMOKE), smoke_attack[creature_size(info)], x, y, cell);
+    explosion_create(EXPLOSION_THING(EXPLOSION_SMOKE), smoke_attack[creature_size(info)], at.x, at.y, cell);
     return outcome;
 }
 
-int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, bool notify)
+int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage)
 {
-    drop_moving_creature_possessions_cell_count = 0;
+    return damage_creature(group, creature_index, at, damage, NULL);
+}
+
+/* The same attack, with a random spread of 1/8, on every creature of the group. */
+static int16_t damage_all_creatures(uint16_t group, Location at, int16_t attack, GroupFallDrops *drops)
+{
     if (attack < 1)
         return OUTCOME_NO_CREATURE_KILLED;
     int16_t spread = (attack >> 3) + 1;
@@ -665,13 +738,18 @@ int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_
     int16_t some_killed = 0;
     for (int16_t i = rec_group_last_creature(group); i >= 0; i--) {
         int16_t damage = attack - spread + random16() % (spread * 2);
-        int16_t outcome = group_get_damage_creature_outcome(group, i, x, y, damage, notify);
+        int16_t outcome = damage_creature(group, i, at, damage, drops);
         all_killed = all_killed && outcome;
         some_killed = some_killed || outcome;
     }
     return all_killed    ? OUTCOME_ALL_CREATURES_KILLED
            : some_killed ? OUTCOME_SOME_CREATURES_KILLED
                          : OUTCOME_NO_CREATURE_KILLED;
+}
+
+int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack)
+{
+    return damage_all_creatures(group, (Location){x, y}, attack, NULL);
 }
 
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack)
@@ -686,8 +764,8 @@ uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int
 void group_door_damages_creatures(int16_t x, int16_t y)
 {
     uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
-    if (group_get_damage_all_creatures_outcome(group, x, y, DOOR_DAMAGE, true) != OUTCOME_ALL_CREATURES_KILLED)
-        group_process_reaction_event(x, y, REACTION_DANGER_ON_SQUARE, false);
+    if (group_get_damage_all_creatures_outcome(group, x, y, DOOR_DAMAGE) != OUTCOME_ALL_CREATURES_KILLED)
+        group_process_reaction_event((Location){x, y}, REACTION_DANGER_ON_SQUARE);
 }
 
 /* A Giggler steals objects from random slots while the champion fails the dexterity and luck checks, then flees. */
@@ -712,7 +790,7 @@ static void group_steal_from_champion(uint16_t group, uint16_t champion_index)
     }
     if ((random16() & 7) && (!stole || !random_bit()))
         return;
-    group_active(group)->delay_fleeing = (random16() & THEFT_FLEE_RANDOM_MASK) + FLEE_DELAY_MINIMUM;
+    active_of(group)->delay_fleeing = (random16() & THEFT_FLEE_RANDOM_MASK) + FLEE_DELAY_MINIMUM;
     rec_group_set_behavior(group, BEHAVIOR_FLEE);
 }
 
@@ -800,11 +878,12 @@ static int16_t group_get_distance_between_unblocked_squares(int16_t src_x, int16
 /* Distance to the party when a creature (or any creature with -1) sees it, else 0. Light, invisibility, and
    the sight range limit the view. Quirk kept: the invisibility range -10 is compared unsigned, so it does not hide
    the party from a creature that does not see invisible. */
-static uint16_t group_get_distance_to_visible_party(uint16_t group, int16_t creature_index, int16_t x, int16_t y)
+static uint16_t group_get_distance_to_visible_party(const GroupTurn *t, uint16_t group, int16_t creature_index,
+                                                    int16_t x, int16_t y)
 {
     const CreatureInfo *info = group_info(group);
     if (!(info->attributes & CREATURE_SIDE_ATTACK)) {
-        uint8_t directions = group_active(group)->directions;
+        uint8_t directions = active_of(group)->directions;
         uint16_t seen[GROUP_MAX_CREATURES];
         int16_t count = 0;
         if (creature_index < 0) {
@@ -832,8 +911,8 @@ static uint16_t group_get_distance_to_visible_party(uint16_t group, int16_t crea
         range = INVISIBLE_PARTY_SIGHT_RANGE;
     else if (!(info->attributes & CREATURE_NIGHT_VISION))
         range -= g_party_light_level >> 1;
-    if (range < g_current_group_distance_to_party) {
-        if (g_current_group_distance_to_party == 1) {
+    if (range < t->distance_to_party) {
+        if (t->distance_to_party == 1) {
             uint16_t random1 = random16();
             uint16_t random2 = random16();
             range += random1 % (creature_hearing_range(info) + 1) + random2 % (creature_smell_range(info) + 1);
@@ -841,7 +920,7 @@ static uint16_t group_get_distance_to_visible_party(uint16_t group, int16_t crea
                 range += random_bit() + ADJACENT_SIGHT_BONUS;
         }
         if ((uint16_t)(range + (random16() & 7) - SIGHT_ROLL_CENTER) <
-            g_current_group_distance_to_party) /* 16-bit wrap as in the original */
+            t->distance_to_party) /* 16-bit wrap as in the original */
             return 0;
     }
     return group_get_distance_between_unblocked_squares(x, y, g_party_map_x, g_party_map_y,
@@ -859,36 +938,40 @@ uint16_t group_get_party_scent_ordinal(int16_t x, int16_t y)
 }
 
 /* Direction ordinal toward the party by smell: straight when close enough, else along the scent trail. 0: none. */
-static int16_t group_get_smelled_party_direction_ordinal(const CreatureInfo *info, int16_t x, int16_t y)
+static int16_t group_get_smelled_party_direction_ordinal(GroupTurn *t, const CreatureInfo *info, int16_t x, int16_t y)
 {
     uint16_t smell = creature_smell_range(info);
     if (!smell)
         return 0;
-    if (g_current_group_distance_to_party <= (smell + 1) >> 1 &&
+    if (t->distance_to_party <= (smell + 1) >> 1 &&
         group_get_distance_between_unblocked_squares(x, y, g_party_map_x, g_party_map_y,
                                                      group_is_smell_party_blocked)) {
-        g_group_secondary_direction = g_current_group_secondary_direction_to_party;
-        return g_current_group_primary_direction_to_party + 1;
+        t->secondary_direction = t->directions_to_party.secondary;
+        return t->directions_to_party.primary + 1;
     }
     uint16_t ordinal = group_get_party_scent_ordinal(x, y);
     if (ordinal && SCENT_TRAIL_THRESHOLD - 2 * smell < random_2bits() + g_party.scent_strengths[ordinal - 1]) {
         uint16_t next = g_party.scents[ordinal];
-        return group_get_directions_to_destination(x, y, party_position_x(next), party_position_y(next)) + 1;
+        DirectionPair directions = group_get_directions_to_destination(
+            (Location){x, y}, (Location){party_position_x(next), party_position_y(next)});
+        t->secondary_direction = directions.secondary;
+        return directions.primary + 1;
     }
     return 0;
 }
 
-/* Can the creature step one square in a direction? Sets the movement_blocked_by_* results. Lord Chaos stops at
-   fluxcages. A wary creature avoids a teleporter to a map that does not allow its type. */
-static bool group_is_movement_possible(const CreatureInfo *info, int16_t x, int16_t y, uint16_t direction,
-                                       bool allow_imaginary)
+/* Can the creature step one square in a direction? Lord Chaos stops at fluxcages. A wary creature avoids a
+   teleporter to a map that does not allow its type. */
+static MovementTest test_movement(GroupTurn *t, int16_t direction, bool allow_imaginary)
 {
-    movement_tested_directions[direction] = 1;
-    movement_blocked_by_group = THING_ENDOFLIST;
-    movement_blocked_by_door = false;
-    movement_blocked_by_party = false;
+    const CreatureInfo *info = t->info;
+    int16_t x = t->x;
+    int16_t y = t->y;
+    MovementTest result = {false, false};
+    t->tested_directions[direction] = 1;
+    last_blocked_by_party = false;
     if (info->movement_ticks == CREATURE_IMMOBILE)
-        return false;
+        return result;
     map_step(direction, 1, 0, &x, &y);
     uint8_t square = 0;
     int16_t type = SQUARE_WALL;
@@ -902,16 +985,15 @@ static bool group_is_movement_possible(const CreatureInfo *info, int16_t x, int1
                 (info->attributes & CREATURE_LEVITATES)) &&
                (type != SQUARE_FAKE_WALL || (square & FAKE_WALL_OPEN) || imaginary_allowed);
     }
-    movement_blocked_by_wall = !open;
     if (!open)
-        return false;
+        return result;
     if (info->attributes & CREATURE_ARCHENEMY) {
-        for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t)) {
-            if (THING_TYPE(t) == THING_EXPLOSION && rec_explosion_type(t) == EXPLOSION_FLUXCAGE) {
-                flux_cages[direction] = 1;
-                flux_cage_count++;
-                movement_blocked_by_wall = true;
-                return false;
+        for (uint16_t thing = map_get_square_first_thing(x, y); thing != THING_ENDOFLIST;
+             thing = rec_thing_next(thing)) {
+            if (THING_TYPE(thing) == THING_EXPLOSION && rec_explosion_type(thing) == EXPLOSION_FLUXCAGE) {
+                t->flux_cages[direction] = 1;
+                t->flux_cage_count++;
+                return result;
             }
         }
     }
@@ -919,52 +1001,51 @@ static bool group_is_movement_possible(const CreatureInfo *info, int16_t x, int1
         creature_wariness(info) >= WARINESS_AVOIDS_FORBIDDEN_TELEPORTER) {
         uint16_t teleporter = map_get_square_first_thing(x, y);
         if ((rec_teleporter_scope(teleporter) & TELEPORTER_SCOPE_CREATURES) &&
-            !group_is_creature_allowed_on_map(g_current_group_thing, rec_teleporter_target_map(teleporter))) {
-            movement_blocked_by_wall = true;
-            return false;
-        }
+            !group_is_creature_allowed_on_map(last_turn.thing, rec_teleporter_target_map(teleporter)))
+            return result;
     }
-    movement_blocked_by_party = map_is_party_on((Location){x, y});
-    if (movement_blocked_by_party)
-        return false;
+    result.blocked_by_party = map_is_party_on((Location){x, y});
+    last_blocked_by_party = result.blocked_by_party;
+    if (result.blocked_by_party)
+        return result;
     if (type == SQUARE_DOOR) {
         int16_t height = rec_door_is_vertical(map_get_square_first_thing(x, y)) ? creature_height(info->attributes) : 1;
         int16_t state = rec_door_state(square);
-        if (height < state && state != DOOR_DESTROYED && !(info->attributes & CREATURE_NON_MATERIAL)) {
-            movement_blocked_by_door = true;
-            return false;
-        }
+        if (height < state && state != DOOR_DESTROYED && !(info->attributes & CREATURE_NON_MATERIAL))
+            return result;
     }
-    movement_blocked_by_group = map_find_thing((Location){x, y}, THING_GROUP);
-    return movement_blocked_by_group == THING_ENDOFLIST;
+    result.possible = map_find_thing((Location){x, y}, THING_GROUP) == THING_ENDOFLIST;
+    return result;
 }
 
 /* Ordinal of the first untested direction where the creature can move, or 0. */
-static int16_t group_get_first_possible_movement_direction_ordinal(const CreatureInfo *info, int16_t x, int16_t y,
-                                                                   bool allow_imaginary)
+static int16_t group_get_first_possible_movement_direction_ordinal(GroupTurn *t, bool allow_imaginary)
 {
-    for (uint16_t direction = 0; direction < 4; direction++)
-        if (!movement_tested_directions[direction] &&
-            group_is_movement_possible(info, x, y, direction, allow_imaginary))
+    for (int16_t direction = 0; direction < DIRECTION_COUNT; direction++)
+        if (!t->tested_directions[direction] && test_movement(t, direction, allow_imaginary).possible)
             return direction + 1;
     return 0;
 }
 
 /* Lord Chaos jumps two squares: the first square must have no fluxcage, the second must be free. */
-static bool group_is_archenemy_double_movement_possible(const CreatureInfo *info, int16_t x, int16_t y,
-                                                        uint16_t direction)
+static bool group_is_archenemy_double_movement_possible(GroupTurn *t, int16_t direction)
 {
-    if (flux_cages[direction])
+    if (t->flux_cages[direction])
         return false;
-    map_step(direction, 1, 0, &x, &y);
-    return group_is_movement_possible(info, x, y, direction, false);
+    int16_t x = t->x;
+    int16_t y = t->y;
+    map_step(direction, 1, 0, &t->x, &t->y);
+    bool possible = test_movement(t, direction, false).possible;
+    t->x = x;
+    t->y = y;
+    return possible;
 }
 
 /* Turns one creature. A creature never turns around at once: it turns left or right first. Two half-square
    creatures turn together, once per game tick. */
 static void group_set_direction(ActiveGroup *active, int16_t direction, int16_t creature_index, bool turn_pair)
 {
-    if (turn_pair && g_game_time == set_direction_time && active == set_direction_group)
+    if (turn_pair && g_game_time == set_direction.time && active == set_direction.group)
         return;
     uint16_t directions = active->directions;
     if (NORMALIZE(group_cell(directions, creature_index) - direction) == 2)
@@ -972,8 +1053,8 @@ static void group_set_direction(ActiveGroup *active, int16_t direction, int16_t 
     directions = group_set_cell_value(directions, creature_index, direction);
     if (turn_pair) {
         directions = group_set_cell_value(directions, creature_index ^ 1, direction);
-        set_direction_time = g_game_time;
-        set_direction_group = active;
+        set_direction.time = g_game_time;
+        set_direction.group = active;
     }
     active->directions = directions;
 }
@@ -990,51 +1071,56 @@ static void group_set_direction_group(ActiveGroup *active, int16_t direction, in
             group_set_direction(active, direction, i, turn_pair);
 }
 
+/* The spell that a creature type casts at the party: its explosion type and whether the cast has a sound. */
+typedef struct {
+    uint16_t explosion;
+    bool sound;
+} CreatureSpell;
+
 /* Explosion type of the spell that a creature type casts at the party. */
-static uint16_t get_creature_spell_explosion(uint16_t creature_type, int16_t *spell_sound)
+static CreatureSpell get_creature_spell_explosion(uint16_t creature_type)
 {
-    *spell_sound = 1;
     switch (creature_type) {
     case CREATURE_SWAMP_SLIME:
-        *spell_sound = 0;
-        return EXPLOSION_SLIME;
+        return (CreatureSpell){EXPLOSION_SLIME, false};
     case CREATURE_WIZARD_EYE:
-        return (random16() & 7) ? EXPLOSION_LIGHTNING_BOLT : EXPLOSION_OPEN_DOOR;
+        return (CreatureSpell){(random16() & 7) ? EXPLOSION_LIGHTNING_BOLT : EXPLOSION_OPEN_DOOR, true};
     case CREATURE_VEXIRK:
     case CREATURE_LORD_CHAOS:
         if (random_bit())
-            return EXPLOSION_FIREBALL;
+            return (CreatureSpell){EXPLOSION_FIREBALL, true};
         switch (random_2bits()) {
         case 0:
-            return EXPLOSION_HARM_NON_MATERIAL;
+            return (CreatureSpell){EXPLOSION_HARM_NON_MATERIAL, true};
         case 1:
-            return EXPLOSION_LIGHTNING_BOLT;
+            return (CreatureSpell){EXPLOSION_LIGHTNING_BOLT, true};
         case 2:
-            return EXPLOSION_POISON_CLOUD;
+            return (CreatureSpell){EXPLOSION_POISON_CLOUD, true};
         default:
-            return EXPLOSION_OPEN_DOOR;
+            return (CreatureSpell){EXPLOSION_OPEN_DOOR, true};
         }
     case CREATURE_MATERIALIZER:
-        return random_bit() ? EXPLOSION_POISON_CLOUD : EXPLOSION_FIREBALL;
+        return (CreatureSpell){random_bit() ? EXPLOSION_POISON_CLOUD : EXPLOSION_FIREBALL, true};
     default:
-        return EXPLOSION_FIREBALL;
+        return (CreatureSpell){EXPLOSION_FIREBALL, true};
     }
 }
 
 /* One creature attacks: a melee hit (or theft) on a champion in front, or a spell projectile toward the party.
    Returns true when the creature attacked. */
-static bool group_is_creature_attacking(uint16_t group, int16_t x, int16_t y, int16_t creature_index)
+static bool group_is_creature_attacking(const GroupTurn *t, uint16_t group, int16_t x, int16_t y,
+                                        int16_t creature_index)
 {
-    int16_t primary = g_current_group_primary_direction_to_party;
+    int16_t primary = t->directions_to_party.primary;
     int16_t spell = 0;
     int16_t spell_sound = 1;
     g_last_creature_attack_time = g_game_time;
     uint16_t type = rec_group_creature_type(group);
     const CreatureInfo *info = tables_get_creature_info(type);
-    uint8_t cells = group_active(group)->cells;
+    uint8_t cells = active_of(group)->cells;
     int16_t cell = cells == CELL_CENTERED ? NORMALIZE(primary + random_bit())
                                           : direction_front_cell(primary, group_cell(cells, creature_index));
-    if (creature_attack_range(info) <= 1 || (g_current_group_distance_to_party <= 1 && !random_bit())) {
+    if (creature_attack_range(info) <= 1 || (t->distance_to_party <= 1 && !random_bit())) {
         int16_t champion_index;
         if (!(info->attributes & CREATURE_ATTACK_ANY_CHAMPION)) {
             champion_index = group_get_target_champion_index(x, y, cell);
@@ -1062,7 +1148,9 @@ static bool group_is_creature_attacking(uint16_t group, int16_t x, int16_t y, in
         }
     } else {
         spell = 1;
-        uint16_t explosion = get_creature_spell_explosion(type, &spell_sound);
+        CreatureSpell cast = get_creature_spell_explosion(type);
+        uint16_t explosion = cast.explosion;
+        spell_sound = cast.sound;
         uint16_t kinetic_energy = (info->attack >> 2) + 1;
         kinetic_energy += random16() % kinetic_energy;
         kinetic_energy += random16() % kinetic_energy;
@@ -1124,15 +1212,16 @@ bool group_is_destination_visible_from_source(int16_t direction, int16_t src_x, 
     return ahead > 0 && abs16(side) <= ahead;
 }
 
-int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)
+DirectionPair group_get_directions_to_destination(Location from, Location to)
 {
+    int16_t src_x = from.x, src_y = from.y, dst_x = to.x, dst_y = to.y;
     if (dst_x == src_x) {
-        g_group_secondary_direction = (random16() & 2) + 1;
-        return src_y <= dst_y ? DIRECTION_SOUTH : DIRECTION_NORTH;
+        int16_t secondary = (random16() & 2) + 1;
+        return (DirectionPair){src_y <= dst_y ? DIRECTION_SOUTH : DIRECTION_NORTH, secondary};
     }
     if (dst_y == src_y) {
-        g_group_secondary_direction = random16() & 2;
-        return src_x <= dst_x ? DIRECTION_EAST : DIRECTION_WEST;
+        int16_t secondary = random16() & 2;
+        return (DirectionPair){src_x <= dst_x ? DIRECTION_EAST : DIRECTION_WEST, secondary};
     }
     int16_t primary = 0;
     while (!group_is_destination_visible_from_source(primary, src_x, src_y, dst_x, dst_y))
@@ -1143,22 +1232,16 @@ int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_
         secondary = DIRECTION_WEST;
         both_visible = group_is_destination_visible_from_source(secondary, src_x, src_y, dst_x, dst_y);
     }
-    if (!both_visible) {
-        g_group_secondary_direction = NORMALIZE(primary + (random16() & 2) + 1);
-        return primary;
-    }
-    if (random_bit()) {
-        g_group_secondary_direction = primary;
-        return secondary;
-    }
-    g_group_secondary_direction = secondary;
-    return primary;
+    if (!both_visible)
+        return (DirectionPair){primary, NORMALIZE(primary + (random16() & 2) + 1)};
+    if (random_bit())
+        return (DirectionPair){secondary, primary};
+    return (DirectionPair){primary, secondary};
 }
 
-void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x,
-                                       int16_t group_y, int16_t group_cell)
+void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, Location target, Location group_at, int16_t group_cell)
 {
-    int16_t direction = group_get_directions_to_destination(target_x, target_y, group_x, group_y);
+    int16_t direction = group_get_directions_to_destination(target, group_at).primary;
     if (!(direction & 1))
         group_cell++;
     int16_t row = ((group_cell >> 1) & 1) + direction * 2;
@@ -1171,7 +1254,7 @@ int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell)
     if (!g_party_champion_count || abs16(x - g_party_map_x) + abs16(y - g_party_map_y) > 1)
         return -1;
     uint8_t cells[4];
-    group_set_ordered_cells_to_attack(cells, g_party_map_x, g_party_map_y, x, y, cell);
+    group_set_ordered_cells_to_attack(cells, (Location){g_party_map_x, g_party_map_y}, (Location){x, y}, cell);
     for (int16_t i = 0; i < 4; i++) {
         int16_t champion_index = champion_get_index_in_cell(cells[i]);
         if (champion_index >= 0)
@@ -1301,9 +1384,15 @@ static int16_t melee_hit_damage(int16_t champion_index, const CreatureInfo *info
     return damage;
 }
 
-int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, int16_t creature_index, int16_t x,
-                                      int16_t y, uint16_t hit_probability, uint16_t damage_factor, int16_t skill_index)
+int16_t group_get_melee_action_damage(const MeleeAttack *attack)
 {
+    int16_t champion_index = attack->champion_index;
+    uint16_t group = attack->group;
+    int16_t creature_index = attack->creature_index;
+    Location at = attack->at;
+    uint16_t hit_probability = attack->hit_probability;
+    uint16_t damage_factor = attack->damage_factor;
+    int16_t skill_index = attack->skill_index;
     if (champion_index >= g_party_champion_count)
         return 0;
     Champion *champion = &g_champions[champion_index];
@@ -1334,7 +1423,7 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
         uint16_t random = random16();
         if ((random & DOUBLE_DAMAGE_RANDOM_MASK) < champion_get_skill_level(champion_index, skill_index))
             damage = damage * 2 + DOUBLE_DAMAGE_BONUS;
-        outcome = group_get_damage_creature_outcome(group, creature_index, x, y, damage, true);
+        outcome = group_get_damage_creature_outcome(group, creature_index, at, damage);
         /* 16-bit product as in the original */
         champion_add_skill_experience(champion_index, skill_index,
                                       ((uint16_t)(creature_experience(info) * damage) >> 4) + MELEE_EXPERIENCE_BONUS);
@@ -1344,31 +1433,9 @@ int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, in
         champion_decrement_stamina(champion_index, random_bit() + 2);
     }
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
-        group_process_reaction_event(x, y, REACTION_PARTY_IS_ADJACENT, 0);
+        group_process_reaction_event(at, REACTION_PARTY_IS_ADJACENT);
     return damage;
 }
-
-/* State of one run of group_process_reaction_event. */
-typedef struct {
-    int16_t x, y;
-    int16_t event_type; /* reactions are REACTION_* here */
-    uint16_t ticks;
-    uint16_t group;
-    const CreatureInfo *info;
-    ActiveGroup *active;
-    TimelineEvent next;             /* the next event of the group */
-    uint32_t aspect_update_time;    /* 0: the aspect of the whole group is updated */
-    int16_t ticks_delay_next_event; /* 0: ticks delay the aspect update instead (behavior events) */
-    int16_t ticks_since_last_move;  /* -1: the group waits to move */
-    int16_t movement_ticks;
-    int16_t archenemy;
-    uint16_t last_creature_index, size;
-    int16_t distance_x, distance_y;
-    int16_t moved;
-    int16_t was_attacking;
-    uint16_t visible_distance;
-    int16_t direction; /* the direction the group wants to move in */
-} GroupTurn;
 
 /* Adds the next event with the aspect update time, and the ticks that the event carried. */
 static void add_event_with_aspect(GroupTurn *t)
@@ -1412,7 +1479,7 @@ static void set_behavior_attack(GroupTurn *t)
         group_delete_events(t->x, t->y);
     set_target_to_party(t->active);
     rec_group_set_behavior(t->group, BEHAVIOR_ATTACK);
-    int16_t primary = g_current_group_primary_direction_to_party;
+    int16_t primary = t->directions_to_party.primary;
     bool turn_pair = t->last_creature_index && t->size == CREATURE_SIZE_HALF;
     for (int16_t i = t->last_creature_index; i >= 0; i--) {
         uint32_t map = t->next.map_time & ~(uint32_t)EVENT_TIME_MASK;
@@ -1440,9 +1507,12 @@ static bool try_move(GroupTurn *t, int16_t target_x, int16_t target_y)
         t->movement_ticks = remaining;
         return false;
     }
-    if (move_get_move_result(t->group, t->x, t->y, target_x, target_y))
+    MoveDestination destination;
+    if (move_get_move_result(
+            &(Move){.thing = t->group, .from.x = t->x, .from.y = t->y, .to.x = target_x, .to.y = target_y},
+            &destination) != MOVE_RESULT_DONE)
         return true;
-    t->next.b = event_square(g_move_result_map_x, g_move_result_map_y);
+    t->next.b = event_square(destination.x, destination.y);
     t->active->prior_x = t->x;
     t->active->prior_y = t->y;
     t->active->last_move_time = g_game_time;
@@ -1460,7 +1530,7 @@ static void turn_and_finish(GroupTurn *t, int16_t direction)
             return;
         if (t->was_attacking)
             rec_group_set_behavior(t->group, BEHAVIOR_APPROACH);
-        group_stop_attacking(t->active, t->x, t->y);
+        stop_attacking(t->active, t->x, t->y);
     }
     add_wander_event(t);
 }
@@ -1491,7 +1561,7 @@ static bool after_move(GroupTurn *t, int16_t direction)
         return false;
     }
     t->direction = random_2bits();
-    g_group_secondary_direction = direction_right(t->direction);
+    t->secondary_direction = direction_right(t->direction);
     return jump_archenemy(t);
 }
 
@@ -1499,20 +1569,20 @@ static bool after_move(GroupTurn *t, int16_t direction)
 static bool jump_archenemy(GroupTurn *t)
 {
     for (;;) {
-        group_get_first_possible_movement_direction_ordinal(t->info, t->x, t->y, false);
+        group_get_first_possible_movement_direction_ordinal(t, false);
         int16_t direction = t->direction;
-        bool possible = group_is_archenemy_double_movement_possible(t->info, t->x, t->y, direction);
+        bool possible = group_is_archenemy_double_movement_possible(t, direction);
         if (!possible) {
-            direction = g_group_secondary_direction;
-            possible = group_is_archenemy_double_movement_possible(t->info, t->x, t->y, direction);
+            direction = t->secondary_direction;
+            possible = group_is_archenemy_double_movement_possible(t, direction);
         }
-        if (!possible && flux_cage_count) {
-            direction = direction_back(g_group_secondary_direction);
-            possible = group_is_archenemy_double_movement_possible(t->info, t->x, t->y, direction);
+        if (!possible && t->flux_cage_count) {
+            direction = direction_back(t->secondary_direction);
+            possible = group_is_archenemy_double_movement_possible(t, direction);
         }
-        if (!possible && flux_cage_count >= 2) {
+        if (!possible && t->flux_cage_count >= 2) {
             direction = direction_back(t->direction);
-            possible = group_is_archenemy_double_movement_possible(t->info, t->x, t->y, direction);
+            possible = group_is_archenemy_double_movement_possible(t, direction);
         }
         if (!possible) {
             group_set_direction_group(t->active, t->direction, t->last_creature_index, t->size);
@@ -1531,7 +1601,7 @@ static bool jump_archenemy(GroupTurn *t)
             return false;
         }
         t->direction = random_2bits();
-        g_group_secondary_direction = direction_right(t->direction);
+        t->secondary_direction = direction_right(t->direction);
     }
 }
 
@@ -1550,18 +1620,18 @@ static bool move_in_direction(GroupTurn *t, int16_t direction)
 static bool move_toward(GroupTurn *t, bool allow_imaginary)
 {
     int16_t direction = t->direction;
-    if (group_is_movement_possible(t->info, t->x, t->y, direction, allow_imaginary))
+    if (test_movement(t, direction, allow_imaginary).possible)
         return move_in_direction(t, direction);
     bool allow_second = allow_imaginary && random_bit();
-    direction = g_group_secondary_direction;
-    if (group_is_movement_possible(t->info, t->x, t->y, direction, allow_second))
+    direction = t->secondary_direction;
+    if (test_movement(t, direction, allow_second).possible)
         return move_in_direction(t, direction);
     direction = direction_back(direction);
-    if (group_is_movement_possible(t->info, t->x, t->y, direction, false))
+    if (test_movement(t, direction, false).possible)
         return move_in_direction(t, direction);
     if (!random_2bits()) {
         direction = direction_back(t->direction);
-        if (group_is_movement_possible(t->info, t->x, t->y, direction, false))
+        if (test_movement(t, direction, false).possible)
             return move_in_direction(t, direction);
     }
     if (t->archenemy)
@@ -1581,15 +1651,15 @@ static bool random_move(GroupTurn *t)
         int16_t y = t->y;
         map_step(direction, 1, 0, &x, &y);
         if ((x != t->active->prior_x || y != t->active->prior_y || !random_2bits()) &&
-            group_is_movement_possible(t->info, t->x, t->y, direction, false)) {
+            test_movement(t, direction, false).possible) {
             if (try_move(t, x, y))
                 return true;
             return after_move(t, direction);
         }
-        if (movement_blocked_by_party) {
+        if (last_blocked_by_party) {
             if (t->event_type != REACTION_DANGER_ON_SQUARE && t->info->attack_ticks != CREATURE_NO_ATTACK &&
                 (rec_group_behavior(t->group) != BEHAVIOR_FLEE ||
-                 !group_get_first_possible_movement_direction_ordinal(t->info, t->x, t->y, false) || random_bit())) {
+                 !group_get_first_possible_movement_direction_ordinal(t, false) || random_bit())) {
                 set_behavior_attack(t);
                 return false;
             }
@@ -1611,7 +1681,10 @@ static bool approach_target(GroupTurn *t)
         turn_and_finish(t, 0);
         return false;
     }
-    t->direction = group_get_directions_to_destination(t->x, t->y, target_x, target_y);
+    DirectionPair directions =
+        group_get_directions_to_destination((Location){t->x, t->y}, (Location){target_x, target_y});
+    t->direction = directions.primary;
+    t->secondary_direction = directions.secondary;
     return move_toward(t, true);
 }
 
@@ -1620,14 +1693,17 @@ static bool approach_party(GroupTurn *t)
 {
     t->movement_ticks = (t->movement_ticks + 1) >> 1;
     set_target_to_party(t->active);
-    t->direction = group_get_directions_to_destination(t->x, t->y, g_party_map_x, g_party_map_y);
+    DirectionPair directions =
+        group_get_directions_to_destination((Location){t->x, t->y}, (Location){g_party_map_x, g_party_map_y});
+    t->direction = directions.primary;
+    t->secondary_direction = directions.secondary;
     return move_toward(t, true);
 }
 
 /* Runs away from the party (or the last target), sometimes home. Fleeing ends after a delay without sight. */
 static bool flee(GroupTurn *t)
 {
-    t->visible_distance = group_get_distance_to_visible_party(t->group, -1, t->x, t->y);
+    t->visible_distance = group_get_distance_to_visible_party(t, t->group, -1, t->x, t->y);
     int16_t from_x, from_y;
     if (!t->visible_distance) {
         if (--t->active->delay_fleeing == 0) {
@@ -1637,14 +1713,17 @@ static bool flee(GroupTurn *t)
             return false;
         }
         if (random_bit()) {
-            if (!group_get_first_possible_movement_direction_ordinal(t->info, t->x, t->y, false) &&
+            if (!group_get_first_possible_movement_direction_ordinal(t, false) &&
                 abs16(t->x - g_party_map_x) + abs16(t->y - g_party_map_y) < 2) {
                 t->moved = 0;
                 rec_group_set_behavior(t->group, BEHAVIOR_WANDER);
                 turn_and_finish(t, 0);
                 return false;
             }
-            t->direction = group_get_directions_to_destination(t->x, t->y, t->active->home_x, t->active->home_y);
+            DirectionPair directions = group_get_directions_to_destination(
+                (Location){t->x, t->y}, (Location){t->active->home_x, t->active->home_y});
+            t->direction = directions.primary;
+            t->secondary_direction = directions.secondary;
             return move_toward(t, true);
         }
         from_x = t->active->target_x;
@@ -1654,8 +1733,9 @@ static bool flee(GroupTurn *t)
         from_x = g_party_map_x;
         from_y = g_party_map_y;
     }
-    t->direction = direction_back(group_get_directions_to_destination(t->x, t->y, from_x, from_y));
-    g_group_secondary_direction = direction_back(g_group_secondary_direction);
+    DirectionPair directions = group_get_directions_to_destination((Location){t->x, t->y}, (Location){from_x, from_y});
+    t->direction = direction_back(directions.primary);
+    t->secondary_direction = direction_back(directions.secondary);
     t->movement_ticks -= t->movement_ticks >> 2;
     return move_toward(t, true);
 }
@@ -1677,7 +1757,7 @@ static void process_reaction(GroupTurn *t, uint16_t behavior)
             return;
         bool useless = behavior == BEHAVIOR_USELESS_3 || behavior == BEHAVIOR_USELESS_2;
         if (useless || random_2bits()) {
-            if (!group_get_distance_to_visible_party(t->group, -1, t->x, t->y)) {
+            if (!group_get_distance_to_visible_party(t, t->group, -1, t->x, t->y)) {
                 turn_and_finish(t, 0);
                 return;
             }
@@ -1708,7 +1788,7 @@ static void process_reaction(GroupTurn *t, uint16_t behavior)
 static void process_aspect_event(GroupTurn *t, uint16_t behavior)
 {
     t->next.type = t->event_type + EVENT_BEHAVIOR_TO_ASPECT;
-    if (group_get_distance_to_visible_party(t->group, -1, t->x, t->y)) {
+    if (group_get_distance_to_visible_party(t, t->group, -1, t->x, t->y)) {
         bool attacks_or_flees = behavior == BEHAVIOR_ATTACK || behavior == BEHAVIOR_FLEE;
         if (!attacks_or_flees && t->info->attack_ticks != CREATURE_NO_ATTACK &&
             abs16(g_party_map_x - t->x) + abs16(g_party_map_y - t->y) <= 1) {
@@ -1746,13 +1826,13 @@ static void process_group_behavior(GroupTurn *t, uint16_t behavior)
     case BEHAVIOR_WANDER:
     case BEHAVIOR_USELESS_2:
     case BEHAVIOR_USELESS_3:
-        t->visible_distance = group_get_distance_to_visible_party(t->group, -1, t->x, t->y);
+        t->visible_distance = group_get_distance_to_visible_party(t, t->group, -1, t->x, t->y);
         if (!t->visible_distance) {
             if (behavior != BEHAVIOR_WANDER) {
                 add_wander_event(t);
                 return;
             }
-            int16_t ordinal = group_get_smelled_party_direction_ordinal(t->info, t->x, t->y);
+            int16_t ordinal = group_get_smelled_party_direction_ordinal(t, t->info, t->x, t->y);
             if (ordinal) {
                 t->direction = ordinal - 1;
                 move_toward(t, false);
@@ -1771,7 +1851,7 @@ static void process_group_behavior(GroupTurn *t, uint16_t behavior)
             add_wander_event(t);
         return;
     case BEHAVIOR_APPROACH:
-        t->visible_distance = group_get_distance_to_visible_party(t->group, -1, t->x, t->y);
+        t->visible_distance = group_get_distance_to_visible_party(t, t->group, -1, t->x, t->y);
         if (!t->visible_distance)
             approach_target(t);
         else if (can_start_attack(t))
@@ -1872,18 +1952,18 @@ static void process_creature_behavior(GroupTurn *t)
     }
     if (t->last_creature_index < creature)
         return;
-    t->direction = g_current_group_primary_direction_to_party;
-    t->visible_distance = group_get_distance_to_visible_party(t->group, creature, t->x, t->y);
+    t->direction = t->directions_to_party.primary;
+    t->visible_distance = group_get_distance_to_visible_party(t, t->group, creature, t->x, t->y);
     if (t->visible_distance)
         set_target_to_party(active);
     if (shift_single_creature(t))
         return;
     if (!t->visible_distance ||
         (!(t->info->attributes & CREATURE_SIDE_ATTACK) && group_cell(active->directions, creature) != t->direction)) {
-        if (!group_get_distance_to_visible_party(t->group, -1, t->x, t->y)) {
+        if (!group_get_distance_to_visible_party(t, t->group, -1, t->x, t->y)) {
             rec_group_set_behavior(t->group, BEHAVIOR_APPROACH);
             if (t->last_creature_index)
-                group_stop_attacking(active, t->x, t->y);
+                stop_attacking(active, t->x, t->y);
             approach_target(t);
             return;
         }
@@ -1900,12 +1980,12 @@ static void process_creature_behavior(GroupTurn *t)
         (random16() & ATTACK_RANGE_RANDOM_MASK) + 1 < range) {
         rec_group_set_behavior(t->group, BEHAVIOR_APPROACH);
         if (t->last_creature_index)
-            group_stop_attacking(active, t->x, t->y);
+            stop_attacking(active, t->x, t->y);
         approach_party(t);
         return;
     }
     if (can_attack_from_cell(t, creature, range)) {
-        bool attacking = group_is_creature_attacking(t->group, t->x, t->y, creature);
+        bool attacking = group_is_creature_attacking(t, t->group, t->x, t->y, creature);
         t->aspect_update_time = group_get_creature_aspect_update_time(active, creature, attacking);
         t->next.map_time += random_bit() + creature_ticks_after_attack(t->info);
         t->next.type = t->event_type;
@@ -1926,13 +2006,16 @@ static void process_creature_behavior(GroupTurn *t)
 static void wander_off_party_map(GroupTurn *t)
 {
     int16_t direction = random_2bits();
-    if (group_is_movement_possible(t->info, t->x, t->y, direction, false)) {
+    if (test_movement(t, direction, false).possible) {
         int16_t target_x = t->x;
         int16_t target_y = t->y;
         map_step(direction, 1, 0, &target_x, &target_y);
-        if (move_get_move_result(t->group, t->x, t->y, target_x, target_y))
+        MoveDestination destination;
+        if (move_get_move_result(
+                &(Move){.thing = t->group, .from.x = t->x, .from.y = t->y, .to.x = target_x, .to.y = target_y},
+                &destination) != MOVE_RESULT_DONE)
             return;
-        t->next.b = event_square(g_move_result_map_x, g_move_result_map_y);
+        t->next.b = event_square(destination.x, destination.y);
     }
     t->next.type = EVENT_UPDATE_BEHAVIOR_GROUP;
     t->next.map_time += max16(abs16(g_current_map_index - g_party_map_index) << 4, t->info->movement_ticks * 2);
@@ -1969,15 +2052,12 @@ static void set_current_group(GroupTurn *t)
     t->size = creature_size(t->info);
     t->distance_x = abs16(t->x - g_party_map_x);
     t->distance_y = abs16(t->y - g_party_map_y);
-    g_current_group_map_x = t->x;
-    g_current_group_map_y = t->y;
-    g_current_group_thing = t->group;
-    for (int16_t i = 0; i < 4; i++)
-        movement_tested_directions[i] = 0;
-    g_current_group_distance_to_party = group_get_square_distance(t->x, t->y, g_party_map_x, g_party_map_y);
-    g_current_group_primary_direction_to_party =
-        group_get_directions_to_destination(t->x, t->y, g_party_map_x, g_party_map_y);
-    g_current_group_secondary_direction_to_party = g_group_secondary_direction;
+    last_turn.at = (Location){t->x, t->y};
+    last_turn.thing = t->group;
+    t->distance_to_party = group_get_square_distance(t->x, t->y, g_party_map_x, g_party_map_y);
+    t->directions_to_party =
+        group_get_directions_to_destination((Location){t->x, t->y}, (Location){g_party_map_x, g_party_map_y});
+    t->secondary_direction = t->directions_to_party.secondary;
 }
 
 /* Events 37-41: the behavior of the group or of one creature. A fleeing group flees as a whole. Event ticks make
@@ -1993,25 +2073,20 @@ static void process_behavior_event(GroupTurn *t, uint16_t behavior)
     }
     if (behavior == BEHAVIOR_FLEE) {
         if (t->last_creature_index)
-            group_stop_attacking(t->active, t->x, t->y);
+            stop_attacking(t->active, t->x, t->y);
         flee(t);
         return;
     }
     process_creature_behavior(t);
 }
 
-void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint16_t ticks)
+/* Runs the turn of the group on a square for a reaction or a group event. */
+static void process_turn(GroupTurn *t)
 {
-    if (g_current_map_index != g_party_map_index && event_type != EVENT_UPDATE_BEHAVIOR_GROUP &&
-        event_type != EVENT_UPDATE_ASPECT_GROUP && event_type != EVENT_UPDATE_BEHAVIOR_CREATURE_0 &&
-        event_type != EVENT_UPDATE_ASPECT_CREATURE_0)
-        return;
-    uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
-    if (group == THING_ENDOFLIST)
-        return;
-    GroupTurn turn = {
-        .x = x, .y = y, .event_type = event_type, .ticks = ticks, .group = group, .info = group_info(group)};
-    GroupTurn *t = &turn;
+    int16_t x = t->x;
+    int16_t y = t->y;
+    int16_t event_type = t->event_type;
+    uint16_t group = t->group;
     t->next = (TimelineEvent){
         .map_time = EVENT_MAP_TIME(g_current_map_index, g_game_time),
         .priority = GROUP_EVENT_PRIORITY_MAX - t->info->movement_ticks,
@@ -2022,14 +2097,9 @@ void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint
         return;
     }
     t->archenemy = (t->info->attributes & CREATURE_ARCHENEMY) != 0;
-    if (t->archenemy) {
-        if (g_game_won)
-            return;
-        flux_cage_count = 0;
-        for (int16_t i = 0; i < 4; i++)
-            flux_cages[i] = 0;
-    }
-    t->active = group_active(group);
+    if (t->archenemy && g_game_won)
+        return;
+    t->active = active_of(group);
     t->ticks_since_last_move = (uint8_t)g_game_time - t->active->last_move_time;
     if (t->ticks_since_last_move < 0)
         t->ticks_since_last_move += MOVE_TIME_WRAP;
@@ -2057,9 +2127,32 @@ void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint
     process_behavior_event(t, behavior);
 }
 
-/* A teleporter turns the creatures (relative or absolute rotation). Quarter-size creatures keep their cells with an
-   absolute rotation. Returns the active entry + 2 for an attacking group on the party map, else 1. */
-static int16_t move_get_teleporter_rotated_group_result(uint16_t teleporter, uint16_t group, int16_t map)
+/* Starts the turn of the group on a square, unless the event type does not run off the party map. */
+static void process_turn_at(Location at, int16_t event_type, uint16_t ticks)
+{
+    if (g_current_map_index != g_party_map_index && event_type != EVENT_UPDATE_BEHAVIOR_GROUP &&
+        event_type != EVENT_UPDATE_ASPECT_GROUP && event_type != EVENT_UPDATE_BEHAVIOR_CREATURE_0 &&
+        event_type != EVENT_UPDATE_ASPECT_CREATURE_0)
+        return;
+    uint16_t group = map_find_thing(at, THING_GROUP);
+    if (group == THING_ENDOFLIST)
+        return;
+    GroupTurn turn = {
+        .x = at.x, .y = at.y, .event_type = event_type, .ticks = ticks, .group = group, .info = group_info(group)};
+    process_turn(&turn);
+}
+
+void group_process_reaction_event(Location at, int16_t reaction)
+{
+    process_turn_at(at, reaction, 0);
+}
+
+void group_process_event(const TimelineEvent *event)
+{
+    process_turn_at((Location){event_square_x(event), event_square_y(event)}, event->type, event_group_ticks(event));
+}
+
+int16_t group_turn_by_teleporter(uint16_t teleporter, uint16_t group, int16_t map)
 {
     uint16_t rotation = rec_teleporter_rotation(teleporter);
     int16_t absolute = rec_teleporter_is_absolute(teleporter);
@@ -2084,162 +2177,71 @@ static int16_t move_get_teleporter_rotated_group_result(uint16_t teleporter, uin
     group_set_directions(group, directions, map);
     group_set_cells(group, cells, map);
     if (map == g_party_map_index && rec_group_behavior(group) == BEHAVIOR_ATTACK)
-        return rec_group_cells(group) + 2;
-    return 1;
+        return rec_group_cells(group);
+    return -1;
 }
 
-/* One group move: the group thing (stairs change its cell), the source, and the destination that teleporters,
-   pits, and stairs lead to. */
-typedef struct {
-    uint16_t group;
-    int16_t src_map, src_x, src_y;
-    int16_t map, x, y;
-    bool levitating, audible, removed_from_party_map;
-    int16_t result; /* of the last teleporter rotation */
-} GroupMove;
-
-/* Follows teleporters, open pits (fall damage), and stairs from the destination square. Returns true when the fall
-   killed all creatures. */
-static bool follow_destination_squares(GroupMove *m)
+bool group_is_killed_by_fall(uint16_t group, Position source, Position landing, GroupFallDrops *drops)
 {
-    for (int16_t n = SQUARE_CHAIN_MAXIMUM; n; n--) {
-        uint8_t square = rec_square_byte(g_current_map_index, m->x, m->y);
-        int16_t type = rec_square_type(square);
-        if (type == SQUARE_TELEPORTER) {
-            if (!(square & TELEPORTER_OPEN))
-                break;
-            uint16_t teleporter = map_get_square_first_thing(m->x, m->y);
-            if (!(rec_teleporter_scope(teleporter) & TELEPORTER_SCOPE_CREATURES))
-                break;
-            int16_t points_to_itself = rec_teleporter_target_x(teleporter) == m->x &&
-                                       rec_teleporter_target_y(teleporter) == m->y &&
-                                       rec_teleporter_target_map(teleporter) == m->map;
-            m->x = rec_teleporter_target_x(teleporter);
-            m->y = rec_teleporter_target_y(teleporter);
-            m->audible = rec_teleporter_is_audible(teleporter);
-            m->map = rec_teleporter_target_map(teleporter);
-            map_set_current_map(m->map);
-            if (m->audible)
-                sound_request_play(SOUND_BUZZ, m->x, m->y, SOUND_MODE_AFTER_TICK);
-            m->result = move_get_teleporter_rotated_group_result(teleporter, m->group, m->src_map);
-            if (points_to_itself)
-                break;
-        } else if (type == SQUARE_PIT && !m->levitating && (square & PIT_OPEN) && !(square & PIT_IMAGINARY)) {
-            m->map = map_get_location_after_level_change(m->map, LEVEL_DOWN, &m->x, &m->y);
-            map_set_current_map(m->src_map);
-            int16_t outcome = group_get_damage_all_creatures_outcome(m->group, m->src_x, m->src_y, FALL_DAMAGE, false);
-            map_set_current_map(m->map);
-            if (outcome == OUTCOME_ALL_CREATURES_KILLED)
-                return true;
-            if (outcome == OUTCOME_SOME_CREATURES_KILLED)
-                group_drop_moving_creature_fixed_possessions(m->group, m->x, m->y);
-        } else if (type == SQUARE_STAIRS) {
-            if (!(square & STAIRS_UP)) {
-                m->map = map_get_location_after_level_change(m->map, LEVEL_DOWN, &m->x, &m->y);
-                map_set_current_map(m->map);
-            }
-            int16_t exit = map_get_stairs_exit_direction(m->x, m->y);
-            map_step(exit, 1, 0, &m->x, &m->y);
-            int16_t start_direction = direction_back(exit);
-            m->group = THING_WITH_CELL(m->group, direction_front_cell(start_direction, THING_CELL(m->group)));
-        } else {
-            break;
-        }
-    }
+    map_set_current_map(source.map);
+    drops->count = 0;
+    int16_t outcome = damage_all_creatures(group, (Location){source.x, source.y}, FALL_DAMAGE, drops);
+    map_set_current_map(landing.map);
+    if (outcome == OUTCOME_ALL_CREATURES_KILLED)
+        return true;
+    if (outcome == OUTCOME_SOME_CREATURES_KILLED)
+        group_drop_moving_creature_fixed_possessions(group, landing.x, landing.y, drops);
     return false;
 }
 
-/* The group enters the destination square, or waits off the map while the party or another group stands there
-   (returns 1). Returns 1 when the group became active or inactive, the active entry + 2 after a teleporter rotation
-   of an attacking group, else 0. */
-static int16_t enter_destination(GroupMove *m)
+void group_remove_after_move(uint16_t group, Position source, Position landing, GroupFallDrops *drops)
 {
-    int16_t result = m->result;
-    map_set_current_map(m->map);
-    uint8_t active_index = rec_group_cells(m->group);
-    if (map_is_party_on((Location){m->x, m->y}) ||
-        map_find_thing((Location){m->x, m->y}, THING_GROUP) != THING_ENDOFLIST) {
-        map_set_current_map(m->src_map);
-        if (m->src_x >= 0)
-            group_delete_events(m->src_x, m->src_y);
-        if (m->removed_from_party_map)
-            group_remove_active_group(active_index);
-        group_create_event_move_group(m->group, m->x, m->y, m->map, m->audible);
-        return 1;
-    }
-    sound_request_play(get_creature_movement_sound(rec_group_creature_type(m->group)), m->x, m->y,
-                       SOUND_MODE_AFTER_TICK);
-    if (m->removed_from_party_map && m->map != g_party_map_index) {
-        group_remove_active_group(active_index);
-        result = 1;
-    } else if (!m->removed_from_party_map && m->map == g_party_map_index) {
-        group_add_active_group(m->group, m->x, m->y);
-        result = 1;
-    }
-    if (!m->levitating)
-        sensor_process_thing_addition_or_removal(m->x, m->y, m->group, false, true);
-    else
-        map_link_thing_to_list(m->group, 0, m->x, m->y);
-    if (result || m->src_x < 0)
-        group_start_wandering(m->x, m->y);
-    map_set_current_map(m->src_map);
-    if (m->src_x >= 0) {
-        if (result >= 2)
-            group_stop_attacking(&g_active_groups[result - 2], m->src_x, m->src_y);
-        else if (result == 1)
-            group_delete_events(m->src_x, m->src_y);
-    }
-    return result;
+    group_drop_moving_creature_fixed_possessions(group, landing.x, landing.y, drops);
+    group_drop_group_possessions(landing.x, landing.y, group, SOUND_MODE_ONE_TICK_LATER);
+    map_set_current_map(source.map);
+    if (source.x >= 0)
+        group_delete(source.x, source.y);
 }
 
-int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)
+MoveResult group_enter_square(const GroupArrival *arrival)
 {
-    GroupMove m = {
-        .group = group,
-        .src_map = g_current_map_index,
-        .src_x = src_x,
-        .src_y = src_y,
-        .map = g_current_map_index,
-        .x = dst_x,
-        .y = dst_y,
-        .levitating = (map_get_creature_attributes(group) & CREATURE_LEVITATES) != 0,
-    };
-    uint16_t src_cell = THING_CELL(group);
-    if (src_x >= 0 && g_current_map_index == g_party_map_index &&
-        projectile_is_killed_by_impact(src_x, src_y, dst_x, dst_y, group))
-        return 1;
-    if (dst_x >= 0) {
-        m.removed_from_party_map = g_current_map_index == g_party_map_index && src_x >= 0;
-        if (follow_destination_squares(&m) || !group_is_creature_allowed_on_map(m.group, m.map)) {
-            group_drop_moving_creature_fixed_possessions(m.group, m.x, m.y);
-            group_drop_group_possessions(m.x, m.y, m.group, SOUND_MODE_ONE_TICK_LATER);
-            map_set_current_map(m.src_map);
-            if (src_x >= 0)
-                group_delete(src_x, src_y);
-            return 1;
-        }
-        g_move_result_cell = THING_CELL(m.group);
-        bool same_square = m.map == m.src_map && m.x == src_x && m.y == src_y;
-        g_move_result_map_x = m.x;
-        g_move_result_map_y = m.y;
-        g_move_result_map_index = m.map;
-        if (!same_square) {
-            if (m.map != m.src_map)
-                map_set_current_map(m.src_map);
-        } else if (g_move_result_cell == src_cell) {
-            return 0;
-        }
+    MoveResult result = arrival->result;
+    map_set_current_map(arrival->landing.map);
+    uint8_t active_index = rec_group_cells(arrival->group);
+    Location at = {arrival->landing.x, arrival->landing.y};
+    bool levitating = move_is_levitating(arrival->group);
+    if (map_is_party_on(at) || map_find_thing(at, THING_GROUP) != THING_ENDOFLIST) {
+        map_set_current_map(arrival->source.map);
+        if (arrival->source.x >= 0)
+            group_delete_events(arrival->source.x, arrival->source.y);
+        if (arrival->removed_from_party_map)
+            group_remove_active_group(active_index);
+        group_create_event_move_group(arrival->group, at.x, at.y, arrival->landing.map, arrival->audible);
+        return MOVE_RESULT_STOPPED;
     }
-    if (src_x >= 0) {
-        if (!m.levitating)
-            sensor_process_thing_addition_or_removal(src_x, src_y, m.group, map_is_party_on((Location){src_x, src_y}),
-                                                     false);
-        else
-            map_unlink_thing_from_list(m.group, 0, src_x, src_y);
+    sound_request_play(get_creature_movement_sound(rec_group_creature_type(arrival->group)), at.x, at.y,
+                       SOUND_MODE_AFTER_TICK);
+    if (arrival->removed_from_party_map && arrival->landing.map != g_party_map_index) {
+        group_remove_active_group(active_index);
+        result = MOVE_RESULT_STOPPED;
+    } else if (!arrival->removed_from_party_map && arrival->landing.map == g_party_map_index) {
+        group_add_active_group(arrival->group, at.x, at.y);
+        result = MOVE_RESULT_STOPPED;
     }
-    if (m.x < 0)
-        return 0;
-    return enter_destination(&m);
+    if (!levitating)
+        sensor_process_thing_addition_or_removal(at.x, at.y, arrival->group, false, true);
+    else
+        map_link_thing_to_list(arrival->group, 0, at.x, at.y);
+    if (result != MOVE_RESULT_DONE || arrival->source.x < 0)
+        group_start_wandering(at.x, at.y);
+    map_set_current_map(arrival->source.map);
+    if (arrival->source.x >= 0) {
+        if (result == MOVE_RESULT_TURNED)
+            stop_attacking(&g_active_groups[arrival->turned_active], arrival->source.x, arrival->source.y);
+        else if (result == MOVE_RESULT_STOPPED)
+            group_delete_events(arrival->source.x, arrival->source.y);
+    }
+    return result;
 }
 
 void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, bool audible)
@@ -2262,7 +2264,7 @@ void group_process_move_event(TimelineEvent *event)
         if (!map_is_party_on((Location){x, y}) && map_find_thing((Location){x, y}, THING_GROUP) == THING_ENDOFLIST) {
             if (event->type == EVENT_MOVE_GROUP_AUDIBLE)
                 sound_request_play(SOUND_BUZZ, x, y, SOUND_MODE_AFTER_TICK);
-            move_get_move_result(event->c, -1, 0, x, y);
+            move_get_move_result(&(Move){.thing = event->c, .to.x = x, .to.y = y, .enters = true}, NULL);
             return;
         }
         if (retried)
@@ -2293,9 +2295,8 @@ void group_process_move_event(TimelineEvent *event)
 
 void group_reset(void)
 {
-    for (size_t i = 0; i < sizeof flux_cages; i++)
-        flux_cages[i] = 0;
-    flux_cage_count = 0;
-    set_direction_time = 0;
-    set_direction_group = NULL;
+    set_direction.time = 0;
+    set_direction.group = NULL;
+    last_turn.thing = 0;
+    last_turn.at = (Location){0, 0};
 }

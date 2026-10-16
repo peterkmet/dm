@@ -16,6 +16,7 @@
 #define DIRECTION_SOUTH      2
 #define DIRECTION_WEST       3
 #define DIRECTION_BITS       2
+#define DIRECTION_COUNT      4
 #define LEVEL_UP             (-1)
 #define LEVEL_DOWN           1
 #define MAP_COORD_BITS       5 /* maps are at most 32 squares wide and high */
@@ -157,8 +158,6 @@ uint8_t map_get_square(int16_t x, int16_t y);
 int16_t map_get_square_type(int16_t x, int16_t y);
 /* Corridor, pit, door, or teleporter. */
 bool map_is_square_open(int16_t x, int16_t y);
-/* The map one level below (LEVEL_DOWN) or above (LEVEL_UP) that covers the dungeon position of (x, y). -1 when none. */
-int16_t map_get_location_after_level_change(int16_t map, int16_t level_delta, int16_t *x, int16_t *y);
 /* The stairs axis is north-south or east-west. The exit side is the one that is not a wall or stairs. */
 int16_t map_get_stairs_exit_direction(int16_t x, int16_t y);
 
@@ -181,6 +180,9 @@ typedef struct {
 typedef struct {
     int16_t map, x, y;
 } Position;
+
+/* The square one level below (LEVEL_DOWN) or above (LEVEL_UP) at the same dungeon place; map -1 when none. */
+Position map_get_level_change_location(Position place, int16_t level_delta);
 
 /* The party stands on the square of the current map. */
 bool map_is_party_on(Location at);

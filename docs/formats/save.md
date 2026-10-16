@@ -268,3 +268,5 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 - The header byte at `0x12a` (`SAVE_HEADER_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.
 - `savefile_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.
 - The meaning of the header byte at `0x12a`, of `g_save_header_extra`, and of the long at block 0 offset 32 is not traced.
+- Free active group entries are saved with 0 bytes after a new game or a load; the original saves whatever its memory holds. An entry that a group leaves keeps its bytes, as in the original.
+- A cells byte beyond the active group table reads a free entry (`group_get_active`).

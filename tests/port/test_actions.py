@@ -8,7 +8,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import s16, var
-from dmtest.game import (CHAMPIONS, Champion, Location, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
+from dmtest.game import (CHAMPIONS, Champion, Location, MeleeAttack, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
                          setup_creatures, skeleton_map_and_squares, things_of_type, tick)
 from dmtest.lib import load_lib
 
@@ -43,7 +43,7 @@ def lib():
 def alib(lib):
     for name, res, args in [
         ("action_is_action_performed", ctypes.c_bool, [u16, c16]), ("champion_poison", None, [c16, u16]),
-        ("group_get_melee_action_damage", c16, [c16, u16, c16, c16, c16, u16, u16, c16]),
+        ("group_get_melee_action_damage", c16, [ctypes.POINTER(MeleeAttack)]),
         ("timeline_delete_event", None, [u16]), ("timeline_add_event", c16, [ctypes.POINTER(TimelineEvent)]),
         ("map_link_thing_to_list", None, [u16, u16, c16, c16]), ("tables_get_action_info", ctypes.c_void_p, [ctypes.c_int]),
     ]:
@@ -147,7 +147,9 @@ def test_melee_damage_matches_original(alib, seed):
         skill = w.emu.read(ACTION_INFO + 5 * 44 + action, 1)[0]
         i, creature = w.rng.randrange(4), w.rng.randrange(4)
         w.seed(seed * 7907 + round_)
-        got = lib.group_get_melee_action_damage(i, C.THING_GROUP << 10, creature, FAR, FAR, hit, factor, skill)
+        got = lib.group_get_melee_action_damage(
+            ctypes.byref(MeleeAttack(i, C.THING_GROUP << 10, creature, Location(FAR, FAR), hit, factor, skill))
+        )
         want = s16(w.emu.call(MELEE_DAMAGE, [(4, CHAMPIONS + 0x140 * i), (2, i), (4, GROUP_BUF), (2, creature), (2, FAR), (2, FAR),
                                              (2, hit), (2, factor), (2, skill)]))
         assert got == want, (round_, group[4], action)
@@ -176,7 +178,7 @@ def fighter(alib):
     m, party_square, _ = skeleton_map_and_squares(lib)
     x, y = party_square
     place_party(lib, m, x, y, 2)  # south
-    assert lib.group_get_generated(12, 1, 0, 0, x, y + 1) == 0xFFFF  # a skeleton, active on the party map
+    assert lib.group_get_generated(12, 1, 0, 0, Location(x, y + 1)) == 0xFFFF  # a skeleton, active on the party map
     c.direction, c.cell = 2, 2  # front row when the party faces south
     c.slots[C.SLOT_HAND_ACTION] = new_object(lib, C.THING_WEAPON, WEAPON_SWORD)
     for s in range(20):

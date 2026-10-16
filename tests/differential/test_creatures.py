@@ -53,8 +53,9 @@ def test_directions_to_destination_match_original(lib, seed):
         var(lib, ctypes.c_uint32, "g_random_seed").value = value
         emu.write(SEED, struct.pack(">I", value))
         want = s16(emu.call(DIRECTIONS, [(2, sx & 0xFFFF), (2, sy & 0xFFFF), (2, dx & 0xFFFF), (2, dy & 0xFFFF)]))
-        assert lib.group_get_directions_to_destination(sx, sy, dx, dy) == want, (sx, sy, dx, dy)
-        assert var(lib, c16, "g_group_secondary_direction").value == s16(struct.unpack(">H", emu.read(SECONDARY_DIRECTION, 2))[0])
+        got = lib.group_get_directions_to_destination(Location(sx, sy), Location(dx, dy))
+        assert got.primary == want, (sx, sy, dx, dy)
+        assert got.secondary == s16(struct.unpack(">H", emu.read(SECONDARY_DIRECTION, 2))[0])
         assert var(lib, ctypes.c_uint32, "g_random_seed").value == struct.unpack(">I", emu.read(SEED, 4))[0]
         for direction in range(4):
             args = (direction, sx, sy, dx, dy)
@@ -258,13 +259,13 @@ def test_creature_dies_and_drops_possessions(lib):
     place_party(lib, m, *party_square, 2)
     assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == 0xFFFE
     # Like the original, the result is THING_NONE when the new group becomes active on the party map.
-    assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 0, x, y) == 0xFFFF
+    assert lib.group_get_generated(C.CREATURE_SKELETON, 1, 0, 0, Location(x, y)) == 0xFFFF
     group = lib.map_find_thing(Location(x, y), C.THING_GROUP)
     assert group != 0xFFFE and lib.rec_write(group)[4] == C.CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value
-    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10, 1) == 0  # 10 damage: the skeleton survives
+    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10) == 0  # 10 damage: the skeleton survives
     assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == group
-    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 2000, 1) == 2
+    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 2000) == 2
     assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == 0xFFFE
     assert var(lib, u16, "g_active_group_count").value == active - 1
     drops = things_of_type(lib, x, y, C.THING_WEAPON) + things_of_type(lib, x, y, C.THING_ARMOUR)

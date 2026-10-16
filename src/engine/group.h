@@ -4,6 +4,8 @@
 /* Prefixes: group_ creature_ */
 #include "data/tables.h"
 #include "engine/event.h"
+#include "engine/map.h"
+#include "engine/move.h"
 #include "engine/record.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
@@ -113,11 +115,9 @@ void group_init_active_groups(void);
 /* Allocates count active group entries, all free. A failed allocation is a fatal error. */
 void group_allocate_active(uint16_t count);
 
-/* On the party map the cells byte of the record holds the index of the active group. */
-static inline ActiveGroup *group_active(uint16_t group)
-{
-    return &g_active_groups[rec_group_cells(group)];
-}
+/* The active group entry of a group on the party map (a corrupt index reads a free entry); NULL while the
+   active group table is not allocated. */
+const ActiveGroup *group_get_active(uint16_t group);
 static inline const CreatureInfo *group_info(uint16_t group)
 {
     return tables_get_creature_info(rec_group_creature_type(group));
@@ -185,10 +185,6 @@ static inline uint16_t creature_size(const CreatureInfo *info)
 }
 
 extern int16_t g_creature_damage_outcome;
-extern int16_t g_group_secondary_direction;
-extern int16_t g_current_group_map_x, g_current_group_map_y;
-extern uint16_t g_current_group_thing, g_current_group_distance_to_party;
-extern int16_t g_current_group_primary_direction_to_party, g_current_group_secondary_direction_to_party;
 
 uint8_t group_get_cells(uint16_t group, int16_t map);
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
@@ -216,7 +212,8 @@ uint32_t group_get_creature_aspect_update_time(ActiveGroup *active, int16_t crea
 /* A new group behavior event (37) after one tick. Faster creatures get a higher event priority. */
 void group_start_wandering(int16_t x, int16_t y);
 void group_delete_events(int16_t x, int16_t y);
-void group_stop_attacking(ActiveGroup *active, int16_t x, int16_t y);
+/* A frightened group on the party map flees for delay_fleeing; an attacking group stops its attack first. */
+void group_frighten(uint16_t group, int16_t x, int16_t y, uint8_t delay_fleeing);
 /* A group on the party map gets an active group entry. The record keeps the entry index in its cells byte. */
 void group_add_active_group(uint16_t group, int16_t x, int16_t y);
 /* The record gets back its cells and one direction. A fleeing or attacking group wanders again. */
@@ -231,25 +228,29 @@ uint16_t group_get_party_scent_ordinal(int16_t x, int16_t y);
 
 /* A new group of creatures on a square. Health is base health * multiplier plus a random part. */
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index,
-                             int16_t direction, int16_t x, int16_t y);
+                             int16_t direction, Location at);
 /* The creature generator of a corridor event: count, health multiplier (0: map difficulty), random direction. */
 void group_generate_from_sensor(uint16_t sensor, int16_t x, int16_t y);
 
 /* A dead creature leaves the fixed possessions of its type. Possessions with bit 15 drop half of the time. */
 void group_drop_creature_fixed_possessions(uint16_t creature_type, int16_t x, int16_t y, uint16_t cell,
                                            int16_t sound_mode);
+/* Cells of the creatures that died in a fall during a group move; their fixed possessions drop later. */
+typedef struct {
+    int16_t count;
+    uint8_t cells[GROUP_MAX_CREATURES];
+} GroupFallDrops;
 /* Creatures that died during a move drop their fixed possessions on the destination square. */
-void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y);
+void group_drop_moving_creature_fixed_possessions(uint16_t group, int16_t x, int16_t y, GroupFallDrops *drops);
 /* All creatures drop their fixed possessions (sound_mode >= 0), then the carried objects fall on random cells. */
 void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t sound_mode);
 /* The group record becomes free. Health is cleared first, so that no projectile impact runs on the removal. */
 void group_delete(int16_t x, int16_t y);
-/* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group (with notify).
+/* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group.
    Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
-int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, int16_t x, int16_t y, int16_t damage,
-                                          bool notify);
+int16_t group_get_damage_creature_outcome(uint16_t group, uint16_t creature_index, Location at, int16_t damage);
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
-int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack, bool notify);
+int16_t group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack);
 uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack);
 /* A closing door hits the creatures on its square; the survivors react to the danger. */
 void group_door_damages_creatures(int16_t x, int16_t y);
@@ -258,30 +259,66 @@ int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2
 /* True when the destination is in the 90 degree cone in front of the source. */
 bool group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x,
                                               int16_t dst_y);
-/* Main direction from a source square to a destination. The second direction goes to g_group_secondary_direction. */
-int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
+/* The two directions from a square toward a destination: the main one and the second best. */
+typedef struct {
+    int16_t primary, secondary;
+} DirectionPair;
+/* The directions from a source square to a destination. */
+DirectionPair group_get_directions_to_destination(Location from, Location to);
 /* The 4 cells of the target square in the order the attacker reaches them. */
-void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x,
-                                       int16_t group_y, int16_t group_cell);
+void group_set_ordered_cells_to_attack(uint8_t *ordered_cells, Location target, Location group_at, int16_t group_cell);
 /* The champion that a creature on an adjacent square attacks, or -1. */
 int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell);
 
 /* A creature hits a champion: dodge by dexterity and luck, damage from attack, map difficulty, and parry skill,
    then poison. Returns the damage. */
 int16_t group_get_champion_damage(uint16_t group, uint16_t champion_index);
+/* A melee attack of a champion on a creature. */
+typedef struct {
+    int16_t champion_index;
+    uint16_t group;
+    int16_t creature_index;
+    Location at;
+    uint16_t hit_probability;
+    uint16_t damage_factor;
+    int16_t skill_index;
+} MeleeAttack;
 /* A champion hits a creature with a melee action: hit chance by dexterity, damage by strength, the action damage
    factor, and the creature defense. Returns the damage (0 for a miss). */
-int16_t group_get_melee_action_damage(int16_t champion_index, uint16_t group, int16_t creature_index, int16_t x,
-                                      int16_t y, uint16_t hit_probability, uint16_t damage_factor, int16_t skill_index);
+int16_t group_get_melee_action_damage(const MeleeAttack *attack);
 
-/* Events 32-41 and the reactions -1..-3 (events 29-31 later) of the group on a square. Off the party map a group
-   only wanders. Lord Chaos ignores Freeze Life. */
-void group_process_reaction_event(int16_t x, int16_t y, int16_t event_type, uint16_t ticks);
+/* A rule tells the group on a square about a danger, a projectile hit or the adjacent party (REACTION_*). */
+void group_process_reaction_event(Location at, int16_t reaction);
+/* The group event of the timeline (EVENT_GROUP_REACTION_* to EVENT_UPDATE_BEHAVIOR_CREATURE_3). Off the party map a
+   group only wanders. Lord Chaos ignores Freeze Life. */
+void group_process_event(const TimelineEvent *event);
 
-/* move_get_move_result for a group. Teleporters, pits (20 damage), and stairs move it on. A group that dies or
-   reaches a map that does not allow its type is deleted (returns 1). An occupied destination makes the group wait
-   for event 60/61 (returns 1). Returns 0, 1, or the active entry + 2 (see the teleporter rotation). */
-int16_t group_get_move_result(uint16_t group, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
+/* Group hooks of the square chain of move_get_move_result. Teleporters, pits (20 damage), and stairs move a group
+   on. A group that dies or reaches a map that does not allow its type is deleted (stopped). An occupied destination
+   makes the group wait for event 60/61 (stopped). */
+/* A teleporter turns the creatures (relative or absolute rotation). Quarter-size creatures keep their cells with an
+   absolute rotation. Returns the active entry of an attacking group on the party map, else -1. */
+int16_t group_turn_by_teleporter(uint16_t teleporter, uint16_t group, int16_t map);
+/* A fall hurts each creature with FALL_DAMAGE on the source square. The possessions of creatures that died drop on
+   the destination; drops keeps the cells when the whole group died. Returns true when the whole group died. */
+bool group_is_killed_by_fall(uint16_t group, Position source, Position landing, GroupFallDrops *drops);
+/* A group that died in a fall, or reached a map that does not allow its type, drops its possessions on the
+   destination and is deleted from the source square. */
+void group_remove_after_move(uint16_t group, Position source, Position landing, GroupFallDrops *drops);
+/* A group move after the square chain. */
+typedef struct {
+    uint16_t group;              /* with the cell after the chain */
+    Position source;             /* x < 0: the group enters the map */
+    Position landing;            /* the destination after teleporters, pits, and stairs */
+    MoveResult result;           /* of the last teleporter: done (none), stopped, or turned */
+    int16_t turned_active;       /* active index of the group that the last teleporter turned, else -1 */
+    bool audible;                /* the last teleporter plays a sound */
+    bool removed_from_party_map; /* the group left a square of the party map */
+} GroupArrival;
+/* The group enters the destination square, or waits off the map while the party or another group stands there
+   (stopped). Stopped when the group became active or inactive, turned after a teleporter rotation of an attacking
+   group, else done. */
+MoveResult group_enter_square(const GroupArrival *arrival);
 /* The group waits off the map and tries to enter the square 5 ticks later (event 61 plays the teleporter sound). */
 void group_create_event_move_group(uint16_t group, int16_t x, int16_t y, int16_t map, bool audible);
 /* A waiting group enters its square when the square is free. Lord Chaos may take an adjacent open square. */

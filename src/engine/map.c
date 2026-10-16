@@ -86,18 +86,6 @@ bool map_is_square_open(int16_t x, int16_t y)
     return type == SQUARE_CORRIDOR || type == SQUARE_TELEPORTER || type == SQUARE_PIT || type == SQUARE_DOOR;
 }
 
-int16_t map_get_location_after_level_change(int16_t map, int16_t level_delta, int16_t *x, int16_t *y)
-{
-    if (g_party_map_index == NO_DUNGEON_MAP)
-        return -1;
-    int16_t found = map_find_level_map(map, level_delta, *x, *y);
-    if (found >= 0) {
-        *x += rec_map_offset_x(map) - rec_map_offset_x(found);
-        *y += rec_map_offset_y(map) - rec_map_offset_y(found);
-    }
-    return found;
-}
-
 int16_t map_get_stairs_exit_direction(int16_t x, int16_t y)
 {
     int16_t direction = map_get_square(x, y) & STAIRS_NORTH_SOUTH ? DIRECTION_NORTH : DIRECTION_EAST;
@@ -220,6 +208,19 @@ void map_unlink_thing_from_list(uint16_t thing, uint16_t list, int16_t x, int16_
     rec_thing_set_next(thing, THING_ENDOFLIST);
 }
 
+Position map_get_level_change_location(Position place, int16_t level_delta)
+{
+    Position to = {-1, place.x, place.y};
+    if (g_party_map_index == NO_DUNGEON_MAP)
+        return to;
+    to.map = map_find_level_map(place.map, level_delta, place.x, place.y);
+    if (to.map >= 0) {
+        to.x += rec_map_offset_x(place.map) - rec_map_offset_x(to.map);
+        to.y += rec_map_offset_y(place.map) - rec_map_offset_y(to.map);
+    }
+    return to;
+}
+
 bool map_is_party_on(Location at)
 {
     return g_current_map_index == g_party_map_index && at.x == g_party_map_x && at.y == g_party_map_y;
@@ -264,5 +265,10 @@ int16_t map_find_level_map(int16_t map, int16_t level_delta, int16_t x, int16_t 
 
 uint16_t map_get_creature_attributes(uint16_t group_thing)
 {
-    return tables_get_creature_info(rec_group_creature_type(group_thing))->attributes;
+    uint16_t creature_type = rec_group_creature_type(group_thing);
+    /* Deviation: a creature type beyond the table (a corrupt dungeon) has no attributes; the original reads
+       beyond it. */
+    if (creature_type >= CREATURE_TYPE_COUNT)
+        return 0;
+    return tables_get_creature_info(creature_type)->attributes;
 }

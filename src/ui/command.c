@@ -409,7 +409,7 @@ static void grab_object(int16_t pile)
     }
     uint16_t thing = g_pile_top_objects[pile];
     if (object_get_icon_index(thing) != -1) {
-        move_get_move_result(thing, x, y, -1, 0);
+        move_get_move_result(&(Move){.thing = thing, .from.x = x, .from.y = y, .leaves = true}, NULL);
         inventory_put_object_in_leader_hand(thing);
     }
     g_stop_waiting_for_input = true;
@@ -430,7 +430,7 @@ static void drop_object(int16_t pile)
         get_front_square(&x, &y);
     int16_t cell = NORMALIZE(pile + g_party_direction);
     uint16_t thing = inventory_get_object_removed_from_leader_hand();
-    move_get_move_result(THING_WITH_CELL(thing, cell), -1, 0, x, y);
+    move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = x, .to.y = y, .enters = true}, NULL);
     if (alcove && g_facing_vi_altar && object_get_icon_index(thing) == ICON_BONES)
         sensor_add_vi_altar_rebirth_event(thing, x, y, cell);
     g_stop_waiting_for_input = true;

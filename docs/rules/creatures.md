@@ -20,13 +20,13 @@ The party map has active groups. Other maps do not.
 
 - `group_add_all_active_groups()` runs when the party enters a map. Each group on the map gets an `ActiveGroup` entry, its behavior events are deleted, and it starts to wander (event 37 after 1 tick).
 - `group_remove_all_active_groups()` runs when the party leaves a map. Each record gets back its cells byte and one direction. A group that flees or attacks wanders again.
-- On the party map, the cells byte of the group record holds the index of the active group. `group_active(group)` returns the entry. The entry holds the cells, the directions of the creatures, the aspect (graphic offsets, flip, attack) of each creature, the home square, the prior square, the target square, the time of the last move, and the flee delay.
+- On the party map, the cells byte of the group record holds the index of the active group. `group_get_active(group)` returns the entry; a cells byte beyond the table gives a free entry. The entry holds the cells, the directions of the creatures, the aspect (graphic offsets, flip, attack) of each creature, the home square, the prior square, the target square, the time of the last move, and the flee delay.
 - A group that enters the party map from another map becomes active. A group that leaves the party map becomes inactive.
 - More than `g_max_active_group_count` active groups is System Error 71.
 
 ## Group events
 
-The timeline sends events 29–41 to `group_process_reaction_event(x, y, type, ticks)`. Other rules send a reaction with a negative type. The reaction becomes event 32 + reaction after a short delay.
+The timeline sends events 29–41 to `group_process_event(event)`. Other rules send a reaction with a negative type through `group_process_reaction_event(at, reaction)`. The reaction becomes event 32 + reaction after a short delay.
 
 | Event | Reaction | Meaning |
 |---|---|---|
@@ -71,11 +71,11 @@ Smell uses the smell range of the creature. A creature smells the party directly
 ### Movement
 
 - The creature moves when half its movement ticks have passed since the last move. Else the group waits.
-- `group_get_directions_to_destination` gives a primary direction and a second direction (`g_group_secondary_direction`). Random numbers select between equal choices. This function matches the original exactly (differential test).
-- `group_is_movement_possible` blocks walls, stairs, open pits (except for levitating creatures), closed fake walls, the party square, other groups, and closed doors that are too low for the creature. A wary creature avoids a teleporter to a map that does not allow its type. Lord Chaos does not enter a fluxcage.
+- `group_get_directions_to_destination` returns a `DirectionPair`: a primary direction and a second direction. Random numbers select between equal choices. This function matches the original exactly (differential test).
+- `test_movement` blocks walls, stairs, open pits (except for levitating creatures), closed fake walls, the party square, other groups, and closed doors that are too low for the creature. A wary creature avoids a teleporter to a map that does not allow its type. Lord Chaos does not enter a fluxcage.
 - A creature never turns around at once. It turns left or right first.
 - Lord Chaos sometimes jumps two squares over a free square.
-- `group_get_move_result` moves a group through teleporters, pits (20 damage to each creature), and stairs. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
+- `move_get_move_result` moves a group through the one square chain of every mover (the rule table in [movement.md](movement.md)): teleporters with the creatures scope, pits (20 damage to each creature), and stairs. The group hooks are `group_turn_by_teleporter`, `group_is_killed_by_fall`, `group_remove_after_move`, and `group_enter_square`. A group that reaches a map that does not allow its creature type dies and drops its possessions. When the destination is occupied, the group waits with event 60 or 61 and tries again every 5 ticks.
 
 ### Attack
 
@@ -99,14 +99,14 @@ This function matches the original exactly (differential test).
 
 ## Damage and death
 
-`group_get_damage_creature_outcome(group, creature, x, y, damage, notify)` hurts one creature. It returns `OUTCOME_NO_CREATURE_KILLED` (0), `OUTCOME_SOME_CREATURES_KILLED` (1), or `OUTCOME_ALL_CREATURES_KILLED` (2).
+`group_get_damage_creature_outcome(group, creature, at, damage)` hurts one creature. It returns `OUTCOME_NO_CREATURE_KILLED` (0), `OUTCOME_SOME_CREATURES_KILLED` (1), or `OUTCOME_ALL_CREATURES_KILLED` (2).
 
 - An invulnerable creature takes no damage.
 - A creature that dies leaves smoke (explosion type 40). The smoke attack depends on the creature size.
-- When the last creature dies and `notify` is set, the group drops its possessions and the record becomes free.
+- When the last creature dies, the group drops its possessions and the record becomes free.
 - When one creature of several dies, the other creatures move down one index. The creature can drop its fixed possessions. An attacking group can start to flee, by its fear resistance.
 
-`group_get_damage_all_creatures_outcome(group, x, y, attack, notify)` hurts each creature with `attack ± attack / 8`.
+`group_get_damage_all_creatures_outcome(group, x, y, attack)` hurts each creature with `attack ± attack / 8`.
 
 ### Possessions
 
@@ -196,6 +196,11 @@ Then the explosion disappears.
 4. The champion gets the experience and an action delay (event 11).
 
 `magic_get_click_on_spell_cast_result` casts for the magic caster and clears the symbols, except when a flask is missing.
+
+## Kept original quirks
+
+- `random_move` reads the party-blocked result of the last step test, also when it skips the test. The value survives between turns; `group_reset` does not clear it.
+- A group turn remembers its square and group thing (`last_turn` in `group.c`) until the next group turn. A group that becomes active plays its flip sound at this square, and a group off the party map tests teleporters with this thing.
 
 ## Fixed original bugs
 
