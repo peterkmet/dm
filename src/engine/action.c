@@ -239,7 +239,7 @@ static bool is_shot(int16_t champion_index)
         step_energy -= WEAPON_CLASS_FIRST_SLING;
     }
     champion_face_party_direction(c);
-    uint16_t thing = inventory_get_object_removed_from_slot(champion_index, SLOT_HAND_READY);
+    uint16_t thing = inventory_take_slot_object(champion_index, SLOT_HAND_READY);
     sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
     int16_t level = champion_get_skill_level(champion_index, SKILL_SHOOT, false, false);
     /* The attack is a byte: the launcher shoot attack plus the level, doubled. */
@@ -258,7 +258,7 @@ static void cast_freeze_life(int16_t champion_index)
     uint16_t type = rec_junk_type(thing);
     if (type == JUNK_MAGICAL_BOX_BLUE || type == JUNK_MAGICAL_BOX_GREEN) {
         ticks = type == JUNK_MAGICAL_BOX_BLUE ? FREEZE_LIFE_TICKS_BLUE_BOX : FREEZE_LIFE_TICKS_GREEN_BOX;
-        inventory_get_object_removed_from_slot(champion_index, SLOT_HAND_ACTION);
+        inventory_take_slot_object(champion_index, SLOT_HAND_ACTION);
         rec_thing_set_free(thing);
     } else {
         ticks = FREEZE_LIFE_TICKS_CHARGE;
@@ -365,8 +365,8 @@ static bool is_door_bashed(int16_t champion_index, int16_t x, int16_t y, uint8_t
     if (rec_square_type(square) != SQUARE_DOOR || rec_door_state(square) != DOOR_CLOSED)
         return false;
     sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
-    event_is_door_destroyed_by_attack((Location){x, y}, champion_get_strength(champion_index, SLOT_HAND_ACTION), false,
-                                      DOOR_BASH_DESTRUCTION_TICKS);
+    event_is_door_destroyed((Location){x, y}, champion_get_strength(champion_index, SLOT_HAND_ACTION), false,
+                            DOOR_BASH_DESTRUCTION_TICKS);
     sound_request_play(SOUND_WOODEN_THUD, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_EVENT, 1);
     return true;
 }
@@ -381,7 +381,7 @@ static int16_t throwing_stamina_cost(uint16_t thing)
     return cost;
 }
 
-/* Throwing: slot SLOT_HAND_ACTION, or the leader hand object with action_is_leader_hand_object_thrown. side 1 throws
+/* Throwing: slot SLOT_HAND_ACTION, or the leader hand object with action_is_hand_object_thrown. side 1 throws
    from the right side of the party. */
 static bool is_object_thrown(int16_t champion_index, int16_t slot, bool side)
 {
@@ -391,7 +391,7 @@ static bool is_object_thrown(int16_t champion_index, int16_t slot, bool side)
     if (slot < 0) {
         if (g_leader_empty_handed)
             return false;
-        thing = inventory_get_object_removed_from_leader_hand();
+        thing = inventory_take_hand_object();
         /* The strength counts the thrown object as if it were in the action hand. */
         uint16_t action_hand = c->slots[SLOT_HAND_ACTION];
         c->slots[SLOT_HAND_ACTION] = thing;
@@ -400,7 +400,7 @@ static bool is_object_thrown(int16_t champion_index, int16_t slot, bool side)
         c->slots[SLOT_HAND_ACTION] = action_hand;
     } else {
         strength = champion_get_strength(champion_index, slot);
-        thing = inventory_get_object_removed_from_slot(champion_index, slot);
+        thing = inventory_take_slot_object(champion_index, slot);
         if (thing == THING_NONE)
             return false;
     }
@@ -443,7 +443,7 @@ static bool is_object_thrown(int16_t champion_index, int16_t slot, bool side)
 
 /* Throw: the champion throws the action hand object from its side of the party. Event 11 then moves the next
    weapon from the quiver to the action hand. */
-static bool is_action_hand_object_thrown(int16_t champion_index)
+static bool is_action_object_thrown(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
     champion_face_party_direction(c);
@@ -665,8 +665,7 @@ bool action_is_action_performed(int16_t champion_index, int16_t action)
         break;
     case ACTION_SPELLSHIELD:
     case ACTION_FIRESHIELD:
-        if (magic_is_party_spell_or_fire_shield_successful(champion_index, action == ACTION_SPELLSHIELD,
-                                                           SHIELD_ACTION_TICKS, true)) {
+        if (magic_cast_party_spell(champion_index, action == ACTION_SPELLSHIELD, SHIELD_ACTION_TICKS, true)) {
             decrement_charges(champion_index);
         } else {
             experience = (int16_t)experience >> 2; /* signed shift as in the original */
@@ -690,7 +689,7 @@ bool action_is_action_performed(int16_t champion_index, int16_t action)
         decrement_charges(champion_index);
         break;
     case ACTION_THROW:
-        performed = is_action_hand_object_thrown(champion_index);
+        performed = is_action_object_thrown(champion_index);
         break;
     case ACTION_FUSE: {
         champion_face_party_direction(c);
@@ -730,7 +729,7 @@ bool action_did_click_trigger_action(int16_t action_list_index)
 /* The champion throws the object of the slot (or, with slot < 0, the leader hand object) from the left or right
    front cell. Kinetic energy comes from the strength, the weapon, and the throw level. */
 
-bool action_is_leader_hand_object_thrown(bool side)
+bool action_is_hand_object_thrown(bool side)
 {
     if (g_leader_index == -1)
         return false;
@@ -738,7 +737,7 @@ bool action_is_leader_hand_object_thrown(bool side)
 }
 
 /* True when the weapon slot holds a bow and the ammunition slot an arrow, or a sling and a sling stone. */
-bool action_is_ammunition_compatible_with_weapon(int16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)
+bool action_is_ammo_for_weapon(int16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)
 {
     const Champion *c = &g_champions[champion_index];
     uint16_t weapon = c->slots[weapon_slot];
@@ -757,21 +756,20 @@ bool action_is_ammunition_compatible_with_weapon(int16_t champion_index, uint16_
 }
 
 /* Moves a weapon from the quiver to the slot. */
-static bool has_weapon_moved_to_slot(int16_t champion_index, uint16_t quiver_slot, int16_t slot)
+static bool take_from_quiver(int16_t champion_index, uint16_t quiver_slot, int16_t slot)
 {
     if (THING_TYPE(g_champions[champion_index].slots[quiver_slot]) != THING_WEAPON)
         return false;
-    inventory_add_object_in_slot(champion_index, inventory_get_object_removed_from_slot(champion_index, quiver_slot),
-                                 slot);
+    inventory_add_object_in_slot(champion_index, inventory_take_slot_object(champion_index, quiver_slot), slot);
     return true;
 }
 
-void action_move_weapon_from_quiver_to_slot(int16_t champion_index, int16_t slot)
+void action_refill_from_quiver(int16_t champion_index, int16_t slot)
 {
     if (g_champions[champion_index].slots[slot] != THING_NONE ||
-        has_weapon_moved_to_slot(champion_index, SLOT_QUIVER_LINE1_1, slot))
+        take_from_quiver(champion_index, SLOT_QUIVER_LINE1_1, slot))
         return;
     for (uint16_t quiver = SLOT_QUIVER_LINE2_1; quiver <= SLOT_QUIVER_LINE2_2; quiver++) /* slots 7-9 */
-        if (has_weapon_moved_to_slot(champion_index, quiver, slot))
+        if (take_from_quiver(champion_index, quiver, slot))
             return;
 }

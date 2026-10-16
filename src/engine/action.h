@@ -84,12 +84,11 @@ bool action_did_click_trigger_action(int16_t action_list_index);
 bool action_is_action_performed(int16_t champion_index, int16_t action); /* exported for the tests */
 
 /* The leader throws the object in the leader hand (a click in the upper dungeon view). */
-bool action_is_leader_hand_object_thrown(bool side);
+bool action_is_hand_object_thrown(bool side);
 
 /* Ammunition in the quiver for the launcher in the weapon slot. */
-bool action_is_ammunition_compatible_with_weapon(int16_t champion_index, uint16_t weapon_slot,
-                                                 uint16_t ammunition_slot);
+bool action_is_ammo_for_weapon(int16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot);
 /* After a throw: the next weapon of the quiver goes to the empty slot (quiver line 1 first, then line 2). */
-void action_move_weapon_from_quiver_to_slot(int16_t champion_index, int16_t slot);
+void action_refill_from_quiver(int16_t champion_index, int16_t slot);
 
 #endif

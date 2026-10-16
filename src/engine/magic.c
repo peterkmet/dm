@@ -96,7 +96,7 @@ void magic_disable_action(int16_t champion_index, uint16_t ticks)
     c->enable_action_event_index = timeline_add_event(&event);
 }
 
-void magic_print_spell_failure_message(int16_t champion_index, int16_t failure_type, int16_t skill_index)
+void magic_print_spell_failure(int16_t champion_index, int16_t failure_type, int16_t skill_index)
 {
     int16_t first;
     if (failure_type == SPELL_FAILURE_NEEDS_MORE_PRACTICE) {
@@ -137,8 +137,7 @@ bool magic_is_projectile_spell_cast(int16_t champion_index, uint16_t thing, int1
     return true;
 }
 
-bool magic_is_party_spell_or_fire_shield_successful(int16_t champion_index, bool spell_shield, uint16_t ticks,
-                                                    bool use_mana)
+bool magic_cast_party_spell(int16_t champion_index, bool spell_shield, uint16_t ticks, bool use_mana)
 {
     Champion *c = &g_champions[champion_index];
     bool success = true;
@@ -164,7 +163,7 @@ bool magic_is_party_spell_or_fire_shield_successful(int16_t champion_index, bool
 }
 
 /* The empty flask in the action hand, else in the ready hand, or THING_NONE. */
-static uint16_t find_empty_flask_in_hand(const Champion *c)
+static uint16_t find_empty_flask(const Champion *c)
 {
     for (int16_t slot = SLOT_HAND_ACTION; slot >= SLOT_HAND_READY; slot--)
         if (c->slots[slot] != THING_NONE && object_get_icon_index(c->slots[slot]) == ICON_EMPTY_FLASK)
@@ -176,9 +175,9 @@ static uint16_t find_empty_flask_in_hand(const Champion *c)
 static bool cast_potion(int16_t champion_index, uint16_t potion_type, int16_t power)
 {
     Champion *c = &g_champions[champion_index];
-    uint16_t flask = find_empty_flask_in_hand(c);
+    uint16_t flask = find_empty_flask(c);
     if (flask == THING_NONE) {
-        magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_FLASK_IN_HAND, 0);
+        magic_print_spell_failure(champion_index, SPELL_FAILURE_NEEDS_FLASK_IN_HAND, 0);
         return false;
     }
     uint16_t empty_weight = inventory_get_object_weight(flask);
@@ -278,8 +277,7 @@ static void cast_other(int16_t champion_index, uint16_t type, int16_t power)
         cast_zokathra(champion_index);
         break;
     case SPELL_OTHER_FIRE_SHIELD:
-        magic_is_party_spell_or_fire_shield_successful(champion_index, false, ticks * ticks + FIRE_SHIELD_BASE_TICKS,
-                                                       false);
+        magic_cast_party_spell(champion_index, false, ticks * ticks + FIRE_SHIELD_BASE_TICKS, false);
         break;
     }
 }
@@ -313,7 +311,7 @@ static MagicMapCast cast_magic_map(int16_t champion_index, uint16_t type, int16_
     MagicMapCast result = {true, 0};
     Champion *c = &g_champions[champion_index];
     if (!is_magic_map(c->slots[SLOT_HAND_ACTION])) {
-        magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MAGIC_MAP, 0);
+        magic_print_spell_failure(champion_index, SPELL_FAILURE_NEEDS_MAGIC_MAP, 0);
         return (MagicMapCast){false, 0};
     }
     uint16_t d = (power + 1) * SPELL_DURATION_FACTOR, ticks;
@@ -343,7 +341,7 @@ static MagicMapCast cast_magic_map(int16_t champion_index, uint16_t type, int16_
     return result;
 }
 
-int16_t magic_get_champion_spell_cast_result(int16_t champion_index)
+int16_t magic_cast_champion_spell(int16_t champion_index)
 {
     if (champion_index < 0 || champion_index >= g_party_champion_count)
         return SPELL_CAST_FAILURE;
@@ -352,7 +350,7 @@ int16_t magic_get_champion_spell_cast_result(int16_t champion_index)
         return SPELL_CAST_FAILURE;
     int16_t index = spell_find((const uint8_t *)c->symbols);
     if (index < 0) {
-        magic_print_spell_failure_message(champion_index, SPELL_FAILURE_MEANINGLESS_SPELL, 0);
+        magic_print_spell_failure(champion_index, SPELL_FAILURE_MEANINGLESS_SPELL, 0);
         return SPELL_CAST_FAILURE;
     }
     const Spell *spell = tables_get_spell(index);
@@ -368,7 +366,7 @@ int16_t magic_get_champion_spell_cast_result(int16_t champion_index)
         if (spell_draw_fails(c->statistics[STAT_WISDOM][STAT_CURRENT], random16())) {
             champion_add_skill_experience(champion_index, spell->skill_index,
                                           spell_get_failure_experience(experience, required_level, skill_level));
-            magic_print_spell_failure_message(champion_index, SPELL_FAILURE_NEEDS_MORE_PRACTICE, spell->skill_index);
+            magic_print_spell_failure(champion_index, SPELL_FAILURE_NEEDS_MORE_PRACTICE, spell->skill_index);
             return SPELL_CAST_FAILURE;
         }
     }
@@ -397,9 +395,9 @@ int16_t magic_get_champion_spell_cast_result(int16_t champion_index)
     return SPELL_CAST_SUCCESS;
 }
 
-int16_t magic_get_click_on_spell_cast_result(void)
+int16_t magic_click_cast_spell(void)
 {
-    int16_t result = magic_get_champion_spell_cast_result(g_magic_caster_champion_index);
+    int16_t result = magic_cast_champion_spell(g_magic_caster_champion_index);
     if (result == SPELL_CAST_FAILURE_NEEDS_FLASK)
         return SPELL_CAST_FAILURE;
     Champion *c = &g_champions[g_magic_caster_champion_index];

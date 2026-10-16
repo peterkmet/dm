@@ -148,7 +148,7 @@ uint16_t inventory_get_armour_defense(const ArmourInfo *armour, bool use_sharp_d
                              : defense;
 }
 
-void inventory_put_object_in_leader_hand(uint16_t thing)
+void inventory_put_hand_object(uint16_t thing)
 {
     if (thing == THING_NONE)
         return;
@@ -160,7 +160,7 @@ void inventory_put_object_in_leader_hand(uint16_t thing)
     }
 }
 
-uint16_t inventory_get_object_removed_from_leader_hand(void)
+uint16_t inventory_take_hand_object(void)
 {
     uint16_t thing = g_leader_hand_object;
     g_leader_empty_handed = true;
@@ -278,7 +278,7 @@ static bool is_torch(int16_t icon)
     return icon >= ICON_TORCH_UNLIT && icon <= ICON_TORCH_LAST;
 }
 
-uint16_t inventory_get_object_removed_from_slot(int16_t champion_index, int16_t slot)
+uint16_t inventory_take_slot_object(int16_t champion_index, int16_t slot)
 {
     Champion *c = &g_champions[champion_index];
     uint16_t *p = get_slot_pointer(c, slot);
@@ -369,10 +369,10 @@ void inventory_click_on_slot_box(uint16_t slot_box)
         !(tables_get_slot_mask(slot) & tables_get_object_info(inventory_get_object_info_index(hand))->allowed_slots))
         return;
     if (hand != THING_NONE)
-        inventory_get_object_removed_from_leader_hand();
+        inventory_take_hand_object();
     if (thing != THING_NONE) {
-        inventory_get_object_removed_from_slot(champion_index, slot);
-        inventory_put_object_in_leader_hand(thing);
+        inventory_take_slot_object(champion_index, slot);
+        inventory_put_hand_object(thing);
     }
     if (hand != THING_NONE)
         inventory_add_object_in_slot(champion_index, hand, slot);
@@ -508,7 +508,7 @@ int16_t inventory_process_click_on_mouth(void)
         consumed = true;
     }
     if (consumed)
-        inventory_get_object_removed_from_leader_hand();
+        inventory_take_hand_object();
     if (type == THING_POTION)
         drink_potion(champion_index, thing);
     else if (icon >= ICON_FOOD_FIRST && icon <= ICON_FOOD_LAST)
@@ -534,7 +534,7 @@ void inventory_reset(void)
         g_open_chest_slots[i] = THING_NONE;
 }
 
-bool inventory_fill_leader_hand_at_fountain(void)
+bool inventory_fill_at_fountain(void)
 {
     uint16_t thing = g_leader_hand_object;
     int16_t icon = object_get_icon_index(thing);

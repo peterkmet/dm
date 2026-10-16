@@ -336,7 +336,7 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
     if (!command || !g_leader_empty_handed)
         return;
     uint8_t cell = g_champions[index].cell;
-    champion_click_in_resurrect_reincarnate_panel(command);
+    champion_click_rebirth_panel(command);
     inventory_set_open_champion(index); /* the rule clears it; the panel closes here */
     command_toggle_inventory(INVENTORY_CLOSE);
     if (command == PANEL_CANCEL) {
@@ -410,7 +410,7 @@ static void grab_object(int16_t pile)
     uint16_t thing = g_pile_top_objects[pile];
     if (object_get_icon_index(thing) != -1) {
         move_get_move_result(&(Move){.thing = thing, .from.x = x, .from.y = y, .leaves = true}, NULL);
-        inventory_put_object_in_leader_hand(thing);
+        inventory_put_hand_object(thing);
     }
     g_stop_waiting_for_input = true;
 }
@@ -429,10 +429,10 @@ static void drop_object(int16_t pile)
     if (pile >= VIEW_CELL_FRONT_FIRST)
         get_front_square(&x, &y);
     int16_t cell = NORMALIZE(pile + g_party_direction);
-    uint16_t thing = inventory_get_object_removed_from_leader_hand();
+    uint16_t thing = inventory_take_hand_object();
     move_get_move_result(&(Move){.thing = THING_WITH_CELL(thing, cell), .to.x = x, .to.y = y, .enters = true}, NULL);
     if (alcove && g_facing_vi_altar && object_get_icon_index(thing) == ICON_BONES)
-        sensor_add_vi_altar_rebirth_event(thing, x, y, cell);
+        sensor_add_rebirth_event(thing, x, y, cell);
     g_stop_waiting_for_input = true;
 }
 
@@ -445,7 +445,7 @@ static void touch_front_wall(void)
         return;
     int16_t candidate = g_session.candidate_champion_index;
     /* the wall side that faces the party */
-    g_stop_waiting_for_input = sensor_is_triggered_by_click_on_wall(x, y, direction_back(g_party_direction));
+    g_stop_waiting_for_input = sensor_is_wall_triggered(x, y, direction_back(g_party_direction));
     if (candidate < 0 && g_session.candidate_champion_index >= 0)
         show_candidate();
 }
@@ -477,9 +477,9 @@ static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
     int16_t zone = g_square_ahead_element == VIEW_ELEMENT_DOOR_FRONT ? ZONE_THROW_DOOR_LEFT : ZONE_THROW_LEFT;
     int16_t thrown = 0;
     if (ui_is_point_in_zone(zone, x, y))
-        thrown = action_is_leader_hand_object_thrown(0);
+        thrown = action_is_hand_object_thrown(0);
     else if (ui_is_point_in_zone(zone + 1, x, y))
-        thrown = action_is_leader_hand_object_thrown(1);
+        thrown = action_is_hand_object_thrown(1);
     if (thrown)
         g_stop_waiting_for_input = true;
     return thrown;
@@ -549,7 +549,7 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
         return;
     }
     if (g_facing_fountain)
-        inventory_fill_leader_hand_at_fountain();
+        inventory_fill_at_fountain();
     touch_front_wall();
 }
 
@@ -587,7 +587,7 @@ static void click_in_spell_area(int16_t x, int16_t y)
         if (!g_champions[g_magic_caster_champion_index].symbols[0])
             return;
         highlight_zone(ZONE_SPELL_CAST_BOX);
-        g_stop_waiting_for_input = magic_get_click_on_spell_cast_result();
+        g_stop_waiting_for_input = magic_click_cast_spell();
     } else if (command >= COMMAND_SPELL_SYMBOL_FIRST && command < COMMAND_SPELL_SYMBOL_FIRST + SYMBOL_COUNT) {
         highlight_zone(ZONE_SPELL_SYMBOL_BOX_FIRST + command - COMMAND_SPELL_SYMBOL_FIRST);
         add_champion_symbol(command - COMMAND_SPELL_SYMBOL_FIRST);

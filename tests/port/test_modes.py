@@ -508,7 +508,7 @@ def test_empty_hand_at_a_fountain(game, mode):
     ctypes.memmove(ctypes.byref(champions[1]), ctypes.byref(champions[0]), ctypes.sizeof(champions[0]))
     champions[1].cell = (champions[0].cell + 1) % 4
     count.value = 2
-    lib.map_set_current_map_and_party_map(1)
+    lib.map_set_party_map(1)
     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (0, 21, 2)):  # facing a fountain on level 2
         c16.in_dll(lib, name).value = v
     lib.gameloop_draw_view()
@@ -518,7 +518,7 @@ def test_empty_hand_at_a_fountain(game, mode):
     assert (champions[0].water, champions[1].water) == (2048, 2048 if mode == ADVANCED else 100)
     count.value = 1
     ctypes.memset(ctypes.byref(champions[1]), 0, ctypes.sizeof(champions[1]))
-    lib.map_set_current_map_and_party_map(start[0])
+    lib.map_set_party_map(start[0])
     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), start[1]):
         c16.in_dll(lib, name).value = v
     lib.gameloop_draw_view()
@@ -581,7 +581,7 @@ def test_cheat_immortal_keeps_1_health(game):
     session(lib).cheat_immortal = 1
     try:
         lib.champion_damage_all(5000, 0, 0)
-        lib.champion_apply_and_draw_pending_damage_and_wounds()
+        lib.champion_apply_pending_damage()
         assert champion.current_health == 1
     finally:
         session(lib).cheat_immortal = 0

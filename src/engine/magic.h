@@ -33,12 +33,12 @@ static inline Position magic_get_map_position(const uint8_t *spells)
 /* Shield defense above which a new shield adds only a quarter. */
 #define SHIELD_STRONG 50 /* above this shield defense, a new shield or a Ya potion adds a quarter */
 
-/* Results of magic_get_champion_spell_cast_result. */
+/* Results of magic_cast_champion_spell. */
 #define SPELL_CAST_FAILURE             0
 #define SPELL_CAST_SUCCESS             1
 #define SPELL_CAST_FAILURE_NEEDS_FLASK 3
 
-/* Failure messages of magic_print_spell_failure_message. */
+/* Failure messages of magic_print_spell_failure. */
 #define SPELL_FAILURE_NEEDS_MORE_PRACTICE 0
 #define SPELL_FAILURE_MEANINGLESS_SPELL   1
 #define SPELL_FAILURE_NEEDS_FLASK_IN_HAND 10
@@ -56,17 +56,16 @@ static inline Position magic_get_map_position(const uint8_t *spells)
 #define SPELL_OTHER_FIRE_SHIELD  8
 
 /* Casts the spell of the champion symbols. Each missing skill level is a chance to fail against wisdom. */
-int16_t magic_get_champion_spell_cast_result(int16_t champion_index); /* exported for the tests */
+int16_t magic_cast_champion_spell(int16_t champion_index); /* exported for the tests */
 /* Cast button: casts for the magic caster; the symbols clear unless a flask is missing. */
-int16_t magic_get_click_on_spell_cast_result(void);
+int16_t magic_click_cast_spell(void);
 /* Prints "<text> <champion name> <text>" for a failed cast. (exported for the tests) */
-void magic_print_spell_failure_message(int16_t champion_index, int16_t failure_type, int16_t skill_index);
+void magic_print_spell_failure(int16_t champion_index, int16_t failure_type, int16_t skill_index);
 /* Spends the mana and shoots the spell; a weak cast with little maximum mana gets a slower step energy. */
 bool magic_is_projectile_spell_cast(int16_t champion_index, uint16_t thing, int16_t kinetic_energy,
                                     uint16_t required_mana);
 /* Spell shield (event 77) or fire shield (event 78) for the ticks. With mana, it costs 4 and half the ticks when short. */
-bool magic_is_party_spell_or_fire_shield_successful(int16_t champion_index, bool spell_shield, uint16_t ticks,
-                                                    bool use_mana);
+bool magic_cast_party_spell(int16_t champion_index, bool spell_shield, uint16_t ticks, bool use_mana);
 /* Light comes now; event 70 takes it back step by step after the ticks. */
 void magic_create_light_event(int16_t light_power, uint16_t ticks);
 /* The action hand is disabled for the ticks; an earlier disable is merged into one event 11. */

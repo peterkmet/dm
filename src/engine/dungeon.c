@@ -134,7 +134,7 @@ static uint16_t count_text_words(void)
 {
     return be16(g_dungeon_header + HEADER_TEXT_WORDS);
 }
-static uint16_t get_column_first_thing_index(int16_t map, int16_t x)
+static uint16_t column_first_thing(int16_t map, int16_t x)
 {
     return be16(g_dungeon_column_first_thing_index + (g_dungeon_map_first_column[map] + x) * 2);
 }
@@ -174,7 +174,7 @@ static bool read_maps(int16_t maps, uint16_t *sum)
 }
 
 /* Reads the column index, the square first things, and the text words. A new game adds free square entries. */
-static bool read_square_things_and_text(bool new_game, uint16_t *sum)
+static bool read_things_and_text(bool new_game, uint16_t *sum)
 {
     uint16_t square_things = rec_dungeon_square_things();
     uint16_t extra = new_game ? FREE_SQUARE_THINGS : 0;
@@ -250,7 +250,7 @@ static bool parse_dungeon(bool new_game)
     if (!read_header(new_game, &sum))
         return false;
     int16_t maps = dungeon_map_count();
-    if (!maps || !read_maps(maps, &sum) || !read_square_things_and_text(new_game, &sum) || !read_things(new_game, &sum))
+    if (!maps || !read_maps(maps, &sum) || !read_things_and_text(new_game, &sum) || !read_things(new_game, &sum))
         return false;
     g_dungeon_raw_map_data = alloc(raw_map_bytes());
     if (!read_summed_block(g_dungeon_raw_map_data, &sum, raw_map_bytes()))
@@ -306,7 +306,7 @@ static bool validate_squares(void)
 {
     for (int16_t m = 0; m < dungeon_map_count(); m++) {
         for (int16_t x = 0; x < dungeon_map_width(m); x++) {
-            uint16_t index = get_column_first_thing_index(m, x);
+            uint16_t index = column_first_thing(m, x);
             for (int16_t y = 0; y < dungeon_map_height(m); y++) {
                 uint8_t square = rec_square_byte(m, x, y);
                 int16_t type = rec_square_type(square);

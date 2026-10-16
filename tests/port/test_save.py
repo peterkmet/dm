@@ -256,7 +256,7 @@ def test_fuse_sequence_ends_the_game(game, quit_reset):
     spot = None
     for level in range(1, 14):
         lib.group_remove_all_active_groups()
-        lib.map_set_current_map_and_party_map(level)
+        lib.map_set_party_map(level)
         lib.group_add_all_active_groups()
         width, height = game.value("g_current_map_width"), game.value("g_current_map_height")
         groups = {(x, y) for x in range(width) for y in range(height) if lib.map_find_thing(Location(x, y), C.THING_GROUP) != 0xFFFE}

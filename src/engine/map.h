@@ -158,7 +158,7 @@ void map_reset(void);
 /* Selects the map that the square and thing functions work on. */
 void map_set_current_map(int16_t map);
 /* The party map becomes the current map. The ornament lists are view data (view_load_map). */
-void map_set_current_map_and_party_map(int16_t map);
+void map_set_party_map(int16_t map);
 
 /* Outside the map: a wall, with the "ornament allowed" bit when the adjacent square is a corridor or a pit. */
 uint8_t map_get_square(int16_t x, int16_t y);

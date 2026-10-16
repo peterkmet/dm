@@ -90,7 +90,7 @@ def test_champion_dies_with_inventory_open(game):
     game.run()
     assert game.session.inventory_champion_index == 1
 
-    game.lib.champion_add_pending_damage_and_wounds(1, 10000, 0, C.ATTACK_RAW)
+    game.lib.champion_add_pending_damage(1, 10000, 0, C.ATTACK_RAW)
     game.run()
     assert game.champions[1].current_health == 0
     assert game.session.inventory_champion_index == -1
@@ -204,7 +204,7 @@ def test_hand_object_name_follows_the_icon(game):
     skin = lib.rec_find_unused_thing(10)
     data = lib.rec_write(skin)
     data[3], data[2] = junk, 1 << 6  # one charge
-    lib.inventory_put_object_in_leader_hand(skin)
+    lib.inventory_put_hand_object(skin)
     game.key(C.KEY_F1)
     game.run()
     box = Box()

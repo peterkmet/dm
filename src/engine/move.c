@@ -244,7 +244,7 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
             group_delete(g_party_map_x, g_party_map_y);
         }
         if (map == src_map) {
-            sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, same_square, true);
+            sensor_process_thing_change(g_party_map_x, g_party_map_y, THING_NONE, same_square, true);
         } else {
             map_set_current_map(src_map);
             g_session.new_party_map = map;
@@ -254,7 +254,7 @@ static void arrive_on_square(uint16_t thing, int16_t dst_x, int16_t dst_y, int16
     if (THING_TYPE(thing) == THING_PROJECTILE)
         map_link_thing_to_list(thing, 0, dst_x, dst_y);
     else
-        sensor_process_thing_addition_or_removal(dst_x, dst_y, thing, map_is_party_on((Location){dst_x, dst_y}), true);
+        sensor_process_thing_change(dst_x, dst_y, thing, map_is_party_on((Location){dst_x, dst_y}), true);
     map_set_current_map(src_map);
 }
 
@@ -265,9 +265,9 @@ static void leave_source_square(const Walk *w, bool same_square)
     int16_t x = w->source.x;
     int16_t y = w->source.y;
     if (w->mover == MOVER_PARTY)
-        sensor_process_thing_addition_or_removal(x, y, THING_NONE, same_square, false);
+        sensor_process_thing_change(x, y, THING_NONE, same_square, false);
     else if (!w->levitating)
-        sensor_process_thing_addition_or_removal(x, y, w->thing, map_is_party_on((Location){x, y}), false);
+        sensor_process_thing_change(x, y, w->thing, map_is_party_on((Location){x, y}), false);
     else
         map_unlink_thing_from_list(w->thing, 0, x, y);
 }
@@ -327,7 +327,7 @@ MoveResult move_get_move_result(const Move *move, MoveDestination *destination)
         return MOVE_RESULT_STOPPED;
     if (dst_x >= 0) {
         start_walk(&w);
-        if (follow_square_chain(&w) || (mover == MOVER_GROUP && !group_is_creature_allowed_on_map(w.thing, w.d.map))) {
+        if (follow_square_chain(&w) || (mover == MOVER_GROUP && !group_is_allowed_on_map(w.thing, w.d.map))) {
             group_remove_after_move(w.thing, w.source, (Position){w.d.map, w.d.x, w.d.y}, &w.drops);
             return MOVE_RESULT_STOPPED;
         }
@@ -361,7 +361,7 @@ void move_process_new_party_map(void)
     if (g_session.new_party_map == -1)
         return;
     group_remove_all_active_groups();
-    map_set_current_map_and_party_map(g_session.new_party_map);
+    map_set_party_map(g_session.new_party_map);
     group_add_all_active_groups();
     move_get_move_result(&(Move){.thing = THING_NONE, .to.x = g_party_map_x, .to.y = g_party_map_y, .enters = true},
                          NULL);
@@ -372,7 +372,7 @@ void move_party_enter_dungeon(void)
 {
     map_reset();
     g_session.new_party_map = -1;
-    map_set_current_map_and_party_map(g_party_map_index);
+    map_set_party_map(g_party_map_index);
     group_add_all_active_groups();
     move_get_move_result(&(Move){.thing = THING_NONE, .to.x = g_party_map_x, .to.y = g_party_map_y, .enters = true},
                          NULL);
@@ -400,9 +400,9 @@ void move_turn_party(int16_t command)
         take_stairs(square & STAIRS_UP);
         return;
     }
-    sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, true, false);
+    sensor_process_thing_change(g_party_map_x, g_party_map_y, THING_NONE, true, false);
     turn_party(NORMALIZE(g_party_direction + (command == COMMAND_TURN_RIGHT ? 1 : -1)));
-    sensor_process_thing_addition_or_removal(g_party_map_x, g_party_map_y, THING_NONE, true, true);
+    sensor_process_thing_change(g_party_map_x, g_party_map_y, THING_NONE, true, true);
 }
 
 /* A wall, a door that is not open enough, or a solid fake wall stops the party. */
@@ -426,10 +426,10 @@ static void bump_into_wall(int16_t x, int16_t y, int16_t arrow)
 {
     int16_t cell = NORMALIZE(g_party_direction + arrow + 2);
     int16_t first = group_get_target_champion_index(x, y, cell);
-    int16_t damaged = champion_add_pending_damage_and_wounds(first, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
+    int16_t damaged = champion_add_pending_damage(first, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
     int16_t second = group_get_target_champion_index(x, y, direction_right(cell));
     if (second != first)
-        damaged |= champion_add_pending_damage_and_wounds(second, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
+        damaged |= champion_add_pending_damage(second, 1, WOUND_TORSO | WOUND_LEGS, ATTACK_SELF);
     if (damaged)
         sound_request_play(SOUND_PARTY_DAMAGED, (Location){x, y}, SOUND_MODE_NOW, 0);
 }

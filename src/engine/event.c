@@ -368,7 +368,7 @@ static void process_light(TimelineEvent *event)
     }
 }
 
-bool event_is_door_destroyed_by_attack(Location at, int16_t attack, bool magic, uint16_t ticks)
+bool event_is_door_destroyed(Location at, int16_t attack, bool magic, uint16_t ticks)
 {
     int16_t x = at.x, y = at.y;
     uint16_t door = map_get_square_first_thing(x, y);
@@ -403,10 +403,9 @@ static void enable_champion_action(int16_t champion_index)
             static const uint16_t quiver_order[] = {SLOT_QUIVER_LINE1_1, SLOT_QUIVER_LINE2_1, SLOT_QUIVER_LINE1_2,
                                                     SLOT_QUIVER_LINE2_2};
             for (int i = 0; i < ARRAY_COUNT(quiver_order); i++) {
-                if (action_is_ammunition_compatible_with_weapon(champion_index, SLOT_HAND_ACTION, quiver_order[i])) {
+                if (action_is_ammo_for_weapon(champion_index, SLOT_HAND_ACTION, quiver_order[i])) {
                     inventory_add_object_in_slot(
-                        champion_index, inventory_get_object_removed_from_slot(champion_index, quiver_order[i]),
-                        SLOT_HAND_READY);
+                        champion_index, inventory_take_slot_object(champion_index, quiver_order[i]), SLOT_HAND_READY);
                     break;
                 }
             }
@@ -535,7 +534,7 @@ void event_process_expired(void)
         case EVENT_ENABLE_CHAMPION_ACTION:
             enable_champion_action(event.priority);
             if (event_quiver_slot(&event) != -1) /* after a throw: the slot that gets the next weapon of the quiver */
-                action_move_weapon_from_quiver_to_slot(event.priority, event_quiver_slot(&event));
+                action_refill_from_quiver(event.priority, event_quiver_slot(&event));
             break;
         case EVENT_HIDE_DAMAGE_RECEIVED:
             hide_damage_received(event.priority);

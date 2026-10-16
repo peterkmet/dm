@@ -158,7 +158,7 @@ void champion_add_redraw_flags(int16_t champion_index, uint16_t attributes);
 void champion_face_party_direction(Champion *champion);
 /* The start of a game: no leader and an empty leader hand. Returns the hand object before, which a loaded
    game puts back. */
-uint16_t champion_reset_data_to_start_game(void);
+uint16_t champion_reset_for_new_game(void);
 
 /* Original 0x140-byte big-endian record (save files, emulator tests). */
 void champion_pack(const Champion *c, uint8_t *bytes);
@@ -168,7 +168,7 @@ void champion_unpack(const uint8_t *in, Champion *c);
 void champion_add_candidate_to_party(int16_t portrait_index);
 /* Cancel removes the candidate. Resurrect and reincarnate take the possessions from the wall
    square and disable the mirror. The original also asks for a new name on reincarnation. */
-void champion_click_in_resurrect_reincarnate_panel(int16_t command);
+void champion_click_rebirth_panel(int16_t command);
 /* Vi altar: the champion comes back with no objects and with a lower maximum health. */
 void champion_resurrect(int16_t champion_index);
 /* The living champion in a cell of the party square, or -1. */
@@ -208,10 +208,10 @@ int16_t champion_get_strength(int16_t champion_index, int16_t slot);
 int16_t champion_get_wound_defense(int16_t champion_index, int16_t slot, bool sharp); /* exported for the tests */
 
 /* Damage arrives at the end of the tick. Attack type ATTACK_RAW skips defense and wounds. */
-int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
-                                               int16_t attack_type);
+int16_t champion_add_pending_damage(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
+                                    int16_t attack_type);
 /* The main loop calls this every tick. A champion at 0 health dies. */
-void champion_apply_and_draw_pending_damage_and_wounds(void);
+void champion_apply_pending_damage(void);
 /* Closes the champion's inventory and action menu, drops all objects and the bones on the party
    square, and passes the leader and the spell casting to the first living champion. The party dies
    with its last champion. */

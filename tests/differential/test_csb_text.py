@@ -136,8 +136,8 @@ def test_prison_recruit_shows_csb_text(lib):
     assert c16.in_dll(lib, "g_party_champion_count").value == 1
     lib.ui_draw_inventory_open(0)
     lib.ui_draw_champion_skills_and_statistics()
-    lib.champion_click_in_resurrect_reincarnate_panel(C.PANEL_RESURRECT)
-    lib.magic_print_spell_failure_message(0, C.SPELL_FAILURE_NEEDS_MORE_PRACTICE, C.SKILL_WIZARD)
+    lib.champion_click_rebirth_panel(C.PANEL_RESURRECT)
+    lib.magic_print_spell_failure(0, C.SPELL_FAILURE_NEEDS_MORE_PRACTICE, C.SKILL_WIZARD)
     rows = message_rows(lib)
     assert any(r.endswith(" RESURRECTED.") and len(r) > len(" RESURRECTED.") for r in rows), rows
     assert any(r.endswith(" NEEDS MORE PRACTICE WITH THIS WIZARD SPELL.") for r in rows), rows

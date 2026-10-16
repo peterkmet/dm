@@ -129,6 +129,6 @@ void event_process_expired(void);
 void event_process_wall(TimelineEvent *event); /* exported for the tests */
 /* A closed door breaks when the attack reaches its defense and the door accepts the attack kind (force or magic).
    ticks 0 breaks it at once, else a door destruction event breaks it later. Returns true when the door breaks. */
-bool event_is_door_destroyed_by_attack(Location at, int16_t attack, bool magic, uint16_t ticks);
+bool event_is_door_destroyed(Location at, int16_t attack, bool magic, uint16_t ticks);
 
 #endif

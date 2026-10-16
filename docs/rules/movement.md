@@ -26,7 +26,7 @@ The game loop calls these functions in this order on each tick:
 
 ## Current map
 
-All square and thing functions work on the current map (`g_current_map_index`). `map_set_current_map(map)` selects a map. `map_set_current_map_and_party_map(map)` also sets `g_party_map_index`. The ornament lists of the original `set_current_map_and_party_map` are view data. `view_load_map` handles them.
+All square and thing functions work on the current map (`g_current_map_index`). `map_set_current_map(map)` selects a map. `map_set_party_map(map)` also sets `g_party_map_index`. The ornament lists of the original `set_current_map_and_party_map` are view data. `view_load_map` handles them.
 
 Call `map_reset()` after `dungeon_load`. The current map pointers then point to the new buffers at the next `map_set_current_map`.
 
@@ -111,19 +111,19 @@ After the loop:
 - A party move to a new square adds a scent. The scent list keeps 24 entries. `party_add_scent_strength` updates the strengths. The original compares scent `i` with strength `count − 1 − i`. The port keeps this.
 - A group that died in a fall, or that reached a map that does not allow its creature type, drops its possessions and is deleted (`group_remove_after_move`).
 - A move to the same square does nothing when the party direction or the cell of an object or a group did not change.
-- The thing leaves the source square with `sensor_process_thing_addition_or_removal(..., 0)`. A levitating object (projectile, explosion) only unlinks.
+- The thing leaves the source square with `sensor_process_thing_change(..., 0)`. A levitating object (projectile, explosion) only unlinks.
 - The party on a new map sets `g_session.new_party_map`. The party on the same map enters the floor sensors. An object enters the square with its sensors. A projectile only links.
 - A group enters the square with `group_enter_square` (see [creatures.md](creatures.md)).
 
 ### Champion functions
 
-Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see `docs/rules/champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `party_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand`, and `object_get_type`. `object_get_type` needs `tables_load()`.
+Movement calls these functions of `src/engine/champion.c` and `src/engine/inventory.c` (see `docs/rules/champions.md`): `champion_decrement_stamina`, `champion_get_maximum_load`, `champion_get_movement_ticks`, `champion_damage_all`, `champion_fall_damage`, `party_delete_scent`, `champion_add_skill_experience`, `champion_add_candidate_to_party`, `inventory_put_hand_object`, `inventory_take_hand_object`, and `object_get_type`. `object_get_type` needs `tables_load()`.
 
 ## Sensors
 
 ### Floor and wall sensors
 
-`sensor_process_thing_addition_or_removal(x, y, thing, party_on_square, add)` runs when a thing enters (`add` 1) or leaves (`add` 0) a square. `thing` `0xffff` is the party.
+`sensor_process_thing_change(x, y, thing, party_on_square, add)` runs when a thing enters (`add` 1) or leaves (`add` 0) a square. `thing` `0xffff` is the party.
 
 1. The function scans the square: a group present, objects present, objects of the same type, objects of another type. On a wall square it only scans the cell of the thing.
 2. On a floor square, the party entering a square prints the visible texts on the square (`dungeon_decode_text` mode 1, color 15). Not when the party only turns.
@@ -152,7 +152,7 @@ The trigger rule: XOR the value with the revert bit (byte 5 bit 5). Effect 3 (ho
 
 ### Wall click
 
-`sensor_is_triggered_by_click_on_wall(x, y, cell)` handles a click on the front wall cell with the leader hand. The command step calls it. It returns 1 when a sensor triggered. Only sensors in the clicked cell count. Without a leader, only type 127 counts. `g_leader_empty_handed` tells if the leader hand is empty.
+`sensor_is_wall_triggered(x, y, cell)` handles a click on the front wall cell with the leader hand. The command step calls it. It returns 1 when a sensor triggered. Only sensors in the clicked cell count. Without a leader, only type 127 counts. `g_leader_empty_handed` tells if the leader hand is empty.
 
 | Type | Rule |
 |---|---|
@@ -185,7 +185,7 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 - A closing door on the party square (state not 0) opens fully when the party has champions, damages the party (`champion_damage_all(5, 4, 2)`, sound 15), and tries again at time + 2.
 - A closing door with a group that is not non-material (creature attribute bit 6) goes back one step when the creature height is at most the state, plays sound 4, and tries again at time + 2. The height is 1, or creature attribute bits 7–8 for a door with bit 5 of byte 3.
 - Event 2 (door destruction): the state becomes 5.
-- `event_is_door_destroyed_by_attack(at, attack, magic, ticks)` (`0x11d5e0`): force (`magic` false) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Else event 2 destroys it after `ticks`. Returns 1 when the door breaks.
+- `event_is_door_destroyed(at, attack, magic, ticks)` (`0x11d5e0`): force (`magic` false) needs door word bit 8. Magic needs door word bit 7. The attack must reach the door defense (low byte of `g_current_map_door_info[door type]`). The door must be closed (state 4). `ticks` 0 destroys the door at once. Else event 2 destroys it after `ticks`. Returns 1 when the door breaks.
 
 ## Pits, teleporters, and fake walls
 
@@ -251,7 +251,7 @@ These rules need later steps. The port has no code for them yet:
 - Groups: `move_get_move_result` returns 0 for a group and does not move it. The party that arrives on a group square does not delete the group. A blocked move into a group does not send event −1 to the group. The closing door does not damage a group. The group generator does not create a group.
 - Projectiles: wall launchers (sensor types 7–10, 14, 15) do not launch. `projectile_is_killed_by_impact` does not run.
 - Champions: a blocked move does not damage the two front champions and plays no sound. This needs `group_get_target_champion_index` and `order_attack_cells`.
-- Objects: wall sensor type 12 does not create an object (`projectile_get_object_for_launcher_or_generator`).
+- Objects: wall sensor type 12 does not create an object (`projectile_get_launch_object`).
 - Endgame: wall sensor type 18 does nothing.
 - Drawing: the pit fall animation and the redraw calls are not part of the rules.
 

@@ -32,15 +32,15 @@ def lib():
         "champion_get_skill_level": (c16, [c16, c16, ctypes.c_bool, ctypes.c_bool]), "champion_add_skill_experience": (None, [c16, u16, u16]),
         "champion_get_maximum_load": (u16, [c16]), "champion_get_movement_ticks": (c16, [c16]),
         "champion_get_dexterity": (c16, [c16]), "champion_get_strength": (c16, [c16, c16]),
-        "champion_get_wound_defense": (c16, [c16, c16, ctypes.c_bool]), "champion_add_pending_damage_and_wounds": (c16, [c16, c16, u16, c16]),
+        "champion_get_wound_defense": (c16, [c16, c16, ctypes.c_bool]), "champion_add_pending_damage": (c16, [c16, c16, u16, c16]),
         "champion_damage_all": (c16, [c16, u16, c16]), "champion_decrement_stamina": (None, [c16, c16]),
         "inventory_get_object_weight": (u16, [u16]), "object_get_icon_index": (c16, [u16]), "rec_find_unused_thing": (u16, [u16]),
-        "champion_add_candidate_to_party": (None, [c16]), "champion_click_in_resurrect_reincarnate_panel": (None, [c16]),
-        "inventory_put_object_in_leader_hand": (None, [u16]), "champion_kill": (None, [c16]),
+        "champion_add_candidate_to_party": (None, [c16]), "champion_click_rebirth_panel": (None, [c16]),
+        "inventory_put_hand_object": (None, [u16]), "champion_kill": (None, [c16]),
         "champion_pack": (None, [cp, ctypes.c_char_p]), "champion_unpack": (None, [ctypes.c_char_p, cp]),
         "recruit_text_thing": (u16, [c16, c16, c16]), "recruit_portrait_index": (c16, [u16]),
         "map_get_first_thing_at": (u16, [Position]), "rec_write": (ctypes.POINTER(u8), [u16]),
-        "map_set_current_map_and_party_map": (None, [c16]), "dungeon_load": (ctypes.c_bool, [ctypes.c_char_p]),
+        "map_set_party_map": (None, [c16]), "dungeon_load": (ctypes.c_bool, [ctypes.c_char_p]),
     }
     for name, (res, args) in sig.items():
         f = getattr(lib, name)
@@ -116,7 +116,7 @@ def test_damage_matches_original(lib, seed):
         kind = w.rng.randrange(3)
         if kind == 0:
             args = (w.rng.randrange(4), w.rng.choice([-5, 0, 1, 30, 100, 300, 2000]), w.rng.getrandbits(6), w.rng.randrange(8))
-            assert lib.champion_add_pending_damage_and_wounds(*args) == s16(w.emu.call(PENDING, [(2, a) for a in args]))
+            assert lib.champion_add_pending_damage(*args) == s16(w.emu.call(PENDING, [(2, a) for a in args]))
         elif kind == 1:
             args = (w.rng.choice([0, 5, 20, 120]), w.rng.getrandbits(6), w.rng.randrange(8))
             assert lib.champion_damage_all(*args) == s16(w.emu.call(DAMAGE_ALL, [(2, a) for a in args]))
@@ -217,7 +217,7 @@ def party(lib):
     var(lib, ctypes.c_bool, "g_leader_empty_handed").value = 1
     var(lib, ctypes.c_uint32, "g_random_seed").value = 12345
     portrait, m, x, y, c = first_mirror(lib)
-    lib.map_set_current_map_and_party_map(m)
+    lib.map_set_party_map(m)
     var(lib, c16, "g_party_map_x").value = px = x + STEP_EAST[c]
     var(lib, c16, "g_party_map_y").value = py = y + STEP_NORTH[c]
     var(lib, c16, "g_party_direction").value = d = (c + 2) & 3
@@ -245,7 +245,7 @@ def test_recruit_first_mirror_champion(lib, party):
     slots = [s for s in ch.slots if s != 0xFFFF]
     assert sorted(slots) == sorted(party["possessions"])
     assert ch.load == sum(lib.inventory_get_object_weight(t) for t in slots)
-    lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
+    lib.champion_click_rebirth_panel(0xA0)
     assert session(lib).candidate_champion_index == -1
     wall = list(square_things(lib, party["m"], *party["wall"]))
     assert not set(t & 0x3FFF for t in party["possessions"]) & set(t & 0x3FFF for t in wall)
@@ -262,7 +262,7 @@ def test_recruit_copies_the_mirror_portrait(lib, party):
 
 
 def test_eat_food(lib, party):
-    lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
+    lib.champion_click_rebirth_panel(0xA0)
     ch = champions(lib)[0]
     session(lib).inventory_champion_index = 0
     lib.tables_get_object_info.restype = ctypes.POINTER(u16 * 3)
@@ -272,7 +272,7 @@ def test_eat_food(lib, party):
     thing = lib.rec_find_unused_thing(10)
     lib.rec_junk_set_type(thing, junk)
     ch.food, load = 100, ch.load
-    lib.inventory_put_object_in_leader_hand(thing)
+    lib.inventory_put_hand_object(thing)
     assert ch.load == load + lib.inventory_get_object_weight(thing)
     lib.inventory_process_click_on_mouth()
     assert ch.food == min(100 + food_value, 2048) and ch.load == load
@@ -282,13 +282,13 @@ def test_eat_food(lib, party):
 
 
 def test_damage_until_death(lib, party):
-    lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
+    lib.champion_click_rebirth_panel(0xA0)
     ch = champions(lib)[0]
     slots = [s for s in ch.slots if s != 0xFFFF]
     hits = 0
     while ch.current_health:
         lib.champion_damage_all(50, 0x3F, 3)
-        lib.champion_apply_and_draw_pending_damage_and_wounds()
+        lib.champion_apply_pending_damage()
         hits += 1
         assert hits < 200
     assert session(lib).party_dead == 1
@@ -300,7 +300,7 @@ def test_damage_until_death(lib, party):
 
 
 def test_death_sets_redraw_flags(lib, party):
-    lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
+    lib.champion_click_rebirth_panel(0xA0)
     cs = champions(lib)
     ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
     cs[1].cell = (cs[0].cell + 1) & 3
@@ -316,7 +316,7 @@ def test_death_sets_redraw_flags(lib, party):
 
 
 def test_death_marks_the_champion_for_release(lib, party):
-    lib.champion_click_in_resurrect_reincarnate_panel(0xA0)
+    lib.champion_click_rebirth_panel(0xA0)
     cs = champions(lib)
     ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
     cs[1].cell = (cs[0].cell + 1) & 3

@@ -118,7 +118,7 @@ Each table ends where the next named table starts. The tests check this.
 | 18 | `resistances` | Bits 8–11 poison. |
 | 20 | `animation_ticks` | Bits 4–7 non-attack, bits 8–11 attack. |
 | 22 | `wound_probabilities` | Four 4-bit thresholds. The creature attack code compares them with a random nibble to select an entry of `g_wound_probability_index_to_mask`. |
-| 24 | `attack_type` | Attack type argument of `champion_add_pending_damage_and_wounds`. |
+| 24 | `attack_type` | Attack type argument of `champion_add_pending_damage`. |
 | 25 | — | Padding. |
 
 `group_get_champion_damage` (`0x11d10a`) copies the whole 26-byte record to the stack. That code confirms the offsets of `wound_probabilities` and `attack_type`.
@@ -167,7 +167,7 @@ Each table ends where the next named table starts. The tests check this.
 
 ## Door info
 
-Door info, 2 bytes per door type, read by `tables_get_door_attributes`. Byte 0 `attributes`, byte 1 `defense`. `event_is_door_destroyed_by_attack` compares an attack with `defense`. Each map selects 2 door types (map record byte 14).
+Door info, 2 bytes per door type, read by `tables_get_door_attributes`. Byte 0 `attributes`, byte 1 `defense`. `event_is_door_destroyed` compares an attack with `defense`. Each map selects 2 door types (map record byte 14).
 
 ## Spells and symbols
 

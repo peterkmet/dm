@@ -115,7 +115,7 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
                      g_game_time + rec_sensor_delay(sensor));
 }
 
-static bool is_object_or_in_chest(uint16_t thing, int16_t object_type)
+static bool is_or_contains_object(uint16_t thing, int16_t object_type)
 {
     int16_t type = object_get_type(thing);
     if (type == object_type)
@@ -164,12 +164,12 @@ static ClickResult exchange_single_object(uint16_t sensor, int16_t x, int16_t y)
         if (object == THING_NONE)
             return CLICK_RESULT_IGNORED;
         map_unlink_thing_from_list(object, 0, x, y);
-        inventory_put_object_in_leader_hand(object);
+        inventory_put_hand_object(object);
     } else {
         if (!holds_object_type(data) || get_object_in_cell(x, y, sensor_cell, data) != THING_NONE)
             return CLICK_RESULT_IGNORED;
         uint16_t object = g_leader_hand_object;
-        inventory_get_object_removed_from_leader_hand();
+        inventory_take_hand_object();
         map_link_thing_to_list(THING_WITH_CELL(object, sensor_cell), 0, x, y);
     }
     trigger_local_effect(LOCAL_EFFECT_ROTATE_SENSORS, x, y, sensor_cell);
@@ -188,9 +188,9 @@ static ClickResult exchange_object(uint16_t sensor, Location at, int16_t remaini
         return CLICK_RESULT_IGNORED;
     map_unlink_thing_from_list(object, 0, x, y);
     uint16_t hand = g_leader_hand_object;
-    inventory_get_object_removed_from_leader_hand();
+    inventory_take_hand_object();
     map_link_thing_to_list(THING_WITH_CELL(hand, THING_CELL(sensor)), 0, x, y);
-    inventory_put_object_in_leader_hand(object);
+    inventory_put_hand_object(object);
     return CLICK_RESULT_MATCH;
 }
 
@@ -247,7 +247,7 @@ static ClickTest click_test(uint16_t thing, uint16_t previous, Location at, int1
     return (ClickTest){CLICK_RESULT_IGNORED, thing};
 }
 
-bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, int16_t cell)
+bool sensor_is_wall_triggered(int16_t x, int16_t y, int16_t cell)
 {
     bool triggered = false;
     int16_t remaining[CELL_COUNT] = {0};
@@ -288,7 +288,7 @@ bool sensor_is_triggered_by_click_on_wall(int16_t x, int16_t y, int16_t cell)
             (type == SENSOR_WALL_OBJECT_REMOVED || type == SENSOR_WALL_SINGLE_OBJECT_STORAGE ||
              type == SENSOR_WALL_OBJECT_REMOVED_SENSOR_REMOVED)) {
             rec_thing_set_free(g_leader_hand_object);
-            inventory_get_object_removed_from_leader_hand();
+            inventory_take_hand_object();
         }
         sensor_trigger_effect(sensor, effect, x, y, sensor_cell);
     }
@@ -360,9 +360,9 @@ static bool is_object_possessed(int16_t object_type)
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         if (g_champions[i].current_health)
             for (int16_t slot = 0; slot < SLOT_COUNT; slot++)
-                if (is_object_or_in_chest(g_champions[i].slots[slot], object_type))
+                if (is_or_contains_object(g_champions[i].slots[slot], object_type))
                     return true;
-    return is_object_or_in_chest(g_leader_hand_object, object_type);
+    return is_or_contains_object(g_leader_hand_object, object_type);
 }
 
 /* A floor sensor: each type tests the thing and what else lies on the square. */
@@ -415,7 +415,7 @@ static void process_floor_sensor(uint16_t sensor, const SquareChange *s, uint8_t
     }
 }
 
-void sensor_process_thing_addition_or_removal(int16_t x, int16_t y, uint16_t thing, bool party_on_square, bool add)
+void sensor_process_thing_change(int16_t x, int16_t y, uint16_t thing, bool party_on_square, bool add)
 {
     bool party = thing == THING_NONE;
     SquareChange s = {.x = x,
@@ -456,7 +456,7 @@ void sensor_reset(void)
     rotation.cell = 0;
 }
 
-void sensor_add_vi_altar_rebirth_event(uint16_t bones, int16_t x, int16_t y, int16_t cell)
+void sensor_add_rebirth_event(uint16_t bones, int16_t x, int16_t y, int16_t cell)
 {
     TimelineEvent rebirth = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + 1),
                              .type = EVENT_VI_ALTAR_REBIRTH,

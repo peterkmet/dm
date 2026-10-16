@@ -662,11 +662,11 @@ def chest_with_content(game):
 
 def test_take_put_and_look_in_an_open_chest(game):
     lib = game.lib
-    lib.inventory_put_object_in_leader_hand.argtypes = [ctypes.c_uint16]
-    lib.inventory_get_object_removed_from_leader_hand.restype = ctypes.c_uint16
+    lib.inventory_put_hand_object.argtypes = [ctypes.c_uint16]
+    lib.inventory_take_hand_object.restype = ctypes.c_uint16
     chest, content = chest_with_content(game)
     free = 30 + len(content)
-    lib.inventory_put_object_in_leader_hand(chest)  # the chest stays in its square list; the test gives it back unchanged
+    lib.inventory_put_hand_object(chest)  # the chest stays in its square list; the test gives it back unchanged
     client = Client(game)
     try:
         client.act("open_inventory", champion=0)
@@ -695,7 +695,7 @@ def test_take_put_and_look_in_an_open_chest(game):
         client.act("close_inventory")
     finally:
         client.sock.close()
-        removed = lib.inventory_get_object_removed_from_leader_hand()
+        removed = lib.inventory_take_hand_object()
     assert removed == chest
     data = lib.rec_write(chest)
     assert data[2] << 8 | data[3] == content[0]
@@ -930,13 +930,13 @@ def on_map(game, m, x, y, direction):
     lib, saved_map = game.lib, game.value("g_party_map_index")
     palette = ctypes.c_int16.in_dll(lib, "g_party_light_level")
     saved_palette, palette.value = palette.value, 0
-    lib.map_set_current_map_and_party_map(m)
+    lib.map_set_party_map(m)
     lib.view_load_map(m)
     try:
         with placed(game, x, y, direction):
             yield
     finally:
-        lib.map_set_current_map_and_party_map(saved_map)
+        lib.map_set_party_map(saved_map)
         lib.view_load_map(saved_map)
         palette.value = saved_palette
 

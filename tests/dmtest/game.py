@@ -532,7 +532,7 @@ def setup_creatures(lib):
     """The types of the creature, projectile and spell functions."""
     event_p = ctypes.POINTER(TimelineEvent)
     for name, res, args in [
-        ("projectile_get_impact_attack", Impact, [u16, u16]), ("projectile_get_object_for_launcher_or_generator", u16, [c16]),
+        ("projectile_get_impact_attack", Impact, [u16, u16]), ("projectile_get_launch_object", u16, [c16]),
         ("projectile_create", None, [ctypes.POINTER(ProjectileLaunch)]), ("map_get_square", u8, [c16, c16]),
         ("map_get_square_first_thing", u16, [c16, c16]), ("rec_thing_next", u16, [u16]), ("map_find_thing", u16, [Location, c16]),
         ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]), ("rec_square_byte", u8, [c16, c16, c16]),
@@ -541,14 +541,14 @@ def setup_creatures(lib):
         ("timeline_is_first_event_expired", ctypes.c_bool, []), ("timeline_extract_first_event", None, [event_p]),
         ("projectile_process_move_event", None, [event_p]), ("explosion_process_step_event", None, [event_p]),
         ("map_set_current_map", None, [c16]), ("rec_write", ctypes.POINTER(u8), [u16]),
-        ("group_get_champion_damage", c16, [u16, c16]), ("group_get_directions_to_destination", DirectionPair, [Location, Location]),
-        ("group_is_destination_visible_from_source", ctypes.c_bool, [c16, c16, c16, c16, c16]),
-        ("group_get_resistance_adjusted_poison_attack", u16, [u16, c16]),
+        ("group_get_champion_damage", c16, [u16, c16]), ("group_get_directions_to", DirectionPair, [Location, Location]),
+        ("group_is_destination_visible", ctypes.c_bool, [c16, c16, c16, c16, c16]),
+        ("group_get_poison_attack", u16, [u16, c16]),
         ("group_get_generated", u16, [u16, c16, u16, c16, Location]),
-        ("group_get_damage_all_creatures_outcome", ctypes.c_int, [u16, c16, c16, c16]),
+        ("group_damage_all_creatures", ctypes.c_int, [u16, c16, c16, c16]),
         ("dungeon_load", ctypes.c_bool, [ctypes.c_char_p]),
-        ("magic_get_champion_spell_cast_result", c16, [c16]), ("rec_find_unused_thing", u16, [u16]),
-        ("object_get_icon_index", c16, [u16]), ("group_is_creature_allowed_on_map", ctypes.c_bool, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
+        ("magic_cast_champion_spell", c16, [c16]), ("rec_find_unused_thing", u16, [u16]),
+        ("object_get_icon_index", c16, [u16]), ("group_is_allowed_on_map", ctypes.c_bool, [u16, c16]), ("champion_pack", None, [ctypes.POINTER(Champion), ctypes.c_char_p]),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
@@ -611,7 +611,7 @@ def skeleton_map_and_squares(lib):
     """A map that allows skeletons, and two empty corridor squares on it, two squares apart in a straight line."""
     probe = lib.rec_find_unused_thing(C.THING_GROUP)
     lib.rec_group_set_creature_type(probe, C.CREATURE_SKELETON)
-    maps = [m for m in range(lib.dungeon_map_count()) if lib.group_is_creature_allowed_on_map(probe, m)]
+    maps = [m for m in range(lib.dungeon_map_count()) if lib.group_is_allowed_on_map(probe, m)]
     data = lib.rec_write(probe)
     data[0] = data[1] = 0xFF  # free the probe record again
     for m in maps:

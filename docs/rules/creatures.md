@@ -62,7 +62,7 @@ Bits 0–3 of group word 14 hold the behavior.
 
 `visible_party_distance` returns the square distance to the party, or 0.
 
-1. A creature without side attack sees only into the 90 degree cone in front of it (`group_is_destination_visible_from_source`).
+1. A creature without side attack sees only into the 90 degree cone in front of it (`group_is_destination_visible`).
 2. The sight range comes from the creature info. Darkness reduces it by `palette index / 2`, unless the creature has night vision. An invisible party is hidden from a creature that does not see invisible.
 3. Outside the sight range the creature can still notice the party by a random roll. Next to the party, the roll also adds the hearing and smell ranges.
 4. A wall, a solid fake wall, or a closed door that is not see-through on the line from the party to the creature blocks the view.
@@ -72,7 +72,7 @@ Smell uses the smell range of the creature. A creature smells the party directly
 ### Movement
 
 - The creature moves when half its movement ticks have passed since the last move. Else the group waits.
-- `group_get_directions_to_destination` returns a `DirectionPair`: a primary direction and a second direction. Random numbers select between equal choices. This function matches the original exactly (differential test).
+- `group_get_directions_to` returns a `DirectionPair`: a primary direction and a second direction. Random numbers select between equal choices. This function matches the original exactly (differential test).
 - `test_movement` blocks walls, stairs, open pits (except for levitating creatures), closed fake walls, the party square, other groups, and closed doors that are too low for the creature. A wary creature avoids a teleporter to a map that does not allow its type. Lord Chaos does not enter a fluxcage.
 - A creature never turns around at once. It turns left or right first.
 - Lord Chaos sometimes jumps two squares over a free square.
@@ -93,21 +93,21 @@ An attacking creature (events 38–41) turns to the party, moves to the front ce
 1. A sleeping party wakes up. The champion gets parry experience.
 2. The champion dodges by dexterity against `random(32) + creature dexterity + 2 × map difficulty + dodge bonus − 16`. Darkness and invisibility increase the dodge bonus. Luck (60 %) can also avoid the hit.
 3. The damage starts from `random(16) + creature attack + 2 × map difficulty − 2 × parry skill`, then gets a random spread.
-4. `champion_add_pending_damage_and_wounds` applies armour by the attack type of the creature. A hit plays the damage sound of the champion.
+4. `champion_add_pending_damage` applies armour by the attack type of the creature. A hit plays the damage sound of the champion.
 5. A poison attack poisons the champion half of the time.
 
 This function matches the original exactly (differential test).
 
 ## Damage and death
 
-`group_get_damage_creature_outcome(group, creature, at, damage)` hurts one creature. It returns `OUTCOME_NO_CREATURE_KILLED` (0), `OUTCOME_SOME_CREATURES_KILLED` (1), or `OUTCOME_ALL_CREATURES_KILLED` (2).
+`group_damage_creature(group, creature, at, damage)` hurts one creature. It returns `OUTCOME_NO_CREATURE_KILLED` (0), `OUTCOME_SOME_CREATURES_KILLED` (1), or `OUTCOME_ALL_CREATURES_KILLED` (2).
 
 - An invulnerable creature takes no damage.
 - A creature that dies leaves smoke (explosion type 40). The smoke attack depends on the creature size.
 - When the last creature dies, the group drops its possessions and the record becomes free.
 - When one creature of several dies, the other creatures move down one index. The creature can drop its fixed possessions. An attacking group can start to flee, by its fear resistance.
 
-`group_get_damage_all_creatures_outcome(group, x, y, attack)` hurts each creature with `attack ± attack / 8`.
+`group_damage_all_creatures(group, x, y, attack)` hurts each creature with `attack ± attack / 8`.
 
 ### Possessions
 
@@ -152,7 +152,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 - A Ful bomb or Ven bomb flask explodes into a fireball or a poison cloud.
 - A spell projectile becomes an explosion of its type. A lightning bolt keeps half its kinetic energy as attack, a poison bolt a quarter.
 
-`projectile_get_impact_attack` returns an `Impact`: the attack, the attack type, and the poison attack of the hit. It and `projectile_get_object_for_launcher_or_generator` match the original exactly (differential tests).
+`projectile_get_impact_attack` returns an `Impact`: the attack, the attack type, and the poison attack of the hit. It and `projectile_get_launch_object` match the original exactly (differential tests).
 
 ### Launchers
 
@@ -186,7 +186,7 @@ Then the explosion disappears.
 
 ## Spells
 
-`magic_get_champion_spell_cast_result(champion)` casts the spell of the champion symbols. It returns `SPELL_CAST_SUCCESS` (1), `SPELL_CAST_FAILURE` (0), or `SPELL_CAST_FAILURE_NEEDS_FLASK` (3).
+`magic_cast_champion_spell(champion)` casts the spell of the champion symbols. It returns `SPELL_CAST_SUCCESS` (1), `SPELL_CAST_FAILURE` (0), or `SPELL_CAST_FAILURE_NEEDS_FLASK` (3).
 
 1. A dead champion or an unknown symbol string fails. An unknown string prints "meaningless spell".
 2. The required level is `power + base level of the spell`. Each missing skill level is a draw against wisdom. A failed draw gives reduced experience and prints "needs more practice".
@@ -196,7 +196,7 @@ Then the explosion disappears.
    - Other: Light, Darkness, Thieves Eye, Invisibility, Party Shield, Magic Torch, Footprints, Zokathra, Fire Shield. Each effect adds its end event (70–79).
 4. The champion gets the experience and an action delay (event 11).
 
-`magic_get_click_on_spell_cast_result` casts for the magic caster and clears the symbols, except when a flask is missing.
+`magic_click_cast_spell` casts for the magic caster and clears the symbols, except when a flask is missing.
 
 ## Kept original quirks
 

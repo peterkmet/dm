@@ -229,7 +229,7 @@ Code references (Step 3 verified each address: a `pea` or `lea` with A5 = C`0x10
 | `0x102d3e`, `0x102d4e` | `champion_add_skill_experience` |
 | `0x104b2a`, `0x104b3e` | `menus_is_action_performed` |
 | `0x104b64`, `0x104b70` | `menus_draw_action_damage` |
-| `0x102dec`, `0x102dfa` | `champion_click_in_resurrect_reincarnate_panel` |
+| `0x102dec`, `0x102dfa` | `champion_click_rebirth_panel` |
 | `0x104c56` | `endgame` |
 | `0x102654`, `0x102164` | `scroll_text_insert_creature_name` |
 | `0x1048b4` | `menus_get_action_name` |
@@ -345,7 +345,7 @@ Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `ui_champio
 
 ### Champions
 
-- `champion_click_in_resurrect_reincarnate_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value − value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `src/engine/champion.c` `reincarnate`. The CSB dungeon has no mirrors, so this code does not run in a normal CSB game (UNVERIFIED).
+- `champion_click_rebirth_panel` (C`0x11668e`), REINCARNATE: before the 12 random points, CSB sets each statistic 1–6 (current and maximum) to max(minimum, value − value/8) (C`0x1167e0`–`0x116854`). Then it divides health, stamina, and mana (current and maximum) by 4 (C`0x116856`–`0x11688e`). Port: `src/engine/champion.c` `reincarnate`. The CSB dungeon has no mirrors, so this code does not run in a normal CSB game (UNVERIFIED).
 - All other champion functions differ only in code generation: object modifiers, skill level, skill experience, luck, time effects, candidate, food and potions, object icons.
 
 ### Save and load

@@ -35,7 +35,7 @@ The port reads all game tables from the KAOS image at run time ([tables.md](tabl
 
 The possessions stay in the wall square list until the player accepts the candidate.
 
-`champion_click_in_resurrect_reincarnate_panel(command)`:
+`champion_click_rebirth_panel(command)`:
 
 | Command | Effect |
 |---|---|
@@ -99,7 +99,7 @@ With the first champion, the time of the last party move becomes the game time.
 
 ## Damage
 
-`champion_add_pending_damage_and_wounds(index, attack, allowed_wounds, type)` adds damage that the main loop applies at the end of the tick. It returns the damage.
+`champion_add_pending_damage(index, attack, allowed_wounds, type)` adds damage that the main loop applies at the end of the tick. It returns the damage.
 
 1. No damage for no champion, the candidate, a dead champion, or an attack of 0 or less.
 2. `ATTACK_RAW` adds the attack without defense and without wounds.
@@ -116,7 +116,7 @@ Sleep keeps the selected runes of the magic caster, in the original (command 145
 
 `champion_damage_all(attack, wounds, type)` gives each champion `max(1, attack − spread + random16() % (2 × spread))` with `spread = attack / 8 + 1`. It returns the number of champions hurt.
 
-`champion_apply_and_draw_pending_damage_and_wounds()` adds the pending wounds, subtracts the pending damage, and kills a champion at 0 health. A hurt champion gets event 12 (hide the damage) at time + 5, or the existing event moves to that time.
+`champion_apply_pending_damage()` adds the pending wounds, subtracts the pending damage, and kills a champion at 0 health. A hurt champion gets event 12 (hide the damage) at time + 5, or the existing event moves to that time.
 
 `champion_decrement_stamina(index, amount)`: stamina below 1 becomes 0 and gives raw damage of half the deficit. Stamina stops at the maximum.
 
@@ -141,8 +141,8 @@ Sleep keeps the selected runes of the magic caster, in the original (command 145
 | `inventory_get_object_weight` | Weapon and armour weight from the tables. Scroll 1. Potion 3, empty flask 1. Chest 50 plus its contents. Junk weight from the table; the waterskin adds 2 for each charge. |
 | `object_get_icon_index` | The object type, plus the state for types 0–30: compass direction, lit torch charge, waterskin and worn jewel charges, weapon charges, closed scroll. |
 | `inventory_add_object_in_slot` | Adds the weight to the load and applies the object modifiers. A torch in a hand burns. A scroll in the action hand opens. A jewel on the neck is worn; the Illumulet adds light. |
-| `inventory_get_object_removed_from_slot` | The reverse. A torch in a hand goes out. A scroll leaving the action hand closes. |
-| `inventory_put_object_in_leader_hand`, `inventory_get_object_removed_from_leader_hand` | The hand object counts in the leader load. |
+| `inventory_take_slot_object` | The reverse. A torch in a hand goes out. A scroll leaving the action hand closes. |
+| `inventory_put_hand_object`, `inventory_take_hand_object` | The hand object counts in the leader load. |
 | `inventory_click_on_slot_box` | Swaps the hand object and the slot object when the slot mask accepts the hand object. |
 | `champion_set_leader` | Moves the hand object weight to the new leader and turns the leader to the party direction. |
 
@@ -213,7 +213,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 
 | Action | Effect |
 |---|---|
-| Chop, Kick, Swing, Hack, Berzerk, Bash on a closed door | Bashes the door with the action-hand strength (`event_is_door_destroyed_by_attack`, destruction after 2 ticks). Disabled ticks become 6. |
+| Chop, Kick, Swing, Hack, Berzerk, Bash on a closed door | Bashes the door with the action-hand strength (`event_is_door_destroyed`, destruction after 2 ticks). Disabled ticks become 6. |
 | Melee actions (the above without a door, Punch, Stab, Thrust, Jab, Parry, Disrupt, Melee, Slash, Cleave, Stun) | `is_melee_performed`. A miss of the target (no group, no creature in reach) halves the experience and the disabled ticks. |
 | War Cry, Blow Horn, Calm, Brandish, Confuse | `is_group_frightened`. Confuse uses a charge. War Cry plays sound 17, Blow Horn sound 18. |
 | Flip | Prints heads or tails (text 0x45 or 0x46) by a random bit. |
@@ -221,7 +221,7 @@ The code is in `src/engine/action.c`. The rules follow `action_is_action_perform
 | Freeze Life | A blue magical box adds 30 freeze ticks, a green box 125; the box is used up. Other objects add 70 and use a charge. The maximum is 200. |
 | Fireball (150), Dispell (harm non-material, 150), Lightning (180), Spit (fireball, 250), Invoke | Shoots the explosion with the attack as kinetic energy. Invoke: attack `100 + random(128)`, spell by `random % 6`: 0 poison bolt, 1 poison cloud, 2 harm non-material, else fireball. With less mana than the cost, attack becomes `max(2, mana × attack / cost)` and all mana is used. A failed cast halves the experience. Each uses a charge. |
 | Shoot | The bow (class 16–31) or sling (class 32–47) in the action hand shoots the arrow (class 10) or stone (class 11) of the ready hand. Kinetic energy is the sum of both weapons. Attack is `(shoot level + launcher attributes low byte) × 2`. Step energy is the launcher class minus 16 or 32. Without ammunition: `g_session.action_damage = −2`, no experience. |
-| Spellshield, Fireshield | `magic_is_party_spell_or_fire_shield_successful` for 280 ticks with mana. Success uses a charge. Failure quarters the experience and halves the disabled ticks. |
+| Spellshield, Fireshield | `magic_cast_party_spell` for 280 ticks with mana. Success uses a charge. Failure quarters the experience and halves the disabled ticks. |
 | Fluxcage | `projectile_fluxcage_action` on the square in front. |
 | Heal | While mana remains: health + `min(10, heal level)`, mana − 2, experience + 2 (start 2). |
 | Light | Light power 2 now, event 70 takes it back after 2500 ticks. Uses a charge. |
@@ -241,7 +241,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 ### Throwing
 
-`is_object_thrown(champion, slot, side)` throws the object of the slot. With slot < 0 it throws the leader hand object (`action_is_leader_hand_object_thrown`, a click in the throw zones of the dungeon view); the strength then counts the object as if it were in the action hand.
+`is_object_thrown(champion, slot, side)` throws the object of the slot. With slot < 0 it throws the leader hand object (`action_is_hand_object_thrown`, a click in the throw zones of the dungeon view); the strength then counts the object as if it were in the action hand.
 
 1. Stamina cost: half the weight, bounded 1–10, plus half of each 10 above (`throwing_stamina_cost`). The action hand is disabled for 4 ticks.
 2. Experience to the throw skill: 8 for objects, 12 for weapons, plus kinetic energy / 4 for weapons of class 0–12.
@@ -257,7 +257,7 @@ The influence roll is `random16() % (influence level + bonus)`. The bonus and th
 
 | Event | Handler | Effect |
 |---|---|---|
-| 11 | `enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 − 1` (`action_move_weapon_from_quiver_to_slot`). |
+| 11 | `enable_champion_action` | The action hand works again. The action defense of `action_index` ends. After Shoot with an empty ready hand, the first matching ammunition of the quiver (slot 12, then 7–9) goes to the ready hand. Byte 6 ≠ 0 then moves the next weapon of the quiver to slot `byte 6 − 1` (`action_refill_from_quiver`). |
 | 12 | `hide_damage_received` | Hides the damage number of the champion. |
 | 13 | `process_vi_altar_rebirth` | Cell byte = step. Step 2: rebirth explosion, next step after 5 ticks. Step 1: the bones of the champion (junk icon 147, champion index in the charges, in the event cell) disappear, next step after 1 tick; without bones the rebirth stops. Step 0: `champion_resurrect`. |
 | 75 | `champion_poison` | One poison step: the poison event count decreases, then `champion_poison(champion, word 6)`. |

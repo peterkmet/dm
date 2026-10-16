@@ -64,13 +64,13 @@ def lib():
         ("rec_thing_next", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("rec_find_unused_thing", u16, [u16]),
         ("map_link_thing_to_list", None, [u16, u16, c16, c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("dungeon_decode_text", ctypes.c_bool, [ctypes.c_char_p, c16, u16, c16]), ("tables_get_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
-        ("magic_get_champion_spell_cast_result", c16, [c16]), ("map_get_creature_attributes", u16, [u16]),
+        ("magic_cast_champion_spell", c16, [c16]), ("map_get_creature_attributes", u16, [u16]),
         ("ui_get_viewport", ctypes.POINTER(Bitmap), []), ("gfx_get_string", ctypes.c_char_p, [c16]),
         ("layout_get_zone", ctypes.c_bool, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
         ("savegame_load_from", ctypes.c_int, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
         ("ui_draw_inventory_open", None, [c16]), ("gfx_get_bitmap", ctypes.POINTER(Bitmap), [c16]),
         ("map_get_stairs_exit_direction", c16, [c16, c16]), ("view_get_wall_ornament", c16, [c16, c16, c16]),
-        ("view_get_floor_ornament", c16, [c16, c16]), ("map_set_current_map_and_party_map", None, [c16]),
+        ("view_get_floor_ornament", c16, [c16, c16]), ("map_set_party_map", None, [c16]),
         ("text_get_size", ctypes.c_bool, [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]), ("dungeon_map_width", c16, [c16]), ("dungeon_map_height", c16, [c16]),
     ]:
         f = getattr(lib, name)
@@ -173,7 +173,7 @@ def message_rows(lib):
 def cast(lib, c, spell_index, power, index=0):
     s = lib.tables_get_spell(spell_index).contents
     c.symbols = bytes([POWER_SYMBOL_BEFORE_FIRST + power, s.symbols >> 16 & 0xFF, s.symbols >> 8 & 0xFF, s.symbols & 0xFF, 0])
-    return lib.magic_get_champion_spell_cast_result(index)
+    return lib.magic_cast_champion_spell(index)
 
 
 def panel(lib):
@@ -765,7 +765,7 @@ def test_floor_ornament_tile(lib, csb):
 def test_wall_ornament_tiles(lib, csb, ornament):
     c, scrolls = csb
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
-    lib.map_set_current_map_and_party_map(WALL_ORNAMENT_MAP)
+    lib.map_set_party_map(WALL_ORNAMENT_MAP)
     panel(lib)  # the view loads the party map
     fx, fy = face_free_square(lib, lambda x, y: any(lib.view_get_wall_ornament(x, y, f) == ornament for f in range(4)))
     view = panel(lib)

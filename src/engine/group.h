@@ -194,7 +194,7 @@ static inline uint16_t creature_size(const CreatureInfo *info)
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
 void group_set_directions(uint16_t group, uint8_t directions, int16_t map);
 /* The creature type list of a map follows its last square. */
-bool group_is_creature_allowed_on_map(uint16_t group, int16_t map);
+bool group_is_allowed_on_map(uint16_t group, int16_t map);
 
 /* The index of the creature in a cell, or -1. Half-square creatures fill two cells side by side. */
 int16_t group_get_creature_in_cell(uint16_t group, int16_t cell);
@@ -242,23 +242,22 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
 void group_delete(int16_t x, int16_t y);
 /* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group.
    Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
-DamageOutcome group_get_damage_creature_outcome(uint16_t group, int16_t creature_index, Location at, int16_t damage);
+DamageOutcome group_damage_creature(uint16_t group, int16_t creature_index, Location at, int16_t damage);
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
-DamageOutcome group_get_damage_all_creatures_outcome(uint16_t group, int16_t x, int16_t y, int16_t attack);
-uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack);
+DamageOutcome group_damage_all_creatures(uint16_t group, int16_t x, int16_t y, int16_t attack);
+uint16_t group_get_poison_attack(uint16_t creature_type, int16_t poison_attack);
 /* A closing door hits the creatures on its square; the survivors react to the danger. */
 void group_door_damages_creatures(int16_t x, int16_t y);
 
 int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 /* True when the destination is in the 90 degree cone in front of the source. (exported for the tests) */
-bool group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x,
-                                              int16_t dst_y);
+bool group_is_destination_visible(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);
 /* The two directions from a square toward a destination: the main one and the second best. */
 typedef struct {
     int16_t primary, secondary;
 } DirectionPair;
 /* The directions from a source square to a destination. */
-DirectionPair group_get_directions_to_destination(Location from, Location to);
+DirectionPair group_get_directions_to(Location from, Location to);
 /* The champion that a creature on an adjacent square attacks, or -1. */
 int16_t group_get_target_champion_index(int16_t x, int16_t y, int16_t cell);
 

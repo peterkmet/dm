@@ -1239,9 +1239,9 @@ address,name,signature,subsystem
 0x10c40a,drop_moving_possessions,"void drop_moving_possessions(uint16_t group_thing, int16_t map_x, int16_t map_y)",group
 0x10c466,group_drop_group_possessions,"void group_drop_group_possessions(int16_t map_x, int16_t map_y, uint16_t group_thing, int16_t sound_mode)",group
 0x10c56a,group_delete,"void group_delete(int16_t map_x, int16_t map_y)",group
-0x10c5e8,group_get_damage_creature_outcome,"int16_t group_get_damage_creature_outcome(Group *group, uint16_t creature_index, int16_t map_x, int16_t map_y, int16_t damage, int16_t notify)",group
-0x10c8fc,group_get_damage_all_creatures_outcome,"int16_t group_get_damage_all_creatures_outcome(Group *group, int16_t map_x, int16_t map_y, int16_t attack, int16_t notify)",group
-0x10c99a,group_get_resistance_adjusted_poison_attack,"uint16_t group_get_resistance_adjusted_poison_attack(uint16_t creature_type, int16_t poison_attack)",group
+0x10c5e8,group_damage_creature,"int16_t group_damage_creature(Group *group, uint16_t creature_index, int16_t map_x, int16_t map_y, int16_t damage, int16_t notify)",group
+0x10c8fc,group_damage_all_creatures,"int16_t group_damage_all_creatures(Group *group, int16_t map_x, int16_t map_y, int16_t attack, int16_t notify)",group
+0x10c99a,group_get_poison_attack,"uint16_t group_get_poison_attack(uint16_t creature_type, int16_t poison_attack)",group
 0x10c9de,steal_from_champion,"uint8_t steal_from_champion(Group *group, uint16_t champion_index)",group
 0x10cad0,group_remove_all_active_groups,void group_remove_all_active_groups(void),group
 0x10cafa,group_add_all_active_groups,void group_add_all_active_groups(void),group
@@ -1319,8 +1319,8 @@ address,name,signature,subsystem
 0x111584,champion_add_scent_strength,"void champion_add_scent_strength(int16_t map_x, int16_t map_y, int16_t strength_and_flags)",champion
 0x111642,drop_all_objects,void drop_all_objects(uint16_t champion_index),champion
 0x1116b4,champion_kill,void champion_kill(uint16_t champion_index),champion
-0x11187e,champion_apply_and_draw_pending_damage_and_wounds,void champion_apply_and_draw_pending_damage_and_wounds(void),champion
-0x111984,champion_add_pending_damage_and_wounds,"int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds, int16_t attack_type)",champion
+0x11187e,champion_apply_pending_damage,void champion_apply_pending_damage(void),champion
+0x111984,champion_add_pending_damage,"int16_t champion_add_pending_damage(int16_t champion_index, int16_t attack, uint16_t allowed_wounds, int16_t attack_type)",champion
 0x111b32,champion_poison,"void champion_poison(int16_t champion_index, uint16_t attack)",champion
 0x111be4,champion_unpoison,void champion_unpoison(int16_t champion_index),champion
 0x111c3a,champion_damage_all,"int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t attack_type)",champion
@@ -1348,9 +1348,9 @@ address,name,signature,subsystem
 0x1130ac,champion_get_decoded_value,"uint16_t champion_get_decoded_value(const char *text, int16_t char_count)",champion
 0x1130c8,champion_add_candidate_to_party,void champion_add_candidate_to_party(uint16_t portrait_index),champion
 0x1134f0,champion_rename,void champion_rename(char *name_and_title),champion
-0x11382c,champion_click_in_resurrect_reincarnate_panel,void champion_click_in_resurrect_reincarnate_panel(int16_t command),champion
+0x11382c,champion_click_rebirth_panel,void champion_click_rebirth_panel(int16_t command),champion
 0x113a12,champion_resurrect,void champion_resurrect(uint16_t champion_index),champion
-0x113abe,champion_reset_data_to_start_game,void champion_reset_data_to_start_game(void),champion
+0x113abe,champion_reset_for_new_game,void champion_reset_for_new_game(void),champion
 0x113b6e,flip_bitmap_vertical_raw,"void flip_bitmap_vertical_raw(uint8_t *pixels, int16_t width, int16_t height)",video
 0x113c16,find_video_driver,int16_t find_video_driver(void),video
 0x113c48,select_display_buffer,void select_display_buffer(int16_t buffer),video
@@ -1492,8 +1492,8 @@ address,name,signature,subsystem
 0x11cc04,group_fluxcage_action,"void group_fluxcage_action(int16_t map_x, int16_t map_y)",group
 0x11cda2,group_fuse_action,"void group_fuse_action(int16_t map_x, int16_t map_y)",group
 0x11cefe,get_square_distance,"int16_t get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2)",group
-0x11cf42,group_is_destination_visible_from_source,"int16_t group_is_destination_visible_from_source(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
-0x11cfba,group_get_directions_to_destination,"int16_t group_get_directions_to_destination(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
+0x11cf42,group_is_destination_visible,"int16_t group_is_destination_visible(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
+0x11cfba,group_get_directions_to,"int16_t group_get_directions_to(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
 0x11d0b2,order_attack_cells,"void order_attack_cells(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x, int16_t group_y, int16_t group_cell)",group
 0x11d10a,group_get_champion_damage,"int16_t group_get_champion_damage(Group *group, uint16_t champion_index)",group
 0x11d348,group_get_melee_action_damage,"int16_t group_get_melee_action_damage(Champion *champion, int16_t champion_index, Group *group, int16_t creature_index, int16_t map_x, int16_t map_y, uint16_t hit_probability, uint16_t damage_factor, int16_t skill_index)",group
@@ -1512,8 +1512,8 @@ address,name,signature,subsystem
 0x11e74a,sensor_trigger_effect,"void sensor_trigger_effect(Sensor *sensor, int16_t effect, int16_t map_x, int16_t map_y, int16_t cell)",sensor
 0x11e7f8,get_object_in_cell,"uint16_t get_object_in_cell(int16_t map_x, int16_t map_y, int16_t cell, int16_t object_type)",sensor
 0x11e84e,is_object_possessed,int16_t is_object_possessed(int16_t object_type),sensor
-0x11e8ea,sensor_is_triggered_by_click_on_wall,"int16_t sensor_is_triggered_by_click_on_wall(int16_t map_x, int16_t map_y, uint16_t cell)",sensor
-0x11ed20,sensor_process_thing_addition_or_removal,"void sensor_process_thing_addition_or_removal(uint16_t map_x, uint16_t map_y, uint16_t thing, int16_t party_on_square, int16_t add_thing)",sensor
+0x11e8ea,sensor_is_wall_triggered,"int16_t sensor_is_wall_triggered(int16_t map_x, int16_t map_y, uint16_t cell)",sensor
+0x11ed20,sensor_process_thing_change,"void sensor_process_thing_change(uint16_t map_x, uint16_t map_y, uint16_t thing, int16_t party_on_square, int16_t add_thing)",sensor
 0x11f16a,timeline_init,void timeline_init(void),timeline
 0x11f1da,timeline_reset,void timeline_reset(void),timeline
 0x11f23c,is_before,"int16_t is_before(const TimelineEvent *a, const TimelineEvent *b)",timeline

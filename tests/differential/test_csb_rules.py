@@ -39,8 +39,8 @@ def lib():
         ("rec_thing_next", u16, [u16]), ("map_get_square", ctypes.c_uint8, [c16, c16]), ("kaos_s16", c16, [ctypes.c_uint32]),
         ("action_is_action_performed", ctypes.c_bool, [c16, c16]), ("random_bit", u16, []), ("random16", u16, []),
         ("sensor_add_event", None, [c16, Location, c16, c16, u32]),
-        ("sensor_process_thing_addition_or_removal", None, [c16, c16, u16, ctypes.c_bool, ctypes.c_bool]),
-        ("champion_click_in_resurrect_reincarnate_panel", None, [c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
+        ("sensor_process_thing_change", None, [c16, c16, u16, ctypes.c_bool, ctypes.c_bool]),
+        ("champion_click_rebirth_panel", None, [c16]), ("map_unlink_thing_from_list", None, [u16, u16, c16, c16]),
         ("tables_get_action_info", ctypes.POINTER(ActionInfo), [ctypes.c_int]),
         ("champion_add_skill_experience", None, [c16, u16, u16]),
         ("map_link_thing_to_list", None, [u16, u16, c16, c16]),
@@ -205,7 +205,7 @@ def test_version_checker_limit(world, data):
     x, y = version_checker(lib, data)
     value(lib, "g_party_champion_count", c16).value = 1
     count = Timeline.in_dll(lib, "g_timeline").count
-    lib.sensor_process_thing_addition_or_removal(x, y, 0xFFFF, 0, 1)
+    lib.sensor_process_thing_change(x, y, 0xFFFF, 0, 1)
     triggered = Timeline.in_dll(lib, "g_timeline").count - count
     assert triggered == (data <= (31 if adventure == "csb" else 36))
 
@@ -230,7 +230,7 @@ def test_reincarnation(world):
             stats[s][C.STAT_CURRENT] = stats[s][C.STAT_MAXIMUM] = max(stats[s][C.STAT_MINIMUM], v - v // 8)
         bars = [b >> 2 for b in bars]
     value(lib, "g_random_seed", u32).value = SEED
-    lib.champion_click_in_resurrect_reincarnate_panel(C.PANEL_REINCARNATE)
+    lib.champion_click_rebirth_panel(C.PANEL_REINCARNATE)
     seed = value(lib, "g_random_seed", u32).value
     value(lib, "g_random_seed", u32).value = SEED
     for _ in range(12):

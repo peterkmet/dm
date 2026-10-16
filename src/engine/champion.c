@@ -437,7 +437,7 @@ static void reincarnate(Champion *c)
     }
 }
 
-void champion_click_in_resurrect_reincarnate_panel(int16_t command)
+void champion_click_rebirth_panel(int16_t command)
 {
     uint16_t index = g_party_champion_count - 1;
     Champion *c = &g_champions[index];
@@ -767,8 +767,8 @@ static int16_t resisted_attack(int16_t champion_index, int16_t attack, uint16_t 
     return attack <= 0 ? 0 : scale_value(attack, DAMAGE_SCALE_SHIFT, ARMOUR_DEFENSE_LIMIT - defense);
 }
 
-int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
-                                               int16_t attack_type)
+int16_t champion_add_pending_damage(int16_t champion_index, int16_t attack, uint16_t allowed_wounds,
+                                    int16_t attack_type)
 {
     if (champion_index == -1 || champion_index == g_session.candidate_champion_index || attack <= 0)
         return 0;
@@ -794,7 +794,7 @@ int16_t champion_add_pending_damage_and_wounds(int16_t champion_index, int16_t a
     return attack;
 }
 
-void champion_apply_and_draw_pending_damage_and_wounds(void)
+void champion_apply_pending_damage(void)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         Champion *c = &g_champions[i];
@@ -841,7 +841,7 @@ static void drop_all_objects(int16_t champion_index)
 {
     uint16_t cell = g_champions[champion_index].cell;
     for (uint16_t i = 0; i < SLOT_COUNT; i++) {
-        uint16_t thing = inventory_get_object_removed_from_slot(champion_index, tables_get_slot_drop_order(i));
+        uint16_t thing = inventory_take_slot_object(champion_index, tables_get_slot_drop_order(i));
         if (thing != THING_NONE)
             drop_on_party_square(thing, cell);
     }
@@ -891,8 +891,7 @@ void champion_poison(int16_t champion_index, int16_t attack)
     if (champion_index == -1 || champion_index == g_session.candidate_champion_index)
         return;
     Champion *c = &g_champions[champion_index];
-    champion_add_pending_damage_and_wounds(champion_index, max16(1, (uint16_t)attack >> POISON_DAMAGE_SHIFT), 0,
-                                           ATTACK_RAW);
+    champion_add_pending_damage(champion_index, max16(1, (uint16_t)attack >> POISON_DAMAGE_SHIFT), 0, ATTACK_RAW);
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     if (--attack) {
         c->poison_event_count++;
@@ -921,8 +920,7 @@ int16_t champion_damage_all(int16_t attack, uint16_t allowed_wounds, int16_t att
     spread *= 2;
     int16_t count = 0;
     for (uint16_t i = 0; i < g_party_champion_count; i++)
-        if (champion_add_pending_damage_and_wounds(i, max16(1, attack + random16() % spread), allowed_wounds,
-                                                   attack_type))
+        if (champion_add_pending_damage(i, max16(1, attack + random16() % spread), allowed_wounds, attack_type))
             count++;
     return count;
 }
@@ -936,8 +934,8 @@ void champion_decrement_stamina(int16_t champion_index, int16_t decrement)
     int16_t stamina = c->current_stamina;
     if (stamina <= 0) {
         c->current_stamina = 0;
-        champion_add_pending_damage_and_wounds(champion_index, (int16_t)-stamina >> 1, 0,
-                                               ATTACK_RAW); /* 16-bit wrap as in the original */
+        champion_add_pending_damage(champion_index, (int16_t)-stamina >> 1, 0,
+                                    ATTACK_RAW); /* 16-bit wrap as in the original */
     } else if (stamina > c->maximum_stamina) {
         c->current_stamina = c->maximum_stamina;
     }
@@ -1124,7 +1122,7 @@ void champion_face_party_direction(Champion *champion)
     }
 }
 
-uint16_t champion_reset_data_to_start_game(void)
+uint16_t champion_reset_for_new_game(void)
 {
     uint16_t hand = g_leader_hand_object;
     g_leader_empty_handed = true;

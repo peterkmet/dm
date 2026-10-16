@@ -82,7 +82,7 @@ typedef struct {
 
 bool g_fuse_sequence_requested;
 
-static void add_event_one_tick_later(const TimelineEvent *event)
+static void add_event_next_tick(const TimelineEvent *event)
 {
     TimelineEvent next = *event;
     next.map_time++;
@@ -143,7 +143,7 @@ static void damage_square(uint16_t explosion_thing, uint16_t attack, int16_t x, 
         damage >>= 2;
     int16_t resisted = damage - random16() % (resistance * 2 + 1);
     if (resisted)
-        *outcome = group_get_damage_all_creatures_outcome(group, x, y, resisted);
+        *outcome = group_damage_all_creatures(group, x, y, resisted);
 }
 
 /* Returns false when no explosion thing is free. */
@@ -264,8 +264,8 @@ static HitResult hit_creature(uint16_t projectile, uint16_t thing, Location targ
     uint16_t attack = (uint16_t)(impact.attack << 6) / info->defense; /* 16-bit product as in the original */
     if (!attack)
         return HIT_RESULT_HIT;
-    uint16_t poison = group_get_resistance_adjusted_poison_attack(creature_type, impact.poison);
-    DamageOutcome outcome = group_get_damage_creature_outcome(group, creature_index, target, attack + poison);
+    uint16_t poison = group_get_poison_attack(creature_type, impact.poison);
+    DamageOutcome outcome = group_damage_creature(group, creature_index, target, attack + poison);
     if (outcome != OUTCOME_ALL_CREATURES_KILLED)
         group_process_reaction_event(target, REACTION_HIT_BY_PROJECTILE);
     *hit->outcome = outcome;
@@ -310,7 +310,7 @@ static bool hit_door(uint16_t projectile, uint16_t thing, int16_t x, int16_t y)
     }
     uint16_t attack = projectile_get_impact_attack(projectile, thing).attack + 1;
     uint16_t bonus = random16() % attack;
-    event_is_door_destroyed_by_attack((Location){x, y}, attack + bonus, false, 0);
+    event_is_door_destroyed((Location){x, y}, attack + bonus, false, 0);
     return true;
 }
 
@@ -419,8 +419,7 @@ static bool has_impact_occurred(ImpactSite site, uint16_t projectile, DamageOutc
     }
     if (effect_happens) {
         if (champion_impact.attack &&
-            champion_add_pending_damage_and_wounds(cell, champion_impact.attack, WOUND_HEAD_AND_TORSO,
-                                                   champion_impact.type) &&
+            champion_add_pending_damage(cell, champion_impact.attack, WOUND_HEAD_AND_TORSO, champion_impact.type) &&
             champion_impact.poison && random_bit())
             champion_poison(cell, champion_impact.poison);
         if (!hit.is_explosion && !flask_explodes && thing != EXPLOSION_THING(EXPLOSION_POISON_BOLT)) {
@@ -533,7 +532,7 @@ void projectile_process_move_event(TimelineEvent *event)
 static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t damage)
 {
     if (rec_group_creature_type(group) != CREATURE_MATERIALIZER || g_current_map_index != g_party_map_index) {
-        group_get_damage_all_creatures_outcome(group, x, y, damage);
+        group_damage_all_creatures(group, x, y, damage);
         return;
     }
     for (int16_t i = rec_group_last_creature(group); i >= 0; i--) {
@@ -542,8 +541,7 @@ static void harm_non_material(uint16_t group, int16_t x, int16_t y, int16_t dama
         uint16_t spread = random16();
         uint16_t extra = random_2bits();
         int16_t eighth = damage >> 3;
-        group_get_damage_creature_outcome(group, i, (Location){x, y},
-                                          extra + (damage - eighth) + spread % (eighth * 2 + 1));
+        group_damage_creature(group, i, (Location){x, y}, extra + (damage - eighth) + spread % (eighth * 2 + 1));
     }
 }
 
@@ -565,26 +563,26 @@ void explosion_process_step_event(TimelineEvent *event)
         if (map_is_party_on((Location){x, y})) {
             champion_damage_all(damage, 0, ATTACK_RAW);
         } else if (group != THING_ENDOFLIST) {
-            damage = group_get_resistance_adjusted_poison_attack(rec_group_creature_type(group), damage);
-            if (damage && group_get_damage_all_creatures_outcome(group, x, y, damage) != OUTCOME_ALL_CREATURES_KILLED &&
+            damage = group_get_poison_attack(rec_group_creature_type(group), damage);
+            if (damage && group_damage_all_creatures(group, x, y, damage) != OUTCOME_ALL_CREATURES_KILLED &&
                 damage > POISON_REACTION_MIN_DAMAGE)
                 group_process_reaction_event((Location){x, y}, REACTION_DANGER_ON_SQUARE);
         }
         if (attack > POISON_CLOUD_MIN_ATTACK) {
             rec_explosion_set_attack(explosion, attack - POISON_CLOUD_FADE);
-            add_event_one_tick_later(event);
+            add_event_next_tick(event);
             return;
         }
         break;
     case EXPLOSION_REBIRTH_STEP_1:
         rec_explosion_set_type(explosion, EXPLOSION_REBIRTH_STEP_2);
         sound_request_play(SOUND_STRONG_EXPLOSION, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
-        add_event_one_tick_later(event);
+        add_event_next_tick(event);
         return;
     case EXPLOSION_SMOKE:
         if (attack >= SMOKE_MIN_ATTACK) {
             rec_explosion_set_attack(explosion, attack - SMOKE_FADE);
-            add_event_one_tick_later(event);
+            add_event_next_tick(event);
             return;
         }
         break;
@@ -601,7 +599,7 @@ void explosion_process_step_event(TimelineEvent *event)
         break;
     }
     if (breaks_door && rec_square_type(square) == SQUARE_DOOR)
-        event_is_door_destroyed_by_attack((Location){x, y}, damage, true, 0);
+        event_is_door_destroyed((Location){x, y}, damage, true, 0);
     map_unlink_thing_from_list(explosion, 0, x, y);
     rec_thing_set_free(explosion);
 }
@@ -747,8 +745,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
     bool test_destination = false;
     DamageOutcome outcome = OUTCOME_NO_CREATURE_KILLED;
     if (dst_x >= 0 && group_get_square_distance(src_x, src_y, dst_x, dst_y) == 1) {
-        uint16_t primary =
-            group_get_directions_to_destination((Location){src_x, src_y}, (Location){dst_x, dst_y}).primary;
+        uint16_t primary = group_get_directions_to((Location){src_x, src_y}, (Location){dst_x, dst_y}).primary;
         uint16_t next = direction_right(primary);
         crossed[direction_left(primary)] = occupied[primary];
         crossed[direction_right(next)] = occupied[next];
@@ -787,7 +784,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
 }
 
 /* The first object (or group) in the launch cell or the cell beside it. */
-static uint16_t find_square_object_in_cells(int16_t x, int16_t y, int16_t cell)
+static uint16_t find_cell_object(int16_t x, int16_t y, int16_t cell)
 {
     /* Bug fix: the original scans until 0xffff and reads past the end of the list. */
     for (uint16_t t = map_get_square_first_thing(x, y); t != THING_ENDOFLIST; t = rec_thing_next(t))
@@ -811,23 +808,23 @@ void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event)
         second = data - LAUNCHER_EXPLOSION_DATA_BASE;
         first = second;
     } else if (type == SENSOR_WALL_LAUNCHER_SQUARE_OBJECT || type == SENSOR_WALL_LAUNCHER_TWO_SQUARE_OBJECTS) {
-        first = find_square_object_in_cells(x, y, direction);
+        first = find_cell_object(x, y, direction);
         if (first == THING_ENDOFLIST)
             return;
         map_unlink_thing_from_list(first, 0, x, y);
         if (!single) {
-            second = find_square_object_in_cells(x, y, direction);
+            second = find_cell_object(x, y, direction);
             if (second == THING_ENDOFLIST)
                 single = 1;
             else
                 map_unlink_thing_from_list(second, 0, x, y);
         }
     } else {
-        first = projectile_get_object_for_launcher_or_generator(data);
+        first = projectile_get_launch_object(data);
         if (first == THING_NONE)
             return;
         if (!single) {
-            second = projectile_get_object_for_launcher_or_generator(data);
+            second = projectile_get_launch_object(data);
             if (second == THING_NONE)
                 single = 1;
         }
@@ -857,7 +854,7 @@ void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event)
     }
 }
 
-uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_index)
+uint16_t projectile_get_launch_object(int16_t object_info_index)
 {
     if (object_info_index >= LAUNCHER_INFO_TORCH_FIRST && object_info_index <= LAUNCHER_INFO_TORCH_LAST)
         object_info_index = LAUNCHER_INFO_TORCH_FIRST;

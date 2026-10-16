@@ -52,7 +52,7 @@ def check(name, got):
 
 
 def place_party(game, m, x, y, d):
-    game.lib.map_set_current_map_and_party_map(m)
+    game.lib.map_set_party_map(m)
     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (x, y, d)):
         c16.in_dll(game.lib, name).value = v
     game.lib.gameloop_draw_view()
@@ -80,10 +80,10 @@ def test_fill_at_a_fountain(game):
     flask = new_object(game, C.THING_POTION, C.POTION_EMPTY_FLASK, byte=2)
     skin = new_object(game, C.THING_JUNK, C.JUNK_WATERSKIN)
     for thing in (flask, skin):
-        lib.inventory_put_object_in_leader_hand(thing)
+        lib.inventory_put_hand_object(thing)
         game.click_box(game.boxes[5])
         got.append(snapshot(game))
-        lib.inventory_get_object_removed_from_leader_hand()
+        lib.inventory_take_hand_object()
     assert lib.rec_write(flask)[2] & 0x7F != C.POTION_EMPTY_FLASK
     assert lib.rec_write(skin)[2] >> 6 == 3
     check("fill", got)
@@ -112,7 +112,7 @@ def test_bones_on_the_vi_altar(game):
     assert game.value("g_facing_vi_altar") and game.value("g_facing_alcove")
     bones = new_object(game, C.THING_JUNK, C.JUNK_BONES)
     lib.rec_write(bones)[2] = 1 << 6  # charges: champion 1
-    lib.inventory_put_object_in_leader_hand(bones)
+    lib.inventory_put_hand_object(bones)
     game.click_box(game.boxes[5])
     got = [snapshot(game)]
     ticks(game, 30)
@@ -243,7 +243,7 @@ def find_spot(game, maps, ahead_ok, directions=range(4)):
     """The first party place (map, x, y, direction) in scan order on a free corridor whose square ahead passes ahead_ok."""
     lib = game.lib
     for m in maps:
-        lib.map_set_current_map_and_party_map(m)
+        lib.map_set_party_map(m)
         width, height = game.value("g_current_map_width"), game.value("g_current_map_height")
         for y in range(height):
             for x in range(width):
@@ -255,7 +255,7 @@ def find_spot(game, maps, ahead_ok, directions=range(4)):
 
 
 def hold(game, thing):
-    game.lib.inventory_put_object_in_leader_hand(thing)
+    game.lib.inventory_put_hand_object(thing)
     assert game.value("g_leader_hand_object", u16) == thing
 
 
@@ -304,7 +304,7 @@ def test_grab_under_a_creature(game):
         hand = game.value("g_leader_hand_object", u16)
         assert (hand & THING_STRIP_CELL == piles[cell] & THING_STRIP_CELL) if grabbed else hand == NONE
         got.append({"hand": hand, **snapshot(game)})
-        lib.inventory_get_object_removed_from_leader_hand()
+        lib.inventory_take_hand_object()
     check("grab under a creature", got)
 
 
@@ -314,7 +314,7 @@ def test_alcove(game):
     recruit(game)
     spot = None
     for m in range(MAP_COUNT):  # the only alcove of map 0 is the vi altar
-        lib.map_set_current_map_and_party_map(m)
+        lib.map_set_party_map(m)
         for x, y, d in [(x, y, d) for y in range(game.value("g_current_map_height"))
                         for x in range(game.value("g_current_map_width")) for d in range(4)]:
             ax, ay = x + STEP[d][0], y + STEP[d][1]
@@ -388,7 +388,7 @@ def test_fuse_sequence(game):
     spot = None
     for level in range(1, MAP_COUNT):
         lib.group_remove_all_active_groups()
-        lib.map_set_current_map_and_party_map(level)
+        lib.map_set_party_map(level)
         lib.group_add_all_active_groups()
         width, height = game.value("g_current_map_width"), game.value("g_current_map_height")
         groups = {(x, y) for x in range(width) for y in range(height) if lib.map_find_thing(Location(x, y), C.THING_GROUP) != END}

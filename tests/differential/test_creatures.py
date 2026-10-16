@@ -53,13 +53,13 @@ def test_directions_to_destination_match_original(lib, seed):
         var(lib, ctypes.c_uint32, "g_random_seed").value = value
         emu.write(SEED, struct.pack(">I", value))
         want = s16(emu.call(DIRECTIONS, [(2, sx & 0xFFFF), (2, sy & 0xFFFF), (2, dx & 0xFFFF), (2, dy & 0xFFFF)]))
-        got = lib.group_get_directions_to_destination(Location(sx, sy), Location(dx, dy))
+        got = lib.group_get_directions_to(Location(sx, sy), Location(dx, dy))
         assert got.primary == want, (sx, sy, dx, dy)
         assert got.secondary == s16(struct.unpack(">H", emu.read(SECONDARY_DIRECTION, 2))[0])
         assert var(lib, ctypes.c_uint32, "g_random_seed").value == struct.unpack(">I", emu.read(SEED, 4))[0]
         for direction in range(4):
             args = (direction, sx, sy, dx, dy)
-            assert lib.group_is_destination_visible_from_source(*args) == s16(emu.call(VISIBLE, [(2, a & 0xFFFF) for a in args])), args
+            assert lib.group_is_destination_visible(*args) == s16(emu.call(VISIBLE, [(2, a & 0xFFFF) for a in args])), args
 
 
 def test_poison_resistance_matches_original(lib):
@@ -70,7 +70,7 @@ def test_poison_resistance_matches_original(lib):
             var(lib, ctypes.c_uint32, "g_random_seed").value = creature_type * 1000 + poison
             emu.write(SEED, struct.pack(">I", creature_type * 1000 + poison))
             want = emu.call(POISON_RESISTANCE, [(2, creature_type), (2, poison)]) & 0xFFFF
-            assert lib.group_get_resistance_adjusted_poison_attack(creature_type, poison) == want, (creature_type, poison)
+            assert lib.group_get_poison_attack(creature_type, poison) == want, (creature_type, poison)
 
 
 @pytest.mark.parametrize("seed", range(4))
@@ -125,7 +125,7 @@ def test_object_for_launcher_matches_original(lib):
     for index in list(range(-3, 201)) + [0x7FFF]:
         for t in (5, 10):  # one free weapon and one free junk record
             w.write_record(t, 0, b"\xff\xff" + bytes(2))
-        got = lib.projectile_get_object_for_launcher_or_generator(index)
+        got = lib.projectile_get_launch_object(index)
         want = w.emu.call(LAUNCHER_OBJECT, [(2, index & 0xFFFF)]) & 0xFFFF
         assert got == want, index
         for t in (5, 10):
@@ -263,9 +263,9 @@ def test_creature_dies_and_drops_possessions(lib):
     group = lib.map_find_thing(Location(x, y), C.THING_GROUP)
     assert group != 0xFFFE and lib.rec_write(group)[4] == C.CREATURE_SKELETON
     active = var(lib, u16, "g_active_group_count").value
-    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 10) == 0  # 10 damage: the skeleton survives
+    assert lib.group_damage_all_creatures(group, x, y, 10) == 0  # 10 damage: the skeleton survives
     assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == group
-    assert lib.group_get_damage_all_creatures_outcome(group, x, y, 2000) == 2
+    assert lib.group_damage_all_creatures(group, x, y, 2000) == 2
     assert lib.map_find_thing(Location(x, y), C.THING_GROUP) == 0xFFFE
     assert var(lib, u16, "g_active_group_count").value == active - 1
     drops = things_of_type(lib, x, y, C.THING_WEAPON) + things_of_type(lib, x, y, C.THING_ARMOUR)
@@ -319,7 +319,7 @@ def caster(lib):
 
 def cast(lib, c, symbols):
     c.symbols = bytes(symbols)
-    return lib.magic_get_champion_spell_cast_result(0)
+    return lib.magic_cast_champion_spell(0)
 
 
 def test_light_spell_adds_light_event_and_experience(caster):

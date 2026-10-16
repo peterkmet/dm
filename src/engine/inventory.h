@@ -61,10 +61,10 @@ uint16_t inventory_get_object_weight(uint16_t thing);
 /* Sharp attacks use the sharp resistance (attributes bits 0-2) of the armour. */
 uint16_t inventory_get_armour_defense(const ArmourInfo *armour, bool use_sharp_defense);
 
-void inventory_put_object_in_leader_hand(uint16_t thing);
-uint16_t inventory_get_object_removed_from_leader_hand(void);
+void inventory_put_hand_object(uint16_t thing);
+uint16_t inventory_take_hand_object(void);
 /* Takes an object from a slot: bonuses end, a torch goes out, a scroll closes. */
-uint16_t inventory_get_object_removed_from_slot(int16_t champion_index, int16_t slot);
+uint16_t inventory_take_slot_object(int16_t champion_index, int16_t slot);
 /* Puts an object in a slot: bonuses start, a torch in a hand burns, a scroll opens. */
 void inventory_add_object_in_slot(int16_t champion_index, uint16_t thing, int16_t slot);
 /* Slot boxes 0-7: the two hands of champions 0-3. 8 and up: slot (box - 8) of the open inventory.
@@ -72,7 +72,7 @@ void inventory_add_object_in_slot(int16_t champion_index, uint16_t thing, int16_
 void inventory_click_on_slot_box(uint16_t slot_box);
 /* A flask or a waterskin in the leader hand fills at a fountain; the leader load changes with its weight.
    Returns true when the hand object changed. */
-bool inventory_fill_leader_hand_at_fountain(void);
+bool inventory_fill_at_fountain(void);
 /* Opens the inventory of a champion for the rules; -1 closes it. */
 void inventory_set_open_champion(int16_t champion_index);
 /* Results of inventory_process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */

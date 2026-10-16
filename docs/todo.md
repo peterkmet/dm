@@ -6,7 +6,7 @@ User wishes for future versions. Not planned yet.
 
 - `action_reset` (`src/engine/action.c`) also clears `g_redraw`, which is not action state.
 - `ui/view.c` square table: the D2L2, D2R2 and D0 rows leave unread "none" fields at 0, a valid id; the D0C right stairs zone is a literal in its branch; the three shape `if` blocks can be one `switch`.
-- ui ignores the result of `inventory_fill_leader_hand_at_fountain`.
+- ui ignores the result of `inventory_fill_at_fountain`.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
 - `tests/golden/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
 

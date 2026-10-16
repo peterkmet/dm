@@ -149,7 +149,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
 void projectile_trigger_launcher(uint16_t sensor, const TimelineEvent *event);
 /* A new weapon or junk object for an object info index: torches, daggers, arrows, slayers, rocks, poison darts,
    throwing stars, boulders. THING_NONE for other indices. */
-uint16_t projectile_get_object_for_launcher_or_generator(int16_t object_info_index); /* exported for the tests */
+uint16_t projectile_get_launch_object(int16_t object_info_index); /* exported for the tests */
 /* A champion throws or shoots from the front cell of his side; the party cannot move into it for 4 ticks. */
 void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, int16_t kinetic_energy, int16_t attack,
                                     uint16_t step_energy);

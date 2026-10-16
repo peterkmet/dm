@@ -266,7 +266,7 @@ bool gameloop_start_new_game(const char *dir)
         return false;
     game_start_new();
     savegame_forget();
-    champion_reset_data_to_start_game(); /* a new game has no hand object to put back */
+    champion_reset_for_new_game(); /* a new game has no hand object to put back */
     start_game();
     explored_reset();
     move_party_enter_dungeon();
@@ -275,12 +275,12 @@ bool gameloop_start_new_game(const char *dir)
     return true;
 }
 
-/* champion_reset_data_to_start_game for a loaded game: the hand object, the leader with its load,
+/* champion_reset_for_new_game for a loaded game: the hand object, the leader with its load,
    and the magic caster come back; all champion states are drawn. */
 static void reset_champions_of_loaded_game(void)
 {
     int16_t leader = g_leader_index;
-    inventory_put_object_in_leader_hand(champion_reset_data_to_start_game());
+    inventory_put_hand_object(champion_reset_for_new_game());
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         g_champions[i].attributes &= CHAMPION_ATTR_KEEP_MASK;
     ui_draw_all_champion_states(CHAMPION_ATTR_ICON | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ACTION_HAND);
@@ -295,7 +295,7 @@ static void start_loaded_game(int confirm)
     start_game();
     map_reset();
     group_remove_all_active_groups();
-    map_set_current_map_and_party_map(g_party_map_index);
+    map_set_party_map(g_party_map_index);
     group_add_all_active_groups();
     if (confirm) {
         g_game_screen_inactive = true;
@@ -424,7 +424,7 @@ void gameloop_tick(void)
     int16_t leader = g_leader_index;
     Champion before[CHAMPION_MAX_COUNT];
     memcpy(before, g_champions, sizeof before);
-    champion_apply_and_draw_pending_damage_and_wounds();
+    champion_apply_pending_damage();
     release_dead_champions(leader);
     if (g_session.party_dead) {
         ui_draw_all_champion_states(0); /* the dead champions show during the death scream */

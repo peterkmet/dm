@@ -202,8 +202,8 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 - `group_fluxcage_action(x, y)` (was unnamed): creates a fluxcage (type 50) and event 24 after 100 ticks, which removes it. When Lord Chaos is on an adjacent square and 3 fluxcages surround him, it sends event −3 to his group. The existing CSV name `group_fluxcage_action` at `0x11cda2` was wrong.
 - `group_fuse_action(x, y)` (`0x11cda2`): creates a harm non-material explosion. When Lord Chaos is on the square and 4 fluxcages surround him, it starts the fuse endgame sequence (`0x125132`). Otherwise Lord Chaos moves to a random free adjacent square.
 - `get_square_distance`: Manhattan distance.
-- `group_is_destination_visible_from_source(direction, sx, sy, dx, dy)`: true when the destination is in the 90° cone in that direction.
-- `group_get_directions_to_destination(sx, sy, dx, dy)` returns the main direction and writes the second direction to `g_group_secondary_direction`. The port returns both in a `DirectionPair`.
+- `group_is_destination_visible(direction, sx, sy, dx, dy)`: true when the destination is in the 90° cone in that direction.
+- `group_get_directions_to(sx, sy, dx, dy)` returns the main direction and writes the second direction to `g_group_secondary_direction`. The port returns both in a `DirectionPair`.
 - `order_attack_cells` copies 4 cells from `g_ordered_cells_to_attack[direction * 2 + side]`.
 - `group_get_champion_damage(group, champion)`: creature attack on a champion. It uses dexterity, luck, the map difficulty (`map[0x0c] >> 4`), invisibility, and the creature wound probabilities. It adds poison.
 - `group_get_melee_action_damage(...)`: champion melee attack on a creature.
@@ -275,13 +275,13 @@ Algorithm:
 2. Store the destination. For the party set `g_party_map_x/y`. Choose a teleporter scope mask: 1 creature, 2 party, 3 object.
 3. Loop at most 99 times over the destination square:
    - Teleporter (type 5, open bit 3): the teleporter thing is the first thing of the square. Check its scope bits (byte 2 bits 5–6). Read target X (byte 3 bits 0–4), target Y (word 2 bits 5–9), target map (byte 4). Byte 2 bit 7 is audible: play sound 14. Byte 2 bit 4 selects absolute rotation; bits 2–3 hold the rotation. The party turns with `champion_set_party_direction`. Objects rotate their cell. Stop when the teleporter points to itself.
-   - Open pit (type 2, bit 3 set, bit 0 clear), when the thing does not levitate: go one level down with `get_location_after_level_change(map, +1, &x, &y)`. The party takes `champion_damage_all(20, 0x30, 2)` and sound 7. When `g_use_rope_to_climb_down_pit` is set, each champion instead loses stamina `load × 25 / max_load + 1`. A falling group takes 20 damage through `group_get_damage_all_creatures_outcome`. Outcome 2 (all dead) ends the loop.
+   - Open pit (type 2, bit 3 set, bit 0 clear), when the thing does not levitate: go one level down with `get_location_after_level_change(map, +1, &x, &y)`. The party takes `champion_damage_all(20, 0x30, 2)` and sound 7. When `g_use_rope_to_climb_down_pit` is set, each champion instead loses stamina `load × 25 / max_load + 1`. A falling group takes 20 damage through `group_damage_all_creatures`. Outcome 2 (all dead) ends the loop.
    - Stairs (type 3) for things other than the party and projectiles: go one level up or down (bit 2 clear: down), then step out in the stairs exit direction. The new cell faces away from the stairs.
    - Any other square ends the loop.
 4. A group that died, or that is not allowed on the target map (`is_creature_allowed_on_map`), drops its possessions and is deleted.
 5. Store the result in `g_move_result_map_x/y`, `g_move_result_map_index`, `g_move_result_cell`, and `g_move_result_direction`. The port returns them in a `MoveDestination`, and takes the move as a `Move` request.
 6. Party move to a new square: add a scent. The scent list holds 24 entries. When full, `party_delete_scent(0)` drops the oldest. A scent word holds X (bits 0–4), Y (bits 5–9), and map (bits 10–15). `champion_add_scent_strength` updates strengths with the time since `g_last_party_movement_time`.
-7. Remove the thing from the source with `sensor_process_thing_addition_or_removal(..., add=0)`. A levitating thing skips sensors and only unlinks.
+7. Remove the thing from the source with `sensor_process_thing_change(..., add=0)`. A levitating thing skips sensors and only unlinks.
 8. Add the thing at the destination:
    - Party on a new map: set `g_new_party_map_index`. The game loop changes the map.
    - Party on the same map: a group on the square drops its possessions and is deleted. Then sensors run with `add=1`.
@@ -307,7 +307,7 @@ Note for range 4: `g_creature_info` (`0x101930`) points to offset 2 of each 26-b
 
 Local effects: 10 adds 300 experience in skill 8 (to the leader, or to all champions when `cell == -1`). Effects 1 and 2 store a rotation request in `g_sensor_rotation_effect*`. `sensor_process_rotation_effect` runs after each sensor pass. It moves the first sensor of the matching cell to the end of the sensor list of that cell.
 
-`sensor_process_thing_addition_or_removal(x, y, thing, party_on_square, add)` runs floor or wall sensors when a thing enters or leaves a square. It first scans the square: a group present, objects present, objects of the same type, objects of a different type. On a corridor (no wall), text things (type 2) print when the party enters. Floor sensor types:
+`sensor_process_thing_change(x, y, thing, party_on_square, add)` runs floor or wall sensors when a thing enters or leaves a square. It first scans the square: a group present, objects present, objects of the same type, objects of a different type. On a corridor (no wall), text things (type 2) print when the party enters. Floor sensor types:
 
 | Type | Name | Trigger |
 |---|---|---|
@@ -324,7 +324,7 @@ On a wall square the same function handles objects in a cell: wall sensor types 
 
 The trigger value is XORed with "revert" (byte 5 bit 5). Effect 3 (hold) converts to set or clear. Otherwise the sensor triggers only when the value is true.
 
-`sensor_is_triggered_by_click_on_wall(x, y, cell)` handles a click on the front wall. Wall sensor types:
+`sensor_is_wall_triggered(x, y, cell)` handles a click on the front wall. Wall sensor types:
 
 | Type | Name |
 |---|---|

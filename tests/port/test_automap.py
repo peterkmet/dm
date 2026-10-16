@@ -191,7 +191,7 @@ def test_a_pressure_pad_is_a_gray_square_in_the_floor(game):
     gray = 2
     for name, value in (("g_party_map_index", 1), ("g_party_map_x", 14), ("g_party_map_y", 1), ("g_party_direction", 1)):
         c16.in_dll(game, name).value = value
-    game.map_set_current_map_and_party_map(1)
+    game.map_set_party_map(1)
     game.view_load_map(1)
     mark_here(game)  # facing east into the room of nine pads of map 1
     px = draw(game, VIEWPORT.w, VIEWPORT.h, Box(0, 0, VIEWPORT.w, VIEWPORT.h))

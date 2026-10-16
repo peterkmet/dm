@@ -46,7 +46,7 @@ void map_set_current_map(int16_t map)
     column_first_thing_index = g_dungeon_column_first_thing_index + g_dungeon_map_first_column[map] * 2;
 }
 
-void map_set_current_map_and_party_map(int16_t map)
+void map_set_party_map(int16_t map)
 {
     g_party_map_index = map;
     map_set_current_map(map);
