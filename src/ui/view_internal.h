@@ -6,6 +6,7 @@
 #include "data/graphics.h"
 #include "engine/map.h"
 #include "ui/video.h"
+#include "ui/view.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -245,6 +246,7 @@ typedef struct {
     uint8_t creature_palette_changes_d3[PALETTE_COLORS]; /* the D3 and D2 creature palette changes of the map */
     uint8_t creature_palette_changes_d2[PALETTE_COLORS];
     int16_t vi_altar, fountain; /* wall ornament index of the vi altar and the fountain, or -1 */
+    ViewResult result;          /* the outputs of the last view_draw */
 } View;
 
 /* Where view_draw_in_zone puts a bitmap: the relative position that a ZONE_SHIFTED or ZONE_SIZED zone passes to
@@ -303,7 +305,7 @@ typedef struct {
 #define SQ_CEILING_IN_ALCOVE  0x1 /* an alcove draws the ceiling pit before its things */
 #define SQ_CEILING_AFTER_DOOR 0x2 /* a door front draws the ceiling pit after the door */
 #define SQ_STAIRS_LAYOUT_IDS  0x4 /* the stairs front graphics are layout ids, not stairs graphics */
-#define SQ_FRONT              0x8 /* the square ahead: sets g_square_ahead_element and the facing flags */
+#define SQ_FRONT 0x8 /* the square ahead: sets the square ahead element of the result and the facing flags */
 
 /* One wall set bitmap: wall_set index, zone, and BLIT_* mode. */
 typedef struct {

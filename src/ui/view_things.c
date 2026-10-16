@@ -163,7 +163,7 @@ ProjectileAspect view_get_projectile_aspect(uint16_t thing)
    CLICK_BOX_MIN_W x CLICK_BOX_MIN_H pixels around its center. The object becomes the pile top and joins the pile list. */
 static void add_clickable_object(int16_t index, uint16_t thing, const Box *drawn)
 {
-    Box *box = &g_dungeon_view_clickable_boxes[index];
+    Box *box = &g_view.result.clickable_boxes[index];
     if (box->x == -1) {
         *box = *drawn;
         if (box->h < CLICK_BOX_CENTER_H) {
@@ -183,9 +183,9 @@ static void add_clickable_object(int16_t index, uint16_t thing, const Box *drawn
         box->w = right - box->x;
         box->h = bottom - box->y;
     }
-    g_pile_top_objects[index] = thing;
-    if (g_pile_object_counts[index] < VIEW_PILE_OBJECT_MAX)
-        g_pile_objects[index][g_pile_object_counts[index]++] = thing;
+    g_view.result.pile_top_objects[index] = thing;
+    if (g_view.result.pile_object_counts[index] < VIEW_PILE_OBJECT_MAX)
+        g_view.result.pile_objects[index][g_view.result.pile_object_counts[index]++] = thing;
 }
 
 /* One view square while its things draw. */

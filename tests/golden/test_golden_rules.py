@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import ActionList, Location, Party, Position, scrub_free_groups, state, session, screen
+from dmtest.game import ActionList, Location, Party, Position, scrub_free_groups, state, session, screen, view_result
 from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
 from dmtest.markers import needs_dm
 
@@ -75,7 +75,7 @@ def test_fill_at_a_fountain(game):
     lib = game.lib
     recruit(game)
     place_party(game, *FOUNTAIN)
-    assert game.value("g_facing_fountain")
+    assert view_result(game.lib).facing_fountain
     got = []
     flask = new_object(game, C.THING_POTION, C.POTION_EMPTY_FLASK, byte=2)
     skin = new_object(game, C.THING_JUNK, C.JUNK_WATERSKIN)
@@ -109,7 +109,7 @@ def test_bones_on_the_vi_altar(game):
     add_second_champion(game)
     game.champions[1].current_health = 0
     place_party(game, *VI_ALTAR)
-    assert game.value("g_facing_vi_altar") and game.value("g_facing_alcove")
+    assert view_result(game.lib).facing_vi_altar and view_result(game.lib).facing_alcove
     bones = new_object(game, C.THING_JUNK, C.JUNK_BONES)
     lib.rec_write(bones)[2] = 1 << 6  # charges: champion 1
     lib.inventory_put_hand_object(bones)
@@ -321,7 +321,7 @@ def test_alcove(game):
             if not is_free(lib, x, y) or square_type(lib, ax, ay) != WALL:
                 continue
             place_party(game, m, x, y, d)
-            if game.value("g_facing_alcove") and not game.value("g_facing_vi_altar"):
+            if view_result(game.lib).facing_alcove and not view_result(game.lib).facing_vi_altar:
                 spot = m, x, y, d
                 break
         if spot:

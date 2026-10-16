@@ -79,9 +79,9 @@ static bool draw_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspec
             draw_wall_text(wall_text);
             return alcove;
         }
-        g_facing_alcove = alcove;
-        g_facing_vi_altar = i == g_view.vi_altar;
-        g_facing_fountain = i == g_view.fountain;
+        g_view.result.facing_alcove = alcove;
+        g_view.result.facing_vi_altar = i == g_view.vi_altar;
+        g_view.result.facing_fountain = i == g_view.fountain;
     }
     ScaledBitmap scaled = {0};
     const Bitmap *bitmap;
@@ -113,7 +113,7 @@ static bool draw_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspec
     if (view_draw_in_zone(bitmap, &g_view.viewport, &(ZoneBlit){zone, mirrored ? FLIP_H : 0, TRANSPARENT_COLOR, place},
                           &drawn) &&
         wall_view == VIEW_WALL_D1C_FRONT)
-        g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn;
+        g_view.result.clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn;
     if (wall_view == VIEW_WALL_D1C_FRONT && aspect->portrait >= 0)
         draw_wall_portrait(aspect->portrait);
     view_free_scaled(&scaled);
@@ -169,7 +169,7 @@ static void draw_door_button(int16_t button)
     Box drawn;
     if (bm && bm->px && view_draw_in_zone(bm, &g_view.viewport, &(ZoneBlit){zone, 0, TRANSPARENT_COLOR, {0}}, &drawn) &&
         button == BUTTON_D1C)
-        g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn;
+        g_view.result.clickable_boxes[VIEW_CLICK_BOX_WALL] = drawn;
     view_free_scaled(&scaled);
 }
 
@@ -258,9 +258,9 @@ void view_draw_ceiling_pit(const SquareView *square, Location at)
 void view_draw_square_wall(const SquareView *square, const Aspect *a, int16_t dir, Location at)
 {
     if (square->flags & SQ_FRONT) {
-        g_facing_alcove = false;
-        g_facing_vi_altar = false;
-        g_facing_fountain = false;
+        g_view.result.facing_alcove = false;
+        g_view.result.facing_vi_altar = false;
+        g_view.result.facing_fountain = false;
     }
     view_draw_wall_part(&square->wall);
     if (square->side_face != SIDE_FACE_NONE)

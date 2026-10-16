@@ -43,12 +43,11 @@
 View g_view = {.map = -1};
 
 bool g_do_not_draw_fluxcages;
-Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
-uint16_t g_pile_top_objects[VIEW_CLICK_BOX_WALL];
-uint16_t g_pile_objects[VIEW_CLICK_BOX_WALL][VIEW_PILE_OBJECT_MAX];
-int16_t g_pile_object_counts[VIEW_CLICK_BOX_WALL];
-int16_t g_square_ahead_element;
-bool g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
+
+const ViewResult *view_get_result(void)
+{
+    return &g_view.result;
+}
 
 static bool is_open_floor(uint8_t square)
 {
@@ -829,7 +828,7 @@ static void draw_square(const SquareView *s, int16_t dir, Location at)
         return;
     }
     if (s->flags & SQ_FRONT)
-        g_square_ahead_element = a.element;
+        g_view.result.square_ahead_element = a.element;
     uint16_t cells = s->cells;
     switch (a.element) {
     case SQUARE_WALL:
@@ -1102,8 +1101,8 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
     memset(px, 0, sizeof px);
     view_start_tracks(dir, (Location){x, y});
     for (int i = 0; i < VIEW_CLICK_BOX_COUNT; i++)
-        g_dungeon_view_clickable_boxes[i].x = -1;
-    memset(g_pile_object_counts, 0, sizeof g_pile_object_counts);
+        g_view.result.clickable_boxes[i].x = -1;
+    memset(g_view.result.pile_object_counts, 0, sizeof g_view.result.pile_object_counts);
     reset_wall_set_ids();
     g_view.use_flipped_walls = (dir + x + y) & 1;
     if (g_view.use_flipped_walls) { /* the mirrored-walls memory option is on, as on a 1 MB Amiga */

@@ -359,7 +359,7 @@ static const char *turn_party_right(const char *args)
 static const char *click_wall_ahead(const char *args)
 {
     (void)args;
-    const Box *b = &g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL];
+    const Box *b = &view_get_result()->clickable_boxes[VIEW_CLICK_BOX_WALL];
     if (g_session.inventory_champion_index >= 0)
         return "close the inventory first (close_inventory)";
     if (b->x == -1)
@@ -377,9 +377,10 @@ static const char *take_object(const char *args)
         return "cell must be 0-4 (see get_view piles)";
     if (!g_leader_empty_handed)
         return "the leader hand is not empty: drop or store the object first";
-    if (g_dungeon_view_clickable_boxes[cell].x == -1)
+    const Box *box = &view_get_result()->clickable_boxes[cell];
+    if (box->x == -1)
         return "no object at this cell";
-    click_view_box(&g_dungeon_view_clickable_boxes[cell]);
+    click_view_box(box);
     return NULL;
 }
 
@@ -387,14 +388,15 @@ static const char *drop_object(const char *args)
 {
     int64_t cell = get_int(args, "cell", 0);
     Box b;
+    const ViewResult *view = view_get_result();
     if (g_session.inventory_champion_index >= 0)
         return "close the inventory first (close_inventory)";
     if (g_leader_empty_handed)
         return "the leader hand is empty";
     if (cell == VIEW_CLICK_BOX_ALCOVE) {
-        if (g_square_ahead_element != VIEW_ELEMENT_WALL || !g_facing_alcove)
+        if (view->square_ahead_element != VIEW_ELEMENT_WALL || !view->facing_alcove)
             return "no alcove ahead";
-        click_view_box(&g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL]);
+        click_view_box(&view->clickable_boxes[VIEW_CLICK_BOX_WALL]);
         return NULL;
     }
     if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE || !ui_zone_box(ZONE_DROP_CELL_FIRST + cell, &b))

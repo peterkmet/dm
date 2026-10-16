@@ -47,9 +47,6 @@ BOOL_GLOBALS = frozenset({
     "g_return_to_entrance",
     "g_action_area_contains_icons",
     "g_do_not_draw_fluxcages",
-    "g_facing_alcove",
-    "g_facing_fountain",
-    "g_facing_vi_altar",
 })
 
 
@@ -64,6 +61,20 @@ class Box(ctypes.Structure):
 
 class Bitmap(ctypes.Structure):
     _fields_ = [("w", u16), ("h", u16), ("px", ctypes.POINTER(ctypes.c_uint8))]
+
+
+class ViewResult(ctypes.Structure):
+    _fields_ = [
+        ("square_ahead_element", c16), ("facing_alcove", ctypes.c_bool), ("facing_fountain", ctypes.c_bool),
+        ("facing_vi_altar", ctypes.c_bool), ("clickable_boxes", Box * 6), ("pile_top_objects", u16 * 5),
+        ("pile_objects", (u16 * 32) * 5), ("pile_object_counts", c16 * 5),
+    ]
+
+
+def view_result(lib):
+    """The outputs of the last view_draw."""
+    lib.view_get_result.restype = ctypes.POINTER(ViewResult)
+    return lib.view_get_result().contents
 
 
 class Skill(ctypes.Structure):
@@ -323,7 +334,7 @@ class World:
 class Game:
     def __init__(self, lib):
         self.lib = lib
-        self.boxes = (Box * 6).in_dll(lib, "g_dungeon_view_clickable_boxes")
+        self.boxes = view_result(lib).clickable_boxes
         self.champions = (Champion * 4).in_dll(lib, "g_champions")
         self.session = session(lib)
         self.origin = lib.kaos_s16(VIEWPORT_ORIGIN), lib.kaos_s16(VIEWPORT_ORIGIN + 2)

@@ -875,19 +875,20 @@ static bool side_seen(int16_t depth, int16_t side)
 /* The piles that take_object reaches, each with its top object and all its objects, top first. */
 static void piles_json(Json *j)
 {
+    const ViewResult *view = view_get_result();
     json_key(j, "piles");
     json_open(j, '[');
     for (int16_t pile = 0; pile < VIEW_CLICK_BOX_WALL; pile++) {
-        uint16_t thing = g_pile_top_objects[pile];
-        if (g_dungeon_view_clickable_boxes[pile].x == -1 || object_get_icon_index(thing) == -1)
+        uint16_t thing = view->pile_top_objects[pile];
+        if (view->clickable_boxes[pile].x == -1 || object_get_icon_index(thing) == -1)
             continue;
         json_open(j, '{');
         key_int(j, "cell", pile);
         key_str(j, "top", object_name(thing));
         json_key(j, "objects");
         json_open(j, '[');
-        for (int16_t i = g_pile_object_counts[pile] - 1; i >= 0; i--) {
-            uint16_t object = g_pile_objects[pile][i];
+        for (int16_t i = view->pile_object_counts[pile] - 1; i >= 0; i--) {
+            uint16_t object = view->pile_objects[pile][i];
             if (object_get_icon_index(object) != -1)
                 json_str(j, object_name(object));
         }
@@ -899,6 +900,7 @@ static void piles_json(Json *j)
 
 void state_json_write_view(Json *j)
 {
+    const ViewResult *view = view_get_result();
     json_open(j, '{');
     key_str(j, "facing", direction_names[NORMALIZE(g_party_direction)]);
     key_int(j, "darkness", g_party_light_level);
@@ -939,12 +941,12 @@ void state_json_write_view(Json *j)
         }
     json_close(j, ']');
     piles_json(j);
-    key_bool(j, "wall_ahead_clickable", g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL].x != -1);
+    key_bool(j, "wall_ahead_clickable", view->clickable_boxes[VIEW_CLICK_BOX_WALL].x != -1);
     int wall_ahead =
-        g_square_ahead_element == VIEW_ELEMENT_WALL; /* the view sets the facing flags only for a wall ahead */
-    key_bool(j, "alcove", wall_ahead && g_facing_alcove);
-    key_bool(j, "fountain", wall_ahead && g_facing_fountain);
-    key_bool(j, "vi_altar", wall_ahead && g_facing_vi_altar);
+        view->square_ahead_element == VIEW_ELEMENT_WALL; /* the view sets the facing flags only for a wall ahead */
+    key_bool(j, "alcove", wall_ahead && view->facing_alcove);
+    key_bool(j, "fountain", wall_ahead && view->facing_fountain);
+    key_bool(j, "vi_altar", wall_ahead && view->facing_vi_altar);
     json_close(j, '}');
 }
 

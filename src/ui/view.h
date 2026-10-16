@@ -19,17 +19,23 @@
 #define VIEW_CLICK_BOX_WALL     5
 #define VIEW_CLICK_BOX_COUNT    6
 #define VIEW_PILE_OBJECT_MAX    32 /* a pile records at most this many objects; the view drops the rest */
-/* View element of the square ahead (g_square_ahead_element): a wall, a door seen from the front. */
+/* View element of the square ahead (ViewResult.square_ahead_element): a wall, a door seen from the front. */
 #define VIEW_ELEMENT_WALL       0
 #define VIEW_ELEMENT_DOOR_FRONT 0x11
 
 extern bool g_do_not_draw_fluxcages;
-extern Box g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_COUNT];
-extern uint16_t g_pile_top_objects[VIEW_CLICK_BOX_WALL];                   /* top object of each pile box */
-extern uint16_t g_pile_objects[VIEW_CLICK_BOX_WALL][VIEW_PILE_OBJECT_MAX]; /* objects of each pile box in draw order */
-extern int16_t g_pile_object_counts[VIEW_CLICK_BOX_WALL];
-extern int16_t g_square_ahead_element;
-extern bool g_facing_alcove, g_facing_fountain, g_facing_vi_altar;
+
+/* The outputs of the last view_draw: what the square ahead is, the click boxes and the piles. */
+typedef struct {
+    int16_t square_ahead_element; /* VIEW_ELEMENT_* */
+    bool facing_alcove, facing_fountain, facing_vi_altar;
+    Box clickable_boxes[VIEW_CLICK_BOX_COUNT]; /* in viewport coordinates, x -1: empty */
+    uint16_t pile_top_objects[VIEW_CLICK_BOX_WALL];
+    uint16_t pile_objects[VIEW_CLICK_BOX_WALL][VIEW_PILE_OBJECT_MAX]; /* in draw order */
+    int16_t pile_object_counts[VIEW_CLICK_BOX_WALL];
+} ViewResult;
+/* The outputs of the last view. */
+const ViewResult *view_get_result(void);
 
 /* Loads the wall set, floor set, stairs, doors, ornaments, and creature colors of the map. Graphics decode on
    first use. */

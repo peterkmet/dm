@@ -16,7 +16,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.control import Client
-from dmtest.game import (screen, pending_damage, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
+from dmtest.game import (view_result, screen, pending_damage, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
                          start_game, session)
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
@@ -512,7 +512,7 @@ def test_empty_hand_at_a_fountain(game, mode):
     for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (0, 21, 2)):  # facing a fountain on level 2
         c16.in_dll(lib, name).value = v
     lib.gameloop_draw_view()
-    assert game.value("g_facing_fountain") == 1
+    assert view_result(game.lib).facing_fountain
     champions[0].water = champions[1].water = 100
     game.click_box(game.boxes[5])
     assert (champions[0].water, champions[1].water) == (2048, 2048 if mode == ADVANCED else 100)

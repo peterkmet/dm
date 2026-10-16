@@ -407,7 +407,7 @@ static void grab_object(int16_t pile)
         return;
     if (pile >= VIEW_CELL_FRONT_FIRST)
         get_front_square(&at.x, &at.y);
-    if (inventory_grab_object(g_pile_top_objects[pile], NORMALIZE(pile + g_party_direction), at))
+    if (inventory_grab_object(view_get_result()->pile_top_objects[pile], NORMALIZE(pile + g_party_direction), at))
         g_stop_waiting_for_input = true;
 }
 
@@ -423,7 +423,7 @@ static void drop_object(int16_t pile)
         pile = VIEW_CELL_FRONT_FIRST;
     if (pile >= VIEW_CELL_FRONT_FIRST)
         get_front_square(&at.x, &at.y);
-    inventory_drop_object(NORMALIZE(pile + g_party_direction), at, alcove && g_facing_vi_altar);
+    inventory_drop_object(NORMALIZE(pile + g_party_direction), at, alcove && view_get_result()->facing_vi_altar);
     g_stop_waiting_for_input = true;
 }
 
@@ -465,7 +465,8 @@ static bool is_in_box(const Box *b, int16_t x, int16_t y)
 /* The leader throws the hand object when the click is in the left or right throw zone. */
 static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
 {
-    int16_t zone = g_square_ahead_element == VIEW_ELEMENT_DOOR_FRONT ? ZONE_THROW_DOOR_LEFT : ZONE_THROW_LEFT;
+    int16_t zone =
+        view_get_result()->square_ahead_element == VIEW_ELEMENT_DOOR_FRONT ? ZONE_THROW_DOOR_LEFT : ZONE_THROW_LEFT;
     bool thrown = false;
     if (ui_is_point_in_zone(zone, x, y))
         thrown = action_is_hand_object_thrown(0);
@@ -480,21 +481,22 @@ static bool is_leader_hand_object_thrown(int16_t x, int16_t y)
    square ahead. */
 static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, bool imaginary_wall)
 {
+    const ViewResult *view = view_get_result();
     for (int16_t i = 0; i < VIEW_CLICK_BOX_COUNT; i++) {
-        if (!is_in_box(&g_dungeon_view_clickable_boxes[i], x, y))
+        if (!is_in_box(&view->clickable_boxes[i], x, y))
             continue;
         if (i != VIEW_CLICK_BOX_WALL) {
             grab_object(i);
             return;
         }
         /* With the advanced features, every living champion drinks. */
-        if (g_facing_fountain && g_leader_index != -1)
+        if (view->facing_fountain && g_leader_index != -1)
             champion_drink_from_fountain(g_advanced_features);
-        if (!g_facing_alcove)
+        if (!view->facing_alcove)
             touch_front_wall();
         return;
     }
-    if (g_square_ahead_element != VIEW_ELEMENT_WALL)
+    if (view->square_ahead_element != VIEW_ELEMENT_WALL)
         return;
     if (ui_is_point_in_zone(ZONE_THROW_LEFT, x, y) || ui_is_point_in_zone(ZONE_THROW_LEFT + 1, x, y))
         touch_front_square_empty_handed(imaginary_wall, fx, fy);
@@ -504,9 +506,10 @@ static void click_empty_handed(int16_t x, int16_t y, int16_t fx, int16_t fy, boo
 static void click_in_dungeon_view(int16_t x, int16_t y)
 {
     int16_t fx, fy;
-    const Box *wall_box = &g_dungeon_view_clickable_boxes[VIEW_CLICK_BOX_WALL];
+    const ViewResult *view = view_get_result();
+    const Box *wall_box = &view->clickable_boxes[VIEW_CLICK_BOX_WALL];
     get_front_square(&fx, &fy);
-    if (g_square_ahead_element == VIEW_ELEMENT_DOOR_FRONT) {
+    if (view->square_ahead_element == VIEW_ELEMENT_DOOR_FRONT) {
         if (g_leader_index == -1)
             return;
         if (!g_leader_empty_handed && is_leader_hand_object_thrown(x, y))
@@ -523,9 +526,10 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
         click_empty_handed(x, y, fx, fy, imaginary_wall);
         return;
     }
-    if ((g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall) && is_leader_hand_object_thrown(x, y))
+    if ((view->square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall) && is_leader_hand_object_thrown(x, y))
         return;
-    int16_t cells = g_square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall ? CELL_COUNT : VIEW_CELL_FRONT_FIRST;
+    int16_t cells =
+        view->square_ahead_element != VIEW_ELEMENT_WALL || imaginary_wall ? CELL_COUNT : VIEW_CELL_FRONT_FIRST;
     for (int16_t i = 0; i < cells; i++)
         if (ui_is_point_in_zone(ZONE_DROP_CELL_FIRST + i, x, y)) {
             drop_object(i);
@@ -533,11 +537,11 @@ static void click_in_dungeon_view(int16_t x, int16_t y)
         }
     if (cells == CELL_COUNT || !is_in_box(wall_box, x, y))
         return;
-    if (g_facing_alcove) {
+    if (view->facing_alcove) {
         drop_object(VIEW_CLICK_BOX_ALCOVE);
         return;
     }
-    if (g_facing_fountain)
+    if (view->facing_fountain)
         inventory_fill_at_fountain();
     touch_front_wall();
 }
