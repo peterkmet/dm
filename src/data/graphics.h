@@ -38,17 +38,17 @@ bool gfx_open(const char *path);
 /* The item count of the open Graphics.DAT; exported for the tests. */
 int gfx_count(void);
 /* Packed bytes of item i. */
-const uint8_t *gfx_get_item(int i, uint16_t *size);
+const uint8_t *gfx_get_item(int graphic, uint16_t *size);
 /* Port of expand_graphic: decodes a packed graphic into a chunky bitmap; exported for the tests. */
 bool gfx_expand(const uint8_t *packed, size_t len, Bitmap *bm);
 /* Decodes a packed graphic over a bitmap of the same size: skipped pixels keep their color. */
 bool gfx_expand_over(const uint8_t *packed, size_t len, Bitmap *bm);
 /* Decodes graphic i into a new bitmap. False when it does not decode. */
-bool gfx_load_bitmap(int16_t i, Bitmap *bm);
+bool gfx_load_bitmap(int graphic, Bitmap *bm);
 /* Frees the pixels of a bitmap of gfx_load_bitmap. */
 void gfx_free_bitmap(Bitmap *bm);
 /* Decoded graphic i, kept until the next gfx_open. NULL when it does not decode. */
-const Bitmap *gfx_get_bitmap(int i);
+const Bitmap *gfx_get_bitmap(int graphic);
 
 /* Loads the strings, action names, and object names of the game data. Call after gfx_open and csb_text_build. */
 bool gfx_load_strings(void);

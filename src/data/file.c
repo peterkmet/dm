@@ -23,13 +23,13 @@ static uint8_t *read_open_file(FILE *f, size_t *len)
     return buf;
 }
 
-uint8_t *file_read(const char *path, size_t *len)
+uint8_t *file_read(const char *path, size_t *read_length)
 {
-    *len = 0;
+    *read_length = 0;
     FILE *f = fopen(path, "rb");
     if (!f)
         return NULL;
-    uint8_t *buf = read_open_file(f, len);
+    uint8_t *buf = read_open_file(f, read_length);
     fclose(f);
     return buf;
 }

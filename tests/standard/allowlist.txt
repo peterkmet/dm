@@ -767,11 +767,6 @@ result ui/anim.h:anim_open open: epic 8
 result ui/anim.h:anim_play open: epic 8
 result ui/layout.h:layout_init open: epic 8
 result ui/logo.h:logo_play open: epic 8
-type data:dir open: epic 4
-type data:i open: epic 4
-type data:len open: epic 4
-type data:out open: epic 4
-type data:step open: epic 4
 type engine:a open: epic 6
 type engine:attack open: epic 6
 type engine:b open: epic 6

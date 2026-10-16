@@ -13,7 +13,7 @@
 #define PATH_SIZE 1024 /* longest file path */
 
 /* The malloc'd contents of the file at path and its length in *len; NULL when it is missing or unreadable. */
-uint8_t *file_read(const char *path, size_t *len);
+uint8_t *file_read(const char *path, size_t *read_length);
 /* True when the file at path can be opened for reading. */
 bool file_exists(const char *path);
 /* Compares two file names as ASCII without case, as strcasecmp. */

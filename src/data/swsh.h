@@ -20,7 +20,7 @@ typedef struct {
 } SwshLogo;
 
 /* Loads SWSH.FTL from path and points the logo fields into it. False when the file cannot be read or is too short. */
-bool swsh_load(const char *path, SwshLogo *out);
+bool swsh_load(const char *path, SwshLogo *logo);
 /* Frees the module of a loaded logo and clears the logo. */
 void swsh_free(SwshLogo *logo);
 

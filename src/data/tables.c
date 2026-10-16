@@ -341,9 +341,9 @@ int16_t tables_get_food_value(int16_t i)
 {
     return GET_VALUE(food_values, i);
 }
-uint8_t tables_get_base_mana_cost(int16_t step, int16_t symbol)
+uint8_t tables_get_base_mana_cost(uint16_t step, int16_t symbol)
 {
-    if (step < 0 || step >= SYMBOL_STEP_COUNT)
+    if (step >= SYMBOL_STEP_COUNT)
         return 0;
     return GET_VALUE(symbol_base_mana_cost[step], symbol);
 }
@@ -507,9 +507,10 @@ uint8_t tables_get_explosion_scale(int16_t depth)
 {
     return kaos_u8(KAOS_EXPLOSION_SCALES + depth);
 }
-uint8_t tables_get_rebirth_scale(int16_t step, int16_t coord)
+uint8_t tables_get_rebirth_scale(int16_t rebirth_step, int16_t coord)
 {
-    return kaos_u8((step == TABLES_REBIRTH_STEP_1 ? KAOS_REBIRTH_STEP_1_SCALES : KAOS_REBIRTH_STEP_2_SCALES) + coord);
+    return kaos_u8((rebirth_step == TABLES_REBIRTH_STEP_1 ? KAOS_REBIRTH_STEP_1_SCALES : KAOS_REBIRTH_STEP_2_SCALES) +
+                   coord);
 }
 uint8_t tables_get_group_directions(int16_t index)
 {
@@ -749,18 +750,18 @@ static uint32_t mouse_table(int16_t table)
         return kaos_u32(KAOS_DIALOG_MOUSE_INPUTS + DIALOG_TABLE_POINTER_BYTES * (table - TABLES_MOUSE_DIALOG_FIRST));
     return at[table];
 }
-bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out)
+bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *input)
 {
     uint32_t a = mouse_table(table) + MOUSE_INPUT_BYTES * entry;
     int16_t command = kaos_s16(a + MOUSE_AT_COMMAND);
     if (!command)
         return false;
-    *out = (MouseInput){command,
-                        kaos_s16(a + MOUSE_AT_X1),
-                        kaos_s16(a + MOUSE_AT_X2),
-                        kaos_s16(a + MOUSE_AT_Y1),
-                        kaos_s16(a + MOUSE_AT_Y2),
-                        kaos_u16(a + MOUSE_AT_BUTTONS)};
+    *input = (MouseInput){command,
+                          kaos_s16(a + MOUSE_AT_X1),
+                          kaos_s16(a + MOUSE_AT_X2),
+                          kaos_s16(a + MOUSE_AT_Y1),
+                          kaos_s16(a + MOUSE_AT_Y2),
+                          kaos_u16(a + MOUSE_AT_BUTTONS)};
     return true;
 }
 void tables_set_mouse_input_box(int16_t table, int16_t entry, const Box *box)

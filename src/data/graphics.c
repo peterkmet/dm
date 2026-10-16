@@ -101,12 +101,12 @@ int gfx_count(void)
     return graphics.item_count;
 }
 
-const uint8_t *gfx_get_item(int i, uint16_t *size)
+const uint8_t *gfx_get_item(int graphic, uint16_t *size)
 {
-    if (i < 0 || i >= graphics.item_count)
+    if (graphic < 0 || graphic >= graphics.item_count)
         return NULL;
-    *size = graphics.offsets[i + 1] - graphics.offsets[i];
-    return graphics.data + graphics.offsets[i];
+    *size = graphics.offsets[graphic + 1] - graphics.offsets[graphic];
+    return graphics.data + graphics.offsets[graphic];
 }
 
 /* Skips the pad words and reads the size of a packed graphic. Returns the start of the commands or NULL. */
@@ -222,10 +222,10 @@ bool gfx_expand_over(const uint8_t *p, size_t len, Bitmap *bm)
     return true;
 }
 
-bool gfx_load_bitmap(int16_t i, Bitmap *bm)
+bool gfx_load_bitmap(int graphic, Bitmap *bm)
 {
     uint16_t size;
-    const uint8_t *p = gfx_get_item(i, &size);
+    const uint8_t *p = gfx_get_item(graphic, &size);
     return p && gfx_expand(p, size, bm);
 }
 
@@ -235,13 +235,13 @@ void gfx_free_bitmap(Bitmap *bm)
     bm->px = NULL;
 }
 
-const Bitmap *gfx_get_bitmap(int i)
+const Bitmap *gfx_get_bitmap(int graphic)
 {
-    if (i < 0 || i >= graphics.item_count)
+    if (graphic < 0 || graphic >= graphics.item_count)
         return NULL;
-    if (!graphics.decoded[i].px && !gfx_load_bitmap(i, &graphics.decoded[i]))
+    if (!graphics.decoded[graphic].px && !gfx_load_bitmap(graphic, &graphics.decoded[graphic]))
         return NULL;
-    return &graphics.decoded[i];
+    return &graphics.decoded[graphic];
 }
 
 /* CSB object names: the bit is set in the last character. */

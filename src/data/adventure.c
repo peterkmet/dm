@@ -102,17 +102,17 @@ bool adventure_load_files(const char *dir, const char **failed)
     return true;
 }
 
-AdventureDisk adventure_install_disk(const char *adf_path, const char **dir)
+AdventureDisk adventure_install_disk(const char *adf_path, const char **disk_dir)
 {
     char path[PATH_SIZE];
     for (int i = 0; i < ARRAY_COUNT(game_disks); i++) {
         if (!adf_has_file(adf_path, game_disks[i].file))
             continue;
-        *dir = game_disks[i].dir;
-        snprintf(path, sizeof path, "%s/%s", *dir, game_disks[i].file);
+        *disk_dir = game_disks[i].dir;
+        snprintf(path, sizeof path, "%s/%s", *disk_dir, game_disks[i].file);
         if (file_exists(path))
             return ADVENTURE_DISK_SKIPPED;
-        return adf_extract(adf_path, *dir) ? ADVENTURE_DISK_INSTALLED : ADVENTURE_DISK_FAILED;
+        return adf_extract(adf_path, *disk_dir) ? ADVENTURE_DISK_INSTALLED : ADVENTURE_DISK_FAILED;
     }
     return ADVENTURE_DISK_SKIPPED;
 }

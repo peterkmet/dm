@@ -196,7 +196,7 @@ uint8_t tables_get_junk_weight(int16_t junk_type);
 /* Food that a food type adds. */
 int16_t tables_get_food_value(int16_t index);
 /* Mana cost of a symbol at a step, before the power multiplier. */
-uint8_t tables_get_base_mana_cost(int16_t step, int16_t symbol);
+uint8_t tables_get_base_mana_cost(uint16_t step, int16_t symbol);
 /* Mana cost multiplier of a power symbol, in eighths. */
 uint8_t tables_get_mana_multiplier(int16_t power);
 /* Light amount of a light power. */
@@ -291,7 +291,7 @@ uint8_t tables_get_explosion_scale(int16_t depth);
 #define TABLES_REBIRTH_STEP_1 1
 #define TABLES_REBIRTH_STEP_2 2
 /* Scale of rebirth step 1 or 2 at an object coordinate set. */
-uint8_t tables_get_rebirth_scale(int16_t step, int16_t coord);
+uint8_t tables_get_rebirth_scale(int16_t rebirth_step, int16_t coord);
 /* The 4 creature directions of a group that faces one direction, 2 bits per creature. */
 uint8_t tables_get_group_directions(int16_t index);
 
@@ -460,7 +460,7 @@ typedef struct {
     uint16_t buttons;
 } MouseInput;
 /* Entry of a mouse input table; false at the end of the table. */
-bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *out);
+bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *input);
 /* Writes the box of an entry into the mouse input table of the image, as the endgame screen does. */
 void tables_set_mouse_input_box(int16_t table, int16_t entry, const Box *box);
 

@@ -55,8 +55,8 @@ const char *adventure_find_bad_file(int16_t adventure, const char *dir);
 /* Loads the engine module and Graphics.DAT of g_adventure from dir. False with the failed file name in *failed. */
 bool adventure_load_files(const char *dir, const char **failed);
 /* Extracts a game disk image into its default folder: DM, CSB disk A, or CSB disk B. INSTALLED with the folder in
-   *dir; SKIPPED when the disk is no game disk or the folder has its files already; FAILED when the extraction
+   *disk_dir; SKIPPED when the disk is no game disk or the folder has its files already; FAILED when the extraction
    fails. */
-AdventureDisk adventure_install_disk(const char *adf_path, const char **dir);
+AdventureDisk adventure_install_disk(const char *adf_path, const char **disk_dir);
 
 #endif
