@@ -377,17 +377,7 @@ params ui/ui.h:ui_print_zone_padded open: epic 8
 params ui/ui_champion.c:draw_stat_meter open: epic 8
 params ui/video.c:video_map_mouse open: epic 8
 params ui/video.h:video_map_mouse open: epic 8
-params ui/view.c:draw_cell_objects open: epic 8
-params ui/view.c:draw_creature open: epic 8
-params ui/view.c:draw_creatures_in_cell open: epic 8
-params ui/view.c:draw_explosions open: epic 8
-params ui/view.c:draw_map_square open: epic 8
-params ui/view.c:draw_map_square_things open: epic 8
-params ui/view.c:draw_map_wall open: epic 8
-params ui/view.c:draw_object open: epic 8
-params ui/view.c:draw_projectile open: epic 8
 params ui/view.c:draw_square_things open: epic 8
-params ui/view.c:get_projectile_pose open: epic 8
 result ui/anim.h:anim_open open: epic 8
 result ui/anim.h:anim_play open: epic 8
 result ui/layout.h:layout_init open: epic 8

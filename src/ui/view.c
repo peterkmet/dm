@@ -693,46 +693,70 @@ static void add_clickable_object(int16_t index, uint16_t thing, const Box *drawn
         g_pile_objects[index][g_pile_object_counts[index]++] = thing;
 }
 
-/* One object on the floor or in an alcove. pile counts the objects of the cell for their shift;
-   NULL draws an object in flight at zone without pile shift, moved by place, and drawn gets its box. */
-static void draw_object(uint16_t thing, int16_t aspect_index, int16_t cell, int16_t lane, int16_t depth,
-                        bool alcove_front, int16_t zone, int16_t *pile, int16_t coord, bool alcove, Placement place,
-                        Box *drawn)
+/* One view square while its things draw. */
+typedef struct {
+    int16_t dir;         /* party direction */
+    Location at;         /* the map square */
+    int16_t view_square; /* VIEW_SQUARE_* */
+    int16_t lane, depth; /* of the view square */
+    int16_t coord;       /* object or alcove coordinate set, -1 none */
+    int16_t pass;        /* DOOR_PASS_* of a door square, else 0 */
+    int16_t cell;        /* the view cell that draws, VIEW_CELL_* */
+    int16_t map_cell;    /* its map cell */
+} SquareDraw;
+
+/* Where an object of a pile goes. */
+typedef struct {
+    int16_t zone;      /* the zone of an object in flight */
+    int16_t *pile;     /* objects drawn on the pile so far; NULL: an object in flight */
+    bool alcove;       /* the pile is in an alcove */
+    bool alcove_front; /* the alcove faces the party */
+    Placement place;   /* the shift of an object in flight */
+    Box *drawn;        /* gets the drawn box of an object in flight; NULL: not wanted */
+} ObjectSpot;
+
+/* One object on the floor or in an alcove, in view cell sq->cell. spot->pile counts the objects of the cell for
+   their shift; NULL draws an object in flight at spot->zone without pile shift. */
+static void draw_object(const SquareDraw *sq, uint16_t thing, int16_t aspect_index, const ObjectSpot *spot)
 {
+    int16_t cell = sq->cell;
+    int16_t lane = sq->lane;
+    int16_t *pile = spot->pile;
     const uint8_t *aspect = tables_get_object_aspect(aspect_index);
-    bool alcove_graphic = alcove_front && (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_HAS_ALCOVE_GRAPHIC);
+    bool alcove_graphic = spot->alcove_front && (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_HAS_ALCOVE_GRAPHIC);
     int16_t graphic = GFX_OBJECT_FIRST + aspect[OBJECT_ASPECT_GRAPHIC] + alcove_graphic;
     int16_t distance = 0;
     int flip = (aspect[OBJECT_ASPECT_FLAGS] & OBJECT_FLIP_ON_RIGHT) && !alcove_graphic &&
                (lane >= 1 || (lane == 0 && (cell == VIEW_CELL_BACK_RIGHT || cell == VIEW_CELL_FRONT_RIGHT)));
+    ZoneBlit blit = {spot->zone, flip ? FLIP_H : 0, TRANSPARENT_COLOR, spot->place};
     Bitmap own;
     const Bitmap *bitmap;
-    if (depth == DEPTH_D0)
+    if (sq->depth == DEPTH_D0)
         bitmap = get_shrunk_bitmap(graphic, SCALE_NATIVE, NULL, &own);
     else {
         int16_t row =
-            depth * 2 - 1 - (cell == VIEW_CELL_CENTER ? 1 : cell >> 1); /* front cells count as one row nearer */
+            sq->depth * 2 - 1 - (cell == VIEW_CELL_CENTER ? 1 : cell >> 1); /* front cells count as one row nearer */
         distance = (row + 1) >> 1;
         bitmap = get_shrunk_bitmap(graphic, tables_get_object_scale(row), get_object_palette_changes(distance), &own);
     }
     if (pile) {
-        zone = ZONE_SHIFTED |
-               (alcove ? ZONE_ALCOVE_OBJECT_FIRST + coord + aspect[OBJECT_ASPECT_ALCOVE_COORD] * ZONE_ALCOVE_VIEW_SETS
-                       : ZONE_OBJECT_FIRST + cell + coord * ZONE_OBJECT_CELLS);
-        place.zone_dx = tables_get_creature_shift(distance, tables_get_pile_shift(*pile, TABLES_AXIS_X));
-        place.zone_dy = tables_get_creature_shift(distance, tables_get_pile_shift(*pile, TABLES_AXIS_Y));
+        blit.zone = ZONE_SHIFTED | (spot->alcove ? ZONE_ALCOVE_OBJECT_FIRST + sq->coord +
+                                                       aspect[OBJECT_ASPECT_ALCOVE_COORD] * ZONE_ALCOVE_VIEW_SETS
+                                                 : ZONE_OBJECT_FIRST + cell + sq->coord * ZONE_OBJECT_CELLS);
+        blit.place.zone_dx = tables_get_creature_shift(distance, tables_get_pile_shift(*pile, TABLES_AXIS_X));
+        blit.place.zone_dy = tables_get_creature_shift(distance, tables_get_pile_shift(*pile, TABLES_AXIS_Y));
         ++*pile;
-        if (!alcove)
+        if (!spot->alcove)
             *pile &= PILE_FLOOR_SHIFTS - 1;
         else if (*pile > PILE_ALCOVE_LAST)
             *pile = PILE_ALCOVE_FIRST;
     }
     Box box;
-    bool drew = blit_in_zone(bitmap, &view.viewport, &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, place}, &box);
-    if (drew && drawn)
-        *drawn = box;
+    bool drew = blit_in_zone(bitmap, &view.viewport, &blit, &box);
+    if (drew && spot->drawn)
+        *spot->drawn = box;
     if (drew && pile && distance == 0 && lane == 0)
-        add_clickable_object(alcove ? VIEW_CLICK_BOX_ALCOVE : cell, thing, &box);
+        add_clickable_object(spot->alcove ? VIEW_CLICK_BOX_ALCOVE : cell, thing, &box);
     free(own.px);
 }
 
@@ -796,10 +820,11 @@ static int16_t get_creature_in_cell(const ViewGroup *s, uint16_t cell)
 }
 
 /* One creature: front, side, back, or attack graphic for its facing, scaled and recolored by depth,
-   at position pos (view cell, or 4 centered) of the creature coordinate set coord. */
-static void draw_creature(const ViewGroup *group, uint8_t look, uint16_t facing, int16_t pos, int16_t coord,
-                          int16_t depth)
+   at position pos (view cell, or 4 centered) of the creature coordinate set of the view square. */
+static void draw_creature(const SquareDraw *sq, const ViewGroup *group, uint8_t look, uint16_t facing, int16_t pos)
 {
+    int16_t coord = tables_get_view_square(sq->view_square).creature_coord;
+    int16_t depth = sq->depth;
     uint16_t info = group->info->graphic_info;
     int16_t graphic = GFX_CREATURE_FIRST + be16(group->aspect + CREATURE_ASPECT_GRAPHIC);
     int16_t distance = 0;
@@ -844,20 +869,22 @@ static void draw_creature(const ViewGroup *group, uint8_t look, uint16_t facing,
     free(own.px);
 }
 
-/* The creatures of the group in view cell cell (map cell mcell). rest holds the cells still to draw,
+/* The creatures of the group in view cell sq->cell (map cell sq->map_cell). rest holds the cells still to draw,
    front tells that the cell is a front cell of the pass. Returns true when the group is complete. */
-static bool draw_creatures_in_cell(const ViewGroup *group, int16_t dir, int16_t view_square, int16_t depth,
-                                   int16_t cell, uint16_t mcell, uint16_t rest, int16_t pass, bool front)
+static bool draw_creatures_in_cell(const SquareDraw *sq, const ViewGroup *group, uint16_t rest, bool front)
 {
+    int16_t dir = sq->dir;
+    int16_t view_square = sq->view_square;
+    int16_t pass = sq->pass;
     int16_t coord = tables_get_view_square(view_square).creature_coord;
     int16_t index;
     int16_t second = 0;
-    int16_t pos = cell;
+    int16_t pos = sq->cell;
     bool done = false;
     if (coord < 0)
         return true;
     uint16_t creature_index = 0;
-    index = get_creature_in_cell(group, mcell);
+    index = get_creature_in_cell(group, sq->map_cell);
     if (index < 0) {
         if (group->size != CREATURE_SIZE_HALF)
             return false;
@@ -896,10 +923,10 @@ static bool draw_creatures_in_cell(const ViewGroup *group, int16_t dir, int16_t 
     if (group->size == CREATURE_SIZE_QUARTER && ((view_square == VIEW_SQUARE_D0L && pos != VIEW_CELL_FRONT_RIGHT) ||
                                                  (view_square == VIEW_SQUARE_D0R && pos != VIEW_CELL_FRONT_LEFT)))
         return done;
-    draw_creature(group, group->look[index], facing, pos, coord, depth);
+    draw_creature(sq, group, group->look[index], facing, pos);
     if (second) /* the other creature of a half-size pair, beside it */
-        draw_creature(group, group->look[index == 0], facing,
-                      pos == VIEW_CELL_BACK_RIGHT ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT, coord, depth);
+        draw_creature(sq, group, group->look[index == 0], facing,
+                      pos == VIEW_CELL_BACK_RIGHT ? VIEW_CELL_BACK_LEFT : VIEW_CELL_BACK_RIGHT);
     return done;
 }
 
@@ -959,15 +986,23 @@ void view_set_motion(int16_t step, int16_t steps)
     flight.motion_steps = steps;
 }
 
-/* The pose of a projectile graphic by its direction of flight, and its mirror flags in flip_out. */
-static int16_t get_projectile_pose(const uint8_t *aspect, uint16_t thing, int16_t dir, int16_t x, int16_t y,
-                                   int16_t cell, int16_t lane, int16_t *flip_out)
+/* A projectile graphic: the pose and the mirror flag. */
+typedef struct {
+    int16_t pose;
+    int16_t flip;
+} ProjectilePose;
+
+/* The pose of a projectile graphic by its direction of flight, and its mirror flags. */
+static ProjectilePose get_projectile_pose(const SquareDraw *sq, const uint8_t *aspect, uint16_t thing)
 {
+    int16_t dir = sq->dir;
+    int16_t cell = sq->cell;
+    int16_t lane = sq->lane;
     int16_t kind = aspect[PROJECTILE_ASPECT_POSE_FLAGS] & PROJECTILE_KIND;
     int16_t pose;
     int16_t flip = 0;
     bool rotates = kind == PROJECTILE_BACK_AND_ROTATION;
-    bool odd_square = rotates && ((x + y) & 1);
+    bool odd_square = rotates && ((sq->at.x + sq->at.y) & 1);
     if (kind == PROJECTILE_NO_BACK_NO_ROTATION)
         pose = POSE_FRONT;
     else {
@@ -995,21 +1030,21 @@ static int16_t get_projectile_pose(const uint8_t *aspect, uint16_t thing, int16_
             }
         }
     }
-    *flip_out = flip;
-    return pose;
+    return (ProjectilePose){pose, flip};
 }
 
-/* A projectile in view cell cell: an object in flight, or a projectile graphic posed and mirrored by
+/* A projectile in view cell sq->cell: an object in flight, or a projectile graphic posed and mirrored by
    its direction of flight and scaled by depth (and kinetic energy). */
-static void draw_projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, int16_t cell, int16_t lane,
-                            int16_t depth, int16_t coord)
+static void draw_projectile(const SquareDraw *sq, uint16_t thing)
 {
-    int16_t zone = ZONE_PROJECTILE_FIRST + coord * ZONE_OBJECT_CELLS + cell;
+    int16_t cell = sq->cell;
+    int16_t depth = sq->depth;
+    int16_t zone = ZONE_PROJECTILE_FIRST + sq->coord * ZONE_OBJECT_CELLS + cell;
     int16_t aspect_index = get_projectile_aspect(rec_projectile_slot(thing));
     if (aspect_index >= 0) {
         Box drawn = {0};
-        draw_object(thing, aspect_index, cell, lane, depth, false, zone, NULL, 0, false, begin_projectile(thing),
-                    &drawn);
+        draw_object(sq, thing, aspect_index,
+                    &(ObjectSpot){.zone = zone, .place = begin_projectile(thing), .drawn = &drawn});
         end_projectile(thing, drawn.w > 0, &drawn);
         return;
     }
@@ -1017,7 +1052,6 @@ static void draw_projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, i
     int16_t by_energy = aspect[PROJECTILE_ASPECT_SCALE_FLAGS] & PROJECTILE_SCALE_WITH_ENERGY;
     int16_t scale = SCALE_NATIVE;
     int16_t row = 0;
-    int16_t flip;
     uint8_t energy = rec_projectile_energy(thing);
     if ((by_energy && energy != KINETIC_ENERGY_MAXIMUM) || depth) {
         row = depth * 2 - (cell >> 1);
@@ -1026,14 +1060,14 @@ static void draw_projectile(uint16_t thing, int16_t dir, int16_t x, int16_t y, i
             scale = max16(PROJECTILE_SCALE_MIN, (int8_t)((uint16_t)(max16(PROJECTILE_ENERGY_MIN, energy + 1) * scale) >>
                                                          PROJECTILE_ENERGY_SCALE_SHIFT));
     }
-    int16_t pose = get_projectile_pose(aspect, thing, dir, x, y, cell, lane, &flip);
+    ProjectilePose pose = get_projectile_pose(sq, aspect, thing);
     int16_t distance = row >> 1 == 2 ? 1 : row >> 1 == 3 ? 2 : 0; /* D2 or D3 palette changes */
     Bitmap own;
-    const Bitmap *bm = get_shrunk_bitmap(GFX_PROJECTILE_FIRST + aspect[PROJECTILE_ASPECT_GRAPHIC] + pose, scale,
+    const Bitmap *bm = get_shrunk_bitmap(GFX_PROJECTILE_FIRST + aspect[PROJECTILE_ASPECT_GRAPHIC] + pose.pose, scale,
                                          scale == SCALE_NATIVE ? NULL : get_object_palette_changes(distance), &own);
     Box drawn;
-    bool drew =
-        blit_in_zone(bm, &view.viewport, &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, begin_projectile(thing)}, &drawn);
+    bool drew = blit_in_zone(bm, &view.viewport,
+                             &(ZoneBlit){zone, pose.flip, TRANSPARENT_COLOR, begin_projectile(thing)}, &drawn);
     end_projectile(thing, drew, &drawn);
     free(own.px);
 }
@@ -1138,16 +1172,18 @@ static void draw_fluxcage(int16_t field_index)
 }
 
 /* The explosions of a square, each mirrored at random, then a fluxcage as a field. */
-static void draw_explosions(uint16_t thing, int16_t dir, int16_t view_square, int16_t depth, int16_t coord,
-                            uint16_t mcell, int16_t pass)
+static void draw_explosions(const SquareDraw *sq, uint16_t first)
 {
-    ViewSquare square = tables_get_view_square(view_square);
+    int16_t dir = sq->dir;
+    int16_t depth = sq->depth;
+    int16_t coord = sq->coord;
+    ViewSquare square = tables_get_view_square(sq->view_square);
     int16_t explosion_coord = square.explosion_coord;
     int16_t field_index = square.field_aspect;
     bool fluxcage = false;
     if (explosion_coord < 0 && field_index < 0)
         return;
-    for (; thing != THING_ENDOFLIST; thing = rec_thing_next(thing)) {
+    for (uint16_t thing = first; thing != THING_ENDOFLIST; thing = rec_thing_next(thing)) {
         if (THING_TYPE(thing) != THING_EXPLOSION)
             continue;
         uint16_t cell = THING_CELL(thing);
@@ -1155,7 +1191,7 @@ static void draw_explosions(uint16_t thing, int16_t dir, int16_t view_square, in
         bool rebirth = type >= EXPLOSION_REBIRTH_STEP_1;
         int16_t zone;
         int16_t scale;
-        if (rebirth && !(coord >= 0 && cell == mcell))
+        if (rebirth && !(coord >= 0 && cell == sq->map_cell))
             continue;
         int16_t flip = random_2bits();
         if (type == EXPLOSION_REBIRTH_STEP_1) {
@@ -1170,7 +1206,7 @@ static void draw_explosions(uint16_t thing, int16_t dir, int16_t view_square, in
         Bitmap own = {0};
         if (explosion_coord < 0)
             continue;
-        if (view_square == VIEW_SQUARE_D0C) {
+        if (sq->view_square == VIEW_SQUARE_D0C) {
             draw_explosion_on_party(thing, aspect);
             continue;
         }
@@ -1190,7 +1226,7 @@ static void draw_explosions(uint16_t thing, int16_t dir, int16_t view_square, in
                      &(ZoneBlit){zone, flip, TRANSPARENT_COLOR, {0}}, NULL);
         free(own.px);
     }
-    if (fluxcage && field_index >= 0 && pass != DOOR_PASS_BACK && !g_do_not_draw_fluxcages)
+    if (fluxcage && field_index >= 0 && sq->pass != DOOR_PASS_BACK && !g_do_not_draw_fluxcages)
         draw_fluxcage(field_index);
 }
 
@@ -1200,17 +1236,16 @@ static bool is_cell_in_view(int16_t depth, int16_t cell)
     return (depth != DEPTH_D3 || cell >= VIEW_CELL_FRONT_RIGHT) && (depth != DEPTH_D0 || cell < VIEW_CELL_FRONT_RIGHT);
 }
 
-/* The objects of map cell mcell, drawn in view cell cell; pile counts the objects drawn on the pile. */
-static void draw_cell_objects(uint16_t first, int16_t cell, uint16_t mcell, int16_t lane, int16_t depth, int16_t coord,
-                              bool alcove, int16_t *pile)
+/* The objects of map cell sq->map_cell, drawn in view cell sq->cell; pile counts the objects drawn on the pile. */
+static void draw_cell_objects(const SquareDraw *sq, uint16_t first, int16_t *pile, bool alcove)
 {
-    if (coord < 0 || !is_cell_in_view(depth, cell))
+    if (sq->coord < 0 || !is_cell_in_view(sq->depth, sq->cell))
         return;
+    const ObjectSpot spot = {.pile = pile, .alcove = alcove, .alcove_front = alcove && sq->lane == 0};
     for (uint16_t t = first; t != THING_ENDOFLIST; t = rec_thing_next(t)) {
         int16_t type = THING_TYPE(t);
-        if (type >= THING_WEAPON && type <= THING_JUNK && THING_CELL(t) == mcell)
-            draw_object(t, get_object_aspect(t), cell, lane, depth, alcove && lane == 0, 0, pile, coord, alcove,
-                        (Placement){0}, NULL);
+        if (type >= THING_WEAPON && type <= THING_JUNK && THING_CELL(t) == sq->map_cell)
+            draw_object(sq, t, get_object_aspect(t), &spot);
     }
 }
 
@@ -1235,59 +1270,59 @@ static void draw_square_things(uint16_t first, int16_t dir, int16_t x, int16_t y
 {
     if (first == THING_ENDOFLIST)
         return;
-    int16_t pass = 0;
+    ViewSquare square = tables_get_view_square(view_square);
+    SquareDraw sq = {.dir = dir, .at.x = x, .at.y = y, .view_square = view_square, .lane = square.lane};
+    sq.depth = square.depth;
     if (order & CELL_ORDER_DOOR_PASS) {
-        pass = (order & 1) ? DOOR_PASS_FRONT : DOOR_PASS_BACK;
+        sq.pass = (order & 1) ? DOOR_PASS_FRONT : DOOR_PASS_BACK;
         order >>= CELL_ORDER_BITS;
     }
     uint16_t rest = order;
-    uint16_t mcell = 0;
     uint16_t group_thing = THING_NONE;
     bool alcove = rest == 0;
     bool has_projectiles = false;
     bool has_explosions = false;
     bool group_done = false;
     bool loaded = false;
-    ViewSquare square = tables_get_view_square(view_square);
-    int16_t lane = square.lane;
-    int16_t depth = square.depth;
-    int16_t coord = alcove ? square.alcove_coord : square.object_coord;
+    sq.coord = alcove ? square.alcove_coord : square.object_coord;
     int16_t count = 0;
     ViewGroup group;
     find_square_things(first, &group_thing, &has_projectiles, &has_explosions);
     do {
-        int16_t cell, pile;
+        int16_t pile;
         if (!alcove) {
-            cell = (rest & CELL_ORDER_MASK) - 1;
+            sq.cell = (rest & CELL_ORDER_MASK) - 1;
             rest >>= CELL_ORDER_BITS;
             count++;
-            mcell = NORMALIZE(cell + dir);
+            sq.map_cell = NORMALIZE(sq.cell + dir);
             pile = 0;
         } else {
-            cell = VIEW_CELL_CENTER;
-            mcell = direction_back(dir); /* the alcove side of the wall faces the party */
+            sq.cell = VIEW_CELL_CENTER;
+            sq.map_cell = direction_back(dir); /* the alcove side of the wall faces the party */
             pile = PILE_ALCOVE_FIRST;
         }
-        pile += (mcell & 1) * PILE_ODD_CELL; /* odd map cells start in the second half of the shifts */
-        draw_cell_objects(first, cell, mcell, lane, depth, coord, alcove, &pile);
-        if (alcove || depth >= DEPTH_D4)
+        pile += (sq.map_cell & 1) * PILE_ODD_CELL; /* odd map cells start in the second half of the shifts */
+        draw_cell_objects(&sq, first, &pile, alcove);
+        if (alcove || sq.depth >= DEPTH_D4)
             break;
-        bool front = (cell < VIEW_CELL_FRONT_RIGHT || count == 1) &&
+        bool front = (sq.cell < VIEW_CELL_FRONT_RIGHT || count == 1) &&
                      (rest == 0 || (rest & CELL_ORDER_MASK) - 1 >= VIEW_CELL_FRONT_RIGHT);
         if (group_thing != THING_NONE && !group_done) {
             if (!loaded) {
                 load_group_aspect(group_thing, &group);
                 loaded = true;
             }
-            group_done = draw_creatures_in_cell(&group, dir, view_square, depth, cell, mcell, rest, pass, front);
+            group_done = draw_creatures_in_cell(&sq, &group, rest, front);
         }
-        if (has_projectiles && square.object_coord >= 0 && is_cell_in_view(depth, cell))
+        /* the alcove pass broke out above, so sq.coord is square.object_coord here */
+        if (has_projectiles && square.object_coord >= 0 && is_cell_in_view(sq.depth, sq.cell))
             for (uint16_t t = first; t != THING_ENDOFLIST; t = rec_thing_next(t))
-                if (THING_TYPE(t) == THING_PROJECTILE && THING_CELL(t) == mcell)
-                    draw_projectile(t, dir, x, y, cell, lane, depth, square.object_coord);
+                if (THING_TYPE(t) == THING_PROJECTILE && THING_CELL(t) == sq.map_cell)
+                    draw_projectile(&sq, t);
     } while (rest);
+    /* the last drawn map cell decides the rebirth check, as in the original */
     if (has_explosions)
-        draw_explosions(first, dir, view_square, depth, coord, mcell, pass);
+        draw_explosions(&sq, first);
 }
 
 /* The field of a teleporter square. */
@@ -2258,13 +2293,6 @@ void view_load_map(int16_t m)
     load_creature_colors(creature_types, creature_type_count);
 }
 
-/* The square forward and right of (x, y) in direction dir. */
-static void get_relative_square(int16_t dir, int16_t forward, int16_t right, int16_t *x, int16_t *y)
-{
-    *x += forward * tables_get_step_east(dir) + right * tables_get_step_east(direction_right(dir));
-    *y += forward * tables_get_step_north(dir) + right * tables_get_step_north(direction_right(dir));
-}
-
 int16_t view_get_wall_ornament(int16_t x, int16_t y, int16_t face)
 {
     Aspect a;
@@ -2423,11 +2451,24 @@ static int16_t get_map_explosion_tile(uint16_t explosion)
     return rec_explosion_type(explosion) < EXPLOSION_SMOKE ? MAP_TILE_EXPLOSION_OTHER : -1;
 }
 
-/* The things of a square that the spells show at (px, py): with DAIN the zokathra objects, the projectiles,
-   and the explosions, with KU the creatures. blink: the square is a fake wall that blinks. */
-static void draw_map_square_things(Bitmap *dst, const uint8_t *spells, const Aspect *aspect, bool blink, int16_t dir,
-                                   int16_t px, int16_t py)
+/* One magic map square draw. */
+typedef struct {
+    Bitmap *dst;
+    const uint8_t *spells;
+    bool blink;
+    int16_t dir;
+    int16_t px, py;
+} MapDraw;
+
+/* The things of a square that the spells show at (m->px, m->py): with DAIN the zokathra objects, the projectiles,
+   and the explosions, with KU the creatures. m->blink: the square is a fake wall that blinks. */
+static void draw_map_square_things(const MapDraw *m, const Aspect *aspect)
 {
+    Bitmap *dst = m->dst;
+    const uint8_t *spells = m->spells;
+    int16_t dir = m->dir;
+    int16_t px = m->px;
+    int16_t py = m->py;
     uint16_t explosion = THING_ENDOFLIST;
     uint16_t projectile = THING_ENDOFLIST;
     uint16_t group = THING_ENDOFLIST;
@@ -2444,7 +2485,7 @@ static void draw_map_square_things(Bitmap *dst, const uint8_t *spells, const Asp
         else if (type == THING_JUNK && object_get_type(thing) == OBJECT_TYPE_ZOKATHRA)
             draw_map_tile(dst,
                           MAP_TILE_ZOKATHRA_FIRST + NORMALIZE(THING_CELL(thing) - dir) +
-                              (aspect->element == SQUARE_WALL && !blink ? MAP_TILE_IN_WALL : 0),
+                              (aspect->element == SQUARE_WALL && !m->blink ? MAP_TILE_IN_WALL : 0),
                           px, py);
     }
     if (group != THING_ENDOFLIST && !(map_get_creature_attributes(group) & CREATURE_NOT_ON_MAP))
@@ -2463,9 +2504,12 @@ static void draw_map_square_things(Bitmap *dst, const uint8_t *spells, const Asp
 
 /* A wall on the magic map: blinking when ROS shows a fake wall, else the wall with its vi altar, alcove, and
    fountain sides. */
-static void draw_map_wall(Bitmap *dst, const uint8_t *spells, const Aspect *aspect, bool blink, int16_t px, int16_t py)
+static void draw_map_wall(const MapDraw *m, const Aspect *aspect)
 {
-    if (spells[MAGIC_MAP_ROS] && blink && (g_game_time & MAP_TIME_BLINK_WALL)) {
+    Bitmap *dst = m->dst;
+    int16_t px = m->px;
+    int16_t py = m->py;
+    if (m->spells[MAGIC_MAP_ROS] && m->blink && (g_game_time & MAP_TIME_BLINK_WALL)) {
         draw_map_tile(dst, MAP_TILE_FAKE_WALL_BLINK, px, py);
         return;
     }
@@ -2493,17 +2537,22 @@ static int16_t get_map_door_tile(const Aspect *aspect)
     return tile;
 }
 
-/* The tiles of square (x, y) seen in direction dir at (px, py): the square, then with DAIN the footprints, the
+/* The tiles of square at seen in direction m->dir at (m->px, m->py): the square, then with DAIN the footprints, the
    zokathra objects, the projectiles, and the explosions, with ROS the fake walls and invisible pits, with KU the
    creatures. */
-static void draw_map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16_t y, int16_t dir, int16_t px,
-                            int16_t py)
+static void draw_map_square(const MapDraw *m, Location at)
 {
+    Bitmap *dst = m->dst;
+    const uint8_t *spells = m->spells;
+    int16_t dir = m->dir;
+    int16_t px = m->px;
+    int16_t py = m->py;
     Aspect aspect;
-    get_square_aspect(&aspect, dir, x, y);
-    bool blink = rec_square_type(aspect.square) == SQUARE_FAKE_WALL && (aspect.square & FAKE_WALL_IMAGINARY);
-    int16_t color = x == g_party_map_x && y == g_party_map_y ? MAP_COLOR_PARTY
-                    : spells[MAGIC_MAP_DAIN] && aspect.element != SQUARE_WALL && has_map_footprints(&aspect, x, y)
+    get_square_aspect(&aspect, dir, at.x, at.y);
+    MapDraw square = *m;
+    square.blink = rec_square_type(aspect.square) == SQUARE_FAKE_WALL && (aspect.square & FAKE_WALL_IMAGINARY);
+    int16_t color = at.x == g_party_map_x && at.y == g_party_map_y ? MAP_COLOR_PARTY
+                    : spells[MAGIC_MAP_DAIN] && aspect.element != SQUARE_WALL && has_map_footprints(&aspect, at.x, at.y)
                         ? MAP_COLOR_FOOTPRINTS
                         : -1;
     if (color >= 0) {
@@ -2512,7 +2561,7 @@ static void draw_map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16
     }
     switch (aspect.element) {
     case SQUARE_WALL:
-        draw_map_wall(dst, spells, &aspect, blink, px, py);
+        draw_map_wall(&square, &aspect);
         break;
     case SQUARE_CORRIDOR: {
         draw_map_tile(dst, MAP_TILE_FLOOR, px, py);
@@ -2533,7 +2582,7 @@ static void draw_map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16
         break;
     case ELEMENT_STAIRS_SIDE:
     case ELEMENT_STAIRS_FRONT: {
-        int16_t side = NORMALIZE(map_get_stairs_exit_direction(x, y) - dir);
+        int16_t side = NORMALIZE(map_get_stairs_exit_direction(at.x, at.y) - dir);
         if (aspect.state)
             side = direction_back(side);
         draw_map_tile(dst, MAP_TILE_STAIRS_FIRST + side, px, py);
@@ -2548,7 +2597,7 @@ static void draw_map_square(Bitmap *dst, const uint8_t *spells, int16_t x, int16
         break;
     }
     if (spells[MAGIC_MAP_KU] || spells[MAGIC_MAP_DAIN])
-        draw_map_square_things(dst, spells, &aspect, blink, dir, px, py);
+        draw_map_square_things(&square, &aspect);
 }
 
 /* The magic map of a champion at (px, py) of dst: 7 x 7 squares around the party, or around the square that
@@ -2576,7 +2625,7 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
     view.map = map;
     view.map_width = dungeon_map_width(map);
     view.map_height = dungeon_map_height(map);
-    get_relative_square(dir, MAP_HALF, -MAP_HALF, &x, &y);
+    map_step(dir, MAP_HALF, -MAP_HALF, &x, &y);
     for (int16_t row = 0; row < MAP_SQUARES; row++, py += MAP_TILE_H + MAP_GAP_Y) {
         int16_t sx = x;
         int16_t sy = y;
@@ -2586,14 +2635,15 @@ void view_draw_magic_map(Bitmap *dst, const uint8_t *spells, int16_t px, int16_t
                 party_px = cx;
                 party_py = py;
             } else {
-                draw_map_square(dst, spells, sx, sy, dir, cx, py);
+                draw_map_square(&(MapDraw){dst, spells, false, dir, cx, py}, (Location){sx, sy});
             }
-            get_relative_square(dir, 0, 1, &sx, &sy);
+            map_step(dir, 0, 1, &sx, &sy);
         }
-        get_relative_square(dir, -1, 0, &x, &y);
+        map_step(dir, -1, 0, &x, &y);
     }
     if (party_px >= 0)
-        draw_map_square(dst, spells, g_party_map_x, g_party_map_y, dir, party_px, party_py);
+        draw_map_square(&(MapDraw){dst, spells, false, dir, party_px, party_py},
+                        (Location){g_party_map_x, g_party_map_y});
     view.map = saved[0];
     view.map_width = saved[1];
     view.map_height = saved[2];
@@ -2629,13 +2679,13 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
     for (int i = 0; i < D4_SQUARE_COUNT; i++) { /* objects only on D4L, D4R, D4C */
         int16_t sx = x;
         int16_t sy = y;
-        get_relative_square(dir, DEPTH_D4, d4_right[i], &sx, &sy);
+        map_step(dir, DEPTH_D4, d4_right[i], &sx, &sy);
         draw_square_things(map_get_first_thing_at((Position){view.map, sx, sy}), dir, sx, sy, d4_squares[i], CELLS_BL);
     }
     for (int i = 0; i < DRAWN_SQUARE_COUNT; i++) {
         int16_t sx = x;
         int16_t sy = y;
-        get_relative_square(dir, square_views[i].forward, square_views[i].right, &sx, &sy);
+        map_step(dir, square_views[i].forward, square_views[i].right, &sx, &sy);
         draw_square(&square_views[i], dir, sx, sy);
     }
     Bitmap screen = {SCREEN_W, SCREEN_H, &fb[0][0]};
