@@ -14,8 +14,6 @@ User wishes for future versions. Not planned yet.
 - `map_get_creature_attributes` (`src/engine/map.c`) reads the creature table through the cached accessor of `data/tables`. A creature type above the table (a corrupt dungeon) reads a NULL pointer.
 - Change: a range check with a defined value, a short comment, and a deviation entry in the formats doc.
 
-## Truth values that are still int16_t
-
 ## Small cleanups after the clean-code pass
 
 - `action_reset` (`src/engine/action.c`) also clears `g_redraw`, which is not action state.
