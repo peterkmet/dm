@@ -24,8 +24,6 @@ enum {
     KEY_3 = 0x0300
 };
 
-#define QUICK_SAVE_FILE_NAME "QUICK.DAT"
-
 extern bool g_advanced_features; /* set outside vanilla: the advanced features show */
 extern bool g_automap_open;      /* set: the automap covers the viewport and the game time stops */
 

@@ -471,7 +471,9 @@ def test_sensor_18_with_frames_plays_at_once_and_waits_for_input(lib, model, tmp
             click(lib, 10, 10)
 
     frames = Frames(lib, action)
-    lib.startend_run_endgame_sensor(5)
+    m, x, y, sensor = endgame_sensor_square(lib)  # the rule sets the won game, then runs the ending
+    lib.map_set_current_map(m)
+    lib.event_process_wall(ctypes.byref(TimelineEvent(b=x << 8 | y, c=(sensor >> 14) << 8)))
     frames.remove()
     assert frames.shots[0] == (model[0][1], model[0][2])  # no delay before the first frame
     assert len(frames.shots) == total + 10 and not any(entrance)

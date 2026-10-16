@@ -24,6 +24,13 @@ int16_t savegame_save(const char *dir);
    champions, party, timeline, and portraits. Returns SAVEGAME_LOADED, SAVEGAME_MISSING, or
    SAVEGAME_DAMAGED. After a damaged file the dungeon is not loaded. */
 int16_t savegame_load(const char *dir);
+/* The saved game no longer counts: the endgame offers no restart. */
+void savegame_forget(void);
+/* The quick save and load of the advanced mode, dir/QUICK.DAT: the saved-game flag and the save times stay
+   as they were (a quick save is not a saved game). savegame_quick_save returns 1 on success; savegame_quick_load
+   returns the results of savegame_load_from, and after a load both times are 0. */
+int16_t savegame_quick_save(const char *dir);
+int16_t savegame_quick_load(const char *dir);
 
 /* CSB prison (CEDT MAKE NEW ADVENTURE): puts the party into the CSB adventure of mini_path (MINI.DAT),
    writes it to dir/CSBGAME.DAT (the old file becomes CSBGAME.BAK), and loads it. Returns ADVENTURE_MADE,

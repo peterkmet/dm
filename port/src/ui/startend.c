@@ -38,8 +38,6 @@
 #define FUSE_LORD_HEALTH         10000
 #define FUSE_FIRST_ATTACK        55
 #define FUSE_ATTACK_STEP         40
-#define FUSE_MAGICAL_LIGHT       200
-#define FUSE_SHIELD              100
 #define FUSE_TEXT_COUNT          8
 #define FUSE_TEXT_SIZE           200
 #define DECODE_MESSAGE_INVISIBLE ((int16_t)0x8001) /* dungeon_decode_text: message mode, also invisible texts */
@@ -191,7 +189,7 @@ void startend_save_game(void)
         if (choice == SAVE_CHOICE_QUIT) {
             if (!confirm_quit())
                 continue;
-            g_saved_game_exists = false;
+            savegame_forget();
             startend_run_endgame(0);
             return;
         }
@@ -506,14 +504,10 @@ void startend_run_fuse_sequence(void)
 {
     int16_t x = g_party_map_x;
     int16_t y = g_party_map_y;
-    g_game_won = true;
     if (g_inventory_champion_ordinal)
         command_toggle_inventory(CHAMPION_MAX_COUNT);
     command_highlight_disable();
-    g_party.magical_light_amount = FUSE_MAGICAL_LIGHT;
-    g_party.shield_defense = FUSE_SHIELD;
-    g_party.spell_shield_defense = FUSE_SHIELD;
-    g_party.fire_shield_defense = FUSE_SHIELD;
+    game_start_fuse_sequence();
     ui_draw_all_champion_states(CHAMPION_ATTR_STATUS_BOX);
     fuse_update();
     game_update_map_coordinates_after_relative_movement(g_party_direction, 1, 0, &x, &y);
@@ -544,7 +538,7 @@ void startend_run_fuse_sequence(void)
     show_final_texts();
     draw_fuse_explosions(EXPLOSION_HARM_NON_MATERIAL, x, y);
     wait_frames(FUSE_END_FRAMES);
-    g_saved_game_exists = false;
+    savegame_forget();
     startend_run_endgame(1);
 }
 
@@ -561,13 +555,10 @@ static void play_csb_ending(void)
 
 void startend_run_endgame_sensor(uint16_t delay)
 {
-    if (g_adventure == ADVENTURE_CSB) { /* no delay, and the saved game stays */
-        g_game_won = true;
+    if (g_adventure == ADVENTURE_CSB) { /* no delay */
         play_csb_ending();
         return;
     }
     wait_frames(delay * SENSOR_DELAY_FRAMES);
-    g_saved_game_exists = false;
-    g_game_won = true;
     startend_run_endgame(1);
 }

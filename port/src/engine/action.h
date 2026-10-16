@@ -60,6 +60,15 @@ enum { ACTION_DAMAGE_CANT_REACH = -1, ACTION_DAMAGE_NO_AMMUNITION = -2 };
 extern int16_t g_acting_champion_ordinal; /* 0: none */
 extern uint8_t g_action_list_indices[3];  /* 0xff: none */
 extern int16_t g_action_damage;           /* 0: none, -1 can't reach, -2 need ammo */
+extern uint8_t g_action_list_minimum_skill_levels[3];
+extern uint16_t g_action_count;
+
+void action_set_action_list(int16_t action_set_index);
+/* Makes a champion the acting champion with the actions of its action hand. Returns false when it cannot act. */
+bool action_set_acting_champion(uint16_t champion_index);
+/* The action damage to show, which is then cleared. */
+int16_t action_take_damage(void);
+void action_reset(void);
 
 /* Closes the action menu: the action hand and the action area are drawn again. */
 void action_clear_acting_champion(void);

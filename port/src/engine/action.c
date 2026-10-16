@@ -16,6 +16,7 @@
 #include "sound.h"
 #include "tables.h"
 #include "timeline_process.h"
+#include <string.h>
 
 #define MESSAGE_SIZE 100
 
@@ -91,6 +92,87 @@ uint16_t g_action_target_group_thing;
 int16_t g_acting_champion_ordinal;
 uint8_t g_action_list_indices[ACTION_LIST_COUNT] = {ACTION_NONE, ACTION_NONE, ACTION_NONE};
 int16_t g_action_damage;
+uint8_t g_action_list_minimum_skill_levels[ACTION_LIST_COUNT];
+uint16_t g_action_count;
+
+/* The charges of the object in the action hand of the acting champion (1 when it has none). */
+static uint16_t action_hand_charge_count(void)
+{
+    uint16_t thing = g_champions[g_acting_champion_ordinal - 1].slots[SLOT_HAND_ACTION];
+    switch (THING_TYPE(thing)) {
+    case THING_WEAPON:
+        return weapon_charges(thing);
+    case THING_ARMOUR:
+        return armour_charges(thing);
+    case THING_JUNK:
+        return junk_charges(thing);
+    }
+    return 1;
+}
+
+/* Builds the action menu of the acting champion: the first action always; the other two when the
+   champion has the skill level and, when the action needs them, charges. */
+void action_set_action_list(int16_t action_set_index)
+{
+    const ActionSet *set = tables_get_action_set(action_set_index);
+    uint16_t n = 1;
+    if (!set)
+        return;
+    g_action_list_indices[0] = set->action_indices[0];
+    g_action_list_minimum_skill_levels[0] = 1;
+    for (int k = 1; k < ACTION_LIST_COUNT; k++) {
+        uint8_t action = set->action_indices[k];
+        uint8_t level = set->minimum_skill_levels[k - 1];
+        const ActionInfo *info = tables_get_action_info(action);
+        if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charge_count()))
+            continue;
+        level &= ~ACTION_LEVEL_NEEDS_CHARGES;
+        if (level <= champion_get_skill_level(g_acting_champion_ordinal - 1, info->skill_index)) {
+            g_action_list_indices[n] = action;
+            g_action_list_minimum_skill_levels[n++] = level;
+        }
+    }
+    g_action_count = n;
+    for (; n < ACTION_LIST_COUNT; n++)
+        g_action_list_indices[n] = ACTION_NONE;
+}
+
+/* A living champion that may act becomes the acting champion: the actions of the object in its action
+   hand (or of the empty hand) form the action list, and its action hand is drawn again. */
+bool action_set_acting_champion(uint16_t champion_index)
+{
+    Champion *c = &g_champions[champion_index];
+    int16_t set = ACTION_SET_EMPTY_HAND;
+    if (c->attributes & CHAMPION_ATTR_ACTION_DISABLED || !c->current_health)
+        return false;
+    if (c->slots[SLOT_HAND_ACTION] != THING_NONE) {
+        const ObjectInfo *info = tables_get_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
+        if (!info || !(set = info->action_set_index))
+            return false;
+    }
+    g_acting_champion_ordinal = champion_index + 1;
+    action_set_action_list(set);
+    c->attributes |= CHAMPION_ATTR_ACTION_HAND;
+    return true;
+}
+
+int16_t action_take_damage(void)
+{
+    int16_t damage = g_action_damage;
+    g_action_damage = 0;
+    return damage;
+}
+
+/* No acting champion, no action list, no action damage, and no redraw request at the start of a game. */
+void action_reset(void)
+{
+    g_acting_champion_ordinal = 0;
+    memset(g_action_list_indices, ACTION_NONE, sizeof g_action_list_indices);
+    memset(g_action_list_minimum_skill_levels, 0, sizeof g_action_list_minimum_skill_levels);
+    g_action_count = 0;
+    g_action_damage = 0;
+    g_redraw = 0;
+}
 
 void action_clear_acting_champion(void)
 {

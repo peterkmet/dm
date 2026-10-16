@@ -71,6 +71,11 @@ extern uint16_t g_champion_pending_wounds[CHAMPION_MAX_COUNT];
 extern int16_t g_champion_skill_level_up[CHAMPION_MAX_COUNT][SKILL_BASE_COUNT];
 /* Champions that died in the tick, one bit per champion index: the user interface releases them after the tick. */
 extern uint16_t g_dead_champions;
+/* The champions that died in the tick (one bit each); the notice is then cleared. */
+uint16_t champion_take_dead_champions(void);
+/* Asks the user interface to draw these parts of a champion again (CHAMPION_ATTR_* redraw flags). */
+void champion_add_redraw_flags(uint16_t champion_index, uint16_t attributes);
+uint16_t champion_reset_data_to_start_game(void);
 
 /* Original 0x140-byte big-endian record (save files, emulator tests). */
 void champion_pack(const Champion *c, uint8_t *out);

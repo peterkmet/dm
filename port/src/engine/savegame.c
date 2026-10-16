@@ -20,6 +20,7 @@
 #define EXTENSION_LENGTH_BYTES     4 /* the length of the automap block, after the block */
 #define NEW_ADVENTURE_LUCK_MINIMUM 10
 #define SAVED_FREE_INDEX_SHIFT     16 /* a free event slot of the file keeps the next free index in the high word */
+#define QUICK_SAVE_FILE_NAME       "QUICK.DAT"
 
 /* Party record (g_party) offsets. */
 enum {
@@ -581,4 +582,31 @@ int16_t savegame_load_from(const char *dir, const char *name, const char *backup
     if (from_backup)
         rename(backup, path);
     return SAVEGAME_LOADED;
+}
+
+void savegame_forget(void)
+{
+    g_saved_game_exists = false;
+}
+
+int16_t savegame_quick_save(const char *dir)
+{
+    bool exists = g_saved_game_exists;
+    uint32_t saved = g_last_save_game_time;
+    bool ok = savegame_save_as(dir, QUICK_SAVE_FILE_NAME, NULL);
+    g_saved_game_exists = exists;
+    g_last_save_game_time = saved;
+    return ok;
+}
+
+int16_t savegame_quick_load(const char *dir)
+{
+    bool exists = g_saved_game_exists;
+    int16_t result = savegame_load_from(dir, QUICK_SAVE_FILE_NAME, NULL);
+    if (result == SAVEGAME_LOADED) {
+        g_saved_game_exists = exists;
+        g_last_save_game_time = 0;
+        g_last_load_game_time = 0;
+    }
+    return result;
 }

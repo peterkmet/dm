@@ -189,8 +189,13 @@ extern int16_t g_game_mode; /* GAME_MODE_VANILLA by default */
 extern bool g_cheat_light;    /* the view draws in full light; the creature rules keep the real light */
 extern bool g_cheat_immortal; /* the health of a champion stops at 1 */
 extern bool g_cheat_food;     /* food and water do not go down */
+enum { CHEAT_LIGHT, CHEAT_IMMORTAL, CHEAT_FOOD };
 
 void game_start_new(void);
+void game_reset_session(void);
+void game_set_mode(int16_t mode);
+void game_toggle_cheat(int16_t cheat);
+void game_start_fuse_sequence(void);
 void game_increment_time(void);
 void game_advance_time(void);
 void game_apply_tick_effects(void);

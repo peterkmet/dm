@@ -120,25 +120,15 @@ void advanced_print_message(const char *text)
 /* A quick save is not a saved game: RESTART and the QUIT question look only at the save file. */
 static void quick_save(void)
 {
-    bool exists = g_saved_game_exists;
-    uint32_t saved = g_last_save_game_time;
-    advanced_print_message(savegame_save_as(startend_save_dir(), QUICK_SAVE_FILE_NAME, NULL) ? "GAME SAVED"
-                                                                                             : "UNABLE TO SAVE");
-    g_saved_game_exists = exists;
-    g_last_save_game_time = saved;
+    advanced_print_message(savegame_quick_save(startend_save_dir()) ? "GAME SAVED" : "UNABLE TO SAVE");
 }
 
 /* After a damaged file, savegame_load_from puts the running game back: the game goes on. */
 static void quick_load(void)
 {
-    bool exists = g_saved_game_exists;
-    int16_t result = savegame_load_from(startend_save_dir(), QUICK_SAVE_FILE_NAME, NULL);
-    if (result == SAVEGAME_LOADED) {
+    int16_t result = savegame_quick_load(startend_save_dir());
+    if (result == SAVEGAME_LOADED)
         gameloop_continue_loaded_game();
-        g_saved_game_exists = exists;
-        g_last_save_game_time = 0;
-        g_last_load_game_time = 0;
-    }
     advanced_print_message(result == SAVEGAME_LOADED    ? "GAME LOADED"
                            : result == SAVEGAME_MISSING ? "NO QUICK SAVE"
                                                         : "QUICK SAVE DAMAGED");
@@ -152,8 +142,7 @@ bool advanced_process_key(uint16_t key)
         if (key == KEY_M || key == KEY_TAB || key == KEY_ESCAPE)
             close_automap();
         if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I || key == KEY_F)) {
-            bool *cheat = key == KEY_L ? &g_cheat_light : key == KEY_I ? &g_cheat_immortal : &g_cheat_food;
-            *cheat = !*cheat;
+            game_toggle_cheat(key == KEY_L ? CHEAT_LIGHT : key == KEY_I ? CHEAT_IMMORTAL : CHEAT_FOOD);
             advanced_draw_automap();
         }
         if (g_game_mode == GAME_MODE_ADVANCED && (key == KEY_1 || key == KEY_2 || key == KEY_3)) {

@@ -26,6 +26,8 @@
 #define TORCH_BURN_INTERVAL_MASK   0x1ff /* torches lose one charge every 512 ticks */
 #define TIME_EFFECTS_MASK          0x3f  /* champion time effects every 64 ticks */
 #define TIME_EFFECTS_SLEEPING_MASK 0xf   /* every 16 ticks while the party sleeps */
+#define FUSE_MAGICAL_LIGHT         200
+#define FUSE_SHIELD                100
 
 Party g_party;
 Champion g_champions[CHAMPION_MAX_COUNT];
@@ -83,6 +85,40 @@ void game_start_new(void)
     g_game_id = r * random16();
     timeline_init();
     game_init_active_groups();
+}
+
+/* The start of a game, new or loaded: no candidate, no sleep, no won game, no cheats, no skill level-ups. */
+void game_reset_session(void)
+{
+    g_candidate_champion_ordinal = 0;
+    g_party_is_sleeping = false;
+    g_game_won = false;
+    g_cheat_light = false;
+    g_cheat_immortal = false;
+    g_cheat_food = false;
+    memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
+}
+
+void game_set_mode(int16_t mode)
+{
+    g_game_mode = mode;
+}
+
+/* Turns a cheat of the advanced mode on or off. */
+void game_toggle_cheat(int16_t cheat)
+{
+    bool *flag = cheat == CHEAT_LIGHT ? &g_cheat_light : cheat == CHEAT_IMMORTAL ? &g_cheat_immortal : &g_cheat_food;
+    *flag = !*flag;
+}
+
+/* The fuse wins the game: bright magical light and strong shields for the end sequence. */
+void game_start_fuse_sequence(void)
+{
+    g_game_won = true;
+    g_party.magical_light_amount = FUSE_MAGICAL_LIGHT;
+    g_party.shield_defense = FUSE_SHIELD;
+    g_party.spell_shield_defense = FUSE_SHIELD;
+    g_party.fire_shield_defense = FUSE_SHIELD;
 }
 
 /* One tick of the game clock alone (the fuse sequence). */

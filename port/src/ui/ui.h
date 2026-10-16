@@ -62,8 +62,6 @@ enum { UI_BUTTON_RIGHT = 1, UI_BUTTON_LEFT = 2 };
 
 /* MENU.C state. */
 extern bool g_action_area_contains_icons;
-extern uint8_t g_action_list_minimum_skill_levels[3];
-extern uint16_t g_action_count;
 /* The portrait of a champion as a bitmap. */
 Bitmap ui_draw_champion_portrait(int16_t champion_index);
 
@@ -138,7 +136,6 @@ void panel_click_in_chest(int16_t x, int16_t y);
 
 /* Action area, spell area, movement arrows (ui_menus.c). */
 void menus_draw_movement_arrows(void);
-void menus_set_action_list(int16_t action_set_index);
 void menus_set_acting_champion(uint16_t champion_index);
 void menus_clear_acting_champion(void);
 void menus_draw_action_icon(uint16_t champion_index);
@@ -150,7 +147,8 @@ void menus_draw_spell_area(void);
 void menus_draw_available_symbols(uint16_t symbol_step);
 void menus_draw_champion_symbols(uint16_t champion_index);
 void menus_set_magic_caster(int16_t champion_index);
-void menus_refresh_spell_area(void);
+/* Draws the spell area parts that the rules changed, with caster as the record of the magic caster (NULL: its own). */
+void menus_refresh_spell_area(const Champion *caster);
 void menus_reset(void);
 
 #endif

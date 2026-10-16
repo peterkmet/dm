@@ -22,56 +22,12 @@
 #define DAMAGE_LARGE_BELOW 41
 
 bool g_action_area_contains_icons = true;
-uint8_t g_action_list_minimum_skill_levels[ACTION_LIST_COUNT];
-uint16_t g_action_count;
 
 /* Draws the movement arrows. */
 void menus_draw_movement_arrows(void)
 {
     Bitmap screen = ui_get_screen();
     ui_blit_graphic(&screen, GFX_MOVEMENT_ARROWS, ZONE_MOVEMENT_ARROWS, COLOR_NONE);
-}
-
-/* The charges of the object in the action hand of the acting champion (1 when it has none). */
-static uint16_t action_hand_charge_count(void)
-{
-    uint16_t thing = g_champions[g_acting_champion_ordinal - 1].slots[SLOT_HAND_ACTION];
-    switch (THING_TYPE(thing)) {
-    case THING_WEAPON:
-        return weapon_charges(thing);
-    case THING_ARMOUR:
-        return armour_charges(thing);
-    case THING_JUNK:
-        return junk_charges(thing);
-    }
-    return 1;
-}
-
-/* Builds the action menu of the acting champion: the first action always; the other two when the
-   champion has the skill level and, when the action needs them, charges. */
-void menus_set_action_list(int16_t action_set_index)
-{
-    const ActionSet *set = tables_get_action_set(action_set_index);
-    uint16_t n = 1;
-    if (!set)
-        return;
-    g_action_list_indices[0] = set->action_indices[0];
-    g_action_list_minimum_skill_levels[0] = 1;
-    for (int k = 1; k < ACTION_LIST_COUNT; k++) {
-        uint8_t action = set->action_indices[k];
-        uint8_t level = set->minimum_skill_levels[k - 1];
-        const ActionInfo *info = tables_get_action_info(action);
-        if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !action_hand_charge_count()))
-            continue;
-        level &= ~ACTION_LEVEL_NEEDS_CHARGES;
-        if (level <= champion_get_skill_level(g_acting_champion_ordinal - 1, info->skill_index)) {
-            g_action_list_indices[n] = action;
-            g_action_list_minimum_skill_levels[n++] = level;
-        }
-    }
-    g_action_count = n;
-    for (; n < ACTION_LIST_COUNT; n++)
-        g_action_list_indices[n] = ACTION_NONE;
 }
 
 /* Closes the action menu and redraws the action hand of the champion. */
@@ -86,19 +42,9 @@ void menus_clear_acting_champion(void)
 /* Opens the action menu of a champion: the actions of the object in the action hand. */
 void menus_set_acting_champion(uint16_t champion_index)
 {
-    Champion *c = &g_champions[champion_index];
-    int16_t set = ACTION_SET_EMPTY_HAND;
-    if (c->attributes & CHAMPION_ATTR_ACTION_DISABLED || !c->current_health)
+    if (!action_set_acting_champion(champion_index))
         return;
-    if (c->slots[SLOT_HAND_ACTION] != THING_NONE) {
-        const ObjectInfo *info = tables_get_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
-        if (!info || !(set = info->action_set_index))
-            return;
-    }
-    g_acting_champion_ordinal = champion_index + 1;
-    menus_set_action_list(set);
     g_action_area_contains_icons = false;
-    c->attributes |= CHAMPION_ATTR_ACTION_HAND;
     ui_draw_champion_state(champion_index);
     menus_draw_action_area();
 }
@@ -219,22 +165,29 @@ void menus_refresh_action_area(void)
         g_action_area_contains_icons = true;
         menus_draw_action_area();
     } else {
-        menus_draw_action_damage(g_action_damage);
-        g_action_damage = 0;
+        menus_draw_action_damage(action_take_damage());
     }
 }
 
 /* Draws the caster tabs of the spell area: a cyan tab for each other living champion, the name of
    the caster on its tab. */
-void menus_draw_spell_area_controls(uint16_t champion_index)
+static void draw_caster_tabs(uint16_t champion_index, const Champion *caster)
 {
     Bitmap screen = ui_get_screen();
     ui_fill_zone(&screen, ZONE_SPELL_AREA_TABS, COLOR_BLACK);
-    for (uint16_t i = 0; i < 4; i++)
-        if (i < g_party_champion_count && g_champions[i].current_health)
+    for (uint16_t i = 0; i < 4; i++) {
+        const Champion *champion = i == champion_index ? caster : &g_champions[i];
+        if (i < g_party_champion_count && champion->current_health)
             ui_xor_screen_zone(ZONE_SPELL_CASTER_TAB_FIRST + champion_index * SPELL_TAB_STEP + i);
+    }
     ui_print_zone(&screen, ZONE_SPELL_CASTER_NAME_FIRST + champion_index * SPELL_TAB_STEP, COLOR_BLACK, COLOR_CYAN,
-                  g_champions[champion_index].name);
+                  caster->name);
+}
+
+/* Draws the caster tabs of the spell area for a champion as the caster. */
+void menus_draw_spell_area_controls(uint16_t champion_index)
+{
+    draw_caster_tabs(champion_index, &g_champions[champion_index]);
 }
 
 /* Draws the six runes that the caster can choose at its symbol step. */
@@ -248,11 +201,10 @@ void menus_draw_available_symbols(uint16_t symbol_step)
     }
 }
 
-/* Draws the runes that the champion has chosen so far. */
-void menus_draw_champion_symbols(uint16_t champion_index)
+/* Draws the runes that a champion has chosen so far. */
+static void draw_chosen_symbols(const char *symbols)
 {
     Bitmap screen = ui_get_screen();
-    const char *symbols = g_champions[champion_index].symbols;
     size_t n = 0;
     char s[2] = {0, 0};
     while (n < CHAMPION_SYMBOL_COUNT && symbols[n])
@@ -263,19 +215,32 @@ void menus_draw_champion_symbols(uint16_t champion_index)
     }
 }
 
-/* Draws the spell area of the magic caster; without a caster it is black. */
-static void draw_spell_area(void)
+/* Draws the runes that the champion has chosen so far. */
+void menus_draw_champion_symbols(uint16_t champion_index)
+{
+    draw_chosen_symbols(g_champions[champion_index].symbols);
+}
+
+/* Draws the spell area of the magic caster from the caster record; without a caster it is black. */
+static void draw_spell_area_of(const Champion *caster)
 {
     Bitmap screen = ui_get_screen();
-    int16_t caster = g_magic_caster_champion_index;
-    if (caster == -1) {
+    int16_t caster_index = g_magic_caster_champion_index;
+    if (caster_index == -1) {
         ui_fill_zone(&screen, ZONE_SPELL_AREA, COLOR_BLACK);
         return;
     }
     ui_blit_graphic(&screen, GFX_SPELL_AREA, ZONE_SPELL_AREA, COLOR_NONE);
-    menus_draw_spell_area_controls(caster);
-    menus_draw_available_symbols(g_champions[caster].symbol_step);
-    menus_draw_champion_symbols(caster);
+    draw_caster_tabs(caster_index, caster);
+    menus_draw_available_symbols(caster->symbol_step);
+    draw_chosen_symbols(caster->symbols);
+}
+
+/* Draws the spell area of the magic caster; without a caster it is black. */
+static void draw_spell_area(void)
+{
+    int16_t caster = g_magic_caster_champion_index;
+    draw_spell_area_of(caster == -1 ? NULL : &g_champions[caster]);
 }
 
 /* Draws the spell area of the caster again. A dead caster (the whole party died) is cleared and nothing is
@@ -300,30 +265,27 @@ void menus_set_magic_caster(int16_t champion_index)
 }
 
 /* Draws the parts of the spell area that the game rules changed: all of it, the caster tabs, or the runes. */
-void menus_refresh_spell_area(void)
+void menus_refresh_spell_area(const Champion *caster)
 {
-    int16_t caster = g_magic_caster_champion_index;
+    int16_t caster_index = g_magic_caster_champion_index;
+    if (!caster && caster_index != -1)
+        caster = &g_champions[caster_index];
     if (g_redraw & REDRAW_SPELL_AREA) {
-        draw_spell_area();
-    } else if (caster != -1) {
+        draw_spell_area_of(caster);
+    } else if (caster_index != -1) {
         if (g_redraw & REDRAW_SPELL_TABS)
-            menus_draw_spell_area_controls(caster);
+            draw_caster_tabs(caster_index, caster);
         if (g_redraw & REDRAW_SPELL_SYMBOLS) {
-            menus_draw_available_symbols(g_champions[caster].symbol_step);
-            menus_draw_champion_symbols(caster);
+            menus_draw_available_symbols(caster->symbol_step);
+            draw_chosen_symbols(caster->symbols);
         }
     }
     g_redraw &= ~(REDRAW_SPELL_AREA | REDRAW_SPELL_TABS | REDRAW_SPELL_SYMBOLS);
 }
 
-/* No acting champion, no action list, and no action damage at the start of a game. */
+/* No acting champion, no action list, no action damage, and the action icons at the start of a game. */
 void menus_reset(void)
 {
-    g_acting_champion_ordinal = 0;
+    action_reset();
     g_action_area_contains_icons = true;
-    memset(g_action_list_indices, ACTION_NONE, sizeof g_action_list_indices);
-    memset(g_action_list_minimum_skill_levels, 0, sizeof g_action_list_minimum_skill_levels);
-    g_action_count = 0;
-    g_action_damage = 0;
-    g_redraw = 0;
 }

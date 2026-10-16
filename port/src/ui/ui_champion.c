@@ -371,7 +371,7 @@ void ui_draw_champion_state(uint16_t champion_index)
 void ui_draw_all_champion_states(uint16_t attributes)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
-        g_champions[i].attributes |= attributes;
+        champion_add_redraw_flags(i, attributes);
         ui_draw_champion_state(i);
     }
 }

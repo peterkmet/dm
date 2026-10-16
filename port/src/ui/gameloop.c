@@ -196,7 +196,7 @@ static void refresh_interface(void)
 {
     Bitmap screen = ui_get_screen();
     ui_draw_all_champion_states(0);
-    menus_refresh_spell_area();
+    menus_refresh_spell_area(NULL);
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         if (!g_champions[i].current_health)
             continue;
@@ -221,17 +221,11 @@ static void refresh_interface(void)
 /* The start of a game, the part for both a new and a loaded game: interface state and input. */
 static void start_game(void)
 {
-    g_candidate_champion_ordinal = 0;
-    g_party_is_sleeping = false;
-    g_game_won = false;
+    game_reset_session();
     g_do_not_draw_fluxcages = false;
     g_automap_open = false;
-    g_cheat_light = false;
-    g_cheat_immortal = false;
-    g_cheat_food = false;
     music_select(MUSIC_ORIGINAL);
     automap_scroll_reset();
-    memset(g_champion_skill_level_up, 0, sizeof g_champion_skill_level_up);
     shown_hand_object = THING_NONE;
     command_reset();
     inventory_reset();
@@ -264,8 +258,8 @@ bool gameloop_start_new_game(const char *dir)
     if (!dungeon_load(path))
         return false;
     game_start_new();
-    g_saved_game_exists = false;
-    g_leader_empty_handed = true;
+    savegame_forget();
+    champion_reset_data_to_start_game(); /* a new game has no hand object to put back */
     start_game();
     explored_reset();
     move_party_enter_dungeon();
@@ -279,11 +273,7 @@ bool gameloop_start_new_game(const char *dir)
 static void reset_champions_of_loaded_game(void)
 {
     int16_t leader = g_leader_index;
-    uint16_t hand = g_leader_hand_object;
-    g_leader_empty_handed = true;
-    g_leader_hand_object = THING_NONE;
-    g_leader_index = -1;
-    inventory_put_object_in_leader_hand(hand);
+    inventory_put_object_in_leader_hand(champion_reset_data_to_start_game());
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         g_champions[i].attributes &= CHAMPION_ATTR_KEEP_MASK;
     ui_draw_all_champion_states(CHAMPION_ATTR_ICON | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ACTION_HAND);
@@ -297,7 +287,6 @@ static void start_loaded_game(int confirm)
 {
     start_game();
     map_reset();
-    g_new_party_map_index = -1;
     group_remove_all_active_groups();
     map_set_current_map_and_party_map(g_party_map_index);
     group_add_all_active_groups();
@@ -325,10 +314,8 @@ void gameloop_continue_loaded_game(void)
 /* The fuse action and sensor 18 ask for a sequence that runs outside the commands and events. */
 static void run_requested_sequence(void)
 {
-    if (!g_fuse_sequence_requested)
-        return;
-    g_fuse_sequence_requested = false;
-    startend_run_fuse_sequence();
+    if (projectile_take_fuse_request())
+        startend_run_fuse_sequence();
 }
 
 /* Advanced feature: between two ticks the view shows the projectiles part of the way to their new
@@ -338,11 +325,11 @@ static void draw_projectile_motion(void)
     if (!g_advanced_features || g_game_screen_inactive || g_game_frozen || g_party_is_sleeping ||
         g_inventory_champion_ordinal || !view_has_moving_projectiles())
         return;
-    uint32_t seed = g_random_seed;
+    uint32_t seed = random_get_seed();
     view_set_motion(frames_waiting, g_wait_for_input_max_frames + 1);
     gameloop_draw_view();
     view_set_motion(0, 0);
-    g_random_seed = seed;
+    random_set_seed(seed);
 }
 
 int gameloop_run_frame(void)
@@ -386,10 +373,10 @@ static void advance_game_time(void)
    leader is the leader before the deaths. */
 static void release_dead_champions(int16_t leader)
 {
+    uint16_t dead = champion_take_dead_champions();
     for (uint16_t i = 0; i < CHAMPION_MAX_COUNT; i++)
-        if (g_dead_champions & 1 << i)
+        if (dead & 1 << i)
             command_release_dead_champion(i, leader);
-    g_dead_champions = 0;
 }
 
 /* A party that died in one tick: the spell area as the death before the last one drew it, while the
@@ -397,12 +384,8 @@ static void release_dead_champions(int16_t leader)
 static void draw_spell_area_before_last_death(const Champion *before)
 {
     int16_t caster = g_magic_caster_champion_index;
-    if (caster == -1)
-        return;
-    Champion dead = g_champions[caster];
-    g_champions[caster] = before[caster];
-    menus_refresh_spell_area();
-    g_champions[caster] = dead;
+    if (caster != -1)
+        menus_refresh_spell_area(&before[caster]);
 }
 
 /* One tick of the game. A dead party ends in the endgame. */

@@ -70,7 +70,7 @@ static void show_after_mode(void)
 
 static void set_mode(int16_t mode)
 {
-    g_game_mode = mode;
+    game_set_mode(mode);
     g_advanced_features = mode != GAME_MODE_VANILLA;
 }
 

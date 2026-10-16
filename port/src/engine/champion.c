@@ -1131,3 +1131,26 @@ void champion_apply_time_effects(void)
         c->attributes |= CHAMPION_ATTR_STATISTICS;
     }
 }
+
+uint16_t champion_take_dead_champions(void)
+{
+    uint16_t dead = g_dead_champions;
+    g_dead_champions = 0;
+    return dead;
+}
+
+void champion_add_redraw_flags(uint16_t champion_index, uint16_t attributes)
+{
+    g_champions[champion_index].attributes |= attributes;
+}
+
+/* The start of a game: no leader and an empty leader hand. Returns the hand object before, which a loaded
+   game puts back. */
+uint16_t champion_reset_data_to_start_game(void)
+{
+    uint16_t hand = g_leader_hand_object;
+    g_leader_empty_handed = true;
+    g_leader_hand_object = THING_NONE;
+    g_leader_index = -1;
+    return hand;
+}

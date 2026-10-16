@@ -4,6 +4,8 @@
 #include <stdint.h>
 
 extern uint32_t g_random_seed;
+uint32_t random_get_seed(void);
+void random_set_seed(uint32_t seed);
 
 void random_init(void);
 uint16_t random16(void);

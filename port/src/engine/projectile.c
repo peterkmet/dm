@@ -863,6 +863,13 @@ void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, uint
 }
 
 /* No launcher, poison attack, or fuse request carries into a new game. */
+bool projectile_take_fuse_request(void)
+{
+    bool requested = g_fuse_sequence_requested;
+    g_fuse_sequence_requested = false;
+    return requested;
+}
+
 void projectile_reset(void)
 {
     g_create_launcher_projectile = false;

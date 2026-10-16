@@ -1,5 +1,6 @@
 #include "timeline_process.h"
 #include "action.h"
+#include "adventure.h"
 #include "bytes.h"
 #include "champion.h"
 #include "dungeon.h"
@@ -10,6 +11,7 @@
 #include "message.h"
 #include "move.h"
 #include "projectile.h"
+#include "savegame.h"
 #include "sensor.h"
 #include "sound.h"
 #include "tables.h"
@@ -284,6 +286,9 @@ void event_process_wall(TimelineEvent *event)
             if (rec_sensor_is_once_only(t))
                 rec_sensor_set_type(t, SENSOR_DISABLED);
         } else if (THING_TYPE(t) == THING_SENSOR && rec_sensor_type(t) == SENSOR_WALL_ENDGAME) {
+            g_game_won = true;
+            if (g_adventure != ADVENTURE_CSB) /* DM: the saved game no longer counts; CSB keeps it */
+                savegame_forget();
             if (g_endgame_sensor_hook)
                 g_endgame_sensor_hook(rec_sensor_delay(t));
         }

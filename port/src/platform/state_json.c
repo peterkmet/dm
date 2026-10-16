@@ -244,7 +244,7 @@ static uint16_t action_hand_charges(const Champion *c)
     return 1;
 }
 
-/* The action menu that the action hand of a champion opens, as menus_set_action_list builds it. */
+/* The action menu that the action hand of a champion opens, as action_set_action_list builds it. */
 static void action_list_json(Json *j, int16_t index)
 {
     const Champion *champion = &g_champions[index];
