@@ -180,7 +180,8 @@ Rules that are new or change:
    `game_update_map_coordinates_after_relative_movement` becomes `map_step`,
    `champion_apply_and_draw_pending_damage_and_wounds` becomes `champion_apply_pending_damage`,
    `inventory_get_object_removed_from_leader_hand` becomes `inventory_take_hand_object`.
-5. Constants: every constant is `#define NAME value` with the value written out; no `enum` for constants.
+5. Constants: every constant is `#define NAME value` with the value written out, a negative value in
+   parentheses (`(-1)`); no `enum` for constants.
    The plan turns the 829 anonymous enum members into `#define` lines and writes the 133 implicit values.
    Related constants stand in one block without blank lines, aligned by `clang-format`, with one comment line
    above the block that names the set.
