@@ -352,7 +352,7 @@ Port (Step 7): `magic.c` `cast_magic_map`, `timeline_process.c` events 80–83, 
 
 File names: `DF0:CSBGame.dat` and `DF0:CSBGame.bak` (C`0x10013a`, `0x10014a`), on the volume `DungeonSave:` (C`0x10012c`). DM uses `DF0:DMGAME~.DAT` and `.BAK`.
 
-The cipher (`save_block_xor`, C`0x128720`), the checksum (C`0x128752`), the checked blocks (C`0x1287c2`, `0x128786`), and the summed blocks (C`0x128810`, `0x128856`) are the same as DM. The blocks are the same: globals (128 bytes, same layout), active groups, champions and party (`0x580` bytes), timeline events, timeline index, 4 portraits, dungeon.
+The cipher (`savefile_xor_block`, C`0x128720`), the checksum (C`0x128752`), the checked blocks (C`0x1287c2`, `0x128786`), and the summed blocks (C`0x128810`, `0x128856`) are the same as DM. The blocks are the same: globals (128 bytes, same layout), active groups, champions and party (`0x580` bytes), timeline events, timeline index, 4 portraits, dungeon.
 
 The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`):
 

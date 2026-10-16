@@ -113,11 +113,11 @@ def test_load_fails_gracefully(game, tmp_path):
 
 def test_dm_load_raises_the_active_group_count_to_110(game, tmp_path):
     lib = game.lib
-    lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
-    lib.save_decode.restype = ctypes.c_bool
-    lib.save_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(u32)]
-    lib.save_encode.restype = ctypes.c_void_p
-    lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]
+    lib.savefile_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.savefile_decode.restype = ctypes.c_bool
+    lib.savefile_encode.argtypes = [ctypes.POINTER(SaveFile), ctypes.POINTER(u32)]
+    lib.savefile_encode.restype = ctypes.c_void_p
+    lib.savefile_free.argtypes = [ctypes.POINTER(SaveFile)]
     assert lib.savegame_save(str(tmp_path).encode()) == 1
     good = (tmp_path / SAVE).read_bytes()
     plain = decode(lib, good)

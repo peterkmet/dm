@@ -183,7 +183,7 @@ def align(kf, cf, pairs=None):
 MANUAL_PAIRS = {
     0x10be12: "rt_longjmp",
     0x1286f2: "save_file_write",
-    0x128720: "save_block_xor",
+    0x128720: "savefile_xor_block",
     0x128752: "save_block_checksum",
     0x1287c2: "save_write_checked_block",
     0x128810: "save_read_summed_block",

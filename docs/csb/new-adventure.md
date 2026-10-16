@@ -92,7 +92,7 @@ The header has the structure of the DM header: 32 groups of 4 noise words, then 
 
 1. Header check (`0x108da2`): compute the chain over the 32 groups: `acc = w3 ^ ((w1 ^ (w0 + acc)) - w2)`. Decrypt the 128 payload words with the cipher below and the key word. The chain must equal the 16-bit sum of the plain payload words.
 2. Blocks (`0x108c62`): read each block, decrypt it with `0x108bfc(buf, key[i], words)`, and compare the returned sum with `checksum[i]`. Block sizes come from block 0: offset 46 is the maximum active group count, offset 28 is the event maximum count.
-3. Cipher (`0x108bfc`), the same as DM `save_block_xor`:
+3. Cipher (`0x108bfc`), the same as DM `savefile_xor_block`:
 
    ```c
    sum = key;

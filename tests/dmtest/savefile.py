@@ -17,6 +17,7 @@ u8p = ctypes.POINTER(ctypes.c_uint8)
 class SaveFile(ctypes.Structure):
     _fields_ = [
         ("data", u8p),
+        ("owns_data", ctypes.c_bool),
         ("header", u8p),
         ("block", u8p * 5),
         ("block_size", ctypes.c_uint16 * 5),
@@ -40,7 +41,7 @@ def encode(lib, header, blocks, portraits, dungeon, sizes=SIZES):
     s.portraits, s.dungeon = ctypes.cast(keep[6], u8p), ctypes.cast(keep[7], u8p)
     s.dungeon_size = len(dungeon)
     size = ctypes.c_uint32()
-    p = lib.save_encode(ctypes.byref(s), ctypes.byref(size))
+    p = lib.savefile_encode(ctypes.byref(s), ctypes.byref(size))
     if not p:
         return None
     out = ctypes.string_at(p, size.value)
@@ -50,7 +51,7 @@ def encode(lib, header, blocks, portraits, dungeon, sizes=SIZES):
 
 def decode(lib, data):
     s = SaveFile()
-    if lib.save_decode(data, len(data), ctypes.byref(s)) != 1:
+    if lib.savefile_decode(data, len(data), ctypes.byref(s)) != 1:
         return None
     r = {
         "header": bytes(s.header[:512]),
@@ -58,5 +59,5 @@ def decode(lib, data):
         "portraits": bytes(s.portraits[:PORTRAITS]),
         "dungeon": bytes(s.dungeon[: s.dungeon_size]),
     }
-    lib.save_free(ctypes.byref(s))
+    lib.savefile_free(ctypes.byref(s))
     return r

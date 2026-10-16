@@ -35,9 +35,9 @@ def game():
     lib.savegame_save_as.restype = ctypes.c_bool
     lib.savegame_load_from.restype = c16
     lib.dungeon_map_count.restype = c16
-    lib.save_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
-    lib.save_decode.restype = ctypes.c_bool
-    lib.save_free.argtypes = [ctypes.POINTER(SaveFile)]
+    lib.savefile_decode.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.POINTER(SaveFile)]
+    lib.savefile_decode.restype = ctypes.c_bool
+    lib.savefile_free.argtypes = [ctypes.POINTER(SaveFile)]
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
     yield Game(lib)
@@ -65,7 +65,7 @@ def test_mini_decodes_like_csb_mini(game):
     raw = MINI.read_bytes()
     py = cm.decode_save(raw)
     s = SaveFile()
-    assert game.lib.save_decode(raw, len(raw), ctypes.byref(s)) == 1
+    assert game.lib.savefile_decode(raw, len(raw), ctypes.byref(s)) == 1
     try:
         assert py["layout"] == 2
         assert ctypes.string_at(s.header, 512) == bytes(py["header"])
@@ -74,7 +74,7 @@ def test_mini_decodes_like_csb_mini(game):
         assert ctypes.string_at(s.portraits, 4 * 464) == py["portraits"]
         assert ctypes.string_at(s.dungeon, s.dungeon_size) == cm.dungeon_dat(py)
     finally:
-        game.lib.save_free(ctypes.byref(s))
+        game.lib.savefile_free(ctypes.byref(s))
 
 
 def test_mini_loads_the_csb_start(game, tmp_path):
@@ -84,7 +84,7 @@ def test_mini_loads_the_csb_start(game, tmp_path):
     lib = game.lib
     assert [value(lib, n) for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")] == [4, 22, 18, 2]
     assert lib.dungeon_map_count() == 11
-    saved = cm.w(cm.decode_save(MINI.read_bytes())["blocks"][0], C.G_MAX_ACTIVE_GROUP_COUNT)
+    saved = cm.w(cm.decode_save(MINI.read_bytes())["blocks"][0], C.SAVE_GLOBAL_MAX_ACTIVE_GROUP_COUNT)
     assert value(lib, "g_max_active_group_count", u16) == saved < 110
 
 
@@ -113,7 +113,7 @@ def test_new_prison_game_saves_and_loads_back(game, tmp_path):
     raw = save(game, tmp_path)
     assert game.lib.savegame_load_from(str(tmp_path).encode(), NAME, None) == LOADED
     assert state(game) == before
-    assert cm.w(cm.decode_save(raw)["blocks"][0], C.G_MAX_ACTIVE_GROUP_COUNT) == 60
+    assert cm.w(cm.decode_save(raw)["blocks"][0], C.SAVE_GLOBAL_MAX_ACTIVE_GROUP_COUNT) == 60
 
 
 @pytest.mark.skipif(not CEDT.exists(), reason="CEDT.FTL missing")

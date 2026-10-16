@@ -638,8 +638,8 @@ dead-api engine/projectile.h:projectile_is_fluxcage_on_square open: epic 7
 dead-api engine/recruit.h:recruit_decoded_value open: epic 7
 dead-api engine/recruit.h:recruit_parse_text open: epic 7
 dead-api engine/recruit.h:recruit_portrait_index open: epic 7
-dead-api engine/savefile.h:save_block_xor open: epic 7
-dead-api engine/savefile.h:save_header_randomize open: epic 7
+dead-api engine/savefile.h:savefile_xor_block open: epic 7
+dead-api engine/savefile.h:savefile_randomize_header open: epic 7
 dead-api engine/savegame.h:savegame_load_from open: epic 7
 dead-api engine/savegame.h:savegame_save_as open: epic 7
 dead-api engine/sensor.h:g_sensor_rotation_effect open: epic 7

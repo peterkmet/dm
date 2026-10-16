@@ -63,7 +63,7 @@ The writer (`save_write_header`, `0x1257ca`) fills all words with `random16`. It
 
 ## Block cipher
 
-`save_block_xor` (`0x125510`) encrypts and decrypts in place. XOR is symmetric, so one function does both. It also returns the checksum.
+`savefile_xor_block` (`0x125510`) encrypts and decrypts in place. XOR is symmetric, so one function does both. It also returns the checksum.
 
 ```c
 sum = key;
@@ -145,13 +145,13 @@ The header `src/engine/savefile.h` declares the API. All buffers keep the big-en
 
 | Field | Content |
 |---|---|
-| `data` | Plain copy of the whole file. `save_decode` allocates it. `save_free` frees it. |
+| `data` | Plain copy of the whole file. `savefile_decode` allocates it. `savefile_free` frees it. |
 | `header` | 512 bytes. The payload at `0x100` is plain. |
 | `block[5]`, `block_size[5]` | Plain blocks 0–4 and their sizes in bytes. |
 | `portraits` | 4 × 464 bytes. |
 | `dungeon`, `dungeon_size` | Dungeon parts and the byte sum word. The C code does not parse them. |
 
-### `int16_t save_decode(const uint8_t *file, uint32_t size, SaveFile *s)`
+### `int16_t savefile_decode(const uint8_t *file, uint32_t size, SaveFile *s)`
 
 Copies the file, decrypts the header and the blocks, and sets the pointers in `s` into the copy. Returns 1 on success. Returns 0 and clears `s` when one of these checks fails:
 
@@ -160,9 +160,9 @@ Copies the file, decrypts the header and the blocks, and sets the pointers in `s
 - The platform byte is 1 or the save format is not 3.
 - The checksum of block 0, 1, 3, or 4 is not correct. CSB also checks block 2.
 
-Call `save_free` after a successful decode.
+Call `savefile_free` after a successful decode.
 
-### `uint8_t *save_encode(const SaveFile *s, uint32_t *size)`
+### `uint8_t *savefile_encode(const SaveFile *s, uint32_t *size)`
 
 Builds a save file from a plain header, the plain blocks, the portraits, and the dungeon. Returns a `malloc` buffer and sets `*size`. Free the buffer with `free`. The function does not change `s`.
 
@@ -174,11 +174,11 @@ The caller fills the header: the 256 random bytes, the 16 keys at `0x136`, and t
 
 Returns `NULL` when a pointer is missing or a value in `block_size` does not match the size that block 0 gives.
 
-### `uint16_t save_block_xor(uint8_t *bytes, uint16_t key, uint16_t word_count)`
+### `uint16_t savefile_xor_block(uint8_t *bytes, uint16_t key, uint16_t word_count)`
 
 The block cipher. Encrypts or decrypts `word_count` big-endian words in place. Returns the checksum.
 
-### `void save_free(SaveFile *s)`
+### `void savefile_free(SaveFile *s)`
 
 Frees the decoded copy and clears `s`.
 
@@ -186,13 +186,13 @@ Frees the decoded copy and clears `s`.
 
 | Function | Work |
 |---|---|
-| `save_header_init(h, game_id, dungeon_id, extra)` | Clears the header. Writes 16 keys with `random16`, then 127 chain words with `random16`, in the order of `save_game` and `save_write_header`. Writes the header byte 1, platform 5, dialog choice 1, the game ID, format 3, the dungeon ID, and the 134 extra bytes (CSB: 132). |
-| `save_header_game_id(h)`, `save_header_dungeon_id(h)`, `save_header_extra(h)` | Read the fields of a plain header. |
-| `save_header_extra_size()` | The number of extra bytes: 134, or 132 for CSB. |
+| `savefile_init_header(h, game_id, dungeon_id, extra)` | Clears the header. Writes 16 keys with `random16`, then 127 chain words with `random16`, in the order of `save_game` and `save_write_header`. Writes the header byte 1, platform 5, dialog choice 1, the game ID, format 3, the dungeon ID, and the 134 extra bytes (CSB: 132). |
+| `savefile_get_game_id(h)`, `savefile_get_dungeon_id(h)`, `savefile_get_header_extra(h)` | Read the fields of a plain header. |
+| `savefile_get_extra_size()` | The number of extra bytes: 134, or 132 for CSB. |
 
 ### CSB header
 
-With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header: the payload key is at `0x3a` (word 29), and the fields from `0x12a` on are 2 bytes later. The extra bytes start at `0x17c`. `save_decode` also checks the block 2 checksum. See [csb-data.md](../csb/data.md) "Save file".
+With `g_adventure == ADVENTURE_CSB`, all functions use the CSB header: the payload key is at `0x3a` (word 29), and the fields from `0x12a` on are 2 bytes later. The extra bytes start at `0x17c`. `savefile_decode` also checks the block 2 checksum. See [csb-data.md](../csb/data.md) "Save file".
 
 ## Game state (`savegame.c`)
 
@@ -205,7 +205,7 @@ The save directory is the game data directory (`--data`, default `game/`). `star
 1. `timeline_reset`. Then pack the globals, the active groups, the champions, the party, the timeline events, and the timeline index into the blocks.
 2. The leader load in the file does not count the object in the leader hand, as in `save_game`. The live state does not change.
 3. Write the portraits and the dungeon (`dungeon_save`).
-4. `save_header_init` with `g_game_id`, `g_dungeon_id`, and the extra bytes of the last load. `save_encode`.
+4. `savefile_init_header` with `g_game_id`, `g_dungeon_id`, and the extra bytes of the last load. `savefile_encode`.
 5. Delete `DMGAME.BAK`. Rename `DMGAME.DAT` to `DMGAME.BAK`. Write `DMGAME.DAT`.
 6. Set `g_saved_game_exists` and `g_last_save_game_time`. Return 1, or 0 on a write error.
 
@@ -214,7 +214,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 `int16_t savegame_load(const char *dir)` returns `SAVEGAME_LOADED` (1), `SAVEGAME_MISSING` (0), or `SAVEGAME_DAMAGED` (−1):
 
 1. Read `DMGAME.DAT`. When it is missing, read `DMGAME.BAK`.
-2. `save_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
+2. `savefile_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
 3. Copy block 0 into the globals. `g_last_load_game_time` gets the game time.
 4. Allocate the timeline for `g_event_max_count` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB allocates exactly the saved count and keeps it. A new CSB game has 60 entries.
 5. Find the portrait index of each party champion (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
@@ -256,7 +256,7 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 `tests/differential/test_savefile.py` tests the container through `build/libdm.dylib`:
 
 - A round trip from encode to decode gives the same blocks, portraits, and dungeon.
-- The original `save_block_xor` in `dmtools.emu` gives the same encrypted bytes and checksums as the C encoder.
+- The original `savefile_xor_block` in `dmtools.emu` gives the same encrypted bytes and checksums as the C encoder.
 - The original `save_read_header` and `save_read_checked_block` in `dmtools.emu` accept the C output. The test sets `g_load_from_memory` so that `save_file_read` reads from memory.
 - Truncated files, changed bytes, a wrong format, platform 1, and random data fail.
 
@@ -266,5 +266,5 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 - Deliberate deviation: the original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!". The port sets `g_return_to_entrance`, and `main.c` shows the entrance.
 - A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
 - The header byte at `0x12a` (`H_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.
-- `save_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.
+- `savefile_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.
 - The meaning of the header byte at `0x12a`, of `g_save_header_extra`, and of the long at block 0 offset 32 is not traced.

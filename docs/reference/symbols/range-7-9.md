@@ -784,7 +784,7 @@ A C port with enough memory can use the first set and skip this search.
 
 #### Block cipher
 
-`save_block_xor(words, key, count)` encrypts and decrypts in place (XOR is symmetric). `save_block_checksum` computes the same sum without changes.
+`savefile_xor_block(words, key, count)` encrypts and decrypts in place (XOR is symmetric). `save_block_checksum` computes the same sum without changes.
 
 ```c
 sum = key;
@@ -800,7 +800,7 @@ The checksum is the same for the plain and the encrypted data, because it adds b
 | Offset | Size | Content |
 |---|---|---|
 | `0x000` | 256 | 32 groups of 4 random words `w0..w3`. The chain `acc = w3 ^ ((w1 ^ (w0 + acc)) − w2)`, start 0, gives the sum of the 128 plain words at `0x100`. The writer picks `w3` of the last group to make this true. |
-| `0x100` | 256 | Payload, encrypted with `save_block_xor`, key = word at `0x014`, 128 words. |
+| `0x100` | 256 | Payload, encrypted with `savefile_xor_block`, key = word at `0x014`, 128 words. |
 | `0x12a` | 1 | `g_save_header_byte_12a` (default 1). |
 | `0x12b` | 1 | Platform. Written as 5. A load fails when it is 1. Stored in `g_save_platform`. |
 | `0x130` | 2 | 1 (the "save" choice). Not read. |

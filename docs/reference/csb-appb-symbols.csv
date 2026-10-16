@@ -648,7 +648,7 @@ address,name,signature,subsystem
 0x128676,protect_checksum_128676,,protect
 0x128696,save_file_read,"int16_t save_file_read(void *buffer, uint16_t byte_count)",loadsave
 0x1286f2,save_file_write,"int16_t save_file_write(const void *buffer, uint16_t byte_count)",loadsave
-0x128720,save_block_xor,"uint16_t save_block_xor(uint16_t *words, uint16_t key, uint16_t word_count)",loadsave
+0x128720,savefile_xor_block,"uint16_t savefile_xor_block(uint16_t *words, uint16_t key, uint16_t word_count)",loadsave
 0x128752,save_block_checksum,"uint16_t save_block_checksum(const uint16_t *words, uint16_t key, uint16_t word_count)",loadsave
 0x128786,save_read_checked_block,"int16_t save_read_checked_block(void *buffer, uint16_t byte_count, uint16_t key, uint16_t checksum)",loadsave
 0x1287c2,save_write_checked_block,"int16_t save_write_checked_block(void *buffer, uint16_t byte_count, uint16_t key, uint16_t *checksum)",loadsave

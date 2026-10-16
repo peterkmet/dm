@@ -1683,7 +1683,7 @@ address,name,signature,subsystem
 0x125470,quit_game_hide_pointer_loop,void quit_game_hide_pointer_loop(void),startend
 0x125492,save_file_read,"int16_t save_file_read(void *buffer, uint16_t byte_count)",loadsave
 0x1254e6,save_file_write,"int16_t save_file_write(const void *buffer, uint16_t byte_count)",loadsave
-0x125510,save_block_xor,"uint16_t save_block_xor(uint16_t *words, uint16_t key, uint16_t word_count)",loadsave
+0x125510,savefile_xor_block,"uint16_t savefile_xor_block(uint16_t *words, uint16_t key, uint16_t word_count)",loadsave
 0x125542,save_block_checksum,"uint16_t save_block_checksum(const uint16_t *words, uint16_t key, uint16_t word_count)",loadsave
 0x125576,save_read_checked_block,"int16_t save_read_checked_block(void *buffer, uint16_t byte_count, uint16_t key, uint16_t checksum)",loadsave
 0x1255b2,save_write_checked_block,"int16_t save_write_checked_block(void *buffer, uint16_t byte_count, uint16_t key, uint16_t *checksum)",loadsave
