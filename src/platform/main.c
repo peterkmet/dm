@@ -41,15 +41,9 @@
 /* Loads the engine module and Graphics.DAT from dir. Returns 0 with a log line when a file is missing. */
 static int load_kaos_and_graphics(const char *dir)
 {
-    char path[PATH_SIZE];
-    snprintf(path, sizeof path, "%s/%s", dir, adventure_engine_name());
-    if (tables_load(path)) {
-        SDL_Log("cannot load %s", path);
-        return 0;
-    }
-    snprintf(path, sizeof path, "%s/Graphics.DAT", dir);
-    if (gfx_open(path) < 0) {
-        SDL_Log("cannot load %s", path);
+    const char *failed;
+    if (!adventure_load_files(dir, &failed)) {
+        SDL_Log("cannot load %s/%s", dir, failed);
         return 0;
     }
     return 1;
@@ -421,7 +415,7 @@ static int get_game_mode(const char *name)
 /* Loads the font of the start screens from Graphics.DAT: the --data folder, else DM, else CSB. */
 static int load_font(void)
 {
-    const char *dirs[] = {data_override, adventure_default_dir(ADVENTURE_DM), adventure_default_dir(ADVENTURE_CSB)};
+    const char *dirs[] = {data_override, adventure_get(ADVENTURE_DM)->dir, adventure_get(ADVENTURE_CSB)->dir};
     char path[PATH_SIZE];
     for (int i = 0; i < ARRAY_COUNT(dirs); i++) {
         if (!dirs[i])
@@ -474,13 +468,13 @@ static const char *get_adventure_dir(void)
 {
     if (g_adventure == ADVENTURE_CSB)
         return csb_dir;
-    return data_override ? data_override : adventure_default_dir(ADVENTURE_DM);
+    return data_override ? data_override : adventure_get(ADVENTURE_DM)->dir;
 }
 
 /* Loads the game files of g_adventure from data_dir after the check that they are the Amiga files. Returns 0 with a log line. */
 static int load_game_files(void)
 {
-    const char *bad = adventure_bad_file(g_adventure, data_dir);
+    const char *bad = adventure_find_bad_file(g_adventure, data_dir);
     if (bad) {
         SDL_Log("%s/%s is missing or is not the file of %s for the Amiga", data_dir, bad,
                 adventure_get(g_adventure)->title);
@@ -503,10 +497,10 @@ static SDL_EnumerationResult SDLCALL install_disk(void *userdata, const char *di
     if (len <= ext || SDL_strcasecmp(name + len - ext, DISK_IMAGE_EXTENSION))
         return SDL_ENUM_CONTINUE;
     const char *dir = NULL;
-    int r = adventure_install_disk(name, &dir);
-    if (r > 0)
+    AdventureDisk r = adventure_install_disk(name, &dir);
+    if (r == ADVENTURE_DISK_INSTALLED)
         SDL_Log("extracted %s into %s", name, dir);
-    if (r < 0)
+    if (r == ADVENTURE_DISK_FAILED)
         SDL_Log("cannot extract %s into %s", name, dir);
     return SDL_ENUM_CONTINUE;
 }
@@ -676,7 +670,7 @@ static bool parse_options(int argc, char **argv, Options *options)
             SDL_Log("turn-based mode needs macOS");
             return false;
         }
-        if (!strcmp(argv[i], "--adventure") && (options->adventure = adventure_of(argv[i + 1])) < 0) {
+        if (!strcmp(argv[i], "--adventure") && (options->adventure = adventure_find(argv[i + 1])) < 0) {
             SDL_Log("--adventure must be dm or csb");
             return false;
         }
@@ -697,9 +691,8 @@ int main(int argc, char **argv)
     g_os_list_folder_hook = list_folder;
     SDL_EnumerateDirectory(".", install_disk, NULL);
     /* --data is the CSB folder only with --adventure csb */
-    csb_dir =
-        data_override && options.adventure == ADVENTURE_CSB ? data_override : adventure_default_dir(ADVENTURE_CSB);
-    bool csb_present = adventure_csb_present(csb_dir);
+    csb_dir = data_override && options.adventure == ADVENTURE_CSB ? data_override : adventure_get(ADVENTURE_CSB)->dir;
+    bool csb_present = adventure_is_csb_present(csb_dir);
     if (options.adventure == ADVENTURE_CSB && !csb_present) {
         SDL_Log("CSB data is missing in %s", csb_dir);
         return 1;

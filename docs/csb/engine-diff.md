@@ -152,7 +152,7 @@ Implemented in Step 2 of the CSB plan:
 - `g_csb_copies` in `src/data/csbimage.c` is the single address table: KAOS address (its `KAOS_*` name), APPB address, size. The APPB addresses of the converted tables have the prefix `CSB_APPB_`. Strided and split tables have one row per part.
 - Conversions in code: the action sets (6-byte CSB records to the 8-byte DM layout), and the dialog pointers (moved to the DM tables).
 - The 29 CSB spells are at `0x104160`, after the KAOS data. `spells.c` and `tables.c` read 29 spells from there for CSB.
-- `adventure_engine_name` gives the module file name: `KAOS.FTL` or `APPB.FTL`.
+- `adventure_get(g_adventure)->engine` gives the module file name: `KAOS.FTL` or `APPB.FTL`.
 
 Addresses that the tables above do not list. Each is verified by a code reference (the CSB function that reads it) or by the CSV:
 

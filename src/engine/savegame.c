@@ -316,7 +316,7 @@ static const uint8_t *find_automap(const uint8_t *data, size_t *size, size_t *le
 
 int16_t savegame_save(const char *dir)
 {
-    return savegame_save_as(dir, adventure_save_name(), adventure_backup_name());
+    return savegame_save_as(dir, adventure_get(g_adventure)->save, adventure_get(g_adventure)->backup);
 }
 
 /* Writes size bytes to dir/name; with a backup name, the old file becomes dir/backup first. Returns true on success. */
@@ -465,7 +465,8 @@ int16_t savegame_make_adventure(const char *dir, const char *mini_path)
         out = save_encode(&mini, &out_size);
         save_free(&mini);
     }
-    bool ok = out && write_save_file(dir, adventure_save_name(), adventure_backup_name(), out, out_size);
+    bool ok = out &&
+              write_save_file(dir, adventure_get(g_adventure)->save, adventure_get(g_adventure)->backup, out, out_size);
     free(out);
     free(data);
     return ok && savegame_load(dir) == SAVEGAME_LOADED ? ADVENTURE_MADE : ADVENTURE_FAILED;
@@ -527,7 +528,7 @@ static bool restore_game(const SaveFile *s)
 
 int16_t savegame_load(const char *dir)
 {
-    return savegame_load_from(dir, adventure_save_name(), adventure_backup_name());
+    return savegame_load_from(dir, adventure_get(g_adventure)->save, adventure_get(g_adventure)->backup);
 }
 
 /* Puts back the game of a snapshot after a failed load. The saved-game flags stay. The current

@@ -154,7 +154,6 @@ notation ui/video.h open: epic 8
 bool data/adf.c:make_folders open: epic 4
 bool data/adf.c:write_file open: epic 4
 bool data/adf.h:adf_extract open: epic 4
-bool data/adventure.h:adventure_install_disk open: epic 4
 bool data/csbimage.h:csb_image_build open: epic 4
 bool data/csbtext.h:csb_text_build open: epic 4
 bool data/ftl.c:find_sections open: epic 4
