@@ -77,7 +77,7 @@
 - The C port follows `docs/coding-standard.md`. The source is in four folders of `port/src/`: `data/`, `engine/`, `ui/`, and `platform/`. A file includes only headers of its own layer and of the layers before it. The game rules set redraw flags and do not draw.
 - Each header states its function prefixes, and each prefix belongs to one header. Record accessors of `map.h` use `rec_`; the timeline event handlers use `event_`. `things.h` is part of `map.h`.
 - Named constants replace the plain numbers, predicates return `bool`, and long functions are split.
-- `tests/standard/test_standard.py` checks the standard on each run. `tests/standard_allowlist.txt` holds the permanent exceptions.
+- `tests/test_standard.py` checks the standard on each run. `tests/standard_allowlist.txt` holds the permanent exceptions.
 - The test suite runs in parallel (`pytest-xdist`, one worker per test file).
 - No change of game behavior.
 

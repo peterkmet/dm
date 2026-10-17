@@ -8,7 +8,7 @@ import shutil
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Champion, Party, Timeline, TimelineEvent, global_type
+from dmtest.game import Bitmap, Box, Champion, global_type, Party, Spell, Timeline, TimelineEvent
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, needs_csb, needs_csb_mini, needs_dm
 
@@ -38,19 +38,6 @@ TIME_MASK = 0xFFFFFF
 SEED = 0x12345
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
-
-
-class Spell(ctypes.Structure):
-    _fields_ = [("symbols", u32), ("base_required_skill_level", ctypes.c_uint8), ("skill_index", ctypes.c_uint8),
-                ("kind", ctypes.c_uint8), ("type", ctypes.c_uint8), ("disabled_ticks", ctypes.c_uint8)]
-
-
-class Bitmap(ctypes.Structure):
-    _fields_ = [("w", u16), ("h", u16), ("px", ctypes.POINTER(ctypes.c_uint8))]
-
-
-class Box(ctypes.Structure):
-    _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
 
 
 @pytest.fixture(scope="module")

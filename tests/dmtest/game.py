@@ -63,6 +63,11 @@ class Bitmap(ctypes.Structure):
     _fields_ = [("w", u16), ("h", u16), ("px", ctypes.POINTER(ctypes.c_uint8))]
 
 
+class Spell(ctypes.Structure):
+    _fields_ = [("symbols", ctypes.c_uint32), ("base_required_skill_level", u8), ("skill_index", u8),
+                ("kind", u8), ("type", u8), ("disabled_ticks", u8)]
+
+
 class ViewResult(ctypes.Structure):
     _fields_ = [
         ("square_ahead_element", c16), ("facing_alcove", ctypes.c_bool), ("facing_fountain", ctypes.c_bool),
@@ -117,6 +122,13 @@ class Party(ctypes.Structure):
 
 class TimelineEvent(ctypes.Structure):
     _fields_ = [("map_time", ctypes.c_uint32), ("type", u8), ("priority", u8), ("b", u16), ("c", u16)]
+
+    def be(self):
+        return struct.pack(">IBBHH", self.map_time, self.type, self.priority, self.b, self.c)
+
+
+class ActiveGroup(ctypes.Structure):
+    _fields_ = [("group_index", ctypes.c_int16), ("rest", u8 * 14)]
 
 
 class Timeline(ctypes.Structure):

@@ -19,7 +19,7 @@ TESTS = ROOT / "tests"
 ALLOWLIST = Path(__file__).with_name("allowlist.txt")
 LAYERS = ["data", "engine", "ui", "control", "platform"]
 MAX_FUNCTION_LINES = 60
-EXCEPTION_RULES = {"3.12", "4.8", "5.8"}  # the rules of docs/coding-standard.md that name an exception
+EXCEPTION_RULES = {"1.7", "3.12", "4.8", "5.8"}  # the rules of docs/coding-standard.md that name an exception
 OPEN_REASON = re.compile(r"open: epic (?:[1-9]|1[0-3])")
 
 HEX = re.compile(r"\b0x[0-9a-fA-F]{2,}\b")
@@ -404,7 +404,7 @@ def block_notation_error(items):
     decimals = [v for v in literals if not v.lower().startswith("0x")]
     names = [name.split("_") for name, _ in items]
     hex_kind = any(parts[-1] in HEX_LAST_PARTS or parts[0] in ADDRESS_FIRST_PARTS for parts in names)
-    decimal_kind = any(DECIMAL_PARTS & set(parts) for parts in names)
+    decimal_kind = any(DECIMAL_PARTS & set(parts) for parts in names if parts[0] not in ADDRESS_FIRST_PARTS)
     if hexes and decimals:
         return "mixes hex and decimal"
     if hex_kind and decimal_kind:

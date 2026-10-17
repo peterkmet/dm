@@ -19,7 +19,7 @@ typedef enum {
 /* Setup */
 /* Installs the disk images, checks the adventure, opens the window and the first screen; false on an error. */
 bool app_open(const Options *options);
-/* Closes the socket and the window. */
+/* Closes the socket, frees the images (graphics and tables) and closes the window. */
 void app_close(void);
 
 /* Commands */

@@ -54,10 +54,9 @@ This is a separate work item ("CSB engine"). It needs a decision first: one addr
 
 | File | Place | Hard-coded value |
 |---|---|---|
-| `src/platform/main.c` | `main` | `data = "game"` (default). |
-| | `load_kaos_and_graphics` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Used by `--show` and `--view`. |
-| | `view_start` | `"%s/Dungeon.DAT"`. |
-| | `show` (`--show`) | The palette comes from the KAOS address `KAOS_DUNGEON_PALETTES` (`0x100aa6`). |
+| `src/platform/app.c` | `get_adventure_dir` | The `--data` folder, else the adventure folder (`game` for DM). |
+| `src/platform/debug_view.c` | `show_graphic` (`--show`) | `"%s/Graphics.DAT"`. The palette comes from the KAOS address `KAOS_DUNGEON_PALETTES` (`0x100aa6`). |
+| | `show_view` (`--view`) | `"%s/Dungeon.DAT"`. |
 | `src/ui/gameloop.c` | `gameloop_load_data` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Sets the save directory to `dir`. |
 | | `gameloop_start_new_game` | `"%s/Dungeon.DAT"`. |
 | `src/control/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_get_data_dir()`, so the folder is right. |
@@ -78,8 +77,8 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | `gameloop.c`: `entrance_draw` | Draws DM graphic 4 with doors. Palette `KAOS_ENTRANCE_PALETTE` (`0x100a66`). The buttons ENTER, RESUME, QUIT are part of the graphic. |
 | `command.c`: `command_set_entrance_input`, `KAOS_KEYS_ENTRANCE` (`0x10393c`), `TABLES_MOUSE_ENTRANCE` | Mouse table and key table come from the KAOS data. |
 | `command.c`: `process_other_command` | `COMMAND_ENTRANCE_ENTER`, `COMMAND_ENTRANCE_ENTER_DUNGEON_B` set `g_entrance_choice = ENTRANCE_NEW_GAME`. `COMMAND_ENTRANCE_RESUME` sets `ENTRANCE_RESUME`. The comment says credits (203) are not ported. |
-| `main.c`: `show_entrance`, `entrance_frame` | Draw the DM entrance again and run `gameloop_start_new_game(data)` or `startend_load_saved_game()`. |
-| `main.c`: `main` | `MODE_ENTRANCE` is the first mode after the start. `DM_AUTO_ENTER` (and `turnbased`) presses Return at the start. |
+| `app.c`: `show_entrance`, `run_entrance` | `show_entrance` draws the DM entrance again. `run_entrance` runs `gameloop_start_new_game(folder)` or `startend_load_saved_game()`. |
+| `app.c`: `app_open`, `app_run_frame` | `SCREEN_ENTRANCE` is the first screen after the start screens. `DM_AUTO_ENTER` (and `turnbased`) presses Return at the start. |
 
 ### Endgame and credits
 
@@ -87,7 +86,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 |---|---|
 | `startend.c`: `startend_run_endgame`, `show_credits`, `show_the_end`, `show_champion_parade` | DM graphics `GFX_CREDITS` 5, `GFX_THE_END` 6, `GFX_CHAMPION_FRAME` 346. Palette `KAOS_CREDITS_PALETTE`. |
 | `startend.c`: `startend_run_fuse_sequence`, `startend_run_endgame_sensor`, `show_final_texts` | The fusion of Lord Chaos and Lord Order. Final texts on square (0, 0). CSB ends differently (`ENDA.DAT`). |
-| `startend.c`: `startend_run_endgame` sets `g_return_to_entrance` | `main.c` then shows the DM entrance. For CSB this must show the CSB entrance. |
+| `startend.c`: `startend_run_endgame` sets `g_return_to_entrance` | `app.c` then shows the DM entrance. For CSB this must show the CSB entrance. |
 | `startend.c`: `startend_load_saved_game` | Uses `savegame_load(save_dir)`. The texts come from DM `gfx_get_string`. |
 
 ### Mode handling
@@ -95,10 +94,10 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | Place | Assumption |
 |---|---|
 | `advanced.h`: `GAME_MODE_VANILLA`, `GAME_MODE_ADVANCED`, `GAME_MODE_TURNBASED`, `g_session.mode` | The value is set only by `--mode`. |
-| `main.c`: `get_game_mode`, `main` | The parser reads `--mode` in a loop over `argv`. `g_advanced_features` and the local `turnbased` are set once, before the window opens. `auto_enter` and the control socket (`transport_open`) depend on `turnbased` at the start. The loop uses `turnbased` in five places. |
-| `main.c`: `read_input` | Drops all input when `turnbased` and `mode >= MODE_ENTRANCE`. Escape quits for `mode < MODE_ENTRANCE` (`--show`, `--view`). |
-| `main.c`: `amiga_key` | Maps the advanced keys only outside vanilla. |
-| `main.c`: `g_frame_hook` | `NULL` in `turnbased`, else `run_frame_hook`. |
+| `options.c`: `options_parse` | The parser reads `--mode` into `Options`. `app.c`: `apply_mode` sets `app.turnbased`, `auto_enter`, `g_frame_hook` and opens the control socket (`transport_open`) once, when the selection ends. |
+| `app.c`: `read_input` | Drops all input when `turnbased` and `app.screen >= SCREEN_ENTRANCE`. Escape quits on `SCREEN_DEBUG` (`--show`, `--view`). |
+| `app.c`: `amiga_key` | Maps the advanced keys only outside vanilla. |
+| `app.c`: `g_frame_hook` | `NULL` in `turnbased`, else `run_frame_hook`. |
 
 ### Hard-coded DM knowledge in game rules
 
@@ -143,7 +142,7 @@ The socket protocol needs no new command. The game starts one adventure for each
 
 - One new value: the adventure. One new small module for it. One new module for the screens.
 - No table of function pointers, no adventure struct with callbacks. A `switch` or a `?:` on `g_adventure` is enough for two adventures.
-- All new logic is in libdm (no SDL), so pytest can test it through `ctypes`. `main.c` keeps only the SDL glue.
+- All new logic is in libdm (no SDL), so pytest can test it through `ctypes`. `platform/` keeps only the SDL glue.
 - Existing DM behavior does not change. The DM entrance, the save file names, and the default folder stay as they are.
 
 ### The adventure value
@@ -174,7 +173,7 @@ Changes that use it:
 | `gameloop.c` | `gameloop_load_data` and `gameloop_start_new_game` stay as they are for DM. The CSB branch is part of the CSB engine work item (see [Dependencies](#dependencies-for-play)). |
 | `control.c` | `handle_new_game` error text becomes `"cannot start the new game"` (no file name). |
 
-The data folder is not stored in a second global. `gameloop_get_data_dir()` already returns the folder that `gameloop_load_data` read. `main` computes the folder once:
+The data folder is not stored in a second global. `gameloop_get_data_dir()` already returns the folder that `gameloop_load_data` read. `app.c` computes the folder once (`get_adventure_dir`):
 
 ```c
 data = data_override ? data_override : adventure_get(g_adventure)->dir;
@@ -229,7 +228,7 @@ Reuse these existing functions. Do not add a font renderer.
 
 Colors: normal item `COLOR_LIGHT_GRAY`. Cursor item `COLOR_GOLD`. Disabled item `COLOR_DARK_GRAY`. The module fills the palette array itself (black, three grays, gold), so the screens work before any KAOS file is loaded.
 
-The font data comes from DM `Graphics.DAT` (`game/`). When the file is missing, `main` tries `game-csb/Graphics.DAT`. Verify that `GFX_FONT` has the same item number in the CSB file. If neither file loads, the program exits with a log line, as it does today.
+The font data comes from DM `Graphics.DAT` (`game/`). When the file is missing, `load_font` of `app.c` tries `game-csb/Graphics.DAT`. Verify that `GFX_FONT` has the same item number in the CSB file. If neither file loads, the program exits with a log line, as it does today.
 
 Open check before coding: `advanced_draw_debug` draws plain ASCII with `text_draw`. `endgame_print_text` in `startend.c` maps A-Z to the codes 1-26. Draw one test screen and look at the glyphs. If ASCII capitals look wrong, move `endgame_print_text` into `text.c` and use it.
 
@@ -237,7 +236,7 @@ Layout (320 x 200): the title is not drawn as a graphic. Each screen shows a hea
 
 ### Argument parsing
 
-All in `main.c`, in the existing `argv` loop. Add:
+All in `options.c`, in the existing `argv` loop. Add:
 
 ```c
 if (!strcmp(argv[i], "--adventure") && (adventure = adventure_find(argv[i + 1])) < 0)
@@ -262,7 +261,7 @@ Rules for the flags (see [Open decisions](#open-decisions), point 1):
 
 ### The game loop and the screen switch
 
-Change only `main.c`. The enum becomes:
+Change only the platform layer (`app.c`). The enum becomes:
 
 ```c
 enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
@@ -270,19 +269,19 @@ enum { MODE_SHOW, MODE_VIEW, MODE_SELECT, MODE_ENTRANCE, MODE_GAME };
 
 `MODE_SELECT` is below `MODE_ENTRANCE`. `read_input` already ignores game input for `mode < MODE_ENTRANCE`, so only one new branch is needed.
 
-Changes in `main.c`:
+Changes in `app.c`:
 
-1. `turnbased` becomes `static int turnbased`. A new function `apply_mode(void)` sets `turnbased`, `g_advanced_features`, `auto_enter`, `g_frame_hook`, and opens the control socket (the code that is now in `main` between `plat_init` and the loop). It runs once, when the selection ends. The default control path code moves into it.
-2. Start: when no screen is needed, `main` runs `select_start` (it returns `SELECT_SCREEN_DONE` at once) and `start_adventure()` directly. Otherwise `mode = MODE_SELECT` and `select_start_font()` loads the font. The window opens before the first frame, as today.
+1. `turnbased` becomes `static int turnbased`. A new function `apply_mode(void)` sets `turnbased`, `g_advanced_features`, `auto_enter`, `g_frame_hook`, and opens the control socket (the code that `app_open` ran between `plat_init` and the loop). It runs once, when the selection ends. The default control path code moves into it.
+2. Start: when no screen is needed, `app_open` runs `select_start` (it returns `SELECT_SCREEN_DONE` at once) and `start_adventure()` directly. Otherwise `mode = MODE_SELECT` and `select_start_font()` loads the font. The window opens before the first frame, as today.
 3. `read_input`, new first branch for `MODE_SELECT`: map the SDL key to `SELECT_KEY_*` (Up, Down, Return and keypad Enter, Escape), call `select_key`. For `PLAT_MOUSE` with the left button, call `select_click(e.x, e.y)`. Then `continue`. Ctrl+Q and window close still set `g_quit_requested`.
 4. The frame loop: for `mode == MODE_SELECT`, call `select_draw()` when the screen changed (or every frame: it is a 320 x 200 `memset` and a few strings), then check `select_screen() == SELECT_SCREEN_DONE`. When done, call `start_adventure()`.
 5. `start_adventure()`:
-   - DM: `apply_mode()`, `gameloop_load_data(data)`, `entrance_draw()`, `command_set_entrance_input()`, `mode = MODE_ENTRANCE`. This is the code of today's `if (mode == MODE_ENTRANCE)` block in `main`. `auto_enter` presses Return afterward, as today.
+   - DM: `apply_mode()`, `gameloop_load_data(data)`, `entrance_draw()`, `command_set_entrance_input()`, `mode = MODE_ENTRANCE`. This is the code of today's `SCREEN_ENTRANCE` branch of `app_run_frame`. `auto_enter` presses Return afterward, as today.
    - CSB, choice RESUME or NEW ADVENTURE: `apply_mode()`, then the CSB engine start (see [Dependencies](#dependencies-for-play)). Until that exists, the function logs `CSB play is not available yet` and returns to `SELECT_SCREEN_CSB`.
    - CSB, choice QUIT: `g_quit_requested = 1`.
 6. The pointer: `set_pointer(...)` runs only for `mode >= MODE_ENTRANCE`. In `MODE_SELECT` the pointer shows the arrow from the KAOS data, which is not loaded. Use `plat_set_pointer(NULL, ...)` (system pointer) in `MODE_SELECT`. The mouse position is mapped to game pixels by the platform layer, so clicks work without a pointer image.
-7. `show_entrance` and the `g_return_to_entrance` branch: when `g_adventure == ADVENTURE_CSB`, call `select_start_csb()` and set `mode = MODE_SELECT` instead of `entrance_draw`. For DM nothing changes.
-8. `entrance_frame` stays for DM. The CSB choice is handled by `start_adventure`, not by `g_entrance_choice`.
+7. `return_to_start` and the `g_return_to_entrance` branch: when `g_adventure == ADVENTURE_CSB`, call `select_start_csb()` and set `mode = MODE_SELECT` instead of `entrance_draw`. For DM nothing changes.
+8. `run_entrance` stays for DM. The CSB choice is handled by `start_adventure`, not by `g_entrance_choice`.
 
 `turnbased` and the selection: the `LLM` item sets `g_session.mode = GAME_MODE_TURNBASED`. `apply_mode` then sets `auto_enter = 1`, so the program enters the dungeon without the entrance, as today. The socket opens after the selection, not before. A script that starts `build/dm` and waits for the socket sees the socket only after the user chooses LLM. Scripts must pass `--adventure` and `--mode` (or only `--mode`) to skip the screens.
 
@@ -376,7 +375,7 @@ Process level (SDL dummy drivers, as `test_port.py`):
 |---|---|
 | `test_invalid_adventure_exits` | `build/dm --adventure x --frames 1` exits with code 1 and the log line. |
 | `test_csb_missing_exits` | `build/dm --adventure csb --data <empty tmp> --frames 1` exits with code 1. |
-| `test_flags_skip_screens` | `build/dm --adventure dm --mode vanilla --frames 5` exits with code 0. A new debug check (an exit code or a log line `entrance`) shows that the DM entrance was reached. Use the log line `SDL_Log("adventure %s mode %s")` that `main` prints once at the start of the game. |
+| `test_flags_skip_screens` | `build/dm --adventure dm --mode vanilla --frames 5` exits with code 0. A new debug check (an exit code or a log line `entrance`) shows that the DM entrance was reached. |
 | `test_selection_screen_runs` | `build/dm --frames 5` (no flags, no `DM_AUTO_ENTER`) exits with code 0. This is the existing smoke test, now on the selection screen. |
 
 The existing process tests stay unchanged and must stay green: `test_smoke_run`, the `--frames 100` run with `DM_AUTO_ENTER=1`, `--mode fast` (exit code 1), and the turn-based program test (`--mode turnbased` only).
@@ -401,6 +400,6 @@ Each step has at least one automated test and is green before the next one.
 1. `adventure.c/h`, the save name change in `savegame.c`, `tests/port/test_select.py` (helper tests only). Existing tests stay green.
 2. `select.c/h` (logic, no drawing) and the logic tests.
 3. `select_draw`, the drawing tests, and a first look at the glyphs.
-4. `main.c`: `--adventure`, `MODE_SELECT`, `apply_mode`, `start_adventure`, `show_entrance` branch. The process tests.
+4. `app.c`, `options.c`: `--adventure`, `MODE_SELECT`, `apply_mode`, `start_adventure`, `return_to_start` branch. The process tests.
 5. LLM tools and docs: `adventure` in the state JSON, `INSTRUCTIONS`, docstrings, `llm-mode.md`, README.
 6. Separate plans (not part of this design): the CSB engine module, `MINI.DAT` and `CSBGAME.DAT`, the CSB champion selection, the CSB endgame.

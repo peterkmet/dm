@@ -3,6 +3,7 @@ import ctypes
 
 import pytest
 
+from dmtest.game import Bitmap
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
 
@@ -17,10 +18,6 @@ FONT, TEXT, PLANES = 0x400000, 0x410000, 0x500000
 COLS, NO_EXPIRY = 53, 0xFFFFFFFF
 
 pytestmark = [needs_sdl, needs_dm]
-
-
-class Bitmap(ctypes.Structure):
-    _fields_ = [("w", ctypes.c_uint16), ("h", ctypes.c_uint16), ("px", ctypes.POINTER(ctypes.c_uint8))]
 
 
 class MessageArea(ctypes.Structure):

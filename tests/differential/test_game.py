@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Champion, Timeline, champions
+from dmtest.game import ActiveGroup, Champion, Timeline, TimelineEvent, champions
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -24,18 +24,6 @@ BUF = 0x200000  # free emulator RAM above the KAOS image
 
 pytestmark = [needs_dm]
 c16, c32 = ctypes.c_int16, ctypes.c_uint32
-
-
-class Event(ctypes.Structure):
-    _fields_ = [("map_time", c32), ("type", ctypes.c_uint8), ("priority", ctypes.c_uint8),
-                ("b", ctypes.c_uint16), ("c", ctypes.c_uint16)]
-
-    def be(self):
-        return struct.pack(">IBBHH", self.map_time, self.type, self.priority, self.b, self.c)
-
-
-class ActiveGroup(ctypes.Structure):
-    _fields_ = [("group_index", c16), ("rest", ctypes.c_uint8 * 14)]
 
 
 @pytest.fixture(scope="module")
@@ -157,7 +145,7 @@ def test_champion_helpers_match_original(lib, emu):
 
 def timeline_state(lib):
     n = Timeline.in_dll(lib, "g_timeline").capacity
-    events = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(Event))
+    events = ctypes.cast(Timeline.in_dll(lib, "g_timeline").events, ctypes.POINTER(TimelineEvent))
     heap = ctypes.cast(Timeline.in_dll(lib, "g_timeline").heap, ctypes.POINTER(ctypes.c_uint16))
     count = Timeline.in_dll(lib, "g_timeline").count
     first = Timeline.in_dll(lib, "g_timeline").first_unused
@@ -189,7 +177,7 @@ def test_timeline_matches_original(lib, emu):
     put(emu, EVENT_MAX_COUNT, ">hHIIHhI", n, 0, BUF, BUF + 0x1000, 0, 0, 0)
     put(emu, GAME_TIME, ">I", 0)
     emu.write(BUF, b"".join(struct.pack(">HHIH", i + 1 if i < n - 1 else 0xFFFF, 0, 0, 0) for i in range(n)))
-    emu.write(arg, Event(300, 53).be())
+    emu.write(arg, TimelineEvent(300, 53).be())
     emu.call(ADD_EVENT, [(4, arg)])
     assert timeline_state(lib) == emu_timeline_state(emu, n)
     rng = random.Random(3)
@@ -197,12 +185,12 @@ def test_timeline_matches_original(lib, emu):
     for _ in range(1500):
         count = word(emu, TIMELINE_COUNT)
         if count and (count >= n - 1 or rng.random() < 0.35):
-            got = Event()
+            got = TimelineEvent()
             lib.timeline_extract_first_event(ctypes.byref(got))
             emu.call(EXTRACT_FIRST, [(4, arg)])
             assert got.be() == emu.read(arg, 10)
         else:
-            e = Event(rng.randrange(3) << 24 | rng.randrange(8), rng.choice(types), rng.randrange(4),
+            e = TimelineEvent(rng.randrange(3) << 24 | rng.randrange(8), rng.choice(types), rng.randrange(4),
                       rng.randrange(2) << 8 | rng.randrange(2), rng.randrange(4) << 8 | rng.randrange(3))
             emu.write(arg, e.be())
             assert lib.timeline_add_event(ctypes.byref(e)) == s16(emu.call(ADD_EVENT, [(4, arg)]))
@@ -218,10 +206,10 @@ def test_timeline_order(lib):
     c32.in_dll(lib, "g_game_time").value = 0
     lib.timeline_init()  # watchdog: time 300, type 53
     for t, typ, prio in [(5, 20, 0), (5, 25, 0), (2, 11, 3), (5, 20, 1), (2, 11, 1)]:
-        lib.timeline_add_event(ctypes.byref(Event(t, typ, prio)))
+        lib.timeline_add_event(ctypes.byref(TimelineEvent(t, typ, prio)))
     order = []
     for _ in range(6):
-        e = Event()
+        e = TimelineEvent()
         lib.timeline_extract_first_event(ctypes.byref(e))
         order.append((e.map_time, e.type, e.priority))
     assert order == [(2, 11, 3), (2, 11, 1), (5, 25, 0), (5, 20, 1), (5, 20, 0), (300, 53, 0)]
@@ -242,7 +230,7 @@ def test_game_new(lib):
     assert ctypes.c_uint16.in_dll(lib, "g_leader_hand_object").value == 0xFFFF
     assert c32.in_dll(lib, "g_game_time").value == 0
     count, first, high_water, heap, live, free = timeline_state(lib)
-    assert (count, first, high_water, heap, live) == (1, 1, 1, [0], {0: Event(300, 53).be()})
+    assert (count, first, high_water, heap, live) == (1, 1, 1, [0], {0: TimelineEvent(300, 53).be()})
     assert len(free) == Timeline.in_dll(lib, "g_timeline").capacity - 1
     groups = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_active_groups"), ctypes.POINTER(ActiveGroup))
     assert ctypes.c_uint16.in_dll(lib, "g_max_active_group_count").value == 110

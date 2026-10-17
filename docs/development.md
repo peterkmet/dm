@@ -1,13 +1,13 @@
 # Development
 
-How to build, test, and release the C port. For the player side, see [manual.md](manual.md).
+How to build, test, and release the C port. For the player side, see [manual.md](manual.md). For the structure of the code, see [architecture.md](architecture.md).
 
 ## Build
 
 The port uses C11, `clang`, and SDL3. Install the tools first.
 
 ```sh
-brew install sdl3 clang-format
+brew install sdl3
 uv sync
 ```
 
@@ -24,7 +24,7 @@ Run the game with `build/dm`. The options are in [manual.md](manual.md).
 
 ## Tests
 
-The tests need `clang`, SDL3, and `clang-format` (Homebrew).
+The tests need `clang` and SDL3 (Homebrew). `clang-format` 23 comes with `uv sync`; `pyproject.toml` pins it to version 23, because other versions format differently.
 
 ```sh
 make test
@@ -52,6 +52,7 @@ Some tests need files that the repository does not have. Pytest skips them with 
 |---|---|
 | `needs_dm` | `game/` with `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` |
 | `needs_csb` | `game-csb/` with `APPB.FTL`, `Graphics.DAT`, and `Dungeon.DAT` |
+| `needs_csb_mini` | `game-csb/disk-b/MINI.DAT` |
 | `needs_sdl` | SDL3 from Homebrew |
 | `needs_ghidra` | Ghidra from Homebrew (`tests/tools/test_ghidra.py` runs `decompile.sh` on a small synthetic image, about 4 seconds) |
 

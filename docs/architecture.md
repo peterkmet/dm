@@ -147,7 +147,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 
 1. The input: `plat_poll` reads the SDL events. On the start screens they go to `select_click` and
    `select_key`; in the game they become commands (`command_process_key`, `command_process_click`). In
-   turn-based mode the game ignores the keyboard and the mouse.
+   turn-based mode the keyboard and the mouse are ignored from the entrance on; the start screens still read them.
 2. `transport_poll` reads the control socket (see [The control socket and the turn](#the-control-socket-and-the-turn)).
 3. The screen of the run: a start screen (`select_screen`, `select_draw`), the entrance, or
    `gameloop_run_frame` (`ui/gameloop.c`). `gameloop_run_frame` runs the queued commands and tells if the
@@ -188,11 +188,12 @@ The rules do not draw. They set redraw flags that `ui/` reads and draws:
 In turn-based mode a program player plays the game over a Unix domain socket. The protocol is in
 [the LLM mode guide](llm/llm-mode.md).
 
-1. `transport_poll` (`platform/transport.c`) reads one request line from the socket.
-2. `control_handle_line` (`control/control.c`) answers the request at once, or it starts a turn.
-3. While `control_is_turn_pending()` is true, the frame loop runs game frames and ticks.
-4. In each frame `transport_poll` calls `control_end_turn`. It advances the turn by one frame. When the turn
-   ends, it returns true and the reply goes out on the socket.
+1. In each frame `transport_poll` (`platform/transport.c`) first calls `control_end_turn` when a turn is
+   pending. It advances the turn by one frame. When the turn ends, it returns true and the reply goes out on
+   the socket.
+2. `transport_poll` then reads one request line from the socket.
+3. `control_handle_line` (`control/control.c`) answers the request at once, or it starts a turn.
+4. While `control_is_turn_pending()` is true, the frame loop runs game frames and ticks.
 
 Between two turns the game time stands still: `app_run_frame` does not call `gameloop_run_frame`. The turn
 rules (when a turn ends, what the reply tells) are in `control/turn.c`. The game as JSON is in
