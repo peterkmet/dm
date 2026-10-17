@@ -19,7 +19,7 @@ B   = build
 OBJ = $(B)/obj
 
 SOURCES      = $(wildcard src/*/*.c)
-SDL_SOURCES  = src/platform/main.c src/platform/platform.c
+SDL_SOURCES  = src/platform/main.c src/platform/platform.c src/platform/debug_view.c
 WINDOWS_ONLY = src/platform/control_win.c
 POSIX_ONLY   = src/platform/control.c
 GAME_SOURCES = $(filter-out $(WINDOWS_ONLY),$(SOURCES))
