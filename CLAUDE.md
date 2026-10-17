@@ -8,6 +8,13 @@ Native C11/SDL3 macOS port of Dungeon Master v3.60 (Amiga), built from its own G
 ## Commands
 - Build: `make` (game and test library, 0 warnings); `make windows` (MinGW-w64); `make clean`.
 - Run: `build/dm`; personal play: `make play`, then `playthroughs/local/dm --data game --saves playthroughs/local`.
+- Socket test: `build/dm --mode turnbased --saves DIR --control /tmp/x.sock` (a short path: AF_UNIX holds about 100
+  bytes), then `DM_CONTROL=/tmp/x.sock DM_PLAY_LOG_DIR=none uv run dm-play [--brief] <cmd>`; a picture:
+  `dm-play screenshot '{"path":"..."}'`.
+- Windows test: `make windows`, copy `SDL3.dll` from `build/sdl-mingw/SDL3-*/x86_64-w64-mingw32/bin/` next to
+  `dm.exe`, run it with the local Wine CX: `~/github/wine-cross/dist/Wine CX.app/Contents/Resources/wine/bin/wine`,
+  prefix `~/github/wine-cross/prefix`. Wine CX does not pass macOS environment variables: `wine cmd /c "set X=1&& dm.exe ..."`.
+  Install no other Wine.
 - One test file: `uv run pytest -q tests/<folder>/test_x.py`.
 - Full suite: `make test` (`uv run pytest -q -n auto`).
 - All checks: `make check` (format, standard, suite); `make format` before a commit.
