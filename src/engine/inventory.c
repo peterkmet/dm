@@ -442,7 +442,7 @@ void inventory_close_chest(void)
     }
 }
 
-bool inventory_fill_at_fountain(void)
+void inventory_fill_at_fountain(void)
 {
     uint16_t thing = g_leader_hand_object;
     int16_t icon = object_get_icon_index(thing);
@@ -452,10 +452,9 @@ bool inventory_fill_at_fountain(void)
     else if (icon == ICON_EMPTY_FLASK)
         rec_potion_set_type(thing, POTION_WATER);
     else
-        return false;
+        return;
     g_champions[g_leader_index].load += inventory_get_object_weight(thing) - weight;
     g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
-    return true;
 }
 
 void inventory_set_open_champion(int16_t champion_index)

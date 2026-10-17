@@ -5,7 +5,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 ## Small cleanups after the clean-code pass
 
 - `ui/view_walls.c`: the Thieves Eye (`g_party.thieves_eye_count`, `src/engine/party.h:24`) is not drawn. The original draws it in three places: the D1C front wall gets the hole graphic 41 over the squares behind it (KAOS.c:23050-23081); the D1C door gets the thieves eye door ornament (KAOS.c:21403-21405; loaded at `src/ui/view.c:1006`); the door frame of the party square (D0C) gets the frame with the hole (KAOS.c:23232-23245).
-- `ui/command.c` ignores the result of `inventory_fill_at_fountain` (`src/engine/inventory.c:445-459`, the caller at `src/ui/command.c:563-565`). The frame refresh already draws the changed hand icon (`src/ui/gameloop.c:117-125`), so the function can return `void`.
 - `engine/group.c`: the parameter `group_cell` of `order_attack_cells` (`src/engine/group.c:291-298`) has the name of a function; with `group_at` it becomes `attacker_cell` and `attacker_at`.
 - `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing`. PRD: `docs/superpowers/2026-10-17-discard-thing.md`.
 - `light_depths` (`src/engine/explored.c`): a fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it.

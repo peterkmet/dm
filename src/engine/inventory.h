@@ -86,9 +86,8 @@ void inventory_click_on_slot_box(uint16_t slot_box);
 void inventory_open_chest(uint16_t chest);
 /* Closes the open chest: the objects in the chest slots become its content, in slot order. */
 void inventory_close_chest(void);
-/* A flask or a waterskin in the leader hand fills at a fountain; the leader load changes with its weight.
-   Returns true when the hand object changed. */
-bool inventory_fill_at_fountain(void);
+/* A flask or a waterskin in the leader hand fills at a fountain; the leader load changes with its weight. */
+void inventory_fill_at_fountain(void);
 /* Opens the inventory of a champion for the rules; -1 closes it. */
 void inventory_set_open_champion(int16_t champion_index);
 /* Results of inventory_process_click_on_mouth: nothing happens, the champion swallows, or the object is used up. */
