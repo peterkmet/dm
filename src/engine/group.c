@@ -288,12 +288,12 @@ int16_t group_get_creature_in_cell(uint16_t group, int16_t cell)
 }
 
 /* The 4 cells of the target square in the order the attacker reaches them. */
-static void order_attack_cells(uint8_t *ordered_cells, Location target, Location group_at, int16_t group_cell)
+static void order_attack_cells(uint8_t *ordered_cells, Location target, Location attacker_at, int16_t attacker_cell)
 {
-    int16_t direction = group_get_directions_to(target, group_at).primary;
+    int16_t direction = group_get_directions_to(target, attacker_at).primary;
     if (!(direction & 1))
-        group_cell++;
-    int16_t row = ((group_cell >> 1) & 1) + direction * 2;
+        attacker_cell++;
+    int16_t row = ((attacker_cell >> 1) & 1) + direction * 2;
     for (int16_t i = 0; i < CELL_COUNT; i++)
         ordered_cells[i] = tables_get_attack_cell_order(row, i);
 }
