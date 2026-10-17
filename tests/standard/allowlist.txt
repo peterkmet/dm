@@ -14,7 +14,7 @@ block platform/platform.c open: epic 11
 block control/state_json.c open: epic 10
 block ui/music.c open: epic 9
 block ui/music.h open: epic 9
-decimal control/actions.c open: epic 10
+decimal control/control_actions.c open: epic 10
 decimal platform/scale.c open: epic 11
 decimal control/state_json.c open: epic 10
 enum platform/main.c open: epic 11
@@ -32,7 +32,6 @@ static-prefix engine/group.c:turn_group open: epic 10
 static-prefix engine/move.c:turn_by_teleporter open: epic 10
 static-prefix engine/move.c:turn_party open: epic 10
 static-prefix engine/sound.c:sound_exists open: epic 9
-static-prefix control/actions.c:spell_click open: epic 10
 static-prefix platform/main.c:advanced_key open: epic 11
 static-prefix platform/main.c:entrance_frame open: epic 11
 static-prefix platform/main.c:select_input open: epic 11
@@ -71,7 +70,7 @@ comment engine/savefile.h open: epic 5
 comment engine/savegame.c open: epic 5
 comment engine/savegame.h open: epic 5
 comment engine/sensor.c open: epic 5
-comment control/actions.c open: epic 10
+comment control/control_actions.c open: epic 10
 comment platform/main.c open: epic 11
 comment platform/platform.h open: epic 11
 comment platform/scale.h open: epic 11
@@ -105,7 +104,6 @@ include engine/projectile.h:engine/event.h open: epic 5
 include engine/savegame.c:data/ids.h open: epic 5
 include platform/main.c:data/ftl.h open: epic 11
 include platform/platform.h:ui/video.h open: epic 11
-module control/actions.c open: epic 10
 module platform/main.c open: epic 11
 order engine/action.c open: epic 5
 order engine/champion.c open: epic 5
@@ -125,7 +123,7 @@ order control/state_json.c open: epic 10
 order ui/music.c open: epic 9
 dead-api engine/sound.h:sound_get_volume open: epic 9
 dead-api platform/platform.h:plat_audio_pump open: epic 11
-params control/actions.c:find_in_box open: epic 10
+params control/control_actions.c:find_in_box open: epic 10
 params platform/platform.c:plat_set_pointer open: epic 11
 params platform/platform.h:plat_set_pointer open: epic 11
 params ui/draw.c:draw_blit open: epic 8

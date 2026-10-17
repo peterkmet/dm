@@ -398,7 +398,7 @@ static const char *set_caster(const char *args)
     return NULL;
 }
 
-static const char *spell_click(int16_t command)
+static const char *click_spell_area(int16_t command)
 {
     if (g_magic_caster_champion_index == -1)
         return "no spell area";
@@ -414,7 +414,7 @@ static const char *add_rune(const char *args)
     if (g_magic_caster_champion_index == -1)
         return "no spell area";
     size_t before = strlen(g_champions[g_magic_caster_champion_index].symbols);
-    spell_click(COMMAND_SPELL_SYMBOL_FIRST + symbol);
+    click_spell_area(COMMAND_SPELL_SYMBOL_FIRST + symbol);
     /* the game ignores a rune that costs more mana than the caster has */
     return strlen(g_champions[g_magic_caster_champion_index].symbols) == before
                ? "the rune was not added: not enough mana"
@@ -424,12 +424,12 @@ static const char *add_rune(const char *args)
 static const char *delete_rune(const char *args)
 {
     (void)args;
-    return spell_click(COMMAND_DELETE_SYMBOL);
+    return click_spell_area(COMMAND_DELETE_SYMBOL);
 }
 static const char *cast(const char *args)
 {
     (void)args;
-    return spell_click(COMMAND_CAST_SPELL);
+    return click_spell_area(COMMAND_CAST_SPELL);
 }
 
 static const char *answer_mirror(const char *args)
