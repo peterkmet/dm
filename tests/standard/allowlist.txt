@@ -9,14 +9,11 @@ decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions
 long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
 long engine/event.c:event_process_expired rule 5.8: one short case for each timeline event type
 block platform/transport.c open: epic 10
-block platform/platform.c open: epic 11
 block control/state_json.c open: epic 10
 block ui/music.c open: epic 9
 block ui/music.h open: epic 9
 decimal control/control_actions.c open: epic 10
-decimal platform/scale.c open: epic 11
 decimal control/state_json.c open: epic 10
-enum platform/platform.c open: epic 11
 notation data/kaos_addresses.h open: epic 13
 notation platform/transport.c open: epic 10
 static-prefix engine/group.c:turn_and_finish open: epic 10
@@ -25,7 +22,6 @@ static-prefix engine/group.c:turn_group open: epic 10
 static-prefix engine/move.c:turn_by_teleporter open: epic 10
 static-prefix engine/move.c:turn_party open: epic 10
 static-prefix engine/sound.c:sound_exists open: epic 9
-static-prefix platform/platform.c:draw_pointer open: epic 11
 static-prefix control/state_json.c:action_hand_charges open: epic 10
 static-prefix control/state_json.c:action_list_json open: epic 10
 static-prefix control/state_json.c:champion_json open: epic 10
@@ -59,8 +55,6 @@ comment engine/savegame.c open: epic 5
 comment engine/savegame.h open: epic 5
 comment engine/sensor.c open: epic 5
 comment control/control_actions.c open: epic 10
-comment platform/platform.h open: epic 11
-comment platform/scale.h open: epic 11
 comment control/state_json.c open: epic 10
 header engine/action.h open: epic 5
 header engine/champion.h open: epic 5
@@ -80,8 +74,6 @@ header engine/savefile.h open: epic 5
 header engine/savegame.h open: epic 5
 header engine/sensor.h open: epic 5
 header engine/event.h open: epic 5
-header platform/platform.h open: epic 11
-header platform/scale.h open: epic 11
 header ui/music.h open: epic 9
 include engine/group.h:engine/event.h open: epic 5
 include engine/inventory.c:engine/sound.h open: epic 5
@@ -89,7 +81,6 @@ include engine/move.c:engine/inventory.h open: epic 5
 include engine/move.c:engine/event.h open: epic 5
 include engine/projectile.h:engine/event.h open: epic 5
 include engine/savegame.c:data/ids.h open: epic 5
-include platform/platform.h:ui/video.h open: epic 11
 module platform/main.c open: epic 11
 order engine/action.c open: epic 5
 order engine/champion.c open: epic 5
@@ -104,24 +95,16 @@ order engine/random.c open: epic 5
 order engine/savegame.c open: epic 5
 order engine/sensor.c open: epic 5
 order engine/event.c open: epic 5
-order platform/platform.c open: epic 11
 order control/state_json.c open: epic 10
 order ui/music.c open: epic 9
 dead-api engine/sound.h:sound_get_volume open: epic 9
-dead-api platform/platform.h:plat_audio_pump open: epic 11
 params control/control_actions.c:find_in_box open: epic 10
-params platform/platform.c:plat_set_pointer open: epic 11
-params platform/platform.h:plat_set_pointer open: epic 11
 params ui/draw.c:draw_blit open: epic 8
 params ui/draw.h:draw_blit open: epic 8
 params ui/layout.c:layout_get_zone open: epic 8
 params ui/layout.h:layout_get_zone open: epic 8
 params ui/text.c:text_draw open: epic 8
 params ui/text.h:text_draw open: epic 8
-type platform:x open: epic 11
-type platform:y open: epic 11
 type ui:height open: epic 8
 type ui:width open: epic 8
 todo engine/sound.c open: epic 9
-block platform/platform.h open: epic 11
-static-prefix platform/platform.c:audio_open open: epic 11

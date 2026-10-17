@@ -21,6 +21,7 @@
 #include "ui/startend.h"
 #include "ui/text.h"
 #include "ui/ui.h"
+#include "ui/video.h"
 #include "control/control.h"
 #include "platform/debug_view.h"
 #include "platform/options.h"
@@ -140,12 +141,12 @@ static int16_t click_kind(const PlatEvent *e)
 static void set_pointer(bool in_game)
 {
     PointerImage image;
-    int x, y;
+    int16_t x, y;
     plat_mouse_position(&x, &y);
     if (gameloop_get_pointer(x, y, in_game, &image))
-        plat_set_pointer(image.px, image.w, image.h, image.hot_x, image.hot_y, gameloop_get_pointer_palette());
+        plat_set_pointer(&image, gameloop_get_pointer_palette());
     else
-        plat_set_pointer(NULL, 0, 0, 0, 0, NULL);
+        plat_set_pointer(NULL, NULL);
 }
 
 /* What the frame runs. */
@@ -636,7 +637,7 @@ AppFrame app_run_frame(void)
     if (app.screen >= SCREEN_ENTRANCE || app.loaded_adventure >= 0)
         set_pointer(app.screen == SCREEN_GAME); /* the arrow on the start screens after QUIT */
     if (app.screen == SCREEN_GAME) {
-        int mouse_x, mouse_y;
+        int16_t mouse_x, mouse_y;
         plat_mouse_position(&mouse_x, &mouse_y);
         advanced_drag(mouse_x, mouse_y);
     }

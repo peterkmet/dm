@@ -2,16 +2,18 @@
 #include "platform/platform.h"
 #include "ui/audio.h"
 #include "ui/music.h"
+#include "ui/video.h"
 #include "platform/scale.h"
 #include <SDL3/SDL.h>
 #include <string.h>
 
+/* Timing, filter, audio, and pixel sizes. */
 #define TICK_NS            (SDL_NS_PER_SECOND / FRAMES_PER_SECOND)
 #define FILTER_MAX         3
 #define AUDIO_CHANNELS     2
 #define AUDIO_QUEUED_TICKS 3
+#define AUDIO_TICK_FRAMES  (AUDIO_OUTPUT_RATE / FRAMES_PER_SECOND) /* mixer frames of one tick */
 #define ARGB_BYTES         4
-#define POINTER_MAX        32
 
 static struct {
     SDL_Window *window;
@@ -22,7 +24,7 @@ static struct {
     int filter; /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */
     uint8_t scaled_screen[SCREEN_H * FILTER_MAX][SCREEN_W * FILTER_MAX];
     struct {
-        uint8_t px[POINTER_MAX * POINTER_MAX];
+        uint8_t px[POINTER_SIZE * POINTER_SIZE];
         uint32_t argb[PALETTE_COLORS];
         int w;
         int h;
@@ -33,7 +35,18 @@ static struct {
     int mouse_y;
 } plat = {.filter = 1};
 
-static void render_frame(void);
+/* Draws the frame texture letterboxed into the window. */
+static void render_frame(void)
+{
+    int w, h;
+    SDL_GetCurrentRenderOutputSize(plat.renderer, &w, &h);
+    OutputLayout layout = output_layout(w, h);
+    SDL_FRect dst = {layout.x, layout.y, SCREEN_W * layout.scale, SCREEN_H * layout.scale};
+    SDL_SetRenderDrawColor(plat.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(plat.renderer);
+    SDL_RenderTexture(plat.renderer, plat.texture, NULL, &dst);
+    SDL_RenderPresent(plat.renderer);
+}
 
 /* Redraws the last frame while macOS blocks the main loop during a live window resize. */
 static bool SDLCALL on_expose(void *userdata, SDL_Event *ev)
@@ -87,17 +100,17 @@ void plat_quit(void)
     SDL_Quit();
 }
 
-void plat_set_pointer(const uint8_t *px, int w, int h, int hot_x, int hot_y, const uint16_t *colors)
+void plat_set_pointer(const PointerImage *image, const uint16_t *colors)
 {
-    plat.pointer.w = px && w <= POINTER_MAX && h <= POINTER_MAX ? w : 0;
-    plat.pointer.h = plat.pointer.w ? h : 0;
-    plat.pointer.hot_x = hot_x;
-    plat.pointer.hot_y = hot_y;
+    plat.pointer.w = image && image->w <= POINTER_SIZE && image->h <= POINTER_SIZE ? image->w : 0;
+    plat.pointer.h = plat.pointer.w ? image->h : 0;
+    plat.pointer.hot_x = image ? image->hot_x : 0;
+    plat.pointer.hot_y = image ? image->hot_y : 0;
     if (!plat.pointer.w)
         return;
     if (SDL_CursorVisible())
         SDL_HideCursor();
-    memcpy(plat.pointer.px, px, (size_t)w * h);
+    memcpy(plat.pointer.px, image->px, (size_t)plat.pointer.w * plat.pointer.h);
     for (int i = 0; i < PALETTE_COLORS; i++)
         plat.pointer.argb[i] = video_convert_argb(colors[i]);
 }
@@ -117,14 +130,14 @@ void plat_set_icon(const uint8_t *px, int w, int h, int transparent, const uint1
     SDL_DestroySurface(icon);
 }
 
-void plat_mouse_position(int *x, int *y)
+void plat_mouse_position(int16_t *mouse_x, int16_t *mouse_y)
 {
-    *x = plat.mouse_x;
-    *y = plat.mouse_y;
+    *mouse_x = (int16_t)plat.mouse_x; /* output_map_mouse clamps it to the screen */
+    *mouse_y = (int16_t)plat.mouse_y;
 }
 
 /* Draws the pointer at the mouse position into the filtered frame (row length stride). */
-static void draw_pointer(uint32_t *px, int stride)
+static void overlay_pointer(uint32_t *px, int stride)
 {
     for (int y = 0; y < plat.pointer.h; y++)
         for (int x = 0; x < plat.pointer.w; x++) {
@@ -160,22 +173,9 @@ void plat_present(void)
         for (int x = 0; x < tw; x++)
             px[y * stride + x] = pal[(src[y * tw + x] & COLOR_INDEX_MASK) | half];
     }
-    draw_pointer(px, stride);
+    overlay_pointer(px, stride);
     SDL_UnlockTexture(plat.texture);
     render_frame();
-}
-
-/* Draws the frame texture letterboxed into the window. */
-static void render_frame(void)
-{
-    int w, h;
-    SDL_GetCurrentRenderOutputSize(plat.renderer, &w, &h);
-    OutputLayout layout = output_layout(w, h);
-    SDL_FRect dst = {layout.x, layout.y, SCREEN_W * layout.scale, SCREEN_H * layout.scale};
-    SDL_SetRenderDrawColor(plat.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-    SDL_RenderClear(plat.renderer);
-    SDL_RenderTexture(plat.renderer, plat.texture, NULL, &dst);
-    SDL_RenderPresent(plat.renderer);
 }
 
 bool plat_poll(PlatEvent *event)
@@ -218,19 +218,8 @@ bool plat_poll(PlatEvent *event)
     return false;
 }
 
-void plat_wait_tick(void)
-{
-    plat_audio_pump();
-    Uint64 now = SDL_GetTicksNS();
-    if (now < plat.next_tick)
-        SDL_DelayPrecise(plat.next_tick - now);
-    else
-        plat.next_tick = now; /* fell behind: resync instead of bursting */
-    plat.next_tick += TICK_NS;
-}
-
 /* Opens the audio stream on first use. Returns false when audio is not available. */
-static bool audio_open(void)
+static bool open_audio(void)
 {
     static bool tried;
     if (plat.stream || tried)
@@ -245,16 +234,27 @@ static bool audio_open(void)
     return SDL_ResumeAudioStreamDevice(plat.stream);
 }
 
-void plat_audio_pump(void)
+/* Keeps about three ticks of mixer output queued; runs on the game thread, so the mixer needs no lock. */
+static void pump_audio(void)
 {
-    enum { FRAMES = AUDIO_OUTPUT_RATE / FRAMES_PER_SECOND };
-    int16_t buf[FRAMES * AUDIO_CHANNELS];
-    if (!audio_open())
+    int16_t buf[AUDIO_TICK_FRAMES * AUDIO_CHANNELS];
+    if (!open_audio())
         return;
     while (SDL_GetAudioStreamQueued(plat.stream) < (int)sizeof buf * AUDIO_QUEUED_TICKS) {
-        audio_mix(buf, FRAMES);
-        music_mix(buf, FRAMES);
+        audio_mix(buf, AUDIO_TICK_FRAMES);
+        music_mix(buf, AUDIO_TICK_FRAMES);
         if (!SDL_PutAudioStreamData(plat.stream, buf, sizeof buf))
             return;
     }
+}
+
+void plat_wait_tick(void)
+{
+    pump_audio();
+    Uint64 now = SDL_GetTicksNS();
+    if (now < plat.next_tick)
+        SDL_DelayPrecise(plat.next_tick - now);
+    else
+        plat.next_tick = now; /* fell behind: resync instead of bursting */
+    plat.next_tick += TICK_NS;
 }
