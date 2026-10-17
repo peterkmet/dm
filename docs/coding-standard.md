@@ -93,7 +93,8 @@ refactor; until the run ends, the allowlist carries the difference.
 5. Each constant has one definition, in the header of the module that owns it; other modules include that
    header. [duplicate]
 6. Image addresses: `KAOS_` in `data/kaos_addresses.h`, which only `data/` includes; `CSB_` for the APPB
-   image; `SWSH_` for `SWSH.FTL`. Each address has one name. Other layers call `tables_get_*`. [kaos, address]
+   image; `SWSH_` for `SWSH.FTL`; `VDEO_` for `VDEO.FTL`. Each address has one name. Other layers call
+   `tables_get_*`. [kaos, address]
 7. Graphic, zone, layout, icon and string numbers live in `data/ids.h`, grouped by kind (`GFX_`, `ZONE_`,
    `LAYOUT_`, `ICON_`, `TEXT_`), sorted by value, one name per value. [duplicate; one name per value: review
    only]
@@ -108,9 +109,7 @@ refactor; until the run ends, the allowlist carries the difference.
     the game files (the soundtrack tables of the other versions) stays in the source, named in the allowlist
     with this reason; the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`) stay
     in the source, named in the allowlist with this reason; the fixed CRC-32 table of a standard algorithm
-    (`data/crc32.c`) stays in the source, named in the allowlist with this reason; the palette fade step table of
-    the video driver VDEO.FTL, which the port does not load (`ui/palette.c`), stays in the source, named in the
-    allowlist with this reason. [decimal, hex, allowlist]
+    (`data/crc32.c`) stays in the source, named in the allowlist with this reason. [decimal, hex, allowlist]
 
 ## 4. Naming
 

@@ -10,7 +10,7 @@
 
 /* Commands */
 /* Fades both palette halves from their colors to colors (16 colors, for both halves) in 15 steps of one frame.
-   Without frames (tests, turn-based mode) the colors apply at once. */
+   Without frames (tests, turn-based mode) or without VDEO.FTL the colors apply at once. */
 void palette_fade_to(const uint16_t *colors);
 /* Fades both palette halves to black. */
 void palette_fade_to_black(void);

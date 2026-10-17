@@ -28,7 +28,8 @@ extern bool g_game_frozen;                  /* stays set while the party sleeps;
 extern bool
     g_game_screen_shown; /* set: the game screen shows; clear: dialogs use the whole screen (entrance, endgame) */
 
-/* Loads KAOS.FTL and Graphics.DAT from directory and sets up the interface. Returns true on success. */
+/* Loads KAOS.FTL, Graphics.DAT and the fade table of VDEO.FTL (optional) from directory and sets up the interface.
+   Returns true on success. */
 bool gameloop_load_data(const char *directory);
 /* The directory that gameloop_load_data read the game files from. */
 const char *gameloop_get_data_dir(void);

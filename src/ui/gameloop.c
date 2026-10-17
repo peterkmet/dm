@@ -5,6 +5,7 @@
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/tables.h"
+#include "data/vdeo.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/event.h"
@@ -70,6 +71,9 @@ bool gameloop_load_data(const char *directory)
     if (!adventure_load_files(directory, &failed))
         return false;
     startend_set_save_dir(directory);
+    char path[PATH_SIZE];
+    if (snprintf(path, sizeof path, "%s/%s", directory, VDEO_FILE) < (int)sizeof path)
+        vdeo_load(path); /* without the video driver the palette changes without a fade */
     g_endgame_sensor_hook = startend_run_endgame_sensor;
     return layout_init() && text_init() && ui_init();
 }

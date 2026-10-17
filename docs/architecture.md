@@ -59,6 +59,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `data/spells.h` | `spell_` | The spell rules of the spell table: the symbol strings, the mana cost and the skill draws. |
 | `data/swsh.h` | `swsh_` | The FTL logo module SWSH.FTL: a palette script, the logo graphic, and its sound. |
 | `data/tables.h` | `tables_` | Static rule tables of KAOS.FTL, decoded once from the loaded image. |
+| `data/vdeo.h` | `vdeo_` | The video driver module VDEO.FTL: the step table of the palette fade. |
 
 ### engine/
 

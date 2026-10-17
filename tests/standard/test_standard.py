@@ -456,7 +456,7 @@ def test_byte_order_helpers_only_in_bytes_header():
 KAOS_CALL = re.compile(r"\bkaos_\w+\s*\(")
 KAOS_HEADER = re.compile(r'^\s*#\s*include\s*"(?:data/)?kaos_addresses\.h"', re.M)
 IMAGE_ADDRESS = re.compile(r"\b0x10[0-9a-fA-F]{4}\b")
-ADDRESS_PREFIXES = ("KAOS_", "CSB_", "SWSH_")
+ADDRESS_PREFIXES = ("KAOS_", "CSB_", "SWSH_", "VDEO_")
 
 
 def test_kaos_image_only_in_data():
