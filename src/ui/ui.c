@@ -101,26 +101,24 @@ void ui_blit_graphic_box(Bitmap *dst, int16_t graphic, const Box *box, int16_t t
 {
     const Bitmap *bm = gfx_get_bitmap(graphic);
     if (bm)
-        draw_blit(bm, 0, 0, dst, box, transparent, 0);
+        draw_blit(&(BlitSource){bm, 0, 0, transparent, 0}, dst, box);
 }
 
 void ui_blit_zone(Bitmap *dst, const Bitmap *src, int16_t zone, int16_t transparent)
 {
-    int16_t w = 0;
-    int16_t h = 0;
-    Box b;
-    if (src && layout_get_zone(zone, src->w, src->h, &b, &w, &h))
-        draw_blit(src, w, h, dst, &b, transparent, 0);
+    ZoneClip placed;
+    if (src && layout_get_zone(zone, &(ZoneItem){src->w, src->h, 0, 0}, &placed))
+        draw_blit(&(BlitSource){src, placed.source_x, placed.source_y, transparent, 0}, dst, &placed.box);
 }
 
 void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text)
 {
     int16_t w, h;
-    Box b;
+    ZoneClip placed;
     if (!text_get_size(text, &w, &h))
         return;
-    if (layout_get_zone(zone, 0, 0, &b, &w, &h))
-        text_draw(dst, b.x, b.y + b.h - 1, fg, bg, text);
+    if (layout_get_zone(zone, &(ZoneItem){0, 0, w, h}, &placed))
+        text_draw(dst, (Point){placed.box.x, placed.box.y + placed.box.h - 1}, fg, bg, text);
 }
 
 void ui_print_zone_padded(int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t pad_length)
@@ -177,9 +175,10 @@ static void show_messages(Bitmap *bm, int x, int y)
         for (int c = 0; c < MESSAGE_COLS; c++)
             if (g_message.text[r][c]) {
                 char ch[CHAR_TEXT_SIZE] = {g_message.text[r][c], 0};
-                text_draw(bm, x + c * FONT_CHAR_WIDTH,
-                          y + r * MESSAGE_ROW_HEIGHT + FONT_LINE_HEIGHT - FONT_BASELINE_GAP - 1, g_message.color[r][c],
-                          0, ch);
+                text_draw(bm,
+                          (Point){x + c * FONT_CHAR_WIDTH,
+                                  y + r * MESSAGE_ROW_HEIGHT + FONT_LINE_HEIGHT - FONT_BASELINE_GAP - 1},
+                          g_message.color[r][c], 0, ch);
             }
 }
 
@@ -225,15 +224,16 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
     int16_t i = icon - tables_get_icon_sheet_first(sheet - 1);
     const Bitmap *bm = gfx_get_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     if (bm)
-        draw_blit(bm, i % ICONS_PER_ROW * UI_ICON_SIZE, i / ICONS_PER_ROW * UI_ICON_SIZE, out,
-                  &(Box){0, 0, UI_ICON_SIZE, UI_ICON_SIZE}, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){bm, i % ICONS_PER_ROW * UI_ICON_SIZE, i / ICONS_PER_ROW * UI_ICON_SIZE, COLOR_NONE, 0},
+                  out, &(Box){0, 0, UI_ICON_SIZE, UI_ICON_SIZE});
 }
 
 bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box)
 {
-    int16_t w = UI_ICON_SIZE;
-    int16_t h = UI_ICON_SIZE;
-    bool ok = layout_get_zone(zone, 0, 0, box, &w, &h);
+    ZoneClip placed;
+    if (!layout_get_zone(zone, &(ZoneItem){0, 0, UI_ICON_SIZE, UI_ICON_SIZE}, &placed))
+        return false;
+    *box = placed.box;
     if (border) {
         int16_t d = tables_get_slot_box_border();
         box->x -= d;
@@ -241,7 +241,7 @@ bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box)
         box->w += 2 * d;
         box->h += 2 * d;
     }
-    return ok;
+    return true;
 }
 
 bool ui_get_slot_box_zone(int16_t slot_box, bool border, Box *box)
@@ -261,7 +261,8 @@ void ui_draw_slot_icon(int16_t slot_box, int16_t icon)
     if (icon == -1 || !ui_get_slot_box_zone(slot_box, false, &b))
         return;
     ui_extract_icon(icon, &bm);
-    draw_blit(&bm, 0, 0, slot_box < UI_SLOT_BOX_INVENTORY_FIRST ? &screen : &viewport, &b, COLOR_NONE, 0);
+    draw_blit(&(BlitSource){&bm, 0, 0, COLOR_NONE, 0}, slot_box < UI_SLOT_BOX_INVENTORY_FIRST ? &screen : &viewport,
+              &b);
 }
 
 /* The champion of a bones object: the charge bits of the junk record. */
@@ -341,5 +342,5 @@ void ui_draw_icon_to_viewport(int16_t icon, int16_t zone)
     if (!ui_get_icon_zone_box(zone, false, &b))
         return;
     ui_extract_icon(icon, &bm);
-    draw_blit(&bm, 0, 0, ui_get_viewport(), &b, COLOR_NONE, 0);
+    draw_blit(&(BlitSource){&bm, 0, 0, COLOR_NONE, 0}, ui_get_viewport(), &b);
 }

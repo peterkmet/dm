@@ -34,39 +34,34 @@ int16_t g_entrance_choice = ENTRANCE_WAITING;
 static bool show_doors(const Bitmap *view, int16_t opened)
 {
     Bitmap screen = video_get_screen();
-    Box doors, work, door;
-    int16_t width = 0;
-    int16_t height = 0;
+    Box doors;
+    ZoneClip work, door;
     bool shown = false;
     ui_blit_graphic(&screen, GFX_ENTRANCE, ZONE_SCREEN, COLOR_NONE);
     if (!ui_zone_box(ZONE_ENTRANCE_DOORS, &doors))
         return false;
-    if (!layout_get_zone(ZONE_ENTRANCE_WORK, doors.w, doors.h, &work, &width, &height))
+    if (!layout_get_zone(ZONE_ENTRANCE_WORK, &(ZoneItem){doors.w, doors.h, 0, 0}, &work))
         return false;
-    width = 0;
-    height = 0;
-    if (view && layout_get_zone(ZONE_ENTRANCE_VIEWPORT, view->w, view->h, &door, &width, &height)) {
-        door.x += work.x;
-        door.y += work.y;
-        draw_blit(view, width, height, &screen, &door, COLOR_NONE, 0);
+    if (view && layout_get_zone(ZONE_ENTRANCE_VIEWPORT, &(ZoneItem){view->w, view->h, 0, 0}, &door)) {
+        door.box.x += work.box.x;
+        door.box.y += work.box.y;
+        draw_blit(&(BlitSource){view, door.source_x, door.source_y, COLOR_NONE, 0}, &screen, &door.box);
     }
     for (int16_t side = 0; side < SIDE_COUNT; side++) {
         const Bitmap *door_bitmap = gfx_get_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
-        width = 0;
-        height = 0;
         if (!door_bitmap ||
-            !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, door_bitmap->w, door_bitmap->h, &door, &width, &height))
+            !layout_get_zone(ZONE_ENTRANCE_LEFT_DOOR + side, &(ZoneItem){door_bitmap->w, door_bitmap->h, 0, 0}, &door))
             continue;
-        door.x += work.x;
-        door.y += work.y;
-        door.w = max16(0, door.w - opened);
+        door.box.x += work.box.x;
+        door.box.y += work.box.y;
+        door.box.w = max16(0, door.box.w - opened);
         if (side == 0)
-            width += opened; /* the left door slides left, the right door slides right */
+            door.source_x += opened; /* the left door slides left, the right door slides right */
         else
-            door.x += opened;
-        if (door.w)
+            door.box.x += opened;
+        if (door.box.w)
             shown = true;
-        draw_blit(door_bitmap, width, height, &screen, &door, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){door_bitmap, door.source_x, door.source_y, COLOR_NONE, 0}, &screen, &door.box);
     }
     return shown;
 }
@@ -91,14 +86,13 @@ void entrance_press_button(bool resume)
     static const uint8_t volumes[SIDE_COUNT] = {SOUND_MAX_VOLUME, SOUND_MAX_VOLUME};
     const Bitmap *bm = gfx_get_bitmap(GFX_ENTRANCE_BUTTONS);
     Bitmap screen = video_get_screen();
-    Box box;
-    int16_t sx = 0;
-    int16_t sy = 0;
+    ZoneClip placed;
     if (!g_frame_hook)
         return;
-    if (bm &&
-        layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
-        draw_blit(bm, sx, sy + (resume ? BUTTON_HEIGHT : 0), &screen, &box, COLOR_NONE, 0);
+    if (bm && layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER,
+                              &(ZoneItem){bm->w, BUTTON_HEIGHT, 0, 0}, &placed))
+        draw_blit(&(BlitSource){bm, placed.source_x, placed.source_y + (resume ? BUTTON_HEIGHT : 0), COLOR_NONE, 0},
+                  &screen, &placed.box);
     audio_play_sample(SOUND_SWITCH, volumes);
     frame_wait_count(BUTTON_FRAMES);
 }

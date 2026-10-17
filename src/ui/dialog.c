@@ -50,12 +50,11 @@ static void patch_dividers(Bitmap *viewport, int16_t count)
     Box source = tables_get_layout_bitmap(patch_layout[count - 1] - 1);
     int16_t sx = source.x;
     int16_t sy = source.y;
-    int16_t w = source.w;
-    int16_t h = source.h;
-    Box b;
+    ZoneClip placed;
     memcpy(copy_px, viewport->px, (size_t)viewport->w * viewport->h);
-    if (layout_get_zone(patch_zone[count - 1], copy.w, copy.h, &b, &w, &h))
-        draw_blit(&copy, sx + w, sy + h, viewport, &b, COLOR_NONE, 0);
+    if (layout_get_zone(patch_zone[count - 1], &(ZoneItem){copy.w, copy.h, source.w, source.h}, &placed))
+        draw_blit(&(BlitSource){&copy, sx + placed.source_x, sy + placed.source_y, COLOR_NONE, 0}, viewport,
+                  &placed.box);
 }
 
 /* The choice texts in the zones for their count. */
@@ -102,12 +101,12 @@ static void show_messages(Bitmap *viewport, const char *const message[DIALOG_MES
             char line[MESSAGE_LINE_SIZE];
             int16_t max = width[i] - (width[i] >> WIDE_MESSAGE_SHIFT);
             int16_t line_width = message_next_word_line(message[i], line, &pos, max < box.w ? max : box.w);
-            text_draw(viewport, (viewport->w - line_width) >> 1, y, color, COLOR_LIGHT_BROWN, line);
+            text_draw(viewport, (Point){(viewport->w - line_width) >> 1, y}, color, COLOR_LIGHT_BROWN, line);
             y += pad + MESSAGE_ROW_HEIGHT;
             if (!text_get_size(message[i] + pos, &width[i], &height))
                 continue;
         }
-        text_draw(viewport, (viewport->w - width[i]) >> 1, y, color, COLOR_LIGHT_BROWN, message[i] + pos);
+        text_draw(viewport, (Point){(viewport->w - width[i]) >> 1, y}, color, COLOR_LIGHT_BROWN, message[i] + pos);
         y += pad + MESSAGE_ROW_HEIGHT;
     }
 }
@@ -119,7 +118,7 @@ void dialog_draw(const DialogText *dialog)
     const char *const *choice = dialog->choices;
     Box all = {0, 0, viewport->w, viewport->h};
     if (graphic)
-        draw_blit(graphic, 0, 0, viewport, &all, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){graphic, 0, 0, COLOR_NONE, 0}, viewport, &all);
     ui_print_zone(viewport, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, tables_get_text(TABLES_TEXT_VERSION));
     int16_t count = 1;
     while (count < DIALOG_CHOICE_COUNT && choice[count])

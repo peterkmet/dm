@@ -125,7 +125,7 @@ static void show_label(Bitmap *target, const Box *area, int16_t x, int16_t y, in
     if (x < area->x || x + LABEL_WIDTH > area->x + area->w || y < area->y || y + FONT_LINE_HEIGHT > area->y + area->h)
         return;
     snprintf(text, sizeof text, "%02d", n);
-    text_draw(target, x, y + LABEL_BASELINE, COLOR_LIGHT_GRAY, COLOR_BLACK, text);
+    text_draw(target, (Point){x, y + LABEL_BASELINE}, COLOR_LIGHT_GRAY, COLOR_BLACK, text);
 }
 
 void automap_draw(Bitmap *target, const Box *area, int16_t map)

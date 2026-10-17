@@ -9,7 +9,7 @@ import subprocess
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Box
+from dmtest.game import ZoneClip, ZoneItem
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
 
@@ -176,9 +176,10 @@ def test_layout_zones_equal_but_endgame_buttons(lib):
         assert lib.gfx_open(str(folder / "Graphics.DAT").encode()) and lib.layout_init()
         result = {}
         for zone in range(1, 2000):
-            b, w, h = Box(), c16(), c16()
-            if lib.layout_get_zone(zone, 16, 16, ctypes.byref(b), ctypes.byref(w), ctypes.byref(h)):
-                result[zone] = (b.x, b.y, b.w, b.h, w.value, h.value)
+            placed = ZoneClip()
+            if lib.layout_get_zone(zone, ctypes.byref(ZoneItem(16, 16, 0, 0)), ctypes.byref(placed)):
+                b = placed.box
+                result[zone] = (b.x, b.y, b.w, b.h, placed.source_x, placed.source_y)
         return result
 
     dm, csb = boxes(GAME), boxes(GAME_CSB)

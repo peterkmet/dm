@@ -15,8 +15,13 @@
 
 /* Loads the font graphic. The graphics file must be open. Returns true on success. */
 bool text_init(void);
-/* Draws s with its baseline at y. The sixth column of each cell is not touched. */
-void text_draw(Bitmap *bm, int16_t x, int16_t y, uint8_t fg, uint8_t bg, const char *s);
+/* A pixel of a bitmap. */
+typedef struct {
+    int16_t x, y;
+} Point;
+
+/* Draws s from point, with its baseline at point.y. The sixth column of each cell is not touched. */
+void text_draw(Bitmap *bm, Point point, uint8_t fg, uint8_t bg, const char *s);
 /* Draws s on the screen with its baseline at y. */
 void text_draw_screen(int16_t x, int16_t y, uint8_t fg, uint8_t bg, const char *s);
 /* Pixel size of s. Returns false for an empty text. */

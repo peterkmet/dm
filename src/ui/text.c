@@ -24,10 +24,12 @@ bool text_init(void)
     return true;
 }
 
-void text_draw(Bitmap *bm, int16_t x, int16_t y, uint8_t fg, uint8_t bg, const char *s)
+void text_draw(Bitmap *bm, Point point, uint8_t fg, uint8_t bg, const char *s)
 {
     if (!font)
         return;
+    int16_t x = point.x;
+    int16_t y = point.y;
     for (; *s; s++, x += FONT_CHAR_WIDTH) {
         unsigned c = (uint8_t)*s;
         for (int r = 0; r < FONT_ROWS; r++) {
@@ -50,7 +52,7 @@ void text_draw(Bitmap *bm, int16_t x, int16_t y, uint8_t fg, uint8_t bg, const c
 void text_draw_screen(int16_t x, int16_t y, uint8_t fg, uint8_t bg, const char *s)
 {
     Bitmap screen = video_get_screen();
-    text_draw(&screen, x, y, fg, bg, s);
+    text_draw(&screen, (Point){x, y}, fg, bg, s);
 }
 
 bool text_get_size(const char *s, int16_t *w, int16_t *h)

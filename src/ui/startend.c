@@ -256,13 +256,14 @@ static void endgame_draw_button(int16_t zone, const char *text, int16_t entry_in
 {
     Bitmap screen = video_get_screen();
     int16_t w, h;
-    Box button;
+    ZoneClip placed;
     if (!text_get_size(text, &w, &h))
         return;
     int16_t inner_x = tables_get_button_inner_border(TABLES_AXIS_X);
     int16_t inner_y = tables_get_button_inner_border(TABLES_AXIS_Y);
-    if (!layout_get_zone(zone, 0, 0, &button, &w, &h))
+    if (!layout_get_zone(zone, &(ZoneItem){0, 0, w, h}, &placed))
         return;
+    Box button = placed.box;
     int16_t dx = inner_x + tables_get_button_border(TABLES_AXIS_X);
     int16_t dy = inner_y + tables_get_button_border(TABLES_AXIS_Y);
     Box outer = {button.x - dx, button.y - dy, button.w + 2 * dx, button.h + 2 * dy};
@@ -298,12 +299,12 @@ static void show_champion_parade(void)
     for (uint16_t i = 0; i < g_party_champion_count; i++) {
         const Champion *champion = &g_champions[i];
         ui_blit_graphic(&screen, GFX_CHAMPION_FRAME, ZONE_CHAMPION_FRAME_FIRST + i, COLOR_FLESH);
-        int16_t w = portrait_width;
-        int16_t h = portrait_height;
-        Box b;
+        ZoneClip placed;
         Bitmap portrait = ui_get_champion_portrait(i);
-        if (layout_get_zone(ZONE_CHAMPION_PORTRAIT_FIRST + i, portrait_width, portrait_height, &b, &w, &h))
-            draw_blit(&portrait, w, h, &screen, &b, COLOR_DARK_GRAY, 0);
+        if (layout_get_zone(ZONE_CHAMPION_PORTRAIT_FIRST + i,
+                            &(ZoneItem){portrait_width, portrait_height, portrait_width, portrait_height}, &placed))
+            draw_blit(&(BlitSource){&portrait, placed.source_x, placed.source_y, COLOR_DARK_GRAY, 0}, &screen,
+                      &placed.box);
         char name[sizeof champion->name + 1] = {0};
         char title[sizeof champion->title + 1] = {0};
         memcpy(name, champion->name, sizeof champion->name);

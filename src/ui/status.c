@@ -127,8 +127,9 @@ static void show_icon(int16_t champion_index)
     int16_t cell = NORMALIZE(champion->cell - g_party_direction);
     memset(px, invisible ? COLOR_DARK_GRAY : get_champion_color(champion_index), sizeof px);
     if (icons)
-        draw_blit(icons, NORMALIZE(champion->direction - g_party_direction) * icon_width, 0, &icon,
-                  &(Box){0, 0, icon_width, icon_height}, COLOR_DARKEST_GRAY, 0);
+        draw_blit(&(BlitSource){icons, NORMALIZE(champion->direction - g_party_direction) * icon_width, 0,
+                                COLOR_DARKEST_GRAY, 0},
+                  &icon, &(Box){0, 0, icon_width, icon_height});
     if (invisible) {
         const uint8_t *changes = tables_get_palette_changes(TABLES_CHANGES_INVISIBILITY);
         for (int i = 0; i < icon_width * icon_height; i++)
@@ -149,7 +150,7 @@ static void show_portrait(int16_t champion_index)
         return;
     b.w = tables_get_portrait_width();
     b.h = tables_get_portrait_height();
-    draw_blit(&portrait, 0, 0, &screen, &b, COLOR_NONE, 0);
+    draw_blit(&(BlitSource){&portrait, 0, 0, COLOR_NONE, 0}, &screen, &b);
     if (g_party.invisibility_count)
         ui_fill_zone_pattern(&screen, zone, COLOR_DARKEST_GRAY);
 }

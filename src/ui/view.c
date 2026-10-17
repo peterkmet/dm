@@ -238,32 +238,32 @@ void view_draw_wall_bitmap(WallBitmap bitmap, int16_t zone, int16_t mode)
         height = slot_rect.h;
     }
     const Bitmap *bm = gfx_get_bitmap(graphic);
-    Box b;
-    if (bm && layout_get_zone(zone, bm->w, bm->h, &b, &width, &height))
-        draw_blit(bm, width + sx, height + sy, &g_view.viewport, &b, mode == BLIT_OPAQUE ? -1 : TRANSPARENT_COLOR,
-                  flip);
+    ZoneClip placed;
+    if (bm && layout_get_zone(zone, &(ZoneItem){bm->w, bm->h, width, height}, &placed))
+        draw_blit(&(BlitSource){bm, placed.source_x + sx, placed.source_y + sy,
+                                mode == BLIT_OPAQUE ? -1 : TRANSPARENT_COLOR, flip},
+                  &g_view.viewport, &placed.box);
 }
 
 bool view_draw_in_zone(const Bitmap *bm, Bitmap *dst, const ZoneBlit *blit, Box *drawn)
 {
     int16_t zone = blit->zone;
-    int16_t w = 0;
-    int16_t h = 0;
-    Box b;
+    ZoneClip placed;
     if (!bm || zone == -1)
         return false;
+    ZoneItem item = {bm->w, bm->h, 0, 0};
     if (zone & (ZONE_SHIFTED | ZONE_SIZED)) {
-        w = blit->place.zone_dx;
-        h = blit->place.zone_dy;
+        item.w = blit->place.zone_dx;
+        item.h = blit->place.zone_dy;
         zone &= ~ZONE_SIZED;
     }
-    if (!layout_get_zone(zone, bm->w, bm->h, &b, &w, &h))
+    if (!layout_get_zone(zone, &item, &placed))
         return false;
     if (drawn)
-        *drawn = b;
-    b.x += blit->place.shift_x;
-    b.y += blit->place.shift_y;
-    draw_blit(bm, w, h, dst, &b, blit->transparent, blit->flip);
+        *drawn = placed.box;
+    placed.box.x += blit->place.shift_x;
+    placed.box.y += blit->place.shift_y;
+    draw_blit(&(BlitSource){bm, placed.source_x, placed.source_y, blit->transparent, blit->flip}, dst, &placed.box);
     return true;
 }
 
@@ -1135,11 +1135,11 @@ void view_draw(int16_t dir, int16_t x, int16_t y)
         show_square(&square_views[i], dir, (Location){sx, sy});
     }
     Bitmap screen = video_get_screen();
-    int16_t width = g_view.viewport.w;
-    int16_t height = g_view.viewport.h;
-    Box box;
-    if (layout_get_zone(ZONE_VIEWPORT, g_view.viewport.w, g_view.viewport.h, &box, &width, &height))
-        draw_blit(&g_view.viewport, width, height, &screen, &box, -1, 0);
+    ZoneClip placed;
+    if (layout_get_zone(ZONE_VIEWPORT,
+                        &(ZoneItem){g_view.viewport.w, g_view.viewport.h, g_view.viewport.w, g_view.viewport.h},
+                        &placed))
+        draw_blit(&(BlitSource){&g_view.viewport, placed.source_x, placed.source_y, -1, 0}, &screen, &placed.box);
 }
 
 /* CSB magic map: a grid of 7 x 7 squares, each a 7 x 7 pixel tile with a 1 pixel border. */
@@ -1191,8 +1191,9 @@ static void show_map_tile(Bitmap *dst, int16_t tile, int16_t px, int16_t py)
     const Bitmap *tiles = gfx_get_bitmap(GFX_MAGIC_MAP_TILES);
     Box b = {px, py, MAP_TILE_W, MAP_TILE_H};
     if (tiles)
-        draw_blit(tiles, tile % MAP_TILES_PER_ROW * MAP_TILE_W, tile / MAP_TILES_PER_ROW * MAP_TILE_H, dst, &b,
-                  TRANSPARENT_COLOR, 0);
+        draw_blit(&(BlitSource){tiles, tile % MAP_TILES_PER_ROW * MAP_TILE_W, tile / MAP_TILES_PER_ROW * MAP_TILE_H,
+                                TRANSPARENT_COLOR, 0},
+                  dst, &b);
 }
 
 /* Footprints of the footprints spell on a floor square (the footprints bit of set_square_aspect). */

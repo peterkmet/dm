@@ -150,12 +150,10 @@ static void show_food_water(void)
 /* The position of zone (a 1 x 1 box). */
 static void get_zone_point(int16_t zone, int16_t *x, int16_t *y)
 {
-    int16_t w = 1;
-    int16_t h = 1;
-    Box b = {0};
-    layout_get_zone(zone, 0, 0, &b, &w, &h);
-    *x = b.x;
-    *y = b.y;
+    ZoneClip placed = {0};
+    layout_get_zone(zone, &(ZoneItem){0, 0, 1, 1}, &placed);
+    *x = placed.box.x;
+    *y = placed.box.y;
 }
 
 const char *panel_get_rank_name(int16_t level)
@@ -182,7 +180,7 @@ void panel_draw_skills_statistics(void)
         if (level == 1)
             continue;
         snprintf(line, sizeof line, "%s %s", panel_get_rank_name(level), gfx_get_string(tables_get_base_skill_text(k)));
-        text_draw(viewport, x, y,
+        text_draw(viewport, (Point){x, y},
                   g_champions[champion_index].runtime.skill_level_up[k] ? COLOR_GREEN : COLOR_LIGHT_GRAY,
                   COLOR_DARKEST_GRAY, line);
         y += MESSAGE_ROW_HEIGHT;
@@ -191,14 +189,15 @@ void panel_draw_skills_statistics(void)
     for (int k = STAT_STRENGTH; k <= STAT_ANTIFIRE; k++) {
         uint8_t cur = champion->statistics[k][STAT_CURRENT];
         uint8_t max = champion->statistics[k][STAT_MAXIMUM];
-        text_draw(viewport, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_get_string(tables_get_statistic_text(k)));
-        text_draw(viewport, vx, y,
+        text_draw(viewport, (Point){x, y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY,
+                  gfx_get_string(tables_get_statistic_text(k)));
+        text_draw(viewport, (Point){vx, y},
                   cur < max   ? COLOR_RED
                   : cur > max ? COLOR_GREEN
                               : COLOR_LIGHT_GRAY,
                   COLOR_DARKEST_GRAY, ui_format_number(a, sizeof a, cur, true, VALUE_WIDTH));
         snprintf(line, sizeof line, "/%s", ui_format_number(b, sizeof b, max, true, VALUE_WIDTH));
-        text_draw(viewport, vx + FONT_CHAR_WIDTH * VALUE_WIDTH, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, line);
+        text_draw(viewport, (Point){vx + FONT_CHAR_WIDTH * VALUE_WIDTH, y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, line);
         y += MESSAGE_ROW_HEIGHT;
     }
 }
@@ -212,7 +211,7 @@ void panel_open(int16_t champion_index)
         ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
     inventory_set_open_champion(champion_index);
     if (bg)
-        draw_blit(bg, 0, 0, viewport, &(Box){0, 0, viewport->w, viewport->h}, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){bg, 0, 0, COLOR_NONE, 0}, viewport, &(Box){0, 0, viewport->w, viewport->h});
     if (g_session.candidate_champion_index >= 0) { /* a candidate cannot save, sleep, or close */
         ui_fill_zone(viewport, ZONE_INVENTORY_SAVE, COLOR_DARKEST_GRAY);
         ui_fill_zone(viewport, ZONE_INVENTORY_SLEEP, COLOR_DARKEST_GRAY);
@@ -344,7 +343,7 @@ static void print_panel_line(int16_t x, int16_t *y, const char *text)
             *space = 0;
             rest = space + 1;
         }
-        text_draw(ui_get_viewport(), x, *y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
+        text_draw(ui_get_viewport(), (Point){x, *y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
         *y += MESSAGE_ROW_HEIGHT;
         s = rest;
     }
@@ -407,11 +406,11 @@ static void show_scroll_line(int16_t x, int16_t y, char *text)
     if (!text_get_size(text, &width, &height))
         return;
     int16_t left = x - (width >> 1);
-    text_draw(ui_get_viewport(), left, y, COLOR_BLACK, COLOR_WHITE, text);
+    text_draw(ui_get_viewport(), (Point){left, y}, COLOR_BLACK, COLOR_WHITE, text);
     for (int i = 0; g_advanced_features && text[i]; i++) {
         char glyph[CHAR_TEXT_SIZE] = {text[i], 0};
         if ((uint8_t)text[i] >= SPELL_SYMBOL_FIRST && (uint8_t)text[i] < SPELL_SYMBOL_FIRST + UI_RUNE_COUNT)
-            text_draw(ui_get_viewport(), left + i * FONT_CHAR_WIDTH, y, COLOR_RED, COLOR_WHITE, glyph);
+            text_draw(ui_get_viewport(), (Point){left + i * FONT_CHAR_WIDTH, y}, COLOR_RED, COLOR_WHITE, glyph);
     }
 }
 
@@ -548,7 +547,7 @@ static void show_stat_meter(int16_t x, int16_t y, const StatMeter *meter)
     int16_t filled = value >= maximum ? METER_BAR_WIDTH : value * METER_BAR_WIDTH / maximum;
     if (value && !filled)
         filled = 1; /* a small value still shows */
-    text_draw(viewport, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, meter->label);
+    text_draw(viewport, (Point){x, y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, meter->label);
     Box shadow = {bar_x + 1, top + 1, filled, METER_BAR_HEIGHT};
     Box bar = {bar_x, top, filled, METER_BAR_HEIGHT};
     if (filled) {
@@ -558,7 +557,8 @@ static void show_stat_meter(int16_t x, int16_t y, const StatMeter *meter)
     if (!meter->show_value)
         return;
     snprintf(text, sizeof text, "%3u", value);
-    text_draw(viewport, bar_x + METER_BAR_WIDTH + METER_VALUE_GAP, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, text);
+    text_draw(viewport, (Point){bar_x + METER_BAR_WIDTH + METER_VALUE_GAP, y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY,
+              text);
 }
 
 bool panel_get_object_meter(uint16_t thing, const char **label, uint16_t *value)

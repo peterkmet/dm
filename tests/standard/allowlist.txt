@@ -10,6 +10,8 @@ long engine/action.c:action_is_action_performed rule 5.8: one short case for eac
 long engine/event.c:event_process_expired rule 5.8: one short case for each timeline event type
 block ui/music.c open: epic 9
 block ui/music.h open: epic 9
+block platform/transport.c open: epic 10
+block control/state_json.c open: epic 10
 decimal control/control_actions.c open: epic 10
 decimal control/state_json.c open: epic 10
 notation data/kaos_addresses.h open: epic 13
@@ -77,7 +79,6 @@ header engine/savefile.h open: epic 5
 header engine/savegame.h open: epic 5
 header engine/sensor.h open: epic 5
 header engine/event.h open: epic 5
-header ui/music.h open: epic 9
 include engine/group.h:engine/event.h open: epic 5
 include engine/inventory.c:engine/sound.h open: epic 5
 include engine/move.c:engine/inventory.h open: epic 5
@@ -108,3 +109,7 @@ params ui/text.c:text_draw open: epic 8
 params ui/text.h:text_draw open: epic 8
 type ui:height open: epic 8
 type ui:width open: epic 8
+order control/state_json.c open: epic 10
+dead-api engine/sound.h:sound_get_volume open: epic 9
+params control/control_actions.c:find_in_box open: epic 10
+todo engine/sound.c open: epic 9

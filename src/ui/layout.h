@@ -15,10 +15,21 @@
 
 /* Keeps the raw layout graphic. Returns true on success. */
 bool layout_init(void);
-/* Places an item of *width x *height pixels (0 = bitmap size) in zone and clips it to the
-   parent rectangles. ZONE_SHIFTED adds *width, *height to the position and takes the bitmap size.
-   On return *width, *height hold the source offset of the clipped box. Returns false when nothing is visible. */
-bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, int16_t *width, int16_t *height);
+/* An item to place in a zone: the bitmap size, and the item size w x h (0 = bitmap size). In a ZONE_SHIFTED zone,
+   w and h move the position and the item has the bitmap size. */
+typedef struct {
+    int16_t bitmap_w, bitmap_h;
+    int16_t w, h;
+} ZoneItem;
+
+/* A placed item: the box on the screen, clipped to the parent rectangles, and the source offset of the box. */
+typedef struct {
+    Box box;
+    int16_t source_x, source_y;
+} ZoneClip;
+
+/* Places the item of sizes in zone and clips it to the parent rectangles. Returns false when nothing is visible. */
+bool layout_get_zone(int16_t zone, const ZoneItem *sizes, ZoneClip *placed);
 /* The box of zone with the size record of its parent, scaled by
    wp / ZONE_SCALE_FULL and hp / ZONE_SCALE_FULL. Returns false when nothing is visible. */
 bool layout_get_zone_box(int16_t zone, int16_t wp, int16_t hp, Box *box);

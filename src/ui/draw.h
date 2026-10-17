@@ -27,9 +27,16 @@ typedef struct {
     int16_t sx, sy;
 } MaskedFill;
 
-/* Copies box from src at (sx, sy). transparent -1 is opaque,
-   otherwise bits 0-3 are a color key. flip reads the mirrored source. Clips to both bitmaps. */
-void draw_blit(const Bitmap *src, int16_t sx, int16_t sy, Bitmap *dst, const Box *box, int16_t transparent, int flip);
+/* The source of draw_blit: the bitmap, the source point of the box, the color key and the mirror flags. */
+typedef struct {
+    const Bitmap *bitmap;
+    int16_t sx, sy;
+    int16_t transparent; /* -1 is opaque, otherwise bits 0-3 are a color key */
+    int flip;            /* FLIP_H, FLIP_V: reads the mirrored source */
+} BlitSource;
+
+/* Copies box from the source bitmap at (sx, sy). Clips to both bitmaps. */
+void draw_blit(const BlitSource *source, Bitmap *dst, const Box *box);
 /* Fills box of dst with one color, clipped to dst. */
 void draw_fill(Bitmap *dst, const Box *box, uint8_t color);
 /* Mirrors bm in place. */

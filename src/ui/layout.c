@@ -225,7 +225,7 @@ static bool place_in_parents(const uint8_t *record, int16_t *x, int16_t *y, Box 
     return true;
 }
 
-bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box, int16_t *width, int16_t *height)
+bool layout_get_zone(int16_t zone, const ZoneItem *sizes, ZoneClip *placed)
 {
     if (zone == -1)
         return false;
@@ -247,34 +247,37 @@ bool layout_get_zone(int16_t zone, int16_t bitmap_w, int16_t bitmap_h, Box *box,
     }
     if (type < ALIGN_CENTER || type > ALIGN_CENTER_LEFT)
         return false;
+    int16_t width = sizes->w;
+    int16_t height = sizes->h;
     if (shifted) {
-        x += *width;
-        y += *height;
-        *width = 0;
-        *height = 0;
+        x += width;
+        y += height;
+        width = 0;
+        height = 0;
     }
     if (!place_in_parents(record, &x, &y, &clip))
         return false;
-    int16_t item_width = *width ? *width : bitmap_w;
-    int16_t item_height = *height ? *height : bitmap_h;
+    int16_t item_width = width ? width : sizes->bitmap_w;
+    int16_t item_height = height ? height : sizes->bitmap_h;
+    Box *box = &placed->box;
     box->x = x;
     box->y = y;
     align(type, item_width, item_height, &box->x, &box->y);
     int16_t dx = clip.x - box->x;
     int16_t dy = clip.y - box->y;
     if (dx < 1) {
-        *width = 0;
+        placed->source_x = 0;
         box->w = item_width < dx + clip.w ? item_width : dx + clip.w;
     } else {
-        *width = dx;
+        placed->source_x = dx;
         box->x = clip.x;
         box->w = item_width - dx < clip.w ? item_width - dx : clip.w;
     }
     if (dy < 1) {
-        *height = 0;
+        placed->source_y = 0;
         box->h = item_height < dy + clip.h ? item_height : dy + clip.h;
     } else {
-        *height = dy;
+        placed->source_y = dy;
         box->y = clip.y;
         box->h = item_height - dy < clip.h ? item_height - dy : clip.h;
     }
@@ -290,5 +293,9 @@ bool layout_get_zone_box(int16_t zone, int16_t wp, int16_t hp, Box *box)
     int16_t h = hp == ZONE_SCALE_FULL ? get_zone_y(p) : (int32_t)get_zone_y(p) * hp / ZONE_SCALE_FULL;
     if (w <= 0 || h <= 0)
         return false;
-    return layout_get_zone(zone, 0, 0, box, &w, &h);
+    ZoneClip placed;
+    if (!layout_get_zone(zone, &(ZoneItem){0, 0, w, h}, &placed))
+        return false;
+    *box = placed.box;
+    return true;
 }

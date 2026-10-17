@@ -4,8 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-void draw_blit(const Bitmap *src, int16_t sx, int16_t sy, Bitmap *dst, const Box *box, int16_t transparent, int flip)
+void draw_blit(const BlitSource *source, Bitmap *dst, const Box *box)
 {
+    const Bitmap *src = source->bitmap;
+    int16_t sx = source->sx;
+    int16_t sy = source->sy;
+    int16_t transparent = source->transparent;
+    int flip = source->flip;
     for (int y = 0; y < box->h; y++) {
         int dy = box->y + y;
         int ry = sy + y;
@@ -42,7 +47,12 @@ void draw_flip(Bitmap *bm, int flip)
     if (!copy)
         return;
     memcpy(copy, bm->px, n);
-    draw_blit(&(Bitmap){bm->w, bm->h, copy}, 0, 0, bm, &(Box){0, 0, bm->w, bm->h}, -1, flip);
+    draw_blit(
+        &(BlitSource){
+            &(Bitmap){bm->w, bm->h, copy},
+            0, 0, -1, flip
+    },
+        bm, &(Box){0, 0, bm->w, bm->h});
     free(copy);
 }
 
