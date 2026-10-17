@@ -315,3 +315,55 @@ def test_failed_restore_brings_back_the_prison(game, advanced):
     assert value(game, "g_dungeon_id", u16) == 12 and value(game, "g_party_champion_count", c16) == 1
     assert game.until(lambda: value(game, "g_party_map_index") == 1)
     assert value(game, "g_dungeon_id", u16) == 12
+
+
+HIDDEN_ROUTE = [(14, 6), (15, 6), (16, 6), (17, 6)]  # (15, 6) is an imaginary wall: it looks like a wall
+BUTTON_DOOR, STAIRS_FRONT = (18, 6), (19, 6)  # the closed door with a button, the square north of the stairs (19, 7)
+
+
+def walk_to(game, goal):
+    """Walks the shortest corridor and door path from the party square to goal."""
+    start = tuple(game.position()[:2])
+    previous, queue = {start: None}, [start]
+    for x, y in queue:
+        for d in range(4):
+            n = (x + STEP_EAST[d], y + STEP_NORTH[d])
+            if n not in previous and game.lib.rec_square_type(game.lib.map_get_square(*n)) in (C.SQUARE_CORRIDOR, C.SQUARE_DOOR):
+                previous[n] = (x, y)
+                queue.append(n)
+    path, square = [], goal
+    while square:
+        path.append(square)
+        square = previous[square]
+    game.walk(path[::-1])
+
+
+def test_the_start_square_reaches_stairs_down_through_a_hidden_wall(game, advanced):
+    names = new_prison_game(game, 1)
+    session(game.lib).mode = 1
+    walk_to(game, HIDDEN_ROUTE[0])
+    game.walk(HIDDEN_ROUTE)
+    game.face(1)
+    game.run()
+    game.click_box(game.boxes[5])  # the door button
+    assert game.until(lambda: game.lib.map_get_square(*BUTTON_DOOR) & C.DOOR_STATE_MASK == C.DOOR_OPEN)
+    game.walk([HIDDEN_ROUTE[-1], BUTTON_DOOR, STAIRS_FRONT])
+    game.face(2)
+    game.key(C.KEY_UP)
+    assert game.until(lambda: value(game, "g_party_map_index") != 0)
+    assert_in_adventure(game, names)
+
+
+def message_text(game):
+    rows = (ctypes.c_char * (4 * 53)).in_dll(game.lib, "g_message")
+    return bytes(rows).replace(b"\0", b" ").decode("latin-1")
+
+
+@pytest.mark.parametrize("mode", [0, 1])
+def test_prison_floor_text_only_outside_the_advanced_mode(game, advanced, mode):
+    assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
+    session(game.lib).mode = mode
+    game.run(26)
+    game.walk([(9, 0), (9, 1), (9, 2)])
+    game.run()
+    assert ("ONLY ONE LEVEL HERE" in message_text(game)) == (mode == 0)

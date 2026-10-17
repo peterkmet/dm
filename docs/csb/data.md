@@ -129,7 +129,8 @@ Content (scratch scripts `dun2.py`, `dun4.py`):
 
 - Map 0 has 24 mirrors: wall sensors of type 127 with data 0–23. Each mirror has a text with a champion sheet. The champions are AIRWING, AROC, TALON, LETA, DEMA, ALGOR, TOADROT, VEN, MANTIA, GNATU, SLOGAR, STING, SKELAR, DETH, NECRO, PLAGUE, TUNDA, LANA, BUZZZZZ, PETAL, ITZA, TULA, KAZAI, LOR.
 - 6 mirrors have a second sensor: type 1, once only, effect 1, target the door at (1, 14) or (19, 2). The meaning in the CSB rules is unverified.
-- Two visible inscriptions say: "THERE IS ONLY ONE LEVEL HERE. FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK."
+- One visible text on the floor of (9, 2), two squares south of the start, says "THERE IS ONLY ONE LEVEL HERE. FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." The game prints it when the party enters the square. The other 24 texts of map 0 are the champion sheets of the mirrors (not visible).
+- Stairs down on map 0 (all to map 1): (19, 7) and (6, 15) can be reached from the start: through the imaginary wall at (15, 6) and the closed door with a button at (18, 6), and through the imaginary wall at (8, 14) and the closed door with a button at (7, 15). (19, 3) and (1, 15) are closed in, each with an open door north of it: (19, 1)-(19, 3) and (1, 13)-(1, 15) have no other exit (read with the port map accessors, 2026-10-17).
 - Map 1 has no texts or sensors. It has 12 creature groups: 7 of type 10, 5 of type 7.
 
 The CSB `load_dungeon` is at `0x1295a0`. It follows the DM loader. One addition: before it builds the column pointers, it compares a value from `0xa02(A5)` with `DAT_00129a42`. When the values differ, it does not build the column pointers. This is probably a copy-protection check (unverified).

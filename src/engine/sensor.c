@@ -4,6 +4,7 @@
 #include "ids.h"
 #include "tables.h"
 #include "champion.h"
+#include "dungeon.h"
 #include "event.h"
 #include "game.h"
 #include "inventory.h"
@@ -327,6 +328,12 @@ typedef struct {
     bool group_present, objects_present, same_type_present, other_type_present;
 } SquareChange;
 
+/* The advanced prison prints no floor text: its text sends the player to the utility disk, the stairs start the game. */
+static bool prints_floor_texts(void)
+{
+    return g_session.mode != GAME_MODE_ADVANCED || g_adventure != ADVENTURE_CSB || g_dungeon_id != PRISON_DUNGEON_ID;
+}
+
 /* Finds the groups and the objects on the square: on a wall square only the objects in the cell of the thing. A party
    that enters a floor square reads its texts. */
 static void scan_square(SquareChange *s, bool wall)
@@ -339,7 +346,7 @@ static void scan_square(SquareChange *s, bool wall)
         } else {
             if (type == THING_GROUP)
                 s->group_present = true;
-            if (type == THING_TEXT && s->party && s->add && !s->party_on_square)
+            if (type == THING_TEXT && s->party && s->add && !s->party_on_square && prints_floor_texts())
                 message_print_dungeon_text(t);
             is_object = type > THING_GROUP && type < THING_PROJECTILE;
         }

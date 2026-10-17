@@ -7,15 +7,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - Owner (2026-10-17, manual test): a click stops the CSB intro (as designed), but then about 5 seconds pass with
   nothing on the screen before the prison starts. Find the cause (`src/platform/app.c`, `src/ui/audio.c`).
 
-## CSB start: no stairs down on the first prison level
-
-- Owner (2026-10-17, manual test): the first level of the CSB prison (map 0) has no stairs down that the party
-  can reach, so the advanced stairs start (`docs/superpowers/2026-10-17-csb-start.md`) never fires. The PRD says
-  map 0 has 4 stairs down to map 1: check this against the dungeon data first. If there are none, put stairs down
-  into the prison map in the port (advanced only), at a square the owner can reach.
-- With the stairs in place, the advanced mode drops the start text of the prison that says it is only the first
-  level and that the party must be saved.
-
 ## Release on GitHub
 
 - Publish the source and the macOS and Windows builds on GitHub (the repository is private today).
