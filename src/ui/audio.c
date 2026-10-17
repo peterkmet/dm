@@ -1,14 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "audio.h"
 #include "sound.h"
+#include "advanced.h"
 #include <stdbool.h>
 #include <string.h>
 
 /* Stereo pairs of the Amiga channels. */
-#define PAIR_A         0
-#define PAIR_B         1
-#define PAIR_COUNT     2
-#define AMIGA_CHANNELS 4
+#define PAIR_A        0
+#define PAIR_B        1
+#define PAIR_COUNT    8 /* pairs 0 and 1 are the Amiga pairs; the rest play only in the advanced mode */
+#define VANILLA_PAIRS 2
+#define VOICE_COUNT   (PAIR_COUNT * SOUND_SIDE_COUNT)
 
 typedef struct {
     const int8_t *data;
@@ -25,11 +27,17 @@ typedef struct {
 } Music;
 
 static const int pair_channels[PAIR_COUNT][SOUND_SIDE_COUNT] = {
-    {3, 2},
-    {0, 1}
-}; /* pair A, pair B: left, right */
+    {3,   2  },
+    {0,   1  },
+    {4,   5  },
+    {6,   7  },
+    {8,   9  },
+    {0xA, 0xB},
+    {0xC, 0xD},
+    {0xE, 0xF}
+}; /* pair A, pair B, then the extra pairs: left, right */
 static struct {
-    Voice voices[AMIGA_CHANNELS]; /* Amiga channels: 0, 3 left; 1, 2 right */
+    Voice voices[VOICE_COUNT]; /* Amiga channels: 0, 3 left; 1, 2 right; 4 and up: the extra pairs */
     uint8_t pair_volumes[PAIR_COUNT][SOUND_SIDE_COUNT];
     int8_t pair_samples[PAIR_COUNT][UINT16_MAX]; /* the copied sample of each pair */
     Music music;
@@ -62,17 +70,26 @@ void audio_play_sample(int16_t sound, const uint8_t *volumes)
     audio_play_data(data, length, period, volumes);
 }
 
+/* The first free pair; when all play, the quietest one (pair A or B, as the original, outside the advanced mode). */
+static int choose_pair(void)
+{
+    int count = g_advanced_features ? PAIR_COUNT : VANILLA_PAIRS;
+    int quietest = PAIR_A;
+    for (int p = 0; p < count; p++)
+        if (!is_voice_busy(&audio.voices[pair_channels[p][SOUND_SIDE_LEFT]]))
+            return p;
+    for (int p = PAIR_B; p < count; p++)
+        if (sound_compare_loudness(audio.pair_volumes[quietest], audio.pair_volumes[p]) == LOUDNESS_HIGHER)
+            quietest = p;
+    return quietest;
+}
+
 void audio_play_data(const int8_t *data, uint16_t length, uint16_t period, const uint8_t *volumes)
 {
     if (!data || !length)
         return;
     /* while the music plays, a sample replaces the sample on pair A */
-    int pair = audio.music.count                                                       ? PAIR_A
-               : !is_voice_busy(&audio.voices[pair_channels[PAIR_A][SOUND_SIDE_LEFT]]) ? PAIR_A
-               : !is_voice_busy(&audio.voices[pair_channels[PAIR_B][SOUND_SIDE_LEFT]]) ? PAIR_B
-               : sound_compare_loudness(audio.pair_volumes[PAIR_A], audio.pair_volumes[PAIR_B]) == LOUDNESS_HIGHER
-                   ? PAIR_B
-                   : PAIR_A;
+    int pair = audio.music.count ? PAIR_A : choose_pair();
     memcpy(audio.pair_volumes[pair], volumes, SOUND_SIDE_COUNT);
     memcpy(audio.pair_samples[pair], data, length);
     for (int side = 0; side < SOUND_SIDE_COUNT; side++)
@@ -124,9 +141,9 @@ static void continue_music(void)
 void audio_mix(int16_t *samples, int frames)
 {
     for (int f = 0; f < frames; f++) {
-        int mix[AMIGA_CHANNELS] = {0};
+        int mix[VOICE_COUNT] = {0}, sum[SOUND_SIDE_COUNT] = {0};
         continue_music();
-        for (int c = 0; c < AMIGA_CHANNELS; c++) {
+        for (int c = 0; c < VOICE_COUNT; c++) {
             Voice *v = &audio.voices[c];
             if (!v->data)
                 continue;
@@ -138,8 +155,13 @@ void audio_mix(int16_t *samples, int frames)
             mix[c] = v->data[i] * v->volume * 2;
             v->frame++;
         }
-        samples[2 * f] = mix[pair_channels[PAIR_A][SOUND_SIDE_LEFT]] + mix[pair_channels[PAIR_B][SOUND_SIDE_LEFT]];
-        samples[2 * f + 1] =
-            mix[pair_channels[PAIR_A][SOUND_SIDE_RIGHT]] + mix[pair_channels[PAIR_B][SOUND_SIDE_RIGHT]];
+        for (int p = 0; p < PAIR_COUNT; p++)
+            for (int side = 0; side < SOUND_SIDE_COUNT; side++)
+                sum[side] += mix[pair_channels[p][side]];
+        for (int side = 0; side < SOUND_SIDE_COUNT; side++)
+            samples[2 * f + side] = g_advanced_features ? (int16_t)(sum[side] > INT16_MAX   ? INT16_MAX
+                                                                    : sum[side] < INT16_MIN ? INT16_MIN
+                                                                                            : sum[side])
+                                                        : (int16_t)sum[side];
     }
 }

@@ -112,6 +112,19 @@ def test_mix_replaces_quieter_pair(lib):
     assert mix(lib, frames) == expected_mix([(a, pa, 40, 3), (a, pa, 0, 2), (c, pc, 0, 0), (c, pc, 64, 1)], frames)
 
 
+@pytest.mark.parametrize("advanced, started, playing", [(True, 9, 8), (False, 9, 2)])
+def test_mix_sounds_at_once(lib, advanced, started, playing):
+    ctypes.c_bool.in_dll(lib, "g_advanced_features").value = advanced
+    lib.audio_stop_all()
+    for _ in range(started):
+        lib.audio_play_sample(0, vols(3, 0))
+    data, period = sample(lib, 0)
+    frames = 400
+    one = expected_mix([(data, period, 3, 3)], frames)
+    assert mix(lib, frames)[0::2] == [playing * v for v in one[0::2]]
+    ctypes.c_bool.in_dll(lib, "g_advanced_features").value = False
+
+
 def test_compare_loudness_matches_original(lib, emu):
     for a in [(0, 0), (7, 7), (8, 7), (12, 13), (13, 13), (64, 0), (30, 30)]:
         for b in [(0, 14), (0, 15), (25, 0), (26, 0), (64, 64)]:

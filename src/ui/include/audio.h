@@ -28,7 +28,8 @@ void audio_init(void);
 /* Commands */
 /* Plays a sound of the sound table at the left and right volumes. */
 void audio_play_sample(int16_t sound, const uint8_t *volumes);
-/* Copies sample data and plays it on a free stereo pair, or on the quieter pair when both play. */
+/* Copies sample data and plays it on a free stereo pair, or on the quietest pair when all play. Two pairs play
+   at once; the advanced mode has eight pairs and clamps the mix. */
 void audio_play_data(const int8_t *data, uint16_t length, uint16_t period, const uint8_t *volumes);
 /* Stops every voice and the intro music. */
 void audio_stop_all(void);

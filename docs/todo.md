@@ -11,10 +11,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - A cheat screen of its own, not on the automap. Cheats: full light, immortality, food and water (moved from the automap), one-hit kill, walk through walls, reveal the whole map, a list of all spells with their runes.
 - The save file keeps the cheat state, as it keeps the explored map.
 
-## Advanced mode: more sounds at once
-
-- More than the 2 sounds at once of the two Amiga stereo pairs (`src/ui/audio.c`).
-
 ## Advanced mode: more save slots
 
 - The save dialog offers a choice of several save slots.

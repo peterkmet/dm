@@ -145,6 +145,7 @@ The controls are the controls of the original Amiga game.
 The advanced features are not in the original game:
 
 - Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. The top ruler numbers each second column, the left ruler each row; a white frame shows the end of the map. The top-left corner of the map shows the level, X and Y, facing, and light amount. Corridors are light gray, walls are dark gray. Drag the map with the left mouse button to see the whole level; a click without a move does not scroll. The map opens centered on the party.
+- Up to 8 sounds play at once, not 2 as in the original.
 - Quick save and quick load: one save slot in `QUICK.DAT` in the data folder. `DMGAME.DAT` does not change. The message area shows GAME SAVED, GAME LOADED, NO QUICK SAVE, or QUICK SAVE DAMAGED.
 - W, A, S, D, Q, and E move and turn the party. The cursor keys and the keypad also work.
 - Rune symbols in red after each rune name on an open scroll.
