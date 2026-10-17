@@ -2,11 +2,13 @@
 #include "music.h"
 #include "adventure.h"
 #include "file.h"
+#include "settings.h"
 #include "dungeon.h"
 #include "party.h"
 #include "audio.h"
 #include "gameloop.h"
 #include "music_internal.h"
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -32,6 +34,11 @@
 #define SUPER_NES_GAME_WON_TRACK     16 /* the end credits */
 
 int16_t g_music_soundtrack, g_music_track, g_music_last_track, g_music_requested_track;
+int16_t g_music_volume = SETTINGS_VOLUME_FULL;
+
+static_assert(MUSIC_ORIGINAL == SETTINGS_MUSIC_ORIGINAL && MUSIC_SUPER_NES == SETTINGS_MUSIC_SUPER_NES &&
+                  MUSIC_FM_TOWNS == SETTINGS_MUSIC_FM_TOWNS,
+              "the settings file stores the soundtrack numbers");
 
 static drmp3 decoder;
 static bool decoding; /* the decoder has an open file */
@@ -147,7 +154,8 @@ void music_mix(int16_t *samples, int frames)
         int wanted = frames - done < MUSIC_MIX_FRAMES ? frames - done : MUSIC_MIX_FRAMES;
         int got = drmp3_read_pcm_frames_s16(&decoder, (drmp3_uint64)wanted, pcm);
         for (int i = 0; i < got * MUSIC_CHANNELS; i++) {
-            int sample = samples[done * MUSIC_CHANNELS + i] + pcm[i] / MUSIC_VOLUME_DIVISOR;
+            int sample = samples[done * MUSIC_CHANNELS + i] +
+                         pcm[i] * g_music_volume / SETTINGS_VOLUME_FULL / MUSIC_VOLUME_DIVISOR;
             samples[done * MUSIC_CHANNELS + i] = sample > INT16_MAX   ? INT16_MAX
                                                  : sample < INT16_MIN ? INT16_MIN
                                                                       : sample;

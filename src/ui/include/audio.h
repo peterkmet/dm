@@ -21,6 +21,8 @@ typedef struct {
     uint16_t length;
 } MusicSegment;
 
+extern int16_t g_audio_volume; /* the sound volume step, SETTINGS_VOLUME_OFF to SETTINGS_VOLUME_FULL */
+
 /* Setup */
 /* Sets g_sound_play_hook to audio_play_data; ui_init calls it. */
 void audio_init(void);
@@ -38,7 +40,7 @@ void audio_stop_all(void);
 void audio_music_play(const MusicSegment *segments, int segment_count, uint16_t period, uint8_t volume);
 /* Sets the volume of the intro music on both sides of pair B. */
 void audio_music_set_volume(uint8_t volume);
-/* Renders interleaved stereo int16 at AUDIO_OUTPUT_RATE. Paula has no interpolation: each sample holds for one
+/* Renders interleaved stereo int16 at AUDIO_OUTPUT_RATE, scaled by g_audio_volume. Paula has no interpolation: each sample holds for one
    period. Runs on the game thread. */
 void audio_mix(int16_t *samples, int frames);
 

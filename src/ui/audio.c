@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "audio.h"
+#include "settings.h"
 #include "sound.h"
 #include "advanced.h"
 #include <stdbool.h>
@@ -36,6 +37,7 @@ static const int pair_channels[PAIR_COUNT][SOUND_SIDE_COUNT] = {
     {0xC, 0xD},
     {0xE, 0xF}
 }; /* pair A, pair B, then the extra pairs: left, right */
+int16_t g_audio_volume = SETTINGS_VOLUME_FULL;
 static struct {
     Voice voices[VOICE_COUNT]; /* Amiga channels: 0, 3 left; 1, 2 right; 4 and up: the extra pairs */
     uint8_t pair_volumes[PAIR_COUNT][SOUND_SIDE_COUNT];
@@ -158,6 +160,8 @@ void audio_mix(int16_t *samples, int frames)
         for (int p = 0; p < PAIR_COUNT; p++)
             for (int side = 0; side < SOUND_SIDE_COUNT; side++)
                 sum[side] += mix[pair_channels[p][side]];
+        for (int side = 0; side < SOUND_SIDE_COUNT; side++)
+            sum[side] = sum[side] * g_audio_volume / SETTINGS_VOLUME_FULL;
         for (int side = 0; side < SOUND_SIDE_COUNT; side++)
             samples[2 * f + side] = g_advanced_features ? (int16_t)(sum[side] > INT16_MAX   ? INT16_MAX
                                                                     : sum[side] < INT16_MIN ? INT16_MIN

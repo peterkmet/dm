@@ -15,7 +15,7 @@ PointerAlignment: Right
 SortIncludes: CaseSensitive
 IncludeBlocks: Merge
 IncludeCategories:
-  - Regex: '^"(adf|adventure|bytes|crc32|csb_image|csb_text|file|ftl|graphics|ids|kaos|kaos_addresses|os|spells|swsh|tables|vdeo)\.h"$'
+  - Regex: '^"(adf|adventure|bytes|crc32|csb_image|csb_text|file|ftl|graphics|ids|kaos|kaos_addresses|os|settings|spells|swsh|tables|vdeo)\.h"$'
     Priority: 1
   - Regex: '^"(action|arith|champion|discard|dungeon|event|explored|game|group|inventory|magic|map|message|move|party|projectile|random|record|recruit|savefile|savegame|sensor|sound|timeline)\.h"$'
     Priority: 2

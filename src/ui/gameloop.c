@@ -4,6 +4,7 @@
 #include "file.h"
 #include "graphics.h"
 #include "ids.h"
+#include "settings.h"
 #include "tables.h"
 #include "vdeo.h"
 #include "champion.h"
@@ -23,6 +24,7 @@
 #include "sensor.h"
 #include "sound.h"
 #include "advanced.h"
+#include "audio.h"
 #include "automap.h"
 #include "command.h"
 #include "dialog.h"
@@ -130,13 +132,25 @@ static void refresh_interface(void)
     ui_draw_message_area();
 }
 
+/* The volumes and the music of a game start: the settings file in the advanced mode, else full volumes and no
+   music. */
+static void apply_settings(void)
+{
+    Settings settings = {SETTINGS_VOLUME_FULL, SETTINGS_VOLUME_FULL, SETTINGS_MUSIC_ORIGINAL};
+    if (g_session.mode == GAME_MODE_ADVANCED)
+        settings = settings_load(startend_save_dir());
+    g_audio_volume = settings.sound_volume;
+    g_music_volume = settings.music_volume;
+    music_select(settings.music);
+}
+
 /* The start of a game, the part for both a new and a loaded game: interface state and input. */
 static void start_game(void)
 {
     game_reset_session();
     g_do_not_draw_fluxcages = false;
     g_automap_open = false;
-    music_select(MUSIC_ORIGINAL);
+    apply_settings();
     automap_scroll_reset();
     shown_hand_object = THING_NONE;
     command_reset();

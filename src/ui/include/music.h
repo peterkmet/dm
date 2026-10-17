@@ -20,6 +20,7 @@
 #define MUSIC_CSB_MAP_SIZE  32
 
 extern int16_t g_music_soundtrack; /* MUSIC_ORIGINAL by default: no music */
+extern int16_t g_music_volume;     /* the music volume step, SETTINGS_VOLUME_OFF to SETTINGS_VOLUME_FULL */
 /* The track that plays, 0: silence; exported for the tests. */
 extern int16_t g_music_track;
 /* The track that started last, also when its file is missing; exported for the tests. */
@@ -37,7 +38,7 @@ void music_select(int16_t soundtrack);
 void music_update(void);
 /* The track of the end of the game: game won or game over. */
 void music_play_end(bool won);
-/* Adds the music to interleaved stereo int16 at AUDIO_OUTPUT_RATE. Runs on the game thread, after audio_mix. */
+/* Adds the music, scaled by g_music_volume, to interleaved stereo int16 at AUDIO_OUTPUT_RATE. Runs on the game thread, after audio_mix. */
 void music_mix(int16_t *samples, int frames);
 
 #endif
