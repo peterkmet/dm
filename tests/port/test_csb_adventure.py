@@ -79,7 +79,7 @@ def new_prison_game(game, champions):
 
 def save_now(game):
     reason = ctypes.c_char_p()
-    return game.lib.startend_save_current_game(ctypes.byref(reason)), reason.value
+    return game.lib.startend_save_current_game(0, ctypes.byref(reason)), reason.value
 
 
 def assert_in_adventure(game, names):
@@ -101,7 +101,7 @@ def test_merge_equals_the_python_merge(game, saves):
     names = new_prison_game(game, 3)
     game.champions[1].cell = game.champions[0].cell  # the cell fix of the merge
     assert game.lib.savegame_save_as(str(saves).encode(), b"PRISON.DAT", None) is True
-    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.SAVEGAME_ADVENTURE_MADE
+    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode(), 0) == C.SAVEGAME_ADVENTURE_MADE
     raw = (saves / NAME).read_bytes()
     port = cm.decode_save(raw)
     b2 = port["blocks"][2]
@@ -123,6 +123,15 @@ def test_merge_equals_the_python_merge(game, saves):
         check_decode(raw, "port CSBGAME.DAT")
 
 
+def test_prison_save_into_a_slot_writes_only_that_slot(game, saves):
+    names = new_prison_game(game, 2)
+    (saves / NAME).write_bytes(b"slot 1")
+    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode(), 2) == C.SAVEGAME_ADVENTURE_MADE
+    assert (saves / "CSBGAME3.DAT").exists() and not (saves / "CSBGAME3.BAK").exists()
+    assert (saves / NAME).read_bytes() == b"slot 1"
+    assert_in_adventure(game, names)
+
+
 def test_prison_save_continues_in_the_adventure(game, saves):
     names = new_prison_game(game, 2)
     (saves / NAME).write_bytes(b"old")
@@ -140,7 +149,7 @@ def test_prison_save_continues_in_the_adventure(game, saves):
 def test_merge_refuses_an_empty_party(game, saves):
     assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
     assert save_now(game) == (0, b"CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS.")
-    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.SAVEGAME_ADVENTURE_NO_CHAMPIONS
+    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode(), 0) == C.SAVEGAME_ADVENTURE_NO_CHAMPIONS
     assert not (saves / NAME).exists()
     assert value(game, "g_dungeon_id", u16) == 12
 
@@ -150,7 +159,7 @@ def test_merge_refuses_equal_first_names(game, saves):
     game.champions[1].name = game.champions[0].name
     assert save_now(game) == (0, b"EACH CHAMPION MUST HAVE A UNIQUE FIRST NAME!")
     game.champions[1].name = b""
-    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode()) == C.SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE
+    assert game.lib.savegame_make_adventure(str(saves).encode(), str(MINI).encode(), 0) == C.SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE
     assert not (saves / NAME).exists()
 
 

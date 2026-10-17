@@ -24,6 +24,7 @@
 #include "layout.h"
 #include "music.h"
 #include "panel.h"
+#include "slotlist.h"
 #include "status.h"
 #include "text.h"
 #include "ui.h"
@@ -73,6 +74,7 @@
 
 bool g_restart_requested, g_return_to_entrance;
 static char save_dir[SAVE_DIR_SIZE] = ".";
+static int16_t current_slot; /* the slot of the last save or load from a slot in this run; RESTART loads it */
 
 void startend_set_save_dir(const char *directory)
 {
@@ -106,15 +108,26 @@ static bool confirm_quit(void)
     return dialog_get_choice(2) != QUIT_CHOICE_CANCEL;
 }
 
-int startend_save_current_game(const char **reason)
+/* The save slots, the slot list and the current slot exist only in the advanced mode. */
+static bool has_slots(void)
+{
+    return g_session.mode == GAME_MODE_ADVANCED;
+}
+
+int startend_save_current_game(int16_t slot, const char **reason)
 {
     char mini[SAVE_DIR_SIZE];
     *reason = NULL;
-    if (g_adventure != ADVENTURE_CSB || g_dungeon_id != PRISON_DUNGEON_ID)
-        return savegame_save(save_dir) ? SAVED_GAME : 0;
+    if (g_adventure != ADVENTURE_CSB || g_dungeon_id != PRISON_DUNGEON_ID) {
+        if (!savegame_save_slot(save_dir, slot))
+            return 0;
+        current_slot = slot;
+        return SAVED_GAME;
+    }
     snprintf(mini, sizeof mini, "%s/%s", gameloop_get_data_dir(), CSB_MINI_FILE);
-    switch (savegame_make_adventure(save_dir, mini)) {
+    switch (savegame_make_adventure(save_dir, mini, slot)) {
     case SAVEGAME_ADVENTURE_MADE:
+        current_slot = slot;
         return SAVED_NEW_ADVENTURE;
     case SAVEGAME_ADVENTURE_NO_CHAMPIONS:
         *reason = "CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS.";
@@ -127,16 +140,16 @@ int startend_save_current_game(const char **reason)
     }
 }
 
-/* Shows the saving dialog and saves the current game; an unable-to-save dialog names the reason. Returns the SAVED_*
-   result, 0 on failure. */
-static int save_with_dialog(void)
+/* Shows the saving dialog and saves the current game to the slot; an unable-to-save dialog names the reason. Returns
+   the SAVED_* result, 0 on failure. */
+static int save_with_dialog(int16_t slot)
 {
     const char *reason;
     dialog_draw(&(DialogText){
         {NULL, gfx_get_string(TEXT_SAVING_GAME)},
         {NULL}
     });
-    int saved = startend_save_current_game(&reason);
+    int saved = startend_save_current_game(slot, &reason);
     if (!saved) {
         dialog_draw(&(DialogText){
             {reason ? reason : gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL},
@@ -148,7 +161,8 @@ static int save_with_dialog(void)
 }
 
 /* CSB save dialog: SAVE AND PLAY saves and goes on, SAVE AND QUIT saves and ends the game. The dialog
-   closes after a save; CSB has no quit without a save. */
+   closes after a save; CSB has no quit without a save. In the advanced mode the save list chooses the slot first;
+   its CANCEL goes back to the game. */
 static void save_game_csb(void)
 {
     command_freeze_game();
@@ -157,8 +171,11 @@ static void save_game_csb(void)
         {gfx_get_string(TEXT_CANCEL), gfx_get_string(TEXT_SAVE), gfx_get_string(TEXT_QUIT)}
     });
     int16_t choice = dialog_get_choice(3);
-    if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
-        int saved = save_with_dialog();
+    int16_t slot = 0;
+    if ((choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) && has_slots())
+        slot = slotlist_choose(save_dir, false);
+    if ((choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) && slot >= 0) {
+        int saved = save_with_dialog(slot);
         if (saved && choice == SAVE_CHOICE_QUIT) {
             startend_run_endgame(false);
             return;
@@ -187,7 +204,8 @@ void startend_save_game(void)
         message = NULL;
         int16_t choice = dialog_get_choice(3);
         if (choice == SAVE_CHOICE_SAVE) {
-            if (save_with_dialog() && g_advanced_features)
+            int16_t slot = has_slots() ? slotlist_choose(save_dir, false) : 0;
+            if (slot >= 0 && save_with_dialog(slot) && g_advanced_features)
                 message = "GAME SAVED";
             continue;
         }
@@ -203,12 +221,24 @@ void startend_save_game(void)
     command_unfreeze_game();
 }
 
-bool startend_load_saved_game(void)
+/* Loads a slot, or the quick save for SLOTLIST_QUICK_ROW; with choose, the load list chooses it first. The dialogs
+   of RESUME: LOADING GAME, THE GAME IS DAMAGED!, and CAN'T FIND SAVED GAME, whose LOAD SAVED GAME tries again (in
+   the advanced mode it opens the load list). Returns true when the game is loaded. */
+static bool load_with_dialogs(int16_t slot, bool choose)
 {
     g_game_screen_shown = false;
     for (;;) {
-        SavegameResult result = savegame_load(save_dir);
+        if (choose)
+            slot = slotlist_choose(save_dir, true);
+        if (slot < 0)
+            return false;
+        if (slot == SLOTLIST_QUICK_ROW)
+            savegame_forget(); /* a quick save is not a saved game: no RESTART until the first save */
+        SavegameResult result =
+            slot == SLOTLIST_QUICK_ROW ? savegame_quick_load(save_dir) : savegame_load_slot(save_dir, slot);
         if (result == SAVEGAME_LOADED) {
+            if (slot != SLOTLIST_QUICK_ROW)
+                current_slot = slot;
             dialog_draw(&(DialogText){
                 {NULL, gfx_get_string(TEXT_LOADING_GAME)},
                 {NULL}
@@ -231,7 +261,13 @@ bool startend_load_saved_game(void)
         int16_t choice = dialog_get_choice(2);
         if (!choice || choice == LOAD_CHOICE_CANCEL)
             return false;
+        choose = has_slots();
     }
+}
+
+bool startend_load_saved_game(void)
+{
+    return load_with_dialogs(0, has_slots());
 }
 
 /* Capitals in the endgame font on the dark background. */
@@ -380,7 +416,7 @@ static bool wait_for_restart(void)
     if (!g_restart_requested || g_quit_requested)
         return false;
     memset(g_screen.px, COLOR_BLACK, sizeof g_screen.px);
-    bool loaded = startend_load_saved_game();
+    bool loaded = load_with_dialogs(has_slots() ? current_slot : 0, false);
     g_restart_requested = false;
     if (!loaded)
         return false;

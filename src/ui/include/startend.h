@@ -18,18 +18,20 @@ void startend_set_save_dir(const char *directory);
 /* The directory of the save file now in use. */
 const char *startend_save_dir(void);
 
-/* Writes the save file of the adventure. In the CSB prison it makes the new adventure (CSBGAME.DAT)
-   and loads it; the caller starts it (gameloop_start_loaded_game). Returns SAVED_GAME,
-   SAVED_NEW_ADVENTURE, or 0. On 0, *reason is the reason why the prison party cannot make the
-   adventure, or NULL when the file cannot be written. */
-int startend_save_current_game(const char **reason);
+/* Writes the file of the save slot 0-7 (slot 0: the save file of the adventure) and makes the slot the current
+   slot. In the CSB prison it makes the new adventure in the slot (CSBGAME.DAT for slot 0) and loads it; the caller
+   starts it (gameloop_start_loaded_game). Returns SAVED_GAME, SAVED_NEW_ADVENTURE, or 0. On 0, *reason is the
+   reason why the prison party cannot make the adventure, or NULL when the file cannot be written. */
+int startend_save_current_game(int16_t slot, const char **reason);
 /* Results of startend_save_current_game. */
 #define SAVED_GAME          1
 #define SAVED_NEW_ADVENTURE 2
 /* The save command: CANCEL, SAVE, QUIT. QUIT ends the game through the endgame. CSB: CANCEL, SAVE AND
-   PLAY, SAVE AND QUIT. Without disks the dialog stays after a save until CANCEL or QUIT. */
+   PLAY, SAVE AND QUIT. Without disks the dialog stays after a save until CANCEL or QUIT. In the advanced mode a
+   save opens the save list, and the chosen slot becomes the current slot. */
 void startend_save_game(void);
-/* RESUME: loads the saved game with its dialogs. Returns true when the game is loaded. */
+/* RESUME: loads the saved game with its dialogs; in the advanced mode the load list chooses a slot or the quick
+   save first. Returns true when the game is loaded. */
 bool startend_load_saved_game(void);
 /* Draws the credits graphic on the whole screen; the caller sets the credits palette. */
 void startend_draw_credits(void);

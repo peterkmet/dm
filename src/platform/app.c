@@ -362,6 +362,17 @@ static void list_folder(const char *path, void (*found)(const char *name, void *
     SDL_EnumerateDirectory(path, visit_name, &visit);
 }
 
+/* The file time hook of data/: the modification time of the file in local time. */
+static bool get_file_time(const char *path, OsDateTime *time)
+{
+    SDL_PathInfo info;
+    SDL_DateTime local;
+    if (!SDL_GetPathInfo(path, &info) || !SDL_TimeToDateTime(info.modify_time, &local, true))
+        return false;
+    *time = (OsDateTime){local.year, local.month, local.day, local.hour, local.minute};
+    return true;
+}
+
 /* Loads the font of the start screens from Graphics.DAT: the --data folder, else DM, else CSB. */
 static bool load_font(void)
 {
@@ -616,6 +627,7 @@ bool app_open(const Options *options)
     g_os_fatal_hook = log_fatal;
     g_os_make_folder_hook = make_folder;
     g_os_list_folder_hook = list_folder;
+    g_os_file_time_hook = get_file_time;
     if (!install_disks())
         return false;
     random_init();

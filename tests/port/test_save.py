@@ -78,6 +78,105 @@ def test_save_keeps_a_backup(game, tmp_path):
     assert (tmp_path / SAVE).read_bytes() == first and not (tmp_path / BACKUP).exists()
 
 
+class SlotFiles(ctypes.Structure):
+    _fields_ = [("save", ctypes.c_char * 16), ("backup", ctypes.c_char * 16)]
+
+
+class SlotInfo(ctypes.Structure):
+    _fields_ = [("level", c16), ("has_time", ctypes.c_bool), ("time", c16 * 5)]
+
+
+def slot_files(lib, adventure, slot):
+    lib.savegame_get_slot_files.restype = SlotFiles
+    files = lib.savegame_get_slot_files(adventure, slot)
+    return files.save.decode(), files.backup.decode()
+
+
+def slot_info(lib, folder, slot=None):
+    """The result and the level of the slot info of a slot, or of the quick save for None."""
+    info = SlotInfo()
+    if slot is None:
+        result = lib.savegame_read_quick_info(str(folder).encode(), ctypes.byref(info))
+    else:
+        result = lib.savegame_read_slot_info(str(folder).encode(), slot, ctypes.byref(info))
+    return result, info.level
+
+
+def test_slot_file_names():
+    lib = load_lib()
+    assert slot_files(lib, C.ADVENTURE_DM, 0) == ("DMGAME.DAT", "DMGAME.BAK")
+    assert slot_files(lib, C.ADVENTURE_DM, 3) == ("DMGAME4.DAT", "DMGAME4.BAK")
+    assert slot_files(lib, C.ADVENTURE_DM, 7) == ("DMGAME8.DAT", "DMGAME8.BAK")
+    assert slot_files(lib, C.ADVENTURE_CSB, 3) == ("CSBGAME4.DAT", "CSBGAME4.BAK")
+
+
+def test_slot_save_keeps_its_own_backup(game, tmp_path):
+    lib = game.lib
+    (tmp_path / SAVE).write_bytes(b"slot 1")
+    assert lib.savegame_save_slot(str(tmp_path).encode(), 3) == 1
+    first = (tmp_path / "DMGAME4.DAT").read_bytes()
+    assert lib.savegame_save_slot(str(tmp_path).encode(), 3) == 1
+    assert (tmp_path / "DMGAME4.BAK").read_bytes() == first
+    assert (tmp_path / SAVE).read_bytes() == b"slot 1" and not (tmp_path / BACKUP).exists()
+
+
+def test_slot_load_reads_the_backup_of_the_slot(game, tmp_path):
+    lib = game.lib
+    assert lib.savegame_save_slot(str(tmp_path).encode(), 3) == 1
+    first = (tmp_path / "DMGAME4.DAT").read_bytes()
+    (tmp_path / "DMGAME4.DAT").rename(tmp_path / "DMGAME4.BAK")
+    assert lib.savegame_load_slot(str(tmp_path).encode(), 3) == C.SAVEGAME_LOADED
+    assert (tmp_path / "DMGAME4.DAT").read_bytes() == first and not (tmp_path / "DMGAME4.BAK").exists()
+    assert lib.savegame_load_slot(str(tmp_path).encode(), 4) == C.SAVEGAME_MISSING
+
+
+def test_slot_info(game, tmp_path):
+    lib = game.lib
+    assert lib.gameloop_start_new_game(str(GAME).encode())
+    folder = str(tmp_path).encode()
+    assert slot_info(lib, tmp_path, 0) == (C.SAVEGAME_INFO_EMPTY, 0)
+    assert slot_info(lib, tmp_path) == (C.SAVEGAME_INFO_EMPTY, 0)
+    assert lib.savegame_save_slot(folder, 0) == 1
+    assert slot_info(lib, tmp_path, 0) == (C.SAVEGAME_INFO_READ, 0)  # the list shows LEVEL 1
+    (tmp_path / SAVE).rename(tmp_path / BACKUP)
+    assert slot_info(lib, tmp_path, 0) == (C.SAVEGAME_INFO_READ, 0)
+    good = (tmp_path / BACKUP).read_bytes()
+    (tmp_path / SAVE).write_bytes(good[:600])
+    assert slot_info(lib, tmp_path, 0) == (C.SAVEGAME_INFO_DAMAGED, 0)
+    (tmp_path / "QUICK.DAT").write_bytes(good[:-100])
+    assert slot_info(lib, tmp_path) == (C.SAVEGAME_INFO_DAMAGED, 0)
+    # the level of another party map, from a file with the cheat and automap blocks of the advanced mode
+    party_map = c16.in_dll(lib, "g_party_map_index")
+    session(lib).mode = C.GAME_MODE_ADVANCED
+    try:
+        party_map.value = 3
+        assert lib.savegame_save_slot(folder, 5) == 1
+    finally:
+        party_map.value = 0
+        session(lib).mode = C.GAME_MODE_VANILLA
+    raw = (tmp_path / "DMGAME6.DAT").read_bytes()
+    assert raw[-4 - int.from_bytes(raw[-4:], "big"):][:4] == b"AMAP"
+    assert slot_info(lib, tmp_path, 5) == (C.SAVEGAME_INFO_READ, lib.rec_map_level(3))
+    assert lib.rec_map_level(3) != 0
+
+
+def test_slot_info_changes_no_state(game, tmp_path):
+    lib = game.lib
+    assert lib.gameloop_start_new_game(str(GAME).encode())
+    session(lib).mode = C.GAME_MODE_ADVANCED
+    try:
+        session(lib).cheat_light = 1
+        assert lib.savegame_save_slot(str(tmp_path).encode(), 1) == 1
+        session(lib).cheat_light = 0
+        game.run(20)
+        before, seen = state(game), lib.explored_is_seen(0, 0, 0)
+        assert slot_info(lib, tmp_path, 1)[0] == C.SAVEGAME_INFO_READ
+        assert state(game) == before and lib.explored_is_seen(0, 0, 0) == seen
+        assert session(lib).cheat_light == 0
+    finally:
+        session(lib).mode = C.GAME_MODE_VANILLA
+
+
 def test_portraits_survive_save_and_load(game, tmp_path):
     """The file keeps all four portrait bitmaps, also ones that are not in graphic 26."""
     lib = game.lib

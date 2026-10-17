@@ -706,7 +706,11 @@ int16_t rec_map_offset_y(int16_t map)
 }
 uint16_t rec_map_level(int16_t map)
 {
-    return rec_map_descriptor(map)[MAP_LEVEL] & MAP_LEVEL_MASK;
+    return rec_descriptor_level(rec_map_descriptor(map));
+}
+uint16_t rec_descriptor_level(const uint8_t *descriptor)
+{
+    return descriptor[MAP_LEVEL] & MAP_LEVEL_MASK;
 }
 int16_t rec_map_last_x(int16_t map)
 {

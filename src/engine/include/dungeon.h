@@ -39,6 +39,9 @@ bool dungeon_load_saved(const uint8_t *data, uint32_t size);
 /* The dungeon parts in the order of save_game, then the 16-bit sum of their bytes. Returns a
    malloc buffer, or NULL when no dungeon is loaded. */
 uint8_t *dungeon_save(uint32_t *out_size);
+/* The level of a map in the dungeon part of a save file, without a load; -1 when the byte sum word at the end is
+   wrong or the part has no descriptor of the map. */
+int16_t dungeon_get_saved_level(const uint8_t *data, uint32_t size, int16_t map);
 
 /* Number of maps of the loaded dungeon; 0 when no dungeon is loaded. */
 int16_t dungeon_map_count(void);

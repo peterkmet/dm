@@ -409,6 +409,25 @@ uint8_t *dungeon_save(uint32_t *out_size)
     return out;
 }
 
+/* True when the dungeon part of a save file ends with the 16-bit sum of its other bytes, as dungeon_save writes it. */
+static bool has_saved_sum(const uint8_t *data, uint32_t size)
+{
+    uint16_t sum = 0;
+    if (size < HEADER_BYTES + 2)
+        return false;
+    for (uint32_t i = 0; i < size - 2; i++)
+        sum += data[i];
+    return be16(data + size - 2) == sum;
+}
+
+int16_t dungeon_get_saved_level(const uint8_t *data, uint32_t size, int16_t map)
+{
+    if (!data || !has_saved_sum(data, size) || map < 0 || map >= data[HEADER_MAP_COUNT] ||
+        size < HEADER_BYTES + (uint32_t)(map + 1) * MAP_BYTES)
+        return -1;
+    return rec_descriptor_level(data + HEADER_BYTES + map * MAP_BYTES);
+}
+
 int16_t dungeon_map_count(void)
 {
     return g_dungeon_header ? g_dungeon_header[HEADER_MAP_COUNT] : 0;

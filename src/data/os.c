@@ -9,6 +9,7 @@
 
 OsMakeFolder g_os_make_folder_hook;
 OsListFolder g_os_list_folder_hook;
+OsFileTime g_os_file_time_hook;
 OsLogHook g_os_log_hook;
 OsFatalHook g_os_fatal_hook;
 
@@ -49,4 +50,9 @@ void os_list_folder(const char *path, void (*found)(const char *name, void *data
 {
     if (g_os_list_folder_hook)
         g_os_list_folder_hook(path, found, data);
+}
+
+bool os_get_file_time(const char *path, OsDateTime *time)
+{
+    return g_os_file_time_hook && g_os_file_time_hook(path, time);
 }

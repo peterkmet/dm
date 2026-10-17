@@ -20,6 +20,7 @@
 #include "gameloop.h"
 #include "menus.h"
 #include "panel.h"
+#include "slotlist.h"
 #include "startend.h"
 #include "status.h"
 #include "ui.h"
@@ -144,7 +145,7 @@ void command_process_click(int16_t x, int16_t y, int16_t kind)
         left_button_down = true;
     if (kind == CLICK_LEFT_RELEASE)
         left_button_down = false;
-    if (advanced_process_click(x, y, kind))
+    if (slotlist_process_click(x, y, kind) || advanced_process_click(x, y, kind))
         return;
     if (queue_count >= (kind == CLICK_LEFT_RELEASE ? QUEUE_RELEASE_LIMIT : QUEUE_CLICK_LIMIT))
         return;
@@ -160,7 +161,7 @@ void command_process_click(int16_t x, int16_t y, int16_t kind)
 
 void command_process_key(uint16_t key)
 {
-    if (advanced_process_key(key))
+    if (slotlist_process_key(key) || advanced_process_key(key))
         return;
     g_input_received = true;
     g_last_key = key;

@@ -186,6 +186,8 @@ uint16_t rec_map_raw_offset(int16_t map);
 int16_t rec_map_offset_x(int16_t map);
 int16_t rec_map_offset_y(int16_t map);
 uint16_t rec_map_level(int16_t map);
+/* The level of a map descriptor that is not in the loaded dungeon (a save file). */
+uint16_t rec_descriptor_level(const uint8_t *descriptor);
 int16_t rec_map_last_x(int16_t map);
 int16_t rec_map_last_y(int16_t map);
 int16_t rec_map_door_set(int16_t map, int16_t door_type);

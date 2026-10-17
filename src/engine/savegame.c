@@ -4,6 +4,7 @@
 #include "bytes.h"
 #include "file.h"
 #include "graphics.h"
+#include "os.h"
 #include "champion.h"
 #include "discard.h"
 #include "dungeon.h"
@@ -378,10 +379,81 @@ static uint8_t get_loaded_cheats(const Extension *found)
     return found->cheats[CHEAT_MAGIC_BYTES + 1];
 }
 
+/* The file name of a slot: the name of slot 0 with the slot number before the extension. */
+static void make_slot_name(char *out, const char *name, int16_t slot)
+{
+    const char *dot = strchr(name, '.');
+    int stem = dot ? (int)(dot - name) : (int)strlen(name);
+    if (slot)
+        snprintf(out, SAVEGAME_NAME_SIZE, "%.*s%d%s", stem, name, slot + 1, name + stem);
+    else
+        snprintf(out, SAVEGAME_NAME_SIZE, "%s", name);
+}
+
+SavegameSlotFiles savegame_get_slot_files(int16_t adventure, int16_t slot)
+{
+    const Adventure *a = adventure_get(adventure);
+    SavegameSlotFiles files;
+    make_slot_name(files.save, a->save, slot);
+    make_slot_name(files.backup, a->backup, slot);
+    return files;
+}
+
+/* The level of the party map of a decoded save file; -1 when the dungeon part has no such map. */
+static int16_t get_party_level(const SaveFile *s)
+{
+    int16_t map = be16(s->block[SAVE_BLOCK_GLOBALS] + SAVE_GLOBAL_PARTY_MAP_INDEX);
+    return dungeon_get_saved_level(s->dungeon, s->dungeon_size, map);
+}
+
+/* Reads the slot slot_info of dir/name, else of dir/backup when backup is not NULL. It decodes its own copy of the file
+   and loads nothing. */
+static SavegameInfoResult read_info(const char *dir, const char *name, const char *backup_name,
+                                    SavegameSlotInfo *slot_info)
+{
+    char path[PATH_SIZE];
+    size_t size = 0;
+    *slot_info = (SavegameSlotInfo){0};
+    make_file_path(path, dir, name);
+    uint8_t *data = file_read(path, &size);
+    if (!data && backup_name) {
+        make_file_path(path, dir, backup_name);
+        data = file_read(path, &size);
+    }
+    if (!data)
+        return SAVEGAME_INFO_EMPTY;
+    find_extension(data, &size);
+    SaveFile s;
+    int16_t level = savefile_decode(data, (uint32_t)size, &s) ? get_party_level(&s) : -1;
+    savefile_free(&s);
+    free(data);
+    if (level < 0)
+        return SAVEGAME_INFO_DAMAGED;
+    slot_info->level = level;
+    slot_info->has_time = os_get_file_time(path, &slot_info->time);
+    return SAVEGAME_INFO_READ;
+}
+
+SavegameInfoResult savegame_read_slot_info(const char *dir, int16_t slot, SavegameSlotInfo *slot_info)
+{
+    SavegameSlotFiles files = savegame_get_slot_files(g_adventure, slot);
+    return read_info(dir, files.save, files.backup, slot_info);
+}
+
+SavegameInfoResult savegame_read_quick_info(const char *dir, SavegameSlotInfo *slot_info)
+{
+    return read_info(dir, QUICK_SAVE_FILE_NAME, NULL, slot_info);
+}
+
 bool savegame_save(const char *dir)
 {
-    const Adventure *adventure = adventure_get(g_adventure);
-    return savegame_save_as(dir, adventure->save, adventure->backup);
+    return savegame_save_slot(dir, 0);
+}
+
+bool savegame_save_slot(const char *dir, int16_t slot)
+{
+    SavegameSlotFiles files = savegame_get_slot_files(g_adventure, slot);
+    return savegame_save_as(dir, files.save, files.backup);
 }
 
 /* Writes size bytes to dir/name; with a backup name, the old file becomes dir/backup first. Returns true on success. */
@@ -509,7 +581,7 @@ static void merge_party(SaveFile *mini)
     savefile_make_adventure_header(mini->header, g_game_id);
 }
 
-SavegameAdventureResult savegame_make_adventure(const char *dir, const char *mini_path)
+SavegameAdventureResult savegame_make_adventure(const char *dir, const char *mini_path, int16_t slot)
 {
     if (!g_party_champion_count)
         return SAVEGAME_ADVENTURE_NO_CHAMPIONS;
@@ -525,11 +597,11 @@ SavegameAdventureResult savegame_make_adventure(const char *dir, const char *min
         out = savefile_encode(&mini, &out_size);
         savefile_free(&mini);
     }
-    const Adventure *adventure = adventure_get(g_adventure);
-    bool ok = out && write_save_file(dir, adventure->save, adventure->backup, out, out_size);
+    SavegameSlotFiles files = savegame_get_slot_files(g_adventure, slot);
+    bool ok = out && write_save_file(dir, files.save, files.backup, out, out_size);
     free(out);
     free(data);
-    return ok && savegame_load(dir) == SAVEGAME_LOADED ? SAVEGAME_ADVENTURE_MADE : SAVEGAME_ADVENTURE_FAILED;
+    return ok && savegame_load_slot(dir, slot) == SAVEGAME_LOADED ? SAVEGAME_ADVENTURE_MADE : SAVEGAME_ADVENTURE_FAILED;
 }
 
 /* Allocates the timeline and the active groups for the saved counts, as timeline_init and
@@ -580,8 +652,13 @@ static bool restore_game(const SaveFile *s)
 
 SavegameResult savegame_load(const char *dir)
 {
-    const Adventure *adventure = adventure_get(g_adventure);
-    return savegame_load_from(dir, adventure->save, adventure->backup);
+    return savegame_load_slot(dir, 0);
+}
+
+SavegameResult savegame_load_slot(const char *dir, int16_t slot)
+{
+    SavegameSlotFiles files = savegame_get_slot_files(g_adventure, slot);
+    return savegame_load_from(dir, files.save, files.backup);
 }
 
 /* Puts back the game of a snapshot after a failed load. The saved-game flags stay. The current

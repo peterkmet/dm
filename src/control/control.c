@@ -103,7 +103,7 @@ static void handle_new_game(Json *reply)
 static void handle_save(Json *reply)
 {
     const char *reason;
-    int saved = startend_save_current_game(&reason);
+    int saved = startend_save_current_game(0, &reason);
     if (!saved)
         write_error(reply, reason ? reason : "cannot write the save file");
     else {

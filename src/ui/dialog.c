@@ -17,14 +17,12 @@
 /* Text size of one message line. */
 #define MESSAGE_LINE_SIZE 64
 
-/* The pressed button and the message wrap. */
-#define PRESS_FRAMES       5
+/* The message wrap. */
 #define WIDE_MESSAGE_SHIFT 3 /* a message wider than 7/8 of the zone takes two lines */
 
 int16_t g_dialog_choice = DIALOG_NO_CHOICE;
 
-/* The viewport in the game, or centered on the inactive screen. */
-static void show_viewport(void)
+void dialog_show_viewport(void)
 {
     if (g_game_screen_shown) {
         ui_draw_viewport();
@@ -128,44 +126,50 @@ void dialog_draw(const DialogText *dialog)
     if (choice[0])
         show_choices(viewport, choice, count);
     show_messages(viewport, dialog->messages, count == 1 ? ZONE_MESSAGE_ONE_CHOICE : ZONE_MESSAGE);
-    show_viewport();
+    dialog_show_viewport();
 }
 
-/* The button of the choice: a raised frame, then after PRESS_FRAMES frames a pressed frame. */
-static void show_pressed_button(int16_t table, int16_t choice)
+/* One mouse table per choice count, first for the game screen, then for the inactive screen. */
+static int16_t get_choice_table(int16_t choice_count)
+{
+    return TABLES_MOUSE_DIALOG_FIRST + !g_game_screen_shown * DIALOG_CHOICE_COUNT + choice_count - 1;
+}
+
+bool dialog_get_choice_box(int16_t choice_count, int16_t choice, Box *box)
+{
+    MouseInput entry;
+    return tables_get_mouse_input(get_choice_table(choice_count), choice - 1, &entry) && ui_zone_box(entry.x2, box);
+}
+
+void dialog_show_pressed(const Box *button)
 {
     Bitmap *viewport = ui_get_viewport();
-    MouseInput entry;
-    Box button;
-    if (!tables_get_mouse_input(table, choice - 1, &entry) || !ui_zone_box(entry.x2, &button))
-        return;
-    int x = button.x;
-    int y = button.y;
-    int width = button.w;
-    int height = button.h;
+    int x = button->x;
+    int y = button->y;
+    int width = button->w;
+    int height = button->h;
     draw_fill(viewport, &(Box){x - 2, y - 2, width + 5, 1}, COLOR_LIGHT_BROWN);
     draw_fill(viewport, &(Box){x + width + 2, y - 2, 1, height + 4}, COLOR_BLACK);
     draw_fill(viewport, &(Box){x - 4, y + height + 1, width + 7, 2}, COLOR_BLACK);
     draw_fill(viewport, &(Box){x - 3, y - 2, 1, height + 3}, COLOR_LIGHT_BROWN);
     draw_fill(viewport, &(Box){x - 4, y + height + 4, width + 9, 1}, COLOR_LIGHT_GRAY);
     draw_fill(viewport, &(Box){x + width + 5, y - 3, 1, height + 8}, COLOR_LIGHT_GRAY);
-    show_viewport();
-    frame_wait_count(PRESS_FRAMES);
+    dialog_show_viewport();
+    frame_wait_count(DIALOG_PRESS_FRAMES);
     draw_fill(viewport, &(Box){x - 1, y - 1, width + 3, 1}, COLOR_LIGHT_BROWN);
     draw_fill(viewport, &(Box){x - 2, y - 2, 1, height + 3}, COLOR_LIGHT_BROWN);
     draw_fill(viewport, &(Box){x + width + 1, y - 2, 1, height + 3}, COLOR_DARKEST_GRAY);
     draw_fill(viewport, &(Box){x - 3, y + height, width + 5, 1}, COLOR_DARKEST_GRAY);
     draw_fill(viewport, &(Box){x - 3, y + height + 3, width + 7, 1}, COLOR_DARK_GRAY);
     draw_fill(viewport, &(Box){x + width + 4, y - 2, 1, height + 6}, COLOR_DARK_GRAY);
-    show_viewport();
+    dialog_show_viewport();
 }
 
 int16_t dialog_get_choice(int16_t choice_count)
 {
-    /* One mouse table per choice count, first for the game screen, then for the inactive screen. */
-    int16_t table = TABLES_MOUSE_DIALOG_FIRST + !g_game_screen_shown * DIALOG_CHOICE_COUNT + choice_count - 1;
+    Box button;
     command_save_input();
-    command_set_only_mouse_input(table);
+    command_set_only_mouse_input(get_choice_table(choice_count));
     command_discard_all_input();
     g_dialog_choice = DIALOG_NO_CHOICE;
     while (g_dialog_choice == DIALOG_NO_CHOICE) {
@@ -176,8 +180,8 @@ int16_t dialog_get_choice(int16_t choice_count)
             break;
     }
     int16_t choice = g_dialog_choice == DIALOG_NO_CHOICE ? 0 : g_dialog_choice;
-    if (choice)
-        show_pressed_button(table, choice);
+    if (choice && dialog_get_choice_box(choice_count, choice, &button))
+        dialog_show_pressed(&button);
     command_restore_input();
     command_discard_all_input();
     return choice;
