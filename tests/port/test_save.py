@@ -145,6 +145,10 @@ def test_slot_info(game, tmp_path):
     assert slot_info(lib, tmp_path, 0) == (C.SAVEGAME_INFO_DAMAGED, 0)
     (tmp_path / "QUICK.DAT").write_bytes(good[:-100])
     assert slot_info(lib, tmp_path) == (C.SAVEGAME_INFO_DAMAGED, 0)
+    # trailing bytes after the dungeon part: the load accepts the file, so the list shows its level
+    (tmp_path / SAVE).write_bytes(good + b"\x01\x02\x03")
+    assert lib.savegame_load(folder) == C.SAVEGAME_LOADED
+    assert slot_info(lib, tmp_path, 0) == (C.SAVEGAME_INFO_READ, 0)
     # the level of another party map, from a file with the cheat and automap blocks of the advanced mode
     party_map = c16.in_dll(lib, "g_party_map_index")
     session(lib).mode = C.GAME_MODE_ADVANCED

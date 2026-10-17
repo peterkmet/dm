@@ -409,15 +409,45 @@ uint8_t *dungeon_save(uint32_t *out_size)
     return out;
 }
 
-/* True when the dungeon part of a save file ends with the 16-bit sum of its other bytes, as dungeon_save writes it. */
+/* The byte count of the dungeon parts that the header and the map descriptors of a save file announce, read with
+   the record accessors; 0 when the descriptors do not fit. */
+static uint32_t count_saved_part_bytes(const uint8_t *data, uint32_t size)
+{
+    uint8_t *saved_header = g_dungeon_header;
+    uint8_t *saved_maps = g_dungeon_maps;
+    uint32_t total = 0;
+    g_dungeon_header = (uint8_t *)data;
+    g_dungeon_maps = (uint8_t *)data + HEADER_BYTES;
+    int16_t maps = dungeon_map_count();
+    if (size >= HEADER_BYTES + (uint32_t)maps * MAP_BYTES) {
+        uint32_t columns = 0;
+        for (int16_t m = 0; m < maps; m++)
+            columns += (uint32_t)dungeon_map_width(m);
+        total = HEADER_BYTES + (uint32_t)maps * MAP_BYTES + columns * 2 + (uint32_t)rec_dungeon_square_things() * 2 +
+                (uint32_t)count_text_words() * 2 + raw_map_bytes();
+        for (int16_t t = 0; t < THING_TYPE_COUNT; t++)
+            total += (uint32_t)rec_dungeon_thing_count(t) * g_thing_data_byte_count[t];
+    }
+    g_dungeon_header = saved_header;
+    g_dungeon_maps = saved_maps;
+    return total;
+}
+
+/* True when a save file passes the sum rule of the load: the parts fit, and the 16-bit sum of their bytes matches the
+   word after them when at least two bytes follow. */
 static bool has_saved_sum(const uint8_t *data, uint32_t size)
 {
-    uint16_t sum = 0;
-    if (size < HEADER_BYTES + 2)
+    if (size < HEADER_BYTES)
         return false;
-    for (uint32_t i = 0; i < size - 2; i++)
+    uint32_t parts = count_saved_part_bytes(data, size);
+    if (!parts || parts > size)
+        return false;
+    if (size - parts < 2)
+        return true;
+    uint16_t sum = 0;
+    for (uint32_t i = 0; i < parts; i++)
         sum += data[i];
-    return be16(data + size - 2) == sum;
+    return be16(data + parts) == sum;
 }
 
 int16_t dungeon_get_saved_level(const uint8_t *data, uint32_t size, int16_t map)

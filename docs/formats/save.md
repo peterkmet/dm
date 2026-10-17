@@ -7,7 +7,7 @@ The C code has two layers:
 - `src/engine/savefile.c` handles the container: the header, the cipher, and the checksums.
 - `src/engine/savegame.c` copies the game state into the blocks and back. `src/engine/dungeon.c` writes and reads the dungeon part.
 
-The English version replaces `~` in the file name with nothing. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT` with the backups `DMGAME2.BAK` to `DMGAME8.BAK` (CSB: `CSBGAME`). The slot list reads each file without a load: it strips the extension blocks with the rules of `savegame_load_from`, decodes the rest, checks the byte sum word of the dungeon part, and reads the level of the party map (`savegame_read_slot_info`). A file that fails these checks shows DAMAGED.
+The English version replaces `~` in the file name with nothing. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT` with the backups `DMGAME2.BAK` to `DMGAME8.BAK` (CSB: `CSBGAME`). The slot list reads each file without a load: it strips the extension blocks with the rules of `savegame_load_from`, decodes the rest, checks the byte sum word after the dungeon parts with the rule of the load (only when two or more bytes follow the parts), and reads the level of the party map (`savegame_read_slot_info`). A file that fails these checks shows DAMAGED.
 
 ## Byte order
 
