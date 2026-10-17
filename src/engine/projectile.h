@@ -2,7 +2,6 @@
 #ifndef DM_ENGINE_PROJECTILE_H
 #define DM_ENGINE_PROJECTILE_H
 /* Prefixes: projectile_ explosion_ */
-#include "engine/event.h"
 #include "engine/group.h"
 #include "engine/map.h"
 #include "engine/record.h"

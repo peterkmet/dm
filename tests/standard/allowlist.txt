@@ -69,12 +69,6 @@ header engine/savegame.h open: epic 5
 header engine/sensor.h open: epic 5
 header engine/event.h open: epic 5
 header ui/music.h open: epic 9
-include engine/group.h:engine/event.h open: epic 5
-include engine/inventory.c:engine/sound.h open: epic 5
-include engine/move.c:engine/inventory.h open: epic 5
-include engine/move.c:engine/event.h open: epic 5
-include engine/projectile.h:engine/event.h open: epic 5
-include engine/savegame.c:data/ids.h open: epic 5
 module platform/main.c open: epic 11
 order engine/action.c open: epic 5
 order engine/champion.c open: epic 5

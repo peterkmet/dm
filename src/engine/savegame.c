@@ -4,7 +4,6 @@
 #include "data/bytes.h"
 #include "data/file.h"
 #include "data/graphics.h"
-#include "data/ids.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/explored.h"

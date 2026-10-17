@@ -3,7 +3,6 @@
 #define DM_ENGINE_GROUP_H
 /* Prefixes: group_ creature_ */
 #include "data/tables.h"
-#include "engine/event.h"
 #include "engine/map.h"
 #include "engine/move.h"
 #include "engine/record.h"

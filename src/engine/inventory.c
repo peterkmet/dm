@@ -13,7 +13,6 @@
 #include "engine/random.h"
 #include "engine/record.h"
 #include "engine/sensor.h"
-#include "engine/sound.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
 
