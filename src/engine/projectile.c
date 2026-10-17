@@ -82,6 +82,7 @@ typedef struct {
 
 bool g_fuse_sequence_requested;
 
+/* Adds a copy of the event one tick later. */
 static void add_event_next_tick(const TimelineEvent *event)
 {
     TimelineEvent next = *event;

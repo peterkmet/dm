@@ -66,7 +66,8 @@ typedef struct {
 } ActionList;
 extern ActionList g_action_list;
 
-/* Makes a champion the acting champion with the actions of its action hand. Returns false when it cannot act. */
+/* A living champion that may act becomes the acting champion: the actions of the object in its action hand (or of
+   the empty hand) form the action list, and its action hand is drawn again. Returns false when it cannot act. */
 bool action_set_acting_champion(int16_t champion_index);
 /* The action damage to show, which is then cleared. */
 int16_t action_take_damage(void);
@@ -76,7 +77,8 @@ void action_reset(void);
 /* Closes the action menu: the action hand and the action area are drawn again. */
 void action_clear_acting_champion(void);
 
-/* Commands 113-115: runs action list entry 0-2 of the acting champion. Returns true when the action was performed. */
+/* Commands 113-115: runs action list entry 0-2 of the acting champion; the action defense applies while the action
+   runs, and the action menu closes. Returns true when the action was performed. */
 bool action_did_click_trigger_action(int16_t action_list_index);
 /* Runs one action of a champion against the square in front of the champion. After the action the action hand is
    disabled for the action ticks, the champion loses stamina, and the action skill gains experience. A failed
@@ -87,7 +89,8 @@ bool action_is_action_performed(int16_t champion_index, int16_t action); /* expo
 /* The leader throws the object in the leader hand (a click in the upper dungeon view). */
 bool action_is_hand_object_thrown(bool side);
 
-/* Ammunition in the quiver for the launcher in the weapon slot. */
+/* Ammunition in the quiver for the launcher in the weapon slot: true when the weapon slot holds a bow and the
+   ammunition slot an arrow, or a sling and a sling stone. */
 bool action_is_ammo_for_weapon(int16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot);
 /* After a throw: the next weapon of the quiver goes to the empty slot (quiver line 1 first, then line 2). */
 void action_refill_from_quiver(int16_t champion_index, int16_t slot);

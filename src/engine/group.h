@@ -200,7 +200,9 @@ static inline uint16_t creature_size(const CreatureInfo *info)
     return info->attributes & CREATURE_EXTENT_MASK;
 }
 
+/* Sets the cells byte of a group: in its active group entry on the party map, else in its record. */
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
+/* Sets the directions byte of a group: in its active group entry on the party map, else in its record. */
 void group_set_directions(uint16_t group, uint8_t directions, int16_t map);
 /* The creature type list of a map follows its last square. */
 bool group_is_allowed_on_map(uint16_t group, int16_t map);
@@ -225,6 +227,7 @@ void group_start_wandering(int16_t x, int16_t y);
 void group_frighten(uint16_t group, int16_t x, int16_t y, uint8_t delay_fleeing);
 /* A group on the party map gets an active group entry. The record keeps the entry index in its cells byte. */
 void group_add_active_group(uint16_t group, int16_t x, int16_t y); /* exported for the tests */
+/* Ends every active group entry; each group keeps its state in its record only. */
 void group_remove_all_active_groups(void);
 /* Each group of the new party map becomes active and wanders. */
 void group_add_all_active_groups(void);
@@ -256,10 +259,13 @@ void group_delete_all_except(Location at);
 DamageOutcome group_damage_creature(uint16_t group, int16_t creature_index, Location at, int16_t damage);
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
 DamageOutcome group_damage_all_creatures(uint16_t group, int16_t x, int16_t y, int16_t attack);
+/* The poison damage of a poison attack on a creature type: 0 without an attack or for an immune creature, else
+   reduced by the poison resistance. */
 uint16_t group_get_poison_attack(uint16_t creature_type, int16_t poison_attack);
 /* A closing door hits the creatures on its square; the survivors react to the danger. */
 void group_door_damages_creatures(int16_t x, int16_t y);
 
+/* The distance between two squares in steps along x plus steps along y. */
 int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 /* True when the destination is in the 90 degree cone in front of the source. (exported for the tests) */
 bool group_is_destination_visible(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);

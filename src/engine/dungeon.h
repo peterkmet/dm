@@ -40,8 +40,11 @@ bool dungeon_validate(void); /* exported for the tests */
    malloc buffer, or NULL when no dungeon is loaded. */
 uint8_t *dungeon_save(uint32_t *out_size);
 
+/* Number of maps of the loaded dungeon; 0 when no dungeon is loaded. */
 int16_t dungeon_map_count(void);
+/* Width of a map in squares. */
 int16_t dungeon_map_width(int16_t map);
+/* Height of a map in squares. */
 int16_t dungeon_map_height(int16_t map);
 /* dungeon_decode_text modes and buffer sizes. */
 #define TEXT_MODE_MESSAGE        1

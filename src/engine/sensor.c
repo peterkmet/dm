@@ -115,6 +115,7 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
                      g_game_time + rec_sensor_delay(sensor));
 }
 
+/* True when thing is an object of object_type, or a closed chest that holds one. */
 static bool is_or_contains_object(uint16_t thing, int16_t object_type)
 {
     int16_t type = object_get_type(thing);

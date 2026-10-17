@@ -147,7 +147,8 @@ extern int16_t g_leader_index, g_magic_caster_champion_index;
 #define CHAMPION_ATTR_KEEP_MASK       0x007f /* flags that stay after a redraw */
 #define CHAMPION_ATTR_INVENTORY_ALL   0x5f80 /* everything the inventory shows */
 
-/* Copies portrait portrait_index of graphic 26 into the portrait of the champion. */
+/* Copies portrait portrait_index of graphic 26 into the portrait of the champion, clipped to the portrait sheet;
+   the pixels outside the sheet stay 0. */
 void champion_set_portrait(int16_t champion_index, int16_t portrait_index); /* exported for the tests */
 /* Champions that died in the tick, one bit per champion index: the user interface releases them after the tick. */
 extern uint16_t g_dead_champions;
@@ -163,6 +164,7 @@ uint16_t champion_reset_for_new_game(void);
 
 /* Original 0x140-byte big-endian record (save files, emulator tests). */
 void champion_pack(const Champion *c, uint8_t *bytes);
+/* Reads a champion from the original 0x140-byte big-endian record. */
 void champion_unpack(const uint8_t *in, Champion *c);
 
 /* The party stands in front of a mirror. The text on the party square holds the champion data. */

@@ -69,14 +69,21 @@ uint16_t savefile_xor_block(uint8_t *bytes, uint16_t key, uint16_t word_count); 
 bool savefile_decode(const uint8_t *file, uint32_t size, SaveFile *save);
 /* Encrypts s into a new save file buffer. Returns NULL when s is incomplete. */
 uint8_t *savefile_encode(const SaveFile *save, uint32_t *out_size);
+/* Frees the data that the save file owns and clears it. */
 void savefile_free(SaveFile *save);
 
-/* Plain header fields. savefile_init_header fills a new header with random16 words and keys. */
+/* Fills a new header: the 16 block keys and the random16 chain words (savefile_encode writes the last chain word),
+   then the plain payload fields. */
 void savefile_init_header(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const uint8_t *extra);
-/* The header of a new adventure made from a saved game with ID game_id (CEDT merge), new keys included. */
+/* The header of a new adventure made from a saved game with ID game_id (CEDT merge): the first payload bytes come
+   from the saved game (0 in a port save), the game ID is game_id + 1, the header byte is 2, and new keys and chain
+   words follow. */
 void savefile_make_adventure_header(uint8_t *h, uint32_t game_id);
+/* The game ID of a header. */
 uint32_t savefile_get_game_id(const uint8_t *h);
+/* The dungeon ID of a header. */
 uint16_t savefile_get_dungeon_id(const uint8_t *h);
+/* The extra bytes of g_adventure in a header. */
 const uint8_t *savefile_get_header_extra(const uint8_t *h);
 /* The extra bytes of g_adventure: 134 (DM) or 132 (CSB). */
 uint16_t savefile_get_extra_size(void);

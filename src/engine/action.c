@@ -137,8 +137,6 @@ static void set_action_list(int16_t action_set_index)
         g_action_list.actions[n] = ACTION_NONE;
 }
 
-/* A living champion that may act becomes the acting champion: the actions of the object in its action
-   hand (or of the empty hand) form the action list, and its action hand is drawn again. */
 bool action_set_acting_champion(int16_t champion_index)
 {
     Champion *c = &g_champions[champion_index];
@@ -710,7 +708,6 @@ bool action_is_action_performed(int16_t champion_index, int16_t action)
     return performed;
 }
 
-/* Commands 113-115: the action defense applies while the action runs; the action menu closes. */
 bool action_did_click_trigger_action(int16_t action_list_index)
 {
     if (g_session.acting_champion_index < 0 || g_action_list.actions[action_list_index] == ACTION_NONE)
@@ -736,7 +733,6 @@ bool action_is_hand_object_thrown(bool side)
     return is_object_thrown(g_leader_index, -1, side);
 }
 
-/* True when the weapon slot holds a bow and the ammunition slot an arrow, or a sling and a sling stone. */
 bool action_is_ammo_for_weapon(int16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)
 {
     const Champion *c = &g_champions[champion_index];

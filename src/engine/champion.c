@@ -344,7 +344,6 @@ static void add_candidate_possessions(int16_t champion_index)
     }
 }
 
-/* Copies the portrait from the portrait sheet, clipped to the sheet; the pixels outside the sheet stay 0. */
 void champion_set_portrait(int16_t champion_index, int16_t portrait_index)
 {
     const Bitmap *portraits = gfx_get_bitmap(GFX_CHAMPION_PORTRAITS);

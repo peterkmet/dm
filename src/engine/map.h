@@ -169,6 +169,7 @@ bool map_is_square_open(int16_t x, int16_t y);
 /* The stairs axis is north-south or east-west. The exit side is the one that is not a wall or stairs. */
 int16_t map_get_stairs_exit_direction(int16_t x, int16_t y);
 
+/* The first thing on a square of the current map, or THING_ENDOFLIST. */
 uint16_t map_get_square_first_thing(int16_t x, int16_t y);
 /* The first group, object, projectile, or explosion of the square. */
 uint16_t map_get_square_first_object(int16_t x, int16_t y);
@@ -208,6 +209,7 @@ static inline int16_t direction_front_cell(int16_t direction, int16_t cell)
     return NORMALIZE(direction + (((cell - direction + 1) & 2) >> 1));
 }
 
+/* The creature attributes of the creature type of a group; 0 for a type beyond the table. */
 uint16_t map_get_creature_attributes(uint16_t group_thing);
 
 #endif

@@ -58,6 +58,7 @@ _Noreturn void game_fatal(int16_t code);
 void game_start_new(void);
 /* The start of a game, new or loaded: no candidate, no sleep, no won game, no cheats, no skill level-ups. */
 void game_reset_session(void);
+/* Sets the game mode (GAME_MODE_*) of the session. */
 void game_set_mode(int16_t mode);
 /* Turns a cheat of the advanced mode on or off. */
 void game_toggle_cheat(int16_t cheat);

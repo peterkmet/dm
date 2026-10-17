@@ -964,7 +964,6 @@ static uint16_t visible_party_distance(const GroupTurn *t, uint16_t group, int16
     return unblocked_distance(x, y, g_party_map_x, g_party_map_y, is_view_party_blocked);
 }
 
-/* The index of the latest party scent on a square (champion_get_scent_ordinal), or -1. */
 int16_t group_get_party_scent(int16_t x, int16_t y)
 {
     uint16_t scent = party_pack_position(g_current_map_index, x, y);

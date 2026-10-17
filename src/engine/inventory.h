@@ -62,7 +62,9 @@ uint16_t inventory_get_object_weight(uint16_t thing);
 /* Sharp attacks use the sharp resistance (attributes bits 0-2) of the armour. */
 uint16_t inventory_get_armour_defense(const ArmourInfo *armour, bool use_sharp_defense);
 
+/* Puts thing into the leader hand, and the leader carries its weight; THING_NONE changes nothing. */
 void inventory_put_hand_object(uint16_t thing);
+/* Empties the leader hand and returns its object or THING_NONE; the leader no longer carries its weight. */
 uint16_t inventory_take_hand_object(void);
 /* The leader takes object thing from cell of square at into the hand, unless a creature that does not levitate
    stands in that cell. Returns false when the creature protects the object, true otherwise; the hand takes only

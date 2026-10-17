@@ -187,8 +187,6 @@ static void randomize_header(uint8_t *h)
     }
 }
 
-/* save_game and save_write_header: the 16 block keys, then the random chain words (the last w3
-   comes from savefile_encode), then the fields of the payload. */
 void savefile_init_header(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, const uint8_t *extra)
 {
     memset(h, 0, SAVE_HEADER_BYTES);
@@ -203,8 +201,6 @@ void savefile_init_header(uint8_t *h, uint32_t game_id, uint16_t dungeon_id, con
         memcpy(h + get_header_field_offset(SAVE_HEADER_EXTRA), extra, savefile_get_extra_size());
 }
 
-/* CEDT merge: the first payload bytes come from the saved game (0 in a port save), the game ID is
-   the ID of the saved game + 1, the header byte is 2. New keys and chain words follow. */
 void savefile_make_adventure_header(uint8_t *h, uint32_t game_id)
 {
     memset(h + SAVE_HEADER_PAYLOAD, 0, SAVE_HEADER_SAVED_GAME_BYTES);

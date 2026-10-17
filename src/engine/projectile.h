@@ -126,6 +126,7 @@ typedef struct {
     int16_t count;
     DamageOutcome outcome;
 } ImpactCount;
+/* Every projectile in a cell of a square hits the impact target; returns the hit count and the damage outcome. */
 ImpactCount projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t y, int16_t cell);
 /* Moves a projectile one cell forward: within the square, or into the next square. Each step outside the first one
    tests the party and the creatures on the square and costs kinetic energy and attack. */
