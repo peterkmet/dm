@@ -1,31 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_PLATFORM_STATE_JSON_H
 #define DM_PLATFORM_STATE_JSON_H
-/* Prefixes: json_ state_ */
-#include <stddef.h>
+/* Prefixes: state_ */
+#include "control/json.h"
 #include <stdint.h>
 
 /* The game as JSON for the turn-based mode: what a player sees, plus the explored map
    (docs/llm/llm-mode.md). No SDL. */
 
 #define DECIMAL_BASE 10 /* request numbers, tenths, and the map grid digits are decimal */
-
-/* A growing JSON text. Start with {0}; free s when done. */
-typedef struct {
-    char *s;
-    size_t len, cap;
-} Json;
-
-/* Writer: a value or key gets its comma before it when it is not the first in its object or array. */
-void json_raw(Json *j, const char *text);
-void json_key(Json *j, const char *key);
-void json_int(Json *j, int64_t value);
-void json_bool(Json *j, int value);
-void json_null(Json *j);
-/* A JSON string with the quote, backslash, and control characters escaped. */
-void json_str(Json *j, const char *text);
-void json_open(Json *j, char bracket);  /* '{' or '[' */
-void json_close(Json *j, char bracket); /* '}' or ']' */
 
 /* Each appends one JSON object. */
 void state_json_write_state(Json *j); /* party, champions, messages, actions, runes, panels */

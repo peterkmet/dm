@@ -890,7 +890,7 @@ static void send_line(Json *j)
         else
             sent += (size_t)n;
     }
-    free(j->s);
+    json_free(j);
 }
 
 static void send_error(const char *error)
@@ -898,7 +898,7 @@ static void send_error(const char *error)
     Json j = {0};
     json_open(&j, '{');
     json_key(&j, "ok");
-    json_bool(&j, 0);
+    json_bool(&j, false);
     json_key(&j, "error");
     json_str(&j, error);
     json_close(&j, '}');
@@ -928,7 +928,7 @@ static void send_turn_result(void)
     Json j = {0};
     json_open(&j, '{');
     json_key(&j, "ok");
-    json_bool(&j, 1);
+    json_bool(&j, true);
     json_key(&j, "ticks");
     json_int(&j, g_game_time - (batch.active ? batch.start_time : turn.start_time));
     if (turn.wait_only) {
@@ -953,7 +953,7 @@ static void send_turn_result(void)
     json_bool(&j, is_game_over());
     if (turn_bumped()) {
         json_key(&j, "bumped");
-        json_bool(&j, 1);
+        json_bool(&j, true);
     }
     if (batch.active && batch.damage_count) {
         json_key(&j, "action_damage");
@@ -981,7 +981,7 @@ static void send_part(const char *key, void (*part)(Json *))
     Json j = {0};
     json_open(&j, '{');
     json_key(&j, "ok");
-    json_bool(&j, 1);
+    json_bool(&j, true);
     json_key(&j, key);
     part(&j);
     json_close(&j, '}');
