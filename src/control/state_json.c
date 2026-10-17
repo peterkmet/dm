@@ -25,22 +25,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Sizes and counts of the state text. */
 #define STATE_TEXT_SIZE 512
 #define MAP_MAX_SIZE    63 /* the widest map row (a map is at most 32 squares wide) */
 #define MAP_GRID_DIGITS 10 /* the grid shows x mod 10 */
 #define MAP_GRID_PREFIX 3  /* "yy " in front of a grid row */
 #define INT64_TEXT_SIZE 24 /* an int64_t in decimal digits with its sign */
+#define VIEW_SIDE_COUNT 3  /* left, center, right */
 
-static const char *const direction_names[4] = {"north", "east", "south", "west"};
+static const char *const direction_names[DIRECTION_COUNT] = {"north", "east", "south", "west"};
 static const char *const statistic_names[STAT_COUNT] = {"luck",     "strength",  "dexterity", "wisdom",
                                                         "vitality", "antimagic", "antifire"};
 static const char *const skill_names[SKILL_BASE_COUNT] = {"fighter", "ninja", "priest", "wizard"};
 static const char *const wound_names[UI_BODY_SLOT_COUNT] = {"ready_hand", "action_hand", "head",
                                                             "torso",      "legs",        "feet"};
 /* Relative view cells: on the party square the far cells, on the square ahead the near cells are piles 0-3. */
-static const char *const cell_names[4] = {"far_left", "far_right", "near_right", "near_left"};
-static const char *const side_names[3] = {"left", "center", "right"};
-static const char *const party_cell_names[4] = {"front_left", "front_right", "back_right", "back_left"};
+static const char *const cell_names[CELL_COUNT] = {"far_left", "far_right", "near_right", "near_left"};
+static const char *const side_names[VIEW_SIDE_COUNT] = {"left", "center", "right"};
+static const char *const party_cell_names[CELL_COUNT] = {"front_left", "front_right", "back_right", "back_left"};
 static const char *const slot_names[SLOT_COUNT] = {
     "ready_hand",  "action_hand", "head",        "torso",       "legs",        "feet",
     "pouch_2",     "quiver_2",    "quiver_3",    "quiver_4",    "neck",        "pouch_1",
@@ -557,6 +559,7 @@ static const char *const wall_ornament_names[] = {
     "rock_face",
     "lord_order",
 };
+/* The names of the wall ornaments. */
 #define WALL_ORNAMENT_NAME_COUNT (ARRAY_COUNT(wall_ornament_names))
 
 /* True for a wall sensor type that reacts to an object put on the wall. */
@@ -679,6 +682,7 @@ static void wall_faces_json(Json *j, int16_t depth, int16_t side, int16_t x, int
 static const char *const floor_ornament_names[] = {"grate",       "pressure_pad",       "moss",
                                                    "round_grate", "round_pressure_pad", "flame_pit",
                                                    "crack",       "tiny_pressure_pad",  "puddle"};
+/* The names of the floor ornaments. */
 #define FLOOR_ORNAMENT_COUNT (ARRAY_COUNT(floor_ornament_names))
 
 /* The floor ornament that the view draws on the square; an unknown ornament gets its index. */

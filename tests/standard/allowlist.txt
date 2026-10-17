@@ -8,12 +8,8 @@ hex data/csb_text.c rule 3.12: the APPB address tables of the CSB image build
 decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions, not in the game files
 long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
 long engine/event.c:event_process_expired rule 5.8: one short case for each timeline event type
-block platform/transport.c open: epic 10
-block control/state_json.c open: epic 10
 block ui/music.c open: epic 9
 block ui/music.h open: epic 9
-decimal control/control_actions.c open: epic 10
-decimal control/state_json.c open: epic 10
 static-prefix engine/group.c:turn_and_finish open: epic 10
 static-prefix engine/group.c:turn_creature open: epic 10
 static-prefix engine/group.c:turn_group open: epic 10

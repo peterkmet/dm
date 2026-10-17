@@ -25,6 +25,11 @@
 #define SLOT_REQUEST_SIZE 64
 #define CHOICE_SIZE       16
 
+/* Counts of the tables of the click helpers. */
+#define VIEWPORT_ORIGIN_COUNT 3
+#define SWAP_CHAMPION_COUNT   2
+#define MIRROR_CHOICE_COUNT   3
+
 /* Input as the player gives it: clicks and keys go through the command queue. */
 
 static void click(int16_t x, int16_t y)
@@ -73,7 +78,7 @@ static bool find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
     const Bitmap *viewport = ui_get_viewport();
     int16_t ox, oy;
     get_viewport_origin(&ox, &oy);
-    const int16_t offsets[3][2] = {
+    const Location offsets[VIEWPORT_ORIGIN_COUNT] = {
         {0,                            0                           },
         {ox,                           oy                          },
         {(SCREEN_W - viewport->w) / 2, (SCREEN_H - viewport->h) / 2}
@@ -93,8 +98,8 @@ static bool find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
         }
         if (!ui_zone_box(x2, &box))
             continue;
-        for (int k = 0; k < 3; k++)
-            if (find_in_box(table, command, box, offsets[k][0], offsets[k][1], x, y))
+        for (int k = 0; k < VIEWPORT_ORIGIN_COUNT; k++)
+            if (find_in_box(table, command, box, offsets[k].x, offsets[k].y, x, y))
                 return true;
     }
     return false;
@@ -330,13 +335,13 @@ static const char *look(const char *args)
 /* Clicks the icon of champion a, then the icon of champion b: the two champions swap cells. */
 static const char *swap_champions(const char *args)
 {
-    int64_t pair[2] = {request_get_int(args, "a", -1), request_get_int(args, "b", -1)};
-    for (int k = 0; k < 2; k++)
+    int64_t pair[SWAP_CHAMPION_COUNT] = {request_get_int(args, "a", -1), request_get_int(args, "b", -1)};
+    for (int k = 0; k < SWAP_CHAMPION_COUNT; k++)
         if (pair[k] < 0 || pair[k] >= g_party_champion_count || !g_champions[(int16_t)pair[k]].current_health)
             return "a and b must be living champions";
     if (pair[0] == pair[1])
         return "a and b must be different champions";
-    for (int k = 0; k < 2; k++)
+    for (int k = 0; k < SWAP_CHAMPION_COUNT; k++)
         if (!click_command(TABLES_MOUSE_INTERFACE,
                            COMMAND_CLICK_CHAMPION_ICON_FIRST +
                                NORMALIZE(g_champions[(int16_t)pair[k]].cell - g_party_direction)))
@@ -434,7 +439,7 @@ static const char *cast(const char *args)
 
 static const char *answer_mirror(const char *args)
 {
-    static const char *const choices[3] = {"resurrect", "reincarnate", "cancel"};
+    static const char *const choices[MIRROR_CHOICE_COUNT] = {"resurrect", "reincarnate", "cancel"};
     char choice[CHOICE_SIZE];
     if (g_session.candidate_champion_index < 0)
         return "no candidate: click a champion mirror first (click_wall_ahead)";
@@ -442,7 +447,7 @@ static const char *answer_mirror(const char *args)
         return "the leader hand must be empty";
     if (!request_get_string(args, "choice", choice, sizeof choice))
         return "choice must be resurrect, reincarnate, or cancel";
-    for (int k = 0; k < 3; k++)
+    for (int k = 0; k < MIRROR_CHOICE_COUNT; k++)
         if (!strcmp(choice, choices[k])) {
             click_command(TABLES_MOUSE_RESURRECT, PANEL_RESURRECT + k);
             return NULL;
