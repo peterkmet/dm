@@ -77,6 +77,8 @@ void menus_draw_action_icon(int16_t champion_index)
             uint8_t stamp = tables_get_palette_changes(TABLES_CHANGES_ACTION_ICON)[px[i] & COLOR_INDEX_MASK];
             if (!g_advanced_features || stamp == COLOR_CYAN)
                 px[i] = stamp;
+            else /* an own color: the interface palette, so it is the same in every light */
+                px[i] |= COLOR_INTERFACE_FLAG;
         }
     }
     ui_fill_zone(&screen, zone, COLOR_CYAN);

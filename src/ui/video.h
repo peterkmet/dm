@@ -15,7 +15,9 @@
 #define FRAMES_PER_SECOND 50 /* PAL vertical blank */
 
 /* The palette index bits of a pixel. */
-#define COLOR_INDEX_MASK (PALETTE_COLORS - 1)
+#define COLOR_INDEX_MASK     (PALETTE_COLORS - 1)
+/* A pixel bit above the index: the pixel uses the interface palette half on any row. */
+#define COLOR_INTERFACE_FLAG 0x10
 
 /* Bit positions of the color components. */
 #define ARGB_RED_SHIFT    16 /* bit position of the red byte in a video_convert_argb color */
@@ -39,7 +41,8 @@ static inline uint8_t video_argb_blue(uint32_t argb)
 
 /* The Amiga screen: chunky pixels of palette indices and the two palette halves of the copper list. Rows
    split_top to split_bottom - 1 use the top palette (palette[0..15], the dungeon view), the other rows the bottom
-   palette (palette[16..31], the interface). The default puts every row in the top palette. */
+   palette (palette[16..31], the interface); a pixel with COLOR_INTERFACE_FLAG uses the bottom palette on any row.
+   The default puts every row in the top palette. */
 typedef struct {
     uint8_t px[SCREEN_H][SCREEN_W];
     uint16_t palette[2 * PALETTE_COLORS];
@@ -58,7 +61,7 @@ static inline uint16_t video_amiga_color(uint16_t red, uint16_t green, uint16_t 
     return (uint16_t)(red << AMIGA_RED_SHIFT | green << AMIGA_GREEN_SHIFT | blue);
 }
 
-/* Amiga color of index color on screen row y. */
+/* Amiga color of index color on screen row y; COLOR_INTERFACE_FLAG selects the interface palette half. */
 uint16_t video_get_color(int16_t y, uint8_t color);
 /* Converts an Amiga 12-bit color (4 bits each of red, green, blue) to ARGB8888. */
 uint32_t video_convert_argb(uint16_t amiga);

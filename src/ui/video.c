@@ -15,7 +15,7 @@ Screen g_screen = {.split_bottom = SCREEN_H};
 
 uint16_t video_get_color(int16_t y, uint8_t color)
 {
-    bool bottom = y < g_screen.split_top || y >= g_screen.split_bottom;
+    bool bottom = y < g_screen.split_top || y >= g_screen.split_bottom || color & COLOR_INTERFACE_FLAG;
     return g_screen.palette[(color & COLOR_INDEX_MASK) | (bottom ? PALETTE_COLORS : 0)];
 }
 

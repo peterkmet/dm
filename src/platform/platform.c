@@ -148,7 +148,7 @@ static void build_frame(void)
         bool top_row = y >= g_screen.split_top && y < g_screen.split_bottom;
         for (int x = 0; x < SCREEN_W; x++) {
             uint8_t px = g_screen.px[y][x];
-            int half = top_row && !(px & BOTTOM_HALF_FLAG) ? 0 : BOTTOM_HALF_FLAG;
+            int half = top_row && !(px & COLOR_INTERFACE_FLAG) ? 0 : BOTTOM_HALF_FLAG;
             plat.frame[y][x] = (uint8_t)((px & COLOR_INDEX_MASK) | half);
         }
     }

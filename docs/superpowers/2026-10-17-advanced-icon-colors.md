@@ -1,7 +1,7 @@
 # Advanced mode: action icons keep their colors on every level: PRD
 
-Date: 2026-10-17. Branch: `feature/2026-10-17-advanced-icon-colors`. Status: reviewed (one `prd-reviewer` pass,
-as part of the todo pass of 2026-10-17); the plan is not written yet.
+Date: 2026-10-17. Branch: `feature/2026-10-17-advanced-icon-colors`. Status: implemented (todo pass of
+2026-10-17, branch `feature/2026-10-17-todo`).
 
 ## Goal
 
