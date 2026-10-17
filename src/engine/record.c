@@ -454,7 +454,7 @@ void rec_object_set_cursed(uint16_t thing, bool cursed)
     d[OBJECT_FLAGS] = (d[OBJECT_FLAGS] & ~OBJECT_CURSED_BIT) | (cursed != 0);
 }
 /* The byte that holds the important bit: the type byte of the object. */
-static uint8_t important_byte(uint16_t thing)
+static int important_byte(uint16_t thing)
 {
     return THING_TYPE(thing) == THING_POTION ? POTION_TYPE : OBJECT_TYPE;
 }
