@@ -1,39 +1,133 @@
-# dm
+# Dungeon Master for macOS and Windows
 
-A native C11/SDL3 port of Dungeon Master v3.60 (Amiga) for macOS and Windows. It is built from its own Ghidra decompilation of the original game.
+A native C11/SDL3 port of **Dungeon Master v3.60** and **Chaos Strikes Back** for the Amiga. It runs on macOS
+(Apple Silicon) and Windows (x86-64).
 
-This repository contains no game files. You supply your own disk images.
+The port is a reimplementation, not an emulator. It is built from its own Ghidra decompilation of the original
+Amiga program. The game rules follow the decompiled code exactly, and differential tests compare the port with the
+original program in a 68000 emulator. The Amiga technical layer (copper, blitter, disk loader) is not reproduced.
 
-## Status
+This repository contains no game files. You need your own Amiga disk images.
 
-The full game of Dungeon Master and Chaos Strikes Back plays on macOS and Windows.
-The LLM mode (a program plays through a Unix socket) runs on macOS.
+## What you get
 
-## Quickstart
+- The complete Dungeon Master and Chaos Strikes Back, from the Hall of Champions to the end.
+- Three modes:
+  - **Vanilla:** the original game.
+  - **Advanced:** the original game with extras: an automap, an options menu (sound and music volume, music
+    choice), 8 save slots, quick save and quick load, a cheat screen, WASD keys, up to 8 sounds at once, the
+    FM-Towns and Super NES soundtracks, and a direct start of Chaos Strikes Back from the prison stairs.
+  - **LLM (turn-based):** a program or a language model plays the game through a Unix socket; the game time stands
+    still between turns. macOS only.
+- Pixel-art upscale filters (`scale2x`, `scale3x`) and a window that scales with its size.
+
+## Get the game data
+
+You need the Amiga disk images (`.adf`):
+
+- `Dungeon Master v3.60.adf` (one disk).
+- Optional: `Chaos Strikes Back (FTL) A.adf` and `Chaos Strikes Back (FTL) B.adf`.
+
+Disks of other versions (DOS, Atari ST, other Amiga versions) do not work. At the first start the game extracts
+the disks in the current folder into `game/`, `game-csb/`, and `game-csb/disk-b/`. It checks the CRC32 of each
+required file and names the first wrong file.
+
+## Play
+
+### From a release
+
+1. Download `DungeonMaster.zip` (macOS) or `DungeonMaster-win.zip` (Windows) from the releases and unpack it.
+2. Copy your `.adf` disk images into the unpacked folder.
+3. macOS: open Terminal in the folder, remove the quarantine, and start the game:
+
+   ```sh
+   xattr -d com.apple.quarantine dm "Dungeon Master.command" libSDL3.0.dylib
+   ```
+
+   Then double-click `Dungeon Master.command`.
+
+   Windows: double-click `dm.exe`. When Windows warns about an unknown publisher, click "More info", then
+   "Run anyway".
+
+### From the source
 
 ```sh
 brew install sdl3
 uv sync
 make
-build/dm --data game
-make test
+build/dm
 ```
 
-`game/` holds `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT`. If you put the `.adf` disk images in the current folder, the game extracts them at the first start.
+Put the `.adf` disk images in the folder where you start `build/dm`.
 
-## License
+### First steps
 
-The code is GPL-3.0-or-later (`LICENSE`). The game data of Dungeon Master and Chaos Strikes Back is not included.
+1. Select the adventure (DUNGEON MASTER or CHAOS STRIKES BACK) and the mode (VANILLA, ADVANCED, or LLM).
+2. Dungeon Master: click ENTER for a new game or RESUME for a saved game. Chaos Strikes Back: NEW ADVENTURE or
+   RESUME.
+3. Recruit champions at the mirrors: click a mirror, then RESURRECT or REINCARNATE.
+
+The controls are the controls of the Amiga original: the mouse, the cursor keys or the keypad to move, Delete and
+Insert to turn, F1 to F4 for the inventories, Ctrl+S to save. The advanced mode adds W, A, S, D, Q, E, M or Tab
+(automap), Escape (options), C (cheats), F5 and F9 (quick save and quick load). The full list is in the
+[player manual](docs/manual.md#controls).
+
+### Options
+
+```text
+build/dm [options]
+  --data       DIR   the game files (DM; CSB with --adventure csb)
+  --saves      DIR   the folder of the saved games
+  --adventure  dm|csb  skip the adventure screen
+  --mode       vanilla|advanced|turnbased  skip the mode screen
+  --control    PATH  the control socket of the turn-based mode
+  --filter     none|scale2x|scale3x  the pixel-art upscale filter
+  --help             print this help
+```
+
+The saved games go to `game/` (Dungeon Master) and `game-csb/` (Chaos Strikes Back), or to the folder of
+`--saves`. The save files have the format of the Amiga original.
+
+### Let an LLM play
+
+Start the game in the turn-based mode with a control socket, then send requests with `dm-play` or connect Claude
+Code through the MCP server `dm-mcp`:
+
+```sh
+build/dm --mode turnbased --control /tmp/dm.sock
+DM_CONTROL=/tmp/dm.sock uv run dm-play --brief get_state
+DM_CONTROL=/tmp/dm.sock uv run dm-play act move_forward
+```
+
+The protocol, the actions, and the setup are in [LLM mode](docs/llm/llm-mode.md).
+
+## Develop
+
+```sh
+make            # the game and the test library, 0 warnings
+make test       # the test suite (pytest, in parallel)
+make check      # format, coding standard, and the suite
+make windows    # build/dm.exe with MinGW-w64
+```
+
+The code is in five layers under `src/`: `data`, `engine`, `ui`, `control`, `platform`. Only `platform/` uses SDL.
+The tests load the game code as a shared library with `ctypes`.
 
 ## Documentation
 
 - [Player manual](docs/manual.md): run, options, controls, modes, saves, Windows
-- [Development](docs/development.md): build, tests, layout, release
+- [Development](docs/development.md): build, tests, release
+- [Architecture](docs/architecture.md) and [coding standard](docs/coding-standard.md)
 - [Decompiling](docs/decompiling.md): Ghidra tooling
-- [Coding standard](docs/coding-standard.md)
-- [Architecture](docs/architecture.md)
-- [Formats](docs/formats/ftl.md): [FTL](docs/formats/ftl.md), [Dungeon.DAT](docs/formats/dungeon.md), [save file](docs/formats/save.md)
+- [Formats](docs/formats/ftl.md): [FTL](docs/formats/ftl.md), [Dungeon.DAT](docs/formats/dungeon.md),
+  [save file](docs/formats/save.md)
 - [Rules](docs/rules/game-state.md) of the game engine
 - [Chaos Strikes Back](docs/csb/data.md)
 - [LLM mode](docs/llm/llm-mode.md) and [LLM playbook](docs/llm/llm-playbook.md)
-- [Reference](docs/reference/kaos-map.md): the KAOS map and the symbol notes in [docs/reference/symbols/](docs/reference/symbols)
+- [Reference](docs/reference/kaos-map.md): the KAOS map and the symbol notes
+
+## License
+
+The code is GPL-3.0-or-later ([LICENSE](LICENSE)). Dungeon Master and Chaos Strikes Back are games of FTL Games
+(Software Heaven). This project is not affiliated with them. The game data is not included and is not covered by
+this license.
