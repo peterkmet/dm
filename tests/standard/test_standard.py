@@ -19,7 +19,7 @@ TESTS = ROOT / "tests"
 ALLOWLIST = Path(__file__).with_name("allowlist.txt")
 LAYERS = ["data", "engine", "ui", "control", "platform"]
 MAX_FUNCTION_LINES = 60
-EXCEPTION_RULES = {"3.12", "4.8", "5.8"}  # the rules of docs/coding-standard.md that name an exception
+EXCEPTION_RULES = {"1.7", "3.12", "4.8", "5.8"}  # the rules of docs/coding-standard.md that name an exception
 OPEN_REASON = re.compile(r"open: epic (?:[1-9]|1[0-3])")
 
 HEX = re.compile(r"\b0x[0-9a-fA-F]{2,}\b")

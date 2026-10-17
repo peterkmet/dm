@@ -57,7 +57,7 @@ include engine/move.c:engine/inventory.h open: epic 5
 include engine/move.c:engine/event.h open: epic 5
 include engine/projectile.h:engine/event.h open: epic 5
 include engine/savegame.c:data/ids.h open: epic 5
-module platform/main.c open: epic 11
+module platform/main.c rule 1.7: the entry point has no header
 order engine/action.c open: epic 5
 order engine/champion.c open: epic 5
 order engine/dungeon.c open: epic 5
