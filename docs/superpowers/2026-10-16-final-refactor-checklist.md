@@ -42,6 +42,6 @@ and the PRD acceptance (Task 132). This list holds what no test covers: the scre
 
 ## Decisions for the owner
 
-- [ ] Rule 4.8: the stored attack sound ordinal of the KAOS creature table counts as "a game record stores it"
+- [x] Rule 4.8: the stored attack sound ordinal of the KAOS creature table counts as "a game record stores it"
       (two allowlist lines). Confirm or reject.
 - [ ] Read the "Rulings of the run" list in the Decisions section of the PRD; reject any ruling you disagree with.

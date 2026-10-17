@@ -683,7 +683,7 @@ Feature: Final refactor
     field would lose that memory.
   - Rule 3.12 also allows the fixed table of a standard algorithm (the CRC-32 table of `data/crc32.c`).
   - Rule 4.8 "a game record stores it" covers the stored attack sound ordinal of the KAOS creature table
-    (the owner confirms it at the checklist).
+    (the owner confirmed it, 2026-10-17).
   - Rule 1.7: the entry point `src/platform/main.c` has no header; the module check names it as the one
     exception. The second file of a module is `<module>_<x>.c` (`control/control_actions.c`).
   - The notation check does not read `WIDTH`, `TICKS` and similar words as a decimal kind in a name with an
