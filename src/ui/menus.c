@@ -169,8 +169,9 @@ void menus_refresh_action_area(void)
         g_action_area_contains_icons = true;
         menus_draw_action_area();
     } else {
-        damage_hold_ticks = g_session.mode == GAME_MODE_ADVANCED ? DAMAGE_HOLD_EXTRA_TICKS : 0;
-        menus_draw_action_damage(action_take_damage());
+        int16_t damage = action_take_damage();
+        damage_hold_ticks = g_session.mode == GAME_MODE_ADVANCED && damage > 0 ? DAMAGE_HOLD_EXTRA_TICKS : 0;
+        menus_draw_action_damage(damage);
     }
 }
 
