@@ -130,7 +130,7 @@ static void play_sample(int16_t sound, const uint8_t *volumes)
 void sound_request_play(int16_t sound, Location at, int16_t mode, uint16_t delay)
 {
     uint8_t v[SOUND_SIDE_COUNT];
-    /* ponytail: no "current map == party map" check for mode >= 1 until the port has g_current_map_index */
+    /* Deviation: no "current map == party map" check for mode >= 1; the port has no current map index. */
     if (!is_known_sound(sound))
         return;
     if (mode == SOUND_MODE_EVENT) {
