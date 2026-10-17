@@ -19,7 +19,7 @@ The plan is in [2026-10-04-modes-plan.md](../superpowers/archive/2026-10-04-mode
 
 ### Prerequisites
 
-- The game files are in `game/` (see the [README](../../README.md)).
+- The game files are in `game/` (see the [manual](../manual.md)).
 - `uv sync` is complete.
 - Claude Code is installed.
 
@@ -111,7 +111,7 @@ The two roles are agent definitions in the repository:
 
 ## Play Chaos Strikes Back
 
-The CSB files must be in `game-csb/` (see the [README](../../README.md)). Start the game with `--adventure csb`:
+The CSB files must be in `game-csb/` (see the [manual](../manual.md)). Start the game with `--adventure csb`:
 
 ```sh
 build/dm --adventure csb --mode turnbased --control ~/.dm/control.sock

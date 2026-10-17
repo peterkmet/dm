@@ -1,0 +1,92 @@
+# Development
+
+How to build, test, and release the C port. For the player side, see [manual.md](manual.md).
+
+## Build
+
+The port uses C11, `clang`, and SDL3. Install the tools first.
+
+```sh
+brew install sdl3 clang-format
+uv sync
+```
+
+| Command | Result |
+|---|---|
+| `make` | The game `build/dm` and the test library `build/libdm.dylib`. The build has 0 warnings. |
+| `make lib` | The library only. It has no SDL code. |
+| `make windows` | `build/dm.exe` for Windows x86-64, with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. |
+| `make SANITIZE=1` | The build with the address and undefined-behavior sanitizers. |
+| `make play PLAY_DIR=<dir>` | Copy a new build to `<dir>/dm`. The default is `playthroughs/local`. The saves in the folder stay. Run it with `<dir>/dm --data game --saves <dir>`. |
+| `make clean` | Remove `build/`. |
+
+Run the game with `build/dm`. The options are in [manual.md](manual.md).
+
+## Tests
+
+The tests need `clang`, SDL3, and `clang-format` (Homebrew).
+
+```sh
+make test
+```
+
+`make test` runs `uv run pytest -q -n auto`. To run one file:
+
+```sh
+uv run pytest -q tests/<folder>/test_x.py
+```
+
+| Folder | What it proves |
+|---|---|
+| `tests/differential/` | The same input through the port (`ctypes` on `build/libdm.dylib`) and through the original in a 68000 emulator gives the same state. |
+| `tests/port/` | The port code by itself: the data layer, the UI, the control protocol, the options, and the modes. |
+| `tests/golden/` | The state, the view, the rules, the screens, and the protocol hash to the stored snapshots. Never regenerate a snapshot to make a test pass. |
+| `tests/tools/` | The Python tools in `tools/dmtools/` and `decompile.sh`. |
+| `tests/standard/` | The coding standard, the docs links, and the docs vocabulary. |
+
+`tests/dmtest/` has the shared helpers: `load_lib()` loads a private copy of the library for a test module, `constants` mirrors C constants, and `markers` has the skip markers.
+
+Some tests need files that the repository does not have. Pytest skips them with a marker:
+
+| Marker | Needs |
+|---|---|
+| `needs_dm` | `game/` with `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` |
+| `needs_csb` | `game-csb/` with `APPB.FTL`, `Graphics.DAT`, and `Dungeon.DAT` |
+| `needs_sdl` | SDL3 from Homebrew |
+| `needs_ghidra` | Ghidra from Homebrew (`tests/tools/test_ghidra.py` runs `decompile.sh` on a small synthetic image, about 4 seconds) |
+
+Each test module owns its state, so the tests run in any order and in parallel.
+
+To hide the format commit in `git blame`:
+
+```sh
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
+## Layout
+
+- `src/`: the C port in four layers. Every include names its layer, for example `#include "engine/game.h"`.
+  - `data/`: the files of the game and the tables.
+  - `engine/`: the game rules, without SDL.
+  - `ui/`: the screens, the panels, and the sound.
+  - `platform/`: SDL3, the options, the application (`app.c`), and the entry point (`main.c`).
+  - `control/`: the control protocol of the turn-based mode.
+- `third_party/dr_mp3/`: the vendored MP3 decoder.
+- `tools/dmtools/`: the Python tools. `tools/ghidra/`: the decompile scripts. `tools/dist/`: the release scripts. `tools/research/`: research scripts (not tested).
+- `tests/`: see the table above.
+- `docs/`: the documentation.
+- Git-ignored data: `game/`, `game-csb/` (original files), `reference/` (Ghidra output), `playthroughs/`.
+
+## Coding standard
+
+[coding-standard.md](coding-standard.md) is the coding standard of the C port. Follow it for every change in `src/`.
+
+- `make format` formats the C files. Run it before a commit.
+- `make check` runs the format check, `ruff`, `tests/standard`, and the full suite.
+
+## Release
+
+1. Add the changes to `CHANGELOG.md`.
+2. `make check`.
+3. `make dist` builds `build/DungeonMaster.zip` (macOS: the game and SDL3, without game files).
+4. `make dist-win` builds `build/DungeonMaster-win.zip` (`dm.exe` and `SDL3.dll`).
