@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.15.0 - 2026-10-17
 
 ### Added
 
@@ -18,6 +18,7 @@
 - Advanced mode: C opens a cheat screen with full light, immortality, food and water, and the new cheats one-hit kill, walk through walls, and reveal map; quick save and quick load; and a list of all spells with their runes. The save file keeps the cheats in a new extension block.
 - Advanced mode: 8 save slots (`DMGAME.DAT`, `DMGAME2.DAT` to `DMGAME8.DAT`; CSB `CSBGAME`). SAVE opens a save list, RESUME a load list with the level and the file time of each slot and the quick save; RESTART THIS GAME loads the slot of the last save or load.
 - Advanced mode, Chaos Strikes Back: the stairs down of the prison start the new adventure at once, without a save and without the utility disk.
+- Advanced mode: up to 8 sounds play at once (vanilla keeps the 2 of the Amiga).
 
 ### Changed
 
@@ -29,6 +30,7 @@
 - Golden snapshot tests of the save file, the dungeon view, and the game rules.
 - Windows: the ADF extraction stops with an error on a file name that is not safe on Windows; the turn-based mode is hidden.
 - `--view` uses the game keys and walks through walls.
+- Source layout: the public headers of a layer are in `src/<layer>/include/`; each layer compiles with the include paths of its own and the lower layers.
 - Advanced mode: Escape in the dungeon view opens the options menu, not the freeze. The automap keys L, I, F (cheats) and 1, 2, 3 (music) are gone; the music choice is in the options menu.
 
 ### Fixed
