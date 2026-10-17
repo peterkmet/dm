@@ -1,7 +1,6 @@
 # Credits on the entrance: PRD
 
-Date: 2026-10-17. Branch: `feature/2026-10-17-entrance-credits`. Status: reviewed (one `prd-reviewer` pass, as
-part of the todo pass of 2026-10-17); the plan is not written yet.
+Date: 2026-10-17. Branch: `feature/2026-10-17-entrance-credits`. Status: implemented (todo pass of 2026-10-17).
 
 ## Goal
 

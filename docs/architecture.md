@@ -100,13 +100,14 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `ui/command.h` | `command_` | Player input as the command table of the original: clicks and keys become queued commands; command_process_queue runs them. |
 | `ui/dialog.h` | `dialog_` | The message box with one to four choices: it draws the dialog in the viewport and waits for a click on a choice. |
 | `ui/draw.h` | `draw_` | Pixel operations on bitmaps: blit, fill, flip, shrink, and the masked fill. |
-| `ui/entrance.h` | `entrance_` | The entrance of Dungeon Master: the doors, the ENTER and RESUME buttons, the door animation. |
+| `ui/entrance.h` | `entrance_` | The entrance of Dungeon Master: the doors, the ENTER and RESUME buttons, the door animation, the credits. |
 | `ui/frame.h` | `frame_` | The frame wait of the blocking sequences: dialogs, the entrance, the endgame, the animations. |
 | `ui/gameloop.h` | `gameloop_` | Game start and the main loop: it loads the game data, starts a new or a loaded game, runs a tick, and draws what changed. |
 | `ui/layout.h` | `layout_` | The screen layout from the layout graphic of Graphics.DAT: it finds the box of a zone on the screen. |
 | `ui/logo.h` | `logo_` | The FTL logo of SWSH.FTL (not KAOS): the original shows it before the DM title. |
 | `ui/menus.h` | `menus_` | The action area, the spell area and the movement arrows at the right of the screen. |
 | `ui/music.h` | `music_` | Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and Super NES versions from MP3 files. |
+| `ui/palette.h` | `palette_` | The palette fade of the original: it changes both palette halves of g_screen step by step, one frame for each step through g_frame_hook. |
 | `ui/panel.h` | `panel_` | The inventory panel: slots, the eye and the mouth, food and water, skills and statistics, the object description, the scroll, the chest. |
 | `ui/select.h` | `select_` | The start screens in the DM font: adventure, mode, and the CSB entrance. |
 | `ui/startend.h` | `startend_` | Sequences outside the game loop: the save dialog, resuming a saved game, the endgame screens, and the fuse sequence with Lord Chaos. |

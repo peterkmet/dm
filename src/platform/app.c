@@ -161,6 +161,7 @@ typedef struct {
     bool turnbased;                  /* the game mode is turn-based: the socket gives the turns */
     bool auto_enter;                 /* DM_AUTO_ENTER or turn-based: NEW ADVENTURE without the title */
     bool title_pending;              /* the DM title plays before the entrance */
+    bool pointer_hidden;             /* the entrance credits hide the pointer */
     int16_t loaded_adventure;        /* the adventure whose game files are loaded; -1 none */
     Options options;                 /* the command line */
     const char *data_dir;            /* the disk A folder of the running adventure */
@@ -231,7 +232,10 @@ static void read_input(void)
 static void run_frame_hook(void)
 {
     read_input();
-    set_pointer(false);
+    if (app.pointer_hidden)
+        plat_set_pointer(NULL, NULL);
+    else
+        set_pointer(false);
     plat_present();
     plat_wait_tick();
 }
@@ -291,6 +295,12 @@ static bool run_entrance(const char *folder)
         g_quit_requested = false;
         quit_to_start();
         return true;
+    }
+    if (g_entrance_choice == ENTRANCE_CREDITS) {
+        app.pointer_hidden = true; /* until the entrance is drawn again, as the original */
+        entrance_show_credits();
+        show_entrance();
+        app.pointer_hidden = false;
     }
     if (g_entrance_choice == ENTRANCE_RESUME || g_entrance_choice == ENTRANCE_NEW_GAME)
         entrance_press_button(g_entrance_choice == ENTRANCE_RESUME);
@@ -487,10 +497,11 @@ static bool start_dm(void)
     app.loaded_adventure = ADVENTURE_DM;
     if (!apply_mode())
         return false;
-    entrance_draw();
-    command_set_entrance_input();
     app.screen = SCREEN_ENTRANCE;
     app.title_pending = !app.auto_enter;
+    if (!app.title_pending) /* else the title draws the entrance after it */
+        entrance_draw();
+    command_set_entrance_input();
     if (app.auto_enter)
         command_process_key(KEY_RETURN);
     /* turn-based: the game starts before the first socket request, so an early load cannot keep the entrance */

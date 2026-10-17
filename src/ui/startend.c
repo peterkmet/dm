@@ -388,11 +388,16 @@ static bool wait_for_restart(void)
     return true;
 }
 
-/* The credits screen until a key or a button is pressed. */
-static void show_credits(void)
+void startend_draw_credits(void)
 {
     Bitmap screen = video_get_screen();
     ui_blit_graphic(&screen, GFX_CREDITS, ZONE_SCREEN, COLOR_NONE);
+}
+
+/* The credits screen until a key or a button is pressed. */
+static void show_credits(void)
+{
+    startend_draw_credits();
     uint16_t credits_colors[PALETTE_COLORS];
     tables_get_palette(TABLES_PALETTE_CREDITS, credits_colors);
     ui_set_screen_palette(credits_colors);

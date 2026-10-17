@@ -761,6 +761,9 @@ static void process_other_command(int16_t command)
     case COMMAND_ENTRANCE_RESUME:
         g_entrance_choice = ENTRANCE_RESUME;
         break;
+    case COMMAND_ENTRANCE_CREDITS:
+        g_entrance_choice = ENTRANCE_CREDITS;
+        break;
     case COMMAND_SAVE_GAME:
         startend_save_game();
         break;
@@ -777,7 +780,7 @@ static void process_other_command(int16_t command)
         g_quit_requested = true;
         break;
     default:
-        break; /* deviation: no credits and no name entry */
+        break; /* deviation: no name entry */
     }
 }
 

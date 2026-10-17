@@ -183,10 +183,9 @@ The function reads all three tables from the KAOS image. The single characters f
 - A creature type beyond the creature table has no attributes (`map_get_creature_attributes`).
 - A new game and a game load start the search for a thing to discard on map 0 for each thing type (`discard_reset`); the original keeps `g_last_discarded_thing_map_index` for the whole run.
 - An icon below the first icon sheet draws empty (`ui_extract_icon`); the original reads the sheet table before its first entry.
-- The entrance has no credits (`entrance_draw`).
 - The entrance doors open over the view of the start square; the original draws a made-up corridor (`entrance_open_doors`).
 - The panel with the eye pressed keeps the leader hand object name; the original clears it until the eye is released (`panel_draw_eye`).
-- The credits command (203) and the name entry do nothing (`process_other_command` in `ui/command.c`).
+- The name entry does nothing (`process_other_command` in `ui/command.c`).
 
 ## Not ported
 

@@ -5,9 +5,6 @@
 /* Alpha of an opaque ARGB pixel. */
 #define ARGB_OPAQUE 0xff000000u
 
-/* One 4-bit component of an Amiga color. */
-#define AMIGA_CHANNEL_MASK 0xf
-
 /* Widens a 4-bit component to 8 bits: 15 * 17 = 255. */
 #define CHANNEL_4_TO_8_FACTOR 17
 
@@ -21,9 +18,9 @@ uint16_t video_get_color(int16_t y, uint8_t color)
 
 uint32_t video_convert_argb(uint16_t amiga)
 {
-    uint32_t r = amiga >> AMIGA_RED_SHIFT & AMIGA_CHANNEL_MASK;
-    uint32_t g = amiga >> AMIGA_GREEN_SHIFT & AMIGA_CHANNEL_MASK;
-    uint32_t b = amiga & AMIGA_CHANNEL_MASK;
+    uint32_t r = video_amiga_red(amiga);
+    uint32_t g = video_amiga_green(amiga);
+    uint32_t b = video_amiga_blue(amiga);
     return ARGB_OPAQUE | (r * CHANNEL_4_TO_8_FACTOR) << ARGB_RED_SHIFT |
            (g * CHANNEL_4_TO_8_FACTOR) << ARGB_GREEN_SHIFT | b * CHANNEL_4_TO_8_FACTOR;
 }

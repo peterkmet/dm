@@ -25,6 +25,9 @@
 #define AMIGA_RED_SHIFT   8 /* bit position of the red nibble in an Amiga 12-bit color */
 #define AMIGA_GREEN_SHIFT 4
 
+/* One 4-bit component of an Amiga color. */
+#define AMIGA_CHANNEL_MASK 0xf
+
 /* The channels of a video_convert_argb color. */
 static inline uint8_t video_argb_red(uint32_t argb)
 {
@@ -59,6 +62,20 @@ static inline Bitmap video_get_screen(void)
 static inline uint16_t video_amiga_color(uint16_t red, uint16_t green, uint16_t blue)
 {
     return (uint16_t)(red << AMIGA_RED_SHIFT | green << AMIGA_GREEN_SHIFT | blue);
+}
+
+/* The 4-bit components of an Amiga 12-bit color. */
+static inline uint16_t video_amiga_red(uint16_t amiga)
+{
+    return amiga >> AMIGA_RED_SHIFT & AMIGA_CHANNEL_MASK;
+}
+static inline uint16_t video_amiga_green(uint16_t amiga)
+{
+    return amiga >> AMIGA_GREEN_SHIFT & AMIGA_CHANNEL_MASK;
+}
+static inline uint16_t video_amiga_blue(uint16_t amiga)
+{
+    return amiga & AMIGA_CHANNEL_MASK;
 }
 
 /* Amiga color of index color on screen row y; COLOR_INTERFACE_FLAG selects the interface palette half. */

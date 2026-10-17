@@ -9,10 +9,13 @@
 #include "engine/party.h"
 #include "engine/sound.h"
 #include "ui/audio.h"
+#include "ui/command.h"
 #include "ui/draw.h"
 #include "ui/frame.h"
 #include "ui/gameloop.h"
 #include "ui/layout.h"
+#include "ui/palette.h"
+#include "ui/startend.h"
 #include "ui/ui.h"
 #include "ui/video.h"
 #include "ui/view.h"
@@ -20,12 +23,13 @@
 #include <string.h>
 
 /* Sizes in pixels, times in frames. */
-#define SIDE_COUNT    2 /* the two doors, the two sound channels */
-#define BUTTON_HEIGHT 13
-#define BUTTON_FRAMES 20
-#define DOOR_STEP     2
-#define STEP_FRAMES   2
-#define SOUND_FRAMES  40
+#define SIDE_COUNT     2 /* the two doors, the two sound channels */
+#define BUTTON_HEIGHT  13
+#define BUTTON_FRAMES  20
+#define DOOR_STEP      2
+#define STEP_FRAMES    2
+#define SOUND_FRAMES   40
+#define CREDITS_FRAMES 1800 /* 36 seconds */
 
 int16_t g_entrance_choice = ENTRANCE_WAITING;
 
@@ -66,19 +70,29 @@ static bool show_doors(const Bitmap *view, int16_t opened)
     return shown;
 }
 
-/* The entrance palette over the whole screen. */
-static void set_entrance_palette(void)
+/* The top palette over the whole screen. */
+static void set_full_screen_split(void)
 {
-    tables_get_palette(TABLES_PALETTE_ENTRANCE, g_screen.palette);
     g_screen.split_top = 0;
     g_screen.split_bottom = SCREEN_H;
 }
 
+/* The entrance palette over the whole screen. */
+static void set_entrance_palette(void)
+{
+    tables_get_palette(TABLES_PALETTE_ENTRANCE, g_screen.palette);
+    set_full_screen_split();
+}
+
 void entrance_draw(void)
 {
+    uint16_t colors[PALETTE_COLORS];
+    palette_fade_to_black();
     memset(g_screen.px, 0, sizeof g_screen.px);
-    set_entrance_palette();
+    set_full_screen_split();
     show_doors(NULL, 0);
+    tables_get_palette(TABLES_PALETTE_ENTRANCE, colors);
+    palette_fade_to(colors);
 }
 
 void entrance_press_button(bool resume)
@@ -118,4 +132,16 @@ void entrance_open_doors(void)
         for (int16_t f = 0; f < STEP_FRAMES && frame_wait(); f++, frames++)
             ;
     }
+}
+
+void entrance_show_credits(void)
+{
+    uint16_t colors[PALETTE_COLORS];
+    palette_fade_to_black();
+    startend_draw_credits();
+    tables_get_palette(TABLES_PALETTE_CREDITS, colors);
+    palette_fade_to(colors);
+    command_discard_all_input(); /* the keys and clicks of the fades do not end the credits */
+    for (int16_t frames = 0; frames < CREDITS_FRAMES && !g_input_received && frame_wait(); frames++)
+        ;
 }

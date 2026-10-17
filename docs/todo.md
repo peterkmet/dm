@@ -11,11 +11,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - Owner's wish (2026-10-17): REINCARNATE asks for a new name and title, as in the original.
 - PRD: `docs/superpowers/2026-10-17-reincarnate-name.md`.
 
-## Credits on the entrance
-
-- The credits command (203) of the entrance is not ported; the original fades the palette.
-- PRD: `docs/superpowers/2026-10-17-entrance-credits.md`.
-
 ## Windows build: the sound crackles under Wine
 
 - Found in the manual test (2026-10-17): `dm.exe` under the local Wine CX build (`~/github/wine-cross`) plays, saves and loads, but the sounds crackle and pop (wall bump, door). The macOS build sounds clean. Kairosoft games in the same Wine sound clean.

@@ -31,6 +31,8 @@ int startend_save_current_game(const char **reason);
 void startend_save_game(void);
 /* RESUME: loads the saved game with its dialogs. Returns true when the game is loaded. */
 bool startend_load_saved_game(void);
+/* Draws the credits graphic on the whole screen; the caller sets the credits palette. */
+void startend_draw_credits(void);
 /* The end of the game: game over (party_dead true), won (g_session.won), or quit (party_dead false). It
    returns after RESTART THIS GAME loaded the saved game, or after the credits with g_return_to_entrance set:
    the port shows the entrance after the credits instead of quitting (deliberate deviation). */

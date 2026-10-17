@@ -108,7 +108,9 @@ refactor; until the run ends, the allowlist carries the difference.
     the game files (the soundtrack tables of the other versions) stays in the source, named in the allowlist
     with this reason; the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`) stay
     in the source, named in the allowlist with this reason; the fixed CRC-32 table of a standard algorithm
-    (`data/crc32.c`) stays in the source, named in the allowlist with this reason. [decimal, hex, allowlist]
+    (`data/crc32.c`) stays in the source, named in the allowlist with this reason; the palette fade step table of
+    the video driver VDEO.FTL, which the port does not load (`ui/palette.c`), stays in the source, named in the
+    allowlist with this reason. [decimal, hex, allowlist]
 
 ## 4. Naming
 
