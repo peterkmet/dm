@@ -67,6 +67,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `engine/action.h` | `action_` | Champion actions of the action area (KAOS range 8, MENU.C). |
 | `engine/arith.h` | `min16` `max16` `abs16` `bounded_` `scale_` | The 16-bit arithmetic of the original rules: minimum, maximum, bounds, and the scaled product of the 68000. |
 | `engine/champion.h` | `champion_` | Champion rules of KAOS (CHAMPION.C). |
+| `engine/discard.h` | `discard_` | The record of a new thing: a free record, or the record of a thing that disappears from a far square when no record of its type is free. |
 | `engine/dungeon.h` | `dungeon_` | The loaded dungeon: header, maps, squares and thing records, in the big-endian byte layout of the original memory. |
 | `engine/event.h` | `event_` | Timeline event types and the handlers of the square events. |
 | `engine/explored.h` | `explored_` | Explored squares (not in the original game): the squares the party has seen, for the automap. |

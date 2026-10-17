@@ -4,7 +4,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 
 ## Small cleanups after the clean-code pass
 
-- `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing`. PRD: `docs/superpowers/2026-10-17-discard-thing.md`.
 - `light_depths` (`src/engine/explored.c`): a fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it.
 
 ## Port the name entry of a reincarnated champion

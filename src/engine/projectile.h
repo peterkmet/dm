@@ -116,6 +116,11 @@ void explosion_create(uint16_t explosion_thing, int16_t attack, Location at, Loc
 Impact projectile_get_impact_attack(uint16_t projectile, uint16_t thing); /* exported for the tests */
 /* The flight direction of a projectile (from its move event). */
 int16_t projectile_get_flight_direction(uint16_t projectile);
+/* The projectile ends: the flying object drops to the square, or joins the possessions of the group that caught it
+   (possessing_group is THING_NONE for the square). */
+void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x, int16_t y);
+/* The move event of the projectile leaves the timeline. */
+void projectile_delete_event(uint16_t projectile);
 /* The square and cell that an impact test looks at. */
 typedef struct {
     int16_t type;

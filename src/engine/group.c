@@ -5,6 +5,7 @@
 #include "data/tables.h"
 #include "engine/arith.h"
 #include "engine/champion.h"
+#include "engine/discard.h"
 #include "engine/event.h"
 #include "engine/game.h"
 #include "engine/inventory.h"
@@ -505,7 +506,7 @@ uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, 
     if ((uint16_t)(g_max_active_group_count - ACTIVE_GROUP_RESERVE) <= g_active_group_count &&
         g_current_map_index == g_party_map_index)
         return THING_NONE;
-    uint16_t group = rec_find_unused_thing(THING_GROUP);
+    uint16_t group = discard_get_unused_thing(THING_GROUP);
     if (group == THING_NONE)
         return THING_NONE;
     rec_group_set_possessions(group, THING_ENDOFLIST);
@@ -605,7 +606,7 @@ static void drop_fixed_possessions(uint16_t creature_type, int16_t x, int16_t y,
             thing_type = THING_WEAPON;
             object_type = info_index - OBJECT_INFO_FIRST_WEAPON;
         }
-        uint16_t thing = rec_find_unused_thing(thing_type);
+        uint16_t thing = discard_get_unused_thing(thing_type);
         if (thing == THING_NONE)
             continue;
         rec_object_set_type(thing, object_type);

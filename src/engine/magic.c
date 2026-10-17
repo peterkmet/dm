@@ -5,6 +5,7 @@
 #include "data/spells.h"
 #include "engine/arith.h"
 #include "engine/champion.h"
+#include "engine/discard.h"
 #include "engine/dungeon.h"
 #include "engine/event.h"
 #include "engine/game.h"
@@ -212,7 +213,7 @@ static void cast_light(uint16_t light_power, uint16_t ticks)
 /* Zokathra: a new junk object in an empty hand, else on the party square. */
 static void cast_zokathra(int16_t champion_index)
 {
-    uint16_t thing = rec_find_unused_thing(THING_JUNK);
+    uint16_t thing = discard_get_unused_thing(THING_JUNK);
     if (thing == THING_NONE)
         return;
     rec_junk_set_type(thing, JUNK_ZOKATHRA);

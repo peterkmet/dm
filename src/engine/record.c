@@ -189,6 +189,12 @@ void rec_thing_set_free(uint16_t thing)
 {
     wr16(REC(thing) + THING_NEXT, THING_NONE);
 }
+void rec_thing_clear(uint16_t thing)
+{
+    uint8_t *record = REC(thing);
+    memset(record, 0, g_thing_data_byte_count[THING_TYPE(thing)]);
+    wr16(record + THING_NEXT, THING_ENDOFLIST);
+}
 
 uint16_t rec_find_unused_thing(uint16_t thing_type)
 {
@@ -198,10 +204,8 @@ uint16_t rec_find_unused_thing(uint16_t thing_type)
     if (thing_type == THING_JUNK)
         count -= JUNK_RESERVED_COUNT;
     for (int16_t i = 0; i < count; i++) {
-        uint8_t *record = g_thing_data[type] + i * size;
-        if (be16(record) == THING_NONE) {
-            memset(record, 0, size);
-            wr16(record, THING_ENDOFLIST);
+        if (be16(g_thing_data[type] + i * size) == THING_NONE) {
+            rec_thing_clear(THING_MAKE(type, i));
             return THING_MAKE(type, i);
         }
     }
@@ -433,6 +437,10 @@ void rec_group_set_no_discard(uint16_t thing, bool no_discard)
     uint8_t *d = REC(thing);
     d[GROUP_FLAGS] = no_discard ? d[GROUP_FLAGS] | GROUP_NO_DISCARD_BIT : d[GROUP_FLAGS] & ~GROUP_NO_DISCARD_BIT;
 }
+bool rec_group_is_no_discard(uint16_t thing)
+{
+    return record_bytes(thing)[GROUP_FLAGS] & GROUP_NO_DISCARD_BIT;
+}
 
 /* Object records */
 
@@ -445,10 +453,19 @@ void rec_object_set_cursed(uint16_t thing, bool cursed)
     uint8_t *d = REC(thing);
     d[OBJECT_FLAGS] = (d[OBJECT_FLAGS] & ~OBJECT_CURSED_BIT) | (cursed != 0);
 }
+/* The byte that holds the important bit: the type byte of the object. */
+static uint8_t important_byte(uint16_t thing)
+{
+    return THING_TYPE(thing) == THING_POTION ? POTION_TYPE : OBJECT_TYPE;
+}
+bool rec_object_is_important(uint16_t thing)
+{
+    return record_bytes(thing)[important_byte(thing)] & OBJECT_IMPORTANT_BIT;
+}
 void rec_object_set_important(uint16_t thing, bool important)
 {
-    uint8_t *d = REC(thing);
-    d[OBJECT_TYPE] = important ? d[OBJECT_TYPE] | OBJECT_IMPORTANT_BIT : d[OBJECT_TYPE] & ~OBJECT_IMPORTANT_BIT;
+    uint8_t *d = REC(thing) + important_byte(thing);
+    *d = important ? *d | OBJECT_IMPORTANT_BIT : *d & ~OBJECT_IMPORTANT_BIT;
 }
 void rec_object_set_type(uint16_t thing, uint16_t value)
 {

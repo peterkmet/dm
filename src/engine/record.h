@@ -22,6 +22,8 @@ uint8_t *rec_write(uint16_t thing);
 uint16_t rec_thing_next(uint16_t thing);
 void rec_thing_set_next(uint16_t thing, uint16_t value);
 void rec_thing_set_free(uint16_t thing);
+/* The record of a new thing: all bytes 0, the next thing THING_ENDOFLIST. */
+void rec_thing_clear(uint16_t thing);
 /* A free record of the type. Junk keeps 3 records in reserve unless NO_JUNK_RESERVE is set. Returns THING_NONE
    when no record is free. */
 uint16_t rec_find_unused_thing(uint16_t thing_type);
@@ -97,10 +99,14 @@ void rec_group_set_last_creature(uint16_t thing, uint16_t value);
 uint8_t rec_group_direction(uint16_t thing);
 void rec_group_set_direction(uint16_t thing, uint16_t value);
 void rec_group_set_no_discard(uint16_t thing, bool no_discard);
+bool rec_group_is_no_discard(uint16_t thing);
 
 /* Object records (thing types 5-10) */
 bool rec_object_is_cursed(uint16_t thing);
 void rec_object_set_cursed(uint16_t thing, bool cursed);
+/* An important object never disappears when the records run out. Weapon, armour, and junk keep the bit in byte 3,
+   a potion in byte 2. */
+bool rec_object_is_important(uint16_t thing);
 void rec_object_set_important(uint16_t thing, bool important);
 /* Weapon, armour, and junk: the type in word 2 bits 0-6; the important bit stays. */
 void rec_object_set_type(uint16_t thing, uint16_t value);

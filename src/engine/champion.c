@@ -7,6 +7,7 @@
 #include "data/tables.h"
 #include "engine/action.h"
 #include "engine/arith.h"
+#include "engine/discard.h"
 #include "engine/event.h"
 #include "engine/game.h"
 #include "engine/group.h"
@@ -876,7 +877,7 @@ void champion_kill(int16_t champion_index)
     c->attributes |= CHAMPION_ATTR_STATUS_BOX;
     g_dead_champions |= 1 << champion_index;
     drop_all_objects(champion_index);
-    uint16_t bones = rec_find_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
+    uint16_t bones = discard_get_unused_thing(THING_JUNK | NO_JUNK_RESERVE);
     if (bones != THING_NONE) {
         rec_junk_set_type(bones, JUNK_BONES);
         rec_object_set_important(bones, true);

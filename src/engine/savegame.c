@@ -5,6 +5,7 @@
 #include "data/file.h"
 #include "data/graphics.h"
 #include "engine/champion.h"
+#include "engine/discard.h"
 #include "engine/dungeon.h"
 #include "engine/explored.h"
 #include "engine/game.h"
@@ -494,6 +495,7 @@ static bool restore_game(const SaveFile *s)
     if (!dungeon_load_saved(s->dungeon, s->dungeon_size))
         return false;
     unpack_globals(s->block[SAVE_BLOCK_GLOBALS]);
+    discard_reset(); /* the original keeps the search maps of the game before the load */
     if (!allocate_tables())
         return false;
     for (uint16_t i = 0; i < g_max_active_group_count; i++)

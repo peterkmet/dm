@@ -1,7 +1,7 @@
 # Discard a thing when the records run out: PRD
 
-Date: 2026-10-17. Branch: `feature/2026-10-17-discard-thing`. Status: reviewed (one `prd-reviewer` pass, as part
-of the todo pass of 2026-10-17); the plan is not written yet.
+Date: 2026-10-17. Branch: `feature/2026-10-17-discard-thing`. Status: implemented (reviewed by one `prd-reviewer`
+pass, as part of the todo pass of 2026-10-17).
 
 ## Goal
 

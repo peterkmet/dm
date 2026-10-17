@@ -4,6 +4,7 @@
 #include "data/tables.h"
 #include "engine/arith.h"
 #include "engine/champion.h"
+#include "engine/discard.h"
 #include "engine/event.h"
 #include "engine/game.h"
 #include "engine/group.h"
@@ -104,7 +105,7 @@ static void add_event_next_tick(const TimelineEvent *event)
 
 void projectile_create(const ProjectileLaunch *launch)
 {
-    uint16_t projectile = rec_find_unused_thing(THING_PROJECTILE);
+    uint16_t projectile = discard_get_unused_thing(THING_PROJECTILE);
     if (projectile == THING_NONE) {
         if (THING_TYPE(launch->thing) != THING_EXPLOSION)
             move_get_move_result(
@@ -162,7 +163,7 @@ static void damage_square(uint16_t explosion_thing, uint16_t attack, int16_t x, 
 /* Returns false when no explosion thing is free. */
 static bool place_explosion(uint16_t explosion_thing, uint16_t attack, Location at, int16_t cell)
 {
-    uint16_t explosion = rec_find_unused_thing(THING_EXPLOSION);
+    uint16_t explosion = discard_get_unused_thing(THING_EXPLOSION);
     if (explosion == THING_NONE)
         return false;
     int16_t x = at.x;
@@ -372,8 +373,7 @@ static void create_impact_explosion(uint16_t thing, uint16_t projectile, FlaskEx
     }
 }
 
-/* The flying object drops to the square, or joins the possessions of the group that caught it. */
-static void delete_projectile(uint16_t projectile, uint16_t possessing_group, int16_t x, int16_t y)
+void projectile_delete(uint16_t projectile, uint16_t possessing_group, int16_t x, int16_t y)
 {
     uint16_t thing = rec_projectile_slot(projectile);
     if (THING_TYPE(thing) != THING_EXPLOSION) {
@@ -394,7 +394,7 @@ static void delete_projectile(uint16_t projectile, uint16_t possessing_group, in
     rec_thing_set_free(projectile);
 }
 
-static void delete_event(uint16_t projectile)
+void projectile_delete_event(uint16_t projectile)
 {
     timeline_delete_event(rec_projectile_event_index(projectile));
 }
@@ -451,7 +451,7 @@ static bool has_impact_occurred(ImpactSite site, uint16_t projectile, DamageOutc
         rec_projectile_set_slot(projectile, flask.explosion);
     }
     map_unlink_thing_from_list(projectile, 0, at.x, at.y);
-    delete_projectile(projectile, hit.possessing_group, at.x, at.y);
+    projectile_delete(projectile, hit.possessing_group, at.x, at.y);
     return true;
 }
 
@@ -470,7 +470,7 @@ ImpactCount projectile_get_impact_count(int16_t impact_type, int16_t x, int16_t 
             t = rec_thing_next(t);
         if (t == THING_ENDOFLIST)
             return result;
-        delete_event(t);
+        projectile_delete_event(t);
         result.count++;
     } while (impact_type != IMPACT_CREATURE || result.outcome != OUTCOME_ALL_CREATURES_KILLED);
     return result;
@@ -502,7 +502,7 @@ void projectile_process_move_event(TimelineEvent *event)
             return;
         if (rec_projectile_energy(projectile) <= step_energy) {
             map_unlink_thing_from_list(projectile, 0, x, y);
-            delete_projectile(projectile, THING_NONE, x, y);
+            projectile_delete(projectile, THING_NONE, x, y);
             return;
         }
         rec_projectile_set_energy(projectile, rec_projectile_energy(projectile) - step_energy);
@@ -646,7 +646,7 @@ void projectile_fluxcage_action(int16_t x, int16_t y)
     int16_t type = rec_square_type(map_get_square(x, y));
     if (type == SQUARE_WALL || type == SQUARE_STAIRS)
         return;
-    uint16_t fluxcage = rec_find_unused_thing(THING_EXPLOSION);
+    uint16_t fluxcage = discard_get_unused_thing(THING_EXPLOSION);
     if (fluxcage == THING_NONE)
         return;
     map_link_thing_to_list(fluxcage, 0, x, y);
@@ -783,7 +783,7 @@ bool projectile_is_killed_by_impact(int16_t src_x, int16_t src_y, int16_t dst_x,
                     g_timeline.events[rec_projectile_event_index(t)].type == EVENT_MOVE_PROJECTILE_IGNORE_IMPACTS ||
                     target < 0 || !has_impact_occurred((ImpactSite){impact_type, at, source, target}, t, &outcome))
                     continue;
-                delete_event(t);
+                projectile_delete_event(t);
                 if (outcome == OUTCOME_ALL_CREATURES_KILLED)
                     return true;
                 hit = 1;
@@ -904,7 +904,7 @@ uint16_t projectile_get_launch_object(int16_t object_info_index)
     default:
         return THING_NONE;
     }
-    uint16_t thing = rec_find_unused_thing(thing_type);
+    uint16_t thing = discard_get_unused_thing(thing_type);
     if (thing == THING_NONE)
         return THING_NONE;
     /* The original also fills the charges of a lit torch; a new record is never lit. */

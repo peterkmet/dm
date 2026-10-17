@@ -2,6 +2,7 @@
 #include "engine/game.h"
 #include "data/os.h"
 #include "engine/champion.h"
+#include "engine/discard.h"
 #include "engine/group.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
@@ -57,6 +58,7 @@ void game_start_new(void)
     g_game_id = r * random16();
     timeline_init();
     group_init_active_groups();
+    discard_reset(); /* the original never resets the search maps; the port can load another dungeon */
 }
 
 void game_reset_session(void)
