@@ -27,8 +27,8 @@
 static const char *const music_names[SETTINGS_MUSIC_COUNT] = {"ORIGINAL", "SUPER NES", "FM-TOWNS"};
 
 static struct {
-    int16_t row;     /* the selected row */
-    Settings opened; /* the values when the menu opened */
+    int16_t row;    /* the selected row */
+    Settings saved; /* the values of the settings file */
 } menu;
 
 /* The values in use. */
@@ -54,18 +54,20 @@ static void show_menu(void)
 void optmenu_open(void)
 {
     menu.row = ROW_SOUND;
-    menu.opened = get_current();
+    menu.saved = get_current();
     show_menu();
 }
 
-/* Writes the settings file when a value changed since the menu opened; a failed write keeps the values. */
+/* Writes the settings file when a value differs from the file; a failed write keeps the values. */
 static void save_changes(void)
 {
     Settings now = get_current();
-    if (now.sound_volume == menu.opened.sound_volume && now.music_volume == menu.opened.music_volume &&
-        now.music == menu.opened.music)
+    if (now.sound_volume == menu.saved.sound_volume && now.music_volume == menu.saved.music_volume &&
+        now.music == menu.saved.music)
         return;
-    if (!settings_save(startend_save_dir(), &now))
+    if (settings_save(startend_save_dir(), &now))
+        menu.saved = now;
+    else
         advanced_print_message("UNABLE TO SAVE OPTIONS");
 }
 
@@ -95,19 +97,16 @@ static void change_value(int16_t step)
         g_music_volume = step_volume(g_music_volume, step);
     else if (menu.row == ROW_MUSIC)
         music_select(step_music(step));
+    save_changes();
 }
 
 bool optmenu_process_key(uint16_t key)
 {
     switch (key) {
     case KEY_ESCAPE:
-        save_changes();
         return true;
     case KEY_RETURN:
-        if (menu.row != ROW_CONTINUE)
-            return false;
-        save_changes();
-        return true;
+        return menu.row == ROW_CONTINUE;
     case KEY_UP:
         if (menu.row > ROW_SOUND)
             menu.row--;
@@ -139,10 +138,8 @@ bool optmenu_process_click(int16_t x, int16_t y)
     if (row < 0)
         return false;
     menu.row = row;
-    if (row == ROW_CONTINUE) {
-        save_changes();
+    if (row == ROW_CONTINUE)
         return true;
-    }
     int16_t column = rows_find_column(x);
     if (row == ROW_MUSIC)
         change_value(1);

@@ -112,7 +112,7 @@ A claim without a `file:line` source is an assumption; the plan task that relies
   cannot read gives the default of that value: sound 7, music volume 7, music ORIGINAL.
 - `music=super-nes` in CSB gives ORIGINAL in the game. The port does not write the file for this; the file
   keeps `super-nes` until the player changes a value.
-- Write: when the menu closes and a value changed, the port writes a temporary file and then replaces
+- Write: on each change of a value in the menu, the port writes a temporary file and then replaces
   `SETTINGS.TXT` with it (`file_write`, `file_replace`). When the write fails, the message area shows UNABLE TO
   SAVE OPTIONS, and the values stay in use. When no value changed, the port does not write.
 - The vanilla and the turnbased modes do not read or write the file.
