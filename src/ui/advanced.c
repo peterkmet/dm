@@ -11,6 +11,7 @@
 #include "record.h"
 #include "savegame.h"
 #include "automap.h"
+#include "cheats.h"
 #include "command.h"
 #include "frame.h"
 #include "gameloop.h"
@@ -95,6 +96,43 @@ void advanced_drag(int16_t x, int16_t y)
     show_automap();
 }
 
+/* A quick save is not a saved game: RESTART and the QUIT question look only at the save file. */
+static void quick_save(void)
+{
+    advanced_print_message(savegame_quick_save(startend_save_dir()) ? "GAME SAVED" : "UNABLE TO SAVE");
+}
+
+/* After a damaged file, savegame_load_from puts the running game back: the game goes on. */
+static void quick_load(void)
+{
+    SavegameResult result = savegame_quick_load(startend_save_dir());
+    if (result == SAVEGAME_LOADED)
+        gameloop_continue_loaded_game();
+    advanced_print_message(result == SAVEGAME_LOADED    ? "GAME LOADED"
+                           : result == SAVEGAME_MISSING ? "NO QUICK SAVE"
+                                                        : "QUICK SAVE DAMAGED");
+}
+
+/* Runs what a key or a click on the cheat screen asks for. */
+static void run_cheats_result(CheatsResult result)
+{
+    switch (result) {
+    case CHEATS_STAY:
+        break;
+    case CHEATS_CLOSE:
+        close_screen();
+        break;
+    case CHEATS_QUICK_SAVE:
+        quick_save();
+        ui_draw_message_area(); /* the game loop draws no interface while the screen is open */
+        break;
+    case CHEATS_QUICK_LOAD:
+        close_screen();
+        quick_load();
+        break;
+    }
+}
+
 bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
 {
     if (g_advanced_screen == ADVANCED_SCREEN_NONE)
@@ -102,6 +140,11 @@ bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
     if (g_advanced_screen == ADVANCED_SCREEN_OPTIONS) {
         if (kind == CLICK_LEFT_PRESS && optmenu_process_click(x, y))
             close_screen();
+        return true;
+    }
+    if (g_advanced_screen == ADVANCED_SCREEN_CHEATS) {
+        if (kind == CLICK_LEFT_PRESS)
+            run_cheats_result(cheats_process_click(x, y));
         return true;
     }
     Box b;
@@ -122,23 +165,6 @@ void advanced_print_message(const char *text)
     message_print(QUICK_MESSAGE_COLOR, text);
 }
 
-/* A quick save is not a saved game: RESTART and the QUIT question look only at the save file. */
-static void quick_save(void)
-{
-    advanced_print_message(savegame_quick_save(startend_save_dir()) ? "GAME SAVED" : "UNABLE TO SAVE");
-}
-
-/* After a damaged file, savegame_load_from puts the running game back: the game goes on. */
-static void quick_load(void)
-{
-    SavegameResult result = savegame_quick_load(startend_save_dir());
-    if (result == SAVEGAME_LOADED)
-        gameloop_continue_loaded_game();
-    advanced_print_message(result == SAVEGAME_LOADED    ? "GAME LOADED"
-                           : result == SAVEGAME_MISSING ? "NO QUICK SAVE"
-                                                        : "QUICK SAVE DAMAGED");
-}
-
 bool advanced_process_key(uint16_t key)
 {
     if (g_session.mode == GAME_MODE_VANILLA || champion_is_renaming())
@@ -151,6 +177,9 @@ bool advanced_process_key(uint16_t key)
     case ADVANCED_SCREEN_OPTIONS:
         if (optmenu_process_key(key))
             close_screen();
+        return true;
+    case ADVANCED_SCREEN_CHEATS:
+        run_cheats_result(cheats_process_key(key));
         return true;
     }
     switch (key) {
@@ -175,6 +204,12 @@ bool advanced_process_key(uint16_t key)
             return false; /* the inventory closes, or the game freezes or unfreezes */
         open_screen(ADVANCED_SCREEN_OPTIONS);
         optmenu_open();
+        return true;
+    case KEY_C:
+        if (g_session.mode != GAME_MODE_ADVANCED || !in_dungeon_view())
+            return true;
+        open_screen(ADVANCED_SCREEN_CHEATS);
+        cheats_open();
         return true;
     }
     return false;

@@ -53,10 +53,12 @@
 #define CTRL_ASCII 0x80
 #define CTRL_MASK  0x3f
 
-/* The Amiga key word of a key of the advanced modes: M, Tab, F5, F9, and the movement letters. */
+/* The Amiga key word of a key of the advanced modes: C, M, Tab, F5, F9, and the movement letters. */
 static uint16_t get_advanced_key(int key)
 {
     switch (key) {
+    case SDLK_C:
+        return KEY_C;
     case SDLK_M:
         return KEY_M;
     case SDLK_TAB:
@@ -82,8 +84,8 @@ static uint16_t get_name_entry_key(int key, int character)
 
 /* The Amiga key word of an SDL key: raw key code in the high byte, ASCII in the low byte. Keypad
    keys move as the cursor keys; 7 and 9 turn (Del and Help). In vanilla and during the name entry, the letters,
-   the space, Backspace and the punctuation are the name entry keys; else M, Tab, F5, F9, and W, A, S, D, Q, E are
-   the advanced keys. Returns 0 for other keys. */
+   the space, Backspace and the punctuation are the name entry keys; else C, M, Tab, F5, F9, and W, A, S, D, Q, E
+   are the advanced keys. Returns 0 for other keys. */
 static uint16_t amiga_key(int key, int modifiers, int character)
 {
     if (modifiers & SDL_KMOD_CTRL) {

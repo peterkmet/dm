@@ -73,6 +73,8 @@ void game_set_mode(int16_t mode);
 uint8_t game_get_cheats(void);
 /* Turns on the cheats of the CHEAT_* bits and turns off the others. */
 void game_set_cheats(uint8_t cheats);
+/* Turns a cheat (one CHEAT_* bit) on or off. */
+void game_toggle_cheat(uint8_t cheat);
 /* The fuse wins the game: bright magical light and strong shields for the end sequence. */
 void game_start_fuse_sequence(void);
 /* Lord Chaos on square at before the fuse: full fuse health, centered, facing the party; the fluxcages on

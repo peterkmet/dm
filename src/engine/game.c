@@ -94,6 +94,11 @@ void game_set_cheats(uint8_t cheats)
     g_session.cheat_map = cheats & CHEAT_MAP;
 }
 
+void game_toggle_cheat(uint8_t cheat)
+{
+    game_set_cheats(game_get_cheats() ^ cheat);
+}
+
 void game_start_fuse_sequence(void)
 {
     g_session.won = true;

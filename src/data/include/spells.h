@@ -16,8 +16,9 @@
 /* Font character of the first symbol: power 1 at step 0. */
 #define SPELL_SYMBOL_FIRST 0x60
 
-/* The power symbol in the packed symbols. */
+/* The power symbol in the packed symbols, and one symbol of the packed symbols. */
 #define SPELL_POWER_SYMBOL_MASK 0xff000000u
+#define SPELL_SYMBOL_MASK       0x000000ffu
 
 /* Experience of a cast: level² + (power - 1) * base level * 8 + level * 16 + random(8). */
 #define SPELL_EXPERIENCE_POWER_FACTOR 8
@@ -36,6 +37,8 @@
 int16_t spell_find(const uint8_t *symbols);
 /* Symbol character for button symbol_index (0-5) at a step (0-3). */
 uint8_t spell_get_symbol(uint16_t step, int16_t symbol_index);
+/* Symbol character at a step (0 the power symbol, 1-3 the runes) of the packed spell symbols, 0 for none. */
+uint8_t spell_get_packed_symbol(uint32_t symbol_word, uint16_t step);
 /* Mana cost of a symbol; after the power symbol, the cost is scaled by the power. */
 uint16_t spell_get_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t power_symbol);
 /* One draw per missing skill level; the cast fails on the first draw that returns true. */

@@ -3,6 +3,7 @@
 #include "arith.h"
 #include "dungeon.h"
 #include "explored.h"
+#include "game.h"
 #include "map.h"
 #include "party.h"
 #include "record.h"
@@ -146,7 +147,7 @@ void automap_draw(Bitmap *target, const Box *area, int16_t map)
     int16_t origin_y = maps.y + (maps.h - AUTOMAP_CELL_SIZE) / 2 - center_y * AUTOMAP_CELL_SIZE;
     for (int16_t x = 0; x < map_width; x++)
         for (int16_t y = 0; y < map_height; y++)
-            if (explored_is_seen(map, x, y))
+            if (g_session.cheat_map || explored_is_seen(map, x, y))
                 show_square(target, &maps, rec_square_byte(map, x, y), party_here && view_is_pressure_pad(x, y),
                             &(Box){origin_x + x * AUTOMAP_CELL_SIZE, origin_y + y * AUTOMAP_CELL_SIZE,
                                    AUTOMAP_CELL_SIZE, AUTOMAP_CELL_SIZE});

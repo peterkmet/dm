@@ -35,6 +35,11 @@ uint8_t spell_get_symbol(uint16_t step, int16_t symbol_index)
     return SPELL_SYMBOL_FIRST + step * SPELL_SYMBOLS_PER_STEP + symbol_index;
 }
 
+uint8_t spell_get_packed_symbol(uint32_t symbol_word, uint16_t step)
+{
+    return symbol_word >> (SPELL_FIRST_SYMBOL_SHIFT - step * CHAR_BIT) & SPELL_SYMBOL_MASK;
+}
+
 uint16_t spell_get_symbol_mana_cost(uint16_t step, int16_t symbol_index, uint8_t power_symbol)
 {
     uint16_t cost = tables_get_base_mana_cost(step, symbol_index);

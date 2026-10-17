@@ -92,7 +92,7 @@ def test_vanilla_is_the_default_and_the_advanced_keys_do_nothing(game, tmp_path)
     assert game.session.mode == VANILLA and game.value("g_advanced_features") == 0
     game.lib.startend_set_save_dir(str(tmp_path).encode())
     position = game.position()
-    for key in (C.KEY_F5, C.KEY_F9, C.KEY_M, C.KEY_TAB):
+    for key in (C.KEY_F5, C.KEY_F9, C.KEY_M, C.KEY_TAB, C.KEY_C):
         press(game, key)
     assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE and not (tmp_path / QUICK).exists()
     assert game.session.inventory_champion_index == -1 and game.position() == position
