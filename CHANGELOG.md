@@ -15,6 +15,7 @@
 - Advanced mode: the damage of a hit stays in the action area for two ticks; the action icons keep their colors in every light.
 - The upscale filter smooths the mouse pointer with the picture.
 - Advanced mode: Escape opens an options menu with the sound volume, the music volume (0 to 7), and the music choice. `SETTINGS.TXT` in the saves folder keeps the values.
+- Advanced mode: C opens a cheat screen with full light, immortality, food and water, and the new cheats one-hit kill, walk through walls, and reveal map; quick save and quick load; and a list of all spells with their runes. The save file keeps the cheats in a new extension block.
 
 ### Changed
 

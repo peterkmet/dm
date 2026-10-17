@@ -88,7 +88,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `engine/record.h` | `rec_` | The byte layout of the dungeon records: one accessor per field, no record byte outside this module. |
 | `engine/recruit.h` | `recruit_` | Candidate champions: the champion data from the text of a mirror. |
 | `engine/savefile.h` | `savefile_` | The save file container of DM v3.60 and CSB: the header and the blocks. |
-| `engine/savegame.h` | `savegame_` | Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and load_game, LOADSAVE.C). |
+| `engine/savegame.h` | `savegame_` | Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and load_game, LOADSAVE.C), and the extension blocks of the port (automap, cheats). |
 | `engine/sensor.h` | `sensor_` | Floor and wall sensors. |
 | `engine/sound.h` | `sound_` | The sound rules: the sound table, the volume by distance, the pending queue, and the play requests of the rules. |
 | `engine/timeline.h` | `timeline_` | The timeline: the event slots and the min-heap that orders them by time. |
@@ -97,10 +97,11 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 
 | Header | Prefixes | Purpose |
 |---|---|---|
-| `ui/advanced.h` | `advanced_` | Game modes and the advanced features (not in the original game): the viewport screen state (`g_advanced_screen`: automap, options menu; at most one open, the game time stops), automap, quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat meters, and more. |
+| `ui/advanced.h` | `advanced_` | Game modes and the advanced features (not in the original game): the viewport screen state (`g_advanced_screen`: automap, options menu, cheat screen; at most one open, the game time stops), automap, quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat meters, and more. |
 | `ui/anim.h` | `anim_` | The animation player of ANIM.FTL for the chunk files (CSB ENDA.DAT). |
 | `ui/audio.h` | `audio_` | The audio output: four Paula voices in two stereo pairs, the CSB intro music, and the mixer that platform/ calls on the game thread; it scales the mix by the sound volume. |
 | `ui/automap.h` | `automap_` | Automap (not in the original game): draws the squares the party has seen (engine/explored owns them) as a top-down map. |
+| `ui/cheats.h` | `cheats_` | The cheat screen of the advanced mode (not in the original game): it switches the cheats, offers quick save and quick load, and lists the spells of the loaded game with their runes. |
 | `ui/command.h` | `command_` | Player input as the command table of the original: clicks and keys become queued commands; command_process_queue runs them. |
 | `ui/dialog.h` | `dialog_` | The message box with one to four choices: it draws the dialog in the viewport and waits for a click on a choice. |
 | `ui/draw.h` | `draw_` | Pixel operations on bitmaps: blit, fill, flip, shrink, and the masked fill. |

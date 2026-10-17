@@ -159,6 +159,18 @@ The advanced features are not in the original game:
   - CONTINUE: closes the menu.
 
   Mouse: click `-` or `+` to change a volume, click the MUSIC row for the next music, click CONTINUE to close. Keys: Up and Down (also W and S) select a row; Left and Right (also A and D) change its value; Return on CONTINUE closes; Escape closes from every row.
+- Cheat screen: C in the dungeon view opens it in place of the dungeon view. The game time stops while the screen is open. Only in the `advanced` mode. The rows of the cheat page:
+  - FULL LIGHT: the view is always bright; the creature rules keep the real light.
+  - IMMORTAL: the health of a champion stops at 1; damage, wounds, poison, hunger, and thirst stay.
+  - FOOD AND WATER: food and water do not go down; eating and drinking still raise them.
+  - ONE-HIT KILL: a hit of the party (melee, projectile, or explosion) with damage above 0 kills the creature. A closing door and a fall do normal damage. An invulnerable creature stays invulnerable.
+  - WALK THROUGH WALLS: the party moves into a wall or a solid fake wall inside the map, without damage. The map border, a creature, and a door that is not open stop the party. No wall sensor runs for the party in a wall. With the cheat off, the party can leave a wall square into a square that is not a wall.
+  - REVEAL MAP: the automap shows all squares of the level. The explored squares do not change: with the cheat off, the automap shows only the explored squares again.
+  - QUICK SAVE F5: a quick save; the screen stays open. QUICK LOAD F9: the screen closes, then a quick load.
+  - SPELLS: the spell pages. Each line shows the runes of a spell as names, then as numbers, then the spell name, for example `FUL IR (X,4,4) FIREBALL`. X means any power; the number of a rune is its place in its row of runes, 1 to 6. NEXT shows the next page, BACK the page before, CLOSE closes the screen.
+  - CLOSE: closes the screen.
+
+  Mouse: click a row to switch the cheat or to run the item. Keys: Up and Down (also W and S) select a row; Return switches or runs it; F5 and F9 run the quick save and the quick load; C and Escape close. The save file of the `advanced` mode keeps the cheats (see below). A new game turns them off.
 - Settings file: when the menu closes after a change, the port writes the values to `SETTINGS.TXT` in the saves folder (the data folder of the adventure, or `--saves DIR`). Each game start in the `advanced` mode reads the file again. The lines are `sound_volume=0..7`, `music_volume=0..7`, and `music=original|super-nes|fm-towns`. A missing file, a file above 1 KiB, or a line that the port cannot read gives the default of that value: volume 7 and ORIGINAL. When the write fails, the message area shows UNABLE TO SAVE OPTIONS and the new values stay in use until the next game start. The `vanilla` and `turnbased` modes do not read the file: they play at full volume without music.
 - Music: a track plays one time and does not loop, as in the original versions:
   - FM-Towns DM: each level has a track. A new level stops the current track and starts its track. Game over and game won have a track.
@@ -174,7 +186,8 @@ Keys of the `advanced` mode:
 | Key | Action |
 |---|---|
 | M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, Escape, and a drag on the map work. Tab also closes an open inventory. |
-| Escape | Close the automap or the open inventory. In the dungeon view, open the options menu; Escape closes it again. While the menu is open, M does not open the automap. |
+| Escape | Close the automap, the cheat screen, or the open inventory. In the dungeon view, open the options menu; Escape closes it again. While the menu is open, M does not open the automap. |
+| C | Open or close the cheat screen. It opens only in the dungeon view, when no other screen is open. |
 | F5 | Quick save. Only in the dungeon view. |
 | F9 | Quick load. Only in the dungeon view. |
 | W, S | Move forward, move backward |
@@ -183,7 +196,7 @@ Keys of the `advanced` mode:
 
 F1 to F4 open the inventories in every mode.
 
-In the `advanced` and `turnbased` modes, the save file has an extension block after the original save data. The block keeps the explored squares of the automap. The original part of the file is the same as in a vanilla save, and vanilla loads the file. A file without the block, or with a damaged block, loads with an empty automap.
+In the `advanced` and `turnbased` modes, the save file has extension blocks after the original save data. The automap block keeps the explored squares of the automap. In the `advanced` mode, a cheat block keeps the cheats that are on. The original part of the file is the same as in a vanilla save, and vanilla loads the file. A file without the automap block, or with a damaged one, loads with an empty automap. A load without the cheat block, with a damaged one, or in the `vanilla` and `turnbased` modes turns all cheats off. The format is in [formats/save.md](formats/save.md#extension-blocks).
 
 In the `turnbased` mode, the game enters the dungeon at the start. The control socket opens after the start screens. A script that waits for the socket must pass `--mode turnbased` to skip the screens. The keyboard and the mouse do not control the game. Closing the window quits.
 
