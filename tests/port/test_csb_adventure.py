@@ -247,7 +247,6 @@ def test_advanced_save_keeps_the_automap_block(game, saves):
         session(game.lib).mode = 0
 
 
-
 STAIRS_DOOR = (19, 2)  # map 0 of the prison: the open door north of the stairs down at (19, 3)
 
 
@@ -264,12 +263,15 @@ def step_onto_stairs(game, mode):
 def advanced(game, saves):
     yield saves
     session(game.lib).mode = 0
+    session(game.lib).cheat_kill = 0
 
 
 def test_advanced_stairs_start_the_adventure_without_a_file(game, advanced):
     names = new_prison_game(game, 2)
+    session(game.lib).cheat_kill = 1
     step_onto_stairs(game, 1)
     assert_in_adventure(game, names)
+    assert game.session.cheat_kill  # the same play session keeps its cheats
     assert game.session.new_party_map == -1 and not game.session.saved_game_exists
     assert value(game, "g_game_screen_shown") == 1
     assert not list(advanced.glob("*.DAT")) and not list(advanced.glob("*.BAK"))

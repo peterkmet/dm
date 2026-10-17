@@ -746,12 +746,15 @@ SavegameAdventureResult savegame_start_adventure(const char *mini_path)
         return refused;
     size_t size = 0;
     uint8_t *data = file_read(mini_path, &size);
+    uint8_t cheats = game_get_cheats();
     SaveFile mini;
     bool ok = savefile_decode(data, (uint32_t)size, &mini);
     if (ok) {
         merge_party(&mini);
         ok = load_decoded(&mini, &(Extension){0});
     }
+    if (ok)
+        game_set_cheats(cheats); /* the same play session keeps its cheats */
     savefile_free(&mini);
     free(data);
     if (!ok)
