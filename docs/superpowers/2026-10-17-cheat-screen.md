@@ -255,6 +255,15 @@ Feature: Cheat screen
   kind and type are unique among the DM and the CSB spells.
 - Assumption, checked first: the game font has `(`, `)` and `,`; else the numbers are separated by spaces.
 
+- Cast from the spell list (owner, 2026-10-17, manual test): a click on a spell line, or Return on it, casts the
+  spell. `magic_cast_cheat_spell` (`src/engine/magic.c`) takes the spell by its index and runs the same effect code
+  as a normal cast (`cast_effect`), not a copy of its rules. The caster is `g_magic_caster_champion_index`, the
+  champion whose runes the spell area shows. The power is MON; a spell with a fixed power symbol keeps its power,
+  because MON would make another rune sequence. No mana, no skill draw, no experience; the action hand is
+  disabled for the ticks of the spell, as in a normal cast, and the projectile energy uses the real skill level.
+  A missing flask, a missing magic map or a dead caster fails as in a normal cast, with the normal message. The
+  runes in the rune area stay. After the cast, success or failure, the screen closes, so the player sees the
+  effect and the message. The spell lines become selectable rows.
 - One-hit kill needs no projectile owner: a creature projectile that hits a creature also kills it (owner,
   2026-10-17). An owner field would change the projectile record.
 

@@ -72,6 +72,9 @@ bool magic_cast_party_spell(int16_t champion_index, bool spell_shield, uint16_t 
 bool magic_map_is_text(const char *text);
 /* Casts the spell of the champion symbols. Each missing skill level is a chance to fail against wisdom. */
 int16_t magic_cast_champion_spell(int16_t champion_index); /* exported for the tests */
+/* Advanced cheat: casts the spell of the index for the champion at power MON (a fixed power symbol keeps its power),
+   without mana, skill draw or experience. A missing flask or magic map fails as in a normal cast. */
+int16_t magic_cast_cheat_spell(int16_t champion_index, int16_t spell_index);
 /* Cast button: casts for the magic caster; the symbols clear unless a flask is missing. */
 int16_t magic_click_cast_spell(void);
 /* The magic caster adds a rune and pays its mana. Returns false when the mana is short. */

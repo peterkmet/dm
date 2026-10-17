@@ -23,6 +23,9 @@
 /* Symbol code of power 1. */
 #define POWER_SYMBOL_FIRST 0x60 /* symbol of power 1 is 0x60, power n is 0x5f + n */
 
+/* The power of the cheat cast: MON, the highest power symbol. */
+#define POWER_MON 6
+
 /* Attack, mana and tick values of the spells. */
 #define SPELL_PROJECTILE_ATTACK      90
 #define SHIELD_MANA_COST             4
@@ -342,6 +345,34 @@ static MagicMapCast cast_magic_map(int16_t champion_index, uint16_t type, int16_
     return result;
 }
 
+/* The effect of the spell at the power; the skill level sets the energy of a projectile. Sets the ticks of the
+   disabled action hand. Returns SPELL_CAST_FAILURE_NEEDS_FLASK without the flask or the magic map. */
+static int16_t cast_effect(int16_t champion_index, const Spell *spell, int16_t power, uint16_t skill_level,
+                           uint16_t *disabled_ticks)
+{
+    *disabled_ticks = spell->disabled_ticks;
+    switch (spell->kind) {
+    case SPELL_KIND_POTION:
+        if (!cast_potion(champion_index, spell->type, power))
+            return SPELL_CAST_FAILURE_NEEDS_FLASK;
+        break;
+    case SPELL_KIND_PROJECTILE:
+        cast_projectile(champion_index, spell->type, power, skill_level);
+        break;
+    case SPELL_KIND_OTHER:
+        cast_other(champion_index, spell->type, power);
+        break;
+    case SPELL_KIND_MAGIC_MAP: {
+        MagicMapCast map_cast = cast_magic_map(champion_index, spell->type, power);
+        if (!map_cast.cast)
+            return SPELL_CAST_FAILURE_NEEDS_FLASK; /* the symbols stay, as without a flask */
+        if (spell->type == MAGIC_MAP_NETA)
+            *disabled_ticks = map_cast.disabled_ticks;
+    } break;
+    }
+    return SPELL_CAST_SUCCESS;
+}
+
 int16_t magic_cast_champion_spell(int16_t champion_index)
 {
     if (champion_index < 0 || champion_index >= g_party_champion_count)
@@ -371,29 +402,30 @@ int16_t magic_cast_champion_spell(int16_t champion_index)
             return SPELL_CAST_FAILURE;
         }
     }
-    uint16_t disabled_ticks = spell->disabled_ticks;
-    switch (spell->kind) {
-    case SPELL_KIND_POTION:
-        if (!cast_potion(champion_index, spell->type, power))
-            return SPELL_CAST_FAILURE_NEEDS_FLASK;
-        break;
-    case SPELL_KIND_PROJECTILE:
-        cast_projectile(champion_index, spell->type, power, skill_level);
-        break;
-    case SPELL_KIND_OTHER:
-        cast_other(champion_index, spell->type, power);
-        break;
-    case SPELL_KIND_MAGIC_MAP: {
-        MagicMapCast map_cast = cast_magic_map(champion_index, spell->type, power);
-        if (!map_cast.cast)
-            return SPELL_CAST_FAILURE_NEEDS_FLASK; /* the symbols stay, as without a flask */
-        if (spell->type == MAGIC_MAP_NETA)
-            disabled_ticks = map_cast.disabled_ticks;
-    } break;
-    }
+    uint16_t disabled_ticks;
+    int16_t result = cast_effect(champion_index, spell, power, skill_level, &disabled_ticks);
+    if (result != SPELL_CAST_SUCCESS)
+        return result;
     champion_add_skill_experience(champion_index, spell->skill_index, experience);
     magic_disable_action(champion_index, disabled_ticks);
     return SPELL_CAST_SUCCESS;
+}
+
+int16_t magic_cast_cheat_spell(int16_t champion_index, int16_t spell_index)
+{
+    const Spell *spell = tables_get_spell(spell_index);
+    if (!spell || champion_index < 0 || champion_index >= g_party_champion_count ||
+        !g_champions[champion_index].current_health)
+        return SPELL_CAST_FAILURE;
+    uint8_t power_symbol = spell_get_packed_symbol(spell->symbols, 0);
+    int16_t power = power_symbol ? power_symbol - (POWER_SYMBOL_FIRST - 1) : POWER_MON;
+    uint16_t disabled_ticks;
+    int16_t result =
+        cast_effect(champion_index, spell, power,
+                    champion_get_skill_level(champion_index, spell->skill_index, false, false), &disabled_ticks);
+    if (result == SPELL_CAST_SUCCESS)
+        magic_disable_action(champion_index, disabled_ticks);
+    return result;
 }
 
 int16_t magic_click_cast_spell(void)

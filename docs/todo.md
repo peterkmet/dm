@@ -2,12 +2,6 @@
 
 User wishes for future versions. Not planned yet, unless an item names its PRD.
 
-## Cheat: cast a spell from the spell list
-
-- Owner (2026-10-17, manual test): a click on a spell name in the cheat spell list casts it. The caster is the
-  active spell caster of the rune area, the power is MON (the highest), and the cast ignores mana and skill: it
-  always works and adds no experience.
-
 ## CSB intro: a pause after a click
 
 - Owner (2026-10-17, manual test): a click stops the CSB intro (as designed), but then about 5 seconds pass with

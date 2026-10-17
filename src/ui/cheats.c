@@ -2,6 +2,7 @@
 #include "cheats.h"
 #include "spells.h"
 #include "tables.h"
+#include "champion.h"
 #include "game.h"
 #include "inventory.h"
 #include "magic.h"
@@ -116,12 +117,6 @@ static int16_t count_rows(void)
     return screen.page == CHEAT_PAGE ? PAGE_ROW_COUNT : count_page_spells() + SPELL_ITEM_COUNT;
 }
 
-/* The first row that the player can select: the spell lines are not items. */
-static int16_t get_first_item_row(void)
-{
-    return screen.page == CHEAT_PAGE ? ROW_LIGHT : count_page_spells();
-}
-
 /* Appends text to the line of size bytes; a full line keeps its start. */
 static void append_text(char *line, size_t size, const char *text)
 {
@@ -224,11 +219,16 @@ void cheats_open(void)
     open_page(CHEAT_PAGE, ROW_LIGHT);
 }
 
-/* Runs a row of a spell page: NEXT goes to the next spell page (after the last, the first), BACK to the page
-   before (the cheat page before the first spell page). */
+/* Runs a row of a spell page: a spell line casts the spell for the spell caster and closes the screen, so the
+   player sees the effect; NEXT goes to the next spell page (after the last, the first), BACK to the page before
+   (the cheat page before the first spell page). */
 static CheatsResult run_spell_row(int16_t row)
 {
     int16_t item = row - count_page_spells();
+    if (item < 0) {
+        magic_cast_cheat_spell(g_magic_caster_champion_index, (screen.page - 1) * SPELLS_PER_PAGE + row);
+        return CHEATS_CLOSE;
+    }
     if (item == SPELL_ITEM_NEXT)
         open_page(screen.page % count_spell_pages() + 1, -1);
     else if (item == SPELL_ITEM_BACK)
@@ -272,7 +272,7 @@ CheatsResult cheats_process_key(uint16_t key)
     case KEY_RETURN:
         return run_row(screen.row);
     case KEY_UP:
-        if (screen.row > get_first_item_row())
+        if (screen.row > 0)
             screen.row--;
         break;
     case KEY_DOWN:
@@ -289,7 +289,7 @@ CheatsResult cheats_process_key(uint16_t key)
 CheatsResult cheats_process_click(int16_t x, int16_t y)
 {
     int16_t row = rows_find_row(x, y, count_rows());
-    if (row < get_first_item_row())
+    if (row < 0)
         return CHEATS_STAY;
     screen.row = row;
     show_page();

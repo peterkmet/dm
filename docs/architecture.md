@@ -101,7 +101,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `ui/anim.h` | `anim_` | The animation player of ANIM.FTL for the chunk files (CSB ENDA.DAT). |
 | `ui/audio.h` | `audio_` | The audio output: four Paula voices in two stereo pairs, the CSB intro music, and the mixer that platform/ calls on the game thread; it scales the mix by the sound volume. |
 | `ui/automap.h` | `automap_` | Automap (not in the original game): draws the squares the party has seen (engine/explored owns them) as a top-down map. |
-| `ui/cheats.h` | `cheats_` | The cheat screen of the advanced mode (not in the original game): it switches the cheats, offers quick save and quick load, and lists the spells of the loaded game with their runes. |
+| `ui/cheats.h` | `cheats_` | The cheat screen of the advanced mode (not in the original game): it switches the cheats, offers quick save and quick load, and lists the spells of the loaded game with their runes; a spell line casts its spell. |
 | `ui/command.h` | `command_` | Player input as the command table of the original: clicks and keys become queued commands; command_process_queue runs them. |
 | `ui/dialog.h` | `dialog_` | The message box with one to four choices: it draws the dialog in the viewport and waits for a click on a choice. |
 | `ui/draw.h` | `draw_` | Pixel operations on bitmaps: blit, fill, flip, shrink, and the masked fill. |
