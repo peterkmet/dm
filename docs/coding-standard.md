@@ -29,7 +29,7 @@ refactor; until the run ends, the allowlist carries the difference.
    [platform]
 7. A module is one `.c` file with one public header. A module with several `.c` files has one public header
    and one `<module>_internal.h` for the shared private declarations; both carry the prefix of the module.
-   [module]
+   The entry point `platform/main.c` is the one exception: it has no header. [module]
 8. Each header states its prefixes in one comment line, `/* Prefixes: rec_ */`. A prefix belongs to one
    module; no prefix starts with the prefix of another module. [prefix]
 9. `third_party/` is vendored code: outside every check and outside the format check, by folder. [layer]
@@ -64,7 +64,8 @@ refactor; until the run ends, the allowlist carries the difference.
 ## 3. Constants
 
 1. Name every game value. Plain numbers are allowed only for 0, 1, -1, and 2 when it halves or doubles a
-   value. Every other number is a named constant, also in an array size and in a loop bound. The base argument of `strtol` and its siblings is a plain number.
+   value. Every other number is a named constant, also in an array size and in a loop bound. The base
+   argument of `strtol` and its siblings is a plain number.
    [hex, decimal]
 2. A constant is `#define NAME value` with the value written out; a negative value stands in parentheses:
    `#define COLOR_NONE (-1)`. No `enum` for constants; `enum` names a result type only (rule 6.1). [enum]
