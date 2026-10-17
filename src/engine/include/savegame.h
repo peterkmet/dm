@@ -80,6 +80,10 @@ SavegameResult savegame_load_slot(const char *dir, int16_t slot);
 SavegameResult savegame_load_from(const char *dir, const char *name, const char *backup); /* exported for the tests */
 /* The saved game no longer counts: the endgame offers no restart. */
 void savegame_forget(void);
+/* The advanced CSB start by the prison stairs: puts the party into the CSB adventure of mini_path (MINI.DAT) without
+   a file. The automap is empty and the saved game no longer counts. Results as savegame_make_adventure; after a
+   refusal nothing changes, and after SAVEGAME_ADVENTURE_FAILED the prison game is back. */
+SavegameAdventureResult savegame_start_adventure(const char *mini_path);
 /* The quick save of the advanced mode, dir/QUICK.DAT: the saved-game flag and the save times stay as they were (a
    quick save is not a saved game). Returns true on success. */
 bool savegame_quick_save(const char *dir);

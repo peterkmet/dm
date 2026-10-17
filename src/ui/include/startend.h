@@ -26,6 +26,9 @@ int startend_save_current_game(int16_t slot, const char **reason);
 /* Results of startend_save_current_game. */
 #define SAVED_GAME          1
 #define SAVED_NEW_ADVENTURE 2
+/* The advanced CSB start by the prison stairs: the party goes into the CSB dungeon without a file, and the game
+   goes on there (no GAME LOADED dialog). A refused party gets a dialog with OK. Returns true when the game started. */
+bool startend_take_prison_stairs(void);
 /* The save command: CANCEL, SAVE, QUIT. QUIT ends the game through the endgame. CSB: CANCEL, SAVE AND
    PLAY, SAVE AND QUIT. Without disks the dialog stays after a save until CANCEL or QUIT. In the advanced mode a
    save opens the save list, and the chosen slot becomes the current slot. */

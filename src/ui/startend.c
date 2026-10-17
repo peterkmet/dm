@@ -114,6 +114,25 @@ static bool has_slots(void)
     return g_session.mode == GAME_MODE_ADVANCED;
 }
 
+/* The path of MINI.DAT in the CSB data folder. */
+static void make_mini_path(char *out, size_t size)
+{
+    snprintf(out, size, "%s/%s", gameloop_get_data_dir(), CSB_MINI_FILE);
+}
+
+/* The reason why the prison party cannot make the adventure; NULL when the party is not the reason. */
+static const char *get_refusal_reason(SavegameAdventureResult result)
+{
+    switch (result) {
+    case SAVEGAME_ADVENTURE_NO_CHAMPIONS:
+        return "CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS.";
+    case SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE:
+        return "EACH CHAMPION MUST HAVE A UNIQUE FIRST NAME!";
+    default:
+        return NULL;
+    }
+}
+
 int startend_save_current_game(int16_t slot, const char **reason)
 {
     char mini[SAVE_DIR_SIZE];
@@ -124,20 +143,37 @@ int startend_save_current_game(int16_t slot, const char **reason)
         current_slot = slot;
         return SAVED_GAME;
     }
-    snprintf(mini, sizeof mini, "%s/%s", gameloop_get_data_dir(), CSB_MINI_FILE);
-    switch (savegame_make_adventure(save_dir, mini, slot)) {
-    case SAVEGAME_ADVENTURE_MADE:
-        current_slot = slot;
-        return SAVED_NEW_ADVENTURE;
-    case SAVEGAME_ADVENTURE_NO_CHAMPIONS:
-        *reason = "CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS.";
-        return 0;
-    case SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE:
-        *reason = "EACH CHAMPION MUST HAVE A UNIQUE FIRST NAME!";
-        return 0;
-    default:
+    make_mini_path(mini, sizeof mini);
+    SavegameAdventureResult result = savegame_make_adventure(save_dir, mini, slot);
+    if (result != SAVEGAME_ADVENTURE_MADE) {
+        *reason = get_refusal_reason(result);
         return 0;
     }
+    current_slot = slot;
+    return SAVED_NEW_ADVENTURE;
+}
+
+/* The OK dialog that a save or a start cannot be made: the reason, else UNABLE TO SAVE. */
+static void show_unable_dialog(const char *reason)
+{
+    dialog_draw(&(DialogText){
+        {reason ? reason : gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL},
+        {gfx_get_string(TEXT_OK)}
+    });
+    dialog_get_choice(1);
+}
+
+bool startend_take_prison_stairs(void)
+{
+    char mini[SAVE_DIR_SIZE];
+    make_mini_path(mini, sizeof mini);
+    SavegameAdventureResult result = savegame_start_adventure(mini);
+    if (result != SAVEGAME_ADVENTURE_MADE) {
+        show_unable_dialog(get_refusal_reason(result));
+        return false;
+    }
+    gameloop_continue_loaded_game();
+    return true;
 }
 
 /* Shows the saving dialog and saves the current game to the slot; an unable-to-save dialog names the reason. Returns
@@ -150,13 +186,8 @@ static int save_with_dialog(int16_t slot)
         {NULL}
     });
     int saved = startend_save_current_game(slot, &reason);
-    if (!saved) {
-        dialog_draw(&(DialogText){
-            {reason ? reason : gfx_get_string(TEXT_UNABLE_TO_SAVE), NULL},
-            {gfx_get_string(TEXT_OK)}
-        });
-        dialog_get_choice(1);
-    }
+    if (!saved)
+        show_unable_dialog(reason);
     return saved;
 }
 

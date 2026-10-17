@@ -246,3 +246,70 @@ def test_advanced_save_keeps_the_automap_block(game, saves):
     finally:
         session(game.lib).mode = 0
 
+
+
+STAIRS_DOOR = (19, 2)  # map 0 of the prison: the open door north of the stairs down at (19, 3)
+
+
+def step_onto_stairs(game, mode):
+    """The party stands in the door north of the prison stairs, faces south and steps onto the stairs."""
+    session(game.lib).mode = mode
+    for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (*STAIRS_DOOR, 2)):
+        c16.in_dll(game.lib, name).value = v
+    game.key(C.KEY_UP)
+    assert game.until(lambda: value(game, "g_party_map_index") != 0)
+
+
+@pytest.fixture
+def advanced(game, saves):
+    yield saves
+    session(game.lib).mode = 0
+
+
+def test_advanced_stairs_start_the_adventure_without_a_file(game, advanced):
+    names = new_prison_game(game, 2)
+    step_onto_stairs(game, 1)
+    assert_in_adventure(game, names)
+    assert game.session.new_party_map == -1 and not game.session.saved_game_exists
+    assert value(game, "g_game_screen_shown") == 1
+    assert not list(advanced.glob("*.DAT")) and not list(advanced.glob("*.BAK"))
+    game.run()
+    assert value(game, "g_party_map_index") == 4
+
+
+def test_vanilla_stairs_lead_to_map_1(game, advanced):
+    new_prison_game(game, 2)
+    step_onto_stairs(game, 0)
+    assert value(game, "g_party_map_index") == 1 and value(game, "g_dungeon_id", u16) == 12
+
+
+def test_refused_party_takes_the_stairs_as_today(game, advanced):
+    assert game.lib.gameloop_start_new_game(str(GAME_CSB).encode())
+    step_onto_stairs(game, 1)
+    assert value(game, "g_party_map_index") == 1 and value(game, "g_dungeon_id", u16) == 12
+    game.key(C.KEY_DOWN)  # back off the stairs: up to map 0
+    assert game.until(lambda: value(game, "g_party_map_index") == 0)
+    game.run()
+    assert value(game, "g_party_map_index") == 0 and value(game, "g_dungeon_id", u16) == 12
+
+
+def test_failed_restore_brings_back_the_prison(game, advanced):
+    lib = game.lib
+    lib.savegame_start_adventure.restype = ctypes.c_int
+    lib.savefile_decode.restype = ctypes.c_bool
+    new_prison_game(game, 1)
+    bad = bytearray(MINI.read_bytes())
+    bad[-10] ^= 0xFF  # a byte of the dungeon part: the dungeon sum no longer matches
+    buffer = ctypes.create_string_buffer(4096)
+    assert lib.savefile_decode(bytes(bad), len(bad), buffer)  # the decode accepts it, restore_game refuses it
+    lib.savefile_free(buffer)
+    path = advanced / "MINI.DAT"
+    path.write_bytes(bad)
+    for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (*STAIRS_DOOR, 2)):
+        c16.in_dll(lib, name).value = v
+    lib.move_party(C.COMMAND_MOVE_FORWARD)
+    assert game.session.new_party_map == 1
+    assert lib.savegame_start_adventure(str(path).encode()) == C.SAVEGAME_ADVENTURE_FAILED
+    assert value(game, "g_dungeon_id", u16) == 12 and value(game, "g_party_champion_count", c16) == 1
+    assert game.until(lambda: value(game, "g_party_map_index") == 1)
+    assert value(game, "g_dungeon_id", u16) == 12

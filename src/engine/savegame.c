@@ -581,12 +581,22 @@ static void merge_party(SaveFile *mini)
     savefile_make_adventure_header(mini->header, g_game_id);
 }
 
-SavegameAdventureResult savegame_make_adventure(const char *dir, const char *mini_path, int16_t slot)
+/* CEDT checks of the prison party: SAVEGAME_ADVENTURE_NO_CHAMPIONS, SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE, else
+   SAVEGAME_ADVENTURE_MADE. */
+static SavegameAdventureResult check_party(void)
 {
     if (!g_party_champion_count)
         return SAVEGAME_ADVENTURE_NO_CHAMPIONS;
     if (!are_first_names_unique())
         return SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE;
+    return SAVEGAME_ADVENTURE_MADE;
+}
+
+SavegameAdventureResult savegame_make_adventure(const char *dir, const char *mini_path, int16_t slot)
+{
+    SavegameAdventureResult refused = check_party();
+    if (refused != SAVEGAME_ADVENTURE_MADE)
+        return refused;
     size_t size = 0;
     uint32_t out_size = 0;
     uint8_t *data = file_read(mini_path, &size);
@@ -681,11 +691,28 @@ static void restore_snapshot(const uint8_t *data, uint32_t size)
     g_session.last_load_time = loaded;
 }
 
+/* The game of a decoded save file with its extension blocks: the automap (else none) and the cheats. After a failed
+   restore the game before comes back. Returns false when restore_game refuses the file. */
+static bool load_decoded(const SaveFile *s, const Extension *found)
+{
+    uint32_t snapshot_size = 0;
+    /* restore_game frees the running dungeon before it checks the dungeon part */
+    uint8_t *snapshot = g_dungeon_header ? encode_game(&snapshot_size) : NULL;
+    bool ok = restore_game(s);
+    if (!ok && snapshot)
+        restore_snapshot(snapshot, snapshot_size);
+    free(snapshot);
+    if (ok && (!found->automap || !explored_load(found->automap, found->automap_length)))
+        explored_reset();
+    if (ok)
+        game_set_cheats(get_loaded_cheats(found));
+    return ok;
+}
+
 SavegameResult savegame_load_from(const char *dir, const char *name, const char *backup_name)
 {
     char path[PATH_SIZE], backup[PATH_SIZE];
     size_t size = 0;
-    uint32_t snapshot_size = 0;
     make_file_path(path, dir, name);
     if (backup_name)
         make_file_path(backup, dir, backup_name);
@@ -697,21 +724,8 @@ SavegameResult savegame_load_from(const char *dir, const char *name, const char 
         return SAVEGAME_MISSING;
     Extension found = find_extension(data, &size);
     SaveFile s;
-    uint8_t *snapshot = NULL;
-    bool ok = savefile_decode(data, (uint32_t)size, &s);
-    if (ok) {
-        /* restore_game frees the running dungeon before it checks the dungeon part */
-        snapshot = g_dungeon_header ? encode_game(&snapshot_size) : NULL;
-        ok = restore_game(&s);
-        if (!ok && snapshot)
-            restore_snapshot(snapshot, snapshot_size);
-    }
+    bool ok = savefile_decode(data, (uint32_t)size, &s) && load_decoded(&s, &found);
     savefile_free(&s);
-    if (ok && (!found.automap || !explored_load(found.automap, found.automap_length)))
-        explored_reset();
-    if (ok)
-        game_set_cheats(get_loaded_cheats(&found));
-    free(snapshot);
     free(data);
     if (!ok)
         return SAVEGAME_DAMAGED;
@@ -723,6 +737,27 @@ SavegameResult savegame_load_from(const char *dir, const char *name, const char 
 void savegame_forget(void)
 {
     g_session.saved_game_exists = false;
+}
+
+SavegameAdventureResult savegame_start_adventure(const char *mini_path)
+{
+    SavegameAdventureResult refused = check_party();
+    if (refused != SAVEGAME_ADVENTURE_MADE)
+        return refused;
+    size_t size = 0;
+    uint8_t *data = file_read(mini_path, &size);
+    SaveFile mini;
+    bool ok = savefile_decode(data, (uint32_t)size, &mini);
+    if (ok) {
+        merge_party(&mini);
+        ok = load_decoded(&mini, &(Extension){0});
+    }
+    savefile_free(&mini);
+    free(data);
+    if (!ok)
+        return SAVEGAME_ADVENTURE_FAILED;
+    savegame_forget(); /* no file: the endgame offers no restart */
+    return SAVEGAME_ADVENTURE_MADE;
 }
 
 bool savegame_quick_save(const char *dir)

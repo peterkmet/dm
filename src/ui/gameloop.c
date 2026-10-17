@@ -20,6 +20,7 @@
 #include "party.h"
 #include "projectile.h"
 #include "random.h"
+#include "record.h"
 #include "savegame.h"
 #include "sensor.h"
 #include "sound.h"
@@ -316,11 +317,22 @@ static void show_death_spell_area(const Champion *before)
         menus_refresh_spell_area(&before[caster]);
 }
 
+/* The advanced CSB start: the party takes stairs down in the prison, and no candidate waits at a mirror. */
+static bool is_prison_stairs_down(void)
+{
+    return g_session.mode == GAME_MODE_ADVANCED && g_adventure == ADVENTURE_CSB && g_dungeon_id == PRISON_DUNGEON_ID &&
+           g_session.new_party_map != -1 &&
+           rec_map_level(g_session.new_party_map) == rec_map_level(g_party_map_index) + LEVEL_DOWN &&
+           g_session.candidate_champion_index < 0;
+}
+
 void gameloop_tick(void)
 {
     frames_waiting = 0;
     g_stop_waiting_for_input = false;
     do {
+        if (is_prison_stairs_down() && startend_take_prison_stairs())
+            return; /* the CSB dungeon runs from the next tick */
         if (g_session.new_party_map != -1) {
             move_process_new_party_map();
             command_discard_all_input();
