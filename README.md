@@ -31,6 +31,7 @@ The code is GPL-3.0-or-later (`LICENSE`). The game data of Dungeon Master and Ch
 - [Development](docs/development.md): build, tests, layout, release
 - [Decompiling](docs/decompiling.md): Ghidra tooling
 - [Coding standard](docs/coding-standard.md)
+- [Architecture](docs/architecture.md)
 - [Formats](docs/formats/ftl.md): [FTL](docs/formats/ftl.md), [Dungeon.DAT](docs/formats/dungeon.md), [save file](docs/formats/save.md)
 - [Rules](docs/rules/game-state.md) of the game engine
 - [Chaos Strikes Back](docs/csb/data.md)
