@@ -30,8 +30,8 @@ extern int16_t g_music_requested_track;
 
 /* Stops the track; the soundtrack stays. */
 void music_stop(void);
-/* Selects a soundtrack (keys 1, 2, 3 on the automap) and starts the track of the party position.
-   Super NES has no CSB soundtrack: the selection does nothing in CSB. */
+/* Selects a soundtrack (the options menu, or the settings at a game start) and starts the track of the party
+   position. Super NES has no CSB soundtrack: the selection does nothing in CSB. */
 void music_select(int16_t soundtrack);
 /* Starts the track of the party position after the party moved: FM-Towns DM by level, FM-Towns CSB
    by zone, Super NES by trigger square. */

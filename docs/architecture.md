@@ -58,6 +58,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `data/kaos.h` | `kaos_` | The loaded engine image (KAOS.FTL, or the KAOS-layout image of the CSB APPB.FTL) and its readers at the addresses of the original. |
 | `data/kaos_addresses.h` | `KAOS_` | Addresses of the KAOS.FTL image (and of the KAOS-layout CSB image). |
 | `data/os.h` | `os_` | The operating system services that data/ and engine/ need: folders, the log, and fatal errors. |
+| `data/settings.h` | `settings_` | The settings file of the advanced mode (not in the original game): SETTINGS.TXT in the saves folder with the sound volume, the music volume and the music choice. |
 | `data/spells.h` | `spell_` | The spell rules of the spell table: the symbol strings, the mana cost and the skill draws. |
 | `data/swsh.h` | `swsh_` | The FTL logo module SWSH.FTL: a palette script, the logo graphic, and its sound. |
 | `data/tables.h` | `tables_` | Static rule tables of KAOS.FTL, decoded once from the loaded image. |
@@ -96,9 +97,9 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 
 | Header | Prefixes | Purpose |
 |---|---|---|
-| `ui/advanced.h` | `advanced_` | Game modes and the advanced features (not in the original game): automap, quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat meters, and more. |
+| `ui/advanced.h` | `advanced_` | Game modes and the advanced features (not in the original game): the viewport screen state (`g_advanced_screen`: automap, options menu; at most one open, the game time stops), automap, quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat meters, and more. |
 | `ui/anim.h` | `anim_` | The animation player of ANIM.FTL for the chunk files (CSB ENDA.DAT). |
-| `ui/audio.h` | `audio_` | The audio output: four Paula voices in two stereo pairs, the CSB intro music, and the mixer that platform/ calls on the game thread. |
+| `ui/audio.h` | `audio_` | The audio output: four Paula voices in two stereo pairs, the CSB intro music, and the mixer that platform/ calls on the game thread; it scales the mix by the sound volume. |
 | `ui/automap.h` | `automap_` | Automap (not in the original game): draws the squares the party has seen (engine/explored owns them) as a top-down map. |
 | `ui/command.h` | `command_` | Player input as the command table of the original: clicks and keys become queued commands; command_process_queue runs them. |
 | `ui/dialog.h` | `dialog_` | The message box with one to four choices: it draws the dialog in the viewport and waits for a click on a choice. |
@@ -109,9 +110,11 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `ui/layout.h` | `layout_` | The screen layout from the layout graphic of Graphics.DAT: it finds the box of a zone on the screen. |
 | `ui/logo.h` | `logo_` | The FTL logo of SWSH.FTL (not KAOS): the original shows it before the DM title. |
 | `ui/menus.h` | `menus_` | The action area, the spell area and the movement arrows at the right of the screen. |
-| `ui/music.h` | `music_` | Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and Super NES versions from MP3 files. |
+| `ui/music.h` | `music_` | Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and Super NES versions from MP3 files, scaled by the music volume. |
+| `ui/optmenu.h` | `optmenu_` | The options menu of the advanced mode (not in the original game): sound volume, music volume and music choice in the viewport; it writes SETTINGS.TXT after a change. |
 | `ui/palette.h` | `palette_` | The palette fade of the original: it changes both palette halves of g_screen step by step, one frame for each step through g_frame_hook. |
 | `ui/panel.h` | `panel_` | The inventory panel: slots, the eye and the mouth, food and water, skills and statistics, the object description, the scroll, the chest. |
+| `ui/rows.h` | `rows_` | The rows of text of the viewport screens (not in the original game): it draws a title and rows in the game font and maps a click to a row and a text column. |
 | `ui/select.h` | `select_` | The start screens in the DM font: adventure, mode, and the CSB entrance. |
 | `ui/startend.h` | `startend_` | Sequences outside the game loop: the save dialog, resuming a saved game, the endgame screens, and the fuse sequence with Lord Chaos. |
 | `ui/status.h` | `status_` | The champion status boxes at the top of the screen: name, bars, hands, shields, damage, the party icons. |

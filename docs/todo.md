@@ -2,10 +2,6 @@
 
 User wishes for future versions. Not planned yet, unless an item names its PRD.
 
-## Advanced mode: options menu on Escape
-
-- Escape opens an options menu instead of only freezing the game: sound volume in X steps, music volume in Y steps, the music choice (now keys 1-3 on the automap), and freeze.
-
 ## Advanced mode: cheat screen
 
 - A cheat screen of its own, not on the automap. Cheats: full light, immortality, food and water (moved from the automap), one-hit kill, walk through walls, reveal the whole map, a list of all spells with their runes.

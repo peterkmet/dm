@@ -41,7 +41,7 @@ Usage: dm [options]
 - `--adventure dm|csb` selects the adventure: Dungeon Master (data in `game/`) or Chaos Strikes Back (data in `game-csb/`). With `--adventure csb`, the program stops with exit code 1 when the CSB files are missing.
 - `--mode vanilla|advanced|turnbased` selects the game mode.
 - `--data DIR` selects the data folder (disk A) of the selected adventure. The CSB file check uses `DIR` only with `--adventure csb`. Else it uses `game-csb/`.
-- `--saves DIR` selects the folder of the save files (`DMGAME.DAT`, `CSBGAME.DAT`, their `.BAK` files, and `QUICK.DAT`). The default is the data folder. The folder must exist.
+- `--saves DIR` selects the folder of the save files (`DMGAME.DAT`, `CSBGAME.DAT`, their `.BAK` files, `QUICK.DAT`, and `SETTINGS.TXT`). The default is the data folder. The folder must exist.
 - `--control PATH` selects the socket of the `turnbased` mode. The default is `~/.dm/control.sock`.
 - `--filter none|scale2x|scale3x` selects the pixel-art upscale filter. The default is `none`. The filter makes the image 2 or 3 times larger before the window scaling; it smooths the mouse pointer together with the picture. It gives the sharpest image when the window scale is a multiple of the filter factor. Example: `build/dm --filter scale2x`.
 - `--frames N` quits after N frames (50 frames per second).
@@ -113,7 +113,7 @@ The controls are the controls of the original Amiga game.
 | Delete, keypad 7 | Turn left |
 | Help, Insert, keypad 9 | Turn right |
 | F1 to F4 | Open or close the inventory of champion 1 to 4 |
-| Escape | Freeze the game. Escape again continues. |
+| Escape | Freeze the game. Escape again continues. The `advanced` mode opens the options menu instead (see Modes). |
 | Return | Wake up a sleeping party |
 | Click on the movement arrows | Move and turn |
 | Click on a mirror | Show the champion. Then click RESURRECT, REINCARNATE, or CANCEL. |
@@ -152,13 +152,20 @@ The advanced features are not in the original game:
 - Action icons in their own colors.
 - Stat meters in the object description (hold the eye with an object in the hand): attack for a weapon, defense for armour, and weight.
 - A click on a fountain with an empty hand lets every living champion drink, not only the leader.
-- Cheats on the automap: L switches full light (the view is always bright; the creatures still see the real light), I switches immortality (the health of a champion stops at 1; damage, wounds, poison, hunger, and thirst stay), F switches food and water (they do not go down; eating and drinking still raise them). The map shows their state under the read-out. They are not saved: a new or loaded game turns them off. Only in the `advanced` mode, not in `turnbased`.
-- Music on the automap: 1 selects Original (no music, the default), 2 Super NES, 3 FM-Towns. The map shows the choice under the cheats. The choice is not saved: a new or loaded game selects Original. Only in the `advanced` mode. A track plays one time and does not loop, as in the original versions:
+- Options menu: Escape in the dungeon view opens it in place of the dungeon view. The game time stops while the menu is open; the music and the sounds go on. Only in the `advanced` mode. The rows:
+  - SOUND: the sound volume, 0 (off) to 7 (full).
+  - MUSIC VOLUME: the music volume, 0 (off) to 7 (full).
+  - MUSIC: ORIGINAL (no music, the default), SUPER NES, or FM-TOWNS. The new music starts at once.
+  - CONTINUE: closes the menu.
+
+  Mouse: click `-` or `+` to change a volume, click the MUSIC row for the next music, click CONTINUE to close. Keys: Up and Down (also W and S) select a row; Left and Right (also A and D) change its value; Return on CONTINUE closes; Escape closes from every row.
+- Settings file: when the menu closes after a change, the port writes the values to `SETTINGS.TXT` in the saves folder (the data folder of the adventure, or `--saves DIR`). Each game start in the `advanced` mode reads the file again. The lines are `sound_volume=0..7`, `music_volume=0..7`, and `music=original|super-nes|fm-towns`. A missing file, a file above 1 KiB, or a line that the port cannot read gives the default of that value: volume 7 and ORIGINAL. When the write fails, the message area shows UNABLE TO SAVE OPTIONS and the new values stay in use until the next game start. The `vanilla` and `turnbased` modes do not read the file: they play at full volume without music.
+- Music: a track plays one time and does not loop, as in the original versions:
   - FM-Towns DM: each level has a track. A new level stops the current track and starts its track. Game over and game won have a track.
   - FM-Towns CSB: each square of a zone has a track. A new zone requests its track; it starts when the current track ends. A level change stops the music. The prison and game over have a track.
-  - Super NES (DM only, 2 does nothing in CSB): a step on one of 22 trigger squares stops the current track and starts its track. Game won plays the end credits.
+  - Super NES (DM only; in CSB the menu skips it, and `music=super-nes` gives ORIGINAL): a step on one of 22 trigger squares stops the current track and starts its track. Game won plays the end credits.
   - The MP3 files go into `music/` of the game folder: `game/music/` gets `music/Game_Dungeon_Master_JP/*.mp3` and `music/Game_Dungeon_Master_US/Super_NES,*.mp3`, `game-csb/music/` gets `music/Game_Chaos_Strikes_Back_JP/*.mp3`. A missing file gives silence. The music stops at the entrance and at the CSB screen.
-- Escape and Tab close an open inventory. With no inventory open, Escape freezes the game as in vanilla.
+- Escape and Tab close an open inventory. In the sleep, the candidate panel, or the frozen game, Escape works as in vanilla.
 - The damage that a champion deals stays in the action area for two ticks, not one. A click on the action area in the second tick shows the action icons and acts at once. Only in the `advanced` mode, not in `turnbased`.
 - Smooth projectile flight: between two game ticks, the view shows each flying projectile part of the way to its new place. The size changes only at a tick.
 
@@ -166,8 +173,8 @@ Keys of the `advanced` mode:
 
 | Key | Action |
 |---|---|
-| M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, Escape, L, I, and F (cheats), 1, 2, and 3 (music), and a drag on the map work. Tab also closes an open inventory. |
-| Escape | Close the automap or the open inventory, else freeze the game |
+| M, Tab | Open or close the automap. The map opens only in the dungeon view: no inventory, freeze, sleep, or candidate. While the map is open, only M, Tab, Escape, and a drag on the map work. Tab also closes an open inventory. |
+| Escape | Close the automap or the open inventory. In the dungeon view, open the options menu; Escape closes it again. While the menu is open, M does not open the automap. |
 | F5 | Quick save. Only in the dungeon view. |
 | F9 | Quick load. Only in the dungeon view. |
 | W, S | Move forward, move backward |

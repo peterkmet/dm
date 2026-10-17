@@ -1,6 +1,6 @@
 # Options menu on Escape: PRD
 
-Date: 2026-10-17. Branch: `feature/2026-10-17-options`. Status: proposed.
+Date: 2026-10-17. Branch: `feature/2026-10-17-options`. Status: implemented.
 
 ## Goal
 

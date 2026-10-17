@@ -14,6 +14,7 @@
 - A thing on a far square disappears when the records of its type run out, as the original.
 - Advanced mode: the damage of a hit stays in the action area for two ticks; the action icons keep their colors in every light.
 - The upscale filter smooths the mouse pointer with the picture.
+- Advanced mode: Escape opens an options menu with the sound volume, the music volume (0 to 7), and the music choice. `SETTINGS.TXT` in the saves folder keeps the values.
 
 ### Changed
 
@@ -25,6 +26,7 @@
 - Golden snapshot tests of the save file, the dungeon view, and the game rules.
 - Windows: the ADF extraction stops with an error on a file name that is not safe on Windows; the turn-based mode is hidden.
 - `--view` uses the game keys and walks through walls.
+- Advanced mode: Escape in the dungeon view opens the options menu, not the freeze. The automap keys L, I, F (cheats) and 1, 2, 3 (music) are gone; the music choice is in the options menu.
 
 ### Fixed
 
