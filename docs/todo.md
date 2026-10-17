@@ -20,6 +20,12 @@ User wishes for future versions. Not planned yet.
 - Today: `champion_click_rebirth_panel` (`src/engine/champion.c`) keeps the name and prints "<name> REINCARNATED." (`docs/rules/champions.md:44`). `process_other_command` (`src/ui/command.c`) ignores the name entry commands (`docs/formats/dungeon.md:188`).
 - The original: the rename panel is `g_panel_content` 8 (`docs/reference/symbols/range-4-6.md:242`); it swaps in its own mouse and keyboard input tables (`range-4-6.md:542`, `KAOS_MOUSE_INPUT_NAME_ENTRY` in `src/data/kaos_addresses.h`). CSB: `champion_rename` at `0x116312` (`docs/reference/csb-appb-symbols.csv`).
 
+## Smooth the mouse pointer with the filter
+
+- Owner's wish (2026-10-17): with `--filter scale2x` or `scale3x` the mouse pointer is smoothed like the picture.
+- Today: `plat_present` (`src/platform/platform.c`) scales the game screen, then `overlay_pointer` draws the pointer into the scaled frame as blocks of 2x2 or 3x3 pixels, so the pointer stays blocky.
+- Change: draw the pointer into the screen before the filter runs, so the filter smooths it too.
+
 ## Advanced mode: show the damage twice as long
 
 - Owner's wish (2026-10-16): in the advanced mode the damage that a champion deals stays in the action area twice as long; the vanilla mode keeps the original time.
