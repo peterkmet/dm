@@ -182,7 +182,7 @@ void panel_draw_skills_statistics(void)
         if (level == 1)
             continue;
         snprintf(line, sizeof line, "%s %s", panel_get_rank_name(level), gfx_get_string(tables_get_base_skill_text(k)));
-        text_draw(viewport, x, y,
+        text_draw(viewport, (Point){x, y},
                   g_champions[champion_index].runtime.skill_level_up[k] ? COLOR_GREEN : COLOR_LIGHT_GRAY,
                   COLOR_DARKEST_GRAY, line);
         y += MESSAGE_ROW_HEIGHT;
@@ -191,14 +191,15 @@ void panel_draw_skills_statistics(void)
     for (int k = STAT_STRENGTH; k <= STAT_ANTIFIRE; k++) {
         uint8_t cur = champion->statistics[k][STAT_CURRENT];
         uint8_t max = champion->statistics[k][STAT_MAXIMUM];
-        text_draw(viewport, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, gfx_get_string(tables_get_statistic_text(k)));
-        text_draw(viewport, vx, y,
+        text_draw(viewport, (Point){x, y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY,
+                  gfx_get_string(tables_get_statistic_text(k)));
+        text_draw(viewport, (Point){vx, y},
                   cur < max   ? COLOR_RED
                   : cur > max ? COLOR_GREEN
                               : COLOR_LIGHT_GRAY,
                   COLOR_DARKEST_GRAY, ui_format_number(a, sizeof a, cur, true, VALUE_WIDTH));
         snprintf(line, sizeof line, "/%s", ui_format_number(b, sizeof b, max, true, VALUE_WIDTH));
-        text_draw(viewport, vx + FONT_CHAR_WIDTH * VALUE_WIDTH, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, line);
+        text_draw(viewport, (Point){vx + FONT_CHAR_WIDTH * VALUE_WIDTH, y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, line);
         y += MESSAGE_ROW_HEIGHT;
     }
 }
@@ -344,7 +345,7 @@ static void print_panel_line(int16_t x, int16_t *y, const char *text)
             *space = 0;
             rest = space + 1;
         }
-        text_draw(ui_get_viewport(), x, *y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
+        text_draw(ui_get_viewport(), (Point){x, *y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, s);
         *y += MESSAGE_ROW_HEIGHT;
         s = rest;
     }
@@ -407,11 +408,11 @@ static void show_scroll_line(int16_t x, int16_t y, char *text)
     if (!text_get_size(text, &width, &height))
         return;
     int16_t left = x - (width >> 1);
-    text_draw(ui_get_viewport(), left, y, COLOR_BLACK, COLOR_WHITE, text);
+    text_draw(ui_get_viewport(), (Point){left, y}, COLOR_BLACK, COLOR_WHITE, text);
     for (int i = 0; g_advanced_features && text[i]; i++) {
         char glyph[CHAR_TEXT_SIZE] = {text[i], 0};
         if ((uint8_t)text[i] >= SPELL_SYMBOL_FIRST && (uint8_t)text[i] < SPELL_SYMBOL_FIRST + UI_RUNE_COUNT)
-            text_draw(ui_get_viewport(), left + i * FONT_CHAR_WIDTH, y, COLOR_RED, COLOR_WHITE, glyph);
+            text_draw(ui_get_viewport(), (Point){left + i * FONT_CHAR_WIDTH, y}, COLOR_RED, COLOR_WHITE, glyph);
     }
 }
 
@@ -548,7 +549,7 @@ static void show_stat_meter(int16_t x, int16_t y, const StatMeter *meter)
     int16_t filled = value >= maximum ? METER_BAR_WIDTH : value * METER_BAR_WIDTH / maximum;
     if (value && !filled)
         filled = 1; /* a small value still shows */
-    text_draw(viewport, x, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, meter->label);
+    text_draw(viewport, (Point){x, y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, meter->label);
     Box shadow = {bar_x + 1, top + 1, filled, METER_BAR_HEIGHT};
     Box bar = {bar_x, top, filled, METER_BAR_HEIGHT};
     if (filled) {
@@ -558,7 +559,8 @@ static void show_stat_meter(int16_t x, int16_t y, const StatMeter *meter)
     if (!meter->show_value)
         return;
     snprintf(text, sizeof text, "%3u", value);
-    text_draw(viewport, bar_x + METER_BAR_WIDTH + METER_VALUE_GAP, y, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, text);
+    text_draw(viewport, (Point){bar_x + METER_BAR_WIDTH + METER_VALUE_GAP, y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY,
+              text);
 }
 
 bool panel_get_object_meter(uint16_t thing, const char **label, uint16_t *value)

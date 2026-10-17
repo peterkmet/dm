@@ -120,7 +120,7 @@ void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char
     if (!text_get_size(text, &w, &h))
         return;
     if (layout_get_zone(zone, 0, 0, &b, &w, &h))
-        text_draw(dst, b.x, b.y + b.h - 1, fg, bg, text);
+        text_draw(dst, (Point){b.x, b.y + b.h - 1}, fg, bg, text);
 }
 
 void ui_print_zone_padded(int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t pad_length)
@@ -177,9 +177,10 @@ static void show_messages(Bitmap *bm, int x, int y)
         for (int c = 0; c < MESSAGE_COLS; c++)
             if (g_message.text[r][c]) {
                 char ch[CHAR_TEXT_SIZE] = {g_message.text[r][c], 0};
-                text_draw(bm, x + c * FONT_CHAR_WIDTH,
-                          y + r * MESSAGE_ROW_HEIGHT + FONT_LINE_HEIGHT - FONT_BASELINE_GAP - 1, g_message.color[r][c],
-                          0, ch);
+                text_draw(bm,
+                          (Point){x + c * FONT_CHAR_WIDTH,
+                                  y + r * MESSAGE_ROW_HEIGHT + FONT_LINE_HEIGHT - FONT_BASELINE_GAP - 1},
+                          g_message.color[r][c], 0, ch);
             }
 }
 

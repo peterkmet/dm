@@ -102,12 +102,12 @@ static void show_messages(Bitmap *viewport, const char *const message[DIALOG_MES
             char line[MESSAGE_LINE_SIZE];
             int16_t max = width[i] - (width[i] >> WIDE_MESSAGE_SHIFT);
             int16_t line_width = message_next_word_line(message[i], line, &pos, max < box.w ? max : box.w);
-            text_draw(viewport, (viewport->w - line_width) >> 1, y, color, COLOR_LIGHT_BROWN, line);
+            text_draw(viewport, (Point){(viewport->w - line_width) >> 1, y}, color, COLOR_LIGHT_BROWN, line);
             y += pad + MESSAGE_ROW_HEIGHT;
             if (!text_get_size(message[i] + pos, &width[i], &height))
                 continue;
         }
-        text_draw(viewport, (viewport->w - width[i]) >> 1, y, color, COLOR_LIGHT_BROWN, message[i] + pos);
+        text_draw(viewport, (Point){(viewport->w - width[i]) >> 1, y}, color, COLOR_LIGHT_BROWN, message[i] + pos);
         y += pad + MESSAGE_ROW_HEIGHT;
     }
 }

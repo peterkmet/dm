@@ -101,8 +101,6 @@ dead-api engine/sound.h:sound_get_volume open: epic 9
 params control/control_actions.c:find_in_box open: epic 10
 params ui/layout.c:layout_get_zone open: epic 8
 params ui/layout.h:layout_get_zone open: epic 8
-params ui/text.c:text_draw open: epic 8
-params ui/text.h:text_draw open: epic 8
 type ui:height open: epic 8
 type ui:width open: epic 8
 todo engine/sound.c open: epic 9

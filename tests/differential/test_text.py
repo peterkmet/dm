@@ -23,6 +23,10 @@ class Bitmap(ctypes.Structure):
     _fields_ = [("w", ctypes.c_uint16), ("h", ctypes.c_uint16), ("px", ctypes.POINTER(ctypes.c_uint8))]
 
 
+class Point(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_int16), ("y", ctypes.c_int16)]
+
+
 class MessageArea(ctypes.Structure):
     _fields_ = [
         ("text", (ctypes.c_char * COLS) * 4),
@@ -39,14 +43,14 @@ def lib():
     assert lib.gfx_open(str(GAME / "Graphics.DAT").encode())
     lib.text_init.restype = ctypes.c_bool
     assert lib.text_init()
-    lib.text_draw.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.c_uint8, ctypes.c_uint8, ctypes.c_char_p]
+    lib.text_draw.argtypes = [ctypes.POINTER(Bitmap), Point, ctypes.c_uint8, ctypes.c_uint8, ctypes.c_char_p]
     lib.message_print.argtypes = [ctypes.c_int16, ctypes.c_char_p]
     return lib
 
 
 def c_draw(lib, w, h, fill, x, y, fg, bg, text):
     buf = (ctypes.c_uint8 * (w * h))(*[fill] * (w * h))
-    lib.text_draw(ctypes.byref(Bitmap(w, h, buf)), x, y, fg, bg, text)
+    lib.text_draw(ctypes.byref(Bitmap(w, h, buf)), Point(x, y), fg, bg, text)
     return bytes(buf)
 
 
