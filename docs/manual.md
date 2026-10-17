@@ -49,7 +49,7 @@ Usage: dm [options]
 - `--show N` shows graphic N of `Graphics.DAT`.
 - The environment variable `DM_AUTO_ENTER=1` skips the start screens and presses ENTER at the entrance. The tests use it.
 
-Not available yet: the credits fade, the door animation of the entrance, and the rename of a reincarnated champion. The dialogs and the endgame screens do not fade the palette.
+Not available yet: the credits fade and the rename of a reincarnated champion. The dialogs and the endgame screens do not fade the palette.
 
 ## Start screens
 
