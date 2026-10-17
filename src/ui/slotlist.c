@@ -39,9 +39,11 @@ static struct {
     bool closed;   /* a click or Escape closed the list */
     int16_t row;   /* the row that closed the list, -1 for CANCEL */
     int16_t count; /* 8 rows in the save list, 9 in the load list */
-    char text[LIST_ROWS][SLOT_TEXT_SIZE];
-    bool selectable[LIST_ROWS];
-} list;
+    struct {
+        char text[SLOT_TEXT_SIZE];
+        bool selectable;
+    } rows[LIST_ROWS];
+} slotlist;
 
 /* The text of a row: the slot number or QUICK, then EMPTY, DAMAGED, or the level and the file time. */
 static void format_row(char *text, int16_t row, SavegameInfoResult result, const SavegameSlotInfo *info)
@@ -65,13 +67,13 @@ static void format_row(char *text, int16_t row, SavegameInfoResult result, const
 /* Reads the slot infos in directory into the row texts; in the load list only a slot with a game can be selected. */
 static void read_rows(const char *directory, bool load)
 {
-    list.count = load ? LIST_ROWS : SAVEGAME_SLOT_COUNT;
-    for (int16_t row = 0; row < list.count; row++) {
+    slotlist.count = load ? LIST_ROWS : SAVEGAME_SLOT_COUNT;
+    for (int16_t row = 0; row < slotlist.count; row++) {
         SavegameSlotInfo info;
         SavegameInfoResult result = row == SLOTLIST_QUICK_ROW ? savegame_read_quick_info(directory, &info)
                                                               : savegame_read_slot_info(directory, row, &info);
-        format_row(list.text[row], row, result, &info);
-        list.selectable[row] = !load || result == SAVEGAME_INFO_READ;
+        format_row(slotlist.rows[row].text, row, result, &info);
+        slotlist.rows[row].selectable = !load || result == SAVEGAME_INFO_READ;
     }
 }
 
@@ -87,7 +89,7 @@ static void show_row(Bitmap *viewport, int16_t row, uint8_t color, uint8_t backg
     Box box = get_row_box(row);
     draw_fill(viewport, &box, background);
     text_draw(viewport, (Point){ROW_TEXT_LEFT, box.y + FONT_LINE_HEIGHT - FONT_BASELINE_GAP}, color, background,
-              list.text[row]);
+              slotlist.rows[row].text);
 }
 
 /* Draws the dialog graphic with CANCEL, then the rows in the message panel, and shows the viewport. */
@@ -98,8 +100,8 @@ static void show_list(void)
         {NULL, NULL},
         {gfx_get_string(TEXT_CANCEL)}
     });
-    for (int16_t row = 0; row < list.count; row++)
-        show_row(viewport, row, list.selectable[row] ? SLOT_COLOR : DISABLED_COLOR, ROW_BACKGROUND);
+    for (int16_t row = 0; row < slotlist.count; row++)
+        show_row(viewport, row, slotlist.rows[row].selectable ? SLOT_COLOR : DISABLED_COLOR, ROW_BACKGROUND);
     dialog_show_viewport();
 }
 
@@ -107,12 +109,12 @@ static void show_list(void)
 static void show_pressed(void)
 {
     Box cancel;
-    if (list.row < 0) {
+    if (slotlist.row < 0) {
         if (dialog_get_choice_box(CANCEL_CHOICE_COUNT, CANCEL_CHOICE, &cancel))
             dialog_show_pressed(&cancel);
         return;
     }
-    show_row(ui_get_viewport(), list.row, PRESSED_COLOR, PRESSED_BACKGROUND);
+    show_row(ui_get_viewport(), slotlist.row, PRESSED_COLOR, PRESSED_BACKGROUND);
     dialog_show_viewport();
     frame_wait_count(DIALOG_PRESS_FRAMES);
 }
@@ -124,17 +126,17 @@ int16_t slotlist_choose(const char *directory, bool load)
     command_save_input();
     command_set_only_mouse_input(-1);
     command_discard_all_input();
-    list.closed = false;
-    list.row = -1;
-    list.open = true;
-    while (!list.closed && frame_wait())
+    slotlist.closed = false;
+    slotlist.row = -1;
+    slotlist.open = true;
+    while (!slotlist.closed && frame_wait())
         ;
-    list.open = false;
-    if (list.closed)
+    slotlist.open = false;
+    if (slotlist.closed)
         show_pressed();
     command_restore_input();
     command_discard_all_input();
-    return list.closed ? list.row : -1;
+    return slotlist.closed ? slotlist.row : -1;
 }
 
 /* The top left corner of the viewport on the screen: its zone in the game, else centered on the inactive screen. */
@@ -150,23 +152,23 @@ static Point get_viewport_origin(void)
 
 bool slotlist_process_click(int16_t x, int16_t y, int16_t kind)
 {
-    if (!list.open)
+    if (!slotlist.open)
         return false;
-    if (kind != CLICK_LEFT_PRESS || list.closed)
+    if (kind != CLICK_LEFT_PRESS || slotlist.closed)
         return true;
     Point origin = get_viewport_origin();
     int16_t vx = x - origin.x;
     int16_t vy = y - origin.y;
     Box cancel;
     if (dialog_get_choice_box(CANCEL_CHOICE_COUNT, CANCEL_CHOICE, &cancel) && box_contains(&cancel, vx, vy)) {
-        list.closed = true;
+        slotlist.closed = true;
         return true;
     }
-    for (int16_t row = 0; row < list.count; row++) {
+    for (int16_t row = 0; row < slotlist.count; row++) {
         Box box = get_row_box(row);
-        if (list.selectable[row] && box_contains(&box, vx, vy)) {
-            list.row = row;
-            list.closed = true;
+        if (slotlist.rows[row].selectable && box_contains(&box, vx, vy)) {
+            slotlist.row = row;
+            slotlist.closed = true;
         }
     }
     return true;
@@ -174,9 +176,9 @@ bool slotlist_process_click(int16_t x, int16_t y, int16_t kind)
 
 bool slotlist_process_key(uint16_t key)
 {
-    if (!list.open)
+    if (!slotlist.open)
         return false;
     if (key == KEY_ESCAPE)
-        list.closed = true;
+        slotlist.closed = true;
     return true;
 }
