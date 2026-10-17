@@ -103,6 +103,14 @@ def test_objects_disappear_like_original(game, thing_type):
     assert discarded and len(set(discarded)) == len(discarded)
 
 
+def test_current_map_comes_back_like_original(game):
+    """A request from another map than the party map: the search and the removal end on that map again."""
+    release_things(game, C.THING_WEAPON)
+    game.map_set_current_map(2)
+    assert discard_all(game, C.THING_WEAPON)
+    assert c16.in_dll(game, "g_current_map_index").value == 2
+
+
 @pytest.mark.parametrize("dx, dy, stays", [(5, 0, True), (6, 0, False), (0, 5, True), (0, 6, False), (5, 5, True)])
 def test_near_party_stays_like_original(game, dx, dy, stays):
     """On the party map, a thing at most 5 squares away on both axes stays."""
