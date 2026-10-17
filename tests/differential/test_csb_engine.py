@@ -9,6 +9,7 @@ import subprocess
 import pytest
 
 from dmtest import constants as C
+from dmtest.game import Box
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
 
@@ -32,10 +33,6 @@ pytestmark = [needs_csb]
 
 class CsbCopy(ctypes.Structure):
     _fields_ = [("kaos", ctypes.c_uint32), ("appb", ctypes.c_uint32), ("size", ctypes.c_uint16)]
-
-
-class Box(ctypes.Structure):
-    _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
 
 
 def image(path):

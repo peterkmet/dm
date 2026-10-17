@@ -6,6 +6,7 @@ import subprocess
 
 import pytest
 
+from dmtest.game import Bitmap
 from dmtest.lib import load_lib
 from dmtest.markers import BUILD, ROOT, needs_dm, needs_sdl
 
@@ -22,10 +23,6 @@ pytestmark = [needs_sdl]
 
 class FtlImage(ctypes.Structure):
     _fields_ = [("data", ctypes.POINTER(ctypes.c_uint8)), ("size", ctypes.c_uint32), ("base", ctypes.c_uint32), ("data_base", ctypes.c_uint32), ("code_base", ctypes.c_uint32)]
-
-
-class Bitmap(ctypes.Structure):
-    _fields_ = [("w", ctypes.c_uint16), ("h", ctypes.c_uint16), ("px", ctypes.POINTER(ctypes.c_uint8))]
 
 
 @pytest.fixture(scope="module")

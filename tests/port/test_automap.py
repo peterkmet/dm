@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Position, screen
+from dmtest.game import Bitmap, Box, Position, screen
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -22,14 +22,6 @@ FORWARD, TURN_LEFT = 3, 1
 CELL, BLACK, YELLOW, FILLER, DARKEST_GRAY, LIGHT_GRAY = 7, 0, 11, 0xEE, 12, 13
 RULER_W, RULER_H = 12, 7
 WALL, DOOR, FAKE_WALL = 0, 4, 6
-
-
-class Box(ctypes.Structure):
-    _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
-
-
-class Bitmap(ctypes.Structure):
-    _fields_ = [("w", ctypes.c_uint16), ("h", ctypes.c_uint16), ("px", ctypes.POINTER(ctypes.c_uint8))]
 
 
 VIEWPORT = Box(0, 33, 224, 136)

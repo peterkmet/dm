@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import global_type, session, screen
+from dmtest.game import Box, global_type, screen, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
 
@@ -21,10 +21,6 @@ c16 = ctypes.c_int16
 
 class Adventure(ctypes.Structure):
     _fields_ = [(n, ctypes.c_char_p) for n in ("name", "dir", "title", "engine", "save", "backup")]
-
-
-class Box(ctypes.Structure):
-    _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
 
 
 @pytest.fixture(scope="module")

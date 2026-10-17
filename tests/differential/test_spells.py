@@ -4,6 +4,7 @@ import itertools
 
 import pytest
 
+from dmtest.game import Spell
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -14,11 +15,6 @@ GET_SPELL_FROM_SYMBOLS, G_SPELLS = 0x122FDC, 0x103C84
 BUF = 0x200000
 
 pytestmark = [needs_dm]
-
-
-class Spell(ctypes.Structure):
-    _fields_ = [("symbols", ctypes.c_uint32), ("base_required_skill_level", ctypes.c_uint8), ("skill_index", ctypes.c_uint8),
-                ("kind", ctypes.c_uint8), ("type", ctypes.c_uint8), ("disabled_ticks", ctypes.c_uint8)]
 
 
 @pytest.fixture(scope="module")
