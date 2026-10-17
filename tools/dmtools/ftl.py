@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Parse FTL modules (Dungeon Master v3.60 Amiga) and lay them out in memory like BJELoad_R."""
 
 import argparse

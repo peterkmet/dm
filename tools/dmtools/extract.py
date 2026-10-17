@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Extract all files from an Amiga ADF disk image and print a manifest."""
 
 import argparse

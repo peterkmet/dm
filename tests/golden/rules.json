@@ -181,6 +181,16 @@
    "state": "9b4cdfb45837718af0620a304c860b193e23f185135ead22a860dac20566d554"
   }
  ],
+ "alcove": [
+  {
+   "screen": "cf49bf1a0282a5d146df70a2157a61eb7afe5d413fa13927102bc30833310d27",
+   "state": "48aa9b7ec9abedd60b217a7b32608aee7b205331f739cdd111c1685262b8420f"
+  },
+  {
+   "screen": "8086aab7ccc62fd76041207e1509a420c4202ac4ae84205f6110ba2ece1f9b7d",
+   "state": "c3affeb90fea3ebc2408dbf74d22902d3e1a1c4b3365f2196e6192fc28d3186f"
+  }
+ ],
  "door button": [
   {
    "screen": "18434019432f97808a46ef76074e1731c56d7dea9c85b53b21aec0578f32692e",
@@ -211,6 +221,127 @@
   {
    "screen": "91cab0b962e6142d0a30b5bb6230c4aa4985b871efc5187fdd6b15b18a110463",
    "state": "e478e2644350892996707299cc0abb778092b5db92700695b048e02898068007"
+  }
+ ],
+ "fuse": [
+  {
+   "screen": "0faea51de378f29da6818bdf946dc2e9304a9799809ade5ec4bec187d0264ac4",
+   "state": "0d05147bb4914e6c6a399236b2c06adc746a14603187d68a1e446fa92ce3eed2"
+  }
+ ],
+ "grab and drop": [
+  {
+   "screen": "2ea18f1acfbf3823ca88acff561daa4872207fca7ec878dd352c9eb46cb72e4f",
+   "state": "131ae13e1aa0bc97be2d58b4d9e5b6df711724efd5c326ff97bdf48e1695581e"
+  },
+  {
+   "screen": "5862fbce5ff2c3d65742ec10d55979ea1ea9b458a66c0c05dbaf0ef8c2d2c986",
+   "state": "dd5bd43d62de7921328a68e0c4f34789212e39d7d64ebb3d318d6ec4e7d5a769"
+  },
+  {
+   "screen": "570daa5c49c423a9251e4df581fcfa343d6ca886524443e06f64b6556922eae0",
+   "state": "d2ee37ea8a8d80d232da75c000c3749ee33030851312883a95aebe6358d74b8e"
+  },
+  {
+   "screen": "5862fbce5ff2c3d65742ec10d55979ea1ea9b458a66c0c05dbaf0ef8c2d2c986",
+   "state": "603437b054197cd5789760a94fca2c6f3253ac19f94a325b08d46768300fce35"
+  }
+ ],
+ "grab under a creature": [
+  {
+   "hand": 65535,
+   "screen": "8b1471e827ad3b887f944a6112a534b5d430d6d1f3373d341c52a3729b9b2996",
+   "state": "3accbdda9bc55d3633f7501785e15c77584f183685e07be5e7547c2ec224e6b1"
+  },
+  {
+   "hand": 8248,
+   "screen": "90417437f80561390386dd54405777664164bb7a71ef28e8f4af119c85f482ab",
+   "state": "3a519a770eb0154541324e7b279998a958f6a3bab635471f426045a595e9539f"
+  },
+  {
+   "hand": 57381,
+   "screen": "dac67161e86b0938da4c6c7a4e40d932621ca783c5984fb9de1b90e52f837eb9",
+   "state": "22ae17a344db96b3cddd9f4445d914312c8da67a7b585a6f4bd07cad3825ccf4"
+  }
+ ],
+ "imaginary wall": [
+  {
+   "screen": "c5246bdc8c12474b5bf44d3fb65eb02a0c2f45cf99b656be8f6016d921670097",
+   "state": "d39ae00ffec1aa06d348ed45f1d32f850ff2dacdf3d7588c780d694dd5e6cc6d"
+  },
+  {
+   "screen": "c5246bdc8c12474b5bf44d3fb65eb02a0c2f45cf99b656be8f6016d921670097",
+   "state": "fa49e6e7a7993e456e70c9e788b11a8c9ca74be7a3ec5f9fd0dc6940c3d53abf"
+  }
+ ],
+ "load": [
+  {
+   "screen": "ff23926b1d0587165270a8a1d6bb5606126cfb78ccd07713d10a1b87e9b0ed35",
+   "state": "67aa843eb82c1879fd6ea943873941e0813382c2ec26c6ecdd4307b99a63d147"
+  },
+  {
+   "screen": "aa638573cc47e76f808beaba7234da161e65896c41ee8a18945c64cd0c3529d5",
+   "state": "ac022c2d0e84cf3c41809621ee0c60cce5c2ec67c43c80f9cd8d59bdf75ba22a"
+  },
+  {
+   "screen": "7ab42b98f2646acf6b8d64d2fbb25068b0228dca8a3bf4aef1c0c86d9bb9d85d",
+   "state": "bad1ea949d7de9704f99ae7a1b29ad447290cf0bf11b1a30040630bded69eee7"
+  }
+ ],
+ "movement blocked": [
+  {
+   "position": [
+    4,
+    2,
+    1
+   ],
+   "screen": "1f34eeb7784ea733828454c624a782ca22dea48f7567bdf55d06f95ed719be95",
+   "state": "54d3657895833de442810cc20b43a857d2aaae40ca4e9c63c65028f3d5be2707"
+  },
+  {
+   "position": [
+    5,
+    2,
+    1
+   ],
+   "screen": "3ef447601cd63e0616b2ec506856caf22f49ab4d87f7f8a1d011c5366de56d16",
+   "state": "d1df850d5cde9b1342f20c69c531b7d76542d4befa942cfcb5adfd6448681e48"
+  },
+  {
+   "position": [
+    4,
+    2,
+    1
+   ],
+   "screen": "e24971ab20ebbfdf0222940207fd3e55d7ab8b36dabd5984d00eb4530ae3cfa9",
+   "state": "6ee322a29e617251acf58cfd1eb27f4c2bef3596d38d4cafe73adb8002504c99"
+  },
+  {
+   "position": [
+    5,
+    2,
+    1
+   ],
+   "screen": "3ef447601cd63e0616b2ec506856caf22f49ab4d87f7f8a1d011c5366de56d16",
+   "state": "e2643b00f0061a52861430fedf4dd25b2eca02d71878bf8e66bd7b42cf0fd329"
+  },
+  {
+   "position": [
+    5,
+    2,
+    1
+   ],
+   "screen": "3ef447601cd63e0616b2ec506856caf22f49ab4d87f7f8a1d011c5366de56d16",
+   "state": "7a13252bcdef1e8d09042d583939f609f7e3d516a1e6859c011a382657332a82"
+  },
+  {
+   "position": [
+    5,
+    2,
+    1
+   ],
+   "screen": "3ef447601cd63e0616b2ec506856caf22f49ab4d87f7f8a1d011c5366de56d16",
+   "state": "7a13252bcdef1e8d09042d583939f609f7e3d516a1e6859c011a382657332a82"
   }
  ],
  "runes 100": [
@@ -304,5 +435,8 @@
    "screen": "5cab1dff371c6202ac33736b8027ca2e27e1f165286488e670b4bae962c95638",
    "state": "29587786477bbff93acd8d52c67759dda4d22bb85c0e5e6f0a4f2a7436b7d308"
   }
+ ],
+ "visibility": [
+  "313f37805363b20cdd4fd809a23d8e15ec85eb462842f0de331ab7d2a266a824"
  ]
 }

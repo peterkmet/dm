@@ -12,5 +12,21 @@ AlignConsecutiveMacros: AcrossComments
 AlignArrayOfStructures: Left
 IndentCaseLabels: false
 PointerAlignment: Right
-SortIncludes: Never
+SortIncludes: CaseSensitive
+IncludeBlocks: Merge
+IncludeCategories:
+  - Regex: '^"data/'
+    Priority: 1
+  - Regex: '^"engine/'
+    Priority: 2
+  - Regex: '^"ui/'
+    Priority: 3
+  - Regex: '^"control/'
+    Priority: 4
+  - Regex: '^"platform/'
+    Priority: 5
+  - Regex: '^<(dr_mp3|SDL3)/'
+    Priority: 6
+  - Regex: '^<'
+    Priority: 7
 ReflowComments: false

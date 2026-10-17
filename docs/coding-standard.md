@@ -29,7 +29,7 @@ refactor; until the run ends, the allowlist carries the difference.
    [platform]
 7. A module is one `.c` file with one public header. A module with several `.c` files has one public header
    and one `<module>_internal.h` for the shared private declarations; both carry the prefix of the module.
-   [module]
+   The entry point `platform/main.c` is the one exception: it has no header. [module]
 8. Each header states its prefixes in one comment line, `/* Prefixes: rec_ */`. A prefix belongs to one
    module; no prefix starts with the prefix of another module. [prefix]
 9. `third_party/` is vendored code: outside every check and outside the format check, by folder. [layer]
@@ -64,7 +64,9 @@ refactor; until the run ends, the allowlist carries the difference.
 ## 3. Constants
 
 1. Name every game value. Plain numbers are allowed only for 0, 1, -1, and 2 when it halves or doubles a
-   value. Every other number is a named constant, also in an array size and in a loop bound. [hex, decimal]
+   value. Every other number is a named constant, also in an array size and in a loop bound. The base
+   argument of `strtol` and its siblings is a plain number.
+   [hex, decimal]
 2. A constant is `#define NAME value` with the value written out; a negative value stands in parentheses:
    `#define COLOR_NONE (-1)`. No `enum` for constants; `enum` names a result type only (rule 6.1). [enum]
 3. Related constants stand in one block without blank lines, with one comment line above the block that
@@ -101,10 +103,12 @@ refactor; until the run ends, the allowlist carries the difference.
 10. The byte order helpers `be16`, `wr16`, `be32`, `wr32` are `static inline` functions in `data/bytes.h`
     only. [byteorder]
 11. The record layout belongs to `engine/record.h` and `engine/record.c`: no other file indexes a record
-    (`REC(`), `g_current_map_data[` or `g_dungeon_map_data[`. [record]
+    (`REC(`) or `g_dungeon_map_data[`. [record]
 12. Read game data at run time; do not copy a game table into the source. Exception: a table that is not in
     the game files (the soundtrack tables of the other versions) stays in the source, named in the allowlist
-    with this reason. [decimal, allowlist]
+    with this reason; the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`) stay
+    in the source, named in the allowlist with this reason; the fixed CRC-32 table of a standard algorithm
+    (`data/crc32.c`) stays in the source, named in the allowlist with this reason. [decimal, hex, allowlist]
 
 ## 4. Naming
 
@@ -248,7 +252,7 @@ refactor; until the run ends, the allowlist carries the difference.
 
 1. A test module imports helpers from `tests/dmtest/` only, never from another test module.
 2. A C constant comes from the headers through `dmtest.constants`; no hand-mirrored value.
-3. A test calls the accessors of the port; it does not decode a record by bit shifts.
+3. A test calls the accessors of the port; it does not decode a record by bit shifts. [review only]
 4. No machine path in a test (`/Users/`, `/private/tmp/`).
 5. Each test module loads its own copy of the library (`dmtest.lib`); no test compiles the library.
 
@@ -286,7 +290,7 @@ dependency group (version 23). [format]
 | `numbered` | an event number, a byte offset or an address in a name |
 | `packed` | a shift by 8, 16, 24 or a foreign `*_SHIFT` at a call site, a double integer cast |
 | `byteorder` | a byte order helper outside `data/bytes.h` |
-| `record` | `REC(`, `g_current_map_data[` or `g_dungeon_map_data[` outside `engine/record.c` and `engine/record.h` |
+| `record` | `REC(` or `g_dungeon_map_data[` outside `engine/record.c` and `engine/record.h` |
 | `name` | a function name above four words after the prefix or above 32 characters |
 | `static-prefix` | a static function with a module prefix |
 | `bool` | a predicate, a truth local or a "Returns 0/1" function that is not `bool` |

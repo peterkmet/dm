@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """MCP stdio server that plays Dungeon Master through the turn-based control socket.
 
 Start the game with `build/dm --mode turnbased --control <socket>` (add `--adventure csb` for

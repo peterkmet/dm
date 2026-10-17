@@ -5,10 +5,13 @@ requires-python = ">=3.14"
 dependencies = [
     "amitools>=0.8",
     "machine68k>=0.4.1",
-    "mcp>=2.3.0",
 ]
 
+[project.optional-dependencies]
+mcp = ["mcp>=2.3.0"]
+
 [project.scripts]
+dm-csb-match = "dmtools.csb_match:main"
 dm-extract = "dmtools.extract:main"
 dm-ftl = "dmtools.ftl:main"
 dm-mcp = "dmtools.mcp_server:main"
@@ -23,13 +26,28 @@ packages = ["tools/dmtools"]
 
 [dependency-groups]
 dev = [
+    "clang-format>=23.1,<24",
     "dmcsb>=0.2.1",
+    "mcp>=2.3.0",
     "pytest>=8",
     "pytest-timeout>=2.4.0",
     "pytest-xdist>=3.8.0",
+    "ruff>=0.17.1",
 ]
+research = [
+    "capstone>=5.0.9",
+    "numpy>=2.5.4",
+]
+
+[tool.ruff]
+line-length = 160
+src = ["tests", "tools/dmtools"]
+
+[tool.ruff.lint]
+select = ["E4", "E9", "F"]
 
 [tool.pytest.ini_options]
 timeout = 120
-addopts = "-n auto --dist loadfile"
+addopts = "--dist loadfile --import-mode=importlib"
+pythonpath = ["tests"]
 testpaths = ["tests"]

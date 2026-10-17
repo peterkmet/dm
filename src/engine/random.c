@@ -1,0 +1,51 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "engine/random.h"
+#include <time.h>
+
+/* Multiplier of the random generator and mask of 2 random bits. */
+#define RANDOM_MULTIPLIER 0xbb40e62du
+#define RANDOM_2BITS_MASK 0x00000003
+
+/* Increment of the random generator, time unit and the shift of the value. */
+#define RANDOM_INCREMENT            11
+#define NANOSECONDS_PER_MICROSECOND 1000
+#define RANDOM_VALUE_SHIFT          8 /* a value is bits 8-23 of the seed */
+
+uint32_t g_random_seed;
+
+void random_init(void)
+{
+    struct timespec ts;
+    timespec_get(&ts, TIME_UTC);
+    g_random_seed = ts.tv_nsec / NANOSECONDS_PER_MICROSECOND;
+}
+
+/* Next value of the linear congruential generator: bits 8-23 of the new seed. */
+static uint16_t next(void)
+{
+    g_random_seed = g_random_seed * RANDOM_MULTIPLIER + RANDOM_INCREMENT;
+    return g_random_seed >> RANDOM_VALUE_SHIFT;
+}
+
+uint16_t random16(void)
+{
+    return next();
+}
+uint16_t random_bit(void)
+{
+    return next() & 1;
+}
+uint16_t random_2bits(void)
+{
+    return next() & RANDOM_2BITS_MASK;
+}
+
+uint32_t random_get_seed(void)
+{
+    return g_random_seed;
+}
+
+void random_set_seed(uint32_t seed)
+{
+    g_random_seed = seed;
+}

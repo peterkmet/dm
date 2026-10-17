@@ -2,33 +2,68 @@
 
 User wishes for future versions. Not planned yet.
 
-## Uninitialized bytes of free active groups in a save
-
-- `game_init_active_groups` (`port/src/engine/game.c`) allocates `g_active_groups` with `malloc` and sets only `group_index = -1` in each entry. The other bytes of a free entry are not initialized.
-- `pack_active_group` (`port/src/engine/savegame.c`) copies every entry into save block 1, the free entries too. Two saves of the same game can have different bytes in block 1.
-- Change: clear the array after `malloc` (`calloc`, or `memset` to 0), then set `group_index = -1`. Game behavior stays; saves become deterministic.
-- Then remove `scrub_free_groups` from `tests/test_golden_save.py` and `tests/test_golden_rules.py`; the golden files stay the same.
-
-## NULL read of creature attributes on a corrupt dungeon
-
-- `map_get_creature_attributes` (`port/src/engine/map.c`) reads the creature table through the cached accessor of `data/tables`. A creature type above the table (a corrupt dungeon) reads a NULL pointer.
-- Change: a range check with a defined value, a short comment, and a deviation entry in the formats doc.
-
-## Truth values that are still int16_t
-
-- `savegame_quick_save` (`port/src/engine/savegame.h`) returns 1 or 0: make it `bool` (coding standard rule 3). `savegame_quick_load` keeps its `SAVEGAME_*` codes.
-- `music_play_end(int16_t won)` (`port/src/ui/music.h`): make the parameter `bool`.
-
 ## Small cleanups after the clean-code pass
 
-- `action_reset` (`port/src/engine/action.c`) also clears `g_redraw`, which is not action state.
-- `ui/view.c` square table: the D2L2, D2R2 and D0 rows leave unread "none" fields at 0, a valid id; the D0C right stairs zone is a literal in its branch; the three shape `if` blocks can be one `switch`.
-- ui ignores the result of `inventory_fill_leader_hand_at_fountain`.
+- `action_reset` (`src/engine/action.c`) also clears `g_redraw`, which is not action state.
+- `ui/view_walls.c`: the thieves eye hole is not drawn; it needs the party spell state.
+- `ui/command.c`: the credits command (203) is not ported.
+- `ui/command.c` ignores the result of `inventory_fill_at_fountain`.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
-- `tests/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
+- `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing` (`docs/reference/symbols/range-4-6.md`). Port that rule.
+- `light_depths` (`src/engine/explored.c`): a fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it.
+- `sound_request_play` (`src/engine/sound.c`): the original skips a mode >= 1 sound when the current map is not the party map; the port does not check it yet. Port that rule.
+- `tests/golden/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
+
+## Port the name entry of a reincarnated champion
+
+- Owner's wish (2026-10-17): REINCARNATE asks for a new name and title, as in the original.
+- Today: `champion_click_rebirth_panel` (`src/engine/champion.c`) keeps the name and prints "<name> REINCARNATED." (`docs/rules/champions.md:44`). `process_other_command` (`src/ui/command.c`) ignores the name entry commands (`docs/formats/dungeon.md:188`).
+- The original: the rename panel is `g_panel_content` 8 (`docs/reference/symbols/range-4-6.md:242`); it swaps in its own mouse and keyboard input tables (`range-4-6.md:542`, `KAOS_MOUSE_INPUT_NAME_ENTRY` in `src/data/kaos_addresses.h`). CSB: `champion_rename` at `0x116312` (`docs/reference/csb-appb-symbols.csv`).
+
+## Smooth the mouse pointer with the filter
+
+- Owner's wish (2026-10-17): with `--filter scale2x` or `scale3x` the mouse pointer is smoothed like the picture.
+- Today: `plat_present` (`src/platform/platform.c`) scales the game screen, then `overlay_pointer` draws the pointer into the scaled frame as blocks of 2x2 or 3x3 pixels, so the pointer stays blocky.
+- Change: draw the pointer into the screen before the filter runs, so the filter smooths it too.
+
+## Developer view: game keys and walking through walls
+
+- Owner's wish (2026-10-17): `--view` uses the same keys as the game (Q, W, E, A, S, D, the cursor keys, the keypad; `docs/manual.md:148`), and the view can walk through walls.
+- Today: `debug_view_key` (`src/platform/debug_view.c`) knows only the cursor keys, A and D, and stops at a wall or a closed fake wall.
+- Change: map the game keys to the same moves; drop the wall check, keep the check for the map border.
+
+## Draw the damage splat on the champion box
+
+- Found in the manual test (2026-10-17): a champion that takes damage shows no red splat with the number on the status box. The bars and `health_lost` are correct.
+- Today: `champion_apply_pending_damage` (`src/engine/champion.c`) updates the health and queues the hide event, but nothing draws the splat. `status_draw_damage` (`src/ui/status.c`) has no caller in `src/`; only the tests call it. Main had the same gap (`ui_draw_champion_damage` without a caller).
+- The original: the pending-damage routine calls `champion_draw_damage(i, damage)` (KAOS `0x11187e`, `reference/decomp/dm/KAOS.c:14774`).
+- Change: the engine records the damage per champion; the game loop (`src/ui/gameloop.c`) calls `status_draw_damage` for it.
+
+## Windows build: the sound crackles under Wine
+
+- Found in the manual test (2026-10-17): `dm.exe` under the local Wine CX build (`~/github/wine-cross`) plays, saves and loads, but the sounds crackle and pop (wall bump, door). The macOS build sounds clean. Kairosoft games in the same Wine sound clean.
+- Ruled out:
+  - the game output: the SDL `disk` driver records clean audio from `dm.exe`;
+  - a dry queue: a log in `pump_audio` (`src/platform/platform.c`) found no empty queue during play, and 6 queued ticks did not help;
+  - the device rate: `SDL_AUDIO_FREQUENCY=48000` did not help;
+  - CPU load: 15-20 % for `dm.exe`.
+- Wine CX does not pass macOS environment variables to the Windows process; set them with `wine cmd /c "set NAME=value&& dm.exe ..."`.
+- Next step: run `dm.exe` on a real Windows. If it crackles there, look at the SDL3 WASAPI path; if not, it is a Wine CX problem.
+
+## Advanced mode: show the damage twice as long
+
+- Owner's wish (2026-10-16): in the advanced mode the damage that a champion deals stays in the action area twice as long; the vanilla mode keeps the original time.
+- Today: `menus_draw_action_damage` (`src/ui/menus.c`) shows the damage in the action area until the area draws again. The time of that redraw also controls when the champion can act again, so the longer display needs its own timer, not a change of the action times.
+- Not in scope: the damage received on the champion box (`HIDE_DAMAGE_TICKS`, `src/engine/champion.c:26`) keeps its time.
+
+## Advanced mode: action icons keep their colors on every level
+
+- Owner's wish (2026-10-16): in the advanced mode the icons of the action area (the empty hand) have the same colors on every level; the vanilla mode keeps the original behavior.
+- Today: the action area is on the screen lines of the viewport, so it draws with the dungeon palette. Each map puts the replacement colors of its creatures into colors 9 and 10 of that palette (`set_creature_replacement_colors`, `src/ui/view.c:878`). The empty hand icon uses one of these colors: orange on level 11, dark red on level 12. The original game does the same.
+- Change: in the advanced mode, draw the action area icons with fixed colors (e.g. the default colors 9 and 10 of the interface palette), without changing the creature colors of the viewport.
 
 ## Test audit against the test list of CLAUDE.md
 
 - Check every test against the list of CLAUDE.md §2 (what to test, what not to test: UI and layout, CLI arguments, constants and data tables, wiring).
-- Candidates: `tests/test_select.py`, the out-of-range and count tests of `tests/test_tables.py`, parts of `tests/test_modes.py`.
+- Candidates: `tests/port/test_select.py`, the out-of-range and count tests of `tests/differential/test_tables.py`, parts of `tests/port/test_modes.py`.
 - Result: a list with one reason per test to remove or keep; the user approves it before a test is removed.

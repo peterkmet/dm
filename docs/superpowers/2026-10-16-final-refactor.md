@@ -597,8 +597,9 @@ Feature: Final refactor
     And the golden save, view, screens, rules and protocol snapshots are unchanged
 
   Scenario: Constants
-    When I search src/ for "enum {" and for "enum" outside a result type
+    When I search src/ for an anonymous enum ("^\s*enum\s*{", not after "typedef")
     Then nothing is found
+    And every enum left is a named typedef enum that Task 25 keeps
     And every constant block is hex in every line or decimal in every line
 
   Scenario: Globals
@@ -675,6 +676,31 @@ Feature: Final refactor
   (the private copy loader before the tests stop compiling); R3; R4; R5 to R7 (R5.2 before R10); R8 and R9;
   R10 and R11; the rest of R12; R13 and R14 last.
 - Git tags for the past releases: out of scope; the CHANGELOG carries the history.
+
+- Rulings of the run (2026-10-17), each kept by the final review:
+  - `set_direction_*` of the group turn and the last party-blocked movement result stay file-static in
+    `group.c`: the original keeps them across calls (the result is read after a skipped test); a `GroupTurn`
+    field would lose that memory.
+  - Rule 3.12 also allows the fixed table of a standard algorithm (the CRC-32 table of `data/crc32.c`).
+  - Rule 4.8 "a game record stores it" covers the stored attack sound ordinal of the KAOS creature table
+    (the owner confirmed it, 2026-10-17).
+  - Rule 1.7: the entry point `src/platform/main.c` has no header; the module check names it as the one
+    exception. The second file of a module is `<module>_<x>.c` (`control/control_actions.c`).
+  - The notation check does not read `WIDTH`, `TICKS` and similar words as a decimal kind in a name with an
+    address first part (`KAOS_*`): such a name holds the address of the field.
+  - `layout_output` and `map_mouse` are exported from `platform/scale.c` (in the library), so the mouse
+    mapping test keeps calling them.
+  - The square table of the view marks every unread field; the right rows do not mirror the left ones
+    (buttons, door frames, D2 flags differ). `view.c` keeps the 480-line square table and has 1448 lines.
+  - Parameter structs of `ui/`: `draw_blit` takes a `BlitSource`, `text_draw` a `Point`, `layout_get_zone` a
+    `ZoneItem` in and a `ZoneClip` out.
+  - `transport_poll` does not return early after a turn frame. When the client drops during a batch, the
+    batch runs one action fewer than before; the golden protocol is unchanged.
+  - `sound_request_play` keeps the missing "current map == party map" check for mode >= 1 as a recorded
+    deviation (`docs/formats/dungeon.md`, `docs/todo.md`); this refactor changes no game rule.
+  - `tests/standard/allowlist.txt` has no `merge=union` driver: with no parallel streams left, the union merge
+    only brought back deleted lines.
+  - `docs/superpowers/` is history: the run does not edit the plan, the PRD inventory or the archive.
 
 ## Known consequences
 

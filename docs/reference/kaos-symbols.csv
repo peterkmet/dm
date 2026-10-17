@@ -1,0 +1,1717 @@
+address,name,signature,subsystem
+0x100000,g_copper_palette_request,int16_t,interrupt
+0x100002,g_copper_interrupt,,system
+0x100018,g_interrupt_data,,system
+0x10001c,g_console_port,,system
+0x100020,g_console_request,,system
+0x100024,g_input_request,,input
+0x100028,g_input_port,,input
+0x10002c,g_input_device_open,,input
+0x10002e,g_system_requesters_patched,int16_t,system
+0x100030,g_old_auto_request,,system
+0x100034,g_old_build_sys_request,,system
+0x100038,g_chip_pool,,memory
+0x10003c,g_fast_pool,,memory
+0x100040,g_chip_pool_size,,memory
+0x100044,g_fast_pool_size,,memory
+0x100048,g_own_task,,system
+0x10004c,g_nil_file,,system
+0x100050,g_debug_output,,debug
+0x100054,g_chip_block,,system
+0x100058,g_chip_pool_2,,memory
+0x10005c,g_chip_pool_2_size,,memory
+0x1000c4,g_input_handler_installed,int16_t,input
+0x1000ca,g_emulated_left_button_down,int16_t,input
+0x1000cc,g_emulated_right_button_down,int16_t,input
+0x1000ce,g_left_button_down,int16_t,input
+0x1000d0,g_right_button_down,int16_t,input
+0x1000d2,g_input_interrupt,,input
+0x1000e8,g_mouse_x_hires,,input
+0x1000ea,g_mouse_y_hires,,input
+0x1000ec,g_raw_key_buffer,char[8],input
+0x1000f4,g_game_drive,,disk
+0x1000f6,g_save_drive,,disk
+0x1000f8,g_game_drive_change_count,int32_t,disk
+0x1000fc,g_save_drive_change_count,int32_t,disk
+0x100100,g_game_disk_changed,int16_t,disk
+0x100102,g_save_disk_changed,int16_t,disk
+0x100104,g_single_floppy_drive,int16_t,disk
+0x100106,g_game_drive_name,char *,disk
+0x10010a,g_save_drive_name,char *,disk
+0x10010e,g_game_volume_name,char *,disk
+0x100112,g_save_volume_name,char *,disk
+0x100116,g_key_queue_head,,input
+0x100118,g_key_queue_tail,,input
+0x100122,g_last_disk_kind,int16_t,disk
+0x100124,g_file_info_block,struct FileInfoBlock *,disk
+0x100152,g_vblank_interrupt,,video
+0x100168,g_sprite_palette_pending,int16_t,palette
+0x10016a,g_top_palette_pending,,palette
+0x10016c,g_bottom_palette_pending,,palette
+0x10016e,g_display_active,,video
+0x100170,g_initial_colormap,uint16_t[32],palette
+0x1001b0,g_temp_rastport_uninitialized,int16_t,graphics
+0x1001b2,g_fill_pattern,uint16_t[2],graphics
+0x1001b6,g_sprite_palette,uint16_t *,palette
+0x1001ba,g_top_palette,,palette
+0x1001be,g_bottom_palette,,palette
+0x1001c2,g_current_palette,,palette
+0x1001c6,g_module_args,,main
+0x1001ca,g_viewport_needs_clear,int16_t,dungeon_view
+0x1001cc,g_stop_waiting_for_input,,main
+0x1001ce,g_new_party_map_index,,main
+0x1001d0,g_viewport_bitmap,,video
+0x1001d4,g_memory_options,uint8_t[6],startend
+0x1001d7,g_sound_group_1_available,uint8_t,sound
+0x1001d8,g_sound_group_2_available,uint8_t,sound
+0x1001d9,g_sound_group_3_available,uint8_t,sound
+0x1001da,g_entrance_choice,,main
+0x1001dc,g_candidate_champion_index,"int16_t g_candidate_champion_index; /* index, -1 for none; the original stores index + 1, 0 for none */",champion
+0x1001de,g_party_is_sleeping,,main
+0x1001e0,g_game_time_ticking,,main
+0x1001e2,g_fade_display_on_exit,int16_t,video
+0x1001e4,g_party_dead,,main
+0x1001e6,g_party_light_level,int16_t,dungeon_view
+0x1001e8,g_party_champion_count,,champion
+0x1001ea,g_party_direction,,main
+0x1001ec,g_party_map_x,,main
+0x1001ee,g_party_map_y,,main
+0x1001f0,g_party_map_index,,main
+0x1001f2,g_disabled_movement_ticks,,main
+0x1001f4,g_projectile_disabled_movement_ticks,,main
+0x1001f6,g_last_projectile_disabled_movement_direction,,main
+0x1001f8,g_game_time,,main
+0x1001fc,g_vblank_counter,,main
+0x1001fe,g_wait_for_input_max_vblank_count,,main
+0x100200,g_last_load_game_time,int32_t,loadsave
+0x10020a,g_set_mouse_pointer_to_object_in_main_loop,,mouse
+0x10020c,g_refresh_mouse_pointer_in_main_loop,,mouse
+0x100212,g_pressing_closed_imaginary_fake_wall,int16_t,main
+0x100214,g_highlight_box,int16_t[4],command
+0x10021e,g_highlight_box_enabled,int16_t,command
+0x100220,g_refresh_dungeon_view_palette,int16_t,dungeon_view
+0x100222,g_graphic_0_data,uint8_t *g_graphic_0_data; /* graphic 0 read raw at startup */,graphics_dat
+0x100266,g_object_names,char **,object
+0x10026a,g_icon_box,int16_t[4],object
+0x100272,g_zero_block,uint32_t[13],memory
+0x1002a6,g_hide_mouse_pointer_request_count,,mouse
+0x1002a8,g_mouse_pointer_bitmap_updated,,mouse
+0x1002b0,g_arrow_pointer_bitmap,uint8_t[288],mouse
+0x1003d4,g_hand_pointer_bitmap,uint8_t[288],mouse
+0x1004f4,g_mouse_pointer_current_shape,int16_t,mouse
+0x1004f6,g_mouse_tracking_box_exit_command,int16_t,mouse
+0x1004f8,g_mouse_pointer_zones,int16_t[16][6],mouse
+0x1005b8,g_champion_icon_drag_box,int16_t[4],mouse
+0x1005c8,g_mouse_pointer_hotspots,int16_t[4][4],mouse
+0x1005ea,g_mouse_sprite_x,int16_t,mouse
+0x1005ec,g_mouse_sprite_y,int16_t,mouse
+0x1005ee,g_pointer_shadow_colors,uint8_t[16],mouse
+0x1005fe,g_pointer_shadow_colors_object,uint8_t[16],mouse
+0x10060e,g_pointer_swap_colors_0_12,uint8_t[16],mouse
+0x10061e,g_mouse_pointer_outside_screen,int16_t,mouse
+0x100620,g_mouse_buttons,,input
+0x100622,g_mouse_x,,input
+0x100624,g_mouse_y,,input
+0x100640,g_ignore_mouse_movements,int16_t,input
+0x100642,g_mouse_pointer_use_object,int16_t,mouse
+0x100644,g_mouse_pointer_use_hand,int16_t,mouse
+0x100646,g_dragged_champion_icon_cell_plus_1,int16_t,mouse
+0x10064e,g_champion_icon_click_cell,int16_t,mouse
+0x100650,g_mouse_pointer_redraw_requested,int16_t,mouse
+0x100652,g_mouse_tracking_box_active,int16_t,mouse
+0x100654,g_mouse_tracking_box,int16_t[4],mouse
+0x10065c,g_mouse_pointer_initialized,int16_t,mouse
+0x10065e,g_mouse_sprites,struct SimpleSprite[4],mouse
+0x10068e,g_mouse_sprite_data,uint16_t *,mouse
+0x100696,g_sound_volume_table,uint8_t[25][25],sound
+0x100908,g_audio_control_a,struct IOAudio *,sound
+0x10090c,g_audio_write_a_left,struct IOAudio *,sound
+0x100910,g_audio_write_a_right,struct IOAudio *,sound
+0x100914,g_audio_control_b,struct IOAudio *,sound
+0x100918,g_audio_write_b_left,struct IOAudio *,sound
+0x10091c,g_audio_write_b_right,struct IOAudio *,sound
+0x100920,g_audio_port_control,struct MsgPort *,sound
+0x100924,g_audio_port_unused_1,struct MsgPort *,sound
+0x100928,g_audio_port_a_right,struct MsgPort *,sound
+0x10092c,g_audio_port_unused_2,struct MsgPort *,sound
+0x100930,g_audio_port_b_left,struct MsgPort *,sound
+0x100934,g_audio_port_b_right,struct MsgPort *,sound
+0x100938,g_audio_pair_a_volumes,uint8_t[2],sound
+0x10093a,g_audio_pair_b_volumes,uint8_t[2],sound
+0x10093c,g_audio_channel_mask,uint8_t,sound
+0x10093e,g_pending_sound_1_volumes,uint8_t[2],sound
+0x100940,g_pending_sound_2_volumes,uint8_t[2],sound
+0x100942,g_pending_sound_1,int16_t,sound
+0x100944,g_pending_sound_2,int16_t,sound
+0x100946,g_audio_device,struct Device *,sound
+0x100958,g_always_loaded_graphics,uint16_t[71],dungeon_view
+0x100a46,g_credits_palette,uint16_t[16],startend
+0x100a66,g_entrance_palette,uint16_t[16],startend
+0x100aa6,g_dungeon_palettes,uint16_t[][16],palette
+0x100b66,g_ordered_cells_to_attack,uint8_t[8][4],group
+0x100b86,g_wound_probability_index_to_mask,uint8_t[4],group
+0x100b8a,g_slots_to_steal_from,uint8_t[8],group
+0x100b92,g_icon_graphic_first_index,uint16_t[7],object
+0x100ba0,g_torch_charge_to_icon_offset,uint8_t[16],object
+0x100bb0,g_slot_boxes,int16_t[][2],object
+0x100c68,g_slot_masks,const uint16_t g_slot_masks[30]; /* allowed-slot bit for each champion slot */,champion
+0x100cb4,g_light_power_to_light_amount,int16_t[16],menus
+0x100cd4,g_palette_light_thresholds,"const int16_t g_palette_light_thresholds[6]; /* 99,75,50,25,1,0 */",inventory
+0x100ce0,g_champion_colors,"const uint8_t g_champion_colors[4]; /* 7,11,8,14 */",champion
+0x100ce4,g_wound_defense_factor,const uint8_t g_wound_defense_factor[6],champion
+0x100cea,g_rename_cursor_string,"char g_rename_cursor_string[2]; /* ""_"" */",champion
+0x100cec,g_rename_char_string,char g_rename_char_string[2],champion
+0x100d0e,g_slot_drop_order,const int16_t g_slot_drop_order[30],champion
+0x100d4a,g_square_type_to_event_type,uint8_t[8],sensor
+0x100d52,g_sounds,uint8_t[35][12],sound
+0x100ef8,g_random_seed,,random
+0x100efc,g_screen_bitmap,,video
+0x100f00,g_message_area_scroll_line,int16_t,message_area
+0x100f02,g_glyph_masks_left,uint32_t[4],text
+0x100f12,g_glyph_masks_right,uint32_t[4],text
+0x100f22,g_message_area_ready,int16_t,message_area
+0x100f24,g_message_area_copy_pending,int16_t,message_area
+0x100f26,g_font_bitmap,uint8_t *,text
+0x100f2a,g_message_area_row_bitmap,uint8_t *,message_area
+0x100f2e,g_load_text,"char g_load_text[]; /* ""nn.n/nn KG"" built by champion_draw_state */",champion
+0x100fc4,g_message_area_box,int16_t[4],message_area
+0x100fcc,g_message_area_top_offset,int16_t,message_area
+0x100fce,g_message_area_second_line_offset,int16_t,message_area
+0x100fd0,g_message_area_last_row_offset,int16_t,message_area
+0x100fd2,g_message_area_scroll_byte_count,uint16_t,message_area
+0x100fd4,g_message_area_row_plane_size,int16_t,message_area
+0x100fd6,g_screen_plane_size,int16_t,message_area
+0x100fd8,g_screen_row_bytes,int16_t,message_area
+0x100fda,g_message_area_cursor_row,int16_t,message_area
+0x100fdc,g_message_area_cursor_x,int16_t,message_area
+0x100fde,g_message_area_row_expiry,int32_t[4],message_area
+0x100ff2,g_trackdisk_port,struct MsgPort *,trackdisk
+0x100ff6,g_dos_packet_port,struct MsgPort *,trackdisk
+0x100ffa,g_trackdisk_request,struct IOExtTD *,trackdisk
+0x100ffe,g_dos_packet,struct StandardPacket *,trackdisk
+0x101002,g_track_buffer,uint32_t *,trackdisk
+0x101006,g_trackdisk_change_request,struct IOExtTD *,trackdisk
+0x10100a,g_trackdisk_change_port,struct MsgPort *,trackdisk
+0x10100e,g_trackdisk_unit_open,int16_t,trackdisk
+0x101010,g_trackdisk_dos_device_name,char[21],trackdisk
+0x101038,g_direction_to_step_east,,dungeon
+0x101040,g_direction_to_step_north,,dungeon
+0x101048,g_thing_data_byte_count,,dungeon
+0x101058,g_new_game_extra_thing_count,const uint8_t g_new_game_extra_thing_count[16],dungeon
+0x101068,g_object_info,,dungeon
+0x1014a0,g_weapon_info,const WeaponInfo g_weapon_info[]; /* 6 bytes each */,dungeon
+0x1015b4,g_armour_info,const ArmourInfo g_armour_info[]; /* 4 bytes each */,dungeon
+0x10169c,g_junk_weights,const uint8_t g_junk_weights[],dungeon
+0x1016d2,g_food_values,const int16_t g_food_values[8]; /* icons 0xa8..0xaf */,inventory
+0x1016e2,g_door_info,"const uint16_t g_door_info[]; /* hi byte attributes, lo byte defense */",dungeon
+0x1016ea,g_message_escape_strings,const char g_message_escape_strings[32][8],dungeon
+0x1017ea,g_escape_replacement_chars,const char g_escape_replacement_chars[32][2],dungeon
+0x10182a,g_inscription_escape_strings,const char g_inscription_escape_strings[32][8],dungeon
+0x10192a,g_group_directions_packed,"const uint8_t g_group_directions_packed[4]; /* 0x00,0x55,0xaa,0xff */",dungeon
+0x10192e,g_creature_info,const CreatureInfo g_creature_info[]; /* 0x1a bytes each; replaces 0x101930 */,dungeon
+0x101bec,g_creature_sounds,"const int8_t g_creature_sounds[18][2]; /* attack, movement sound per sound ordinal - 1; -1 none */",group
+0x101c10,g_fixed_possessions,const uint16_t g_fixed_possessions[]; /* 0-terminated lists 0x101c10..0x101c5f */,group
+0x101c60,g_current_map_index,,dungeon
+0x101c62,g_last_discarded_thing_map_index,uint8_t g_last_discarded_thing_map_index[16],dungeon
+0x101c72,g_dungeon_text_data,,dungeon
+0x101c76,g_current_map_wall_ornament_indices,uint8_t g_current_map_wall_ornament_indices[16],dungeon
+0x101c86,g_current_map_floor_ornament_indices,uint8_t g_current_map_floor_ornament_indices[16],dungeon
+0x101c96,g_current_map_door_ornament_indices,uint8_t g_current_map_door_ornament_indices[16],dungeon
+0x101ca8,g_current_map_metadata,uint8_t *g_current_map_metadata; /* bytes after the squares */,dungeon
+0x101cac,g_current_map_inscription_ornament_index,int16_t g_current_map_inscription_ornament_index,dungeon
+0x101cae,g_current_map_vi_altar_ornament_index,int16_t,dungeon_view
+0x101cb0,g_current_map_alcove_ornament_indices,int16_t[3],dungeon_view
+0x101cb6,g_current_map_fountain_ornament_indices,int16_t[1],dungeon_view
+0x101cb8,g_dungeon_raw_map_data,,dungeon
+0x101cbc,g_current_map,,dungeon
+0x101cc0,g_current_map_column_first_thing_index,,dungeon
+0x101cc4,g_current_map_data,,dungeon
+0x101cc8,g_current_map_width,,dungeon
+0x101cca,g_current_map_height,,dungeon
+0x101ccc,g_current_map_door_info,uint16_t g_current_map_door_info[2],dungeon
+0x101cd0,g_dungeon_maps,,dungeon
+0x101cd4,g_dungeon_header,,dungeon
+0x101cd8,g_dungeon_map_data,,dungeon
+0x101cdc,g_dungeon_column_first_thing_index,,dungeon
+0x101ce0,g_dungeon_map_first_column,,dungeon
+0x101ce4,g_dungeon_column_count,int16_t g_dungeon_column_count; /* columns of all maps */,dungeon
+0x101ce6,g_square_first_things,,dungeon
+0x101cea,g_thing_data,,dungeon
+0x101d2a,g_square_ahead_element,int16_t,dungeon_view
+0x101d2c,g_facing_alcove,int16_t,dungeon_view
+0x101d2e,g_facing_vi_altar,int16_t,dungeon_view
+0x101d30,g_facing_fountain,int16_t,dungeon_view
+0x101d32,g_champion_portrait_ordinal,int16_t,dungeon_view
+0x101d34,g_inscription_thing,uint16_t g_inscription_thing,dungeon
+0x101d36,g_dungeon_view_clickable_boxes,int16_t[6][4],dungeon_view
+0x101d66,g_pile_top_objects,uint16_t[5],dungeon_view
+0x101d8c,g_dungeon_dat_name,"char *g_dungeon_dat_name; /* -> ""DungeonMaster:Dungeon~.dat"" */",dungeon
+0x101dac,g_dungeon_ftl_name,char *g_dungeon_ftl_name,dungeon
+0x101dcc,g_dungeon_b_dat_name,char *g_dungeon_b_dat_name,dungeon
+0x101dd0,g_graphics_dat_name,char *g_graphics_dat_name,graphics_dat
+0x101de4,g_save_file_name,char *,loadsave
+0x101df8,g_save_backup_file_name,char *,loadsave
+0x101e18,g_active_group_count,,group
+0x101e1a,g_group_set_direction_time,int32_t g_group_set_direction_time,group
+0x101e1e,g_group_set_direction_group,ActiveGroup *g_group_set_direction_group,group
+0x101e22,g_active_groups,,group
+0x101e26,g_max_active_group_count,,group
+0x101e28,g_current_group_map_x,int16_t g_current_group_map_x,group
+0x101e2a,g_current_group_map_y,int16_t g_current_group_map_y,group
+0x101e2c,g_current_group_thing,uint16_t g_current_group_thing,group
+0x101e2e,g_current_group_distance_to_party,uint16_t g_current_group_distance_to_party,group
+0x101e30,g_current_group_primary_direction_to_party,int16_t g_current_group_primary_direction_to_party,group
+0x101e32,g_current_group_secondary_direction_to_party,int16_t g_current_group_secondary_direction_to_party,group
+0x101e34,g_group_movement_tested_directions,uint8_t g_group_movement_tested_directions[4],group
+0x101e38,g_flux_cages,uint8_t g_flux_cages[4],group
+0x101e3c,g_flux_cage_count,int16_t g_flux_cage_count,group
+0x101e3e,g_group_movement_blocked_by_wall,"int16_t g_group_movement_blocked_by_wall; /* also stairs, pit, fake wall, flux cage, teleporter */",group
+0x101e40,g_group_movement_blocked_by_group_thing,uint16_t g_group_movement_blocked_by_group_thing,group
+0x101e42,g_group_movement_blocked_by_door,int16_t g_group_movement_blocked_by_door,group
+0x101e44,g_group_movement_blocked_by_party,int16_t g_group_movement_blocked_by_party,group
+0x101e46,g_drop_moving_creature_possessions_cell_count,int16_t g_drop_moving_creature_possessions_cell_count,group
+0x101e48,g_drop_moving_creature_possessions_cells,uint8_t g_drop_moving_creature_possessions_cells[4],group
+0x101e4c,g_language,,main
+0x101e4e,g_empty_string,const char *g_empty_string; /* returned for invalid indices */,text
+0x101e52,g_string_count,int16_t g_string_count,text
+0x101e54,g_string_data,"char *g_string_data; /* graphic 700, NUL-separated */",text
+0x101e58,g_strings,char **g_strings,text
+0x101e5e,g_default_palette_changes,const uint8_t g_default_palette_changes[16],video
+0x101e6e,g_panel_content,int16_t g_panel_content,inventory
+0x101e70,g_panel_content_drawn,int16_t g_panel_content_drawn,inventory
+0x101e72,g_open_chest,uint16_t g_open_chest; /* 0xffff when no chest is open */,inventory
+0x101e74,g_skill_level_string_indices,const int16_t g_skill_level_string_indices[15]; /* level 2..16 */,inventory
+0x101e92,g_direction_string_indices,const int16_t g_direction_string_indices[4],inventory
+0x101e9a,g_statistic_string_indices,const int16_t g_statistic_string_indices[7],inventory
+0x101ea8,g_inventory_champion_index,"int16_t g_inventory_champion_index; /* index, -1 for none; the original stores index + 1, 0 for none */",inventory
+0x101eaa,g_open_chest_slots,uint16_t g_open_chest_slots[8],inventory
+0x101eba,g_panel_text_x,int16_t g_panel_text_x,inventory
+0x101ebc,g_panel_text_y,int16_t g_panel_text_y,inventory
+0x101ed2,g_leader_index,,champion
+0x101ed4,g_party,"Party g_party; /* 0x58 bytes, fields in range-4-6.md */",champion
+0x101ed6,g_event73_count_thieves_eye,uint8_t,party
+0x101ed7,g_event79_count_footprints,uint8_t,party
+0x101ed8,g_party_shield_defense,int16_t,party
+0x101eda,g_party_fire_shield_defense,int16_t g_party_fire_shield_defense; /* g_party+6 */,champion
+0x101edc,g_party_spell_shield_defense,int16_t g_party_spell_shield_defense; /* g_party+8 */,champion
+0x101ede,g_party_scent_count,uint8_t g_party_scent_count; /* g_party+0xa */,champion
+0x101edf,g_party_freeze_life_ticks,uint8_t g_party_freeze_life_ticks; /* g_party+0xb */,champion
+0x101ee0,g_party_first_scent_index,uint8_t g_party_first_scent_index; /* g_party+0xc */,champion
+0x101ee1,g_party_last_scent_index,uint8_t g_party_last_scent_index; /* g_party+0xd */,champion
+0x101ee2,g_party_scents,uint16_t g_party_scents[24]; /* g_party+0xe */,champion
+0x101f12,g_party_scent_strengths,uint8_t g_party_scent_strengths[24]; /* g_party+0x3e */,champion
+0x101f2a,g_party_invisibility_count,uint8_t g_party_invisibility_count; /* g_party+0x56 */,champion
+0x101f54,g_champions,,champion
+0x102454,g_leader_hand_object,,champion
+0x102456,g_leader_hand_object_icon_index,,champion
+0x102458,g_object_icon_for_mouse_pointer,,mouse
+0x10245c,g_leader_empty_handed,,champion
+0x102460,g_rename_command,"int16_t g_rename_command; /* -1 while waiting; 0xa5 back, 0xa6 ok, 0xa7 next field */",champion
+0x102462,g_champion_pending_damage,int16_t g_champion_pending_damage[4],champion
+0x10246a,g_champion_pending_wounds,uint16_t g_champion_pending_wounds[4],champion
+0x102472,g_base_skill_string_indices,const int16_t g_base_skill_string_indices[4],inventory
+0x10247a,g_invisibility_palette_changes,const uint8_t g_invisibility_palette_changes[16],champion
+0x10248a,g_integer_string,char g_integer_string[5],champion
+0x102490,g_champion_skill_level_up,int16_t g_champion_skill_level_up[4][4]; /* 1 = base skill gained a level */,champion
+0x1024b0,g_draw_all_states_pending,int16_t g_draw_all_states_pending,champion
+0x1024b2,g_icons_changed_mouse_hidden,int16_t g_icons_changed_mouse_hidden,champion
+0x1024d6,g_video,,video
+0x1024da,g_palette_copper_lists,void **,palette
+0x1024de,g_video_port_name,"const char g_video_port_name[]; /* ""FTL_DRIA_Video"" */",video
+0x1024ee,g_graphics_dat_buffer_block,int16_t g_graphics_dat_buffer_block; /* 1 KB block in g_graphics_dat_buffer */,graphics_dat
+0x1024f0,g_graphics_dat_format,uint16_t g_graphics_dat_format,graphics_dat
+0x1024f2,g_language_graphics,"const uint16_t g_language_graphics[10][3]; /* English, French, German index */",graphics_dat
+0x10252e,g_memory_debug_key_index,int16_t g_memory_debug_key_index,debug
+0x102530,g_memory_debug_password,"const char g_memory_debug_password[]; /* ""_memdbg"" */",debug
+0x102538,g_graphics_dat_open_count,,graphics_dat
+0x10253a,g_memory_configured,int16_t g_memory_configured,memory
+0x10253c,g_main_arena_free,int32_t g_main_arena_free,memory
+0x102540,g_derived_bitmap_byte_counts,uint16_t *g_derived_bitmap_byte_counts; /* 997 entries */,graphics_dat
+0x102544,g_graphic_dimensions,,graphics_dat
+0x102548,g_graphics_dat_buffer_invalid,int16_t g_graphics_dat_buffer_invalid,graphics_dat
+0x10254a,g_graphics_dat_buffer,uint8_t *g_graphics_dat_buffer; /* 1 KB */,graphics_dat
+0x10254e,g_graphics_load_dry_run,int16_t g_graphics_load_dry_run,graphics_dat
+0x102550,g_graphics_spare_memory,int32_t g_graphics_spare_memory,graphics_dat
+0x102554,g_graphics_dat_file,,graphics_dat
+0x102558,g_graphic_count,,graphics_dat
+0x10255a,g_graphics_dat_size,int32_t g_graphics_dat_size,graphics_dat
+0x10255e,g_graphic_compressed_sizes,,graphics_dat
+0x102562,g_graphic_decompressed_sizes,,graphics_dat
+0x102566,g_graphic_cache,,graphics_dat
+0x10256a,g_graphic_cache_block,uint16_t *g_graphic_cache_block; /* per graphic: cache block index or 0xffff */,graphics_dat
+0x10256e,g_derived_cache_block,uint16_t *g_derived_cache_block; /* 997 entries: cache block index or 0xffff */,graphics_dat
+0x102572,g_cache_start,uint8_t *g_cache_start,graphics_dat
+0x102576,g_cache_end,uint8_t *g_cache_end,graphics_dat
+0x10257a,g_main_arena_end,uint8_t *g_main_arena_end,memory
+0x10257e,g_main_arena_top,uint8_t *g_main_arena_top,memory
+0x102586,g_fast_arena_top,uint8_t *g_fast_arena_top,memory
+0x10258a,g_fast_arena_free,int32_t g_fast_arena_free,memory
+0x10258e,g_chip_gfx_area,GfxArea g_chip_gfx_area,graphics_dat
+0x10259c,g_fast_gfx_area,GfxArea g_fast_gfx_area,graphics_dat
+0x1025aa,g_cache_top,uint8_t *g_cache_top,graphics_dat
+0x1025ae,g_heap_regions,HeapRegion *g_heap_regions,memory
+0x1025b2,g_heap_finalized,int16_t g_heap_finalized,memory
+0x1025b4,g_cache_blocks,CacheBlock **g_cache_blocks; /* 0x606 entries */,graphics_dat
+0x1025b8,g_cache_free_bytes,int32_t g_cache_free_bytes,graphics_dat
+0x1025bc,g_cache_free_list,"CacheBlock *g_cache_free_list; /* sorted by size, largest first */",graphics_dat
+0x1025c0,g_cache_lru_first,CacheBlock *g_cache_lru_first; /* evicted first */,graphics_dat
+0x1025c4,g_cache_lru_last,CacheBlock *g_cache_lru_last,graphics_dat
+0x1025c8,g_cache_lru_current,CacheBlock *g_cache_lru_current; /* last block used in the current tick */,graphics_dat
+0x1025cc,g_cache_usage_time,int32_t g_cache_usage_time,graphics_dat
+0x1025d0,g_graphics_memory_free,int32_t g_graphics_memory_free,graphics_dat
+0x1025ee,g_service_table,void *g_service_table; /* BJELoad_R services */,main
+0x1025f2,g_layout_bitmaps,"LayoutBitmap g_layout_bitmaps[]; /* 14 bytes each, index -1-n */",zone
+0x10293e,g_main_arena_reserve,uint16_t g_main_arena_reserve,memory
+0x102942,g_screen_width,,video
+0x102944,g_screen_height,,video
+0x102948,g_viewport_width,,video
+0x10294a,g_viewport_height,,video
+0x10294e,g_icon_width,,object
+0x102950,g_icon_height,,object
+0x102952,g_pointer_shadow_dx,int16_t,mouse
+0x102954,g_pointer_shadow_dy,int16_t,mouse
+0x102956,g_slot_box_border,int16_t,object
+0x102958,g_portrait_width,int16_t g_portrait_width,champion
+0x10295a,g_portrait_height,int16_t g_portrait_height,champion
+0x10295c,g_champion_icon_width,int16_t g_champion_icon_width,champion
+0x10295e,g_champion_icon_height,int16_t g_champion_icon_height,champion
+0x102962,g_text_line_height,int16_t,text
+0x102964,g_text_char_gap,int16_t,text
+0x102968,g_text_baseline_gap,int16_t,text
+0x10296a,g_text_char_width,int16_t,text
+0x10296c,g_message_area_row_height,int16_t,message_area
+0x102972,g_message_area_row_bitmap_size,uint16_t,message_area
+0x102974,g_message_area_row_bitmap_width,int16_t,message_area
+0x102976,g_message_area_row_bitmap_height,int16_t,message_area
+0x102990,g_layout_zones,LayoutChunk *g_layout_zones,zone
+0x10299a,g_temp_box_index,int16_t g_temp_box_index,zone
+0x10299c,g_temp_boxes,int16_t g_temp_boxes[8][4],zone
+0x1029dc,g_blit_mask_from_pixel,uint16_t[17],blitter
+0x1029fe,g_blit_mask_before_pixel,uint16_t[17],blitter
+0x102a20,g_blit_skip_beam_wait,int16_t,blitter
+0x102a22,g_wall_set_layout_ids,int16_t[46],dungeon_view
+0x102a60,g_wall_set_flipped_layout_ids,int16_t[15],dungeon_view
+0x102a7e,g_view_square_lane,int8_t[24],dungeon_view
+0x102a96,g_view_square_depth,int8_t[24],dungeon_view
+0x102aae,g_view_square_object_coord_index,int8_t[24],dungeon_view
+0x102ac6,g_view_square_alcove_object_coord_index,int8_t[24],dungeon_view
+0x102ade,g_view_square_creature_coord_index,int8_t[24],dungeon_view
+0x102af6,g_view_square_explosion_coord_index,int8_t[24],dungeon_view
+0x102b0e,g_view_square_field_aspect_index,int8_t[24],dungeon_view
+0x102b26,g_field_aspects,FieldAspect[12],dungeon_view
+0x102bc0,g_alcove_ornament_indices,uint8_t[3],dungeon_view
+0x102bc3,g_fountain_ornament_indices,uint8_t[1],dungeon_view
+0x102bc4,g_wall_ornament_coord_sets,uint8_t[60],dungeon_view
+0x102c00,g_floor_ornament_coord_sets,uint8_t[10],dungeon_view
+0x102c0a,g_door_ornament_coord_sets,uint8_t[12],dungeon_view
+0x102c16,g_door_button_coord_sets,uint8_t[2],dungeon_view
+0x102c18,g_palette_changes_d3,uint8_t[16],dungeon_view
+0x102c28,g_palette_changes_d2,uint8_t[16],dungeon_view
+0x102c38,g_palette_changes_door_ornament_d3,uint8_t[16],dungeon_view
+0x102c48,g_palette_changes_door_ornament_d2,uint8_t[16],dungeon_view
+0x102c68,g_object_aspects,uint8_t[85][4],dungeon_view
+0x102db8,g_projectile_aspects,uint8_t[15][4],dungeon_view
+0x102df4,g_palette_changes_smoke,uint8_t[16],dungeon_view
+0x102e58,g_creature_aspects,uint8_t[27][6],dungeon_view
+0x102efa,g_creature_replacement_color_sets,uint8_t[13][14],dungeon_view
+0x102fb0,g_palette_changes_creature_d3,uint8_t[16],dungeon_view
+0x102fc0,g_palette_changes_creature_d2,uint8_t[16],dungeon_view
+0x102fd0,g_creature_shift_sets,int8_t[3][8],dungeon_view
+0x102ff8,g_current_floor_set,int16_t,dungeon_view
+0x102ffa,g_current_wall_set,int16_t,dungeon_view
+0x102ffc,g_rebuild_flipped_walls,int16_t,dungeon_view
+0x102ffe,g_viewport_blit_in_progress,int16_t,video
+0x103000,g_last_viewport_palette,uint16_t *,dungeon_view
+0x103004,g_viewport_buffer,uint8_t *,dungeon_view
+0x10300c,g_wall_set_layout_ids_saved,int16_t[15],dungeon_view
+0x10302a,g_current_map_wall_ornament_info,int16_t[16][2],dungeon_view
+0x10306a,g_current_map_floor_ornament_info,int16_t[16][2],dungeon_view
+0x1030aa,g_current_map_door_ornament_info,int16_t[17][2],dungeon_view
+0x10310a,g_temp_bitmap,uint8_t *,dungeon_view
+0x10310e,g_use_flipped_wall_bitmaps,int16_t,dungeon_view
+0x103110,g_do_not_draw_fluxcages,int16_t,dungeon_view
+0x103112,g_zone_relative_x,int16_t,dungeon_view
+0x103114,g_zone_relative_y,int16_t,dungeon_view
+0x103116,g_drawn_box,int16_t[4],dungeon_view
+0x10311e,g_stairs_graphics,int16_t[18],dungeon_view
+0x103142,g_door_graphics,int16_t[3][2],dungeon_view
+0x103152,g_last_party_movement_time,int32_t,move
+0x103156,g_group_secondary_direction,int16_t,group
+0x103158,g_creature_damage_outcome,int16_t,group
+0x10315a,g_create_launcher_projectile,int16_t,projectile
+0x10315c,g_projectile_poison_attack,int16_t,projectile
+0x10315e,g_projectile_attack_type,int16_t,projectile
+0x103160,g_sensor_rotation_effect,int16_t,sensor
+0x103162,g_move_result_map_x,int16_t,move
+0x103164,g_move_result_map_y,int16_t,move
+0x103166,g_move_result_map_index,uint16_t,move
+0x103168,g_move_result_cell,uint16_t,move
+0x10316a,g_move_result_direction,uint16_t,move
+0x10316c,g_use_rope_to_climb_down_pit,int16_t,move
+0x10316e,g_sensor_rotation_effect_map_x,int16_t,sensor
+0x103170,g_sensor_rotation_effect_map_y,int16_t,sensor
+0x103172,g_sensor_rotation_effect_cell,int16_t,sensor
+0x103174,g_event_max_count,,timeline
+0x103176,g_event_high_water,uint16_t,timeline
+0x103178,g_timeline_events,,timeline
+0x10317c,g_timeline,,timeline
+0x103180,g_timeline_count,uint16_t,timeline
+0x103182,g_first_unused_event_index,int16_t,timeline
+0x103184,g_watchdog_time,int32_t,timeline
+0x103188,g_command_queue_last_index,int16_t,command
+0x10318a,g_command_queue_locked,int16_t,command
+0x1031f8,g_mouse_input_interface,MouseInput[],command
+0x1032e8,g_mouse_input_movement,MouseInput[],command
+0x103354,g_mouse_input_champion_inventory,MouseInput[],command
+0x10351c,g_mouse_input_party_sleeping,MouseInput[],command
+0x103540,g_mouse_input_frozen_game,MouseInput[],command
+0x103564,g_mouse_input_action_area_names,MouseInput[],command
+0x1035a0,g_mouse_input_action_area_icons,MouseInput[],command
+0x1035dc,g_mouse_input_spell_area,MouseInput[],command
+0x103654,g_mouse_input_champion_status_box,MouseInput[],command
+0x1036f0,g_mouse_input_panel_chest,MouseInput[],command
+0x10375c,g_mouse_input_panel_resurrect_reincarnate,MouseInput[],command
+0x10378c,g_mouse_input_champion_name_entry,MouseInput[],command
+0x103980,g_keyboard_input_party_sleeping,KeyboardInput[],command
+0x10398c,g_keyboard_input_frozen_game,KeyboardInput[],command
+0x103bd4,g_dialog_mouse_inputs,void *[8],dialog
+0x103bf4,g_saved_primary_keyboard_input,KeyboardInput *,command
+0x103bf8,g_saved_secondary_keyboard_input,KeyboardInput *,command
+0x103bfc,g_saved_primary_mouse_input,MouseInput *,command
+0x103c00,g_saved_secondary_mouse_input,MouseInput *,command
+0x103c04,g_primary_mouse_input,MouseInput *,command
+0x103c08,g_secondary_mouse_input,MouseInput *,command
+0x103c0c,g_primary_keyboard_input,KeyboardInput *,command
+0x103c10,g_secondary_keyboard_input,KeyboardInput *,command
+0x103c14,g_command_queue,CommandQueueEntry[9] (6 bytes each),command
+0x103c4a,g_command_queue_count,int16_t,command
+0x103c4c,g_command_queue_first_index,int16_t,command
+0x103c4e,g_pending_click_present,int16_t,command
+0x103c50,g_pending_click_x,int16_t,command
+0x103c52,g_pending_click_y,int16_t,command
+0x103c54,g_pending_click_button,int16_t,command
+0x103c56,g_movement_arrow_to_step_forward_count,int16_t[4],command
+0x103c5e,g_movement_arrow_to_step_right_count,int16_t[4],command
+0x103c66,g_symbol_base_mana_cost,uint8_t[4][6],menus
+0x103c7e,g_symbol_mana_cost_multiplier,uint8_t[6],menus
+0x103c84,g_spells,Spell[25] (8 bytes each),menus
+0x103d4c,g_action_sets,uint8_t[44][8],menus
+0x103eac,g_action_disabled_ticks,uint8_t[44],menus
+0x103ed8,g_action_damage_factor,uint8_t[44],menus
+0x103f04,g_action_hit_probability,uint8_t[44],menus
+0x103f30,g_action_stamina,uint8_t[44],menus
+0x103f5c,g_action_defense,int8_t[44],menus
+0x103f88,g_action_skill_index,uint8_t[44],menus
+0x103fb4,g_action_experience_gain,uint8_t[44],menus
+0x103fe0,g_magic_caster_champion_index,,menus
+0x103fe2,g_acting_champion_index,"int16_t g_acting_champion_index; /* index, -1 for none; the original stores index + 1, 0 for none */",menus
+0x103fe4,g_action_count,uint16_t,menus
+0x103fe6,g_refresh_action_area,int16_t,menus
+0x103fe8,g_action_area_contains_icons,int16_t,menus
+0x103fec,g_action_list_indices,uint8_t[3],menus
+0x103fef,g_action_list_minimum_skill_levels,uint8_t[3],menus
+0x103ff2,g_action_names,char *,menus
+0x103ff6,g_action_damage,int16_t,menus
+0x103ff8,g_action_target_group_thing,uint16_t,menus
+0x103ffa,g_palette_changes_action_area_object_icon,uint8_t[16],menus
+0x10400c,g_dos_base,,system
+0x104010,g_gfx_base,,system
+0x104014,g_intuition_base,,system
+0x104018,g_layers_base,,system
+0x10401c,g_console_device,,system
+0x104020,g_sys_base,,system
+0x104024,g_game_screen_shown,bool,gameloop
+0x104026,g_dialog_message_colors,int16_t[2],dialog
+0x10402a,g_dialog_choice,int16_t,dialog
+0x10402c,g_dialog_version_text,char[6],dialog
+0x104032,g_exit_jmp_buf,int32_t[11],main
+0x104060,g_save_dialog_format_choice,int16_t,loadsave
+0x104062,g_last_save_game_time,int32_t,loadsave
+0x104066,g_load_file,,loadsave
+0x10406a,g_save_header_extra,uint8_t[134],loadsave
+0x1040f0,g_dungeon_id,uint16_t,loadsave
+0x1040f2,g_game_id,uint32_t,loadsave
+0x1040f6,g_save_format,uint16_t,loadsave
+0x1040f8,g_save_platform,uint16_t,loadsave
+0x1040fa,g_save_header_byte_12a,uint16_t,loadsave
+0x1040fc,g_load_from_memory,int16_t,loadsave
+0x1040fe,g_load_memory_pointer,uint8_t *,loadsave
+0x104102,g_load_memory_remaining,int32_t,loadsave
+0x104106,g_entrance_door_bitmap_count,int16_t,startend
+0x104108,g_entrance_door_bitmaps,uint8_t **,startend
+0x10410c,g_entrance_background_bitmap,uint8_t *,startend
+0x104110,g_entrance_work_bitmap,uint8_t *,startend
+0x104114,g_entrance_graphic,uint16_t *,startend
+0x104118,g_credits_graphic,uint16_t *,startend
+0x104124,g_entrance_doors_box,int16_t[4],startend
+0x10412c,g_entrance_screen_box,int16_t[4],startend
+0x104134,g_memory_feature_sets,const uint8_t g_memory_feature_sets[]; /* argument of memory_select_feature_set */,memory
+0x104154,g_best_free_memory,int32_t,startend
+0x104158,g_use_dungeon_b,int16_t,loadsave
+0x10415a,g_saved_game_exists,int16_t,startend
+0x10415c,g_restart_requested,int16_t,startend
+0x10415e,g_game_frozen,int16_t,startend
+0x104182,jt_module_entry_stub,,jump_table
+0x10418a,jt_rt_switch_word,,jump_table
+0x104192,jt_rt_switch_long,,jump_table
+0x10419a,jt_rt_switch_range,,jump_table
+0x1041a2,jt_rt_lmul,,jump_table
+0x1041aa,jt_rt_uldiv,,jump_table
+0x1041b2,jt_rt_ulmod,,jump_table
+0x1041ba,jt_rt_ldiv,,jump_table
+0x1041c2,jt_rt_lmod,,jump_table
+0x1041ca,jt_rt_nop,,jump_table
+0x1041d2,jt_input_handler_stub,,jump_table
+0x1041da,jt_install_input_handler,,jump_table
+0x1041e2,jt_detect_floppy_drives,,jump_table
+0x1041ea,jt_get_drive_disk_kind,,jump_table
+0x1041f2,jt_format_save_disk,,jump_table
+0x1041fa,jt_is_save_disk_inserted,,jump_table
+0x104202,jt_fun_106140,,jump_table
+0x10420a,jt_has_disk_changed,,jump_table
+0x104212,jt_input_any_pending,,jump_table
+0x10421a,jt_fun_106372,,jump_table
+0x104222,jt_input_key_pending,,jump_table
+0x10422a,jt_input_wait_key,,jump_table
+0x104232,jt_char_to_ascii7,,jump_table
+0x10423a,jt_file_open_read,,jump_table
+0x104242,jt_file_open_write,,jump_table
+0x10424a,jt_file_close,,jump_table
+0x104252,jt_file_seek,,jump_table
+0x10425a,jt_file_read,,jump_table
+0x104262,jt_file_write,,jump_table
+0x10426a,jt_file_size,,jump_table
+0x104272,jt_file_delete,,jump_table
+0x10427a,jt_file_rename,,jump_table
+0x104282,jt_vblank_interrupt_handler,,jump_table
+0x10428a,jt_fill_screen_box,,jump_table
+0x104292,jt_fill_bitmap_box,,jump_table
+0x10429a,jt_fill_bitmap_box_pattern,,jump_table
+0x1042a2,jt_palette_fade_to,,jump_table
+0x1042aa,jt_clear_screen,,jump_table
+0x1042b2,jt_box_to_bounds,,jump_table
+0x1042ba,jt_rt_longjmp,,jump_table
+0x1042c2,jt_str_length,,jump_table
+0x1042ca,jt_str_concat,,jump_table
+0x1042d2,jt_str_compare,,jump_table
+0x1042da,jt_str_copy,,jump_table
+0x1042e2,jt_str_replace_char,,jump_table
+0x1042ea,jt_int_to_decimal_string,,jump_table
+0x1042f2,jt_fatal_error,,jump_table
+0x1042fa,jt_wait_vertical_blank,,jump_table
+0x104302,jt_wait_vertical_blanks,,jump_table
+0x10430a,jt_abs16,,jump_table
+0x104312,jt_min16,,jump_table
+0x10431a,jt_max16,,jump_table
+0x104322,jt_bounded_value,,jump_table
+0x10432a,jt_random16,,jump_table
+0x104332,jt_random_bit,,jump_table
+0x10433a,jt_random_2bits,,jump_table
+0x104342,jt_scale_value,,jump_table
+0x10434a,jt_xor_screen_box,,jump_table
+0x104352,jt_xor_screen_zone,,jump_table
+0x10435a,jt_fill_bytes_stride,,jump_table
+0x104362,jt_fill_words_stride,,jump_table
+0x10436a,jt_bitmap_byte_count,,jump_table
+0x104372,jt_blit_bitmap_to_bitmap,,jump_table
+0x10437a,jt_blit_to_viewport,,jump_table
+0x104382,jt_blit_to_viewport_zone,,jump_table
+0x10438a,jt_blit_graphic_to_viewport,,jump_table
+0x104392,jt_blit_graphic_to_viewport_zone,,jump_table
+0x10439a,jt_blit_to_screen,,jump_table
+0x1043a2,jt_blit_to_screen_zone,,jump_table
+0x1043aa,jt_blit_graphic_to_screen,,jump_table
+0x1043b2,jt_blit_graphic_to_screen_zone,,jump_table
+0x1043ba,jt_get_cached_scaled_bitmap,,jump_table
+0x1043c2,jt_apply_palette_changes,,jump_table
+0x1043ca,jt_copy_bitmap_with_palette_changes,,jump_table
+0x1043d2,jt_flip_bitmap_horizontal,,jump_table
+0x1043da,jt_flip_bitmap_vertical,,jump_table
+0x1043e2,jt_process_new_party_map,,jump_table
+0x1043ea,jt_kaos_main,,jump_table
+0x1043f2,jt_load_object_names,,jump_table
+0x1043fa,jt_object_get_type,,jump_table
+0x104402,jt_object_get_icon_index,,jump_table
+0x10440a,jt_draw_leader_hand_object_name,,jump_table
+0x104412,jt_clear_leader_hand_object_name,,jump_table
+0x10441a,jt_extract_object_icon,,jump_table
+0x104422,jt_get_slot_box_zone,,jump_table
+0x10442a,jt_fun_107c64,,jump_table
+0x104432,jt_draw_icon_in_slot_box,,jump_table
+0x10443a,jt_get_icon_in_slot_box,,jump_table
+0x104442,jt_clear_memory,,jump_table
+0x10444a,jt_init_mouse_pointer,,jump_table
+0x104452,jt_request_mouse_pointer_redraw,,jump_table
+0x10445a,jt_set_mouse_pointer,,jump_table
+0x104462,jt_set_mouse_pointer_to_object,,jump_table
+0x10446a,jt_refresh_mouse_pointer,,jump_table
+0x104472,jt_set_mouse_pointer_to_champion,,jump_table
+0x10447a,jt_restore_champion_mouse_pointer,,jump_table
+0x104482,jt_mouse_end_change,,jump_table
+0x10448a,jt_mouse_begin_change,,jump_table
+0x104492,jt_mouse_show_pointer,,jump_table
+0x10449a,jt_mouse_hide_pointer,,jump_table
+0x1044a2,jt_sound_request_play,,jump_table
+0x1044aa,jt_sound_play_pending,,jump_table
+0x1044b2,jt_play_sample,,jump_table
+0x1044ba,jt_sound_free_sample,,jump_table
+0x1044c2,jt_audio_stop_all,,jump_table
+0x1044ca,jt_sound_disable_unloaded,,jump_table
+0x1044d2,jt_sound_init,,jump_table
+0x1044da,jt_text_init,,jump_table
+0x1044e2,jt_text_get_zone_size,,jump_table
+0x1044ea,jt_text_get_next_word_line,,jump_table
+0x1044f2,jt_message_area_clear,,jump_table
+0x1044fa,jt_message_area_print_message,,jump_table
+0x104502,jt_message_area_print_number,,jump_table
+0x10450a,jt_message_area_new_line,,jump_table
+0x104512,jt_text_print_to_viewport,,jump_table
+0x10451a,jt_text_print_to_screen,,jump_table
+0x104522,jt_text_print_to_viewport_zone,,jump_table
+0x10452a,jt_text_print_to_viewport_zone_color,,jump_table
+0x104532,jt_text_print_to_screen_zone,,jump_table
+0x10453a,jt_text_print_to_bitmap,,jump_table
+0x104542,jt_text_print_centered_in_zone,,jump_table
+0x10454a,jt_text_print_padded_to_screen,,jump_table
+0x104552,jt_fun_1053b8,,jump_table
+0x10455a,jt_system_init,,jump_table
+0x104562,jt_system_shutdown,,jump_table
+0x10456a,jt_copper_interrupt_handler,,jump_table
+0x104572,jt_set_language_file_names,,jump_table
+0x10457a,jt_group_is_view_party_blocked,,jump_table
+0x104582,jt_group_is_smell_party_blocked,,jump_table
+0x10458a,jt_group_set_cell_value,,jump_table
+0x104592,jt_group_get_thing,,jump_table
+0x10459a,jt_group_get_creature_ordinal_in_cell,,jump_table
+0x1045a2,jt_group_get_melee_target_creature_ordinal,,jump_table
+0x1045aa,jt_fun_10bce6,,jump_table
+0x1045b2,jt_group_start_wandering,,jump_table
+0x1045ba,jt_group_delete_events,,jump_table
+0x1045c2,jt_group_stop_attacking,,jump_table
+0x1045ca,jt_group_add_active_group,,jump_table
+0x1045d2,jt_group_remove_active_group,,jump_table
+0x1045da,jt_group_get_generated,,jump_table
+0x1045e2,jt_group_drop_moving_creature_fixed_possessions,,jump_table
+0x1045ea,jt_group_drop_group_possessions,,jump_table
+0x1045f2,jt_group_delete,,jump_table
+0x1045fa,jt_group_get_damage_creature_outcome,,jump_table
+0x104602,jt_group_get_damage_all_creatures_outcome,,jump_table
+0x10460a,jt_group_get_resistance_adjusted_poison_attack,,jump_table
+0x104612,jt_group_remove_all_active_groups,,jump_table
+0x10461a,jt_group_add_all_active_groups,,jump_table
+0x104622,jt_group_init_active_groups,,jump_table
+0x10462a,jt_group_process_events_29_to_41,,jump_table
+0x104632,jt_load_string_table,,jump_table
+0x10463a,jt_get_string,,jump_table
+0x104642,jt_get_square,,jump_table
+0x10464a,jt_get_relative_square,,jump_table
+0x104652,jt_get_location_after_level_change,,jump_table
+0x10465a,jt_update_map_coordinates_after_relative_movement,,jump_table
+0x104662,jt_get_stairs_exit_direction,,jump_table
+0x10466a,jt_set_square_aspect,,jump_table
+0x104672,jt_get_thing_data,,jump_table
+0x10467a,jt_get_square_first_thing_data,,jump_table
+0x104682,jt_get_weapon_info,,jump_table
+0x10468a,jt_get_next_thing,,jump_table
+0x104692,jt_get_square_first_thing,,jump_table
+0x10469a,jt_get_square_first_object,,jump_table
+0x1046a2,jt_link_thing_to_list,,jump_table
+0x1046aa,jt_unlink_thing_from_list,,jump_table
+0x1046b2,jt_get_discarded_thing,,jump_table
+0x1046ba,jt_get_object_for_launcher_or_generator,,jump_table
+0x1046c2,jt_decode_text,,jump_table
+0x1046ca,jt_is_creature_allowed_on_map,,jump_table
+0x1046d2,jt_get_object_weight,,jump_table
+0x1046da,jt_get_object_info_index,,jump_table
+0x1046e2,jt_get_projectile_aspect,,jump_table
+0x1046ea,jt_get_armour_defense,,jump_table
+0x1046f2,jt_get_creature_attributes,,jump_table
+0x1046fa,jt_get_group_cells,,jump_table
+0x104702,jt_set_group_cells,,jump_table
+0x10470a,jt_get_group_directions,,jump_table
+0x104712,jt_set_group_directions,,jump_table
+0x10471a,jt_is_wall_ornament_an_alcove,,jump_table
+0x104722,jt_is_wall_ornament_a_fountain,,jump_table
+0x10472a,jt_set_current_map,,jump_table
+0x104732,jt_set_current_map_and_party_map,,jump_table
+0x10473a,jt_blit_shrink_with_palette_changes,,jump_table
+0x104742,jt_flip_bitmap_horizontal_raw,,jump_table
+0x10474a,jt_set_dungeon_view_palette,,jump_table
+0x104752,jt_decrease_torches_light_power,,jump_table
+0x10475a,jt_close_chest,,jump_table
+0x104762,jt_process_click_on_mouth,,jump_table
+0x10476a,jt_draw_stop_pressing_mouth,,jump_table
+0x104772,jt_draw_status_box_portrait,,jump_table
+0x10477a,jt_process_click_on_eye,,jump_table
+0x104782,jt_draw_stop_pressing_eye,,jump_table
+0x10478a,jt_inventory_toggle,,jump_table
+0x104792,jt_champion_get_scent_ordinal,,jump_table
+0x10479a,jt_champion_delete_scent,,jump_table
+0x1047a2,jt_champion_add_scent_strength,,jump_table
+0x1047aa,jt_champion_set_party_direction,,jump_table
+0x1047b2,jt_champion_get_index_in_cell,,jump_table
+0x1047ba,jt_champion_get_target_champion_index,,jump_table
+0x1047c2,jt_champion_put_object_in_leader_hand,,jump_table
+0x1047ca,jt_champion_get_object_removed_from_leader_hand,,jump_table
+0x1047d2,jt_champion_get_object_removed_from_slot,,jump_table
+0x1047da,jt_champion_add_object_in_slot,,jump_table
+0x1047e2,jt_champion_click_on_slot_box,,jump_table
+0x1047ea,jt_champion_decrement_stamina,,jump_table
+0x1047f2,jt_champion_disable_action,,jump_table
+0x1047fa,jt_champion_add_pending_damage_and_wounds,,jump_table
+0x104802,jt_champion_poison,,jump_table
+0x10480a,jt_champion_damage_all,,jump_table
+0x104812,jt_champion_apply_and_draw_pending_damage_and_wounds,,jump_table
+0x10481a,jt_champion_add_skill_experience,,jump_table
+0x104822,jt_champion_get_skill_level,,jump_table
+0x10482a,jt_champion_get_statistic_adjusted_attack,,jump_table
+0x104832,jt_champion_is_lucky,,jump_table
+0x10483a,jt_champion_get_maximum_load,,jump_table
+0x104842,jt_champion_get_movement_ticks,,jump_table
+0x10484a,jt_champion_get_dexterity,,jump_table
+0x104852,jt_champion_get_strength,,jump_table
+0x10485a,jt_fun_11035c,,jump_table
+0x104862,jt_champion_is_leader_hand_object_thrown,,jump_table
+0x10486a,jt_champion_is_object_thrown,,jump_table
+0x104872,jt_fun_111d04,,jump_table
+0x10487a,jt_fun_111d5c,,jump_table
+0x104882,jt_champion_wake_up,,jump_table
+0x10488a,jt_champion_apply_time_effects,,jump_table
+0x104892,jt_fun_1123cc,,jump_table
+0x10489a,jt_champion_draw_state,,jump_table
+0x1048a2,jt_champion_draw_all_states,,jump_table
+0x1048aa,jt_champion_draw_changed_object_icons,,jump_table
+0x1048b2,jt_fun_112f5c,,jump_table
+0x1048ba,jt_fun_112ffe,,jump_table
+0x1048c2,jt_fun_113abe,,jump_table
+0x1048ca,jt_champion_add_candidate_to_party,,jump_table
+0x1048d2,jt_champion_click_in_resurrect_reincarnate_panel,,jump_table
+0x1048da,jt_fun_113a12,,jump_table
+0x1048e2,jt_fun_113b6e,,jump_table
+0x1048ea,jt_fill_bitmap,,jump_table
+0x1048f2,jt_fill_viewport_box,,jump_table
+0x1048fa,jt_fill_screen_zone,,jump_table
+0x104902,jt_fill_screen_zone_pattern,,jump_table
+0x10490a,jt_copy_bytes,,jump_table
+0x104912,jt_heap_add_region,,jump_table
+0x10491a,jt_heap_set_reserve,,jump_table
+0x104922,jt_graphics_dat_open,,jump_table
+0x10492a,jt_graphics_dat_close,,jump_table
+0x104932,jt_graphics_dat_read_header,,jump_table
+0x10493a,jt_graphics_dat_load_graphics,,jump_table
+0x104942,jt_get_native_bitmap_or_graphic,,jump_table
+0x10494a,jt_decode_cached_graphic,,jump_table
+0x104952,jt_cache_free_graphic,,jump_table
+0x10495a,jt_load_graphic_into_bitmap,,jump_table
+0x104962,jt_load_graphic_alloc,,jump_table
+0x10496a,jt_load_bitmap_alloc,,jump_table
+0x104972,jt_mem_alloc,,jump_table
+0x10497a,jt_mem_free_top,,jump_table
+0x104982,jt_mem_free_temp,,jump_table
+0x10498a,jt_alloc_bitmap,,jump_table
+0x104992,jt_free_bitmap,,jump_table
+0x10499a,jt_is_derived_bitmap_in_cache,,jump_table
+0x1049a2,jt_get_derived_bitmap,,jump_table
+0x1049aa,jt_add_derived_bitmap_to_cache,,jump_table
+0x1049b2,jt_copy_bitmap_header,,jump_table
+0x1049ba,jt_copy_bitmap,,jump_table
+0x1049c2,jt_graphics_dat_get_graphic_size,,jump_table
+0x1049ca,jt_memory_debug_key,,jump_table
+0x1049d2,jt_set_service_table,,jump_table
+0x1049da,jt_service_cleanup,,jump_table
+0x1049e2,jt_expand_graphic,,jump_table
+0x1049ea,jt_find_video_driver,,jump_table
+0x1049f2,jt_blit_bitmap,,jump_table
+0x1049fa,jt_draw_viewport,,jump_table
+0x104a02,jt_fun_11751c,,jump_table
+0x104a0a,jt_fun_1176aa,,jump_table
+0x104a12,jt_fun_1175c6,,jump_table
+0x104a1a,jt_load_current_map_graphics,,jump_table
+0x104a22,jt_clear_viewport,,jump_table
+0x104a2a,jt_draw_dungeon_view,,jump_table
+0x104a32,jt_layout_alloc,,jump_table
+0x104a3a,jt_temp_box,,jump_table
+0x104a42,jt_temp_box_size,,jump_table
+0x104a4a,jt_set_box_size,,jump_table
+0x104a52,jt_inflate_box,,jump_table
+0x104a5a,jt_is_point_in_box,,jump_table
+0x104a62,jt_is_point_in_zone,,jump_table
+0x104a6a,jt_get_layout_bitmap,,jump_table
+0x104a72,jt_get_layout_bitmap_only,,jump_table
+0x104a7a,jt_set_layout_bitmap,,jump_table
+0x104a82,jt_get_zone,,jump_table
+0x104a8a,jt_get_zone_at_origin,,jump_table
+0x104a92,jt_get_zone_size,,jump_table
+0x104a9a,jt_get_zone_box_clipped,,jump_table
+0x104aa2,jt_get_zone_box,,jump_table
+0x104aaa,jt_init_layout,,jump_table
+0x104ab2,jt_move_is_levitating,,jump_table
+0x104aba,jt_move_get_move_result,,jump_table
+0x104ac2,jt_fun_11e526,,jump_table
+0x104aca,jt_sensor_is_triggered_by_click_on_wall,,jump_table
+0x104ad2,jt_sensor_process_thing_addition_or_removal,,jump_table
+0x104ada,jt_fun_11e4ec,,jump_table
+0x104ae2,jt_timeline_init,,jump_table
+0x104aea,jt_timeline_reset,,jump_table
+0x104af2,jt_timeline_add_event,,jump_table
+0x104afa,jt_timeline_get_index,,jump_table
+0x104b02,jt_timeline_fix_chronology,,jump_table
+0x104b0a,jt_timeline_delete_event,,jump_table
+0x104b12,jt_timeline_process,,jump_table
+0x104b1a,jt_projectile_create,,jump_table
+0x104b22,jt_projectile_delete_event,,jump_table
+0x104b2a,jt_projectile_delete,,jump_table
+0x104b32,jt_fun_11c4e8,,jump_table
+0x104b3a,jt_explosion_create,,jump_table
+0x104b42,jt_fun_11cc04,,jump_table
+0x104b4a,jt_group_fluxcage_action,,jump_table
+0x104b52,jt_fun_11cefe,,jump_table
+0x104b5a,jt_fun_11cf42,,jump_table
+0x104b62,jt_fun_11cfba,,jump_table
+0x104b6a,jt_group_set_ordered_cells_to_attack,,jump_table
+0x104b72,jt_fun_11d10a,,jump_table
+0x104b7a,jt_fun_11d348,,jump_table
+0x104b82,jt_fun_11d5e0,,jump_table
+0x104b8a,jt_highlight_box_disable,,jump_table
+0x104b92,jt_menus_init,,jump_table
+0x104b9a,jt_menus_refresh_action_area,,jump_table
+0x104ba2,jt_menus_clear_acting_champion,,jump_table
+0x104baa,jt_fun_1235fe,,jump_table
+0x104bb2,jt_menus_set_magic_caster,,jump_table
+0x104bba,jt_fun_123618,,jump_table
+0x104bc2,jt_fun_1238f8,,jump_table
+0x104bca,jt_fun_123a02,,jump_table
+0x104bd2,jt_command_init_mouse_zones,,jump_table
+0x104bda,jt_command_discard_all_input,,jump_table
+0x104be2,jt_fun_1210e8,,jump_table
+0x104bea,jt_command_set_leader,,jump_table
+0x104bf2,jt_command_process_click,,jump_table
+0x104bfa,jt_command_process_key,,jump_table
+0x104c02,jt_command_process_queue,,jump_table
+0x104c0a,jt_endgame,,jump_table
+0x104c12,jt_quit_game_thunk,,jump_table
+0x104c1a,jt_fun_125132,,jump_table
+0x104c22,jt_check_save_disk,,jump_table
+0x104c2a,jt_save_game,,jump_table
+0x104c32,jt_fun_1270c8,,jump_table
+0x104c3a,jt_game_freeze,,jump_table
+0x104c42,jt_game_unfreeze,,jump_table
+0x104c4a,jt_initialize_game,,jump_table
+0x104c52,jt_fun_127ad4,,jump_table
+0x104c5a,jt_fun_127ba6,,jump_table
+0x104c62,jt_fun_127c22,,jump_table
+0x104c6a,jt_os_add_int_server,,jump_table
+0x104c72,jt_os_alert,,jump_table
+0x104c7a,jt_os_alloc_mem,,jump_table
+0x104c82,jt_os_avail_mem,,jump_table
+0x104c8a,jt_os_change_sprite,,jump_table
+0x104c92,jt_os_check_io,,jump_table
+0x104c9a,jt_os_close,,jump_table
+0x104ca2,jt_os_close_device,,jump_table
+0x104caa,jt_os_close_library,,jump_table
+0x104cb2,jt_os_date_stamp,,jump_table
+0x104cba,jt_os_delay,,jump_table
+0x104cc2,jt_os_delete_file,,jump_table
+0x104cca,jt_os_device_proc,,jump_table
+0x104cd2,jt_os_disable,,jump_table
+0x104cda,jt_os_disown_blitter,,jump_table
+0x104ce2,jt_os_display_alert,,jump_table
+0x104cea,jt_os_do_io,,jump_table
+0x104cf2,jt_os_enable,,jump_table
+0x104cfa,jt_os_examine,,jump_table
+0x104d02,jt_os_create_ext_io,,jump_table
+0x104d0a,jt_os_delete_ext_io,,jump_table
+0x104d12,jt_os_create_std_io,,jump_table
+0x104d1a,jt_os_delete_std_io,,jump_table
+0x104d22,jt_os_find_port,,jump_table
+0x104d2a,jt_os_find_task,,jump_table
+0x104d32,jt_os_forbid,,jump_table
+0x104d3a,jt_os_free_mem,,jump_table
+0x104d42,jt_os_free_sprite,,jump_table
+0x104d4a,jt_os_get_msg,,jump_table
+0x104d52,jt_os_get_sprite,,jump_table
+0x104d5a,jt_os_init_bitmap,,jump_table
+0x104d62,jt_os_init_rastport,,jump_table
+0x104d6a,jt_os_load_view,,jump_table
+0x104d72,jt_os_lock,,jump_table
+0x104d7a,jt_os_make_screen,,jump_table
+0x104d82,jt_os_move_sprite,,jump_table
+0x104d8a,jt_os_open,,jump_table
+0x104d92,jt_os_open_device,,jump_table
+0x104d9a,jt_os_init_sys_base,,jump_table
+0x104da2,jt_os_exit_supervisor_reset,,jump_table
+0x104daa,jt_os_open_library,,jump_table
+0x104db2,jt_os_own_blitter,,jump_table
+0x104dba,jt_os_permit,,jump_table
+0x104dc2,jt_os_create_port,,jump_table
+0x104dca,jt_os_delete_port,,jump_table
+0x104dd2,jt_os_begin_io,,jump_table
+0x104dda,jt_os_put_msg,,jump_table
+0x104de2,jt_os_read,,jump_table
+0x104dea,jt_os_rect_fill,,jump_table
+0x104df2,jt_os_rem_int_server,,jump_table
+0x104dfa,jt_os_rename,,jump_table
+0x104e02,jt_os_rethink_display,,jump_table
+0x104e0a,jt_os_seek,,jump_table
+0x104e12,jt_os_set_a_pen,,jump_table
+0x104e1a,jt_os_set_dr_md,,jump_table
+0x104e22,jt_os_set_function,,jump_table
+0x104e2a,jt_os_set_rgb4,,jump_table
+0x104e32,jt_os_unlock,,jump_table
+0x104e3a,jt_os_wait_blit,,jump_table
+0x104e42,jt_os_wait_io,,jump_table
+0x104e4a,jt_os_wait_port,,jump_table
+0x104e52,jt_os_wait_tof,,jump_table
+0x104e5a,jt_os_write,,jump_table
+0x104e62,jt_os_raw_key_convert,,jump_table
+0x104e6c,module_entry_stub,void module_entry_stub(void),runtime
+0x104efa,rt_switch_word,void rt_switch_word(void) /* D0.w key; table follows the JSR */,runtime
+0x104f0e,rt_switch_long,void rt_switch_long(void) /* D0.l key; table follows the JSR */,runtime
+0x104f22,rt_switch_range,void rt_switch_range(void) /* D0.w index; table follows the JSR */,runtime
+0x104f3e,rt_lmul,"int32_t rt_lmul(int32_t a, int32_t b)",runtime
+0x104f74,rt_uldiv,"uint32_t rt_uldiv(uint32_t a, uint32_t b)",runtime
+0x104f94,rt_ulmod,"uint32_t rt_ulmod(uint32_t a, uint32_t b)",runtime
+0x104fb6,rt_ldiv,"int32_t rt_ldiv(int32_t a, int32_t b)",runtime
+0x104fd6,rt_lmod,"int32_t rt_lmod(int32_t a, int32_t b)",runtime
+0x104ff8,rt_ldivmod_core,void rt_ldivmod_core(void) /* in D0=a D1=b; out D0=a/b D1=a%b */,runtime
+0x105026,rt_uldivmod_core,void rt_uldivmod_core(void) /* in D0=a D1=b; out D0=a/b D1=a%b; uses D7 */,runtime
+0x105090,rt_nop,void rt_nop(void),runtime
+0x105092,copper_interrupt_handler,int32_t copper_interrupt_handler(void *is_data /* A1 */),interrupt
+0x1050c2,install_copper_interrupt,void install_copper_interrupt(void),interrupt
+0x1050f2,remove_copper_interrupt,void remove_copper_interrupt(void),interrupt
+0x105102,store_interrupt_data_a5,void store_interrupt_data_a5(void),interrupt
+0x105108,open_dos_library,void open_dos_library(void),system
+0x10512a,close_dos_library,void close_dos_library(void),system
+0x105140,open_graphics_library,void open_graphics_library(void),system
+0x105162,close_graphics_library,void close_graphics_library(void),system
+0x105178,open_intuition_library,void open_intuition_library(void),system
+0x10519a,close_intuition_library,void close_intuition_library(void),system
+0x1051b0,open_layers_library,void open_layers_library(void),system
+0x1051d2,close_layers_library,void close_layers_library(void),system
+0x1051e8,open_console_device,void open_console_device(void),system
+0x105256,close_console_device,void close_console_device(void),system
+0x105294,open_input_device,void open_input_device(void),system
+0x1052fc,close_input_device,void close_input_device(void),system
+0x10533a,open_nil_output,void open_nil_output(void),system
+0x105360,close_nil_output,void close_nil_output(void),system
+0x10537a,alloc_chip_block,void alloc_chip_block(void),system
+0x10539e,free_chip_block,void free_chip_block(void),system
+0x1053b8,system_requester_stub,int32_t system_requester_stub(void),system
+0x1053bc,patch_system_requesters,void patch_system_requesters(void),system
+0x1053f0,restore_system_requesters,void restore_system_requesters(void),system
+0x105440,open_system_resources,void open_system_resources(void),system
+0x10547a,close_system_resources,void close_system_resources(void),system
+0x1054a0,alert_text_decimal,char *alert_text_decimal(void),system
+0x1054f8,alert_text_hex,char *alert_text_hex(void),system
+0x10555a,alert_digit_table,const char *alert_digit_table(void),system
+0x105574,show_alert_decimal,void show_alert_decimal(int16_t code),system
+0x1055dc,show_alert_hex,void show_alert_hex(uint32_t code),system
+0x10563c,fatal_system_error,void fatal_system_error(uint32_t code),system
+0x10567e,get_usable_chip_memory,int32_t get_usable_chip_memory(void),memory
+0x105728,system_init,void system_init(void),system
+0x105880,system_release,void system_release(void),system
+0x1058e6,system_shutdown,void system_shutdown(void),system
+0x105908,input_event_handler,struct InputEvent *input_event_handler(struct InputEvent *events),input
+0x105db0,input_handler_stub,"struct InputEvent *input_handler_stub(struct InputEvent *events /* A0 */, void *is_data /* A1 */)",input
+0x105dc4,install_input_handler,void install_input_handler(void),input
+0x105e62,remove_input_handler,void remove_input_handler(void),input
+0x105e98,key_queue_put,void key_queue_put(uint16_t key),input
+0x105ed0,key_queue_get,uint16_t key_queue_get(void),input
+0x105efa,key_queue_not_empty,int16_t key_queue_not_empty(void),input
+0x105f18,unused_stub_105f18,void unused_stub_105f18(void),input
+0x105f20,poll_disk_change,void poll_disk_change(void),disk
+0x105f68,detect_floppy_drives,void detect_floppy_drives(void),disk
+0x105fc8,get_drive_disk_kind,int16_t get_drive_disk_kind(int16_t which),disk
+0x1060da,format_save_disk,int16_t format_save_disk(void),disk
+0x106112,is_save_disk_inserted,int16_t is_save_disk_inserted(int16_t mode),disk
+0x106140,disk_prompt_hook,void disk_prompt_hook(void),disk
+0x106148,has_disk_changed,int16_t has_disk_changed(int16_t which),disk
+0x1061b8,file_open_read,int32_t file_open_read(const char *name),file
+0x1061cc,file_open_write,int32_t file_open_write(const char *name),file
+0x1061e0,file_close,void file_close(int32_t fh),file
+0x1061f8,file_seek,"int32_t file_seek(int32_t fh, int32_t position)",file
+0x106212,file_read,"int32_t file_read(int32_t fh, int32_t size, void *buffer)",file
+0x106236,file_write,"int32_t file_write(int32_t fh, int32_t size, const void *buffer)",file
+0x10625a,file_tell,int32_t file_tell(int32_t fh),file
+0x10626e,file_size,int32_t file_size(int32_t fh),file
+0x1062b8,file_delete,int32_t file_delete(const char *name),file
+0x1062ca,file_rename,"int32_t file_rename(const char *old_name, const char *new_name)",file
+0x1062e0,input_wait_key,uint16_t input_wait_key(void),input
+0x1062f6,input_key_pending,int16_t input_key_pending(void),input
+0x1062fc,char_to_ascii7,uint8_t char_to_ascii7(int16_t c),input
+0x10630a,debug_print,void debug_print(const char *text),debug
+0x10633c,debug_print_char,void debug_print_char(int16_t c),debug
+0x10635c,input_any_pending,int16_t input_any_pending(void),input
+0x106372,format_done_hook,void format_done_hook(void),disk
+0x106374,vblank_interrupt_handler,int32_t vblank_interrupt_handler(void *is_data /* A1 */),interrupt
+0x106586,install_vblank_interrupt,void install_vblank_interrupt(void),interrupt
+0x1065b6,remove_vblank_interrupt,void remove_vblank_interrupt(void),interrupt
+0x1065c6,load_colormap,"void load_colormap(const uint16_t *colors, int16_t count)",palette
+0x10661a,connect_video_driver,void connect_video_driver(void),video
+0x1066be,restore_display,void restore_display(void),video
+0x106746,fade_display_out,void fade_display_out(void),palette
+0x10675c,wait_blitter_on_exit,void wait_blitter_on_exit(void),video
+0x106768,palette_fade,"void palette_fade(const uint16_t *target, const uint16_t *start)",palette
+0x106990,palette_fade_to,void palette_fade_to(const uint16_t *target),palette
+0x1069dc,wait_for_raster_line,void wait_for_raster_line(int16_t line),video
+0x106a04,setup_temp_rastport,"void setup_temp_rastport(uint8_t *planes, int16_t color, int16_t width, int16_t height)",graphics
+0x106abe,fill_bitmap_box,"int32_t fill_bitmap_box(uint8_t *bitmap, const int16_t *box, int16_t color, int16_t width, int16_t height)",graphics
+0x106b46,fill_bitmap_box_pattern,"int32_t fill_bitmap_box_pattern(uint8_t *bitmap, const int16_t *box, int16_t color, int16_t width, int16_t height)",graphics
+0x106c04,fill_screen_box,"int32_t fill_screen_box(const int16_t *box, int16_t color)",graphics
+0x106c8a,complement_screen_box,int32_t complement_screen_box(const int16_t *box),graphics
+0x106d0e,clear_screen,void clear_screen(int16_t color),graphics
+0x106d7c,box_to_bounds,"void box_to_bounds(const int16_t *box, int16_t *bounds)",graphics
+0x106da4,init_module_args,"void init_module_args(void *services, uint8_t *args)",main
+0x106de8,module_cleanup,void module_cleanup(void),main
+0x106dee,rt_setjmp,int16_t rt_setjmp(int32_t *env),runtime
+0x106dfc,rt_longjmp,"void rt_longjmp(int32_t *env, int16_t value)",runtime
+0x106e0e,str_length,int16_t str_length(const char *s),string
+0x106e32,str_concat,"char *str_concat(char *dst, const char *src)",string
+0x106e5c,str_compare,"int16_t str_compare(const char *a, const char *b)",string
+0x106e92,str_copy,"char *str_copy(char *dst, const char *src)",string
+0x106eb8,str_copy_n,"char *str_copy_n(char *dst, const char *src, int16_t n)",string
+0x106eea,str_find_char,"char *str_find_char(const char *s, int16_t c)",string
+0x106f16,str_replace_char,"int16_t str_replace_char(const char *src, const char *insert, int16_t c, char *dst)",string
+0x106f82,int_to_decimal_string,"void int_to_decimal_string(int32_t value, char *out)",string
+0x106ff6,wait_vertical_blank,void wait_vertical_blank(void),video
+0x106ffc,xor_screen_box,void xor_screen_box(const uint16_t *box),graphics
+0x1070ec,xor_screen_zone,void xor_screen_zone(int16_t zone),graphics
+0x107110,fill_bytes_stride,"void fill_bytes_stride(uint8_t *dst, int16_t count, int16_t value, int16_t stride)",memory
+0x107146,fill_words_stride,"void fill_words_stride(int16_t *dst, int16_t count, int16_t value, int16_t stride_bytes)",memory
+0x10717c,fatal_error,void fatal_error(int16_t code),system
+0x107194,bitmap_byte_count,uint16_t bitmap_byte_count(const uint8_t *bitmap),graphics
+0x1071ae,blit_bitmap_to_bitmap,"void blit_bitmap_to_bitmap(const uint8_t *src, uint8_t *dst, const int16_t *dst_box, int16_t src_x, int16_t src_y, int16_t transparent_color)",graphics
+0x1071ea,blit_to_viewport,"void blit_to_viewport(const uint8_t *src, const int16_t *dst_box, int16_t transparent_color)",graphics
+0x10721c,blit_to_viewport_zone,"void blit_to_viewport_zone(const uint8_t *src, int16_t zone, int16_t transparent_color)",graphics
+0x107280,blit_graphic_to_viewport,"void blit_graphic_to_viewport(int16_t graphic, const int16_t *dst_box, int16_t transparent_color)",graphics
+0x1072c6,blit_graphic_to_viewport_zone,"void blit_graphic_to_viewport_zone(int16_t graphic, int16_t zone, int16_t transparent_color)",graphics
+0x107356,blit_to_screen,"void blit_to_screen(const uint8_t *src, const int16_t *dst_box, int16_t transparent_color)",graphics
+0x107388,blit_to_screen_zone,"void blit_to_screen_zone(const uint8_t *src, int16_t zone, int16_t transparent_color)",graphics
+0x1073ec,blit_graphic_to_screen,"void blit_graphic_to_screen(int16_t graphic, const int16_t *dst_box, int16_t transparent_color)",graphics
+0x107432,blit_graphic_to_screen_zone,"void blit_graphic_to_screen_zone(int16_t graphic, int16_t zone, int16_t transparent_color)",graphics
+0x1074c2,get_scaled_bitmap,"uint8_t *get_scaled_bitmap(int16_t graphic, int16_t derived_index, int16_t width, int16_t height, const uint8_t *palette_changes)",graphics
+0x107512,get_cached_scaled_bitmap,"uint8_t *get_cached_scaled_bitmap(int16_t graphic, int16_t derived_index, int16_t width, int16_t height, const uint8_t *palette_changes)",graphics
+0x107584,apply_palette_changes,"void apply_palette_changes(uint8_t *bitmap, const uint8_t *palette_changes)",graphics
+0x1075b2,copy_bitmap_with_palette_changes,"void copy_bitmap_with_palette_changes(const uint8_t *src, uint8_t *dst, const uint8_t *palette_changes)",graphics
+0x1075f0,flip_bitmap_horizontal,void flip_bitmap_horizontal(uint8_t *bitmap),graphics
+0x10760c,flip_bitmap_vertical,void flip_bitmap_vertical(uint8_t *bitmap),graphics
+0x107628,wait_vertical_blanks,void wait_vertical_blanks(int16_t count),video
+0x107642,abs16,int16_t abs16(int16_t v),math
+0x107652,min16,"int16_t min16(int16_t a, int16_t b)",math
+0x107668,max16,"int16_t max16(int16_t a, int16_t b)",math
+0x10767e,bounded_value,"int16_t bounded_value(int16_t min, int16_t value, int16_t max)",math
+0x1076a0,random16,uint16_t random16(void),random
+0x1076bc,random_bit,uint16_t random_bit(void),random
+0x1076da,random_2bits,uint16_t random_2bits(void),random
+0x1076f8,scale_value,"int16_t scale_value(uint16_t a, int16_t shift, uint16_t b)",math
+0x10770e,process_new_party_map,void process_new_party_map(int16_t map_index),main
+0x10773c,game_loop,void game_loop(void),main
+0x1078de,kaos_main,"int32_t kaos_main(void *services, uint8_t *args)",main
+0x10791c,load_object_names,void load_object_names(void),object
+0x1079a4,object_get_type,int16_t object_get_type(uint16_t thing),object
+0x1079dc,object_get_icon_index,int16_t object_get_icon_index(uint16_t thing),object
+0x107abe,draw_leader_hand_object_name,void draw_leader_hand_object_name(uint16_t thing),object
+0x107baa,clear_leader_hand_object_name,void clear_leader_hand_object_name(void),object
+0x107bb8,extract_object_icon,"void extract_object_icon(int16_t icon_index, uint8_t *bitmap)",object
+0x107c3a,get_slot_box_zone,"void get_slot_box_zone(int16_t zone, int16_t *box)",object
+0x107c64,get_slot_box_border_zone,"void get_slot_box_border_zone(int16_t zone, int16_t *box)",object
+0x107c88,draw_icon_in_slot_box,"void draw_icon_in_slot_box(int16_t slot_box, int16_t icon_index)",object
+0x107d56,get_icon_in_slot_box,int16_t get_icon_in_slot_box(int16_t slot_box),object
+0x107d6e,clear_memory,"void clear_memory(void *dst, int32_t size)",memory
+0x107dbc,update_mouse_pointer_sprites,void update_mouse_pointer_sprites(void),mouse
+0x107f1c,view_restored_hook,void view_restored_hook(void),mouse
+0x107f20,init_mouse_pointer,void init_mouse_pointer(void),mouse
+0x108002,free_mouse_pointer,void free_mouse_pointer(void),mouse
+0x10809e,mouse_set_tracking_box,"void mouse_set_tracking_box(const int16_t *box, int16_t exit_command)",mouse
+0x1080d8,request_mouse_pointer_redraw,void request_mouse_pointer_redraw(void),mouse
+0x1080e0,set_mouse_pointer,void set_mouse_pointer(int16_t hand),mouse
+0x108100,build_mouse_pointer_sprite,"void build_mouse_pointer_sprite(const uint16_t *bitmap, int16_t shape)",mouse
+0x108216,build_mouse_pointer_bitmap,"void build_mouse_pointer_bitmap(const uint8_t *src, uint8_t *dst, int16_t transparent_color)",mouse
+0x1082e2,set_mouse_pointer_to_object,void set_mouse_pointer_to_object(const uint8_t *icon_bitmap),mouse
+0x108340,refresh_mouse_pointer,void refresh_mouse_pointer(void),mouse
+0x10836a,mouse_process_champion_icon_click,void mouse_process_champion_icon_click(int16_t cell),mouse
+0x1084f2,mouse_cancel_champion_icon_drag,void mouse_cancel_champion_icon_drag(void),mouse
+0x108504,get_mouse_pointer_shape_for_position,"int16_t get_mouse_pointer_shape_for_position(int16_t x, int16_t y)",mouse
+0x108702,mouse_begin_change,void mouse_begin_change(void),mouse
+0x108704,mouse_end_change,void mouse_end_change(void),mouse
+0x108706,mouse_hide_pointer,void mouse_hide_pointer(void),mouse
+0x108710,mouse_show_pointer,void mouse_show_pointer(void),mouse
+0x10871a,sound_compare_loudness,"int16_t sound_compare_loudness(const uint8_t *a, const uint8_t *b)",sound
+0x108788,sound_init,void sound_init(void),sound
+0x10878a,audio_stop_all,void audio_stop_all(void),sound
+0x10881e,sound_free_sample,int16_t sound_free_sample(int16_t sound),sound
+0x108850,audio_play_sample,"void audio_play_sample(int16_t sound, const uint8_t *volumes)",sound
+0x1089be,audio_device_open,void audio_device_open(void),sound
+0x108c68,audio_device_close,void audio_device_close(void),sound
+0x108d86,sound_disable_unloaded,void sound_disable_unloaded(void),sound
+0x108df4,sound_request_play,"void sound_request_play(int16_t sound, int16_t map_x, int16_t map_y, uint16_t mode)",sound
+0x108fca,sound_play_pending,void sound_play_pending(void),sound
+0x109054,sound_get_volume,"int16_t sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes)",sound
+0x109116,text_print_to_bitmap,"void text_print_to_bitmap(uint8_t *bitmap, uint16_t width, int16_t x, int16_t y, uint16_t fg, uint16_t bg, const char *text, uint16_t height)",text
+0x1093e0,message_area_init_metrics,void message_area_init_metrics(void),message_area
+0x109466,text_get_zone_size,"int16_t text_get_zone_size(const char *text, int16_t *width, int16_t *height)",text
+0x1094b6,text_get_next_word_line,"int16_t text_get_next_word_line(const char *text, char *line, int16_t *position, int16_t max_width)",text
+0x10953c,text_print_to_bitmap_zone,"void text_print_to_bitmap_zone(uint8_t *bitmap, uint16_t width, int16_t zone, uint16_t fg, uint16_t bg, const char *text, uint16_t height)",text
+0x1095aa,text_print_padded_to_bitmap,"void text_print_padded_to_bitmap(uint8_t *bitmap, uint16_t width, int16_t x, int16_t y, uint16_t fg, uint16_t bg, const char *text, int16_t length, uint16_t height)",text
+0x109604,text_print_padded_to_bitmap_zone,"void text_print_padded_to_bitmap_zone(uint8_t *bitmap, uint16_t width, int16_t zone, uint16_t fg, uint16_t bg, const char *text, int16_t length, uint16_t height)",text
+0x10965a,message_area_move_cursor,"void message_area_move_cursor(int16_t column, int16_t row)",message_area
+0x1096a6,message_area_clear,void message_area_clear(void),message_area
+0x1096f0,message_area_clear_expired_rows,void message_area_clear_expired_rows(void),message_area
+0x10977a,message_area_create_new_row,void message_area_create_new_row(void),message_area
+0x1097e6,message_area_print_string,"void message_area_print_string(int16_t color, const char *text)",message_area
+0x1098a6,message_area_print_message,"void message_area_print_message(int16_t color, const char *text)",message_area
+0x109944,message_area_print_char,"void message_area_print_char(int16_t color, int16_t c)",message_area
+0x109962,message_area_print_number,"void message_area_print_number(int16_t color, int32_t value)",message_area
+0x10999e,message_area_new_line,void message_area_new_line(void),message_area
+0x1099ac,text_print_to_viewport,"void text_print_to_viewport(int16_t x, int16_t y, uint16_t color, const char *text)",text
+0x1099d8,text_print_to_screen,"void text_print_to_screen(int16_t x, int16_t y, uint16_t fg, uint16_t bg, const char *text)",text
+0x109a04,text_print_to_viewport_zone,"void text_print_to_viewport_zone(int16_t zone, uint16_t color, const char *text)",text
+0x109a72,text_print_to_viewport_zone_color,"void text_print_to_viewport_zone_color(int16_t zone, uint16_t fg, uint16_t bg, const char *text)",text
+0x109ae0,text_print_to_screen_zone,"void text_print_to_screen_zone(int16_t zone, uint16_t fg, uint16_t bg, const char *text)",text
+0x109b4e,text_init,void text_init(void),text
+0x109bb2,trackdisk_init,void trackdisk_init(void),trackdisk
+0x109c92,trackdisk_release,void trackdisk_release(void),trackdisk
+0x109d28,trackdisk_open_unit,int16_t trackdisk_open_unit(int16_t unit),trackdisk
+0x109d50,trackdisk_close_unit,void trackdisk_close_unit(void),trackdisk
+0x109d66,trackdisk_do_command,"void trackdisk_do_command(int16_t unused, uint16_t command, int32_t length, uint8_t flags)",trackdisk
+0x109d94,dos_send_packet,"int32_t dos_send_packet(void *handler_port, int32_t action, const int32_t *args, int16_t arg_count)",trackdisk
+0x109e26,dos_inhibit_drive,"int16_t dos_inhibit_drive(const char *device, int16_t inhibit)",trackdisk
+0x109e6a,dos_relabel_disk,"int16_t dos_relabel_disk(const char *device, const char *name)",trackdisk
+0x109ee0,sum_longs_128,int32_t sum_longs_128(const int32_t *block),trackdisk
+0x109f0a,trackdisk_format_disk,"int16_t trackdisk_format_disk(int16_t unit, const char *volume_name)",trackdisk
+0x10a292,trackdisk_unit_exists,int16_t trackdisk_unit_exists(int16_t unit),trackdisk
+0x10a2b2,trackdisk_get_change_count,int32_t trackdisk_get_change_count(int16_t unit),trackdisk
+0x10a2ec,trackdisk_get_change_count_from_handler,int32_t trackdisk_get_change_count_from_handler(int16_t unit),trackdisk
+0x10a34c,trackdisk_get_disk_state,int16_t trackdisk_get_disk_state(int16_t unit),trackdisk
+0x10a3a6,draw_format_progress,"void draw_format_progress(int16_t total, int16_t done)",trackdisk
+0x10a432,is_creature_allowed_on_map,"int16_t is_creature_allowed_on_map(uint16_t group_thing, uint16_t map_index)",dungeon
+0x10a4ac,get_object_weight,uint16_t get_object_weight(uint16_t thing),dungeon
+0x10a594,get_object_info_index,int16_t get_object_info_index(uint16_t thing),dungeon
+0x10a618,get_projectile_aspect,uint16_t get_projectile_aspect(uint16_t thing),dungeon
+0x10a6a6,get_armour_defense,"uint16_t get_armour_defense(const ArmourInfo *info, int16_t use_sharp_defense)",dungeon
+0x10a6e4,get_creature_attributes,uint16_t get_creature_attributes(uint16_t group_thing),dungeon
+0x10a70e,get_group_cells,"uint8_t get_group_cells(const Group *group, int16_t map_index)",dungeon
+0x10a73e,set_group_cells,"void set_group_cells(Group *group, uint8_t cells, int16_t map_index)",dungeon
+0x10a772,get_group_directions,"uint8_t get_group_directions(const Group *group, int16_t map_index)",dungeon
+0x10a7b2,set_group_directions,"void set_group_directions(Group *group, int16_t directions, int16_t map_index)",dungeon
+0x10a7f4,is_wall_ornament_an_alcove,int16_t is_wall_ornament_an_alcove(int16_t ornament_index),dungeon
+0x10a828,is_wall_ornament_a_fountain,int16_t is_wall_ornament_a_fountain(int16_t ornament_index),dungeon
+0x10a85c,update_map_coordinates_after_relative_movement,"void update_map_coordinates_after_relative_movement(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t *map_x, int16_t *map_y)",dungeon
+0x10a8ac,get_square,"uint8_t get_square(int16_t map_x, int16_t map_y)",dungeon
+0x10a9b8,get_relative_square,"uint8_t get_relative_square(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t map_x, int16_t map_y)",dungeon
+0x10a9e4,get_relative_square_type,"int16_t get_relative_square_type(int16_t direction, int16_t steps_forward, int16_t steps_right, int16_t map_x, int16_t map_y)",dungeon
+0x10aa0c,get_location_after_level_change,"int16_t get_location_after_level_change(int16_t map_index, int16_t level_delta, int16_t *map_x, int16_t *map_y)",dungeon
+0x10aad2,get_stairs_exit_direction,"int16_t get_stairs_exit_direction(int16_t map_x, int16_t map_y)",dungeon
+0x10ab3c,get_thing_data,void *get_thing_data(uint16_t thing),dungeon
+0x10ab6c,get_square_first_thing_data,"void *get_square_first_thing_data(int16_t map_x, int16_t map_y)",dungeon
+0x10ab86,get_weapon_info,const WeaponInfo *get_weapon_info(uint16_t weapon_thing),dungeon
+0x10abb4,get_next_thing,uint16_t get_next_thing(uint16_t thing),dungeon
+0x10abe8,get_square_first_thing_index,"int16_t get_square_first_thing_index(int16_t map_x, int16_t map_y)",dungeon
+0x10ac4e,get_square_first_thing,"uint16_t get_square_first_thing(int16_t map_x, int16_t map_y)",dungeon
+0x10ac7c,get_square_first_object,"uint16_t get_square_first_object(int16_t map_x, int16_t map_y)",dungeon
+0x10acba,link_thing_to_list,"void link_thing_to_list(uint16_t thing, uint16_t list_thing, int16_t map_x, int16_t map_y)",dungeon
+0x10adf4,unlink_thing_from_list,"void unlink_thing_from_list(uint16_t thing, uint16_t list_thing, int16_t map_x, int16_t map_y)",dungeon
+0x10af2e,get_discarded_thing,uint16_t get_discarded_thing(uint16_t thing_type),dungeon
+0x10b1a6,get_unused_thing,uint16_t get_unused_thing(uint16_t thing_type),dungeon
+0x10b24e,get_object_for_launcher_or_generator,uint16_t get_object_for_launcher_or_generator(uint16_t object_info_index),dungeon
+0x10b312,decode_text,"void decode_text(char *dst, uint16_t text_thing, int16_t mode)",dungeon
+0x10b47c,get_random_ornament_index,"uint16_t get_random_ornament_index(uint16_t seed1, uint16_t seed2, uint16_t modulo)",dungeon
+0x10b4aa,get_random_ornament,"int16_t get_random_ornament(int16_t allowed, int16_t ornament_count, int16_t map_x, int16_t map_y, int16_t modulo)",dungeon
+0x10b4fa,set_square_aspect_random_wall_ornaments,"void set_square_aspect_random_wall_ornaments(uint16_t *aspect, int16_t left_allowed, int16_t front_allowed, int16_t right_allowed, int16_t back_allowed, int16_t direction, int16_t map_x, int16_t map_y)",dungeon
+0x10b5ec,set_square_aspect,"void set_square_aspect(uint16_t aspect[7], int16_t direction, int16_t map_x, int16_t map_y)",dungeon
+0x10b988,set_current_map,void set_current_map(uint16_t map_index),dungeon
+0x10ba2a,set_current_map_and_party_map,void set_current_map_and_party_map(uint16_t map_index),dungeon
+0x10baca,insert_language_in_file_name,"void insert_language_in_file_name(char *name, char letter)",dungeon
+0x10bb06,set_language_file_names,void set_language_file_names(void),dungeon
+0x10bb5c,group_get_thing,"uint16_t group_get_thing(int16_t map_x, int16_t map_y)",group
+0x10bb9a,group_get_creature_in_cell,"int16_t group_get_creature_in_cell(const Group *group, uint16_t cell)",group
+0x10bc6c,group_get_melee_target,"int16_t group_get_melee_target(int16_t group_x, int16_t group_y, int16_t party_x, int16_t party_y, int16_t champion_cell)",group
+0x10bce6,is_square_open,"int16_t is_square_open(int16_t map_x, int16_t map_y)",dungeon
+0x10bd24,set_cell_value,"uint16_t set_cell_value(uint16_t packed, uint16_t creature_index, uint16_t value)",group
+0x10bd54,next_aspect_time,"int32_t next_aspect_time(ActiveGroup *active, int16_t creature_index, int16_t is_attacking)",group
+0x10bf0c,group_start_wandering,"void group_start_wandering(int16_t map_x, int16_t map_y)",group
+0x10bf8c,delete_events,"void delete_events(int16_t map_x, int16_t map_y)",group
+0x10bfee,stop_attacking,"void stop_attacking(ActiveGroup *active, int16_t map_x, int16_t map_y)",group
+0x10c020,group_add_active_group,"void group_add_active_group(uint16_t group_thing, uint8_t map_x, uint8_t map_y)",group
+0x10c0d8,remove_active_group,void remove_active_group(uint16_t active_index),group
+0x10c150,group_get_generated,"uint16_t group_get_generated(uint8_t creature_type, int16_t health_multiplier, uint16_t creature_count_minus_1, int16_t direction, int16_t map_x, int16_t map_y)",group
+0x10c290,drop_fixed_possessions,"void drop_fixed_possessions(uint16_t creature_type, int16_t map_x, int16_t map_y, uint16_t cell, int16_t sound_mode)",group
+0x10c40a,drop_moving_possessions,"void drop_moving_possessions(uint16_t group_thing, int16_t map_x, int16_t map_y)",group
+0x10c466,group_drop_group_possessions,"void group_drop_group_possessions(int16_t map_x, int16_t map_y, uint16_t group_thing, int16_t sound_mode)",group
+0x10c56a,group_delete,"void group_delete(int16_t map_x, int16_t map_y)",group
+0x10c5e8,group_damage_creature,"int16_t group_damage_creature(Group *group, uint16_t creature_index, int16_t map_x, int16_t map_y, int16_t damage, int16_t notify)",group
+0x10c8fc,group_damage_all_creatures,"int16_t group_damage_all_creatures(Group *group, int16_t map_x, int16_t map_y, int16_t attack, int16_t notify)",group
+0x10c99a,group_get_poison_attack,"uint16_t group_get_poison_attack(uint16_t creature_type, int16_t poison_attack)",group
+0x10c9de,steal_from_champion,"uint8_t steal_from_champion(Group *group, uint16_t champion_index)",group
+0x10cad0,group_remove_all_active_groups,void group_remove_all_active_groups(void),group
+0x10cafa,group_add_all_active_groups,void group_add_all_active_groups(void),group
+0x10cb76,group_init_active_groups,void group_init_active_groups(void),group
+0x10cbcc,is_view_party_blocked,"int16_t is_view_party_blocked(uint16_t map_x, uint16_t map_y)",group
+0x10cc54,is_smell_party_blocked,"int16_t is_smell_party_blocked(uint16_t map_x, uint16_t map_y)",group
+0x10cc98,unblocked_distance,"int16_t unblocked_distance(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, int16_t (*is_blocked)(uint16_t map_x, uint16_t map_y))",group
+0x10ceee,visible_party_distance,"int16_t visible_party_distance(const Group *group, int16_t creature_index, int16_t map_x, int16_t map_y)",group
+0x10d07e,get_smelled_party_direction,"int16_t get_smelled_party_direction(const CreatureInfo *info, int16_t map_x, int16_t map_y)",group
+0x10d13e,group_is_movement_possible,"int16_t group_is_movement_possible(const CreatureInfo *info, int16_t map_x, int16_t map_y, uint16_t direction, int16_t allow_fake_pit_and_wall)",group
+0x10d366,get_first_free_direction,"int16_t get_first_free_direction(const CreatureInfo *info, int16_t map_x, int16_t map_y, int16_t allow_fake_pit_and_wall)",group
+0x10d3ae,can_archenemy_double_move,"int16_t can_archenemy_double_move(const CreatureInfo *info, int16_t map_x, int16_t map_y, uint16_t direction)",group
+0x10d40a,rotate_creature,"void rotate_creature(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t two_half_square_creatures_same_direction)",group
+0x10d4ac,rotate_group,"void rotate_group(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t creature_size)",group
+0x10d500,is_creature_attacking,"int16_t is_creature_attacking(const Group *group, int16_t map_x, int16_t map_y, int16_t creature_index)",group
+0x10d78c,add_event,"void add_event(TimelineEvent *event, uint32_t aspect_update_time)",group
+0x10d7e4,group_process_events_29_to_41,"void group_process_events_29_to_41(int16_t map_x, int16_t map_y, int16_t event_type, int16_t ticks)",group
+0x10e706,load_string_table,void load_string_table(void),text
+0x10e784,get_string,const char *get_string(int16_t index),text
+0x10e7b2,fill_bitmap,"void fill_bitmap(uint8_t *bitmap, int16_t color, int16_t width, int16_t height)",video
+0x10e7f4,fill_viewport_box,"void fill_viewport_box(const int16_t *box, int16_t color)",video
+0x10e814,fill_screen_zone,"void fill_screen_zone(int16_t zone, int16_t color)",video
+0x10e840,fill_viewport_zone,void fill_viewport_zone(int16_t zone),video
+0x10e86c,fill_screen_zone_pattern,"void fill_screen_zone_pattern(int16_t zone, int16_t color)",video
+0x10e898,blit_shrink_with_palette_changes,"void blit_shrink_with_palette_changes(const uint8_t *src, uint8_t *dst, int16_t src_width, int16_t src_height, int16_t dst_width, int16_t dst_height, const uint8_t *palette_changes)",video
+0x10eae2,flip_bitmap_horizontal_raw,"void flip_bitmap_horizontal_raw(uint8_t *pixels, int16_t width, int16_t height)",video
+0x10eb38,g_byte_bit_reverse,const uint8_t g_byte_bit_reverse[256]; /* in code section */,video
+0x10ec40,draw_icon_to_viewport,"void draw_icon_to_viewport(int16_t icon_index, int16_t zone)",inventory
+0x10ec88,panel_print_line,void panel_print_line(const char *text),inventory
+0x10ed20,build_object_attributes_string,"void build_object_attributes_string(uint16_t potential_attributes, uint16_t actual_attributes, const char **attribute_strings, char *dst, const char *prefix, const char *suffix)",inventory
+0x10edd6,set_dungeon_view_palette,void set_dungeon_view_palette(void),inventory
+0x10ef0e,decrease_torches_light_power,void decrease_torches_light_power(void),inventory
+0x10efac,draw_panel_arrow_or_eye,void draw_panel_arrow_or_eye(int16_t pressing_eye),inventory
+0x10efcc,draw_panel_scroll_text_line,"void draw_panel_scroll_text_line(int16_t x, int16_t y, char *text)",inventory
+0x10f048,draw_panel_scroll,void draw_panel_scroll(const Scroll *scroll),inventory
+0x10f14c,open_and_draw_chest,"void open_and_draw_chest(uint16_t chest_thing, Container *chest, int16_t pressing_eye)",inventory
+0x10f208,close_chest,void close_chest(void),inventory
+0x10f28a,draw_panel_object,"void draw_panel_object(uint16_t thing, int16_t pressing_eye)",inventory
+0x10f6ac,draw_panel_horizontal_bar,"void draw_panel_horizontal_bar(int16_t value, int16_t zone, int16_t color)",inventory
+0x10f74e,draw_panel_food_water_poisoned,void draw_panel_food_water_poisoned(void),inventory
+0x10f7d2,draw_panel_resurrect_reincarnate,void draw_panel_resurrect_reincarnate(void),inventory
+0x10f7ee,draw_panel,void draw_panel(void),inventory
+0x10f860,adjust_statistic_current_value,"void adjust_statistic_current_value(int16_t champion_index, uint16_t statistic, int16_t delta)",inventory
+0x10f8da,process_click_on_mouth,void process_click_on_mouth(void),inventory
+0x10fcf0,draw_stop_pressing_mouth,void draw_stop_pressing_mouth(void),inventory
+0x10fd08,draw_champion_skills_and_statistics,void draw_champion_skills_and_statistics(void),inventory
+0x10ff32,process_click_on_eye,void process_click_on_eye(void),inventory
+0x10ff94,draw_stop_pressing_eye,void draw_stop_pressing_eye(void),inventory
+0x10fff0,draw_status_box_portrait,void draw_status_box_portrait(int16_t champion_index),inventory
+0x11005a,inventory_toggle,void inventory_toggle(int16_t champion_index),inventory
+0x110254,champion_set_party_direction,void champion_set_party_direction(int16_t direction),champion
+0x110296,champion_get_index_in_cell,int16_t champion_get_index_in_cell(int16_t cell),champion
+0x1102d2,champion_get_target_champion_index,"int16_t champion_get_target_champion_index(int16_t map_x, int16_t map_y, int16_t cell)",champion
+0x11035c,champion_is_ammunition_compatible_with_weapon,"int16_t champion_is_ammunition_compatible_with_weapon(uint16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)",champion
+0x11040c,champion_put_object_in_leader_hand,"void champion_put_object_in_leader_hand(uint16_t thing, int16_t set_pointer_in_main_loop)",champion
+0x1104a2,champion_get_object_removed_from_leader_hand,uint16_t champion_get_object_removed_from_leader_hand(void),champion
+0x110510,champion_apply_object_modifiers,"void champion_apply_object_modifiers(Champion *champion, uint16_t slot, int16_t icon_index, int16_t sign, uint16_t thing)",champion
+0x110714,champion_get_object_removed_from_slot,"uint16_t champion_get_object_removed_from_slot(uint16_t champion_index, uint16_t slot)",champion
+0x1108aa,champion_add_object_in_slot,"void champion_add_object_in_slot(uint16_t champion_index, uint16_t thing, uint16_t slot)",champion
+0x110a12,champion_click_on_slot_box,void champion_click_on_slot_box(uint16_t slot_box),champion
+0x110b20,champion_get_skill_level,"int16_t champion_get_skill_level(int16_t champion_index, int16_t skill_index, bool ignore_modifiers, bool ignore_temporary)",champion
+0x110c2e,champion_add_skill_experience,"void champion_add_skill_experience(uint16_t champion_index, uint16_t skill, uint16_t experience)",champion
+0x110f0c,champion_get_throwing_stamina_cost,int16_t champion_get_throwing_stamina_cost(uint16_t thing),champion
+0x110f4c,champion_get_stamina_adjusted_value,"int16_t champion_get_stamina_adjusted_value(int16_t champion_index, int16_t value)",champion
+0x110f88,champion_get_statistic_adjusted_attack,"uint16_t champion_get_statistic_adjusted_attack(int16_t champion_index, uint16_t statistic, uint16_t attack)",champion
+0x110fc8,champion_is_lucky,"int16_t champion_is_lucky(int16_t champion_index, uint16_t percentage)",champion
+0x111056,champion_get_maximum_load,uint16_t champion_get_maximum_load(int16_t champion_index),champion
+0x1110c2,champion_get_movement_ticks,int16_t champion_get_movement_ticks(int16_t champion_index),champion
+0x11112e,champion_get_dexterity,int16_t champion_get_dexterity(int16_t champion_index),champion
+0x1111b6,champion_get_strength,"int16_t champion_get_strength(int16_t champion_index, int16_t slot)",champion
+0x1112ea,champion_get_wound_defense,"int16_t champion_get_wound_defense(int16_t champion_index, int16_t slot, bool sharp)",champion
+0x111440,champion_wake_up,void champion_wake_up(void),champion
+0x11147a,champion_get_scent_ordinal,"uint16_t champion_get_scent_ordinal(int16_t map_x, int16_t map_y)",champion
+0x1114f0,party_delete_scent,void party_delete_scent(uint16_t scent_index),champion
+0x111584,champion_add_scent_strength,"void champion_add_scent_strength(int16_t map_x, int16_t map_y, int16_t strength_and_flags)",champion
+0x111642,drop_all_objects,void drop_all_objects(uint16_t champion_index),champion
+0x1116b4,champion_kill,void champion_kill(uint16_t champion_index),champion
+0x11187e,champion_apply_pending_damage,void champion_apply_pending_damage(void),champion
+0x111984,champion_add_pending_damage,"int16_t champion_add_pending_damage(int16_t champion_index, int16_t attack, uint16_t allowed_wounds, int16_t attack_type)",champion
+0x111b32,champion_poison,"void champion_poison(int16_t champion_index, uint16_t attack)",champion
+0x111be4,champion_unpoison,void champion_unpoison(int16_t champion_index),champion
+0x111c3a,champion_damage_all,"int16_t champion_damage_all(uint16_t attack, uint16_t allowed_wounds, int16_t attack_type)",champion
+0x111ca2,champion_decrement_stamina,"void champion_decrement_stamina(int16_t champion_index, int16_t decrement)",champion
+0x111d04,champion_shoot_projectile,"void champion_shoot_projectile(const Champion *champion, uint16_t thing, uint8_t kinetic_energy, uint8_t attack, uint8_t step_energy)",champion
+0x111d5c,champion_is_projectile_spell_cast,"int16_t champion_is_projectile_spell_cast(uint16_t champion_index, uint16_t thing, int16_t kinetic_energy, uint16_t required_mana)",champion
+0x111dd4,champion_is_object_thrown,"int16_t champion_is_object_thrown(uint16_t champion_index, int16_t slot, int16_t side)",champion
+0x111f5e,champion_is_leader_hand_object_thrown,int16_t champion_is_leader_hand_object_thrown(int16_t side),champion
+0x111f82,champion_disable_action,"void champion_disable_action(uint16_t champion_index, uint16_t ticks)",champion
+0x11202c,champion_apply_time_effects,void champion_apply_time_effects(void),champion
+0x1123b6,champion_clear_icon,void champion_clear_icon(int16_t relative_cell),champion
+0x1123cc,champion_build_icon_bitmap,"uint8_t *champion_build_icon_bitmap(uint8_t *bitmap, int16_t champion_index)",champion
+0x11246c,champion_draw_bar_graphs,void champion_draw_bar_graphs(int16_t champion_index),champion
+0x112594,champion_get_string_from_integer,"char *champion_get_string_from_integer(uint16_t value, int16_t pad_with_spaces, int16_t digits)",champion
+0x1125d0,champion_draw_value_pair,"void champion_draw_value_pair(int16_t zone, int16_t value, int16_t maximum)",champion
+0x112624,champion_draw_health_stamina_mana_values,void champion_draw_health_stamina_mana_values(const Champion *champion),champion
+0x112676,champion_draw_slot,"void champion_draw_slot(uint16_t champion_index, uint16_t slot)",champion
+0x11281c,champion_draw_damage,"void champion_draw_damage(int16_t champion_index, int16_t damage)",champion
+0x112880,champion_draw_state,void champion_draw_state(uint16_t champion_index),champion
+0x112d2c,champion_draw_all_states,void champion_draw_all_states(uint16_t attributes),champion
+0x112d62,champion_has_object_icon_in_slot_box_changed,"int16_t champion_has_object_icon_in_slot_box_changed(int16_t slot_box, uint16_t thing)",champion
+0x112dd2,champion_draw_changed_object_icons,void champion_draw_changed_object_icons(void),champion
+0x112f5c,champion_portraits_to_interleaved,void champion_portraits_to_interleaved(void),champion
+0x112ffe,champion_portraits_from_interleaved,void champion_portraits_from_interleaved(void),champion
+0x1130ac,champion_get_decoded_value,"uint16_t champion_get_decoded_value(const char *text, int16_t char_count)",champion
+0x1130c8,champion_add_candidate_to_party,void champion_add_candidate_to_party(uint16_t portrait_index),champion
+0x1134f0,champion_rename,void champion_rename(char *name_and_title),champion
+0x11382c,champion_click_rebirth_panel,void champion_click_rebirth_panel(int16_t command),champion
+0x113a12,champion_resurrect,void champion_resurrect(uint16_t champion_index),champion
+0x113abe,champion_reset_for_new_game,void champion_reset_for_new_game(void),champion
+0x113b6e,flip_bitmap_vertical_raw,"void flip_bitmap_vertical_raw(uint8_t *pixels, int16_t width, int16_t height)",video
+0x113c16,find_video_driver,int16_t find_video_driver(void),video
+0x113c48,select_display_buffer,void select_display_buffer(int16_t buffer),video
+0x113cc8,expand_graphic,"void expand_graphic(const uint8_t *packed, uint8_t *bitmap)",graphics_dat
+0x113ea2,expand_next_row_if_full,(register helper of expand_graphic: D4=x; D0.hi=width; A3=row start; D6.hi=row bytes),graphics_dat
+0x113f56,expand_put_pixel,(register helper of expand_graphic: writes 1 pixel of color D2 at x=D4 in A0; D0/D6/D7=plane offsets),graphics_dat
+0x113fe2,expand_copy_run_from_previous_row,(register helper of expand_graphic: copies D1 pixels from A2 (row above) to A0),graphics_dat
+0x1140c6,expand_fill_run,(register helper of expand_graphic: fills D1 pixels with plane words at A2),graphics_dat
+0x1141b2,g_expand_color_planes,const uint16_t g_expand_color_planes[16][4]; /* in code section */,graphics_dat
+0x114232,g_expand_left_masks,const uint16_t g_expand_left_masks[16]; /* followed by right masks at 0x114252 */,graphics_dat
+0x11427a,copy_bytes,"void copy_bytes(const void *src, void *dst, int32_t size)",memory
+0x114362,graphics_dat_get_graphic_offset,int32_t graphics_dat_get_graphic_offset(uint16_t graphic_index),graphics_dat
+0x1143b0,heap_init_block,"void heap_init_block(HeapRegion *region, int32_t size, uint16_t flags)",memory
+0x1143f8,heap_claim_largest_region,HeapRegion *heap_claim_largest_region(uint16_t flags),memory
+0x11444a,heap_find_best_fit,"HeapRegion *heap_find_best_fit(int32_t size, uint16_t flags)",memory
+0x11449a,heap_take_from_block,"void *heap_take_from_block(HeapRegion *region, int32_t size)",memory
+0x1144ba,heap_save_marks,void heap_save_marks(void),memory
+0x1144e0,heap_restore_marks,void heap_restore_marks(void),memory
+0x114506,mem_alloc,"void *mem_alloc(uint32_t size, int16_t mode, uint16_t flags)",memory
+0x1145a6,mem_free_top,void mem_free_top(uint32_t size),memory
+0x1145c6,mem_free_temp,void mem_free_temp(uint32_t size),memory
+0x1145e2,alloc_bitmap,"uint8_t *alloc_bitmap(int16_t width, int16_t height, int16_t mode)",memory
+0x114626,free_bitmap,void free_bitmap(uint8_t *bitmap),memory
+0x11464c,cache_free_list_unlink,void cache_free_list_unlink(CacheBlock *block),graphics_dat
+0x11468c,cache_free_list_insert,void cache_free_list_insert(CacheBlock *block),graphics_dat
+0x114708,sort_words,"void sort_words(uint16_t *words, uint16_t count, uint16_t key_mask)",graphics_dat
+0x114892,graphics_get_language_index,uint16_t graphics_get_language_index(uint16_t graphic_index),graphics_dat
+0x1148e4,graphics_dat_read_graphic,"void graphics_dat_read_graphic(uint16_t graphic_index, void *dst)",graphics_dat
+0x1149dc,heap_add_region,"int16_t heap_add_region(void *start, uint32_t size, uint16_t flags)",memory
+0x114b0c,memory_select_feature_set,void memory_select_feature_set(const uint8_t *feature_sets),memory
+0x114bf0,graphics_dat_open,void graphics_dat_open(void),graphics_dat
+0x114c1a,graphics_dat_close,void graphics_dat_close(void),graphics_dat
+0x114c2c,graphics_dat_read_header,void graphics_dat_read_header(void),graphics_dat
+0x114e02,cache_free_graphic,void cache_free_graphic(int16_t owner),graphics_dat
+0x114f5c,cache_make_room,void cache_make_room(int32_t size),graphics_dat
+0x114f8e,cache_compact,void cache_compact(void),graphics_dat
+0x11502a,cache_alloc_block,CacheBlock *cache_alloc_block(int32_t size),graphics_dat
+0x1150d8,gfx_area_init,"void gfx_area_init(GfxArea *area, uint8_t *end, int32_t size, uint16_t flags)",graphics_dat
+0x11510a,gfx_area_compact,uint8_t *gfx_area_compact(GfxArea *area),graphics_dat
+0x11518c,gfx_area_mark_free,"void gfx_area_mark_free(uint8_t *graphic, uint16_t graphic_index)",graphics_dat
+0x1151c8,gfx_area_keep_or_evict,"int32_t gfx_area_keep_or_evict(uint16_t graphic_index, int32_t used, int32_t limit)",graphics_dat
+0x11525a,gfx_area_alloc,"uint8_t *gfx_area_alloc(GfxArea *area, int32_t size)",graphics_dat
+0x115272,gfx_area_alloc_copy,"uint8_t *gfx_area_alloc_copy(GfxArea *area, const void *src, int32_t size)",graphics_dat
+0x11529e,graphics_dat_load_graphics,"void graphics_dat_load_graphics(uint16_t *graphic_indices, int16_t count)",graphics_dat
+0x115728,cache_reset_usage,void cache_reset_usage(void),graphics_dat
+0x115768,cache_lru_insert,void cache_lru_insert(uint16_t block_index),graphics_dat
+0x115858,cache_touch,CacheBlock *cache_touch(uint16_t block_index),graphics_dat
+0x115998,decode_cached_graphic,"void decode_cached_graphic(int16_t graphic_index, uint8_t *bitmap)",graphics_dat
+0x1159de,get_native_bitmap_or_graphic,uint8_t *get_native_bitmap_or_graphic(int16_t graphic_index),graphics_dat
+0x115ad8,load_graphic_into_bitmap,"void load_graphic_into_bitmap(uint16_t graphic_index_and_flags, uint8_t *dst)",graphics_dat
+0x115b40,is_derived_bitmap_in_cache,int16_t is_derived_bitmap_in_cache(int16_t derived_index),graphics_dat
+0x115bde,get_derived_bitmap,uint8_t *get_derived_bitmap(int16_t derived_index),graphics_dat
+0x115c00,add_derived_bitmap_to_cache,void add_derived_bitmap_to_cache(int16_t derived_index),graphics_dat
+0x115c18,copy_bitmap_header,"void copy_bitmap_header(const uint8_t *src, uint8_t *dst)",video
+0x115c38,copy_bitmap,"void copy_bitmap(const uint8_t *src, uint8_t *dst)",video
+0x115c6e,graphics_dat_get_graphic_size,uint16_t graphics_dat_get_graphic_size(uint16_t graphic_index),graphics_dat
+0x115c88,load_graphic_alloc,"uint16_t load_graphic_alloc(uint16_t graphic_index, void **dst, uint16_t flags)",graphics_dat
+0x115cc8,load_bitmap_alloc,uint8_t *load_bitmap_alloc(int16_t graphic_index),graphics_dat
+0x115d06,memory_debug_key,void memory_debug_key(int16_t key),debug
+0x115fbc,set_service_table,"void *set_service_table(void *services, int16_t version)",main
+0x115fe8,service_cleanup,void service_cleanup(void),main
+0x115fea,set_box,"int16_t *set_box(int16_t *box, int16_t x, int16_t y, int16_t width, int16_t height)",zone
+0x116012,set_box_size,"int16_t *set_box_size(int16_t *box, int16_t width, int16_t height)",zone
+0x116036,temp_box,"int16_t *temp_box(int16_t x, int16_t y, int16_t width, int16_t height)",zone
+0x11607a,temp_box_size,"int16_t *temp_box_size(int16_t width, int16_t height)",zone
+0x116090,inflate_box,"int16_t *inflate_box(int16_t *box, int16_t dx, int16_t dy)",zone
+0x1160bc,is_point_in_box,"int16_t is_point_in_box(const int16_t *box, int16_t x, int16_t y)",zone
+0x116102,is_point_in_zone,"int16_t is_point_in_zone(int16_t zone, int16_t x, int16_t y)",zone
+0x116130,get_layout_bitmap,"uint8_t *get_layout_bitmap(int16_t bitmap_index, LayoutBitmapInfo *info)",zone
+0x1161d0,get_layout_bitmap_only,uint8_t *get_layout_bitmap_only(int16_t bitmap_index),zone
+0x1161e4,set_layout_bitmap,"void set_layout_bitmap(int16_t bitmap_index, uint8_t *bitmap)",zone
+0x11621c,set_layout_graphic,"void set_layout_graphic(int16_t bitmap_index, int16_t graphic_index)",zone
+0x116254,layout_find_zone,"LayoutZone *layout_find_zone(const LayoutChunk *list, int16_t zone)",zone
+0x116296,get_zone,"int16_t *get_zone(const uint8_t *bitmap, int16_t *box, int16_t zone, int16_t *width_or_clip_x, int16_t *height_or_clip_y)",zone
+0x116808,get_zone_at_origin,"int16_t *get_zone_at_origin(const uint8_t *bitmap, int16_t *box, int16_t zone)",zone
+0x116830,get_zone_size,"void get_zone_size(int16_t zone, int16_t *x, int16_t *y)",zone
+0x11686a,get_zone_box_clipped,"int16_t *get_zone_box_clipped(int16_t zone, int16_t *box, int16_t width_per_10000, int16_t height_per_10000)",zone
+0x11693a,get_zone_box,"int16_t *get_zone_box(int16_t zone, int16_t *box)",zone
+0x116954,parse_layout,"void parse_layout(const int16_t *data, int16_t unused1, uint16_t size, LayoutChunk **list, void *(*alloc)(int32_t size))",zone
+0x1169d4,layout_alloc,void *layout_alloc(int32_t size),zone
+0x1169ea,load_layout,void load_layout(int16_t graphic_index),zone
+0x116a42,init_layout,void init_layout(void),zone
+0x116a4e,blit_box_filled_with_masked_bitmap,"void blit_box_filled_with_masked_bitmap(const uint16_t *units, uint8_t *dst, const uint16_t *mask, uint8_t *temp, const int16_t *box, int16_t last_unit_index, int16_t first_unit_index, int16_t dst_width, int16_t transparent_color, int16_t src_x, int16_t src_y, int16_t dst_height, int16_t unit_plane_words)",blitter
+0x116c06,blit_raw,"void blit_raw(const uint8_t *src, uint8_t *dst, const int16_t *bounds, int16_t src_x, int16_t src_y, int16_t src_width, int16_t dst_width, int16_t transparent_color, int16_t src_height, int16_t dst_height)",blitter
+0x11739c,blit_bitmap,"void blit_bitmap(const uint8_t *src, uint8_t *dst, const int16_t *box, int16_t src_x, int16_t src_y, int16_t src_width, int16_t dst_width, int16_t transparent_color, int16_t src_height, int16_t dst_height)",blitter
+0x11751c,get_scaled_bitmap_byte_count,"uint16_t get_scaled_bitmap_byte_count(int16_t width, int16_t height, int16_t scale)",dungeon_view
+0x117554,apply_creature_replacement_colors,"void apply_creature_replacement_colors(int16_t replaced_color, int16_t color_set_index)",dungeon_view
+0x1175c6,load_floor_set,int16_t load_floor_set(int16_t floor_set),dungeon_view
+0x11761c,copy_wall_bitmap_and_flip_horizontal,"void copy_wall_bitmap_and_flip_horizontal(int16_t src_layout_id, int16_t dst_layout_id)",dungeon_view
+0x1176aa,load_wall_set,int16_t load_wall_set(int16_t wall_set),dungeon_view
+0x1177a0,load_current_map_graphics,void load_current_map_graphics(void),dungeon_view
+0x11829e,draw_viewport,void draw_viewport(int16_t palette_mode),dungeon_view
+0x11838c,clear_viewport,void clear_viewport(void),dungeon_view
+0x1183de,copy_layout_bitmap_pixels,"void copy_layout_bitmap_pixels(int16_t layout_id, uint8_t *dst)",dungeon_view
+0x11840c,copy_bitmap_flipped_horizontal,"void copy_bitmap_flipped_horizontal(const uint8_t *src, uint8_t *dst)",dungeon_view
+0x118428,draw_wall_set_bitmap,"int16_t draw_wall_set_bitmap(int16_t layout_id, int16_t zone)",dungeon_view
+0x1184a0,draw_wall_set_bitmap_opaque,"int16_t draw_wall_set_bitmap_opaque(int16_t layout_id, int16_t zone)",dungeon_view
+0x118518,draw_wall_set_bitmap_flipped,"int16_t draw_wall_set_bitmap_flipped(int16_t layout_id, int16_t zone)",dungeon_view
+0x1185b8,get_flipped_bitmap,"uint8_t *get_flipped_bitmap(int16_t graphic, int16_t derived_index, int16_t flip_flags)",dungeon_view
+0x118650,get_scaled_flipped_bitmap,"uint8_t *get_scaled_flipped_bitmap(int16_t graphic, int16_t flipped_derived_index, int16_t flip_flags, int16_t scaled_derived_index, int16_t scale_x, int16_t scale_y, const uint8_t *palette_changes)",dungeon_view
+0x1187a0,blit_in_zone,"void blit_in_zone(const uint8_t *src, uint8_t *dst, uint16_t zone, int16_t flipped, int16_t transparent_color)",dungeon_view
+0x11884a,draw_wall_ornament,"int16_t draw_wall_ornament(int16_t ornament_index, int16_t view_wall_index)",dungeon_view
+0x118b34,draw_floor_ornament,"void draw_floor_ornament(int16_t ornament_index, int16_t view_floor_index)",dungeon_view
+0x118c06,draw_door_ornament,"void draw_door_ornament(int16_t ornament_index, int16_t view_door_ornament_index)",dungeon_view
+0x118ca8,draw_door_button,"void draw_door_button(int16_t button_ordinal, int16_t view_door_button_index)",dungeon_view
+0x118d54,draw_door,"void draw_door(uint16_t door_index, int16_t door_state, const int16_t *door_graphics, int16_t view_door_ornament_index, int16_t zone)",dungeon_view
+0x118eae,draw_ceiling_pit,"void draw_ceiling_pit(int16_t layout_id, int16_t zone, int16_t map_x, int16_t map_y, int16_t flipped)",dungeon_view
+0x118f2c,draw_field,"void draw_field(const FieldAspect *aspect, int16_t zone)",dungeon_view
+0x119036,get_explosion_bitmap,"uint8_t *get_explosion_bitmap(int16_t explosion_aspect_index, int16_t scale, int16_t flip_flags)",dungeon_view
+0x1190a8,draw_objects_creatures_projectiles_explosions,"void draw_objects_creatures_projectiles_explosions(uint16_t first_thing, int16_t direction, int16_t map_x, int16_t map_y, int16_t view_square, uint16_t cell_order)",dungeon_view
+0x11a05a,draw_square_d3l2,"void draw_square_d3l2(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11a1a6,draw_square_d3r2,"void draw_square_d3r2(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11a2fa,draw_square_d3l,"void draw_square_d3l(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11a480,draw_square_d3r,"void draw_square_d3r(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11a62c,draw_square_d3c,"void draw_square_d3c(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11a7c4,draw_square_d2l2,"void draw_square_d2l2(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11a81c,draw_square_d2r2,"void draw_square_d2r2(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11a874,draw_square_d2l,"void draw_square_d2l(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11aa14,draw_square_d2r,"void draw_square_d2r(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11abb8,draw_square_d2c,"void draw_square_d2c(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11ad76,draw_square_d1l,"void draw_square_d1l(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11af14,draw_square_d1r,"void draw_square_d1r(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11b0b4,draw_square_d1c,"void draw_square_d1c(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11b360,draw_square_d0l,"void draw_square_d0l(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11b44a,draw_square_d0r,"void draw_square_d0r(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11b536,draw_square_d0c,"void draw_square_d0c(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11b6ae,draw_dungeon_view,"void draw_dungeon_view(int16_t direction, int16_t map_x, int16_t map_y)",dungeon_view
+0x11bb12,projectile_create,"void projectile_create(uint16_t thing, int16_t map_x, int16_t map_y, int16_t cell, int16_t direction, int16_t kinetic_energy, int16_t attack, int16_t step_energy)",projectile
+0x11bc44,explosion_create,"void explosion_create(uint16_t explosion_thing, uint16_t attack, uint16_t map_x_combo, uint16_t map_y_combo, int16_t cell)",projectile
+0x11be5a,delete_event,void delete_event(uint16_t projectile_thing),projectile
+0x11be7a,delete_projectile,"void delete_projectile(uint16_t projectile_thing, uint16_t *group_slot, int16_t map_x, int16_t map_y)",projectile
+0x11bf0a,projectile_get_impact_attack,"uint16_t projectile_get_impact_attack(Projectile *projectile, uint16_t thing)",projectile
+0x11c036,has_impact_occurred,"int16_t has_impact_occurred(int16_t impact_type, int16_t map_x, int16_t map_y, int16_t cell, uint16_t projectile_thing)",projectile
+0x11c4e8,projectile_get_impact_count,"int16_t projectile_get_impact_count(int16_t impact_type, int16_t map_x, int16_t map_y, int16_t cell)",projectile
+0x11c578,projectile_process_events_48_to_49,void projectile_process_events_48_to_49(TimelineEvent *event),projectile
+0x11c84a,explosion_process_event_25,void explosion_process_event_25(TimelineEvent *event),projectile
+0x11cb3e,group_is_fluxcage_on_square,"int16_t group_is_fluxcage_on_square(int16_t map_x, int16_t map_y)",group
+0x11cbc4,group_get_lord_chaos_on_square,"uint16_t group_get_lord_chaos_on_square(int16_t map_x, int16_t map_y)",group
+0x11cc04,group_fluxcage_action,"void group_fluxcage_action(int16_t map_x, int16_t map_y)",group
+0x11cda2,group_fuse_action,"void group_fuse_action(int16_t map_x, int16_t map_y)",group
+0x11cefe,get_square_distance,"int16_t get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2)",group
+0x11cf42,group_is_destination_visible,"int16_t group_is_destination_visible(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
+0x11cfba,group_get_directions_to,"int16_t group_get_directions_to(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",group
+0x11d0b2,order_attack_cells,"void order_attack_cells(uint8_t *ordered_cells, int16_t target_x, int16_t target_y, int16_t group_x, int16_t group_y, int16_t group_cell)",group
+0x11d10a,group_get_champion_damage,"int16_t group_get_champion_damage(Group *group, uint16_t champion_index)",group
+0x11d348,group_get_melee_action_damage,"int16_t group_get_melee_action_damage(Champion *champion, int16_t champion_index, Group *group, int16_t creature_index, int16_t map_x, int16_t map_y, uint16_t hit_probability, uint16_t damage_factor, int16_t skill_index)",group
+0x11d5e0,group_is_door_destroyed_by_attack,"int16_t group_is_door_destroyed_by_attack(int16_t map_x, int16_t map_y, int16_t attack, int16_t magic_attack, int16_t ticks)",group
+0x11d6aa,move_get_teleporter_rotated_group_result,"int16_t move_get_teleporter_rotated_group_result(Teleporter *teleporter, uint16_t group_thing, int16_t map_index)",move
+0x11d7f0,rotate_projectile,"uint16_t rotate_projectile(Teleporter *teleporter, uint16_t thing)",move
+0x11d842,move_is_levitating,int16_t move_is_levitating(uint16_t thing),move
+0x11d882,move_create_event_move_group,"void move_create_event_move_group(uint16_t group_thing, int16_t map_x, int16_t map_y, int16_t map_index, int16_t audible)",move
+0x11d8ce,move_is_killed_by_projectile_impact,"int16_t move_is_killed_by_projectile_impact(int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y, uint16_t thing)",move
+0x11db22,move_get_move_result,"int16_t move_get_move_result(uint16_t thing, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y)",move
+0x11e4ec,move_get_creature_sound,int16_t move_get_creature_sound(uint16_t creature_type),move
+0x11e526,sensor_add_event,"void sensor_add_event(int16_t event_type, int16_t map_x, int16_t map_y, int16_t cell, int16_t effect, int32_t time)",sensor
+0x11e58e,add_skill_experience,"void add_skill_experience(int16_t skill_index, uint16_t experience, int16_t leader_only)",sensor
+0x11e5f4,trigger_local_effect,"void trigger_local_effect(int16_t local_effect, int16_t map_x, int16_t map_y, int16_t cell)",sensor
+0x11e636,sensor_process_rotation_effect,void sensor_process_rotation_effect(void),sensor
+0x11e74a,sensor_trigger_effect,"void sensor_trigger_effect(Sensor *sensor, int16_t effect, int16_t map_x, int16_t map_y, int16_t cell)",sensor
+0x11e7f8,get_object_in_cell,"uint16_t get_object_in_cell(int16_t map_x, int16_t map_y, int16_t cell, int16_t object_type)",sensor
+0x11e84e,is_object_possessed,int16_t is_object_possessed(int16_t object_type),sensor
+0x11e8ea,sensor_is_wall_triggered,"int16_t sensor_is_wall_triggered(int16_t map_x, int16_t map_y, uint16_t cell)",sensor
+0x11ed20,sensor_process_thing_change,"void sensor_process_thing_change(uint16_t map_x, uint16_t map_y, uint16_t thing, int16_t party_on_square, int16_t add_thing)",sensor
+0x11f16a,timeline_init,void timeline_init(void),timeline
+0x11f1da,timeline_reset,void timeline_reset(void),timeline
+0x11f23c,is_before,"int16_t is_before(const TimelineEvent *a, const TimelineEvent *b)",timeline
+0x11f26c,timeline_get_index,uint16_t timeline_get_index(int16_t event_index),timeline
+0x11f296,timeline_fix_chronology,void timeline_fix_chronology(uint16_t timeline_index),timeline
+0x11f3d0,timeline_delete_event,void timeline_delete_event(uint16_t event_index),timeline
+0x11f43c,find_mergeable,int16_t find_mergeable(TimelineEvent *event),timeline
+0x11f59c,timeline_add_event,int16_t timeline_add_event(TimelineEvent *event),timeline
+0x11f634,timeline_extract_first_event,void timeline_extract_first_event(TimelineEvent *event),timeline
+0x11f662,timeline_is_first_event_expired,int16_t timeline_is_first_event_expired(void),timeline
+0x11f68c,timeline_process_event1_door_animation,void timeline_process_event1_door_animation(TimelineEvent *event),timeline
+0x11f852,timeline_process_event7_fake_wall,void timeline_process_event7_fake_wall(TimelineEvent *event),timeline
+0x11f8fc,timeline_process_event2_door_destruction,void timeline_process_event2_door_destruction(TimelineEvent *event),timeline
+0x11f92e,timeline_process_event10_door,void timeline_process_event10_door(TimelineEvent *event),timeline
+0x11f9a0,timeline_process_event5_corridor,void timeline_process_event5_corridor(TimelineEvent *event),timeline
+0x11fb8a,timeline_process_event65_enable_group_generator,void timeline_process_event65_enable_group_generator(TimelineEvent *event),timeline
+0x11fbf0,timeline_trigger_projectile_launcher,"void timeline_trigger_projectile_launcher(Sensor *sensor, TimelineEvent *event)",timeline
+0x11fe2e,timeline_process_event6_wall,void timeline_process_event6_wall(TimelineEvent *event),timeline
+0x1200e4,timeline_move_teleporter_or_pit_square_things,"void timeline_move_teleporter_or_pit_square_things(uint16_t map_x, uint16_t map_y)",timeline
+0x1202a6,timeline_process_event8_teleporter,void timeline_process_event8_teleporter(TimelineEvent *event),timeline
+0x12030c,timeline_process_event9_pit,void timeline_process_event9_pit(TimelineEvent *event),timeline
+0x120372,timeline_process_event60_61_move_group,void timeline_process_event60_61_move_group(TimelineEvent *event),timeline
+0x12044a,timeline_process_event11_enable_champion_action,void timeline_process_event11_enable_champion_action(uint16_t champion_index),timeline
+0x12050c,timeline_process_event12_hide_damage_received,void timeline_process_event12_hide_damage_received(uint16_t champion_index),timeline
+0x120564,timeline_process_event13_vi_altar_rebirth,void timeline_process_event13_vi_altar_rebirth(TimelineEvent *event),timeline
+0x120662,timeline_add_watchdog_event,void timeline_add_watchdog_event(void),timeline
+0x120688,timeline_process_event70_light,void timeline_process_event70_light(TimelineEvent *event),timeline
+0x120706,timeline_has_weapon_moved_to_slot,"int16_t timeline_has_weapon_moved_to_slot(int16_t champion_index, Champion *champion, uint16_t source_slot, int16_t destination_slot)",timeline
+0x12074e,timeline_move_weapon_from_quiver_to_slot,"void timeline_move_weapon_from_quiver_to_slot(uint16_t champion_index, uint16_t slot)",timeline
+0x1207bc,timeline_process,void timeline_process(void),timeline
+0x120afe,command_init_mouse_zones,void command_init_mouse_zones(void),command
+0x120b4c,command_init_mouse_input_table,void command_init_mouse_input_table(MouseInput *table),command
+0x120be8,command_discard_all_input,void command_discard_all_input(void),command
+0x120cc6,command_get_command_from_mouse_input,"int16_t command_get_command_from_mouse_input(const MouseInput *table, int16_t x, int16_t y, uint16_t button_mask)",command
+0x120db8,command_process_click,"void command_process_click(int16_t x, int16_t y, int16_t button)",command
+0x120e82,command_process_pending_click,void command_process_pending_click(void),command
+0x120ea0,command_process_key,void command_process_key(int16_t key),command
+0x120f2e,command_process_click_in_champion_status_box,"void command_process_click_in_champion_status_box(uint16_t champion_index, int16_t x, int16_t y)",command
+0x120f9e,command_set_leader,void command_set_leader(int16_t champion_index),command
+0x121060,command_process_click_in_panel,"int16_t command_process_click_in_panel(int16_t x, int16_t y)",command
+0x1210e8,command_draw_sleep_screen,void command_draw_sleep_screen(void),command
+0x121118,command_process_queue,void command_process_queue(void),command
+0x121542,command_touch_front_wall,void command_touch_front_wall(void),command
+0x12159a,command_touch_front_square_empty_handed,"void command_touch_front_square_empty_handed(int16_t is_imaginary_wall, int16_t map_x, int16_t map_y)",command
+0x1215f2,command_grab_leader_hand_object,void command_grab_leader_hand_object(uint16_t view_cell),command
+0x1216b6,command_drop_leader_hand_object,void command_drop_leader_hand_object(uint16_t view_cell),command
+0x1217a8,command_is_leader_hand_object_thrown,"int16_t command_is_leader_hand_object_thrown(int16_t x, int16_t y)",command
+0x12181c,command_process_click_in_dungeon_view,"void command_process_click_in_dungeon_view(int16_t x, int16_t y)",command
+0x121af6,highlight_box_enable,void highlight_box_enable(const int16_t *box),command
+0x121b28,highlight_zone_enable,void highlight_zone_enable(int16_t zone_index),command
+0x121b4c,highlight_box_disable,void highlight_box_disable(void),command
+0x121b64,command_take_stairs,void command_take_stairs(int16_t stairs_go_up),command
+0x121bc4,command_turn_party,void command_turn_party(int16_t command),command
+0x121c5e,command_move_party,void command_move_party(int16_t command),command
+0x121f04,command_process_click_in_spell_area,"void command_process_click_in_spell_area(int16_t x, int16_t y)",command
+0x121fe0,command_process_click_in_action_area,"void command_process_click_in_action_area(int16_t x, int16_t y)",command
+0x1220b2,menus_init,void menus_init(void),menus
+0x1220e0,menus_print_action_message,void menus_print_action_message(const char *text),menus
+0x122160,menus_get_action_hand_charge_count,uint16_t menus_get_action_hand_charge_count(void),menus
+0x1221c4,menus_set_action_list,void menus_set_action_list(const uint8_t *action_set),menus
+0x122278,menus_clear_acting_champion,void menus_clear_acting_champion(void),menus
+0x1222aa,menus_set_acting_champion,void menus_set_acting_champion(uint16_t champion_index),menus
+0x12233a,menus_refresh_action_area,void menus_refresh_action_area(void),menus
+0x122404,menus_did_click_trigger_action,int16_t menus_did_click_trigger_action(int16_t action_list_index),menus
+0x122484,menus_is_group_frightened_by_action,"int16_t menus_is_group_frightened_by_action(int16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y)",menus
+0x1225a2,menus_is_melee_action_performed,"int16_t menus_is_melee_action_performed(uint16_t champion_index, int16_t action_index, int16_t map_x, int16_t map_y, int16_t skill_index)",menus
+0x1226c6,menus_is_party_spell_or_fire_shield_successful,"int16_t menus_is_party_spell_or_fire_shield_successful(Champion *champion, int16_t spell_shield, uint16_t ticks, int16_t use_mana)",menus
+0x122788,menus_create_event70_light,"void menus_create_event70_light(int16_t light_power, int16_t ticks)",menus
+0x1227c6,menus_decrement_charges,void menus_decrement_charges(Champion *champion),menus
+0x12286a,menus_set_champion_direction_to_party_direction,void menus_set_champion_direction_to_party_direction(Champion *champion),menus
+0x122892,menus_is_action_performed,"int16_t menus_is_action_performed(uint16_t champion_index, int16_t action_index)",menus
+0x122f84,menus_get_click_on_spell_cast_result,int16_t menus_get_click_on_spell_cast_result(void),menus
+0x122fdc,menus_get_spell_from_symbols,Spell *menus_get_spell_from_symbols(const uint8_t *symbols),menus
+0x123042,menus_get_empty_flask_in_hand,"Potion *menus_get_empty_flask_in_hand(Champion *champion, uint16_t *flask_thing)",menus
+0x12308e,menus_get_champion_spell_cast_result,int16_t menus_get_champion_spell_cast_result(uint16_t champion_index),menus
+0x1234fc,menus_add_champion_symbol,void menus_add_champion_symbol(int16_t symbol_index),menus
+0x1235a4,menus_delete_champion_symbol,void menus_delete_champion_symbol(void),menus
+0x1235fe,menus_draw_movement_arrows,void menus_draw_movement_arrows(void),menus
+0x123694,menus_draw_available_symbols,void menus_draw_available_symbols(uint16_t symbol_step),menus
+0x1236e4,menus_draw_champion_symbols,void menus_draw_champion_symbols(Champion *champion),menus
+0x12374a,menus_set_magic_caster,void menus_set_magic_caster(int16_t champion_index),menus
+0x1237d0,menus_get_action_name,const char *menus_get_action_name(int16_t action_index),menus
+0x123804,menus_draw_action_damage,void menus_draw_action_damage(int16_t damage),menus
+0x1238f8,menus_draw_action_icon,void menus_draw_action_icon(uint16_t champion_index),menus
+0x123a02,menus_draw_action_area,void menus_draw_action_area(void),menus
+0x123ae2,menus_print_spell_failure_message,"void menus_print_spell_failure_message(Champion *champion, int16_t failure_type, uint16_t skill_index)",menus
+0x123ba6,os_add_int_server,"void os_add_int_server(uint32_t int_number, void *interrupt)",os_stub
+0x123bc8,os_add_port,void os_add_port(void *port),os_stub
+0x123be6,os_alert,"void os_alert(uint32_t alert_number, void *parameters)",os_stub
+0x123c08,os_alloc_mem,"void *os_alloc_mem(uint32_t byte_size, uint32_t requirements)",os_stub
+0x123c2a,os_alloc_signal,int8_t os_alloc_signal(int32_t signal_number),os_stub
+0x123c48,os_avail_mem,uint32_t os_avail_mem(uint32_t requirements),os_stub
+0x123c66,os_change_sprite,"void os_change_sprite(void *viewport, void *simple_sprite, void *new_data)",os_stub
+0x123c8c,os_check_io,void *os_check_io(void *io_request),os_stub
+0x123caa,os_close,int32_t os_close(int32_t file),os_stub
+0x123cc8,os_close_device,void os_close_device(void *io_request),os_stub
+0x123ce6,os_close_library,void os_close_library(void *library),os_stub
+0x123d04,os_cd_input_handler,"void *os_cd_input_handler(void *events, void *console_device)",os_stub
+0x123d26,os_raw_key_convert,"int32_t os_raw_key_convert(void *event, char *buffer, int32_t length, void *keymap)",os_stub
+0x123d50,os_date_stamp,void *os_date_stamp(void *date),os_stub
+0x123d6e,os_delay,void os_delay(int32_t ticks),os_stub
+0x123d8c,os_delete_file,int32_t os_delete_file(const char *name),os_stub
+0x123daa,os_device_proc,void *os_device_proc(const char *name),os_stub
+0x123dc8,os_disable,void os_disable(void),os_stub
+0x123ddc,os_disown_blitter,void os_disown_blitter(void),os_stub
+0x123df0,os_display_alert,"int32_t os_display_alert(uint32_t alert_number, const char *string, uint32_t height)",os_stub
+0x123e16,os_do_io,int8_t os_do_io(void *io_request),os_stub
+0x123e34,os_enable,void os_enable(void),os_stub
+0x123e48,os_examine,"int32_t os_examine(int32_t lock, void *file_info_block)",os_stub
+0x123e6a,os_new_list,void os_new_list(void *list),os_stub
+0x123e88,os_create_ext_io,"void *os_create_ext_io(void *reply_port, int32_t size)",os_stub
+0x123ecc,os_delete_ext_io,void os_delete_ext_io(void *io_request),os_stub
+0x123efe,os_create_std_io,void *os_create_std_io(void *reply_port),os_stub
+0x123f12,os_delete_std_io,void os_delete_std_io(void *io_request),os_stub
+0x123f22,os_find_port,void *os_find_port(const char *name),os_stub
+0x123f40,os_find_task,void *os_find_task(const char *name),os_stub
+0x123f5e,os_forbid,void os_forbid(void),os_stub
+0x123f72,os_free_mem,"void os_free_mem(void *memory_block, uint32_t byte_size)",os_stub
+0x123f94,os_free_signal,void os_free_signal(int32_t signal_number),os_stub
+0x123fb2,os_free_sprite,void os_free_sprite(int16_t sprite_number),os_stub
+0x123fd0,os_get_msg,void *os_get_msg(void *port),os_stub
+0x123fee,os_get_sprite,"int16_t os_get_sprite(void *simple_sprite, int16_t sprite_number)",os_stub
+0x124010,os_init_bitmap,"void os_init_bitmap(void *bitmap, int8_t depth, uint16_t width, uint16_t height)",os_stub
+0x12403a,os_init_rastport,void os_init_rastport(void *rastport),os_stub
+0x124058,os_load_view,void os_load_view(void *view),os_stub
+0x124076,os_lock,"int32_t os_lock(const char *name, int32_t access_mode)",os_stub
+0x124098,os_make_screen,void os_make_screen(void *screen),os_stub
+0x1240b6,os_move_sprite,"void os_move_sprite(void *viewport, void *simple_sprite, int16_t x, int16_t y)",os_stub
+0x1240e0,os_open,"int32_t os_open(const char *name, int32_t access_mode)",os_stub
+0x124102,os_open_device,"int8_t os_open_device(const char *device_name, uint32_t unit, void *io_request, uint32_t flags)",os_stub
+0x12412c,os_init_sys_base,void os_init_sys_base(void),os_stub
+0x124134,os_reboot,void os_reboot(void),os_stub
+0x12414e,os_open_library,"void *os_open_library(const char *name, uint32_t version)",os_stub
+0x124170,os_own_blitter,void os_own_blitter(void),os_stub
+0x124184,os_permit,void os_permit(void),os_stub
+0x124198,os_create_port,"void *os_create_port(const char *name, int32_t priority)",os_stub
+0x124222,os_delete_port,void os_delete_port(void *port),os_stub
+0x124264,os_begin_io,void os_begin_io(void *io_request),os_stub
+0x124280,os_put_msg,"void os_put_msg(void *port, void *message)",os_stub
+0x1242a2,os_read,"int32_t os_read(int32_t file, void *buffer, int32_t length)",os_stub
+0x1242c8,os_rect_fill,"void os_rect_fill(void *rastport, int32_t x_min, int32_t y_min, int32_t x_max, int32_t y_max)",os_stub
+0x1242f6,os_rem_int_server,"void os_rem_int_server(uint32_t int_number, void *interrupt)",os_stub
+0x124318,os_rem_port,void os_rem_port(void *port),os_stub
+0x124336,os_rename,"int32_t os_rename(const char *old_name, const char *new_name)",os_stub
+0x124358,os_rethink_display,void os_rethink_display(void),os_stub
+0x12436c,os_seek,"int32_t os_seek(int32_t file, int32_t position, int32_t mode)",os_stub
+0x124392,os_set_a_pen,"void os_set_a_pen(void *rastport, uint32_t pen)",os_stub
+0x1243b4,os_set_dr_md,"void os_set_dr_md(void *rastport, uint32_t draw_mode)",os_stub
+0x1243d6,os_set_function,"void *os_set_function(void *library, int32_t function_offset, void *new_function)",os_stub
+0x1243fc,os_set_rgb4,"void os_set_rgb4(void *viewport, int32_t index, uint32_t red, uint32_t green, uint32_t blue)",os_stub
+0x12442a,os_unlock,void os_unlock(int32_t lock),os_stub
+0x124448,os_wait_blit,void os_wait_blit(void),os_stub
+0x12445c,os_wait_io,int8_t os_wait_io(void *io_request),os_stub
+0x12447a,os_wait_port,void *os_wait_port(void *port),os_stub
+0x124498,os_wait_tof,void os_wait_tof(void),os_stub
+0x1244ac,os_write,"int32_t os_write(int32_t file, const void *buffer, int32_t length)",os_stub
+0x1244d2,dialog_draw_viewport,void dialog_draw_viewport(void),dialog
+0x1244f4,dialog_get_choice,"int16_t dialog_get_choice(int16_t choice_count, int16_t disk_change_drive, int16_t disk_change_choice)",dialog
+0x12482e,dialog_draw,"void dialog_draw(const char *message1, const char *message2, const char *choice1, const char *choice2, const char *choice3, const char *choice4)",dialog
+0x124c32,endgame_print_text,"void endgame_print_text(int16_t x, int16_t y, int16_t color, const char *text)",startend
+0x124c7c,endgame_draw_button,"void endgame_draw_button(int16_t zone, const char *text, uint16_t *mouse_input_entry)",startend
+0x124d44,endgame,void endgame(int16_t party_dead),startend
+0x125112,fuse_sequence_update,void fuse_sequence_update(void),startend
+0x125132,fuse_sequence,void fuse_sequence(void),startend
+0x12546a,quit_game,void quit_game(void),startend
+0x125470,quit_game_hide_pointer_loop,void quit_game_hide_pointer_loop(void),startend
+0x125492,save_file_read,"int16_t save_file_read(void *buffer, uint16_t byte_count)",loadsave
+0x1254e6,save_file_write,"int16_t save_file_write(const void *buffer, uint16_t byte_count)",loadsave
+0x125510,savefile_xor_block,"uint16_t savefile_xor_block(uint16_t *words, uint16_t key, uint16_t word_count)",loadsave
+0x125542,save_block_checksum,"uint16_t save_block_checksum(const uint16_t *words, uint16_t key, uint16_t word_count)",loadsave
+0x125576,save_read_checked_block,"int16_t save_read_checked_block(void *buffer, uint16_t byte_count, uint16_t key, uint16_t checksum)",loadsave
+0x1255b2,save_write_checked_block,"int16_t save_write_checked_block(void *buffer, uint16_t byte_count, uint16_t key, uint16_t *checksum)",loadsave
+0x1255fa,save_read_summed_block,"int16_t save_read_summed_block(uint8_t *buffer, uint16_t *byte_sum, uint16_t byte_count)",loadsave
+0x125640,save_write_summed_block,"int16_t save_write_summed_block(const uint8_t *buffer, uint16_t *byte_sum, uint16_t byte_count)",loadsave
+0x125686,build_save_prompt,"void build_save_prompt(char *dest, const char *template_text, int16_t disk_kind)",loadsave
+0x1256c0,ensure_master_disk,int16_t ensure_master_disk(int16_t force_prompt),loadsave
+0x125766,save_read_header,int16_t save_read_header(uint16_t *header),loadsave
+0x1257ca,save_write_header,int16_t save_write_header(uint16_t *header),loadsave
+0x12584c,format_save_disk_dialog,void format_save_disk_dialog(void),loadsave
+0x125a44,save_game,void save_game(void),loadsave
+0x1260ee,load_dungeon,int16_t load_dungeon(void),loadsave
+0x1265d4,load_game,int16_t load_game(void),loadsave
+0x126ba0,entrance_draw_dungeon_view,void entrance_draw_dungeon_view(void),startend
+0x126c34,entrance_blit_work_bitmap,void entrance_blit_work_bitmap(void),startend
+0x126c4a,entrance_open_doors,void entrance_open_doors(void),startend
+0x126d88,entrance_draw,void entrance_draw(void),startend
+0x126e96,process_entrance,void process_entrance(void),startend
+0x1270c8,entrance_show_credits,void entrance_show_credits(void),startend
+0x12712c,decompress_dungeon,"void decompress_dungeon(const uint8_t *source, uint8_t *dest, int32_t byte_count)",loadsave
+0x127186,decompress_get_bits,uint16_t decompress_get_bits(void),loadsave
+0x1271a2,game_freeze,void game_freeze(void),startend
+0x1271fa,game_unfreeze,void game_unfreeze(void),startend
+0x12726a,graphic_get_bitmap_byte_count,uint16_t graphic_get_bitmap_byte_count(int16_t graphic_index),startend
+0x127298,layout_alloc_graphic_bitmap,"void layout_alloc_graphic_bitmap(int16_t layout_index, int16_t graphic_index)",startend
+0x1272ce,layout_share_bitmap,"void layout_share_bitmap(int16_t source_layout_index, int16_t dest_layout_index)",startend
+0x1272e8,init_graphic_data,void init_graphic_data(void),startend
+0x127ad4,init_flipped_wall_bitmaps,void init_flipped_wall_bitmaps(void),startend
+0x127ba6,parse_memory_option_set,"int16_t parse_memory_option_set(const uint8_t **option_list, int32_t *reserve_bytes)",startend
+0x127c22,check_memory_for_all_maps,"int16_t check_memory_for_all_maps(int16_t is_last_option_set, int32_t reserve_bytes)",startend
+0x127cfa,start_game,void start_game(void),startend
+0x127e34,initialize_game,void initialize_game(void),startend

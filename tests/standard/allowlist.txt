@@ -1,0 +1,10 @@
+# Accepted exceptions of tests/standard/test_standard.py. One per line: <check> <target> <reason>.
+# A reason is "rule <n.m>: <text>" for an exception that docs/coding-standard.md names. Targets are relative to src/.
+decimal data/csb_image.c rule 3.12: the APPB address tables of the CSB image build
+hex data/crc32.c rule 3.12: the CRC-32 table of PNG, a standard constant table
+hex data/csb_image.c rule 3.12: the APPB address tables of the CSB image build
+hex data/csb_text.c rule 3.12: the APPB address tables of the CSB image build
+decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions, not in the game files
+long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
+long engine/event.c:event_process_expired rule 5.8: one short case for each timeline event type
+module platform/main.c rule 1.7: the entry point has no header

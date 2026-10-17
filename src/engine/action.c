@@ -1,0 +1,771 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "engine/action.h"
+#include "data/adventure.h"
+#include "data/graphics.h"
+#include "data/ids.h"
+#include "data/tables.h"
+#include "engine/arith.h"
+#include "engine/champion.h"
+#include "engine/event.h"
+#include "engine/game.h"
+#include "engine/group.h"
+#include "engine/inventory.h"
+#include "engine/magic.h"
+#include "engine/map.h"
+#include "engine/message.h"
+#include "engine/move.h"
+#include "engine/party.h"
+#include "engine/projectile.h"
+#include "engine/random.h"
+#include "engine/record.h"
+#include "engine/sound.h"
+#include "engine/timeline.h"
+#include <string.h>
+
+/* Size of the buffer of a message text. */
+#define MESSAGE_SIZE 100
+
+/* Freeze Life ticks of the magical boxes and the charges. */
+#define FREEZE_LIFE_TICKS_BLUE_BOX  30
+#define FREEZE_LIFE_TICKS_GREEN_BOX 125
+#define FREEZE_LIFE_TICKS_CHARGE    70
+#define FREEZE_LIFE_TICKS_MAXIMUM   200
+
+/* Attack, tick, experience and mana values of the spell, door and throw actions. */
+#define SPELL_ACTION_MAXIMUM_LEVEL    6 /* the mana cost of a spell action is 7 - min(6, skill level) */
+#define FIREBALL_ACTION_ATTACK        150
+#define DISPELL_ACTION_ATTACK         150
+#define LIGHTNING_ACTION_ATTACK       180
+#define SPIT_ACTION_ATTACK            250
+#define INVOKE_ACTION_BASE_ATTACK     100
+#define INVOKE_SPELL_COUNT            6
+#define SHIELD_ACTION_TICKS           280
+#define LIGHT_ACTION_POWER            2
+#define LIGHT_ACTION_TICKS            2500
+#define WINDOW_ACTION_BASE_TICKS      5
+#define HEAL_ACTION_MAXIMUM_LEVEL     10
+#define HEAL_ACTION_MANA_PER_STEP     2
+#define DOOR_BASH_DISABLED_TICKS      6
+#define DOOR_BASH_DESTRUCTION_TICKS   2
+#define THROW_DISABLED_TICKS          4
+#define THROW_EXPERIENCE              8
+#define THROW_WEAPON_EXPERIENCE       12
+#define THROW_STAMINA_MAXIMUM         10
+#define THROW_ATTACK_MINIMUM          40
+#define THROW_ATTACK_MAXIMUM          200
+#define THROW_STEP_ENERGY_BASE        11
+#define THROW_STEP_ENERGY_MINIMUM     5
+#define WEAPON_CLASS_SKILL_LEVEL_STEP 8
+#define SPELL_ACTION_ATTACK_MINIMUM   2 /* with too little mana: max(2, mana * attack / cost) */
+#define HEAL_ACTION_EXPERIENCE_STEP   2 /* Heal experience: 2, plus 2 for each step */
+#define WINDOW_ACTION_LEVEL_BONUS     8 /* Window ticks: random % (level + 8) + 5 */
+
+/* Bit masks of the shoot attack of a launcher and of the random terms of the invoke and throw actions. */
+#define WEAPON_SHOOT_ATTACK_MASK  0xff /* weapon info attributes bits 0-7: the attack of a launcher */
+#define INVOKE_ACTION_RANDOM_MASK 0x7f /* Invoke attack: 100 + random(128) */
+#define THROW_ENERGY_RANDOM_MASK  0x0f
+#define THROW_ATTACK_RANDOM_MASK  0x1f
+
+/* Fear actions: the bonus to the influence roll and the experience. */
+#define FEAR_BONUS_CONFUSE        12
+#define FEAR_EXPERIENCE_CONFUSE   45
+#define FEAR_BONUS_WAR_CRY        3
+#define FEAR_EXPERIENCE_WAR_CRY   12
+#define FEAR_BONUS_BLOW_HORN      6
+#define FEAR_EXPERIENCE_BLOW_HORN 20
+#define FEAR_BONUS_BRANDISH       6
+#define FEAR_EXPERIENCE_BRANDISH  30
+#define FEAR_BONUS_CALM           7
+#define FEAR_EXPERIENCE_CALM      35
+#define FLEE_DELAY_FEAR_LIMIT     16 /* flee delay: (16 - fear) * 4 / movement ticks */
+#define FLEE_DELAY_FACTOR         4
+
+/* Spells of Invoke: random % INVOKE_SPELL_COUNT; the other values give a fireball. */
+#define INVOKE_POISON_BOLT       0
+#define INVOKE_POISON_CLOUD      1
+#define INVOKE_HARM_NON_MATERIAL 2
+
+/* Cells relative to the champion direction. */
+#define RELATIVE_CELL_BACK_RIGHT 2
+#define RELATIVE_CELL_BACK_LEFT  3
+
+ActionList g_action_list = {
+    {ACTION_NONE, ACTION_NONE, ACTION_NONE},
+    {0},
+    0
+};
+
+/* The charges of the object in the action hand of the acting champion (1 when it has none). */
+static uint16_t hand_charge_count(void)
+{
+    uint16_t thing = g_champions[g_session.acting_champion_index].slots[SLOT_HAND_ACTION];
+    switch (THING_TYPE(thing)) {
+    case THING_WEAPON:
+        return rec_weapon_charges(thing);
+    case THING_ARMOUR:
+        return rec_armour_charges(thing);
+    case THING_JUNK:
+        return rec_junk_charges(thing);
+    }
+    return 1;
+}
+
+/* Builds the action menu of the acting champion: the first action always; the other two when the
+   champion has the skill level and, when the action needs them, charges. */
+static void set_action_list(int16_t action_set_index)
+{
+    const ActionSet *set = tables_get_action_set(action_set_index);
+    uint16_t n = 1;
+    if (!set)
+        return;
+    g_action_list.actions[0] = set->action_indices[0];
+    g_action_list.minimum_skill_levels[0] = 1;
+    for (int k = 1; k < ACTION_LIST_COUNT; k++) {
+        uint8_t action = set->action_indices[k];
+        uint8_t level = set->minimum_skill_levels[k - 1];
+        const ActionInfo *info = tables_get_action_info(action);
+        if (action == ACTION_NONE || !info || ((level & ACTION_LEVEL_NEEDS_CHARGES) && !hand_charge_count()))
+            continue;
+        level &= ~ACTION_LEVEL_NEEDS_CHARGES;
+        if (level <= champion_get_skill_level(g_session.acting_champion_index, info->skill_index, false, false)) {
+            g_action_list.actions[n] = action;
+            g_action_list.minimum_skill_levels[n++] = level;
+        }
+    }
+    g_action_list.count = n;
+    for (; n < ACTION_LIST_COUNT; n++)
+        g_action_list.actions[n] = ACTION_NONE;
+}
+
+bool action_set_acting_champion(int16_t champion_index)
+{
+    Champion *c = &g_champions[champion_index];
+    int16_t set = ACTION_SET_EMPTY_HAND;
+    if (c->attributes & CHAMPION_ATTR_ACTION_DISABLED || !c->current_health)
+        return false;
+    if (c->slots[SLOT_HAND_ACTION] != THING_NONE) {
+        const ObjectInfo *info = tables_get_object_info(inventory_get_object_info_index(c->slots[SLOT_HAND_ACTION]));
+        if (!info || !(set = info->action_set_index))
+            return false;
+    }
+    g_session.acting_champion_index = champion_index;
+    set_action_list(set);
+    c->attributes |= CHAMPION_ATTR_ACTION_HAND;
+    return true;
+}
+
+int16_t action_take_damage(void)
+{
+    int16_t damage = g_session.action_damage;
+    g_session.action_damage = 0;
+    return damage;
+}
+
+void action_reset(void)
+{
+    g_session.acting_champion_index = -1;
+    memset(g_action_list.actions, ACTION_NONE, sizeof g_action_list.actions);
+    memset(g_action_list.minimum_skill_levels, 0, sizeof g_action_list.minimum_skill_levels);
+    g_action_list.count = 0;
+    g_session.action_damage = 0;
+    g_redraw = 0;
+}
+
+void action_clear_acting_champion(void)
+{
+    if (g_session.acting_champion_index < 0)
+        return;
+    g_champions[g_session.acting_champion_index].attributes |= CHAMPION_ATTR_ACTION_HAND;
+    g_session.acting_champion_index = -1;
+    g_redraw |= REDRAW_ACTION_AREA;
+}
+
+/* The object in the action hand loses one charge: weapons, armour, and junk keep their charges in different bits. */
+static void decrement_charges(int16_t champion_index)
+{
+    uint16_t thing = g_champions[champion_index].slots[SLOT_HAND_ACTION];
+    switch (THING_TYPE(thing)) {
+    case THING_WEAPON:
+        if (rec_weapon_charges(thing))
+            rec_weapon_set_charges(thing, rec_weapon_charges(thing) - 1);
+        break;
+    case THING_ARMOUR:
+        if (rec_armour_charges(thing))
+            rec_armour_set_charges(thing, rec_armour_charges(thing) - 1);
+        break;
+    case THING_JUNK:
+        if (rec_junk_charges(thing))
+            rec_junk_set_charges(thing, rec_junk_charges(thing) - 1);
+        break;
+    }
+    /* The interface redraws the changed object icons from the slots. */
+}
+
+/* A spell action shoots the explosion. With less mana than the cost, the attack shrinks and all mana is used. */
+static bool is_spell_action_cast(int16_t champion_index, uint16_t explosion_type, int16_t attack, int16_t mana_cost)
+{
+    Champion *c = &g_champions[champion_index];
+    champion_face_party_direction(c);
+    if (c->current_mana < mana_cost) {
+        attack =
+            max16(SPELL_ACTION_ATTACK_MINIMUM, (int16_t)(c->current_mana * attack) / mana_cost); /* 16-bit product */
+        mana_cost = c->current_mana;
+    }
+    bool cast = magic_is_projectile_spell_cast(champion_index, EXPLOSION_THING(explosion_type), attack, mana_cost);
+    decrement_charges(champion_index);
+    return cast;
+}
+
+/* The bow or sling in the action hand shoots the ammunition of the ready hand. Returns false without matching
+   ammunition. */
+static bool is_shot(int16_t champion_index)
+{
+    Champion *c = &g_champions[champion_index];
+    uint16_t ammunition = c->slots[SLOT_HAND_READY];
+    if (THING_TYPE(ammunition) != THING_WEAPON)
+        return false;
+    const WeaponInfo *launcher = tables_get_weapon_info(rec_weapon_type(c->slots[SLOT_HAND_ACTION]));
+    const WeaponInfo *missile = tables_get_weapon_info(rec_weapon_type(ammunition));
+    int16_t step_energy = launcher->weapon_class;
+    if (step_energy >= WEAPON_CLASS_FIRST_BOW && step_energy <= WEAPON_CLASS_LAST_BOW) {
+        if (missile->weapon_class != WEAPON_CLASS_BOW_AMMUNITION)
+            return false;
+        step_energy -= WEAPON_CLASS_FIRST_BOW;
+    } else if (step_energy >= WEAPON_CLASS_FIRST_SLING && step_energy <= WEAPON_CLASS_LAST_SLING) {
+        if (missile->weapon_class != WEAPON_CLASS_SLING_AMMUNITION)
+            return false;
+        step_energy -= WEAPON_CLASS_FIRST_SLING;
+    }
+    champion_face_party_direction(c);
+    uint16_t thing = inventory_take_slot_object(champion_index, SLOT_HAND_READY);
+    sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
+    int16_t level = champion_get_skill_level(champion_index, SKILL_SHOOT, false, false);
+    /* The attack is a byte: the launcher shoot attack plus the level, doubled. */
+    projectile_shoot_from_champion(champion_index, thing, (uint8_t)(missile->kinetic_energy + launcher->kinetic_energy),
+                                   (uint8_t)((level + (launcher->attributes & WEAPON_SHOOT_ATTACK_MASK)) << 1),
+                                   (uint8_t)step_energy);
+    return true;
+}
+
+/* Freeze Life stops the creatures. A magical box is used up; other objects use a charge. */
+static void cast_freeze_life(int16_t champion_index)
+{
+    uint16_t thing = g_champions[champion_index].slots[SLOT_HAND_ACTION];
+    int16_t ticks;
+    /* Weapons, armour, and junk keep their type in the same bits. */
+    uint16_t type = rec_junk_type(thing);
+    if (type == JUNK_MAGICAL_BOX_BLUE || type == JUNK_MAGICAL_BOX_GREEN) {
+        ticks = type == JUNK_MAGICAL_BOX_BLUE ? FREEZE_LIFE_TICKS_BLUE_BOX : FREEZE_LIFE_TICKS_GREEN_BOX;
+        inventory_take_slot_object(champion_index, SLOT_HAND_ACTION);
+        rec_thing_set_free(thing);
+    } else {
+        ticks = FREEZE_LIFE_TICKS_CHARGE;
+        decrement_charges(champion_index);
+    }
+    g_party.freeze_life_ticks = min16(FREEZE_LIFE_TICKS_MAXIMUM, ticks + g_party.freeze_life_ticks);
+}
+
+/* Heal changes mana into health: up to min(10, heal level) health for each 2 mana. Returns the experience. */
+static uint16_t heal_champion(int16_t champion_index, uint16_t experience)
+{
+    Champion *c = &g_champions[champion_index];
+    int16_t missing = c->maximum_health - c->current_health;
+    if (missing <= 0 || !c->current_mana)
+        return experience;
+    int16_t step = min16(HEAL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, SKILL_HEAL, false, false));
+    experience = HEAL_ACTION_EXPERIENCE_STEP;
+    for (;;) {
+        int16_t amount = min16(missing, step);
+        c->current_health += amount;
+        experience += HEAL_ACTION_EXPERIENCE_STEP;
+        c->current_mana -= HEAL_ACTION_MANA_PER_STEP;
+        if (c->current_mana <= 0)
+            break;
+        missing -= amount;
+        if (!missing)
+            break;
+    }
+    if (c->current_mana < 0)
+        c->current_mana = 0;
+    c->attributes |= CHAMPION_ATTR_STATISTICS;
+    return experience;
+}
+
+/* Window: thieves eye for a random time by the skill level. */
+static void open_window(int16_t champion_index, int16_t skill_index)
+{
+    uint16_t random = random16();
+    int16_t level = champion_get_skill_level(champion_index, skill_index, false, false);
+    uint16_t ticks = random % (level + WINDOW_ACTION_LEVEL_BONUS) + WINDOW_ACTION_BASE_TICKS;
+    TimelineEvent event = {.map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + ticks),
+                           .type = EVENT_THIEVES_EYE_END};
+    timeline_add_event(&event);
+    g_party.thieves_eye_count++;
+}
+
+/* Climb down: the party goes down the pit in front with the rope, without fall damage. Returns false without a pit. */
+static bool is_climbed_down(void)
+{
+    int16_t x, y;
+    x = g_party_map_x;
+    y = g_party_map_y;
+    map_step(g_party_direction, 1, 0, &x, &y);
+    if (rec_square_type(map_get_square(x, y)) != SQUARE_PIT ||
+        map_find_thing((Location){x, y}, THING_GROUP) != THING_ENDOFLIST)
+        return false;
+    move_get_move_result(&(Move){.thing = THING_NONE,
+                                 .from.x = g_party_map_x,
+                                 .from.y = g_party_map_y,
+                                 .to.x = x,
+                                 .to.y = y,
+                                 .uses_rope = true},
+                         NULL);
+    return true;
+}
+
+/* Fireball, Dispell, Lightning, Spit, and Invoke shoot their explosion. Invoke takes a random attack and spell. */
+static bool is_explosion_action_cast(int16_t champion_index, int16_t action, int16_t mana_cost)
+{
+    int16_t attack = 0;
+    uint16_t type = EXPLOSION_FIREBALL;
+    switch (action) {
+    case ACTION_FIREBALL:
+        attack = FIREBALL_ACTION_ATTACK;
+        break;
+    case ACTION_DISPELL:
+        attack = DISPELL_ACTION_ATTACK;
+        type = EXPLOSION_HARM_NON_MATERIAL;
+        break;
+    case ACTION_LIGHTNING:
+        attack = LIGHTNING_ACTION_ATTACK;
+        type = EXPLOSION_LIGHTNING_BOLT;
+        break;
+    case ACTION_SPIT:
+        attack = SPIT_ACTION_ATTACK;
+        break;
+    case ACTION_INVOKE: {
+        attack = (random16() & INVOKE_ACTION_RANDOM_MASK) + INVOKE_ACTION_BASE_ATTACK;
+        uint16_t spell = random16() % INVOKE_SPELL_COUNT;
+        type = spell == INVOKE_POISON_BOLT         ? EXPLOSION_POISON_BOLT
+               : spell == INVOKE_POISON_CLOUD      ? EXPLOSION_POISON_CLOUD
+               : spell == INVOKE_HARM_NON_MATERIAL ? EXPLOSION_HARM_NON_MATERIAL
+                                                   : EXPLOSION_FIREBALL;
+        break;
+    }
+    }
+    return is_spell_action_cast(champion_index, type, attack, mana_cost);
+}
+
+/* Chop, Kick, Swing, Hack, Berzerk, and Bash on a closed door: the champion bashes the door with the action hand
+   strength. Returns false without a closed door in front. */
+static bool is_door_bashed(int16_t champion_index, int16_t x, int16_t y, uint8_t square)
+{
+    if (rec_square_type(square) != SQUARE_DOOR || rec_door_state(square) != DOOR_CLOSED)
+        return false;
+    sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
+    event_is_door_destroyed((Location){x, y}, champion_get_strength(champion_index, SLOT_HAND_ACTION), false,
+                            DOOR_BASH_DESTRUCTION_TICKS);
+    sound_request_play(SOUND_WOODEN_THUD, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_EVENT, 1);
+    return true;
+}
+
+/* Stamina cost of a throw: half the weight, 1 to 10, plus half of each 10 above. */
+static int16_t throwing_stamina_cost(uint16_t thing)
+{
+    uint16_t weight = inventory_get_object_weight(thing) >> 1;
+    int16_t cost = bounded_value(1, weight, THROW_STAMINA_MAXIMUM);
+    for (int16_t rest = weight - THROW_STAMINA_MAXIMUM; rest > 0; rest -= THROW_STAMINA_MAXIMUM)
+        cost += rest >> 1;
+    return cost;
+}
+
+/* Throwing: slot SLOT_HAND_ACTION, or the leader hand object with action_is_hand_object_thrown. side 1 throws
+   from the right side of the party. */
+static bool is_object_thrown(int16_t champion_index, int16_t slot, bool side)
+{
+    Champion *c = &g_champions[champion_index];
+    uint16_t thing;
+    int16_t strength;
+    if (slot < 0) {
+        if (g_leader_empty_handed)
+            return false;
+        thing = inventory_take_hand_object();
+        /* The strength counts the thrown object as if it were in the action hand. */
+        uint16_t action_hand = c->slots[SLOT_HAND_ACTION];
+        c->slots[SLOT_HAND_ACTION] = thing;
+        slot = SLOT_HAND_ACTION;
+        strength = champion_get_strength(champion_index, slot);
+        c->slots[SLOT_HAND_ACTION] = action_hand;
+    } else {
+        strength = champion_get_strength(champion_index, slot);
+        thing = inventory_take_slot_object(champion_index, slot);
+        if (thing == THING_NONE)
+            return false;
+    }
+    sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
+    champion_decrement_stamina(champion_index, throwing_stamina_cost(thing));
+    magic_disable_action(champion_index, THROW_DISABLED_TICKS);
+    int16_t experience = THROW_EXPERIENCE;
+    int16_t weapon_energy = 1;
+    if (THING_TYPE(thing) == THING_WEAPON) {
+        experience = THROW_WEAPON_EXPERIENCE;
+        const WeaponInfo *info = tables_get_weapon_info(rec_weapon_type(thing));
+        if (info->weapon_class < WEAPON_CLASS_KINETIC_THROW_LIMIT) {
+            weapon_energy = info->kinetic_energy;
+            experience += weapon_energy >> 2;
+        }
+    }
+    champion_add_skill_experience(champion_index, SKILL_THROW, experience);
+    int16_t level = champion_get_skill_level(champion_index, SKILL_THROW, false, false);
+    uint16_t energy_random = random16() & THROW_ENERGY_RANDOM_MASK;
+    uint16_t attack_random = random16() & THROW_ATTACK_RANDOM_MASK;
+    int16_t energy = weapon_energy + strength;
+    /* The kinetic energy is a byte. */
+    uint8_t kinetic_energy = level + (energy >> 1) + energy_random + energy;
+    uint8_t attack = bounded_value(THROW_ATTACK_MINIMUM, attack_random + level * WEAPON_CLASS_SKILL_LEVEL_STEP,
+                                   THROW_ATTACK_MAXIMUM);
+    uint8_t step_energy = max16(THROW_STEP_ENERGY_MINIMUM, THROW_STEP_ENERGY_BASE - level);
+    projectile_create(&(ProjectileLaunch){
+        .thing = thing,
+        .at = {g_party_map_x, g_party_map_y},
+        .cell = NORMALIZE(side + g_party_direction),
+        .direction = g_party_direction,
+        .kinetic_energy = kinetic_energy,
+        .attack = attack,
+        .step_energy = step_energy
+    });
+    g_projectile_disabled_movement_ticks = SHOT_DISABLED_MOVEMENT_TICKS;
+    g_last_projectile_disabled_movement_direction = g_party_direction;
+    return true;
+}
+
+/* Throw: the champion throws the action hand object from its side of the party. EVENT_ENABLE_CHAMPION_ACTION then
+   moves the next weapon from the quiver to the action hand. */
+static bool is_action_object_thrown(int16_t champion_index)
+{
+    Champion *c = &g_champions[champion_index];
+    champion_face_party_direction(c);
+    bool side = direction_right(g_party_direction) == c->cell || direction_back(g_party_direction) == c->cell;
+    if (!is_object_thrown(champion_index, SLOT_HAND_ACTION, side))
+        return false;
+    event_set_quiver_slot(&g_timeline.events[c->enable_action_event_index], SLOT_HAND_ACTION);
+    return true;
+}
+
+/* CSB has no code for invoke, fluxcage, and fuse: they only disable the hand, take stamina, and give experience. */
+static bool is_removed_in_csb(int16_t action)
+{
+    return g_adventure == ADVENTURE_CSB &&
+           (action == ACTION_INVOKE || action == ACTION_FLUXCAGE || action == ACTION_FUSE);
+}
+
+/* Prints "<text>" in the action color; "@p" in the text becomes the champion name. */
+static void print_message(int16_t champion_index, const char *text)
+{
+    char out[MESSAGE_SIZE];
+    size_t n = 0;
+    out[n++] = '\n';
+    for (; *text && n < sizeof out - 1; text++) {
+        if (*text != '@') {
+            out[n++] = *text;
+            continue;
+        }
+        if (out[n - 1] != '\n')
+            out[n++] = ' ';
+        for (const char *name = g_champions[champion_index].name; *name && n < sizeof out - 2; name++)
+            out[n++] = *name;
+        out[n++] = ' ';
+        if (text[1])
+            text++;
+    }
+    out[n] = 0;
+    if (out[1])
+        message_print(MESSAGE_COLOR_CYAN, out);
+}
+
+/* A melee hit on target_group, the group in front (THING_ENDOFLIST: none). A champion in a back cell reaches only past an empty front cell ("can't
+   reach"). Disrupt hits only non-material creatures. Returns false when the champion hits nothing. */
+static bool is_melee_performed(int16_t champion_index, int16_t action, Location target_square, int16_t skill_index,
+                               uint16_t target_group)
+{
+    const Champion *c = &g_champions[champion_index];
+    sound_request_play(SOUND_SWING, (Location){g_party_map_x, g_party_map_y}, SOUND_MODE_AFTER_TICK, 0);
+    if (target_group == THING_ENDOFLIST)
+        return false;
+    int16_t creature_index =
+        group_get_melee_target(target_square.x, target_square.y, g_party_map_x, g_party_map_y, c->cell);
+    if (creature_index < 0)
+        return false;
+    uint16_t relative_cell = NORMALIZE(c->cell - c->direction);
+    if (relative_cell >= RELATIVE_CELL_BACK_RIGHT) {
+        int16_t front_cell = NORMALIZE(c->cell + (relative_cell == RELATIVE_CELL_BACK_LEFT ? 1 : -1));
+        if (champion_get_index_in_cell(front_cell) != -1) {
+            g_session.action_damage = ACTION_DAMAGE_CANT_REACH;
+            return false;
+        }
+    }
+    if (action == ACTION_DISRUPT && !(map_get_creature_attributes(target_group) & CREATURE_NON_MATERIAL))
+        return false;
+    const ActionInfo *info = tables_get_action_info(action);
+    uint16_t hit_probability = info->hit_probability;
+    if (object_get_icon_index(c->slots[SLOT_HAND_ACTION]) == ICON_VORPAL_BLADE || action == ACTION_DISRUPT)
+        hit_probability |= HIT_PROBABILITY_ALWAYS_HITS;
+    MeleeAttack attack = {.champion_index = champion_index,
+                          .group = target_group,
+                          .creature_index = creature_index,
+                          .at = target_square,
+                          .hit_probability = hit_probability,
+                          .damage_factor = info->damage_factor,
+                          .skill_index = skill_index};
+    g_session.action_damage = group_get_melee_action_damage(&attack);
+    return true;
+}
+
+/* War cry, blow horn, confuse, calm, brandish: the group in front flees when the influence roll beats its fear
+   resistance. The champion gains influence experience, half of it when the group stays. */
+static bool is_group_frightened(int16_t champion_index, int16_t action, int16_t x, int16_t y, uint16_t group)
+{
+    if (group == THING_ENDOFLIST)
+        return false;
+    uint16_t bonus = 0;
+    uint16_t experience = 0;
+    switch (action) {
+    case ACTION_CONFUSE:
+        bonus = FEAR_BONUS_CONFUSE;
+        experience = FEAR_EXPERIENCE_CONFUSE;
+        break;
+    case ACTION_WAR_CRY:
+        bonus = FEAR_BONUS_WAR_CRY;
+        experience = FEAR_EXPERIENCE_WAR_CRY;
+        break;
+    case ACTION_BLOW_HORN:
+        bonus = FEAR_BONUS_BLOW_HORN;
+        experience = FEAR_EXPERIENCE_BLOW_HORN;
+        break;
+    case ACTION_BRANDISH:
+        bonus = FEAR_BONUS_BRANDISH;
+        experience = FEAR_EXPERIENCE_BRANDISH;
+        break;
+    case ACTION_CALM:
+        bonus = FEAR_BONUS_CALM;
+        experience = FEAR_EXPERIENCE_CALM;
+        break;
+    }
+    uint16_t level = champion_get_skill_level(champion_index, SKILL_INFLUENCE, false, false);
+    const CreatureInfo *info = group_info(group);
+    uint16_t roll = random16() % (level + bonus);
+    uint16_t fear = creature_fear_resistance(info);
+    bool frightened = false;
+    if (roll < fear || fear == FEAR_RESISTANCE_NONE_FEARLESS) {
+        experience >>= 1;
+    } else {
+        group_frighten(group, x, y, (FLEE_DELAY_FEAR_LIMIT - fear) * FLEE_DELAY_FACTOR / info->movement_ticks);
+        frightened = true;
+    }
+    champion_add_skill_experience(champion_index, SKILL_INFLUENCE, experience);
+    return frightened;
+}
+
+bool action_is_action_performed(int16_t champion_index, int16_t action)
+{
+    if (champion_index < 0 || champion_index >= g_party_champion_count)
+        return false;
+    Champion *c = &g_champions[champion_index];
+    if (!c->current_health)
+        return false;
+    int16_t x, y;
+    x = g_party_map_x;
+    y = g_party_map_y;
+    map_step(c->direction, 1, 0, &x, &y);
+    uint16_t target_group = map_find_thing((Location){x, y}, THING_GROUP);
+    const ActionInfo *info = tables_get_action_info(action);
+    uint16_t disabled_ticks = info->disabled_ticks;
+    uint16_t skill_index = info->skill_index;
+    int16_t stamina = random_bit() + info->stamina;
+    uint16_t experience = info->experience_gain;
+    uint8_t square = map_get_square(x, y);
+    bool performed = true;
+    int16_t mana_cost = 0;
+    if ((skill_index >= SKILL_COUNT - SKILL_BASE_COUNT && skill_index < SKILL_COUNT) || skill_index == SKILL_WIZARD)
+        mana_cost =
+            SPELL_ACTION_MAXIMUM_LEVEL + 1 -
+            min16(SPELL_ACTION_MAXIMUM_LEVEL, champion_get_skill_level(champion_index, skill_index, false, false));
+    switch (is_removed_in_csb(action) ? ACTION_NONE : action) {
+    case ACTION_CHOP:
+    case ACTION_KICK:
+    case ACTION_SWING:
+    case ACTION_HACK:
+    case ACTION_BERZERK:
+    case ACTION_BASH:
+        if (is_door_bashed(champion_index, x, y, square)) {
+            disabled_ticks = DOOR_BASH_DISABLED_TICKS;
+            break;
+        }
+        /* no closed door: a melee attack */
+        /* fall through */
+        __attribute__((fallthrough));
+    case ACTION_PUNCH:
+    case ACTION_STAB_DAGGER:
+    case ACTION_STAB_SKILL_5:
+    case ACTION_THRUST:
+    case ACTION_JAB:
+    case ACTION_PARRY:
+    case ACTION_DISRUPT:
+    case ACTION_MELEE:
+    case ACTION_SLASH:
+    case ACTION_CLEAVE:
+    case ACTION_STUN:
+        performed = is_melee_performed(champion_index, action, (Location){x, y}, skill_index, target_group);
+        if (!performed) {
+            experience = (int16_t)experience >> 1; /* signed shift as in the original */
+            disabled_ticks >>= 1;
+        }
+        break;
+    case ACTION_CONFUSE:
+        decrement_charges(champion_index);
+        /* fall through */
+        __attribute__((fallthrough));
+    case ACTION_BLOW_HORN:
+    case ACTION_WAR_CRY:
+    case ACTION_CALM:
+    case ACTION_BRANDISH:
+        if (action == ACTION_WAR_CRY)
+            sound_request_play(SOUND_WAR_CRY, (Location){x, y}, SOUND_MODE_NOW, 0);
+        if (action == ACTION_BLOW_HORN)
+            sound_request_play(SOUND_BLOW_HORN, (Location){x, y}, SOUND_MODE_NOW, 0);
+        performed = is_group_frightened(champion_index, action, x, y, target_group);
+        break;
+    case ACTION_FLIP:
+        print_message(champion_index, gfx_get_string(random_bit() ? TEXT_FLIP_HEADS : TEXT_FLIP_TAILS));
+        break;
+    case ACTION_CLIMB_DOWN:
+        if (!is_climbed_down())
+            disabled_ticks = 0;
+        break;
+    case ACTION_FREEZE_LIFE:
+        cast_freeze_life(champion_index);
+        break;
+    case ACTION_FIREBALL:
+    case ACTION_DISPELL:
+    case ACTION_LIGHTNING:
+    case ACTION_SPIT:
+    case ACTION_INVOKE:
+        performed = is_explosion_action_cast(champion_index, action, mana_cost);
+        if (!performed)
+            experience = (int16_t)experience >> 1; /* signed shift as in the original */
+        break;
+    case ACTION_SHOOT:
+        if (!is_shot(champion_index)) {
+            g_session.action_damage = ACTION_DAMAGE_NO_AMMUNITION;
+            experience = 0;
+            performed = false;
+        }
+        break;
+    case ACTION_SPELLSHIELD:
+    case ACTION_FIRESHIELD:
+        if (magic_cast_party_spell(champion_index, action == ACTION_SPELLSHIELD, SHIELD_ACTION_TICKS, true)) {
+            decrement_charges(champion_index);
+        } else {
+            experience = (int16_t)experience >> 2; /* signed shift as in the original */
+            disabled_ticks >>= 1;
+        }
+        break;
+    case ACTION_FLUXCAGE:
+        champion_face_party_direction(c);
+        projectile_fluxcage_action(x, y);
+        break;
+    case ACTION_HEAL:
+        experience = heal_champion(champion_index, experience);
+        break;
+    case ACTION_LIGHT:
+        g_party.magical_light_amount += tables_get_light_amount(LIGHT_ACTION_POWER);
+        magic_create_light_event(-LIGHT_ACTION_POWER, LIGHT_ACTION_TICKS);
+        decrement_charges(champion_index);
+        break;
+    case ACTION_WINDOW:
+        open_window(champion_index, skill_index);
+        decrement_charges(champion_index);
+        break;
+    case ACTION_THROW:
+        performed = is_action_object_thrown(champion_index);
+        break;
+    case ACTION_FUSE: {
+        champion_face_party_direction(c);
+        int16_t fuse_x, fuse_y;
+        fuse_x = g_party_map_x;
+        fuse_y = g_party_map_y;
+        map_step(g_party_direction, 1, 0, &fuse_x, &fuse_y);
+        projectile_fuse_action(fuse_x, fuse_y);
+        break;
+    }
+    }
+    if (disabled_ticks)
+        magic_disable_action(champion_index, disabled_ticks);
+    if (stamina)
+        champion_decrement_stamina(champion_index, stamina);
+    if (experience)
+        champion_add_skill_experience(champion_index, skill_index, experience);
+    return performed;
+}
+
+bool action_did_click_trigger_action(int16_t action_list_index)
+{
+    if (g_session.acting_champion_index < 0 || g_action_list.actions[action_list_index] == ACTION_NONE)
+        return false;
+    uint16_t champion_index = g_session.acting_champion_index;
+    Champion *c = &g_champions[champion_index];
+    uint8_t action = g_action_list.actions[action_list_index];
+    c->action_defense += tables_get_action_info(action)->defense;
+    c->attributes |= CHAMPION_ATTR_STATISTICS;
+    bool performed = action_is_action_performed(champion_index, action);
+    c->action_index = action;
+    action_clear_acting_champion();
+    return performed;
+}
+
+/* The champion throws the object of the slot (or, with slot < 0, the leader hand object) from the left or right
+   front cell. Kinetic energy comes from the strength, the weapon, and the throw level. */
+
+bool action_is_hand_object_thrown(bool side)
+{
+    if (g_leader_index == -1)
+        return false;
+    return is_object_thrown(g_leader_index, -1, side);
+}
+
+bool action_is_ammo_for_weapon(int16_t champion_index, uint16_t weapon_slot, uint16_t ammunition_slot)
+{
+    const Champion *c = &g_champions[champion_index];
+    uint16_t weapon = c->slots[weapon_slot];
+    uint16_t ammunition = c->slots[ammunition_slot];
+    if (THING_TYPE(weapon) != THING_WEAPON)
+        return false;
+    uint8_t weapon_class = tables_get_weapon_info(rec_weapon_type(weapon))->weapon_class, needed;
+    if (weapon_class >= WEAPON_CLASS_FIRST_BOW && weapon_class <= WEAPON_CLASS_LAST_BOW)
+        needed = WEAPON_CLASS_BOW_AMMUNITION;
+    else if (weapon_class >= WEAPON_CLASS_FIRST_SLING && weapon_class <= WEAPON_CLASS_LAST_SLING)
+        needed = WEAPON_CLASS_SLING_AMMUNITION;
+    else
+        return false;
+    return THING_TYPE(ammunition) == THING_WEAPON &&
+           tables_get_weapon_info(rec_weapon_type(ammunition))->weapon_class == needed;
+}
+
+/* Moves a weapon from the quiver to the slot. */
+static bool take_from_quiver(int16_t champion_index, uint16_t quiver_slot, int16_t slot)
+{
+    if (THING_TYPE(g_champions[champion_index].slots[quiver_slot]) != THING_WEAPON)
+        return false;
+    inventory_add_object_in_slot(champion_index, inventory_take_slot_object(champion_index, quiver_slot), slot);
+    return true;
+}
+
+void action_refill_from_quiver(int16_t champion_index, int16_t slot)
+{
+    if (g_champions[champion_index].slots[slot] != THING_NONE ||
+        take_from_quiver(champion_index, SLOT_QUIVER_LINE1_1, slot))
+        return;
+    for (uint16_t quiver = SLOT_QUIVER_LINE2_1; quiver <= SLOT_QUIVER_LINE2_2; quiver++) /* slots 7-9 */
+        if (take_from_quiver(champion_index, quiver, slot))
+            return;
+}
