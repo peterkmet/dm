@@ -79,14 +79,6 @@ void game_set_mode(int16_t mode)
     g_session.mode = mode;
 }
 
-void game_toggle_cheat(int16_t cheat)
-{
-    bool *flag = cheat == CHEAT_LIGHT      ? &g_session.cheat_light
-                 : cheat == CHEAT_IMMORTAL ? &g_session.cheat_immortal
-                                           : &g_session.cheat_food;
-    *flag = !*flag;
-}
-
 void game_start_fuse_sequence(void)
 {
     g_session.won = true;

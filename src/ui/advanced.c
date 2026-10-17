@@ -14,7 +14,7 @@
 #include "command.h"
 #include "frame.h"
 #include "gameloop.h"
-#include "music.h"
+#include "optmenu.h"
 #include "startend.h"
 #include "text.h"
 #include "ui.h"
@@ -34,7 +34,6 @@ static struct {
 } drag;
 
 static const char *const direction_names[DIRECTION_COUNT] = {"NORTH", "EAST", "SOUTH", "WEST"};
-static const char *const soundtrack_names[] = {"ORIGINAL", "SUPER NES", "FM-TOWNS"};
 
 /* The party walks the dungeon: no inventory, dialog, freeze, sleep, candidate, death, sequence, or won game. */
 static bool in_dungeon_view(void)
@@ -54,15 +53,6 @@ static void show_readout(Bitmap *viewport)
     text_draw(viewport, (Point){x, y}, COLOR_WHITE, COLOR_BLACK, line);
     snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)], party_get_light());
     text_draw(viewport, (Point){x, y + FONT_LINE_HEIGHT + FONT_BASELINE_GAP}, COLOR_WHITE, COLOR_BLACK, line);
-    if (g_session.mode != GAME_MODE_ADVANCED)
-        return;
-    snprintf(line, sizeof line, "L LIGHT %s I IMMORTAL %s", g_session.cheat_light ? "ON" : "OFF",
-             g_session.cheat_immortal ? "ON" : "OFF");
-    text_draw(viewport, (Point){x, y + 2 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP)}, COLOR_WHITE, COLOR_BLACK, line);
-    snprintf(line, sizeof line, "F FOOD AND WATER %s", g_session.cheat_food ? "ON" : "OFF");
-    text_draw(viewport, (Point){x, y + 3 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP)}, COLOR_WHITE, COLOR_BLACK, line);
-    snprintf(line, sizeof line, "1 2 3 MUSIC %s", soundtrack_names[g_music_soundtrack]);
-    text_draw(viewport, (Point){x, y + 4 * (FONT_LINE_HEIGHT + FONT_BASELINE_GAP)}, COLOR_WHITE, COLOR_BLACK, line);
 }
 
 /* Draws the automap and the position read-out (level, position, facing, light) in place of the viewport with the
@@ -109,6 +99,11 @@ bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
 {
     if (g_advanced_screen == ADVANCED_SCREEN_NONE)
         return false;
+    if (g_advanced_screen == ADVANCED_SCREEN_OPTIONS) {
+        if (kind == CLICK_LEFT_PRESS && optmenu_process_click(x, y))
+            close_screen();
+        return true;
+    }
     Box b;
     if (kind == CLICK_LEFT_RELEASE) {
         advanced_drag(x, y);
@@ -148,17 +143,14 @@ bool advanced_process_key(uint16_t key)
 {
     if (g_session.mode == GAME_MODE_VANILLA || champion_is_renaming())
         return false;
-    if (g_advanced_screen == ADVANCED_SCREEN_AUTOMAP) {
+    switch (g_advanced_screen) {
+    case ADVANCED_SCREEN_AUTOMAP:
         if (key == KEY_M || key == KEY_TAB || key == KEY_ESCAPE)
             close_screen();
-        if (g_session.mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I || key == KEY_F)) {
-            game_toggle_cheat(key == KEY_L ? CHEAT_LIGHT : key == KEY_I ? CHEAT_IMMORTAL : CHEAT_FOOD);
-            show_automap();
-        }
-        if (g_session.mode == GAME_MODE_ADVANCED && (key == KEY_1 || key == KEY_2 || key == KEY_3)) {
-            music_select(key == KEY_1 ? MUSIC_ORIGINAL : key == KEY_2 ? MUSIC_SUPER_NES : MUSIC_FM_TOWNS);
-            show_automap();
-        }
+        return true;
+    case ADVANCED_SCREEN_OPTIONS:
+        if (optmenu_process_key(key))
+            close_screen();
         return true;
     }
     switch (key) {
@@ -177,6 +169,12 @@ bool advanced_process_key(uint16_t key)
             return !(key == KEY_TAB && g_session.inventory_champion_index >= 0);
         open_screen(ADVANCED_SCREEN_AUTOMAP);
         show_automap();
+        return true;
+    case KEY_ESCAPE:
+        if (g_session.mode != GAME_MODE_ADVANCED || !in_dungeon_view())
+            return false; /* the inventory closes, or the game freezes or unfreezes */
+        open_screen(ADVANCED_SCREEN_OPTIONS);
+        optmenu_open();
         return true;
     }
     return false;

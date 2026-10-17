@@ -59,14 +59,8 @@
 #define CLICK_LEFT_RELEASE  4
 #define CLICK_RIGHT_RELEASE 8
 
-/* Key words: Amiga raw key in the high byte, ASCII in the low byte. TAB, M, F5, F9, L, I, F, 1, 2, and 3 are
-   advanced keys that no original key table has. */
-#define KEY_1         0x0100
-#define KEY_2         0x0200
-#define KEY_3         0x0300
-#define KEY_I         0x1700
-#define KEY_F         0x2300
-#define KEY_L         0x2800
+/* Key words: Amiga raw key in the high byte, ASCII in the low byte. TAB, M, F5, and F9 are advanced keys that
+   no original key table has. */
 #define KEY_M         0x3700
 #define KEY_BACKSPACE 0x4100
 #define KEY_TAB       0x4200

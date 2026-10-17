@@ -4,7 +4,7 @@ import ctypes
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import ADVANCED, TURNBASED, VANILLA, press, recruit_first_champion, set_mode, start_game
+from dmtest.game import VANILLA, recruit_first_champion, set_mode, start_game
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 
@@ -72,20 +72,6 @@ def mix(game, frames):
     game.lib.audio_mix(out, frames)
     game.lib.music_mix(out, frames)
     return out
-
-
-@pytest.mark.parametrize("mode", [VANILLA, ADVANCED, TURNBASED])
-def test_music_keys_work_only_on_the_advanced_automap(game, mode):
-    set_mode(game, mode)
-    press(game, C.KEY_M)
-    press(game, C.KEY_3)
-    assert var(game, "g_music_soundtrack").value == (FM_TOWNS if mode == ADVANCED else ORIGINAL)
-    press(game, C.KEY_2)
-    assert var(game, "g_music_soundtrack").value == (SUPER_NES if mode == ADVANCED else ORIGINAL)
-    press(game, C.KEY_1)
-    assert var(game, "g_music_soundtrack").value == ORIGINAL
-    press(game, C.KEY_M)
-    set_mode(game, VANILLA)
 
 
 def test_fm_towns_dm_plays_the_level_track(game):

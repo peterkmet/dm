@@ -27,10 +27,6 @@ extern uint16_t g_redraw;
 #define GAME_MODE_VANILLA   0
 #define GAME_MODE_ADVANCED  1
 #define GAME_MODE_TURNBASED 2
-/* Cheats of the advanced mode, L, I, and F on the automap. Not saved; a new or loaded game turns them off. */
-#define CHEAT_LIGHT         0
-#define CHEAT_IMMORTAL      1
-#define CHEAT_FOOD          2
 
 /* The state of one run of the game: a new game or a load resets it, the save file does not hold it. */
 typedef struct {
@@ -60,8 +56,6 @@ void game_start_new(void);
 void game_reset_session(void);
 /* Sets the game mode (GAME_MODE_*) of the session. */
 void game_set_mode(int16_t mode);
-/* Turns a cheat of the advanced mode on or off. */
-void game_toggle_cheat(int16_t cheat);
 /* The fuse wins the game: bright magical light and strong shields for the end sequence. */
 void game_start_fuse_sequence(void);
 /* Lord Chaos on square at before the fuse: full fuse health, centered, facing the party; the fluxcages on

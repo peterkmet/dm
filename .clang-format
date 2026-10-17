@@ -19,7 +19,7 @@ IncludeCategories:
     Priority: 1
   - Regex: '^"(action|arith|champion|discard|dungeon|event|explored|game|group|inventory|magic|map|message|move|party|projectile|random|record|recruit|savefile|savegame|sensor|sound|timeline)\.h"$'
     Priority: 2
-  - Regex: '^"(advanced|anim|audio|automap|command|dialog|draw|entrance|frame|gameloop|layout|logo|menus|music|music_internal|palette|panel|select|startend|status|text|ui|video|view|view_internal)\.h"$'
+  - Regex: '^"(advanced|anim|audio|automap|command|dialog|draw|entrance|frame|gameloop|layout|logo|menus|music|music_internal|optmenu|palette|panel|rows|select|startend|status|text|ui|video|view|view_internal)\.h"$'
     Priority: 3
   - Regex: '^"(control|control_internal|json|png|request|state_json|turn)\.h"$'
     Priority: 4

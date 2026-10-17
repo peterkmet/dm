@@ -7,7 +7,8 @@
 #include <string.h>
 
 /* The text of the settings file. */
-#define LINE_SIZE 64 /* longer lines are unreadable */
+#define LINE_SIZE      64 /* longer lines are unreadable */
+#define TEMPORARY_FILE "SETTINGS.TMP"
 
 static const char *const music_names[SETTINGS_MUSIC_COUNT] = {"original", "super-nes", "fm-towns"};
 
@@ -82,4 +83,17 @@ Settings settings_load(const char *dir)
     Settings settings = settings_parse(text ? (const char *)text : "", length);
     free(text);
     return settings;
+}
+
+/* Commands */
+
+bool settings_save(const char *dir, const Settings *settings)
+{
+    char path[PATH_SIZE], temporary[PATH_SIZE], text[SETTINGS_MAX_SIZE];
+    if (snprintf(path, sizeof path, "%s/%s", dir, SETTINGS_FILE) >= (int)sizeof path ||
+        snprintf(temporary, sizeof temporary, "%s/%s", dir, TEMPORARY_FILE) >= (int)sizeof temporary)
+        return false;
+    int length = snprintf(text, sizeof text, "sound_volume=%d\nmusic_volume=%d\nmusic=%s\n", settings->sound_volume,
+                          settings->music_volume, music_names[settings->music]);
+    return file_write(temporary, (const uint8_t *)text, (size_t)length) && file_replace(temporary, path);
 }

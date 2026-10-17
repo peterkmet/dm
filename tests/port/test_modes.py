@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import (screen, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
+from dmtest.game import (screen, ADVANCED, STEP_EAST, STEP_NORTH, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
                          start_game, session)
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
@@ -201,10 +201,62 @@ def test_escape_rule(game, mode):
     if mode == ADVANCED:
         assert game.session.inventory_champion_index == -1 and game.value("g_game_frozen") == 0
         press(game, C.KEY_ESCAPE)
-    assert game.value("g_game_frozen") == 1
-    unfreeze(game)
+        assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_OPTIONS and game.value("g_game_frozen") == 0
+        press(game, C.KEY_ESCAPE)
+        assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE
+    else:
+        assert game.value("g_game_frozen") == 1
+        unfreeze(game)
     if game.session.inventory_champion_index >= 0:
         press(game, C.KEY_F1)
+    set_mode(game, VANILLA)
+
+
+def test_options_menu_stops_the_game_time(game):
+    set_mode(game, ADVANCED)
+    game.run(13)
+    time_before, position = game.value("g_game_time", u32), game.position()
+    press(game, C.KEY_ESCAPE)
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_OPTIONS
+    screenshot(game, "adv_options.png")
+    press(game, C.KEY_UP, 50)
+    assert game.value("g_game_time", u32) == time_before and game.position() == position
+    press(game, C.KEY_ESCAPE)
+    game.run(30)
+    assert game.value("g_game_time", u32) > time_before
+    set_mode(game, VANILLA)
+
+
+def test_one_viewport_screen_at_a_time(game):
+    set_mode(game, ADVANCED)
+    press(game, C.KEY_M)
+    press(game, C.KEY_ESCAPE)  # closes the automap only
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE
+    press(game, C.KEY_ESCAPE)
+    press(game, C.KEY_M)  # the menu stays, the automap does not open
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_OPTIONS
+    press(game, C.KEY_ESCAPE)
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE
+    set_mode(game, VANILLA)
+
+
+def test_options_menu_writes_the_settings_only_after_a_change(game, tmp_path):
+    lib, settings = game.lib, tmp_path / "SETTINGS.TXT"
+    volume = c16.in_dll(lib, "g_audio_volume")
+    set_mode(game, ADVANCED)
+    lib.startend_set_save_dir(str(tmp_path).encode())
+    for key in (C.KEY_ESCAPE, C.KEY_DOWN, C.KEY_DOWN, C.KEY_DOWN, C.KEY_RETURN):  # CONTINUE without a change
+        press(game, key)
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE and not settings.exists()
+    for key in (C.KEY_ESCAPE, C.KEY_LEFT, C.KEY_LEFT, C.KEY_DOWN, C.KEY_RIGHT, C.KEY_ESCAPE):  # sound 5, music 7
+        press(game, key)
+    assert volume.value == 5 and settings.read_text() == "sound_volume=5\nmusic_volume=7\nmusic=original\n"
+    lib.startend_set_save_dir(str(tmp_path / "missing").encode())
+    for key in (C.KEY_ESCAPE, C.KEY_RIGHT, C.KEY_ESCAPE):
+        press(game, key)
+    assert volume.value == 6 and "UNABLE TO SAVE OPTIONS" in message_text(game)
+    volume.value = C.SETTINGS_VOLUME_FULL
+    lib.startend_set_save_dir(b".")
     set_mode(game, VANILLA)
 
 
@@ -375,27 +427,6 @@ def test_smooth_projectile_flight(game):
             assert changes > 3
             screenshot(game, "adv_projectile.png")
         game.run(200)  # the fireball explodes
-    set_mode(game, VANILLA)
-
-
-@pytest.mark.parametrize("mode", [VANILLA, ADVANCED, TURNBASED])
-def test_cheat_keys_work_only_on_the_advanced_automap(game, mode):
-    set_mode(game, mode)
-    press(game, C.KEY_L)  # not on the automap: nothing
-    assert game.session.cheat_light == 0
-    press(game, C.KEY_M)
-    press(game, C.KEY_L)
-    press(game, C.KEY_I)
-    press(game, C.KEY_F)
-    on = mode == ADVANCED
-    assert (game.session.cheat_light, game.session.cheat_immortal, game.session.cheat_food) == (on, on, on)
-    if on:
-        assert C.COLOR_WHITE in pixels(game, C.ZONE_VIEWPORT)[:224 * 24]  # the cheat line under the read-out
-        press(game, C.KEY_L)
-        press(game, C.KEY_I)
-        press(game, C.KEY_F)
-        assert (game.session.cheat_light, game.session.cheat_immortal, game.session.cheat_food) == (0, 0, 0)
-    press(game, C.KEY_M)
     set_mode(game, VANILLA)
 
 

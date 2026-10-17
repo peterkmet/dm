@@ -53,7 +53,7 @@
 #define CTRL_ASCII 0x80
 #define CTRL_MASK  0x3f
 
-/* The Amiga key word of a key of the advanced modes: M, Tab, F5, F9, L, F, I, 1-3, and the movement letters. */
+/* The Amiga key word of a key of the advanced modes: M, Tab, F5, F9, and the movement letters. */
 static uint16_t get_advanced_key(int key)
 {
     switch (key) {
@@ -65,18 +65,6 @@ static uint16_t get_advanced_key(int key)
         return KEY_F5;
     case SDLK_F9:
         return KEY_F9;
-    case SDLK_L:
-        return KEY_L;
-    case SDLK_F:
-        return KEY_F;
-    case SDLK_I:
-        return KEY_I;
-    case SDLK_1:
-        return KEY_1;
-    case SDLK_2:
-        return KEY_2;
-    case SDLK_3:
-        return KEY_3;
     }
     return advanced_letter_key(key);
 }

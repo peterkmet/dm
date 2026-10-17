@@ -5,7 +5,7 @@
 
 /* The settings file of the advanced mode (SETTINGS.TXT in the saves folder): the sound volume, the music volume
    and the music choice as text lines key=value. Player preferences, not game state: the save file does not hold
-   them. It reads the file; it does not apply the values. */
+   them. It reads and writes the file; it does not apply the values. */
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -38,5 +38,10 @@ typedef struct {
 Settings settings_parse(const char *file_text, size_t length);
 /* The values of the settings file in dir, as settings_parse; a missing file gives the defaults. */
 Settings settings_load(const char *dir);
+
+/* Commands */
+/* Writes the values to the settings file in dir through a temporary file. False when the write fails; the old
+   file then stays. */
+bool settings_save(const char *dir, const Settings *settings);
 
 #endif
