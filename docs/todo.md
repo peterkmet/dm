@@ -2,6 +2,44 @@
 
 User wishes for future versions. Not planned yet, unless an item names its PRD.
 
+## Cheat: walk through walls passes doors too
+
+- Owner (2026-10-17, manual test): WALK THROUGH WALLS passes everything except the map border, also closed doors.
+  Today doors block (`docs/superpowers/2026-10-17-cheat-screen.md`). A creature square still blocks (owner).
+
+## Cheat: cast a spell from the spell list
+
+- Owner (2026-10-17, manual test): a click on a spell name in the cheat spell list casts it. The caster is the
+  active spell caster of the rune area, the power is MON (the highest), and the cast ignores mana and skill: it
+  always works and adds no experience.
+
+## CSB intro: a pause after a click
+
+- Owner (2026-10-17, manual test): a click stops the CSB intro (as designed), but then about 5 seconds pass with
+  nothing on the screen before the prison starts. Find the cause (`src/platform/app.c`, `src/ui/audio.c`).
+
+## CSB start: no stairs down on the first prison level
+
+- Owner (2026-10-17, manual test): the first level of the CSB prison (map 0) has no stairs down that the party
+  can reach, so the advanced stairs start (`docs/superpowers/2026-10-17-csb-start.md`) never fires. The PRD says
+  map 0 has 4 stairs down to map 1: check this against the dungeon data first. If there are none, put stairs down
+  into the prison map in the port (advanced only), at a square the owner can reach.
+- With the stairs in place, the advanced mode drops the start text of the prison that says it is only the first
+  level and that the party must be saved.
+
+## Automap: header line
+
+- Owner (2026-10-17, manual test): remove the column numbers (00 02 04 ...) and the light line (for example
+  `LIGHT 0`). The top line shows `LEVEL 7 (30,27)`, centered: the level and the party position.
+
+## Advanced save dialog: LOAD, SAVE, CONTINUE, QUIT
+
+- Owner (2026-10-17, manual test): in the advanced mode the save dialog (Ctrl+S, the save icon; DM: CANCEL, SAVE,
+  QUIT; CSB: CANCEL, SAVE AND PLAY, SAVE AND QUIT) shows four buttons in DM and in CSB: LOAD (the load list),
+  SAVE (the save list), CONTINUE (back to the game), QUIT (to the start screen: the DM entrance or the CSB screen;
+  the quit question of today stays). The port prints the button texts with the game font, so the texts can
+  change. Vanilla keeps the original dialog.
+
 ## Release on GitHub
 
 - Publish the source and the macOS and Windows builds on GitHub (the repository is private today).
