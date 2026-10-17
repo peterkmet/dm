@@ -56,10 +56,10 @@ static inline Position magic_get_map_position(const uint8_t *spells)
 #define SPELL_OTHER_ZOKATHRA     7
 #define SPELL_OTHER_FIRE_SHIELD  8
 
-/* Casts the spell of the champion symbols. Each missing skill level is a chance to fail against wisdom. */
-int16_t magic_cast_champion_spell(int16_t champion_index); /* exported for the tests */
-/* Cast button: casts for the magic caster; the symbols clear unless a flask is missing. */
-int16_t magic_click_cast_spell(void);
+/* Light comes now; EVENT_LIGHT takes it back step by step after the ticks. */
+void magic_create_light_event(int16_t light_power, uint16_t ticks);
+/* The action hand is disabled for the ticks; an earlier disable is merged into one EVENT_ENABLE_CHAMPION_ACTION. */
+void magic_disable_action(int16_t champion_index, uint16_t ticks);
 /* Prints "<text> <champion name> <text>" for a failed cast. (exported for the tests) */
 void magic_print_spell_failure(int16_t champion_index, int16_t failure_type, int16_t skill_index);
 /* Spends the mana and shoots the spell; a weak cast with little maximum mana gets a slower step energy. */
@@ -68,17 +68,17 @@ bool magic_is_projectile_spell_cast(int16_t champion_index, uint16_t thing, int1
 /* Spell shield (EVENT_SPELL_SHIELD_END) or fire shield (EVENT_FIRE_SHIELD_END) for the ticks. With mana, it costs 4
    and half the ticks when short. */
 bool magic_cast_party_spell(int16_t champion_index, bool spell_shield, uint16_t ticks, bool use_mana);
-/* Light comes now; EVENT_LIGHT takes it back step by step after the ticks. */
-void magic_create_light_event(int16_t light_power, uint16_t ticks);
-/* The action hand is disabled for the ticks; an earlier disable is merged into one EVENT_ENABLE_CHAMPION_ACTION. */
-void magic_disable_action(int16_t champion_index, uint16_t ticks);
+/* CSB: true when a scroll text (or its first line) is the magic map text MAGICMAP. */
+bool magic_map_is_text(const char *text);
+/* Casts the spell of the champion symbols. Each missing skill level is a chance to fail against wisdom. */
+int16_t magic_cast_champion_spell(int16_t champion_index); /* exported for the tests */
+/* Cast button: casts for the magic caster; the symbols clear unless a flask is missing. */
+int16_t magic_click_cast_spell(void);
 /* The magic caster adds a rune and pays its mana. Returns false when the mana is short. */
 bool magic_add_champion_symbol(int16_t symbol);
 /* The magic caster removes the last rune; the mana stays spent. Returns false when it has no rune. */
 bool magic_delete_champion_symbol(void);
 /* Selects a living champion as the spell caster; -1 clears it. Returns true when the caster changed. */
 bool magic_set_caster(int16_t champion_index);
-/* CSB: true when a scroll text (or its first line) is the magic map text MAGICMAP. */
-bool magic_map_is_text(const char *text);
 
 #endif

@@ -62,6 +62,14 @@ uint16_t g_open_chest_slots[SLOT_CHEST_COUNT] = {THING_NONE, THING_NONE, THING_N
                                                  THING_NONE, THING_NONE, THING_NONE, THING_NONE};
 uint16_t g_open_chest = THING_NONE;
 
+void inventory_reset(void)
+{
+    g_session.inventory_champion_index = -1;
+    g_open_chest = THING_NONE;
+    for (int i = 0; i < SLOT_CHEST_COUNT; i++)
+        g_open_chest_slots[i] = THING_NONE;
+}
+
 int16_t inventory_get_object_info_index(uint16_t thing)
 {
     switch (THING_TYPE(thing)) {
@@ -434,6 +442,27 @@ void inventory_close_chest(void)
     }
 }
 
+bool inventory_fill_at_fountain(void)
+{
+    uint16_t thing = g_leader_hand_object;
+    int16_t icon = object_get_icon_index(thing);
+    uint16_t weight = inventory_get_object_weight(thing);
+    if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
+        rec_junk_set_charges(thing, FILLED_WATERSKIN_CHARGES);
+    else if (icon == ICON_EMPTY_FLASK)
+        rec_potion_set_type(thing, POTION_WATER);
+    else
+        return false;
+    g_champions[g_leader_index].load += inventory_get_object_weight(thing) - weight;
+    g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
+    return true;
+}
+
+void inventory_set_open_champion(int16_t champion_index)
+{
+    g_session.inventory_champion_index = champion_index;
+}
+
 /* Heals wounds at random; tries again (up to 10 times) until at least one wound heals. */
 static void heal_wounds(Champion *c, uint16_t rolls)
 {
@@ -546,33 +575,4 @@ int16_t inventory_process_click_on_mouth(void)
     }
     c->attributes |= CHAMPION_ATTR_STATISTICS;
     return consumed ? MOUTH_USED_UP : MOUTH_SWALLOWED;
-}
-
-void inventory_reset(void)
-{
-    g_session.inventory_champion_index = -1;
-    g_open_chest = THING_NONE;
-    for (int i = 0; i < SLOT_CHEST_COUNT; i++)
-        g_open_chest_slots[i] = THING_NONE;
-}
-
-bool inventory_fill_at_fountain(void)
-{
-    uint16_t thing = g_leader_hand_object;
-    int16_t icon = object_get_icon_index(thing);
-    uint16_t weight = inventory_get_object_weight(thing);
-    if (icon == ICON_WATERSKIN_EMPTY || icon == ICON_WATERSKIN_FULL)
-        rec_junk_set_charges(thing, FILLED_WATERSKIN_CHARGES);
-    else if (icon == ICON_EMPTY_FLASK)
-        rec_potion_set_type(thing, POTION_WATER);
-    else
-        return false;
-    g_champions[g_leader_index].load += inventory_get_object_weight(thing) - weight;
-    g_champions[g_leader_index].attributes |= CHAMPION_ATTR_LOAD;
-    return true;
-}
-
-void inventory_set_open_champion(int16_t champion_index)
-{
-    g_session.inventory_champion_index = champion_index;
 }

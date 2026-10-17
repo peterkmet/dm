@@ -77,14 +77,14 @@ void action_reset(void);
 /* Closes the action menu: the action hand and the action area are drawn again. */
 void action_clear_acting_champion(void);
 
-/* Commands 113-115: runs action list entry 0-2 of the acting champion; the action defense applies while the action
-   runs, and the action menu closes. Returns true when the action was performed. */
-bool action_did_click_trigger_action(int16_t action_list_index);
 /* Runs one action of a champion against the square in front of the champion. After the action the action hand is
    disabled for the action ticks, the champion loses stamina, and the action skill gains experience. A failed
    melee action halves the ticks and the experience. Returns false when the action fails. The function is long: one
    short case for each action of the action table. */
 bool action_is_action_performed(int16_t champion_index, int16_t action); /* exported for the tests */
+/* Commands 113-115: runs action list entry 0-2 of the acting champion; the action defense applies while the action
+   runs, and the action menu closes. Returns true when the action was performed. */
+bool action_did_click_trigger_action(int16_t action_list_index);
 
 /* The leader throws the object in the leader hand (a click in the upper dungeon view). */
 bool action_is_hand_object_thrown(bool side);

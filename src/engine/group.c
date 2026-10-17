@@ -490,6 +490,14 @@ void group_add_all_active_groups(void)
     }
 }
 
+void group_reset(void)
+{
+    set_direction.time = 0;
+    set_direction.group = NULL;
+    last_turn.thing = 0;
+    last_turn.at = (Location){0, 0};
+}
+
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index,
                              int16_t direction, Location at)
 {
@@ -1585,6 +1593,7 @@ static void finish_movement(GroupTurn *t, int16_t direction)
     rotate_and_finish(t, direction);
 }
 
+/* Mutual recursion: after_move and jump_archenemy call each other. */
 static bool jump_archenemy(GroupTurn *t);
 
 /* After a move attempt Lord Chaos may jump in a random direction; any other group finishes its movement. */
@@ -2338,12 +2347,4 @@ void group_process_move_event(TimelineEvent *event)
     }
     event->map_time += MOVE_GROUP_RETRY_TICKS;
     timeline_add_event(event);
-}
-
-void group_reset(void)
-{
-    set_direction.time = 0;
-    set_direction.group = NULL;
-    last_turn.thing = 0;
-    last_turn.at = (Location){0, 0};
 }

@@ -21,6 +21,8 @@
 
 extern int16_t g_party_teleport_count; /* port only: teleporters that moved the party */
 
+/* No map change waits at the start of a game. */
+void move_reset(void);
 /* Levitating groups, projectiles, and explosions do not fall into pits and do not trigger sensors when they leave a square. */
 bool move_is_levitating(uint16_t thing);
 
@@ -54,8 +56,6 @@ MoveResult move_get_move_result(const Move *move, MoveDestination *destination);
 void move_process_new_party_map(void);
 /* New game: the party map becomes current and the party enters the start square. */
 void move_party_enter_dungeon(void);
-/* No map change waits at the start of a game. */
-void move_reset(void);
 
 /* On stairs, a turn takes the stairs. The party leaves the square sensors before the turn and enters them after it. */
 void move_turn_party(int16_t command);

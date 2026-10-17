@@ -146,6 +146,15 @@ uint16_t g_dead_champions;
         (int16_t *)&c->wounds, &c->current_health, &c->maximum_health, &c->current_stamina, &c->maximum_stamina,       \
         &c->current_mana, &c->maximum_mana, &c->action_defense, &c->food, &c->water
 
+uint16_t champion_reset_for_new_game(void)
+{
+    uint16_t hand = g_leader_hand_object;
+    g_leader_empty_handed = true;
+    g_leader_hand_object = THING_NONE;
+    g_leader_index = -1;
+    return hand;
+}
+
 void champion_pack(const Champion *c, uint8_t *bytes)
 {
     memset(bytes, 0, CHAMPION_RECORD_SIZE);
@@ -1130,15 +1139,6 @@ void champion_face_party_direction(Champion *champion)
         champion->direction = g_party_direction;
         champion->attributes |= CHAMPION_ATTR_ICON;
     }
-}
-
-uint16_t champion_reset_for_new_game(void)
-{
-    uint16_t hand = g_leader_hand_object;
-    g_leader_empty_handed = true;
-    g_leader_hand_object = THING_NONE;
-    g_leader_index = -1;
-    return hand;
 }
 
 int16_t champion_adjust_by_stamina(int16_t champion_index, int16_t number)

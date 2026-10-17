@@ -24,6 +24,11 @@
 
 int16_t g_party_teleport_count;
 
+void move_reset(void)
+{
+    g_session.new_party_map = -1;
+}
+
 bool move_is_levitating(uint16_t thing)
 {
     int16_t type = THING_TYPE(thing);
@@ -493,9 +498,4 @@ bool move_is_blocked(int16_t command)
         return true;
     return g_projectile_disabled_movement_ticks && NORMALIZE(command + g_party_direction - COMMAND_MOVE_FORWARD) ==
                                                        g_last_projectile_disabled_movement_direction;
-}
-
-void move_reset(void)
-{
-    g_session.new_party_map = -1;
 }

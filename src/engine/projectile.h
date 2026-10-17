@@ -86,6 +86,8 @@ static inline uint16_t projectile_event_c(int16_t x, int16_t y, int16_t directio
 
 /* The endgame step runs startend_run_fuse_sequence when it is set (exported for the tests). */
 extern bool g_fuse_sequence_requested;
+/* No fuse request carries into a new game. */
+void projectile_reset(void);
 /* True once when the fuse action or sensor asked for the fuse sequence; the request is then cleared. */
 bool projectile_take_fuse_request(void);
 
@@ -140,8 +142,6 @@ void projectile_fluxcage_action(int16_t x, int16_t y);
 /* Fuse: a harm non-material explosion. Lord Chaos in 4 fluxcages starts the fuse sequence; otherwise he escapes
    through a free side to an open square. */
 void projectile_fuse_action(int16_t x, int16_t y);
-/* No fuse request carries into a new game. */
-void projectile_reset(void);
 
 /* Projectiles in the cells of the party (thing 0xffff) or of a group hit before it moves. A move to an adjacent
    square also tests the projectiles on the destination that the movers cross. Returns true when the group died. */

@@ -21,6 +21,13 @@ static void clear_row(int r)
     g_message.expiry[r] = MESSAGE_NO_EXPIRY;
 }
 
+void message_clear(void)
+{
+    message_move_cursor(0, MESSAGE_LAST_ROW);
+    for (int r = 0; r < MESSAGE_ROWS; r++)
+        clear_row(r);
+}
+
 void message_move_cursor(int16_t column, int16_t row)
 {
     if (column < 0)
@@ -31,13 +38,6 @@ void message_move_cursor(int16_t column, int16_t row)
     int16_t max = MESSAGE_ROW_WIDTH - FONT_CHAR_WIDTH;
     g_message.cursor_x = x < max ? x : max;
     g_message.cursor_row = row < 0 ? 0 : row > MESSAGE_LAST_ROW ? MESSAGE_LAST_ROW : row;
-}
-
-void message_clear(void)
-{
-    message_move_cursor(0, MESSAGE_LAST_ROW);
-    for (int r = 0; r < MESSAGE_ROWS; r++)
-        clear_row(r);
 }
 
 void message_clear_expired_rows(void)
