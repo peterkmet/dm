@@ -118,6 +118,8 @@ void command_process_click(int16_t x, int16_t y, int16_t kind);
 void command_process_key(uint16_t key);
 /* Drops all waiting commands except the button releases. */
 void command_discard_all_input(void);
+/* True while the left mouse button is held. */
+bool command_is_left_button_down(void);
 /* Inverts the highlighted zone back. */
 void command_highlight_disable(void);
 /* Dims the movement arrows (or the closed inventory panel), the spell area, and the action area. */

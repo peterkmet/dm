@@ -141,6 +141,8 @@ void entrance_show_credits(void)
     startend_draw_credits();
     tables_get_palette(TABLES_PALETTE_CREDITS, colors);
     palette_fade_to(colors);
+    while (command_is_left_button_down() && frame_wait()) /* the countdown starts when no button is held */
+        ;
     command_discard_all_input(); /* the keys and clicks of the fades do not end the credits */
     for (int16_t frames = 0; frames < CREDITS_FRAMES && !g_input_received && frame_wait(); frames++)
         ;

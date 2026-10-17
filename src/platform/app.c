@@ -139,7 +139,8 @@ static uint16_t amiga_key(int key, int modifiers, int character)
     }
     if (g_session.mode == GAME_MODE_VANILLA || champion_is_renaming())
         return get_name_entry_key(key, character);
-    return get_advanced_key(key);
+    uint16_t advanced = get_advanced_key(key);
+    return advanced ? advanced : get_name_entry_key(key, character); /* any key ends the credits */
 }
 
 /* Mouse buttons as click kinds: left and right, pressed or released. */
@@ -175,7 +176,7 @@ typedef struct {
     bool turnbased;                  /* the game mode is turn-based: the socket gives the turns */
     bool auto_enter;                 /* DM_AUTO_ENTER or turn-based: NEW ADVENTURE without the title */
     bool title_pending;              /* the DM title plays before the entrance */
-    bool pointer_hidden;             /* the entrance credits hide the pointer */
+    bool pointer_hidden;             /* the entrance fades and credits hide the pointer */
     int16_t loaded_adventure;        /* the adventure whose game files are loaded; -1 none */
     Options options;                 /* the command line */
     const char *data_dir;            /* the disk A folder of the running adventure */
@@ -254,10 +255,18 @@ static void run_frame_hook(void)
     plat_wait_tick();
 }
 
+/* The entrance with its fades; the pointer is hidden until it is drawn, as the original. */
+static void redraw_entrance_hidden(void)
+{
+    app.pointer_hidden = true;
+    entrance_draw();
+    app.pointer_hidden = false;
+}
+
 /* The entrance again, after a cancelled or failed resume. */
 static void show_entrance(void)
 {
-    entrance_draw();
+    redraw_entrance_hidden();
     command_set_entrance_input();
     command_discard_all_input();
     g_entrance_choice = ENTRANCE_WAITING;
@@ -314,7 +323,6 @@ static bool run_entrance(const char *folder)
         app.pointer_hidden = true; /* until the entrance is drawn again, as the original */
         entrance_show_credits();
         show_entrance();
-        app.pointer_hidden = false;
     }
     if (g_entrance_choice == ENTRANCE_RESUME || g_entrance_choice == ENTRANCE_NEW_GAME)
         entrance_press_button(g_entrance_choice == ENTRANCE_RESUME);
@@ -490,7 +498,7 @@ static bool start_csb(void)
     } else if (startend_load_saved_game()) {
         gameloop_start_loaded_game();
     } else if (app.turnbased) {
-        entrance_draw();
+        redraw_entrance_hidden();
     } else {
         app.screen = SCREEN_SELECT;
         select_start_csb(NULL);
@@ -514,7 +522,7 @@ static bool start_dm(void)
     app.screen = SCREEN_ENTRANCE;
     app.title_pending = !app.auto_enter;
     if (!app.title_pending) /* else the title draws the entrance after it */
-        entrance_draw();
+        redraw_entrance_hidden();
     command_set_entrance_input();
     if (app.auto_enter)
         command_process_key(KEY_RETURN);
@@ -539,7 +547,7 @@ static void return_to_start(void)
     g_return_to_entrance = false;
     music_stop(); /* the start screens have no music */
     if (app.turnbased) {
-        entrance_draw(); /* the game mode stays: load and new_game over the socket start the next game */
+        redraw_entrance_hidden(); /* the game mode stays: load and new_game over the socket start the next game */
     } else if (g_adventure == ADVENTURE_CSB) {
         app.screen = SCREEN_SELECT;
         select_start_csb(NULL);

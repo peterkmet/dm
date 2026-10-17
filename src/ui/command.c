@@ -192,6 +192,11 @@ void command_discard_all_input(void)
     memcpy(queue, kept, sizeof kept[0] * n);
 }
 
+bool command_is_left_button_down(void)
+{
+    return left_button_down;
+}
+
 /* Inverts a zone on the screen until the next tick. */
 static void highlight_zone(int16_t zone)
 {
