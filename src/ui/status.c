@@ -160,18 +160,19 @@ static uint16_t show_status_box(int16_t champion_index, uint16_t attr, bool inv)
 {
     const Champion *champion = &g_champions[champion_index];
     Bitmap screen = video_get_screen();
-    int16_t shields[SHIELD_KINDS], n = 0;
     Box box;
-    ui_zone_box(ZONE_STATUS_BOX_FIRST + champion_index, &box);
-    draw_fill(&screen, &box, COLOR_DARKEST_GRAY);
-    if (g_party.fire_shield_defense > 0)
-        shields[n++] = GFX_SHIELD_FIRE;
-    if (g_party.spell_shield_defense > 0)
-        shields[n++] = GFX_SHIELD_SPELL;
-    if (g_party.shield_defense > 0 || champion->shield_defense)
-        shields[n++] = GFX_SHIELD_PARTY;
-    while (n--)
-        ui_blit_graphic_box(&screen, shields[n], &box, COLOR_FLESH);
+    if (ui_zone_box(ZONE_STATUS_BOX_FIRST + champion_index, &box)) {
+        int16_t shields[SHIELD_KINDS], n = 0;
+        draw_fill(&screen, &box, COLOR_DARKEST_GRAY);
+        if (g_party.fire_shield_defense > 0)
+            shields[n++] = GFX_SHIELD_FIRE;
+        if (g_party.spell_shield_defense > 0)
+            shields[n++] = GFX_SHIELD_SPELL;
+        if (g_party.shield_defense > 0 || champion->shield_defense)
+            shields[n++] = GFX_SHIELD_PARTY;
+        while (n--)
+            ui_blit_graphic_box(&screen, shields[n], &box, COLOR_FLESH);
+    }
     if (inv) {
         show_portrait(champion_index);
         return attr | CHAMPION_ATTR_STATISTICS;
