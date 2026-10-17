@@ -6,7 +6,7 @@ import struct
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Location, PendingSound
+from dmtest.game import Location, PendingSound, Timeline
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
 
@@ -142,6 +142,8 @@ def test_request_queue_matches_original(lib, emu):
     rnd = random.Random(12)
     emu.write(G_PARTY_MAP_INDEX_ADDR, b"\0\0")
     emu.write(G_CURRENT_MAP_INDEX, b"\0\0")
+    ctypes.c_int16.in_dll(lib, "g_party_map_index").value = 0
+    ctypes.c_int16.in_dll(lib, "g_current_map_index").value = 0
     pending = (PendingSound * 2).in_dll(lib, "g_pending_sounds")
     for _ in range(40):
         set_party(lib, emu, 10, 10, rnd.randrange(4))
@@ -156,3 +158,37 @@ def test_request_queue_matches_original(lib, emu):
             lib.sound_request_play(s, Location(x, y), 1, 0)
             want = struct.unpack(">2h", bytes(emu.read(G_PENDING_SOUNDS, 4))), bytes(emu.read(G_PENDING_VOLUMES, 4))
             assert (tuple(slot.sound for slot in pending), bytes(b for slot in pending for b in slot.volumes)) == want
+
+
+@pytest.mark.parametrize("mode", [0, 1, 2])
+def test_request_skips_other_map_like_original(lib, emu, mode):
+    set_party(lib, emu, 10, 10, 0)
+    emu.write(G_PARTY_MAP_INDEX_ADDR, b"\0\0")
+    emu.write(G_CURRENT_MAP_INDEX, b"\0\1")
+    ctypes.c_int16.in_dll(lib, "g_party_map_index").value = 0
+    ctypes.c_int16.in_dll(lib, "g_current_map_index").value = 1
+    pending = (PendingSound * 2).in_dll(lib, "g_pending_sounds")
+    for slot in pending:
+        slot.sound = -1
+        slot.volumes[:] = [0, 0]
+    emu.write(G_PENDING_SOUNDS, b"\xff\xff\xff\xff")
+    emu.write(G_PENDING_VOLUMES, bytes(4))
+    played = []
+    hook_type = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_uint16, ctypes.c_uint16, ctypes.c_void_p)
+    hook = hook_type(lambda *args: played.append(args))
+    hook_slot = ctypes.c_void_p.in_dll(lib, "g_sound_play_hook")
+    old_hook = hook_slot.value
+    hook_slot.value = ctypes.cast(hook, ctypes.c_void_p).value
+    events = Timeline.in_dll(lib, "g_timeline").count
+    try:
+        if mode:  # the original plays a mode 0 sound through the driver, which the emulator does not model
+            emu.call(SOUND_REQUEST_PLAY, [(2, 5), (2, 10), (2, 9), (2, mode)])
+        lib.sound_request_play(5, Location(10, 9), mode, 3)
+    finally:
+        hook_slot.value = old_hook
+        ctypes.c_int16.in_dll(lib, "g_current_map_index").value = 0
+        emu.write(G_CURRENT_MAP_INDEX, b"\0\0")
+    want = struct.unpack(">2h", bytes(emu.read(G_PENDING_SOUNDS, 4))), bytes(emu.read(G_PENDING_VOLUMES, 4))
+    assert (tuple(slot.sound for slot in pending), bytes(b for slot in pending for b in slot.volumes)) == want
+    assert Timeline.in_dll(lib, "g_timeline").count == events
+    assert bool(played) == (mode == 0)

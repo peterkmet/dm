@@ -130,9 +130,9 @@ static void play_sample(int16_t sound, const uint8_t *volumes)
 void sound_request_play(int16_t sound, Location at, int16_t mode, uint16_t delay)
 {
     uint8_t v[SOUND_SIDE_COUNT];
-    /* Deviation: the original skips a mode >= 1 sound when the current map is not the party map; the port does not
-       check it yet (docs/todo.md). */
     if (!is_known_sound(sound))
+        return;
+    if (mode != SOUND_MODE_NOW && g_current_map_index != g_party_map_index)
         return;
     if (mode == SOUND_MODE_EVENT) {
         TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + delay), EVENT_PLAY_SOUND,
