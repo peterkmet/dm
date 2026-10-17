@@ -240,7 +240,12 @@ Feature: Cheat screen
 - Doors and falls never one-hit kill, because "damage the party deals" excludes the dungeon itself.
 - An invulnerable creature stays invulnerable under one-hit kill, so the end of the game still needs the fuse.
 - Walk through walls passes walls and solid fake walls only. Doors keep their rules, so the door state stays
-  consistent. Wall sensors do not run for the party in a wall, because they react to things in the cells of
+  consistent.
+  - Changed (owner, 2026-10-17, manual test): walk through walls passes every blocking square inside the map,
+    also a door that is not open; only the map border and a creature stop the party. The door state does not
+    change when the party enters the door square. A door that closes on the party in its square goes back open
+    as normal (`process_door_animation`, `src/engine/event.c`), but with the cheat on the party takes no door
+    damage, so a closed door the party walked into does not hurt it each tick. Wall sensors do not run for the party in a wall, because they react to things in the cells of
   the wall faces. The party can always leave a wall square, so a load without cheats cannot trap it
   (coordinator ruling). Assumption, checked first: the view and the explored marking work with the party on a wall
   square.

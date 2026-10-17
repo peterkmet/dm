@@ -426,12 +426,10 @@ static bool is_square_blocking(uint8_t square)
     }
 }
 
-/* Walk through walls: the party passes a wall or a solid fake wall inside the map; doors keep their rules. */
-static bool can_walk_through(uint8_t square, int16_t x, int16_t y)
+/* Walk through walls: the party passes every blocking square inside the map, also a closed door. */
+static bool can_walk_through(int16_t x, int16_t y)
 {
-    int16_t type = rec_square_type(square);
-    return g_session.cheat_walls && (type == SQUARE_WALL || type == SQUARE_FAKE_WALL) && x >= 0 &&
-           x < g_current_map_width && y >= 0 && y < g_current_map_height;
+    return g_session.cheat_walls && x >= 0 && x < g_current_map_width && y >= 0 && y < g_current_map_height;
 }
 
 /* The two champions on the side of the bump take 1 damage (torso and legs wounds). */
@@ -473,7 +471,7 @@ void move_party(int16_t command)
         take_stairs(square & STAIRS_UP);
         return;
     }
-    bool blocked = is_square_blocking(square) && !can_walk_through(square, x, y);
+    bool blocked = is_square_blocking(square) && !can_walk_through(x, y);
     if (g_party_champion_count) {
         if (blocked) {
             bump_into_wall(x, y, arrow);

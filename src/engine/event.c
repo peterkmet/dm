@@ -72,7 +72,8 @@ static void process_door_animation(TimelineEvent *event)
         if (map_is_party_on((Location){x, y}) && state != DOOR_OPEN) {
             if (g_party_champion_count) {
                 rec_door_set_state(map, x, y, DOOR_OPEN);
-                if (champion_damage_all(DOOR_CLOSE_DAMAGE, WOUND_HEAD, ATTACK_SELF))
+                /* Advanced cheat: a party that walks through walls takes no damage from a closing door. */
+                if (!g_session.cheat_walls && champion_damage_all(DOOR_CLOSE_DAMAGE, WOUND_HEAD, ATTACK_SELF))
                     sound_request_play(SOUND_PARTY_DAMAGED, (Location){x, y}, SOUND_MODE_AFTER_TICK, 0);
             }
             add_again_next_tick(event);

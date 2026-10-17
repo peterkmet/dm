@@ -2,11 +2,6 @@
 
 User wishes for future versions. Not planned yet, unless an item names its PRD.
 
-## Cheat: walk through walls passes doors too
-
-- Owner (2026-10-17, manual test): WALK THROUGH WALLS passes everything except the map border, also closed doors.
-  Today doors block (`docs/superpowers/2026-10-17-cheat-screen.md`). A creature square still blocks (owner).
-
 ## Cheat: cast a spell from the spell list
 
 - Owner (2026-10-17, manual test): a click on a spell name in the cheat spell list casts it. The caster is the

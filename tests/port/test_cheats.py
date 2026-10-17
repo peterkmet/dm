@@ -7,8 +7,8 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import var
-from dmtest.game import (STEP_EAST, STEP_NORTH, Location, Position, Spell, Timeline, add_test_champion, new_game, place_party,
-                         setup_creatures, session, skeleton_map_and_squares)
+from dmtest.game import (STEP_EAST, STEP_NORTH, Location, Position, Spell, Timeline, TimelineEvent, add_test_champion, new_game,
+                         place_party, setup_creatures, session, skeleton_map_and_squares)
 from dmtest.lib import load_lib
 from dmtest.markers import needs_dm
 
@@ -32,6 +32,7 @@ def lib():
         ("group_is_killed_by_fall", ctypes.c_bool, [u16, Position, Position, ctypes.POINTER(FallDrops)]),
         ("rec_group_set_creature_type", None, [u16, u16]), ("move_party", None, [c16]), ("move_turn_party", None, [c16]),
         ("rec_door_state", c16, [u8]), ("rec_sensor_type", u16, [u16]),
+        ("rec_door_set_state", None, [c16, c16, c16, c16]), ("timeline_add_event", c16, [ctypes.c_void_p]),
     ]:
         f = getattr(lib, name)
         f.restype, f.argtypes = res, args
@@ -183,10 +184,39 @@ def test_walk_through_a_wall(lib, wanted):
     assert stopped == (x, y) and bump > 0
 
 
-@pytest.mark.parametrize("wanted", [is_closed_door, is_outside])
-def test_walk_through_walls_stops_at_doors_and_the_border(lib, wanted):
+def test_walk_through_a_closed_door(lib):
     new_game(lib)
-    place = find_place(lib, lambda m, x, y: wanted(lib, m, x, y))
+    place = find_place(lib, lambda m, x, y: is_closed_door(lib, m, x, y))
+    m, x, y, d = place
+    door = (x + STEP_EAST[d], y + STEP_NORTH[d])
+    assert walk(lib, place, True) == (door, 0)
+    assert lib.rec_door_state(lib.map_get_square(*door)) == C.DOOR_CLOSED
+    stopped, bump = walk(lib, place, False)
+    assert stopped == (x, y) and bump > 0
+
+
+@pytest.mark.parametrize("cheat", [False, True])
+def test_a_closing_door_hurts_the_party_only_without_the_cheat(lib, cheat):
+    new_game(lib)
+    m, x, y, d = find_place(lib, lambda m, x, y: is_closed_door(lib, m, x, y))
+    door = (x + STEP_EAST[d], y + STEP_NORTH[d])
+    new_game(lib)
+    champion = add_test_champion(lib)
+    place_party(lib, m, *door, d)
+    lib.rec_door_set_state(m, *door, C.DOOR_CLOSED - 1)
+    session(lib).cheat_walls = cheat
+    time = var(lib, ctypes.c_uint32, "g_game_time").value
+    lib.timeline_add_event(ctypes.byref(TimelineEvent(map_time=m << 24 | time, type=C.EVENT_DOOR_ANIMATION,
+                                                      b=door[0] << 8 | door[1], c=C.EFFECT_CLEAR)))
+    lib.event_process_expired()
+    session(lib).cheat_walls = 0
+    assert lib.rec_door_state(lib.map_get_square(*door)) == C.DOOR_OPEN
+    assert (champion.runtime.pending_damage > 0) != cheat
+
+
+def test_walk_through_walls_stops_at_the_border(lib):
+    new_game(lib)
+    place = find_place(lib, lambda m, x, y: is_outside(lib, m, x, y))
     assert walk(lib, place, True)[0] == place[1:3]
 
 
