@@ -186,6 +186,7 @@ The function reads all three tables from the KAOS image. The single characters f
 - The entrance doors open over the view of the start square; the original draws a made-up corridor (`entrance_open_doors`).
 - The panel with the eye pressed keeps the leader hand object name; the original clears it until the eye is released (`panel_draw_eye`).
 - The name entry does nothing (`process_other_command` in `ui/command.c`).
+- After a refused duplicate name, the name entry puts the input at the end of the name and clears the title (`champion_rename_ok`); the original points the input at the name but keeps the title state.
 
 ## Not ported
 

@@ -120,6 +120,10 @@ int16_t g_magic_caster_champion_index = -1;
 
 uint16_t g_dead_champions;
 
+/* Lengths of the name and the title in the name entry of a reincarnated champion. */
+#define RENAME_NAME_LENGTH  7
+#define RENAME_TITLE_LENGTH 19
+
 /* Offsets of the original record. */
 #define CHAMPION_RECORD_NAME             0x000
 #define CHAMPION_RECORD_TITLE            0x008
@@ -146,6 +150,13 @@ uint16_t g_dead_champions;
     &c->enable_action_event_index, &c->hide_damage_received_event_index, (int16_t *)&c->attributes,                    \
         (int16_t *)&c->wounds, &c->current_health, &c->maximum_health, &c->current_stamina, &c->maximum_stamina,       \
         &c->current_mana, &c->maximum_mana, &c->action_defense, &c->food, &c->water
+
+/* The name entry of a reincarnated champion; not saved, the game is frozen during the entry. */
+static struct {
+    int16_t champion_index;
+    bool in_title;    /* the input is in the title, else in the name */
+    int16_t position; /* the next character goes here; the field text has this length */
+} rename_entry;
 
 uint16_t champion_reset_for_new_game(void)
 {
@@ -446,6 +457,12 @@ static void reincarnate(Champion *c)
     }
 }
 
+void champion_finish_reincarnate(int16_t champion_index)
+{
+    reincarnate(&g_champions[champion_index]);
+    print_champion_message(champion_index, TEXT_REINCARNATED);
+}
+
 void champion_click_rebirth_panel(int16_t command)
 {
     uint16_t index = g_party_champion_count - 1;
@@ -469,11 +486,97 @@ void champion_click_rebirth_panel(int16_t command)
             map_unlink_thing_from_list(c->slots[s], 0, x, y);
     uint16_t mirror = map_find_thing((Location){x, y}, THING_SENSOR);
     rec_sensor_set_type(mirror, SENSOR_DISABLED);
-    if (command == PANEL_REINCARNATE)
-        reincarnate(c);
     if (g_party_champion_count == 1)
         g_last_party_movement_time = g_game_time;
-    print_champion_message(index, command == PANEL_RESURRECT ? TEXT_RESURRECTED : TEXT_REINCARNATED);
+    if (command == PANEL_REINCARNATE)
+        champion_finish_reincarnate(index);
+    else
+        print_champion_message(index, TEXT_RESURRECTED);
+}
+
+void champion_start_rename(int16_t champion_index)
+{
+    Champion *c = &g_champions[champion_index];
+    c->name[0] = '\0';
+    c->title[0] = '\0';
+    rename_entry.champion_index = champion_index;
+    rename_entry.in_title = false;
+    rename_entry.position = 0;
+}
+
+/* The field of the input is full: the name holds 7 characters (only after a refused duplicate) or the title 19. */
+static bool is_field_full(void)
+{
+    return rename_entry.position == (rename_entry.in_title ? RENAME_TITLE_LENGTH : RENAME_NAME_LENGTH);
+}
+
+RenameInput champion_get_rename_input(void)
+{
+    return (RenameInput){rename_entry.in_title, rename_entry.position, !is_field_full()};
+}
+
+static char *field_text(void)
+{
+    Champion *c = &g_champions[rename_entry.champion_index];
+    return rename_entry.in_title ? c->title : c->name;
+}
+
+/* The input goes to position 0 of the empty title. */
+static void enter_title(void)
+{
+    rename_entry.in_title = true;
+    rename_entry.position = 0;
+}
+
+void champion_rename_type(char character)
+{
+    if (is_field_full() || (character == ' ' && rename_entry.position == 0))
+        return;
+    char *text = field_text();
+    text[rename_entry.position++] = character;
+    text[rename_entry.position] = '\0';
+    if (!rename_entry.in_title && rename_entry.position == RENAME_NAME_LENGTH)
+        enter_title();
+}
+
+void champion_rename_backspace(void)
+{
+    if (!rename_entry.in_title && rename_entry.position == 0)
+        return;
+    if (rename_entry.in_title && rename_entry.position == 0) {
+        rename_entry.in_title = false;
+        rename_entry.position = (int16_t)strlen(field_text());
+    }
+    field_text()[--rename_entry.position] = '\0';
+}
+
+void champion_rename_next_field(void)
+{
+    if (!rename_entry.in_title && rename_entry.position != 0)
+        enter_title();
+}
+
+bool champion_rename_ok(void)
+{
+    if (!rename_entry.in_title && rename_entry.position == 0)
+        return false;
+    Champion *c = &g_champions[rename_entry.champion_index];
+    char untrimmed[CHAMPION_NAME_SIZE];
+    memcpy(untrimmed, c->name, sizeof untrimmed);
+    size_t length = strlen(c->name);
+    while (c->name[length - 1] == ' ')
+        c->name[--length] = '\0';
+    for (int16_t i = 0; i < g_party_champion_count; i++) {
+        if (i != rename_entry.champion_index && strcmp(g_champions[i].name, c->name) == 0) {
+            /* defined state after a refused duplicate: the original keeps the title state over the name */
+            memcpy(c->name, untrimmed, sizeof c->name);
+            c->title[0] = '\0';
+            rename_entry.in_title = false;
+            rename_entry.position = (int16_t)strlen(c->name);
+            return false;
+        }
+    }
+    return true;
 }
 
 void champion_resurrect(int16_t champion_index)

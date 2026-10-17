@@ -94,6 +94,13 @@ typedef struct {
     ChampionRuntime runtime;
 } Champion;
 
+/* The input of the name entry of a reincarnated champion. */
+typedef struct {
+    bool in_title;       /* the input is in the title, else in the name */
+    int16_t position;    /* characters before the input in its field */
+    bool cursor_visible; /* false in a full field */
+} RenameInput;
+
 extern Champion g_champions[CHAMPION_MAX_COUNT];
 extern int16_t g_party_champion_count;
 extern int16_t g_leader_index, g_magic_caster_champion_index;
@@ -178,9 +185,25 @@ int16_t champion_move_to_cell(int16_t champion_index, int16_t cell);
 void champion_set_portrait(int16_t champion_index, int16_t portrait_index); /* exported for the tests */
 /* The party stands in front of a mirror. The text on the party square holds the champion data. */
 void champion_add_candidate_to_party(int16_t portrait_index);
+/* Reincarnation of the champion: all experience is lost, 12 random statistic points, "<name> REINCARNATED.". */
+void champion_finish_reincarnate(int16_t champion_index); /* exported for the tests */
 /* Cancel removes the candidate. Resurrect and reincarnate take the possessions from the wall
    square and disable the mirror. The original also asks for a new name on reincarnation. */
 void champion_click_rebirth_panel(int16_t command);
+/* Starts the name entry of a reincarnated champion: clears the name and the title, the input is in the name. */
+void champion_start_rename(int16_t champion_index); /* exported for the tests */
+/* The field and the position of the input, and whether the cursor shows (not in a full field). */
+RenameInput champion_get_rename_input(void); /* exported for the tests */
+/* Types a character at the input; the 7th name character moves the input to the title. A full field and a space
+   as the first character of a field take nothing. */
+void champion_rename_type(char character); /* exported for the tests */
+/* Deletes the character before the input; at the start of the title it deletes the last name character. */
+void champion_rename_backspace(void); /* exported for the tests */
+/* Moves the input from a non-empty name to the title. */
+void champion_rename_next_field(void); /* exported for the tests */
+/* Ends the entry: trims the trailing spaces of the name. Refuses an empty name and the name of another party
+   champion; a refused duplicate keeps the untrimmed name, clears the title and puts the input at the end of the name. */
+bool champion_rename_ok(void); /* exported for the tests */
 /* Vi altar: the champion comes back with no objects and with a lower maximum health. */
 void champion_resurrect(int16_t champion_index);
 
