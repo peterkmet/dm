@@ -19,7 +19,7 @@ typedef struct {
     int button, x, y; /* PLAT_MOUSE and PLAT_MOUSE_UP, x and y in game screen pixels */
 } PlatEvent;
 
-/* Opens the window at scale times the game screen. DM_FILTER selects the upscale filter. */
+/* Opens the window at scale times the game screen. */
 bool plat_init(int scale);
 /* The upscale factor of a filter name: "scale2x" 2, "scale3x" 3, else 1 (none). */
 int plat_filter_factor(const char *name);
