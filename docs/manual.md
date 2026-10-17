@@ -45,7 +45,7 @@ Usage: dm [options]
 - `--control PATH` selects the socket of the `turnbased` mode. The default is `~/.dm/control.sock`.
 - `--filter none|scale2x|scale3x` selects the pixel-art upscale filter. The default is `none`. The filter makes the image 2 or 3 times larger before the window scaling. It gives the sharpest image when the window scale is a multiple of the filter factor. Example: `build/dm --filter scale2x`.
 - `--frames N` quits after N frames (50 frames per second).
-- `--view` shows only the dungeon view at the party start. Up and Down move, Left and Right turn, A and D move sideways.
+- `--view` shows only the dungeon view at the party start. The keys are the game keys: W, S, Up, Down move; A, D, Left, Right move sideways; Q, E, Delete, Insert turn; the keypad works too. The view walks through walls but not off the map.
 - `--show N` shows graphic N of `Graphics.DAT`.
 - The environment variable `DM_AUTO_ENTER=1` skips the start screens and presses ENTER at the entrance. The tests use it.
 

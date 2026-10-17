@@ -7,7 +7,6 @@
 #include "engine/dungeon.h"
 #include "engine/map.h"
 #include "engine/party.h"
-#include "engine/record.h"
 #include "ui/layout.h"
 #include "ui/video.h"
 #include "ui/view.h"
@@ -67,26 +66,44 @@ void debug_view_key(int keycode)
     int16_t x = g_party_map_x;
     int16_t y = g_party_map_y;
     int16_t map = g_party_map_index;
-    if (keycode == SDLK_UP)
+    switch (keycode) {
+    case SDLK_UP:
+    case SDLK_KP_8:
+    case SDLK_W:
         forward = 1;
-    else if (keycode == SDLK_DOWN)
+        break;
+    case SDLK_DOWN:
+    case SDLK_KP_2:
+    case SDLK_KP_5:
+    case SDLK_S:
         forward = -1;
-    else if (keycode == SDLK_LEFT)
-        direction = direction_left(direction);
-    else if (keycode == SDLK_RIGHT)
-        direction = direction_right(direction);
-    else if (keycode == SDLK_A)
+        break;
+    case SDLK_LEFT:
+    case SDLK_KP_4:
+    case SDLK_A:
         right = -1;
-    else if (keycode == SDLK_D)
+        break;
+    case SDLK_RIGHT:
+    case SDLK_KP_6:
+    case SDLK_D:
         right = 1;
-    else
+        break;
+    case SDLK_DELETE:
+    case SDLK_KP_7:
+    case SDLK_Q:
+        direction = direction_left(direction);
+        break;
+    case SDLK_INSERT:
+    case SDLK_HELP:
+    case SDLK_KP_9:
+    case SDLK_E:
+        direction = direction_right(direction);
+        break;
+    default:
         return;
+    }
     map_step(direction, forward, right, &x, &y);
     if (x < 0 || x >= dungeon_map_width(map) || y < 0 || y >= dungeon_map_height(map))
-        return;
-    uint8_t square = rec_square_byte(map, x, y);
-    if (rec_square_type(square) == SQUARE_WALL ||
-        (rec_square_type(square) == SQUARE_FAKE_WALL && !(square & FAKE_WALL_OPEN)))
         return;
     g_party_map_x = x;
     g_party_map_y = y;

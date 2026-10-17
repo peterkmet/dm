@@ -24,12 +24,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - Today: `plat_present` (`src/platform/platform.c:156-179`) scales the indexed game screen, then `overlay_pointer` draws the pointer into the scaled frame as blocks of 2x2 or 3x3 pixels, so the pointer stays blocky. The pointer has its own colors (`plat_set_pointer`, `src/platform/platform.c:103-116`), so it cannot go into `g_screen.px`.
 - Change: build a 320x200 index frame (a screen pixel is its color plus 16 for the interface half, a pointer pixel is 32 plus its color, pointer color 0 is transparent), filter it, map it with one 48-entry color table. The screenshot (`src/control/png.c:51-61`) does not change.
 
-## Developer view: game keys and walking through walls
-
-- Owner's wish (2026-10-17): `--view` uses the same keys as the game (Q, W, E, A, S, D, the cursor keys, the keypad; `docs/manual.md:109-114`), and the view can walk through walls.
-- Today: `debug_view_key` (`src/platform/debug_view.c:62-95`) knows only the cursor keys, A and D; Left and Right turn. The wall check is at `:87-90`, the map border check at `:85-86`.
-- Change: Up, KP8, W forward; Down, KP2, KP5, S back; Left, KP4, A left; Right, KP6, D right; Delete, KP7, Q turn left; Insert, Help, KP9, E turn right. Drop the wall check, keep the map border check. Update `docs/manual.md:48` and `src/platform/debug_view.h:15`.
-
 ## Draw the damage splat on the champion box
 
 - Found in the manual test (2026-10-17): a champion that takes damage shows no red splat with the number on the status box. The bars and `health_lost` are correct.
