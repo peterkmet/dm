@@ -6,23 +6,32 @@
 #include <SDL3/SDL.h>
 #include <string.h>
 
-static SDL_Window *window;
-static SDL_Renderer *renderer;
-static SDL_Texture *texture;
-static Uint64 next_tick;
-static SDL_AudioStream *stream;
 #define TICK_NS            (SDL_NS_PER_SECOND / FRAMES_PER_SECOND)
 #define FILTER_MAX         3
 #define AUDIO_CHANNELS     2
 #define AUDIO_QUEUED_TICKS 3
 #define ARGB_BYTES         4
+#define POINTER_MAX        32
 
-static int filter = 1; /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */
-static uint8_t scaled_screen[SCREEN_H * FILTER_MAX][SCREEN_W * FILTER_MAX];
-#define POINTER_MAX 32
-static uint8_t pointer_px[POINTER_MAX * POINTER_MAX];
-static uint32_t pointer_argb[PALETTE_COLORS];
-static int pointer_w, pointer_h, pointer_hot_x, pointer_hot_y, mouse_x, mouse_y;
+static struct {
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+    SDL_Texture *texture;
+    Uint64 next_tick;
+    SDL_AudioStream *stream;
+    int filter; /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */
+    uint8_t scaled_screen[SCREEN_H * FILTER_MAX][SCREEN_W * FILTER_MAX];
+    struct {
+        uint8_t px[POINTER_MAX * POINTER_MAX];
+        uint32_t argb[PALETTE_COLORS];
+        int w;
+        int h;
+        int hot_x;
+        int hot_y;
+    } pointer;
+    int mouse_x;
+    int mouse_y;
+} plat = {.filter = 1};
 
 static void render_frame(void);
 
@@ -30,7 +39,7 @@ static void render_frame(void);
 static bool SDLCALL on_expose(void *userdata, SDL_Event *ev)
 {
     (void)userdata;
-    if (ev->type == SDL_EVENT_WINDOW_EXPOSED && texture)
+    if (ev->type == SDL_EVENT_WINDOW_EXPOSED && plat.texture)
         render_frame();
     return true;
 }
@@ -38,15 +47,14 @@ static bool SDLCALL on_expose(void *userdata, SDL_Event *ev)
 bool plat_init(int scale)
 {
     if (!SDL_Init(SDL_INIT_VIDEO) || !SDL_CreateWindowAndRenderer("Dungeon Master", SCREEN_W * scale, SCREEN_H * scale,
-                                                                  SDL_WINDOW_RESIZABLE, &window, &renderer)) {
+                                                                  SDL_WINDOW_RESIZABLE, &plat.window, &plat.renderer)) {
         SDL_Log("SDL: %s", SDL_GetError());
         return false;
     }
     SDL_AddEventWatch(on_expose, NULL);
-    const char *name = SDL_getenv("DM_FILTER");
-    if (!plat_set_filter(name ? plat_filter_factor(name) : 1))
+    if (!plat_set_filter(1))
         return false;
-    next_tick = SDL_GetTicksNS() + TICK_NS;
+    plat.next_tick = SDL_GetTicksNS() + TICK_NS;
     return true;
 }
 
@@ -61,16 +69,16 @@ int plat_filter_factor(const char *name)
 
 bool plat_set_filter(int factor)
 {
-    filter = factor == 2 || factor == 3 ? factor : 1;
-    if (texture)
-        SDL_DestroyTexture(texture);
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_W * filter,
-                                SCREEN_H * filter);
-    if (!texture) {
+    plat.filter = factor == 2 || factor == 3 ? factor : 1;
+    if (plat.texture)
+        SDL_DestroyTexture(plat.texture);
+    plat.texture = SDL_CreateTexture(plat.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+                                     SCREEN_W * plat.filter, SCREEN_H * plat.filter);
+    if (!plat.texture) {
         SDL_Log("SDL: %s", SDL_GetError());
         return false;
     }
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART); /* even pixels at a fractional scale */
+    SDL_SetTextureScaleMode(plat.texture, SDL_SCALEMODE_PIXELART); /* even pixels at a fractional scale */
     return true;
 }
 
@@ -81,17 +89,17 @@ void plat_quit(void)
 
 void plat_set_pointer(const uint8_t *px, int w, int h, int hot_x, int hot_y, const uint16_t *colors)
 {
-    pointer_w = px && w <= POINTER_MAX && h <= POINTER_MAX ? w : 0;
-    pointer_h = pointer_w ? h : 0;
-    pointer_hot_x = hot_x;
-    pointer_hot_y = hot_y;
-    if (!pointer_w)
+    plat.pointer.w = px && w <= POINTER_MAX && h <= POINTER_MAX ? w : 0;
+    plat.pointer.h = plat.pointer.w ? h : 0;
+    plat.pointer.hot_x = hot_x;
+    plat.pointer.hot_y = hot_y;
+    if (!plat.pointer.w)
         return;
     if (SDL_CursorVisible())
         SDL_HideCursor();
-    memcpy(pointer_px, px, (size_t)w * h);
+    memcpy(plat.pointer.px, px, (size_t)w * h);
     for (int i = 0; i < PALETTE_COLORS; i++)
-        pointer_argb[i] = video_convert_argb(colors[i]);
+        plat.pointer.argb[i] = video_convert_argb(colors[i]);
 }
 
 void plat_set_icon(const uint8_t *px, int w, int h, int transparent, const uint16_t *colors)
@@ -105,54 +113,55 @@ void plat_set_icon(const uint8_t *px, int w, int h, int transparent, const uint1
             uint8_t c = px[y * w + x] & COLOR_INDEX_MASK;
             out[y * (icon->pitch / ARGB_BYTES) + x] = c == transparent ? 0 : video_convert_argb(colors[c]);
         }
-    SDL_SetWindowIcon(window, icon);
+    SDL_SetWindowIcon(plat.window, icon);
     SDL_DestroySurface(icon);
 }
 
 void plat_mouse_position(int *x, int *y)
 {
-    *x = mouse_x;
-    *y = mouse_y;
+    *x = plat.mouse_x;
+    *y = plat.mouse_y;
 }
 
 /* Draws the pointer at the mouse position into the filtered frame (row length stride). */
 static void draw_pointer(uint32_t *px, int stride)
 {
-    for (int y = 0; y < pointer_h; y++)
-        for (int x = 0; x < pointer_w; x++) {
-            uint8_t c = pointer_px[y * pointer_w + x];
-            int sx = mouse_x - pointer_hot_x + x;
-            int sy = mouse_y - pointer_hot_y + y;
+    for (int y = 0; y < plat.pointer.h; y++)
+        for (int x = 0; x < plat.pointer.w; x++) {
+            uint8_t c = plat.pointer.px[y * plat.pointer.w + x];
+            int sx = plat.mouse_x - plat.pointer.hot_x + x;
+            int sy = plat.mouse_y - plat.pointer.hot_y + y;
             if (!c || sx < 0 || sy < 0 || sx >= SCREEN_W || sy >= SCREEN_H)
                 continue;
-            for (int dy = 0; dy < filter; dy++)
-                for (int dx = 0; dx < filter; dx++)
-                    px[(sy * filter + dy) * stride + sx * filter + dx] = pointer_argb[c & COLOR_INDEX_MASK];
+            for (int dy = 0; dy < plat.filter; dy++)
+                for (int dx = 0; dx < plat.filter; dx++)
+                    px[(sy * plat.filter + dy) * stride + sx * plat.filter + dx] =
+                        plat.pointer.argb[c & COLOR_INDEX_MASK];
         }
 }
 
 void plat_present(void)
 {
     uint32_t pal[2 * PALETTE_COLORS], *px;
-    int pitch, tw = SCREEN_W * filter;
-    const uint8_t *src = filter == 1 ? &g_screen.px[0][0] : &scaled_screen[0][0];
-    if (filter == 2)
-        scale2x(&g_screen.px[0][0], SCREEN_W, SCREEN_H, &scaled_screen[0][0]);
-    if (filter == 3)
-        scale3x(&g_screen.px[0][0], SCREEN_W, SCREEN_H, &scaled_screen[0][0]);
+    int pitch, tw = SCREEN_W * plat.filter;
+    const uint8_t *src = plat.filter == 1 ? &g_screen.px[0][0] : &plat.scaled_screen[0][0];
+    if (plat.filter == 2)
+        scale2x(&g_screen.px[0][0], SCREEN_W, SCREEN_H, &plat.scaled_screen[0][0]);
+    if (plat.filter == 3)
+        scale3x(&g_screen.px[0][0], SCREEN_W, SCREEN_H, &plat.scaled_screen[0][0]);
     for (int i = 0; i < 2 * PALETTE_COLORS; i++)
         pal[i] = video_convert_argb(g_screen.palette[i]);
-    if (!SDL_LockTexture(texture, NULL, (void **)&px, &pitch))
+    if (!SDL_LockTexture(plat.texture, NULL, (void **)&px, &pitch))
         return;
     int stride = pitch / ARGB_BYTES;
-    for (int y = 0; y < SCREEN_H * filter; y++) {
-        int row = y / filter;
+    for (int y = 0; y < SCREEN_H * plat.filter; y++) {
+        int row = y / plat.filter;
         int half = row >= g_screen.split_top && row < g_screen.split_bottom ? 0 : PALETTE_COLORS;
         for (int x = 0; x < tw; x++)
             px[y * stride + x] = pal[(src[y * tw + x] & COLOR_INDEX_MASK) | half];
     }
     draw_pointer(px, stride);
-    SDL_UnlockTexture(texture);
+    SDL_UnlockTexture(plat.texture);
     render_frame();
 }
 
@@ -160,13 +169,13 @@ void plat_present(void)
 static void render_frame(void)
 {
     int w, h;
-    SDL_GetCurrentRenderOutputSize(renderer, &w, &h);
+    SDL_GetCurrentRenderOutputSize(plat.renderer, &w, &h);
     OutputLayout layout = output_layout(w, h);
     SDL_FRect dst = {layout.x, layout.y, SCREEN_W * layout.scale, SCREEN_H * layout.scale};
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-    SDL_RenderClear(renderer);
-    SDL_RenderTexture(renderer, texture, NULL, &dst);
-    SDL_RenderPresent(renderer);
+    SDL_SetRenderDrawColor(plat.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(plat.renderer);
+    SDL_RenderTexture(plat.renderer, plat.texture, NULL, &dst);
+    SDL_RenderPresent(plat.renderer);
 }
 
 bool plat_poll(PlatEvent *event)
@@ -188,21 +197,21 @@ bool plat_poll(PlatEvent *event)
             event->modifiers = sdl_event.key.mod;
             return true;
         case SDL_EVENT_MOUSE_MOTION:
-            SDL_ConvertEventToRenderCoordinates(renderer, &sdl_event); /* window points -> output pixels */
-            SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
+            SDL_ConvertEventToRenderCoordinates(plat.renderer, &sdl_event); /* window points -> output pixels */
+            SDL_GetCurrentRenderOutputSize(plat.renderer, &output_width, &output_height);
             layout = output_layout(output_width, output_height);
-            output_map_mouse(&layout, (int)sdl_event.motion.x, (int)sdl_event.motion.y, &mouse_x, &mouse_y);
+            output_map_mouse(&layout, (int)sdl_event.motion.x, (int)sdl_event.motion.y, &plat.mouse_x, &plat.mouse_y);
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP:
-            SDL_ConvertEventToRenderCoordinates(renderer, &sdl_event);
-            SDL_GetCurrentRenderOutputSize(renderer, &output_width, &output_height);
+            SDL_ConvertEventToRenderCoordinates(plat.renderer, &sdl_event);
+            SDL_GetCurrentRenderOutputSize(plat.renderer, &output_width, &output_height);
             layout = output_layout(output_width, output_height);
             event->type = sdl_event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ? PLAT_MOUSE : PLAT_MOUSE_UP;
             event->button = sdl_event.button.button;
             output_map_mouse(&layout, (int)sdl_event.button.x, (int)sdl_event.button.y, &event->x, &event->y);
-            mouse_x = event->x;
-            mouse_y = event->y;
+            plat.mouse_x = event->x;
+            plat.mouse_y = event->y;
             return true;
         }
     }
@@ -213,27 +222,27 @@ void plat_wait_tick(void)
 {
     plat_audio_pump();
     Uint64 now = SDL_GetTicksNS();
-    if (now < next_tick)
-        SDL_DelayPrecise(next_tick - now);
+    if (now < plat.next_tick)
+        SDL_DelayPrecise(plat.next_tick - now);
     else
-        next_tick = now; /* fell behind: resync instead of bursting */
-    next_tick += TICK_NS;
+        plat.next_tick = now; /* fell behind: resync instead of bursting */
+    plat.next_tick += TICK_NS;
 }
 
-/* Opens the audio stream on first use. Returns 0 when audio is not available. */
-static int audio_open(void)
+/* Opens the audio stream on first use. Returns false when audio is not available. */
+static bool audio_open(void)
 {
-    static int tried;
-    if (stream || tried)
-        return stream != NULL;
-    tried = 1;
+    static bool tried;
+    if (plat.stream || tried)
+        return plat.stream != NULL;
+    tried = true;
     SDL_AudioSpec spec = {SDL_AUDIO_S16, AUDIO_CHANNELS, AUDIO_OUTPUT_RATE};
     if (!SDL_InitSubSystem(SDL_INIT_AUDIO) ||
-        !(stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL))) {
+        !(plat.stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL))) {
         SDL_Log("SDL audio: %s", SDL_GetError());
-        return 0;
+        return false;
     }
-    return SDL_ResumeAudioStreamDevice(stream);
+    return SDL_ResumeAudioStreamDevice(plat.stream);
 }
 
 void plat_audio_pump(void)
@@ -242,10 +251,10 @@ void plat_audio_pump(void)
     int16_t buf[FRAMES * AUDIO_CHANNELS];
     if (!audio_open())
         return;
-    while (SDL_GetAudioStreamQueued(stream) < (int)sizeof buf * AUDIO_QUEUED_TICKS) {
+    while (SDL_GetAudioStreamQueued(plat.stream) < (int)sizeof buf * AUDIO_QUEUED_TICKS) {
         audio_mix(buf, FRAMES);
         music_mix(buf, FRAMES);
-        if (!SDL_PutAudioStreamData(stream, buf, sizeof buf))
+        if (!SDL_PutAudioStreamData(plat.stream, buf, sizeof buf))
             return;
     }
 }

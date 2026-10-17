@@ -2,32 +2,26 @@
 #include "data/adventure.h"
 #include "data/bytes.h"
 #include "data/file.h"
-#include "data/ftl.h"
 #include "data/graphics.h"
 #include "data/ids.h"
 #include "data/os.h"
-#include "data/tables.h"
-#include "engine/dungeon.h"
 #include "engine/game.h"
-#include "engine/map.h"
-#include "engine/party.h"
 #include "engine/random.h"
-#include "engine/record.h"
 #include "ui/advanced.h"
 #include "ui/anim.h"
 #include "ui/command.h"
 #include "ui/entrance.h"
 #include "ui/frame.h"
 #include "ui/gameloop.h"
-#include "ui/layout.h"
 #include "ui/logo.h"
 #include "ui/music.h"
 #include "ui/select.h"
 #include "ui/startend.h"
 #include "ui/text.h"
 #include "ui/ui.h"
-#include "ui/view.h"
 #include "control/control.h"
+#include "platform/debug_view.h"
+#include "platform/options.h"
 #include "platform/platform.h"
 #include "platform/transport.h"
 #include <SDL3/SDL.h>
@@ -42,91 +36,6 @@
 #define TITLE_FILE             "TITL.DAT"         /* the DM title animation, before the entrance */
 #define DISK_IMAGE_EXTENSION   ".adf"             /* the original game disks, extracted at start */
 #define DEFAULT_CONTROL_SOCKET ".dm/control.sock" /* in the home directory */
-
-/* Loads the engine module and Graphics.DAT from dir. Returns 0 with a log line when a file is missing. */
-static int load_kaos_and_graphics(const char *dir)
-{
-    const char *failed;
-    if (!adventure_load_files(dir, &failed)) {
-        SDL_Log("cannot load %s/%s", dir, failed);
-        return 0;
-    }
-    return 1;
-}
-
-/* Draws graphic n at the top-left with the dungeon palette. */
-static int show(const char *dir, int n)
-{
-    Bitmap bm;
-    if (!load_kaos_and_graphics(dir))
-        return 0;
-    if (!gfx_load_bitmap(n, &bm)) {
-        SDL_Log("cannot decode graphic %d", n);
-        return 0;
-    }
-    tables_get_palette(TABLES_PALETTE_DUNGEON, g_screen.palette);
-    memset(g_screen.px, 0, sizeof g_screen.px);
-    for (int y = 0; y < bm.h && y < SCREEN_H; y++)
-        for (int x = 0; x < bm.w && x < SCREEN_W; x++)
-            g_screen.px[y][x] = bm.px[y * bm.w + x];
-    gfx_free_bitmap(&bm);
-    return 1;
-}
-
-/* --view: loads the game files and shows the dungeon view at the party start of a new game. */
-static int view_start(const char *dir)
-{
-    char path[PATH_SIZE];
-    if (!load_kaos_and_graphics(dir))
-        return 0;
-    if (!layout_init()) {
-        SDL_Log("cannot load %s/Graphics.DAT", dir);
-        return 0;
-    }
-    snprintf(path, sizeof path, "%s/Dungeon.DAT", dir);
-    if (!dungeon_load(path)) {
-        SDL_Log("cannot load %s", path);
-        return 0;
-    }
-    memset(g_screen.px, 0, sizeof g_screen.px);
-    return view_render(g_party_map_index, g_party_map_x, g_party_map_y, g_party_direction);
-}
-
-/* Free movement for visual checks: up/down move, left/right turn, A/D strafe. Walls block. */
-static void view_key(int key)
-{
-    int16_t direction = g_party_direction;
-    int16_t forward = 0;
-    int16_t right = 0;
-    int16_t x = g_party_map_x;
-    int16_t y = g_party_map_y;
-    int16_t map = g_party_map_index;
-    if (key == SDLK_UP)
-        forward = 1;
-    else if (key == SDLK_DOWN)
-        forward = -1;
-    else if (key == SDLK_LEFT)
-        direction = direction_left(direction);
-    else if (key == SDLK_RIGHT)
-        direction = direction_right(direction);
-    else if (key == SDLK_A)
-        right = -1;
-    else if (key == SDLK_D)
-        right = 1;
-    else
-        return;
-    map_step(direction, forward, right, &x, &y);
-    if (x < 0 || x >= dungeon_map_width(map) || y < 0 || y >= dungeon_map_height(map))
-        return;
-    uint8_t square = rec_square_byte(map, x, y);
-    if (rec_square_type(square) == SQUARE_WALL ||
-        (rec_square_type(square) == SQUARE_FAKE_WALL && !(square & FAKE_WALL_OPEN)))
-        return;
-    g_party_map_x = x;
-    g_party_map_y = y;
-    g_party_direction = direction;
-    view_render(map, x, y, direction);
-}
 
 /* The Amiga key word of a key of the advanced modes: M, Tab, F5, F9, L, F, I, 1-3, and the movement letters. */
 static uint16_t advanced_key(int key)
@@ -284,7 +193,7 @@ static void read_input(void)
             if (event.type == PLAT_KEY && event.key == SDLK_ESCAPE)
                 g_quit_requested = true;
             if (mode == MODE_VIEW && event.type == PLAT_KEY)
-                view_key(event.key);
+                debug_view_key(event.key);
             continue;
         }
         uint16_t key = event.type == PLAT_KEY ? amiga_key(event.key, event.modifiers) : 0;
@@ -407,17 +316,6 @@ static void list_folder(const char *path, void (*found)(const char *name, void *
     SDL_EnumerateDirectory(path, visit_name, &visit);
 }
 
-static const char *const game_mode_names[] = {"vanilla", "advanced", "turnbased"};
-
-/* The game mode of a --mode value, or -1. */
-static int get_game_mode(const char *name)
-{
-    for (int i = 0; i < ARRAY_COUNT(game_mode_names); i++)
-        if (!strcmp(name, game_mode_names[i]))
-            return i;
-    return -1;
-}
-
 /* Loads the font of the start screens from Graphics.DAT: the --data folder, else DM, else CSB. */
 static int load_font(void)
 {
@@ -523,7 +421,7 @@ static bool start_csb(void)
         return true;
     }
     if (loaded_adventure != ADVENTURE_CSB) {
-        SDL_Log("adventure csb, mode %s", game_mode_names[g_session.mode]);
+        SDL_Log("adventure csb, mode %s", options_get_mode_name(g_session.mode));
         data_dir = get_adventure_dir();
         if (!load_game_files())
             return false;
@@ -558,7 +456,7 @@ static bool start_adventure(void)
 {
     if (g_adventure == ADVENTURE_CSB)
         return start_csb();
-    SDL_Log("adventure dm, mode %s", game_mode_names[g_session.mode]);
+    SDL_Log("adventure dm, mode %s", options_get_mode_name(g_session.mode));
     data_dir = get_adventure_dir();
     if (!load_game_files())
         return false;
@@ -638,23 +536,13 @@ static int run_frame(void)
     return RUN_NEXT_FRAME;
 }
 
-/* The command-line options of main; --data, --saves, and --control go into their file-static variables. */
-typedef struct {
-    int64_t frames;
-    int64_t graphic;
-    const char *filter;
-    int view;
-    int adventure;
-    int mode;
-} Options;
-
-/* Reads the command line. Returns false with a log line for a wrong --mode or --adventure. */
+/* Reads the command line; --data, --saves, --control go to file statics. False for a wrong --mode or --adventure. */
 static bool parse_options(int argc, char **argv, Options *options)
 {
-    *options = (Options){.frames = -1, .graphic = -1, .filter = NULL, .view = 0, .adventure = -1, .mode = -1};
+    *options = (Options){.frames = -1, .graphic = -1, .filter = NULL, .view = false, .adventure = -1, .mode = -1};
     for (int i = 1; i < argc; i++)
         if (!strcmp(argv[i], "--view"))
-            options->view = 1;
+            options->view = true;
     for (int i = 1; i < argc - 1; i++) {
         if (!strcmp(argv[i], "--frames"))
             options->frames = atoll(argv[i + 1]);
@@ -668,7 +556,7 @@ static bool parse_options(int argc, char **argv, Options *options)
             options->filter = argv[i + 1];
         if (!strcmp(argv[i], "--control"))
             control_socket = argv[i + 1];
-        if (!strcmp(argv[i], "--mode") && (options->mode = get_game_mode(argv[i + 1])) < 0) {
+        if (!strcmp(argv[i], "--mode") && (options->mode = options_find_mode(argv[i + 1])) < 0) {
             SDL_Log("--mode must be vanilla, advanced, or turnbased");
             return false;
         }
@@ -710,9 +598,9 @@ int main(int argc, char **argv)
     for (int i = 0; i < PALETTE_COLORS; i++) /* gray ramp */
         g_screen.palette[i] = i * GRAY_STEP;
     mode = options.graphic >= 0 ? MODE_SHOW : options.view ? MODE_VIEW : MODE_SELECT;
-    if (mode == MODE_SHOW && !show(data_dir, options.graphic))
+    if (mode == MODE_SHOW && !debug_view_open(data_dir, options.graphic))
         return 1;
-    if (mode == MODE_VIEW && !view_start(data_dir))
+    if (mode == MODE_VIEW && !debug_view_open(data_dir, -1))
         return 1;
     if (mode == MODE_SELECT && select_screen() != SELECT_SCREEN_DONE && !load_font())
         return 1;

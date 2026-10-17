@@ -249,7 +249,7 @@ Options:
 
 Not available yet: the credits fade, the door animation of the entrance, and the rename of a reincarnated champion. The dialogs and the endgame screens do not fade the palette.
 
-Set `DM_FILTER` to select a pixel-art upscale filter. The values are `none` (default), `scale2x`, and `scale3x`. The filter makes the image 2 or 3 times larger before the window scaling. The filter gives the sharpest image when the window scale is a multiple of the filter factor. Example: `DM_FILTER=scale2x build/dm`.
+Use `--filter` to select a pixel-art upscale filter. The values are `none` (default), `scale2x`, and `scale3x`. The filter makes the image 2 or 3 times larger before the window scaling. The filter gives the sharpest image when the window scale is a multiple of the filter factor. Example: `build/dm --filter scale2x`.
 
 `build/libdm.dylib` contains the game code without SDL. `tests/port/test_port.py` loads it with `ctypes`.
 

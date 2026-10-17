@@ -143,3 +143,6 @@ dead-api data/os.h:g_os_fatal_hook open: epic 11
 dead-api data/kaos.h:kaos_free open: epic 11
 dead-api data/graphics.h:gfx_close open: epic 11
 static-prefix platform/platform.c:audio_open open: epic 11
+dead-api platform/options.h:options_parse open: epic 11
+dead-api platform/options.h:options_print_help open: epic 11
+type platform:out open: epic 10
