@@ -267,14 +267,14 @@ def test_no_wall_sensor_runs_for_the_party_in_a_wall(lib):
 # The spell list of the cheat screen.
 
 
-@pytest.mark.parametrize("symbols, line", [
-    (0x00696F00, "FUL IR (X,4,4) FIREBALL"),  # any power
-    (0x60696F00, "LO FUL IR (1,4,4) FIREBALL"),  # a fixed power symbol
-    (0x00697075, "FUL BRO NETA (X,4,5,4) FIRE SHIELD"),
+@pytest.mark.parametrize("symbols, kind, type_, line", [
+    (0x00696F00, C.SPELL_KIND_PROJECTILE, C.EXPLOSION_FIREBALL, "FUL IR (X,4,4) FIREBALL"),  # any power
+    (0x60696F00, C.SPELL_KIND_PROJECTILE, C.EXPLOSION_FIREBALL, "LO FUL IR (1,4,4) FIREBALL"),  # a fixed power symbol
+    (0x00697075, C.SPELL_KIND_OTHER, C.SPELL_OTHER_FIRE_SHIELD, "FUL BRO NETA (X,4,5,4) FIRE SHIELD"),
+    (0x00667075, C.SPELL_KIND_POTION, C.POTION_NETA, "(X,1,5,4) VITALITY POTION"),  # too wide: no rune names
 ])
-def test_spell_line(lib, symbols, line):
+def test_spell_line(lib, symbols, kind, type_, line):
     lib.cheats_get_spell_line.argtypes = [ctypes.POINTER(Spell), ctypes.c_char_p, ctypes.c_size_t]
     text = ctypes.create_string_buffer(64)
-    kind, type_ = (C.SPELL_KIND_PROJECTILE, C.EXPLOSION_FIREBALL) if "FIREBALL" in line else (C.SPELL_KIND_OTHER, C.SPELL_OTHER_FIRE_SHIELD)
     lib.cheats_get_spell_line(ctypes.byref(Spell(symbols=symbols, kind=kind, type=type_)), text, len(text))
     assert text.value.decode() == line

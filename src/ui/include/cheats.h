@@ -21,7 +21,7 @@ typedef enum {
 
 /* Queries */
 /* The text line of a spell: the runes as names, as numbers (X for any power), then the spell name, for example
-   "FUL IR (X,4,4) FIREBALL". (exported for the tests) */
+   "FUL IR (X,4,4) FIREBALL"; a line wider than the viewport has no rune names. (exported for the tests) */
 void cheats_get_spell_line(const Spell *spell, char *line, size_t size);
 
 /* Commands */

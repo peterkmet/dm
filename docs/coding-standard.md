@@ -115,7 +115,8 @@ refactor; until the run ends, the allowlist carries the difference.
     with this reason; the APPB address tables of the CSB image build (`data/csb_image.c`, `data/csb_text.c`) stay
     in the source, named in the allowlist with this reason; the fixed CRC-32 table of a standard algorithm
     (`data/crc32.c`) stays in the source, named in the allowlist with this reason; the port spell names of the
-    cheat screen (`ui/cheats.c`) stay in the source, because the game files have no spell names (no allowlist
+    cheat screen (`ui/cheats.c`) stay in the source, because the game files have no spell names (the object names
+    of the potions are rune names, not effects) (no allowlist
     line: the table has no plain numbers). [decimal, hex, allowlist]
 
 ## 4. Naming

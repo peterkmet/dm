@@ -40,24 +40,26 @@
 #define NUMBER_SIZE         4
 #define CHEAT_LABEL_COLUMNS 20
 #define ANY_POWER           "X"
+#define SPELL_LINE_COLUMNS  36 /* the characters that fit in the viewport right of the text column */
 
-/* The name of a spell, by its kind and type: the game files have no spell names. */
+/* The name of a spell, by its kind and type: the game files have no spell names. A potion is named by its drink
+   effect (drink_potion, engine/inventory.c), a bomb by its explosion (engine/projectile.c). */
 typedef struct {
     uint8_t kind, type;
     const char *name;
 } SpellName;
 
 static const SpellName spell_names[] = {
-    {SPELL_KIND_POTION,     POTION_VEN_BOMB,             "VEN POTION"       },
-    {SPELL_KIND_POTION,     POTION_ROS,                  "ROS POTION"       },
-    {SPELL_KIND_POTION,     POTION_KU,                   "KU POTION"        },
-    {SPELL_KIND_POTION,     POTION_DANE,                 "DANE POTION"      },
-    {SPELL_KIND_POTION,     POTION_NETA,                 "NETA POTION"      },
+    {SPELL_KIND_POTION,     POTION_VEN_BOMB,             "POISON BOMB"      },
+    {SPELL_KIND_POTION,     POTION_ROS,                  "DEXTERITY POTION" },
+    {SPELL_KIND_POTION,     POTION_KU,                   "STRENGTH POTION"  },
+    {SPELL_KIND_POTION,     POTION_DANE,                 "WISDOM POTION"    },
+    {SPELL_KIND_POTION,     POTION_NETA,                 "VITALITY POTION"  },
     {SPELL_KIND_POTION,     POTION_ANTIVENIN,            "ANTIVENIN"        },
-    {SPELL_KIND_POTION,     POTION_MON,                  "MON POTION"       },
-    {SPELL_KIND_POTION,     POTION_YA,                   "YA POTION"        },
-    {SPELL_KIND_POTION,     POTION_EE,                   "EE POTION"        },
-    {SPELL_KIND_POTION,     POTION_VI,                   "VI POTION"        },
+    {SPELL_KIND_POTION,     POTION_MON,                  "STAMINA POTION"   },
+    {SPELL_KIND_POTION,     POTION_YA,                   "SHIELD POTION"    },
+    {SPELL_KIND_POTION,     POTION_EE,                   "MANA POTION"      },
+    {SPELL_KIND_POTION,     POTION_VI,                   "HEALTH POTION"    },
     {SPELL_KIND_PROJECTILE, EXPLOSION_FIREBALL,          "FIREBALL"         },
     {SPELL_KIND_PROJECTILE, EXPLOSION_LIGHTNING_BOLT,    "LIGHTNING BOLT"   },
     {SPELL_KIND_PROJECTILE, EXPLOSION_HARM_NON_MATERIAL, "HARM NON-MATERIAL"},
@@ -137,8 +139,8 @@ static const char *get_spell_name(const Spell *spell)
 
 void cheats_get_spell_line(const Spell *spell, char *line, size_t size)
 {
+    char runes[CHEAT_TEXT_SIZE] = "";
     char numbers[CHEAT_TEXT_SIZE] = "(";
-    line[0] = '\0';
     for (uint16_t step = 0; step < SYMBOL_STEP_COUNT; step++) {
         uint8_t symbol = spell_get_packed_symbol(spell->symbols, step);
         if (!symbol && step)
@@ -146,19 +148,22 @@ void cheats_get_spell_line(const Spell *spell, char *line, size_t size)
         char number[NUMBER_SIZE] = ANY_POWER; /* a spell without a power symbol takes any power */
         if (symbol) {
             int16_t index = symbol - SPELL_SYMBOL_FIRST;
-            if (line[0])
-                append_text(line, size, " ");
-            append_text(line, size, g_rune_names[index]);
+            if (runes[0])
+                append_text(runes, sizeof runes, " ");
+            append_text(runes, sizeof runes, g_rune_names[index]);
             snprintf(number, sizeof number, "%d", index % SPELL_SYMBOLS_PER_STEP + 1);
         }
         if (step)
             append_text(numbers, sizeof numbers, ",");
         append_text(numbers, sizeof numbers, number);
     }
-    append_text(line, size, " ");
-    append_text(line, size, numbers);
-    append_text(line, size, ") ");
-    append_text(line, size, get_spell_name(spell));
+    append_text(numbers, sizeof numbers, ") ");
+    append_text(numbers, sizeof numbers, get_spell_name(spell));
+    /* a line wider than the viewport drops the rune names and keeps the numbers */
+    if (strlen(runes) + 1 + strlen(numbers) > SPELL_LINE_COLUMNS)
+        snprintf(line, size, "%s", numbers);
+    else
+        snprintf(line, size, "%s %s", runes, numbers);
 }
 
 /* Commands */

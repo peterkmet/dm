@@ -253,6 +253,12 @@ Feature: Cheat screen
 - The spell names come from a port table, keyed by the spell kind and type, because the game files have no
   spell names (coding standard 3.12 exception, allowlist line with this reason). Assumption, checked first:
   kind and type are unique among the DM and the CSB spells.
+- A potion spell shows the potion by its effect (owner, 2026-10-17): the name comes from the drink effect of its
+  potion type (`drink_potion`, `src/engine/inventory.c`), for example HEALTH POTION, MANA POTION, STAMINA POTION,
+  SHIELD POTION, ANTIVENIN; a bomb from its explosion (`src/engine/projectile.c`): POISON BOMB. The object names of
+  the game are rune names (KU POTION), and DM and CSB name potion types 10 and 11 differently, so the port table
+  holds the names; the effects are the same in DM and CSB. A line wider than the viewport (36 characters) drops the
+  rune names and keeps the numbers, for example `(X,1,5,4) VITALITY POTION`.
 - Assumption, checked first: the game font has `(`, `)` and `,`; else the numbers are separated by spaces.
 
 - Cast from the spell list (owner, 2026-10-17, manual test): a click on a spell line, or Return on it, casts the
