@@ -108,6 +108,8 @@ def test_slot_file_names():
     assert slot_files(lib, C.ADVENTURE_DM, 3) == ("DMGAME4.DAT", "DMGAME4.BAK")
     assert slot_files(lib, C.ADVENTURE_DM, 7) == ("DMGAME8.DAT", "DMGAME8.BAK")
     assert slot_files(lib, C.ADVENTURE_CSB, 3) == ("CSBGAME4.DAT", "CSBGAME4.BAK")
+    assert slot_files(lib, C.ADVENTURE_DM, -1) == ("", "")  # a slot outside 0-7 has no file
+    assert slot_files(lib, C.ADVENTURE_DM, 8) == ("", "")
 
 
 def test_slot_save_keeps_its_own_backup(game, tmp_path):

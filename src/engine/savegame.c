@@ -390,10 +390,17 @@ static void make_slot_name(char *out, const char *name, int16_t slot)
         snprintf(out, SAVEGAME_NAME_SIZE, "%s", name);
 }
 
+static bool is_slot_valid(int16_t slot)
+{
+    return slot >= 0 && slot < SAVEGAME_SLOT_COUNT;
+}
+
 SavegameSlotFiles savegame_get_slot_files(int16_t adventure, int16_t slot)
 {
     const Adventure *a = adventure_get(adventure);
-    SavegameSlotFiles files;
+    SavegameSlotFiles files = {0};
+    if (!is_slot_valid(slot))
+        return files;
     make_slot_name(files.save, a->save, slot);
     make_slot_name(files.backup, a->backup, slot);
     return files;
@@ -436,6 +443,8 @@ static SavegameInfoResult read_info(const char *dir, const char *name, const cha
 
 SavegameInfoResult savegame_read_slot_info(const char *dir, int16_t slot, SavegameSlotInfo *slot_info)
 {
+    if (!is_slot_valid(slot))
+        return SAVEGAME_INFO_EMPTY;
     SavegameSlotFiles files = savegame_get_slot_files(g_adventure, slot);
     return read_info(dir, files.save, files.backup, slot_info);
 }
@@ -452,6 +461,8 @@ bool savegame_save(const char *dir)
 
 bool savegame_save_slot(const char *dir, int16_t slot)
 {
+    if (!is_slot_valid(slot))
+        return false;
     SavegameSlotFiles files = savegame_get_slot_files(g_adventure, slot);
     return savegame_save_as(dir, files.save, files.backup);
 }
@@ -597,6 +608,8 @@ SavegameAdventureResult savegame_make_adventure(const char *dir, const char *min
     SavegameAdventureResult refused = check_party();
     if (refused != SAVEGAME_ADVENTURE_MADE)
         return refused;
+    if (!is_slot_valid(slot))
+        return SAVEGAME_ADVENTURE_FAILED;
     size_t size = 0;
     uint32_t out_size = 0;
     uint8_t *data = file_read(mini_path, &size);
@@ -667,6 +680,8 @@ SavegameResult savegame_load(const char *dir)
 
 SavegameResult savegame_load_slot(const char *dir, int16_t slot)
 {
+    if (!is_slot_valid(slot))
+        return SAVEGAME_MISSING;
     SavegameSlotFiles files = savegame_get_slot_files(g_adventure, slot);
     return savegame_load_from(dir, files.save, files.backup);
 }
