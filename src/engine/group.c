@@ -1593,22 +1593,6 @@ static void finish_movement(GroupTurn *t, int16_t direction)
     rotate_and_finish(t, direction);
 }
 
-/* Mutual recursion: after_move and jump_archenemy call each other. */
-static bool jump_archenemy(GroupTurn *t);
-
-/* After a move attempt Lord Chaos may jump in a random direction; any other group finishes its movement. */
-static bool after_move(GroupTurn *t, int16_t direction)
-{
-    if (t->moved || t->ticks_since_last_move == -1 || !t->archenemy ||
-        (t->event_type != REACTION_DANGER_ON_SQUARE && random_2bits())) {
-        finish_movement(t, direction);
-        return false;
-    }
-    t->direction = random_2bits();
-    t->secondary_direction = direction_right(t->direction);
-    return jump_archenemy(t);
-}
-
 /* Lord Chaos jumps two squares over a free square, away from fluxcages. Returns true when the turn ended at once. */
 static bool jump_archenemy(GroupTurn *t)
 {
@@ -1647,6 +1631,19 @@ static bool jump_archenemy(GroupTurn *t)
         t->direction = random_2bits();
         t->secondary_direction = direction_right(t->direction);
     }
+}
+
+/* After a move attempt Lord Chaos may jump in a random direction; any other group finishes its movement. */
+static bool after_move(GroupTurn *t, int16_t direction)
+{
+    if (t->moved || t->ticks_since_last_move == -1 || !t->archenemy ||
+        (t->event_type != REACTION_DANGER_ON_SQUARE && random_2bits())) {
+        finish_movement(t, direction);
+        return false;
+    }
+    t->direction = random_2bits();
+    t->secondary_direction = direction_right(t->direction);
+    return jump_archenemy(t);
 }
 
 /* Moves one square in a direction that is possible. */
