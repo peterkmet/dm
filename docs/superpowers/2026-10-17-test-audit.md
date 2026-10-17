@@ -9,13 +9,34 @@ Date: 2026-10-17. Scope: every test function in `tests/` (a parametrized test is
 | `tests/golden/`, `tests/standard/`, `tests/tools/` | 94 | 4 | 1 | 3 |
 | Total | 335 | 91 | 13 | 48 |
 
-## Open decisions for the owner
+## Decisions of the owner (2026-10-17)
 
-1. Smoke runs: after the REMOVE entries no test starts `build/dm` (`test_smoke_run`, `test_show_smoke_run`, `test_game_runs_headless_with_auto_enter`, `test_selection_screen_runs`). Proposal: keep one smoke run.
-2. Bug regressions checked on UI pixels (most KEEP? of `tests/port/`): "a regression of a real bug" against "no UI tests". Proposal: keep them, one test per bug.
-3. CSB magic map tile tests (most KEEP? of `tests/differential/`): a rule with several outcomes, checked through the drawing. Proposal: keep them.
-4. `standard::test_sources_are_formatted` repeats the clang-format step of `make check`. Proposal: keep the test, drop the Makefile step.
+1. Smoke runs: keep one. `port/test_modes.py::test_turnbased_program_answers_get_state_and_act` stays; it starts `build/dm` and answers over the socket. The other smoke runs go.
+2. Bug regressions checked on UI pixels: keep them, one test per bug.
+3. CSB magic map tile tests: keep them.
+4. `standard::test_sources_are_formatted` stays; the clang-format step leaves the `Makefile`.
 
+## Rulings on the KEEP? entries
+
+Decisions 1-4 settle part of the KEEP? entries; the rest follows the test list of CLAUDE.md.
+
+KEEP (30):
+- Decision 1: `port/test_modes.py::test_turnbased_program_answers_get_state_and_act`.
+- Decision 2 (a real bug): `port/test_automap.py::test_side_squares_behind_walls_stay_unseen`, `test_darkness_shortens_the_visible_depth`; `port/test_control.py::test_a_cast_leaves_the_cleared_runes_inverted_as_with_the_mouse`, `test_wait_does_not_stop_for_a_group_that_stays_in_view`, `test_the_tests_do_not_log_into_a_run`; `port/test_gameloop.py::test_freeze_covers_open_inventory`, `test_hand_object_name_follows_the_icon`, `test_pointer_over_the_status_box_hands`; `port/test_panels.py::test_eat_food_redraws_the_food_bar`.
+- Decision 3: `differential/test_csb_magic_map.py::test_rune_of_each_spell`, `test_ku_creature_tile`, `test_dain_explosion_tile`, `test_ros_pit_and_fake_wall_tiles`, `test_party_and_footprint_borders`, `test_door_tiles`, `test_stairs_tiles`, `test_fireball_projectile_tile`, `test_zokathra_tile`, `test_floor_ornament_tile`, `test_wall_ornament_tiles`.
+- Decision 4: `standard/test_standard.py::test_sources_are_formatted`.
+- A rule or a data format: `port/test_modes.py::test_smooth_projectile_flight` (no game random numbers), `port/test_port_data.py::test_kaos_accessors` (big-endian reads), `differential/test_creatures.py::test_group_activates_and_approaches_party`, `test_group_attacks_adjacent_party` (no reference check covers them), `tools/test_dmtest.py::test_each_load_has_its_own_globals` (guards the rule "each test file owns its state").
+- Keep with fewer asserts (weakened assertions): `differential/test_csb_ending.py::test_chunk_walk_consumes_the_file` (drop the tag counts of ENDA.DAT), `test_death_shows_restart_only_and_restart_loads_the_save` (drop the button pixel checks), `test_csb_intro_frames_and_music` (drop the frame count 851).
+
+REMOVE (18):
+- UI or layout: `port/test_entrance.py::test_ftl_logo_lasts_as_its_sound`, `port/test_ui.py::test_palette_split`, `differential/test_text.py::test_text_draw_clips`, `differential/test_csb_engine.py::test_layout_zones_equal_but_endgame_buttons`, `differential/test_csb_magic_map.py::test_panel_draws_again_each_tick`, `test_eye_keeps_the_leader_map` (both added with the feature in 91922a0, no bug record).
+- UI wiring: `differential/test_champion.py::test_death_sets_redraw_flags`, `test_death_marks_the_champion_for_release`.
+- Covered by another test: `port/test_actions.py::test_sword_attack_hurts_group_and_gains_experience`, `differential/test_tables.py::test_object_types_match_dmcsb_item_list`, `tools/test_csb_tools.py::test_csb_prison_state_through_the_tools`.
+- Constants or data tables: `port/test_music.py::test_csb_square_table_matches_the_research`, `differential/test_dungeon.py::test_door_vertical_bit`, `differential/test_recruit.py::test_portrait_origin`, `differential/test_tables.py::test_strides_and_bases_match_decompiled_code`.
+- CLI arguments or process start: `port/test_options.py::test_errors`, `port/test_select.py::test_load_failure_leaves_no_control_socket`.
+- One outcome, no bug record: `port/test_music.py::test_music_stop_after_audio_stop_all_stops_the_track_and_keeps_the_soundtrack`.
+
+Totals after the rulings: KEEP 365, REMOVE 109, MERGE 13 (487 entries).
 
 ## Audit of tests/port
 
