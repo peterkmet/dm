@@ -157,6 +157,7 @@ The advanced features are not in the original game:
   - Super NES (DM only, 2 does nothing in CSB): a step on one of 22 trigger squares stops the current track and starts its track. Game won plays the end credits.
   - The MP3 files go into `music/` of the game folder: `game/music/` gets `music/Game_Dungeon_Master_JP/*.mp3` and `music/Game_Dungeon_Master_US/Super_NES,*.mp3`, `game-csb/music/` gets `music/Game_Chaos_Strikes_Back_JP/*.mp3`. A missing file gives silence. The music stops at the entrance and at the CSB screen.
 - Escape and Tab close an open inventory. With no inventory open, Escape freezes the game as in vanilla.
+- The damage that a champion deals stays in the action area for two ticks, not one. A click on the action area in the second tick shows the action icons and acts at once. Only in the `advanced` mode, not in `turnbased`.
 - Smooth projectile flight: between two game ticks, the view shows each flying projectile part of the way to its new place. The size changes only at a tick.
 
 Keys of the `advanced` mode:

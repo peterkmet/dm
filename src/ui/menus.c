@@ -24,7 +24,11 @@
 #define DAMAGE_SMALL_BELOW 16
 #define DAMAGE_LARGE_BELOW 41
 
+/* Ticks that the advanced mode holds the action damage after the original tick (not in the original game). */
+#define DAMAGE_HOLD_EXTRA_TICKS 1
+
 bool g_action_area_contains_icons = true;
+static int16_t damage_hold_ticks;
 
 void menus_draw_movement_arrows(void)
 {
@@ -143,22 +147,44 @@ void menus_refresh_action_area(void)
             menus_clear_acting_champion();
             return;
         }
+        damage_hold_ticks = 0;
         if (g_session.candidate_champion_index < 0)
             return;
     }
     if (!(g_redraw & REDRAW_ACTION_AREA))
         return;
     if (g_session.acting_champion_index >= 0) {
+        damage_hold_ticks = 0;
         g_action_area_contains_icons = false;
         g_champions[g_session.acting_champion_index].attributes |= CHAMPION_ATTR_ACTION_HAND;
         status_draw_champion(g_session.acting_champion_index);
         menus_draw_action_area();
     } else if (!g_session.action_damage) {
+        if (damage_hold_ticks) {
+            damage_hold_ticks--;
+            return;
+        }
         g_action_area_contains_icons = true;
         menus_draw_action_area();
     } else {
+        damage_hold_ticks = g_session.mode == GAME_MODE_ADVANCED ? DAMAGE_HOLD_EXTRA_TICKS : 0;
         menus_draw_action_damage(action_take_damage());
     }
+}
+
+void menus_end_damage_hold(void)
+{
+    damage_hold_ticks = 0;
+}
+
+bool menus_click_damage_hold(void)
+{
+    if (!damage_hold_ticks || g_session.acting_champion_index >= 0)
+        return false;
+    damage_hold_ticks = 0;
+    g_action_area_contains_icons = true;
+    menus_draw_action_area();
+    return true;
 }
 
 /* Draws the caster tabs of the spell area: a cyan tab for each other living champion, the name of
@@ -267,4 +293,5 @@ void menus_reset(void)
 {
     action_reset();
     g_action_area_contains_icons = true;
+    damage_hold_ticks = 0;
 }

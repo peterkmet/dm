@@ -31,6 +31,10 @@ void menus_draw_action_damage(int16_t damage); /* exported for the tests */
 /* Runs each tick: turns idle champions toward their last attacker, then redraws the action area
    when requested (menu, damage, or icons). */
 void menus_refresh_action_area(void);
+/* Ends the advanced mode hold of the action damage; the next refresh draws the icons. */
+void menus_end_damage_hold(void);
+/* A click in the advanced mode hold of the action damage: draws the icons at once. Returns true when a hold ran. */
+bool menus_click_damage_hold(void);
 /* Draws the six runes that the caster can choose at its symbol step. */
 void menus_draw_available_symbols(int16_t symbol_step);
 /* Draws the runes that the champion has chosen so far. */

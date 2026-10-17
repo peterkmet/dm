@@ -205,6 +205,7 @@ void ui_draw_interface(void)
     }
     status_draw_all(CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_ICON);
     menus_draw_spell_area();
+    menus_end_damage_hold();
     g_redraw |= REDRAW_ACTION_AREA;
     menus_refresh_action_area();
     ui_draw_message_area();

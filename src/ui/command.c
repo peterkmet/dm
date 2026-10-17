@@ -373,6 +373,7 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
         status_draw_all(CHAMPION_ATTR_STATUS_BOX | CHAMPION_ATTR_NAME_TITLE | CHAMPION_ATTR_STATISTICS |
                         CHAMPION_ATTR_ICON | CHAMPION_ATTR_ACTION_HAND | CHAMPION_ATTR_WOUNDS);
     }
+    menus_end_damage_hold();
     g_redraw |= REDRAW_ACTION_AREA;
 }
 
@@ -623,7 +624,7 @@ static bool trigger_action(int16_t list_index)
 static void click_in_action_area(int16_t x, int16_t y)
 {
     if (g_session.acting_champion_index < 0) {
-        if (!g_action_area_contains_icons)
+        if (!g_action_area_contains_icons && !menus_click_damage_hold())
             return;
         int16_t command = ui_command_from_mouse(TABLES_MOUSE_ACTION_ICONS, x, y, CLICK_LEFT_PRESS);
         int16_t index = command - COMMAND_SELECT_ACTING_CHAMPION_FIRST;

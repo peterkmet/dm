@@ -27,11 +27,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - Wine CX does not pass macOS environment variables to the Windows process; set them with `wine cmd /c "set NAME=value&& dm.exe ..."`.
 - Next step: run `dm.exe` on a real Windows. If it crackles there, look at the SDL3 WASAPI path; if not, it is a Wine CX problem.
 
-## Advanced mode: show the damage twice as long
-
-- Owner's wish (2026-10-16): in the advanced mode the damage that a champion deals stays in the action area twice as long; the vanilla mode keeps the original time.
-- PRD: `docs/superpowers/2026-10-17-advanced-damage-time.md`.
-
 ## Advanced mode: action icons keep their colors on every level
 
 - Owner's wish (2026-10-16): in the advanced mode the icons of the action area have the same colors on every level; the vanilla mode keeps the original behavior.

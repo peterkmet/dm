@@ -1,7 +1,7 @@
 # Advanced mode: the action damage shows twice as long: PRD
 
-Date: 2026-10-17. Branch: `feature/2026-10-17-advanced-damage-time`. Status: reviewed (one `prd-reviewer` pass,
-as part of the todo pass of 2026-10-17); the plan is not written yet.
+Date: 2026-10-17. Branch: `feature/2026-10-17-advanced-damage-time`. Status: implemented (one `prd-reviewer` pass,
+as part of the todo pass of 2026-10-17; a bounded change without a plan).
 
 ## Goal
 
