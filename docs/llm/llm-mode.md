@@ -11,7 +11,7 @@ The plan is in [2026-10-04-modes-plan.md](../superpowers/archive/2026-10-04-mode
 | State, view, and map as JSON | `src/control/state_json.c` | Done, tested |
 | Protocol and turns | `src/control/control.c`, `src/control/turn.c` | Done, tested in process |
 | Socket server | `src/platform/transport.c` | Done, tested in process |
-| MCP server | `tools/dmtools/mcp_server.py` | Done, tested against the socket |
+| MCP server | `tools/dmtools/mcp_server.py` | Done, no test (a thin wrapper of the socket) |
 | Command-line client `dm-play` | `tools/dmtools/play.py` | Done, tested against the socket |
 | `--mode turnbased --control PATH` | `src/platform/options.c`, `src/platform/app.c` | Done, tested headless |
 
@@ -545,39 +545,40 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 ## Tests
 
-`tests/port/test_control.py` builds a private `libdm`, starts a new game, and recruits one champion. It checks:
+`tests/port/test_control.py` builds a private `libdm`, starts a new game, recruits one champion, and opens the
+socket. It checks:
 
-- The JSON of `state_get_string` parses and has the expected fields.
-- A socket session: `get_state`, `act move_forward` changes the party position, walking to a mirror, `click_wall_ahead`, `recruit`, and `wait`.
-- The MCP tool functions, called directly against the socket, including `save_game` and `load_game`.
-- `save`, then a move and `wait`, then `load` restores the party position and the game time.
-- `dm-play` prints one line of valid JSON, the exit code 1 for `"ok": false`, and the `--brief` summary.
-- The view stops at a wall at depth 1 (6 squares) and at a closed door (nothing beyond the door, also not in the map). A mirror on a side wall is in `side_face`. The map shows the wall of a mirror as `#`: the map has no wall features, as the automap. A side square behind walls is not in the view and not in the map.
-- The state: stamina in the units of the screen, skill ranks, `load_kg`, and the candidate outside `champions[]`, with the `--brief` line.
-- `wait` without news runs all ticks with `stopped` `done`. Damage stops it early with `stopped` `damage` and the ticks that ran. `ticks` 5001 is refused.
-- `act_many` with a creature group in view on a side square runs all turns while the group stays in view. It stops with `creature` after the first turn when a new group comes into view, also when the old group leaves the view in the same turn.
-- `act_many`: the actions run in order, a failed action stops the batch, and damage stops it after the first turn. The MCP tools and `dm-play` send `act_many`.
-- A move into a wall gives `"bumped": true` and the same square. `act_many` stops with `bumped`. `--brief` ends the turn line with `BUMPED`.
-- A move onto a spinner of map 2 stops `act_many` with `turned` after that step. A move and turns before the spinner do not stop it. A single `act` onto the spinner has `stopped` `turned`.
-- `dm-play` does not import `mcp`.
-- A fireball flies to a screamer two squares ahead during a `wait`. The explosion is gone at the end of the turn, but `seen.explosions` has `fireball` on the square of the screamer, and `seen.creature_changes` has the killed screamer with `after` 0. `--brief` prints the `seen:` line. A `wait` without explosions and creature changes has no `seen`.
-- `--brief` prints the name of an explosion in `flying`, also a number.
-- A chest in the action hand opens. `take_from_slot`, `put_in_slot`, and `look` with a chest slot (30-37) click the chest slot box, and the state shows the change. Slot 38 gives `slot out of range`.
-- `--brief` prints the creatures on a side square, also at depth 0.
-- `--brief` prints a door with its state and an open pit on a side square.
-- `get_map`: each row of `rows` has `width` characters. `grid` has the `x mod 10` header and the `y` in front of each row. `--brief get_map` prints `grid`.
-- On map 1, the nine pads of the room east of (14, 1) and the pad at (25, 1) give `floor_ornament` `pressure_pad` in the view and `_` in the map. The party row gives none. The floor sensor at (14, 14) has no ornament and gives none. `--brief` prints the pad, also on a side square.
-- `swap_champions` swaps the `position` of two champions. `look` on a slot returns the name of the sword and the weight line, and the sword is in its slot again. `look` on the leader hand gives the same text, with `ATTACK` in the advanced features. `--brief` prints the `look:` line.
-- `dm-play` returns exit code 1 and logs the call when the game is not running.
-- After a forced party death: `save` and `wait` return `game over`, `load` restores the game, and after a second death `new_game` starts a new game.
-- A lock and another wall ornament give the name of their picture (`iron_lock`, `creeper`); `--brief` prints the name. A wall text has no leading new line.
-- `alcove`, `fountain`, and `vi_altar` are false when no wall is ahead. A border wall outside the map shows its fountain.
-- A teleporter that sends the party back to its start square gives `stopped` `moved`, not `bumped`.
-- `act_many` gives `action_damage` as a list. `add_rune` without enough mana fails and adds no rune.
+- The view stops at a closed door: nothing beyond the door, also not in the map. A mirror on a side wall is in
+  `side_face`.
+- `act_many`: the actions run in order, a failed action stops the batch, and damage stops it after the first turn.
+  It stops with `creature` only when a new creature group comes into view, also when the old group leaves the view
+  in the same turn. A move onto a spinner of map 2 stops it with `turned`.
+- `add_rune` without enough mana fails and adds no rune. After a cast the cleared runes stay inverted, as with the
+  mouse.
+- `wait` without news runs all ticks with `stopped` `done`; damage stops it early with `stopped` `damage`. A group
+  that stays in view does not stop it.
+- A fireball that kills a screamer during a turn is in `seen.explosions` and `seen.creature_changes`; a group in view
+  for many ticks is recorded once. `--brief` prints the `seen:` line.
+- A move into a wall gives `"bumped": true` and the health lost of the step; `--brief` ends the turn line with
+  `BUMPED`. A teleporter back to the start square gives `stopped` `moved`.
+- `swap_champions` swaps the positions; `look` returns the object name and its lines.
+- A chest in the action hand opens; `take_from_slot`, `put_in_slot`, and `look` work on the chest slots.
+- A pile lists all its objects top first, in take order.
+- `--brief` prints the creatures on side squares, skips a side square that the view leaves out, and names a lock.
+- `get_map`: `grid` has the indexes.
+- After a party death `load` restores the game and `new_game` starts a new game.
+- A free record never enters a square list. A torch holder is not a lock; a lock names its picture. A wall text has
+  no leading new line. No alcove without a wall ahead. A border wall outside the map shows its fountain. The view
+  lists no side square that the screen hides.
+- On map 1 the view and the map show the pressure pads; a plate without an ornament stays hidden.
+- Two requests in one write get two answers; a client that goes away in the middle of a line does not stop the
+  game.
 - The tests log the `dm-play` calls to a temporary folder (`tests/conftest.py`), never into a run.
-- `tests/port/test_automap.py`: a pressure pad that the view draws is a gray square in the floor of the automap.
 
-`tests/port/test_modes.py` starts `build/dm --mode turnbased --control <socket>` with the SDL dummy drivers and checks `get_state` and `act move_forward`. It also checks that a party death during a turn gives `"game_over": true`.
+`tests/port/test_modes.py` starts `build/dm --mode turnbased --control <socket>` with the SDL dummy drivers and
+checks `get_state` and `act move_forward`, and that a `load` sent at once runs the game.
+
+The MCP server (`tools/dmtools/mcp_server.py`) has no test: it only passes each tool call to the socket.
 
 ```sh
 uv run pytest -q tests/port/test_control.py
