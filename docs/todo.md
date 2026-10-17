@@ -39,6 +39,17 @@ User wishes for future versions. Not planned yet.
 - The original: the pending-damage routine calls `champion_draw_damage(i, damage)` (KAOS `0x11187e`, `reference/decomp/dm/KAOS.c:14774`).
 - Change: the engine records the damage per champion; the game loop (`src/ui/gameloop.c`) calls `status_draw_damage` for it.
 
+## Windows build: the sound crackles under Wine
+
+- Found in the manual test (2026-10-17): `dm.exe` under the local Wine CX build (`~/github/wine-cross`) plays, saves and loads, but the sounds crackle and pop (wall bump, door). The macOS build sounds clean. Kairosoft games in the same Wine sound clean.
+- Ruled out:
+  - the game output: the SDL `disk` driver records clean audio from `dm.exe`;
+  - a dry queue: a log in `pump_audio` (`src/platform/platform.c`) found no empty queue during play, and 6 queued ticks did not help;
+  - the device rate: `SDL_AUDIO_FREQUENCY=48000` did not help;
+  - CPU load: 15-20 % for `dm.exe`.
+- Wine CX does not pass macOS environment variables to the Windows process; set them with `wine cmd /c "set NAME=value&& dm.exe ..."`.
+- Next step: run `dm.exe` on a real Windows. If it crackles there, look at the SDL3 WASAPI path; if not, it is a Wine CX problem.
+
 ## Advanced mode: show the damage twice as long
 
 - Owner's wish (2026-10-16): in the advanced mode the damage that a champion deals stays in the action area twice as long; the vanilla mode keeps the original time.
