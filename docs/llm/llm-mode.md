@@ -8,8 +8,9 @@ The plan is in [2026-10-04-modes-plan.md](../superpowers/archive/2026-10-04-mode
 
 | Part | File | State |
 |---|---|---|
-| State, view, and map as JSON | `src/platform/state_json.c` | Done, tested |
-| Socket server and turns | `src/platform/control.c` | Done, tested in process |
+| State, view, and map as JSON | `src/control/state_json.c` | Done, tested |
+| Protocol and turns | `src/control/control.c`, `src/control/turn.c` | Done, tested in process |
+| Socket server | `src/platform/transport.c` | Done, tested in process |
 | MCP server | `tools/dmtools/mcp_server.py` | Done, tested against the socket |
 | Command-line client `dm-play` | `tools/dmtools/play.py` | Done, tested against the socket |
 | `--mode turnbased --control PATH` | `src/platform/main.c` | Done, tested headless |
@@ -195,6 +196,262 @@ There is one save slot. The save directory is the folder of `--saves`, else the 
 
 The actions, why a turn or a batch stops (bump, displacement, wait, seen, game over), the cells, the chest and look answers, and the fields of `state`, `view`, and `map` are in the [player instructions](llm-playbook.md#how-to-play).
 
+## Protocol vocabulary
+
+The names that the game writes into `state`, `view`, and `map`, and the names of the actions. Each list has the order of its table in `control/state_json.c` or `control/control_actions.c`. `tests/standard/test_vocabulary.py` checks that every name is here.
+
+### Directions
+
+The values of `facing`, in the order north to west.
+
+- `north`: toward lower `y`
+- `east`: toward higher `x`
+- `south`: toward higher `y`
+- `west`: toward lower `x`
+
+### Statistics
+
+The keys of the statistics of a champion.
+
+- `luck`: chance in the game rules
+- `strength`: carry weight and melee damage
+- `dexterity`: hit and dodge
+- `wisdom`: mana and spell skill
+- `vitality`: health and stamina
+- `antimagic`: resistance to magic
+- `antifire`: resistance to fire
+
+### Skills
+
+The base skills.
+
+- `fighter`: melee and shooting skill
+- `ninja`: throwing and fast melee skill
+- `priest`: healing and defence skill
+- `wizard`: spell skill
+
+### Wounds
+
+The body parts that can hold a wound; they are also the first six slots.
+
+- `ready_hand`: the left hand
+- `action_hand`: the right hand
+- `head`: the head
+- `torso`: the torso
+- `legs`: the legs
+- `feet`: the feet
+
+### Cells of the view
+
+The cell of an object on a square, as the party sees it.
+
+- `far_left`: the far left pile
+- `far_right`: the far right pile
+- `near_right`: the near right pile
+- `near_left`: the near left pile
+
+### Sides
+
+The side of a square in the view.
+
+- `left`: the lane left of the party
+- `center`: the lane of the party
+- `right`: the lane right of the party
+
+### Party cells
+
+The cell of a champion in the party.
+
+- `front_left`: the front row, left
+- `front_right`: the front row, right
+- `back_right`: the back row, right
+- `back_left`: the back row, left
+
+### Slots
+
+The places of an inventory, in index order.
+
+- `ready_hand`: the left hand
+- `action_hand`: the right hand
+- `head`: the head
+- `torso`: the torso
+- `legs`: the legs
+- `feet`: the feet
+- `pouch_2`: the second pouch
+- `quiver_2`: a quiver place
+- `quiver_3`: a quiver place
+- `quiver_4`: a quiver place
+- `neck`: the neck
+- `pouch_1`: the first pouch
+- `quiver_1`: a quiver place
+- `backpack_1`: a backpack place
+- `backpack_2`: a backpack place
+- `backpack_3`: a backpack place
+- `backpack_4`: a backpack place
+- `backpack_5`: a backpack place
+- `backpack_6`: a backpack place
+- `backpack_7`: a backpack place
+- `backpack_8`: a backpack place
+- `backpack_9`: a backpack place
+- `backpack_10`: a backpack place
+- `backpack_11`: a backpack place
+- `backpack_12`: a backpack place
+- `backpack_13`: a backpack place
+- `backpack_14`: a backpack place
+- `backpack_15`: a backpack place
+- `backpack_16`: a backpack place
+- `backpack_17`: a backpack place
+
+### Creatures
+
+The names of the creature types, by type. The original shows no names; these are the common ones.
+
+- `Giant Scorpion`
+- `Swamp Slime`
+- `Giggler`
+- `Wizard Eye`
+- `Pain Rat`
+- `Ruster`
+- `Screamer`
+- `Rockpile`
+- `Ghost`
+- `Stone Golem`
+- `Mummy`
+- `Black Flame`
+- `Skeleton`
+- `Couatl`
+- `Vexirk`
+- `Magenta Worm`
+- `Trolin`
+- `Giant Wasp`
+- `Animated Armour`
+- `Materializer`
+- `Water Elemental`
+- `Oitu`
+- `Demon`
+- `Lord Chaos`
+- `Red Dragon`
+- `Lord Order`
+- `Grey Lord`
+
+### Wall ornaments
+
+The wall ornaments, by index, named from their picture. An index without a name is shown as a number.
+
+- `square_alcove`
+- `vi_altar`
+- `arched_alcove`
+- `hook`
+- `iron_lock`
+- `plate_ring`
+- `dent`
+- `tiny_button`
+- `iron_ring`
+- `crack`
+- `slime_outlet`
+- `green_button`
+- `blue_button`
+- `grate`
+- `coin_slot`
+- `wooden_lock`
+- `rune_lock`
+- `framed_lock`
+- `studded_lock`
+- `cross_lock`
+- `gold_lock`
+- `skull_lock`
+- `ornate_gold_lock`
+- `blue_lock`
+- `green_lock`
+- `diamond_lock`
+- `sun_lock`
+- `black_lock`
+- `gem_hole`
+- `creeper`
+- `manacles`
+- `fountain`
+- `iron_ornament`
+- `demon_face`
+- `scratches`
+- `tiny_hole`
+- `round_hole`
+- `narrow_slot`
+- `mirror`
+- `torch_holder`
+- `empty_torch_holder`
+- `long_holder`
+- `red_button`
+- `eye_socket`
+- `grey_button`
+- `small_crack`
+- `green_gem`
+- `blue_gem`
+- `brown_button`
+- `wall_slot`
+- `wide_crack`
+- `red_gem_roots`
+- `blue_gem_roots`
+- `rock_face`
+- `lord_order`
+
+### Floor ornaments
+
+The floor ornaments, by index. An index without a name is shown as a number.
+
+- `grate`
+- `pressure_pad`
+- `moss`
+- `round_grate`
+- `round_pressure_pad`
+- `flame_pit`
+- `crack`
+- `tiny_pressure_pad`
+- `puddle`
+
+### Square looks
+
+The look of a square on the map and in `look`.
+
+- `wall`: a wall
+- `floor`: an open floor
+- `pit`: a pit
+- `stairs_up`: stairs up
+- `stairs_down`: stairs down
+- `door`: a door
+- `teleporter`: a teleporter
+
+### Actions
+
+The values of `action` for `act` and `act_many`.
+
+- `move_forward`: one square forward
+- `move_back`: one square back
+- `move_left`: one square left, same facing
+- `move_right`: one square right, same facing
+- `turn_left`: turn 90 degrees left
+- `turn_right`: turn 90 degrees right
+- `click_wall_ahead`: click the wall ahead (switch, lock, mirror)
+- `take_object`: take an object from the floor into the hand
+- `drop_object`: drop the object of the hand
+- `open_inventory`: open the inventory of a champion
+- `close_inventory`: close the inventory
+- `put_in_slot`: put the object of the hand into a slot
+- `take_from_slot`: take the object of a slot into the hand
+- `eat`: eat the object of the hand
+- `drink`: drink the object of the hand
+- `choose_action`: choose an action of the weapon in the hand
+- `pass`: do nothing for one turn
+- `set_caster`: choose the champion that casts
+- `add_rune`: add a rune to the spell
+- `delete_rune`: delete the last rune
+- `cast`: cast the spell
+- `recruit`: answer the mirror of a candidate
+- `set_leader`: choose the leader
+- `sleep`: let the party sleep
+- `wake`: wake the party
+- `swap_champions`: swap two champions
+- `look`: look at a square
+
 ## Play from the shell: dm-play
 
 `dm-play` sends one request to the socket and prints the response as compact JSON on one line. Use it from a shell, or let an LLM use it through a shell tool instead of MCP. The socket path comes from `DM_CONTROL`. The default is `~/.dm/control.sock`.
@@ -245,31 +502,40 @@ With champions, each champion has one line, for example `0 <name> (front_left): 
 
 ## C API
 
-`control.h` (plain POSIX, in `libdm`):
+`control/control.h` (no socket, no SDL, in `libdm`):
 
 | Function | Purpose |
 |---|---|
-| `bool control_open(const char *path)` | Listens on the socket. Replaces an old socket file. Returns false on an error. |
-| `void control_poll(void)` | Call one time per frame. Accepts a client, answers requests, runs and ends turns. |
+| `bool control_handle_line(const char *line, Json *reply)` | Answers one request line. Returns true when `reply` holds the answer, false when a turn started. |
+| `bool control_end_turn(Json *reply)` | Advances the pending turn by one frame. Returns true when the request ended and `reply` holds the answer. |
 | `bool control_is_turn_pending(void)` | True while a turn runs. |
-| `void control_close(void)` | Closes the sockets and removes the socket file. |
+| `void control_drop_client(void)` | The client is gone: a pending turn ends without a reply. |
+
+`platform/transport.h` (plain POSIX; `transport_none.c` replaces it on Windows):
+
+| Function | Purpose |
+|---|---|
+| `bool transport_is_available(void)` | True where the control socket exists (macOS). |
+| `bool transport_open(const char *path)` | Listens on the socket. Replaces an old socket file. Returns false on an error. |
+| `void transport_poll(void)` | Call one time per frame. Advances a pending turn, accepts a client, answers requests. |
+| `void transport_close(void)` | Closes the sockets and removes the socket file. |
 
 The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gameloop_get_data_dir()`. `gameloop_load_data` sets both directories.
 
-`state_json.h` (in `libdm`, no SDL): `state_json_write_state`, `state_json_write_view`, `state_json_map` append one JSON object to a `Json` buffer. `state_json_get_string(part)` returns a new string. Release it with `free`.
+`control/state_json.h` (in `libdm`, no SDL): `state_write_state`, `state_write_view`, `state_write_map` append one JSON object to a `Json` buffer. `state_get_string(part)` returns a new string. Release it with `free`.
 
 ## Integration in main.c
 
-`main.c` does these steps in the `turnbased` mode:
+`platform/main.c` does these steps in the `turnbased` mode:
 
-1. It parses `--mode turnbased` and `--control PATH`, and calls `control_open(PATH)` before the main loop. It stops with an error when the call returns 0.
+1. It parses `--mode turnbased` and `--control PATH`, and calls `transport_open(PATH)` before the main loop. It stops with an error when the call returns false. Where `transport_is_available()` is false, the mode is not offered.
 2. It presses ENTER at the entrance (as `DM_AUTO_ENTER` does). The entrance frames run without a turn.
 3. `read_input` keeps only the quit event. Keys and clicks do not go to the command queue.
-4. Each frame calls `control_poll()` after `read_input()`.
-5. In the game, each frame calls `gameloop_run_frame()` and `gameloop_tick()` only when `control_is_turn_pending()` returns 1. The window still shows each frame.
+4. Each frame calls `transport_poll()` one time, after `read_input()`.
+5. In the game, each frame calls `gameloop_run_frame()` and `gameloop_tick()` only while `control_is_turn_pending()` returns true. The window still shows each frame.
 6. `g_frame_hook` is `NULL`, so the endgame, the dialogs, and the fuse sequence do not wait for frames or input.
 7. After a game over, the program stays in the game mode and shows the entrance. `load` and `new_game` start the next game.
-8. It calls `control_close()` before `plat_quit()`.
+8. It calls `transport_close()` before `plat_quit()`.
 
 ## Known limits
 
@@ -281,7 +547,7 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 `tests/port/test_control.py` builds a private `libdm`, starts a new game, and recruits one champion. It checks:
 
-- The JSON of `state_json_get_string` parses and has the expected fields.
+- The JSON of `state_get_string` parses and has the expected fields.
 - A socket session: `get_state`, `act move_forward` changes the party position, walking to a mirror, `click_wall_ahead`, `recruit`, and `wait`.
 - The MCP tool functions, called directly against the socket, including `save_game` and `load_game`.
 - `save`, then a move and `wait`, then `load` restores the party position and the game time.

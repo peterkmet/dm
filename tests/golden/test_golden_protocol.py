@@ -26,8 +26,8 @@ def game(tmp_path):
     """The loaded game data in a private copy of libdm, with an open control socket and a temp save folder."""
     lib = load_lib()
     lib.gameloop_load_data.restype = ctypes.c_bool
-    lib.control_open.restype = ctypes.c_bool
-    lib.control_open.argtypes = [ctypes.c_char_p]
+    lib.transport_open.restype = ctypes.c_bool
+    lib.transport_open.argtypes = [ctypes.c_char_p]
     lib.control_is_turn_pending.restype = ctypes.c_bool
     lib.map_get_square.restype = ctypes.c_uint8
     lib.map_get_square_first_thing.restype = ctypes.c_uint16
@@ -41,9 +41,9 @@ def game(tmp_path):
     lib.startend_set_save_dir(str(game.saves).encode())
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
     game.socket = os.path.join(sock_dir, "control.sock")
-    assert lib.control_open(game.socket.encode())
+    assert lib.transport_open(game.socket.encode())
     yield game
-    lib.control_close()
+    lib.transport_close()
     shutil.rmtree(sock_dir, ignore_errors=True)
 
 

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ALLOWLIST = Path(__file__).with_name("allowlist.txt")
 NEVER_OPEN = {"format", "allowlist"}
 AUDIO = ("engine/sound.", "ui/music", "ui/audio")
-CONTROL = ("control/", "platform/control", "platform/state_json")
+CONTROL = ("control/", "platform/transport", "platform/state_json")
 ENGINE_EPIC = {"record": 5, "module": 5, "prefix": 5, "header": 5, "include": 5, "comment": 5, "order": 5,
                "global": 7, "dead-api": 7, "engine-write": 7}
 LAYERS = ("data", "engine", "ui", "control", "platform")

@@ -60,7 +60,7 @@ This is a separate work item ("CSB engine"). It needs a decision first: one addr
 | | `show` (`--show`) | The palette comes from the KAOS address `KAOS_DUNGEON_PALETTES` (`0x100aa6`). |
 | `src/ui/gameloop.c` | `gameloop_load_data` | `"%s/KAOS.FTL"`, `"%s/Graphics.DAT"`. Sets the save directory to `dir`. |
 | | `gameloop_start_new_game` | `"%s/Dungeon.DAT"`. |
-| `src/platform/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_get_data_dir()`, so the folder is right. |
+| `src/control/control.c` | `handle_new_game` | The error text `"cannot load Dungeon.DAT"`. It uses `gameloop_get_data_dir()`, so the folder is right. |
 | | `handle_load`, `handle_request` (`save`) | Use `startend_save_dir()` and `savegame_load/save`. The folder is right. |
 | `src/engine/savegame.h` | `SAVE_FILE_NAME`, `SAVE_BACKUP_FILE_NAME` | `"DMGAME.DAT"`, `"DMGAME.BAK"`. Used in `savegame.c`: `savegame_save` and `savegame_load` (4 places). |
 | `src/ui/startend.c` | `save_dir` | Default `"."`. `startend_set_save_dir` is called by `gameloop_load_data`. |
@@ -95,7 +95,7 @@ The DM font comes from `Graphics.DAT` (`GFX_FONT`, item 695). `text_init` reads 
 | Place | Assumption |
 |---|---|
 | `advanced.h`: `GAME_MODE_VANILLA`, `GAME_MODE_ADVANCED`, `GAME_MODE_TURNBASED`, `g_session.mode` | The value is set only by `--mode`. |
-| `main.c`: `get_game_mode`, `main` | The parser reads `--mode` in a loop over `argv`. `g_advanced_features` and the local `turnbased` are set once, before the window opens. `auto_enter` and the control socket (`control_open`) depend on `turnbased` at the start. The loop uses `turnbased` in five places. |
+| `main.c`: `get_game_mode`, `main` | The parser reads `--mode` in a loop over `argv`. `g_advanced_features` and the local `turnbased` are set once, before the window opens. `auto_enter` and the control socket (`transport_open`) depend on `turnbased` at the start. The loop uses `turnbased` in five places. |
 | `main.c`: `read_input` | Drops all input when `turnbased` and `mode >= MODE_ENTRANCE`. Escape quits for `mode < MODE_ENTRANCE` (`--show`, `--view`). |
 | `main.c`: `amiga_key` | Maps the advanced keys only outside vanilla. |
 | `main.c`: `g_frame_hook` | `NULL` in `turnbased`, else `run_frame_hook`. |
@@ -244,7 +244,7 @@ if (!strcmp(argv[i], "--adventure") && (adventure = adventure_find(argv[i + 1]))
     return SDL_Log("--adventure must be dm or csb"), 1;
 ```
 
-`--mode` writes to a local `mode_arg` (-1 when absent) instead of `g_session.mode`. `select_start(adventure, mode_arg, csb_present, control_is_available())` sets the globals.
+`--mode` writes to a local `mode_arg` (-1 when absent) instead of `g_session.mode`. `select_start(adventure, mode_arg, csb_present, transport_is_available())` sets the globals.
 
 Rules for the flags (see [Open decisions](#open-decisions), point 1):
 

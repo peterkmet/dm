@@ -24,7 +24,7 @@
 #define MOVER_OBJECT     2
 #define MOVER_PROJECTILE 3
 
-int g_party_teleport_count;
+int16_t g_party_teleport_count;
 
 bool move_is_levitating(uint16_t thing)
 {
