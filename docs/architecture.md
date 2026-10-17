@@ -57,7 +57,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `data/ids.h` | `GFX_` `ZONE_` `LAYOUT_` `ICON_` `TEXT_` | Graphic numbers (Graphics.DAT items), layout zone numbers (graphic 696), layout bitmap ids, object icons, and string numbers (graphic 700), one block per kind, sorted by value. |
 | `data/kaos.h` | `kaos_` | The loaded engine image (KAOS.FTL, or the KAOS-layout image of the CSB APPB.FTL) and its readers at the addresses of the original. |
 | `data/kaos_addresses.h` | `KAOS_` | Addresses of the KAOS.FTL image (and of the KAOS-layout CSB image). |
-| `data/os.h` | `os_` | The operating system services that data/ and engine/ need: folders, the log, and fatal errors. |
+| `data/os.h` | `os_` | The operating system services that data/ and engine/ need: folders, file times, the log, and fatal errors. |
 | `data/settings.h` | `settings_` | The settings file of the advanced mode (not in the original game): SETTINGS.TXT in the saves folder with the sound volume, the music volume and the music choice. |
 | `data/spells.h` | `spell_` | The spell rules of the spell table: the symbol strings, the mana cost and the skill draws. |
 | `data/swsh.h` | `swsh_` | The FTL logo module SWSH.FTL: a palette script, the logo graphic, and its sound. |
@@ -88,7 +88,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `engine/record.h` | `rec_` | The byte layout of the dungeon records: one accessor per field, no record byte outside this module. |
 | `engine/recruit.h` | `recruit_` | Candidate champions: the champion data from the text of a mirror. |
 | `engine/savefile.h` | `savefile_` | The save file container of DM v3.60 and CSB: the header and the blocks. |
-| `engine/savegame.h` | `savegame_` | Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and load_game, LOADSAVE.C), and the extension blocks of the port (automap, cheats). |
+| `engine/savegame.h` | `savegame_` | Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and load_game, LOADSAVE.C), the extension blocks of the port (automap, cheats), and the save slots of the advanced mode with the slot info read. |
 | `engine/sensor.h` | `sensor_` | Floor and wall sensors. |
 | `engine/sound.h` | `sound_` | The sound rules: the sound table, the volume by distance, the pending queue, and the play requests of the rules. |
 | `engine/timeline.h` | `timeline_` | The timeline: the event slots and the min-heap that orders them by time. |
@@ -117,6 +117,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `ui/panel.h` | `panel_` | The inventory panel: slots, the eye and the mouth, food and water, skills and statistics, the object description, the scroll, the chest. |
 | `ui/rows.h` | `rows_` | The rows of text of the viewport screens (not in the original game): it draws a title and rows in the game font and maps a click to a row and a text column. |
 | `ui/select.h` | `select_` | The start screens in the DM font: adventure, mode, and the CSB entrance. |
+| `ui/slotlist.h` | `slotlist_` | The slot list of the advanced mode (not in the original game): the save slots, and in the load list also the quick save, as rows in the dialog graphic with CANCEL. It takes every click and key while it is open. |
 | `ui/startend.h` | `startend_` | Sequences outside the game loop: the save dialog, resuming a saved game, the endgame screens, and the fuse sequence with Lord Chaos. |
 | `ui/status.h` | `status_` | The champion status boxes at the top of the screen: name, bars, hands, shields, damage, the party icons. |
 | `ui/text.h` | `text_` | The DM font: it draws text and measures it. |
@@ -236,6 +237,7 @@ A hook is a function pointer that a higher layer sets, so that a lower layer can
 | `g_os_fatal_hook` | `data/os.h` | `platform/app.c` | `os_fatal` (`data/os.c`) | the message goes to stderr |
 | `g_os_make_folder_hook` | `data/os.h` | `platform/app.c`, the tests | `os_make_folder` (`data/os.c`) | the folder is not made; the call returns false |
 | `g_os_list_folder_hook` | `data/os.h` | `platform/app.c`, the tests | `os_list_folder` (`data/os.c`) | no file is listed |
+| `g_os_file_time_hook` | `data/os.h` | `platform/app.c` | `os_get_file_time` (`data/os.c`) | the slot list shows no file time |
 
 ## Test seams
 

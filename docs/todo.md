@@ -2,10 +2,6 @@
 
 User wishes for future versions. Not planned yet, unless an item names its PRD.
 
-## Advanced mode: more save slots
-
-- The save dialog offers a choice of several save slots.
-
 ## CSB: start without the two disks
 
 - Chaos Strikes Back: choose the party, then stairs down into the dungeon where the game starts, without the two-disk start of the original.

@@ -1,6 +1,6 @@
 # Save slots: PRD
 
-Date: 2026-10-17. Branch: `feature/2026-10-17-options`. Status: draft.
+Date: 2026-10-17. Branch: `feature/2026-10-17-options`. Status: implemented.
 
 ## Goal
 
@@ -8,6 +8,11 @@ In the advanced mode, the player saves to one of 8 save slots and resumes from o
 2026-10-17; `docs/todo.md:14`). Today the game has one save file per adventure and the quick save.
 
 A claim without a `file:line` source is an assumption; the plan task that relies on it checks it first.
+
+Implementation notes: the font has `-` and `:`. The message panel of the one-choice dialog is 201 x 76 pixels, so a
+row is 8 pixels high (9 rows: 72 pixels). `QUICK SAVE  LEVEL 14  2026-10-17 14:32` is 227 pixels and does not fit
+the viewport, so the quick save row is labelled `QUICK`. The code numbers the slots 0-7 (slot 0 is `DMGAME.DAT`);
+the lists show 1-8. The info read also checks the byte sum word of the dungeon part.
 
 ## The port today
 

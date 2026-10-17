@@ -84,11 +84,11 @@ The entrance of Dungeon Master: click ENTER or press Return to start a new game.
 
 The new adventure starts on level 4 at (22, 18), facing south. Each champion has full health, stamina, and mana, no objects, and food and water of 1500 to 1755. The save needs at least one champion, and each champion needs a unique first name. Else a dialog gives the reason and the game stays in the prison.
 
-- RESUME loads `CSBGAME.DAT`, or `CSBGAME.BAK` when `CSBGAME.DAT` is missing. When the file is missing or damaged, the dialogs are the same as in Dungeon Master, and the game shows the CSB screen again.
-- The save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. SAVE AND PLAY saves and continues the game. SAVE AND QUIT saves, shows the credits, and then shows the CSB screen. In the prison, SAVE AND QUIT makes the new adventure and then quits: RESUME starts it. The dialog closes after a save. CSB has no quit without a save, as in the original.
+- RESUME loads `CSBGAME.DAT`, or `CSBGAME.BAK` when `CSBGAME.DAT` is missing. When the file is missing or damaged, the dialogs are the same as in Dungeon Master, and the game shows the CSB screen again. In the advanced mode, RESUME opens the load list (see Saved games); CANCEL shows the CSB screen again.
+- The save dialog shows CANCEL, SAVE AND PLAY, and SAVE AND QUIT. SAVE AND PLAY saves and continues the game. SAVE AND QUIT saves, shows the credits, and then shows the CSB screen. In the prison, SAVE AND QUIT makes the new adventure and then quits: RESUME starts it. The dialog closes after a save. CSB has no quit without a save, as in the original. In the advanced mode, SAVE AND PLAY and SAVE AND QUIT open the save list first; the save goes to the chosen slot (in the prison, the new adventure goes into that slot). CANCEL in the list goes back to the game.
 - After the credits (SAVE AND QUIT, the end of the game), the game shows the CSB screen. In turn-based mode, the game shows the entrance picture, and `load` or `new_game` over the socket starts the next game. QUIT on the CSB screen goes back to the first start screen, as QUIT on the DM entrance. Ctrl+Q or closing the window ends the program.
 - The end of the game: when the party dies, THE END shows with RESTART THIS GAME only (no QUIT), then the credits. When the party wins, the game plays the ending animation `ENDA.DAT`. After the last frame, a key or a click shows the CSB screen (the original stays on the last frame).
-- Quick save (F5) and quick load (F9) use `QUICK.DAT` in the CSB folder. A quick save in the prison is a plain save: it does not make the new adventure.
+- Quick save (F5) and quick load (F9) use `QUICK.DAT` in the CSB folder. A quick save in the prison is a plain save: it does not make the new adventure. DM and CSB use the same name `QUICK.DAT`; when `--saves` gives one folder to both, the load list of one adventure shows the quick save of the other as DAMAGED.
 - Turn-based mode: `new_game` starts NEW ADVENTURE (the prison). `save` in the prison makes the new adventure. `load` loads `CSBGAME.DAT`.
 
 ## Saved games
@@ -98,6 +98,16 @@ The game saves to `DMGAME.DAT` in the data folder (`game/`, or the folder of `--
 - Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. After SAVE the dialog stays open. CANCEL continues the game. QUIT ends the game. When the game was not saved or loaded in the last 100 ticks, QUIT asks first.
 - Resume: click RESUME at the entrance. The game loads `DMGAME.DAT`, or `DMGAME.BAK` when `DMGAME.DAT` is missing. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
 - When all champions die, the game shows THE END. When a saved game exists, RESTART THIS GAME loads it. QUIT on this screen, the QUIT of the save dialog, and the end of a won game show the credits. A key or a click then shows the entrance.
+
+### Save slots (advanced mode)
+
+The advanced mode has 8 save slots. Slot 1 is the file of the other modes: `DMGAME.DAT` (backup `DMGAME.BAK`). Slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT`, each with its own backup `DMGAME2.BAK` to `DMGAME8.BAK`. CSB uses `CSBGAME.DAT` and `CSBGAME2.DAT` to `CSBGAME8.DAT` in the same way. The vanilla and turn-based modes see only slot 1.
+
+- The list shows one row per slot in the dialog: `4  LEVEL 3  2026-10-17 14:32` (the level of the party and the date and time of the file), `4  EMPTY` when the slot has no file, or `4  DAMAGED`. Click a row to choose it. CANCEL or Escape closes the list. Other keys do nothing.
+- Save: SAVE in the save dialog opens the save list. A click on a row saves to that slot; the old file of the slot becomes the backup of the slot. The save dialog then shows GAME SAVED. There is no question before a save over a used slot: the backup keeps the previous game, and the next save over the slot replaces that backup.
+- Resume: RESUME opens the load list: the 8 slots, then QUICK, the quick save `QUICK.DAT`. EMPTY and DAMAGED rows are gray; a click on them does nothing. The QUICK row loads the quick save as F9 does: it is not a saved game, so THE END offers RESTART THIS GAME only after the first save. CANCEL shows the entrance again.
+- The current slot is the slot of the last save or load from a slot since the program start (slot 1 at the start). RESTART THIS GAME loads the current slot without the list. When its file and its backup are missing, the game asks CAN'T FIND SAVED GAME; LOAD SAVED GAME opens the load list.
+- Quick save (F5) is not in the save list.
 - Deliberate deviations from the original: the original quits the program after the credits and after a damaged save. The port shows the entrance. QUIT on the entrance goes back to the start screens. Only Ctrl+Q or closing the window ends the program.
 
 ## Controls
