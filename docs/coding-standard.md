@@ -64,7 +64,8 @@ refactor; until the run ends, the allowlist carries the difference.
 ## 3. Constants
 
 1. Name every game value. Plain numbers are allowed only for 0, 1, -1, and 2 when it halves or doubles a
-   value. Every other number is a named constant, also in an array size and in a loop bound. [hex, decimal]
+   value. Every other number is a named constant, also in an array size and in a loop bound. The base argument of `strtol` and its siblings is a plain number.
+   [hex, decimal]
 2. A constant is `#define NAME value` with the value written out; a negative value stands in parentheses:
    `#define COLOR_NONE (-1)`. No `enum` for constants; `enum` names a result type only (rule 6.1). [enum]
 3. Related constants stand in one block without blank lines, with one comment line above the block that

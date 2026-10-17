@@ -24,7 +24,7 @@
 #include "ui/view.h"
 #include "control/png.h"
 #include "control/request.h"
-#include "platform/state_json.h"
+#include "control/state_json.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -90,7 +90,7 @@ static struct {
 /* What the party knew before a turn: act_many and wait stop on news against it. */
 static struct {
     int16_t health[CHAMPION_MAX_COUNT];
-    uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX];
+    uint16_t groups[STATE_VISIBLE_GROUPS_MAX];
     int group_count;
     uint32_t message_expiry;
 } seen;
@@ -98,11 +98,11 @@ static struct {
 /* What the party saw during a request, also when it was gone at the end: the explosions, and the creature
    groups with their count when first seen and when last seen. */
 typedef struct {
-    StateJsonSeenThing at;
+    StateSeenThing at;
     uint8_t type;
 } WitnessedExplosion;
 typedef struct {
-    StateJsonSeenThing at;
+    StateSeenThing at;
     uint16_t creature;
     int16_t before, after;
     bool in_view, killed;
@@ -648,8 +648,8 @@ static const struct {
 /* Adds the explosions and the creature counts that the party sees now to the record of the request. */
 static void record_witnessed(void)
 {
-    StateJsonSeenThing things[WITNESSED_EXPLOSIONS_MAX];
-    int count = state_json_write_visible_things(THING_EXPLOSION, things, WITNESSED_EXPLOSIONS_MAX);
+    StateSeenThing things[WITNESSED_EXPLOSIONS_MAX];
+    int count = state_get_visible_things(THING_EXPLOSION, things, WITNESSED_EXPLOSIONS_MAX);
     for (int i = 0; i < count; i++) {
         uint8_t type = rec_explosion_type(things[i].thing);
         int known = 0;
@@ -661,7 +661,7 @@ static void record_witnessed(void)
     }
     for (int k = 0; k < witnessed.group_count; k++)
         witnessed.groups[k].in_view = false;
-    count = state_json_write_visible_things(THING_GROUP, things, STATE_JSON_VISIBLE_GROUPS_MAX);
+    count = state_get_visible_things(THING_GROUP, things, STATE_VISIBLE_GROUPS_MAX);
     for (int i = 0; i < count; i++) {
         int k = 0;
         while (k < witnessed.group_count && witnessed.groups[k].at.thing != things[i].thing)
@@ -693,7 +693,7 @@ static void start_witnessing(void)
     record_witnessed();
 }
 
-static void seen_place_json(Json *j, const StateJsonSeenThing *at)
+static void seen_place_json(Json *j, const StateSeenThing *at)
 {
     json_key(j, "x");
     json_int(j, at->x);
@@ -720,7 +720,7 @@ static void seen_json(Json *j)
     for (int k = 0; k < witnessed.explosion_count; k++) {
         json_open(j, '{');
         json_key(j, "name");
-        state_json_explosion_name(j, witnessed.explosions[k].type);
+        state_write_explosion_name(j, witnessed.explosions[k].type);
         seen_place_json(j, &witnessed.explosions[k].at);
         json_close(j, '}');
     }
@@ -732,7 +732,7 @@ static void seen_json(Json *j)
             continue;
         json_open(j, '{');
         json_key(j, "type");
-        json_str(j, state_json_creature_name(witnessed.groups[k].creature));
+        json_str(j, state_get_creature_name(witnessed.groups[k].creature));
         seen_place_json(j, &witnessed.groups[k].at);
         json_key(j, "before");
         json_int(j, witnessed.groups[k].before);
@@ -860,9 +860,9 @@ static void send_turn_result(void)
     look_json(&j);
     seen_json(&j);
     json_key(&j, "state");
-    state_json_write_state(&j);
+    state_write_state(&j);
     json_key(&j, "view");
-    state_json_write_view(&j);
+    state_write_view(&j);
     json_close(&j, '}');
     send_line(&j);
 }
@@ -946,15 +946,15 @@ static void take_snapshot(void)
 {
     for (uint16_t i = 0; i < g_party_champion_count; i++)
         seen.health[i] = g_champions[i].current_health;
-    seen.group_count = state_json_write_visible_groups(seen.groups);
+    seen.group_count = state_get_visible_groups(seen.groups);
     seen.message_expiry = latest_message_expiry();
 }
 
 /* A creature group is in view that was not in view at the snapshot. */
 static bool new_group_in_view(void)
 {
-    uint16_t groups[STATE_JSON_VISIBLE_GROUPS_MAX];
-    int count = state_json_write_visible_groups(groups);
+    uint16_t groups[STATE_VISIBLE_GROUPS_MAX];
+    int count = state_get_visible_groups(groups);
     for (int i = 0; i < count; i++) {
         int known = 0;
         for (int k = 0; k < seen.group_count; k++)
@@ -1068,7 +1068,7 @@ static void handle_load(void)
         return;
     }
     gameloop_start_loaded_game();
-    send_part("state", state_json_write_state);
+    send_part("state", state_write_state);
 }
 
 /* Starts a new game on the start square, as ENTER at the entrance does, and answers with the state. */
@@ -1079,7 +1079,7 @@ static void handle_new_game(void)
         return;
     }
     load_failed = false;
-    send_part("state", state_json_write_state);
+    send_part("state", state_write_state);
 }
 
 /* Writes the save file of the adventure, as the SAVE button does. */
@@ -1151,11 +1151,11 @@ static void handle_request(const char *request)
         return;
     }
     if (!strcmp(cmd, "get_state")) {
-        send_part("state", state_json_write_state);
+        send_part("state", state_write_state);
     } else if (!strcmp(cmd, "get_view")) {
-        send_part("view", state_json_write_view);
+        send_part("view", state_write_view);
     } else if (!strcmp(cmd, "get_map")) {
-        send_part("map", state_json_map);
+        send_part("map", state_write_map);
     } else if (is_game_over() &&
                (!strcmp(cmd, "act") || !strcmp(cmd, "act_many") || !strcmp(cmd, "wait") || !strcmp(cmd, "save"))) {
         send_error("game over");

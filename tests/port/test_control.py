@@ -33,7 +33,7 @@ def game():
     lib.rec_thing_next.restype = ctypes.c_uint16
     lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = ctypes.c_int16
-    lib.state_json_get_string.restype = ctypes.c_void_p
+    lib.state_get_string.restype = ctypes.c_void_p
     lib.control_open.argtypes = [ctypes.c_char_p]
     lib.control_is_turn_pending.restype = ctypes.c_bool
     assert lib.gameloop_load_data(str(GAME).encode())
@@ -57,7 +57,7 @@ def game():
 
 
 def state_json(game, part):
-    pointer = game.lib.state_json_get_string(part)
+    pointer = game.lib.state_get_string(part)
     text = ctypes.string_at(pointer).decode()
     ctypes.CDLL(None).free(ctypes.c_void_p(pointer))
     return json.loads(text)
