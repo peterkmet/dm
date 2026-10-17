@@ -152,6 +152,10 @@
 #define KAOS_DIALOG_MESSAGE_COLORS       0x104026 /* int16_t[2], color in the low byte */
 #define KAOS_ENDGAME_BUTTON_BORDER       0x102988 /* outer border x, y of an endgame button */
 #define KAOS_ENDGAME_BUTTON_INNER_BORDER 0x10298c /* inner border x, y */
+#define KAOS_RENAME_CURSOR               0x100cea /* "_" of the name entry */
+#define KAOS_NAME_ENTRY_CHARACTERS       0x100cee /* char[31]: A-Z , . ; : and space, by keyboard command */
+#define KAOS_NAME_UNDERSCORES            0x1024ba /* the 7 underscores of the empty name */
+#define KAOS_TITLE_UNDERSCORES           0x1024c2 /* the 19 underscores of the empty title */
 
 /* Mouse pointer. */
 #define KAOS_ARROW_POINTER_WIDTH    0x1002ac /* width and height words, then the 4 bit planes */
@@ -185,5 +189,6 @@
 #define KAOS_KEYS_MOVEMENT            0x103964 /* movement and turn keys */
 #define KAOS_KEYS_SLEEPING            0x103980
 #define KAOS_KEYS_FROZEN              0x10398c
+#define KAOS_KEYS_NAME_ENTRY          0x103994 /* letters, punctuation, space, backspace, return */
 
 #endif

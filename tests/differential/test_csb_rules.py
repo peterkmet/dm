@@ -223,7 +223,8 @@ def test_reincarnation(world):
             stats[s][C.STAT_CURRENT] = stats[s][C.STAT_MAXIMUM] = max(stats[s][C.STAT_MINIMUM], v - v // 8)
         bars = [b >> 2 for b in bars]
     value(lib, "g_random_seed", u32).value = SEED
-    lib.champion_click_rebirth_panel(C.PANEL_REINCARNATE)
+    lib.champion_click_rebirth_panel(C.PANEL_REINCARNATE)  # starts the name entry; its OK reincarnates
+    lib.champion_finish_reincarnate(0)
     seed = value(lib, "g_random_seed", u32).value
     value(lib, "g_random_seed", u32).value = SEED
     for _ in range(12):

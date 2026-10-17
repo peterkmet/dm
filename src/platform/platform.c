@@ -203,6 +203,8 @@ bool plat_poll(PlatEvent *event)
             event->type = PLAT_KEY;
             event->key = sdl_event.key.key;
             event->modifiers = sdl_event.key.mod;
+            event->character =
+                (int)SDL_GetKeyFromScancode(sdl_event.key.scancode, sdl_event.key.mod & SDL_KMOD_SHIFT, false);
             return true;
         case SDL_EVENT_MOUSE_MOTION:
             SDL_ConvertEventToRenderCoordinates(plat.renderer, &sdl_event); /* window points -> output pixels */

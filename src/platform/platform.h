@@ -21,6 +21,7 @@ typedef struct {
     int type;
     int key;          /* SDL keycode for PLAT_KEY */
     int modifiers;    /* SDL key modifiers for PLAT_KEY */
+    int character;    /* PLAT_KEY: the keycode that the layout gives with the shift state, ':' for Shift+';' */
     int button, x, y; /* PLAT_MOUSE and PLAT_MOUSE_UP, x and y in game screen pixels */
 } PlatEvent;
 

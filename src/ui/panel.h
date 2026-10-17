@@ -14,6 +14,7 @@
 #define PANEL_CONTENT_SCROLL     5
 #define PANEL_CONTENT_CHEST      6
 #define PANEL_CONTENT_RESURRECT  7
+#define PANEL_CONTENT_NAME_ENTRY 8
 #define PANEL_LINE_COUNT         3
 #define PANEL_LINE_SIZE          40
 #define STAMINA_DISPLAY_UNIT     10 /* the inventory shows stamina in tenths of the stored value */
@@ -45,6 +46,9 @@ bool panel_get_object_meter(uint16_t thing, const char **label, uint16_t *value)
 /* Draws the inventory panel: resurrect/reincarnate for a candidate, the open scroll or chest in
    the action hand, else food and water. */
 void panel_draw(void);
+/* Draws the name entry of a reincarnated champion from the engine state: the keyboard, the name and the title
+   with underscores for the free characters, and the cursor at the input. */
+void panel_draw_name_entry(void);
 /* The panel while the eye is pressed: the leader hand object, or the skills and statistics.
    Deviation: the leader hand object name stays; the original clears it until the eye is released. */
 void panel_draw_eye(void);

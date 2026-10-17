@@ -416,7 +416,10 @@ int16_t tables_get_direction_text(int16_t direction);
 #define TABLES_TEXT_ATTRIBUTES_PREFIX 2
 #define TABLES_TEXT_ATTRIBUTES_SUFFIX 3
 #define TABLES_TEXT_VERSION           4
-#define TABLES_TEXT_COUNT             5
+#define TABLES_TEXT_RENAME_CURSOR     5
+#define TABLES_TEXT_NAME_UNDERSCORES  6
+#define TABLES_TEXT_TITLE_UNDERSCORES 7
+#define TABLES_TEXT_COUNT             8
 /* A short text of the image. */
 const char *tables_get_text(int16_t text);
 /* Pixels above and below a dialog message line. */
@@ -481,14 +484,19 @@ bool tables_get_mouse_input(int16_t table, int16_t entry, MouseInput *input);
 void tables_set_mouse_input_box(int16_t table, int16_t entry, const Box *box);
 
 /* Keyboard input tables. */
-#define TABLES_KEYS_NONE      (-1)
-#define TABLES_KEYS_ENTRANCE  0
-#define TABLES_KEYS_INTERFACE 1
-#define TABLES_KEYS_MOVEMENT  2
-#define TABLES_KEYS_SLEEPING  3
-#define TABLES_KEYS_FROZEN    4
-#define TABLES_KEYS_COUNT     5
+#define TABLES_KEYS_NONE       (-1)
+#define TABLES_KEYS_ENTRANCE   0
+#define TABLES_KEYS_INTERFACE  1
+#define TABLES_KEYS_MOVEMENT   2
+#define TABLES_KEYS_SLEEPING   3
+#define TABLES_KEYS_FROZEN     4
+#define TABLES_KEYS_NAME_ENTRY 5
+#define TABLES_KEYS_COUNT      6
 /* The command of a key in a keyboard table, or 0. */
 int16_t tables_get_key_command(int16_t key_table, uint16_t key);
+/* The first key word of a keyboard table with this ASCII character, or 0. */
+uint16_t tables_get_char_key(int16_t key_table, char character);
+/* Character i of the name entry keyboard: A-Z, ',', '.', ';', ':', then the space. */
+char tables_get_name_entry_char(int16_t i);
 
 #endif

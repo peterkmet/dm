@@ -54,6 +54,8 @@ const CsbCopy g_csb_copies[] = {
     {KAOS_PALETTE_LIGHT_THRESHOLDS,        0x1011aa,               12                           },
     {KAOS_CHAMPION_COLORS,                 0x1011b6,               4                            },
     {KAOS_WOUND_DEFENSE_FACTOR,            0x1011ba,               6                            },
+    {KAOS_RENAME_CURSOR,                   0x1011c0,               2                            }, /* "_" */
+    {KAOS_NAME_ENTRY_CHARACTERS,           0x1011c4,               31                           },
     {KAOS_SLOT_DROP_ORDER,                 0x1011e4,               60                           },
     {KAOS_SQUARE_TYPE_TO_EVENT_TYPE,       0x101222,               8                            },
     {KAOS_SOUNDS,                          0x10122a,               420                          },
@@ -77,6 +79,8 @@ const CsbCopy g_csb_copies[] = {
     {KAOS_BONES_SEPARATOR,                 0x10267a,               2                            }, /* " " between champion name and BONES */
     {KAOS_ATTRIBUTES_SUFFIX,               0x1026ec,               2                            }, /* ")" */
     {KAOS_ATTRIBUTES_PREFIX,               0x1026ea,               2                            }, /* "(" */
+    {KAOS_NAME_UNDERSCORES,                0x102dd0,               8                            },
+    {KAOS_TITLE_UNDERSCORES,               0x102dd8,               20                           },
     {KAOS_PALETTE_CHANGES_INVISIBILITY,    0x102d8a,               16                           },
     {KAOS_LAYOUT_BITMAPS,                  0x102f50,               840                          },
     {KAOS_VIEWPORT_X,                      0x103298,               4                            }, /* viewport origin */
@@ -142,7 +146,8 @@ const CsbCopy g_csb_copies[] = {
     {KAOS_KEYS_INTERFACE,                  0x1043c4,               28                           }, /* interface keys */
     {KAOS_KEYS_MOVEMENT,                   0x1043e0,               28                           }, /* movement keys */
     {KAOS_KEYS_SLEEPING,                   0x1043fc,               12                           },
-    {KAOS_KEYS_FROZEN,                     0x104408,               12                           },
+    {KAOS_KEYS_FROZEN,                     0x104408,               8                            },
+    {KAOS_KEYS_NAME_ENTRY,                 0x104410,               240                          },
     {KAOS_DIALOG_TABLES,                   CSB_APPB_DIALOG_TABLES, DIALOG_TABLES_SIZE           },
     {KAOS_MOVEMENT_ARROW_TO_STEP_FORWARD,  0x104694,               8                            },
     {KAOS_MOVEMENT_ARROW_TO_STEP_RIGHT,    0x10469c,               8                            },

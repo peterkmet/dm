@@ -30,6 +30,7 @@
 #define GFX_PANEL_MAGIC_MAP             24 /* CSB */
 #define GFX_PANEL_CHEST                 25
 #define GFX_CHAMPION_PORTRAITS          26
+#define GFX_PANEL_NAME_ENTRY            27 /* the keyboard of the name entry */
 #define GFX_CHAMPION_ICONS              28
 #define GFX_PANEL_OBJECT_CIRCLE         29
 #define GFX_PANEL_FOOD_LABEL            30
@@ -169,6 +170,8 @@
 #define ZONE_INVENTORY_SAVE            562 /* hidden for a candidate */
 #define ZONE_INVENTORY_SLEEP           564
 #define ZONE_INVENTORY_CLOSE           566
+#define ZONE_NAME_ENTRY_NAME           574 /* the name field of the name entry */
+#define ZONE_NAME_ENTRY_TITLE          575
 #define ZONE_MAGIC_MAP                 614 /* CSB: the top left square of the 7 x 7 grid */
 #define ZONE_CEILING                   700
 #define ZONE_FLOOR                     701

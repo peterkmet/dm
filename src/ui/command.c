@@ -60,6 +60,7 @@ typedef struct {
 
 static InputTables frozen_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE};
 static InputTables dialog_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE};
+static InputTables rename_input = {.primary_keys = TABLES_KEYS_NONE, .secondary_keys = TABLES_KEYS_NONE};
 static bool left_button_down, pressing_eye, pressing_mouth, pressing_fake_wall;
 static int16_t dragged_icon_cell = -1; /* the champion icon cell picked for a move, or -1 */
 static Box highlight;
@@ -169,7 +170,7 @@ void command_process_key(uint16_t key)
     if (!command)
         command = tables_get_key_command(secondary_keys, key);
     if (g_advanced_features && ((key == KEY_ESCAPE && command == COMMAND_FREEZE_GAME) || key == KEY_TAB) &&
-        g_session.inventory_champion_index >= 0 && g_session.candidate_champion_index < 0)
+        g_session.inventory_champion_index >= 0 && g_session.candidate_champion_index < 0 && !champion_is_renaming())
         command = COMMAND_CLOSE_INVENTORY;
     if (command)
         queue_put(command, 0, 0);
@@ -351,19 +352,13 @@ static void show_candidate(void)
     command_freeze_game();
 }
 
-/* Click in the resurrect/reincarnate panel of the candidate: accept or cancel it. */
-static void click_in_candidate_panel(int16_t x, int16_t y)
+/* The rebirth panel closes: a cancelled candidate leaves its status box and its icon (cell), a reborn champion
+   draws its state. */
+static void close_rebirth_panel(bool cancelled, int16_t index, uint8_t cell)
 {
     Bitmap screen = video_get_screen();
-    int16_t command = ui_command_from_mouse(TABLES_MOUSE_RESURRECT, x, y, CLICK_LEFT_PRESS);
-    int16_t index = g_party_champion_count - 1;
-    if (!command || !g_leader_empty_handed)
-        return;
-    uint8_t cell = g_champions[index].cell;
-    champion_click_rebirth_panel(command);
-    inventory_set_open_champion(index); /* the rule clears it; the panel closes here */
     command_close_inventory();
-    if (command == PANEL_CANCEL) {
+    if (cancelled) {
         ui_fill_zone(&screen, ZONE_STATUS_BOX_FIRST + index, COLOR_BLACK);
         ui_fill_zone(&screen, ZONE_CHAMPION_ICON_FIRST + NORMALIZE(cell - g_party_direction), COLOR_BLACK);
         if (!g_party_champion_count)
@@ -375,6 +370,32 @@ static void click_in_candidate_panel(int16_t x, int16_t y)
     }
     menus_end_damage_hold();
     g_redraw |= REDRAW_ACTION_AREA;
+}
+
+/* The name entry of a reincarnated champion: no game time passes, only the name entry input is active. */
+static void start_name_entry(void)
+{
+    g_game_time_ticking = false;
+    rename_input = get_current_input();
+    set_input((InputTables){TABLES_MOUSE_NAME_ENTRY, NO_TABLE, TABLES_KEYS_NAME_ENTRY, TABLES_KEYS_NONE});
+    command_discard_all_input();
+    panel_draw_name_entry();
+}
+
+/* Click in the resurrect/reincarnate panel of the candidate: accept or cancel it. */
+static void click_in_candidate_panel(int16_t x, int16_t y)
+{
+    int16_t command = ui_command_from_mouse(TABLES_MOUSE_RESURRECT, x, y, CLICK_LEFT_PRESS);
+    int16_t index = g_party_champion_count - 1;
+    if (!command || !g_leader_empty_handed)
+        return;
+    uint8_t cell = g_champions[index].cell;
+    champion_click_rebirth_panel(command);
+    inventory_set_open_champion(index); /* the rule clears it; the panel closes here */
+    if (champion_is_renaming())
+        start_name_entry();
+    else
+        close_rebirth_panel(command == PANEL_CANCEL, index, cell);
 }
 
 /* Left click in a champion status box: the name sets the leader, a hand is a slot box. */
@@ -736,6 +757,29 @@ static void step_or_turn(int16_t command)
     }
 }
 
+/* A command of the name entry keyboard: a character, Backspace, the next field, or OK. An accepted OK
+   reincarnates the champion with its new name and closes the panel; the game time runs again. */
+static void process_rename_command(int16_t command)
+{
+    int16_t index = g_party_champion_count - 1;
+    if (!champion_is_renaming())
+        return;
+    if (command == COMMAND_RENAME_BACKSPACE) {
+        champion_rename_backspace();
+    } else if (command == COMMAND_RENAME_NEXT_FIELD) {
+        champion_rename_next_field();
+    } else if (command != COMMAND_RENAME_OK) {
+        champion_rename_type(tables_get_name_entry_char(command - COMMAND_RENAME_CHAR_FIRST));
+    } else if (champion_rename_ok()) {
+        set_input(rename_input);
+        g_game_time_ticking = true;
+        champion_finish_reincarnate(index);
+        close_rebirth_panel(false, index, g_champions[index].cell);
+        return;
+    }
+    panel_draw_name_entry();
+}
+
 /* Commands that do not run while the eye or the mouth is pressed. */
 static void process_other_command(int16_t command)
 {
@@ -780,7 +824,9 @@ static void process_other_command(int16_t command)
         g_quit_requested = true;
         break;
     default:
-        break; /* deviation: no name entry */
+        if (command >= COMMAND_RENAME_BACKSPACE && command <= COMMAND_RENAME_CHAR_LAST)
+            process_rename_command(command);
+        break;
     }
 }
 

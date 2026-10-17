@@ -7,6 +7,7 @@
 #include "data/ids.h"
 #include "data/os.h"
 #include "data/tables.h"
+#include "engine/champion.h"
 #include "engine/game.h"
 #include "engine/random.h"
 #include "ui/advanced.h"
@@ -28,6 +29,7 @@
 #include "platform/platform.h"
 #include "platform/transport.h"
 #include <SDL3/SDL.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -79,10 +81,22 @@ static uint16_t get_advanced_key(int key)
     return advanced_letter_key(key);
 }
 
+/* The Amiga key word of a key of the name entry keyboard: Backspace, or the letter, the space, ',', '.', ';' or ':'
+   that the key types. The name entry key table is the only table with these keys and gives their raw key codes. */
+static uint16_t get_name_entry_key(int key, int character)
+{
+    if (key == SDLK_BACKSPACE)
+        return KEY_BACKSPACE;
+    if (character <= 0 || character > CHAR_MAX)
+        return 0;
+    return tables_get_char_key(TABLES_KEYS_NAME_ENTRY, (char)character);
+}
+
 /* The Amiga key word of an SDL key: raw key code in the high byte, ASCII in the low byte. Keypad
-   keys move as the cursor keys; 7 and 9 turn (Del and Help). Outside vanilla, M, Tab, F5, F9, and
-   W, A, S, D, Q, E are the advanced keys. Returns 0 for other keys. */
-static uint16_t amiga_key(int key, int modifiers)
+   keys move as the cursor keys; 7 and 9 turn (Del and Help). In vanilla and during the name entry, the letters,
+   the space, Backspace and the punctuation are the name entry keys; else M, Tab, F5, F9, and W, A, S, D, Q, E are
+   the advanced keys. Returns 0 for other keys. */
+static uint16_t amiga_key(int key, int modifiers, int character)
 {
     if (modifiers & SDL_KMOD_CTRL) {
         if (key == SDLK_Q)
@@ -123,8 +137,8 @@ static uint16_t amiga_key(int key, int modifiers)
     case SDLK_F4:
         return command_champion_key(key - SDLK_F1);
     }
-    if (g_session.mode == GAME_MODE_VANILLA)
-        return 0;
+    if (g_session.mode == GAME_MODE_VANILLA || champion_is_renaming())
+        return get_name_entry_key(key, character);
     return get_advanced_key(key);
 }
 
@@ -220,7 +234,7 @@ static void read_input(void)
                 debug_view_key(event.key);
             continue;
         }
-        uint16_t key = event.type == PLAT_KEY ? amiga_key(event.key, event.modifiers) : 0;
+        uint16_t key = event.type == PLAT_KEY ? amiga_key(event.key, event.modifiers, event.character) : 0;
         if (key)
             command_process_key(key);
         if (event.type == PLAT_MOUSE || event.type == PLAT_MOUSE_UP)

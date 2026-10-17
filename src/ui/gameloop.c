@@ -313,7 +313,7 @@ void gameloop_tick(void)
     music_update();
     if (!g_session.party_sleeping) {
         command_wake_up();
-        if (g_session.candidate_champion_index < 0)
+        if (g_session.candidate_champion_index < 0 && !champion_is_renaming())
             command_unfreeze_game();
         if (g_session.inventory_champion_index < 0)
             gameloop_draw_view();
@@ -393,10 +393,10 @@ static void make_object_pointer(PointerImage *image)
 }
 
 /* The pointer shape of a screen position: the hand or the object over the zones that use it
-   (viewport, hands of the status boxes) when there is a leader, else the arrow. */
+   (viewport, hands of the status boxes) when there is a leader, else the arrow; the name entry shows the arrow. */
 static int get_pointer_shape(int16_t x, int16_t y, bool in_game)
 {
-    if (!in_game || g_leader_index == -1)
+    if (!in_game || g_leader_index == -1 || champion_is_renaming())
         return POINTER_ARROW;
     for (int i = 0; i < POINTER_ZONE_COUNT; i++) {
         PointerZone z = tables_get_pointer_zone(i);

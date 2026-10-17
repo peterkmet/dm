@@ -153,6 +153,7 @@ uint16_t g_dead_champions;
 
 /* The name entry of a reincarnated champion; not saved, the game is frozen during the entry. */
 static struct {
+    bool open;
     int16_t champion_index;
     bool in_title;    /* the input is in the title, else in the name */
     int16_t position; /* the next character goes here; the field text has this length */
@@ -164,6 +165,7 @@ uint16_t champion_reset_for_new_game(void)
     g_leader_empty_handed = true;
     g_leader_hand_object = THING_NONE;
     g_leader_index = -1;
+    rename_entry.open = false;
     return hand;
 }
 
@@ -488,7 +490,9 @@ void champion_click_rebirth_panel(int16_t command)
     rec_sensor_set_type(mirror, SENSOR_DISABLED);
     if (g_party_champion_count == 1)
         g_last_party_movement_time = g_game_time;
-    if (command == PANEL_REINCARNATE)
+    if (command == PANEL_REINCARNATE && g_session.mode != GAME_MODE_TURNBASED)
+        champion_start_rename(index);
+    else if (command == PANEL_REINCARNATE)
         champion_finish_reincarnate(index);
     else
         print_champion_message(index, TEXT_RESURRECTED);
@@ -499,9 +503,15 @@ void champion_start_rename(int16_t champion_index)
     Champion *c = &g_champions[champion_index];
     c->name[0] = '\0';
     c->title[0] = '\0';
+    rename_entry.open = true;
     rename_entry.champion_index = champion_index;
     rename_entry.in_title = false;
     rename_entry.position = 0;
+}
+
+bool champion_is_renaming(void)
+{
+    return rename_entry.open;
 }
 
 /* The field of the input is full: the name holds 7 characters (only after a refused duplicate) or the title 19. */
@@ -576,6 +586,7 @@ bool champion_rename_ok(void)
             return false;
         }
     }
+    rename_entry.open = false;
     return true;
 }
 

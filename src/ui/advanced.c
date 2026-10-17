@@ -2,6 +2,7 @@
 #include "ui/advanced.h"
 #include "data/graphics.h"
 #include "data/ids.h"
+#include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/game.h"
 #include "engine/map.h"
@@ -138,7 +139,7 @@ static void quick_load(void)
 
 bool advanced_process_key(uint16_t key)
 {
-    if (g_session.mode == GAME_MODE_VANILLA)
+    if (g_session.mode == GAME_MODE_VANILLA || champion_is_renaming())
         return false;
     if (g_automap_open) {
         if (key == KEY_M || key == KEY_TAB || key == KEY_ESCAPE)

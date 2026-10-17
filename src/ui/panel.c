@@ -40,8 +40,9 @@
 #define METER_LABEL_CHARS         8 /* the bar starts after the longest label */
 #define METER_BAR_WIDTH           36
 #define METER_BAR_HEIGHT          5
-#define METER_VALUE_GAP           4 /* pixels between the bar and the value */
-#define METER_BAR_ABOVE_BASELINE  4 /* the bar top is level with the top of the letters */
+#define METER_VALUE_GAP           4  /* pixels between the bar and the value */
+#define METER_BAR_ABOVE_BASELINE  4  /* the bar top is level with the top of the letters */
+#define NAME_TITLE_CHARS          27 /* the name entry clears the name and title line for this many characters */
 
 /* Object attribute bits of the description; the names are strings TEXT_CONSUMABLE + bit. */
 #define ATTRIBUTE_CONSUMABLE 1
@@ -657,6 +658,41 @@ void panel_draw(void)
         show_food_water();
     else
         show_object(thing, false);
+}
+
+/* Prints the text of a name entry field over its underscores, and the cursor at character position cursor (-1:
+   none). */
+static void print_name_entry_field(int16_t zone, const char *text, int16_t cursor)
+{
+    Bitmap *viewport = ui_get_viewport();
+    int16_t x, y;
+    get_zone_point(zone, &x, &y);
+    text_draw(viewport, (Point){x, y}, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY, text);
+    if (cursor >= 0)
+        text_draw(viewport, (Point){x + cursor * FONT_CHAR_WIDTH, y}, COLOR_GOLD, COLOR_DARKEST_GRAY,
+                  tables_get_text(TABLES_TEXT_RENAME_CURSOR));
+}
+
+void panel_draw_name_entry(void)
+{
+    const Champion *c = &g_champions[g_session.inventory_champion_index];
+    Bitmap *viewport = ui_get_viewport();
+    RenameInput input = champion_get_rename_input();
+    ZoneClip placed;
+    g_panel_content = PANEL_CONTENT_NAME_ENTRY;
+    if (layout_get_zone(ZONE_NAME_TITLE,
+                        &(ZoneItem){0, 0, NAME_TITLE_CHARS * FONT_CHAR_WIDTH - FONT_CHAR_GAP, FONT_LINE_HEIGHT},
+                        &placed))
+        draw_fill(viewport, &placed.box, COLOR_DARKEST_GRAY);
+    ui_blit_graphic(viewport, GFX_PANEL_NAME_ENTRY, ZONE_PANEL, COLOR_CYAN);
+    ui_print_zone(viewport, ZONE_NAME_ENTRY_NAME, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY,
+                  tables_get_text(TABLES_TEXT_NAME_UNDERSCORES));
+    ui_print_zone(viewport, ZONE_NAME_ENTRY_TITLE, COLOR_LIGHT_GRAY, COLOR_DARKEST_GRAY,
+                  tables_get_text(TABLES_TEXT_TITLE_UNDERSCORES));
+    int16_t cursor = input.cursor_visible ? input.position : -1;
+    print_name_entry_field(ZONE_NAME_ENTRY_NAME, c->name, input.in_title ? -1 : cursor);
+    print_name_entry_field(ZONE_NAME_ENTRY_TITLE, c->title, input.in_title ? cursor : -1);
+    ui_draw_viewport();
 }
 
 void panel_draw_eye(void)

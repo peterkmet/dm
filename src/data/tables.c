@@ -59,6 +59,7 @@
 #define MOUSE_AT_BUTTONS               10
 #define KEY_AT_COMMAND                 0
 #define KEY_AT_KEY                     2
+#define KEY_AT_ASCII                   3 /* the low byte of the key word */
 #define SKILL_LEVEL_TEXT_FIRST         2 /* the level names start at level 2 */
 #define LAYOUT_AT_X                    2 /* byte offsets in a layout bitmap */
 #define LAYOUT_AT_Y                    4
@@ -686,8 +687,9 @@ int16_t tables_get_direction_text(int16_t direction)
 }
 const char *tables_get_text(int16_t text)
 {
-    static const uint32_t at[TABLES_TEXT_COUNT] = {KAOS_LIST_SEPARATOR, KAOS_BONES_SEPARATOR, KAOS_ATTRIBUTES_PREFIX,
-                                                   KAOS_ATTRIBUTES_SUFFIX, KAOS_DIALOG_VERSION_TEXT};
+    static const uint32_t at[TABLES_TEXT_COUNT] = {
+        KAOS_LIST_SEPARATOR,      KAOS_BONES_SEPARATOR, KAOS_ATTRIBUTES_PREFIX, KAOS_ATTRIBUTES_SUFFIX,
+        KAOS_DIALOG_VERSION_TEXT, KAOS_RENAME_CURSOR,   KAOS_NAME_UNDERSCORES,  KAOS_TITLE_UNDERSCORES};
     return (const char *)kaos_ptr(at[text]);
 }
 int16_t tables_get_message_line_pad(void)
@@ -777,14 +779,30 @@ void tables_set_mouse_input_box(int16_t table, int16_t entry, const Box *box)
     kaos_write_u16(a + MOUSE_AT_Y1, (uint16_t)box->y);
     kaos_write_u16(a + MOUSE_AT_Y2, (uint16_t)(box->y + box->h - 1));
 }
-int16_t tables_get_key_command(int16_t key_table, uint16_t key)
+/* Image address of a keyboard table. */
+static uint32_t key_table_at(int16_t key_table)
 {
     static const uint32_t at[TABLES_KEYS_COUNT] = {KAOS_KEYS_ENTRANCE, KAOS_KEYS_INTERFACE, KAOS_KEYS_MOVEMENT,
-                                                   KAOS_KEYS_SLEEPING, KAOS_KEYS_FROZEN};
+                                                   KAOS_KEYS_SLEEPING, KAOS_KEYS_FROZEN,    KAOS_KEYS_NAME_ENTRY};
+    return at[key_table];
+}
+int16_t tables_get_key_command(int16_t key_table, uint16_t key)
+{
     if (key_table == TABLES_KEYS_NONE)
         return 0;
-    for (uint32_t entry = at[key_table]; kaos_s16(entry + KEY_AT_COMMAND); entry += KEY_ENTRY_BYTES)
+    for (uint32_t entry = key_table_at(key_table); kaos_s16(entry + KEY_AT_COMMAND); entry += KEY_ENTRY_BYTES)
         if (kaos_u16(entry + KEY_AT_KEY) == key)
             return kaos_s16(entry + KEY_AT_COMMAND);
     return 0;
+}
+uint16_t tables_get_char_key(int16_t key_table, char character)
+{
+    for (uint32_t entry = key_table_at(key_table); kaos_s16(entry + KEY_AT_COMMAND); entry += KEY_ENTRY_BYTES)
+        if (kaos_u8(entry + KEY_AT_ASCII) == (uint8_t)character)
+            return kaos_u16(entry + KEY_AT_KEY);
+    return 0;
+}
+char tables_get_name_entry_char(int16_t i)
+{
+    return (char)kaos_u8(KAOS_NAME_ENTRY_CHARACTERS + i);
 }
