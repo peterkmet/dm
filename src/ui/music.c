@@ -20,6 +20,7 @@
 #pragma clang diagnostic pop
 #endif
 
+/* The mix settings, and the tracks of the game end and of the prison. */
 #define MUSIC_VOLUME_DIVISOR         6 /* the music under the game sounds; raise it for quieter music */
 #define MUSIC_MIX_FRAMES             1024
 #define MUSIC_CHANNELS               2
