@@ -404,7 +404,7 @@ def block_notation_error(items):
     decimals = [v for v in literals if not v.lower().startswith("0x")]
     names = [name.split("_") for name, _ in items]
     hex_kind = any(parts[-1] in HEX_LAST_PARTS or parts[0] in ADDRESS_FIRST_PARTS for parts in names)
-    decimal_kind = any(DECIMAL_PARTS & set(parts) for parts in names)
+    decimal_kind = any(DECIMAL_PARTS & set(parts) for parts in names if parts[0] not in ADDRESS_FIRST_PARTS)
     if hexes and decimals:
         return "mixes hex and decimal"
     if hex_kind and decimal_kind:

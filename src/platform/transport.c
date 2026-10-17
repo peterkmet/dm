@@ -16,9 +16,11 @@
 #define INPUT_SIZE 65536
 
 #ifdef MSG_NOSIGNAL
-#define SEND_FLAGS MSG_NOSIGNAL /* a closed client does not raise SIGPIPE (Linux) */
+/* A closed client does not raise SIGPIPE (Linux). */
+#define SEND_FLAGS MSG_NOSIGNAL
 #else
-#define SEND_FLAGS 0 /* SO_NOSIGPIPE does the same (macOS) */
+/* SO_NOSIGPIPE does the same (macOS). */
+#define SEND_FLAGS 0x0
 #endif
 
 static int listen_fd = -1;
