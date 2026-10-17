@@ -27,6 +27,14 @@ RTS = b"\x4e\x75"
 STUBS = {0x112880: RTS, 0x112D2C: RTS, 0x1098A6: RTS, 0x10999E: RTS,  # draw state, draw all, message print, new line
          0x111440: b"\x42\x6d\xc0\x7e" + RTS}  # champion_wake_up: clr.w g_party_is_sleeping
 THING_BUF, MAP_BUF = 0x200000, 0x208000
+MAP_INDEX, DUNGEON_MAPS, DUNGEON_HEADER, DUNGEON_MAP_DATA = 0x101C60, 0x101CD0, 0x101CD4, 0x101CD8
+COLUMN_FIRST_THINGS, MAP_FIRST_COLUMN, COLUMN_COUNT, SQUARE_FIRST_THINGS = 0x101CDC, 0x101CE0, 0x101CE4, 0x101CE6
+PARTY_X, PARTY_Y, PARTY_MAP, ROTATION_EFFECT = 0x1001EC, 0x1001EE, 0x1001F0, 0x103160
+EVENT_MAX_COUNT, TIMELINE_COUNT = 0x103174, 0x103180  # max count, high water, events, heap, count, first unused
+ACTIVE_GROUP_COUNT, ACTIVE_GROUPS, MAX_ACTIVE_GROUPS = 0x101E18, 0x101E22, 0x101E26
+SET_CURRENT_MAP = 0x10B988
+DUNGEON_BUF = 0x300000  # the mirrored dungeon, above THING_BUF and MAP_BUF
+HEADER_BYTES, MAP_BYTES, EVENT_BE_BYTES = 44, 16, 10
 # (thing type, record count, record size)
 THINGS = [(5, 46, 4), (6, 58, 4), (7, 1, 4), (8, 21, 4), (9, 1, 8), (10, 53, 4)]
 
@@ -353,6 +361,126 @@ class World:
         assert session(lib).party_sleeping == struct.unpack(">h", emu.read(SLEEPING, 2))[0]
         assert [c.runtime.pending_damage for c in cs] == list(struct.unpack(">4h", emu.read(PENDING_DAMAGE, 8)))
         assert [c.runtime.pending_wounds for c in cs] == list(struct.unpack(">4H", emu.read(PENDING_WOUNDS, 8)))
+
+
+class DungeonMirror:
+    """The dungeon of the C library in the emulator: header, all maps with their squares and square lists, the records,
+    the timeline, the active groups, the party square, and the current map. state() reads either side back."""
+
+    def __init__(self, lib, emu):
+        self.lib, self.emu, self.free = lib, emu, DUNGEON_BUF
+        header = raw_array(lib, "g_dungeon_header", HEADER_BYTES)
+        self.maps = header[4]
+        self.raw_size, self.square_things = struct.unpack_from(">H", header, 2)[0], struct.unpack_from(">H", header, 10)[0]
+        self.columns = c16.in_dll(lib, "g_dungeon_column_count").value
+        self.counts = struct.unpack_from(">16H", header, 12)
+        self.sizes = list((u8 * 16).in_dll(lib, "g_thing_data_byte_count"))
+        self.capacity = Timeline.in_dll(lib, "g_timeline").capacity
+        self.groups = u16.in_dll(lib, "g_max_active_group_count").value
+        self.at = {}
+        for name, key, size in (("g_dungeon_header", "header", HEADER_BYTES), ("g_dungeon_maps", "maps", MAP_BYTES * self.maps),
+                                ("g_dungeon_raw_map_data", "squares", self.raw_size),
+                                ("g_dungeon_column_first_thing_index", "column_first_things", 2 * self.columns),
+                                ("g_square_first_things", "square_first_things", 2 * self.square_things)):
+            self.at[key] = self.put(raw_array(lib, name, size))
+        first_columns = ctypes.cast(ctypes.c_void_p.in_dll(lib, "g_dungeon_map_first_column").value, ctypes.POINTER(c16))
+        self.at["first_column"] = self.put(struct.pack(f">{self.maps}h", *first_columns[:self.maps]))
+        self.at["map_data"] = self.put(b"".join(struct.pack(">I", self.put(self.map_columns(m))) for m in range(self.maps)))
+        thing_data = (ctypes.c_void_p * 16).in_dll(lib, "g_thing_data")
+        for t in range(16):
+            self.at[t] = self.put(ctypes.string_at(thing_data[t], self.counts[t] * self.sizes[t]) if self.counts[t] else bytes(2))
+            emu.write(THING_DATA + 4 * t, struct.pack(">I", self.at[t]))
+        for addr, key in ((DUNGEON_HEADER, "header"), (DUNGEON_MAPS, "maps"), (DUNGEON_MAP_DATA, "map_data"),
+                          (COLUMN_FIRST_THINGS, "column_first_things"), (MAP_FIRST_COLUMN, "first_column"),
+                          (SQUARE_FIRST_THINGS, "square_first_things")):
+            emu.write(addr, struct.pack(">I", self.at[key]))
+        emu.write(COLUMN_COUNT, struct.pack(">h", self.columns))
+        self.put_timeline()
+        self.at["groups"] = self.put(b"".join(struct.pack(">h", g.group_index) + bytes(g.rest) for g in self.active_groups()))
+        emu.write(ACTIVE_GROUPS, struct.pack(">I", self.at["groups"]))
+        emu.write(ACTIVE_GROUP_COUNT, struct.pack(">H", u16.in_dll(lib, "g_active_group_count").value))
+        emu.write(MAX_ACTIVE_GROUPS, struct.pack(">H", self.groups))
+        for addr, name in ((PARTY_X, "g_party_map_x"), (PARTY_Y, "g_party_map_y"), (PARTY_MAP, "g_party_map_index")):
+            emu.write(addr, struct.pack(">h", c16.in_dll(lib, name).value))
+        emu.write(GAME_TIME, struct.pack(">I", u32.in_dll(lib, "g_game_time").value))
+        emu.write(ROTATION_EFFECT, struct.pack(">h", -1))
+        emu.write(MAP_INDEX, struct.pack(">h", -1))
+        emu.call(SET_CURRENT_MAP, [(2, c16.in_dll(lib, "g_current_map_index").value)])
+
+    def put(self, data):
+        addr, self.free = self.free, (self.free + len(data) + 0x10) & ~0xF
+        self.emu.write(addr, data)
+        return addr
+
+    def map_columns(self, m):
+        """The column pointers of map m, into the mirrored squares."""
+        base = ctypes.c_void_p.in_dll(self.lib, "g_dungeon_raw_map_data").value
+        maps = ctypes.cast(ctypes.c_void_p.in_dll(self.lib, "g_dungeon_map_data").value, ctypes.POINTER(ctypes.c_void_p))
+        columns = ctypes.cast(maps[m], ctypes.POINTER(ctypes.c_void_p))
+        return b"".join(struct.pack(">I", self.at["squares"] + columns[x] - base) for x in range(self.lib.dungeon_map_width(m)))
+
+    def active_groups(self):
+        return ctypes.cast(ctypes.c_void_p.in_dll(self.lib, "g_active_groups"), ctypes.POINTER(ActiveGroup))[:self.groups]
+
+    def port_events(self):
+        """The timeline slots in the layout of the original: a free slot keeps the next free index in its first word."""
+        timeline = Timeline.in_dll(self.lib, "g_timeline")
+        events = ctypes.cast(timeline.events, ctypes.POINTER(TimelineEvent))[:self.capacity]
+        return [e.be() if e.type else struct.pack(">H", e.map_time & 0xFFFF) for e in events]
+
+    def put_timeline(self):
+        timeline = Timeline.in_dll(self.lib, "g_timeline")
+        events = b"".join(e.ljust(EVENT_BE_BYTES, b"\0") for e in self.port_events())
+        heap = struct.pack(f">{self.capacity}H", *ctypes.cast(timeline.heap, ctypes.POINTER(u16))[:self.capacity])
+        self.at["events"], self.at["heap"] = self.put(events), self.put(heap)
+        self.emu.write(EVENT_MAX_COUNT, struct.pack(">HHIIHh", self.capacity, timeline.high_water, self.at["events"],
+                                                    self.at["heap"], timeline.count, timeline.first_unused))
+
+    def port_state(self):
+        """The mirrored state of the C library."""
+        lib, timeline = self.lib, Timeline.in_dll(self.lib, "g_timeline")
+        thing_data = (ctypes.c_void_p * 16).in_dll(lib, "g_thing_data")
+        return {
+            "header": raw_array(lib, "g_dungeon_header", HEADER_BYTES),
+            "squares": raw_array(lib, "g_dungeon_raw_map_data", self.raw_size),
+            "column_first_things": raw_array(lib, "g_dungeon_column_first_thing_index", 2 * self.columns),
+            "square_first_things": raw_array(lib, "g_square_first_things", 2 * self.square_things),
+            **{f"records {t}": ctypes.string_at(thing_data[t], self.counts[t] * self.sizes[t]) for t in range(16) if self.counts[t]},
+            "events": self.port_events(),
+            "heap": list(ctypes.cast(timeline.heap, ctypes.POINTER(u16))[:timeline.count]),
+            "timeline": (timeline.count, timeline.high_water, timeline.first_unused),
+            "active groups": [struct.pack(">h", g.group_index) + bytes(g.rest) for g in self.active_groups()],
+            "active group count": u16.in_dll(lib, "g_active_group_count").value,
+            "current map": c16.in_dll(lib, "g_current_map_index").value,
+        }
+
+    def state(self):
+        """The same state, read from the emulator."""
+        emu, at = self.emu, self.at
+        read = lambda key, size: bytes(emu.read(at[key], size))
+        word = lambda addr, fmt=">H": struct.unpack(fmt, emu.read(addr, 2))[0]
+        raw_events = read("events", EVENT_BE_BYTES * self.capacity)
+        events = [raw_events[i:i + EVENT_BE_BYTES] for i in range(0, len(raw_events), EVENT_BE_BYTES)]
+        count = word(TIMELINE_COUNT)
+        groups = read("groups", ACTIVE_GROUP_BYTES * self.groups)
+        return {
+            "header": read("header", HEADER_BYTES),
+            "squares": read("squares", self.raw_size),
+            "column_first_things": read("column_first_things", 2 * self.columns),
+            "square_first_things": read("square_first_things", 2 * self.square_things),
+            **{f"records {t}": read(t, self.counts[t] * self.sizes[t]) for t in range(16) if self.counts[t]},
+            "events": [e if e[4] else e[:2] for e in events],
+            "heap": list(struct.unpack(f">{count}H", read("heap", 2 * count))),
+            "timeline": (count, word(EVENT_MAX_COUNT + 2), word(TIMELINE_COUNT + 2, ">h")),
+            "active groups": [groups[i:i + ACTIVE_GROUP_BYTES] for i in range(0, len(groups), ACTIVE_GROUP_BYTES)],
+            "active group count": word(ACTIVE_GROUP_COUNT),
+            "current map": word(MAP_INDEX, ">h"),
+        }
+
+    def check_state(self):
+        port, original = self.port_state(), self.state()
+        for key in port:
+            assert port[key] == original[key], key
 
 
 class Game:
