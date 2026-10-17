@@ -26,6 +26,15 @@ static void fill_clipped(Bitmap *target, const Box *area, const Box *box, uint8_
     draw_fill(target, &clipped, color);
 }
 
+/* A wall that the party walks through: the floor checkered with the wall color. */
+static void show_imaginary_wall(Bitmap *target, const Box *area, int16_t left, int16_t top)
+{
+    fill_clipped(target, area, &(Box){left, top, AUTOMAP_CELL_SIZE, AUTOMAP_CELL_SIZE}, COLOR_DARKEST_GRAY);
+    for (int16_t y = 0; y < AUTOMAP_CELL_SIZE - 1; y++)
+        for (int16_t x = y % 2; x < AUTOMAP_CELL_SIZE - 1; x += 2)
+            fill_clipped(target, area, &(Box){left + x, top + y, 1, 1}, COLOR_LIGHT_GRAY);
+}
+
 /* One seen square at screen position at: a light floor with a 1 pixel grid gap, or a full dark wall.
    pad: a pressure pad that the view draws, as a gray square in the middle of the floor. */
 static void show_square(Bitmap *target, const Box *area, uint8_t square, bool pad, const Box *at)
@@ -37,6 +46,10 @@ static void show_square(Bitmap *target, const Box *area, uint8_t square, bool pa
     const int16_t bar = AUTOMAP_CELL_SIZE / 3;
     const int16_t middle = (AUTOMAP_CELL_SIZE - AUTOMAP_CELL_SIZE / 3) / 2;
     int type = rec_square_type(square);
+    if (type == SQUARE_FAKE_WALL && (square & FAKE_WALL_IMAGINARY) && !(square & FAKE_WALL_OPEN)) {
+        show_imaginary_wall(target, area, left, top);
+        return;
+    }
     if (type == SQUARE_WALL || (type == SQUARE_FAKE_WALL && !(square & FAKE_WALL_OPEN))) {
         fill_clipped(target, area, &(Box){left, top, size, size}, COLOR_DARKEST_GRAY);
         return;

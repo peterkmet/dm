@@ -18,6 +18,7 @@
 - Advanced mode: C opens a cheat screen with full light, immortality, food and water, and the new cheats one-hit kill, walk through walls, and reveal map; quick save and quick load; and a list of all spells with their runes. The save file keeps the cheats in a new extension block.
 - Advanced mode: 8 save slots (`DMGAME.DAT`, `DMGAME2.DAT` to `DMGAME8.DAT`; CSB `CSBGAME`). The save dialog shows LOAD, SAVE, CONTINUE, and QUIT in DM and CSB; SAVE opens a save list, LOAD and RESUME a load list with the level and the file time of each slot and the quick save; RESTART THIS GAME loads the slot of the last save or load.
 - Advanced mode, Chaos Strikes Back: the stairs down of the prison start the new adventure at once, without a save and without the utility disk. Two of the stairs are behind hidden passages, at (15, 6) and (8, 14) of the first level. The advanced prison does not show the text about the utility disk.
+- Advanced mode: the automap draws a wall that the party walks through (an imaginary wall) checkered.
 - Advanced mode: up to 8 sounds play at once (vanilla keeps the 2 of the Amiga).
 
 ### Changed
