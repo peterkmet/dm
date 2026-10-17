@@ -6,13 +6,19 @@ User wishes for future versions. Not planned yet.
 
 - `action_reset` (`src/engine/action.c`) also clears `g_redraw`, which is not action state.
 - `ui/view_walls.c`: the thieves eye hole is not drawn; it needs the party spell state.
-- `ui/command.c`: the credits command (203) and the name entry are not ported.
+- `ui/command.c`: the credits command (203) is not ported.
 - `ui/command.c` ignores the result of `inventory_fill_at_fountain`.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
 - `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing` (`docs/reference/symbols/range-4-6.md`). Port that rule.
 - `light_depths` (`src/engine/explored.c`): a fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it.
 - `sound_request_play` (`src/engine/sound.c`): the original skips a mode >= 1 sound when the current map is not the party map; the port does not check it yet. Port that rule.
 - `tests/golden/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
+
+## Port the name entry of a reincarnated champion
+
+- Owner's wish (2026-10-17): REINCARNATE asks for a new name and title, as in the original.
+- Today: `champion_click_rebirth_panel` (`src/engine/champion.c`) keeps the name and prints "<name> REINCARNATED." (`docs/rules/champions.md:44`). `process_other_command` (`src/ui/command.c`) ignores the name entry commands (`docs/formats/dungeon.md:188`).
+- The original: the rename panel is `g_panel_content` 8 (`docs/reference/symbols/range-4-6.md:242`); it swaps in its own mouse and keyboard input tables (`range-4-6.md:542`, `KAOS_MOUSE_INPUT_NAME_ENTRY` in `src/data/kaos_addresses.h`). CSB: `champion_rename` at `0x116312` (`docs/reference/csb-appb-symbols.csv`).
 
 ## Advanced mode: show the damage twice as long
 
