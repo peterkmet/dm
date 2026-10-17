@@ -17,6 +17,7 @@
 - Advanced mode: Escape opens an options menu with the sound volume, the music volume (0 to 7), and the music choice. `SETTINGS.TXT` in the saves folder keeps the values.
 - Advanced mode: C opens a cheat screen with full light, immortality, food and water, and the new cheats one-hit kill, walk through walls, and reveal map; quick save and quick load; and a list of all spells with their runes. The save file keeps the cheats in a new extension block.
 - Advanced mode: 8 save slots (`DMGAME.DAT`, `DMGAME2.DAT` to `DMGAME8.DAT`; CSB `CSBGAME`). SAVE opens a save list, RESUME a load list with the level and the file time of each slot and the quick save; RESTART THIS GAME loads the slot of the last save or load.
+- Advanced mode, Chaos Strikes Back: the stairs down of the prison start the new adventure at once, without a save and without the utility disk.
 
 ### Changed
 

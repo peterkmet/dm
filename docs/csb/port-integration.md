@@ -8,7 +8,7 @@ Status: implemented. This page is the design record of the CSB integration; the 
 
 1. Title screen on a black background, in the DM font: DUNGEON MASTER, CHAOS STRIKES BACK. Click, or arrows and Return.
 2. Mode screen: VANILLA, ADVANCED, LLM. LLM is `--mode turnbased`. Escape goes back to step 1.
-3. DM: the existing entrance (ENTER, RESUME, QUIT), unchanged. CSB: a screen with NEW ADVENTURE, RESUME, QUIT. NEW ADVENTURE builds `CSBGAME.DAT` from `MINI.DAT` and opens the champion selection. RESUME loads `CSBGAME.DAT`.
+3. DM: the existing entrance (ENTER, RESUME, QUIT), unchanged. CSB: a screen with NEW ADVENTURE, RESUME, QUIT. NEW ADVENTURE builds `CSBGAME.DAT` from `MINI.DAT` and opens the champion selection. RESUME loads `CSBGAME.DAT`. In the advanced mode, the stairs down of the prison make the new adventure without a file and continue the game in it (`docs/superpowers/2026-10-17-csb-start.md`).
 4. New flag `--adventure dm|csb`. When `--adventure` and `--mode` are both given, the selection screens are skipped.
 5. When the CSB data is missing, CHAOS STRIKES BACK is grey and cannot be selected.
 6. LLM mode goes straight into the dungeon after the selection, as `turnbased` does today.
