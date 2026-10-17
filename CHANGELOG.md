@@ -4,17 +4,23 @@
 
 ### Added
 
+- `build/dm --help`; unknown options stop with an error.
 - The game extracts the Amiga disk images (`.adf`) in the current folder into `game/`, `game-csb/`, and `game-csb/disk-b/` at start.
 - Before an adventure loads, the game checks the CRC32 of its required files against the Amiga disks and names the first wrong file.
-- Windows build: `make -C port windows` (MinGW-w64) and `tools/make-dist-win.sh` for a Windows zip. No LLM mode on Windows.
+- Windows build: `make windows` (MinGW-w64) and `tools/make-dist-win.sh` for a Windows zip. No LLM mode on Windows.
 
 ### Changed
 
+- Final refactor, with no change of game behavior: the source is in `src/` with five layers (`data`, `engine`, `ui`, `control`, `platform`); a root `Makefile` with incremental builds, `-Werror` and `make check`; coding standard v2 with a check per rule; the record accessors in `engine/record.c`; the LLM protocol in `control/`; tests in folders with shared `dmtest` helpers; `docs/architecture.md`, `docs/manual.md`, `docs/development.md`; GPL-3.0 license.
 - The picture scales smoothly with the window size and follows a live resize.
 - `tools/make-dist.sh` no longer puts game files into the zip; the player adds the disk images.
-- Clean-code pass of the C port, with no change of game behavior: `.clang-format` and a format check, named constants, `bool` truth values, typed accessors for the KAOS tables, verb-object names, game rules moved from `ui/` to `engine/`, and the dungeon view squares drawn from one table. `docs/coding-standard.md` lists every check of `tests/test_standard.py`.
+- Clean-code pass of the C port, with no change of game behavior: `.clang-format` and a format check, named constants, `bool` truth values, typed accessors for the KAOS tables, verb-object names, game rules moved from `ui/` to `engine/`, and the dungeon view squares drawn from one table. `docs/coding-standard.md` lists every check of `tests/standard/test_standard.py`.
 - Golden snapshot tests of the save file, the dungeon view, and the game rules.
 - Windows: the ADF extraction stops with an error on a file name that is not safe on Windows; the turn-based mode is hidden.
+
+### Removed
+
+- `DM_FILTER` (use `--filter`).
 
 ## 0.14.1 - 2026-10-07
 
@@ -71,7 +77,7 @@
 - The C port follows `docs/coding-standard.md`. The source is in four folders of `port/src/`: `data/`, `engine/`, `ui/`, and `platform/`. A file includes only headers of its own layer and of the layers before it. The game rules set redraw flags and do not draw.
 - Each header states its function prefixes, and each prefix belongs to one header. Record accessors of `map.h` use `rec_`; the timeline event handlers use `event_`. `things.h` is part of `map.h`.
 - Named constants replace the plain numbers, predicates return `bool`, and long functions are split.
-- `tests/test_standard.py` checks the standard on each run. `tests/standard_allowlist.txt` holds the permanent exceptions.
+- `tests/standard/test_standard.py` checks the standard on each run. `tests/standard_allowlist.txt` holds the permanent exceptions.
 - The test suite runs in parallel (`pytest-xdist`, one worker per test file).
 - No change of game behavior.
 
