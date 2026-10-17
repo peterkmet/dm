@@ -17,7 +17,7 @@
 
 /* A thing to discard and its square. */
 typedef struct {
-    uint16_t thing; /* THING_ENDOFLIST: none */
+    uint16_t thing; /* THING_NONE: none */
     Position place;
 } Found;
 
@@ -40,13 +40,6 @@ int16_t discard_get_last_map(uint16_t thing_type)
 }
 
 /* Commands */
-
-/* A square of the party map near the party. */
-static bool is_near_party(Position place)
-{
-    return place.map == g_party_map_index && abs16(place.x - g_party_map_x) <= NEAR_PARTY_SQUARES &&
-           abs16(place.y - g_party_map_y) <= NEAR_PARTY_SQUARES;
-}
 
 /* A group without possessions that may be discarded, an object that is not important, or a thing of another type. */
 static bool is_discardable(uint16_t thing)
@@ -71,12 +64,19 @@ static uint16_t find_on_square(Position place, uint16_t type)
     for (uint16_t thing = map_get_first_thing_at(place); thing != THING_ENDOFLIST; thing = rec_thing_next(thing)) {
         if (THING_TYPE(thing) == THING_SENSOR) {
             if (rec_sensor_type(thing) != SENSOR_DISABLED)
-                return THING_ENDOFLIST;
+                return THING_NONE;
         } else if (THING_TYPE(thing) == type && is_discardable(thing)) {
             return thing;
         }
     }
-    return THING_ENDOFLIST;
+    return THING_NONE;
+}
+
+/* A square of the party map near the party. */
+static bool is_near_party(Position place)
+{
+    return place.map == g_party_map_index && abs16(place.x - g_party_map_x) <= NEAR_PARTY_SQUARES &&
+           abs16(place.y - g_party_map_y) <= NEAR_PARTY_SQUARES;
 }
 
 /* The first thing of the type on the map that can be discarded, column by column, outside the squares near the
@@ -89,11 +89,11 @@ static Found find_on_map(int16_t map, uint16_t type)
             if (is_near_party(place))
                 continue;
             uint16_t thing = find_on_square(place, type);
-            if (thing != THING_ENDOFLIST)
+            if (thing != THING_NONE)
                 return (Found){thing, place};
         }
     }
-    return (Found){.thing = THING_ENDOFLIST};
+    return (Found){.thing = THING_NONE};
 }
 
 /* The thing leaves its square: a group is deleted, a projectile ends and drops its object, an object leaves the
@@ -117,12 +117,7 @@ static void remove_thing(uint16_t thing, Position place)
     case THING_POTION:
     case THING_JUNK:
         map_set_current_map(place.map);
-        move_get_move_result(
-            &(Move){
-                .thing = thing, .from = {place.x, place.y},
-                     .leaves = true
-        },
-            NULL);
+        move_get_move_result(&(Move){.thing = thing, .from.x = place.x, .from.y = place.y, .leaves = true}, NULL);
         break;
     default:
         break;
@@ -154,7 +149,7 @@ static uint16_t get_discarded_thing(uint16_t type)
     int16_t first = map;
     for (;;) {
         Found found = find_on_map(map, type);
-        if (found.thing != THING_ENDOFLIST) {
+        if (found.thing != THING_NONE) {
             remove_thing(found.thing, found.place);
             map_set_current_map(current);
             discard.last_map[type] = map;
