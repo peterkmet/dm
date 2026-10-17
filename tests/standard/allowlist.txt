@@ -24,8 +24,6 @@ notation platform/transport.c open: epic 10
 notation platform/main.c open: epic 11
 bool platform/main.c:entrance_frame open: epic 11
 bool platform/main.c:load_game_files open: epic 11
-bool platform/main.c:load_kaos_and_graphics open: epic 11
-bool platform/platform.c:audio_open open: epic 11
 static-prefix engine/group.c:turn_and_finish open: epic 10
 static-prefix engine/group.c:turn_creature open: epic 10
 static-prefix engine/group.c:turn_group open: epic 10
@@ -35,8 +33,6 @@ static-prefix engine/sound.c:sound_exists open: epic 9
 static-prefix platform/main.c:advanced_key open: epic 11
 static-prefix platform/main.c:entrance_frame open: epic 11
 static-prefix platform/main.c:select_input open: epic 11
-static-prefix platform/main.c:view_key open: epic 11
-static-prefix platform/main.c:view_start open: epic 11
 static-prefix platform/platform.c:draw_pointer open: epic 11
 static-prefix control/state_json.c:action_hand_charges open: epic 10
 static-prefix control/state_json.c:action_list_json open: epic 10
@@ -102,7 +98,6 @@ include engine/move.c:engine/inventory.h open: epic 5
 include engine/move.c:engine/event.h open: epic 5
 include engine/projectile.h:engine/event.h open: epic 5
 include engine/savegame.c:data/ids.h open: epic 5
-include platform/main.c:data/ftl.h open: epic 11
 include platform/platform.h:ui/video.h open: epic 11
 module platform/main.c open: epic 11
 order engine/action.c open: epic 5
@@ -145,4 +140,3 @@ dead-api data/graphics.h:gfx_close open: epic 11
 static-prefix platform/platform.c:audio_open open: epic 11
 dead-api platform/options.h:options_parse open: epic 11
 dead-api platform/options.h:options_print_help open: epic 11
-type platform:out open: epic 10
