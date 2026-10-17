@@ -23,6 +23,7 @@
 #include "ui/ui.h"
 #include "ui/video.h"
 #include "ui/view.h"
+#include "control/request.h"
 #include "platform/state_json.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -43,7 +44,6 @@
 #define ACTION_NAME_SIZE         32
 #define WITNESSED_EXPLOSIONS_MAX 32
 #define WITNESSED_GROUPS_MAX     16
-#define KEY_PATTERN_SIZE         64 /* a quoted request key */
 #define SLOT_REQUEST_SIZE        64
 #define CHOICE_SIZE              16
 #define CMD_SIZE                 32
@@ -222,50 +222,13 @@ static void click_view_box(const Box *b)
     click(ox + b->x + b->w / 2, oy + b->y + b->h / 2);
 }
 
-/* Requests: a flat search for "key": value; nested args are found the same way. */
-
-static const char *find_value(const char *line, const char *key)
-{
-    char pattern[KEY_PATTERN_SIZE];
-    snprintf(pattern, sizeof pattern, "\"%s\"", key);
-    const char *p = strstr(line, pattern);
-    if (!p)
-        return NULL;
-    p += strlen(pattern);
-    while (*p == ' ' || *p == ':')
-        p++;
-    return p;
-}
-
-static bool get_string(const char *line, const char *key, char *out, size_t size)
-{
-    const char *p = find_value(line, key);
-    size_t n = 0;
-    if (!p || *p++ != '"')
-        return false;
-    while (*p && *p != '"' && n + 1 < size)
-        out[n++] = *p++;
-    out[n] = 0;
-    return true;
-}
-
-static int64_t get_int(const char *line, const char *key, int64_t missing)
-{
-    const char *p = find_value(line, key);
-    char *end;
-    if (!p)
-        return missing;
-    int64_t value = strtoll(p, &end, DECIMAL_BASE);
-    return end == p ? missing : value;
-}
-
 /* Actions. Each returns NULL when it gave its input, or the reason why it cannot. */
 
 typedef const char *(*ActionFn)(const char *request);
 
 static bool parse_champion_arg(const char *request, int16_t *champion)
 {
-    int64_t c = get_int(request, "champion", -1);
+    int64_t c = request_get_int(request, "champion", -1);
     if (c < 0 || c >= g_party_champion_count || !g_champions[c].current_health)
         return false;
     *champion = c;
@@ -371,7 +334,7 @@ static const char *click_wall_ahead(const char *args)
 
 static const char *take_object(const char *args)
 {
-    int64_t cell = get_int(args, "cell", -1);
+    int64_t cell = request_get_int(args, "cell", -1);
     if (g_session.inventory_champion_index >= 0)
         return "close the inventory first (close_inventory)";
     if (cell < 0 || cell > VIEW_CLICK_BOX_ALCOVE)
@@ -387,7 +350,7 @@ static const char *take_object(const char *args)
 
 static const char *drop_object(const char *args)
 {
-    int64_t cell = get_int(args, "cell", 0);
+    int64_t cell = request_get_int(args, "cell", 0);
     Box b;
     const ViewResult *view = view_get_result();
     if (g_session.inventory_champion_index >= 0)
@@ -429,7 +392,7 @@ static const char *close_inventory(const char *args)
 static const char *click_slot(const char *args)
 {
     int16_t champion_index;
-    int64_t slot = get_int(args, "slot", -1);
+    int64_t slot = request_get_int(args, "slot", -1);
     if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
     if (g_leader_index == -1)
@@ -468,7 +431,7 @@ static void press_eye(int16_t x, int16_t y)
 static const char *send_look(const char *args)
 {
     int16_t x, y;
-    int64_t slot = get_int(args, "slot", -1);
+    int64_t slot = request_get_int(args, "slot", -1);
     char request[SLOT_REQUEST_SIZE];
     if (g_session.inventory_champion_index < 0)
         return "open an inventory first (open_inventory): the eye is in the inventory";
@@ -483,7 +446,7 @@ static const char *send_look(const char *args)
     if (!g_leader_empty_handed)
         return "the leader hand must be empty to look at a slot";
     snprintf(request, sizeof request, "\"champion\":%" PRId64 ",\"slot\":%" PRId64,
-             get_int(args, "champion", g_session.inventory_champion_index), slot);
+             request_get_int(args, "champion", g_session.inventory_champion_index), slot);
     const char *error = click_slot(request);
     if (error)
         return error;
@@ -497,7 +460,7 @@ static const char *send_look(const char *args)
 /* Clicks the icon of champion a, then the icon of champion b: the two champions swap cells. */
 static const char *swap_champions(const char *args)
 {
-    int64_t pair[2] = {get_int(args, "a", -1), get_int(args, "b", -1)};
+    int64_t pair[2] = {request_get_int(args, "a", -1), request_get_int(args, "b", -1)};
     for (int k = 0; k < 2; k++)
         if (pair[k] < 0 || pair[k] >= g_party_champion_count || !g_champions[pair[k]].current_health)
             return "a and b must be living champions";
@@ -524,7 +487,7 @@ static const char *use_mouth(const char *args)
 static const char *choose_action(const char *args)
 {
     int16_t champion_index;
-    int64_t index = get_int(args, "index", -1);
+    int64_t index = request_get_int(args, "index", -1);
     if (!parse_champion_arg(args, &champion_index))
         return "no living champion with this index";
     if (g_session.acting_champion_index >= 0 && g_session.acting_champion_index != champion_index)
@@ -577,7 +540,7 @@ static const char *spell_click(int16_t command)
 
 static const char *add_rune(const char *args)
 {
-    int64_t symbol = get_int(args, "symbol", -1);
+    int64_t symbol = request_get_int(args, "symbol", -1);
     if (symbol < 0 || symbol >= SYMBOL_COUNT)
         return "symbol must be 0-5";
     if (g_magic_caster_champion_index == -1)
@@ -609,7 +572,7 @@ static const char *recruit(const char *args)
         return "no candidate: click a champion mirror first (click_wall_ahead)";
     if (!g_leader_empty_handed)
         return "the leader hand must be empty";
-    if (!get_string(args, "choice", choice, sizeof choice))
+    if (!request_get_string(args, "choice", choice, sizeof choice))
         return "choice must be resurrect, reincarnate, or cancel";
     for (int k = 0; k < 3; k++)
         if (!strcmp(choice, choices[k])) {
@@ -1026,7 +989,7 @@ static const char *run_action(const char *name, const char *request)
 static void handle_act(const char *request)
 {
     char name[ACTION_NAME_SIZE];
-    if (!get_string(request, "action", name, sizeof name)) {
+    if (!request_get_string(request, "action", name, sizeof name)) {
         send_error("missing action");
         return;
     }
@@ -1109,58 +1072,21 @@ static void batch_finish(const char *stop, const char *error)
     memset(&batch, 0, sizeof batch);
 }
 
-/* The next act_many element, a "name" or an {"action": "name", "args": {...}} object, copied to out.
-   Returns 1, 0 at the end of the list, or -1 for an item that is not an action. */
-static int next_element(char *out, size_t size)
-{
-    const char *cursor = batch.next;
-    while (*cursor == ' ' || *cursor == ',')
-        cursor++;
-    const char *start = cursor;
-    if (!*cursor || *cursor == ']')
-        return 0;
-    if (*cursor == '"') {
-        cursor = strchr(cursor + 1, '"');
-        if (!cursor)
-            return -1;
-        cursor++;
-    } else if (*cursor == '{') {
-        for (int depth = 0; *cursor; cursor++) {
-            if (*cursor == '"')
-                cursor = strchr(cursor + 1, '"'); /* strings hold no '"' (docs/llm/llm-mode.md) */
-            if (!cursor)
-                return -1;
-            depth += (*cursor == '{') - (*cursor == '}');
-            if (!depth)
-                break;
-        }
-        if (!*cursor++)
-            return -1;
-    } else {
-        return -1;
-    }
-    if ((size_t)(cursor - start) >= size)
-        return -1;
-    memcpy(out, start, (size_t)(cursor - start));
-    out[cursor - start] = 0;
-    batch.next = cursor;
-    return 1;
-}
-
 /* Starts the next step of the batch, or ends the batch when it is done or the step cannot run. */
 static void batch_next(void)
 {
     const char *error;
     char element[INPUT_SIZE / 4], name[ACTION_NAME_SIZE];
     take_snapshot();
-    int found = next_element(element, sizeof element);
-    if (found <= 0) {
-        batch_finish(found ? "failed" : "done", found ? "an item of actions is not an action name or object" : NULL);
+    RequestItem found = request_next_item(&batch.next, element, sizeof element);
+    if (found != REQUEST_ITEM_FOUND) {
+        bool bad = found == REQUEST_ITEM_BAD;
+        batch_finish(bad ? "failed" : "done", bad ? "an item of actions is not an action name or object" : NULL);
         return;
     }
     if (element[0] == '"')
         snprintf(name, sizeof name, "%.*s", (int)strlen(element) - 2, element + 1);
-    else if (!get_string(element, "action", name, sizeof name))
+    else if (!request_get_string(element, "action", name, sizeof name))
         name[0] = 0;
     error = run_action(name, element);
     if (error)
@@ -1182,7 +1108,7 @@ static void batch_after_turn(void)
 
 static void handle_act_many(const char *request)
 {
-    const char *list = find_value(request, "actions");
+    const char *list = request_find_value(request, "actions");
     if (!list || *list != '[') {
         send_error("actions must be a list");
         return;
@@ -1247,7 +1173,7 @@ static void handle_save(void)
 /* Starts a turn of the given ticks without an action; it ends early on news. */
 static void handle_wait(const char *request)
 {
-    int64_t ticks = get_int(request, "ticks", 1);
+    int64_t ticks = request_get_int(request, "ticks", 1);
     if (ticks < 1 || ticks > WAIT_MAX_TICKS)
         send_error("ticks must be 1-5000");
     else {
@@ -1264,7 +1190,7 @@ static void handle_wait(const char *request)
 static void handle_screenshot(const char *request)
 {
     char path[PATH_SIZE];
-    if (!get_string(request, "path", path, sizeof path))
+    if (!request_get_string(request, "path", path, sizeof path))
         send_error("missing path");
     else if (!write_png(path))
         send_error("cannot write the PNG file");
@@ -1280,7 +1206,7 @@ static void handle_screenshot(const char *request)
 static void handle_request(const char *request)
 {
     char cmd[CMD_SIZE];
-    if (!get_string(request, "cmd", cmd, sizeof cmd)) {
+    if (!request_get_string(request, "cmd", cmd, sizeof cmd)) {
         send_error("missing cmd");
         return;
     }
