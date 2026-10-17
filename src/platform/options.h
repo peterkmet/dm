@@ -34,8 +34,6 @@ typedef enum {
 OptionsResult options_parse(int argc, char **argv, Options *options);
 /* Prints one line per option with its value and meaning. */
 void options_print_help(FILE *out);
-/* The game mode of a --mode value, or -1. */
-int16_t options_find_mode(const char *name);
 /* The name of a game mode for the log. */
 const char *options_get_mode_name(int16_t mode);
 

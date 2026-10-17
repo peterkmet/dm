@@ -263,7 +263,7 @@ The port does not keep portrait bitmaps. It keeps the index of each portrait in 
 ## Limits
 
 - No real save file was available. The tests use synthetic data, the port's own saves, and the original routines as the oracle. The original `load_dungeon` reads a file handle, so the tests do not run it on the dungeon part.
-- Deliberate deviation: the original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!". The port sets `g_return_to_entrance`, and `main.c` shows the entrance.
+- Deliberate deviation: the original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!". The port sets `g_return_to_entrance`, and `platform/app.c` shows the entrance.
 - A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
 - The header byte at `0x12a` (`SAVE_HEADER_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.
 - `savefile_decode` does not check the dungeon part. A file that is cut inside the dungeon part decodes. The dungeon loader must check the part sizes and the byte sum.

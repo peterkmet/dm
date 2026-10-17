@@ -2,6 +2,8 @@
 #include "platform/options.h"
 #include "data/adventure.h"
 #include "data/bytes.h"
+#include "engine/game.h"
+#include "platform/transport.h"
 #include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -47,6 +49,15 @@ static const Option *find_option(const char *name)
     return NULL;
 }
 
+/* The game mode of a --mode value, or -1. */
+static int16_t find_mode(const char *name)
+{
+    for (int16_t mode = 0; mode < ARRAY_COUNT(mode_names); mode++)
+        if (!strcmp(name, mode_names[mode]))
+            return mode;
+    return -1;
+}
+
 /* Reads a decimal number from 0 to max; false for other text. */
 static bool read_number(const char *text, int64_t max, int64_t *number)
 {
@@ -83,7 +94,7 @@ static bool write_value(const Option *option, const char *text, Options *options
         memcpy(target, &small, sizeof small);
         return true;
     case VALUE_MODE:
-        small = options_find_mode(text);
+        small = find_mode(text);
         if (small < 0) {
             fprintf(stderr, "--mode must be vanilla, advanced, or turnbased\n");
             return false;
@@ -125,6 +136,10 @@ OptionsResult options_parse(int argc, char **argv, Options *options)
         if (!write_value(option, argv[i], options))
             return OPTIONS_ERROR;
     }
+    if (options->mode == GAME_MODE_TURNBASED && !transport_is_available()) {
+        fprintf(stderr, "turn-based mode needs macOS\n");
+        return OPTIONS_ERROR;
+    }
     return OPTIONS_RUN;
 }
 
@@ -133,14 +148,6 @@ void options_print_help(FILE *out)
     fprintf(out, "Usage: dm [options]\n");
     for (int i = 0; i < ARRAY_COUNT(options_table); i++)
         fprintf(out, "  %-12s %s\n", options_table[i].name, options_table[i].help);
-}
-
-int16_t options_find_mode(const char *name)
-{
-    for (int16_t mode = 0; mode < ARRAY_COUNT(mode_names); mode++)
-        if (!strcmp(name, mode_names[mode]))
-            return mode;
-    return -1;
 }
 
 const char *options_get_mode_name(int16_t mode)

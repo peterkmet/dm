@@ -292,6 +292,11 @@ bool tables_load(const char *path)
     return r;
 }
 
+void tables_free(void)
+{
+    kaos_free();
+}
+
 bool tables_is_loaded(void)
 {
     return kaos_is_loaded();

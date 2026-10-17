@@ -13,7 +13,7 @@ The plan is in [2026-10-04-modes-plan.md](../superpowers/archive/2026-10-04-mode
 | Socket server | `src/platform/transport.c` | Done, tested in process |
 | MCP server | `tools/dmtools/mcp_server.py` | Done, tested against the socket |
 | Command-line client `dm-play` | `tools/dmtools/play.py` | Done, tested against the socket |
-| `--mode turnbased --control PATH` | `src/platform/main.c` | Done, tested headless |
+| `--mode turnbased --control PATH` | `src/platform/options.c`, `src/platform/app.c` | Done, tested headless |
 
 ## Play with Claude Code
 
@@ -524,14 +524,14 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 `control/state_json.h` (in `libdm`, no SDL): `state_write_state`, `state_write_view`, `state_write_map` append one JSON object to a `Json` buffer. `state_get_string(part)` returns a new string. Release it with `free`.
 
-## Integration in main.c
+## Integration in app.c
 
-`platform/main.c` does these steps in the `turnbased` mode:
+`platform/app.c` does these steps in the `turnbased` mode:
 
-1. It parses `--mode turnbased` and `--control PATH`, and calls `transport_open(PATH)` before the main loop. It stops with an error when the call returns false. Where `transport_is_available()` is false, the mode is not offered.
+1. `options_parse` reads `--mode turnbased` and `--control PATH`; when the game mode is set, `apply_mode` calls `transport_open(PATH)`. It stops with an error when the call returns false. Where `transport_is_available()` is false, the mode is not offered.
 2. It presses ENTER at the entrance (as `DM_AUTO_ENTER` does). The entrance frames run without a turn.
 3. `read_input` keeps only the quit event. Keys and clicks do not go to the command queue.
-4. Each frame calls `transport_poll()` one time, after `read_input()`.
+4. Each frame, `app_run_frame` calls `transport_poll()` one time, after `read_input()`.
 5. In the game, each frame calls `gameloop_run_frame()` and `gameloop_tick()` only while `control_is_turn_pending()` returns true. The window still shows each frame.
 6. `g_frame_hook` is `NULL`, so the endgame, the dialogs, and the fuse sequence do not wait for frames or input.
 7. After a game over, the program stays in the game mode and shows the entrance. `load` and `new_game` start the next game.

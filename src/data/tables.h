@@ -180,6 +180,8 @@ typedef struct {
 
 /* Loads the engine module at path (kaos_load), then decodes the tables. False as kaos_load. */
 bool tables_load(const char *path);
+/* Frees the engine image of tables_load. */
+void tables_free(void);
 
 /* True after a successful tables_load. */
 bool tables_is_loaded(void);

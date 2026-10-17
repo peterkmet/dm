@@ -236,7 +236,7 @@ Port: `startend_run_endgame_sensor` in `src/ui/startend.c` sets `g_session.won`,
 - `TITL.DAT` (disk B): the title animation of the utility disk. 1 `AN`, 1 `PL`, 1 `EN`, 31 `DL`, 1 `DO`.
 - `ANIM.DAT` (disk B): the long intro animation. It loads 5 samples from `Sound/` by name and music from `MIDI/NAKED.AMG`. The 5 files in `Sound/` equal CSB graphic items 688, 675, 683, 684, and 685.
 
-The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `src/platform/main.c`). It does not read `TITL.DAT` of disk B.
+The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `src/platform/app.c`). It does not read `TITL.DAT` of disk B.
 
 `ANIM.FTL` of disk B is another build than disk A (all addresses below are disk B addresses). Dispatcher `0x100c76`, table at `0x100c8e`. Handlers:
 
