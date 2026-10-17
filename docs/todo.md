@@ -2,11 +2,6 @@
 
 User wishes for future versions. Not planned yet, unless an item names its PRD.
 
-## CSB intro: a pause after a click
-
-- Owner (2026-10-17, manual test): a click stops the CSB intro (as designed), but then about 5 seconds pass with
-  nothing on the screen before the prison starts. Find the cause (`src/platform/app.c`, `src/ui/audio.c`).
-
 ## Release on GitHub
 
 - Publish the source and the macOS and Windows builds on GitHub (the repository is private today).

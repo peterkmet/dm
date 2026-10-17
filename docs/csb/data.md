@@ -251,6 +251,15 @@ The port plays `ANIM.DAT` after NEW ADVENTURE (`play_csb_intro` in `src/platform
 
 `ANIM.DAT` has 851 frames, 10808 vertical blanks (216 s). After the last frame or a stop (`BR` 1), the cleanup fades the music: volume 29 down to 1, one step every 3 ticks (`0x102e4c`), then the music stops.
 
+A stop is not immediate. The play loop `0x100eec` checks the input before each chunk. A frame chunk (`0x100fd4`,
+`0x100ff4`) first waits until the vertical blank counter `-0x132(A5)` of the shown frame is 0, shows the new frame
+and sets the counter to its time. After a stop the loop waits for the counter again, then the cleanup fades the
+music. So a click keeps the shown frame for the rest of its time, shows one more frame for its full time, and then
+fades the music for 87 ticks (1.7 s). `ANIM.DAT` has frames of up to 536 ticks (10.7 s; the title pictures of the
+first minute). The port stops after the rest of the shown frame and does not show the next frame; then it fades
+the music as the original. Measured in the port (2026-10-17): a click 8.6 s before the end of a long frame starts
+the prison 10.3 s later; a click in a short frame, 1.9 s later. Loading the prison takes 30 ms.
+
 `NAKED.AMG` is not a tracker or MIDI file. All words are big-endian:
 
 | Offset | Content |
