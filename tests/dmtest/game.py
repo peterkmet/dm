@@ -100,7 +100,7 @@ class Skill(ctypes.Structure):
 
 class ChampionRuntime(ctypes.Structure):
     _fields_ = [
-        ("pending_damage", c16), ("pending_wounds", u16), ("skill_level_up", ctypes.c_bool * 4),
+        ("pending_damage", c16), ("pending_wounds", u16), ("damage_to_show", c16), ("skill_level_up", ctypes.c_bool * 4),
         ("portrait", u8 * (32 * 29)),
     ]
 

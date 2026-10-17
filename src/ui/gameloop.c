@@ -327,6 +327,11 @@ void gameloop_tick(void)
     Champion before[CHAMPION_MAX_COUNT];
     memcpy(before, g_champions, sizeof before);
     champion_apply_pending_damage();
+    for (int16_t i = 0; i < g_party_champion_count; i++) {
+        int16_t damage = champion_take_damage_to_show(i);
+        if (damage)
+            status_draw_damage(i, damage);
+    }
     release_dead_champions(leader);
     if (g_session.party_dead) {
         status_draw_all(0); /* the dead champions show during the death scream */

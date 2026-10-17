@@ -14,7 +14,7 @@
 void status_draw_slot(int16_t champion_index, int16_t slot);
 /* Shows the damage a champion took: a splat with the number on the status box, or on the
    portrait while the inventory of the champion is open. */
-void status_draw_damage(int16_t champion_index, int16_t damage); /* exported for the tests */
+void status_draw_damage(int16_t champion_index, int16_t damage);
 /* Draws the parts of a champion that have a redraw flag in its attributes, then clears the flags. */
 void status_draw_champion(int16_t champion_index);
 /* Sets redraw flags on all champions and draws them. */

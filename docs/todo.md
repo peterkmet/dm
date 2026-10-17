@@ -24,13 +24,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - Today: `plat_present` (`src/platform/platform.c:156-179`) scales the indexed game screen, then `overlay_pointer` draws the pointer into the scaled frame as blocks of 2x2 or 3x3 pixels, so the pointer stays blocky. The pointer has its own colors (`plat_set_pointer`, `src/platform/platform.c:103-116`), so it cannot go into `g_screen.px`.
 - Change: build a 320x200 index frame (a screen pixel is its color plus 16 for the interface half, a pointer pixel is 32 plus its color, pointer color 0 is transparent), filter it, map it with one 48-entry color table. The screenshot (`src/control/png.c:51-61`) does not change.
 
-## Draw the damage splat on the champion box
-
-- Found in the manual test (2026-10-17): a champion that takes damage shows no red splat with the number on the status box. The bars and `health_lost` are correct.
-- Today: `champion_apply_pending_damage` (`src/engine/champion.c:816-848`) updates the health and queues the hide event, but nothing draws the splat. `status_draw_damage` (`src/ui/status.c:102-111`) has no caller in `src/`; only `tests/golden/test_golden_screens.py:48` calls it.
-- The original: the pending-damage routine draws the splat of each living champion before the action-area refresh (KAOS.c:14776-14829, the draw at :14808 in the `else` of the kill at :14799).
-- Change: the engine records the damage of the tick per living champion in `ChampionRuntime` (`src/engine/champion.h:61-67`; the ctypes mirror `tests/dmtest/game.py:101-105` gets the field too); the game loop calls `status_draw_damage` after `champion_apply_pending_damage` and before `release_dead_champions` (`src/ui/gameloop.c:329-330`).
-
 ## Windows build: the sound crackles under Wine
 
 - Found in the manual test (2026-10-17): `dm.exe` under the local Wine CX build (`~/github/wine-cross`) plays, saves and loads, but the sounds crackle and pop (wall bump, door). The macOS build sounds clean. Kairosoft games in the same Wine sound clean.

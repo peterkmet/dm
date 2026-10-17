@@ -62,6 +62,7 @@ typedef struct {
 typedef struct {
     int16_t pending_damage;                /* damage of the tick, applied after the tick */
     uint16_t pending_wounds;               /* WOUND_* bits of the tick */
+    int16_t damage_to_show;                /* damage applied in the tick to a living champion; 0: none */
     bool skill_level_up[SKILL_BASE_COUNT]; /* the panel shows the base skill in green */
     uint8_t portrait[CHAMPION_PORTRAIT_WIDTH * CHAMPION_PORTRAIT_HEIGHT];
 } ChampionRuntime;
@@ -232,6 +233,8 @@ void champion_apply_time_effects(void);
 extern uint16_t g_dead_champions;
 /* The champions that died in the tick (one bit each); the notice is then cleared. */
 uint16_t champion_take_dead_champions(void);
+/* The damage of the tick that the status box of a living champion shows (0: none); the notice is then cleared. */
+int16_t champion_take_damage_to_show(int16_t champion_index);
 /* Asks the user interface to draw these parts of a champion again (CHAMPION_ATTR_* redraw flags). */
 void champion_add_redraw_flags(int16_t champion_index, uint16_t attributes);
 /* The champion turns to the party direction. */

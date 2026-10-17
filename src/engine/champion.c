@@ -834,6 +834,7 @@ void champion_apply_pending_damage(void)
             continue;
         }
         c->current_health = health;
+        c->runtime.damage_to_show = damage;
         c->attributes |= wounds ? CHAMPION_ATTR_STATISTICS | CHAMPION_ATTR_WOUNDS : CHAMPION_ATTR_STATISTICS;
         uint32_t map_time = EVENT_MAP_TIME(g_party_map_index, g_game_time + HIDE_DAMAGE_TICKS);
         int16_t e = c->hide_damage_received_event_index;
@@ -1126,6 +1127,13 @@ uint16_t champion_take_dead_champions(void)
     uint16_t dead = g_dead_champions;
     g_dead_champions = 0;
     return dead;
+}
+
+int16_t champion_take_damage_to_show(int16_t champion_index)
+{
+    int16_t damage = g_champions[champion_index].runtime.damage_to_show;
+    g_champions[champion_index].runtime.damage_to_show = 0;
+    return damage;
 }
 
 void champion_add_redraw_flags(int16_t champion_index, uint16_t attributes)

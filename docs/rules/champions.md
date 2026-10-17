@@ -116,7 +116,7 @@ Sleep keeps the selected runes of the magic caster, in the original (command 145
 
 `champion_damage_all(attack, wounds, type)` gives each champion `max(1, attack − spread + random16() % (2 × spread))` with `spread = attack / 8 + 1`. It returns the number of champions hurt.
 
-`champion_apply_pending_damage()` adds the pending wounds, subtracts the pending damage, and kills a champion at 0 health. A hurt champion gets event 12 (hide the damage) at time + 5, or the existing event moves to that time.
+`champion_apply_pending_damage()` adds the pending wounds, subtracts the pending damage, and kills a champion at 0 health. A hurt champion gets event 12 (hide the damage) at time + 5, or the existing event moves to that time. A champion that survives keeps the damage in `damage_to_show`; after the call the game loop takes it with `champion_take_damage_to_show(index)` and draws the splat with the number on the status box (`status_draw_damage`).
 
 `champion_decrement_stamina(index, amount)`: stamina below 1 becomes 0 and gives raw damage of half the deficit. Stamina stops at the maximum.
 
