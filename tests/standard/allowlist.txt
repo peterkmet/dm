@@ -32,8 +32,6 @@ comment engine/savefile.h open: epic 5
 comment engine/savegame.c open: epic 5
 comment engine/savegame.h open: epic 5
 comment engine/sensor.c open: epic 5
-comment control/control_actions.c open: epic 10
-comment control/state_json.c open: epic 10
 header engine/action.h open: epic 5
 header engine/champion.h open: epic 5
 header engine/dungeon.h open: epic 5
@@ -73,10 +71,8 @@ order engine/random.c open: epic 5
 order engine/savegame.c open: epic 5
 order engine/sensor.c open: epic 5
 order engine/event.c open: epic 5
-order control/state_json.c open: epic 10
 order ui/music.c open: epic 9
 dead-api engine/sound.h:sound_get_volume open: epic 9
-params control/control_actions.c:find_in_box open: epic 10
 params ui/draw.c:draw_blit open: epic 8
 params ui/draw.h:draw_blit open: epic 8
 params ui/layout.c:layout_get_zone open: epic 8

@@ -32,6 +32,7 @@
 
 /* Input as the player gives it: clicks and keys go through the command queue. */
 
+/* A left click at a screen point, then the commands it queues. */
 static void click(int16_t x, int16_t y)
 {
     command_process_click(x, y, CLICK_LEFT_PRESS);
@@ -51,18 +52,18 @@ static void get_viewport_origin(int16_t *x, int16_t *y)
     *y = tables_get_viewport_y();
 }
 
-/* A screen point inside box b (moved by dx, dy) where the table gives command, or 0. */
-static bool find_in_box(int16_t table, int16_t command, Box b, int16_t dx, int16_t dy, int16_t *x, int16_t *y)
+/* A screen point inside box b where the table gives command, or 0. */
+static bool find_in_box(int16_t table, int16_t command, Box b, int16_t *x, int16_t *y)
 {
-    int16_t cx = b.x + dx + b.w / 2;
-    int16_t cy = b.y + dy + b.h / 2;
+    int16_t cx = b.x + b.w / 2;
+    int16_t cy = b.y + b.h / 2;
     if (ui_command_from_mouse(table, cx, cy, UI_BUTTON_LEFT) == command) {
         *x = cx;
         *y = cy;
         return true;
     }
-    for (int16_t py = b.y + dy; py < b.y + dy + b.h; py++)
-        for (int16_t px = b.x + dx; px < b.x + dx + b.w; px++)
+    for (int16_t py = b.y; py < b.y + b.h; py++)
+        for (int16_t px = b.x; px < b.x + b.w; px++)
             if (ui_command_from_mouse(table, px, py, UI_BUTTON_LEFT) == command) {
                 *x = px;
                 *y = py;
@@ -92,19 +93,22 @@ static bool find_click(int16_t table, int16_t command, int16_t *x, int16_t *y)
         Box box = {x1, mouse_input.y1, x2 - x1 + 1, 0};
         if (x1 >= 0) {
             box.h = mouse_input.y2 - box.y + 1;
-            if (find_in_box(table, command, box, 0, 0, x, y))
+            if (find_in_box(table, command, box, x, y))
                 return true;
             continue;
         }
         if (!ui_zone_box(x2, &box))
             continue;
-        for (int k = 0; k < VIEWPORT_ORIGIN_COUNT; k++)
-            if (find_in_box(table, command, box, offsets[k].x, offsets[k].y, x, y))
+        for (int k = 0; k < VIEWPORT_ORIGIN_COUNT; k++) {
+            Box moved = {box.x + offsets[k].x, box.y + offsets[k].y, box.w, box.h};
+            if (find_in_box(table, command, moved, x, y))
                 return true;
+        }
     }
     return false;
 }
 
+/* Clicks the point where the table gives command; false when the table has none. */
 static bool click_command(int16_t table, int16_t command)
 {
     int16_t x, y;
@@ -126,6 +130,7 @@ static void click_view_box(const Box *b)
 
 typedef const char *(*ActionFn)(const char *request);
 
+/* Reads the champion argument; false unless it names a living champion. */
 static bool parse_champion_arg(const char *request, int16_t *champion)
 {
     int64_t c = request_get_int(request, "champion", -1);
@@ -135,6 +140,7 @@ static bool parse_champion_arg(const char *request, int16_t *champion)
     return true;
 }
 
+/* The reason why a movement cannot start (an open inventory), or NULL. */
 static const char *need_movement_input(void)
 {
     if (g_session.inventory_champion_index >= 0)
@@ -142,6 +148,7 @@ static const char *need_movement_input(void)
     return NULL;
 }
 
+/* Presses the movement key unless the inventory blocks it; returns the reason or NULL. */
 static const char *parse_movement(uint16_t key)
 {
     const char *error = need_movement_input();
@@ -194,6 +201,7 @@ static const char *rotate_right(const char *args)
     return give_rotation(KEY_HELP, 1);
 }
 
+/* Clicks the wall square ahead. */
 static const char *click_wall_ahead(const char *args)
 {
     (void)args;
@@ -206,6 +214,7 @@ static const char *click_wall_ahead(const char *args)
     return NULL;
 }
 
+/* Clicks the object pile at a cell of the view to take it. */
 static const char *take_object(const char *args)
 {
     int64_t cell = request_get_int(args, "cell", -1);
@@ -222,6 +231,7 @@ static const char *take_object(const char *args)
     return NULL;
 }
 
+/* Drops the leader hand object at a cell of the view, or into the alcove ahead. */
 static const char *drop_object(const char *args)
 {
     int64_t cell = request_get_int(args, "cell", 0);
@@ -243,6 +253,7 @@ static const char *drop_object(const char *args)
     return NULL;
 }
 
+/* Opens the inventory of a champion. */
 static const char *open_inventory(const char *args)
 {
     int16_t champion_index;
@@ -253,6 +264,7 @@ static const char *open_inventory(const char *args)
     return NULL;
 }
 
+/* Closes the open inventory. */
 static const char *close_inventory(const char *args)
 {
     (void)args;
@@ -349,6 +361,7 @@ static const char *swap_champions(const char *args)
     return NULL;
 }
 
+/* Clicks the mouth of the open inventory: the champion eats or drinks the leader hand object. */
 static const char *use_mouth(const char *args)
 {
     (void)args;
@@ -360,6 +373,7 @@ static const char *use_mouth(const char *args)
     return NULL;
 }
 
+/* Opens the action menu of a champion and picks one action of it. */
 static const char *choose_action(const char *args)
 {
     int16_t champion_index;
@@ -381,6 +395,7 @@ static const char *choose_action(const char *args)
     return NULL;
 }
 
+/* Closes the action menu without an action. */
 static const char *pass(const char *args)
 {
     (void)args;
@@ -389,6 +404,7 @@ static const char *pass(const char *args)
     return NULL;
 }
 
+/* Picks the champion that casts the spell. */
 static const char *set_caster(const char *args)
 {
     int16_t champion_index;
@@ -403,6 +419,7 @@ static const char *set_caster(const char *args)
     return NULL;
 }
 
+/* Clicks a command of the spell area. */
 static const char *click_spell_area(int16_t command)
 {
     if (g_magic_caster_champion_index == -1)
@@ -411,6 +428,7 @@ static const char *click_spell_area(int16_t command)
     return NULL;
 }
 
+/* Adds a rune symbol to the spell. */
 static const char *add_rune(const char *args)
 {
     int64_t symbol = request_get_int(args, "symbol", -1);
@@ -437,6 +455,7 @@ static const char *cast(const char *args)
     return click_spell_area(COMMAND_CAST_SPELL);
 }
 
+/* Answers the champion mirror: resurrect, reincarnate or cancel. */
 static const char *answer_mirror(const char *args)
 {
     static const char *const choices[MIRROR_CHOICE_COUNT] = {"resurrect", "reincarnate", "cancel"};
@@ -455,6 +474,7 @@ static const char *answer_mirror(const char *args)
     return "choice must be resurrect, reincarnate, or cancel";
 }
 
+/* Makes a champion the leader. */
 static const char *set_leader(const char *args)
 {
     int16_t champion_index;
@@ -464,6 +484,7 @@ static const char *set_leader(const char *args)
     return NULL;
 }
 
+/* Puts the party to sleep. */
 static const char *sleep_party(const char *args)
 {
     (void)args;
@@ -475,6 +496,7 @@ static const char *sleep_party(const char *args)
     return NULL;
 }
 
+/* Wakes the sleeping party. */
 static const char *wake(const char *args)
 {
     (void)args;

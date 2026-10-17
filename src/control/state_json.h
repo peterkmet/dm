@@ -26,23 +26,20 @@ typedef struct {
     uint16_t thing;
 } StateSeenThing;
 
-/* Writers */
 /* Appends the party, champions, messages, actions, runes and panels as one object. */
 void state_write_state(Json *j);
-/* Appends the squares in front of the party, 4 deep and the sides, as one object. */
-void state_write_view(Json *j);
-/* Appends the explored squares of the party map as text rows. */
-void state_write_map(Json *j);
-/* Appends the name of an explosion type, or its number when it has no name. */
-void state_write_explosion_name(Json *j, uint16_t type);
-
-/* Queries */
-/* The creature groups (their things) on the squares the party sees now. Returns the count. */
-int state_get_visible_groups(uint16_t groups[STATE_VISIBLE_GROUPS_MAX]);
-/* The things of a thing type on the squares the party sees now (no walls), in view order. Returns the count. */
-int state_get_visible_things(uint16_t type, StateSeenThing *things, int max);
 /* The name of a creature type, or "unknown". */
 const char *state_get_creature_name(uint16_t type);
+/* Appends the name of an explosion type, or its number when it has no name. */
+void state_write_explosion_name(Json *j, uint16_t type);
+/* Appends the squares in front of the party, 4 deep and the sides, as one object. */
+void state_write_view(Json *j);
+/* The things of a thing type on the squares the party sees now (no walls), in view order. Returns the count. */
+int state_get_visible_things(uint16_t type, StateSeenThing *things, int max);
+/* The creature groups (their things) on the squares the party sees now. Returns the count. */
+int state_get_visible_groups(uint16_t groups[STATE_VISIBLE_GROUPS_MAX]);
+/* Appends the explored squares of the party map as text rows. */
+void state_write_map(Json *j);
 /* One part (STATE_PART_*) as a new string; release it with free. */
 char *state_get_string(int16_t part); /* exported for the tests */
 

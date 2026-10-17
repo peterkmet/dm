@@ -79,6 +79,7 @@ static void pair(Json *j, const char *key, int64_t a, int64_t b)
 
 /* Objects. */
 
+/* The kind name of an object thing: weapon, clothing, scroll and so on. */
 static const char *get_object_kind(uint16_t thing)
 {
     switch (THING_TYPE(thing)) {
@@ -410,6 +411,7 @@ void state_write_state(Json *j)
 
 /* Squares as a player sees them. */
 
+/* The name of a door state: open, closed, broken and so on. */
 static const char *get_door_state_name(int16_t state)
 {
     if (state == DOOR_OPEN)
