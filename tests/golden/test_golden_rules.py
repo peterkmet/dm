@@ -3,15 +3,13 @@
 
 import ctypes
 import hashlib
-import json
-import os
 from pathlib import Path
 
 import pytest
 
 from dmtest import constants as C
 from dmtest.game import ActionList, Location, Party, Position, scrub_free_groups, state, session, screen, view_result
-from dmtest.golden import add_second_champion, golden_game, recruit, ticks, zone_box
+from dmtest.golden import add_second_champion, check as check_golden, golden_game, recruit, ticks, zone_box
 from dmtest.markers import needs_dm
 
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
@@ -42,13 +40,8 @@ def snapshot(game):
 
 
 def check(name, got):
-    """Compares the snapshots of a scenario with the golden file; DM_UPDATE_GOLDEN writes them."""
-    golden = json.loads(GOLDEN.read_text()) if GOLDEN.exists() else {}
-    if os.environ.get("DM_UPDATE_GOLDEN"):
-        golden[name] = got
-        GOLDEN.parent.mkdir(exist_ok=True)
-        GOLDEN.write_text(json.dumps(golden, indent=1, sort_keys=True) + "\n")
-    assert got == golden[name]
+    """Compares the snapshots of a scenario with the golden file."""
+    check_golden(GOLDEN, got, name)
 
 
 def place_party(game, m, x, y, d):
@@ -146,6 +139,17 @@ def test_runes(game, mana):
         game.click_box(box, viewport=False)
         got.append(snapshot(game))
     check(f"runes {mana}", got)
+
+
+@needs_dm
+def test_dead_caster_leaves_the_spell_area(game):
+    recruit(game)
+    index = game.value("g_magic_caster_champion_index")
+    assert index != -1
+    game.champions[index].current_health = 0
+    game.lib.menus_draw_spell_area()
+    assert game.value("g_magic_caster_champion_index") == -1
+    check("dead caster", [snapshot(game)])
 
 
 @needs_dm

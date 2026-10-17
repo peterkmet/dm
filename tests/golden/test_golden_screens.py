@@ -2,14 +2,12 @@
 """Golden snapshot of the champion screens: status boxes, the inventory panel, and the action area."""
 
 import hashlib
-import json
-import os
 from pathlib import Path
 
 import pytest
 
 from dmtest import constants as C
-from dmtest.golden import add_second_champion, golden_game, recruit, zone_box
+from dmtest.golden import add_second_champion, check as check_golden, golden_game, recruit, zone_box
 from dmtest.game import screen as video_screen
 from dmtest.markers import needs_dm
 
@@ -28,12 +26,8 @@ def screen(game):
 
 
 def check(name, got):
-    """Compares the screens of a scenario with the golden file; DM_UPDATE_GOLDEN writes them."""
-    golden = json.loads(GOLDEN.read_text()) if GOLDEN.exists() else {}
-    if os.environ.get("DM_UPDATE_GOLDEN"):
-        golden[name] = got
-        GOLDEN.write_text(json.dumps(golden, indent=1, sort_keys=True) + "\n")
-    assert got == golden[name]
+    """Compares the screens of a scenario with the golden file."""
+    check_golden(GOLDEN, got, name)
 
 
 @needs_dm

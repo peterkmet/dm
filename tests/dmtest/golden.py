@@ -2,6 +2,9 @@
 """The setup of the golden rule and screen snapshots: a fixed new game and the recruit steps of the scenarios."""
 
 import ctypes
+import json
+import os
+from pathlib import Path
 
 from dmtest import constants as C
 from dmtest.game import Box, ChampionRuntime, Game, Location, recruit_and_hold_object
@@ -73,3 +76,22 @@ def add_second_champion(game):
         champions[1].slots[s] = 0xFFFF
     champions[1].load = 0
     u16.in_dll(game.lib, "g_party_champion_count").value = 2
+
+
+def check(path, got, key=None, indent=1, sort_keys=True, describe=None):
+    """Compares got with the snapshot file (the whole file, or its entry key); DM_UPDATE_GOLDEN=1 writes it."""
+    path = Path(path)
+    command = f"DM_UPDATE_GOLDEN=1 uv run pytest -q tests/golden/test_golden_{path.stem}.py"
+    if os.environ.get("DM_UPDATE_GOLDEN"):
+        assert not os.environ.get("PYTEST_XDIST_WORKER"), f"run the update without xdist: {command}"
+        data = got
+        if key is not None:
+            data = json.loads(path.read_text()) if path.exists() else {}
+            data[key] = got
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(json.dumps(data, indent=indent, sort_keys=sort_keys) + "\n")
+    golden = json.loads(path.read_text())
+    if key is not None:
+        assert key in golden, f"{path} has no key {key!r}; create it with: {command}"
+        golden = golden[key]
+    assert got == golden, describe(got, golden) if describe else f"{path} differs at {key!r}"

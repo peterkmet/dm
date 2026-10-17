@@ -2,13 +2,12 @@
 """Golden snapshot of the dungeon view: every square of every map in all 4 directions draws the same pixels."""
 
 import ctypes
-import json
-import os
 import zlib
 from pathlib import Path
 
 import pytest
 
+from dmtest.golden import check as check_golden
 from dmtest.game import setup_view, start_view, screen
 from dmtest.lib import load_lib
 from dmtest.markers import needs_dm
@@ -48,9 +47,4 @@ def test_view_matches_the_golden_snapshot(game, m):
     lib.view_render.restype = ctypes.c_bool
     assert lib.dungeon_map_count() == MAP_COUNT
     got = map_rows(lib, m)
-    golden = json.loads(GOLDEN.read_text()) if GOLDEN.exists() else {}
-    if os.environ.get("DM_UPDATE_GOLDEN"):
-        golden[str(m)] = got
-        GOLDEN.parent.mkdir(exist_ok=True)
-        GOLDEN.write_text(json.dumps(golden, indent=None, sort_keys=True) + "\n")
-    assert got == golden[str(m)]
+    check_golden(GOLDEN, got, str(m), indent=None)

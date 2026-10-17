@@ -3,11 +3,10 @@
 
 import ctypes
 import hashlib
-import json
-import os
 from pathlib import Path
 
 
+from dmtest.golden import check as check_golden
 from dmtest.game import Game, recruit_and_hold_object, scrub_free_groups
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
@@ -53,7 +52,4 @@ def saved_game(tmp_path):
 @needs_dm
 def test_save_matches_the_golden_snapshot(tmp_path):
     got = digests(saved_game(tmp_path))
-    if os.environ.get("DM_UPDATE_GOLDEN"):
-        GOLDEN.parent.mkdir(exist_ok=True)
-        GOLDEN.write_text(json.dumps(got, indent=1) + "\n")
-    assert got == json.loads(GOLDEN.read_text())
+    check_golden(GOLDEN, got, sort_keys=False)

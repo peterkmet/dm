@@ -11,7 +11,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing`. PRD: `docs/superpowers/2026-10-17-discard-thing.md`.
 - `light_depths` (`src/engine/explored.c`): a fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it.
 - `sound_request_play` (`src/engine/sound.c:130-148`): the original skips a mode >= 1 sound when the current map is not the party map (KAOS.c:7001); the port does not check it yet. Fix: return when `mode != SOUND_MODE_NOW` and `g_current_map_index != g_party_map_index`; a differential case in `tests/differential/test_sound.py`.
-- `tests/golden/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot. Fix: one `check` helper in `tests/dmtest/golden.py` for the five files in `tests/golden/`, with a message that names the update command, and an update mode that stops in an xdist worker.
 
 ## Port the name entry of a reincarnated champion
 

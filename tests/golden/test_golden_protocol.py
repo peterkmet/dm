@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from dmtest.control import Client
+from dmtest.golden import check as check_golden
 from dmtest.game import STEP_EAST, STEP_NORTH, Game
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
@@ -88,8 +89,5 @@ def test_protocol_matches_the_golden_snapshot(game):
         client.sock.close()
     assert not any(str(game.saves) in r for r in replies)  # the replies hold no machine path
     got = {"replies": [hashlib.sha256(r.encode()).hexdigest() for r in replies]}
-    if os.environ.get("DM_UPDATE_GOLDEN"):
-        GOLDEN.write_text(json.dumps(got, indent=1) + "\n")
-    golden = json.loads(GOLDEN.read_text())
-    first = next((i for i, (a, b) in enumerate(zip(got["replies"], golden["replies"])) if a != b), None)
-    assert got == golden, f"reply {first} differs: {replies[first] if first is not None else 'count'}"
+    first = lambda got, golden: next((i for i, (a, b) in enumerate(zip(got["replies"], golden["replies"])) if a != b), None)
+    check_golden(GOLDEN, got, sort_keys=False, describe=lambda got, golden: f"reply {first(got, golden)} differs: {replies[first(got, golden)] if first(got, golden) is not None else 'count'}")
