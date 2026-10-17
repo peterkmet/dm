@@ -28,6 +28,7 @@
 #include "ui/ui.h"
 #include "ui/view.h"
 #include "platform/control.h"
+#include "platform/options.h"
 #include "platform/platform.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
@@ -406,17 +407,6 @@ static void list_folder(const char *path, void (*found)(const char *name, void *
     SDL_EnumerateDirectory(path, visit_name, &visit);
 }
 
-static const char *const game_mode_names[] = {"vanilla", "advanced", "turnbased"};
-
-/* The game mode of a --mode value, or -1. */
-static int get_game_mode(const char *name)
-{
-    for (int i = 0; i < ARRAY_COUNT(game_mode_names); i++)
-        if (!strcmp(name, game_mode_names[i]))
-            return i;
-    return -1;
-}
-
 /* Loads the font of the start screens from Graphics.DAT: the --data folder, else DM, else CSB. */
 static int load_font(void)
 {
@@ -522,7 +512,7 @@ static bool start_csb(void)
         return true;
     }
     if (loaded_adventure != ADVENTURE_CSB) {
-        SDL_Log("adventure csb, mode %s", game_mode_names[g_session.mode]);
+        SDL_Log("adventure csb, mode %s", options_get_mode_name(g_session.mode));
         data_dir = get_adventure_dir();
         if (!load_game_files())
             return false;
@@ -557,7 +547,7 @@ static bool start_adventure(void)
 {
     if (g_adventure == ADVENTURE_CSB)
         return start_csb();
-    SDL_Log("adventure dm, mode %s", game_mode_names[g_session.mode]);
+    SDL_Log("adventure dm, mode %s", options_get_mode_name(g_session.mode));
     data_dir = get_adventure_dir();
     if (!load_game_files())
         return false;
@@ -637,23 +627,13 @@ static int run_frame(void)
     return RUN_NEXT_FRAME;
 }
 
-/* The command-line options of main; --data, --saves, and --control go into their file-static variables. */
-typedef struct {
-    int64_t frames;
-    int64_t graphic;
-    const char *filter;
-    int view;
-    int adventure;
-    int mode;
-} Options;
-
-/* Reads the command line. Returns false with a log line for a wrong --mode or --adventure. */
+/* Reads the command line; --data, --saves, --control go to file statics. False for a wrong --mode or --adventure. */
 static bool parse_options(int argc, char **argv, Options *options)
 {
-    *options = (Options){.frames = -1, .graphic = -1, .filter = NULL, .view = 0, .adventure = -1, .mode = -1};
+    *options = (Options){.frames = -1, .graphic = -1, .filter = NULL, .view = false, .adventure = -1, .mode = -1};
     for (int i = 1; i < argc; i++)
         if (!strcmp(argv[i], "--view"))
-            options->view = 1;
+            options->view = true;
     for (int i = 1; i < argc - 1; i++) {
         if (!strcmp(argv[i], "--frames"))
             options->frames = atoll(argv[i + 1]);
@@ -667,7 +647,7 @@ static bool parse_options(int argc, char **argv, Options *options)
             options->filter = argv[i + 1];
         if (!strcmp(argv[i], "--control"))
             control_socket = argv[i + 1];
-        if (!strcmp(argv[i], "--mode") && (options->mode = get_game_mode(argv[i + 1])) < 0) {
+        if (!strcmp(argv[i], "--mode") && (options->mode = options_find_mode(argv[i + 1])) < 0) {
             SDL_Log("--mode must be vanilla, advanced, or turnbased");
             return false;
         }
