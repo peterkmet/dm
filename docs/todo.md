@@ -5,8 +5,8 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 ## Release on GitHub
 
 - Publish the source and the macOS and Windows builds on GitHub (the repository is private today).
-- Version 0.15.0 (CHANGELOG). The disk install is tested end to end (2026-10-17): a clean folder with only the program and the three `.adf` disks extracts files equal to the reference data and starts DM and CSB, from the macOS zip and from the Windows zip under Wine CX; not on a real Windows.
-- Left: make the repository public, create the GitHub release 0.15.0 with `build/DungeonMaster.zip` and `build/DungeonMaster-win.zip` (owner command).
+- Version 1.0.0 (CHANGELOG), released on GitHub as `v1.0.0` with both zips while the repository is private. The disk install is tested end to end (2026-10-17): a clean folder with only the program and the three `.adf` disks extracts files equal to the reference data and starts DM and CSB, from the macOS zip and from the Windows zip under Wine CX; not on a real Windows.
+- Left: make the repository public (owner command).
 - The history holds no original game files (no `.adf`, `.ftl`, `.dat`, `game/` or `reference/` path was ever added; checked 2026-10-17).
 
 ## Small cleanups after the clean-code pass
