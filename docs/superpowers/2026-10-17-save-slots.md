@@ -217,6 +217,7 @@ Feature: Save slots in the advanced mode
 - RESTART THIS GAME without its file: LOAD SAVED GAME opens the load list, so the player can pick another slot;
   the other outcomes stay as today.
 - The current slot is UI state in `ui/startend.c`, not in the session and not in the save file.
+- Owner (2026-10-17): the advanced save dialog shows LOAD, SAVE, CONTINUE, QUIT in DM and CSB (the 4-choice layout of the original, port texts); it replaces CANCEL, SAVE, QUIT and the CSB SAVE AND PLAY, SAVE AND QUIT.
 
 
 ## Known consequences

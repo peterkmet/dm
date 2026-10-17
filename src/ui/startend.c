@@ -72,6 +72,13 @@
 #define QUIT_CHOICE_CANCEL 2
 #define LOAD_CHOICE_CANCEL 2
 
+/* Choices of the save dialog of the advanced mode. */
+#define ADVANCED_CHOICE_LOAD     1
+#define ADVANCED_CHOICE_SAVE     2
+#define ADVANCED_CHOICE_CONTINUE 3
+#define ADVANCED_CHOICE_QUIT     4
+#define ADVANCED_CHOICE_COUNT    4
+
 bool g_restart_requested, g_return_to_entrance;
 static char save_dir[SAVE_DIR_SIZE] = ".";
 static int16_t current_slot; /* the slot of the last save or load from a slot in this run; RESTART loads it */
@@ -192,8 +199,7 @@ static int save_with_dialog(int16_t slot)
 }
 
 /* CSB save dialog: SAVE AND PLAY saves and goes on, SAVE AND QUIT saves and ends the game. The dialog
-   closes after a save; CSB has no quit without a save. In the advanced mode the save list chooses the slot first;
-   its CANCEL goes back to the game. */
+   closes after a save; CSB has no quit without a save. */
 static void save_game_csb(void)
 {
     command_freeze_game();
@@ -202,11 +208,8 @@ static void save_game_csb(void)
         {gfx_get_string(TEXT_CANCEL), gfx_get_string(TEXT_SAVE), gfx_get_string(TEXT_QUIT)}
     });
     int16_t choice = dialog_get_choice(3);
-    int16_t slot = 0;
-    if ((choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) && has_slots())
-        slot = slotlist_choose(save_dir, false);
-    if ((choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) && slot >= 0) {
-        int saved = save_with_dialog(slot);
+    if (choice == SAVE_CHOICE_SAVE || choice == SAVE_CHOICE_QUIT) {
+        int saved = save_with_dialog(0);
         if (saved && choice == SAVE_CHOICE_QUIT) {
             startend_run_endgame(false);
             return;
@@ -219,9 +222,86 @@ static void save_game_csb(void)
     command_unfreeze_game();
 }
 
+/* Loads a slot, or the quick save for SLOTLIST_QUICK_ROW, and makes a loaded slot the current slot. */
+static SavegameResult load_slot(int16_t slot)
+{
+    if (slot == SLOTLIST_QUICK_ROW)
+        savegame_forget(); /* a quick save is not a saved game: no RESTART until the first save */
+    SavegameResult result =
+        slot == SLOTLIST_QUICK_ROW ? savegame_quick_load(save_dir) : savegame_load_slot(save_dir, slot);
+    if (result == SAVEGAME_LOADED && slot != SLOTLIST_QUICK_ROW)
+        current_slot = slot;
+    return result;
+}
+
+/* Saves to a slot of the save list. DM stays in the dialog with GAME SAVED; CSB goes back to the game, and in the
+   prison starts the new adventure. Returns true when the dialog closes. */
+static bool save_from_list(const char **message)
+{
+    int16_t slot = slotlist_choose(save_dir, false);
+    int saved = slot >= 0 ? save_with_dialog(slot) : 0;
+    if (!saved)
+        return false;
+    if (g_adventure != ADVENTURE_CSB) {
+        if (g_advanced_features)
+            *message = "GAME SAVED";
+        return false;
+    }
+    if (saved == SAVED_NEW_ADVENTURE)
+        gameloop_start_loaded_game();
+    if (g_advanced_features)
+        advanced_print_message("GAME SAVED");
+    return true;
+}
+
+/* The save dialog of the advanced mode in DM and CSB: LOAD and SAVE open the slot lists, CONTINUE goes back to the
+   game, QUIT goes to the entrance or the CSB screen after the quit question. A loaded slot starts at once. */
+static void save_game_advanced(void)
+{
+    const char *message = NULL;
+    command_freeze_game();
+    for (;;) {
+        dialog_draw(&(DialogText){
+            {message, NULL},
+            {"LOAD", "SAVE", "CONTINUE", "QUIT"}
+        });
+        message = NULL;
+        int16_t choice = dialog_get_choice(ADVANCED_CHOICE_COUNT);
+        if (choice == ADVANCED_CHOICE_LOAD) {
+            int16_t slot = slotlist_choose(save_dir, true);
+            SavegameResult result = slot >= 0 ? load_slot(slot) : SAVEGAME_MISSING;
+            if (result == SAVEGAME_LOADED) {
+                gameloop_start_loaded_game();
+                break;
+            }
+            if (slot >= 0) /* the file changed after the list read it; the running game stays */
+                message = gfx_get_string(result == SAVEGAME_DAMAGED ? TEXT_GAME_DAMAGED : TEXT_CANT_FIND_SAVED_GAME);
+            continue;
+        }
+        if (choice == ADVANCED_CHOICE_SAVE) {
+            if (save_from_list(&message))
+                break;
+            continue;
+        }
+        if (choice == ADVANCED_CHOICE_QUIT) {
+            if (!confirm_quit())
+                continue;
+            savegame_forget();
+            startend_run_endgame(false);
+            return;
+        }
+        break;
+    }
+    command_unfreeze_game();
+}
+
 void startend_save_game(void)
 {
     const char *message = NULL;
+    if (has_slots()) {
+        save_game_advanced();
+        return;
+    }
     if (g_adventure == ADVENTURE_CSB) {
         save_game_csb();
         return;
@@ -235,8 +315,7 @@ void startend_save_game(void)
         message = NULL;
         int16_t choice = dialog_get_choice(3);
         if (choice == SAVE_CHOICE_SAVE) {
-            int16_t slot = has_slots() ? slotlist_choose(save_dir, false) : 0;
-            if (slot >= 0 && save_with_dialog(slot) && g_advanced_features)
+            if (save_with_dialog(0) && g_advanced_features)
                 message = "GAME SAVED";
             continue;
         }
@@ -263,13 +342,8 @@ static bool load_with_dialogs(int16_t slot, bool choose)
             slot = slotlist_choose(save_dir, true);
         if (slot < 0)
             return false;
-        if (slot == SLOTLIST_QUICK_ROW)
-            savegame_forget(); /* a quick save is not a saved game: no RESTART until the first save */
-        SavegameResult result =
-            slot == SLOTLIST_QUICK_ROW ? savegame_quick_load(save_dir) : savegame_load_slot(save_dir, slot);
+        SavegameResult result = load_slot(slot);
         if (result == SAVEGAME_LOADED) {
-            if (slot != SLOTLIST_QUICK_ROW)
-                current_slot = slot;
             dialog_draw(&(DialogText){
                 {NULL, gfx_get_string(TEXT_LOADING_GAME)},
                 {NULL}

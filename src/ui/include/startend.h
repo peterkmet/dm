@@ -30,8 +30,9 @@ int startend_save_current_game(int16_t slot, const char **reason);
    goes on there (no GAME LOADED dialog). A refused party gets a dialog with OK. Returns true when the game started. */
 bool startend_take_prison_stairs(void);
 /* The save command: CANCEL, SAVE, QUIT. QUIT ends the game through the endgame. CSB: CANCEL, SAVE AND
-   PLAY, SAVE AND QUIT. Without disks the dialog stays after a save until CANCEL or QUIT. In the advanced mode a
-   save opens the save list, and the chosen slot becomes the current slot. */
+   PLAY, SAVE AND QUIT. Without disks the dialog stays after a save until CANCEL or QUIT. The advanced mode shows
+   LOAD, SAVE, CONTINUE, QUIT in DM and CSB: LOAD and SAVE open the slot lists, and the chosen slot becomes the
+   current slot. */
 void startend_save_game(void);
 /* RESUME: loads the saved game with its dialogs; in the advanced mode the load list chooses a slot or the quick
    save first. Returns true when the game is loaded. */

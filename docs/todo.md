@@ -16,14 +16,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - With the stairs in place, the advanced mode drops the start text of the prison that says it is only the first
   level and that the party must be saved.
 
-## Advanced save dialog: LOAD, SAVE, CONTINUE, QUIT
-
-- Owner (2026-10-17, manual test): in the advanced mode the save dialog (Ctrl+S, the save icon; DM: CANCEL, SAVE,
-  QUIT; CSB: CANCEL, SAVE AND PLAY, SAVE AND QUIT) shows four buttons in DM and in CSB: LOAD (the load list),
-  SAVE (the save list), CONTINUE (back to the game), QUIT (to the start screen: the DM entrance or the CSB screen;
-  the quit question of today stays). The port prints the button texts with the game font, so the texts can
-  change. Vanilla keeps the original dialog.
-
 ## Release on GitHub
 
 - Publish the source and the macOS and Windows builds on GitHub (the repository is private today).
