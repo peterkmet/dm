@@ -35,7 +35,4 @@ def test_png_of_the_screen(tmp_path):
     raw = zlib.decompress(found[b"IDAT"])
     assert len(raw) == (1 + 3 * C.SCREEN_W) * C.SCREEN_H
     assert all(raw[y * (1 + 3 * C.SCREEN_W)] == 0 for y in range(C.SCREEN_H))  # filter byte: none
-
-
-def test_png_to_a_missing_folder(tmp_path):
     assert not lib.png_write(str(tmp_path / "missing" / "screen.png").encode())

@@ -68,13 +68,6 @@ def test_parse_and_load_image():
     assert img.entries == [img.code_base, img.code_base + 2]
 
 
-def test_parse_rejects_bad_checksum():
-    ftl = bytearray(make_ftl(b"\x4e\x75", [0], [], [0]))
-    ftl[-1] ^= 0xFF
-    with pytest.raises(ValueError, match="code checksum"):
-        parse(bytes(ftl))
-
-
 def test_unpack_r23():
     from dmtools.ftl import unpack
 
@@ -104,8 +97,14 @@ def test_load_image_rejects_wrong_data_length():
         load_image(mod, 0x100000)
 
 
-@pytest.mark.parametrize("tag, what", [(None, "header"), (0x10, "info"), (0x11, "data")])
+@pytest.mark.parametrize("tag, what", [(None, "header"), (0x10, "info"), (0x11, "data"), ("code", "code")])
 def test_parse_rejects_bad_section_checksum(tag, what):
+    if tag == "code":
+        ftl = bytearray(make_ftl(b"\x4e\x75", [0], [], [0]))
+        ftl[-1] ^= 0xFF
+        with pytest.raises(ValueError, match="code checksum"):
+            parse(bytes(ftl))
+        return
     ftl = bytearray(make_ftl(b"\x4e\x75", [0x0002], [], [0], data_size=2))
     offsets = {t: struct.unpack_from(">HHI", ftl, 0x14 + i * 12)[2] for i, t in enumerate((0x10, 0x11, 0x12))}
     ftl[0x08 if tag is None else offsets[tag] + 0x10 if tag == 0x10 else offsets[tag] + 1] ^= 0x01

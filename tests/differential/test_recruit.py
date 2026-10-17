@@ -90,9 +90,3 @@ def test_parse_text_edges(lib):
     assert list(r.experience[4:8]) == [0, 125 << 15, 250, 500]
     assert r.experience[0] == (125 << 15) + 250 + 500
 
-
-def test_portrait_origin(lib):
-    need(lib)
-    x, y = ctypes.c_int16(), ctypes.c_int16()
-    lib.recruit_portrait_origin(11, ctypes.byref(x), ctypes.byref(y))
-    assert (x.value, y.value) == (3 * 32, 1 * 29)

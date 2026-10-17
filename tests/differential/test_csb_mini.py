@@ -93,12 +93,9 @@ def changed_byte():
     return bytes(bad)
 
 
-def test_original_rejects_changed_byte():
+def test_csb_mini_rejects_changed_byte():
     with pytest.raises(AssertionError, match="block 3"):
         Cedt().load(0, changed_byte())
-
-
-def test_csb_mini_rejects_changed_byte():
     with pytest.raises(ValueError):
         cm.decode_save(changed_byte())
 

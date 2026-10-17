@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Bitmap, BlitSource, Box, Position, ZoneClip, ZoneItem, setup_view, start_view, zone_records
+from dmtest.game import Bitmap, Box, ZoneClip, ZoneItem, setup_view, start_view, zone_records
 from dmtest.game import screen as video_screen
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
@@ -33,17 +33,6 @@ def bitmap(rows):
 
 def pixels(bm):
     return [[bm.px[y * bm.w + x] for x in range(bm.w)] for y in range(bm.h)]
-
-
-def test_blit_transparent_and_flip(lib):
-    src = bitmap([[1, 2, 3], [4, 5, 0]])
-    dst = bitmap([[9] * 4 for _ in range(3)])
-    lib.draw_blit(BlitSource(ctypes.pointer(src), 0, 0, 0, 0), dst, Box(1, 1, 3, 2))
-    assert pixels(dst) == [[9, 9, 9, 9], [9, 1, 2, 3], [9, 4, 5, 9]]
-    lib.draw_blit(BlitSource(ctypes.pointer(src), 1, 0, -1, 1), dst, Box(0, 0, 2, 2))
-    assert pixels(dst) == [[2, 1, 9, 9], [5, 4, 2, 3], [9, 4, 5, 9]]
-    lib.draw_blit(BlitSource(ctypes.pointer(src), 0, 0, 0x12, 3), dst, Box(2, 1, 3, 2))  # key uses bits 0-3, both flips, clipped right
-    assert pixels(dst) == [[2, 1, 9, 9], [5, 4, 0, 5], [9, 4, 3, 9]]
 
 
 def planar(px, w, h):
@@ -121,22 +110,6 @@ def game(lib):
     return start_view(lib)
 
 
-VIEWS = {"start": None, "door": (0, 1, 13, 2), "ornament": (0, 4, 9, 3), "text": (0, 4, 17, 1), "stairs": (0, 4, 15, 3)}  # map, x, y, direction
-
-
-@needs_dm
-@pytest.mark.parametrize("name", list(VIEWS))
-def test_render_view(game, name):
-    lib, party = game
-    m, x, y, d = VIEWS[name] or party
-    ctypes.memset(ctypes.addressof(video_screen(lib).px), 0, 320 * 200)
-    assert lib.view_render(m, x, y, d)
-    first = screen(lib)
-    assert lib.view_render(m, x, y, d)
-    assert screen(lib) == first
-    assert len(set(first)) > 4
-
-
 MASKED_FILL, BLIT_BITMAP = 0x116A4E, 0x11739C
 
 
@@ -200,63 +173,3 @@ def test_masked_fill_matches_original(lib, emu, box, last, first, transparent, s
     lib.draw_masked_fill(out, Box(*box), fill)
     assert pixels(out) == expected
 
-
-def thing_records(lib, thing_type):
-    data = (ctypes.POINTER(ctypes.c_uint8) * 16).in_dll(lib, "g_thing_data")[thing_type]
-    header = ctypes.POINTER(ctypes.c_uint8).in_dll(lib, "g_dungeon_header")
-    return data, header[12 + 2 * thing_type] << 8 | header[13 + 2 * thing_type]
-
-
-def add_explosion(lib, m, x, y, cell, attack, explosion_type):
-    """Links a new explosion behind the first thing of a square with things. Returns an undo function."""
-    lib.map_get_first_thing_at.restype = ctypes.c_uint16
-    lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
-    data, count = thing_records(lib, 15)
-    index = next(i for i in range(count) if data[4 * i] == 0xFF and data[4 * i + 1] == 0xFF)
-    first = lib.map_get_first_thing_at(Position(m, x, y))
-    assert first != 0xFFFE
-    head = lib.rec_write(first)
-    thing = cell << 14 | 15 << 10 | index
-    data[4 * index], data[4 * index + 1], data[4 * index + 2], data[4 * index + 3] = head[0], head[1], attack, explosion_type
-    old = head[0], head[1]
-    head[0], head[1] = thing >> 8, thing & 0xFF
-
-    def undo():
-        head[0], head[1] = old
-        data[4 * index] = data[4 * index + 1] = 0xFF
-    return undo
-
-
-THINGS = {  # name: (map, x, y, direction, explosion (map x y cell attack type) or None, light)
-    "objects": ((1, 6, 2, 2), None, 99),
-    "objects_start_level": ((0, 4, 17, 0), None, 99),
-    "creatures": ((1, 14, 4, 3), None, 99),
-    "creatures_d3": ((1, 16, 4, 3), None, 99),
-    "teleporter": ((1, 24, 29, 1), None, 99),
-    "fluxcage": ((1, 15, 4, 3), (1, 13, 4, 0, 0, 50), 99),
-    "fireball": ((1, 15, 4, 3), (1, 13, 4, 0, 200, 0x80), 99),
-    "party_explosion": ((1, 13, 4, 3), (1, 13, 4, 0, 150, 0), 99),
-    "dark": ((1, 14, 4, 3), None, 10),
-}
-
-
-@needs_dm
-@pytest.mark.parametrize("name", list(THINGS))
-def test_render_things(game, name):
-    lib, _ = game
-    (m, x, y, d), explosion, light = THINGS[name]
-    lib.party_set_light_level.argtypes = [ctypes.c_int16] * 2
-    lib.party_set_light_level(m, light)
-    assert lib.view_render(m, x, y, d)
-    plain = screen(lib)
-    undo = add_explosion(lib, *explosion) if explosion else None
-    try:
-        assert lib.view_render(m, x, y, d)
-        first = screen(lib)
-    finally:
-        if undo:
-            undo()
-        lib.party_set_light_level(m, 99)
-    assert len(set(first)) > 4
-    if explosion:
-        assert first != plain

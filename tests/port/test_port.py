@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import ctypes
-import os
-import subprocess
 
 import pytest
 
 from dmtest.lib import load_lib
-from dmtest.markers import BUILD, needs_sdl
+from dmtest.markers import needs_sdl
 
 pytestmark = [needs_sdl]
 
@@ -14,13 +12,6 @@ pytestmark = [needs_sdl]
 @pytest.fixture(scope="module")
 def lib():
     return load_lib()
-
-
-def test_palette(lib):
-    lib.video_convert_argb.restype = ctypes.c_uint32
-    assert lib.video_convert_argb(0x0F80) == 0xFFFF8800
-    assert lib.video_convert_argb(0x0000) == 0xFF000000
-    assert lib.video_convert_argb(0x0FFF) == 0xFFFFFFFF
 
 
 class OutputLayout(ctypes.Structure):
@@ -46,8 +37,3 @@ def test_mouse_mapping(lib, out, pos, game):
     lib.output_map_mouse(ctypes.byref(layout), *pos, ctypes.byref(gx), ctypes.byref(gy))
     assert (gx.value, gy.value) == game
 
-
-def test_smoke_run(lib):
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
-    r = subprocess.run([BUILD / "dm", "--frames", "5"], env=env, capture_output=True, timeout=10)
-    assert r.returncode == 0, r.stderr

@@ -6,7 +6,6 @@ import ctypes
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Position
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, needs_csb, needs_dm
 
@@ -14,7 +13,6 @@ from dmtest.markers import GAME, GAME_CSB, needs_csb, needs_dm
 DM, CSB = 0, 1
 TEXT_COUNT, OBJECT_NAME_COUNT = 135, 199
 SKILL_LEVEL_STRINGS, BASE_SKILL_STRINGS, STATISTIC_STRINGS, DIRECTION_STRINGS = 0x101E74, 0x102472, 0x101E9A, 0x101E92
-STEP_EAST, STEP_NORTH = (0, 1, 0, -1), (-1, 0, 1, 0)
 c16 = ctypes.c_int16
 
 pytestmark = [needs_csb]
@@ -108,36 +106,3 @@ def test_texts_against_dm(lib):
     assert len(changed) == 33 and {23, 158, 174} <= set(changed)
     assert all(csb_objects)
 
-
-def things(lib, x, y):
-    t = lib.map_get_first_thing_at(Position(0, x, y))
-    while t != 0xFFFE:
-        yield t
-        d = lib.rec_write(t)
-        t = d[0] << 8 | d[1]
-
-
-def message_rows(lib):
-    text = ((ctypes.c_char * C.MESSAGE_COLS) * C.MESSAGE_ROWS).in_dll(lib, "g_message")
-    return [bytes(row).replace(b"\0", b" ").decode().strip() for row in text]
-
-
-def test_prison_recruit_shows_csb_text(lib):
-    load(lib, CSB, GAME_CSB)
-    assert lib.gameloop_start_new_game(str(GAME_CSB).encode())
-    mirror = next((t, x, y) for x in range(lib.dungeon_map_width(0)) for y in range(lib.dungeon_map_height(0))
-                  for t in things(lib, x, y) if t >> 10 & 15 == 3 and lib.recruit_portrait_index(t) >= 0)
-    t, x, y = mirror
-    side = t >> 14
-    for name, value in (("g_party_map_x", x + STEP_EAST[side]), ("g_party_map_y", y + STEP_NORTH[side]), ("g_party_direction", (side + 2) % 4)):
-        c16.in_dll(lib, name).value = value
-    lib.message_clear()
-    lib.champion_add_candidate_to_party(lib.recruit_portrait_index(t))
-    assert c16.in_dll(lib, "g_party_champion_count").value == 1
-    lib.panel_open(0)
-    lib.panel_draw_skills_statistics()
-    lib.champion_click_rebirth_panel(C.PANEL_RESURRECT)
-    lib.magic_print_spell_failure(0, C.SPELL_FAILURE_NEEDS_MORE_PRACTICE, C.SKILL_WIZARD)
-    rows = message_rows(lib)
-    assert any(r.endswith(" RESURRECTED.") and len(r) > len(" RESURRECTED.") for r in rows), rows
-    assert any(r.endswith(" NEEDS MORE PRACTICE WITH THIS WIZARD SPELL.") for r in rows), rows

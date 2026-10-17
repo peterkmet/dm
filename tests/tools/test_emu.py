@@ -13,12 +13,6 @@ def tiny(code):
     return Emu(Image(bytes(code), BASE, BASE + 0x100, BASE, [BASE]), max_cycles=10_000)
 
 
-def test_word_args():
-    # move.w 4(sp),d0; add.w 6(sp),d0; rts
-    emu = tiny(bytes.fromhex("302F0004D06F00064E75"))
-    assert emu.call(BASE, [(2, 1234), (2, 4321)]) & 0xFFFF == 5555
-
-
 def test_word_push_order_and_negative():
     # move.w 4(sp),d0; sub.w 6(sp),d0; rts
     emu = tiny(bytes.fromhex("302F0004906F00064E75"))

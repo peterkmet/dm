@@ -71,10 +71,9 @@ def test_list_of_names_and_objects():
     assert result == C.REQUEST_ITEM_END
 
 
-@pytest.mark.parametrize("text", ["5]", '"move_forward', '{"action": "pass"', '{"action": "pass}'])
-def test_bad_item(text):
-    assert items(text)[1] == C.REQUEST_ITEM_BAD
-
-
-def test_item_too_long():
-    assert items('"move_forward"]', size=4)[1] == C.REQUEST_ITEM_BAD
+@pytest.mark.parametrize(
+    "text, size",
+    [("5]", 256), ('"move_forward', 256), ('{"action": "pass"', 256), ('{"action": "pass}', 256), ('"move_forward"]', 4)],
+)
+def test_bad_item(text, size):
+    assert items(text, size)[1] == C.REQUEST_ITEM_BAD

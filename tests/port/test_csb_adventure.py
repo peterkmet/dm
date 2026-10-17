@@ -2,19 +2,13 @@
 """CSB new adventure: the prison save merges the party into MINI.DAT (docs/csb/new-adventure.md), RESUME, the CSB save dialog."""
 
 import ctypes
-import os
-import shutil
-import subprocess
-import tempfile
-from pathlib import Path
 
 import pytest
 
 from dmtest import constants as C
-from dmtest.control import Client
 from dmtest.game import STEP_EAST, STEP_NORTH, ZONE_RESURRECT, Frames, Game, global_type, session
 from dmtest.lib import load_lib
-from dmtest.markers import GAME_CSB, ROOT, needs_csb, needs_csb_mini, needs_sdl
+from dmtest.markers import GAME_CSB, needs_csb, needs_csb_mini
 
 MINI = GAME_CSB / "disk-b" / "MINI.DAT"
 CEDT = GAME_CSB / "disk-b" / "CEDT.FTL"
@@ -243,42 +237,3 @@ def test_advanced_save_keeps_the_automap_block(game, saves):
     finally:
         session(game.lib).mode = 0
 
-
-def test_control_new_game_save_and_load(game, saves):
-
-    sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")
-    game.socket = os.path.join(sock_dir, "control.sock")
-    assert game.lib.transport_open(game.socket.encode())
-    try:
-        client = Client(game)
-        state = client.call(cmd="new_game")
-        assert state["ok"] and value(game, "g_dungeon_id", u16) == 12
-        assert client.call(cmd="save") == {"ok": False, "error": "CAN'T MAKE NEW ADVENTURE WITHOUT CHAMPIONS."}
-        names = new_prison_game(game, 2)
-        assert client.call(cmd="save") == {"ok": True}
-        assert_in_adventure(game, names)
-        assert client.call(cmd="new_game")["ok"] and value(game, "g_dungeon_id", u16) == 12
-        assert client.call(cmd="load")["ok"]
-        assert_in_adventure(game, names)
-    finally:
-        game.lib.transport_close()
-        shutil.rmtree(sock_dir, ignore_errors=True)
-
-
-def run_dm(*args):
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
-    env.pop("DM_AUTO_ENTER", None)
-    return subprocess.run([str(ROOT / "build/dm"), *args, "--frames", "20"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
-
-
-@needs_sdl
-def test_turnbased_csb_starts_the_prison(tmp_path):
-    folder = tmp_path / "csb"
-    shutil.copytree(GAME_CSB, folder, ignore=shutil.ignore_patterns("CSBGAME.*", "QUICK.DAT"))
-    sock = Path(tempfile.mkdtemp(prefix="dm", dir="/tmp")) / "c.sock"
-    try:
-        result = run_dm("--adventure", "csb", "--mode", "turnbased", "--data", str(folder), "--control", str(sock))
-        assert result.returncode == 0, result.stderr
-        assert "adventure csb, mode turnbased" in result.stderr
-    finally:
-        shutil.rmtree(sock.parent, ignore_errors=True)

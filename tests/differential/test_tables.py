@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import ctypes
-import re
 import struct
-from pathlib import Path
 
 import pytest
 
@@ -12,7 +10,6 @@ from dmtest.markers import ROOT, needs_dm
 from dmtools.ftl import load_image, parse
 
 KAOS = ROOT / "game" / "KAOS.FTL"
-DECOMP = ROOT / "reference" / "decomp" / "dm" / "KAOS.c"
 BASE = 0x100000
 
 pytestmark = [needs_dm]
@@ -94,25 +91,6 @@ def as_tuple(rec):
     return out
 
 
-@pytest.mark.parametrize("name", TABLES)
-def test_accessor_rejects_out_of_range(lib, image, name):
-    _, count, addr, stride, fmt = TABLES[name]
-    scalar = not issubclass(TABLES[name][0], ctypes.Structure)
-    if scalar:
-        assert get(lib, name, count - 1) == struct.unpack_from(fmt, image, addr - BASE + (count - 1) * stride)[0]
-    else:
-        assert get(lib, name, count - 1) is not None
-    for i in (-1, count, 0x7FFF):
-        assert get(lib, name, i) == 0 if scalar else get(lib, name, i) is None
-
-
-def test_symbol_mana_cost_rejects_out_of_range(lib):
-    f = lib.tables_get_base_mana_cost
-    assert f(3, 5)
-    for step, sym in ((-1, 0), (4, 0), (0, -1), (0, 6)):
-        assert not f(step, sym)
-
-
 @pytest.mark.parametrize("name", [n for n in TABLES if TABLES[n][2] is not None])
 def test_table_matches_big_endian_image(lib, image, name):
     _, count, addr, stride, fmt = TABLES[name]
@@ -138,42 +116,3 @@ def test_symbol_base_mana_cost_matches_image(lib, image):
         for sym in range(6):
             assert lib.tables_get_base_mana_cost(step, sym) == image[0x103C66 - BASE + step * 6 + sym]
 
-
-def test_object_types_match_dmcsb_item_list(lib):
-    dungeon = pytest.importorskip("dmcsb.dungeon")
-    text = (Path(dungeon.__file__).parent / "data" / "itemnames.txt").read_text()
-    icons = [int(m) for m in re.findall(r"^\s*[0-9A-Fa-f]+h\s*\((\d+)\)", text, re.M)]
-    assert [get(lib, "object_info", i).type for i in range(180)] == icons
-    bases = dungeon._ITEM_NAME_BASES
-    assert (bases["Weapon"], bases["Armour"], bases["Junk"]) == (23, 23 + 46, 23 + 46 + 58)
-
-
-def test_counts_follow_layout(lib):
-    # each table ends where the next named table starts
-    assert 0x10192E + 27 * 0x1A == 0x101BEC
-    assert 0x101BEC + 18 * 2 == 0x101C10
-    assert 0x101068 + 180 * 6 == 0x1014A0
-    assert 0x1014A0 + 46 * 6 == 0x1015B4
-    assert 0x1015B4 + 58 * 4 == 0x10169C
-    assert 0x103D4C + 44 * 8 == 0x103EAC
-    assert max(get(lib, "creature_info", i).attack_sound_byte for i in range(27)) == 18
-    assert {get(lib, "spell", i).kind for i in range(25)} == {1, 2, 3}
-    assert all(get(lib, "object_info", i).action_set_index < 44 for i in range(180))
-    junk_icons = {get(lib, "object_info", i).type for i in range(127, 180)}
-    assert set(range(0xA8, 0xB0)) <= junk_icons  # food values are indexed by icon - 0xa8
-
-
-def test_strides_and_bases_match_decompiled_code():
-    if not DECOMP.exists():
-        pytest.skip("reference/decomp/dm/KAOS.c not found")
-    c = DECOMP.read_text()
-    assert re.search(r"g_creature_info \+ \(short\)\(ushort\)\*\(byte \*\)\(\w+ \+ 4\) \* 0x1a", c)
-    assert "*(short *)(&g_object_info + sVar1 * 6)" in c
-    assert re.search(r"rt_lmul\(\*\(byte \*\)\(iVar1 \+ 3\) & 0x7f,6\);\s+return g_weapon_info \+ iVar1;", c)
-    assert "g_armour_info + (uint)(*(byte *)(iVar1 + 3) & 0x7f) * 4" in c
-    assert "g_junk_weights[*(byte *)(iVar1 + 3) & 0x7f]" in c
-    # inventory_get_object_info_index: weapon base 0x17, armour base 0x45, junk base 0x7f
-    for base in ("0x17", "0x45", "0x7f"):
-        assert f"((*(byte *)(iVar1 + 3) & 0x7f) + {base})" in c
-    assert "g_food_values + (uint)(ushort)(uVar6 - 0xa8) * 2" in c
-    assert "(uint)(ushort)(uVar10 - 1) * 2 + 0x101bec" in c

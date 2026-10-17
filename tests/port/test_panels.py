@@ -24,7 +24,7 @@ RTS = b"\x4e\x75"
 THING_BUF, TEXT_BUF = 0x300000, 0x340000
 OBJECT_TYPES = (5, 6, 8, 10)  # weapon, armour, potion, junk
 RECORD_SIZE = {5: 4, 6: 4, 7: 4, 8: 4, 9: 8, 10: 4}
-SCROLL, CHEST, NONE, END = 7, 9, 0xFFFF, 0xFFFE
+CHEST, NONE, END = 9, 0xFFFF, 0xFFFE
 SLOT_BOX_CHEST_FIRST, CHEST_SLOTS, VIEWPORT_Y = 38, 8, 33
 PRIEST = 2
 
@@ -242,25 +242,6 @@ def test_chest_open_swap_close(game, party):
     game.inventory_take_slot_object(0, 1)
     assert open_chest.value == NONE
     assert chest_content(game, chest) == [hand] + content[1:] + [content[0]]
-    game.panel_close(0)
-
-
-@needs_dm
-def test_render_scroll_and_eye(game, party):
-    scrolls = things_of(game, SCROLL)[0]
-    assert scrolls
-    render(game, "base")
-    game.panel_open(0)
-    put_in_action_hand(game, party, scrolls[0])
-    assert c16.in_dll(game, "g_panel_content").value == 5
-    sword = next(t for t in things_of(game, 5)[0] if game.gfx_get_object_name(game.object_get_icon_index(t)) == b"SWORD")
-    game.inventory_put_hand_object(sword)
-    game.panel_draw_eye()
-    game.ui_draw_viewport()
-    name, lines = port_text(game, sword)
-    assert name == b"SWORD" and lines[-1].startswith(b"WEIGHS ")
-    game.inventory_take_hand_object()
-    party[0].slots[1] = NONE
     game.panel_close(0)
 
 

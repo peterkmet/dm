@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import ctypes
-import os
 import struct
-import subprocess
 
 import pytest
 
 from dmtest.game import Bitmap
 from dmtest.lib import load_lib
-from dmtest.markers import BUILD, ROOT, needs_dm, needs_sdl
+from dmtest.markers import ROOT, needs_dm, needs_sdl
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -160,9 +158,3 @@ def test_expand_graphic_matches_original(lib):
         compared += 1
     assert compared == 687
 
-
-@needs_dm
-def test_show_smoke_run(lib):
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
-    r = subprocess.run([BUILD / "dm", "--data", GAME, "--show", "1", "--frames", "5"], env=env, capture_output=True, timeout=10)
-    assert r.returncode == 0, r.stderr

@@ -1,15 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import ctypes
-import os
-import subprocess
-from pathlib import Path
 
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Box, global_type, screen, session
+from dmtest.game import Box, global_type, session
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
+from dmtest.markers import GAME, needs_dm
 
 DM, CSB = 0, 1
 VANILLA, ADVANCED, TURNBASED = 0, 1, 2
@@ -71,47 +68,21 @@ def click(lib, item):
     lib.select_click(box.x + box.w // 2, box.y + box.h // 2)
 
 
-def csb_folder(root, missing=None):
+def csb_folder(root, missing=()):
     for name in CSB_FILES:
-        if name != missing:
+        if name not in missing:
             (root / name).parent.mkdir(parents=True, exist_ok=True)
             (root / name).touch()
     return root
 
 
-def test_adventure_find(lib):
-    assert lib.adventure_find(b"dm") == DM
-    assert lib.adventure_find(b"csb") == CSB
-    for name in (b"DM", b"", b"x"):
-        assert lib.adventure_find(name) == -1
-
-
-def test_default_dirs(lib):
-    assert lib.adventure_get(DM).contents.dir == b"game"
-    assert lib.adventure_get(CSB).contents.dir == b"game-csb"
-
-
-def test_save_names(lib):
-    set_value(lib, "g_adventure", DM)
-    dm = lib.adventure_get(DM).contents
-    csb = lib.adventure_get(CSB).contents
-    assert (dm.save, dm.backup) == (b"DMGAME.DAT", b"DMGAME.BAK")
-    assert (csb.save, csb.backup) == (b"CSBGAME.DAT", b"CSBGAME.BAK")
-
-
-def test_csb_present(lib, tmp_path):
-    assert lib.adventure_is_csb_present(str(tmp_path).encode()) == 0
-    assert lib.adventure_is_csb_present(str(csb_folder(tmp_path / "all")).encode()) == 1
-
-
-@pytest.mark.parametrize("missing", CSB_FILES)
-def test_csb_present_needs_every_file(lib, tmp_path, missing):
-    assert lib.adventure_is_csb_present(str(csb_folder(tmp_path, missing)).encode()) == 0
-
-
-@needs_csb
-def test_csb_present_in_game_csb(lib):
-    assert lib.adventure_is_csb_present(str(GAME_CSB).encode()) == 1
+@pytest.mark.parametrize(
+    "missing, present",
+    [((), 1), (CSB_FILES, 0)] + [((name,), 0) for name in CSB_FILES],
+    ids=["full", "empty"] + list(CSB_FILES),
+)
+def test_csb_present_needs_every_file(lib, tmp_path, missing, present):
+    assert lib.adventure_is_csb_present(str(csb_folder(tmp_path, missing)).encode()) == present
 
 
 @needs_dm
@@ -235,130 +206,11 @@ def test_csb_screen_choices(lib, item):
     assert value(lib, "g_quit_requested") == 0  # QUIT goes back to the first screen (main.c)
 
 
-@needs_dm
-def test_csb_screen_again_with_a_message(lib):
-    load_font(lib, GAME)
-    message_line = Box(0, 152, 320, 12)
-    start(lib, CSB, VANILLA)
-    keys(lib, ENTER)
-    lib.select_start_csb(b"NOT AVAILABLE YET")
-    assert lib.select_screen() == C.SELECT_SCREEN_CSB
-    lib.select_draw()
-    assert colors_in(lib, message_line) == {C.COLOR_BLACK, C.COLOR_LIGHT_GRAY}
-    keys(lib, DOWN)
-    lib.select_draw()
-    assert colors_in(lib, message_line) == {C.COLOR_BLACK}
-
-
 def test_done_ignores_keys(lib):
     start(lib, DM, VANILLA)
     keys(lib, ESCAPE, DOWN, ENTER)
     assert lib.select_screen() == C.SELECT_SCREEN_DONE
     assert (value(lib, "g_adventure"), session(lib).mode) == (DM, VANILLA)
-
-
-def load_font(lib, folder):
-    assert lib.gfx_open(str(folder / "Graphics.DAT").encode())
-    assert lib.text_init()
-
-
-def colors_in(lib, box):
-    fb = screen(lib).px
-    return {fb[y * 320 + x] for y in range(box.y, box.y + box.h) for x in range(box.x, box.x + box.w)}
-
-
-@needs_dm
-def test_draw_items(lib):
-    load_font(lib, GAME)
-    start(lib)
-    lib.select_draw()
-    fb = screen(lib).px
-    assert fb[0] == fb[319] == fb[199 * 320] == fb[199 * 320 + 319] == C.COLOR_BLACK
-    assert colors_in(lib, item_box(lib, DM)) == {C.COLOR_BLACK, C.COLOR_GOLD}
-    assert colors_in(lib, item_box(lib, CSB)) == {C.COLOR_BLACK, C.COLOR_LIGHT_GRAY}
-    keys(lib, DOWN)
-    lib.select_draw()
-    assert colors_in(lib, item_box(lib, DM)) == {C.COLOR_BLACK, C.COLOR_LIGHT_GRAY}
-    assert colors_in(lib, item_box(lib, CSB)) == {C.COLOR_BLACK, C.COLOR_GOLD}
-
-
-@needs_dm
-def test_draw_disabled_color(lib):
-    load_font(lib, GAME)
-    start(lib, csb_present=0)
-    lib.select_draw()
-    assert colors_in(lib, item_box(lib, CSB)) == {C.COLOR_BLACK, C.COLOR_DARK_GRAY}
-
-
-@needs_csb
-def test_font_from_csb_graphics(lib):
-    load_font(lib, GAME_CSB)
-    start(lib)
-    lib.select_draw()
-    assert C.COLOR_GOLD in colors_in(lib, item_box(lib, DM))
-
-
-def run_dm(*args, auto_enter=False):
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
-    env.pop("DM_AUTO_ENTER", None)
-    if auto_enter:
-        env["DM_AUTO_ENTER"] = "1"
-    return subprocess.run([str(ROOT / "build/dm"), *args, "--frames", "5"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
-
-
-@needs_sdl
-def test_invalid_adventure_exits():
-    result = run_dm("--adventure", "x")
-    assert result.returncode == 1
-    assert "--adventure must be dm or csb" in result.stderr
-
-
-@needs_sdl
-@needs_dm
-def test_load_failure_leaves_no_control_socket(tmp_path):
-    sock = Path("/tmp") / f"dm-select-{os.getpid()}.sock"
-    sock.unlink(missing_ok=True)
-    result = run_dm("--mode", "turnbased", "--data", str(tmp_path / "missing"), "--control", str(sock))
-    assert result.returncode == 1
-    assert "KAOS.FTL is missing or is not the file" in result.stderr
-    assert not sock.exists()
-
-
-@needs_sdl
-def test_csb_missing_exits(tmp_path):
-    result = run_dm("--adventure", "csb", "--data", str(tmp_path))
-    assert result.returncode == 1
-    assert f"CSB data is missing in {tmp_path}" in result.stderr
-
-
-@needs_sdl
-@needs_dm
-@pytest.mark.parametrize("args, auto_enter", [
-    (["--adventure", "dm", "--mode", "vanilla"], False),
-    (["--mode", "advanced"], False),
-    ([], True),
-])
-def test_flags_skip_screens(args, auto_enter):
-    result = run_dm(*args, auto_enter=auto_enter)
-    assert result.returncode == 0, result.stderr
-    assert "adventure dm, mode" in result.stderr
-
-
-@needs_sdl
-@needs_dm
-@pytest.mark.parametrize("args", [[], ["--adventure", "dm"]])
-def test_selection_screen_runs(args):
-    result = run_dm(*args)
-    assert result.returncode == 0, result.stderr
-    assert "adventure dm, mode" not in result.stderr
-
-
-@needs_sdl
-@needs_csb
-def test_csb_screen_runs():
-    result = run_dm("--adventure", "csb", "--mode", "vanilla")
-    assert result.returncode == 0, result.stderr
-    assert "adventure dm, mode" not in result.stderr
 
 
 @pytest.mark.parametrize("adventure, mode, first", [(-1, -1, C.SELECT_SCREEN_ADVENTURE), (DM, -1, C.SELECT_SCREEN_MODE), (CSB, 0, C.SELECT_SCREEN_CSB)])

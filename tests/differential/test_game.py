@@ -17,7 +17,7 @@ RANDOM16, RANDOM_BIT, RANDOM_2BITS = 0x1076A0, 0x1076BC, 0x1076DA
 MIN16, MAX16, BOUNDED_VALUE, SCALE_VALUE = 0x107652, 0x107668, 0x10767E, 0x1076F8
 MOVE_RELATIVE = 0x10A85C
 STAMINA_ADJUSTED, ADJUSTED_ATTACK, ADJUST_STATISTIC, IS_LUCKY = 0x110F4C, 0x110F88, 0x10F860, 0x110FC8
-EVENT_MAX_COUNT, EVENT_HIGH_WATER, TIMELINE_EVENTS, TIMELINE = 0x103174, 0x103176, 0x103178, 0x10317C
+EVENT_MAX_COUNT, EVENT_HIGH_WATER = 0x103174, 0x103176
 TIMELINE_COUNT, FIRST_UNUSED = 0x103180, 0x103182
 ADD_EVENT, EXTRACT_FIRST, IS_EXPIRED = 0x11F59C, 0x11F634, 0x11F662
 BUF = 0x200000  # free emulator RAM above the KAOS image
@@ -199,20 +199,6 @@ def test_timeline_matches_original(lib, emu):
         c32.in_dll(lib, "g_game_time").value = t
         put(emu, GAME_TIME, ">I", t)
         assert lib.timeline_is_first_event_expired() == emu.call(IS_EXPIRED) & 0xFFFF
-
-
-def test_timeline_order(lib):
-    Timeline.in_dll(lib, "g_timeline").capacity = 10
-    c32.in_dll(lib, "g_game_time").value = 0
-    lib.timeline_init()  # watchdog: time 300, type 53
-    for t, typ, prio in [(5, 20, 0), (5, 25, 0), (2, 11, 3), (5, 20, 1), (2, 11, 1)]:
-        lib.timeline_add_event(ctypes.byref(TimelineEvent(t, typ, prio)))
-    order = []
-    for _ in range(6):
-        e = TimelineEvent()
-        lib.timeline_extract_first_event(ctypes.byref(e))
-        order.append((e.map_time, e.type, e.priority))
-    assert order == [(2, 11, 3), (2, 11, 1), (5, 25, 0), (5, 20, 1), (5, 20, 0), (300, 53, 0)]
 
 
 def test_game_new(lib):

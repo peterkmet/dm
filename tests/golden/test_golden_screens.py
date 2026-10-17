@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Golden snapshot of the champion screens: status boxes, the inventory panel, the action and spell areas."""
+"""Golden snapshot of the champion screens: status boxes, the inventory panel, and the action area."""
 
 import hashlib
 import json
@@ -67,13 +67,3 @@ def test_action_area(game):
     got.append(screen(game))
     check("action", got)
 
-
-@needs_dm
-def test_spell_area(game):
-    recruit(game)
-    game.champions[game.value("g_magic_caster_champion_index")].current_mana = 100
-    got = []
-    for symbol in (0, 1):
-        game.click_box(zone_box(game, C.ZONE_SPELL_SYMBOL_BOX_FIRST + symbol), viewport=False)
-        got.append(screen(game))
-    check("spell", got)

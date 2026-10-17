@@ -8,7 +8,7 @@ import pytest
 
 from dmtest import constants as C
 from dmtest.emu import s16, var
-from dmtest.game import (ActionList, pending_damage, CHAMPIONS, Champion, Location, MeleeAttack, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
+from dmtest.game import (pending_damage, CHAMPIONS, Champion, Location, MeleeAttack, Timeline, TimelineEvent, World, add_test_champion, events, new_game, pack, place_party,
                          setup_creatures, skeleton_map_and_squares, things_of_type, tick, session)
 from dmtest.lib import load_lib
 
@@ -25,8 +25,8 @@ TICKS_AT, GROUP_BUF = 0x2F0000, 0x230000
 CAPTURE_TICKS = b"\x33\xef\x00\x06" + struct.pack(">I", TICKS_AT) + RTS
 
 WEAPON_SWORD = 10
-ATTR_ACTION_DISABLED, ATTR_ACTION_HAND = 0x0008, 0x8000
-EVENT_ENABLE_ACTION, EVENT_HIDE_DAMAGE, EVENT_REBIRTH = 11, 12, 13
+ATTR_ACTION_DISABLED = 0x0008
+EVENT_ENABLE_ACTION = 11
 FAR = 60  # a square outside every map: a wall without things
 
 # Actions whose result depends only on the champion and the action tables when the square in front is an empty wall.
@@ -196,23 +196,6 @@ def party(alib):
     return alib, c, (x, y)
 
 
-def test_sword_attack_hurts_group_and_gains_experience(fighter):
-    lib, c, (x, y) = fighter
-    group = lib.map_find_thing(Location(x, y + 1), C.THING_GROUP)
-    health = struct.unpack(">H", bytes(lib.rec_write(group)[6:8]))[0]
-    experience = c.skills[C.SKILL_SWING].experience
-    damage = []
-    for _ in range(20):
-        lib.action_is_action_performed(0, C.ACTION_SWING)
-        damage.append(session(lib).action_damage)
-        group = lib.map_find_thing(Location(x, y + 1), C.THING_GROUP)
-        if group == 0xFFFE or struct.unpack(">H", bytes(lib.rec_write(group)[6:8]))[0] < health:
-            break
-    assert any(d > 0 for d in damage)
-    assert c.skills[C.SKILL_SWING].experience > experience
-    assert c.enable_action_event_index >= 0 and c.attributes & ATTR_ACTION_DISABLED
-
-
 def test_back_row_champion_cannot_reach(fighter):
     lib, c, _ = fighter
     c.cell = 0  # back right when the party faces south; champion 1 stands in front of it in cell 3
@@ -260,19 +243,6 @@ def test_event_11_ends_action_defense(party):
     assert not c.attributes & ATTR_ACTION_DISABLED and c.action_defense == 0 and c.action_index == 255
 
 
-def test_triggered_action_closes_menu_and_asks_for_action_area(party):
-    lib, c, _ = party
-    lib.action_did_click_trigger_action.restype, lib.action_did_click_trigger_action.argtypes = ctypes.c_bool, [c16]
-    redraw = ctypes.c_uint16.in_dll(lib, "g_redraw")
-    redraw.value = 0
-    session(lib).acting_champion_index = 0
-    ActionList.in_dll(lib, "g_action_list").actions[0] = C.ACTION_BLOCK
-    lib.action_did_click_trigger_action(0)
-    assert session(lib).acting_champion_index == -1
-    assert redraw.value & C.REDRAW_ACTION_AREA
-    assert c.attributes & ATTR_ACTION_HAND
-
-
 def test_poison_event_deals_damage_each_step(party):
     lib, c, _ = party
     pending = pending_damage(lib)
@@ -285,33 +255,3 @@ def test_poison_event_deals_damage_each_step(party):
     poison = events(lib, C.EVENT_POISON)
     assert len(poison) == 1 and poison[0].b == 198
 
-
-def test_event_12_hides_damage(party):
-    lib, c, _ = party
-    now = var(lib, ctypes.c_uint32, "g_game_time").value
-    event = TimelineEvent(map_time=var(lib, c16, "g_party_map_index").value << 24 | (now + 1), type=EVENT_HIDE_DAMAGE, priority=0)
-    c.hide_damage_received_event_index = lib.timeline_add_event(ctypes.byref(event))
-    tick(lib)
-    tick(lib)
-    assert c.hide_damage_received_event_index == -1
-
-
-def test_vi_altar_rebirth(party):
-    lib, c, (x, y) = party
-    bones = new_object(lib, C.THING_JUNK, C.JUNK_BONES)
-    lib.rec_write(bones)[2] = 0  # charges: champion 0
-    lib.map_link_thing_to_list(bones | 1 << 14, 0, x, y)
-    c.current_health = 0
-    now = var(lib, ctypes.c_uint32, "g_game_time").value
-    event = TimelineEvent(map_time=var(lib, c16, "g_party_map_index").value << 24 | (now + 1), type=EVENT_REBIRTH, priority=0,
-                          b=x << 8 | y, c=1 << 8 | 2)
-    lib.timeline_add_event(ctypes.byref(event))
-    tick(lib)
-    tick(lib)
-    assert things_of_type(lib, x, y, C.THING_EXPLOSION)  # the rebirth explosion
-    for _ in range(5):
-        tick(lib)
-    assert all(t & 0x3FFF != bones for t in things_of_type(lib, x, y, C.THING_JUNK))
-    for _ in range(2):
-        tick(lib)
-    assert c.current_health > 0

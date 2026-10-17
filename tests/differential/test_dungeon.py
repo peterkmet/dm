@@ -8,7 +8,6 @@ from dmtest.game import Position
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 from dmcsb import THING_TYPES, open_dungeon
-from dmcsb.dungeon import _default_escape
 
 from dmtools.emu import Emu
 from dmtools.ftl import load_image, parse
@@ -96,22 +95,6 @@ def test_dungeon_matches_dmcsb(lib, name):
         nexts = [struct.unpack_from(">H", data, i * size)[0] for i in range(total)]
         assert nexts[:n] == [r["Next"] for r in d.things.get(tname, [])]
         assert nexts[n:] == [0xFFFF] * (total - n)
-
-
-@pytest.mark.parametrize("name", FILES)
-def test_text_matches_dmcsb(lib, name):
-    need(lib, f"{name}.DAT")
-    d = load(lib, GAME / f"{name}.DAT")
-    compared = 0
-    for i, _, _ in d.texts():
-        # Escape 30 differs except "THE "/"YOU ": dmcsb gives display glyphs, the original font codes (see emu test)
-        ref = d.text(i, escape=lambda c, n: _default_escape(c, n) if c == 29 or n in (2, 3) else "\0")
-        if "\0" in ref:
-            continue
-        assert decode(lib, 2 << 10 | i, 2 | -0x8000).value.decode("latin1") == ref
-        assert decode(lib, 2 << 10 | i, 1 | -0x8000).value.decode("latin1") == "\n" + ref.replace("\n", " ")
-        compared += 1
-    assert compared >= 90
 
 
 @pytest.mark.parametrize("name", FILES)
@@ -269,10 +252,3 @@ def test_bad_text_offset_and_small_buffer(lib):
     rec[2], rec[3] = (words << 3 | 1) >> 8 & 0xFF, (words << 3 | 1) & 0xFF
     assert lib.dungeon_decode_text(buf, 8, 2 << 10, 2) == 0
 
-
-def test_door_vertical_bit(lib):
-    need(lib, "Dungeon.DAT")
-    doors = load(lib, GAME / "Dungeon.DAT").things["Door"]
-    assert {d["Vertical"] for d in doors} == {0, 1}
-    for i, door in enumerate(doors):
-        assert (lib.rec_write(i)[3] & 0x20 != 0) == door["Vertical"]  # rec_door_is_vertical

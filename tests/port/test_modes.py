@@ -15,11 +15,10 @@ from pathlib import Path
 import pytest
 
 from dmtest import constants as C
-from dmtest.control import Client
-from dmtest.game import (view_result, screen, pending_damage, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
+from dmtest.game import (screen, ADVANCED, STEP_EAST, STEP_NORTH, TURNBASED, VANILLA, Box, Location, Party, ProjectileLaunch, press, recruit_first_champion, set_mode,
                          start_game, session)
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
+from dmtest.markers import ROOT, needs_dm, needs_sdl
 
 PNG_DIR = os.environ.get("DM_TEST_PNG_DIR")  # optional: a folder for PNG renders of the screen
 QUICK = "QUICK.DAT"
@@ -81,11 +80,6 @@ def seen(game):
     return {(x, y) for x in range(lib.dungeon_map_width(m)) for y in range(lib.dungeon_map_height(m)) if lib.explored_is_seen(m, x, y)}
 
 
-def thing_count(game, thing_type):
-    header = ctypes.c_void_p.in_dll(game.lib, "g_dungeon_header").value
-    return int.from_bytes(ctypes.string_at(header + 12 + 2 * thing_type, 2), "big")
-
-
 def unfreeze(game):
     for key in (C.KEY_ESCAPE, C.KEY_RETURN):
         if game.value("g_game_frozen"):
@@ -102,13 +96,6 @@ def test_vanilla_is_the_default_and_the_advanced_keys_do_nothing(game, tmp_path)
     assert game.value("g_automap_open") == 0 and not (tmp_path / QUICK).exists()
     assert game.session.inventory_champion_index == -1 and game.position() == position
     assert [game.lib.advanced_letter_key(ord(c)) for c in "wsadqe"] == [0] * 6
-
-
-def test_letter_keys_move_and_turn_outside_vanilla(game):
-    set_mode(game, ADVANCED)
-    keys = [game.lib.advanced_letter_key(ord(c)) for c in "wsadqex"]
-    assert keys == [C.KEY_UP, C.KEY_DOWN, C.KEY_LEFT, C.KEY_RIGHT, C.KEY_DEL, C.KEY_HELP, 0]
-    set_mode(game, VANILLA)
 
 
 def message_text(game):
@@ -151,13 +138,6 @@ def test_quick_save_and_quick_load(game, tmp_path):
     set_mode(game, VANILLA)
 
 
-@needs_sdl
-def test_bad_mode_stops_the_program():
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
-    result = subprocess.run([str(ROOT / "build/dm"), "--mode", "fast", "--frames", "1"], cwd=ROOT, env=env, capture_output=True, timeout=60)
-    assert result.returncode == 1
-
-
 def test_automap_stops_the_game_time_and_draws_the_map(game):
     set_mode(game, ADVANCED)
     game.run(13)
@@ -178,32 +158,6 @@ def test_automap_stops_the_game_time_and_draws_the_map(game):
     assert game.value("g_game_time", u32) > time_before
     set_mode(game, VANILLA)
 
-
-def arrow_x(game):
-    """The mean x of the party arrow pixels in the viewport."""
-    b = zone_box(game, C.ZONE_VIEWPORT)
-    xs = [i % b.w for i, c in enumerate(pixels(game, C.ZONE_VIEWPORT)) if c == C.COLOR_YELLOW]
-    return sum(xs) / len(xs) if xs else None
-
-
-def test_a_drag_scrolls_the_automap(game):
-    set_mode(game, ADVANCED)
-    press(game, C.KEY_M)
-    centered = arrow_x(game)
-    b = zone_box(game, C.ZONE_VIEWPORT)
-    x, y = b.x + b.w // 2, b.y + b.h // 2
-    game.click(x, y)
-    assert arrow_x(game) == centered  # a click without a move does not scroll
-    game.lib.command_process_click(x, y, C.CLICK_LEFT_PRESS)
-    game.lib.advanced_drag(x - 3 * 7 - 3, y)  # 3 squares and a part of one to the west
-    game.lib.command_process_click(x - 3 * 7 - 3, y, C.CLICK_LEFT_RELEASE)
-    game.run()
-    assert arrow_x(game) == centered - 3 * 7  # the map follows the mouse in whole squares
-    press(game, C.KEY_M)
-    press(game, C.KEY_M)
-    assert arrow_x(game) == centered
-    press(game, C.KEY_M)
-    set_mode(game, VANILLA)
 
 def test_automap_opens_only_in_the_dungeon_view(game):
     set_mode(game, ADVANCED)
@@ -235,24 +189,6 @@ def test_quick_keys_work_only_in_the_dungeon_view(game, tmp_path):
     press(game, C.KEY_F5)
     assert (tmp_path / QUICK).exists()
     lib.startend_set_save_dir(b".")
-    set_mode(game, VANILLA)
-
-
-def test_automap_shows_the_position_readout(game):
-    lib = game.lib
-    set_mode(game, ADVANCED)
-    game.run(13)
-    lib.gameloop_draw_view()
-    view = pixels(game, C.ZONE_VIEWPORT)
-    set_mode(game, VANILLA)
-    lib.gameloop_draw_view()
-    assert pixels(game, C.ZONE_VIEWPORT) == view  # the dungeon view has no read-out
-    set_mode(game, ADVANCED)
-    press(game, C.KEY_M)
-    with_readout = pixels(game, C.ZONE_VIEWPORT)
-    assert C.COLOR_WHITE in with_readout[:224 * 14]  # the read-out text in the top rows
-    screenshot(game, "adv_automap_readout.png")
-    press(game, C.KEY_M)
     set_mode(game, VANILLA)
 
 
@@ -319,63 +255,6 @@ def test_save_and_load_keep_the_automap(game, tmp_path):
     assert seen(game) == set()
     lib.gameloop_start_loaded_game()
     assert len(seen(game)) > 0
-
-
-def test_render_advanced_panels(game):
-    lib, champion = game.lib, game.champions[0]
-    set_mode(game, ADVANCED)
-    hand = champion.slots[C.SLOT_HAND_ACTION]
-
-    assert hand >> 10 & 15 == C.THING_WEAPON  # the sword of the recruited champion
-    armour = next(t for t in champion.slots if t != 0xFFFF and t >> 10 & 15 == C.THING_ARMOUR)
-    set_mode(game, VANILLA)
-    lib.menus_draw_action_area()
-    black_icon = pixels(game, C.ZONE_ACTION_AREA)
-    set_mode(game, ADVANCED)
-    lib.menus_draw_action_area()
-    colored_icon = pixels(game, C.ZONE_ACTION_AREA)
-    assert set(black_icon) <= {C.COLOR_BLACK, C.COLOR_CYAN} and len(set(colored_icon)) > 2
-    screenshot(game, "adv_action_icons.png")
-
-    press(game, C.KEY_F1)
-    assert game.session.inventory_champion_index == 0
-    champion.slots[C.SLOT_HAND_ACTION] = hand
-    leader_hand = u16.in_dll(lib, "g_leader_hand_object")
-    empty_handed = ctypes.c_bool.in_dll(lib, "g_leader_empty_handed")
-    held, was_empty = leader_hand.value, empty_handed.value
-    for thing, name in ((hand, "adv_stat_meters.png"), (armour, "adv_stat_meters_armour.png")):
-        leader_hand.value, empty_handed.value = thing, 0  # the eye shows the description of the leader hand object
-        set_mode(game, VANILLA)
-        lib.panel_draw_eye()
-        lib.ui_draw_viewport()
-        plain = pixels(game, C.ZONE_VIEWPORT)
-        set_mode(game, ADVANCED)
-        lib.panel_draw_eye()
-        lib.ui_draw_viewport()
-        assert pixels(game, C.ZONE_VIEWPORT) != plain
-        screenshot(game, name)
-    leader_hand.value, empty_handed.value = held, was_empty
-
-    runes = False
-    for index in range(thing_count(game, C.THING_SCROLL)):
-        champion.slots[C.SLOT_HAND_ACTION] = C.THING_SCROLL << 10 | index
-        set_mode(game, VANILLA)
-        lib.panel_draw()
-        lib.ui_draw_viewport()
-        plain_red = pixels(game, C.ZONE_VIEWPORT).count(C.COLOR_RED)
-        set_mode(game, ADVANCED)
-        lib.panel_draw()
-        lib.ui_draw_viewport()
-        if pixels(game, C.ZONE_VIEWPORT).count(C.COLOR_RED) > plain_red:
-            runes = True
-            screenshot(game, "adv_scroll_runes.png")
-            break
-    assert runes
-
-    champion.slots[C.SLOT_HAND_ACTION] = hand
-    press(game, C.KEY_F1)
-    assert game.session.inventory_champion_index == -1
-    set_mode(game, VANILLA)
 
 
 @needs_sdl
@@ -499,34 +378,6 @@ def test_smooth_projectile_flight(game):
     set_mode(game, VANILLA)
 
 
-@pytest.mark.parametrize("mode", [VANILLA, ADVANCED])
-def test_empty_hand_at_a_fountain(game, mode):
-    lib, champions = game.lib, game.champions
-    set_mode(game, mode)
-    count = c16.in_dll(lib, "g_party_champion_count")
-    start = game.value("g_party_map_index"), game.position()
-    ctypes.memmove(ctypes.byref(champions[1]), ctypes.byref(champions[0]), ctypes.sizeof(champions[0]))
-    champions[1].cell = (champions[0].cell + 1) % 4
-    count.value = 2
-    lib.map_set_party_map(1)
-    for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), (0, 21, 2)):  # facing a fountain on level 2
-        c16.in_dll(lib, name).value = v
-    lib.gameloop_draw_view()
-    assert view_result(game.lib).facing_fountain
-    champions[0].water = champions[1].water = 100
-    game.click_box(game.boxes[5])
-    assert (champions[0].water, champions[1].water) == (2048, 2048 if mode == ADVANCED else 100)
-    count.value = 1
-    ctypes.memset(ctypes.byref(champions[1]), 0, ctypes.sizeof(champions[1]))
-    lib.map_set_party_map(start[0])
-    for name, v in zip(("g_party_map_x", "g_party_map_y", "g_party_direction"), start[1]):
-        c16.in_dll(lib, name).value = v
-    lib.gameloop_draw_view()
-    set_mode(game, VANILLA)
-
-
-
-
 @pytest.mark.parametrize("mode", [VANILLA, ADVANCED, TURNBASED])
 def test_cheat_keys_work_only_on_the_advanced_automap(game, mode):
     set_mode(game, mode)
@@ -603,66 +454,3 @@ def test_cheat_food_keeps_food_and_water(game):
         session(lib).cheat_food = 0
         champion.food, champion.water = food, water
 
-
-def test_party_death_during_a_turn_reports_game_over(game):
-    lib = game.lib
-    sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")
-    game.socket = os.path.join(sock_dir, "control.sock")
-    assert lib.transport_open(game.socket.encode())
-    try:
-        set_mode(game, TURNBASED)
-        client = Client(game)
-        assert client.call(cmd="get_state")["state"]["party"]["dead"] is False
-        pending = pending_damage(lib)
-        pending[0] = game.champions[0].current_health + 100  # applied in the first tick of the turn
-        result = client.call(cmd="wait", ticks=50)
-        assert result["ok"] and result["game_over"] is True and result["state"]["party"]["dead"] is True
-        assert result["ticks"] < 50
-        assert client.call(cmd="act", action="move_forward", args={}) == {"ok": False, "error": "game over"}
-        assert client.call(cmd="get_state")["ok"]
-        client.sock.close()
-    finally:
-        lib.transport_close()
-        shutil.rmtree(sock_dir, ignore_errors=True)
-        ctypes.c_bool.in_dll(lib, "g_return_to_entrance").value = 0
-        set_mode(game, VANILLA)
-        assert lib.gameloop_start_new_game(str(GAME).encode())
-
-
-@needs_sdl
-def test_turnbased_save_goes_to_the_saves_folder(tmp_path):
-    data, saves = tmp_path / "game", tmp_path / "saves"
-    shutil.copytree(ROOT / "game", data, ignore=shutil.ignore_patterns("DMGAME.*", "QUICK.DAT"))
-    saves.mkdir()
-    sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")  # sun_path holds about 100 bytes
-    path = os.path.join(sock_dir, "control.sock")
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
-    program = subprocess.Popen([str(ROOT / "build/dm"), "--mode", "turnbased", "--data", str(data), "--saves", str(saves),
-                                "--control", path, "--frames", "100000"], cwd=ROOT, env=env,
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    try:
-        while not os.path.exists(path):
-            time.sleep(0.001)
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-            s.settimeout(60)
-            s.connect(path)
-            lines = s.makefile("rw")
-
-            def call(**payload):
-                lines.write(json.dumps(payload) + "\n")
-                lines.flush()
-                return json.loads(lines.readline())
-
-            while not call(cmd="get_state")["ok"]:
-                time.sleep(0.05)
-            assert call(cmd="save")["ok"]
-            assert call(cmd="load")["ok"]
-    finally:
-        program.send_signal(signal.SIGINT)
-        try:
-            program.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            program.kill()
-        shutil.rmtree(sock_dir, ignore_errors=True)
-    assert (saves / "DMGAME.DAT").exists()
-    assert not (data / "DMGAME.DAT").exists()

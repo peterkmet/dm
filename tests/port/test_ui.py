@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import ActionList, Box, recruit_from_mirrors, render, reset, setup_ui, start_ui, zone_records, session, screen
+from dmtest.game import Box, setup_ui, start_ui, zone_records
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
 
@@ -14,10 +14,9 @@ from dmtools.ftl import load_image, parse
 GAME = ROOT / "game"
 GET_ZONE_BOX_CLIPPED, COMMAND_FROM_MOUSE, LAYOUT_ZONES = 0x11686A, 0x120CC6, 0x102990
 MOUSE_TABLES = [0x1031F8, 0x1032E8, 0x103354, 0x10351C, 0x103540, 0x103564, 0x1035A0, 0x1035DC, 0x103654, 0x1036F0, 0x10375C, 0x10378C]
-DUNGEON_PALETTE, ARROWS_GFX, ARROWS_ZONE = 0x100AA6, 13, 9
+DUNGEON_PALETTE = 0x100AA6
 ATTR_ALL = 0xFF80
 pytestmark = [needs_sdl]
-u8, u16, c16 = ctypes.c_uint8, ctypes.c_uint16, ctypes.c_int16
 
 
 @pytest.fixture(scope="module")
@@ -45,15 +44,6 @@ def emu(game):
         at = nxt
     emu.zones = [z for first, last, _ in chunks for z in range(first, last + 1)]
     return emu
-
-
-def test_palette_split(lib):
-    scr = screen(lib)
-    saved = list(scr.palette), scr.split_top, scr.split_bottom
-    scr.palette[3], scr.palette[19], scr.split_top, scr.split_bottom = 0x123, 0x456, 33, 169
-    lib.video_get_color.restype = u16
-    assert [lib.video_get_color(y, 3) for y in (0, 32, 33, 168, 169, 199)] == [0x456, 0x456, 0x123, 0x123, 0x456, 0x456]
-    scr.palette[:], scr.split_top, scr.split_bottom = saved
 
 
 @needs_dm
@@ -109,62 +99,3 @@ def test_mouse_commands_match_original(game, emu, table):
             hits += want != 0
     assert hits > 0
 
-
-@needs_dm
-def test_render_empty_party(game):
-    reset(game)
-    recruit_from_mirrors(game, 0)
-    fb = render(game, "empty")
-    arrows = game.gfx_get_bitmap(ARROWS_GFX).contents
-    box = Box()
-    assert game.ui_zone_box(ARROWS_ZONE, ctypes.byref(box))
-    assert all(fb[(box.y + y) * 320 + box.x + x] == arrows.px[y * arrows.w + x] for y in range(arrows.h) for x in range(arrows.w))
-    assert set(fb[:320 * 33]) == {0}  # no status boxes
-
-
-@needs_dm
-@pytest.mark.parametrize("n", [1, 2, 3, 4])
-def test_render_party(game, n):
-    reset(game)
-    champions = recruit_from_mirrors(game, n)
-    if n == 4:
-        champions[3].current_health = 0
-        champions[1].wounds = 0x3
-        champions[2].attributes = 0x0008
-        game.message_print(15, b"\nWELCOME TO THE DUNGEON.")
-        game.message_print(9, b"\nTHE PARTY IS READY.")
-        game.menus_set_magic_caster(1)
-    fb = render(game, f"party{n}")
-    box = Box()
-    for i in range(n):
-        assert game.ui_zone_box(151 + i, ctypes.byref(box))
-        colors = {fb[(box.y + y) * 320 + box.x + x] for y in range(box.h) for x in range(box.w)}
-        assert len(colors) > 3
-    if n == 4:
-        game.status_draw_damage(1, 37)
-        game.menus_draw_action_damage(25)
-
-
-@needs_dm
-def test_render_action_menu(game):
-    reset(game)
-    recruit_from_mirrors(game, 4)
-    render(game, "base")
-    game.menus_set_acting_champion(0)
-    assert session(game).acting_champion_index == 0
-    assert ActionList.in_dll(game, "g_action_list").actions[0] != 0xFF
-
-
-@needs_dm
-def test_render_inventory(game):
-    reset(game)
-    recruit_from_mirrors(game, 2)
-    render(game, "base")
-    game.panel_open(0)
-    fb = bytes(screen(game).px)
-    assert session(game).inventory_champion_index == 0
-    assert len(set(fb[320 * 33:320 * 169])) > 6
-    game.panel_draw_skills_statistics()
-    game.ui_draw_viewport()
-    game.panel_close(0)
-    assert session(game).inventory_champion_index == -1

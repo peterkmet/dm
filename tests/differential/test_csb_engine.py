@@ -2,16 +2,12 @@
 """The CSB engine image: APPB.FTL tables at their KAOS addresses (docs/csb/engine-diff.md "Data tables")."""
 
 import ctypes
-import os
-import struct
-import subprocess
 
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import ZoneClip, ZoneItem
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
+from dmtest.markers import GAME, GAME_CSB, needs_csb, needs_dm
 
 from dmtools import ftl
 
@@ -123,19 +119,6 @@ def test_equal_tables_match_dm(lib, kaos):
     assert csb(C.CSB_SPELLS, 25 * 8) == kaos(DM_SPELLS, 25 * 8)
 
 
-@needs_dm
-def test_documented_differences(lib, kaos):
-    csb = load(lib, CSB, GAME_CSB / "APPB.FTL")
-    gain = {i: (a, b) for i, (a, b) in enumerate(zip(kaos(EXPERIENCE_GAIN, 44), csb(EXPERIENCE_GAIN, 44))) if a != b}
-    assert gain == {4: (1, 0), 36: (5, 0), 37: (1, 0), 41: (3, 0)}
-    assert csb(VERSION_TEXT, 5) == b"V3.1\0"
-    entrance, dm_entrance = struct.unpack(">16H", csb(ENTRANCE_PALETTE, 32)), struct.unpack(">16H", kaos(ENTRANCE_PALETTE, 32))
-    assert [i for i in range(16) if entrance[i] != dm_entrance[i]] == [5] and entrance[5] == 0x422
-    assert csb(ENTRANCE_KEYS, 8) == bytes.fromhex("00c8440000000000")
-    assert [struct.unpack_from(">H", csb(ENTRANCE_MOUSE + 12 * i, 2))[0] for i in range(5)] == [0xC8, 0xC9, 0xCA, 0xCB, 0]
-    assert [struct.unpack_from(">H", csb(ENDGAME_MOUSE + 12 * i, 2))[0] for i in range(2)] == [0xD7, 0]
-
-
 def test_converted_action_sets(lib, appb):
     csb = load(lib, CSB, GAME_CSB / "APPB.FTL")
     for i in range(44):
@@ -169,54 +152,3 @@ def test_dm_spells(lib, appb):
     assert lib.tables_get_spell(24) and not lib.tables_get_spell(25)
     assert lib.spell_find(spell_runes(appb, 25)) == -1
 
-
-@needs_dm
-def test_layout_zones_equal_but_endgame_buttons(lib):
-    def boxes(folder):
-        assert lib.gfx_open(str(folder / "Graphics.DAT").encode()) and lib.layout_init()
-        result = {}
-        for zone in range(1, 2000):
-            placed = ZoneClip()
-            if lib.layout_get_zone(zone, ctypes.byref(ZoneItem(16, 16, 0, 0)), ctypes.byref(placed)):
-                b = placed.box
-                result[zone] = (b.x, b.y, b.w, b.h, placed.source_x, placed.source_y)
-        return result
-
-    dm, csb = boxes(GAME), boxes(GAME_CSB)
-    assert set(dm) - set(csb) == {C.ZONE_RESTART_BUTTON, C.ZONE_QUIT_BUTTON}
-    assert all(csb[z] == dm[z] for z in csb)
-
-
-def test_prison_new_game_runs_and_renders(lib):
-    set_adventure(lib, CSB)
-    assert lib.gameloop_load_data(str(GAME_CSB).encode())
-    assert lib.gameloop_start_new_game(str(GAME_CSB).encode())
-    position = [c16.in_dll(lib, n).value for n in ("g_party_map_index", "g_party_map_x", "g_party_map_y", "g_party_direction")]
-    assert position == [0, 9, 0, 2]
-    for _ in range(50):
-        if lib.gameloop_run_frame():
-            lib.gameloop_tick()
-    assert lib.view_render(*position)
-
-
-def run_dm(*args):
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy")
-    env.pop("DM_AUTO_ENTER", None)
-    return subprocess.run([str(ROOT / "build/dm"), *args, "--frames", "5"], cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
-
-
-@needs_sdl
-def test_view_shows_prison():
-    result = run_dm("--adventure", "csb", "--view")
-    assert result.returncode == 0, result.stderr
-
-
-@needs_sdl
-def test_view_loads_csb_from_data_folder(tmp_path):
-    for name in ("APPB.FTL", "Graphics.DAT", "Dungeon.DAT", "disk-b"):
-        (tmp_path / name).symlink_to(GAME_CSB / name)
-    assert run_dm("--adventure", "csb", "--view", "--data", str(tmp_path)).returncode == 0
-    (tmp_path / "APPB.FTL").unlink()
-    (tmp_path / "APPB.FTL").write_bytes(b"")
-    result = run_dm("--adventure", "csb", "--view", "--data", str(tmp_path))
-    assert result.returncode == 1 and f"{tmp_path}/APPB.FTL" in result.stderr

@@ -156,14 +156,7 @@ def test_removed_actions(world, action):
     else:
         assert explosions
         assert new_fluxcages == (action == C.ACTION_FLUXCAGE)
-
-
-def test_action_without_branch_draws_only_the_stamina_bit(world):
-    """The reference of the CSB check above: an action without own code draws only the stamina random bit."""
-    _, game = world
-    lib = game.lib
-    face_empty_corridor(lib)
-    put_champion(lib)
+    # an action without own code draws only the stamina random bit
     value(lib, "g_random_seed", u32).value = SEED
     assert lib.action_is_action_performed(0, ACTION_NONE_IN_BOTH) == 1
     assert value(lib, "g_random_seed", u32).value == seed_after_random_bit(lib)

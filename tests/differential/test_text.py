@@ -78,18 +78,6 @@ def test_text_draw_matches_original(lib, x):
     assert c_draw(lib, 48, 8, 5, x, 5, 15, 2, b"HELLO") == want
 
 
-def test_text_draw_glyph_pixels(lib):
-    px = c_draw(lib, 6, 6, 9, 0, 4, 1, 0, b"H")
-    rows = ["".join(".#9"[[0, 1, 9].index(px[y * 6 + x])] for x in range(6)) for y in range(6)]
-    assert rows == ["#...#9", "#...#9", "#####9", "#...#9", "#...#9", ".....9"]
-
-
-def test_text_draw_clips(lib):
-    full = c_draw(lib, 20, 12, 3, 4, 7, 15, 1, b"AB")
-    clipped = c_draw(lib, 10, 4, 3, -2, 1, 15, 1, b"AB")  # same text 6 px left, 6 px up
-    assert clipped == bytes(full[(y + 6) * 20 + x + 6] for y in range(4) for x in range(10))
-
-
 def message(lib):
     return MessageArea.in_dll(lib, "g_message")
 

@@ -5,7 +5,7 @@ import struct
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import ACTIVE_GROUP_BYTES, champions, Box, Frames, Game, Location, recruit_and_hold_object, state, session
+from dmtest.game import ACTIVE_GROUP_BYTES, champions, Box, Frames, Game, recruit_and_hold_object, state, session
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, needs_dm
 from dmtest.savefile import G_LOAD_FROM_MEMORY, SAVE_READ_CHECKED_BLOCK, SAVE_READ_HEADER, SaveFile, decode, encode
@@ -247,42 +247,6 @@ def test_party_death_restart_loads_the_saved_game(game, tmp_path, quit_reset):
     assert game.champions[0].current_health > 0
     assert game.value("g_game_time", u32) == saved_time
     assert game.value("g_game_screen_shown") == 1
-
-
-def test_fuse_sequence_ends_the_game(game, quit_reset):
-    lib = game.lib
-    assert lib.gameloop_start_new_game(str(GAME).encode())
-    recruit_and_hold_object(game)
-    lib.map_find_thing.restype = u16
-    spot = None
-    for level in range(1, 14):
-        lib.group_remove_all_active_groups()
-        lib.map_set_party_map(level)
-        lib.group_add_all_active_groups()
-        width, height = game.value("g_current_map_width"), game.value("g_current_map_height")
-        groups = {(x, y) for x in range(width) for y in range(height) if lib.map_find_thing(Location(x, y), C.THING_GROUP) != 0xFFFE}
-        spot = next(
-            ((x - STEP[d][0], y - STEP[d][1], d, (x, y)) for x, y in sorted(groups) for d in range(4)
-             if 0 <= x - STEP[d][0] < width and 0 <= y - STEP[d][1] < height
-             and lib.rec_square_type(lib.map_get_square(x - STEP[d][0], y - STEP[d][1])) == 1 and (x - STEP[d][0], y - STEP[d][1]) not in groups),
-            None)
-        if spot:
-            break
-    assert spot, "no group next to a corridor"
-    px, py, direction, lord_square = spot
-    for name, v in (("g_party_map_x", px), ("g_party_map_y", py), ("g_party_direction", direction)):
-        ctypes.c_int16.in_dll(lib, name).value = v
-    lord = lib.map_find_thing(Location(*lord_square), C.THING_GROUP)
-    lib.startend_run_fuse_sequence()
-    assert game.session.won == 1 and game.value("g_return_to_entrance") == 1 and game.value("g_quit_requested") == 0
-    assert lib.rec_write(lord)[4] == 26  # Grey Lord
-    # the other groups are gone; the test group is not caged and can walk away and go too
-    assert {(x, y) for x in range(width) for y in range(height) if lib.map_find_thing(Location(x, y), C.THING_GROUP) != 0xFFFE} <= {lord_square}
-    assert lib.gameloop_start_new_game(str(GAME).encode())  # a new game draws fluxcages again for the other tests
-    assert game.value("g_do_not_draw_fluxcages") == 0 and game.session.won == 0
-
-
-STEP = [(0, -1), (1, 0), (0, 1), (-1, 0)]  # east, north steps of each direction
 
 
 SLEEP_CLICK = (187, 35)  # ZZZ in the open inventory

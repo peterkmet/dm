@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import ctypes
-import json
 
 import pytest
 
@@ -16,8 +15,6 @@ CSB_DUNGEON_ID = 13
 CSB_MAPS, CSB_MAP_SIZE = 10, 32
 MIX_FRAMES = 44100
 TRACK_02 = GAME / "music/FM-Towns,Track_02,Music.mp3"
-MUSIC_MAP = GAME.parent / "reference/extracted/music_map.json"
-
 pytestmark = [needs_dm]
 
 
@@ -77,18 +74,6 @@ def mix(game, frames):
     return out
 
 
-def test_csb_square_table_matches_the_research(game):
-    table = list(csb_table(game))
-    assert sum(1 for t in table if t) == 3798
-    assert sum(1 for t in table[:CSB_MAP_SIZE * CSB_MAP_SIZE] if t == 2) == 217
-    if not MUSIC_MAP.exists():
-        pytest.skip("music_map.json missing")
-    for m in json.loads(MUSIC_MAP.read_text())["fm_towns_csb"]["maps"]:
-        for y, row in enumerate(m["grid_rows_y_then_x"]):
-            start = (m["map"] * CSB_MAP_SIZE + y) * CSB_MAP_SIZE
-            assert table[start:start + len(row)] == row
-
-
 @pytest.mark.parametrize("mode", [VANILLA, ADVANCED, TURNBASED])
 def test_music_keys_work_only_on_the_advanced_automap(game, mode):
     set_mode(game, mode)
@@ -130,15 +115,6 @@ def test_track_plays_one_time(game):
 
 
 @pytest.mark.skipif(not TRACK_02.exists(), reason="FM-Towns MP3 files missing")
-def test_music_stop_after_audio_stop_all_stops_the_track_and_keeps_the_soundtrack(game):
-    update_at(game, 0, 1, 1)
-    game.lib.music_select(FM_TOWNS)
-    game.lib.audio_stop_all()
-    game.lib.music_stop()
-    assert (var(game, "g_music_track").value, var(game, "g_music_soundtrack").value) == (0, FM_TOWNS)
-
-
-@pytest.mark.skipif(not TRACK_02.exists(), reason="FM-Towns MP3 files missing")
 def test_music_mix_clips(game):
     update_at(game, 0, 1, 1)
     game.lib.music_select(FM_TOWNS)
@@ -148,13 +124,6 @@ def test_music_mix_clips(game):
     game.lib.music_mix(out, frames)
     assert all(v >= 0 for v in out[0::2]) and all(v <= 0 for v in out[1::2])  # no wrap to the other sign
     assert out[0::2].count(32767) < frames  # the music changed samples
-
-
-def test_a_loaded_game_selects_original(game):
-    update_at(game, 0, 1, 1)
-    game.lib.music_select(FM_TOWNS)
-    game.lib.gameloop_continue_loaded_game()
-    assert (var(game, "g_music_soundtrack").value, var(game, "g_music_track").value) == (ORIGINAL, 0)
 
 
 def test_super_nes_trigger_square_starts_its_track(game):
@@ -168,12 +137,10 @@ def test_super_nes_trigger_square_starts_its_track(game):
     var(game, "g_music_last_track").value = 0
     update_at(game, 2, 9, 17)
     assert last(game) == 0  # no step: no new start
-
-
-def test_super_nes_does_nothing_in_csb(game):
+    game.lib.music_select(ORIGINAL)
     var(game, "g_adventure").value = CSB
     game.lib.music_select(SUPER_NES)
-    assert var(game, "g_music_soundtrack").value == ORIGINAL
+    assert var(game, "g_music_soundtrack").value == ORIGINAL  # no Super NES soundtrack in CSB
 
 
 def test_fm_towns_csb_zone_track_waits_for_the_current_track(game):

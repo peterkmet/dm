@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import ctypes
-import os
-import subprocess
 
 import pytest
 
 from dmtest import constants as C
 from dmtest.game import pending_damage, STEP_EAST, STEP_NORTH, Box, Party, Position, start_game, session, screen
 from dmtest.lib import load_lib
-from dmtest.markers import GAME, ROOT, needs_dm, needs_sdl
+from dmtest.markers import GAME, needs_dm
 
 ZONE_RESURRECT, ZONE_DROP_PARTY_CELL, ZONE_BACKPACK_FIRST_SLOT = 570, 740, 520
 c16, u16 = ctypes.c_int16, ctypes.c_uint16
@@ -19,57 +17,6 @@ pytestmark = [needs_dm]
 @pytest.fixture(scope="module")
 def game():
     return start_game(load_lib())
-
-
-def test_new_game_recruit_take_and_store(game):
-    start = game.position()
-    game.run(26)
-    game.key(C.KEY_DEL)
-    assert game.until(lambda: game.position()[2] == (start[2] + 3) & 3)
-    game.key(C.KEY_HELP)
-    assert game.until(lambda: game.position()[2] == start[2])
-
-    path, direction = game.path_to_mirror()
-    game.walk(path)
-    game.face(direction)
-    game.run()
-    wall = game.boxes[5]
-    assert wall.x != -1
-    game.click_box(wall)
-    assert game.session.candidate_champion_index == 0
-    assert game.session.inventory_champion_index == 0
-
-    game.click_zone(ZONE_RESURRECT)
-    assert game.session.candidate_champion_index == -1
-    assert game.value("g_party_champion_count", c16) == 1
-    assert game.value("g_leader_index") == 0
-    assert game.session.inventory_champion_index == -1
-
-    weapon = game.champions[0].slots[C.SLOT_HAND_ACTION]
-    assert weapon != 0xFFFF
-    box = Box()
-    assert game.lib.ui_get_slot_box_zone(C.SLOT_HAND_ACTION, 0, ctypes.byref(box))
-    game.click_box(box, viewport=False)
-    assert game.value("g_leader_hand_object", u16) == weapon
-    assert game.champions[0].slots[C.SLOT_HAND_ACTION] == 0xFFFF
-
-    game.click_zone(ZONE_DROP_PARTY_CELL)
-    assert game.value("g_leader_hand_object", u16) == 0xFFFF
-    pile = next(i for i in range(4) if game.boxes[i].x != -1)
-    game.click_box(game.boxes[pile])
-    assert game.value("g_leader_hand_object", u16) & 0x3FFF == weapon & 0x3FFF
-    game.click_box(box, viewport=False)  # the status box hand takes the weapon without the inventory
-    assert game.champions[0].slots[C.SLOT_HAND_ACTION] & 0x3FFF == weapon & 0x3FFF
-    assert game.value("g_leader_hand_object", u16) == 0xFFFF
-    game.click_box(box, viewport=False)
-    assert game.value("g_leader_hand_object", u16) & 0x3FFF == weapon & 0x3FFF
-
-    game.key(C.KEY_F1)
-    game.run()
-    assert game.session.inventory_champion_index == 0
-    game.click_zone(ZONE_BACKPACK_FIRST_SLOT)
-    assert game.value("g_leader_hand_object", u16) == 0xFFFF
-    assert game.champions[0].slots[C.SLOT_BACKPACK_FIRST] & 0x3FFF == weapon & 0x3FFF
 
 
 def test_champion_dies_with_inventory_open(game):
@@ -106,13 +53,6 @@ def test_champion_dies_with_inventory_open(game):
     direction = game.position()[2]
     game.key(C.KEY_DEL)
     assert game.until(lambda: game.position()[2] == (direction + 3) & 3)
-
-
-@needs_sdl
-def test_game_runs_headless_with_auto_enter():
-    env = dict(os.environ, SDL_VIDEO_DRIVER="dummy", SDL_AUDIO_DRIVER="dummy", DM_AUTO_ENTER="1")
-    result = subprocess.run([str(ROOT / "build/dm"), "--frames", "100"], cwd=ROOT, env=env, capture_output=True, timeout=60)
-    assert result.returncode == 0, result.stderr
 
 
 def viewport_pixels(game):

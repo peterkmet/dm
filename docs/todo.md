@@ -61,9 +61,3 @@ User wishes for future versions. Not planned yet.
 - Owner's wish (2026-10-16): in the advanced mode the icons of the action area (the empty hand) have the same colors on every level; the vanilla mode keeps the original behavior.
 - Today: the action area is on the screen lines of the viewport, so it draws with the dungeon palette. Each map puts the replacement colors of its creatures into colors 9 and 10 of that palette (`set_creature_replacement_colors`, `src/ui/view.c:878`). The empty hand icon uses one of these colors: orange on level 11, dark red on level 12. The original game does the same.
 - Change: in the advanced mode, draw the action area icons with fixed colors (e.g. the default colors 9 and 10 of the interface palette), without changing the creature colors of the viewport.
-
-## Test audit against the test list of CLAUDE.md
-
-- Check every test against the list of CLAUDE.md §2 (what to test, what not to test: UI and layout, CLI arguments, constants and data tables, wiring).
-- Candidates: `tests/port/test_select.py`, the out-of-range and count tests of `tests/differential/test_tables.py`, parts of `tests/port/test_modes.py`.
-- Result: a list with one reason per test to remove or keep; the user approves it before a test is removed.

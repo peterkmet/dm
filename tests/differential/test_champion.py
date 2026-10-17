@@ -4,7 +4,6 @@ import struct
 
 import pytest
 
-from dmtest import constants as C
 from dmtest.emu import need, s16, var
 from dmtest.game import CHAMPIONS, STEP_EAST, STEP_NORTH, THING_BUF, Bitmap, Champion, Party, Position, RecruitData, World, champions, pack, session
 from dmtest.lib import load_lib
@@ -18,8 +17,6 @@ LEVEL_UP_ADDR = 0x102490
 SKILL_LEVEL, ADD_EXPERIENCE, MAX_LOAD, MOVE_TICKS, DEXTERITY = 0x110B20, 0x110C2E, 0x111056, 0x1110C2, 0x11112E
 STRENGTH, WOUND_DEFENSE, PENDING, DAMAGE_ALL, TIME_EFFECTS = 0x1111B6, 0x1112EA, 0x111984, 0x111C3A, 0x11202C
 WEIGHT, ICON = 0x10A4AC, 0x1079DC
-ATTR_STATUS_BOX = 4096
-
 pytestmark = [needs_dm]
 c16, u16, u8 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint8
 
@@ -298,34 +295,6 @@ def test_damage_until_death(lib, party):
     bones = [t for t in dropped if t >> 10 & 15 == 10 and lib.rec_write(t)[3] & 0x7F == 5]
     assert len(bones) == 1 and lib.rec_write(bones[0])[2] >> 6 == 0 and bones[0] >> 14 == ch.cell
 
-
-def test_death_sets_redraw_flags(lib, party):
-    lib.champion_click_rebirth_panel(0xA0)
-    cs = champions(lib)
-    ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
-    cs[1].cell = (cs[0].cell + 1) & 3
-    var(lib, c16, "g_party_champion_count").value = 2
-    var(lib, c16, "g_leader_index").value = 1
-    var(lib, c16, "g_magic_caster_champion_index").value = 0
-    redraw = var(lib, u16, "g_redraw")
-    redraw.value = 0
-    lib.champion_kill(0)
-    assert cs[0].attributes & ATTR_STATUS_BOX  # the user interface draws the dead champion after the tick
-    assert var(lib, c16, "g_magic_caster_champion_index").value == 1 and redraw.value == C.REDRAW_SPELL_AREA
-
-
-
-def test_death_marks_the_champion_for_release(lib, party):
-    lib.champion_click_rebirth_panel(0xA0)
-    cs = champions(lib)
-    ctypes.memmove(ctypes.byref(cs[1]), ctypes.byref(cs[0]), ctypes.sizeof(Champion))
-    cs[1].cell = (cs[0].cell + 1) & 3
-    var(lib, c16, "g_party_champion_count").value = 2
-    dead = var(lib, u16, "g_dead_champions")
-    dead.value = 0
-    lib.champion_kill(1)
-    assert dead.value == 1 << 1  # the user interface releases the champion after the tick
-    dead.value = 0
 
 SET_DUNGEON_VIEW_PALETTE, PALETTE_INDEX, PARTY = 0x10EDD6, 0x1001E6, 0x101ED4
 BRIGHT_THRESHOLD = 99  # g_palette_light_thresholds[0]

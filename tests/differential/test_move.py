@@ -87,14 +87,6 @@ def kaos_words(lib, addr, n):
     return [c16(lib.kaos_u16(addr + 2 * i)).value for i in range(n)]
 
 
-def test_start_position(game):
-    header = bytes(u8p.in_dll(game, "g_dungeon_header")[:44])
-    start = struct.unpack(">H", header[8:10])[0]
-    assert party(game) == (0, start & 31, start >> 5 & 31, start >> 10 & 3) == (0, 1, 3, 2)
-    assert var(game, "g_current_map_index").value == 0
-    assert session(game).new_party_map == -1
-
-
 @pytest.mark.parametrize("command", [LEFT, RIGHT])
 def test_move_into_wall_stays(game, command):
     game.move_party(command)
