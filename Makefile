@@ -20,8 +20,8 @@ OBJ = $(B)/obj
 
 SOURCES      = $(wildcard src/*/*.c)
 SDL_SOURCES  = src/platform/main.c src/platform/platform.c
-WINDOWS_ONLY = src/platform/control_win.c
-POSIX_ONLY   = src/platform/control.c
+WINDOWS_ONLY = src/platform/transport_none.c
+POSIX_ONLY   = src/platform/transport.c
 GAME_SOURCES = $(filter-out $(WINDOWS_ONLY),$(SOURCES))
 LIB_SOURCES  = $(filter-out $(SDL_SOURCES) $(WINDOWS_ONLY),$(SOURCES))
 WIN_SOURCES  = $(filter-out $(POSIX_ONLY),$(SOURCES))
@@ -58,7 +58,7 @@ $(B)/libdm.dylib: $(call objects,$(OBJ),$(LIB_SOURCES))
 	$(CC) $(CFLAGS) $(LDFLAGS) -dynamiclib -o $@ $^
 
 # Windows: cross-build with MinGW-w64 (brew install mingw-w64) and the SDL3 MinGW package, fetched into build/.
-# Windows has no control socket: control_win.c replaces control.c.
+# Windows has no control socket: transport_none.c replaces transport.c.
 WIN_CC            = x86_64-w64-mingw32-gcc
 WIN_OBJ           = $(B)/obj-win
 SDL_MINGW_VERSION = 3.4.18

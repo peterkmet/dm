@@ -25,7 +25,7 @@ pytestmark = [needs_dm]
 def game():
     """A new game in a private copy of libdm."""
     lib = load_lib()
-    lib.control_open.restype = ctypes.c_bool
+    lib.transport_open.restype = ctypes.c_bool
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
@@ -34,7 +34,7 @@ def game():
     lib.map_get_square.restype = ctypes.c_uint8
     lib.kaos_s16.restype = ctypes.c_int16
     lib.state_get_string.restype = ctypes.c_void_p
-    lib.control_open.argtypes = [ctypes.c_char_p]
+    lib.transport_open.argtypes = [ctypes.c_char_p]
     lib.control_is_turn_pending.restype = ctypes.c_bool
     assert lib.gameloop_load_data(str(GAME).encode())
     assert lib.gameloop_start_new_game(str(GAME).encode())
@@ -50,9 +50,9 @@ def game():
     game.mirrors = {(path[-1][0] + STEP_EAST[direction], path[-1][1] + STEP_NORTH[direction])}
     sock_dir = socket_dir()
     game.socket = os.path.join(sock_dir, "control.sock")
-    assert lib.control_open(game.socket.encode())
+    assert lib.transport_open(game.socket.encode())
     yield game
-    lib.control_close()
+    lib.transport_close()
     shutil.rmtree(sock_dir, ignore_errors=True)
 
 
@@ -1047,3 +1047,41 @@ def test_a_plate_without_an_ornament_stays_hidden(game):
             assert game_map["rows"][hidden[1]][hidden[0]] == "."
             return
     pytest.fail("no floor square next to the hidden plate")
+
+
+def read_lines(client, count):
+    """Pumps the game until the client got count reply lines."""
+    data = b""
+    for _ in range(20000):
+        pump(client.game.lib)
+        try:
+            data += client.sock.recv(1 << 20)
+        except BlockingIOError:
+            pass
+        if data.count(b"\n") >= count:
+            return [json.loads(line) for line in data.splitlines()]
+    raise AssertionError("no response")
+
+
+def test_two_requests_in_one_write(game):
+    client = Client(game)
+    try:
+        client.sock.sendall(b'{"cmd": "get_state"}\n{"cmd": "get_map"}\n')
+        first, second = read_lines(client, 2)
+    finally:
+        client.sock.close()
+    assert "state" in first and "map" in second
+
+
+def test_client_gone_mid_line(game):
+    client = Client(game)
+    client.sock.sendall(b'{"cmd": "get_')
+    pump(game.lib)
+    client.sock.close()
+    for _ in range(3):
+        pump(game.lib)
+    client = Client(game)
+    try:
+        assert client.call(cmd="get_state")["ok"] is True
+    finally:
+        client.sock.close()

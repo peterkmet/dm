@@ -16,6 +16,9 @@
 #define TURN_MAX_TICKS      64
 #define TURN_WAIT_MAX_TICKS 5000
 
+/* Longest action name of a request, with its terminator. */
+#define TURN_ACTION_NAME_SIZE 32
+
 /* Gives the input of action name with the args in request: NULL, or the reason why it cannot. */
 typedef const char *(*TurnActionFn)(const char *name, const char *request);
 

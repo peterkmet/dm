@@ -18,9 +18,8 @@
 #define FRAMES_PER_TICK_LIMIT 16 /* a frozen game ends a turn after this many frames per tick */
 
 /* Sizes of a batch. */
-#define BATCH_ACTION_NAME_SIZE 32
-#define BATCH_ITEM_SIZE        16384 /* a quarter of the longest request line */
-#define BATCH_DAMAGE_MAX       64
+#define BATCH_ITEM_SIZE  16384 /* a quarter of the longest request line */
+#define BATCH_DAMAGE_MAX 64
 
 /* Counts of the things the party saw during a request. */
 #define WITNESSED_EXPLOSIONS_MAX 32
@@ -425,7 +424,7 @@ static void batch_finish(const char *stop, const char *error, Json *reply)
 static bool batch_next(Json *reply)
 {
     const char *error;
-    char element[BATCH_ITEM_SIZE], name[BATCH_ACTION_NAME_SIZE];
+    char element[BATCH_ITEM_SIZE], name[TURN_ACTION_NAME_SIZE];
     turn_take_snapshot();
     RequestItem found = request_next_item(&turn.batch.next, element, sizeof element);
     if (found != REQUEST_ITEM_FOUND) {

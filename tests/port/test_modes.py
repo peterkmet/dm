@@ -33,14 +33,14 @@ pytestmark = [needs_dm]
 def game():
     """A new game with one recruited champion in a private copy of libdm."""
     lib = load_lib()
-    lib.control_open.restype = ctypes.c_bool
+    lib.transport_open.restype = ctypes.c_bool
     lib.dungeon_map_width.restype = c16
     lib.dungeon_map_height.restype = c16
     lib.savegame_save.restype = ctypes.c_bool
     lib.savegame_load.restype = ctypes.c_int
     lib.video_get_color.restype = u16
     lib.video_convert_argb.restype = u32
-    lib.control_open.argtypes = [ctypes.c_char_p]
+    lib.transport_open.argtypes = [ctypes.c_char_p]
     game = start_game(lib)
     recruit_first_champion(game)
     game.run(30)
@@ -608,7 +608,7 @@ def test_party_death_during_a_turn_reports_game_over(game):
     lib = game.lib
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")
     game.socket = os.path.join(sock_dir, "control.sock")
-    assert lib.control_open(game.socket.encode())
+    assert lib.transport_open(game.socket.encode())
     try:
         set_mode(game, TURNBASED)
         client = Client(game)
@@ -622,7 +622,7 @@ def test_party_death_during_a_turn_reports_game_over(game):
         assert client.call(cmd="get_state")["ok"]
         client.sock.close()
     finally:
-        lib.control_close()
+        lib.transport_close()
         shutil.rmtree(sock_dir, ignore_errors=True)
         ctypes.c_bool.in_dll(lib, "g_return_to_entrance").value = 0
         set_mode(game, VANILLA)

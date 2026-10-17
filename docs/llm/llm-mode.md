@@ -9,7 +9,8 @@ The plan is in [2026-10-04-modes-plan.md](../superpowers/archive/2026-10-04-mode
 | Part | File | State |
 |---|---|---|
 | State, view, and map as JSON | `src/control/state_json.c` | Done, tested |
-| Socket server and turns | `src/platform/control.c` | Done, tested in process |
+| Protocol and turns | `src/control/control.c`, `src/control/turn.c` | Done, tested in process |
+| Socket server | `src/platform/transport.c` | Done, tested in process |
 | MCP server | `tools/dmtools/mcp_server.py` | Done, tested against the socket |
 | Command-line client `dm-play` | `tools/dmtools/play.py` | Done, tested against the socket |
 | `--mode turnbased --control PATH` | `src/platform/main.c` | Done, tested headless |
@@ -245,14 +246,14 @@ With champions, each champion has one line, for example `0 <name> (front_left): 
 
 ## C API
 
-`control.h` (plain POSIX, in `libdm`):
+`platform/transport.h` (plain POSIX, in `libdm`) and `control/control.h` (no socket, in `libdm`):
 
 | Function | Purpose |
 |---|---|
-| `bool control_open(const char *path)` | Listens on the socket. Replaces an old socket file. Returns false on an error. |
-| `void control_poll(void)` | Call one time per frame. Accepts a client, answers requests, runs and ends turns. |
+| `bool transport_open(const char *path)` | Listens on the socket. Replaces an old socket file. Returns false on an error. |
+| `void transport_poll(void)` | Call one time per frame. Advances a pending turn, accepts a client, answers requests. |
 | `bool control_is_turn_pending(void)` | True while a turn runs. |
-| `void control_close(void)` | Closes the sockets and removes the socket file. |
+| `void transport_close(void)` | Closes the sockets and removes the socket file. |
 
 The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gameloop_get_data_dir()`. `gameloop_load_data` sets both directories.
 
@@ -262,14 +263,14 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 `main.c` does these steps in the `turnbased` mode:
 
-1. It parses `--mode turnbased` and `--control PATH`, and calls `control_open(PATH)` before the main loop. It stops with an error when the call returns 0.
+1. It parses `--mode turnbased` and `--control PATH`, and calls `transport_open(PATH)` before the main loop. It stops with an error when the call returns 0.
 2. It presses ENTER at the entrance (as `DM_AUTO_ENTER` does). The entrance frames run without a turn.
 3. `read_input` keeps only the quit event. Keys and clicks do not go to the command queue.
-4. Each frame calls `control_poll()` after `read_input()`.
+4. Each frame calls `transport_poll()` after `read_input()`.
 5. In the game, each frame calls `gameloop_run_frame()` and `gameloop_tick()` only when `control_is_turn_pending()` returns 1. The window still shows each frame.
 6. `g_frame_hook` is `NULL`, so the endgame, the dialogs, and the fuse sequence do not wait for frames or input.
 7. After a game over, the program stays in the game mode and shows the entrance. `load` and `new_game` start the next game.
-8. It calls `control_close()` before `plat_quit()`.
+8. It calls `transport_close()` before `plat_quit()`.
 
 ## Known limits
 

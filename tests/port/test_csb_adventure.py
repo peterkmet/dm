@@ -32,7 +32,7 @@ pytestmark = [needs_csb, needs_csb_mini]
 def game():
     """A private copy of libdm with the CSB data loaded."""
     lib = load_lib()
-    lib.control_open.restype = ctypes.c_bool
+    lib.transport_open.restype = ctypes.c_bool
     lib.gameloop_load_data.restype = ctypes.c_bool
     lib.gameloop_start_new_game.restype = ctypes.c_bool
     lib.rec_write.restype = ctypes.POINTER(ctypes.c_uint8)
@@ -44,7 +44,7 @@ def game():
     lib.savegame_save_as.restype = ctypes.c_bool
     lib.savegame_load_from.restype = ctypes.c_int
     lib.startend_load_saved_game.restype = ctypes.c_bool
-    lib.control_open.argtypes = [ctypes.c_char_p]
+    lib.transport_open.argtypes = [ctypes.c_char_p]
     c16.in_dll(lib, "g_adventure").value = CSB
     assert lib.gameloop_load_data(str(GAME_CSB).encode())
     yield Game(lib)
@@ -248,7 +248,7 @@ def test_control_new_game_save_and_load(game, saves):
 
     sock_dir = tempfile.mkdtemp(prefix="dm", dir="/tmp")
     game.socket = os.path.join(sock_dir, "control.sock")
-    assert game.lib.control_open(game.socket.encode())
+    assert game.lib.transport_open(game.socket.encode())
     try:
         client = Client(game)
         state = client.call(cmd="new_game")
@@ -261,7 +261,7 @@ def test_control_new_game_save_and_load(game, saves):
         assert client.call(cmd="load")["ok"]
         assert_in_adventure(game, names)
     finally:
-        game.lib.control_close()
+        game.lib.transport_close()
         shutil.rmtree(sock_dir, ignore_errors=True)
 
 

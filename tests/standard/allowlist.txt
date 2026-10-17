@@ -8,22 +8,20 @@ hex data/csb_text.c rule 3.12: the APPB address tables of the CSB image build
 decimal ui/music_tables.c rule 3.12: the soundtrack tables of the other versions, not in the game files
 long engine/action.c:action_is_action_performed rule 5.8: one short case for each action of the action table
 long engine/event.c:event_process_expired rule 5.8: one short case for each timeline event type
-block platform/control.c open: epic 10
+block platform/transport.c open: epic 10
 block platform/main.c open: epic 11
 block platform/platform.c open: epic 11
 block control/state_json.c open: epic 10
 block ui/music.c open: epic 9
 block ui/music.h open: epic 9
-decimal platform/control.c open: epic 10
+decimal control/actions.c open: epic 10
 decimal platform/scale.c open: epic 11
 decimal control/state_json.c open: epic 10
-enum platform/control.c open: epic 10
 enum platform/main.c open: epic 11
 enum platform/platform.c open: epic 11
 notation data/kaos_addresses.h open: epic 13
-notation platform/control.c open: epic 10
+notation platform/transport.c open: epic 10
 notation platform/main.c open: epic 11
-bool platform/control.c:next_element open: epic 10
 bool platform/main.c:entrance_frame open: epic 11
 bool platform/main.c:load_game_files open: epic 11
 bool platform/main.c:load_kaos_and_graphics open: epic 11
@@ -34,13 +32,7 @@ static-prefix engine/group.c:turn_group open: epic 10
 static-prefix engine/move.c:turn_by_teleporter open: epic 10
 static-prefix engine/move.c:turn_party open: epic 10
 static-prefix engine/sound.c:sound_exists open: epic 9
-static-prefix platform/control.c:move_back open: epic 10
-static-prefix platform/control.c:move_forward open: epic 10
-static-prefix platform/control.c:move_left open: epic 10
-static-prefix platform/control.c:move_right open: epic 10
-static-prefix platform/control.c:spell_click open: epic 10
-static-prefix platform/control.c:turn_party_left open: epic 10
-static-prefix platform/control.c:turn_party_right open: epic 10
+static-prefix control/actions.c:spell_click open: epic 10
 static-prefix platform/main.c:advanced_key open: epic 11
 static-prefix platform/main.c:entrance_frame open: epic 11
 static-prefix platform/main.c:select_input open: epic 11
@@ -79,7 +71,7 @@ comment engine/savefile.h open: epic 5
 comment engine/savegame.c open: epic 5
 comment engine/savegame.h open: epic 5
 comment engine/sensor.c open: epic 5
-comment platform/control.c open: epic 10
+comment control/actions.c open: epic 10
 comment platform/main.c open: epic 11
 comment platform/platform.h open: epic 11
 comment platform/scale.h open: epic 11
@@ -102,7 +94,6 @@ header engine/savefile.h open: epic 5
 header engine/savegame.h open: epic 5
 header engine/sensor.h open: epic 5
 header engine/event.h open: epic 5
-header platform/control.h open: epic 10
 header platform/platform.h open: epic 11
 header platform/scale.h open: epic 11
 header ui/music.h open: epic 9
@@ -114,6 +105,7 @@ include engine/projectile.h:engine/event.h open: epic 5
 include engine/savegame.c:data/ids.h open: epic 5
 include platform/main.c:data/ftl.h open: epic 11
 include platform/platform.h:ui/video.h open: epic 11
+module control/actions.c open: epic 10
 module platform/main.c open: epic 11
 order engine/action.c open: epic 5
 order engine/champion.c open: epic 5
@@ -128,13 +120,12 @@ order engine/random.c open: epic 5
 order engine/savegame.c open: epic 5
 order engine/sensor.c open: epic 5
 order engine/event.c open: epic 5
-order platform/control.c open: epic 10
 order platform/platform.c open: epic 11
 order control/state_json.c open: epic 10
 order ui/music.c open: epic 9
 dead-api engine/sound.h:sound_get_volume open: epic 9
 dead-api platform/platform.h:plat_audio_pump open: epic 11
-params platform/control.c:find_in_box open: epic 10
+params control/actions.c:find_in_box open: epic 10
 params platform/platform.c:plat_set_pointer open: epic 11
 params platform/platform.h:plat_set_pointer open: epic 11
 params ui/draw.c:draw_blit open: epic 8
@@ -143,7 +134,6 @@ params ui/layout.c:layout_get_zone open: epic 8
 params ui/layout.h:layout_get_zone open: epic 8
 params ui/text.c:text_draw open: epic 8
 params ui/text.h:text_draw open: epic 8
-type platform:value open: epic 11
 type platform:x open: epic 11
 type platform:y open: epic 11
 type ui:height open: epic 8

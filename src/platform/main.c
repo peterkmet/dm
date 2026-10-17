@@ -27,8 +27,9 @@
 #include "ui/text.h"
 #include "ui/ui.h"
 #include "ui/view.h"
-#include "platform/control.h"
+#include "control/control.h"
 #include "platform/platform.h"
+#include "platform/transport.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -461,7 +462,7 @@ static int apply_mode(void)
         snprintf(default_control, sizeof default_control, "%s/%s", home ? home : ".", DEFAULT_CONTROL_SOCKET);
         control_socket = default_control;
     }
-    if (!control_open(control_socket)) {
+    if (!transport_open(control_socket)) {
         SDL_Log("cannot open the control socket %s", control_socket);
         return 0;
     }
@@ -588,7 +589,7 @@ static int run_frame(void)
     read_input();
     if (g_quit_requested)
         return RUN_QUIT;
-    control_poll();
+    transport_poll();
     int tick = 0;
     if (mode == MODE_SELECT) {
         if (select_screen() == SELECT_SCREEN_DONE && !start_adventure())
@@ -671,7 +672,7 @@ static bool parse_options(int argc, char **argv, Options *options)
             SDL_Log("--mode must be vanilla, advanced, or turnbased");
             return false;
         }
-        if (options->mode == GAME_MODE_TURNBASED && !control_is_available()) {
+        if (options->mode == GAME_MODE_TURNBASED && !transport_is_available()) {
             SDL_Log("turn-based mode needs macOS");
             return false;
         }
@@ -702,7 +703,7 @@ int main(int argc, char **argv)
         SDL_Log("CSB data is missing in %s", csb_dir);
         return 1;
     }
-    select_start(options.adventure, options.mode, csb_present, control_is_available());
+    select_start(options.adventure, options.mode, csb_present, transport_is_available());
     data_dir = get_adventure_dir();
 
     random_init();
@@ -737,7 +738,7 @@ int main(int argc, char **argv)
             break;
     }
 
-    control_close();
+    transport_close();
     plat_quit();
     return 0;
 }

@@ -15,7 +15,7 @@ def socket_dir():
 
 def pump(lib):
     """One frame of the turn-based main loop."""
-    lib.control_poll()
+    lib.transport_poll()
     if lib.control_is_turn_pending() and lib.gameloop_run_frame():
         lib.gameloop_tick()
 
