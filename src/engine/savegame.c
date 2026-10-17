@@ -22,10 +22,16 @@
 
 /* Sizes, limits and names of the save game code. */
 #define TIMELINE_ENTRY_BYTES       2 /* one event index per timeline entry */
-#define EXTENSION_LENGTH_BYTES     4 /* the length of the automap block, after the block */
+#define EXTENSION_LENGTH_BYTES     4 /* the length of an extension block, after the block */
 #define NEW_ADVENTURE_LUCK_MINIMUM 10
 #define SAVED_FREE_INDEX_SHIFT     16 /* a free event slot of the file keeps the next free index in the high word */
 #define QUICK_SAVE_FILE_NAME       "QUICK.DAT"
+
+/* The cheat block of the save extension: the magic, the version, and one byte of cheat bits (CHEAT_*). */
+#define CHEAT_SAVE_MAGIC   "CHTS"
+#define CHEAT_SAVE_VERSION 1
+#define CHEAT_MAGIC_BYTES  4
+#define CHEAT_SAVE_BYTES   6
 
 /* Party record (g_party) offsets. */
 #define SAVE_PARTY_MAGICAL_LIGHT   0
@@ -285,41 +291,91 @@ static void make_file_path(char *path, const char *dir, const char *name)
     snprintf(path, PATH_SIZE, "%s/%s", dir, name);
 }
 
-/* Outside vanilla, the automap block and its length follow the original save data. The original
-   part stays the same. Returns the new size, or 0 when there is no memory. */
-static uint32_t append_automap(uint8_t **data, uint32_t size)
+/* Adds a block and its length after the data. Returns the new size, or 0 when there is no memory. */
+static uint32_t append_block(uint8_t **data, uint32_t size, const uint8_t *block, size_t length)
 {
-    uint8_t *block = NULL, *grown;
-    size_t length = 0;
-    if (g_session.mode == GAME_MODE_VANILLA)
-        return size;
-    if (!explored_save(&block, &length))
+    uint8_t *grown = realloc(*data, size + length + EXTENSION_LENGTH_BYTES);
+    if (!grown)
         return 0;
-    grown = realloc(*data, size + length + EXTENSION_LENGTH_BYTES);
-    if (!grown) {
-        free(block);
-        return 0;
-    }
     memcpy(grown + size, block, length);
     wr32(grown + size + length, (uint32_t)length);
-    free(block);
     *data = grown;
     return size + (uint32_t)(length + EXTENSION_LENGTH_BYTES);
 }
 
-/* The automap block at the end of a save file, or NULL. *size becomes the size of the original part. */
-static const uint8_t *find_automap(const uint8_t *data, size_t *size, size_t *length)
+/* Outside vanilla, the extension blocks follow the original save data: the cheat block in the advanced mode, then
+   the automap block, each with its length. The original part stays the same. Returns the new size, or 0 when there
+   is no memory. */
+static uint32_t append_extension(uint8_t **data, uint32_t size)
 {
-    if (*size < SAVE_HEADER_BYTES + EXTENSION_LENGTH_BYTES)
-        return NULL;
-    *length = be32(data + *size - EXTENSION_LENGTH_BYTES);
-    if (*length > *size - SAVE_HEADER_BYTES - EXTENSION_LENGTH_BYTES)
-        return NULL;
-    const uint8_t *block = data + *size - EXTENSION_LENGTH_BYTES - *length;
-    if (*length < strlen(EXPLORED_SAVE_MAGIC) || memcmp(block, EXPLORED_SAVE_MAGIC, strlen(EXPLORED_SAVE_MAGIC)))
-        return NULL;
-    *size -= *length + EXTENSION_LENGTH_BYTES;
-    return block;
+    uint8_t *block = NULL;
+    size_t length = 0;
+    if (g_session.mode == GAME_MODE_VANILLA)
+        return size;
+    if (g_session.mode == GAME_MODE_ADVANCED) {
+        uint8_t cheats[CHEAT_SAVE_BYTES] = {0};
+        memcpy(cheats, CHEAT_SAVE_MAGIC, CHEAT_MAGIC_BYTES);
+        cheats[CHEAT_MAGIC_BYTES] = CHEAT_SAVE_VERSION;
+        cheats[CHEAT_MAGIC_BYTES + 1] = game_get_cheats();
+        size = append_block(data, size, cheats, sizeof cheats);
+        if (!size)
+            return 0;
+    }
+    if (!explored_save(&block, &length))
+        return 0;
+    size = append_block(data, size, block, length);
+    free(block);
+    return size;
+}
+
+/* The extension blocks found at the end of a save file; NULL for a missing block. */
+typedef struct {
+    const uint8_t *automap, *cheats;
+    size_t automap_length, cheats_length;
+} Extension;
+
+/* True when the block of length bytes starts with the magic. */
+static bool has_magic(const uint8_t *block, size_t length, const char *magic)
+{
+    return length >= strlen(magic) && !memcmp(block, magic, strlen(magic));
+}
+
+/* Strips the extension blocks from the end of a save file: a block whose length fits and whose magic is known; the
+   last block of a magic counts. *size becomes the size of the original part. */
+static Extension find_extension(const uint8_t *data, size_t *size)
+{
+    Extension found = {0};
+    while (*size >= SAVE_HEADER_BYTES + EXTENSION_LENGTH_BYTES) {
+        size_t length = be32(data + *size - EXTENSION_LENGTH_BYTES);
+        if (length > *size - SAVE_HEADER_BYTES - EXTENSION_LENGTH_BYTES)
+            break;
+        const uint8_t *block = data + *size - EXTENSION_LENGTH_BYTES - length;
+        if (has_magic(block, length, EXPLORED_SAVE_MAGIC)) {
+            if (!found.automap) {
+                found.automap = block;
+                found.automap_length = length;
+            }
+        } else if (has_magic(block, length, CHEAT_SAVE_MAGIC)) {
+            if (!found.cheats) {
+                found.cheats = block;
+                found.cheats_length = length;
+            }
+        } else {
+            break;
+        }
+        *size -= length + EXTENSION_LENGTH_BYTES;
+    }
+    return found;
+}
+
+/* The cheats of a load: the bits of the cheat block in the advanced mode; none without the block, for a damaged
+   block (size, version, unknown bit), and in the other modes. */
+static uint8_t get_loaded_cheats(const Extension *found)
+{
+    if (g_session.mode != GAME_MODE_ADVANCED || !found->cheats || found->cheats_length != CHEAT_SAVE_BYTES ||
+        found->cheats[CHEAT_MAGIC_BYTES] != CHEAT_SAVE_VERSION || found->cheats[CHEAT_MAGIC_BYTES + 1] & ~CHEAT_ALL)
+        return 0;
+    return found->cheats[CHEAT_MAGIC_BYTES + 1];
 }
 
 bool savegame_save(const char *dir)
@@ -347,7 +403,7 @@ bool savegame_save_as(const char *dir, const char *name, const char *backup_name
     uint8_t *data = encode_game(&size);
     if (!data)
         return false;
-    size = append_automap(&data, size);
+    size = append_extension(&data, size);
     bool ok = size && write_save_file(dir, name, backup_name, data, size);
     free(data);
     if (!ok)
@@ -562,8 +618,7 @@ SavegameResult savegame_load_from(const char *dir, const char *name, const char 
         data = file_read(backup, &size);
     if (!data)
         return SAVEGAME_MISSING;
-    size_t automap_length = 0;
-    const uint8_t *automap = find_automap(data, &size, &automap_length);
+    Extension found = find_extension(data, &size);
     SaveFile s;
     uint8_t *snapshot = NULL;
     bool ok = savefile_decode(data, (uint32_t)size, &s);
@@ -575,8 +630,10 @@ SavegameResult savegame_load_from(const char *dir, const char *name, const char 
             restore_snapshot(snapshot, snapshot_size);
     }
     savefile_free(&s);
-    if (ok && (!automap || !explored_load(automap, automap_length)))
+    if (ok && (!found.automap || !explored_load(found.automap, found.automap_length)))
         explored_reset();
+    if (ok)
+        game_set_cheats(get_loaded_cheats(&found));
     free(snapshot);
     free(data);
     if (!ok)

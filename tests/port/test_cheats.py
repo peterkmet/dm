@@ -96,6 +96,13 @@ def test_one_hit_kill_skips_doors_and_falls(lib, skeleton):
     assert is_alive(lib, at)
 
 
+def test_new_game_turns_the_cheats_off(lib):
+    s = session(lib)
+    s.cheat_light = s.cheat_immortal = s.cheat_food = s.cheat_kill = s.cheat_walls = s.cheat_map = 1
+    new_game(lib)
+    assert not any((s.cheat_light, s.cheat_immortal, s.cheat_food, s.cheat_kill, s.cheat_walls, s.cheat_map))
+
+
 # Walk through walls.
 
 

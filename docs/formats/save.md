@@ -233,6 +233,21 @@ After a damaged file, the dungeon is not loaded and the globals can be partly ch
 - Block 3: 10 bytes per event: `map_time` (long), `type`, `priority`, `b`, `c`. A free slot has the next free index in the high word, as `timeline_reset` writes it.
 - Block 4: the heap of slot indices.
 
+### Extension blocks
+
+The port adds extension blocks after the original save data outside the vanilla mode. The original part stays the same as a vanilla save; a vanilla save has no extension. Each block is followed by its length as a big-endian long:
+
+```
+[original save data][cheat block][length][automap block][length]
+```
+
+| Block | Mode | Bytes |
+|---|---|---|
+| Cheat block | `advanced` | `CHTS`, version 1, one byte of cheat bits: bit 0 full light, 1 immortal, 2 food and water, 3 one-hit kill, 4 walk through walls, 5 reveal map (`CHEAT_*`, `engine/game.h`) |
+| Automap block | `advanced`, `turnbased` | `AMAP`, version 1, map count, width and height of each map, one byte per square (`explored_save`) |
+
+`savegame_load_from` reads the blocks from the end. It strips a block when its length fits the file and its magic is `AMAP` or `CHTS`, in any order; for a magic found twice, the last block in the file counts. The scan stops at the first block that does not fit; the bytes before it go to `savefile_decode`. After a successful load, the automap block sets the explored squares (else an empty automap), and in the `advanced` mode the cheat block sets the cheats. Without the cheat block, with a damaged one (size, version, or an unknown bit), or in the other modes, all cheats are off. A failed load keeps the cheats of the running game.
+
 ### Portraits
 
 The port does not keep portrait bitmaps. It keeps the index of each portrait in graphic 26 (`g_champion_portrait_indices`). The save writes the portrait of each party champion in the interleaved form: per row and per 16-pixel column, one word for each of the 4 bit planes (`champion_portraits_to_interleaved`). The other portraits are 0. The load encodes each portrait of graphic 26 in the same form and takes the index of the equal one. A portrait that has no equal gets index 0.

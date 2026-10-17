@@ -28,7 +28,17 @@ extern uint16_t g_redraw;
 #define GAME_MODE_ADVANCED  1
 #define GAME_MODE_TURNBASED 2
 
-/* The state of one run of the game: a new game or a load resets it, the save file does not hold it. */
+/* Cheat bits of the advanced mode, as the cheat block of the save file holds them (game_get_cheats). */
+#define CHEAT_LIGHT    0x01
+#define CHEAT_IMMORTAL 0x02
+#define CHEAT_FOOD     0x04
+#define CHEAT_KILL     0x08
+#define CHEAT_WALLS    0x10
+#define CHEAT_MAP      0x20
+#define CHEAT_ALL      0x3f
+
+/* The state of one run of the game: a new game or a load resets it. The save file of the advanced mode holds only
+   the cheats. */
 typedef struct {
     int16_t mode; /* GAME_MODE_*; a load keeps it */
     bool party_sleeping;
@@ -55,10 +65,14 @@ _Noreturn void game_fatal(int16_t code);
 
 /* load_game (new game) and the end of load_dungeon. dungeon_load must run first. */
 void game_start_new(void);
-/* The start of a game, new or loaded: no candidate, no sleep, no won game, no cheats, no skill level-ups. */
+/* The start of a game, new or loaded: no candidate, no sleep, no won game, no skill level-ups. */
 void game_reset_session(void);
 /* Sets the game mode (GAME_MODE_*) of the session. */
 void game_set_mode(int16_t mode);
+/* The cheats that are on, as CHEAT_* bits. */
+uint8_t game_get_cheats(void);
+/* Turns on the cheats of the CHEAT_* bits and turns off the others. */
+void game_set_cheats(uint8_t cheats);
 /* The fuse wins the game: bright magical light and strong shields for the end sequence. */
 void game_start_fuse_sequence(void);
 /* Lord Chaos on square at before the fuse: full fuse health, centered, facing the party; the fluxcages on

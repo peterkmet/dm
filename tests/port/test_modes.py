@@ -22,6 +22,7 @@ from dmtest.markers import ROOT, needs_dm, needs_sdl
 
 PNG_DIR = os.environ.get("DM_TEST_PNG_DIR")  # optional: a folder for PNG renders of the screen
 QUICK = "QUICK.DAT"
+CHEAT_BLOCK_SIZE = 6 + 4  # the cheat block of an advanced save and its length
 SAVE = "DMGAME.DAT"
 c16, u16, u32 = ctypes.c_int16, ctypes.c_uint16, ctypes.c_uint32
 
@@ -301,12 +302,81 @@ def test_save_and_load_keep_the_automap(game, tmp_path):
     assert seen(game) == set()
 
     damaged = bytearray(advanced)
-    damaged[len(vanilla) + 4] ^= 0xFF  # the version byte of the block
+    damaged[len(vanilla) + CHEAT_BLOCK_SIZE + 4] ^= 0xFF  # the version byte of the automap block
     (advanced_dir / SAVE).write_bytes(bytes(damaged))
     assert lib.savegame_load(str(advanced_dir).encode()) == C.SAVEGAME_LOADED
     assert seen(game) == set()
     lib.gameloop_start_loaded_game()
     assert len(seen(game)) > 0
+
+
+
+def cheats(game):
+    s = game.session
+    return {n for n in ("light", "immortal", "food", "kill", "walls", "map") if getattr(s, "cheat_" + n)}
+
+
+def set_cheats(game, names):
+    for n in ("light", "immortal", "food", "kill", "walls", "map"):
+        setattr(game.session, "cheat_" + n, n in names)
+
+
+def split_extension(data):
+    """The original part and the extension blocks (without their lengths) of a save file, the first block first."""
+    blocks = []
+    while data[-4 - int.from_bytes(data[-4:], "big"):][:4] in (b"AMAP", b"CHTS"):
+        length = int.from_bytes(data[-4:], "big")
+        blocks.insert(0, data[-4 - length:-4])
+        data = data[:-4 - length]
+    return data, blocks
+
+
+def join_extension(original, blocks):
+    return original + b"".join(b + len(b).to_bytes(4, "big") for b in blocks)
+
+
+def test_save_and_load_keep_the_cheats(game, tmp_path):
+    lib, path = game.lib, tmp_path / SAVE
+    set_mode(game, ADVANCED)
+    press(game, C.KEY_UP, 30)
+    explored = seen(game)
+    set_cheats(game, {"light", "walls"})
+    assert lib.savegame_save(str(tmp_path).encode()) is True
+    good = path.read_bytes()
+    original, blocks = split_extension(good)
+    assert [b[:5] for b in blocks] == [b"CHTS\x01", b"AMAP\x01"] and blocks[0] == b"CHTS\x01\x11"
+
+    def load(data, mode=ADVANCED):
+        path.write_bytes(data)
+        set_cheats(game, {"immortal"})
+        lib.explored_reset()
+        set_mode(game, mode)
+        result = lib.savegame_load(str(tmp_path).encode())
+        set_mode(game, ADVANCED)
+        return result, cheats(game), seen(game) == explored
+
+    try:
+        assert load(good) == (C.SAVEGAME_LOADED, {"light", "walls"}, True)
+        lib.gameloop_start_loaded_game()  # the start of the loaded game keeps them
+        assert cheats(game) == {"light", "walls"}
+        assert load(join_extension(original, blocks[::-1])) == (C.SAVEGAME_LOADED, {"light", "walls"}, True)
+        assert load(join_extension(original, [b"CHTS\x01\x08", *blocks])) == (C.SAVEGAME_LOADED, {"light", "walls"}, True)
+        assert load(join_extension(original, blocks[1:])) == (C.SAVEGAME_LOADED, set(), True)  # an old save
+        for damaged in (b"CHTS\x02\x11", b"CHTS\x01\x40", b"CHTS\x01\x11\x00"):  # version, unknown bit, size
+            assert load(join_extension(original, [damaged, blocks[1]])) == (C.SAVEGAME_LOADED, set(), True)
+        for mode in (VANILLA, C.GAME_MODE_TURNBASED):
+            assert load(good, mode)[:2] == (C.SAVEGAME_LOADED, set())
+        unknown = join_extension(original, [*blocks, b"XXXX"])  # the unknown block stops the scan
+        assert load(unknown) == (C.SAVEGAME_LOADED, set(), False)
+        damaged = bytearray(good)
+        damaged[600] ^= 0xFF  # a checked block of the original part
+        assert load(bytes(damaged))[:2] == (C.SAVEGAME_DAMAGED, {"immortal"})  # the running game keeps its cheats
+        set_mode(game, VANILLA)
+        assert lib.savegame_save(str(tmp_path).encode()) is True
+        assert path.read_bytes() == original  # a vanilla save has no extension
+    finally:
+        set_cheats(game, set())
+        set_mode(game, VANILLA)
 
 
 @needs_sdl

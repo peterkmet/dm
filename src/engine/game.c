@@ -45,6 +45,7 @@ void game_start_new(void)
     g_leader_hand_object = THING_NONE;
     g_session.party_sleeping = false;
     g_session.party_dead = false;
+    game_set_cheats(0);
     g_game_time = 0;
     g_last_creature_attack_time = 0;
     g_last_party_movement_time = 0;
@@ -66,12 +67,6 @@ void game_reset_session(void)
     g_session.candidate_champion_index = -1;
     g_session.party_sleeping = false;
     g_session.won = false;
-    g_session.cheat_light = false;
-    g_session.cheat_immortal = false;
-    g_session.cheat_food = false;
-    g_session.cheat_kill = false;
-    g_session.cheat_walls = false;
-    g_session.cheat_map = false;
     g_redraw = 0;
     for (uint16_t i = 0; i < CHAMPION_MAX_COUNT; i++)
         memset(g_champions[i].runtime.skill_level_up, 0, sizeof g_champions[i].runtime.skill_level_up);
@@ -80,6 +75,23 @@ void game_reset_session(void)
 void game_set_mode(int16_t mode)
 {
     g_session.mode = mode;
+}
+
+uint8_t game_get_cheats(void)
+{
+    return (g_session.cheat_light ? CHEAT_LIGHT : 0) | (g_session.cheat_immortal ? CHEAT_IMMORTAL : 0) |
+           (g_session.cheat_food ? CHEAT_FOOD : 0) | (g_session.cheat_kill ? CHEAT_KILL : 0) |
+           (g_session.cheat_walls ? CHEAT_WALLS : 0) | (g_session.cheat_map ? CHEAT_MAP : 0);
+}
+
+void game_set_cheats(uint8_t cheats)
+{
+    g_session.cheat_light = cheats & CHEAT_LIGHT;
+    g_session.cheat_immortal = cheats & CHEAT_IMMORTAL;
+    g_session.cheat_food = cheats & CHEAT_FOOD;
+    g_session.cheat_kill = cheats & CHEAT_KILL;
+    g_session.cheat_walls = cheats & CHEAT_WALLS;
+    g_session.cheat_map = cheats & CHEAT_MAP;
 }
 
 void game_start_fuse_sequence(void)
