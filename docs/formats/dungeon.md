@@ -187,6 +187,7 @@ The function reads all three tables from the KAOS image. The single characters f
 - The panel with the eye pressed keeps the leader hand object name; the original clears it until the eye is released (`panel_draw_eye`).
 - In the `turnbased` mode, REINCARNATE keeps the old name: the protocol has no name entry (`champion_click_rebirth_panel`).
 - After a refused duplicate name, the name entry puts the input at the end of the name and clears the title (`champion_rename_ok`); the original points the input at the name but keeps the title state.
+- The party on a wall square runs no wall sensor of that square on a move or a turn (`sensor_process_thing_change`); only the walk through walls cheat of the advanced mode puts the party there, the original never does.
 
 ## Not ported
 

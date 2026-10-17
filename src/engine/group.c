@@ -118,6 +118,12 @@
 #define MOVE_CELL_RANDOM_BITS    0xc0
 #define NEW_CELL_RANDOM_BITS     0x38
 
+/* Who deals a damage: one-hit kill takes only the damage of the party; a fall also collects the drops. */
+typedef struct {
+    bool party;            /* melee, projectiles and explosions; false for a door or a fall */
+    GroupFallDrops *drops; /* the drops of a fall, else NULL */
+} DamageSource;
+
 ActiveGroup *g_active_groups;
 uint16_t g_active_group_count, g_max_active_group_count;
 int32_t g_last_creature_attack_time;
@@ -737,14 +743,17 @@ static void remove_dead_creature(uint16_t group, int16_t creature_index, Locatio
 }
 
 /* Damage to one creature. Without drops (not a fall) a dead creature drops its possessions now and the last one
-   deletes the group. */
+   deletes the group. With one-hit kill, a damage of the party above 0 kills. */
 static int16_t damage_creature(uint16_t group, int16_t creature_index, Location at, int16_t damage,
-                               GroupFallDrops *drops)
+                               const DamageSource *source)
 {
     uint16_t type = rec_group_creature_type(group);
     const CreatureInfo *info = tables_get_creature_info(type);
+    GroupFallDrops *drops = source->drops;
     if (info->defense == CREATURE_INVULNERABLE)
         return OUTCOME_NO_CREATURE_KILLED;
+    if (g_session.cheat_kill && source->party && damage > 0)
+        damage = rec_group_health(group, creature_index);
     if (rec_group_health(group, creature_index) >
         (uint16_t)damage) { /* unsigned as in the original: a negative damage kills */
         if (damage > 0)
@@ -773,11 +782,11 @@ static int16_t damage_creature(uint16_t group, int16_t creature_index, Location 
 
 DamageOutcome group_damage_creature(uint16_t group, int16_t creature_index, Location at, int16_t damage)
 {
-    return damage_creature(group, creature_index, at, damage, NULL);
+    return damage_creature(group, creature_index, at, damage, &(DamageSource){true, NULL});
 }
 
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
-static int16_t damage_all_creatures(uint16_t group, Location at, int16_t attack, GroupFallDrops *drops)
+static int16_t damage_all_creatures(uint16_t group, Location at, int16_t attack, const DamageSource *source)
 {
     if (attack < 1)
         return OUTCOME_NO_CREATURE_KILLED;
@@ -786,7 +795,7 @@ static int16_t damage_all_creatures(uint16_t group, Location at, int16_t attack,
     int16_t some_killed = 0;
     for (int16_t i = rec_group_last_creature(group); i >= 0; i--) {
         int16_t damage = attack - spread + random16() % (spread * 2);
-        int16_t outcome = damage_creature(group, i, at, damage, drops);
+        int16_t outcome = damage_creature(group, i, at, damage, source);
         all_killed = all_killed && outcome;
         some_killed = some_killed || outcome;
     }
@@ -797,7 +806,7 @@ static int16_t damage_all_creatures(uint16_t group, Location at, int16_t attack,
 
 DamageOutcome group_damage_all_creatures(uint16_t group, int16_t x, int16_t y, int16_t attack)
 {
-    return damage_all_creatures(group, (Location){x, y}, attack, NULL);
+    return damage_all_creatures(group, (Location){x, y}, attack, &(DamageSource){true, NULL});
 }
 
 uint16_t group_get_poison_attack(uint16_t creature_type, int16_t poison_attack)
@@ -812,7 +821,8 @@ uint16_t group_get_poison_attack(uint16_t creature_type, int16_t poison_attack)
 void group_door_damages_creatures(int16_t x, int16_t y)
 {
     uint16_t group = map_find_thing((Location){x, y}, THING_GROUP);
-    if (group_damage_all_creatures(group, x, y, DOOR_DAMAGE) != OUTCOME_ALL_CREATURES_KILLED)
+    if (damage_all_creatures(group, (Location){x, y}, DOOR_DAMAGE, &(DamageSource){false, NULL}) !=
+        OUTCOME_ALL_CREATURES_KILLED)
         group_process_reaction_event((Location){x, y}, REACTION_DANGER_ON_SQUARE);
 }
 
@@ -2237,7 +2247,8 @@ bool group_is_killed_by_fall(uint16_t group, Position source, Position landing, 
 {
     map_set_current_map(source.map);
     drops->count = 0;
-    int16_t outcome = damage_all_creatures(group, (Location){source.x, source.y}, FALL_DAMAGE, drops);
+    int16_t outcome =
+        damage_all_creatures(group, (Location){source.x, source.y}, FALL_DAMAGE, &(DamageSource){false, drops});
     map_set_current_map(landing.map);
     if (outcome == OUTCOME_ALL_CREATURES_KILLED)
         return true;

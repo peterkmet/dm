@@ -252,10 +252,10 @@ void group_drop_group_possessions(int16_t x, int16_t y, uint16_t group, int16_t 
 void group_delete(int16_t x, int16_t y);
 /* All creature groups of the current map except the one on square at disappear. */
 void group_delete_all_except(Location at);
-/* Damage to one creature. A dead creature leaves smoke; the last one also deletes the group.
-   Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
+/* Damage that the party deals (melee, projectiles, explosions) to one creature. A dead creature leaves smoke; the
+   last one also deletes the group. Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
 DamageOutcome group_damage_creature(uint16_t group, int16_t creature_index, Location at, int16_t damage);
-/* The same attack, with a random spread of 1/8, on every creature of the group. */
+/* The same attack of the party, with a random spread of 1/8, on every creature of the group. */
 DamageOutcome group_damage_all_creatures(uint16_t group, int16_t x, int16_t y, int16_t attack);
 /* The poison damage of a poison attack on a creature type: 0 without an attack or for an immune creature, else
    reduced by the poison resistance. */

@@ -438,6 +438,8 @@ void sensor_process_thing_change(int16_t x, int16_t y, uint16_t thing, bool part
         map_unlink_thing_from_list(thing, 0, x, y);
     uint8_t square = rec_square_byte(g_current_map_index, x, y);
     bool wall = rec_square_type(square) == SQUARE_WALL;
+    if (wall && party)
+        return; /* the party in a wall (walk through walls) runs no wall sensor */
     scan_square(&s, wall);
     if (add && !party)
         map_link_thing_to_list(thing, 0, x, y);

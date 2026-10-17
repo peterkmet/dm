@@ -37,6 +37,9 @@ typedef struct {
     bool cheat_light;       /* the view draws in full light; the creature rules keep the real light */
     bool cheat_immortal;    /* the health of a champion stops at 1 */
     bool cheat_food;        /* food and water do not go down */
+    bool cheat_kill;        /* a damage of the party above 0 kills a creature that is not invulnerable */
+    bool cheat_walls;       /* the party walks into walls and solid fake walls inside the map */
+    bool cheat_map;         /* the automap shows every square of the level */
     bool saved_game_exists; /* set after a save or a load: the endgame offers a restart */
     uint32_t last_save_time, last_load_time;
     int16_t candidate_champion_index; /* -1: no candidate */

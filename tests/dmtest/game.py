@@ -201,6 +201,7 @@ class Session(ctypes.Structure):
     _fields_ = [
         ("mode", c16), ("party_sleeping", ctypes.c_bool), ("party_dead", ctypes.c_bool), ("won", ctypes.c_bool),
         ("cheat_light", ctypes.c_bool), ("cheat_immortal", ctypes.c_bool), ("cheat_food", ctypes.c_bool),
+        ("cheat_kill", ctypes.c_bool), ("cheat_walls", ctypes.c_bool), ("cheat_map", ctypes.c_bool),
         ("saved_game_exists", ctypes.c_bool), ("last_save_time", u32), ("last_load_time", u32),
         ("candidate_champion_index", c16), ("inventory_champion_index", c16), ("acting_champion_index", c16),
         ("action_damage", c16), ("new_party_map", c16),
