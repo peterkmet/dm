@@ -253,7 +253,8 @@ void group_delete(int16_t x, int16_t y);
 /* All creature groups of the current map except the one on square at disappear. */
 void group_delete_all_except(Location at);
 /* Damage that the party deals (melee, projectiles, explosions) to one creature. A dead creature leaves smoke; the
-   last one also deletes the group. Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED, or OUTCOME_ALL_CREATURES_KILLED. */
+   last one also deletes the group. Returns OUTCOME_NO_CREATURE_KILLED, OUTCOME_SOME_CREATURES_KILLED,
+   or OUTCOME_ALL_CREATURES_KILLED. */
 DamageOutcome group_damage_creature(uint16_t group, int16_t creature_index, Location at, int16_t damage);
 /* The same attack of the party, with a random spread of 1/8, on every creature of the group. */
 DamageOutcome group_damage_all_creatures(uint16_t group, int16_t x, int16_t y, int16_t attack);

@@ -70,8 +70,8 @@ bool savegame_save_as(const char *dir, const char *name, const char *backup); /*
    and loads it. Returns SAVEGAME_ADVENTURE_MADE, SAVEGAME_ADVENTURE_NO_CHAMPIONS or
    SAVEGAME_ADVENTURE_NAMES_NOT_UNIQUE (nothing written), or SAVEGAME_ADVENTURE_FAILED. */
 SavegameAdventureResult savegame_make_adventure(const char *dir, const char *mini_path, int16_t slot);
-/* Reads dir/DMGAME.DAT, else dir/DMGAME.BAK (CSB: CSBGAME.DAT, CSBGAME.BAK), into the game state: dungeon, globals, active groups,
-   champions, party, timeline, and portraits. Returns SAVEGAME_LOADED, SAVEGAME_MISSING, or
+/* Reads dir/DMGAME.DAT, else dir/DMGAME.BAK (CSB: CSBGAME.DAT, CSBGAME.BAK), into the game state:
+   dungeon, globals, active groups, champions, party, timeline, and portraits. Returns SAVEGAME_LOADED, SAVEGAME_MISSING, or
    SAVEGAME_DAMAGED. After a damaged file the dungeon is not loaded. */
 SavegameResult savegame_load(const char *dir);
 /* Reads the file of a slot 0-7 in dir, else the backup of the slot. Results as savegame_load. */

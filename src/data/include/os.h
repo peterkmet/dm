@@ -3,7 +3,8 @@
 #define DM_DATA_OS_H
 /* Prefixes: os_ */
 
-/* The operating system services that data/ and engine/ need: folders, file times, the log, and fatal errors. platform/ sets the hooks; tests set their own. */
+/* The operating system services that data/ and engine/ need: folders, file times, the log, and fatal errors.
+   platform/ sets the hooks; tests set their own. */
 
 #include <stdbool.h>
 #include <stdint.h>

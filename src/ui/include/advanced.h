@@ -4,8 +4,8 @@
 /* Prefixes: advanced_ */
 
 /* Game modes and the advanced features (not in the original game): automap with a position read-out,
-   the options menu, the cheat screen, quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat
-   meters, Escape and Tab close the inventory, the whole party drinks at a fountain.
+   the options menu, the cheat screen, quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action
+   icons, item stat meters, Escape and Tab close the inventory, the whole party drinks at a fountain.
    The game rules are the same in every mode. Plan: docs/superpowers/archive/2026-10-04-modes-plan.md. */
 
 #include <stdbool.h>

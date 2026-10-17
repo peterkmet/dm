@@ -40,8 +40,8 @@ void audio_stop_all(void);
 void audio_music_play(const MusicSegment *segments, int segment_count, uint16_t period, uint8_t volume);
 /* Sets the volume of the intro music on both sides of pair B. */
 void audio_music_set_volume(uint8_t volume);
-/* Renders interleaved stereo int16 at AUDIO_OUTPUT_RATE, scaled by g_audio_volume. Paula has no interpolation: each sample holds for one
-   period. Runs on the game thread. */
+/* Renders interleaved stereo int16 at AUDIO_OUTPUT_RATE, scaled by g_audio_volume. Paula has no interpolation: each sample
+   holds for one period. Runs on the game thread. */
 void audio_mix(int16_t *samples, int frames);
 
 #endif

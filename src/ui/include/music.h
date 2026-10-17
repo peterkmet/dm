@@ -38,7 +38,8 @@ void music_select(int16_t soundtrack);
 void music_update(void);
 /* The track of the end of the game: game won or game over. */
 void music_play_end(bool won);
-/* Adds the music, scaled by g_music_volume, to interleaved stereo int16 at AUDIO_OUTPUT_RATE. Runs on the game thread, after audio_mix. */
+/* Adds the music, scaled by g_music_volume, to interleaved stereo int16 at AUDIO_OUTPUT_RATE.
+   Runs on the game thread, after audio_mix. */
 void music_mix(int16_t *samples, int frames);
 
 #endif
