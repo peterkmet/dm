@@ -223,5 +223,3 @@ Each fix has a short comment in the code.
 ## Not ported in this step
 
 - Champion actions and the events 11, 12, 13, and 75 are in [rules-champions.md](champions.md#actions).
-- The fuse sequence (endgame). `g_fuse_sequence_requested` marks the request.
-- The palette change after a light spell. The view step computes the palette from the light amount.

@@ -189,6 +189,8 @@ The function reads all three tables from the KAOS image. The single characters f
 - After a refused duplicate name, the name entry puts the input at the end of the name and clears the title (`champion_rename_ok`); the original points the input at the name but keeps the title state.
 - The party on a wall square runs no wall sensor of that square on a move or a turn (`sensor_process_thing_change`); only the walk through walls cheat of the advanced mode puts the party there, the original never does.
 - With the walk through walls cheat of the advanced mode on, a door that closes on the party goes back open as in the original, but the party takes no door damage (`process_door_animation`).
+- The spell experience squares the required level of the spell (`magic.c`); the original squares an undefined register.
+- The endgame screens show the credits without the palette fade; the original fades the palette.
 
 ## Not ported
 

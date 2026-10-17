@@ -244,16 +244,15 @@ Event types without effect in the port:
 
 The redraw calls of events 70–79 (`set_dungeon_view_palette`, `status_draw_champion`) belong to the drawing step.
 
-## Gaps
+## Also implemented
 
-These rules need later steps. The port has no code for them yet:
+- Groups move through `move_get_move_result`. A group that falls drops its dead creatures (`GroupFallDrops`).
+- Wall launchers (sensor types 7–10, 14, 15) launch in `projectile_trigger_launcher`. `projectile_is_killed_by_impact` runs in `move_get_move_result`.
+- A blocked move damages the two front champions (`bump_into_wall`, `group_get_target_champion_index`).
+- Wall sensor type 12 creates an object (`projectile_get_launch_object`).
+- Wall sensor type 18 ends the game (`startend_run_endgame_sensor`).
 
-- Groups: `move_get_move_result` returns 0 for a group and does not move it. The party that arrives on a group square does not delete the group. A blocked move into a group does not send event −1 to the group. The closing door does not damage a group. The group generator does not create a group.
-- Projectiles: wall launchers (sensor types 7–10, 14, 15) do not launch. `projectile_is_killed_by_impact` does not run.
-- Champions: a blocked move does not damage the two front champions and plays no sound. This needs `group_get_target_champion_index` and `order_attack_cells`.
-- Objects: wall sensor type 12 does not create an object (`projectile_get_launch_object`).
-- Endgame: wall sensor type 18 does nothing.
-- Drawing: the pit fall animation and the redraw calls are not part of the rules.
+The redraw calls of the events belong to the drawing layer.
 
 ## Differences from the original
 
