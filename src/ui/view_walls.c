@@ -311,11 +311,13 @@ void view_draw_d0c_door_frame(const SquareView *square)
     WallBitmap id = g_view.wall_set[square->frames[0].ws];
     const Bitmap *frame = gfx_get_bitmap(id.slot >= 0 ? g_view.slot_graphics[id.slot] : id.graphic);
     const Bitmap *hole = gfx_get_bitmap(GFX_THIEVES_EYE_HOLE);
-    if (!frame || !hole)
+    Bitmap copy = {0};
+    if (frame && hole)
+        copy = (Bitmap){frame->w, frame->h, malloc((size_t)frame->w * frame->h)};
+    if (!copy.px) { /* no hole graphic or no memory: the plain frame */
+        view_draw_wall_part(&square->frames[0]);
         return;
-    Bitmap copy = {frame->w, frame->h, malloc((size_t)frame->w * frame->h)};
-    if (!copy.px)
-        return;
+    }
     memcpy(copy.px, frame->px, (size_t)frame->w * frame->h);
     Box rect = tables_get_layout_bitmap(view_get_wall_bitmap(LAYOUT_THIEVES_EYE_HOLE_D0C).slot);
     ZoneClip placed;
