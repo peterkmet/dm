@@ -66,7 +66,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## Layout
 
-- `src/`: the C port in four layers. Every include names its layer, for example `#include "engine/game.h"`.
+- `src/`: the C port in five layers. Every include names its layer, for example `#include "engine/game.h"`.
   - `data/`: the files of the game and the tables.
   - `engine/`: the game rules, without SDL.
   - `ui/`: the screens, the panels, and the sound.

@@ -18,8 +18,8 @@ Native C11/SDL3 macOS port of Dungeon Master v3.60 (Amiga), built from its own G
   - `data/`: tables and formats of the original data files (no game state).
   - `engine/`: game rules and state; no drawing, no SDL.
   - `ui/`: screens, input handling, drawing, audio.
-  - `control/`: the LLM protocol (state JSON, requests, transport).
-  - `platform/`: SDL3 window, events, application loop.
+  - `control/`: the LLM protocol (state JSON, requests).
+  - `platform/`: SDL3 window, events, application loop, transport (`transport.c`).
 - `third_party/dr_mp3/`: the vendored MP3 decoder.
 - `tools/dmtools/`: Python tools: ADF extract, FTL loader, emulator harness, control client. `tools/ghidra/`,
   `tools/dist/`, `tools/research/` (not tested).
