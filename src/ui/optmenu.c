@@ -8,6 +8,7 @@
 #include "music.h"
 #include "rows.h"
 #include "startend.h"
+#include "ui.h"
 #include <stdio.h>
 
 /* The rows of the menu. */
@@ -27,8 +28,9 @@
 static const char *const music_names[SETTINGS_MUSIC_COUNT] = {"ORIGINAL", "SUPER NES", "FM-TOWNS"};
 
 static struct {
-    int16_t row;    /* the selected row */
-    Settings saved; /* the values of the settings file */
+    int16_t row;      /* the selected row */
+    Settings saved;   /* the values of the settings file */
+    bool save_failed; /* the last write failed and its message shows */
 } menu;
 
 /* The values in use. */
@@ -55,6 +57,7 @@ void optmenu_open(void)
 {
     menu.row = ROW_SOUND;
     menu.saved = get_current();
+    menu.save_failed = false;
     show_menu();
 }
 
@@ -65,10 +68,14 @@ static void save_changes(void)
     if (now.sound_volume == menu.saved.sound_volume && now.music_volume == menu.saved.music_volume &&
         now.music == menu.saved.music)
         return;
-    if (settings_save(startend_save_dir(), &now))
+    if (settings_save(startend_save_dir(), &now)) {
         menu.saved = now;
-    else
+        menu.save_failed = false;
+    } else if (!menu.save_failed) {
+        menu.save_failed = true;
         advanced_print_message("UNABLE TO SAVE OPTIONS");
+        ui_draw_message_area(); /* the game loop draws no interface while the menu is open */
+    }
 }
 
 /* The volume one step lower (-1) or higher (1), within the steps. */
