@@ -49,7 +49,7 @@ Usage: dm [options]
 - `--show N` shows graphic N of `Graphics.DAT`.
 - The environment variable `DM_AUTO_ENTER=1` skips the start screens and presses ENTER at the entrance. The tests use it.
 
-Not available yet: the rename of a reincarnated champion. The entrance and its credits fade the palette, as the original; the dialogs and the endgame screens do not.
+The entrance and its credits fade the palette, as the original; the dialogs and the endgame screens do not.
 
 ## Start screens
 
@@ -117,6 +117,7 @@ The controls are the controls of the original Amiga game.
 | Return | Wake up a sleeping party |
 | Click on the movement arrows | Move and turn |
 | Click on a mirror | Show the champion. Then click RESURRECT, REINCARNATE, or CANCEL. |
+| Name entry after REINCARNATE | Type the name and the title with the panel keyboard or the keys: letters, Space, `,` `.` `;` `:`, Backspace. Return goes from the name to the title. Click OK to end. A right click types a space. Other keys, also Ctrl+Q and the advanced keys, do nothing. |
 | Click on an object in the view | Take the object into the leader hand |
 | Click on the floor with an object in the hand | Drop the object |
 | Click on the front wall or a door button | Use the wall switch or the door button |

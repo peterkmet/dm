@@ -1,7 +1,7 @@
 # Name entry of a reincarnated champion: PRD
 
-Date: 2026-10-17. Branch: `feature/2026-10-17-reincarnate-name`. Status: reviewed (one `prd-reviewer` pass, as
-part of the todo pass of 2026-10-17); the plan is not written yet.
+Date: 2026-10-17. Branch: `feature/2026-10-17-reincarnate-name`. Status: implemented (on
+`feature/2026-10-17-todo`, without a separate plan; reviewed by one `prd-reviewer` pass).
 
 ## Goal
 

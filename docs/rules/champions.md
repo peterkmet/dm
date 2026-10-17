@@ -41,9 +41,11 @@ The possessions stay in the wall square list until the player accepts the candid
 |---|---|
 | `PANEL_CANCEL` | Removes the candidate. When it was the only champion, the party has no leader and no caster. |
 | `PANEL_RESURRECT` | Unlinks the possessions from the wall square. Disables the mirror sensor (`rec_sensor_set_type` to `SENSOR_DISABLED`). Prints "<name> RESURRECTED." |
-| `PANEL_REINCARNATE` | As resurrect. Also clears all experience and adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The original also asks for a new name. The port keeps the name. |
+| `PANEL_REINCARNATE` | As resurrect, then the name entry (below). After OK, clears all experience and adds 1 to the current and maximum value of a random statistic 12 times. Prints "<name> REINCARNATED." The `turnbased` mode skips the name entry and keeps the old name. |
 
 With the first champion, the time of the last party move becomes the game time.
+
+The name entry (`champion_start_rename` … `champion_rename_ok`) clears the name and the title. No game time passes until OK. The name takes up to 7 characters; the 7th moves the input to the title. The title takes up to 19 characters. A field does not take a space as its first character. Return (next field) moves the input from a non-empty name to the title. Backspace deletes the character before the input; at the start of the title it deletes the last name character. OK does nothing while the name is empty. OK removes the trailing spaces of the name and refuses, without a message, the name of another party champion. The panel keyboard, the letter keys, Space, Backspace, `,` `.` `;` `:` and Return type; a right click anywhere types a space. Only the OK button ends the entry.
 
 `champion_resurrect(index)` is the Vi altar rebirth. The champion takes a free cell when its cell is used, loses all objects, and gets `max(25, max_health − max_health / 64 − 1)` maximum health and half of it as current health.
 
