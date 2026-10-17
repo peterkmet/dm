@@ -9,10 +9,7 @@
 #include "engine/game.h"
 #include "engine/inventory.h"
 #include "engine/map.h"
-#include "engine/message.h"
-#include "engine/move.h"
 #include "engine/party.h"
-#include "engine/record.h"
 #include "engine/savegame.h"
 #include "ui/advanced.h"
 #include "ui/command.h"
@@ -25,6 +22,7 @@
 #include "control/png.h"
 #include "control/request.h"
 #include "control/state_json.h"
+#include "control/turn.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -36,17 +34,11 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#define INPUT_SIZE               65536 /* longest request line */
-#define TURN_MIN_TICKS           2     /* an action shows its result, then the action area returns */
-#define TURN_MAX_TICKS           64
-#define WAIT_MAX_TICKS           5000
-#define FRAMES_PER_TICK_LIMIT    16 /* a frozen game ends a turn after this many frames per tick */
-#define ACTION_NAME_SIZE         32
-#define WITNESSED_EXPLOSIONS_MAX 32
-#define WITNESSED_GROUPS_MAX     16
-#define SLOT_REQUEST_SIZE        64
-#define CHOICE_SIZE              16
-#define CMD_SIZE                 32
+#define INPUT_SIZE        65536 /* longest request line */
+#define ACTION_NAME_SIZE  32
+#define SLOT_REQUEST_SIZE 64
+#define CHOICE_SIZE       16
+#define CMD_SIZE          32
 
 #ifdef MSG_NOSIGNAL
 #define SEND_FLAGS MSG_NOSIGNAL /* a closed client does not raise SIGPIPE (Linux) */
@@ -60,75 +52,7 @@ static char socket_path[sizeof(((struct sockaddr_un *)0)->sun_path)];
 static char input[INPUT_SIZE];
 static size_t input_length;
 
-static struct {
-    bool pending, wait_only;
-    uint32_t start_time;
-    int64_t frames, min_ticks, max_ticks;
-    bool has_damage;
-    int16_t damage;
-    bool moving; /* the action was a step forward and to the right */
-    int16_t step_forward, step_right;
-    int16_t rotation;             /* the action was a turn: 1 right, -1 left */
-    int16_t map, x, y, direction; /* the party before the action */
-    int teleports;                /* g_party_teleport_count before the action */
-    const char *stop;             /* wait: the news that ended it early, or NULL */
-} turn;
-
-/* A batch: act_many runs a list of actions; each step is one turn. */
-#define BATCH_DAMAGE_MAX 64
-static struct {
-    bool active;
-    int ran;
-    int16_t damages[BATCH_DAMAGE_MAX]; /* the action damage of each choose_action, in order */
-    int damage_count;
-    char *actions; /* a copy of the request; next is the rest of its actions array */
-    const char *next;
-    uint32_t start_time;
-    const char *stop, *error;
-} batch;
-
-/* What the party knew before a turn: act_many and wait stop on news against it. */
-static struct {
-    int16_t health[CHAMPION_MAX_COUNT];
-    uint16_t groups[STATE_VISIBLE_GROUPS_MAX];
-    int group_count;
-    uint32_t message_expiry;
-} seen;
-
-/* What the party saw during a request, also when it was gone at the end: the explosions, and the creature
-   groups with their count when first seen and when last seen. */
-typedef struct {
-    StateSeenThing at;
-    uint8_t type;
-} WitnessedExplosion;
-typedef struct {
-    StateSeenThing at;
-    uint16_t creature;
-    int16_t before, after;
-    bool in_view, killed;
-} WitnessedGroup;
-static struct {
-    int explosion_count, group_count;
-    WitnessedExplosion explosions[WITNESSED_EXPLOSIONS_MAX];
-    WitnessedGroup groups[WITNESSED_GROUPS_MAX];
-    int16_t health[CHAMPION_MAX_COUNT]; /* the health of each champion at the start of the request */
-    uint16_t champion_count;
-} witnessed;
-
-/* The eye panel text of a look action, for the turn result. */
-static struct {
-    bool shown;
-    int16_t count;
-    char name[PANEL_LINE_SIZE], lines[PANEL_LINE_COUNT + 1][PANEL_LINE_SIZE];
-} look_text;
-
 static bool load_failed; /* a damaged save file left no game to play */
-
-/* The party died, or the game is won: the endgame ran and no turn can follow until load or new_game. */
-static bool is_game_over(void)
-{
-    return g_session.party_dead || g_session.won;
-}
 
 /* Input as the player gives it: clicks and keys go through the command queue. */
 
@@ -253,40 +177,14 @@ static const char *parse_movement(uint16_t key)
 /* A step remembers where it goes, so that the turn result can tell a bump or a move by the dungeon. */
 static const char *step(uint16_t key, int16_t forward, int16_t right)
 {
-    turn.moving = true;
-    turn.step_forward = forward;
-    turn.step_right = right;
+    turn_set_step(forward, right);
     return parse_movement(key);
 }
 
 static const char *rotate(uint16_t key, int16_t rotation)
 {
-    turn.rotation = rotation;
+    turn_set_rotation(rotation);
     return parse_movement(key);
-}
-
-/* The step of the turn left the party on its square: a wall, a closed door, or a creature is in the way. */
-static bool turn_bumped(void)
-{
-    return turn.moving && g_party_map_index == turn.map && g_party_map_x == turn.x && g_party_map_y == turn.y &&
-           g_party_teleport_count == turn.teleports;
-}
-
-/* The party was turned or moved by something else than its action: a spinner, a teleporter, a pit, stairs. */
-static const char *turn_displaced(void)
-{
-    int16_t x = turn.x;
-    int16_t y = turn.y;
-    if (turn.moving)
-        map_step(turn.direction, turn.step_forward, turn.step_right, &x, &y);
-    bool stayed = g_party_map_x == turn.x && g_party_map_y == turn.y;
-    if (g_party_map_index != turn.map || (!stayed && (g_party_map_x != x || g_party_map_y != y)))
-        return "moved";
-    if (stayed && g_party_teleport_count != turn.teleports)
-        return "moved"; /* a teleporter sent the party back */
-    if (g_party_direction != turn.direction && g_party_direction != NORMALIZE(turn.direction + turn.rotation))
-        return "turned";
-    return NULL;
 }
 
 static const char *move_forward(const char *args)
@@ -417,12 +315,13 @@ static void press_eye(int16_t x, int16_t y)
 {
     const char *label;
     uint16_t value;
+    char name[PANEL_LINE_SIZE], lines[PANEL_LINE_COUNT + 1][PANEL_LINE_SIZE];
     command_process_click(x, y, CLICK_LEFT_PRESS);
     gameloop_run_commands();
-    look_text.shown = true;
-    look_text.count = panel_format_object_text(g_leader_hand_object, look_text.name, look_text.lines);
+    int16_t count = panel_format_object_text(g_leader_hand_object, name, lines);
     if (g_advanced_features && panel_get_object_meter(g_leader_hand_object, &label, &value))
-        snprintf(look_text.lines[look_text.count++], PANEL_LINE_SIZE, "%s %u", label, value);
+        snprintf(lines[count++], PANEL_LINE_SIZE, "%s %u", label, value);
+    turn_set_look(name, (const char (*)[PANEL_LINE_SIZE])lines, count);
     command_process_click(x, y, CLICK_LEFT_RELEASE);
     gameloop_run_commands();
 }
@@ -499,12 +398,9 @@ static const char *choose_action(const char *args)
     }
     if (index < 0 || index >= g_action_list.count)
         return "index out of range of the action menu (see state action_menu)";
-    turn.has_damage = true;
     g_session.action_damage = 0;
     click_command(TABLES_MOUSE_ACTION_NAMES, COMMAND_ACTION_FIRST + index);
-    turn.damage = g_session.action_damage;
-    if (batch.active && batch.damage_count < BATCH_DAMAGE_MAX)
-        batch.damages[batch.damage_count++] = g_session.action_damage;
+    turn_add_damage(g_session.action_damage);
     return NULL;
 }
 
@@ -643,125 +539,7 @@ static const struct {
     {"look",             send_look       },
 };
 
-/* What the party saw during a request. */
-
-/* Adds the explosions and the creature counts that the party sees now to the record of the request. */
-static void record_witnessed(void)
-{
-    StateSeenThing things[WITNESSED_EXPLOSIONS_MAX];
-    int count = state_get_visible_things(THING_EXPLOSION, things, WITNESSED_EXPLOSIONS_MAX);
-    for (int i = 0; i < count; i++) {
-        uint8_t type = rec_explosion_type(things[i].thing);
-        int known = 0;
-        for (int k = 0; k < witnessed.explosion_count; k++)
-            known |= witnessed.explosions[k].type == type && witnessed.explosions[k].at.x == things[i].x &&
-                     witnessed.explosions[k].at.y == things[i].y;
-        if (!known && witnessed.explosion_count < WITNESSED_EXPLOSIONS_MAX)
-            witnessed.explosions[witnessed.explosion_count++] = (WitnessedExplosion){things[i], type};
-    }
-    for (int k = 0; k < witnessed.group_count; k++)
-        witnessed.groups[k].in_view = false;
-    count = state_get_visible_things(THING_GROUP, things, STATE_VISIBLE_GROUPS_MAX);
-    for (int i = 0; i < count; i++) {
-        int k = 0;
-        while (k < witnessed.group_count && witnessed.groups[k].at.thing != things[i].thing)
-            k++;
-        if (k == WITNESSED_GROUPS_MAX)
-            continue;
-        int16_t creatures = rec_group_last_creature(things[i].thing) + 1;
-        if (k == witnessed.group_count) { /* a group seen first: count it once, not on each tick */
-            witnessed.groups[k] =
-                (WitnessedGroup){.creature = rec_group_creature_type(things[i].thing), .before = creatures};
-            witnessed.group_count++;
-        }
-        witnessed.groups[k].at = things[i];
-        witnessed.groups[k].after = creatures;
-        witnessed.groups[k].in_view = true;
-    }
-    for (int k = 0; k < witnessed.group_count; k++) /* a killed group frees its record */
-        witnessed.groups[k].killed |=
-            !witnessed.groups[k].in_view && rec_thing_next(witnessed.groups[k].at.thing) == THING_NONE;
-}
-
-/* Starts the record of what the party sees during a request. */
-static void start_witnessing(void)
-{
-    memset(&witnessed, 0, sizeof witnessed);
-    witnessed.champion_count = g_party_champion_count;
-    for (uint16_t i = 0; i < g_party_champion_count; i++)
-        witnessed.health[i] = g_champions[i].current_health;
-    record_witnessed();
-}
-
-static void seen_place_json(Json *j, const StateSeenThing *at)
-{
-    json_key(j, "x");
-    json_int(j, at->x);
-    json_key(j, "y");
-    json_int(j, at->y);
-    json_key(j, "depth");
-    json_int(j, at->depth);
-    json_key(j, "side");
-    json_str(j, at->side);
-}
-
-/* The explosions the party saw and the groups that lost creatures in view or were killed; nothing when none. */
-static void seen_json(Json *j)
-{
-    int changes = 0;
-    for (int k = 0; k < witnessed.group_count; k++)
-        changes += witnessed.groups[k].killed || witnessed.groups[k].after < witnessed.groups[k].before;
-    if (!changes && !witnessed.explosion_count)
-        return;
-    json_key(j, "seen");
-    json_open(j, '{');
-    json_key(j, "explosions");
-    json_open(j, '[');
-    for (int k = 0; k < witnessed.explosion_count; k++) {
-        json_open(j, '{');
-        json_key(j, "name");
-        state_write_explosion_name(j, witnessed.explosions[k].type);
-        seen_place_json(j, &witnessed.explosions[k].at);
-        json_close(j, '}');
-    }
-    json_close(j, ']');
-    json_key(j, "creature_changes");
-    json_open(j, '[');
-    for (int k = 0; k < witnessed.group_count; k++) {
-        if (!witnessed.groups[k].killed && witnessed.groups[k].after >= witnessed.groups[k].before)
-            continue;
-        json_open(j, '{');
-        json_key(j, "type");
-        json_str(j, state_get_creature_name(witnessed.groups[k].creature));
-        seen_place_json(j, &witnessed.groups[k].at);
-        json_key(j, "before");
-        json_int(j, witnessed.groups[k].before);
-        json_key(j, "after");
-        json_int(j, witnessed.groups[k].killed ? 0 : witnessed.groups[k].after);
-        json_close(j, '}');
-    }
-    json_close(j, ']');
-    json_close(j, '}');
-}
-
 /* Responses. */
-
-/* The health that each champion lost since the start of the request, only when one lost health. */
-static void health_lost_json(Json *j)
-{
-    int any = 0;
-    for (uint16_t i = 0; i < witnessed.champion_count; i++)
-        any |= g_champions[i].current_health < witnessed.health[i];
-    if (!any)
-        return;
-    json_key(j, "health_lost");
-    json_open(j, '[');
-    for (uint16_t i = 0; i < witnessed.champion_count; i++) {
-        int lost = witnessed.health[i] - g_champions[i].current_health;
-        json_int(j, lost > 0 ? lost : 0);
-    }
-    json_close(j, ']');
-}
 
 static void close_client(void)
 {
@@ -769,6 +547,7 @@ static void close_client(void)
         close(client_fd);
     client_fd = -1;
     input_length = 0;
+    turn_drop_client();
 }
 
 static void send_line(Json *j)
@@ -796,77 +575,6 @@ static void send_error(const char *error)
     send_line(&j);
 }
 
-/* The eye panel text of a look action, only when the turn looked. */
-static void look_json(Json *j)
-{
-    if (!look_text.shown)
-        return;
-    json_key(j, "look");
-    json_open(j, '{');
-    json_key(j, "name");
-    json_str(j, look_text.name);
-    json_key(j, "lines");
-    json_open(j, '[');
-    for (int16_t i = 0; i < look_text.count; i++)
-        json_str(j, look_text.lines[i]);
-    json_close(j, ']');
-    json_close(j, '}');
-}
-
-/* The end of a turn: the ticks it took, the action damage, the state, and the view. */
-static void send_turn_result(void)
-{
-    Json j = {0};
-    json_open(&j, '{');
-    json_key(&j, "ok");
-    json_bool(&j, true);
-    json_key(&j, "ticks");
-    json_int(&j, g_game_time - (batch.active ? batch.start_time : turn.start_time));
-    if (turn.wait_only) {
-        json_key(&j, "stopped");
-        json_str(&j, turn.stop ? turn.stop : "done");
-    }
-    if (!turn.wait_only && !batch.active && !is_game_over() && turn_displaced()) {
-        json_key(&j, "stopped");
-        json_str(&j, turn_displaced());
-    }
-    if (batch.active) {
-        json_key(&j, "ran");
-        json_int(&j, batch.ran);
-        json_key(&j, "stopped");
-        json_str(&j, batch.stop);
-        if (batch.error) {
-            json_key(&j, "error");
-            json_str(&j, batch.error);
-        }
-    }
-    json_key(&j, "game_over");
-    json_bool(&j, is_game_over());
-    if (turn_bumped()) {
-        json_key(&j, "bumped");
-        json_bool(&j, true);
-    }
-    if (batch.active && batch.damage_count) {
-        json_key(&j, "action_damage");
-        json_open(&j, '[');
-        for (int i = 0; i < batch.damage_count; i++)
-            json_int(&j, batch.damages[i]);
-        json_close(&j, ']');
-    } else if (!batch.active && turn.has_damage) {
-        json_key(&j, "action_damage");
-        json_int(&j, turn.damage);
-    }
-    health_lost_json(&j);
-    look_json(&j);
-    seen_json(&j);
-    json_key(&j, "state");
-    state_write_state(&j);
-    json_key(&j, "view");
-    state_write_view(&j);
-    json_close(&j, '}');
-    send_line(&j);
-}
-
 static void send_part(const char *key, void (*part)(Json *))
 {
     Json j = {0};
@@ -879,17 +587,6 @@ static void send_part(const char *key, void (*part)(Json *))
     send_line(&j);
 }
 
-static void start_turn(int64_t min_ticks, int64_t max_ticks, bool wait_only)
-{
-    turn.pending = true;
-    turn.wait_only = wait_only;
-    turn.stop = NULL;
-    turn.start_time = g_game_time;
-    turn.frames = 0;
-    turn.min_ticks = min_ticks;
-    turn.max_ticks = max_ticks;
-}
-
 /* Gives the input of action name with the args in request; NULL, or the reason why it cannot. */
 static const char *run_action(const char *name, const char *request)
 {
@@ -900,15 +597,7 @@ static const char *run_action(const char *name, const char *request)
             return "a candidate is shown: answer with recruit first";
         if (g_session.party_sleeping && strcmp(name, "wake"))
             return "the party sleeps: use wake or wait";
-        turn.has_damage = 0;
-        look_text.shown = 0;
-        turn.moving = 0;
-        turn.rotation = 0;
-        turn.map = g_party_map_index;
-        turn.x = g_party_map_x;
-        turn.y = g_party_map_y;
-        turn.direction = g_party_direction;
-        turn.teleports = g_party_teleport_count;
+        turn_begin_action();
         return actions[k].run(request);
     }
     return "unknown action";
@@ -921,117 +610,12 @@ static void handle_act(const char *request)
         send_error("missing action");
         return;
     }
-    start_witnessing();
+    turn_start_witnessing();
     const char *error = run_action(name, request);
     if (error)
         send_error(error);
     else
-        start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
-}
-
-/* Batches. */
-
-/* The latest expiry time of a message row: it grows when the game prints a message. */
-static uint32_t latest_message_expiry(void)
-{
-    uint32_t latest = 0;
-    for (int r = 0; r < MESSAGE_ROWS; r++)
-        if (g_message.expiry[r] != MESSAGE_NO_EXPIRY && g_message.expiry[r] > latest)
-            latest = g_message.expiry[r];
-    return latest;
-}
-
-/* Remembers what the news checks compare during and after the next turn. */
-static void take_snapshot(void)
-{
-    for (uint16_t i = 0; i < g_party_champion_count; i++)
-        seen.health[i] = g_champions[i].current_health;
-    seen.group_count = state_get_visible_groups(seen.groups);
-    seen.message_expiry = latest_message_expiry();
-}
-
-/* A creature group is in view that was not in view at the snapshot. */
-static bool new_group_in_view(void)
-{
-    uint16_t groups[STATE_VISIBLE_GROUPS_MAX];
-    int count = state_get_visible_groups(groups);
-    for (int i = 0; i < count; i++) {
-        int known = 0;
-        for (int k = 0; k < seen.group_count; k++)
-            known |= groups[i] == seen.groups[k];
-        if (!known)
-            return true;
-    }
-    return false;
-}
-
-/* What happened since the snapshot that the player must see, or NULL. */
-static const char *send_news(void)
-{
-    if (is_game_over())
-        return "game_over";
-    for (uint16_t i = 0; i < g_party_champion_count; i++)
-        if (g_champions[i].current_health < seen.health[i])
-            return "damage";
-    if (new_group_in_view())
-        return "creature";
-    if (latest_message_expiry() > seen.message_expiry)
-        return "message";
-    return NULL;
-}
-
-/* Why a batch stops after a turn, or NULL to go on. */
-static const char *batch_stop_reason(void)
-{
-    if (is_game_over())
-        return send_news();
-    if (turn_bumped())
-        return "bumped";                      /* before damage: a bump into a wall hurts */
-    const char *displaced = turn_displaced(); /* before damage: a pit fall hurts */
-    return displaced ? displaced : send_news();
-}
-
-static void batch_finish(const char *stop, const char *error)
-{
-    batch.stop = stop;
-    batch.error = error;
-    send_turn_result();
-    free(batch.actions);
-    memset(&batch, 0, sizeof batch);
-}
-
-/* Starts the next step of the batch, or ends the batch when it is done or the step cannot run. */
-static void batch_next(void)
-{
-    const char *error;
-    char element[INPUT_SIZE / 4], name[ACTION_NAME_SIZE];
-    take_snapshot();
-    RequestItem found = request_next_item(&batch.next, element, sizeof element);
-    if (found != REQUEST_ITEM_FOUND) {
-        bool bad = found == REQUEST_ITEM_BAD;
-        batch_finish(bad ? "failed" : "done", bad ? "an item of actions is not an action name or object" : NULL);
-        return;
-    }
-    if (element[0] == '"')
-        snprintf(name, sizeof name, "%.*s", (int)strlen(element) - 2, element + 1);
-    else if (!request_get_string(element, "action", name, sizeof name))
-        name[0] = 0;
-    error = run_action(name, element);
-    if (error)
-        batch_finish("failed", error);
-    else
-        start_turn(TURN_MIN_TICKS, TURN_MAX_TICKS, 0);
-}
-
-/* After a turn of the batch: count it, stop on news, else start the next step. */
-static void batch_after_turn(void)
-{
-    batch.ran++;
-    const char *stop = batch_stop_reason();
-    if (stop)
-        batch_finish(stop, NULL);
-    else
-        batch_next();
+        turn_start(TURN_MIN_TICKS, TURN_MAX_TICKS, false);
 }
 
 static void handle_act_many(const char *request)
@@ -1041,17 +625,10 @@ static void handle_act_many(const char *request)
         send_error("actions must be a list");
         return;
     }
-    batch.actions = strdup(list + 1);
-    if (!batch.actions)
-        abort();
-    batch.next = batch.actions;
-    batch.active = true;
-    batch.damage_count = 0;
-    batch.start_time = g_game_time;
-    turn.has_damage = false;
-    turn.moving = false;
-    start_witnessing();
-    batch_next();
+    turn_start_witnessing();
+    Json reply = {0};
+    if (turn_start_batch(list + 1, run_action, &reply))
+        send_line(&reply);
 }
 
 /* Loads the save file of the adventure (DMGAME.DAT or CSBGAME.DAT) from the save directory, as RESUME does, and answers with the state. */
@@ -1102,15 +679,13 @@ static void handle_save(void)
 static void handle_wait(const char *request)
 {
     int64_t ticks = request_get_int(request, "ticks", 1);
-    if (ticks < 1 || ticks > WAIT_MAX_TICKS)
+    if (ticks < 1 || ticks > TURN_WAIT_MAX_TICKS)
         send_error("ticks must be 1-5000");
     else {
-        turn.has_damage = false;
-        look_text.shown = false;
-        turn.moving = false;
-        take_snapshot();
-        start_witnessing();
-        start_turn(ticks, ticks, 1);
+        turn_begin_action();
+        turn_take_snapshot();
+        turn_start_witnessing();
+        turn_start((uint16_t)ticks, (uint16_t)ticks, true);
     }
 }
 
@@ -1156,7 +731,7 @@ static void handle_request(const char *request)
         send_part("view", state_write_view);
     } else if (!strcmp(cmd, "get_map")) {
         send_part("map", state_write_map);
-    } else if (is_game_over() &&
+    } else if (turn_is_game_over() &&
                (!strcmp(cmd, "act") || !strcmp(cmd, "act_many") || !strcmp(cmd, "wait") || !strcmp(cmd, "save"))) {
         send_error("game over");
     } else if (!strcmp(cmd, "save")) {
@@ -1174,20 +749,6 @@ static void handle_request(const char *request)
     }
 }
 
-/* A turn ends when the party can move again after the minimum ticks, or at the maximum. A wait
-   ends early on news. A game that does not tick ends the turn after a frame limit. */
-static bool turn_finished(void)
-{
-    int64_t ticks = g_game_time - turn.start_time;
-    if (turn.wait_only && (turn.stop = send_news()))
-        return true;
-    if (is_game_over())
-        return true;
-    if (ticks >= turn.max_ticks || turn.frames > turn.max_ticks * FRAMES_PER_TICK_LIMIT)
-        return true;
-    return !turn.wait_only && ticks >= turn.min_ticks && !g_disabled_movement_ticks;
-}
-
 bool control_open(const char *path)
 {
     struct sockaddr_un address = {.sun_family = AF_UNIX};
@@ -1203,6 +764,7 @@ bool control_open(const char *path)
     snprintf(address.sun_path, sizeof address.sun_path, "%s", path);
     snprintf(socket_path, sizeof socket_path, "%s", path);
     unlink(path);
+    turn_reset();
     listen_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (listen_fd < 0)
         return false;
@@ -1221,29 +783,17 @@ bool control_is_available(void)
 
 bool control_is_turn_pending(void)
 {
-    return turn.pending;
+    return turn_is_pending();
 }
 
 void control_poll(void)
 {
     if (listen_fd < 0)
         return;
-    if (turn.pending) {
-        record_witnessed();
-        if (!turn_finished()) {
-            turn.frames++;
-            gameloop_run_commands();
-            g_stop_waiting_for_input = true; /* every frame of a turn is a tick */
-            return;
-        }
-        turn.pending = false;
-        if (client_fd < 0) {
-            free(batch.actions);
-            memset(&batch, 0, sizeof batch);
-        } else if (batch.active)
-            batch_after_turn();
-        else
-            send_turn_result();
+    if (turn_is_pending()) {
+        Json reply = {0};
+        if (turn_run_frame(&reply))
+            send_line(&reply);
     }
     if (client_fd < 0) {
         client_fd = accept(listen_fd, NULL, NULL);
@@ -1264,7 +814,7 @@ void control_poll(void)
         input_length += (size_t)n;
     input[input_length] = 0;
     char *end;
-    while (client_fd >= 0 && !turn.pending && (end = strchr(input, '\n'))) {
+    while (client_fd >= 0 && !turn_is_pending() && (end = strchr(input, '\n'))) {
         *end = 0;
         if (end > input)
             handle_request(input);

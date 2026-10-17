@@ -18,7 +18,7 @@
 #define COMMAND_MOVE_BACKWARD 5
 #define COMMAND_MOVE_LEFT     6
 
-extern int g_party_teleport_count; /* port only: teleporters that moved the party */
+extern int16_t g_party_teleport_count; /* port only: teleporters that moved the party */
 
 /* Levitating groups, projectiles, and explosions do not fall into pits and do not trigger sensors when they leave a square. */
 bool move_is_levitating(uint16_t thing);
