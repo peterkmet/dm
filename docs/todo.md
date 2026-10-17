@@ -4,7 +4,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 
 ## Small cleanups after the clean-code pass
 
-- `ui/view_walls.c`: the Thieves Eye (`g_party.thieves_eye_count`, `src/engine/party.h:24`) is not drawn. The original draws it in three places: the D1C front wall gets the hole graphic 41 over the squares behind it (KAOS.c:23050-23081); the D1C door gets the thieves eye door ornament (KAOS.c:21403-21405; loaded at `src/ui/view.c:1006`); the door frame of the party square (D0C) gets the frame with the hole (KAOS.c:23232-23245).
 - `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing`. PRD: `docs/superpowers/2026-10-17-discard-thing.md`.
 - `light_depths` (`src/engine/explored.c`): a fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it.
 

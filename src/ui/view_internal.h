@@ -85,6 +85,7 @@
 #define BLIT_FLIPPED              2
 #define TRANSPARENT_COLOR         10
 #define DOOR_ORNAMENT_TRANSPARENT 9
+#define THIEVES_EYE_TRANSPARENT   9
 #define PORTRAIT_TRANSPARENT      1
 
 /* View squares: index of the g_view_square_* tables. */
@@ -392,6 +393,8 @@ void view_draw_door_front(const SquareView *square, const Aspect *a, int16_t dir
 void view_draw_stairs_front(const SquareView *square, bool up);
 /* The front of the staircase on the party square: the graphic and its mirror. */
 void view_draw_d0c_stairs(const SquareView *square, bool up);
+/* The door frame of the party square; with the Thieves Eye the frame has a hole. */
+void view_draw_d0c_door_frame(const SquareView *square);
 
 /* view_things.c */
 /* The object aspect of a flying thing, or its projectile aspect. */

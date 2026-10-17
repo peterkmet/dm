@@ -4,6 +4,7 @@
 #include "data/tables.h"
 #include "engine/dungeon.h"
 #include "engine/map.h"
+#include "engine/party.h"
 #include "engine/random.h"
 #include "engine/record.h"
 #include "engine/recruit.h"
@@ -192,6 +193,8 @@ static void show_door(uint16_t door_thing, int16_t state, int16_t door_view)
     show_door_ornament(rec_door_ornament(door_thing), depth, &door_copy);
     if (g_view.door_type_attributes[type] & DOOR_ANIMATED)
         draw_flip(&door_copy, random_2bits());
+    if (door_view == VIEW_D1C && g_party.thieves_eye_count)
+        show_door_ornament(DOOR_ORNAMENT_THIEVES_EYE, DOOR_DEPTH_D1, &door_copy);
     Placement place = {0};
     if (state == DOOR_DESTROYED)
         show_door_ornament(DOOR_ORNAMENT_DESTROYED, depth, &door_copy);
@@ -256,6 +259,25 @@ void view_draw_ceiling_pit(const SquareView *square, Location at)
         show_ceiling_pit(square->ceiling, square->ceiling_zone, at.x, at.y, square->mirror);
 }
 
+/* The Thieves Eye hole of the D1C wall: the view behind the wall in the hole rectangle, with the hole graphic
+   over it. The px of the result is NULL when there is no hole. */
+static Bitmap save_wall_hole(Box *box)
+{
+    const Bitmap *hole = gfx_get_bitmap(GFX_THIEVES_EYE_HOLE);
+    if (!hole)
+        return (Bitmap){0};
+    Bitmap behind = {hole->w, hole->h, calloc((size_t)hole->w * hole->h, 1)};
+    if (!behind.px)
+        return behind;
+    Box rect = tables_get_layout_bitmap(view_get_wall_bitmap(LAYOUT_THIEVES_EYE_HOLE_D1C).slot);
+    *box = (Box){0, 0, rect.w ? rect.w : hole->w, rect.h ? rect.h : hole->h};
+    draw_blit(&(BlitSource){&g_view.viewport, rect.x, rect.y, -1, 0}, &behind, box);
+    draw_blit(&(BlitSource){hole, 0, 0, TRANSPARENT_COLOR, 0}, &behind, box);
+    box->x = rect.x;
+    box->y = rect.y;
+    return behind;
+}
+
 void view_draw_square_wall(const SquareView *square, const Aspect *a, int16_t dir, Location at)
 {
     if (square->flags & SQ_FRONT) {
@@ -263,15 +285,46 @@ void view_draw_square_wall(const SquareView *square, const Aspect *a, int16_t di
         g_view.result.facing_vi_altar = false;
         g_view.result.facing_fountain = false;
     }
+    Box hole_box;
+    Bitmap behind = square->view == VIEW_D1C && g_party.thieves_eye_count ? save_wall_hole(&hole_box) : (Bitmap){0};
     view_draw_wall_part(&square->wall);
     if (square->side_face != SIDE_FACE_NONE)
         show_wall_ornament(square->side_face == SIDE_FACE_RIGHT ? a->side[SIDE_RIGHT] : a->side[SIDE_LEFT],
                            square->side_ornament_view, a);
-    if (square->front_ornament_view < 0 || !show_wall_ornament(a->side[SIDE_FRONT], square->front_ornament_view, a))
+    if (square->front_ornament_view >= 0 && show_wall_ornament(a->side[SIDE_FRONT], square->front_ornament_view, a)) {
+        if (square->flags & SQ_CEILING_IN_ALCOVE)
+            view_draw_ceiling_pit(square, at);
+        view_draw_square_things(a->first_thing, dir, at, square->view_square, CELLS_ALCOVE);
+    }
+    if (behind.px) { /* the view behind shows through the hole over the wall and its ornament */
+        draw_blit(&(BlitSource){&behind, 0, 0, THIEVES_EYE_TRANSPARENT, 0}, &g_view.viewport, &hole_box);
+        free(behind.px);
+    }
+}
+
+void view_draw_d0c_door_frame(const SquareView *square)
+{
+    if (!g_party.thieves_eye_count) {
+        view_draw_wall_part(&square->frames[0]);
         return;
-    if (square->flags & SQ_CEILING_IN_ALCOVE)
-        view_draw_ceiling_pit(square, at);
-    view_draw_square_things(a->first_thing, dir, at, square->view_square, CELLS_ALCOVE);
+    }
+    WallBitmap id = g_view.wall_set[square->frames[0].ws];
+    const Bitmap *frame = gfx_get_bitmap(id.slot >= 0 ? g_view.slot_graphics[id.slot] : id.graphic);
+    const Bitmap *hole = gfx_get_bitmap(GFX_THIEVES_EYE_HOLE);
+    if (!frame || !hole)
+        return;
+    Bitmap copy = {frame->w, frame->h, malloc((size_t)frame->w * frame->h)};
+    if (!copy.px)
+        return;
+    memcpy(copy.px, frame->px, (size_t)frame->w * frame->h);
+    Box rect = tables_get_layout_bitmap(view_get_wall_bitmap(LAYOUT_THIEVES_EYE_HOLE_D0C).slot);
+    ZoneClip placed;
+    if (layout_get_zone(ZONE_THIEVES_EYE_HOLE_D0C,
+                        &(ZoneItem){hole->w, hole->h, rect.w ? rect.w : hole->w, rect.h ? rect.h : hole->h}, &placed))
+        draw_blit(&(BlitSource){hole, rect.x + placed.source_x, rect.y + placed.source_y, THIEVES_EYE_TRANSPARENT, 0},
+                  &copy, &placed.box);
+    view_draw_in_zone(&copy, &g_view.viewport, &(ZoneBlit){ZONE_DOOR_FRAME_D0C, 0, TRANSPARENT_COLOR, {0}}, NULL);
+    free(copy.px);
 }
 
 void view_draw_door_front(const SquareView *square, const Aspect *a, int16_t dir, Location at)

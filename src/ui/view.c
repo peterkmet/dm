@@ -802,7 +802,7 @@ static void show_d0_side_square(const SquareView *s, const Aspect *a, int16_t di
 static void show_d0c_square(const SquareView *s, const Aspect *a, int16_t dir, Location at)
 {
     if (a->element == ELEMENT_DOOR_SIDE)
-        view_draw_wall_part(&s->frames[0]);
+        view_draw_d0c_door_frame(s);
     else if (a->element == SQUARE_PIT)
         view_draw_square_pit(s, a->state);
     else if (a->element == ELEMENT_STAIRS_FRONT)

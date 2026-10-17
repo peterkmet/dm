@@ -42,6 +42,7 @@
 #define GFX_SHIELD_FIRE                 38
 #define GFX_SHIELD_SPELL                39
 #define GFX_PANEL_RESURRECT_REINCARNATE 40
+#define GFX_THIEVES_EYE_HOLE            41 /* the Thieves Eye hole: the D1C wall and, from x 32, the D0C door frame */
 #define GFX_PIT_D3L2                    49 /* D3R2 and D3R: mirrored */
 #define GFX_PIT_D3L                     50
 #define GFX_PIT_D3C                     51
@@ -205,6 +206,7 @@
 #define ZONE_DOOR_FRAME_TOP_D1C        733
 #define ZONE_DOOR_FRAME_TOP_D1R        734
 #define ZONE_INSCRIPTION_WALL_D1C      735 /* the blank wall behind a wall text */
+#define ZONE_THIEVES_EYE_HOLE_D0C      736 /* the Thieves Eye hole in the D0C door frame bitmap */
 #define ZONE_WALL_PORTRAIT             737 /* champion portrait on the D1C wall */
 #define ZONE_THROW_LEFT                745 /* + 1 right: the upper view where a thrown object flies */
 #define ZONE_THROW_DOOR_LEFT           748 /* + 1 right: the same with a door in front */
@@ -309,7 +311,10 @@
 #define ZONE_SHIFTED 0x8000 /* zone flag: the position moves by the creature or pile shift */
 #define ZONE_SIZED   0x4000 /* zone flag: the item size comes from the zone relative x, y */
 
-/* Layout bitmap ids outside tables_get_wall_layout_id: parts of the D3L stairs and of the D1C wall. */
+/* Layout bitmap ids outside tables_get_wall_layout_id: parts of the D3L stairs, of the D1C wall, and the Thieves Eye
+   holes. */
+#define LAYOUT_THIEVES_EYE_HOLE_D1C   -53 /* the view behind the D1C wall hole */
+#define LAYOUT_THIEVES_EYE_HOLE_D0C   -52 /* the part of GFX_THIEVES_EYE_HOLE for the D0C door frame */
 #define LAYOUT_INSCRIPTION_WALL       -51
 #define LAYOUT_STAIRS_DOWN_FRONT_D3R2 -36
 #define LAYOUT_STAIRS_DOWN_FRONT_D3L2 -35
