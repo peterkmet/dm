@@ -27,6 +27,8 @@ Native C11/SDL3 macOS port of Dungeon Master v3.60 (Amiga), built from its own G
   (`tests/standard/test_standard.py` checks the coding standard); `tests/dmtest/` shared helpers (`load_lib()`).
 - `docs/`: `architecture.md`, `development.md`, `coding-standard.md`, `todo.md`.
 - Git-ignored data: `game/`, `game-csb/` (original files), `reference/` (Ghidra output), `playthroughs/`. Link them into a new worktree.
+- `playthroughs/local/` is the owner's personal game: no agent reads, writes, moves or deletes anything there, and no
+  agent stops its game. Only `make play` replaces `dm` there.
 
 ## Conventions
 - `docs/architecture.md` describes the layers and modules.
