@@ -20,7 +20,7 @@
 #define ROW_TEXT_LEFT  14
 #define ROW_TOP        14 /* the top of the first row */
 #define ROW_HEIGHT     8  /* the font rows and 2 blank rows */
-#define SLOT_TEXT_SIZE 40
+#define SLOT_TEXT_SIZE 64 /* room for every int16 field, so the row text never truncates */
 #define LABEL_SIZE     8
 
 /* The row colors. */
