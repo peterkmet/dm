@@ -229,10 +229,10 @@ void plat_wait_tick(void)
     plat.next_tick += TICK_NS;
 }
 
-/* Opens the audio stream on first use. Returns 0 when audio is not available. */
-static int audio_open(void)
+/* Opens the audio stream on first use. Returns false when audio is not available. */
+static bool audio_open(void)
 {
-    static int tried;
+    static bool tried;
     if (plat.stream || tried)
         return plat.stream != NULL;
     tried = true;
