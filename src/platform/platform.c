@@ -14,6 +14,10 @@
 #define AUDIO_QUEUED_TICKS 3
 #define AUDIO_TICK_FRAMES  (AUDIO_OUTPUT_RATE / FRAMES_PER_SECOND) /* mixer frames of one tick */
 #define ARGB_BYTES         4
+/* Index frame colors: 0-15 top palette, 16-31 bottom palette, 32-47 pointer colors. */
+#define BOTTOM_HALF_FLAG   PALETTE_COLORS
+#define POINTER_COLOR_BASE (2 * PALETTE_COLORS)
+#define FRAME_COLORS       (3 * PALETTE_COLORS)
 
 static struct {
     SDL_Window *window;
@@ -21,7 +25,8 @@ static struct {
     SDL_Texture *texture;
     Uint64 next_tick;
     SDL_AudioStream *stream;
-    int filter; /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */
+    int filter;                        /* upscale factor: 1 none, 2 Scale2x, 3 Scale3x */
+    uint8_t frame[SCREEN_H][SCREEN_W]; /* index frame: screen and pointer, before the filter */
     uint8_t scaled_screen[SCREEN_H * FILTER_MAX][SCREEN_W * FILTER_MAX];
     struct {
         uint8_t px[POINTER_SIZE * POINTER_SIZE];
@@ -136,9 +141,17 @@ void plat_mouse_position(int16_t *mouse_x, int16_t *mouse_y)
     *mouse_y = (int16_t)plat.mouse_y;
 }
 
-/* Draws the pointer at the mouse position into the filtered frame (row length stride). */
-static void overlay_pointer(uint32_t *px, int stride)
+/* Builds the index frame: each screen pixel with its palette half, the pointer over it at the mouse position. */
+static void build_frame(void)
 {
+    for (int y = 0; y < SCREEN_H; y++) {
+        bool top_row = y >= g_screen.split_top && y < g_screen.split_bottom;
+        for (int x = 0; x < SCREEN_W; x++) {
+            uint8_t px = g_screen.px[y][x];
+            int half = top_row && !(px & BOTTOM_HALF_FLAG) ? 0 : BOTTOM_HALF_FLAG;
+            plat.frame[y][x] = (uint8_t)((px & COLOR_INDEX_MASK) | half);
+        }
+    }
     for (int y = 0; y < plat.pointer.h; y++)
         for (int x = 0; x < plat.pointer.w; x++) {
             uint8_t c = plat.pointer.px[y * plat.pointer.w + x];
@@ -146,34 +159,29 @@ static void overlay_pointer(uint32_t *px, int stride)
             int sy = plat.mouse_y - plat.pointer.hot_y + y;
             if (!c || sx < 0 || sy < 0 || sx >= SCREEN_W || sy >= SCREEN_H)
                 continue;
-            for (int dy = 0; dy < plat.filter; dy++)
-                for (int dx = 0; dx < plat.filter; dx++)
-                    px[(sy * plat.filter + dy) * stride + sx * plat.filter + dx] =
-                        plat.pointer.argb[c & COLOR_INDEX_MASK];
+            plat.frame[sy][sx] = (uint8_t)(POINTER_COLOR_BASE + (c & COLOR_INDEX_MASK));
         }
 }
 
 void plat_present(void)
 {
-    uint32_t pal[2 * PALETTE_COLORS], *px;
+    uint32_t argb[FRAME_COLORS], *px;
     int pitch, tw = SCREEN_W * plat.filter;
-    const uint8_t *src = plat.filter == 1 ? &g_screen.px[0][0] : &plat.scaled_screen[0][0];
+    const uint8_t *src = plat.filter == 1 ? &plat.frame[0][0] : &plat.scaled_screen[0][0];
+    build_frame();
     if (plat.filter == 2)
-        scale2x(&g_screen.px[0][0], SCREEN_W, SCREEN_H, &plat.scaled_screen[0][0]);
+        scale2x(&plat.frame[0][0], SCREEN_W, SCREEN_H, &plat.scaled_screen[0][0]);
     if (plat.filter == 3)
-        scale3x(&g_screen.px[0][0], SCREEN_W, SCREEN_H, &plat.scaled_screen[0][0]);
+        scale3x(&plat.frame[0][0], SCREEN_W, SCREEN_H, &plat.scaled_screen[0][0]);
     for (int i = 0; i < 2 * PALETTE_COLORS; i++)
-        pal[i] = video_convert_argb(g_screen.palette[i]);
+        argb[i] = video_convert_argb(g_screen.palette[i]);
+    memcpy(&argb[POINTER_COLOR_BASE], plat.pointer.argb, sizeof plat.pointer.argb);
     if (!SDL_LockTexture(plat.texture, NULL, (void **)&px, &pitch))
         return;
     int stride = pitch / ARGB_BYTES;
-    for (int y = 0; y < SCREEN_H * plat.filter; y++) {
-        int row = y / plat.filter;
-        int half = row >= g_screen.split_top && row < g_screen.split_bottom ? 0 : PALETTE_COLORS;
+    for (int y = 0; y < SCREEN_H * plat.filter; y++)
         for (int x = 0; x < tw; x++)
-            px[y * stride + x] = pal[(src[y * tw + x] & COLOR_INDEX_MASK) | half];
-    }
-    overlay_pointer(px, stride);
+            px[y * stride + x] = argb[src[y * tw + x]];
     SDL_UnlockTexture(plat.texture);
     render_frame();
 }

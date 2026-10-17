@@ -18,12 +18,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - The credits command (203) of the entrance is not ported; the original fades the palette.
 - PRD: `docs/superpowers/2026-10-17-entrance-credits.md`.
 
-## Smooth the mouse pointer with the filter
-
-- Owner's wish (2026-10-17): with `--filter scale2x` or `scale3x` the mouse pointer is smoothed like the picture.
-- Today: `plat_present` (`src/platform/platform.c:156-179`) scales the indexed game screen, then `overlay_pointer` draws the pointer into the scaled frame as blocks of 2x2 or 3x3 pixels, so the pointer stays blocky. The pointer has its own colors (`plat_set_pointer`, `src/platform/platform.c:103-116`), so it cannot go into `g_screen.px`.
-- Change: build a 320x200 index frame (a screen pixel is its color plus 16 for the interface half, a pointer pixel is 32 plus its color, pointer color 0 is transparent), filter it, map it with one 48-entry color table. The screenshot (`src/control/png.c:51-61`) does not change.
-
 ## Windows build: the sound crackles under Wine
 
 - Found in the manual test (2026-10-17): `dm.exe` under the local Wine CX build (`~/github/wine-cross`) plays, saves and loads, but the sounds crackle and pop (wall bump, door). The macOS build sounds clean. Kairosoft games in the same Wine sound clean.
