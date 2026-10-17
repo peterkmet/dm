@@ -26,6 +26,12 @@ User wishes for future versions. Not planned yet.
 - Today: `plat_present` (`src/platform/platform.c`) scales the game screen, then `overlay_pointer` draws the pointer into the scaled frame as blocks of 2x2 or 3x3 pixels, so the pointer stays blocky.
 - Change: draw the pointer into the screen before the filter runs, so the filter smooths it too.
 
+## Developer view: game keys and walking through walls
+
+- Owner's wish (2026-10-17): `--view` uses the same keys as the game (Q, W, E, A, S, D, the cursor keys, the keypad; `docs/manual.md:148`), and the view can walk through walls.
+- Today: `debug_view_key` (`src/platform/debug_view.c`) knows only the cursor keys, A and D, and stops at a wall or a closed fake wall.
+- Change: map the game keys to the same moves; drop the wall check, keep the check for the map border.
+
 ## Advanced mode: show the damage twice as long
 
 - Owner's wish (2026-10-16): in the advanced mode the damage that a champion deals stays in the action area twice as long; the vanilla mode keeps the original time.
