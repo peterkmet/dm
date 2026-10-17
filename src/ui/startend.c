@@ -303,7 +303,7 @@ static void show_champion_parade(void)
         Box b;
         Bitmap portrait = ui_get_champion_portrait(i);
         if (layout_get_zone(ZONE_CHAMPION_PORTRAIT_FIRST + i, portrait_width, portrait_height, &b, &w, &h))
-            draw_blit(&portrait, w, h, &screen, &b, COLOR_DARK_GRAY, 0);
+            draw_blit(&(BlitSource){&portrait, w, h, COLOR_DARK_GRAY, 0}, &screen, &b);
         char name[sizeof champion->name + 1] = {0};
         char title[sizeof champion->title + 1] = {0};
         memcpy(name, champion->name, sizeof champion->name);

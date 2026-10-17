@@ -55,7 +55,7 @@ static void patch_dividers(Bitmap *viewport, int16_t count)
     Box b;
     memcpy(copy_px, viewport->px, (size_t)viewport->w * viewport->h);
     if (layout_get_zone(patch_zone[count - 1], copy.w, copy.h, &b, &w, &h))
-        draw_blit(&copy, sx + w, sy + h, viewport, &b, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){&copy, sx + w, sy + h, COLOR_NONE, 0}, viewport, &b);
 }
 
 /* The choice texts in the zones for their count. */
@@ -119,7 +119,7 @@ void dialog_draw(const DialogText *dialog)
     const char *const *choice = dialog->choices;
     Box all = {0, 0, viewport->w, viewport->h};
     if (graphic)
-        draw_blit(graphic, 0, 0, viewport, &all, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){graphic, 0, 0, COLOR_NONE, 0}, viewport, &all);
     ui_print_zone(viewport, ZONE_VERSION, COLOR_GRAY, COLOR_DARK_GRAY, tables_get_text(TABLES_TEXT_VERSION));
     int16_t count = 1;
     while (count < DIALOG_CHOICE_COUNT && choice[count])

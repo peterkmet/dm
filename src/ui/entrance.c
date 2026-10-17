@@ -48,7 +48,7 @@ static bool show_doors(const Bitmap *view, int16_t opened)
     if (view && layout_get_zone(ZONE_ENTRANCE_VIEWPORT, view->w, view->h, &door, &width, &height)) {
         door.x += work.x;
         door.y += work.y;
-        draw_blit(view, width, height, &screen, &door, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){view, width, height, COLOR_NONE, 0}, &screen, &door);
     }
     for (int16_t side = 0; side < SIDE_COUNT; side++) {
         const Bitmap *door_bitmap = gfx_get_bitmap(GFX_ENTRANCE_LEFT_DOOR + side);
@@ -66,7 +66,7 @@ static bool show_doors(const Bitmap *view, int16_t opened)
             door.x += opened;
         if (door.w)
             shown = true;
-        draw_blit(door_bitmap, width, height, &screen, &door, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){door_bitmap, width, height, COLOR_NONE, 0}, &screen, &door);
     }
     return shown;
 }
@@ -98,7 +98,7 @@ void entrance_press_button(bool resume)
         return;
     if (bm &&
         layout_get_zone(resume ? ZONE_ENTRANCE_RESUME : ZONE_ENTRANCE_ENTER, bm->w, BUTTON_HEIGHT, &box, &sx, &sy))
-        draw_blit(bm, sx, sy + (resume ? BUTTON_HEIGHT : 0), &screen, &box, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){bm, sx, sy + (resume ? BUTTON_HEIGHT : 0), COLOR_NONE, 0}, &screen, &box);
     audio_play_sample(SOUND_SWITCH, volumes);
     frame_wait_count(BUTTON_FRAMES);
 }

@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dmtest.game import Bitmap, Box, Position, setup_view, start_view, zone_records
+from dmtest.game import Bitmap, BlitSource, Box, Position, setup_view, start_view, zone_records
 from dmtest.game import screen as video_screen
 from dmtest.lib import load_lib
 from dmtest.markers import ROOT, needs_dm, needs_sdl
@@ -38,11 +38,11 @@ def pixels(bm):
 def test_blit_transparent_and_flip(lib):
     src = bitmap([[1, 2, 3], [4, 5, 0]])
     dst = bitmap([[9] * 4 for _ in range(3)])
-    lib.draw_blit(src, 0, 0, dst, Box(1, 1, 3, 2), 0, 0)
+    lib.draw_blit(BlitSource(ctypes.pointer(src), 0, 0, 0, 0), dst, Box(1, 1, 3, 2))
     assert pixels(dst) == [[9, 9, 9, 9], [9, 1, 2, 3], [9, 4, 5, 9]]
-    lib.draw_blit(src, 1, 0, dst, Box(0, 0, 2, 2), -1, 1)
+    lib.draw_blit(BlitSource(ctypes.pointer(src), 1, 0, -1, 1), dst, Box(0, 0, 2, 2))
     assert pixels(dst) == [[2, 1, 9, 9], [5, 4, 2, 3], [9, 4, 5, 9]]
-    lib.draw_blit(src, 0, 0, dst, Box(2, 1, 3, 2), 0x12, 3)  # key uses bits 0-3, both flips, clipped right
+    lib.draw_blit(BlitSource(ctypes.pointer(src), 0, 0, 0x12, 3), dst, Box(2, 1, 3, 2))  # key uses bits 0-3, both flips, clipped right
     assert pixels(dst) == [[2, 1, 9, 9], [5, 4, 0, 5], [9, 4, 3, 9]]
 
 

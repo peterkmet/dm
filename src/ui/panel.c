@@ -212,7 +212,7 @@ void panel_open(int16_t champion_index)
         ui_fill_zone_pattern(&screen, ZONE_MOVEMENT_ARROWS, COLOR_BLACK);
     inventory_set_open_champion(champion_index);
     if (bg)
-        draw_blit(bg, 0, 0, viewport, &(Box){0, 0, viewport->w, viewport->h}, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){bg, 0, 0, COLOR_NONE, 0}, viewport, &(Box){0, 0, viewport->w, viewport->h});
     if (g_session.candidate_champion_index >= 0) { /* a candidate cannot save, sleep, or close */
         ui_fill_zone(viewport, ZONE_INVENTORY_SAVE, COLOR_DARKEST_GRAY);
         ui_fill_zone(viewport, ZONE_INVENTORY_SLEEP, COLOR_DARKEST_GRAY);

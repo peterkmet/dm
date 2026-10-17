@@ -101,7 +101,7 @@ void ui_blit_graphic_box(Bitmap *dst, int16_t graphic, const Box *box, int16_t t
 {
     const Bitmap *bm = gfx_get_bitmap(graphic);
     if (bm)
-        draw_blit(bm, 0, 0, dst, box, transparent, 0);
+        draw_blit(&(BlitSource){bm, 0, 0, transparent, 0}, dst, box);
 }
 
 void ui_blit_zone(Bitmap *dst, const Bitmap *src, int16_t zone, int16_t transparent)
@@ -110,7 +110,7 @@ void ui_blit_zone(Bitmap *dst, const Bitmap *src, int16_t zone, int16_t transpar
     int16_t h = 0;
     Box b;
     if (src && layout_get_zone(zone, src->w, src->h, &b, &w, &h))
-        draw_blit(src, w, h, dst, &b, transparent, 0);
+        draw_blit(&(BlitSource){src, w, h, transparent, 0}, dst, &b);
 }
 
 void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text)
@@ -225,8 +225,8 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
     int16_t i = icon - tables_get_icon_sheet_first(sheet - 1);
     const Bitmap *bm = gfx_get_bitmap(GFX_OBJECT_ICONS_BEFORE_FIRST + sheet);
     if (bm)
-        draw_blit(bm, i % ICONS_PER_ROW * UI_ICON_SIZE, i / ICONS_PER_ROW * UI_ICON_SIZE, out,
-                  &(Box){0, 0, UI_ICON_SIZE, UI_ICON_SIZE}, COLOR_NONE, 0);
+        draw_blit(&(BlitSource){bm, i % ICONS_PER_ROW * UI_ICON_SIZE, i / ICONS_PER_ROW * UI_ICON_SIZE, COLOR_NONE, 0},
+                  out, &(Box){0, 0, UI_ICON_SIZE, UI_ICON_SIZE});
 }
 
 bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box)
@@ -261,7 +261,8 @@ void ui_draw_slot_icon(int16_t slot_box, int16_t icon)
     if (icon == -1 || !ui_get_slot_box_zone(slot_box, false, &b))
         return;
     ui_extract_icon(icon, &bm);
-    draw_blit(&bm, 0, 0, slot_box < UI_SLOT_BOX_INVENTORY_FIRST ? &screen : &viewport, &b, COLOR_NONE, 0);
+    draw_blit(&(BlitSource){&bm, 0, 0, COLOR_NONE, 0}, slot_box < UI_SLOT_BOX_INVENTORY_FIRST ? &screen : &viewport,
+              &b);
 }
 
 /* The champion of a bones object: the charge bits of the junk record. */
@@ -341,5 +342,5 @@ void ui_draw_icon_to_viewport(int16_t icon, int16_t zone)
     if (!ui_get_icon_zone_box(zone, false, &b))
         return;
     ui_extract_icon(icon, &bm);
-    draw_blit(&bm, 0, 0, ui_get_viewport(), &b, COLOR_NONE, 0);
+    draw_blit(&(BlitSource){&bm, 0, 0, COLOR_NONE, 0}, ui_get_viewport(), &b);
 }

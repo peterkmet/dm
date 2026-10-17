@@ -63,6 +63,10 @@ class Bitmap(ctypes.Structure):
     _fields_ = [("w", u16), ("h", u16), ("px", ctypes.POINTER(ctypes.c_uint8))]
 
 
+class BlitSource(ctypes.Structure):
+    _fields_ = [("bitmap", ctypes.POINTER(Bitmap)), ("sx", c16), ("sy", c16), ("transparent", c16), ("flip", ctypes.c_int)]
+
+
 class ViewResult(ctypes.Structure):
     _fields_ = [
         ("square_ahead_element", c16), ("facing_alcove", ctypes.c_bool), ("facing_fountain", ctypes.c_bool),
@@ -686,7 +690,7 @@ def setup_view(lib):
     lib.layout_init.restype = ctypes.c_bool
     lib.draw_shrink.restype = ctypes.c_bool
     lib.view_render.restype = ctypes.c_bool
-    lib.draw_blit.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Bitmap), ctypes.POINTER(Box), ctypes.c_int16, ctypes.c_int]
+    lib.draw_blit.argtypes = [ctypes.POINTER(BlitSource), ctypes.POINTER(Bitmap), ctypes.POINTER(Box)]
     lib.draw_shrink.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.c_char_p, ctypes.POINTER(Bitmap)]
     lib.layout_get_zone.argtypes = [ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Box), ctypes.POINTER(ctypes.c_int16), ctypes.POINTER(ctypes.c_int16)]
     lib.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)

@@ -39,7 +39,7 @@ static void show_wall_text(const uint8_t *text)
         int16_t height = glyph_h;
         if (n && layout_get_zone(ZONE_WALL_TEXT_LINE_FIRST + line, 0, 0, &box, &width, &height))
             for (box.w = glyph_w; n; n--, text++, box.x += glyph_w)
-                draw_blit(font, *text * glyph_w, 0, &g_view.viewport, &box, TRANSPARENT_COLOR, 0);
+                draw_blit(&(BlitSource){font, *text * glyph_w, 0, TRANSPARENT_COLOR, 0}, &g_view.viewport, &box);
         text += n;
         if (*text++ == WALL_TEXT_END)
             break;
@@ -56,8 +56,9 @@ static void show_wall_portrait(int16_t champion)
     int16_t h = ph;
     Box b;
     if (portraits && layout_get_zone(ZONE_WALL_PORTRAIT, 0, 0, &b, &w, &h))
-        draw_blit(portraits, champion % PORTRAITS_PER_ROW * pw, champion / PORTRAITS_PER_ROW * ph, &g_view.viewport, &b,
-                  PORTRAIT_TRANSPARENT, 0);
+        draw_blit(&(BlitSource){portraits, champion % PORTRAITS_PER_ROW * pw, champion / PORTRAITS_PER_ROW * ph,
+                                PORTRAIT_TRANSPARENT, 0},
+                  &g_view.viewport, &b);
 }
 
 /* The ornament or inscription on a view wall, and on the D1C wall the champion
@@ -206,7 +207,7 @@ static void show_door(uint16_t door_thing, int16_t state, int16_t door_view)
             int16_t h = place.zone_dy;
             Box b;
             if (layout_get_zone(zone + ZONE_DOOR_RIGHT_HALF, door_copy.w, door_copy.h, &b, &w, &h))
-                draw_blit(&door_copy, place.zone_dx + w, h, &g_view.viewport, &b, TRANSPARENT_COLOR, 0);
+                draw_blit(&(BlitSource){&door_copy, place.zone_dx + w, h, TRANSPARENT_COLOR, 0}, &g_view.viewport, &b);
             zone = (zone + ZONE_DOOR_LEFT_HALF) | ZONE_SIZED;
         }
     }
