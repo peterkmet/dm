@@ -11,13 +11,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-extern bool g_advanced_features; /* set outside vanilla: the advanced features show */
-extern bool g_automap_open;      /* set: the automap covers the viewport and the game time stops */
+/* The viewport screens of g_advanced_screen: at most one covers the viewport, and the game time stops while it
+   is open. */
+#define ADVANCED_SCREEN_NONE    0
+#define ADVANCED_SCREEN_AUTOMAP 1
+
+extern bool g_advanced_features;  /* set outside vanilla: the advanced features show */
+extern int16_t g_advanced_screen; /* the open viewport screen, ADVANCED_SCREEN_NONE for the dungeon view */
 
 /* The mouse is at (x, y): during a drag the map follows it in whole squares. */
 void advanced_drag(int16_t x, int16_t y);
-/* A mouse button while the automap is open: a left press on the map starts a drag, the left release
-   ends it. Returns true when the automap is open. */
+/* A mouse button while a viewport screen is open: on the automap a left press on the map starts a drag, the
+   left release ends it. Returns true when a screen is open: it uses up every click. */
 bool advanced_process_click(int16_t x, int16_t y, int16_t kind);
 /* A white line in the message area. */
 void advanced_print_message(const char *text);

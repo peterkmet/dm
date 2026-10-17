@@ -25,7 +25,8 @@
 #define READOUT_MARGIN      2 /* pixels between the rulers and the read-out */
 #define QUICK_MESSAGE_COLOR COLOR_WHITE
 
-bool g_advanced_features, g_automap_open;
+bool g_advanced_features;
+int16_t g_advanced_screen = ADVANCED_SCREEN_NONE;
 
 static struct {
     bool active;
@@ -75,10 +76,16 @@ static void show_automap(void)
     ui_draw_viewport();
 }
 
-/* Closes the automap and draws the dungeon view again. */
-static void close_automap(void)
+/* Opens a viewport screen: the game time stops until it closes. */
+static void open_screen(int16_t screen)
 {
-    g_automap_open = false;
+    g_advanced_screen = screen;
+}
+
+/* Closes the open viewport screen and draws the dungeon view again. */
+static void close_screen(void)
+{
+    g_advanced_screen = ADVANCED_SCREEN_NONE;
     drag.active = false;
     automap_scroll_reset();
     gameloop_draw_view();
@@ -86,7 +93,7 @@ static void close_automap(void)
 
 void advanced_drag(int16_t x, int16_t y)
 {
-    if (!drag.active || !g_automap_open)
+    if (!drag.active || g_advanced_screen != ADVANCED_SCREEN_AUTOMAP)
         return;
     int16_t dx = (x - drag.x) / AUTOMAP_CELL_SIZE;
     int16_t dy = (y - drag.y) / AUTOMAP_CELL_SIZE;
@@ -100,7 +107,7 @@ void advanced_drag(int16_t x, int16_t y)
 
 bool advanced_process_click(int16_t x, int16_t y, int16_t kind)
 {
-    if (!g_automap_open)
+    if (g_advanced_screen == ADVANCED_SCREEN_NONE)
         return false;
     Box b;
     if (kind == CLICK_LEFT_RELEASE) {
@@ -141,9 +148,9 @@ bool advanced_process_key(uint16_t key)
 {
     if (g_session.mode == GAME_MODE_VANILLA || champion_is_renaming())
         return false;
-    if (g_automap_open) {
+    if (g_advanced_screen == ADVANCED_SCREEN_AUTOMAP) {
         if (key == KEY_M || key == KEY_TAB || key == KEY_ESCAPE)
-            close_automap();
+            close_screen();
         if (g_session.mode == GAME_MODE_ADVANCED && (key == KEY_L || key == KEY_I || key == KEY_F)) {
             game_toggle_cheat(key == KEY_L ? CHEAT_LIGHT : key == KEY_I ? CHEAT_IMMORTAL : CHEAT_FOOD);
             show_automap();
@@ -168,7 +175,7 @@ bool advanced_process_key(uint16_t key)
     case KEY_TAB:
         if (!in_dungeon_view())
             return !(key == KEY_TAB && g_session.inventory_champion_index >= 0);
-        g_automap_open = true;
+        open_screen(ADVANCED_SCREEN_AUTOMAP);
         show_automap();
         return true;
     }

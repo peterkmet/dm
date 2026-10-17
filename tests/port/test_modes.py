@@ -93,7 +93,7 @@ def test_vanilla_is_the_default_and_the_advanced_keys_do_nothing(game, tmp_path)
     position = game.position()
     for key in (C.KEY_F5, C.KEY_F9, C.KEY_M, C.KEY_TAB):
         press(game, key)
-    assert game.value("g_automap_open") == 0 and not (tmp_path / QUICK).exists()
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE and not (tmp_path / QUICK).exists()
     assert game.session.inventory_champion_index == -1 and game.position() == position
     assert [game.lib.advanced_letter_key(ord(c)) for c in "wsadqe"] == [0] * 6
 
@@ -143,7 +143,7 @@ def test_automap_stops_the_game_time_and_draws_the_map(game):
     game.run(13)
     time_before, position = game.value("g_game_time", u32), game.position()
     press(game, C.KEY_M)
-    assert game.value("g_automap_open") == 1
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_AUTOMAP
     view = pixels(game, C.ZONE_VIEWPORT)
     assert C.COLOR_YELLOW in view  # the party arrow, in the interface palette
     palette = list(screen(game.lib).palette)
@@ -153,7 +153,7 @@ def test_automap_stops_the_game_time_and_draws_the_map(game):
     assert game.value("g_game_time", u32) == time_before
     assert game.position() == position
     press(game, C.KEY_TAB)
-    assert game.value("g_automap_open") == 0
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE
     game.run(30)
     assert game.value("g_game_time", u32) > time_before
     set_mode(game, VANILLA)
@@ -164,12 +164,12 @@ def test_automap_opens_only_in_the_dungeon_view(game):
     press(game, C.KEY_F1)
     assert game.session.inventory_champion_index == 0
     press(game, C.KEY_M)
-    assert game.value("g_automap_open") == 0
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE
     press(game, C.KEY_F1)
     assert game.session.inventory_champion_index == -1
     press(game, C.KEY_M)
     press(game, C.KEY_ESCAPE)
-    assert game.value("g_automap_open") == 0 and game.value("g_game_frozen") == 0
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE and game.value("g_game_frozen") == 0
     set_mode(game, VANILLA)
 
 
@@ -214,7 +214,7 @@ def test_tab_closes_the_inventory(game, mode):
     press(game, C.KEY_F1)
     press(game, C.KEY_TAB)
     assert game.session.inventory_champion_index == (-1 if mode == ADVANCED else 0)
-    assert game.value("g_automap_open") == 0
+    assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE
     if game.session.inventory_champion_index >= 0:
         press(game, C.KEY_F1)
     set_mode(game, VANILLA)

@@ -149,7 +149,7 @@ static void start_game(void)
 {
     game_reset_session();
     g_do_not_draw_fluxcages = false;
-    g_automap_open = false;
+    g_advanced_screen = ADVANCED_SCREEN_NONE;
     apply_settings();
     automap_scroll_reset();
     shown_hand_object = THING_NONE;
@@ -264,8 +264,8 @@ static void show_projectile_motion(void)
 bool gameloop_run_frame(void)
 {
     bool ran = false;
-    if (g_automap_open)
-        return false; /* the game time stops while the automap is open */
+    if (g_advanced_screen != ADVANCED_SCREEN_NONE)
+        return false; /* the game time stops while a viewport screen is open */
     while ((!g_stop_waiting_for_input || !g_game_time_ticking) && command_process_queue())
         ran = true;
     if (ran)

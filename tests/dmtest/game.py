@@ -43,7 +43,6 @@ BOOL_GLOBALS = frozenset({
     "g_leader_empty_handed",
     "g_fuse_sequence_requested",
     "g_advanced_features",
-    "g_automap_open",
     "g_game_screen_shown",
     "g_stop_waiting_for_input",
     "g_game_time_ticking",
