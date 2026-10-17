@@ -1,43 +1,46 @@
 # Ideas for later
 
-User wishes for future versions. Not planned yet.
+User wishes for future versions. Not planned yet, unless an item names its PRD.
 
 ## Small cleanups after the clean-code pass
 
-- `action_reset` (`src/engine/action.c`) also clears `g_redraw`, which is not action state.
-- `ui/view_walls.c`: the thieves eye hole is not drawn; it needs the party spell state.
-- `ui/command.c`: the credits command (203) is not ported.
-- `ui/command.c` ignores the result of `inventory_fill_at_fountain`.
-- `engine/group.c`: a parameter `group_cell` has the name of a function.
-- `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing` (`docs/reference/symbols/range-4-6.md`). Port that rule.
+- `action_reset` (`src/engine/action.c:171`) also clears `g_redraw`, which is not action state. Move the clear into `game_reset_session` (`src/engine/game.c:62-72`); `menus_reset` cannot do it, because `ui/` may change `g_redraw` only with `|=` and `&=` (`tests/standard/test_standard.py:508-526`).
+- `ui/view_walls.c`: the Thieves Eye (`g_party.thieves_eye_count`, `src/engine/party.h:24`) is not drawn. The original draws it in three places: the D1C front wall gets the hole graphic 41 over the squares behind it (KAOS.c:23050-23081); the D1C door gets the thieves eye door ornament (KAOS.c:21403-21405; loaded at `src/ui/view.c:1006`); the door frame of the party square (D0C) gets the frame with the hole (KAOS.c:23232-23245).
+- `ui/command.c` ignores the result of `inventory_fill_at_fountain` (`src/engine/inventory.c:445-459`, the caller at `src/ui/command.c:563-565`). The frame refresh already draws the changed hand icon (`src/ui/gameloop.c:117-125`), so the function can return `void`.
+- `engine/group.c`: the parameter `group_cell` of `order_attack_cells` (`src/engine/group.c:291-298`) has the name of a function; with `group_at` it becomes `attacker_cell` and `attacker_at`.
+- `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing`. PRD: `docs/superpowers/2026-10-17-discard-thing.md`.
 - `light_depths` (`src/engine/explored.c`): a fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it.
-- `sound_request_play` (`src/engine/sound.c`): the original skips a mode >= 1 sound when the current map is not the party map; the port does not check it yet. Port that rule.
-- `tests/golden/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
+- `sound_request_play` (`src/engine/sound.c:130-148`): the original skips a mode >= 1 sound when the current map is not the party map (KAOS.c:7001); the port does not check it yet. Fix: return when `mode != SOUND_MODE_NOW` and `g_current_map_index != g_party_map_index`; a differential case in `tests/differential/test_sound.py`.
+- `tests/golden/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot. Fix: one `check` helper in `tests/dmtest/golden.py` for the five files in `tests/golden/`, with a message that names the update command, and an update mode that stops in an xdist worker.
 
 ## Port the name entry of a reincarnated champion
 
 - Owner's wish (2026-10-17): REINCARNATE asks for a new name and title, as in the original.
-- Today: `champion_click_rebirth_panel` (`src/engine/champion.c`) keeps the name and prints "<name> REINCARNATED." (`docs/rules/champions.md:44`). `process_other_command` (`src/ui/command.c`) ignores the name entry commands (`docs/formats/dungeon.md:188`).
-- The original: the rename panel is `g_panel_content` 8 (`docs/reference/symbols/range-4-6.md:242`); it swaps in its own mouse and keyboard input tables (`range-4-6.md:542`, `KAOS_MOUSE_INPUT_NAME_ENTRY` in `src/data/kaos_addresses.h`). CSB: `champion_rename` at `0x116312` (`docs/reference/csb-appb-symbols.csv`).
+- PRD: `docs/superpowers/2026-10-17-reincarnate-name.md`.
+
+## Credits on the entrance
+
+- The credits command (203) of the entrance is not ported; the original fades the palette.
+- PRD: `docs/superpowers/2026-10-17-entrance-credits.md`.
 
 ## Smooth the mouse pointer with the filter
 
 - Owner's wish (2026-10-17): with `--filter scale2x` or `scale3x` the mouse pointer is smoothed like the picture.
-- Today: `plat_present` (`src/platform/platform.c`) scales the game screen, then `overlay_pointer` draws the pointer into the scaled frame as blocks of 2x2 or 3x3 pixels, so the pointer stays blocky.
-- Change: draw the pointer into the screen before the filter runs, so the filter smooths it too.
+- Today: `plat_present` (`src/platform/platform.c:156-179`) scales the indexed game screen, then `overlay_pointer` draws the pointer into the scaled frame as blocks of 2x2 or 3x3 pixels, so the pointer stays blocky. The pointer has its own colors (`plat_set_pointer`, `src/platform/platform.c:103-116`), so it cannot go into `g_screen.px`.
+- Change: build a 320x200 index frame (a screen pixel is its color plus 16 for the interface half, a pointer pixel is 32 plus its color, pointer color 0 is transparent), filter it, map it with one 48-entry color table. The screenshot (`src/control/png.c:51-61`) does not change.
 
 ## Developer view: game keys and walking through walls
 
-- Owner's wish (2026-10-17): `--view` uses the same keys as the game (Q, W, E, A, S, D, the cursor keys, the keypad; `docs/manual.md:148`), and the view can walk through walls.
-- Today: `debug_view_key` (`src/platform/debug_view.c`) knows only the cursor keys, A and D, and stops at a wall or a closed fake wall.
-- Change: map the game keys to the same moves; drop the wall check, keep the check for the map border.
+- Owner's wish (2026-10-17): `--view` uses the same keys as the game (Q, W, E, A, S, D, the cursor keys, the keypad; `docs/manual.md:109-114`), and the view can walk through walls.
+- Today: `debug_view_key` (`src/platform/debug_view.c:62-95`) knows only the cursor keys, A and D; Left and Right turn. The wall check is at `:87-90`, the map border check at `:85-86`.
+- Change: Up, KP8, W forward; Down, KP2, KP5, S back; Left, KP4, A left; Right, KP6, D right; Delete, KP7, Q turn left; Insert, Help, KP9, E turn right. Drop the wall check, keep the map border check. Update `docs/manual.md:48` and `src/platform/debug_view.h:15`.
 
 ## Draw the damage splat on the champion box
 
 - Found in the manual test (2026-10-17): a champion that takes damage shows no red splat with the number on the status box. The bars and `health_lost` are correct.
-- Today: `champion_apply_pending_damage` (`src/engine/champion.c`) updates the health and queues the hide event, but nothing draws the splat. `status_draw_damage` (`src/ui/status.c`) has no caller in `src/`; only the tests call it. Main had the same gap (`ui_draw_champion_damage` without a caller).
-- The original: the pending-damage routine calls `champion_draw_damage(i, damage)` (KAOS `0x11187e`, `reference/decomp/dm/KAOS.c:14774`).
-- Change: the engine records the damage per champion; the game loop (`src/ui/gameloop.c`) calls `status_draw_damage` for it.
+- Today: `champion_apply_pending_damage` (`src/engine/champion.c:816-848`) updates the health and queues the hide event, but nothing draws the splat. `status_draw_damage` (`src/ui/status.c:102-111`) has no caller in `src/`; only `tests/golden/test_golden_screens.py:48` calls it.
+- The original: the pending-damage routine draws the splat of each living champion before the action-area refresh (KAOS.c:14776-14829, the draw at :14808 in the `else` of the kill at :14799).
+- Change: the engine records the damage of the tick per living champion in `ChampionRuntime` (`src/engine/champion.h:61-67`; the ctypes mirror `tests/dmtest/game.py:101-105` gets the field too); the game loop calls `status_draw_damage` after `champion_apply_pending_damage` and before `release_dead_champions` (`src/ui/gameloop.c:329-330`).
 
 ## Windows build: the sound crackles under Wine
 
@@ -53,11 +56,9 @@ User wishes for future versions. Not planned yet.
 ## Advanced mode: show the damage twice as long
 
 - Owner's wish (2026-10-16): in the advanced mode the damage that a champion deals stays in the action area twice as long; the vanilla mode keeps the original time.
-- Today: `menus_draw_action_damage` (`src/ui/menus.c`) shows the damage in the action area until the area draws again. The time of that redraw also controls when the champion can act again, so the longer display needs its own timer, not a change of the action times.
-- Not in scope: the damage received on the champion box (`HIDE_DAMAGE_TICKS`, `src/engine/champion.c:26`) keeps its time.
+- PRD: `docs/superpowers/2026-10-17-advanced-damage-time.md`.
 
 ## Advanced mode: action icons keep their colors on every level
 
-- Owner's wish (2026-10-16): in the advanced mode the icons of the action area (the empty hand) have the same colors on every level; the vanilla mode keeps the original behavior.
-- Today: the action area is on the screen lines of the viewport, so it draws with the dungeon palette. Each map puts the replacement colors of its creatures into colors 9 and 10 of that palette (`set_creature_replacement_colors`, `src/ui/view.c:878`). The empty hand icon uses one of these colors: orange on level 11, dark red on level 12. The original game does the same.
-- Change: in the advanced mode, draw the action area icons with fixed colors (e.g. the default colors 9 and 10 of the interface palette), without changing the creature colors of the viewport.
+- Owner's wish (2026-10-16): in the advanced mode the icons of the action area have the same colors on every level; the vanilla mode keeps the original behavior.
+- PRD: `docs/superpowers/2026-10-17-advanced-icon-colors.md`.
