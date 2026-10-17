@@ -92,7 +92,6 @@ format:
 	uv run clang-format -i $(C_FILES)
 
 check:
-	uv run clang-format --dry-run --Werror $(C_FILES)
 	uv run ruff check tests tools/dmtools
 	uv run pytest -q tests/standard
 	$(MAKE) test

@@ -83,7 +83,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 [coding-standard.md](coding-standard.md) is the coding standard of the C port. Follow it for every change in `src/`.
 
 - `make format` formats the C files. Run it before a commit.
-- `make check` runs the format check, `ruff`, `tests/standard`, and the full suite.
+- `make check` runs `ruff`, `tests/standard` (with the format check), and the full suite.
 
 ## Release
 
