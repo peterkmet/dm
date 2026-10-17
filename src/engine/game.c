@@ -67,6 +67,7 @@ void game_reset_session(void)
     g_session.cheat_light = false;
     g_session.cheat_immortal = false;
     g_session.cheat_food = false;
+    g_redraw = 0;
     for (uint16_t i = 0; i < CHAMPION_MAX_COUNT; i++)
         memset(g_champions[i].runtime.skill_level_up, 0, sizeof g_champions[i].runtime.skill_level_up);
 }

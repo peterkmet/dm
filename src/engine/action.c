@@ -168,7 +168,6 @@ void action_reset(void)
     memset(g_action_list.minimum_skill_levels, 0, sizeof g_action_list.minimum_skill_levels);
     g_action_list.count = 0;
     g_session.action_damage = 0;
-    g_redraw = 0;
 }
 
 void action_clear_acting_champion(void)
