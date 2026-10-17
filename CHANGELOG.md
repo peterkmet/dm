@@ -8,6 +8,12 @@
 - The game extracts the Amiga disk images (`.adf`) in the current folder into `game/`, `game-csb/`, and `game-csb/disk-b/` at start.
 - Before an adventure loads, the game checks the CRC32 of its required files against the Amiga disks and names the first wrong file.
 - Windows build: `make windows` (MinGW-w64) and `tools/dist/make-dist-win.sh` for a Windows zip. No LLM mode on Windows.
+- REINCARNATE asks for a new name and title, as the original (DM and CSB). The turn-based mode keeps the old name.
+- The entrance shows the credits; the entrance and the credits fade the palette as the original.
+- The view draws the Thieves Eye holes: the wall ahead, the door ahead, and the door frame of the party square.
+- A thing on a far square disappears when the records of its type run out, as the original.
+- Advanced mode: the damage of a hit stays in the action area for two ticks; the action icons keep their colors in every light.
+- The upscale filter smooths the mouse pointer with the picture.
 
 ### Changed
 
@@ -18,6 +24,12 @@
 - Clean-code pass of the C port, with no change of game behavior: `.clang-format` and a format check, named constants, `bool` truth values, typed accessors for the KAOS tables, verb-object names, game rules moved from `ui/` to `engine/`, and the dungeon view squares drawn from one table. `docs/coding-standard.md` lists every check of `tests/standard/test_standard.py`.
 - Golden snapshot tests of the save file, the dungeon view, and the game rules.
 - Windows: the ADF extraction stops with an error on a file name that is not safe on Windows; the turn-based mode is hidden.
+- `--view` uses the game keys and walks through walls.
+
+### Fixed
+
+- The status box shows the damage splat of a hurt champion.
+- A door or a creature on another map than the party map makes no sound.
 
 ### Removed
 
