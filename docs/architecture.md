@@ -75,7 +75,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `engine/inventory.h` | `inventory_` `object_` | Objects, slots, and the leader hand. |
 | `engine/magic.h` | `magic_` | Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C). |
 | `engine/map.h` | `door_` `square_` `map_` `direction_` | Current map, square bytes, and thing lists. |
-| `engine/message.h` | `message_` | Rule-level model of the message area (zone 15). |
+| `engine/message.h` | `message_` | Rule-level model of the message area (zone 15): the text rows, their colors and expiry, and the cursor. |
 | `engine/move.h` | `move_` | Party and object movement (KAOS range 8, MOVESENS.C and COMMAND.C). |
 | `engine/party.h` | `party_` | The party as one body: its position, its scents, its light, and its movement delays. |
 | `engine/projectile.h` | `projectile_` `explosion_` | Projectiles, explosions, fluxcages, and launchers (KAOS range 7, PROJEXPL.C). |
@@ -83,7 +83,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `engine/record.h` | `rec_` | The byte layout of the dungeon records: one accessor per field, no record byte outside this module. |
 | `engine/recruit.h` | `recruit_` | Candidate champions: the champion data from the text of a mirror. |
 | `engine/savefile.h` | `savefile_` | The save file container of DM v3.60 and CSB: the header and the blocks. |
-| `engine/savegame.h` | `savegame_` | Game state to and from the save file of the adventure (KAOS save_game and load_game, LOADSAVE.C). |
+| `engine/savegame.h` | `savegame_` | Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and load_game, LOADSAVE.C). |
 | `engine/sensor.h` | `sensor_` | Floor and wall sensors. |
 | `engine/sound.h` | `sound_` | The sound rules: the sound table, the volume by distance, the pending queue, and the play requests of the rules. |
 | `engine/timeline.h` | `timeline_` | The timeline: the event slots and the min-heap that orders them by time. |
