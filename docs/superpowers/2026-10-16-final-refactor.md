@@ -597,8 +597,9 @@ Feature: Final refactor
     And the golden save, view, screens, rules and protocol snapshots are unchanged
 
   Scenario: Constants
-    When I search src/ for "enum {" and for "enum" outside a result type
+    When I search src/ for an anonymous enum ("^\s*enum\s*{", not after "typedef")
     Then nothing is found
+    And every enum left is a named typedef enum that Task 25 keeps
     And every constant block is hex in every line or decimal in every line
 
   Scenario: Globals
