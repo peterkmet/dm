@@ -6,7 +6,7 @@
 /* The soundtrack tables of the music module, shared by music.c and music_tables.c. The tables are not in the
    game files: they come from the FM-Towns and Super NES versions. */
 
-#include "ui/music.h"
+#include "music.h"
 #include <stdint.h>
 
 /* Sizes of the soundtrack tables. */

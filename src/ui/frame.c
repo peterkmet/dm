@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/frame.h"
+#include "frame.h"
 
 void (*g_frame_hook)(void);
 bool g_quit_requested;

@@ -3,7 +3,15 @@ CC          = clang
 BASE_CFLAGS = -std=c11 -Wall -Wextra -Werror -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wvla \
               -Wimplicit-fallthrough -O2 -g
 CFLAGS      = $(BASE_CFLAGS)
-CPPFLAGS    = -Isrc -isystem third_party -MMD -MP
+CPPFLAGS    = -isystem third_party -MMD -MP
+# The include path of a layer: its own public headers and those of the layers before it. A private *_internal.h
+# stands next to its .c file. A wrong layer include does not compile.
+INC_data     = -Isrc/data/include
+INC_engine   = $(INC_data) -Isrc/engine/include
+INC_ui       = $(INC_engine) -Isrc/ui/include
+INC_control  = $(INC_ui) -Isrc/control/include
+INC_platform = $(INC_control) -Isrc/platform/include
+layer_inc    = $(INC_$(word 2,$(subst /, ,$(1))))
 LDFLAGS     =
 ifeq ($(SANITIZE),1)
 CFLAGS  += -fsanitize=address,undefined
@@ -25,7 +33,7 @@ POSIX_ONLY   = src/platform/transport.c
 GAME_SOURCES = $(filter-out $(WINDOWS_ONLY),$(SOURCES))
 LIB_SOURCES  = $(filter-out $(SDL_SOURCES) $(WINDOWS_ONLY),$(SOURCES))
 WIN_SOURCES  = $(filter-out $(POSIX_ONLY),$(SOURCES))
-C_FILES      = $(wildcard src/*/*.[ch])
+C_FILES      = $(wildcard src/*/*.[ch] src/*/include/*.h)
 
 objects = $(patsubst src/%.c,$(1)/%.o,$(2))
 
@@ -47,7 +55,7 @@ $(OBJ)/flags.txt:
 
 $(OBJ)/%.o: src/%.c Makefile $(OBJ)/flags.txt
 	@mkdir -p $(@D)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(call layer_inc,$<) $(CFLAGS) -c -o $@ $<
 
 $(call objects,$(OBJ),$(SDL_SOURCES)): CPPFLAGS += -I$(SDL_PREFIX)/include
 
@@ -76,7 +84,7 @@ $(WIN_OBJ)/flags.txt:
 
 $(WIN_OBJ)/%.o: src/%.c Makefile $(WIN_OBJ)/flags.txt | $(SDL_MINGW)
 	@mkdir -p $(@D)
-	$(WIN_CC) $(CPPFLAGS) -I$(SDL_MINGW)/include $(BASE_CFLAGS) -c -o $@ $<
+	$(WIN_CC) $(CPPFLAGS) $(call layer_inc,$<) -I$(SDL_MINGW)/include $(BASE_CFLAGS) -c -o $@ $<
 
 $(B)/dm.exe: $(call objects,$(WIN_OBJ),$(WIN_SOURCES))
 	$(WIN_CC) $(BASE_CFLAGS) -o $@ $^ -L$(SDL_MINGW)/lib -lSDL3

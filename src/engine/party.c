@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/party.h"
-#include "data/ids.h"
-#include "data/tables.h"
-#include "engine/arith.h"
-#include "engine/champion.h"
-#include "engine/game.h"
-#include "engine/inventory.h"
-#include "engine/map.h"
-#include "engine/record.h"
+#include "party.h"
+#include "ids.h"
+#include "tables.h"
+#include "arith.h"
+#include "champion.h"
+#include "game.h"
+#include "inventory.h"
+#include "map.h"
+#include "record.h"
 #include <string.h>
 
 /* Party light and scent limits. */

@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "platform/platform.h"
-#include "ui/audio.h"
-#include "ui/music.h"
-#include "ui/video.h"
-#include "platform/scale.h"
+#include "platform.h"
+#include "audio.h"
+#include "music.h"
+#include "video.h"
+#include "scale.h"
 #include <SDL3/SDL.h>
 #include <string.h>
 

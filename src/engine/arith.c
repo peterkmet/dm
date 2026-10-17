@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/arith.h"
+#include "arith.h"
 
 extern inline int16_t min16(int16_t a, int16_t b);
 extern inline int16_t max16(int16_t a, int16_t b);

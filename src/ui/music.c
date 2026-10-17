@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/music.h"
-#include "data/adventure.h"
-#include "data/file.h"
-#include "engine/dungeon.h"
-#include "engine/party.h"
-#include "ui/audio.h"
-#include "ui/gameloop.h"
-#include "ui/music_internal.h"
+#include "music.h"
+#include "adventure.h"
+#include "file.h"
+#include "dungeon.h"
+#include "party.h"
+#include "audio.h"
+#include "gameloop.h"
+#include "music_internal.h"
 #include <stdbool.h>
 #include <stdio.h>
 

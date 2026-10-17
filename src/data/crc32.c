@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/crc32.h"
-#include "data/bytes.h"
+#include "crc32.h"
+#include "bytes.h"
 
 /* Entries of the CRC table: one per byte value. */
 #define CRC_TABLE_SIZE 256

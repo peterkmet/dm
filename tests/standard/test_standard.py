@@ -49,6 +49,23 @@ def rel(path):
     return path.relative_to(SRC).as_posix()
 
 
+def layer_of(path):
+    return path.relative_to(SRC).parts[0]
+
+
+def public_header(layer, stem):
+    """The path of the public header <stem>.h of a layer (it may not exist)."""
+    return SRC / layer / "include" / f"{stem}.h"
+
+
+def public_headers():
+    """Each public header name and its paths: src/<layer>/include/<name>.h."""
+    names = defaultdict(list)
+    for path in sorted(SRC.glob("*/include/*.h")):
+        names[path.name].append(path)
+    return names
+
+
 def allowed():
     """The (check, target) pairs of the allowlist; none when DM_STANDARD_IGNORE_ALLOWLIST is set."""
     if os.environ.get("DM_STANDARD_IGNORE_ALLOWLIST"):
@@ -239,8 +256,8 @@ def test_each_constant_has_one_definition():
 
 
 def module_stem(name):
-    """The path of a module's public header without .h; <m>_internal.h gives <m>."""
-    return name.removesuffix(".h").removesuffix("_internal")
+    """The path of a module's public header without .h and include/; <m>_internal.h gives <m>."""
+    return name.replace("/include/", "/").removesuffix(".h").removesuffix("_internal")
 
 
 def test_headers_state_unique_prefixes():
@@ -449,12 +466,12 @@ BYTE_ORDER_DEF = re.compile(r"^\s*#\s*define\s+(be16|wr16|be32|wr32)\b|^(?:stati
 
 def test_byte_order_helpers_only_in_bytes_header():
     report("byteorder", [f"byteorder {rel(path)}  | {m.group().strip()}" for path in sources()
-                         if rel(path) != "data/bytes.h"
+                         if rel(path) != "data/include/bytes.h"
                          for m in BYTE_ORDER_DEF.finditer(strip(path.read_text(errors="replace")))])
 
 
 KAOS_CALL = re.compile(r"\bkaos_\w+\s*\(")
-KAOS_HEADER = re.compile(r'^\s*#\s*include\s*"(?:data/)?kaos_addresses\.h"', re.M)
+KAOS_HEADER = re.compile(r'^\s*#\s*include\s*"kaos_addresses\.h"', re.M)
 IMAGE_ADDRESS = re.compile(r"\b0x10[0-9a-fA-F]{4}\b")
 ADDRESS_PREFIXES = ("KAOS_", "CSB_", "SWSH_", "VDEO_")
 
@@ -463,7 +480,7 @@ def test_kaos_image_only_in_data():
     ok = allowed()
     found = []
     for path in sources():
-        if path.parent.name == "data" or ("kaos", rel(path)) in ok:
+        if layer_of(path) == "data" or ("kaos", rel(path)) in ok:
             continue
         text = path.read_text(errors="replace")
         lines = [m.group() for m in KAOS_HEADER.finditer(text)]
@@ -494,7 +511,7 @@ def test_platform_code_only_in_platform():
     ok = allowed()
     found = []
     for path in sources():
-        if path.parent.name == "platform" or ("platform", rel(path)) in ok:
+        if layer_of(path) == "platform" or ("platform", rel(path)) in ok:
             continue
         text = path.read_text(errors="replace")
         found += [f"platform {rel(path)}  | {m.group().strip()}" for m in PLATFORM_CODE.finditer(text)]
@@ -510,7 +527,7 @@ REDRAW_FLAG_WRITE = re.compile(r"\battributes\s*[|&]=\s*~?\s*\(?\s*CHAMPION_ATTR
 
 def engine_globals():
     names = set()
-    for path in (SRC / "engine").glob("*.h"):
+    for path in (SRC / "engine").rglob("*.h"):
         for decl in EXTERN.findall(strip(path.read_text(errors="replace"))):
             names.update(n for n in re.findall(r"\b(g_\w+)", decl) if not n.endswith("_hook"))
     return names
@@ -529,26 +546,43 @@ def test_ui_does_not_write_engine_variables():
 INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.M)
 
 
+def layer_place_error(path):
+    """Why a file stands in the wrong place, or None: a public header in include/, all else next to the .c files."""
+    parts = path.relative_to(SRC).parts
+    if parts[0] not in LAYERS or len(parts) not in (2, 3) or (len(parts) == 3 and parts[1] != "include"):
+        return "not in a layer folder"
+    public = path.suffix == ".h" and not path.stem.endswith("_internal")
+    if public != (len(parts) == 3):
+        return "a public header outside include/" if public else "only public headers stand in include/"
+    return None
+
+
 def test_layers():
-    """The include path names the layer; a file includes only its own layer and the layers before it."""
+    """An include names only the file; a file includes only its own layer and the layers before it."""
     ok = allowed()
     found = []
+    public = public_headers()
+    found += [f"layer {name}  | the header name is not unique: {[rel(p) for p in paths]}"
+              for name, paths in sorted(public.items()) if len(paths) > 1]
     for path in sources():
-        parts = path.relative_to(SRC).parts
-        if len(parts) != 2 or parts[0] not in LAYERS:
-            found.append(f"layer {rel(path)}  | not in a layer folder")
+        if (error := layer_place_error(path)):
+            found.append(f"layer {rel(path)}  | {error}")
             continue
-        layer = parts[0]
+        layer = layer_of(path)
         text = path.read_text(errors="replace")
         for header in INCLUDE.findall(text):
             key = f"{rel(path)}:{header}"
-            target = header.split("/")[0] if "/" in header else None
             if ("layer", key) in ok:
                 continue
-            if target not in LAYERS:
-                found.append(f"layer {key}  | the include does not name its layer")
-            elif LAYERS.index(target) > LAYERS.index(layer):
-                found.append(f"layer {key}  | {layer} includes {target}")
+            private = SRC / layer / header
+            if "/" in header:
+                found.append(f"layer {key}  | the include names a path, not only the file")
+            elif header in public:
+                target = layer_of(public[header][0])
+                if LAYERS.index(target) > LAYERS.index(layer):
+                    found.append(f"layer {key}  | {layer} includes {target}")
+            elif not (header.endswith("_internal.h") and private.exists()):
+                found.append(f"layer {key}  | no public header and no private header of {layer}/")
         if layer != "platform" and re.search(r"#\s*include\s+<SDL", text) and ("layer", f"{rel(path)}:SDL") not in ok:
             found.append(f"layer {rel(path)}:SDL  | SDL outside platform/")
     report("layer", found)
@@ -572,6 +606,17 @@ def test_sources_are_formatted():
     assert result.returncode == 0, result.stderr[-4000:]
 
 
+INCLUDE_CATEGORY = re.compile(r"""^  - Regex: '\^"\(([\w|]+)\)\\\.h"\$'\n    Priority: (\d)$""", re.M)
+
+
+def test_include_categories_name_the_headers_of_each_layer():
+    """.clang-format sorts the project includes by layer: the category of a layer names each of its headers."""
+    categories = {int(priority): sorted(names.split("|"))
+                  for names, priority in INCLUDE_CATEGORY.findall((ROOT / ".clang-format").read_text())}
+    expected = {number: sorted(p.stem for p in (SRC / layer).rglob("*.h")) for number, layer in enumerate(LAYERS, 1)}
+    assert categories == expected
+
+
 def test_allowlist_names_documented_reasons():
     """Each allowlist line is an open line of the final refactor or an exception rule of the standard."""
     found = []
@@ -588,12 +633,14 @@ def test_allowlist_names_documented_reasons():
 def module_files(header):
     """The header, its _internal.h and the .c files of its module (same stem or <stem>_*)."""
     base = header.stem.removesuffix("_internal")
-    return {p for p in header.parent.iterdir() if p.suffix in (".c", ".h") and (p.stem == base or p.stem.startswith(base + "_"))}
+    layer = SRC / layer_of(header)
+    return {p for p in [*layer.iterdir(), *(layer / "include").iterdir()]
+            if p.suffix in (".c", ".h") and (p.stem == base or p.stem.startswith(base + "_"))}
 
 
 def base_header(path):
     """The public header <m>.h of a file named <m>_<x>, or None."""
-    return next((h for h in sorted(path.parent.glob("*.h")) if h != path and not h.stem.endswith("_internal")
+    return next((h for h in sorted((SRC / layer_of(path) / "include").glob("*.h")) if h != path
                  and path.stem.startswith(h.stem + "_")), None)
 
 
@@ -603,12 +650,13 @@ def test_one_public_header_per_module():
     for path in sources():
         if ("module", rel(path)) in ok:
             continue
-        if path.suffix == ".c" and not path.with_suffix(".h").exists() and not base_header(path):
+        own = public_header(layer_of(path), path.stem.removesuffix("_internal"))
+        if path.suffix == ".c" and not own.exists() and not base_header(path):
             found.append(f"module {rel(path)}  | no header")
         elif path.suffix == ".h" and path.stem.endswith("_internal"):
-            if not path.with_name(path.stem.removesuffix("_internal") + ".h").exists():
+            if not own.exists():
                 found.append(f"module {rel(path)}  | an internal header without its public header")
-        elif path.suffix == ".h" and (base := base_header(path)) and not path.with_suffix(".c").exists() \
+        elif path.suffix == ".h" and (base := base_header(path)) and not (SRC / layer_of(path) / f"{path.stem}.c").exists() \
                 and any(not f.static for f in functions(path)):
             found.append(f"module {rel(path)}  | a second public header of {base.name}")
     report("module", found)
@@ -620,7 +668,7 @@ SPDX_C = "/* SPDX-License-Identifier: GPL-3.0-or-later */"
 def header_error(path):
     """Why the head of a header is out of order (SPDX, guard, prefix line, purpose paragraph), or None."""
     lines = path.read_text(errors="replace").splitlines()
-    guard = f"DM_{path.parent.name.upper()}_{path.stem.upper()}_H"
+    guard = f"DM_{layer_of(path).upper()}_{path.stem.upper()}_H"
     if lines[:1] != [SPDX_C]:
         return "line 1 is not the SPDX line"
     if lines[1:3] != [f"#ifndef {guard}", f"#define {guard}"]:
@@ -656,18 +704,18 @@ def defined_names(header, cache={}):
 
 def test_includes_are_used():
     """A file uses at least one name of each project header it includes; its own header is always allowed."""
-    by_path = {rel(h): h for h in headers()}
+    by_name = {h.name: h for h in headers()}
     ok = allowed()
     found = []
     for path in sources():
         raw = path.read_text(errors="replace")
         used = set(IDENTIFIER.findall(INCLUDE.sub("", strip(raw))))
-        own = f"{path.parent.name}/{path.stem}.h"
+        own = f"{path.stem}.h"
         for header in INCLUDE.findall(raw):
             key = f"{rel(path)}:{header}"
-            if header == own or header not in by_path or ("include", key) in ok:
+            if header == own or header not in by_name or ("include", key) in ok:
                 continue
-            if not defined_names(by_path[header]) & used:
+            if not defined_names(by_name[header]) & used:
                 found.append(f"include {key}  | no name of {header} is used")
     report("include", found)
 
@@ -710,7 +758,7 @@ FORWARD_STATIC = re.compile(r"^static\b[^=;{]*?\b(\w+)\s*\([^;{]*\)\s*;", re.M)
 
 
 def owner_header(path):
-    own = path.with_suffix(".h")
+    own = public_header(layer_of(path), path.stem)
     return own if own.exists() else base_header(path)
 
 
@@ -759,7 +807,7 @@ def test_one_type_per_parameter_name():
     found = []
     for layer in LAYERS:
         types = defaultdict(set)
-        for header in (SRC / layer).glob("*.h"):
+        for header in (SRC / layer).rglob("*.h"):
             for f in functions(header):
                 for text in f.params:
                     kind, name = parameter(text)

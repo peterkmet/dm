@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "platform/options.h"
-#include "data/adventure.h"
-#include "data/bytes.h"
-#include "engine/game.h"
-#include "platform/transport.h"
+#include "options.h"
+#include "adventure.h"
+#include "bytes.h"
+#include "game.h"
+#include "transport.h"
 #include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>

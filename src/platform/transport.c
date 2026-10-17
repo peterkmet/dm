@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "platform/transport.h"
-#include "control/control.h"
-#include "control/json.h"
-#include "control/turn.h"
+#include "transport.h"
+#include "control.h"
+#include "json.h"
+#include "turn.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>

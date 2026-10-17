@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/adventure.h"
-#include "data/adf.h"
-#include "data/bytes.h"
-#include "data/crc32.h"
-#include "data/file.h"
-#include "data/graphics.h"
-#include "data/tables.h"
+#include "adventure.h"
+#include "adf.h"
+#include "bytes.h"
+#include "crc32.h"
+#include "file.h"
+#include "graphics.h"
+#include "tables.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

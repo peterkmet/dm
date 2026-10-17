@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "control/control.h"
-#include "data/file.h"
-#include "engine/dungeon.h"
-#include "engine/savegame.h"
-#include "ui/gameloop.h"
-#include "ui/startend.h"
-#include "control/control_internal.h"
-#include "control/png.h"
-#include "control/request.h"
-#include "control/state_json.h"
-#include "control/turn.h"
+#include "control.h"
+#include "file.h"
+#include "dungeon.h"
+#include "savegame.h"
+#include "gameloop.h"
+#include "startend.h"
+#include "control_internal.h"
+#include "png.h"
+#include "request.h"
+#include "state_json.h"
+#include "turn.h"
 #include <string.h>
 
 /* Longest request command name, with its terminator. */

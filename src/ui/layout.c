@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/layout.h"
-#include "data/bytes.h"
-#include "data/graphics.h"
-#include "data/ids.h"
+#include "layout.h"
+#include "bytes.h"
+#include "graphics.h"
+#include "ids.h"
 
 /* First word of the layout data. */
 #define LAYOUT_SIGNATURE 0xfc0d

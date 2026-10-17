@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/sound.h"
-#include "data/graphics.h"
-#include "data/tables.h"
-#include "engine/event.h"
-#include "engine/game.h"
-#include "engine/map.h"
-#include "engine/party.h"
-#include "engine/timeline.h"
+#include "sound.h"
+#include "graphics.h"
+#include "tables.h"
+#include "event.h"
+#include "game.h"
+#include "map.h"
+#include "party.h"
+#include "timeline.h"
 #include <stdbool.h>
 #include <string.h>
 

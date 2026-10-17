@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/random.h"
+#include "random.h"
 #include <time.h>
 
 /* Multiplier of the random generator and mask of 2 random bits. */

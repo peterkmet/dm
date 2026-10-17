@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "control/turn.h"
-#include "engine/champion.h"
-#include "engine/game.h"
-#include "engine/map.h"
-#include "engine/message.h"
-#include "engine/move.h"
-#include "engine/party.h"
-#include "engine/record.h"
-#include "ui/gameloop.h"
-#include "control/request.h"
-#include "control/state_json.h"
+#include "turn.h"
+#include "champion.h"
+#include "game.h"
+#include "map.h"
+#include "message.h"
+#include "move.h"
+#include "party.h"
+#include "record.h"
+#include "gameloop.h"
+#include "request.h"
+#include "state_json.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

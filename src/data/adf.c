@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/adf.h"
-#include "data/bytes.h"
-#include "data/file.h"
-#include "data/os.h"
+#include "adf.h"
+#include "bytes.h"
+#include "file.h"
+#include "os.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

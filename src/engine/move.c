@@ -1,16 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/move.h"
-#include "data/tables.h"
-#include "engine/arith.h"
-#include "engine/champion.h"
-#include "engine/game.h"
-#include "engine/group.h"
-#include "engine/map.h"
-#include "engine/party.h"
-#include "engine/projectile.h"
-#include "engine/record.h"
-#include "engine/sensor.h"
-#include "engine/sound.h"
+#include "move.h"
+#include "tables.h"
+#include "arith.h"
+#include "champion.h"
+#include "game.h"
+#include "group.h"
+#include "map.h"
+#include "party.h"
+#include "projectile.h"
+#include "record.h"
+#include "sensor.h"
+#include "sound.h"
 
 /* Strength of a new scent and the stamina factor of a step. */
 #define SCENT_NEW_STRENGTH  24

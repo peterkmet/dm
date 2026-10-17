@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/dungeon.h"
-#include "data/adventure.h"
-#include "data/bytes.h"
-#include "data/file.h"
-#include "data/tables.h"
-#include "engine/map.h"
-#include "engine/party.h"
-#include "engine/record.h"
-#include "engine/timeline.h"
+#include "dungeon.h"
+#include "adventure.h"
+#include "bytes.h"
+#include "file.h"
+#include "tables.h"
+#include "map.h"
+#include "party.h"
+#include "record.h"
+#include "timeline.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -139,7 +139,7 @@ The dungeon in `Dungeon.DAT` format without compression: header (44 bytes), maps
 
 ## C API
 
-The header `src/engine/savefile.h` declares the API. All buffers keep the big-endian byte layout.
+The header `src/engine/include/savefile.h` declares the API. All buffers keep the big-endian byte layout.
 
 ### `SaveFile`
 

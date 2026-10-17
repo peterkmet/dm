@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/record.h"
-#include "data/bytes.h"
-#include "engine/dungeon.h"
-#include "engine/map.h"
+#include "record.h"
+#include "bytes.h"
+#include "dungeon.h"
+#include "map.h"
 #include <string.h>
 
 /* Byte offsets of the fields of every record: the next thing of the list. */

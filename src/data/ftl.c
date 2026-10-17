@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/ftl.h"
-#include "data/bytes.h"
+#include "ftl.h"
+#include "bytes.h"
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>

@@ -18,8 +18,10 @@ engine/     game rules: dungeon, party, champions, creatures, timeline, saves
 data/       file formats, the engine image (KAOS.FTL, APPB.FTL) and its tables, run configuration
 ```
 
-A file includes only headers of its own layer and of the layers below it in the diagram. The rules are in
-[the coding standard](coding-standard.md), section 1.
+A file includes only headers of its own layer and of the layers below it in the diagram. The public headers of a
+layer stand in `src/<layer>/include/`, and the include path of a layer holds only its own and the lower layers,
+so the compiler rejects an include of a higher layer. This page names a header with its layer: `engine/game.h`
+is `src/engine/include/game.h`. The rules are in [the coding standard](coding-standard.md), section 1.
 
 - `data/` owns the file formats, the engine image and its tables, and the run configuration. It reaches the
   operating system only through the hooks of `data/os.h`.

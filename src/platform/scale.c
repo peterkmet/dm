@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "platform/scale.h"
-#include "ui/video.h"
+#include "scale.h"
+#include "video.h"
 #include <math.h>
 #include <stdbool.h>
 

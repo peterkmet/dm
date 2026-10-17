@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/automap.h"
-#include "engine/arith.h"
-#include "engine/dungeon.h"
-#include "engine/explored.h"
-#include "engine/map.h"
-#include "engine/party.h"
-#include "engine/record.h"
-#include "ui/draw.h"
-#include "ui/text.h"
-#include "ui/ui.h"
-#include "ui/view.h"
+#include "automap.h"
+#include "arith.h"
+#include "dungeon.h"
+#include "explored.h"
+#include "map.h"
+#include "party.h"
+#include "record.h"
+#include "draw.h"
+#include "text.h"
+#include "ui.h"
+#include "view.h"
 #include <stdio.h>
 
 /* Ruler labels: the row and column numbers. */

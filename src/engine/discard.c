@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/discard.h"
-#include "engine/arith.h"
-#include "engine/dungeon.h"
-#include "engine/group.h"
-#include "engine/map.h"
-#include "engine/move.h"
-#include "engine/party.h"
-#include "engine/projectile.h"
-#include "engine/record.h"
-#include "engine/sound.h"
+#include "discard.h"
+#include "arith.h"
+#include "dungeon.h"
+#include "group.h"
+#include "map.h"
+#include "move.h"
+#include "party.h"
+#include "projectile.h"
+#include "record.h"
+#include "sound.h"
 #include <string.h>
 
 /* Limits of the search for a thing to discard. */

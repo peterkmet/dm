@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/swsh.h"
-#include "data/bytes.h"
-#include "data/file.h"
+#include "swsh.h"
+#include "bytes.h"
+#include "file.h"
 #include <stdlib.h>
 
 /* SWSH.FTL image addresses. */

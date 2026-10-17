@@ -15,15 +15,15 @@ PointerAlignment: Right
 SortIncludes: CaseSensitive
 IncludeBlocks: Merge
 IncludeCategories:
-  - Regex: '^"data/'
+  - Regex: '^"(adf|adventure|bytes|crc32|csb_image|csb_text|file|ftl|graphics|ids|kaos|kaos_addresses|os|spells|swsh|tables|vdeo)\.h"$'
     Priority: 1
-  - Regex: '^"engine/'
+  - Regex: '^"(action|arith|champion|discard|dungeon|event|explored|game|group|inventory|magic|map|message|move|party|projectile|random|record|recruit|savefile|savegame|sensor|sound|timeline)\.h"$'
     Priority: 2
-  - Regex: '^"ui/'
+  - Regex: '^"(advanced|anim|audio|automap|command|dialog|draw|entrance|frame|gameloop|layout|logo|menus|music|music_internal|palette|panel|select|startend|status|text|ui|video|view|view_internal)\.h"$'
     Priority: 3
-  - Regex: '^"control/'
+  - Regex: '^"(control|control_internal|json|png|request|state_json|turn)\.h"$'
     Priority: 4
-  - Regex: '^"platform/'
+  - Regex: '^"(app|debug_view|options|platform|scale|transport)\.h"$'
     Priority: 5
   - Regex: '^<(dr_mp3|SDL3)/'
     Priority: 6

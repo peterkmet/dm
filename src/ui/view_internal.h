@@ -3,10 +3,10 @@
 #define DM_UI_VIEW_INTERNAL_H
 /* Prefixes: view_ */
 /* Private declarations shared by view.c, view_walls.c and view_things.c. */
-#include "data/graphics.h"
-#include "engine/map.h"
-#include "ui/video.h"
-#include "ui/view.h"
+#include "graphics.h"
+#include "map.h"
+#include "video.h"
+#include "view.h"
 #include <stdbool.h>
 #include <stdint.h>
 

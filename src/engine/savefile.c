@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/savefile.h"
-#include "data/adventure.h"
-#include "data/bytes.h"
-#include "engine/random.h"
+#include "savefile.h"
+#include "adventure.h"
+#include "bytes.h"
+#include "random.h"
 #include <stdlib.h>
 #include <string.h>
 

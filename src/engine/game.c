@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/game.h"
-#include "data/os.h"
-#include "engine/champion.h"
-#include "engine/discard.h"
-#include "engine/group.h"
-#include "engine/inventory.h"
-#include "engine/map.h"
-#include "engine/party.h"
-#include "engine/random.h"
-#include "engine/timeline.h"
+#include "game.h"
+#include "os.h"
+#include "champion.h"
+#include "discard.h"
+#include "group.h"
+#include "inventory.h"
+#include "map.h"
+#include "party.h"
+#include "random.h"
+#include "timeline.h"
 #include <stdlib.h>
 #include <string.h>
 

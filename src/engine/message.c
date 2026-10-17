@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/message.h"
-#include "engine/dungeon.h"
-#include "engine/game.h"
+#include "message.h"
+#include "dungeon.h"
+#include "game.h"
 #include <stdio.h>
 #include <string.h>
 

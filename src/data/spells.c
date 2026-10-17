@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/spells.h"
-#include "data/bytes.h"
-#include "data/tables.h"
+#include "spells.h"
+#include "bytes.h"
+#include "tables.h"
 #include <limits.h>
 
 /* The packed symbols and the failure draw. */

@@ -23,17 +23,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 
 - Chaos Strikes Back: choose the party, then stairs down into the dungeon where the game starts, without the two-disk start of the original.
 
-## Source layout: public headers in include/
-
-- The public headers of a layer move to `src/<layer>/include/` (`src/engine/include/game.h`); an include names only
-  the file (`#include "game.h"`). Header names are unique across the layers (checked 2026-10-17).
-- Each layer compiles with the include paths of its own layer and the layers below it, so the compiler rejects a
-  wrong layer include.
-- The private headers (`src/ui/view_internal.h`, `src/ui/music_internal.h`, `src/control/control_internal.h`) stay
-  next to their `.c` files.
-- Change together: `Makefile` (also `make windows`), `docs/coding-standard.md` rule 1.2, `tests/standard/test_standard.py`,
-  `docs/architecture.md`, and the CLAUDE.md line on the layer includes.
-
 ## Release on GitHub
 
 - Publish the source and the macOS and Windows builds on GitHub (the repository is private today).

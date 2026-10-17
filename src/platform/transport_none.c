@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* The build without a control socket (Windows): the turn-based mode cannot start. */
-#include "platform/transport.h"
+#include "transport.h"
 
 bool transport_is_available(void)
 {

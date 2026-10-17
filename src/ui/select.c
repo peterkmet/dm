@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/select.h"
-#include "data/adventure.h"
-#include "data/graphics.h"
-#include "engine/game.h"
-#include "ui/advanced.h"
-#include "ui/text.h"
-#include "ui/ui.h"
-#include "ui/video.h"
+#include "select.h"
+#include "adventure.h"
+#include "graphics.h"
+#include "game.h"
+#include "advanced.h"
+#include "text.h"
+#include "ui.h"
+#include "video.h"
 #include <string.h>
 
 /* Selection screen layout. */

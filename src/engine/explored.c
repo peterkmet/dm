@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/explored.h"
-#include "engine/dungeon.h"
-#include "engine/game.h"
-#include "engine/map.h"
-#include "engine/party.h"
-#include "engine/record.h"
+#include "explored.h"
+#include "dungeon.h"
+#include "game.h"
+#include "map.h"
+#include "party.h"
+#include "record.h"
 #include <stdlib.h>
 #include <string.h>
 

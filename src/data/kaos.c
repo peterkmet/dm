@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/kaos.h"
-#include "data/adventure.h"
-#include "data/bytes.h"
-#include "data/csb_image.h"
-#include "data/file.h"
-#include "data/ftl.h"
-#include "data/kaos_addresses.h"
-#include "data/os.h"
+#include "kaos.h"
+#include "adventure.h"
+#include "bytes.h"
+#include "csb_image.h"
+#include "file.h"
+#include "ftl.h"
+#include "kaos_addresses.h"
+#include "os.h"
 #include <inttypes.h>
 #include <stdlib.h>
 

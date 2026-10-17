@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/timeline.h"
-#include "engine/event.h"
-#include "engine/game.h"
-#include "engine/sensor.h"
+#include "timeline.h"
+#include "event.h"
+#include "game.h"
+#include "sensor.h"
 #include <stdlib.h>
 
 /* The system error of the original for a full timeline. */

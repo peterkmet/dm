@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/video.h"
+#include "video.h"
 #include <stdbool.h>
 
 /* Alpha of an opaque ARGB pixel. */

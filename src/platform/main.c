@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "platform/app.h"
-#include "platform/options.h"
+#include "app.h"
+#include "options.h"
 #include <stdint.h>
 #include <stdio.h>
 

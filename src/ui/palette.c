@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/palette.h"
-#include "data/vdeo.h"
-#include "engine/arith.h"
-#include "ui/frame.h"
-#include "ui/video.h"
+#include "palette.h"
+#include "vdeo.h"
+#include "arith.h"
+#include "frame.h"
+#include "video.h"
 #include <string.h>
 
 /* Commands */

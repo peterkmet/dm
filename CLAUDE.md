@@ -20,7 +20,7 @@ Native C11/SDL3 macOS port of Dungeon Master v3.60 (Amiga), built from its own G
 - All checks: `make check` (format, standard, suite); `make format` before a commit.
 
 ## Layout
-- `src/`: the C port in five layers, in this order; every include names its layer (`#include "engine/game.h"`).
+- `src/`: the C port in five layers, in this order; public headers in `src/<layer>/include/`, an include names only the file (`#include "game.h"`).
   The root `Makefile` builds `build/dm` and `build/libdm.dylib`.
   - `data/`: tables and formats of the original data files (no game state).
   - `engine/`: game rules and state; no drawing, no SDL.

@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "control/png.h"
-#include "data/bytes.h"
-#include "data/crc32.h"
-#include "ui/video.h"
+#include "png.h"
+#include "bytes.h"
+#include "crc32.h"
+#include "video.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

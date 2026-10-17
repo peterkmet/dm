@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "platform/debug_view.h"
-#include "data/adventure.h"
-#include "data/file.h"
-#include "data/graphics.h"
-#include "data/tables.h"
-#include "engine/dungeon.h"
-#include "engine/map.h"
-#include "engine/party.h"
-#include "ui/layout.h"
-#include "ui/video.h"
-#include "ui/view.h"
+#include "debug_view.h"
+#include "adventure.h"
+#include "file.h"
+#include "graphics.h"
+#include "tables.h"
+#include "dungeon.h"
+#include "map.h"
+#include "party.h"
+#include "layout.h"
+#include "video.h"
+#include "view.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <string.h>

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/audio.h"
-#include "engine/sound.h"
+#include "audio.h"
+#include "sound.h"
 #include <stdbool.h>
 #include <string.h>
 

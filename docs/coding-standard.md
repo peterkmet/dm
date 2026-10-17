@@ -17,7 +17,11 @@ refactor; until the run ends, the allowlist carries the difference.
    audio output), `control/` (the turn-based protocol for a program player), `platform/` (SDL, the control
    socket, options, the application, `main`). A file includes only headers of its own layer and of the layers
    before it. [layer]
-2. The include path is `-Isrc -Ithird_party`; an include names the layer: `#include "engine/game.h"`. [layer]
+2. The public headers of a layer stand in `src/<layer>/include/` (`src/engine/include/game.h`); a private
+   `<module>_internal.h` stands next to its `.c` files. The include path of a layer holds only the `include/`
+   folders of its own layer and of the layers before it, and `-isystem third_party`, so the compiler rejects
+   an include of a later layer. An include names only the file: `#include "game.h"`. Header names are unique
+   across the layers. [layer]
 3. Only `platform/` includes SDL and operating system headers (`_WIN32`, POSIX, `<sys/...>`, `<unistd.h>`,
    `<dirent.h>`). The other layers reach the operating system through the hooks of `data/os.h`, which
    `platform/` and the tests set. [platform]
@@ -49,14 +53,15 @@ refactor; until the run ends, the allowlist carries the difference.
 
    #include <stdbool.h>
    #include <stdint.h>
-   #include "engine/dungeon.h"
+   #include "dungeon.h"
    ```
 
 2. A header includes only what its declarations need; a struct that appears only behind a pointer is
    forward-declared. [include]
 3. A `.c` file includes exactly the headers it uses, in this order: its own header; project headers by layer
    order and alphabetical inside a layer; third-party headers; system headers. `.clang-format` sorts them.
-   There is no umbrella header per layer. [format, include]
+   The include categories of `.clang-format` name the headers of each layer. There is no umbrella header
+   per layer. [format, include]
 4. The one-line comment of a public function stands in the header above its prototype. [comment]
 5. A symbol that exists only for the tests carries `/* exported for the tests */` on its declaration.
    [dead-api]
@@ -197,8 +202,8 @@ refactor; until the run ends, the allowlist carries the difference.
 
    ```c
    /* SPDX-License-Identifier: GPL-3.0-or-later */
-   #include "engine/sensor.h"
-   #include "engine/record.h"
+   #include "sensor.h"
+   #include "record.h"
    #include <string.h>
 
    /* Effects of a sensor on its target. */
@@ -273,7 +278,7 @@ dependency group (version 23). [format]
 
 | Key | Fails on |
 |---|---|
-| `layer` | an include that breaks the layer order, SDL outside `platform/`, a file outside a layer folder |
+| `layer` | an include that breaks the layer order, names a path or names no project header; SDL outside `platform/`; a file outside a layer folder, a public header outside `include/`, a private header in `include/`; a header name in two layers |
 | `platform` | an operating system header or `_WIN32` outside `platform/`; `fprintf(stderr` or `exit(` outside `platform/` and `data/os.c` |
 | `engine-write` | a write of `ui/` to an engine global, except redraw flags and hooks |
 | `module` | a `.c` file without its header, a second public header of one module |

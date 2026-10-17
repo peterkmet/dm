@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/csb_image.h"
-#include "data/bytes.h"
-#include "data/csb_text.h"
-#include "data/kaos_addresses.h"
-#include "data/tables.h"
+#include "csb_image.h"
+#include "bytes.h"
+#include "csb_text.h"
+#include "kaos_addresses.h"
+#include "tables.h"
 #include <stdlib.h>
 #include <string.h>
 

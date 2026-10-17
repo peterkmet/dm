@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/os.h"
+#include "os.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

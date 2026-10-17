@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "engine/recruit.h"
-#include "data/tables.h"
-#include "engine/arith.h"
-#include "engine/champion.h"
-#include "engine/dungeon.h"
-#include "engine/map.h"
-#include "engine/record.h"
+#include "recruit.h"
+#include "tables.h"
+#include "arith.h"
+#include "champion.h"
+#include "dungeon.h"
+#include "map.h"
+#include "record.h"
 #include <string.h>
 
 /* Offsets in the values line of a champion text, counted from its leading '\n'. */

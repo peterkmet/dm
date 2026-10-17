@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/vdeo.h"
-#include "data/adventure.h"
-#include "data/file.h"
-#include "data/ftl.h"
+#include "vdeo.h"
+#include "adventure.h"
+#include "file.h"
+#include "ftl.h"
 #include <stdlib.h>
 #include <string.h>
 

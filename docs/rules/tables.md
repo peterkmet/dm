@@ -1,6 +1,6 @@
 # Static game tables
 
-This page describes the static rule tables of `KAOS.FTL` and the C accessors in `src/data/tables.h`. The port does not copy table values into the source. `tables_load` reads the tables from the loaded KAOS image at run time.
+This page describes the static rule tables of `KAOS.FTL` and the C accessors in `src/data/include/tables.h`. The port does not copy table values into the source. `tables_load` reads the tables from the loaded KAOS image at run time.
 
 All addresses are original KAOS addresses (see [KAOS module map](../reference/kaos-map.md)). All multi-byte values are big-endian in the image. The C structs hold native values.
 
@@ -11,7 +11,7 @@ All addresses are original KAOS addresses (see [KAOS module map](../reference/ka
 
 Each accessor of the table list returns a pointer to a constant record. It returns `NULL` for an index out of range. Load the module again (CSB or DM) with `tables_load`.
 
-The image accessors read the loaded image at call time. They need `tables_load`. They do not check the index. All addresses are in `src/data/kaos_addresses.h`.
+The image accessors read the loaded image at call time. They need `tables_load`. They do not check the index. All addresses are in `src/data/include/kaos_addresses.h`.
 
 | Image accessor | Address | Element | Index |
 |---|---|---|---|

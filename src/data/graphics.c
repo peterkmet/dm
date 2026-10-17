@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/graphics.h"
-#include "data/adventure.h"
-#include "data/bytes.h"
-#include "data/csb_text.h"
-#include "data/file.h"
-#include "data/ids.h"
+#include "graphics.h"
+#include "adventure.h"
+#include "bytes.h"
+#include "csb_text.h"
+#include "file.h"
+#include "ids.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/music_internal.h"
+#include "music_internal.h"
 
 /* FM-Towns CSB 3.1: the CD track of each square (CHTWE.EXP table), 0: no change.
    Index: map, y, x on the CSB maps 0-9; squares outside a map are 0. Source: reference/extracted/music_map.json. */

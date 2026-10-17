@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "ui/logo.h"
-#include "data/bytes.h"
-#include "data/graphics.h"
-#include "data/swsh.h"
-#include "engine/sound.h"
-#include "ui/audio.h"
-#include "ui/frame.h"
-#include "ui/music.h"
-#include "ui/ui.h"
-#include "ui/video.h"
+#include "logo.h"
+#include "bytes.h"
+#include "graphics.h"
+#include "swsh.h"
+#include "sound.h"
+#include "audio.h"
+#include "frame.h"
+#include "music.h"
+#include "ui.h"
+#include "video.h"
 #include <string.h>
 
 /* Palette script of the logo. */

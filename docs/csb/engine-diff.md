@@ -135,7 +135,7 @@ DM pads each byte array to an even length. CSB does not. The content is equal, b
 
 ### Graphics.DAT
 
-CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have the same meaning, so the graphic ids in `src/data/ids.h` stay valid. These items differ:
+CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have the same meaning, so the graphic ids in `src/data/include/ids.h` stay valid. These items differ:
 
 - Item 700 (strings) and item 699 (action names) are empty in CSB. Items 737 and 747 (French and German strings) do not exist.
 - Item 694 (object names) ends each name with a byte that has bit 7 set. DM separates the names with NUL. 33 names differ, for example 23 BOLT BLADE → STORM, 158 BRO POTION → ANTIVENIN, 174 DRUMSTICK → SHANK.
@@ -149,7 +149,7 @@ CSB `Graphics.DAT` has 728 items. DM has 749. The item numbers up to 727 have th
 
 Implemented in Step 2 of the CSB plan:
 
-- `kaos_load` (`src/data/kaos.c`) loads `APPB.FTL` when `g_adventure` is CSB. `csb_image_build` (`src/data/csb_image.c`) then makes a KAOS-layout image: each table that the port reads is at its DM address. The `KAOS_*` names of `src/data/kaos_addresses.h` do not change.
+- `kaos_load` (`src/data/kaos.c`) loads `APPB.FTL` when `g_adventure` is CSB. `csb_image_build` (`src/data/csb_image.c`) then makes a KAOS-layout image: each table that the port reads is at its DM address. The `KAOS_*` names of `src/data/include/kaos_addresses.h` do not change.
 - `g_csb_copies` in `src/data/csb_image.c` is the single address table: KAOS address (its `KAOS_*` name), APPB address, size. The APPB addresses of the converted tables have the prefix `CSB_APPB_`. Strided and split tables have one row per part.
 - Conversions in code: the action sets (6-byte CSB records to the 8-byte DM layout), and the dialog pointers (moved to the DM tables).
 - The 29 CSB spells are at `0x104160`, after the KAOS data. `spells.c` and `tables.c` read 29 spells from there for CSB.
@@ -327,7 +327,7 @@ Redraw: in `game_loop` (C`0x10809c`), with the inventory open and the drawn pane
 
 Correction: `draw_panel_scroll` writes the drawn panel content `g_panel_content_drawn` (C`0x1024cc`: 5, 9, or 10), not `g_panel_content` (C`0x1024ca`).
 
-Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/event.c` (events 80–83), `src/engine/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/panel.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
+Port changes: `src/engine/magic.c` (spell kind 4, failure message 11), `src/data/spells.c` (29 spells), `src/engine/event.c` (events 80–83), `src/engine/include/game.h` `Champion` (bytes `0x118`–`0x11d`, also in the save block), `src/ui/panel.c` (scroll panel, CREANAME, MAGICMAP), `src/ui/view.c` (square aspect for the map).
 
 Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `panel.c` (`insert_creature_name`, `show_magic_map`, `panel_redraw_scroll`), `view.c` `view_draw_magic_map`, `gameloop.c` (the redraw each tick). CSB only: spells 25–28 exist only in CSB, and the scroll panel checks `g_adventure`.
 
@@ -341,7 +341,7 @@ Port (Step 7): `magic.c` `cast_magic_map`, `event.c` events 80–83, `panel.c` (
 
 ### Creatures
 
-- `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `src/engine/game.h`; `src/engine/savegame.c` applies it as the DM minimum.
+- `group_init_active_groups` (C`0x10e990`): a new game has 60 active group slots (C`0x10e998`). DM has 110 (K`0x10cb80`). CSB allocates exactly the stored count. DM allocates at least 110. CSB `load_game` (C`0x129efc`) restores the saved count without a minimum. The count limits the creature generators (`group_get_generated`, C`0x10de76`). Port: `ACTIVE_GROUP_MAX_COUNT` in `src/engine/include/game.h`; `src/engine/savegame.c` applies it as the DM minimum.
 - `steal_from_champion` (C`0x10e7e2`–`0x10e7f2`): a new rule takes the action hand when the panel content is 10 and `random_bit` is set. No code writes 10 to the panel content variable C`0x1024ca`, so the rule never runs. No port change. Step 7 check: the APPB code writes C`0x1024ca` only at C`0x112120` (7), C`0x112180` (6), C`0x112188` (5), C`0x112190` (1), and C`0x116324` (8). The magic map writes 10 to the drawn panel content C`0x1024cc`, a different variable. The rule stays unreachable.
 
 ### Champions

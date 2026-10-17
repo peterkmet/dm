@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "data/tables.h"
-#include "data/adventure.h"
-#include "data/bytes.h"
-#include "data/csb_image.h"
-#include "data/kaos.h"
-#include "data/kaos_addresses.h"
-#include "data/spells.h"
+#include "tables.h"
+#include "adventure.h"
+#include "bytes.h"
+#include "csb_image.h"
+#include "kaos.h"
+#include "kaos_addresses.h"
+#include "spells.h"
 
 /* Record sizes in KAOS. */
 #define CREATURE_INFO_BYTES        26
