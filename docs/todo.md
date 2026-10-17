@@ -32,6 +32,13 @@ User wishes for future versions. Not planned yet.
 - Today: `debug_view_key` (`src/platform/debug_view.c`) knows only the cursor keys, A and D, and stops at a wall or a closed fake wall.
 - Change: map the game keys to the same moves; drop the wall check, keep the check for the map border.
 
+## Draw the damage splat on the champion box
+
+- Found in the manual test (2026-10-17): a champion that takes damage shows no red splat with the number on the status box. The bars and `health_lost` are correct.
+- Today: `champion_apply_pending_damage` (`src/engine/champion.c`) updates the health and queues the hide event, but nothing draws the splat. `status_draw_damage` (`src/ui/status.c`) has no caller in `src/`; only the tests call it. Main had the same gap (`ui_draw_champion_damage` without a caller).
+- The original: the pending-damage routine calls `champion_draw_damage(i, damage)` (KAOS `0x11187e`, `reference/decomp/dm/KAOS.c:14774`).
+- Change: the engine records the damage per champion; the game loop (`src/ui/gameloop.c`) calls `status_draw_damage` for it.
+
 ## Advanced mode: show the damage twice as long
 
 - Owner's wish (2026-10-16): in the advanced mode the damage that a champion deals stays in the action area twice as long; the vanilla mode keeps the original time.
