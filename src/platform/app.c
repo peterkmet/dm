@@ -281,7 +281,9 @@ static void play_csb_intro(void)
     snprintf(path, sizeof path, "%s/%s", app.data_dir, LOGO_FILE);
     logo_play(path);
     snprintf(path, sizeof path, "%s/%s", app.data_dir, CSB_INTRO_FILE);
+    anim_set_stop_at_once(g_session.mode == GAME_MODE_ADVANCED);
     anim_play(path);
+    anim_set_stop_at_once(false);
     command_discard_all_input();
 }
 

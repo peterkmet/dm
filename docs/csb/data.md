@@ -258,7 +258,7 @@ music. So a click keeps the shown frame for the rest of its time, shows one more
 fades the music for 87 ticks (1.7 s). `ANIM.DAT` has frames of up to 536 ticks (10.7 s; the title pictures of the
 first minute). The port stops after the rest of the shown frame and does not show the next frame; then it fades
 the music as the original. Measured in the port (2026-10-17): a click 8.6 s before the end of a long frame starts
-the prison 10.3 s later; a click in a short frame, 1.9 s later. Loading the prison takes 30 ms.
+the prison 10.3 s later; a click in a short frame, 1.9 s later. Loading the prison takes 30 ms. In the advanced mode the port stops at once (`anim_set_stop_at_once`), then fades the music.
 
 `NAKED.AMG` is not a tracker or MIDI file. All words are big-endian:
 

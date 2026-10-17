@@ -247,6 +247,24 @@ def test_dm_title_plays_and_stops_on_input(lib, reset):
     assert len(frames.shots) == 5
 
 
+INTRO = GAME_CSB / "disk-b" / "ANIM.DAT"
+FADE_FRAMES = 29 * 3  # the music volume 29 down to 1, one step every 3 ticks
+LONG_FRAME_END = 728  # the sixth frame of the intro stays from tick 288 to tick 728
+
+
+@needs_file(INTRO)
+@pytest.mark.parametrize("at_once, frames", [(False, LONG_FRAME_END + FADE_FRAMES), (True, 300 + FADE_FRAMES)])
+def test_intro_stop_waits_for_the_shown_frame_unless_at_once(lib, reset, at_once, frames):
+    """A click at tick 300: the original waits for the rest of the shown frame; the advanced intro ends at once."""
+    lib.anim_set_stop_at_once(at_once)
+    press = lambda n: n == 300 and setattr(value(lib, "g_input_received"), "value", 1)
+    counter = Frames(lib, press)
+    assert lib.anim_play(str(INTRO).encode()) is True
+    counter.remove()
+    lib.anim_set_stop_at_once(False)
+    assert len(counter.shots) == frames
+
+
 def test_enda_ignores_input(lib, model, reset):
     press = lambda n: n == 5 and setattr(value(lib, "g_input_received"), "value", 1)
     frames = Frames(lib, press)

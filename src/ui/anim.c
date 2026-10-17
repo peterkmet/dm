@@ -70,7 +70,8 @@ static const uint8_t *samples[MAX_SAMPLES];
 static uint16_t sample_sizes[MAX_SAMPLES];
 static int sample_count, loop_depth;
 static bool palette_changed;
-static bool input_stops; /* BR allows a stop by a key or a click */
+static bool input_stops;  /* BR allows a stop by a key or a click */
+static bool stop_at_once; /* a stop does not wait for the rest of the shown frame */
 static Loop loops[MAX_LOOP_DEPTH];
 static uint16_t colors[PALETTE_COLORS];
 static char directory[PATH_SIZE]; /* the folder of the animation file: SF and MF names are relative to it */
@@ -332,7 +333,8 @@ bool anim_play(const char *path)
     /* a stop keeps the shown frame for its delay, as the original */
     for (int16_t delay; running && (delay = anim_next_frame()) != ANIM_END;) {
         while (delay-- > 0 && (running = frame_wait()))
-            ;
+            if (stop_at_once && input_stops && g_input_received)
+                break;
         if (input_stops && g_input_received)
             running = false;
     }
@@ -343,4 +345,9 @@ bool anim_play(const char *path)
     }
     anim_close();
     return true;
+}
+
+void anim_set_stop_at_once(bool at_once)
+{
+    stop_at_once = at_once;
 }

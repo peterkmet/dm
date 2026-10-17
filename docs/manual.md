@@ -78,7 +78,7 @@ The entrance of Dungeon Master: click ENTER or press Return to start a new game.
 
 ## Chaos Strikes Back
 
-1. Select NEW ADVENTURE on the CSB screen. The game shows the FTL logo and the intro of disk B (`disk-b/ANIM.DAT` with the music `disk-b/MIDI/NAKED.AMG`, about 3.6 minutes; a key or a click stops it; as in the original, the picture on the screen stays for the rest of its time, up to 11 s in the first minute, then the music fades out for about 2 s). Then the game starts in the prison (`game-csb/Dungeon.DAT`). `DM_AUTO_ENTER` and the turn-based mode skip the logo and the intro.
+1. Select NEW ADVENTURE on the CSB screen. The game shows the FTL logo and the intro of disk B (`disk-b/ANIM.DAT` with the music `disk-b/MIDI/NAKED.AMG`, about 3.6 minutes; a key or a click stops it: in the advanced mode at once; in vanilla, as in the original, the picture on the screen stays for the rest of its time, up to 11 s in the first minute; then the music fades out for about 2 s). Then the game starts in the prison (`game-csb/Dungeon.DAT`). `DM_AUTO_ENTER` and the turn-based mode skip the logo and the intro.
 2. Recruit one to four champions at the 24 mirrors.
 3. Save the game. In the prison, the save makes the new adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, loads it, and continues in the CSB dungeon. The original needs a restart with the utility disk for this step.
 

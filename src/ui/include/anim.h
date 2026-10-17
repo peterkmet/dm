@@ -21,5 +21,7 @@ bool anim_open(const char *path); /* exported for the tests */
 int16_t anim_next_frame(void); /* exported for the tests */
 /* Plays an animation file on the screen to its end. Returns false when the file cannot be read. */
 bool anim_play(const char *path);
+/* True: a key or a click ends the animation at once, not after the time of the shown frame (advanced CSB intro). */
+void anim_set_stop_at_once(bool at_once);
 
 #endif
