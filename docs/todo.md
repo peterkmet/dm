@@ -27,11 +27,6 @@ User wishes for future versions. Not planned yet, unless an item names its PRD.
 - With the stairs in place, the advanced mode drops the start text of the prison that says it is only the first
   level and that the party must be saved.
 
-## Automap: header line
-
-- Owner (2026-10-17, manual test): remove the column numbers (00 02 04 ...) and the light line (for example
-  `LIGHT 0`). The top line shows `LEVEL 7 (30,27)`, centered: the level and the party position.
-
 ## Advanced save dialog: LOAD, SAVE, CONTINUE, QUIT
 
 - Owner (2026-10-17, manual test): in the advanced mode the save dialog (Ctrl+S, the save icon; DM: CANCEL, SAVE,

@@ -156,7 +156,7 @@ The controls are the controls of the original Amiga game.
 
 The advanced features are not in the original game:
 
-- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. The top ruler numbers each second column, the left ruler each row; a white frame shows the end of the map. The top-left corner of the map shows the level, X and Y, facing, and light amount. Corridors are light gray, walls are dark gray. Drag the map with the left mouse button to see the whole level; a click without a move does not scroll. The map opens centered on the party.
+- Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. A white frame shows the end of the map. The top line shows the level and the party position, for example `LEVEL 7 (30,27)`: the level number is the one of the saved games list. Corridors are light gray, walls are dark gray. Drag the map with the left mouse button to see the whole level; a click without a move does not scroll. The map opens centered on the party.
 - Up to 8 sounds play at once, not 2 as in the original.
 - Quick save and quick load: one save slot in `QUICK.DAT` in the data folder. `DMGAME.DAT` does not change. The message area shows GAME SAVED, GAME LOADED, NO QUICK SAVE, or QUICK SAVE DAMAGED.
 - W, A, S, D, Q, and E move and turn the party. The cursor keys and the keypad also work.
@@ -176,7 +176,7 @@ The advanced features are not in the original game:
   - IMMORTAL: the health of a champion stops at 1; damage, wounds, poison, hunger, and thirst stay.
   - FOOD AND WATER: food and water do not go down; eating and drinking still raise them.
   - ONE-HIT KILL: a hit of the party (melee, projectile, or explosion) with damage above 0 kills the creature. A closing door and a fall do normal damage. An invulnerable creature stays invulnerable.
-  - WALK THROUGH WALLS: the party moves into a wall or a solid fake wall inside the map, without damage. The map border, a creature, and a door that is not open stop the party. No wall sensor runs for the party in a wall. With the cheat off, the party can leave a wall square into a square that is not a wall.
+  - WALK THROUGH WALLS: the party moves into any square inside the map, without damage: a wall, a solid fake wall, and also a door that is not open. The map border and a creature stop the party. A door that closes on the party does not hurt it; the door opens again, as normal. No wall sensor runs for the party in a wall. With the cheat off, the party can leave a wall or door square into a square that does not block.
   - REVEAL MAP: the automap shows all squares of the level. The explored squares do not change: with the cheat off, the automap shows only the explored squares again.
   - QUICK SAVE F5: a quick save; the screen stays open. QUICK LOAD F9: the screen closes, then a quick load.
   - SPELLS: the spell pages. Each line shows the runes of a spell as names, then as numbers, then the spell name, for example `FUL IR (X,4,4) FIREBALL`. X means any power; the number of a rune is its place in its row of runes, 1 to 6. NEXT shows the next page, BACK the page before, CLOSE closes the screen.

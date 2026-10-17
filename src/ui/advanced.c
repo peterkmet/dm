@@ -5,7 +5,6 @@
 #include "champion.h"
 #include "dungeon.h"
 #include "game.h"
-#include "map.h"
 #include "message.h"
 #include "party.h"
 #include "record.h"
@@ -21,9 +20,9 @@
 #include "ui.h"
 #include <stdio.h>
 
-/* The automap read-out and the quick save and load messages. */
-#define READOUT_TEXT_SIZE   40
-#define READOUT_MARGIN      2 /* pixels between the rulers and the read-out */
+/* The automap header and the quick save and load messages. */
+#define HEADER_TEXT_SIZE    40
+#define HEADER_BASELINE     4 /* the font cell starts 4 rows above the baseline */
 #define QUICK_MESSAGE_COLOR COLOR_WHITE
 
 bool g_advanced_features;
@@ -34,8 +33,6 @@ static struct {
     int16_t x, y; /* the mouse position that matches the current scroll */
 } drag;
 
-static const char *const direction_names[DIRECTION_COUNT] = {"NORTH", "EAST", "SOUTH", "WEST"};
-
 /* The party walks the dungeon: no inventory, dialog, freeze, sleep, candidate, death, sequence, or won game. */
 static bool in_dungeon_view(void)
 {
@@ -44,26 +41,23 @@ static bool in_dungeon_view(void)
            g_session.candidate_champion_index < 0 && !g_frame_wait_depth && !g_session.won;
 }
 
-/* Level, position, facing, and light in the top-left corner of the map, inside the rulers. */
-static void show_readout(Bitmap *viewport)
+/* Level and position in the top line, centered over the map. */
+static void show_header(Bitmap *viewport)
 {
-    char line[READOUT_TEXT_SIZE];
-    int16_t x = AUTOMAP_RULER_WIDTH + READOUT_MARGIN;
-    int16_t y = AUTOMAP_RULER_HEIGHT + READOUT_MARGIN + FONT_LINE_HEIGHT - FONT_BASELINE_GAP;
-    snprintf(line, sizeof line, "LEVEL %u X %d Y %d", rec_map_level(g_party_map_index), g_party_map_x, g_party_map_y);
-    text_draw(viewport, (Point){x, y}, COLOR_WHITE, COLOR_BLACK, line);
-    snprintf(line, sizeof line, "%s LIGHT %d", direction_names[NORMALIZE(g_party_direction)], party_get_light());
-    text_draw(viewport, (Point){x, y + FONT_LINE_HEIGHT + FONT_BASELINE_GAP}, COLOR_WHITE, COLOR_BLACK, line);
+    char line[HEADER_TEXT_SIZE];
+    int16_t width, height;
+    snprintf(line, sizeof line, "LEVEL %u (%d,%d)", rec_map_level(g_party_map_index) + 1, g_party_map_x, g_party_map_y);
+    text_get_size(line, &width, &height);
+    text_draw(viewport, (Point){(viewport->w - width) / 2, HEADER_BASELINE}, COLOR_WHITE, COLOR_BLACK, line);
 }
 
-/* Draws the automap and the position read-out (level, position, facing, light) in place of the viewport with the
-   interface palette. */
+/* Draws the automap and its header line in place of the viewport with the interface palette. */
 static void show_automap(void)
 {
     Bitmap *viewport = ui_get_viewport();
     Box area = {0, 0, viewport->w, viewport->h};
     automap_draw(viewport, &area, g_party_map_index);
-    show_readout(viewport);
+    show_header(viewport);
     ui_draw_viewport();
 }
 

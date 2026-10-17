@@ -8,15 +8,9 @@
 #include "party.h"
 #include "record.h"
 #include "draw.h"
-#include "text.h"
 #include "ui.h"
 #include "view.h"
-#include <stdio.h>
 
-/* Ruler labels: the row and column numbers. */
-#define LABEL_WIDTH     11 /* two digits; the font cell starts 4 rows above the baseline */
-#define LABEL_BASELINE  4
-#define LABEL_TEXT_SIZE 7          /* the longest int16_t, "-32768", and the end byte */
 static int16_t scroll_x, scroll_y; /* squares between the party and the center of the drawn map */
 
 /* Fills the part of box that lies inside area. */
@@ -119,24 +113,12 @@ void automap_scroll_reset(void)
     scroll_y = 0;
 }
 
-/* The number n at (x, y), only when the whole number is inside area. */
-static void show_label(Bitmap *target, const Box *area, int16_t x, int16_t y, int16_t n)
-{
-    char text[LABEL_TEXT_SIZE];
-    if (x < area->x || x + LABEL_WIDTH > area->x + area->w || y < area->y || y + FONT_LINE_HEIGHT > area->y + area->h)
-        return;
-    snprintf(text, sizeof text, "%02d", n);
-    text_draw(target, (Point){x, y + LABEL_BASELINE}, COLOR_LIGHT_GRAY, COLOR_BLACK, text);
-}
-
 void automap_draw(Bitmap *target, const Box *area, int16_t map)
 {
     fill_clipped(target, area, area, COLOR_BLACK);
     if (map < 0 || map >= dungeon_map_count())
         return;
-    Box top = {area->x + AUTOMAP_RULER_WIDTH, area->y, area->w - AUTOMAP_RULER_WIDTH, AUTOMAP_RULER_HEIGHT};
-    Box left = {area->x, area->y + AUTOMAP_RULER_HEIGHT, AUTOMAP_RULER_WIDTH, area->h - AUTOMAP_RULER_HEIGHT};
-    Box maps = {top.x, left.y, top.w, left.h};
+    Box maps = {area->x, area->y + AUTOMAP_HEADER_HEIGHT, area->w, area->h - AUTOMAP_HEADER_HEIGHT};
     bool party_here = map == g_party_map_index;
     int16_t center_x;
     int16_t center_y;
@@ -158,10 +140,6 @@ void automap_draw(Bitmap *target, const Box *area, int16_t map)
     fill_clipped(target, &maps, &(Box){origin_x - 1, bottom, right - origin_x + 2, 1}, COLOR_WHITE);
     fill_clipped(target, &maps, &(Box){origin_x - 1, origin_y - 1, 1, bottom - origin_y + 2}, COLOR_WHITE);
     fill_clipped(target, &maps, &(Box){right, origin_y - 1, 1, bottom - origin_y + 2}, COLOR_WHITE);
-    for (int16_t x = 0; x < map_width; x += 2)
-        show_label(target, &top, origin_x + x * AUTOMAP_CELL_SIZE + (AUTOMAP_CELL_SIZE - LABEL_WIDTH) / 2, top.y, x);
-    for (int16_t y = 0; y < map_height; y++)
-        show_label(target, &left, left.x, origin_y + y * AUTOMAP_CELL_SIZE, y);
     if (party_here)
         show_party_arrow(target, &maps, origin_x + g_party_map_x * AUTOMAP_CELL_SIZE,
                          origin_y + g_party_map_y * AUTOMAP_CELL_SIZE, g_party_direction);

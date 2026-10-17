@@ -11,9 +11,8 @@
 #include <stdint.h>
 
 /* Automap geometry, in pixels. */
-#define AUTOMAP_CELL_SIZE    7  /* pixels per square: 32 squares fill the 224 pixel viewport */
-#define AUTOMAP_RULER_WIDTH  12 /* the left ruler with the row numbers: two digits and a gap */
-#define AUTOMAP_RULER_HEIGHT 7  /* the top ruler with the column numbers: one text row and a gap */
+#define AUTOMAP_CELL_SIZE     7 /* pixels per square: 32 squares fill the 224 pixel viewport */
+#define AUTOMAP_HEADER_HEIGHT 7 /* the top line above the map: one text row and a gap */
 
 /* Moves the center of the drawn map by (dx, dy) squares; the center stays on the map. */
 void automap_scroll(int16_t map, int16_t dx, int16_t dy);
