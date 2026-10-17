@@ -70,7 +70,7 @@ const int8_t *sound_get_sample(int16_t sound, uint16_t *length, uint16_t *period
 LoudnessResult sound_compare_loudness(const uint8_t *volumes_a, const uint8_t *volumes_b);
 /* Stereo volume of a sound on a square, relative to the party position and direction.
    Returns false when the square is out of hearing range. */
-bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes);
+bool sound_get_volume(int16_t map_x, int16_t map_y, uint8_t *volumes); /* exported for the tests */
 /* Plays a sound of a square now, after the tick, or as a timeline event after delay ticks (SOUND_MODE_EVENT only;
    0 for the other modes). */
 void sound_request_play(int16_t sound, Location at, int16_t mode, uint16_t delay);
