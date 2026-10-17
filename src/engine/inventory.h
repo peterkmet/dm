@@ -2,13 +2,14 @@
 #ifndef DM_ENGINE_INVENTORY_H
 #define DM_ENGINE_INVENTORY_H
 /* Prefixes: inventory_ object_ */
+
+/* Objects, slots, and the leader hand: docs/rules/champions.md. */
+
 #include "data/tables.h"
 #include "engine/champion.h"
 #include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Objects, slots, and the leader hand: docs/rules/champions.md. */
 
 /* Object types of the rules: the weapon, potion, and junk type of a record. */
 #define WEAPON_TORCH           2
@@ -50,6 +51,8 @@ extern bool g_leader_empty_handed;
 extern uint16_t g_open_chest_slots[SLOT_CHEST_COUNT]; /* slots SLOT_CHEST_FIRST and up */
 extern uint16_t g_open_chest;                         /* THING_NONE: no chest is open */
 
+/* No inventory and no chest are open at the start of a game. */
+void inventory_reset(void);
 /* The object info record of an object thing, or -1. */
 int16_t inventory_get_object_info_index(uint16_t thing);
 /* The object type (base icon), or -1 for no thing or a thing that is not an object. */
@@ -61,7 +64,9 @@ uint16_t inventory_get_object_weight(uint16_t thing);
 /* Sharp attacks use the sharp resistance (attributes bits 0-2) of the armour. */
 uint16_t inventory_get_armour_defense(const ArmourInfo *armour, bool use_sharp_defense);
 
+/* Puts thing into the leader hand, and the leader carries its weight; THING_NONE changes nothing. */
 void inventory_put_hand_object(uint16_t thing);
+/* Empties the leader hand and returns its object or THING_NONE; the leader no longer carries its weight. */
 uint16_t inventory_take_hand_object(void);
 /* The leader takes object thing from cell of square at into the hand, unless a creature that does not levitate
    stands in that cell. Returns false when the creature protects the object, true otherwise; the hand takes only
@@ -77,6 +82,10 @@ void inventory_add_object_in_slot(int16_t champion_index, uint16_t thing, int16_
 /* Slot boxes 0-7: the two hands of champions 0-3. 8 and up: slot (box - 8) of the open inventory.
    Swaps the leader hand object with the slot object when the slot accepts it. */
 void inventory_click_on_slot_box(uint16_t slot_box);
+/* Opens a chest in the panel: its first 8 objects go to the chest slots, the other slots are empty. */
+void inventory_open_chest(uint16_t chest);
+/* Closes the open chest: the objects in the chest slots become its content, in slot order. */
+void inventory_close_chest(void);
 /* A flask or a waterskin in the leader hand fills at a fountain; the leader load changes with its weight.
    Returns true when the hand object changed. */
 bool inventory_fill_at_fountain(void);
@@ -89,12 +98,6 @@ void inventory_set_open_champion(int16_t champion_index);
 /* The inventory champion eats or drinks the leader hand object. Food is used up, a potion
    leaves an empty flask, and a waterskin loses one charge. */
 int16_t inventory_process_click_on_mouth(void);
-/* Opens a chest in the panel: its first 8 objects go to the chest slots, the other slots are empty. */
-void inventory_open_chest(uint16_t chest);
-/* Closes the open chest: the objects in the chest slots become its content, in slot order. */
-void inventory_close_chest(void);
-/* No inventory and no chest are open at the start of a game. */
-void inventory_reset(void);
 
 extern uint16_t g_leader_hand_object;
 

@@ -3,10 +3,8 @@
 #include "data/tables.h"
 #include "engine/arith.h"
 #include "engine/champion.h"
-#include "engine/event.h"
 #include "engine/game.h"
 #include "engine/group.h"
-#include "engine/inventory.h"
 #include "engine/map.h"
 #include "engine/party.h"
 #include "engine/projectile.h"
@@ -25,6 +23,11 @@
 #define MOVER_PROJECTILE 3
 
 int16_t g_party_teleport_count;
+
+void move_reset(void)
+{
+    g_session.new_party_map = -1;
+}
 
 bool move_is_levitating(uint16_t thing)
 {
@@ -103,7 +106,7 @@ static uint16_t rotate_projectile(uint16_t teleporter, uint16_t thing, int16_t *
 }
 
 /* Turns the party. Each champion keeps its place relative to the party. The loop also runs one time without champions. */
-static void turn_party(int16_t direction)
+static void rotate_party(int16_t direction)
 {
     int16_t delta = direction - g_party_direction;
     g_party_direction = direction;
@@ -118,7 +121,7 @@ static void turn_party(int16_t direction)
 
 /* After the jump of a teleporter, the party hears it, keeps the count of teleports and turns; a group hears it later
    and turns; a projectile turns its direction and cell; an object turns its cell. */
-static void turn_by_teleporter(Walk *w, uint16_t teleporter, bool points_to_itself)
+static void rotate_by_teleporter(Walk *w, uint16_t teleporter, bool points_to_itself)
 {
     MoveDestination *d = &w->d;
     int16_t rotation = rec_teleporter_rotation(teleporter);
@@ -129,7 +132,7 @@ static void turn_by_teleporter(Walk *w, uint16_t teleporter, bool points_to_itse
         g_party_teleport_count += !points_to_itself;
         if (rec_teleporter_is_audible(teleporter))
             sound_request_play(SOUND_BUZZ, (Location){d->x, d->y}, SOUND_MODE_NOW, 0);
-        turn_party(rec_teleporter_is_absolute(teleporter) ? rotation : NORMALIZE(g_party_direction + rotation));
+        rotate_party(rec_teleporter_is_absolute(teleporter) ? rotation : NORMALIZE(g_party_direction + rotation));
         break;
     case MOVER_GROUP:
         w->audible = rec_teleporter_is_audible(teleporter);
@@ -165,7 +168,7 @@ static bool is_teleported(Walk *w, uint8_t square)
     d->y = y;
     d->map = rec_teleporter_target_map(teleporter);
     map_set_current_map(d->map);
-    turn_by_teleporter(w, teleporter, points_to_itself);
+    rotate_by_teleporter(w, teleporter, points_to_itself);
     return !points_to_itself;
 }
 
@@ -391,7 +394,7 @@ static void take_stairs(bool stairs_go_up)
     g_party_map_x = to.x;
     g_party_map_y = to.y;
     map_set_current_map(g_session.new_party_map);
-    turn_party(map_get_stairs_exit_direction(g_party_map_x, g_party_map_y));
+    rotate_party(map_get_stairs_exit_direction(g_party_map_x, g_party_map_y));
     map_set_current_map(g_party_map_index);
 }
 
@@ -403,7 +406,7 @@ void move_turn_party(int16_t command)
         return;
     }
     sensor_process_thing_change(g_party_map_x, g_party_map_y, THING_NONE, true, false);
-    turn_party(NORMALIZE(g_party_direction + (command == COMMAND_TURN_RIGHT ? 1 : -1)));
+    rotate_party(NORMALIZE(g_party_direction + (command == COMMAND_TURN_RIGHT ? 1 : -1)));
     sensor_process_thing_change(g_party_map_x, g_party_map_y, THING_NONE, true, true);
 }
 
@@ -495,9 +498,4 @@ bool move_is_blocked(int16_t command)
         return true;
     return g_projectile_disabled_movement_ticks && NORMALIZE(command + g_party_direction - COMMAND_MOVE_FORWARD) ==
                                                        g_last_projectile_disabled_movement_direction;
-}
-
-void move_reset(void)
-{
-    g_session.new_party_map = -1;
 }

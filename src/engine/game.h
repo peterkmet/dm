@@ -2,11 +2,12 @@
 #ifndef DM_ENGINE_GAME_H
 #define DM_ENGINE_GAME_H
 /* Prefixes: game_ */
+
+/* The game session: the clock, the run flags, the modes and cheats, and the redraw flags that the rules raise. */
+
 #include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* The game session: the clock, the run flags, the modes and cheats, and the redraw flags that the rules raise. */
 
 /* Watchdog interval and the system error code of a failed allocation. */
 #define WATCHDOG_INTERVAL   300 /* game ticks between two watchdog events */
@@ -57,6 +58,7 @@ _Noreturn void game_fatal(int16_t code);
 void game_start_new(void);
 /* The start of a game, new or loaded: no candidate, no sleep, no won game, no cheats, no skill level-ups. */
 void game_reset_session(void);
+/* Sets the game mode (GAME_MODE_*) of the session. */
 void game_set_mode(int16_t mode);
 /* Turns a cheat of the advanced mode on or off. */
 void game_toggle_cheat(int16_t cheat);

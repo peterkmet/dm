@@ -490,6 +490,14 @@ void group_add_all_active_groups(void)
     }
 }
 
+void group_reset(void)
+{
+    set_direction.time = 0;
+    set_direction.group = NULL;
+    last_turn.thing = 0;
+    last_turn.at = (Location){0, 0};
+}
+
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index,
                              int16_t direction, Location at)
 {
@@ -964,7 +972,6 @@ static uint16_t visible_party_distance(const GroupTurn *t, uint16_t group, int16
     return unblocked_distance(x, y, g_party_map_x, g_party_map_y, is_view_party_blocked);
 }
 
-/* The index of the latest party scent on a square (champion_get_scent_ordinal), or -1. */
 int16_t group_get_party_scent(int16_t x, int16_t y)
 {
     uint16_t scent = party_pack_position(g_current_map_index, x, y);
@@ -1079,7 +1086,7 @@ static bool can_archenemy_double_move(GroupTurn *t, int16_t direction)
 
 /* Turns one creature. A creature never turns around at once: it turns left or right first. Two half-square
    creatures turn together, once per game tick. */
-static void turn_creature(ActiveGroup *active, int16_t direction, int16_t creature_index, bool turn_pair)
+static void rotate_creature(ActiveGroup *active, int16_t direction, int16_t creature_index, bool turn_pair)
 {
     if (turn_pair && g_game_time == set_direction.time && active == set_direction.group)
         return;
@@ -1096,14 +1103,14 @@ static void turn_creature(ActiveGroup *active, int16_t direction, int16_t creatu
 }
 
 /* Turns the group: the first creature always, the others half of the time. */
-static void turn_group(ActiveGroup *active, int16_t direction, int16_t last_creature_index, uint16_t size)
+static void rotate_group(ActiveGroup *active, int16_t direction, int16_t last_creature_index, uint16_t size)
 {
     bool turn_pair = last_creature_index && size == CREATURE_SIZE_HALF;
     if (turn_pair)
         last_creature_index--;
     for (int16_t i = last_creature_index; i >= 0; i--)
         if (i == 0 || random_bit())
-            turn_creature(active, direction, i, turn_pair);
+            rotate_creature(active, direction, i, turn_pair);
 }
 
 /* The spell that a creature type casts at the party: its explosion type and whether the cast has a sound. */
@@ -1522,7 +1529,7 @@ static void set_behavior_attack(GroupTurn *t)
         if (group_cell(t->active->directions, i) == primary || (i && random_bit())) {
             t->next.map_time = map | (g_game_time + 1);
         } else {
-            turn_creature(t->active, primary, i, turn_pair);
+            rotate_creature(t->active, primary, i, turn_pair);
             t->next.map_time = map | (g_game_time + random_2bits() + 2);
         }
         if (t->ticks_delay_next_event)
@@ -1556,11 +1563,11 @@ static bool try_move(GroupTurn *t, int16_t target_x, int16_t target_y)
 }
 
 /* After a move or a failed move: the group turns, a reaction ends the attack, and the next event follows. */
-static void turn_and_finish(GroupTurn *t, int16_t direction)
+static void rotate_and_finish(GroupTurn *t, int16_t direction)
 {
     if (!t->moved && t->ticks_since_last_move >= 0)
         direction = random_2bits();
-    turn_group(t->active, direction, t->last_creature_index, t->size);
+    rotate_group(t->active, direction, t->last_creature_index, t->size);
     if (t->event_type < REACTION_PARTY_IS_ADJACENT) {
         if (!t->moved)
             return;
@@ -1583,22 +1590,7 @@ static void finish_movement(GroupTurn *t, int16_t direction)
             return;
         }
     }
-    turn_and_finish(t, direction);
-}
-
-static bool jump_archenemy(GroupTurn *t);
-
-/* After a move attempt Lord Chaos may jump in a random direction; any other group finishes its movement. */
-static bool after_move(GroupTurn *t, int16_t direction)
-{
-    if (t->moved || t->ticks_since_last_move == -1 || !t->archenemy ||
-        (t->event_type != REACTION_DANGER_ON_SQUARE && random_2bits())) {
-        finish_movement(t, direction);
-        return false;
-    }
-    t->direction = random_2bits();
-    t->secondary_direction = direction_right(t->direction);
-    return jump_archenemy(t);
+    rotate_and_finish(t, direction);
 }
 
 /* Lord Chaos jumps two squares over a free square, away from fluxcages. Returns true when the turn ended at once. */
@@ -1621,7 +1613,7 @@ static bool jump_archenemy(GroupTurn *t)
             possible = can_archenemy_double_move(t, direction);
         }
         if (!possible) {
-            turn_group(t->active, t->direction, t->last_creature_index, t->size);
+            rotate_group(t->active, t->direction, t->last_creature_index, t->size);
             add_wander_event(t);
             return false;
         }
@@ -1639,6 +1631,19 @@ static bool jump_archenemy(GroupTurn *t)
         t->direction = random_2bits();
         t->secondary_direction = direction_right(t->direction);
     }
+}
+
+/* After a move attempt Lord Chaos may jump in a random direction; any other group finishes its movement. */
+static bool after_move(GroupTurn *t, int16_t direction)
+{
+    if (t->moved || t->ticks_since_last_move == -1 || !t->archenemy ||
+        (t->event_type != REACTION_DANGER_ON_SQUARE && random_2bits())) {
+        finish_movement(t, direction);
+        return false;
+    }
+    t->direction = random_2bits();
+    t->secondary_direction = direction_right(t->direction);
+    return jump_archenemy(t);
 }
 
 /* Moves one square in a direction that is possible. */
@@ -1672,7 +1677,7 @@ static bool step_toward(GroupTurn *t, bool allow_imaginary)
     }
     if (t->archenemy)
         return jump_archenemy(t);
-    turn_group(t->active, t->direction, t->last_creature_index, t->size);
+    rotate_group(t->active, t->direction, t->last_creature_index, t->size);
     add_wander_event(t);
     return false;
 }
@@ -1714,7 +1719,7 @@ static bool approach_target(GroupTurn *t)
     if (target_x == t->x && target_y == t->y) {
         t->moved = 0;
         rec_group_set_behavior(t->group, BEHAVIOR_WANDER);
-        turn_and_finish(t, 0);
+        rotate_and_finish(t, 0);
         return false;
     }
     DirectionPair directions = group_get_directions_to((Location){t->x, t->y}, (Location){target_x, target_y});
@@ -1744,7 +1749,7 @@ static bool flee(GroupTurn *t)
         if (--t->active->delay_fleeing == 0) {
             t->moved = 0;
             rec_group_set_behavior(t->group, BEHAVIOR_WANDER);
-            turn_and_finish(t, 0);
+            rotate_and_finish(t, 0);
             return false;
         }
         if (random_bit()) {
@@ -1752,7 +1757,7 @@ static bool flee(GroupTurn *t)
                 abs16(t->x - g_party_map_x) + abs16(t->y - g_party_map_y) < 2) {
                 t->moved = 0;
                 rec_group_set_behavior(t->group, BEHAVIOR_WANDER);
-                turn_and_finish(t, 0);
+                rotate_and_finish(t, 0);
                 return false;
             }
             DirectionPair directions =
@@ -1793,7 +1798,7 @@ static void process_reaction(GroupTurn *t, uint16_t behavior)
         bool useless = behavior == BEHAVIOR_WANDER_NO_SMELL || behavior == BEHAVIOR_WANDER_NO_APPROACH;
         if (useless || random_2bits()) {
             if (!visible_party_distance(t, t->group, -1, t->x, t->y)) {
-                turn_and_finish(t, 0);
+                rotate_and_finish(t, 0);
                 return;
             }
             if (useless || random_2bits())
@@ -2005,7 +2010,7 @@ static void process_creature_behavior(GroupTurn *t)
             return;
         }
         set_target_to_party(active);
-        turn_creature(active, t->direction, creature, t->last_creature_index && t->size == CREATURE_SIZE_HALF);
+        rotate_creature(active, t->direction, creature, t->last_creature_index && t->size == CREATURE_SIZE_HALF);
         t->next.map_time += 2;
         t->aspect_update_time = t->next.map_time & EVENT_TIME_MASK;
         t->next.type = t->event_type;
@@ -2339,12 +2344,4 @@ void group_process_move_event(TimelineEvent *event)
     }
     event->map_time += MOVE_GROUP_RETRY_TICKS;
     timeline_add_event(event);
-}
-
-void group_reset(void)
-{
-    set_direction.time = 0;
-    set_direction.group = NULL;
-    last_turn.thing = 0;
-    last_turn.at = (Location){0, 0};
 }

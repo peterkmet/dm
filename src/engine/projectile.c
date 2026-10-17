@@ -82,6 +82,19 @@ typedef struct {
 
 bool g_fuse_sequence_requested;
 
+void projectile_reset(void)
+{
+    g_fuse_sequence_requested = false;
+}
+
+bool projectile_take_fuse_request(void)
+{
+    bool requested = g_fuse_sequence_requested;
+    g_fuse_sequence_requested = false;
+    return requested;
+}
+
+/* Adds a copy of the event one tick later. */
 static void add_event_next_tick(const TimelineEvent *event)
 {
     TimelineEvent next = *event;
@@ -917,16 +930,4 @@ void projectile_shoot_from_champion(int16_t champion_index, uint16_t thing, int1
     });
     g_projectile_disabled_movement_ticks = SHOT_DISABLED_MOVEMENT_TICKS;
     g_last_projectile_disabled_movement_direction = direction;
-}
-
-void projectile_reset(void)
-{
-    g_fuse_sequence_requested = false;
-}
-
-bool projectile_take_fuse_request(void)
-{
-    bool requested = g_fuse_sequence_requested;
-    g_fuse_sequence_requested = false;
-    return requested;
 }

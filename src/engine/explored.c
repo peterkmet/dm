@@ -24,6 +24,7 @@ static size_t count_squares(int16_t map)
     return (size_t)dungeon_map_width(map) * (size_t)dungeon_map_height(map);
 }
 
+/* Index of the first square of a map in the seen storage. */
 static size_t first_square(int16_t map)
 {
     size_t offset = 0;
@@ -116,7 +117,6 @@ int16_t explored_get_visible_depths(Position place, int16_t direction)
     return limit;
 }
 
-/* A side square is seen when the square ahead at its depth or the side square one row nearer is open. */
 bool explored_is_side_visible(Position place, int16_t direction, int16_t depth, int16_t right)
 {
     if (depth == 0 || right == 0)
@@ -144,7 +144,6 @@ void explored_mark_visible(Position place, int16_t direction)
         }
 }
 
-/* Block: "AMAP", version, map count, then per map its width, height and one byte per square. */
 bool explored_save(uint8_t **out_data, size_t *out_length)
 {
     if (!seen)

@@ -4,7 +4,6 @@
 #include "data/bytes.h"
 #include "data/file.h"
 #include "data/graphics.h"
-#include "data/ids.h"
 #include "engine/champion.h"
 #include "engine/dungeon.h"
 #include "engine/explored.h"
@@ -129,6 +128,7 @@ static void pack_party(uint8_t *p)
     p[SAVE_PARTY_INVISIBILITY] = g_party.invisibility_count;
 }
 
+/* Reads the party from the 128 bytes of the party record. */
 static void unpack_party(const uint8_t *p)
 {
     memset(&g_party, 0, sizeof g_party);
@@ -158,6 +158,7 @@ static void pack_event(const TimelineEvent *e, uint8_t *p)
     wr16(p + SAVE_EVENT_DATA_C, e->c);
 }
 
+/* Reads one timeline event of the timeline block. */
 static void unpack_event(const uint8_t *p, TimelineEvent *e)
 {
     e->map_time = be32(p + SAVE_EVENT_MAP_TIME);

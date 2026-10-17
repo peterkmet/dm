@@ -27,6 +27,13 @@ static struct {
     int16_t cell;
 } rotation = {.effect = -1};
 
+void sensor_reset(void)
+{
+    rotation.effect = -1;
+    rotation.at = (Location){0, 0};
+    rotation.cell = 0;
+}
+
 void sensor_add_event(int16_t event_type, Location at, int16_t cell, int16_t effect, uint32_t time)
 {
     static const uint8_t priority[SENSOR_PRIORITY_COUNT] = {[EFFECT_SET] = 1, [EFFECT_CLEAR] = 3, [EFFECT_TOGGLE] = 2};
@@ -115,6 +122,7 @@ void sensor_trigger_effect(uint16_t sensor, int16_t effect, int16_t x, int16_t y
                      g_game_time + rec_sensor_delay(sensor));
 }
 
+/* True when thing is an object of object_type, or a closed chest that holds one. */
 static bool is_or_contains_object(uint16_t thing, int16_t object_type)
 {
     int16_t type = object_get_type(thing);
@@ -447,13 +455,6 @@ void sensor_process_thing_change(int16_t x, int16_t y, uint16_t thing, bool part
             process_wall_sensor(t, &s);
     }
     sensor_process_rotation_effect();
-}
-
-void sensor_reset(void)
-{
-    rotation.effect = -1;
-    rotation.at = (Location){0, 0};
-    rotation.cell = 0;
 }
 
 void sensor_add_rebirth_event(uint16_t bones, int16_t x, int16_t y, int16_t cell)

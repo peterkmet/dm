@@ -11,7 +11,7 @@ User wishes for future versions. Not planned yet.
 - `engine/group.c`: a parameter `group_cell` has the name of a function.
 - `rec_find_unused_thing` (`src/engine/record.c`) returns `THING_NONE` when no record is free; the original then frees a record with `get_discarded_thing` (`docs/reference/symbols/range-4-6.md`). Port that rule.
 - `light_depths` (`src/engine/explored.c`): a fixed cut by palette index (4 -> 3 rows, 5 -> 2 rows); a finer rule if the LLM player needs it.
-- `sound_request_play` (`src/engine/sound.c`): no check "current map == party map" for mode >= 1; the port has no `g_current_map_index`.
+- `sound_request_play` (`src/engine/sound.c`): the original skips a mode >= 1 sound when the current map is not the party map; the port does not check it yet. Port that rule.
 - `tests/golden/test_golden_rules.py`: `check()` raises a bare `KeyError` on a missing key; the update mode needs `-n 0`; the dead-caster case of `menus_draw_spell_area` has no snapshot.
 
 ## Advanced mode: show the damage twice as long

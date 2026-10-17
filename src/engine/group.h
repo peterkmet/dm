@@ -2,16 +2,16 @@
 #ifndef DM_ENGINE_GROUP_H
 #define DM_ENGINE_GROUP_H
 /* Prefixes: group_ creature_ */
+
+/* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules/creatures.md. */
+
 #include "data/tables.h"
-#include "engine/event.h"
 #include "engine/map.h"
 #include "engine/move.h"
 #include "engine/record.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules/creatures.md. */
 
 /* Most creatures in one group. */
 #define GROUP_MAX_CREATURES 4
@@ -126,14 +126,14 @@ extern ActiveGroup *g_active_groups;                            /* exported for 
 extern uint16_t g_active_group_count, g_max_active_group_count; /* exported for the tests */
 extern int32_t g_last_creature_attack_time;
 
-/* New game only: all active group entries are free. */
-void group_init_active_groups(void);
-/* Allocates count active group entries, all free. A failed allocation is a fatal error. */
-void group_allocate_active(uint16_t count);
-
 /* The active group entry of a group on the party map (a corrupt index reads a free entry); NULL while the
    active group table is not allocated. */
 const ActiveGroup *group_get_active(uint16_t group);
+/* Allocates count active group entries, all free. A failed allocation is a fatal error. */
+void group_allocate_active(uint16_t count);
+/* New game only: all active group entries are free. */
+void group_init_active_groups(void);
+
 static inline const CreatureInfo *group_info(uint16_t group)
 {
     return tables_get_creature_info(rec_group_creature_type(group));
@@ -200,7 +200,9 @@ static inline uint16_t creature_size(const CreatureInfo *info)
     return info->attributes & CREATURE_EXTENT_MASK;
 }
 
+/* Sets the cells byte of a group: in its active group entry on the party map, else in its record. */
 void group_set_cells(uint16_t group, uint8_t cells, int16_t map);
+/* Sets the directions byte of a group: in its active group entry on the party map, else in its record. */
 void group_set_directions(uint16_t group, uint8_t directions, int16_t map);
 /* The creature type list of a map follows its last square. */
 bool group_is_allowed_on_map(uint16_t group, int16_t map);
@@ -225,13 +227,12 @@ void group_start_wandering(int16_t x, int16_t y);
 void group_frighten(uint16_t group, int16_t x, int16_t y, uint8_t delay_fleeing);
 /* A group on the party map gets an active group entry. The record keeps the entry index in its cells byte. */
 void group_add_active_group(uint16_t group, int16_t x, int16_t y); /* exported for the tests */
+/* Ends every active group entry; each group keeps its state in its record only. */
 void group_remove_all_active_groups(void);
 /* Each group of the new party map becomes active and wanders. */
 void group_add_all_active_groups(void);
 /* The fluxcage and direction memories of the last group step do not carry into a new game. */
 void group_reset(void);
-/* The index of the latest party scent on a square of the current map, or -1. */
-int16_t group_get_party_scent(int16_t x, int16_t y);
 
 /* A new group of creatures on a square. Health is base health * multiplier plus a random part. (exported for the tests) */
 uint16_t group_get_generated(uint16_t creature_type, int16_t health_multiplier, uint16_t last_creature_index,
@@ -256,10 +257,15 @@ void group_delete_all_except(Location at);
 DamageOutcome group_damage_creature(uint16_t group, int16_t creature_index, Location at, int16_t damage);
 /* The same attack, with a random spread of 1/8, on every creature of the group. */
 DamageOutcome group_damage_all_creatures(uint16_t group, int16_t x, int16_t y, int16_t attack);
+/* The poison damage of a poison attack on a creature type: 0 without an attack or for an immune creature, else
+   reduced by the poison resistance. */
 uint16_t group_get_poison_attack(uint16_t creature_type, int16_t poison_attack);
 /* A closing door hits the creatures on its square; the survivors react to the danger. */
 void group_door_damages_creatures(int16_t x, int16_t y);
+/* The index of the latest party scent on a square of the current map, or -1. */
+int16_t group_get_party_scent(int16_t x, int16_t y);
 
+/* The distance between two squares in steps along x plus steps along y. */
 int16_t group_get_square_distance(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 /* True when the destination is in the 90 degree cone in front of the source. (exported for the tests) */
 bool group_is_destination_visible(int16_t direction, int16_t src_x, int16_t src_y, int16_t dst_x, int16_t dst_y);

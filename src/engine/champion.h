@@ -2,11 +2,12 @@
 #ifndef DM_ENGINE_CHAMPION_H
 #define DM_ENGINE_CHAMPION_H
 /* Prefixes: champion_ */
+
+/* Champion rules of KAOS (CHAMPION.C): docs/rules/champions.md. */
+
 #include "data/tables.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Champion rules of KAOS (CHAMPION.C): docs/rules/champions.md. */
 
 /* Champion count, statistic limits and statistic indices. */
 #define CHAMPION_MAX_COUNT       4
@@ -146,31 +147,15 @@ extern int16_t g_leader_index, g_magic_caster_champion_index;
 #define CHAMPION_ATTR_KEEP_MASK       0x007f /* flags that stay after a redraw */
 #define CHAMPION_ATTR_INVENTORY_ALL   0x5f80 /* everything the inventory shows */
 
-/* Copies portrait portrait_index of graphic 26 into the portrait of the champion. */
-void champion_set_portrait(int16_t champion_index, int16_t portrait_index); /* exported for the tests */
-/* Champions that died in the tick, one bit per champion index: the user interface releases them after the tick. */
-extern uint16_t g_dead_champions;
-/* The champions that died in the tick (one bit each); the notice is then cleared. */
-uint16_t champion_take_dead_champions(void);
-/* Asks the user interface to draw these parts of a champion again (CHAMPION_ATTR_* redraw flags). */
-void champion_add_redraw_flags(int16_t champion_index, uint16_t attributes);
-/* The champion turns to the party direction. */
-void champion_face_party_direction(Champion *champion);
 /* The start of a game: no leader and an empty leader hand. Returns the hand object before, which a loaded
    game puts back. */
 uint16_t champion_reset_for_new_game(void);
 
 /* Original 0x140-byte big-endian record (save files, emulator tests). */
 void champion_pack(const Champion *c, uint8_t *bytes);
+/* Reads a champion from the original 0x140-byte big-endian record. */
 void champion_unpack(const uint8_t *in, Champion *c);
 
-/* The party stands in front of a mirror. The text on the party square holds the champion data. */
-void champion_add_candidate_to_party(int16_t portrait_index);
-/* Cancel removes the candidate. Resurrect and reincarnate take the possessions from the wall
-   square and disable the mirror. The original also asks for a new name on reincarnation. */
-void champion_click_rebirth_panel(int16_t command);
-/* Vi altar: the champion comes back with no objects and with a lower maximum health. */
-void champion_resurrect(int16_t champion_index);
 /* The living champion in a cell of the party square, or -1. */
 int16_t champion_get_index_in_cell(int16_t cell);
 /* The leader carries the hand object, so its weight moves to the new leader. */
@@ -187,6 +172,16 @@ uint16_t champion_turn_to_last_attackers(void);
 /* A champion faces the party direction and moves to a cell; a champion in that cell takes its old cell.
    Returns that other champion, or -1. */
 int16_t champion_move_to_cell(int16_t champion_index, int16_t cell);
+/* Copies portrait portrait_index of graphic 26 into the portrait of the champion, clipped to the portrait sheet;
+   the pixels outside the sheet stay 0. */
+void champion_set_portrait(int16_t champion_index, int16_t portrait_index); /* exported for the tests */
+/* The party stands in front of a mirror. The text on the party square holds the champion data. */
+void champion_add_candidate_to_party(int16_t portrait_index);
+/* Cancel removes the candidate. Resurrect and reincarnate take the possessions from the wall
+   square and disable the mirror. The original also asks for a new name on reincarnation. */
+void champion_click_rebirth_panel(int16_t command);
+/* Vi altar: the champion comes back with no objects and with a lower maximum health. */
+void champion_resurrect(int16_t champion_index);
 
 /* Level 1 below 500 experience, one more level for each doubling. A hidden skill counts the
    mean of its own and its base skill experience. Sleeping champions have level 1. The flags leave out
@@ -233,6 +228,14 @@ void champion_fall_damage(bool use_rope);
 
 /* The main loop calls this every 64 ticks (16 while the party sleeps). */
 void champion_apply_time_effects(void);
+/* Champions that died in the tick, one bit per champion index: the user interface releases them after the tick. */
+extern uint16_t g_dead_champions;
+/* The champions that died in the tick (one bit each); the notice is then cleared. */
+uint16_t champion_take_dead_champions(void);
+/* Asks the user interface to draw these parts of a champion again (CHAMPION_ATTR_* redraw flags). */
+void champion_add_redraw_flags(int16_t champion_index, uint16_t attributes);
+/* The champion turns to the party direction. */
+void champion_face_party_direction(Champion *champion);
 
 /* Below half stamina, a value drops toward half of it; exported for the tests. */
 int16_t champion_adjust_by_stamina(int16_t champion_index, int16_t number);

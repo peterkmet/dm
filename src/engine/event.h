@@ -2,12 +2,14 @@
 #ifndef DM_ENGINE_EVENT_H
 #define DM_ENGINE_EVENT_H
 /* Prefixes: event_ */
+
+/* Timeline event types and the handlers of the square events. engine/timeline.h stores the events; this
+   module runs them. */
+
 #include "engine/map.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Timeline event types and the handlers of the square events. */
 
 /* Event types of the timeline. */
 #define EVENT_DOOR_ANIMATION         1
@@ -123,13 +125,13 @@ static inline void event_set_quiver_slot(TimelineEvent *event, int16_t slot)
 /* The endgame of an endgame sensor, set by the user interface: it runs inside the sensor event. */
 extern void (*g_endgame_sensor_hook)(uint16_t delay);
 
-/* Runs every expired event on its map. Event types without a handler here belong to later steps. */
-void event_process_expired(void);
 /* Texts of the event cell change visibility. Counters, AND/OR gates, and projectile launchers of the cell run.
    An endgame sensor ends the game. */
 void event_process_wall(TimelineEvent *event); /* exported for the tests */
 /* A closed door breaks when the attack reaches its defense and the door accepts the attack kind (force or magic).
    ticks 0 breaks it at once, else a door destruction event breaks it later. Returns true when the door breaks. */
 bool event_is_door_destroyed(Location at, int16_t attack, bool magic, uint16_t ticks);
+/* Runs every expired event on its map. Event types without a handler here belong to later steps. */
+void event_process_expired(void);
 
 #endif
