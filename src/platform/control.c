@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "platform/control.h"
 #include "data/bytes.h"
-#include "data/crc32.h"
 #include "data/file.h"
 #include "data/ids.h"
 #include "engine/action.h"
@@ -23,6 +22,7 @@
 #include "ui/ui.h"
 #include "ui/video.h"
 #include "ui/view.h"
+#include "control/png.h"
 #include "control/request.h"
 #include "platform/state_json.h"
 #include <errno.h>
@@ -643,78 +643,6 @@ static const struct {
     {"look",             send_look       },
 };
 
-/* Screenshot: g_screen as an RGB PNG with stored (uncompressed) deflate blocks. */
-
-#define ZLIB_METHOD        0x78  /* deflate, 32 KB window */
-#define ZLIB_FLAGS         0x01  /* no dictionary; header check bits */
-#define ADLER32_MODULUS    65521 /* the largest prime below 65536 */
-#define ADLER32_HIGH_SHIFT 16
-#define PNG_IHDR_SIZE      13
-
-static void png_chunk(FILE *f, const char *type, const uint8_t *data, uint32_t n)
-{
-    uint8_t head[8];
-    wr32(head, n);
-    memcpy(head + 4, type, 4);
-    uint32_t crc = crc32_update(crc32_update(0, head + 4, 4), data, n);
-    fwrite(head, 1, 8, f);
-    fwrite(data, 1, n, f);
-    wr32(head, crc);
-    fwrite(head, 1, 4, f);
-}
-
-static bool write_png(const char *path)
-{
-    enum { ROW = 1 + 3 * SCREEN_W, RAW = ROW * SCREEN_H, BLOCK = 65535 };
-    enum { BLOCKS = (RAW + BLOCK - 1) / BLOCK, ZLIB = 2 + RAW + 5 * BLOCKS + 4 };
-    static uint8_t raw[RAW], compressed[ZLIB];
-    for (int16_t y = 0; y < SCREEN_H; y++) {
-        uint8_t *pixel = raw + y * ROW;
-        *pixel++ = 0; /* filter: none */
-        for (int x = 0; x < SCREEN_W; x++) {
-            uint32_t argb = video_convert_argb(video_get_color(y, g_screen.px[y][x]));
-            *pixel++ = video_argb_red(argb);
-            *pixel++ = video_argb_green(argb);
-            *pixel++ = video_argb_blue(argb);
-        }
-    }
-    uint8_t *out = compressed;
-    *out++ = ZLIB_METHOD;
-    *out++ = ZLIB_FLAGS;
-    uint32_t byte_sum = 1;
-    uint32_t sum_of_sums = 0;
-    for (size_t done = 0; done < RAW;) {
-        size_t n = RAW - done < BLOCK ? RAW - done : BLOCK;
-        *out++ = done + n == RAW;
-        *out++ = (uint8_t)n;
-        *out++ = (uint8_t)(n >> BITS_PER_BYTE);
-        *out++ = (uint8_t)~n;
-        *out++ = (uint8_t)(~n >> BITS_PER_BYTE);
-        memcpy(out, raw + done, n);
-        for (size_t i = 0; i < n; i++) {
-            byte_sum = (byte_sum + raw[done + i]) % ADLER32_MODULUS;
-            sum_of_sums = (sum_of_sums + byte_sum) % ADLER32_MODULUS;
-        }
-        out += n;
-        done += n;
-    }
-    wr32(out, sum_of_sums << ADLER32_HIGH_SHIFT | byte_sum);
-    out += 4;
-    uint8_t ihdr[PNG_IHDR_SIZE] = {0};
-    wr32(ihdr, SCREEN_W);
-    wr32(ihdr + 4, SCREEN_H);
-    ihdr[8] = 8; /* bits per channel */
-    ihdr[9] = 2; /* RGB */
-    FILE *file = fopen(path, "wb");
-    if (!file)
-        return false;
-    fwrite("\x89PNG\r\n\x1a\n", 1, 8, file);
-    png_chunk(file, "IHDR", ihdr, sizeof ihdr);
-    png_chunk(file, "IDAT", compressed, (uint32_t)(out - compressed));
-    png_chunk(file, "IEND", NULL, 0);
-    return fclose(file) == 0;
-}
-
 /* What the party saw during a request. */
 
 /* Adds the explosions and the creature counts that the party sees now to the record of the request. */
@@ -1192,7 +1120,7 @@ static void handle_screenshot(const char *request)
     char path[PATH_SIZE];
     if (!request_get_string(request, "path", path, sizeof path))
         send_error("missing path");
-    else if (!write_png(path))
+    else if (!png_write(path))
         send_error("cannot write the PNG file");
     else {
         Json j = {0};
