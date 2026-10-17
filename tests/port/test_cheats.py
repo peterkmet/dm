@@ -92,8 +92,9 @@ def test_one_hit_kill_skips_doors_and_falls(lib, skeleton):
     lib.group_door_damages_creatures(at.x, at.y)
     assert is_alive(lib, at) and lib.rec_group_health(group, 0) < health
     drops = FallDrops()
+    health = lib.rec_group_health(group, 0)
     assert not lib.group_is_killed_by_fall(group, Position(m, at.x, at.y), Position(m, at.x, at.y), ctypes.byref(drops))
-    assert is_alive(lib, at)
+    assert is_alive(lib, at) and lib.rec_group_health(group, 0) < health
 
 
 def test_new_game_turns_the_cheats_off(lib):
