@@ -121,7 +121,8 @@ static bool show_wall_ornament(int16_t i, int16_t wall_view, const Aspect *aspec
     return alcove;
 }
 
-void view_draw_floor_ornament(int16_t i, int16_t floor_view)
+/* The floor ornament i on a floor view. */
+static void show_floor_ornament(int16_t i, int16_t floor_view)
 {
     if (i < 0)
         return;
@@ -131,6 +132,13 @@ void view_draw_floor_ornament(int16_t i, int16_t floor_view)
     int16_t zone = ZONE_FLOOR_ORNAMENT_FIRST + ZONE_FLOOR_ORNAMENT_VIEWS * g_view.floor_ornaments[i].coord + floor_view;
     view_draw_in_zone(gfx_get_bitmap(g_view.floor_ornaments[i].graphic + tables_get_floor_ornament_offset(floor_view)),
                       &g_view.viewport, &(ZoneBlit){zone, flip ? FLIP_H : 0, TRANSPARENT_COLOR, {0}}, NULL);
+}
+
+void view_draw_floor_ornament(const Aspect *a, int16_t floor_view)
+{
+    show_floor_ornament(a->floor_ornament, floor_view);
+    if (a->footprints)
+        show_floor_ornament(FLOOR_ORNAMENT_FOOTPRINTS, floor_view);
 }
 
 /* An ornament or mask on the door bitmap, scaled for D3 and D2. */
@@ -331,7 +339,7 @@ void view_draw_d0c_door_frame(const SquareView *square)
 
 void view_draw_door_front(const SquareView *square, const Aspect *a, int16_t dir, Location at)
 {
-    view_draw_floor_ornament(a->floor_ornament, square->view);
+    view_draw_floor_ornament(a, square->view);
     view_draw_square_things(a->first_thing, dir, at, square->view_square, square->door_back);
     for (int i = 0; i < square->frame_count; i++)
         view_draw_wall_part(&square->frames[i]);

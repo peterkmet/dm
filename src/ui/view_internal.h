@@ -209,6 +209,7 @@ typedef struct {
     int16_t floor_ornament;   /* floor ornament index, -1 none */
     uint16_t text;            /* the text thing of an inscription on the wall */
     int16_t portrait;         /* a champion portrait on the wall: portrait index, or -1 */
+    bool footprints;          /* the party scent on the square is in the footprints range */
 } Aspect;
 
 /* An ornament graphic and its coordinate set. */
@@ -374,8 +375,8 @@ const Bitmap *view_get_scaled_bitmap(const ScaledBitmap *scaled);
 void view_free_scaled(ScaledBitmap *scaled);
 
 /* view_walls.c */
-/* The floor ornament i on a floor view. */
-void view_draw_floor_ornament(int16_t i, int16_t floor_view);
+/* The floor ornament of square aspect a on a floor view, then the footprints on it. */
+void view_draw_floor_ornament(const Aspect *a, int16_t floor_view);
 /* A wall set bitmap of a square. */
 void view_draw_wall_part(const WallPart *part);
 /* The pit of a square, open or invisible. */

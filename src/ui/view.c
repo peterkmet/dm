@@ -147,8 +147,18 @@ static uint16_t scan_ornament_things(Aspect *aspect, uint16_t thing, int16_t dir
     return thing;
 }
 
-/* set_square_aspect without the footprints bit: the element, the ornaments, and the first drawn thing of
-   square (x, y) seen in direction dir. */
+/* Footprints of the footprints spell on a floor square (the footprints bit of set_square_aspect). */
+static bool has_footprints(const Aspect *a, int16_t x, int16_t y)
+{
+    bool allowed = a->element == SQUARE_PIT ? a->square & PIT_IMAGINARY
+                                            : a->element != SQUARE_WALL && a->element != ELEMENT_STAIRS_SIDE &&
+                                                  a->element != ELEMENT_STAIRS_FRONT;
+    int16_t scent = allowed ? group_get_party_scent(x, y) : -1;
+    return scent >= 0 && scent >= g_party.first_scent_index && scent < g_party.last_scent_index;
+}
+
+/* set_square_aspect: the element, the ornaments, the footprints, and the first drawn thing of square (x, y) seen in
+   direction dir. */
 static void get_square_aspect(Aspect *aspect, int16_t dir, int16_t x, int16_t y)
 {
     memset(aspect, 0, sizeof *aspect);
@@ -204,6 +214,7 @@ static void get_square_aspect(Aspect *aspect, int16_t dir, int16_t x, int16_t y)
         break;
     }
     thing = scan_ornament_things(aspect, thing, dir, scan);
+    aspect->footprints = has_footprints(aspect, x, y);
     /* a closed fake wall shows its things only when the party stands in its row or column */
     aspect->first_thing = scan == SCAN_FAKE_WALL && g_party_map_x != x && g_party_map_y != y ? THING_ENDOFLIST : thing;
 }
@@ -863,7 +874,7 @@ static void show_square(const SquareView *s, int16_t dir, Location at)
     default:
         return;
     }
-    view_draw_floor_ornament(a.floor_ornament, s->view);
+    view_draw_floor_ornament(&a, s->view);
     view_draw_ceiling_pit(s, at);
     view_draw_square_things(a.first_thing, dir, at, s->view_square, cells);
     if (a.element == SQUARE_TELEPORTER)
@@ -1196,16 +1207,6 @@ static void show_map_tile(Bitmap *dst, int16_t tile, int16_t px, int16_t py)
                   dst, &b);
 }
 
-/* Footprints of the footprints spell on a floor square (the footprints bit of set_square_aspect). */
-static bool has_map_footprints(const Aspect *a, int16_t x, int16_t y)
-{
-    bool allowed = a->element == SQUARE_PIT ? a->square & PIT_IMAGINARY
-                                            : a->element != SQUARE_WALL && a->element != ELEMENT_STAIRS_SIDE &&
-                                                  a->element != ELEMENT_STAIRS_FRONT;
-    int16_t scent = allowed ? group_get_party_scent(x, y) : -1;
-    return scent >= 0 && scent >= g_party.first_scent_index && scent < g_party.last_scent_index;
-}
-
 /* The tile of a flying thing, or -1: spell projectiles and a flying zokathra. */
 static int16_t get_map_projectile_tile(uint16_t projectile, int16_t dir)
 {
@@ -1345,7 +1346,7 @@ static void show_map_square(const MapDraw *m, Location at)
     MapDraw square = *m;
     square.blink = rec_square_type(aspect.square) == SQUARE_FAKE_WALL && (aspect.square & FAKE_WALL_IMAGINARY);
     int16_t color = at.x == g_party_map_x && at.y == g_party_map_y ? MAP_COLOR_PARTY
-                    : spells[MAGIC_MAP_DAIN] && aspect.element != SQUARE_WALL && has_map_footprints(&aspect, at.x, at.y)
+                    : spells[MAGIC_MAP_DAIN] && aspect.element != SQUARE_WALL && aspect.footprints
                         ? MAP_COLOR_FOOTPRINTS
                         : -1;
     if (color >= 0) {

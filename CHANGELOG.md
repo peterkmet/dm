@@ -39,6 +39,7 @@
 
 - The status box shows the damage splat of a hurt champion.
 - A door or a creature on another map than the party map makes no sound.
+- The dungeon view draws the footprints of the Footprints spell on the floor, as the original.
 
 ### Removed
 
