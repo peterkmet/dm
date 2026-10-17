@@ -2,11 +2,12 @@
 #ifndef DM_ENGINE_SAVEFILE_H
 #define DM_ENGINE_SAVEFILE_H
 /* Prefixes: savefile_ */
-#include <stdbool.h>
-#include <stdint.h>
 
 /* DM v3.60 save file container (DMGAME~.DAT); CSB (CSBGAME.DAT) with g_adventure. Layout: docs/formats/save.md,
    CSB header: docs/csb/data.md "Save file". */
+
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Header size and block layout of the save file. */
 #define SAVE_HEADER_BYTES    512

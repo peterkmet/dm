@@ -2,11 +2,13 @@
 #ifndef DM_ENGINE_SAVEGAME_H
 #define DM_ENGINE_SAVEGAME_H
 /* Prefixes: savegame_ */
+
+/* Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and
+   load_game, LOADSAVE.C). savefile.c owns the container; this module owns the block contents. Layout:
+   docs/formats/save.md. */
+
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Game state to and from the save file of the adventure, DMGAME.DAT or CSBGAME.DAT (KAOS save_game and load_game, LOADSAVE.C).
-   savefile.c owns the container; this module owns the block contents. Layout: docs/formats/save.md. */
 
 /* Results of a load. */
 typedef enum {

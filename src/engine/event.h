@@ -2,12 +2,14 @@
 #ifndef DM_ENGINE_EVENT_H
 #define DM_ENGINE_EVENT_H
 /* Prefixes: event_ */
+
+/* Timeline event types and the handlers of the square events. engine/timeline.h stores the events; this
+   module runs them. */
+
 #include "engine/map.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Timeline event types and the handlers of the square events. */
 
 /* Event types of the timeline. */
 #define EVENT_DOOR_ANIMATION         1

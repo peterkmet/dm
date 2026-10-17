@@ -2,6 +2,9 @@
 #ifndef DM_ENGINE_GROUP_H
 #define DM_ENGINE_GROUP_H
 /* Prefixes: group_ creature_ */
+
+/* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules/creatures.md. */
+
 #include "data/tables.h"
 #include "engine/map.h"
 #include "engine/move.h"
@@ -9,8 +12,6 @@
 #include "engine/timeline.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Creature groups (KAOS range 4, GROUP.C, and the group helpers of range 7): docs/rules/creatures.md. */
 
 /* Most creatures in one group. */
 #define GROUP_MAX_CREATURES 4

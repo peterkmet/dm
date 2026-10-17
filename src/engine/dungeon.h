@@ -2,6 +2,10 @@
 #ifndef DM_ENGINE_DUNGEON_H
 #define DM_ENGINE_DUNGEON_H
 /* Prefixes: dungeon_ */
+
+/* The loaded dungeon: header, maps, squares and thing records, in the big-endian byte layout of the original
+   memory. The record fields belong to engine/record.h. */
+
 #include <stdbool.h>
 #include <stdint.h>
 

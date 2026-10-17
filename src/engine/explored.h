@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #ifndef DM_ENGINE_EXPLORED_H
 #define DM_ENGINE_EXPLORED_H
+/* Prefixes: explored_ */
+
+/* Explored squares (not in the original game): the squares the party has seen, for the automap. */
+
 #include "engine/map.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
-/* Prefixes: explored_ */
-
-/* Explored squares (not in the original game): the squares the party has seen, for the automap. */
 
 /* Magic of the explored block. */
 #define EXPLORED_SAVE_MAGIC "AMAP" /* the first 4 bytes of the save block */

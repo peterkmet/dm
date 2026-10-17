@@ -2,6 +2,9 @@
 #ifndef DM_ENGINE_RANDOM_H
 #define DM_ENGINE_RANDOM_H
 /* Prefixes: random_ random16 */
+
+/* The game random numbers: the seed and the random draws. */
+
 #include <stdint.h>
 
 extern uint32_t g_random_seed;

@@ -2,11 +2,12 @@
 #ifndef DM_ENGINE_SENSOR_H
 #define DM_ENGINE_SENSOR_H
 /* Prefixes: sensor_ */
+
+/* Floor and wall sensors. Coordinates are on the current map. */
+
 #include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Floor and wall sensors. Coordinates are on the current map. */
 
 /* Sensor effects and local effects. */
 #define EFFECT_SET                    0

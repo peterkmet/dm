@@ -2,12 +2,13 @@
 #ifndef DM_ENGINE_MAP_H
 #define DM_ENGINE_MAP_H
 /* Prefixes: door_ square_ map_ direction_ */
-#include "engine/record.h"
-#include <stdbool.h>
-#include <stdint.h>
 
 /* Current map, square bytes, and thing lists.
    Coordinates are on the current map. All records keep the big-endian layout of Dungeon.DAT. */
+
+#include "engine/record.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #define NORMALIZE(direction) ((direction) & 3)
 /* Cell and direction counts, direction values and level steps. */

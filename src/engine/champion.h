@@ -2,11 +2,12 @@
 #ifndef DM_ENGINE_CHAMPION_H
 #define DM_ENGINE_CHAMPION_H
 /* Prefixes: champion_ */
+
+/* Champion rules of KAOS (CHAMPION.C): docs/rules/champions.md. */
+
 #include "data/tables.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Champion rules of KAOS (CHAMPION.C): docs/rules/champions.md. */
 
 /* Champion count, statistic limits and statistic indices. */
 #define CHAMPION_MAX_COUNT       4

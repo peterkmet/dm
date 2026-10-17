@@ -2,11 +2,12 @@
 #ifndef DM_ENGINE_MOVE_H
 #define DM_ENGINE_MOVE_H
 /* Prefixes: move_ */
+
+/* Party and object movement (KAOS range 8, MOVESENS.C and COMMAND.C). */
+
 #include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Party and object movement (KAOS range 8, MOVESENS.C and COMMAND.C). */
 
 /* Most squares that one move follows. */
 #define SQUARE_CHAIN_MAXIMUM 99 /* teleporters, pits, and stairs that one move follows */

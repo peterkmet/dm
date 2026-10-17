@@ -2,6 +2,10 @@
 #ifndef DM_ENGINE_MESSAGE_H
 #define DM_ENGINE_MESSAGE_H
 /* Prefixes: message_ */
+
+/* Rule-level model of the message area (zone 15): the text rows, their colors and expiry, and the cursor.
+   It draws nothing; ui/ draws the rows. */
+
 #include "data/graphics.h"
 #include <stdint.h>
 

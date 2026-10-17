@@ -2,13 +2,14 @@
 #ifndef DM_ENGINE_MAGIC_H
 #define DM_ENGINE_MAGIC_H
 /* Prefixes: magic_ */
+
+/* Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C): docs/rules/creatures.md. */
+
 #include "data/bytes.h"
 #include "engine/map.h"
 #include "engine/party.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Spell casting: the effect of a spell from the champion symbols (KAOS range 8, MENU.C): docs/rules/creatures.md. */
 
 /* Champion.magic_map: the DAIN, ROS, and KU spell counts; NETA holds direction + 1 of the kept map; the
    kept position is a big-endian word with x in bits 11-15, y in bits 6-10, and the map in bits 0-5. */

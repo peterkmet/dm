@@ -2,11 +2,12 @@
 #ifndef DM_ENGINE_GAME_H
 #define DM_ENGINE_GAME_H
 /* Prefixes: game_ */
+
+/* The game session: the clock, the run flags, the modes and cheats, and the redraw flags that the rules raise. */
+
 #include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* The game session: the clock, the run flags, the modes and cheats, and the redraw flags that the rules raise. */
 
 /* Watchdog interval and the system error code of a failed allocation. */
 #define WATCHDOG_INTERVAL   300 /* game ticks between two watchdog events */

@@ -2,13 +2,14 @@
 #ifndef DM_ENGINE_INVENTORY_H
 #define DM_ENGINE_INVENTORY_H
 /* Prefixes: inventory_ object_ */
+
+/* Objects, slots, and the leader hand: docs/rules/champions.md. */
+
 #include "data/tables.h"
 #include "engine/champion.h"
 #include "engine/map.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Objects, slots, and the leader hand: docs/rules/champions.md. */
 
 /* Object types of the rules: the weapon, potion, and junk type of a record. */
 #define WEAPON_TORCH           2

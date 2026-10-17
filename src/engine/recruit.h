@@ -2,6 +2,9 @@
 #ifndef DM_ENGINE_RECRUIT_H
 #define DM_ENGINE_RECRUIT_H
 /* Prefixes: recruit_ */
+
+/* Candidate champions: the champion data from the text of a mirror. */
+
 #include "engine/champion.h"
 #include <stdbool.h>
 #include <stdint.h>

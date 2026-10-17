@@ -2,14 +2,15 @@
 #ifndef DM_ENGINE_PROJECTILE_H
 #define DM_ENGINE_PROJECTILE_H
 /* Prefixes: projectile_ explosion_ */
+
+/* Projectiles, explosions, fluxcages, and launchers (KAOS range 7, PROJEXPL.C): docs/rules/creatures.md. */
+
 #include "engine/group.h"
 #include "engine/map.h"
 #include "engine/record.h"
 #include "engine/timeline.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Projectiles, explosions, fluxcages, and launchers (KAOS range 7, PROJEXPL.C): docs/rules/creatures.md. */
 
 /* Explosion types. The explosion thing of a type is 0xff80 + type. */
 #define EXPLOSION_FIREBALL          0
