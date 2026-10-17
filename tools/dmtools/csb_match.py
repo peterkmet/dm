@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Match the functions of the CSB engine (game-csb/APPB.FTL) to DM KAOS.FTL.
 
-Usage: uv run dm-csb-match [--csv OUT] [--report OUT] [--diff KAOS_ADDR]
+Usage: uv run dm-csb-match [--csv OUT] [--report OUT] [--kaos F] [--kaos-csv F] [--appb F] [--appb-c F]
 
 The two modules come from different compilers: CSB keeps locals on the stack,
 DM keeps them in registers. A byte or instruction compare does not work, so each
