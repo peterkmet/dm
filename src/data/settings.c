@@ -3,7 +3,6 @@
 #include "adventure.h"
 #include "file.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /* The text of the settings file. */
@@ -75,14 +74,16 @@ Settings settings_parse(const char *file_text, size_t length)
 
 Settings settings_load(const char *dir)
 {
-    char path[PATH_SIZE];
+    char path[PATH_SIZE], text[SETTINGS_MAX_SIZE + 1];
     size_t length = 0;
-    uint8_t *text = NULL;
-    if (snprintf(path, sizeof path, "%s/%s", dir, SETTINGS_FILE) < (int)sizeof path)
-        text = file_read(path, &length);
-    Settings settings = settings_parse(text ? (const char *)text : "", length);
-    free(text);
-    return settings;
+    if (snprintf(path, sizeof path, "%s/%s", dir, SETTINGS_FILE) < (int)sizeof path) {
+        FILE *file = fopen(path, "rb");
+        if (file) {
+            length = fread(text, 1, sizeof text, file); /* one byte above the limit tells a file that is too large */
+            fclose(file);
+        }
+    }
+    return settings_parse(text, length);
 }
 
 /* Commands */
