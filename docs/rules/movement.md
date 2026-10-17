@@ -79,11 +79,11 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 5. These targets block the move: a wall, a door with state 2, 3, or 4, and a fake wall with bit 2 (open) and bit 0 (imaginary) clear. With champions, a group on the target also blocks the move.
 6. Else the party moves with `move_get_move_result`. On stairs, the party only enters the new square. `g_disabled_movement_ticks` becomes the maximum of 1 and `champion_get_movement_ticks` of each living champion. `g_projectile_disabled_movement_ticks` becomes 0.
 
-`move_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`turn_party`), and enters the floor sensors again.
+`move_turn_party(command)` takes the stairs when the party is on stairs. Else the party leaves the floor sensors of its square, turns (`rotate_party`), and enters the floor sensors again.
 
 `take_stairs(up)` removes the party from its square, sets `g_session.new_party_map` and the party square with `map_get_level_change_location` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
-`turn_party(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
+`rotate_party(direction)` adds the direction change to the cell and the direction of each champion. The loop runs one time also without champions, as in the original.
 
 ### `move_get_move_result`
 

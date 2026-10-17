@@ -22,7 +22,7 @@ PendingSound g_pending_sounds[SOUND_PENDING_SLOTS] = {
     {NO_SOUND, {0, 0}}
 };
 
-static bool sound_exists(int16_t sound)
+static bool is_known_sound(int16_t sound)
 {
     return sound >= 0 && sound < SOUND_COUNT && tables_get_sound_graphic(sound) >= 0;
 }
@@ -30,7 +30,7 @@ static bool sound_exists(int16_t sound)
 const int8_t *sound_get_sample(int16_t sound, uint16_t *length, uint16_t *period)
 {
     uint16_t size;
-    if (!sound_exists(sound))
+    if (!is_known_sound(sound))
         return NULL;
     const uint8_t *p = gfx_get_item(tables_get_sound_graphic(sound), &size);
     uint8_t rate = tables_get_sound_rate(sound);
@@ -131,7 +131,7 @@ void sound_request_play(int16_t sound, Location at, int16_t mode, uint16_t delay
 {
     uint8_t v[SOUND_SIDE_COUNT];
     /* ponytail: no "current map == party map" check for mode >= 1 until the port has g_current_map_index */
-    if (!sound_exists(sound))
+    if (!is_known_sound(sound))
         return;
     if (mode == SOUND_MODE_EVENT) {
         TimelineEvent e = {EVENT_MAP_TIME(g_party_map_index, g_game_time + delay), EVENT_PLAY_SOUND,

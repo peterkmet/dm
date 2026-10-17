@@ -295,8 +295,8 @@ address,name,signature,subsystem
 0x10f030,group_is_movement_possible,"int16_t group_is_movement_possible(const CreatureInfo *info, int16_t map_x, int16_t map_y, uint16_t direction, int16_t allow_fake_pit_and_wall)",group
 0x10f2a0,get_first_free_direction,"int16_t get_first_free_direction(const CreatureInfo *info, int16_t map_x, int16_t map_y, int16_t allow_fake_pit_and_wall)",group
 0x10f2e8,can_archenemy_double_move,"int16_t can_archenemy_double_move(const CreatureInfo *info, int16_t map_x, int16_t map_y, uint16_t direction)",group
-0x10f34e,turn_creature,"void turn_creature(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t two_half_square_creatures_same_direction)",group
-0x10f3f6,turn_group,"void turn_group(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t creature_size)",group
+0x10f34e,rotate_creature,"void rotate_creature(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t two_half_square_creatures_same_direction)",group
+0x10f3f6,rotate_group,"void rotate_group(ActiveGroup *active, int16_t direction, int16_t creature_index, int16_t creature_size)",group
 0x10f44c,is_creature_attacking,"int16_t is_creature_attacking(const Group *group, int16_t map_x, int16_t map_y, int16_t creature_index)",group
 0x10f704,add_event,"void add_event(TimelineEvent *event, uint32_t aspect_update_time)",group
 0x10f760,group_process_events_29_to_41,"void group_process_events_29_to_41(int16_t map_x, int16_t map_y, int16_t event_type, int16_t ticks)",group
