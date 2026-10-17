@@ -59,6 +59,14 @@ class Box(ctypes.Structure):
     _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
 
 
+class ZoneItem(ctypes.Structure):
+    _fields_ = [("bitmap_w", c16), ("bitmap_h", c16), ("w", c16), ("h", c16)]
+
+
+class ZoneClip(ctypes.Structure):
+    _fields_ = [("box", Box), ("source_x", c16), ("source_y", c16)]
+
+
 class Bitmap(ctypes.Structure):
     _fields_ = [("w", u16), ("h", u16), ("px", ctypes.POINTER(ctypes.c_uint8))]
 
@@ -692,7 +700,7 @@ def setup_view(lib):
     lib.view_render.restype = ctypes.c_bool
     lib.draw_blit.argtypes = [ctypes.POINTER(BlitSource), ctypes.POINTER(Bitmap), ctypes.POINTER(Box)]
     lib.draw_shrink.argtypes = [ctypes.POINTER(Bitmap), ctypes.c_int16, ctypes.c_int16, ctypes.c_char_p, ctypes.POINTER(Bitmap)]
-    lib.layout_get_zone.argtypes = [ctypes.c_int16, ctypes.c_int16, ctypes.c_int16, ctypes.POINTER(Box), ctypes.POINTER(ctypes.c_int16), ctypes.POINTER(ctypes.c_int16)]
+    lib.layout_get_zone.argtypes = [ctypes.c_int16, ctypes.POINTER(ZoneItem), ctypes.POINTER(ZoneClip)]
     lib.gfx_get_item.restype = ctypes.POINTER(ctypes.c_uint8)
     lib.dungeon_load.restype = ctypes.c_bool
     lib.gfx_get_item.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]

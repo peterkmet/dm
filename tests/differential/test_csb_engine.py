@@ -9,6 +9,7 @@ import subprocess
 import pytest
 
 from dmtest import constants as C
+from dmtest.game import ZoneClip, ZoneItem
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, ROOT, needs_csb, needs_dm, needs_sdl
 
@@ -32,10 +33,6 @@ pytestmark = [needs_csb]
 
 class CsbCopy(ctypes.Structure):
     _fields_ = [("kaos", ctypes.c_uint32), ("appb", ctypes.c_uint32), ("size", ctypes.c_uint16)]
-
-
-class Box(ctypes.Structure):
-    _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
 
 
 def image(path):
@@ -179,9 +176,10 @@ def test_layout_zones_equal_but_endgame_buttons(lib):
         assert lib.gfx_open(str(folder / "Graphics.DAT").encode()) and lib.layout_init()
         result = {}
         for zone in range(1, 2000):
-            b, w, h = Box(), c16(), c16()
-            if lib.layout_get_zone(zone, 16, 16, ctypes.byref(b), ctypes.byref(w), ctypes.byref(h)):
-                result[zone] = (b.x, b.y, b.w, b.h, w.value, h.value)
+            placed = ZoneClip()
+            if lib.layout_get_zone(zone, ctypes.byref(ZoneItem(16, 16, 0, 0)), ctypes.byref(placed)):
+                b = placed.box
+                result[zone] = (b.x, b.y, b.w, b.h, placed.source_x, placed.source_y)
         return result
 
     dm, csb = boxes(GAME), boxes(GAME_CSB)

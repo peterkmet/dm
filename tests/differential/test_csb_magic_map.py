@@ -8,7 +8,7 @@ import shutil
 import pytest
 
 from dmtest import constants as C
-from dmtest.game import Champion, Party, Timeline, TimelineEvent, global_type
+from dmtest.game import Champion, Party, Timeline, TimelineEvent, ZoneClip, ZoneItem, global_type
 from dmtest.lib import load_lib
 from dmtest.markers import GAME, GAME_CSB, needs_csb, needs_csb_mini, needs_dm
 
@@ -49,10 +49,6 @@ class Bitmap(ctypes.Structure):
     _fields_ = [("w", u16), ("h", u16), ("px", ctypes.POINTER(ctypes.c_uint8))]
 
 
-class Box(ctypes.Structure):
-    _fields_ = [("x", c16), ("y", c16), ("w", c16), ("h", c16)]
-
-
 @pytest.fixture(scope="module")
 def lib():
     """A private copy of libdm."""
@@ -66,7 +62,7 @@ def lib():
         ("dungeon_decode_text", ctypes.c_bool, [ctypes.c_char_p, c16, u16, c16]), ("tables_get_spell", ctypes.POINTER(Spell), [ctypes.c_int]),
         ("magic_cast_champion_spell", c16, [c16]), ("map_get_creature_attributes", u16, [u16]),
         ("ui_get_viewport", ctypes.POINTER(Bitmap), []), ("gfx_get_string", ctypes.c_char_p, [c16]),
-        ("layout_get_zone", ctypes.c_bool, [c16, c16, c16, ctypes.POINTER(Box), ctypes.POINTER(c16), ctypes.POINTER(c16)]),
+        ("layout_get_zone", ctypes.c_bool, [c16, ctypes.POINTER(ZoneItem), ctypes.POINTER(ZoneClip)]),
         ("savegame_load_from", ctypes.c_int, [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_void_p]),
         ("panel_open", None, [c16]), ("gfx_get_bitmap", ctypes.POINTER(Bitmap), [c16]),
         ("map_get_stairs_exit_direction", c16, [c16, c16]), ("view_get_wall_ornament", c16, [c16, c16, c16]),
@@ -185,9 +181,9 @@ def panel(lib):
 
 
 def map_origin(lib):
-    box, w, h = Box(), c16(1), c16(1)
-    assert lib.layout_get_zone(C.ZONE_MAGIC_MAP, 0, 0, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
-    return box.x, box.y
+    placed = ZoneClip()
+    assert lib.layout_get_zone(C.ZONE_MAGIC_MAP, ZoneItem(0, 0, 1, 1), ctypes.byref(placed))
+    return placed.box.x, placed.box.y
 
 
 def changed_cells(lib, before, after):
@@ -505,14 +501,15 @@ def test_panel_shows_the_magic_map_graphic(lib, csb):
     c.slots[C.SLOT_HAND_ACTION] = take(lib, scrolls[b"MAGICMAP"])
     view = panel(lib)
     graphic, scroll = bitmap(lib, C.GFX_PANEL_MAGIC_MAP), bitmap(lib, C.GFX_PANEL_SCROLL)
-    box, w, h = Box(), c16(0), c16(0)
-    assert lib.layout_get_zone(C.ZONE_PANEL, graphic.w, graphic.h, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
+    placed = ZoneClip()
+    assert lib.layout_get_zone(C.ZONE_PANEL, ZoneItem(graphic.w, graphic.h, 0, 0), ctypes.byref(placed))
+    box = placed.box
     ox, oy = map_origin(lib)
     width = lib.ui_get_viewport().contents.w
     checked = 0
     for y in range(box.h):
         for x in range(box.w):
-            vx, vy, color = box.x + x, box.y + y, graphic.px[(h.value + y) * graphic.w + w.value + x]
+            vx, vy, color = box.x + x, box.y + y, graphic.px[(placed.source_y + y) * graphic.w + placed.source_x + x]
             in_grid = ox - 2 <= vx < ox + 7 * MAP_CELL + 1 and oy - 2 <= vy < oy + 7 * MAP_CELL + 1
             if color != C.COLOR_RED and not in_grid and (y >= scroll.h or x >= scroll.w or color != scroll.px[y * scroll.w + x]):
                 if all(abs(vx - rx) > 10 or abs(vy - ry) > 10 for rx, ry in rune_points(lib)):
@@ -524,9 +521,9 @@ def test_panel_shows_the_magic_map_graphic(lib, csb):
 def rune_points(lib):
     points = []
     for i in range(4):
-        box, w, h = Box(), c16(1), c16(1)
-        assert lib.layout_get_zone(ZONE_RUNE_FIRST + i, 0, 0, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
-        points.append((box.x, box.y))
+        placed = ZoneClip()
+        assert lib.layout_get_zone(ZONE_RUNE_FIRST + i, ZoneItem(0, 0, 1, 1), ctypes.byref(placed))
+        points.append((placed.box.x, placed.box.y))
     return points
 
 
@@ -534,8 +531,9 @@ def rune_colors(lib, view, i):
     """The colors in the box of rune zone i (the box of ui_print_zone)."""
     tw, th = c16(), c16()
     assert lib.text_get_size(bytes([0x72 + i]), ctypes.byref(tw), ctypes.byref(th))
-    box, w, h = Box(), c16(tw.value), c16(th.value)
-    assert lib.layout_get_zone(ZONE_RUNE_FIRST + i, 0, 0, ctypes.byref(box), ctypes.byref(w), ctypes.byref(h))
+    placed = ZoneClip()
+    assert lib.layout_get_zone(ZONE_RUNE_FIRST + i, ZoneItem(0, 0, tw.value, th.value), ctypes.byref(placed))
+    box = placed.box
     width = lib.ui_get_viewport().contents.w
     return {view[y * width + x] for y in range(box.y, box.y + box.h) for x in range(box.x, box.x + box.w)}
 

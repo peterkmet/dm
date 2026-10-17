@@ -594,12 +594,10 @@ static void show_projectile(const SquareDraw *sq, uint16_t thing)
    start in the pattern so that it sparkles. */
 static void show_field(const uint8_t *aspect, int16_t zone)
 {
-    int16_t width = aspect[FIELD_WIDTH];
-    int16_t height = aspect[FIELD_HEIGHT];
     int16_t sx = 0;
     bool flip = false;
-    Box box;
-    if (!layout_get_zone(zone, 0, 0, &box, &width, &height))
+    ZoneClip placed;
+    if (!layout_get_zone(zone, &(ZoneItem){0, 0, aspect[FIELD_WIDTH], aspect[FIELD_HEIGHT]}, &placed))
         return;
     const Bitmap *mask = NULL;
     const Bitmap *units = gfx_get_bitmap(GFX_FIELD_PATTERN_FIRST + aspect[FIELD_PATTERN]);
@@ -612,7 +610,7 @@ static void show_field(const uint8_t *aspect, int16_t zone)
     int16_t first = random16() & FIELD_FIRST_UNIT_RANGE;
     int16_t last = aspect[FIELD_LAST_UNIT] + random_bit();
     if (units)
-        draw_masked_fill(&g_view.viewport, &box,
+        draw_masked_fill(&g_view.viewport, &placed.box,
                          &(MaskedFill){units, mask, flip, last, first, aspect[FIELD_TRANSPARENT], sx, 0});
 }
 
@@ -642,11 +640,9 @@ static void show_explosion_on_party(uint16_t thing, int16_t aspect)
     }
     int16_t first = random16() & EXPLOSION_FILL_FIRST_UNIT_RANGE;
     int16_t last = random_2bits() + EXPLOSION_FILL_LAST_UNIT;
-    int16_t width = 0;
-    int16_t height = 0;
-    Box box;
-    if (units && layout_get_zone(ZONE_VIEWPORT_BOX, g_view.viewport.w, g_view.viewport.h, &box, &width, &height))
-        draw_masked_fill(&g_view.viewport, &box,
+    ZoneClip placed;
+    if (units && layout_get_zone(ZONE_VIEWPORT_BOX, &(ZoneItem){g_view.viewport.w, g_view.viewport.h, 0, 0}, &placed))
+        draw_masked_fill(&g_view.viewport, &placed.box,
                          &(MaskedFill){units, NULL, false, last, first, EXPLOSION_FILL_TRANSPARENT, 0, 0});
     free(own.px);
 }

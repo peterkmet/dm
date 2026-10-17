@@ -50,12 +50,11 @@ static void patch_dividers(Bitmap *viewport, int16_t count)
     Box source = tables_get_layout_bitmap(patch_layout[count - 1] - 1);
     int16_t sx = source.x;
     int16_t sy = source.y;
-    int16_t w = source.w;
-    int16_t h = source.h;
-    Box b;
+    ZoneClip placed;
     memcpy(copy_px, viewport->px, (size_t)viewport->w * viewport->h);
-    if (layout_get_zone(patch_zone[count - 1], copy.w, copy.h, &b, &w, &h))
-        draw_blit(&(BlitSource){&copy, sx + w, sy + h, COLOR_NONE, 0}, viewport, &b);
+    if (layout_get_zone(patch_zone[count - 1], &(ZoneItem){copy.w, copy.h, source.w, source.h}, &placed))
+        draw_blit(&(BlitSource){&copy, sx + placed.source_x, sy + placed.source_y, COLOR_NONE, 0}, viewport,
+                  &placed.box);
 }
 
 /* The choice texts in the zones for their count. */

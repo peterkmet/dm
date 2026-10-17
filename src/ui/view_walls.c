@@ -34,12 +34,10 @@ static void show_wall_text(const uint8_t *text)
         int16_t n = 0;
         while (text[n] < WALL_TEXT_NEW_LINE)
             n++;
-        Box box;
-        int16_t width = glyph_w * n;
-        int16_t height = glyph_h;
-        if (n && layout_get_zone(ZONE_WALL_TEXT_LINE_FIRST + line, 0, 0, &box, &width, &height))
-            for (box.w = glyph_w; n; n--, text++, box.x += glyph_w)
-                draw_blit(&(BlitSource){font, *text * glyph_w, 0, TRANSPARENT_COLOR, 0}, &g_view.viewport, &box);
+        ZoneClip placed;
+        if (n && layout_get_zone(ZONE_WALL_TEXT_LINE_FIRST + line, &(ZoneItem){0, 0, glyph_w * n, glyph_h}, &placed))
+            for (placed.box.w = glyph_w; n; n--, text++, placed.box.x += glyph_w)
+                draw_blit(&(BlitSource){font, *text * glyph_w, 0, TRANSPARENT_COLOR, 0}, &g_view.viewport, &placed.box);
         text += n;
         if (*text++ == WALL_TEXT_END)
             break;
@@ -52,13 +50,11 @@ static void show_wall_portrait(int16_t champion)
     const Bitmap *portraits = gfx_get_bitmap(GFX_CHAMPION_PORTRAITS);
     int16_t pw = tables_get_portrait_width();
     int16_t ph = tables_get_portrait_height();
-    int16_t w = pw;
-    int16_t h = ph;
-    Box b;
-    if (portraits && layout_get_zone(ZONE_WALL_PORTRAIT, 0, 0, &b, &w, &h))
+    ZoneClip placed;
+    if (portraits && layout_get_zone(ZONE_WALL_PORTRAIT, &(ZoneItem){0, 0, pw, ph}, &placed))
         draw_blit(&(BlitSource){portraits, champion % PORTRAITS_PER_ROW * pw, champion / PORTRAITS_PER_ROW * ph,
                                 PORTRAIT_TRANSPARENT, 0},
-                  &g_view.viewport, &b);
+                  &g_view.viewport, &placed.box);
 }
 
 /* The ornament or inscription on a view wall, and on the D1C wall the champion
@@ -203,11 +199,12 @@ static void show_door(uint16_t door_thing, int16_t state, int16_t door_view)
         zone += state;
         if (!rec_door_is_vertical(door_thing)) {
             place.zone_dx = door_copy.w >> 1;
-            int16_t w = place.zone_dx;
-            int16_t h = place.zone_dy;
-            Box b;
-            if (layout_get_zone(zone + ZONE_DOOR_RIGHT_HALF, door_copy.w, door_copy.h, &b, &w, &h))
-                draw_blit(&(BlitSource){&door_copy, place.zone_dx + w, h, TRANSPARENT_COLOR, 0}, &g_view.viewport, &b);
+            ZoneClip placed;
+            if (layout_get_zone(zone + ZONE_DOOR_RIGHT_HALF,
+                                &(ZoneItem){door_copy.w, door_copy.h, place.zone_dx, place.zone_dy}, &placed))
+                draw_blit(
+                    &(BlitSource){&door_copy, place.zone_dx + placed.source_x, placed.source_y, TRANSPARENT_COLOR, 0},
+                    &g_view.viewport, &placed.box);
             zone = (zone + ZONE_DOOR_LEFT_HALF) | ZONE_SIZED;
         }
     }

@@ -150,12 +150,10 @@ static void show_food_water(void)
 /* The position of zone (a 1 x 1 box). */
 static void get_zone_point(int16_t zone, int16_t *x, int16_t *y)
 {
-    int16_t w = 1;
-    int16_t h = 1;
-    Box b = {0};
-    layout_get_zone(zone, 0, 0, &b, &w, &h);
-    *x = b.x;
-    *y = b.y;
+    ZoneClip placed = {0};
+    layout_get_zone(zone, &(ZoneItem){0, 0, 1, 1}, &placed);
+    *x = placed.box.x;
+    *y = placed.box.y;
 }
 
 const char *panel_get_rank_name(int16_t level)

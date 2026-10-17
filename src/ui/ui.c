@@ -106,21 +106,19 @@ void ui_blit_graphic_box(Bitmap *dst, int16_t graphic, const Box *box, int16_t t
 
 void ui_blit_zone(Bitmap *dst, const Bitmap *src, int16_t zone, int16_t transparent)
 {
-    int16_t w = 0;
-    int16_t h = 0;
-    Box b;
-    if (src && layout_get_zone(zone, src->w, src->h, &b, &w, &h))
-        draw_blit(&(BlitSource){src, w, h, transparent, 0}, dst, &b);
+    ZoneClip placed;
+    if (src && layout_get_zone(zone, &(ZoneItem){src->w, src->h, 0, 0}, &placed))
+        draw_blit(&(BlitSource){src, placed.source_x, placed.source_y, transparent, 0}, dst, &placed.box);
 }
 
 void ui_print_zone(Bitmap *dst, int16_t zone, uint8_t fg, uint8_t bg, const char *text)
 {
     int16_t w, h;
-    Box b;
+    ZoneClip placed;
     if (!text_get_size(text, &w, &h))
         return;
-    if (layout_get_zone(zone, 0, 0, &b, &w, &h))
-        text_draw(dst, (Point){b.x, b.y + b.h - 1}, fg, bg, text);
+    if (layout_get_zone(zone, &(ZoneItem){0, 0, w, h}, &placed))
+        text_draw(dst, (Point){placed.box.x, placed.box.y + placed.box.h - 1}, fg, bg, text);
 }
 
 void ui_print_zone_padded(int16_t zone, uint8_t fg, uint8_t bg, const char *text, int16_t pad_length)
@@ -232,9 +230,10 @@ void ui_extract_icon(int16_t icon, Bitmap *out)
 
 bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box)
 {
-    int16_t w = UI_ICON_SIZE;
-    int16_t h = UI_ICON_SIZE;
-    bool ok = layout_get_zone(zone, 0, 0, box, &w, &h);
+    ZoneClip placed;
+    if (!layout_get_zone(zone, &(ZoneItem){0, 0, UI_ICON_SIZE, UI_ICON_SIZE}, &placed))
+        return false;
+    *box = placed.box;
     if (border) {
         int16_t d = tables_get_slot_box_border();
         box->x -= d;
@@ -242,7 +241,7 @@ bool ui_get_icon_zone_box(int16_t zone, bool border, Box *box)
         box->w += 2 * d;
         box->h += 2 * d;
     }
-    return ok;
+    return true;
 }
 
 bool ui_get_slot_box_zone(int16_t slot_box, bool border, Box *box)
