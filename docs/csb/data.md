@@ -36,7 +36,7 @@ Both files use format 1 (`0x8001`), the header of [kaos-map.md](../reference/kao
 
 ### Item comparison
 
-The scratch script `align.py` aligned the items by content hash (`difflib.SequenceMatcher` on MD5 of each item). Items 0–726 keep their index. DM items 727–747 are not in CSB. DM item 748 (2 bytes) is CSB item 727.
+An alignment by content hash matched the items (`difflib.SequenceMatcher` on MD5 of each item). Items 0–726 keep their index. DM items 727–747 are not in CSB. DM item 748 (2 bytes) is CSB item 727.
 
 Removed items (DM 727–747): the empty item 727 and the French and German items (entrance, THE END label, rename panel, food, water, and poisoned labels, resurrect panel, object names, action names, texts).
 
@@ -64,7 +64,7 @@ All other items in 0–726 are byte-identical.
 
 ### Port decoding test
 
-The scratch script `port_gfx.py` loads `build/libdm.dylib` with `ctypes`, calls `gfx_open`, and calls `gfx_load_bitmap` for every item. Output:
+A check loads `build/libdm.dylib` with `ctypes`, calls `gfx_open`, and calls `gfx_load_bitmap` for every item. Output:
 
 ```text
 DM gfx_open -> 749
@@ -75,7 +75,7 @@ CSB gfx_open -> 728
 
 The failed items have fewer than 4 bytes (empty or 2-byte items). They are not bitmaps. In both files, the decoded width and height equal the header dimensions of each item.
 
-The scratch script `pix.py` compares the port pixels with `dmcsb.graphics.decode_img1` for the 673 CSB image items (0–670, 676, 686). All 673 are equal.
+A check compares the port pixels with `dmcsb.graphics.decode_img1` for the 673 CSB image items (0–670, 676, 686). All 673 are equal.
 
 Result: `graphics.c` needs no change for CSB.
 
@@ -87,7 +87,7 @@ Object names (item 694). The CSB engine reads 199 names at `0x108280` (graphic i
 
 Action names and texts (items 699 and 700). CSB has no text in these items. The CSB engine has the texts in the `APPB.FTL` data area. Examples: the action names start near `0x1048c0` as one NUL-separated list. `WAKE UP` and `GAME FROZEN` are at `0x104680`. `GAME LOADED, READY TO PLAY.` is at `0x104d70`. A pointer table refers to some texts. `docs/csb/engine-diff.md` "Text" maps the CSB texts to the DM indices of item 700. The CSB engine does not push `0x2bb` (699). DM pushes it at `0x1220b8`.
 
-Layout (item 696). The scratch script `txt.py` compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal. `startend.c` uses zone 437 (`ZONE_RESTART_BUTTON`) and zone 438 (`ZONE_QUIT_BUTTON`) for THE END screen.
+Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode_lay1`. The range `400–438` becomes `400–436`. All other records are equal. `startend.c` uses zone 437 (`ZONE_RESTART_BUTTON`) and zone 438 (`ZONE_QUIT_BUTTON`) for THE END screen.
 
 ### Hard-coded indices with other CSB content
 
@@ -121,11 +121,11 @@ Unchanged indices that the port uses: 0, 6, 7–9, 12–25, 27–41, 46, 48–32
 | Thing counts in the file | 4 doors, 26 texts, 30 sensors, 12 groups |
 | `g_timeline.capacity` after a new-game load | 297 |
 
-The scratch script `dun.py` loads the file with `kaos_load("game/KAOS.FTL")` and `dungeon_load`. The call returns 1. The thing counts include the new-game extras (groups 87 = 12 + 75). The CSB engine uses the same thing record sizes (`0x10154a`) and the same new-game extra counts (`0x10155a`) as DM, so the DM KAOS tables give the correct result.
+A check loads the file with `kaos_load("game/KAOS.FTL")` and `dungeon_load`. The call returns 1. The thing counts include the new-game extras (groups 87 = 12 + 75). The CSB engine uses the same thing record sizes (`0x10154a`) and the same new-game extra counts (`0x10155a`) as DM, so the DM KAOS tables give the correct result.
 
 `dmcsb` identifies the file by CRC32 as `atarist_csb` (Atari ST CSB 2.x dungeon). The Amiga file is byte-identical to it.
 
-Content (scratch scripts `dun2.py`, `dun4.py`):
+Content:
 
 - Map 0 has 24 mirrors: wall sensors of type 127 with data 0–23. Each mirror has a text with a champion sheet. The champions are AIRWING, AROC, TALON, LETA, DEMA, ALGOR, TOADROT, VEN, MANTIA, GNATU, SLOGAR, STING, SKELAR, DETH, NECRO, PLAGUE, TUNDA, LANA, BUZZZZZ, PETAL, ITZA, TULA, KAZAI, LOR.
 - 6 mirrors have a second sensor: type 1, once only, effect 1, target the door at (1, 14) or (19, 2). The meaning in the CSB rules is unverified.
@@ -135,7 +135,7 @@ Content (scratch scripts `dun2.py`, `dun4.py`):
 
 The CSB `load_dungeon` is at `0x1295a0`. It follows the DM loader. One addition: before it builds the column pointers, it compares a value from `0xa02(A5)` with `DAT_00129a42`. When the values differ, it does not build the column pointers. This is probably a copy-protection check (unverified).
 
-Result: the port loader reads the file. The full CSB dungeon is not on disk A. The utility disk makes the adventure from a saved start game. The utility modules `CEDT.FTL` and `HINT.FTL` refer to `DF0:MINI.DAT`, `DF0:DMGAME.DAT`, and `DF0:CSBGAME.DAT`. `MINI.DAT` (42784 bytes) has no known header. Its format is not analysed.
+Result: the port loader reads the file. The full CSB dungeon is not on disk A. The utility disk makes the adventure from a saved start game. The utility modules `CEDT.FTL` and `HINT.FTL` refer to `DF0:MINI.DAT`, `DF0:DMGAME.DAT`, and `DF0:CSBGAME.DAT`. `MINI.DAT` (42784 bytes) has the layout of a saved game, see [MINI.DAT format](new-adventure.md#minidat-format).
 
 ## Save file
 
@@ -195,9 +195,9 @@ Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVE
 | 4 | 2 | Parameter |
 | 6 | length | Payload |
 
-The next chunk follows the payload directly. `ANIM.FTL` `0x101356` walks the chunks with this step. The scratch script `anim.py` walks all four files to the exact file end. All payload lengths are even.
+The next chunk follows the payload directly. `ANIM.FTL` `0x101356` walks the chunks with this step. A walk of all four files with this step reaches the exact file end. All payload lengths are even.
 
-The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (18 entries: offset word, then tag word; each offset is relative to its own position; default offset at `0x100d7a`). The loop `0x100fca` runs the chunks from the first chunk to the file end. Step 8 checked each handler in the disassembly (`machine68k`, scratch script):
+The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (18 entries: offset word, then tag word; each offset is relative to its own position; default offset at `0x100d7a`). The loop `0x100fca` runs the chunks from the first chunk to the file end. Step 8 checked each handler in the disassembly (`machine68k`):
 
 | Tag | Handler | Meaning | Port (`src/ui/anim.c`) |
 |---|---|---|---|
@@ -275,7 +275,7 @@ Item 0 is the sequence: item numbers, ended by `0xff` (`1,1,2,2,1,1,2,2,3,4,3,4,
 
 The CSB engine takes the sounds from `Graphics.DAT`, as DM does.
 
-- The CSB sound table at `0x10122a` has 35 entries of 12 bytes. It is byte-identical to the DM table at `0x100d52` (scratch script output: all 35 entries equal). The graphic indices are 671–712.
+- The CSB sound table at `0x10122a` has 35 entries of 12 bytes. It is byte-identical to the DM table at `0x100d52` (all 35 entries are equal). The graphic indices are 671–712.
 - The CSB init `0x1091ce` reads each sample graphic, sets the length to the graphic size − 2, and keeps the data after the first word. The play routine `0x109258` uses the length and the period `72800 / rate` (`0x11c60`).
 - In 26 sample items, the first word differs from DM by 1 or 2. The sample data is identical. The CSB engine does not read this word. `sound.c` does not read it.
 
@@ -283,7 +283,7 @@ The CSB engine has no new sound in `Graphics.DAT`. New samples exist only in the
 
 ## Engine tables
 
-The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `KAOS.FTL`. The scratch scripts searched `APPB.FTL` for the DM table bytes:
+The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `KAOS.FTL`. A search of `APPB.FTL` found the DM table bytes:
 
 | Table | DM address | CSB address | Content |
 |---|---|---|---|
