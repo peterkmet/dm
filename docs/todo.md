@@ -42,7 +42,7 @@ Stays in `dm`: `docs/csb/data.md`, `engine-diff.md`, `new-adventure.md` (the sou
 - `CLAUDE.md` says "macOS port"; the port runs on macOS and Windows.
 - Link texts with old file names: `docs/manual.md` "[save-format.md]", `docs/rules/creatures.md` "[rules-movement.md]".
 - README "From a release", step 3 holds macOS and Windows in one numbered step. Split it.
-- README "Documentation": "[Formats](docs/formats/ftl.md): [FTL](docs/formats/ftl.md)" links the same page twice.
+- README "Documentation": the Formats line links `docs/formats/ftl.md` twice, as "Formats" and as "FTL".
 - `pyproject.toml` has `version = "0.1.0"`; the CHANGELOG is at 1.0.0. Make them equal.
 - `.gitignore`: `.ruff_cache/` and `.superpowers/` are ignored only by their own inner `.gitignore`. Add them.
 
