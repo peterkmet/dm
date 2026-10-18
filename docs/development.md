@@ -103,3 +103,18 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
     ```sh
     gh release create vX.Y.Z build/DungeonMaster.zip build/DungeonMaster-win.zip --notes-file <notes>
     ```
+
+### New zips of a released version
+
+A change that keeps the version number replaces the zips of its release:
+
+1. In `CHANGELOG.md`, add the entries to the section of the released version.
+2. `make check`, `make dist`, `make dist-win`.
+3. Commit `CHANGELOG.md`.
+4. The owner pushes the branch, moves the tag to the new commit, and replaces the zips and the notes:
+
+   ```sh
+   git tag -f vX.Y.Z && git push -f origin vX.Y.Z
+   gh release upload vX.Y.Z build/DungeonMaster.zip build/DungeonMaster-win.zip --clobber
+   gh release edit vX.Y.Z --notes-file <notes>
+   ```

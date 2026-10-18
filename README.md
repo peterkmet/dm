@@ -3,7 +3,7 @@
 A native C11/SDL3 port of **Dungeon Master v3.60** and **Chaos Strikes Back** for the Amiga. It runs on macOS
 (Apple Silicon) and Windows (x86-64).
 
-![Dungeon Master in the port: a corridor of level 1](docs/images/screenshot.png)
+![Dungeon Master in the port: a corridor that ends in a door](docs/images/screenshot.png)
 
 The port is a reimplementation, not an emulator. It is built from its own Ghidra decompilation of the original
 Amiga program. The game rules follow the decompiled code exactly, and differential tests compare the port with the
@@ -17,8 +17,8 @@ This repository contains no game files. You need your own Amiga disk images.
 - Three modes:
   - **Vanilla:** the original game.
   - **Advanced:** the original game with extras: an automap, an options menu (sound and music volume, music
-    choice), 8 save slots, quick save and quick load, a cheat screen, WASD keys, up to 8 sounds at once, the
-    FM-Towns and Super NES soundtracks, and a direct start of Chaos Strikes Back from the prison stairs.
+    choice, upscale filter), 8 save slots, quick save and quick load, a cheat screen, WASD keys, up to 8 sounds at
+    once, the FM-Towns and Super NES soundtracks, and a direct start of Chaos Strikes Back from the prison stairs.
   - **LLM (turn-based):** a program or a language model plays the game through a Unix socket; the game time stands
     still between turns. macOS only.
 - Pixel-art upscale filters (`scale2x`, `scale3x`) and a window that scales with its size.
