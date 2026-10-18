@@ -154,3 +154,5 @@ The port was written with Claude (Claude Code), from 2026-10-03 to version 1.0.0
 The code is GPL-3.0-or-later ([LICENSE](LICENSE)). Dungeon Master and Chaos Strikes Back are games of FTL Games
 (Software Heaven). This project is not affiliated with them. The game data is not included and is not covered by
 this license.
+
+<p align="center"><img src="docs/images/ai-code.svg" width="200" alt="100 % of this code is AI"></p>
