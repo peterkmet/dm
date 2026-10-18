@@ -1,12 +1,15 @@
 *.adf
-game/
+/game
 .venv/
 __pycache__/
 .pytest_cache/
 .DS_Store
 /reference/
 build/
-game-csb/
+/game-csb
 playthroughs/*
 !playthroughs/template/
 playthroughs/template/DMGAME.DAT
+/research/
+.ruff_cache/
+.superpowers/
