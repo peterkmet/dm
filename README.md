@@ -15,7 +15,8 @@ versions) do not work. The game recognizes the disks by their content, not by th
 
 ## Features
 
-- The complete Dungeon Master and Chaos Strikes Back.
+- The complete Dungeon Master and Chaos Strikes Back. Dungeon Master is fully playable and tested in a complete
+  playthrough, from the Hall of Champions to the defeat of Lord Chaos.
 - **Vanilla** mode: the original game.
 - **Advanced** mode: automap, options menu (volume, music, upscale filter), 8 save slots, quick save and
   quick load, cheat screen, WASD keys, 8 sounds at once, the FM-Towns and Super NES soundtracks, and a direct
