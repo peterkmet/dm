@@ -32,7 +32,7 @@ moved files; `dm` reaches its data through the git-ignored links `game`, `game-c
   constants and data tables; wiring, scaffold, CLI arguments, logging; what the compiler, a linter or a standard
   check catches; UI and layout; what another test already covers. No mutation tests. This plan adds no test.
 - Weakened assertions: none. Task 4 makes `test_allowlist_names_documented_reasons` stricter; Task 13 makes
-  `test_doc_links_resolve` check more files. Approved by the owner: (pending).
+  `test_doc_links_resolve` check more files. Approved by the owner on 2026-10-18 (the list is empty).
 
 ## Sourced facts
 
