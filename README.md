@@ -123,7 +123,7 @@ The tests load the game code as a shared library with `ctypes`.
   [save file](docs/formats/save.md)
 - [Rules](docs/rules/game-state.md) of the game engine
 - [Chaos Strikes Back](docs/csb/data.md)
-- [LLM mode](docs/llm/llm-mode.md) and [LLM playbook](docs/llm/llm-playbook.md)
+- [LLM mode](docs/llm/llm-mode.md), [LLM runs](docs/llm/llm-runs.md), and [LLM playbook](docs/llm/llm-playbook.md)
 - [Reference](docs/reference/kaos-map.md): the KAOS map and the symbol notes
 
 ## License

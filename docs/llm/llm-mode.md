@@ -2,19 +2,6 @@
 
 In turn-based mode, a program or an LLM plays the game through a Unix socket. The game time stands still between turns. The window shows the game, so a person can watch. The MCP server `dm-mcp` connects Claude Code to the socket.
 
-The plan is in [2026-10-04-modes-plan.md](../superpowers/archive/2026-10-04-modes-plan.md).
-
-## Status
-
-| Part | File | State |
-|---|---|---|
-| State, view, and map as JSON | `src/control/state_json.c` | Done, tested |
-| Protocol and turns | `src/control/control.c`, `src/control/turn.c` | Done, tested in process |
-| Socket server | `src/platform/transport.c` | Done, tested in process |
-| MCP server | `tools/dmtools/mcp_server.py` | Done, no test (a thin wrapper of the socket) |
-| Command-line client `dm-play` | `tools/dmtools/play.py` | Done, tested against the socket |
-| `--mode turnbased --control PATH` | `src/platform/options.c`, `src/platform/app.c` | Done, tested headless |
-
 ## Play with Claude Code
 
 ### Prerequisites
@@ -39,75 +26,21 @@ The plan is in [2026-10-04-modes-plan.md](../superpowers/archive/2026-10-04-mode
 
    The game creates the directory of the socket when it does not exist. `--control` is optional; the default is `~/.dm/control.sock`. The game enters the dungeon at the start. The keyboard and the mouse do not control the game. Closing the window quits.
 
-3. Register the MCP server in Claude Code. Do this one time.
+3. Register the MCP server in Claude Code. Do this one time. Run it from the repository root.
 
    ```sh
-   claude mcp add dm -- uv --directory /Users/lego/github/dm run dm-mcp
+   claude mcp add dm -- uv --directory "$(pwd)" run dm-mcp
    ```
 
    For a socket path other than the default, set `DM_CONTROL`:
 
    ```sh
-   claude mcp add dm -e DM_CONTROL=<socket> -- uv --directory /Users/lego/github/dm run dm-mcp
+   claude mcp add dm -e DM_CONTROL=<socket> -- uv --directory "$(pwd)" run dm-mcp
    ```
 
 4. Start Claude Code and ask it to play. Example prompt: `Use the dm tools. Recruit four champions and explore the first level.`
 
-   The server instructions and the tool descriptions tell the LLM how to play. A long playthrough uses `dm-play` and the player instructions instead: see [Runs and checkpoints](#runs-and-checkpoints).
-
-## Goal of the runs
-
-Each run measures how much the LLM player gets better: from session to session in the run, and against the earlier runs. To finish the game is the long-term goal, not the measure of one run.
-
-- Measure each run with `coordinator/level_stats.md`: the game time, the calls, and the tokens at the arrival on each level. Compare the run with the earlier runs.
-- Between sessions and between runs, you may change the player instructions: `docs/llm/llm-playbook.md` and the headers in `playthroughs/template/`. Change them in small steps. Write each change, its reason, and the session where it starts in `coordinator/instruction_changes.md`, so that you can compare its effect.
-- Allowed changes: general rules about how to play and about the game, for example survival, fights, food and water, training, saves, the use of the commands, and how to keep the memory.
-- Not allowed: hints for this dungeon, for example a position, a map, the solution of a puzzle, where an item lies, which key opens which door, or the way to the next level. The player finds these itself.
-- The memory of an earlier run (maps, lessons) is the player's own knowledge, not a hint.
-
-## Runs and checkpoints
-
-A run is one playthrough from a start save. All run folders are in `playthroughs/`. Only `playthroughs/template/` is in git, without its `DMGAME.DAT`.
-
-```text
-playthroughs/
-  template/                     the player files with their headers (in git), and the start save DMGAME.DAT (local only: a game file)
-  current -> run<N>             a link to the folder of the current run
-  run<N>/                       the files of run N
-    player/                     the player memory (the player sees only this)
-    coordinator/                the coordinator files
-      session_costs.md          the cost of each session
-      calls.log                 one line per dm-play call of the player
-      level_stats.md            at the end of the run: game time, calls, and tokens at the arrival on each level
-      instruction_changes.md    each change of the player instructions: what, why, and from which session
-    game/                       the live save of the run: `build/dm --saves playthroughs/current/game`
-    saves/<name>/               a checkpoint: a save DMGAME.DAT and a copy of player/ in files/
-  local/                        the local play folder: `make play`, then `playthroughs/local/dm --data game --saves playthroughs/local`
-```
-
-- Start a new run N: create `playthroughs/run<N>/` with the folders `player/`, `coordinator/`, `game/`, and `saves/`. Copy the `*.md` files of `playthroughs/template/` to `player/`. Copy `playthroughs/template/DMGAME.DAT` (the party of 4 on the stairs to level 1) to `game/`. Create `saves/start/` with the start save and a copy of `player/` in `files/`. Point the link to the run: `ln -sfn run<N> playthroughs/current`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
-- Start a new run with the memory of an earlier run: as above, but copy into `player/` the files of the earlier run that describe the game, not its state: `map_L<n>.md`, `lessons.md`, `spells.md`, and `bestiary.md`. `progress.md`, `party.md`, `items.md`, and `bugs.md` come from the templates. Tell the player in the first session that the run starts again and that these notes come from its earlier game.
-- Make a checkpoint after a session: copy `game/DMGAME.DAT` of the run and the `*.md` files of `player/` (as `files/`) to `saves/s<session>-level<level>/`, for example `saves/s3-level2/`. Add a row to `coordinator/session_costs.md`; count the calls of the session in `coordinator/calls.log`.
-- The coordinator's own `dm-play` calls stay out of the log: `DM_PLAY_LOG_DIR=none uv run dm-play ...`.
-- Resume from a checkpoint: copy its `DMGAME.DAT` to `game/` of the run and its `files/` to `player/`. Run `SDL_AUDIO_DRIVER=dummy build/dm --mode turnbased --saves playthroughs/current/game --control ~/.dm/control.sock` (a run plays without sound), then `DM_PLAY_LOG_DIR=none uv run dm-play load`.
-- Before a player session: the game runs with `--saves playthroughs/current/game` (start it as in Resume when it does not run), and `DM_PLAY_LOG_DIR=none uv run dm-play --brief get_state` shows the position of `player/progress.md`. After the session: make the checkpoint, then stop the game or leave it for the next session. When the player reports a bad save, restore the checkpoint that it asks for (see Resume).
-- Start a player session: the player reads only its instructions, the [player manual](llm-playbook.md), and its memory in `playthroughs/current/player/`. Give the player the current goal and the limit of `dm-play` calls. The player counts its calls in `coordinator/calls.log` and stops 20 calls before the limit. The player shell must run in the repository root: `dm-play` writes its log to `playthroughs/current/coordinator/` relative to it, else `calls.log` stays empty.
-- End a run: copy the last save to `saves/end/`, and write `coordinator/level_stats.md`.
-
-## Coordinator as a subagent
-
-The main session starts the coordinator as a background subagent, so that the coordinator has a clean context and the main session stays free. The coordinator plays a batch of sessions and then hands over to the next coordinator.
-
-The two roles are agent definitions in the repository:
-
-| Agent | File | Role |
-|---|---|---|
-| `dm-coordinator` | `.claude/agents/dm-coordinator.md` | Plays a batch of at most 5 sessions, makes the checkpoints, logs costs and level statistics, may change the general player instructions, and writes `coordinator/handover.md`. |
-| `dm-player` | `.claude/agents/dm-player.md` | Plays one session through `dm-play` and keeps its memory. Tools: Bash, Read, Edit, Write. |
-
-- The main session starts `dm-coordinator` with the first session number of the batch. When the batch ends, it starts the next `dm-coordinator`.
-- The coordinator starts one `dm-player` per session with the session number, the goal, and the call limit.
-- When the coordinator cannot start a subagent, it returns at once with the task message of the next player. The main session then starts the player, and gives the report to the next coordinator.
+   The server instructions and the tool descriptions tell the LLM how to play. A long playthrough uses `dm-play` and the player instructions instead: see [the LLM runs page](llm-runs.md).
 
 ## Play Chaos Strikes Back
 
@@ -524,62 +457,8 @@ The commands `save`, `load`, and `new_game` use `startend_save_dir()` and `gamel
 
 `control/state_json.h` (in `libdm`, no SDL): `state_write_state`, `state_write_view`, `state_write_map` append one JSON object to a `Json` buffer. `state_get_string(part)` returns a new string. Release it with `free`.
 
-## Integration in app.c
-
-`platform/app.c` does these steps in the `turnbased` mode:
-
-1. `options_parse` reads `--mode turnbased` and `--control PATH`; when the game mode is set, `apply_mode` calls `transport_open(PATH)`. It stops with an error when the call returns false. Where `transport_is_available()` is false, the mode is not offered.
-2. It presses ENTER at the entrance (as `DM_AUTO_ENTER` does). The entrance frames run without a turn.
-3. `read_input` keeps only the quit event. Keys and clicks do not go to the command queue.
-4. Each frame, `app_run_frame` calls `transport_poll()` one time, after `read_input()`.
-5. In the game, each frame calls `gameloop_run_frame()` and `gameloop_tick()` only while `control_is_turn_pending()` returns true. The window still shows each frame.
-6. `g_frame_hook` is `NULL`, so the endgame, the dialogs, and the fuse sequence do not wait for frames or input.
-7. After a game over, the program stays in the game mode and shows the entrance. `load` and `new_game` start the next game.
-8. It calls `transport_close()` before `plat_quit()`.
-
 ## Known limits
 
 - In the `turnbased` mode the automap and the quick save keys do not work, because the keyboard does not control the game. `get_map` gives the automap.
 - Throwing objects has no action.
 - `recruit` with `reincarnate` keeps the old name and title: the `turnbased` mode has no name entry.
-
-## Tests
-
-`tests/port/test_control.py` builds a private `libdm`, starts a new game, recruits one champion, and opens the
-socket. It checks:
-
-- The view stops at a closed door: nothing beyond the door, also not in the map. A mirror on a side wall is in
-  `side_face`.
-- `act_many`: the actions run in order, a failed action stops the batch, and damage stops it after the first turn.
-  It stops with `creature` only when a new creature group comes into view, also when the old group leaves the view
-  in the same turn. A move onto a spinner of map 2 stops it with `turned`.
-- `add_rune` without enough mana fails and adds no rune. After a cast the cleared runes stay inverted, as with the
-  mouse.
-- `wait` without news runs all ticks with `stopped` `done`; damage stops it early with `stopped` `damage`. A group
-  that stays in view does not stop it.
-- A fireball that kills a screamer during a turn is in `seen.explosions` and `seen.creature_changes`; a group in view
-  for many ticks is recorded once. `--brief` prints the `seen:` line.
-- A move into a wall gives `"bumped": true` and the health lost of the step; `--brief` ends the turn line with
-  `BUMPED`. A teleporter back to the start square gives `stopped` `moved`.
-- `swap_champions` swaps the positions; `look` returns the object name and its lines.
-- A chest in the action hand opens; `take_from_slot`, `put_in_slot`, and `look` work on the chest slots.
-- A pile lists all its objects top first, in take order.
-- `--brief` prints the creatures on side squares, skips a side square that the view leaves out, and names a lock.
-- `get_map`: `grid` has the indexes.
-- After a party death `load` restores the game and `new_game` starts a new game.
-- A free record never enters a square list. A torch holder is not a lock; a lock names its picture. A wall text has
-  no leading new line. No alcove without a wall ahead. A border wall outside the map shows its fountain. The view
-  lists no side square that the screen hides.
-- On map 1 the view and the map show the pressure pads; a plate without an ornament stays hidden.
-- Two requests in one write get two answers; a client that goes away in the middle of a line does not stop the
-  game.
-- The tests log the `dm-play` calls to a temporary folder (`tests/conftest.py`), never into a run.
-
-`tests/port/test_modes.py` starts `build/dm --mode turnbased --control <socket>` with the SDL dummy drivers and
-checks `get_state` and `act move_forward`, and that a `load` sent at once runs the game.
-
-The MCP server (`tools/dmtools/mcp_server.py`) has no test: it only passes each tool call to the socket.
-
-```sh
-uv run pytest -q tests/port/test_control.py
-```

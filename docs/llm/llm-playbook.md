@@ -140,7 +140,9 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 | Pass time | `uv run dm-play wait '{"ticks":50}'` |
 | Save, load | `uv run dm-play save`, `uv run dm-play load` |
 | Sleep | `uv run dm-play act sleep`, then `wait`, then `uv run dm-play act wake` |
-| See the screen | `uv run dm-play screenshot '{"path":"/Users/lego/github/dm/playthroughs/current/coordinator/shot.png"}'`, then read the PNG |
+| See the screen | `uv run dm-play screenshot '{"path":"playthroughs/current/coordinator/shot.png"}'`, then read the PNG |
+
+The screenshot path is relative to the folder where the game runs (the repository root in a run).
 
 ### dm-play
 
