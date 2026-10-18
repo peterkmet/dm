@@ -1,7 +1,10 @@
 # dm
 
 @~/.claude/skills/c-decomp-port/SKILL.md
+
 @~/.claude/skills/python-uv/SKILL.md
+
+The two imports load the author's global skills (the `dotclaude` setup); they are not in this repository.
 
 Native C11/SDL3 macOS and Windows port of Dungeon Master v3.60 (Amiga), built from its own Ghidra decompilation.
 
