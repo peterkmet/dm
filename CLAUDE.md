@@ -32,11 +32,12 @@ Native C11/SDL3 macOS and Windows port of Dungeon Master v3.60 (Amiga), built fr
 - `tests/`: folders `differential/` (against the original), `port/`, `golden/` (snapshots), `tools/`, `standard/`
   (`tests/standard/test_standard.py` checks the coding standard); `tests/dmtest/` shared helpers (`load_lib()`).
 - `docs/`: `architecture.md`, `development.md`, `coding-standard.md`, `todo.md`.
-- Git-ignored data: `game/`, `game-csb/` (original files), `reference/` (Ghidra output), `playthroughs/`. Link them into a new worktree.
+- `research/`: the private repository `dm-research` (optional): plans, research tools, LLM runs, original game files.
+- Git-ignored data: `research/`, `game/`, `game-csb/` (links into `research/`: original files), `reference/` (Ghidra output), `playthroughs/`. Link them, and `research/`, into a new worktree.
 - `playthroughs/local/` is the owner's personal game: no agent reads, writes, moves or deletes anything there, and no
   agent stops its game. Only `make play` replaces `dm` there.
 
 ## Conventions
 - `docs/architecture.md` describes the layers and modules.
 - `docs/coding-standard.md` is the coding standard of the C port; follow it for every change in `src/`.
-- Plans in `docs/superpowers/`; open work in `docs/todo.md`.
+- Plans in `research/superpowers/` (the private repository `dm-research`, cloned into the git-ignored `research/`); open work in `docs/todo.md`.

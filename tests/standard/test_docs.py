@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Repository checks of the docs: every relative Markdown link outside docs/superpowers/ resolves."""
+"""Repository checks of the docs: every relative Markdown link in the docs resolves."""
 
 import re
 import subprocess
@@ -10,7 +10,7 @@ LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 
 
 def markdown_files():
-    docs = [p for p in sorted((ROOT / "docs").rglob("*.md")) if "superpowers" not in p.relative_to(ROOT / "docs").parts]
+    docs = sorted((ROOT / "docs").rglob("*.md"))
     return [ROOT / "README.md", ROOT / "CHANGELOG.md", ROOT / "CLAUDE.md", *docs]
 
 
