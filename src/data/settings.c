@@ -10,6 +10,7 @@
 #define TEMPORARY_FILE "SETTINGS.TMP"
 
 static const char *const music_names[SETTINGS_MUSIC_COUNT] = {"original", "super-nes", "fm-towns"};
+static const char *const filter_names[] = {"none", "scale2x", "scale3x"}; /* from SETTINGS_FILTER_NONE */
 
 /* The volume step of a value text, or -1 when it is not a step. */
 static int16_t parse_volume(const char *value)
@@ -28,6 +29,15 @@ static int16_t parse_music(const char *value)
     return -1;
 }
 
+/* The filter of a value text, or -1 for an unknown name. */
+static int16_t parse_filter(const char *value)
+{
+    for (int16_t i = SETTINGS_FILTER_NONE; i <= SETTINGS_FILTER_SCALE3X; i++)
+        if (!strcmp(value, filter_names[i - SETTINGS_FILTER_NONE]))
+            return i;
+    return -1;
+}
+
 /* Sets the value of one line key=value; an unknown key or a bad value changes nothing. */
 static void parse_line(char *line, Settings *settings)
 {
@@ -41,13 +51,15 @@ static void parse_line(char *line, Settings *settings)
         settings->music_volume = parse_volume(value);
     else if (!strcmp(line, "music") && parse_music(value) >= 0)
         settings->music = parse_music(value);
+    else if (!strcmp(line, "filter") && parse_filter(value) >= 0)
+        settings->filter = parse_filter(value);
 }
 
 /* Queries */
 
 Settings settings_parse(const char *file_text, size_t length)
 {
-    Settings settings = {SETTINGS_VOLUME_FULL, SETTINGS_VOLUME_FULL, SETTINGS_MUSIC_ORIGINAL};
+    Settings settings = {SETTINGS_VOLUME_FULL, SETTINGS_VOLUME_FULL, SETTINGS_MUSIC_ORIGINAL, SETTINGS_FILTER_NONE};
     if (length > SETTINGS_MAX_SIZE)
         return settings;
     char line[LINE_SIZE];
@@ -94,7 +106,8 @@ bool settings_save(const char *dir, const Settings *settings)
     if (snprintf(path, sizeof path, "%s/%s", dir, SETTINGS_FILE) >= (int)sizeof path ||
         snprintf(temporary, sizeof temporary, "%s/%s", dir, TEMPORARY_FILE) >= (int)sizeof temporary)
         return false;
-    int length = snprintf(text, sizeof text, "sound_volume=%d\nmusic_volume=%d\nmusic=%s\n", settings->sound_volume,
-                          settings->music_volume, music_names[settings->music]);
+    int length = snprintf(text, sizeof text, "sound_volume=%d\nmusic_volume=%d\nmusic=%s\nfilter=%s\n",
+                          settings->sound_volume, settings->music_volume, music_names[settings->music],
+                          filter_names[settings->filter - SETTINGS_FILTER_NONE]);
     return file_write(temporary, (const uint8_t *)text, (size_t)length) && file_replace(temporary, path);
 }

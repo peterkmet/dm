@@ -43,7 +43,7 @@ Usage: dm [options]
 - `--data DIR` selects the data folder (disk A) of the selected adventure. The CSB file check uses `DIR` only with `--adventure csb`. Else it uses `game-csb/`.
 - `--saves DIR` selects the folder of the save files (`DMGAME.DAT`, `CSBGAME.DAT`, their `.BAK` files, `QUICK.DAT`, and `SETTINGS.TXT`). The default is the data folder. The folder must exist.
 - `--control PATH` selects the socket of the `turnbased` mode. The default is `~/.dm/control.sock`.
-- `--filter none|scale2x|scale3x` selects the pixel-art upscale filter. The default is `none`. The filter makes the image 2 or 3 times larger before the window scaling; it smooths the mouse pointer together with the picture. It gives the sharpest image when the window scale is a multiple of the filter factor. Example: `build/dm --filter scale2x`.
+- `--filter none|scale2x|scale3x` selects the pixel-art upscale filter. The default is `none`; the `advanced` mode takes the filter of the options menu. The filter makes the image 2 or 3 times larger before the window scaling; it smooths the mouse pointer together with the picture. It gives the sharpest image when the window scale is a multiple of the filter factor. Example: `build/dm --filter scale2x`.
 - `--frames N` quits after N frames (50 frames per second).
 - `--view` shows only the dungeon view at the party start. The keys are the game keys: W, S, Up, Down move; A, D, Left, Right move sideways; Q, E, Delete, Insert turn; the keypad works too. The view walks through walls but not off the map.
 - `--show N` shows graphic N of `Graphics.DAT`.
@@ -169,9 +169,10 @@ The advanced features are not in the original game:
   - SOUND: the sound volume, 0 (off) to 7 (full).
   - MUSIC VOLUME: the music volume, 0 (off) to 7 (full).
   - MUSIC: ORIGINAL (no music, the default), SUPER NES, or FM-TOWNS. The new music starts at once.
+  - FILTER: the pixel-art upscale filter, NONE (the default), SCALE2X, or SCALE3X, as `--filter`. The new filter shows at once. With `--filter`, each game start uses the filter of `--filter`, not the filter of the file.
   - CONTINUE: closes the menu.
 
-  Mouse: click `-` or `+` to change a volume, click the MUSIC row for the next music, click CONTINUE to close. Keys: Up and Down (also W and S) select a row; Left and Right (also A and D) change its value; Return on CONTINUE closes; Escape closes from every row.
+  Mouse: click `-` or `+` to change a volume, click the MUSIC or FILTER row for the next value, click CONTINUE to close. Keys: Up and Down (also W and S) select a row; Left and Right (also A and D) change its value; Return on CONTINUE closes; Escape closes from every row.
 - Cheat screen: C in the dungeon view opens it in place of the dungeon view. The game time stops while the screen is open. Only in the `advanced` mode. The rows of the cheat page:
   - FULL LIGHT: the view is always bright; the creature rules keep the real light.
   - IMMORTAL: the health of a champion stops at 1; damage, wounds, poison, hunger, and thirst stay.
@@ -184,7 +185,7 @@ The advanced features are not in the original game:
   - CLOSE: closes the screen.
 
   Mouse: click a row to switch the cheat, to run the item, or to cast the spell. Keys: Up and Down (also W and S) select a row; Return switches or runs it; F5 and F9 run the quick save and the quick load; C and Escape close. The save file of the `advanced` mode keeps the cheats (see below). A new game turns them off.
-- Settings file: at each change of a value in the menu, the port writes the values to `SETTINGS.TXT` in the saves folder (the data folder of the adventure, or `--saves DIR`). Each game start in the `advanced` mode reads the file again. The lines are `sound_volume=0..7`, `music_volume=0..7`, and `music=original|super-nes|fm-towns`. A missing file, a file above 1 KiB, or a line that the port cannot read gives the default of that value: volume 7 and ORIGINAL. When the write fails, the message area shows UNABLE TO SAVE OPTIONS and the new values stay in use until the next game start. The `vanilla` and `turnbased` modes do not read the file: they play at full volume without music.
+- Settings file: at each change of a value in the menu, the port writes the values to `SETTINGS.TXT` in the saves folder (the data folder of the adventure, or `--saves DIR`). Each game start in the `advanced` mode reads the file again. The lines are `sound_volume=0..7`, `music_volume=0..7`, `music=original|super-nes|fm-towns`, and `filter=none|scale2x|scale3x`. A missing file, a file above 1 KiB, or a line that the port cannot read gives the default of that value: volume 7, ORIGINAL, and NONE. When the write fails, the message area shows UNABLE TO SAVE OPTIONS and the new values stay in use until the next game start. The `vanilla` and `turnbased` modes do not read the file: they play at full volume without music, with the filter of `--filter` or no filter.
 - Music: a track plays one time and does not loop, as in the original versions:
   - FM-Towns DM: each level has a track. A new level stops the current track and starts its track. Game over and game won have a track.
   - FM-Towns CSB: each square of a zone has a track. A new zone requests its track; it starts when the current track ends. A level change stops the music. The prison and game over have a track.

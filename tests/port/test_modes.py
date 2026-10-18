@@ -246,12 +246,12 @@ def test_options_menu_writes_the_settings_only_after_a_change(game, tmp_path):
     volume = c16.in_dll(lib, "g_audio_volume")
     set_mode(game, ADVANCED)
     lib.startend_set_save_dir(str(tmp_path).encode())
-    for key in (C.KEY_ESCAPE, C.KEY_DOWN, C.KEY_DOWN, C.KEY_DOWN, C.KEY_RETURN):  # CONTINUE without a change
+    for key in (C.KEY_ESCAPE, C.KEY_DOWN, C.KEY_DOWN, C.KEY_DOWN, C.KEY_DOWN, C.KEY_RETURN):  # CONTINUE without a change
         press(game, key)
     assert game.value("g_advanced_screen") == C.ADVANCED_SCREEN_NONE and not settings.exists()
     for key in (C.KEY_ESCAPE, C.KEY_LEFT, C.KEY_LEFT, C.KEY_DOWN, C.KEY_RIGHT, C.KEY_ESCAPE):  # sound 5, music 7
         press(game, key)
-    assert volume.value == 5 and settings.read_text() == "sound_volume=5\nmusic_volume=7\nmusic=original\n"
+    assert volume.value == 5 and settings.read_text() == "sound_volume=5\nmusic_volume=7\nmusic=original\nfilter=none\n"
     lib.startend_set_save_dir(str(tmp_path / "missing").encode())
     for key in (C.KEY_ESCAPE, C.KEY_RIGHT, C.KEY_ESCAPE):
         press(game, key)

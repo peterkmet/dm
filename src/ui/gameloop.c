@@ -32,6 +32,7 @@
 #include "layout.h"
 #include "menus.h"
 #include "music.h"
+#include "optmenu.h"
 #include "panel.h"
 #include "startend.h"
 #include "status.h"
@@ -133,16 +134,18 @@ static void refresh_interface(void)
     ui_draw_message_area();
 }
 
-/* The volumes and the music of a game start: the settings file in the advanced mode, else full volumes and no
-   music. */
+/* The volumes, the music and the filter of a game start: the settings file in the advanced mode, else full
+   volumes, no music and no filter; --filter keeps its filter. */
 static void apply_settings(void)
 {
-    Settings settings = {SETTINGS_VOLUME_FULL, SETTINGS_VOLUME_FULL, SETTINGS_MUSIC_ORIGINAL};
+    Settings settings = {SETTINGS_VOLUME_FULL, SETTINGS_VOLUME_FULL, SETTINGS_MUSIC_ORIGINAL, SETTINGS_FILTER_NONE};
     if (g_session.mode == GAME_MODE_ADVANCED)
         settings = settings_load(startend_save_dir());
     g_audio_volume = settings.sound_volume;
     g_music_volume = settings.music_volume;
     music_select(settings.music);
+    if (!g_filter_fixed)
+        optmenu_set_filter(settings.filter);
 }
 
 /* The start of a game, the part for both a new and a loaded game: interface state and input. */

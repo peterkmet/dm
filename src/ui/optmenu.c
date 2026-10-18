@@ -15,8 +15,9 @@
 #define ROW_SOUND        0
 #define ROW_MUSIC_VOLUME 1
 #define ROW_MUSIC        2
-#define ROW_CONTINUE     3
-#define ROW_COUNT        4
+#define ROW_FILTER       3
+#define ROW_CONTINUE     4
+#define ROW_COUNT        5
 
 /* The text of a row: the label column, the - and + columns of a volume row, the columns a click on them takes. */
 #define ROW_TEXT_SIZE 40
@@ -26,6 +27,12 @@
 #define SIGN_REACH    1 /* columns on each side of a sign that a click also takes */
 
 static const char *const music_names[SETTINGS_MUSIC_COUNT] = {"ORIGINAL", "SUPER NES", "FM-TOWNS"};
+static const char *const filter_names[] = {"NONE", "SCALE2X", "SCALE3X"}; /* from SETTINGS_FILTER_NONE */
+#define FILTER_COUNT 3
+
+int16_t g_filter = SETTINGS_FILTER_NONE;
+bool g_filter_fixed;
+bool (*g_filter_hook)(int16_t filter);
 
 static struct {
     int16_t row;      /* the selected row */
@@ -36,7 +43,7 @@ static struct {
 /* The values in use. */
 static Settings get_current(void)
 {
-    return (Settings){g_audio_volume, g_music_volume, g_music_soundtrack};
+    return (Settings){g_audio_volume, g_music_volume, g_music_soundtrack, g_filter};
 }
 
 /* Draws the menu with the current values. */
@@ -46,12 +53,21 @@ static void show_menu(void)
     snprintf(texts[ROW_SOUND], ROW_TEXT_SIZE, "%-*s-  %d  +", LABEL_COLUMNS, "SOUND", g_audio_volume);
     snprintf(texts[ROW_MUSIC_VOLUME], ROW_TEXT_SIZE, "%-*s-  %d  +", LABEL_COLUMNS, "MUSIC VOLUME", g_music_volume);
     snprintf(texts[ROW_MUSIC], ROW_TEXT_SIZE, "%-*s%s", LABEL_COLUMNS, "MUSIC", music_names[g_music_soundtrack]);
+    snprintf(texts[ROW_FILTER], ROW_TEXT_SIZE, "%-*s%s", LABEL_COLUMNS, "FILTER",
+             filter_names[g_filter - SETTINGS_FILTER_NONE]);
     snprintf(texts[ROW_CONTINUE], ROW_TEXT_SIZE, "CONTINUE");
-    const char *rows[ROW_COUNT] = {texts[ROW_SOUND], texts[ROW_MUSIC_VOLUME], texts[ROW_MUSIC], texts[ROW_CONTINUE]};
+    const char *rows[ROW_COUNT] = {texts[ROW_SOUND], texts[ROW_MUSIC_VOLUME], texts[ROW_MUSIC], texts[ROW_FILTER],
+                                   texts[ROW_CONTINUE]};
     rows_draw("OPTIONS", rows, ROW_COUNT, menu.row);
 }
 
 /* Commands */
+
+void optmenu_set_filter(int16_t filter)
+{
+    if (!g_filter_hook || g_filter_hook(filter))
+        g_filter = filter;
+}
 
 void optmenu_open(void)
 {
@@ -66,7 +82,7 @@ static void save_changes(void)
 {
     Settings now = get_current();
     if (now.sound_volume == menu.saved.sound_volume && now.music_volume == menu.saved.music_volume &&
-        now.music == menu.saved.music)
+        now.music == menu.saved.music && now.filter == menu.saved.filter)
         return;
     if (settings_save(startend_save_dir(), &now)) {
         menu.saved = now;
@@ -95,6 +111,12 @@ static int16_t step_music(int16_t step)
     return music;
 }
 
+/* The filter before (-1) or after (1) the current one, with wrap. */
+static int16_t step_filter(int16_t step)
+{
+    return (int16_t)((g_filter - SETTINGS_FILTER_NONE + step + FILTER_COUNT) % FILTER_COUNT + SETTINGS_FILTER_NONE);
+}
+
 /* Changes the value of the selected row one step down (-1) or up (1). */
 static void change_value(int16_t step)
 {
@@ -104,6 +126,8 @@ static void change_value(int16_t step)
         g_music_volume = step_volume(g_music_volume, step);
     else if (menu.row == ROW_MUSIC)
         music_select(step_music(step));
+    else if (menu.row == ROW_FILTER)
+        optmenu_set_filter(step_filter(step));
     save_changes();
 }
 
@@ -148,7 +172,7 @@ bool optmenu_process_click(int16_t x, int16_t y)
     if (row == ROW_CONTINUE)
         return true;
     int16_t column = rows_find_column(x);
-    if (row == ROW_MUSIC)
+    if (row == ROW_MUSIC || row == ROW_FILTER)
         change_value(1);
     else if (is_near_column(column, MINUS_COLUMN))
         change_value(-1);

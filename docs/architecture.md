@@ -58,7 +58,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `data/kaos.h` | `kaos_` | The loaded engine image (KAOS.FTL, or the KAOS-layout image of the CSB APPB.FTL) and its readers at the addresses of the original. |
 | `data/kaos_addresses.h` | `KAOS_` | Addresses of the KAOS.FTL image (and of the KAOS-layout CSB image). |
 | `data/os.h` | `os_` | The operating system services that data/ and engine/ need: folders, file times, the log, and fatal errors. |
-| `data/settings.h` | `settings_` | The settings file of the advanced mode (not in the original game): SETTINGS.TXT in the saves folder with the sound volume, the music volume and the music choice. |
+| `data/settings.h` | `settings_` | The settings file of the advanced mode (not in the original game): SETTINGS.TXT in the saves folder with the sound volume, the music volume, the music choice and the upscale filter. |
 | `data/spells.h` | `spell_` | The spell rules of the spell table: the symbol strings, the mana cost and the skill draws. |
 | `data/swsh.h` | `swsh_` | The FTL logo module SWSH.FTL: a palette script, the logo graphic, and its sound. |
 | `data/tables.h` | `tables_` | Static rule tables of KAOS.FTL, decoded once from the loaded image. |
@@ -112,7 +112,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 | `ui/logo.h` | `logo_` | The FTL logo of SWSH.FTL (not KAOS): the original shows it before the DM title. |
 | `ui/menus.h` | `menus_` | The action area, the spell area and the movement arrows at the right of the screen. |
 | `ui/music.h` | `music_` | Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and Super NES versions from MP3 files, scaled by the music volume. |
-| `ui/optmenu.h` | `optmenu_` | The options menu of the advanced mode (not in the original game): sound volume, music volume and music choice in the viewport; it writes SETTINGS.TXT after a change. |
+| `ui/optmenu.h` | `optmenu_` | The options menu of the advanced mode (not in the original game): sound volume, music volume, music choice and upscale filter in the viewport; platform/ sets the filter hook; it writes SETTINGS.TXT after a change. |
 | `ui/palette.h` | `palette_` | The palette fade of the original: it changes both palette halves of g_screen step by step, one frame for each step through g_frame_hook. |
 | `ui/panel.h` | `panel_` | The inventory panel: slots, the eye and the mouth, food and water, skills and statistics, the object description, the scroll, the chest. |
 | `ui/rows.h` | `rows_` | The rows of text of the viewport screens (not in the original game): it draws a title and rows in the game font and maps a click to a row and a text column. |

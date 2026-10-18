@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Advanced mode: the options menu has a FILTER row (NONE, SCALE2X, SCALE3X). The filter changes at once, and `SETTINGS.TXT` keeps it. `--filter` takes priority at a game start.
+
 ## 1.0.0 - 2026-10-17
 
 ### Added

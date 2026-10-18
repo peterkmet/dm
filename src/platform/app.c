@@ -18,6 +18,7 @@
 #include "gameloop.h"
 #include "logo.h"
 #include "music.h"
+#include "optmenu.h"
 #include "select.h"
 #include "startend.h"
 #include "text.h"
@@ -602,14 +603,25 @@ static bool choose_first_screen(void)
     return start_adventure();
 }
 
+/* Shows the image with the upscale filter of the options menu. */
+static bool set_filter(int16_t filter)
+{
+    return plat_set_filter(filter);
+}
+
 /* Opens the window with the icon and the filter. */
 static bool open_window(void)
 {
     if (!plat_init(WINDOW_SCALE))
         return false;
     set_icon();
-    if (app.options.filter && !plat_set_filter(plat_filter_factor(app.options.filter)))
-        return false;
+    if (app.options.filter) {
+        g_filter = (int16_t)plat_filter_factor(app.options.filter);
+        g_filter_fixed = true;
+        if (!plat_set_filter(g_filter))
+            return false;
+    }
+    g_filter_hook = set_filter;
     /* turn-based and DM_AUTO_ENTER choose NEW ADVENTURE, as ENTER at the DM entrance */
     if (app.screen == SCREEN_SELECT && select_screen() == SELECT_SCREEN_CSB &&
         (app.auto_enter || g_session.mode == GAME_MODE_TURNBASED))
