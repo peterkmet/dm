@@ -15,7 +15,7 @@ uv sync
 |---|---|
 | `make` | The game `build/dm` and the test library `build/libdm.dylib`. The build has 0 warnings. |
 | `make lib` | The library only. It has no SDL code. |
-| `make windows` | `build/dm.exe` for Windows x86-64, with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. |
+| `make windows` | `build/dm.exe` for Windows x86-64, with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. Test it with Wine. |
 | `make SANITIZE=1` | The build with the address and undefined-behavior sanitizers. |
 | `make play PLAY_DIR=<dir>` | Copy a new build to `<dir>/dm`. The default is `playthroughs/local`. The saves in the folder stay. Run it with `<dir>/dm --data game --saves <dir>`. |
 | `make clean` | Remove `build/`. |

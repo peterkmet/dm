@@ -29,8 +29,7 @@ You need the Amiga disk images (`.adf`):
 - Optional: `Chaos Strikes Back (FTL) A.adf` and `Chaos Strikes Back (FTL) B.adf`.
 
 Disks of other versions (DOS, Atari ST, other Amiga versions) do not work. At the first start the game extracts
-the disks in the current folder into `game/`, `game-csb/`, and `game-csb/disk-b/`. It checks the CRC32 of each
-required file and names the first wrong file.
+the disks in the current folder; see [Run the game](docs/manual.md#run-the-game) in the player manual.
 
 ## Play
 
@@ -74,16 +73,7 @@ Insert to turn, F1 to F4 for the inventories, Ctrl+S to save. The advanced mode 
 
 ### Options
 
-```text
-build/dm [options]
-  --data       DIR   the game files (DM; CSB with --adventure csb)
-  --saves      DIR   the folder of the saved games
-  --adventure  dm|csb  skip the adventure screen
-  --mode       vanilla|advanced|turnbased  skip the mode screen
-  --control    PATH  the control socket of the turn-based mode
-  --filter     none|scale2x|scale3x  the pixel-art upscale filter
-  --help             print this help
-```
+`build/dm --help` prints the options. The [player manual](docs/manual.md#options) describes each option.
 
 The saved games go to `game/` (Dungeon Master) and `game-csb/` (Chaos Strikes Back), or to the folder of
 `--saves`. The save files have the format of the Amiga original.
@@ -110,12 +100,11 @@ make check      # format, coding standard, and the suite
 make windows    # build/dm.exe with MinGW-w64
 ```
 
-The code is in five layers under `src/`: `data`, `engine`, `ui`, `control`, `platform`. Only `platform/` uses SDL.
-The tests load the game code as a shared library with `ctypes`.
+The build, the tests, and the release are in [Development](docs/development.md).
 
 ## Documentation
 
-- [Player manual](docs/manual.md): run, options, controls, modes, saves, Windows
+- [Player manual](docs/manual.md): run, options, controls, modes, saves
 - [Development](docs/development.md): build, tests, release
 - [Architecture](docs/architecture.md) and [coding standard](docs/coding-standard.md)
 - [Decompiling](docs/decompiling.md): Ghidra tooling

@@ -12,13 +12,17 @@ build/dm
 
 At start, the game extracts each `.adf` disk image in the current folder once: the Dungeon Master v3.60 disk to `game/`, CSB disk A to `game-csb/`, CSB disk B to `game-csb/disk-b/`. A folder that already has the files stays as it is. Before an adventure loads, the CRC32 of its required files must match the Amiga disks; else the game logs the first wrong file and exits.
 
-To extract the disks by hand, see [decompiling.md](decompiling.md). The `.gitignore` file excludes `*.adf`, `game/`, `game-csb/`, and `reference/`. Do not commit game content.
+### Extract the disks by hand
 
-The personal game: `make play` copies a new build to `playthroughs/local/dm`. The binary and the save files are in that folder.
+Install the Python tools with `uv sync`, then extract each disk image. Replace `<disk.adf>`, `<disk A>`, and `<disk B>` with the paths to your ADF files.
 
 ```sh
-playthroughs/local/dm --data game --saves playthroughs/local
+uv run dm-extract <disk.adf> game
+uv run dm-extract "<disk A>.adf" game-csb
+uv run dm-extract "<disk B>.adf" game-csb/disk-b
 ```
+
+The Dungeon Master disk goes to `game/`. The two Chaos Strikes Back (CSB) disks are optional: disk A goes to `game-csb/`, disk B goes to `game-csb/disk-b/`. The disks have files with the same name, so each disk needs its own folder. The command prints one line for each file: SHA-256, size, and path.
 
 ## Options
 
@@ -155,6 +159,8 @@ The controls are the controls of the original Amiga game.
 | `advanced` | The original game with the advanced features. |
 | `turnbased` | The advanced features, and a program plays through a Unix socket. The game time stands still between turns. See [llm-mode.md](llm/llm-mode.md). |
 
+The Windows build has no control socket, so the LLM mode cannot start there: the mode screen offers VANILLA and ADVANCED only, and `--mode turnbased` stops with an error.
+
 The advanced features are not in the original game:
 
 - Automap: a top-down map of the seen squares in place of the dungeon view. The game time stops while the map is open. A white frame shows the end of the map. The top line shows the level and the party position, for example `LEVEL 7 (30,27)`: the level number is the one of the saved games list. Corridors are light gray, walls are dark gray. A wall that the party can walk through (an imaginary wall) is checkered light and dark gray; an open fake wall is a corridor. Drag the map with the left mouse button to see the whole level; a click without a move does not scroll. The map opens centered on the party.
@@ -213,16 +219,3 @@ F1 to F4 open the inventories in every mode.
 In the `advanced` and `turnbased` modes, the save file has extension blocks after the original save data. The automap block keeps the explored squares of the automap. In the `advanced` mode, a cheat block keeps the cheats that are on. The original part of the file is the same as in a vanilla save, and vanilla loads the file. A file without the automap block, or with a damaged one, loads with an empty automap. A load without the cheat block, with a damaged one, or in the `vanilla` and `turnbased` modes turns all cheats off. The format is in [formats/save.md](formats/save.md#extension-blocks).
 
 In the `turnbased` mode, the game enters the dungeon at the start. The control socket opens after the start screens. A script that waits for the socket must pass `--mode turnbased` to skip the screens. The keyboard and the mouse do not control the game. Closing the window quits.
-
-
-## Windows
-
-Windows (x86-64): `make windows` cross-builds `build/dm.exe` with MinGW-w64 (`brew install mingw-w64`). The first run downloads the SDL3 MinGW package into `build/sdl-mingw/`. `make dist-win` builds `build/DungeonMaster-win.zip` with `dm.exe` and `SDL3.dll`. The player copies the disk images into the folder of the game.
-
-The Windows build has no control socket, so the LLM mode cannot start there: the mode screen offers VANILLA and ADVANCED only, and `--mode turnbased` stops with an error. Test it with Wine.
-
-On macOS, `make dist` builds `build/DungeonMaster.zip`: the game and SDL3 without game files.
-
-## Library
-
-`build/libdm.dylib` contains the game code without SDL. The tests load it with `ctypes`, see [development.md](development.md).

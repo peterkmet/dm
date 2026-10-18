@@ -28,7 +28,7 @@ How to decompile Dungeon Master v3.60 (Amiga) from your own disk image with Ghid
    uv run dm-extract <disk.adf> game
    ```
 
-   The command prints one line for each file: SHA-256, size, and path.
+   The [player manual](manual.md#extract-the-disks-by-hand) describes the folder layout and the output.
 
 4. Decompile all FTL modules to `reference/decomp/dm/`.
 
@@ -38,16 +38,9 @@ How to decompile Dungeon Master v3.60 (Amiga) from your own disk image with Ghid
 
    For each module, the script writes `reference/decomp/dm/<MODULE>.bin` (memory image), `reference/decomp/dm/<MODULE>.c` (decompiled C), and `reference/decomp/dm/<MODULE>.c.log` (Ghidra log). A full run takes about 20 seconds.
 
-5. Optional: extract the two Chaos Strikes Back (CSB) disks. Disk A goes to `game-csb/`, disk B goes to `game-csb/disk-b/`. The disks have files with the same name, so each disk needs its own folder.
+5. Optional: extract the two Chaos Strikes Back (CSB) disks to `game-csb/` and `game-csb/disk-b/`, see the [player manual](manual.md#extract-the-disks-by-hand).
 
-   ```sh
-   uv run dm-extract "<disk A>.adf" game-csb
-   uv run dm-extract "<disk B>.adf" game-csb/disk-b
-   ```
-
-   Replace `<disk A>` and `<disk B>` with the paths to your CSB ADF files.
-
-The `.gitignore` file excludes `*.adf`, `game/`, `game-csb/`, and `reference/` (original disks, music, extracted versions, decompiled code). Do not commit game content.
+The `.gitignore` file excludes `*.adf`, `/game`, `/game-csb`, and `reference/` (original disks, music, extracted versions, decompiled code). Do not commit game content.
 
 ## Tools
 
