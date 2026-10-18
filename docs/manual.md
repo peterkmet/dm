@@ -4,7 +4,7 @@ How to run the Dungeon Master C port and how to play it. The repository has no g
 
 ## Run the game
 
-Build the game first, see [development.md](development.md). Dungeon Master needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/`. `--data DIR` selects another folder for the selected adventure.
+Unpack a release (see the [README](../README.md)) or build the game (see [development.md](development.md)). Dungeon Master needs `KAOS.FTL`, `Graphics.DAT`, and `Dungeon.DAT` in `game/`. `--data DIR` selects another folder for the selected adventure.
 
 ```sh
 build/dm
