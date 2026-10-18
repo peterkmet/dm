@@ -3,6 +3,8 @@
 A native C11/SDL3 port of **Dungeon Master v3.60** and **Chaos Strikes Back** for the Amiga. It runs on macOS
 (Apple Silicon) and Windows (x86-64).
 
+![Dungeon Master in the port: a corridor of level 1](docs/images/screenshot.png)
+
 The port is a reimplementation, not an emulator. It is built from its own Ghidra decompilation of the original
 Amiga program. The game rules follow the decompiled code exactly, and differential tests compare the port with the
 original program in a 68000 emulator. The Amiga technical layer (copper, blitter, disk loader) is not reproduced.
