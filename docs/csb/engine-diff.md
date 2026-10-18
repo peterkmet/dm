@@ -16,22 +16,16 @@ All addresses are image addresses. "K" marks a DM address, "C" marks a CSB addre
 
 ## Function mapping
 
-`tools/dmtools/csb_match.py` builds the mapping and writes `docs/reference/csb-appb-symbols.csv`.
+`docs/reference/csb-appb-symbols.csv` holds the CSB-to-DM function mapping.
 
-```sh
-uv run dm-csb-match --report /tmp/csb-report.txt
-```
+These steps made the mapping:
 
-The report file has one line per function: class, CSB address, DM address, name, instruction counts, and similarity.
-
-The tool works in these steps:
-
-1. It loads both modules with `dmtools.ftl` and disassembles them with the Musashi disassembler of `machine68k`.
+1. Load both modules with `dmtools.ftl` and disassemble them with the Musashi disassembler of `machine68k`.
 2. DM function starts come from `kaos-symbols.csv`. CSB function starts come from the Ghidra output, the exports, `LINK` after `RTS`, and direct call targets.
 3. Each function becomes features: the ordered call targets (jump table and `BSR`/`JSR`), the ordered immediates as 16-bit words, the stack argument offsets, the referenced globals, and the count of conditional branches.
 4. A global alignment (Needleman-Wunsch) of the two address-ordered function lists gives the pairs. The linkers keep the source file order. A second pass uses the mapped calls. A call-graph pass adds callees that three paired callers replace in the same way.
-5. OS stubs pair by their library call offset (LVO). The table `MANUAL_PAIRS` in the tool adds pairs that a code reading proved.
-6. Globals: equal non-zero bytes of the two data sections, then globals at the same position in paired functions (at least 2 votes, 80 % agreement). The table `CSB_GLOBALS` adds verified CSB globals. Globals that only zero bytes support are not mapped, because equal zero bytes prove nothing.
+5. OS stubs pair by their library call offset (LVO). A list of pairs that a code reading proved adds more pairs.
+6. Globals: equal non-zero bytes of the two data sections, then globals at the same position in paired functions (at least 2 votes, 80 % agreement). A list of verified CSB globals adds more globals. Globals that only zero bytes support are not mapped, because equal zero bytes prove nothing.
 
 ### Classes
 
@@ -49,7 +43,7 @@ DM has 752 functions, CSB has 756. The classes are a heuristic:
 - Most "constants" pairs differ only in code generation: bit-field masks (DM `lsr #6; and #31`, CSB `and #$7c0; lsr #6`), sign extension (`-1` against `0xffff`), and two word pushes that DM merges into one long push.
 - Many "logic" pairs differ only because DM calls `get_string` and CSB uses inline text, or because DM calls `mouse_begin_change` (an empty stub in DM, K`0x108702`) where CSB hides the pointer (C`0x109128`).
 
-The [differences that need port changes](#differences-that-need-port-changes) section lists the real differences. Three code readings checked every rule-relevant pair that the tool did not classify as identical.
+The [differences that need port changes](#differences-that-need-port-changes) section lists the real differences. Three code readings checked every rule-relevant pair that the mapping did not classify as identical.
 
 ### Parts of APPB that are not the game engine
 

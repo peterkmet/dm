@@ -29,7 +29,7 @@ Native C11/SDL3 macOS port of Dungeon Master v3.60 (Amiga), built from its own G
   - `platform/`: SDL3 window, events, application loop, transport (`transport.c`).
 - `third_party/dr_mp3/`: the vendored MP3 decoder.
 - `tools/dmtools/`: Python tools: ADF extract, FTL loader, emulator harness, control client. `tools/ghidra/`,
-  `tools/dist/`, `tools/research/` (not tested).
+  `tools/dist/`.
 - `tests/`: folders `differential/` (against the original), `port/`, `golden/` (snapshots), `tools/`, `standard/`
   (`tests/standard/test_standard.py` checks the coding standard); `tests/dmtest/` shared helpers (`load_lib()`).
 - `docs/`: `architecture.md`, `development.md`, `coding-standard.md`, `todo.md`.
