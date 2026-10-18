@@ -2,7 +2,7 @@
 
 This page uses the original KAOS names; the port names differ.
 
-This page describes the structure of `KAOS.FTL`, the main game module of Dungeon Master v3.60 for the Amiga. It is a skeleton map for the naming work in Step 3b of the [C port plan](../superpowers/archive/2026-10-04-dm-c-port-plan.md). The names come from [kaos-symbols.csv](kaos-symbols.csv). Many names follow the structure of ReDMCSB, because the function order in KAOS matches the order of the DM source files.
+This page describes the structure of `KAOS.FTL`, the main game module of Dungeon Master v3.60 for the Amiga. The names come from [kaos-symbols.csv](kaos-symbols.csv). Many names follow the structure of ReDMCSB, because the function order in KAOS matches the order of the DM source files.
 
 All addresses are for the image that `uv run dm-ftl game/KAOS.FTL <out.bin>` creates. The [FTL module format](../formats/ftl.md) page describes the loader.
 

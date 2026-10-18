@@ -4,8 +4,7 @@
 /* Prefixes: music_ */
 
 /* Music of the advanced mode (not in the original Amiga game): the soundtracks of the FM-Towns and
-   Super NES versions from MP3 files in <disk A folder>/music/. A track plays one time and does not loop.
-   Decisions: docs/superpowers/archive/2026-10-05-music-decisions.md. */
+   Super NES versions from MP3 files in <disk A folder>/music/. A track plays one time and does not loop. */
 
 #include <stdbool.h>
 #include <stdint.h>
