@@ -198,7 +198,7 @@ The prototype is the module `dmtools.csb_mini`, and its differential test is a h
 | `tests/dmtest/cedt.py` | Harness that runs the original CEDT routines in `dmtools.emu`. |
 | `tests/differential/test_csb_mini.py` | Differential test against the original CEDT routines. |
 
-Write the CSB dungeon as an uncompressed `Dungeon.DAT`, and optionally build a new adventure. Run the commands from `/Users/lego/github/dm`:
+Write the CSB dungeon as an uncompressed `Dungeon.DAT`, and optionally build a new adventure. Run the commands from the repository root:
 
 ```sh
 uv run python -m dmtools.csb_mini game-csb/disk-b/MINI.DAT csb_dungeon.dat

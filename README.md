@@ -46,7 +46,7 @@ required file and names the first wrong file.
 
    Then double-click `Dungeon Master.command`.
 
-   Windows: double-click `dm.exe`. When Windows warns about an unknown publisher, click "More info", then
+4. Windows: double-click `dm.exe`. When Windows warns about an unknown publisher, click "More info", then
    "Run anyway".
 
 ### From the source
@@ -119,7 +119,7 @@ The tests load the game code as a shared library with `ctypes`.
 - [Development](docs/development.md): build, tests, release
 - [Architecture](docs/architecture.md) and [coding standard](docs/coding-standard.md)
 - [Decompiling](docs/decompiling.md): Ghidra tooling
-- [Formats](docs/formats/ftl.md): [FTL](docs/formats/ftl.md), [Dungeon.DAT](docs/formats/dungeon.md),
+- Formats: [FTL](docs/formats/ftl.md), [Dungeon.DAT](docs/formats/dungeon.md),
   [save file](docs/formats/save.md)
 - [Rules](docs/rules/game-state.md) of the game engine
 - [Chaos Strikes Back](docs/csb/data.md)
