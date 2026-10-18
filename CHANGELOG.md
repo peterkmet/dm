@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Added
-
-- Advanced mode: the options menu has a FILTER row (NONE, SCALE2X, SCALE3X). The filter changes at once, and `SETTINGS.TXT` keeps it. `--filter` takes priority at a game start.
-
 ## 1.0.0 - 2026-10-17
 
 ### Added
@@ -21,6 +15,7 @@
 - Advanced mode: the damage of a hit stays in the action area for two ticks; the action icons keep their colors in every light.
 - The upscale filter smooths the mouse pointer with the picture.
 - Advanced mode: Escape opens an options menu with the sound volume, the music volume (0 to 7), and the music choice. `SETTINGS.TXT` in the saves folder keeps the values.
+- Advanced mode: the options menu has a FILTER row (NONE, SCALE2X, SCALE3X). The filter changes at once, and `SETTINGS.TXT` keeps it. `--filter` takes priority at a game start.
 - Advanced mode: C opens a cheat screen with full light, immortality, food and water, and the new cheats one-hit kill, walk through walls, and reveal map; quick save and quick load; and a list of all spells with their runes. The save file keeps the cheats in a new extension block.
 - Advanced mode: 8 save slots (`DMGAME.DAT`, `DMGAME2.DAT` to `DMGAME8.DAT`; CSB `CSBGAME`). The save dialog shows LOAD, SAVE, CONTINUE, and QUIT in DM and CSB; SAVE opens a save list, LOAD and RESUME a load list with the level and the file time of each slot and the quick save; RESTART THIS GAME loads the slot of the last save or load.
 - Advanced mode, Chaos Strikes Back: the stairs down of the prison start the new adventure at once, without a save and without the utility disk. Two of the stairs are behind hidden passages, at (15, 6) and (8, 14) of the first level. The advanced prison does not show the text about the utility disk.
