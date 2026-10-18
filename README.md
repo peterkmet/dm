@@ -112,6 +112,20 @@ make windows    # build/dm.exe with MinGW-w64
 
 The build, the tests, and the release are in [Development](docs/development.md).
 
+## How it was made
+
+The port was written with Claude (Claude Code), from 2026-10-03 to version 1.0.0 on 2026-10-17.
+
+1. Decompile: Ghidra decompiles the FTL code modules of the Amiga v3.60 disk to C
+   ([Decompiling](docs/decompiling.md)). The symbol tables in `docs/reference/` name the functions and the globals.
+2. Port: the game rules are written again in C11 from this decompilation only. No code of another port is used.
+3. Check against the original: the differential tests run a function of the original program in a 68000 emulator
+   and the same function of the port with the same input, then compare the state. Golden snapshots keep the save
+   file, the dungeon view, and the game rules.
+4. Clean up: several passes made the code clear, each without a change of game behavior: a clean-code pass (named
+   constants, typed accessors, the game rules out of the user interface), a final refactor into five layers, a
+   coding standard with a check per rule, and an audit of the tests.
+
 ## Documentation
 
 - [Player manual](docs/manual.md): run, options, controls, modes, saves
