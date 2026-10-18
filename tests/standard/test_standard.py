@@ -37,7 +37,7 @@ FUNC_START = re.compile(r"^(?:static\s+)?[A-Za-z_][\w *]*?\b([a-z_]\w*)\s*\([^;]
 
 
 def sources():
-    return sorted(SRC.rglob("*.[ch]"))
+    return sorted(p for p in SRC.rglob("*.[ch]") if p.relative_to(SRC).parts[0] != "third_party")
 
 
 def headers():

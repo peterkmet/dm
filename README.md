@@ -143,7 +143,7 @@ The port was written with Claude (Claude Code), from 2026-10-03 to version 1.0.0
 ## Acknowledgements
 
 - [SDL3](https://github.com/libsdl-org/SDL): the window, the input events, and the audio output.
-- [dr_mp3](https://github.com/mackron/dr_libs) by David Reid (`third_party/dr_mp3/`): the MP3 decoder of the music.
+- [dr_mp3](https://github.com/mackron/dr_libs) by David Reid (`src/third_party/dr_mp3/`): the MP3 decoder of the music.
 - amitools: the disk extraction of `dm-extract` and the reference for the ADF reader tests.
 - machine68k: the 68000 emulator that runs the original program in the differential tests.
 - ReDMCSB: many function and structure names of the decompilation follow its source files.

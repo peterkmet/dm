@@ -17,7 +17,7 @@ this document names.
    before it. [layer]
 2. The public headers of a layer stand in `src/<layer>/include/` (`src/engine/include/game.h`); a private
    `<module>_internal.h` stands next to its `.c` files. The include path of a layer holds only the `include/`
-   folders of its own layer and of the layers before it, and `-isystem third_party`, so the compiler rejects
+   folders of its own layer and of the layers before it, and `-isystem src/third_party`, so the compiler rejects
    an include of a later layer. An include names only the file: `#include "game.h"`. Header names are unique
    across the layers. [layer]
 3. Only `platform/` includes SDL and operating system headers (`_WIN32`, POSIX, `<sys/...>`, `<unistd.h>`,
@@ -34,7 +34,8 @@ this document names.
    The entry point `platform/main.c` is the one exception: it has no header. [module]
 8. Each header states its prefixes in one comment line, `/* Prefixes: rec_ */`. A prefix belongs to one
    module; no prefix starts with the prefix of another module. [prefix]
-9. `third_party/` is vendored code: outside every check and outside the format check, by folder. [layer]
+9. `src/third_party/` is vendored code, the one folder of `src/` outside the layers: outside every check and outside
+   the format check, by folder. [layer]
 
 ## 2. Headers and includes
 

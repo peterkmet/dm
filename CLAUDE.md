@@ -26,7 +26,7 @@ Native C11/SDL3 macOS and Windows port of Dungeon Master v3.60 (Amiga), built fr
   - `ui/`: screens, input handling, drawing, audio.
   - `control/`: the LLM protocol (state JSON, requests).
   - `platform/`: SDL3 window, events, application loop, transport (`transport.c`).
-- `third_party/dr_mp3/`: the vendored MP3 decoder.
+- `src/third_party/dr_mp3/`: the vendored MP3 decoder.
 - `tools/dmtools/`: Python tools: ADF extract, FTL loader, emulator harness, control client. `tools/ghidra/`,
   `tools/dist/`.
 - `tests/`: folders `differential/` (against the original), `port/`, `golden/` (snapshots), `tools/`, `standard/`

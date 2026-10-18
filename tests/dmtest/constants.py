@@ -96,7 +96,7 @@ def parse(texts):
     return known
 
 
-VALUES = parse(path.read_text(errors="replace") for path in sorted(_SRC.rglob("*.h")))
+VALUES = parse(path.read_text(errors="replace") for path in sorted(p for p in _SRC.rglob("*.h") if p.relative_to(_SRC).parts[0] != "third_party"))
 globals().update(VALUES)
 
 

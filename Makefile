@@ -3,7 +3,7 @@ CC          = clang
 BASE_CFLAGS = -std=c11 -Wall -Wextra -Werror -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wvla \
               -Wimplicit-fallthrough -O2 -g
 CFLAGS      = $(BASE_CFLAGS)
-CPPFLAGS    = -isystem third_party -MMD -MP
+CPPFLAGS    = -isystem src/third_party -MMD -MP
 # The include path of a layer: its own public headers and those of the layers before it. A private *_internal.h
 # stands next to its .c file. A wrong layer include does not compile.
 INC_data     = -Isrc/data/include

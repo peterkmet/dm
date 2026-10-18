@@ -73,7 +73,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
   - `ui/`: the screens, the panels, and the sound.
   - `platform/`: SDL3, the options, the application (`app.c`), and the entry point (`main.c`).
   - `control/`: the control protocol of the turn-based mode.
-- `third_party/dr_mp3/`: the vendored MP3 decoder.
+- `src/third_party/dr_mp3/`: the vendored MP3 decoder.
 - `tools/dmtools/`: the Python tools. `tools/ghidra/`: the decompile scripts. `tools/dist/`: the release scripts.
 - `tests/`: see the table above.
 - `docs/`: the documentation.
