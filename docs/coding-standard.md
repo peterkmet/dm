@@ -5,10 +5,8 @@ prove that the behavior matches the original. This standard makes the code reada
 
 Every rule names its check in `tests/standard/test_standard.py` in brackets, or says "review only" when no
 mechanical check is possible, or names its exception. `tests/standard/allowlist.txt` holds the accepted
-exceptions, one per line: `<check> <target> <reason>`. A reason is either an exception that this document
-names, or `open: epic N` during the final refactor (PRD `docs/superpowers/2026-10-16-final-refactor.md`); the
-last epic of that refactor removes the `open` lines. This document describes the target state of that
-refactor; until the run ends, the allowlist carries the difference.
+exceptions, one per line: `<check> <target> <reason>`. A reason is `rule <n.m>: <text>` for an exception that
+this document names.
 
 ## 1. Layers and modules
 
@@ -315,6 +313,6 @@ dependency group (version 23). [format]
 | `todo` | a TODO marker in code |
 | `tests` | a `from test_` import, a machine path, a clang call in `tests/` |
 | `format` | a file that `clang-format --dry-run --Werror` reports |
-| `allowlist` | an allowlist line with a reason that this document does not name and that is not `open: epic N` |
+| `allowlist` | an allowlist line with a reason that this document does not name |
 
 A reader who knows Dungeon Master can understand each function without opening the decompiled code.
