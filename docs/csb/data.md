@@ -316,24 +316,8 @@ The other tables of `tables.md`, the view tables, the input tables, and the esca
 
 No change is needed in `layout.c` or `dungeon.c` (`dungeon_load`). Step 8 added `gfx_expand_over` (`graphics.c`, a decode over an existing bitmap for the delta frames) and `audio_play_data` (`audio.c`, plays sample data that is not in `Graphics.DAT`).
 
-## Scratch scripts
-
-The scripts are in the session scratchpad, folder `data/`. They are not part of the repository.
-
-| Script | Purpose |
-|---|---|
-| `hdr.py`, `align.py` | Read both headers and align the items |
-| `snd.py` | Compare the sample items and the `Sound/*.amg` files |
-| `port_gfx.py`, `pix.py` | Decode all items through `libdm.dylib` and compare with `dmcsb` |
-| `txt.py` | Compare object names and layout zones |
-| `dun.py`–`dun4.py` | Load `Dungeon.DAT` with the port and with `dmcsb` |
-| `anim.py`, `anim2.py` | Walk the animation chunks |
-
 ## Open points
 
 - The order of the CSB texts in `APPB.FTL` against the DM text indices.
 - The meaning of the `AN` count (the player skips `AN`). The music chunks (`MI`, `MD`, `MF`) and `SF` of `ANIM.DAT`.
-- The format of `MINI.DAT` and the way the utility disk builds the CSB adventure.
-- The CSB entrance buttons (graphic 11 and the entrance mouse zones).
 - The CSB rule differences for renamed objects (for example STORM, RA BLADE).
-- A test with a real CSB save file.

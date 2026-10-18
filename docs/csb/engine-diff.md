@@ -374,10 +374,12 @@ Other load and save differences:
   - After a successful SAVE AND QUIT, `A5-0xe0` becomes 0 and `endgame(0)` (C`0x128374`) runs: the credits, then `quit_game`.
   - When the save fails, a message dialog with one button shows (C`0x1294f8`), then the game continues.
   - No code path quits without a save. Text 93 (quit without save) does not exist, and the save dialog has no plain QUIT.
-  - Port (`src/ui/startend.c` `save_game_csb`): the 3-choice dialog. The port writes dialog choice 1 for both saves. SAVE AND QUIT shows the credits and then the CSB screen.
+  - Port (`src/ui/startend.c` `save_game_csb`): the 3-choice dialog. The port writes dialog choice 1 for both saves. SAVE AND QUIT shows the credits and then the CSB screen (turn-based: the entrance picture).
 - `load_dungeon` (C`0x1295a0`) reads the same format. Its extra calls are copy protection.
 
-Port changes: `src/engine/savefile.c` (header offsets, file names), `src/engine/savegame.c` (active group count, champion bytes `0x118`–`0x11d`), `src/ui/startend.c` (save dialog). An open question decides the start of a game, see [Open questions](#open-questions).
+Port changes: `src/engine/savefile.c` (header offsets, file names), `src/engine/savegame.c` (active group count, champion bytes `0x118`–`0x11d`), `src/ui/startend.c` (save dialog).
+
+Port start of a game: NEW ADVENTURE starts the prison (`Dungeon.DAT`). A save in the prison merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, and loads it (`src/engine/savegame.c` `savegame_make_adventure`). The original needs a restart with the utility disk for this step. The merge rules and the `MINI.DAT` format: [new-adventure.md](new-adventure.md).
 
 ### Entrance and start
 
@@ -427,30 +429,6 @@ UNVERIFIED: the complete list of penalties.
 
 These differences need no port change, because the port does not reproduce the Amiga layer: video driver and display setup, heap, interrupts, `mouse_begin_change`, OS stubs, trackdisk, and the language support of DM.
 
-## Work estimate
-
-The estimate counts changed or new lines in `src/`, without tests.
-
-| Subsystem | Work | Size |
-|---|---|---|
-| Engine selection, CSB address table for 140 addresses, strides | `ftl.c`, `tables.c`, new address table, all files with `#define 0x10xxxx` | 250–350 lines |
-| Text (inline strings, object names with bit 7, action names) | `ui.c`, `ids.h`, `champion.c`, `magic.c`, `action.c`, `status.c`, `panel.c`, `menus.c`, `command.c`, `gameloop.c`, `startend.c` | 200–300 lines |
-| Actions and experience table | `action.c`, `tables.c` | 20–40 lines |
-| Magic map (spells, events, champion bytes, scroll panel, map drawing) | `magic.c`, `spells.c`, `event.c`, `game.h`, `panel.c`, `view.c` | 350–500 lines |
-| Sensors, active groups, reincarnation | `sensor.c`, `game.h`, `game.c`, `savegame.c`, `champion.c` | 30–60 lines |
-| Save file header and names, save dialog | `savefile.c`, `savegame.c`, `startend.c`, `dialog.c` | 100–150 lines |
-| Entrance, title, death screen, credits | `startend.c`, `gameloop.c` | 150–250 lines |
-| End of the game (`ENDA.DAT` player or replacement) | new module or `startend.c` | 50 lines (replacement) to 600+ lines (`ANIM.FTL` port) |
-| Game start without `CEDT.FTL` | open question | 0 (user supplies `CSBGame.dat`) to 1000+ lines (`CEDT.FTL` port) |
-| Tests (differential tests against APPB in `dmtools.emu`, table checks) | `tests/` | 300–500 lines |
-
-Total without `ENDA.DAT` and without `CEDT.FTL`: about 1500–2200 lines.
-
 ## Open questions
 
-1. Game start: CSB needs `CSBGame.dat` from the utility disk (`CEDT.FTL`, disk B, with `MINI.DAT` and the portraits). Must the user supply a save made with the original utility disk, or must the port also port the "make new adventure" and champion import of `CEDT.FTL`?
-2. The `ENDA.DAT` ending: port the `ANIM.FTL` player, or show a replacement screen? Answered: Step 8 ports the player (`src/ui/anim.c`, see [End of the game](#end-of-the-game)).
-3. The magic map: is a "MAGICMAP" scroll in the CSB dungeon? Answered: yes, on map 4 at x 20, y 11 (see [Magic map](#magic-map)).
-4. SAVE AND QUIT. Answered: after a successful save, `save_game` calls `endgame(0)`: the credits, then `quit_game` (see [Save and load](#save-and-load)). `quit_game` then stops at C`0x128600`, because the won flag is 0 (Step 8, see [End of the game](#end-of-the-game)). The port shows the credits and then the CSB screen (turn-based: the entrance picture).
-5. The DM disk has an empty `CSBGAME.DAT`. Does DM 3.60 read it? Not traced.
-6. Graphics.DAT item 696 (layout) is 16 bytes shorter in CSB. Answered: only the endgame button zones 437 and 438 are missing (see [Graphics.DAT](#graphicsdat)).
+1. The DM disk has an empty `CSBGAME.DAT`. Does DM 3.60 read it? Not traced.
