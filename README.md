@@ -4,6 +4,7 @@ A native C11/SDL3 port of **Dungeon Master v3.60** and **Chaos Strikes Back** fo
 Silicon) and Windows (x86-64).
 
 ![Dungeon Master in the port: a corridor that ends in a door](docs/images/screenshot.png)
+![Dungeon Master in the port: Lord Chaos on level 12](docs/images/screenshot-chaos.png)
 
 The port is a reimplementation, not an emulator. It is built from its own Ghidra decompilation of the original
 Amiga program: the game rules follow the decompiled code, and differential tests compare the port with the
