@@ -88,7 +88,18 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## Release
 
-1. Add the changes to `CHANGELOG.md`.
-2. `make check`.
-3. `make dist` builds `build/DungeonMaster.zip` (macOS: the game and SDL3, without game files).
-4. `make dist-win` builds `build/DungeonMaster-win.zip` (`dm.exe` and `SDL3.dll`).
+1. In `CHANGELOG.md`, move the entries of "Unreleased" under a new heading `## X.Y.Z - YYYY-MM-DD`.
+2. Set `version` in `pyproject.toml` to the same number. Run `uv lock`.
+3. `make check`.
+4. `make dist` builds `build/DungeonMaster.zip` (macOS: the game and SDL3, without game files).
+5. `make dist-win` builds `build/DungeonMaster-win.zip` (`dm.exe` and `SDL3.dll`).
+6. Commit `CHANGELOG.md`, `pyproject.toml`, and `uv.lock` with the message `docs: version X.Y.Z`.
+7. `git tag vX.Y.Z`.
+8. The owner pushes the branch and the tag.
+9. Write the notes file: the `CHANGELOG.md` section of the version and the sentence "The Windows build is tested
+   under Wine only, not on a real Windows."
+10. The owner creates the release:
+
+    ```sh
+    gh release create vX.Y.Z build/DungeonMaster.zip build/DungeonMaster-win.zip --notes-file <notes>
+    ```

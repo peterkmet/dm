@@ -21,6 +21,14 @@ This repository contains no game files. You need your own Amiga disk images.
     still between turns. macOS only.
 - Pixel-art upscale filters (`scale2x`, `scale3x`) and a window that scales with its size.
 
+## System requirements
+
+- macOS: a current macOS on Apple Silicon.
+- Windows: Windows 10 or later, x86-64.
+- Your own Amiga disk images; see [Get the game data](#get-the-game-data).
+
+The Windows build is tested under Wine only, not on a real Windows.
+
 ## Get the game data
 
 You need the Amiga disk images (`.adf`):
@@ -106,6 +114,7 @@ The build, the tests, and the release are in [Development](docs/development.md).
 
 - [Player manual](docs/manual.md): run, options, controls, modes, saves
 - [Development](docs/development.md): build, tests, release
+- [Changes](CHANGELOG.md)
 - [Architecture](docs/architecture.md) and [coding standard](docs/coding-standard.md)
 - [Decompiling](docs/decompiling.md): Ghidra tooling
 - Formats: [FTL](docs/formats/ftl.md), [Dungeon.DAT](docs/formats/dungeon.md),
@@ -114,6 +123,15 @@ The build, the tests, and the release are in [Development](docs/development.md).
 - [Chaos Strikes Back](docs/csb/data.md)
 - [LLM mode](docs/llm/llm-mode.md), [LLM runs](docs/llm/llm-runs.md), and [LLM playbook](docs/llm/llm-playbook.md)
 - [Reference](docs/reference/kaos-map.md): the KAOS map and the symbol notes
+
+## Acknowledgements
+
+- [SDL3](https://github.com/libsdl-org/SDL): the window, the input events, and the audio output.
+- [dr_mp3](https://github.com/mackron/dr_libs) by David Reid (`third_party/dr_mp3/`): the MP3 decoder of the music.
+- amitools: the disk extraction of `dm-extract` and the reference for the ADF reader tests.
+- machine68k: the 68000 emulator that runs the original program in the differential tests.
+- ReDMCSB: many function and structure names of the decompilation follow its source files.
+- dmcsb: the reference for the `Dungeon.DAT` checks in the tests.
 
 ## License
 
