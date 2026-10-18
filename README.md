@@ -114,7 +114,7 @@ The build, the tests, and the release are in [Development](docs/development.md).
 
 ## How it was made
 
-The port was written with Claude (Claude Code), from 2026-10-03 to version 1.0.0 on 2026-10-17.
+The port was written with Claude (Claude Code).
 
 1. Decompile: Ghidra decompiles the FTL code modules of the Amiga v3.60 disk to C
    ([Decompiling](docs/decompiling.md)). The symbol tables in `docs/reference/` name the functions and the globals.
