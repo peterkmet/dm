@@ -95,7 +95,7 @@ More: the [file formats](docs/formats/ftl.md), the [game rules](docs/rules/game-
 - [dr_mp3](https://github.com/mackron/dr_libs) by David Reid: the MP3 decoder of the music.
 - [amitools](https://github.com/cnvogelg/amitools): the ADF extraction and the reference of the ADF reader tests.
 - [machine68k](https://github.com/cnvogelg/machine68k): the 68000 emulator of the differential tests.
-- [ReDMCSB](http://dmweb.free.fr/?q=node/1467) by Christophe Fontanel: many function and structure names of
+- [ReDMCSB](http://dmweb.free.fr/community/redmcsb/) by Christophe Fontanel: many function and structure names of
   the decompilation follow its source files.
 - [dmcsb](https://codeberg.org/CyCl0ne/DungeonMasterTools) by Cycl0ne: the reference of the `Dungeon.DAT`
   checks in the tests.
