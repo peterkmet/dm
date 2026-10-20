@@ -1,10 +1,10 @@
 #!/bin/bash
-# Build build/DungeonMaster.zip: the game and SDL3. The player adds the game disk images.
+# Build build/DMMac-macos-arm64.zip: the game and SDL3. The player adds the game disk images.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 make
-out=build/dist/DungeonMaster
-rm -rf build/dist build/DungeonMaster.zip
+out=build/dist/DMMac
+rm -rf build/dist build/DMMac-macos-arm64.zip
 mkdir -p "$out"
 cp build/dm "$out/dm"
 sdl="$(brew --prefix sdl3)/lib/libSDL3.0.dylib"
@@ -19,7 +19,7 @@ cd "$(dirname "$0")" && exec ./dm
 EOF
 chmod +x "$out/Dungeon Master.command"
 cat > "$out/README.txt" <<'EOF'
-Dungeon Master and Chaos Strikes Back for macOS (Apple Silicon).
+DMMac: Dungeon Master and Chaos Strikes Back for macOS (Apple Silicon).
 
 The game files are not included. Copy your Amiga disk images (.adf) into this folder:
 - Dungeon Master v3.60 (one disk).
@@ -33,6 +33,6 @@ versions (DOS, Atari ST, other Amiga versions) do not work: the game names the w
 
 The saved games go to game/ (Dungeon Master) and game-csb/ (Chaos Strikes Back) in this folder.
 EOF
-(cd build/dist && ditto -c -k --norsrc --keepParent DungeonMaster ../DungeonMaster.zip)
+(cd build/dist && ditto -c -k --norsrc --keepParent DMMac ../DMMac-macos-arm64.zip)
 rm -rf build/dist
-ls -lh build/DungeonMaster.zip
+ls -lh build/DMMac-macos-arm64.zip

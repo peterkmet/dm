@@ -1,7 +1,7 @@
-# Dungeon Master for macOS and Windows
+# DMMac: Dungeon Master for macOS and Windows
 
-A native C11/SDL3 port of **Dungeon Master v3.60** and **Chaos Strikes Back** for the Amiga. macOS (Apple
-Silicon) and Windows (x86-64).
+DMMac is a native C11/SDL3 port of **Dungeon Master v3.60** and **Chaos Strikes Back** for the Amiga, for macOS
+(Apple Silicon) and Windows (x86-64).
 
 <p align="center">
   <img src="docs/images/screenshot.png" alt="Dungeon Master in the port: a corridor that ends in a door">
@@ -29,8 +29,8 @@ versions) do not work. The game recognizes the disks by their content, not by th
 
 ## Play
 
-Download the [latest release](https://github.com/peterkmet/dm/releases/latest): `DungeonMaster.zip` (macOS)
-or `DungeonMaster-win.zip` (Windows). Unpack it and copy your `.adf` disk images into the folder.
+Download the [latest release](https://github.com/peterkmet/dmmac/releases/latest): `DMMac-macos-arm64.zip` or
+`DMMac-windows-x64.zip`. Unpack it and copy your `.adf` disk images into the folder.
 
 - macOS: remove the quarantine, then start `Dungeon Master.command`.
 

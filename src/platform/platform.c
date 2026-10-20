@@ -64,7 +64,7 @@ static bool SDLCALL on_expose(void *userdata, SDL_Event *ev)
 
 bool plat_init(int scale)
 {
-    if (!SDL_Init(SDL_INIT_VIDEO) || !SDL_CreateWindowAndRenderer("Dungeon Master", SCREEN_W * scale, SCREEN_H * scale,
+    if (!SDL_Init(SDL_INIT_VIDEO) || !SDL_CreateWindowAndRenderer("DMMac", SCREEN_W * scale, SCREEN_H * scale,
                                                                   SDL_WINDOW_RESIZABLE, &plat.window, &plat.renderer)) {
         SDL_Log("SDL: %s", SDL_GetError());
         return false;

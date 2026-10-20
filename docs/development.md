@@ -84,8 +84,8 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 1. In `CHANGELOG.md`, move the entries of "Unreleased" under a new heading `## X.Y.Z - YYYY-MM-DD`.
 2. Set `version` in `pyproject.toml` to the same number. Run `uv lock`.
 3. `make check`.
-4. `make dist` builds `build/DungeonMaster.zip` (macOS: the game and SDL3, without game files).
-5. `make dist-win` builds `build/DungeonMaster-win.zip` (`dm.exe` and `SDL3.dll`).
+4. `make dist` builds `build/DMMac-macos-arm64.zip` (the game and SDL3, without game files).
+5. `make dist-win` builds `build/DMMac-windows-x64.zip` (`dm.exe` and `SDL3.dll`).
 6. Commit `CHANGELOG.md`, `pyproject.toml`, and `uv.lock` with the message `docs: version X.Y.Z`.
 7. `git tag vX.Y.Z`.
 8. The owner pushes the branch and the tag.
@@ -94,7 +94,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 10. The owner creates the release:
 
     ```sh
-    gh release create vX.Y.Z build/DungeonMaster.zip build/DungeonMaster-win.zip --notes-file <notes>
+    gh release create vX.Y.Z build/DMMac-macos-arm64.zip build/DMMac-windows-x64.zip --notes-file <notes>
     ```
 
 ### New zips of a released version
@@ -108,6 +108,6 @@ A change that keeps the version number replaces the zips of its release:
 
    ```sh
    git tag -f vX.Y.Z && git push -f origin vX.Y.Z
-   gh release upload vX.Y.Z build/DungeonMaster.zip build/DungeonMaster-win.zip --clobber
+   gh release upload vX.Y.Z build/DMMac-macos-arm64.zip build/DMMac-windows-x64.zip --clobber
    gh release edit vX.Y.Z --notes-file <notes>
    ```

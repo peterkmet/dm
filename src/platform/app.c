@@ -193,7 +193,7 @@ static bool fail(const char *format, ...)
     vsnprintf(text, sizeof text, format, args);
     va_end(args);
     SDL_Log("%s", text);
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Dungeon Master", text, NULL);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "DMMac", text, NULL);
     return false;
 }
 
