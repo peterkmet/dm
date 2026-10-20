@@ -1,7 +1,7 @@
 # C port coding standard
 
 The C port is a readable reimplementation of the game. It is not a cleaned-up decompiler listing. The tests
-prove that the behavior matches the original. This standard makes the code readable and keeps it that way.
+prove that the behavior matches the original.
 
 Every rule names its check in `tests/standard/test_standard.py` in brackets, or says "review only" when no
 mechanical check is possible, or names its exception. `tests/standard/allowlist.txt` holds the accepted
@@ -35,7 +35,7 @@ this document names.
 8. Each header states its prefixes in one comment line, `/* Prefixes: rec_ */`. A prefix belongs to one
    module; no prefix starts with the prefix of another module. [prefix]
 9. `src/third_party/` is vendored code, the one folder of `src/` outside the layers. The folder is outside every check,
-   also the format check. [layer]
+   including the format check. [layer]
 
 ## 2. Headers and includes
 
@@ -313,5 +313,3 @@ dependency group (version 23). [format]
 | `tests` | a `from test_` import, a machine path, a clang call in `tests/` |
 | `format` | a file that `clang-format --dry-run --Werror` reports |
 | `allowlist` | an allowlist line with a reason that this document does not name |
-
-A reader who knows Dungeon Master can understand each function without opening the decompiled code.

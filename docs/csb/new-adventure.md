@@ -1,6 +1,6 @@
 # Chaos Strikes Back: new adventure
 
-This page describes how the original Chaos Strikes Back (CSB) for the Amiga starts a new game. It covers the menu flow, the format of `MINI.DAT`, the merge that makes `CSBGAME.DAT`, and the champion selection in the prison.
+How the original Chaos Strikes Back (CSB) for the Amiga starts a new game: the menu flow, the format of `MINI.DAT`, the merge that makes `CSBGAME.DAT`, and the champion selection in the prison.
 
 The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and `reference/decomp/csb-b/` (disk B) (base `0x100000`). All addresses are code addresses in these images. "CEDT" means `reference/decomp/csb-b/CEDT.bin` (disk B). "APPB A" means `reference/decomp/csb-a/APPB.bin` (disk A). Ghidra drops the arguments of calls through the `A5` jump table, so the claims come from the disassembly, not from the `.c` files.
 
@@ -15,7 +15,7 @@ The sources are the decompiled modules in `reference/decomp/csb-a/` (disk A) and
 
 The dungeon text in the prison says the same: "FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." (text strings 24 and 25 of disk A `Dungeon.DAT`, read with `dmcsb`).
 
-`MINI.DAT` is not encrypted with a special scheme and is not compressed. It uses the cipher of the DM save file ([save.md](../formats/save.md)) with a header that is moved by 2 bytes. CEDT does not change or randomize the dungeon.
+`MINI.DAT` uses the cipher of the DM save file ([save.md](../formats/save.md)), not a special one, with a header that is moved by 2 bytes. It is not compressed. CEDT does not change or randomize the dungeon.
 
 ## Modules
 
@@ -158,7 +158,7 @@ Then for each champion (record offsets of [game-state.md](../rules/game-state.md
 | `temporary_experience` of each skill | 0 |
 | All 30 slots | `0xffff`: the champion has no objects |
 
-Before a slot is cleared, `0x104cca` removes the stat bonus of the object from the champion. This call changes the record in slot 0, not the copy in slot 1. Thus a DM champion keeps an object bonus in the new adventure. The prison has no objects, so a prison party is not affected. This is an observation from the code. The test below does not cover an object with a bonus.
+Before a slot is cleared, `0x104cca` removes the stat bonus of the object from the champion. This call changes the record in slot 0, not the copy in slot 1. Thus a DM champion keeps an object bonus in the new adventure. The prison has no objects, so a prison party is not affected. The merge test does not cover an object with a bonus (UNVERIFIED).
 
 At the end, `0x1062b8` gives a champion a new cell when another champion has the same cell. The new cell is the lowest cell that no champion uses (`0x105bf0`).
 

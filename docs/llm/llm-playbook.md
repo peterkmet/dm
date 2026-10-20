@@ -15,7 +15,7 @@ Your files in `playthroughs/current/player/` are your memory. Keep each file sho
 | `map_L<n>.md` | Your map of level `n`: keys and locks, switches, hidden plates, pits, teleporters, stairs, creatures, puzzles. |
 | `spells.md` | Each spell you found: runes, mana cost, effect, who can cast it. |
 | `bestiary.md` | Each creature: where you met it, how strong it is, what works against it. |
-| `bugs.md` | What looks wrong in the game (this port is under test). |
+| `bugs.md` | What looks wrong in the game. |
 
 ## The party
 
@@ -123,9 +123,8 @@ This port is under test. When something looks wrong, write it in `bugs.md` with 
 - Each call costs tokens. Use `--brief` for each call. Plan several steps per call: a whole route or a whole fight in one `act_many`, a long rest in one `wait`. Keep your text and your thinking per call short: do not repeat the state, decide the next steps.
 - Plan a corridor or a fight in one `act_many` call. It stops early when something happens (see [Batches](#batches)). Check why it stopped before you continue.
 - One `wait` with many ticks stops by itself on damage, a new creature, or a message.
-- A script may compute a route or an action list from `get_map` and send it as one `act_many`.
 - A script must not loop over `get_state`, `get_view`, `wait`, or `choose_action`: each turn is your decision.
-- Ask for `get_map` only when you plan a route: one `get_map` per route plan, not one per step. A script reads the map once and sends the whole route. The `act`, `act_many`, and `wait` responses already contain the state and the view.
+- Ask for `get_map` only when you plan a route: one `get_map` per route plan, not one per step. A script reads the map once and sends the whole route as one `act_many`. The `act`, `act_many`, and `wait` responses already contain the state and the view.
 - The view gives wall texts (`text`) and the picture of each lock (`lock`). Use screenshots only to check a suspected bug.
 - Chosen runes stay after a stopped or failed cast. Before you add runes, check `state.spell.chosen` and send `delete_rune` until it is empty.
 
@@ -307,7 +306,8 @@ An object is `{name, kind}`. A scroll that a champion holds also has `text`.
 
 - `squares[]`: the visible squares, `depth` 0-3 and `side` `left`, `center`, `right`. Each has `x`, `y`, `element` (`wall`, `floor`, `door`, `pit`, `stairs_up`, `stairs_down`, `teleporter`). A door has `door` and `button`. A square that is not a wall has `objects[]` (`cell`, `name`), `flying[]` (projectiles and explosions), and `creatures` (`type`, `count`) when a group is there. From depth 1, a floor square has `floor_ornament` when the view draws one: `grate`, `pressure_pad`, `moss`, `round_grate`, `round_pressure_pad`, `flame_pit`, `crack`, `tiny_pressure_pad`, or `puddle` (the index of the floor ornament graphics of the game). Another ornament gives its index as a number. The view draws no floor ornament on the party row, and a floor sensor without an ornament shows nothing, as on the screen.
 - A `flying` entry is `{kind, name}`. A projectile has `kind` `projectile` and the object name, or `spell`. An explosion has `kind` `explosion`, `type` (the number of the game), and `name`: `fireball`, `slime`, `lightning`, `harm_non_material`, `open_door`, `poison_bolt`, `poison_cloud`, `smoke`, `fluxcage`, or `rebirth`. Another type gives its number as `name`.
-- A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`. `facing` is the direction that the face points to. `switch` is a button or a lever. `lock` takes or holds an object: a keyhole or a slot. Its value names the picture, for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, or `coin_slot`; a picture without a name gives its index in the wall ornament graphics. `torch_holder` is a wall holder for a torch. `ornament` is another ornament, also named by its picture, for example `creeper` or `manacles`. The faces are the faces that the dungeon view draws: the front face of a center wall from depth 1, the side face of a side wall from depth 1, and also the front face of a side wall from depth 2. The view draws no ornaments on the side walls of depth 0, so these have no faces.
+- A wall has `front_face` (the side that faces the party) and `side_face` (the side that faces the lane of the party) when the face shows something. A face is `{facing, text?, mirror?, switch?, lock?, torch_holder?, alcove?, fountain?, vi_altar?, ornament?}`. `facing` is the direction that the face points to. `switch` is a button or a lever. `lock` takes or holds an object: a keyhole or a slot. Its value names the picture, for example `iron_lock`, `gold_lock`, `sun_lock`, `eye_socket`, `gem_hole`, or `coin_slot`; a picture without a name gives its index in the wall ornament graphics. `torch_holder` is a wall holder for a torch. `ornament` is another ornament, also named by its picture, for example `creeper` or `manacles`.
+- The faces are the faces that the dungeon view draws: the front face of a center wall from depth 1, the side face of a side wall from depth 1, and the front face of a side wall from depth 2. The side walls of depth 0 have no faces.
 - `piles[]`: `{cell, top, objects}` for each pile that `take_object` can reach now. `objects` lists every object of the pile, top first. `take_object` takes `objects[0]`, the same object as `top`.
 - `wall_ahead_clickable`, `alcove`, `fountain`, `vi_altar`.
 

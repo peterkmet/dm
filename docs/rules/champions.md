@@ -1,6 +1,6 @@
 # Champion rules
 
-This page describes the champion rules of the C port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `src/engine/champion.c` and `src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](../reference/kaos-symbols.csv). The champion record is in [game-state.md](game-state.md#champions).
+The champion rules of the port: recruiting, skills, inventory, eating and drinking, damage, death, and the time effects. The code is in `src/engine/champion.c` and `src/engine/inventory.c`. The rules follow the decompiled `KAOS.FTL` code (CHAMPION.C, the inventory part of range 5, and `process_click_on_mouth`). The original addresses are in [kaos-symbols.csv](../reference/kaos-symbols.csv). The champion record is in [game-state.md](game-state.md#champions).
 
 The port reads all game tables from the KAOS image at run time ([tables.md](tables.md)). Object record fields go through the accessors in `src/engine/include/record.h`. Icon and text numbers are in `src/data/include/ids.h`.
 
@@ -45,7 +45,7 @@ The possessions stay in the wall square list until the player accepts the candid
 
 With the first champion, the time of the last party move becomes the game time.
 
-The name entry (`champion_start_rename` … `champion_rename_ok`) clears the name and the title. No game time passes until OK. The name takes up to 7 characters; the 7th moves the input to the title. The title takes up to 19 characters. A field does not take a space as its first character. Return (next field) moves the input from a non-empty name to the title. Backspace deletes the character before the input; at the start of the title it deletes the last name character. OK does nothing while the name is empty. OK removes the trailing spaces of the name and refuses, without a message, the name of another party champion. The panel keyboard, the letter keys, Space, Backspace, `,` `.` `;` `:` and Return type; a right click anywhere types a space. Only the OK button ends the entry.
+The name entry (`champion_start_rename` … `champion_rename_ok`) clears the name and the title. No game time passes until OK. The name takes up to 7 characters; the 7th moves the input to the title. The title takes up to 19 characters. A field does not take a space as its first character. Return (next field) moves the input from a non-empty name to the title. Backspace deletes the character before the input; at the start of the title it deletes the last name character. OK does nothing while the name is empty. OK removes the trailing spaces of the name and refuses, without a message, the name of another party champion. Input comes from the panel keyboard, the letter keys, Space, Backspace, `,` `.` `;` `:` and Return; a right click anywhere enters a space. Only the OK button ends the entry.
 
 `champion_resurrect(index)` is the Vi altar rebirth. The champion takes a free cell when its cell is used, loses all objects, and gets `max(25, max_health − max_health / 64 − 1)` maximum health and half of it as current health.
 
@@ -114,11 +114,9 @@ The name entry (`champion_start_rename` … `champion_rename_ok`) clears the nam
 4. Wounds: a threshold is the vitality-adjusted value of `(random16() & 127) + 10`. While the threshold is below the attack, a random allowed body slot gets a wound and the threshold doubles.
 5. Damage wakes up a sleeping party.
 
-Sleep keeps the selected runes of the magic caster, in the original (command 145 and `champion_wake_up`) and in the port (`go_to_sleep`). The input of a sleeping party only wakes it up, so the runes do not change during sleep. Mana regeneration does not depend on the selected runes.
-
 `champion_damage_all(attack, wounds, type)` gives each champion `max(1, attack − spread + random16() % (2 × spread))` with `spread = attack / 8 + 1`. It returns the number of champions hurt.
 
-`champion_apply_pending_damage()` adds the pending wounds, subtracts the pending damage, and kills a champion at 0 health. A hurt champion gets event 12 (hide the damage) at time + 5, or the existing event moves to that time. A champion that survives keeps the damage in `damage_to_show`; after the call the game loop takes it with `champion_take_damage_to_show(index)` and draws the splat with the number on the status box (`status_draw_damage`).
+`champion_apply_pending_damage()` adds the pending wounds, subtracts the pending damage, and kills a champion at 0 health. A hurt champion gets event 12 (hide the damage) at time + 5, or the existing event moves to that time. A survivor keeps the damage in `damage_to_show`. The game loop reads it with `champion_take_damage_to_show(index)` and draws the splat on the status box (`status_draw_damage`).
 
 `champion_decrement_stamina(index, amount)`: stamina below 1 becomes 0 and gives raw damage of half the deficit. Stamina stops at the maximum.
 

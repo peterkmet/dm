@@ -53,19 +53,19 @@ Usage: dm [options]
 
 ## Start screens
 
-Without `--adventure` and `--mode`, the game asks for the adventure (DUNGEON MASTER or CHAOS STRIKES BACK) and the mode (VANILLA, ADVANCED, or LLM). CHAOS STRIKES BACK is gray when `game-csb/` is incomplete. Up and Down move the cursor, Return selects, a click selects, Escape goes back. Ctrl+Q or closing the window quits.
+Without `--adventure` and `--mode`, the game asks for the adventure (DUNGEON MASTER or CHAOS STRIKES BACK) and the mode (VANILLA, ADVANCED, or LLM). CHAOS STRIKES BACK is gray when `game-csb/` is incomplete. Up and Down move the cursor, Return selects, a click selects, Escape goes back. Ctrl+Q or closing the window ends the program at any time.
 
 Dungeon Master then shows the FTL logo, the title animation (a key or a click stops it), and the entrance. Chaos Strikes Back shows a third screen: NEW ADVENTURE, RESUME, and QUIT.
 
 ## Entrance
 
-Click ENTER or press Return to start a new game. Click RESUME to continue the saved game. QUIT goes back to the start screens. Ctrl+Q or closing the window closes the program.
+Click ENTER or press Return to start a new game. Click RESUME to continue the saved game. QUIT goes back to the start screens.
 
 ## Chaos Strikes Back
 
 1. Select NEW ADVENTURE. The game plays the intro of disk B (about 3.6 minutes; a key or a click stops it). Then the game starts in the prison.
 2. Recruit one to four champions at the 24 mirrors.
-3. Save the game. In the prison, the save makes the new adventure and continues in the CSB dungeon. The original needs a restart with the utility disk for this step. The save needs at least one champion, and each champion needs a unique first name; otherwise a dialog gives the reason.
+3. Save the game. In the prison, the save creates the new adventure and continues in the CSB dungeon. The original needs a restart with the utility disk for this step. The save needs at least one champion, and each champion needs a unique first name; otherwise a dialog gives the reason.
 
 In the advanced mode, the stairs down of the prison also start the new adventure, without a save. The automap shows the stairs down in orange and the hidden passages to them checkered. In vanilla, the stairs lead to the lower level of the prison, as in the original.
 
@@ -80,7 +80,7 @@ The game saves to `DMGAME.DAT` in `game/`; Chaos Strikes Back saves to `CSBGAME.
 - Save: click the save icon in an inventory, or press Ctrl+S. The dialog shows CANCEL, SAVE, and QUIT. QUIT ends the game; when the game was not saved in the last 100 ticks, QUIT asks first.
 - Resume: click RESUME at the entrance. A damaged file shows "THE GAME IS DAMAGED!" and the entrance again.
 - When all champions die, THE END shows. RESTART THIS GAME loads the saved game. QUIT shows the credits and the entrance.
-- The original quits the program after the credits and after a damaged save; the port shows the entrance. Only Ctrl+Q or closing the window ends the program.
+- The original quits the program after the credits and after a damaged save; the port shows the entrance.
 
 ### Save slots (advanced mode)
 
@@ -158,7 +158,7 @@ The game rules are the same in all modes.
 
 ### Options menu
 
-Escape in the dungeon view opens the menu; the game time stops. Rows: SOUND (volume 0 to 7), MUSIC VOLUME (0 to 7), MUSIC (ORIGINAL, SUPER NES, or FM-TOWNS), FILTER (NONE, SCALE2X, or SCALE3X), CONTINUE. Click `-` or `+` to change a volume, click a row for the next value; or select a row with Up and Down (W and S) and change it with Left and Right (A and D). Escape closes the menu.
+Escape in the dungeon view opens the menu; the game time stops. Rows: SOUND (volume 0 to 7), MUSIC VOLUME (0 to 7), MUSIC (ORIGINAL, SUPER NES, or FM-TOWNS), FILTER (NONE, SCALE2X, or SCALE3X), CONTINUE. Click `-` or `+` to change a volume. Click a row for its next value. Keys: Up and Down (W, S) select a row, Left and Right (A, D) change it. Escape closes the menu.
 
 The game writes the values to `SETTINGS.TXT` in the saves folder and reads them at each start of the `advanced` mode. The other modes play at full volume without music.
 

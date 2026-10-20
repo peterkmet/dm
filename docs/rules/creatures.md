@@ -1,6 +1,6 @@
 # Creature, projectile, and magic rules
 
-This page describes the creature rules of the C port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `src/engine/group.c`, `src/engine/projectile.c`, and `src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts and the original addresses. See [movement.md](movement.md) for the game loop and the timeline dispatch.
+The creature rules of the port: creature groups and their AI, creature attacks, damage and death, group generators, projectiles, explosions, fluxcages, the fuse action, and spell effects. The code is in `src/engine/group.c`, `src/engine/projectile.c`, and `src/engine/magic.c`. The rules follow KAOS range 4 (GROUP.C), range 7 (PROJEXPL.C), and range 8 (MENU.C). See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts and the original addresses. See [movement.md](movement.md) for the game loop and the timeline dispatch.
 
 ## Records
 
@@ -143,7 +143,7 @@ Event 48 or 49 (`projectile_process_move_event`) moves a projectile one cell for
 4. In a door square, a closed door stops it with an impact.
 5. The next event comes after 1 tick on the party map, 3 ticks on other maps.
 
-`has_impact_occurred(site, projectile, outcome)` runs one impact; the site holds the impact type, `at`, `target` and the cell, and `outcome` receives the damage outcome. The projectile stops at the square `at`; the creature or door hit is on the square `target` (the same square, except when the party or a group moves onto the square of a projectile: `target` is then the square it leaves):
+`has_impact_occurred(site, projectile, outcome)` runs one impact; the site holds the impact type, `at`, `target` and the cell, and `outcome` receives the damage outcome. The projectile stops at the square `at`. The creature or door hit is on the square `target`. `target` is `at`, except when the party or a group steps onto the projectile square: then `target` is the square they leave. The impact types:
 
 - Party: the champion in the cell takes `projectile_get_impact_attack` damage on the head or torso. Poison can follow.
 - Creature: damage `impact attack × 64 / creature defense` plus poison. A non-material creature takes damage only from Harm Non-Material. A Black Flame gains health from a fireball. Some creatures catch a thrown dagger, arrow, slayer, poison dart, or throwing star.

@@ -97,7 +97,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 
 | Header | Prefixes | Purpose |
 |---|---|---|
-| `ui/advanced.h` | `advanced_` | Game modes and the advanced features (not in the original game): the viewport screen state (`g_advanced_screen`: automap, options menu, cheat screen; at most one open, the game time stops), automap, quick save and quick load, WASD/QE keys, rune symbols on scrolls, coloured action icons, item stat meters, and more. |
+| `ui/advanced.h` | `advanced_` | Game modes and the advanced features (not in the original game): the viewport screen state (`g_advanced_screen`: automap, options menu, cheat screen; at most one open, the game time stops), automap, quick save and quick load, WASD/QE keys, rune symbols on scrolls, colored action icons, item stat meters. |
 | `ui/anim.h` | `anim_` | The animation player of ANIM.FTL for the chunk files (CSB ENDA.DAT). |
 | `ui/audio.h` | `audio_` | The audio output: four Paula voices in two stereo pairs, the CSB intro music, and the mixer that platform/ calls on the game thread; it scales the mix by the sound volume and passes it through a low-pass filter like the Amiga LED filter. |
 | `ui/automap.h` | `automap_` | Automap (not in the original game): draws the squares the party has seen (engine/explored owns them) as a top-down map. |
@@ -157,7 +157,7 @@ paragraph. A module with several `.c` files has one `<module>_internal.h` for it
 
 1. The input: `plat_poll` reads the SDL events. On the start screens they go to `select_click` and
    `select_key`; in the game they become commands (`command_process_key`, `command_process_click`). In
-   turn-based mode the keyboard and the mouse are ignored from the entrance on; the start screens still read them.
+   turn-based mode the game ignores the keyboard and the mouse from the entrance on; the start screens still read them.
 2. `transport_poll` reads the control socket (see [The control socket and the turn](#the-control-socket-and-the-turn)).
 3. The screen of the run: a start screen (`select_screen`, `select_draw`), the entrance, or
    `gameloop_run_frame` (`ui/gameloop.c`). `gameloop_run_frame` runs the queued commands and tells if the

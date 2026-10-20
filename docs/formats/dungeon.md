@@ -1,6 +1,6 @@
 # Dungeon.DAT format
 
-This page describes the `Dungeon.DAT` format as `src/engine/dungeon.c` implements it. The port follows `load_dungeon` (`0x1260ee`) in `KAOS.FTL`. The language variants `DungeonF.DAT` and `DungeonG.DAT` use the same format.
+The `Dungeon.DAT` format as `src/engine/dungeon.c` implements it. The port follows `load_dungeon` (`0x1260ee`) in `KAOS.FTL`. The language variants `DungeonF.DAT` and `DungeonG.DAT` use the same format.
 
 All words and longs are big-endian. "Word" means 16 bits.
 

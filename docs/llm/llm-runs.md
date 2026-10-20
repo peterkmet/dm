@@ -1,6 +1,6 @@
 # LLM runs
 
-This page shows how to run an LLM playthrough of the game with a coordinator and players.
+How to run an LLM playthrough of the game with a coordinator and players.
 
 ## Goal of the runs
 

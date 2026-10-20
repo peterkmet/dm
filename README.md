@@ -10,19 +10,17 @@ for macOS (Apple Silicon) and Windows (x86-64).
 
 This repository contains no game data. You must provide your own Amiga disk images (`.adf`): Dungeon Master
 v3.60 (1 disk) and optionally Chaos Strikes Back (disks A and B). DOS, Atari ST, and other Amiga releases are
-not supported. Disks are identified by content rather than filename.
+not supported. The game identifies a disk by its content, not by its file name.
 
 ## Features
 
-- **Full campaigns:** Both Dungeon Master and Chaos Strikes Back are playable in full (Dungeon Master verified
-  by a complete playthrough to the defeat of Lord Chaos).
-- **Vanilla mode:** Faithful original rules, timing, and interface.
+- **Full campaigns:** Both Dungeon Master and Chaos Strikes Back are playable to the end.
+- **Vanilla mode:** The original rules, timing, and interface.
 - **Advanced mode:** Automap, in-game options menu (volume, music, upscale filter), 8 save slots, quick save/load,
   cheat screen, WASD movement, 8 simultaneous sounds, FM-Towns and Super NES soundtracks, and direct entry to
   Chaos Strikes Back from the prison stairs.
-- **LLM mode (macOS):** Turn-by-turn programmatic control over a Unix domain socket for scripts and language
-  models.
-- **Display scaling:** Dynamic window resizing with `scale2x` and `scale3x` pixel-art filters.
+- **LLM mode (macOS only):** A program plays the game over a Unix socket, one turn per request.
+- **Display scaling:** Window resizing with the `scale2x` and `scale3x` pixel-art filters.
 
 ## Play
 
@@ -40,8 +38,8 @@ Download the [latest release](https://github.com/peterkmet/dmmac/releases/latest
 - **Windows 10+:** Run `dm.exe`. If Windows SmartScreen warns about an unknown publisher, select "More info",
   then "Run anyway".
 
-On first launch, the engine extracts the disk images into `game/` and `game-csb/`. Save files are stored in the
-same folders using the original Amiga binary format.
+On first launch, the game extracts the disk images into `game/` and `game-csb/`. The saves go to the same
+folders, in the original Amiga format.
 
 Keys of the advanced mode (in the dungeon view):
 
@@ -65,9 +63,8 @@ DM_CONTROL=/tmp/dm.sock uv run dm-play act move_forward
 ```
 
 The `dm-mcp` server exposes the control socket over the Model Context Protocol (MCP) for clients such as Claude
-Code. Protocol specifications, available actions, and setup instructions are covered in
-[LLM Mode](docs/llm/llm-mode.md). Multi-agent playthroughs (using coordinator and player agents) are documented
-in [LLM Runs](docs/llm/llm-runs.md).
+Code. [LLM mode](docs/llm/llm-mode.md) has the protocol, the actions, and the setup. [LLM runs](docs/llm/llm-runs.md)
+describes playthroughs with a coordinator and player agents.
 
 ## Build
 
@@ -86,27 +83,24 @@ for codebase structure, and [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Engineering
 
-DMMac is a native C11 engine that runs the Amiga releases of Dungeon Master and Chaos Strikes Back without
-emulation. The port was developed with Claude Code in four stages:
+The port was developed with Claude Code in four stages:
 
-1. **Decompilation:** The original 68000 FTL binary modules were decompiled to C using Ghidra
-   ([Decompiling](docs/decompiling.md)), with function and global variable names mapped via the symbol tables
-   in `docs/reference/`.
-2. **Reimplementation:** Game logic was rewritten in C11 strictly from the decompilation, without using code
-   from other ports.
+1. **Decompilation:** Ghidra decompiled the 68000 FTL modules to C ([Decompiling](docs/decompiling.md)). The
+   symbol tables in `docs/reference/` name the functions and globals.
+2. **Reimplementation:** The game logic was rewritten in C11 from the decompilation alone, without code from
+   other ports.
 3. **Differential verification:** Automated tests execute ported C functions alongside the original 68000 code
    in an emulator using identical inputs and compare the resulting state. Golden snapshots validate save files,
    viewport rendering, and game mechanics.
-4. **Refactoring:** Subsequent passes preserved exact runtime behavior while introducing named constants, typed
-   accessors, a five-layer architecture, automated coding-standard checks, and a test suite audit.
+4. **Refactoring:** Later passes added named constants, typed accessors, the five layers, and the automated
+   coding-standard checks. The game behavior did not change.
 
-[ReDMCSB](http://dmweb.free.fr/community/redmcsb/) is Christophe Fontanel's reconstruction of the original 68000 source code, which compiles back into bit-identical Amiga and
-Atari ST binaries. DMMac does not use its code: the game logic comes from DMMac's own decompilation (stage 2). DMMac
-adopts ReDMCSB's function and structure names, which keeps the two code bases easy to compare.
+[ReDMCSB](http://dmweb.free.fr/community/redmcsb/) is Christophe Fontanel's reconstruction of the original 68000
+source. It compiles to bit-identical Amiga and Atari ST binaries. DMMac takes only the function and structure
+names from ReDMCSB, which keeps the two code bases easy to compare.
 
-Additional technical documentation covers [FTL file formats](docs/formats/ftl.md),
-[game state rules](docs/rules/game-state.md), [Chaos Strikes Back internals](docs/csb/data.md), and the
-[KAOS map](docs/reference/kaos-map.md).
+More: [FTL file format](docs/formats/ftl.md), [game state](docs/rules/game-state.md),
+[Chaos Strikes Back data](docs/csb/data.md), [KAOS module map](docs/reference/kaos-map.md).
 
 ## Acknowledgements
 

@@ -65,7 +65,7 @@ After the auto-analysis, `decompile.sh` runs these Ghidra scripts in this order:
 
 ## Known limitations
 
-- Some decompiled code still contains `>> 0x10` casts, for example `(short)((uint)x >> 0x10)`. `grep -c '>> 0x10' reference/decomp/dm/KAOS.c` gives 92 lines (281 lines without `InferParams.java` and `ResolveJumpTable.java`). Most of these lines are the high word of a 32-bit value in D0 or D1, for example in `CONCAT22` or `in_D0 >> 0x10`.
+- Some decompiled code still contains `>> 0x10` casts, for example `(short)((uint)x >> 0x10)`. About 90 lines keep such a cast. Most of these lines are the high word of a 32-bit value in D0 or D1, for example in `CONCAT22` or `in_D0 >> 0x10`.
 - The decompiled C does not compile. Names, types, and register calling conventions still need work.
 
 ## Related pages

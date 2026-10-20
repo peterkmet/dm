@@ -1,6 +1,6 @@
 # Ideas for later
 
-Ideas for later versions. None is planned.
+None of these is planned.
 
 ## Small cleanups
 

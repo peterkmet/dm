@@ -1,8 +1,6 @@
 # KAOS ranges 1–3: notes for the C port
 
-This page uses the original KAOS names; the port names differ.
-
-This page covers the functions of `KAOS.FTL` from `0x104e6c` to `0x10a3a6` (ranges 1, 2, and 3 of the [function partition](../kaos-map.md#function-partition)). The symbols are in [kaos-symbols.csv](../kaos-symbols.csv). The page describes what each group does, the data structures, and the facts that a C porter must know.
+The functions of `KAOS.FTL` from `0x104e6c` to `0x10a3a6` (ranges 1, 2, and 3 of the [function partition](../kaos-map.md#function-partition)). The symbols are in [kaos-symbols.csv](../kaos-symbols.csv). The names are the original KAOS names; the port names differ. For each group: what it does, the data structures, and the facts the port needs.
 
 All addresses are for the image that `uv run dm-ftl game/KAOS.FTL <out.bin>` creates. `A5` holds `0x104160`.
 
@@ -107,7 +105,7 @@ The port replaces this group with a save directory and returns fixed values.
 - `file_seek(fh, pos)` seeks from the start and always returns −1.
 - `file_tell(fh)` (`0x10625a`) returns the current position. It does not move. No code calls it.
 - `file_size` seeks to the end and back.
-- `file_read`, `file_write` return 1 when all bytes transfer. Note the parameter order: handle, size, buffer.
+- `file_read`, `file_write` return 1 when all bytes transfer. The parameter order is handle, size, buffer.
 
 The port maps these functions to `fopen`, `fseek`, `ftell`, `fread`, `fwrite`.
 

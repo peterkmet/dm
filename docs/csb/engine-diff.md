@@ -1,6 +1,6 @@
 # CSB engine compared with the DM engine
 
-This page lists the differences between the Chaos Strikes Back (CSB) engine and the Dungeon Master v3.60 (DM) engine that matter to the C port in `src/`.
+The differences between the Chaos Strikes Back (CSB) engine and the Dungeon Master v3.60 (DM) engine that matter to the port.
 
 - DM engine: `game/KAOS.FTL`. Image `reference/decomp/dm/KAOS.bin`, base `0x100000`, data base (A5) `0x104160`. Names: [kaos-symbols.csv](../reference/kaos-symbols.csv).
 - CSB engine: `game-csb/APPB.FTL`. Image `reference/decomp/csb-a/APPB.bin`, base `0x100000`, data base (A5) `0x10511e`, code base `0x105ede`. Names: [csb-appb-symbols.csv](../reference/csb-appb-symbols.csv).

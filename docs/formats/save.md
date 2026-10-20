@@ -1,13 +1,13 @@
 # Save file format
 
-This page describes the Dungeon Master v3.60 save file `DMGAME~.DAT` and the C code that reads and writes it. The original routines are `save_game` (`0x125a44`) and `load_game` (`0x1265d4`) in `KAOS.FTL`.
+The Dungeon Master v3.60 save file `DMGAME~.DAT` and the port code that reads and writes it. The original routines are `save_game` (`0x125a44`) and `load_game` (`0x1265d4`) in `KAOS.FTL`.
 
 The C code has two layers:
 
 - `src/engine/savefile.c` handles the container: the header, the cipher, and the checksums.
 - `src/engine/savegame.c` copies the game state into the blocks and back. `src/engine/dungeon.c` writes and reads the dungeon part.
 
-The English version removes `~` from the file name. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT` with the backups `DMGAME2.BAK` to `DMGAME8.BAK` (CSB: `CSBGAME`). The slot list reads each file without a load: it strips the extension blocks with the rules of `savegame_load_from`, decodes the rest, checks the byte sum word after the dungeon parts with the rule of the load (only when two or more bytes follow the parts), and reads the level of the party map (`savegame_read_slot_info`). A file that fails these checks shows DAMAGED.
+The English version removes `~` from the file name. The port writes `DMGAME.DAT` and `DMGAME.BAK`. The save slots of the advanced mode use the same format: slot 1 is `DMGAME.DAT`, slots 2 to 8 are `DMGAME2.DAT` to `DMGAME8.DAT` with the backups `DMGAME2.BAK` to `DMGAME8.BAK` (CSB: `CSBGAME`).
 
 ## Byte order
 
@@ -47,7 +47,7 @@ The header has 512 bytes. Offsets are bytes from the start of the file.
 | `0x178` | 2 | Dungeon ID. 10 for the Dungeon Master dungeon. |
 | `0x17a` | 134 | `g_save_header_extra`. The original copies it unchanged. |
 
-The offsets from `0x12a` to `0x1ff` are in the payload. You read them only after decryption.
+The offsets from `0x12a` to `0x1ff` are in the payload. They are readable only after decryption.
 
 ### Header chain
 
@@ -223,7 +223,18 @@ The random header words come after the copy of the globals. Thus the saved rando
 
 When a file is damaged, the dungeon does not load and some globals can change. The entrance starts a new game from `Dungeon.DAT`, which sets all state again.
 
-`gameloop_start_loaded_game` then does the rest of `start_game`: it makes the party map current (`group_remove_all_active_groups`, `map_set_party_map`, `group_add_all_active_groups`), shows "GAME LOADED, READY TO PLAY.", draws the interface, and runs `champion_reset_for_new_game`: the hand object goes back into the hand, `champion_set_leader` adds its weight to the leader load again, and the magic caster comes back.
+`gameloop_start_loaded_game` then does the rest of `start_game`:
+
+1. Makes the party map current (`group_remove_all_active_groups`, `map_set_party_map`, `group_add_all_active_groups`).
+2. Shows "GAME LOADED, READY TO PLAY." and draws the interface.
+3. Runs `champion_reset_for_new_game`: the hand object goes back into the hand, `champion_set_leader` adds its weight to the leader load again, and the magic caster comes back.
+
+The slot list (`savegame_read_slot_info`) reads each file without a load:
+
+1. Strips the extension blocks with the rules of `savegame_load_from`.
+2. Decodes the rest.
+3. Checks the byte sum word after the dungeon parts, as the load does (only when two or more bytes follow the parts).
+4. Reads the level of the party map. A file that fails a check shows DAMAGED.
 
 ### Block contents
 
@@ -235,7 +246,7 @@ When a file is damaged, the dungeon does not load and some globals can change. T
 
 ### Extension blocks
 
-The port adds extension blocks after the original save data outside the vanilla mode. The original part stays the same as a vanilla save; a vanilla save has no extension. Each block is followed by its length as a big-endian long:
+The port adds extension blocks after the original save data outside the vanilla mode. The original part is the same as a vanilla save. Each block is followed by its length as a big-endian long:
 
 ```
 [original save data][cheat block][length][automap block][length]

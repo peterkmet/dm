@@ -1,8 +1,6 @@
 # KAOS module map
 
-This page uses the original KAOS names; the port names differ.
-
-This page describes the structure of `KAOS.FTL`, the main game module of Dungeon Master v3.60 for the Amiga. The names come from [kaos-symbols.csv](kaos-symbols.csv). Many names follow the structure of ReDMCSB, because the function order in KAOS matches the order of the DM source files.
+The structure of `KAOS.FTL`, the main game module of Dungeon Master v3.60 for the Amiga. The names are the original KAOS names; the port names differ. The names come from [kaos-symbols.csv](kaos-symbols.csv). Many names follow the structure of ReDMCSB, because the function order in KAOS matches the order of the DM source files.
 
 All addresses are for the image that `uv run dm-ftl game/KAOS.FTL <out.bin>` creates. The [FTL module format](../formats/ftl.md) page describes the loader.
 
@@ -235,6 +233,3 @@ The linker keeps the source file order. The export numbers form groups that foll
 | 7 | `0x116a4e` | `0x11d7f0` | 67 | Blitter, dungeon view, projectiles, explosions, group movement helpers | Medium | Exports 270–277, 307–320. Blitter registers, 16 square drawing functions. |
 | 8 | `0x11d842` | `0x123ae2` | 101 | Movement, sensors, timeline, commands, action and spell menus | Medium | Exports 294–306, 321–336. `timeline_process`, `command_process_queue`. |
 | 9 | `0x123ba6` | `0x127e34` | 115 | OS stubs (70), dialogs, endgame, save and load, entrance, start | High | Exports 337–412. Alphabetical LVO stubs, `DMGAME~.DAT`, checksums. |
-
-## Open questions
-

@@ -1,8 +1,6 @@
 # KAOS ranges 7–9: symbol notes
 
-This page uses the original KAOS names; the port names differ.
-
-This page describes the functions of `KAOS.FTL` in partition ranges 7, 8, and 9 of the [module map](../kaos-map.md): `0x116a4e`–`0x127e34`. The symbols are in [kaos-symbols.csv](../kaos-symbols.csv). The CSV has one row for each of the 283 functions and rows for the globals that these functions own. For a global, the column `signature` holds the C type.
+The functions of `KAOS.FTL` in partition ranges 7, 8, and 9 of the [module map](../kaos-map.md): `0x116a4e`–`0x127e34`. The symbols are in [kaos-symbols.csv](../kaos-symbols.csv). The names are the original KAOS names; the port names differ. The CSV has one row for each of the 283 functions and rows for the globals that these functions own. For a global, the column `signature` holds the C type.
 
 Signatures use 16-bit types for word arguments, because the original `int` is 16 bits. Struct names (`TimelineEvent`, `Group`, `Champion`, `Projectile`, `Teleporter`, `FieldAspect`) refer to the records that this page describes.
 
@@ -212,7 +210,6 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 
 ### Notes on globals of other ranges
 
-- `g_creature_info` is at `0x10192e`. The code reads the 26-byte creature record at `0x10192e + 26 * type`. `0x101930` is offset 2 (attributes).
 - `0x101d26` is `g_thing_data[15]` (explosion records).
 - `0x101ed6` is the party thieves eye counter. `0x101f2a` is the party invisibility counter. Both are in the party record (range 5/6).
 - `0x1001d4`–`0x1001d9` are memory and sound options (range 9 names them as memory options).
@@ -293,7 +290,6 @@ Algorithm:
 
 `move_get_creature_sound(type)` returns -1 when the party sleeps or the creature has no sound. Otherwise it reads the sound ordinal from creature record byte 1 and maps it through the word table at `0x101bea` (low byte).
 
-Note for range 4: `g_creature_info` (`0x10192e`) has 26-byte records. Offset 1 holds the sound ordinal, offset 6 the movement ticks, offset 0x10 the properties word (fear resistance in bits 4–7).
 
 ### Sensors (`sensor_*`)
 

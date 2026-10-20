@@ -1,6 +1,6 @@
 # Chaos Strikes Back data files
 
-This page compares the data files of Chaos Strikes Back (CSB) for the Amiga with the files of Dungeon Master (DM) v3.60. It also names the port module that reads each CSB file.
+The data files of Chaos Strikes Back (CSB) for the Amiga compared with the files of Dungeon Master (DM) v3.60, and the port module that reads each CSB file.
 
 Inputs:
 
@@ -130,7 +130,7 @@ Content:
 - Map 0 has 24 mirrors: wall sensors of type 127 with data 0–23. Each mirror has a text with a champion sheet. The champions are AIRWING, AROC, TALON, LETA, DEMA, ALGOR, TOADROT, VEN, MANTIA, GNATU, SLOGAR, STING, SKELAR, DETH, NECRO, PLAGUE, TUNDA, LANA, BUZZZZZ, PETAL, ITZA, TULA, KAZAI, LOR.
 - 6 mirrors have a second sensor: type 1, once only, effect 1, target the door at (1, 14) or (19, 2). The meaning in the CSB rules is unverified.
 - One visible text on the floor of (9, 2), two squares south of the start, says "THERE IS ONLY ONE LEVEL HERE. FIRST CHOOSE YOUR CHAMPIONS...THEN SAVE THE GAME...THEN RESTART WITH THE UTILITY DISK." The game prints it when the party enters the square. The other 24 texts of map 0 are the champion sheets of the mirrors (not visible).
-- Stairs down on map 0 (all to map 1): (19, 7) and (6, 15) can be reached from the start: through the imaginary wall at (15, 6) and the closed door with a button at (18, 6), and through the imaginary wall at (8, 14) and the closed door with a button at (7, 15). (19, 3) and (1, 15) are closed in, each with an open door north of it: (19, 1)-(19, 3) and (1, 13)-(1, 15) have no other exit (read with the port map accessors, 2026-10-17).
+- Stairs down on map 0 (all to map 1): (19, 7) and (6, 15) can be reached from the start: through the imaginary wall at (15, 6) and the closed door with a button at (18, 6), and through the imaginary wall at (8, 14) and the closed door with a button at (7, 15). (19, 3) and (1, 15) are closed in, each with an open door north of it: (19, 1)-(19, 3) and (1, 13)-(1, 15) have no other exit (read with the port map accessors).
 - Map 1 has no texts or sensors. It has 12 creature groups: 7 of type 10, 5 of type 7.
 
 The CSB `load_dungeon` is at `0x1295a0`. It follows the DM loader. One addition: before it builds the column pointers, it compares a value from `0xa02(A5)` with `DAT_00129a42`. When the values differ, it does not build the column pointers. This is probably a copy-protection check (unverified).
@@ -257,7 +257,7 @@ and sets the counter to its time. After a stop the loop waits for the counter ag
 music. So a click keeps the shown frame for the rest of its time, shows one more frame for its full time, and then
 fades the music for 87 ticks (1.7 s). `ANIM.DAT` has frames of up to 536 ticks (10.7 s; the title pictures of the
 first minute). The port stops after the rest of the shown frame and does not show the next frame; then it fades
-the music as in the original. Measured in the port (2026-10-17): a click 8.6 s before the end of a long frame starts
+the music as in the original. Measured in the port: a click 8.6 s before the end of a long frame starts
 the prison 10.3 s later; a click in a short frame, 1.9 s later. Loading the prison takes 30 ms. In the advanced mode the port stops at once (`anim_set_stop_at_once`), then fades the music.
 
 `NAKED.AMG` is not a tracker or MIDI file. All words are big-endian:

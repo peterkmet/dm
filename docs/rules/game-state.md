@@ -1,6 +1,6 @@
 # Game state
 
-This page describes the game state of the C port: the structs and globals in `src/engine/include/game.h` and `src/engine/include/random.h`. It gives the original KAOS address of each item. The names come from [kaos-symbols.csv](../reference/kaos-symbols.csv). The field meanings come from [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md).
+The game state of the port: the structs and globals in `src/engine/include/game.h` and `src/engine/include/random.h`. It gives the original KAOS address of each item. The names come from [kaos-symbols.csv](../reference/kaos-symbols.csv). The field meanings come from [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md).
 
 The port uses native C types for this state. It does not keep the big-endian byte layout. The dungeon data from `dungeon.c` keeps the big-endian layout, see [Dungeon.DAT format](../formats/dungeon.md). A save file reader or writer must convert between the two layouts.
 
@@ -179,7 +179,6 @@ A free slot keeps the index of the next free slot in `map_time`. The value `0xff
 - New type 2 (door destruction): every type 1 and type 10 event with the same `b` and the same map is deleted. The function returns −1.
 - Other new types do not merge.
 
-Note: [range-7-9.md](../reference/symbols/range-7-9.md) says that "any other new type" deletes a type 1 event. The code does this only for new types 5–10.
 
 ## Active creature groups
 

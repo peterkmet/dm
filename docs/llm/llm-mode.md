@@ -53,7 +53,7 @@ build/dm --adventure csb --mode turnbased --control ~/.dm/control.sock
 The game selects NEW ADVENTURE at the start. `new_game` starts it again. `state.adventure` is `"csb"`.
 
 1. The game starts in the prison (map 0, square 9,0). Recruit up to four champions at the mirrors, as in Dungeon Master.
-2. Send `save`. In the prison, the save makes the adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, and continues at the start of the CSB dungeon (map 4).
+2. Send `save`. In the prison, the save creates the adventure: the save merges the party with `disk-b/MINI.DAT`, writes `CSBGAME.DAT`, and continues at the start of the CSB dungeon (map 4).
 3. The response of `save` is `{"ok":true}` only. Send `get_state` to see the new position.
 
 After that, `save` writes `CSBGAME.DAT` (the old file becomes `CSBGAME.BAK`), and `load` loads it. The save directory is the folder of `--saves`, otherwise the CSB data folder.
@@ -412,8 +412,8 @@ uv run dm-play load
 uv run dm-play new_game
 ```
 
-- `--brief` (before the command) prints a short summary instead of the JSON: the turn (`ticks`, `ran`, `stopped`, `error`, `game_over`, `action_damage`, `health_lost`, and `BUMPED` after a bump), the party position (the first line has `| CSB` in a CSB game), the leader hand, a `CANDIDATE (not recruited)` line while a mirror shows a candidate, each champion with HP, stamina, mana, food, and water, the open action menu, the messages, the walls to the sides, the visible squares ahead, the side squares (also at depth 0, `here left` and `here right`) with a door and its state, an open pit, a wall face, a floor ornament, or creatures, every side square ahead that is not a wall (a side passage), and the piles. For `get_map`, it prints the `grid`. After `look`, a `look: <name> | <line> | ...` line follows the turn line. A response with `seen` has a line such as `seen: fireball at ahead 2; a group of 1 Screamer at ahead 2 was killed` (or `lost <n>`) after the turn line.
-- `dm-play` does not import the `mcp` package. The socket helpers are in `tools/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use. The import of `dmtools.play` takes about 4 ms. This uses fewer tokens than the JSON.
+- `--brief` (before the command) prints a short summary instead of the JSON; it uses fewer tokens. The format is in the [player instructions](llm-playbook.md#dm-play).
+- `dm-play` does not import the `mcp` package. The socket helpers are in `tools/dmtools/control_client.py`, which `dm-play` and `dm-mcp` both use.
 - A relative `path` becomes an absolute path, because the game runs in another directory.
 - The exit code is 1 when the response has `"ok": false`, also when the game is not running.
 

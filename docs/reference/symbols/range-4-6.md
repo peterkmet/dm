@@ -1,8 +1,6 @@
 # KAOS ranges 4–6: symbols and subsystem notes
 
-This page uses the original KAOS names; the port names differ.
-
-This page covers the KAOS functions in partition ranges 4, 5, and 6 of the [module map](../kaos-map.md): `0x10a432`–`0x116a42`. The symbols are in [kaos-symbols.csv](../kaos-symbols.csv). It has all 246 functions of the ranges and 143 globals that these functions own.
+The KAOS functions in partition ranges 4, 5, and 6 of the [module map](../kaos-map.md): `0x10a432`–`0x116a42`. The symbols are in [kaos-symbols.csv](../kaos-symbols.csv). The names are the original KAOS names; the port names differ. It has all 246 functions of the ranges and 143 globals that these functions own.
 
 Names follow the ReDMCSB function order where the code matches. All offsets are in bytes. All words are big-endian. "Word" means 16 bits, "long" means 32 bits.
 
@@ -482,7 +480,21 @@ Zone types:
 | 9 | A size record: `a` is the width, `b` is the height. |
 | 10–18 | A point inside another zone: the parent is a point record whose parent is a size record. Alignment `type − 10` selects the reference point of that rectangle. (`a`, `b`) is an offset. |
 
-Alignment codes for a box of size (`w`, `h`) at point (`x`, `y`): 0 center (`x − (w+1)/2`, `y − (h+1)/2`), 1 top left, 2 top right (`x + 1 − w`), 3 bottom right, 4 bottom left (`y + 1 − h`), 5 top center, 6 right center, 7 bottom center, 8 left center. The reference points for types 10–18 use the same codes on the rectangle (for example 12 is (`x + w − 1`, `y`)).
+Alignment codes for a box of size (`w`, `h`) at point (`x`, `y`):
+
+| Code | Alignment | Box origin |
+|---|---|---|
+| 0 | center | `x − (w+1)/2`, `y − (h+1)/2` |
+| 1 | top left | `x`, `y` |
+| 2 | top right | `x + 1 − w`, `y` |
+| 3 | bottom right | `x + 1 − w`, `y + 1 − h` |
+| 4 | bottom left | `x`, `y + 1 − h` |
+| 5 | top center | `x − (w+1)/2`, `y` |
+| 6 | right center | `x + 1 − w`, `y − (h+1)/2` |
+| 7 | bottom center | `x − (w+1)/2`, `y + 1 − h` |
+| 8 | left center | `x`, `y − (h+1)/2` |
+
+The reference points for types 10–18 use the same codes on the rectangle (for example 12 is (`x + w − 1`, `y`)).
 
 `get_zone(bitmap, box, zone, &w, &h)`:
 

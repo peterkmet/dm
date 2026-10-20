@@ -1,6 +1,6 @@
 # Movement, sensors, and timeline rules
 
-This page describes the movement rules of the C port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `event_process_expired`. The code is in `src/engine/map.c`, `src/engine/move.c`, `src/engine/sensor.c`, and `src/engine/event.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts.
+The movement rules of the port: the current map, square thing lists, party movement, sensors, doors, pits, teleporters, stairs, and the event dispatch of `event_process_expired`. The code is in `src/engine/map.c`, `src/engine/move.c`, `src/engine/sensor.c`, and `src/engine/event.c`. The rules follow KAOS range 8 (MOVESENS.C, TIMELINE.C, COMMAND.C) and the dungeon access functions of range 4. See [range-4-6.md](../reference/symbols/range-4-6.md) and [range-7-9.md](../reference/symbols/range-7-9.md) for the record layouts.
 
 ## Start a game
 
@@ -83,13 +83,24 @@ Call `map_reset()` after `dungeon_load`. The current map pointers then point to 
 
 `take_stairs(up)` removes the party from its square, sets `g_session.new_party_map` and the party square with `map_get_level_change_location` (−1 for up, +1 for down), and turns the party to the stairs exit direction of the new map.
 
-`rotate_party(direction)` adds the direction change to the cell and the direction of each champion. The loop runs once also without champions, as in the original.
+`rotate_party(direction)` adds the direction change to the cell and the direction of each champion. The loop runs once even without champions, as in the original.
 
 ### `move_get_move_result`
 
 `move_get_move_result(move, destination)` moves the party (`thing` `0xffff`), a group, an object, or a projectile. The `Move` request holds the thing, `from`, and `to`. The original codes these as coordinates: `enters` is `src_x < 0` (the thing only arrives), `leaves` is `dst_x < 0` (the thing is only removed), and `keeps_cell` is `src_x == -2` (no teleporter rotation of an object). `uses_rope` is the original `g_use_rope_to_climb_down_pit`. The function returns `MOVE_RESULT_DONE`, `MOVE_RESULT_STOPPED` (the mover died, was deleted, waits off the map, or became active or inactive), or `MOVE_RESULT_TURNED` (a teleporter turned an attacking group).
 
-One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`, `MOVER_GROUP`, `MOVER_OBJECT`, `MOVER_PROJECTILE`). It repeats these rules on the destination square, at most 99 times (`SQUARE_CHAIN_MAXIMUM`). An open teleporter has bit 3 set; its scope is bits 5–6 of byte 2 of the teleporter record, the target is byte 3 bits 0–4 (X), word 2 bits 5–9 (Y), and byte 4 (map); bit 7 of byte 2 makes it audible, bits 2–3 hold the rotation, and bit 4 makes the rotation absolute. An open pit has bit 3 set and bit 0 clear.
+One square chain (`follow_square_chain`) serves every mover kind (`MOVER_PARTY`, `MOVER_GROUP`, `MOVER_OBJECT`, `MOVER_PROJECTILE`). It repeats these rules on the destination square, at most 99 times (`SQUARE_CHAIN_MAXIMUM`). An open teleporter has bit 3 set. An open pit has bit 3 set and bit 0 clear. The teleporter record:
+
+| Field | Place | Meaning |
+|---|---|---|
+| Scope | byte 2 bits 5–6 | Who the teleporter moves |
+| Audible | byte 2 bit 7 | Plays the sound |
+| Rotation | byte 2 bits 2–3 | The direction change |
+| Absolute | byte 2 bit 4 | The rotation is an absolute direction |
+| Target X | byte 3 bits 0–4 | |
+| Target Y | word 2 bits 5–9 | |
+| Target map | byte 4 | |
+
 
 | Square | Mover | Rule |
 |---|---|---|

@@ -24,7 +24,7 @@ Run the game with `build/dm`. The options are in [manual.md](manual.md).
 
 ## Tests
 
-The tests need `clang` and SDL3 (Homebrew). `clang-format` 23 comes with `uv sync`; `pyproject.toml` pins it to version 23, because other versions format differently.
+The tests need `clang` and SDL3 (Homebrew). `uv sync` installs `clang-format` 23 (pinned in `pyproject.toml`); other versions format differently.
 
 ```sh
 make test

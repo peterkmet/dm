@@ -1,6 +1,6 @@
 # Static game tables
 
-This page describes the static rule tables of `KAOS.FTL` and the C accessors in `src/data/include/tables.h`. The port does not copy table values into the source. `tables_load` reads the tables from the loaded KAOS image at run time.
+The static rule tables of `KAOS.FTL` and their accessors in `src/data/include/tables.h`. The port does not copy table values into the source. `tables_load` reads the tables from the loaded KAOS image at run time.
 
 All addresses are original KAOS addresses (see [KAOS module map](../reference/kaos-map.md)). All multi-byte values are big-endian in the image. The C structs hold native values.
 
