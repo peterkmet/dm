@@ -1085,7 +1085,7 @@ address,name,signature,subsystem
 0x104b26,g_action_damage,int16_t,menus
 0x104b28,g_action_target_group_thing,uint16_t,menus
 0x104b52,g_palette_changes_action_area_object_icon,uint8_t[16],menus
-0x104c1c,g_game_screen_shown,bool,gameloop
+0x104c1c,g_game_screen_inactive,bool,gameloop
 0x104c20,g_dialog_message_colors,int16_t[2],dialog
 0x104c68,g_save_dialog_format_choice,int16_t,loadsave
 0x104c6a,g_load_file,,loadsave

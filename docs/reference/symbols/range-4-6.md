@@ -11,31 +11,9 @@ Names follow the ReDMCSB function order where the code matches. All offsets are 
 | Item | Count |
 |---|---|
 | Functions in ranges 4–6 | 246 |
-| Existing names confirmed | 211 |
-| Existing names corrected | 7 |
-| Functions named for the first time | 28 |
 | Globals named | 143 (3 of them are tables in the code section) |
 
-Corrected names:
-
-| Address | Old name | New name | Reason |
-|---|---|---|---|
-| `0x10af2e` | `get_unused_thing` | `get_discarded_thing` | Scans maps and deletes a thing to free a slot (ReDMCSB F0165). |
-| `0x10b1a6` | `get_discarded_thing` | `get_unused_thing` | Returns a free slot and calls `get_discarded_thing` when none is free (F0166). The two names were swapped. |
-| `0x1143f8` | `heap_find_pool` | `heap_claim_largest_region` | Returns the largest unclaimed region and marks it as claimed. |
-| `0x114b0c` | `heap_set_reserve` | `memory_select_feature_set` | Tries feature sets until the graphics of every map fit. |
-| `0x115728` | `derived_cache_reset_usage` | `cache_reset_usage` | Works on all cached bitmaps, not only derived ones. |
-| `0x115768` | `derived_cache_add` | `cache_lru_insert` | Inserts a block into the LRU list. |
-| `0x115858` | `derived_cache_lookup` | `cache_touch` | Increments the usage count and moves the block in the LRU list. |
-
-Global correction: `g_creature_info` starts at `0x10192e`, not `0x101930`. The table entry is `0x1a` bytes and the attributes word is at offset 2. The code reads `0x10192e + type * 0x1a` (for example in `group_process_events_29_to_41`).
-
-## Method
-
-- Read every function in `reference/decomp/dm/KAOS.c` for the three ranges.
-- Read the disassembly (capstone) for jump-table calls, register helpers, and the clipping tail of `get_zone`.
-- Built a call graph from the disassembly to find callers.
-- Checked `expand_graphic` in the emulator (`tools/dmtools/emu.py`) against a Python model on every bitmap in `Graphics.DAT`. Result: 687 of 688 bitmap-sized items decode to identical bytes. The other item (graphic 672) is not a bitmap. Its "dimensions" are a size field.
+`g_creature_info` starts at `0x10192e`. The table entry is `0x1a` bytes and the attributes word is at offset 2. The code reads `0x10192e + type * 0x1a` (for example in `group_process_events_29_to_41`).
 
 ## Dungeon data access (range 4, DUNGEON.C)
 
@@ -218,12 +196,12 @@ ordinal = allowed && index < count ? index + 1 : 0;
 
 ### Group AI
 
-`group_process_events_29_to_41` follows ReDMCSB F0209. A port should use the ReDMCSB structure and these KAOS details:
+`group_process_events_29_to_41` follows ReDMCSB F0209. The port uses the ReDMCSB structure with these KAOS details:
 
 - Off the party map, a group only handles event types 32, 33, 37, and 38. It moves in a random direction and adds a new event 37 later by `max(16 * |map − party map|, 2 * movement ticks)`.
 - The function stores the current group in `g_current_group_map_x`, `g_current_group_map_y`, `g_current_group_thing`, `g_current_group_distance_to_party`, and the two directions to the party. The port keeps the square and thing in `last_turn` and the distance and directions in `GroupTurn`. The movement test results go to `g_group_movement_blocked_by_*`, `g_flux_cages`, and `g_flux_cage_count`.
 - `unblocked_distance` walks a line from the group to the party with fixed point slope (`* 64`). It calls `is_view_party_blocked` or `is_smell_party_blocked` for each square.
-- `is_creature_attacking` has a jump table at `0x10d75a` for creature types below 25 that cast spells. Ghidra cannot recover it. Read the disassembly when you port that switch.
+- `is_creature_attacking` has a jump table at `0x10d75a` for creature types below 25 that cast spells. Ghidra cannot recover it; the disassembly shows the cases. The port has them in `CreatureSpell` (`src/engine/group.c`).
 
 Several callees are in range 7 ([range-7-9.md](range-7-9.md)): `get_square_distance` (`0x11cefe`), `group_is_destination_visible` (`0x11cf42`), `group_get_directions_to` (`0x11cfba`), `group_get_champion_damage` (`0x11d10a`), and `projectile_get_impact_count` (`0x11c4e8`).
 
@@ -302,7 +280,7 @@ Attribute flags at `0x30`: `0x0008` disable action, `0x0010` male, `0x0080` name
 | `0x3e` | 24 bytes | Scent strengths. |
 | `0x56` | byte | Invisibility event count. |
 
-### Rules a port must reproduce
+### Rules
 
 - Skill level (`champion_get_skill_level(champion, skill | flags)`): returns 1 while the party sleeps. Experience is the long of the skill plus the temporary experience (flag `0x8000` ignores the temporary part). For a hidden skill, add the base skill `(skill − 4) / 4` and halve. Level starts at 1 and adds 1 for each halving while experience ≥ 500. Without flag `0x4000`, add object bonuses (action hand icons 27 and 28, neck icons 120, 124, 121, 122 for specific skills).
 - Experience (`champion_add_skill_experience`): halve for skills 4–11 when the last creature attack is more than 150 ticks ago. Multiply by the map difficulty when it is not 0. Double for hidden skills when the last creature attack is less than 25 ticks ago. On a new level, raise statistics, maximum health, stamina, and mana, set `g_champion_skill_level_up`, and print the message.
@@ -355,7 +333,7 @@ A port replaces all of this with one 320 × 200 indexed framebuffer, a 16-color 
 
 ## Graphic decompression (`expand_graphic`)
 
-`expand_graphic(packed, bitmap)` decodes one graphic into a planar bitmap. A Python model of this description matched the original code in the emulator on every bitmap (see [Method](#method)).
+`expand_graphic(packed, bitmap)` decodes one graphic into a planar bitmap. A Python model of this description matches the original in the emulator (`tools/dmtools/emu.py`): 687 of 688 bitmap-sized items of `Graphics.DAT` decode to identical bytes. The other item (graphic 672) is not a bitmap; its dimensions are a size field.
 
 ### Input
 
@@ -381,7 +359,7 @@ The decoder keeps the position (`x`, `y`). Each pixel advances `x`. At `x == w`,
 | `1L01 cccc`, count | Raw pixels. Count as above, plus 1. When the count is odd, the first pixel has color `c`. Then `count / 2` bytes follow, each with 2 pixels (high nibble first). The count must be at least 2. |
 | `1L11 cccc`, count | Copy `count + 1` pixels from the row above (same `x`), then write 1 pixel of color `c`. |
 
-Rows wrap inside every run. A run that passes the last row writes past the end of plane 0 in the original. A port must clip.
+Rows wrap inside every run. A run that passes the last row writes past the end of plane 0 in the original. The port clips (`put_pixel`, `src/data/graphics.c`).
 
 The four register helpers (`expand_fill_run`, `expand_copy_run_from_previous_row`, `expand_put_pixel`, `expand_next_row_if_full`) use word masks from `g_expand_left_masks` and the following right masks. `g_expand_color_planes[c]` holds the 4 plane words of color `c` in the order plane 1, plane 0, plane 3, plane 2. They do not use the C calling convention. A port does not need them.
 
@@ -444,11 +422,12 @@ A free block uses offset 4 and 8 as previous and next pointers of `g_cache_free_
 - `g_cache_blocks` maps a block index (0–`0x605`) to the block. `g_graphic_cache_block` and `g_derived_cache_block` map an owner to a block index.
 - `cache_alloc_block(size)` evicts from `g_cache_lru_first` until `g_cache_free_bytes ≥ size` (`cache_make_room`). It takes space at `g_cache_top`, or an exact or larger free block (it splits a block when the rest is at least `0x1c` bytes), or compacts the cache.
 - `cache_free_graphic(owner)` releases a block and merges it with free neighbors (boundary tags).
+- `cache_lru_insert(index)` inserts a block into the LRU list.
 - `cache_touch(index)` counts a use in the current tick and keeps the LRU list ordered by usage count. `cache_reset_usage` clears the counts when `g_game_time` changes.
 - `get_native_bitmap_or_graphic(i)` returns a cached bitmap. On a miss, it allocates `rowbytes * 4 * h + 0x14` bytes and decodes the packed item.
 - Derived bitmaps (scaled or recolored copies, 997 indices) use `is_derived_bitmap_in_cache` (allocates on a miss and returns 0, so the caller draws it), `get_derived_bitmap`, and `add_derived_bitmap_to_cache`. `g_derived_bitmap_byte_counts` gives the size of each derived bitmap.
 
-A port can replace this with a plain LRU cache. Keep the behavior that a derived bitmap is drawn by the caller when it is missing.
+A port can replace this with a plain LRU cache that keeps one behavior: the caller draws a derived bitmap when it is missing.
 
 ## Heap (range 6)
 
@@ -521,25 +500,25 @@ Negative bitmap indices refer to `g_layout_bitmaps[−1 − i]` (14 bytes each):
 
 ## Globals owned by other ranges
 
-These globals appear in ranges 4–6 but belong to other source files. They are not in the CSV. Suggested names:
+These globals appear in ranges 4–6 but belong to other source files. The names are the CSV names; three addresses have no CSV row and a suggested name.
 
-| Address | Suggested name | Evidence |
+| Address | Name | Evidence |
 |---|---|---|
-| `0x1001ca` | `g_viewport_overwritten` | Set by `load_graphic_into_bitmap`; the inventory redraws when set. |
-| `0x1001d4`–`0x1001d9` | `g_memory_features[6]` | Set by `memory_select_feature_set`. |
-| `0x1001e2` | `g_game_won` | No damage and no archenemy action when set. |
-| `0x10020e` | `g_pressing_eye` | Eye click handling. |
-| `0x100210` | `g_pressing_mouth` | Mouth click handling. |
-| `0x100212` | Unknown pressing flag | Cleared in `champion_kill` for the leader. |
+| `0x1001ca` | `g_viewport_needs_clear` | Set by `load_graphic_into_bitmap`; the inventory redraws when set. |
+| `0x1001d4`–`0x1001d9` | `g_memory_options` (6 bytes) | Set by `memory_select_feature_set`. |
+| `0x1001e2` | `g_fade_display_on_exit` | Set when the game is won: no damage and no archenemy action. `system_shutdown` fades the display when it is set. |
+| `0x10020e` | `g_pressing_eye` (suggested) | Eye click handling. |
+| `0x100210` | `g_pressing_mouth` (suggested) | Mouth click handling. |
+| `0x100212` | `g_pressing_closed_imaginary_fake_wall` | Cleared in `champion_kill` for the leader. |
 | `0x100220` | `g_refresh_dungeon_view_palette` | Set by `set_dungeon_view_palette`. |
 | `0x100266` | `g_object_names` | Pointer to the name pointer array. |
 | `0x100640` | `g_ignore_mouse_movements` | Set while pressing eye or mouth. |
-| `0x100646` | `g_champion_icon_ordinal_as_pointer` | Champion icon dragged by the mouse. |
-| `0x10314e` | `g_last_creature_attack_time` | Set in `is_creature_attacking`. |
+| `0x100646` | `g_dragged_champion_icon_cell_plus_1` | Champion icon dragged by the mouse. |
+| `0x10314e` | `g_last_creature_attack_time` (suggested) | Set in `is_creature_attacking`. |
 | `0x103152` | `g_last_party_movement_time` | Read in `champion_apply_time_effects`. |
-| `0x103156` | `g_secondary_direction_to_or_from_party` | Group movement. |
+| `0x103156` | `g_group_secondary_direction` | Group movement. |
 | `0x103162`, `0x103164` | `g_move_result_map_x`, `g_move_result_map_y` | Read after `move_get_move_result`. The port returns them in a `MoveDestination`. |
-| `0x103c04`–`0x103c10` | Primary/secondary mouse and keyboard input tables | Swapped by inventory, sleep, and rename. |
+| `0x103c04`–`0x103c10` | `g_primary_mouse_input`, `g_secondary_mouse_input`, `g_primary_keyboard_input`, `g_secondary_keyboard_input` | Swapped by inventory, sleep, and rename. |
 
 ## Uncertain items
 
@@ -548,5 +527,4 @@ These globals appear in ranges 4–6 but belong to other source files. They are 
 - `select_display_buffer` has no caller. The difference between the two copper lists (220 and 200 instructions) is not traced.
 - Behavior codes of the group record are from ReDMCSB and only partly checked.
 - `g_panel_content` (`0x101e6e`) and `g_panel_content_drawn` (`0x101e70`): two globals where ReDMCSB has one. The split is not fully traced.
-- `0x102962`, `0x102964`, `0x102968`, `0x102980` are text or layout metrics. Their meaning is not clear.
-- The jump table in `is_creature_attacking` (`0x10d75a`) and the one in `blit_shrink_with_palette_changes` (`0x10e9b4`) need disassembly work.
+- Ghidra does not recover the jump table in `is_creature_attacking` (`0x10d75a`) or the one in `blit_shrink_with_palette_changes` (`0x10e9b4`); the disassembly shows them.

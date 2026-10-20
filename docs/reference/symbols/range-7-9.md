@@ -75,7 +75,7 @@ Port: for each destination pixel in the box, take the pattern pixel, skip it whe
 
 - `g_viewport_bitmap` is an off-screen 224 × 136 bitmap. `g_viewport_buffer` is its pixel data.
 - `clear_viewport` fills the 4 planes with 0 and clears `g_viewport_needs_clear`.
-- `draw_viewport(palette_mode)` (ReDMCSB `F0097`) copies the viewport to screen zone 7. Mode 0 uses `g_palette_top_and_bottom`. Mode 1 uses `g_dungeon_view_palettes[g_party_light_level]` (6 light levels). Mode 2 keeps the palette. A palette change waits for the vertical blank.
+- `draw_viewport(palette_mode)` (ReDMCSB `F0097`) copies the viewport to screen zone 7. Mode 0 uses `g_palette_top_and_bottom`. Mode 1 uses `g_dungeon_palettes[g_party_light_level]` (6 light levels). Mode 2 keeps the palette. A palette change waits for the vertical blank.
 - Zones: a zone number indexes the layout table of `Graphics.DAT` (range 6, `get_zone`). Zone bit 14 (`0x4000`) adds `g_zone_relative_x/y` to the position. Bit 15 is handled by `get_zone`. `get_zone` writes the result box into `g_drawn_box`.
 
 ### Dungeon view drawing
@@ -208,11 +208,11 @@ ReDMCSB `GROUP.C` tail and `MOVESENS.C` head.
 - `group_get_champion_damage(group, champion)`: creature attack on a champion. It uses dexterity, luck, the map difficulty (`map[0x0c] >> 4`), invisibility, and the creature wound probabilities. It adds poison.
 - `group_get_melee_action_damage(...)`: champion melee attack on a creature.
 - `group_is_door_destroyed_by_attack(x, y, attack, magic, ticks)`: compares the attack with the door defense (`door_info[type].defense`). It sets the square door state to 5 (destroyed) at once, or adds event 2 (door destruction) after `ticks`.
-- `move_get_teleporter_rotated_group_result` and `rotate_projectile` rotate a group or projectile by the teleporter rotation (teleporter `+2` bits 2–3 rotation, bit 4 absolute). The projectile direction goes to `0x10316a` (range 8, move result direction).
+- `move_get_teleporter_rotated_group_result` and `rotate_projectile` rotate a group or projectile by the teleporter rotation (teleporter `+2` bits 2–3 rotation, bit 4 absolute). The projectile direction goes to `g_move_result_direction` (`0x10316a`) (range 8, move result direction).
 
 ### Notes on globals of other ranges
 
-- `g_creature_info` is at `0x10192e`, not `0x101930`. The code reads the 26-byte creature record at `0x10192e + 26 * type`. `0x101930` is offset 2 (attributes).
+- `g_creature_info` is at `0x10192e`. The code reads the 26-byte creature record at `0x10192e + 26 * type`. `0x101930` is offset 2 (attributes).
 - `0x101d26` is `g_thing_data[15]` (explosion records).
 - `0x101ed6` is the party thieves eye counter. `0x101f2a` is the party invisibility counter. Both are in the party record (range 5/6).
 - `0x1001d4`–`0x1001d9` are memory and sound options (range 9 names them as memory options).
@@ -293,7 +293,7 @@ Algorithm:
 
 `move_get_creature_sound(type)` returns -1 when the party sleeps or the creature has no sound. Otherwise it reads the sound ordinal from creature record byte 1 and maps it through the word table at `0x101bea` (low byte).
 
-Note for range 4: `g_creature_info` (`0x101930`) points to offset 2 of each 26-byte creature record. The record starts at `0x10192e`. Offset 1 holds the sound ordinal, offset 6 the movement ticks, offset 0x10 the properties word (fear resistance in bits 4–7).
+Note for range 4: `g_creature_info` (`0x10192e`) has 26-byte records. Offset 1 holds the sound ordinal, offset 6 the movement ticks, offset 0x10 the properties word (fear resistance in bits 4–7).
 
 ### Sensors (`sensor_*`)
 
@@ -350,9 +350,9 @@ Only sensors for the clicked cell count. Data is the object type. The function r
 The timeline keeps future events in two arrays:
 
 - `g_timeline.events`: `g_timeline.capacity` slots of 10 bytes.
-- `g_timeline.heap`: a binary min-heap of slot indices (uint16). `g_timeline.count` (`0x103180`) holds the heap size.
-- `g_timeline.first_unused` (`0x103182`) heads the free list.
-- `g_timeline.high_water` (`0x103176`, CSV name `g_event_count`) holds the highest used slot + 1. Linear scans use it as a bound. `timeline_reset` rebuilds it, the free list, and the heap size after a load. The save file stores the heap, the heap size, and the free list head.
+- `g_timeline.heap`: a binary min-heap of slot indices (uint16). `g_timeline_count` (`0x103180`) holds the heap size (port: `g_timeline.count`).
+- `g_first_unused_event_index` (`0x103182`) heads the free list (port: `g_timeline.first_unused`).
+- `g_event_high_water` (`0x103176`) holds the highest used slot + 1 (port: `g_timeline.high_water`). Linear scans use it as a bound. `timeline_reset` rebuilds it, the free list, and the heap size after a load. The save file stores the heap, the heap size, and the free list head.
 
 Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the larger word at offset 4 (type × 256 + priority) first. On a full tie, the lower slot address first. `timeline_fix_chronology(i)` sifts the entry at heap position `i` up, and down when it did not move up. `timeline_get_index` finds a slot in the heap with a linear search. It calls `fatal_error(0x46)` when the slot is missing.
 
@@ -385,7 +385,7 @@ Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the l
 | 12 | Hide damage received | `timeline_process_event12_hide_damage_received` |
 | 13 | Vi altar rebirth | `timeline_process_event13_vi_altar_rebirth` |
 | 20 | Play sound | `sound_request_play(word8, byte6, byte7, 1)` |
-| 24 | Remove fluxcage | Unlink thing `word8` and free it, unless `g_game_won` |
+| 24 | Remove fluxcage | Unlink thing `word8` and free it, unless `g_fade_display_on_exit` (the game is won) |
 | 25 | Explosion | `explosion_process_event_25` (range 7) |
 | 29–41 | Group events | `group_process_events_29_to_41(byte6, byte7, type, byte8)` (range 4) |
 | 48, 49 | Move projectile (48 ignores impacts) | `projectile_process_events_48_to_49` (range 7) |
@@ -393,13 +393,13 @@ Heap order (`is_before`): earlier time (bits 0–23) first. On equal time, the l
 | 60, 61 | Move group (61 audible) | `timeline_process_event60_61_move_group` |
 | 65 | Enable group generator | `timeline_process_event65_enable_group_generator` |
 | 70 | Light | `timeline_process_event70_light`, then `set_dungeon_view_palette` |
-| 71 | Invisibility end | Decrement `g_event71_count_invisibility`. At 0 redraw all champions. |
+| 71 | Invisibility end | Decrement `g_party_invisibility_count`. At 0 redraw all champions. |
 | 72 | Champion shield end | Subtract word 6 from champion +0x112, redraw. |
 | 73 | Thieves eye end | Decrement `g_event73_count_thieves_eye`. |
 | 74 | Party shield end | Subtract word 6 from `g_party_shield_defense`. |
 | 75 | Poison | Decrement champion +0x2a, `champion_poison(champion, word6)`. |
-| 77 | Spell shield end | Subtract word 6 from `g_spell_shield_defense`. |
-| 78 | Fire shield end | Subtract word 6 from `g_fire_shield_defense`. |
+| 77 | Spell shield end | Subtract word 6 from `g_party_spell_shield_defense`. |
+| 78 | Fire shield end | Subtract word 6 from the fire shield defense (`g_party` + 6). |
 | 79 | Footprints end | Decrement `g_event79_count_footprints`. |
 
 Other types below 80 do nothing. The jump table is at `0x120a5e` (80 word offsets).
@@ -411,12 +411,12 @@ Square event effects: 0 = set (open, activate), 1 = clear (close, deactivate), 2
 - Teleporter (8), pit (9): effect 0 sets bit 3 and calls `timeline_move_teleporter_or_pit_square_things`. Effect 1 clears bit 3. The two handlers have identical code.
 - `timeline_move_teleporter_or_pit_square_things(x, y)` re-runs `move_get_move_result(thing, x, y, x, y)` for the party, the group, and each object. Projectiles and explosions get their event data updated from the `g_move_result_*` globals (in the port: from the `MoveDestination`).
 - Corridor (5): text things toggle visibility (byte 3 bit 0). The party sees new text as a message. Group generator sensors (type 6) create a group with `group_get_generated`, play sound 14 when audible, and disable themselves. A non-once-only generator re-enables through event 65 after its regeneration delay.
-- Wall (6): text things in the event cell toggle. Counter sensors (6) count up (effect 0, max 511) or down, and trigger at 0. AND/OR gates (5) set or clear bit `cell` of the data, and compare bits 4–7 with bits 0–3. Launchers in the event cell call `timeline_trigger_projectile_launcher`. Sensor 18 waits `delay × 60` frames, sets `g_game_won`, and calls `endgame(1)`.
+- Wall (6): text things in the event cell toggle. Counter sensors (6) count up (effect 0, max 511) or down, and trigger at 0. AND/OR gates (5) set or clear bit `cell` of the data, and compare bits 4–7 with bits 0–3. Launchers in the event cell call `timeline_trigger_projectile_launcher`. Sensor 18 waits `delay × 60` frames, sets `g_fade_display_on_exit` (the game is won), and calls `endgame(1)`.
 - `timeline_trigger_projectile_launcher(sensor, event)`: types 7, 8, 14 launch one projectile, types 9, 10, 15 launch two. Types 8 and 10 launch explosions (`data − 128`). Types 14 and 15 launch objects from the launcher square (cells in front). Types 7 and 9 create objects with `get_object_for_launcher_or_generator`. Kinetic energy is word 6 bits 4–11. Step energy is word 6 bits 12–15. The attack is 100. A single projectile picks a random side cell. The projectile starts on the adjacent square in direction `cell` with `g_create_launcher_projectile` set.
 - Move group (60/61): when the party or a group still blocks the square, retry at time + 5. Lord Chaos (creature type 23) can instead step to a random adjacent free square (1 in 4).
 - Enable champion action (11): clear the action event index (+0x2c) and the "action disabled" flag, remove the action defense, redraw the action hand. When the last action was SHOOT (32) and the ready hand is empty, move ammunition from the quiver (slot 12, then 7–9).
-- Vi altar rebirth (13): byte 9 is the step. Step 2 creates explosion thing `0xffe4` at the altar, step 1 removes the bones (icon 0x93) of the champion, step 0 resurrects the champion (`0x113a12`, range 5). Each step re-adds the event.
-- Light (70): word 6 holds the signed light power. The handler applies one step of `g_light_power_to_light_amount` (`0x100cb4`) to `g_magical_light_amount` and re-adds the rest 4 ticks later.
+- Vi altar rebirth (13): byte 9 is the step. Step 2 creates explosion thing `0xffe4` at the altar, step 1 removes the bones (icon 0x93) of the champion, step 0 resurrects the champion (`champion_resurrect` (`0x113a12`), range 5). Each step re-adds the event.
+- Light (70): word 6 holds the signed light power. The handler applies one step of `g_light_power_to_light_amount` (`0x100cb4`) to the magical light amount (`g_party` + 0) and re-adds the rest 4 ticks later.
 
 ### Commands (`command_*`, `highlight_*`)
 
@@ -428,7 +428,7 @@ A `KeyboardInput` entry has 2 words: command, key code. A command of 0 ends the 
 
 The active tables are `g_primary_mouse_input`, `g_secondary_mouse_input`, `g_primary_keyboard_input`, and `g_secondary_keyboard_input`. Sleep and freeze swap them (freeze saves the old pointers).
 
-Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right press, 8 right release. Code `0x21` comes from a deferred click (`0x1004f6`).
+Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right press, 8 right release. Code `0x21` comes from a deferred click (`g_mouse_tracking_box_exit_command` (`0x1004f6`)).
 
 #### Command queue
 
@@ -458,21 +458,21 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 | 112 | Pass (no action). |
 | 113–115 | Action 0–2. |
 | 116–119 | Select acting champion 0–3. |
-| 125–128 | Champion icon click (`set_mouse_pointer_to_champion`). |
-| 129 | Right button release (`restore_champion_mouse_pointer`). |
+| 125–128 | Champion icon click (slot `jt_set_mouse_pointer_to_champion`). |
+| 129 | Right button release (slot `jt_restore_champion_mouse_pointer`). |
 | 140 | Save game. |
 | 145 | Sleep. |
 | 146 | Wake up. |
 | 147 | Freeze game. |
 | 148 | Unfreeze game. |
-| 165–198 | Character key for name entry (stored in `0x102460`). |
+| 165–198 | Character key for name entry (stored in `g_rename_command` (`0x102460`)). |
 | 200 | Set `g_entrance_choice`. |
-| 201 | Set `g_entrance_choice` and `0x104158` (load the second dungeon file). |
+| 201 | Set `g_entrance_choice` and `g_use_dungeon_b` (`0x104158`) (load the second dungeon file). |
 | 202 | Clear `g_entrance_choice`. |
-| 203 | Calls `0x1270c8` (range 9). |
-| 210–213 | Dialog choice 1–4 (stored in `0x10402a`). |
-| 215 | Set `0x10415c` (range 9 flag). |
-| 216 | `quit_game_thunk`. |
+| 203 | Calls `entrance_show_credits` (`0x1270c8`) (range 9). |
+| 210–213 | Dialog choice 1–4 (stored in `g_dialog_choice` (`0x10402a`)). |
+| 215 | Set `g_restart_requested` (`0x10415c`) (range 9 flag). |
+| 216 | Slot `jt_quit_game_thunk`. |
 | 254 | Left button release: stop pressing eye, mouth, or the hand in a fake wall. |
 
 #### Party movement
@@ -483,7 +483,7 @@ Button codes from `input_event_handler`: 2 left press, 4 left release, 1 right p
 
 #### Dungeon view clicks
 
-`command_process_click_in_dungeon_view(x, y)` converts the click to viewport coordinates. Range 7 globals describe the front square: `0x101d2a` (front element, 0x11 = door), `0x101d2c` (alcove), `0x101d2e` (vi altar), `0x101d30` (fountain), `0x101d36` (6 clickable boxes: 4 object cells, 1 unused, 1 wall ornament), `0x101d5e` (door button box), `0x101d66` (top object of each cell).
+`command_process_click_in_dungeon_view(x, y)` converts the click to viewport coordinates. Range 7 globals describe the front square: `g_square_ahead_element` (`0x101d2a`) (front element, 0x11 = door), `g_facing_alcove` (`0x101d2c`) (alcove), `g_facing_vi_altar` (`0x101d2e`) (vi altar), `g_facing_fountain` (`0x101d30`) (fountain), `g_dungeon_view_clickable_boxes` (`0x101d36`) (6 clickable boxes: 4 object cells, 1 unused, 1 wall ornament), `0x101d5e` (door button box), `g_pile_top_objects` (`0x101d66`) (top object of each cell).
 
 - Door button: `sensor_add_event(10, front, cell 0, toggle, time + 1)`.
 - Empty hand on an object cell: `command_grab_leader_hand_object`.
@@ -518,7 +518,7 @@ Per-action tables (44 bytes each, indexed by action):
 | `0x103f88` | `g_action_skill_index` | Skill that the action trains. |
 | `0x103fb4` | `g_action_experience_gain` | Experience gain. |
 
-`menus_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB, 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB, 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`0x11d5e0`). Other melee actions call `menus_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
+`menus_is_action_performed(champion, action)` runs the action against the square in the champion direction. Action indices: 2 CHOP, 4 BLOW HORN, 5 FLIP, 6 PUNCH, 7 KICK, 8 WAR CRY, 9 STAB, 10 CLIMB DOWN, 11 FREEZE LIFE, 13 SWING, 14 STAB, 15 THRUST, 16 JAB, 17 PARRY, 18 HACK, 19 BERZERK, 20 FIREBALL, 21 DISPELL, 22 CONFUSE, 23 LIGHTNING, 24 DISRUPT, 25 MELEE, 27 INVOKE, 28 SLASH, 29 CLEAVE, 30 BASH, 31 STUN, 32 SHOOT, 33 SPELLSHIELD, 34 FIRESHIELD, 35 FLUXCAGE, 36 HEAL, 37 CALM, 38 LIGHT, 39 WINDOW, 40 SPIT, 41 BRANDISH, 42 THROW, 43 FUSE. Melee actions on a closed door bash the door (`group_is_door_destroyed_by_attack` (`0x11d5e0`)). Other melee actions call `menus_is_melee_action_performed`. The result goes into `g_action_damage`: −1 "can't reach", −2 "need ammo", otherwise damage. `menus_refresh_action_area` draws it with `menus_draw_action_damage`. After the action the function disables the champion action, decrements stamina, and adds experience.
 
 `menus_is_group_frightened_by_action` (WAR CRY, BLOW HORN, CONFUSE, CALM, BRANDISH) compares `random16() % (skill + bonus)` with the creature fear resistance. A frightened group flees for `(16 − fear) × 4 / movement_ticks`.
 
@@ -542,7 +542,7 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the s
 `menus_get_champion_spell_cast_result`:
 
 1. Find the spell (`menus_get_spell_from_symbols`). No match: message "meaningless spell".
-2. Power = first symbol − 0x5f (1–6). Required level = power + base level. Experience = `(random & 7) + 16 × level + 8 × (power − 1) × base + D3²`. The intended last term is `level²` (ReDMCSB). The compiled code squares register D3 before it stores the level in D3, so it uses a stale value from the caller. A port should use `level²`.
+2. Power = first symbol − 0x5f (1–6). Required level = power + base level. Experience = `(random & 7) + 16 × level + 8 × (power − 1) × base + D3²`. The intended last term is `level²` (ReDMCSB). The compiled code squares register D3 before it stores the level in D3, so it uses a stale value from the caller. The port uses `level²` (`src/engine/magic.c`).
 3. When the skill level is too low, each missing level gives a failure chance against the current wisdom (champion offset `0x50`, `min(wisdom + 15, 115)`). A failure adds reduced experience and prints "needs more practice".
 4. Potion: needs an empty flask (icon 0xc3) in a hand, otherwise message "need flask" and return 3. The flask becomes potion `type` with power `power × 40 + random(16)`.
 5. Projectile: turn the champion to the party direction and shoot explosion `type − 128` with kinetic energy `bounded(21, (power + 2) × (4 + 2 × skill), 255)`. Type 4 doubles the skill.
@@ -553,7 +553,6 @@ Symbols are characters `0x60 + step × 6 + n`. Champion record +0x21 holds the s
 ### Uncertain items
 
 - `command_touch_front_square_empty_handed` (`0x12159a`): plays sound 4 on a normal front square. On an imaginary fake wall it hides the mouse pointer while the right button is down. The ReDMCSB name is not confirmed.
-- `g_timeline.high_water` replaces the CSV name `g_event_count` (`0x103176`). The CSV name is misleading: the real event count is `g_timeline.count` (`0x103180`).
 - `0x103fea` (action set byte 6) has no known reader.
 - The setter of `g_pending_click_present` is not visible in the Ghidra output.
 
@@ -652,9 +651,9 @@ The dialog system shows a message box with one to four choices. ReDMCSB calls it
 
 #### `dialog_draw(message1, message2, choice1, choice2, choice3, choice4)`
 
-1. Expand the dialog graphic (pointer at `0x100222`) into `g_viewport_bitmap`. Print the version text.
+1. Expand the dialog graphic (pointer at `g_graphic_0_data` (`0x100222`)) into `g_viewport_bitmap`. Print the version text.
 2. Count the choices: 1 to 4 non-null choice pointers, in order.
-3. Patch the box. 1 choice: layout `-0x36`, graphic zone `0x1c3`. 2 choices: layout `-0x37`, zone `0x1c4`. 4 choices: layout `-0x38`, zone `0x1c5`. 3 choices: no patch. The patch uses a temporary bitmap (a derived-cache slot when the memory option at `0x10253a` is set).
+3. Patch the box. 1 choice: layout `-0x36`, graphic zone `0x1c3`. 2 choices: layout `-0x37`, zone `0x1c4`. 4 choices: layout `-0x38`, zone `0x1c5`. 3 choices: no patch. The patch uses a temporary bitmap (a derived-cache slot when the memory option at `g_memory_configured` (`0x10253a`) is set).
 4. Print the choice texts in color 9 on background 5. Zones: 1 choice `0x1ce`; 2 choices `0x1cf`, `0x1ce`; 3 choices `0x1cf`, `0x1d2`, `0x1d3`; 4 choices `0x1d0`–`0x1d3`.
 5. Print the two messages centered in the message zone (`0x1d5` for 1 choice, otherwise `0x1d7`). A message that is wider than 7/8 of the zone width is split into two lines with `text_get_next_word_line`. The block of lines is centered vertically.
 6. Show the result with `dialog_draw_viewport`. In full-screen mode fade in to the palette at `0x100170`.
@@ -672,20 +671,20 @@ The dialog system shows a message box with one to four choices. ReDMCSB calls it
 
 #### Game start
 
-- `start_game` clears pending mouse/click state, the sleep flag, `g_game_frozen`, and the 32-byte block at `0x102490`. It installs the four main input tables (`0x1031f8`, `0x1032e8`, `0x103948`, `0x103964`) and calls `process_new_party_map(g_party_map_index)`.
+- `start_game` clears pending mouse/click state, the sleep flag, `g_game_frozen`, and the 32-byte block at `g_champion_skill_level_up` (`0x102490`). It installs the four main input tables (`0x1031f8`, `0x1032e8`, `0x103948`, `0x103964`) and calls `process_new_party_map(g_party_map_index)`.
 - Loaded game: clear screen, show "GAME LOADED, READY TO PLAY." with OK, then `ensure_master_disk(0)` (it closes `Graphics.DAT` for the time of the check). New game: clear `g_game_screen_inactive` and fill screen zones `0x191`, `0x193`, `0x195` with color 0.
-- Both paths set the top palette `0x100aa6` and bottom palette `0x100170`, wait until the vertical-blank handler applies them, draw the interface (`0x1235fe`, `0x113abe`), and set `g_game_time_ticking`.
+- Both paths set the top palette `0x100aa6` and bottom palette `0x100170`, wait until the vertical-blank handler applies them, draw the interface (`menus_draw_movement_arrows` (`0x1235fe`), `champion_reset_for_new_game` (`0x113abe`)), and set `g_game_time_ticking`.
 - Ghidra shows an endless loop at the end of `start_game`. This is wrong. The palette wait loop confuses it. Read the disassembly.
 
 #### `initialize_game` order
 
-`set_language_file_names`, `system_init`, `detect_floppy_drives`, `install_input_handler`, `graphics_dat_read_header`, `init_layout`, `load_string_table`, `init_graphic_data`, `text_init`, `sound_init`, `0x1175c6(0)`, `0x1176aa(0)`, `menus_init`, `load_object_names`, `command_init_mouse_zones`, `init_mouse_pointer`, `process_entrance`. Then loop `load_game` until it returns 1; after each failure call `graphics_dat_open` and `process_entrance` again. Then `graphics_dat_open`, `heap_set_reserve(g_memory_option_list)`, `sound_disable_unloaded`, `start_game`, `graphics_dat_close`. For a new game: `move_get_move_result(0xffff, -1, 0, x, y)` puts the party on the start square. Last: `mouse_show_pointer`, `command_discard_all_input`.
+`set_language_file_names`, `system_init`, `detect_floppy_drives`, `install_input_handler`, `graphics_dat_read_header`, `init_layout`, `load_string_table`, `init_graphic_data`, `text_init`, `sound_init`, `load_floor_set(0)`, `load_wall_set(0)`, `menus_init`, `load_object_names`, `command_init_mouse_zones`, `init_mouse_pointer`, `process_entrance`. Then loop `load_game` until it returns 1; after each failure call `graphics_dat_open` and `process_entrance` again. Then `graphics_dat_open`, `memory_select_feature_set(g_memory_feature_sets)`, `sound_disable_unloaded`, `start_game`, `graphics_dat_close`. For a new game: `move_get_move_result(0xffff, -1, 0, x, y)` puts the party on the start square. Last: `mouse_show_pointer`, `command_discard_all_input`.
 
-Ghidra drops the pointer argument of `heap_set_reserve`. The real argument is `0x104134`.
+Ghidra drops the pointer argument of `memory_select_feature_set`. The real argument is `0x104134`.
 
 #### Memory options
 
-`heap_set_reserve` (range 6) tries option sets from `g_memory_option_list` (`0x104134`) until the game fits in memory. The list is bytes:
+`memory_select_feature_set` (range 6) tries option sets from `g_memory_feature_sets` (`0x104134`) until the game fits in memory. The list is bytes:
 
 - `0..5`: set flag `g_memory_options[n]` (`0x1001d4`) to 1.
 - `0xfd n`: reserve `n << 10` bytes.
@@ -705,14 +704,14 @@ A C port with enough memory can use the first set and skip this search.
 1. Allocate layout bitmaps for wall, floor, ceiling, and door graphics (`layout_alloc_graphic_bitmap(layout, graphic)`, graphics `0x4e`–`0x6b`). Some layouts share a bitmap (`layout_share_bitmap`).
 2. Move the current `g_viewport_bitmap` to layout `-0x35` and allocate a new viewport bitmap.
 3. Compute the sizes of the floor and ceiling parts of the viewport and the largest of three scratch bitmaps.
-4. Fill the derived-bitmap byte-count table (`0x102540`) with the scaled sizes of all wall ornaments, door ornaments, floor ornaments, projectiles, explosions, and creatures. `0x11751c(width, height, scale)` computes one scaled size. Scales: 14 and 21 (in 32nds) for creatures, a 5-entry table at `0x102e24` for ornaments, a 6-entry table at `0x102e2a` for door ornaments.
+4. Fill the derived-bitmap byte-count table (`g_derived_bitmap_byte_counts` (`0x102540`)) with the scaled sizes of all wall ornaments, door ornaments, floor ornaments, projectiles, explosions, and creatures. `0x11751c(width, height, scale)` computes one scaled size. Scales: 14 and 21 (in 32nds) for creatures, a 5-entry table at `0x102e24` for ornaments, a 6-entry table at `0x102e2a` for door ornaments.
 
 `graphic_get_bitmap_byte_count(g)` returns `((width + 15) & ~15) / 2 * height` from `g_graphic_dimensions`.
 
 #### Freeze
 
 - `game_freeze`: only when not frozen and the game screen is active. Set `g_game_frozen`. Restore the champion mouse pointer, disable the highlight box, clear zone 9 (or close the open chest when an inventory is open), clear zones 13 and 11, and set the default mouse pointer.
-- `game_unfreeze`: only when frozen and the game screen is active. When the party sleeps, redraw the sleep screen (`0x1210e8`, `draw_viewport(0)`) and stay frozen. Otherwise clear the flag, redraw the magic caster and action area, then the viewport or the open inventory, then refresh the mouse pointer.
+- `game_unfreeze`: only when frozen and the game screen is active. When the party sleeps, redraw the sleep screen (`command_draw_sleep_screen` (`0x1210e8`), `draw_viewport(0)`) and stay frozen. Otherwise clear the flag, redraw the magic caster and action area, then the viewport or the open inventory, then refresh the mouse pointer.
 
 #### Entrance
 
@@ -735,7 +734,7 @@ A C port with enough memory can use the first set and skip this search.
 
 #### Endgame
 
-`endgame(party_dead)` (ReDMCSB `F0444_STARTEND_Endgame`). `kaos_main` calls it with `g_party_dead` after `game_loop`. `save_game` calls it with 0 (quit). `fuse_sequence` calls it with 1 and `g_game_won` set.
+`endgame(party_dead)` (ReDMCSB `F0444_STARTEND_Endgame`). `kaos_main` calls it with `g_party_dead` after `game_loop`. `save_game` calls it with 0 (quit). `fuse_sequence` calls it with 1 and `g_fade_display_on_exit` set.
 
 1. Set the default pointer and hide it. Clear the input tables.
 2. When the party died and the game is not won: play sound 7 and wait 240 frames.
@@ -750,17 +749,17 @@ A C port with enough memory can use the first set and skip this search.
 
 `fuse_sequence` (ReDMCSB `F0446_STARTEND_FuseSequence`) runs when the party fuses Lord Chaos. `fuse_sequence_update` runs one tick: `timeline_process`, `draw_dungeon_view`, `sound_play_pending`, `g_game_time++`.
 
-1. Set `g_game_won`. Close the inventory. Set magical light to 200 and the three party shields (`0x101ed4`, `0x101ed8`–`0x101edc`) to 100. Redraw all champions.
+1. Set `g_fade_display_on_exit` (the game is won). Close the inventory. Set magical light to 200 and the three party shields (`0x101ed4`, `0x101ed8`–`0x101edc`) to 100. Redraw all champions.
 2. The group in front of the party gets health 10000, all cells, and faces the party.
 3. Remove fluxcage explosions (type 50) on the party square and the Lord Chaos square.
-4. Create 6 fireball explosions (`0xff80`, power 55 to 255 step 40) and 6 harm-non-material explosions (`0xff83`) on the Lord Chaos square. Play sound 14. Flash the group between creature types 23 (Lord Chaos) and 25 (Lord Order) with sound 14. Then set type 26 (Grey Lord). Set the "do not draw fluxcages" flag (`0x103110`).
+4. Create 6 fireball explosions (`0xff80`, power 55 to 255 step 40) and 6 harm-non-material explosions (`0xff83`) on the Lord Chaos square. Play sound 14. Flash the group between creature types 23 (Lord Chaos) and 25 (Lord Order) with sound 14. Then set type 26 (Grey Lord). Set the "do not draw fluxcages" flag (`g_do_not_draw_fluxcages` (`0x103110`)).
 5. Delete all other groups on the map.
 6. Collect the text things on square (0, 0) of the map. Print them in the message area in the order of their first letter (`A`, `B`, ...), 780 frames each.
 7. Final explosions, wait 600 frames, clear `g_saved_game_exists`, `endgame(1)`.
 
 #### Quit
 
-`quit_game` (`0x12546a`) is the real entry. It hides the mouse pointer until the hide count is at least 1, closes `Graphics.DAT` twice, calls `system_shutdown`, and calls `rt_longjmp(0x104032, 1)`. `0x125470` is only the loop head inside `quit_game`. Ghidra made a second function there. No code calls it.
+`quit_game` (`0x12546a`) is the real entry. It hides the mouse pointer until the hide count is at least 1, closes `Graphics.DAT` twice, calls `system_shutdown`, and calls `rt_longjmp(0x104032, 1)`. `quit_game_hide_pointer_loop` (`0x125470`) is only the loop head inside `quit_game`. Ghidra made a second function there. No code calls it.
 
 ### Load and save
 
@@ -768,9 +767,9 @@ A C port with enough memory can use the first set and skip this search.
 
 | Global | File |
 |---|---|
-| `g_dungeon_file_name` (`0x101d8c`) | `DungeonMaster:Dungeon~.dat` |
-| `g_dungeon_ftl_file_name` (`0x101dac`) | `DungeonMaster:Dungeon~.FTL` |
-| `g_dungeon_b_file_name` (`0x101dcc`) | `DungeonMaster:DungeonB~.dat` |
+| `g_dungeon_dat_name` (`0x101d8c`) | `DungeonMaster:Dungeon~.dat` |
+| `g_dungeon_ftl_name` (`0x101dac`) | `DungeonMaster:Dungeon~.FTL` |
+| `g_dungeon_b_dat_name` (`0x101dcc`) | `DungeonMaster:DungeonB~.dat` |
 | `g_save_file_name` (`0x101de4`) | `DF0:DMGAME~.DAT` |
 | `g_save_backup_file_name` (`0x101df8`) | `DF0:DMGAME~.BAK` |
 
@@ -820,10 +819,10 @@ The checksum is the same for the plain and the encrypted data, because it adds b
    3. Champions and party: `0x580` bytes = 4 × `0x140` champion records + 128 bytes from `0x101ed4`.
    4. Timeline events: `event_max_count × 10` bytes.
    5. Timeline index: `event_max_count × 2` bytes.
-3. Four champion portrait bitmaps, not encrypted. Size per bitmap = `((w + 15) & ~15) / 2 × h` with `w`, `h` at `0x102958`/`0x10295a`. The pointers are at champion offset `0x114`.
+3. Four champion portrait bitmaps, not encrypted. Size per bitmap = `((w + 15) & ~15) / 2 × h` with `w`, `h` at `g_portrait_width` (`0x102958`)/`0x10295a`. The pointers are at champion offset `0x114`.
 4. The dungeon in `Dungeon.DAT` format without compression: header (44), maps (count × 16), column first-thing indices, square first things, text data, 16 thing arrays, raw map data. Then a word: the byte sum of all dungeon parts.
 
-`save_game` removes the weight of the leader hand object from the leader load (champion offset `0x110`) for the time of the save. It calls `0x112f5c` before the first write and `0x112ffe` at the end (champion range).
+`save_game` removes the weight of the leader hand object from the leader load (champion offset `0x110`) for the time of the save. It calls `champion_portraits_to_interleaved` (`0x112f5c`) before the first write and `champion_portraits_from_interleaved` (`0x112ffe`) at the end (champion range).
 
 #### `save_game`
 
@@ -861,7 +860,7 @@ Stop after `size` output bytes. `decompress_get_bits` is the internal bit reader
 
 #### Disk helpers
 
-- `build_save_prompt(dest, text, kind)` replaces `~` in the text with a drive name. It uses the name at `0x100106` when the flag at `0x100104` is set or `kind` is 1, otherwise the name at `0x10010a`.
+- `build_save_prompt(dest, text, kind)` replaces `~` in the text with a drive name. It uses the name at `g_game_drive_name` (`0x100106`) when the flag at `g_single_floppy_drive` (`0x100104`) is set or `kind` is 1, otherwise the name at `g_save_drive_name` (`0x10010a`).
 - `ensure_master_disk(force)` returns 1 at once when the master disk is present and `force` is not 2. Otherwise it freezes the game and shows "PUT THE DUNGEON MASTER DISK IN ~" with OK until the disk is present (next prompts add "THAT'S NOT THE MASTER DISK!"). It returns 0 when it showed a prompt.
 - `format_save_disk_dialog`: "PUT A BLANK DISK IN ~" with FORMAT FLOPPY and CANCEL. A save disk asks "FORMAT DISK ANYWAY?". Shows "FORMATTING DISK . . ." and calls `format_save_disk`. On error "UNABLE TO FORMAT DISK!".
 
@@ -870,4 +869,4 @@ Stop after `size` output bytes. `decompress_get_bits` is the internal bit reader
 - `g_saved_game_exists` (`0x10415a`): 1 after a save or a load. The endgame offers a restart only when it is set.
 - `g_restart_requested` (`0x10415c`): set by command `0xd7`. While it is set, `load_game` and `load_dungeon` reuse the existing buffers.
 - `g_game_frozen` (`0x10415e`).
-- `g_game_won` (`0x1001e2`).
+- `g_fade_display_on_exit` (`0x1001e2`): set when the game is won.

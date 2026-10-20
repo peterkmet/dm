@@ -208,7 +208,7 @@ address,name,signature,subsystem
 0x1017ea,g_escape_replacement_chars,const char g_escape_replacement_chars[32][2],dungeon
 0x10182a,g_inscription_escape_strings,const char g_inscription_escape_strings[32][8],dungeon
 0x10192a,g_group_directions_packed,"const uint8_t g_group_directions_packed[4]; /* 0x00,0x55,0xaa,0xff */",dungeon
-0x10192e,g_creature_info,const CreatureInfo g_creature_info[]; /* 0x1a bytes each; replaces 0x101930 */,dungeon
+0x10192e,g_creature_info,const CreatureInfo g_creature_info[]; /* 0x1a bytes each */,dungeon
 0x101bec,g_creature_sounds,"const int8_t g_creature_sounds[18][2]; /* attack, movement sound per sound ordinal - 1; -1 none */",group
 0x101c10,g_fixed_possessions,const uint16_t g_fixed_possessions[]; /* 0-terminated lists 0x101c10..0x101c5f */,group
 0x101c60,g_current_map_index,,dungeon
@@ -520,7 +520,7 @@ address,name,signature,subsystem
 0x104018,g_layers_base,,system
 0x10401c,g_console_device,,system
 0x104020,g_sys_base,,system
-0x104024,g_game_screen_shown,bool,gameloop
+0x104024,g_game_screen_inactive,bool,gameloop
 0x104026,g_dialog_message_colors,int16_t[2],dialog
 0x10402a,g_dialog_choice,int16_t,dialog
 0x10402c,g_dialog_version_text,char[6],dialog

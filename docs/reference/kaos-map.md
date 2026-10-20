@@ -23,14 +23,14 @@ Entry `i` is at `0x104180 + 8 * i`. Bytes 2–7 hold `JMP abs.l` to export `i`. 
 
 Ghidra shows this call as an indirect call through a global, for example `(*DAT_0010465a)()`. The slot `S` points to export `(S - 0x104182) / 8`. Examples:
 
-| Global in old output | Export | Target | Name |
+| Ghidra global | Export | Target | Name |
 |---|---|---|---|
 | `DAT_0010465a` | 155 | `0x10a85c` | `update_map_coordinates_after_relative_movement` |
 | `DAT_0010463a` | 151 | `0x10e784` | `get_string` |
 | `DAT_00104a82` | 288 | `0x116296` | `get_zone` |
 | `DAT_0010490a` | 241 | `0x11427a` | `copy_bytes` |
 
-`kaos-symbols.csv` labels every slot as `jt_<target name>` (or `jt_fun_<address>` when the target has no name yet). The decompiled C then shows `(*jt_timeline_process)()`.
+`kaos-symbols.csv` labels every slot as `jt_<target name>` (or `jt_fun_<address>` when the target has no name). The decompiled C shows `(*jt_timeline_process)()`.
 
 Seven slots are also function pointers: interrupt handlers and callbacks (`0x1041d2`, `0x104282`, `0x104552`, `0x10456a`, `0x10457a`, `0x104582`, `0x104a32`). Ghidra turns them into thunk functions, so `reference/decomp/dm/KAOS.c` has 756 function headers.
 
@@ -139,8 +139,8 @@ File names in the data section:
 | Address | Name | Use |
 |---|---|---|
 | `0x101d70` | `DungeonMaster:Dungeon~.dat` | Dungeon. `~` becomes empty, `F`, or `G`. |
-| `0x101d90` | `DungeonMaster:Dungeon~.FTL` | Language-specific name (not read in the traced paths). |
-| `0x101db0` | `DungeonMaster:DungeonB~.dat` | Second dungeon name (not traced). |
+| `0x101d90` | `DungeonMaster:Dungeon~.FTL` | New-game dungeon. `load_game` opens it when the save disk has no `DMGAME~.DAT` and no `DMGAME~.BAK`. |
+| `0x101db0` | `DungeonMaster:DungeonB~.dat` | Second dungeon. `load_game` opens it when `g_use_dungeon_b` is set (entrance command `0xc9`). |
 | `0x101dd4` | `DF0:DMGAME~.DAT` | Saved game. `~` becomes the save drive number. |
 | `0x101de8` | `DF0:DMGAME~.BAK` | Backup of the saved game. |
 | `0x101dfc` | `DungeonMaster:graphics.dat` | Graphics. |
@@ -211,7 +211,7 @@ random_2bits = (seed >> 8) & 3;
 | `g_party_map_x`, `g_party_map_y`, `g_party_direction`, `g_party_map_index` | words at `0x1001ec`, `0x1001ee`, `0x1001ea`, `0x1001f0` | Party position. |
 | `g_game_time` | long at `0x1001f8` | Game tick counter. |
 | `g_dungeon_header` | 44 bytes | See [Dungeon.DAT](#dungeondat). |
-| `g_dungeon_maps` | 16 bytes per map | Offset 0: raw data offset. Offset 8: width − 1 (bits 6–10), height − 1 (bits 11–15). Offsets 10–14: graphics counts (not fully decoded). |
+| `g_dungeon_maps` | 16 bytes per map | Offset 0: raw data offset. Offset 8: width − 1 (bits 6–10), height − 1 (bits 11–15). Offsets 10–14: ornament, creature type, and door type counts, see [range-4-6.md](symbols/range-4-6.md#map-descriptor). |
 | `g_current_map_data` | pointer per column | Square bytes of the current map. Bits 5–7: square type (0 wall, 1 corridor, 2 pit, 3 stairs, 4 door, 5 teleporter, 6 fake wall). Bit 4: the square has things. |
 | `g_thing_data[16]` | pointers | Thing records per type. A thing is a word: bits 10–13 type, bits 0–9 index, bits 14–15 cell. `0xfffe` is the end of a list. |
 | `g_active_groups` | 16 bytes per entry | Active creature groups. |
@@ -238,5 +238,3 @@ The linker keeps the source file order. The export numbers form groups that foll
 
 ## Open questions
 
-- The exact meaning of several flags is not known, for example `0x104024`, `0x10254e`, and `0x10415c`.
-- The roles of `Dungeon~.FTL` and `DungeonB~.dat` are not traced.

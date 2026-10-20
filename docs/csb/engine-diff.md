@@ -360,7 +360,7 @@ The header differs (`save_read_header` C`0x1289c4`, `load_game` C`0x129b3e`):
 | Dungeon ID | `0x178` | `0x17a` |
 | Copied extra header | `0x17a`, 134 bytes | `0x17c`, 132 bytes |
 
-`save_game` (C`0x128cc0`) writes the fields at the CSB offsets: dialog choice `0x132`, extra header `0x17c` (`0x84` bytes), game ID `0x134`, platform `0x12d` = 5, header byte `0x12c`, save format `0x178`, dungeon ID `0x17a`, block keys `0x138`, block checksums `0x158`. Then it calls `save_write_header` (C`0x128a42`). A prison save has dungeon ID 12; a save of the adventure has 13 (see [new-adventure.md](new-adventure.md#header)).
+`save_game` (C`0x128cc0`) writes the fields at the CSB offsets: dialog choice `0x132`, extra header `0x17c` (`0x84` bytes), game ID `0x134`, platform `0x12d` = 5, header byte `0x12c`, save format `0x178`, dungeon ID `0x17a`, block keys `0x138`, block checksums `0x158`. Then it calls `save_write_header` (C`0x128a42`). A prison save has dungeon ID 12; a save of the adventure has 13 (see [new-adventure.md](new-adventure.md#summary)).
 
 Other load and save differences:
 

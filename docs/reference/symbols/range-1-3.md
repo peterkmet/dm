@@ -8,7 +8,7 @@ All addresses are for the image that `uv run dm-ftl game/KAOS.FTL <out.bin>` cre
 
 ## General facts
 
-- The compiler uses 16-bit `int`. Word parameters are pushed as 2 bytes. Use `int16_t` and `uint16_t` for them.
+- The compiler uses 16-bit `int`. Word parameters are pushed as 2 bytes. The port uses `int16_t` and `uint16_t` for them.
 - Most functions use `LINK A6` and caller cleanup. The runtime helpers `rt_lmul`, `rt_uldiv`, `rt_ulmod`, `rt_ldiv`, and `rt_lmod` remove their own 8 bytes of arguments and keep `D1`.
 - Booleans are words with the value 0 or 1. Some functions extend the result to a long (`ext.l`), for example `file_read`.
 - The error alert text says "Chaos Strikes Back". KAOS shares its code base with CSB.
@@ -19,7 +19,7 @@ All addresses are for the image that `uv run dm-ftl game/KAOS.FTL <out.bin>` cre
 - `rt_switch_word`, `rt_switch_long`, and `rt_switch_range` implement `switch`. The caller puts the key in `D0` and calls the helper with `JSR`. The case table follows the `JSR` instruction. The helper jumps to the case code. A zero offset makes an endless loop.
 - `rt_ldiv` and `rt_lmod` truncate toward zero, as in C99. The remainder has the sign of the dividend. Division by zero causes a `DIVU` trap.
 - `rt_setjmp(env)` saves `D3`–`D7`, the return address, `A2`–`A4`, `A6`, and `SP` in 11 longs. It returns 0. `rt_longjmp(env, value)` returns `value` from `rt_setjmp`. A value of 0 becomes 1. `kaos_main` uses `g_exit_jmp_buf` (`0x104032`).
-- In C, use the standard operators and `setjmp`/`longjmp`.
+- The port uses the standard operators and `setjmp`/`longjmp`.
 
 ## System init and shutdown (`0x105102`–`0x1058e6`)
 
@@ -65,7 +65,7 @@ Both handlers run as interrupt servers. `A1` points to `g_interrupt_data`, which
 
 `g_palette_copper_lists` (`0x1024da`) points to three pointers into the copper lists. The video driver module provides them.
 
-In C, run the vblank work once per 50 Hz frame from the platform layer. Apply the top palette to the viewport rows and the bottom palette to the rest of the screen.
+The port runs the vblank work once per 50 Hz frame in the platform layer. It applies the top palette to the viewport rows and the bottom palette to the rest of the screen.
 
 ## Input (`0x105908`–`0x106372`)
 
@@ -99,7 +99,7 @@ The C port gets the same key words and click kinds from SDL events. A mutex is n
 - `poll_disk_change` runs in the input handler. It compares the trackdisk change counters with the stored values and sets `g_game_disk_changed` and `g_save_disk_changed`. `has_disk_changed(which)` returns and clears the flag.
 - `disk_prompt_hook`, `format_done_hook`, and `unused_stub_105f18` are empty.
 
-The C port replaces this group with a save directory. These functions can return fixed values.
+The port replaces this group with a save directory and returns fixed values.
 
 ## File I/O (`0x1061b8`–`0x1062ca`)
 
@@ -109,7 +109,7 @@ The C port replaces this group with a save directory. These functions can return
 - `file_size` seeks to the end and back.
 - `file_read`, `file_write` return 1 when all bytes transfer. Note the parameter order: handle, size, buffer.
 
-Map these functions to `fopen`, `fseek`, `ftell`, `fread`, `fwrite`.
+The port maps these functions to `fopen`, `fseek`, `ftell`, `fread`, `fwrite`.
 
 ## Palette and display (`0x1065c6`–`0x106ff6`)
 
@@ -118,7 +118,7 @@ Map these functions to `fopen`, `fseek`, `ftell`, `fread`, `fwrite`.
 - `palette_fade_to(target)` fades from `g_current_palette`.
 - `fade_display_out` fades to `g_dungeon_palettes[0]` (the normal palette), not to black.
 - `connect_video_driver` finds the `VDEO` driver, points the palette globals at the driver data, waits for the vblank handler, calls `LoadView`, and loads `g_initial_colormap` (32 colors) into the screen color map.
-- `wait_for_raster_line(line)` busy-waits until `VPOSR` reaches `line + 0x2c`. Fills and XOR boxes call it to avoid tearing. The C port can drop it.
+- `wait_for_raster_line(line)` busy-waits until `VPOSR` reaches `line + 0x2c`. Fills and XOR boxes call it to avoid tearing. The port has no such wait.
 
 ## Fills and blit wrappers (`0x106a04`–`0x10760c`)
 
@@ -139,7 +139,7 @@ Bitmap layout: 4 planes, not interleaved. Each plane is `((width + 15) & ~15) / 
 - `str_*` work like the C library. `str_find_char` returns null when the character is not found. `str_replace_char(src, insert, c, dst)` copies `src` to `dst` and replaces the first `c` with `insert`. It returns 1 when it found `c`. The language file names use it with `~`.
 - `bounded_value(min, value, max)` clamps `value`.
 - `scale_value(a, shift, b)` returns `(a * b) >> shift` with an unsigned 16×16 multiply. Callers use the low word.
-- Random: `seed = seed * 0xBB40E62D + 11`; the results are `(seed >> 8)` masked to 16, 1, or 2 bits. Keep the 32-bit wrap-around.
+- Random: `seed = seed * 0xBB40E62D + 11`; the results are `(seed >> 8)` masked to 16, 1, or 2 bits. The port keeps the 32-bit wrap-around.
 
 Emulator checks (`dmtools.emu`): `bounded_value(0, 15, 10) = 10`, `scale_value(100, 3, 50) = 625`, `rt_ldiv(-7, 2) = -3`, `rt_lmod(-7, 2) = -1`.
 
@@ -221,7 +221,7 @@ Other functions:
 - `text_get_next_word_line` copies words up to `max_width` pixels and returns the width.
 - `text_print_to_bitmap_zone`, `text_print_padded_to_bitmap`, and `text_print_padded_to_bitmap_zone` take any bitmap. The padded forms add spaces up to `length` (buffer of 80 bytes).
 
-The text metric globals at `0x102962`–`0x102976` come from the layout data. Their names are provisional.
+The text metric globals at `0x102962`–`0x102976` come from the layout data.
 
 ## Message area
 
@@ -234,7 +234,7 @@ When the cursor is on row 3 and a new row is necessary:
 3. Each vblank scrolls the area one pixel line up (`copy_bytes` per plane) and copies one more line of the row bitmap to the bottom. A full row takes 7 frames.
 4. When text arrives after the scroll, `g_message_area_copy_pending` tells the vblank handler to copy the whole row bitmap.
 
-Functions that draw into the area busy-wait until the scroll ends. The C port must run the scroll from the frame timer, or the wait never ends.
+Functions that draw into the area busy-wait until the scroll ends. The port keeps the rows as text and scrolls one row at once, without a wait (`start_new_row`, `src/engine/message.c`).
 
 ## Trackdisk and save disk format (`0x109bb2`–`0x10a3a6`)
 
