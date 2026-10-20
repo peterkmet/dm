@@ -26,9 +26,12 @@ There are many Dungeon Master ports and clones. DMMac exists for two reasons:
   it again? The decompilation and the port were the exercise, not a shortcut around it.
 
 DMMac is not [ReDMCSB](http://dmweb.free.fr/community/redmcsb/). ReDMCSB is the reconstructed source code of
-the original: it compiles to the original program for the Amiga and the Atari ST. DMMac is a new program with
-its own decompilation, its own code and its own tests against the original; it adds the advanced mode and the
-LLM mode. ReDMCSB served as a reference for the names of functions and structures.
+the original program: it compiles to the same 68000 binary that FTL shipped, and that binary runs on an Amiga or
+an Atari ST, or in an emulator. DMMac is a modern program: C11 and SDL3, compiled to a native binary for Apple
+Silicon and for x86-64 Windows. From the original it takes only the data files on the disk (the graphics, the
+dungeon, the sounds); the game rules were written again in C from the decompilation, and its own tests compare
+them with the original. It adds the advanced mode and the LLM mode. ReDMCSB served as a reference for the names
+of functions and structures.
 
 ## Features
 
