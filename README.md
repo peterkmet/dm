@@ -38,7 +38,7 @@ Download the [latest release](https://github.com/peterkmet/dmmac/releases/latest
   ```
 
 - **Windows 10+:** Run `dm.exe`. If Windows SmartScreen warns about an unknown publisher, select "More info",
-  then "Run anyway". (The Windows binary is tested under Wine only.)
+  then "Run anyway".
 
 On first launch, the engine extracts the disk images into `game/` and `game-csb/`. Save files are stored in the
 same folders using the original Amiga binary format. See the [Player Manual](docs/manual.md) for controls,

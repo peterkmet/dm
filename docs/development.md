@@ -89,8 +89,7 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 6. Commit `CHANGELOG.md`, `pyproject.toml`, and `uv.lock` with the message `docs: version X.Y.Z`.
 7. `git tag vX.Y.Z`.
 8. The owner pushes the branch and the tag.
-9. Write the notes file: the `CHANGELOG.md` section of the version and the sentence "The Windows build is tested
-   under Wine only, not on a real Windows."
+9. Write the notes file: the `CHANGELOG.md` section of the version.
 10. The owner creates the release:
 
     ```sh
