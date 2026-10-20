@@ -1,6 +1,6 @@
 # DMMac: Dungeon Master for macOS and Windows
 
-DMMac is the Amiga version of **Dungeon Master v3.60** and **Chaos Strikes Back**, written again in C11 and
+DMMac is the Amiga version of **Dungeon Master v3.60** and **Chaos Strikes Back**, rewritten in C11 and
 SDL3. It compiles to a native program for macOS (Apple Silicon) and Windows (x86-64).
 
 <p align="center">
@@ -29,7 +29,7 @@ DMMac is not [ReDMCSB](http://dmweb.free.fr/community/redmcsb/). ReDMCSB is the 
 the original program: it compiles to the same 68000 binary that FTL shipped, and that binary runs on an Amiga or
 an Atari ST, or in an emulator. DMMac is a modern program: C11 and SDL3, compiled to a native binary for Apple
 Silicon and for x86-64 Windows. From the original it takes only the data files on the disk (the graphics, the
-dungeon, the sounds); the game rules were written again in C from the decompilation, and its own tests compare
+dungeon, the sounds); the game rules were rewritten in C from the decompilation, and its own tests compare
 them with the original. It adds the advanced mode and the LLM mode. ReDMCSB served as a reference for the names
 of functions and structures.
 
@@ -95,7 +95,7 @@ The port was written with Claude Code.
 
 1. Decompile: Ghidra decompiles the FTL code modules of the Amiga disk to C
    ([Decompiling](docs/decompiling.md)). The symbol tables in `docs/reference/` name the functions and the globals.
-2. Port: the game rules are written again in C11 from this decompilation only. No code of another port is used.
+2. Port: the game rules are rewritten in C11 from this decompilation only. No code of another port is used.
 3. Check against the original: the differential tests run a function of the original program in a 68000
    emulator and the same function of the port with the same input, then compare the state. Golden snapshots
    keep the save file, the dungeon view and the game rules.
