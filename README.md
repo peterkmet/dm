@@ -22,8 +22,8 @@ There are many Dungeon Master ports and clones. DMMac exists for two reasons:
 
 - The author wanted to play Dungeon Master as a native program on a modern Mac (Apple Silicon) and found no
   port that does this.
-- The project was an experiment: can an LLM (Claude Code) decompile a complete game from its binary and write
-  it again? The decompilation and the port were the exercise, not a shortcut around it.
+- The author wanted to see how far Claude Code gets with the decompilation of a complete game from its binary
+  and with the port of its rules to C.
 
 DMMac is not [ReDMCSB](http://dmweb.free.fr/community/redmcsb/). ReDMCSB is the reconstructed source code of
 the original program: it compiles to the same 68000 binary that FTL shipped, and that binary runs on an Amiga or
