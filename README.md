@@ -18,7 +18,7 @@ versions) do not work. The game recognizes the disks by their content, not by th
   the defeat of Lord Chaos.
 - **Vanilla** mode: the original game.
 - **Advanced** mode: automap, options menu (volume, music, upscale filter), 8 save slots, quick save and
-  quick load, cheat screen, WASD keys, 8 sounds at once, the FM-Towns and Super NES soundtracks, and a direct
+  quick load, cheat screen, WASD keys, 8 simultaneous sounds, the FM-Towns and Super NES soundtracks, and a direct
   start of Chaos Strikes Back from the prison stairs.
 - **LLM** mode (macOS): a program or a language model plays the game over a Unix socket, turn by turn.
 - Pixel-art upscale filters (`scale2x`, `scale3x`); the picture scales with the window.
@@ -77,15 +77,14 @@ The port was developed with Claude Code in four stages:
 1. Ghidra decompiled the FTL code modules of the Amiga disk to C ([Decompiling](docs/decompiling.md)). The
    symbol tables in `docs/reference/` name the functions and the globals.
 2. The game rules were rewritten in C11 from this decompilation only; no code of another port was used.
-3. Differential tests were added. Each runs a function of the original program in a 68000 emulator and the same
-   function of the port with the same input, then compares the state. Golden snapshots keep the save file, the
-   dungeon view and the game rules.
+3. Differential tests run a ported function and its original in a 68000 emulator with identical inputs and
+   compare the resulting state. Golden snapshots verify the save file, the dungeon view and the game rules.
 4. Several cleanup passes kept the game behavior and introduced named constants, typed accessors, five layers,
    a coding standard with a check per rule, and an audit of the tests.
 
-[ReDMCSB](http://dmweb.free.fr/community/redmcsb/) is a different kind of project: the reconstructed source
-code of the original program, which compiles to the same 68000 binary that FTL shipped and runs on an Amiga, an
-Atari ST or an emulator. ReDMCSB gave DMMac the names of functions and structures.
+[ReDMCSB](http://dmweb.free.fr/community/redmcsb/) is the reconstruction of the original source code; it
+recompiles to the shipped 68000 binary for Amiga and Atari ST hardware and emulators. It gave DMMac the names of
+functions and structures.
 
 The docs describe the [file formats](docs/formats/ftl.md), the [game rules](docs/rules/game-state.md),
 [Chaos Strikes Back](docs/csb/data.md), and the [KAOS map](docs/reference/kaos-map.md).
