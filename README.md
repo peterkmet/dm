@@ -14,8 +14,8 @@ versions) do not work. The game recognizes the disks by their content, not by th
 
 ## Features
 
-- The complete Dungeon Master and Chaos Strikes Back. Dungeon Master was played through to the defeat of Lord
-  Chaos.
+- The complete Dungeon Master and Chaos Strikes Back. Dungeon Master is verified in a complete playthrough to
+  the defeat of Lord Chaos.
 - **Vanilla** mode: the original game.
 - **Advanced** mode: automap, options menu (volume, music, upscale filter), 8 save slots, quick save and
   quick load, cheat screen, WASD keys, 8 sounds at once, the FM-Towns and Super NES soundtracks, and a direct
@@ -28,10 +28,11 @@ versions) do not work. The game recognizes the disks by their content, not by th
 Download the [latest release](https://github.com/peterkmet/dmmac/releases/latest): `DMMac-macos-arm64.zip` or
 `DMMac-windows-x64.zip`. Unpack it and copy your `.adf` disk images into the folder.
 
-- macOS: remove the quarantine, then start `Dungeon Master.command`.
+- macOS: remove the quarantine, then start `Dungeon Master.command` (a double-click in Finder works too).
 
   ```sh
   xattr -d com.apple.quarantine dm "Dungeon Master.command" libSDL3.0.dylib
+  open "Dungeon Master.command"
   ```
 
 - Windows 10 or later: start `dm.exe`. Windows warns about an unknown publisher: "More info", "Run anyway".
@@ -71,15 +72,14 @@ Run `build/dm` in the folder with the `.adf` images. The build, the tests and th
 ## Engineering
 
 DMMac is a native C11 engine for the Amiga data of Dungeon Master and Chaos Strikes Back; it needs no emulator.
-Claude Code wrote the port in four steps:
+The port was developed with Claude Code in four stages:
 
 1. Ghidra decompiled the FTL code modules of the Amiga disk to C ([Decompiling](docs/decompiling.md)). The
    symbol tables in `docs/reference/` name the functions and the globals.
-2. The game rules were rewritten in C11 from this decompilation only; no code of another port was used. From
-   the original, DMMac takes only the data files on the disk (graphics, dungeon, sounds).
-3. Differential tests run a function of the original program in a 68000 emulator and the same function of the
-   port with the same input, then compare the state. Golden snapshots keep the save file, the dungeon view and
-   the game rules.
+2. The game rules were rewritten in C11 from this decompilation only; no code of another port was used.
+3. Differential tests were added. Each runs a function of the original program in a 68000 emulator and the same
+   function of the port with the same input, then compares the state. Golden snapshots keep the save file, the
+   dungeon view and the game rules.
 4. Several cleanup passes kept the game behavior and introduced named constants, typed accessors, five layers,
    a coding standard with a check per rule, and an audit of the tests.
 
