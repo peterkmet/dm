@@ -203,7 +203,7 @@ The door state is bits 0–2 of the door square: 0 open, 1–3 partly closed, 4 
 
 `event_process_expired()` runs every expired event. For each event it selects the event map, calls the handler, and selects the party map again. Event 70 runs on the party map.
 
-Implemented event types:
+Event types of this page:
 
 | Type | Action |
 |---|---|
@@ -242,7 +242,7 @@ Event types that other pages describe:
 | 75 | `champion_poison` | [champions.md](champions.md) |
 | 0, 3, 4, 14–19, 21–23, 26–28, 42–47, 50–52, 54–59, 62–64, 66–69, 76, 80 and higher | None in the original | — |
 
-The redraw calls of events 70–79 (`set_dungeon_view_palette`, `status_draw_champion`) belong to the drawing layer.
+The redraw calls of events 70–79 (the view palette, `status_draw_champion`) belong to the drawing layer.
 
 Movement rules that the event table does not cover:
 

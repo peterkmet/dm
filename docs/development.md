@@ -41,7 +41,7 @@ uv run pytest -q tests/<folder>/test_x.py
 | `tests/differential/` | The same input through the port (`ctypes` on `build/libdm.dylib`) and through the original in a 68000 emulator gives the same state. |
 | `tests/port/` | The port code by itself: the data layer, the UI, the control protocol, the options, and the modes. |
 | `tests/golden/` | The state, the view, the rules, the screens, and the protocol hash to the stored snapshots. Never regenerate a snapshot to make a test pass. |
-| `tests/tools/` | The Python tools in `tools/dmtools/` and `decompile.sh`. |
+| `tests/tools/` | The Python tools in `tools/dmtools/`. |
 | `tests/standard/` | The coding standard, the docs links, and the docs vocabulary. |
 
 `tests/dmtest/` has the shared helpers: `load_lib()` loads a private copy of the library for a test module, `constants` mirrors C constants, and `markers` has the skip markers.
@@ -54,7 +54,6 @@ Some tests need files that the repository does not have. Pytest skips them with 
 | `needs_csb` | `game-csb/` with `APPB.FTL`, `Graphics.DAT`, and `Dungeon.DAT` |
 | `needs_csb_mini` | `game-csb/disk-b/MINI.DAT` |
 | `needs_sdl` | SDL3 from Homebrew |
-| `needs_ghidra` | Ghidra from Homebrew (`tests/tools/test_ghidra.py` runs `decompile.sh` on a small synthetic image, about 4 seconds) |
 
 Each test module owns its state, so the tests run in any order and in parallel.
 

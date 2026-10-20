@@ -188,9 +188,9 @@ Values in the new `CSBGAME.DAT`:
 | Game ID | Saved game ID + 1 |
 | Dungeon ID | 13 (`MINI.DAT`) |
 
-## Prototype
+## Python tool
 
-The prototype is the module `dmtools.csb_mini`, and its differential test is a helper of the tests.
+The module `dmtools.csb_mini` makes the adventure in Python. The port does the same in `savegame_make_adventure` (`src/engine/savegame.c`). `tests/differential/test_csb_mini.py` checks the module against the original CEDT routines.
 
 | File | Content |
 |---|---|
@@ -209,7 +209,7 @@ uv run python -m dmtools.csb_mini game-csb/disk-b/MINI.DAT csb_dungeon.dat <save
 
 ## Verification
 
-`tests/dmtest/cedt.py` runs the original CEDT routines in `dmtools.emu`. It replaces three things: the file read service (`A5+0x20a`) with a memory reader, `0x105020` (allocate) with a bump allocator, and `0x105036` (free) with `RTS`.
+`tests/dmtest/cedt.py` replaces three things: the file read service (`A5+0x20a`) with a memory reader, `0x105020` (allocate) with a bump allocator, and `0x105036` (free) with `RTS`.
 
 | Check | Result |
 |---|---|

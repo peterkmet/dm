@@ -217,7 +217,7 @@ The random header words come after the copy of the globals. Thus the saved rando
 2. `savefile_decode`. Then `dungeon_load_saved` on the dungeon part. A failure gives `SAVEGAME_DAMAGED`.
 3. Copy block 0 into the globals. `g_session.last_load_time` gets the game time.
 4. Allocate the timeline for `g_timeline.capacity` events and the active groups for at least 110 entries. Copy blocks 1–4. Raise `g_max_active_group_count` to at least 110. `timeline_reset`. CSB allocates exactly the saved count and keeps it. A new CSB game has 60 entries.
-5. Find the portrait index of each party champion (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
+5. Decode the portrait of each champion into `ChampionRuntime.portrait` (see Portraits). Copy the game ID, the dungeon ID, and the extra header bytes.
 6. Clear `g_session.party_dead` and the sleep flag. Set `g_session.saved_game_exists`.
 7. When the file was the backup, rename it to `DMGAME.DAT`.
 
@@ -250,7 +250,7 @@ The port adds extension blocks after the original save data outside the vanilla 
 
 ### Portraits
 
-The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait`. The save writes the portrait of each party champion in the interleaved form: per row and per 16-pixel column, one word for each of the 4 bit planes (`champion_portraits_to_interleaved`). The other portraits are 0. The load decodes each portrait of the file into `ChampionRuntime.portrait`.
+The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait`. The save writes the portrait of each party champion in the interleaved form: per row and per 16-pixel column, one word for each of the 4 bit planes (`portrait_to_interleaved`). The other portraits are 0. The load decodes each portrait of the file into `ChampionRuntime.portrait`.
 
 ### Dungeon part (`dungeon.c`)
 
@@ -261,7 +261,7 @@ The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait
 
 `tests/port/test_save.py` tests the game state layer:
 
-- Round trip: a new game, a recruited champion with an object in the hand, then a save. A new game, then a load. The globals, the packed champions (the leader load less the hand object), the party, the timeline, the active groups, the portrait indices, and `dungeon_save` are equal.
+- Round trip: a new game, a recruited champion with an object in the hand, then a save. A new game, then a load. The globals, the packed champions (the leader load less the hand object), the party, the timeline, the active groups, the portraits, and `dungeon_save` are equal.
 - The second save keeps the first file as `DMGAME.BAK`. A load without `DMGAME.DAT` uses the backup and renames it.
 - A missing file gives `SAVEGAME_MISSING`. A truncated file, a changed dungeon end, a changed header byte, and zeros give `SAVEGAME_DAMAGED`.
 - The original `save_read_header` and `save_read_checked_block` in `dmtools.emu` accept the file of `savegame_save`. The dungeon sum word is correct.
@@ -277,7 +277,7 @@ The port keeps the portrait pixels of each champion in `ChampionRuntime.portrait
 
 ## Limits
 
-- No real save file was available. The tests use synthetic data, the port's own saves, and the original routines as the oracle. The original `load_dungeon` reads a file handle, so the tests do not run it on the dungeon part.
+- The tests have no save file of the original program. They use synthetic data, the port's own saves, and the original routines as the oracle. The original `load_dungeon` reads a file handle, so the tests do not run it on the dungeon part.
 - Deliberate deviation: the original quits the program after the credits of the endgame and after "THE GAME IS DAMAGED!". The port sets `g_return_to_entrance`, and `platform/app.c` shows the entrance.
 - A restart does not check that the saved game has the same game ID ("THAT'S NOT THE SAME GAME").
 - The header byte at `0x12a` (`SAVE_HEADER_HEADER_BYTE`) is always written as 1 (`HEADER_BYTE_DEFAULT`). The original writes back the value of the last load.

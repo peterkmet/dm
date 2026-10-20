@@ -131,7 +131,7 @@ Sleep keeps the selected runes of the magic caster, in the original (command 145
 `champion_kill(index)`:
 
 1. Health becomes 0. An open inventory of the champion closes.
-2. All objects drop on the party square in the champion cell, in the order of `g_slot_drop_order` (`move_get_move_result`).
+2. All objects drop on the party square in the champion cell, in the order of `tables_get_slot_drop_order` (`move_get_move_result`).
 3. A junk record (no reserve) becomes the bones (junk type 5, important, champion index in the charges) and drops in the same cell.
 4. The spell symbols clear. Poison ends.
 5. When no champion lives, `g_session.party_dead` becomes 1. Otherwise the first living champion becomes leader or caster when the dead champion had that role.

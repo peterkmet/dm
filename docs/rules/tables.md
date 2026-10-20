@@ -101,7 +101,7 @@ Each table ends where the next named table starts. The tests check this.
 
 | Offset | Field | Meaning |
 |---|---|---|
-| 0 | `aspect_index` | Index into `g_creature_aspects`. |
+| 0 | `aspect_index` | Index for `tables_get_creature_aspect`. |
 | 1 | `attack_sound_byte` | 0 = no sound. Otherwise index + 1 into the creature sound table, as stored; the reader uses the index, −1 for none. |
 | 2 | `attributes` | Bits 0–1 size, bit 2 side attack, bit 3 prefer back row, bit 4 attack any champion, bits 7–8 height, bit 9 drops fixed possessions, bit 11 sees invisible, bit 12 night vision, bit 13 archenemy. |
 | 4 | `graphic_info` | Bit 2 flip when not attacking, bit 9 flip when attacking, bit 10 flip during attack, bits 12–13 horizontal offset range, bits 14–15 vertical offset range. |
@@ -117,7 +117,7 @@ Each table ends where the next named table starts. The tests check this.
 | 16 | `properties` | Bits 4–7 fear resistance, bits 8–11 experience, bits 12–15 wariness. |
 | 18 | `resistances` | Bits 8–11 poison. |
 | 20 | `animation_ticks` | Bits 4–7 non-attack, bits 8–11 attack. |
-| 22 | `wound_probabilities` | Four 4-bit thresholds. The creature attack code compares them with a random nibble to select an entry of `g_wound_probability_index_to_mask`. |
+| 22 | `wound_probabilities` | Four 4-bit thresholds. The creature attack code compares them with a random nibble to select an entry of `tables_get_wound_mask`. |
 | 24 | `attack_type` | Attack type argument of `champion_add_pending_damage`. |
 | 25 | — | Padding. |
 
@@ -134,7 +134,7 @@ Each table ends where the next named table starts. The tests check this.
 | Offset | Field | Meaning |
 |---|---|---|
 | 0 | `type` | Object name index and base icon index. |
-| 2 | `aspect_index` | Index into `g_object_aspects`. |
+| 2 | `aspect_index` | Index for `tables_get_object_aspect`. |
 | 3 | `action_set_index` | Index into the action set table. |
 | 4 | `allowed_slots` | Bit mask. A slot accepts the object when `allowed_slots & slot_mask` is not 0. |
 
@@ -212,7 +212,7 @@ The action names come from graphic 699, not from KAOS.
 
 ## Light, slots, and wounds
 
-- Light power to light amount: 16 signed words. `set_dungeon_view_palette` and the light event use it.
+- Light power to light amount: 16 signed words. The view palette and the light event (`process_light`) use it.
 - Palette light thresholds: 6 signed words. The palette index is the first entry that is not greater than the light sum.
 - Slot masks: 38 words. Index 0–29 are champion slots, 30–37 are chest slots. Compare with `allowed_slots` of the object info.
 - Wound defense factor: 6 bytes, indexed by body slot. The champion defense code multiplies the shield defense with it.

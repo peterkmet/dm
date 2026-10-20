@@ -77,11 +77,11 @@ The failed items have fewer than 4 bytes (empty or 2-byte items). They are not b
 
 A check compares the port pixels with `dmcsb.graphics.decode_img1` for the 673 CSB image items (0–670, 676, 686). All 673 are equal.
 
-Result: `graphics.c` needs no change for CSB.
+Result: `gfx_expand` decodes the CSB items without a CSB branch.
 
 ### Strings and layout
 
-Object names (item 694). The CSB engine reads 199 names at `0x108280` (graphic index `0x2b6` pushed at `0x1082ac`). Each name ends at a byte with bit 7 set. The engine clears bit 7 and adds a NUL. `dmcsb` calls this encoding TXT1. The DM file uses NUL-terminated strings (TXT2). `ui.c` `load_strings` splits on NUL, so it gives one long string for CSB.
+Object names (item 694). The CSB engine reads 199 names at `0x108280` (graphic index `0x2b6` pushed at `0x1082ac`). Each name ends at a byte with bit 7 set. The engine clears bit 7 and adds a NUL. `dmcsb` calls this encoding TXT1. The DM file uses NUL-terminated strings (TXT2). `load_strings` (`src/data/graphics.c`) ends each CSB object name at the byte with bit 7 set.
 
 33 of the 199 CSB names differ from DM. Examples: 23–24 STORM (DM BOLT BLADE), 25–26 RA BLADE (FURY), 38 SIDE SPLITTER (DELTA), 41 DRAGON FANG (THE INQUISITOR), 62–64 STAFF OF IRRA, CROSS OF NETA, SERPENT STAFF, 174 SHANK (DRUMSTICK).
 
@@ -97,7 +97,7 @@ Layout (item 696). A check compares the zone records with `dmcsb.graphics.decode
 | `GFX_CREDITS` | 5 | `startend.c` | CSB credits art. The CSB engine does not show credits at the end. |
 | `GFX_ACTION_AREA_NAMES` | 10 | `ids.h` | Different content, same size. |
 | `GFX_CHAMPION_PORTRAITS` | 26 | `ids.h` | CSB portraits. `savegame.c` matches saved portraits against this sheet (see [Save file](#save-file)). |
-| `GFX_OBJECT_ICONS_BEFORE_FIRST` + 1–4, 6 | 42–45, 47 | `ids.h` | CSB icons. The `ICON_*` names of DM items now name CSB items, for example `ICON_BOLT_BLADE`, `ICON_FURY`, `ICON_DELTA`, `ICON_INQUISITOR`. |
+| `GFX_OBJECT_ICONS_BEFORE_FIRST` + 1–4, 6 | 42–45, 47 | `ids.h` | CSB icons. The `ICON_*` names of DM items name the CSB items at the same indices, for example `ICON_BOLT_BLADE`, `ICON_FURY`, `ICON_DELTA`, `ICON_INQUISITOR`. |
 | `GFX_OBJECT_NAMES` | 694 | `ids.h`, `ui.c` | TXT1 encoding. |
 | `GFX_ACTION_NAMES` | 699 | `ids.h`, `ui.c` | Empty. |
 | `GFX_STRINGS` | 700 | `ids.h`, `ui.c`, `champion.c` | Empty. |
@@ -197,18 +197,18 @@ Result: `savefile.c` reads and writes the CSB header when `g_adventure` is `ADVE
 
 The next chunk follows the payload directly. `ANIM.FTL` `0x101356` walks the chunks with this step. A walk of all four files with this step reaches the exact file end. All payload lengths are even.
 
-The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (18 entries: offset word, then tag word; each offset is relative to its own position; default offset at `0x100d7a`). The loop `0x100fca` runs the chunks from the first chunk to the file end. Step 8 checked each handler in the disassembly (`machine68k`):
+The chunk dispatcher of `ANIM.FTL` is `0x100d1a`: a switch table at `0x100d30` (18 entries: offset word, then tag word; each offset is relative to its own position; default offset at `0x100d7a`). The loop `0x100fca` runs the chunks from the first chunk to the file end. The disassembly (`machine68k`) confirms each handler:
 
 | Tag | Handler | Meaning | Port (`src/ui/anim.c`) |
 |---|---|---|---|
-| `PL` | `0x100760` | Payload: count word, then count entries of 4 bytes: color index, red, green, blue (4 bits each). The colors go into a pending palette. The next frame applies it (`0x1016d8`). | Done |
-| `EN` | `0x100812` | Full frame: the `Graphics.DAT` packed graphic format (width, height, commands), decoded by the GRF1 function behind slot `0xea` into the back buffer. The parameter is the time in vertical blanks (50 Hz) that the frame stays. | Done |
-| `DL` | `0x100846` | Delta frame: the blitter first copies the shown screen into the back buffer (`0x1017bc`), then the same decoder draws the frame. Skip commands keep the old pixels. Pad word `0xff81` before the size. Parameter as `EN`. | Done |
-| `SD` | `0x10087a` | Sample: adds the payload to the sample table (max. 32). Payload: length word, then the 8-bit sample data. | Done |
+| `PL` | `0x100760` | Payload: count word, then count entries of 4 bytes: color index, red, green, blue (4 bits each). The colors go into a pending palette. The next frame applies it (`0x1016d8`). | Yes |
+| `EN` | `0x100812` | Full frame: the `Graphics.DAT` packed graphic format (width, height, commands), decoded by the GRF1 function behind slot `0xea` into the back buffer. The parameter is the time in vertical blanks (50 Hz) that the frame stays. | Yes |
+| `DL` | `0x100846` | Delta frame: the blitter first copies the shown screen into the back buffer (`0x1017bc`), then the same decoder draws the frame. Skip commands keep the old pixels. Pad word `0xff81` before the size. Parameter as `EN`. | Yes |
+| `SD` | `0x10087a` | Sample: adds the payload to the sample table (max. 32). Payload: length word, then the 8-bit sample data. | Yes |
 | `SO` | `0x1008f2` | Plays sample number parameter (1-based) at Paula period 650 (`0x101406`). The two bytes after the chunk header give the volumes: (byte + 1) >> 2. In `ENDA.DAT` the `SO` chunks have no payload, so these are the bytes `DL` of the next tag (volumes 17 and 19). | Done. UNVERIFIED: which volume is the left channel. |
-| `FO` | `0x100b64` | Loop start: pushes the loop (count parameter − 1, start = the second chunk after `FO`) onto a stack of 16 loops. The chunk after `FO` runs once. | Done |
-| `NE` | `0x100be2` | End of a pass: decrements the count. When the count was 0, it pops the loop and skips the two chunks after `NE`. | Done |
-| `BN` | `0x100c7e` | Goes back to the loop start. | Done |
+| `FO` | `0x100b64` | Loop start: pushes the loop (count parameter − 1, start = the second chunk after `FO`) onto a stack of 16 loops. The chunk after `FO` runs once. | Yes |
+| `NE` | `0x100be2` | End of a pass: decrements the count. When the count was 0, it pops the loop and skips the two chunks after `NE`. | Yes |
+| `BN` | `0x100c7e` | Goes back to the loop start. | Yes |
 | `BR` | `0x10073a` | The parameter allows a stop by key or click (`0x10104e`, input types 1 and `0x11`). `ENDA.DAT` has 0: no stop. | Not used (always 0 in `ENDA.DAT`) |
 | `AN` | `0x100722` | Skipped by the player. Payload: width 320, height 200, 4 planes, a count. | Skipped |
 | `DO` | `0x100c9c` | Calls slot `0x182` (`0x102d52`): `ADCMD_FINISH` (command 11) on both audio channel pairs, so the playing samples end with their cycle. | No action: the port voices play once and stop |
@@ -298,9 +298,9 @@ The port reads all rule and view tables from the `KAOS.FTL` image. CSB has no `K
 | Creature aspects | `0x102e58` | `0x1039e8` | Identical |
 | Thing record sizes | `0x101048` | `0x10154a` | Identical |
 | New-game extras | `0x101058` | `0x10155a` | Identical |
-| Action sets | `0x103d4c` | Not found as one block | Not analysed |
+| Action sets | `0x103d4c` | `0x1047ac` | 6-byte records. `csb_image.c` converts them to the 8-byte DM layout. |
 
-The other tables of `tables.md`, the view tables, the input tables, and the escape tables of `dungeon_decode_text` are not checked.
+[engine-diff.md](engine-diff.md#equal-tables-at-new-addresses) lists the CSB addresses of the view tables, the input tables, and the escape tables. `g_csb_copies` (`src/data/csb_image.c`) copies them.
 
 ## Loaders
 
@@ -318,5 +318,5 @@ The other tables of `tables.md`, the view tables, the input tables, and the esca
 
 ## Open points
 
-- The meaning of the `AN` count (the player skips `AN`). The music chunks (`MI`, `MD`, `MF`) and `SF` of `ANIM.DAT`.
+- The meaning of the `AN` count (the player skips `AN`).
 - The CSB rule differences for renamed objects (for example STORM, RA BLADE).
