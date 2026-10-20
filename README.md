@@ -41,8 +41,20 @@ Download the [latest release](https://github.com/peterkmet/dmmac/releases/latest
   then "Run anyway".
 
 On first launch, the engine extracts the disk images into `game/` and `game-csb/`. Save files are stored in the
-same folders using the original Amiga binary format. See the [Player Manual](docs/manual.md) for controls,
-game modes, and configuration.
+same folders using the original Amiga binary format.
+
+Keys of the advanced mode (in the dungeon view):
+
+| Key | Action |
+|---|---|
+| W, A, S, D, Q, E | Move and turn (the cursor keys and the keypad also work) |
+| M or Tab | Automap |
+| Escape | Options menu (volume, music, upscale filter) |
+| C | Cheat screen |
+| F5, F9 | Quick save, quick load |
+| Ctrl+S | Save dialog with the 8 slots |
+
+See the [Player Manual](docs/manual.md) for all controls, game modes, and configuration.
 
 ## Let an LLM play
 
